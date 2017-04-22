@@ -63,7 +63,7 @@ class ImplSdPPTImport : public SdrPowerPointImport
 
     void            FillSdAnimationInfo( SdAnimationInfo* pInfo, PptInteractiveInfoAtom* pIAtom, const OUString& aMacroName );
 
-    virtual         SdrObject* ProcessObj( SvStream& rSt, DffObjData& rData, void* pData, Rectangle& rTextRect, SdrObject* pObj ) override;
+    virtual         SdrObject* ProcessObj( SvStream& rSt, DffObjData& rData, void* pData, ::tools::Rectangle& rTextRect, SdrObject* pObj ) override;
     virtual         SdrObject* ApplyTextObj( PPTTextObj* pTextObj, SdrTextObj* pText, SdPageCapsule pPage,
                                             SfxStyleSheet*, SfxStyleSheet** ) const override;
 
@@ -73,7 +73,7 @@ public:
     OUString        ReadMedia( sal_uInt32 nMediaRef ) const;
 
     ImplSdPPTImport( SdDrawDocument* pDoc, SotStorage& rStorage, SfxMedium& rMed, PowerPointImportParam& );
-    virtual ~ImplSdPPTImport();
+    virtual ~ImplSdPPTImport() override;
 
     bool         Import();
     virtual bool ReadFormControl(  tools::SvRef<SotStorage>& rSrc1, css::uno::Reference< css::form::XFormComponent > & rFormComp ) const override;
@@ -82,7 +82,7 @@ public:
 class SdPPTImport
 {
     PowerPointImportParam maParam;
-    ImplSdPPTImport* pFilter;
+    std::unique_ptr<ImplSdPPTImport> pFilter;
 
 public:
 

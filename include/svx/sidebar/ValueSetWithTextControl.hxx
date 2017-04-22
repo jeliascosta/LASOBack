@@ -38,55 +38,22 @@ namespace svx { namespace sidebar {
 class SVX_DLLPUBLIC ValueSetWithTextControl : public ValueSet
 {
 public:
-    // control type of specialized <ValueSet>:
-    // - image + text
-    // - text + text
-    enum tControlType
-    {
-        IMAGE_TEXT,
-        TEXT_TEXT
-    };
+    ValueSetWithTextControl(Window* pParent, WinBits nBits);
 
-    ValueSetWithTextControl(
-        const tControlType eControlType,
-        vcl::Window* pParent,
-        const ResId& rResId);
-
-    // add item for control type IMAGE_TEXT
-    // if control type does not match IMAGE_TEXT no item is added.
-    // @param pSelectedItemImage
-    // selection item image is optional. if not provided, it is the same as the image item
-    // @param pItemHelpText
-    // help text is optional. if not provided, it is the same as the item text
-    void AddItem(
-        const Image& rItemImage,
-        const Image* pSelectedItemImage,
-        const OUString& rItemText,
-        const OUString* pItemHelpText );
-
-    // add item for control type TEXT_TEXT
-    // if control type does not match TEXT_TEXT no item is added.
-    // @param pItemHelpText
-    // help text is optional. if not provided, it is the same as the item text
     void AddItem(
         const OUString& rItemText,
-        const OUString& rItemText2,
-        const OUString* pItemHelpText );
+        const OUString& rItemText2 );
 
     virtual void UserDraw( const UserDrawEvent& rUDEvt ) override;
 
 private:
     struct ValueSetWithTextItem
     {
-        Image maItemImage;
-        Image maSelectedItemImage;
         OUString maItemText;
         OUString maItemText2;
     };
 
     typedef ::std::vector< ValueSetWithTextItem > tItemList;
-
-    const tControlType meControlType;
     tItemList maItems;
 };
 

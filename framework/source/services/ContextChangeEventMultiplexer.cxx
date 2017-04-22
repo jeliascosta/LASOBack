@@ -18,7 +18,7 @@
  */
 
 #include <helper/mischelper.hxx>
-
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/lang/XEventListener.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
@@ -53,7 +53,6 @@ class ContextChangeEventMultiplexer
 {
 public:
     ContextChangeEventMultiplexer();
-    virtual ~ContextChangeEventMultiplexer();
     ContextChangeEventMultiplexer(const ContextChangeEventMultiplexer&) = delete;
     ContextChangeEventMultiplexer& operator=(const ContextChangeEventMultiplexer&) = delete;
 
@@ -62,33 +61,25 @@ public:
     // XContextChangeEventMultiplexer
     virtual void SAL_CALL addContextChangeEventListener (
         const cssu::Reference<css::ui::XContextChangeEventListener>& rxListener,
-        const cssu::Reference<cssu::XInterface>& rxEventFocus)
-        throw(cssu::RuntimeException, cssl::IllegalArgumentException, std::exception) override;
+        const cssu::Reference<cssu::XInterface>& rxEventFocus) override;
     virtual void SAL_CALL removeContextChangeEventListener (
         const cssu::Reference<css::ui::XContextChangeEventListener>& rxListener,
-        const cssu::Reference<cssu::XInterface>& rxEventFocus)
-        throw(cssu::RuntimeException, cssl::IllegalArgumentException, std::exception) override;
+        const cssu::Reference<cssu::XInterface>& rxEventFocus) override;
     virtual void SAL_CALL removeAllContextChangeEventListeners (
-        const cssu::Reference<css::ui::XContextChangeEventListener>& rxListener)
-        throw(cssu::RuntimeException, cssl::IllegalArgumentException, std::exception) override;
+        const cssu::Reference<css::ui::XContextChangeEventListener>& rxListener) override;
     virtual void SAL_CALL broadcastContextChangeEvent (
         const css::ui::ContextChangeEventObject& rContextChangeEventObject,
-        const cssu::Reference<cssu::XInterface>& rxEventFocus)
-        throw(cssu::RuntimeException, std::exception) override;
+        const cssu::Reference<cssu::XInterface>& rxEventFocus) override;
 
     // XServiceInfo
-    virtual ::rtl::OUString SAL_CALL getImplementationName()
-        throw (cssu::RuntimeException, std::exception) override;
+    virtual ::rtl::OUString SAL_CALL getImplementationName() override;
     virtual sal_Bool SAL_CALL supportsService  (
-        const ::rtl::OUString& rsServiceName)
-        throw (cssu::RuntimeException, std::exception) override;
-    virtual cssu::Sequence< ::rtl::OUString> SAL_CALL getSupportedServiceNames()
-        throw (cssu::RuntimeException, std::exception) override;
+        const ::rtl::OUString& rsServiceName) override;
+    virtual cssu::Sequence< ::rtl::OUString> SAL_CALL getSupportedServiceNames() override;
 
     // XEventListener
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEvent)
-        throw (cssu::RuntimeException, std::exception) override;
+        const css::lang::EventObject& rEvent) override;
 
     typedef ::std::vector<cssu::Reference<css::ui::XContextChangeEventListener> > ListenerContainer;
     class FocusDescriptor
@@ -118,10 +109,6 @@ public:
 ContextChangeEventMultiplexer::ContextChangeEventMultiplexer()
     : ContextChangeEventMultiplexerInterfaceBase(m_aMutex),
       maListeners()
-{
-}
-
-ContextChangeEventMultiplexer::~ContextChangeEventMultiplexer()
 {
 }
 
@@ -158,7 +145,6 @@ void SAL_CALL ContextChangeEventMultiplexer::disposing()
 void SAL_CALL ContextChangeEventMultiplexer::addContextChangeEventListener (
     const cssu::Reference<css::ui::XContextChangeEventListener>& rxListener,
     const cssu::Reference<cssu::XInterface>& rxEventFocus)
-    throw(cssu::RuntimeException,cssl::IllegalArgumentException, std::exception)
 {
     if ( ! rxListener.is())
         throw css::lang::IllegalArgumentException(
@@ -195,7 +181,6 @@ void SAL_CALL ContextChangeEventMultiplexer::addContextChangeEventListener (
 void SAL_CALL ContextChangeEventMultiplexer::removeContextChangeEventListener (
     const cssu::Reference<css::ui::XContextChangeEventListener>& rxListener,
     const cssu::Reference<cssu::XInterface>& rxEventFocus)
-    throw(cssu::RuntimeException,cssl::IllegalArgumentException, std::exception)
 {
     if ( ! rxListener.is())
         throw cssl::IllegalArgumentException(
@@ -221,7 +206,6 @@ void SAL_CALL ContextChangeEventMultiplexer::removeContextChangeEventListener (
 
 void SAL_CALL ContextChangeEventMultiplexer::removeAllContextChangeEventListeners (
     const cssu::Reference<css::ui::XContextChangeEventListener>& rxListener)
-    throw(cssu::RuntimeException,cssl::IllegalArgumentException, std::exception)
 {
     if ( ! rxListener.is())
         throw cssl::IllegalArgumentException(
@@ -249,7 +233,6 @@ void SAL_CALL ContextChangeEventMultiplexer::removeAllContextChangeEventListener
 void SAL_CALL ContextChangeEventMultiplexer::broadcastContextChangeEvent (
     const css::ui::ContextChangeEventObject& rEventObject,
     const cssu::Reference<cssu::XInterface>& rxEventFocus)
-    throw(cssu::RuntimeException, std::exception)
 {
     // Remember the current context.
     if (rxEventFocus.is())
@@ -313,26 +296,22 @@ ContextChangeEventMultiplexer::FocusDescriptor* ContextChangeEventMultiplexer::G
 }
 
 OUString SAL_CALL ContextChangeEventMultiplexer::getImplementationName()
-    throw(cssu::RuntimeException, std::exception)
 {
     return OUString("org.apache.openoffice.comp.framework.ContextChangeEventMultiplexer");
 }
 
 sal_Bool SAL_CALL ContextChangeEventMultiplexer::supportsService ( const ::rtl::OUString& rsServiceName)
-    throw (cssu::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rsServiceName);
 }
 
 css::uno::Sequence<OUString> SAL_CALL ContextChangeEventMultiplexer::getSupportedServiceNames()
-    throw (cssu::RuntimeException, std::exception)
 {
     // it's a singleton, not a service
     return css::uno::Sequence<OUString>();
 }
 
 void SAL_CALL ContextChangeEventMultiplexer::disposing ( const css::lang::EventObject& rEvent)
-    throw (cssu::RuntimeException, std::exception)
 {
     ListenerMap::iterator iDescriptor (maListeners.find(rEvent.Source));
 

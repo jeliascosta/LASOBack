@@ -27,6 +27,7 @@
 #if HAVE_FEATURE_EXTENSIONS
 #include "dp_persmap.h"
 #endif
+#include "dp_services.hxx"
 #include "dp_ucb.h"
 #include <rtl/string.hxx>
 #include <rtl/ustrbuf.hxx>
@@ -42,6 +43,7 @@
 #include <com/sun/star/configuration/Update.hpp>
 #include <com/sun/star/ucb/NameClash.hpp>
 #include <com/sun/star/io/XActiveDataSink.hpp>
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <com/sun/star/util/XRefreshable.hpp>
 #include <list>
@@ -60,7 +62,7 @@ namespace backend {
 namespace configuration {
 namespace {
 
-typedef ::std::list<OUString> t_stringlist;
+typedef std::list<OUString> t_stringlist;
 
 
 class BackendImpl : public ::dp_registry::backend::PackageRegistryBackend
@@ -84,7 +86,7 @@ class BackendImpl : public ::dp_registry::backend::PackageRegistryBackend
             Reference<XCommandEnvironment> const & xCmdEnv ) override;
 
     public:
-        inline PackageImpl(
+        PackageImpl(
             ::rtl::Reference<PackageRegistryBackend> const & myBackend,
             OUString const & url, OUString const & name,
             Reference<deployment::XPackageTypeInfo> const & xPackageType,
@@ -114,7 +116,7 @@ class BackendImpl : public ::dp_registry::backend::PackageRegistryBackend
 
 #if HAVE_FEATURE_EXTENSIONS
     // for backwards compatibility - nil if no (compatible) back-compat db present
-    ::std::unique_ptr<PersistentMap> m_registeredPackages;
+    std::unique_ptr<PersistentMap> m_registeredPackages;
 #endif
 
     virtual void SAL_CALL disposing() override;
@@ -133,9 +135,10 @@ class BackendImpl : public ::dp_registry::backend::PackageRegistryBackend
      */
     void addToConfigmgrIni( bool isSchema, bool isURL, OUString const & url,
                      Reference<XCommandEnvironment> const & xCmdEnv );
+#if HAVE_FEATURE_EXTENSIONS
     bool removeFromConfigmgrIni( bool isSchema, OUString const & url,
                           Reference<XCommandEnvironment> const & xCmdEnv );
-
+#endif
     void addDataToDb(OUString const & url, ConfigurationBackendDb::Data const & data);
     ::boost::optional<ConfigurationBackendDb::Data> readDataFromDb(OUString const & url);
     void revokeEntryFromDb(OUString const & url);
@@ -148,10 +151,8 @@ public:
 
     // XPackageRegistry
     virtual Sequence< Reference<deployment::XPackageTypeInfo> > SAL_CALL
-    getSupportedPackageTypes() throw (RuntimeException, std::exception) override;
-    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType)
-        throw (deployment::DeploymentException,
-               uno::RuntimeException, std::exception) override;
+    getSupportedPackageTypes() override;
+    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType) override;
 
     using PackageRegistryBackend::disposing;
 };
@@ -185,13 +186,13 @@ BackendImpl::BackendImpl(
       m_xConfDataTypeInfo( new Package::TypeInfo(
                                "application/vnd.sun.star.configuration-data",
                                "*.xcu",
-                               getResourceString(RID_STR_CONF_DATA),
-                               RID_IMG_CONF_XML ) ),
+                               getResourceString(RID_STR_CONF_DATA)
+                               ) ),
       m_xConfSchemaTypeInfo( new Package::TypeInfo(
                                  "application/vnd.sun.star.configuration-schema",
                                  "*.xcs",
-                                 getResourceString(RID_STR_CONF_SCHEMA),
-                                 RID_IMG_CONF_XML ) ),
+                                 getResourceString(RID_STR_CONF_SCHEMA)
+                                 ) ),
       m_typeInfos( 2 )
 {
     m_typeInfos[ 0 ] = m_xConfDataTypeInfo;
@@ -213,13 +214,13 @@ BackendImpl::BackendImpl(
         //are still registers. Only after revoking and restarting OOo the folders
         //can be removed. This works now, because the extension manager is a singleton
         //and the backends are only create once per process.
-        ::std::list<OUString> folders = m_backendDb->getAllDataUrls();
+        std::list<OUString> folders = m_backendDb->getAllDataUrls();
         deleteUnusedFolders(OUString(), folders);
 
         configmgrini_verify_init( xCmdEnv );
 
 #if HAVE_FEATURE_EXTENSIONS
-        ::std::unique_ptr<PersistentMap> pMap;
+        std::unique_ptr<PersistentMap> pMap;
         OUString aCompatURL( makeURL( getCachePath(), "registered_packages.pmap" ) );
 
         // Don't create it if it doesn't exist already
@@ -282,13 +283,11 @@ bool BackendImpl::activateEntry(OUString const & url)
 // XPackageRegistry
 
 Sequence< Reference<deployment::XPackageTypeInfo> >
-BackendImpl::getSupportedPackageTypes() throw (RuntimeException, std::exception)
+BackendImpl::getSupportedPackageTypes()
 {
     return m_typeInfos;
 }
 void BackendImpl::packageRemoved(OUString const & url, OUString const & /*mediaType*/)
-        throw (deployment::DeploymentException,
-               uno::RuntimeException, std::exception)
 {
     if (m_backendDb.get())
         m_backendDb->removeEntry(url);
@@ -475,7 +474,7 @@ void BackendImpl::addToConfigmgrIni( bool isSchema, bool isURL, OUString const &
     const ::osl::MutexGuard guard( getMutex() );
     configmgrini_verify_init( xCmdEnv );
     t_stringlist & rSet = getFiles(isSchema);
-    if (::std::find( rSet.begin(), rSet.end(), rcterm ) == rSet.end()) {
+    if (std::find( rSet.begin(), rSet.end(), rcterm ) == rSet.end()) {
         rSet.push_front( rcterm ); // prepend to list, thus overriding
         // write immediately:
         m_configmgrini_modified = true;
@@ -483,7 +482,7 @@ void BackendImpl::addToConfigmgrIni( bool isSchema, bool isURL, OUString const &
     }
 }
 
-
+#if HAVE_FEATURE_EXTENSIONS
 bool BackendImpl::removeFromConfigmgrIni(
     bool isSchema, OUString const & url_,
     Reference<XCommandEnvironment> const & xCmdEnv )
@@ -498,7 +497,7 @@ bool BackendImpl::removeFromConfigmgrIni(
         //in case the xcu contained %origin% then the configmr.ini contains the
         //url to the file in the user installation (e.g. $BUNDLED_EXTENSIONS_USER)
         //However, m_url (getURL()) contains the URL for the file in the actual
-        //extension installatation.
+        //extension installation.
         ::boost::optional<ConfigurationBackendDb::Data> data = readDataFromDb(url_);
         if (data)
             i = std::find(rSet.begin(), rSet.end(), data->iniEntry);
@@ -512,7 +511,7 @@ bool BackendImpl::removeFromConfigmgrIni(
     configmgrini_flush( xCmdEnv );
     return true;
 }
-
+#endif
 
 // Package
 
@@ -602,7 +601,7 @@ OUString replaceOrigin(
     OString origin;
     sal_Char const * pBytes = reinterpret_cast<sal_Char const *>(
         bytes.data());
-    sal_Size nBytes = bytes.size();
+    std::size_t nBytes = bytes.size();
     size_t write_pos = 0;
     while (nBytes > 0)
     {
@@ -710,20 +709,20 @@ void BackendImpl::PackageImpl::processPackage_(
             }
             //No need for live-deployment for bundled extension, because OOo
             //restarts after installation
-            if (that->m_eContext != CONTEXT_BUNDLED
+            if (that->m_eContext != Context::Bundled
                 && !startup)
             {
                 if (m_isSchema)
                 {
                     css::configuration::Update::get(
                         that->m_xComponentContext)->insertExtensionXcsFile(
-                            that->m_eContext == CONTEXT_SHARED, expandUnoRcUrl(url));
+                            that->m_eContext == Context::Shared, expandUnoRcUrl(url));
                 }
                 else
                 {
                     css::configuration::Update::get(
                         that->m_xComponentContext)->insertExtensionXcuFile(
-                            that->m_eContext == CONTEXT_SHARED, expandUnoRcUrl(url));
+                            that->m_eContext == Context::Shared, expandUnoRcUrl(url));
                 }
             }
             that->addToConfigmgrIni( m_isSchema, true, url, xCmdEnv );
@@ -801,7 +800,7 @@ void BackendImpl::PackageImpl::processPackage_(
 
 namespace sdecl = comphelper::service_decl;
 sdecl::class_<BackendImpl, sdecl::with_args<true> > serviceBI;
-extern sdecl::ServiceDecl const serviceDecl(
+sdecl::ServiceDecl const serviceDecl(
     serviceBI,
     "com.sun.star.comp.deployment.configuration.PackageRegistryBackend",
     BACKEND_SERVICE_NAME );

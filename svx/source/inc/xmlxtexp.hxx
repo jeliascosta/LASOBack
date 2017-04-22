@@ -41,13 +41,13 @@ public:
         const css::uno::Reference< css::container::XNameContainer > & xTable,
         css::uno::Reference< css::document::XGraphicObjectResolver >& xGrfResolver);
 
-    virtual ~SvxXMLXTableExportComponent();
+    virtual ~SvxXMLXTableExportComponent() override;
 
+    /// @throws css::uno::RuntimeException
     static bool save( const OUString& rURL,
                       const css::uno::Reference< css::container::XNameContainer >& xTable,
                       const css::uno::Reference< css::embed::XStorage > &xStorage,
-                      OUString *pOptName )
-        throw (css::uno::RuntimeException, std::exception);
+                      OUString *pOptName );
 
     // methods without content:
     virtual void ExportAutoStyles_() override;

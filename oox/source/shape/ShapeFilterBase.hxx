@@ -35,11 +35,11 @@ class ShapeFilterBase : public core::XmlFilterBase
 public:
     typedef std::shared_ptr<ShapeFilterBase> Pointer_t;
 
+    /// @throws css::uno::RuntimeException
     explicit            ShapeFilterBase(
-                            const css::uno::Reference< css::uno::XComponentContext >& rxContext )
-                            throw( css::uno::RuntimeException );
+                            const css::uno::Reference< css::uno::XComponentContext >& rxContext );
 
-    virtual             ~ShapeFilterBase();
+    virtual             ~ShapeFilterBase() override;
 
     /** Has to be implemented by each filter, returns the current theme. */
     virtual const ::oox::drawingml::Theme* getCurrentTheme() const override;
@@ -61,7 +61,7 @@ public:
 
 private:
     virtual ::oox::ole::VbaProject* implCreateVbaProject() const override;
-    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
     virtual GraphicHelper* implCreateGraphicHelper() const override;
 
     std::shared_ptr< ::oox::drawingml::chart::ChartConverter > mxChartConv;

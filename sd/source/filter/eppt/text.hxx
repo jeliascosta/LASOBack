@@ -39,14 +39,14 @@ namespace style { struct TabStop; }
 
 struct SOParagraph
 {
-    bool                bExtendedParameters;
+    bool                    bExtendedParameters;
     sal_uInt32              nParaFlags;
     sal_Int16               nBulletFlags;
     OUString                sPrefix;
     OUString                sSuffix;
     OUString                sGraphicUrl;            // String to a graphic
     Size                    aBuGraSize;
-    sal_uInt32              nNumberingType;         // this is actually a SvxEnum
+    SvxNumType              nNumberingType;
     sal_uInt32              nHorzAdjust;
     sal_uInt32              nBulletColor;
     sal_Int32               nBulletOfs;
@@ -55,7 +55,7 @@ struct SOParagraph
     sal_Int16               nBulletRealSize;        // scale in percent
     sal_Int16               nDepth;                 // actual depth
     sal_Unicode             cBulletId;              // if Numbering Type == CharSpecial
-    css::awt::FontDescriptor       aFontDesc;
+    css::awt::FontDescriptor aFontDesc;
 
     bool                    bExtendedBulletsUsed;
     sal_uInt16              nBulletId;
@@ -95,7 +95,7 @@ protected:
     css::beans::PropertyState ePropState;
     css::uno::Reference < css::beans::XPropertyState > mXPropState;
 
-    bool    ImplGetPropertyValue( const OUString& rString, bool bGetPropertyState = true );
+    bool    ImplGetPropertyValue( const OUString& rString, bool bGetPropertyState );
 };
 
 struct FieldEntry
@@ -126,7 +126,7 @@ class PortionObj : public PropStateValue
         static sal_uInt32 ImplGetTextField( css::uno::Reference< css::text::XTextRange > & rXTextRangeRef,
                             const css::uno::Reference< css::beans::XPropertySet > & rXPropSetRef, OUString& rURL );
         sal_uInt32      ImplCalculateTextPositions( sal_uInt32 nCurrentTextPosition );
-        void            ImplGetPortionValues( FontCollection& rFontCollection, bool bGetPropStateValue = false );
+        void            ImplGetPortionValues( FontCollection& rFontCollection, bool bGetPropStateValue );
 
     public:
 
@@ -184,8 +184,8 @@ class ParagraphObj : public PropStateValue, public SOParagraph
         void            ImplConstruct( const ParagraphObj& rParagraphObj );
         void            ImplClear();
         sal_uInt32      ImplCalculateTextPositions( sal_uInt32 nCurrentTextPosition );
-        void            ImplGetParagraphValues( PPTExBulletProvider* pBuProv, bool bGetPropStateValue = false );
-        void            ImplGetNumberingLevel( PPTExBulletProvider* pBuProv, sal_Int16 nDepth, bool bIsBullet, bool bGetPropStateValue = false );
+        void            ImplGetParagraphValues( PPTExBulletProvider* pBuProv, bool bGetPropStateValue );
+        void            ImplGetNumberingLevel( PPTExBulletProvider* pBuProv, sal_Int16 nDepth, bool bIsBullet, bool bGetPropStateValue );
 
     public:
 

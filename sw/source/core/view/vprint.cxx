@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/view/XRenderable.hpp>
 
 #include <hintids.hxx>
 #include <sfx2/app.hxx>
@@ -201,17 +200,17 @@ void SwViewShell::InitPrt( OutputDevice *pOutDev )
     // physical page while the output uses OutputOffset as origin.
     if ( pOutDev )
     {
-        maPrtOffst = Point();
+        maPrtOffset = Point();
 
-        maPrtOffst += pOutDev->GetMapMode().GetOrigin();
+        maPrtOffset += pOutDev->GetMapMode().GetOrigin();
         MapMode aMapMode( pOutDev->GetMapMode() );
-        aMapMode.SetMapUnit( MAP_TWIP );
+        aMapMode.SetMapUnit( MapUnit::MapTwip );
         pOutDev->SetMapMode( aMapMode );
         pOutDev->SetLineColor();
         pOutDev->SetFillColor();
     }
     else
-        maPrtOffst.X() = maPrtOffst.Y() = 0;
+        maPrtOffset.X() = maPrtOffset.Y() = 0;
 
     if ( !mpWin )
         mpOut = pOutDev;
@@ -223,7 +222,7 @@ void SwViewShell::ChgAllPageOrientation( Orientation eOri )
     SET_CURR_SHELL( this );
 
     const size_t nAll = GetDoc()->GetPageDescCnt();
-    bool bNewOri = eOri != ORIENTATION_PORTRAIT;
+    bool bNewOri = eOri != Orientation::Portrait;
 
     for( size_t i = 0; i < nAll; ++ i )
     {
@@ -581,7 +580,7 @@ bool SwViewShell::PrintOrPDFExport(
 }
 
 void SwViewShell::PrtOle2( SwDoc *pDoc, const SwViewOption *pOpt, const SwPrintData& rOptions,
-                           vcl::RenderContext& rRenderContext, const Rectangle& rRect )
+                           vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect )
 {
     // For printing a shell is needed. Either the Doc already has one, than we
     // create a new view, or it has none, than we create the first view.

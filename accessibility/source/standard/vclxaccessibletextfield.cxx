@@ -17,14 +17,15 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessibletextfield.hxx>
+#include <standard/vclxaccessibletextfield.hxx>
 #include <vcl/lstbox.hxx>
-#include <accessibility/helper/listboxhelper.hxx>
+#include <helper/listboxhelper.hxx>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <vcl/svapp.hxx>
 #include <vcl/combobox.hxx>
 
@@ -67,7 +68,6 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2(VCLXAccessibleTextField, VCLXAccessibleTextComp
 
 Reference<XAccessibleContext> SAL_CALL
     VCLXAccessibleTextField::getAccessibleContext()
-    throw (RuntimeException, std::exception)
 {
     return this;
 }
@@ -76,21 +76,18 @@ Reference<XAccessibleContext> SAL_CALL
 // XAccessibleContext
 
 sal_Int32 SAL_CALL VCLXAccessibleTextField::getAccessibleChildCount()
-    throw (RuntimeException, std::exception)
 {
     return 0;
 }
 
 
 Reference<XAccessible> SAL_CALL VCLXAccessibleTextField::getAccessibleChild (sal_Int32)
-    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     throw IndexOutOfBoundsException();
 }
 
 
 sal_Int16 SAL_CALL VCLXAccessibleTextField::getAccessibleRole()
-    throw (RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -98,7 +95,6 @@ sal_Int16 SAL_CALL VCLXAccessibleTextField::getAccessibleRole()
 }
 
 Reference< XAccessible > SAL_CALL VCLXAccessibleTextField::getAccessibleParent(  )
-    throw (RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -109,14 +105,12 @@ Reference< XAccessible > SAL_CALL VCLXAccessibleTextField::getAccessibleParent( 
 // XServiceInfo
 
 OUString VCLXAccessibleTextField::getImplementationName()
-    throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleTextField" );
 }
 
 
 Sequence< OUString > VCLXAccessibleTextField::getSupportedServiceNames()
-    throw (RuntimeException, std::exception)
 {
     Sequence< OUString > aNames = VCLXAccessibleTextComponent::getSupportedServiceNames();
     sal_Int32 nLength = aNames.getLength();

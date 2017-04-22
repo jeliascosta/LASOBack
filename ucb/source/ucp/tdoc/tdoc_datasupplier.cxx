@@ -26,6 +26,7 @@
 
 #include <vector>
 
+#include "com/sun/star/ucb/IllegalIdentifierException.hpp"
 #include "osl/diagnose.h"
 #include "ucbhelper/contentidentifier.hxx"
 
@@ -378,7 +379,6 @@ void ResultSetDataSupplier::close()
 
 // virtual
 void ResultSetDataSupplier::validate()
-    throw( ucb::ResultSetException )
 {
     if ( m_pImpl->m_bThrowException )
         throw ucb::ResultSetException();

@@ -155,7 +155,7 @@ namespace
 
     /* we only need to call stat or lstat if one of the
        following flags is set */
-    inline bool is_stat_call_necessary(sal_uInt32 field_mask, oslFileType file_type = osl_File_Type_Unknown)
+    inline bool is_stat_call_necessary(sal_uInt32 field_mask, oslFileType file_type)
     {
         return (
                 ((field_mask & osl_FileStatus_Mask_Type) && (file_type == osl_File_Type_Unknown)) ||
@@ -205,13 +205,13 @@ oslFileError SAL_CALL osl_getFileStatus(oslDirectoryItem Item, oslFileStatus* pS
 
     rtl::OUString file_path;
     oslFileError  osl_error = setup_osl_getFileStatus(pImpl, pStat, file_path);
-    if (osl_File_E_None != osl_error)
+    if (osl_error != osl_File_E_None)
         return osl_error;
 
     struct stat file_stat;
 
     bool bStatNeeded = is_stat_call_necessary(uFieldMask, pImpl->getFileType());
-    if (bStatNeeded && (0 != osl::lstat(file_path, file_stat)))
+    if (bStatNeeded && (osl::lstat(file_path, file_stat) != 0))
         return oslTranslateFileError(OSL_FET_ERROR, errno);
 
     if (bStatNeeded)

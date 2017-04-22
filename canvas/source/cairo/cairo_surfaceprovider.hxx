@@ -31,8 +31,6 @@ class Bitmap;
 
 namespace cairocanvas
 {
-    class Bitmap;
-
     /* Definition of RepaintTarget interface */
 
     /** Target interface for XCachedPrimitive implementations
@@ -53,14 +51,14 @@ namespace cairocanvas
 
         /// create new surface in given size
         virtual ::cairo::SurfaceSharedPtr createSurface( const ::basegfx::B2ISize& rSize,
-                                                         int aContent = CAIRO_CONTENT_COLOR_ALPHA ) = 0;
+                                                         int aContent ) = 0;
         /// create new surface from given bitmap
         virtual ::cairo::SurfaceSharedPtr createSurface( ::Bitmap& rBitmap ) = 0;
 
-        /** convert surface between alpha and non-alpha
+        /** convert surface from alpha to non-alpha, does not copy content
             channel. returns new surface on success, NULL otherwise
         */
-        virtual ::cairo::SurfaceSharedPtr changeSurface( bool bHasAlpha, bool bCopyContent ) = 0;
+        virtual ::cairo::SurfaceSharedPtr changeSurface() = 0;
 
         /** Provides the underlying vcl outputdevice this surface renders on
          */

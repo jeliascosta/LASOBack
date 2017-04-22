@@ -72,7 +72,7 @@ void SvXMLExportItemMapper::exportXML( const SvXMLExport& rExport,
 
     while( nIndex < nCount )
     {
-        SvXMLItemMapEntry& rEntry = mrMapEntries->getByIndex( nIndex );
+        SvXMLItemMapEntry const & rEntry = mrMapEntries->getByIndex( nIndex );
 
         // we have a valid map entry here, so lets use it...
         if( 0 == (rEntry.nMemberId & MID_SW_FLAG_NO_ITEM_EXPORT) )
@@ -136,7 +136,7 @@ void SvXMLExportItemMapper::exportXML( const SvXMLExport& rExport,
                 OUStringBuffer aOut;
                 const SfxBoolItem* pSplit = dynamic_cast<const SfxBoolItem*>( &rItem );
                 assert(pSplit && "Wrong Which-ID");
-                const unsigned int eEnum = (pSplit && pSplit->GetValue()) ? 1 : 0;
+                const sal_uInt16 eEnum = (pSplit && pSplit->GetValue()) ? 1 : 0;
                 SvXMLUnitConverter::convertEnum( aOut, eEnum, aXML_KeepTogetherType );
                 aValue = aOut.makeStringAndClear();
             }
@@ -228,7 +228,7 @@ void SvXMLExportItemMapper::exportElementItems(
     for( size_t nIndex = 0; nIndex < nCount; ++nIndex )
     {
         const sal_uInt16 nElement = rIndexArray[ nIndex ];
-        SvXMLItemMapEntry& rEntry = mrMapEntries->getByIndex( nElement );
+        SvXMLItemMapEntry const & rEntry = mrMapEntries->getByIndex( nElement );
         OSL_ENSURE( 0 != (rEntry.nMemberId & MID_SW_FLAG_ELEMENT_ITEM_EXPORT),
                     "wrong mid flag!" );
 
@@ -248,7 +248,7 @@ void SvXMLExportItemMapper::exportElementItems(
 }
 
 /** returns the item with the given WhichId from the given ItemSet if its
-    set or its default item if its not set and the SvXmlExportFlags::DEEP
+    set or its default item if it's not set and the SvXmlExportFlags::DEEP
     is set in the flags
 */
 const SfxPoolItem* SvXMLExportItemMapper::GetItem( const SfxItemSet& rSet,
@@ -267,9 +267,9 @@ const SfxPoolItem* SvXMLExportItemMapper::GetItem( const SfxItemSet& rSet,
         return pItem;
     }
     else if( (nFlags & SvXmlExportFlags::DEFAULTS) &&
-              SFX_WHICH_MAX > nWhichId )
+              SfxItemPool::IsWhich(nWhichId))
     {
-        // if its not set, try the pool if we export defaults
+        // if it's not set, try the pool if we export defaults
         return &rSet.GetPool()->GetDefaultItem(nWhichId);
     }
     else
@@ -290,10 +290,10 @@ SvXMLExportItemMapper::~SvXMLExportItemMapper()
 void SvXMLExportItemMapper::exportXML( SvXMLExport& rExport,
                     const SfxItemSet& rSet,
                     const SvXMLUnitConverter& rUnitConverter,
-                    XMLTokenEnum ePropToken,
-                    SvXmlExportFlags nFlags ) const
+                    XMLTokenEnum ePropToken ) const
 {
     std::vector<sal_uInt16> aIndexArray;
+    const SvXmlExportFlags nFlags = SvXmlExportFlags::IGN_WS;
 
     exportXML( rExport, rExport.GetAttrList(), rSet, rUnitConverter,
                rExport.GetNamespaceMap(), nFlags, &aIndexArray );
@@ -355,13 +355,13 @@ static bool lcl_isOdfDoubleLine( const SvxBorderLine* pLine )
     bool bIsOdfDouble = false;
     switch (pLine->GetBorderLineStyle())
     {
-        case table::BorderLineStyle::DOUBLE:
-        case table::BorderLineStyle::THINTHICK_SMALLGAP:
-        case table::BorderLineStyle::THINTHICK_MEDIUMGAP:
-        case table::BorderLineStyle::THINTHICK_LARGEGAP:
-        case table::BorderLineStyle::THICKTHIN_SMALLGAP:
-        case table::BorderLineStyle::THICKTHIN_MEDIUMGAP:
-        case table::BorderLineStyle::THICKTHIN_LARGEGAP:
+        case SvxBorderLineStyle::DOUBLE:
+        case SvxBorderLineStyle::THINTHICK_SMALLGAP:
+        case SvxBorderLineStyle::THINTHICK_MEDIUMGAP:
+        case SvxBorderLineStyle::THINTHICK_LARGEGAP:
+        case SvxBorderLineStyle::THICKTHIN_SMALLGAP:
+        case SvxBorderLineStyle::THICKTHIN_MEDIUMGAP:
+        case SvxBorderLineStyle::THICKTHIN_LARGEGAP:
             bIsOdfDouble = true;
             break;
         default:
@@ -500,19 +500,19 @@ bool SvXMLExportItemMapper::QueryXMLValue(
                 sal_Int32 nX = 1, nY = 1;
                 switch( pShadow->GetLocation() )
                 {
-                    case SVX_SHADOW_TOPLEFT:
+                    case SvxShadowLocation::TopLeft:
                         nX = -1;
                         nY = -1;
                         break;
-                    case SVX_SHADOW_TOPRIGHT:
+                    case SvxShadowLocation::TopRight:
                         nY = -1;
                         break;
-                    case SVX_SHADOW_BOTTOMLEFT:
+                    case SvxShadowLocation::BottomLeft:
                         nX = -1;
                         break;
-                    case SVX_SHADOW_BOTTOMRIGHT:
+                    case SvxShadowLocation::BottomRight:
                         break;
-                    case SVX_SHADOW_NONE:
+                    case SvxShadowLocation::NONE:
                     default:
                         rValue = GetXMLToken(XML_NONE);
                         return true;
@@ -733,46 +733,46 @@ bool SvXMLExportItemMapper::QueryXMLValue(
                             bool bNoBorder = false;
                             switch (pLine->GetBorderLineStyle())
                             {
-                                case table::BorderLineStyle::SOLID:
+                                case SvxBorderLineStyle::SOLID:
                                     eStyle = XML_SOLID;
                                     break;
-                                case table::BorderLineStyle::DOTTED:
+                                case SvxBorderLineStyle::DOTTED:
                                     eStyle = XML_DOTTED;
                                     break;
-                                case table::BorderLineStyle::DASHED:
+                                case SvxBorderLineStyle::DASHED:
                                     eStyle = XML_DASHED;
                                     break;
-                                case table::BorderLineStyle::FINE_DASHED:
+                                case SvxBorderLineStyle::FINE_DASHED:
                                     eStyle = XML_FINE_DASHED;
                                     break;
-                                case table::BorderLineStyle::DASH_DOT:
+                                case SvxBorderLineStyle::DASH_DOT:
                                     eStyle = XML_DASH_DOT;
                                     break;
-                                case table::BorderLineStyle::DASH_DOT_DOT:
+                                case SvxBorderLineStyle::DASH_DOT_DOT:
                                     eStyle = XML_DASH_DOT_DOT;
                                     break;
-                                case table::BorderLineStyle::DOUBLE_THIN:
+                                case SvxBorderLineStyle::DOUBLE_THIN:
                                     eStyle = XML_DOUBLE_THIN;
                                     break;
-                                case table::BorderLineStyle::DOUBLE:
-                                case table::BorderLineStyle::THINTHICK_SMALLGAP:
-                                case table::BorderLineStyle::THINTHICK_MEDIUMGAP:
-                                case table::BorderLineStyle::THINTHICK_LARGEGAP:
-                                case table::BorderLineStyle::THICKTHIN_SMALLGAP:
-                                case table::BorderLineStyle::THICKTHIN_MEDIUMGAP:
-                                case table::BorderLineStyle::THICKTHIN_LARGEGAP:
+                                case SvxBorderLineStyle::DOUBLE:
+                                case SvxBorderLineStyle::THINTHICK_SMALLGAP:
+                                case SvxBorderLineStyle::THINTHICK_MEDIUMGAP:
+                                case SvxBorderLineStyle::THINTHICK_LARGEGAP:
+                                case SvxBorderLineStyle::THICKTHIN_SMALLGAP:
+                                case SvxBorderLineStyle::THICKTHIN_MEDIUMGAP:
+                                case SvxBorderLineStyle::THICKTHIN_LARGEGAP:
                                     eStyle = XML_DOUBLE;
                                     break;
-                                case table::BorderLineStyle::EMBOSSED:
+                                case SvxBorderLineStyle::EMBOSSED:
                                     eStyle = XML_RIDGE;
                                     break;
-                                case table::BorderLineStyle::ENGRAVED:
+                                case SvxBorderLineStyle::ENGRAVED:
                                     eStyle = XML_GROOVE;
                                     break;
-                                case table::BorderLineStyle::INSET:
+                                case SvxBorderLineStyle::INSET:
                                     eStyle = XML_INSET;
                                     break;
-                                case table::BorderLineStyle::OUTSET:
+                                case SvxBorderLineStyle::OUTSET:
                                     eStyle = XML_OUTSET;
                                     break;
                                 default:
@@ -839,20 +839,20 @@ bool SvXMLExportItemMapper::QueryXMLValue(
         {
             const SvxFormatBreakItem& rFormatBreak = dynamic_cast<const SvxFormatBreakItem&>(rItem);
 
-            unsigned int eEnum = 0;
+            sal_uInt16 eEnum = 0;
 
             switch( nMemberId )
             {
             case MID_BREAK_BEFORE:
-                switch (rFormatBreak.GetValue())
+                switch (rFormatBreak.GetBreak())
                 {
-                    case SVX_BREAK_COLUMN_BEFORE:
+                    case SvxBreak::ColumnBefore:
                         eEnum = 1;
                         break;
-                    case SVX_BREAK_PAGE_BEFORE:
+                    case SvxBreak::PageBefore:
                         eEnum = 2;
                         break;
-                    case SVX_BREAK_NONE:
+                    case SvxBreak::NONE:
                         eEnum = 0;
                         break;
                     default:
@@ -860,15 +860,15 @@ bool SvXMLExportItemMapper::QueryXMLValue(
                 }
                 break;
             case MID_BREAK_AFTER:
-                switch (rFormatBreak.GetValue())
+                switch (rFormatBreak.GetBreak())
                 {
-                    case SVX_BREAK_COLUMN_AFTER:
+                    case SvxBreak::ColumnAfter:
                         eEnum = 1;
                         break;
-                    case SVX_BREAK_PAGE_AFTER:
+                    case SvxBreak::PageAfter:
                         eEnum = 2;
                         break;
-                    case SVX_BREAK_NONE:
+                    case SvxBreak::NONE:
                         eEnum = 0;
                         break;
                     default:
@@ -1019,7 +1019,7 @@ bool SvXMLExportItemMapper::QueryXMLValue(
                 {
                     // #i114163# positiveInteger only!
                     sal_Int32 const number(oNumOffset.get());
-                    ::sax::Converter::convertNumber(aOut, number);
+                    aOut.append(number);
                 }
                 else
                 {

@@ -21,13 +21,23 @@
 
 # Cap the number of threads unittests use.
 export MAX_CONCURRENCY=4
+# Disable searching for certificates by default
+export MOZILLA_CERTIFICATE_FOLDER=0
 
 gb_CppunitTest_UNITTESTFAILED ?= $(GBUILDDIR)/platform/unittest-failed-default.sh
 gb_CppunitTest_PYTHONDEPS ?= $(call gb_Library_get_target,pyuno_wrapper) $(if $(SYSTEM_PYTHON),,$(call gb_Package_get_target,python3))
 
 ifeq ($(strip $(gb_CppunitTest_GDBTRACE)),)
 ifneq ($(strip $(CPPUNITTRACE)),)
+ifneq ($(filter gdb,$(CPPUNITTRACE)),)
+gb_CppunitTest_GDBTRACE := $(subst gdb,gdb -ex "set environment $(subst =, ,$(gb_CppunitTest_CPPTESTPRECOMMAND))",$(CPPUNITTRACE))
+else ifneq ($(filter lldb,$(CPPUNITTRACE)),)
+gb_CppunitTest_PREGDBTRACE := lo_dyldpathfile=$(call var2file,$(shell $(gb_MKTEMP)),500,settings set target.env-vars $(gb_CppunitTest_CPPTESTPRECOMMAND))
+gb_CppunitTest_GDBTRACE := $(subst lldb,lldb -s $$lo_dyldpathfile,$(CPPUNITTRACE))
+gb_CppunitTest_POSTGDBTRACE := rm $$lo_dyldpathfile
+else
 gb_CppunitTest_GDBTRACE := $(CPPUNITTRACE)
+endif
 gb_CppunitTest__interactive := $(true)
 endif
 endif
@@ -98,6 +108,8 @@ $(call gb_CppunitTest_get_clean_target,%) :
 $(call gb_CppunitTest_get_target,%) :| $(gb_CppunitTest_RUNTIMEDEPS)
 	$(call gb_Output_announce,$*,$(true),CUT,2)
 	$(call gb_Helper_abbreviate_dirs,\
+	        $(if $(gb_CppunitTest_vcl_hide_windows),export VCL_HIDE_WINDOWS=1 && ) \
+	        $(if $(gb_CppunitTest_vcl_show_windows),unset VCL_HIDE_WINDOWS && ) \
 		mkdir -p $(dir $@) && \
 		rm -fr $@.user && mkdir $@.user && \
 		$(if $(gb_CppunitTest__use_confpreinit), \
@@ -105,30 +117,47 @@ $(call gb_CppunitTest_get_target,%) :| $(gb_CppunitTest_RUNTIMEDEPS)
 		$(if $(gb_CppunitTest__interactive),, \
 			$(if $(value gb_CppunitTest_postprocess), \
 				rm -fr $@.core && mkdir $@.core && cd $@.core &&)) \
-		($(gb_CppunitTest_CPPTESTPRECOMMAND) \
+		( \
+		$(if $(gb_CppunitTest_localized),for l in $(WITH_LANG_LIST) ; do LO_TEST_LOCALE="$$l" ) \
+		$(if $(gb_CppunitTest_PREGDBTRACE),$(gb_CppunitTest_PREGDBTRACE) &&) \
+		$(if $(filter gdb,$(CPPUNITTRACE)),,$(gb_CppunitTest_CPPTESTPRECOMMAND)) \
 		$(if $(G_SLICE),G_SLICE=$(G_SLICE)) \
 		$(if $(GLIBCXX_FORCE_NEW),GLIBCXX_FORCE_NEW=$(GLIBCXX_FORCE_NEW)) \
-		$(if $(HEADLESS),,VCL_HIDE_WINDOWS=1) \
 		$(gb_CppunitTest_malloc_check) \
 		$(if $(strip $(PYTHON_URE)),\
 			PYTHONDONTWRITEBYTECODE=1) \
+		$(EXTRA_ENV_VARS) \
 		$(ICECREAM_RUN) $(gb_CppunitTest_GDBTRACE) $(gb_CppunitTest_VALGRINDTOOL) $(gb_CppunitTest_CPPTESTCOMMAND) \
 		$(call gb_LinkTarget_get_target,$(call gb_CppunitTest_get_linktarget,$*)) \
 		$(call gb_CppunitTest__make_args) "-env:CPPUNITTESTTARGET=$@" \
+		$(if $(gb_CppunitTest_POSTGDBTRACE), \
+			; RET=$$? && $(gb_CppunitTest_POSTGDBTRACE) && (exit $$RET)) \
+		$(if $(gb_CppunitTest_localized),|| exit $$?; done) \
+		) \
 		$(if $(gb_CppunitTest__interactive),, \
 			> $@.log 2>&1 \
 			|| ($(if $(value gb_CppunitTest_postprocess), \
 					RET=$$?; \
 					$(call gb_CppunitTest_postprocess,$(gb_CppunitTest_CPPTESTCOMMAND),$@.core,$$RET) >> $@.log 2>&1;) \
-				cat $@.log; $(gb_CppunitTest_UNITTESTFAILED) Cppunit $*))))
+				cat $@.log; $(gb_CppunitTest_UNITTESTFAILED) Cppunit $*)))
 
 define gb_CppunitTest_CppunitTest
 $(call gb_CppunitTest__CppunitTest_impl,$(1),$(call gb_CppunitTest_get_linktarget,$(1)))
 
 endef
 
+define gb_CppunitTest_CppunitScreenShot
+$(call gb_CppunitTest_get_target,$(1)) : gb_CppunitTest_localized := $(true)
+$(call gb_CppunitTest__CppunitTest_impl,$(1),$(call gb_CppunitTest_get_linktarget,$(1)))
+
+endef
+
+define gb_CppunitTest_register_target
+endef
+
 # call gb_CppunitTest__CppunitTest_impl,cppunittest,linktarget
 define gb_CppunitTest__CppunitTest_impl
+$(call gb_CppunitTest_register_target, $(1), $(2), "test")
 $(call gb_LinkTarget_LinkTarget,$(2),CppunitTest_$(1),NONE)
 $(call gb_LinkTarget_set_targettype,$(2),CppunitTest)
 $(call gb_LinkTarget_add_libs,$(2),$(gb_STDLIBS))
@@ -156,6 +185,7 @@ $(call gb_CppunitTest_get_target,$(1)) : VCL := $(false)
 $(call gb_CppunitTest_get_target,$(1)) : UNO_SERVICES :=
 $(call gb_CppunitTest_get_target,$(1)) : UNO_TYPES :=
 $(call gb_CppunitTest_get_target,$(1)) : HEADLESS := --headless
+$(call gb_CppunitTest_get_target,$(1)) : EXTRA_ENV_VARS :=
 $$(eval $$(call gb_Module_register_target,$(call gb_CppunitTest_get_target,$(1)),$(call gb_CppunitTest_get_clean_target,$(1))))
 $(call gb_Helper_make_userfriendly_targets,$(1),CppunitTest)
 
@@ -209,7 +239,20 @@ endef
 
 define gb_CppunitTest_use_vcl_non_headless
 $(call gb_CppunitTest_get_target,$(1)) : HEADLESS :=
+$(call gb_CppunitTest_get_target,$(1)) : gb_CppunitTest_vcl_hide_windows := $(true)
 $(call gb_CppunitTest__use_vcl,$(1),$(false))
+
+endef
+
+define gb_CppunitTest_use_vcl_non_headless_with_windows
+$(call gb_CppunitTest_get_target,$(1)) : HEADLESS :=
+$(call gb_CppunitTest_get_target,$(1)) : gb_CppunitTest_vcl_show_windows := $(true)
+$(call gb_CppunitTest__use_vcl,$(1),$(false))
+
+endef
+
+define gb_CppunitTest_localized_run
+$(call gb_CppunitTest_get_target,$(1)) : gb_CppunitTest_localized := $(true)
 
 endef
 
@@ -353,6 +396,16 @@ $(call gb_CppunitTest_get_target,$(1)) :\
 
 endef
 
+define gb_CppunitTest_use_uiconfig
+$(call gb_CppunitTest_get_target,$(1)) : $(call gb_UIConfig_get_target,$(2))
+
+endef
+
+define gb_CppunitTest_use_uiconfigs
+$(foreach uiconfig,$(2),$(call gb_CppunitTest_use_uiconfig,$(1),$(uiconfig)))
+
+endef
+
 define gb_CppunitTest__forward_to_Linktarget
 gb_CppunitTest_$(1) = $$(call gb_LinkTarget_$(1),$$(call gb_CppunitTest_get_linktarget,$$(1)),$$(2),$$(3),CppunitTest_$$(1))
 
@@ -372,6 +425,8 @@ $(eval $(foreach method,\
 	add_objcobjects \
 	add_objcxxobject \
 	add_objcxxobjects \
+	add_cxxclrobject \
+	add_cxxclrobjects \
 	add_asmobject \
 	add_asmobjects \
 	use_package \
@@ -384,6 +439,7 @@ $(eval $(foreach method,\
 	set_yaccflags \
 	add_objcflags \
 	add_objcxxflags \
+	add_cxxclrflags \
 	add_defs \
 	set_include \
 	add_ldflags \

@@ -25,6 +25,7 @@
 #include <svx/rectenum.hxx>
 #include <vcl/graph.hxx>
 #include <svx/xtable.hxx>
+#include <rtl/ref.hxx>
 #include <o3tl/typed_flags_set.hxx>
 
 class XOBitmap;
@@ -47,7 +48,7 @@ public:
         : SfxTabPage(pParent, rID, rUIXMLDescription, &rAttrSet)
     {
     }
-    virtual void PointChanged( vcl::Window* pWindow, RECT_POINT eRP ) = 0;
+    virtual void PointChanged( vcl::Window* pWindow, RectPoint eRP ) = 0;
 };
 
 /*************************************************************************
@@ -78,7 +79,7 @@ private:
     SVX_DLLPRIVATE void             Resize_Impl();
 
 protected:
-    SvxRectCtlAccessibleContext* pAccContext;
+    rtl::Reference<SvxRectCtlAccessibleContext> pAccContext;
     sal_uInt16 nBorderWidth;
     sal_uInt16 nRadius;
     Size aSize;
@@ -86,8 +87,7 @@ protected:
     Point aPtLM, aPtMM, aPtRM;
     Point aPtLB, aPtMB, aPtRB;
     Point aPtNew;
-    RECT_POINT eRP, eDefRP;
-    CTL_STYLE eCS;
+    RectPoint eRP, eDefRP;
     Bitmap* pBitmap;
     CTL_STATE m_nState;
 
@@ -97,24 +97,23 @@ protected:
 
     void MarkToResetSettings(bool bUpdateForeground, bool bUpdateBackground);
 
-    RECT_POINT          GetRPFromPoint( Point, bool bRTL = false ) const;
-    const Point&        GetPointFromRP( RECT_POINT ) const;
+    RectPoint          GetRPFromPoint( Point, bool bRTL = false ) const;
+    const Point&        GetPointFromRP( RectPoint ) const;
     void                SetFocusRect();
-    Point               SetActualRPWithoutInvalidate( RECT_POINT eNewRP );  // returns the last point
+    Point               SetActualRPWithoutInvalidate( RectPoint eNewRP );  // returns the last point
 
     virtual void        GetFocus() override;
     virtual void        LoseFocus() override;
 
     Point               GetApproxLogPtFromPixPt( const Point& rRoughPixelPoint ) const;
 public:
-    SvxRectCtl( vcl::Window* pParent, RECT_POINT eRpt = RP_MM,
+    SvxRectCtl( vcl::Window* pParent, RectPoint eRpt = RectPoint::MM,
                 sal_uInt16 nBorder = 200, sal_uInt16 nCircle = 80 );
-    void SetControlSettings(RECT_POINT eRpt = RP_MM, sal_uInt16 nBorder = 200,
-        sal_uInt16 nCircle = 80);
-    virtual ~SvxRectCtl();
+    void SetControlSettings(RectPoint eRpt, sal_uInt16 nBorder, sal_uInt16 nCircl);
+    virtual ~SvxRectCtl() override;
     virtual void dispose() override;
 
-    virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void        Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void        MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void        KeyInput( const KeyEvent& rKeyEvt ) override;
     virtual void        StateChanged( StateChangedType nStateChange ) override;
@@ -123,46 +122,22 @@ public:
     virtual Size        GetOptimalSize() const override;
 
     void                Reset();
-    RECT_POINT          GetActualRP() const { return eRP;}
-    void                SetActualRP( RECT_POINT eNewRP );
+    RectPoint           GetActualRP() const { return eRP;}
+    void                SetActualRP( RectPoint eNewRP );
 
     void                SetState( CTL_STATE nState );
 
-    sal_uInt8               GetNumOfChildren() const;   // returns number of usable radio buttons
+    static const sal_uInt8 NO_CHILDREN = 9;   // returns number of usable radio buttons
 
-    Rectangle           CalculateFocusRectangle() const;
-    Rectangle           CalculateFocusRectangle( RECT_POINT eRectPoint ) const;
+    tools::Rectangle           CalculateFocusRectangle() const;
+    tools::Rectangle           CalculateFocusRectangle( RectPoint eRectPoint ) const;
 
     virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessible() override;
 
-    RECT_POINT          GetApproxRPFromPixPt( const css::awt::Point& rPixelPoint ) const;
+    RectPoint          GetApproxRPFromPixPt( const css::awt::Point& rPixelPoint ) const;
 
     bool IsCompletelyDisabled() const { return mbCompleteDisable; }
     void DoCompletelyDisable(bool bNew);
-    void SetCS(CTL_STYLE eNew);
-};
-
-/*************************************************************************
-|* Preview control for the display of bitmaps
-\************************************************************************/
-
-class SAL_WARN_UNUSED SVX_DLLPUBLIC SvxBitmapCtl
-{
-protected:
-    sal_uInt16      nLines;
-    Color           aPixelColor, aBackgroundColor;
-    const sal_uInt16*   pBmpArray;
-
-public:
-            SvxBitmapCtl();
-            ~SvxBitmapCtl();
-
-    BitmapEx GetBitmapEx();
-
-    void    SetBmpArray( const sal_uInt16* pPixel ) { pBmpArray = pPixel; }
-    void    SetLines( sal_uInt16 nLns ) { nLines = nLns; }
-    void    SetPixelColor( Color aColor ) { aPixelColor = aColor; }
-    void    SetBackgroundColor( Color aColor ) { aBackgroundColor = aColor; }
 };
 
 /*************************************************************************
@@ -184,16 +159,18 @@ protected:
     bool        bPaintable;
     //Add member identifying position
     Point       aFocusPosition;
-    Rectangle   implCalFocusRect( const Point& aPosition );
+    rtl::Reference<SvxPixelCtlAccessible>  m_xAccess;
+
+    tools::Rectangle   implCalFocusRect( const Point& aPosition );
     void    ChangePixel( sal_uInt16 nPixel );
 
 public:
     SvxPixelCtl( vcl::Window* pParent, sal_uInt16 nNumber = 8 );
 
-    virtual ~SvxPixelCtl();
+    virtual ~SvxPixelCtl() override;
     virtual void dispose() override;
 
-    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void Resize() override;
     virtual Size GetOptimalSize() const override;
@@ -202,7 +179,6 @@ public:
 
     void    SetPixelColor( const Color& rCol ) { aPixelColor = rCol; }
     void    SetBackgroundColor( const Color& rCol ) { aBackgroundColor = rCol; }
-    void    SetLineColor( const Color& rCol ) { aLineColor = rCol; }
 
     sal_uInt16  GetLineCount() const { return nLines; }
 
@@ -211,8 +187,6 @@ public:
 
     void    SetPaintable( bool bTmp ) { bPaintable = bTmp; }
     void    Reset();
-    SvxPixelCtlAccessible*  m_pAccess;
-    css::uno::Reference< css::accessibility::XAccessible >        m_xAccess;
     virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessible() override;
     long GetSquares() const { return nSquares ; }
     long GetWidth() const { return aRectSize.getWidth() ; }
@@ -223,7 +197,7 @@ public:
 
     long PointToIndex(const Point &pt) const;
     Point IndexToPoint(long nIndex) const ;
-    long GetFoucsPosIndex() const ;
+    long GetFocusPosIndex() const ;
     //Keyboard function for key input and focus handling function
     virtual void        KeyInput( const KeyEvent& rKEvt ) override;
     virtual void        GetFocus() override;
@@ -232,46 +206,18 @@ public:
 
 /************************************************************************/
 
-class SAL_WARN_UNUSED SVX_DLLPUBLIC ColorLB : public ColorListBox
-{
-
-public:
-         ColorLB( vcl::Window* pParent, WinBits aWB ) : ColorListBox( pParent, aWB ) {}
-
-    void Fill( const XColorListRef &pTab );
-
-    void Append( const XColorEntry& rEntry );
-    void Modify( const XColorEntry& rEntry, sal_Int32 nPos );
-};
-
-/************************************************************************/
-
 class SAL_WARN_UNUSED SVX_DLLPUBLIC HatchingLB : public ListBox
 {
-    XHatchListRef mpList;
 public:
     explicit HatchingLB(vcl::Window* pParent, WinBits aWB);
-
-    void Fill( const XHatchListRef &pList );
-
-    void    Append( const XHatchEntry& rEntry, const Bitmap& rBitmap );
-    void    Modify( const XHatchEntry& rEntry, sal_Int32 nPos, const Bitmap& rBitmap );
 };
 
 /************************************************************************/
 
 class SAL_WARN_UNUSED SVX_DLLPUBLIC GradientLB : public ListBox
 {
-    XGradientListRef mpList;
 public:
     explicit GradientLB(vcl::Window* pParent, WinBits aWB);
-
-    void Fill( const XGradientListRef &pList );
-
-    void    Append( const XGradientEntry& rEntry, const Bitmap& rBitmap );
-    void    Modify( const XGradientEntry& rEntry, sal_Int32 nPos, const Bitmap& rBitmap );
-    void    SelectEntryByList( const XGradientListRef &pList, const OUString& rStr,
-                               const XGradient& rXGradient );
 };
 
 /************************************************************************/
@@ -280,21 +226,11 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC BitmapLB : public ListBox
 {
 public:
     explicit BitmapLB(vcl::Window* pParent, WinBits aWB);
-
-    void Fill(const XBitmapListRef &pList);
-
-    void Append(const Size& rSize, const XBitmapEntry& rEntry);
-    void Modify(const Size& rSize, const XBitmapEntry& rEntry, sal_Int32 nPos);
-
-private:
-    BitmapEx        maBitmapEx;
-
-    XBitmapListRef  mpList;
 };
 
 /************************************************************************/
 
-class SAL_WARN_UNUSED SVX_DLLPUBLIC FillAttrLB : public ColorListBox
+class SAL_WARN_UNUSED SVX_DLLPUBLIC FillAttrLB : public ListBox
 {
 private:
     BitmapEx        maBitmapEx;
@@ -305,6 +241,7 @@ public:
     void Fill( const XHatchListRef    &pList );
     void Fill( const XGradientListRef &pList );
     void Fill( const XBitmapListRef   &pList );
+    void Fill( const XPatternListRef  &pList );
 };
 
 /************************************************************************/
@@ -323,7 +260,6 @@ public:
 class SAL_WARN_UNUSED SVX_DLLPUBLIC LineLB : public ListBox
 {
 private:
-    /// bitfield
     /// defines if standard fields (none, solid) are added, default is true
     bool        mbAddStandardFields : 1;
 
@@ -375,7 +311,7 @@ protected:
 
 public:
     SvxPreviewBase(vcl::Window* pParent);
-    virtual ~SvxPreviewBase();
+    virtual ~SvxPreviewBase() override;
     virtual void dispose() override;
 
     // change support
@@ -412,7 +348,7 @@ private:
 
 public:
     SvxXLinePreview( vcl::Window* pParent );
-    virtual ~SvxXLinePreview();
+    virtual ~SvxXLinePreview() override;
     virtual void dispose() override;
 
     void SetLineAttributes(const SfxItemSet& rItemSet);
@@ -421,7 +357,7 @@ public:
     void SetSymbol( Graphic* p, const Size& s );
     void ResizeSymbol( const Size& s );
 
-    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void Resize() override;
     virtual Size GetOptimalSize() const override;
 };
@@ -439,12 +375,12 @@ private:
 
 public:
     SvxXRectPreview(vcl::Window* pParent);
-    virtual ~SvxXRectPreview();
+    virtual ~SvxXRectPreview() override;
     virtual void dispose() override;
 
     void SetAttributes(const SfxItemSet& rItemSet);
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void Resize() override;
 };
 
@@ -465,14 +401,14 @@ private:
 public:
     SvxXShadowPreview(vcl::Window *pParent);
 
-    virtual ~SvxXShadowPreview();
+    virtual ~SvxXShadowPreview() override;
     virtual void dispose() override;
 
     void SetRectangleAttributes(const SfxItemSet& rItemSet);
     void SetShadowAttributes(const SfxItemSet& rItemSet);
     void SetShadowPosition(const Point& rPos);
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
 };
 
 #endif // INCLUDED_SVX_DLGCTRL_HXX

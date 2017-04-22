@@ -22,7 +22,7 @@
 #include <map>
 #include <fmtfld.hxx>
 #include <txtfld.hxx>
-#include <SidebarWin.hxx>
+#include <AnnotationWin.hxx>
 
 namespace {
     struct SidebarWinKey
@@ -39,16 +39,7 @@ namespace {
         }
     };
 
-    struct SidebarWinOrder
-    {
-        bool operator()( const SidebarWinKey& rSidebarWinKeyA,
-                             const SidebarWinKey& rSidebarWinKeyB ) const
-        {
-            return rSidebarWinKeyA < rSidebarWinKeyB;
-        }
-    };
-
-    typedef ::std::map < SidebarWinKey, VclPtr<sw::sidebarwindows::SwSidebarWin>, SidebarWinOrder > SidebarWinContainer;
+    typedef std::map < SidebarWinKey, VclPtr<sw::annotation::SwAnnotationWin> > SidebarWinContainer;
 
     struct FrameKey
     {
@@ -64,16 +55,7 @@ namespace {
         }
     };
 
-    struct FrameOrder
-    {
-        bool operator()( const FrameKey& rFrameKeyA,
-                             const FrameKey& rFrameKeyB ) const
-        {
-            return rFrameKeyA < rFrameKeyB;
-        }
-    };
-
-    typedef ::std::map < FrameKey, SidebarWinContainer, FrameOrder > FrameSidebarWinContainer_;
+    typedef std::map < FrameKey, SidebarWinContainer > FrameSidebarWinContainer_;
 }
 
 namespace sw { namespace sidebarwindows {
@@ -83,7 +65,7 @@ class FrameSidebarWinContainer : public FrameSidebarWinContainer_
 };
 
 SwFrameSidebarWinContainer::SwFrameSidebarWinContainer()
-    : mpFrameSidebarWinContainer( new FrameSidebarWinContainer() )
+    : mpFrameSidebarWinContainer( new FrameSidebarWinContainer )
 {}
 
 SwFrameSidebarWinContainer::~SwFrameSidebarWinContainer()
@@ -94,7 +76,7 @@ SwFrameSidebarWinContainer::~SwFrameSidebarWinContainer()
 
 bool SwFrameSidebarWinContainer::insert( const SwFrame& rFrame,
                                        const SwFormatField& rFormatField,
-                                       SwSidebarWin& rSidebarWin )
+                                       sw::annotation::SwAnnotationWin& rSidebarWin )
 {
     bool bInserted( false );
 
@@ -113,7 +95,7 @@ bool SwFrameSidebarWinContainer::insert( const SwFrame& rFrame,
 }
 
 bool SwFrameSidebarWinContainer::remove( const SwFrame& rFrame,
-                                       const SwSidebarWin& rSidebarWin )
+                                         const sw::annotation::SwAnnotationWin & rSidebarWin )
 {
     bool bRemoved( false );
 
@@ -152,10 +134,10 @@ bool SwFrameSidebarWinContainer::empty( const SwFrame& rFrame )
     return bEmpty;
 }
 
-SwSidebarWin* SwFrameSidebarWinContainer::get( const SwFrame& rFrame,
+sw::annotation::SwAnnotationWin* SwFrameSidebarWinContainer::get( const SwFrame& rFrame,
                                              const sal_Int32 nIndex )
 {
-    SwSidebarWin* pRet( nullptr );
+    sw::annotation::SwAnnotationWin* pRet( nullptr );
 
     FrameKey aFrameKey( &rFrame );
     FrameSidebarWinContainer::iterator aFrameIter = mpFrameSidebarWinContainer->find( aFrameKey );

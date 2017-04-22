@@ -42,7 +42,7 @@ protected:
 
 public:
     FmFieldWinListBox( FmFieldWin* pParent );
-    virtual ~FmFieldWinListBox();
+    virtual ~FmFieldWinListBox() override;
     virtual void dispose() override;
 
     sal_Int8 AcceptDrop( const AcceptDropEvent& rEvt ) override;
@@ -74,16 +74,16 @@ class FmFieldWin :public SfxFloatingWindow
                        m_aObjectName;
     sal_Int32          m_nObjectType;
 
-    ::comphelper::OPropertyChangeMultiplexer*   m_pChangeListener;
+    rtl::Reference<::comphelper::OPropertyChangeMultiplexer>  m_pChangeListener;
 
 public:
     FmFieldWin(SfxBindings *pBindings,
                SfxChildWindow *pMgr, vcl::Window* pParent);
 
-    virtual ~FmFieldWin();
+    virtual ~FmFieldWin() override;
     virtual void dispose() override;
     virtual void Resize() override;
-    virtual bool Close() override;
+    using SfxFloatingWindow::Close;
     virtual void GetFocus() override;
     virtual bool PreNotify( NotifyEvent& _rNEvt ) override;
     virtual void StateChanged(sal_uInt16 nSID, SfxItemState eState,
@@ -102,12 +102,10 @@ public:
 
 protected:
     // FmXChangeListener
-    virtual void _propertyChanged(const css::beans::PropertyChangeEvent& evt) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void _propertyChanged(const css::beans::PropertyChangeEvent& evt) override;
 
 protected:
-    inline          SfxBindings&    GetBindings()       { return SfxControllerItem::GetBindings(); }
-    inline  const   SfxBindings&    GetBindings() const { return SfxControllerItem::GetBindings(); }
-
+    using SfxControllerItem::GetBindings;
     using SfxFloatingWindow::StateChanged;
 };
 

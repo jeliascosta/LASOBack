@@ -37,7 +37,6 @@
 #include <X11/Xatom.h>
 
 #include <unx/sm.hxx>
-#include <unx/saldata.hxx>
 #include <unx/saldisp.hxx>
 #include <unx/salframe.h>
 #include <unx/salinst.h>
@@ -55,7 +54,7 @@ public:
     IceSalSession() {}
 
 private:
-    virtual ~IceSalSession() {}
+    virtual ~IceSalSession() override {}
 
     virtual void queryInteraction() override;
     virtual void interactionDone() override;
@@ -67,6 +66,8 @@ private:
 
 SalSession* X11SalInstance::CreateSalSession()
 {
+    SAL_INFO("vcl.sm", "X11SalInstance::CreateSalSession");
+
     SalSession * p = new IceSalSession;
     SessionManagerClient::open(p);
     return p;
@@ -74,8 +75,11 @@ SalSession* X11SalInstance::CreateSalSession()
 
 void IceSalSession::queryInteraction()
 {
+    SAL_INFO("vcl.sm", "IceSalSession::queryInteraction");
+
     if( ! SessionManagerClient::queryInteraction() )
     {
+        SAL_INFO("vcl.sm.debug", "  call SalSessionInteractionEvent");
         SalSessionInteractionEvent aEvent( false );
         CallCallback( &aEvent );
     }
@@ -83,16 +87,22 @@ void IceSalSession::queryInteraction()
 
 void IceSalSession::interactionDone()
 {
+    SAL_INFO("vcl.sm", "IceSalSession::interactionDone");
+
     SessionManagerClient::interactionDone( false );
 }
 
 void IceSalSession::saveDone()
 {
+    SAL_INFO("vcl.sm", "IceSalSession::saveDone");
+
     SessionManagerClient::saveDone();
 }
 
 bool IceSalSession::cancelShutdown()
 {
+    SAL_INFO("vcl.sm", "IceSalSession::cancelShutdown");
+
     SessionManagerClient::interactionDone( true );
     return false;
 }
@@ -130,6 +140,8 @@ public:
         , m_origIOErrorHandler(nullptr)
         , m_origErrorHandler(nullptr)
     {
+        SAL_INFO("vcl.sm", "ICEConnectionObserver::ICEConnectionObserver");
+
         m_nWakeupFiles[0] = m_nWakeupFiles[1] = 0;
     }
 
@@ -142,7 +154,9 @@ SalSession * SessionManagerClient::m_pSession = nullptr;
 std::unique_ptr< ICEConnectionObserver >
 SessionManagerClient::m_xICEConnectionObserver;
 SmcConn SessionManagerClient::m_pSmcConnection = nullptr;
-OString SessionManagerClient::m_aClientID;
+OString SessionManagerClient::m_aClientID = "";
+OString SessionManagerClient::m_aTimeID = "";
+OString SessionManagerClient::m_aClientTimeID = "";
 bool SessionManagerClient::m_bDocSaveDone = false; // HACK
 
 extern "C" {
@@ -160,93 +174,113 @@ static void IgnoreIceIOErrors(SAL_UNUSED_PARAMETER IceConn) {}
 
 static SmProp*  pSmProps = nullptr;
 static SmProp** ppSmProps = nullptr;
+static char  ** ppSmDel  = nullptr;
+
 static int      nSmProps = 0;
+static int      nSmDel   = 0;
 static unsigned char   *pSmRestartHint = nullptr;
+
+
+enum { eCloneCommand, eProgram, eRestartCommand, eUserId, eRestartStyleHint };
+enum { eDiscardCommand };
+
 
 static void BuildSmPropertyList()
 {
+    SAL_INFO("vcl.sm", "BuildSmPropertyList");
+
     if( ! pSmProps )
     {
-        OString aExec(OUStringToOString(SessionManagerClient::getExecName(), osl_getThreadTextEncoding()));
-
-        nSmProps = 5;
-        pSmProps = new SmProp[ nSmProps ];
-
-        pSmProps[ 0 ].name      = const_cast<char*>(SmCloneCommand);
-        pSmProps[ 0 ].type      = const_cast<char*>(SmLISTofARRAY8);
-        pSmProps[ 0 ].num_vals  = 1;
-        pSmProps[ 0 ].vals      = new SmPropValue;
-        pSmProps[ 0 ].vals->length  = aExec.getLength()+1;
-        pSmProps[ 0 ].vals->value   = strdup( aExec.getStr() );
-
-        pSmProps[ 1 ].name      = const_cast<char*>(SmProgram);
-        pSmProps[ 1 ].type      = const_cast<char*>(SmARRAY8);
-        pSmProps[ 1 ].num_vals  = 1;
-        pSmProps[ 1 ].vals      = new SmPropValue;
-        pSmProps[ 1 ].vals->length  = aExec.getLength()+1;
-        pSmProps[ 1 ].vals->value   = strdup( aExec.getStr() );
-
-        pSmProps[ 2 ].name      = const_cast<char*>(SmRestartCommand);
-        pSmProps[ 2 ].type      = const_cast<char*>(SmLISTofARRAY8);
-        pSmProps[ 2 ].num_vals  = 3;
-        pSmProps[ 2 ].vals      = new SmPropValue[3];
-        pSmProps[ 2 ].vals[0].length    = aExec.getLength()+1;
-        pSmProps[ 2 ].vals[0].value = strdup( aExec.getStr() );
-        OStringBuffer aRestartOption;
-        aRestartOption.append("--session=");
-        aRestartOption.append(SessionManagerClient::getSessionID());
-        pSmProps[ 2 ].vals[1].length    = aRestartOption.getLength()+1;
-        pSmProps[ 2 ].vals[1].value = strdup(aRestartOption.getStr());
-        OString aRestartOptionNoLogo("--nologo");
-        pSmProps[ 2 ].vals[2].length    = aRestartOptionNoLogo.getLength()+1;
-        pSmProps[ 2 ].vals[2].value = strdup(aRestartOptionNoLogo.getStr());
-
-        OUString aUserName;
-        OString aUser;
-        oslSecurity aSec = osl_getCurrentSecurity();
-        if( aSec )
-        {
-            osl_getUserName( aSec, &aUserName.pData );
-            aUser = OUStringToOString( aUserName, osl_getThreadTextEncoding() );
-            osl_freeSecurityHandle( aSec );
-        }
-
-        pSmProps[ 3 ].name      = const_cast<char*>(SmUserID);
-        pSmProps[ 3 ].type      = const_cast<char*>(SmARRAY8);
-        pSmProps[ 3 ].num_vals  = 1;
-        pSmProps[ 3 ].vals      = new SmPropValue;
-        pSmProps[ 3 ].vals->value   = strdup( aUser.getStr() );
-        pSmProps[ 3 ].vals->length  = rtl_str_getLength( static_cast<char *>(pSmProps[ 3 ].vals->value) )+1;
-
-        pSmProps[ 4 ].name      = const_cast<char*>(SmRestartStyleHint);
-        pSmProps[ 4 ].type      = const_cast<char*>(SmCARD8);
-        pSmProps[ 4 ].num_vals  = 1;
-        pSmProps[ 4 ].vals      = new SmPropValue;
-        pSmProps[ 4 ].vals->value   = malloc(1);
-        pSmRestartHint = static_cast<unsigned char *>(pSmProps[ 4 ].vals->value);
-        *pSmRestartHint = SmRestartIfRunning;
-        pSmProps[ 4 ].vals->length  = 1;
-
+        nSmProps  = 5;
+        nSmDel    = 1;
+        pSmProps  = new SmProp[ nSmProps ];
         ppSmProps = new SmProp*[ nSmProps ];
-        for( int i = 0; i < nSmProps; i++ )
-            ppSmProps[ i ] = &pSmProps[i];
+        ppSmDel   = new char*[ nSmDel ];
     }
+
+    OString aExec(OUStringToOString(SessionManagerClient::getExecName(), osl_getThreadTextEncoding()));
+
+    pSmProps[ eCloneCommand ].name      = const_cast<char*>(SmCloneCommand);
+    pSmProps[ eCloneCommand ].type      = const_cast<char*>(SmLISTofARRAY8);
+    pSmProps[ eCloneCommand ].num_vals  = 1;
+    pSmProps[ eCloneCommand ].vals      = new SmPropValue;
+    pSmProps[ eCloneCommand ].vals->length  = aExec.getLength()+1;
+    pSmProps[ eCloneCommand ].vals->value   = strdup( aExec.getStr() );
+
+    pSmProps[ eProgram ].name      = const_cast<char*>(SmProgram);
+    pSmProps[ eProgram ].type      = const_cast<char*>(SmARRAY8);
+    pSmProps[ eProgram ].num_vals  = 1;
+    pSmProps[ eProgram ].vals      = new SmPropValue;
+    pSmProps[ eProgram ].vals->length  = aExec.getLength()+1;
+    pSmProps[ eProgram ].vals->value   = strdup( aExec.getStr() );
+
+    pSmProps[ eRestartCommand ].name      = const_cast<char*>(SmRestartCommand);
+    pSmProps[ eRestartCommand ].type      = const_cast<char*>(SmLISTofARRAY8);
+    pSmProps[ eRestartCommand ].num_vals  = 3;
+    pSmProps[ eRestartCommand ].vals      = new SmPropValue[3];
+    pSmProps[ eRestartCommand ].vals[0].length    = aExec.getLength()+1;
+    pSmProps[ eRestartCommand ].vals[0].value = strdup( aExec.getStr() );
+    OStringBuffer aRestartOption;
+    aRestartOption.append("--session=");
+    aRestartOption.append(SessionManagerClient::getSessionID());
+    pSmProps[ eRestartCommand ].vals[1].length    = aRestartOption.getLength()+1;
+    pSmProps[ eRestartCommand ].vals[1].value = strdup(aRestartOption.getStr());
+    OString aRestartOptionNoLogo("--nologo");
+    pSmProps[ eRestartCommand ].vals[2].length    = aRestartOptionNoLogo.getLength()+1;
+    pSmProps[ eRestartCommand ].vals[2].value = strdup(aRestartOptionNoLogo.getStr());
+
+    OUString aUserName;
+    OString aUser;
+    oslSecurity aSec = osl_getCurrentSecurity();
+    if( aSec )
+    {
+        osl_getUserName( aSec, &aUserName.pData );
+        aUser = OUStringToOString( aUserName, osl_getThreadTextEncoding() );
+        osl_freeSecurityHandle( aSec );
+    }
+
+    pSmProps[ eUserId ].name      = const_cast<char*>(SmUserID);
+    pSmProps[ eUserId ].type      = const_cast<char*>(SmARRAY8);
+    pSmProps[ eUserId ].num_vals  = 1;
+    pSmProps[ eUserId ].vals      = new SmPropValue;
+    pSmProps[ eUserId ].vals->value   = strdup( aUser.getStr() );
+    pSmProps[ eUserId ].vals->length  = rtl_str_getLength( static_cast<char *>(pSmProps[ 3 ].vals->value) )+1;
+
+    pSmProps[ eRestartStyleHint ].name      = const_cast<char*>(SmRestartStyleHint);
+    pSmProps[ eRestartStyleHint ].type      = const_cast<char*>(SmCARD8);
+    pSmProps[ eRestartStyleHint ].num_vals  = 1;
+    pSmProps[ eRestartStyleHint ].vals      = new SmPropValue;
+    pSmProps[ eRestartStyleHint ].vals->value   = malloc(1);
+    pSmRestartHint = static_cast<unsigned char *>(pSmProps[ 4 ].vals->value);
+    *pSmRestartHint = SmRestartIfRunning;
+    pSmProps[ eRestartStyleHint ].vals->length  = 1;
+
+    for( int i = 0; i < nSmProps; i++ )
+        ppSmProps[ i ] = &pSmProps[i];
+
+    ppSmDel[eDiscardCommand] = const_cast<char*>(SmDiscardCommand);
 }
 
 bool SessionManagerClient::checkDocumentsSaved()
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient::checkDocumentsSaved");
+
+    SAL_INFO("vcl.sm.debug", "  m_bcheckDocumentsSaved = " << (m_bDocSaveDone ? "true" : "false" ));
     return m_bDocSaveDone;
 }
 
-IMPL_STATIC_LINK_TYPED( SessionManagerClient, SaveYourselfHdl, void*, pStateVal, void )
+IMPL_STATIC_LINK( SessionManagerClient, SaveYourselfHdl, void*, pStateVal, void )
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient, SaveYourselfHdl");
+
     // Decode argument smuggled in as void*:
     sal_uIntPtr nStateVal = reinterpret_cast< sal_uIntPtr >(pStateVal);
     bool shutdown = nStateVal != 0;
 
-    SAL_INFO("vcl.sm", "posting save documents event shutdown = " << (shutdown ? "true" : "false" ));
-
     static bool bFirstShutdown=true;
+
+    SAL_INFO("vcl.sm.debug", "  shutdown  = " << (shutdown ? "true" : "false" ) <<
+                             ", bFirstShutdown = " << (bFirstShutdown ? "true" : "false" ));
     if (shutdown && bFirstShutdown) //first shutdown request
     {
         bFirstShutdown = false;
@@ -265,6 +299,7 @@ IMPL_STATIC_LINK_TYPED( SessionManagerClient, SaveYourselfHdl, void*, pStateVal,
             if (pWindow && pWindow->IsVisible())
             {
                 *pSmRestartHint = SmRestartIfRunning;
+                SAL_INFO("vcl.sm.debug", "  pSmRestartHint = SmRestartIfRunning");
                 break;
             }
         }
@@ -279,9 +314,10 @@ IMPL_STATIC_LINK_TYPED( SessionManagerClient, SaveYourselfHdl, void*, pStateVal,
         saveDone();
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( SessionManagerClient, InteractionHdl, void*, void )
+IMPL_STATIC_LINK_NOARG( SessionManagerClient, InteractionHdl, void*, void )
 {
-    SAL_INFO("vcl.sm", "interaction link");
+    SAL_INFO("vcl.sm", "SessionManagerClient, InteractionHdl");
+
     if( m_pSession )
     {
         SalSessionInteractionEvent aEvent( true );
@@ -289,9 +325,10 @@ IMPL_STATIC_LINK_NOARG_TYPED( SessionManagerClient, InteractionHdl, void*, void 
     }
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( SessionManagerClient, ShutDownCancelHdl, void*, void )
+IMPL_STATIC_LINK_NOARG( SessionManagerClient, ShutDownCancelHdl, void*, void )
 {
-    SAL_INFO("vcl.sm", "shutdown cancel");
+    SAL_INFO("vcl.sm", "SessionManagerClient, ShutDownCancelHdl");
+
     if( m_pSession )
     {
         SalSessionShutdownCancelEvent aEvent;
@@ -308,17 +345,27 @@ void SessionManagerClient::SaveYourselfProc(
     Bool
     )
 {
-    SAL_INFO("vcl.sm", "Session: save yourself, "
-        "save_type "
-            " local: " << (save_type == SmSaveLocal) <<
-            " global: " << (save_type == SmSaveGlobal) <<
-            " both: " << (save_type == SmSaveBoth) <<
-        " shutdown: " << shutdown <<
-        " interact_style: "
-            " SmInteractStyleNone: " << (interact_style == SmInteractStyleNone) <<
-            " SmInteractStyleErrors: " << (interact_style == SmInteractStyleErrors) <<
-            " SmInteractStyleErrors: " << (interact_style == SmInteractStyleAny));
+    SAL_INFO("vcl.sm", "SessionManagerClient::SaveYourselfProc");
+
+    TimeValue now;
+    osl_getSystemTime(&now);
+
+    SAL_INFO("vcl.sm", "  save_type = "   <<    ((save_type == SmSaveLocal ) ? "local"  :
+                                                 (save_type == SmSaveGlobal) ? "global" : "both") <<
+                       ", shutdown = " <<        (shutdown ? "true" : "false" ) <<
+                       ", interact_style = " << ((interact_style == SmInteractStyleNone)   ? "SmInteractStyleNone"   :
+                                                 (interact_style == SmInteractStyleErrors) ? "SmInteractStyleErrors" :
+                                                                                             "SmInteractStyleAny"));
+    char num[100];
+    snprintf(num, sizeof(num), "_%d_%d", now.Seconds, (now.Nanosec / 1000));
+    m_aTimeID = OString(num);
+
     BuildSmPropertyList();
+
+    SmcSetProperties( m_pSmcConnection, 1, &ppSmProps[ eProgram ] );
+    SmcSetProperties( m_pSmcConnection, 1, &ppSmProps[ eUserId ] );
+
+
     m_bDocSaveDone = false;
     /* #i49875# some session managers send a "die" message if the
      * saveDone does not come early enough for their convenience
@@ -334,11 +381,12 @@ void SessionManagerClient::SaveYourselfProc(
     // Smuggle argument in as void*:
     sal_uIntPtr nStateVal = shutdown;
     Application::PostUserEvent( LINK( nullptr, SessionManagerClient, SaveYourselfHdl ), reinterpret_cast< void * >(nStateVal) );
-    SAL_INFO("vcl.sm", "waiting for save yourself event to be processed" );
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( SessionManagerClient, ShutDownHdl, void*, void )
+IMPL_STATIC_LINK_NOARG( SessionManagerClient, ShutDownHdl, void*, void )
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient, ShutDownHdl");
+
     if( m_pSession )
     {
         SalSessionQuitEvent aEvent;
@@ -346,7 +394,8 @@ IMPL_STATIC_LINK_NOARG_TYPED( SessionManagerClient, ShutDownHdl, void*, void )
     }
 
     const std::list< SalFrame* >& rFrames = vcl_sal::getSalDisplay(GetGenericData())->getFrames();
-    SAL_INFO("vcl.sm", (!rFrames.empty() ? "shutdown on first frame" : "shutdown event but no frame"));
+
+    SAL_INFO("vcl.sm.debug", "  rFrames.empty() = " << (rFrames.empty() ? "true" : "false"));
     if( !rFrames.empty() )
         rFrames.front()->CallCallback( SalEvent::Shutdown, nullptr );
 }
@@ -356,11 +405,12 @@ void SessionManagerClient::DieProc(
     SmPointer
     )
 {
-    SAL_INFO("vcl.sm", "Session: die");
+    SAL_INFO("vcl.sm", "SessionManagerClient::DieProc");
+
     if( connection == m_pSmcConnection )
     {
+        SAL_INFO("vcl.sm.debug", "  connection == m_pSmcConnection" );
         Application::PostUserEvent( LINK( nullptr, SessionManagerClient, ShutDownHdl ) );
-        SAL_INFO("vcl.sm", "waiting for shutdown event to be processed" );
     }
 }
 
@@ -369,14 +419,16 @@ void SessionManagerClient::SaveCompleteProc(
     SmPointer
     )
 {
-    SAL_INFO("vcl.sm", "Session: save complete");
+    SAL_INFO("vcl.sm", "SessionManagerClient::SaveCompleteProc");
 }
 
 void SessionManagerClient::ShutdownCanceledProc(
     SmcConn connection,
     SmPointer )
 {
-    SAL_INFO("vcl.sm", "Session: shutdown canceled" );
+    SAL_INFO("vcl.sm", "SessionManagerClient::ShutdownCanceledProc" );
+
+    SAL_INFO("vcl.sm.debug", "  connection == m_pSmcConnection = " <<  (( connection == m_pSmcConnection ) ? "true" : "false"));
     if( connection == m_pSmcConnection )
         Application::PostUserEvent( LINK( nullptr, SessionManagerClient, ShutDownCancelHdl ) );
 }
@@ -385,32 +437,44 @@ void SessionManagerClient::InteractProc(
                                         SmcConn connection,
                                         SmPointer )
 {
-    SAL_INFO("vcl.sm", "Session: interaction request completed" );
+    SAL_INFO("vcl.sm", "SessionManagerClient::InteractProc" );
+
+    SAL_INFO("vcl.sm.debug", "  connection == m_pSmcConnection = " <<  (( connection == m_pSmcConnection ) ? "true" : "false"));
     if( connection == m_pSmcConnection )
         Application::PostUserEvent( LINK( nullptr, SessionManagerClient, InteractionHdl ) );
 }
 
 void SessionManagerClient::saveDone()
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient::saveDone");
+
     if( m_pSmcConnection )
     {
         assert(m_xICEConnectionObserver);
         osl::MutexGuard g(m_xICEConnectionObserver->m_ICEMutex);
-        SmcSetProperties( m_pSmcConnection, nSmProps, ppSmProps );
+        //SmcSetProperties( m_pSmcConnection, 1, &ppSmProps[ eCloneCommand ] );
+        // this message-handling is now equal to kate and plasma desktop
+        SmcSetProperties( m_pSmcConnection, 1, &ppSmProps[ eRestartCommand ] );
+        SmcDeleteProperties( m_pSmcConnection, 1, &ppSmDel[ eDiscardCommand ] );
+        SmcSetProperties( m_pSmcConnection, 1, &ppSmProps[ eRestartStyleHint ] );
+
         SmcSaveYourselfDone( m_pSmcConnection, True );
-        SAL_INFO("vcl.sm", "sent SaveYourselfDone SmRestartHint of " << *pSmRestartHint );
+        SAL_INFO("vcl.sm.debug", "  sent SmRestartHint = " << (*pSmRestartHint) );
         m_bDocSaveDone = true;
     }
 }
 
 void SessionManagerClient::open(SalSession * pSession)
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient::open");
+
     assert(!m_pSession && !m_xICEConnectionObserver && !m_pSmcConnection);
         // must only be called once
     m_pSession = pSession;
     // This is the way Xt does it, so we can too:
     if( getenv( "SESSION_MANAGER" ) )
     {
+        SAL_INFO("vcl.sm.debug", "  getenv( SESSION_MANAGER ) = true");
         m_xICEConnectionObserver.reset(new ICEConnectionObserver);
         m_xICEConnectionObserver->activate();
 
@@ -443,9 +507,9 @@ void SessionManagerClient::open(SalSession * pSession)
                                                   sizeof( aErrBuf ),
                                                   aErrBuf );
             if( !m_pSmcConnection )
-                SAL_INFO("vcl.sm", "SmcOpenConnection failed: " << aErrBuf);
+                SAL_INFO("vcl.sm.debug", "  SmcOpenConnection failed: " << aErrBuf);
             else
-                SAL_INFO("vcl.sm", "SmcOpenConnection succeeded, client ID is " << pClientID );
+                SAL_INFO("vcl.sm.debug", "  SmcOpenConnection succeeded, client ID is " << pClientID );
             m_aClientID = OString(pClientID);
             free( pClientID );
             pClientID = nullptr;
@@ -454,6 +518,7 @@ void SessionManagerClient::open(SalSession * pSession)
         SalDisplay* pDisp = vcl_sal::getSalDisplay(GetGenericData());
         if( pDisp->GetDrawable(pDisp->GetDefaultXScreen()) && !m_aClientID.isEmpty() )
         {
+            SAL_INFO("vcl.sm.debug", "  SmcOpenConnection open: pDisp->GetDrawable = true");
             XChangeProperty( pDisp->GetDisplay(),
                              pDisp->GetDrawable( pDisp->GetDefaultXScreen() ),
                              XInternAtom( pDisp->GetDisplay(), "SM_CLIENT_ID", False ),
@@ -467,25 +532,33 @@ void SessionManagerClient::open(SalSession * pSession)
     }
     else
     {
-        SAL_INFO("vcl.sm", "no SESSION_MANAGER");
+        SAL_INFO("vcl.sm.debug", "  getenv( SESSION_MANAGER ) = false");
     }
 }
 
 const OString& SessionManagerClient::getSessionID()
 {
-    return m_aClientID;
+    SAL_INFO("vcl.sm", "SessionManagerClient::getSessionID");
+
+    m_aClientTimeID = m_aClientID + m_aTimeID;
+
+    SAL_INFO("vcl.sm", "  SessionID = " << m_aClientTimeID);
+
+    return m_aClientTimeID;
 }
 
 void SessionManagerClient::close()
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient::close");
+
     if( m_pSmcConnection )
     {
+        SAL_INFO("vcl.sm.debug", "  attempting SmcCloseConnection");
         assert(m_xICEConnectionObserver);
         {
             osl::MutexGuard g(m_xICEConnectionObserver->m_ICEMutex);
-            SAL_INFO("vcl.sm", "attempting SmcCloseConnection");
             SmcCloseConnection( m_pSmcConnection, 0, nullptr );
-            SAL_INFO("vcl.sm", "SmcConnection closed");
+            SAL_INFO("vcl.sm", "  SmcCloseConnection closed");
         }
         m_xICEConnectionObserver->deactivate();
         m_xICEConnectionObserver.reset();
@@ -495,11 +568,14 @@ void SessionManagerClient::close()
 
 bool SessionManagerClient::queryInteraction()
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient::queryInteraction");
+
     bool bRet = false;
     if( m_pSmcConnection )
     {
         assert(m_xICEConnectionObserver);
         osl::MutexGuard g(m_xICEConnectionObserver->m_ICEMutex);
+        SAL_INFO("vcl.sm.debug", "  SmcInteractRequest" );
         if( SmcInteractRequest( m_pSmcConnection, SmDialogNormal, InteractProc, nullptr ) )
             bRet = true;
     }
@@ -508,27 +584,36 @@ bool SessionManagerClient::queryInteraction()
 
 void SessionManagerClient::interactionDone( bool bCancelShutdown )
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient::interactionDone");
+
     if( m_pSmcConnection )
     {
         assert(m_xICEConnectionObserver);
         osl::MutexGuard g(m_xICEConnectionObserver->m_ICEMutex);
+        SAL_INFO("vcl.sm.debug", "  SmcInteractDone = " << (bCancelShutdown ? "true" : "false") );
         SmcInteractDone( m_pSmcConnection, bCancelShutdown ? True : False );
     }
 }
 
 OUString SessionManagerClient::getExecName()
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient::getExecName");
+
     OUString aExec, aSysExec;
     osl_getExecutableFile( &aExec.pData );
     osl_getSystemPathFromFileURL( aExec.pData, &aSysExec.pData );
 
     if( aSysExec.endsWith(".bin") )
         aSysExec = aSysExec.copy( 0, aSysExec.getLength() - RTL_CONSTASCII_LENGTH(".bin") );
+
+    SAL_INFO("vcl.sm.debug", "  aSysExec = " << aSysExec);
     return aSysExec;
 }
 
 OString SessionManagerClient::getPreviousSessionID()
 {
+    SAL_INFO("vcl.sm", "SessionManagerClient::getPreviousSessionID");
+
     OString aPrevId;
 
     sal_uInt32 n = rtl_getAppCommandArgCount();
@@ -545,12 +630,14 @@ OString SessionManagerClient::getPreviousSessionID()
         }
     }
 
-    SAL_INFO("vcl.sm", "previous ID = " << aPrevId.getStr());
+    SAL_INFO("vcl.sm.debug", "  previous ID = " << aPrevId.getStr());
     return aPrevId;
 }
 
 void ICEConnectionObserver::activate()
 {
+    SAL_INFO("vcl.sm", "ICEConnectionObserver::activate");
+
     /*
      * Default handlers call exit, we don't care that strongly if something
      * happens to fail
@@ -562,6 +649,8 @@ void ICEConnectionObserver::activate()
 
 void ICEConnectionObserver::deactivate()
 {
+    SAL_INFO("vcl.sm", "ICEConnectionObserver::deactivate");
+
     oslThread t;
     {
         osl::MutexGuard g(m_ICEMutex);
@@ -574,18 +663,23 @@ void ICEConnectionObserver::deactivate()
     }
     if (t)
     {
+        SAL_INFO("vcl.sm.debug", "  terminate");
         terminate(t);
     }
 }
 
 void ICEConnectionObserver::wakeup()
 {
+    SAL_INFO("vcl.sm", "ICEConnectionObserver::wakeup");
+
     char cChar = 'w';
     OSL_VERIFY(write(m_nWakeupFiles[1], &cChar, 1) == 1);
 }
 
 void ICEConnectionObserver::terminate(oslThread iceThread)
 {
+    SAL_INFO("vcl.sm", "ICEConnectionObserver::terminate");
+
     osl_terminateThread(iceThread);
     wakeup();
     osl_joinWithThread(iceThread);
@@ -596,6 +690,8 @@ void ICEConnectionObserver::terminate(oslThread iceThread)
 
 void ICEConnectionWorker(void * data)
 {
+    SAL_INFO("vcl.sm", "ICEConnectionWorker");
+
     osl::Thread::setName("ICEConnectionWorker");
     ICEConnectionObserver * pThis = static_cast< ICEConnectionObserver * >(
         data);
@@ -638,7 +734,7 @@ void ICEConnectionWorker(void * data)
             char buf[4];
             while( read( pThis->m_nWakeupFiles[0], buf, sizeof( buf ) ) > 0 )
                 ;
-            SAL_INFO("vcl.sm", "file handles active in wakeup: " << nRet);
+            SAL_INFO("vcl.sm.debug", "  file handles active in wakeup: " << nRet);
             if( nRet == 1 )
                 continue;
         }
@@ -650,7 +746,7 @@ void ICEConnectionWorker(void * data)
             nRet = poll( pThis->m_pFilehandles+1, pThis->m_nConnections, 0 );
             if( nRet > 0 )
             {
-                SAL_INFO("vcl.sm", "IceProcessMessages");
+                SAL_INFO("vcl.sm.debug", "  IceProcessMessages");
                 Bool bReply;
                 for( int i = 0; i < pThis->m_nConnections; i++ )
                     if( pThis->m_pFilehandles[i+1].revents & POLLIN )
@@ -658,13 +754,16 @@ void ICEConnectionWorker(void * data)
             }
         }
     }
-    SAL_INFO("vcl.sm", "shutting down ICE dispatch thread");
+
+    SAL_INFO("vcl.sm.debug", "  shutting down ICE dispatch thread");
 }
 
 void ICEWatchProc(
     IceConn ice_conn, IcePointer client_data, Bool opening,
     SAL_UNUSED_PARAMETER IcePointer *)
 {
+    SAL_INFO("vcl.sm", "ICEWatchProc");
+
     // Note: This is a callback function for ICE; this implicitly means that a
     // call into ICE lib is calling this, so the m_ICEMutex MUST already be
     // locked by the caller.
@@ -672,6 +771,7 @@ void ICEWatchProc(
         client_data);
     if( opening )
     {
+        SAL_INFO("vcl.sm.debug", "  opening");
         int fd = IceConnectionNumber( ice_conn );
         pThis->m_nConnections++;
         pThis->m_pConnections = static_cast<IceConn*>(rtl_reallocateMemory( pThis->m_pConnections, sizeof( IceConn )*pThis->m_nConnections ));
@@ -681,6 +781,7 @@ void ICEWatchProc(
         pThis->m_pFilehandles[ pThis->m_nConnections ].events = POLLIN;
         if( pThis->m_nConnections == 1 )
         {
+            SAL_INFO("vcl.sm.debug", "  First connection");
             if (!pipe(pThis->m_nWakeupFiles))
             {
                 int flags;
@@ -715,6 +816,7 @@ void ICEWatchProc(
     }
     else // closing
     {
+        SAL_INFO("vcl.sm.debug", "  closing");
         for( int i = 0; i < pThis->m_nConnections; i++ )
         {
             if( pThis->m_pConnections[i] == ice_conn )
@@ -732,7 +834,7 @@ void ICEWatchProc(
         }
         if( pThis->m_nConnections == 0 && pThis->m_ICEThread )
         {
-            SAL_INFO("vcl.sm", "terminating ICEThread");
+            SAL_INFO("vcl.sm.debug", "  terminating ICEThread");
             oslThread t = pThis->m_ICEThread;
             pThis->m_ICEThread = nullptr;
 
@@ -746,8 +848,9 @@ void ICEWatchProc(
             pThis->m_ICEMutex.acquire();
         }
     }
-    SAL_INFO( "vcl.sm", "ICE connection on " << IceConnectionNumber( ice_conn ) << " " << (opening ? "inserted" : "removed"));
-    SAL_INFO( "vcl.sm", "Display connection is " << ConnectionNumber( vcl_sal::getSalDisplay(GetGenericData())->GetDisplay() ) );
+
+    SAL_INFO( "vcl.sm.debug", "  ICE connection     on " << IceConnectionNumber( ice_conn ) );
+    SAL_INFO( "vcl.sm.debug", "  Display connection is " << ConnectionNumber( vcl_sal::getSalDisplay(GetGenericData())->GetDisplay() ) );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -51,8 +51,10 @@ $(eval $(call gb_Library_use_externals,vclplug_gen,\
 	boost_headers \
 	cairo \
 	graphite \
-	glew \
+	epoxy \
+	glm_headers \
 	harfbuzz \
+	icu_headers \
 	icuuc \
 	valgrind \
 	Xrender \
@@ -63,7 +65,6 @@ $(eval $(call gb_Library_add_libs,vclplug_gen,\
 	-lXext \
 	-lSM \
 	-lICE \
-	-lGL \
 ))
 
 $(eval $(call gb_Library_add_exception_objects,vclplug_gen,\

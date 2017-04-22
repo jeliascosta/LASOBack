@@ -102,45 +102,29 @@ GL3DBarChartType::GL3DBarChartType( const GL3DBarChartType& rOther ) :
 GL3DBarChartType::~GL3DBarChartType() {}
 
 OUString SAL_CALL GL3DBarChartType::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString GL3DBarChartType::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart.GL3DBarChartType");
 }
 
 sal_Bool SAL_CALL GL3DBarChartType::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL GL3DBarChartType::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
-}
-
-uno::Sequence<OUString> GL3DBarChartType::getSupportedServiceNames_Static()
-{
-    uno::Sequence<OUString> aServices(3);
-    aServices[0] = CHART2_SERVICE_NAME_CHARTTYPE_GL3DBAR;
-    aServices[1] = "com.sun.star.chart2.ChartType";
-    aServices[2] = "com.sun.star.beans.PropertySet";
-    return aServices;
+    return {
+        CHART2_SERVICE_NAME_CHARTTYPE_GL3DBAR,
+        "com.sun.star.chart2.ChartType",
+        "com.sun.star.beans.PropertySet" };
 }
 
 OUString SAL_CALL GL3DBarChartType::getChartType()
-        throw (css::uno::RuntimeException, std::exception)
 {
     return OUString(CHART2_SERVICE_NAME_CHARTTYPE_GL3DBAR);
 }
 
 uno::Sequence<OUString> GL3DBarChartType::getSupportedPropertyRoles()
-        throw (css::uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString > aPropRoles { "FillColor" };
 
@@ -149,13 +133,11 @@ uno::Sequence<OUString> GL3DBarChartType::getSupportedPropertyRoles()
 
 css::uno::Reference<css::util::XCloneable>
 GL3DBarChartType::createClone()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return uno::Reference<util::XCloneable>(new GL3DBarChartType(*this));
 }
 
 css::uno::Any GL3DBarChartType::GetDefaultValue( sal_Int32 nHandle ) const
-    throw (css::beans::UnknownPropertyException)
 {
     const tPropertyValueMap& rDefaults = *Defaults::get();
     tPropertyValueMap::const_iterator it = rDefaults.find(nHandle);
@@ -168,7 +150,6 @@ cppu::IPropertyArrayHelper& GL3DBarChartType::getInfoHelper()
 }
 
 css::uno::Reference<css::beans::XPropertySetInfo> GL3DBarChartType::getPropertySetInfo()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return *ChartTypeInfo::get();
 }

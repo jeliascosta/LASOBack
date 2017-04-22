@@ -51,47 +51,42 @@ namespace accessibility
         /// Create accessible object for given parent
         AccessibleImageBullet ( const css::uno::Reference< css::accessibility::XAccessible >& rParent );
 
-        virtual ~AccessibleImageBullet  ();
-
-        // XInterface
-        virtual css::uno::Any SAL_CALL queryInterface (const css::uno::Type & rType) throw (css::uno::RuntimeException, std::exception) override;
+        virtual ~AccessibleImageBullet  () override;
 
         // XAccessible
-        virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext(  ) override;
 
         // XAccessibleContext
-        virtual sal_Int32 SAL_CALL getAccessibleChildCount() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getAccessibleIndexInParent() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int16 SAL_CALL getAccessibleRole() throw (css::uno::RuntimeException, std::exception) override;
-        /// Maximal length of text returned by getAccessibleDescription()
-        enum { MaxDescriptionLen = 40 };
-        virtual OUString SAL_CALL getAccessibleDescription() throw (css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getAccessibleName() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL getAccessibleStateSet() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::lang::Locale SAL_CALL getLocale() throw (css::accessibility::IllegalAccessibleComponentStateException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getAccessibleChildCount() override;
+        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) override;
+        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent() override;
+        virtual sal_Int32 SAL_CALL getAccessibleIndexInParent() override;
+        virtual sal_Int16 SAL_CALL getAccessibleRole() override;
+        virtual OUString SAL_CALL getAccessibleDescription() override;
+        virtual OUString SAL_CALL getAccessibleName() override;
+        virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet() override;
+        virtual css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL getAccessibleStateSet() override;
+        virtual css::lang::Locale SAL_CALL getLocale() override;
 
         // XAccessibleEventBroadcaster
-        virtual void SAL_CALL addAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL removeAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) override;
+        virtual void SAL_CALL removeAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) override;
 
         // XAccessibleComponent
-        virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::awt::Rectangle SAL_CALL getBounds(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::awt::Point SAL_CALL getLocation(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::awt::Point SAL_CALL getLocationOnScreen(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::awt::Size SAL_CALL getSize(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL grabFocus(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getForeground(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getBackground(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint ) override;
+        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint( const css::awt::Point& aPoint ) override;
+        virtual css::awt::Rectangle SAL_CALL getBounds(  ) override;
+        virtual css::awt::Point SAL_CALL getLocation(  ) override;
+        virtual css::awt::Point SAL_CALL getLocationOnScreen(  ) override;
+        virtual css::awt::Size SAL_CALL getSize(  ) override;
+        virtual void SAL_CALL grabFocus(  ) override;
+        virtual sal_Int32 SAL_CALL getForeground(  ) override;
+        virtual sal_Int32 SAL_CALL getBackground(  ) override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL supportsService (const OUString& sServiceName) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName() override;
+        virtual sal_Bool SAL_CALL supportsService (const OUString& sServiceName) override;
+        virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() override;
 
         /** Set the current index in the accessibility parent
 
@@ -145,15 +140,11 @@ namespace accessibility
         sal_Int32 GetParagraphIndex() const { return mnParagraphIndex; }
 
         /// Calls all Listener objects to tell them the change. Don't hold locks when calling this!
-        void FireEvent(const sal_Int16 nEventId, const css::uno::Any& rNewValue = css::uno::Any(), const css::uno::Any& rOldValue = css::uno::Any() ) const;
+        void FireEvent(const sal_Int16 nEventId, const css::uno::Any& rNewValue, const css::uno::Any& rOldValue = css::uno::Any() ) const;
 
     private:
         AccessibleImageBullet( const AccessibleImageBullet& ) = delete;
         AccessibleImageBullet& operator= ( const AccessibleImageBullet& ) = delete;
-
-        // syntactic sugar for FireEvent
-        void GotPropertyEvent( const css::uno::Any& rNewValue, const sal_Int16 nEventId ) const;
-        void LostPropertyEvent( const css::uno::Any& rOldValue, const sal_Int16 nEventId ) const;
 
         // maintain state set and send STATE_CHANGE events
         void SetState( const sal_Int16 nStateId );
@@ -180,8 +171,6 @@ namespace accessibility
             make sure SolarMutex is locked when calling this.
          */
         SvxViewForwarder&   GetViewForwarder() const;
-
-        const Point& GetEEOffset() const { return maEEOffset; }
 
         // the paragraph index in the edit engine (guarded by solar mutex)
         sal_Int32   mnParagraphIndex;

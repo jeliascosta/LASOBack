@@ -33,10 +33,10 @@ using namespace com::sun::star;
 
 // helper functions
 namespace {
+    /// @throws css::lang::IllegalArgumentException
+    /// @throws css::uno::RuntimeException
     const SwWrongList* getTextMarkupList( const SwTextNode& rTextNode,
                                           const sal_Int32 nTextMarkupType )
-        throw (css::lang::IllegalArgumentException,
-               css::uno::RuntimeException)
     {
         const SwWrongList* pTextMarkupList( nullptr );
         switch ( nTextMarkupType )
@@ -88,8 +88,6 @@ SwTextMarkupHelper::SwTextMarkupHelper( const SwAccessiblePortionData& rPortionD
 }
 
 sal_Int32 SwTextMarkupHelper::getTextMarkupCount( const sal_Int32 nTextMarkupType )
-        throw (css::lang::IllegalArgumentException,
-               css::uno::RuntimeException)
 {
     sal_Int32 nTextMarkupCount( 0 );
 
@@ -109,9 +107,6 @@ sal_Int32 SwTextMarkupHelper::getTextMarkupCount( const sal_Int32 nTextMarkupTyp
 css::accessibility::TextSegment
         SwTextMarkupHelper::getTextMarkup( const sal_Int32 nTextMarkupIndex,
                                            const sal_Int32 nTextMarkupType )
-        throw (css::lang::IndexOutOfBoundsException,
-               css::lang::IllegalArgumentException,
-               css::uno::RuntimeException)
 {
     if ( nTextMarkupIndex >= getTextMarkupCount( nTextMarkupType ) ||
          nTextMarkupIndex < 0 )
@@ -155,9 +150,6 @@ css::accessibility::TextSegment
 css::uno::Sequence< css::accessibility::TextSegment >
         SwTextMarkupHelper::getTextMarkupAtIndex( const sal_Int32 nCharIndex,
                                                   const sal_Int32 nTextMarkupType )
-        throw (css::lang::IndexOutOfBoundsException,
-               css::lang::IllegalArgumentException,
-               css::uno::RuntimeException)
 {
     // assumption:
     // value of <nCharIndex> is in range [0..length of accessible text)
@@ -175,7 +167,7 @@ css::uno::Sequence< css::accessibility::TextSegment >
                             mpTextMarkupList
                             ? mpTextMarkupList
                             : getTextMarkupList( *mpTextNode, nTextMarkupType );
-    ::std::vector< css::accessibility::TextSegment > aTmpTextMarkups;
+    std::vector< css::accessibility::TextSegment > aTmpTextMarkups;
     if ( pTextMarkupList )
     {
         const OUString rText = mrPortionData.GetAccessibleString();
@@ -205,7 +197,7 @@ css::uno::Sequence< css::accessibility::TextSegment >
 
     uno::Sequence< css::accessibility::TextSegment > aTextMarkups(
                                                     aTmpTextMarkups.size() );
-    ::std::copy( aTmpTextMarkups.begin(), aTmpTextMarkups.end(), aTextMarkups.begin() );
+    std::copy( aTmpTextMarkups.begin(), aTmpTextMarkups.end(), aTextMarkups.begin() );
 
     return aTextMarkups;
 }

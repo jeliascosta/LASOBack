@@ -23,52 +23,76 @@
 #include <sal/config.h>
 
 #include <deque>
+#include <exception>
+#include <functional>
 #include <map>
+#include <memory>
 #include <vector>
 
-#include <dbaccess/AsynchronousLink.hxx>
-#include <dbaccess/controllerframe.hxx>
-#include <dbaccess/dbaccessdllapi.h>
-#include <dbaccess/IController.hxx>
+#include <boost/optional.hpp>
 
+#include <com/sun/star/awt/XUserInputInterception.hpp>
 #include <com/sun/star/frame/CommandGroup.hpp>
+#include <com/sun/star/frame/DispatchInformation.hpp>
 #include <com/sun/star/frame/XController2.hpp>
 #include <com/sun/star/frame/XDispatch.hpp>
 #include <com/sun/star/frame/XDispatchInformationProvider.hpp>
 #include <com/sun/star/frame/XDispatchProviderInterceptor.hpp>
-#include <com/sun/star/frame/XFrameActionListener.hpp>
+#include <com/sun/star/frame/XLayoutManager.hpp>
 #include <com/sun/star/frame/XTitle.hpp>
 #include <com/sun/star/frame/XTitleChangeBroadcaster.hpp>
-#include <com/sun/star/frame/XLayoutManager.hpp>
+#include <com/sun/star/lang/EventObject.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/sdb/XDatabaseContext.hpp>
-#include <com/sun/star/sdbc/XConnection.hpp>
-#include <com/sun/star/sdbc/XDataSource.hpp>
-#include <com/sun/star/uno/XComponentContext.hpp>
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Exception.hpp>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <com/sun/star/util/URL.hpp>
 #include <com/sun/star/util/XModifyListener.hpp>
-#include <com/sun/star/util/XURLTransformer.hpp>
-#include <com/sun/star/awt/XUserInputInterception.hpp>
-
-#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/sharedmutex.hxx>
 #include <comphelper/namedvaluecollection.hxx>
 #include <connectivity/dbexception.hxx>
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/interfacecontainer.h>
-
-#include <boost/optional.hpp>
-#include <sfx2/userinputinterception.hxx>
+#include <dbaccess/AsynchronousLink.hxx>
+#include <dbaccess/controllerframe.hxx>
+#include <dbaccess/dbaccessdllapi.h>
+#include <dbaccess/IController.hxx>
+#include <osl/mutex.hxx>
+#include <rtl/string.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <tools/link.hxx>
 #include <vcl/vclptr.hxx>
 
-#include <com/sun/star/ui/XSidebarProvider.hpp>
-
-namespace dbtools
-{
-    class SQLExceptionInfo;
-}
+namespace com { namespace sun { namespace star {
+    namespace awt { class XKeyHandler; }
+    namespace awt { class XMouseClickHandler; }
+    namespace awt { class XWindow; }
+    namespace beans { struct PropertyValue; }
+    namespace frame { class XController; }
+    namespace frame { class XDispatchProvider; }
+    namespace frame { class XFrame; }
+    namespace frame { class XFrameActionListener; }
+    namespace frame { class XModel; }
+    namespace frame { class XStatusListener; }
+    namespace frame { class XTitleChangeListener; }
+    namespace frame { struct DispatchDescriptor; }
+    namespace frame { struct FrameActionEvent; }
+    namespace lang { class XEventListener; }
+    namespace sdb { class XDatabaseContext; }
+    namespace sdbc { class XConnection; }
+    namespace sdbc { class XDataSource; }
+    namespace ui { class XSidebarProvider; }
+    namespace uno { class XComponentContext; }
+    namespace util { class XURLTransformer; }
+} } }
 
 namespace vcl { class Window; }
+class NotifyEvent;
+
 namespace dbaui
 {
     class ODataView;
@@ -156,7 +180,7 @@ namespace dbaui
     struct CompareFeatureById : ::std::binary_function< SupportedFeatures::value_type, sal_Int32, bool >
     {
 
-        inline bool operator()( const SupportedFeatures::value_type& _aType, const sal_Int32& _nId ) const
+        bool operator()( const SupportedFeatures::value_type& _aType, sal_Int32 _nId ) const
         {
             return !!( _nId == _aType.second.nFeatureId );
         }
@@ -178,7 +202,7 @@ namespace dbaui
     struct FindFeatureListener : ::std::binary_function< FeatureListener, css::uno::Reference< css::frame::XStatusListener >, bool >
     {
 
-        inline bool operator()( const FeatureListener& lhs, const css::uno::Reference< css::frame::XStatusListener >& rhs ) const
+        bool operator()( const FeatureListener& lhs, const css::uno::Reference< css::frame::XStatusListener >& rhs ) const
         {
             return !!( lhs.xListener == rhs );
         }
@@ -258,7 +282,7 @@ namespace dbaui
 
 
         // attribute access
-        ::osl::Mutex&               getMutex() const            { return OGenericUnoController_MBASE::getMutex(); }
+        using OGenericUnoController_MBASE::getMutex;
         ::cppu::OBroadcastHelper&   getBroadcastHelper()        { return OGenericUnoController_Base::rBHelper; }
 
 
@@ -266,26 +290,6 @@ namespace dbaui
         OGenericUnoController( const css::uno::Reference< css::uno::XComponentContext >& _rM );
         const ::comphelper::NamedValueCollection&
                                     getInitParams() const   { return m_aInitParameters; }
-
-
-        /** open the help agent for the given help id.
-            @param  _nHelpId
-                The help id to dispatch.
-        */
-        void openHelpAgent( const OString& _sHelpId );
-
-        /** open the help agent for the given help url.
-            @param  _pHelpStringURL
-                The help url to dispatch.
-        */
-        void openHelpAgent( const OUString& _suHelpStringURL );
-
-        /** opens the given Help URL in the help agent
-
-            The URL does not need to be parsed already, it is passed through
-            XURLTransformer::parseStrict before it is used.
-        */
-        void openHelpAgent( const css::util::URL& _rURL );
 
         // closes the task when possible
         void closeTask();
@@ -350,8 +354,7 @@ namespace dbaui
 
         // connect to a datasource
         css::uno::Reference< css::sdbc::XConnection > connect(
-            const css::uno::Reference< css::sdbc::XDataSource>& _xDataSource,
-            ::dbtools::SQLExceptionInfo* _pErrorInfo
+            const css::uno::Reference< css::sdbc::XDataSource>& _xDataSource
         );
 
         // connect to a datasource
@@ -386,7 +389,7 @@ namespace dbaui
 
         void releaseNumberForComponent();
 
-        virtual ~OGenericUnoController();
+        virtual ~OGenericUnoController() override;
 
     private:
         void fillSupportedFeatures();
@@ -399,8 +402,8 @@ namespace dbaui
         void ImplBroadcastFeatureState(const OUString& _rFeature, const css::uno::Reference< css::frame::XStatusListener > & xListener, bool _bIgnoreCache);
 
         // link methods
-        DECL_LINK_TYPED(OnAsyncInvalidateAll, void*, void);
-        DECL_LINK_TYPED(OnAsyncCloseTask, void*, void);
+        DECL_LINK(OnAsyncInvalidateAll, void*, void);
+        DECL_LINK(OnAsyncCloseTask, void*, void);
 
     public:
         const css::uno::Reference< css::uno::XComponentContext >& getORB() const { return m_xContext; }
@@ -438,90 +441,89 @@ namespace dbaui
         virtual void executeChecked(sal_uInt16 _nCommandId, const css::uno::Sequence< css::beans::PropertyValue>& aArgs) override;
         virtual bool isCommandEnabled(sal_uInt16 _nCommandId) const override;
         virtual bool isCommandEnabled(const OUString& _rCompleteCommandURL) const override;
-        virtual sal_uInt16 registerCommandURL( const OUString& _rCompleteCommandURL ) override;
         virtual void notifyHiContrastChanged() override;
         virtual bool isDataSourceReadOnly() const override;
-        virtual css::uno::Reference< css::frame::XController > getXController() throw( css::uno::RuntimeException ) override;
+        virtual css::uno::Reference< css::frame::XController > getXController() override;
         virtual bool interceptUserInput( const NotifyEvent& _rEvent ) override;
 
         // misc
         bool isCommandChecked(sal_uInt16 _nCommandId) const;
 
         // css::lang::XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& Source) override;
 
         // css::util::XModifyListener
-        virtual void SAL_CALL modified(const css::lang::EventObject& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL modified(const css::lang::EventObject& aEvent) override;
 
         // XInterface
         virtual void SAL_CALL acquire(  ) throw () override;
         virtual void SAL_CALL release(  ) throw () override;
 
         // css::frame::XController2
-        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL getComponentWindow() throw (css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getViewControllerName() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getCreationArguments() throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL getComponentWindow() override;
+        virtual OUString SAL_CALL getViewControllerName() override;
+        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getCreationArguments() override;
 
-        virtual css::uno::Reference< css::ui::XSidebarProvider > SAL_CALL getSidebar() throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::ui::XSidebarProvider > SAL_CALL getSidebar() override;
 
 
         // css::frame::XController
-        virtual void SAL_CALL attachFrame(const css::uno::Reference< css::frame::XFrame > & xFrame) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual sal_Bool SAL_CALL attachModel(const css::uno::Reference< css::frame::XModel > & xModel) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual sal_Bool SAL_CALL suspend(sal_Bool bSuspend) throw( css::uno::RuntimeException, std::exception ) override = 0;
-        virtual css::uno::Any SAL_CALL getViewData() throw( css::uno::RuntimeException, std::exception ) override;
-        virtual void SAL_CALL restoreViewData(const css::uno::Any& Data) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual css::uno::Reference< css::frame::XModel >  SAL_CALL getModel() throw( css::uno::RuntimeException, std::exception ) override;
-        virtual css::uno::Reference< css::frame::XFrame >  SAL_CALL getFrame() throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL attachFrame(const css::uno::Reference< css::frame::XFrame > & xFrame) override;
+        virtual sal_Bool SAL_CALL attachModel(const css::uno::Reference< css::frame::XModel > & xModel) override;
+        virtual sal_Bool SAL_CALL suspend(sal_Bool bSuspend) override = 0;
+        virtual css::uno::Any SAL_CALL getViewData() override;
+        virtual void SAL_CALL restoreViewData(const css::uno::Any& Data) override;
+        virtual css::uno::Reference< css::frame::XModel >  SAL_CALL getModel() override;
+        virtual css::uno::Reference< css::frame::XFrame >  SAL_CALL getFrame() override;
 
         // css::frame::XDispatch
-        virtual void        SAL_CALL dispatch(const css::util::URL& aURL, const css::uno::Sequence< css::beans::PropertyValue>& aArgs) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void        SAL_CALL addStatusListener(const css::uno::Reference< css::frame::XStatusListener > & aListener, const css::util::URL& aURL) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void        SAL_CALL removeStatusListener(const css::uno::Reference< css::frame::XStatusListener > & aListener, const css::util::URL& aURL) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void        SAL_CALL dispatch(const css::util::URL& aURL, const css::uno::Sequence< css::beans::PropertyValue>& aArgs) override;
+        virtual void        SAL_CALL addStatusListener(const css::uno::Reference< css::frame::XStatusListener > & aListener, const css::util::URL& aURL) override;
+        virtual void        SAL_CALL removeStatusListener(const css::uno::Reference< css::frame::XStatusListener > & aListener, const css::util::URL& aURL) override;
 
         // css::frame::XDispatchProviderInterceptor
-        virtual css::uno::Reference< css::frame::XDispatchProvider >  SAL_CALL getSlaveDispatchProvider() throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL setSlaveDispatchProvider(const css::uno::Reference< css::frame::XDispatchProvider > & _xNewProvider) throw(css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::frame::XDispatchProvider >  SAL_CALL getMasterDispatchProvider() throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL setMasterDispatchProvider(const css::uno::Reference< css::frame::XDispatchProvider > & _xNewProvider) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::frame::XDispatchProvider >  SAL_CALL getSlaveDispatchProvider() override;
+        virtual void SAL_CALL setSlaveDispatchProvider(const css::uno::Reference< css::frame::XDispatchProvider > & _xNewProvider) override;
+        virtual css::uno::Reference< css::frame::XDispatchProvider >  SAL_CALL getMasterDispatchProvider() override;
+        virtual void SAL_CALL setMasterDispatchProvider(const css::uno::Reference< css::frame::XDispatchProvider > & _xNewProvider) override;
 
         // css::frame::XDispatchProvider
-        virtual css::uno::Reference< css::frame::XDispatch >  SAL_CALL queryDispatch(const css::util::URL& aURL, const OUString& aTargetFrameName, sal_Int32 nSearchFlags) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual css::uno::Sequence< css::uno::Reference< css::frame::XDispatch >  > SAL_CALL queryDispatches(const css::uno::Sequence< css::frame::DispatchDescriptor >& aDescripts) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual css::uno::Reference< css::frame::XDispatch >  SAL_CALL queryDispatch(const css::util::URL& aURL, const OUString& aTargetFrameName, sal_Int32 nSearchFlags) override;
+        virtual css::uno::Sequence< css::uno::Reference< css::frame::XDispatch >  > SAL_CALL queryDispatches(const css::uno::Sequence< css::frame::DispatchDescriptor >& aDescripts) override;
 
         // css::lang::XComponent
-        virtual void SAL_CALL dispose() throw(css::uno::RuntimeException, std::exception) override; //LLA: need solar mutex {OGenericUnoController_COMPBASE::dispose(); }
+        virtual void SAL_CALL dispose() override; //LLA: need solar mutex {OGenericUnoController_COMPBASE::dispose(); }
         virtual void SAL_CALL disposing() override;
-        virtual void SAL_CALL addEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL removeEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) override;
+        virtual void SAL_CALL removeEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) override;
 
         // css::frame::XFrameActionListener
-        virtual void SAL_CALL frameAction(const css::frame::FrameActionEvent& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL frameAction(const css::frame::FrameActionEvent& aEvent) override;
         // lang::XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw(css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override = 0;
-        virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw(css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override = 0;
+        virtual OUString SAL_CALL getImplementationName() override = 0;
+        virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+        virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() override = 0;
 
         // XDispatchInformationProvider
-        virtual css::uno::Sequence< ::sal_Int16 > SAL_CALL getSupportedCommandGroups() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< css::frame::DispatchInformation > SAL_CALL getConfigurableDispatchInformation( ::sal_Int16 ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< ::sal_Int16 > SAL_CALL getSupportedCommandGroups() override;
+        virtual css::uno::Sequence< css::frame::DispatchInformation > SAL_CALL getConfigurableDispatchInformation( ::sal_Int16 ) override;
 
         // XTitle
-        virtual OUString SAL_CALL getTitle(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL setTitle( const OUString& sTitle ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getTitle(  ) override;
+        virtual void SAL_CALL setTitle( const OUString& sTitle ) override;
 
         // XTitleChangeBroadcaster
-        virtual void SAL_CALL addTitleChangeListener( const css::uno::Reference< css::frame::XTitleChangeListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL removeTitleChangeListener( const css::uno::Reference< css::frame::XTitleChangeListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addTitleChangeListener( const css::uno::Reference< css::frame::XTitleChangeListener >& xListener ) override;
+        virtual void SAL_CALL removeTitleChangeListener( const css::uno::Reference< css::frame::XTitleChangeListener >& xListener ) override;
 
         // XUserInputInterception
-        virtual void SAL_CALL addKeyHandler( const css::uno::Reference< css::awt::XKeyHandler >& xHandler ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL removeKeyHandler( const css::uno::Reference< css::awt::XKeyHandler >& xHandler ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL addMouseClickHandler( const css::uno::Reference< css::awt::XMouseClickHandler >& xHandler ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL removeMouseClickHandler( const css::uno::Reference< css::awt::XMouseClickHandler >& xHandler ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addKeyHandler( const css::uno::Reference< css::awt::XKeyHandler >& xHandler ) override;
+        virtual void SAL_CALL removeKeyHandler( const css::uno::Reference< css::awt::XKeyHandler >& xHandler ) override;
+        virtual void SAL_CALL addMouseClickHandler( const css::uno::Reference< css::awt::XMouseClickHandler >& xHandler ) override;
+        virtual void SAL_CALL removeMouseClickHandler( const css::uno::Reference< css::awt::XMouseClickHandler >& xHandler ) override;
 
     protected:
 #ifdef _MSC_VER

@@ -59,8 +59,6 @@ class ModifyEventForwarder :
 public:
     ModifyEventForwarder();
 
-    void FireEvent( const css::lang::EventObject & rEvent );
-
     void AddListener(
         const css::uno::Reference< css::util::XModifyListener >& aListener );
     void RemoveListener(
@@ -69,21 +67,17 @@ public:
 protected:
     // ____ XModifyBroadcaster ____
     virtual void SAL_CALL addModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
     virtual void SAL_CALL removeModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
 
     // ____ XModifyListener ____
     virtual void SAL_CALL modified(
-        const css::lang::EventObject& aEvent )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& aEvent ) override;
 
     // ____ XEventListener (base of XModifyListener) ____
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& Source ) override;
 
     // ____ WeakComponentImplHelperBase ____
     virtual void SAL_CALL disposing() override;
@@ -96,8 +90,8 @@ private:
 //     ::osl::Mutex & m_rMutex;
     ::cppu::OBroadcastHelper  m_aModifyListeners;
 
-    typedef ::std::list<
-            ::std::pair<
+    typedef std::list<
+            std::pair<
             css::uno::WeakReference< css::util::XModifyListener >,
             css::uno::Reference< css::util::XModifyListener > > >
         tListenerMap;
@@ -109,7 +103,7 @@ namespace impl
 {
 
 template< class InterfaceRef >
-struct addListenerFunctor : public ::std::unary_function< InterfaceRef, void >
+struct addListenerFunctor : public std::unary_function< InterfaceRef, void >
 {
     explicit addListenerFunctor( const css::uno::Reference< css::util::XModifyListener > & xListener ) :
             m_xListener( xListener )
@@ -127,7 +121,7 @@ private:
 };
 
 template< class InterfaceRef >
-struct removeListenerFunctor : public ::std::unary_function< InterfaceRef, void >
+struct removeListenerFunctor : public std::unary_function< InterfaceRef, void >
 {
     explicit removeListenerFunctor( const css::uno::Reference< css::util::XModifyListener > & xListener ) :
             m_xListener( xListener )
@@ -145,7 +139,7 @@ private:
 };
 
 template< class Pair >
-struct addListenerToMappedElementFunctor : public ::std::unary_function< Pair, void >
+struct addListenerToMappedElementFunctor : public std::unary_function< Pair, void >
 {
     explicit addListenerToMappedElementFunctor( const css::uno::Reference< css::util::XModifyListener > & xListener ) :
             m_xListener( xListener )
@@ -163,7 +157,7 @@ private:
 };
 
 template< class Pair >
-struct removeListenerFromMappedElementFunctor : public ::std::unary_function< Pair, void >
+struct removeListenerFromMappedElementFunctor : public std::unary_function< Pair, void >
 {
     explicit removeListenerFromMappedElementFunctor( const css::uno::Reference< css::util::XModifyListener > & xListener ) :
             m_xListener( xListener )
@@ -200,7 +194,7 @@ void addListenerToAllElements(
     const css::uno::Reference< css::util::XModifyListener > & xListener )
 {
     if( xListener.is())
-        ::std::for_each( rContainer.begin(), rContainer.end(),
+        std::for_each( rContainer.begin(), rContainer.end(),
                          impl::addListenerFunctor< typename Container::value_type >( xListener ));
 }
 
@@ -210,7 +204,7 @@ void addListenerToAllMapElements(
     const css::uno::Reference< css::util::XModifyListener > & xListener )
 {
     if( xListener.is())
-        ::std::for_each( rContainer.begin(), rContainer.end(),
+        std::for_each( rContainer.begin(), rContainer.end(),
                          impl::addListenerToMappedElementFunctor< typename Container::value_type >( xListener ));
 }
 
@@ -220,7 +214,7 @@ void addListenerToAllSequenceElements(
     const css::uno::Reference< css::util::XModifyListener > & xListener )
 {
     if( xListener.is())
-        ::std::for_each( rSequence.getConstArray(), rSequence.getConstArray() + rSequence.getLength(),
+        std::for_each( rSequence.getConstArray(), rSequence.getConstArray() + rSequence.getLength(),
                          impl::addListenerFunctor< T >( xListener ));
 }
 
@@ -242,7 +236,7 @@ void removeListenerFromAllElements(
     const css::uno::Reference< css::util::XModifyListener > & xListener )
 {
     if( xListener.is())
-        ::std::for_each( rContainer.begin(), rContainer.end(),
+        std::for_each( rContainer.begin(), rContainer.end(),
                          impl::removeListenerFunctor< typename Container::value_type >( xListener ));
 }
 
@@ -252,7 +246,7 @@ void removeListenerFromAllMapElements(
     const css::uno::Reference< css::util::XModifyListener > & xListener )
 {
     if( xListener.is())
-        ::std::for_each( rContainer.begin(), rContainer.end(),
+        std::for_each( rContainer.begin(), rContainer.end(),
                          impl::removeListenerFromMappedElementFunctor< typename Container::value_type >( xListener ));
 }
 
@@ -262,7 +256,7 @@ void removeListenerFromAllSequenceElements(
     const css::uno::Reference< css::util::XModifyListener > & xListener )
 {
     if( xListener.is())
-        ::std::for_each( rSequence.getConstArray(), rSequence.getConstArray() + rSequence.getLength(),
+        std::for_each( rSequence.getConstArray(), rSequence.getConstArray() + rSequence.getLength(),
                          impl::removeListenerFunctor< T >( xListener ));
 }
 

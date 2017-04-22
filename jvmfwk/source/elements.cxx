@@ -17,6 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <cassert>
+#include <memory>
+
 #include "elements.hxx"
 #include "osl/mutex.hxx"
 #include "osl/file.hxx"
@@ -166,44 +171,6 @@ void createSettingsStructure(xmlDoc * document, bool * bNeedsSave)
     nodeCrLf = xmlNewText(reinterpret_cast<xmlChar const *>("\n"));
     xmlAddChild(root, nodeCrLf);
 }
-
-
-VersionInfo::VersionInfo(): arVersions(nullptr)
-{
-}
-
-VersionInfo::~VersionInfo()
-{
-    delete [] arVersions;
-}
-
-void VersionInfo::addExcludeVersion(const OUString& sVersion)
-{
-    vecExcludeVersions.push_back(sVersion);
-}
-
-rtl_uString** VersionInfo::getExcludeVersions()
-{
-    osl::MutexGuard guard(FwkMutex::get());
-    if (arVersions != nullptr)
-        return arVersions;
-
-    arVersions = new rtl_uString*[vecExcludeVersions.size()];
-    int j=0;
-    typedef std::vector<OUString>::const_iterator it;
-    for (it i = vecExcludeVersions.begin(); i != vecExcludeVersions.end();
-         ++i, ++j)
-    {
-        arVersions[j] = vecExcludeVersions[j].pData;
-    }
-    return arVersions;
-}
-
-sal_Int32 VersionInfo::getExcludeVersionSize()
-{
-    return vecExcludeVersions.size();
-}
-
 
 NodeJava::NodeJava(Layer layer):
     m_layer(layer)
@@ -625,35 +592,21 @@ void NodeJava::setJavaInfo(const JavaInfo * pInfo, bool bAutoSelect)
     }
 }
 
-void NodeJava::setVmParameters(rtl_uString * * arOptions, sal_Int32 size)
+void NodeJava::setVmParameters(std::vector<OUString> const & arOptions)
 {
-    OSL_ASSERT( !(arOptions == nullptr && size != 0));
-    if ( ! m_vmParameters)
-        m_vmParameters = boost::optional<std::vector<OUString> >(
-            std::vector<OUString>());
-    m_vmParameters->clear();
-    if (arOptions != nullptr)
-    {
-        for (int i  = 0; i < size; i++)
-        {
-            const OUString sOption(static_cast<rtl_uString*>(arOptions[i]));
-            m_vmParameters->push_back(sOption);
-        }
-    }
+    m_vmParameters = boost::optional<std::vector<OUString> >(arOptions);
 }
 
-void NodeJava::addJRELocation(rtl_uString * sLocation)
+void NodeJava::addJRELocation(OUString const & sLocation)
 {
-    OSL_ASSERT( sLocation);
     if (!m_JRELocations)
         m_JRELocations = boost::optional<std::vector<OUString> >(
             std::vector<OUString> ());
      //only add the path if not already present
     std::vector<OUString>::const_iterator it =
-        std::find(m_JRELocations->begin(), m_JRELocations->end(),
-                  OUString(sLocation));
+        std::find(m_JRELocations->begin(), m_JRELocations->end(), sLocation);
     if (it == m_JRELocations->end())
-        m_JRELocations->push_back(OUString(sLocation));
+        m_JRELocations->push_back(sLocation);
 }
 
 jfw::FileStatus NodeJava::checkSettingsFileStatus(OUString const & sURL)
@@ -973,19 +926,14 @@ void CNodeJavaInfo::writeToNode(xmlDoc* pDoc,
     xmlAddChild(pJavaInfoNode, nodeCrLf);
 }
 
-JavaInfo * CNodeJavaInfo::makeJavaInfo() const
+std::unique_ptr<JavaInfo> CNodeJavaInfo::makeJavaInfo() const
 {
     if (bNil || m_bEmptyNode)
-        return nullptr;
-    JavaInfo * pInfo = new JavaInfo;
-    memset(pInfo, 0, sizeof(JavaInfo));
-    pInfo->sVendor = sVendor;
-    pInfo->sLocation = sLocation;
-    pInfo->sVersion = sVersion;
-    pInfo->nFeatures = nFeatures;
-    pInfo->nRequirements = nRequirements;
-    pInfo->arVendorData = arVendorData;
-    return pInfo;
+        return std::unique_ptr<JavaInfo>();
+    return std::unique_ptr<JavaInfo>(
+        new JavaInfo{
+            sVendor, sLocation, sVersion, nFeatures, nRequirements,
+            arVendorData});
 }
 
 
@@ -1050,7 +998,7 @@ void MergedSettings::merge(const NodeJava & share, const NodeJava & user)
 }
 
 
-JavaInfo * MergedSettings::createJavaInfo() const
+std::unique_ptr<JavaInfo> MergedSettings::createJavaInfo() const
 {
     return m_javaInfo.makeJavaInfo();
 }
@@ -1060,26 +1008,13 @@ bool MergedSettings::getJavaInfoAttrAutoSelect() const
     return m_javaInfo.bAutoSelect;
 }
 #endif
-void MergedSettings::getVmParametersArray(
-    rtl_uString *** parParams, sal_Int32 * size) const
+void MergedSettings::getVmParametersArray(std::vector<OUString> * parParams)
+    const
 {
+    assert(parParams != nullptr);
     osl::MutexGuard guard(FwkMutex::get());
-    OSL_ASSERT(parParams != nullptr && size != nullptr);
 
-    *parParams = static_cast<rtl_uString **>(
-        rtl_allocateMemory(sizeof(rtl_uString*) * m_vmParams.size()));
-    if (*parParams == nullptr)
-        return;
-
-    int j=0;
-    typedef std::vector<OUString>::const_iterator it;
-    for (it i = m_vmParams.begin(); i != m_vmParams.end();
-         ++i, ++j)
-    {
-        (*parParams)[j] = i->pData;
-        rtl_uString_acquire(i->pData);
-    }
-    *size = m_vmParams.size();
+    *parParams = m_vmParams;
 }
 
 }

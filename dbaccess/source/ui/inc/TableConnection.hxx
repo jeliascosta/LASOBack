@@ -26,7 +26,7 @@
 #include "TableConnectionData.hxx"
 
 class Point;
-class Rectangle;
+namespace tools { class Rectangle; }
 
 namespace dbaui
 {
@@ -37,7 +37,7 @@ namespace dbaui
 
     class OTableConnection : public vcl::Window
     {
-        ::std::vector<OConnectionLine*> m_vConnLine;
+        std::vector<OConnectionLine*> m_vConnLine;
         TTableConnectionData::value_type
                                         m_pData;
         VclPtr<OJoinTableView>          m_pParent;
@@ -47,9 +47,6 @@ namespace dbaui
         void Init();
         /** loops through the vector and deletes all lines */
         void clearLineData();
-
-    protected:
-        static OConnectionLine* CreateConnLine( const OConnectionLine& rConnLine );
 
     public:
         OTableConnection( OJoinTableView* pContainer, const TTableConnectionData::value_type& pTabConnData );
@@ -63,7 +60,7 @@ namespace dbaui
                        responsible to check and save the data for deleting it
                        eventually.
          */
-        virtual ~OTableConnection();
+        virtual ~OTableConnection() override;
         virtual void dispose() override;
 
         OTableConnection& operator=( const OTableConnection& rConn );
@@ -89,12 +86,12 @@ namespace dbaui
             return (_pTable == GetSourceWin() || _pTable == GetDestWin());
         }
 
-        Rectangle   GetBoundingRect() const;
+        tools::Rectangle   GetBoundingRect() const;
 
         const TTableConnectionData::value_type& GetData() const { return m_pData; }
-        const ::std::vector<OConnectionLine*>&  GetConnLineList() const { return m_vConnLine; }
-        inline OJoinTableView*                  GetParent() const { return m_pParent; }
-        virtual void Draw(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
+        const std::vector<OConnectionLine*>&  GetConnLineList() const { return m_vConnLine; }
+        OJoinTableView*                  GetParent() const { return m_pParent; }
+        virtual void Draw(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
         using Window::Draw;
         virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessible() override;
     };

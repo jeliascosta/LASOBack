@@ -21,6 +21,10 @@
 #ifndef INCLUDED_UCB_SOURCE_UCP_WEBDAV_WEBDAVPROVIDER_HXX
 #define INCLUDED_UCB_SOURCE_UCP_WEBDAV_WEBDAVPROVIDER_HXX
 
+#include <sal/config.h>
+
+#include <memory>
+
 #include <rtl/ref.hxx>
 #include <com/sun/star/beans/Property.hpp>
 #include "DAVSessionFactory.hxx"
@@ -62,33 +66,27 @@ namespace http_dav_ucp {
 class ContentProvider : public ::ucbhelper::ContentProviderImplHelper
 {
     rtl::Reference< DAVSessionFactory > m_xDAVSessionFactory;
-    PropertyMap * m_pProps;
+    std::unique_ptr<PropertyMap> m_pProps;
 
 public:
     explicit ContentProvider( const css::uno::Reference< css::uno::XComponentContext >& rContext );
-    virtual ~ContentProvider();
+    virtual ~ContentProvider() override;
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
         throw() override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     static OUString getImplementationName_Static();
     static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
@@ -99,9 +97,7 @@ public:
 
     // XContentProvider
     virtual css::uno::Reference< css::ucb::XContent > SAL_CALL
-    queryContent( const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier )
-        throw( css::ucb::IllegalIdentifierException,
-               css::uno::RuntimeException ) override;
+    queryContent( const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier ) override;
 
 
     // Non-interface methods.

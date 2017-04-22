@@ -50,30 +50,29 @@ public:
         {}
 
     // XInterface
-    virtual Any SAL_CALL queryInterface( const Type & rType ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual Any SAL_CALL queryInterface( const Type & rType ) override;
     virtual void SAL_CALL acquire() throw () override;
     virtual void SAL_CALL release() throw () override;
 
     // XTypeProvider
-    virtual Sequence< Type > SAL_CALL getTypes() throw (css::uno::RuntimeException, std::exception) override;
-    virtual Sequence< sal_Int8 > SAL_CALL getImplementationId() throw (css::uno::RuntimeException, std::exception) override;
+    virtual Sequence< Type > SAL_CALL getTypes() override;
+    virtual Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
 
     // XIdlMember
-    virtual Reference< XIdlClass > SAL_CALL getDeclaringClass() throw(css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual Reference< XIdlClass > SAL_CALL getDeclaringClass() override;
+    virtual OUString SAL_CALL getName() override;
     // XIdlField
-    virtual Reference< XIdlClass > SAL_CALL getType() throw(css::uno::RuntimeException, std::exception) override;
-    virtual FieldAccessMode SAL_CALL getAccessMode() throw(css::uno::RuntimeException, std::exception) override;
-    virtual Any SAL_CALL get( const Any & rObj ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL set( const Any & rObj, const Any & rValue ) throw(css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception) override;
+    virtual Reference< XIdlClass > SAL_CALL getType() override;
+    virtual FieldAccessMode SAL_CALL getAccessMode() override;
+    virtual Any SAL_CALL get( const Any & rObj ) override;
+    virtual void SAL_CALL set( const Any & rObj, const Any & rValue ) override;
     // XIdlField2: getType, getAccessMode and get are equal to XIdlField
-    virtual void SAL_CALL set( Any & rObj, const Any & rValue ) throw(css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL set( Any & rObj, const Any & rValue ) override;
 };
 
 // XInterface
 
 Any IdlCompFieldImpl::queryInterface( const Type & rType )
-    throw(css::uno::RuntimeException, std::exception)
 {
     Any aRet( ::cppu::queryInterface( rType,
                                       static_cast< XIdlField * >( this ),
@@ -94,7 +93,6 @@ void IdlCompFieldImpl::release() throw()
 // XTypeProvider
 
 Sequence< Type > IdlCompFieldImpl::getTypes()
-    throw (css::uno::RuntimeException, std::exception)
 {
     static ::cppu::OTypeCollection * s_pTypes = nullptr;
     if (! s_pTypes)
@@ -113,7 +111,6 @@ Sequence< Type > IdlCompFieldImpl::getTypes()
 }
 
 Sequence< sal_Int8 > IdlCompFieldImpl::getImplementationId()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -121,7 +118,6 @@ Sequence< sal_Int8 > IdlCompFieldImpl::getImplementationId()
 // XIdlMember
 
 Reference< XIdlClass > IdlCompFieldImpl::getDeclaringClass()
-    throw(css::uno::RuntimeException, std::exception)
 {
     if (! _xDeclClass.is())
     {
@@ -149,7 +145,6 @@ Reference< XIdlClass > IdlCompFieldImpl::getDeclaringClass()
 }
 
 OUString IdlCompFieldImpl::getName()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return IdlMemberImpl::getName();
 }
@@ -157,19 +152,16 @@ OUString IdlCompFieldImpl::getName()
 // XIdlField
 
 Reference< XIdlClass > IdlCompFieldImpl::getType()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return getReflection()->forType( getTypeDescr() );
 }
 
 FieldAccessMode IdlCompFieldImpl::getAccessMode()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return FieldAccessMode_READWRITE;
 }
 
 Any IdlCompFieldImpl::get( const Any & rObj )
-    throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     if (rObj.getValueTypeClass() == css::uno::TypeClass_STRUCT ||
         rObj.getValueTypeClass() == css::uno::TypeClass_EXCEPTION)
@@ -197,12 +189,11 @@ Any IdlCompFieldImpl::get( const Any & rObj )
         TYPELIB_DANGER_RELEASE( pObjTD );
     }
     throw IllegalArgumentException(
-        "illegal object given!",
+        "expected struct or exception, got " + rObj.getValueType().getTypeName(),
         static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 0 );
 }
 
 void IdlCompFieldImpl::set( const Any & rObj, const Any & rValue )
-    throw(css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception)
 {
     if (rObj.getValueTypeClass() == css::uno::TypeClass_STRUCT ||
         rObj.getValueTypeClass() == css::uno::TypeClass_EXCEPTION)
@@ -226,20 +217,19 @@ void IdlCompFieldImpl::set( const Any & rObj, const Any & rValue )
             else
             {
                 throw IllegalArgumentException(
-                    "illegal value given!",
+                    "cannot assign value to destination",
                     static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 1 );
             }
         }
         TYPELIB_DANGER_RELEASE( pObjTD );
     }
     throw IllegalArgumentException(
-        "illegal object given!",
+        "expected struct or exception, got " + rObj.getValueType().getTypeName(),
         static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 0 );
 }
 
 
 void IdlCompFieldImpl::set( Any & rObj, const Any & rValue )
-    throw(css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception)
 {
     if (rObj.getValueTypeClass() == css::uno::TypeClass_STRUCT ||
         rObj.getValueTypeClass() == css::uno::TypeClass_EXCEPTION)
@@ -263,26 +253,24 @@ void IdlCompFieldImpl::set( Any & rObj, const Any & rValue )
             else
             {
                 throw IllegalArgumentException(
-                    "illegal value given!",
+                    "cannot assign to destination",
                     static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 1 );
             }
         }
         TYPELIB_DANGER_RELEASE( pObjTD );
     }
     throw IllegalArgumentException(
-        "illegal object given!",
+        "expected struct or exception, got " + rObj.getValueType().getTypeName(),
         static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 0 );
 }
 
 
 CompoundIdlClassImpl::~CompoundIdlClassImpl()
 {
-    delete _pFields;
 }
 
 
 sal_Bool CompoundIdlClassImpl::isAssignableFrom( const Reference< XIdlClass > & xType )
-    throw(css::uno::RuntimeException, std::exception)
 {
     if (xType.is())
     {
@@ -306,7 +294,6 @@ sal_Bool CompoundIdlClassImpl::isAssignableFrom( const Reference< XIdlClass > & 
 }
 
 Sequence< Reference< XIdlClass > > CompoundIdlClassImpl::getSuperclasses()
-    throw(css::uno::RuntimeException, std::exception)
 {
     if (! _xSuperClass.is())
     {
@@ -325,7 +312,6 @@ Sequence< Reference< XIdlClass > > CompoundIdlClassImpl::getSuperclasses()
 }
 
 Reference< XIdlField > CompoundIdlClassImpl::getField( const OUString & rName )
-    throw(css::uno::RuntimeException, std::exception)
 {
     if (! _pFields)
         getFields(); // init fields
@@ -338,7 +324,6 @@ Reference< XIdlField > CompoundIdlClassImpl::getField( const OUString & rName )
 }
 
 Sequence< Reference< XIdlField > > CompoundIdlClassImpl::getFields()
-    throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( getMutexAccess() );
     if (! _pFields)
@@ -374,7 +359,7 @@ Sequence< Reference< XIdlField > > CompoundIdlClassImpl::getFields()
             }
         }
 
-        _pFields = pFields;
+        _pFields.reset( pFields );
     }
     return *_pFields;
 }

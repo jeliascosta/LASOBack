@@ -28,8 +28,8 @@
 class LanguageTag;
 
 struct ScriptTypeList {
-    sal_Int16 from;
-    sal_Int16 to;
+    css::i18n::UnicodeScript from;
+    css::i18n::UnicodeScript to;
     sal_Int16 value;
 };
 
@@ -38,7 +38,7 @@ class I18NUTIL_DLLPUBLIC unicode
 public:
 
     static sal_Int16 SAL_CALL getUnicodeType( const sal_Unicode ch );
-    static sal_Int16 SAL_CALL getUnicodeScriptType( const sal_Unicode ch, const ScriptTypeList *typeList = nullptr, sal_Int16 unknownType = 0 );
+    static sal_Int16 SAL_CALL getUnicodeScriptType( const sal_Unicode ch, const ScriptTypeList *typeList, sal_Int16 unknownType = 0 );
     static sal_Unicode SAL_CALL getUnicodeScriptStart(css::i18n::UnicodeScript type);
     static sal_Unicode SAL_CALL getUnicodeScriptEnd(css::i18n::UnicodeScript type);
     static sal_uInt8 SAL_CALL getUnicodeDirection( const sal_Unicode ch );
@@ -72,7 +72,6 @@ class I18NUTIL_DLLPUBLIC ToggleUnicodeCodepoint
 {
 private:
     OUStringBuffer maInput;
-    OUStringBuffer maOutput;
     OUStringBuffer maUtf16;
     OUStringBuffer maCombining;
     bool mbAllowMoreChars = true;
@@ -80,8 +79,6 @@ private:
     bool mbIsHexString = false;
 
 public:
-    ToggleUnicodeCodepoint();
-
     /**
     Build an input string of valid UTF16 units to toggle.
         -do not call the other functions until the input process is complete

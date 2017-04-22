@@ -55,12 +55,9 @@ namespace slideshow
                 for( const auto& pActivity : maCurrentActivitiesReinsert )
                     pActivity->dispose();
             }
-            catch (uno::Exception &)
+            catch (const uno::Exception&)
             {
-                OSL_FAIL( OUStringToOString(
-                                comphelper::anyToString(
-                                    cppu::getCaughtException() ),
-                                RTL_TEXTENCODING_UTF8 ).getStr() );
+                SAL_WARN( "slideshow", "" << comphelper::anyToString(cppu::getCaughtException() ) );
             }
         }
 
@@ -141,7 +138,7 @@ namespace slideshow
                     // since this will also capture segmentation
                     // violations and the like. In such a case, we
                     // still better let our clients now...
-                    OSL_TRACE( "::presentation::internal::ActivitiesQueue: Activity threw a SlideShowException, removing from ring" );
+                    SAL_WARN("slideshow", "::presentation::internal::ActivitiesQueue: Activity threw a SlideShowException, removing from ring" );
                 }
 
                 if( bReinsert )

@@ -20,6 +20,7 @@
 #include "vbahelper/vbaapplicationbase.hxx"
 #include <sal/macros.h>
 
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XMultiComponentFactory.hpp>
@@ -34,7 +35,9 @@
 #include <com/sun/star/awt/XWindow2.hpp>
 
 #include <filter/msfilter/msvbahelper.hxx>
+#include <rtl/ref.hxx>
 #include <tools/datetime.hxx>
+#include <vcl/timer.hxx>
 
 #include <basic/sbx.hxx>
 #include <basic/sbstar.hxx>
@@ -66,7 +69,7 @@ public:
     VbaTimer()
     {}
 
-    virtual ~VbaTimer()
+    ~VbaTimer()
     {
         m_aTimer.Stop();
     }
@@ -79,7 +82,7 @@ public:
         Date aDateNow( Date::SYSTEM );
         tools::Time aTimeNow( tools::Time::SYSTEM );
          Date aRefDate( 1,1,1900 );
-        long nDiffDays = (long)(aDateNow - aRefDate);
+        long nDiffDays = aDateNow - aRefDate;
         nDiffDays += 2; // Change VisualBasic: 1.Jan.1900 == 2
 
         long nDiffSeconds = aTimeNow.GetHour() * 3600 + aTimeNow.GetMin() * 60 + aTimeNow.GetSec();
@@ -104,15 +107,15 @@ public:
 
         m_xBase = xBase;
         m_aTimerInfo = VbaTimerInfo( aFunction, ::std::pair< double, double >( nFrom, nTo ) );
-        m_aTimer.SetTimeoutHdl( LINK( this, VbaTimer, MacroCallHdl ) );
+        m_aTimer.SetInvokeHandler( LINK( this, VbaTimer, MacroCallHdl ) );
         m_aTimer.SetTimeout( GetTimerMiliseconds( GetNow(), nFrom ) );
         m_aTimer.Start();
     }
 
-    DECL_LINK_TYPED( MacroCallHdl, Timer*, void );
+    DECL_LINK( MacroCallHdl, Timer*, void );
 };
 
-IMPL_LINK_NOARG_TYPED(VbaTimer, MacroCallHdl, Timer *, void)
+IMPL_LINK_NOARG(VbaTimer, MacroCallHdl, Timer *, void)
 {
     if ( m_aTimerInfo.second.second == 0 || GetNow() < m_aTimerInfo.second.second )
     {
@@ -148,14 +151,14 @@ struct VbaTimerInfoHash
 typedef std::unordered_map< VbaTimerInfo, VbaTimer*, VbaTimerInfoHash > VbaTimerHashMap;
 
 // ====VbaApplicationBase_Impl==================================
-struct VbaApplicationBase_Impl
+struct VbaApplicationBase_Impl final
 {
     VbaTimerHashMap m_aTimerHash;
     bool mbVisible;
 
-    inline VbaApplicationBase_Impl() : mbVisible( true ) {}
+    VbaApplicationBase_Impl() : mbVisible( true ) {}
 
-    virtual ~VbaApplicationBase_Impl()
+    ~VbaApplicationBase_Impl()
     {
         // remove the remaining timers
         for ( VbaTimerHashMap::iterator aIter = m_aTimerHash.begin();
@@ -180,14 +183,14 @@ VbaApplicationBase::~VbaApplicationBase()
 }
 
 sal_Bool SAL_CALL
-VbaApplicationBase::getScreenUpdating() throw (uno::RuntimeException, std::exception)
+VbaApplicationBase::getScreenUpdating()
 {
     uno::Reference< frame::XModel > xModel( getCurrentDocument(), uno::UNO_QUERY_THROW );
     return !xModel->hasControllersLocked();
 }
 
 void SAL_CALL
-VbaApplicationBase::setScreenUpdating(sal_Bool bUpdate) throw (uno::RuntimeException, std::exception)
+VbaApplicationBase::setScreenUpdating(sal_Bool bUpdate)
 {
     uno::Reference< frame::XModel > xModel( getCurrentDocument(), uno::UNO_QUERY_THROW );
     // #163808# use helper from module "basic" to lock all documents of this application
@@ -195,7 +198,7 @@ VbaApplicationBase::setScreenUpdating(sal_Bool bUpdate) throw (uno::RuntimeExcep
 }
 
 sal_Bool SAL_CALL
-VbaApplicationBase::getDisplayStatusBar() throw (uno::RuntimeException, std::exception)
+VbaApplicationBase::getDisplayStatusBar()
 {
     uno::Reference< frame::XModel > xModel( getCurrentDocument(), uno::UNO_QUERY_THROW );
     uno::Reference< frame::XFrame > xFrame( xModel->getCurrentController()->getFrame(), uno::UNO_QUERY_THROW );
@@ -212,7 +215,7 @@ VbaApplicationBase::getDisplayStatusBar() throw (uno::RuntimeException, std::exc
 }
 
 void SAL_CALL
-VbaApplicationBase::setDisplayStatusBar(sal_Bool bDisplayStatusBar) throw (uno::RuntimeException, std::exception)
+VbaApplicationBase::setDisplayStatusBar(sal_Bool bDisplayStatusBar)
 {
     uno::Reference< frame::XModel > xModel( getCurrentDocument(), uno::UNO_QUERY_THROW );
     uno::Reference< frame::XFrame > xFrame( xModel->getCurrentController()->getFrame(), uno::UNO_QUERY_THROW );
@@ -237,7 +240,6 @@ VbaApplicationBase::setDisplayStatusBar(sal_Bool bDisplayStatusBar) throw (uno::
 }
 
 sal_Bool SAL_CALL VbaApplicationBase::getInteractive()
-    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xModel( getCurrentDocument(), uno::UNO_QUERY_THROW );
     uno::Reference< frame::XFrame > xFrame( xModel->getCurrentController()->getFrame(), uno::UNO_QUERY_THROW );
@@ -247,26 +249,25 @@ sal_Bool SAL_CALL VbaApplicationBase::getInteractive()
 }
 
 void SAL_CALL VbaApplicationBase::setInteractive( sal_Bool bInteractive )
-    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xModel( getCurrentDocument(), uno::UNO_QUERY_THROW );
     // #163808# use helper from module "basic" to enable/disable all container windows of all documents of this application
     ::basic::vba::enableContainerWindowsOfAllDocuments( xModel, bInteractive );
 }
 
-sal_Bool SAL_CALL VbaApplicationBase::getVisible() throw (uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL VbaApplicationBase::getVisible()
 {
     return m_pImpl->mbVisible;    // dummy implementation
 }
 
-void SAL_CALL VbaApplicationBase::setVisible( sal_Bool bVisible ) throw (uno::RuntimeException, std::exception)
+void SAL_CALL VbaApplicationBase::setVisible( sal_Bool bVisible )
 {
     m_pImpl->mbVisible = bVisible;  // dummy implementation
 }
 
 
 void SAL_CALL
-VbaApplicationBase::OnKey( const OUString& Key, const uno::Any& Procedure ) throw (uno::RuntimeException, std::exception)
+VbaApplicationBase::OnKey( const OUString& Key, const uno::Any& Procedure )
 {
     // parse the Key & modifiers
     awt::KeyEvent aKeyEvent = parseKeyEvent( Key );
@@ -288,7 +289,7 @@ VbaApplicationBase::OnKey( const OUString& Key, const uno::Any& Procedure ) thro
 }
 
 uno::Any SAL_CALL
-VbaApplicationBase::CommandBars( const uno::Any& aIndex ) throw (uno::RuntimeException, std::exception)
+VbaApplicationBase::CommandBars( const uno::Any& aIndex )
 {
     uno::Reference< XCommandBars > xCommandBars( new ScVbaCommandBars( this, mxContext, uno::Reference< container::XIndexAccess >(), getCurrentDocument() ) );
     if( aIndex.hasValue() )
@@ -297,12 +298,12 @@ VbaApplicationBase::CommandBars( const uno::Any& aIndex ) throw (uno::RuntimeExc
 }
 
 OUString SAL_CALL
-VbaApplicationBase::getVersion() throw (uno::RuntimeException, std::exception)
+VbaApplicationBase::getVersion()
 {
     return OUString(OFFICEVERSION);
 }
 
-uno::Any SAL_CALL VbaApplicationBase::Run( const OUString& MacroName, const uno::Any& varg1, const uno::Any& varg2, const uno::Any& varg3, const uno::Any& varg4, const uno::Any& varg5, const uno::Any& varg6, const uno::Any& varg7, const uno::Any& varg8, const uno::Any& varg9, const uno::Any& varg10, const uno::Any& varg11, const uno::Any& varg12, const uno::Any& varg13, const uno::Any& varg14, const uno::Any& varg15, const uno::Any& varg16, const uno::Any& varg17, const uno::Any& varg18, const uno::Any& varg19, const uno::Any& varg20, const uno::Any& varg21, const uno::Any& varg22, const uno::Any& varg23, const uno::Any& varg24, const uno::Any& varg25, const uno::Any& varg26, const uno::Any& varg27, const uno::Any& varg28, const uno::Any& varg29, const uno::Any& varg30 ) throw (uno::RuntimeException, std::exception)
+uno::Any SAL_CALL VbaApplicationBase::Run( const OUString& MacroName, const uno::Any& varg1, const uno::Any& varg2, const uno::Any& varg3, const uno::Any& varg4, const uno::Any& varg5, const uno::Any& varg6, const uno::Any& varg7, const uno::Any& varg8, const uno::Any& varg9, const uno::Any& varg10, const uno::Any& varg11, const uno::Any& varg12, const uno::Any& varg13, const uno::Any& varg14, const uno::Any& varg15, const uno::Any& varg16, const uno::Any& varg17, const uno::Any& varg18, const uno::Any& varg19, const uno::Any& varg20, const uno::Any& varg21, const uno::Any& varg22, const uno::Any& varg23, const uno::Any& varg24, const uno::Any& varg25, const uno::Any& varg26, const uno::Any& varg27, const uno::Any& varg28, const uno::Any& varg29, const uno::Any& varg30 )
 {
     OUString aMacroName = MacroName.trim();
     if( aMacroName.startsWith("!") )
@@ -353,7 +354,6 @@ uno::Any SAL_CALL VbaApplicationBase::Run( const OUString& MacroName, const uno:
 }
 
 void SAL_CALL VbaApplicationBase::OnTime( const uno::Any& aEarliestTime, const OUString& aFunction, const uno::Any& aLatestTime, const uno::Any& aSchedule )
-    throw ( uno::RuntimeException, std::exception )
 {
     if ( aFunction.isEmpty() )
         throw uno::RuntimeException( "Unexpected function name!" );
@@ -385,14 +385,14 @@ void SAL_CALL VbaApplicationBase::OnTime( const uno::Any& aEarliestTime, const O
     }
 }
 
-float SAL_CALL VbaApplicationBase::CentimetersToPoints( float Centimeters ) throw (uno::RuntimeException, std::exception)
+float SAL_CALL VbaApplicationBase::CentimetersToPoints( float Centimeters )
 {
     // i cm = 28.35 points
     static const float rate = 28.35f;
     return ( Centimeters * rate );
 }
 
-uno::Any SAL_CALL VbaApplicationBase::getVBE() throw (uno::RuntimeException, std::exception)
+uno::Any SAL_CALL VbaApplicationBase::getVBE()
 {
     try // return empty object on error
     {
@@ -429,13 +429,12 @@ VbaApplicationBase::getServiceNames()
 }
 
 void SAL_CALL VbaApplicationBase::Undo()
-    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xModel( getCurrentDocument(), uno::UNO_QUERY_THROW );
     dispatchRequests( xModel, ".uno:Undo" );
 }
 
-void VbaApplicationBase::Quit() throw (uno::RuntimeException, std::exception)
+void VbaApplicationBase::Quit()
 {
     // need to stop basic
     SbMethod* pMeth = StarBASIC::GetActiveMethod();

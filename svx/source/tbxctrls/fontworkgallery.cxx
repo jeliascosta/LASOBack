@@ -76,7 +76,7 @@ FontWorkGalleryDialog::FontWorkGalleryDialog( SdrView* pSdrView, vcl::Window* pP
 {
     get(mpOKButton, "ok");
     get(mpCtlFavorites, "ctlFavorites");
-    Size aSize(LogicToPixel(Size(200, 200), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(200, 200), MapUnit::MapAppFont));
     mpCtlFavorites->set_width_request(aSize.Width());
     mpCtlFavorites->set_height_request(aSize.Height());
 
@@ -106,7 +106,7 @@ void FontWorkGalleryDialog::dispose()
 void FontWorkGalleryDialog::initFavorites(sal_uInt16 nThemeId)
 {
     // Ueber die Gallery werden die Favoriten eingelesen
-    sal_uIntPtr nFavCount = GalleryExplorer::GetSdrObjCount( nThemeId );
+    sal_uInt32 nFavCount = GalleryExplorer::GetSdrObjCount( nThemeId );
 
     // Gallery thema locken
     GalleryExplorer::BeginLocking(nThemeId);
@@ -167,12 +167,11 @@ void FontWorkGalleryDialog::fillFavorites(sal_uInt16 nThemeId)
 
     mpCtlFavorites->Clear();
 
-    sal_uInt32 nFavorite;
-    for( nFavorite = 1; nFavorite <= nFavCount; nFavorite++ )
+    for( std::vector<Bitmap *>::size_type nFavorite = 1; nFavorite <= nFavCount; nFavorite++ )
     {
         OUString aStr(SVX_RESSTR(RID_SVXFLOAT3D_FAVORITE));
         aStr += " ";
-        aStr += OUString::number((sal_Int32)nFavorite);
+        aStr += OUString::number(nFavorite);
         Image aThumbImage( maFavoritesHorizontal[nFavorite-1] );
         mpCtlFavorites->InsertItem( (sal_uInt16)nFavorite, aThumbImage, aStr );
     }
@@ -204,12 +203,12 @@ void FontWorkGalleryDialog::insertSelectedFontwork()
                 OutputDevice* pOutDev = mpSdrView->GetFirstOutputDevice();
                 if( pOutDev )
                 {
-                    Rectangle aObjRect( pNewObject->GetLogicRect() );
-                    Rectangle aVisArea = pOutDev->PixelToLogic(Rectangle(Point(0,0), pOutDev->GetOutputSizePixel()));
+                    tools::Rectangle aObjRect( pNewObject->GetLogicRect() );
+                    tools::Rectangle aVisArea = pOutDev->PixelToLogic(tools::Rectangle(Point(0,0), pOutDev->GetOutputSizePixel()));
                     Point aPagePos = aVisArea.Center();
                     aPagePos.X() -= aObjRect.GetWidth() / 2;
                     aPagePos.Y() -= aObjRect.GetHeight() / 2;
-                    Rectangle aNewObjectRectangle(aPagePos, aObjRect.GetSize());
+                    tools::Rectangle aNewObjectRectangle(aPagePos, aObjRect.GetSize());
                     SdrPageView* pPV = mpSdrView->GetSdrPageView();
 
                     pNewObject->SetLogicRect(aNewObjectRectangle);
@@ -229,14 +228,14 @@ void FontWorkGalleryDialog::insertSelectedFontwork()
 }
 
 
-IMPL_LINK_NOARG_TYPED(FontWorkGalleryDialog, ClickOKHdl, Button*, void)
+IMPL_LINK_NOARG(FontWorkGalleryDialog, ClickOKHdl, Button*, void)
 {
     insertSelectedFontwork();
     EndDialog( RET_OK );
 }
 
 
-IMPL_LINK_NOARG_TYPED(FontWorkGalleryDialog, DoubleClickFavoriteHdl, ValueSet*, void)
+IMPL_LINK_NOARG(FontWorkGalleryDialog, DoubleClickFavoriteHdl, ValueSet*, void)
 {
     insertSelectedFontwork();
     EndDialog( RET_OK );
@@ -246,9 +245,9 @@ IMPL_LINK_NOARG_TYPED(FontWorkGalleryDialog, DoubleClickFavoriteHdl, ValueSet*, 
 class FontworkAlignmentWindow : public ToolbarMenu
 {
 public:
-    FontworkAlignmentWindow( svt::ToolboxController& rController, const Reference< css::frame::XFrame >& rFrame, vcl::Window* pParentWindow );
+    FontworkAlignmentWindow( svt::ToolboxController& rController, vcl::Window* pParentWindow );
 
-    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( RuntimeException ) override;
+    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) override;
 
 private:
     svt::ToolboxController& mrController;
@@ -261,20 +260,19 @@ private:
 
     const OUString msFontworkAlignment;
 
-    DECL_LINK_TYPED( SelectHdl, ToolbarMenu*, void );
+    DECL_LINK( SelectHdl, ToolbarMenu*, void );
 
     void    implSetAlignment( int nAlignmentMode, bool bEnabled );
 };
 
-FontworkAlignmentWindow::FontworkAlignmentWindow(svt::ToolboxController& rController,
-    const Reference< css::frame::XFrame >& rFrame, vcl::Window* pParentWindow)
-    : ToolbarMenu(rFrame, pParentWindow, WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+FontworkAlignmentWindow::FontworkAlignmentWindow(svt::ToolboxController& rController, vcl::Window* pParentWindow)
+    : ToolbarMenu(rController.getFrameInterface(), pParentWindow, WB_STDPOPUP)
     , mrController(rController)
-    , maImgAlgin1(SVX_RES(RID_SVXIMG_FONTWORK_ALIGN_LEFT))
-    , maImgAlgin2(SVX_RES(RID_SVXIMG_FONTWORK_ALIGN_CENTER))
-    , maImgAlgin3(SVX_RES(RID_SVXIMG_FONTWORK_ALIGN_RIGHT))
-    , maImgAlgin4(SVX_RES(RID_SVXIMG_FONTWORK_ALIGN_WORD))
-    , maImgAlgin5(SVX_RES(RID_SVXIMG_FONTWORK_ALIGN_STRETCH))
+    , maImgAlgin1(BitmapEx(SVX_RES(RID_SVXBMP_FONTWORK_ALIGN_LEFT)))
+    , maImgAlgin2(BitmapEx(SVX_RES(RID_SVXBMP_FONTWORK_ALIGN_CENTER)))
+    , maImgAlgin3(BitmapEx(SVX_RES(RID_SVXBMP_FONTWORK_ALIGN_RIGHT)))
+    , maImgAlgin4(BitmapEx(SVX_RES(RID_SVXBMP_FONTWORK_ALIGN_WORD)))
+    , maImgAlgin5(BitmapEx(SVX_RES(RID_SVXBMP_FONTWORK_ALIGN_STRETCH)))
     , msFontworkAlignment(".uno:FontworkAlignment")
 {
     SetSelectHdl( LINK( this, FontworkAlignmentWindow, SelectHdl ) );
@@ -300,7 +298,7 @@ void FontworkAlignmentWindow::implSetAlignment( int nSurface, bool bEnabled )
     }
 }
 
-void FontworkAlignmentWindow::statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( RuntimeException )
+void FontworkAlignmentWindow::statusChanged( const css::frame::FeatureStateEvent& Event )
 {
     if( Event.FeatureURL.Main.equals( msFontworkAlignment ) )
     {
@@ -317,7 +315,7 @@ void FontworkAlignmentWindow::statusChanged( const css::frame::FeatureStateEvent
     }
 }
 
-IMPL_LINK_NOARG_TYPED(FontworkAlignmentWindow, SelectHdl, ToolbarMenu*, void)
+IMPL_LINK_NOARG(FontworkAlignmentWindow, SelectHdl, ToolbarMenu*, void)
 {
     if ( IsInPopupMode() )
         EndPopupMode();
@@ -327,7 +325,7 @@ IMPL_LINK_NOARG_TYPED(FontworkAlignmentWindow, SelectHdl, ToolbarMenu*, void)
     {
         Sequence< PropertyValue > aArgs( 1 );
         aArgs[0].Name = msFontworkAlignment.copy(5);
-        aArgs[0].Value <<= (sal_Int32)nAlignment;
+        aArgs[0].Value <<= nAlignment;
 
         mrController.dispatchCommand( msFontworkAlignment, aArgs );
 
@@ -343,31 +341,29 @@ public:
     virtual VclPtr<vcl::Window> createPopupWindow( vcl::Window* pParent ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-        throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     using  svt::PopupWindowController::createPopupWindow;
 };
 
 
 FontworkAlignmentControl::FontworkAlignmentControl( const Reference< XComponentContext >& rxContext )
-: svt::PopupWindowController( rxContext, Reference< css::frame::XFrame >(), OUString( ".uno:FontworkAlignment" ) )
+: svt::PopupWindowController( rxContext, Reference< css::frame::XFrame >(), ".uno:FontworkAlignment" )
 {
 }
 
 
 VclPtr<vcl::Window> FontworkAlignmentControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<FontworkAlignmentWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<FontworkAlignmentWindow>::Create( *this, pParent );
 }
 
 // XInitialization
 void SAL_CALL FontworkAlignmentControl::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-    throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     svt::PopupWindowController::initialize( aArguments );
 
@@ -386,26 +382,26 @@ OUString SAL_CALL FontworkAlignmentControl_getImplementationName()
 }
 
 
-Sequence< OUString > SAL_CALL FontworkAlignmentControl_getSupportedServiceNames() throw( RuntimeException )
+Sequence< OUString > SAL_CALL FontworkAlignmentControl_getSupportedServiceNames()
 {
     Sequence<OUString> aSNS { "com.sun.star.frame.ToolbarController" };
     return aSNS;
 }
 
 
-Reference< XInterface > SAL_CALL SAL_CALL FontworkAlignmentControl_createInstance( const Reference< XMultiServiceFactory >& rSMgr ) throw( RuntimeException )
+Reference< XInterface > SAL_CALL SAL_CALL FontworkAlignmentControl_createInstance( const Reference< XMultiServiceFactory >& rSMgr )
 {
     return *new FontworkAlignmentControl( comphelper::getComponentContext(rSMgr) );
 }
 
 
-OUString SAL_CALL FontworkAlignmentControl::getImplementationName(  ) throw (RuntimeException, std::exception)
+OUString SAL_CALL FontworkAlignmentControl::getImplementationName(  )
 {
     return FontworkAlignmentControl_getImplementationName();
 }
 
 
-Sequence< OUString > SAL_CALL FontworkAlignmentControl::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL FontworkAlignmentControl::getSupportedServiceNames(  )
 {
     return FontworkAlignmentControl_getSupportedServiceNames();
 }
@@ -413,25 +409,24 @@ Sequence< OUString > SAL_CALL FontworkAlignmentControl::getSupportedServiceNames
 class FontworkCharacterSpacingWindow : public ToolbarMenu
 {
 public:
-    FontworkCharacterSpacingWindow( svt::ToolboxController& rController, const Reference< css::frame::XFrame >& rFrame, vcl::Window* pParentWindow );
+    FontworkCharacterSpacingWindow( svt::ToolboxController& rController, vcl::Window* pParentWindow );
 
-    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException ) override;
+    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) override;
 private:
     svt::ToolboxController& mrController;
 
     const OUString msFontworkCharacterSpacing;
     const OUString msFontworkKernCharacterPairs;
 
-    DECL_LINK_TYPED( SelectHdl, ToolbarMenu*, void );
+    DECL_LINK( SelectHdl, ToolbarMenu*, void );
 
     void    implSetCharacterSpacing( sal_Int32 nCharacterSpacing, bool bEnabled );
     void    implSetKernCharacterPairs( bool bKernOnOff, bool bEnabled );
 
 };
 
-FontworkCharacterSpacingWindow::FontworkCharacterSpacingWindow(svt::ToolboxController& rController,
-    const Reference< css::frame::XFrame >& rFrame, vcl::Window* pParentWindow)
-    : ToolbarMenu(rFrame, pParentWindow, WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+FontworkCharacterSpacingWindow::FontworkCharacterSpacingWindow(svt::ToolboxController& rController, vcl::Window* pParentWindow)
+    : ToolbarMenu(rController.getFrameInterface(), pParentWindow, WB_STDPOPUP)
     , mrController(rController)
     , msFontworkCharacterSpacing(".uno:FontworkCharacterSpacing")
     , msFontworkKernCharacterPairs(".uno:FontworkKernCharacterPairs")
@@ -485,7 +480,7 @@ void FontworkCharacterSpacingWindow::implSetKernCharacterPairs( bool, bool bEnab
 }
 
 
-void FontworkCharacterSpacingWindow::statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException )
+void FontworkCharacterSpacingWindow::statusChanged( const css::frame::FeatureStateEvent& Event )
 {
     if( Event.FeatureURL.Main.equals( msFontworkCharacterSpacing ) )
     {
@@ -516,7 +511,7 @@ void FontworkCharacterSpacingWindow::statusChanged( const css::frame::FeatureSta
 }
 
 
-IMPL_LINK_NOARG_TYPED(FontworkCharacterSpacingWindow, SelectHdl,ToolbarMenu*, void)
+IMPL_LINK_NOARG(FontworkCharacterSpacingWindow, SelectHdl,ToolbarMenu*, void)
 {
     if ( IsInPopupMode() )
         EndPopupMode();
@@ -536,7 +531,7 @@ IMPL_LINK_NOARG_TYPED(FontworkCharacterSpacingWindow, SelectHdl,ToolbarMenu*, vo
     {
         Sequence< PropertyValue > aArgs( 1 );
         aArgs[0].Name = msFontworkCharacterSpacing.copy(5);
-        aArgs[0].Value <<= (sal_Int32)nCharacterSpacing;
+        aArgs[0].Value <<= nCharacterSpacing;
 
         mrController.dispatchCommand( ".uno:FontworkCharacterSpacingDialog", aArgs );
     }
@@ -554,7 +549,7 @@ IMPL_LINK_NOARG_TYPED(FontworkCharacterSpacingWindow, SelectHdl,ToolbarMenu*, vo
     {
         Sequence< PropertyValue > aArgs( 1 );
         aArgs[0].Name = msFontworkCharacterSpacing.copy(5);
-        aArgs[0].Value <<=( sal_Int32)nCharacterSpacing;
+        aArgs[0].Value <<= nCharacterSpacing;
 
         mrController.dispatchCommand( msFontworkCharacterSpacing,  aArgs );
 
@@ -570,31 +565,29 @@ public:
     virtual VclPtr<vcl::Window> createPopupWindow( vcl::Window* pParent ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-        throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     using svt::PopupWindowController::createPopupWindow;
 };
 
 
 FontworkCharacterSpacingControl::FontworkCharacterSpacingControl( const Reference< XComponentContext >& rxContext )
-: svt::PopupWindowController( rxContext, Reference< css::frame::XFrame >(), OUString( ".uno:FontworkCharacterSpacingFloater" ) )
+: svt::PopupWindowController( rxContext, Reference< css::frame::XFrame >(), ".uno:FontworkCharacterSpacingFloater" )
 {
 }
 
 
 VclPtr<vcl::Window> FontworkCharacterSpacingControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<FontworkCharacterSpacingWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<FontworkCharacterSpacingWindow>::Create( *this, pParent );
 }
 
 // XInitialization
 void SAL_CALL FontworkCharacterSpacingControl::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-    throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     svt::PopupWindowController::initialize( aArguments );
 
@@ -613,26 +606,26 @@ OUString SAL_CALL FontworkCharacterSpacingControl_getImplementationName()
 }
 
 
-Sequence< OUString > SAL_CALL FontworkCharacterSpacingControl_getSupportedServiceNames() throw( RuntimeException )
+Sequence< OUString > SAL_CALL FontworkCharacterSpacingControl_getSupportedServiceNames()
 {
     Sequence<OUString> aSNS { "com.sun.star.frame.ToolbarController" };
     return aSNS;
 }
 
 
-Reference< XInterface > SAL_CALL SAL_CALL FontworkCharacterSpacingControl_createInstance( const Reference< XMultiServiceFactory >& rSMgr ) throw( RuntimeException )
+Reference< XInterface > SAL_CALL SAL_CALL FontworkCharacterSpacingControl_createInstance( const Reference< XMultiServiceFactory >& rSMgr )
 {
     return *new FontworkCharacterSpacingControl( comphelper::getComponentContext(rSMgr) );
 }
 
 
-OUString SAL_CALL FontworkCharacterSpacingControl::getImplementationName(  ) throw (RuntimeException, std::exception)
+OUString SAL_CALL FontworkCharacterSpacingControl::getImplementationName(  )
 {
     return FontworkCharacterSpacingControl_getImplementationName();
 }
 
 
-Sequence< OUString > SAL_CALL FontworkCharacterSpacingControl::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL FontworkCharacterSpacingControl::getSupportedServiceNames(  )
 {
     return FontworkCharacterSpacingControl_getSupportedServiceNames();
 }

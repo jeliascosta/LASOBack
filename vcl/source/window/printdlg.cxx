@@ -20,7 +20,6 @@
 #include "printdlg.hxx"
 #include "svdata.hxx"
 #include "svids.hrc"
-#include "jobset.h"
 
 #include <vcl/print.hxx>
 #include <vcl/dialog.hxx>
@@ -35,6 +34,8 @@
 #include <vcl/unohelp.hxx>
 #include <vcl/settings.hxx>
 #include <vcl/builderfactory.hxx>
+#include <vcl/lstbox.hxx>
+#include "jobset.h"
 
 #include "unotools/localedatawrapper.hxx"
 
@@ -164,7 +165,7 @@ void PrintDialog::PrintPreviewWindow::Resize()
 
 }
 
-void PrintDialog::PrintPreviewWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void PrintDialog::PrintPreviewWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     long nTextHeight = maHorzDim->GetTextHeight();
     Size aSize(GetSizePixel());
@@ -177,7 +178,7 @@ void PrintDialog::PrintPreviewWindow::Paint(vcl::RenderContext& rRenderContext, 
         rRenderContext.Push();
         Font aFont(rRenderContext.GetSettings().GetStyleSettings().GetLabelFont());
         SetZoomedPointFont(rRenderContext, aFont);
-        Rectangle aTextRect(aOffset + Point(2, 2), Size(maPreviewSize.Width() - 4, maPreviewSize.Height() - 4));
+        tools::Rectangle aTextRect(aOffset + Point(2, 2), Size(maPreviewSize.Width() - 4, maPreviewSize.Height() - 4));
         rRenderContext.DrawText(aTextRect, maReplacementString,
                                 DrawTextFlags::Center | DrawTextFlags::VCenter |
                                 DrawTextFlags::WordBreak | DrawTextFlags::MultiLine);
@@ -190,7 +191,7 @@ void PrintDialog::PrintPreviewWindow::Paint(vcl::RenderContext& rRenderContext, 
         rRenderContext.DrawBitmap(aOffset, aPreviewBitmap);
     }
 
-    Rectangle aFrameRect(aOffset + Point(-1, -1), Size(maPreviewSize.Width() + 2, maPreviewSize.Height() + 2));
+    tools::Rectangle aFrameRect(aOffset + Point(-1, -1), Size(maPreviewSize.Width() + 2, maPreviewSize.Height() + 2));
     DecorationView aDecorationView(&rRenderContext);
     aDecorationView.DrawFrame(aFrameRect, DrawFrameStyle::Group);
 }
@@ -233,18 +234,18 @@ void PrintDialog::PrintPreviewWindow::setPreview( const GDIMetaFile& i_rNewPrevi
 
     // use correct measurements
     const LocaleDataWrapper& rLocWrap( GetSettings().GetLocaleDataWrapper() );
-    MapUnit eUnit = MAP_MM;
+    MapUnit eUnit = MapUnit::MapMM;
     int nDigits = 0;
     if( rLocWrap.getMeasurementSystemEnum() == MEASURE_US )
     {
-        eUnit = MAP_100TH_INCH;
+        eUnit = MapUnit::Map100thInch;
         nDigits = 2;
     }
-    Size aLogicPaperSize( LogicToLogic( i_rOrigSize, MapMode( MAP_100TH_MM ), MapMode( eUnit ) ) );
+    Size aLogicPaperSize( LogicToLogic( i_rOrigSize, MapMode( MapUnit::Map100thMM ), MapMode( eUnit ) ) );
     OUString aNumText( rLocWrap.getNum( aLogicPaperSize.Width(), nDigits ) );
     aBuf.append( aNumText )
         .append( sal_Unicode( ' ' ) );
-    aBuf.appendAscii( eUnit == MAP_MM ? "mm" : "in" );
+    aBuf.appendAscii( eUnit == MapUnit::MapMM ? "mm" : "in" );
     if( !i_rPaperName.isEmpty() )
     {
         aBuf.append( " (" );
@@ -256,7 +257,7 @@ void PrintDialog::PrintPreviewWindow::setPreview( const GDIMetaFile& i_rNewPrevi
     aNumText = rLocWrap.getNum( aLogicPaperSize.Height(), nDigits );
     aBuf.append( aNumText )
         .append( sal_Unicode( ' ' ) );
-    aBuf.appendAscii( eUnit == MAP_MM ? "mm" : "in" );
+    aBuf.appendAscii( eUnit == MapUnit::MapMM ? "mm" : "in" );
     maVertDim->SetText( aBuf.makeStringAndClear() );
 
     Resize();
@@ -269,7 +270,7 @@ void PrintDialog::PrintPreviewWindow::preparePreviewBitmap()
     GDIMetaFile aMtf( maMtf );
 
     Size aVDevSize( maPageVDev->GetOutputSizePixel() );
-    const Size aLogicSize( maPageVDev->PixelToLogic( aVDevSize, MapMode( MAP_100TH_MM ) ) );
+    const Size aLogicSize( maPageVDev->PixelToLogic( aVDevSize, MapMode( MapUnit::Map100thMM ) ) );
     Size aOrigSize( maOrigSize );
     if( aOrigSize.Width() < 1 )
         aOrigSize.Width() = aLogicSize.Width();
@@ -279,7 +280,7 @@ void PrintDialog::PrintPreviewWindow::preparePreviewBitmap()
 
     maPageVDev->Erase();
     maPageVDev->Push();
-    maPageVDev->SetMapMode( MAP_100TH_MM );
+    maPageVDev->SetMapMode( MapUnit::Map100thMM );
     DrawModeFlags nOldDrawMode = maPageVDev->GetDrawMode();
     if( mbGreyscale )
         maPageVDev->SetDrawMode( maPageVDev->GetDrawMode() |
@@ -296,8 +297,8 @@ void PrintDialog::PrintPreviewWindow::preparePreviewBitmap()
 
     maPageVDev->Pop();
 
-    SetMapMode( MAP_PIXEL );
-    maPageVDev->SetMapMode( MAP_PIXEL );
+    SetMapMode( MapUnit::MapPixel );
+    maPageVDev->SetMapMode( MapUnit::MapPixel );
 
     maPreviewBitmap = Bitmap(maPageVDev->GetBitmap(Point(0, 0), aVDevSize));
 
@@ -306,14 +307,9 @@ void PrintDialog::PrintPreviewWindow::preparePreviewBitmap()
 
 PrintDialog::ShowNupOrderWindow::ShowNupOrderWindow( vcl::Window* i_pParent )
     : Window( i_pParent, WB_NOBORDER )
-    , mnOrderMode( 0 )
+    , mnOrderMode( NupOrderType::LRTB )
     , mnRows( 1 )
     , mnColumns( 1 )
-{
-    ImplInitSettings();
-}
-
-void PrintDialog::ShowNupOrderWindow::ImplInitSettings()
 {
     SetBackground( Wallpaper( GetSettings().GetStyleSettings().GetFieldColor() ) );
 }
@@ -323,11 +319,11 @@ Size PrintDialog::ShowNupOrderWindow::GetOptimalSize() const
     return Size(70, 70);
 }
 
-void PrintDialog::ShowNupOrderWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& i_rRect)
+void PrintDialog::ShowNupOrderWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& i_rRect)
 {
     Window::Paint(rRenderContext, i_rRect);
 
-    rRenderContext.SetMapMode(MAP_PIXEL);
+    rRenderContext.SetMapMode(MapUnit::MapPixel);
     rRenderContext.SetTextColor(rRenderContext.GetSettings().GetStyleSettings().GetFieldTextColor());
 
     int nPages = mnRows * mnColumns;
@@ -353,19 +349,19 @@ void PrintDialog::ShowNupOrderWindow::Paint(vcl::RenderContext& rRenderContext, 
         int nX = 0, nY = 0;
         switch (mnOrderMode)
         {
-        case SV_PRINT_PRT_NUP_ORDER_LRTB:
+        case NupOrderType::LRTB:
             nX = (i % mnColumns);
             nY = (i / mnColumns);
             break;
-        case SV_PRINT_PRT_NUP_ORDER_TBLR:
+        case NupOrderType::TBLR:
             nX = (i / mnRows);
             nY = (i % mnRows);
             break;
-        case SV_PRINT_PRT_NUP_ORDER_RLTB:
+        case NupOrderType::RLTB:
             nX = mnColumns - 1 - (i % mnColumns);
             nY = (i / mnColumns);
             break;
-        case SV_PRINT_PRT_NUP_ORDER_TBRL:
+        case NupOrderType::TBRL:
             nX = mnColumns - 1 - (i / mnRows);
             nY = (i % mnRows);
             break;
@@ -377,7 +373,7 @@ void PrintDialog::ShowNupOrderWindow::Paint(vcl::RenderContext& rRenderContext, 
                                       nY * aSubSize.Height() + nDeltaY), aPageText);
     }
     DecorationView aDecorationView(&rRenderContext);
-    aDecorationView.DrawFrame(Rectangle(Point(0, 0), aOutSize), DrawFrameStyle::Group);
+    aDecorationView.DrawFrame(tools::Rectangle(Point(0, 0), aOutSize), DrawFrameStyle::Group);
 }
 
 PrintDialog::NUpTabPage::NUpTabPage( VclBuilder *pUIBuilder )
@@ -469,7 +465,7 @@ void PrintDialog::NUpTabPage::initFromMultiPageSetup( const vcl::PrinterControll
     mpBorderCB->Check( i_rMPS.bDrawBorder );
     mpNupRowsEdt->SetValue( i_rMPS.nRows );
     mpNupColEdt->SetValue( i_rMPS.nColumns );
-    mpNupOrderBox->SelectEntryPos( i_rMPS.nOrder );
+    mpNupOrderBox->SelectEntryPos( (sal_Int32)i_rMPS.nOrder );
     if( i_rMPS.nRows != 1 || i_rMPS.nColumns != 1 )
     {
         mpNupPagesBox->SelectEntryPos( mpNupPagesBox->GetEntryCount()-1 );
@@ -479,9 +475,9 @@ void PrintDialog::NUpTabPage::initFromMultiPageSetup( const vcl::PrinterControll
 }
 
 PrintDialog::JobTabPage::JobTabPage( VclBuilder* pUIBuilder )
-    : maCollateImg( VclResId( SV_PRINT_COLLATE_IMG ) )
-    , maNoCollateImg( VclResId( SV_PRINT_NOCOLLATE_IMG ) )
-    , mnCollateUIMode( 0 )
+    : maCollateBmp(VclResId(SV_PRINT_COLLATE_BMP))
+    , maNoCollateBmp(VclResId(SV_PRINT_NOCOLLATE_BMP))
+    , mnCollateUIMode(0)
 {
     pUIBuilder->get(mpPrinters, "printers");
     pUIBuilder->get(mpStatusTxt, "status");
@@ -573,9 +569,9 @@ PrintDialog::PrintDialog( vcl::Window* i_pParent, const std::shared_ptr<PrinterC
     : ModalDialog(i_pParent, "PrintDialog", "vcl/ui/printdialog.ui")
     , mpCustomOptionsUIBuilder(nullptr)
     , maPController( i_rController )
-    , maNUpPage(m_pUIBuilder)
-    , maJobPage(m_pUIBuilder)
-    , maOptionsPage(m_pUIBuilder)
+    , maNUpPage(m_pUIBuilder.get())
+    , maJobPage(m_pUIBuilder.get())
+    , maOptionsPage(m_pUIBuilder.get())
     , maNoPageStr( VclResId( SV_PRINT_NOPAGES ).toString() )
     , mnCurPage( 0 )
     , mnCachedPages( 0 )
@@ -653,8 +649,8 @@ PrintDialog::PrintDialog( vcl::Window* i_pParent, const std::shared_ptr<PrinterC
 
     // setup sizes for N-Up
     Size aNupSize( maPController->getPrinter()->PixelToLogic(
-                         maPController->getPrinter()->GetPaperSizePixel(), MapMode( MAP_100TH_MM ) ) );
-    if( maPController->getPrinter()->GetOrientation() == ORIENTATION_LANDSCAPE )
+                         maPController->getPrinter()->GetPaperSizePixel(), MapMode( MapUnit::Map100thMM ) ) );
+    if( maPController->getPrinter()->GetOrientation() == Orientation::Landscape )
     {
         maNupLandscapeSize = aNupSize;
         maNupPortraitSize = Size( aNupSize.Height(), aNupSize.Width() );
@@ -735,6 +731,8 @@ void PrintDialog::dispose()
     mpCancelButton.clear();
     mpHelpButton.clear();
     maPController.reset();
+    maControlToPropertyMap.clear();
+    maControlToNumValMap.clear();
     ModalDialog::dispose();
 }
 
@@ -1212,7 +1210,7 @@ void PrintDialog::checkControlDependencies()
     else
         maJobPage.mpCollateBox->Enable( false );
 
-    Image aImg( maJobPage.mpCollateBox->IsChecked() ? maJobPage.maCollateImg : maJobPage.maNoCollateImg );
+    Image aImg(maJobPage.mpCollateBox->IsChecked() ? maJobPage.maCollateBmp : maJobPage.maNoCollateBmp);
 
     Size aImgSize( aImg.GetSizePixel() );
 
@@ -1221,7 +1219,7 @@ void PrintDialog::checkControlDependencies()
     maJobPage.mpCollateImage->SetImage( aImg );
 
     // enable setup button only for printers that can be setup
-    bool bHaveSetup = maPController->getPrinter()->HasSupport( SUPPORT_SETUPDIALOG );
+    bool bHaveSetup = maPController->getPrinter()->HasSupport( PrinterSupport::SetupDialog );
     maJobPage.mpSetupButton->Enable(bHaveSetup);
 }
 
@@ -1326,7 +1324,7 @@ void PrintDialog::preparePreview( bool i_bNewPage, bool i_bMayUseCache )
 
     if( i_bNewPage )
     {
-        const MapMode aMapMode( MAP_100TH_MM );
+        const MapMode aMapMode( MapUnit::Map100thMM );
         GDIMetaFile aMtf;
         VclPtr<Printer> aPrt( maPController->getPrinter() );
         if( nPages > 0 )
@@ -1340,7 +1338,7 @@ void PrintDialog::preparePreview( bool i_bNewPage, bool i_bMayUseCache )
             }
         }
 
-        Size aCurPageSize = aPrt->PixelToLogic( aPrt->GetPaperSizePixel(), MapMode( MAP_100TH_MM ) );
+        Size aCurPageSize = aPrt->PixelToLogic( aPrt->GetPaperSizePixel(), MapMode( MapUnit::Map100thMM ) );
         mpPreviewWindow->setPreview( aMtf, aCurPageSize,
                                     aPrt->GetPaperName(),
                                     nPages > 0 ? OUString() : maNoPageStr,
@@ -1354,7 +1352,7 @@ void PrintDialog::preparePreview( bool i_bNewPage, bool i_bMayUseCache )
     }
 }
 
-Size PrintDialog::getJobPageSize()
+Size const & PrintDialog::getJobPageSize()
 {
     if( maFirstPageSize.Width() == 0 && maFirstPageSize.Height() == 0)
     {
@@ -1481,7 +1479,6 @@ void PrintDialog::updateNup()
     PrinterController::MultiPageSetup aMPS;
     aMPS.nRows         = nRows;
     aMPS.nColumns      = nCols;
-    aMPS.nRepeat       = 1;
     aMPS.nLeftMargin   =
     aMPS.nTopMargin    =
     aMPS.nRightMargin  =
@@ -1492,15 +1489,7 @@ void PrintDialog::updateNup()
 
     aMPS.bDrawBorder        = maNUpPage.mpBorderCB->IsChecked();
 
-    int nOrderMode = maNUpPage.mpNupOrderBox->GetSelectEntryPos();
-    if( nOrderMode == SV_PRINT_PRT_NUP_ORDER_LRTB )
-        aMPS.nOrder = PrinterController::LRTB;
-    else if( nOrderMode == SV_PRINT_PRT_NUP_ORDER_TBLR )
-        aMPS.nOrder = PrinterController::TBLR;
-    else if( nOrderMode == SV_PRINT_PRT_NUP_ORDER_RLTB )
-        aMPS.nOrder = PrinterController::RLTB;
-    else if( nOrderMode == SV_PRINT_PRT_NUP_ORDER_TBRL )
-        aMPS.nOrder = PrinterController::TBRL;
+    aMPS.nOrder = (NupOrderType)maNUpPage.mpNupOrderBox->GetSelectEntryPos();
 
     int nOrientationMode = maNUpPage.mpNupOrientationBox->GetSelectEntryPos();
     if( nOrientationMode == SV_PRINT_PRT_NUP_ORIENTATION_LANDSCAPE )
@@ -1522,12 +1511,12 @@ void PrintDialog::updateNup()
 
     maPController->setMultipage( aMPS );
 
-    maNUpPage.mpNupOrderWin->setValues( nOrderMode, nCols, nRows );
+    maNUpPage.mpNupOrderWin->setValues( aMPS.nOrder, nCols, nRows );
 
     preparePreview( true, true );
 }
 
-IMPL_LINK_TYPED( PrintDialog, SelectHdl, ListBox&, rBox, void )
+IMPL_LINK( PrintDialog, SelectHdl, ListBox&, rBox, void )
 {
     if(  &rBox == maJobPage.mpPrinters )
     {
@@ -1564,17 +1553,17 @@ IMPL_LINK_TYPED( PrintDialog, SelectHdl, ListBox&, rBox, void )
     }
 }
 
-IMPL_LINK_TYPED( PrintDialog, ToggleRadioHdl, RadioButton&, rButton, void )
+IMPL_LINK( PrintDialog, ToggleRadioHdl, RadioButton&, rButton, void )
 {
     ClickHdl(static_cast<Button*>(&rButton));
 }
 
-IMPL_LINK_TYPED( PrintDialog, ToggleHdl, CheckBox&, rButton, void )
+IMPL_LINK( PrintDialog, ToggleHdl, CheckBox&, rButton, void )
 {
     ClickHdl(&rButton);
 }
 
-IMPL_LINK_TYPED( PrintDialog, ClickHdl, Button*, pButton, void )
+IMPL_LINK( PrintDialog, ClickHdl, Button*, pButton, void )
 {
     if( pButton == mpOKButton || pButton == mpCancelButton )
     {
@@ -1663,7 +1652,7 @@ IMPL_LINK_TYPED( PrintDialog, ClickHdl, Button*, pButton, void )
     }
 }
 
-IMPL_LINK_TYPED( PrintDialog, ModifyHdl, Edit&, rEdit, void )
+IMPL_LINK( PrintDialog, ModifyHdl, Edit&, rEdit, void )
 {
     checkControlDependencies();
     if( &rEdit == maNUpPage.mpNupRowsEdt || &rEdit == maNUpPage.mpNupColEdt ||
@@ -1693,7 +1682,7 @@ PropertyValue* PrintDialog::getValueForWindow( vcl::Window* i_pWindow ) const
     if( it != maControlToPropertyMap.end() )
     {
         pVal = maPController->getValue( it->second );
-        DBG_ASSERT( pVal, "property value not found" );
+        SAL_WARN_IF( !pVal, "vcl", "property value not found" );
     }
     else
     {
@@ -1731,7 +1720,7 @@ void PrintDialog::updateWindowFromProperty( const OUString& i_rProperty )
                 }
                 else
                 {
-                    DBG_ASSERT( false, "missing a checkbox" );
+                    SAL_WARN( "vcl", "missing a checkbox" );
                 }
             }
             else if( pValue->Value >>= nVal )
@@ -1745,7 +1734,7 @@ void PrintDialog::updateWindowFromProperty( const OUString& i_rProperty )
                 else if( nVal >= 0 && nVal < sal_Int32(rWindows.size() ) )
                 {
                     RadioButton* pBtn = dynamic_cast< RadioButton* >( rWindows[nVal].get() );
-                    DBG_ASSERT( pBtn, "unexpected control for property" );
+                    SAL_WARN_IF( !pBtn, "vcl", "unexpected control for property" );
                     if( pBtn )
                         pBtn->Check();
                 }
@@ -1765,7 +1754,7 @@ void PrintDialog::makeEnabled( vcl::Window* i_pWindow )
     }
 }
 
-IMPL_LINK_TYPED( PrintDialog, UIOption_CheckHdl, CheckBox&, i_rBox, void )
+IMPL_LINK( PrintDialog, UIOption_CheckHdl, CheckBox&, i_rBox, void )
 {
     PropertyValue* pVal = getValueForWindow( &i_rBox );
     if( pVal )
@@ -1782,7 +1771,7 @@ IMPL_LINK_TYPED( PrintDialog, UIOption_CheckHdl, CheckBox&, i_rBox, void )
     }
 }
 
-IMPL_LINK_TYPED( PrintDialog, UIOption_RadioHdl, RadioButton&, i_rBtn, void )
+IMPL_LINK( PrintDialog, UIOption_RadioHdl, RadioButton&, i_rBtn, void )
 {
     // this handler gets called for all radiobuttons that get unchecked, too
     // however we only want one notificaction for the new value (that is for
@@ -1810,7 +1799,7 @@ IMPL_LINK_TYPED( PrintDialog, UIOption_RadioHdl, RadioButton&, i_rBtn, void )
     }
 }
 
-IMPL_LINK_TYPED( PrintDialog, UIOption_SelectHdl, ListBox&, i_rBox, void )
+IMPL_LINK( PrintDialog, UIOption_SelectHdl, ListBox&, i_rBox, void )
 {
     PropertyValue* pVal = getValueForWindow( &i_rBox );
     if( pVal )
@@ -1835,7 +1824,7 @@ IMPL_LINK_TYPED( PrintDialog, UIOption_SelectHdl, ListBox&, i_rBox, void )
     }
 }
 
-IMPL_LINK_TYPED( PrintDialog, UIOption_ModifyHdl, Edit&, i_rBox, void )
+IMPL_LINK( PrintDialog, UIOption_ModifyHdl, Edit&, i_rBox, void )
 {
     PropertyValue* pVal = getValueForWindow( &i_rBox );
     if( pVal )
@@ -1923,7 +1912,7 @@ PrintProgressDialog::PrintProgressDialog(vcl::Window* i_pParent, int i_nMax)
     mpText->set_width_request(mpText->get_preferred_size().Width());
 
     //Pick a useful max width
-    mpProgress->set_width_request(mpProgress->LogicToPixel(Size(100, 0), MapMode(MAP_APPFONT)).Width());
+    mpProgress->set_width_request(mpProgress->LogicToPixel(Size(100, 0), MapMode(MapUnit::MapAppFont)).Width());
 
     mpButton->SetClickHdl( LINK( this, PrintProgressDialog, ClickHdl ) );
 
@@ -1942,7 +1931,7 @@ void PrintProgressDialog::dispose()
     ModelessDialog::dispose();
 }
 
-IMPL_LINK_TYPED( PrintProgressDialog, ClickHdl, Button*, pButton, void )
+IMPL_LINK( PrintProgressDialog, ClickHdl, Button*, pButton, void )
 {
     if( pButton == mpButton )
         mbCanceled = true;

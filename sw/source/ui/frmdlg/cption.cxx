@@ -66,7 +66,7 @@ class SwSequenceOptionDialog : public SvxStandardDialog
 public:
     SwSequenceOptionDialog( vcl::Window *pParent, SwView &rV,
                             const OUString& rSeqFieldType );
-    virtual ~SwSequenceOptionDialog();
+    virtual ~SwSequenceOptionDialog() override;
     virtual void dispose() override;
     virtual void Apply() override;
 
@@ -123,9 +123,9 @@ SwCaptionDialog::SwCaptionDialog( vcl::Window *pParent, SwView &rV ) :
      uno::Reference< frame::XModel >  xModel = rView.GetDocShell()->GetBaseModel();
 
     eType = rSh.GetSelectionType();
-    if ( eType & nsSelectionType::SEL_OLE )
+    if ( eType & SelectionType::Ole )
     {
-        eType = nsSelectionType::SEL_GRF;
+        eType = SelectionType::Graphic;
          uno::Reference< text::XTextEmbeddedObjectsSupplier >  xObjs(xModel, uno::UNO_QUERY);
         xNameAccess = xObjs->getEmbeddedObjects();
     }
@@ -145,15 +145,15 @@ SwCaptionDialog::SwCaptionDialog( vcl::Window *pParent, SwView &rV ) :
     size_t nCount = pMgr->GetFieldTypeCount();
     for (size_t i = 0; i < nCount; ++i)
     {
-        SwFieldType *pType = pMgr->GetFieldType( USHRT_MAX, i );
-        if( pType->Which() == RES_SETEXPFLD &&
+        SwFieldType *pType = pMgr->GetFieldType( SwFieldIds::Unknown, i );
+        if( pType->Which() == SwFieldIds::SetExp &&
             static_cast<SwSetExpFieldType *>( pType)->GetType() & nsSwGetSetExpType::GSE_SEQ )
             m_pCategoryBox->InsertEntry(pType->GetName());
     }
 
     OUString sString;
     sal_uInt16 nPoolId = 0;
-    if (eType & nsSelectionType::SEL_GRF)
+    if (eType & SelectionType::Graphic)
     {
         nPoolId = RES_POOLCOLL_LABEL_ABB;
         sString = ::GetOldGrfCat();
@@ -167,7 +167,7 @@ SwCaptionDialog::SwCaptionDialog( vcl::Window *pParent, SwView &rV ) :
         }
 
     }
-    else if( eType & nsSelectionType::SEL_TBL )
+    else if( eType & SelectionType::Table )
     {
         nPoolId = RES_POOLCOLL_LABEL_TABLE;
         sString = ::GetOldTabCat();
@@ -175,7 +175,7 @@ SwCaptionDialog::SwCaptionDialog( vcl::Window *pParent, SwView &rV ) :
         xNameAccess = xTables->getTextTables();
         sObjectName = rSh.GetTableFormat()->GetName();
     }
-    else if( eType & nsSelectionType::SEL_FRM )
+    else if( eType & SelectionType::Frame )
     {
         nPoolId = RES_POOLCOLL_LABEL_FRAME;
         sString = ::GetOldFrameCat();
@@ -183,12 +183,12 @@ SwCaptionDialog::SwCaptionDialog( vcl::Window *pParent, SwView &rV ) :
         xNameAccess = xFrames->getTextFrames();
         sObjectName = rSh.GetFlyName();
     }
-    else if( eType == nsSelectionType::SEL_TXT )
+    else if( eType == SelectionType::Text )
     {
         nPoolId = RES_POOLCOLL_LABEL_FRAME;
         sString = ::GetOldFrameCat();
     }
-    else if( eType & nsSelectionType::SEL_DRW )
+    else if( eType & SelectionType::DrawObject )
     {
         nPoolId = RES_POOLCOLL_LABEL_DRAWING;
         sString = ::GetOldDrwCat();
@@ -207,7 +207,7 @@ SwCaptionDialog::SwCaptionDialog( vcl::Window *pParent, SwView &rV ) :
     nCount = pMgr->GetFieldTypeCount();
     for ( size_t i = nCount; i; )
     {
-        SwFieldType* pFieldType = pMgr->GetFieldType(USHRT_MAX, --i);
+        SwFieldType* pFieldType = pMgr->GetFieldType(SwFieldIds::Unknown, --i);
         if( pFieldType->GetName().equals(m_pCategoryBox->GetText()) )
         {
             nSelFormat = (sal_uInt16)static_cast<SwSetExpFieldType*>(pFieldType)->GetSeqFormat();
@@ -226,23 +226,22 @@ SwCaptionDialog::SwCaptionDialog( vcl::Window *pParent, SwView &rV ) :
     }
 
     // aPosBox
-    switch (eType)
+    if (eType == SelectionType::Graphic
+        || eType == SelectionType::Table
+        || eType == (SelectionType::Table | SelectionType::NumberList)
+        || eType == (SelectionType::Table | SelectionType::Text)
+        || eType == (SelectionType::Table | SelectionType::NumberList | SelectionType::Text)
+        || eType == SelectionType::DrawObject
+        || eType == (SelectionType::DrawObject | SelectionType::Ornament))
     {
-        case nsSelectionType::SEL_GRF:
-        case nsSelectionType::SEL_TBL:
-        case nsSelectionType::SEL_TBL | nsSelectionType::SEL_NUM:
-        case nsSelectionType::SEL_TBL | nsSelectionType::SEL_TXT:
-        case nsSelectionType::SEL_TBL | nsSelectionType::SEL_NUM | nsSelectionType::SEL_TXT:
-        case nsSelectionType::SEL_DRW:
-        case nsSelectionType::SEL_DRW | nsSelectionType::SEL_BEZ:
-            m_pPosBox->InsertEntry(SW_RESSTR(STR_CAPTION_ABOVE));
-            m_pPosBox->InsertEntry(SW_RESSTR(STR_CAPTION_BELOW));
-            break;
-        case nsSelectionType::SEL_FRM:
-        case nsSelectionType::SEL_TXT:
-            m_pPosBox->InsertEntry(SW_RESSTR(STR_CAPTION_BEGINNING));
-            m_pPosBox->InsertEntry(SW_RESSTR(STR_CAPTION_END     ));
-            break;
+        m_pPosBox->InsertEntry(SW_RESSTR(STR_CAPTION_ABOVE));
+        m_pPosBox->InsertEntry(SW_RESSTR(STR_CAPTION_BELOW));
+    }
+    else if(eType == SelectionType::Frame
+            || eType == SelectionType::Text)
+    {
+        m_pPosBox->InsertEntry(SW_RESSTR(STR_CAPTION_BEGINNING));
+        m_pPosBox->InsertEntry(SW_RESSTR(STR_CAPTION_END     ));
     }
     m_pPosBox->SelectEntryPos(1);
 
@@ -279,7 +278,7 @@ void SwCaptionDialog::Apply()
     our_aSepTextSave = m_pSepEdit->GetText();
 }
 
-IMPL_LINK_TYPED( SwCaptionDialog, OptionHdl, Button*, pButton, void )
+IMPL_LINK( SwCaptionDialog, OptionHdl, Button*, pButton, void )
 {
     OUString sFieldTypeName = m_pCategoryBox->GetText();
     if(sFieldTypeName == m_sNone)
@@ -301,23 +300,23 @@ IMPL_LINK_TYPED( SwCaptionDialog, OptionHdl, Button*, pButton, void )
     DrawSample();
 }
 
-IMPL_LINK_NOARG_TYPED(SwCaptionDialog, SelectListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwCaptionDialog, SelectListBoxHdl, ListBox&, void)
 {
     DrawSample();
 }
-IMPL_LINK_NOARG_TYPED(SwCaptionDialog, SelectHdl, ComboBox&, void)
+IMPL_LINK_NOARG(SwCaptionDialog, SelectHdl, ComboBox&, void)
 {
     DrawSample();
 }
 
-IMPL_LINK_NOARG_TYPED(SwCaptionDialog, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SwCaptionDialog, ModifyHdl, Edit&, void)
 {
     SwWrtShell &rSh = rView.GetWrtShell();
     OUString sFieldTypeName = m_pCategoryBox->GetText();
     bool bCorrectFieldName = !sFieldTypeName.isEmpty();
     bool bNone = sFieldTypeName == m_sNone;
     SwFieldType* pType = (bCorrectFieldName && !bNone)
-                    ? rSh.GetFieldType( RES_SETEXPFLD, sFieldTypeName )
+                    ? rSh.GetFieldType( SwFieldIds::SetExp, sFieldTypeName )
                     : nullptr;
     m_pOKButton->Enable( bCorrectFieldName &&
                         (!pType ||
@@ -332,7 +331,7 @@ IMPL_LINK_NOARG_TYPED(SwCaptionDialog, ModifyHdl, Edit&, void)
     DrawSample();
 }
 
-IMPL_LINK_NOARG_TYPED(SwCaptionDialog, CaptionHdl, Button*, void)
+IMPL_LINK_NOARG(SwCaptionDialog, CaptionHdl, Button*, void)
 {
     SfxItemSet  aSet( rView.GetDocShell()->GetDoc()->GetAttrPool() );
     ScopedVclPtrInstance< SwCaptionOptDlg > aDlg( this, aSet );
@@ -363,13 +362,11 @@ void SwCaptionDialog::DrawSample()
 
             SwWrtShell &rSh = rView.GetWrtShell();
             SwSetExpFieldType* pFieldType = static_cast<SwSetExpFieldType*>(rSh.GetFieldType(
-                                            RES_SETEXPFLD, sFieldTypeName ));
+                                            SwFieldIds::SetExp, sFieldTypeName ));
             if( pFieldType && pFieldType->GetOutlineLvl() < MAXLEVEL )
             {
-                sal_Int8 nLvl = pFieldType->GetOutlineLvl();
                 SwNumberTree::tNumberVector aNumVector;
-                for( sal_Int8 i = 0; i <= nLvl; ++i )
-                    aNumVector.push_back(1);
+                aNumVector.insert(aNumVector.end(), pFieldType->GetOutlineLvl(), 1);
 
                 OUString sNumber( rSh.GetOutlineNumRule()->
                                 MakeNumString(aNumVector, false ));
@@ -450,7 +447,7 @@ SwSequenceOptionDialog::SwSequenceOptionDialog( vcl::Window *pParent, SwView &rV
         m_pLbLevel->InsertEntry( OUString::number(n+1) );
 
     SwSetExpFieldType* pFieldType = static_cast<SwSetExpFieldType*>(rSh.GetFieldType(
-                                        RES_SETEXPFLD, aFieldTypeName ));
+                                        SwFieldIds::SetExp, aFieldTypeName ));
 
     sal_Unicode nLvl = MAXLEVEL;
     OUString sDelim(": ");
@@ -488,7 +485,7 @@ void SwSequenceOptionDialog::Apply()
 {
     SwWrtShell &rSh = rView.GetWrtShell();
     SwSetExpFieldType* pFieldType = static_cast<SwSetExpFieldType*>(rSh.GetFieldType(
-                                        RES_SETEXPFLD, aFieldTypeName ));
+                                        SwFieldIds::SetExp, aFieldTypeName ));
 
     sal_Int8 nLvl = (sal_Int8)( m_pLbLevel->GetSelectEntryPos() - 1);
     sal_Unicode cDelim = m_pEdDelim->GetText()[0];

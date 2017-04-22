@@ -19,49 +19,56 @@
 #ifndef INCLUDED_SW_INC_TBLENUM_HXX
 #define INCLUDED_SW_INC_TBLENUM_HXX
 
+#include <o3tl/typed_flags_set.hxx>
+
 // For changing table columns/rows widths/heights.
-typedef sal_uInt16 TableChgWidthHeightType;
-
-namespace nsTableChgWidthHeightType
+enum class TableChgWidthHeightType : sal_uInt16
 {
-    const TableChgWidthHeightType WH_COL_LEFT = 0;
-    const TableChgWidthHeightType WH_COL_RIGHT = 1;
-    const TableChgWidthHeightType WH_ROW_TOP = 2;
-    const TableChgWidthHeightType WH_ROW_BOTTOM = 3;
-    const TableChgWidthHeightType WH_CELL_LEFT = 4;
-    const TableChgWidthHeightType WH_CELL_RIGHT = 5;
-    const TableChgWidthHeightType WH_CELL_TOP = 6;
-    const TableChgWidthHeightType WH_CELL_BOTTOM = 7;
+    ColLeft      = 0,
+    ColRight     = 1,
+    RowTop       = 2,
+    RowBottom    = 3,
+    CellLeft     = 4,
+    CellRight    = 5,
+    CellTop      = 6,
+    CellBottom   = 7,
+    InvalidPos   = 0x0f,
 
-    // The following can "or"ed into.
-    const TableChgWidthHeightType WH_FLAG_INSDEL  = 0x4000;           // Insert/Del-mode: the Bigger-Flag
-                                                                    // tells what happens:
-                                                                    // bBigger -> box gets removed.
-                                                                    // !bBigger-> box gets inserted.
-    const TableChgWidthHeightType WH_FLAG_BIGGER  = 0x8000;           // Box becomes larger -> else smaller.
+    // The following can be "or"ed in.
+    InsertDeleteMode = 0x4000, // Insert/Del-mode: the Bigger-Flag
+                               // tells what happens:
+                               // bBigger -> box gets removed.
+                               // !bBigger-> box gets inserted.
+    BiggerMode       = 0x8000, // Box becomes larger -> else smaller.
+};
+namespace o3tl {
+    template<> struct typed_flags<TableChgWidthHeightType> : is_typed_flags<TableChgWidthHeightType, 0xc00f> {};
+}
+constexpr TableChgWidthHeightType extractPosition(TableChgWidthHeightType e) {
+    return static_cast<TableChgWidthHeightType>(static_cast<int>(e) & 0xf);
 }
 
-enum TableChgMode
+enum class TableChgMode
 {
-    TBLFIX_CHGABS,          // Table fixed width, change neighbour.
-    TBLFIX_CHGPROP,         // Table fixed width, change all neighbours.
-    TBLVAR_CHGABS           // Table variable, change all neighbours.
+    FixedWidthChangeAbs,          // Table fixed width, change neighbour.
+    FixedWidthChangeProp,         // Table fixed width, change all neighbours.
+    VarWidthChangeAbs           // Table variable, change all neighbours.
 };
 
-enum SplitTable_HeadlineOption
+enum class SplitTable_HeadlineOption
 {
-    HEADLINE_NONE = 0,          // Leave everything in place.
-    HEADLINE_BORDERCOPY,        // Copy border of the previous line.
-    HEADLINE_CNTNTCOPY,         // Copy 1st line with all contents.
-    HEADLINE_BOXATTRCOPY,       // Copy box attributes of 1st line.
-    HEADLINE_BOXATRCOLLCOPY     // Copy box attributes and paragraph styles of 1st line.
+    NONE = 0,          // Leave everything in place.
+    BorderCopy,        // Copy border of the previous line.
+    ContentCopy,         // Copy 1st line with all contents.
+    BoxAttrCopy,       // Copy box attributes of 1st line.
+    BoxAttrAllCopy     // Copy box attributes and paragraph styles of 1st line.
 };
 
-enum TableMergeErr
+enum class TableMergeErr
 {
-    TBLMERGE_OK,
-    TBLMERGE_NOSELECTION,
-    TBLMERGE_TOOCOMPLEX
+    Ok,
+    NoSelection,
+    TooComplex
 };
 
 #endif

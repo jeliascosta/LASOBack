@@ -26,6 +26,7 @@
 
 class ScDocument;
 class DateTime;
+enum class ScMatrixMode : sal_uInt8;
 
 struct ScMyActionInfo
 {
@@ -45,12 +46,12 @@ struct ScMyCellInfo
     sal_Int32          nMatrixRows;
     formula::FormulaGrammar::Grammar eGrammar;
     sal_uInt16         nType;
-    sal_uInt8          nMatrixFlag;
+    ScMatrixMode       nMatrixFlag;
 
     ScMyCellInfo(
         const ScCellValue& rCell, const OUString& sFormulaAddress, const OUString& sFormula,
         const formula::FormulaGrammar::Grammar eGrammar, const OUString& sInputString,
-        const double& fValue, const sal_uInt16 nType, const sal_uInt8 nMatrixFlag,
+        const double& fValue, const sal_uInt16 nType, const ScMatrixMode nMatrixFlag,
         const sal_Int32 nMatrixCols, const sal_Int32 nMatrixRows );
     ~ScMyCellInfo();
 
@@ -60,7 +61,7 @@ struct ScMyCellInfo
 struct ScMyDeleted
 {
     sal_uInt32 nID;
-    ScMyCellInfo* pCellInfo;
+    std::unique_ptr<ScMyCellInfo> pCellInfo;
 
     ScMyDeleted();
     ~ScMyDeleted();
@@ -72,7 +73,7 @@ struct ScMyGenerated
 {
     ScBigRange      aBigRange;
     sal_uInt32      nID;
-    ScMyCellInfo*   pCellInfo;
+    std::unique_ptr<ScMyCellInfo> pCellInfo;
 
     ScMyGenerated(ScMyCellInfo* pCellInfo, const ScBigRange& aBigRange);
     ~ScMyGenerated();
@@ -131,41 +132,41 @@ struct ScMyBaseAction
 struct ScMyInsAction : public ScMyBaseAction
 {
     explicit ScMyInsAction(const ScChangeActionType nActionType);
-    virtual ~ScMyInsAction();
+    virtual ~ScMyInsAction() override;
 };
 
 struct ScMyDelAction : public ScMyBaseAction
 {
     ScMyGeneratedList aGeneratedList;
-    ScMyInsertionCutOff* pInsCutOff;
+    std::unique_ptr<ScMyInsertionCutOff> pInsCutOff;
     ScMyMoveCutOffs aMoveCutOffs;
     sal_Int32 nD;
 
     explicit ScMyDelAction(const ScChangeActionType nActionType);
-    virtual ~ScMyDelAction();
+    virtual ~ScMyDelAction() override;
 };
 
 struct ScMyMoveAction : public ScMyBaseAction
 {
     ScMyGeneratedList aGeneratedList;
-    ScMyMoveRanges* pMoveRanges;
+    std::unique_ptr<ScMyMoveRanges> pMoveRanges;
 
     ScMyMoveAction();
-    virtual ~ScMyMoveAction();
+    virtual ~ScMyMoveAction() override;
 };
 
 struct ScMyContentAction : public ScMyBaseAction
 {
-    ScMyCellInfo*   pCellInfo;
+    std::unique_ptr<ScMyCellInfo>  pCellInfo;
 
     ScMyContentAction();
-    virtual ~ScMyContentAction();
+    virtual ~ScMyContentAction() override;
 };
 
 struct ScMyRejAction : public ScMyBaseAction
 {
     ScMyRejAction();
-    virtual ~ScMyRejAction();
+    virtual ~ScMyRejAction() override;
 };
 
 typedef std::list<ScMyBaseAction*> ScMyActions;

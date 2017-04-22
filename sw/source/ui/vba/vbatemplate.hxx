@@ -31,12 +31,12 @@ private:
 public:
     SwVbaTemplate( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext,
         const OUString& );
-    virtual ~SwVbaTemplate();
+    virtual ~SwVbaTemplate() override;
 
    // XTemplate
-    virtual OUString SAL_CALL getName() throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getPath() throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL AutoTextEntries( const css::uno::Any& index ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getName() override;
+    virtual OUString SAL_CALL getPath() override;
+    virtual css::uno::Any SAL_CALL AutoTextEntries( const css::uno::Any& index ) override;
     // XHelperInterface
     virtual OUString getServiceImplName() override;
     virtual css::uno::Sequence<OUString> getServiceNames() override;

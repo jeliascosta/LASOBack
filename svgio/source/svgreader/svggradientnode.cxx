@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svggradientnode.hxx>
-#include <svgio/svgreader/svgdocument.hxx>
-#include <svgio/svgreader/svggradientstopnode.hxx>
+#include <svggradientnode.hxx>
+#include <svgdocument.hxx>
+#include <svggradientstopnode.hxx>
 
 namespace svgio
 {
@@ -54,12 +54,11 @@ namespace svgio
             maXLink(),
             mpXLink(nullptr)
         {
-            OSL_ENSURE(aType == SVGTokenLinearGradient || aType == SVGTokenRadialGradient, "SvgGradientNode should ony be used for Linear and Radial gradient (!)");
+            OSL_ENSURE(aType == SVGTokenLinearGradient || aType == SVGTokenRadialGradient, "SvgGradientNode should only be used for Linear and Radial gradient (!)");
         }
 
         SvgGradientNode::~SvgGradientNode()
         {
-            delete mpaGradientTransform;
             // do NOT delete mpXLink, it's only referenced, not owned
         }
 
@@ -95,7 +94,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setX1(aNum);
+                        maX1 = aNum;
                     }
                     break;
                 }
@@ -105,7 +104,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setY1(aNum);
+                        maY1 = aNum;
                     }
                     break;
                 }
@@ -115,7 +114,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setX2(aNum);
+                        maX2 = aNum;
                     }
                     break;
                 }
@@ -125,7 +124,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setY2(aNum);
+                        maY2 = aNum;
                     }
                     break;
                 }
@@ -135,7 +134,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setCx(aNum);
+                        maCx = aNum;
                     }
                     break;
                 }
@@ -145,7 +144,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setCy(aNum);
+                        maCy = aNum;
                     }
                     break;
                 }
@@ -155,7 +154,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setFx(aNum);
+                        maFx = aNum;
                     }
                     break;
                 }
@@ -165,7 +164,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setFy(aNum);
+                        maFy = aNum;
                     }
                     break;
                 }
@@ -177,7 +176,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setR(aNum);
+                            maR = aNum;
                         }
                     }
                     break;
@@ -472,7 +471,7 @@ namespace svgio
         {
             if(mpaGradientTransform)
             {
-                return mpaGradientTransform;
+                return mpaGradientTransform.get();
             }
 
             const_cast< SvgGradientNode* >(this)->tryToFindLink();
@@ -487,15 +486,11 @@ namespace svgio
 
         void SvgGradientNode::setGradientTransform(const basegfx::B2DHomMatrix* pMatrix)
         {
-            if(mpaGradientTransform)
-            {
-                delete mpaGradientTransform;
-                mpaGradientTransform = nullptr;
-            }
+            mpaGradientTransform.reset();
 
             if(pMatrix)
             {
-                mpaGradientTransform = new basegfx::B2DHomMatrix(*pMatrix);
+                mpaGradientTransform.reset(new basegfx::B2DHomMatrix(*pMatrix) );
             }
         }
 

@@ -36,23 +36,22 @@ public:
     VPolarRadiusAxis( const AxisProperties& rAxisProperties
            , const css::uno::Reference< css::util::XNumberFormatsSupplier >& xNumberFormatsSupplier
            , sal_Int32 nDimensionCount );
-    virtual ~VPolarRadiusAxis();
+    virtual ~VPolarRadiusAxis() override;
 
     virtual void initPlotter(
           const css::uno::Reference< css::drawing::XShapes >& xLogicTarget
         , const css::uno::Reference< css::drawing::XShapes >& xFinalTarget
         , const css::uno::Reference< css::lang::XMultiServiceFactory >& xFactory
         , const OUString& rCID
-                ) throw (css::uno::RuntimeException ) override;
+                ) override;
 
     virtual void setTransformationSceneToScreen( const css::drawing::HomogenMatrix& rMatrix ) override;
 
-    virtual void setScales( const ::std::vector< ExplicitScaleData >& rScales, bool bSwapXAndYAxis ) override;
+    virtual void setScales( const std::vector< ExplicitScaleData >& rScales, bool bSwapXAndYAxis ) override;
 
     virtual void setExplicitScaleAndIncrement(
             const ExplicitScaleData& rScale
-          , const ExplicitIncrementData& rIncrement )
-                throw (css::uno::RuntimeException) override;
+          , const ExplicitIncrementData& rIncrement ) override;
 
     virtual void initAxisLabelProperties(
                     const css::awt::Size& rFontReferenceSize

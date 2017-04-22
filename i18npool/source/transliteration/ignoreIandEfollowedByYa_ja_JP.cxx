@@ -26,7 +26,7 @@ using namespace com::sun::star::lang;
 
 namespace com { namespace sun { namespace star { namespace i18n {
 
-OneToOneMappingTable_t IandE[] = {
+OneToOneMappingTable_t const IandE[] = {
     { 0x30A3, 0x0000 },  // KATAKANA LETTER SMALL I
     { 0x30A4, 0x0000 },  // KATAKANA LETTER I
     { 0x30A7, 0x0000 },  // KATAKANA LETTER SMALL E
@@ -65,7 +65,6 @@ OneToOneMappingTable_t IandE[] = {
 
 OUString SAL_CALL
 ignoreIandEfollowedByYa_ja_JP::folding( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, Sequence< sal_Int32 >& offset )
-  throw(RuntimeException, std::exception)
 {
     // Create a string buffer which can hold nCount + 1 characters.
     // The reference count is 1 now.

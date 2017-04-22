@@ -27,7 +27,7 @@ class ScStyleDlg;
 class ScHFPage : public SvxHFPage
 {
 public:
-    virtual         ~ScHFPage();
+    virtual         ~ScHFPage() override;
     virtual void    dispose() override;
 
     virtual void    Reset( const SfxItemSet* rSet ) override;
@@ -44,18 +44,18 @@ protected:
     virtual void    ActivatePage() override;
     virtual void    DeactivatePage() override;
     virtual void    ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg   DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
 
 private:
     VclPtr<PushButton>   m_pBtnEdit;
     SfxItemSet           aDataSet;
     OUString             aStrPageStyle;
-    sal_uInt16           nPageUsage;
+    SvxPageUsage         nPageUsage;
     VclPtr<ScStyleDlg>   pStyleDlg;
 
-    DECL_LINK_TYPED( BtnHdl, Button*, void );
-    DECL_LINK_TYPED( HFEditHdl, void*, void );
-    DECL_LINK_TYPED( TurnOnHdl, Button*, void );
+    DECL_LINK( BtnHdl, Button*, void );
+    DECL_LINK( HFEditHdl, void*, void );
+    DECL_LINK( TurnOnHdl, Button*, void );
 };
 
 class ScHeaderPage : public ScHFPage

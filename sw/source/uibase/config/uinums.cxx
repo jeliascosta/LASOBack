@@ -58,7 +58,7 @@ void SwChapterNumRules::Save()
     aURL.setFinalSlash();
     aURL.Append(CHAPTER_FILENAME);
 
-    SfxMedium aMedium( aURL.GetMainURL(INetURLObject::NO_DECODE), StreamMode::WRITE );
+    SfxMedium aMedium( aURL.GetMainURL(INetURLObject::DecodeMechanism::NONE), StreamMode::WRITE );
     SvStream* pStream = aMedium.GetOutStream();
     bool bRet = (pStream && pStream->GetError() == 0);
     if (bRet)
@@ -86,7 +86,7 @@ void  SwChapterNumRules::Init()
     SvtPathOptions aOpt;
     if( aOpt.SearchFile( sNm ))
     {
-        SfxMedium aStrm( sNm, STREAM_STD_READ );
+        SfxMedium aStrm( sNm, StreamMode::STD_READ );
         sw::ImportStoredChapterNumberingRules(*this, *aStrm.GetInStream(),
                 CHAPTER_FILENAME);
     }
@@ -159,21 +159,19 @@ SwNumRulesWithName& SwNumRulesWithName::operator=(const SwNumRulesWithName &rCop
     return *this;
 }
 
-void SwNumRulesWithName::MakeNumRule( SwWrtShell& rSh, SwNumRule& rChg ) const
+SwNumRule* SwNumRulesWithName::MakeNumRule(SwWrtShell& rSh) const
 {
     // #i89178#
-    rChg = SwNumRule( maName, numfunc::GetDefaultPositionAndSpaceMode() );
-    rChg.SetAutoRule( false );
-    for( sal_uInt16 n = 0; n < MAXLEVEL; ++n )
+    SwNumRule* pChg = new SwNumRule(maName, numfunc::GetDefaultPositionAndSpaceMode());
+    pChg->SetAutoRule( false );
+    for (sal_uInt16 n = 0; n < MAXLEVEL; ++n)
     {
         SwNumFormatGlobal* pFormat = aFormats[ n ];
-        if( nullptr != pFormat)
-        {
-            SwNumFormat aNew;
-            pFormat->ChgNumFormat( rSh, aNew );
-            rChg.Set( n, aNew );
-        }
+        if (!pFormat)
+            continue;
+        pChg->Set(n, pFormat->MakeNumFormat(rSh));
     }
+    return pChg;
 }
 
 void SwNumRulesWithName::GetNumFormat(
@@ -236,8 +234,7 @@ SwNumRulesWithName::SwNumFormatGlobal::~SwNumFormatGlobal()
 {
 }
 
-void SwNumRulesWithName::SwNumFormatGlobal::ChgNumFormat( SwWrtShell& rSh,
-                            SwNumFormat& rNew ) const
+SwNumFormat SwNumRulesWithName::SwNumFormatGlobal::MakeNumFormat(SwWrtShell& rSh) const
 {
     SwCharFormat* pFormat = nullptr;
     if( !sCharFormatName.isEmpty() )
@@ -272,10 +269,11 @@ void SwNumRulesWithName::SwNumFormatGlobal::ChgNumFormat( SwWrtShell& rSh,
             }
         }
     }
-    const_cast<SwNumFormat&>(aFormat).SetCharFormat( pFormat );
-    rNew = aFormat;
-    if( pFormat )
-        const_cast<SwNumFormat&>(aFormat).SetCharFormat( nullptr );
+    const_cast<SwNumFormat&>(aFormat).SetCharFormat(pFormat);
+    SwNumFormat aNew = aFormat;
+    if (pFormat)
+        const_cast<SwNumFormat&>(aFormat).SetCharFormat(nullptr);
+    return aNew;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

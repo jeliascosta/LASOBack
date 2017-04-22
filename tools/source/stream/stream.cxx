@@ -23,7 +23,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <stdlib.h>
 
 #include <osl/endian.h>
@@ -106,7 +105,7 @@ inline static void SwapDouble( double& r )
     {
         if( sizeof(double) != 8 )
         {
-          DBG_ASSERT( false, "Can only swap 8-Byte-doubles\n" );
+          SAL_WARN( "tools.stream", "Can only swap 8-Byte-doubles\n" );
         }
         else
         {
@@ -142,13 +141,13 @@ static void SwapUnicode(sal_Unicode & r) { r = OSL_SWAPWORD(r); }
     }                                                       \
     else                                                    \
     {                                                       \
-        Read( &value, sizeof(datatype) );                   \
+        ReadBytes( &value, sizeof(datatype) );              \
     }                                                       \
 
 
 #define WRITENUMBER_WITHOUT_SWAP(datatype,value) \
     if (m_isIoWrite && sizeof(datatype) <= m_nBufFree)      \
-    {                                                   \
+    {                                                       \
         for (std::size_t i = 0; i < sizeof(datatype); i++)  \
             m_pBufPos[i] = reinterpret_cast<char const *>(&value)[i]; \
         m_nBufFree -= sizeof(datatype);                     \
@@ -160,7 +159,7 @@ static void SwapUnicode(sal_Unicode & r) { r = OSL_SWAPWORD(r); }
     }                                                       \
     else                                                    \
     {                                                       \
-        Write( &value, sizeof(datatype) );                  \
+        WriteBytes( &value, sizeof(datatype) );             \
     }                                                       \
 
 //  class SvLockBytes
@@ -174,8 +173,8 @@ void SvLockBytes::close()
 
 
 // virtual
-ErrCode SvLockBytes::ReadAt(sal_uInt64 const nPos, void * pBuffer, sal_Size nCount,
-                            sal_Size * pRead) const
+ErrCode SvLockBytes::ReadAt(sal_uInt64 const nPos, void * pBuffer, std::size_t nCount,
+                            std::size_t * pRead) const
 {
     if (!m_pStream)
     {
@@ -184,15 +183,15 @@ ErrCode SvLockBytes::ReadAt(sal_uInt64 const nPos, void * pBuffer, sal_Size nCou
     }
 
     m_pStream->Seek(nPos);
-    sal_Size nTheRead = m_pStream->Read(pBuffer, nCount);
+    std::size_t nTheRead = m_pStream->ReadBytes(pBuffer, nCount);
     if (pRead)
         *pRead = nTheRead;
     return m_pStream->GetErrorCode();
 }
 
 // virtual
-ErrCode SvLockBytes::WriteAt(sal_uInt64 const nPos, const void * pBuffer, sal_Size nCount,
-                             sal_Size * pWritten)
+ErrCode SvLockBytes::WriteAt(sal_uInt64 const nPos, const void * pBuffer, std::size_t nCount,
+                             std::size_t * pWritten)
 {
     if (!m_pStream)
     {
@@ -201,7 +200,7 @@ ErrCode SvLockBytes::WriteAt(sal_uInt64 const nPos, const void * pBuffer, sal_Si
     }
 
     m_pStream->Seek(nPos);
-    sal_Size nTheWritten = m_pStream->Write(pBuffer, nCount);
+    std::size_t nTheWritten = m_pStream->WriteBytes(pBuffer, nCount);
     if (pWritten)
         *pWritten = nTheWritten;
     return m_pStream->GetErrorCode();
@@ -252,12 +251,12 @@ ErrCode SvLockBytes::Stat(SvLockBytesStat * pStat, SvLockBytesStatFlag) const
 
 //  class SvStream
 
-sal_Size SvStream::GetData( void* pData, sal_Size nSize )
+std::size_t SvStream::GetData( void* pData, std::size_t nSize )
 {
     if( !GetError() )
     {
-        DBG_ASSERT( m_xLockBytes.Is(), "pure virtual function" );
-        sal_Size nRet(0);
+        DBG_ASSERT( m_xLockBytes.is(), "pure virtual function" );
+        std::size_t nRet(0);
         m_nError = m_xLockBytes->ReadAt(m_nActPos, pData, nSize, &nRet);
         m_nActPos += nRet;
         return nRet;
@@ -265,12 +264,12 @@ sal_Size SvStream::GetData( void* pData, sal_Size nSize )
     else return 0;
 }
 
-sal_Size SvStream::PutData( const void* pData, sal_Size nSize )
+std::size_t SvStream::PutData( const void* pData, std::size_t nSize )
 {
     if( !GetError() )
     {
-        DBG_ASSERT( m_xLockBytes.Is(), "pure virtual function" );
-        sal_Size nRet(0);
+        DBG_ASSERT( m_xLockBytes.is(), "pure virtual function" );
+        std::size_t nRet(0);
         m_nError = m_xLockBytes->WriteAt(m_nActPos, pData, nSize, &nRet);
         m_nActPos += nRet;
         return nRet;
@@ -284,7 +283,7 @@ sal_uInt64 SvStream::SeekPos(sal_uInt64 const nPos)
     assert(nPos != SAL_MAX_UINT32);
     if( !GetError() && nPos == STREAM_SEEK_TO_END )
     {
-        DBG_ASSERT( m_xLockBytes.Is(), "pure virtual function" );
+        DBG_ASSERT( m_xLockBytes.is(), "pure virtual function" );
         SvLockBytesStat aStat;
         m_xLockBytes->Stat( &aStat, SVSTATFLAG_DEFAULT );
         m_nActPos = aStat.nSize;
@@ -298,56 +297,57 @@ void SvStream::FlushData()
 {
     if( !GetError() )
     {
-        DBG_ASSERT( m_xLockBytes.Is(), "pure virtual function" );
+        DBG_ASSERT( m_xLockBytes.is(), "pure virtual function" );
         m_nError = m_xLockBytes->Flush();
     }
 }
 
 void SvStream::SetSize(sal_uInt64 const nSize)
 {
-    DBG_ASSERT( m_xLockBytes.Is(), "pure virtual function" );
+    DBG_ASSERT( m_xLockBytes.is(), "pure virtual function" );
     m_nError = m_xLockBytes->SetSize( nSize );
 }
 
-void SvStream::ImpInit()
-{
-    m_nActPos           = 0;
-    m_nCompressMode     = SvStreamCompressFlags::NONE;
-    m_eStreamCharSet    = osl_getThreadTextEncoding();
-    m_nCryptMask        = 0;
-    m_isEof             = false;
+SvStream::SvStream() :
+     m_nActPos(0)
+
+   , m_pRWBuf(nullptr)
+   , m_pBufPos(nullptr)
+   , m_nBufSize(0)
+   , m_nBufActualLen(0)
+   , m_nBufActualPos(0)
+   , m_nBufFree(0)
+   , m_isIoRead(false)
+   , m_isIoWrite(false)
+
+   , m_isDirty(false)
+   , m_isConsistent(true)
+   , m_isEof(false)
+
+   , m_nCompressMode(SvStreamCompressFlags::NONE)
 #if defined UNX
-    m_eLineDelimiter    = LINEEND_LF;   // UNIX-Format
+   , m_eLineDelimiter(LINEEND_LF)   // UNIX-Format
 #else
-    m_eLineDelimiter    = LINEEND_CRLF; // DOS-Format
+   , m_eLineDelimiter(LINEEND_CRLF) // DOS-Format
 #endif
+   , m_eStreamCharSet(osl_getThreadTextEncoding())
 
+   , m_nCryptMask(0)
+
+   , m_nVersion(0)
+
+   , m_nBufFilePos(0)
+   , m_eStreamMode(StreamMode::NONE)
+   , m_isWritable(true)
+
+{
     SetEndian( SvStreamEndian::LITTLE );
-
-    m_nBufFilePos       = 0;
-    m_nBufActualPos     = 0;
-    m_isDirty           = false;
-    m_isConsistent      = true;
-    m_isWritable        = true;
-
-    m_pRWBuf            = nullptr;
-    m_pBufPos           = nullptr;
-    m_nBufSize          = 0;
-    m_nBufActualLen     = 0;
-    m_isIoRead          = false;
-    m_isIoWrite         = false;
-    m_nBufFree          = 0;
-
-    m_eStreamMode       = StreamMode::NONE;
-
-    m_nVersion          = 0;
 
     ClearError();
 }
 
-SvStream::SvStream( SvLockBytes* pLockBytesP )
+SvStream::SvStream( SvLockBytes* pLockBytesP ) : SvStream()
 {
-    ImpInit();
     m_xLockBytes = pLockBytesP;
     if( pLockBytesP ) {
         const SvStream* pStrm = pLockBytesP->GetStream();
@@ -358,14 +358,9 @@ SvStream::SvStream( SvLockBytes* pLockBytesP )
     SetBufferSize( 256 );
 }
 
-SvStream::SvStream()
-{
-    ImpInit();
-}
-
 SvStream::~SvStream()
 {
-    if (m_xLockBytes.Is())
+    if (m_xLockBytes.is())
         Flush();
 
     delete[] m_pRWBuf;
@@ -456,13 +451,13 @@ bool SvStream::ReadLine( OString& rStr, sal_Int32 nMaxBytesToRead )
     bool        bEnd        = false;
     sal_uInt64  nOldFilePos = Tell();
     sal_Char    c           = 0;
-    sal_Size       nTotalLen   = 0;
+    std::size_t nTotalLen   = 0;
 
     OStringBuffer aBuf(4096);
     while( !bEnd && !GetError() )   // Don't test for EOF as we
                                     // are reading block-wise!
     {
-        sal_uInt16 nLen = (sal_uInt16)Read( buf, sizeof(buf)-1 );
+        sal_uInt16 nLen = static_cast<sal_uInt16>(ReadBytes(buf, sizeof(buf)-1));
         if ( !nLen )
         {
             if ( aBuf.isEmpty() )
@@ -490,7 +485,7 @@ bool SvStream::ReadLine( OString& rStr, sal_Int32 nMaxBytesToRead )
             ++n;
         }
         nTotalLen += j;
-        if (nTotalLen > static_cast<sal_Size>(nMaxBytesToRead))
+        if (nTotalLen > static_cast<std::size_t>(nMaxBytesToRead))
         {
             n -= nTotalLen - nMaxBytesToRead;
             nTotalLen = nMaxBytesToRead;
@@ -511,7 +506,7 @@ bool SvStream::ReadLine( OString& rStr, sal_Int32 nMaxBytesToRead )
     if ( bEnd && (c=='\r' || c=='\n') )  // Special treatment for DOS files
     {
         char cTemp;
-        sal_Size nLen = Read(&cTemp , sizeof(cTemp) );
+        std::size_t nLen = ReadBytes(&cTemp, sizeof(cTemp));
         if ( nLen ) {
             if( cTemp == c || (cTemp != '\n' && cTemp != '\r') )
                 Seek( nOldFilePos );
@@ -530,7 +525,7 @@ bool SvStream::ReadUniStringLine( OUString& rStr, sal_Int32 nMaxCodepointsToRead
     bool        bEnd        = false;
     sal_uInt64  nOldFilePos = Tell();
     sal_Unicode c           = 0;
-    sal_Size       nTotalLen   = 0;
+    std::size_t nTotalLen   = 0;
 
     DBG_ASSERT( sizeof(sal_Unicode) == sizeof(sal_uInt16), "ReadUniStringLine: swapping sizeof(sal_Unicode) not implemented" );
 
@@ -538,7 +533,7 @@ bool SvStream::ReadUniStringLine( OUString& rStr, sal_Int32 nMaxCodepointsToRead
     while( !bEnd && !GetError() )   // Don't test for EOF as we
                                     // are reading block-wise!
     {
-        sal_uInt16 nLen = (sal_uInt16)Read( buf, sizeof(buf)-sizeof(sal_Unicode) );
+        sal_uInt16 nLen = static_cast<sal_uInt16>(ReadBytes( buf, sizeof(buf)-sizeof(sal_Unicode)));
         nLen /= sizeof(sal_Unicode);
         if ( !nLen )
         {
@@ -576,7 +571,7 @@ bool SvStream::ReadUniStringLine( OUString& rStr, sal_Int32 nMaxCodepointsToRead
             }
         }
         nTotalLen += j;
-        if (nTotalLen > static_cast<sal_Size>(nMaxCodepointsToRead))
+        if (nTotalLen > static_cast<std::size_t>(nMaxCodepointsToRead))
         {
             n -= nTotalLen - nMaxCodepointsToRead;
             nTotalLen = nMaxCodepointsToRead;
@@ -597,7 +592,7 @@ bool SvStream::ReadUniStringLine( OUString& rStr, sal_Int32 nMaxCodepointsToRead
     if ( bEnd && (c=='\r' || c=='\n') )  // special treatment for DOS files
     {
         sal_Unicode cTemp;
-        Read( &cTemp, sizeof(cTemp) );
+        ReadBytes( &cTemp, sizeof(cTemp) );
         if (m_isSwap)
             SwapUnicode( cTemp );
         if( cTemp == c || (cTemp != '\n' && cTemp != '\r') )
@@ -629,11 +624,11 @@ OString read_zeroTerminated_uInt8s_ToOString(SvStream& rStream)
 
     while( !bEnd && !rStream.GetError() )
     {
-        sal_Size nLen = rStream.Read(buf, sizeof(buf)-1);
+        std::size_t nLen = rStream.ReadBytes(buf, sizeof(buf)-1);
         if (!nLen)
             break;
 
-        sal_Size nReallyRead = nLen;
+        std::size_t nReallyRead = nLen;
         const sal_Char* pPtr = buf;
         while (nLen && *pPtr)
         {
@@ -663,16 +658,16 @@ OUString read_zeroTerminated_uInt8s_ToOUString(SvStream& rStream, rtl_TextEncodi
 
 /** Attempt to write a prefixed sequence of nUnits 16bit units from an OUString,
     returned value is number of bytes written */
-sal_Size write_uInt16s_FromOUString(SvStream& rStrm, const OUString& rStr,
-    sal_Size nUnits)
+std::size_t write_uInt16s_FromOUString(SvStream& rStrm, const OUString& rStr,
+    std::size_t nUnits)
 {
     DBG_ASSERT( sizeof(sal_Unicode) == sizeof(sal_uInt16), "write_uInt16s_FromOUString: swapping sizeof(sal_Unicode) not implemented" );
-    sal_Size nWritten;
+    std::size_t nWritten;
     if (!rStrm.IsEndianSwap())
-        nWritten = rStrm.Write( rStr.getStr(), nUnits * sizeof(sal_Unicode) );
+        nWritten = rStrm.WriteBytes(rStr.getStr(), nUnits * sizeof(sal_Unicode));
     else
     {
-        sal_Size nLen = nUnits;
+        std::size_t nLen = nUnits;
         sal_Unicode aBuf[384];
         sal_Unicode* const pTmp = ( nLen > 384 ? new sal_Unicode[nLen] : aBuf);
         memcpy( pTmp, rStr.getStr(), nLen * sizeof(sal_Unicode) );
@@ -683,7 +678,7 @@ sal_Size write_uInt16s_FromOUString(SvStream& rStrm, const OUString& rStr,
             SwapUnicode( *p );
             p++;
         }
-        nWritten = rStrm.Write( pTmp, nLen * sizeof(sal_Unicode) );
+        nWritten = rStrm.WriteBytes( pTmp, nLen * sizeof(sal_Unicode) );
         if ( pTmp != aBuf )
             delete [] pTmp;
     }
@@ -712,7 +707,7 @@ bool SvStream::WriteByteStringLine( const OUString& rStr, rtl_TextEncoding eDest
 
 bool SvStream::WriteLine(const OString& rStr)
 {
-    Write(rStr.getStr(), rStr.getLength());
+    WriteBytes(rStr.getStr(), rStr.getLength());
     endl(*this);
     return m_nError == SVSTREAM_OK;
 }
@@ -724,7 +719,7 @@ bool SvStream::WriteUniOrByteChar( sal_Unicode ch, rtl_TextEncoding eDestCharSet
     else
     {
         OString aStr(&ch, 1, eDestCharSet);
-        Write(aStr.getStr(), aStr.getLength());
+        WriteBytes(aStr.getStr(), aStr.getLength());
     }
     return m_nError == SVSTREAM_OK;
 }
@@ -902,7 +897,7 @@ SvStream& SvStream::ReadSChar( signed char& r )
         m_nBufFree -= sizeof(signed char);
     }
     else
-        Read( &r, sizeof(signed char) );
+        ReadBytes( &r, sizeof(signed char) );
     return *this;
 }
 
@@ -919,7 +914,7 @@ SvStream& SvStream::ReadChar( char& r )
         m_nBufFree -= sizeof(char);
     }
     else
-        Read( &r, sizeof(char) );
+        ReadBytes( &r, sizeof(char) );
     return *this;
 }
 
@@ -934,7 +929,7 @@ SvStream& SvStream::ReadUChar( unsigned char& r )
         m_nBufFree -= sizeof(char);
     }
     else
-        Read( &r, sizeof(char) );
+        ReadBytes( &r, sizeof(char) );
     return *this;
 }
 
@@ -966,7 +961,7 @@ SvStream& SvStream::ReadCharAsBool( bool& r )
     else
     {
         unsigned char c;
-        if (Read(&c, 1) == 1)
+        if (ReadBytes(&c, 1) == 1)
         {
             SAL_WARN_IF(c > 1, "tools.stream", unsigned(c) << " not 0/1");
             r = c != 0;
@@ -1008,15 +1003,14 @@ SvStream& SvStream::ReadDouble(double& r)
 SvStream& SvStream::ReadStream( SvStream& rStream )
 {
     const sal_uInt32 cBufLen = 0x8000;
-    char* pBuf = new char[ cBufLen ];
+    std::unique_ptr<char[]> pBuf( new char[ cBufLen ] );
 
     sal_uInt32 nCount;
     do {
-        nCount = Read( pBuf, cBufLen );
-        rStream.Write( pBuf, nCount );
+        nCount = ReadBytes( pBuf.get(), cBufLen );
+        rStream.WriteBytes( pBuf.get(), nCount );
     } while( nCount == cBufLen );
 
-    delete[] pBuf;
     return *this;
 }
 
@@ -1082,7 +1076,7 @@ SvStream& SvStream::WriteSChar( signed char v )
         m_isDirty = true;
     }
     else
-        Write( &v, sizeof(signed char) );
+        WriteBytes( &v, sizeof(signed char) );
     return *this;
 }
 
@@ -1102,7 +1096,7 @@ SvStream& SvStream::WriteChar( char v )
         m_isDirty = true;
     }
     else
-        Write( &v, sizeof(char) );
+        WriteBytes( &v, sizeof(char) );
     return *this;
 }
 
@@ -1120,7 +1114,7 @@ SvStream& SvStream::WriteUChar( unsigned char v )
         m_isDirty = true;
     }
     else
-        Write( &v, sizeof(char) );
+        WriteBytes( &v, sizeof(char) );
     return *this;
 }
 
@@ -1164,21 +1158,20 @@ SvStream& SvStream::WriteDouble ( const double& r )
 
 SvStream& SvStream::WriteCharPtr( const char* pBuf )
 {
-    Write( pBuf, strlen( pBuf ) );
+    WriteBytes( pBuf, strlen(pBuf) );
     return *this;
 }
 
 SvStream& SvStream::WriteStream( SvStream& rStream )
 {
     const sal_uInt32 cBufLen = 0x8000;
-    char* pBuf = new char[ cBufLen ];
+    std::unique_ptr<char[]> pBuf( new char[ cBufLen ] );
     sal_uInt32 nCount;
     do {
-        nCount = rStream.Read( pBuf, cBufLen );
-        Write( pBuf, nCount );
+        nCount = rStream.ReadBytes( pBuf.get(), cBufLen );
+        WriteBytes( pBuf.get(), nCount );
     } while( nCount == cBufLen );
 
-    delete[] pBuf;
     return *this;
 }
 
@@ -1200,9 +1193,22 @@ SvStream& SvStream::WriteUniOrByteString( const OUString& rStr, rtl_TextEncoding
     return *this;
 }
 
-sal_Size SvStream::Read( void* pData, sal_Size nCount )
+void SvStream::FlushBuffer(bool isConsistent)
 {
-    sal_Size nSaveCount = nCount;
+    if (m_isDirty && isConsistent) // Does stream require a flush?
+    {
+        SeekPos(m_nBufFilePos);
+        if (m_nCryptMask)
+            CryptAndWriteBuffer(m_pRWBuf, m_nBufActualLen);
+        else if (PutData(m_pRWBuf, m_nBufActualLen) != m_nBufActualLen)
+            SetError(SVSTREAM_WRITE_ERROR);
+        m_isDirty = false;
+    }
+}
+
+std::size_t SvStream::ReadBytes( void* pData, std::size_t nCount )
+{
+    std::size_t nSaveCount = nCount;
     if (!m_isConsistent)
         RefreshBuffer();
 
@@ -1218,25 +1224,18 @@ sal_Size SvStream::Read( void* pData, sal_Size nCount )
         // check if block is completely within buffer
         m_isIoRead = true;
         m_isIoWrite = false;
-        if (nCount <= static_cast<sal_Size>(m_nBufActualLen - m_nBufActualPos))
+        if (nCount <= static_cast<std::size_t>(m_nBufActualLen - m_nBufActualPos))
         {
             // => yes
-            memcpy(pData, m_pBufPos, (size_t) nCount);
+            if (nCount != 0)
+                memcpy(pData, m_pBufPos, (size_t) nCount);
             m_nBufActualPos = m_nBufActualPos + (sal_uInt16)nCount;
             m_pBufPos += nCount;
             m_nBufFree = m_nBufFree - (sal_uInt16)nCount;
         }
         else
         {
-            if (m_isDirty) // Does stream require a flush?
-            {
-                SeekPos(m_nBufFilePos);
-                if (m_nCryptMask)
-                    CryptAndWriteBuffer(m_pRWBuf, m_nBufActualLen);
-                else
-                    PutData(m_pRWBuf, m_nBufActualLen);
-                m_isDirty = false;
-            }
+            FlushBuffer(true);
 
             // Does data block fit into buffer?
             if (nCount > m_nBufSize)
@@ -1264,7 +1263,7 @@ sal_Size SvStream::Read( void* pData, sal_Size nCount )
                 SeekPos(m_nBufFilePos);
 
                 // TODO: Typecast before GetData, sal_uInt16 nCountTmp
-                sal_Size nCountTmp = GetData( m_pRWBuf, m_nBufSize );
+                std::size_t nCountTmp = GetData( m_pRWBuf, m_nBufSize );
                 if (m_nCryptMask)
                     EncryptBuffer(m_pRWBuf, nCountTmp);
                 m_nBufActualLen = (sal_uInt16)nCountTmp;
@@ -1287,10 +1286,11 @@ sal_Size SvStream::Read( void* pData, sal_Size nCount )
     return nCount;
 }
 
-sal_Size SvStream::Write( const void* pData, sal_Size nCount )
+std::size_t SvStream::WriteBytes( const void* pData, std::size_t nCount )
 {
     if( !nCount )
         return 0;
+
     if (!m_isWritable)
     {
         SetError( ERRCODE_IO_CANTWRITE );
@@ -1311,7 +1311,7 @@ sal_Size SvStream::Write( const void* pData, sal_Size nCount )
 
     m_isIoRead = false;
     m_isIoWrite = true;
-    if (nCount <= static_cast<sal_Size>(m_nBufSize - m_nBufActualPos))
+    if (nCount <= static_cast<std::size_t>(m_nBufSize - m_nBufActualPos))
     {
         memcpy( m_pBufPos, pData, (size_t)nCount );
         m_nBufActualPos = m_nBufActualPos + (sal_uInt16)nCount;
@@ -1324,16 +1324,7 @@ sal_Size SvStream::Write( const void* pData, sal_Size nCount )
     }
     else
     {
-        // Does stream require flushing?
-        if (m_isDirty)
-        {
-            SeekPos(m_nBufFilePos);
-            if (m_nCryptMask)
-                CryptAndWriteBuffer( m_pRWBuf, (sal_Size)m_nBufActualLen );
-            else
-                PutData( m_pRWBuf, m_nBufActualLen );
-            m_isDirty = false;
-        }
+        FlushBuffer(true);
 
         // Does data block fit into buffer?
         if (nCount > m_nBufSize)
@@ -1388,15 +1379,7 @@ sal_uInt64 SvStream::Seek(sal_uInt64 const nFilePos)
     }
     else
     {
-        if (m_isDirty && m_isConsistent)
-        {
-            SeekPos(m_nBufFilePos);
-            if (m_nCryptMask)
-                CryptAndWriteBuffer( m_pRWBuf, m_nBufActualLen );
-            else
-                PutData( m_pRWBuf, m_nBufActualLen );
-            m_isDirty = false;
-        }
+        FlushBuffer(m_isConsistent);
         m_nBufActualLen = 0;
         m_nBufActualPos = 0;
         m_pBufPos     = m_pRWBuf;
@@ -1419,37 +1402,20 @@ sal_uInt64 SvStream::remainingSize()
 
 void SvStream::Flush()
 {
-    if (m_isDirty && m_isConsistent)
-    {
-        SeekPos(m_nBufFilePos);
-        if (m_nCryptMask)
-            CryptAndWriteBuffer( m_pRWBuf, (sal_Size)m_nBufActualLen );
-        else
-            if (PutData( m_pRWBuf, m_nBufActualLen ) != m_nBufActualLen)
-                SetError( SVSTREAM_WRITE_ERROR );
-        m_isDirty = false;
-    }
+    FlushBuffer(m_isConsistent);
     if (m_isWritable)
         FlushData();
 }
 
 void SvStream::RefreshBuffer()
 {
-    if (m_isDirty && m_isConsistent)
-    {
-        SeekPos(m_nBufFilePos);
-        if (m_nCryptMask)
-            CryptAndWriteBuffer( m_pRWBuf, (sal_Size)m_nBufActualLen );
-        else
-            PutData( m_pRWBuf, m_nBufActualLen );
-        m_isDirty = false;
-    }
+    FlushBuffer(m_isConsistent);
     SeekPos(m_nBufFilePos);
     m_nBufActualLen = (sal_uInt16)GetData( m_pRWBuf, m_nBufSize );
     if (m_nBufActualLen && m_nError == ERRCODE_IO_PENDING)
         m_nError = ERRCODE_NONE;
     if (m_nCryptMask)
-        EncryptBuffer(m_pRWBuf, (sal_Size)m_nBufActualLen);
+        EncryptBuffer(m_pRWBuf, (std::size_t)m_nBufActualLen);
     m_isConsistent = true;
     m_isIoRead = m_isIoWrite = false;
 }
@@ -1457,28 +1423,28 @@ void SvStream::RefreshBuffer()
 SvStream& SvStream::WriteInt32AsString(sal_Int32 nInt32)
 {
     char buffer[12];
-    sal_Size nLen = sprintf(buffer, "%" SAL_PRIdINT32, nInt32);
-    Write(buffer, nLen);
+    std::size_t nLen = sprintf(buffer, "%" SAL_PRIdINT32, nInt32);
+    WriteBytes(buffer, nLen);
     return *this;
 }
 
 SvStream& SvStream::WriteUInt32AsString(sal_uInt32 nUInt32)
 {
     char buffer[11];
-    sal_Size nLen = sprintf(buffer, "%" SAL_PRIuUINT32, nUInt32);
-    Write(buffer, nLen);
+    std::size_t nLen = sprintf(buffer, "%" SAL_PRIuUINT32, nUInt32);
+    WriteBytes(buffer, nLen);
     return *this;
 }
 
 #define CRYPT_BUFSIZE 1024
 
 /// Encrypt and write
-sal_Size SvStream::CryptAndWriteBuffer( const void* pStart, sal_Size nLen)
+std::size_t SvStream::CryptAndWriteBuffer( const void* pStart, std::size_t nLen)
 {
     unsigned char  pTemp[CRYPT_BUFSIZE];
     unsigned char const * pDataPtr = static_cast<unsigned char const *>(pStart);
-    sal_Size nCount = 0;
-    sal_Size nBufCount;
+    std::size_t nCount = 0;
+    std::size_t nBufCount;
     unsigned char nMask = m_nCryptMask;
     do
     {
@@ -1504,12 +1470,12 @@ sal_Size SvStream::CryptAndWriteBuffer( const void* pStart, sal_Size nLen)
     return nCount;
 }
 
-bool SvStream::EncryptBuffer(void* pStart, sal_Size nLen)
+bool SvStream::EncryptBuffer(void* pStart, std::size_t nLen)
 {
     unsigned char* pTemp = static_cast<unsigned char*>(pStart);
     unsigned char nMask = m_nCryptMask;
 
-    for ( sal_Size n=0; n < nLen; n++, pTemp++ )
+    for ( std::size_t n=0; n < nLen; n++, pTemp++ )
     {
         unsigned char aCh = *pTemp;
         SWAPNIBBLES(aCh)
@@ -1561,7 +1527,7 @@ void SvStream::SetCryptMaskKey(const OString& rCryptMaskKey)
         m_aCryptMaskKey.getLength(), GetVersion());
 }
 
-void SvStream::SyncSvStream( sal_Size nNewStreamPos )
+void SvStream::SyncSvStream( std::size_t nNewStreamPos )
 {
     ClearBuffer();
     SvStream::m_nBufFilePos = nNewStreamPos;
@@ -1624,7 +1590,7 @@ SvStream& endlub( SvStream& rStrm )
         return endl( rStrm );
 }
 
-SvMemoryStream::SvMemoryStream( void* pBuffer, sal_Size bufSize,
+SvMemoryStream::SvMemoryStream( void* pBuffer, std::size_t bufSize,
                                 StreamMode eMode )
 {
     if( eMode & StreamMode::WRITE )
@@ -1640,7 +1606,7 @@ SvMemoryStream::SvMemoryStream( void* pBuffer, sal_Size bufSize,
     SetBufferSize( 0 );
 }
 
-SvMemoryStream::SvMemoryStream( sal_Size nInitSize, sal_Size nResizeOffset )
+SvMemoryStream::SvMemoryStream( std::size_t nInitSize, std::size_t nResizeOffset )
 {
     m_isWritable = true;
     bOwnsData   = true;
@@ -1685,10 +1651,10 @@ sal_uInt64 SvMemoryStream::GetSize()
     return nLength;
 }
 
-void SvMemoryStream::SetBuffer( void* pNewBuf, sal_Size nCount,
-                                 sal_Size nEOF )
+void SvMemoryStream::SetBuffer( void* pNewBuf, std::size_t nCount,
+                                 std::size_t nEOF )
 {
-    SetBufferSize( 0 ); // Buffering in der Basisklasse initialisieren
+    SetBufferSize( 0 ); // Init buffering in the base class
     Seek( 0 );
     if( bOwnsData )
     {
@@ -1709,9 +1675,9 @@ void SvMemoryStream::SetBuffer( void* pNewBuf, sal_Size nCount,
     ResetError();
 }
 
-sal_Size SvMemoryStream::GetData( void* pData, sal_Size nCount )
+std::size_t SvMemoryStream::GetData( void* pData, std::size_t nCount )
 {
-    sal_Size nMaxCount = nEndOfData-nPos;
+    std::size_t nMaxCount = nEndOfData-nPos;
     if( nCount > nMaxCount )
         nCount = nMaxCount;
     if (nCount != 0)
@@ -1722,12 +1688,12 @@ sal_Size SvMemoryStream::GetData( void* pData, sal_Size nCount )
     return nCount;
 }
 
-sal_Size SvMemoryStream::PutData( const void* pData, sal_Size nCount )
+std::size_t SvMemoryStream::PutData( const void* pData, std::size_t nCount )
 {
     if( GetError() )
         return 0L;
 
-    sal_Size nMaxCount = nSize-nPos;
+    std::size_t nMaxCount = nSize-nPos;
 
     // check for overflow
     if( nCount > nMaxCount )
@@ -1824,7 +1790,7 @@ void SvMemoryStream::ResetError()
     SvStream::ClearError();
 }
 
-bool SvMemoryStream::AllocateMemory( sal_Size nNewSize )
+bool SvMemoryStream::AllocateMemory( std::size_t nNewSize )
 {
     pBuf = new sal_uInt8[nNewSize];
     return( pBuf != nullptr );
@@ -1833,10 +1799,13 @@ bool SvMemoryStream::AllocateMemory( sal_Size nNewSize )
 // (using Bozo algorithm)
 bool SvMemoryStream::ReAllocateMemory( long nDiff )
 {
+    if (!m_isWritable || !bOwnsData)
+        return false;
+
     bool bRetVal    = false;
     long nTemp      = (long)nSize;
     nTemp           += nDiff;
-    sal_Size nNewSize  = (sal_Size)nTemp;
+    std::size_t nNewSize  = (std::size_t)nTemp;
 
     if( nNewSize )
     {
@@ -1901,7 +1870,7 @@ void* SvMemoryStream::SwitchBuffer()
 
     ResetError();
 
-    sal_Size nInitSize = 512;
+    std::size_t nInitSize = 512;
     if( !AllocateMemory(nInitSize) )
     {
         SetError( SVSTREAM_OUTOFMEMORY );
@@ -1916,6 +1885,12 @@ void* SvMemoryStream::SwitchBuffer()
 
 void SvMemoryStream::SetSize(sal_uInt64 const nNewSize)
 {
+    if (!m_isWritable)
+    {
+        SetError(SVSTREAM_INVALID_HANDLE);
+        return;
+    }
+
     long nDiff = (long)nNewSize - (long)nSize;
     ReAllocateMemory( nDiff );
 }
@@ -1978,19 +1953,21 @@ bool SvScriptStream::good() const
 }
 
 //Create a OString of nLen bytes from rStream
-OString read_uInt8s_ToOString(SvStream& rStrm, sal_Size nLen)
+OString read_uInt8s_ToOString(SvStream& rStrm, std::size_t nLen)
 {
     rtl_String *pStr = nullptr;
     if (nLen)
     {
-        nLen = std::min(nLen, static_cast<sal_Size>(SAL_MAX_INT32));
+        nLen = std::min<std::size_t>(nLen, SAL_MAX_INT32);
+        //limit allocation to size of file, but + 1 to set eof state
+        nLen = std::min<sal_uInt64>(nLen, rStrm.remainingSize() + 1);
         //alloc a (ref-count 1) rtl_String of the desired length.
         //rtl_String's buffer is uninitialized, except for null termination
         pStr = rtl_string_alloc(sal::static_int_cast<sal_Int32>(nLen));
-        SAL_WARN_IF(!pStr, "tools", "allocation failed");
+        SAL_WARN_IF(!pStr, "tools.stream", "allocation failed");
         if (pStr)
         {
-            sal_Size nWasRead = rStrm.Read(pStr->buffer, nLen);
+            std::size_t nWasRead = rStrm.ReadBytes(pStr->buffer, nLen);
             if (nWasRead != nLen)
             {
                 //on (typically unlikely) short read set length to what we could
@@ -2006,20 +1983,22 @@ OString read_uInt8s_ToOString(SvStream& rStrm, sal_Size nLen)
     return pStr ? OString(pStr, SAL_NO_ACQUIRE) : OString();
 }
 
-//Create a OUString of nLen sal_Unicodes from rStream
-OUString read_uInt16s_ToOUString(SvStream& rStrm, sal_Size nLen)
+//Create a OUString of nLen sal_Unicode code units from rStream
+OUString read_uInt16s_ToOUString(SvStream& rStrm, std::size_t nLen)
 {
     rtl_uString *pStr = nullptr;
     if (nLen)
     {
-        nLen = std::min(nLen, static_cast<sal_Size>(SAL_MAX_INT32));
+        nLen = std::min<std::size_t>(nLen, SAL_MAX_INT32);
+        //limit allocation to size of file, but + 1 to set eof state
+        nLen = std::min<sal_uInt64>(nLen, (rStrm.remainingSize() + 2) / 2);
         //alloc a (ref-count 1) rtl_uString of the desired length.
         //rtl_String's buffer is uninitialized, except for null termination
         pStr = rtl_uString_alloc(sal::static_int_cast<sal_Int32>(nLen));
-        SAL_WARN_IF(!pStr, "tools", "allocation failed");
+        SAL_WARN_IF(!pStr, "tools.stream", "allocation failed");
         if (pStr)
         {
-            sal_Size nWasRead = rStrm.Read(pStr->buffer, nLen*2)/2;
+            std::size_t nWasRead = rStrm.ReadBytes(pStr->buffer, nLen*2)/2;
             if (nWasRead != nLen)
             {
                 //on (typically unlikely) short read set length to what we could
@@ -2131,12 +2110,12 @@ OUString convertLineEnd(const OUString &rIn, LineEnd eLineEnd)
     return tmpl_convertLineEnd<OUString, OUStringBuffer>(rIn, eLineEnd);
 }
 
-sal_Size write_uInt32_lenPrefixed_uInt16s_FromOUString(SvStream& rStrm,
+std::size_t write_uInt32_lenPrefixed_uInt16s_FromOUString(SvStream& rStrm,
                                                 const OUString &rStr)
 {
-    sal_Size nWritten = 0;
-    sal_uInt32 nUnits = std::min<sal_Size>(rStr.getLength(), std::numeric_limits<sal_uInt32>::max());
-    SAL_WARN_IF(static_cast<sal_Size>(nUnits) != static_cast<sal_Size>(rStr.getLength()),
+    std::size_t nWritten = 0;
+    sal_uInt32 nUnits = std::min<std::size_t>(rStr.getLength(), std::numeric_limits<sal_uInt32>::max());
+    SAL_WARN_IF(static_cast<std::size_t>(nUnits) != static_cast<std::size_t>(rStr.getLength()),
         "tools.stream",
         "string too long for prefix count to fit in output type");
     rStrm.WriteUInt32(nUnits);
@@ -2148,11 +2127,11 @@ sal_Size write_uInt32_lenPrefixed_uInt16s_FromOUString(SvStream& rStrm,
     return nWritten;
 }
 
-sal_Size write_uInt16_lenPrefixed_uInt16s_FromOUString(SvStream& rStrm,
+std::size_t write_uInt16_lenPrefixed_uInt16s_FromOUString(SvStream& rStrm,
                                                 const OUString &rStr)
 {
-    sal_Size nWritten = 0;
-    sal_uInt16 nUnits = std::min<sal_Size>(rStr.getLength(), std::numeric_limits<sal_uInt16>::max());
+    std::size_t nWritten = 0;
+    sal_uInt16 nUnits = std::min<std::size_t>(rStr.getLength(), std::numeric_limits<sal_uInt16>::max());
     SAL_WARN_IF(nUnits != rStr.getLength(),
         "tools.stream",
         "string too long for prefix count to fit in output type");
@@ -2165,12 +2144,12 @@ sal_Size write_uInt16_lenPrefixed_uInt16s_FromOUString(SvStream& rStrm,
     return nWritten;
 }
 
-sal_Size write_uInt16_lenPrefixed_uInt8s_FromOString(SvStream& rStrm,
+std::size_t write_uInt16_lenPrefixed_uInt8s_FromOString(SvStream& rStrm,
                                               const OString &rStr)
 {
-    sal_Size nWritten = 0;
-    sal_uInt16 nUnits = std::min<sal_Size>(rStr.getLength(), std::numeric_limits<sal_uInt16>::max());
-    SAL_WARN_IF(static_cast<sal_Size>(nUnits) != static_cast<sal_Size>(rStr.getLength()),
+    std::size_t nWritten = 0;
+    sal_uInt16 nUnits = std::min<std::size_t>(rStr.getLength(), std::numeric_limits<sal_uInt16>::max());
+    SAL_WARN_IF(static_cast<std::size_t>(nUnits) != static_cast<std::size_t>(rStr.getLength()),
         "tools.stream",
         "string too long for sal_uInt16 count to fit in output type");
     rStrm.WriteUInt16( nUnits );

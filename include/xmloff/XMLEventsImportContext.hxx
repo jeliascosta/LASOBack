@@ -53,10 +53,10 @@ typedef ::std::vector< EventNameValuesPair > EventsVector;
  */
 class XMLOFF_DLLPUBLIC XMLEventsImportContext : public SvXMLImportContext
 {
-protected:
     // the event XNameReplace; may be empty
     css::uno::Reference<css::container::XNameReplace> xEvents;
 
+protected:
     // if no XNameReplace is given, use this vector to collect events
     EventsVector aCollectEvents;
 
@@ -80,7 +80,7 @@ public:
         const OUString& rLocalName,
         const css::uno::Reference<css::container::XNameReplace> & xNameRepl);
 
-    virtual ~XMLEventsImportContext();
+    virtual ~XMLEventsImportContext() override;
 
     void AddEventValues(
         const OUString& rEventName,

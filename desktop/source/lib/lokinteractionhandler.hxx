@@ -86,25 +86,19 @@ public:
             desktop::LibLibreOffice_Impl *,
             desktop::LibLODocument_Impl *pLOKDocumt = nullptr);
 
-    virtual ~LOKInteractionHandler();
+    virtual ~LOKInteractionHandler() override;
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & rServiceName)
-        throw (com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService(OUString const & rServiceName) override;
 
-    virtual com::sun::star::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual com::sun::star::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
 
-    virtual void SAL_CALL initialize(com::sun::star::uno::Sequence<com::sun::star::uno::Any > const & rArguments)
-        throw (com::sun::star::uno::Exception, std::exception) override;
+    virtual void SAL_CALL initialize(com::sun::star::uno::Sequence<com::sun::star::uno::Any > const & rArguments) override;
 
-    virtual void SAL_CALL handle(com::sun::star::uno::Reference<com::sun::star::task::XInteractionRequest> const & rRequest)
-        throw (com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL handle(com::sun::star::uno::Reference<com::sun::star::task::XInteractionRequest> const & rRequest) override;
 
-    virtual sal_Bool SAL_CALL handleInteractionRequest(const ::com::sun::star::uno::Reference<::com::sun::star::task::XInteractionRequest>& Request)
-        throw (com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL handleInteractionRequest(const ::com::sun::star::uno::Reference<::com::sun::star::task::XInteractionRequest>& Request) override;
 };
 
 #endif

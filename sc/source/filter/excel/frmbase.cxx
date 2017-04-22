@@ -151,26 +151,25 @@ const ScRange* ScRangeListTabs::Next ()
 ConverterBase::ConverterBase( svl::SharedStringPool& rSPool, sal_uInt16 nNewBuffer ) :
     aPool(rSPool),
     aEingPos( 0, 0, 0 ),
-    eStatus( ConvOK )
+    eStatus( ConvErr::OK )
 {
     OSL_ENSURE( nNewBuffer > 0, "ConverterBase::ConverterBase - nNewBuffer == 0!" );
-    pBuffer = new sal_Char[ nNewBuffer ];
+    pBuffer.reset( new sal_Char[ nNewBuffer ] );
 }
 
 ConverterBase::~ConverterBase()
 {
-    delete[] pBuffer;
 }
 
 void ConverterBase::Reset()
 {
-    eStatus = ConvOK;
+    eStatus = ConvErr::OK;
     aPool.Reset();
     aStack.Reset();
 }
 
-ExcelConverterBase::ExcelConverterBase( svl::SharedStringPool& rSPool, sal_uInt16 nNewBuffer ) :
-    ConverterBase(rSPool, nNewBuffer)
+ExcelConverterBase::ExcelConverterBase( svl::SharedStringPool& rSPool ) :
+    ConverterBase(rSPool, 512)
 {
 }
 
@@ -190,8 +189,8 @@ void ExcelConverterBase::Reset()
     aEingPos.Set( 0, 0, 0 );
 }
 
-LotusConverterBase::LotusConverterBase( SvStream &rStr, svl::SharedStringPool& rSPool, sal_uInt16 nNewBuffers ) :
-    ConverterBase(rSPool, nNewBuffers),
+LotusConverterBase::LotusConverterBase( SvStream &rStr, svl::SharedStringPool& rSPool  ) :
+    ConverterBase(rSPool, 128),
     aIn( rStr ),
     nBytesLeft( 0 )
 {

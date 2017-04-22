@@ -51,7 +51,6 @@ EditHTMLParser::EditHTMLParser( SvStream& rIn, const OUString& rBaseURL, SvKeyVa
     nInCell(0),
     nDefListLevel(0)
 {
-    DBG_ASSERT( RTL_TEXTENCODING_DONTKNOW == GetSrcEncoding( ), "EditHTMLParser::EditHTMLParser: Where does the encoding come from?" );
     DBG_ASSERT( !IsSwitchToUCS2(), "EditHTMLParser::::EditHTMLParser: Switch to UCS2?" );
 
     // Although the real default encoding is ISO8859-1, we use MS-1252
@@ -67,32 +66,31 @@ EditHTMLParser::EditHTMLParser( SvStream& rIn, const OUString& rBaseURL, SvKeyVa
 
 EditHTMLParser::~EditHTMLParser()
 {
-    delete pCurAnchor;
 }
 
 SvParserState EditHTMLParser::CallParser(EditEngine* pEE, const EditPaM& rPaM)
 {
     DBG_ASSERT(pEE, "CallParser: ImpEditEngine ?!");
     mpEditEngine = pEE;
-    SvParserState _eState = SVPAR_NOTSTARTED;
+    SvParserState _eState = SvParserState::NotStarted;
     if ( mpEditEngine )
     {
         // Build in wrap mimic in RTF import?
         aCurSel = EditSelection( rPaM, rPaM );
 
-        if (mpEditEngine->IsImportHandlerSet())
+        if (mpEditEngine->IsHtmlImportHandlerSet())
         {
-            ImportInfo aImportInfo(HTMLIMP_START, this, mpEditEngine->CreateESelection(aCurSel));
-            mpEditEngine->CallImportHandler(aImportInfo);
+            HtmlImportInfo aImportInfo(HtmlImportState::Start, this, mpEditEngine->CreateESelection(aCurSel));
+            mpEditEngine->CallHtmlImportHandler(aImportInfo);
         }
 
         ImpSetStyleSheet( 0 );
         _eState = HTMLParser::CallParser();
 
-        if (mpEditEngine->IsImportHandlerSet())
+        if (mpEditEngine->IsHtmlImportHandlerSet())
         {
-            ImportInfo aImportInfo(HTMLIMP_END, this, mpEditEngine->CreateESelection(aCurSel));
-            mpEditEngine->CallImportHandler(aImportInfo);
+            HtmlImportInfo aImportInfo(HtmlImportState::End, this, mpEditEngine->CreateESelection(aCurSel));
+            mpEditEngine->CallHtmlImportHandler(aImportInfo);
         }
 
         if ( bFieldsInserted )
@@ -218,7 +216,7 @@ void EditHTMLParser::NextToken( int nToken )
                                 SfxItemSet aItems( aCurSel.Max().GetNode()->GetContentAttribs().GetItems() );
                                 aItems.ClearItem( EE_PARA_JUST );
                                 if ( nToken == HTML_CENTER_ON )
-                                    aItems.Put( SvxAdjustItem( SVX_ADJUST_CENTER, EE_PARA_JUST ) );
+                                    aItems.Put( SvxAdjustItem( SvxAdjust::Center, EE_PARA_JUST ) );
                                 mpEditEngine->SetParaAttribsOnly(nNode, aItems);
                             }
                             break;
@@ -492,26 +490,26 @@ void EditHTMLParser::NextToken( int nToken )
     }
     }   // SWITCH
 
-    if (mpEditEngine->IsImportHandlerSet())
+    if (mpEditEngine->IsHtmlImportHandlerSet())
     {
-        ImportInfo aImportInfo(HTMLIMP_NEXTTOKEN, this, mpEditEngine->CreateESelection(aCurSel));
+        HtmlImportInfo aImportInfo(HtmlImportState::NextToken, this, mpEditEngine->CreateESelection(aCurSel));
         aImportInfo.nToken = nToken;
         aImportInfo.nTokenValue = (short)nTokenValue;
         if ( nToken == HTML_TEXTTOKEN )
             aImportInfo.aText = aToken;
         else if (nToken == HTML_STYLE_OFF)
             aImportInfo.aText = maStyleSource.makeStringAndClear();
-        mpEditEngine->CallImportHandler(aImportInfo);
+        mpEditEngine->CallHtmlImportHandler(aImportInfo);
     }
 
 }
 
 void EditHTMLParser::ImpInsertParaBreak()
 {
-    if (mpEditEngine->IsImportHandlerSet())
+    if (mpEditEngine->IsHtmlImportHandlerSet())
     {
-        ImportInfo aImportInfo(HTMLIMP_INSERTPARA, this, mpEditEngine->CreateESelection(aCurSel));
-        mpEditEngine->CallImportHandler(aImportInfo);
+        HtmlImportInfo aImportInfo(HtmlImportState::InsertPara, this, mpEditEngine->CreateESelection(aCurSel));
+        mpEditEngine->CallHtmlImportHandler(aImportInfo);
     }
     aCurSel = mpEditEngine->InsertParaBreak(aCurSel);
 }
@@ -528,12 +526,12 @@ void EditHTMLParser::ImpSetAttribs( const SfxItemSet& rItems )
     aStartPaM.SetIndex( 0 );
     aEndPaM.SetIndex( aEndPaM.GetNode()->Len() );
 
-    if (mpEditEngine->IsImportHandlerSet())
+    if (mpEditEngine->IsHtmlImportHandlerSet())
     {
         EditSelection aSel( aStartPaM, aEndPaM );
-        ImportInfo aImportInfo(HTMLIMP_SETATTR, this, mpEditEngine->CreateESelection(aSel));
+        HtmlImportInfo aImportInfo(HtmlImportState::SetAttr, this, mpEditEngine->CreateESelection(aSel));
         aImportInfo.pAttrs = const_cast<SfxItemSet *>(&rItems);
-        mpEditEngine->CallImportHandler(aImportInfo);
+        mpEditEngine->CallHtmlImportHandler(aImportInfo);
     }
 
     ContentNode* pSN = aStartPaM.GetNode();
@@ -599,16 +597,16 @@ void EditHTMLParser::ImpSetStyleSheet( sal_uInt16 nHLevel )
         aItems.Put( aWeightItem );
 
         SvxWeightItem aWeightItemCJK( WEIGHT_BOLD, EE_CHAR_WEIGHT_CJK );
-        aItems.Put( aWeightItem );
+        aItems.Put( aWeightItemCJK );
 
         SvxWeightItem aWeightItemCTL( WEIGHT_BOLD, EE_CHAR_WEIGHT_CTL );
-        aItems.Put( aWeightItem );
+        aItems.Put( aWeightItemCTL );
     }
 
     // Font hight and margins, when LogicToLogic is possible:
     MapUnit eUnit = mpEditEngine->GetRefMapMode().GetMapUnit();
-    if ( ( eUnit != MAP_PIXEL ) && ( eUnit != MAP_SYSFONT ) &&
-         ( eUnit != MAP_APPFONT ) && ( eUnit != MAP_RELATIVE ) )
+    if ( ( eUnit != MapUnit::MapPixel ) && ( eUnit != MapUnit::MapSysFont ) &&
+         ( eUnit != MapUnit::MapAppFont ) && ( eUnit != MapUnit::MapRelative ) )
     {
         long nPoints = 10;
         if ( nHLevel == 1 )
@@ -620,7 +618,7 @@ void EditHTMLParser::ImpSetStyleSheet( sal_uInt16 nHLevel )
         else if ( nHLevel == 4 )
             nPoints = 11;
 
-        nPoints = OutputDevice::LogicToLogic( nPoints, MAP_POINT, eUnit );
+        nPoints = OutputDevice::LogicToLogic( nPoints, MapUnit::MapPoint, eUnit );
 
         SvxFontHeightItem aHeightItem( nPoints, 100, EE_CHAR_FONTHEIGHT );
         aItems.Put( aHeightItem );
@@ -635,8 +633,8 @@ void EditHTMLParser::ImpSetStyleSheet( sal_uInt16 nHLevel )
         if ( !nHLevel || ((nHLevel >= 1) && (nHLevel <= 6)) )
         {
             SvxULSpaceItem aULSpaceItem( EE_PARA_ULSPACE );
-            aULSpaceItem.SetUpper( (sal_uInt16)OutputDevice::LogicToLogic( 42, MAP_10TH_MM, eUnit ) );
-            aULSpaceItem.SetLower( (sal_uInt16)OutputDevice::LogicToLogic( 35, MAP_10TH_MM, eUnit ) );
+            aULSpaceItem.SetUpper( (sal_uInt16)OutputDevice::LogicToLogic( 42, MapUnit::Map10thMM, eUnit ) );
+            aULSpaceItem.SetLower( (sal_uInt16)OutputDevice::LogicToLogic( 35, MapUnit::Map10thMM, eUnit ) );
             aItems.Put( aULSpaceItem );
         }
     }
@@ -660,11 +658,11 @@ void EditHTMLParser::ImpSetStyleSheet( sal_uInt16 nHLevel )
 
 void EditHTMLParser::ImpInsertText( const OUString& rText )
 {
-    if (mpEditEngine->IsImportHandlerSet())
+    if (mpEditEngine->IsHtmlImportHandlerSet())
     {
-        ImportInfo aImportInfo(HTMLIMP_INSERTTEXT, this, mpEditEngine->CreateESelection(aCurSel));
+        HtmlImportInfo aImportInfo(HtmlImportState::InsertText, this, mpEditEngine->CreateESelection(aCurSel));
         aImportInfo.aText = rText;
-        mpEditEngine->CallImportHandler(aImportInfo);
+        mpEditEngine->CallHtmlImportHandler(aImportInfo);
     }
 
     aCurSel = mpEditEngine->InsertText(aCurSel, rText);
@@ -699,7 +697,7 @@ void EditHTMLParser::StartPara( bool bReal )
     if ( bReal )
     {
         const HTMLOptions& aOptions = GetOptions();
-        SvxAdjust eAdjust = SVX_ADJUST_LEFT;
+        SvxAdjust eAdjust = SvxAdjust::Left;
         for (const auto & aOption : aOptions)
         {
             switch( aOption.GetToken() )
@@ -708,13 +706,13 @@ void EditHTMLParser::StartPara( bool bReal )
                 {
                     OUString const& rTmp(aOption.GetString());
                     if (rTmp.equalsIgnoreAsciiCase(OOO_STRING_SVTOOLS_HTML_AL_right))
-                        eAdjust = SVX_ADJUST_RIGHT;
+                        eAdjust = SvxAdjust::Right;
                     else if (rTmp.equalsIgnoreAsciiCase(OOO_STRING_SVTOOLS_HTML_AL_middle))
-                        eAdjust = SVX_ADJUST_CENTER;
+                        eAdjust = SvxAdjust::Center;
                     else if (rTmp.equalsIgnoreAsciiCase(OOO_STRING_SVTOOLS_HTML_AL_center))
-                        eAdjust = SVX_ADJUST_CENTER;
+                        eAdjust = SvxAdjust::Center;
                     else
-                        eAdjust = SVX_ADJUST_LEFT;
+                        eAdjust = SvxAdjust::Left;
                 }
                 break;
             }
@@ -778,9 +776,9 @@ void EditHTMLParser::AnchorStart()
                 INetURLObject aTargetURL;
                 INetURLObject aRootURL( aBaseURL );
                 aRootURL.GetNewAbsURL( aRef, &aTargetURL );
-                aURL = aTargetURL.GetMainURL( INetURLObject::DECODE_TO_IURI );
+                aURL = aTargetURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
             }
-            pCurAnchor = new AnchorInfo;
+            pCurAnchor.reset( new AnchorInfo );
             pCurAnchor->aHRef = aURL;
         }
     }
@@ -794,13 +792,12 @@ void EditHTMLParser::AnchorEnd()
         SvxFieldItem aFld( SvxURLField( pCurAnchor->aHRef, pCurAnchor->aText, SVXURLFORMAT_REPR ), EE_FEATURE_FIELD  );
         aCurSel = mpEditEngine->InsertField(aCurSel, aFld);
         bFieldsInserted = true;
-        delete pCurAnchor;
-        pCurAnchor = nullptr;
+        pCurAnchor.reset();
 
-        if (mpEditEngine->IsImportHandlerSet())
+        if (mpEditEngine->IsHtmlImportHandlerSet())
         {
-            ImportInfo aImportInfo(HTMLIMP_INSERTFIELD, this, mpEditEngine->CreateESelection(aCurSel));
-            mpEditEngine->CallImportHandler(aImportInfo);
+            HtmlImportInfo aImportInfo(HtmlImportState::InsertField, this, mpEditEngine->CreateESelection(aCurSel));
+            mpEditEngine->CallHtmlImportHandler(aImportInfo);
         }
     }
 }

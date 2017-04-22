@@ -30,6 +30,7 @@
 #include <com/sun/star/frame/DispatchResultState.hpp>
 #include <com/sun/star/office/Quickstart.hpp>
 #include <com/sun/star/system/SystemShellExecute.hpp>
+#include <com/sun/star/system/SystemShellExecuteException.hpp>
 #include <com/sun/star/system/SystemShellExecuteFlags.hpp>
 #include <com/sun/star/task/XJob.hpp>
 #include <com/sun/star/task/XJobExecutor.hpp>
@@ -53,6 +54,7 @@
 #endif
 #endif
 
+#include <onlinecheck.hxx>
 #include "updateprotocol.hxx"
 #include "updatecheckconfig.hxx"
 
@@ -69,10 +71,6 @@ namespace uno = com::sun::star::uno ;
 #define PROPERTY_SHOW_BUBBLE    "BubbleVisible"
 #define PROPERTY_CLICK_HDL      "MenuClickHDL"
 #define PROPERTY_SHOW_MENUICON  "MenuIconVisible"
-
-#if defined(_WIN32)
-extern "C" bool SAL_CALL WNT_hasInternetConnection();
-#endif
 
 // Returns the URL of the release note for the given position
 OUString getReleaseNote(const UpdateInfo& rInfo, sal_uInt8 pos, bool autoDownloadEnabled)
@@ -106,7 +104,7 @@ inline OUString getBuildId()
 }
 
 
-#if defined LINUX || defined SOLARIS
+#if (defined LINUX || defined __sun)
 inline OUString getBaseInstallation()
 {
     OUString aPathVal("$BRAND_BASE_DIR");
@@ -234,7 +232,7 @@ public:
     virtual void cancel() override;
 
 protected:
-    virtual ~UpdateCheckThread();
+    virtual ~UpdateCheckThread() override;
 
     virtual void SAL_CALL run() override;
     virtual void SAL_CALL onTerminated() override;
@@ -245,7 +243,7 @@ protected:
 private:
 
     /* Used to avoid dialup login windows (on platforms we know how to double this) */
-    static inline bool hasInternetConnection()
+    static bool hasInternetConnection()
     {
 #ifdef _WIN32
         return WNT_hasInternetConnection();
@@ -255,7 +253,7 @@ private:
     }
 
     /* Creates a new instance of UpdateInformationProvider and returns this instance */
-    inline uno::Reference<deployment::XUpdateInformationProvider> createProvider()
+    uno::Reference<deployment::XUpdateInformationProvider> createProvider()
     {
         osl::MutexGuard aGuard(m_aMutex);
         m_xProvider = deployment::UpdateInformationProvider::create(m_xContext);
@@ -263,11 +261,11 @@ private:
     };
 
     /* Returns the remembered instance of UpdateInformationProvider if any */
-    inline uno::Reference<deployment::XUpdateInformationProvider> getProvider()
+    uno::Reference<deployment::XUpdateInformationProvider> getProvider()
         { osl::MutexGuard aGuard(m_aMutex); return m_xProvider; };
 
     /* Releases the remembered instance of UpdateInformationProvider if any */
-    inline void clearProvider()
+    void clearProvider()
         { osl::MutexGuard aGuard(m_aMutex); m_xProvider.clear(); };
 
     osl::Mutex      m_aMutex;
@@ -297,8 +295,7 @@ public:
     explicit MenuBarButtonJob(const rtl::Reference< UpdateCheck >& rUpdateCheck);
 
     // XJob
-    virtual uno::Any SAL_CALL execute(const uno::Sequence<beans::NamedValue>&)
-        throw (lang::IllegalArgumentException, uno::Exception, std::exception) override;
+    virtual uno::Any SAL_CALL execute(const uno::Sequence<beans::NamedValue>&) override;
 
 private:
     rtl::Reference< UpdateCheck > m_aUpdateCheck;
@@ -319,7 +316,7 @@ public:
     virtual void SAL_CALL onTerminated() override;
 
 protected:
-    virtual ~DownloadThread();
+    virtual ~DownloadThread() override;
 
 private:
     osl::Condition& m_aCondition;
@@ -338,7 +335,7 @@ public:
     virtual void SAL_CALL onTerminated() override;
 
 protected:
-    virtual ~ShutdownThread();
+    virtual ~ShutdownThread() override;
 
 private:
     osl::Condition m_aCondition;
@@ -540,8 +537,7 @@ UpdateCheckThread::run()
 
     catch(const uno::Exception& e) {
         // Silently catch all errors
-        OSL_TRACE( "Caught exception: %s\n thread terminated.\n",
-            OUStringToOString(e.Message, RTL_TEXTENCODING_UTF8).getStr() );
+        SAL_WARN("extensions.update", "Caught exception, thread terminated. " << e.Message );
     }
 }
 
@@ -556,8 +552,7 @@ ManualUpdateCheckThread::run()
     }
     catch(const uno::Exception& e) {
         // Silently catch all errors
-        OSL_TRACE( "Caught exception: %s\n thread terminated.\n",
-            OUStringToOString(e.Message, RTL_TEXTENCODING_UTF8).getStr() );
+        SAL_WARN("extensions.update", "Caught exception, thread terminated. " << e.Message );
     }
 }
 
@@ -570,7 +565,6 @@ MenuBarButtonJob::MenuBarButtonJob(const rtl::Reference< UpdateCheck >& rUpdateC
 
 uno::Any SAL_CALL
 MenuBarButtonJob::execute(const uno::Sequence<beans::NamedValue>& )
-    throw (lang::IllegalArgumentException, uno::Exception, std::exception)
 {
     if ( m_aUpdateCheck->shouldShowExtUpdDlg() )
         m_aUpdateCheck->showExtensionDialog();
@@ -606,7 +600,7 @@ DownloadThread::run()
 
 #ifdef _WIN32
     CoUninitialize();
-    CoInitialize( NULL );
+    CoInitialize( nullptr );
 #endif
 
     while( schedule() )
@@ -848,7 +842,7 @@ UpdateCheck::download()
 
     if (aInfo.Sources.empty())
     {
-        SAL_WARN("extension.updatecheck", "download called without source");
+        SAL_WARN("extensions.update", "download called without source");
         return;
     }
 
@@ -894,7 +888,7 @@ UpdateCheck::install()
 
         OUString aParameter;
         sal_Int32 nFlags = c3s::SystemShellExecuteFlags::DEFAULTS;
-#if ( defined LINUX || defined SOLARIS )
+#if (defined LINUX || defined __sun)
         nFlags = 42;
         aParameter = getBaseInstallation();
         if( !aParameter.isEmpty() )

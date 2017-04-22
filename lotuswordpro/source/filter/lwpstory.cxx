@@ -63,6 +63,10 @@
 #include "lwpglobalmgr.hxx"
 #include "lwpstory.hxx"
 #include "xfilter/xfstylemanager.hxx"
+#include "lwppara.hxx"
+#include "lwpobjfactory.hxx"
+#include "lwppagelayout.hxx"
+
 
 LwpStory::LwpStory(LwpObjectHeader &objHdr, LwpSvStream* pStrm)
     : LwpContent(objHdr, pStrm)
@@ -71,25 +75,20 @@ LwpStory::LwpStory(LwpObjectHeader &objHdr, LwpSvStream* pStrm)
     , m_pTabLayout(nullptr)
     , m_bDropcap(false)
     , m_pHyperlinkMgr(new LwpHyperlinkMgr)
-    , m_pXFContainer(nullptr)
 {
 }
 
 LwpStory::~LwpStory()
 {
-    delete m_pHyperlinkMgr;
 }
 
 void LwpStory::Read()
 {
     LwpContent::Read();
-    m_ParaList.Read(m_pObjStrm);
-    m_FirstParaStyle.ReadIndexed(m_pObjStrm);
+    m_ParaList.Read(m_pObjStrm.get());
+    m_FirstParaStyle.ReadIndexed(m_pObjStrm.get());
     m_pObjStrm->SkipExtra();
 }
-
-#include "lwppara.hxx"
-#include "lwpobjfactory.hxx"
 
 /**************************************************************************
  * @descr:   Convert all the contents in current story
@@ -133,6 +132,8 @@ void LwpStory::RegisterStyle()
     rtl::Reference<LwpPara> xPara(dynamic_cast<LwpPara*>(GetFirstPara().obj().get()));
     while (xPara.is())
     {
+        if (xPara->GetFoundry())
+            throw std::runtime_error("loop in register style");
         xPara->SetFoundry(m_pFoundry);
         xPara->DoRegisterStyle();
         xPara.set(dynamic_cast<LwpPara*>(xPara->GetNext().obj().get()));
@@ -141,14 +142,12 @@ void LwpStory::RegisterStyle()
 
 void LwpStory::Parse(IXFStream* pOutputStream)
 {
-    m_pXFContainer = new XFContentContainer;
-    XFConvert(m_pXFContainer);
-    m_pXFContainer->ToXml(pOutputStream);
-    delete m_pXFContainer;
-    m_pXFContainer = nullptr;
+    m_xXFContainer.set(new XFContentContainer);
+    XFConvert(m_xXFContainer.get());
+    m_xXFContainer->ToXml(pOutputStream);
+    m_xXFContainer.clear();
 }
 
-#include "lwppagelayout.hxx"
 /**************************************************************************
  * @descr:   Set current page layout. If pPageLayout is a mirror page layout,
              use odd child page layout as current page layout.
@@ -393,16 +392,13 @@ void LwpStory::XFConvertFrameInHeaderFooter(XFContentContainer* pCont)
 
 void LwpStory::AddXFContent(XFContent* pContent)
 {
-    if(m_pXFContainer)
-        m_pXFContainer->Add(pContent);
+    if (m_xXFContainer)
+        m_xXFContainer->Add(pContent);
 }
 
 XFContentContainer* LwpStory::GetXFContent()
 {
-    if(m_pXFContainer)
-        return m_pXFContainer;
-    else
-        return nullptr;
+    return m_xXFContainer.get();
 }
 
 LwpPara* LwpStory::GetLastParaOfPreviousStory()

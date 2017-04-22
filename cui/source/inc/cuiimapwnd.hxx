@@ -20,16 +20,12 @@
 #define INCLUDED_CUI_SOURCE_INC_CUIIMAPWND_HXX
 
 #include <vcl/dialog.hxx>
-#include <vcl/fixed.hxx>
 #include <vcl/combobox.hxx>
 #include <vcl/button.hxx>
 #include <vcl/menu.hxx>
-#include <svl/itempool.hxx>
-#include <svtools/imapobj.hxx>
-#include <svtools/transfer.hxx>
-#include <svtools/imap.hxx>
+#include <vcl/vclmedit.hxx>
+
 #include <sfx2/frame.hxx>
-#include <svtools/svmedit.hxx>
 
 class URLDlg : public ModalDialog
 {
@@ -45,7 +41,7 @@ public:
                                 const OUString& rURL, const OUString& rAlternativeText, const OUString& rDescription,
                                 const OUString& rTarget, const OUString& rName,
                                 TargetList& rTargetList );
-    virtual             ~URLDlg();
+    virtual             ~URLDlg() override;
     virtual void        dispose() override;
 
     OUString            GetURL() const { return m_pEdtURL->GetText(); }

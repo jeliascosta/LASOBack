@@ -10,12 +10,11 @@
 #ifndef INCLUDED_VCL_INC_OPENGL_FRAMEBUFFER_H
 #define INCLUDED_VCL_INC_OPENGL_FRAMEBUFFER_H
 
-#include <GL/glew.h>
 #include <vcl/dllapi.h>
 
 #include <opengl/texture.hxx>
 
-class VCL_DLLPUBLIC OpenGLFramebuffer
+class VCL_DLLPUBLIC OpenGLFramebuffer final
 {
 private:
     GLuint      mnId;
@@ -25,13 +24,14 @@ private:
 
 public:
     OpenGLFramebuffer();
-    virtual ~OpenGLFramebuffer();
+    ~OpenGLFramebuffer();
 
     int     GetWidth() const { return mnWidth; };
     int     GetHeight() const { return mnHeight; };
 
-    void    Bind();
-    static void Unbind();
+    void    Bind(GLenum eTarget = GL_FRAMEBUFFER);
+
+    static void Unbind(GLenum eTarget = GL_FRAMEBUFFER);
 
     bool    IsFree() const;
     bool    IsAttached( GLuint nTexture ) const;

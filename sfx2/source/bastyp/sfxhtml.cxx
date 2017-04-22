@@ -46,20 +46,16 @@
 using namespace ::com::sun::star;
 
 
-const sal_Char sHTML_MIME_text[] = "text/";
-const sal_Char sHTML_MIME_application[] = "application/";
-const sal_Char sHTML_MIME_experimental[] = "x-";
-
 // <INPUT TYPE=xxx>
-static HTMLOptionEnum const aAreaShapeOptEnums[] =
+static HTMLOptionEnum<sal_uInt16> const aAreaShapeOptEnums[] =
 {
     { OOO_STRING_SVTOOLS_HTML_SH_rect,      IMAP_OBJ_RECTANGLE  },
     { OOO_STRING_SVTOOLS_HTML_SH_rectangle, IMAP_OBJ_RECTANGLE  },
     { OOO_STRING_SVTOOLS_HTML_SH_circ,      IMAP_OBJ_CIRCLE     },
     { OOO_STRING_SVTOOLS_HTML_SH_circle,    IMAP_OBJ_CIRCLE     },
-    { OOO_STRING_SVTOOLS_HTML_SH_poly,          IMAP_OBJ_POLYGON    },
-    { OOO_STRING_SVTOOLS_HTML_SH_polygon,       IMAP_OBJ_POLYGON    },
-    { nullptr,                    0                   }
+    { OOO_STRING_SVTOOLS_HTML_SH_poly,      IMAP_OBJ_POLYGON    },
+    { OOO_STRING_SVTOOLS_HTML_SH_polygon,   IMAP_OBJ_POLYGON    },
+    { nullptr,                              0                   }
 };
 
 SfxHTMLParser::SfxHTMLParser( SvStream& rStream, bool bIsNewDoc,
@@ -187,7 +183,7 @@ IMAPOBJ_SETEVENT:
     case IMAP_OBJ_RECTANGLE:
         if( aCoords.size() >=4 )
         {
-            Rectangle aRect( aCoords[0], aCoords[1],
+            tools::Rectangle aRect( aCoords[0], aCoords[1],
                              aCoords[2], aCoords[3] );
             IMapRectangleObject aMapRObj( aRect, aHRef, aAlt, OUString(), aTarget, aName,
                                           !bNoHRef );
@@ -251,7 +247,7 @@ bool SfxHTMLParser::FinishFileDownload( OUString& rStr )
             aStream.WriteStream( *pStream );
 
         aStream.Seek( STREAM_SEEK_TO_END );
-        sal_Size nLen = aStream.Tell();
+        sal_uInt64 const nLen = aStream.Tell();
         aStream.Seek( 0 );
         OString sBuffer = read_uInt8s_ToOString(aStream, nLen);
         rStr = OStringToOUString( sBuffer, RTL_TEXTENCODING_UTF8 );
@@ -279,14 +275,14 @@ void SfxHTMLParser::GetScriptType_Impl( SvKeyValueIterator *pHTTPHeader )
                 if( !aKV.GetValue().isEmpty() )
                 {
                     OUString aTmp( aKV.GetValue() );
-                    if( aTmp.startsWithIgnoreAsciiCase( sHTML_MIME_text ) )
+                    if( aTmp.startsWithIgnoreAsciiCase( "text/" ) )
                         aTmp = aTmp.copy( 5 );
-                    else if( aTmp.startsWithIgnoreAsciiCase( sHTML_MIME_application ) )
+                    else if( aTmp.startsWithIgnoreAsciiCase( "application/" ) )
                         aTmp = aTmp.copy( 12 );
                     else
                         break;
 
-                    if( aTmp.startsWithIgnoreAsciiCase( sHTML_MIME_experimental ) )
+                    if( aTmp.startsWithIgnoreAsciiCase( "x-" ) ) // MIME-experimental
                     {
                         aTmp = aTmp.copy( 2 );
                     }

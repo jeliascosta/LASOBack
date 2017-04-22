@@ -22,6 +22,8 @@
 
 #include "sal/config.h"
 
+#include <memory>
+
 #include "sal/types.h"
 #include "sal/macros.h"
 #include "rtl/string.h"
@@ -39,9 +41,9 @@ namespace store
  *======================================================================*/
 #define STORE_MAGIC_DATAPAGE sal_uInt32(0x94190310)
 
-struct OStoreDataPageData : public store::OStorePageData
+struct OStoreDataPageData : public store::PageData
 {
-    typedef OStorePageData       base;
+    typedef PageData       base;
     typedef OStoreDataPageData   self;
 
     typedef OStorePageDescriptor D;
@@ -73,7 +75,7 @@ struct OStoreDataPageData : public store::OStorePageData
 
     /** Construction.
     */
-    explicit OStoreDataPageData (sal_uInt16 nPageSize = self::thePageSize)
+    explicit OStoreDataPageData (sal_uInt16 nPageSize)
         : base (nPageSize)
     {
         base::m_aGuard.m_nMagic = store::htonl(self::theTypeId);
@@ -106,7 +108,7 @@ class OStoreDataPageObject : public store::OStorePageObject
 public:
     /** Construction.
     */
-    explicit OStoreDataPageObject (PageHolder const & rxPage = PageHolder())
+    explicit OStoreDataPageObject (std::shared_ptr<PageData> const & rxPage = std::shared_ptr<PageData>())
         : OStorePageObject (rxPage)
     {}
 
@@ -123,9 +125,9 @@ public:
  *======================================================================*/
 #define STORE_MAGIC_INDIRECTPAGE sal_uInt32(0x89191107)
 
-struct OStoreIndirectionPageData : public store::OStorePageData
+struct OStoreIndirectionPageData : public store::PageData
 {
-    typedef OStorePageData            base;
+    typedef PageData            base;
     typedef OStoreIndirectionPageData self;
 
     typedef OStorePageGuard           G;
@@ -216,7 +218,7 @@ class OStoreIndirectionPageObject : public store::OStorePageObject
 public:
     /** Construction.
     */
-    explicit OStoreIndirectionPageObject (PageHolder const & rxPage = PageHolder())
+    explicit OStoreIndirectionPageObject (std::shared_ptr<PageData> const & rxPage = std::shared_ptr<PageData>())
         : OStorePageObject (rxPage)
     {}
 
@@ -519,9 +521,9 @@ struct OStoreDirectoryDataBlock
  *======================================================================*/
 #define STORE_MAGIC_DIRECTORYPAGE sal_uInt32(0x62190120)
 
-struct OStoreDirectoryPageData : public store::OStorePageData
+struct OStoreDirectoryPageData : public store::PageData
 {
-    typedef OStorePageData           base;
+    typedef PageData           base;
     typedef OStoreDirectoryPageData  self;
 
     typedef OStorePageDescriptor     D;
@@ -641,7 +643,7 @@ class OStoreDirectoryPageObject : public store::OStorePageObject
 public:
     /** Construction.
     */
-    explicit OStoreDirectoryPageObject (PageHolder const & rxPage = PageHolder())
+    explicit OStoreDirectoryPageObject (std::shared_ptr<PageData> const & rxPage = std::shared_ptr<PageData>())
         : OStorePageObject (rxPage)
     {}
 

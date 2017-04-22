@@ -31,7 +31,7 @@ typedef struct {
     uno::Reference< accessibility::XAccessibleHyperlink > xLink;
 } HyperLink;
 
-static uno::Reference< accessibility::XAccessibleHyperlink >
+static uno::Reference< accessibility::XAccessibleHyperlink > const &
     getHyperlink( AtkHyperlink *pHyperlink )
 {
     HyperLink *pLink = reinterpret_cast<HyperLink *>(pHyperlink);
@@ -189,8 +189,9 @@ hyper_link_get_type()
 
 // ---------------------- AtkHyperText ----------------------
 
+/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleHypertext>
-    getHypertext( AtkHypertext *pHypertext ) throw (uno::RuntimeException)
+    getHypertext( AtkHypertext *pHypertext )
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( pHypertext );
     if( pWrap )

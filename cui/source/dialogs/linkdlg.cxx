@@ -99,7 +99,7 @@ SvBaseLinksDlg::SvBaseLinksDlg( vcl::Window * pParent, LinkManager* pMgr, bool b
     aUpdateIdle("cui SvBaseLinksDlg UpdateIdle")
 {
     get(m_pTbLinks, "TB_LINKS");
-    Size aSize(LogicToPixel(Size(257, 87), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(257, 87), MapUnit::MapAppFont));
     m_pTbLinks->set_width_request(aSize.Width());
     m_pTbLinks->set_height_request(aSize.Height());
     get(m_pFtFullFileName, "FULL_FILE_NAME");
@@ -112,19 +112,19 @@ SvBaseLinksDlg::SvBaseLinksDlg( vcl::Window * pParent, LinkManager* pMgr, bool b
     get(m_pPbChangeSource, "CHANGE_SOURCE");
     get(m_pPbBreakLink, "BREAK_LINK");
 
-    m_pTbLinks->SetSelectionMode( MULTIPLE_SELECTION );
+    m_pTbLinks->SetSelectionMode( SelectionMode::Multiple );
     m_pTbLinks->SetTabs( &nTabs[0] );
     FixedText *pFtFiles = get<FixedText>("FILES");
-    pFtFiles->set_width_request(LogicToPixel(Size(nTabs[2] - nTabs[1] - 2, 0), MAP_APPFONT).Width());
+    pFtFiles->set_width_request(LogicToPixel(Size(nTabs[2] - nTabs[1] - 2, 0), MapUnit::MapAppFont).Width());
     FixedText *pFtLinks = get<FixedText>("LINKS");
-    pFtLinks->set_width_request(LogicToPixel(Size(nTabs[3] - nTabs[2] - 2, 0), MAP_APPFONT).Width());
+    pFtLinks->set_width_request(LogicToPixel(Size(nTabs[3] - nTabs[2] - 2, 0), MapUnit::MapAppFont).Width());
     FixedText *pFtTypes = get<FixedText>("TYPE");
-    pFtTypes->set_width_request(LogicToPixel(Size(nTabs[4] - nTabs[3] - 2, 0), MAP_APPFONT).Width());
+    pFtTypes->set_width_request(LogicToPixel(Size(nTabs[4] - nTabs[3] - 2, 0), MapUnit::MapAppFont).Width());
     m_pTbLinks->Resize();  // OS: hack for correct selection
 
     // UpdateTimer for DDE-/Grf-links, which are waited for
-    aUpdateIdle.SetIdleHdl( LINK( this, SvBaseLinksDlg, UpdateWaitingHdl ) );
-    aUpdateIdle.SetPriority( SchedulerPriority::LOWEST );
+    aUpdateIdle.SetInvokeHandler( LINK( this, SvBaseLinksDlg, UpdateWaitingHdl ) );
+    aUpdateIdle.SetPriority( TaskPriority::LOWEST );
 
     m_pPbOpenSource->Hide();
 
@@ -165,7 +165,7 @@ void SvBaseLinksDlg::dispose()
 /*************************************************************************
 |*    SvBaseLinksDlg::Handler()
 *************************************************************************/
-IMPL_LINK_TYPED( SvBaseLinksDlg, LinksSelectHdl, SvTreeListBox *, pSvTabListBox, void )
+IMPL_LINK( SvBaseLinksDlg, LinksSelectHdl, SvTreeListBox *, pSvTabListBox, void )
 {
     const sal_uLong nSelectionCount = pSvTabListBox ?
         pSvTabListBox->GetSelectionCount() : 0;
@@ -188,11 +188,11 @@ IMPL_LINK_TYPED( SvBaseLinksDlg, LinksSelectHdl, SvTreeListBox *, pSvTabListBox,
             {
                 pEntry = i == 0 ? pSvTabListBox->FirstSelected() :
                                     pSvTabListBox->NextSelected(pEntry);
-                DBG_ASSERT(pEntry, "Wo ist der Entry?");
+                DBG_ASSERT(pEntry, "Where is the Entry?");
                 if (!pEntry)
                     continue;
                 pLink = static_cast<SvBaseLink*>(pEntry->GetUserData());
-                DBG_ASSERT(pLink, "Wo ist der Link?");
+                DBG_ASSERT(pLink, "Where is the Link?");
                 if (!pLink)
                     continue;
                 if( (OBJECT_CLIENT_FILE & pLink->GetObjType()) != OBJECT_CLIENT_FILE )
@@ -243,20 +243,20 @@ IMPL_LINK_TYPED( SvBaseLinksDlg, LinksSelectHdl, SvTreeListBox *, pSvTabListBox,
 
         OUString aFileName;
         sfx2::LinkManager::GetDisplayNames( pLink, &sType, &aFileName, pLinkNm, pFilter );
-        aFileName = INetURLObject::decode(aFileName, INetURLObject::DECODE_UNAMBIGUOUS);
+        aFileName = INetURLObject::decode(aFileName, INetURLObject::DecodeMechanism::Unambiguous);
         m_pFtFullFileName->SetText( aFileName );
         m_pFtFullSourceName->SetText( sLink );
         m_pFtFullTypeName->SetText( sType );
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, LinksDoubleClickHdl, SvTreeListBox *, bool )
+IMPL_LINK_NOARG( SvBaseLinksDlg, LinksDoubleClickHdl, SvTreeListBox *, bool )
 {
     ChangeSourceClickHdl( nullptr );
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, AutomaticClickHdl, Button*, void )
+IMPL_LINK_NOARG( SvBaseLinksDlg, AutomaticClickHdl, Button*, void )
 {
     sal_uLong nPos;
     SvBaseLink* pLink = GetSelEntry( &nPos );
@@ -265,7 +265,7 @@ IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, AutomaticClickHdl, Button*, void )
         SetType( *pLink, nPos, SfxLinkUpdateMode::ALWAYS );
 }
 
-IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, ManualClickHdl, Button*, void )
+IMPL_LINK_NOARG( SvBaseLinksDlg, ManualClickHdl, Button*, void )
 {
     sal_uLong nPos;
     SvBaseLink* pLink = GetSelEntry( &nPos );
@@ -274,7 +274,7 @@ IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, ManualClickHdl, Button*, void )
         SetType( *pLink, nPos, SfxLinkUpdateMode::ONCALL );
 }
 
-IMPL_LINK_NOARG_TYPED(SvBaseLinksDlg, UpdateNowClickHdl, Button*, void)
+IMPL_LINK_NOARG(SvBaseLinksDlg, UpdateNowClickHdl, Button*, void)
 {
     SvTabListBox& rListBox = *m_pTbLinks;
 
@@ -345,7 +345,7 @@ IMPL_LINK_NOARG_TYPED(SvBaseLinksDlg, UpdateNowClickHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, ChangeSourceClickHdl, Button *, void )
+IMPL_LINK_NOARG( SvBaseLinksDlg, ChangeSourceClickHdl, Button *, void )
 {
     sal_uLong nSelectionCount = m_pTbLinks->GetSelectionCount();
     if(nSelectionCount > 1)
@@ -389,7 +389,7 @@ IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, ChangeSourceClickHdl, Button *, void )
                     aUrl2.insertName( aUrl_.getName() );
                     OUString sNewLinkName;
                     MakeLnkName( sNewLinkName, nullptr ,
-                            aUrl2.GetMainURL(INetURLObject::DECODE_TO_IURI), sLinkName, &sFilter);
+                            aUrl2.GetMainURL(INetURLObject::DecodeMechanism::ToIUri), sLinkName, &sFilter);
                     pLink->SetLinkSourceName( sNewLinkName );
                     pLink->Update();
                 }
@@ -414,17 +414,17 @@ IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, ChangeSourceClickHdl, Button *, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, BreakLinkClickHdl, Button*, void )
+IMPL_LINK_NOARG( SvBaseLinksDlg, BreakLinkClickHdl, Button*, void )
 {
     bool bModified = false;
     if(m_pTbLinks->GetSelectionCount() <= 1)
     {
         sal_uLong nPos;
         tools::SvRef<SvBaseLink> xLink = GetSelEntry( &nPos );
-        if( !xLink.Is() )
+        if( !xLink.is() )
             return;
 
-        ScopedVclPtrInstance< QueryBox > aBox( this, WB_YES_NO | WB_DEF_YES, Closelinkmsg() );
+        ScopedVclPtrInstance< QueryBox > aBox( this, WB_YES_NO | WB_DEF_YES, aStrCloselinkmsg );
 
         if( RET_YES == aBox->Execute() )
         {
@@ -437,8 +437,8 @@ IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, BreakLinkClickHdl, Button*, void )
             xLink->Closed();
 
             // if somebody has forgotten to deregister himself
-            if( xLink.Is() )
-                pLinkMgr->Remove( &xLink );
+            if( xLink.is() )
+                pLinkMgr->Remove( xLink.get() );
 
             if( bNewLnkMgr )
             {
@@ -455,7 +455,7 @@ IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, BreakLinkClickHdl, Button*, void )
     }
     else
     {
-        ScopedVclPtrInstance< QueryBox > aBox( this, WB_YES_NO | WB_DEF_YES, CloselinkmsgMulti() );
+        ScopedVclPtrInstance< QueryBox > aBox( this, WB_YES_NO | WB_DEF_YES, aStrCloselinkmsgMulti );
 
         if( RET_YES == aBox->Execute() )
         {
@@ -477,7 +477,7 @@ IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, BreakLinkClickHdl, Button*, void )
                 xLink->Closed();
 
                 // if somebody has forgotten to deregister himself
-                pLinkMgr->Remove( &xLink );
+                pLinkMgr->Remove( xLink.get() );
                 bModified = true;
             }
             // then remove all selected entries
@@ -501,14 +501,14 @@ IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, BreakLinkClickHdl, Button*, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, UpdateWaitingHdl, Idle*, void )
+IMPL_LINK_NOARG( SvBaseLinksDlg, UpdateWaitingHdl, Timer*, void )
 {
     m_pTbLinks->SetUpdateMode(false);
     for( sal_uLong nPos = m_pTbLinks->GetEntryCount(); nPos; )
     {
         SvTreeListEntry* pBox = m_pTbLinks->GetEntry( --nPos );
         tools::SvRef<SvBaseLink> xLink( static_cast<SvBaseLink*>(pBox->GetUserData()) );
-        if( xLink.Is() )
+        if( xLink.is() )
         {
             OUString sCur( ImplGetStateStr( *xLink ) ),
                     sOld( SvTabListBox::GetEntryText( pBox, 3 ) );
@@ -519,7 +519,7 @@ IMPL_LINK_NOARG_TYPED( SvBaseLinksDlg, UpdateWaitingHdl, Idle*, void )
     m_pTbLinks->SetUpdateMode(true);
 }
 
-IMPL_LINK_TYPED( SvBaseLinksDlg, EndEditHdl, sfx2::SvBaseLink&, _rLink, void )
+IMPL_LINK( SvBaseLinksDlg, EndEditHdl, sfx2::SvBaseLink&, _rLink, void )
 {
     sal_uLong nPos;
     GetSelEntry( &nPos );
@@ -563,16 +563,16 @@ OUString SvBaseLinksDlg::ImplGetStateStr( const SvBaseLink& rLnk )
 {
     OUString sRet;
     if( !rLnk.GetObj() )
-        sRet = Brokenlink();
+        sRet = aStrBrokenlink;
     else if( rLnk.GetObj()->IsPending() )
     {
-        sRet = Waitinglink();
-        StartUpdateTimer();
+        sRet = aStrWaitinglink;
+        aUpdateIdle.Start();
     }
     else if( SfxLinkUpdateMode::ALWAYS == rLnk.GetUpdateMode() )
-        sRet = Autolink();
+        sRet = aStrAutolink;
     else
-        sRet = Manuallink();
+        sRet = aStrManuallink;
 
     return sRet;
 }
@@ -595,7 +595,7 @@ void SvBaseLinksDlg::SetManager( LinkManager* pNewMgr )
         for( size_t n = 0; n < rLnks.size(); ++n )
         {
             tools::SvRef<SvBaseLink>& rLinkRef = rLnks[ n ];
-            if( !rLinkRef.Is() )
+            if( !rLinkRef.is() )
             {
                 rLnks.erase( rLnks.begin() + n );
                 --n;
@@ -631,7 +631,7 @@ void SvBaseLinksDlg::InsertEntry( const SvBaseLink& rLink, sal_uLong nPos, bool 
     OUString aTxt = m_pTbLinks->GetEllipsisString( sFileNm, nWidthPixel, DrawTextFlags::PathEllipsis );
     INetURLObject aPath( sFileNm, INetProtocol::File );
     OUString aFileName = aPath.getName();
-    aFileName = INetURLObject::decode(aFileName, INetURLObject::DECODE_UNAMBIGUOUS);
+    aFileName = INetURLObject::decode(aFileName, INetURLObject::DecodeMechanism::Unambiguous);
 
     if( aFileName.getLength() > aTxt.getLength() )
         aTxt = aFileName;
@@ -639,16 +639,12 @@ void SvBaseLinksDlg::InsertEntry( const SvBaseLink& rLink, sal_uLong nPos, bool 
         // filename not in string
         aTxt = aFileName;
 
-    aEntry = aTxt;
-    aEntry += "\t";
+    aEntry = aTxt + "\t";
     if( OBJECT_CLIENT_GRF == rLink.GetObjType() )
         aEntry += sFilter;
     else
         aEntry += sLinkNm;
-    aEntry += "\t";
-    aEntry += sTypeNm;
-    aEntry += "\t";
-    aEntry += ImplGetStateStr( rLink );
+    aEntry += "\t" + sTypeNm + "\t" + ImplGetStateStr( rLink );
 
     SvTreeListEntry * pE = m_pTbLinks->InsertEntryToColumn( aEntry, nPos );
     pE->SetUserData( const_cast<SvBaseLink *>(&rLink) );
@@ -663,7 +659,7 @@ SvBaseLink* SvBaseLinksDlg::GetSelEntry( sal_uLong* pPos )
     if( pE && TREELIST_ENTRY_NOTFOUND !=
         ( nPos = m_pTbLinks->GetModel()->GetAbsPos( pE ) ) )
     {
-        DBG_ASSERT( pE, "wo kommt der leere Eintrag her?" );
+        DBG_ASSERT( pE, "Where does the empty entry come from?" );
 
         if( pPos )
             *pPos = nPos;

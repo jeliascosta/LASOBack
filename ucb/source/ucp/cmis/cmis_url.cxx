@@ -7,7 +7,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#if defined __GNUC__ && __GNUC__ >= 7
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
+#pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
+#elif defined __clang__ && __cplusplus > 201402L
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdynamic-exception-spec"
+#endif
 #include <libcmis/libcmis.hxx>
+#if defined __GNUC__ && __GNUC__ >= 7
+#pragma GCC diagnostic pop
+#elif defined __clang__ && __cplusplus > 201402L
+#pragma clang diagnostic pop
+#endif
 
 #include <config_oauth2.h>
 #include <rtl/uri.hxx>
@@ -23,17 +36,17 @@ namespace cmis
         INetURLObject aUrl( urlStr );
 
         // Decode the authority to get the binding URL and repository id
-        OUString sDecodedHost = aUrl.GetHost( INetURLObject::DECODE_WITH_CHARSET );
+        OUString sDecodedHost = aUrl.GetHost( INetURLObject::DecodeMechanism::WithCharset );
         INetURLObject aHostUrl( sDecodedHost );
         m_sBindingUrl = aHostUrl.GetURLNoMark( );
         m_sRepositoryId = aHostUrl.GetMark( );
 
-        m_sUser = aUrl.GetUser( INetURLObject::DECODE_WITH_CHARSET );
-        m_sPass = aUrl.GetPass( INetURLObject::DECODE_WITH_CHARSET );
+        m_sUser = aUrl.GetUser( INetURLObject::DecodeMechanism::WithCharset );
+        m_sPass = aUrl.GetPass( INetURLObject::DecodeMechanism::WithCharset );
 
         // Store the path to the object
-        m_sPath = aUrl.GetURLPath( INetURLObject::DECODE_WITH_CHARSET );
-        m_sId = aUrl.GetMark( INetURLObject::DECODE_WITH_CHARSET );
+        m_sPath = aUrl.GetURLPath( INetURLObject::DecodeMechanism::WithCharset );
+        m_sId = aUrl.GetMark( INetURLObject::DecodeMechanism::WithCharset );
 
         if ( m_sPath == "/" && m_sBindingUrl.indexOf( "google" ) != -1 )
             m_sId = "root";

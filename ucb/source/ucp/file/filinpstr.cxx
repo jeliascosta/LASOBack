@@ -17,9 +17,13 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/io/IOException.hpp>
+
 #include "filinpstr.hxx"
 #include "filerror.hxx"
-#include "shell.hxx"
+#include "filtask.hxx"
 #include "prov.hxx"
 
 using namespace fileaccess;
@@ -82,9 +86,7 @@ XTYPEPROVIDER_IMPL_3( XInputStream_impl,
 
 
 uno::Any SAL_CALL
-XInputStream_impl::queryInterface(
-    const uno::Type& rType )
-    throw( uno::RuntimeException, std::exception)
+XInputStream_impl::queryInterface( const uno::Type& rType )
 {
     uno::Any aRet = cppu::queryInterface( rType,
                                           (static_cast< io::XInputStream* >(this)),
@@ -95,8 +97,7 @@ XInputStream_impl::queryInterface(
 
 
 void SAL_CALL
-XInputStream_impl::acquire(
-    void )
+XInputStream_impl::acquire()
     throw()
 {
     OWeakObject::acquire();
@@ -104,8 +105,7 @@ XInputStream_impl::acquire(
 
 
 void SAL_CALL
-XInputStream_impl::release(
-    void )
+XInputStream_impl::release()
     throw()
 {
     OWeakObject::release();
@@ -116,10 +116,6 @@ sal_Int32 SAL_CALL
 XInputStream_impl::readBytes(
                  uno::Sequence< sal_Int8 >& aData,
                  sal_Int32 nBytesToRead )
-    throw( io::NotConnectedException,
-           io::BufferSizeExceededException,
-           io::IOException,
-           uno::RuntimeException, std::exception)
 {
     if( ! m_nIsOpen ) throw io::IOException( THROW_WHERE );
 
@@ -144,44 +140,27 @@ sal_Int32 SAL_CALL
 XInputStream_impl::readSomeBytes(
     uno::Sequence< sal_Int8 >& aData,
     sal_Int32 nMaxBytesToRead )
-    throw( io::NotConnectedException,
-           io::BufferSizeExceededException,
-           io::IOException,
-           uno::RuntimeException, std::exception)
 {
     return readBytes( aData,nMaxBytesToRead );
 }
 
 
 void SAL_CALL
-XInputStream_impl::skipBytes(
-    sal_Int32 nBytesToSkip )
-    throw( io::NotConnectedException,
-           io::BufferSizeExceededException,
-           io::IOException,
-           uno::RuntimeException, std::exception)
+XInputStream_impl::skipBytes( sal_Int32 nBytesToSkip )
 {
     m_aFile.setPos( osl_Pos_Current, sal_uInt64( nBytesToSkip ) );
 }
 
 
 sal_Int32 SAL_CALL
-XInputStream_impl::available(
-    void )
-    throw( io::NotConnectedException,
-           io::IOException,
-           uno::RuntimeException, std::exception)
+XInputStream_impl::available()
 {
     return 0;
 }
 
 
 void SAL_CALL
-XInputStream_impl::closeInput(
-    void )
-    throw( io::NotConnectedException,
-           io::IOException,
-           uno::RuntimeException, std::exception )
+XInputStream_impl::closeInput()
 {
     if( m_nIsOpen )
     {
@@ -194,11 +173,7 @@ XInputStream_impl::closeInput(
 
 
 void SAL_CALL
-XInputStream_impl::seek(
-    sal_Int64 location )
-    throw( lang::IllegalArgumentException,
-           io::IOException,
-           uno::RuntimeException, std::exception )
+XInputStream_impl::seek( sal_Int64 location )
 {
     if( location < 0 )
         throw lang::IllegalArgumentException( THROW_WHERE, uno::Reference< uno::XInterface >(), 0 );
@@ -208,10 +183,7 @@ XInputStream_impl::seek(
 
 
 sal_Int64 SAL_CALL
-XInputStream_impl::getPosition(
-    void )
-    throw( io::IOException,
-           uno::RuntimeException, std::exception )
+XInputStream_impl::getPosition()
 {
     sal_uInt64 uPos;
     if( osl::FileBase::E_None != m_aFile.getPos( uPos ) )
@@ -220,10 +192,7 @@ XInputStream_impl::getPosition(
 }
 
 sal_Int64 SAL_CALL
-XInputStream_impl::getLength(
-    void )
-    throw( io::IOException,
-           uno::RuntimeException, std::exception )
+XInputStream_impl::getLength()
 {
     sal_uInt64 uEndPos;
     if ( m_aFile.getSize(uEndPos) != osl::FileBase::E_None )

@@ -38,10 +38,10 @@ namespace dbaxml
     class OPropertyHandlerFactory : public ::xmloff::OControlPropertyHandlerFactory
     {
     protected:
-        mutable ::std::unique_ptr<XMLConstantsPropertyHandler>    m_pDisplayHandler;
+        mutable std::unique_ptr<XMLConstantsPropertyHandler>    m_pDisplayHandler;
     public:
         OPropertyHandlerFactory();
-        virtual ~OPropertyHandlerFactory();
+        virtual ~OPropertyHandlerFactory() override;
 
         virtual const XMLPropertyHandler* GetPropertyHandler(sal_Int32 _nType) const override;
     };

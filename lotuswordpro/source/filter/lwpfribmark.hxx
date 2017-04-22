@@ -74,10 +74,7 @@ public:
         : LwpFrib(pPara)
         , m_nType(0)
         {}
-    virtual ~LwpFribCHBlock(){}
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
-    LwpCHBlkMarker* GetMarker();
-    sal_uInt8 GetType(){return m_nType;}
     enum{MARKER_START=1,MARKER_END,MARKER_NONE};
     void XFConvert(XFContentContainer* pXFPara,LwpStory* pStory);
 private:
@@ -89,7 +86,6 @@ class LwpFribBookMark : public LwpFrib
 {
 public:
     explicit LwpFribBookMark( LwpPara* pPara );
-    virtual ~LwpFribBookMark(){}
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
     const LwpObjectID& GetMarkerID(){return m_objMarker;}
     sal_uInt8 GetType(){return m_nType;}
@@ -99,15 +95,14 @@ public:
 private:
     sal_uInt8 m_nType;
     LwpObjectID m_objMarker;
-    XFBookmarkStart* m_pStart;
-    XFBookmarkEnd* m_pEnd;
+    rtl::Reference<XFBookmarkStart> m_xStart;
+    rtl::Reference<XFBookmarkEnd> m_xEnd;
 };
 
 class LwpFribField : public LwpFrib
 {
 public:
     explicit LwpFribField( LwpPara* pPara );
-    virtual ~LwpFribField(){}
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
     LwpFieldMark* GetMarker();
     sal_uInt8 GetType(){return m_nType;}
@@ -148,10 +143,7 @@ class LwpFribRubyMarker : public LwpFrib
 {
 public:
     explicit LwpFribRubyMarker( LwpPara* pPara );
-    virtual ~LwpFribRubyMarker(){}
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
-    LwpRubyMarker* GetMarker();
-    sal_uInt8 GetType(){return m_nType;}
     enum{MARKER_START=1,MARKER_END,MARKER_NONE};
     void XFConvert(XFContentContainer* pXFPara);
     void RegisterStyle(LwpFoundry* pFoundry) override;

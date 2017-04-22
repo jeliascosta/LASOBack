@@ -20,7 +20,6 @@
 #include "CachedDataSequence.hxx"
 #include "macros.hxx"
 #include "PropertyHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "CommonFunctors.hxx"
 #include "ModifyListenerHelper.hxx"
 
@@ -32,7 +31,6 @@
 #include <rtl/math.hxx>
 
 using namespace ::com::sun::star;
-using namespace ::chart::ContainerHelper;
 
 using ::com::sun::star::uno::Sequence;
 using ::com::sun::star::uno::Reference;
@@ -81,10 +79,9 @@ CachedDataSequence::CachedDataSequence( const OUString & rSingleText )
         : OPropertyContainer( GetBroadcastHelper()),
           CachedDataSequence_Base( GetMutex()),
           m_eCurrentDataType( TEXTUAL ),
+          m_aTextualSequence({rSingleText}),
           m_xModifyEventForwarder( ModifyListenerHelper::createModifyEventForwarder())
 {
-    m_aTextualSequence.realloc(1);
-    m_aTextualSequence[0] = rSingleText;
     registerProperties();
 }
 
@@ -147,7 +144,7 @@ Sequence< double > CachedDataSequence::Impl_getNumericalData() const
     if( m_eCurrentDataType == TEXTUAL )
     {
         const OUString * pTextArray = m_aTextualSequence.getConstArray();
-        ::std::transform( pTextArray, pTextArray + nSize,
+        std::transform( pTextArray, pTextArray + nSize,
                           pResultArray,
                           CommonFunctors::OUStringToDouble() );
     }
@@ -155,7 +152,7 @@ Sequence< double > CachedDataSequence::Impl_getNumericalData() const
     {
         OSL_ASSERT( m_eCurrentDataType == MIXED );
         const Any * pMixedArray = m_aMixedSequence.getConstArray();
-        ::std::transform( pMixedArray, pMixedArray + nSize,
+        std::transform( pMixedArray, pMixedArray + nSize,
                           pResultArray,
                           CommonFunctors::AnyToDouble() );
     }
@@ -177,7 +174,7 @@ Sequence< OUString > CachedDataSequence::Impl_getTextualData() const
     if( m_eCurrentDataType == NUMERICAL )
     {
         const double * pTextArray = m_aNumericalSequence.getConstArray();
-        ::std::transform( pTextArray, pTextArray + nSize,
+        std::transform( pTextArray, pTextArray + nSize,
                           pResultArray,
                           CommonFunctors::DoubleToOUString() );
     }
@@ -185,7 +182,7 @@ Sequence< OUString > CachedDataSequence::Impl_getTextualData() const
     {
         OSL_ASSERT( m_eCurrentDataType == MIXED );
         const Any * pMixedArray = m_aMixedSequence.getConstArray();
-        ::std::transform( pMixedArray, pMixedArray + nSize,
+        std::transform( pMixedArray, pMixedArray + nSize,
                           pResultArray,
                           CommonFunctors::AnyToString() );
     }
@@ -208,7 +205,7 @@ Sequence< Any > CachedDataSequence::Impl_getMixedData() const
     if( m_eCurrentDataType == NUMERICAL )
     {
         const double * pTextArray = m_aNumericalSequence.getConstArray();
-        ::std::transform( pTextArray, pTextArray + nSize,
+        std::transform( pTextArray, pTextArray + nSize,
                           pResultArray,
                           CommonFunctors::makeAny< double >() );
     }
@@ -216,7 +213,7 @@ Sequence< Any > CachedDataSequence::Impl_getMixedData() const
     {
         OSL_ASSERT( m_eCurrentDataType == TEXTUAL );
         const OUString * pMixedArray = m_aTextualSequence.getConstArray();
-        ::std::transform( pMixedArray, pMixedArray + nSize,
+        std::transform( pMixedArray, pMixedArray + nSize,
                           pResultArray,
                           CommonFunctors::makeAny< OUString >() );
     }
@@ -224,22 +221,11 @@ Sequence< Any > CachedDataSequence::Impl_getMixedData() const
     return aResult;
 }
 
-Sequence< OUString > CachedDataSequence::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 4 );
-    aServices[ 0 ] = lcl_aServiceName;
-    aServices[ 1 ] = "com.sun.star.chart2.data.DataSequence";
-    aServices[ 2 ] = "com.sun.star.chart2.data.NumericalDataSequence";
-    aServices[ 3 ] = "com.sun.star.chart2.data.TextualDataSequence";
-    return aServices;
-}
-
 IMPLEMENT_FORWARD_XINTERFACE2( CachedDataSequence, CachedDataSequence_Base, OPropertyContainer )
 IMPLEMENT_FORWARD_XTYPEPROVIDER2( CachedDataSequence, CachedDataSequence_Base, OPropertyContainer )
 
 // ____ XPropertySet ____
 Reference< beans::XPropertySetInfo > SAL_CALL CachedDataSequence::getPropertySetInfo()
-    throw(uno::RuntimeException, std::exception)
 {
     return Reference< beans::XPropertySetInfo >( createPropertySetInfo( getInfoHelper() ) );
 }
@@ -260,33 +246,28 @@ Reference< beans::XPropertySetInfo > SAL_CALL CachedDataSequence::getPropertySet
     return new ::cppu::OPropertyArrayHelper( aProps );
 }
 
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL CachedDataSequence::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString CachedDataSequence::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName);
 }
 
 sal_Bool SAL_CALL CachedDataSequence::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL CachedDataSequence::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        lcl_aServiceName,
+        "com.sun.star.chart2.data.DataSequence",
+        "com.sun.star.chart2.data.NumericalDataSequence",
+        "com.sun.star.chart2.data.TextualDataSequence"
+    };
 }
 
 // ________ XNumericalDataSequence ________
 Sequence< double > SAL_CALL CachedDataSequence::getNumericalData()
-    throw (uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( GetMutex() );
 
@@ -298,7 +279,6 @@ Sequence< double > SAL_CALL CachedDataSequence::getNumericalData()
 
 // ________ XTextualDataSequence ________
 Sequence< OUString > SAL_CALL CachedDataSequence::getTextualData()
-    throw (uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( GetMutex() );
 
@@ -310,34 +290,28 @@ Sequence< OUString > SAL_CALL CachedDataSequence::getTextualData()
 
 // ________ XDataSequence  ________
 Sequence< Any > SAL_CALL CachedDataSequence::getData()
-    throw (uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( GetMutex() );
     return Impl_getMixedData();
 }
 
 OUString SAL_CALL CachedDataSequence::getSourceRangeRepresentation()
-    throw (uno::RuntimeException, std::exception)
 {
     return m_sRole;
 }
 
 Sequence< OUString > SAL_CALL CachedDataSequence::generateLabel( chart2::data::LabelOrigin  /*eLabelOrigin*/ )
-    throw (uno::RuntimeException, std::exception)
 {
-    // return empty label, as we have no range representaions to determine something useful
+    // return empty label, as we have no range representations to determine something useful
     return Sequence< OUString >();
 }
 
 ::sal_Int32 SAL_CALL CachedDataSequence::getNumberFormatKeyByIndex( ::sal_Int32 /*nIndex*/ )
-    throw (lang::IndexOutOfBoundsException,
-           uno::RuntimeException, std::exception)
 {
     return 0;
 }
 
 Reference< util::XCloneable > SAL_CALL CachedDataSequence::createClone()
-    throw (uno::RuntimeException, std::exception)
 {
     CachedDataSequence * pNewSeq = new CachedDataSequence( *this );
 
@@ -345,7 +319,6 @@ Reference< util::XCloneable > SAL_CALL CachedDataSequence::createClone()
 }
 
 void SAL_CALL CachedDataSequence::addModifyListener( const Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -359,7 +332,6 @@ void SAL_CALL CachedDataSequence::addModifyListener( const Reference< util::XMod
 }
 
 void SAL_CALL CachedDataSequence::removeModifyListener( const Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -373,7 +345,7 @@ void SAL_CALL CachedDataSequence::removeModifyListener( const Reference< util::X
 }
 
 // lang::XInitialization:
-void SAL_CALL CachedDataSequence::initialize(const uno::Sequence< uno::Any > & _aArguments) throw (uno::RuntimeException, uno::Exception, std::exception)
+void SAL_CALL CachedDataSequence::initialize(const uno::Sequence< uno::Any > & _aArguments)
 {
     ::comphelper::SequenceAsHashMap aMap(_aArguments);
     m_aNumericalSequence = aMap.getUnpackedValueOrDefault( "DataSequence" ,m_aNumericalSequence);

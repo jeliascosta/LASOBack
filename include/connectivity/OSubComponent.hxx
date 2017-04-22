@@ -70,13 +70,15 @@ namespace connectivity
             ::osl::MutexGuard aGuard( m_pDerivedImplementation->WEAK::rBHelper.rMutex );
         m_xParent.clear();
         }
-        void relase_ChildImpl() throw ()
+        void release_ChildImpl() throw ()
         {
+#if 0
             ::connectivity::release(m_pDerivedImplementation->m_refCount,
                                     m_pDerivedImplementation->WEAK::rBHelper,
                                     m_xParent,
                                     m_pDerivedImplementation);
 
+#endif
             m_pDerivedImplementation->WEAK::release();
         }
     };

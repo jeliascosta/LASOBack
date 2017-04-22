@@ -17,16 +17,19 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <cassert>
 #include <memory>
+#include <utility>
+
 #include "rtl/ustring.hxx"
 #include "rtl/bootstrap.hxx"
 #include "osl/thread.hxx"
 #include "osl/file.hxx"
 #include "jvmfwk/framework.hxx"
 #include "vendorplugin.hxx"
-#include <cassert>
 #include <vector>
-#include <functional>
 #include <algorithm>
 #include "framework.hxx"
 #include "fwkutil.hxx"
@@ -47,82 +50,61 @@ bool areEqualJavaInfo(
 
 }
 
-javaFrameworkError jfw_findAllJREs(JavaInfo ***pparInfo, sal_Int32 *pSize)
+javaFrameworkError jfw_findAllJREs(std::vector<std::unique_ptr<JavaInfo>> *pparInfo)
 {
-    javaFrameworkError retVal = JFW_E_NONE;
+    assert(pparInfo != nullptr);
     try
     {
         osl::MutexGuard guard(jfw::FwkMutex::get());
-        javaFrameworkError errcode = JFW_E_NONE;
-        if (pparInfo == nullptr || pSize == nullptr)
-            return JFW_E_INVALID_ARG;
 
         jfw::VendorSettings aVendorSettings;
         std::vector<OUString> vecVendors =
             aVendorSettings.getSupportedVendors();
         //Add the JavaInfos found by jfw_plugin_getAllJavaInfos to the vector
-        //Make sure that the contents are destroyed if this
-        //function returns with an error
-        std::vector<jfw::CJavaInfo> vecInfo;
-        //Add the JavaInfos found by jfw_plugin_getJavaInfoByPath to this vector
-        //Make sure that the contents are destroyed if this
-        //function returns with an error
-        std::vector<jfw::CJavaInfo> vecInfoManual;
-        typedef std::vector<jfw::CJavaInfo>::iterator it_info;
+        std::vector<std::unique_ptr<JavaInfo>> vecInfo;
         //get the list of paths to jre locations which have been
         //added manually
         const jfw::MergedSettings settings;
         const std::vector<OUString>& vecJRELocations =
             settings.getJRELocations();
         //Use every plug-in library to get Java installations.
-        typedef std::vector<OUString>::const_iterator ci_pl;
-        for (ci_pl i = vecVendors.begin(); i != vecVendors.end(); ++i)
+        for (auto const & vendor: vecVendors)
         {
-            const OUString & vendor = *i;
             jfw::VersionInfo versionInfo =
                 aVendorSettings.getVersionInformation(vendor);
 
             //get all installations of one vendor according to minVersion,
             //maxVersion and excludeVersions
-            sal_Int32 cInfos = 0;
-            JavaInfo** arInfos = nullptr;
+            std::vector<std::unique_ptr<JavaInfo>> arInfos;
             std::vector<rtl::Reference<jfw_plugin::VendorBase>> infos;
             javaPluginError plerr = jfw_plugin_getAllJavaInfos(
                 true,
                 vendor,
                 versionInfo.sMinVersion,
                 versionInfo.sMaxVersion,
-                versionInfo.getExcludeVersions(),
-                versionInfo.getExcludeVersionSize(),
+                versionInfo.vecExcludeVersions,
                 & arInfos,
-                & cInfos,
                 infos);
 
             if (plerr != javaPluginError::NONE)
                 return JFW_E_ERROR;
 
-            for (int j = 0; j < cInfos; j++)
-                vecInfo.push_back(jfw::CJavaInfo::createWrapper(arInfos[j]));
-
-            rtl_freeMemory(arInfos);
+            for (auto & j: arInfos)
+                vecInfo.push_back(std::move(j));
 
             //Check if the current plugin can detect JREs at the location
             // of the paths added by jfw_addJRELocation
-            //get the function from the plugin
-            typedef std::vector<OUString>::const_iterator citLoc;
             //Check every manually added location
-            for (citLoc ii = vecJRELocations.begin();
-                ii != vecJRELocations.end(); ++ii)
+            for (auto const & ii: vecJRELocations)
             {
-                jfw::CJavaInfo aInfo;
+                std::unique_ptr<JavaInfo> aInfo;
                 plerr = jfw_plugin_getJavaInfoByPath(
-                    *ii,
+                    ii,
                     vendor,
                     versionInfo.sMinVersion,
                     versionInfo.sMaxVersion,
-                    versionInfo.getExcludeVersions(),
-                    versionInfo.getExcludeVersionSize(),
-                    & aInfo.pInfo);
+                    versionInfo.vecExcludeVersions,
+                    &aInfo);
                 if (plerr == javaPluginError::NoJre)
                     continue;
                 if (plerr == javaPluginError::FailedVersion)
@@ -130,80 +112,46 @@ javaFrameworkError jfw_findAllJREs(JavaInfo ***pparInfo, sal_Int32 *pSize)
                 else if (plerr != javaPluginError::NONE)
                     return JFW_E_ERROR;
 
-                if (aInfo)
+                // Was this JRE already added?  Different plugins could detect
+                // the same JRE.  Also make sure vecInfo contains only JavaInfos
+                // for the vendors for which there is a javaSelection/plugins/
+                // library entry in the javavendors.xml; jfw_getJavaInfoByPath
+                // can return a JavaInfo of any vendor:
+                if ((std::find_if(
+                         vecInfo.begin(), vecInfo.end(),
+                         [&aInfo](std::unique_ptr<JavaInfo> const & info) {
+                             return areEqualJavaInfo(
+                                 info.get(), aInfo.get());
+                         })
+                     == vecInfo.end())
+                    && (std::find(
+                            vecVendors.begin(), vecVendors.end(),
+                            aInfo->sVendor)
+                        != vecVendors.end()))
                 {
-                    //Was this JRE already added?. Different plugins could detect
-                    //the same JRE
-                    it_info it_duplicate =
-                        std::find_if(vecInfoManual.begin(), vecInfoManual.end(),
-                                     std::bind(areEqualJavaInfo, std::placeholders::_1, aInfo));
-                    if (it_duplicate == vecInfoManual.end())
-                        vecInfoManual.push_back(aInfo);
+                    vecInfo.push_back(std::move(aInfo));
                 }
             }
         }
-        //Make sure vecInfoManual contains only JavaInfos for the vendors for which
-        //there is a javaSelection/plugins/library entry in the javavendors.xml
-        //To obtain the JavaInfos for the manually added JRE locations the function
-        //jfw_getJavaInfoByPath is called which can return a JavaInfo of any vendor.
-        std::vector<jfw::CJavaInfo> vecInfoManual2;
-        for (it_info ivm = vecInfoManual.begin(); ivm != vecInfoManual.end(); ++ivm)
-        {
-            for (ci_pl ii = vecVendors.begin(); ii != vecVendors.end(); ++ii)
-            {
-                if ( ii->equals((*ivm)->sVendor))
-                {
-                    vecInfoManual2.push_back(*ivm);
-                    break;
-                }
-            }
-        }
-        //Check which JavaInfo from vector vecInfoManual2 is already
-        //contained in vecInfo. If it already exists then remove it from
-        //vecInfoManual2
-        for (it_info j = vecInfo.begin(); j != vecInfo.end(); ++j)
-        {
-            it_info it_duplicate =
-                std::find_if(vecInfoManual2.begin(), vecInfoManual2.end(),
-                             std::bind(areEqualJavaInfo, std::placeholders::_1, *j));
-            if (it_duplicate != vecInfoManual2.end())
-                vecInfoManual2.erase(it_duplicate);
-        }
-        //create an fill the array of JavaInfo*
-        sal_Int32 nSize = vecInfo.size() + vecInfoManual2.size();
-        *pparInfo = static_cast<JavaInfo**>(rtl_allocateMemory(
-            nSize * sizeof(JavaInfo*)));
-        if (*pparInfo == nullptr)
-            return JFW_E_ERROR;
 
-        typedef std::vector<jfw::CJavaInfo>::iterator it;
-        int index = 0;
-        //Add the automatically detected JREs
-        for (it k = vecInfo.begin(); k != vecInfo.end(); ++k)
-            (*pparInfo)[index++] = k->detach();
-        //Add the manually detected JREs
-        for (it l = vecInfoManual2.begin(); l != vecInfoManual2.end(); ++l)
-            (*pparInfo)[index++] = l->detach();
+        *pparInfo = std::move(vecInfo);
 
-        *pSize = nSize;
-        return errcode;
+        return JFW_E_NONE;
     }
     catch (const jfw::FrameworkException& e)
     {
-        retVal = e.errorCode;
         fprintf(stderr, "%s\n", e.message.getStr());
         OSL_FAIL(e.message.getStr());
+        return e.errorCode;
     }
-    return retVal;
 }
 
 javaFrameworkError jfw_startVM(
-    JavaInfo const * pInfo, JavaVMOption * arOptions, sal_Int32 cOptions,
+    JavaInfo const * pInfo, std::vector<OUString> const & arOptions,
     JavaVM ** ppVM, JNIEnv ** ppEnv)
 {
+    assert(ppVM != nullptr);
     javaFrameworkError errcode = JFW_E_NONE;
-    if (cOptions > 0 && arOptions == nullptr)
-        return JFW_E_INVALID_ARG;
 
     try
     {
@@ -214,12 +162,9 @@ javaFrameworkError jfw_startVM(
         if (g_pJavaVM != nullptr)
             return JFW_E_RUNNING_JVM;
 
-        if (ppVM == nullptr)
-            return JFW_E_INVALID_ARG;
-
         std::vector<OString> vmParams;
         OString sUserClassPath;
-        jfw::CJavaInfo aInfo;
+        std::unique_ptr<JavaInfo> aInfo;
         if (pInfo == nullptr)
         {
             jfw::JFW_MODE mode = jfw::getMode();
@@ -228,9 +173,9 @@ javaFrameworkError jfw_startVM(
                 const jfw::MergedSettings settings;
                 if (!settings.getEnabled())
                     return JFW_E_JAVA_DISABLED;
-                aInfo.attach(settings.createJavaInfo());
+                aInfo = settings.createJavaInfo();
                 //check if a Java has ever been selected
-                if (aInfo == nullptr)
+                if (!aInfo)
                     return JFW_E_NO_SELECT;
 
 #ifdef _WIN32
@@ -244,11 +189,11 @@ javaFrameworkError jfw_startVM(
                 {
                     // If no JRE has been selected then we do not select one. This function shall then
                     //return JFW_E_NO_SELECT
-                    if (aInfo != NULL &&
+                    if (aInfo &&
                         (aInfo->nFeatures & JFW_FEATURE_ACCESSBRIDGE) == 0)
                     {
                         //has the user manually selected a JRE?
-                        if (settings.getJavaInfoAttrAutoSelect() == true)
+                        if (settings.getJavaInfoAttrAutoSelect())
                         {
                             // if not then the automatism has previously selected a JRE
                             //without accessibility support. We return JFW_E_NO_SELECT
@@ -274,7 +219,7 @@ javaFrameworkError jfw_startVM(
                     return JFW_E_NEED_RESTART;
 
                 //Check if the selected Java was set in this process. If so it
-                //must not have the requirments flag JFW_REQUIRE_NEEDRESTART
+                //must not have the requirements flag JFW_REQUIRE_NEEDRESTART
                 if ((aInfo->nRequirements & JFW_REQUIRE_NEEDRESTART)
                     && jfw::wasJavaSelectedInSameProcess())
                     return JFW_E_NEED_RESTART;
@@ -284,7 +229,7 @@ javaFrameworkError jfw_startVM(
             } // end mode FWK_MODE_OFFICE
             else if (mode == jfw::JFW_MODE_DIRECT)
             {
-                errcode = jfw_getSelectedJRE(&aInfo.pInfo);
+                errcode = jfw_getSelectedJRE(&aInfo);
                 if (errcode != JFW_E_NONE)
                     return errcode;
                 //In direct mode the options are specified by bootstrap variables
@@ -295,18 +240,15 @@ javaFrameworkError jfw_startVM(
             }
             else
                 OSL_ASSERT(false);
-            pInfo = aInfo.pInfo;
+            pInfo = aInfo.get();
         }
         assert(pInfo != nullptr);
-
-        //get the function jfw_plugin_startJavaVirtualMachine
-        jfw::VendorSettings aVendorSettings;
 
         // create JavaVMOptions array that is passed to the plugin
         // it contains the classpath and all options set in the
         //options dialog
         std::unique_ptr<JavaVMOption[]> sarJOptions(
-            new JavaVMOption[cOptions + 2 + vmParams.size()]);
+            new JavaVMOption[arOptions.size() + 2 + vmParams.size()]);
         JavaVMOption * arOpt = sarJOptions.get();
         if (! arOpt)
             return JFW_E_ERROR;
@@ -330,10 +272,13 @@ javaFrameworkError jfw_startVM(
             index ++;
         }
         //add all options of the arOptions argument
-        for (int ii = 0; ii < cOptions; ii++)
+        std::vector<OString> convertedOptions;
+        for (auto const & ii: arOptions)
         {
-            arOpt[index].optionString = arOptions[ii].optionString;
-            arOpt[index].extraInfo = arOptions[ii].extraInfo;
+            OString conv = OUStringToOString(ii, osl_getThreadTextEncoding());
+            convertedOptions.push_back(conv);
+            arOpt[index].optionString = const_cast<char *>(conv.getStr());
+            arOpt[index].extraInfo = nullptr;
             index++;
         }
 
@@ -372,7 +317,7 @@ javaFrameworkError jfw_startVM(
     PATH environment variables. If no suitable JavaInfo is found there, it
     inspects all JavaInfos found by the jfw_plugin_get* functions.
  */
-javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo)
+javaFrameworkError jfw_findAndSelectJRE(std::unique_ptr<JavaInfo> *pInfo)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -381,7 +326,7 @@ javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo)
         if (jfw::getMode() == jfw::JFW_MODE_DIRECT)
             return JFW_E_DIRECT_MODE;
         sal_uInt64 nFeatureFlags = 0;
-        jfw::CJavaInfo aCurrentInfo;
+        std::unique_ptr<JavaInfo> aCurrentInfo;
         //Determine if accessibility support is needed
         bool bSupportAccessibility = jfw::isAccessibilitySupportDesired();
         nFeatureFlags = bSupportAccessibility ?
@@ -414,55 +359,45 @@ javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo)
 
         // first inspect Java installation that the JAVA_HOME
         // environment variable points to (if it is set)
-        JavaInfo* pHomeInfo = nullptr;
-        if (jfw_plugin_getJavaInfoFromJavaHome(versionInfos, &pHomeInfo, infos)
+        if (jfw_plugin_getJavaInfoFromJavaHome(
+                versionInfos, &aCurrentInfo, infos)
             == javaPluginError::NONE)
         {
-            aCurrentInfo = pHomeInfo;
-
             // compare features
             // if the user does not require any features (nFeatureFlags = 0)
             // or the Java installation provides all features, then this installation is used
-            if ((pHomeInfo->nFeatures & nFeatureFlags) == nFeatureFlags)
+            if ((aCurrentInfo->nFeatures & nFeatureFlags) == nFeatureFlags)
             {
                 bInfoFound = true;
             }
-            delete pHomeInfo;
         }
 
         // if no Java installation providing all features was detected by using JAVA_HOME,
         // query PATH for Java installations
         if (!bInfoFound)
         {
-            std::vector<JavaInfo*> vecJavaInfosFromPath;
+            std::vector<std::unique_ptr<JavaInfo>> vecJavaInfosFromPath;
             if (jfw_plugin_getJavaInfosFromPath(
                     versionInfos, vecJavaInfosFromPath, infos)
                 == javaPluginError::NONE)
             {
-                std::vector<JavaInfo*>::const_iterator it = vecJavaInfosFromPath.begin();
-                while(it != vecJavaInfosFromPath.end() && !bInfoFound)
+                for (auto & pJInfo: vecJavaInfosFromPath)
                 {
-                    JavaInfo* pJInfo = *it;
-                    if (pJInfo != nullptr)
+                    // if the current Java installation implements all required features: use it
+                    if ((pJInfo->nFeatures & nFeatureFlags) == nFeatureFlags)
                     {
-                        // if the current Java installation implements all required features: use it
-                        if ((pJInfo->nFeatures & nFeatureFlags) == nFeatureFlags)
-                        {
-                            aCurrentInfo = pJInfo;
-                            bInfoFound = true;
-                        }
-                        else if (static_cast<JavaInfo*>(aCurrentInfo) == nullptr)
-                        {
-                            // current Java installation does not provide all features
-                            // but no Java installation has been detected before
-                            // -> remember the current one until one is found
-                            // that provides all features
-                            aCurrentInfo = pJInfo;
-                        }
-
-                        delete pJInfo;
+                        aCurrentInfo = std::move(pJInfo);
+                        bInfoFound = true;
+                        break;
                     }
-                    ++it;
+                    else if (!aCurrentInfo)
+                    {
+                        // current Java installation does not provide all features
+                        // but no Java installation has been detected before
+                        // -> remember the current one until one is found
+                        // that provides all features
+                        aCurrentInfo = std::move(pJInfo);
+                    }
                 }
             }
         }
@@ -484,36 +419,22 @@ javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo)
 
                 //get all installations of one vendor according to minVersion,
                 //maxVersion and excludeVersions
-                sal_Int32 cInfos = 0;
-                JavaInfo** arInfos = nullptr;
+                std::vector<std::unique_ptr<JavaInfo>> arInfos;
                 javaPluginError plerr = jfw_plugin_getAllJavaInfos(
                     false,
                     vendor,
                     versionInfo.sMinVersion,
                     versionInfo.sMaxVersion,
-                    versionInfo.getExcludeVersions(),
-                    versionInfo.getExcludeVersionSize(),
+                    versionInfo.vecExcludeVersions,
                     & arInfos,
-                    & cInfos,
                     infos);
 
                 if (plerr != javaPluginError::NONE)
                     continue;
                 //iterate over all installations to find the best which has
                 //all features
-                if (cInfos == 0)
+                for (auto & pJInfo: arInfos)
                 {
-                    rtl_freeMemory(arInfos);
-                    continue;
-                }
-                for (int ii = 0; ii < cInfos; ii++)
-                {
-                    JavaInfo* pJInfo = arInfos[ii];
-
-                    //We remember the first installation in aCurrentInfo
-                    // if no JavaInfo has been found before
-                    if (aCurrentInfo.getLocation().isEmpty())
-                            aCurrentInfo = pJInfo;
                     // compare features
                     // If the user does not require any features (nFeatureFlags = 0)
                     // then the first installation is used
@@ -521,23 +442,24 @@ javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo)
                     {
                         //the just found Java implements all required features
                         //currently there is only accessibility!!!
-                        aCurrentInfo = pJInfo;
+                        aCurrentInfo = std::move(pJInfo);
                         bInfoFound = true;
                         break;
                     }
+                    else if (!aCurrentInfo)
+                    {
+                        // We remember the first installation in aCurrentInfo if
+                        // no JavaInfo has been found before:
+                        aCurrentInfo = std::move(pJInfo);
+                    }
                 }
-                //The array returned by jfw_plugin_getAllJavaInfos must be freed as well as
-                //its contents
-                for (int j = 0; j < cInfos; j++)
-                    delete arInfos[j];
-                rtl_freeMemory(arInfos);
 
                 if (bInfoFound)
                     break;
                 //All Java installations found by the current plug-in lib
                 //do not provide the required features. Try the next plug-in
             }
-            if (static_cast<JavaInfo*>(aCurrentInfo) == nullptr)
+            if (!aCurrentInfo)
             {//The plug-ins did not find a suitable Java. Now try the paths which have been
             //added manually.
                 //get the list of paths to jre locations which have been added manually
@@ -556,15 +478,14 @@ javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo)
                     for (citLoc it = vecJRELocations.begin();
                         it != vecJRELocations.end(); ++it)
                     {
-                        jfw::CJavaInfo aInfo;
+                        std::unique_ptr<JavaInfo> aInfo;
                         javaPluginError err = jfw_plugin_getJavaInfoByPath(
                             *it,
                             vendor,
                             versionInfo.sMinVersion,
                             versionInfo.sMaxVersion,
-                            versionInfo.getExcludeVersions(),
-                            versionInfo.getExcludeVersionSize(),
-                            & aInfo.pInfo);
+                            versionInfo.vecExcludeVersions,
+                            &aInfo);
                         if (err == javaPluginError::NoJre)
                             continue;
                         if (err == javaPluginError::FailedVersion)
@@ -574,19 +495,22 @@ javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo)
 
                         if (aInfo)
                         {
-                            //We remember the very first installation in aCurrentInfo
-                            if (aCurrentInfo.getLocation().isEmpty())
-                                aCurrentInfo = aInfo;
                             // compare features
                             // If the user does not require any features (nFeatureFlags = 0)
                             // then the first installation is used
-                            if ((aInfo.getFeatures() & nFeatureFlags) == nFeatureFlags)
+                            if ((aInfo->nFeatures & nFeatureFlags) == nFeatureFlags)
                             {
                                 //the just found Java implements all required features
                                 //currently there is only accessibility!!!
-                                aCurrentInfo = aInfo;
+                                aCurrentInfo = std::move(aInfo);
                                 bInfoFound = true;
                                 break;
+                            }
+                            else if (!aCurrentInfo)
+                            {
+                                // We remember the very first installation in
+                                // aCurrentInfo:
+                                aCurrentInfo = std::move(aInfo);
                             }
                         }
                     }//end iterate over paths
@@ -595,18 +519,17 @@ javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo)
                 }// end iterate plug-ins
             }
         }
-        if (static_cast<JavaInfo*>(aCurrentInfo))
+        if (aCurrentInfo)
         {
             jfw::NodeJava javaNode(jfw::NodeJava::USER);
-            javaNode.setJavaInfo(aCurrentInfo,true);
+            javaNode.setJavaInfo(aCurrentInfo.get(),true);
             javaNode.write();
             //remember that this JRE was selected in this process
             jfw::setJavaSelected();
 
             if (pInfo !=nullptr)
             {
-                //copy to out param
-                *pInfo = aCurrentInfo.cloneJavaInfo();
+                *pInfo = std::move(aCurrentInfo);
             }
         }
         else
@@ -642,21 +565,18 @@ bool jfw_areEqualJavaInfo(JavaInfo const * pInfoA,JavaInfo const * pInfoB)
     return false;
 }
 
-javaFrameworkError jfw_getSelectedJRE(JavaInfo **ppInfo)
+javaFrameworkError jfw_getSelectedJRE(std::unique_ptr<JavaInfo> *ppInfo)
 {
+    assert(ppInfo != nullptr);
     javaFrameworkError errcode = JFW_E_NONE;
     try
     {
         osl::MutexGuard guard(jfw::FwkMutex::get());
-        if (ppInfo == nullptr)
-            return JFW_E_INVALID_ARG;
 
         if (jfw::getMode() == jfw::JFW_MODE_DIRECT)
         {
-            OUString sJRE = jfw::BootParams::getJREHome();
-
-            jfw::CJavaInfo aInfo;
-            if ((errcode = jfw_getJavaInfoByPath(sJRE.pData, & aInfo.pInfo))
+            if ((errcode = jfw_getJavaInfoByPath(
+                     jfw::BootParams::getJREHome(), ppInfo))
                 != JFW_E_NONE)
                 throw jfw::FrameworkException(
                     JFW_E_CONFIGURATION,
@@ -666,16 +586,13 @@ javaFrameworkError jfw_getSelectedJRE(JavaInfo **ppInfo)
                         " could not be recognized. Check the values and make sure that you "
                         "use a plug-in library that can recognize that JRE."));
 
-            *ppInfo = aInfo.detach();
             return JFW_E_NONE;
         }
 
         const jfw::MergedSettings settings;
-        jfw::CJavaInfo aInfo;
-        aInfo.attach(settings.createJavaInfo());
-        if (! aInfo)
+        *ppInfo = settings.createJavaInfo();
+        if (!*ppInfo)
         {
-            *ppInfo = nullptr;
             return JFW_E_NONE;
         }
         //If the javavendors.xml has changed, then the current selected
@@ -684,8 +601,10 @@ javaFrameworkError jfw_getSelectedJRE(JavaInfo **ppInfo)
         OString sUpdated = jfw::getElementUpdated();
 
         if (!sUpdated.equals(settings.getJavaInfoAttrVendorUpdate()))
+        {
+            ppInfo->reset();
             return JFW_E_INVALID_SETTINGS;
-        *ppInfo = aInfo.detach();
+        }
     }
     catch (const jfw::FrameworkException& e)
     {
@@ -696,28 +615,19 @@ javaFrameworkError jfw_getSelectedJRE(JavaInfo **ppInfo)
     return errcode;
 }
 
-javaFrameworkError jfw_isVMRunning(sal_Bool *bRunning)
+bool jfw_isVMRunning()
 {
     osl::MutexGuard guard(jfw::FwkMutex::get());
-    if (bRunning == nullptr)
-        return JFW_E_INVALID_ARG;
-    if (g_pJavaVM == nullptr)
-        *bRunning = false;
-    else
-        *bRunning = true;
-    return JFW_E_NONE;
+    return g_pJavaVM != nullptr;
 }
 
-javaFrameworkError jfw_getJavaInfoByPath(rtl_uString *pPath, JavaInfo **ppInfo)
+javaFrameworkError jfw_getJavaInfoByPath(OUString const & pPath, std::unique_ptr<JavaInfo> *ppInfo)
 {
+    assert(ppInfo != nullptr);
     javaFrameworkError errcode = JFW_E_NONE;
     try
     {
         osl::MutexGuard guard(jfw::FwkMutex::get());
-        if (pPath == nullptr || ppInfo == nullptr)
-            return JFW_E_INVALID_ARG;
-
-        OUString ouPath(pPath);
 
         jfw::VendorSettings aVendorSettings;
         std::vector<OUString> vecVendors =
@@ -735,24 +645,21 @@ javaFrameworkError jfw_getJavaInfoByPath(rtl_uString *pPath, JavaInfo **ppInfo)
             //ask the plugin if this is a JRE.
             //If so check if it meets the version requirements.
             //Only if it does return a JavaInfo
-            JavaInfo* pInfo = nullptr;
             javaPluginError plerr = jfw_plugin_getJavaInfoByPath(
-                ouPath,
+                pPath,
                 vendor,
                 versionInfo.sMinVersion,
                 versionInfo.sMaxVersion,
-                versionInfo.getExcludeVersions(),
-                versionInfo.getExcludeVersionSize(),
-                & pInfo);
+                versionInfo.vecExcludeVersions,
+                ppInfo);
 
             if (plerr == javaPluginError::NONE)
             {
-                *ppInfo = pInfo;
                 break;
             }
             else if(plerr == javaPluginError::FailedVersion)
             {//found JRE but it has the wrong version
-                *ppInfo = nullptr;
+                ppInfo->reset();
                 errcode = JFW_E_FAILED_VERSION;
                 break;
             }
@@ -762,7 +669,7 @@ javaFrameworkError jfw_getJavaInfoByPath(rtl_uString *pPath, JavaInfo **ppInfo)
             }
             OSL_ASSERT(false);
         }
-        if (*ppInfo == nullptr && errcode != JFW_E_FAILED_VERSION)
+        if (!*ppInfo && errcode != JFW_E_FAILED_VERSION)
             errcode = JFW_E_NOT_RECOGNIZED;
     }
     catch (const jfw::FrameworkException& e)
@@ -785,12 +692,12 @@ javaFrameworkError jfw_setSelectedJRE(JavaInfo const *pInfo)
         if (jfw::getMode() == jfw::JFW_MODE_DIRECT)
             return JFW_E_DIRECT_MODE;
         //check if pInfo is the selected JRE
-        JavaInfo *currentInfo = nullptr;
+        std::unique_ptr<JavaInfo> currentInfo;
         errcode = jfw_getSelectedJRE( & currentInfo);
         if (errcode != JFW_E_NONE && errcode != JFW_E_INVALID_SETTINGS)
             return errcode;
 
-        if (!jfw_areEqualJavaInfo(currentInfo, pInfo))
+        if (!jfw_areEqualJavaInfo(currentInfo.get(), pInfo))
         {
             jfw::NodeJava node(jfw::NodeJava::USER);
             node.setJavaInfo(pInfo, false);
@@ -798,8 +705,6 @@ javaFrameworkError jfw_setSelectedJRE(JavaInfo const *pInfo)
             //remember that the JRE was selected in this process
             jfw::setJavaSelected();
         }
-
-        delete currentInfo;
     }
     catch (const jfw::FrameworkException& e)
     {
@@ -843,16 +748,15 @@ javaFrameworkError jfw_setEnabled(bool bEnabled)
     return errcode;
 }
 
-javaFrameworkError jfw_getEnabled(sal_Bool *pbEnabled)
+javaFrameworkError jfw_getEnabled(bool *pbEnabled)
 {
+    assert(pbEnabled != nullptr);
     javaFrameworkError errcode = JFW_E_NONE;
     try
     {
         if (jfw::getMode() == jfw::JFW_MODE_DIRECT)
             return JFW_E_DIRECT_MODE;
         osl::MutexGuard guard(jfw::FwkMutex::get());
-        if (pbEnabled == nullptr)
-            return JFW_E_INVALID_ARG;
         jfw::MergedSettings settings;
         *pbEnabled = settings.getEnabled();
     }
@@ -866,8 +770,7 @@ javaFrameworkError jfw_getEnabled(sal_Bool *pbEnabled)
 }
 
 
-javaFrameworkError jfw_setVMParameters(
-    rtl_uString * * arOptions, sal_Int32 nLen)
+javaFrameworkError jfw_setVMParameters(std::vector<OUString> const & arOptions)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -876,9 +779,7 @@ javaFrameworkError jfw_setVMParameters(
         if (jfw::getMode() == jfw::JFW_MODE_DIRECT)
             return JFW_E_DIRECT_MODE;
         jfw::NodeJava node(jfw::NodeJava::USER);
-        if (arOptions == nullptr && nLen != 0)
-            return JFW_E_INVALID_ARG;
-        node.setVmParameters(arOptions, nLen);
+        node.setVmParameters(arOptions);
         node.write();
     }
     catch (const jfw::FrameworkException& e)
@@ -891,8 +792,7 @@ javaFrameworkError jfw_setVMParameters(
     return errcode;
 }
 
-javaFrameworkError jfw_getVMParameters(
-    rtl_uString *** parOptions, sal_Int32 * pLen)
+javaFrameworkError jfw_getVMParameters(std::vector<OUString> * parOptions)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -901,10 +801,8 @@ javaFrameworkError jfw_getVMParameters(
         if (jfw::getMode() == jfw::JFW_MODE_DIRECT)
             return JFW_E_DIRECT_MODE;
 
-        if (parOptions == nullptr || pLen == nullptr)
-            return JFW_E_INVALID_ARG;
         const jfw::MergedSettings settings;
-        settings.getVmParametersArray(parOptions, pLen);
+        settings.getVmParametersArray(parOptions);
     }
     catch (const jfw::FrameworkException& e)
     {
@@ -915,7 +813,7 @@ javaFrameworkError jfw_getVMParameters(
     return errcode;
 }
 
-javaFrameworkError jfw_setUserClassPath(rtl_uString * pCp)
+javaFrameworkError jfw_setUserClassPath(OUString const & pCp)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -924,8 +822,6 @@ javaFrameworkError jfw_setUserClassPath(rtl_uString * pCp)
         if (jfw::getMode() == jfw::JFW_MODE_DIRECT)
             return JFW_E_DIRECT_MODE;
         jfw::NodeJava node(jfw::NodeJava::USER);
-        if (pCp == nullptr)
-            return JFW_E_INVALID_ARG;
         node.setUserClassPath(pCp);
         node.write();
     }
@@ -938,19 +834,17 @@ javaFrameworkError jfw_setUserClassPath(rtl_uString * pCp)
     return errcode;
 }
 
-javaFrameworkError jfw_getUserClassPath(rtl_uString ** ppCP)
+javaFrameworkError jfw_getUserClassPath(OUString * ppCP)
 {
+    assert(ppCP != nullptr);
     javaFrameworkError errcode = JFW_E_NONE;
     try
     {
         osl::MutexGuard guard(jfw::FwkMutex::get());
         if (jfw::getMode() == jfw::JFW_MODE_DIRECT)
             return JFW_E_DIRECT_MODE;
-        if (ppCP == nullptr)
-            return JFW_E_INVALID_ARG;
         const jfw::MergedSettings settings;
-        *ppCP = settings.getUserClassPath().pData;
-        rtl_uString_acquire(*ppCP);
+        *ppCP = settings.getUserClassPath();
     }
     catch (const jfw::FrameworkException& e)
     {
@@ -961,7 +855,7 @@ javaFrameworkError jfw_getUserClassPath(rtl_uString ** ppCP)
     return errcode;
 }
 
-javaFrameworkError jfw_addJRELocation(rtl_uString * sLocation)
+javaFrameworkError jfw_addJRELocation(OUString const & sLocation)
 {
     javaFrameworkError errcode = JFW_E_NONE;
     try
@@ -970,8 +864,6 @@ javaFrameworkError jfw_addJRELocation(rtl_uString * sLocation)
         if (jfw::getMode() == jfw::JFW_MODE_DIRECT)
             return JFW_E_DIRECT_MODE;
         jfw::NodeJava node(jfw::NodeJava::USER);
-        if (sLocation == nullptr)
-            return JFW_E_INVALID_ARG;
         node.load();
         node.addJRELocation(sLocation);
         node.write();
@@ -987,12 +879,8 @@ javaFrameworkError jfw_addJRELocation(rtl_uString * sLocation)
 
 }
 
-javaFrameworkError jfw_existJRE(const JavaInfo *pInfo, sal_Bool *exist)
+javaFrameworkError jfw_existJRE(const JavaInfo *pInfo, bool *exist)
 {
-    //get the function jfw_plugin_existJRE
-    jfw::VendorSettings aVendorSettings;
-    jfw::CJavaInfo aInfo;
-    aInfo = pInfo; //makes a copy of pInfo
     javaPluginError plerr = jfw_plugin_existJRE(pInfo, exist);
 
     javaFrameworkError ret = JFW_E_NONE;
@@ -1000,9 +888,6 @@ javaFrameworkError jfw_existJRE(const JavaInfo *pInfo, sal_Bool *exist)
     {
     case javaPluginError::NONE:
         ret = JFW_E_NONE;
-        break;
-    case javaPluginError::InvalidArg:
-        ret = JFW_E_INVALID_ARG;
         break;
     case javaPluginError::Error:
         ret = JFW_E_ERROR;
@@ -1021,94 +906,6 @@ void jfw_lock()
 void jfw_unlock()
 {
     jfw::FwkMutex::get().release();
-}
-
-
-namespace jfw
-{
-CJavaInfo::CJavaInfo(): pInfo(nullptr)
-{
-}
-
-CJavaInfo::CJavaInfo(const CJavaInfo & info)
-{
-    pInfo = copyJavaInfo(info.pInfo);
-}
-
-CJavaInfo::CJavaInfo(::JavaInfo * info, _transfer_ownership)
-{
-    pInfo = info;
-}
-CJavaInfo CJavaInfo::createWrapper(::JavaInfo* info)
-{
-    return CJavaInfo(info, TRANSFER);
-}
-void CJavaInfo::attach(::JavaInfo * info)
-{
-    delete pInfo;
-    pInfo = info;
-}
-::JavaInfo * CJavaInfo::detach()
-{
-    JavaInfo * tmp = pInfo;
-    pInfo = nullptr;
-    return tmp;
-}
-
-CJavaInfo::~CJavaInfo()
-{
-    delete pInfo;
-}
-
-
-JavaInfo * CJavaInfo::copyJavaInfo(const JavaInfo * pInfo)
-{
-    return pInfo == nullptr ? nullptr : new JavaInfo(*pInfo);
-}
-
-
-JavaInfo* CJavaInfo::cloneJavaInfo() const
-{
-    if (pInfo == nullptr)
-        return nullptr;
-    return copyJavaInfo(pInfo);
-}
-
-CJavaInfo & CJavaInfo::operator = (const CJavaInfo& info)
-{
-    if (&info == this)
-        return *this;
-
-    delete pInfo;
-    pInfo = copyJavaInfo(info.pInfo);
-    return *this;
-}
-CJavaInfo & CJavaInfo::operator = (const ::JavaInfo* info)
-{
-    if (info == pInfo)
-        return *this;
-
-    delete pInfo;
-    pInfo = copyJavaInfo(info);
-    return *this;
-}
-
-OUString CJavaInfo::getLocation() const
-{
-    if (pInfo)
-        return OUString(pInfo->sLocation);
-    else
-        return OUString();
-}
-
-sal_uInt64 CJavaInfo::getFeatures() const
-{
-    if (pInfo)
-        return pInfo->nFeatures;
-    else
-        return 0l;
-}
-
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

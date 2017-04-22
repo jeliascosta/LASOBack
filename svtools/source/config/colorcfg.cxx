@@ -30,7 +30,6 @@
 #include <unotools/configpaths.hxx>
 #include <com/sun/star/uno/Sequence.h>
 #include <svl/poolitem.hxx>
-#include <svl/smplhint.hxx>
 #include <osl/mutex.hxx>
 
 #include "itemholder2.hxx"
@@ -53,9 +52,7 @@ static const char g_sIsVisible[] = "/IsVisible";
 namespace svtools
 {
 
-static const sal_Char cColor[] = "/Color";
-static const sal_Char cColorSchemes[] = "ColorSchemes/";
-sal_Int32            nColorRefCount_Impl = 0;
+static sal_Int32            nColorRefCount_Impl = 0;
 namespace
 {
     struct ColorMutex_Impl
@@ -67,7 +64,6 @@ ColorConfig_Impl*    ColorConfig::m_pImpl = nullptr;
 class ColorConfig_Impl : public utl::ConfigItem
 {
     ColorConfigValue m_aConfigValues[ColorConfigEntryCount];
-    bool             m_bEditMode;
     OUString         m_sLoadedScheme;
     bool             m_bAutoDetectSystemHC;
 
@@ -75,7 +71,7 @@ class ColorConfig_Impl : public utl::ConfigItem
 
 public:
     explicit ColorConfig_Impl();
-    virtual ~ColorConfig_Impl();
+    virtual ~ColorConfig_Impl() override;
 
     void                            Load(const OUString& rScheme);
     void                            CommitCurrentSchemeName();
@@ -94,12 +90,12 @@ public:
 
     void                            AddScheme(const OUString& rNode);
     void                            RemoveScheme(const OUString& rNode);
-    void                            SetModified(){ConfigItem::SetModified();}
-    void                            ClearModified(){ConfigItem::ClearModified();}
+    using ConfigItem::SetModified;
+    using ConfigItem::ClearModified;
     void                            SettingsChanged();
     bool GetAutoDetectSystemHC() {return m_bAutoDetectSystemHC;}
 
-    DECL_LINK_TYPED( DataChangedEventListener, VclSimpleEvent&, void );
+    DECL_LINK( DataChangedEventListener, VclSimpleEvent&, void );
 
     void ImplUpdateApplicationSettings();
 };
@@ -112,73 +108,68 @@ uno::Sequence< OUString> GetPropertyNames(const OUString& rScheme)
     OUString* pNames = aNames.getArray();
     struct ColorConfigEntryData_Impl
     {
-        const sal_Char* cName;
-        sal_Int32       nLength;
-        rtl_TextEncoding eEncoding;
+        OUStringLiteral cName;
         bool            bCanBeVisible;
     };
     static const ColorConfigEntryData_Impl cNames[] =
     {
-        { RTL_CONSTASCII_USTRINGPARAM("/DocColor")        ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/DocBoundaries")   ,true },
-        { RTL_CONSTASCII_USTRINGPARAM("/AppBackground")   ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/ObjectBoundaries"),true },
-        { RTL_CONSTASCII_USTRINGPARAM("/TableBoundaries") ,true },
-        { RTL_CONSTASCII_USTRINGPARAM("/FontColor")     ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/Links")           ,true },
-        { RTL_CONSTASCII_USTRINGPARAM("/LinksVisited")    ,true },
-        { RTL_CONSTASCII_USTRINGPARAM("/Spell")     ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/SmartTags")     ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/Shadow")        , true },
-        { RTL_CONSTASCII_USTRINGPARAM("/WriterTextGrid")  ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/WriterFieldShadings"),true },
-        { RTL_CONSTASCII_USTRINGPARAM("/WriterIdxShadings")     ,true },
-        { RTL_CONSTASCII_USTRINGPARAM("/WriterDirectCursor")    ,true },
-        { RTL_CONSTASCII_USTRINGPARAM("/WriterScriptIndicator")    ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/WriterSectionBoundaries")    ,true },
-        { RTL_CONSTASCII_USTRINGPARAM("/WriterHeaderFooterMark")    ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/WriterPageBreaks")    ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/HTMLSGML")        ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/HTMLComment")     ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/HTMLKeyword")     ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/HTMLUnknown")     ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/CalcGrid")        ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/CalcPageBreak"), false },
-        { RTL_CONSTASCII_USTRINGPARAM("/CalcPageBreakManual"), false },
-        { RTL_CONSTASCII_USTRINGPARAM("/CalcPageBreakAutomatic"), false },
-        { RTL_CONSTASCII_USTRINGPARAM("/CalcDetective")   ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/CalcDetectiveError")   ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/CalcReference")   ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/CalcNotesBackground") ,false },
-        { RTL_CONSTASCII_USTRINGPARAM("/DrawGrid")        ,true },
-        { RTL_CONSTASCII_USTRINGPARAM("/BASICIdentifier"),  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/BASICComment")   ,  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/BASICNumber")    ,  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/BASICString")    ,  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/BASICOperator")  ,  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/BASICKeyword")   ,  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/BASICError"),  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/SQLIdentifier"),  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/SQLNumber"),  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/SQLString"),  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/SQLOperator"),  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/SQLKeyword"),  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/SQLParameter"),  false },
-        { RTL_CONSTASCII_USTRINGPARAM("/SQLComment"),  false }
+        { OUStringLiteral("/DocColor")        ,false },
+        { OUStringLiteral("/DocBoundaries")   ,true },
+        { OUStringLiteral("/AppBackground")   ,false },
+        { OUStringLiteral("/ObjectBoundaries"),true },
+        { OUStringLiteral("/TableBoundaries") ,true },
+        { OUStringLiteral("/FontColor")     ,false },
+        { OUStringLiteral("/Links")           ,true },
+        { OUStringLiteral("/LinksVisited")    ,true },
+        { OUStringLiteral("/Spell")     ,false },
+        { OUStringLiteral("/SmartTags")     ,false },
+        { OUStringLiteral("/Shadow")        , true },
+        { OUStringLiteral("/WriterTextGrid")  ,false },
+        { OUStringLiteral("/WriterFieldShadings"),true },
+        { OUStringLiteral("/WriterIdxShadings")     ,true },
+        { OUStringLiteral("/WriterDirectCursor")    ,true },
+        { OUStringLiteral("/WriterScriptIndicator")    ,false },
+        { OUStringLiteral("/WriterSectionBoundaries")    ,true },
+        { OUStringLiteral("/WriterHeaderFooterMark")    ,false },
+        { OUStringLiteral("/WriterPageBreaks")    ,false },
+        { OUStringLiteral("/HTMLSGML")        ,false },
+        { OUStringLiteral("/HTMLComment")     ,false },
+        { OUStringLiteral("/HTMLKeyword")     ,false },
+        { OUStringLiteral("/HTMLUnknown")     ,false },
+        { OUStringLiteral("/CalcGrid")        ,false },
+        { OUStringLiteral("/CalcPageBreak"), false },
+        { OUStringLiteral("/CalcPageBreakManual"), false },
+        { OUStringLiteral("/CalcPageBreakAutomatic"), false },
+        { OUStringLiteral("/CalcDetective")   ,false },
+        { OUStringLiteral("/CalcDetectiveError")   ,false },
+        { OUStringLiteral("/CalcReference")   ,false },
+        { OUStringLiteral("/CalcNotesBackground") ,false },
+        { OUStringLiteral("/DrawGrid")        ,true },
+        { OUStringLiteral("/BASICIdentifier"),  false },
+        { OUStringLiteral("/BASICComment")   ,  false },
+        { OUStringLiteral("/BASICNumber")    ,  false },
+        { OUStringLiteral("/BASICString")    ,  false },
+        { OUStringLiteral("/BASICOperator")  ,  false },
+        { OUStringLiteral("/BASICKeyword")   ,  false },
+        { OUStringLiteral("/BASICError"),  false },
+        { OUStringLiteral("/SQLIdentifier"),  false },
+        { OUStringLiteral("/SQLNumber"),  false },
+        { OUStringLiteral("/SQLString"),  false },
+        { OUStringLiteral("/SQLOperator"),  false },
+        { OUStringLiteral("/SQLKeyword"),  false },
+        { OUStringLiteral("/SQLParameter"),  false },
+        { OUStringLiteral("/SQLComment"),  false }
     };
     int nIndex = 0;
-    OUString sColor = cColor;
-    OUString sBase(cColorSchemes);
-    sBase += utl::wrapConfigurationElementName(rScheme);
+    OUString sBase = "ColorSchemes/"
+                   + utl::wrapConfigurationElementName(rScheme);
     const int nCount = ColorConfigEntryCount;
-    for(sal_Int32 i = 0; i < 4 * nCount; i+= 4)
+    for(sal_Int32 i = 0; i < nCount; ++i)
     {
-        OUString sBaseName(sBase);
-        sal_Int32 nPos = i / 4;
-        sBaseName += OUString(cNames[nPos].cName, cNames[nPos].nLength, cNames[nPos].eEncoding);
+        OUString sBaseName = sBase + cNames[i].cName;
         pNames[nIndex] += sBaseName;
-        pNames[nIndex++] += sColor;
-        if(cNames[nPos].bCanBeVisible)
+        pNames[nIndex++] += "/Color";
+        if(cNames[i].bCanBeVisible)
         {
             pNames[nIndex] += sBaseName;
             pNames[nIndex++] += g_sIsVisible;
@@ -192,15 +183,11 @@ uno::Sequence< OUString> GetPropertyNames(const OUString& rScheme)
 
 ColorConfig_Impl::ColorConfig_Impl() :
     ConfigItem("Office.UI/ColorScheme"),
-    m_bEditMode(false),
     m_bAutoDetectSystemHC(true)
 {
-    if(!m_bEditMode)
-    {
-        //try to register on the root node - if possible
-        uno::Sequence < OUString > aNames(1);
-        EnableNotification( aNames );
-    }
+    //try to register on the root node - if possible
+    uno::Sequence < OUString > aNames(1);
+    EnableNotification( aNames );
 
     if (!utl::ConfigManager::IsAvoidConfig())
         Load(OUString());
@@ -233,18 +220,18 @@ void ColorConfig_Impl::Load(const OUString& rScheme)
     const uno::Any* pColors = aColors.getConstArray();
     const OUString* pColorNames = aColorNames.getConstArray();
     sal_Int32 nIndex = 0;
-    for(int i = 0; i < 2 * ColorConfigEntryCount && aColors.getLength() > nIndex; i+= 2)
+    for(int i = 0; i < ColorConfigEntryCount && aColors.getLength() > nIndex; ++i)
     {
         if(pColors[nIndex].hasValue())
-            pColors[nIndex] >>= m_aConfigValues[i / 2].nColor;
+            pColors[nIndex] >>= m_aConfigValues[i].nColor;
         else
-            m_aConfigValues[i/2].nColor = COL_AUTO;
+            m_aConfigValues[i].nColor = COL_AUTO;
         nIndex++;
         if(nIndex >= aColors.getLength())
             break;
         //test for visibility property
         if(pColorNames[nIndex].endsWith(g_sIsVisible))
-             m_aConfigValues[i / 2].bIsVisible = Any2Bool(pColors[nIndex++]);
+             m_aConfigValues[i].bIsVisible = Any2Bool(pColors[nIndex++]);
     }
     // fdo#71511: check if we are running in a11y autodetect
     {
@@ -261,7 +248,7 @@ void    ColorConfig_Impl::Notify( const uno::Sequence<OUString>& )
 {
     //loading via notification always uses the default setting
     Load(OUString());
-    NotifyListeners(0);
+    NotifyListeners(ConfigurationHints::NONE);
 }
 
 void ColorConfig_Impl::ImplCommit()
@@ -271,12 +258,12 @@ void ColorConfig_Impl::ImplCommit()
     beans::PropertyValue* pPropValues = aPropValues.getArray();
     const OUString* pColorNames = aColorNames.getConstArray();
     sal_Int32 nIndex = 0;
-    for(int i = 0; i < 2 * ColorConfigEntryCount && aColorNames.getLength() > nIndex; i+= 2)
+    for(int i = 0; i < ColorConfigEntryCount && aColorNames.getLength() > nIndex; ++i)
     {
         pPropValues[nIndex].Name = pColorNames[nIndex];
         //save automatic colors as void value
-        if(COL_AUTO != sal::static_int_cast<ColorData>(m_aConfigValues[i/2].nColor))
-            pPropValues[nIndex].Value <<= m_aConfigValues[i/2].nColor;
+        if(COL_AUTO != sal::static_int_cast<ColorData>(m_aConfigValues[i].nColor))
+            pPropValues[nIndex].Value <<= m_aConfigValues[i].nColor;
 
         nIndex++;
         if(nIndex >= aColorNames.getLength())
@@ -285,7 +272,7 @@ void ColorConfig_Impl::ImplCommit()
         if(pColorNames[nIndex].endsWith(g_sIsVisible))
         {
              pPropValues[nIndex].Name = pColorNames[nIndex];
-             pPropValues[nIndex].Value <<= m_aConfigValues[i/2].bIsVisible;
+             pPropValues[nIndex].Value <<= m_aConfigValues[i].bIsVisible;
              nIndex++;
         }
     }
@@ -339,12 +326,12 @@ void ColorConfig_Impl::SettingsChanged()
 
     ImplUpdateApplicationSettings();
 
-    NotifyListeners(0);
+    NotifyListeners(ConfigurationHints::NONE);
 }
 
-IMPL_LINK_TYPED( ColorConfig_Impl, DataChangedEventListener, VclSimpleEvent&, rEvent, void )
+IMPL_LINK( ColorConfig_Impl, DataChangedEventListener, VclSimpleEvent&, rEvent, void )
 {
-    if ( rEvent.GetId() == VCLEVENT_APPLICATION_DATACHANGED )
+    if ( rEvent.GetId() == VclEventId::ApplicationDataChanged )
     {
         DataChangedEvent* pData = static_cast<DataChangedEvent*>(static_cast<VclWindowEvent&>(rEvent).GetData());
         if ( (pData->GetType() == DataChangedEventType::SETTINGS) &&
@@ -389,7 +376,7 @@ ColorConfig::ColorConfig()
     if ( !m_pImpl )
     {
         m_pImpl = new ColorConfig_Impl;
-        svtools::ItemHolder2::holdConfigItem(E_COLORCFG);
+        svtools::ItemHolder2::holdConfigItem(EItem::ColorConfig);
     }
     ++nColorRefCount_Impl;
     m_pImpl->AddListener(this);
@@ -509,11 +496,6 @@ ColorConfigValue ColorConfig::GetColorValue(ColorConfigEntry eEntry, bool bSmart
     }
 
     return aRet;
-}
-
-void ColorConfig::Reload()
-{
-    m_pImpl->Load(OUString());
 }
 
 EditableColorConfig::EditableColorConfig() :

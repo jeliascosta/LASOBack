@@ -7,11 +7,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-
-// Include this before stdio.h for the __MINGW32__ sake.
-// This header contains a define that modifies the way
-// formatting strings work for the mingw platforms.
-#include <sal/types.h>
+#include <sal/config.h>
 
 #include <stdio.h>
 #ifndef _WIN32
@@ -36,6 +32,8 @@
 #include <osl/file.hxx>
 #include <osl/process.h>
 #include <rtl/bootstrap.hxx>
+#include <sfx2/app.hxx>
+#include <sal/types.h>
 #include <vcl/svapp.hxx>
 
 #include <svx/galtheme.hxx>
@@ -100,7 +98,8 @@ static void createTheme( const OUString& aThemeName, const OUString& aGalleryURL
 
     SfxListener aListener;
 
-    if ( !( pGalTheme = pGallery->AcquireTheme( aThemeName, aListener ) ) ) {
+    pGalTheme = pGallery->AcquireTheme( aThemeName, aListener );
+    if ( !pGalTheme ) {
             fprintf( stderr, "Failed to acquire theme\n" );
             exit( 1 );
     }
@@ -121,10 +120,10 @@ static void createTheme( const OUString& aThemeName, const OUString& aGalleryURL
 
         if ( ! pGalTheme->InsertURL( *aIter ) )
             fprintf( stderr, "Failed to import '%s'\n",
-                     OUStringToOString( aIter->GetMainURL(INetURLObject::NO_DECODE), RTL_TEXTENCODING_UTF8 ).getStr() );
+                     OUStringToOString( aIter->GetMainURL(INetURLObject::DecodeMechanism::NONE), RTL_TEXTENCODING_UTF8 ).getStr() );
         else
             fprintf( stderr, "Imported file '%s' (%" SAL_PRI_SIZET "u)\n",
-                     OUStringToOString( aIter->GetMainURL(INetURLObject::NO_DECODE), RTL_TEXTENCODING_UTF8 ).getStr(),
+                     OUStringToOString( aIter->GetMainURL(INetURLObject::DecodeMechanism::NONE), RTL_TEXTENCODING_UTF8 ).getStr(),
                      pGalTheme->GetObjectCount() );
     }
 
@@ -185,7 +184,7 @@ void GalApp::Init()
             OUString envVar( "OOO_INSTALL_PREFIX");
             osl_setEnvironment(envVar.pData, installPrefix.pData);
         }
-        OSL_TRACE( "OOO_INSTALL_PREFIX=%s", getenv( "OOO_INSTALL_PREFIX" ) );
+        SAL_INFO("svx", "OOO_INSTALL_PREFIX=" << getenv( "OOO_INSTALL_PREFIX" ) );
 
         uno::Reference<uno::XComponentContext> xComponentContext
             = ::cppu::defaultBootstrap_InitialComponentContext();
@@ -276,6 +275,8 @@ int GalApp::Main()
 {
     try
     {
+        SfxApplication::GetOrCreate();
+
         OUString aPath, aDestDir;
         OUString aName( "Default name" );
         std::vector<INetURLObject> aFiles;
@@ -297,7 +298,7 @@ int GalApp::Main()
                 aName = GetCommandLineParam( ++i );
             else if ( aParam == "--path" )
                 aPath = Smartify( GetCommandLineParam( ++i ) ).
-                    GetMainURL(INetURLObject::NO_DECODE);
+                    GetMainURL(INetURLObject::DecodeMechanism::NONE);
             else if ( aParam == "--destdir" )
                 aDestDir = GetCommandLineParam( ++i );
             else if ( aParam == "--relative-urls" )
@@ -318,12 +319,12 @@ int GalApp::Main()
     }
     catch (const uno::Exception& e)
     {
-        SAL_WARN("vcl.app", "Fatal exception: " << e.Message);
+        SAL_WARN("svx", "Fatal exception: " << e.Message);
         return EXIT_FAILURE;
     }
     catch (const std::exception &e)
     {
-        SAL_WARN("vcl.app", "Fatal exception: " << e.what());
+        SAL_WARN("svx", "Fatal exception: " << e.what());
         return 1;
     }
 

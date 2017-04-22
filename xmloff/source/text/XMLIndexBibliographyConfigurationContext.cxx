@@ -40,9 +40,6 @@ using ::com::sun::star::beans::PropertyValue;
 using ::com::sun::star::beans::XPropertySet;
 using ::com::sun::star::lang::XMultiServiceFactory;
 
-const sal_Char sAPI_FieldMaster_Bibliography[] =
-                                "com.sun.star.text.FieldMaster.Bibliography";
-
 
 XMLIndexBibliographyConfigurationContext::XMLIndexBibliographyConfigurationContext(
     SvXMLImport& rImport,
@@ -50,8 +47,7 @@ XMLIndexBibliographyConfigurationContext::XMLIndexBibliographyConfigurationConte
     const OUString& rLocalName,
     const Reference<XAttributeList> & xAttrList) :
         SvXMLStyleContext(rImport, nPrfx, rLocalName, xAttrList, XML_STYLE_FAMILY_TEXT_BIBLIOGRAPHYCONFIG),
-        sFieldMaster_Bibliography(
-            sAPI_FieldMaster_Bibliography),
+        sFieldMaster_Bibliography("com.sun.star.text.FieldMaster.Bibliography"),
         sBracketBefore("BracketBefore"),
         sBracketAfter("BracketAfter"),
         sIsNumberEntries("IsNumberEntries"),
@@ -151,19 +147,18 @@ void XMLIndexBibliographyConfigurationContext::ProcessAttribute(
     }
 }
 
-
 SvXMLImportContext *XMLIndexBibliographyConfigurationContext::CreateChildContext(
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
     const Reference<XAttributeList> & xAttrList )
 {
-    OUString sKey;
-    bool bSort(true);
-
     // process children here and use default context!
     if ( ( nPrefix == XML_NAMESPACE_TEXT ) &&
          IsXMLToken( rLocalName, XML_SORT_KEY ) )
     {
+        OUString sKey;
+        bool bSort(true);
+
         sal_Int16 nLength = xAttrList->getLength();
         for(sal_Int16 nAttr = 0; nAttr < nLength; nAttr++)
         {
@@ -199,12 +194,12 @@ SvXMLImportContext *XMLIndexBibliographyConfigurationContext::CreateChildContext
 
             PropertyValue aNameValue;
             aNameValue.Name = sSortKey;
-            aNameValue.Value = Any((sal_Int16)nKey);
+            aNameValue.Value <<= (sal_Int16)nKey;
             aKey[0] = aNameValue;
 
             PropertyValue aSortValue;
             aSortValue.Name = sIsSortAscending;
-            aSortValue.Value = Any(bSort);
+            aSortValue.Value <<= bSort;
             aKey[1] = aSortValue;
 
             aSortKeys.push_back(aKey);

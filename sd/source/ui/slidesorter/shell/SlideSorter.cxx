@@ -51,15 +51,15 @@ class ContentWindow : public ::sd::Window
 {
 public:
     ContentWindow(vcl::Window& rParent, SlideSorter& rSlideSorter);
-    virtual ~ContentWindow();
+
     void SetCurrentFunction (const rtl::Reference<FuPoor>& rpFunction);
-    virtual void Paint(vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& /*rRenderContext*/, const ::tools::Rectangle& rRect) override;
     virtual void KeyInput (const KeyEvent& rEvent) override;
     virtual void MouseMove (const MouseEvent& rEvent) override;
     virtual void MouseButtonUp (const MouseEvent& rEvent) override;
     virtual void MouseButtonDown (const MouseEvent& rEvent) override;
     virtual void Command (const CommandEvent& rEvent) override;
-    virtual bool Notify (NotifyEvent& rEvent) override;
+    virtual bool EventNotify (NotifyEvent& rEvent) override;
 
 private:
     SlideSorter& mrSlideSorter;
@@ -168,7 +168,7 @@ void SlideSorter::Init()
     SetupListeners ();
 
     // Initialize the window.
-    sd::Window *pContentWindow (GetContentWindow());
+    sd::Window *pContentWindow = GetContentWindow().get();
     if (pContentWindow)
     {
         vcl::Window* pParentWindow = pContentWindow->GetParent();
@@ -235,7 +235,7 @@ Reference<frame::XController> SlideSorter::GetXController() const
     return xController;
 }
 
-void SlideSorter::Paint (const Rectangle& rRepaintArea)
+void SlideSorter::Paint (const ::tools::Rectangle& rRepaintArea)
 {
     GetController().Paint(
         rRepaintArea,
@@ -249,7 +249,7 @@ void SlideSorter::SetupControls (vcl::Window* )
 
 void SlideSorter::SetupListeners()
 {
-    sd::Window *pWindow (GetContentWindow());
+    sd::Window *pWindow = GetContentWindow().get();
     if (pWindow)
     {
         vcl::Window* pParentWindow = pWindow->GetParent();
@@ -278,7 +278,7 @@ void SlideSorter::ReleaseListeners()
 {
     mpSlideSorterController->GetScrollBarManager().Disconnect();
 
-    sd::Window *pWindow (GetContentWindow());
+    sd::Window *pWindow (GetContentWindow().get());
     if (pWindow)
     {
         pWindow->RemoveEventListener(
@@ -305,7 +305,7 @@ void SlideSorter::CreateModelViewController()
     DBG_ASSERT (mpSlideSorterModel.get()!=nullptr,
         "Can not create model for slide browser");
 
-    mpSlideSorterView.reset(CreateView());
+    mpSlideSorterView.reset(new view::SlideSorterView (*this));
     DBG_ASSERT (mpSlideSorterView.get()!=nullptr,
         "Can not create view for slide browser");
 
@@ -333,11 +333,6 @@ model::SlideSorterModel* SlideSorter::CreateModel()
         return nullptr;
 }
 
-view::SlideSorterView* SlideSorter::CreateView()
-{
-    return new view::SlideSorterView (*this);
-}
-
 controller::SlideSorterController* SlideSorter::CreateController()
 {
     controller::SlideSorterController* pController
@@ -361,7 +356,7 @@ void SlideSorter::ArrangeGUIElements (
         view::SlideSorterView::DrawLock aLock (*this);
         GetContentWindow()->EnablePaint (false);
 
-        mpSlideSorterController->Resize (Rectangle(aOrigin, rSize));
+        mpSlideSorterController->Resize (::tools::Rectangle(aOrigin, rSize));
 
         GetContentWindow()->EnablePaint (true);
 
@@ -417,13 +412,13 @@ void SlideSorter::SetCurrentFunction (const rtl::Reference<FuPoor>& rpFunction)
     }
 }
 
-std::shared_ptr<controller::Properties> SlideSorter::GetProperties() const
+std::shared_ptr<controller::Properties> const & SlideSorter::GetProperties() const
 {
     OSL_ASSERT(mpProperties);
     return mpProperties;
 }
 
-std::shared_ptr<view::Theme> SlideSorter::GetTheme() const
+std::shared_ptr<view::Theme> const & SlideSorter::GetTheme() const
 {
     OSL_ASSERT(mpTheme);
     return mpTheme;
@@ -444,16 +439,12 @@ ContentWindow::ContentWindow(
     SetStyle(GetStyle() | WB_NOPOINTERFOCUS);
 }
 
-ContentWindow::~ContentWindow()
-{
-}
-
 void ContentWindow::SetCurrentFunction (const rtl::Reference<FuPoor>& rpFunction)
 {
     mpCurrentFunction = rpFunction;
 }
 
-void ContentWindow::Paint (vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect)
+void ContentWindow::Paint (vcl::RenderContext& /*rRenderContext*/, const ::tools::Rectangle& rRect)
 {
     mrSlideSorter.Paint(rRect);
 }
@@ -488,7 +479,7 @@ void ContentWindow::Command(const CommandEvent& rEvent)
         mpCurrentFunction->Command(rEvent);
 }
 
-bool ContentWindow::Notify (NotifyEvent&)
+bool ContentWindow::EventNotify(NotifyEvent&)
 {
     return false;
 }

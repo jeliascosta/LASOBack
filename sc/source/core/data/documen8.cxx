@@ -45,8 +45,6 @@
 #include <vcl/virdev.hxx>
 #include <vcl/msgbox.hxx>
 
-#include <com/sun/star/i18n/TransliterationModulesExtra.hpp>
-
 #include "inputopt.hxx"
 #include "global.hxx"
 #include "table.hxx"
@@ -77,7 +75,7 @@
 #include "printopt.hxx"
 #include "externalrefmgr.hxx"
 #include "globstr.hrc"
-#include "sc.hrc"
+#include "scres.hrc"
 #include "charthelper.hxx"
 #include "macromgr.hxx"
 #include "dpobject.hxx"
@@ -137,7 +135,7 @@ SfxPrinter* ScDocument::GetPrinter(bool bCreateIfNotExist)
         pSet->Put( SfxBoolItem( SID_PRINTER_NOTFOUND_WARN, aMisc.IsNotFoundWarning() ) );
 
         pPrinter = VclPtr<SfxPrinter>::Create( pSet );
-        pPrinter->SetMapMode( MAP_100TH_MM );
+        pPrinter->SetMapMode( MapUnit::Map100thMM );
         UpdateDrawPrinter();
         pPrinter->SetDigitLanguage( SC_MOD()->GetOptDigitLanguage() );
     }
@@ -145,7 +143,7 @@ SfxPrinter* ScDocument::GetPrinter(bool bCreateIfNotExist)
     return pPrinter;
 }
 
-void ScDocument::SetPrinter( SfxPrinter* pNewPrinter )
+void ScDocument::SetPrinter( VclPtr<SfxPrinter> const & pNewPrinter )
 {
     if ( pNewPrinter == pPrinter.get() )
     {
@@ -195,9 +193,9 @@ VirtualDevice* ScDocument::GetVirtualDevice_100th_mm()
 #else
         pVirtualDevice_100th_mm = VclPtr<VirtualDevice>::Create(DeviceFormat::BITMASK);
 #endif
-        pVirtualDevice_100th_mm->SetReferenceDevice(VirtualDevice::REFDEV_MODE_MSO1);
+        pVirtualDevice_100th_mm->SetReferenceDevice(VirtualDevice::RefDevMode::MSO1);
         MapMode aMapMode( pVirtualDevice_100th_mm->GetMapMode() );
-        aMapMode.SetMapUnit( MAP_100TH_MM );
+        aMapMode.SetMapUnit( MapUnit::Map100thMM );
         pVirtualDevice_100th_mm->SetMapMode( aMapMode );
     }
     return pVirtualDevice_100th_mm;
@@ -374,9 +372,9 @@ sal_uInt8 ScDocument::GetEditTextDirection(SCTAB nTab) const
         SvxFrameDirection eDirection = (SvxFrameDirection)
             static_cast<const SvxFrameDirectionItem&>(rStyleSet.Get( ATTR_WRITINGDIR )).GetValue();
 
-        if ( eDirection == FRMDIR_HORI_LEFT_TOP )
+        if ( eDirection == SvxFrameDirection::Horizontal_LR_TB )
             eRet = EE_HTEXTDIR_L2R;
-        else if ( eDirection == FRMDIR_HORI_RIGHT_TOP )
+        else if ( eDirection == SvxFrameDirection::Horizontal_RL_TB )
             eRet = EE_HTEXTDIR_R2L;
         // else (invalid for EditEngine): keep "default"
     }
@@ -419,7 +417,7 @@ void ScDocument::SetFormulaResults( const ScAddress& rTopPos, const double* pRes
 }
 
 void ScDocument::SetFormulaResults(
-    const ScAddress& rTopPos, const formula::FormulaTokenRef* pResults, size_t nLen )
+    const ScAddress& rTopPos, const formula::FormulaConstTokenRef* pResults, size_t nLen )
 {
     ScTable* pTab = FetchTable(rTopPos.Tab());
     if (!pTab)
@@ -507,7 +505,7 @@ public:
     void setRow(SCROW nRow) { mrCalcPos.SetRow(nRow); }
 
     void incTab() { mrCalcPos.IncTab(); }
-    void incCol(SCCOL nInc=1) { mrCalcPos.IncCol(nInc); }
+    void incCol(SCCOL nInc) { mrCalcPos.IncCol(nInc); }
 
     void setOldMapMode(const MapMode& rOldMapMode) { maOldMapMode = rOldMapMode; }
 
@@ -591,9 +589,9 @@ bool ScDocument::IdleCalcTextWidth()            // true = try next again
                 {
                     pDev = GetPrinter();
                     aScope.setOldMapMode(pDev->GetMapMode());
-                    pDev->SetMapMode( MAP_PIXEL );  // Important for GetNeededSize
+                    pDev->SetMapMode( MapUnit::MapPixel );  // Important for GetNeededSize
 
-                    Point aPix1000 = pDev->LogicToPixel( Point(1000,1000), MAP_TWIP );
+                    Point aPix1000 = pDev->LogicToPixel( Point(1000,1000), MapUnit::MapTwip );
                     nPPTX = aPix1000.X() / 1000.0;
                     nPPTY = aPix1000.Y() / 1000.0;
                 }
@@ -833,8 +831,8 @@ void ScDocument::UpdateExternalRefLinks(vcl::Window* pWin)
         OUString aFile;
         sfx2::LinkManager::GetDisplayNames(pRefLink, nullptr, &aFile);
         // Decode encoded URL for display friendliness.
-        INetURLObject aUrl(aFile,INetURLObject::WAS_ENCODED);
-        aFile = aUrl.GetMainURL(INetURLObject::DECODE_UNAMBIGUOUS);
+        INetURLObject aUrl(aFile,INetURLObject::EncodeMechanism::WasEncoded);
+        aFile = aUrl.GetMainURL(INetURLObject::DecodeMechanism::Unambiguous);
 
         OUStringBuffer aBuf;
         aBuf.append(OUString(ScResId(SCSTR_EXTDOC_NOT_LOADED)));
@@ -849,7 +847,7 @@ void ScDocument::UpdateExternalRefLinks(vcl::Window* pWin)
     if (bAny)
     {
         TrackFormulas();
-        pShell->Broadcast( SfxSimpleHint(FID_DATACHANGED) );
+        pShell->Broadcast( SfxHint(SfxHintId::ScDataChanged) );
 
         // #i101960# set document modified, as in TrackTimeHdl for DDE links
         if (!pShell->IsModified())
@@ -1070,7 +1068,7 @@ void ScDocument::DeleteAreaLinksOnTab( SCTAB nTab )
         return;
 
     const ::sfx2::SvBaseLinks& rLinks = pMgr->GetLinks();
-    sal_uInt16 nPos = 0;
+    sfx2::SvBaseLinks::size_type nPos = 0;
     while ( nPos < rLinks.size() )
     {
         const ::sfx2::SvBaseLink* pBase = rLinks[nPos].get();
@@ -1162,14 +1160,6 @@ void ScDocument::KeyInput( const KeyEvent& )
         apTemporaryChartLock->StartOrContinueLocking();
 }
 
-bool ScDocument::CheckMacroWarn()
-{
-    //  The check for macro configuration, macro warning and disabling is now handled
-    //  in SfxObjectShell::AdjustMacroMode, called by SfxObjectShell::CallBasic.
-
-    return true;
-}
-
 SfxBindings* ScDocument::GetViewBindings()
 {
     //  used to invalidate slots after changes to this document
@@ -1192,7 +1182,7 @@ SfxBindings* ScDocument::GetViewBindings()
         return nullptr;
 }
 
-void ScDocument::TransliterateText( const ScMarkData& rMultiMark, sal_Int32 nType )
+void ScDocument::TransliterateText( const ScMarkData& rMultiMark, TransliterationFlags nType )
 {
     OSL_ENSURE( rMultiMark.IsMultiMarked(), "TransliterateText: no selection" );
 
@@ -1224,7 +1214,7 @@ void ScDocument::TransliterateText( const ScMarkData& rMultiMark, sal_Int32 nTyp
                 // for performance reasons.
                 if (aCell.meType == CELLTYPE_EDIT ||
                     (aCell.meType == CELLTYPE_STRING &&
-                     ( nType == i18n::TransliterationModulesExtra::SENTENCE_CASE || nType == i18n::TransliterationModulesExtra::TITLE_CASE)))
+                     ( nType == TransliterationFlags::SENTENCE_CASE || nType == TransliterationFlags::TITLE_CASE)))
                 {
                     if (!pEngine)
                         pEngine.reset(new ScFieldEditEngine(this, GetEnginePool(), GetEditPool()));

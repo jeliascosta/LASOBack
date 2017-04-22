@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SC_SOURCE_FILTER_INC_TABLEBUFFER_HXX
 #define INCLUDED_SC_SOURCE_FILTER_INC_TABLEBUFFER_HXX
 
-#include <com/sun/star/table/CellRangeAddress.hpp>
 #include "autofilterbuffer.hxx"
 #include "tablecolumnsbuffer.hxx"
 #include "workbookhelper.hxx"
@@ -30,8 +29,7 @@ namespace xls {
 
 struct TableModel
 {
-    css::table::CellRangeAddress
-                        maRange;            /// Original (unchecked) range of the table.
+    ScRange             maRange;            /// Original (unchecked) range of the table.
     OUString            maProgName;         /// Programmatical name.
     OUString            maDisplayName;      /// Display name.
     sal_Int32           mnId;               /// Unique table identifier.
@@ -52,9 +50,9 @@ public:
     /** Imports a table definition from a TABLE record. */
     void                importTable( SequenceInputStream& rStrm, sal_Int16 nSheet );
     /** Creates a new auto filter and stores it internally. */
-    inline AutoFilter&  createAutoFilter() { return maAutoFilters.createAutoFilter(); }
+    AutoFilter&  createAutoFilter() { return maAutoFilters.createAutoFilter(); }
     /** Creates a new tableColumns handler and stores it internally. */
-    inline TableColumns&  createTableColumns() { return maTableColumns.createTableColumns(); }
+    TableColumns&  createTableColumns() { return maTableColumns.createTableColumns(); }
 
     /** Creates a database range from this tables. */
     void                finalizeImport();
@@ -62,32 +60,31 @@ public:
     void                applyTableColumns();
 
     /** Returns the unique table identifier. */
-    inline sal_Int32    getTableId() const { return maModel.mnId; }
+    sal_Int32    getTableId() const { return maModel.mnId; }
     /** Returns the token index used in API token arrays (com.sun.star.sheet.FormulaToken). */
-    inline sal_Int32    getTokenIndex() const { return mnTokenIndex; }
+    sal_Int32    getTokenIndex() const { return mnTokenIndex; }
     /** Returns the original display name of the table. */
-    inline const OUString& getDisplayName() const { return maModel.maDisplayName; }
+    const OUString& getDisplayName() const { return maModel.maDisplayName; }
 
     /** Returns the original (unchecked) total range of the table. */
-    inline const css::table::CellRangeAddress& getOriginalRange() const { return maModel.maRange; }
+    const ScRange& getOriginalRange() const { return maModel.maRange; }
     /** Returns the cell range of this table. */
-    inline const css::table::CellRangeAddress& getRange() const { return maDestRange; }
+    const ScRange& getRange() const { return maDestRange; }
     /** Returns the number of columns of this table. */
-    inline sal_Int32    getWidth() const { return maDestRange.EndColumn - maDestRange.StartColumn + 1; }
+    SCCOL        getWidth() const { return maDestRange.aEnd.Col() - maDestRange.aStart.Col() + 1; }
     /** Returns the number of rows of this table. */
-    inline sal_Int32    getHeight() const { return maDestRange.EndRow - maDestRange.StartRow + 1; }
+    SCROW        getHeight() const { return maDestRange.aEnd.Row() - maDestRange.aStart.Row() + 1; }
     /** Returns the number of header rows in the table range. */
-    inline sal_Int32    getHeaderRows() const { return maModel.mnHeaderRows; }
+    sal_Int32    getHeaderRows() const { return maModel.mnHeaderRows; }
     /** Returns the number of totals rows in the table range. */
-    inline sal_Int32    getTotalsRows() const { return maModel.mnTotalsRows; }
+    sal_Int32    getTotalsRows() const { return maModel.mnTotalsRows; }
 
 private:
     TableModel          maModel;
     AutoFilterBuffer    maAutoFilters;      /// Filter settings for this table.
     TableColumnsBuffer  maTableColumns;     /// Column names of this table.
     OUString            maDBRangeName;      /// Name of the database range in the Calc document.
-    css::table::CellRangeAddress
-                        maDestRange;        /// Validated range of the table in the worksheet.
+    ScRange             maDestRange;        /// Validated range of the table in the worksheet.
     sal_Int32           mnTokenIndex;       /// Token index used in API token array.
 };
 
@@ -117,8 +114,8 @@ private:
     void                insertTableToMaps( const TableRef& rxTable );
 
 private:
-    typedef RefVector< Table >                  TableVector;
-    typedef RefMap< sal_Int32, Table >          TableIdMap;
+    typedef RefVector< Table >           TableVector;
+    typedef RefMap< sal_Int32, Table >   TableIdMap;
     typedef RefMap< OUString, Table >    TableNameMap;
 
     TableVector         maTables;

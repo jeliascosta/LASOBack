@@ -30,13 +30,14 @@ private:
     css::uno::Reference< css::frame::XModel > mxModel;
 
 public:
+    /// @throws css::uno::RuntimeException
     SwVbaPane( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext,
-        const css::uno::Reference< css::frame::XModel >& xModel ) throw ( css::uno::RuntimeException );
-    virtual ~SwVbaPane();
+        const css::uno::Reference< css::frame::XModel >& xModel );
+    virtual ~SwVbaPane() override;
 
     // Methods
-    virtual css::uno::Any SAL_CALL View(  ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL Close(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL View(  ) override;
+    virtual void SAL_CALL Close(  ) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

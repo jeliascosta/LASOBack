@@ -145,17 +145,14 @@ void B3dTransformationSet::Reset()
     mfNearBound = 0.001;
     mfFarBound = 1.001;
 
-    meRatio = Base3DRatioGrow;
     mfRatio = 0.0;
 
-    maViewportRectangle = Rectangle(-1, -1, 2, 2);
+    maViewportRectangle = tools::Rectangle(-1, -1, 2, 2);
     maVisibleRectangle = maViewportRectangle;
 
     mbPerspective = true;
 
     mbProjectionValid = false;
-    mbObjectToDeviceValid = false;
-    mbWorldToViewValid = false;
 
     CalcViewport();
 }
@@ -172,10 +169,6 @@ void B3dTransformationSet::SetOrientation(const basegfx::B3DPoint& rVRP, const b
 {
     maOrientation.identity();
     Orientation(maOrientation, rVRP, rVPN, rVUP);
-
-    mbInvTransObjectToEyeValid = false;
-    mbObjectToDeviceValid = false;
-    mbWorldToViewValid = false;
 
     PostSetOrientation();
 }
@@ -206,10 +199,6 @@ void B3dTransformationSet::PostSetProjection()
     // Assign and compute inverse
     maInvProjection = GetProjection();
     maInvProjection.invert();
-
-    // invalidate dependent matrices
-    mbObjectToDeviceValid = false;
-    mbWorldToViewValid = false;
 }
 
 /// Transformations for viewport
@@ -234,57 +223,20 @@ void B3dTransformationSet::CalcViewport()
             fActRatio = fBoundHeight / fBoundWidth;
         // FIXME   else in this case has a lot of problems,  should this return.
 
-        switch(meRatio)
+        // scale down larger part
+        if(fActRatio > mfRatio)
         {
-            case Base3DRatioShrink :
-            {
-                // Dilate smaller part
-                if(fActRatio > mfRatio)
-                {
-                    // enlarge X
-                    fFactor = 1.0 / fActRatio;
-                    fRight  *= fFactor;
-                    fLeft *= fFactor;
-                }
-                else
-                {
-                    // enlarge Y
-                    fFactor = fActRatio;
-                    fTop *= fFactor;
-                    fBottom *= fFactor;
-                }
-                break;
-            }
-            case Base3DRatioGrow :
-            {
-                // scale down larger part
-                if(fActRatio > mfRatio)
-                {
-                    // scale down Y
-                    fFactor = fActRatio;
-                    fTop *= fFactor;
-                    fBottom *= fFactor;
-                }
-                else
-                {
-                    // scale down X
-                    fFactor = 1.0 / fActRatio;
-                    fRight  *= fFactor;
-                    fLeft *= fFactor;
-                }
-                break;
-            }
-            case Base3DRatioMiddle :
-            {
-                // averaging
-                fFactor = ((1.0 / fActRatio) + 1.0) / 2.0;
-                fRight *= fFactor;
-                fLeft *= fFactor;
-                fFactor = (fActRatio + 1.0) / 2.0;
-                fTop *= fFactor;
-                fBottom *= fFactor;
-                break;
-            }
+            // scale down Y
+            fFactor = fActRatio;
+            fTop *= fFactor;
+            fBottom *= fFactor;
+        }
+        else
+        {
+            // scale down X
+            fFactor = 1.0 / fActRatio;
+            fRight  *= fFactor;
+            fLeft *= fFactor;
         }
     }
 
@@ -334,8 +286,6 @@ void B3dTransformationSet::SetRatio(double fNew)
     {
         mfRatio = fNew;
         mbProjectionValid = false;
-        mbObjectToDeviceValid = false;
-        mbWorldToViewValid = false;
     }
 }
 
@@ -349,8 +299,6 @@ void B3dTransformationSet::SetDeviceRectangle(double fL, double fR, double fB, d
         mfTopBound = fT;
 
         mbProjectionValid = false;
-        mbObjectToDeviceValid = false;
-        mbWorldToViewValid = false;
 
         // Broadcast changes
         DeviceRectangleChange();
@@ -367,12 +315,10 @@ void B3dTransformationSet::SetPerspective(bool bNew)
     {
         mbPerspective = bNew;
         mbProjectionValid = false;
-        mbObjectToDeviceValid = false;
-        mbWorldToViewValid = false;
     }
 }
 
-void B3dTransformationSet::SetViewportRectangle(Rectangle& rRect, Rectangle& rVisible)
+void B3dTransformationSet::SetViewportRectangle(tools::Rectangle const & rRect, tools::Rectangle const & rVisible)
 {
     if(rRect != maViewportRectangle || rVisible != maVisibleRectangle)
     {
@@ -380,8 +326,6 @@ void B3dTransformationSet::SetViewportRectangle(Rectangle& rRect, Rectangle& rVi
         maVisibleRectangle = rVisible;
 
         mbProjectionValid = false;
-        mbObjectToDeviceValid = false;
-        mbWorldToViewValid = false;
     }
 }
 
@@ -390,14 +334,14 @@ void B3dTransformationSet::SetViewportRectangle(Rectangle& rRect, Rectangle& rVi
 const basegfx::B3DPoint B3dTransformationSet::WorldToEyeCoor(const basegfx::B3DPoint& rVec)
 {
     basegfx::B3DPoint aVec(rVec);
-    aVec *= GetOrientation();
+    aVec *= maOrientation;
     return aVec;
 }
 
 const basegfx::B3DPoint B3dTransformationSet::EyeToWorldCoor(const basegfx::B3DPoint& rVec)
 {
     basegfx::B3DPoint aVec(rVec);
-    aVec *= GetInvOrientation();
+    aVec *= maInvOrientation;
     return aVec;
 }
 
@@ -448,8 +392,7 @@ B3dCamera::B3dCamera(
     aCorrectedPosition(rPos),
     aLookAt(rLkAt),
     fFocalLength(fFocLen),
-    fBankAngle(fBnkAng),
-    bUseFocalLength(false)
+    fBankAngle(fBnkAng)
 {
     CalcNewViewportValues();
 }
@@ -506,23 +449,13 @@ bool B3dCamera::CalcFocalLength()
     double fWidth = GetDeviceRectangleWidth();
     bool bRetval = false;
 
-    if(bUseFocalLength)
-    {
-        // Update position if focal length changes
-        aCorrectedPosition = basegfx::B3DPoint(0.0, 0.0, fFocalLength * fWidth / 35.0);
-        aCorrectedPosition = EyeToWorldCoor(aCorrectedPosition);
-        bRetval = true;
-    }
-    else
-    {
-        // Adjust focal length based on given position
-        basegfx::B3DPoint aOldPosition;
-        aOldPosition = WorldToEyeCoor(aOldPosition);
-        if(fWidth != 0.0)
-            fFocalLength = aOldPosition.getZ() / fWidth * 35.0;
-        if(fFocalLength < 5.0)
-            fFocalLength = 5.0;
-    }
+    // Adjust focal length based on given position
+    basegfx::B3DPoint aOldPosition;
+    aOldPosition = WorldToEyeCoor(aOldPosition);
+    if(fWidth != 0.0)
+        fFocalLength = aOldPosition.getZ() / fWidth * 35.0;
+    if(fFocalLength < 5.0)
+        fFocalLength = 5.0;
     return bRetval;
 }
 

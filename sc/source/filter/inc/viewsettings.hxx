@@ -20,8 +20,6 @@
 #ifndef INCLUDED_SC_SOURCE_FILTER_INC_VIEWSETTINGS_HXX
 #define INCLUDED_SC_SOURCE_FILTER_INC_VIEWSETTINGS_HXX
 
-#include <com/sun/star/table/CellAddress.hpp>
-#include <com/sun/star/table/CellRangeAddress.hpp>
 #include "addressconverter.hxx"
 #include "stylesbuffer.hxx"
 #include "worksheethelper.hxx"
@@ -33,7 +31,7 @@ namespace xls {
 struct PaneSelectionModel
 {
     ScAddress maActiveCell;  /// Position of active cell (cursor).
-    ApiCellRangeList    maSelection;                    /// Selected cell ranges.
+    ScRangeList         maSelection;                    /// Selected cell ranges.
     sal_Int32           mnActiveCellId;                 /// Index of active cell in selection list.
 
     explicit            PaneSelectionModel();
@@ -79,8 +77,6 @@ struct SheetViewModel
     /** Returns the grid color as RGB value. */
     sal_Int32           getGridColor( const ::oox::core::FilterBase& rFilter ) const;
 
-    /** Returns the selection data, if available, otherwise 0. */
-    const PaneSelectionModel* getPaneSelection( sal_Int32 nPaneId ) const;
     /** Returns the selection data of the active pane. */
     const PaneSelectionModel* getActiveSelection() const;
     /** Returns read/write access to the selection data of the specified pane. */
@@ -166,8 +162,7 @@ public:
                             const SheetViewModelRef& rxSheetView,
                             const css::uno::Any& rProperties );
     /** Stores the used area for a specific worksheet. */
-    void                setSheetUsedArea(
-                            const css::table::CellRangeAddress& rUsedArea );
+    void                setSheetUsedArea( const ScRange& rUsedArea );
 
     /** Converts all imported document view settings. */
     void                finalizeImport();
@@ -182,14 +177,13 @@ private:
     typedef RefVector< WorkbookViewModel >                                      WorkbookViewModelVec;
     typedef RefMap< sal_Int16, SheetViewModel >                                 SheetViewModelMap;
     typedef ::std::map< sal_Int16, css::uno::Any >                 SheetPropertiesMap;
-    typedef ::std::map< sal_Int16, css::table::CellRangeAddress >  SheetUsedAreaMap;
+    typedef ::std::map< sal_Int16, ScRange >                                    SheetUsedAreaMap;
 
     WorkbookViewModelVec maBookViews;       /// Workbook view models.
     SheetViewModelMap   maSheetViews;       /// Active view model for each sheet.
     SheetPropertiesMap  maSheetProps;       /// Converted property sequences for each sheet.
     SheetUsedAreaMap    maSheetUsedAreas;   /// Used area (cell range) of every sheet.
-    css::table::CellRangeAddress
-                        maOleSize;          /// Visible area if this is an embedded OLE object.
+    ScRange             maOleSize;          /// Visible area if this is an embedded OLE object.
     bool                mbValidOleSize;     /// True = imported OLE size is a valid cell range.
 };
 

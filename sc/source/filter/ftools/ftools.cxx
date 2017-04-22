@@ -35,11 +35,7 @@
 #include "stlsheet.hxx"
 #include "compiler.hxx"
 
-#include <config_orcus.h>
-
-#if ENABLE_ORCUS
 #include "orcusfiltersimpl.hxx"
-#endif
 
 
 // ScFilterTools::ReadLongDouble()
@@ -73,7 +69,7 @@ SEEEEEEE EEEEEEEE IMMMMMMM MMMMMMMM MMMMMMMM MMMMMMMM MMMMMMMM MMMMMMMM MMMMMMMM
     long double lfFakt = 256.0;
     sal_uInt8 pDouble10[ 10 ];
 
-    rStrm.Read( pDouble10, 10 );            // Intel-10 in pDouble10
+    rStrm.ReadBytes(pDouble10, 10);            // Intel-10 in pDouble10
 
     lfDouble  = static_cast< long double >( pDouble10[ 7 ] );   // Byte 7
     lfDouble *= lfFakt;
@@ -165,36 +161,36 @@ OUString ScfTools::ConvertToScDefinedName(const OUString& rName )
 
 // *** streams and storages *** -----------------------------------------------
 
-tools::SvRef<SotStorage> ScfTools::OpenStorageRead( tools::SvRef<SotStorage> xStrg, const OUString& rStrgName )
+tools::SvRef<SotStorage> ScfTools::OpenStorageRead( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrgName )
 {
     tools::SvRef<SotStorage> xSubStrg;
-    if( xStrg.Is() && xStrg->IsContained( rStrgName ) )
-        xSubStrg = xStrg->OpenSotStorage( rStrgName, STREAM_STD_READ );
+    if( xStrg.is() && xStrg->IsContained( rStrgName ) )
+        xSubStrg = xStrg->OpenSotStorage( rStrgName, StreamMode::STD_READ );
     return xSubStrg;
 }
 
-tools::SvRef<SotStorage> ScfTools::OpenStorageWrite( tools::SvRef<SotStorage> xStrg, const OUString& rStrgName )
+tools::SvRef<SotStorage> ScfTools::OpenStorageWrite( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrgName )
 {
     tools::SvRef<SotStorage> xSubStrg;
-    if( xStrg.Is() )
-        xSubStrg = xStrg->OpenSotStorage( rStrgName, STREAM_STD_WRITE );
+    if( xStrg.is() )
+        xSubStrg = xStrg->OpenSotStorage( rStrgName, StreamMode::STD_WRITE );
     return xSubStrg;
 }
 
-tools::SvRef<SotStorageStream> ScfTools::OpenStorageStreamRead( tools::SvRef<SotStorage> xStrg, const OUString& rStrmName )
+tools::SvRef<SotStorageStream> ScfTools::OpenStorageStreamRead( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrmName )
 {
     tools::SvRef<SotStorageStream> xStrm;
-    if( xStrg.Is() && xStrg->IsContained( rStrmName ) && xStrg->IsStream( rStrmName ) )
-        xStrm = xStrg->OpenSotStream( rStrmName, STREAM_STD_READ );
+    if( xStrg.is() && xStrg->IsContained( rStrmName ) && xStrg->IsStream( rStrmName ) )
+        xStrm = xStrg->OpenSotStream( rStrmName, StreamMode::STD_READ );
     return xStrm;
 }
 
-tools::SvRef<SotStorageStream> ScfTools::OpenStorageStreamWrite( tools::SvRef<SotStorage> xStrg, const OUString& rStrmName )
+tools::SvRef<SotStorageStream> ScfTools::OpenStorageStreamWrite( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrmName )
 {
-    OSL_ENSURE( !xStrg || !xStrg->IsContained( rStrmName ), "ScfTools::OpenStorageStreamWrite - stream exists already" );
+    OSL_ENSURE( !xStrg.is() || !xStrg->IsContained( rStrmName ), "ScfTools::OpenStorageStreamWrite - stream exists already" );
     tools::SvRef<SotStorageStream> xStrm;
-    if( xStrg.Is() )
-        xStrm = xStrg->OpenSotStream( rStrmName, STREAM_STD_WRITE | StreamMode::TRUNC );
+    if( xStrg.is() )
+        xStrm = xStrg->OpenSotStream( rStrmName, StreamMode::STD_WRITE | StreamMode::TRUNC );
     return xStrm;
 }
 
@@ -217,7 +213,10 @@ bool ScfTools::CheckItems( const SfxItemSet& rItemSet, const sal_uInt16* pnWhich
 void ScfTools::PutItem( SfxItemSet& rItemSet, const SfxPoolItem& rItem, sal_uInt16 nWhichId, bool bSkipPoolDef )
 {
     if( !bSkipPoolDef || (rItem != rItemSet.GetPool()->GetDefaultItem( nWhichId )) )
-        rItemSet.Put( rItem, nWhichId );
+    {
+        std::unique_ptr<SfxPoolItem> pNewItem(rItem.CloneSetWhich(nWhichId));
+        rItemSet.Put( *pNewItem );
+    }
 }
 
 void ScfTools::PutItem( SfxItemSet& rItemSet, const SfxPoolItem& rItem, bool bSkipPoolDef )
@@ -354,12 +353,8 @@ ScFormatFilterPluginImpl::~ScFormatFilterPluginImpl() {}
 
 ScOrcusFilters* ScFormatFilterPluginImpl::GetOrcusFilters()
 {
-#if ENABLE_ORCUS
     static ScOrcusFiltersImpl aImpl;
     return &aImpl;
-#else
-    return NULL;
-#endif
 }
 
 ScFormatFilterPlugin * SAL_CALL ScFilterCreate()

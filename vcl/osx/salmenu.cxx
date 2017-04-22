@@ -86,7 +86,7 @@ const AquaSalMenu* AquaSalMenu::pCurrentMenuBar = nullptr;
         else if( nDialog == ShowDialogId::Preferences )
             aDialog = "PREFERENCES";
         const ApplicationEvent* pAppEvent = new ApplicationEvent(
-            ApplicationEvent::TYPE_SHOWDIALOG, aDialog);
+            ApplicationEvent::Type::ShowDialog, aDialog);
         AquaSalInstance::aAppEventList.push_back( pAppEvent );
     }
 }
@@ -157,7 +157,10 @@ static void initAppMenu()
                         [pString release];
                     if( pNewItem )
                     {
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+    // 'NSCommandKeyMask' is deprecated: first deprecated in macOS 10.12
                         [pNewItem setKeyEquivalentModifierMask: NSCommandKeyMask];
+SAL_WNODEPRECATED_DECLARATIONS_POP
                         [pNewItem setTarget: pMainMenuSelector];
                         [pAppMenu insertItem: [NSMenuItem separatorItem] atIndex: 3];
                     }
@@ -257,7 +260,6 @@ void AquaSalInstance::DestroyMenuItem( SalMenuItem* pSalMenuItem )
 AquaSalMenu::AquaSalMenu( bool bMenuBar ) :
     mbMenuBar( bMenuBar ),
     mpMenu( nil ),
-    mpVCLMenu( nullptr ),
     mpFrame( nullptr ),
     mpParentSalMenu( nullptr )
 {
@@ -317,7 +319,7 @@ AquaSalMenu::~AquaSalMenu()
     }
 }
 
-bool AquaSalMenu::ShowNativePopupMenu(FloatingWindow * pWin, const Rectangle& rRect, FloatWinPopupFlags nFlags)
+bool AquaSalMenu::ShowNativePopupMenu(FloatingWindow * pWin, const tools::Rectangle& rRect, FloatWinPopupFlags nFlags)
 {
     // do not use native popup menu when AQUA_NATIVE_MENUS is set to false
     if( ! VisibleMenuBar() ) {
@@ -392,7 +394,7 @@ void AquaSalMenu::unsetMainMenu()
 
 void AquaSalMenu::setMainMenu()
 {
-    DBG_ASSERT( mbMenuBar, "setMainMenu on non menubar" );
+    SAL_WARN_IF( !mbMenuBar, "vcl", "setMainMenu on non menubar" );
     if( mbMenuBar )
     {
         if( pCurrentMenuBar != this )
@@ -639,7 +641,7 @@ void AquaSalMenu::SetItemText( unsigned /*i_nPos*/, SalMenuItem* i_pSalMenuItem,
     AquaSalMenuItem *pAquaSalMenuItem = static_cast<AquaSalMenuItem *>(i_pSalMenuItem);
 
     // Delete mnemonics
-    OUString aText( comphelper::string::remove(i_rText, '~') );
+    OUString aText = i_rText.replaceAll("~", "");
 
     /* #i90015# until there is a correct solution
        strip out any appended (.*) in menubar entries
@@ -712,19 +714,51 @@ void AquaSalMenu::SetAccelerator( unsigned /*nPos*/, SalMenuItem* pSalMenuItem, 
             case KEY_EQUAL:
                 nCommandKey='=';
                 break;
+            case KEY_SEMICOLON:
+                nCommandKey=';';
+                break;
+            case KEY_BACKSPACE:
+                nCommandKey=sal_Unicode( 0x232b );
+                break;
+            case KEY_PAGEUP:
+                nCommandKey=sal_Unicode( 0x21de );
+                break;
+            case KEY_PAGEDOWN:
+                nCommandKey=sal_Unicode( 0x21df );
+                break;
+            case KEY_UP:
+                nCommandKey=sal_Unicode( 0x21e1 );
+                break;
+            case KEY_DOWN:
+                nCommandKey=sal_Unicode( 0x21e3 );
+                break;
+            case KEY_RETURN:
+                nCommandKey=sal_Unicode( 0x21a9 );
+                break;
+            case KEY_BRACKETLEFT:
+                nCommandKey='[';
+                break;
+            case KEY_BRACKETRIGHT:
+                nCommandKey=']';
+                break;
             }
         }
     }
     else // not even a code ? nonsense -> ignore
         return;
 
-    DBG_ASSERT( nCommandKey, "unmapped accelerator key" );
+    SAL_WARN_IF( !nCommandKey, "vcl", "unmapped accelerator key" );
 
     nModifier=rKeyCode.GetModifier();
 
     // should always use the command key
     int nItemModifier = 0;
 
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+        // 'NSAlternateKeyMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSCommandKeyMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSControlKeyMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSShiftKeyMask' is deprecated: first deprecated in macOS 10.12
     if (nModifier & KEY_SHIFT)
     {
         nItemModifier |= NSShiftKeyMask;   // actually useful only for function keys
@@ -740,6 +774,7 @@ void AquaSalMenu::SetAccelerator( unsigned /*nPos*/, SalMenuItem* pSalMenuItem, 
 
     if(nModifier & KEY_MOD3)
         nItemModifier |= NSControlKeyMask;
+SAL_WNODEPRECATED_DECLARATIONS_POP
 
     AquaSalMenuItem *pAquaSalMenuItem = static_cast<AquaSalMenuItem *>(pSalMenuItem);
     NSString* pString = CreateNSString( OUString( &nCommandKey, 1 ) );
@@ -819,26 +854,26 @@ void AquaSalMenu::RemoveMenuBarButton( sal_uInt16 i_nId )
         statusLayout();
 }
 
-Rectangle AquaSalMenu::GetMenuBarButtonRectPixel( sal_uInt16 i_nItemId, SalFrame* i_pReferenceFrame )
+tools::Rectangle AquaSalMenu::GetMenuBarButtonRectPixel( sal_uInt16 i_nItemId, SalFrame* i_pReferenceFrame )
 {
     if( ! i_pReferenceFrame || ! AquaSalFrame::isAlive( static_cast<AquaSalFrame*>(i_pReferenceFrame) ) )
-        return Rectangle();
+        return tools::Rectangle();
 
     MenuBarButtonEntry* pEntry = findButtonItem( i_nItemId );
 
     if( ! pEntry )
-        return Rectangle();
+        return tools::Rectangle();
 
     NSStatusItem* pItem = SalData::getStatusItem();
     if( ! pItem )
-        return Rectangle();
+        return tools::Rectangle();
 
     NSView* pNSView = [pItem view];
     if( ! pNSView )
-        return Rectangle();
+        return tools::Rectangle();
     NSWindow* pNSWin = [pNSView window];
     if( ! pNSWin )
-        return Rectangle();
+        return tools::Rectangle();
 
     NSRect aRect = [pNSWin convertRectToScreen:[pNSWin frame]];
 
@@ -847,7 +882,7 @@ Rectangle AquaSalMenu::GetMenuBarButtonRectPixel( sal_uInt16 i_nItemId, SalFrame
     aRect.origin.x -= i_pReferenceFrame->maGeometry.nX;
     aRect.origin.y -= i_pReferenceFrame->maGeometry.nY + aRect.size.height;
 
-    return Rectangle( Point(static_cast<long int>(aRect.origin.x),
+    return tools::Rectangle( Point(static_cast<long int>(aRect.origin.x),
                 static_cast<long int>(aRect.origin.y)
                 ),
               Size( static_cast<long int>(aRect.size.width),
@@ -867,9 +902,6 @@ AquaSalMenuItem::AquaSalMenuItem( const SalItemParams* pItemData ) :
     mpSubMenu( nullptr ),
     mpMenuItem( nil )
 {
-    // Delete mnemonics
-    OUString aText( comphelper::string::remove(pItemData->aText, '~') );
-
     if (pItemData->eType == MenuItemType::SEPARATOR)
     {
         mpMenuItem = [NSMenuItem separatorItem];
@@ -881,14 +913,16 @@ AquaSalMenuItem::AquaSalMenuItem( const SalItemParams* pItemData ) :
     {
         mpMenuItem = [[SalNSMenuItem alloc] initWithMenuItem: this];
         [mpMenuItem setEnabled: YES];
-        NSString* pString = CreateNSString( aText );
+
+        // peel mnemonics because on mac there are no such things for menu items
+        NSString* pString = CreateNSString( pItemData->aText.replaceAll( "~", "" ) );
         if (pString)
         {
             [mpMenuItem setTitle: pString];
             [pString release];
         }
         // anything but a separator should set a menu to dispatch to
-        DBG_ASSERT( mpVCLMenu, "no menu" );
+        SAL_WARN_IF( !mpVCLMenu, "vcl", "no menu" );
     }
 }
 

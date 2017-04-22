@@ -96,9 +96,9 @@ enum SchXMLChartAttrMap
     XML_TOK_CHART_WIDTH,
     XML_TOK_CHART_HEIGHT,
     XML_TOK_CHART_STYLE_NAME,
-    XML_TOK_CHART_ADDIN_NAME,
     XML_TOK_CHART_COL_MAPPING,
-    XML_TOK_CHART_ROW_MAPPING
+    XML_TOK_CHART_ROW_MAPPING,
+    XML_TOK_CHART_DATA_PILOT_SOURCE,
 };
 
 enum SchXMLPlotAreaAttrTokenMap
@@ -110,7 +110,6 @@ enum SchXMLPlotAreaAttrTokenMap
     XML_TOK_PA_STYLE_NAME,
     XML_TOK_PA_TRANSFORM,
     XML_TOK_PA_CHART_ADDRESS,
-    XML_TOK_PA_TABLE_NUMBER_LIST,
     XML_TOK_PA_DS_HAS_LABELS,
     XML_TOK_PA_VRP,
     XML_TOK_PA_VPN,
@@ -122,12 +121,6 @@ enum SchXMLPlotAreaAttrTokenMap
     XML_TOK_PA_SHADE_MODE,
     XML_TOK_PA_AMBIENT_COLOR,
     XML_TOK_PA_LIGHTING_MODE
-};
-
-enum SchXMLAutoStyleAttrMap
-{
-    XML_TOK_AS_FAMILY,
-    XML_TOK_AS_NAME
 };
 
 enum SchXMLCellAttrMap
@@ -173,13 +166,13 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& xContext,
         OUString const & implementationName, SvXMLImportFlags nImportFlags );
 
-    virtual ~SchXMLImport() throw ();
+    virtual ~SchXMLImport() throw () override;
 
     SvXMLImportContext* CreateStylesContext( const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList );
 
     // XImporter
-    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
 };
 
 #endif // INCLUDED_XMLOFF_INC_SCHXMLIMPORT_HXX

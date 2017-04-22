@@ -63,7 +63,6 @@ AccessibleChartView::AccessibleChartView(SdrView* pView ) :
 
 AccessibleChartView::~AccessibleChartView()
 {
-    delete m_pViewForwarder;
 }
 
 awt::Rectangle AccessibleChartView::GetWindowPosSize() const
@@ -74,7 +73,7 @@ awt::Rectangle AccessibleChartView::GetWindowPosSize() const
 
     awt::Rectangle aBBox( xWindow->getPosSize() );
 
-    vcl::Window* pWindow( VCLUnoHelper::GetWindow( GetInfo().m_xWindow ));
+    VclPtr<vcl::Window> pWindow( VCLUnoHelper::GetWindow( GetInfo().m_xWindow ));
     if( pWindow )
     {
         SolarMutexGuard aSolarGuard;
@@ -99,39 +98,33 @@ awt::Point AccessibleChartView::GetUpperLeftOnScreen() const
 
 // ________ XAccessibleContext ________
 OUString SAL_CALL AccessibleChartView::getAccessibleName()
-    throw (uno::RuntimeException, std::exception)
 {
     return SCH_RESSTR(STR_OBJECT_DIAGRAM);
 }
 
 OUString SAL_CALL AccessibleChartView::getAccessibleDescription()
-    throw (uno::RuntimeException, std::exception)
 {
     return getAccessibleName();
 }
 
 Reference< XAccessible > SAL_CALL AccessibleChartView::getAccessibleParent()
-    throw (uno::RuntimeException, std::exception)
 {
     return Reference< XAccessible >( m_xParent );
 }
 
 sal_Int32 SAL_CALL AccessibleChartView::getAccessibleIndexInParent()
-    throw (uno::RuntimeException, std::exception)
 {
     // the document is always the only child of the window
     return 0;
 }
 
 sal_Int16 SAL_CALL AccessibleChartView::getAccessibleRole()
-    throw (uno::RuntimeException, std::exception)
 {
     return AccessibleRole::DOCUMENT;
 }
 
 // ________ XAccessibleComponent ________
 awt::Rectangle SAL_CALL AccessibleChartView::getBounds()
-    throw (uno::RuntimeException, std::exception)
 {
     awt::Rectangle aResult( GetWindowPosSize());
     Reference< XAccessible > xParent( m_xParent );
@@ -149,7 +142,6 @@ awt::Rectangle SAL_CALL AccessibleChartView::getBounds()
 }
 
 awt::Point SAL_CALL AccessibleChartView::getLocationOnScreen()
-    throw (uno::RuntimeException, std::exception)
 {
     awt::Rectangle aBounds( getBounds());
     awt::Point aResult;
@@ -168,7 +160,6 @@ awt::Point SAL_CALL AccessibleChartView::getLocationOnScreen()
 // lang::XInitialization
 
 void SAL_CALL AccessibleChartView::initialize( const Sequence< Any >& rArguments )
-                throw (uno::Exception, uno::RuntimeException, std::exception)
 {
     //0: view::XSelectionSupplier offers notifications for selection changes and access to the selection itself
     //1: frame::XModel representing the chart model - offers access to object data
@@ -306,7 +297,8 @@ void SAL_CALL AccessibleChartView::initialize( const Sequence< Any >& rArguments
             MutexGuard aGuard( GetMutex());
             Reference< chart2::XChartDocument > xChartDoc( xChartModel, uno::UNO_QUERY );
             if( xChartDoc.is())
-                m_spObjectHierarchy.reset( new ObjectHierarchy( xChartDoc, getExplicitValueProvider() ));
+                m_spObjectHierarchy.reset(
+                    new ObjectHierarchy( xChartDoc, ExplicitValueProvider::getExplicitValueProvider(m_xChartView) ));
             else
                 m_spObjectHierarchy.reset();
         }
@@ -322,28 +314,18 @@ void SAL_CALL AccessibleChartView::initialize( const Sequence< Any >& rArguments
             aAccInfo.m_pParent = nullptr;
             aAccInfo.m_spObjectHierarchy = m_spObjectHierarchy;
             aAccInfo.m_pSdrView = m_pSdrView;
-            vcl::Window* pWindow = VCLUnoHelper::GetWindow( m_xWindow );
-            if ( m_pViewForwarder )
-            {
-                delete m_pViewForwarder;
-            }
-            m_pViewForwarder = new AccessibleViewForwarder( this, pWindow );
-            aAccInfo.m_pViewForwarder = m_pViewForwarder;
+            VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( m_xWindow );
+            m_pViewForwarder.reset( new AccessibleViewForwarder( this, pWindow ) );
+            aAccInfo.m_pViewForwarder = m_pViewForwarder.get();
             // broadcasts an INVALIDATE_ALL_CHILDREN event globally
             SetInfo( aAccInfo );
         }
     }
 }
 
-ExplicitValueProvider* AccessibleChartView::getExplicitValueProvider()
-{
-    return ExplicitValueProvider::getExplicitValueProvider(m_xChartView);
-}
-
 // view::XSelectionChangeListener
 
 void SAL_CALL AccessibleChartView::selectionChanged( const lang::EventObject& /*rEvent*/ )
-                throw (uno::RuntimeException, std::exception)
 {
     Reference< view::XSelectionSupplier > xSelectionSupplier;
     {
@@ -356,25 +338,18 @@ void SAL_CALL AccessibleChartView::selectionChanged( const lang::EventObject& /*
         ObjectIdentifier aSelectedOID( xSelectionSupplier->getSelection() );
         if ( m_aCurrentSelectionOID.isValid() )
         {
-            NotifyEvent( LOST_SELECTION, m_aCurrentSelectionOID );
+            NotifyEvent( EventType::LOST_SELECTION, m_aCurrentSelectionOID );
         }
         if( aSelectedOID.isValid() )
         {
-            NotifyEvent( GOT_SELECTION, aSelectedOID );
+            NotifyEvent( EventType::GOT_SELECTION, aSelectedOID );
         }
         m_aCurrentSelectionOID = aSelectedOID;
     }
 }
 
-// lang::XComponent::dispose()
-void SAL_CALL AccessibleChartView::disposing()
-{
-    AccessibleBase::disposing();
-}
-
 // XEventListener
 void SAL_CALL AccessibleChartView::disposing( const lang::EventObject& /*Source*/ )
-    throw (uno::RuntimeException, std::exception)
 {
 }
 

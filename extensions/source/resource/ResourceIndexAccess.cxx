@@ -11,6 +11,7 @@
 
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <osl/mutex.hxx>
 #include <tools/rcid.h>
@@ -37,49 +38,27 @@ namespace
         return std::shared_ptr<ResMgr>(ResMgr::CreateResMgr(sEncName.getStr()));
     }
 
-    class ResourceIndexAccessBase : public cppu::WeakImplHelper< css::container::XIndexAccess>
+    class ResourceStringIndexAccess : public cppu::WeakImplHelper< css::container::XIndexAccess>
     {
         public:
-            explicit ResourceIndexAccessBase( std::shared_ptr<ResMgr> pResMgr)
+            explicit ResourceStringIndexAccess(const std::shared_ptr<ResMgr>& pResMgr)
                 : m_pResMgr(pResMgr)
             {
                 OSL_ENSURE(m_pResMgr, "no resource manager given");
             }
 
             // XIndexAccess
-            virtual ::sal_Int32 SAL_CALL getCount(  ) throw (css::uno::RuntimeException, std::exception) override
+            virtual ::sal_Int32 SAL_CALL getCount(  ) override
                 { return m_pResMgr.get() ? SAL_MAX_UINT16 : 0; };
+            virtual css::uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) override;
             // XElementAccess
-            virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception) override
+            virtual sal_Bool SAL_CALL hasElements(  ) override
                 { return static_cast<bool>(m_pResMgr.get()); };
-
-        protected:
+            virtual css::uno::Type SAL_CALL getElementType(  ) override
+                { return ::cppu::UnoType<OUString>::get(); };
+        private:
             // m_pResMgr should never be NULL
             const std::shared_ptr<ResMgr> m_pResMgr;
-    };
-
-    class ResourceStringIndexAccess : public ResourceIndexAccessBase
-    {
-        public:
-            explicit ResourceStringIndexAccess( std::shared_ptr<ResMgr> pResMgr)
-                : ResourceIndexAccessBase(pResMgr) {}
-            // XIndexAccess
-            virtual css::uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
-            // XElementAccessBase
-            virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override
-                { return ::cppu::UnoType<OUString>::get(); };
-    };
-
-    class ResourceStringListIndexAccess : public ResourceIndexAccessBase
-    {
-        public:
-            explicit ResourceStringListIndexAccess( std::shared_ptr<ResMgr> pResMgr)
-                : ResourceIndexAccessBase(pResMgr) {}
-            // XIndexAccess
-            virtual css::uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
-            // XElementAccessBase
-            virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override
-                { return cppu::UnoType<Sequence<PropertyValue>>::get(); };
     };
 }
 
@@ -88,17 +67,13 @@ ResourceIndexAccess::ResourceIndexAccess(Sequence<Any> const& rArgs, Reference<X
 {};
 
 Any SAL_CALL ResourceIndexAccess::getByName(const OUString& aName)
-    throw (NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     const Sequence<OUString> aNames(getElementNames());
     Reference<XIndexAccess> xResult;
-    switch(::std::find(aNames.begin(), aNames.end(), aName) - aNames.begin())
+    switch(std::find(aNames.begin(), aNames.end(), aName) - aNames.begin())
     {
         case 0:
             xResult.set(new ResourceStringIndexAccess(m_pResMgr));
-            break;
-        case 1:
-            xResult.set(new ResourceStringListIndexAccess(m_pResMgr));
             break;
         default:
             throw NoSuchElementException();
@@ -107,27 +82,23 @@ Any SAL_CALL ResourceIndexAccess::getByName(const OUString& aName)
 }
 
 Sequence<OUString> SAL_CALL ResourceIndexAccess::getElementNames(  )
-    throw (RuntimeException, std::exception)
 {
     static Sequence<OUString> aResult;
     if( aResult.getLength() == 0)
     {
-        aResult.realloc(2);
+        aResult.realloc(1);
         aResult[0] = "String";
-        aResult[1] = "StringList";
     }
     return aResult;
 }
 
 sal_Bool SAL_CALL ResourceIndexAccess::hasByName(const OUString& aName)
-    throw (RuntimeException, std::exception)
 {
     const Sequence<OUString> aNames(getElementNames());
-    return (::std::find(aNames.begin(), aNames.end(), aName) != aNames.end());
+    return (std::find(aNames.begin(), aNames.end(), aName) != aNames.end());
 }
 
 Any SAL_CALL ResourceStringIndexAccess::getByIndex(sal_Int32 nIdx)
-    throw (IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception)
 {
     if(nIdx > SAL_MAX_UINT16 || nIdx < 0)
         throw IndexOutOfBoundsException();
@@ -142,32 +113,6 @@ Any SAL_CALL ResourceStringIndexAccess::getByIndex(sal_Int32 nIdx)
         throw RuntimeException("string resource for id not available");
 
     return makeAny(aId.toString());
-}
-
-Any SAL_CALL ResourceStringListIndexAccess::getByIndex(sal_Int32 nIdx)
-    throw (IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception)
-{
-    if(nIdx > SAL_MAX_UINT16 || nIdx < 0)
-        throw IndexOutOfBoundsException();
-    SolarMutexGuard aGuard;
-
-    if(!m_pResMgr.get())
-        throw RuntimeException("resource manager not available");
-
-    const ResId aId(static_cast<sal_uInt16>(nIdx), *m_pResMgr);
-    aId.SetRT(RSC_STRINGARRAY);
-    if(!m_pResMgr->IsAvailable(aId))
-        throw RuntimeException("string list resource for id not available");
-    const ResStringArray aStringList(aId);
-    Sequence<PropertyValue> aPropList(aStringList.Count());
-    for(sal_Int32 nCount = 0; nCount != aPropList.getLength(); ++nCount)
-    {
-        aPropList[nCount].Name = aStringList.GetString(nCount);
-        aPropList[nCount].Handle = -1;
-        aPropList[nCount].Value <<= aStringList.GetValue(nCount);
-        aPropList[nCount].State = PropertyState_DIRECT_VALUE;
-    }
-    return makeAny(aPropList);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

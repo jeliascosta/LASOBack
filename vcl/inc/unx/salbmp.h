@@ -109,7 +109,7 @@ public:
 public:
 
                                 X11SalBitmap();
-    virtual                     ~X11SalBitmap();
+    virtual                     ~X11SalBitmap() override;
 
     // override pure virtual methods
     virtual bool                Create(
@@ -144,6 +144,7 @@ public:
     virtual void                ReleaseBuffer( BitmapBuffer* pBuffer, BitmapAccessMode nMode ) override;
     virtual bool                GetSystemData( BitmapSystemData& rData ) override;
 
+    virtual bool                ScalingSupported() const override;
     virtual bool                Scale( const double& rScaleX, const double& rScaleY, BmpScaleFlag nScaleFlag ) override;
     virtual bool                Replace( const Color& rSearchColor, const Color& rReplaceColor, sal_uLong nTol ) override;
 };
@@ -229,7 +230,7 @@ public:
                     ImplSalBitmapCache();
                     ~ImplSalBitmapCache();
 
-    void            ImplAdd( X11SalBitmap* pBmp, sal_uIntPtr nMemSize = 0UL );
+    void            ImplAdd( X11SalBitmap* pBmp, sal_uIntPtr nMemSize );
     void            ImplRemove( X11SalBitmap* pBmp );
     void            ImplClear();
 };

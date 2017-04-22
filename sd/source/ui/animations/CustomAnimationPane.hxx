@@ -32,7 +32,6 @@
 #include "CategoryListBox.hxx"
 #include "motionpathtag.hxx"
 #include "misc/scopelock.hxx"
-#include "CustomAnimationPreset.hxx"
 
 #include <vector>
 
@@ -66,18 +65,17 @@ class CustomAnimationPane : public PanelLayout, public ICustomAnimationListContr
     friend class MotionPathTag;
 public:
     CustomAnimationPane( vcl::Window* pParent, ViewShellBase& rBase, const css::uno::Reference<css::frame::XFrame>& rxFrame );
-    virtual ~CustomAnimationPane();
+    CustomAnimationPane( vcl::Window* pParent, ViewShellBase& rBase, const css::uno::Reference<css::frame::XFrame>& rxFrame, bool bHorizontal );
+    virtual ~CustomAnimationPane() override;
     virtual void dispose() override;
 
     // callbacks
     void onSelectionChanged();
     void onChangeCurrentPage();
     void onAdd();
-    void animationChange();
     void onRemove();
     void onChangeStart();
     void onChangeStart( sal_Int16 nNodeType );
-    void onChangeProperty();
     void onChangeSpeed();
 
     // methods
@@ -91,7 +89,7 @@ public:
     // ICustomAnimationListController
     virtual void onSelect() override;
     virtual void onDoubleClick() override;
-    virtual void onContextMenu( sal_uInt16 nSelectedPopupEntry ) override;
+    virtual void onContextMenu(const OString& rIdent) override;
 
     // Window
     virtual void DataChanged (const DataChangedEvent& rEvent) override;
@@ -102,11 +100,11 @@ public:
     void updatePathFromMotionPathTag( const rtl::Reference< MotionPathTag >& xTag );
 
 private:
+    void initialize();
     void addListener();
     void removeListener();
     void updateControls();
     void updateMotionPathTags();
-    void markShapesFromSelectedEffects();
 
     void showOptions(const OString& sPage = OString());
     void moveSelection( bool bUp );
@@ -120,14 +118,16 @@ private:
     void UpdateLook();
     sal_uInt32 fillAnimationLB( bool bHasText );
 
-    DECL_LINK_TYPED( implControlListBoxHdl, ListBox&, void );
-    DECL_LINK_TYPED( implClickHdl, Button*, void );
-    DECL_LINK_TYPED( implPropertyHdl, LinkParamNone*, void );
-    DECL_LINK_TYPED( EventMultiplexerListener, tools::EventMultiplexerEvent&, void );
-    DECL_LINK_TYPED( lateInitCallback, Timer *, void );
-    DECL_LINK_TYPED( DurationModifiedHdl, Edit&, void );
-    DECL_LINK_TYPED( UpdateAnimationLB, ListBox&, void );
-    DECL_LINK_TYPED( AnimationSelectHdl, ListBox&, void );
+    DECL_LINK( implControlListBoxHdl, ListBox&, void );
+    DECL_LINK( implClickHdl, Button*, void );
+    DECL_LINK( implPropertyHdl, LinkParamNone*, void );
+    DECL_LINK( EventMultiplexerListener, tools::EventMultiplexerEvent&, void );
+    DECL_LINK( lateInitCallback, Timer *, void );
+    DECL_LINK( DurationModifiedHdl, Edit&, void );
+    DECL_LINK( DelayModifiedHdl, Edit&, void );
+    DECL_LINK( DelayLoseFocusHdl, Control&, void );
+    DECL_LINK( UpdateAnimationLB, ListBox&, void );
+    DECL_LINK( AnimationSelectHdl, ListBox&, void );
     void implControlHdl(Control*);
 
 private:
@@ -146,6 +146,8 @@ private:
     VclPtr<PushButton> mpPBPropertyMore;
     VclPtr<FixedText>  mpFTDuration;
     VclPtr<MetricBox>   mpCBXDuration;
+    VclPtr<FixedText>   mpFTStartDelay;
+    VclPtr<MetricField> mpMFStartDelay;
     VclPtr<CustomAnimationList>    mpCustomAnimationList;
     VclPtr<PushButton> mpPBMoveUp;
     VclPtr<PushButton> mpPBMoveDown;
@@ -163,6 +165,8 @@ private:
     sal_Int32   mnCurvePathPos;
     sal_Int32   mnPolygonPathPos;
     sal_Int32   mnFreeformPathPos;
+
+    bool        mbHorizontal;
 
     EffectSequence  maListSelection;
     css::uno::Any   maViewSelection;

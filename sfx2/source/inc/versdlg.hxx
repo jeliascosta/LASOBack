@@ -57,15 +57,15 @@ class SfxVersionDialog : public SfxModalDialog
     SfxVersionTableDtor*        m_pTable;
     bool                        m_bIsSaveVersionOnClose;
 
-    DECL_LINK_TYPED(            DClickHdl_Impl, SvTreeListBox*, bool);
-    DECL_LINK_TYPED(            SelectHdl_Impl, SvTreeListBox*, void);
-    DECL_LINK_TYPED(            ButtonHdl_Impl, Button*, void );
+    DECL_LINK(            DClickHdl_Impl, SvTreeListBox*, bool);
+    DECL_LINK(            SelectHdl_Impl, SvTreeListBox*, void);
+    DECL_LINK(            ButtonHdl_Impl, Button*, void );
     void                        Init_Impl();
     void                        Open_Impl();
 
 public:
                                 SfxVersionDialog ( SfxViewFrame* pFrame, bool );
-    virtual                     ~SfxVersionDialog ();
+    virtual                     ~SfxVersionDialog () override;
     virtual void                dispose() override;
     bool                        IsSaveVersionOnClose() const { return m_bIsSaveVersionOnClose; }
 };
@@ -80,11 +80,11 @@ class SfxViewVersionDialog_Impl : public SfxModalDialog
     VclPtr<CloseButton>      m_pCloseButton;
     SfxVersionInfo&   m_rInfo;
 
-    DECL_LINK_TYPED(ButtonHdl, Button*, void);
+    DECL_LINK(ButtonHdl, Button*, void);
 
 public:
     SfxViewVersionDialog_Impl(vcl::Window *pParent, SfxVersionInfo& rInfo, bool bEdit);
-    virtual ~SfxViewVersionDialog_Impl();
+    virtual ~SfxViewVersionDialog_Impl() override;
     virtual void dispose() override;
 };
 
@@ -102,7 +102,7 @@ class SfxCmisVersionsDialog : public SfxModalDialog
 
 public:
                                 SfxCmisVersionsDialog ( SfxViewFrame* pFrame );
-    virtual                     ~SfxCmisVersionsDialog ();
+    virtual                     ~SfxCmisVersionsDialog () override;
     virtual void                dispose() override;
 };
 

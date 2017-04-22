@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <ctype.h>
 #include <float.h>
 #include <hintids.hxx>
 #include <hints.hxx>
@@ -204,8 +203,8 @@ void InsTableBox( SwDoc* pDoc, SwTableNode* pTableNd,
     }
 }
 
-SwTable::SwTable( SwTableFormat* pFormat )
-    : SwClient( pFormat ),
+SwTable::SwTable()
+    : SwClient( nullptr ),
     m_pHTMLLayout( nullptr ),
     m_pTableNode( nullptr ),
     m_nGraphicsThatResize( 0 ),
@@ -214,7 +213,7 @@ SwTable::SwTable( SwTableFormat* pFormat )
     m_bNewModel( true )
 {
     // default value set in the options
-    m_eTableChgMode = (TableChgMode)GetTableChgDefaultMode();
+    m_eTableChgMode = GetTableChgDefaultMode();
 }
 
 SwTable::SwTable( const SwTable& rTable )
@@ -240,17 +239,17 @@ void DelBoxNode( SwTableSortBoxes& rSortCntBoxes )
 
 SwTable::~SwTable()
 {
-    if( m_xRefObj.Is() )
+    if( m_xRefObj.is() )
     {
         SwDoc* pDoc = GetFrameFormat()->GetDoc();
         if( !pDoc->IsInDtor() )         // then remove from the list
-            pDoc->getIDocumentLinksAdministration().GetLinkManager().RemoveServer( &m_xRefObj );
+            pDoc->getIDocumentLinksAdministration().GetLinkManager().RemoveServer( m_xRefObj.get() );
 
         m_xRefObj->Closed();
     }
 
     // the table can be deleted if it's the last client of the FrameFormat
-    SwTableFormat* pFormat = static_cast<SwTableFormat*>(GetFrameFormat());
+    SwTableFormat* pFormat = GetFrameFormat();
     pFormat->Remove( this );               // remove
 
     if( !pFormat->HasWriterListeners() )
@@ -367,7 +366,7 @@ void SwTable::Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew )
     else
         CheckRegistration( pOld, pNew );
 
-    if (pOldSize && pNewSize && !IsModifyLocked())
+    if (pOldSize && pNewSize && !m_bModifyLocked)
         AdjustWidths( pOldSize->GetWidth(), pNewSize->GetWidth() );
 }
 
@@ -1795,9 +1794,9 @@ void sw_GetTableBoxColStr( sal_uInt16 nCol, OUString& rNm )
     do {
         const sal_uInt16 nCalc = nCol % coDiff;
         if( nCalc >= 26 )
-            rNm = OUString( sal_Unicode('a' - 26 + nCalc ) ) + rNm;
+            rNm = OUStringLiteral1( 'a' - 26 + nCalc ) + rNm;
         else
-            rNm = OUString( sal_Unicode('A' + nCalc ) ) + rNm;
+            rNm = OUStringLiteral1( 'A' + nCalc ) + rNm;
 
         if( 0 == (nCol = nCol - nCalc) )
             break;
@@ -1937,7 +1936,7 @@ SwTableNode* SwTable::GetTableNode() const
 
 void SwTable::SetRefObject( SwServerObject* pObj )
 {
-    if( m_xRefObj.Is() )
+    if( m_xRefObj.is() )
         m_xRefObj->Closed();
 
     m_xRefObj = pObj;
@@ -1970,10 +1969,10 @@ void ChgTextToNum( SwTableBox& rBox, const OUString& rText, const Color* pCol,
         {
             pItem = &pTNd->SwContentNode::GetAttr( RES_PARATR_ADJUST );
             SvxAdjust eAdjust = static_cast<const SvxAdjustItem*>(pItem)->GetAdjust();
-            if( SVX_ADJUST_LEFT == eAdjust || SVX_ADJUST_BLOCK == eAdjust )
+            if( SvxAdjust::Left == eAdjust || SvxAdjust::Block == eAdjust )
             {
                 SvxAdjustItem aAdjust( *static_cast<const SvxAdjustItem*>(pItem) );
-                aAdjust.SetAdjust( SVX_ADJUST_RIGHT );
+                aAdjust.SetAdjust( SvxAdjust::Right );
                 pTNd->SetAttr( aAdjust );
             }
         }
@@ -2097,9 +2096,9 @@ void ChgNumToText( SwTableBox& rBox, sal_uLong nFormat )
         // assign adjustment
         if( bChgAlign && pAttrSet && SfxItemState::SET == pAttrSet->GetItemState(
             RES_PARATR_ADJUST, false, &pItem ) &&
-                SVX_ADJUST_RIGHT == static_cast<const SvxAdjustItem*>(pItem)->GetAdjust() )
+                SvxAdjust::Right == static_cast<const SvxAdjustItem*>(pItem)->GetAdjust() )
         {
-            pTNd->SetAttr( SvxAdjustItem( SVX_ADJUST_LEFT, RES_PARATR_ADJUST ) );
+            pTNd->SetAttr( SvxAdjustItem( SvxAdjust::Left, RES_PARATR_ADJUST ) );
         }
 
         // assign color or save "user color"
@@ -2556,7 +2555,7 @@ struct SwTableCellInfo::Impl
     const SwTable * m_pTable;
     const SwCellFrame * m_pCellFrame;
     const SwTabFrame * m_pTabFrame;
-    typedef ::std::set<const SwTableBox *> TableBoxes_t;
+    typedef std::set<const SwTableBox *> TableBoxes_t;
     TableBoxes_t m_HandledTableBoxes;
 
 public:
@@ -2564,8 +2563,6 @@ public:
         : m_pTable(nullptr), m_pCellFrame(nullptr), m_pTabFrame(nullptr)
     {
     }
-
-    ~Impl() {}
 
     void setTable(const SwTable * pTable)
     {

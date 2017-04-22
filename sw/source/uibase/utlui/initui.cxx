@@ -19,6 +19,7 @@
 
 #include <config_features.h>
 
+#include <tools/resary.hxx>
 #include <unotools/localedatawrapper.hxx>
 #include <viewsh.hxx>
 #include <initui.hxx>
@@ -29,7 +30,6 @@
 #include <gloslst.hxx>
 
 #include <utlui.hrc>
-#include <initui.hrc>
 #include <comcore.hrc>
 #include <authfld.hxx>
 #include <dbmgr.hxx>
@@ -39,10 +39,10 @@
 
 // Global Pointer
 
-SwGlossaries*       pGlossaries = nullptr;
+static SwGlossaries* pGlossaries = nullptr;
 
 // Provides all needed paths. Is initialized by UI.
-SwGlossaryList*     pGlossaryList = nullptr;
+static SwGlossaryList* pGlossaryList = nullptr;
 
 namespace
 {
@@ -174,8 +174,7 @@ void InitUI()
 }
 
 ShellResource::ShellResource()
-    : Resource( SW_RES(RID_SW_SHELLRES) ),
-    aPostItAuthor( SW_RES( STR_POSTIT_AUTHOR ) ),
+    : aPostItAuthor( SW_RES( STR_POSTIT_AUTHOR ) ),
     aPostItPage( SW_RES( STR_POSTIT_PAGE ) ),
     aPostItLine( SW_RES( STR_POSTIT_LINE ) ),
 
@@ -183,9 +182,7 @@ ShellResource::ShellResource()
     aCalc_ZeroDiv( SW_RES( STR_CALC_ZERODIV ) ),
     aCalc_Brack( SW_RES( STR_CALC_BRACK ) ),
     aCalc_Pow( SW_RES( STR_CALC_POW ) ),
-    aCalc_VarNFnd( SW_RES( STR_CALC_VARNFND ) ),
     aCalc_Overflow( SW_RES( STR_CALC_OVERFLOW ) ),
-    aCalc_WrongTime( SW_RES( STR_CALC_WRONGTIME ) ),
     aCalc_Default( SW_RES( STR_CALC_DEFAULT ) ),
     aCalc_Error( SW_RES( STR_CALC_ERROR ) ),
 
@@ -221,13 +218,6 @@ ShellResource::ShellResource()
 
     for(sal_uInt16 i = 0; i < nCount; ++i)
         aDocInfoLst.push_back(OUString(SW_RESSTR(FLD_DOCINFO_BEGIN + i)));
-
-    FreeResource();
-}
-
-ShellResource::~ShellResource()
-{
-    delete pAutoFormatNameLst;
 }
 
 OUString ShellResource::GetPageDescName(sal_uInt16 nNo, PageNameMode eMode)
@@ -270,43 +260,26 @@ SwGlossaryList* GetGlossaryList()
     return pGlossaryList;
 }
 
-struct ImpAutoFormatNameListLoader : public Resource
-{
-    explicit ImpAutoFormatNameListLoader( std::vector<OUString>& rLst );
-};
-
 void ShellResource::GetAutoFormatNameLst_() const
 {
     assert(!pAutoFormatNameLst);
-    pAutoFormatNameLst = new std::vector<OUString>;
+    pAutoFormatNameLst.reset( new std::vector<OUString> );
     pAutoFormatNameLst->reserve(STR_AUTOFMTREDL_END);
-    ImpAutoFormatNameListLoader aTmp(*pAutoFormatNameLst);
-}
 
-ImpAutoFormatNameListLoader::ImpAutoFormatNameListLoader( std::vector<OUString>& rLst )
-    : Resource( ResId(RID_SHELLRES_AUTOFMTSTRS, *pSwResMgr) )
-{
-    for( sal_uInt16 n = 0; n < STR_AUTOFMTREDL_END; ++n )
+    ResStringArray aStringArray(ResId(RID_SHELLRES_AUTOFMTSTRS, *pSwResMgr));
+    assert(aStringArray.Count() == STR_AUTOFMTREDL_END);
+    for (sal_uInt16 n = 0; n < STR_AUTOFMTREDL_END; ++n)
     {
-        OUString p(ResId(n + 1, *pSwResMgr));
-        if(STR_AUTOFMTREDL_TYPO == n)
+        OUString p(aStringArray.GetString(n));
+        if (STR_AUTOFMTREDL_TYPO == n)
         {
-#ifdef _WIN32
-            // For Windows, a special treatment is necessary because MS has
-            // forgotten some characters in the dialog font here.
-            p = p.replaceFirst("%1", ",,");
-            p = p.replaceFirst("%2", "''");
-#else
             const SvtSysLocale aSysLocale;
             const LocaleDataWrapper& rLclD = aSysLocale.GetLocaleData();
-            // With real operating systems it also works without special handling.
             p = p.replaceFirst("%1", rLclD.getDoubleQuotationMarkStart());
             p = p.replaceFirst("%2", rLclD.getDoubleQuotationMarkEnd());
-#endif
         }
-        rLst.insert(rLst.begin() + n, p);
+        pAutoFormatNameLst->push_back(p);
     }
-    FreeResource();
 }
 
 OUString SwAuthorityFieldType::GetAuthFieldName(ToxAuthorityField eType)

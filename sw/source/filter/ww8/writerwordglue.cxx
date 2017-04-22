@@ -394,8 +394,8 @@ namespace sw
         {
             if (const SvxBoxItem *pBox = rPage.GetItem<SvxBoxItem>(RES_BOX))
             {
-                dyaHdrTop = pBox->CalcLineSpace(SvxBoxItemLine::TOP);
-                dyaHdrBottom = pBox->CalcLineSpace(SvxBoxItemLine::BOTTOM);
+                dyaHdrTop = pBox->CalcLineSpace( SvxBoxItemLine::TOP, /*bEvenIfNoLine*/true );
+                dyaHdrBottom = pBox->CalcLineSpace( SvxBoxItemLine::BOTTOM, /*bEvenIfNoLine*/true );
             }
             else
             {
@@ -475,7 +475,6 @@ namespace sw
 
         CharStyleMapper::~CharStyleMapper()
         {
-            delete mpImpl;
         }
 
         CharStyleMapper::StyleResult CharStyleMapper::GetStyle(
@@ -524,7 +523,7 @@ namespace sw
             OSL_ENSURE(rTextNd.GetDoc(), "No document for node?, suspicious");
             if (rTextNd.GetDoc())
             {
-                if (FRMDIR_HORI_RIGHT_TOP ==
+                if (SvxFrameDirection::Horizontal_RL_TB ==
                     rTextNd.GetDoc()->GetTextDirection(SwPosition(rTextNd)))
                 {
                     bParaIsRTL = true;

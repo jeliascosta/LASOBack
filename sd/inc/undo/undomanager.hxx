@@ -22,18 +22,24 @@
 
 #include <misc/scopelock.hxx>
 #include <svx/sdrundomanager.hxx>
+#include "sddllapi.h"
+
+class SfxViewShell;
 
 namespace sd
 {
 
-class UndoManager : public SdrUndoManager
+class SD_DLLPUBLIC UndoManager : public SdrUndoManager
 {
 public:
-    UndoManager( sal_uInt16 nMaxUndoActionCount = 20 );
+    UndoManager();
 
-    virtual void            EnterListAction(const OUString &rComment, const OUString& rRepeatComment, sal_uInt16 nId=0) override;
+    virtual void            EnterListAction(const OUString &rComment, const OUString& rRepeatComment, sal_uInt16 nId, ViewShellId nViewShellId) override;
 
     virtual void            AddUndoAction( SfxUndoAction *pAction, bool bTryMerg=false ) override;
+    size_t GetUndoActionCount(const bool bCurrentLevel = true) const override;
+    size_t GetRedoActionCount(const bool bCurrentLevel = true) const override;
+    void SetViewShell(SfxViewShell* pViewShell);
 
     /** Set or reset the undo manager linked with the called undo manager.
     */
@@ -47,6 +53,8 @@ private:
         synchronize the undo managers.
     */
     ::svl::IUndoManager* mpLinkedUndoManager;
+    /// Return undo/redo info for this view.
+    SfxViewShell* mpViewShell;
 
     /** Call ClearRedo() at the linked undo manager, when present.
 

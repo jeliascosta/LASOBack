@@ -48,7 +48,6 @@ namespace sdr
             double                                  mfShearX;
             double                                  mfRotation;
 
-            /// bitfield
             // Flag to remember which state to draw. Inited with false (0)
             bool                                    mbOverlayState : 1;
 
@@ -60,14 +59,14 @@ namespace sdr
                 const basegfx::B2DPoint& rBasePos,
                 const BitmapEx& rBitmapEx1,
                 const BitmapEx& rBitmapEx2,
-                sal_uInt64 nBlinkTime = 500,
+                sal_uInt64 nBlinkTime,
                 sal_uInt16 nCenX1 = 0,
                 sal_uInt16 nCenY1 = 0,
                 sal_uInt16 nCenX2 = 0,
                 sal_uInt16 nCenY2 = 0,
                 double fShearX = 0.0,
                 double fRotation = 0.0);
-            virtual ~OverlayAnimatedBitmapEx();
+            virtual ~OverlayAnimatedBitmapEx() override;
 
             const BitmapEx& getBitmapEx1() const { return maBitmapEx1; }
             const BitmapEx& getBitmapEx2() const { return maBitmapEx2; }

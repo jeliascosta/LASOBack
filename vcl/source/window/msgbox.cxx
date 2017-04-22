@@ -38,26 +38,17 @@
 static void ImplInitMsgBoxImageList()
 {
     ImplSVData* pSVData = ImplGetSVData();
-    if ( !pSVData->maWinData.mpMsgBoxImgList )
+    if (pSVData->maWinData.maMsgBoxImgList.empty())
     {
         ResMgr* pResMgr = ImplGetResMgr();
-        pSVData->maWinData.mpMsgBoxImgList = new ImageList();
-        if( pResMgr )
+        if (pResMgr)
         {
-            Color aNonAlphaMask( 0xC0, 0xC0, 0xC0 );
-            pSVData->maWinData.mpMsgBoxImgList->InsertFromHorizontalBitmap
-                ( ResId( SV_RESID_BITMAP_MSGBOX, *pResMgr ), 4, &aNonAlphaMask );
+            pSVData->maWinData.maMsgBoxImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_ERRORBOX, *pResMgr))));
+            pSVData->maWinData.maMsgBoxImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_QUERYBOX, *pResMgr))));
+            pSVData->maWinData.maMsgBoxImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_WARNINGBOX, *pResMgr))));
+            pSVData->maWinData.maMsgBoxImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_INFOBOX, *pResMgr))));
         }
     }
-}
-
-void MessBox::ImplInitMessBoxData()
-{
-    mpVCLMultiLineEdit  = nullptr;
-    mpFixedImage        = nullptr;
-    mbHelpBtn           = false;
-    mpCheckBox          = nullptr;
-    mbCheck             = false;
 }
 
 void MessBox::ImplInitButtons()
@@ -139,10 +130,11 @@ void MessBox::ImplInitButtons()
 
 MessBox::MessBox( vcl::Window* pParent, WinBits nStyle,
                   const OUString& rTitle, const OUString& rMessage ) :
-    ButtonDialog( WINDOW_MESSBOX ),
+    ButtonDialog( WindowType::MESSBOX ),
+    mbHelpBtn( false ),
+    mbCheck( false ),
     maMessText( rMessage )
 {
-    ImplInitMessBoxData();
     ImplInit( pParent, nStyle | WB_MOVEABLE | WB_HORZ | WB_CENTER );
     ImplInitButtons();
 
@@ -183,8 +175,8 @@ void MessBox::ImplPosControls()
     }
 
     TextRectInfo    aTextInfo;
-    Rectangle       aRect( 0, 0, 30000, 30000 );
-    Rectangle       aFormatRect;
+    tools::Rectangle       aRect( 0, 0, 30000, 30000 );
+    tools::Rectangle       aFormatRect;
     Point           aTextPos( IMPL_DIALOG_OFFSET, IMPL_DIALOG_OFFSET+IMPL_MSGBOX_OFFSET_EXTRA_Y );
     Size            aImageSize;
     Size            aPageSize;
@@ -379,7 +371,8 @@ Size MessBox::GetOptimalSize() const
     return Size( 250, 100 );
 }
 
-void InfoBox::ImplInitInfoBoxData()
+InfoBox::InfoBox( vcl::Window* pParent, const OUString& rMessage ) :
+    MessBox( pParent, WB_OK | WB_DEF_OK, OUString(), rMessage )
 {
     // Default Text is the display title from the application
     if ( GetText().isEmpty() )
@@ -388,38 +381,31 @@ void InfoBox::ImplInitInfoBoxData()
     SetImage( InfoBox::GetStandardImage() );
 }
 
-InfoBox::InfoBox( vcl::Window* pParent, const OUString& rMessage ) :
-    MessBox( pParent, WB_OK | WB_DEF_OK, OUString(), rMessage )
-{
-    ImplInitInfoBoxData();
-}
-
 InfoBox::InfoBox( vcl::Window* pParent, WinBits nStyle, const OUString& rMessage ) :
     MessBox( pParent, nStyle, OUString(), rMessage )
-{
-    ImplInitInfoBoxData();
-}
-
-Image InfoBox::GetStandardImage()
-{
-    ImplInitMsgBoxImageList();
-    return ImplGetSVData()->maWinData.mpMsgBoxImgList->GetImage( 4 );
-}
-
-void WarningBox::ImplInitWarningBoxData()
 {
     // Default Text is the display title from the application
     if ( GetText().isEmpty() )
         SetText( Application::GetDisplayName() );
 
-    SetImage( WarningBox::GetStandardImage() );
+    SetImage( InfoBox::GetStandardImage() );
+}
+
+Image InfoBox::GetStandardImage()
+{
+    ImplInitMsgBoxImageList();
+    return ImplGetSVData()->maWinData.maMsgBoxImgList[3];
 }
 
 WarningBox::WarningBox( vcl::Window* pParent, WinBits nStyle,
                         const OUString& rMessage ) :
     MessBox( pParent, nStyle, OUString(), rMessage )
 {
-    ImplInitWarningBoxData();
+    // Default Text is the display title from the application
+    if ( GetText().isEmpty() )
+        SetText( Application::GetDisplayName() );
+
+    SetImage( WarningBox::GetStandardImage() );
 }
 
 void WarningBox::SetDefaultCheckBoxText()
@@ -432,23 +418,18 @@ void WarningBox::SetDefaultCheckBoxText()
 Image WarningBox::GetStandardImage()
 {
     ImplInitMsgBoxImageList();
-    return ImplGetSVData()->maWinData.mpMsgBoxImgList->GetImage( 3 );
-}
-
-void ErrorBox::ImplInitErrorBoxData()
-{
-    // Default Text is the display title from the application
-    if ( GetText().isEmpty() )
-        SetText( Application::GetDisplayName() );
-
-    SetImage( ErrorBox::GetStandardImage() );
+    return ImplGetSVData()->maWinData.maMsgBoxImgList[2];
 }
 
 ErrorBox::ErrorBox( vcl::Window* pParent, WinBits nStyle,
                     const OUString& rMessage ) :
     MessBox( pParent, nStyle, OUString(), rMessage )
 {
-    ImplInitErrorBoxData();
+    // Default Text is the display title from the application
+    if ( GetText().isEmpty() )
+        SetText( Application::GetDisplayName() );
+
+    SetImage( ErrorBox::GetStandardImage() );
 }
 
 Image ErrorBox::GetStandardImage()
@@ -463,22 +444,17 @@ Image ErrorBox::GetStandardImage()
         // ucb and hence no ability to get this image, so nop.
         return Image();
     }
-    return ImplGetSVData()->maWinData.mpMsgBoxImgList->GetImage( 1 );
+    return ImplGetSVData()->maWinData.maMsgBoxImgList[0];
 }
 
-void QueryBox::ImplInitQueryBoxData()
+QueryBox::QueryBox( vcl::Window* pParent, WinBits nStyle, const OUString& rMessage ) :
+    MessBox( pParent, nStyle, OUString(), rMessage )
 {
     // Default Text is the display title from the application
     if ( GetText().isEmpty() )
         SetText( Application::GetDisplayName() );
 
     SetImage( QueryBox::GetStandardImage() );
-}
-
-QueryBox::QueryBox( vcl::Window* pParent, WinBits nStyle, const OUString& rMessage ) :
-    MessBox( pParent, nStyle, OUString(), rMessage )
-{
-    ImplInitQueryBoxData();
 }
 
 void QueryBox::SetDefaultCheckBoxText()
@@ -491,7 +467,7 @@ void QueryBox::SetDefaultCheckBoxText()
 Image QueryBox::GetStandardImage()
 {
     ImplInitMsgBoxImageList();
-    return ImplGetSVData()->maWinData.mpMsgBoxImgList->GetImage( 2 );
+    return ImplGetSVData()->maWinData.maMsgBoxImgList[1];
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

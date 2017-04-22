@@ -378,7 +378,7 @@ sal_uInt32  SfxFilterMatcher::GuessFilterIgnoringContent(
     OUString sTypeName;
     try
     {
-        sTypeName = xDetection->queryTypeByURL( rMedium.GetURLObject().GetMainURL( INetURLObject::NO_DECODE ) );
+        sTypeName = xDetection->queryTypeByURL( rMedium.GetURLObject().GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
     }
     catch (uno::Exception&)
     {
@@ -419,7 +419,7 @@ sal_uInt32  SfxFilterMatcher::GuessFilterControlDefaultUI( SfxMedium& rMedium, s
         // open the stream one times only ...
         // Otherwhise it will be tried more than once and show the same interaction more than once ...
 
-        OUString sURL( rMedium.GetURLObject().GetMainURL( INetURLObject::NO_DECODE ) );
+        OUString sURL( rMedium.GetURLObject().GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
         uno::Reference< io::XInputStream > xInStream = rMedium.GetInputStream();
         OUString aFilterName;
 
@@ -712,7 +712,7 @@ std::shared_ptr<const SfxFilter> SfxFilterMatcher::GetFilter4Extension( const OU
                 if (sExt.isEmpty())
                     continue;
 
-                if (sExt[0] != (sal_Unicode)'.')
+                if (sExt[0] != '.')
                     sExt = "." + sExt;
 
                 WildCard aCheck(sWildCard, ';');
@@ -816,7 +816,7 @@ std::shared_ptr<const SfxFilter> SfxFilterMatcher::GetFilter4FilterName( const O
     return nullptr;
 }
 
-IMPL_LINK_TYPED( SfxFilterMatcher, MaybeFileHdl_Impl, OUString*, pString, bool )
+IMPL_LINK( SfxFilterMatcher, MaybeFileHdl_Impl, OUString*, pString, bool )
 {
     std::shared_ptr<const SfxFilter> pFilter = GetFilter4Extension( *pString );
     if (pFilter && !pFilter->GetWildcard().Matches( OUString() ) &&
@@ -874,7 +874,7 @@ std::shared_ptr<const SfxFilter> SfxFilterMatcherIter::Next()
     using given separator
   ---------------------------------------------------------------*/
 OUString implc_convertStringlistToString( const uno::Sequence< OUString >& lList     ,
-                                                 const sal_Unicode&                                        cSeparator,
+                                                 sal_Unicode                                        cSeparator,
                                                  const OUString&                                    sPrefix   )
 {
     OUStringBuffer   sString ( 1000 )           ;
@@ -1117,7 +1117,7 @@ void SfxFilterContainer::ReadFilters_Impl( bool bUpdate )
 
         if( xFilterCFG.is() && xTypeCFG.is() )
         {
-            // select right query to get right set of filters for search modul
+            // select right query to get right set of filters for search module
             uno::Sequence< OUString > lFilterNames = xFilterCFG->getElementNames();
             if ( lFilterNames.getLength() )
             {

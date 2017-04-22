@@ -64,6 +64,10 @@
 #include "apple_remote/RemoteControl.h"
 #include "postmac.h"
 
+extern "C" {
+#include <crt_externs.h>
+}
+
 using namespace std;
 using namespace ::com::sun::star;
 
@@ -105,12 +109,12 @@ void AquaSalInstance::delayedSettingsChanged( bool bInvalidate )
 {
     osl::Guard< comphelper::SolarMutex > aGuard( *mpSalYieldMutex );
     AquaDelayedSettingsChanged* pIdle = new AquaDelayedSettingsChanged( bInvalidate );
-    pIdle->SetPriority( SchedulerPriority::MEDIUM );
+    pIdle->SetPriority( TaskPriority::MEDIUM );
     pIdle->Start();
 }
 
-// the AppEventList must be available before any SalData/SalInst/etc. objects are ready
-AquaSalInstance::AppEventList AquaSalInstance::aAppEventList;
+// the std::list<const ApplicationEvent*> must be available before any SalData/SalInst/etc. objects are ready
+std::list<const ApplicationEvent*> AquaSalInstance::aAppEventList;
 
 NSMenu* AquaSalInstance::GetDynamicDockMenu()
 {
@@ -251,10 +255,6 @@ void DeInitSalData()
     SetSalData( nullptr );
 }
 
-extern "C" {
-#include <crt_externs.h>
-}
-
 void InitSalMain()
 {
 }
@@ -324,7 +324,7 @@ SalInstance* CreateSalInstance()
         initNSApp();
 
     SalData* pSalData = GetSalData();
-    DBG_ASSERT( pSalData->mpFirstInstance == nullptr, "more than one instance created" );
+    SAL_WARN_IF( pSalData->mpFirstInstance != nullptr, "vcl", "more than one instance created" );
     AquaSalInstance* pInst = new AquaSalInstance;
 
     // init instance (only one instance in this version !!!)
@@ -349,6 +349,7 @@ void DestroySalInstance( SalInstance* pInst )
 
 AquaSalInstance::AquaSalInstance()
  : maUserEventListMutex()
+ , maWaitingYieldCond()
 {
     mpSalYieldMutex = new SalYieldMutex;
     mpSalYieldMutex->acquire();
@@ -356,7 +357,6 @@ AquaSalInstance::AquaSalInstance()
     maMainThread = osl::Thread::getCurrentIdentifier();
     mbWaitingYield = false;
     mnActivePrintJobs = 0;
-    maWaitingYieldCond = osl_createCondition();
 }
 
 AquaSalInstance::~AquaSalInstance()
@@ -364,7 +364,6 @@ AquaSalInstance::~AquaSalInstance()
     ::comphelper::SolarMutex::setSolarMutex( nullptr );
     mpSalYieldMutex->release();
     delete mpSalYieldMutex;
-    osl_destroyCondition( maWaitingYieldCond );
 }
 
 void AquaSalInstance::wakeupYield()
@@ -373,6 +372,8 @@ void AquaSalInstance::wakeupYield()
     if( mbWaitingYield )
     {
         SalData::ensureThreadAutoreleasePool();
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+    // 'NSApplicationDefined' is deprecated: first deprecated in macOS 10.12
         NSEvent* pEvent = [NSEvent otherEventWithType: NSApplicationDefined
                                    location: NSZeroPoint
                                    modifierFlags: 0
@@ -382,6 +383,7 @@ void AquaSalInstance::wakeupYield()
                                    subtype: AquaSalInstance::YieldWakeupEvent
                                    data1: 0
                                    data2: 0 ];
+SAL_WNODEPRECATED_DECLARATIONS_POP
         if( pEvent )
             [NSApp postEvent: pEvent atStart: NO];
     }
@@ -597,7 +599,7 @@ SalYieldResult AquaSalInstance::DoYield(bool bWait, bool bHandleAllCurrentEvents
         if( aEvent.mpFrame && AquaSalFrame::isAlive( aEvent.mpFrame ) )
         {
             aEvent.mpFrame->CallCallback( aEvent.mnType, aEvent.mpData );
-            osl_setCondition( maWaitingYieldCond );
+            maWaitingYieldCond.set();
             // return if only one event is asked for
             if( ! bHandleAllCurrentEvents )
                 return SalYieldResult::EVENT;
@@ -620,7 +622,10 @@ SalYieldResult AquaSalInstance::DoYield(bool bWait, bool bHandleAllCurrentEvents
         {
             sal_uLong nCount = ReleaseYieldMutex();
 
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+    // 'NSAnyEventMask' is deprecated: first deprecated in macOS 10.12
             pEvent = [NSApp nextEventMatchingMask: NSAnyEventMask untilDate: nil
+SAL_WNODEPRECATED_DECLARATIONS_POP
                             inMode: NSDefaultRunLoopMode dequeue: YES];
             if( pEvent )
             {
@@ -638,7 +643,10 @@ SalYieldResult AquaSalInstance::DoYield(bool bWait, bool bHandleAllCurrentEvents
             sal_uLong nCount = ReleaseYieldMutex();
 
             NSDate* pDt = AquaSalTimer::pRunningTimer ? [AquaSalTimer::pRunningTimer fireDate] : [NSDate distantFuture];
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+    // 'NSAnyEventMask' is deprecated: first deprecated in macOS 10.12
             pEvent = [NSApp nextEventMatchingMask: NSAnyEventMask untilDate: pDt
+SAL_WNODEPRECATED_DECLARATIONS_POP
                             inMode: NSDefaultRunLoopMode dequeue: YES];
             if( pEvent )
                 [NSApp sendEvent: pEvent];
@@ -674,17 +682,17 @@ SalYieldResult AquaSalInstance::DoYield(bool bWait, bool bHandleAllCurrentEvents
                 (*it)->maInvalidRect.SetEmpty();
             }
         }
-        osl_setCondition( maWaitingYieldCond );
+        maWaitingYieldCond.set();
     }
     else if( bWait )
     {
         // #i103162#
         // wait until any thread (most likely the main thread)
         // has dispatched an event, cop out at 200 ms
-        osl_resetCondition( maWaitingYieldCond );
+        maWaitingYieldCond.reset();
         TimeValue aVal = { 0, 200000000 };
         sal_uLong nCount = ReleaseYieldMutex();
-        osl_waitCondition( maWaitingYieldCond, &aVal );
+        maWaitingYieldCond.wait( &aVal );
         AcquireYieldMutex( nCount );
     }
 
@@ -736,7 +744,27 @@ bool AquaSalInstance::AnyInput( VclInputFlags nType )
         }
     }
 
+    if (![NSThread isMainThread])
+        return false;
+
     unsigned/*NSUInteger*/ nEventMask = 0;
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+        // 'NSFlagsChangedMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSKeyDownMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSKeyUpMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSLeftMouseDownMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSLeftMouseDraggedMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSLeftMouseUpMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSMouseEnteredMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSMouseExitedMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSOtherMouseDownMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSOtherMouseDraggedMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSOtherMouseUpMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSRightMouseDownMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSRightMouseDraggedMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSRightMouseUpMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSScrollWheelMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSTabletPoint' is deprecated: first deprecated in macOS 10.12
     if( nType & VclInputFlags::MOUSE)
         nEventMask |=
             NSLeftMouseDownMask    | NSRightMouseDownMask    | NSOtherMouseDownMask |
@@ -749,6 +777,7 @@ bool AquaSalInstance::AnyInput( VclInputFlags nType )
         nEventMask |= NSKeyDownMask | NSKeyUpMask | NSFlagsChangedMask;
     if( nType & VclInputFlags::OTHER)
         nEventMask |= NSTabletPoint;
+SAL_WNODEPRECATED_DECLARATIONS_POP
     // TODO: VclInputFlags::PAINT / more VclInputFlags::OTHER
     if( !bool(nType) )
         return false;
@@ -807,7 +836,7 @@ void AquaSalInstance::GetPrinterQueueInfo( ImplPrnQueueList* pList )
     NSArray* pTypes = [NSPrinter printerTypes];
     unsigned int nNameCount = pNames ? [pNames count] : 0;
     unsigned int nTypeCount = pTypes ? [pTypes count] : 0;
-    DBG_ASSERT( nTypeCount == nNameCount, "type count not equal to printer count" );
+    SAL_WARN_IF( nTypeCount != nNameCount, "vcl", "type count not equal to printer count" );
     for( unsigned int i = 0; i < nNameCount; i++ )
     {
         NSString* pName = [pNames objectAtIndex: i];
@@ -844,15 +873,15 @@ OUString AquaSalInstance::GetDefaultPrinter()
     if( maDefaultPrinter.isEmpty() )
     {
         NSPrintInfo* pPI = [NSPrintInfo sharedPrintInfo];
-        DBG_ASSERT( pPI, "no print info" );
+        SAL_WARN_IF( !pPI, "vcl", "no print info" );
         if( pPI )
         {
             NSPrinter* pPr = [pPI printer];
-            DBG_ASSERT( pPr, "no printer in default info" );
+            SAL_WARN_IF( !pPr, "vcl", "no printer in default info" );
             if( pPr )
             {
                 NSString* pDefName = [pPr name];
-                DBG_ASSERT( pDefName, "printer has no name" );
+                SAL_WARN_IF( !pDefName, "vcl", "printer has no name" );
                 maDefaultPrinter = GetOUString( pDefName );
             }
         }
@@ -861,7 +890,7 @@ OUString AquaSalInstance::GetDefaultPrinter()
 }
 
 SalInfoPrinter* AquaSalInstance::CreateInfoPrinter( SalPrinterQueueInfo* pQueueInfo,
-                                                ImplJobSetup* pSetupData )
+                                                    ImplJobSetup* pSetupData )
 {
     // #i113170# may not be the main thread if called from UNO API
     SalData::ensureThreadAutoreleasePool();
@@ -885,11 +914,9 @@ void AquaSalInstance::DestroyInfoPrinter( SalInfoPrinter* pPrinter )
     delete pPrinter;
 }
 
-void* AquaSalInstance::GetConnectionIdentifier( ConnectionIdentifierType& rReturnedType, int& rReturnedBytes )
+OUString AquaSalInstance::GetConnectionIdentifier()
 {
-    rReturnedBytes  = 1;
-    rReturnedType   = AsciiCString;
-    return const_cast<char *>("");
+    return OUString("");
 }
 
 // We need to re-encode file urls because osl_getFileURLFromSystemPath converts
@@ -991,23 +1018,6 @@ OUString AquaSalInstance::getOSVersion()
     return aVersion;
 }
 
-class MacImeStatus : public SalI18NImeStatus
-{
-public:
-    MacImeStatus() {}
-    virtual ~MacImeStatus() {}
-
-    // asks whether there is a status window available
-    // to toggle into menubar
-    virtual bool canToggle() override { return false; }
-    virtual void toggle() override {}
-};
-
-SalI18NImeStatus* AquaSalInstance::CreateI18NImeStatus()
-{
-    return new MacImeStatus();
-}
-
 // YieldMutexReleaser
 YieldMutexReleaser::YieldMutexReleaser() : mnCount( 0 )
 {
@@ -1052,7 +1062,7 @@ CGImageRef CreateCGImage( const Image& rImage )
         else
             xImage = pSalBmp->CreateCroppedImage( 0, 0, pSalBmp->mnWidth, pSalBmp->mnHeight );
     }
-    else if( aBmpEx.GetTransparentType() == TRANSPARENT_BITMAP )
+    else if( aBmpEx.GetTransparentType() == TransparentType::Bitmap )
     {
         Bitmap aMask( aBmpEx.GetMask() );
         QuartzSalBitmap* pMaskBmp = static_cast<QuartzSalBitmap*>(aMask.ImplGetImpBitmap()->ImplGetSalBitmap());
@@ -1061,7 +1071,7 @@ CGImageRef CreateCGImage( const Image& rImage )
         else
             xImage = pSalBmp->CreateCroppedImage( 0, 0, pSalBmp->mnWidth, pSalBmp->mnHeight );
     }
-    else if( aBmpEx.GetTransparentType() == TRANSPARENT_COLOR )
+    else if( aBmpEx.GetTransparentType() == TransparentType::Color )
     {
         Color aTransColor( aBmpEx.GetTransparentColor() );
         SalColor nTransColor = MAKE_SALCOLOR( aTransColor.GetRed(), aTransColor.GetGreen(), aTransColor.GetBlue() );

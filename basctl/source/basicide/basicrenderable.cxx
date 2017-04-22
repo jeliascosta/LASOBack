@@ -37,11 +37,6 @@ Renderable::Renderable (BaseWindow* pWin)
 : cppu::WeakComponentImplHelper< css::view::XRenderable >( maMutex )
 , mpWindow( pWin )
 {
-    ResStringArray aStrings( IDEResId( RID_PRINTDLG_STRLIST )  );
-    DBG_ASSERT( aStrings.Count() >= 3, "resource incomplete" );
-    if( aStrings.Count() < 3 ) // bad resource ?
-        return;
-
     m_aUIProperties.resize( 3 );
 
     // show Subgroup for print range
@@ -49,19 +44,16 @@ Renderable::Renderable (BaseWindow* pWin)
     aPrintRangeOpt.maGroupHint = "PrintRange" ;
     aPrintRangeOpt.mbInternalOnly = true;
     m_aUIProperties[0].Value = setSubgroupControlOpt("printrange",
-        OUString(aStrings.GetString(0)), OUString(), aPrintRangeOpt);
+        IDE_RESSTR( RID_STR_PRINTDLG_RANGE ), OUString(), aPrintRangeOpt);
 
     // create a choice for the range to print
     OUString aPrintContentName( "PrintContent" );
-    Sequence< OUString > aChoices( 2 );
-    Sequence< OUString > aHelpIds( 2 );
-    Sequence< OUString > aWidgetIds( 2 );
-    aChoices[0] = aStrings.GetString( 1 );
-    aHelpIds[0] = ".HelpID:vcl:PrintDialog:PrintContent:RadioButton:0" ;
-    aChoices[1] = aStrings.GetString( 2 );
-    aHelpIds[1] = ".HelpID:vcl:PrintDialog:PrintContent:RadioButton:1" ;
-    aWidgetIds[0] = "printallpages" ;
-    aWidgetIds[1] = "printpages" ;
+    const Sequence<OUString> aChoices{IDE_RESSTR(RID_STR_PRINTDLG_ALLPAGES),
+                                      IDE_RESSTR(RID_STR_PRINTDLG_PAGES)};
+    const Sequence<OUString> aHelpIds{".HelpID:vcl:PrintDialog:PrintContent:RadioButton:0",
+                                      ".HelpID:vcl:PrintDialog:PrintContent:RadioButton:1"};
+    const Sequence<OUString> aWidgetIds{"printallpages",
+                                        "printpages"};
     m_aUIProperties[1].Value = setChoiceRadiosControlOpt(aWidgetIds, OUString(),
                                                    aHelpIds, aPrintContentName,
                                                    aChoices, 0);
@@ -94,14 +86,14 @@ VclPtr< Printer > Renderable::getPrinter()
 
 sal_Int32 SAL_CALL Renderable::getRendererCount (
         const Any&, const Sequence<beans::PropertyValue >& i_xOptions
-        ) throw (lang::IllegalArgumentException, RuntimeException, std::exception)
+        )
 {
     processProperties( i_xOptions );
 
     sal_Int32 nCount = 0;
     if( mpWindow )
     {
-        if (Printer* pPrinter = getPrinter())
+        if (VclPtr<Printer> pPrinter = getPrinter())
         {
             nCount = mpWindow->countPages( pPrinter );
             sal_Int64 nContent = getIntValue( "PrintContent", -1 );
@@ -126,23 +118,23 @@ sal_Int32 SAL_CALL Renderable::getRendererCount (
 
 Sequence<beans::PropertyValue> SAL_CALL Renderable::getRenderer (
         sal_Int32, const Any&, const Sequence<beans::PropertyValue>& i_xOptions
-        ) throw (lang::IllegalArgumentException, RuntimeException, std::exception)
+        )
 {
     processProperties( i_xOptions );
 
     Sequence< beans::PropertyValue > aVals;
     // insert page size here
-    Printer* pPrinter = getPrinter();
+    VclPtr<Printer> pPrinter = getPrinter();
     // no renderdevice is legal; the first call is to get our print ui options
     if( pPrinter )
     {
-        Size aPageSize( pPrinter->PixelToLogic( pPrinter->GetPaperSizePixel(), MapMode( MAP_100TH_MM ) ) );
+        Size aPageSize( pPrinter->PixelToLogic( pPrinter->GetPaperSizePixel(), MapMode( MapUnit::Map100thMM ) ) );
 
         awt::Size aSize;
         aSize.Width  = aPageSize.Width();
         aSize.Height = aPageSize.Height();
         aVals = ::comphelper::InitPropertySequence({
-            { "PageSize", makeAny(aSize) }
+            { "PageSize", Any(aSize) }
         });
     }
 
@@ -154,13 +146,13 @@ Sequence<beans::PropertyValue> SAL_CALL Renderable::getRenderer (
 void SAL_CALL Renderable::render (
         sal_Int32 nRenderer, const Any&,
         const Sequence<beans::PropertyValue>& i_xOptions
-        ) throw (lang::IllegalArgumentException, RuntimeException, std::exception)
+        )
 {
     processProperties( i_xOptions );
 
     if( mpWindow )
     {
-        if (Printer* pPrinter = getPrinter())
+        if (VclPtr<Printer> pPrinter = getPrinter())
         {
             sal_Int64 nContent = getIntValue( "PrintContent", -1 );
             if( nContent == 1 )

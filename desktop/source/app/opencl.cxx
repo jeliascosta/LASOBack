@@ -15,6 +15,7 @@
 #include "app.hxx"
 
 #include <config_version.h>
+#include <config_features.h>
 #include <config_folders.h>
 
 #include <rtl/bootstrap.hxx>
@@ -28,7 +29,9 @@
 #include <com/sun/star/sheet/XSpreadsheets.hpp>
 #include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
 
+#if HAVE_FEATURE_OPENCL
 #include <opencl/openclwrapper.hxx>
+#endif
 #include <opencl/OpenCLZone.hxx>
 
 #include <osl/file.hxx>
@@ -55,7 +58,7 @@ bool testOpenCLCompute(const Reference< XDesktop2 > &xDesktop, const OUString &r
 
         css::uno::Sequence< css::beans::PropertyValue > aArgs(1);
         aArgs[0].Name = "Hidden";
-        aArgs[0].Value = makeAny(true);
+        aArgs[0].Value <<= true;
 
         xComponent.set(xLoader->loadComponentFromURL(rURL, "_blank", 0, aArgs));
 
@@ -99,7 +102,7 @@ bool testOpenCLCompute(const Reference< XDesktop2 > &xDesktop, const OUString &r
 
     if (nKernelFailures != opencl::kernelFailures)
     {
-        // tdf#
+        // tdf#100883 - defeat SEH exception handling fallbacks.
         SAL_WARN("opencl", "OpenCL kernels failed to compile, "
                  "or took SEH exceptions "
                  << nKernelFailures << " != " << opencl::kernelFailures);
@@ -117,7 +120,7 @@ bool testOpenCLCompute(const Reference< XDesktop2 > &xDesktop, const OUString &r
 
 void Desktop::CheckOpenCLCompute(const Reference< XDesktop2 > &xDesktop)
 {
-    if (!opencl::canUseOpenCL())
+    if (!opencl::canUseOpenCL() || Application::IsSafeModeEnabled())
         return;
 
     SAL_INFO("opencl", "Initiating test of OpenCL device");
@@ -158,7 +161,7 @@ void Desktop::CheckOpenCLCompute(const Reference< XDesktop2 > &xDesktop)
         // OpenCL device changed - sanity check it and disable if bad.
 
         boost::optional<sal_Int32> nOrigMinimumSize = officecfg::Office::Calc::Formula::Calculation::OpenCLMinimumDataSize::get();
-        { // set the group size to something small for quick testing.
+        { // set the minimum group size to something small for quick testing.
             std::shared_ptr<comphelper::ConfigurationChanges> xBatch(comphelper::ConfigurationChanges::create());
             officecfg::Office::Calc::Formula::Calculation::OpenCLMinimumDataSize::set(3 /* small */, xBatch);
             xBatch->commit();
@@ -166,11 +169,9 @@ void Desktop::CheckOpenCLCompute(const Reference< XDesktop2 > &xDesktop)
 
         bool bSucceeded = testOpenCLCompute(xDesktop, aURL);
 
-        // it passed -> save the device.
-        {
+        { // restore the minimum group size
             std::shared_ptr<comphelper::ConfigurationChanges> xBatch(comphelper::ConfigurationChanges::create());
             officecfg::Office::Calc::Formula::Calculation::OpenCLMinimumDataSize::set(nOrigMinimumSize, xBatch);
-            // allow the user to subsequently manually enable it.
             officecfg::Office::Common::Misc::SelectedOpenCLDeviceIdentifier::set(aSelectedCLDeviceVersionID, xBatch);
             xBatch->commit();
         }

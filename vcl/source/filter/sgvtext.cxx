@@ -31,8 +31,6 @@
 #include <memory>
 #include <cstdlib>
 
-extern SgfFontLst* pSgfFonts;
-
 //  Limitations:  only grey shadows, 2D and with fixed distance.
 // Start of AbsBase.Pas
 
@@ -110,7 +108,7 @@ extern SgfFontLst* pSgfFonts;
 #define  EscNoVal  -2147483647 /* -MaxLongInt */
 
 #define  NoTrenn 0xFFFF   /* parameter value for 'Rest' of GetTextChar(), if separation should not occur */
-#define  DoTrenn 0xFFFE   /* parameter value for 'Rest' of GetTextChar(), if separtion should occur      */
+#define  DoTrenn 0xFFFE   /* parameter value for 'Rest' of GetTextChar(), if separation should occur     */
 
 #define  MaxLineChars 1024
 
@@ -376,7 +374,7 @@ UCHAR GetTextChar(UCHAR* TBuf, sal_uInt16& Index,
     return c;
 }
 
-  // HardSpace and HardTrenn should be converted explicitely ! }
+  // HardSpace and HardTrenn should be converted explicitly ! }
   // if AktAtr.Schnitt and TextKaptBit =TextKaptBit then c:=UpCase(c);(explizit) }
 
   // The separationmethod SoftTrennAdd assumes, the separating consonant }
@@ -681,7 +679,7 @@ void FormatLine(UCHAR* TBuf, sal_uInt16& Index, ObjTextType& Atr0, ObjTextType& 
     sal_uInt16       i,j,k,h;
     sal_uInt16       re,li;
 
-    vOut->SetMapMode(MapMode(MAP_10TH_MM,Point(),Fraction(1,4),Fraction(1,4)));
+    vOut->SetMapMode(MapMode(MapUnit::Map10thMM,Point(),Fraction(1,4),Fraction(1,4)));
 
     nChars=0;
     SetTextContext(*vOut.get(),AktAtr,false,0,1,1,1,1);
@@ -1109,7 +1107,7 @@ void SgfFontLst::ReadList()
 
         for (i=0;i<Anz;i++)
         {
-            FID = comphelper::string::remove(aCfg.GetKeyName(i), ' ');
+            FID = aCfg.GetKeyName(i).replaceAll(" ", "");
             Dsc = aCfg.ReadKey( i );
             if (comphelper::string::isdigitAsciiString(FID))
             {

@@ -52,11 +52,9 @@ public:
         const Action& rAction);
 
     virtual void SAL_CALL disposing() override;
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override;
     virtual void SAL_CALL notifyConfigurationChange (
-        const css::drawing::framework::ConfigurationChangeEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
 
 private:
     css::uno::Reference<css::drawing::framework::XConfigurationController> mxConfigurationController;
@@ -79,7 +77,7 @@ private:
         const OUString& rsEventName,
         const Predicate& rPredicate,
         const Action& rAction);
-    virtual ~PresenterFrameworkObserver();
+    virtual ~PresenterFrameworkObserver() override;
 
     void Shutdown();
 

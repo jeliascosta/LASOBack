@@ -19,6 +19,7 @@
 
 #include "precompile.h"
 
+#include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,11 +75,13 @@ HWPFile::~HWPFile()
     for (; tbl != tables.end(); ++tbl)
         delete *tbl;
 
-    std::list < HyperText* >::iterator hyp = hyperlist.begin();
+    std::list<EmPicture*>::iterator emb = emblist.begin();
+    for (; emb != emblist.end(); ++emb)
+        delete *emb;
+
+    std::list<HyperText*>::iterator hyp = hyperlist.begin();
     for (; hyp != hyperlist.end(); ++hyp)
-    {
         delete *hyp;
-    }
 }
 
 int HWPFile::ReadHwpFile(HStream * stream)
@@ -124,7 +127,7 @@ int HWPFile::Open(HStream * stream)
 
     char idstr[HWPIDLen];
 
-    if (ReadBlock(idstr, HWPIDLen) <= 0
+    if (ReadBlock(idstr, HWPIDLen) < HWPIDLen
         || HWP_V30 != (version = detect_hwp_version(idstr)))
     {
         return SetState(HWP_UNSUPPORTED_VERSION);
@@ -138,15 +141,10 @@ int HWPFile::SetState(int errcode)
     return error_code;
 }
 
-bool HWPFile::Read1b(unsigned char &out)
-{
-    return hiodev && hiodev->read1b(out);
-}
-
 bool HWPFile::Read1b(char &out)
 {
     unsigned char tmp8;
-    if (!Read1b(tmp8))
+    if (!hiodev || !hiodev->read1b(tmp8))
         return false;
     out = tmp8;
     return true;
@@ -352,8 +350,30 @@ void HWPFile::TagsRead()
                      if (!Read4b(_hwpInfo.back_info.size))
                         return;
 
-                     _hwpInfo.back_info.data = new char[(unsigned int)_hwpInfo.back_info.size];
-                     ReadBlock(_hwpInfo.back_info.data, _hwpInfo.back_info.size);
+                     if (_hwpInfo.back_info.size < 0)
+                     {
+                        _hwpInfo.back_info.size = 0;
+                        return;
+                     }
+
+                     _hwpInfo.back_info.data.clear();
+
+                     //read potentially compressed data in blocks as its more
+                     //likely large values are simply broken and we'll run out
+                     //of data before we need to realloc
+                     for (int i = 0; i < _hwpInfo.back_info.size; i+= SAL_MAX_UINT16)
+                     {
+                        int nOldSize = _hwpInfo.back_info.data.size();
+                        size_t nBlock = std::min<int>(SAL_MAX_UINT16, _hwpInfo.back_info.size - nOldSize);
+                        _hwpInfo.back_info.data.resize(nOldSize + nBlock);
+                        size_t nReadBlock = ReadBlock(_hwpInfo.back_info.data.data() + nOldSize, nBlock);
+                        if (nBlock != nReadBlock)
+                        {
+                            _hwpInfo.back_info.data.resize(nOldSize + nReadBlock);
+                            break;
+                        }
+                     }
+                     _hwpInfo.back_info.size = _hwpInfo.back_info.data.size();
 
                      if( _hwpInfo.back_info.size > 0 )
                           _hwpInfo.back_info.type = 2;

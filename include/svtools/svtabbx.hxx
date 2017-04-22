@@ -63,14 +63,14 @@ protected:
     SvTreeListEntry*            GetChildOnPos( SvTreeListEntry* _pParent, sal_uLong _nEntryPos, sal_uLong& _rPos ) const;
 
 public:
-    SvTabListBox( vcl::Window* pParent, WinBits = WB_BORDER );
-    virtual ~SvTabListBox();
+    SvTabListBox( vcl::Window* pParent, WinBits );
+    virtual ~SvTabListBox() override;
     virtual void dispose() override;
-    void            SetTabs(const long* pTabs, MapUnit = MAP_APPFONT);
+    void            SetTabs(const long* pTabs, MapUnit = MapUnit::MapAppFont);
     sal_uInt16      TabCount() const { return (sal_uInt16)nTabCount; }
     using SvTreeListBox::GetTab;
     long            GetTab( sal_uInt16 nTab ) const;
-    void            SetTab( sal_uInt16 nTab, long nValue, MapUnit = MAP_APPFONT );
+    void            SetTab( sal_uInt16 nTab, long nValue, MapUnit = MapUnit::MapAppFont );
     long            GetLogicTab( sal_uInt16 nTab );
 
     virtual SvTreeListEntry*    InsertEntry( const OUString& rText, SvTreeListEntry* pParent = nullptr,
@@ -91,20 +91,19 @@ public:
     virtual SvTreeListEntry* InsertEntryToColumn( const OUString&, SvTreeListEntry* pParent,
                                  sal_uLong nPos, sal_uInt16 nCol, void* pUserData = nullptr );
     virtual SvTreeListEntry* InsertEntryToColumn( const OUString&, const Image& rExpandedEntryBmp,
-                                 const Image& rCollapsedEntryBmp, SvTreeListEntry* pParent = nullptr,
+                                 const Image& rCollapsedEntryBmp, SvTreeListEntry* pParent,
                                  sal_uLong nPos = TREELIST_APPEND, sal_uInt16 nCol = 0xffff, void* pUserData = nullptr );
 
     virtual OUString GetEntryText( SvTreeListEntry* pEntry ) const override;
     static OUString  GetEntryText( SvTreeListEntry*, sal_uInt16 nCol );
     OUString         GetEntryText( sal_uLong nPos, sal_uInt16 nCol = 0xffff ) const;
     using SvTreeListBox::SetEntryText;
-    void             SetEntryText(const OUString&, sal_uLong, sal_uInt16 nCol=0xffff);
+    void             SetEntryText(const OUString&, sal_uLong, sal_uInt16 nCol);
     void             SetEntryText(const OUString&, SvTreeListEntry*, sal_uInt16 nCol=0xffff);
     OUString         GetCellText( sal_uLong nPos, sal_uInt16 nCol ) const;
     sal_uLong        GetEntryPos( const OUString&, sal_uInt16 nCol = 0xffff );
     sal_uLong        GetEntryPos( const SvTreeListEntry* pEntry ) const;
 
-    virtual void     Resize() override;
     void             SetTabJustify( sal_uInt16 nTab, SvTabJustify );
 };
 
@@ -128,21 +127,21 @@ private:
     typedef ::std::vector< css::uno::Reference< css::accessibility::XAccessible > > AccessibleChildren;
 
     bool                            m_bFirstPaint;
-    ::svt::SvHeaderTabListBoxImpl*  m_pImpl;
+    std::unique_ptr<::svt::SvHeaderTabListBoxImpl>  m_pImpl;
     ::svt::IAccessibleTabListBox*   m_pAccessible;
     AccessibleChildren              m_aAccessibleChildren;
 
-    DECL_DLLPRIVATE_LINK_TYPED( ScrollHdl_Impl, SvTreeListBox*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( CreateAccessibleHdl_Impl, HeaderBar*, void );
+    DECL_DLLPRIVATE_LINK( ScrollHdl_Impl, SvTreeListBox*, void );
+    DECL_DLLPRIVATE_LINK( CreateAccessibleHdl_Impl, HeaderBar*, void );
 
     void            RecalculateAccessibleChildren();
 
 public:
     SvHeaderTabListBox( vcl::Window* pParent, WinBits nBits );
-    virtual ~SvHeaderTabListBox();
+    virtual ~SvHeaderTabListBox() override;
     virtual void dispose() override;
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
 
     void            InitHeaderBar( HeaderBar* pHeaderBar );
     static bool     IsItemChecked( SvTreeListEntry* pEntry, sal_uInt16 nCol );
@@ -152,7 +151,7 @@ public:
     virtual SvTreeListEntry* InsertEntryToColumn( const OUString&, SvTreeListEntry* pParent,
                                  sal_uLong nPos, sal_uInt16 nCol, void* pUserData = nullptr ) override;
     virtual SvTreeListEntry* InsertEntryToColumn( const OUString&, const Image& rExpandedEntryBmp,
-                                 const Image& rCollapsedEntryBmp, SvTreeListEntry* pParent = nullptr,
+                                 const Image& rCollapsedEntryBmp, SvTreeListEntry* pParent,
                                  sal_uLong nPos = TREELIST_APPEND, sal_uInt16 nCol = 0xffff, void* pUserData = nullptr ) override;
     virtual sal_uLong Insert( SvTreeListEntry* pEnt,SvTreeListEntry* pPar,sal_uLong nPos=TREELIST_APPEND) override;
     virtual sal_uLong Insert( SvTreeListEntry* pEntry, sal_uLong nRootPos = TREELIST_APPEND ) override;
@@ -161,8 +160,8 @@ public:
 
     // Accessible -------------------------------------------------------------
 
-    inline void     DisableTransientChildren()          { SetChildrenNotTransient(); }
-    inline bool     IsTransientChildrenDisabled() const { return !AreChildrenTransient(); }
+    void     DisableTransientChildren()          { SetChildrenNotTransient(); }
+    bool     IsTransientChildrenDisabled() const { return !AreChildrenTransient(); }
 
     bool            IsCellCheckBox( long _nRow, sal_uInt16 _nColumn, TriState& _rState );
 
@@ -189,9 +188,8 @@ public:
     virtual bool                    GoToCell( sal_Int32 _nRow, sal_uInt16 _nColumn ) override;
 
     virtual void                    SetNoSelection() override;
-    using SvListView::SelectAll;
+    using SvTabListBox::SelectAll;
     virtual void                    SelectAll() override;
-    virtual void                    SelectAll( bool bSelect, bool bPaint = true ) override;
     virtual void                    SelectRow( long _nRow, bool _bSelect = true, bool bExpand = true ) override;
     virtual void                    SelectColumn( sal_uInt16 _nColumn, bool _bSelect = true ) override;
     virtual sal_Int32               GetSelectedRowCount() const override;
@@ -206,9 +204,9 @@ public:
     virtual bool                    IsCellVisible( sal_Int32 _nRow, sal_uInt16 _nColumn ) const override;
     virtual OUString                GetAccessibleCellText( long _nRow, sal_uInt16 _nColumnPos ) const override;
 
-    virtual Rectangle               calcHeaderRect( bool _bIsColumnBar, bool _bOnScreen = true ) override;
-    virtual Rectangle               calcTableRect( bool _bOnScreen = true ) override;
-    virtual Rectangle               GetFieldRectPixelAbs( sal_Int32 _nRow, sal_uInt16 _nColumn, bool _bIsHeader, bool _bOnScreen = true ) override;
+    virtual tools::Rectangle               calcHeaderRect( bool _bIsColumnBar, bool _bOnScreen = true ) override;
+    virtual tools::Rectangle               calcTableRect( bool _bOnScreen = true ) override;
+    virtual tools::Rectangle               GetFieldRectPixelAbs( sal_Int32 _nRow, sal_uInt16 _nColumn, bool _bIsHeader, bool _bOnScreen = true ) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessibleCell( sal_Int32 _nRow, sal_uInt16 _nColumn ) override;
     virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessibleRowHeader( sal_Int32 _nRow ) override;
@@ -231,10 +229,10 @@ public:
     virtual void                    GrabTableFocus() override;
 
     // OutputDevice
-    virtual bool                    GetGlyphBoundRects( const Point& rOrigin, const OUString& rStr, int nIndex, int nLen, int nBase, MetricVector& rVector ) override;
+    virtual bool                    GetGlyphBoundRects( const Point& rOrigin, const OUString& rStr, int nIndex, int nLen, MetricVector& rVector ) override;
 
     // Window
-    virtual Rectangle               GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const override;
+    virtual tools::Rectangle               GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const override;
     virtual void                    GrabFocus() override;
     virtual css::uno::Reference< css::accessibility::XAccessible > GetAccessible() override;
     virtual vcl::Window*                 GetAccessibleParentWindow() const override;
@@ -242,7 +240,7 @@ public:
     /** Creates and returns the accessible object of the whole BrowseBox. */
     virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessible() override;
 
-    virtual Rectangle               GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 nIndex) override;
+    virtual tools::Rectangle               GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 nIndex) override;
     virtual sal_Int32               GetFieldIndexAtPoint(sal_Int32 _nRow,sal_Int32 _nColumnPos,const Point& _rPoint) override;
 };
 

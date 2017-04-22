@@ -40,7 +40,7 @@ namespace comphelper
     template <typename TYPE> struct OIdPropertyArrayUsageHelperMutex
             : public rtl::Static< ::osl::Mutex, OIdPropertyArrayUsageHelperMutex<TYPE> > {};
 
-    typedef std::map< sal_Int32, ::cppu::IPropertyArrayHelper*, std::less< sal_Int32 > > OIdPropertyArrayMap;
+    typedef std::map< sal_Int32, ::cppu::IPropertyArrayHelper* > OIdPropertyArrayMap;
     template <class TYPE>
     class OIdPropertyArrayUsageHelper
     {
@@ -74,9 +74,6 @@ namespace comphelper
             This method needs to be implemented in derived classes.
             <BR>
             The method gets called with Mutex acquired.
-            <BR>
-            as long as IPropertyArrayHelper has no virtual destructor, the implementation of ~OPropertyArrayUsageHelper
-            assumes that you created an ::cppu::OPropertyArrayHelper when deleting s_pProps.
             @return                         an pointer to the newly created array helper. Must not be NULL.
         */
         virtual ::cppu::IPropertyArrayHelper* createArrayHelper(sal_Int32 nId) const = 0;
@@ -96,7 +93,7 @@ namespace comphelper
         ::osl::MutexGuard aGuard(OIdPropertyArrayUsageHelperMutex<TYPE>::get());
         // create the map if necessary
         if (s_pMap == nullptr)
-            s_pMap = new OIdPropertyArrayMap();
+            s_pMap = new OIdPropertyArrayMap;
         ++s_nRefCount;
     }
 

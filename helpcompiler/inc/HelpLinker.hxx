@@ -47,11 +47,11 @@ public:
 class L10N_DLLPUBLIC HelpLinker
 {
 public:
+    /// @throws HelpProcessingException
     void main(std::vector<std::string> &args,
               std::string* pExtensionPath = nullptr,
               std::string* pDestination = nullptr,
-              const OUString* pOfficeHelpPath = nullptr )
-            throw( HelpProcessingException, std::exception );
+              const OUString* pOfficeHelpPath = nullptr );
 
     HelpLinker()
         : bExtensionMode(false)
@@ -59,10 +59,6 @@ public:
         , m_bUseLangRoot(true)
         , m_bCreateIndex(true)
     {}
-    ~HelpLinker()
-    {
-        delete m_pIndexerPreProcessor;
-    }
 
 private:
     Stringtable additionalFiles;
@@ -82,11 +78,13 @@ private:
     std::string extensionDestination;
     bool bExtensionMode;
     fs::path indexDirParentName;
-    IndexerPreProcessor* m_pIndexerPreProcessor;
+    std::unique_ptr<IndexerPreProcessor> m_pIndexerPreProcessor;
     bool m_bUseLangRoot;
     bool m_bCreateIndex;
     void initIndexerPreProcessor();
-    void link() throw(HelpProcessingException, BasicCodeTagger::TaggerException, std::exception);
+    /// @throws HelpProcessingException
+    /// @throws BasicCodeTagger::TaggerException
+    void link();
     static void addBookmark( FILE* pFile_DBHelp, std::string thishid,
         const std::string& fileB, const std::string& anchorB,
         const std::string& jarfileB, const std::string& titleB );

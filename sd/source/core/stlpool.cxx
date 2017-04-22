@@ -18,6 +18,7 @@
  */
 
 #include <com/sun/star/lang/DisposedException.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/supportsservice.hxx>
 #include <editeng/eeitem.hxx>
 #include <editeng/fhgtitem.hxx>
@@ -37,7 +38,7 @@
 #include <editeng/brushitem.hxx>
 #include <editeng/editeng.hxx>
 #include <editeng/cmapitem.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <editeng/langitem.hxx>
 #include <editeng/charreliefitem.hxx>
 #include <editeng/emphasismarkitem.hxx>
@@ -121,9 +122,9 @@ SdStyleSheetPool::SdStyleSheetPool(SfxItemPool const& _rPool, SdDrawDocument* pD
             msTableFamilyName = xNamed->getName();
 
         // create presentation families, one for each master page
-        const sal_uInt16 nCount = mpDoc->GetMasterSdPageCount(PK_STANDARD);
+        const sal_uInt16 nCount = mpDoc->GetMasterSdPageCount(PageKind::Standard);
         for( sal_uInt16 nPage = 0; nPage < nCount; ++nPage )
-            AddStyleFamily( mpDoc->GetMasterSdPage(nPage,PK_STANDARD) );
+            AddStyleFamily( mpDoc->GetMasterSdPage(nPage,PageKind::Standard) );
 
     }
 }
@@ -241,25 +242,22 @@ void SdStyleSheetPool::CreateLayoutStyleSheets(const OUString& rLayoutName, bool
                 rSet.Put( SvxUnderlineItem(LINESTYLE_NONE, EE_CHAR_UNDERLINE ) );
                 rSet.Put( SvxOverlineItem(LINESTYLE_NONE, EE_CHAR_OVERLINE ) );
                 rSet.Put( SvxCrossedOutItem(STRIKEOUT_NONE, EE_CHAR_STRIKEOUT ) );
-                rSet.Put( SvxCaseMapItem(SVX_CASEMAP_NOT_MAPPED, EE_CHAR_CASEMAP ) );
+                rSet.Put( SvxCaseMapItem(SvxCaseMap::NotMapped, EE_CHAR_CASEMAP ) );
                 rSet.Put( SvxShadowedItem(false, EE_CHAR_SHADOW ) );
                 rSet.Put( SvxContourItem(false, EE_CHAR_OUTLINE ) );
                 rSet.Put( SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK ) );
-                rSet.Put( SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF) );
+                rSet.Put( SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF) );
                 rSet.Put( SvxColorItem( Color(COL_AUTO), EE_CHAR_COLOR) );
                 rSet.Put( SvxBackgroundColorItem( Color (COL_AUTO), EE_CHAR_BKGCOLOR )  );
                 rSet.Put( XLineStyleItem(css::drawing::LineStyle_NONE) );
                 rSet.Put( XFillStyleItem(drawing::FillStyle_NONE) );
-                rSet.Put( SdrTextFitToSizeTypeItem(SDRTEXTFIT_AUTOFIT) );
+                rSet.Put( SdrTextFitToSizeTypeItem(SdrFitToSizeType::Autofit) );
                 rSet.Put( makeSdrTextAutoGrowHeightItem(false) );
                 // #i16874# enable kerning by default but only for new documents
                 rSet.Put( SvxAutoKernItem( true, EE_CHAR_PAIRKERNING ) );
 
-                if( nLevel == 1 )
-                {
-                    vcl::Font f( GetBulletFont() );
-                    PutNumBulletItem( pSheet, f );
-                }
+                vcl::Font f( GetBulletFont() );
+                PutNumBulletItem( pSheet, f );
             }
 
             sal_uLong nFontSize = 20;
@@ -359,14 +357,14 @@ void SdStyleSheetPool::CreateLayoutStyleSheets(const OUString& rLayoutName, bool
         rTitleSet.Put(SvxUnderlineItem(LINESTYLE_NONE, EE_CHAR_UNDERLINE ));
         rTitleSet.Put(SvxOverlineItem(LINESTYLE_NONE, EE_CHAR_OVERLINE ));
         rTitleSet.Put(SvxCrossedOutItem(STRIKEOUT_NONE, EE_CHAR_STRIKEOUT ));
-        rTitleSet.Put(SvxCaseMapItem(SVX_CASEMAP_NOT_MAPPED, EE_CHAR_CASEMAP ));
+        rTitleSet.Put(SvxCaseMapItem(SvxCaseMap::NotMapped, EE_CHAR_CASEMAP ));
         rTitleSet.Put(SvxShadowedItem(false, EE_CHAR_SHADOW ));
         rTitleSet.Put(SvxContourItem(false, EE_CHAR_OUTLINE ));
         rTitleSet.Put( SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK ) );
-        rTitleSet.Put( SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF ) );
+        rTitleSet.Put( SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF ) );
         rTitleSet.Put(SvxColorItem( Color(COL_AUTO), EE_CHAR_COLOR ));
         rTitleSet.Put(SvxBackgroundColorItem( Color(COL_AUTO), EE_CHAR_BKGCOLOR ));
-        rTitleSet.Put(SvxAdjustItem(SVX_ADJUST_CENTER, EE_PARA_JUST ));
+        rTitleSet.Put(SvxAdjustItem(SvxAdjust::Center, EE_PARA_JUST ));
         rTitleSet.Put( SdrTextVertAdjustItem( SDRTEXTVERTADJUST_CENTER ) );
         // #i16874# enable kerning by default but only for new documents
         rTitleSet.Put( SvxAutoKernItem( true, EE_CHAR_PAIRKERNING ) );
@@ -405,14 +403,14 @@ void SdStyleSheetPool::CreateLayoutStyleSheets(const OUString& rLayoutName, bool
         rSubtitleSet.Put(SvxUnderlineItem(LINESTYLE_NONE, EE_CHAR_UNDERLINE ));
         rSubtitleSet.Put(SvxOverlineItem(LINESTYLE_NONE, EE_CHAR_OVERLINE ));
         rSubtitleSet.Put(SvxCrossedOutItem(STRIKEOUT_NONE, EE_CHAR_STRIKEOUT ));
-        rSubtitleSet.Put(SvxCaseMapItem(SVX_CASEMAP_NOT_MAPPED, EE_CHAR_CASEMAP ));
+        rSubtitleSet.Put(SvxCaseMapItem(SvxCaseMap::NotMapped, EE_CHAR_CASEMAP ));
         rSubtitleSet.Put(SvxShadowedItem(false, EE_CHAR_SHADOW ));
         rSubtitleSet.Put(SvxContourItem(false, EE_CHAR_OUTLINE ));
         rSubtitleSet.Put( SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK ) );
-        rSubtitleSet.Put( SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF ) );
+        rSubtitleSet.Put( SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF ) );
         rSubtitleSet.Put(SvxColorItem( Color(COL_AUTO), EE_CHAR_COLOR ));
         rSubtitleSet.Put(SvxBackgroundColorItem( Color(COL_AUTO), EE_CHAR_BKGCOLOR ));
-        rSubtitleSet.Put(SvxAdjustItem(SVX_ADJUST_CENTER, EE_PARA_JUST ));
+        rSubtitleSet.Put(SvxAdjustItem(SvxAdjust::Center, EE_PARA_JUST ));
         rSubtitleSet.Put( SdrTextVertAdjustItem( SDRTEXTVERTADJUST_CENTER ) );
         // #i16874# enable kerning by default but only for new documents
         rSubtitleSet.Put( SvxAutoKernItem( true, EE_CHAR_PAIRKERNING ) );
@@ -454,11 +452,11 @@ void SdStyleSheetPool::CreateLayoutStyleSheets(const OUString& rLayoutName, bool
         rNotesSet.Put( SvxUnderlineItem(LINESTYLE_NONE, EE_CHAR_UNDERLINE ) );
         rNotesSet.Put( SvxOverlineItem(LINESTYLE_NONE, EE_CHAR_OVERLINE ) );
         rNotesSet.Put( SvxCrossedOutItem(STRIKEOUT_NONE, EE_CHAR_STRIKEOUT ) );
-        rNotesSet.Put( SvxCaseMapItem(SVX_CASEMAP_NOT_MAPPED, EE_CHAR_CASEMAP ) );
+        rNotesSet.Put( SvxCaseMapItem(SvxCaseMap::NotMapped, EE_CHAR_CASEMAP ) );
         rNotesSet.Put( SvxShadowedItem(false, EE_CHAR_SHADOW ) );
         rNotesSet.Put( SvxContourItem(false, EE_CHAR_OUTLINE ) );
         rNotesSet.Put( SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK ) );
-        rNotesSet.Put( SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF) );
+        rNotesSet.Put( SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF) );
         rNotesSet.Put( SvxColorItem( Color(COL_AUTO), EE_CHAR_COLOR ) );
         rNotesSet.Put( SvxBackgroundColorItem( Color(COL_AUTO), EE_CHAR_BKGCOLOR ) );
         rNotesSet.Put( SvxLRSpaceItem( 0, 0, 600, -600, EE_PARA_LRSPACE  ) );
@@ -595,18 +593,13 @@ void SdStyleSheetPool::CopyCellSheets(SdStyleSheetPool& rSourcePool, SdStyleShee
 
 void SdStyleSheetPool::RenameAndCopyGraphicSheets(SdStyleSheetPool& rSourcePool, SdStyleSheetVector& rCreatedSheets, OUString &rRenameSuffix)
 {
-    RenameAndCopySheets( rSourcePool, SD_STYLE_FAMILY_GRAPHICS, rCreatedSheets, rRenameSuffix );
+    CopySheets( rSourcePool, SD_STYLE_FAMILY_GRAPHICS, rCreatedSheets, rRenameSuffix );
 }
 
 void SdStyleSheetPool::CopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily )
 {
     SdStyleSheetVector aTmpSheets;
     CopySheets(rSourcePool, eFamily, aTmpSheets);
-}
-
-void SdStyleSheetPool::RenameAndCopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily, SdStyleSheetVector& rCreatedSheets, OUString &rRenameSuffix)
-{
-    CopySheets( rSourcePool, eFamily, rCreatedSheets, rRenameSuffix );
 }
 
 void SdStyleSheetPool::CopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily, SdStyleSheetVector& rCreatedSheets)
@@ -621,7 +614,7 @@ namespace
 struct HasFamilyPredicate : svl::StyleSheetPredicate
 {
     explicit HasFamilyPredicate(SfxStyleFamily eFamily)
-    : meFamily(eFamily) {;}
+    : meFamily(eFamily) {}
 
     bool Check(const SfxStyleSheetBase& sheet) override
     {
@@ -931,7 +924,7 @@ namespace
 struct StyleSheetIsUserDefinedPredicate : svl::StyleSheetPredicate
 {
     StyleSheetIsUserDefinedPredicate()
-    {;}
+    {}
 
     bool Check(const SfxStyleSheetBase& sheet) override
     {
@@ -1104,7 +1097,7 @@ void SdStyleSheetPool::PutNumBulletItem( SfxStyleSheetBase* pSheet,
             aNumberFormat.SetBulletRelSize(45);
             aNumberFormat.SetBulletColor(Color(COL_AUTO));
             aNumberFormat.SetStart(1);
-            aNumberFormat.SetNumAdjust(SVX_ADJUST_LEFT);
+            aNumberFormat.SetNumAdjust(SvxAdjust::Left);
 
             SvxNumRule aNumRule( SvxNumRuleFlags::BULLET_REL_SIZE | SvxNumRuleFlags::BULLET_COLOR | SvxNumRuleFlags::CHAR_TEXT_DISTANCE, SVX_MAX_NUM, false);
 
@@ -1117,7 +1110,7 @@ void SdStyleSheetPool::PutNumBulletItem( SfxStyleSheetBase* pSheet,
             }
 
             rSet.Put( SvxNumBulletItem( aNumRule, EE_PARA_NUMBULLET ) );
-            static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+            static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxHint( SfxHintId::DataChanged ) );
         }
         break;
 
@@ -1150,7 +1143,7 @@ void SdStyleSheetPool::PutNumBulletItem( SfxStyleSheetBase* pSheet,
                 }
 
                 rSet.Put( SvxNumBulletItem( aNumRule, EE_PARA_NUMBULLET ) );
-                static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+                static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxHint( SfxHintId::DataChanged ) );
             }
         }
         break;
@@ -1161,7 +1154,7 @@ void SdStyleSheetPool::PutNumBulletItem( SfxStyleSheetBase* pSheet,
             SvxNumberFormat aNumberFormat(SVX_NUM_CHAR_SPECIAL);
             aNumberFormat.SetBulletColor(Color(COL_AUTO));
             aNumberFormat.SetStart(1);
-            aNumberFormat.SetNumAdjust(SVX_ADJUST_LEFT);
+            aNumberFormat.SetNumAdjust(SvxAdjust::Left);
 
             SvxNumRule aNumRule( SvxNumRuleFlags::BULLET_REL_SIZE | SvxNumRuleFlags::BULLET_COLOR |
                                  SvxNumRuleFlags::CHAR_TEXT_DISTANCE | SvxNumRuleFlags::SYMBOL_ALIGNMENT,
@@ -1175,7 +1168,7 @@ void SdStyleSheetPool::PutNumBulletItem( SfxStyleSheetBase* pSheet,
             }
 
             rSet.Put( SvxNumBulletItem( aNumRule, EE_PARA_NUMBULLET ) );
-            static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+            static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxHint( SfxHintId::DataChanged ) );
         }
         break;
     }
@@ -1228,31 +1221,31 @@ void SdStyleSheetPool::RemoveStyleFamily( const SdPage* pPage )
     }
 }
 
-void SdStyleSheetPool::throwIfDisposed() throw(css::uno::RuntimeException)
+void SdStyleSheetPool::throwIfDisposed()
 {
     if( mpDoc == nullptr )
         throw DisposedException();
 }
 
 // XServiceInfo
-OUString SAL_CALL SdStyleSheetPool::getImplementationName() throw(RuntimeException, std::exception)
+OUString SAL_CALL SdStyleSheetPool::getImplementationName()
 {
     return OUString( "SdStyleSheetPool" );
 }
 
-sal_Bool SAL_CALL SdStyleSheetPool::supportsService( const OUString& ServiceName ) throw(RuntimeException, std::exception)
+sal_Bool SAL_CALL SdStyleSheetPool::supportsService( const OUString& ServiceName )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-Sequence< OUString > SAL_CALL SdStyleSheetPool::getSupportedServiceNames() throw(RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL SdStyleSheetPool::getSupportedServiceNames()
 {
     OUString aStr("com.sun.star.style.StyleFamilies");
     return Sequence< OUString >( &aStr, 1 );
 }
 
 // XNameAccess
-Any SAL_CALL SdStyleSheetPool::getByName( const OUString& aName ) throw(NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
+Any SAL_CALL SdStyleSheetPool::getByName( const OUString& aName )
 {
     throwIfDisposed();
 
@@ -1274,7 +1267,7 @@ Any SAL_CALL SdStyleSheetPool::getByName( const OUString& aName ) throw(NoSuchEl
     throw NoSuchElementException();
 }
 
-Sequence< OUString > SAL_CALL SdStyleSheetPool::getElementNames() throw(RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL SdStyleSheetPool::getElementNames()
 {
     throwIfDisposed();
 
@@ -1293,7 +1286,7 @@ Sequence< OUString > SAL_CALL SdStyleSheetPool::getElementNames() throw(RuntimeE
     return aNames;
 }
 
-sal_Bool SAL_CALL SdStyleSheetPool::hasByName( const OUString& aName ) throw(RuntimeException, std::exception)
+sal_Bool SAL_CALL SdStyleSheetPool::hasByName( const OUString& aName )
 {
     throwIfDisposed();
 
@@ -1317,28 +1310,28 @@ sal_Bool SAL_CALL SdStyleSheetPool::hasByName( const OUString& aName ) throw(Run
 
 // XElementAccess
 
-Type SAL_CALL SdStyleSheetPool::getElementType() throw(RuntimeException, std::exception)
+Type SAL_CALL SdStyleSheetPool::getElementType()
 {
     throwIfDisposed();
 
     return cppu::UnoType<XNameAccess>::get();
 }
 
-sal_Bool SAL_CALL SdStyleSheetPool::hasElements() throw(RuntimeException, std::exception)
+sal_Bool SAL_CALL SdStyleSheetPool::hasElements()
 {
     return true;
 }
 
 // XIndexAccess
 
-sal_Int32 SAL_CALL SdStyleSheetPool::getCount() throw(RuntimeException, std::exception)
+sal_Int32 SAL_CALL SdStyleSheetPool::getCount()
 {
     throwIfDisposed();
 
     return maStyleFamilyMap.size() + 3;
 }
 
-Any SAL_CALL SdStyleSheetPool::getByIndex( sal_Int32 Index ) throw(IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception)
+Any SAL_CALL SdStyleSheetPool::getByIndex( sal_Int32 Index )
 {
     switch( Index )
     {
@@ -1367,7 +1360,7 @@ Any SAL_CALL SdStyleSheetPool::getByIndex( sal_Int32 Index ) throw(IndexOutOfBou
 
 // XComponent
 
-void SAL_CALL SdStyleSheetPool::dispose() throw (RuntimeException, std::exception)
+void SAL_CALL SdStyleSheetPool::dispose()
 {
     if( mpDoc )
     {
@@ -1398,11 +1391,11 @@ void SAL_CALL SdStyleSheetPool::dispose() throw (RuntimeException, std::exceptio
     }
 }
 
-void SAL_CALL SdStyleSheetPool::addEventListener( const Reference< XEventListener >& /*xListener*/ ) throw (RuntimeException, std::exception)
+void SAL_CALL SdStyleSheetPool::addEventListener( const Reference< XEventListener >& /*xListener*/ )
 {
 }
 
-void SAL_CALL SdStyleSheetPool::removeEventListener( const Reference< XEventListener >& /*aListener*/ ) throw (RuntimeException, std::exception)
+void SAL_CALL SdStyleSheetPool::removeEventListener( const Reference< XEventListener >& /*aListener*/ )
 {
 }
 
@@ -1421,16 +1414,6 @@ SdStyleSheetVector SdStyleSheetPool::CreateChildList( SdStyleSheet* pSheet )
     }
 
     return aResult;
-}
-
-void SAL_CALL SdStyleSheetPool::acquire() throw ()
-{
-    SdStyleSheetPoolBase::acquire();
-}
-
-void SAL_CALL SdStyleSheetPool::release() throw ()
-{
-    SdStyleSheetPoolBase::release();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -20,6 +20,8 @@
 #ifndef INCLUDED_SC_SOURCE_FILTER_INC_EXTERNALLINKBUFFER_HXX
 #define INCLUDED_SC_SOURCE_FILTER_INC_EXTERNALLINKBUFFER_HXX
 
+#include <ostream>
+
 #include <com/sun/star/sheet/ExternalLinkInfo.hpp>
 #include <oox/helper/containerhelper.hxx>
 #include "defnamesbuffer.hxx"
@@ -58,7 +60,7 @@ public:
 
     /** Appends the passed value to the result set. */
     template< typename Type >
-    inline void         appendResultValue( const Type& rValue )
+    void         appendResultValue( const Type& rValue )
                             { if( maCurrIt != maResults.end() ) (*maCurrIt++) <<= rValue; }
 
     /** Imports the definedName element. */
@@ -84,11 +86,6 @@ public:
     void                importDdeItemError( SequenceInputStream& rStrm );
     /** Imports the DDEITEM_STRING record containing a string in a link result. */
     void                importDdeItemString( SequenceInputStream& rStrm );
-
-#if 0
-    /** Returns the sheet cache index if this is a sheet-local external name. */
-    sal_Int32           getSheetCacheIndex() const;
-#endif
 
     /** Returns the DDE item info needed by the XML formula parser. */
     bool                getDdeItemInfo(
@@ -122,7 +119,7 @@ typedef std::shared_ptr< ExternalName > ExternalNameRef;
 class LinkSheetRange
 {
 public:
-    inline explicit     LinkSheetRange() { setDeleted(); }
+    explicit     LinkSheetRange() { setDeleted(); }
 
     /** Sets this struct to deleted state. */
     void                setDeleted();
@@ -134,17 +131,17 @@ public:
     void                setExternalRange( sal_Int32 nDocLink, sal_Int32 nFirst, sal_Int32 nLast );
 
     /** Returns true, if the sheet indexes are valid and different. */
-    inline bool         isDeleted() const { return mnFirst < 0; }
+    bool         isDeleted() const { return mnFirst < 0; }
     /** Returns true, if the sheet range points to an external document. */
-    inline bool         isExternal() const { return !isDeleted() && (meType == LINKSHEETRANGE_EXTERNAL); }
+    bool         isExternal() const { return !isDeleted() && (meType == LINKSHEETRANGE_EXTERNAL); }
     /** Returns true, if the sheet indexes are valid and different. */
-    inline bool         isSameSheet() const { return meType == LINKSHEETRANGE_SAMESHEET; }
+    bool         isSameSheet() const { return meType == LINKSHEETRANGE_SAMESHEET; }
     /** Returns true, if the sheet indexes are valid and different. */
-    inline bool         is3dRange() const { return (0 <= mnFirst) && (mnFirst < mnLast); }
+    bool         is3dRange() const { return (0 <= mnFirst) && (mnFirst < mnLast); }
 
-    inline sal_Int32    getDocLinkIndex() const { return mnDocLink; }
-    inline sal_Int32    getFirstSheet() const { return mnFirst; }
-    inline sal_Int32    getLastSheet() const { return mnLast; }
+    sal_Int32    getDocLinkIndex() const { return mnDocLink; }
+    sal_Int32    getFirstSheet() const { return mnFirst; }
+    sal_Int32    getLastSheet() const { return mnLast; }
 
 private:
     enum LinkSheetRangeType
@@ -160,19 +157,36 @@ private:
     sal_Int32           mnLast;         /// Index of the last sheet or index of last external sheet cache.
 };
 
-enum ExternalLinkType
+enum class ExternalLinkType
 {
-    LINKTYPE_SELF,          /// Link refers to the current workbook.
-    LINKTYPE_SAME,          /// Link refers to the current sheet.
-    LINKTYPE_INTERNAL,      /// Link refers to a sheet in the own workbook.
-    LINKTYPE_EXTERNAL,      /// Link refers to an external spreadsheet document.
-    LINKTYPE_ANALYSIS,      /// Link refers to the Analysis add-in.
-    LINKTYPE_LIBRARY,       /// Link refers to an external add-in.
-    LINKTYPE_DDE,           /// DDE link.
-    LINKTYPE_OLE,           /// OLE link.
-    LINKTYPE_MAYBE_DDE_OLE, /// Could be DDE or OLE link (BIFF only).
-    LINKTYPE_UNKNOWN        /// Unknown or unsupported link type.
+    Self,          /// Link refers to the current workbook.
+    Same,          /// Link refers to the current sheet.
+    External,      /// Link refers to an external spreadsheet document.
+    // let's ignore xlStartup and xlAlternateStartup for now
+    PathMissing,   /// Just for round-tripping (FIXME: Functionality not actually implemented after all.)
+    Library,       /// Link refers to an external add-in.
+    DDE,           /// DDE link.
+    OLE,           /// OLE link.
+    Unknown        /// Unknown or unsupported link type.
 };
+
+template< typename charT, typename traits >
+inline std::basic_ostream<charT, traits> & operator <<(
+    std::basic_ostream<charT, traits> & stream, const ExternalLinkType& type )
+{
+    switch (type)
+    {
+    case ExternalLinkType::Self: return stream << "self";
+    case ExternalLinkType::Same: return stream << "same";
+    case ExternalLinkType::External: return stream << "external";
+    case ExternalLinkType::PathMissing: return stream << "pathmissing";
+    case ExternalLinkType::Library: return stream << "library";
+    case ExternalLinkType::DDE: return stream << "dde";
+    case ExternalLinkType::OLE: return stream << "ole";
+    case ExternalLinkType::Unknown: return stream << "unknown";
+    default: return stream << static_cast<int>(type);
+    }
+}
 
 class ExternalLink : public WorkbookHelper
 {
@@ -212,19 +226,17 @@ public:
     void                importExternalAddin( SequenceInputStream& rStrm );
 
     /** Sets the link type to 'self reference'. */
-    inline void         setSelfLinkType() { meLinkType = LINKTYPE_SELF; }
+    void         setSelfLinkType() { meLinkType = ExternalLinkType::Self; }
 
     /** Returns the type of this external link. */
-    inline ExternalLinkType getLinkType() const { return meLinkType; }
-    /** Returns true, if the link refers to the current workbook. */
-    inline bool         isInternalLink() const { return (meLinkType == LINKTYPE_SELF) || (meLinkType == LINKTYPE_INTERNAL); }
+    ExternalLinkType getLinkType() const { return meLinkType; }
 
     /** Returns the relation identifier for the external link fragment. */
-    inline const OUString& getRelId() const { return maRelId; }
+    const OUString& getRelId() const { return maRelId; }
     /** Returns the class name of this external link. */
-    inline const OUString& getClassName() const { return maClassName; }
+    const OUString& getClassName() const { return maClassName; }
     /** Returns the target URL of this external link. */
-    inline const OUString& getTargetUrl() const { return maTargetUrl; }
+    const OUString& getTargetUrl() const { return maTargetUrl; }
     /** Returns the link info needed by the XML formula parser. */
     css::sheet::ExternalLinkInfo getLinkInfo() const;
 
@@ -234,7 +246,7 @@ public:
     /** Returns the token index of the external document. */
     sal_Int32           getDocumentLinkIndex() const;
     /** Returns the external sheet cache index or for the passed sheet. */
-    sal_Int32           getSheetCacheIndex( sal_Int32 nTabId = 0 ) const;
+    sal_Int32           getSheetCacheIndex( sal_Int32 nTabId ) const;
     /** Returns the sheet cache of the external sheet with the passed index. */
     css::uno::Reference< css::sheet::XExternalSheetCache >
                         getSheetCache( sal_Int32 nTabId ) const;
@@ -256,18 +268,16 @@ private:
     ExternalNameRef     createExternalName();
 
 private:
-    typedef ::std::vector< sal_Int16 >  Int16Vector;
-    typedef ::std::vector< sal_Int32 >  Int32Vector;
     typedef RefVector< ExternalName >   ExternalNameVector;
 
     ExternalLinkType    meLinkType;         /// Type of this link object.
-    FunctionLibraryType meFuncLibType;      /// Type of the function library, if link type is LINKTYPE_LIBRARY.
+    FunctionLibraryType meFuncLibType;      /// Type of the function library, if link type is ExternalLinkType::Library.
     OUString            maRelId;            /// Relation identifier for the external link fragment.
     OUString            maClassName;        /// DDE service, OLE class name.
     OUString            maTargetUrl;        /// Target link, DDE topic, OLE target.
     css::uno::Reference< css::sheet::XExternalDocLink >
                         mxDocLink;          /// Interface for an external document.
-    Int32Vector         maSheetCaches;      /// External sheet cache indexes.
+    std::vector< sal_Int32 > maSheetCaches; /// External sheet cache indexes.
     ExternalNameVector  maExtNames;         /// Defined names in external document.
 };
 
@@ -317,8 +327,6 @@ public:
     /** Returns the external link for the passed reference identifier. */
     ExternalLinkRef     getExternalLink( sal_Int32 nRefId, bool bUseRefSheets = true ) const;
 
-    /** Returns the sheet range for the specified reference (BIFF2-BIFF5 only). */
-    LinkSheetRange      getSheetRange( sal_Int32 nRefId, sal_Int16 nTabId1, sal_Int16 nTabId2 ) const;
     /** Returns the sheet range for the specified reference (BIFF8 only). */
     LinkSheetRange      getSheetRange( sal_Int32 nRefId ) const;
 

@@ -39,14 +39,18 @@ protected:
     sal_Int8 * const p1Sequence, * const p2Sequence, * const p4Sequence;
 
 public:
-    ByteChucker (css::uno::Reference<css::io::XOutputStream> xOstream);
+    ByteChucker (css::uno::Reference<css::io::XOutputStream> const & xOstream);
     ~ByteChucker();
 
-    void WriteBytes( const css::uno::Sequence< sal_Int8 >& aData )
-        throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException);
+    /// @throws css::io::NotConnectedException
+    /// @throws css::io::BufferSizeExceededException
+    /// @throws css::io::IOException
+    /// @throws css::uno::RuntimeException
+    void WriteBytes( const css::uno::Sequence< sal_Int8 >& aData );
 
-    sal_Int64 GetPosition()
-        throw(css::io::IOException, css::uno::RuntimeException);
+    /// @throws css::io::IOException
+    /// @throws css::uno::RuntimeException
+    sal_Int64 GetPosition();
 
     void WriteInt16(sal_Int16 nInt16)
     {

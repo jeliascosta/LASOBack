@@ -93,21 +93,19 @@ public:
     LwpFrib* GetNext(){return m_pNext;}
     void SetNext(LwpFrib* next){m_pNext = next;}
     sal_uInt8 GetType() { return m_nFribType;}
-    void SetType(sal_uInt8 type) { m_nFribType = type;}
-    void SetEditor(sal_uInt8 editor) { m_nEditor = editor;}
     OUString GetEditor();
     XFColor GetHighlightColor();
 protected:
     LwpPara* m_pPara;
     LwpFrib* m_pNext;
     sal_uInt8 m_nFribType;
-    ModifierInfo* m_pModifiers;
+    std::unique_ptr<ModifierInfo> m_pModifiers;
     OUString m_StyleName;
 public:
     bool m_ModFlag;
     const OUString& GetStyleName(){return m_StyleName;}
     void SetModifiers(ModifierInfo* pModifiers);
-    ModifierInfo* GetModifiers(){return m_pModifiers;}
+    ModifierInfo* GetModifiers(){return m_pModifiers.get();}
     virtual void RegisterStyle(LwpFoundry* pFoundry);
     bool HasNextFrib();
     void ConvertChars(XFContentContainer* pXFPara,const OUString& text);

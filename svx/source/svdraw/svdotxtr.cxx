@@ -40,12 +40,12 @@
 
 using namespace com::sun::star;
 
-void SdrTextObj::NbcSetSnapRect(const Rectangle& rRect)
+void SdrTextObj::NbcSetSnapRect(const tools::Rectangle& rRect)
 {
     if (aGeo.nRotationAngle!=0 || aGeo.nShearAngle!=0)
     {
         // Either the rotation or shear angle exists.
-        Rectangle aSR0(GetSnapRect());
+        tools::Rectangle aSR0(GetSnapRect());
         long nWdt0=aSR0.Right()-aSR0.Left();
         long nHgt0=aSR0.Bottom()-aSR0.Top();
         long nWdt1=rRect.Right()-rRect.Left();
@@ -67,12 +67,12 @@ void SdrTextObj::NbcSetSnapRect(const Rectangle& rRect)
     }
 }
 
-const Rectangle& SdrTextObj::GetLogicRect() const
+const tools::Rectangle& SdrTextObj::GetLogicRect() const
 {
     return maRect;
 }
 
-void SdrTextObj::NbcSetLogicRect(const Rectangle& rRect)
+void SdrTextObj::NbcSetLogicRect(const tools::Rectangle& rRect)
 {
     maRect = rRect;
     ImpJustifyRect(maRect);
@@ -295,7 +295,7 @@ SdrObject* SdrTextObj::ImpConvertContainedTextToSdrPathObjs(bool bToPoly) const
     }
 
     // get primitives
-    const drawinglayer::primitive2d::Primitive2DContainer xSequence(GetViewContact().getViewIndependentPrimitive2DSequence());
+    const drawinglayer::primitive2d::Primitive2DContainer xSequence(GetViewContact().getViewIndependentPrimitive2DContainer());
 
     if(!xSequence.empty())
     {

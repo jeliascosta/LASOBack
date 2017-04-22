@@ -22,8 +22,10 @@
 #include <services.h>
 
 #include <com/sun/star/frame/Desktop.hpp>
+#include <com/sun/star/frame/TerminationVetoException.hpp>
 #include <com/sun/star/task/XJob.hpp>
 #include <com/sun/star/task/XAsyncJob.hpp>
+#include <com/sun/star/util/CloseVetoException.hpp>
 #include <com/sun/star/util/XCloseBroadcaster.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
@@ -90,7 +92,7 @@ Job::Job( /*IN*/ const css::uno::Reference< css::uno::XComponentContext >& xCont
 }
 
 /**
-    @short  superflous!
+    @short  superfluous!
     @descr  Releasing of memory and reference must be done inside die() call.
             Otherwhise it's a bug.
 */
@@ -619,7 +621,7 @@ void Job::impl_stopListening()
                 its results
 */
 void SAL_CALL Job::jobFinished( /*IN*/ const css::uno::Reference< css::task::XAsyncJob >& xJob    ,
-                                /*IN*/ const css::uno::Any&                               aResult ) throw(css::uno::RuntimeException, std::exception)
+                                /*IN*/ const css::uno::Any&                               aResult )
 {
     SolarMutexGuard g;
 
@@ -657,8 +659,7 @@ void SAL_CALL Job::jobFinished( /*IN*/ const css::uno::Reference< css::task::XAs
     @throw  TerminateVetoException
                 if our internal wrapped job is still running.
  */
-void SAL_CALL Job::queryTermination( /*IN*/ const css::lang::EventObject& ) throw(css::frame::TerminationVetoException,
-                                                                                         css::uno::RuntimeException, std::exception          )
+void SAL_CALL Job::queryTermination( /*IN*/ const css::lang::EventObject& )
 {
     SolarMutexGuard g;
 
@@ -687,14 +688,14 @@ void SAL_CALL Job::queryTermination( /*IN*/ const css::lang::EventObject& ) thro
             We have to accept it and cancel all current processes inside.
             It can occur only, if job was not already started if queryTermination() was called here ..
             Then we had not throwed a veto exception. But now we must agree with this situation and break
-            all our internal processes. Its not a good idea to mark this instance as non startable any longer
+            all our internal processes. It's not a good idea to mark this instance as non startable any longer
             inside queryTermination() if no job was running too. Because that would disable this job and may
-            the office does not really shutdownm, because another listener has thrown the suitable exception.
+            the office does not really shutdown, because another listener has thrown the suitable exception.
 
     @param  aEvent
                 describes the broadcaster and must be the desktop instance
  */
-void SAL_CALL Job::notifyTermination( /*IN*/ const css::lang::EventObject& ) throw(css::uno::RuntimeException, std::exception)
+void SAL_CALL Job::notifyTermination( /*IN*/ const css::lang::EventObject& )
 {
     die();
     // Do nothing else here. Our internal resources was released ...
@@ -719,8 +720,7 @@ void SAL_CALL Job::notifyTermination( /*IN*/ const css::lang::EventObject& ) thr
                 if our internal wrapped job is still running.
  */
 void SAL_CALL Job::queryClosing( const css::lang::EventObject& aEvent         ,
-                                       sal_Bool                bGetsOwnership ) throw(css::util::CloseVetoException,
-                                                                                      css::uno::RuntimeException, std::exception   )
+                                       sal_Bool                bGetsOwnership )
 {
     SolarMutexGuard g;
 
@@ -788,7 +788,7 @@ void SAL_CALL Job::queryClosing( const css::lang::EventObject& aEvent         ,
     @param  aEvent
             describes the broadcaster and must be the frame or model instance we know
  */
-void SAL_CALL Job::notifyClosing( const css::lang::EventObject& ) throw(css::uno::RuntimeException, std::exception)
+void SAL_CALL Job::notifyClosing( const css::lang::EventObject& )
 {
     die();
     // Do nothing else here. Our internal resources was released ...
@@ -802,7 +802,7 @@ void SAL_CALL Job::notifyClosing( const css::lang::EventObject& ) throw(css::uno
     @param      aEvent
                 describe the broadcaster
 */
-void SAL_CALL Job::disposing( const css::lang::EventObject& aEvent ) throw(css::uno::RuntimeException, std::exception)
+void SAL_CALL Job::disposing( const css::lang::EventObject& aEvent )
 {
     /* SAFE { */
     SolarMutexClearableGuard aWriteLock;

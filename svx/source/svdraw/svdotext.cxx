@@ -91,24 +91,19 @@ SdrTextObj::SdrTextObj()
     bTextFrame=false;
     bPortionInfoChecked=false;
     bNoShear=false;
-    bNoRotate=false;
     bNoMirror=false;
     bDisableAutoWidthOnDragging=false;
 
     mbInEditMode = false;
-    mbTextHidden = false;
     mbTextAnimationAllowed = true;
     maTextEditOffset = Point(0, 0);
-
-    // chaining
-    mbToBeChained = false;
 
     // #i25616#
     mbSupportTextIndentingOnLineWidthChange = true;
     mbInDownScale = false;
 }
 
-SdrTextObj::SdrTextObj(const Rectangle& rNewRect)
+SdrTextObj::SdrTextObj(const tools::Rectangle& rNewRect)
 :   SdrAttrObj(),
     maRect(rNewRect),
     mpText(nullptr),
@@ -119,19 +114,14 @@ SdrTextObj::SdrTextObj(const Rectangle& rNewRect)
     bTextFrame=false;
     bPortionInfoChecked=false;
     bNoShear=false;
-    bNoRotate=false;
     bNoMirror=false;
     bDisableAutoWidthOnDragging=false;
     ImpJustifyRect(maRect);
 
     mbInEditMode = false;
-    mbTextHidden = false;
     mbTextAnimationAllowed = true;
     mbInDownScale = false;
     maTextEditOffset = Point(0, 0);
-
-    // chaining
-    mbToBeChained = false;
 
     // #i25616#
     mbSupportTextIndentingOnLineWidthChange = true;
@@ -147,24 +137,19 @@ SdrTextObj::SdrTextObj(SdrObjKind eNewTextKind)
     bTextFrame=true;
     bPortionInfoChecked=false;
     bNoShear=true;
-    bNoRotate=false;
     bNoMirror=true;
     bDisableAutoWidthOnDragging=false;
 
     mbInEditMode = false;
-    mbTextHidden = false;
     mbTextAnimationAllowed = true;
     mbInDownScale = false;
     maTextEditOffset = Point(0, 0);
-
-    // chaining
-    mbToBeChained = false;
 
     // #i25616#
     mbSupportTextIndentingOnLineWidthChange = true;
 }
 
-SdrTextObj::SdrTextObj(SdrObjKind eNewTextKind, const Rectangle& rNewRect)
+SdrTextObj::SdrTextObj(SdrObjKind eNewTextKind, const tools::Rectangle& rNewRect)
 :   SdrAttrObj(),
     maRect(rNewRect),
     mpText(nullptr),
@@ -175,16 +160,11 @@ SdrTextObj::SdrTextObj(SdrObjKind eNewTextKind, const Rectangle& rNewRect)
     bTextFrame=true;
     bPortionInfoChecked=false;
     bNoShear=true;
-    bNoRotate=false;
     bNoMirror=true;
     bDisableAutoWidthOnDragging=false;
     ImpJustifyRect(maRect);
 
-    // chaining
-    mbToBeChained = false;
-
     mbInEditMode = false;
-    mbTextHidden = false;
     mbTextAnimationAllowed = true;
     mbInDownScale = false;
     maTextEditOffset = Point(0, 0);
@@ -224,7 +204,7 @@ void SdrTextObj::FitFrameToTextSize()
         aNewSize.Width()++; // because of possible rounding errors
         aNewSize.Width()+=GetTextLeftDistance()+GetTextRightDistance();
         aNewSize.Height()+=GetTextUpperDistance()+GetTextLowerDistance();
-        Rectangle aNewRect(maRect);
+        tools::Rectangle aNewRect(maRect);
         aNewRect.SetSize(aNewSize);
         ImpJustifyRect(aNewRect);
         if (aNewRect!=maRect) {
@@ -249,11 +229,11 @@ void SdrTextObj::NbcSetText(const OUString& rStr)
 
 void SdrTextObj::SetText(const OUString& rStr)
 {
-    Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+    tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
     NbcSetText(rStr);
     SetChanged();
     BroadcastObjectChange();
-    SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize,aBoundRect0);
 }
 
 void SdrTextObj::NbcSetText(SvStream& rInput, const OUString& rBaseURL, sal_uInt16 eFormat)
@@ -272,11 +252,11 @@ void SdrTextObj::NbcSetText(SvStream& rInput, const OUString& rBaseURL, sal_uInt
 
 void SdrTextObj::SetText(SvStream& rInput, const OUString& rBaseURL, sal_uInt16 eFormat)
 {
-    Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+    tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
     NbcSetText(rInput,rBaseURL,eFormat);
     SetChanged();
     BroadcastObjectChange();
-    SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize,aBoundRect0);
 }
 
 const Size& SdrTextObj::GetTextSize() const
@@ -312,11 +292,11 @@ bool SdrTextObj::IsAutoGrowHeight() const
     {
         SdrTextAniKind eAniKind = static_cast<const SdrTextAniKindItem&>(rSet.Get(SDRATTR_TEXT_ANIKIND)).GetValue();
 
-        if(eAniKind == SDRTEXTANI_SCROLL || eAniKind == SDRTEXTANI_ALTERNATE || eAniKind == SDRTEXTANI_SLIDE)
+        if(eAniKind == SdrTextAniKind::Scroll || eAniKind == SdrTextAniKind::Alternate || eAniKind == SdrTextAniKind::Slide)
         {
             SdrTextAniDirection eDirection = static_cast<const SdrTextAniDirectionItem&>(rSet.Get(SDRATTR_TEXT_ANIDIRECTION)).GetValue();
 
-            if(eDirection == SDRTEXTANI_UP || eDirection == SDRTEXTANI_DOWN)
+            if(eDirection == SdrTextAniDirection::Up || eDirection == SdrTextAniDirection::Down)
             {
                 bRet = false;
             }
@@ -339,11 +319,11 @@ bool SdrTextObj::IsAutoGrowWidth() const
     {
         SdrTextAniKind eAniKind = static_cast<const SdrTextAniKindItem&>(rSet.Get(SDRATTR_TEXT_ANIKIND)).GetValue();
 
-        if(eAniKind == SDRTEXTANI_SCROLL || eAniKind == SDRTEXTANI_ALTERNATE || eAniKind == SDRTEXTANI_SLIDE)
+        if(eAniKind == SdrTextAniKind::Scroll || eAniKind == SdrTextAniKind::Alternate || eAniKind == SdrTextAniKind::Slide)
         {
             SdrTextAniDirection eDirection = static_cast<const SdrTextAniDirectionItem&>(rSet.Get(SDRATTR_TEXT_ANIDIRECTION)).GetValue();
 
-            if(eDirection == SDRTEXTANI_LEFT || eDirection == SDRTEXTANI_RIGHT)
+            if(eDirection == SdrTextAniDirection::Left || eDirection == SdrTextAniDirection::Right)
             {
                 bRet = false;
             }
@@ -370,11 +350,11 @@ SdrTextHorzAdjust SdrTextObj::GetTextHorizontalAdjust(const SfxItemSet& rSet) co
     {
         SdrTextAniKind eAniKind = static_cast<const SdrTextAniKindItem&>(rSet.Get(SDRATTR_TEXT_ANIKIND)).GetValue();
 
-        if(eAniKind == SDRTEXTANI_SCROLL || eAniKind == SDRTEXTANI_ALTERNATE || eAniKind == SDRTEXTANI_SLIDE)
+        if(eAniKind == SdrTextAniKind::Scroll || eAniKind == SdrTextAniKind::Alternate || eAniKind == SdrTextAniKind::Slide)
         {
             SdrTextAniDirection eDirection = static_cast<const SdrTextAniDirectionItem&>(rSet.Get(SDRATTR_TEXT_ANIDIRECTION)).GetValue();
 
-            if(eDirection == SDRTEXTANI_LEFT || eDirection == SDRTEXTANI_RIGHT)
+            if(eDirection == SdrTextAniDirection::Left || eDirection == SdrTextAniDirection::Right)
             {
                 eRet = SDRTEXTHORZADJUST_LEFT;
             }
@@ -403,11 +383,11 @@ SdrTextVertAdjust SdrTextObj::GetTextVerticalAdjust(const SfxItemSet& rSet) cons
     {
         SdrTextAniKind eAniKind = static_cast<const SdrTextAniKindItem&>(rSet.Get(SDRATTR_TEXT_ANIKIND)).GetValue();
 
-        if(eAniKind == SDRTEXTANI_SCROLL || eAniKind == SDRTEXTANI_ALTERNATE || eAniKind == SDRTEXTANI_SLIDE)
+        if(eAniKind == SdrTextAniKind::Scroll || eAniKind == SdrTextAniKind::Alternate || eAniKind == SdrTextAniKind::Slide)
         {
             SdrTextAniDirection eDirection = static_cast<const SdrTextAniDirectionItem&>(rSet.Get(SDRATTR_TEXT_ANIDIRECTION)).GetValue();
 
-            if(eDirection == SDRTEXTANI_LEFT || eDirection == SDRTEXTANI_RIGHT)
+            if(eDirection == SdrTextAniDirection::Left || eDirection == SdrTextAniDirection::Right)
             {
                 eRet = SDRTEXTVERTADJUST_TOP;
             }
@@ -417,7 +397,7 @@ SdrTextVertAdjust SdrTextObj::GetTextVerticalAdjust(const SfxItemSet& rSet) cons
     return eRet;
 } // defaults: TOP for text frame, CENTER for captions of drawing objects
 
-void SdrTextObj::ImpJustifyRect(Rectangle& rRect)
+void SdrTextObj::ImpJustifyRect(tools::Rectangle& rRect)
 {
     if (!rRect.IsEmpty()) {
         rRect.Justify();
@@ -486,11 +466,6 @@ bool SdrTextObj::HasTextImpl( SdrOutliner* pOutliner )
         bRet= nParaCount!=0;
     }
     return bRet;
-}
-
-bool SdrTextObj::HasEditText() const
-{
-    return HasTextImpl( pEdtOutl );
 }
 
 void SdrTextObj::SetPage(SdrPage* pNewPage)
@@ -606,7 +581,7 @@ void SdrTextObj::AdaptTextMinSize()
     SetObjectItemSet(aSet);
 }
 
-void SdrTextObj::ImpSetContourPolygon( SdrOutliner& rOutliner, Rectangle& rAnchorRect, bool bLineWidth ) const
+void SdrTextObj::ImpSetContourPolygon( SdrOutliner& rOutliner, tools::Rectangle& rAnchorRect, bool bLineWidth ) const
 {
     basegfx::B2DPolyPolygon aXorPolyPolygon(TakeXorPoly());
     basegfx::B2DPolyPolygon* pContourPolyPolygon = nullptr;
@@ -664,18 +639,18 @@ void SdrTextObj::ImpSetContourPolygon( SdrOutliner& rOutliner, Rectangle& rAncho
     delete pContourPolyPolygon;
 }
 
-void SdrTextObj::TakeUnrotatedSnapRect(Rectangle& rRect) const
+void SdrTextObj::TakeUnrotatedSnapRect(tools::Rectangle& rRect) const
 {
     rRect=maRect;
 }
 
-void SdrTextObj::TakeTextAnchorRect(Rectangle& rAnchorRect) const
+void SdrTextObj::TakeTextAnchorRect(tools::Rectangle& rAnchorRect) const
 {
     long nLeftDist=GetTextLeftDistance();
     long nRightDist=GetTextRightDistance();
     long nUpperDist=GetTextUpperDistance();
     long nLowerDist=GetTextLowerDistance();
-    Rectangle aAnkRect(maRect); // the rectangle in which we anchor
+    tools::Rectangle aAnkRect(maRect); // the rectangle in which we anchor
     bool bFrame=IsTextFrame();
     if (!bFrame) {
         TakeUnrotatedSnapRect(aAnkRect);
@@ -704,10 +679,10 @@ void SdrTextObj::TakeTextAnchorRect(Rectangle& rAnchorRect) const
     rAnchorRect=aAnkRect;
 }
 
-void SdrTextObj::TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText,
-                               Rectangle* pAnchorRect, bool bLineWidth ) const
+void SdrTextObj::TakeTextRect( SdrOutliner& rOutliner, tools::Rectangle& rTextRect, bool bNoEditText,
+                               tools::Rectangle* pAnchorRect, bool bLineWidth ) const
 {
-    Rectangle aAnkRect; // the rectangle in which we anchor
+    tools::Rectangle aAnkRect; // the rectangle in which we anchor
     TakeTextAnchorRect(aAnkRect);
     SdrTextVertAdjust eVAdj=GetTextVerticalAdjust();
     SdrTextHorzAdjust eHAdj=GetTextHorizontalAdjust();
@@ -738,11 +713,11 @@ void SdrTextObj::TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, boo
 
             bool bInEditMode = IsInEditMode();
 
-            if (!bInEditMode && (eAniKind==SDRTEXTANI_SCROLL || eAniKind==SDRTEXTANI_ALTERNATE || eAniKind==SDRTEXTANI_SLIDE))
+            if (!bInEditMode && (eAniKind==SdrTextAniKind::Scroll || eAniKind==SdrTextAniKind::Alternate || eAniKind==SdrTextAniKind::Slide))
             {
                 // unlimited paper size for ticker text
-                if (eAniDirection==SDRTEXTANI_LEFT || eAniDirection==SDRTEXTANI_RIGHT) nWdt=1000000;
-                if (eAniDirection==SDRTEXTANI_UP || eAniDirection==SDRTEXTANI_DOWN) nHgt=1000000;
+                if (eAniDirection==SdrTextAniDirection::Left || eAniDirection==SdrTextAniDirection::Right) nWdt=1000000;
+                if (eAniDirection==SdrTextAniDirection::Up || eAniDirection==SdrTextAniDirection::Down) nHgt=1000000;
             }
 
             bool bChainedFrame = IsChainable();
@@ -871,7 +846,7 @@ void SdrTextObj::TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, boo
         *pAnchorRect=aAnkRect;
 
     // rTextRect might not be correct in some cases at ContourFrame
-    rTextRect=Rectangle(aTextPos,aTextSiz);
+    rTextRect=tools::Rectangle(aTextPos,aTextSiz);
     if (bContourFrame)
         rTextRect=aAnkRect;
 }
@@ -1103,7 +1078,6 @@ SdrTextObj& SdrTextObj::operator=(const SdrTextObj& rObj)
 
     // Not all of the necessary parameters were copied yet.
     bNoShear = rObj.bNoShear;
-    bNoRotate = rObj.bNoRotate;
     bNoMirror = rObj.bNoMirror;
     bDisableAutoWidthOnDragging = rObj.bDisableAutoWidthOnDragging;
 
@@ -1152,8 +1126,8 @@ basegfx::B2DPolyPolygon SdrTextObj::TakeContour() const
         // in every case
         SdrOutliner& rOutliner=ImpGetDrawOutliner();
 
-        Rectangle aAnchor2;
-        Rectangle aR;
+        tools::Rectangle aAnchor2;
+        tools::Rectangle aR;
         TakeTextRect(rOutliner,aR,false,&aAnchor2);
         rOutliner.Clear();
         bool bFitToSize(IsFitToSize());
@@ -1259,9 +1233,9 @@ SdrOutliner& SdrTextObj::ImpGetDrawOutliner() const
 // Extracted from Paint()
 void SdrTextObj::ImpSetupDrawOutlinerForPaint( bool             bContourFrame,
                                                SdrOutliner&     rOutliner,
-                                               Rectangle&       rTextRect,
-                                               Rectangle&       rAnchorRect,
-                                               Rectangle&       rPaintRect,
+                                               tools::Rectangle&       rTextRect,
+                                               tools::Rectangle&       rAnchorRect,
+                                               tools::Rectangle&       rPaintRect,
                                                Fraction&        rFitXKorreg ) const
 {
     if (!bContourFrame)
@@ -1354,25 +1328,25 @@ void SdrTextObj::ImpAutoFitText( SdrOutliner& rOutliner, const Size& rTextSize, 
             nCurrStretchY = sal::static_int_cast<sal_uInt16>(nCurrStretchY*fFactor);
             rOutliner.SetGlobalCharStretching(std::min(sal_uInt16(100),nCurrStretchX),
                                               std::min(sal_uInt16(100),nCurrStretchY));
-            OSL_TRACE("SdrTextObj::onEditOutlinerStatusEvent(): zoom is %d", nCurrStretchX);
+            SAL_INFO("svx", "zoom is " << nCurrStretchX);
         }
     }
 
-    OSL_TRACE("---- SdrTextObj::onEditOutlinerStatusEvent(): final zoom is %d ----", nMinStretchX);
+    SAL_INFO("svx", "final zoom is " << nMinStretchX);
     rOutliner.SetGlobalCharStretching(std::min(sal_uInt16(100),nMinStretchX),
                                       std::min(sal_uInt16(100),nMinStretchY));
 }
 
-void SdrTextObj::SetupOutlinerFormatting( SdrOutliner& rOutl, Rectangle& rPaintRect ) const
+void SdrTextObj::SetupOutlinerFormatting( SdrOutliner& rOutl, tools::Rectangle& rPaintRect ) const
 {
     ImpInitDrawOutliner( rOutl );
     UpdateOutlinerFormatting( rOutl, rPaintRect );
 }
 
-void SdrTextObj::UpdateOutlinerFormatting( SdrOutliner& rOutl, Rectangle& rPaintRect ) const
+void SdrTextObj::UpdateOutlinerFormatting( SdrOutliner& rOutl, tools::Rectangle& rPaintRect ) const
 {
-    Rectangle aTextRect;
-    Rectangle aAnchorRect;
+    tools::Rectangle aTextRect;
+    tools::Rectangle aAnchorRect;
     Fraction aFitXKorreg(1,1);
 
     bool bContourFrame=IsContourTextFrame();
@@ -1467,14 +1441,14 @@ void SdrTextObj::ReformatText()
 {
     if(GetOutlinerParaObject())
     {
-        Rectangle aBoundRect0;
+        tools::Rectangle aBoundRect0;
         if (pUserCall!=nullptr)
             aBoundRect0=GetLastBoundRect();
 
         NbcReformatText();
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
 }
 
@@ -1502,7 +1476,7 @@ void SdrTextObj::RestGeoData(const SdrObjGeoData& rGeo)
 
 SdrFitToSizeType SdrTextObj::GetFitToSize() const
 {
-    SdrFitToSizeType eType = SDRTEXTFIT_NONE;
+    SdrFitToSizeType eType = SdrFitToSizeType::NONE;
 
     if(!IsAutoGrowWidth())
         eType = static_cast<const SdrTextFitToSizeTypeItem&>(GetObjectItem(SDRATTR_TEXT_FITTOSIZE)).GetValue();
@@ -1510,7 +1484,7 @@ SdrFitToSizeType SdrTextObj::GetFitToSize() const
     return eType;
 }
 
-const Rectangle& SdrTextObj::GetGeoRect() const
+const tools::Rectangle& SdrTextObj::GetGeoRect() const
 {
     return maRect;
 }
@@ -1526,12 +1500,6 @@ void SdrTextObj::ForceOutlinerParaObject()
 
         pText->ForceOutlinerParaObject( nOutlMode );
     }
-}
-
-// chaining
-bool SdrTextObj::IsToBeChained() const
-{
-    return mbToBeChained;
 }
 
 TextChain *SdrTextObj::GetTextChain() const
@@ -1569,7 +1537,7 @@ void SdrTextObj::SetVerticalWriting(bool bVertical)
         pOutlinerParaObject = GetOutlinerParaObject();
     }
 
-    if( pOutlinerParaObject && (pOutlinerParaObject->IsVertical() != (bool)bVertical) )
+    if( pOutlinerParaObject && (pOutlinerParaObject->IsVertical() != bVertical) )
     {
         // get item settings
         const SfxItemSet& rSet = GetObjectItemSet();
@@ -1581,7 +1549,7 @@ void SdrTextObj::SetVerticalWriting(bool bVertical)
         SdrTextVertAdjust eVert = static_cast<const SdrTextVertAdjustItem&>(rSet.Get(SDRATTR_TEXT_VERTADJUST)).GetValue();
 
         // rescue object size
-        Rectangle aObjectRect = GetSnapRect();
+        tools::Rectangle aObjectRect = GetSnapRect();
 
         // prepare ItemSet to set exchanged width and height items
         SfxItemSet aNewSet(*rSet.GetPool(),
@@ -1641,7 +1609,7 @@ bool SdrTextObj::TRGetBaseGeometry(basegfx::B2DHomMatrix& rMatrix, basegfx::B2DP
     double fShearX = (aGeo.nShearAngle / 100.0) * F_PI180;
 
     // get aRect, this is the unrotated snaprect
-    Rectangle aRectangle(maRect);
+    tools::Rectangle aRectangle(maRect);
 
     // fill other values
     basegfx::B2DTuple aScale(aRectangle.GetWidth(), aRectangle.GetHeight());
@@ -1657,12 +1625,12 @@ bool SdrTextObj::TRGetBaseGeometry(basegfx::B2DHomMatrix& rMatrix, basegfx::B2DP
     }
 
     // force MapUnit to 100th mm
-    const SfxMapUnit eMapUnit(GetObjectMapUnit());
-    if(eMapUnit != SFX_MAPUNIT_100TH_MM)
+    const MapUnit eMapUnit(GetObjectMapUnit());
+    if(eMapUnit != MapUnit::Map100thMM)
     {
         switch(eMapUnit)
         {
-            case SFX_MAPUNIT_TWIP :
+            case MapUnit::MapTwip :
             {
                 // position
                 aTranslate.setX(ImplTwipsToMM(aTranslate.getX()));
@@ -1722,12 +1690,12 @@ void SdrTextObj::TRSetBaseGeometry(const basegfx::B2DHomMatrix& rMatrix, const b
     aGeo.RecalcTan();
 
     // force metric to pool metric
-    const SfxMapUnit eMapUnit(GetObjectMapUnit());
-    if(eMapUnit != SFX_MAPUNIT_100TH_MM)
+    const MapUnit eMapUnit(GetObjectMapUnit());
+    if(eMapUnit != MapUnit::Map100thMM)
     {
         switch(eMapUnit)
         {
-            case SFX_MAPUNIT_TWIP :
+            case MapUnit::MapTwip :
             {
                 // position
                 aTranslate.setX(ImplMMToTwips(aTranslate.getX()));
@@ -1758,7 +1726,7 @@ void SdrTextObj::TRSetBaseGeometry(const basegfx::B2DHomMatrix& rMatrix, const b
     // build and set BaseRect (use scale)
     Point aPoint = Point();
     Size aSize(FRound(aScale.getX()), FRound(aScale.getY()));
-    Rectangle aBaseRect(aPoint, aSize);
+    tools::Rectangle aBaseRect(aPoint, aSize);
     SetSnapRect(aBaseRect);
 
     // flip?
@@ -1835,7 +1803,7 @@ long SdrTextObj::GetMaxTextFrameWidth() const
 bool SdrTextObj::IsFontwork() const
 {
     return !bTextFrame // Default is FALSE
-        && static_cast<const XFormTextStyleItem&>(GetObjectItemSet().Get(XATTR_FORMTXTSTYLE)).GetValue() != XFT_NONE;
+        && static_cast<const XFormTextStyleItem&>(GetObjectItemSet().Get(XATTR_FORMTXTSTYLE)).GetValue() != XFormTextStyle::NONE;
 }
 
 bool SdrTextObj::IsHideContour() const
@@ -1883,13 +1851,13 @@ SdrTextAniDirection SdrTextObj::GetTextAniDirection() const
 // Get necessary data for text scroll animation. ATM base it on a Text-Metafile and a
 // painting rectangle. Rotation is excluded from the returned values.
 GDIMetaFile* SdrTextObj::GetTextScrollMetaFileAndRectangle(
-    Rectangle& rScrollRectangle, Rectangle& rPaintRectangle)
+    tools::Rectangle& rScrollRectangle, tools::Rectangle& rPaintRectangle)
 {
     GDIMetaFile* pRetval = nullptr;
     SdrOutliner& rOutliner = ImpGetDrawOutliner();
-    Rectangle aTextRect;
-    Rectangle aAnchorRect;
-    Rectangle aPaintRect;
+    tools::Rectangle aTextRect;
+    tools::Rectangle aAnchorRect;
+    tools::Rectangle aPaintRect;
     Fraction aFitXKorreg(1,1);
     bool bContourFrame(IsContourTextFrame());
 
@@ -1900,17 +1868,17 @@ GDIMetaFile* SdrTextObj::GetTextScrollMetaFileAndRectangle(
     ImpSetupDrawOutlinerForPaint( bContourFrame, rOutliner, aTextRect, aAnchorRect, aPaintRect, aFitXKorreg );
     aGeo.nRotationAngle = nAngle;
 
-    Rectangle aScrollFrameRect(aPaintRect);
+    tools::Rectangle aScrollFrameRect(aPaintRect);
     const SfxItemSet& rSet = GetObjectItemSet();
     SdrTextAniDirection eDirection = static_cast<const SdrTextAniDirectionItem&>(rSet.Get(SDRATTR_TEXT_ANIDIRECTION)).GetValue();
 
-    if(SDRTEXTANI_LEFT == eDirection || SDRTEXTANI_RIGHT == eDirection)
+    if(SdrTextAniDirection::Left == eDirection || SdrTextAniDirection::Right == eDirection)
     {
         aScrollFrameRect.Left() = aAnchorRect.Left();
         aScrollFrameRect.Right() = aAnchorRect.Right();
     }
 
-    if(SDRTEXTANI_UP == eDirection || SDRTEXTANI_DOWN == eDirection)
+    if(SdrTextAniDirection::Up == eDirection || SdrTextAniDirection::Down == eDirection)
     {
         aScrollFrameRect.Top() = aAnchorRect.Top();
         aScrollFrameRect.Bottom() = aAnchorRect.Bottom();
@@ -1938,13 +1906,13 @@ GDIMetaFile* SdrTextObj::GetTextScrollMetaFileAndRectangle(
 // Access to TextAnimationAllowed flag
 bool SdrTextObj::IsAutoFit() const
 {
-    return GetFitToSize()==SDRTEXTFIT_AUTOFIT;
+    return GetFitToSize()==SdrFitToSizeType::Autofit;
 }
 
 bool SdrTextObj::IsFitToSize() const
 {
     const SdrFitToSizeType eFit=GetFitToSize();
-    return (eFit==SDRTEXTFIT_PROPORTIONAL || eFit==SDRTEXTFIT_ALLLINES);
+    return (eFit==SdrFitToSizeType::Proportional || eFit==SdrFitToSizeType::AllLines);
 }
 
 void SdrTextObj::SetTextAnimationAllowed(bool bNew)
@@ -1961,7 +1929,7 @@ void SdrTextObj::onEditOutlinerStatusEvent( EditStatus* pEditStatus )
 {
     const EditStatusFlags nStat = pEditStatus->GetStatusWord();
     const bool bGrowX = bool(nStat & EditStatusFlags::TEXTWIDTHCHANGED);
-    const bool bGrowY = bool(nStat & EditStatusFlags::TEXTHEIGHTCHANGED);
+    const bool bGrowY = bool(nStat & EditStatusFlags::TextHeightChanged);
     if(bTextFrame && (bGrowX || bGrowY))
     {
         if ((bGrowX && IsAutoGrowWidth()) || (bGrowY && IsAutoGrowHeight()))
@@ -2126,11 +2094,6 @@ SdrTextObj* SdrTextObj::GetPrevLinkInChain() const
     return mpPrevInChain;
 }
 
-void SdrTextObj::SetPreventChainable()
-{
-    mbIsUnchainableClone = true;
-}
-
 bool SdrTextObj::GetPreventChainable() const
 {
     // Prevent chaining it 1) during dragging && 2) when we are editing next link
@@ -2143,7 +2106,7 @@ bool SdrTextObj::GetPreventChainable() const
     SdrTextObj *pTextObjClone = dynamic_cast<SdrTextObj *>(pClone);
     if (pTextObjClone != nullptr) {
         // Avoid transferring of text for chainable object during dragging
-        pTextObjClone->SetPreventChainable();
+        pTextObjClone->mbIsUnchainableClone = true;
     }
 
     return pClone;

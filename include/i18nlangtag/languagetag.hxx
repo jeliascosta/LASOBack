@@ -11,6 +11,7 @@
 #define INCLUDED_I18NLANGTAG_LANGUAGETAG_HXX
 
 #include <sal/config.h>
+#include <rtl/locale.h>
 #include <rtl/ustring.hxx>
 #include <com/sun/star/lang/Locale.hpp>
 #include <i18nlangtag/i18nlangtagdllapi.h>
@@ -18,9 +19,6 @@
 
 #include <memory>
 #include <vector>
-
-typedef struct _rtl_Locale rtl_Locale;  // as in rtl/locale.h
-
 
 /** The ISO 639-2 code reserved for local use used to indicate that a
     css::Locale contains a BCP 47 string in its Variant field. The
@@ -49,11 +47,29 @@ class LanguageTagImpl;
     For standalone conversions if no LanguageTag instance is at hand, static
     convertTo...() methods exist.
  */
-class I18NLANGTAG_DLLPUBLIC LanguageTag
+class SAL_WARN_UNUSED I18NLANGTAG_DLLPUBLIC LanguageTag
 {
     friend class LanguageTagImpl;
 
 public:
+
+    /** ScriptType for a language.
+
+        Used only in onTheFly languages as a way of marking key script behaviours
+        for the script of the language without having to store and analyse the
+        script each time. Used primarily from msLangId.
+
+        These need to correspond to the ExtraLanguages.ScriptType template
+        property in officecfg/registry/schema/org/openoffice/VCL.xcs
+     */
+    enum ScriptType
+    {
+        UNKNOWN = 0,
+        WESTERN = 1,      // Copies css::i18n::ScriptType for strong types
+        CJK = 2,
+        CTL = 3,
+        RTL = 4       // implies CTL
+    };
 
     /** Init LanguageTag with existing BCP 47 language tag string.
 
@@ -237,6 +253,11 @@ public:
       */
     bool                            isSystemLocale() const { return mbSystemLocale;}
 
+    /** Returns the script type for this language, UNKNOWN if not set */
+    ScriptType                      getScriptType() const;
+
+    /** Sets the script type for this language */
+    void                            setScriptType(ScriptType st);
 
     /** Reset with existing BCP 47 language tag string. See ctor. */
     LanguageTag &                   reset( const OUString & rBcp47LanguageTag );
@@ -491,11 +512,12 @@ public:
                 private use, like 'x-...', are not allowed and FALSE is
                 returned in this case.
      */
-    static bool         isValidBcp47( const OUString& rString, OUString* o_pCanonicalized = nullptr,
+    static bool         isValidBcp47( const OUString& rString, OUString* o_pCanonicalized,
                                       bool bDisallowPrivate = false );
 
     /** If nLang is a generated on-the-fly LangID */
     static bool         isOnTheFlyID( LanguageType nLang );
+    static ScriptType   getOnTheFlyScriptType( LanguageType nLang );
 
     /** @ATTENTION: _ONLY_ to be called by the application's configuration! */
     static void setConfiguredSystemLanguage( LanguageType nLang );
@@ -514,7 +536,7 @@ private:
     mutable bool                            mbInitializedLangID : 1;
             bool                            mbIsFallback        : 1;
 
-    ImplPtr             getImpl() const;
+    ImplPtr const &     getImpl() const;
     ImplPtr             registerImpl() const;
     void                syncFromImpl();
     void                syncVarsFromRawImpl() const;

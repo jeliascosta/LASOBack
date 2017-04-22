@@ -62,7 +62,7 @@ bool SvpSalInstance::isFrameAlive( const SalFrame* pFrame ) const
 
 SvpSalInstance* SvpSalInstance::s_pDefaultInstance = nullptr;
 
-#ifndef ANDROID
+#if !defined(ANDROID) && !defined(IOS)
 
 static void atfork_child()
 {
@@ -82,11 +82,13 @@ SvpSalInstance::SvpSalInstance( SalYieldMutex *pMutex ) :
     m_aTimeout.tv_usec      = 0;
     m_nTimeoutMS            = 0;
 
+#ifndef IOS
     m_pTimeoutFDS[0] = m_pTimeoutFDS[1] = -1;
     CreateWakeupPipe(true);
+#endif
     if( s_pDefaultInstance == nullptr )
         s_pDefaultInstance = this;
-#ifndef ANDROID
+#if !defined(ANDROID) && !defined(IOS)
     pthread_atfork(nullptr, nullptr, atfork_child);
 #endif
 }
@@ -95,9 +97,12 @@ SvpSalInstance::~SvpSalInstance()
 {
     if( s_pDefaultInstance == this )
         s_pDefaultInstance = nullptr;
-
+#ifndef IOS
     CloseWakeupPipe(true);
+#endif
 }
+
+#ifndef IOS
 
 void SvpSalInstance::CloseWakeupPipe(bool log)
 {
@@ -158,6 +163,8 @@ void SvpSalInstance::CreateWakeupPipe(bool log)
     }
 }
 
+#endif
+
 void SvpSalInstance::PostEvent(const SalFrame* pFrame, ImplSVEvent* pData, SalEvent nEvent)
 {
     {
@@ -194,7 +201,7 @@ void SvpSalInstance::deregisterFrame( SalFrame* pFrame )
             {
                 if (it->m_nEvent == SalEvent::UserEvent)
                 {
-                    delete static_cast<ImplSVEvent *>(it->m_pData);
+                    delete it->m_pData;
                 }
                 it = m_aUserEvents.erase( it );
             }
@@ -206,7 +213,9 @@ void SvpSalInstance::deregisterFrame( SalFrame* pFrame )
 
 void SvpSalInstance::Wakeup()
 {
+#ifndef IOS
     OSL_VERIFY(write (m_pTimeoutFDS[1], "", 1) == 1);
+#endif
 }
 
 bool SvpSalInstance::CheckTimeout( bool bExecuteTimers )
@@ -225,7 +234,7 @@ bool SvpSalInstance::CheckTimeout( bool bExecuteTimers )
                 m_aTimeout = aTimeOfDay;
                 m_aTimeout += m_nTimeoutMS;
 
-                osl::Guard< comphelper::SolarMutex > aGuard( mpSalYieldMutex );
+                osl::Guard< comphelper::SolarMutex > aGuard( mpSalYieldMutex.get() );
 
                 // notify
                 ImplSVData* pSVData = ImplGetSVData();
@@ -282,11 +291,6 @@ SalVirtualDevice* SvpSalInstance::CreateVirtualDevice( SalGraphics* /* pGraphics
 SalTimer* SvpSalInstance::CreateSalTimer()
 {
     return new SvpSalTimer( this );
-}
-
-SalI18NImeStatus* SvpSalInstance::CreateI18NImeStatus()
-{
-    return new SvpImeStatus();
 }
 
 SalSystem* SvpSalInstance::CreateSalSystem()
@@ -411,11 +415,9 @@ SalSession* SvpSalInstance::CreateSalSession()
     return nullptr;
 }
 
-void* SvpSalInstance::GetConnectionIdentifier( ConnectionIdentifierType& rReturnedType, int& rReturnedBytes )
+OUString SvpSalInstance::GetConnectionIdentifier()
 {
-    rReturnedBytes  = 1;
-    rReturnedType   = AsciiCString;
-    return const_cast<char*>("");
+    return OUString("");
 }
 
 void SvpSalInstance::StopTimer()
@@ -445,6 +447,20 @@ void SvpSalInstance::AddToRecentDocumentList(const OUString&, const OUString&, c
 }
 
 //obviously doesn't actually do anything, its just a nonfunctional stub
+
+#ifdef LIBO_HEADLESS
+
+class SvpOpenGLContext
+{
+};
+
+OpenGLContext* SvpSalInstance::CreateOpenGLContext()
+{
+    return nullptr;
+}
+
+#else
+
 class SvpOpenGLContext : public OpenGLContext
 {
     GLWindow m_aGLWin;
@@ -457,6 +473,8 @@ OpenGLContext* SvpSalInstance::CreateOpenGLContext()
 {
     return new SvpOpenGLContext;
 }
+
+#endif
 
 SvpSalTimer::~SvpSalTimer()
 {

@@ -25,9 +25,6 @@
 #include <svl/macitem.hxx>
 #include <stringio.hxx>
 
-SfxPoolItem* SvxMacroItem::CreateDefault() { return new SvxMacroItem(0); }
-
-
 SvxMacro::SvxMacro( const OUString &rMacName, const OUString &rLanguage)
     : aMacName( rMacName ), aLibName( rLanguage),
       eType( EXTENDED_STYPE)
@@ -205,7 +202,7 @@ void SvxMacroTableDtor::Erase(sal_uInt16 nEvent)
 
 bool SvxMacroItem::operator==( const SfxPoolItem& rAttr ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==(rAttr), "unequal types" );
+    assert(SfxPoolItem::operator==(rAttr));
 
     const SvxMacroTableDtor& rOwn = aMacroTable;
     const SvxMacroTableDtor& rOther = static_cast<const SvxMacroItem&>(rAttr).aMacroTable;
@@ -223,8 +220,8 @@ SfxPoolItem* SvxMacroItem::Clone( SfxItemPool* ) const
 bool SvxMacroItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper *
 )   const

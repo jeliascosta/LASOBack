@@ -72,14 +72,14 @@ class XFTable : public XFContent
 public:
     XFTable();
 
-    virtual ~XFTable();
+    virtual ~XFTable() override;
 
 public:
     void    SetTableName(const OUString& name);
 
     void    SetColumnStyle(sal_Int32 col, const OUString& style);
 
-    void    AddRow(XFRow *pRow);
+    void    AddRow(rtl::Reference<XFRow>& rRow);
 
     void    AddHeaderRow(XFRow *pRow);
 
@@ -110,7 +110,7 @@ private:
     bool    m_bSubTable;
     XFCell      *m_pOwnerCell;
     rtl::Reference<XFContentContainer>  m_aHeaderRows;
-    std::map<sal_uInt16, XFRow*>  m_aRows;
+    std::map<sal_uInt16, rtl::Reference<XFRow>>  m_aRows;
     std::map<sal_Int32,OUString>   m_aColumns;
     OUString   m_strDefCellStyle;
     OUString   m_strDefRowStyle;

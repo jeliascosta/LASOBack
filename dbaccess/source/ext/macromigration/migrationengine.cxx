@@ -148,7 +148,7 @@ namespace dbmm
         }
     };
 
-    typedef ::std::vector< SubDocument >    SubDocuments;
+    typedef std::vector< SubDocument >    SubDocuments;
 
     // helper
     typedef ::utl::SharedUNOComponent< XStorage >   SharedStorage;
@@ -544,12 +544,11 @@ namespace dbmm
     public:
         explicit ScriptsStorage( MigrationLog& _rLogger );
         ScriptsStorage( const Reference< XModel >& _rxDocument, MigrationLog& _rLogger );
-        ~ScriptsStorage();
 
         /** determines whether the instance is valid, i.e. refers to a valid root storage
             for reading/storing scripts
         */
-        inline bool isValid() const { return m_xScriptsStorage.is(); }
+        bool isValid() const { return m_xScriptsStorage.is(); }
 
         /** binds the instance to a new document. Only to be called when the instance is not yet
             bound (i.e. isValid returns <FALSE/>).
@@ -565,7 +564,7 @@ namespace dbmm
 
         /** returns the names of the elements in the "Scripts" storage
         */
-        ::std::set< OUString >
+        std::set< OUString >
                 getElementNames() const;
 
         /** removes the sub storage for a given script type
@@ -604,10 +603,6 @@ namespace dbmm
         ,m_xScriptsStorage()
     {
         bind( _rxDocument );
-    }
-
-    ScriptsStorage::~ScriptsStorage()
-    {
     }
 
     bool ScriptsStorage::commit()
@@ -672,17 +667,17 @@ namespace dbmm
         return xStorage;
     }
 
-    ::std::set< OUString > ScriptsStorage::getElementNames() const
+    std::set< OUString > ScriptsStorage::getElementNames() const
     {
         Sequence< OUString > aElementNames;
         if ( isValid() )
             aElementNames = m_xScriptsStorage->getElementNames();
 
-        ::std::set< OUString > aNames;
-        ::std::copy(
+        std::set< OUString > aNames;
+        std::copy(
             aElementNames.getConstArray(),
             aElementNames.getConstArray() + aElementNames.getLength(),
-            ::std::insert_iterator< ::std::set< OUString > >( aNames, aNames.end() )
+            std::insert_iterator< std::set< OUString > >( aNames, aNames.end() )
         );
         return aNames;
     }
@@ -784,10 +779,9 @@ namespace dbmm
             IMigrationProgress& _rProgress,
             MigrationLog& _rLogger
         );
-        ~MigrationEngine_Impl();
 
-        inline  size_t      getFormCount() const    { return m_nFormCount; }
-        inline  size_t      getReportCount()const   { return m_nReportCount; }
+        size_t      getFormCount() const    { return m_nFormCount; }
+        size_t      getReportCount()const   { return m_nReportCount; }
         bool    migrateAll();
 
     private:
@@ -917,10 +911,6 @@ namespace dbmm
         OSL_VERIFY( impl_collectSubDocuments_nothrow() );
     }
 
-    MigrationEngine_Impl::~MigrationEngine_Impl()
-    {
-    }
-
     bool MigrationEngine_Impl::migrateAll()
     {
         if  ( m_aSubDocs.empty() )
@@ -1045,7 +1035,7 @@ namespace dbmm
         m_rProgress.startObject( sObjectName, OUString(), DEFAULT_DOC_PROGRESS_RANGE );
 
         // load the document
-        Reference< ProgressCapture > pStatusIndicator( new ProgressCapture( sObjectName, m_rProgress ) );
+        rtl::Reference< ProgressCapture > pStatusIndicator( new ProgressCapture( sObjectName, m_rProgress ) );
         SubDocument aSubDocument( _rDocument );
         OpenDocResult eResult = lcl_loadSubDocument_nothrow( aSubDocument, pStatusIndicator.get(), m_rLogger );
         if ( eResult != eOpenedDoc )
@@ -1171,7 +1161,7 @@ namespace dbmm
             // "too many" invalid characters, or the name composed with the base name was already used.
             // (The latter is valid, since there can be multiple sub documents with the same base name,
             // in different levels in the hierarchy.)
-            // In this case, just use the umambiguous sub document number.
+            // In this case, just use the unambiguous sub document number.
             return sPrefix + OUString::number( _rDocument.nNumber ) + "_" + _rSourceLibName;
         }
     }
@@ -1190,7 +1180,7 @@ namespace dbmm
             {   // no scripts at all, or no scripts of the given type
                 return !m_rLogger.hadFailure();
             }
-            ::std::set< OUString > aElementNames( aDocStorage.getElementNames() );
+            std::set< OUString > aElementNames( aDocStorage.getElementNames() );
 
             const ScriptType aKnownStorageBasedTypes[] = {
                 eBeanShell, eJavaScript, ePython, eJava

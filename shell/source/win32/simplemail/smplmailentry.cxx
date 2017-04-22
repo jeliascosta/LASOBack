@@ -22,20 +22,15 @@
 #include <osl/diagnose.h>
 #include "smplmailsuppl.hxx"
 
-
-// namespace directives
-
-
-using namespace ::com::sun::star::uno       ;
-using namespace ::com::sun::star::container ;
-using namespace ::com::sun::star::lang      ;
-using namespace ::com::sun::star::registry  ;
-using namespace ::cppu                      ;
+using namespace ::com::sun::star::uno;
+using namespace ::com::sun::star::container;
+using namespace ::com::sun::star::lang;
+using namespace ::com::sun::star::registry;
+using namespace ::cppu;
 using com::sun::star::system::XSimpleMailClientSupplier;
 
 #define COMP_SERVICE_NAME  "com.sun.star.system.SimpleSystemMail"
 #define COMP_IMPL_NAME     "com.sun.star.sys.shell.SimpleSystemMail"
-
 
 namespace
 {
@@ -48,21 +43,17 @@ namespace
 extern "C"
 {
 
-// component_getFactory
-// returns a factory to create XFilePicker-Services
-
-
 SAL_DLLPUBLIC_EXPORT void* SAL_CALL smplmail_component_getFactory(
         const sal_Char* pImplName, void* pSrvManager, void* /*pRegistryKey*/ )
 {
-    void* pRet = 0;
+    void* pRet = nullptr;
 
     if ( pSrvManager && ( 0 == rtl_str_compare( pImplName, COMP_IMPL_NAME ) ) )
     {
         Sequence< OUString > aSNS { COMP_SERVICE_NAME };
 
         Reference< XSingleServiceFactory > xFactory ( createOneInstanceFactory(
-            reinterpret_cast< XMultiServiceFactory* > ( pSrvManager ),
+            static_cast< XMultiServiceFactory* > ( pSrvManager ),
             OUString::createFromAscii( pImplName ),
             createInstance,
             aSNS ) );

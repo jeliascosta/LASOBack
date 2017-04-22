@@ -50,7 +50,6 @@ class ScPrintSelectionStatus
 
 public:
             ScPrintSelectionStatus() : eMode(SC_PRINTSEL_INVALID) {}
-            ~ScPrintSelectionStatus() {}
 
     void    SetMode(ScPrintSelectionMode eNew)  { eMode = eNew; }
     void    SetRanges(const ScRangeList& rNew)  { aRanges = rNew; }
@@ -70,12 +69,12 @@ struct ScPrintPageLocation
 {
     long        nPage;
     ScRange     aCellRange;
-    Rectangle   aRectangle;     // pixels
+    tools::Rectangle   aRectangle;     // pixels
 
     ScPrintPageLocation() :
         nPage(-1) {}            // default: invalid
 
-    ScPrintPageLocation( long nP, const ScRange& rRange, const Rectangle& rRect ) :
+    ScPrintPageLocation( long nP, const ScRange& rRange, const tools::Rectangle& rRect ) :
         nPage(nP), aCellRange(rRange), aRectangle(rRect) {}
 };
 

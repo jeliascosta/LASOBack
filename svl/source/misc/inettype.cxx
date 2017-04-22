@@ -44,7 +44,6 @@ struct TypeIDMapEntry
 {
     OUString m_aTypeName;
     OUString m_aPresentation;
-    OUString m_aSystemFileType;
 };
 
 struct TypeNameMapEntry
@@ -88,8 +87,7 @@ public:
 
     static INetContentType RegisterContentType(OUString const & rTypeName,
                                                OUString const & rPresentation,
-                                               OUString const * pExtension,
-                                               OUString const * pSystemFileType);
+                                               OUString const * pExtension);
 
     static INetContentType GetContentType(OUString const & rTypeName);
 
@@ -120,7 +118,7 @@ inline TypeIDMapEntry * Registration::getEntry(INetContentType eTypeID)
 }
 
 MediaTypeEntry const * seekEntry(OUString const & rTypeName,
-                                 MediaTypeEntry const * pMap, sal_Size nSize);
+                                 MediaTypeEntry const * pMap, std::size_t nSize);
 
 /** A mapping from type names to type ids and extensions.  Sorted by type
     name.
@@ -421,8 +419,7 @@ TypeNameMapEntry * Registration::getExtensionEntry(OUString const & rTypeName)
 // static
 INetContentType Registration::RegisterContentType(OUString const & rTypeName,
                                                   OUString const & rPresentation,
-                                                  OUString const * pExtension,
-                                                  OUString const * pSystemFileType)
+                                                  OUString const * pExtension)
 {
     Registration &rRegistration = theRegistration::get();
 
@@ -435,8 +432,6 @@ INetContentType Registration::RegisterContentType(OUString const & rTypeName,
     TypeIDMapEntry * pTypeIDMapEntry = new TypeIDMapEntry;
     pTypeIDMapEntry->m_aTypeName = aTheTypeName;
     pTypeIDMapEntry->m_aPresentation = rPresentation;
-    if (pSystemFileType)
-        pTypeIDMapEntry->m_aSystemFileType = *pSystemFileType;
     rRegistration.m_aTypeIDMap.insert( ::std::make_pair( eTypeID, pTypeIDMapEntry ) );
 
     rRegistration.m_aTypeNameMap.insert(std::make_pair(aTheTypeName,
@@ -504,21 +499,21 @@ namespace
 {
 
 MediaTypeEntry const * seekEntry(OUString const & rTypeName,
-                                 MediaTypeEntry const * pMap, sal_Size nSize)
+                                 MediaTypeEntry const * pMap, std::size_t nSize)
 {
 #if defined DBG_UTIL
-    for (sal_Size i = 0; i < nSize - 1; ++i)
+    for (std::size_t i = 0; i < nSize - 1; ++i)
         DBG_ASSERT(
             rtl_str_compare(
                 pMap[i].m_pTypeName, pMap[i + 1].m_pTypeName) < 0,
             "seekEntry(): Bad map");
 #endif
 
-    sal_Size nLow = 0;
-    sal_Size nHigh = nSize;
+    std::size_t nLow = 0;
+    std::size_t nHigh = nSize;
     while (nLow != nHigh)
     {
-        sal_Size nMiddle = (nLow + nHigh) / 2;
+        std::size_t nMiddle = (nLow + nHigh) / 2;
         MediaTypeEntry const * pEntry = pMap + nMiddle;
         sal_Int32 nCmp = rTypeName.compareToIgnoreAsciiCaseAscii(pEntry->m_pTypeName);
         if (nCmp < 0)
@@ -542,8 +537,7 @@ INetContentType INetContentTypes::RegisterContentType(OUString const & rTypeName
     INetContentType eTypeID = GetContentType(rTypeName);
     if (eTypeID == CONTENT_TYPE_UNKNOWN)
         eTypeID = Registration::RegisterContentType(rTypeName, rPresentation,
-                                                    pExtension,
-                                                    nullptr/*pSystemFileType*/);
+                                                    pExtension);
     else if (eTypeID > CONTENT_TYPE_LAST)
     {
         TypeIDMapEntry * pTypeEntry = Registration::getEntry(eTypeID);
@@ -588,7 +582,7 @@ OUString INetContentTypes::GetContentType(INetContentType eTypeID)
     static bool bInitialized = false;
     if (!bInitialized)
     {
-        for (sal_Size i = 0; i <= CONTENT_TYPE_LAST; ++i)
+        for (std::size_t i = 0; i <= CONTENT_TYPE_LAST; ++i)
             aMap[aStaticTypeNameMap[i].m_eTypeID] = aStaticTypeNameMap[i].m_pTypeName;
         aMap[CONTENT_TYPE_UNKNOWN] = CONTENT_TYPE_STR_APP_OCTSTREAM;
         aMap[CONTENT_TYPE_TEXT_PLAIN] = CONTENT_TYPE_STR_TEXT_PLAIN
@@ -644,7 +638,7 @@ INetContentType INetContentTypes::GetContentTypeFromURL(OUString const & rURL)
     if (!aToken.isEmpty())
     {
         if (aToken.equalsIgnoreAsciiCase(INETTYPE_URL_PROT_FILE))
-            if (rURL[ rURL.getLength() - 1 ] == (sal_Unicode)'/') // folder
+            if (rURL[ rURL.getLength() - 1 ] == '/') // folder
                 if (rURL.getLength() > RTL_CONSTASCII_LENGTH("file:///"))
                     if (WildCard("*/{*}/").Matches(rURL)) // special folder
                         eTypeID = CONTENT_TYPE_X_CNT_FSYSSPECIALFOLDER;
@@ -731,15 +725,15 @@ bool INetContentTypes::GetExtensionFromURL(OUString const & rURL,
     while (i >= 0)
     {
         nSlashPos = i;
-        i = rURL.indexOf((sal_Unicode)'/', i + 1);
+        i = rURL.indexOf('/', i + 1);
     }
     if (nSlashPos != 0)
     {
-        sal_Int32 nLastDotPos = i = rURL.indexOf((sal_Unicode)'.', nSlashPos);
+        sal_Int32 nLastDotPos = i = rURL.indexOf('.', nSlashPos);
         while (i >= 0)
         {
             nLastDotPos = i;
-            i = rURL.indexOf((sal_Unicode)'.', i + 1);
+            i = rURL.indexOf('.', i + 1);
         }
         if (nLastDotPos >- 0)
             rExtension = rURL.copy(nLastDotPos + 1);

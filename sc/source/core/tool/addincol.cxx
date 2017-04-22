@@ -80,12 +80,10 @@ ScUnoAddInFuncData::ScUnoAddInFuncData( const OUString& rNam, const OUString& rL
 {
     if ( nArgCount )
     {
-        pArgDescs = new ScAddInArgDesc[nArgCount];
+        pArgDescs.reset( new ScAddInArgDesc[nArgCount] );
         for (long i=0; i<nArgCount; i++)
             pArgDescs[i] = pAD[i];
     }
-    else
-        pArgDescs = nullptr;
 
     aUpperName = ScGlobal::pCharClass->uppercase(aUpperName);
     aUpperLocal = ScGlobal::pCharClass->uppercase(aUpperLocal);
@@ -93,7 +91,6 @@ ScUnoAddInFuncData::ScUnoAddInFuncData( const OUString& rNam, const OUString& rL
 
 ScUnoAddInFuncData::~ScUnoAddInFuncData()
 {
-    delete[] pArgDescs;
 }
 
 const ::std::vector<ScUnoAddInFuncData::LocalizedName>& ScUnoAddInFuncData::GetCompNames() const
@@ -204,17 +201,15 @@ void ScUnoAddInFuncData::SetFunction( const uno::Reference< reflection::XIdlMeth
 
 void ScUnoAddInFuncData::SetArguments( long nNewCount, const ScAddInArgDesc* pNewDescs )
 {
-    delete[] pArgDescs;
-
     nArgCount = nNewCount;
     if ( nArgCount )
     {
-        pArgDescs = new ScAddInArgDesc[nArgCount];
+        pArgDescs.reset( new ScAddInArgDesc[nArgCount] );
         for (long i=0; i<nArgCount; i++)
             pArgDescs[i] = pNewDescs[i];
     }
     else
-        pArgDescs = nullptr;
+        pArgDescs.reset();
 }
 
 void ScUnoAddInFuncData::SetCallerPos( long nNewPos )
@@ -364,7 +359,7 @@ void ScUnoAddInCollection::ReadConfiguration()
     ScAddInCfg& rAddInConfig = SC_MOD()->GetAddInCfg();
 
     // additional, temporary config item for the compatibility names
-    ScLinkConfigItem aAllLocalesConfig( OUString(CFGPATH_ADDINS), ConfigItemMode::AllLocales );
+    ScLinkConfigItem aAllLocalesConfig( CFGPATH_ADDINS, ConfigItemMode::AllLocales );
     // CommitLink is not used (only reading values)
 
     const OUString sSlash('/');
@@ -436,14 +431,10 @@ void ScUnoAddInCollection::ReadConfiguration()
                 aFuncPropPath += pFuncNameArray[nFuncPos];
                 aFuncPropPath += sSlash;
 
-                uno::Sequence<OUString> aFuncPropNames(CFG_FUNCPROP_COUNT);
-                OUString* pNameArray = aFuncPropNames.getArray();
-                pNameArray[CFG_FUNCPROP_DISPLAYNAME] = aFuncPropPath
-                    + CFGSTR_DISPLAYNAME;
-                pNameArray[CFG_FUNCPROP_DESCRIPTION] = aFuncPropPath
-                    + CFGSTR_DESCRIPTION;
-                pNameArray[CFG_FUNCPROP_CATEGORY] = aFuncPropPath
-                    + CFGSTR_CATEGORY;
+                uno::Sequence<OUString> aFuncPropNames{
+                    (aFuncPropPath + CFGSTR_DISPLAYNAME), // CFG_FUNCPROP_DISPLAYNAME
+                    (aFuncPropPath + CFGSTR_DESCRIPTION), // CFG_FUNCPROP_DESCRIPTION
+                    (aFuncPropPath + CFGSTR_CATEGORY)};   // CFG_FUNCPROP_CATEGORY
 
                 uno::Sequence<uno::Any> aFuncProperties = rAddInConfig.GetProperties( aFuncPropNames );
                 if ( aFuncProperties.getLength() == CFG_FUNCPROP_COUNT )
@@ -475,7 +466,7 @@ void ScUnoAddInCollection::ReadConfiguration()
                         for ( sal_Int32 nLocale = 0; nLocale < nLocaleCount; nLocale++ )
                         {
                             // PropertyValue name is the locale ("convert" from
-                            // string to string to canonicalize)
+                            // string to canonicalize)
                             OUString aLocale( LanguageTag( pConfigArray[nLocale].Name, true).getBcp47( false));
                             // PropertyValue value is the localized value (string in this case)
                             OUString aName;
@@ -583,7 +574,7 @@ void ScUnoAddInCollection::ReadConfiguration()
 void ScUnoAddInCollection::LoadComponent( const ScUnoAddInFuncData& rFuncData )
 {
     const OUString& aFullName = rFuncData.GetOriginalName();
-    sal_Int32 nPos = aFullName.lastIndexOf( (sal_Unicode) '.' );
+    sal_Int32 nPos = aFullName.lastIndexOf( '.' );
     if ( nPos > 0 )
     {
         OUString aServiceName = aFullName.copy( 0, nPos );
@@ -1275,7 +1266,6 @@ bool ScUnoAddInCollection::FillFunctionDescFromData( const ScUnoAddInFuncData& r
             rDesc.maDefArgNames[nArg] = pArgs[nArg].aName;
             rDesc.maDefArgDescs[nArg] = pArgs[nArg].aDescription;
             rDesc.pDefArgFlags[nArg].bOptional = pArgs[nArg].bOptional;
-            rDesc.pDefArgFlags[nArg].bSuppress = false;
 
             // no empty names...
             if ( rDesc.maDefArgNames[nArg].isEmpty() )
@@ -1302,7 +1292,7 @@ bool ScUnoAddInCollection::FillFunctionDescFromData( const ScUnoAddInFuncData& r
 ScUnoAddInCall::ScUnoAddInCall( ScUnoAddInCollection& rColl, const OUString& rName,
                                 long nParamCount ) :
     bValidCount( false ),
-    nErrCode( formula::errNoCode ),      // before function was called
+    nErrCode( FormulaError::NoCode ),      // before function was called
     bHasString( true ),
     fValue( 0.0 ),
     xMatrix( nullptr )
@@ -1468,7 +1458,7 @@ void ScUnoAddInCall::ExecuteCallWithArgs(uno::Sequence<uno::Any>& rCallArgs)
     if ( xFunction.is() )
     {
         uno::Any aAny;
-        nErrCode = 0;
+        nErrCode = FormulaError::NONE;
 
         try
         {
@@ -1476,34 +1466,32 @@ void ScUnoAddInCall::ExecuteCallWithArgs(uno::Sequence<uno::Any>& rCallArgs)
         }
         catch(lang::IllegalArgumentException&)
         {
-            nErrCode = formula::errIllegalArgument;
+            nErrCode = FormulaError::IllegalArgument;
         }
-
         catch(const reflection::InvocationTargetException& rWrapped)
         {
             if ( rWrapped.TargetException.getValueType().equals(
                     cppu::UnoType<lang::IllegalArgumentException>::get()) )
-                nErrCode = formula::errIllegalArgument;
+                nErrCode = FormulaError::IllegalArgument;
             else if ( rWrapped.TargetException.getValueType().equals(
                     cppu::UnoType<sheet::NoConvergenceException>::get()) )
-                nErrCode = formula::errNoConvergence;
+                nErrCode = FormulaError::NoConvergence;
             else
-                nErrCode = formula::errNoValue;
+                nErrCode = FormulaError::NoValue;
         }
-
         catch(uno::Exception&)
         {
-            nErrCode = formula::errNoValue;
+            nErrCode = FormulaError::NoValue;
         }
 
-        if (!nErrCode)
+        if (nErrCode == FormulaError::NONE)
             SetResult( aAny );      // convert result to Calc types
     }
 }
 
 void ScUnoAddInCall::SetResult( const uno::Any& rNewRes )
 {
-    nErrCode = 0;
+    nErrCode = FormulaError::NONE;
     xVarRes = nullptr;
 
     // Reflection* pRefl = rNewRes.getReflection();
@@ -1513,7 +1501,7 @@ void ScUnoAddInCall::SetResult( const uno::Any& rNewRes )
     switch (eClass)
     {
         case uno::TypeClass_VOID:
-            nErrCode = formula::NOTAVAILABLE;         // #NA
+            nErrCode = FormulaError::NotAvailable;         // #NA
             break;
 
         case uno::TypeClass_ENUM:
@@ -1549,7 +1537,7 @@ void ScUnoAddInCall::SetResult( const uno::Any& rNewRes )
                     xVarRes.set( xInterface, uno::UNO_QUERY );
 
                 if (!xVarRes.is())
-                    nErrCode = formula::errNoValue;          // unknown interface
+                    nErrCode = FormulaError::NoValue;          // unknown interface
             }
             break;
 
@@ -1687,7 +1675,7 @@ void ScUnoAddInCall::SetResult( const uno::Any& rNewRes )
             }
 
             if (!xMatrix)                       // no array found
-                nErrCode = formula::errNoValue;          //TODO: code for error in return type???
+                nErrCode = FormulaError::NoValue;          //TODO: code for error in return type???
     }
 }
 

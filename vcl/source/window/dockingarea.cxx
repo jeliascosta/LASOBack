@@ -30,7 +30,6 @@ class DockingAreaWindow::ImplData
 {
 public:
     ImplData();
-    ~ImplData();
 
     WindowAlign meAlign;
 };
@@ -40,12 +39,8 @@ DockingAreaWindow::ImplData::ImplData()
     meAlign = WindowAlign::Top;
 }
 
-DockingAreaWindow::ImplData::~ImplData()
-{
-}
-
 DockingAreaWindow::DockingAreaWindow( vcl::Window* pParent ) :
-    Window( WINDOW_DOCKINGAREA )
+    Window( WindowType::DOCKINGAREA )
 {
     ImplInit( pParent, WB_CLIPCHILDREN|WB_3DLOOK, nullptr );
 
@@ -143,13 +138,13 @@ void DockingAreaWindow::ApplySettings(vcl::RenderContext& rRenderContext)
             if (pMenubarWin)
                 nMenubarHeight = pMenubarWin->GetOutputHeightPixel();
         }
-        aWallpaper.SetRect(Rectangle(Point(0, -nMenubarHeight),
+        aWallpaper.SetRect(tools::Rectangle(Point(0, -nMenubarHeight),
                            Size(rRenderContext.GetOutputWidthPixel(),
                                 rRenderContext.GetOutputHeightPixel() + nMenubarHeight)));
 
         rRenderContext.SetBackground(aWallpaper);
     }
-    else if (rRenderContext.IsNativeControlSupported(ControlType::Toolbar, ControlPart::Entire))
+    else if (!rRenderContext.IsNativeControlSupported(ControlType::Toolbar, ControlPart::Entire))
     {
         Wallpaper aWallpaper;
         aWallpaper.SetStyle(WallpaperStyle::ApplicationGradient);
@@ -160,7 +155,7 @@ void DockingAreaWindow::ApplySettings(vcl::RenderContext& rRenderContext)
 
 }
 
-void DockingAreaWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void DockingAreaWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     const StyleSettings rSetting = rRenderContext.GetSettings().GetStyleSettings();
 
@@ -184,7 +179,7 @@ void DockingAreaWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangl
         else if (!ImplGetSVData()->maNWFData.mbDockingAreaSeparateTB)
         {
             // draw a single toolbar background covering the whole docking area
-            Rectangle aCtrlRegion(Point(), GetOutputSizePixel());
+            tools::Rectangle aCtrlRegion(Point(), GetOutputSizePixel());
 
             rRenderContext.DrawNativeControl(ControlType::Toolbar, IsHorizontal() ? ControlPart::DrawBackgroundHorz : ControlPart::DrawBackgroundVert,
                                              aCtrlRegion, nState, aControlValue, OUString() );
@@ -200,7 +195,7 @@ void DockingAreaWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangl
                     {
                         Point aPos = pChild->GetPosPixel();
                         Size aSize = pChild->GetSizePixel();
-                        Rectangle aRect(aPos, aSize);
+                        tools::Rectangle aRect(aPos, aSize);
 
                         rRenderContext.SetLineColor(rRenderContext.GetSettings().GetStyleSettings().GetLightColor());
                         rRenderContext.DrawLine(aRect.TopLeft(), aRect.TopRight());
@@ -234,7 +229,7 @@ void DockingAreaWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangl
             std::map<int, int>::const_iterator it;
             for (it = ranges.begin(); it != ranges.end(); ++it)
             {
-                Rectangle aTBRect;
+                tools::Rectangle aTBRect;
                 if (IsHorizontal())
                 {
                     aTBRect.Left()   = 0;

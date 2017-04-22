@@ -117,9 +117,9 @@ void SbxCollection::Notify( SfxBroadcaster& rCst, const SfxHint& rHint )
     const SbxHint* p = dynamic_cast<const SbxHint*>(&rHint);
     if( p )
     {
-        const sal_uInt32 nId = p->GetId();
-        bool bRead  = ( nId == SBX_HINT_DATAWANTED );
-        bool bWrite = ( nId == SBX_HINT_DATACHANGED );
+        const SfxHintId nId = p->GetId();
+        bool bRead  = ( nId == SfxHintId::BasicDataWanted );
+        bool bWrite = ( nId == SfxHintId::BasicDataChanged );
         SbxVariable* pVar = p->GetVar();
         SbxArray* pArg = pVar->GetParameters();
         if( bRead || bWrite )
@@ -238,9 +238,9 @@ bool SbxCollection::LoadData( SvStream& rStrm, sal_uInt16 nVer )
 
 
 SbxStdCollection::SbxStdCollection
-                    ( const OUString& rClass, const OUString& rElem, bool b )
+                    ( const OUString& rClass, const OUString& rElem )
                   : SbxCollection( rClass ), aElemClass( rElem ),
-                    bAddRemoveOk( b )
+                    bAddRemoveOk( true )
 {}
 
 SbxStdCollection::SbxStdCollection( const SbxStdCollection& r )

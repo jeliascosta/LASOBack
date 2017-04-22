@@ -36,16 +36,16 @@
 #include <svx/svdpage.hxx>
 #include "svx/sdrpaintwindow.hxx"
 
-void GraphCtrlUserCall::Changed( const SdrObject& rObj, SdrUserCallType eType, const Rectangle& /*rOldBoundRect*/ )
+void GraphCtrlUserCall::Changed( const SdrObject& rObj, SdrUserCallType eType, const tools::Rectangle& /*rOldBoundRect*/ )
 {
     switch( eType )
     {
-        case SDRUSERCALL_MOVEONLY:
-        case SDRUSERCALL_RESIZE:
+        case SdrUserCallType::MoveOnly:
+        case SdrUserCallType::Resize:
             rWin.SdrObjChanged( rObj );
         break;
 
-        case SDRUSERCALL_INSERTED:
+        case SdrUserCallType::Inserted:
             rWin.SdrObjCreated( rObj );
         break;
 
@@ -58,32 +58,25 @@ void GraphCtrlUserCall::Changed( const SdrObject& rObj, SdrUserCallType eType, c
 GraphCtrl::GraphCtrl( vcl::Window* pParent, WinBits nStyle ) :
             Control         ( pParent, nStyle ),
             aUpdateIdle     ( "svx GraphCtrl Update" ),
-            aMap100         ( MAP_100TH_MM ),
+            aMap100         ( MapUnit::Map100thMM ),
             nWinStyle       ( 0 ),
             eObjKind        ( OBJ_NONE ),
             nPolyEdit       ( 0 ),
             bEditMode       ( false ),
             bSdrMode        ( false ),
             bAnim           ( false ),
-            mpAccContext    ( nullptr ),
+            mbInIdleUpdate  ( false ),
             pModel          ( nullptr ),
             pView           ( nullptr )
 {
     pUserCall = new GraphCtrlUserCall( *this );
-    aUpdateIdle.SetPriority( SchedulerPriority::LOWEST );
-    aUpdateIdle.SetIdleHdl( LINK( this, GraphCtrl, UpdateHdl ) );
+    aUpdateIdle.SetPriority( TaskPriority::LOWEST );
+    aUpdateIdle.SetInvokeHandler( LINK( this, GraphCtrl, UpdateHdl ) );
     aUpdateIdle.Start();
     EnableRTL( false );
 }
 
-VCL_BUILDER_DECL_FACTORY(GraphCtrl)
-{
-    WinBits nWinStyle = 0;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<GraphCtrl>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(GraphCtrl, 0)
 
 GraphCtrl::~GraphCtrl()
 {
@@ -94,10 +87,10 @@ void GraphCtrl::dispose()
 {
     aUpdateIdle.Stop();
 
-    if( mpAccContext )
+    if( mpAccContext.is() )
     {
         mpAccContext->disposing();
-        mpAccContext->release();
+        mpAccContext.clear();
     }
     delete pView;
     pView = nullptr;
@@ -156,11 +149,11 @@ void GraphCtrl::InitSdrModel()
 
     // Creating a View
     pView = new GraphCtrlView( pModel, this );
-    pView->SetWorkArea( Rectangle( Point(), aGraphSize ) );
+    pView->SetWorkArea( tools::Rectangle( Point(), aGraphSize ) );
     pView->EnableExtendedMouseEventDispatcher( true );
     pView->ShowSdrPage(pView->GetModel()->GetPage(0));
     pView->SetFrameDragSingles();
-    pView->SetMarkedPointsSmooth( SDRPATHSMOOTH_SYMMETRIC );
+    pView->SetMarkedPointsSmooth( SdrPathSmoothKind::Symmetric );
     pView->SetEditMode();
 
     // #i72889# set needed flags
@@ -169,14 +162,14 @@ void GraphCtrl::InitSdrModel()
     pView->SetBufferedOverlayAllowed(true);
 
     // Tell the accessibility object about the changes.
-    if (mpAccContext != nullptr)
+    if (mpAccContext.is())
         mpAccContext->setModelAndView (pModel, pView);
 }
 
 void GraphCtrl::SetGraphic( const Graphic& rGraphic, bool bNewModel )
 {
     // If possible we dither bitmaps for the display
-    if ( !bAnim && ( rGraphic.GetType() == GRAPHIC_BITMAP )  )
+    if ( !bAnim && ( rGraphic.GetType() == GraphicType::Bitmap )  )
     {
         if ( rGraphic.IsTransparent() )
         {
@@ -195,7 +188,7 @@ void GraphCtrl::SetGraphic( const Graphic& rGraphic, bool bNewModel )
     else
         aGraphic = rGraphic;
 
-    if ( aGraphic.GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
+    if ( aGraphic.GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
         aGraphSize = Application::GetDefaultDevice()->PixelToLogic( aGraphic.GetPrefSize(), aMap100 );
     else
         aGraphSize = OutputDevice::LogicToLogic( aGraphic.GetPrefSize(), aGraphic.GetPrefMapMode(), aMap100 );
@@ -251,11 +244,11 @@ void GraphCtrl::Resize()
     Invalidate();
 }
 
-void GraphCtrl::Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void GraphCtrl::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     // #i72889# used splitted repaint to be able to paint an own background
     // even to the buffered view
-    const bool bGraphicValid(GRAPHIC_NONE != aGraphic.GetType());
+    const bool bGraphicValid(GraphicType::NONE != aGraphic.GetType());
 
     if (bSdrMode)
     {
@@ -464,11 +457,11 @@ void GraphCtrl::KeyInput( const KeyEvent& rKEvt )
                 if(nullptr == pHdl)
                 {
                     // restrict movement to WorkArea
-                    const Rectangle& rWorkArea = pView->GetWorkArea();
+                    const tools::Rectangle& rWorkArea = pView->GetWorkArea();
 
                     if(!rWorkArea.IsEmpty())
                     {
-                        Rectangle aMarkRect(pView->GetMarkedObjRect());
+                        tools::Rectangle aMarkRect(pView->GetMarkedObjRect());
                         aMarkRect.Move(nX, nY);
 
                         if(!aMarkRect.IsInside(rWorkArea))
@@ -549,7 +542,7 @@ void GraphCtrl::KeyInput( const KeyEvent& rKEvt )
 
             if(pHdl)
             {
-                if(pHdl->GetKind() == HDL_POLY)
+                if(pHdl->GetKind() == SdrHdlKind::Poly)
                 {
                     // rescue ID of point with focus
                     sal_uInt32 nPol(pHdl->GetPolyNum());
@@ -582,7 +575,7 @@ void GraphCtrl::KeyInput( const KeyEvent& rKEvt )
                             SdrHdl* pAct = rHdlList.GetHdl(a);
 
                             if(pAct
-                                && pAct->GetKind() == HDL_POLY
+                                && pAct->GetKind() == SdrHdlKind::Poly
                                 && pAct->GetPolyNum() == nPol
                                 && pAct->GetPointNum() == nPnt)
                             {
@@ -620,7 +613,7 @@ void GraphCtrl::MouseButtonDown( const MouseEvent& rMEvt )
     {
         const Point aLogPt( PixelToLogic( rMEvt.GetPosPixel() ) );
 
-        if ( !Rectangle( Point(), aGraphSize ).IsInside( aLogPt ) && !pView->IsEditMode() )
+        if ( !tools::Rectangle( Point(), aGraphSize ).IsInside( aLogPt ) && !pView->IsEditMode() )
             Control::MouseButtonDown( rMEvt );
         else
         {
@@ -632,7 +625,7 @@ void GraphCtrl::MouseButtonDown( const MouseEvent& rMEvt )
                 SdrViewEvent    aVEvt;
                 SdrHitKind      eHit = pView->PickAnything( rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt );
 
-                if ( nPolyEdit == SID_BEZIER_INSERT && eHit == SDRHIT_MARKEDOBJECT )
+                if ( nPolyEdit == SID_BEZIER_INSERT && eHit == SdrHitKind::MarkedObject )
                     pView->BegInsObjPoint( aLogPt, rMEvt.IsMod1());
                 else
                     pView->MouseButtonDown( rMEvt, this );
@@ -677,7 +670,7 @@ void GraphCtrl::MouseMove(const MouseEvent& rMEvt)
 
     if ( aMousePosLink.IsSet() )
     {
-        if ( Rectangle( Point(), aGraphSize ).IsInside( aLogPos ) )
+        if ( tools::Rectangle( Point(), aGraphSize ).IsInside( aLogPos ) )
             aMousePos = aLogPos;
         else
             aMousePos = Point();
@@ -693,7 +686,7 @@ void GraphCtrl::MouseButtonUp(const MouseEvent& rMEvt)
     if ( bSdrMode )
     {
         if ( pView->IsInsObjPoint() )
-            pView->EndInsObjPoint( SDRCREATE_FORCEEND );
+            pView->EndInsObjPoint( SdrCreateCmd::ForceEnd );
         else
             pView->MouseButtonUp( rMEvt, this );
 
@@ -764,7 +757,7 @@ void GraphCtrl::SetObjKind( const SdrObjKind _eObjKind )
     QueueIdleUpdate();
 }
 
-IMPL_LINK_TYPED( GraphCtrl, UpdateHdl, Idle *, , void )
+IMPL_LINK( GraphCtrl, UpdateHdl, Timer *, , void )
 {
     mbInIdleUpdate = true;
     aUpdateLink.Call( this );
@@ -795,12 +788,11 @@ css::uno::Reference< css::accessibility::XAccessible > GraphCtrl::CreateAccessib
                 xAccParent.is() )
             {
                 mpAccContext = new SvxGraphCtrlAccessibleContext( xAccParent, *this );
-                mpAccContext->acquire();
             }
         }
     }
 
-    return mpAccContext;
+    return mpAccContext.get();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

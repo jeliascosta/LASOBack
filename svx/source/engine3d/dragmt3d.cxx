@@ -25,7 +25,6 @@
 #include <svx/svddrgmt.hxx>
 #include <svx/svdtrans.hxx>
 #include <svx/obj3d.hxx>
-#include <svx/polysc3d.hxx>
 #include <svx/e3dundo.hxx>
 #include <svx/dialogs.hrc>
 #include <svx/sdr/overlay/overlaypolypolygon.hxx>
@@ -112,7 +111,7 @@ void E3dDragMethod::TakeSdrDragComment(OUString& /*rStr*/) const
 
 bool E3dDragMethod::BeginSdrDrag()
 {
-    if(E3DDRAG_CONSTR_Z == meConstraint)
+    if(E3dDragConstraint::Z == meConstraint)
     {
         const sal_uInt32 nCnt(maGrp.size());
         DragStat().Ref1() = maFullBound.Center();
@@ -246,7 +245,7 @@ void E3dDragMethod::CreateOverlayGeometry(sdr::overlay::OverlayManager& rOverlay
         sdr::overlay::OverlayPolyPolygonStripedAndFilled* pNew = new sdr::overlay::OverlayPolyPolygonStripedAndFilled(
             aResult);
         rOverlayManager.add(*pNew);
-        addToOverlayObjectList(*pNew);
+        addToOverlayObjectList(pNew);
     }
 }
 
@@ -334,7 +333,7 @@ void E3dDragRotate::MoveSdrDrag(const Point& rPnt)
             double fWAngle, fHAngle;
             E3dDragMethodUnit& rCandidate = maGrp[nOb];
 
-            if(E3DDRAG_CONSTR_Z == meConstraint)
+            if(E3dDragConstraint::Z == meConstraint)
             {
                 fWAngle = NormAngle360(GetAngle(rPnt - DragStat().GetRef1()) -
                     rCandidate.mnStartAngle) - rCandidate.mnLastAngle;
@@ -368,21 +367,21 @@ void E3dDragRotate::MoveSdrDrag(const Point& rPnt)
 
             // Determine transformation
             basegfx::B3DHomMatrix aRotMat;
-            if(E3DDRAG_CONSTR_Y & meConstraint)
+            if(E3dDragConstraint::Y & meConstraint)
             {
                 if(nModifier & KEY_MOD2)
                     aRotMat.rotate(0.0, 0.0, fWAngle);
                 else
                     aRotMat.rotate(0.0, fWAngle, 0.0);
             }
-            else if(E3DDRAG_CONSTR_Z & meConstraint)
+            else if(E3dDragConstraint::Z & meConstraint)
             {
                 if(nModifier & KEY_MOD2)
                     aRotMat.rotate(0.0, fWAngle, 0.0);
                 else
                     aRotMat.rotate(0.0, 0.0, fWAngle);
             }
-            if(E3DDRAG_CONSTR_X & meConstraint)
+            if(E3dDragConstraint::X & meConstraint)
             {
                 aRotMat.rotate(fHAngle, 0.0, 0.0);
             }
@@ -441,39 +440,39 @@ E3dDragMove::E3dDragMove(SdrDragView &_rView,
 {
     switch(meWhatDragHdl)
     {
-        case HDL_LEFT:
+        case SdrHdlKind::Left:
             maScaleFixPos = maFullBound.RightCenter();
             break;
-        case HDL_RIGHT:
+        case SdrHdlKind::Right:
             maScaleFixPos = maFullBound.LeftCenter();
             break;
-        case HDL_UPPER:
+        case SdrHdlKind::Upper:
             maScaleFixPos = maFullBound.BottomCenter();
             break;
-        case HDL_LOWER:
+        case SdrHdlKind::Lower:
             maScaleFixPos = maFullBound.TopCenter();
             break;
-        case HDL_UPLFT:
+        case SdrHdlKind::UpperLeft:
             maScaleFixPos = maFullBound.BottomRight();
             break;
-        case HDL_UPRGT:
+        case SdrHdlKind::UpperRight:
             maScaleFixPos = maFullBound.BottomLeft();
             break;
-        case HDL_LWLFT:
+        case SdrHdlKind::LowerLeft:
             maScaleFixPos = maFullBound.TopRight();
             break;
-        case HDL_LWRGT:
+        case SdrHdlKind::LowerRight:
             maScaleFixPos = maFullBound.TopLeft();
             break;
         default:
-            // Moving the object, HDL_MOVE
+            // Moving the object, SdrHdlKind::Move
             break;
     }
 
     // Override when IsResizeAtCenter()
     if(getSdrDragView().IsResizeAtCenter())
     {
-        meWhatDragHdl = HDL_USER;
+        meWhatDragHdl = SdrHdlKind::User;
         maScaleFixPos = maFullBound.Center();
     }
 }
@@ -487,7 +486,7 @@ void E3dDragMove::MoveSdrDrag(const Point& rPnt)
 
     if(DragStat().CheckMinMoved(rPnt))
     {
-        if(HDL_MOVE == meWhatDragHdl)
+        if(SdrHdlKind::Move == meWhatDragHdl)
         {
             // Translation
             // Determine the motion vector
@@ -605,13 +604,13 @@ void E3dDragMove::MoveSdrDrag(const Point& rPnt)
                 // constraints?
                 switch(meWhatDragHdl)
                 {
-                    case HDL_LEFT:
-                    case HDL_RIGHT:
+                    case SdrHdlKind::Left:
+                    case SdrHdlKind::Right:
                         // to constrain on X -> Y equal
                         aScNext.setY(aScFixPos.getY());
                         break;
-                    case HDL_UPPER:
-                    case HDL_LOWER:
+                    case SdrHdlKind::Upper:
+                    case SdrHdlKind::Lower:
                         // constrain to auf Y -> X equal
                         aScNext.setX(aScFixPos.getX());
                         break;

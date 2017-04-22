@@ -32,12 +32,6 @@
 #include "sqlbison.hxx"
 
 
-#if OSL_DEBUG_LEVEL > 0
-# define OUtoCStr( x ) ( OUStringToOString ( (x), RTL_TEXTENCODING_ASCII_US).getStr())
-#else /* OSL_DEBUG_LEVEL */
-# define OUtoCStr( x ) ("dummy")
-#endif /* OSL_DEBUG_LEVEL */
-
 using namespace connectivity::kab;
 using namespace com::sun::star::uno;
 using namespace com::sun::star::lang;
@@ -54,7 +48,7 @@ namespace
     {
         ::connectivity::SharedResources aResources;
         const OUString sError( aResources.getResourceString(_nErrorId) );
-        ::dbtools::throwGenericSQLException(sError,NULL);
+        ::dbtools::throwGenericSQLException(sError,nullptr);
     }
 }
 
@@ -64,10 +58,9 @@ KabCommonStatement::KabCommonStatement(KabConnection* _pConnection )
     : KabCommonStatement_BASE(m_aMutex),
     OPropertySetHelper(KabCommonStatement_BASE::rBHelper),
     m_aParser(_pConnection->getComponentContext()),
-    m_aSQLIterator(_pConnection, _pConnection->createCatalog()->getTables(), m_aParser, NULL ),
-    m_pParseTree(NULL),
-    m_pConnection(_pConnection),
-    rBHelper(KabCommonStatement_BASE::rBHelper)
+    m_aSQLIterator(_pConnection, _pConnection->createCatalog()->getTables(), m_aParser),
+    m_pParseTree(nullptr),
+    m_pConnection(_pConnection)
 {
     m_pConnection->acquire();
 }
@@ -76,22 +69,17 @@ KabCommonStatement::~KabCommonStatement()
 {
 }
 
-void KabCommonStatement::disposing()
-{
-    KabCommonStatement_BASE::disposing();
-}
-
-void KabCommonStatement::resetParameters() const throw(::com::sun::star::sdbc::SQLException)
+void KabCommonStatement::resetParameters() const
 {
     lcl_throwError(STR_PARA_ONLY_PREPARED);
 }
 
-void KabCommonStatement::getNextParameter(OUString &) const throw(::com::sun::star::sdbc::SQLException)
+void KabCommonStatement::getNextParameter(OUString &) const
 {
     lcl_throwError(STR_PARA_ONLY_PREPARED);
 }
 
-KabCondition *KabCommonStatement::analyseWhereClause(const OSQLParseNode *pParseNode) const throw(SQLException)
+KabCondition *KabCommonStatement::analyseWhereClause(const OSQLParseNode *pParseNode) const
 {
     if (pParseNode->count() == 3)
     {
@@ -197,12 +185,12 @@ KabCondition *KabCommonStatement::analyseWhereClause(const OSQLParseNode *pParse
 
                 if (SQL_ISTOKEN(pMiddleRight, NOT))
                 {
-                    // WHERE "Mobile Phone" IS NOT NULL
+                    // WHERE "Mobile Phone" IS NOT nullptr
                     return new KabConditionNotNull(sColumnName);
                 }
                 else
                 {
-                    // WHERE "Mobile Phone" IS NULL
+                    // WHERE "Mobile Phone" IS nullptr
                     return new KabConditionNull(sColumnName);
                 }
             }
@@ -235,10 +223,10 @@ KabCondition *KabCommonStatement::analyseWhereClause(const OSQLParseNode *pParse
 
     // Unreachable:
     OSL_ASSERT(false);
-    return 0;
+    return nullptr;
 }
 
-KabOrder *KabCommonStatement::analyseOrderByClause(const OSQLParseNode *pParseNode) const throw(SQLException)
+KabOrder *KabCommonStatement::analyseOrderByClause(const OSQLParseNode *pParseNode) const
 {
     if (SQL_ISRULE(pParseNode, ordering_spec_commalist))
     {
@@ -281,7 +269,7 @@ KabOrder *KabCommonStatement::analyseOrderByClause(const OSQLParseNode *pParseNo
     lcl_throwError(STR_QUERY_TOO_COMPLEX);
     // Unreachable:
     OSL_ASSERT(false);
-    return 0;
+    return nullptr;
 }
 
 bool KabCommonStatement::isTableKnown(KabResultSet *pResult) const
@@ -297,7 +285,7 @@ bool KabCommonStatement::isTableKnown(KabResultSet *pResult) const
     return true;
 }
 
-void KabCommonStatement::setKabFields(KabResultSet *pResult) const throw(SQLException)
+void KabCommonStatement::setKabFields(KabResultSet *pResult) const
 {
     ::rtl::Reference<connectivity::OSQLColumns> xColumns;   // selected columns
 
@@ -309,12 +297,12 @@ void KabCommonStatement::setKabFields(KabResultSet *pResult) const throw(SQLExce
     pResult->getKabMetaData()->setKabFields(xColumns);
 }
 
-void KabCommonStatement::selectAddressees(KabResultSet *pResult) const throw(SQLException)
+void KabCommonStatement::selectAddressees(KabResultSet *pResult) const
 {
     const OSQLParseNode *pParseNode;
 
     pParseNode = m_aSQLIterator.getWhereTree();
-    if (pParseNode != NULL)
+    if (pParseNode != nullptr)
     {
         if (SQL_ISRULE(pParseNode, where_clause))
         {
@@ -334,12 +322,12 @@ void KabCommonStatement::selectAddressees(KabResultSet *pResult) const throw(SQL
     pResult->allKabAddressees();
 }
 
-void KabCommonStatement::sortAddressees(KabResultSet *pResult) const throw(SQLException)
+void KabCommonStatement::sortAddressees(KabResultSet *pResult) const
 {
     const OSQLParseNode *pParseNode;
 
     pParseNode = m_aSQLIterator.getOrderTree();
-    if (pParseNode != NULL)
+    if (pParseNode != nullptr)
     {
         if (SQL_ISRULE(pParseNode, opt_order_by_clause))
         {
@@ -351,7 +339,7 @@ void KabCommonStatement::sortAddressees(KabResultSet *pResult) const throw(SQLEx
     }
 }
 
-Any SAL_CALL KabCommonStatement::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any SAL_CALL KabCommonStatement::queryInterface( const Type & rType )
 {
     Any aRet = KabCommonStatement_BASE::queryInterface(rType);
     if (!aRet.hasValue())
@@ -359,7 +347,7 @@ Any SAL_CALL KabCommonStatement::queryInterface( const Type & rType ) throw(Runt
     return aRet;
 }
 
-Sequence< Type > SAL_CALL KabCommonStatement::getTypes(  ) throw(RuntimeException, std::exception)
+Sequence< Type > SAL_CALL KabCommonStatement::getTypes(  )
 {
     ::cppu::OTypeCollection aTypes( cppu::UnoType<XMultiPropertySet>::get(),
                                     cppu::UnoType<XFastPropertySet>::get(),
@@ -368,7 +356,7 @@ Sequence< Type > SAL_CALL KabCommonStatement::getTypes(  ) throw(RuntimeExceptio
     return comphelper::concatSequences(aTypes.getTypes(),KabCommonStatement_BASE::getTypes());
 }
 
-void SAL_CALL KabCommonStatement::cancel(  ) throw(RuntimeException, std::exception)
+void SAL_CALL KabCommonStatement::cancel(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -376,7 +364,7 @@ void SAL_CALL KabCommonStatement::cancel(  ) throw(RuntimeException, std::except
     // cancel the current sql statement
 }
 
-void SAL_CALL KabCommonStatement::close(  ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL KabCommonStatement::close(  )
 {
     {
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -387,7 +375,7 @@ void SAL_CALL KabCommonStatement::close(  ) throw(SQLException, RuntimeException
 }
 
 sal_Bool SAL_CALL KabCommonStatement::execute(
-        const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
+        const OUString& sql )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabCommonStatement_BASE::rBHelper.bDisposed);
@@ -398,19 +386,17 @@ sal_Bool SAL_CALL KabCommonStatement::execute(
 }
 
 Reference< XResultSet > SAL_CALL KabCommonStatement::executeQuery(
-        const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
+        const OUString& sql )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabCommonStatement_BASE::rBHelper.bDisposed);
-
-OSL_TRACE("KDE Address book - SQL Request: %s", OUtoCStr(sql));
 
     KabResultSet* pResult = new KabResultSet(this);
     Reference< XResultSet > xRS = pResult;
     OUString aErr;
 
     m_pParseTree = m_aParser.parseTree(aErr, sql);
-    if (m_pParseTree == NULL)
+    if (m_pParseTree == nullptr)
         throw SQLException(aErr, *this, aErr, 0, Any());
 
     m_aSQLIterator.setParseTree(m_pParseTree);
@@ -438,7 +424,7 @@ OSL_TRACE("KDE Address book - SQL Request: %s", OUtoCStr(sql));
     return xRS;
 }
 
-Reference< XConnection > SAL_CALL KabCommonStatement::getConnection(  ) throw(SQLException, RuntimeException, std::exception)
+Reference< XConnection > SAL_CALL KabCommonStatement::getConnection(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabCommonStatement_BASE::rBHelper.bDisposed);
@@ -447,7 +433,7 @@ Reference< XConnection > SAL_CALL KabCommonStatement::getConnection(  ) throw(SQ
     return m_pConnection;
 }
 
-sal_Int32 SAL_CALL KabCommonStatement::executeUpdate( const OUString& ) throw(SQLException, RuntimeException, std::exception)
+sal_Int32 SAL_CALL KabCommonStatement::executeUpdate( const OUString& )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabCommonStatement_BASE::rBHelper.bDisposed);
@@ -456,7 +442,7 @@ sal_Int32 SAL_CALL KabCommonStatement::executeUpdate( const OUString& ) throw(SQ
     return 0;
 }
 
-Any SAL_CALL KabCommonStatement::getWarnings(  ) throw(SQLException, RuntimeException, std::exception)
+Any SAL_CALL KabCommonStatement::getWarnings(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabCommonStatement_BASE::rBHelper.bDisposed);
@@ -464,7 +450,7 @@ Any SAL_CALL KabCommonStatement::getWarnings(  ) throw(SQLException, RuntimeExce
     return makeAny(m_aLastWarning);
 }
 
-void SAL_CALL KabCommonStatement::clearWarnings(  ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL KabCommonStatement::clearWarnings(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabCommonStatement_BASE::rBHelper.bDisposed);
@@ -479,25 +465,25 @@ void SAL_CALL KabCommonStatement::clearWarnings(  ) throw(SQLException, RuntimeE
     Sequence< Property > aProps(10);
     Property* pProperties = aProps.getArray();
     sal_Int32 nPos = 0;
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
         PROPERTY_ID_CURSORNAME, cppu::UnoType<OUString>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ESCAPEPROCESSING),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ESCAPEPROCESSING),
         PROPERTY_ID_ESCAPEPROCESSING, cppu::UnoType<bool>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
         PROPERTY_ID_FETCHDIRECTION, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
         PROPERTY_ID_FETCHSIZE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXFIELDSIZE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXFIELDSIZE),
         PROPERTY_ID_MAXFIELDSIZE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXROWS),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXROWS),
         PROPERTY_ID_MAXROWS, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_QUERYTIMEOUT),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_QUERYTIMEOUT),
         PROPERTY_ID_QUERYTIMEOUT, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
         PROPERTY_ID_RESULTSETCONCURRENCY, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
         PROPERTY_ID_RESULTSETTYPE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_USEBOOKMARKS),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_USEBOOKMARKS),
         PROPERTY_ID_USEBOOKMARKS, cppu::UnoType<bool>::get(), 0);
 
     return new ::cppu::OPropertyArrayHelper(aProps);
@@ -512,14 +498,14 @@ sal_Bool KabCommonStatement::convertFastPropertyValue(
         Any &,
         Any &,
         sal_Int32,
-        const Any&) throw (::com::sun::star::lang::IllegalArgumentException)
+        const Any&)
 {
     bool bConverted = false;
     // here we have to try to convert
     return bConverted;
 }
 
-void KabCommonStatement::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any&) throw (Exception, std::exception)
+void KabCommonStatement::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any&)
 {
     // set the value to whatever is necessary
     switch (nHandle)
@@ -568,7 +554,7 @@ void SAL_CALL KabCommonStatement::release() throw()
     KabCommonStatement_BASE::release();
 }
 
-Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL KabCommonStatement::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
+Reference< css::beans::XPropertySetInfo > SAL_CALL KabCommonStatement::getPropertySetInfo(  )
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }

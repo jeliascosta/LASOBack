@@ -31,7 +31,7 @@
 namespace tools {
 
 /** T must be a class that extends SvRefBase */
-template<typename T> class SAL_DLLPUBLIC_RTTI SvRef {
+template<typename T> class SAL_DLLPUBLIC_RTTI SvRef final {
 public:
     SvRef(): pObj(nullptr) {}
 
@@ -56,7 +56,7 @@ public:
         if (pObj != nullptr) pObj->ReleaseRef();
     }
 
-    void Clear()
+    void clear()
     {
         if (pObj != nullptr) {
             T * pRefObj = pObj;
@@ -67,7 +67,7 @@ public:
 
     SvRef & operator =(SvRef const & rObj)
     {
-        if (rObj.pObj != 0) {
+        if (rObj.pObj != nullptr) {
             rObj.pObj->AddNextRef();
         }
         T * pRefObj = pObj;
@@ -78,19 +78,30 @@ public:
         return *this;
     }
 
-    bool Is()         const { return pObj != nullptr; }
+    SvRef & operator =(SvRef && rObj)
+    {
+        if (pObj != nullptr) {
+            pObj->ReleaseRef();
+        }
+        pObj = rObj.pObj;
+        rObj.pObj = nullptr;
+        return *this;
+    }
+
+    bool is()         const { return pObj != nullptr; }
+
+    explicit operator bool() const { return is(); }
 
     T * get()         const { return pObj; }
-
-    T * operator &()  const { return pObj; }
 
     T * operator ->() const { assert(pObj != nullptr); return pObj; }
 
     T & operator *()  const { assert(pObj != nullptr); return *pObj; }
 
-    operator T *()    const { return pObj; }
+    bool operator ==(const SvRef<T> &rhs) const { return pObj == rhs.pObj; }
+    bool operator !=(const SvRef<T> &rhs) const { return !(*this == rhs); }
 
-protected:
+private:
     T * pObj;
 };
 
@@ -193,7 +204,7 @@ public:
 
     ~SvCompatWeakBase() { _xHdl->ResetWeakBase(); }
 
-    SvCompatWeakHdl<T>* GetHdl() { return _xHdl; }
+    SvCompatWeakHdl<T>* GetHdl() { return _xHdl.get(); }
 };
 
 /** We only have one weak reference in LO, in include/sfx2/frame.hxx, class SfxFrameWeak.
@@ -203,17 +214,18 @@ class SAL_WARN_UNUSED SvCompatWeakRef
 {
     tools::SvRef< SvCompatWeakHdl<T> > _xHdl;
 public:
-    inline               SvCompatWeakRef( ) {}
-    inline               SvCompatWeakRef( T* pObj )
+    SvCompatWeakRef( ) {}
+    SvCompatWeakRef( T* pObj )
                          {  if( pObj ) _xHdl = pObj->GetHdl(); }
-    inline SvCompatWeakRef& operator = ( T * pObj )
-                         {  _xHdl = pObj ? pObj->GetHdl() : 0; return *this; }
-    inline bool          Is() const
-                         { return _xHdl.Is() && _xHdl->GetObj(); }
-    inline T*            operator -> () const
-                         { return _xHdl.Is() ? _xHdl->GetObj() : 0; }
-    inline operator T* () const
-                         { return _xHdl.Is() ? _xHdl->GetObj() : 0; }
+    SvCompatWeakRef& operator = ( T * pObj )
+                         {  _xHdl = pObj ? pObj->GetHdl() : nullptr; return *this; }
+    bool          is() const
+                         { return _xHdl.is() && _xHdl->GetObj(); }
+    explicit operator bool() const { return is(); }
+    T*            operator -> () const
+                         { return _xHdl.is() ? _xHdl->GetObj() : nullptr; }
+    operator T* () const
+                         { return _xHdl.is() ? _xHdl->GetObj() : nullptr; }
 };
 
 #endif

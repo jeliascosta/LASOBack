@@ -15,6 +15,7 @@
 #include <vcl/edit.hxx>
 #include <vcl/scrbar.hxx>
 #include <vcl/timer.hxx>
+#include <svtools/svlbitm.hxx>
 #include <svx/checklbx.hxx>
 
 #include <memory>
@@ -48,7 +49,7 @@ public:
     };
 
     explicit ScMenuFloatingWindow(vcl::Window* pParent, ScDocument* pDoc, sal_uInt16 nMenuStackLevel = 0);
-    virtual ~ScMenuFloatingWindow();
+    virtual ~ScMenuFloatingWindow() override;
      void dispose() override;
 
     virtual void PopupModeEnd() override;
@@ -56,7 +57,7 @@ public:
     virtual void MouseButtonDown(const MouseEvent& rMEvt) override;
     virtual void MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual void KeyInput(const KeyEvent& rKEvt) override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual css::uno::Reference<css::accessibility::XAccessible> CreateAccessible() override;
 
     void addMenuItem(const OUString& rText, Action* pAction);
@@ -165,7 +166,7 @@ private:
         VclPtr<ScMenuFloatingWindow>   mpSubMenu;
         size_t                  mnMenuPos;
 
-        DECL_LINK_TYPED( TimeoutHdl, Timer*, void );
+        DECL_LINK( TimeoutHdl, Timer*, void );
 
         SubMenuItemData(ScMenuFloatingWindow* pParent);
         void reset();
@@ -227,16 +228,16 @@ class ScCheckListBox : public SvTreeListBox
     ScTabStops*         mpTabStops;
     bool                mbSeenMouseButtonDown;
     void            CountCheckedEntries( SvTreeListEntry* pParent, sal_uLong& nCount ) const;
-    void            CheckAllChildren( SvTreeListEntry* pEntry, bool bCheck = true );
+    void            CheckAllChildren( SvTreeListEntry* pEntry, bool bCheck );
 
     public:
 
-    ScCheckListBox( vcl::Window* pParent, WinBits nWinStyle = 0 );
-    virtual ~ScCheckListBox() { disposeOnce(); }
+    ScCheckListBox( vcl::Window* pParent );
+    virtual ~ScCheckListBox() override { disposeOnce(); }
     virtual void dispose() override { delete mpCheckButton; SvTreeListBox::dispose(); }
     void Init();
-    void CheckEntry( const OUString& sName, SvTreeListEntry* pParent, bool bCheck = true );
-    void CheckEntry( SvTreeListEntry* pEntry, bool bCheck = true );
+    void CheckEntry( const OUString& sName, SvTreeListEntry* pParent, bool bCheck );
+    void CheckEntry( SvTreeListEntry* pEntry, bool bCheck );
     SvTreeListEntry* ShowCheckEntry( const OUString& sName, ScCheckListMember& rMember, bool bShow = true, bool bCheck = true );
     bool IsChecked( const OUString& sName, SvTreeListEntry* pParent );
     SvTreeListEntry* FindEntry( SvTreeListEntry* pParent, const OUString& sNode );
@@ -257,9 +258,8 @@ public:
         : Edit(pParent)
         , mpTabStops(nullptr)
     {
+        set_id("search_edit");
     }
-
-    virtual ~ScSearchEdit() {}
 
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
     void SetTabStopsContainer( ScTabStops* pTabStops )  { mpTabStops = pTabStops; }
@@ -293,7 +293,18 @@ struct ScCheckListMember
 class ScCheckListMenuWindow : public ScMenuFloatingWindow
 {
 public:
-    typedef std::unordered_map<OUString, bool, OUStringHash> ResultType;
+    struct ResultEntry
+    {
+        OUString aName;
+        bool bValid;
+        bool bDate;
+
+        bool operator<(const ResultEntry& rhs) const
+        {
+            return aName < rhs.aName;
+        }
+    };
+    typedef std::set<ResultEntry> ResultType;
 
     /**
      * Extended data that the client code may need to store.  Create a
@@ -316,15 +327,16 @@ public:
     };
 
     explicit ScCheckListMenuWindow(vcl::Window* pParent, ScDocument* pDoc);
-    virtual ~ScCheckListMenuWindow();
+    virtual ~ScCheckListMenuWindow() override;
     virtual void dispose() override;
 
     virtual void MouseMove(const MouseEvent& rMEvt) override;
-    virtual bool Notify(NotifyEvent& rNEvt) override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual bool EventNotify(NotifyEvent& rNEvt) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessible() override;
 
     void setMemberSize(size_t n);
+    void setHasDates(bool bHasDates);
     void addDateMember(const OUString& rName, double nVal, bool bVisible);
     void addMember(const OUString& rName, bool bVisible);
     void initMembers();
@@ -332,7 +344,7 @@ public:
 
     bool isAllSelected() const;
     void getResult(ResultType& rResult);
-    void launch(const Rectangle& rRect);
+    void launch(const tools::Rectangle& rRect);
     void close(bool bOK);
 
     /**
@@ -359,7 +371,7 @@ private:
     {
     public:
         CancelButton(ScCheckListMenuWindow* pParent);
-        virtual ~CancelButton();
+        virtual ~CancelButton() override;
         virtual void dispose() override;
 
         virtual void Click() override;
@@ -391,10 +403,10 @@ private:
     void selectCurrentMemberOnly(bool bSet);
     void updateMemberParents( SvTreeListEntry* pLeaf, size_t nIdx );
 
-    DECL_LINK_TYPED( ButtonHdl, Button*, void );
-    DECL_LINK_TYPED( TriStateHdl, Button*, void );
-    DECL_LINK_TYPED( CheckHdl, SvTreeListBox*, void );
-    DECL_LINK_TYPED( EdModifyHdl, Edit&, void );
+    DECL_LINK( ButtonHdl, Button*, void );
+    DECL_LINK( TriStateHdl, Button*, void );
+    DECL_LINK( CheckHdl, SvTreeListBox*, void );
+    DECL_LINK( EdModifyHdl, Edit&, void );
 
 private:
     VclPtr<ScSearchEdit>   maEdSearch;

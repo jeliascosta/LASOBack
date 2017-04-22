@@ -100,13 +100,13 @@ public:
     explicit SwVbaCodeNameProvider( SwDocShell* pDocShell ) : mpDocShell( pDocShell ) {}
         // XCodeNameQuery
 
-    OUString SAL_CALL getCodeNameForContainer( const uno::Reference< uno::XInterface >& /*xIf*/ ) throw( uno::RuntimeException, std::exception ) override
+    OUString SAL_CALL getCodeNameForContainer( const uno::Reference< uno::XInterface >& /*xIf*/ ) override
     {
         // #FIXME not implemented...
         return OUString();
     }
 
-    OUString SAL_CALL getCodeNameForObject( const uno::Reference< uno::XInterface >& xIf ) throw( uno::RuntimeException, std::exception ) override
+    OUString SAL_CALL getCodeNameForObject( const uno::Reference< uno::XInterface >& xIf ) override
     {
         // Initialise the code name
         if ( msThisDocumentCodeName.isEmpty() )
@@ -180,22 +180,22 @@ public:
     SwVbaProjectNameProvider()
     {
     }
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception ) override
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override
     {
         return ( mTemplateToProject.find( aName ) != mTemplateToProject.end() );
     }
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override
     {
         if ( !hasByName( aName ) )
             throw container::NoSuchElementException();
         return uno::makeAny( mTemplateToProject.find( aName )->second );
     }
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override
     {
         return comphelper::mapKeysToSequence( mTemplateToProject );
     }
 
-    virtual void SAL_CALL insertByName( const OUString& aName, const uno::Any& aElement ) throw ( css::lang::IllegalArgumentException, css::container::ElementExistException, css::lang::WrappedTargetException, std::exception ) override
+    virtual void SAL_CALL insertByName( const OUString& aName, const uno::Any& aElement ) override
     {
 
         OUString sProjectName;
@@ -205,24 +205,24 @@ public:
         mTemplateToProject[ aName ] = sProjectName;
     }
 
-    virtual void SAL_CALL removeByName( const OUString& Name ) throw ( css::container::NoSuchElementException, css::lang::WrappedTargetException, std::exception ) override
+    virtual void SAL_CALL removeByName( const OUString& Name ) override
     {
         if ( !hasByName( Name ) )
             throw container::NoSuchElementException();
         mTemplateToProject.erase( Name );
     }
-    virtual void SAL_CALL replaceByName( const OUString& aName, const uno::Any& aElement ) throw ( css::lang::IllegalArgumentException, css::container::NoSuchElementException, css::lang::WrappedTargetException, std::exception ) override
+    virtual void SAL_CALL replaceByName( const OUString& aName, const uno::Any& aElement ) override
     {
         if ( !hasByName( aName ) )
             throw container::NoSuchElementException();
         insertByName( aName, aElement ); // insert will overwrite
     }
     // XElemenAccess
-    virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Type SAL_CALL getElementType(  ) override
     {
         return ::cppu::UnoType<OUString>::get();
     }
-    virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception ) override
+    virtual sal_Bool SAL_CALL hasElements(  ) override
     {
 
         return ( !mTemplateToProject.empty() );
@@ -239,7 +239,7 @@ public:
         // #FIXME #TODO is the code name for ThisDocument read anywhere?
     }
 
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception ) override
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override
     {
         // #FIXME #TODO we really need to be checking against the codename for
         // ThisDocument
@@ -248,26 +248,26 @@ public:
         return false;
     }
 
-    css::uno::Any SAL_CALL getByName( const OUString& aName ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
+    css::uno::Any SAL_CALL getByName( const OUString& aName ) override
     {
         if ( !hasByName( aName ) )
              throw container::NoSuchElementException();
         uno::Sequence< uno::Any > aArgs( 2 );
-        aArgs[0] = uno::Any( uno::Reference< uno::XInterface >() );
-        aArgs[1] = uno::Any( mpDocShell->GetModel() );
+        aArgs[0] <<= uno::Reference< uno::XInterface >();
+        aArgs[1] <<= mpDocShell->GetModel();
         uno::Reference< uno::XInterface > xDocObj = ooo::vba::createVBAUnoAPIServiceWithArgs( mpDocShell, "ooo.vba.word.Document" , aArgs );
         SAL_INFO("sw.uno",
             "Creating Object ( ooo.vba.word.Document ) 0x" << xDocObj.get());
         return  uno::makeAny( xDocObj );
     }
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override
     {
         uno::Sequence< OUString > aNames;
         return aNames;
     }
     // XElemenAccess
-    virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override { return uno::Type(); }
-    virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception ) override { return true; }
+    virtual css::uno::Type SAL_CALL getElementType(  ) override { return uno::Type(); }
+    virtual sal_Bool SAL_CALL hasElements(  ) override { return true; }
 
 };
 
@@ -276,185 +276,187 @@ public:
 struct  ProvNamesId_Type
 {
     const char *    pName;
-    sal_uInt16      nType;
+    SwServiceType   nType;
 };
 
 // note: this thing is indexed as an array, so do not insert/remove entries!
 const ProvNamesId_Type aProvNamesId[] =
 {
-    { "com.sun.star.text.TextTable",                          SW_SERVICE_TYPE_TEXTTABLE },
-    { "com.sun.star.text.TextFrame",                          SW_SERVICE_TYPE_TEXTFRAME },
-    { "com.sun.star.text.GraphicObject",                      SW_SERVICE_TYPE_GRAPHIC },
-    { "com.sun.star.text.TextEmbeddedObject",                 SW_SERVICE_TYPE_OLE },
-    { "com.sun.star.text.Bookmark",                           SW_SERVICE_TYPE_BOOKMARK },
-    { "com.sun.star.text.Footnote",                           SW_SERVICE_TYPE_FOOTNOTE },
-    { "com.sun.star.text.Endnote",                            SW_SERVICE_TYPE_ENDNOTE },
-    { "com.sun.star.text.DocumentIndexMark",                  SW_SERVICE_TYPE_INDEXMARK },
-    { "com.sun.star.text.DocumentIndex",                      SW_SERVICE_TYPE_INDEX },
-    { "com.sun.star.text.ReferenceMark",                      SW_SERVICE_REFERENCE_MARK },
-    { "com.sun.star.style.CharacterStyle",                    SW_SERVICE_STYLE_CHARACTER_STYLE },
-    { "com.sun.star.style.ParagraphStyle",                    SW_SERVICE_STYLE_PARAGRAPH_STYLE },
-    { "com.sun.star.style.FrameStyle",                        SW_SERVICE_STYLE_FRAME_STYLE },
-    { "com.sun.star.style.PageStyle",                         SW_SERVICE_STYLE_PAGE_STYLE },
-    { "com.sun.star.style.NumberingStyle",                    SW_SERVICE_STYLE_NUMBERING_STYLE },
-    { "com.sun.star.text.ContentIndexMark",                   SW_SERVICE_CONTENT_INDEX_MARK },
-    { "com.sun.star.text.ContentIndex",                       SW_SERVICE_CONTENT_INDEX },
-    { "com.sun.star.text.UserIndexMark",                      SW_SERVICE_USER_INDEX_MARK },
-    { "com.sun.star.text.UserIndex",                          SW_SERVICE_USER_INDEX },
-    { "com.sun.star.text.TextSection",                        SW_SERVICE_TEXT_SECTION },
-    { "com.sun.star.text.TextField.DateTime",                 SW_SERVICE_FIELDTYPE_DATETIME },
-    { "com.sun.star.text.TextField.User",                     SW_SERVICE_FIELDTYPE_USER },
-    { "com.sun.star.text.TextField.SetExpression",            SW_SERVICE_FIELDTYPE_SET_EXP },
-    { "com.sun.star.text.TextField.GetExpression",            SW_SERVICE_FIELDTYPE_GET_EXP },
-    { "com.sun.star.text.TextField.FileName",                 SW_SERVICE_FIELDTYPE_FILE_NAME },
-    { "com.sun.star.text.TextField.PageNumber",               SW_SERVICE_FIELDTYPE_PAGE_NUM },
-    { "com.sun.star.text.TextField.Author",                   SW_SERVICE_FIELDTYPE_AUTHOR },
-    { "com.sun.star.text.TextField.Chapter",                  SW_SERVICE_FIELDTYPE_CHAPTER },
-    { "",                                                     SW_SERVICE_FIELDTYPE_DUMMY_0 },
-    { "com.sun.star.text.TextField.GetReference",             SW_SERVICE_FIELDTYPE_GET_REFERENCE },
-    { "com.sun.star.text.TextField.ConditionalText",          SW_SERVICE_FIELDTYPE_CONDITIONED_TEXT },
-    { "com.sun.star.text.TextField.Annotation",               SW_SERVICE_FIELDTYPE_ANNOTATION },
-    { "com.sun.star.text.TextField.Input",                    SW_SERVICE_FIELDTYPE_INPUT },
-    { "com.sun.star.text.TextField.Macro",                    SW_SERVICE_FIELDTYPE_MACRO },
-    { "com.sun.star.text.TextField.DDE",                      SW_SERVICE_FIELDTYPE_DDE },
-    { "com.sun.star.text.TextField.HiddenParagraph",          SW_SERVICE_FIELDTYPE_HIDDEN_PARA },
-    { "" /*com.sun.star.text.TextField.DocumentInfo"*/,       SW_SERVICE_FIELDTYPE_DOC_INFO },
-    { "com.sun.star.text.TextField.TemplateName",             SW_SERVICE_FIELDTYPE_TEMPLATE_NAME },
-    { "com.sun.star.text.TextField.ExtendedUser",             SW_SERVICE_FIELDTYPE_USER_EXT },
-    { "com.sun.star.text.TextField.ReferencePageSet",         SW_SERVICE_FIELDTYPE_REF_PAGE_SET },
-    { "com.sun.star.text.TextField.ReferencePageGet",         SW_SERVICE_FIELDTYPE_REF_PAGE_GET },
-    { "com.sun.star.text.TextField.JumpEdit",                 SW_SERVICE_FIELDTYPE_JUMP_EDIT },
-    { "com.sun.star.text.TextField.Script",                   SW_SERVICE_FIELDTYPE_SCRIPT },
-    { "com.sun.star.text.TextField.DatabaseNextSet",          SW_SERVICE_FIELDTYPE_DATABASE_NEXT_SET },
-    { "com.sun.star.text.TextField.DatabaseNumberOfSet",      SW_SERVICE_FIELDTYPE_DATABASE_NUM_SET },
-    { "com.sun.star.text.TextField.DatabaseSetNumber",        SW_SERVICE_FIELDTYPE_DATABASE_SET_NUM },
-    { "com.sun.star.text.TextField.Database",                 SW_SERVICE_FIELDTYPE_DATABASE },
-    { "com.sun.star.text.TextField.DatabaseName",             SW_SERVICE_FIELDTYPE_DATABASE_NAME },
-    { "com.sun.star.text.TextField.TableFormula",             SW_SERVICE_FIELDTYPE_TABLE_FORMULA },
-    { "com.sun.star.text.TextField.PageCount",                SW_SERVICE_FIELDTYPE_PAGE_COUNT },
-    { "com.sun.star.text.TextField.ParagraphCount",           SW_SERVICE_FIELDTYPE_PARAGRAPH_COUNT },
-    { "com.sun.star.text.TextField.WordCount",                SW_SERVICE_FIELDTYPE_WORD_COUNT },
-    { "com.sun.star.text.TextField.CharacterCount",           SW_SERVICE_FIELDTYPE_CHARACTER_COUNT },
-    { "com.sun.star.text.TextField.TableCount",               SW_SERVICE_FIELDTYPE_TABLE_COUNT },
-    { "com.sun.star.text.TextField.GraphicObjectCount",       SW_SERVICE_FIELDTYPE_GRAPHIC_OBJECT_COUNT },
-    { "com.sun.star.text.TextField.EmbeddedObjectCount",      SW_SERVICE_FIELDTYPE_EMBEDDED_OBJECT_COUNT },
-    { "com.sun.star.text.TextField.DocInfo.ChangeAuthor",     SW_SERVICE_FIELDTYPE_DOCINFO_CHANGE_AUTHOR },
-    { "com.sun.star.text.TextField.DocInfo.ChangeDateTime",   SW_SERVICE_FIELDTYPE_DOCINFO_CHANGE_DATE_TIME },
-    { "com.sun.star.text.TextField.DocInfo.EditTime",         SW_SERVICE_FIELDTYPE_DOCINFO_EDIT_TIME },
-    { "com.sun.star.text.TextField.DocInfo.Description",      SW_SERVICE_FIELDTYPE_DOCINFO_DESCRIPTION },
-    { "com.sun.star.text.TextField.DocInfo.CreateAuthor",     SW_SERVICE_FIELDTYPE_DOCINFO_CREATE_AUTHOR },
-    { "com.sun.star.text.TextField.DocInfo.CreateDateTime",   SW_SERVICE_FIELDTYPE_DOCINFO_CREATE_DATE_TIME },
-    { "",                                                     SW_SERVICE_FIELDTYPE_DUMMY_0 },
-    { "",                                                     SW_SERVICE_FIELDTYPE_DUMMY_1 },
-    { "",                                                     SW_SERVICE_FIELDTYPE_DUMMY_2 },
-    { "",                                                     SW_SERVICE_FIELDTYPE_DUMMY_3 },
-    { "com.sun.star.text.TextField.DocInfo.Custom",           SW_SERVICE_FIELDTYPE_DOCINFO_CUSTOM },
-    { "com.sun.star.text.TextField.DocInfo.PrintAuthor",      SW_SERVICE_FIELDTYPE_DOCINFO_PRINT_AUTHOR },
-    { "com.sun.star.text.TextField.DocInfo.PrintDateTime",    SW_SERVICE_FIELDTYPE_DOCINFO_PRINT_DATE_TIME },
-    { "com.sun.star.text.TextField.DocInfo.KeyWords",         SW_SERVICE_FIELDTYPE_DOCINFO_KEY_WORDS },
-    { "com.sun.star.text.TextField.DocInfo.Subject",          SW_SERVICE_FIELDTYPE_DOCINFO_SUBJECT },
-    { "com.sun.star.text.TextField.DocInfo.Title",            SW_SERVICE_FIELDTYPE_DOCINFO_TITLE },
-    { "com.sun.star.text.TextField.DocInfo.Revision",         SW_SERVICE_FIELDTYPE_DOCINFO_REVISION },
-    { "com.sun.star.text.TextField.Bibliography",             SW_SERVICE_FIELDTYPE_BIBLIOGRAPHY },
-    { "com.sun.star.text.TextField.CombinedCharacters",       SW_SERVICE_FIELDTYPE_COMBINED_CHARACTERS },
-    { "com.sun.star.text.TextField.DropDown",                 SW_SERVICE_FIELDTYPE_DROPDOWN },
-    { "com.sun.star.text.textfield.MetadataField",            SW_SERVICE_FIELDTYPE_METAFIELD },
-    { "",                                                     SW_SERVICE_FIELDTYPE_DUMMY_4 },
-    { "",                                                     SW_SERVICE_FIELDTYPE_DUMMY_5 },
-    { "",                                                     SW_SERVICE_FIELDTYPE_DUMMY_6 },
-    { "",                                                     SW_SERVICE_FIELDTYPE_DUMMY_7 },
-    { "com.sun.star.text.FieldMaster.User",                   SW_SERVICE_FIELDMASTER_USER },
-    { "com.sun.star.text.FieldMaster.DDE",                    SW_SERVICE_FIELDMASTER_DDE },
-    { "com.sun.star.text.FieldMaster.SetExpression",          SW_SERVICE_FIELDMASTER_SET_EXP },
-    { "com.sun.star.text.FieldMaster.Database",               SW_SERVICE_FIELDMASTER_DATABASE },
-    { "com.sun.star.text.FieldMaster.Bibliography",           SW_SERVICE_FIELDMASTER_BIBLIOGRAPHY },
-    { "",                                                     SW_SERVICE_FIELDMASTER_DUMMY2 },
-    { "",                                                     SW_SERVICE_FIELDMASTER_DUMMY3 },
-    { "",                                                     SW_SERVICE_FIELDMASTER_DUMMY4 },
-    { "",                                                     SW_SERVICE_FIELDMASTER_DUMMY5 },
-    { "com.sun.star.text.IllustrationsIndex",                 SW_SERVICE_INDEX_ILLUSTRATIONS },
-    { "com.sun.star.text.ObjectIndex",                        SW_SERVICE_INDEX_OBJECTS },
-    { "com.sun.star.text.TableIndex",                         SW_SERVICE_INDEX_TABLES },
-    { "com.sun.star.text.Bibliography",                       SW_SERVICE_INDEX_BIBLIOGRAPHY },
-    { "com.sun.star.text.Paragraph",                          SW_SERVICE_PARAGRAPH },
-    { "com.sun.star.text.TextField.InputUser",                SW_SERVICE_FIELDTYPE_INPUT_USER },
-    { "com.sun.star.text.TextField.HiddenText",               SW_SERVICE_FIELDTYPE_HIDDEN_TEXT },
-    { "com.sun.star.style.ConditionalParagraphStyle",         SW_SERVICE_STYLE_CONDITIONAL_PARAGRAPH_STYLE },
-    { "com.sun.star.text.NumberingRules",                     SW_SERVICE_NUMBERING_RULES },
-    { "com.sun.star.text.TextColumns",                        SW_SERVICE_TEXT_COLUMNS },
-    { "com.sun.star.text.IndexHeaderSection",                 SW_SERVICE_INDEX_HEADER_SECTION },
-    { "com.sun.star.text.Defaults",                           SW_SERVICE_DEFAULTS },
-    { "com.sun.star.image.ImageMapRectangleObject",           SW_SERVICE_IMAP_RECTANGLE },
-    { "com.sun.star.image.ImageMapCircleObject",              SW_SERVICE_IMAP_CIRCLE },
-    { "com.sun.star.image.ImageMapPolygonObject",             SW_SERVICE_IMAP_POLYGON },
-    { "com.sun.star.text.TextGraphicObject",                  SW_SERVICE_TYPE_TEXT_GRAPHIC },
-    { "com.sun.star.chart2.data.DataProvider",                SW_SERVICE_CHART2_DATA_PROVIDER },
-    { "com.sun.star.text.Fieldmark",                          SW_SERVICE_TYPE_FIELDMARK },
-    { "com.sun.star.text.FormFieldmark",                      SW_SERVICE_TYPE_FORMFIELDMARK },
-    { "com.sun.star.text.InContentMetadata",                  SW_SERVICE_TYPE_META },
-    { "ooo.vba.VBAObjectModuleObjectProvider",                SW_SERVICE_VBAOBJECTPROVIDER },
-    { "ooo.vba.VBACodeNameProvider",                          SW_SERVICE_VBACODENAMEPROVIDER },
-    { "ooo.vba.VBAProjectNameProvider",                       SW_SERVICE_VBAPROJECTNAMEPROVIDER },
-    { "ooo.vba.VBAGlobals",                       SW_SERVICE_VBAGLOBALS },
+    { "com.sun.star.text.TextTable",                          SwServiceType::TypeTextTable },
+    { "com.sun.star.text.TextFrame",                          SwServiceType::TypeTextFrame },
+    { "com.sun.star.text.GraphicObject",                      SwServiceType::TypeGraphic },
+    { "com.sun.star.text.TextEmbeddedObject",                 SwServiceType::TypeOLE },
+    { "com.sun.star.text.Bookmark",                           SwServiceType::TypeBookmark },
+    { "com.sun.star.text.Footnote",                           SwServiceType::TypeFootnote },
+    { "com.sun.star.text.Endnote",                            SwServiceType::TypeEndnote },
+    { "com.sun.star.text.DocumentIndexMark",                  SwServiceType::TypeIndexMark },
+    { "com.sun.star.text.DocumentIndex",                      SwServiceType::TypeIndex },
+    { "com.sun.star.text.ReferenceMark",                      SwServiceType::ReferenceMark },
+    { "com.sun.star.style.CharacterStyle",                    SwServiceType::StyleCharacter },
+    { "com.sun.star.style.ParagraphStyle",                    SwServiceType::StyleParagraph },
+    { "com.sun.star.style.FrameStyle",                        SwServiceType::StyleFrame },
+    { "com.sun.star.style.PageStyle",                         SwServiceType::StylePage },
+    { "com.sun.star.style.NumberingStyle",                    SwServiceType::StyleNumbering },
+    { "com.sun.star.text.ContentIndexMark",                   SwServiceType::ContentIndexMark },
+    { "com.sun.star.text.ContentIndex",                       SwServiceType::ContentIndex },
+    { "com.sun.star.text.UserIndexMark",                      SwServiceType::UserIndexMark },
+    { "com.sun.star.text.UserIndex",                          SwServiceType::UserIndex },
+    { "com.sun.star.text.TextSection",                        SwServiceType::TextSection },
+    { "com.sun.star.text.TextField.DateTime",                 SwServiceType::FieldTypeDateTime },
+    { "com.sun.star.text.TextField.User",                     SwServiceType::FieldTypeUser },
+    { "com.sun.star.text.TextField.SetExpression",            SwServiceType::FieldTypeSetExp },
+    { "com.sun.star.text.TextField.GetExpression",            SwServiceType::FieldTypeGetExp },
+    { "com.sun.star.text.TextField.FileName",                 SwServiceType::FieldTypeFileName },
+    { "com.sun.star.text.TextField.PageNumber",               SwServiceType::FieldTypePageNum },
+    { "com.sun.star.text.TextField.Author",                   SwServiceType::FieldTypeAuthor },
+    { "com.sun.star.text.TextField.Chapter",                  SwServiceType::FieldTypeChapter },
+    { "",                                                     SwServiceType::FieldTypeDummy0 },
+    { "com.sun.star.text.TextField.GetReference",             SwServiceType::FieldTypeGetReference },
+    { "com.sun.star.text.TextField.ConditionalText",          SwServiceType::FieldTypeConditionedText },
+    { "com.sun.star.text.TextField.Annotation",               SwServiceType::FieldTypeAnnotation },
+    { "com.sun.star.text.TextField.Input",                    SwServiceType::FieldTypeInput },
+    { "com.sun.star.text.TextField.Macro",                    SwServiceType::FieldTypeMacro },
+    { "com.sun.star.text.TextField.DDE",                      SwServiceType::FieldTypeDDE },
+    { "com.sun.star.text.TextField.HiddenParagraph",          SwServiceType::FieldTypeHiddenPara },
+    { "" /*com.sun.star.text.TextField.DocumentInfo"*/,       SwServiceType::FieldTypeDocInfo },
+    { "com.sun.star.text.TextField.TemplateName",             SwServiceType::FieldTypeTemplateName },
+    { "com.sun.star.text.TextField.ExtendedUser",             SwServiceType::FieldTypeUserExt },
+    { "com.sun.star.text.TextField.ReferencePageSet",         SwServiceType::FieldTypeRefPageSet },
+    { "com.sun.star.text.TextField.ReferencePageGet",         SwServiceType::FieldTypeRefPageGet },
+    { "com.sun.star.text.TextField.JumpEdit",                 SwServiceType::FieldTypeJumpEdit },
+    { "com.sun.star.text.TextField.Script",                   SwServiceType::FieldTypeScript },
+    { "com.sun.star.text.TextField.DatabaseNextSet",          SwServiceType::FieldTypeDatabaseNextSet },
+    { "com.sun.star.text.TextField.DatabaseNumberOfSet",      SwServiceType::FieldTypeDatabaseNumSet },
+    { "com.sun.star.text.TextField.DatabaseSetNumber",        SwServiceType::FieldTypeDatabaseSetNum },
+    { "com.sun.star.text.TextField.Database",                 SwServiceType::FieldTypeDatabase },
+    { "com.sun.star.text.TextField.DatabaseName",             SwServiceType::FieldTypeDatabaseName },
+    { "com.sun.star.text.TextField.TableFormula",             SwServiceType::FieldTypeTableFormula },
+    { "com.sun.star.text.TextField.PageCount",                SwServiceType::FieldTypePageCount },
+    { "com.sun.star.text.TextField.ParagraphCount",           SwServiceType::FieldTypeParagraphCount },
+    { "com.sun.star.text.TextField.WordCount",                SwServiceType::FieldTypeWordCount },
+    { "com.sun.star.text.TextField.CharacterCount",           SwServiceType::FieldTypeCharacterCount },
+    { "com.sun.star.text.TextField.TableCount",               SwServiceType::FieldTypeTableCount },
+    { "com.sun.star.text.TextField.GraphicObjectCount",       SwServiceType::FieldTypeGraphicObjectCount },
+    { "com.sun.star.text.TextField.EmbeddedObjectCount",      SwServiceType::FieldTypeEmbeddedObjectCount },
+    { "com.sun.star.text.TextField.DocInfo.ChangeAuthor",     SwServiceType::FieldTypeDocInfoChangeAuthor },
+    { "com.sun.star.text.TextField.DocInfo.ChangeDateTime",   SwServiceType::FieldTypeDocInfoChangeDateTime },
+    { "com.sun.star.text.TextField.DocInfo.EditTime",         SwServiceType::FieldTypeDocInfoEditTime },
+    { "com.sun.star.text.TextField.DocInfo.Description",      SwServiceType::FieldTypeDocInfoDescription },
+    { "com.sun.star.text.TextField.DocInfo.CreateAuthor",     SwServiceType::FieldTypeDocInfoCreateAuthor },
+    { "com.sun.star.text.TextField.DocInfo.CreateDateTime",   SwServiceType::FieldTypeDocInfoCreateDateTime },
+    { "",                                                     SwServiceType::FieldTypeDummy0 },
+    { "",                                                     SwServiceType::FieldTypeDummy1 },
+    { "",                                                     SwServiceType::FieldTypeDummy2 },
+    { "",                                                     SwServiceType::FieldTypeDummy3 },
+    { "com.sun.star.text.TextField.DocInfo.Custom",           SwServiceType::FieldTypeDocInfoCustom },
+    { "com.sun.star.text.TextField.DocInfo.PrintAuthor",      SwServiceType::FieldTypeDocInfoPrintAuthor },
+    { "com.sun.star.text.TextField.DocInfo.PrintDateTime",    SwServiceType::FieldTypeDocInfoPrintDateTime },
+    { "com.sun.star.text.TextField.DocInfo.KeyWords",         SwServiceType::FieldTypeDocInfoKeywords },
+    { "com.sun.star.text.TextField.DocInfo.Subject",          SwServiceType::FieldTypeDocInfoSubject },
+    { "com.sun.star.text.TextField.DocInfo.Title",            SwServiceType::FieldTypeDocInfoTitle },
+    { "com.sun.star.text.TextField.DocInfo.Revision",         SwServiceType::FieldTypeDocInfoRevision },
+    { "com.sun.star.text.TextField.Bibliography",             SwServiceType::FieldTypeBibliography },
+    { "com.sun.star.text.TextField.CombinedCharacters",       SwServiceType::FieldTypeCombinedCharacters },
+    { "com.sun.star.text.TextField.DropDown",                 SwServiceType::FieldTypeDropdown },
+    { "com.sun.star.text.textfield.MetadataField",            SwServiceType::FieldTypeMetafield },
+    { "",                                                     SwServiceType::FieldTypeDummy4 },
+    { "",                                                     SwServiceType::FieldTypeDummy5 },
+    { "",                                                     SwServiceType::FieldTypeDummy6 },
+    { "",                                                     SwServiceType::FieldTypeDummy7 },
+    { "com.sun.star.text.FieldMaster.User",                   SwServiceType::FieldMasterUser },
+    { "com.sun.star.text.FieldMaster.DDE",                    SwServiceType::FieldMasterDDE },
+    { "com.sun.star.text.FieldMaster.SetExpression",          SwServiceType::FieldMasterSetExp },
+    { "com.sun.star.text.FieldMaster.Database",               SwServiceType::FieldMasterDatabase },
+    { "com.sun.star.text.FieldMaster.Bibliography",           SwServiceType::FieldMasterBibliography },
+    { "",                                                     SwServiceType::FieldMasterDummy2 },
+    { "",                                                     SwServiceType::FieldMasterDummy3 },
+    { "",                                                     SwServiceType::FieldMasterDummy4 },
+    { "",                                                     SwServiceType::FieldMasterDummy5 },
+    { "com.sun.star.text.IllustrationsIndex",                 SwServiceType::IndexIllustrations },
+    { "com.sun.star.text.ObjectIndex",                        SwServiceType::IndexObjects },
+    { "com.sun.star.text.TableIndex",                         SwServiceType::IndexTables },
+    { "com.sun.star.text.Bibliography",                       SwServiceType::IndexBibliography },
+    { "com.sun.star.text.Paragraph",                          SwServiceType::Paragraph },
+    { "com.sun.star.text.TextField.InputUser",                SwServiceType::FieldTypeInputUser },
+    { "com.sun.star.text.TextField.HiddenText",               SwServiceType::FieldTypeHiddenText },
+    { "com.sun.star.style.ConditionalParagraphStyle",         SwServiceType::StyleConditionalParagraph },
+    { "com.sun.star.text.NumberingRules",                     SwServiceType::NumberingRules },
+    { "com.sun.star.text.TextColumns",                        SwServiceType::TextColumns },
+    { "com.sun.star.text.IndexHeaderSection",                 SwServiceType::IndexHeaderSection },
+    { "com.sun.star.text.Defaults",                           SwServiceType::Defaults },
+    { "com.sun.star.image.ImageMapRectangleObject",           SwServiceType::IMapRectangle },
+    { "com.sun.star.image.ImageMapCircleObject",              SwServiceType::IMapCircle },
+    { "com.sun.star.image.ImageMapPolygonObject",             SwServiceType::IMapPolygon },
+    { "com.sun.star.text.TextGraphicObject",                  SwServiceType::TypeTextGraphic },
+    { "com.sun.star.chart2.data.DataProvider",                SwServiceType::Chart2DataProvider },
+    { "com.sun.star.text.Fieldmark",                          SwServiceType::TypeFieldMark },
+    { "com.sun.star.text.FormFieldmark",                      SwServiceType::TypeFormFieldMark },
+    { "com.sun.star.text.InContentMetadata",                  SwServiceType::TypeMeta },
+    { "ooo.vba.VBAObjectModuleObjectProvider",                SwServiceType::VbaObjectProvider },
+    { "ooo.vba.VBACodeNameProvider",                          SwServiceType::VbaCodeNameProvider },
+    { "ooo.vba.VBAProjectNameProvider",                       SwServiceType::VbaProjectNameProvider },
+    { "ooo.vba.VBAGlobals",                       SwServiceType::VbaGlobals },
 
     // case-correct versions of the service names (see #i67811)
-    { CSS_TEXT_TEXTFIELD_DATE_TIME,                   SW_SERVICE_FIELDTYPE_DATETIME },
-    { CSS_TEXT_TEXTFIELD_USER,                        SW_SERVICE_FIELDTYPE_USER },
-    { CSS_TEXT_TEXTFIELD_SET_EXPRESSION,              SW_SERVICE_FIELDTYPE_SET_EXP },
-    { CSS_TEXT_TEXTFIELD_GET_EXPRESSION,              SW_SERVICE_FIELDTYPE_GET_EXP },
-    { CSS_TEXT_TEXTFIELD_FILE_NAME,                   SW_SERVICE_FIELDTYPE_FILE_NAME },
-    { CSS_TEXT_TEXTFIELD_PAGE_NUMBER,                 SW_SERVICE_FIELDTYPE_PAGE_NUM },
-    { CSS_TEXT_TEXTFIELD_AUTHOR,                      SW_SERVICE_FIELDTYPE_AUTHOR },
-    { CSS_TEXT_TEXTFIELD_CHAPTER,                     SW_SERVICE_FIELDTYPE_CHAPTER },
-    { CSS_TEXT_TEXTFIELD_GET_REFERENCE,               SW_SERVICE_FIELDTYPE_GET_REFERENCE },
-    { CSS_TEXT_TEXTFIELD_CONDITIONAL_TEXT,            SW_SERVICE_FIELDTYPE_CONDITIONED_TEXT },
-    { CSS_TEXT_TEXTFIELD_ANNOTATION,                  SW_SERVICE_FIELDTYPE_ANNOTATION },
-    { CSS_TEXT_TEXTFIELD_INPUT,                       SW_SERVICE_FIELDTYPE_INPUT },
-    { CSS_TEXT_TEXTFIELD_MACRO,                       SW_SERVICE_FIELDTYPE_MACRO },
-    { CSS_TEXT_TEXTFIELD_DDE,                         SW_SERVICE_FIELDTYPE_DDE },
-    { CSS_TEXT_TEXTFIELD_HIDDEN_PARAGRAPH,            SW_SERVICE_FIELDTYPE_HIDDEN_PARA },
-    { CSS_TEXT_TEXTFIELD_TEMPLATE_NAME,               SW_SERVICE_FIELDTYPE_TEMPLATE_NAME },
-    { CSS_TEXT_TEXTFIELD_EXTENDED_USER,               SW_SERVICE_FIELDTYPE_USER_EXT },
-    { CSS_TEXT_TEXTFIELD_REFERENCE_PAGE_SET,          SW_SERVICE_FIELDTYPE_REF_PAGE_SET },
-    { CSS_TEXT_TEXTFIELD_REFERENCE_PAGE_GET,          SW_SERVICE_FIELDTYPE_REF_PAGE_GET },
-    { CSS_TEXT_TEXTFIELD_JUMP_EDIT,                   SW_SERVICE_FIELDTYPE_JUMP_EDIT },
-    { CSS_TEXT_TEXTFIELD_SCRIPT,                      SW_SERVICE_FIELDTYPE_SCRIPT },
-    { CSS_TEXT_TEXTFIELD_DATABASE_NEXT_SET,           SW_SERVICE_FIELDTYPE_DATABASE_NEXT_SET },
-    { CSS_TEXT_TEXTFIELD_DATABASE_NUMBER_OF_SET,      SW_SERVICE_FIELDTYPE_DATABASE_NUM_SET },
-    { CSS_TEXT_TEXTFIELD_DATABASE_SET_NUMBER,         SW_SERVICE_FIELDTYPE_DATABASE_SET_NUM },
-    { CSS_TEXT_TEXTFIELD_DATABASE,                    SW_SERVICE_FIELDTYPE_DATABASE },
-    { CSS_TEXT_TEXTFIELD_DATABASE_NAME,               SW_SERVICE_FIELDTYPE_DATABASE_NAME },
-    { CSS_TEXT_TEXTFIELD_TABLE_FORMULA,               SW_SERVICE_FIELDTYPE_TABLE_FORMULA },
-    { CSS_TEXT_TEXTFIELD_PAGE_COUNT,                  SW_SERVICE_FIELDTYPE_PAGE_COUNT },
-    { CSS_TEXT_TEXTFIELD_PARAGRAPH_COUNT,             SW_SERVICE_FIELDTYPE_PARAGRAPH_COUNT },
-    { CSS_TEXT_TEXTFIELD_WORD_COUNT,                  SW_SERVICE_FIELDTYPE_WORD_COUNT },
-    { CSS_TEXT_TEXTFIELD_CHARACTER_COUNT,             SW_SERVICE_FIELDTYPE_CHARACTER_COUNT },
-    { CSS_TEXT_TEXTFIELD_TABLE_COUNT,                 SW_SERVICE_FIELDTYPE_TABLE_COUNT },
-    { CSS_TEXT_TEXTFIELD_GRAPHIC_OBJECT_COUNT,        SW_SERVICE_FIELDTYPE_GRAPHIC_OBJECT_COUNT },
-    { CSS_TEXT_TEXTFIELD_EMBEDDED_OBJECT_COUNT,       SW_SERVICE_FIELDTYPE_EMBEDDED_OBJECT_COUNT },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_CHANGE_AUTHOR,       SW_SERVICE_FIELDTYPE_DOCINFO_CHANGE_AUTHOR },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_CHANGE_DATE_TIME,    SW_SERVICE_FIELDTYPE_DOCINFO_CHANGE_DATE_TIME },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_EDIT_TIME,           SW_SERVICE_FIELDTYPE_DOCINFO_EDIT_TIME },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_DESCRIPTION,         SW_SERVICE_FIELDTYPE_DOCINFO_DESCRIPTION },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_CREATE_AUTHOR,       SW_SERVICE_FIELDTYPE_DOCINFO_CREATE_AUTHOR },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_CREATE_DATE_TIME,    SW_SERVICE_FIELDTYPE_DOCINFO_CREATE_DATE_TIME },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_PRINT_AUTHOR,        SW_SERVICE_FIELDTYPE_DOCINFO_PRINT_AUTHOR },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_PRINT_DATE_TIME,     SW_SERVICE_FIELDTYPE_DOCINFO_PRINT_DATE_TIME },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_KEY_WORDS,           SW_SERVICE_FIELDTYPE_DOCINFO_KEY_WORDS },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_SUBJECT,             SW_SERVICE_FIELDTYPE_DOCINFO_SUBJECT },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_TITLE,               SW_SERVICE_FIELDTYPE_DOCINFO_TITLE },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_REVISION,            SW_SERVICE_FIELDTYPE_DOCINFO_REVISION },
-    { CSS_TEXT_TEXTFIELD_DOCINFO_CUSTOM,              SW_SERVICE_FIELDTYPE_DOCINFO_CUSTOM },
-    { CSS_TEXT_TEXTFIELD_BIBLIOGRAPHY,                SW_SERVICE_FIELDTYPE_BIBLIOGRAPHY },
-    { CSS_TEXT_TEXTFIELD_COMBINED_CHARACTERS,         SW_SERVICE_FIELDTYPE_COMBINED_CHARACTERS },
-    { CSS_TEXT_TEXTFIELD_DROP_DOWN,                   SW_SERVICE_FIELDTYPE_DROPDOWN },
-    { CSS_TEXT_TEXTFIELD_INPUT_USER,                  SW_SERVICE_FIELDTYPE_INPUT_USER },
-    { CSS_TEXT_TEXTFIELD_HIDDEN_TEXT,                 SW_SERVICE_FIELDTYPE_HIDDEN_TEXT },
-    { CSS_TEXT_FIELDMASTER_USER,                      SW_SERVICE_FIELDMASTER_USER },
-    { CSS_TEXT_FIELDMASTER_DDE,                       SW_SERVICE_FIELDMASTER_DDE },
-    { CSS_TEXT_FIELDMASTER_SET_EXPRESSION,            SW_SERVICE_FIELDMASTER_SET_EXP },
-    { CSS_TEXT_FIELDMASTER_DATABASE,                  SW_SERVICE_FIELDMASTER_DATABASE },
-    { CSS_TEXT_FIELDMASTER_BIBLIOGRAPHY,              SW_SERVICE_FIELDMASTER_BIBLIOGRAPHY }
+    { CSS_TEXT_TEXTFIELD_DATE_TIME,                   SwServiceType::FieldTypeDateTime },
+    { CSS_TEXT_TEXTFIELD_USER,                        SwServiceType::FieldTypeUser },
+    { CSS_TEXT_TEXTFIELD_SET_EXPRESSION,              SwServiceType::FieldTypeSetExp },
+    { CSS_TEXT_TEXTFIELD_GET_EXPRESSION,              SwServiceType::FieldTypeGetExp },
+    { CSS_TEXT_TEXTFIELD_FILE_NAME,                   SwServiceType::FieldTypeFileName },
+    { CSS_TEXT_TEXTFIELD_PAGE_NUMBER,                 SwServiceType::FieldTypePageNum },
+    { CSS_TEXT_TEXTFIELD_AUTHOR,                      SwServiceType::FieldTypeAuthor },
+    { CSS_TEXT_TEXTFIELD_CHAPTER,                     SwServiceType::FieldTypeChapter },
+    { CSS_TEXT_TEXTFIELD_GET_REFERENCE,               SwServiceType::FieldTypeGetReference },
+    { CSS_TEXT_TEXTFIELD_CONDITIONAL_TEXT,            SwServiceType::FieldTypeConditionedText },
+    { CSS_TEXT_TEXTFIELD_ANNOTATION,                  SwServiceType::FieldTypeAnnotation },
+    { CSS_TEXT_TEXTFIELD_INPUT,                       SwServiceType::FieldTypeInput },
+    { CSS_TEXT_TEXTFIELD_MACRO,                       SwServiceType::FieldTypeMacro },
+    { CSS_TEXT_TEXTFIELD_DDE,                         SwServiceType::FieldTypeDDE },
+    { CSS_TEXT_TEXTFIELD_HIDDEN_PARAGRAPH,            SwServiceType::FieldTypeHiddenPara },
+    { CSS_TEXT_TEXTFIELD_TEMPLATE_NAME,               SwServiceType::FieldTypeTemplateName },
+    { CSS_TEXT_TEXTFIELD_EXTENDED_USER,               SwServiceType::FieldTypeUserExt },
+    { CSS_TEXT_TEXTFIELD_REFERENCE_PAGE_SET,          SwServiceType::FieldTypeRefPageSet },
+    { CSS_TEXT_TEXTFIELD_REFERENCE_PAGE_GET,          SwServiceType::FieldTypeRefPageGet },
+    { CSS_TEXT_TEXTFIELD_JUMP_EDIT,                   SwServiceType::FieldTypeJumpEdit },
+    { CSS_TEXT_TEXTFIELD_SCRIPT,                      SwServiceType::FieldTypeScript },
+    { CSS_TEXT_TEXTFIELD_DATABASE_NEXT_SET,           SwServiceType::FieldTypeDatabaseNextSet },
+    { CSS_TEXT_TEXTFIELD_DATABASE_NUMBER_OF_SET,      SwServiceType::FieldTypeDatabaseNumSet },
+    { CSS_TEXT_TEXTFIELD_DATABASE_SET_NUMBER,         SwServiceType::FieldTypeDatabaseSetNum },
+    { CSS_TEXT_TEXTFIELD_DATABASE,                    SwServiceType::FieldTypeDatabase },
+    { CSS_TEXT_TEXTFIELD_DATABASE_NAME,               SwServiceType::FieldTypeDatabaseName },
+    { CSS_TEXT_TEXTFIELD_TABLE_FORMULA,               SwServiceType::FieldTypeTableFormula },
+    { CSS_TEXT_TEXTFIELD_PAGE_COUNT,                  SwServiceType::FieldTypePageCount },
+    { CSS_TEXT_TEXTFIELD_PARAGRAPH_COUNT,             SwServiceType::FieldTypeParagraphCount },
+    { CSS_TEXT_TEXTFIELD_WORD_COUNT,                  SwServiceType::FieldTypeWordCount },
+    { CSS_TEXT_TEXTFIELD_CHARACTER_COUNT,             SwServiceType::FieldTypeCharacterCount },
+    { CSS_TEXT_TEXTFIELD_TABLE_COUNT,                 SwServiceType::FieldTypeTableCount },
+    { CSS_TEXT_TEXTFIELD_GRAPHIC_OBJECT_COUNT,        SwServiceType::FieldTypeGraphicObjectCount },
+    { CSS_TEXT_TEXTFIELD_EMBEDDED_OBJECT_COUNT,       SwServiceType::FieldTypeEmbeddedObjectCount },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_CHANGE_AUTHOR,       SwServiceType::FieldTypeDocInfoChangeAuthor },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_CHANGE_DATE_TIME,    SwServiceType::FieldTypeDocInfoChangeDateTime },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_EDIT_TIME,           SwServiceType::FieldTypeDocInfoEditTime },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_DESCRIPTION,         SwServiceType::FieldTypeDocInfoDescription },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_CREATE_AUTHOR,       SwServiceType::FieldTypeDocInfoCreateAuthor },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_CREATE_DATE_TIME,    SwServiceType::FieldTypeDocInfoCreateDateTime },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_PRINT_AUTHOR,        SwServiceType::FieldTypeDocInfoPrintAuthor },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_PRINT_DATE_TIME,     SwServiceType::FieldTypeDocInfoPrintDateTime },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_KEY_WORDS,           SwServiceType::FieldTypeDocInfoKeywords },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_SUBJECT,             SwServiceType::FieldTypeDocInfoSubject },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_TITLE,               SwServiceType::FieldTypeDocInfoTitle },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_REVISION,            SwServiceType::FieldTypeDocInfoRevision },
+    { CSS_TEXT_TEXTFIELD_DOCINFO_CUSTOM,              SwServiceType::FieldTypeDocInfoCustom },
+    { CSS_TEXT_TEXTFIELD_BIBLIOGRAPHY,                SwServiceType::FieldTypeBibliography },
+    { CSS_TEXT_TEXTFIELD_COMBINED_CHARACTERS,         SwServiceType::FieldTypeCombinedCharacters },
+    { CSS_TEXT_TEXTFIELD_DROP_DOWN,                   SwServiceType::FieldTypeDropdown },
+    { CSS_TEXT_TEXTFIELD_INPUT_USER,                  SwServiceType::FieldTypeInputUser },
+    { CSS_TEXT_TEXTFIELD_HIDDEN_TEXT,                 SwServiceType::FieldTypeHiddenText },
+    { CSS_TEXT_FIELDMASTER_USER,                      SwServiceType::FieldMasterUser },
+    { CSS_TEXT_FIELDMASTER_DDE,                       SwServiceType::FieldMasterDDE },
+    { CSS_TEXT_FIELDMASTER_SET_EXPRESSION,            SwServiceType::FieldMasterSetExp },
+    { CSS_TEXT_FIELDMASTER_DATABASE,                  SwServiceType::FieldMasterDatabase },
+    { CSS_TEXT_FIELDMASTER_BIBLIOGRAPHY,              SwServiceType::FieldMasterBibliography },
+    { "com.sun.star.style.TableStyle",                SwServiceType::StyleTable },
+    { "com.sun.star.style.CellStyle",                 SwServiceType::StyleCell }
 };
 
 const SvEventDescription* sw_GetSupportedMacroItems()
@@ -469,13 +471,13 @@ const SvEventDescription* sw_GetSupportedMacroItems()
     return aMacroDescriptionsImpl;
 }
 
-OUString    SwXServiceProvider::GetProviderName(sal_uInt16 nObjectType)
+OUString SwXServiceProvider::GetProviderName(SwServiceType nObjectType)
 {
     SolarMutexGuard aGuard;
     OUString sRet;
     const sal_uInt16 nEntries = SAL_N_ELEMENTS(aProvNamesId);
-    if(nObjectType < nEntries)
-        sRet = OUString::createFromAscii(aProvNamesId[nObjectType].pName);
+    if((sal_uInt16)nObjectType < nEntries)
+        sRet = OUString::createFromAscii(aProvNamesId[(sal_uInt16)nObjectType].pName);
     return sRet;
 }
 
@@ -499,61 +501,61 @@ uno::Sequence<OUString>     SwXServiceProvider::GetAllServiceNames()
 
 }
 
-sal_uInt16  SwXServiceProvider::GetProviderType(const OUString& rServiceName)
+SwServiceType  SwXServiceProvider::GetProviderType(const OUString& rServiceName)
 {
     for(const ProvNamesId_Type & i : aProvNamesId)
     {
         if (rServiceName.equalsAscii(i.pName))
             return i.nType;
     }
-    return SW_SERVICE_INVALID;
+    return SwServiceType::Invalid;
 }
 
 uno::Reference<uno::XInterface>
-SwXServiceProvider::MakeInstance(sal_uInt16 nObjectType, SwDoc & rDoc)
+SwXServiceProvider::MakeInstance(SwServiceType nObjectType, SwDoc & rDoc)
 {
     SolarMutexGuard aGuard;
     uno::Reference< uno::XInterface >  xRet;
     switch(nObjectType)
     {
-        case  SW_SERVICE_TYPE_TEXTTABLE:
+        case  SwServiceType::TypeTextTable:
         {
             xRet = SwXTextTable::CreateXTextTable(nullptr);
         }
         break;
-        case  SW_SERVICE_TYPE_TEXTFRAME:
+        case  SwServiceType::TypeTextFrame:
         {
             xRet = SwXTextFrame::CreateXTextFrame(rDoc, nullptr);
         }
         break;
-        case  SW_SERVICE_TYPE_GRAPHIC  :
-        case  SW_SERVICE_TYPE_TEXT_GRAPHIC /* #i47503# */ :
+        case  SwServiceType::TypeGraphic  :
+        case  SwServiceType::TypeTextGraphic /* #i47503# */ :
         {
             xRet = SwXTextGraphicObject::CreateXTextGraphicObject(rDoc, nullptr);
 
         }
         break;
-        case  SW_SERVICE_TYPE_OLE      :
+        case  SwServiceType::TypeOLE      :
         {
             xRet = SwXTextEmbeddedObject::CreateXTextEmbeddedObject(rDoc, nullptr);
         }
         break;
-        case  SW_SERVICE_TYPE_BOOKMARK :
+        case  SwServiceType::TypeBookmark :
         {
             xRet = SwXBookmark::CreateXBookmark(rDoc, nullptr);
         }
         break;
-        case  SW_SERVICE_TYPE_FIELDMARK :
+        case  SwServiceType::TypeFieldMark :
         {
             xRet = SwXFieldmark::CreateXFieldmark(rDoc, nullptr);
         }
         break;
-        case  SW_SERVICE_TYPE_FORMFIELDMARK :
+        case  SwServiceType::TypeFormFieldMark :
         {
             xRet = SwXFieldmark::CreateXFieldmark(rDoc, nullptr, true);
         }
         break;
-        case  SW_SERVICE_VBAOBJECTPROVIDER :
+        case  SwServiceType::VbaObjectProvider :
 #if HAVE_FEATURE_SCRIPTING
         {
             SwVbaObjectForCodeNameProvider* pObjProv =
@@ -562,7 +564,7 @@ SwXServiceProvider::MakeInstance(sal_uInt16 nObjectType, SwDoc & rDoc)
         }
 #endif
         break;
-        case  SW_SERVICE_VBACODENAMEPROVIDER :
+        case  SwServiceType::VbaCodeNameProvider :
 #if HAVE_FEATURE_SCRIPTING
         {
             if (rDoc.GetDocShell() && ooo::vba::isAlienWordDoc(*rDoc.GetDocShell()))
@@ -573,7 +575,7 @@ SwXServiceProvider::MakeInstance(sal_uInt16 nObjectType, SwDoc & rDoc)
         }
 #endif
         break;
-        case  SW_SERVICE_VBAPROJECTNAMEPROVIDER :
+        case  SwServiceType::VbaProjectNameProvider :
 #if HAVE_FEATURE_SCRIPTING
         {
                         uno::Reference< container::XNameContainer > xProjProv = rDoc.GetVBATemplateToProjectCache();
@@ -587,7 +589,7 @@ SwXServiceProvider::MakeInstance(sal_uInt16 nObjectType, SwDoc & rDoc)
         }
 #endif
         break;
-        case  SW_SERVICE_VBAGLOBALS :
+        case  SwServiceType::VbaGlobals :
 #if HAVE_FEATURE_SCRIPTING
         {
             uno::Any aGlobs;
@@ -604,173 +606,183 @@ SwXServiceProvider::MakeInstance(sal_uInt16 nObjectType, SwDoc & rDoc)
 #endif
         break;
 
-        case  SW_SERVICE_TYPE_FOOTNOTE :
+        case  SwServiceType::TypeFootnote :
             xRet = SwXFootnote::CreateXFootnote(rDoc, nullptr);
         break;
-        case  SW_SERVICE_TYPE_ENDNOTE  :
+        case  SwServiceType::TypeEndnote  :
             xRet = SwXFootnote::CreateXFootnote(rDoc, nullptr, true);
         break;
-        case  SW_SERVICE_CONTENT_INDEX_MARK :
-        case  SW_SERVICE_USER_INDEX_MARK    :
-        case  SW_SERVICE_TYPE_INDEXMARK:
+        case  SwServiceType::ContentIndexMark :
+        case  SwServiceType::UserIndexMark    :
+        case  SwServiceType::TypeIndexMark:
         {
             TOXTypes eType = TOX_INDEX;
-            if(SW_SERVICE_CONTENT_INDEX_MARK== nObjectType)
+            if(SwServiceType::ContentIndexMark== nObjectType)
                 eType = TOX_CONTENT;
-            else if(SW_SERVICE_USER_INDEX_MARK == nObjectType)
+            else if(SwServiceType::UserIndexMark == nObjectType)
                 eType = TOX_USER;
             xRet = SwXDocumentIndexMark::CreateXDocumentIndexMark(rDoc, nullptr, eType);
         }
         break;
-        case  SW_SERVICE_CONTENT_INDEX      :
-        case  SW_SERVICE_USER_INDEX         :
-        case  SW_SERVICE_TYPE_INDEX    :
-        case SW_SERVICE_INDEX_ILLUSTRATIONS:
-        case SW_SERVICE_INDEX_OBJECTS      :
-        case SW_SERVICE_INDEX_TABLES:
-        case SW_SERVICE_INDEX_BIBLIOGRAPHY :
+        case  SwServiceType::ContentIndex      :
+        case  SwServiceType::UserIndex         :
+        case  SwServiceType::TypeIndex    :
+        case SwServiceType::IndexIllustrations:
+        case SwServiceType::IndexObjects      :
+        case SwServiceType::IndexTables:
+        case SwServiceType::IndexBibliography :
         {
             TOXTypes eType = TOX_INDEX;
-            if(SW_SERVICE_CONTENT_INDEX == nObjectType)
+            if(SwServiceType::ContentIndex == nObjectType)
                 eType = TOX_CONTENT;
-            else if(SW_SERVICE_USER_INDEX == nObjectType)
+            else if(SwServiceType::UserIndex == nObjectType)
                 eType = TOX_USER;
-            else if(SW_SERVICE_INDEX_ILLUSTRATIONS == nObjectType)
+            else if(SwServiceType::IndexIllustrations == nObjectType)
             {
                 eType = TOX_ILLUSTRATIONS;
             }
-            else if(SW_SERVICE_INDEX_OBJECTS       == nObjectType)
+            else if(SwServiceType::IndexObjects       == nObjectType)
             {
                 eType = TOX_OBJECTS;
             }
-            else if(SW_SERVICE_INDEX_BIBLIOGRAPHY  == nObjectType)
+            else if(SwServiceType::IndexBibliography  == nObjectType)
             {
                 eType = TOX_AUTHORITIES;
             }
-            else if(SW_SERVICE_INDEX_TABLES == nObjectType)
+            else if(SwServiceType::IndexTables == nObjectType)
             {
                 eType = TOX_TABLES;
             }
             xRet = SwXDocumentIndex::CreateXDocumentIndex(rDoc, nullptr, eType);
         }
         break;
-        case SW_SERVICE_INDEX_HEADER_SECTION :
-        case SW_SERVICE_TEXT_SECTION :
+        case SwServiceType::IndexHeaderSection :
+        case SwServiceType::TextSection :
             xRet = SwXTextSection::CreateXTextSection(nullptr,
-                    (SW_SERVICE_INDEX_HEADER_SECTION == nObjectType));
+                    (SwServiceType::IndexHeaderSection == nObjectType));
 
         break;
-        case SW_SERVICE_REFERENCE_MARK :
+        case SwServiceType::ReferenceMark :
             xRet = SwXReferenceMark::CreateXReferenceMark(rDoc, nullptr);
         break;
-        case SW_SERVICE_STYLE_CHARACTER_STYLE:
-        case SW_SERVICE_STYLE_PARAGRAPH_STYLE:
-        case SW_SERVICE_STYLE_CONDITIONAL_PARAGRAPH_STYLE:
-        case SW_SERVICE_STYLE_FRAME_STYLE:
-        case SW_SERVICE_STYLE_PAGE_STYLE:
-        case SW_SERVICE_STYLE_NUMBERING_STYLE:
+        case SwServiceType::StyleCharacter:
+        case SwServiceType::StyleParagraph:
+        case SwServiceType::StyleConditionalParagraph:
+        case SwServiceType::StyleFrame:
+        case SwServiceType::StylePage:
+        case SwServiceType::StyleNumbering:
+        case SwServiceType::StyleTable:
+        case SwServiceType::StyleCell:
         {
             SfxStyleFamily eFamily = SfxStyleFamily::Char;
             switch(nObjectType)
             {
-                case SW_SERVICE_STYLE_PARAGRAPH_STYLE:
+                case SwServiceType::StyleParagraph:
                     eFamily = SfxStyleFamily::Para;
                 break;
-                case SW_SERVICE_STYLE_CONDITIONAL_PARAGRAPH_STYLE:
+                case SwServiceType::StyleConditionalParagraph:
                     eFamily = SfxStyleFamily::Para;
                     xRet = SwXStyleFamilies::CreateStyleCondParagraph(rDoc);
                 break;
-                case SW_SERVICE_STYLE_FRAME_STYLE:
+                case SwServiceType::StyleFrame:
                     eFamily = SfxStyleFamily::Frame;
                 break;
-                case SW_SERVICE_STYLE_PAGE_STYLE:
+                case SwServiceType::StylePage:
                     eFamily = SfxStyleFamily::Page;
                 break;
-                case SW_SERVICE_STYLE_NUMBERING_STYLE:
+                case SwServiceType::StyleNumbering:
                     eFamily = SfxStyleFamily::Pseudo;
                 break;
+                case SwServiceType::StyleTable:
+                    eFamily = SfxStyleFamily::Table;
+                break;
+                case SwServiceType::StyleCell:
+                    eFamily = SfxStyleFamily::Cell;
+                break;
+                default: break;
             }
             if(!xRet.is())
                 xRet = SwXStyleFamilies::CreateStyle(eFamily, rDoc);
         }
         break;
-        case SW_SERVICE_FIELDTYPE_DATETIME:
-        case SW_SERVICE_FIELDTYPE_USER:
-        case SW_SERVICE_FIELDTYPE_SET_EXP:
-        case SW_SERVICE_FIELDTYPE_GET_EXP:
-        case SW_SERVICE_FIELDTYPE_FILE_NAME:
-        case SW_SERVICE_FIELDTYPE_PAGE_NUM:
-        case SW_SERVICE_FIELDTYPE_AUTHOR:
-        case SW_SERVICE_FIELDTYPE_CHAPTER:
-        case SW_SERVICE_FIELDTYPE_GET_REFERENCE:
-        case SW_SERVICE_FIELDTYPE_CONDITIONED_TEXT:
-        case SW_SERVICE_FIELDTYPE_INPUT:
-        case SW_SERVICE_FIELDTYPE_MACRO:
-        case SW_SERVICE_FIELDTYPE_DDE:
-        case SW_SERVICE_FIELDTYPE_HIDDEN_PARA:
-        case SW_SERVICE_FIELDTYPE_DOC_INFO:
-        case SW_SERVICE_FIELDTYPE_TEMPLATE_NAME:
-        case SW_SERVICE_FIELDTYPE_USER_EXT:
-        case SW_SERVICE_FIELDTYPE_REF_PAGE_SET:
-        case SW_SERVICE_FIELDTYPE_REF_PAGE_GET:
-        case SW_SERVICE_FIELDTYPE_JUMP_EDIT:
-        case SW_SERVICE_FIELDTYPE_SCRIPT:
-        case SW_SERVICE_FIELDTYPE_DATABASE_NEXT_SET:
-        case SW_SERVICE_FIELDTYPE_DATABASE_NUM_SET:
-        case SW_SERVICE_FIELDTYPE_DATABASE_SET_NUM:
-        case SW_SERVICE_FIELDTYPE_DATABASE:
-        case SW_SERVICE_FIELDTYPE_DATABASE_NAME:
-        case SW_SERVICE_FIELDTYPE_PAGE_COUNT      :
-        case SW_SERVICE_FIELDTYPE_PARAGRAPH_COUNT :
-        case SW_SERVICE_FIELDTYPE_WORD_COUNT      :
-        case SW_SERVICE_FIELDTYPE_CHARACTER_COUNT :
-        case SW_SERVICE_FIELDTYPE_TABLE_COUNT     :
-        case SW_SERVICE_FIELDTYPE_GRAPHIC_OBJECT_COUNT    :
-        case SW_SERVICE_FIELDTYPE_EMBEDDED_OBJECT_COUNT   :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_CHANGE_AUTHOR     :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_CHANGE_DATE_TIME  :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_EDIT_TIME         :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_DESCRIPTION       :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_CREATE_AUTHOR     :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_CREATE_DATE_TIME  :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_CUSTOM            :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_PRINT_AUTHOR      :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_PRINT_DATE_TIME   :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_KEY_WORDS         :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_SUBJECT           :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_TITLE             :
-        case SW_SERVICE_FIELDTYPE_DOCINFO_REVISION          :
-        case SW_SERVICE_FIELDTYPE_BIBLIOGRAPHY:
-        case SW_SERVICE_FIELDTYPE_INPUT_USER                :
-        case SW_SERVICE_FIELDTYPE_HIDDEN_TEXT               :
-        case SW_SERVICE_FIELDTYPE_COMBINED_CHARACTERS       :
-        case SW_SERVICE_FIELDTYPE_DROPDOWN                  :
-        case SW_SERVICE_FIELDTYPE_TABLE_FORMULA:
+        case SwServiceType::FieldTypeDateTime:
+        case SwServiceType::FieldTypeUser:
+        case SwServiceType::FieldTypeSetExp:
+        case SwServiceType::FieldTypeGetExp:
+        case SwServiceType::FieldTypeFileName:
+        case SwServiceType::FieldTypePageNum:
+        case SwServiceType::FieldTypeAuthor:
+        case SwServiceType::FieldTypeChapter:
+        case SwServiceType::FieldTypeGetReference:
+        case SwServiceType::FieldTypeConditionedText:
+        case SwServiceType::FieldTypeInput:
+        case SwServiceType::FieldTypeMacro:
+        case SwServiceType::FieldTypeDDE:
+        case SwServiceType::FieldTypeHiddenPara:
+        case SwServiceType::FieldTypeDocInfo:
+        case SwServiceType::FieldTypeTemplateName:
+        case SwServiceType::FieldTypeUserExt:
+        case SwServiceType::FieldTypeRefPageSet:
+        case SwServiceType::FieldTypeRefPageGet:
+        case SwServiceType::FieldTypeJumpEdit:
+        case SwServiceType::FieldTypeScript:
+        case SwServiceType::FieldTypeDatabaseNextSet:
+        case SwServiceType::FieldTypeDatabaseNumSet:
+        case SwServiceType::FieldTypeDatabaseSetNum:
+        case SwServiceType::FieldTypeDatabase:
+        case SwServiceType::FieldTypeDatabaseName:
+        case SwServiceType::FieldTypePageCount      :
+        case SwServiceType::FieldTypeParagraphCount :
+        case SwServiceType::FieldTypeWordCount      :
+        case SwServiceType::FieldTypeCharacterCount :
+        case SwServiceType::FieldTypeTableCount     :
+        case SwServiceType::FieldTypeGraphicObjectCount    :
+        case SwServiceType::FieldTypeEmbeddedObjectCount   :
+        case SwServiceType::FieldTypeDocInfoChangeAuthor     :
+        case SwServiceType::FieldTypeDocInfoChangeDateTime  :
+        case SwServiceType::FieldTypeDocInfoEditTime         :
+        case SwServiceType::FieldTypeDocInfoDescription       :
+        case SwServiceType::FieldTypeDocInfoCreateAuthor     :
+        case SwServiceType::FieldTypeDocInfoCreateDateTime  :
+        case SwServiceType::FieldTypeDocInfoCustom            :
+        case SwServiceType::FieldTypeDocInfoPrintAuthor      :
+        case SwServiceType::FieldTypeDocInfoPrintDateTime   :
+        case SwServiceType::FieldTypeDocInfoKeywords         :
+        case SwServiceType::FieldTypeDocInfoSubject           :
+        case SwServiceType::FieldTypeDocInfoTitle             :
+        case SwServiceType::FieldTypeDocInfoRevision          :
+        case SwServiceType::FieldTypeBibliography:
+        case SwServiceType::FieldTypeInputUser                :
+        case SwServiceType::FieldTypeHiddenText               :
+        case SwServiceType::FieldTypeCombinedCharacters       :
+        case SwServiceType::FieldTypeDropdown                  :
+        case SwServiceType::FieldTypeTableFormula:
             // NOTE: the sw.SwXAutoTextEntry unoapi test depends on pDoc = 0
             xRet = SwXTextField::CreateXTextField(nullptr, nullptr, nObjectType);
             break;
-        case SW_SERVICE_FIELDTYPE_ANNOTATION:
+        case SwServiceType::FieldTypeAnnotation:
             xRet = SwXTextField::CreateXTextField(&rDoc, nullptr, nObjectType);
             break;
-        case SW_SERVICE_FIELDMASTER_USER:
-        case SW_SERVICE_FIELDMASTER_DDE:
-        case SW_SERVICE_FIELDMASTER_SET_EXP :
-        case SW_SERVICE_FIELDMASTER_DATABASE:
+        case SwServiceType::FieldMasterUser:
+        case SwServiceType::FieldMasterDDE:
+        case SwServiceType::FieldMasterSetExp :
+        case SwServiceType::FieldMasterDatabase:
         {
-            sal_uInt16 nResId = USHRT_MAX;
+            SwFieldIds nResId = SwFieldIds::Unknown;
             switch(nObjectType)
             {
-                case SW_SERVICE_FIELDMASTER_USER: nResId = RES_USERFLD; break;
-                case SW_SERVICE_FIELDMASTER_DDE:  nResId = RES_DDEFLD; break;
-                case SW_SERVICE_FIELDMASTER_SET_EXP : nResId = RES_SETEXPFLD; break;
-                case SW_SERVICE_FIELDMASTER_DATABASE: nResId = RES_DBFLD; break;
+                case SwServiceType::FieldMasterUser: nResId = SwFieldIds::User; break;
+                case SwServiceType::FieldMasterDDE:  nResId = SwFieldIds::Dde; break;
+                case SwServiceType::FieldMasterSetExp : nResId = SwFieldIds::SetExp; break;
+                case SwServiceType::FieldMasterDatabase: nResId = SwFieldIds::Database; break;
+                default: break;
             }
             xRet = SwXFieldMaster::CreateXFieldMaster(&rDoc, nullptr, nResId);
         }
         break;
-        case SW_SERVICE_FIELDMASTER_BIBLIOGRAPHY:
+        case SwServiceType::FieldMasterBibliography:
         {
-            SwFieldType* pType = rDoc.getIDocumentFieldsAccess().GetFieldType(RES_AUTHORITY, aEmptyOUStr, true);
+            SwFieldType* pType = rDoc.getIDocumentFieldsAccess().GetFieldType(SwFieldIds::TableOfAuthorities, aEmptyOUStr, true);
             if(!pType)
             {
                 SwAuthorityFieldType aType(&rDoc);
@@ -779,28 +791,28 @@ SwXServiceProvider::MakeInstance(sal_uInt16 nObjectType, SwDoc & rDoc)
             xRet = SwXFieldMaster::CreateXFieldMaster(&rDoc, pType);
         }
         break;
-        case SW_SERVICE_PARAGRAPH :
+        case SwServiceType::Paragraph :
             xRet = SwXParagraph::CreateXParagraph(rDoc, nullptr);
         break;
-        case SW_SERVICE_NUMBERING_RULES :
+        case SwServiceType::NumberingRules :
             xRet = static_cast<cppu::OWeakObject*>(new SwXNumberingRules(rDoc));
         break;
-        case SW_SERVICE_TEXT_COLUMNS :
-            xRet = static_cast<cppu::OWeakObject*>(new SwXTextColumns(0));
+        case SwServiceType::TextColumns :
+            xRet = static_cast<cppu::OWeakObject*>(new SwXTextColumns);
         break;
-        case SW_SERVICE_DEFAULTS:
+        case SwServiceType::Defaults:
             xRet = static_cast<cppu::OWeakObject*>(new SwXTextDefaults(&rDoc));
         break;
-        case SW_SERVICE_IMAP_RECTANGLE :
+        case SwServiceType::IMapRectangle :
             xRet = SvUnoImageMapRectangleObject_createInstance( sw_GetSupportedMacroItems() );
         break;
-        case SW_SERVICE_IMAP_CIRCLE    :
+        case SwServiceType::IMapCircle    :
             xRet = SvUnoImageMapCircleObject_createInstance( sw_GetSupportedMacroItems() );
         break;
-        case SW_SERVICE_IMAP_POLYGON   :
+        case SwServiceType::IMapPolygon   :
             xRet = SvUnoImageMapPolygonObject_createInstance( sw_GetSupportedMacroItems() );
         break;
-        case SW_SERVICE_CHART2_DATA_PROVIDER :
+        case SwServiceType::Chart2DataProvider :
             // #i64497# If a chart is in a temporary document during clipoard
             // paste, there should be no data provider, so that own data is used
             // This should not happen during copy/paste, as this will unlink
@@ -812,10 +824,10 @@ SwXServiceProvider::MakeInstance(sal_uInt16 nObjectType, SwDoc & rDoc)
                     "not creating chart data provider for embedded object");
 
         break;
-        case SW_SERVICE_TYPE_META:
+        case SwServiceType::TypeMeta:
             xRet = SwXMeta::CreateXMeta(rDoc, false);
         break;
-        case SW_SERVICE_FIELDTYPE_METAFIELD:
+        case SwServiceType::FieldTypeMetafield:
             xRet = SwXMeta::CreateXMeta(rDoc, true);
         break;
         default:
@@ -836,7 +848,7 @@ SwXTextTables::~SwXTextTables()
 
 }
 
-sal_Int32 SwXTextTables::getCount() throw( uno::RuntimeException, std::exception )
+sal_Int32 SwXTextTables::getCount()
 {
     SolarMutexGuard aGuard;
     sal_Int32 nRet = 0;
@@ -845,30 +857,40 @@ sal_Int32 SwXTextTables::getCount() throw( uno::RuntimeException, std::exception
     return nRet;
 }
 
-uno::Any SAL_CALL SwXTextTables::getByIndex(sal_Int32 nIndex)
-        throw( IndexOutOfBoundsException, WrappedTargetException, uno::RuntimeException, std::exception )
+uno::Any SAL_CALL SwXTextTables::getByIndex(sal_Int32 nInputIndex)
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
-    if(IsValid())
+    if (IsValid())
     {
-        if(0 <= nIndex && GetDoc()->GetTableFrameFormatCount(true) > static_cast<size_t>(nIndex))
-        {
-            SwFrameFormat& rFormat = GetDoc()->GetTableFrameFormat(nIndex, true);
-            uno::Reference< XTextTable >  xTable = SwXTextTables::GetObject(rFormat);
-            aRet.setValue( &xTable,
-                cppu::UnoType<XTextTable>::get());
-        }
-        else
+        if (nInputIndex < 0)
             throw IndexOutOfBoundsException();
+
+        SwAutoFormatGetDocNode aGetHt( &GetDoc()->GetNodes() );
+        size_t nIndex = static_cast<size_t>(nInputIndex);
+        size_t nCurrentIndex = 0;
+
+        for (SwFrameFormat* const & pFormat : *GetDoc()->GetTableFrameFormats())
+        {
+            if (!pFormat->GetInfo(aGetHt))
+            {
+                if (nCurrentIndex == nIndex)
+                {
+                    uno::Reference<XTextTable> xTable = SwXTextTables::GetObject(*pFormat);
+                    aRet <<= xTable;
+                    return aRet;
+                }
+                else
+                    nCurrentIndex++;
+            }
+        }
+        throw IndexOutOfBoundsException();
     }
     else
         throw uno::RuntimeException();
-    return aRet;
 }
 
 uno::Any SwXTextTables::getByName(const OUString& rItemName)
-    throw( NoSuchElementException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -882,8 +904,7 @@ uno::Any SwXTextTables::getByName(const OUString& rItemName)
             if (rItemName == rFormat.GetName())
             {
                 xTable = SwXTextTables::GetObject(rFormat);
-                aRet.setValue(&xTable,
-                    cppu::UnoType<XTextTable>::get());
+                aRet <<= xTable;
                 break;
             }
         }
@@ -896,7 +917,6 @@ uno::Any SwXTextTables::getByName(const OUString& rItemName)
 }
 
 uno::Sequence< OUString > SwXTextTables::getElementNames()
-        throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -917,7 +937,6 @@ uno::Sequence< OUString > SwXTextTables::getElementNames()
 }
 
 sal_Bool SwXTextTables::hasByName(const OUString& rName)
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     bool bRet= false;
@@ -941,12 +960,11 @@ sal_Bool SwXTextTables::hasByName(const OUString& rName)
 
 uno::Type SAL_CALL
     SwXTextTables::getElementType(  )
-        throw(uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<XTextTable>::get();
 }
 
-sal_Bool SwXTextTables::hasElements() throw( uno::RuntimeException, std::exception )
+sal_Bool SwXTextTables::hasElements()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -954,17 +972,17 @@ sal_Bool SwXTextTables::hasElements() throw( uno::RuntimeException, std::excepti
     return 0 != GetDoc()->GetTableFrameFormatCount(true);
 }
 
-OUString SwXTextTables::getImplementationName() throw( uno::RuntimeException, std::exception )
+OUString SwXTextTables::getImplementationName()
 {
     return OUString("SwXTextTables");
 }
 
-sal_Bool SwXTextTables::supportsService(const OUString& rServiceName) throw( uno::RuntimeException, std::exception )
+sal_Bool SwXTextTables::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-uno::Sequence< OUString > SwXTextTables::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
+uno::Sequence< OUString > SwXTextTables::getSupportedServiceNames()
 {
     uno::Sequence< OUString > aRet { "com.sun.star.text.TextTables" };
     return aRet;
@@ -984,13 +1002,13 @@ namespace
     {
         typedef SwXTextFrame core_frame_t;
         typedef XTextFrame uno_frame_t;
-        static inline uno::Any wrapFrame(SwFrameFormat & rFrameFormat)
+        static uno::Any wrapFrame(SwFrameFormat & rFrameFormat)
         {
             uno::Reference<text::XTextFrame> const xRet(
                 SwXTextFrame::CreateXTextFrame(*rFrameFormat.GetDoc(), &rFrameFormat));
             return uno::makeAny(xRet);
         }
-        static inline bool filter(const SwNode* const pNode) { return !pNode->IsNoTextNode(); };
+        static bool filter(const SwNode* const pNode) { return !pNode->IsNoTextNode(); };
     };
 
     template<>
@@ -998,13 +1016,13 @@ namespace
     {
         typedef SwXTextGraphicObject core_frame_t;
         typedef XTextContent uno_frame_t;
-        static inline uno::Any wrapFrame(SwFrameFormat & rFrameFormat)
+        static uno::Any wrapFrame(SwFrameFormat & rFrameFormat)
         {
             uno::Reference<text::XTextContent> const xRet(
                 SwXTextGraphicObject::CreateXTextGraphicObject(*rFrameFormat.GetDoc(), &rFrameFormat));
             return uno::makeAny(xRet);
         }
-        static inline bool filter(const SwNode* const pNode) { return pNode->IsGrfNode(); };
+        static bool filter(const SwNode* const pNode) { return pNode->IsGrfNode(); };
     };
 
     template<>
@@ -1012,13 +1030,13 @@ namespace
     {
         typedef SwXTextEmbeddedObject core_frame_t;
         typedef XEmbeddedObjectSupplier uno_frame_t;
-        static inline uno::Any wrapFrame(SwFrameFormat & rFrameFormat)
+        static uno::Any wrapFrame(SwFrameFormat & rFrameFormat)
         {
             uno::Reference<text::XTextContent> const xRet(
                 SwXTextEmbeddedObject::CreateXTextEmbeddedObject(*rFrameFormat.GetDoc(), &rFrameFormat));
             return uno::makeAny(xRet);
         }
-        static inline bool filter(const SwNode* const pNode) { return pNode->IsOLENode(); };
+        static bool filter(const SwNode* const pNode) { return pNode->IsOLENode(); };
     };
 
     template<FlyCntType T>
@@ -1028,7 +1046,8 @@ namespace
     }
 
     // runtime adapter for lcl_UnoWrapFrame
-    uno::Any lcl_UnoWrapFrame(SwFrameFormat* pFormat, FlyCntType eType) throw(uno::RuntimeException)
+    /// @throws uno::RuntimeException
+    uno::Any lcl_UnoWrapFrame(SwFrameFormat* pFormat, FlyCntType eType)
     {
         switch(eType)
         {
@@ -1048,21 +1067,21 @@ namespace
         : public SwSimpleEnumeration_Base
     {
         private:
-            typedef ::std::list< Any > frmcontainer_t;
+            typedef std::list< Any > frmcontainer_t;
             frmcontainer_t m_aFrames;
         protected:
-            virtual ~SwXFrameEnumeration() {};
+            virtual ~SwXFrameEnumeration() override {};
         public:
             SwXFrameEnumeration(const SwDoc* const pDoc);
 
             //XEnumeration
-            virtual sal_Bool SAL_CALL hasMoreElements() throw( RuntimeException, std::exception ) override;
-            virtual Any SAL_CALL nextElement() throw( NoSuchElementException, WrappedTargetException, RuntimeException, std::exception ) override;
+            virtual sal_Bool SAL_CALL hasMoreElements() override;
+            virtual Any SAL_CALL nextElement() override;
 
             //XServiceInfo
-            virtual OUString SAL_CALL getImplementationName() throw( RuntimeException, std::exception ) override;
-            virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw( RuntimeException, std::exception ) override;
-            virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( RuntimeException, std::exception ) override;
+            virtual OUString SAL_CALL getImplementationName() override;
+            virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+            virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
     };
 }
 
@@ -1076,17 +1095,15 @@ SwXFrameEnumeration<T>::SwXFrameEnumeration(const SwDoc* const pDoc)
         return;
     // #i104937#
     const size_t nSize = pFormats->size();
-    ::std::insert_iterator<frmcontainer_t> pInserter = ::std::insert_iterator<frmcontainer_t>(m_aFrames, m_aFrames.begin());
+    std::insert_iterator<frmcontainer_t> pInserter = std::insert_iterator<frmcontainer_t>(m_aFrames, m_aFrames.begin());
     // #i104937#
     SwFrameFormat* pFormat( nullptr );
-
-    std::set<const SwFrameFormat*> aTextBoxes = SwTextBoxHelper::findTextBoxes(pDoc);
 
     for( size_t i = 0; i < nSize; ++i )
     {
         // #i104937#
         pFormat = (*pFormats)[i];
-        if(pFormat->Which() != RES_FLYFRMFMT || aTextBoxes.find(pFormat) != aTextBoxes.end())
+        if(pFormat->Which() != RES_FLYFRMFMT || SwTextBoxHelper::isTextBox(pFormat, RES_FLYFRMFMT))
             continue;
         const SwNodeIndex* pIdx =  pFormat->GetContent().GetContentIdx();
         if(!pIdx || !pIdx->GetNodes().IsDocNodes())
@@ -1098,14 +1115,14 @@ SwXFrameEnumeration<T>::SwXFrameEnumeration(const SwDoc* const pDoc)
 }
 
 template<FlyCntType T>
-sal_Bool SwXFrameEnumeration<T>::hasMoreElements() throw( RuntimeException, std::exception )
+sal_Bool SwXFrameEnumeration<T>::hasMoreElements()
 {
     SolarMutexGuard aGuard;
     return !m_aFrames.empty();
 }
 
 template<FlyCntType T>
-Any SwXFrameEnumeration<T>::nextElement() throw( NoSuchElementException, WrappedTargetException, RuntimeException, std::exception )
+Any SwXFrameEnumeration<T>::nextElement()
 {
     SolarMutexGuard aGuard;
     if(m_aFrames.empty())
@@ -1116,34 +1133,34 @@ Any SwXFrameEnumeration<T>::nextElement() throw( NoSuchElementException, Wrapped
 }
 
 template<FlyCntType T>
-OUString SwXFrameEnumeration<T>::getImplementationName() throw( RuntimeException, std::exception )
+OUString SwXFrameEnumeration<T>::getImplementationName()
 {
     return OUString("SwXFrameEnumeration");
 }
 
 template<FlyCntType T>
-sal_Bool SwXFrameEnumeration<T>::supportsService(const OUString& ServiceName) throw( RuntimeException, std::exception )
+sal_Bool SwXFrameEnumeration<T>::supportsService(const OUString& ServiceName)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 template<FlyCntType T>
-Sequence< OUString > SwXFrameEnumeration<T>::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence< OUString > SwXFrameEnumeration<T>::getSupportedServiceNames()
 {
     return { OUString("com.sun.star.container.XEnumeration") };
 }
 
-OUString SwXFrames::getImplementationName() throw( RuntimeException, std::exception )
+OUString SwXFrames::getImplementationName()
 {
     return OUString("SwXFrames");
 }
 
-sal_Bool SwXFrames::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
+sal_Bool SwXFrames::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence<OUString> SwXFrames::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence<OUString> SwXFrames::getSupportedServiceNames()
 {
     return { OUString("com.sun.star.text.TextFrames") };
 }
@@ -1156,7 +1173,7 @@ SwXFrames::SwXFrames(SwDoc* _pDoc, FlyCntType eSet) :
 SwXFrames::~SwXFrames()
 {}
 
-uno::Reference<container::XEnumeration> SwXFrames::createEnumeration() throw(uno::RuntimeException, std::exception)
+uno::Reference<container::XEnumeration> SwXFrames::createEnumeration()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1177,7 +1194,7 @@ uno::Reference<container::XEnumeration> SwXFrames::createEnumeration() throw(uno
     }
 }
 
-sal_Int32 SwXFrames::getCount() throw(uno::RuntimeException, std::exception)
+sal_Int32 SwXFrames::getCount()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1187,7 +1204,6 @@ sal_Int32 SwXFrames::getCount() throw(uno::RuntimeException, std::exception)
 }
 
 uno::Any SwXFrames::getByIndex(sal_Int32 nIndex)
-    throw(IndexOutOfBoundsException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1202,7 +1218,6 @@ uno::Any SwXFrames::getByIndex(sal_Int32 nIndex)
 }
 
 uno::Any SwXFrames::getByName(const OUString& rName)
-    throw(NoSuchElementException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1211,13 +1226,13 @@ uno::Any SwXFrames::getByName(const OUString& rName)
     switch(m_eType)
     {
         case FLYCNTTYPE_GRF:
-            pFormat = GetDoc()->FindFlyByName(rName, ND_GRFNODE);
+            pFormat = GetDoc()->FindFlyByName(rName, SwNodeType::Grf);
             break;
         case FLYCNTTYPE_OLE:
-            pFormat = GetDoc()->FindFlyByName(rName, ND_OLENODE);
+            pFormat = GetDoc()->FindFlyByName(rName, SwNodeType::Ole);
             break;
         default:
-            pFormat = GetDoc()->FindFlyByName(rName, ND_TEXTNODE);
+            pFormat = GetDoc()->FindFlyByName(rName, SwNodeType::Text);
             break;
     }
     if(!pFormat)
@@ -1225,13 +1240,13 @@ uno::Any SwXFrames::getByName(const OUString& rName)
     return lcl_UnoWrapFrame(const_cast<SwFrameFormat*>(pFormat), m_eType);
 }
 
-uno::Sequence<OUString> SwXFrames::getElementNames() throw( uno::RuntimeException, std::exception )
+uno::Sequence<OUString> SwXFrames::getElementNames()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
         throw uno::RuntimeException();
     const Reference<XEnumeration> xEnum = createEnumeration();
-    ::std::vector<OUString> vNames;
+    std::vector<OUString> vNames;
     while(xEnum->hasMoreElements())
     {
         Reference<container::XNamed> xNamed;
@@ -1242,7 +1257,7 @@ uno::Sequence<OUString> SwXFrames::getElementNames() throw( uno::RuntimeExceptio
     return ::comphelper::containerToSequence(vNames);
 }
 
-sal_Bool SwXFrames::hasByName(const OUString& rName) throw( uno::RuntimeException, std::exception )
+sal_Bool SwXFrames::hasByName(const OUString& rName)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1250,15 +1265,15 @@ sal_Bool SwXFrames::hasByName(const OUString& rName) throw( uno::RuntimeExceptio
     switch(m_eType)
     {
         case FLYCNTTYPE_GRF:
-            return GetDoc()->FindFlyByName(rName, ND_GRFNODE) != nullptr;
+            return GetDoc()->FindFlyByName(rName, SwNodeType::Grf) != nullptr;
         case FLYCNTTYPE_OLE:
-            return GetDoc()->FindFlyByName(rName, ND_OLENODE) != nullptr;
+            return GetDoc()->FindFlyByName(rName, SwNodeType::Ole) != nullptr;
         default:
-            return GetDoc()->FindFlyByName(rName, ND_TEXTNODE) != nullptr;
+            return GetDoc()->FindFlyByName(rName, SwNodeType::Text) != nullptr;
     }
 }
 
-uno::Type SAL_CALL SwXFrames::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL SwXFrames::getElementType()
 {
     SolarMutexGuard aGuard;
     switch(m_eType)
@@ -1274,7 +1289,7 @@ uno::Type SAL_CALL SwXFrames::getElementType() throw(uno::RuntimeException, std:
     }
 }
 
-sal_Bool SwXFrames::hasElements() throw(uno::RuntimeException, std::exception)
+sal_Bool SwXFrames::hasElements()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1283,17 +1298,17 @@ sal_Bool SwXFrames::hasElements() throw(uno::RuntimeException, std::exception)
 }
 
 
-OUString SwXTextFrames::getImplementationName() throw( RuntimeException, std::exception )
+OUString SwXTextFrames::getImplementationName()
 {
     return OUString("SwXTextFrames");
 }
 
-sal_Bool SwXTextFrames::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
+sal_Bool SwXTextFrames::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > SwXTextFrames::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence< OUString > SwXTextFrames::getSupportedServiceNames()
 {
     Sequence<OUString> aRet { "com.sun.star.text.TextFrames" };
     return aRet;
@@ -1308,17 +1323,17 @@ SwXTextFrames::~SwXTextFrames()
 {
 }
 
-OUString SwXTextGraphicObjects::getImplementationName() throw( RuntimeException, std::exception )
+OUString SwXTextGraphicObjects::getImplementationName()
 {
     return OUString("SwXTextGraphicObjects");
 }
 
-sal_Bool SwXTextGraphicObjects::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
+sal_Bool SwXTextGraphicObjects::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > SwXTextGraphicObjects::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence< OUString > SwXTextGraphicObjects::getSupportedServiceNames()
 {
     Sequence<OUString> aRet { "com.sun.star.text.TextGraphicObjects" };
     return aRet;
@@ -1333,17 +1348,17 @@ SwXTextGraphicObjects::~SwXTextGraphicObjects()
 {
 }
 
-OUString SwXTextEmbeddedObjects::getImplementationName() throw( RuntimeException, std::exception )
+OUString SwXTextEmbeddedObjects::getImplementationName()
 {
     return OUString("SwXTextEmbeddedObjects");
 }
 
-sal_Bool SwXTextEmbeddedObjects::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
+sal_Bool SwXTextEmbeddedObjects::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > SwXTextEmbeddedObjects::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence< OUString > SwXTextEmbeddedObjects::getSupportedServiceNames()
 {
     Sequence<OUString> aRet { "com.sun.star.text.TextEmbeddedObjects" };
     return aRet;
@@ -1358,17 +1373,17 @@ SwXTextEmbeddedObjects::~SwXTextEmbeddedObjects()
 {
 }
 
-OUString SwXTextSections::getImplementationName() throw( RuntimeException, std::exception )
+OUString SwXTextSections::getImplementationName()
 {
     return OUString("SwXTextSections");
 }
 
-sal_Bool SwXTextSections::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
+sal_Bool SwXTextSections::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > SwXTextSections::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence< OUString > SwXTextSections::getSupportedServiceNames()
 {
     Sequence<OUString> aRet { "com.sun.star.text.TextSections" };
     return aRet;
@@ -1383,7 +1398,7 @@ SwXTextSections::~SwXTextSections()
 {
 }
 
-sal_Int32 SwXTextSections::getCount() throw( uno::RuntimeException, std::exception )
+sal_Int32 SwXTextSections::getCount()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1399,7 +1414,6 @@ sal_Int32 SwXTextSections::getCount() throw( uno::RuntimeException, std::excepti
 }
 
 uno::Any SwXTextSections::getByIndex(sal_Int32 nIndex)
-    throw( IndexOutOfBoundsException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Reference< XTextSection >  xRet;
@@ -1432,7 +1446,6 @@ uno::Any SwXTextSections::getByIndex(sal_Int32 nIndex)
 }
 
 uno::Any SwXTextSections::getByName(const OUString& rName)
-    throw( NoSuchElementException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -1447,7 +1460,7 @@ uno::Any SwXTextSections::getByName(const OUString& rName)
                 && (rName == pFormat->GetSection()->GetSectionName()))
             {
                 xSect = GetObject(*pFormat);
-                aRet.setValue(&xSect, cppu::UnoType<XTextSection>::get());
+                aRet <<= xSect;
                 break;
             }
         }
@@ -1460,7 +1473,6 @@ uno::Any SwXTextSections::getByName(const OUString& rName)
 }
 
 uno::Sequence< OUString > SwXTextSections::getElementNames()
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1493,7 +1505,6 @@ uno::Sequence< OUString > SwXTextSections::getElementNames()
 }
 
 sal_Bool SwXTextSections::hasByName(const OUString& rName)
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     bool bRet = false;
@@ -1519,12 +1530,12 @@ sal_Bool SwXTextSections::hasByName(const OUString& rName)
     return bRet;
 }
 
-uno::Type SAL_CALL SwXTextSections::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL SwXTextSections::getElementType()
 {
     return cppu::UnoType<XTextSection>::get();
 }
 
-sal_Bool SwXTextSections::hasElements() throw( uno::RuntimeException, std::exception )
+sal_Bool SwXTextSections::hasElements()
 {
     SolarMutexGuard aGuard;
     size_t nCount = 0;
@@ -1543,17 +1554,17 @@ uno::Reference< XTextSection >  SwXTextSections::GetObject( SwSectionFormat& rFo
     return SwXTextSection::CreateXTextSection(&rFormat);
 }
 
-OUString SwXBookmarks::getImplementationName() throw( RuntimeException, std::exception )
+OUString SwXBookmarks::getImplementationName()
 {
     return OUString("SwXBookmarks");
 }
 
-sal_Bool SwXBookmarks::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
+sal_Bool SwXBookmarks::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > SwXBookmarks::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence< OUString > SwXBookmarks::getSupportedServiceNames()
 {
     Sequence< OUString > aRet { "com.sun.star.text.Bookmarks" };
     return aRet;
@@ -1567,7 +1578,6 @@ SwXBookmarks::~SwXBookmarks()
 { }
 
 sal_Int32 SwXBookmarks::getCount()
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1589,7 +1599,6 @@ sal_Int32 SwXBookmarks::getCount()
 }
 
 uno::Any SwXBookmarks::getByIndex(sal_Int32 nIndex)
-    throw( IndexOutOfBoundsException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1621,7 +1630,6 @@ uno::Any SwXBookmarks::getByIndex(sal_Int32 nIndex)
 }
 
 uno::Any SwXBookmarks::getByName(const OUString& rName)
-    throw( NoSuchElementException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1640,13 +1648,12 @@ uno::Any SwXBookmarks::getByName(const OUString& rName)
 }
 
 uno::Sequence< OUString > SwXBookmarks::getElementNames()
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
         throw uno::RuntimeException();
 
-    ::std::vector< OUString > ret;
+    std::vector< OUString > ret;
     IDocumentMarkAccess* const pMarkAccess = GetDoc()->getIDocumentMarkAccess();
     for (IDocumentMarkAccess::const_iterator_t ppMark =
             pMarkAccess->getBookmarksBegin();
@@ -1662,7 +1669,6 @@ uno::Sequence< OUString > SwXBookmarks::getElementNames()
 }
 
 sal_Bool SwXBookmarks::hasByName(const OUString& rName)
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1673,13 +1679,11 @@ sal_Bool SwXBookmarks::hasByName(const OUString& rName)
 }
 
 uno::Type SAL_CALL SwXBookmarks::getElementType()
-    throw(uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<XTextContent>::get();
 }
 
 sal_Bool SwXBookmarks::hasElements()
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1708,7 +1712,7 @@ SwXNumberingRulesCollection::~SwXNumberingRulesCollection()
 {
 }
 
-sal_Int32 SwXNumberingRulesCollection::getCount() throw( uno::RuntimeException, std::exception )
+sal_Int32 SwXNumberingRulesCollection::getCount()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1717,7 +1721,6 @@ sal_Int32 SwXNumberingRulesCollection::getCount() throw( uno::RuntimeException, 
 }
 
 uno::Any SwXNumberingRulesCollection::getByIndex(sal_Int32 nIndex)
-    throw( IndexOutOfBoundsException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -1727,7 +1730,7 @@ uno::Any SwXNumberingRulesCollection::getByIndex(sal_Int32 nIndex)
         if ( static_cast<size_t>(nIndex) < GetDoc()->GetNumRuleTable().size() )
         {
             xRef = new SwXNumberingRules( *GetDoc()->GetNumRuleTable()[ nIndex ], GetDoc());
-            aRet.setValue(&xRef, cppu::UnoType<XIndexReplace>::get());
+            aRet <<= xRef;
         }
 
         if(!xRef.is())
@@ -1738,12 +1741,12 @@ uno::Any SwXNumberingRulesCollection::getByIndex(sal_Int32 nIndex)
     return aRet;
 }
 
-uno::Type SAL_CALL SwXNumberingRulesCollection::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL SwXNumberingRulesCollection::getElementType()
 {
     return cppu::UnoType<XIndexReplace>::get();
 }
 
-sal_Bool SwXNumberingRulesCollection::hasElements() throw( uno::RuntimeException, std::exception )
+sal_Bool SwXNumberingRulesCollection::hasElements()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1751,17 +1754,17 @@ sal_Bool SwXNumberingRulesCollection::hasElements() throw( uno::RuntimeException
     return !GetDoc()->GetNumRuleTable().empty();
 }
 
-OUString SwXFootnotes::getImplementationName() throw( RuntimeException, std::exception )
+OUString SwXFootnotes::getImplementationName()
 {
     return OUString("SwXFootnotes");
 }
 
-sal_Bool SwXFootnotes::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
+sal_Bool SwXFootnotes::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > SwXFootnotes::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence< OUString > SwXFootnotes::getSupportedServiceNames()
 {
     Sequence<OUString> aRet { "com.sun.star.text.Footnotes" };
     return aRet;
@@ -1777,7 +1780,7 @@ SwXFootnotes::~SwXFootnotes()
 {
 }
 
-sal_Int32 SwXFootnotes::getCount() throw( uno::RuntimeException, std::exception )
+sal_Int32 SwXFootnotes::getCount()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1797,7 +1800,6 @@ sal_Int32 SwXFootnotes::getCount() throw( uno::RuntimeException, std::exception 
 }
 
 uno::Any SwXFootnotes::getByIndex(sal_Int32 nIndex)
-    throw( IndexOutOfBoundsException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -1831,12 +1833,12 @@ uno::Any SwXFootnotes::getByIndex(sal_Int32 nIndex)
     return aRet;
 }
 
-uno::Type SAL_CALL SwXFootnotes::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL SwXFootnotes::getElementType()
 {
     return cppu::UnoType<XFootnote>::get();
 }
 
-sal_Bool SwXFootnotes::hasElements() throw( uno::RuntimeException, std::exception )
+sal_Bool SwXFootnotes::hasElements()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1849,17 +1851,17 @@ Reference<XFootnote>    SwXFootnotes::GetObject( SwDoc& rDoc, const SwFormatFoot
     return SwXFootnote::CreateXFootnote(rDoc, &const_cast<SwFormatFootnote&>(rFormat));
 }
 
-OUString SwXReferenceMarks::getImplementationName() throw( RuntimeException, std::exception )
+OUString SwXReferenceMarks::getImplementationName()
 {
     return OUString("SwXReferenceMarks");
 }
 
-sal_Bool SwXReferenceMarks::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
+sal_Bool SwXReferenceMarks::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > SwXReferenceMarks::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence< OUString > SwXReferenceMarks::getSupportedServiceNames()
 {
     Sequence<OUString> aRet { "com.sun.star.text.ReferenceMarks" };
     return aRet;
@@ -1874,7 +1876,7 @@ SwXReferenceMarks::~SwXReferenceMarks()
 {
 }
 
-sal_Int32 SwXReferenceMarks::getCount() throw( uno::RuntimeException, std::exception )
+sal_Int32 SwXReferenceMarks::getCount()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1883,7 +1885,6 @@ sal_Int32 SwXReferenceMarks::getCount() throw( uno::RuntimeException, std::excep
 }
 
 uno::Any SwXReferenceMarks::getByIndex(sal_Int32 nIndex)
-    throw( IndexOutOfBoundsException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -1897,7 +1898,7 @@ uno::Any SwXReferenceMarks::getByIndex(sal_Int32 nIndex)
         if(pMark)
         {
             xRef = SwXReferenceMark::CreateXReferenceMark(*GetDoc(), pMark);
-            aRet.setValue(&xRef, cppu::UnoType<XTextContent>::get());
+            aRet <<= xRef;
         }
     }
     if(!xRef.is())
@@ -1906,7 +1907,6 @@ uno::Any SwXReferenceMarks::getByIndex(sal_Int32 nIndex)
 }
 
 uno::Any SwXReferenceMarks::getByName(const OUString& rName)
-    throw( NoSuchElementException, WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -1918,7 +1918,7 @@ uno::Any SwXReferenceMarks::getByName(const OUString& rName)
         {
             uno::Reference<XTextContent> const xRef =
                 SwXReferenceMark::CreateXReferenceMark(*GetDoc(), pMark);
-            aRet.setValue(&xRef, cppu::UnoType<XTextContent>::get());
+            aRet <<= xRef;
         }
         else
             throw NoSuchElementException();
@@ -1928,7 +1928,7 @@ uno::Any SwXReferenceMarks::getByName(const OUString& rName)
     return aRet;
 }
 
-uno::Sequence< OUString > SwXReferenceMarks::getElementNames() throw( uno::RuntimeException, std::exception )
+uno::Sequence< OUString > SwXReferenceMarks::getElementNames()
 {
     SolarMutexGuard aGuard;
     uno::Sequence<OUString> aRet;
@@ -1946,7 +1946,7 @@ uno::Sequence< OUString > SwXReferenceMarks::getElementNames() throw( uno::Runti
     return aRet;
 }
 
-sal_Bool SwXReferenceMarks::hasByName(const OUString& rName) throw( uno::RuntimeException, std::exception )
+sal_Bool SwXReferenceMarks::hasByName(const OUString& rName)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1954,12 +1954,12 @@ sal_Bool SwXReferenceMarks::hasByName(const OUString& rName) throw( uno::Runtime
     return nullptr != GetDoc()->GetRefMark( rName);
 }
 
-uno::Type SAL_CALL SwXReferenceMarks::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL SwXReferenceMarks::getElementType()
 {
     return cppu::UnoType<XTextContent>::get();
 }
 
-sal_Bool SwXReferenceMarks::hasElements() throw( uno::RuntimeException, std::exception )
+sal_Bool SwXReferenceMarks::hasElements()
 {
     SolarMutexGuard aGuard;
     if(!IsValid())

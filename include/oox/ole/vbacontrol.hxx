@@ -50,11 +50,11 @@ namespace ole {
 
 /** Common properties for all controls that are part of a VBA user form or of
     another container control in a VBA user form. */
-class VbaSiteModel
+class VbaSiteModel final
 {
 public:
     explicit            VbaSiteModel();
-    virtual             ~VbaSiteModel();
+                        ~VbaSiteModel();
 
     /** Allows to set single properties specified by XML token identifier. */
     void                importProperty( sal_Int32 nPropId, const OUString& rValue );
@@ -88,7 +88,7 @@ public:
                             sal_Int32 nCtrlIndex ) const;
     const OUString& getControlSource() { return  maControlSource; }
     const OUString& getRowSource() { return  maRowSource; }
-protected:
+private:
     OUString     maName;             ///< Name of the control.
     OUString     maTag;              ///< User defined tag.
     OUString     maToolTip;          ///< Tool tip for the control.
@@ -191,7 +191,7 @@ public:
                             const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                             const css::uno::Reference< css::frame::XModel >& rxDocModel,
                             const GraphicHelper& rGraphicHelper,
-                            bool bDefaultColorBgr = true );
+                            bool bDefaultColorBgr );
 
     /** Imports the form and its embedded controls, and inserts the form with
         all its controls into the passed dialog library. */

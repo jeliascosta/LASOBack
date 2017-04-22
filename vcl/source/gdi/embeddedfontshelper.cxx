@@ -143,7 +143,7 @@ bool EmbeddedFontsHelper::addEmbeddedFont( const uno::Reference< io::XInputStrea
     }
     if( !eot )
     {
-        sufficientFontRights = sufficientTTFRights( &fontData.front(), fontData.size(), EditingAllowed );
+        sufficientFontRights = sufficientTTFRights(fontData.data(), fontData.size(), FontRights::EditingAllowed);
     }
     if( !sufficientFontRights )
     {
@@ -197,10 +197,10 @@ bool EmbeddedFontsHelper::sufficientTTFRights( const void* data, long size, Font
         int copyright = info.typeFlags & TYPEFLAG_COPYRIGHT_MASK;
         switch( rights )
         {
-            case ViewingAllowed:
+            case FontRights::ViewingAllowed:
                 // Embedding not restricted completely.
                 return ( copyright & 0x02 ) != 0x02;
-            case EditingAllowed:
+            case FontRights::EditingAllowed:
                 // Font is installable or editable.
                 return copyright == 0 || ( copyright & 0x08 );
         }
@@ -261,9 +261,8 @@ OUString EmbeddedFontsHelper::fontFileUrl( const OUString& familyName, FontFamil
     }
     if( selected != nullptr )
     {
-        FontSubsetInfo info;
         long size;
-        if( const void* data = graphics->GetEmbedFontData( selected, nullptr, nullptr, 0, info, &size ))
+        if (const void* data = graphics->GetEmbedFontData(selected, &size))
         {
             if( sufficientTTFRights( data, size, rights ))
             {

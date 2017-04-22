@@ -11,6 +11,9 @@
 #include "Connection.hxx"
 #include "Util.hxx"
 
+#include <com/sun/star/io/BufferSizeExceededException.hpp>
+#include <com/sun/star/io/NotConnectedException.hpp>
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <connectivity/dbexception.hxx>
@@ -33,7 +36,11 @@ Blob::Blob(isc_db_handle* pDatabaseHandle,
     m_pDatabaseHandle(pDatabaseHandle),
     m_pTransactionHandle(pTransactionHandle),
     m_blobID(aBlobID),
+#if SAL_TYPES_SIZEOFPOINTER == 8
     m_blobHandle(0),
+#else
+    m_blobHandle(nullptr),
+#endif
     m_bBlobOpened(false),
     m_nBlobLength(0),
     m_nBlobPosition(0)
@@ -41,7 +48,6 @@ Blob::Blob(isc_db_handle* pDatabaseHandle,
 }
 
 void Blob::ensureBlobIsOpened()
-    throw(SQLException)
 {
     MutexGuard aGuard(m_aMutex);
 
@@ -90,7 +96,6 @@ void Blob::ensureBlobIsOpened()
 }
 
 void Blob::closeBlob()
-    throw (SQLException)
 {
     MutexGuard aGuard(m_aMutex);
 
@@ -103,7 +108,11 @@ void Blob::closeBlob()
             evaluateStatusVector(m_statusVector, "isc_close_blob", *this);
 
         m_bBlobOpened = false;
+#if SAL_TYPES_SIZEOFPOINTER == 8
         m_blobHandle = 0;
+#else
+        m_blobHandle = nullptr;
+#endif
     }
 }
 
@@ -124,7 +133,6 @@ void SAL_CALL Blob::disposing()
 }
 
 sal_Int64 SAL_CALL Blob::length()
-    throw(SQLException, RuntimeException, std::exception)
 {
     MutexGuard aGuard(m_aMutex);
     checkDisposed(Blob_BASE::rBHelper.bDisposed);
@@ -135,25 +143,25 @@ sal_Int64 SAL_CALL Blob::length()
 
 uno::Sequence< sal_Int8 > SAL_CALL  Blob::getBytes(sal_Int64 nPosition,
                                                    sal_Int32 nBytes)
-    throw(SQLException, RuntimeException, std::exception)
 {
     MutexGuard aGuard(m_aMutex);
     checkDisposed(Blob_BASE::rBHelper.bDisposed);
     ensureBlobIsOpened();
 
-    if (nPosition > m_nBlobLength)
+    if (nPosition > m_nBlobLength || nPosition < 1)
         throw lang::IllegalArgumentException("nPosition out of range", *this, 0);
     // We only have to read as many bytes as are available, i.e. nPosition+nBytes
     // can legally be greater than the total length, hence we don't bother to check.
 
-    if (nPosition > m_nBlobPosition)
+    if (nPosition -1 < m_nBlobPosition)
     {
         // Resets to the beginning (we can't seek these blobs)
         closeBlob();
         ensureBlobIsOpened();
     }
 
-    skipBytes(nPosition - m_nBlobPosition);
+    // nPosition is indexed from 1.
+    skipBytes(nPosition - m_nBlobPosition -1 );
 
     // Don't bother preallocating: readBytes does the appropriate calculations
     // and reallocates for us.
@@ -163,14 +171,12 @@ uno::Sequence< sal_Int8 > SAL_CALL  Blob::getBytes(sal_Int64 nPosition,
 }
 
 uno::Reference< XInputStream > SAL_CALL  Blob::getBinaryStream()
-    throw(SQLException, RuntimeException, std::exception)
 {
     return this;
 }
 
 sal_Int64 SAL_CALL  Blob::position(const uno::Sequence< sal_Int8 >& /*rPattern*/,
                                    sal_Int64 /*nStart*/)
-    throw(SQLException, RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException("Blob::position", *this);
     return 0;
@@ -178,7 +184,6 @@ sal_Int64 SAL_CALL  Blob::position(const uno::Sequence< sal_Int8 >& /*rPattern*/
 
 sal_Int64 SAL_CALL  Blob::positionOfBlob(const uno::Reference< XBlob >& /*rPattern*/,
                                          sal_Int64 /*aStart*/)
-    throw(SQLException, RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException("Blob::positionOfBlob", *this);
     return 0;
@@ -188,7 +193,6 @@ sal_Int64 SAL_CALL  Blob::positionOfBlob(const uno::Reference< XBlob >& /*rPatte
 
 sal_Int32 SAL_CALL Blob::readBytes(uno::Sequence< sal_Int8 >& rDataOut,
                                    sal_Int32 nBytes)
-    throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     MutexGuard aGuard(m_aMutex);
 
@@ -254,7 +258,6 @@ sal_Int32 SAL_CALL Blob::readBytes(uno::Sequence< sal_Int8 >& rDataOut,
 
 sal_Int32 SAL_CALL Blob::readSomeBytes(uno::Sequence< sal_Int8 >& rDataOut,
                                 sal_Int32 nMaximumBytes)
-    throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     // We don't have any way of verifying how many bytes are immediately available,
     // hence we just pass through direct to readBytes
@@ -263,7 +266,6 @@ sal_Int32 SAL_CALL Blob::readSomeBytes(uno::Sequence< sal_Int8 >& rDataOut,
 }
 
 void SAL_CALL Blob::skipBytes(sal_Int32 nBytesToSkip)
-    throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     // There is no way of directly skipping, hence we have to pretend to skip
     // by reading & discarding the data.
@@ -272,7 +274,6 @@ void SAL_CALL Blob::skipBytes(sal_Int32 nBytesToSkip)
 }
 
 sal_Int32 SAL_CALL Blob::available()
-    throw (NotConnectedException,  IOException, RuntimeException, std::exception)
 {
     MutexGuard aGuard(m_aMutex);
 
@@ -305,7 +306,6 @@ sal_Int32 SAL_CALL Blob::available()
 }
 
 void SAL_CALL Blob::closeInput()
-    throw(NotConnectedException, IOException, RuntimeException, std::exception)
 {
     try
     {

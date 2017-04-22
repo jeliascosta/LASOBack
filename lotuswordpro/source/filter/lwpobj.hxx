@@ -83,9 +83,9 @@ class LwpObject: public salhelper::SimpleReferenceObject
 public:
     LwpObject(LwpObjectHeader objHdr, LwpSvStream* pStrm);
 protected:
-    virtual ~LwpObject();
+    virtual ~LwpObject() override;
     LwpObjectHeader m_ObjHdr;
-    LwpObjectStream* m_pObjStrm;
+    std::unique_ptr<LwpObjectStream> m_pObjStrm;
     LwpFoundry* m_pFoundry;
     LwpSvStream* m_pStrm;
     bool m_bRegisteringStyle;

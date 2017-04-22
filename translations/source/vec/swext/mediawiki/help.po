@@ -1,0 +1,745 @@
+#. extracted from swext/mediawiki/help
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2017-03-29 16:56+0000\n"
+"Last-Translator: VenetoABC <veneto.abc@gmail.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: vec\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Accelerator-Marker: ~\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1490806617.000000\n"
+
+#: help.tree
+msgctxt ""
+"help.tree\n"
+"02\n"
+"help_section.text"
+msgid "MediaWiki"
+msgstr "MediaWiki"
+
+#: help.tree
+msgctxt ""
+"help.tree\n"
+"0224\n"
+"node.text"
+msgid "MediaWiki"
+msgstr "MediaWiki"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"tit\n"
+"help.text"
+msgid "Wiki Publisher"
+msgstr "Wiki Publisher"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"bm_id3154408\n"
+"help.text"
+msgid "<bookmark_value>Wiki;Wiki Publisher</bookmark_value><bookmark_value>Wiki Publisher</bookmark_value><bookmark_value>extensions;MediaWiki</bookmark_value>"
+msgstr "<bookmark_value>Wiki;Wiki Publisher</bookmark_value><bookmark_value>Wiki Publisher</bookmark_value><bookmark_value>estension;MediaWiki</bookmark_value>"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id5993530\n"
+"help.text"
+msgid "Wiki Publisher"
+msgstr "Wiki Publisher"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9647511\n"
+"help.text"
+msgid "<ahelp hid=\".\">By using the Wiki Publisher you can upload your current Writer text document to a MediaWiki server. After uploading, all wiki users can read your document on the wiki.</ahelp>"
+msgstr "<ahelp hid=\".\">Doparando Wiki Publisher A te pol cargar so un server MediaWiki el to documento Writer. Dopo verlo cargà, tutti i utenti wiki i podarà łézar el documento inte'l wiki.</ahelp>"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id6468703\n"
+"help.text"
+msgid "<ahelp hid=\".\">Choose <item type=\"menuitem\">File - Send - To MediaWiki</item> to upload the current Writer document to a MediaWiki server.</ahelp>"
+msgstr "<ahelp hid=\".\">Par cargar el documento Writer corente inte'l server MediaWiki, sełesiona <item type=\"menuitem\">File - Invia - A MediaWiki</item>.</ahelp>"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id4554582\n"
+"help.text"
+msgid "System Requirements"
+msgstr "Recuiziti de sistema"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9340495\n"
+"help.text"
+msgid "Java Runtime Environment"
+msgstr "Java Runtime Environment"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id7387615\n"
+"help.text"
+msgid "A wiki account on a supported <link href=\"http://www.mediawiki.org/wiki/MediaWiki\">MediaWiki</link> server"
+msgstr "Un account wiki so un server suportà <link href=\"http://www.mediawiki.org/wiki/MediaWiki\">MediaWiki</link>"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id8047120\n"
+"help.text"
+msgid "Installing Wiki Publisher"
+msgstr "Instałasion de Wiki Publisher "
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id4277169\n"
+"help.text"
+msgid "Before you use the Wiki Publisher, ensure that %PRODUCTNAME uses a Java Runtime Environment (JRE). To check the status of the JRE, choose <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - Advanced</item>. Ensure that “Use a Java runtime environment” is checked and that a Java runtime folder is selected in the big listbox. If no JRE was activated, then activate a JRE of version 1.4 or later and restart %PRODUCTNAME."
+msgstr "Prima de doparar Wiki Publisher, controła che %PRODUCTNAME el dòpara un anbiente de runtime Java (“Java Runtime Environment“ o “JRE“). Par verifegar el stato de'l JRE sernisi <item type=\"menuitem\">Strumenti - Opsion - %PRODUCTNAME - Progredìe</item>. Controła che ła cazeła “Dòpara un anbiente runtime Java“ ła sia sełesionà e che inte ła fenestra de riepìłogo A ghe sia almanco na carteła runtime Java sełesionà. Se no ze ativà njanca un JRE, instała ła version 1.4 o na version pì resente e reavìa %PRODUCTNAME."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id5316019\n"
+"help.text"
+msgid "To Connect to a Wiki"
+msgstr "Conétarse a'l wiki"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id2381969\n"
+"help.text"
+msgid "Note: You can store your user name and password for all respective dialogs inside %PRODUCTNAME. The password will be stored in a secure way, where access is maintained by a master password. To enable the master password, choose <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - Security</item>."
+msgstr "Nota: te pol memorizar el to nome utente e password par tute łe rełative fenestre rento de %PRODUCTNAME. Ła password ła venjarà memorizà co sistema seguro, domente l'aceso el venjarà controłà da na password prinsipałe. Par ativar ła password prinsipałe, sełesiona <item type=\"menuitem\">Strumenti - Opsion - %PRODUCTNAME - Seguresa</item>."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id3751640\n"
+"help.text"
+msgid "Note: If you connect to the web using a proxy server, enter the proxy information to <item type=\"menuitem\">Tools - Options - Internet - Proxy</item>, and restart the software."
+msgstr "Nota: se te te cołeghi a'l web doparando un server proxy, meti rento łe informasion de'l proxy in <item type=\"menuitem\">Strumenti - Opsion - Internet - Proxy</item>, e fa partir da novo el programa."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9533677\n"
+"help.text"
+msgid "Open a Writer document, and choose <item type=\"menuitem\">Tools - Options - Internet - MediaWiki</item>."
+msgstr "Verzi un documento Writer e sełesiona <item type=\"menuitem\">Strumenti - Opsion - Internet - MediaWiki</item>."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id368968\n"
+"help.text"
+msgid "In the <link href=\"com.sun.wiki-publisher/wikisettings.xhp\">Options</link> dialog, click Add."
+msgstr "Inte ła fenestra de diałogo <link href=\"com.sun.wiki-publisher/wikisettings.xhp\">Opsion</link>, faghe click so Zonta."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id6962187\n"
+"help.text"
+msgid "In the <link href=\"com.sun.wiki-publisher/wikiaccount.xhp\">MediaWiki</link> dialog, enter the account information for the wiki."
+msgstr "Inte ła fenestra de diałogo<link href=\"com.sun.wiki-publisher/wikiaccount.xhp\">MediaWiki</link>, insarisi łe informasion de l'account par el wiki."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id5328836\n"
+"help.text"
+msgid "In the URL text box, enter the address of a wiki that you want to connect to."
+msgstr "Inte ła cazeła de testo URL meti rento l'indiriso de'l wiki al cuałe A te vol conétarte."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id389416\n"
+"help.text"
+msgid "You can copy the URL from a web browser and paste it into the textbox."
+msgstr "Te pol copiar l'URL da un navigador e incołarlo rento ła cazeła de testo."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id5906552\n"
+"help.text"
+msgid "In the Username box, enter your user ID for your wiki account."
+msgstr "Inte ła cazeła Nome utente meti rento el to ID utente par el to account wiki."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9297158\n"
+"help.text"
+msgid "If the wiki allows anonymous write access, you can leave the Username and Password boxes empty."
+msgstr "Se el wiki el te parmete l'aceso anònemo in scritura, A te pol łasar vode łe cazełe Nome utente e Password."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id8869594\n"
+"help.text"
+msgid "In the Password box, enter the password for your wiki account, then click OK."
+msgstr "Inte ła cazeła Password meti rento ła password de'll to account wiki, e dopo faghe click so OK."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id292062\n"
+"help.text"
+msgid "Optionally enable “Save password” to save the password between sessions. A master password is used to maintain access to all saved passwords. Choose <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - Security</item> to enable the master password. “Save password” is unavailable when the master password is not enabled."
+msgstr "Te pol ativar in modo opsionałe “Salva password” par salvar ła password fra na sesion e cheł'altra. Ła password prinsipałe ła ze doparà par controłar l'aceso a tute łe to password salvàe. Par ativar ła password prinsipałe, sełesiona <item type=\"menuitem\">Strumenti - Opsion - %PRODUCTNAME - Seguresa</item>. “Salva password” no'l ze mìa desponìbiłe se ła password prinsipałe no ła ze mìa ativa."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id7044892\n"
+"help.text"
+msgid "To Create a New Wiki Page"
+msgstr "Par crear na nova pàjina wiki"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id3514206\n"
+"help.text"
+msgid "Open a Writer document."
+msgstr "Verzi un documento Writer."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id944853\n"
+"help.text"
+msgid "Write the content of the wiki page. You can use formatting such as text formats, headings, footnotes, and more. See the <link href=\"com.sun.wiki-publisher/wikiformats.xhp\">list of supported formats</link>."
+msgstr "Scrivi el contenjùo de ła pàjina wiki. Te pol doparar łe formatasion cofà i formati de testo, łe intestasion, łe note a pie de pàjina e altro. Varda ła <link href=\"com.sun.wiki-publisher/wikiformats.xhp\"> łista de i formati suportài</link>."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id4566484\n"
+"help.text"
+msgid "Choose <item type=\"menuitem\">File - Send - To MediaWiki</item>."
+msgstr "Sełesiona <item type=\"menuitem\">File - Invia - A MediaWiki</item>."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id228278\n"
+"help.text"
+msgid "In the <link href=\"com.sun.wiki-publisher/wikisend.xhp\">Send to MediaWiki</link> dialog, specify the settings for your entry."
+msgstr "Inte ła fenestra de diałogo <link href=\"com.sun.wiki-publisher/wikisend.xhp\">Invia a MediaWiki</link>, spesìfega łe inpostasion de ła voze."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id2564165\n"
+"help.text"
+msgid "<emph>MediaWiki server</emph>: Select the wiki."
+msgstr "<emph>Server MediaWiki</emph>: sełesiona el wiki."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id5566576\n"
+"help.text"
+msgid "<emph>Title</emph>: Type the title of your page. Type the title of an existing page to overwrite the page with your current text document. Type a new title to create a new page on the wiki."
+msgstr "<emph>Tìtoło</emph>: dìjita el tìtoło de ła pàjina. Dìjita el tìtoło de na pàjina ezistente par sorascrìvarla co'l documento de testo corente. Dìjita un tìtoło novo par crear na pàjina nova so'l wiki."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9688711\n"
+"help.text"
+msgid "<emph>Summary</emph>: Enter an optional short summary of your page."
+msgstr "<emph>Descrision</emph>: meti rento na descrision curta, opsionałe, de ła to pàjina."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id4123661\n"
+"help.text"
+msgid "<emph>This is a minor edit</emph>: Check this box to mark the uploaded page as a minor edit of the already existing page with the same title."
+msgstr "<emph>'Sta cuà ła ze na modìfega secondaria</emph>: spunta 'sta cazeła par senjar ła pàjina cargà cofà modìfega secondaria de ła pàjina za prezente co'l steso tìtoło."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id452284\n"
+"help.text"
+msgid "<emph>Show in web browser</emph>: Check this box to open your system web browser and show the uploaded wiki page."
+msgstr "<emph>Mostra inte'l navigador web</emph>: spunta 'sta cazeła par vèrzar el to navigador web predefinìo e mostrar ła pàjina wiki cargà."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id8346812\n"
+"help.text"
+msgid "Click <emph>Send</emph>."
+msgstr "Faghe click so <emph>Invia</emph>."
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"tit\n"
+"help.text"
+msgid "MediaWiki"
+msgstr "MediaWiki"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"hd_id960722\n"
+"help.text"
+msgid "MediaWiki"
+msgstr "MediaWiki"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id4571672\n"
+"help.text"
+msgid "Use the MediaWiki dialog to add or edit your MediaWiki account settings."
+msgstr "Dòpara ła fenestra MediaWiki par zontar o modifegar łe inpostasion de'l to account MediaWiki."
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id7631458\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Enter the URL of a MediaWiki server, starting with http://</ahelp>"
+msgstr "<ahelp hid=\".\" visibility=\"hidden\">Dìjita l'URL di un server MediaWiki scomisiando co http://</ahelp>"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id7862483\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Enter your user name on the MediaWiki server. Leave empty for anonymous access.</ahelp>"
+msgstr "<ahelp hid=\".\" visibility=\"hidden\">Meti rento el to nome utente so'l server MediaWiki. Łasa vodo par l'aceso anònemo.</ahelp>"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id1113010\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Enter your password on the MediaWiki server. Leave empty for anonymous access.</ahelp>"
+msgstr "<ahelp hid=\".\" visibility=\"hidden\">Meti rento ła to password so'l server MediaWiki. Łasa vodo par l'aceso anònemo.</ahelp>"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id656758\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Enable to store your password between sessions. The master password must be enabled; see <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - Security</item>.</ahelp>"
+msgstr "<ahelp hid=\".\" visibility=\"hidden\">Ativa par memorizar ła password tra na sesion e cheł'altra. Verìfega in <item type=\"menuitem\">Strumenti - Opsion - %PRODUCTNAME - Seguresa</item> che ła password prinsipałe ła sia ativa.</ahelp>"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id3112582\n"
+"help.text"
+msgid "Enter the Internet address of a wiki server in a format like “http://wiki.documentfoundation.org” or copy the URL from a web browser."
+msgstr "Meti rento l'indiriso internet de un server wiki inte un formato tipo “http://wiki.documentfoundation.org” o copia l'URL da un navigador web."
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id628070\n"
+"help.text"
+msgid "If the wiki allows anonymous access, you can leave the account text boxes empty. Else enter your user name and password."
+msgstr "Se el wiki el te parmete l'aceso anònemo, te pol łasar vode łe cazełe de l'account. Se no ze cusì, meti rento el to nome utente e ła password."
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id9046601\n"
+"help.text"
+msgid "If you have enabled the master password feature on the Security tab page of the <item type=\"menuitem\">Tools - Options - %PRODUCTNAME</item> dialog, then the software can store your password and automatically insert the data where necessary. Enable the \"Save password\" checkbox to store your password."
+msgstr "Se te ghe ativà ła password prinsipałe inte ła scheda Seguresa de ła fenestra <item type=\"menuitem\">Strumenti - Opsion - %PRODUCTNAME</item>, łora el programa el reusirà a salvar łe password e insarirle ndove che łe servirà. Par memorizar łe password, ativa ła cazeła \"Salva password\"."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"tit\n"
+"help.text"
+msgid "MediaWiki Formats"
+msgstr "Formati MediaWiki"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id3743095\n"
+"help.text"
+msgid "MediaWiki Formats"
+msgstr "Formati MediaWiki"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8654133\n"
+"help.text"
+msgid "The following list gives an overview of the text formats that the Wiki Publisher can upload to the wiki server."
+msgstr "Ła łista seguente ła te dà na panoràmega de i formati de testo che Wiki Publisher el połe cargar inte i server wiki."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id5630664\n"
+"help.text"
+msgid "The OpenDocument format used by Writer and the MediaWiki format are quite different. Only a subset of all features can be transformed from one format to the other."
+msgstr "El formato OpenDocument doparà da Writer e cueło doparà da WikiMedia i ze bastansa difarenti. Soło na parte de tute łe caraterìsteghe łe połe venjer trasformàe da un formato a cheł'altro."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id7178868\n"
+"help.text"
+msgid "Headings"
+msgstr "Intestasion"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id508133\n"
+"help.text"
+msgid "Apply a heading paragraph style to the headings in your Writer document. The wiki will show the heading styles of the same outline level, formatted as defined by the wiki engine."
+msgstr "Àplega un stiłe de intestasion paràgrafo a łe intestasion de'l to documento Writer. El Wiki el te mostrarà i stiłi de intestasion de'l steso łiveło de strutura, formatài cofà definìo da el motor Wiki."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id7217627\n"
+"help.text"
+msgid "Hyperlinks"
+msgstr "Cołegamenti ipartestuałi"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id3735465\n"
+"help.text"
+msgid "Native OpenDocument hyperlinks are transformed into “external” wiki links. Therefore, the built-in linking facility of OpenDocument should only be used to create links that point to other sites outside the wiki web. For creating wiki links that point to other subjects of the same wiki domain, use wiki links."
+msgstr "I cołegamenti ipartestuałi nativi de OpenDocument i ze trasformài in cołegamenti Wiki “esterni”. Cuindi ła funsion incorporà par i cołegamenti de OpenDocument ła pol èsar doparà par crear soło cołegamenti a siti fora da'l web Wiki. Par crear cołegamenti Wiki verso altri sojeti de'l steso dominio Wiki, dòpara i cołegamenti Wiki."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id941190\n"
+"help.text"
+msgid "Lists"
+msgstr "Łiste"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8942838\n"
+"help.text"
+msgid "Lists can be exported reliably when the whole list uses a consistent list style. Use the Numbering or Bullets icon to generate a list in Writer. If you need a list without numbering or bullets, use <emph>Format - Bullets and Numbering</emph> to define and apply the respective list style."
+msgstr "Łe łiste łe połe venjer esportàe in manjera segura cuando l'intiero grupo de łiste el dòpara un stiłe łiste coerente. Par crear na łista so Writer, dopara l'icona par łe łiste numaràe o puntinàe. Se te ghe de bizonjo de na łista sensa numarasion o punti, dòpara l'opsion <emph>Formato - Łiste numaràe e puntinàe</emph> par definir e aplegar el stiłe de łista che te serve."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id7026886\n"
+"help.text"
+msgid "Paragraphs"
+msgstr "Paràgrafi"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id4436475\n"
+"help.text"
+msgid "Alignment"
+msgstr "Łineasion"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id376598\n"
+"help.text"
+msgid "Explicit text alignment should not be used in wiki articles. Nevertheless, text alignment is supported for left, centered, and right alignment of text."
+msgstr "Ła łineasion esplìsita de'l testo no ła dovarìa mìa èsar doparà inte i artìgołi Wiki. Anpò, A ze suportà ła łineasion de'l testo sanco, drito e sentrà."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id7486190\n"
+"help.text"
+msgid "Pre-formatted text"
+msgstr "Testo preformatà"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id1459395\n"
+"help.text"
+msgid "A paragraph style with a fixed-width font is transformed as pre-formatted text. Pre-formatted text is shown on the wiki with a border around the text."
+msgstr "Un stiłe de paràgrafo co un caràtare de łarghesa fisa el vien trasformà in testo preformatà. El testo preformatà el vien mostrà inte'l wiki co un bordo torno el testo."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id4834131\n"
+"help.text"
+msgid "Character styles"
+msgstr "Stiłi caràtare"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id6397595\n"
+"help.text"
+msgid "Character styles modify the appearance of parts of a paragraph. The transformation supports bold, italics, bold/italics, subscript and superscript. All fixed-width fonts are transformed into the wiki typewriter style."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id5152745\n"
+"help.text"
+msgid "Footnotes"
+msgstr "Note a pie pàjina"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id5238196\n"
+"help.text"
+msgid "Note: The transformation uses the new style of footnotes with <ref> and <references> tags that requires the Cite.php extension to be installed into MediaWiki. If those tags are shown as plain text in the transformation result, ask the wiki administrator to install this extension."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id9405499\n"
+"help.text"
+msgid "Images"
+msgstr "Imàjini"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id3541673\n"
+"help.text"
+msgid "Images cannot be exported by a transformation producing a single file of wiki text. However, if the image is already uploaded to the target wiki domain (e. g., Wikimedia Commons), then the transformation produces a valid image tag that includes the image. Image captions are also supported."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id2162236\n"
+"help.text"
+msgid "Tables"
+msgstr "Tabełe"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id3037202\n"
+"help.text"
+msgid "Simple tables are supported well. Table headers are translated into corresponding wiki-style table headers. However, custom formatting of table borders, column sizes and background colors is ignored."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id2954496\n"
+"help.text"
+msgid "Joined Cells"
+msgstr "Cełe unìe"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8253730\n"
+"help.text"
+msgid "OpenDocument and especially LibreOffice represent tables that have joined cells that span rows as tables with nested tables. In contrast, the wiki model of table is to declare column and row spans for such joined cells."
+msgstr "OpenDocument e spesialmente LibreOffice, i raprezenta tabełe che ga cełe unìe che contien righe cofà tabełe co tabełe nidifegà. Par raverso, el modeło de tabeła wiki el ze declarar i intervałi de cołona e riga par chełe union de cełe."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8163090\n"
+"help.text"
+msgid "If only columns of the same row are joined, the result of the transformation resembles the source document very well."
+msgstr "Se vien unìe soło łe cołone de ła stesa riga, el rezultado de ła trasformasion el ghe somejarà abastansa ben a'l documento de orìjine."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id425122\n"
+"help.text"
+msgid "Borders"
+msgstr "Bordi"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id1831110\n"
+"help.text"
+msgid "Irrespective of custom table styles for border and background, a table is always exported as “prettytable,” which renders in the wiki engine with simple borders and bold header."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id6255073\n"
+"help.text"
+msgid "Character set and special characters"
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8216193\n"
+"help.text"
+msgid "The character set of the transformation result is fixed to UTF-8. Depending on your system, this might not be the default character set. This might cause “special characters” to look broken when viewed with default settings. However, you can switch your editor to UTF-8 encoding to fix this. If your editor does not support switching the encoding, you can display the result of the transformation in the Firefox browser and switch the encoding to UTF-8 there. Now, you can copy and paste the transformation result to your program of choice."
+msgstr ""
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"tit\n"
+"help.text"
+msgid "Send to MediaWiki"
+msgstr "Invia a MediaWiki"
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"hd_id108340\n"
+"help.text"
+msgid "Send to MediaWiki"
+msgstr "Invia a MediaWiki"
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id1743827\n"
+"help.text"
+msgid "In the Send to MediaWiki dialog, specify the settings for your current wiki upload."
+msgstr ""
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id664082\n"
+"help.text"
+msgid "<ahelp hid=\".\">Select the MediaWiki server where you want to publish your document. Click Add to add a new server to the list.</ahelp>"
+msgstr "<ahelp hid=\".\">Sełesiona el server MediaWiki ndove te vol publegar el documento. Faghe click so Zonta par zontare un novo server a l'ełenco.</ahelp>"
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id2794885\n"
+"help.text"
+msgid "<ahelp hid=\".\">Enter the title of your wiki entry. This is the top heading of your wiki entry. For a new entry, the title must be unique on this wiki. If you enter an existing title, your upload will overwrite the existing wiki entry.</ahelp>"
+msgstr ""
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id2486342\n"
+"help.text"
+msgid "<ahelp hid=\".\">Enter an optional short summary or comment.</ahelp> See <link href=\"http://meta.wikimedia.org/wiki/Help:Edit_summary\">http://meta.wikimedia.org/wiki/Help:Edit_summary</link>."
+msgstr "<ahelp hid=\".\">Te pol insarir un comento o na descrision.</ahelp> Varda <link href=\"http://meta.wikimedia.org/wiki/Help:Edit_summary\">http://meta.wikimedia.org/wiki/Help:Edit_summary</link>."
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id823999\n"
+"help.text"
+msgid "<emph>This is a minor edit</emph>: <ahelp hid=\".\">Check this box to mark the uploaded page as a minor edit of the already existing page with the same title.</ahelp>"
+msgstr "<emph>'Sta cuà ła ze na modìfega secondaria</emph>: <ahelp hid=\".\">sełesiona 'sta cazeła par marcar ła pàjina cargà cofà modìfega secondaria de ła pàjina za prezente co'l steso tìtoło.</ahelp>"
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id6592913\n"
+"help.text"
+msgid "<emph>Show in web browser</emph>: <ahelp hid=\".\">Check this box to open your system web browser and show the uploaded wiki page.</ahelp>"
+msgstr ""
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"tit\n"
+"help.text"
+msgid "MediaWiki Options"
+msgstr "Opsion MediaWiki"
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"hd_id6425672\n"
+"help.text"
+msgid "MediaWiki Options"
+msgstr "Opsion MediaWiki"
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id1188390\n"
+"help.text"
+msgid "You can add, edit and remove MediaWiki servers. Open the options dialog by going to <item type=\"menuitem\">Tools - Options - Internet - MediaWiki</item>."
+msgstr ""
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id300607\n"
+"help.text"
+msgid "<ahelp hid=\".\">Click Add to add a new wiki server.<br/>Select an entry and click Edit to edit the account settings.<br/>Select an entry and click Remove to remove the entry from the list.</ahelp>"
+msgstr ""
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id9786065\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Opens the MediaWiki dialog to add a new entry to the list.</ahelp>"
+msgstr "<ahelp hid=\".\" visibility=\"hidden\">El verze ła fenestra de diàłogo MediaWiki par ła zontaura de na voze nova inte l'ełenco.</ahelp>"
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id3386333\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Opens the MediaWiki dialog to edit the selected entry.</ahelp>"
+msgstr "<ahelp hid=\".\" visibility=\"hidden\">El verze ła fenestra de diàłogo MediaWiki par ła modìfega de ła voze sełesionà.</ahelp>"
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id7285073\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Removes the selected entry from the list.</ahelp>"
+msgstr "<ahelp hid=\".\" visibility=\"hidden\">Cava via ła voze sełesionada da ła łista.</ahelp>"
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id1029084\n"
+"help.text"
+msgid "When you click Add or Edit, the <link href=\"com.sun.wiki-publisher/wikiaccount.xhp\">MediaWiki</link> dialog opens."
+msgstr "Se te fè click so Zonta o Modìfega, se verze ła fenestra de diàłogo <link href=\"com.sun.wiki-publisher/wikiaccount.xhp\">MediaWiki</link>."

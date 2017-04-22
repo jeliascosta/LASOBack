@@ -38,21 +38,21 @@ namespace
             @param  _rBase      the base point
             @param  _aVector    the vector which will be added
     */
-    inline Rectangle calcRect(const Point& _rBase,const Point& _aVector)
+    inline tools::Rectangle calcRect(const Point& _rBase,const Point& _aVector)
     {
-        return Rectangle( _rBase - _aVector, _rBase + _aVector );
+        return tools::Rectangle( _rBase - _aVector, _rBase + _aVector );
     }
     /** GetTextPos calculate the rectangle for the connection to be drawn
             @param  _pWin           the table window where to draw it
             @param  _aConnPos       the connection point
             @param  _aDescrLinePos  the description line pos
     */
-    Rectangle GetTextPos(const OTableWindow* _pWin, const Point& _aConnPos,const Point& _aDescrLinePos)
+    tools::Rectangle GetTextPos(const OTableWindow* _pWin, const Point& _aConnPos,const Point& _aDescrLinePos)
     {
-        OTableWindowListBox* pListBox = _pWin ? _pWin->GetListBox() : nullptr;
+        VclPtr<OTableWindowListBox> pListBox = _pWin ? _pWin->GetListBox() : nullptr;
         OSL_ENSURE(_pWin && pListBox, "OConnectionLine::GetSourceTextPos : invalid call !");
 
-        Rectangle aReturn;
+        tools::Rectangle aReturn;
         if ( pListBox )
         {
             const long nRowHeight = pListBox->GetEntryHeight();
@@ -110,7 +110,7 @@ namespace
 }
 
 // class OConnectionLine
-OConnectionLine::OConnectionLine( OTableConnection* _pConn, OConnectionLineDataRef _pLineData )
+OConnectionLine::OConnectionLine( OTableConnection* _pConn, OConnectionLineDataRef const & _pLineData )
     : m_pTabConn( _pConn )
     , m_pData( _pLineData )
 {
@@ -145,10 +145,10 @@ OConnectionLine& OConnectionLine::operator=( const OConnectionLine& rLine )
     return *this;
 }
 
-Rectangle OConnectionLine::GetBoundingRect()
+tools::Rectangle OConnectionLine::GetBoundingRect()
 {
     // determine surrounding rectangle
-    Rectangle aBoundingRect( Point(0,0), Point(0,0) );
+    tools::Rectangle aBoundingRect( Point(0,0), Point(0,0) );
     if( !IsValid() )
         return aBoundingRect;
 
@@ -186,7 +186,7 @@ Rectangle OConnectionLine::GetBoundingRect()
         aBottomRight.X() += DESCRIPT_LINE_WIDTH;
     }
 
-    aBoundingRect = Rectangle( aTopLeft-Point(2,17), aBottomRight+Point(2,2) );
+    aBoundingRect = tools::Rectangle( aTopLeft-Point(2,17), aBottomRight+Point(2,2) );
 
     return aBoundingRect;
 }
@@ -315,20 +315,20 @@ bool OConnectionLine::CheckHit( const Point& rMousePos ) const
     double l = fabs(dist_Euklid(m_aSourceConnPos,m_aDestConnPos,rMousePos,q));
     if( l < HIT_SENSITIVE_RADIUS)
     {
-        if(::std::min(m_aSourceConnPos.X(),m_aDestConnPos.X()) <= q.X() && ::std::min(m_aSourceConnPos.Y(),m_aDestConnPos.Y()) <= q.Y()
-            && q.X() <= ::std::max(m_aDestConnPos.X(),m_aSourceConnPos.X())   && q.Y() <= ::std::max(m_aDestConnPos.Y(),m_aSourceConnPos.Y()))
+        if(std::min(m_aSourceConnPos.X(),m_aDestConnPos.X()) <= q.X() && std::min(m_aSourceConnPos.Y(),m_aDestConnPos.Y()) <= q.Y()
+            && q.X() <= std::max(m_aDestConnPos.X(),m_aSourceConnPos.X())   && q.Y() <= std::max(m_aDestConnPos.Y(),m_aSourceConnPos.Y()))
             return true;
     }
 
     return false;
 }
 
-Rectangle OConnectionLine::GetSourceTextPos() const
+tools::Rectangle OConnectionLine::GetSourceTextPos() const
 {
     return GetTextPos(m_pTabConn->GetSourceWin(),m_aSourceConnPos,m_aSourceDescrLinePos);
 }
 
-Rectangle OConnectionLine::GetDestTextPos() const
+tools::Rectangle OConnectionLine::GetDestTextPos() const
 {
     return GetTextPos(m_pTabConn->GetDestWin(),m_aDestConnPos,m_aDestDescrLinePos);
 }

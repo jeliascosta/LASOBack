@@ -61,7 +61,7 @@ class ODbTypeWizDialogSetup : public svt::RoadmapWizard , public IItemSetHelper,
 
 private:
     OModuleClient           m_aModuleClient;
-    ::std::unique_ptr<ODbDataSourceAdministrationHelper>  m_pImpl;
+    std::unique_ptr<ODbDataSourceAdministrationHelper>  m_pImpl;
     SfxItemSet*             m_pOutSet;
     OUString                m_sURL;
     OUString                m_sOldURL;
@@ -98,7 +98,7 @@ public:
         ,const css::uno::Reference< css::uno::XComponentContext >& _rxORB
         ,const css::uno::Any& _aDataSourceName
         );
-    virtual ~ODbTypeWizDialogSetup();
+    virtual ~ODbTypeWizDialogSetup() override;
     virtual void dispose() override;
 
     virtual const SfxItemSet* getOutputSet() const override;
@@ -106,7 +106,7 @@ public:
 
     // forwards to ODbDataSourceAdministrationHelper
     virtual css::uno::Reference< css::uno::XComponentContext > getORB() const override;
-    virtual ::std::pair< css::uno::Reference< css::sdbc::XConnection >,sal_Bool> createConnection() override;
+    virtual std::pair< css::uno::Reference< css::sdbc::XConnection >,sal_Bool> createConnection() override;
     virtual css::uno::Reference< css::sdbc::XDriver > getDriver() override;
     virtual OUString getDatasourceType(const SfxItemSet& _rSet) const override;
     virtual void clearPassword() override;
@@ -131,15 +131,7 @@ protected:
     virtual ::svt::IWizardPageController* getPageController( TabPage* _pCurrentPage ) const override;
     virtual bool        onFinish() override;
 
-protected:
     void resetPages(const css::uno::Reference< css::beans::XPropertySet >& _rxDatasource);
-
-    enum ApplyResult
-    {
-        AR_LEAVE_MODIFIED,      // something was modified and has successfully been committed
-        AR_LEAVE_UNCHANGED,     // no changes were made
-        AR_KEEP                 // don't leave the page (e.g. because an error occurred)
-    };
 
 private:
     /** declares a path with or without authentication, as indicated by the database type
@@ -166,13 +158,12 @@ private:
 
     void updateTypeDependentStates();
     bool callSaveAsDialog();
-    bool IsConnectionUrlRequired();
-    DECL_LINK_TYPED(OnTypeSelected, OGeneralPage&, void);
-    DECL_LINK_TYPED(OnChangeCreationMode, OGeneralPageWizard&, void);
-    DECL_LINK_TYPED(OnRecentDocumentSelected, OGeneralPageWizard&, void);
-    DECL_LINK_TYPED(OnSingleDocumentChosen, OGeneralPageWizard&, void);
-    DECL_LINK_TYPED(ImplClickHdl, OMySQLIntroPageSetup*, void);
-    DECL_LINK_TYPED(ImplModifiedHdl, OGenericAdministrationPage const *, void);
+    DECL_LINK(OnTypeSelected, OGeneralPage&, void);
+    DECL_LINK(OnChangeCreationMode, OGeneralPageWizard&, void);
+    DECL_LINK(OnRecentDocumentSelected, OGeneralPageWizard&, void);
+    DECL_LINK(OnSingleDocumentChosen, OGeneralPageWizard&, void);
+    DECL_LINK(ImplClickHdl, OMySQLIntroPageSetup*, void);
+    DECL_LINK(ImplModifiedHdl, OGenericAdministrationPage const *, void);
 };
 
 }   // namespace dbaui

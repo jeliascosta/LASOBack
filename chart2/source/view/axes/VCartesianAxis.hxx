@@ -35,7 +35,7 @@ public:
            , PlottingPositionHelper* pPosHelper = nullptr //takes ownership
            );
 
-    virtual ~VCartesianAxis();
+    virtual ~VCartesianAxis() override;
 
     virtual void createMaximumLabels() override;
     virtual void createLabels() override;
@@ -145,13 +145,6 @@ private: //methods
      */
     void    doStaggeringOfLabels( const AxisLabelProperties& rAxisLabelProperties
                             , TickFactory2D* pTickFactory2D );
-
-    /**
-     * @return true if we can try to stagger labels in order to avoid
-     *         overlaps, otherwise false.
-     */
-    static bool isAutoStaggeringOfLabelsAllowed(
-        const AxisLabelProperties& rAxisLabelProperties, bool bIsHorizontalAxis, bool bIsVerticalAxis );
 
     /**
      * @return true if we can break a single line label text into multiple

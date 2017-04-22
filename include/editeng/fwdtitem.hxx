@@ -35,8 +35,6 @@ class SvxFontWidthItem : public SfxPoolItem
     sal_uInt16  nWidth;         // 0 = default
     sal_uInt16  nProp;          // default 100%
 public:
-    static SfxPoolItem* CreateDefault();
-
     SvxFontWidthItem(   const sal_uInt16 nSz /*= 0*/,
                         const sal_uInt16 nPropWidth /*= 100*/,
                         const sal_uInt16 nId  );
@@ -47,9 +45,9 @@ public:
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*     Create(SvStream &, sal_uInt16) const override;
@@ -57,7 +55,7 @@ public:
     virtual void             ScaleMetrics( long nMult, long nDiv ) override;
     virtual bool             HasMetrics() const override;
 
-    inline SvxFontWidthItem& operator=(const SvxFontWidthItem& rItem )
+    SvxFontWidthItem& operator=(const SvxFontWidthItem& rItem )
         {
             SetWidthValue( rItem.GetWidth() );
             SetProp( rItem.GetProp() );

@@ -46,9 +46,7 @@ namespace ftp {
     class FTPContentProvider;
 
 
-    enum FTPErrors { FILE_EXIST_DURING_INSERT = CURL_LAST +1,
-                     FOLDER_EXIST_DURING_INSERT,
-                     FOLDER_MIGHT_EXIST_DURING_INSERT,
+    enum FTPErrors { FOLDER_MIGHT_EXIST_DURING_INSERT = CURL_LAST,
                      FILE_MIGHT_EXIST_DURING_INSERT };
 
     class malformed_exception : public std::exception { };
@@ -81,14 +79,11 @@ namespace ftp {
     class FTPURL
     {
     public:
-
+        /// @throws malformed_exception
         FTPURL(
             const OUString& aIdent,
-            FTPContentProvider* pFCP = nullptr
-        )
-            throw(
-                malformed_exception
-            );
+            FTPContentProvider* pFCP
+        );
 
         FTPURL(const FTPURL& r);
 
@@ -117,27 +112,31 @@ namespace ftp {
         /** returns the unencoded title */
         OUString child() const;
 
-        std::vector<FTPDirentry> list(sal_Int16 nMode) const
-            throw(curl_exception);
+        /// @throws curl_exception
+        std::vector<FTPDirentry> list(sal_Int16 nMode) const;
 
         // returns a pointer to an open tempfile,
         // sought to the beginning of.
-        oslFileHandle open() throw(curl_exception, std::exception);
+        /// @throws curl_exception
+        oslFileHandle open();
 
-        FTPDirentry direntry() const
-            throw(curl_exception, malformed_exception, std::exception);
+        /// @throws curl_exception
+        /// @throws malformed_exception
+        FTPDirentry direntry() const;
 
-        void insert(bool ReplaceExisting,void* stream) const
-            throw(curl_exception);
+        /// @throws curl_exception
+        void insert(bool ReplaceExisting,void* stream) const;
 
-        void mkdir(bool ReplaceExisting) const
-            throw(curl_exception, malformed_exception, std::exception);
+        /// @throws curl_exception
+        /// @throws malformed_exception
+        void mkdir(bool ReplaceExisting) const;
 
-        OUString ren(const OUString& NewTitle)
-            throw(curl_exception, std::exception);
+        /// @throws curl_exception
+        OUString ren(const OUString& NewTitle);
 
-        void del() const
-            throw(curl_exception, malformed_exception, std::exception);
+        /// @throws curl_exception
+        /// @throws malformed_exception
+        void del() const;
 
 
     private:
@@ -154,12 +153,11 @@ namespace ftp {
          */
         std::vector<OUString> m_aPathSegmentVec;
 
-        void parse(const OUString& url)
-            throw(
-                malformed_exception
-            );
+        /// @throws malformed_exception
+        void parse(const OUString& url);
 
-        OUString net_title() const throw(curl_exception, std::exception);
+        /// @throws curl_exception
+        OUString net_title() const;
     };
 
 }

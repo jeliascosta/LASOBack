@@ -28,8 +28,6 @@ namespace com { namespace sun { namespace star {
     namespace util { class XNumberFormats; }
 } } }
 
-namespace oox { class PropertyMap; }
-
 namespace oox {
 namespace xls {
 
@@ -72,8 +70,6 @@ public:
                             const css::uno::Reference< css::util::XNumberFormats >& rxNumFmts,
                             const css::lang::Locale& rFromLocale );
     sal_uLong fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs = false ) const;
-    /** Writes the number format to the passed property map. */
-    void                writeToPropertyMap( PropertyMap& rPropMap ) const;
 
 private:
     NumFmtModel         maModel;
@@ -98,10 +94,8 @@ public:
     /** Final processing after import of all style settings. */
     void                finalizeImport();
 
-    sal_uLong           fillToItemSet( SfxItemSet& rItemSet, sal_Int32 nNumFmtId, bool bSkipPoolDefs = false ) const;
+    sal_uLong           fillToItemSet( SfxItemSet& rItemSet, sal_Int32 nNumFmtId, bool bSkipPoolDefs ) const;
 
-    /** Writes the specified number format to the passed property map. */
-    void                writeToPropertyMap( PropertyMap& rPropMap, sal_Int32 nNumFmtId ) const;
     sal_Int32           nextFreeId(){ return ++mnHighestId; }
 private:
     /** Inserts built-in number formats for the current system language. */

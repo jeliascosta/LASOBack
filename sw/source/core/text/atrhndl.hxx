@@ -52,14 +52,14 @@ private:
     public:
         // Ctor, Dtor
         inline SwAttrStack();
-        inline ~SwAttrStack() {
+        ~SwAttrStack() {
             if ( nSize > INITIAL_NUM_ATTR ) delete [] pArray; }
 
         // reset stack
-        inline void Reset() { nCount = 0; };
+        void Reset() { nCount = 0; };
 
         // insert on top
-        inline void Push( const SwTextAttr& rAttr ) { Insert( rAttr, nCount ); };
+        void Push( const SwTextAttr& rAttr ) { Insert( rAttr, nCount ); };
         // insert at specified position, take care for not inserting behind
         // the value returned by Count()
         void Insert( const SwTextAttr& rAttr, const sal_uInt16 nPos );
@@ -71,7 +71,7 @@ private:
         const SwTextAttr* Top() const;
 
         // number of elements on stack
-        inline sal_uInt16 Count() const { return nCount; };
+        sal_uInt16 Count() const { return nCount; };
 
         // returns position of rAttr on Stack if found, otherwise USHRT_MAX
         // can be used for Remove of an attribute
@@ -85,7 +85,7 @@ private:
 
     // This is the base font for the paragraph. It is stored in order to have
     // a template, if we have to restart the attribute evaluation
-    SwFont* pFnt;
+    std::unique_ptr<SwFont> pFnt;
 
     bool bVertLayout;
 
@@ -107,8 +107,7 @@ public:
 
     // set default attributes to values in rAttrSet or from cache
     void Init( const SwAttrSet& rAttrSet,
-               const IDocumentSettingAccess& rIDocumentSettingAccess,
-               const SwViewShell* pShell );
+               const IDocumentSettingAccess& rIDocumentSettingAccess );
     void Init( const SfxPoolItem** pPoolItem, const SwAttrSet* pAttrSet,
                const IDocumentSettingAccess& rIDocumentSettingAccess,
                const SwViewShell* pShell, SwFont& rFnt,
@@ -146,7 +145,7 @@ inline void SwAttrHandler::ResetFont( SwFont& rFnt ) const
 
 inline const SwFont* SwAttrHandler::GetFont() const
 {
-    return pFnt;
+    return pFnt.get();
 };
 
 #endif

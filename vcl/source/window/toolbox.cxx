@@ -18,6 +18,7 @@
  */
 
 #include <vcl/toolbox.hxx>
+#include <vcl/commandinfoprovider.hxx>
 #include <vcl/event.hxx>
 #include <vcl/decoview.hxx>
 #include <vcl/accel.hxx>
@@ -46,6 +47,7 @@
 #endif
 
 #include <cstdlib>
+#include <limits>
 #include <string.h>
 #include <vector>
 #include <math.h>
@@ -64,12 +66,9 @@
 #define TB_SPIN_OFFSET          2
 #define TB_BORDER_OFFSET1       4
 #define TB_BORDER_OFFSET2       2
-#define TB_CUSTOMIZE_OFFSET     2
-#define TB_RESIZE_OFFSET        3
 #define TB_MAXLINES             5
 #define TB_MAXNOSCROLL          32765
 
-#define TB_MIN_WIN_WIDTH        20
 #define TB_DRAGWIDTH            8  // the default width of the drag grip
 
 #define TB_CALCMODE_HORZ        1
@@ -86,53 +85,28 @@
 #define DOCK_LINETOP            ((sal_uInt16)0x8000)
 #define DOCK_LINEOFFSET         3
 
-typedef ::std::vector< VclPtr<ToolBox> > ImplTBList;
-
-
 class ImplTBDragMgr
 {
 private:
-    ImplTBList*     mpBoxList;
     VclPtr<ToolBox> mpDragBox;
     Point           maMouseOff;
-    Rectangle       maRect;
-    Rectangle       maStartRect;
+    tools::Rectangle       maRect;
+    tools::Rectangle       maStartRect;
     Accelerator     maAccel;
-    long            mnMinWidth;
-    long            mnMaxWidth;
     sal_uInt16      mnLineMode;
-    sal_uInt16      mnStartLines;
-    void*           mpCustomizeData;
-    bool            mbResizeMode;
+    ToolBox::ImplToolItems::size_type mnStartLines;
     bool            mbShowDragRect;
+
+    ImplTBDragMgr(const ImplTBDragMgr&) = delete;
+    ImplTBDragMgr& operator=(const ImplTBDragMgr&) = delete;
 
 public:
                     ImplTBDragMgr();
-                    ~ImplTBDragMgr();
 
-    void            push_back( ToolBox* pBox )
-                        { mpBoxList->push_back( pBox ); }
-    void            erase( ToolBox* pBox )
-                    {
-                        for ( ImplTBList::iterator it = mpBoxList->begin(); it != mpBoxList->end(); ++it ) {
-                            if ( *it == pBox ) {
-                                mpBoxList->erase( it );
-                                break;
-                            }
-                        }
-                    }
-    size_t          size() const
-                    { return mpBoxList->size(); }
-
-    ToolBox*        FindToolBox( const Rectangle& rRect );
-
-    void            StartDragging( ToolBox* pDragBox, const Point& rPos, const Rectangle& rRect, sal_uInt16 nLineMode,
-                                   bool bResizeItem );
+    void            StartDragging( ToolBox* pDragBox, const Point& rPos, const tools::Rectangle& rRect, sal_uInt16 nLineMode );
     void            Dragging( const Point& rPos );
     void            EndDragging( bool bOK = true );
-    void            HideDragRect() { if ( mbShowDragRect ) mpDragBox->HideTracking(); }
-    void            UpdateDragRect();
-    DECL_LINK_TYPED( SelectHdl, Accelerator&, void );
+    DECL_LINK( SelectHdl, Accelerator&, void );
 };
 
 
@@ -144,28 +118,34 @@ static ImplTBDragMgr* ImplGetTBDragMgr()
     return pSVData->maCtrlData.mpTBDragMgr;
 }
 
-int ToolBox::ImplGetDragWidth( ToolBox* pThis )
+int ToolBox::ImplGetDragWidth( const vcl::RenderContext& rRenderContext, bool bHorz )
 {
     int nWidth = TB_DRAGWIDTH;
-    if( pThis->IsNativeControlSupported( ControlType::Toolbar, ControlPart::Entire ) )
+    if( rRenderContext.IsNativeControlSupported( ControlType::Toolbar, ControlPart::Entire ) )
     {
 
         ImplControlValue aControlValue;
         Point aPoint;
-        Rectangle aContent, aBound;
-        Rectangle aArea( aPoint, pThis->GetOutputSizePixel() );
+        tools::Rectangle aContent, aBound;
+        tools::Rectangle aArea( aPoint, rRenderContext.GetOutputSizePixel() );
 
-        if ( pThis->GetNativeControlRegion(ControlType::Toolbar, pThis->mbHorz ? ControlPart::ThumbVert : ControlPart::ThumbHorz,
+        if ( rRenderContext.GetNativeControlRegion(ControlType::Toolbar,
+                bHorz ? ControlPart::ThumbVert : ControlPart::ThumbHorz,
                 aArea, ControlState::NONE, aControlValue, OUString(), aBound, aContent) )
         {
-            nWidth = pThis->mbHorz ? aContent.GetWidth() : aContent.GetHeight();
+            nWidth = bHorz ? aContent.GetWidth() : aContent.GetHeight();
         }
     }
 
     // increase the hit area of the drag handle according to DPI scale factor
-    nWidth *= pThis->GetDPIScaleFactor();
+    nWidth *= rRenderContext.GetDPIScaleFactor();
 
     return nWidth;
+}
+
+int ToolBox::ImplGetDragWidth() const
+{
+    return ToolBox::ImplGetDragWidth( *this, mbHorz );
 }
 
 ButtonType determineButtonType( ImplToolItem* pItem, ButtonType defaultType )
@@ -182,37 +162,37 @@ ButtonType determineButtonType( ImplToolItem* pItem, ButtonType defaultType )
     return tmpButtonType;
 }
 
-void ToolBox::ImplUpdateDragArea( ToolBox *pThis )
+void ToolBox::ImplUpdateDragArea() const
 {
-    ImplDockingWindowWrapper *pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper( pThis );
+    ImplDockingWindowWrapper *pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper( this );
     if( pWrapper )
     {
-        if ( pThis->ImplIsFloatingMode() || pWrapper->IsLocked() )
-            pWrapper->SetDragArea( Rectangle() );
+        if ( ImplIsFloatingMode() || pWrapper->IsLocked() )
+            pWrapper->SetDragArea( tools::Rectangle() );
         else
         {
-            if( pThis->meAlign == WindowAlign::Top || pThis->meAlign == WindowAlign::Bottom )
-                pWrapper->SetDragArea( Rectangle( 0, 0, ImplGetDragWidth( pThis ), pThis->GetOutputSizePixel().Height() ) );
+            if( meAlign == WindowAlign::Top || meAlign == WindowAlign::Bottom )
+                pWrapper->SetDragArea( tools::Rectangle( 0, 0, ImplGetDragWidth(), GetOutputSizePixel().Height() ) );
             else
-                pWrapper->SetDragArea( Rectangle( 0, 0, pThis->GetOutputSizePixel().Width(), ImplGetDragWidth( pThis ) ) );
+                pWrapper->SetDragArea( tools::Rectangle( 0, 0, GetOutputSizePixel().Width(), ImplGetDragWidth() ) );
         }
     }
 }
 
 void ToolBox::ImplCalcBorder( WindowAlign eAlign, long& rLeft, long& rTop,
-                              long& rRight, long& rBottom, const ToolBox *pThis )
+                              long& rRight, long& rBottom ) const
 {
-    if( pThis->ImplIsFloatingMode() || !(pThis->mnWinStyle & WB_BORDER) )
+    if( ImplIsFloatingMode() || !(mnWinStyle & WB_BORDER) )
     {
         // no border in floating mode
         rLeft = rTop = rRight = rBottom = 0;
         return;
     }
 
-    ImplDockingWindowWrapper *pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper( pThis );
+    ImplDockingWindowWrapper *pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper( this );
 
     // reserve DragArea only for dockable toolbars
-    int    dragwidth = ( pWrapper && !pWrapper->IsLocked() ) ? ImplGetDragWidth( const_cast<ToolBox*>(pThis) ) : 0;
+    int    dragwidth = ( pWrapper && !pWrapper->IsLocked() ) ? ImplGetDragWidth() : 0;
 
     // no shadow border for dockable toolbars
     int    borderwidth = pWrapper ? 0: 2;
@@ -247,7 +227,7 @@ void ToolBox::ImplCalcBorder( WindowAlign eAlign, long& rLeft, long& rTop,
     }
 }
 
-static void ImplCheckUpdate(ToolBox* pThis)
+void ToolBox::ImplCheckUpdate()
 {
     // remove any pending invalidates to avoid
     // have them triggered when paint is locked (see mpData->mbIsPaintLocked)
@@ -255,8 +235,62 @@ static void ImplCheckUpdate(ToolBox* pThis)
     // this must not be done when we're already in Paint()
 
     // this is only required for transparent toolbars (see ImplDrawTransparentBackground() )
-    if( !pThis->IsBackground() && pThis->HasPaintEvent() && !pThis->IsInPaint() )
-        pThis->Update();
+    if( !IsBackground() && HasPaintEvent() && !IsInPaint() )
+        Update();
+}
+
+void ToolBox::ImplDrawGrip(vcl::RenderContext& rRenderContext,
+        const tools::Rectangle &aDragArea, int nDragWidth, WindowAlign eAlign, bool bHorz)
+{
+    bool bNativeOk = false;
+    const ControlPart ePart = bHorz ? ControlPart::ThumbVert : ControlPart::ThumbHorz;
+    const Size aSz( rRenderContext.GetOutputSizePixel() );
+    if (rRenderContext.IsNativeControlSupported(ControlType::Toolbar, ePart))
+    {
+        ToolbarValue aToolbarValue;
+        aToolbarValue.maGripRect = aDragArea;
+
+        Point aPt;
+        tools::Rectangle aCtrlRegion(aPt, aSz);
+        ControlState nState = ControlState::ENABLED;
+
+        bNativeOk = rRenderContext.DrawNativeControl( ControlType::Toolbar, ePart,
+                                        aCtrlRegion, nState, aToolbarValue, OUString() );
+    }
+
+    if( bNativeOk )
+        return;
+
+    const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
+    rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
+    rRenderContext.SetFillColor(rStyleSettings.GetShadowColor());
+
+    float fScaleFactor = rRenderContext.GetDPIScaleFactor();
+
+    if (eAlign == WindowAlign::Top || eAlign == WindowAlign::Bottom)
+    {
+        int height = (int) (0.6 * aSz.Height() + 0.5);
+        int i = (aSz.Height() - height) / 2;
+        height += i;
+        while (i <= height)
+        {
+            int x = nDragWidth / 2;
+            rRenderContext.DrawEllipse(tools::Rectangle(Point(x, i), Size(2 * fScaleFactor, 2 * fScaleFactor)));
+            i += 4 * fScaleFactor;
+        }
+    }
+    else
+    {
+        int width = (int) (0.6 * aSz.Width() + 0.5);
+        int i = (aSz.Width() - width) / 2;
+        width += i;
+        while (i <= width)
+        {
+            int y = nDragWidth / 2;
+            rRenderContext.DrawEllipse(tools::Rectangle(Point(i, y), Size(2 * fScaleFactor, 2 * fScaleFactor)));
+            i += 4 * fScaleFactor;
+        }
+    }
 }
 
 void ToolBox::ImplDrawGrip(vcl::RenderContext& rRenderContext)
@@ -265,56 +299,9 @@ void ToolBox::ImplDrawGrip(vcl::RenderContext& rRenderContext)
     if( pWrapper && !pWrapper->GetDragArea().IsEmpty() )
     {
         // execute pending paint requests
-        ImplCheckUpdate(this);
-
-        bool bNativeOk = false;
-        if (rRenderContext.IsNativeControlSupported(ControlType::Toolbar, mbHorz ? ControlPart::ThumbHorz : ControlPart::ThumbVert))
-        {
-            ToolbarValue aToolbarValue;
-            aToolbarValue.maGripRect = pWrapper->GetDragArea();
-
-            Point aPt;
-            Rectangle aCtrlRegion(aPt, GetOutputSizePixel());
-            ControlState nState = ControlState::ENABLED;
-
-            bNativeOk = rRenderContext.DrawNativeControl( ControlType::Toolbar, mbHorz ? ControlPart::ThumbVert : ControlPart::ThumbHorz,
-                                            aCtrlRegion, nState, aToolbarValue, OUString() );
-        }
-
-        if( bNativeOk )
-            return;
-
-        const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
-        rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
-        rRenderContext.SetFillColor(rStyleSettings.GetShadowColor());
-
-        Size aSz(GetOutputSizePixel());
-        float fScaleFactor = rRenderContext.GetDPIScaleFactor();
-
-        if (meAlign == WindowAlign::Top || meAlign == WindowAlign::Bottom)
-        {
-            int height = (int) (0.6 * aSz.Height() + 0.5);
-            int i = (aSz.Height() - height) / 2;
-            height += i;
-            while (i <= height)
-            {
-                int x = ImplGetDragWidth(this) / 2;
-                rRenderContext.DrawEllipse(Rectangle(Point(x, i), Size(2 * fScaleFactor, 2 * fScaleFactor)));
-                i += 4 * fScaleFactor;
-            }
-        }
-        else
-        {
-            int width = (int) (0.6 * aSz.Width() + 0.5);
-            int i = (aSz.Width() - width) / 2;
-            width += i;
-            while (i <= width)
-            {
-                int y = ImplGetDragWidth(this) / 2;
-                rRenderContext.DrawEllipse(Rectangle(Point(i, y), Size(2 * fScaleFactor, 2 * fScaleFactor)));
-                i += 4 * fScaleFactor;
-            }
-        }
+        ImplCheckUpdate();
+        ImplDrawGrip( rRenderContext, pWrapper->GetDragArea(),
+                      ImplGetDragWidth(), meAlign, mbHorz );
     }
 }
 
@@ -333,7 +320,7 @@ void ToolBox::ImplDrawGradientBackground(vcl::RenderContext& rRenderContext, Imp
 
     Gradient g;
     g.SetAngle(mbHorz ? 0 : 900);
-    g.SetStyle(GradientStyle_LINEAR);
+    g.SetStyle(GradientStyle::Linear);
 
     g.SetStartColor(startCol);
     g.SetEndColor(endCol);
@@ -366,7 +353,7 @@ void ToolBox::ImplDrawGradientBackground(vcl::RenderContext& rRenderContext, Imp
     }
 
     long nLeft, nTop, nRight, nBottom;
-    ImplCalcBorder(meAlign, nLeft, nTop, nRight, nBottom, this);
+    ImplCalcBorder(meAlign, nLeft, nTop, nRight, nBottom);
 
     Size aTopLineSz(aLineSz);
     Size aBottomLineSz(aLineSz);
@@ -411,31 +398,31 @@ void ToolBox::ImplDrawGradientBackground(vcl::RenderContext& rRenderContext, Imp
     {
         long y = 0;
 
-        rRenderContext.DrawGradient(Rectangle(0, y, aTopLineSz.Width(), y + aTopLineSz.Height()), g);
+        rRenderContext.DrawGradient(tools::Rectangle(0, y, aTopLineSz.Width(), y + aTopLineSz.Height()), g);
         y += aTopLineSz.Height();
 
         while (y < (mnDY - aBottomLineSz.Height()))
         {
-            rRenderContext.DrawGradient(Rectangle(0, y, aLineSz.Width(), y + aLineSz.Height()), g);
+            rRenderContext.DrawGradient(tools::Rectangle(0, y, aLineSz.Width(), y + aLineSz.Height()), g);
             y += aLineSz.Height();
         }
 
-        rRenderContext.DrawGradient(Rectangle(0, y, aBottomLineSz.Width(), y + aBottomLineSz.Height()), g);
+        rRenderContext.DrawGradient(tools::Rectangle(0, y, aBottomLineSz.Width(), y + aBottomLineSz.Height()), g);
     }
     else
     {
         long x = 0;
 
-        rRenderContext.DrawGradient(Rectangle(x, 0, x + aTopLineSz.Width(), aTopLineSz.Height()), g);
+        rRenderContext.DrawGradient(tools::Rectangle(x, 0, x + aTopLineSz.Width(), aTopLineSz.Height()), g);
         x += aTopLineSz.Width();
 
         while (x < (mnDX - aBottomLineSz.Width()))
         {
-            rRenderContext.DrawGradient(Rectangle(x, 0, x + aLineSz.Width(), aLineSz.Height()), g);
+            rRenderContext.DrawGradient(tools::Rectangle(x, 0, x + aLineSz.Width(), aLineSz.Height()), g);
             x += aLineSz.Width();
         }
 
-        rRenderContext.DrawGradient(Rectangle( x, 0, x + aBottomLineSz.Width(), aBottomLineSz.Height()), g);
+        rRenderContext.DrawGradient(tools::Rectangle( x, 0, x + aBottomLineSz.Width(), aBottomLineSz.Height()), g);
     }
 
     if( bLineColor )
@@ -447,7 +434,7 @@ bool ToolBox::ImplDrawNativeBackground(vcl::RenderContext& rRenderContext, const
 {
     // use NWF
     Point aPt;
-    Rectangle aCtrlRegion(aPt, GetOutputSizePixel());
+    tools::Rectangle aCtrlRegion(aPt, GetOutputSizePixel());
     ControlState  nState = ControlState::ENABLED;
 
     return rRenderContext.DrawNativeControl( ControlType::Toolbar, mbHorz ? ControlPart::DrawBackgroundHorz : ControlPart::DrawBackgroundVert,
@@ -483,10 +470,10 @@ void ToolBox::ImplDrawConstantBackground(vcl::RenderContext& rRenderContext, con
     }
 }
 
-void ToolBox::ImplDrawBackground(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void ToolBox::ImplDrawBackground(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     // execute pending paint requests
-    ImplCheckUpdate(this);
+    ImplCheckUpdate();
 
     ImplDockingWindowWrapper* pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper(this);
     bool bIsInPopupMode = ImplIsInPopupMode();
@@ -516,12 +503,12 @@ void ToolBox::ImplDrawBackground(vcl::RenderContext& rRenderContext, const Recta
         bool bNativeOk = false;
         if( ImplIsFloatingMode() && rRenderContext.IsNativeControlSupported( ControlType::Toolbar, ControlPart::Entire) )
             bNativeOk = ImplDrawNativeBackground(rRenderContext, aPaintRegion);
-        const StyleSettings rSetting = Application::GetSettings().GetStyleSettings();
         if (!bNativeOk)
         {
+            const StyleSettings rSetting = Application::GetSettings().GetStyleSettings();
+            const bool isHeader = GetAlign() == WindowAlign::Top && !rSetting.GetPersonaHeader().IsEmpty();
             const bool isFooter = GetAlign() == WindowAlign::Bottom && !rSetting.GetPersonaFooter().IsEmpty();
-            if (!IsBackground() ||
-                ((GetAlign() == WindowAlign::Top && !rSetting.GetPersonaHeader().IsEmpty() ) || isFooter))
+            if (!IsBackground() || isHeader || isFooter)
             {
                 if (!IsInPaint())
                     ImplDrawTransparentBackground(rRenderContext, aPaintRegion);
@@ -535,7 +522,7 @@ void ToolBox::ImplDrawBackground(vcl::RenderContext& rRenderContext, const Recta
     rRenderContext.Pop();
 }
 
-void ToolBox::ImplErase(vcl::RenderContext& rRenderContext, const Rectangle &rRect, bool bHighlight, bool bHasOpenPopup)
+void ToolBox::ImplErase(vcl::RenderContext& rRenderContext, const tools::Rectangle &rRect, bool bHighlight, bool bHasOpenPopup)
 {
     // the background of non NWF buttons is painted in a constant color
     // to have the same highlight color (transparency in DrawSelectionBackground())
@@ -629,16 +616,16 @@ void ToolBox::ImplDrawBorder(vcl::RenderContext& rRenderContext)
 static bool ImplIsFixedControl( const ImplToolItem *pItem )
 {
     return ( pItem->mpWindow &&
-            (pItem->mpWindow->GetType() == WINDOW_FIXEDTEXT ||
-             pItem->mpWindow->GetType() == WINDOW_FIXEDLINE ||
-             pItem->mpWindow->GetType() == WINDOW_GROUPBOX) );
+            (pItem->mpWindow->GetType() == WindowType::FIXEDTEXT ||
+             pItem->mpWindow->GetType() == WindowType::FIXEDLINE ||
+             pItem->mpWindow->GetType() == WindowType::GROUPBOX) );
 }
 
-const ImplToolItem *ToolBox::ImplGetFirstClippedItem( const ToolBox* pThis )
+const ImplToolItem *ToolBox::ImplGetFirstClippedItem() const
 {
-    std::vector< ImplToolItem >::const_iterator it;
-    it = pThis->mpData->m_aItems.begin();
-    while ( it != pThis->mpData->m_aItems.end() )
+    ImplToolItems::const_iterator it;
+    it = mpData->m_aItems.begin();
+    while ( it != mpData->m_aItems.end() )
     {
         if( it->IsClipped() )
             return &(*it);
@@ -647,7 +634,7 @@ const ImplToolItem *ToolBox::ImplGetFirstClippedItem( const ToolBox* pThis )
     return nullptr;
 }
 
-Size ToolBox::ImplCalcSize( const ToolBox* pThis, sal_uInt16 nCalcLines, sal_uInt16 nCalcMode )
+Size ToolBox::ImplCalcSize( ImplToolItems::size_type nCalcLines, sal_uInt16 nCalcMode )
 {
     long            nMax;
     long            nLeft = 0;
@@ -655,125 +642,125 @@ Size ToolBox::ImplCalcSize( const ToolBox* pThis, sal_uInt16 nCalcLines, sal_uIn
     long            nRight = 0;
     long            nBottom = 0;
     Size            aSize;
-    WindowAlign     eOldAlign = pThis->meAlign;
-    bool            bOldHorz = pThis->mbHorz;
-    bool            bOldAssumeDocked = pThis->mpData->mbAssumeDocked;
-    bool            bOldAssumeFloating = pThis->mpData->mbAssumeFloating;
+    WindowAlign     eOldAlign = meAlign;
+    bool            bOldHorz = mbHorz;
+    bool            bOldAssumeDocked = mpData->mbAssumeDocked;
+    bool            bOldAssumeFloating = mpData->mbAssumeFloating;
 
     if ( nCalcMode )
     {
-        bool bOldFloatingMode = pThis->ImplIsFloatingMode();
+        bool bOldFloatingMode = ImplIsFloatingMode();
 
-        pThis->mpData->mbAssumeDocked = false;
-        pThis->mpData->mbAssumeFloating = false;
+        mpData->mbAssumeDocked = false;
+        mpData->mbAssumeFloating = false;
 
         if ( nCalcMode == TB_CALCMODE_HORZ )
         {
-            pThis->mpData->mbAssumeDocked = true;   // force non-floating mode during calculation
-            ImplCalcBorder( WindowAlign::Top, nLeft, nTop, nRight, nBottom, pThis );
-            const_cast<ToolBox*>(pThis)->mbHorz = true;
-            if ( pThis->mbHorz != bOldHorz )
-                const_cast<ToolBox*>(pThis)->meAlign = WindowAlign::Top;
+            mpData->mbAssumeDocked = true;   // force non-floating mode during calculation
+            ImplCalcBorder( WindowAlign::Top, nLeft, nTop, nRight, nBottom );
+            mbHorz = true;
+            if ( mbHorz != bOldHorz )
+                meAlign = WindowAlign::Top;
         }
         else if ( nCalcMode == TB_CALCMODE_VERT )
         {
-            pThis->mpData->mbAssumeDocked = true;   // force non-floating mode during calculation
-            ImplCalcBorder( WindowAlign::Left, nLeft, nTop, nRight, nBottom, pThis );
-            const_cast<ToolBox*>(pThis)->mbHorz = false;
-            if ( pThis->mbHorz != bOldHorz )
-                const_cast<ToolBox*>(pThis)->meAlign = WindowAlign::Left;
+            mpData->mbAssumeDocked = true;   // force non-floating mode during calculation
+            ImplCalcBorder( WindowAlign::Left, nLeft, nTop, nRight, nBottom );
+            mbHorz = false;
+            if ( mbHorz != bOldHorz )
+                meAlign = WindowAlign::Left;
         }
         else if ( nCalcMode == TB_CALCMODE_FLOAT )
         {
-            pThis->mpData->mbAssumeFloating = true;   // force non-floating mode during calculation
+            mpData->mbAssumeFloating = true;   // force non-floating mode during calculation
             nLeft = nTop = nRight = nBottom = 0;
-            const_cast<ToolBox*>(pThis)->mbHorz = true;
-            if ( pThis->mbHorz != bOldHorz )
-                const_cast<ToolBox*>(pThis)->meAlign = WindowAlign::Top;
+            mbHorz = true;
+            if ( mbHorz != bOldHorz )
+                meAlign = WindowAlign::Top;
         }
 
-        if ( (pThis->meAlign != eOldAlign) || (pThis->mbHorz != bOldHorz) ||
-             (pThis->ImplIsFloatingMode() != bOldFloatingMode ) )
-            const_cast<ToolBox*>(pThis)->mbCalc = true;
+        if ( (meAlign != eOldAlign) || (mbHorz != bOldHorz) ||
+             (ImplIsFloatingMode() != bOldFloatingMode ) )
+            mbCalc = true;
     }
     else
-        ImplCalcBorder( pThis->meAlign, nLeft, nTop, nRight, nBottom, pThis );
+        ImplCalcBorder( meAlign, nLeft, nTop, nRight, nBottom );
 
-    const_cast<ToolBox*>(pThis)->ImplCalcItem();
+    ImplCalcItem();
 
-    if( !nCalcMode && pThis->ImplIsFloatingMode() )
+    if( !nCalcMode && ImplIsFloatingMode() )
     {
-        aSize = ImplCalcFloatSize( const_cast<ToolBox*>(pThis), nCalcLines );
+        aSize = ImplCalcFloatSize( nCalcLines );
     }
     else
     {
-        if ( pThis->mbHorz )
+        if ( mbHorz )
         {
-            if ( pThis->mnWinHeight > pThis->mnMaxItemHeight )
-                aSize.Height() = nCalcLines * pThis->mnWinHeight;
+            if ( mnWinHeight > mnMaxItemHeight )
+                aSize.Height() = nCalcLines * mnWinHeight;
             else
-                aSize.Height() = nCalcLines * pThis->mnMaxItemHeight;
+                aSize.Height() = nCalcLines * mnMaxItemHeight;
 
-            if ( pThis->mnWinStyle & WB_LINESPACING )
+            if ( mnWinStyle & WB_LINESPACING )
                 aSize.Height() += (nCalcLines-1)*TB_LINESPACING;
 
-            if ( pThis->mnWinStyle & WB_BORDER )
+            if ( mnWinStyle & WB_BORDER )
                 aSize.Height() += (TB_BORDER_OFFSET2*2) + nTop + nBottom;
 
             nMax = 0;
-            const_cast<ToolBox*>(pThis)->ImplCalcBreaks( TB_MAXNOSCROLL, &nMax, pThis->mbHorz );
+            ImplCalcBreaks( TB_MAXNOSCROLL, &nMax, mbHorz );
             if ( nMax )
                 aSize.Width() += nMax;
 
-            if ( pThis->mnWinStyle & WB_BORDER )
+            if ( mnWinStyle & WB_BORDER )
                 aSize.Width() += (TB_BORDER_OFFSET1*2) + nLeft + nRight;
         }
         else
         {
-            aSize.Width() = nCalcLines * pThis->mnMaxItemWidth;
+            aSize.Width() = nCalcLines * mnMaxItemWidth;
 
-            if ( pThis->mnWinStyle & WB_LINESPACING )
+            if ( mnWinStyle & WB_LINESPACING )
                 aSize.Width() += (nCalcLines-1)*TB_LINESPACING;
 
-            if ( pThis->mnWinStyle & WB_BORDER )
+            if ( mnWinStyle & WB_BORDER )
                 aSize.Width() += (TB_BORDER_OFFSET2*2) + nLeft + nRight;
 
             nMax = 0;
-            const_cast<ToolBox*>(pThis)->ImplCalcBreaks( TB_MAXNOSCROLL, &nMax, pThis->mbHorz );
+            ImplCalcBreaks( TB_MAXNOSCROLL, &nMax, mbHorz );
             if ( nMax )
                 aSize.Height() += nMax;
 
-            if ( pThis->mnWinStyle & WB_BORDER )
+            if ( mnWinStyle & WB_BORDER )
                 aSize.Height() += (TB_BORDER_OFFSET1*2) + nTop + nBottom;
         }
     }
     // restore previous values
     if ( nCalcMode )
     {
-        pThis->mpData->mbAssumeDocked = bOldAssumeDocked;
-        pThis->mpData->mbAssumeFloating = bOldAssumeFloating;
-        if ( (pThis->meAlign != eOldAlign) || (pThis->mbHorz != bOldHorz) )
+        mpData->mbAssumeDocked = bOldAssumeDocked;
+        mpData->mbAssumeFloating = bOldAssumeFloating;
+        if ( (meAlign != eOldAlign) || (mbHorz != bOldHorz) )
         {
-            const_cast<ToolBox*>(pThis)->meAlign  = eOldAlign;
-            const_cast<ToolBox*>(pThis)->mbHorz   = bOldHorz;
-            const_cast<ToolBox*>(pThis)->mbCalc   = true;
+            meAlign  = eOldAlign;
+            mbHorz   = bOldHorz;
+            mbCalc   = true;
         }
     }
 
     return aSize;
 }
 
-void ToolBox::ImplCalcFloatSizes( ToolBox* pThis )
+void ToolBox::ImplCalcFloatSizes()
 {
-    if ( !pThis->maFloatSizes.empty() )
+    if ( !maFloatSizes.empty() )
         return;
 
     // calculate the minimal size, i.e. where the biggest item just fits
     long            nCalcSize = 0;
 
-    std::vector< ImplToolItem >::const_iterator it;
-    it = pThis->mpData->m_aItems.begin();
-    while ( it != pThis->mpData->m_aItems.end() )
+    ImplToolItems::const_iterator it;
+    it = mpData->m_aItems.begin();
+    while ( it != mpData->m_aItems.end() )
     {
         if ( it->mbVisible )
         {
@@ -793,33 +780,33 @@ void ToolBox::ImplCalcFloatSizes( ToolBox* pThis )
     }
 
     // calc an upper bound for ImplCalcBreaks below
-    long upperBoundWidth = nCalcSize * pThis->mpData->m_aItems.size();
+    long upperBoundWidth = nCalcSize * mpData->m_aItems.size();
 
-    sal_uInt16  nLines;
-    sal_uInt16  nCalcLines;
-    sal_uInt16  nTempLines;
+    ImplToolItems::size_type nLines;
+    ImplToolItems::size_type nCalcLines;
+    ImplToolItems::size_type nTempLines;
     long    nMaxLineWidth;
-    nCalcLines = pThis->ImplCalcBreaks( nCalcSize, &nMaxLineWidth, true );
+    nCalcLines = ImplCalcBreaks( nCalcSize, &nMaxLineWidth, true );
 
-    pThis->maFloatSizes.reserve( nCalcLines );
+    maFloatSizes.reserve( nCalcLines );
 
     nTempLines = nLines = nCalcLines;
     while ( nLines )
     {
-        long nHeight = ImplCalcSize( pThis, nTempLines, TB_CALCMODE_FLOAT ).Height();
+        long nHeight = ImplCalcSize( nTempLines, TB_CALCMODE_FLOAT ).Height();
 
         ImplToolSize aSize;
         aSize.mnWidth  = nMaxLineWidth+(TB_BORDER_OFFSET1*2);
         aSize.mnHeight = nHeight;
         aSize.mnLines  = nTempLines;
-        pThis->maFloatSizes.push_back( aSize );
+        maFloatSizes.push_back( aSize );
         nLines--;
         if ( nLines )
         {
             do
             {
-                nCalcSize += pThis->mnMaxItemWidth;
-                nTempLines = pThis->ImplCalcBreaks( nCalcSize, &nMaxLineWidth, true );
+                nCalcSize += mnMaxItemWidth;
+                nTempLines = ImplCalcBreaks( nCalcSize, &nMaxLineWidth, true );
             }
             while ( (nCalcSize < upperBoundWidth) && (nLines < nTempLines) && (nTempLines != 1) );
             if ( nTempLines < nLines )
@@ -828,87 +815,87 @@ void ToolBox::ImplCalcFloatSizes( ToolBox* pThis )
     }
 }
 
-Size ToolBox::ImplCalcFloatSize( ToolBox* pThis, sal_uInt16& rLines )
+Size ToolBox::ImplCalcFloatSize( ImplToolItems::size_type& rLines )
 {
-    ImplCalcFloatSizes( pThis );
+    ImplCalcFloatSizes();
 
     if ( !rLines )
     {
-        rLines = pThis->mnFloatLines;
+        rLines = mnFloatLines;
         if ( !rLines )
-            rLines = pThis->mnLines;
+            rLines = mnLines;
     }
 
     sal_uInt16 i = 0;
-    while ( i + 1u < pThis->maFloatSizes.size() && rLines < pThis->maFloatSizes[i].mnLines )
+    while ( i + 1u < maFloatSizes.size() && rLines < maFloatSizes[i].mnLines )
     {
         i++;
     }
 
-    Size aSize( pThis->maFloatSizes[i].mnWidth, pThis->maFloatSizes[i].mnHeight );
-    rLines = pThis->maFloatSizes[i].mnLines;
+    Size aSize( maFloatSizes[i].mnWidth, maFloatSizes[i].mnHeight );
+    rLines = maFloatSizes[i].mnLines;
 
     return aSize;
 }
 
-void ToolBox::ImplCalcMinMaxFloatSize( ToolBox* pThis, Size& rMinSize, Size& rMaxSize )
+void ToolBox::ImplCalcMinMaxFloatSize( Size& rMinSize, Size& rMaxSize )
 {
-    ImplCalcFloatSizes( pThis );
+    ImplCalcFloatSizes();
 
     sal_uInt16 i = 0;
-    rMinSize = Size( pThis->maFloatSizes[i].mnWidth, pThis->maFloatSizes[i].mnHeight );
-    rMaxSize = Size( pThis->maFloatSizes[i].mnWidth, pThis->maFloatSizes[i].mnHeight );
-    while ( ++i < pThis->maFloatSizes.size() )
+    rMinSize = Size( maFloatSizes[i].mnWidth, maFloatSizes[i].mnHeight );
+    rMaxSize = Size( maFloatSizes[i].mnWidth, maFloatSizes[i].mnHeight );
+    while ( ++i < maFloatSizes.size() )
     {
-        if( pThis->maFloatSizes[i].mnWidth < rMinSize.Width() )
-            rMinSize.Width() = pThis->maFloatSizes[i].mnWidth;
-        if( pThis->maFloatSizes[i].mnHeight < rMinSize.Height() )
-            rMinSize.Height() = pThis->maFloatSizes[i].mnHeight;
+        if( maFloatSizes[i].mnWidth < rMinSize.Width() )
+            rMinSize.Width() = maFloatSizes[i].mnWidth;
+        if( maFloatSizes[i].mnHeight < rMinSize.Height() )
+            rMinSize.Height() = maFloatSizes[i].mnHeight;
 
-        if( pThis->maFloatSizes[i].mnWidth > rMaxSize.Width() )
-            rMaxSize.Width() = pThis->maFloatSizes[i].mnWidth;
-        if( pThis->maFloatSizes[i].mnHeight > rMaxSize.Height() )
-            rMaxSize.Height() = pThis->maFloatSizes[i].mnHeight;
+        if( maFloatSizes[i].mnWidth > rMaxSize.Width() )
+            rMaxSize.Width() = maFloatSizes[i].mnWidth;
+        if( maFloatSizes[i].mnHeight > rMaxSize.Height() )
+            rMaxSize.Height() = maFloatSizes[i].mnHeight;
     }
 }
 
-void ToolBox::ImplSetMinMaxFloatSize( ToolBox *pThis )
+void ToolBox::ImplSetMinMaxFloatSize()
 {
-    ImplDockingWindowWrapper *pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper( pThis );
+    ImplDockingWindowWrapper *pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper( this );
     Size aMinSize, aMaxSize;
-    ImplCalcMinMaxFloatSize( pThis, aMinSize, aMaxSize );
+    ImplCalcMinMaxFloatSize( aMinSize, aMaxSize );
     if( pWrapper )
     {
         pWrapper->SetMinOutputSizePixel( aMinSize );
         pWrapper->SetMaxOutputSizePixel( aMaxSize );
-        pWrapper->ShowTitleButton( TitleButton::Menu, bool( pThis->GetMenuType() & ToolBoxMenuType::Customize) );
+        pWrapper->ShowTitleButton( TitleButton::Menu, bool( GetMenuType() & ToolBoxMenuType::Customize) );
     }
     else
     {
         // TODO: change SetMinOutputSizePixel to be not inline
-        pThis->SetMinOutputSizePixel( aMinSize );
-        pThis->SetMaxOutputSizePixel( aMaxSize );
+        SetMinOutputSizePixel( aMinSize );
+        SetMaxOutputSizePixel( aMaxSize );
     }
 }
 
-sal_uInt16 ToolBox::ImplCalcLines( ToolBox* pThis, long nToolSize )
+ToolBox::ImplToolItems::size_type ToolBox::ImplCalcLines( long nToolSize ) const
 {
     long nLineHeight;
 
-    if ( pThis->mbHorz )
+    if ( mbHorz )
     {
-        if ( pThis->mnWinHeight > pThis->mnMaxItemHeight )
-            nLineHeight = pThis->mnWinHeight;
+        if ( mnWinHeight > mnMaxItemHeight )
+            nLineHeight = mnWinHeight;
         else
-            nLineHeight = pThis->mnMaxItemHeight;
+            nLineHeight = mnMaxItemHeight;
     }
     else
-        nLineHeight = pThis->mnMaxItemWidth;
+        nLineHeight = mnMaxItemWidth;
 
-    if ( pThis->mnWinStyle & WB_BORDER )
+    if ( mnWinStyle & WB_BORDER )
         nToolSize -= TB_BORDER_OFFSET2*2;
 
-    if ( pThis->mnWinStyle & WB_LINESPACING )
+    if ( mnWinStyle & WB_LINESPACING )
     {
         nLineHeight += TB_LINESPACING;
         nToolSize += TB_LINESPACING;
@@ -919,24 +906,24 @@ sal_uInt16 ToolBox::ImplCalcLines( ToolBox* pThis, long nToolSize )
     if( nLines < 1 )
         nLines = 1;
 
-    return static_cast<sal_uInt16>(nLines);
+    return nLines;
 }
 
-sal_uInt16 ToolBox::ImplTestLineSize( ToolBox* pThis, const Point& rPos )
+sal_uInt16 ToolBox::ImplTestLineSize( const Point& rPos ) const
 {
-    if ( !pThis->ImplIsFloatingMode() &&
-         (!pThis->mbScroll || (pThis->mnLines > 1) || (pThis->mnCurLines > pThis->mnVisLines)) )
+    if ( !ImplIsFloatingMode() &&
+         (!mbScroll || (mnLines > 1) || (mnCurLines > mnVisLines)) )
     {
-        WindowAlign eAlign = pThis->GetAlign();
+        WindowAlign eAlign = GetAlign();
 
         if ( eAlign == WindowAlign::Left )
         {
-            if ( rPos.X() > pThis->mnDX-DOCK_LINEOFFSET )
+            if ( rPos.X() > mnDX-DOCK_LINEOFFSET )
                 return DOCK_LINEHSIZE | DOCK_LINERIGHT;
         }
         else if ( eAlign == WindowAlign::Top )
         {
-            if ( rPos.Y() > pThis->mnDY-DOCK_LINEOFFSET )
+            if ( rPos.Y() > mnDY-DOCK_LINEOFFSET )
                 return DOCK_LINEVSIZE | DOCK_LINEBOTTOM;
         }
         else if ( eAlign == WindowAlign::Right )
@@ -954,7 +941,7 @@ sal_uInt16 ToolBox::ImplTestLineSize( ToolBox* pThis, const Point& rPos )
     return 0;
 }
 
-void ToolBox::ImplLineSizing( ToolBox* pThis, const Point& rPos, Rectangle& rRect, sal_uInt16 nLineMode )
+void ToolBox::ImplLineSizing( const Point& rPos, tools::Rectangle& rRect, sal_uInt16 nLineMode )
 {
     bool    bHorz;
     long    nOneLineSize;
@@ -989,26 +976,26 @@ void ToolBox::ImplLineSizing( ToolBox* pThis, const Point& rPos, Rectangle& rRec
         bHorz = false;
     }
 
-    Size    aWinSize = pThis->GetSizePixel();
-    sal_uInt16  nMaxLines = (pThis->mnLines > pThis->mnCurLines) ? pThis->mnLines : pThis->mnCurLines;
+    Size    aWinSize = GetSizePixel();
+    ImplToolItems::size_type nMaxLines = (mnLines > mnCurLines) ? mnLines : mnCurLines;
     if ( nMaxLines > TB_MAXLINES )
         nMaxLines = TB_MAXLINES;
     if ( bHorz )
     {
-        nOneLineSize = ImplCalcSize( pThis, 1 ).Height();
-        nMaxSize = pThis->maOutDockRect.GetHeight() - 20;
+        nOneLineSize = ImplCalcSize( 1 ).Height();
+        nMaxSize = maOutDockRect.GetHeight() - 20;
         if ( nMaxSize < aWinSize.Height() )
             nMaxSize = aWinSize.Height();
     }
     else
     {
-        nOneLineSize = ImplCalcSize( pThis, 1 ).Width();
-        nMaxSize = pThis->maOutDockRect.GetWidth() - 20;
+        nOneLineSize = ImplCalcSize( 1 ).Width();
+        nMaxSize = maOutDockRect.GetWidth() - 20;
         if ( nMaxSize < aWinSize.Width() )
             nMaxSize = aWinSize.Width();
     }
 
-    sal_uInt16 i = 1;
+    ImplToolItems::size_type i = 1;
     if ( nCurSize <= nOneLineSize )
         nSize = nOneLineSize;
     else
@@ -1017,7 +1004,7 @@ void ToolBox::ImplLineSizing( ToolBox* pThis, const Point& rPos, Rectangle& rRec
         while ( (nSize < nCurSize) && (i < nMaxLines) )
         {
             i++;
-            aSize = ImplCalcSize( pThis, i );
+            aSize = ImplCalcSize( i );
             if ( bHorz )
                 nSize = aSize.Height();
             else
@@ -1025,7 +1012,7 @@ void ToolBox::ImplLineSizing( ToolBox* pThis, const Point& rPos, Rectangle& rRec
             if ( nSize > nMaxSize )
             {
                 i--;
-                aSize = ImplCalcSize( pThis, i );
+                aSize = ImplCalcSize( i );
                 if ( bHorz )
                     nSize = aSize.Height();
                 else
@@ -1044,80 +1031,13 @@ void ToolBox::ImplLineSizing( ToolBox* pThis, const Point& rPos, Rectangle& rRec
     else
         rRect.Top() = rRect.Bottom()-nSize;
 
-    pThis->mnDockLines = i;
-}
-
-sal_uInt16 ToolBox::ImplFindItemPos( ToolBox* pBox, const Point& rPos )
-{
-    sal_uInt16  nPos = 0;
-    long    nLast = 0;
-    Point   aPos = rPos;
-    Size    aSize( pBox->mnDX, pBox->mnDY );
-
-    if ( aPos.X() > aSize.Width()-TB_BORDER_OFFSET1 )
-        aPos.X() = aSize.Width()-TB_BORDER_OFFSET1;
-    if ( aPos.Y() > aSize.Height()-TB_BORDER_OFFSET1 )
-        aPos.Y() = aSize.Height()-TB_BORDER_OFFSET1;
-
-    // Item suchen, das geklickt wurde
-    std::vector< ImplToolItem >::const_iterator it = pBox->mpData->m_aItems.begin();
-    while ( it != pBox->mpData->m_aItems.end() )
-    {
-        if ( it->mbVisible )
-        {
-            if ( nLast || !it->maRect.IsEmpty() )
-            {
-                if ( pBox->mbHorz )
-                {
-                    if ( nLast &&
-                         ((nLast < it->maRect.Top()) || it->maRect.IsEmpty()) )
-                        return nPos;
-
-                    if ( aPos.Y() <= it->maRect.Bottom() )
-                    {
-                        if ( aPos.X() < it->maRect.Left() )
-                            return nPos;
-                        else if ( aPos.X() < it->maRect.Right() )
-                            return nPos+1;
-                        else if ( !nLast )
-                            nLast = it->maRect.Bottom();
-                    }
-                }
-                else
-                {
-                    if ( nLast &&
-                         ((nLast < it->maRect.Left()) || it->maRect.IsEmpty()) )
-                        return nPos;
-
-                    if ( aPos.X() <= it->maRect.Right() )
-                    {
-                        if ( aPos.Y() < it->maRect.Top() )
-                            return nPos;
-                        else if ( aPos.Y() < it->maRect.Bottom() )
-                            return nPos+1;
-                        else if ( !nLast )
-                            nLast = it->maRect.Right();
-                    }
-                }
-            }
-        }
-
-        nPos++;
-        ++it;
-    }
-
-    return nPos;
+    mnDockLines = i;
 }
 
 ImplTBDragMgr::ImplTBDragMgr()
-    : mpBoxList(new ImplTBList())
-    , mpDragBox(nullptr)
-    , mnMinWidth(0)
-    , mnMaxWidth(0)
+    : mpDragBox(nullptr)
     , mnLineMode(0)
     , mnStartLines(0)
-    , mpCustomizeData(nullptr)
-    , mbResizeMode(false)
     , mbShowDragRect(false)
 {
     maAccel.InsertItem( KEY_RETURN, vcl::KeyCode( KEY_RETURN ) );
@@ -1125,72 +1045,17 @@ ImplTBDragMgr::ImplTBDragMgr()
     maAccel.SetSelectHdl( LINK( this, ImplTBDragMgr, SelectHdl ) );
 }
 
-ImplTBDragMgr::~ImplTBDragMgr()
-{
-    delete mpBoxList;
-}
-
-ToolBox* ImplTBDragMgr::FindToolBox( const Rectangle& rRect )
-{
-    for (VclPtr<ToolBox> & i : *mpBoxList)
-    {
-        ToolBox* pBox = i;
-        /*
-         *  FIXME: since we can have multiple frames now we cannot
-         *  find the drag target by its position alone.
-         *  As long as the toolbar config dialogue is not a system window
-         *  this works in one frame only anyway. If the dialogue
-         *  changes to a system window, we need a new implementation here
-         */
-        if (  pBox->IsReallyVisible()
-           && pBox->ImplGetWindowImpl()->mpFrame == mpDragBox->ImplGetWindowImpl()->mpFrame
-        ) {
-            if ( !pBox->ImplIsFloatingMode() )
-            {
-                Point aPos = pBox->GetPosPixel();
-                aPos = pBox->GetParent()->OutputToScreenPixel( aPos );
-                Rectangle aTempRect( aPos, pBox->GetSizePixel() );
-                if ( aTempRect.IsOver( rRect ) )
-                    return pBox;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 void ImplTBDragMgr::StartDragging( ToolBox* pToolBox,
-                                   const Point& rPos, const Rectangle& rRect,
-                                   sal_uInt16 nDragLineMode, bool bResizeItem )
+                                   const Point& rPos, const tools::Rectangle& rRect,
+                                   sal_uInt16 nDragLineMode )
 {
     mpDragBox = pToolBox;
     pToolBox->CaptureMouse();
     pToolBox->mbDragging = true;
     Application::InsertAccel( &maAccel );
 
-    if ( nDragLineMode )
-    {
-        mnLineMode = nDragLineMode;
-        mnStartLines = pToolBox->mnDockLines;
-    }
-    else
-    {
-        mpCustomizeData = nullptr;
-        mbResizeMode = bResizeItem;
-        pToolBox->Activate();
-        pToolBox->mnCurItemId = pToolBox->mnConfigItem;
-        pToolBox->Highlight();
-        pToolBox->mnCurItemId = 0;
-        if ( mbResizeMode )
-        {
-            if ( rRect.GetWidth() < TB_MIN_WIN_WIDTH )
-                mnMinWidth = rRect.GetWidth();
-            else
-                mnMinWidth = TB_MIN_WIN_WIDTH;
-            mnMaxWidth = pToolBox->GetSizePixel().Width()-rRect.Left()-
-                         TB_SPIN_SIZE-TB_BORDER_OFFSET1-(TB_SPIN_OFFSET*2);
-        }
-    }
+    mnLineMode = nDragLineMode;
+    mnStartLines = pToolBox->mnDockLines;
 
     // MouseOffset berechnen
     maMouseOff.X() = rRect.Left() - rPos.X();
@@ -1203,34 +1068,12 @@ void ImplTBDragMgr::StartDragging( ToolBox* pToolBox,
 
 void ImplTBDragMgr::Dragging( const Point& rPos )
 {
-    if ( mnLineMode )
-    {
-        ToolBox::ImplLineSizing( mpDragBox, rPos, maRect, mnLineMode );
-        Point aOff = mpDragBox->OutputToScreenPixel( Point() );
-        maRect.Move( aOff.X(), aOff.Y() );
-        mpDragBox->Docking( rPos, maRect );
-        maRect.Move( -aOff.X(), -aOff.Y() );
-        mpDragBox->ShowTracking( maRect );
-    }
-    else
-    {
-        if ( mbResizeMode )
-        {
-            long nXOff = rPos.X()-maStartRect.Left();
-            nXOff += maMouseOff.X()+(maStartRect.Right()-maStartRect.Left());
-            if ( nXOff < mnMinWidth )
-                nXOff = mnMinWidth;
-            if ( nXOff > mnMaxWidth )
-                nXOff = mnMaxWidth;
-            maRect.Right() = maStartRect.Left()+nXOff;
-        }
-        else
-        {
-            maRect.SetPos( rPos );
-            maRect.Move( maMouseOff.X(), maMouseOff.Y() );
-        }
-        mpDragBox->ShowTracking( maRect );
-    }
+    mpDragBox->ImplLineSizing( rPos, maRect, mnLineMode );
+    Point aOff = mpDragBox->OutputToScreenPixel( Point() );
+    maRect.Move( aOff.X(), aOff.Y() );
+    mpDragBox->Docking( rPos, maRect );
+    maRect.Move( -aOff.X(), -aOff.Y() );
+    mpDragBox->ShowTracking( maRect );
 }
 
 void ImplTBDragMgr::EndDragging( bool bOK )
@@ -1242,84 +1085,19 @@ void ImplTBDragMgr::EndDragging( bool bOK )
     mbShowDragRect = false;
     Application::RemoveAccel( &maAccel );
 
-    if ( mnLineMode )
+    if ( !bOK )
     {
-        if ( !bOK )
-        {
-            mpDragBox->mnDockLines = mnStartLines;
-            mpDragBox->EndDocking( maStartRect, false );
-        }
-        else
-            mpDragBox->EndDocking( maRect, false );
-        mnLineMode = 0;
-        mnStartLines = 0;
+        mpDragBox->mnDockLines = mnStartLines;
+        mpDragBox->EndDocking( maStartRect, false );
     }
     else
-    {
-        sal_uInt16 nTempItem = mpDragBox->mnConfigItem;
-        if ( nTempItem )
-        {
-            mpDragBox->mnConfigItem = 0;
-            if ( !mbResizeMode )
-                mpDragBox->Invalidate( mpDragBox->GetItemRect( nTempItem ) );
-        }
-
-        if ( bOK && (maRect != maStartRect) )
-        {
-            if ( mbResizeMode )
-            {
-                ImplToolItem* pItem = mpDragBox->ImplGetItem( nTempItem );
-                Size aSize = pItem->mpWindow->GetSizePixel();
-                aSize.Width() = maRect.GetWidth();
-                pItem->mpWindow->SetSizePixel( aSize );
-
-                // re-calculate and show ToolBox
-                mpDragBox->ImplInvalidate( true );
-            }
-            else
-            {
-                Point aOff = mpDragBox->OutputToScreenPixel( Point() );
-                Rectangle aScreenRect( maRect );
-                aScreenRect.Move( aOff.X(), aOff.Y() );
-                ToolBox* pDropBox = FindToolBox( aScreenRect );
-                if ( pDropBox )
-                {
-                    // Determine search position
-                    Point aPos;
-                    if ( pDropBox->mbHorz )
-                    {
-                        aPos.X() = aScreenRect.Left()-TB_CUSTOMIZE_OFFSET;
-                        aPos.Y() = aScreenRect.Center().Y();
-                    }
-                    else
-                    {
-                        aPos.X() = aScreenRect.Center().X();
-                        aPos.Y() = aScreenRect.Top()-TB_CUSTOMIZE_OFFSET;
-                    }
-
-                    aPos = pDropBox->ScreenToOutputPixel( aPos );
-                    ToolBox::ImplFindItemPos( pDropBox, aPos );
-                }
-            }
-        }
-        mpCustomizeData = nullptr;
-        mbResizeMode = false;
-        mpDragBox->Deactivate();
-    }
+        mpDragBox->EndDocking( maRect, false );
+    mnStartLines = 0;
 
     mpDragBox = nullptr;
 }
 
-void ImplTBDragMgr::UpdateDragRect()
-{
-    // Only update if we're already dragging
-    if ( !mbShowDragRect )
-        return;
-
-    mpDragBox->ShowTracking( maRect );
-}
-
-IMPL_LINK_TYPED( ImplTBDragMgr, SelectHdl, Accelerator&, rAccel, void )
+IMPL_LINK( ImplTBDragMgr, SelectHdl, Accelerator&, rAccel, void )
 {
     if ( rAccel.GetCurItemId() == KEY_ESCAPE )
         EndDragging( false );
@@ -1347,20 +1125,17 @@ void ToolBox::ImplInitToolBoxData()
     mnHighItemId      = 0;
     mnCurItemId       = 0;
     mnDownItemId      = 0;
-    mnCurPos          = TOOLBOX_ITEM_NOTFOUND;
-    mnFocusPos        = TOOLBOX_ITEM_NOTFOUND;    // current position during keyboard access
+    mnCurPos          = ITEM_NOTFOUND;
     mnLines           = 1;
     mnCurLine         = 1;
     mnCurLines        = 1;
     mnVisLines        = 1;
     mnFloatLines      = 0;
     mnDockLines       = 0;
-    mnConfigItem      = 0;
     mnMouseClicks     = 0;
     mnMouseModifier   = 0;
     mbDrag            = false;
     mbSelection       = false;
-    mbCommandDrag     = false;
     mbUpper           = false;
     mbLower           = false;
     mbIn              = false;
@@ -1371,9 +1146,7 @@ void ToolBox::ImplInitToolBoxData()
     mbScroll          = false;
     mbLastFloatMode   = false;
     mbCustomize       = false;
-    mbCustomizeMode   = false;
     mbDragging        = false;
-    mbMenuStrings     = false;
     mbIsShift         = false;
     mbIsKeyEvent = false;
     mbChangingHighlight = false;
@@ -1383,20 +1156,23 @@ void ToolBox::ImplInitToolBoxData()
     meDockAlign       = WindowAlign::Top;
     meLastStyle       = PointerStyle::Arrow;
     mnWinStyle        = 0;
-    meLayoutMode      = TBX_LAYOUT_NORMAL;
+    meLayoutMode      = ToolBoxLayoutMode::Normal;
+    meTextPosition    = ToolBoxTextPosition::Right;
     mnLastFocusItemId = 0;
     mnKeyModifier     = 0;
     mnActivateCount   = 0;
     mnImagesRotationAngle = 0;
     mpStatusListener  = new VclStatusListener<ToolBox>(this, ".uno:ImageOrientation");
+    mpStatusListener->startListening();
 
-    mpIdle = new Idle("toolbox update");
-    mpIdle->SetPriority( SchedulerPriority::RESIZE );
-    mpIdle->SetIdleHdl( LINK( this, ToolBox, ImplUpdateHdl ) );
+    mpIdle = new Idle("vcl::ToolBox maIdle update");
+    mpIdle->SetPriority( TaskPriority::RESIZE );
+    mpIdle->SetInvokeHandler( LINK( this, ToolBox, ImplUpdateHdl ) );
 
     // set timeout and handler for dropdown items
     mpData->maDropdownTimer.SetTimeout( 250 );
-    mpData->maDropdownTimer.SetTimeoutHdl( LINK( this, ToolBox, ImplDropdownLongClickHdl ) );
+    mpData->maDropdownTimer.SetInvokeHandler( LINK( this, ToolBox, ImplDropdownLongClickHdl ) );
+    mpData->maDropdownTimer.SetDebugName( "vcl::ToolBox mpData->maDropdownTimer" );
 }
 
 void ToolBox::ImplInit( vcl::Window* pParent, WinBits nStyle )
@@ -1534,61 +1310,6 @@ void ToolBox::ImplInitSettings(bool bFont, bool bForeground, bool bBackground)
     }
 }
 
-void ToolBox::ImplLoadRes( const ResId& rResId )
-{
-    ResMgr* pMgr = rResId.GetResMgr();
-    if( ! pMgr )
-        return;
-
-    DockingWindow::ImplLoadRes( rResId );
-
-    sal_uLong              nObjMask;
-
-    nObjMask = ReadLongRes();
-
-    if ( nObjMask & RSC_TOOLBOX_BUTTONTYPE )
-        SetButtonType( (ButtonType)ReadLongRes() );
-
-    if ( nObjMask & RSC_TOOLBOX_ALIGN )
-        SetAlign( (WindowAlign)ReadLongRes() );
-
-    if ( nObjMask & RSC_TOOLBOX_LINECOUNT )
-        SetLineCount( sal::static_int_cast<sal_uInt16>(ReadLongRes()) );
-
-    if ( nObjMask & RSC_TOOLBOX_CUSTOMIZE )
-    {
-        bool bCust = ReadShortRes();
-        EnableCustomize( bCust );
-    }
-
-    if ( nObjMask & RSC_TOOLBOX_MENUSTRINGS )
-    {
-        bool bCust = ReadShortRes();
-        EnableMenuStrings( bCust );
-    }
-
-    if ( nObjMask & RSC_TOOLBOX_FLOATLINES )
-        SetFloatingLines( ReadShortRes() );
-
-    if ( nObjMask & RSC_TOOLBOX_ITEMIMAGELIST )
-    {
-        maImageList = ImageList( ResId( static_cast<RSHEADER_TYPE*>(GetClassRes()), *pMgr ) );
-        IncrementRes( GetObjSizeRes( static_cast<RSHEADER_TYPE*>(GetClassRes()) ) );
-    }
-
-    if ( nObjMask & RSC_TOOLBOX_ITEMLIST )
-    {
-        sal_uLong nEle = ReadLongRes();
-
-        // insert item
-        for ( sal_uLong i = 0; i < nEle; i++ )
-        {
-            InsertItem( ResId( static_cast<RSHEADER_TYPE *>(GetClassRes()), *pMgr ) );
-            IncrementRes( GetObjSizeRes( static_cast<RSHEADER_TYPE *>(GetClassRes()) ) );
-        }
-    }
-}
-
 void ToolBox::doDeferredInit(WinBits nBits)
 {
     VclPtr<vcl::Window> pParent = mpDialogParent;
@@ -1598,37 +1319,15 @@ void ToolBox::doDeferredInit(WinBits nBits)
 }
 
 ToolBox::ToolBox( vcl::Window* pParent, WinBits nStyle ) :
-    DockingWindow( WINDOW_TOOLBOX )
+    DockingWindow( WindowType::TOOLBOX )
 {
     ImplInitToolBoxData();
     ImplInit( pParent, nStyle );
-}
-
-ToolBox::ToolBox( vcl::Window* pParent, const ResId& rResId ) :
-    DockingWindow( WINDOW_TOOLBOX )
-{
-    SAL_INFO( "vcl.window", "vcl: ToolBox::ToolBox( vcl::Window* pParent, const ResId& rResId )" );
-    ImplInitToolBoxData();
-
-    rResId.SetRT( RSC_TOOLBOX );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle );
-    ImplLoadRes( rResId );
-
-    // calculate size of floating windows and switch if the
-    // toolbox is initially in floating mode
-    if ( ImplIsFloatingMode() )
-        mbHorz = true;
-    else
-        Resize();
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
 }
 
 ToolBox::ToolBox(vcl::Window* pParent, const OString& rID,
     const OUString& rUIXMLDescription, const css::uno::Reference<css::frame::XFrame> &rFrame)
-    : DockingWindow(WINDOW_TOOLBOX)
+    : DockingWindow(WindowType::TOOLBOX)
 {
     ImplInitToolBoxData();
 
@@ -1670,21 +1369,9 @@ void ToolBox::dispose()
     delete mpData;
     mpData = nullptr;
 
-    // remove the lists when there are no more toolbox references to
-    // the lists
     ImplSVData* pSVData = ImplGetSVData();
-    if ( pSVData->maCtrlData.mpTBDragMgr )
-    {
-        // remove if in TBDrag-Manager
-        if ( mbCustomize )
-            pSVData->maCtrlData.mpTBDragMgr->erase( this );
-
-        if ( !pSVData->maCtrlData.mpTBDragMgr->size() )
-        {
-            delete pSVData->maCtrlData.mpTBDragMgr;
-            pSVData->maCtrlData.mpTBDragMgr = nullptr;
-        }
-    }
+    delete pSVData->maCtrlData.mpTBDragMgr;
+    pSVData->maCtrlData.mpTBDragMgr = nullptr;
 
     if (mpStatusListener.is())
         mpStatusListener->dispose();
@@ -1702,7 +1389,7 @@ ImplToolItem* ToolBox::ImplGetItem( sal_uInt16 nItemId ) const
     if (!mpData)
         return nullptr;
 
-    std::vector< ImplToolItem >::iterator it = mpData->m_aItems.begin();
+    ImplToolItems::iterator it = mpData->m_aItems.begin();
     while ( it != mpData->m_aItems.end() )
     {
         if ( it->mnId == nItemId )
@@ -1744,16 +1431,16 @@ bool ToolBox::ImplCalcItem()
     long            nDropDownArrowWidth = TB_DROPDOWNARROWWIDTH;
 
     // set defaults if image or text is needed but empty
-    nDefWidth       = GetDefaultImageSize().Width() * GetDPIScaleFactor();
-    nDefHeight      = GetDefaultImageSize().Height() * GetDPIScaleFactor();
+    nDefWidth  = GetDefaultImageSize().Width();
+    nDefHeight = GetDefaultImageSize().Height();
 
     mnWinHeight = 0;
     // determine minimum size necessary in NWF
     {
-        Rectangle aRect( Point( 0, 0 ), Size( nMinWidth, nMinHeight ) );
-        Rectangle aReg( aRect );
+        tools::Rectangle aRect( Point( 0, 0 ), Size( nMinWidth, nMinHeight ) );
+        tools::Rectangle aReg( aRect );
         ImplControlValue aVal;
-        Rectangle aNativeBounds, aNativeContent;
+        tools::Rectangle aNativeBounds, aNativeContent;
         if( IsNativeControlSupported( ControlType::Toolbar, ControlPart::Button ) )
         {
             if( GetNativeControlRegion( ControlType::Toolbar, ControlPart::Button,
@@ -1779,7 +1466,7 @@ bool ToolBox::ImplCalcItem()
         // also calculate the area for comboboxes, drop down list boxes and spinfields
         // as these are often inserted into toolboxes; set mnWinHeight to the
         // greater of those values to prevent toolbar flickering (#i103385#)
-        aRect = Rectangle( Point( 0, 0 ), Size( nMinWidth, nMinHeight ) );
+        aRect = tools::Rectangle( Point( 0, 0 ), Size( nMinWidth, nMinHeight ) );
         aReg = aRect;
         if( GetNativeControlRegion( ControlType::Combobox, ControlPart::Entire,
                                     aReg,
@@ -1791,7 +1478,7 @@ bool ToolBox::ImplCalcItem()
             if( aRect.GetHeight() > mnWinHeight )
                 mnWinHeight = aRect.GetHeight();
         }
-        aRect = Rectangle( Point( 0, 0 ), Size( nMinWidth, nMinHeight ) );
+        aRect = tools::Rectangle( Point( 0, 0 ), Size( nMinWidth, nMinHeight ) );
         aReg = aRect;
         if( GetNativeControlRegion( ControlType::Listbox, ControlPart::Entire,
                                     aReg,
@@ -1803,7 +1490,7 @@ bool ToolBox::ImplCalcItem()
             if( aRect.GetHeight() > mnWinHeight )
                 mnWinHeight = aRect.GetHeight();
         }
-        aRect = Rectangle( Point( 0, 0 ), Size( nMinWidth, nMinHeight ) );
+        aRect = tools::Rectangle( Point( 0, 0 ), Size( nMinWidth, nMinHeight ) );
         aReg = aRect;
         if( GetNativeControlRegion( ControlType::Spinbox, ControlPart::Entire,
                                     aReg,
@@ -1819,7 +1506,7 @@ bool ToolBox::ImplCalcItem()
 
     if ( ! mpData->m_aItems.empty() )
     {
-        std::vector< ImplToolItem >::iterator it = mpData->m_aItems.begin();
+        ImplToolItems::iterator it = mpData->m_aItems.begin();
         while ( it != mpData->m_aItems.end() )
         {
             it->mbVisibleText = false;  // indicates if text will definitely be drawn, influences dropdown pos
@@ -1878,14 +1565,28 @@ bool ToolBox::ImplCalcItem()
                         it->maItemSize.Width() = bText ? GetCtrlTextWidth( it->maText )+TB_TEXTOFFSET : 0;
                         it->maItemSize.Height() = bText ? GetTextHeight() : 0;
 
-                        // leave space between image and text
-                        if( bText )
-                            it->maItemSize.Width() += TB_IMAGETEXTOFFSET;
+                        if ( meTextPosition == ToolBoxTextPosition::Right )
+                        {
+                            // leave space between image and text
+                            if( bText )
+                                it->maItemSize.Width() += TB_IMAGETEXTOFFSET;
 
-                        // image and text side by side
-                        it->maItemSize.Width() += it->maImage.GetSizePixel().Width();
-                        if ( it->maImage.GetSizePixel().Height() > it->maItemSize.Height() )
-                            it->maItemSize.Height() = it->maImage.GetSizePixel().Height();
+                            // image and text side by side
+                            it->maItemSize.Width() += it->maImage.GetSizePixel().Width();
+                            if ( it->maImage.GetSizePixel().Height() > it->maItemSize.Height() )
+                                it->maItemSize.Height() = it->maImage.GetSizePixel().Height();
+                        }
+                        else
+                        {
+                            // leave space between image and text
+                            if( bText )
+                                it->maItemSize.Height() += TB_IMAGETEXTOFFSET;
+
+                            // text below image
+                            it->maItemSize.Height() += it->maImage.GetSizePixel().Height();
+                            if ( it->maImage.GetSizePixel().Width() > it->maItemSize.Width() )
+                                it->maItemSize.Width() = it->maImage.GetSizePixel().Width();
+                        }
 
                         it->mbVisibleText = bText;
                     }
@@ -1910,8 +1611,16 @@ bool ToolBox::ImplCalcItem()
                 // add in drop down arrow
                 if( it->mnBits & ToolBoxItemBits::DROPDOWN )
                 {
-                    it->maItemSize.Width() += nDropDownArrowWidth;
-                    it->mnDropDownArrowWidth = nDropDownArrowWidth;
+                    if ( meTextPosition == ToolBoxTextPosition::Right )
+                    {
+                        it->maItemSize.Width() += nDropDownArrowWidth;
+                        it->mnDropDownArrowWidth = nDropDownArrowWidth;
+                    }
+                    else
+                    {
+                        it->maItemSize.Height() += nDropDownArrowWidth;
+                        it->mnDropDownArrowWidth = nDropDownArrowWidth;
+                    }
                 }
 
                 // text items will be rotated in vertical mode
@@ -1980,11 +1689,12 @@ bool ToolBox::ImplCalcItem()
         ImplAddButtonBorder( nMaxWidth, nMaxHeight, mpData->mbNativeButtons );
     }
 
-    if( !ImplIsFloatingMode() && GetToolboxButtonSize() != TOOLBOX_BUTTONSIZE_DONTCARE )
+    if( !ImplIsFloatingMode() && GetToolboxButtonSize() != ToolBoxButtonSize::DontCare
+        && ( meTextPosition == ToolBoxTextPosition::Right ) )
     {
         // make sure all vertical toolbars have the same width and horizontal have the same height
         // this depends on the used button sizes
-        // as this is used for alignement of multiple toolbars
+        // as this is used for alignment of multiple toolbars
         // it is only required for docked toolbars
 
         long nFixedWidth = nDefWidth+nDropDownArrowWidth;
@@ -2012,7 +1722,7 @@ bool ToolBox::ImplCalcItem()
         return false;
 }
 
-sal_uInt16 ToolBox::ImplCalcBreaks( long nWidth, long* pMaxLineWidth, bool bCalcHorz )
+ToolBox::ImplToolItems::size_type ToolBox::ImplCalcBreaks( long nWidth, long* pMaxLineWidth, bool bCalcHorz ) const
 {
     sal_uLong           nLineStart = 0;
     sal_uLong           nGroupStart = 0;
@@ -2020,7 +1730,7 @@ sal_uInt16 ToolBox::ImplCalcBreaks( long nWidth, long* pMaxLineWidth, bool bCalc
     long            nCurWidth;
     long            nLastGroupLineWidth = 0;
     long            nMaxLineWidth = 0;
-    sal_uInt16          nLines = 1;
+    ImplToolItems::size_type nLines = 1;
     bool            bWindow;
     bool            bBreak = false;
     long            nWidthTotal = nWidth;
@@ -2032,7 +1742,7 @@ sal_uInt16 ToolBox::ImplCalcBreaks( long nWidth, long* pMaxLineWidth, bool bCalc
 
     // we need to know which item is the last visible one to be able to add
     // the menu width in case we are unable to show all the items
-    std::vector< ImplToolItem >::iterator it, lastVisible;
+    ImplToolItems::iterator it, lastVisible;
     for ( it = mpData->m_aItems.begin(); it != mpData->m_aItems.end(); ++it )
     {
         if ( it->mbVisible )
@@ -2172,9 +1882,9 @@ Size ToolBox::ImplGetOptimalFloatingSize()
     // try to preserve current height
 
     // calc number of floating lines for current window height
-    sal_uInt16 nFloatLinesHeight = ImplCalcLines( this, mnDY );
+    ImplToolItems::size_type nFloatLinesHeight = ImplCalcLines( mnDY );
     // calc window size according to this number
-    aSize1 = ImplCalcFloatSize( this, nFloatLinesHeight );
+    aSize1 = ImplCalcFloatSize( nFloatLinesHeight );
 
     if( aCurrentSize == aSize1 )
         return aSize1;
@@ -2186,10 +1896,10 @@ Size ToolBox::ImplGetOptimalFloatingSize()
     int nBorderY = 2*TB_BORDER_OFFSET2 + mnTopBorder + mnBottomBorder;
     Size aSz( aCurrentSize );
     long maxX;
-    sal_uInt16 nLines = ImplCalcBreaks( aSz.Width()-nBorderX, &maxX, mbHorz );
+    ImplToolItems::size_type nLines = ImplCalcBreaks( aSz.Width()-nBorderX, &maxX, mbHorz );
 
-    sal_uInt16 manyLines = 1000;
-    Size aMinimalFloatSize = ImplCalcFloatSize( this, manyLines );
+    ImplToolItems::size_type manyLines = 1000;
+    Size aMinimalFloatSize = ImplCalcFloatSize( manyLines );
 
     aSz.Height() = nBorderY + nLineHeight * nLines;
     // line space when more than one line
@@ -2200,7 +1910,7 @@ Size ToolBox::ImplGetOptimalFloatingSize()
 
     // avoid clipping of any items
     if( aSz.Width() < aMinimalFloatSize.Width() )
-        aSize2 = ImplCalcFloatSize( this, nLines );
+        aSize2 = ImplCalcFloatSize( nLines );
     else
         aSize2 = aSz;
 
@@ -2224,10 +1934,10 @@ Size ToolBox::ImplGetOptimalFloatingSize()
 
 namespace
 {
-void lcl_hideDoubleSeparators( std::vector< ImplToolItem >& rItems )
+void lcl_hideDoubleSeparators( ToolBox::ImplToolItems& rItems )
 {
     bool bLastSep( true );
-    std::vector< ImplToolItem >::iterator it;
+    ToolBox::ImplToolItems::iterator it;
     for ( it = rItems.begin(); it != rItems.end(); ++it )
     {
         if ( it->meType == ToolBoxItemType::SEPARATOR )
@@ -2236,7 +1946,7 @@ void lcl_hideDoubleSeparators( std::vector< ImplToolItem >& rItems )
             if ( !bLastSep )
             {
                 // check if any visible items have to appear behind it
-                std::vector< ImplToolItem >::iterator temp_it;
+                ToolBox::ImplToolItems::iterator temp_it;
                 for ( temp_it = it+1; temp_it != rItems.end(); ++temp_it )
                 {
                     if ( ((temp_it->meType == ToolBoxItemType::BUTTON) &&
@@ -2264,15 +1974,15 @@ void ToolBox::ImplFormat( bool bResize )
     mpData->ImplClearLayoutData();
 
     // recalculate positions and sizes
-    Rectangle       aEmptyRect;
+    tools::Rectangle       aEmptyRect;
     long            nLineSize;
     long            nLeft;
     long            nTop;
     long            nMax;   // width of layoutarea in pixels
-    sal_uInt16          nFormatLine;
+    ImplToolItems::size_type nFormatLine;
     bool            bMustFullPaint;
 
-    std::vector< ImplToolItem >::iterator   it;
+    ImplToolItems::iterator   it;
 
     ImplDockingWindowWrapper *pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper( this );
     bool bIsInPopupMode = ImplIsInPopupMode();
@@ -2280,13 +1990,13 @@ void ToolBox::ImplFormat( bool bResize )
     maFloatSizes.clear();
 
     // compute border sizes
-    ImplCalcBorder( meAlign, mnLeftBorder, mnTopBorder, mnRightBorder, mnBottomBorder, this );
+    ImplCalcBorder( meAlign, mnLeftBorder, mnTopBorder, mnRightBorder, mnBottomBorder );
 
     // update drag area (where the 'grip' will be placed)
-    Rectangle aOldDragRect;
+    tools::Rectangle aOldDragRect;
     if( pWrapper )
         aOldDragRect = pWrapper->GetDragArea();
-    ImplUpdateDragArea( this );
+    ImplUpdateDragArea();
 
     if ( ImplCalcItem() )
         bMustFullPaint = true;
@@ -2298,7 +2008,7 @@ void ToolBox::ImplFormat( bool bResize )
     if ( ImplIsFloatingMode() )
     {
         if ( bResize )
-            mnFloatLines = ImplCalcLines( this, mnDY );
+            mnFloatLines = ImplCalcLines( mnDY );
         else
             SetOutputSizePixel( ImplGetOptimalFloatingSize() );
     }
@@ -2316,7 +2026,7 @@ void ToolBox::ImplFormat( bool bResize )
         if ( mbScroll )
         {
             nMax        = mnDX;
-            mnVisLines  = ImplCalcLines( this, mnDY );
+            mnVisLines  = ImplCalcLines( mnDY );
         }
         else
         {
@@ -2356,7 +2066,7 @@ void ToolBox::ImplFormat( bool bResize )
 
         if ( mbScroll )
         {
-            mnVisLines  = ImplCalcLines( this, mnDX );
+            mnVisLines  = ImplCalcLines( mnDX );
             nMax        = mnDY;
         }
         else
@@ -2415,9 +2125,9 @@ void ToolBox::ImplFormat( bool bResize )
         nFormatLine = 1;
 
         // save old scroll rectangles and reset them
-        Rectangle aOldLowerRect = maLowerRect;
-        Rectangle aOldUpperRect = maUpperRect;
-        Rectangle aOldMenubuttonRect = mpData->maMenubuttonItem.maRect;
+        tools::Rectangle aOldLowerRect = maLowerRect;
+        tools::Rectangle aOldUpperRect = maUpperRect;
+        tools::Rectangle aOldMenubuttonRect = mpData->maMenubuttonItem.maRect;
         maUpperRect = aEmptyRect;
         maLowerRect = aEmptyRect;
         mpData->maMenubuttonItem.maRect = aEmptyRect;
@@ -2569,13 +2279,13 @@ void ToolBox::ImplFormat( bool bResize )
                     if ( mbHorz )
                     {
                         it->maCalcRect.Left()     = nX;
-                        // if special TBX_LAYOUT_LOCKVERT lock vertical position
+                        // if special ToolBoxLayoutMode::LockVert lock vertical position
                         // don't recalculate the vertical position of the item
-                        if ( meLayoutMode == TBX_LAYOUT_LOCKVERT && mnLines == 1 )
+                        if ( meLayoutMode == ToolBoxLayoutMode::LockVert && mnLines == 1 )
                         {
                             // Somewhat of a hack here, calc deletes and re-adds
                             // the sum/assign & ok/cancel items dynamically.
-                            // Because TBX_LAYOUT_LOCKVERT effectively prevents
+                            // Because ToolBoxLayoutMode::LockVert effectively prevents
                             // recalculation of the vertical pos of an item the
                             // it->maRect.Top() for those newly added items is
                             // 0. The hack here is that we want to effectively
@@ -2584,7 +2294,7 @@ void ToolBox::ImplFormat( bool bResize )
                             // equal to the LineSize when multibar has a single
                             // line size )
                             if ( it->maRect.Top() ||
-                                 (it->mpWindow && it->mpWindow->GetType() == WINDOW_CALCINPUTLINE) ) // tdf#83099
+                                 (it->mpWindow && it->mpWindow->GetType() == WindowType::CALCINPUTLINE) ) // tdf#83099
                             {
                                 it->maCalcRect.Top()  = it->maRect.Top();
                             }
@@ -2619,8 +2329,7 @@ void ToolBox::ImplFormat( bool bResize )
                         assert( it->maCalcRect.Top() >= 0 );
 
                         it->mpWindow->SetPosPixel( aPos );
-                        if ( !mbCustomizeMode )
-                            it->mpWindow->Show();
+                        it->mpWindow->Show();
                     }
                     else
                         it->mpWindow->Hide();
@@ -2661,7 +2370,7 @@ void ToolBox::ImplFormat( bool bResize )
         {
             if ( bMustFullPaint )
             {
-                maPaintRect = Rectangle( mnLeftBorder, mnTopBorder,
+                maPaintRect = tools::Rectangle( mnLeftBorder, mnTopBorder,
                                          mnDX-mnRightBorder, mnDY-mnBottomBorder );
             }
             else
@@ -2716,9 +2425,9 @@ void ToolBox::ImplFormat( bool bResize )
     mbFormat = false;
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBox, ImplDropdownLongClickHdl, Timer *, void)
+IMPL_LINK_NOARG(ToolBox, ImplDropdownLongClickHdl, Timer *, void)
 {
-    if (mnCurPos != TOOLBOX_ITEM_NOTFOUND &&
+    if (mnCurPos != ITEM_NOTFOUND &&
         (mpData->m_aItems[ mnCurPos ].mnBits & ToolBoxItemBits::DROPDOWN))
     {
         mpData->mbDropDownByKeyboard = false;
@@ -2732,7 +2441,7 @@ IMPL_LINK_NOARG_TYPED(ToolBox, ImplDropdownLongClickHdl, Timer *, void)
             Deactivate();
             InvalidateItem(mnCurPos);
 
-            mnCurPos         = TOOLBOX_ITEM_NOTFOUND;
+            mnCurPos         = ITEM_NOTFOUND;
             mnCurItemId      = 0;
             mnDownItemId     = 0;
             mnMouseClicks    = 0;
@@ -2742,14 +2451,14 @@ IMPL_LINK_NOARG_TYPED(ToolBox, ImplDropdownLongClickHdl, Timer *, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBox, ImplUpdateHdl, Idle *, void)
+IMPL_LINK_NOARG(ToolBox, ImplUpdateHdl, Timer *, void)
 {
 
     if( mbFormat && mpData )
         ImplFormat();
 }
 
-static void ImplDrawMoreIndicator(vcl::RenderContext& rRenderContext, const Rectangle& rRect, bool bSetColor, bool bRotate )
+static void ImplDrawMoreIndicator(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect, bool bSetColor, bool bRotate )
 {
     rRenderContext.Push(PushFlags::FILLCOLOR | PushFlags::LINECOLOR);
     rRenderContext.SetLineColor();
@@ -2761,14 +2470,15 @@ static void ImplDrawMoreIndicator(vcl::RenderContext& rRenderContext, const Rect
         else
             rRenderContext.SetFillColor(Color(COL_BLACK));
     }
+    float fScaleFactor = rRenderContext.GetDPIScaleFactor();
 
-    int linewidth = 1 * rRenderContext.GetDPIScaleFactor();
-    int space = 4 * rRenderContext.GetDPIScaleFactor();
+    int linewidth = 1 * fScaleFactor;
+    int space = 4 * fScaleFactor;
 
     if( !bRotate )
     {
-        long width = 8 * rRenderContext.GetDPIScaleFactor();
-        long height = 5 * rRenderContext.GetDPIScaleFactor();
+        long width = 8 * fScaleFactor;
+        long height = 5 * fScaleFactor;
 
         //Keep odd b/c drawing code works better
         if ( height % 2 == 0 )
@@ -2780,9 +2490,9 @@ static void ImplDrawMoreIndicator(vcl::RenderContext& rRenderContext, const Rect
         long y = rRect.Top() + (rRect.getHeight() - height)/2 + 1;
         while( height >= 1)
         {
-            rRenderContext.DrawRect( Rectangle( x, y, x + linewidth, y ) );
+            rRenderContext.DrawRect( tools::Rectangle( x, y, x + linewidth, y ) );
             x += space;
-            rRenderContext.DrawRect( Rectangle( x, y, x + linewidth, y ) );
+            rRenderContext.DrawRect( tools::Rectangle( x, y, x + linewidth, y ) );
             x -= space;
             y++;
             if( height <= heightOrig / 2 + 1) x--;
@@ -2792,8 +2502,8 @@ static void ImplDrawMoreIndicator(vcl::RenderContext& rRenderContext, const Rect
     }
     else
     {
-        long width = 5 * rRenderContext.GetDPIScaleFactor();
-        long height = 8 * rRenderContext.GetDPIScaleFactor();
+        long width = 5 * fScaleFactor;
+        long height = 8 * fScaleFactor;
 
         //Keep odd b/c drawing code works better
         if (width % 2 == 0)
@@ -2805,9 +2515,9 @@ static void ImplDrawMoreIndicator(vcl::RenderContext& rRenderContext, const Rect
         long y = rRect.Top() + (rRect.getHeight() - height)/2 + 1;
         while( width >= 1)
         {
-            rRenderContext.DrawRect( Rectangle( x, y, x, y + linewidth ) );
+            rRenderContext.DrawRect( tools::Rectangle( x, y, x, y + linewidth ) );
             y += space;
-            rRenderContext.DrawRect( Rectangle( x, y, x, y + linewidth ) );
+            rRenderContext.DrawRect( tools::Rectangle( x, y, x, y + linewidth ) );
             y -= space;
             x++;
             if( width <= widthOrig / 2 + 1) y--;
@@ -2819,7 +2529,7 @@ static void ImplDrawMoreIndicator(vcl::RenderContext& rRenderContext, const Rect
     rRenderContext.Pop();
 }
 
-static void ImplDrawDropdownArrow(vcl::RenderContext& rRenderContext, const Rectangle& rDropDownRect, bool bSetColor, bool bRotate )
+static void ImplDrawDropdownArrow(vcl::RenderContext& rRenderContext, const tools::Rectangle& rDropDownRect, bool bSetColor, bool bRotate )
 {
     bool bLineColor = rRenderContext.IsLineColor();
     bool bFillColor = rRenderContext.IsFillColor();
@@ -2835,16 +2545,18 @@ static void ImplDrawDropdownArrow(vcl::RenderContext& rRenderContext, const Rect
             rRenderContext.SetFillColor(Color(COL_BLACK));
     }
 
+    float fScaleFactor = rRenderContext.GetDPIScaleFactor();
+
     if( !bRotate )
     {
-        long width = 5 * rRenderContext.GetDPIScaleFactor();
-        long height = 3 * rRenderContext.GetDPIScaleFactor();
+        long width = 5 * fScaleFactor;
+        long height = 3 * fScaleFactor;
 
         long x = rDropDownRect.Left() + (rDropDownRect.getWidth() - width)/2;
         long y = rDropDownRect.Top() + (rDropDownRect.getHeight() - height)/2;
         while( width >= 1)
         {
-            rRenderContext.DrawRect( Rectangle( x, y, x+width-1, y ) );
+            rRenderContext.DrawRect( tools::Rectangle( x, y, x+width-1, y ) );
             y++;
             x++;
             width -= 2;
@@ -2852,14 +2564,14 @@ static void ImplDrawDropdownArrow(vcl::RenderContext& rRenderContext, const Rect
     }
     else
     {
-        long width = 3 * rRenderContext.GetDPIScaleFactor();
-        long height = 5 * rRenderContext.GetDPIScaleFactor();
+        long width = 3 * fScaleFactor;
+        long height = 5 * fScaleFactor;
 
         long x = rDropDownRect.Left() + (rDropDownRect.getWidth() - width)/2;
         long y = rDropDownRect.Top() + (rDropDownRect.getHeight() - height)/2;
         while( height >= 1)
         {
-            rRenderContext.DrawRect( Rectangle( x, y, x, y+height-1 ) );
+            rRenderContext.DrawRect( tools::Rectangle( x, y, x, y+height-1 ) );
             y++;
             x++;
             height -= 2;
@@ -2885,7 +2597,7 @@ void ToolBox::ImplDrawMenuButton(vcl::RenderContext& rRenderContext, bool bHighl
             return;
 
         // execute pending paint requests
-        ImplCheckUpdate(this);
+        ImplCheckUpdate();
 
         rRenderContext.Push(PushFlags::FILLCOLOR | PushFlags::LINECOLOR);
 
@@ -2934,7 +2646,7 @@ void ToolBox::ImplDrawSpin(vcl::RenderContext& rRenderContext)
                           false/*bUpperIn*/, false/*bLowerIn*/, bTmpUpper, bTmpLower, !mbHorz);
 }
 
-void ToolBox::ImplDrawSeparator(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, const Rectangle& rRect)
+void ToolBox::ImplDrawSeparator(vcl::RenderContext& rRenderContext, ImplToolItems::size_type nPos, const tools::Rectangle& rRect)
 {
     if ( nPos >= mpData->m_aItems.size() - 1 )
         // no separator if it's the last item
@@ -2980,7 +2692,7 @@ void ToolBox::ImplDrawSeparator(vcl::RenderContext& rRenderContext, sal_uInt16 n
     }
 }
 
-void ToolBox::ImplDrawButton(vcl::RenderContext& rRenderContext, const Rectangle &rRect, sal_uInt16 highlight,
+void ToolBox::ImplDrawButton(vcl::RenderContext& rRenderContext, const tools::Rectangle &rRect, sal_uInt16 highlight,
                              bool bChecked, bool bEnabled, bool bIsWindow )
 {
     // draws toolbar button background either native or using a coloured selection
@@ -3007,13 +2719,13 @@ void ToolBox::ImplDrawButton(vcl::RenderContext& rRenderContext, const Rectangle
                                                   bChecked, true, bIsWindow, nullptr, 2);
 }
 
-void ToolBox::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, sal_uInt16 nHighlight)
+void ToolBox::ImplDrawItem(vcl::RenderContext& rRenderContext, ImplToolItems::size_type nPos, sal_uInt16 nHighlight)
 {
     if (nPos >= mpData->m_aItems.size())
         return;
 
     // execute pending paint requests
-    ImplCheckUpdate(this);
+    ImplCheckUpdate();
 
     ImplDisableFlatButtons();
 
@@ -3044,20 +2756,23 @@ void ToolBox::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, 
     if( ImplGetSVData()->maNWFData.mbToolboxDropDownSeparate )
     {
         // separate button not for dropdown only where the whole button is painted
-        if ( pItem->mnBits & ToolBoxItemBits::DROPDOWN &&
+        // exception: when text position is set to bottom then we want to calculate rect for dropdown only button
+        if ( ( pItem->mnBits & ToolBoxItemBits::DROPDOWN &&
             ((pItem->mnBits & ToolBoxItemBits::DROPDOWNONLY) != ToolBoxItemBits::DROPDOWNONLY) )
+            || ( ( pItem->mnBits & ToolBoxItemBits::DROPDOWN) && ( meTextPosition == ToolBoxTextPosition::Bottom ) ) )
         {
-            Rectangle aArrowRect = pItem->GetDropDownRect( mbHorz );
+            tools::Rectangle aArrowRect = pItem->GetDropDownRect( mbHorz && ( meTextPosition == ToolBoxTextPosition::Right ) );
             if( aArrowRect.Top() == pItem->maRect.Top() ) // dropdown arrow on right side
                 aBtnSize.Width() -= aArrowRect.GetWidth();
-            else // dropdown arrow on bottom side
-                aBtnSize.Height() -= aArrowRect.GetHeight();
+            else if ( !( (meTextPosition == ToolBoxTextPosition::Bottom)
+                        && ((pItem->mnBits & ToolBoxItemBits::DROPDOWNONLY) == ToolBoxItemBits::DROPDOWNONLY) ) )
+                aBtnSize.Height() -= aArrowRect.GetHeight(); // dropdown arrow on bottom side
         }
     }
 
     /* Compute the button/separator rectangle here, we'll need it for
      * both the buttons and the separators. */
-    Rectangle aButtonRect( pItem->maRect.TopLeft(), aBtnSize );
+    tools::Rectangle aButtonRect( pItem->maRect.TopLeft(), aBtnSize );
     long    nOffX       = SMALLBUTTON_OFF_NORMAL_X;
     long    nOffY       = SMALLBUTTON_OFF_NORMAL_Y;
     long    nImageOffX  = 0;
@@ -3074,58 +2789,8 @@ void ToolBox::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, 
     }
 
     // do nothing if item is no button or will be displayed as window
-    if ( (pItem->meType != ToolBoxItemType::BUTTON) ||
-         (pItem->mbShowWindow && !mbCustomizeMode) )
+    if ( (pItem->meType != ToolBoxItemType::BUTTON) || pItem->mbShowWindow )
         return;
-
-    // we need a TBDragMananger to draw the configuration item
-    ImplTBDragMgr* pMgr;
-    if ( pItem->mnId == mnConfigItem )
-    {
-        pMgr = ImplGetTBDragMgr();
-        pMgr->HideDragRect();
-    }
-    else
-        pMgr = nullptr;
-
-    // during configuration mode visible windows will be drawn in a special way
-    if ( mbCustomizeMode && pItem->mbShowWindow )
-    {
-        vcl::Font aOldFont = rRenderContext.GetFont();
-        Color     aOldTextColor = rRenderContext.GetTextColor();
-
-        SetZoomedPointFont(rRenderContext, rStyleSettings.GetAppFont());
-        rRenderContext.SetLineColor(Color(COL_BLACK));
-        rRenderContext.SetFillColor(rStyleSettings.GetFieldColor());
-        rRenderContext.SetTextColor(rStyleSettings.GetFieldTextColor());
-        rRenderContext.DrawRect(pItem->maRect);
-
-        Size aSize( GetCtrlTextWidth( pItem->maText ), GetTextHeight() );
-        Point aPos( pItem->maRect.Left()+2, pItem->maRect.Top() );
-        aPos.Y() += (pItem->maRect.GetHeight()-aSize.Height())/2;
-        bool bClip;
-        if ( (aSize.Width() > pItem->maRect.GetWidth()-2) ||
-             (aSize.Height() > pItem->maRect.GetHeight()-2) )
-        {
-            bClip = true;
-            Rectangle aTempRect(pItem->maRect.Left() + 1, pItem->maRect.Top() + 1,
-                                pItem->maRect.Right() - 1, pItem->maRect.Bottom() - 1);
-            vcl::Region aTempRegion(aTempRect);
-            rRenderContext.SetClipRegion(aTempRegion);
-        }
-        else
-            bClip = false;
-        rRenderContext.DrawCtrlText( aPos, pItem->maText, 0, pItem->maText.getLength() );
-        if (bClip)
-            rRenderContext.SetClipRegion();
-        rRenderContext.SetFont(aOldFont);
-        rRenderContext.SetTextColor(aOldTextColor);
-
-        // draw Config-Frame if required
-        if (pMgr)
-            pMgr->UpdateDragRect();
-        return;
-    }
 
     if ( pItem->meState == TRISTATE_TRUE )
     {
@@ -3188,7 +2853,8 @@ void ToolBox::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, 
         // draw the image
         nImageOffX = nOffX;
         nImageOffY = nOffY;
-        if ( (pItem->mnBits & (ToolBoxItemBits::LEFT|ToolBoxItemBits::DROPDOWN)) || bText )
+        if ( ( (pItem->mnBits & (ToolBoxItemBits::LEFT|ToolBoxItemBits::DROPDOWN)) || bText )
+            && ( meTextPosition == ToolBoxTextPosition::Right ) )
         {
             // left align also to leave space for drop down arrow
             // and when drawing text+image
@@ -3199,7 +2865,8 @@ void ToolBox::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, 
         else
         {
             nImageOffX += (nBtnWidth-aImageSize.Width())/2;
-            nImageOffY += (nBtnHeight-aImageSize.Height())/2;
+            if ( meTextPosition == ToolBoxTextPosition::Right )
+                nImageOffY += (nBtnHeight-aImageSize.Height())/2;
         }
         if ( nHighlight != 0 || (pItem->meState == TRISTATE_TRUE) )
         {
@@ -3247,12 +2914,28 @@ void ToolBox::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, 
         }
         else
         {
-            // center vertically
-            nTextOffY += (nBtnHeight-aTxtSize.Height())/2;
+            if ( meTextPosition == ToolBoxTextPosition::Right )
+            {
+                // center vertically
+                nTextOffY += (nBtnHeight-aTxtSize.Height())/2;
 
-            // add in image offset
-            if( bImage )
-                nTextOffX = nImageOffX + aImageSize.Width() + TB_IMAGETEXTOFFSET;
+                // add in image offset
+                if( bImage )
+                    nTextOffX = nImageOffX + aImageSize.Width() + TB_IMAGETEXTOFFSET;
+            }
+            else
+            {
+                long nArrowHeight = ( pItem->mnBits & ToolBoxItemBits::DROPDOWN )
+                                        ? TB_DROPDOWNARROWWIDTH : 0;
+
+                // only if button is a "dropdown only" type then is painted as a single button
+                // and we need to move text above the arrow
+                if ( ImplGetSVData()->maNWFData.mbToolboxDropDownSeparate
+                    && (pItem->mnBits & ToolBoxItemBits::DROPDOWNONLY) != ToolBoxItemBits::DROPDOWNONLY )
+                    nArrowHeight = 0;
+
+                nTextOffY += nBtnHeight - aTxtSize.Height() - nArrowHeight;
+            }
         }
 
         // draw selection only if not already drawn during image output (see above)
@@ -3277,7 +2960,7 @@ void ToolBox::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, 
     // paint optional drop down arrow
     if ( pItem->mnBits & ToolBoxItemBits::DROPDOWN )
     {
-        Rectangle aDropDownRect( pItem->GetDropDownRect( mbHorz ) );
+        tools::Rectangle aDropDownRect( pItem->GetDropDownRect( mbHorz && ( meTextPosition == ToolBoxTextPosition::Right ) ) );
         bool bSetColor = true;
         if ( !pItem->mbEnabled || !IsEnabled() )
         {
@@ -3301,17 +2984,13 @@ void ToolBox::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, 
         }
         ImplDrawDropdownArrow(rRenderContext, aDropDownRect, bSetColor, bRotate);
     }
-
-    // draw config-frame if required
-    if (pMgr)
-        pMgr->UpdateDragRect();
 }
 
 void ToolBox::ImplDrawFloatwinBorder(vcl::RenderContext& rRenderContext, ImplToolItem* pItem)
 {
     if ( !pItem->maRect.IsEmpty() )
     {
-        Rectangle aRect( mpFloatWin->ImplGetItemEdgeClipRect() );
+        tools::Rectangle aRect( mpFloatWin->ImplGetItemEdgeClipRect() );
         aRect.SetPos( AbsoluteScreenToOutputPixel( aRect.TopLeft() ) );
         rRenderContext.SetLineColor(rRenderContext.GetSettings().GetStyleSettings().GetShadowColor());
         Point p1, p2;
@@ -3363,13 +3042,13 @@ void ToolBox::ImplFloatControl( bool bStart, FloatingWindow* pFloatWindow )
         // draw current item with highlight and keep old state
         bool bWasKeyboardActivate = mpData->mbDropDownByKeyboard;
 
-        if ( mnCurPos != TOOLBOX_ITEM_NOTFOUND )
+        if ( mnCurPos != ITEM_NOTFOUND )
             InvalidateItem(mnCurPos);
         Deactivate();
 
         if( !bWasKeyboardActivate )
         {
-            mnCurPos = TOOLBOX_ITEM_NOTFOUND;
+            mnCurPos = ITEM_NOTFOUND;
             mnCurItemId = 0;
             mnHighItemId = 0;
         }
@@ -3385,7 +3064,7 @@ void ToolBox::ShowLine( bool bNext )
 
     if ( mpData->mbPageScroll )
     {
-        sal_uInt16 delta = mnVisLines;
+        ImplToolItems::size_type delta = mnVisLines;
         if ( bNext )
         {
             mnCurLine = mnCurLine + delta;
@@ -3419,7 +3098,7 @@ bool ToolBox::ImplHandleMouseMove( const MouseEvent& rMEvt, bool bRepeat )
         return false;
 
     // ToolBox active?
-    if ( mbDrag && mnCurPos != TOOLBOX_ITEM_NOTFOUND )
+    if ( mbDrag && mnCurPos != ITEM_NOTFOUND )
     {
         // is the cursor over the item?
         ImplToolItem* pItem = &mpData->m_aItems[mnCurPos];
@@ -3505,7 +3184,7 @@ bool ToolBox::ImplHandleMouseButtonUp( const MouseEvent& rMEvt, bool bCancel )
         else
         {
             mbSelection = false;
-            if ( mnCurPos == TOOLBOX_ITEM_NOTFOUND )
+            if ( mnCurPos == ITEM_NOTFOUND )
                 return true;
         }
 
@@ -3556,7 +3235,7 @@ bool ToolBox::ImplHandleMouseButtonUp( const MouseEvent& rMEvt, bool bCancel )
                     // Get current pos for the case that items are inserted/removed
                     // in the toolBox
                     mnCurPos = GetItemPos( mnCurItemId );
-                    if ( mnCurPos != TOOLBOX_ITEM_NOTFOUND )
+                    if ( mnCurPos != ITEM_NOTFOUND )
                     {
                         InvalidateItem(mnCurPos);
                         Flush();
@@ -3565,7 +3244,7 @@ bool ToolBox::ImplHandleMouseButtonUp( const MouseEvent& rMEvt, bool bCancel )
             }
         }
 
-        mnCurPos         = TOOLBOX_ITEM_NOTFOUND;
+        mnCurPos         = ITEM_NOTFOUND;
         mnCurItemId      = 0;
         mnDownItemId     = 0;
         mnMouseClicks    = 0;
@@ -3610,11 +3289,11 @@ void ToolBox::MouseMove( const MouseEvent& rMEvt )
 
     if ( mbSelection && bDrawHotSpot )
     {
-        sal_uInt16  i = 0;
-        sal_uInt16  nNewPos = TOOLBOX_ITEM_NOTFOUND;
+        ImplToolItems::size_type i = 0;
+        ImplToolItems::size_type nNewPos = ITEM_NOTFOUND;
 
         // search the item that has been clicked
-        std::vector< ImplToolItem >::const_iterator it = mpData->m_aItems.begin();
+        ImplToolItems::const_iterator it = mpData->m_aItems.begin();
         while ( it != mpData->m_aItems.end() )
         {
             // if the mouse position is in this item,
@@ -3642,16 +3321,16 @@ void ToolBox::MouseMove( const MouseEvent& rMEvt )
         // was a new entry selected?
         // don't change selection if keyboard selection is active and
         // mouse leaves the toolbox
-        if ( nNewPos != mnCurPos && !( HasFocus() && nNewPos == TOOLBOX_ITEM_NOTFOUND ) )
+        if ( nNewPos != mnCurPos && !( HasFocus() && nNewPos == ITEM_NOTFOUND ) )
         {
-            if ( mnCurPos != TOOLBOX_ITEM_NOTFOUND )
+            if ( mnCurPos != ITEM_NOTFOUND )
             {
                 InvalidateItem(mnCurPos);
-                CallEventListeners( VCLEVENT_TOOLBOX_HIGHLIGHTOFF, reinterpret_cast< void* >( mnCurPos ) );
+                CallEventListeners( VclEventId::ToolboxHighlightOff, reinterpret_cast< void* >( mnCurPos ) );
             }
 
             mnCurPos = nNewPos;
-            if ( mnCurPos != TOOLBOX_ITEM_NOTFOUND )
+            if ( mnCurPos != ITEM_NOTFOUND )
             {
                 mnCurItemId = mnHighItemId = it->mnId;
                 InvalidateItem(mnCurPos);
@@ -3682,7 +3361,7 @@ void ToolBox::MouseMove( const MouseEvent& rMEvt )
     {
         if ( rMEvt.GetMode() & MouseEventModifiers::SIMPLEMOVE )
         {
-            sal_uInt16 nLinePtr = ImplTestLineSize( this, rMEvt.GetPosPixel() );
+            sal_uInt16 nLinePtr = ImplTestLineSize( rMEvt.GetPosPixel() );
             if ( nLinePtr & DOCK_LINEHSIZE )
             {
                 if ( meAlign == WindowAlign::Left )
@@ -3700,33 +3379,12 @@ void ToolBox::MouseMove( const MouseEvent& rMEvt )
         }
     }
 
-    if ( (eStyle == PointerStyle::Arrow) && mbCustomizeMode )
-    {
-        // search the item which was clicked
-        std::vector< ImplToolItem >::const_iterator it = mpData->m_aItems.begin();
-        while ( it != mpData->m_aItems.end() )
-        {
-            // show resize pointer if it is a customize window
-            if ( it->mbShowWindow )
-            {
-                if ( it->maRect.IsInside( aMousePos ) )
-                {
-                    if ( it->maRect.Right()-TB_RESIZE_OFFSET <= aMousePos.X() )
-                        eStyle = PointerStyle::HSizeBar;
-                    break;
-                }
-            }
-
-            ++it;
-        }
-    }
-
     if ( bDrawHotSpot && ( (mnOutStyle & TOOLBOX_STYLE_FLAT) || !mnOutStyle ) )
     {
         bool bClearHigh = true;
-        if ( !rMEvt.IsLeaveWindow() && (mnCurPos == TOOLBOX_ITEM_NOTFOUND) )
+        if ( !rMEvt.IsLeaveWindow() && (mnCurPos == ITEM_NOTFOUND) )
         {
-            std::vector< ImplToolItem >::const_iterator it = mpData->m_aItems.begin();
+            ImplToolItems::const_iterator it = mpData->m_aItems.begin();
             while ( it != mpData->m_aItems.end() )
             {
                 if ( it->maRect.IsInside( aMousePos ) )
@@ -3738,13 +3396,13 @@ void ToolBox::MouseMove( const MouseEvent& rMEvt )
                             bClearHigh = false;
                             if ( mnHighItemId != it->mnId )
                             {
-                                sal_uInt16 nTempPos = sal::static_int_cast<sal_uInt16>(it - mpData->m_aItems.begin());
+                                ImplToolItems::size_type nTempPos = it - mpData->m_aItems.begin();
                                 if ( mnHighItemId )
                                 {
                                     ImplHideFocus();
-                                    sal_uInt16 nPos = GetItemPos( mnHighItemId );
+                                    ImplToolItems::size_type nPos = GetItemPos( mnHighItemId );
                                     InvalidateItem(nPos);
-                                    CallEventListeners( VCLEVENT_TOOLBOX_HIGHLIGHTOFF, reinterpret_cast< void* >( nPos ) );
+                                    CallEventListeners( VclEventId::ToolboxHighlightOff, reinterpret_cast< void* >( nPos ) );
                                 }
                                 if ( mpData->mbMenubuttonSelected )
                                 {
@@ -3754,7 +3412,7 @@ void ToolBox::MouseMove( const MouseEvent& rMEvt )
                                 mnHighItemId = it->mnId;
                                 InvalidateItem(nTempPos);
                                 ImplShowFocus();
-                                CallEventListeners( VCLEVENT_TOOLBOX_HIGHLIGHT );
+                                CallEventListeners( VclEventId::ToolboxHighlight );
                             }
                         }
                     }
@@ -3777,12 +3435,12 @@ void ToolBox::MouseMove( const MouseEvent& rMEvt )
 
             if( mnHighItemId )
             {
-                sal_uInt16 nClearPos = GetItemPos( mnHighItemId );
-                if ( nClearPos != TOOLBOX_ITEM_NOTFOUND )
+                ImplToolItems::size_type nClearPos = GetItemPos( mnHighItemId );
+                if ( nClearPos != ITEM_NOTFOUND )
                 {
                     InvalidateItem(nClearPos);
                     if( nClearPos != mnCurPos )
-                        CallEventListeners( VCLEVENT_TOOLBOX_HIGHLIGHTOFF, reinterpret_cast< void* >( nClearPos ) );
+                        CallEventListeners( VclEventId::ToolboxHighlightOff, reinterpret_cast< void* >( nClearPos ) );
                 }
                 ImplHideFocus();
                 mnHighItemId = 0;
@@ -3809,7 +3467,7 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
 {
     // only trigger toolbox for left mouse button and when
     // we're not in normal operation
-    if ( rMEvt.IsLeft() && !mbDrag && (mnCurPos == TOOLBOX_ITEM_NOTFOUND) )
+    if ( rMEvt.IsLeft() && !mbDrag && (mnCurPos == ITEM_NOTFOUND) )
     {
         // call activate already here, as items could
         // be exchanged
@@ -3823,11 +3481,11 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
         }
 
         Point  aMousePos = rMEvt.GetPosPixel();
-        sal_uInt16 i = 0;
-        sal_uInt16 nNewPos = TOOLBOX_ITEM_NOTFOUND;
+        ImplToolItems::size_type i = 0;
+        ImplToolItems::size_type nNewPos = ITEM_NOTFOUND;
 
         // search for item that was clicked
-        std::vector< ImplToolItem >::const_iterator it = mpData->m_aItems.begin();
+        ImplToolItems::const_iterator it = mpData->m_aItems.begin();
         while ( it != mpData->m_aItems.end() )
         {
             // is this the item?
@@ -3836,7 +3494,7 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
                 // do nothing if it is a separator or
                 // if the item has been disabled
                 if ( (it->meType == ToolBoxItemType::BUTTON) &&
-                     (!it->mbShowWindow || mbCustomizeMode) )
+                     !it->mbShowWindow )
                     nNewPos = i;
 
                 break;
@@ -3847,29 +3505,8 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
         }
 
         // item found
-        if ( nNewPos != TOOLBOX_ITEM_NOTFOUND )
+        if ( nNewPos != ITEM_NOTFOUND )
         {
-            if ( mbCustomize )
-            {
-                if ( rMEvt.IsMod2() || mbCustomizeMode )
-                {
-                    Deactivate();
-
-                    ImplTBDragMgr* pMgr = ImplGetTBDragMgr();
-                    Rectangle aItemRect = GetItemRect( it->mnId );
-                    mnConfigItem = it->mnId;
-
-                    bool bResizeItem;
-                    if ( mbCustomizeMode && it->mbShowWindow &&
-                         (it->maRect.Right()-TB_RESIZE_OFFSET <= aMousePos.X()) )
-                        bResizeItem = true;
-                    else
-                        bResizeItem = false;
-                    pMgr->StartDragging( this, aMousePos, aItemRect, 0, bResizeItem );
-                    return;
-                }
-            }
-
             if ( !it->mbEnabled )
             {
                 Deactivate();
@@ -3911,7 +3548,8 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
                 // was dropdown arrow pressed
                 if( (it->mnBits & ToolBoxItemBits::DROPDOWN) )
                 {
-                    if( ( (it->mnBits & ToolBoxItemBits::DROPDOWNONLY) == ToolBoxItemBits::DROPDOWNONLY) || it->GetDropDownRect( mbHorz ).IsInside( aMousePos ))
+                    if( ( (it->mnBits & ToolBoxItemBits::DROPDOWNONLY) == ToolBoxItemBits::DROPDOWNONLY)
+                        || it->GetDropDownRect( mbHorz && ( meTextPosition == ToolBoxTextPosition::Right ) ).IsInside( aMousePos ))
                     {
                         // dropdownonly always triggers the dropdown handler, over the whole button area
 
@@ -3927,7 +3565,7 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
                             Deactivate();
                             InvalidateItem(mnCurPos);
 
-                            mnCurPos         = TOOLBOX_ITEM_NOTFOUND;
+                            mnCurPos         = ITEM_NOTFOUND;
                             mnCurItemId      = 0;
                             mnDownItemId     = 0;
                             mnMouseClicks    = 0;
@@ -3963,7 +3601,10 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
         // menu button hit ?
         if( mpData->maMenubuttonItem.maRect.IsInside( aMousePos ) && ImplHasClippedItems() )
         {
-            ExecuteCustomMenu();
+            if ( maMenuButtonHdl.IsSet() )
+                maMenuButtonHdl.Call( this );
+            else
+                ExecuteCustomMenu( mpData->maMenubuttonItem.maRect );
             return;
         }
 
@@ -3994,7 +3635,7 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
         // Linesizing testen
         if ( (mnWinStyle & TB_WBLINESIZING) == TB_WBLINESIZING )
         {
-            sal_uInt16 nLineMode = ImplTestLineSize( this, aMousePos );
+            sal_uInt16 nLineMode = ImplTestLineSize( aMousePos );
             if ( nLineMode )
             {
                 ImplTBDragMgr* pMgr = ImplGetTBDragMgr();
@@ -4008,8 +3649,8 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
                 aPos = ScreenToOutputPixel( aPos );
 
                 // start dragging
-                pMgr->StartDragging( this, aMousePos, Rectangle( aPos, aSize ),
-                                     nLineMode, false );
+                pMgr->StartDragging( this, aMousePos, tools::Rectangle( aPos, aSize ),
+                                     nLineMode );
                 return;
             }
         }
@@ -4021,7 +3662,7 @@ void ToolBox::MouseButtonDown( const MouseEvent& rMEvt )
             Click();
     }
 
-    if ( !mbDrag && !mbSelection && (mnCurPos == TOOLBOX_ITEM_NOTFOUND) )
+    if ( !mbDrag && !mbSelection && (mnCurPos == ITEM_NOTFOUND) )
         DockingWindow::MouseButtonDown( rMEvt );
 }
 
@@ -4030,13 +3671,12 @@ void ToolBox::MouseButtonUp( const MouseEvent& rMEvt )
     if ( ImplHandleMouseButtonUp( rMEvt ) )
         return;
 
-    if ( mbDragging && (rMEvt.IsLeft() || mbCommandDrag) )
+    if ( mbDragging && rMEvt.IsLeft() )
     {
         ImplTBDragMgr* pMgr = ImplGetTBDragMgr();
         pMgr->EndDragging();
         return;
     }
-    mbCommandDrag = false;
 
     DockingWindow::MouseButtonUp( rMEvt );
 }
@@ -4056,7 +3696,7 @@ void ToolBox::Tracking( const TrackingEvent& rTEvt )
     DockingWindow::Tracking( rTEvt );
 }
 
-void ToolBox::InvalidateItem(sal_uInt16 nPosition)
+void ToolBox::InvalidateItem(ImplToolItems::size_type nPosition)
 {
     if (mpData && nPosition < mpData->m_aItems.size())
     {
@@ -4080,12 +3720,12 @@ void ToolBox::InvalidateSpin(bool bUpperIn, bool bLowerIn)
         Invalidate(maLowerRect);
 }
 
-void ToolBox::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rPaintRect)
+void ToolBox::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rPaintRect)
 {
     if( mpData->mbIsPaintLocked )
         return;
 
-    if (rPaintRect == Rectangle(0, 0, mnDX-1, mnDY-1))
+    if (rPaintRect == tools::Rectangle(0, 0, mnDX-1, mnDY-1))
         mbFullPaint = true;
     ImplFormat();
     mbFullPaint = false;
@@ -4108,14 +3748,14 @@ void ToolBox::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rPaintR
     }
 
     // draw buttons
-    sal_uInt16 nHighPos;
+    ImplToolItems::size_type nHighPos;
     if ( mnHighItemId )
         nHighPos = GetItemPos( mnHighItemId );
     else
-        nHighPos = TOOLBOX_ITEM_NOTFOUND;
+        nHighPos = ITEM_NOTFOUND;
 
-    sal_uInt16 nCount = (sal_uInt16)mpData->m_aItems.size();
-    for( sal_uInt16 i = 0; i < nCount; i++ )
+    ImplToolItems::size_type nCount = mpData->m_aItems.size();
+    for( ImplToolItems::size_type i = 0; i < nCount; i++ )
     {
         ImplToolItem* pItem = &mpData->m_aItems[i];
 
@@ -4131,11 +3771,6 @@ void ToolBox::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rPaintR
         }
     }
     ImplShowFocus();
-}
-
-void ToolBox::Move()
-{
-    DockingWindow::Move();
 }
 
 void ToolBox::Resize()
@@ -4189,7 +3824,7 @@ void ToolBox::Resize()
                 if (!aExpandables.empty())
                 {
                     //Get how big the optimal size is
-                    Rectangle aBounds;
+                    tools::Rectangle aBounds;
                     for (const ImplToolItem & rItem : mpData->m_aItems)
                     {
                         aBounds.Union( rItem.maRect );
@@ -4229,17 +3864,17 @@ void ToolBox::Resize()
             if ( mnRightBorder )
             {
                 if ( nOldDX > mnDX )
-                    Invalidate( Rectangle( mnDX-mnRightBorder-1, 0, mnDX, mnDY ) );
+                    Invalidate( tools::Rectangle( mnDX-mnRightBorder-1, 0, mnDX, mnDY ) );
                 else
-                    Invalidate( Rectangle( nOldDX-mnRightBorder-1, 0, nOldDX, nOldDY ) );
+                    Invalidate( tools::Rectangle( nOldDX-mnRightBorder-1, 0, nOldDX, nOldDY ) );
             }
 
             if ( mnBottomBorder )
             {
                 if ( nOldDY > mnDY )
-                    Invalidate( Rectangle( 0, mnDY-mnBottomBorder-1, mnDX, mnDY ) );
+                    Invalidate( tools::Rectangle( 0, mnDY-mnBottomBorder-1, mnDX, mnDY ) );
                 else
-                    Invalidate( Rectangle( 0, nOldDY-mnBottomBorder-1, nOldDX, nOldDY ) );
+                    Invalidate( tools::Rectangle( 0, nOldDY-mnBottomBorder-1, nOldDX, nOldDY ) );
             }
         }
     }
@@ -4282,7 +3917,7 @@ void ToolBox::RequestHelp( const HelpEvent& rHEvt )
             return;
         else
             nItemId = mnHighItemId;
-        Rectangle aRect( GetItemRect( nItemId ) );
+        tools::Rectangle aRect( GetItemRect( nItemId ) );
         if( aRect.IsEmpty() )
             return;
         else
@@ -4294,7 +3929,7 @@ void ToolBox::RequestHelp( const HelpEvent& rHEvt )
         if ( rHEvt.GetMode() & (HelpEventMode::BALLOON | HelpEventMode::QUICK) )
         {
             // get rectangle
-            Rectangle aTempRect = GetItemRect( nItemId );
+            tools::Rectangle aTempRect = GetItemRect( nItemId );
             Point aPt = OutputToScreenPixel( aTempRect.TopLeft() );
             aTempRect.Left()   = aPt.X();
             aTempRect.Top()    = aPt.Y();
@@ -4341,7 +3976,7 @@ void ToolBox::RequestHelp( const HelpEvent& rHEvt )
     DockingWindow::RequestHelp( rHEvt );
 }
 
-bool ToolBox::Notify( NotifyEvent& rNEvt )
+bool ToolBox::EventNotify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
     {
@@ -4361,11 +3996,11 @@ bool ToolBox::Notify( NotifyEvent& rNEvt )
                 bool bNoTabCycling = bOldSchoolContainer || isContainerWindow(pParent);
 
                 if( bNoTabCycling &&  ! (GetStyle() & WB_FORCETABCYCLE) )
-                    return DockingWindow::Notify( rNEvt );
+                    return DockingWindow::EventNotify( rNEvt );
                 else if( ImplChangeHighlightUpDn( aKeyCode.IsShift() , bNoTabCycling ) )
                     return false;
                 else
-                    return DockingWindow::Notify( rNEvt );
+                    return DockingWindow::EventNotify( rNEvt );
             }
             default:
                 break;
@@ -4396,7 +4031,7 @@ bool ToolBox::Notify( NotifyEvent& rNEvt )
         {
             // a child window got the focus so update current item to
             // allow for proper lose focus handling in keyboard navigation
-            std::vector< ImplToolItem >::const_iterator it = mpData->m_aItems.begin();
+            ImplToolItems::const_iterator it = mpData->m_aItems.begin();
             while( it != mpData->m_aItems.end() )
             {
                 if ( it->mbVisible )
@@ -4410,7 +4045,7 @@ bool ToolBox::Notify( NotifyEvent& rNEvt )
 
                 ++it;
             }
-            return DockingWindow::Notify( rNEvt );
+            return DockingWindow::EventNotify( rNEvt );
         }
     }
     else if( rNEvt.GetType() == MouseNotifyEvent::LOSEFOCUS )
@@ -4418,56 +4053,15 @@ bool ToolBox::Notify( NotifyEvent& rNEvt )
         // deselect
         ImplHideFocus();
         mnHighItemId = 0;
-        mnCurPos = TOOLBOX_ITEM_NOTFOUND;
+        mnCurPos = ITEM_NOTFOUND;
     }
 
-    return DockingWindow::Notify( rNEvt );
+    return DockingWindow::EventNotify( rNEvt );
 }
 
 void ToolBox::Command( const CommandEvent& rCEvt )
 {
-    maCommandHandler.Call( &rCEvt );
-
-    // depict StartDrag on MouseButton/Left/Alt
-    if ( (rCEvt.GetCommand() == CommandEventId::StartDrag) && rCEvt.IsMouseEvent() &&
-         mbCustomize && !mbDragging && !mbDrag && !mbSelection &&
-         (mnCurPos == TOOLBOX_ITEM_NOTFOUND) )
-    {
-        // We only allow dragging of items. Therefore, we have to check
-        // if an item was clicked, otherwise we could move the window, and
-        // this is unwanted.
-        // We only do this in customize mode, as otherwise
-        // items could be moved accidentally
-        if ( mbCustomizeMode )
-        {
-            Point           aMousePos = rCEvt.GetMousePosPixel();
-            std::vector< ImplToolItem >::const_iterator it = mpData->m_aItems.begin();
-            while ( it != mpData->m_aItems.end() )
-            {
-                // is this the item?
-                if ( it->maRect.IsInside( aMousePos ) )
-                {
-                    // do nothing if it is a separator or
-                    // the item has been disabled
-                    if ( (it->meType == ToolBoxItemType::BUTTON) &&
-                         !it->mbShowWindow )
-                        mbCommandDrag = true;
-                    break;
-                }
-
-                ++it;
-            }
-
-            if ( mbCommandDrag )
-            {
-                MouseEvent aMEvt( aMousePos, 1, MouseEventModifiers::SIMPLEMOVE,
-                                  MOUSE_LEFT, KEY_MOD2 );
-                ToolBox::MouseButtonDown( aMEvt );
-                return;
-            }
-        }
-    }
-    else if ( rCEvt.GetCommand() == CommandEventId::Wheel )
+    if ( rCEvt.GetCommand() == CommandEventId::Wheel )
     {
         if ( (mnCurLine > 1) || (mnCurLine+mnVisLines-1 < mnCurLines) )
         {
@@ -4482,6 +4076,11 @@ void ToolBox::Command( const CommandEvent& rCEvt )
                 return;
             }
         }
+    }
+    else if ( rCEvt.GetCommand() == CommandEventId::ContextMenu )
+    {
+        ExecuteCustomMenu( tools::Rectangle( rCEvt.GetMousePosPixel(), rCEvt.GetMousePosPixel() ) );
+        return;
     }
 
     DockingWindow::Command( rCEvt );
@@ -4552,13 +4151,16 @@ void ToolBox::statusChanged( const css::frame::FeatureStateEvent& Event )
         mbImagesMirrored = aItem.IsMirrored();
         mnImagesRotationAngle = aItem.GetRotation();
 
-        UpdateImageOrientation();
+        // update image orientation
+        OUString aModuleName(vcl::CommandInfoProvider::GetModuleIdentifier(mpStatusListener->getFrame()));
+        for (ImplToolItems::const_iterator it = mpData->m_aItems.begin(); it != mpData->m_aItems.end(); ++it)
+        {
+            if (vcl::CommandInfoProvider::IsMirrored(it->maCommandStr, aModuleName))
+                SetItemImageMirrorMode(it->mnId, mbImagesMirrored);
+            if (vcl::CommandInfoProvider::IsRotated(it->maCommandStr, aModuleName))
+                SetItemImageAngle(it->mnId, mnImagesRotationAngle);
+        }
     }
-}
-
-bool ToolBox::PrepareToggleFloatingMode()
-{
-    return DockingWindow::PrepareToggleFloatingMode();
 }
 
 void ToolBox::SetStyle(WinBits nNewStyle)
@@ -4594,8 +4196,8 @@ void ToolBox::ToggleFloatingMode()
         if( bOldHorz != mbHorz )
             mbCalc = true;  // orientation was changed !
 
-        ImplSetMinMaxFloatSize( this );
-        SetOutputSizePixel( ImplCalcFloatSize( this, mnFloatLines ) );
+        ImplSetMinMaxFloatSize();
+        SetOutputSizePixel( ImplCalcFloatSize( mnFloatLines ) );
     }
     else
     {
@@ -4629,7 +4231,7 @@ void ToolBox::StartDocking()
     DockingWindow::StartDocking();
 }
 
-bool ToolBox::Docking( const Point& rPos, Rectangle& rRect )
+bool ToolBox::Docking( const Point& rPos, tools::Rectangle& rRect )
 {
     // do nothing during dragging, it was calculated before
     if ( mbDragging )
@@ -4640,27 +4242,27 @@ bool ToolBox::Docking( const Point& rPos, Rectangle& rRect )
     DockingWindow::Docking( rPos, rRect );
 
     // if the mouse is outside the area, it can only become a floating window
-    Rectangle aDockingRect( rRect );
+    tools::Rectangle aDockingRect( rRect );
     if ( !ImplIsFloatingMode() )
     {
         // don't use tracking rectangle for alignment check, because it will be too large
         // to get a floating mode as result - switch to floating size
         // so the calculation only depends on the position of the rectangle, not the current
         // docking state of the window
-        sal_uInt16 nTemp = 0;
-        aDockingRect.SetSize( ImplCalcFloatSize( this, nTemp ) );
+        ImplToolItems::size_type nTemp = 0;
+        aDockingRect.SetSize( ImplCalcFloatSize( nTemp ) );
 
         // in this mode docking is never done by keyboard, so it's OK to use the mouse position
         aDockingRect.SetPos( ImplGetFrameWindow()->GetPointerPosPixel() );
     }
 
-    Rectangle aIntersection = maOutDockRect.GetIntersection( aDockingRect );
-    if ( !aIntersection.IsEmpty() && !IsDockingPrevented() )
+    tools::Rectangle aIntersection = maOutDockRect.GetIntersection( aDockingRect );
+    if ( !aIntersection.IsEmpty() )
     {
-        Rectangle   aInRect = maInDockRect;
+        tools::Rectangle   aInRect = maInDockRect;
         Size aDockSize;
-        aDockSize.Width()  = ImplCalcSize( this, mnLines, TB_CALCMODE_VERT ).Width();
-        aDockSize.Height() = ImplCalcSize( this, mnLines, TB_CALCMODE_HORZ ).Height();
+        aDockSize.Width()  = ImplCalcSize( mnLines, TB_CALCMODE_VERT ).Width();
+        aDockSize.Height() = ImplCalcSize( mnLines, TB_CALCMODE_HORZ ).Height();
         aInRect.Left()   += aDockSize.Width()/2;
         aInRect.Top()    += aDockSize.Height()/2;
         aInRect.Right()  -= aDockSize.Width()/2;
@@ -4680,7 +4282,7 @@ bool ToolBox::Docking( const Point& rPos, Rectangle& rRect )
 
         // if the mouse is outside the Dock area, it can only
         // become a floating window
-        Rectangle aIntersect = aInRect.GetIntersection( aDockingRect );
+        tools::Rectangle aIntersect = aInRect.GetIntersection( aDockingRect );
         if ( aIntersect == aDockingRect )
             bFloatMode = true;
         else
@@ -4742,8 +4344,8 @@ bool ToolBox::Docking( const Point& rPos, Rectangle& rRect )
         meDockAlign = meAlign;
         if ( !mbLastFloatMode )
         {
-            sal_uInt16 nTemp = 0;
-            aDockingRect.SetSize( ImplCalcFloatSize( this, nTemp ) );
+            ImplToolItems::size_type nTemp = 0;
+            aDockingRect.SetSize( ImplCalcFloatSize( nTemp ) );
         }
     }
 
@@ -4753,7 +4355,7 @@ bool ToolBox::Docking( const Point& rPos, Rectangle& rRect )
     return bFloatMode;
 }
 
-void ToolBox::EndDocking( const Rectangle& rRect, bool bFloatMode )
+void ToolBox::EndDocking( const tools::Rectangle& rRect, bool bFloatMode )
 {
     if ( !IsDockingCanceled() )
     {
@@ -4768,34 +4370,34 @@ void ToolBox::EndDocking( const Rectangle& rRect, bool bFloatMode )
 
 void ToolBox::Resizing( Size& rSize )
 {
-    sal_uInt16  nCalcLines;
-    sal_uInt16  nTemp;
+    ImplToolItems::size_type nCalcLines;
+    ImplToolItems::size_type nTemp;
 
-    // Alle Floatinggroessen berechnen
-    ImplCalcFloatSizes( this );
+    // calculate all floating sizes
+    ImplCalcFloatSizes();
 
     if ( !mnLastResizeDY )
         mnLastResizeDY = mnDY;
 
-    // Ist vertikales Resizing angesagt
+    // is vertical resizing needed
     if ( (mnLastResizeDY != rSize.Height()) && (mnDY != rSize.Height()) )
     {
-        nCalcLines = ImplCalcLines( this, rSize.Height() );
+        nCalcLines = ImplCalcLines( rSize.Height() );
         if ( nCalcLines < 1 )
             nCalcLines = 1;
-        rSize = ImplCalcFloatSize( this, nCalcLines );
+        rSize = ImplCalcFloatSize( nCalcLines );
     }
     else
     {
         nCalcLines = 1;
         nTemp = nCalcLines;
-        Size aTempSize = ImplCalcFloatSize( this, nTemp );
+        Size aTempSize = ImplCalcFloatSize( nTemp );
         while ( (aTempSize.Width() > rSize.Width()) &&
                 (nCalcLines <= maFloatSizes[0].mnLines) )
         {
             nCalcLines++;
             nTemp = nCalcLines;
-            aTempSize = ImplCalcFloatSize( this, nTemp );
+            aTempSize = ImplCalcFloatSize( nTemp );
         }
         rSize = aTempSize;
     }
@@ -4824,7 +4426,7 @@ Size ToolBox::GetOptimalSize() const
         }
     }
 
-    Size aSize(ImplCalcSize( this, mnLines ));
+    Size aSize(const_cast<ToolBox *>(this)->ImplCalcSize( mnLines ));
 
     for (std::map<vcl::Window*, Size>::iterator aI = aExpandables.begin(); aI != aExpandables.end(); ++aI)
     {
@@ -4836,23 +4438,23 @@ Size ToolBox::GetOptimalSize() const
     return aSize;
 }
 
-Size ToolBox::CalcWindowSizePixel( sal_uInt16 nCalcLines ) const
+Size ToolBox::CalcWindowSizePixel( ImplToolItems::size_type nCalcLines )
 {
-    return ImplCalcSize( this, nCalcLines );
+    return ImplCalcSize( nCalcLines );
 }
 
-Size ToolBox::CalcWindowSizePixel( sal_uInt16 nCalcLines, WindowAlign eAlign ) const
+Size ToolBox::CalcWindowSizePixel( ImplToolItems::size_type nCalcLines, WindowAlign eAlign )
 {
-    return ImplCalcSize( this, nCalcLines,
+    return ImplCalcSize( nCalcLines,
         (eAlign == WindowAlign::Top || eAlign == WindowAlign::Bottom) ? TB_CALCMODE_HORZ : TB_CALCMODE_VERT );
 }
 
-sal_uInt16 ToolBox::ImplCountLineBreaks( const ToolBox *pThis )
+ToolBox::ImplToolItems::size_type ToolBox::ImplCountLineBreaks() const
 {
-    sal_uInt16 nLines = 0;
+    ImplToolItems::size_type nLines = 0;
 
-    std::vector< ImplToolItem >::const_iterator it = const_cast<ToolBox*>(pThis)->mpData->m_aItems.begin();
-    while ( it != const_cast<ToolBox*>(pThis)->mpData->m_aItems.end() )
+    ImplToolItems::const_iterator it = mpData->m_aItems.begin();
+    while ( it != mpData->m_aItems.end() )
     {
         if( it->meType == ToolBoxItemType::BREAK )
             ++nLines;
@@ -4861,66 +4463,64 @@ sal_uInt16 ToolBox::ImplCountLineBreaks( const ToolBox *pThis )
     return nLines;
 }
 
-Size ToolBox::CalcPopupWindowSizePixel() const
+Size ToolBox::CalcPopupWindowSizePixel()
 {
     // count number of breaks and calc corresponding floating window size
-    sal_uInt16 nLines = ImplCountLineBreaks( this );
+    ImplToolItems::size_type nLines = ImplCountLineBreaks();
 
     if( nLines )
         ++nLines;   // add the first line
     else
     {
         // no breaks found: use quadratic layout
-        nLines = (sal_uInt16) ceil( sqrt( (double) GetItemCount() ) );
+        nLines = (ImplToolItems::size_type) ceil( sqrt( (double) GetItemCount() ) );
     }
 
     bool bPopup = mpData->mbAssumePopupMode;
-    ToolBox *pThis = const_cast<ToolBox*>(this);
-    pThis->mpData->mbAssumePopupMode = true;
+    mpData->mbAssumePopupMode = true;
 
     Size aSize = CalcFloatingWindowSizePixel( nLines );
 
-    pThis->mpData->mbAssumePopupMode = bPopup;
+    mpData->mbAssumePopupMode = bPopup;
     return aSize;
 }
 
-Size ToolBox::CalcFloatingWindowSizePixel() const
+Size ToolBox::CalcFloatingWindowSizePixel()
 {
-    sal_uInt16 nLines = ImplCountLineBreaks( this );
+    ImplToolItems::size_type nLines = ImplCountLineBreaks();
     ++nLines; // add the first line
     return CalcFloatingWindowSizePixel( nLines );
 }
 
-Size ToolBox::CalcFloatingWindowSizePixel( sal_uInt16 nCalcLines ) const
+Size ToolBox::CalcFloatingWindowSizePixel( ImplToolItems::size_type nCalcLines )
 {
     bool bFloat = mpData->mbAssumeFloating;
     bool bDocking = mpData->mbAssumeDocked;
 
     // simulate floating mode and force reformat before calculating
-    ToolBox *pThis = const_cast<ToolBox*>(this);
-    pThis->mpData->mbAssumeFloating = true;
-    pThis->mpData->mbAssumeDocked = false;
+    mpData->mbAssumeFloating = true;
+    mpData->mbAssumeDocked = false;
 
-    Size aSize = ImplCalcFloatSize( const_cast<ToolBox*>(this), nCalcLines );
+    Size aSize = ImplCalcFloatSize( nCalcLines );
 
-    pThis->mbFormat = true;
-    pThis->mpData->mbAssumeFloating = bFloat;
-    pThis->mpData->mbAssumeDocked = bDocking;
+    mbFormat = true;
+    mpData->mbAssumeFloating = bFloat;
+    mpData->mbAssumeDocked = bDocking;
 
     return aSize;
 }
 
-Size ToolBox::CalcMinimumWindowSizePixel() const
+Size ToolBox::CalcMinimumWindowSizePixel()
 {
     if( ImplIsFloatingMode() )
-        return ImplCalcSize( this, mnFloatLines );
+        return ImplCalcSize( mnFloatLines );
     else
     {
         // create dummy toolbox for measurements
         VclPtrInstance< ToolBox > pToolBox( GetParent(), GetStyle() );
 
         // copy until first useful item
-        std::vector< ImplToolItem >::iterator it = mpData->m_aItems.begin();
+        ImplToolItems::iterator it = mpData->m_aItems.begin();
         while( it != mpData->m_aItems.end() )
         {
             pToolBox->CopyItem( *this, it->mnId );
@@ -4954,21 +4554,7 @@ Size ToolBox::CalcMinimumWindowSizePixel() const
 
 void ToolBox::EnableCustomize( bool bEnable )
 {
-    if ( bEnable != mbCustomize )
-    {
-        mbCustomize = bEnable;
-
-        ImplTBDragMgr* pMgr = ImplGetTBDragMgr();
-        if ( bEnable )
-            pMgr->push_back( this );
-        else
-            pMgr->erase( this );
-    }
-}
-
-void ToolBox::GetFocus()
-{
-    DockingWindow::GetFocus();
+    mbCustomize = bEnable;
 }
 
 void ToolBox::LoseFocus()
@@ -5076,13 +4662,15 @@ bool ToolBox::ImplOpenItem( vcl::KeyCode aKeyCode )
       || ((nCode == KEY_UP   || nCode == KEY_DOWN)  && !IsHorizontal()) )
         return false;
 
-    if( IsMenuEnabled() && mpData->mbMenubuttonSelected )
+    if( mpData->mbMenubuttonSelected )
     {
         if( ImplCloseLastPopup( GetParent() ) )
             return bRet;
 
-        UpdateCustomMenu();
-        mpData->mnEventId = Application::PostUserEvent( LINK( this, ToolBox, ImplCallExecuteCustomMenu ), nullptr, true );
+        if ( maMenuButtonHdl.IsSet() )
+            maMenuButtonHdl.Call( this );
+        else
+            ExecuteCustomMenu( mpData->maMenubuttonItem.maRect );
     }
     else if( mnHighItemId &&  ImplGetItem( mnHighItemId ) &&
         (ImplGetItem( mnHighItemId )->mnBits & ToolBoxItemBits::DROPDOWN) )
@@ -5234,14 +4822,19 @@ void ToolBox::KeyInput( const KeyEvent& rKEvt )
             //  leave toolbox and move focus to document
             if( mnHighItemId )
             {
-                ImplToolItem *pItem = ImplGetItem( mnHighItemId );
-                if( !pItem->mbEnabled )
+                ImplToolItem *pItem = ImplGetItem(mnHighItemId);
+                if (!pItem || !pItem->mbEnabled)
                 {
                     bGrabFocusToDocument = true;
                 }
             }
             if( !bGrabFocusToDocument )
                 bForwardKey = !ImplActivateItem( aKeyCode );
+        }
+        break;
+        case KEY_SPACE:
+        {
+            ImplOpenItem( aKeyCode );
         }
         break;
         default:
@@ -5298,10 +4891,10 @@ void ToolBox::KeyInput( const KeyEvent& rKEvt )
 }
 
 // returns the current toolbox line of the item
-sal_uInt16 ToolBox::ImplGetItemLine( ImplToolItem* pCurrentItem )
+ToolBox::ImplToolItems::size_type ToolBox::ImplGetItemLine( ImplToolItem* pCurrentItem )
 {
-    std::vector< ImplToolItem >::const_iterator it = mpData->m_aItems.begin();
-    sal_uInt16 nLine = 1;
+    ImplToolItems::const_iterator it = mpData->m_aItems.begin();
+    ImplToolItems::size_type nLine = 1;
     while( it != mpData->m_aItems.end() )
     {
         if ( it->mbBreak )
@@ -5314,14 +4907,14 @@ sal_uInt16 ToolBox::ImplGetItemLine( ImplToolItem* pCurrentItem )
 }
 
 // returns the first displayable item in the given line
-ImplToolItem* ToolBox::ImplGetFirstValidItem( sal_uInt16 nLine )
+ImplToolItem* ToolBox::ImplGetFirstValidItem( ImplToolItems::size_type nLine )
 {
     if( !nLine || nLine > mnCurLines )
         return nullptr;
 
     nLine--;
 
-    std::vector< ImplToolItem >::iterator it = mpData->m_aItems.begin();
+    ImplToolItems::iterator it = mpData->m_aItems.begin();
     while( it != mpData->m_aItems.end() )
     {
         // find correct line
@@ -5345,23 +4938,22 @@ ImplToolItem* ToolBox::ImplGetFirstValidItem( sal_uInt16 nLine )
     return (it == mpData->m_aItems.end()) ? nullptr : &(*it);
 }
 
-sal_uInt16 ToolBox::ImplFindItemPos( const ImplToolItem* pItem, const std::vector< ImplToolItem >& rList )
+ToolBox::ImplToolItems::size_type ToolBox::ImplFindItemPos( const ImplToolItem* pItem, const ImplToolItems& rList )
 {
     if( pItem )
     {
-        sal_uInt16 nPos;
-        for( nPos = 0; nPos < rList.size(); ++nPos )
+        for( ImplToolItems::size_type nPos = 0; nPos < rList.size(); ++nPos )
             if( &rList[ nPos ] == pItem )
                 return nPos;
     }
-    return TOOLBOX_ITEM_NOTFOUND;
+    return ITEM_NOTFOUND;
 }
 
-void ToolBox::ChangeHighlight( sal_uInt16 nPos )
+void ToolBox::ChangeHighlight( ImplToolItems::size_type nPos )
 {
     if ( nPos < GetItemCount() ) {
         ImplGrabFocus( GetFocusFlags::NONE );
-        ImplChangeHighlight ( ImplGetItem ( GetItemId ( (sal_uInt16) nPos ) ) );
+        ImplChangeHighlight ( ImplGetItem ( GetItemId ( nPos ) ) );
     }
 }
 
@@ -5378,14 +4970,14 @@ void ToolBox::ImplChangeHighlight( ImplToolItem* pItem, bool bNoGrabFocus )
     if ( mnHighItemId )
     {
         ImplHideFocus();
-        sal_uInt16 nPos = GetItemPos( mnHighItemId );
+        ImplToolItems::size_type nPos = GetItemPos( mnHighItemId );
         pOldItem = ImplGetItem( mnHighItemId );
         // #i89962# ImplDrawItem can cause Invalidate/Update
         // which will in turn ImplShowFocus again
         // set mnHighItemId to 0 already to prevent this hen/egg problem
         mnHighItemId = 0;
         InvalidateItem(nPos);
-        CallEventListeners( VCLEVENT_TOOLBOX_HIGHLIGHTOFF, reinterpret_cast< void* >( nPos ) );
+        CallEventListeners( VclEventId::ToolboxHighlightOff, reinterpret_cast< void* >( nPos ) );
     }
 
     if( !bNoGrabFocus && pItem != pOldItem && pOldItem && pOldItem->mpWindow )
@@ -5396,11 +4988,11 @@ void ToolBox::ImplChangeHighlight( ImplToolItem* pItem, bool bNoGrabFocus )
 
     if( pItem )
     {
-        sal_uInt16 aPos = ToolBox::ImplFindItemPos( pItem, mpData->m_aItems );
-        if( aPos != TOOLBOX_ITEM_NOTFOUND)
+        ImplToolItems::size_type aPos = ToolBox::ImplFindItemPos( pItem, mpData->m_aItems );
+        if( aPos != ITEM_NOTFOUND)
         {
             // check for line breaks
-            sal_uInt16 nLine = ImplGetItemLine( pItem );
+            ImplToolItems::size_type nLine = ImplGetItemLine( pItem );
 
             if( nLine >= mnCurLine + mnVisLines )
             {
@@ -5428,14 +5020,14 @@ void ToolBox::ImplChangeHighlight( ImplToolItem* pItem, bool bNoGrabFocus )
             if( pItem->mpWindow )
                 pItem->mpWindow->GrabFocus();
             if( pItem != pOldItem )
-                CallEventListeners( VCLEVENT_TOOLBOX_HIGHLIGHT );
+                CallEventListeners( VclEventId::ToolboxHighlight );
         }
     }
     else
     {
         ImplHideFocus();
         mnHighItemId = 0;
-        mnCurPos = TOOLBOX_ITEM_NOTFOUND;
+        mnCurPos = ITEM_NOTFOUND;
     }
 
     mbChangingHighlight = false;
@@ -5462,7 +5054,7 @@ bool ToolBox::ImplChangeHighlightUpDn( bool bUp, bool bNoCycle )
             if( bUp )
             {
                 // select last valid non-clipped item
-                std::vector< ImplToolItem >::iterator it = mpData->m_aItems.end();
+                ImplToolItems::iterator it = mpData->m_aItems.end();
                 ImplToolItem* pItem = nullptr;
                 while( it != mpData->m_aItems.begin() )
                 {
@@ -5479,7 +5071,7 @@ bool ToolBox::ImplChangeHighlightUpDn( bool bUp, bool bNoCycle )
             else
             {
                 // select first valid non-clipped item
-                std::vector< ImplToolItem >::iterator it = mpData->m_aItems.begin();
+                ImplToolItems::iterator it = mpData->m_aItems.begin();
                 while( it != mpData->m_aItems.end() )
                 {
                     if ( ImplIsValidItem( &(*it), true ) )
@@ -5498,7 +5090,7 @@ bool ToolBox::ImplChangeHighlightUpDn( bool bUp, bool bNoCycle )
         if( bUp )
         {
             // Select first valid item
-            std::vector< ImplToolItem >::iterator it = mpData->m_aItems.begin();
+            ImplToolItems::iterator it = mpData->m_aItems.begin();
             while( it != mpData->m_aItems.end() )
             {
                 if ( ImplIsValidItem( &(*it), false ) )
@@ -5507,7 +5099,7 @@ bool ToolBox::ImplChangeHighlightUpDn( bool bUp, bool bNoCycle )
             }
 
             // select the menu button if a clipped item would be selected
-            if( (it != mpData->m_aItems.end() && &(*it) == ImplGetFirstClippedItem( this )) && IsMenuEnabled() )
+            if( (it != mpData->m_aItems.end() && &(*it) == ImplGetFirstClippedItem()) && IsMenuEnabled() )
             {
                 ImplChangeHighlight( nullptr );
                 InvalidateMenuButton();
@@ -5528,7 +5120,7 @@ bool ToolBox::ImplChangeHighlightUpDn( bool bUp, bool bNoCycle )
             }
             else
             {
-                std::vector< ImplToolItem >::iterator it = mpData->m_aItems.end();
+                ImplToolItems::iterator it = mpData->m_aItems.end();
                 ImplToolItem* pItem = nullptr;
                 while( it != mpData->m_aItems.begin() )
                 {
@@ -5547,10 +5139,10 @@ bool ToolBox::ImplChangeHighlightUpDn( bool bUp, bool bNoCycle )
 
     if( pToolItem )
     {
-        sal_uLong pos = ToolBox::ImplFindItemPos( pToolItem, mpData->m_aItems );
-        sal_uLong nCount = mpData->m_aItems.size();
+        ImplToolItems::size_type pos = ToolBox::ImplFindItemPos( pToolItem, mpData->m_aItems );
+        ImplToolItems::size_type nCount = mpData->m_aItems.size();
 
-        sal_uLong i=0;
+        ImplToolItems::size_type i=0;
         do
         {
             if( bUp )
@@ -5616,9 +5208,9 @@ void ToolBox::ImplShowFocus()
     if( mnHighItemId && HasFocus() )
     {
         ImplToolItem* pItem = ImplGetItem( mnHighItemId );
-        if( pItem->mpWindow && !pItem->mpWindow->IsDisposed() )
+        if (pItem && pItem->mpWindow && !pItem->mpWindow->IsDisposed())
         {
-            vcl::Window *pWin = pItem->mpWindow->ImplGetWindowImpl()->mpBorderWindow ? pItem->mpWindow->ImplGetWindowImpl()->mpBorderWindow : pItem->mpWindow;
+            vcl::Window *pWin = pItem->mpWindow->ImplGetWindowImpl()->mpBorderWindow ? pItem->mpWindow->ImplGetWindowImpl()->mpBorderWindow.get() : pItem->mpWindow.get();
             pWin->ImplGetWindowImpl()->mbDrawSelectionBackground = true;
             pWin->Invalidate();
         }
@@ -5632,7 +5224,7 @@ void ToolBox::ImplHideFocus()
         ImplToolItem* pItem = ImplGetItem( mnHighItemId );
         if( pItem && pItem->mpWindow )
         {
-            vcl::Window *pWin = pItem->mpWindow->ImplGetWindowImpl()->mpBorderWindow ? pItem->mpWindow->ImplGetWindowImpl()->mpBorderWindow : pItem->mpWindow;
+            vcl::Window *pWin = pItem->mpWindow->ImplGetWindowImpl()->mpBorderWindow ? pItem->mpWindow->ImplGetWindowImpl()->mpBorderWindow.get() : pItem->mpWindow.get();
             pWin->ImplGetWindowImpl()->mbDrawSelectionBackground = false;
             pWin->Invalidate();
         }
@@ -5661,15 +5253,15 @@ void ToolBox::ImplDisableFlatButtons()
             DWORD cbData = sizeof(Data);
 
             if( ERROR_SUCCESS == RegQueryValueEx(hkey, "DisableFlatToolboxButtons",
-                NULL, &dwType, Data, &cbData) )
+                nullptr, &dwType, Data, &cbData) )
             {
                 switch (dwType)
                 {
                     case REG_SZ:
-                        bValue = ((0 == stricmp((const char *) Data, "1")) || (0 == stricmp((const char *) Data, "true")));
+                        bValue = ((0 == stricmp(reinterpret_cast<const char *>(Data), "1")) || (0 == stricmp(reinterpret_cast<const char *>(Data), "true")));
                         break;
                     case REG_DWORD:
-                        bValue = (bool)(((DWORD *) Data)[0]);
+                        bValue = (bool)(reinterpret_cast<DWORD *>(Data)[0]);
                         break;
                 }
             }
@@ -5678,6 +5270,8 @@ void ToolBox::ImplDisableFlatButtons()
     }
     if( bValue )
         mnOutStyle &= ~TOOLBOX_STYLE_FLAT;
+#else
+    (void) this; // loplugin:staticmethods
 #endif
 }
 
@@ -5685,6 +5279,11 @@ void ToolBox::SetToolbarLayoutMode( ToolBoxLayoutMode eLayout )
 {
     if ( meLayoutMode != eLayout )
        meLayoutMode  = eLayout;
+}
+
+void ToolBox::SetToolBoxTextPosition( ToolBoxTextPosition ePosition )
+{
+    meTextPosition = ePosition;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

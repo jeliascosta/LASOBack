@@ -42,7 +42,7 @@ class Printer;
 
 class SwEnvPreview : public vcl::Window
 {
-    void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
+    void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
 
 public:
 
@@ -72,7 +72,7 @@ friend class SwEnvPreview;
 
 public:
      SwEnvDlg(vcl::Window* pParent, const SfxItemSet& rSet, SwWrtShell* pWrtSh, Printer* pPrt, bool bInsert);
-    virtual ~SwEnvDlg();
+    virtual ~SwEnvDlg() override;
     virtual void dispose() override;
 };
 
@@ -90,9 +90,9 @@ class SwEnvPage : public SfxTabPage
     SwWrtShell*   pSh;
     OUString      sActDBName;
 
-    DECL_LINK_TYPED( DatabaseHdl, ListBox&, void );
-    DECL_LINK_TYPED(FieldHdl, Button*, void );
-    DECL_LINK_TYPED(SenderHdl, Button*, void );
+    DECL_LINK( DatabaseHdl, ListBox&, void );
+    DECL_LINK(FieldHdl, Button*, void );
+    DECL_LINK(SenderHdl, Button*, void );
 
     void InitDatabaseBox();
 
@@ -103,13 +103,13 @@ class SwEnvPage : public SfxTabPage
 
 public:
     SwEnvPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwEnvPage();
+    virtual ~SwEnvPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rSet);
 
     virtual void ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
+    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
             void FillItem(SwEnvItem& rItem);
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;

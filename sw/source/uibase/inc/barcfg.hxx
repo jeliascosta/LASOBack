@@ -18,7 +18,10 @@
  */
 #ifndef INCLUDED_SW_SOURCE_UIBASE_INC_BARCFG_HXX
 #define INCLUDED_SW_SOURCE_UIBASE_INC_BARCFG_HXX
+
 #include <unotools/configitem.hxx>
+
+enum class SelectionType : sal_Int32;
 
 class SwToolbarConfigItem : public utl::ConfigItem
 {
@@ -30,11 +33,11 @@ class SwToolbarConfigItem : public utl::ConfigItem
 
 public:
     SwToolbarConfigItem( bool bWeb );
-    virtual ~SwToolbarConfigItem();
+    virtual ~SwToolbarConfigItem() override;
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
 
-    void        SetTopToolbar( sal_Int32 nSelType, sal_Int32 nBarId );
+    void        SetTopToolbar( SelectionType nSelType, sal_Int32 nBarId );
 };
 
 #endif

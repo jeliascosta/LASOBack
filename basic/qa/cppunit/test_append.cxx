@@ -20,12 +20,14 @@ namespace
         public:
         EnableTest() : BootstrapFixture(true, false) {};
         void testDimEnable();
+        void testWin64();
         void testEnableRuntime();
         // Adds code needed to register the test suite
         CPPUNIT_TEST_SUITE(EnableTest);
 
         // Declares the method as a test to call
         CPPUNIT_TEST(testDimEnable);
+        CPPUNIT_TEST(testWin64);
         CPPUNIT_TEST(testEnableRuntime);
 
         // End of test suite definition
@@ -53,7 +55,7 @@ void EnableTest::testEnableRuntime()
     myMacro.Compile();
     CPPUNIT_ASSERT_MESSAGE("testEnableRuntime fails with compile error",!myMacro.HasError() );
     SbxVariableRef pNew = myMacro.Run();
-    CPPUNIT_ASSERT(pNew->GetInteger() == 3 );
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int16>(3), pNew->GetInteger());
 }
 
 void EnableTest::testDimEnable()
@@ -61,6 +63,21 @@ void EnableTest::testDimEnable()
     MacroSnippet myMacro(sTestDimEnable);
     myMacro.Compile();
     CPPUNIT_ASSERT_MESSAGE("Dim causes compile error", !myMacro.HasError() );
+}
+
+void EnableTest::testWin64()
+{
+    OUStringBuffer aSource1("   #If Win64\n");
+    aSource1.append("Declare PtrSafe Function aht_apiGetOpenFileName Lib ");
+    aSource1.append('"');
+    aSource1.append("comdlg32.dll");
+    aSource1.append('"');
+    aSource1.append("\n");
+    aSource1.append("#End if\n");
+
+    MacroSnippet myMacro(aSource1.toString());
+    myMacro.Compile();
+    CPPUNIT_ASSERT_MESSAGE("#if Win64 Declare PtrSafe causes compile error", !myMacro.HasError() );
 }
 
   // Put the test suite in the registry

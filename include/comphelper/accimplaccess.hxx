@@ -23,6 +23,7 @@
 #include <cppuhelper/implbase1.hxx>
 #include <com/sun/star/lang/XUnoTunnel.hpp>
 #include <comphelper/comphelperdllapi.h>
+#include <memory>
 
 namespace com { namespace sun { namespace star { namespace accessibility {
     class XAccessible;
@@ -62,7 +63,7 @@ namespace comphelper
     class COMPHELPER_DLLPUBLIC OAccessibleImplementationAccess : public OAccImpl_Base
     {
     private:
-        OAccImpl_Impl*  m_pImpl;
+        std::unique_ptr<OAccImpl_Impl>  m_pImpl;
 
     protected:
         /// retrieves the parent previously set via <method>setAccessibleParent</method>
@@ -80,7 +81,7 @@ namespace comphelper
         virtual ~OAccessibleImplementationAccess( );
 
         // XUnoTunnel
-        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& _rIdentifier ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& _rIdentifier ) override;
 
     public:
 

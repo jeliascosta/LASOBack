@@ -101,7 +101,6 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_markup" translatable="yes">Light source 1</property>
                             <property name="tooltip_text" translatable="yes">Light source 1</property>
                             <property name="image">IMG_LIGHT_1</property>
                           </object>
@@ -118,7 +117,6 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_markup" translatable="yes">Light source 2</property>
                             <property name="tooltip_text" translatable="yes">Light source 2</property>
                             <property name="image">IMG_LIGHT_2</property>
                           </object>
@@ -135,7 +133,6 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_markup" translatable="yes">Light source 3</property>
                             <property name="tooltip_text" translatable="yes">Light source 3</property>
                             <property name="image">IMG_LIGHT_3</property>
                           </object>
@@ -152,7 +149,6 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_markup" translatable="yes">Light source 4</property>
                             <property name="tooltip_text" translatable="yes">Light source 4</property>
                             <property name="image">IMG_LIGHT_4</property>
                           </object>
@@ -169,7 +165,6 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_markup" translatable="yes">Light source 5</property>
                             <property name="tooltip_text" translatable="yes">Light source 5</property>
                             <property name="image">IMG_LIGHT_5</property>
                           </object>
@@ -186,7 +181,6 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_markup" translatable="yes">Light source 6</property>
                             <property name="tooltip_text" translatable="yes">Light source 6</property>
                             <property name="image">IMG_LIGHT_6</property>
                           </object>
@@ -203,7 +197,6 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_markup" translatable="yes">Light source 7</property>
                             <property name="tooltip_text" translatable="yes">Light source 7</property>
                             <property name="image">IMG_LIGHT_7</property>
                           </object>
@@ -220,7 +213,6 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_markup" translatable="yes">Light source 8</property>
                             <property name="tooltip_text" translatable="yes">Light source 8</property>
                             <property name="image">IMG_LIGHT_8</property>
                           </object>
@@ -244,7 +236,7 @@
                         <property name="can_focus">False</property>
                         <property name="spacing">12</property>
                         <child>
-                          <object class="svxlo-ColorLB" id="LB_LIGHTSOURCE">
+                          <object class="svxcorelo-SvxColorListBox" id="LB_LIGHTSOURCE">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
@@ -260,7 +252,6 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_markup" translatable="yes">Select a color using the color dialog</property>
                             <property name="tooltip_text" translatable="yes">Select a color using the color dialog</property>
                             <property name="image">IMG_LIGHTSOURCE_COLOR</property>
                           </object>
@@ -319,7 +310,7 @@
                     <property name="can_focus">False</property>
                     <property name="spacing">12</property>
                     <child>
-                      <object class="svxlo-ColorLB" id="LB_AMBIENTLIGHT">
+                      <object class="svxcorelo-SvxColorListBox" id="LB_AMBIENTLIGHT">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                       </object>
@@ -335,7 +326,6 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="has_tooltip">True</property>
-                        <property name="tooltip_markup" translatable="yes">Select a color using the color dialog</property>
                         <property name="tooltip_text" translatable="yes">Select a color using the color dialog</property>
                         <property name="image">IMG_AMBIENT_COLOR</property>
                       </object>

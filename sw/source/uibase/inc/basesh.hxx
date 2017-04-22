@@ -50,24 +50,24 @@ class SwBaseShell: public SfxShell
     // Update-Timer for graphic
     std::set<sal_uInt16> aGrfUpdateSlots;
 
-    DECL_LINK_TYPED( GraphicArrivedHdl, SwCursorShell&, void );
+    DECL_LINK( GraphicArrivedHdl, SwCursorShell&, void );
 
 protected:
     SwWrtShell&         GetShell();
     SwWrtShell*         GetShellPtr();
 
-    inline SwView&      GetView()                       { return rView; }
-    inline void         SetGetStateSet( SfxItemSet* p ) { pGetStateSet = p; }
-    inline bool         AddGrfUpdateSlot( sal_uInt16 nSlot ){ return aGrfUpdateSlots.insert( nSlot ).second; }
+    SwView&      GetView()                       { return rView; }
+    void         SetGetStateSet( SfxItemSet* p ) { pGetStateSet = p; }
+    bool         AddGrfUpdateSlot( sal_uInt16 nSlot ){ return aGrfUpdateSlots.insert( nSlot ).second; }
 
-    DECL_LINK_TYPED(    InsertDBTextHdl, void*, void );
+    DECL_LINK(    InsertDBTextHdl, void*, void );
 
     void                InsertURLButton( const OUString& rURL, const OUString& rTarget, const OUString& rText );
     void                InsertTable( SfxRequest& _rRequest );
 
 public:
     SwBaseShell(SwView &rShell);
-    virtual     ~SwBaseShell();
+    virtual     ~SwBaseShell() override;
 
     SFX_DECL_INTERFACE(SW_BASESHELL)
 

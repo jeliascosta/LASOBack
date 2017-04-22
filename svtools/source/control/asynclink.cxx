@@ -35,16 +35,13 @@ void AsynchronLink::CreateMutex()
 
 void AsynchronLink::Call( void* pObj, bool bAllowDoubles )
 {
-#ifdef DBG_UTIL
-    if ( !_bInCall )
-        SAL_INFO( "svtools", "Recursives Call. Eher ueber Timer. TLX Fragen" );
-#endif
+    SAL_INFO_IF( !_bInCall, "svtools", "Recursives Call. Eher ueber Timer. TLX Fragen" ); // Do NOT translate. This is a valuable historical artefact.
     if( _aLink.IsSet() )
     {
         _pArg = pObj;
         DBG_ASSERT( bAllowDoubles ||
                     ( !_nEventId && ( !_pIdle || !_pIdle->IsActive() ) ),
-                    "Schon ein Call unterwegs" );
+                    "Already made a call" );
         ClearPendingCall();
         if( _pMutex ) _pMutex->acquire();
         _nEventId = Application::PostUserEvent( LINK( this, AsynchronLink, HandleCall_PostUserEvent) );
@@ -63,7 +60,7 @@ AsynchronLink::~AsynchronLink()
     delete _pMutex;
 }
 
-IMPL_LINK_NOARG_TYPED( AsynchronLink, HandleCall_Idle, Idle*, void )
+IMPL_LINK_NOARG( AsynchronLink, HandleCall_Idle, Timer*, void )
 {
     if( _pMutex ) _pMutex->acquire();
     _nEventId = nullptr;
@@ -71,7 +68,7 @@ IMPL_LINK_NOARG_TYPED( AsynchronLink, HandleCall_Idle, Idle*, void )
     Call_Impl( _pArg );
 }
 
-IMPL_LINK_NOARG_TYPED( AsynchronLink, HandleCall_PostUserEvent, void*, void )
+IMPL_LINK_NOARG( AsynchronLink, HandleCall_PostUserEvent, void*, void )
 {
     HandleCall_Idle(nullptr);
 }

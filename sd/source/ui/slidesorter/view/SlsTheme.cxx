@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include "glob.hrc"
 #include "view/SlsTheme.hxx"
-#include "SlsResource.hxx"
 #include "controller/SlsProperties.hxx"
 #include "sdresid.hxx"
 #include <tools/color.hxx>
@@ -66,18 +66,14 @@ Theme::Theme (const std::shared_ptr<controller::Properties>& rpProperties)
       maIcons(),
       maColor()
 {
-    {
-        LocalResource aResource (RID_SLIDESORTER_ICONS);
-
-        maColor.resize(ColorType_Size_);
-        maColor[Color_Background] = maBackgroundColor;
-        maColor[Color_PageNumberDefault] = 0x0808080;
-        maColor[Color_PageNumberHover] = 0x4c4c4c;
-        maColor[Color_PageNumberHighContrast] = White;
-        maColor[Color_PageNumberBrightBackground] = 0x333333;
-        maColor[Color_PageNumberDarkBackground] = 0xcccccc;
-        maColor[Color_PreviewBorder] = 0x949599;
-    }
+    maColor.resize(ColorType_Size_);
+    maColor[Color_Background] = maBackgroundColor;
+    maColor[Color_PageNumberDefault] = 0x0808080;
+    maColor[Color_PageNumberHover] = 0x4c4c4c;
+    maColor[Color_PageNumberHighContrast] = White;
+    maColor[Color_PageNumberBrightBackground] = 0x333333;
+    maColor[Color_PageNumberDarkBackground] = 0xcccccc;
+    maColor[Color_PreviewBorder] = 0x949599;
 
     Update(rpProperties);
 }
@@ -118,7 +114,6 @@ void Theme::Update (const std::shared_ptr<controller::Properties>& rpProperties)
     // Set up icons.
     if (maIcons.empty())
     {
-        LocalResource aResource (RID_SLIDESORTER_ICONS);
         maIcons.resize(IconType_Size_);
 
         InitializeIcon(Icon_RawShadow, IMAGE_SHADOW);
@@ -156,7 +151,7 @@ std::shared_ptr<vcl::Font> Theme::GetFont (
     if (pFont)
     {
         // Transform the point size to pixel size.
-        const MapMode aFontMapMode (MAP_POINT);
+        const MapMode aFontMapMode (MapUnit::MapPoint);
         const Size aFontSize (rDevice.LogicToPixel(pFont->GetFontSize(), aFontMapMode));
 
         // Transform the font size to the logical coordinates of the device.
@@ -182,13 +177,12 @@ ColorData Theme::GetGradientColor (
 
     switch (eClass)
     {
-        case Border1: return rDescriptor.maBorderColor1;
-        case Border2: return rDescriptor.maBorderColor2;
-        case Fill1: return rDescriptor.maFillColor1;
-        case Fill2: return rDescriptor.maFillColor2;
-        default: OSL_ASSERT(false); SAL_FALLTHROUGH;
-        case Base: return rDescriptor.maBaseColor;
+        case GradientColorClass::Border1: return rDescriptor.maBorderColor1;
+        case GradientColorClass::Border2: return rDescriptor.maBorderColor2;
+        case GradientColorClass::Fill1: return rDescriptor.maFillColor1;
+        case GradientColorClass::Fill2: return rDescriptor.maFillColor2;
     }
+    return 0;
 }
 
 void Theme::SetGradient (
@@ -248,7 +242,7 @@ void Theme::InitializeIcon (const IconType eType, sal_uInt16 nResourceId)
 {
     if (eType>=0 && size_t(eType)<maIcons.size())
     {
-        const BitmapEx aIcon (Image(SdResId(nResourceId)).GetBitmapEx());
+        const BitmapEx aIcon((SdResId(nResourceId)));
         maIcons[eType] = aIcon;
     }
     else

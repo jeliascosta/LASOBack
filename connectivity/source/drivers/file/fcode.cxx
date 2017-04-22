@@ -32,15 +32,7 @@ using namespace connectivity::file;
 using namespace ::com::sun::star::sdbc;
 using namespace ::com::sun::star::sdb;
 
-
-OCode::OCode()
-{
-}
-
-OCode::~OCode()
-{
-}
-
+OCode::~OCode() = default;
 
 OOperandRow::OOperandRow(sal_uInt16 _nPos, sal_Int32 _rType)
     : OOperand(_rType)
@@ -76,8 +68,8 @@ void OOperandValue::setValue(const ORowSetValue& _rVal)
 OOperandParam::OOperandParam(OSQLParseNode* pNode, sal_Int32 _nPos)
     : OOperandRow(static_cast<sal_uInt16>(_nPos), DataType::VARCHAR)         // Standard-Type
 {
-    OSL_ENSURE(SQL_ISRULE(pNode,parameter),"Argument ist kein Parameter");
-    OSL_ENSURE(pNode->count() > 0,"Fehler im Parse Tree");
+    OSL_ENSURE(SQL_ISRULE(pNode,parameter),"Argument is not a parameter");
+    OSL_ENSURE(pNode->count() > 0,"Error in Parse Tree");
     OSQLParseNode *pMark = pNode->getChild(0);
 
     OUString aParameterName;
@@ -87,7 +79,7 @@ OOperandParam::OOperandParam(OSQLParseNode* pNode, sal_Int32 _nPos)
         aParameterName = pNode->getChild(1)->getTokenValue();
     else
     {
-        SAL_WARN( "connectivity.drivers","Fehler im Parse Tree");
+        SAL_WARN( "connectivity.drivers","Error in Parse Tree");
     }
 
     // set up Parameter-Column with default type, can be specified more precisely later using Describe-Parameter
@@ -178,7 +170,7 @@ void OOp_NOT::Exec(OCodeStack& rCodeStack)
     OOperand* pOperand = rCodeStack.top();
     rCodeStack.pop();
 
-    rCodeStack.push(new OOperandResultBOOL(operate(pOperand)));
+    rCodeStack.push(new OOperandResultBOOL(operate(pOperand, nullptr)));
 
     if( typeid(OOperandResult) == typeid(*pOperand))
         delete pOperand;
@@ -201,7 +193,7 @@ void OOp_ISNULL::Exec(OCodeStack& rCodeStack)
     OOperand* pOperand = rCodeStack.top();
     rCodeStack.pop();
 
-    rCodeStack.push(new OOperandResultBOOL(operate(pOperand)));
+    rCodeStack.push(new OOperandResultBOOL(operate(pOperand, nullptr)));
     if( typeid(OOperandResult) == typeid(*pOperand))
         delete pOperand;
 }
@@ -215,7 +207,7 @@ bool OOp_ISNULL::operate(const OOperand* pOperand, const OOperand*) const
 
 bool OOp_ISNOTNULL::operate(const OOperand* pOperand, const OOperand*) const
 {
-    return !OOp_ISNULL::operate(pOperand);
+    return !OOp_ISNULL::operate(pOperand, nullptr);
 }
 
 
@@ -345,8 +337,8 @@ double OOp_DIV::operate(const double& fLeft,const double& fRight) const
 
 void ONthOperator::Exec(OCodeStack& rCodeStack)
 {
-    ::std::vector<ORowSetValue> aValues;
-    ::std::vector<OOperand*> aOperands;
+    std::vector<ORowSetValue> aValues;
+    std::vector<OOperand*> aOperands;
     OOperand* pOperand;
     do
     {
@@ -362,8 +354,8 @@ void ONthOperator::Exec(OCodeStack& rCodeStack)
 
     rCodeStack.push(new OOperandResult(operate(aValues)));
 
-    ::std::vector<OOperand*>::iterator aIter = aOperands.begin();
-    ::std::vector<OOperand*>::const_iterator aEnd = aOperands.end();
+    std::vector<OOperand*>::iterator aIter = aOperands.begin();
+    std::vector<OOperand*>::const_iterator aEnd = aOperands.end();
     for (; aIter != aEnd; ++aIter)
     {
         if (typeid(OOperandResult) == typeid(*(*aIter)))

@@ -196,7 +196,7 @@ class SwEnhancedPDFExportHelper
     SwEditShell& mrSh;
     OutputDevice& mrOut;
 
-    StringRangeEnumerator* mpRangeEnum;
+    std::unique_ptr<StringRangeEnumerator> mpRangeEnum;
     /** The problem is that numbers in StringRangeEnumerator aren't accordant
      * to real page numbers if mbSkipEmptyPages is true, because in this case
      * empty pages are excluded from a page range and numbers in
@@ -247,8 +247,8 @@ class SwEnhancedPDFExportHelper
     static LanguageType GetDefaultLanguage() {return eLanguageDefault; }
 
     //scale and position rRectangle if we're scaling due to notes in margins.
-    Rectangle SwRectToPDFRect(const SwPageFrame* pCurrPage,
-        const Rectangle& rRectangle) const;
+    tools::Rectangle SwRectToPDFRect(const SwPageFrame* pCurrPage,
+        const tools::Rectangle& rRectangle) const;
 };
 
 #endif

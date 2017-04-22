@@ -41,13 +41,10 @@ namespace sdr
             E3dSceneProperties(const E3dSceneProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~E3dSceneProperties();
+            virtual ~E3dSceneProperties() override;
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;
-
-            // get itemset
-            virtual const SfxItemSet& GetObjectItemSet() const override;
 
             // get merged ItemSet. Normally, this maps directly to GetObjectItemSet(), but may
             // be overridden e.g for group objects to return a merged ItemSet of the object.
@@ -63,7 +60,7 @@ namespace sdr
             virtual void SetMergedItem(const SfxPoolItem& rItem) override;
 
             // Clear a single item, iterate over hierarchies if necessary.
-            virtual void ClearMergedItem(const sal_uInt16 nWhich = 0) override;
+            virtual void ClearMergedItem(const sal_uInt16 nWhich) override;
 
             // set a new StyleSheet and broadcast
             virtual void SetStyleSheet(SfxStyleSheet* pNewStyleSheet, bool bDontRemoveHardAttr) override;
@@ -72,7 +69,7 @@ namespace sdr
             virtual SfxStyleSheet* GetStyleSheet() const override;
 
             // Move properties to a new ItemPool. Default implementation does nothing.
-            virtual void MoveToItemPool(SfxItemPool* pSrcPool, SfxItemPool* pDestPool, SdrModel* pNewModel = nullptr) override;
+            virtual void MoveToItemPool(SfxItemPool* pSrcPool, SfxItemPool* pDestPool, SdrModel* pNewModel) override;
 
             // Special for scene:
             void SetSceneItemsFromCamera();

@@ -38,7 +38,7 @@ using namespace ::osl;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star;
 
-#define ROOTNODE_TOOLPANEL                     OUString("Office.Impress/MultiPaneGUI/ToolPanel/Visible")
+#define ROOTNODE_TOOLPANEL                     "Office.Impress/MultiPaneGUI/ToolPanel/Visible"
 
 #define PROPERTYNAME_VISIBLE_IMPRESSVIEW       OUString("ImpressView")
 #define PROPERTYHANDLE_VISIBLE_IMPRESSVIEW     0
@@ -59,11 +59,11 @@ class SvtToolPanelOptions_Impl : public ConfigItem
     public:
 
          SvtToolPanelOptions_Impl();
-        virtual ~SvtToolPanelOptions_Impl();
+        virtual ~SvtToolPanelOptions_Impl() override;
 
         /** called for notify of configmanager
 
-            These method is called from the ConfigManager before application ends or from the
+            This method is called from the ConfigManager before the application ends or from the
             PropertyChangeListener if the sub tree broadcasts changes. You must update your
             internal values.
 
@@ -89,9 +89,9 @@ class SvtToolPanelOptions_Impl : public ConfigItem
 
         virtual void ImplCommit() override;
 
-        /** return list of key names of our configuration management which represent oue module tree
+        /** return list of key names of our configuration management which represent our module tree
 
-            These methods return a static const list of key names. We need it to get needed values from our
+            This methods returns a static const list of key names. We need it to get needed values from our
             configuration management.
 
             \return A list of needed configuration keys is returned.
@@ -297,20 +297,22 @@ Sequence< OUString > SvtToolPanelOptions_Impl::GetPropertyNames()
     return Sequence< OUString >( pProperties, SAL_N_ELEMENTS( pProperties ) );
 }
 
-//  initialize static member, see definition for further information
-//  DON'T DO IT IN YOUR HEADER!
-SvtToolPanelOptions_Impl* SvtToolPanelOptions::m_pDataContainer = nullptr;
-sal_Int32               SvtToolPanelOptions::m_nRefCount = 0;
+namespace {
+
+std::weak_ptr<SvtToolPanelOptions_Impl> theOptions;
+
+}
 
 SvtToolPanelOptions::SvtToolPanelOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetInitMutex() );
-    ++m_nRefCount;
-    // ... and initialize our data container only if it not already exist!
-    if( m_pDataContainer == nullptr )
+
+    m_pImpl = theOptions.lock();
+    if( !m_pImpl )
     {
-       m_pDataContainer = new SvtToolPanelOptions_Impl;
+       m_pImpl = std::make_shared<SvtToolPanelOptions_Impl>();
+       theOptions = m_pImpl;
     }
 }
 
@@ -318,63 +320,58 @@ SvtToolPanelOptions::~SvtToolPanelOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetInitMutex() );
-    --m_nRefCount;
-    // If last instance was deleted we must destroy our static data container!
-    if( m_nRefCount <= 0 )
-    {
-        delete m_pDataContainer;
-        m_pDataContainer = nullptr;
-    }
+
+    m_pImpl.reset();
 }
 
 bool SvtToolPanelOptions::GetVisibleImpressView() const
 {
-    return m_pDataContainer->m_bVisibleImpressView;
+    return m_pImpl->m_bVisibleImpressView;
 }
 
 void SvtToolPanelOptions::SetVisibleImpressView(bool bVisible)
 {
-    m_pDataContainer->m_bVisibleImpressView = bVisible;
+    m_pImpl->m_bVisibleImpressView = bVisible;
 }
 
 bool SvtToolPanelOptions::GetVisibleOutlineView() const
 {
-    return m_pDataContainer->m_bVisibleOutlineView;
+    return m_pImpl->m_bVisibleOutlineView;
 }
 
 void SvtToolPanelOptions::SetVisibleOutlineView(bool bVisible)
 {
-    m_pDataContainer->m_bVisibleOutlineView = bVisible;
+    m_pImpl->m_bVisibleOutlineView = bVisible;
 }
 
 bool SvtToolPanelOptions::GetVisibleNotesView() const
 {
-    return m_pDataContainer->m_bVisibleNotesView;
+    return m_pImpl->m_bVisibleNotesView;
 }
 
 void SvtToolPanelOptions::SetVisibleNotesView(bool bVisible)
 {
-    m_pDataContainer->m_bVisibleNotesView = bVisible;
+    m_pImpl->m_bVisibleNotesView = bVisible;
 }
 
 bool SvtToolPanelOptions::GetVisibleHandoutView() const
 {
-    return m_pDataContainer->m_bVisibleHandoutView;
+    return m_pImpl->m_bVisibleHandoutView;
 }
 
 void SvtToolPanelOptions::SetVisibleHandoutView(bool bVisible)
 {
-    m_pDataContainer->m_bVisibleHandoutView = bVisible;
+    m_pImpl->m_bVisibleHandoutView = bVisible;
 }
 
 bool SvtToolPanelOptions::GetVisibleSlideSorterView() const
 {
-    return m_pDataContainer->m_bVisibleSlideSorterView;
+    return m_pImpl->m_bVisibleSlideSorterView;
 }
 
 void SvtToolPanelOptions::SetVisibleSlideSorterView(bool bVisible)
 {
-    m_pDataContainer->m_bVisibleSlideSorterView = bVisible;
+    m_pImpl->m_bVisibleSlideSorterView = bVisible;
 }
 
 namespace

@@ -23,10 +23,11 @@
 #include <xmloff/xmlimp.hxx>
 #include <tools/color.hxx>
 #include "rangelst.hxx"
+#include "importcontext.hxx"
 
 class ScXMLImport;
 
-class ScXMLTableScenarioContext : public SvXMLImportContext
+class ScXMLTableScenarioContext : public ScXMLImportContext
 {
 private:
     OUString   sComment;
@@ -39,16 +40,13 @@ private:
     bool            bIsActive;
     bool            bProtected;
 
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
-
 public:
 
     ScXMLTableScenarioContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList );
 
-    virtual ~ScXMLTableScenarioContext();
+    virtual ~ScXMLTableScenarioContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

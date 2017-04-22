@@ -17,6 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <vector>
+
 #include <config_features.h>
 
 #include "optaboutconfig.hxx"
@@ -35,7 +39,7 @@
 #include <vcl/waitobj.hxx>
 #include <unotools/pathoptions.hxx>
 #include <svtools/imagemgr.hxx>
-#include "svtools/restartdialog.hxx"
+#include <svtools/restartdialog.hxx>
 #include "svtools/treelistentry.hxx"
 #include <sfx2/filedlghelper.hxx>
 #include <sfx2/inputdlg.hxx>
@@ -55,42 +59,12 @@
 
 #define CLASSPATH_DELIMITER SAL_PATHSEPARATOR
 
-#include <svtools/restartdialog.hxx>
 #include <comphelper/solarmutex.hxx>
 
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::ucb;
 using namespace ::com::sun::star::ui::dialogs;
 using namespace ::com::sun::star::uno;
-
-#if HAVE_FEATURE_JAVA
-
-static bool areListsEqual( const Sequence< OUString >& rListA, const Sequence< OUString >& rListB )
-{
-    bool bRet = true;
-    const sal_Int32 nLen = rListA.getLength();
-
-    if (  rListB.getLength() != nLen )
-        bRet = false;
-    else
-    {
-        const OUString* pStringA = rListA.getConstArray();
-        const OUString* pStringB = rListB.getConstArray();
-
-        for ( sal_Int32 i = 0; i < nLen; ++i )
-        {
-            if ( *pStringA++ != *pStringB++ )
-            {
-                bRet = false;
-                break;
-            }
-        }
-    }
-
-    return bRet;
-}
-
-#endif
 
 class SvxJavaListBox : public svx::SvxRadioButtonListBox
 {
@@ -108,7 +82,7 @@ public:
         if (rBar.GetItemCount() < 4)
             return;
         long nCheckWidth = std::max(GetControlColumnWidth() + 12,
-            rBar.LogicToPixel(Size(15, 0), MAP_APPFONT).Width());
+            rBar.LogicToPixel(Size(15, 0), MapUnit::MapAppFont).Width());
         long nVersionWidth = 12 +
             std::max(rBar.GetTextWidth(rBar.GetItemText(3)),
             GetTextWidth("0.0.0_00-icedtea"));
@@ -123,7 +97,7 @@ public:
         aStaticTabs[2] = nCheckWidth;
         aStaticTabs[3] = aStaticTabs[2] + nVendorWidth;
         aStaticTabs[4] = aStaticTabs[3] + nVersionWidth;
-        SvSimpleTable::SetTabs(aStaticTabs, MAP_PIXEL);
+        SvSimpleTable::SetTabs(aStaticTabs, MapUnit::MapPixel);
     }
     virtual void Resize() override
     {
@@ -138,13 +112,6 @@ SvxJavaOptionsPage::SvxJavaOptionsPage( vcl::Window* pParent, const SfxItemSet& 
     : SfxTabPage(pParent, "OptAdvancedPage", "cui/ui/optadvancedpage.ui", &rSet)
     , m_pParamDlg(nullptr)
     , m_pPathDlg(nullptr)
-#if HAVE_FEATURE_JAVA
-    , m_parJavaInfo(nullptr)
-    , m_parParameters(nullptr)
-    , m_pClassPath(nullptr)
-    , m_nInfoSize(0)
-    , m_nParamSize(0)
-#endif
     , m_aResetIdle("cui options SvxJavaOptionsPage Reset")
     , xDialogListener(new ::svt::DialogClosedListener())
 {
@@ -163,7 +130,7 @@ SvxJavaOptionsPage::SvxJavaOptionsPage( vcl::Window* pParent, const SfxItemSet& 
 
     SvSimpleTableContainer *pJavaListContainer = get<SvSimpleTableContainer>("javas");
     Size aControlSize(177, 60);
-    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
+    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
     pJavaListContainer->set_width_request(aControlSize.Width());
     pJavaListContainer->set_height_request(aControlSize.Height());
     m_pJavaList = VclPtr<SvxJavaListBox>::Create(*pJavaListContainer, m_sAccessibilityText);
@@ -185,12 +152,18 @@ SvxJavaOptionsPage::SvxJavaOptionsPage( vcl::Window* pParent, const SfxItemSet& 
     m_pAddBtn->SetClickHdl( LINK( this, SvxJavaOptionsPage, AddHdl_Impl ) );
     m_pParameterBtn->SetClickHdl( LINK( this, SvxJavaOptionsPage, ParameterHdl_Impl ) );
     m_pClassPathBtn->SetClickHdl( LINK( this, SvxJavaOptionsPage, ClassPathHdl_Impl ) );
-    m_aResetIdle.SetIdleHdl( LINK( this, SvxJavaOptionsPage, ResetHdl_Impl ) );
-    m_aResetIdle.SetPriority(SchedulerPriority::LOWER);
+    m_aResetIdle.SetInvokeHandler( LINK( this, SvxJavaOptionsPage, ResetHdl_Impl ) );
+    m_aResetIdle.SetPriority(TaskPriority::LOWER);
 
     m_pExpertConfigBtn->SetClickHdl( LINK( this, SvxJavaOptionsPage, ExpertConfigHdl_Impl) );
     if (!officecfg::Office::Common::Security::EnableExpertConfiguration::get())
         m_pExpertConfigBtn->Disable();
+
+    if (officecfg::Office::Common::Misc::MacroRecorderMode::isReadOnly())
+        m_pMacroCB->Disable();
+
+    if (officecfg::Office::Common::Misc::ExperimentalMode::isReadOnly())
+        m_pExperimentalCB->Disable();
 
     xDialogListener->SetDialogClosedLink( LINK( this, SvxJavaOptionsPage, DialogClosedHdl ) );
 
@@ -215,12 +188,6 @@ void SvxJavaOptionsPage::dispose()
     m_pPathDlg.disposeAndClear();
     ClearJavaInfo();
 #if HAVE_FEATURE_JAVA
-    std::vector< JavaInfo* >::iterator pIter;
-    for ( pIter = m_aAddedInfos.begin(); pIter != m_aAddedInfos.end(); ++pIter )
-    {
-        JavaInfo* pInfo = *pIter;
-        delete pInfo;
-    }
     m_aAddedInfos.clear();
 
     jfw_unlock();
@@ -238,7 +205,7 @@ void SvxJavaOptionsPage::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, EnableHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, EnableHdl_Impl, Button*, void)
 {
     bool bEnable = m_pJavaEnableCB->IsChecked();
     m_pJavaBox->Enable(bEnable);
@@ -246,7 +213,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, EnableHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_TYPED( SvxJavaOptionsPage, CheckHdl_Impl, SvTreeListBox*, pList, void )
+IMPL_LINK( SvxJavaOptionsPage, CheckHdl_Impl, SvTreeListBox*, pList, void )
 {
     SvTreeListEntry* pEntry = pList ? m_pJavaList->GetEntry( m_pJavaList->GetCurMousePoint() )
                                 : m_pJavaList->FirstSelected();
@@ -255,7 +222,7 @@ IMPL_LINK_TYPED( SvxJavaOptionsPage, CheckHdl_Impl, SvTreeListBox*, pList, void 
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, SelectHdl_Impl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, SelectHdl_Impl, SvTreeListBox*, void)
 {
     // set installation directory info
     SvTreeListEntry* pEntry = m_pJavaList->FirstSelected();
@@ -269,7 +236,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, SelectHdl_Impl, SvTreeListBox*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, AddHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, AddHdl_Impl, Button*, void)
 {
     try
     {
@@ -293,24 +260,17 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, AddHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ParameterHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, ParameterHdl_Impl, Button*, void)
 {
 #if HAVE_FEATURE_JAVA
-    Sequence< OUString > aParameterList;
+    std::vector< OUString > aParameterList;
     if ( !m_pParamDlg )
     {
         m_pParamDlg = VclPtr<SvxJavaParameterDlg>::Create( this );
-        javaFrameworkError eErr = jfw_getVMParameters( &m_parParameters, &m_nParamSize );
-        if ( JFW_E_NONE == eErr && m_parParameters && m_nParamSize > 0 )
+        javaFrameworkError eErr = jfw_getVMParameters( &m_parParameters );
+        if ( JFW_E_NONE == eErr && !m_parParameters.empty() )
         {
-            rtl_uString** pParamArr = m_parParameters;
-            aParameterList.realloc( m_nParamSize );
-            OUString* pParams = aParameterList.getArray();
-            for ( sal_Int32 i = 0; i < m_nParamSize; ++i )
-            {
-                rtl_uString* pParam = *pParamArr++;
-                pParams[i] = OUString( pParam );
-            }
+            aParameterList = m_parParameters;
             m_pParamDlg->SetParameters( aParameterList );
         }
     }
@@ -322,15 +282,10 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ParameterHdl_Impl, Button*, void)
 
     if ( m_pParamDlg->Execute() == RET_OK )
     {
-        if ( !areListsEqual( aParameterList, m_pParamDlg->GetParameters() ) )
+        if ( aParameterList != m_pParamDlg->GetParameters() )
         {
             aParameterList = m_pParamDlg->GetParameters();
-            sal_Bool bRunning = false;
-            javaFrameworkError eErr = jfw_isVMRunning( &bRunning );
-            DBG_ASSERT( JFW_E_NONE == eErr,
-                        "SvxJavaOptionsPage::ParameterHdl_Impl(): error in jfw_isVMRunning" );
-            (void)eErr;
-            if ( bRunning )
+            if ( jfw_isVMRunning() )
             {
                 SolarMutexGuard aGuard;
                 svtools::executeRestartDialog(comphelper::getProcessComponentContext(), nullptr, svtools::RESTART_REASON_ASSIGNING_JAVAPARAMETERS);
@@ -345,7 +300,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ParameterHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ClassPathHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, ClassPathHdl_Impl, Button*, void)
 {
 #if HAVE_FEATURE_JAVA
     OUString sClassPath;
@@ -354,7 +309,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ClassPathHdl_Impl, Button*, void)
     {
           m_pPathDlg = VclPtr<SvxJavaClassPathDlg>::Create( this );
         javaFrameworkError eErr = jfw_getUserClassPath( &m_pClassPath );
-        if ( JFW_E_NONE == eErr && m_pClassPath )
+        if ( JFW_E_NONE == eErr )
         {
             sClassPath = m_pClassPath;
             m_pPathDlg->SetClassPath( sClassPath );
@@ -370,12 +325,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ClassPathHdl_Impl, Button*, void)
         if ( m_pPathDlg->GetClassPath() != sClassPath )
         {
             sClassPath = m_pPathDlg->GetClassPath();
-            sal_Bool bRunning = false;
-            javaFrameworkError eErr = jfw_isVMRunning( &bRunning );
-            DBG_ASSERT( JFW_E_NONE == eErr,
-                        "SvxJavaOptionsPage::ParameterHdl_Impl(): error in jfw_isVMRunning" );
-            (void)eErr;
-            if ( bRunning )
+            if ( jfw_isVMRunning() )
             {
                 SolarMutexGuard aGuard;
                 svtools::executeRestartDialog(comphelper::getProcessComponentContext(), nullptr, svtools::RESTART_REASON_ASSIGNING_FOLDERS);
@@ -390,13 +340,13 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ClassPathHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, ResetHdl_Impl, Idle *, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, ResetHdl_Impl, Timer *, void)
 {
     LoadJREs();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, StartFolderPickerHdl, void*, void)
+IMPL_LINK_NOARG(SvxJavaOptionsPage, StartFolderPickerHdl, void*, void)
 {
     try
     {
@@ -413,7 +363,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaOptionsPage, StartFolderPickerHdl, void*, void)
 }
 
 
-IMPL_LINK_TYPED( SvxJavaOptionsPage, DialogClosedHdl, DialogClosedEvent*, pEvt, void )
+IMPL_LINK( SvxJavaOptionsPage, DialogClosedHdl, DialogClosedEvent*, pEvt, void )
 {
     if ( RET_OK == pEvt->DialogResult )
     {
@@ -424,7 +374,7 @@ IMPL_LINK_TYPED( SvxJavaOptionsPage, DialogClosedHdl, DialogClosedEvent*, pEvt, 
 }
 
 
-IMPL_LINK_NOARG_TYPED( SvxJavaOptionsPage, ExpertConfigHdl_Impl, Button*, void )
+IMPL_LINK_NOARG( SvxJavaOptionsPage, ExpertConfigHdl_Impl, Button*, void )
 {
     ScopedVclPtrInstance< CuiAboutConfigTabPage > pExpertConfigDlg(this);
     pExpertConfigDlg->Reset();//initialize and reset function
@@ -441,19 +391,7 @@ IMPL_LINK_NOARG_TYPED( SvxJavaOptionsPage, ExpertConfigHdl_Impl, Button*, void )
 void SvxJavaOptionsPage::ClearJavaInfo()
 {
 #if HAVE_FEATURE_JAVA
-    if ( m_parJavaInfo )
-    {
-        JavaInfo** parInfo = m_parJavaInfo;
-        for ( sal_Int32 i = 0; i < m_nInfoSize; ++i )
-        {
-            JavaInfo* pInfo = *parInfo++;
-            delete pInfo;
-        }
-
-        rtl_freeMemory( m_parJavaInfo );
-        m_parJavaInfo = nullptr;
-        m_nInfoSize = 0;
-    }
+    m_parJavaInfo.clear();
 #else
     (void) this;
 #endif
@@ -477,50 +415,44 @@ void SvxJavaOptionsPage::LoadJREs()
 {
 #if HAVE_FEATURE_JAVA
     WaitObject aWaitObj(m_pJavaList);
-    javaFrameworkError eErr = jfw_findAllJREs( &m_parJavaInfo, &m_nInfoSize );
-    if ( JFW_E_NONE == eErr && m_parJavaInfo )
+    javaFrameworkError eErr = jfw_findAllJREs( &m_parJavaInfo );
+    if ( JFW_E_NONE == eErr )
     {
-        JavaInfo** parInfo = m_parJavaInfo;
-        for ( sal_Int32 i = 0; i < m_nInfoSize; ++i )
+        for (auto const & pInfo: m_parJavaInfo)
         {
-            JavaInfo* pInfo = *parInfo++;
-            AddJRE( pInfo );
+            AddJRE( pInfo.get() );
         }
     }
 
-    std::vector< JavaInfo* >::iterator pIter;
-    for ( pIter = m_aAddedInfos.begin(); pIter != m_aAddedInfos.end(); ++pIter )
+    for (auto const & pInfo: m_aAddedInfos)
     {
-        JavaInfo* pInfo = *pIter;
-        AddJRE( pInfo );
+        AddJRE( pInfo.get() );
     }
 
-    JavaInfo* pSelectedJava = nullptr;
+    std::unique_ptr<JavaInfo> pSelectedJava;
     eErr = jfw_getSelectedJRE( &pSelectedJava );
     if ( JFW_E_NONE == eErr && pSelectedJava )
     {
-        JavaInfo** parInfo = m_parJavaInfo;
-        for ( sal_Int32 i = 0; i < m_nInfoSize; ++i )
+        sal_Int32 i = 0;
+        for (auto const & pCmpInfo: m_parJavaInfo)
         {
-            JavaInfo* pCmpInfo = *parInfo++;
-            if ( jfw_areEqualJavaInfo( pCmpInfo, pSelectedJava ) )
+            if ( jfw_areEqualJavaInfo( pCmpInfo.get(), pSelectedJava.get() ) )
             {
                 SvTreeListEntry* pEntry = m_pJavaList->GetEntry(i);
                 if ( pEntry )
                     m_pJavaList->HandleEntryChecked( pEntry );
                 break;
             }
+            ++i;
         }
     }
-
-    delete pSelectedJava;
 #else
     (void) this;
 #endif
 }
 
 
-void SvxJavaOptionsPage::AddJRE( JavaInfo* _pInfo )
+void SvxJavaOptionsPage::AddJRE( JavaInfo const * _pInfo )
 {
 #if HAVE_FEATURE_JAVA
     OUStringBuffer sEntry;
@@ -533,7 +465,7 @@ void SvxJavaOptionsPage::AddJRE( JavaInfo* _pInfo )
         sEntry.append(m_sAccessibilityText);
     SvTreeListEntry* pEntry = m_pJavaList->InsertEntry(sEntry.makeStringAndClear());
     INetURLObject aLocObj( OUString( _pInfo->sLocation ) );
-    OUString* pLocation = new OUString( aLocObj.getFSysPath( INetURLObject::FSYS_DETECT ) );
+    OUString* pLocation = new OUString( aLocObj.getFSysPath( FSysStyle::Detect ) );
     pEntry->SetUserData( pLocation );
 #else
     (void) this;
@@ -567,47 +499,42 @@ void SvxJavaOptionsPage::AddFolder( const OUString& _rFolder )
 {
 #if HAVE_FEATURE_JAVA
     bool bStartAgain = true;
-    JavaInfo* pInfo = nullptr;
-    javaFrameworkError eErr = jfw_getJavaInfoByPath( _rFolder.pData, &pInfo );
+    std::unique_ptr<JavaInfo> pInfo;
+    javaFrameworkError eErr = jfw_getJavaInfoByPath( _rFolder, &pInfo );
     if ( JFW_E_NONE == eErr && pInfo )
     {
         sal_Int32 nPos = 0;
         bool bFound = false;
-        JavaInfo** parInfo = m_parJavaInfo;
-        for ( sal_Int32 i = 0; i < m_nInfoSize; ++i )
+        for (auto const & pCmpInfo: m_parJavaInfo)
         {
-            JavaInfo* pCmpInfo = *parInfo++;
-            if ( jfw_areEqualJavaInfo( pCmpInfo, pInfo ) )
+            if ( jfw_areEqualJavaInfo( pCmpInfo.get(), pInfo.get() ) )
             {
                 bFound = true;
-                nPos = i;
                 break;
             }
+            ++nPos;
         }
 
         if ( !bFound )
         {
-            std::vector< JavaInfo* >::iterator pIter;
-            for ( pIter = m_aAddedInfos.begin(); pIter != m_aAddedInfos.end(); ++pIter )
+            for (auto const & pCmpInfo: m_aAddedInfos)
             {
-                JavaInfo* pCmpInfo = *pIter;
-                if ( jfw_areEqualJavaInfo( pCmpInfo, pInfo ) )
+                if ( jfw_areEqualJavaInfo( pCmpInfo.get(), pInfo.get() ) )
                 {
                     bFound = true;
                     break;
                 }
+                ++nPos;
             }
         }
 
         if ( !bFound )
         {
-            jfw_addJRELocation( pInfo->sLocation.pData );
-            AddJRE( pInfo );
-            m_aAddedInfos.push_back( pInfo );
+            jfw_addJRELocation( pInfo->sLocation );
+            AddJRE( pInfo.get() );
+            m_aAddedInfos.push_back( std::move(pInfo) );
             nPos = m_pJavaList->GetEntryCount() - 1;
         }
-        else
-            delete pInfo;
 
         SvTreeListEntry* pEntry = m_pJavaList->GetEntry( nPos );
         m_pJavaList->Select( pEntry );
@@ -668,15 +595,8 @@ bool SvxJavaOptionsPage::FillItemSet( SfxItemSet* /*rCoreSet*/ )
     javaFrameworkError eErr = JFW_E_NONE;
     if ( m_pParamDlg )
     {
-        Sequence< OUString > aParamList = m_pParamDlg->GetParameters();
-        sal_Int32 i, nSize = aParamList.getLength();
-        rtl_uString** pParamArr = static_cast<rtl_uString**>(rtl_allocateMemory( sizeof(rtl_uString*) * nSize ));
-        const OUString* pList = aParamList.getConstArray();
-        for ( i = 0; i < nSize; ++i )
-            pParamArr[i] = pList[i].pData;
-        eErr = jfw_setVMParameters( pParamArr, nSize );
-        SAL_WARN_IF(JFW_E_NONE != eErr, "cui.options", "SvxJavaOptionsPage::FillItemSet(): error in jfw_setVMParameters"); (void)eErr;
-        rtl_freeMemory( pParamArr );
+        eErr = jfw_setVMParameters( m_pParamDlg->GetParameters() );
+        SAL_WARN_IF(JFW_E_NONE != eErr, "cui.options", "SvxJavaOptionsPage::FillItemSet(): error in jfw_setVMParameters");
         bModified = true;
     }
 
@@ -685,8 +605,8 @@ bool SvxJavaOptionsPage::FillItemSet( SfxItemSet* /*rCoreSet*/ )
         OUString sPath( m_pPathDlg->GetClassPath() );
         if ( m_pPathDlg->GetOldPath() != sPath )
         {
-            eErr = jfw_setUserClassPath( sPath.pData );
-            SAL_WARN_IF(JFW_E_NONE != eErr, "cui.options", "SvxJavaOptionsPage::FillItemSet(): error in jfw_setUserClassPath"); (void)eErr;
+            eErr = jfw_setUserClassPath( sPath );
+            SAL_WARN_IF(JFW_E_NONE != eErr, "cui.options", "SvxJavaOptionsPage::FillItemSet(): error in jfw_setUserClassPath");
             bModified = true;
         }
     }
@@ -696,23 +616,19 @@ bool SvxJavaOptionsPage::FillItemSet( SfxItemSet* /*rCoreSet*/ )
     {
         if ( m_pJavaList->GetCheckButtonState( m_pJavaList->GetEntry(i) ) == SvButtonState::Checked )
         {
-            JavaInfo* pInfo = nullptr;
-            if ( i < static_cast< sal_uLong >( m_nInfoSize ) )
-                pInfo = m_parJavaInfo[i];
+            JavaInfo const * pInfo;
+            if ( i < m_parJavaInfo.size() )
+                pInfo = m_parJavaInfo[i].get();
             else
-                pInfo = m_aAddedInfos[ i - m_nInfoSize ];
+                pInfo = m_aAddedInfos[ i - m_parJavaInfo.size() ].get();
 
-            JavaInfo* pSelectedJava = nullptr;
+            std::unique_ptr<JavaInfo> pSelectedJava;
             eErr = jfw_getSelectedJRE( &pSelectedJava );
             if ( JFW_E_NONE == eErr || JFW_E_INVALID_SETTINGS == eErr )
             {
-                if (pSelectedJava == nullptr || !jfw_areEqualJavaInfo( pInfo, pSelectedJava ) )
+                if (!pSelectedJava || !jfw_areEqualJavaInfo( pInfo, pSelectedJava.get() ) )
                 {
-                    sal_Bool bRunning = false;
-                    eErr = jfw_isVMRunning( &bRunning );
-                    DBG_ASSERT( JFW_E_NONE == eErr,
-                                "SvxJavaOptionsPage::FillItemSet(): error in jfw_isVMRunning" );
-                    if ( bRunning ||
+                    if ( jfw_isVMRunning() ||
                         ( ( pInfo->nRequirements & JFW_REQUIRE_NEEDRESTART ) == JFW_REQUIRE_NEEDRESTART ) )
                     {
                         svtools::executeRestartDialog(
@@ -721,16 +637,15 @@ bool SvxJavaOptionsPage::FillItemSet( SfxItemSet* /*rCoreSet*/ )
                     }
 
                     eErr = jfw_setSelectedJRE( pInfo );
-                    SAL_WARN_IF(JFW_E_NONE != eErr, "cui.options", "SvxJavaOptionsPage::FillItemSet(): error in jfw_setSelectedJRE"); (void)eErr;
+                    SAL_WARN_IF(JFW_E_NONE != eErr, "cui.options", "SvxJavaOptionsPage::FillItemSet(): error in jfw_setSelectedJRE");
                     bModified = true;
                 }
             }
-            delete pSelectedJava;
             break;
         }
     }
 
-    sal_Bool bEnabled = false;
+    bool bEnabled = false;
     eErr = jfw_getEnabled( &bEnabled );
     DBG_ASSERT( JFW_E_NONE == eErr,
                 "SvxJavaOptionsPage::FillItemSet(): error in jfw_getEnabled" );
@@ -755,7 +670,7 @@ void SvxJavaOptionsPage::Reset( const SfxItemSet* /*rSet*/ )
     SvtMiscOptions aMiscOpt;
 
 #if HAVE_FEATURE_JAVA
-    sal_Bool bEnabled = false;
+    bool bEnabled = false;
     javaFrameworkError eErr = jfw_getEnabled( &bEnabled );
     if ( eErr != JFW_E_NONE )
         bEnabled = false;
@@ -824,14 +739,14 @@ void SvxJavaParameterDlg::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, ModifyHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, ModifyHdl_Impl, Edit&, void)
 {
     OUString sParam = comphelper::string::strip(m_pParameterEdit->GetText(), ' ');
     m_pAssignBtn->Enable(!sParam.isEmpty());
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, AssignHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, AssignHdl_Impl, Button*, void)
 {
     OUString sParam = comphelper::string::strip(m_pParameterEdit->GetText(), ' ');
     if (!sParam.isEmpty())
@@ -847,26 +762,26 @@ IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, AssignHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, EditHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, EditHdl_Impl, Button*, void)
 {
     EditParameter();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, SelectHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, SelectHdl_Impl, ListBox&, void)
 {
     EnableEditButton();
     EnableRemoveButton();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, DblClickHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, DblClickHdl_Impl, ListBox&, void)
 {
     EditParameter();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaParameterDlg, RemoveHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaParameterDlg, RemoveHdl_Impl, Button*, void)
 {
     sal_Int32 nPos = m_pAssignedList->GetSelectEntryPos();
     if ( nPos != LISTBOX_ENTRY_NOTFOUND )
@@ -920,13 +835,12 @@ short SvxJavaParameterDlg::Execute()
 }
 
 
-Sequence< OUString > SvxJavaParameterDlg::GetParameters() const
+std::vector< OUString > SvxJavaParameterDlg::GetParameters() const
 {
     sal_Int32 nCount = m_pAssignedList->GetEntryCount();
-    Sequence< OUString > aParamList( nCount );
-    OUString* pArray = aParamList.getArray();
+    std::vector< OUString > aParamList;
      for ( sal_Int32 i = 0; i < nCount; ++i )
-         pArray[i] = OUString( m_pAssignedList->GetEntry(i) );
+         aParamList.push_back( m_pAssignedList->GetEntry(i) );
     return aParamList;
 }
 
@@ -938,14 +852,11 @@ void SvxJavaParameterDlg::DisableButtons()
     DisableRemoveButton();
 }
 
-void SvxJavaParameterDlg::SetParameters( Sequence< OUString >& rParams )
+void SvxJavaParameterDlg::SetParameters( std::vector< OUString > const & rParams )
 {
     m_pAssignedList->Clear();
-    sal_uLong i, nCount = rParams.getLength();
-    const OUString* pArray = rParams.getConstArray();
-    for ( i = 0; i < nCount; ++i )
+    for (auto const & sParam: rParams)
     {
-        OUString sParam = OUString( *pArray++ );
         m_pAssignedList->InsertEntry( sParam );
     }
     DisableEditButton();
@@ -996,7 +907,7 @@ void SvxJavaClassPathDlg::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddArchiveHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaClassPathDlg, AddArchiveHdl_Impl, Button*, void)
 {
     sfx2::FileDialogHelper aDlg( TemplateDescription::FILEOPEN_SIMPLE );
     aDlg.SetTitle( CUI_RES( RID_SVXSTR_ARCHIVE_TITLE ) );
@@ -1004,8 +915,8 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddArchiveHdl_Impl, Button*, void)
     OUString sFolder;
     if ( m_pPathList->GetSelectEntryCount() > 0 )
     {
-        INetURLObject aObj( m_pPathList->GetSelectEntry(), INetURLObject::FSYS_DETECT );
-        sFolder = aObj.GetMainURL( INetURLObject::NO_DECODE );
+        INetURLObject aObj( m_pPathList->GetSelectEntry(), FSysStyle::Detect );
+        sFolder = aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
     }
     else
          sFolder = SvtPathOptions().GetWorkPath();
@@ -1014,7 +925,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddArchiveHdl_Impl, Button*, void)
     {
         OUString sURL = aDlg.GetPath();
         INetURLObject aURL( sURL );
-        OUString sFile = aURL.getFSysPath( INetURLObject::FSYS_DETECT );
+        OUString sFile = aURL.getFSysPath( FSysStyle::Detect );
         if ( !IsPathDuplicate( sURL ) )
         {
             sal_Int32 nPos = m_pPathList->InsertEntry( sFile, SvFileInformationManager::GetImage( aURL ) );
@@ -1031,7 +942,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddArchiveHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddPathHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaClassPathDlg, AddPathHdl_Impl, Button*, void)
 {
     Reference < XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
     Reference < XFolderPicker2 > xFolderPicker = FolderPicker::create(xContext);
@@ -1039,8 +950,8 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddPathHdl_Impl, Button*, void)
     OUString sOldFolder;
     if ( m_pPathList->GetSelectEntryCount() > 0 )
     {
-        INetURLObject aObj( m_pPathList->GetSelectEntry(), INetURLObject::FSYS_DETECT );
-        sOldFolder = aObj.GetMainURL( INetURLObject::NO_DECODE );
+        INetURLObject aObj( m_pPathList->GetSelectEntry(), FSysStyle::Detect );
+        sOldFolder = aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
     }
     else
         sOldFolder = SvtPathOptions().GetWorkPath();
@@ -1049,7 +960,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddPathHdl_Impl, Button*, void)
     {
         OUString sFolderURL( xFolderPicker->getDirectory() );
         INetURLObject aURL( sFolderURL );
-        OUString sNewFolder = aURL.getFSysPath( INetURLObject::FSYS_DETECT );
+        OUString sNewFolder = aURL.getFSysPath( FSysStyle::Detect );
         if ( !IsPathDuplicate( sFolderURL ) )
         {
             sal_Int32 nPos = m_pPathList->InsertEntry( sNewFolder, SvFileInformationManager::GetImage( aURL ) );
@@ -1066,7 +977,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, AddPathHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, RemoveHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxJavaClassPathDlg, RemoveHdl_Impl, Button*, void)
 {
     sal_Int32 nPos = m_pPathList->GetSelectEntryPos();
     if ( nPos != LISTBOX_ENTRY_NOTFOUND )
@@ -1085,7 +996,7 @@ IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, RemoveHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxJavaClassPathDlg, SelectHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxJavaClassPathDlg, SelectHdl_Impl, ListBox&, void)
 {
     EnableRemoveButton();
 }
@@ -1098,7 +1009,7 @@ bool SvxJavaClassPathDlg::IsPathDuplicate( const OUString& _rPath )
     sal_Int32 nCount = m_pPathList->GetEntryCount();
     for ( sal_Int32 i = 0; i < nCount; ++i )
     {
-        INetURLObject aOtherObj( m_pPathList->GetEntry(i), INetURLObject::FSYS_DETECT );
+        INetURLObject aOtherObj( m_pPathList->GetEntry(i), FSysStyle::Detect );
         if ( aOtherObj == aFileObj )
         {
             bRet = true;
@@ -1117,7 +1028,7 @@ OUString SvxJavaClassPathDlg::GetClassPath() const
     for ( sal_Int32 i = 0; i < nCount; ++i )
     {
         if ( !sPath.isEmpty() )
-            sPath += OUStringLiteral1<CLASSPATH_DELIMITER>();
+            sPath += OUStringLiteral1(CLASSPATH_DELIMITER);
         OUString* pFullPath = static_cast< OUString* >( m_pPathList->GetEntryData(i) );
         if ( pFullPath )
             sPath += *pFullPath;
@@ -1138,8 +1049,8 @@ void SvxJavaClassPathDlg::SetClassPath( const OUString& _rPath )
     for ( sal_Int32 i = 0; i < nCount; ++i )
     {
         OUString sToken = _rPath.getToken( 0, CLASSPATH_DELIMITER, nIdx );
-        INetURLObject aURL( sToken, INetURLObject::FSYS_DETECT );
-        OUString sPath = aURL.getFSysPath( INetURLObject::FSYS_DETECT );
+        INetURLObject aURL( sToken, FSysStyle::Detect );
+        OUString sPath = aURL.getFSysPath( FSysStyle::Detect );
         m_pPathList->InsertEntry( sPath, SvFileInformationManager::GetImage( aURL ) );
     }
     // select first entry
@@ -1148,5 +1059,3 @@ void SvxJavaClassPathDlg::SetClassPath( const OUString& _rPath )
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */
-
-

@@ -21,6 +21,7 @@
 #include <hintids.hxx>
 #include <i18nlangtag/lang.h>
 #include <i18nlangtag/languagetag.hxx>
+#include <o3tl/any.hxx>
 #include <vcl/msgbox.hxx>
 #include <svtools/parhtml.hxx>
 #include <sot/storage.hxx>
@@ -53,8 +54,6 @@
 #include <swdll.hxx>
 #include <osl/module.hxx>
 #include <comphelper/processfactory.hxx>
-#include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/util/XMacroExpander.hpp>
 #include <rtl/bootstrap.hxx>
 
 using namespace utl;
@@ -65,10 +64,11 @@ SwRead ReadAscii = nullptr, ReadHTML = nullptr, ReadXML = nullptr;
 
 Reader* GetRTFReader();
 Reader* GetWW8Reader();
+Reader* GetDOCXReader();
 
 // Note: if editing, please don't forget to modify also the enum
-// ReaderWriterEnum and aFilterDetect in shellio.hxx
-SwReaderWriterEntry aReaderWriter[] =
+// ReaderWriterEnum and aFilterDetect in iodetect.hxx & iodetect.cxx
+static SwReaderWriterEntry aReaderWriter[] =
 {
     SwReaderWriterEntry( &::GetRTFReader, &::GetRTFWriter,  true  ),
     SwReaderWriterEntry( nullptr,               &::GetASCWriter,  false ),
@@ -79,7 +79,8 @@ SwReaderWriterEntry aReaderWriter[] =
     SwReaderWriterEntry( &::GetWW8Reader, nullptr,                true  ),
     SwReaderWriterEntry( nullptr,               &::GetXMLWriter,  true  ),
     SwReaderWriterEntry( nullptr,               &::GetASCWriter,  false ),
-    SwReaderWriterEntry( nullptr,               &::GetASCWriter,  true  )
+    SwReaderWriterEntry( nullptr,               &::GetASCWriter,  true  ),
+    SwReaderWriterEntry( &::GetDOCXReader,      nullptr,          true  )
 };
 
 Reader* SwReaderWriterEntry::GetReader()
@@ -233,17 +234,15 @@ bool StgWriter::IsStgWriter() const { return true; }
 </FilterFlags>
 */
 
-#define FILTER_OPTION_ROOT      OUString("Office.Writer/FilterFlags")
-
 SwFilterOptions::SwFilterOptions( sal_uInt16 nCnt, const sal_Char** ppNames,
-                                                                sal_uInt32* pValues )
-    : ConfigItem( FILTER_OPTION_ROOT )
+                                                                sal_uInt64* pValues )
+    : ConfigItem( "Office.Writer/FilterFlags" )
 {
     GetValues( nCnt, ppNames, pValues );
 }
 
 void SwFilterOptions::GetValues( sal_uInt16 nCnt, const sal_Char** ppNames,
-                                                                        sal_uInt32* pValues )
+                                                                        sal_uInt64* pValues )
 {
     Sequence<OUString> aNames( nCnt );
     OUString* pNames = aNames.getArray();
@@ -258,7 +257,7 @@ void SwFilterOptions::GetValues( sal_uInt16 nCnt, const sal_Char** ppNames,
         const Any* pAnyValues = aValues.getConstArray();
         for( n = 0; n < nCnt; ++n )
             pValues[ n ] = pAnyValues[ n ].hasValue()
-                                            ? *static_cast<sal_uInt32 const *>(pAnyValues[ n ].getValue())
+                                            ? *o3tl::doAccess<sal_uInt64>(pAnyValues[ n ])
                                             : 0;
     }
     else
@@ -279,7 +278,7 @@ void StgReader::SetFltName( const OUString& rFltNm )
 
 SwRelNumRuleSpaces::SwRelNumRuleSpaces( SwDoc& rDoc, bool bNDoc )
 {
-    pNumRuleTable = new SwNumRuleTable();
+    pNumRuleTable = new SwNumRuleTable;
     pNumRuleTable->reserve(8);
     if( !bNDoc )
         pNumRuleTable->insert( pNumRuleTable->begin(),
@@ -642,6 +641,7 @@ extern "C" {
     void ExportRTF( const OUString&, const OUString& rBaseURL, WriterRef& );
     Reader *ImportDOC();
     void ExportDOC( const OUString&, const OUString& rBaseURL, WriterRef& );
+    Reader *ImportDOCX();
     sal_uLong SaveOrDelMSVBAStorage_ww8( SfxObjectShell&, SotStorage&, sal_Bool, const OUString& );
     sal_uLong GetSaveWarningOfMSVBAStorage_ww8( SfxObjectShell& );
 }
@@ -703,6 +703,20 @@ void GetWW8Writer( const OUString& rFltName, const OUString& rBaseURL, WriterRef
         xRet = WriterRef(nullptr);
 #else
     ExportDOC( rFltName, rBaseURL, xRet );
+#endif
+}
+
+Reader* GetDOCXReader()
+{
+#ifndef DISABLE_DYNLOADING
+    FnGetReader pFunction = reinterpret_cast<FnGetReader>( SwGlobals::getFilters().GetMswordLibSymbol( "ImportDOCX" ) );
+
+    if ( pFunction )
+        return (*pFunction)();
+
+    return nullptr;
+#else
+    return ImportDOCX();
 #endif
 }
 

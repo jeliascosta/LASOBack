@@ -93,48 +93,37 @@ ScAccessibleFilterMenu::~ScAccessibleFilterMenu()
 // XAccessibleComponent
 
 Reference<XAccessible> ScAccessibleFilterMenu::getAccessibleAtPoint( const css::awt::Point& /*rPoint*/ )
-        throw (RuntimeException, std::exception)
 {
     return this;
 }
 
-bool ScAccessibleFilterMenu::isVisible() throw (RuntimeException, std::exception)
+bool ScAccessibleFilterMenu::isVisible()
 {
     return mpWindow->IsVisible();
 }
 
 void ScAccessibleFilterMenu::grabFocus()
-    throw (RuntimeException, std::exception)
 {
 }
 
 sal_Int32 ScAccessibleFilterMenu::getForeground()
-    throw (RuntimeException, std::exception)
 {
     return 0;
 }
 
 sal_Int32 ScAccessibleFilterMenu::getBackground()
-    throw (RuntimeException, std::exception)
 {
     return 0;
 }
 
 // XAccessibleContext
 
-OUString ScAccessibleFilterMenu::getAccessibleName() throw (RuntimeException, std::exception)
-{
-    return ScAccessibleContextBase::getAccessibleName();
-}
-
 sal_Int32 ScAccessibleFilterMenu::getAccessibleChildCount()
-    throw (RuntimeException, std::exception)
 {
     return getMenuItemCount();
 }
 
 Reference<XAccessible> ScAccessibleFilterMenu::getAccessibleChild(sal_Int32 nIndex)
-    throw (RuntimeException, IndexOutOfBoundsException, std::exception)
 {
     if (maMenuItems.size() <= static_cast<size_t>(nIndex))
         throw IndexOutOfBoundsException();
@@ -143,14 +132,12 @@ Reference<XAccessible> ScAccessibleFilterMenu::getAccessibleChild(sal_Int32 nInd
 }
 
 Reference<XAccessibleStateSet> ScAccessibleFilterMenu::getAccessibleStateSet()
-    throw (RuntimeException, std::exception)
 {
     updateStates();
     return mxStateSet;
 }
 
 OUString ScAccessibleFilterMenu::getImplementationName()
-    throw (RuntimeException, std::exception)
 {
     return OUString("ScAccessibleFilterMenu");
 }
@@ -159,7 +146,6 @@ OUString ScAccessibleFilterMenu::getImplementationName()
 
 void ScAccessibleFilterMenu::addAccessibleEventListener(
         const css::uno::Reference<css::accessibility::XAccessibleEventListener>& xListener)
-    throw (css::uno::RuntimeException, std::exception)
 {
     ScAccessibleContextBase::addAccessibleEventListener(xListener);
     for_each(maMenuItems.begin(), maMenuItems.end(), AddRemoveEventListener(xListener, true));
@@ -167,7 +153,6 @@ void ScAccessibleFilterMenu::addAccessibleEventListener(
 
 void ScAccessibleFilterMenu::removeAccessibleEventListener(
         const css::uno::Reference<css::accessibility::XAccessibleEventListener>& xListener)
-    throw (css::uno::RuntimeException, std::exception)
 {
     ScAccessibleContextBase::removeAccessibleEventListener(xListener);
     for_each(maMenuItems.begin(), maMenuItems.end(), AddRemoveEventListener(xListener, false));
@@ -176,7 +161,6 @@ void ScAccessibleFilterMenu::removeAccessibleEventListener(
 // XAccessibleSelection
 
 void ScAccessibleFilterMenu::selectAccessibleChild(sal_Int32 nChildIndex)
-    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     if (static_cast<size_t>(nChildIndex) >= maMenuItems.size())
         throw IndexOutOfBoundsException();
@@ -185,7 +169,6 @@ void ScAccessibleFilterMenu::selectAccessibleChild(sal_Int32 nChildIndex)
 }
 
 sal_Bool ScAccessibleFilterMenu::isAccessibleChildSelected(sal_Int32 nChildIndex)
-    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     if (static_cast<size_t>(nChildIndex) >= maMenuItems.size())
         throw IndexOutOfBoundsException();
@@ -193,24 +176,23 @@ sal_Bool ScAccessibleFilterMenu::isAccessibleChildSelected(sal_Int32 nChildIndex
     return mpWindow->isMenuItemSelected(static_cast<size_t>(nChildIndex));
 }
 
-void ScAccessibleFilterMenu::clearAccessibleSelection() throw (RuntimeException, std::exception)
+void ScAccessibleFilterMenu::clearAccessibleSelection()
 {
     mpWindow->clearSelectedMenuItem();
 }
 
-void ScAccessibleFilterMenu::selectAllAccessibleChildren() throw (RuntimeException, std::exception)
+void ScAccessibleFilterMenu::selectAllAccessibleChildren()
 {
     // not supported - this is a menu, you can't select all menu items.
 }
 
-sal_Int32 ScAccessibleFilterMenu::getSelectedAccessibleChildCount() throw (RuntimeException, std::exception)
+sal_Int32 ScAccessibleFilterMenu::getSelectedAccessibleChildCount()
 {
     // Since this is a menu, either one menu item is selected, or none at all.
     return mpWindow->getSelectedMenuItem() == ScMenuFloatingWindow::MENU_NOT_SELECTED ? 0 : 1;
 }
 
 Reference<XAccessible> ScAccessibleFilterMenu::getSelectedAccessibleChild(sal_Int32 nChildIndex)
-    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     if (static_cast<size_t>(nChildIndex) >= maMenuItems.size())
         throw IndexOutOfBoundsException();
@@ -218,7 +200,7 @@ Reference<XAccessible> ScAccessibleFilterMenu::getSelectedAccessibleChild(sal_In
     return maMenuItems[nChildIndex];
 }
 
-void ScAccessibleFilterMenu::deselectAccessibleChild(sal_Int32 nChildIndex) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+void ScAccessibleFilterMenu::deselectAccessibleChild(sal_Int32 nChildIndex)
 {
     if (static_cast<size_t>(nChildIndex) >= maMenuItems.size())
         throw IndexOutOfBoundsException();
@@ -229,7 +211,6 @@ void ScAccessibleFilterMenu::deselectAccessibleChild(sal_Int32 nChildIndex) thro
 // XInterface
 
 uno::Any SAL_CALL ScAccessibleFilterMenu::queryInterface( uno::Type const & rType )
-    throw (RuntimeException, std::exception)
 {
     Any any = ScAccessibleContextBase::queryInterface(rType);
     if (any.hasValue())
@@ -251,53 +232,50 @@ void SAL_CALL ScAccessibleFilterMenu::release() throw ()
 // XTypeProvider
 
 Sequence<sal_Int8> ScAccessibleFilterMenu::getImplementationId()
-    throw (RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-Rectangle ScAccessibleFilterMenu::GetBoundingBoxOnScreen() const
-    throw (RuntimeException, std::exception)
+tools::Rectangle ScAccessibleFilterMenu::GetBoundingBoxOnScreen() const
 {
     if (mnMenuPos == ScMenuFloatingWindow::MENU_NOT_SELECTED)
-        return Rectangle();
+        return tools::Rectangle();
 
     // Menu object's bounding box is the bounding box of the menu item that
     // launches the menu, which belongs to the parent window.
     ScMenuFloatingWindow* pParentWin = mpWindow->getParentMenuWindow();
     if (!pParentWin)
-        return Rectangle();
+        return tools::Rectangle();
 
     if (!pParentWin->IsVisible())
-        return Rectangle();
+        return tools::Rectangle();
 
     Point aPos = pParentWin->OutputToAbsoluteScreenPixel(Point(0,0));
     Point aMenuPos;
     Size aMenuSize;
     pParentWin->getMenuItemPosSize(mnMenuPos, aMenuPos, aMenuSize);
-    Rectangle aRect(aPos + aMenuPos, aMenuSize);
+    tools::Rectangle aRect(aPos + aMenuPos, aMenuSize);
     return aRect;
 }
 
-Rectangle ScAccessibleFilterMenu::GetBoundingBox() const
-    throw (RuntimeException, std::exception)
+tools::Rectangle ScAccessibleFilterMenu::GetBoundingBox() const
 {
     if (mnMenuPos == ScMenuFloatingWindow::MENU_NOT_SELECTED)
-        return Rectangle();
+        return tools::Rectangle();
 
     // Menu object's bounding box is the bounding box of the menu item that
     // launches the menu, which belongs to the parent window.
     ScMenuFloatingWindow* pParentWin = mpWindow->getParentMenuWindow();
     if (!pParentWin)
-        return Rectangle();
+        return tools::Rectangle();
 
     if (!pParentWin->IsVisible())
-        return Rectangle();
+        return tools::Rectangle();
 
     Point aMenuPos;
     Size aMenuSize;
     pParentWin->getMenuItemPosSize(mnMenuPos, aMenuPos, aMenuSize);
-    Rectangle aRect(aMenuPos, aMenuSize);
+    tools::Rectangle aRect(aMenuPos, aMenuSize);
     return aRect;
 }
 
@@ -345,11 +323,6 @@ bool ScAccessibleFilterMenu::isSelected() const
     return mpWindow->isMenuItemSelected(mnMenuPos);
 }
 
-bool ScAccessibleFilterMenu::isFocused() const
-{
-    return isSelected();
-}
-
 void ScAccessibleFilterMenu::updateStates()
 {
     if (!mxStateSet.is())
@@ -366,7 +339,7 @@ void ScAccessibleFilterMenu::updateStates()
     p->insert(SENSITIVE);
     p->insert(OPAQUE);
 
-    if (isFocused())
+    if (isSelected())
         p->insert(FOCUSED);
 
     if (isSelected())

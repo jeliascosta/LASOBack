@@ -35,14 +35,9 @@
 #define IID_DOCUMENTCLOSE 1
 
 DecoToolBox::DecoToolBox( vcl::Window* pParent ) :
-    ToolBox( pParent, 0 )
+    ToolBox( pParent, 0 ),
+    lastSize(-1)
 {
-    ImplInit();
-}
-
-void DecoToolBox::ImplInit()
-{
-    lastSize = -1;
     calcMinSize();
 }
 
@@ -72,8 +67,8 @@ void DecoToolBox::calcMinSize()
     }
     else
     {
-        sal_uInt16 nItems = GetItemCount();
-        for( sal_uInt16 i = 0; i < nItems; i++ )
+        ImplToolItems::size_type nItems = GetItemCount();
+        for( ImplToolItems::size_type i = 0; i < nItems; i++ )
         {
             sal_uInt16 nId = GetItemId( i );
             aTbx->InsertItem( nId, GetItemImage( nId ) );
@@ -107,8 +102,8 @@ void DecoToolBox::SetImages( long nMaxHeight, bool bForce )
         aBmpExDst.Erase( aEraseColor );
         aBmpExDst.SetSizePixel( Size( lastSize, lastSize ) );
 
-        Rectangle aSrcRect( Point(0,0), maImage.GetSizePixel() );
-        Rectangle aDestRect( Point((lastSize - maImage.GetSizePixel().Width())/2,
+        tools::Rectangle aSrcRect( Point(0,0), maImage.GetSizePixel() );
+        tools::Rectangle aDestRect( Point((lastSize - maImage.GetSizePixel().Width())/2,
                                 (lastSize - maImage.GetSizePixel().Height())/2 ),
                             maImage.GetSizePixel() );
 
@@ -123,14 +118,13 @@ MenuBarWindow::MenuBarWindow( vcl::Window* pParent ) :
     aFloatBtn(VclPtr<PushButton>::Create(this, WB_NOPOINTERFOCUS | WB_SMALLSTYLE | WB_RECTSTYLE)),
     aHideBtn(VclPtr<PushButton>::Create(this, WB_NOPOINTERFOCUS | WB_SMALLSTYLE | WB_RECTSTYLE))
 {
-    SetType(WINDOW_MENUBARWINDOW);
+    SetType(WindowType::MENUBARWINDOW);
     pMenu = nullptr;
     pActivePopup = nullptr;
     nHighlightedItem = ITEMPOS_INVALID;
     nRolloveredItem = ITEMPOS_INVALID;
     mbAutoPopup = true;
     bIgnoreFirstMove = true;
-    bStayActive = false;
     SetMBWHideAccel(true);
     SetMBWMenuKey(false);
 
@@ -176,6 +170,9 @@ void MenuBarWindow::dispose()
     aHideBtn.disposeAndClear();
     aFloatBtn.disposeAndClear();
     aCloseBtn.disposeAndClear();
+    pMenu.clear();
+    pActivePopup.clear();
+    xSaveFocusId.clear();
 
     Window::dispose();
 }
@@ -225,7 +222,7 @@ Size MenuBarWindow::MinCloseButtonSize()
     return aCloseBtn->getMinSize();
 }
 
-IMPL_LINK_NOARG_TYPED(MenuBarWindow, CloseHdl, ToolBox *, void)
+IMPL_LINK_NOARG(MenuBarWindow, CloseHdl, ToolBox *, void)
 {
     if( ! pMenu )
         return;
@@ -235,7 +232,7 @@ IMPL_LINK_NOARG_TYPED(MenuBarWindow, CloseHdl, ToolBox *, void)
         // #i106052# call close hdl asynchronously to ease handler implementation
         // this avoids still being in the handler while the DecoToolBox already
         // gets destroyed
-        Application::PostUserEvent(static_cast<MenuBar*>(pMenu)->GetCloseButtonClickHdl());
+        Application::PostUserEvent(static_cast<MenuBar*>(pMenu.get())->GetCloseButtonClickHdl());
     }
     else
     {
@@ -245,26 +242,26 @@ IMPL_LINK_NOARG_TYPED(MenuBarWindow, CloseHdl, ToolBox *, void)
             MenuBar::MenuBarButtonCallbackArg aArg;
             aArg.nId = it->first;
             aArg.bHighlight = (aCloseBtn->GetHighlightItemId() == it->first);
-            aArg.pMenuBar = dynamic_cast<MenuBar*>(pMenu);
+            aArg.pMenuBar = dynamic_cast<MenuBar*>(pMenu.get());
             it->second.m_aSelectLink.Call( aArg );
         }
     }
 }
 
-IMPL_LINK_TYPED( MenuBarWindow, ToolboxEventHdl, VclWindowEvent&, rEvent, void )
+IMPL_LINK( MenuBarWindow, ToolboxEventHdl, VclWindowEvent&, rEvent, void )
 {
     if( ! pMenu )
         return;
 
     MenuBar::MenuBarButtonCallbackArg aArg;
     aArg.nId = 0xffff;
-    aArg.bHighlight = (rEvent.GetId() == VCLEVENT_TOOLBOX_HIGHLIGHT);
-    aArg.pMenuBar = dynamic_cast<MenuBar*>(pMenu);
-    if( rEvent.GetId() == VCLEVENT_TOOLBOX_HIGHLIGHT )
+    aArg.bHighlight = (rEvent.GetId() == VclEventId::ToolboxHighlight);
+    aArg.pMenuBar = dynamic_cast<MenuBar*>(pMenu.get());
+    if( rEvent.GetId() == VclEventId::ToolboxHighlight )
         aArg.nId = aCloseBtn->GetHighlightItemId();
-    else if( rEvent.GetId() == VCLEVENT_TOOLBOX_HIGHLIGHTOFF )
+    else if( rEvent.GetId() == VclEventId::ToolboxHighlightOff )
     {
-        sal_uInt16 nPos = static_cast< sal_uInt16 >(reinterpret_cast<sal_IntPtr>(rEvent.GetData()));
+        auto nPos = static_cast<ToolBox::ImplToolItems::size_type>(reinterpret_cast<sal_IntPtr>(rEvent.GetData()));
         aArg.nId = aCloseBtn->GetItemId(nPos);
     }
     std::map< sal_uInt16, AddButtonEntry >::iterator it = m_aAddButtons.find( aArg.nId );
@@ -274,15 +271,15 @@ IMPL_LINK_TYPED( MenuBarWindow, ToolboxEventHdl, VclWindowEvent&, rEvent, void )
     }
 }
 
-IMPL_LINK_TYPED( MenuBarWindow, ShowHideListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( MenuBarWindow, ShowHideListener, VclWindowEvent&, rEvent, void )
 {
     if( ! pMenu )
         return;
 
-    if( rEvent.GetId() == VCLEVENT_WINDOW_SHOW )
-        pMenu->ImplCallEventListeners( VCLEVENT_MENU_SHOW, ITEMPOS_INVALID );
-    else if( rEvent.GetId() == VCLEVENT_WINDOW_HIDE )
-        pMenu->ImplCallEventListeners( VCLEVENT_MENU_HIDE, ITEMPOS_INVALID );
+    if( rEvent.GetId() == VclEventId::WindowShow )
+        pMenu->ImplCallEventListeners( VclEventId::MenuShow, ITEMPOS_INVALID );
+    else if( rEvent.GetId() == VclEventId::WindowHide )
+        pMenu->ImplCallEventListeners( VclEventId::MenuHide, ITEMPOS_INVALID );
 }
 
 void MenuBarWindow::ImplCreatePopup( bool bPreSelectFirst )
@@ -298,7 +295,7 @@ void MenuBarWindow::ImplCreatePopup( bool bPreSelectFirst )
         if ( pItemData->bEnabled && pItemData->pSubMenu && ( nHighlightedItem != ITEMPOS_INVALID ) &&
              ( pItemData->pSubMenu != pActivePopup ) )
         {
-            pActivePopup = static_cast<PopupMenu*>(pItemData->pSubMenu);
+            pActivePopup = static_cast<PopupMenu*>(pItemData->pSubMenu.get());
             long nX = 0;
             MenuItemData* pData = nullptr;
             for ( sal_uLong n = 0; n < nHighlightedItem; n++ )
@@ -323,7 +320,7 @@ void MenuBarWindow::ImplCreatePopup( bool bPreSelectFirst )
             // #99071# do not grab the focus, otherwise it will be restored to the menubar
             // when the frame is reactivated later
             //GrabFocus();
-            pActivePopup->ImplExecute( this, Rectangle( aItemTopLeft, aItemBottomRight ), FloatWinPopupFlags::Down | FloatWinPopupFlags::NoHorzPlacement, pMenu, bPreSelectFirst );
+            pActivePopup->ImplExecute( this, tools::Rectangle( aItemTopLeft, aItemBottomRight ), FloatWinPopupFlags::Down | FloatWinPopupFlags::NoHorzPlacement, pMenu, bPreSelectFirst );
             // does not have a window, if aborted before or if there are no entries
             if ( pActivePopup->ImplGetFloatingWindow() )
                 pActivePopup->ImplGetFloatingWindow()->AddPopupModeWindow( this );
@@ -457,31 +454,26 @@ void MenuBarWindow::ChangeHighlightItem( sal_uInt16 n, bool bSelectEntry, bool b
     if ( ( nHighlightedItem == ITEMPOS_INVALID ) && ( n != ITEMPOS_INVALID ) )
     {
         ImplGetSVData()->maWinData.mbNoDeactivate = true;
-        if( !bStayActive )
-        {
-            // #105406# avoid saving the focus when we already have the focus
-            bool bNoSaveFocus = (this == ImplGetSVData()->maWinData.mpFocusWin.get() );
+        // #105406# avoid saving the focus when we already have the focus
+        bool bNoSaveFocus = (this == ImplGetSVData()->maWinData.mpFocusWin.get() );
 
-            if( xSaveFocusId != nullptr )
+        if( xSaveFocusId != nullptr )
+        {
+            if( !ImplGetSVData()->maWinData.mbNoSaveFocus )
             {
-                if( !ImplGetSVData()->maWinData.mbNoSaveFocus )
-                {
-                    xSaveFocusId = nullptr;
-                    if( !bNoSaveFocus )
-                        xSaveFocusId = Window::SaveFocus(); // only save focus when initially activated
-                }
-                else {
-                    ; // do nothing: we 're activated again from taskpanelist, focus was already saved
-                }
-            }
-            else
-            {
-                if( !bNoSaveFocus )
+                 xSaveFocusId = nullptr;
+                 if( !bNoSaveFocus )
                     xSaveFocusId = Window::SaveFocus(); // only save focus when initially activated
+            }
+            else {
+                ; // do nothing: we 're activated again from taskpanelist, focus was already saved
             }
         }
         else
-            bStayActive = false;
+        {
+            if( !bNoSaveFocus )
+                xSaveFocusId = Window::SaveFocus(); // only save focus when initially activated
+        }
         pMenu->bInCallback = true;  // set here if Activate overridden
         pMenu->Activate();
         pMenu->bInCallback = false;
@@ -510,11 +502,11 @@ void MenuBarWindow::ChangeHighlightItem( sal_uInt16 n, bool bSelectEntry, bool b
         if ( nHighlightedItem != nRolloveredItem )
             Invalidate(); //HighlightItem( nHighlightedItem, false );
 
-        pMenu->ImplCallEventListeners( VCLEVENT_MENU_DEHIGHLIGHT, nHighlightedItem );
+        pMenu->ImplCallEventListeners( VclEventId::MenuDehighlight, nHighlightedItem );
     }
 
-    nHighlightedItem = (sal_uInt16)n;
-    DBG_ASSERT( ( nHighlightedItem == ITEMPOS_INVALID ) || pMenu->ImplIsVisible( nHighlightedItem ), "ChangeHighlightItem: Not visible!" );
+    nHighlightedItem = n;
+    SAL_WARN_IF( ( nHighlightedItem != ITEMPOS_INVALID ) && !pMenu->ImplIsVisible( nHighlightedItem ), "vcl", "ChangeHighlightItem: Not visible!" );
     if ( nHighlightedItem != ITEMPOS_INVALID )
         Invalidate(); //HighlightItem( nHighlightedItem, true );
     else if ( nRolloveredItem != ITEMPOS_INVALID )
@@ -544,7 +536,7 @@ static int ImplGetTopDockingAreaHeight( vcl::Window *pWindow )
                 while( pChildWin )
                 {
                     DockingAreaWindow *pDockingArea = nullptr;
-                    if ( pChildWin->GetType() == WINDOW_DOCKINGAREA )
+                    if ( pChildWin->GetType() == WindowType::DOCKINGAREA )
                         pDockingArea = static_cast< DockingAreaWindow* >( pChildWin );
 
                     if( pDockingArea && pDockingArea->GetAlign() == WindowAlign::Top &&
@@ -577,7 +569,7 @@ static void ImplAddNWFSeparator(vcl::RenderContext& rRenderContext, const Size& 
 
         rRenderContext.SetLineColor(rRenderContext.GetSettings().GetStyleSettings().GetSeparatorColor());
         Point aPt;
-        Rectangle aRect(aPt, rSize);
+        tools::Rectangle aRect(aPt, rSize);
         rRenderContext.DrawLine(aRect.BottomLeft(), aRect.BottomRight());
     }
 }
@@ -597,10 +589,20 @@ void MenuBarWindow::HighlightItem(vcl::RenderContext& rRenderContext, sal_uInt16
             if (pData->eType != MenuItemType::SEPARATOR)
             {
                 // #107747# give menuitems the height of the menubar
-                Rectangle aRect = Rectangle(Point(nX, 1), Size(pData->aSz.Width(), GetOutputSizePixel().Height() - 2));
+                tools::Rectangle aRect = tools::Rectangle(Point(nX, 1), Size(pData->aSz.Width(), GetOutputSizePixel().Height() - 2));
                 rRenderContext.Push(PushFlags::CLIPREGION);
                 rRenderContext.IntersectClipRegion(aRect);
-                bool bRollover = nPos != nHighlightedItem;
+                bool bRollover, bHighlight;
+                if (!ImplGetSVData()->maNWFData.mbRolloverMenubar)
+                {
+                    bHighlight = true;
+                    bRollover = nPos != nHighlightedItem;
+                }
+                else
+                {
+                    bRollover = nPos == nRolloveredItem;
+                    bHighlight = nPos == nHighlightedItem;
+                }
                 if (rRenderContext.IsNativeControlSupported(ControlType::Menubar, ControlPart::MenuItem) &&
                     rRenderContext.IsNativeControlSupported(ControlType::Menubar, ControlPart::Entire))
                 {
@@ -612,7 +614,7 @@ void MenuBarWindow::HighlightItem(vcl::RenderContext& rRenderContext, sal_uInt16
                          Erase(rRenderContext);
                     else
                     {
-                        Rectangle aBgRegion(Point(), GetOutputSizePixel());
+                        tools::Rectangle aBgRegion(Point(), GetOutputSizePixel());
                         rRenderContext.DrawNativeControl(ControlType::Menubar, ControlPart::Entire, aBgRegion,
                                                          ControlState::ENABLED, aControlValue, OUString());
                     }
@@ -638,7 +640,7 @@ void MenuBarWindow::HighlightItem(vcl::RenderContext& rRenderContext, sal_uInt16
                     rRenderContext.DrawRect(aRect);
                 }
                 rRenderContext.Pop();
-                pMenu->ImplPaint(rRenderContext, 0, 0, pData, true/*bHighlight*/, false, bRollover);
+                pMenu->ImplPaint(rRenderContext, 0, 0, pData, bHighlight, false, bRollover);
             }
             return;
         }
@@ -647,9 +649,9 @@ void MenuBarWindow::HighlightItem(vcl::RenderContext& rRenderContext, sal_uInt16
     }
 }
 
-Rectangle MenuBarWindow::ImplGetItemRect( sal_uInt16 nPos )
+tools::Rectangle MenuBarWindow::ImplGetItemRect( sal_uInt16 nPos )
 {
-    Rectangle aRect;
+    tools::Rectangle aRect;
     if( pMenu )
     {
         long nX = 0;
@@ -661,7 +663,7 @@ Rectangle MenuBarWindow::ImplGetItemRect( sal_uInt16 nPos )
             {
                 if ( pData->eType != MenuItemType::SEPARATOR )
                     // #107747# give menuitems the height of the menubar
-                    aRect = Rectangle( Point( nX, 1 ), Size( pData->aSz.Width(), GetOutputSizePixel().Height()-2 ) );
+                    aRect = tools::Rectangle( Point( nX, 1 ), Size( pData->aSz.Width(), GetOutputSizePixel().Height()-2 ) );
                 break;
             }
 
@@ -679,10 +681,10 @@ void MenuBarWindow::KeyInput( const KeyEvent& rKEvent )
 
 bool MenuBarWindow::HandleKeyEvent( const KeyEvent& rKEvent, bool bFromMenu )
 {
-    if( ! pMenu )
+    if (!pMenu)
         return false;
 
-    if ( pMenu->bInCallback )
+    if (pMenu->bInCallback)
         return true;    // swallow
 
     bool bDone = false;
@@ -730,7 +732,7 @@ bool MenuBarWindow::HandleKeyEvent( const KeyEvent& rKEvent, bool bFromMenu )
 
             // handling gtk like (aka mbOpenMenuOnF10)
             // do not highlight an item when opening a sub menu
-            // unless there already was a higlighted sub menu item
+            // unless there already was a highlighted sub menu item
             bool bWasHighlight = false;
             if( pActivePopup )
             {
@@ -816,28 +818,37 @@ bool MenuBarWindow::HandleKeyEvent( const KeyEvent& rKEvent, bool bFromMenu )
     }
 
     bool accel = ImplGetSVData()->maNWFData.mbEnableAccel;
+    bool autoacc = ImplGetSVData()->maNWFData.mbAutoAccel;
+
     if ( !bDone && ( bFromMenu || (rKEvent.GetKeyCode().IsMod2() && accel) ) )
     {
         sal_Unicode nCharCode = rKEvent.GetCharCode();
         if ( nCharCode )
         {
-            sal_uInt16 nEntry, nDuplicates;
+            size_t nEntry, nDuplicates;
             MenuItemData* pData = pMenu->GetItemList()->SearchItem( nCharCode, rKEvent.GetKeyCode(), nEntry, nDuplicates, nHighlightedItem );
             if ( pData && (nEntry != ITEMPOS_INVALID) )
             {
                 mbAutoPopup = true;
-                SetMBWMenuKey(true);
-                SetMBWHideAccel(true);
-                Invalidate(InvalidateFlags::Update);
                 ChangeHighlightItem( nEntry, true );
                 bDone = true;
             }
         }
     }
+
+    const bool bShowAccels = nCode != KEY_ESCAPE;
+    if (GetMBWMenuKey() != bShowAccels)
+    {
+        SetMBWMenuKey(bShowAccels);
+        SetMBWHideAccel(!bShowAccels);
+        if (accel && autoacc)
+            Invalidate(InvalidateFlags::Update);
+    }
+
     return bDone;
 }
 
-void MenuBarWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void MenuBarWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     if (!pMenu)
         return;
@@ -861,7 +872,7 @@ void MenuBarWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
         else
         {
             Point aPt;
-            Rectangle aCtrlRegion( aPt, GetOutputSizePixel() );
+            tools::Rectangle aCtrlRegion( aPt, GetOutputSizePixel() );
 
             rRenderContext.DrawNativeControl(ControlType::Menubar, ControlPart::Entire, aCtrlRegion,
                                              ControlState::ENABLED, aMenubarValue, OUString());
@@ -874,6 +885,8 @@ void MenuBarWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
     pMenu->ImplPaint(rRenderContext, 0);
     if (nHighlightedItem != ITEMPOS_INVALID)
         HighlightItem(rRenderContext, nHighlightedItem);
+    else if (ImplGetSVData()->maNWFData.mbRolloverMenubar && nRolloveredItem != ITEMPOS_INVALID)
+        HighlightItem(rRenderContext, nRolloveredItem);
 
     // in high contrast mode draw a separating line on the lower edge
     if (!rRenderContext.IsNativeControlSupported( ControlType::Menubar, ControlPart::Entire) &&
@@ -881,7 +894,7 @@ void MenuBarWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
     {
         rRenderContext.Push(PushFlags::LINECOLOR | PushFlags::MAPMODE);
         rRenderContext.SetLineColor(Color(COL_WHITE));
-        rRenderContext.SetMapMode(MapMode(MAP_PIXEL));
+        rRenderContext.SetMapMode(MapMode(MapUnit::MapPixel));
         Size aSize = GetSizePixel();
         rRenderContext.DrawLine(Point(0, aSize.Height() - 1),
                                 Point(aSize.Width() - 1, aSize.Height() - 1));
@@ -950,7 +963,7 @@ void MenuBarWindow::RequestHelp( const HelpEvent& rHEvt )
     if ( rHEvt.GetMode() & (HelpEventMode::CONTEXT | HelpEventMode::EXTENDED) )
         ChangeHighlightItem( ITEMPOS_INVALID, true );
 
-    Rectangle aHighlightRect( ImplGetItemRect( nHighlightedItem ) );
+    tools::Rectangle aHighlightRect( ImplGetItemRect( nHighlightedItem ) );
     if( !ImplHandleHelpEvent( this, pMenu, nId, rHEvt, aHighlightRect ) )
         Window::RequestHelp( rHEvt );
 }
@@ -987,7 +1000,7 @@ void MenuBarWindow::LayoutChanged()
 
     // depending on the native implementation or the displayable flag
     // the menubar windows is suppressed (ie, height=0)
-    if (!static_cast<MenuBar*>(pMenu)->IsDisplayable() ||
+    if (!static_cast<MenuBar*>(pMenu.get())->IsDisplayable() ||
         (pMenu->ImplGetSalMenu() && pMenu->ImplGetSalMenu()->VisibleMenuBar()))
     {
         nHeight = 0;
@@ -1108,7 +1121,7 @@ sal_uInt16 MenuBarWindow::AddMenuBarButton( const Image& i_rImage, const Link<Me
         nId++;
         it = m_aAddButtons.find( nId );
     } while( it != m_aAddButtons.end() && nId < 128 );
-    DBG_ASSERT( nId < 128, "too many addbuttons in menubar" );
+    SAL_WARN_IF( nId >= 128, "vcl", "too many addbuttons in menubar" );
     AddButtonEntry& rNewEntry = m_aAddButtons[nId];
     rNewEntry.m_nId = nId;
     rNewEntry.m_aSelectLink = i_rLink;
@@ -1130,18 +1143,18 @@ void MenuBarWindow::SetMenuBarButtonHighlightHdl( sal_uInt16 nId, const Link<Men
         it->second.m_aHighlightLink = rLink;
 }
 
-Rectangle MenuBarWindow::GetMenuBarButtonRectPixel( sal_uInt16 nId )
+tools::Rectangle MenuBarWindow::GetMenuBarButtonRectPixel( sal_uInt16 nId )
 {
-    Rectangle aRect;
+    tools::Rectangle aRect;
     if( m_aAddButtons.find( nId ) != m_aAddButtons.end() )
     {
         if( pMenu->mpSalMenu )
         {
             aRect = pMenu->mpSalMenu->GetMenuBarButtonRectPixel( nId, ImplGetWindowImpl()->mpFrame );
-            if( aRect == Rectangle( Point( -1, -1 ), Size( 1, 1 ) ) )
+            if( aRect == tools::Rectangle( Point( -1, -1 ), Size( 1, 1 ) ) )
             {
                 // system menu button is somewhere but location cannot be determined
-                return Rectangle();
+                return tools::Rectangle();
             }
         }
 
@@ -1157,7 +1170,7 @@ Rectangle MenuBarWindow::GetMenuBarButtonRectPixel( sal_uInt16 nId )
 
 void MenuBarWindow::RemoveMenuBarButton( sal_uInt16 nId )
 {
-    sal_uInt16 nPos = aCloseBtn->GetItemPos(nId);
+    ToolBox::ImplToolItems::size_type nPos = aCloseBtn->GetItemPos(nId);
     aCloseBtn->RemoveItem(nPos);
     m_aAddButtons.erase( nId );
     aCloseBtn->calcMinSize();
@@ -1175,7 +1188,7 @@ bool MenuBarWindow::HandleMenuButtonEvent( sal_uInt16 i_nButtonId )
         MenuBar::MenuBarButtonCallbackArg aArg;
         aArg.nId = it->first;
         aArg.bHighlight = true;
-        aArg.pMenuBar = dynamic_cast<MenuBar*>(pMenu);
+        aArg.pMenuBar = dynamic_cast<MenuBar*>(pMenu.get());
         return it->second.m_aSelectLink.Call( aArg );
     }
     return false;

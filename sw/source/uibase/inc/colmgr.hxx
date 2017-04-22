@@ -28,7 +28,7 @@ class SW_DLLPUBLIC SwColMgr
 {
 public:
         // lActWidth is passed directly from the page dialogs edits
-    SwColMgr(const SfxItemSet &rSet, sal_uInt16 nActWidth = USHRT_MAX);
+    SwColMgr(const SfxItemSet &rSet);
     ~SwColMgr();
 
     inline sal_uInt16   GetCount() const;
@@ -40,13 +40,13 @@ public:
     void                SetColWidth(sal_uInt16 nIdx, sal_uInt16 nWidth);
 
     inline bool         IsAutoWidth() const;
-    void                SetAutoWidth(bool bOn = true, sal_uInt16 lGutterWidth = 0);
+    void                SetAutoWidth(bool bOn, sal_uInt16 lGutterWidth = 0);
 
     inline bool         HasLine() const;
     inline void         SetNoLine();
 
-    void                SetLineWidthAndColor(::editeng::SvxBorderStyle eStyle, sal_uLong nWidth, const Color& rCol);
-    inline ::editeng::SvxBorderStyle    GetLineStyle() const;
+    void                SetLineWidthAndColor(SvxBorderLineStyle eStyle, sal_uLong nWidth, const Color& rCol);
+    inline SvxBorderLineStyle    GetLineStyle() const;
     inline sal_uLong    GetLineWidth() const;
     inline const Color& GetLineColor() const;
 
@@ -73,7 +73,7 @@ inline  sal_uInt16 SwColMgr::GetCount() const
     return aFormatCol.GetNumCols();
 }
 
-inline ::editeng::SvxBorderStyle SwColMgr::GetLineStyle() const
+inline SvxBorderLineStyle SwColMgr::GetLineStyle() const
 {
     return aFormatCol.GetLineStyle();
 }

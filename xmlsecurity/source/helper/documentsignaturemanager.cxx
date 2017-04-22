@@ -18,23 +18,26 @@
  */
 
 #include <documentsignaturemanager.hxx>
+#include "gpg/SEInitializer.hxx"
 
 #include <com/sun/star/embed/StorageFormats.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/io/TempFile.hpp>
 #include <com/sun/star/io/XTruncate.hpp>
-#include <com/sun/star/security/SerialNumberAdapter.hpp>
 #include <com/sun/star/embed/XTransactedObject.hpp>
+#include <com/sun/star/xml/crypto/SEInitializer.hpp>
 
 #include <comphelper/storagehelper.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <sax/tools/converter.hxx>
 #include <tools/date.hxx>
 #include <tools/time.hxx>
+#include <o3tl/make_unique.hxx>
 
 #include <certificate.hxx>
+#include <biginteger.hxx>
 
-using namespace com::sun::star;
+using namespace css;
 
 DocumentSignatureManager::DocumentSignatureManager(const uno::Reference<uno::XComponentContext>& xContext, DocumentSignatureMode eMode)
     : mxContext(xContext),
@@ -43,9 +46,67 @@ DocumentSignatureManager::DocumentSignatureManager(const uno::Reference<uno::XCo
 {
 }
 
-DocumentSignatureManager::~DocumentSignatureManager()
+DocumentSignatureManager::~DocumentSignatureManager() = default;
+
+bool DocumentSignatureManager::init()
 {
+    SAL_WARN_IF(mxSEInitializer.is(), "xmlsecurity.helper", "DocumentSignatureManager::Init - mxSEInitializer already set!");
+    SAL_WARN_IF(mxSecurityContext.is(), "xmlsecurity.helper", "DocumentSignatureManager::Init - mxSecurityContext already set!");
+    SAL_WARN_IF(mxGpgSEInitializer.is(), "xmlsecurity.helper", "DocumentSignatureManager::Init - mxGpgSEInitializer already set!");
+
+    mxSEInitializer = xml::crypto::SEInitializer::create(mxContext);
+#if !defined(MACOSX) && !defined(WNT)
+    mxGpgSEInitializer.set(new SEInitializerGpg(mxContext));
+#endif
+
+    if (mxSEInitializer.is())
+        mxSecurityContext = mxSEInitializer->createSecurityContext(OUString());
+
+#if !defined(MACOSX) && !defined(WNT)
+    if (mxGpgSEInitializer.is())
+        mxGpgSecurityContext = mxGpgSEInitializer->createSecurityContext(OUString());
+
+    return mxSecurityContext.is() || mxGpgSecurityContext.is();
+#else
+    return mxSecurityContext.is();
+#endif
 }
+
+PDFSignatureHelper& DocumentSignatureManager::getPDFSignatureHelper()
+{
+    bool bInit = true;
+    if (!mxSecurityContext.is())
+        bInit = init();
+
+    SAL_WARN_IF(!bInit, "xmlsecurity.comp", "Error initializing security context!");
+
+    if (!mpPDFSignatureHelper)
+        mpPDFSignatureHelper = o3tl::make_unique<PDFSignatureHelper>();
+
+    return *mpPDFSignatureHelper;
+}
+
+#if 0 // For some reason does not work
+bool DocumentSignatureManager::IsXAdESRelevant()
+{
+    if (mxStore.is())
+    {
+        // ZIP-based: ODF or OOXML.
+        maSignatureHelper.StartMission();
+
+        SignatureStreamHelper aStreamHelper = ImplOpenSignatureStream(embed::ElementModes::READ, /*bUseTempStream=*/true);
+        if (aStreamHelper.nStorageFormat == embed::StorageFormats::OFOPXML)
+        {
+            maSignatureHelper.EndMission();
+            return false;
+        }
+        // FIXME: How to figure out if it is ODF 1.2?
+        maSignatureHelper.EndMission();
+        return true;
+    }
+    return false;
+}
+#endif
 
 /* Using the zip storage, we cannot get the properties "MediaType" and "IsEncrypted"
     We use the manifest to find out if a file is xml and if it is encrypted.
@@ -55,11 +116,6 @@ DocumentSignatureManager::~DocumentSignatureManager()
 bool DocumentSignatureManager::isXML(const OUString& rURI)
 {
     SAL_WARN_IF(!mxStore.is(), "xmlsecurity.helper", "empty storage reference");
-
-    // FIXME figure out why this is necessary.
-    static bool bTest = getenv("LO_TESTNAME");
-    if (bTest)
-        return true;
 
     bool bIsXML = false;
     bool bPropsAvailable = false;
@@ -187,7 +243,7 @@ SignatureStreamHelper DocumentSignatureManager::ImplOpenSignatureStream(sal_Int3
     return aHelper;
 }
 
-bool DocumentSignatureManager::add(const uno::Reference<security::XCertificate>& xCert, const OUString& rDescription, sal_Int32& nSecurityId)
+bool DocumentSignatureManager::add(const uno::Reference<security::XCertificate>& xCert, const OUString& rDescription, sal_Int32& nSecurityId, bool bAdESCompliant)
 {
     if (!xCert.is())
     {
@@ -195,15 +251,29 @@ bool DocumentSignatureManager::add(const uno::Reference<security::XCertificate>&
         return false;
     }
 
-    uno::Reference<security::XSerialNumberAdapter> xSerialNumberAdapter = security::SerialNumberAdapter::create(mxContext);
-    OUString aCertSerial = xSerialNumberAdapter->toString(xCert->getSerialNumber());
+    OUString aCertSerial = xmlsecurity::bigIntegerToNumericString(xCert->getSerialNumber());
     if (aCertSerial.isEmpty())
     {
         SAL_WARN("xmlsecurity.helper", "Error in Certificate, problem with serial number!");
         return false;
     }
 
-    maSignatureHelper.StartMission();
+    if (!mxStore.is())
+    {
+        // Something not ZIP based, try PDF.
+        nSecurityId = getPDFSignatureHelper().GetNewSecurityId();
+        getPDFSignatureHelper().SetX509Certificate(xCert);
+        getPDFSignatureHelper().SetDescription(rDescription);
+        uno::Reference<io::XInputStream> xInputStream(mxSignatureStream, uno::UNO_QUERY);
+        if (!getPDFSignatureHelper().Sign(xInputStream, bAdESCompliant))
+        {
+            SAL_WARN("xmlsecurity.helper", "PDFSignatureHelper::Sign() failed");
+            return false;
+        }
+        return true;
+    }
+
+    maSignatureHelper.StartMission(mxSecurityContext);
 
     nSecurityId = maSignatureHelper.GetNewSecurityId();
 
@@ -211,7 +281,7 @@ bool DocumentSignatureManager::add(const uno::Reference<security::XCertificate>&
     sax::Converter::encodeBase64(aStrBuffer, xCert->getEncoded());
 
     OUString aCertDigest;
-    if (xmlsecurity::Certificate* pCertificate = dynamic_cast<xmlsecurity::Certificate*>(xCert.get()))
+    if (auto pCertificate = dynamic_cast<xmlsecurity::Certificate*>(xCert.get()))
     {
         OUStringBuffer aBuffer;
         sax::Converter::encodeBase64(aBuffer, pCertificate->getSHA256Thumbprint());
@@ -222,14 +292,24 @@ bool DocumentSignatureManager::add(const uno::Reference<security::XCertificate>&
 
     maSignatureHelper.SetX509Certificate(nSecurityId, xCert->getIssuerName(), aCertSerial, aStrBuffer.makeStringAndClear(), aCertDigest);
 
-    std::vector< OUString > aElements = DocumentSignatureHelper::CreateElementList(mxStore, meSignatureMode, OOo3_2Document);
+    uno::Sequence< uno::Reference< security::XCertificate > > aCertPath = getSecurityEnvironment()->buildCertificatePath(xCert);
+    const uno::Reference< security::XCertificate >* pCertPath = aCertPath.getConstArray();
+    sal_Int32 nCnt = aCertPath.getLength();
+
+    for (int i = 0; i < nCnt; i++)
+    {
+        sax::Converter::encodeBase64(aStrBuffer, pCertPath[i]->getEncoded());
+        maSignatureHelper.AddEncapsulatedX509Certificate(aStrBuffer.makeStringAndClear());
+    }
+
+    std::vector< OUString > aElements = DocumentSignatureHelper::CreateElementList(mxStore, meSignatureMode, DocumentSignatureAlgorithm::OOo3_2);
     DocumentSignatureHelper::AppendContentTypes(mxStore, aElements);
 
     sal_Int32 nElements = aElements.size();
     for (sal_Int32 n = 0; n < nElements; n++)
     {
         bool bBinaryMode = !isXML(aElements[n]);
-        maSignatureHelper.AddForSigning(nSecurityId, aElements[n], aElements[n], bBinaryMode);
+        maSignatureHelper.AddForSigning(nSecurityId, aElements[n], aElements[n], bBinaryMode, bAdESCompliant);
     }
 
     maSignatureHelper.SetDateTime(nSecurityId, Date(Date::SYSTEM), tools::Time(tools::Time::SYSTEM));
@@ -251,10 +331,10 @@ bool DocumentSignatureManager::add(const uno::Reference<security::XCertificate>&
         uno::Reference<xml::sax::XDocumentHandler> xDocumentHandler(xSaxWriter, uno::UNO_QUERY_THROW);
         std::size_t nInfos = maCurrentSignatureInformations.size();
         for (std::size_t n = 0; n < nInfos; n++)
-            XMLSignatureHelper::ExportSignature(xDocumentHandler, maCurrentSignatureInformations[n]);
+            XMLSignatureHelper::ExportSignature(xDocumentHandler, maCurrentSignatureInformations[n], bAdESCompliant);
 
         // Create a new one...
-        maSignatureHelper.CreateAndWriteSignature(xDocumentHandler);
+        maSignatureHelper.CreateAndWriteSignature(xDocumentHandler, bAdESCompliant);
 
         // That's it...
         XMLSignatureHelper::CloseDocumentHandler(xDocumentHandler);
@@ -292,6 +372,22 @@ bool DocumentSignatureManager::add(const uno::Reference<security::XCertificate>&
 
 void DocumentSignatureManager::remove(sal_uInt16 nPosition)
 {
+    if (!mxStore.is())
+    {
+        // Something not ZIP based, try PDF.
+        uno::Reference<io::XInputStream> xInputStream(mxSignatureStream, uno::UNO_QUERY);
+        if (!PDFSignatureHelper::RemoveSignature(xInputStream, nPosition))
+        {
+            SAL_WARN("xmlsecurity.helper", "PDFSignatureHelper::RemoveSignature() failed");
+            return;
+        }
+
+        // Only erase when the removal was successful, it may fail for PDF.
+        // Also, erase the requested and all following signatures, as PDF signatures are always chained.
+        maCurrentSignatureInformations.erase(maCurrentSignatureInformations.begin() + nPosition, maCurrentSignatureInformations.end());
+        return;
+    }
+
     maCurrentSignatureInformations.erase(maCurrentSignatureInformations.begin() + nPosition);
 
     // Export all other signatures...
@@ -305,7 +401,7 @@ void DocumentSignatureManager::remove(sal_uInt16 nPosition)
         uno::Reference< xml::sax::XDocumentHandler> xDocumentHandler(xSaxWriter, uno::UNO_QUERY_THROW);
         std::size_t nInfos = maCurrentSignatureInformations.size();
         for (std::size_t n = 0 ; n < nInfos ; ++n)
-            XMLSignatureHelper::ExportSignature(xDocumentHandler, maCurrentSignatureInformations[n]);
+            XMLSignatureHelper::ExportSignature(xDocumentHandler, maCurrentSignatureInformations[n], false /* ??? */);
 
         XMLSignatureHelper::CloseDocumentHandler(xDocumentHandler);
     }
@@ -336,23 +432,40 @@ void DocumentSignatureManager::read(bool bUseTempStream, bool bCacheLastSignatur
 {
     maCurrentSignatureInformations.clear();
 
-    maSignatureHelper.StartMission();
-
-    SignatureStreamHelper aStreamHelper = ImplOpenSignatureStream(embed::ElementModes::READ, bUseTempStream);
-    if (aStreamHelper.nStorageFormat != embed::StorageFormats::OFOPXML && aStreamHelper.xSignatureStream.is())
+    if (mxStore.is())
     {
-        uno::Reference< io::XInputStream > xInputStream(aStreamHelper.xSignatureStream, uno::UNO_QUERY);
-        maSignatureHelper.ReadAndVerifySignature(xInputStream);
-    }
-    else if (aStreamHelper.nStorageFormat == embed::StorageFormats::OFOPXML && aStreamHelper.xSignatureStorage.is())
-        maSignatureHelper.ReadAndVerifySignatureStorage(aStreamHelper.xSignatureStorage, bCacheLastSignature);
-    maSignatureHelper.EndMission();
+        // ZIP-based: ODF or OOXML.
+        maSignatureHelper.StartMission(mxSecurityContext);
 
-    maCurrentSignatureInformations = maSignatureHelper.GetSignatureInformations();
+        SignatureStreamHelper aStreamHelper = ImplOpenSignatureStream(embed::ElementModes::READ, bUseTempStream);
+        if (aStreamHelper.nStorageFormat != embed::StorageFormats::OFOPXML && aStreamHelper.xSignatureStream.is())
+        {
+            uno::Reference< io::XInputStream > xInputStream(aStreamHelper.xSignatureStream, uno::UNO_QUERY);
+            maSignatureHelper.ReadAndVerifySignature(xInputStream);
+        }
+        else if (aStreamHelper.nStorageFormat == embed::StorageFormats::OFOPXML && aStreamHelper.xSignatureStorage.is())
+            maSignatureHelper.ReadAndVerifySignatureStorage(aStreamHelper.xSignatureStorage, bCacheLastSignature);
+        maSignatureHelper.EndMission();
+
+        maCurrentSignatureInformations = maSignatureHelper.GetSignatureInformations();
+    }
+    else
+    {
+        // Something not ZIP based, try PDF.
+        uno::Reference<io::XInputStream> xInputStream(mxSignatureStream, uno::UNO_QUERY);
+        if (getPDFSignatureHelper().ReadAndVerifySignature(xInputStream))
+            maCurrentSignatureInformations = getPDFSignatureHelper().GetSignatureInformations();
+    }
 }
 
-void DocumentSignatureManager::write()
+void DocumentSignatureManager::write(bool bXAdESCompliantIfODF)
 {
+    if (!mxStore.is())
+    {
+        // Something not ZIP based, assume PDF, which is written directly in add() already.
+        return;
+    }
+
     // Export all other signatures...
     SignatureStreamHelper aStreamHelper = ImplOpenSignatureStream(embed::ElementModes::WRITE|embed::ElementModes::TRUNCATE, false);
 
@@ -365,7 +478,7 @@ void DocumentSignatureManager::write()
         uno::Reference< xml::sax::XDocumentHandler> xDocumentHandler(xSaxWriter, uno::UNO_QUERY_THROW);
         std::size_t nInfos = maCurrentSignatureInformations.size();
         for (std::size_t n = 0 ; n < nInfos ; ++n)
-            XMLSignatureHelper::ExportSignature(xDocumentHandler, maCurrentSignatureInformations[n]);
+            XMLSignatureHelper::ExportSignature(xDocumentHandler, maCurrentSignatureInformations[n], bXAdESCompliantIfODF);
 
         XMLSignatureHelper::CloseDocumentHandler(xDocumentHandler);
 
@@ -396,6 +509,16 @@ void DocumentSignatureManager::write()
         uno::Reference<embed::XTransactedObject> xTrans(aStreamHelper.xSignatureStorage, uno::UNO_QUERY);
         xTrans->commit();
     }
+}
+
+uno::Reference<xml::crypto::XSecurityEnvironment> DocumentSignatureManager::getSecurityEnvironment()
+{
+    return mxSecurityContext.is() ? mxSecurityContext->getSecurityEnvironment() : uno::Reference<xml::crypto::XSecurityEnvironment>();
+}
+
+uno::Reference<xml::crypto::XSecurityEnvironment> DocumentSignatureManager::getGpgSecurityEnvironment()
+{
+    return mxGpgSecurityContext.is() ? mxGpgSecurityContext->getSecurityEnvironment() : uno::Reference<xml::crypto::XSecurityEnvironment>();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -21,29 +21,22 @@
 #include <rtl/byteseq.hxx>
 #include <osl/diagnose.h>
 
-IniParser::IniParser(OUString const & rIniName) throw(com::sun::star::io::IOException, std::exception)
+IniParser::IniParser(OUString const & rIniName)
 {
     OUString iniUrl;
     if (osl_File_E_None != osl_getFileURLFromSystemPath(rIniName.pData, &iniUrl.pData))
         return;
 
 
-#if OSL_DEBUG_LEVEL > 0
-    OString sFile = OUStringToOString(iniUrl, RTL_TEXTENCODING_ASCII_US);
-    OSL_TRACE(__FILE__" -- parser() - %s\n", sFile.getStr());
-#endif
     oslFileHandle handle=nullptr;
     oslFileError fileError = osl_File_E_INVAL;
     try{
         if (!iniUrl.isEmpty())
             fileError = osl_openFile(iniUrl.pData, &handle, osl_File_OpenFlag_Read);
     }
-    catch(const ::com::sun::star::io::IOException&)
+    catch(const css::io::IOException&)
     {
-#if OSL_DEBUG_LEVEL > 0
-        OString file_tmp = OUStringToOString(iniUrl, RTL_TEXTENCODING_ASCII_US);
-        OSL_TRACE( __FILE__" -- couldn't open file: %s", file_tmp.getStr() );
-#endif
+        SAL_WARN("connectivity.mozab", "couldn't open file: " << iniUrl );
     }
 
     if (osl_File_E_None == fileError)
@@ -92,13 +85,10 @@ IniParser::IniParser(OUString const & rIniName) throw(com::sun::star::io::IOExce
         }
         osl_closeFile(handle);
     }
-#if OSL_DEBUG_LEVEL > 0
     else
     {
-        OString file_tmp = OUStringToOString(iniUrl, RTL_TEXTENCODING_ASCII_US);
-        OSL_TRACE( __FILE__" -- couldn't open file: %s", file_tmp.getStr() );
+        SAL_INFO("connectivity.mozab", "couldn't open file: " << iniUrl );
     }
-#endif
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

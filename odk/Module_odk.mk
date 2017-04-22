@@ -22,7 +22,6 @@ $(eval $(call gb_Module_add_targets,odk,\
 	Package_docs \
 	Package_html \
 	Package_examples \
-	Package_lib \
 	Package_odk_headers \
 	Package_odk_headers_generated \
 	Package_settings \
@@ -56,5 +55,11 @@ $(eval $(call gb_Module_add_check_targets,odk,\
 	CustomTarget_allheaders \
 	CustomTarget_check \
 ))
+
+ifneq ($(filter $(OS),LINUX MACOSX),)
+$(eval $(call gb_Module_add_subsequentcheck_targets,odk, \
+    CustomTarget_build-examples \
+))
+endif
 
 # vim: set noet sw=4 ts=4:

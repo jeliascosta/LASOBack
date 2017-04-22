@@ -46,7 +46,7 @@ public:
 
     AccessibleViewForwarder (SdrPaintView* pView, OutputDevice& rDevice);
 
-    virtual ~AccessibleViewForwarder();
+    virtual ~AccessibleViewForwarder() override;
 
     //=====  IAccessibleViewforwarder  ========================================
 
@@ -56,7 +56,7 @@ public:
         @return
             The rectangle of the visible part of the document.
      */
-    virtual Rectangle GetVisibleArea() const override;
+    virtual ::tools::Rectangle GetVisibleArea() const override;
 
     /** Transform the specified point from internal coordinates to an
         absolute screen position.

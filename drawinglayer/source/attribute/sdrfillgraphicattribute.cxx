@@ -38,7 +38,6 @@ namespace drawinglayer
             basegfx::B2DVector                      maOffsetPosition;
             basegfx::B2DVector                      maRectPoint;
 
-            // bitfield
             bool                                    mbTiling : 1;
             bool                                    mbStretch : 1;
             bool                                    mbLogSize : 1;
@@ -87,7 +86,6 @@ namespace drawinglayer
             const basegfx::B2DVector& getRectPoint() const { return maRectPoint; }
             bool getTiling() const { return mbTiling; }
             bool getStretch() const { return mbStretch; }
-            bool getLogSize() const { return mbLogSize; }
 
             bool operator==(const ImpSdrFillGraphicAttribute& rCandidate) const
             {
@@ -99,7 +97,7 @@ namespace drawinglayer
                     && getRectPoint() == rCandidate.getRectPoint()
                     && getTiling() == rCandidate.getTiling()
                     && getStretch() == rCandidate.getStretch()
-                    && getLogSize() == rCandidate.getLogSize());
+                    && mbLogSize == rCandidate.mbLogSize);
             }
         };
 
@@ -143,6 +141,11 @@ namespace drawinglayer
         {
         }
 
+        SdrFillGraphicAttribute::SdrFillGraphicAttribute(SdrFillGraphicAttribute&& rCandidate)
+        :   mpSdrFillGraphicAttribute(std::move(rCandidate.mpSdrFillGraphicAttribute))
+        {
+        }
+
         SdrFillGraphicAttribute::~SdrFillGraphicAttribute()
         {
         }
@@ -155,6 +158,12 @@ namespace drawinglayer
         SdrFillGraphicAttribute& SdrFillGraphicAttribute::operator=(const SdrFillGraphicAttribute& rCandidate)
         {
             mpSdrFillGraphicAttribute = rCandidate.mpSdrFillGraphicAttribute;
+            return *this;
+        }
+
+        SdrFillGraphicAttribute& SdrFillGraphicAttribute::operator=(SdrFillGraphicAttribute&& rCandidate)
+        {
+            mpSdrFillGraphicAttribute = std::move(rCandidate.mpSdrFillGraphicAttribute);
             return *this;
         }
 
@@ -202,11 +211,6 @@ namespace drawinglayer
             return mpSdrFillGraphicAttribute->getTiling();
         }
 
-        bool SdrFillGraphicAttribute::getStretch() const
-        {
-            return mpSdrFillGraphicAttribute->getStretch();
-        }
-
         FillGraphicAttribute SdrFillGraphicAttribute::createFillGraphicAttribute(const basegfx::B2DRange& rRange) const
         {
             // get logical size of bitmap (before possibly expanding it)
@@ -216,8 +220,8 @@ namespace drawinglayer
             basegfx::B2DPoint aBitmapSize(1.0, 1.0);
             basegfx::B2DVector aBitmapTopLeft(0.0, 0.0);
 
-            //UUUU are changes needed? When stretched we are already done, all other values will have no influence
-            if(getTiling() || !getStretch())
+            // are changes needed? When stretched we are already done, all other values will have no influence
+            if(getTiling() || !mpSdrFillGraphicAttribute->getStretch())
             {
                 // init values with range sizes
                 const double fRangeWidth(0.0 != rRange.getWidth() ? rRange.getWidth() : 1.0);

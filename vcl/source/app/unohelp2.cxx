@@ -22,6 +22,7 @@
 #include <sot/formats.hxx>
 #include <tools/debug.hxx>
 #include <vcl/svapp.hxx>
+#include <com/sun/star/datatransfer/UnsupportedFlavorException.hpp>
 #include <com/sun/star/datatransfer/clipboard/XClipboard.hpp>
 #include <com/sun/star/datatransfer/clipboard/XFlushableClipboard.hpp>
 #include <cppuhelper/queryinterface.hxx>
@@ -41,7 +42,7 @@ namespace vcl { namespace unohelper {
     void TextDataObject::CopyStringTo( const OUString& rContent,
         const uno::Reference< datatransfer::clipboard::XClipboard >& rxClipboard )
     {
-        DBG_ASSERT( rxClipboard.is(), "TextDataObject::CopyStringTo: invalid clipboard!" );
+        SAL_WARN_IF( !rxClipboard.is(), "vcl", "TextDataObject::CopyStringTo: invalid clipboard!" );
         if ( !rxClipboard.is() )
             return;
 
@@ -62,21 +63,21 @@ namespace vcl { namespace unohelper {
     }
 
     // css::uno::XInterface
-    uno::Any TextDataObject::queryInterface( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
+    uno::Any TextDataObject::queryInterface( const uno::Type & rType )
     {
         uno::Any aRet = ::cppu::queryInterface( rType, (static_cast< datatransfer::XTransferable* >(this)) );
         return (aRet.hasValue() ? aRet : OWeakObject::queryInterface( rType ));
     }
 
     // css::datatransfer::XTransferable
-    uno::Any TextDataObject::getTransferData( const datatransfer::DataFlavor& rFlavor ) throw(datatransfer::UnsupportedFlavorException, io::IOException, uno::RuntimeException, std::exception)
+    uno::Any TextDataObject::getTransferData( const datatransfer::DataFlavor& rFlavor )
     {
         uno::Any aAny;
 
         SotClipboardFormatId nT = SotExchange::GetFormat( rFlavor );
         if ( nT == SotClipboardFormatId::STRING )
         {
-            aAny <<= GetString();
+            aAny <<= maText;
         }
         else
         {
@@ -85,14 +86,14 @@ namespace vcl { namespace unohelper {
         return aAny;
     }
 
-    uno::Sequence< datatransfer::DataFlavor > TextDataObject::getTransferDataFlavors(  ) throw(uno::RuntimeException, std::exception)
+    uno::Sequence< datatransfer::DataFlavor > TextDataObject::getTransferDataFlavors(  )
     {
         uno::Sequence< datatransfer::DataFlavor > aDataFlavors(1);
         SotExchange::GetFormatDataFlavor( SotClipboardFormatId::STRING, aDataFlavors.getArray()[0] );
         return aDataFlavors;
     }
 
-    sal_Bool TextDataObject::isDataFlavorSupported( const datatransfer::DataFlavor& rFlavor ) throw(uno::RuntimeException, std::exception)
+    sal_Bool TextDataObject::isDataFlavorSupported( const datatransfer::DataFlavor& rFlavor )
     {
         SotClipboardFormatId nT = SotExchange::GetFormat( rFlavor );
         return ( nT == SotClipboardFormatId::STRING );

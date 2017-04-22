@@ -20,10 +20,18 @@
 #ifndef INCLUDED_SVX_CONTDLG_HXX
 #define INCLUDED_SVX_CONTDLG_HXX
 
+#include "sal/types.h"
+
 #include <sfx2/basedlgs.hxx>
-#include <sfx2/ctrlitem.hxx>
 #include <sfx2/childwin.hxx>
 #include <svx/svxdllapi.h>
+#include <tools/poly.hxx>
+#include <vcl/vclptr.hxx>
+#include <vcl/window.hxx>
+
+class Rectangle;
+class SfxBindings;
+class SfxModule;
 
 /*************************************************************************
 |*
@@ -58,7 +66,7 @@ public:
 
                         SvxContourDlg(SfxBindings *pBindings, SfxChildWindow *pCW,
                                       vcl::Window* pParent);
-    virtual             ~SvxContourDlg();
+    virtual             ~SvxContourDlg() override;
     virtual void        dispose() override;
 
     const Graphic&      GetGraphic() const;
@@ -69,10 +77,10 @@ public:
     const void*         GetEditingObject() const;
 
     void                Update( const Graphic& rGraphic, bool bGraphicLinked,
-                                const tools::PolyPolygon* pPolyPoly = nullptr, void* pEditingObj = nullptr );
+                                const tools::PolyPolygon* pPolyPoly, void* pEditingObj );
 
     static tools::PolyPolygon  CreateAutoContour(  const Graphic& rGraphic,
-                                            const Rectangle* pRect = nullptr,
+                                            const tools::Rectangle* pRect = nullptr,
                                             const sal_uIntPtr nFlags = 0L );
 };
 

@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include <GL/glew.h>
+#include <epoxy/gl.h>
 
 #include <vcl/dllapi.h>
 #include <vcl/window.hxx>
@@ -98,9 +98,9 @@ public:
     OpenGLProgram*      UseProgram( const OUString& rVertexShader, const OUString& rFragmentShader, const OString& preamble = "" );
     void                UseNoProgram();
 
-    std::unique_ptr<RenderState>& state()
+    RenderState& state()
     {
-        return mpRenderState;
+        return *mpRenderState;
     }
 
     OpenGLCapabilitySwitch& getOpenGLCapabilitySwitch()
@@ -129,6 +129,8 @@ public:
     void registerAsCurrent();
     /// reset the GL context so this context is not implicit in subsequent GL calls.
     virtual void resetCurrent();
+    /// unbind the GL_FRAMEBUFFER to its default state, needed for gtk3
+    virtual void restoreDefaultFramebuffer();
     virtual void swapBuffers();
     virtual void sync();
     void show();
@@ -158,8 +160,8 @@ private:
     virtual void destroyCurrentContext();
 
 protected:
-    bool InitGLEW();
-    void InitGLEWDebugging();
+    bool InitGL();
+    static void InitGLDebugging();
     static void InitChildWindow(SystemChildWindow *pChildWindow);
     static void BuffersSwapped();
     virtual GLWindow& getModifiableOpenGLWindow() = 0;

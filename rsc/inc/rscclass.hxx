@@ -53,27 +53,17 @@ protected:
     bool                IsValueDflt( CLASS_DATA pData, sal_uInt32 nEle );
     void                SetVarDflt( CLASS_DATA pData, sal_uInt32 nEle,
                                     bool bSet );
-    sal_Int32           GetCorrectValues( const RSCINST & rInst, sal_uInt32 nVarPos,
-                                          sal_uInt32 nTupelIdx, RscTypCont * pTC );
 public:
-                    RscClass( Atom nId, sal_uInt32 nTypId, RscTop * pSuperCl );
-                    virtual ~RscClass();
+                    RscClass( Atom nId, RESOURCE_TYPE nTypId, RscTop * pSuperCl );
+                    virtual ~RscClass() override;
 
     virtual RSCCLASS_TYPE   GetClassType() const override;
 
     void            Pre_dtor() override;
     ERRTYPE         SetVariable( Atom nVarName, RscTop * pClass,
-                                 RSCINST * pDflt,
-                                 RSCVAR nVarType, SfxStyleItem nMask,
-                                 Atom nDataBaseName ) override;
-    ERRTYPE         SetVariable( Atom nVarName, RscTop * pClass,
-                                 RSCINST * pDflt,
-                                 RSCVAR nVarType, SfxSlotInfo nMask,
-                                 Atom nDataBaseName ) override;
-    ERRTYPE         SetVariable( Atom nVarName, RscTop * pClass,
-                                 RSCINST * pDflt,
-                                 RSCVAR nVarType, sal_uInt32 nMask,
-                                 Atom nDataBaseName ) override;
+                                 RSCINST * pDflt = nullptr,
+                                 RSCVAR nVarType = RSCVAR::NONE, sal_uInt32 nMask = 0,
+                                 Atom nDataBaseName = InvalidAtom ) override;
     virtual void    EnumVariables( void * pData, VarEnumCallbackProc ) override;
     RSCINST         GetVariable( const RSCINST & rInst, Atom nVarName,
                                  const RSCINST & rInitInst,
@@ -82,7 +72,7 @@ public:
     RSCINST         GetCopyVar( const RSCINST & rInst, Atom nVarName ) override;
 
                     // gives the class size in bytes
-    sal_uInt32      Size() override { return nSize; }
+    sal_uInt32      Size() const override { return nSize; }
 
     bool            IsConsistent( const RSCINST & rInst ) override;
     void            SetToDefault( const RSCINST & rInst ) override;
@@ -92,30 +82,30 @@ public:
     using RscTop::GetDefault;
     RSCINST         GetDefault( Atom nVarId ) override;
 
-    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool ) override;
+    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool bOwnClass = false ) override;
     void            Destroy( const RSCINST & rInst ) override;
     void            WriteSrc( const RSCINST & rInst, FILE * fOutput,
                               RscTypCont * pTC, sal_uInt32 nTab, const char * ) override;
     ERRTYPE         WriteInstRc( const RSCINST & rInst, RscWriteRc & aMem,
-                                 RscTypCont * pTC, sal_uInt32, bool bExtra );
+                                 RscTypCont * pTC, sal_uInt32 );
     ERRTYPE         WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32, bool bExtra ) override;
+                             RscTypCont * pTC, sal_uInt32 ) override;
 };
 
 class RscSysDepend : public RscClass
 {
 public:
-                    RscSysDepend( Atom nId, sal_uInt32 nTypId, RscTop * pSuper );
+                    RscSysDepend( Atom nId, RESOURCE_TYPE nTypId, RscTop * pSuper );
     ERRTYPE         WriteSysDependRc( const RSCINST &, RscWriteRc & aMem,
-                                      RscTypCont * pTC, sal_uInt32, bool bExtra );
+                                      RscTypCont * pTC, sal_uInt32 );
     ERRTYPE         WriteRc( const RSCINST &, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32, bool bExtra ) override;
+                             RscTypCont * pTC, sal_uInt32 ) override;
 };
 
 class RscTupel : public RscClass
 {
 public:
-    RscTupel( Atom nId, sal_uInt32 nTypId, RscTop * pSuper );
+    RscTupel( Atom nId, RESOURCE_TYPE nTypId );
     RSCINST         GetTupelVar( const RSCINST & rInst, sal_uInt32 nPos,
                                  const RSCINST & rInitInst ) override;
     void            WriteSrc( const RSCINST & rInst, FILE * fOutput,

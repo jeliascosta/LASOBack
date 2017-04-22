@@ -46,7 +46,7 @@ namespace sdr { namespace contact {
     //= ViewObjectContactOfUnoControl
 
     class ViewObjectContactOfUnoControl_Impl;
-    class SVX_DLLPRIVATE ViewObjectContactOfUnoControl : public ViewObjectContactOfSdrObj
+    class ViewObjectContactOfUnoControl : public ViewObjectContactOfSdrObj
     {
     protected:
         ::rtl::Reference< ViewObjectContactOfUnoControl_Impl >    m_pImpl;
@@ -89,7 +89,7 @@ namespace sdr { namespace contact {
         void onControlChangedOrModified( ImplAccess ) { impl_onControlChangedOrModified(); }
 
     protected:
-        virtual ~ViewObjectContactOfUnoControl();
+        virtual ~ViewObjectContactOfUnoControl() override;
 
         // support for Primitive2D
         virtual drawinglayer::primitive2d::Primitive2DContainer createPrimitive2DSequence(const DisplayInfo& rDisplayInfo) const override;
@@ -104,11 +104,11 @@ namespace sdr { namespace contact {
         ViewObjectContactOfUnoControl& operator=( const ViewObjectContactOfUnoControl& ) = delete;
     };
 
-    class SVX_DLLPRIVATE UnoControlPrintOrPreviewContact : public ViewObjectContactOfUnoControl
+    class UnoControlPrintOrPreviewContact : public ViewObjectContactOfUnoControl
     {
     public:
         UnoControlPrintOrPreviewContact( ObjectContactOfPageView& _rObjectContact, ViewContactOfUnoControl& _rViewContact );
-        virtual ~UnoControlPrintOrPreviewContact();
+        virtual ~UnoControlPrintOrPreviewContact() override;
 
     private:
         UnoControlPrintOrPreviewContact( const UnoControlPrintOrPreviewContact& ) = delete;

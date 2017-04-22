@@ -77,7 +77,7 @@ bool VirtualDevice::AcquireGraphics() const
 
     if ( mpGraphics )
     {
-        mpGraphics->SetXORMode( (ROP_INVERT == meRasterOp) || (ROP_XOR == meRasterOp), ROP_INVERT == meRasterOp );
+        mpGraphics->SetXORMode( (RasterOp::Invert == meRasterOp) || (RasterOp::Xor == meRasterOp) );
         mpGraphics->setAntiAliasB2DDraw(bool(mnAntialiasing & AntialiasingFlags::EnableB2dDraw));
     }
 
@@ -148,7 +148,7 @@ void VirtualDevice::ImplInitVirDev( const OutputDevice* pOutDev,
     {
         // do not abort but throw an exception, may be the current thread terminates anyway (plugin-scenario)
         throw css::uno::RuntimeException(
-            OUString( "Could not create system bitmap!" ),
+            "Could not create system bitmap!",
             css::uno::Reference< css::uno::XInterface >() );
     }
 
@@ -181,7 +181,7 @@ void VirtualDevice::ImplInitVirDev( const OutputDevice* pOutDev,
     mpFontCache     = pSVData->maGDIData.mpScreenFontCache;
     mnDPIX          = pOutDev->mnDPIX;
     mnDPIY          = pOutDev->mnDPIY;
-    mnDPIScaleFactor = pOutDev->mnDPIScaleFactor;
+    mnDPIScalePercentage = pOutDev->mnDPIScalePercentage;
     maFont          = pOutDev->maFont;
 
     if( maTextColor != pOutDev->maTextColor )
@@ -209,27 +209,30 @@ void VirtualDevice::ImplInitVirDev( const OutputDevice* pOutDev,
 
 VirtualDevice::VirtualDevice(DeviceFormat eFormat)
 :   mpVirDev( nullptr ),
-    meRefDevMode( REFDEV_NONE )
+    meRefDevMode( RefDevMode::NONE ),
+    mbForceZeroExtleadBug( false )
 {
-    SAL_INFO( "vcl.gdi", "VirtualDevice::VirtualDevice( " << static_cast<int>(eFormat) << " )" );
+    SAL_INFO( "vcl.virdev", "VirtualDevice::VirtualDevice( " << static_cast<int>(eFormat) << " )" );
 
     ImplInitVirDev(Application::GetDefaultDevice(), 0, 0, eFormat);
 }
 
 VirtualDevice::VirtualDevice(const OutputDevice& rCompDev, DeviceFormat eFormat)
     : mpVirDev( nullptr ),
-    meRefDevMode( REFDEV_NONE )
+    meRefDevMode( RefDevMode::NONE ),
+    mbForceZeroExtleadBug( false )
 {
-    SAL_INFO( "vcl.gdi", "VirtualDevice::VirtualDevice( " << static_cast<int>(eFormat) << " )" );
+    SAL_INFO( "vcl.virdev", "VirtualDevice::VirtualDevice( " << static_cast<int>(eFormat) << " )" );
 
     ImplInitVirDev(&rCompDev, 0, 0, eFormat);
 }
 
 VirtualDevice::VirtualDevice(const OutputDevice& rCompDev, DeviceFormat eFormat, DeviceFormat eAlphaFormat)
     : mpVirDev( nullptr )
-    , meRefDevMode( REFDEV_NONE )
+    , meRefDevMode( RefDevMode::NONE )
+    , mbForceZeroExtleadBug( false )
 {
-    SAL_INFO( "vcl.gdi",
+    SAL_INFO( "vcl.virdev",
             "VirtualDevice::VirtualDevice( " << static_cast<int>(eFormat) << ", " << static_cast<int>(eAlphaFormat) << " )" );
 
     ImplInitVirDev(&rCompDev, 0, 0, eFormat);
@@ -241,9 +244,10 @@ VirtualDevice::VirtualDevice(const OutputDevice& rCompDev, DeviceFormat eFormat,
 VirtualDevice::VirtualDevice(const SystemGraphicsData *pData, const Size &rSize,
                              DeviceFormat eFormat)
 :   mpVirDev( nullptr ),
-    meRefDevMode( REFDEV_NONE )
+    meRefDevMode( RefDevMode::NONE ),
+    mbForceZeroExtleadBug( false )
 {
-    SAL_INFO( "vcl.gdi", "VirtualDevice::VirtualDevice( " << static_cast<int>(eFormat) << " )" );
+    SAL_INFO( "vcl.virdev", "VirtualDevice::VirtualDevice( " << static_cast<int>(eFormat) << " )" );
 
     ImplInitVirDev(Application::GetDefaultDevice(), rSize.Width(), rSize.Height(),
                    eFormat, pData);
@@ -251,13 +255,13 @@ VirtualDevice::VirtualDevice(const SystemGraphicsData *pData, const Size &rSize,
 
 VirtualDevice::~VirtualDevice()
 {
-    SAL_INFO( "vcl.gdi", "VirtualDevice::~VirtualDevice()" );
+    SAL_INFO( "vcl.virdev", "VirtualDevice::~VirtualDevice()" );
     disposeOnce();
 }
 
 void VirtualDevice::dispose()
 {
-    SAL_INFO( "vcl.gdi", "VirtualDevice::dispose()" );
+    SAL_INFO( "vcl.virdev", "VirtualDevice::dispose()" );
 
     ImplSVData* pSVData = ImplGetSVData();
 
@@ -282,7 +286,7 @@ void VirtualDevice::dispose()
 bool VirtualDevice::InnerImplSetOutputSizePixel( const Size& rNewSize, bool bErase,
                                                  sal_uInt8 *const pBuffer)
 {
-    SAL_INFO( "vcl.gdi",
+    SAL_INFO( "vcl.virdev",
               "VirtualDevice::InnerImplSetOutputSizePixel( " << rNewSize.Width() << ", "
               << rNewSize.Height() << ", " << int(bErase) << " )" );
 
@@ -373,7 +377,7 @@ bool VirtualDevice::InnerImplSetOutputSizePixel( const Size& rNewSize, bool bEra
 
 // #i32109#: Fill opaque areas correctly (without relying on
 // fill/linecolor state)
-void VirtualDevice::ImplFillOpaqueRectangle( const Rectangle& rRect )
+void VirtualDevice::ImplFillOpaqueRectangle( const tools::Rectangle& rRect )
 {
     // Set line and fill color to black (->opaque),
     // fill rect with that (linecolor, too, because of
@@ -456,17 +460,17 @@ void VirtualDevice::SetReferenceDevice( RefDevMode i_eRefDevMode )
     sal_Int32 nDPIX = 600, nDPIY = 600;
     switch( i_eRefDevMode )
     {
-    case REFDEV_NONE:
+    case RefDevMode::NONE:
     default:
-        DBG_ASSERT( false, "VDev::SetRefDev illegal argument!" );
+        SAL_WARN( "vcl.virdev", "VDev::SetRefDev illegal argument!" );
         break;
-    case REFDEV_MODE06:
+    case RefDevMode::Dpi600:
         nDPIX = nDPIY = 600;
         break;
-    case REFDEV_MODE_MSO1:
+    case RefDevMode::MSO1:
         nDPIX = nDPIY = 6*1440;
         break;
-    case REFDEV_MODE_PDF1:
+    case RefDevMode::PDF1:
         nDPIX = nDPIY = 720;
         break;
     }
@@ -475,14 +479,14 @@ void VirtualDevice::SetReferenceDevice( RefDevMode i_eRefDevMode )
 
 void VirtualDevice::SetReferenceDevice( sal_Int32 i_nDPIX, sal_Int32 i_nDPIY )
 {
-    ImplSetReferenceDevice( REFDEV_CUSTOM, i_nDPIX, i_nDPIY );
+    ImplSetReferenceDevice( RefDevMode::Custom, i_nDPIX, i_nDPIY );
 }
 
 void VirtualDevice::ImplSetReferenceDevice( RefDevMode i_eRefDevMode, sal_Int32 i_nDPIX, sal_Int32 i_nDPIY )
 {
     mnDPIX = i_nDPIX;
     mnDPIY = i_nDPIY;
-    mnDPIScaleFactor = 1;
+    mnDPIScalePercentage = 100;
 
     EnableOutput( false );  // prevent output on reference device
     mbScreenComp = false;
@@ -492,10 +496,9 @@ void VirtualDevice::ImplSetReferenceDevice( RefDevMode i_eRefDevMode, sal_Int32 
     mbNewFont = true;
 
     // avoid adjusting font lists when already in refdev mode
-    sal_uInt8 nOldRefDevMode = meRefDevMode;
-    sal_uInt8 nOldCompatFlag = (sal_uInt8)meRefDevMode & REFDEV_FORCE_ZERO_EXTLEAD;
-    meRefDevMode = (sal_uInt8)(i_eRefDevMode | nOldCompatFlag);
-    if( (nOldRefDevMode ^ nOldCompatFlag) != REFDEV_NONE )
+    RefDevMode nOldRefDevMode = meRefDevMode;
+    meRefDevMode = i_eRefDevMode;
+    if( nOldRefDevMode != RefDevMode::NONE )
         return;
 
     // the reference device should have only scalable fonts
@@ -525,7 +528,7 @@ void VirtualDevice::ImplSetReferenceDevice( RefDevMode i_eRefDevMode, sal_Int32 
 
     // get font list with scalable fonts only
     AcquireGraphics();
-    mpFontCollection = pSVData->maGDIData.mpScreenFontList->Clone( false );
+    mpFontCollection = pSVData->maGDIData.mpScreenFontList->Clone();
 
     // prepare to use new font lists
     mpFontCache = new ImplFontCache();
@@ -543,14 +546,14 @@ bool VirtualDevice::UsePolyPolygonForComplexGradient()
 
 void VirtualDevice::Compat_ZeroExtleadBug()
 {
-    meRefDevMode = (sal_uInt8)meRefDevMode | REFDEV_FORCE_ZERO_EXTLEAD;
+    mbForceZeroExtleadBug = true;
 }
 
 long VirtualDevice::GetFontExtLeading() const
 {
 #ifdef UNX
     // backwards compatible line metrics after fixing #i60945#
-    if ( ForceZeroExtleadBug() )
+    if ( mbForceZeroExtleadBug )
         return 0;
 #endif
 

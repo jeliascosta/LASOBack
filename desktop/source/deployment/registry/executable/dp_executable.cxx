@@ -20,14 +20,15 @@
 
 #include "dp_misc.h"
 #include "dp_backend.h"
+#include "dp_services.hxx"
 #include "dp_ucb.h"
 #include "dp_interact.h"
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <rtl/string.hxx>
 #include <osl/file.hxx>
 #include <ucbhelper/content.hxx>
 #include <comphelper/servicedecl.hxx>
 #include <svl/inettype.hxx>
-#include <cppuhelper/implbase1.hxx>
 #include "dp_executablebackenddb.hxx"
 
 using namespace ::com::sun::star;
@@ -62,7 +63,7 @@ class BackendImpl : public ::dp_registry::backend::PackageRegistryBackend
         bool isUrlTargetInExtension();
 
     public:
-        inline ExecutablePackageImpl(
+        ExecutablePackageImpl(
             ::rtl::Reference<PackageRegistryBackend> const & myBackend,
             OUString const & url, OUString const & name,
             Reference<deployment::XPackageTypeInfo> const & xPackageType,
@@ -93,10 +94,8 @@ public:
 
     // XPackageRegistry
     virtual Sequence< Reference<deployment::XPackageTypeInfo> > SAL_CALL
-    getSupportedPackageTypes() throw (RuntimeException, std::exception) override;
-    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType)
-        throw (deployment::DeploymentException,
-               uno::RuntimeException, std::exception) override;
+    getSupportedPackageTypes() override;
+    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType) override;
 
 };
 
@@ -107,7 +106,7 @@ BackendImpl::BackendImpl(
     : PackageRegistryBackend( args, xComponentContext ),
       m_xExecutableTypeInfo(new Package::TypeInfo(
                                 "application/vnd.sun.star.executable",
-                                "", "Executable", RID_IMG_COMPONENT ) )
+                                "", "Executable" ) )
 {
     if (!transientMode())
     {
@@ -139,15 +138,13 @@ bool BackendImpl::hasActiveEntry(OUString const & url)
 
 // XPackageRegistry
 Sequence< Reference<deployment::XPackageTypeInfo> >
-BackendImpl::getSupportedPackageTypes() throw (RuntimeException, std::exception)
+BackendImpl::getSupportedPackageTypes()
 {
     return Sequence<Reference<deployment::XPackageTypeInfo> >(
         & m_xExecutableTypeInfo, 1);
 }
 
 void BackendImpl::packageRemoved(OUString const & url, OUString const & /*mediaType*/)
-        throw (deployment::DeploymentException,
-               uno::RuntimeException, std::exception)
 {
     if (m_backendDb.get())
         m_backendDb->removeEntry(url);
@@ -311,7 +308,7 @@ bool BackendImpl::ExecutablePackageImpl::getFileAttributes(sal_uInt64& out_Attri
 
 namespace sdecl = comphelper::service_decl;
 sdecl::class_<BackendImpl, sdecl::with_args<true> > serviceBI;
-extern sdecl::ServiceDecl const serviceDecl(
+sdecl::ServiceDecl const serviceDecl(
     serviceBI,
     "com.sun.star.comp.deployment.executable.PackageRegistryBackend",
     BACKEND_SERVICE_NAME );

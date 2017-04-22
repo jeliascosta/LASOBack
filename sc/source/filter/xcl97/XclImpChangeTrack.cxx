@@ -45,11 +45,11 @@ XclImpChangeTrack::XclImpChangeTrack( const XclImpRoot& rRoot, const XclImpStrea
     // "Revision Log" and "User Names" streams when Change Tracking is active but the Revision log
     // remains if Change Tracking is turned off.
     tools::SvRef<SotStorageStream> xUserStrm = OpenStream( EXC_STREAM_USERNAMES );
-    if( !xUserStrm.Is() )
+    if( !xUserStrm.is() )
         return;
 
     xInStrm = OpenStream( EXC_STREAM_REVLOG );
-    if( xInStrm.Is() )
+    if( xInStrm.is() )
     {
         xInStrm->Seek( STREAM_SEEK_TO_END );
         sal_uInt64 const nStreamLen = xInStrm->Tell();
@@ -211,7 +211,7 @@ void XclImpChangeTrack::ReadFormula( ScTokenArray*& rpTokenArray, const ScAddres
     // read the formula, 3D tab refs from extended data
     const ScTokenArray* pArray = nullptr;
     aFmlConv.Reset( rPosition );
-    bool bOK = (aFmlConv.Convert( pArray, aFmlaStrm, nFmlSize, false ) == ConvOK);   // JEG : Check This
+    bool bOK = (aFmlConv.Convert( pArray, aFmlaStrm, nFmlSize, false ) == ConvErr::OK);   // JEG : Check This
     rpTokenArray = (bOK && pArray) ? new ScTokenArray( *pArray ) : nullptr;
     pStrm->Ignore( 1 );
 }
@@ -227,7 +227,7 @@ void XclImpChangeTrack::ReadCell(
         break;
         case EXC_CHTR_TYPE_RK:
         {
-            double fValue = ReadRK();
+            double fValue = XclTools::GetDoubleFromRK( pStrm->ReadInt32() );
             if( pStrm->IsValid() )
             {
                 rCell.meType = CELLTYPE_VALUE;
@@ -257,7 +257,7 @@ void XclImpChangeTrack::ReadCell(
         break;
         case EXC_CHTR_TYPE_BOOL:
         {
-            double fValue = (double) ReadBool();
+            double fValue = (double) (pStrm->ReaduInt16() != 0);
             if( pStrm->IsValid() )
             {
                 rCell.meType = CELLTYPE_VALUE;

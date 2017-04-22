@@ -23,6 +23,7 @@
 #include <vcl/gradient.hxx>
 
 #include "svsys.h"
+#include "ControlCacheKey.hxx"
 
 class WinSalGraphics;
 
@@ -36,7 +37,7 @@ private:
     HPEN mhPen; // Pen
     bool mbStockPen : 1; // is Pen a stockpen
     bool mbBrush : 1; // is Brush (FALSE == NULL_BRUSH)
-    bool mbStockBrush : 1; // is Brush a stcokbrush
+    bool mbStockBrush : 1; // is Brush a stockbrush
     HBRUSH mhBrush; // Brush
     COLORREF mnPenColor; // PenColor
     COLORREF mnBrushColor; // BrushColor
@@ -51,7 +52,7 @@ public:
 
     explicit WinSalGraphicsImpl(WinSalGraphics& rParent);
 
-    virtual ~WinSalGraphicsImpl();
+    virtual ~WinSalGraphicsImpl() override;
 
     virtual void Init() override;
 
@@ -83,7 +84,7 @@ public:
     virtual void SetFillColor( SalColor nSalColor ) override;
 
     // enable/disable XOR drawing
-    virtual void SetXORMode( bool bSet, bool bInvertOnly ) override;
+    virtual void SetXORMode( bool bSet) override;
 
     // set line color for raster operations
     virtual void SetROPLineColor( SalROPColor nROPColor ) override;
@@ -117,18 +118,18 @@ public:
     virtual bool drawPolyLineBezier(
                 sal_uInt32 nPoints,
                 const SalPoint* pPtAry,
-                const sal_uInt8* pFlgAry ) override;
+                const PolyFlags* pFlgAry ) override;
 
     virtual bool drawPolygonBezier(
                 sal_uInt32 nPoints,
                 const SalPoint* pPtAry,
-                const sal_uInt8* pFlgAry ) override;
+                const PolyFlags* pFlgAry ) override;
 
     virtual bool drawPolyPolygonBezier(
                 sal_uInt32 nPoly,
                 const sal_uInt32* pPoints,
                 const SalPoint* const* pPtAry,
-                const sal_uInt8* const* pFlgAry ) override;
+                const PolyFlags* const* pFlgAry ) override;
 
     // CopyArea --> No RasterOp, but ClipRegion
     virtual void copyArea(

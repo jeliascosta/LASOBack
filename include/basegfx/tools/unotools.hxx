@@ -11,7 +11,6 @@
 #define INCLUDED_BASEGFX_TOOLS_UNOTOOLS_HXX
 
 #include <cppuhelper/basemutex.hxx>
-#include <cppuhelper/compbase3.hxx>
 #include <com/sun/star/drawing/PolyPolygonBezierCoords.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/rendering/FillRule.hpp>
@@ -26,9 +25,8 @@ class B2DPolyPolygon;
 
 namespace unotools
 {
-
-    BASEGFX_DLLPUBLIC B2DPolyPolygon polyPolygonBezierToB2DPolyPolygon(const css::drawing::PolyPolygonBezierCoords& rSourcePolyPolygon)
-        throw( css::lang::IllegalArgumentException );
+    /// @throws css::lang::IllegalArgumentException
+    BASEGFX_DLLPUBLIC B2DPolyPolygon polyPolygonBezierToB2DPolyPolygon(const css::drawing::PolyPolygonBezierCoords& rSourcePolyPolygon);
 
     BASEGFX_DLLPUBLIC void b2DPolyPolygonToPolyPolygonBezier( const B2DPolyPolygon& rPolyPoly,
                                             css::drawing::PolyPolygonBezierCoords& rRetval );

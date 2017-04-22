@@ -27,7 +27,6 @@
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/form/runtime/FormFeature.hpp>
 
-#include <sfx2/imgmgr.hxx>
 #include <vcl/fixed.hxx>
 #include <vcl/commandinfoprovider.hxx>
 
@@ -171,13 +170,8 @@ namespace frm
         if ( pPositionWindow )
             pPositionWindow->setDispatcher( _pDispatcher );
 
-        updateFeatureStates( );
-    }
-
-
-    void NavigationToolBar::updateFeatureStates( )
-    {
-        for ( sal_uInt16 nPos = 0; nPos < m_pToolbar->GetItemCount(); ++nPos )
+        // update feature states
+        for ( ToolBox::ImplToolItems::size_type nPos = 0; nPos < m_pToolbar->GetItemCount(); ++nPos )
         {
             sal_uInt16 nItemId = m_pToolbar->GetItemId( nPos );
 
@@ -205,7 +199,7 @@ namespace frm
 
     void NavigationToolBar::enableFeature( sal_Int16 _nFeatureId, bool _bEnabled )
     {
-        DBG_ASSERT( m_pToolbar->GetItemPos( (sal_uInt16)_nFeatureId ) != TOOLBOX_ITEM_NOTFOUND,
+        DBG_ASSERT( m_pToolbar->GetItemPos( (sal_uInt16)_nFeatureId ) != ToolBox::ITEM_NOTFOUND,
             "NavigationToolBar::enableFeature: invalid id!" );
 
         implEnableItem( (sal_uInt16)_nFeatureId, _bEnabled );
@@ -214,7 +208,7 @@ namespace frm
 
     void NavigationToolBar::checkFeature( sal_Int16 _nFeatureId, bool _bEnabled )
     {
-        DBG_ASSERT( m_pToolbar->GetItemPos( (sal_uInt16)_nFeatureId ) != TOOLBOX_ITEM_NOTFOUND,
+        DBG_ASSERT( m_pToolbar->GetItemPos( (sal_uInt16)_nFeatureId ) != ToolBox::ITEM_NOTFOUND,
             "NavigationToolBar::checkFeature: invalid id!" );
 
         m_pToolbar->CheckItem( (sal_uInt16)_nFeatureId, _bEnabled );
@@ -223,7 +217,7 @@ namespace frm
 
     void NavigationToolBar::setFeatureText( sal_Int16 _nFeatureId, const OUString& _rText )
     {
-        DBG_ASSERT( m_pToolbar->GetItemPos( (sal_uInt16)_nFeatureId ) != TOOLBOX_ITEM_NOTFOUND,
+        DBG_ASSERT( m_pToolbar->GetItemPos( (sal_uInt16)_nFeatureId ) != ToolBox::ITEM_NOTFOUND,
             "NavigationToolBar::checkFeature: invalid id!" );
 
         vcl::Window* pItemWindow = m_pToolbar->GetItemWindow( (sal_uInt16)_nFeatureId );
@@ -293,7 +287,7 @@ namespace frm
                     OUString sCommandURL( lcl_getCommandURL( pSupportedFeatures->nId ) );
                     m_pToolbar->SetItemCommand( pSupportedFeatures->nId, sCommandURL );
                     m_pToolbar->SetQuickHelpText( pSupportedFeatures->nId,
-                            vcl::CommandInfoProvider::Instance().GetCommandPropertyFromModule(sCommandURL, m_sModuleId) );
+                            vcl::CommandInfoProvider::GetLabelForCommand(sCommandURL, m_sModuleId) );
                 }
 
                 if ( pSupportedFeatures->bItemWindow )
@@ -337,7 +331,7 @@ namespace frm
             }
         }
 
-        forEachItemWindow( &NavigationToolBar::adjustItemWindowWidth, nullptr );
+        forEachItemWindow( &NavigationToolBar::adjustItemWindowWidth );
 
         implUpdateImages();
     }
@@ -349,14 +343,14 @@ namespace frm
         if ( !m_pImageProvider )
             return;
 
-        const sal_uInt16 nItemCount = m_pToolbar->GetItemCount();
+        const ToolBox::ImplToolItems::size_type nItemCount = m_pToolbar->GetItemCount();
 
         // collect the FormFeatures in the toolbar
         typedef ::std::vector< sal_Int16 >  FormFeatures;
         FormFeatures aFormFeatures;
         aFormFeatures.reserve( nItemCount );
 
-        for ( sal_uInt16 i=0; i<nItemCount; ++i )
+        for ( ToolBox::ImplToolItems::size_type i=0; i<nItemCount; ++i )
         {
             sal_uInt16 nId = m_pToolbar->GetItemId( i );
             if ( ( ToolBoxItemType::BUTTON == m_pToolbar->GetItemType( i ) ) && !isArtificialItem( nId ) )
@@ -486,12 +480,12 @@ namespace frm
                 break;
 
             case StateChangedType::ControlFont:
-                forEachItemWindow( &NavigationToolBar::setItemControlFont, nullptr );
-                forEachItemWindow( &NavigationToolBar::adjustItemWindowWidth, nullptr );
+                forEachItemWindow( &NavigationToolBar::setItemControlFont );
+                forEachItemWindow( &NavigationToolBar::adjustItemWindowWidth );
                 break;
 
             case StateChangedType::ControlForeground:
-                forEachItemWindow( &NavigationToolBar::setItemControlForeground, nullptr );
+                forEachItemWindow( &NavigationToolBar::setItemControlForeground );
                 break;
 
             case StateChangedType::Mirroring:
@@ -556,20 +550,20 @@ namespace frm
     }
 
 
-    void NavigationToolBar::forEachItemWindow( ItemWindowHandler _handler, const void* _pParam )
+    void NavigationToolBar::forEachItemWindow( ItemWindowHandler _handler )
     {
-        for ( sal_uInt16 item = 0; item < m_pToolbar->GetItemCount(); ++item )
+        for ( ToolBox::ImplToolItems::size_type item = 0; item < m_pToolbar->GetItemCount(); ++item )
         {
             sal_uInt16 nItemId = m_pToolbar->GetItemId( item );
             vcl::Window* pItemWindow = m_pToolbar->GetItemWindow( nItemId );
             if ( pItemWindow )
-                (this->*_handler)( nItemId, pItemWindow, _pParam );
+                (this->*_handler)( nItemId, pItemWindow );
         }
     }
 
     void NavigationToolBar::forEachItemWindow( ItemWindowHandler2 _handler, const void* _pParam )
     {
-        for ( sal_uInt16 item = 0; item < m_pToolbar->GetItemCount(); ++item )
+        for ( ToolBox::ImplToolItems::size_type item = 0; item < m_pToolbar->GetItemCount(); ++item )
         {
             sal_uInt16 nItemId = m_pToolbar->GetItemId( item );
             vcl::Window* pItemWindow = m_pToolbar->GetItemWindow( nItemId );
@@ -603,7 +597,7 @@ namespace frm
     }
 #endif
 
-    void NavigationToolBar::setItemControlFont( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const
+    void NavigationToolBar::setItemControlFont( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow ) const
     {
         if ( IsControlFont() )
             _pItemWindow->SetControlFont( GetControlFont() );
@@ -612,7 +606,7 @@ namespace frm
     }
 
 
-    void NavigationToolBar::setItemControlForeground( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const
+    void NavigationToolBar::setItemControlForeground( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow ) const
     {
         if ( IsControlForeground() )
             _pItemWindow->SetControlForeground( GetControlForeground() );
@@ -622,7 +616,7 @@ namespace frm
     }
 
 
-    void NavigationToolBar::adjustItemWindowWidth( sal_uInt16 _nItemId, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const
+    void NavigationToolBar::adjustItemWindowWidth( sal_uInt16 _nItemId, vcl::Window* _pItemWindow ) const
     {
         OUString sItemText;
         switch ( _nItemId )

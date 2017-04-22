@@ -49,14 +49,14 @@ using namespace ::com::sun::star::container;
 sdbcx::ObjectType ODbaseTables::createObject(const OUString& _rName)
 {
     ODbaseTable* pRet = new ODbaseTable(this, static_cast<ODbaseConnection*>(static_cast<OFileCatalog&>(m_rParent).getConnection()),
-                                        _rName,OUString("TABLE"));
+                                        _rName,"TABLE");
 
     sdbcx::ObjectType xRet = pRet;
     pRet->construct();
     return xRet;
 }
 
-void ODbaseTables::impl_refresh(  ) throw(RuntimeException)
+void ODbaseTables::impl_refresh(  )
 {
     static_cast<ODbaseCatalog*>(&m_rParent)->refreshTables();
 }
@@ -124,7 +124,7 @@ void ODbaseTables::dropObject(sal_Int32 _nPos, const OUString& _sElementName)
     }
 }
 
-Any SAL_CALL ODbaseTables::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any SAL_CALL ODbaseTables::queryInterface( const Type & rType )
 {
     typedef sdbcx::OCollection OTables_BASE;
     return OTables_BASE::queryInterface(rType);

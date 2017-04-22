@@ -72,14 +72,10 @@ XFormsSubmissionContext::XFormsSubmissionContext(
         mxSubmission()
 {
     // register submission with model
-    DBG_ASSERT( xModel.is(), "need model" );
+    SAL_WARN_IF( !xModel.is(), "xmloff", "need model" );
     mxSubmission = xModel->createSubmission().get();
-    DBG_ASSERT( mxSubmission.is(), "can't create submission" );
+    SAL_WARN_IF( !mxSubmission.is(), "xmloff", "can't create submission" );
     xModel->getSubmissions()->insert( makeAny( mxSubmission ) );
-}
-
-XFormsSubmissionContext::~XFormsSubmissionContext()
-{
 }
 
 Any toBool( const OUString& rValue )

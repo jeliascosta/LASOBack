@@ -33,19 +33,19 @@ namespace
     struct GlyphCacheHolder
     {
     private:
-        GlyphCache* m_pSvpGlyphCache;
+        std::unique_ptr<GlyphCache> m_pSvpGlyphCache;
+
+        GlyphCacheHolder(const GlyphCacheHolder&) = delete;
+        GlyphCacheHolder& operator=(const GlyphCacheHolder&) = delete;
+
     public:
         GlyphCacheHolder()
+            : m_pSvpGlyphCache( new GlyphCache )
         {
-            m_pSvpGlyphCache = new GlyphCache;
         }
         GlyphCache& getGlyphCache()
         {
             return *m_pSvpGlyphCache;
-        }
-        ~GlyphCacheHolder()
-        {
-            delete m_pSvpGlyphCache;
         }
     };
 

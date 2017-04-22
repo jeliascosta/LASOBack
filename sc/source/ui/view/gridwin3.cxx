@@ -185,7 +185,7 @@ bool ScGridWindow::DrawKeyInput(const KeyEvent& rKEvt)
     return false;
 }
 
-void ScGridWindow::DrawRedraw( ScOutputData& rOutputData, ScUpdateMode eMode, sal_uLong nLayer )
+void ScGridWindow::DrawRedraw( ScOutputData& rOutputData, sal_uLong nLayer )
 {
     const ScViewOptions& rOpts = pViewData->GetOptions();
 
@@ -206,18 +206,11 @@ void ScGridWindow::DrawRedraw( ScOutputData& rOutputData, ScUpdateMode eMode, sa
             pDrView->setHideFormControl(!bDrawDraw);
         }
 
-        if(SC_UPDATE_CHANGED == eMode)
-        {
-            rOutputData.DrawingSingle((sal_uInt16)nLayer);
-        }
-        else
-        {
-            rOutputData.DrawSelectiveObjects((sal_uInt16)nLayer);
-        }
+        rOutputData.DrawSelectiveObjects((sal_uInt16)nLayer);
     }
 }
 
-void ScGridWindow::DrawSdrGrid( const Rectangle& rDrawingRect, OutputDevice* pContentDev )
+void ScGridWindow::DrawSdrGrid( const tools::Rectangle& rDrawingRect, OutputDevice* pContentDev )
 {
     // Draw grid lines
 
@@ -311,7 +304,7 @@ void ScGridWindow::CreateAnchorHandle(SdrHdlList& rHdl, const ScAddress& rAddres
             bool bNegativePage = pViewData->GetDocument()->IsNegativePage( pViewData->GetTabNo() );
             Point aPos = pViewData->GetScrPos( rAddress.Col(), rAddress.Row(), eWhich, true );
             aPos = PixelToLogic(aPos);
-            rHdl.AddHdl(new SdrHdl(aPos, bNegativePage ? HDL_ANCHOR_TR : HDL_ANCHOR));
+            rHdl.AddHdl(new SdrHdl(aPos, bNegativePage ? SdrHdlKind::Anchor_TR : SdrHdlKind::Anchor));
         }
     }
 }
@@ -349,7 +342,7 @@ void ScGridWindow::UpdateStatusPosSize()
     bool bActionItem = false;
     if ( pDrView->IsAction() ) // action rectangle
     {
-        Rectangle aRect;
+        tools::Rectangle aRect;
         pDrView->TakeActionRect( aRect );
         if ( !aRect.IsEmpty() )
         {
@@ -368,7 +361,7 @@ void ScGridWindow::UpdateStatusPosSize()
     {
         if ( pDrView->AreObjectsMarked() ) // selected objects
         {
-            Rectangle aRect = pDrView->GetAllMarkedRect();
+            tools::Rectangle aRect = pDrView->GetAllMarkedRect();
             // mouse position will have been adjusted for offset
             // at current position and zoom, restore that adjustment here
             // so status shows correct value

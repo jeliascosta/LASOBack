@@ -76,7 +76,7 @@ static OUString getInitials( const OUString& rName )
         // take letter
         if( nLength )
         {
-            sInitials += OUString( *pStr );
+            sInitials += OUStringLiteral1( *pStr );
             nLength--; pStr++;
         }
 
@@ -116,7 +116,7 @@ bool AnnotationDragMove::BeginSdrDrag()
     DragStat().SetShown(!DragStat().IsShown());
 
     maOrigin = GetDragHdl()->GetPos();
-    DragStat().SetActionRect(Rectangle(maOrigin,maOrigin));
+    DragStat().SetActionRect(::tools::Rectangle(maOrigin,maOrigin));
 
     return true;
 }
@@ -133,7 +133,7 @@ void AnnotationDragMove::MoveSdrDrag(const Point& rNoSnapPnt)
             DragStat().NextMove(aPnt);
             GetDragHdl()->SetPos( maOrigin + Point( DragStat().GetDX(), DragStat().GetDY() ) );
             Show();
-            DragStat().SetActionRect(Rectangle(aPnt,aPnt));
+            DragStat().SetActionRect(::tools::Rectangle(aPnt,aPnt));
         }
     }
 }
@@ -155,7 +155,7 @@ class AnnotationHdl : public SmartHdl
 {
 public:
     AnnotationHdl( const SmartTagReference& xTag, const Reference< XAnnotation >& xAnnotation, const Point& rPnt );
-    virtual ~AnnotationHdl();
+
     virtual void CreateB2dIAObject() override;
     virtual bool IsFocusHdl() const override;
     virtual bool isMarkable() const override;
@@ -169,10 +169,6 @@ AnnotationHdl::AnnotationHdl( const SmartTagReference& xTag, const Reference< XA
 : SmartHdl( xTag, rPnt )
 , mxAnnotation( xAnnotation )
 , mxTag( dynamic_cast< AnnotationTag* >( xTag.get() ) )
-{
-}
-
-AnnotationHdl::~AnnotationHdl()
 {
 }
 
@@ -229,7 +225,7 @@ void AnnotationHdl::CreateB2dIAObject()
                             }
 
                             xManager->add(*pOverlayObject);
-                            maOverlayGroup.append(*pOverlayObject);
+                            maOverlayGroup.append(pOverlayObject);
                         }
                     }
                 }
@@ -355,7 +351,7 @@ bool AnnotationTag::Command( const CommandEvent& rCEvt )
         vcl::Window* pWindow = mrView.GetViewShell()->GetActiveWindow();
         if( pWindow )
         {
-            Rectangle aContextRect(rCEvt.GetMousePosPixel(),Size(1,1));
+            ::tools::Rectangle aContextRect(rCEvt.GetMousePosPixel(),Size(1,1));
                mrManager.ExecuteAnnotationContextMenu( mxAnnotation, pWindow, aContextRect );
             return true;
         }
@@ -440,7 +436,7 @@ bool AnnotationTag::MarkPoint(SdrHdl& /*rHdl*/, bool /*bUnmark*/ )
     return bRet;
 }
 
-bool AnnotationTag::MarkPoints(const Rectangle* /*pRect*/, bool /*bUnmark*/ )
+bool AnnotationTag::MarkPoints(const ::tools::Rectangle* /*pRect*/, bool /*bUnmark*/ )
 {
     bool bChgd=false;
     return bChgd;
@@ -499,7 +495,7 @@ void AnnotationTag::select()
         RealPoint2D aPosition( mxAnnotation->getPosition() );
         Point aPos( static_cast<long>(aPosition.X * 100.0), static_cast<long>(aPosition.Y * 100.0) );
 
-        Rectangle aVisRect( aPos, pWindow->PixelToLogic(maSize) );
+        ::tools::Rectangle aVisRect( aPos, pWindow->PixelToLogic(maSize) );
         mrView.MakeVisible(aVisRect, *pWindow);
     }
 }
@@ -550,7 +546,7 @@ BitmapEx AnnotationTag::CreateAnnotationBitmap( bool bSelected )
     }
 
     Point aPos;
-    Rectangle aBorderRect( aPos, maSize );
+    ::tools::Rectangle aBorderRect( aPos, maSize );
     pVDev->SetLineColor(aBorderColor);
     pVDev->SetFillColor(maColor);
     pVDev->DrawRect( aBorderRect );
@@ -577,7 +573,7 @@ void AnnotationTag::OpenPopup( bool bEdit )
             aPos.X() += 4; // magic!
             aPos.Y() += 1;
 
-            Rectangle aRect( aPos, maSize );
+            ::tools::Rectangle aRect( aPos, maSize );
 
             mpAnnotationWindow.reset( VclPtr<AnnotationWindow>::Create( mrManager, mrView.GetDocSh(), pWindow->GetWindow(GetWindowType::Frame) ) );
             mpAnnotationWindow->InitControls();
@@ -610,7 +606,7 @@ void AnnotationTag::ClosePopup()
     }
 }
 
-IMPL_LINK_TYPED(AnnotationTag, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK(AnnotationTag, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
         vcl::Window* pWindow = rEvent.GetWindow();
 
@@ -618,7 +614,7 @@ IMPL_LINK_TYPED(AnnotationTag, WindowEventHandler, VclWindowEvent&, rEvent, void
         {
             if( pWindow == mpAnnotationWindow.get() )
             {
-                if( rEvent.GetId() == VCLEVENT_WINDOW_DEACTIVATE )
+                if( rEvent.GetId() == VclEventId::WindowDeactivate )
                 {
                     // tdf#99388 and tdf#99712 if PopupMenu is active, suppress
                     // deletion of the AnnotationWindow which is triggered by
@@ -636,7 +632,7 @@ IMPL_LINK_TYPED(AnnotationTag, WindowEventHandler, VclWindowEvent&, rEvent, void
             {
                 switch( rEvent.GetId() )
                 {
-                case VCLEVENT_WINDOW_MOUSEBUTTONUP:
+                case VclEventId::WindowMouseButtonUp:
                     {
                         // if we stop pressing the button without a mouse move we open the popup
                         mpListenWindow->RemoveEventListener( LINK(this, AnnotationTag, WindowEventHandler));
@@ -645,7 +641,7 @@ IMPL_LINK_TYPED(AnnotationTag, WindowEventHandler, VclWindowEvent&, rEvent, void
                             OpenPopup(false);
                     }
                     break;
-                case VCLEVENT_WINDOW_MOUSEMOVE:
+                case VclEventId::WindowMouseMove:
                     {
                         // if we move the mouse after a button down we wan't to start draging
                         mpListenWindow->RemoveEventListener( LINK(this, AnnotationTag, WindowEventHandler));
@@ -664,15 +660,16 @@ IMPL_LINK_TYPED(AnnotationTag, WindowEventHandler, VclWindowEvent&, rEvent, void
                         }
                     }
                     break;
-                case VCLEVENT_OBJECT_DYING:
+                case VclEventId::ObjectDying:
                     mpListenWindow = nullptr;
                     break;
+                default: break;
                 }
             }
         }
 }
 
-IMPL_LINK_NOARG_TYPED(AnnotationTag, ClosePopupHdl, void*, void)
+IMPL_LINK_NOARG(AnnotationTag, ClosePopupHdl, void*, void)
 {
     mnClosePopupEvent = nullptr;
     ClosePopup();

@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/io/IOException.hpp>
 #include <osl/diagnose.h>
 
 #include "wrapstreamforshare.hxx"
@@ -35,12 +38,12 @@ WrapStreamForShare::WrapStreamForShare( const uno::Reference< io::XInputStream >
 , m_xInStream( xInStream )
 , m_nCurPos( 0 )
 {
-    m_xSeekable.set( m_xInStream, uno::UNO_QUERY );
-    if ( !m_rMutexRef.is() || !m_xInStream.is() || !m_xSeekable.is() )
+    if ( !m_rMutexRef.is() || !m_xInStream.is() )
     {
         OSL_FAIL( "Wrong initialization of wrapping stream!\n" );
         throw uno::RuntimeException(THROW_WHERE );
     }
+    m_xSeekable.set( m_xInStream, uno::UNO_QUERY_THROW );
 }
 
 WrapStreamForShare::~WrapStreamForShare()
@@ -49,10 +52,6 @@ WrapStreamForShare::~WrapStreamForShare()
 
 // XInputStream
 sal_Int32 SAL_CALL WrapStreamForShare::readBytes( uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead )
-        throw ( io::NotConnectedException,
-                io::BufferSizeExceededException,
-                io::IOException,
-                uno::RuntimeException, std::exception )
 {
     if ( !m_xInStream.is() )
         throw io::IOException(THROW_WHERE );
@@ -66,10 +65,6 @@ sal_Int32 SAL_CALL WrapStreamForShare::readBytes( uno::Sequence< sal_Int8 >& aDa
 }
 
 sal_Int32 SAL_CALL WrapStreamForShare::readSomeBytes( uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead )
-        throw ( io::NotConnectedException,
-                io::BufferSizeExceededException,
-                io::IOException,
-                uno::RuntimeException, std::exception )
 {
     if ( !m_xInStream.is() )
         throw io::IOException(THROW_WHERE );
@@ -83,10 +78,6 @@ sal_Int32 SAL_CALL WrapStreamForShare::readSomeBytes( uno::Sequence< sal_Int8 >&
 }
 
 void SAL_CALL WrapStreamForShare::skipBytes( sal_Int32 nBytesToSkip )
-        throw ( io::NotConnectedException,
-                io::BufferSizeExceededException,
-                io::IOException,
-                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_rMutexRef->GetMutex() );
 
@@ -100,9 +91,6 @@ void SAL_CALL WrapStreamForShare::skipBytes( sal_Int32 nBytesToSkip )
 }
 
 sal_Int32 SAL_CALL WrapStreamForShare::available()
-        throw ( io::NotConnectedException,
-                io::IOException,
-                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_rMutexRef->GetMutex() );
 
@@ -113,9 +101,6 @@ sal_Int32 SAL_CALL WrapStreamForShare::available()
 }
 
 void SAL_CALL WrapStreamForShare::closeInput()
-        throw ( io::NotConnectedException,
-                io::IOException,
-                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_rMutexRef->GetMutex() );
 
@@ -130,9 +115,6 @@ void SAL_CALL WrapStreamForShare::closeInput()
 
 // XSeekable
 void SAL_CALL WrapStreamForShare::seek( sal_Int64 location )
-        throw ( lang::IllegalArgumentException,
-                io::IOException,
-                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_rMutexRef->GetMutex() );
 
@@ -146,8 +128,6 @@ void SAL_CALL WrapStreamForShare::seek( sal_Int64 location )
 }
 
 sal_Int64 SAL_CALL WrapStreamForShare::getPosition()
-        throw ( io::IOException,
-                uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_rMutexRef->GetMutex() );
 
@@ -158,8 +138,6 @@ sal_Int64 SAL_CALL WrapStreamForShare::getPosition()
 }
 
 sal_Int64 SAL_CALL WrapStreamForShare::getLength()
-        throw ( io::IOException,
-                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_rMutexRef->GetMutex() );
 

@@ -21,6 +21,7 @@
 #define INCLUDED_SVTOOLS_RULER_HXX
 
 #include <svtools/svtdllapi.h>
+#include <rtl/ref.hxx>
 #include <tools/link.hxx>
 #include <tools/fract.hxx>
 #include <vcl/window.hxx>
@@ -264,7 +265,7 @@ it has been dragged. There are the following query methods:
     - GetDragSize()
         If Borders are dragged, this can be used to query whether the size
         resp. which side or the position should be changed.
-            RulerDragSize::Move oder 0      - Move
+            RulerDragSize::Move or 0      - Move
             RulerDragSize::N1                - left/upper border
             RulerDragSize::N2                - right/bottom border
 
@@ -516,7 +517,7 @@ struct RulerBorder
 };
 
 enum class RulerIndentStyle {
-    Top, Bottom, Border
+    Top, Bottom
 };
 
 struct RulerIndent
@@ -627,7 +628,7 @@ private:
     ImplRulerData*  mpSaveData;
     ImplRulerData*  mpData;
     ImplRulerData*  mpDragData;
-    Rectangle       maExtraRect;
+    tools::Rectangle       maExtraRect;
     WinBits         mnWinStyle;
     sal_uInt16      mnUnitIndex;
     sal_uInt16      mnDragAryPos;
@@ -660,7 +661,7 @@ private:
     std::unique_ptr<RulerSelection> mxCurrentHitTest;
     std::unique_ptr<RulerSelection> mxPreviousHitTest;
 
-    SvtRulerAccessible* pAccContext;
+    rtl::Reference<SvtRulerAccessible> mxAccContext;
 
     SVT_DLLPRIVATE void ImplVDrawLine(vcl::RenderContext& rRenderContext,  long nX1, long nY1, long nX2, long nY2 );
     SVT_DLLPRIVATE void ImplVDrawRect(vcl::RenderContext& rRenderContext, long nX1, long nY1, long nX2, long nY2 );
@@ -671,8 +672,8 @@ private:
                                       long nMin, long nMax, long nStart, long nVirTop, long nVirBottom);
     SVT_DLLPRIVATE void ImplDrawBorders(vcl::RenderContext& rRenderContext,
                                         long nMin, long nMax, long nVirTop, long nVirBottom);
-    SVT_DLLPRIVATE void ImplDrawIndent(vcl::RenderContext& rRenderContext,
-                                       const tools::Polygon& rPoly, bool bIsHit = false);
+    SVT_DLLPRIVATE static void ImplDrawIndent(vcl::RenderContext& rRenderContext,
+                                       const tools::Polygon& rPoly, bool bIsHit);
     SVT_DLLPRIVATE void ImplDrawIndents(vcl::RenderContext& rRenderContext,
                                         long nMin, long nMax, long nVirTop, long nVirBottom);
     SVT_DLLPRIVATE void ImplDrawTab(vcl::RenderContext& rRenderContext, const Point& rPos, sal_uInt16 nStyle);
@@ -712,13 +713,13 @@ protected:
 
 public:
             Ruler( vcl::Window* pParent, WinBits nWinStyle = WB_STDRULER );
-    virtual ~Ruler();
+    virtual ~Ruler() override;
     virtual void dispose() override;
 
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
     virtual void    Tracking( const TrackingEvent& rTEvt ) override;
-    virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void    Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual void    Resize() override;
     virtual void    StateChanged( StateChangedType nStateChange ) override;
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -733,13 +734,13 @@ public:
     void            Activate() override;
     void            Deactivate() override;
 
-    void            SetWinPos( long nOff = 0, long nWidth = 0 );
+    void            SetWinPos( long nOff, long nWidth = 0 );
     long            GetWinOffset() const { return mnWinOff; }
     void            SetPagePos( long nOff = 0, long nWidth = 0 );
     long            GetPageOffset() const;
     void            SetBorderPos( long nOff = 0 );
     long            GetBorderOffset() const { return mnBorderOff; }
-    const Rectangle& GetExtraRect() const { return maExtraRect; }
+    const tools::Rectangle& GetExtraRect() const { return maExtraRect; }
 
     void            SetUnit( FieldUnit eNewUnit );
     FieldUnit       GetUnit() const { return meUnit; }
@@ -750,7 +751,7 @@ public:
     void            SetExtraType( RulerExtra eNewExtraType, sal_uInt16 nStyle = 0 );
 
     bool            StartDocDrag( const MouseEvent& rMEvt,
-                                  RulerType eDragType = RulerType::DontKnow );
+                                  RulerType eDragType );
     RulerType       GetDragType() const { return meDragType; }
     long            GetDragPos() const { return mnDragPos; }
     sal_uInt16      GetDragAryPos() const { return mnDragAryPos; }

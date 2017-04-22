@@ -198,11 +198,12 @@ namespace
             /*137 SotClipboardFormatId::STARCHART_8_TEMPLATE*/           { MIMETYPE_OASIS_OPENDOCUMENT_CHART_TEMPLATE_ASCII, "Chart 8 Template", &cppu::UnoType<Sequence<sal_Int8>>::get() },
             /*138 SotClipboardFormatId::STARMATH_8_TEMPLATE*/            { MIMETYPE_OASIS_OPENDOCUMENT_FORMULA_TEMPLATE_ASCII, "Math 8 Template", &cppu::UnoType<Sequence<sal_Int8>>::get() },
             /*139 SotClipboardFormatId::STARBASE_8*/             { MIMETYPE_OASIS_OPENDOCUMENT_DATABASE_ASCII, "StarBase 8", &cppu::UnoType<Sequence<sal_Int8>>::get() },
-            /*140 SotClipboardFormatId::GDIMETAFILE*/                  { "application/x-openoffice-highcontrast-gdimetafile;windows_formatname=\"GDIMetaFile\"", "High Contrast GDIMetaFile", &cppu::UnoType<Sequence<sal_Int8>>::get() },
+            /*140 SotClipboardFormatId::HC_GDIMETAFILE*/         { "application/x-openoffice-highcontrast-gdimetafile;windows_formatname=\"GDIMetaFile\"", "High Contrast GDIMetaFile", &cppu::UnoType<Sequence<sal_Int8>>::get() },
             /*141 SotClipboardFormatId::PNG*/                    { "image/png", "PNG Bitmap", &cppu::UnoType<Sequence<sal_Int8>>::get() },
             /*142 SotClipboardFormatId::STARWRITERGLOB_8_TEMPLATE*/      { MIMETYPE_OASIS_OPENDOCUMENT_TEXT_GLOBAL_TEMPLATE_ASCII, "Writer/Global 8 Template", &cppu::UnoType<Sequence<sal_Int8>>::get() },
             /*143 SotClipboardFormatId::MATHML*/   { "application/mathml+xml", "MathML", &::cppu::UnoType<const Sequence< sal_Int8 >>::get() },
             /*144 SotClipboardFormatId::JPEG*/ { "image/jpeg", "JPEG Bitmap", &cppu::UnoType<Sequence<sal_Int8>>::get() },
+            /*145 SotClipboardFormatId::RICHTEXT*/ { "text/richtext", "Richtext Format", &cppu::UnoType<Sequence<sal_Int8>>::get() }
             };
         return &aInstance[0];
         }
@@ -241,7 +242,7 @@ static tDataFlavorList& InitFormats_Impl()
 {
     SotData_Impl *pSotData = &ImplData::get();
     if( !pSotData->pDataFlavorList )
-        pSotData->pDataFlavorList = new tDataFlavorList();
+        pSotData->pDataFlavorList = new tDataFlavorList;
     return *pSotData->pDataFlavorList;
 }
 
@@ -455,7 +456,7 @@ SotClipboardFormatId SotExchange::GetFormat( const DataFlavor& rFlavor )
     const DataFlavorRepresentation *pFormatArray_Impl = FormatArray_Impl::get();
     for( SotClipboardFormatId i = SotClipboardFormatId::STRING; i <= SotClipboardFormatId::FILE_LIST;  ++i )
         if( rMimeType.equalsAscii( pFormatArray_Impl[ static_cast<int>(i) ].pMimeType ) )
-            return static_cast<SotClipboardFormatId>(i);
+            return i;
 
     // BM: the chart format 105 ("StarChartDocument 5.0") was written
     // only into 5.1 chart documents - in 5.0 and 5.2 it was 42 ("StarChart 5.0")
@@ -463,8 +464,8 @@ SotClipboardFormatId SotExchange::GetFormat( const DataFlavor& rFlavor )
     for( SotClipboardFormatId i = SotClipboardFormatId::RTF; i <= SotClipboardFormatId::USER_END;  ++i )
         if( rMimeType.equalsAscii( pFormatArray_Impl[ static_cast<int>(i) ].pMimeType ) )
             return ( (i == SotClipboardFormatId::STARCHARTDOCUMENT_50)
-                     ? static_cast<SotClipboardFormatId>(SotClipboardFormatId::STARCHART_50)
-                     : static_cast<SotClipboardFormatId>(i) );
+                     ? SotClipboardFormatId::STARCHART_50
+                     : i );
 
     // dann in der dynamischen Liste
     tDataFlavorList& rL = InitFormats_Impl();

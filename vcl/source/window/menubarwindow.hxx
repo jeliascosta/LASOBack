@@ -39,16 +39,12 @@ class DecoToolBox : public ToolBox
     long lastSize;
     Size maMinSize;
 
-    using Window::ImplInit;
 public:
     explicit DecoToolBox(vcl::Window* pParent);
-    virtual ~DecoToolBox() {}
-
-    void    ImplInit();
 
     void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
-    void    SetImages( long nMaxHeight = 0, bool bForce = false );
+    void    SetImages( long nMaxHeight, bool bForce = false );
 
     void    calcMinSize();
     const Size& getMinSize() { return maMinSize;}
@@ -74,14 +70,13 @@ private:
         AddButtonEntry() : m_nId( 0 ) {}
     };
 
-    Menu*           pMenu;
-    PopupMenu*      pActivePopup;
+    VclPtr<Menu>           pMenu;
+    VclPtr<PopupMenu>      pActivePopup;
     sal_uInt16      nHighlightedItem;
     sal_uInt16      nRolloveredItem;
     VclPtr<vcl::Window> xSaveFocusId;
     bool            mbAutoPopup;
     bool            bIgnoreFirstMove;
-    bool            bStayActive;
     bool            mbHideAccel;
     bool            mbMenuKey;
 
@@ -97,15 +92,15 @@ private:
     sal_uInt16      ImplFindEntry( const Point& rMousePos ) const;
     void            ImplCreatePopup( bool bPreSelectFirst );
     bool    HandleKeyEvent(const KeyEvent& rKEvent, bool bFromMenu = true);
-    Rectangle       ImplGetItemRect( sal_uInt16 nPos );
+    tools::Rectangle       ImplGetItemRect( sal_uInt16 nPos );
 
     void            ImplInitStyleSettings();
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
 
-    DECL_LINK_TYPED( CloseHdl, ToolBox*, void );
-    DECL_LINK_TYPED( ToolboxEventHdl, VclWindowEvent&, void );
-    DECL_LINK_TYPED( ShowHideListener, VclWindowEvent&, void );
+    DECL_LINK( CloseHdl, ToolBox*, void );
+    DECL_LINK( ToolboxEventHdl, VclWindowEvent&, void );
+    DECL_LINK( ShowHideListener, VclWindowEvent&, void );
 
     void            StateChanged( StateChangedType nType ) override;
     void            DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -114,7 +109,7 @@ private:
 
 public:
     explicit        MenuBarWindow( vcl::Window* pParent );
-    virtual         ~MenuBarWindow();
+    virtual         ~MenuBarWindow() override;
     virtual void    dispose() override;
 
     void    ShowButtons(bool bClose, bool bFloat, bool bHide);
@@ -123,7 +118,7 @@ public:
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonUp( const MouseEvent& rMEvt ) override;
     virtual void    KeyInput( const KeyEvent& rKEvent ) override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void    Resize() override;
     virtual void    RequestHelp( const HelpEvent& rHEvt ) override;
 
@@ -141,7 +136,7 @@ public:
     /// Add an arbitrary button to the menubar that will appear next to the close button.
     sal_uInt16 AddMenuBarButton(const Image&, const Link<MenuBar::MenuBarButtonCallbackArg&,bool>&, const OUString&);
     void SetMenuBarButtonHighlightHdl(sal_uInt16 nId, const Link<MenuBar::MenuBarButtonCallbackArg&,bool>&);
-    Rectangle GetMenuBarButtonRectPixel(sal_uInt16 nId);
+    tools::Rectangle GetMenuBarButtonRectPixel(sal_uInt16 nId);
     void RemoveMenuBarButton(sal_uInt16 nId);
     bool HandleMenuButtonEvent(sal_uInt16 i_nButtonId);
     void SetMBWHideAccel(bool val) { mbHideAccel = val; }

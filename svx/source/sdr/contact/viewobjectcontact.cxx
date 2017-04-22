@@ -58,7 +58,6 @@ protected:
     // the found animated primitives
     drawinglayer::primitive2d::Primitive2DContainer  maPrimitive2DSequence;
 
-    // bitfield
     // text animation allowed?
     bool                                            mbTextAnimationAllowed : 1;
 
@@ -74,7 +73,6 @@ public:
         const drawinglayer::geometry::ViewInformation2D& rViewInformation,
         bool bTextAnimationAllowed,
         bool bGraphicAnimationAllowed);
-    virtual ~AnimatedExtractingProcessor2D();
 
     // data access
     const drawinglayer::primitive2d::Primitive2DContainer& getPrimitive2DSequence() const { return maPrimitive2DSequence; }
@@ -90,10 +88,6 @@ AnimatedExtractingProcessor2D::AnimatedExtractingProcessor2D(
     maPrimitive2DSequence(),
     mbTextAnimationAllowed(bTextAnimationAllowed),
     mbGraphicAnimationAllowed(bGraphicAnimationAllowed)
-{
-}
-
-AnimatedExtractingProcessor2D::~AnimatedExtractingProcessor2D()
 {
 }
 
@@ -140,11 +134,11 @@ void AnimatedExtractingProcessor2D::processBasePrimitive2D(const drawinglayer::p
         case PRIMITIVE2D_ID_TRANSFORMPRIMITIVE2D:
 
         // decompose evtl. animated text contained in MaskPrimitive2D
-        // or group rimitives
+        // or group primitives
         case PRIMITIVE2D_ID_MASKPRIMITIVE2D :
         case PRIMITIVE2D_ID_GROUPPRIMITIVE2D :
         {
-            process(rCandidate.get2DDecomposition(getViewInformation2D()));
+            process(rCandidate);
             break;
         }
 
@@ -324,7 +318,7 @@ void ViewObjectContact::checkForPrimitive2DAnimations()
 drawinglayer::primitive2d::Primitive2DContainer ViewObjectContact::createPrimitive2DSequence(const DisplayInfo& rDisplayInfo) const
 {
     // get the view-independent Primitive from the viewContact
-    drawinglayer::primitive2d::Primitive2DContainer xRetval(GetViewContact().getViewIndependentPrimitive2DSequence());
+    drawinglayer::primitive2d::Primitive2DContainer xRetval(GetViewContact().getViewIndependentPrimitive2DContainer());
 
     if(!xRetval.empty())
     {
@@ -359,7 +353,7 @@ drawinglayer::primitive2d::Primitive2DContainer ViewObjectContact::createPrimiti
     return xRetval;
 }
 
-drawinglayer::primitive2d::Primitive2DContainer ViewObjectContact::getPrimitive2DSequence(const DisplayInfo& rDisplayInfo) const
+drawinglayer::primitive2d::Primitive2DContainer const & ViewObjectContact::getPrimitive2DSequence(const DisplayInfo& rDisplayInfo) const
 {
     drawinglayer::primitive2d::Primitive2DContainer xNewPrimitiveSequence;
 

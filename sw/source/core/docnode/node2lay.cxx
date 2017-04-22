@@ -42,6 +42,10 @@ class SwNode2LayImpl
     sal_uLong nIndex;        // The Index of the to-be-inserted Nodes
     bool bMaster    : 1; // true => only Master, false => only Frames without Follow
     bool bInit      : 1; // Did we already call First() at SwClient?
+
+    SwNode2LayImpl(const SwNode2LayImpl&) = delete;
+    SwNode2LayImpl& operator=(const SwNode2LayImpl&) = delete;
+
 public:
     SwNode2LayImpl( const SwNode& rNode, sal_uLong nIdx, bool bSearch );
     ~SwNode2LayImpl() { delete pIter; delete pUpperFrames; }
@@ -51,8 +55,7 @@ public:
     // Inserts a Frame under every pUpper of the array
     void RestoreUpperFrames( SwNodes& rNds, sal_uLong nStt, sal_uLong nEnd );
 
-    SwFrame* GetFrame( const Point* pDocPos,
-                    const SwPosition *pPos ) const;
+    SwFrame* GetFrame( const Point* pDocPos ) const;
 };
 
 SwNode* GoNextWithFrame(const SwNodes& rNodes, SwNodeIndex *pIdx)
@@ -411,11 +414,10 @@ void SwNode2LayImpl::RestoreUpperFrames( SwNodes& rNds, sal_uLong nStt, sal_uLon
     }
 }
 
-SwFrame* SwNode2LayImpl::GetFrame( const Point* pDocPos,
-                                const SwPosition *pPos ) const
+SwFrame* SwNode2LayImpl::GetFrame( const Point* pDocPos ) const
 {
     // test if change of member pIter -> pMod broke anything
-    return pMod ? ::GetFrameOfModify( nullptr, *pMod, FRM_ALL, pDocPos, pPos ) : nullptr;
+    return pMod ? ::GetFrameOfModify( nullptr, *pMod, FRM_ALL, pDocPos, nullptr ) : nullptr;
 }
 
 SwNode2Layout::SwNode2Layout( const SwNode& rNd, sal_uLong nIdx )
@@ -449,10 +451,9 @@ SwNode2Layout::~SwNode2Layout()
 {
 }
 
-SwFrame* SwNode2Layout::GetFrame( const Point* pDocPos,
-                              const SwPosition *pPos ) const
+SwFrame* SwNode2Layout::GetFrame( const Point* pDocPos ) const
 {
-    return pImpl->GetFrame( pDocPos, pPos );
+    return pImpl->GetFrame( pDocPos );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

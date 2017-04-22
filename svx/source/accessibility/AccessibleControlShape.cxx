@@ -22,10 +22,12 @@
 #include "svx/DescriptionGenerator.hxx"
 #include <com/sun/star/drawing/XControlShape.hpp>
 #include <com/sun/star/accessibility/AccessibleRelationType.hpp>
+#include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/form/FormComponentType.hpp>
 #include <com/sun/star/reflection/ProxyFactory.hpp>
+#include <com/sun/star/util/XModeChangeBroadcaster.hpp>
 #include <com/sun/star/container/XContainer.hpp>
 #include <com/sun/star/container/XChild.hpp>
 #include <comphelper/processfactory.hxx>
@@ -33,6 +35,7 @@
 #include <comphelper/types.hxx>
 #include <unotools/accessiblestatesethelper.hxx>
 #include <unotools/accessiblerelationsethelper.hxx>
+#include <svx/IAccessibleParent.hxx>
 #include <svx/svdouno.hxx>
 #include "svx/unoapi.hxx"
 #include <svx/ShapeTypeHandler.hxx>
@@ -117,7 +120,6 @@ AccessibleControlShape::AccessibleControlShape (
     ,   m_bWaitingForControl( false )
 {
     m_pChildManager = new comphelper::OWrappedAccessibleChildrenManager( comphelper::getProcessComponentContext() );
-    m_pChildManager->acquire();
 
     osl_atomic_increment( &m_refCount );
     {
@@ -128,8 +130,7 @@ AccessibleControlShape::AccessibleControlShape (
 
 AccessibleControlShape::~AccessibleControlShape()
 {
-    m_pChildManager->release();
-    m_pChildManager = nullptr;
+    m_pChildManager.clear();
 
     if ( m_xControlContextProxy.is() )
         m_xControlContextProxy->setDelegator( nullptr );
@@ -138,11 +139,6 @@ AccessibleControlShape::~AccessibleControlShape()
     m_xControlContextComponent.clear();
         // this should remove the _only_ three "real" reference (means not delegated to
         // ourself) to this proxy, and thus delete it
-}
-
-SdrObject* AccessibleControlShape::getSdrObject() const
-{
-    return GetSdrObjectFromXShape (mxShape);
 }
 
 namespace {
@@ -176,7 +172,7 @@ void AccessibleControlShape::Init()
         // way future-proof - as soon as an inner context appears which implements an additional interface,
         // we would need to adjust our implementation to support this new interface, too. Bad idea.
 
-        // The usual solution for such a problem is aggregation. Aggregation means using UNO's own meachnisms
+        // The usual solution for such a problem is aggregation. Aggregation means using UNO's own mechanism
         // for merging an inner with an outer component, and get a component which behaves as it is exactly one.
         // This is what XAggregation is for. Unfortunately, aggregation requires _exact_ control over the ref count
         // of the inner object, which we do not have at all.
@@ -190,7 +186,7 @@ void AccessibleControlShape::Init()
 
         // get the control which belongs to our model (relative to our view)
         const vcl::Window* pViewWindow = maShapeTreeInfo.GetWindow();
-        SdrUnoObj* pUnoObjectImpl = dynamic_cast<SdrUnoObj*>( getSdrObject()  );
+        SdrUnoObj* pUnoObjectImpl = dynamic_cast<SdrUnoObj*>( GetSdrObjectFromXShape(mxShape)  );
         SdrView* pView = maShapeTreeInfo.GetSdrView();
         OSL_ENSURE( pView && pViewWindow && pUnoObjectImpl, "AccessibleControlShape::Init: no view, or no view window, no SdrUnoObj!" );
 
@@ -280,12 +276,7 @@ void AccessibleControlShape::Init()
     }
 }
 
-Reference< XAccessibleContext > SAL_CALL AccessibleControlShape::getAccessibleContext() throw (RuntimeException, std::exception)
-{
-    return AccessibleShape::getAccessibleContext ();
-}
-
-void SAL_CALL AccessibleControlShape::grabFocus()  throw (RuntimeException, std::exception)
+void SAL_CALL AccessibleControlShape::grabFocus()
 {
     if ( !m_xUnoControl.is() || !isAliveMode( m_xUnoControl ) )
     {
@@ -301,12 +292,12 @@ void SAL_CALL AccessibleControlShape::grabFocus()  throw (RuntimeException, std:
     }
 }
 
-OUString SAL_CALL AccessibleControlShape::getImplementationName() throw (RuntimeException, std::exception)
+OUString SAL_CALL AccessibleControlShape::getImplementationName()
 {
     return OUString( "com.sun.star.comp.accessibility.AccessibleControlShape" );
 }
 
-OUString AccessibleControlShape::CreateAccessibleBaseName() throw (RuntimeException)
+OUString AccessibleControlShape::CreateAccessibleBaseName()
 {
     OUString sName;
 
@@ -328,7 +319,6 @@ OUString AccessibleControlShape::CreateAccessibleBaseName() throw (RuntimeExcept
 
 OUString
     AccessibleControlShape::CreateAccessibleDescription()
-    throw (RuntimeException, std::exception)
 {
     DescriptionGenerator aDG (mxShape);
     ShapeTypeId nShapeType = ShapeTypeHandler::Instance().GetTypeId (mxShape);
@@ -341,8 +331,8 @@ OUString
             if ( sDesc.isEmpty() )
             {   // no -> use the default
                 aDG.Initialize (STR_ObjNameSingulUno);
-                aDG.AddProperty ("ControlBackground", DescriptionGenerator::COLOR, "");
-                aDG.AddProperty ( "ControlBorder", DescriptionGenerator::INTEGER, "");
+                aDG.AddProperty ("ControlBackground", DescriptionGenerator::PropertyType::Color, "");
+                aDG.AddProperty ( "ControlBorder", DescriptionGenerator::PropertyType::Integer, "");
             }
             // ensure that we are listening to the Name property
             m_bListeningForDesc = ensureListeningState( m_bListeningForDesc, true, lcl_getDescPropertyName() );
@@ -365,7 +355,7 @@ OUString
 IMPLEMENT_FORWARD_REFCOUNT( AccessibleControlShape, AccessibleShape )
 IMPLEMENT_GET_IMPLEMENTATION_ID( AccessibleControlShape )
 
-void SAL_CALL AccessibleControlShape::propertyChange( const PropertyChangeEvent& _rEvent ) throw (RuntimeException, std::exception)
+void SAL_CALL AccessibleControlShape::propertyChange( const PropertyChangeEvent& _rEvent )
 {
     ::osl::MutexGuard aGuard( maMutex );
 
@@ -391,7 +381,7 @@ void SAL_CALL AccessibleControlShape::propertyChange( const PropertyChangeEvent&
 #endif
 }
 
-Any SAL_CALL AccessibleControlShape::queryInterface( const Type& _rType ) throw (RuntimeException, std::exception)
+Any SAL_CALL AccessibleControlShape::queryInterface( const Type& _rType )
 {
     Any aReturn = AccessibleShape::queryInterface( _rType );
     if ( !aReturn.hasValue() )
@@ -403,7 +393,7 @@ Any SAL_CALL AccessibleControlShape::queryInterface( const Type& _rType ) throw 
     return aReturn;
 }
 
-Sequence< Type > SAL_CALL AccessibleControlShape::getTypes() throw (RuntimeException, std::exception)
+Sequence< Type > SAL_CALL AccessibleControlShape::getTypes()
 {
     Sequence< Type > aShapeTypes = AccessibleShape::getTypes();
     Sequence< Type > aOwnTypes = AccessibleControlShape_Base::getTypes();
@@ -432,7 +422,7 @@ Sequence< Type > SAL_CALL AccessibleControlShape::getTypes() throw (RuntimeExcep
     return aAllTypes;
 }
 
-void SAL_CALL AccessibleControlShape::notifyEvent( const AccessibleEventObject& _rEvent ) throw (RuntimeException, std::exception)
+void SAL_CALL AccessibleControlShape::notifyEvent( const AccessibleEventObject& _rEvent )
 {
     if ( AccessibleEventId::STATE_CHANGED == _rEvent.EventId )
     {
@@ -441,7 +431,7 @@ void SAL_CALL AccessibleControlShape::notifyEvent( const AccessibleEventObject& 
         _rEvent.OldValue >>= nLostState;
         _rEvent.NewValue >>= nGainedState;
 
-        // don't multiplex states which the inner context is not resposible for
+        // don't multiplex states which the inner context is not responsible for
         if  ( isComposedState( nLostState ) )
             AccessibleShape::ResetState( nLostState );
 
@@ -467,7 +457,7 @@ void SAL_CALL AccessibleControlShape::notifyEvent( const AccessibleEventObject& 
     }
 }
 
-void SAL_CALL AccessibleControlShape::modeChanged(const ModeChangeEvent& rSource) throw (RuntimeException, std::exception)
+void SAL_CALL AccessibleControlShape::modeChanged(const ModeChangeEvent& rSource)
 {
     // did it come from our inner context (the real one, not it's proxy!)?
     SAL_INFO("sw.uno", "AccessibleControlShape::modeChanged");
@@ -487,7 +477,7 @@ void SAL_CALL AccessibleControlShape::modeChanged(const ModeChangeEvent& rSource
     SAL_WARN_IF(!bReplaced, "sw.uno", "AccessibleControlShape::modeChanged: replacing ourselves away did fail");
 }
 
-void SAL_CALL AccessibleControlShape::disposing (const EventObject& _rSource) throw (RuntimeException, std::exception)
+void SAL_CALL AccessibleControlShape::disposing (const EventObject& _rSource)
 {
     AccessibleShape::disposing( _rSource );
 }
@@ -522,7 +512,7 @@ bool AccessibleControlShape::ensureListeningState(
     return _bNeedNewListening;
 }
 
-sal_Int32 SAL_CALL AccessibleControlShape::getAccessibleChildCount( ) throw(RuntimeException, std::exception)
+sal_Int32 SAL_CALL AccessibleControlShape::getAccessibleChildCount( )
 {
     if ( !m_xUnoControl.is() )
         return 0;
@@ -539,7 +529,7 @@ sal_Int32 SAL_CALL AccessibleControlShape::getAccessibleChildCount( ) throw(Runt
     }
 }
 
-Reference< XAccessible > SAL_CALL AccessibleControlShape::getAccessibleChild( sal_Int32 i ) throw(IndexOutOfBoundsException, RuntimeException, std::exception)
+Reference< XAccessible > SAL_CALL AccessibleControlShape::getAccessibleChild( sal_Int32 i )
 {
     Reference< XAccessible > xChild;
     if ( !m_xUnoControl.is() )
@@ -577,12 +567,13 @@ Reference< XAccessible > SAL_CALL AccessibleControlShape::getAccessibleChild( sa
         xContext = xChild->getAccessibleContext( );
     if ( xContext.is() )
         nChildIndex = xContext->getAccessibleIndexInParent( );
-    OSL_ENSURE( nChildIndex == i, "AccessibleControlShape::getAccessibleChild: index mismatch!" );
+    SAL_WARN_IF( nChildIndex != i, "svx", "AccessibleControlShape::getAccessibleChild: index mismatch,"
+            " nChildIndex=" << nChildIndex << " vs i=" << i );
 #endif
     return xChild;
 }
 
-Reference< XAccessibleRelationSet > SAL_CALL AccessibleControlShape::getAccessibleRelationSet(  ) throw (RuntimeException, std::exception)
+Reference< XAccessibleRelationSet > SAL_CALL AccessibleControlShape::getAccessibleRelationSet(  )
 {
     utl::AccessibleRelationSetHelper* pRelationSetHelper = new utl::AccessibleRelationSetHelper;
     ensureControlModelAccess();
@@ -605,7 +596,7 @@ Reference< XAccessibleRelationSet > SAL_CALL AccessibleControlShape::getAccessib
     return xSet;
 }
 
-OUString AccessibleControlShape::CreateAccessibleName() throw (RuntimeException, std::exception)
+OUString AccessibleControlShape::CreateAccessibleName()
 {
     ensureControlModelAccess();
 
@@ -843,7 +834,7 @@ void AccessibleControlShape::initializeComposedState()
     }
 }
 
-void SAL_CALL AccessibleControlShape::elementInserted( const css::container::ContainerEvent& _rEvent ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL AccessibleControlShape::elementInserted( const css::container::ContainerEvent& _rEvent )
 {
     Reference< XContainer > xContainer( _rEvent.Source, UNO_QUERY );
     Reference< XControl > xControl( _rEvent.Element, UNO_QUERY );
@@ -876,12 +867,12 @@ void SAL_CALL AccessibleControlShape::elementInserted( const css::container::Con
     }
 }
 
-void SAL_CALL AccessibleControlShape::elementRemoved( const css::container::ContainerEvent& ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL AccessibleControlShape::elementRemoved( const css::container::ContainerEvent& )
 {
     // not interested in
 }
 
-void SAL_CALL AccessibleControlShape::elementReplaced( const css::container::ContainerEvent& ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL AccessibleControlShape::elementReplaced( const css::container::ContainerEvent& )
 {
     // not interested in
 }
@@ -895,7 +886,7 @@ AccessibleControlShape* SAL_CALL AccessibleControlShape::GetLabeledByControlShap
         // get the "label by" property value of the control
         if (::comphelper::hasProperty(rAccLabelControlProperty, m_xControlModel))
         {
-            m_xControlModel->getPropertyValue( rAccLabelControlProperty ) >>= sCtlLabelBy;
+            sCtlLabelBy = m_xControlModel->getPropertyValue(rAccLabelControlProperty);
             if( sCtlLabelBy.hasValue() )
             {
                 Reference< XPropertySet >  xAsSet (sCtlLabelBy, UNO_QUERY);

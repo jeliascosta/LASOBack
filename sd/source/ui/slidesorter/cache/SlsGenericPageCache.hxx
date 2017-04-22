@@ -100,13 +100,13 @@ public:
     */
     void RequestPreviewBitmap (
         const CacheKey aKey,
-        const bool bMayBeUpToDate = true);
+        const bool bMayBeUpToDate);
 
     /** Tell the cache to replace the bitmap associated with the given
         request data with a new one that reflects recent changes in the
         content of the page object.
         @return
-            When the key is kown then return <TRUE/>.
+            When the key is known then return <TRUE/>.
     */
     bool InvalidatePreviewBitmap (const CacheKey aKey);
 

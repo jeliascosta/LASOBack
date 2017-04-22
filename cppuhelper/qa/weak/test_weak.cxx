@@ -27,18 +27,18 @@
 #include <com/sun/star/uno/XAdapter.hpp>
 #include <com/sun/star/uno/XReference.hpp>
 #include <com/sun/star/uno/XWeak.hpp>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <cppuhelper/weak.hxx>
 #include <rtl/ref.hxx>
 #include <sal/types.h>
 
 namespace {
 
-class Reference: public cppu::WeakImplHelper1< css::uno::XReference > {
+class Reference: public cppu::WeakImplHelper< css::uno::XReference > {
 public:
     Reference(): m_disposed(false) {}
 
-    void SAL_CALL dispose() throw (css::uno::RuntimeException) override {
+    void SAL_CALL dispose() override {
         m_disposed = true;
         handleDispose();
     }

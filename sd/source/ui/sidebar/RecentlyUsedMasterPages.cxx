@@ -220,10 +220,10 @@ void RecentlyUsedMasterPages::SavePersistentValues()
             {
                 xSet->insertByName (sKey, makeAny(xChild));
 
-                aValue <<= OUString(iDescriptor->msURL);
+                aValue <<= iDescriptor->msURL;
                 xChild->replaceByName (sURLMemberName, aValue);
 
-                aValue <<= OUString(iDescriptor->msName);
+                aValue <<= iDescriptor->msName;
                 xChild->replaceByName (sNameMemberName, aValue);
             }
         }
@@ -278,7 +278,7 @@ void RecentlyUsedMasterPages::SendEvent()
     }
 }
 
-IMPL_LINK_TYPED(RecentlyUsedMasterPages, MasterPageChangeListener,
+IMPL_LINK(RecentlyUsedMasterPages, MasterPageChangeListener,
     MasterPageObserverEvent&, rEvent, void)
 {
     switch (rEvent.meType)
@@ -298,15 +298,14 @@ IMPL_LINK_TYPED(RecentlyUsedMasterPages, MasterPageChangeListener,
     }
 }
 
-IMPL_LINK_TYPED(RecentlyUsedMasterPages, MasterPageContainerChangeListener,
+IMPL_LINK(RecentlyUsedMasterPages, MasterPageContainerChangeListener,
     MasterPageContainerChangeEvent&, rEvent, void)
 {
     switch (rEvent.meEventType)
     {
-        case MasterPageContainerChangeEvent::CHILD_ADDED:
-        case MasterPageContainerChangeEvent::CHILD_REMOVED:
-        case MasterPageContainerChangeEvent::INDEX_CHANGED:
-        case MasterPageContainerChangeEvent::INDEXES_CHANGED:
+        case MasterPageContainerChangeEvent::EventType::CHILD_ADDED:
+        case MasterPageContainerChangeEvent::EventType::CHILD_REMOVED:
+        case MasterPageContainerChangeEvent::EventType::INDEX_CHANGED:
             ResolveList();
             break;
 

@@ -43,15 +43,13 @@
 #include <iostream>
 #include <algorithm>
 
-std::string g_Empty = "";
+std::string const g_Empty = "";
 
-// Mork header of supported format version
-const char *MorkMagicHeader = "// <!-- <mdb:mork:z v=\"1.4\"/> -->";
+const char * const MorkDictColumnMeta = "<(a=c)>";
 
-const char *MorkDictColumnMeta = "<(a=c)>";
+static const int defaultScope_ = 0x80;
 
-
-MorkParser::MorkParser( int DefaultScope ) :
+MorkParser::MorkParser() :
     columns_(),
     values_(),
     mork_(),
@@ -60,10 +58,8 @@ MorkParser::MorkParser( int DefaultScope ) :
     morkData_(),
     morkPos_(0),
     nextAddValueId_(0x7fffffff),
-    defaultScope_(DefaultScope),
-    defaultListScope_(0x81),
     defaultTableId_(1),
-    nowParsing_(NPValues)
+    nowParsing_(NP::Values)
 {
 }
 
@@ -92,7 +88,7 @@ void MorkParser::initVars()
 {
     error_ = NoError;
     morkPos_ = 0;
-    nowParsing_ = NPValues;
+    nowParsing_ = NP::Values;
     currentCells_ = nullptr;
     nextAddValueId_ = 0x7fffffff;
 }
@@ -186,7 +182,7 @@ bool MorkParser::parseDict()
 {
     char cur = nextChar();
     bool Result = true;
-    nowParsing_ = NPValues;
+    nowParsing_ = NP::Values;
 
     while ( Result && cur != '>' && cur )
     {
@@ -199,7 +195,7 @@ bool MorkParser::parseDict()
 
                 if ( morkData_.substr( morkPos_ - 1, strlen( MorkDictColumnMeta ) ) == MorkDictColumnMeta )
                 {
-                    nowParsing_ = NPColumns;
+                    nowParsing_ = NP::Columns;
                     morkPos_ += strlen( MorkDictColumnMeta ) - 1;
                 }
 
@@ -325,12 +321,12 @@ bool MorkParser::parseCell()
     // Apply column and text
     int ColumnId = strtoul(Column.c_str(), nullptr, 16);
 
-    if ( NPRows != nowParsing_ )
+    if ( NP::Rows != nowParsing_ )
     {
         // Dicts
         if ( "" != Text )
         {
-            if ( nowParsing_ == NPColumns )
+            if ( nowParsing_ == NP::Columns )
             {
                 columns_[ ColumnId ] = Text;
             }
@@ -489,7 +485,7 @@ bool MorkParser::parseRow( int TableId, int TableScope )
     bool Result = true;
     std::string TextId;
     int Id = 0, Scope = 0;
-    nowParsing_ = NPRows;
+    nowParsing_ = NP::Rows;
 
     char cur = nextChar();
 
@@ -575,7 +571,7 @@ MorkRowMap *MorkParser::getRows( int RowScope, RowScopeMap *table )
     return &iter->second;
 }
 
-std::string &MorkParser::getValue( int oid )
+std::string const &MorkParser::getValue( int oid )
 {
     MorkDict::iterator foundIter = values_.find( oid );
 
@@ -587,7 +583,7 @@ std::string &MorkParser::getValue( int oid )
     return foundIter->second;
 }
 
-std::string &MorkParser::getColumn( int oid )
+std::string const &MorkParser::getColumn( int oid )
 {
     MorkDict::iterator foundIter = columns_.find( oid );
 
@@ -616,7 +612,7 @@ void MorkParser::retrieveLists(std::set<std::string>& lists)
         << ( ( int ) TableIter->first < 0 ? "-" : " " )
         << TableIter->first << std::endl;
 #endif
-        MorkRowMap* rows = getRows( defaultListScope_, &TableIter->second );
+        MorkRowMap* rows = getRows( 0x81/*defaultListScope*/, &TableIter->second );
         if (!rows) return;
         for ( MorkRowMap::Map::const_iterator RowIter = rows->map.begin();
              RowIter != rows->map.end(); ++RowIter )

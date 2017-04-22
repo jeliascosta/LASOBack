@@ -19,12 +19,12 @@
 #ifndef INCLUDED_TOOLKIT_CONTROLS_ROADMAPENTRY_HXX
 #define INCLUDED_TOOLKIT_CONTROLS_ROADMAPENTRY_HXX
 
-#include <cppuhelper/implbase1.hxx>
 #include <comphelper/uno3.hxx>
 #include <comphelper/broadcasthelper.hxx>
 #include <comphelper/propertycontainer.hxx>
 #include <comphelper/proparrhlp.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
+#include <cppuhelper/implbase.hxx>
 
 
 #define RM_PROPERTY_ID_LABEL        1
@@ -32,8 +32,7 @@
 #define RM_PROPERTY_ID_ENABLED      4
 #define RM_PROPERTY_ID_INTERACTIVE  5
 
-typedef ::cppu::WeakImplHelper1 <   css::lang::XServiceInfo
-                                >   ORoadmapEntry_Base;
+typedef cppu::WeakImplHelper< css::lang::XServiceInfo > ORoadmapEntry_Base;
 
 class ORoadmapEntry :public ORoadmapEntry_Base
             ,public ::comphelper::OMutexAndBroadcastHelper
@@ -50,8 +49,7 @@ protected:
 
     /// @see css::beans::XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-        SAL_CALL getPropertySetInfo()
-        throw (css::uno::RuntimeException, std::exception) override;
+        SAL_CALL getPropertySetInfo() override;
 
     // OPropertySetHelper
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
@@ -59,9 +57,9 @@ protected:
     // OPropertyArrayUsageHelper
     virtual ::cppu::IPropertyArrayHelper* createArrayHelper() const override;
 
-    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
 
     // other stuff

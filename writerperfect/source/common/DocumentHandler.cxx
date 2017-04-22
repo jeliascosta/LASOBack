@@ -16,6 +16,7 @@
 #include <com/sun/star/xml/sax/XAttributeList.hpp>
 
 #include <xmloff/attrlist.hxx>
+#include <xmloff/xmlimp.hxx>
 
 namespace writerperfect
 {
@@ -112,6 +113,8 @@ using com::sun::star::xml::sax::XDocumentHandler;
 DocumentHandler::DocumentHandler(Reference < XDocumentHandler > &xHandler) :
     mxHandler(xHandler)
 {
+    if (SvXMLImport *pFastHandler = dynamic_cast<SvXMLImport *>(mxHandler.get()))
+        mxHandler.set(new SvXMLLegacyToFastDocHandler(pFastHandler));
 }
 
 void DocumentHandler::startDocument()

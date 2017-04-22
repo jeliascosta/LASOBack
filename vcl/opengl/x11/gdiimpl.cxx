@@ -30,8 +30,10 @@
 #include <vcl/opengl/OpenGLHelper.hxx>
 
 #include <o3tl/lru_map.hxx>
+#include "ControlCacheKey.hxx"
 
 static std::vector<GLXContext> g_vShareList;
+static bool g_bAnyCurrent;
 
 class X11OpenGLContext : public OpenGLContext
 {
@@ -184,22 +186,9 @@ namespace
         return pFBC;
     }
 
-    // we need them before glew can initialize them
-    // glew needs an OpenGL context so we need to get the address manually
-    void initOpenGLFunctionPointers()
-    {
-        glXChooseFBConfig = reinterpret_cast<GLXFBConfig*(*)(Display *dpy, int screen, const int *attrib_list, int *nelements)>(glXGetProcAddressARB(reinterpret_cast<GLubyte const *>("glXChooseFBConfig")));
-        glXGetVisualFromFBConfig = reinterpret_cast<XVisualInfo*(*)(Display *dpy, GLXFBConfig config)>(glXGetProcAddressARB(reinterpret_cast<GLubyte const *>("glXGetVisualFromFBConfig")));    // try to find a visual for the current set of attributes
-        glXGetFBConfigAttrib = reinterpret_cast<int(*)(Display *dpy, GLXFBConfig config, int attribute, int* value)>(glXGetProcAddressARB(reinterpret_cast<GLubyte const *>("glXGetFBConfigAttrib")));
-        glXCreateContextAttribsARB = reinterpret_cast<GLXContext(*)(Display*, GLXFBConfig, GLXContext, Bool, const int*)>(glXGetProcAddressARB(reinterpret_cast<const GLubyte *>("glXCreateContextAttribsARB")));
-        glXCreatePixmap = reinterpret_cast<GLXPixmap(*)(Display*, GLXFBConfig, Pixmap, const int*)>(glXGetProcAddressARB(reinterpret_cast<const GLubyte *>("glXCreatePixmap")));
-    }
-
     Visual* getVisual(Display* dpy, Window win)
     {
         OpenGLZone aZone;
-
-        initOpenGLFunctionPointers();
 
         XWindowAttributes xattr;
         if( !XGetWindowAttributes( dpy, win, &xattr ) )
@@ -235,19 +224,22 @@ void X11OpenGLContext::resetCurrent()
     OpenGLZone aZone;
 
     if (m_aGLWin.dpy)
+    {
         glXMakeCurrent(m_aGLWin.dpy, None, nullptr);
+        g_bAnyCurrent = false;
+    }
 }
 
 bool X11OpenGLContext::isCurrent()
 {
     OpenGLZone aZone;
-    return m_aGLWin.ctx && glXGetCurrentContext() == m_aGLWin.ctx &&
+    return g_bAnyCurrent && m_aGLWin.ctx && glXGetCurrentContext() == m_aGLWin.ctx &&
            glXGetCurrentDrawable() == m_aGLWin.win;
 }
 
 bool X11OpenGLContext::isAnyCurrent()
 {
-    return glXGetCurrentContext() != None;
+    return g_bAnyCurrent && glXGetCurrentContext() != None;
 }
 
 SystemWindowData X11OpenGLContext::generateWinData(vcl::Window* pParent, bool /*bRequestLegacyContext*/)
@@ -265,8 +257,6 @@ SystemWindowData X11OpenGLContext::generateWinData(vcl::Window* pParent, bool /*
 
     if( dpy == nullptr || !glXQueryExtension( dpy, nullptr, nullptr ) )
         return aWinData;
-
-    initOpenGLFunctionPointers();
 
     int best_fbc = -1;
     GLXFBConfig* pFBC = getFBConfig(dpy, win, best_fbc, true, false);
@@ -355,9 +345,12 @@ bool X11OpenGLContext::ImplInit()
 
     if( !glXMakeCurrent( m_aGLWin.dpy, m_aGLWin.win, m_aGLWin.ctx ) )
     {
+        g_bAnyCurrent = false;
         SAL_WARN("vcl.opengl", "unable to select current GLX context");
         return false;
     }
+
+    g_bAnyCurrent = true;
 
     int glxMinor, glxMajor;
     double nGLXVersion = 0;
@@ -400,8 +393,8 @@ bool X11OpenGLContext::ImplInit()
         }
     }
 
-    bool bRet = InitGLEW();
-    InitGLEWDebugging();
+    bool bRet = InitGL();
+    InitGLDebugging();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -427,10 +420,12 @@ void X11OpenGLContext::makeCurrent()
     {
         if (!glXMakeCurrent( m_aGLWin.dpy, m_aGLWin.win, m_aGLWin.ctx ))
         {
+            g_bAnyCurrent = false;
             SAL_WARN("vcl.opengl", "OpenGLContext::makeCurrent failed "
                      "on drawable " << m_aGLWin.win);
             return;
         }
+        g_bAnyCurrent = true;
     }
 
     registerAsCurrent();
@@ -445,6 +440,7 @@ void X11OpenGLContext::destroyCurrentContext()
             g_vShareList.erase(itr);
 
         glXMakeCurrent(m_aGLWin.dpy, None, nullptr);
+        g_bAnyCurrent = false;
         if( glGetError() != GL_NO_ERROR )
         {
             SAL_WARN("vcl.opengl", "glError: " << glGetError());
@@ -530,56 +526,23 @@ bool X11OpenGLContext::initWindow()
     return true;
 }
 
-// Copy of gluCheckExtension(), from the Apache-licensed
-// https://code.google.com/p/glues/source/browse/trunk/glues/source/glues_registry.c
-static GLboolean checkExtension(const GLubyte* extName, const GLubyte* extString)
-{
-  GLboolean flag=GL_FALSE;
-  char* word;
-  char* lookHere;
-  char* deleteThis;
-
-  if (extString==nullptr)
-  {
-     return GL_FALSE;
-  }
-
-  deleteThis=lookHere=static_cast<char*>(malloc(strlen(reinterpret_cast<const char*>(extString))+1));
-  if (lookHere==nullptr)
-  {
-     return GL_FALSE;
-  }
-
-  /* strtok() will modify string, so copy it somewhere */
-  strcpy(lookHere, reinterpret_cast<const char*>(extString));
-
-  while ((word=strtok(lookHere, " "))!=nullptr)
-  {
-     if (strcmp(word, reinterpret_cast<const char*>(extName))==0)
-     {
-        flag=GL_TRUE;
-        break;
-     }
-     lookHere=nullptr; /* get next token */
-  }
-  free(static_cast<void*>(deleteThis));
-
-  return flag;
-}
-
 GLX11Window::GLX11Window()
     : dpy(nullptr)
     , screen(0)
     , win(0)
     , vi(nullptr)
     , ctx(nullptr)
-    , GLXExtensions(nullptr)
 {
 }
 
 bool GLX11Window::HasGLXExtension( const char* name ) const
 {
-    return checkExtension( reinterpret_cast<const GLubyte*>(name), reinterpret_cast<const GLubyte*>(GLXExtensions) );
+    for (sal_Int32 i = 0; i != -1;) {
+        if (GLXExtensions.getToken(0, ' ', i) == name) {
+            return true;
+        }
+    }
+    return false;
 }
 
 GLX11Window::~GLX11Window()
@@ -600,7 +563,7 @@ OpenGLContext* X11SalInstance::CreateOpenGLContext()
 
 X11OpenGLSalGraphicsImpl::X11OpenGLSalGraphicsImpl( X11SalGraphics& rParent ):
     OpenGLSalGraphicsImpl(rParent,rParent.GetGeometryProvider()),
-    mrParent(rParent)
+    mrX11Parent(rParent)
 {
 }
 
@@ -611,13 +574,13 @@ X11OpenGLSalGraphicsImpl::~X11OpenGLSalGraphicsImpl()
 void X11OpenGLSalGraphicsImpl::Init()
 {
     // The m_pFrame and m_pVDev pointers are updated late in X11
-    mpProvider = mrParent.GetGeometryProvider();
+    mpProvider = mrX11Parent.GetGeometryProvider();
     OpenGLSalGraphicsImpl::Init();
 }
 
 rtl::Reference<OpenGLContext> X11OpenGLSalGraphicsImpl::CreateWinContext()
 {
-    NativeWindowHandleProvider *pProvider = dynamic_cast<NativeWindowHandleProvider*>(mrParent.m_pFrame);
+    NativeWindowHandleProvider *pProvider = dynamic_cast<NativeWindowHandleProvider*>(mrX11Parent.m_pFrame);
 
     if( !pProvider )
         return nullptr;
@@ -625,21 +588,21 @@ rtl::Reference<OpenGLContext> X11OpenGLSalGraphicsImpl::CreateWinContext()
     sal_uIntPtr aWin = pProvider->GetNativeWindowHandle();
     rtl::Reference<X11OpenGLContext> xContext = new X11OpenGLContext;
     xContext->setVCLOnly();
-    xContext->init( mrParent.GetXDisplay(), aWin,
-                    mrParent.m_nXScreen.getXScreen() );
+    xContext->init( mrX11Parent.GetXDisplay(), aWin,
+                    mrX11Parent.m_nXScreen.getXScreen() );
     return rtl::Reference<OpenGLContext>(xContext.get());
 }
 
 void X11OpenGLSalGraphicsImpl::copyBits( const SalTwoRect& rPosAry, SalGraphics* pSrcGraphics )
 {
-    OpenGLSalGraphicsImpl *pImpl = pSrcGraphics ? static_cast< OpenGLSalGraphicsImpl* >(pSrcGraphics->GetImpl()) : static_cast< OpenGLSalGraphicsImpl *>(mrParent.GetImpl());
+    OpenGLSalGraphicsImpl *pImpl = pSrcGraphics ? static_cast< OpenGLSalGraphicsImpl* >(pSrcGraphics->GetImpl()) : static_cast< OpenGLSalGraphicsImpl *>(mrX11Parent.GetImpl());
     OpenGLSalGraphicsImpl::DoCopyBits( rPosAry, *pImpl );
 }
 
 bool X11OpenGLSalGraphicsImpl::FillPixmapFromScreen( X11Pixmap* pPixmap, int nX, int nY )
 {
-    Display* pDisplay = mrParent.GetXDisplay();
-    SalX11Screen nScreen = mrParent.GetScreenNumber();
+    Display* pDisplay = mrX11Parent.GetXDisplay();
+    SalX11Screen nScreen = mrX11Parent.GetScreenNumber();
     XVisualInfo aVisualInfo;
     XImage* pImage;
     char* pData;
@@ -676,7 +639,7 @@ bool X11OpenGLSalGraphicsImpl::FillPixmapFromScreen( X11Pixmap* pPixmap, int nX,
 typedef typename std::pair<ControlCacheKey, std::unique_ptr<TextureCombo>> ControlCachePair;
 typedef o3tl::lru_map<ControlCacheKey, std::unique_ptr<TextureCombo>, ControlCacheHashFunction> ControlCacheType;
 
-vcl::DeleteOnDeinit<ControlCacheType> gTextureCache(new ControlCacheType(200));
+static vcl::DeleteOnDeinit<ControlCacheType> gTextureCache(new ControlCacheType(200));
 
 namespace
 {
@@ -747,7 +710,7 @@ bool X11OpenGLSalGraphicsImpl::RenderPixmap(X11Pixmap* pPixmap, X11Pixmap* pMask
         None
     };
 
-    Display* pDisplay = mrParent.GetXDisplay();
+    Display* pDisplay = mrX11Parent.GetXDisplay();
     bool bInverted = false;
 
     const long nWidth = pPixmap->GetWidth();
@@ -774,7 +737,7 @@ bool X11OpenGLSalGraphicsImpl::RenderPixmap(X11Pixmap* pPixmap, X11Pixmap* pMask
 
     rCombo.mpTexture.reset(new OpenGLTexture(pPixmap->GetWidth(), pPixmap->GetHeight(), false));
 
-    mpContext->state()->texture().active(0);
+    mpContext->state().texture().active(0);
 
     rCombo.mpTexture->Bind();
     glXBindTexImageEXT( pDisplay, pGlxPixmap, GLX_FRONT_LEFT_EXT, nullptr );

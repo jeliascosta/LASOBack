@@ -39,6 +39,8 @@
 #include <com/sun/star/ucb/NameClash.hpp>
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
 #include <com/sun/star/xml/xpath/XPathAPI.hpp>
+#include <com/sun/star/xml/xpath/XPathException.hpp>
+#include <com/sun/star/xml/dom/DOMException.hpp>
 #include <com/sun/star/xml/dom/DocumentBuilder.hpp>
 #include <com/sun/star/beans/NamedValue.hpp>
 #include <com/sun/star/deployment/ExtensionManager.hpp>
@@ -80,13 +82,13 @@ OO3ExtensionMigration::~OO3ExtensionMigration()
 
 void OO3ExtensionMigration::checkAndCreateDirectory( INetURLObject& rDirURL )
 {
-    ::osl::FileBase::RC aResult = ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DECODE_TO_IURI ) );
+    ::osl::FileBase::RC aResult = ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ) );
     if ( aResult == ::osl::FileBase::E_NOENT )
     {
         INetURLObject aBaseURL( rDirURL );
         aBaseURL.removeSegment();
         checkAndCreateDirectory( aBaseURL );
-        ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DECODE_TO_IURI ) );
+        ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ) );
     }
 }
 
@@ -227,7 +229,7 @@ bool OO3ExtensionMigration::scanDescriptionXml( const OUString& sDescriptionXmlU
             // scan extension identifier and try to match with our black list entries
             for (OUString & i : m_aBlackList)
             {
-                utl::SearchParam param(i, utl::SearchParam::SRCH_REGEXP);
+                utl::SearchParam param(i, utl::SearchParam::SearchType::Regexp);
                 utl::TextSearch  ts(param, LANGUAGE_DONTKNOW);
 
                 sal_Int32 start = 0;
@@ -252,7 +254,7 @@ bool OO3ExtensionMigration::scanDescriptionXml( const OUString& sDescriptionXmlU
         // description.xml!
         for (OUString & i : m_aBlackList)
         {
-            utl::SearchParam param(i, utl::SearchParam::SRCH_REGEXP);
+            utl::SearchParam param(i, utl::SearchParam::SearchType::Regexp);
             utl::TextSearch  ts(param, LANGUAGE_DONTKNOW);
 
             sal_Int32 start = 0;
@@ -293,20 +295,19 @@ void OO3ExtensionMigration::migrateExtension( const OUString& sSourceDir )
 // XServiceInfo
 
 
-OUString OO3ExtensionMigration::getImplementationName() throw (RuntimeException, std::exception)
+OUString OO3ExtensionMigration::getImplementationName()
 {
     return OO3ExtensionMigration_getImplementationName();
 }
 
 
 sal_Bool OO3ExtensionMigration::supportsService(OUString const & ServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 
-Sequence< OUString > OO3ExtensionMigration::getSupportedServiceNames() throw (RuntimeException, std::exception)
+Sequence< OUString > OO3ExtensionMigration::getSupportedServiceNames()
 {
     return OO3ExtensionMigration_getSupportedServiceNames();
 }
@@ -315,7 +316,7 @@ Sequence< OUString > OO3ExtensionMigration::getSupportedServiceNames() throw (Ru
 // XInitialization
 
 
-void OO3ExtensionMigration::initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception)
+void OO3ExtensionMigration::initialize( const Sequence< Any >& aArguments )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -345,7 +346,6 @@ void OO3ExtensionMigration::initialize( const Sequence< Any >& aArguments ) thro
 }
 
 Any OO3ExtensionMigration::execute( const Sequence< beans::NamedValue >& )
-    throw (lang::IllegalArgumentException, Exception, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -385,14 +385,12 @@ TmpRepositoryCommandEnv::~TmpRepositoryCommandEnv()
 // XCommandEnvironment
 
 uno::Reference< task::XInteractionHandler > TmpRepositoryCommandEnv::getInteractionHandler()
-throw ( uno::RuntimeException, std::exception )
 {
     return this;
 }
 
 
 uno::Reference< ucb::XProgressHandler > TmpRepositoryCommandEnv::getProgressHandler()
-throw ( uno::RuntimeException, std::exception )
 {
     return this;
 }
@@ -400,7 +398,6 @@ throw ( uno::RuntimeException, std::exception )
 // XInteractionHandler
 void TmpRepositoryCommandEnv::handle(
     uno::Reference< task::XInteractionRequest> const & xRequest )
-    throw ( uno::RuntimeException, std::exception )
 {
     OSL_ASSERT( xRequest->getRequest().getValueTypeClass() == uno::TypeClass_EXCEPTION );
 
@@ -428,17 +425,15 @@ void TmpRepositoryCommandEnv::handle(
 
 // XProgressHandler
 void TmpRepositoryCommandEnv::push( uno::Any const & /*Status*/ )
-throw (uno::RuntimeException, std::exception)
 {
 }
 
 
 void TmpRepositoryCommandEnv::update( uno::Any const & /*Status */)
-throw (uno::RuntimeException, std::exception)
 {
 }
 
-void TmpRepositoryCommandEnv::pop() throw (uno::RuntimeException, std::exception)
+void TmpRepositoryCommandEnv::pop()
 {
 }
 

@@ -152,7 +152,7 @@ DECLARE_OOXMLEXPORT_TEST(testFieldFlagO,"TOC_field_f.docx")
 DECLARE_OOXMLEXPORT_TEST(testTOCFlag_f, "toc_doc.docx")
 {
     // Export logic for all TOC field flags was enclosed inside
-    // if( nsSwTOXElement::TOX_MARK & pTOX->GetCreateType() ) in ww8atr.cxx which gets true for \f,
+    // if( SwTOXElement::Mark & pTOX->GetCreateType() ) in ww8atr.cxx which gets true for \f,
     // this was the reason if there is \f flag present in original doc then only other flags like
     // \o \h \n used to come after RoundTrip.
     // This test case is to verify even if there is no \f flag in original doc, \h flag is getting
@@ -432,7 +432,7 @@ DECLARE_OOXMLEXPORT_TEST(testFDO76163 , "fdo76163.docx")
     if (!pXmlDoc)
         return;
     //docx file after RT is getting corrupted.
-    assertXPath ( pXmlDoc, "/w:document/w:body/w:p[2]/w:hyperlink/w:r[11]/w:fldChar", "fldCharType", "end" );
+    assertXPath ( pXmlDoc, "/w:document/w:body/w:p[2]/w:hyperlink/w:r[10]/w:fldChar", "fldCharType", "end" );
 }
 
 DECLARE_OOXMLEXPORT_TEST(testFDO78659, "fdo78659.docx")
@@ -565,7 +565,7 @@ DECLARE_OOXMLEXPORT_TEST(testSdtDateDuplicate, "sdt-date-duplicate.docx")
 DECLARE_OOXMLEXPORT_TEST(testFdo81492, "fdo81492.docx")
 {
     if (xmlDocPtr pXmlDoc = parseExport())
-        assertXPathContent(pXmlDoc, "/w:document/w:body/w:p[1]/w:r[5]/w:instrText", "ADDIN EN.CITE.DATA");
+        assertXPathContent(pXmlDoc, "/w:document/w:body/w:p[1]/w:r[9]/w:instrText", "ADDIN EN.CITE.DATA");
 }
 
 DECLARE_OOXMLEXPORT_TEST(testEditTime, "fdo81341.docx")
@@ -669,6 +669,11 @@ DECLARE_OOXMLEXPORT_TEST(testFixedDateFields, "fixed-date-field.docx")
         // Check they are now exported correctly as fldChar with fldLock attribute
         assertXPath(pXmlDoc, "/w:document/w:body/w:p/w:r[1]/w:fldChar", "fldLock", "true");
     }
+}
+
+DECLARE_OOXMLEXPORT_TEST(testToxmarkHyperlink, "toxmarkhyperlink.fodt")
+{
+    // test that export doesn't assert with overlapping fields / hyperlink attr
 }
 
 DECLARE_OOXMLEXPORT_TEST(testOO34469, "ooo34469-1.odt")

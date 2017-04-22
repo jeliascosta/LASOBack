@@ -31,17 +31,15 @@
 #include <com/sun/star/rendering/XSpriteCanvas.hpp>
 #include <memory>
 
-namespace {
-    typedef cppu::WeakComponentImplHelper<
-        css::drawing::framework::XView,
-        css::awt::XWindowListener,
-        css::awt::XPaintListener
-        > PresenterHelpViewInterfaceBase;
-}
-
 namespace sdext { namespace presenter {
 
 class PresenterButton;
+
+typedef cppu::WeakComponentImplHelper<
+    css::drawing::framework::XView,
+    css::awt::XWindowListener,
+    css::awt::XPaintListener
+    > PresenterHelpViewInterfaceBase;
 
 /** Show help text that describes the defined keys.
 */
@@ -55,42 +53,34 @@ public:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId,
         const css::uno::Reference<css::frame::XController>& rxController,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterHelpView();
+    virtual ~PresenterHelpView() override;
 
     virtual void SAL_CALL disposing() override;
 
     // lang::XEventListener
 
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject)
-        throw (css::uno::RuntimeException, std::exception) override;
+        disposing (const css::lang::EventObject& rEventObject) override;
 
     // XWindowListener
 
-    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent) override;
 
-    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent) override;
 
-    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent) override;
 
-    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent) override;
 
     // XPaintListener
 
-    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent) override;
 
     // XResourceId
 
-    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId() override;
 
-    virtual sal_Bool SAL_CALL isAnchorOnly()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isAnchorOnly() override;
 
 private:
     class TextContainer;
@@ -119,11 +109,10 @@ private:
     */
     void CheckFontSize();
 
-    /** This method throws a DisposedException when the object has already been
+    /** @throws css::lang::DisposedException when the object has already been
         disposed.
     */
-    void ThrowIfDisposed()
-        throw (css::lang::DisposedException);
+    void ThrowIfDisposed();
 };
 
 } } // end of namespace ::sdext::presenter

@@ -44,8 +44,8 @@ BarChart::BarChart( const uno::Reference<XChartType>& xChartTypeModel
         : VSeriesPlotter( xChartTypeModel, nDimensionCount )
         , m_pMainPosHelper( new BarPositionHelper() )
 {
-    PlotterBase::m_pPosHelper = m_pMainPosHelper;
-    VSeriesPlotter::m_pMainPosHelper = m_pMainPosHelper;
+    PlotterBase::m_pPosHelper = m_pMainPosHelper.get();
+    VSeriesPlotter::m_pMainPosHelper = m_pMainPosHelper.get();
 
     try
     {
@@ -63,7 +63,6 @@ BarChart::BarChart( const uno::Reference<XChartType>& xChartTypeModel
 
 BarChart::~BarChart()
 {
-    delete m_pMainPosHelper;
 }
 
 PlottingPositionHelper& BarChart::getPlottingPositionHelper( sal_Int32 nAxisIndex ) const
@@ -452,15 +451,15 @@ void BarChart::createShapes()
     //iterate through all x values per indices
     for( sal_Int32 nPointIndex = nStartIndex; nPointIndex < nEndIndex; nPointIndex++ )
     {
-        ::std::vector< ::std::vector< VDataSeriesGroup > >::iterator             aZSlotIter = m_aZSlots.begin();
-        const ::std::vector< ::std::vector< VDataSeriesGroup > >::const_iterator  aZSlotEnd = m_aZSlots.end();
+        std::vector< std::vector< VDataSeriesGroup > >::iterator             aZSlotIter = m_aZSlots.begin();
+        const std::vector< std::vector< VDataSeriesGroup > >::const_iterator  aZSlotEnd = m_aZSlots.end();
 
-        //sum up the values for all series in a complete z zlot per attached axis
-        ::std::map< sal_Int32,  double > aLogicYSumMap;
+        //sum up the values for all series in a complete z slot per attached axis
+        std::map< sal_Int32,  double > aLogicYSumMap;
         for( ; aZSlotIter != aZSlotEnd; ++aZSlotIter )
         {
-            ::std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
-            const ::std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
+            std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
+            const std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
 
             for( aXSlotIter = aZSlotIter->begin(); aXSlotIter != aXSlotEnd; ++aXSlotIter )
             {
@@ -486,22 +485,22 @@ void BarChart::createShapes()
         aZSlotIter = m_aZSlots.begin();
         for( sal_Int32 nZ=1; aZSlotIter != aZSlotEnd; ++aZSlotIter, nZ++ )
         {
-            ::std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
-            const ::std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
+            std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
+            const std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
 
             //iterate through all x slots in this category
             double fSlotX=0;
             for( aXSlotIter = aZSlotIter->begin(); aXSlotIter != aXSlotEnd; ++aXSlotIter, fSlotX+=1.0 )
             {
                 sal_Int32 nAttachedAxisIndex = 0;
-                BarPositionHelper* pPosHelper = m_pMainPosHelper;
+                BarPositionHelper* pPosHelper = m_pMainPosHelper.get();
                 if( aXSlotIter != aXSlotEnd )
                 {
                     nAttachedAxisIndex = aXSlotIter->getAttachedAxisIndexForFirstSeries();
                     //2ND_AXIS_IN_BARS so far one can assume to have the same plotter for each z slot
                     pPosHelper = dynamic_cast<BarPositionHelper*>(&( this->getPlottingPositionHelper( nAttachedAxisIndex ) ) );
                     if(!pPosHelper)
-                        pPosHelper = m_pMainPosHelper;
+                        pPosHelper = m_pMainPosHelper.get();
                 }
                 PlotterBase::m_pPosHelper = pPosHelper;
 
@@ -509,7 +508,7 @@ void BarChart::createShapes()
                 pPosHelper->updateSeriesCount( aZSlotIter->size() );
                 double fLogicBaseWidth = pPosHelper->getScaledSlotWidth();
 
-                ::std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
+                std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
 
                 // get distance from base value to maximum and minimum
 
@@ -554,8 +553,8 @@ void BarChart::createShapes()
                 double fPositiveLogicYForNextSeries = fBaseValue;
                 double fNegativeLogicYForNextSeries = fBaseValue;
 
-                ::std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
-                const ::std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
+                std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
+                const std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
                 //iterate through all series in this x slot
                 for( ; aSeriesIter != aSeriesEnd; ++aSeriesIter )
                 {
@@ -809,7 +808,7 @@ void BarChart::createShapes()
                                 if(!rtl::math::isNan(nPropVal))
                                 {
                                     uno::Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY_THROW );
-                                    xProps->setPropertyValue("FillColor", uno::makeAny(static_cast<sal_Int32>(nPropVal)));
+                                    xProps->setPropertyValue("FillColor", uno::Any(static_cast<sal_Int32>(nPropVal)));
                                 }
                             }
                             //set name/classified ObjectID (CID)
@@ -863,31 +862,31 @@ void BarChart::createShapes()
     }//next category
     if( bDrawConnectionLines )
     {
-        ::std::vector< ::std::vector< VDataSeriesGroup > >::iterator             aZSlotIter = m_aZSlots.begin();
-        const ::std::vector< ::std::vector< VDataSeriesGroup > >::const_iterator  aZSlotEnd = m_aZSlots.end();
+        std::vector< std::vector< VDataSeriesGroup > >::iterator             aZSlotIter = m_aZSlots.begin();
+        const std::vector< std::vector< VDataSeriesGroup > >::const_iterator  aZSlotEnd = m_aZSlots.end();
         for( sal_Int32 nZ=1; aZSlotIter != aZSlotEnd; ++aZSlotIter, nZ++ )
         {
-            ::std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
-            const ::std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
+            std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
+            const std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
 
-            BarPositionHelper* pPosHelper = m_pMainPosHelper;
+            BarPositionHelper* pPosHelper = m_pMainPosHelper.get();
             if( aXSlotIter != aXSlotEnd )
             {
                 sal_Int32 nAttachedAxisIndex = aXSlotIter->getAttachedAxisIndexForFirstSeries();
                 //2ND_AXIS_IN_BARS so far one can assume to have the same plotter for each z slot
                 pPosHelper = dynamic_cast<BarPositionHelper*>(&( this->getPlottingPositionHelper( nAttachedAxisIndex ) ) );
                 if(!pPosHelper)
-                    pPosHelper = m_pMainPosHelper;
+                    pPosHelper = m_pMainPosHelper.get();
             }
             PlotterBase::m_pPosHelper = pPosHelper;
 
             //iterate through all x slots in this category
             for( double fSlotX=0; aXSlotIter != aXSlotEnd; ++aXSlotIter, fSlotX+=1.0 )
             {
-                ::std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
+                std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
 
-                ::std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
-                const ::std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
+                std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
+                const std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
                 //iterate through all series in this x slot
                 for( ; aSeriesIter != aSeriesEnd; ++aSeriesIter )
                 {

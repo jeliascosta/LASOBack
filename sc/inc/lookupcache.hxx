@@ -108,7 +108,7 @@ public:
 
     /// MUST be new'd because Notify() deletes.
                             ScLookupCache( ScDocument * pDoc, const ScRange & rRange );
-    virtual                 ~ScLookupCache();
+    virtual                 ~ScLookupCache() override;
     /// Remove from document structure and delete (!) cache on modify hint.
     virtual void Notify( const SfxHint& rHint ) override;
 
@@ -128,7 +128,7 @@ public:
                                     const ScAddress & rQueryAddress,
                                     const bool bAvailable );
 
-    inline  const ScRange&  getRange() const { return maRange; }
+    const ScRange&  getRange() const { return maRange; }
 
     struct Hash
     {
@@ -178,9 +178,6 @@ private:
         QueryCriteriaAndResult( const QueryCriteria & rCriteria, const ScAddress & rAddress ) :
             maCriteria( rCriteria),
             maAddress( rAddress)
-        {
-        }
-        ~QueryCriteriaAndResult()
         {
         }
     };

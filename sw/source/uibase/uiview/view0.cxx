@@ -57,15 +57,9 @@
 #include "shells.hrc"
 
 #define SwView
-#define GlobalContents
 #define Text
 #define TextDrawText
-#define TextInTable
-#define ListInText
-#define ListInTable
-#define WebTextInTable
-#define WebListInText
-#define WebListInTable
+
 #include <sfx2/msg.hxx>
 #include "swslots.hxx"
 #include <PostItMgr.hxx>
@@ -110,15 +104,15 @@ void SwView::InitInterface_Impl()
 #endif
     GetStaticInterface()->RegisterChildWindow(FN_INSERT_FIELD_DATA_ONLY);
 
-    GetStaticInterface()->RegisterChildWindow(FN_SYNC_LABELS, false, CHILDWIN_LABEL);
+    GetStaticInterface()->RegisterChildWindow(FN_SYNC_LABELS, false, SfxShellFeature::SwChildWindowLabel);
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_TOOLS|SFX_VISIBILITY_STANDARD|SFX_VISIBILITY_SERVER,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_TOOLS, SfxVisibilityFlags::Standard|SfxVisibilityFlags::Server,
                                             RID_TOOLS_TOOLBOX);
 #endif
 }
 
 
-ShellModes  SwView::GetShellMode()
+ShellMode SwView::GetShellMode()
 {
     return m_pViewImpl->GetShellMode();
 }
@@ -137,21 +131,17 @@ void SwView::ApplyAccessiblityOptions(SvtAccessibilityOptions& rAccessibilityOpt
 
 }
 
-#if HAVE_FEATURE_DBCONNECTIVITY
-
-void SwView::SetMailMergeConfigItem(SwMailMergeConfigItem*  pConfigItem,
-                sal_uInt16 nRestart, bool bIsSource)
+void SwView::SetMailMergeConfigItem(std::shared_ptr<SwMailMergeConfigItem>& rConfigItem,
+                                    sal_uInt16 nRestart)
 {
-    m_pViewImpl->SetMailMergeConfigItem(pConfigItem, nRestart, bIsSource);
+    m_pViewImpl->SetMailMergeConfigItem(rConfigItem, nRestart);
     UIFeatureChanged();
 }
 
-SwMailMergeConfigItem* SwView::GetMailMergeConfigItem()
+std::shared_ptr<SwMailMergeConfigItem> SwView::GetMailMergeConfigItem() const
 {
     return m_pViewImpl->GetMailMergeConfigItem();
 }
-
-#endif
 
 static bool lcl_IsViewMarks( const SwViewOption& rVOpt )
 {
@@ -218,7 +208,7 @@ void SwView::RecheckBrowseMode()
     CheckVisArea();
 
     SvxZoomType eType;
-    if( GetWrtShell().GetViewOptions()->getBrowseMode() && SvxZoomType::PERCENT != (eType = (SvxZoomType)
+    if( GetWrtShell().GetViewOptions()->getBrowseMode() && SvxZoomType::PERCENT != (eType =
         GetWrtShell().GetViewOptions()->GetZoomType()) )
         SetZoom( eType );
     InvalidateBorder();
@@ -606,7 +596,7 @@ void SwView::ExecFormatFootnote()
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-    std::unique_ptr<VclAbstractDialog> pDlg(pFact->CreateSwFootNoteOptionDlg(GetWindow(), GetWrtShell()));
+    ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateSwFootNoteOptionDlg(GetWindow(), GetWrtShell()));
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     pDlg->Execute();
 }
@@ -616,11 +606,11 @@ void SwView::ExecNumberingOutline(SfxItemPool & rPool)
     SfxItemSet aTmp(rPool, FN_PARAM_1, FN_PARAM_1);
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "Dialog creation failed!");
-    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSwTabDialog( DLG_TAB_OUTLINE,
+    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSwTabDialog( DLG_TAB_OUTLINE,
                                                 GetWindow(), &aTmp, GetWrtShell()));
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     pDlg->Execute();
-    pDlg.reset();
+    pDlg.disposeAndClear();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

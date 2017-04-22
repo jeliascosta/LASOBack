@@ -42,14 +42,14 @@ using namespace com::sun::star::sdbc;
 using namespace com::sun::star::sdbcx;
 
 
-ODriver::ODriver(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _xORB)
+ODriver::ODriver(const css::uno::Reference< css::lang::XMultiServiceFactory >& _xORB)
     : ODriver_BASE(m_aMutex)
     ,m_xORB(_xORB)
 {
-     if ( FAILED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED)) )
+     if ( FAILED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)) )
      {
          CoUninitialize();
-         int h = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+         int h = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
          (void)h;
          ++h;
      }
@@ -58,7 +58,7 @@ ODriver::ODriver(const ::com::sun::star::uno::Reference< ::com::sun::star::lang:
 ODriver::~ODriver()
 {
     CoUninitialize();
-    CoInitialize(NULL);
+    CoInitialize(nullptr);
 }
 
 void ODriver::disposing()
@@ -78,12 +78,12 @@ void ODriver::disposing()
 }
 // static ServiceInfo
 
-OUString ODriver::getImplementationName_Static(  ) throw(RuntimeException)
+OUString ODriver::getImplementationName_Static(  )
 {
     return OUString("com.sun.star.comp.sdbc.ado.ODriver");
 }
 
-Sequence< OUString > ODriver::getSupportedServiceNames_Static(  ) throw (RuntimeException)
+Sequence< OUString > ODriver::getSupportedServiceNames_Static(  )
 {
     Sequence< OUString > aSNS( 2 );
     aSNS[0] = "com.sun.star.sdbc.Driver";
@@ -91,33 +91,33 @@ Sequence< OUString > ODriver::getSupportedServiceNames_Static(  ) throw (Runtime
     return aSNS;
 }
 
-::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >  SAL_CALL connectivity::ado::ODriver_CreateInstance(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory) throw( ::com::sun::star::uno::Exception )
+css::uno::Reference< css::uno::XInterface >  SAL_CALL connectivity::ado::ODriver_CreateInstance(const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxFactory)
 {
     return *(new ODriver(_rxFactory));
 }
 
 
-OUString SAL_CALL ODriver::getImplementationName(  ) throw(RuntimeException)
+OUString SAL_CALL ODriver::getImplementationName(  )
 {
     return getImplementationName_Static();
 }
 
-sal_Bool SAL_CALL ODriver::supportsService( const OUString& _rServiceName ) throw(RuntimeException)
+sal_Bool SAL_CALL ODriver::supportsService( const OUString& _rServiceName )
 {
     return cppu::supportsService(this, _rServiceName);
 }
 
 
-Sequence< OUString > SAL_CALL ODriver::getSupportedServiceNames(  ) throw(RuntimeException)
+Sequence< OUString > SAL_CALL ODriver::getSupportedServiceNames(  )
 {
     return getSupportedServiceNames_Static();
 }
 
 
-Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url, const Sequence< PropertyValue >& info ) throw(SQLException, RuntimeException)
+Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url, const Sequence< PropertyValue >& info )
 {
     if ( ! acceptsURL(url) )
-        return NULL;
+        return nullptr;
 
     // we need to wrap the connection as the construct call might throw
     std::unique_ptr<OConnection> pCon(new OConnection(this));
@@ -130,7 +130,6 @@ Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url, const S
 }
 
 sal_Bool SAL_CALL ODriver::acceptsURL( const OUString& url )
-        throw(SQLException, RuntimeException)
 {
     return url.startsWith("sdbc:ado:");
 }
@@ -145,35 +144,35 @@ void ODriver::impl_checkURL_throw(const OUString& _sUrl)
     } // if ( !acceptsURL(_sUrl) )
 }
 
-Sequence< DriverPropertyInfo > SAL_CALL ODriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ ) throw(SQLException, RuntimeException)
+Sequence< DriverPropertyInfo > SAL_CALL ODriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ )
 {
     impl_checkURL_throw(url);
     if ( acceptsURL(url) )
     {
-        ::std::vector< DriverPropertyInfo > aDriverInfo;
+        std::vector< DriverPropertyInfo > aDriverInfo;
 
         Sequence< OUString > aBooleanValues(2);
         aBooleanValues[0] = "false";
         aBooleanValues[1] = "true";
 
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("IgnoreDriverPrivileges")
-                ,OUString("Ignore the privileges from the database driver.")
-                ,sal_False
-                ,OUString( "false" )
+                "IgnoreDriverPrivileges"
+                ,"Ignore the privileges from the database driver."
+                ,false
+                ,"false"
                 ,aBooleanValues)
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("EscapeDateTime")
-                ,OUString("Escape date time format.")
-                ,sal_False
-                ,OUString( "true" )
+                "EscapeDateTime"
+                ,"Escape date time format."
+                ,false
+                ,"true"
                 ,aBooleanValues)
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("TypeInfoSettings")
-                ,OUString("Defines how the type info of the database metadata should be manipulated.")
-                ,sal_False
+                "TypeInfoSettings"
+                ,"Defines how the type info of the database metadata should be manipulated."
+                ,false
                 ,OUString( )
                 ,Sequence< OUString > ())
         );
@@ -182,32 +181,32 @@ Sequence< DriverPropertyInfo > SAL_CALL ODriver::getPropertyInfo( const OUString
     return Sequence< DriverPropertyInfo >();
 }
 
-sal_Int32 SAL_CALL ODriver::getMajorVersion(  ) throw(RuntimeException)
+sal_Int32 SAL_CALL ODriver::getMajorVersion(  )
 {
     return 1;
 }
 
-sal_Int32 SAL_CALL ODriver::getMinorVersion(  ) throw(RuntimeException)
+sal_Int32 SAL_CALL ODriver::getMinorVersion(  )
 {
     return 0;
 }
 
 // XDataDefinitionSupplier
-Reference< XTablesSupplier > SAL_CALL ODriver::getDataDefinitionByConnection( const Reference< ::com::sun::star::sdbc::XConnection >& connection ) throw(::com::sun::star::sdbc::SQLException, RuntimeException)
+Reference< XTablesSupplier > SAL_CALL ODriver::getDataDefinitionByConnection( const Reference< css::sdbc::XConnection >& connection )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (ODriver_BASE::rBHelper.bDisposed)
         throw DisposedException();
 
-    OConnection* pConnection = NULL;
-    Reference< ::com::sun::star::lang::XUnoTunnel> xTunnel(connection,UNO_QUERY);
+    OConnection* pConnection = nullptr;
+    Reference< css::lang::XUnoTunnel> xTunnel(connection,UNO_QUERY);
     if(xTunnel.is())
     {
         OConnection* pSearchConnection = reinterpret_cast< OConnection* >( xTunnel->getSomething(OConnection::getUnoTunnelImplementationId()) );
 
         for (OWeakRefArray::const_iterator i = m_xConnections.begin(); m_xConnections.end() != i; ++i)
         {
-            if ((OConnection*) Reference< XConnection >::query(i->get().get()).get() == pSearchConnection)
+            if (static_cast<OConnection*>(Reference< XConnection >::query(i->get().get()).get()) == pSearchConnection)
             {
                 pConnection = pSearchConnection;
                 break;
@@ -216,7 +215,7 @@ Reference< XTablesSupplier > SAL_CALL ODriver::getDataDefinitionByConnection( co
 
     }
 
-    Reference< XTablesSupplier > xTab = NULL;
+    Reference< XTablesSupplier > xTab = nullptr;
     if(pConnection)
     {
         WpADOCatalog aCatalog;
@@ -233,16 +232,16 @@ Reference< XTablesSupplier > SAL_CALL ODriver::getDataDefinitionByConnection( co
     return xTab;
 }
 
-Reference< XTablesSupplier > SAL_CALL ODriver::getDataDefinitionByURL( const OUString& url, const Sequence< PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, RuntimeException)
+Reference< XTablesSupplier > SAL_CALL ODriver::getDataDefinitionByURL( const OUString& url, const Sequence< PropertyValue >& info )
 {
     impl_checkURL_throw(url);
     return getDataDefinitionByConnection(connect(url,info));
 }
 
 
-void ADOS::ThrowException(ADOConnection* _pAdoCon,const Reference< XInterface >& _xInterface) throw(SQLException, RuntimeException)
+void ADOS::ThrowException(ADOConnection* _pAdoCon,const Reference< XInterface >& _xInterface)
 {
-    ADOErrors *pErrors = NULL;
+    ADOErrors *pErrors = nullptr;
     _pAdoCon->get_Errors(&pErrors);
     if(!pErrors)
         return; // no error found
@@ -258,7 +257,7 @@ void ADOS::ThrowException(ADOConnection* _pAdoCon,const Reference< XInterface >&
         aException.ErrorCode = 1000;
         for (sal_Int32 i = nLen-1; i>=0; --i)
         {
-            ADOError *pError = NULL;
+            ADOError *pError = nullptr;
             pErrors->get_Item(OLEVariant(i),&pError);
             WpADOError aErr(pError);
             OSL_ENSURE(pError,"No error in collection found! BAD!");

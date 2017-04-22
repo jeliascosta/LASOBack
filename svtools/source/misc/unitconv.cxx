@@ -109,16 +109,16 @@ void SetFieldUnit( MetricBox& rBox, FieldUnit eUnit )
 }
 
 
-void SetMetricValue( MetricField& rField, long nCoreValue, SfxMapUnit eUnit )
+void SetMetricValue( MetricField& rField, long nCoreValue, MapUnit eUnit )
 {
-    sal_Int64 nVal = OutputDevice::LogicToLogic( nCoreValue, (MapUnit)eUnit, MAP_100TH_MM );
+    sal_Int64 nVal = OutputDevice::LogicToLogic( nCoreValue, eUnit, MapUnit::Map100thMM );
     nVal = rField.Normalize( nVal );
     rField.SetValue( nVal, FUNIT_100TH_MM );
 
 }
 
 
-long GetCoreValue( const MetricField& rField, SfxMapUnit eUnit )
+long GetCoreValue( const MetricField& rField, MapUnit eUnit )
 {
     sal_Int64 nVal = rField.GetValue( FUNIT_100TH_MM );
     // avoid rounding issues
@@ -136,34 +136,34 @@ long GetCoreValue( const MetricField& rField, SfxMapUnit eUnit )
     }
     if( bRoundBefore )
         nVal = rField.Denormalize( nVal );
-    sal_Int64 nUnitVal = OutputDevice::LogicToLogic( static_cast<long>(nVal), MAP_100TH_MM, (MapUnit)eUnit );
+    sal_Int64 nUnitVal = OutputDevice::LogicToLogic( static_cast<long>(nVal), MapUnit::Map100thMM, eUnit );
     if( ! bRoundBefore )
         nUnitVal = rField.Denormalize( nUnitVal );
     return static_cast<long>(nUnitVal);
 }
 
 
-long CalcToUnit( float nIn, SfxMapUnit eUnit )
+long CalcToUnit( float nIn, MapUnit eUnit )
 {
-    // nIn ist in Points
+    // nIn is in Points
 
-    DBG_ASSERT( eUnit == SFX_MAPUNIT_TWIP       ||
-                eUnit == SFX_MAPUNIT_100TH_MM   ||
-                eUnit == SFX_MAPUNIT_10TH_MM    ||
-                eUnit == SFX_MAPUNIT_MM         ||
-                eUnit == SFX_MAPUNIT_CM, "this unit is not implemented" );
+    DBG_ASSERT( eUnit == MapUnit::MapTwip       ||
+                eUnit == MapUnit::Map100thMM   ||
+                eUnit == MapUnit::Map10thMM    ||
+                eUnit == MapUnit::MapMM         ||
+                eUnit == MapUnit::MapCM, "this unit is not implemented" );
 
     float nTmp = nIn;
 
-    if ( SFX_MAPUNIT_TWIP != eUnit )
+    if ( MapUnit::MapTwip != eUnit )
         nTmp = nIn * 10 / 567;
 
     switch ( eUnit )
     {
-        case SFX_MAPUNIT_100TH_MM:  nTmp *= 100; break;
-        case SFX_MAPUNIT_10TH_MM:   nTmp *= 10;  break;
-        case SFX_MAPUNIT_MM:                     break;
-        case SFX_MAPUNIT_CM:        nTmp /= 10;  break;
+        case MapUnit::Map100thMM:  nTmp *= 100; break;
+        case MapUnit::Map10thMM:   nTmp *= 10;  break;
+        case MapUnit::MapMM:                     break;
+        case MapUnit::MapCM:        nTmp /= 10;  break;
         default: ;//prevent warning
     }
 
@@ -174,52 +174,52 @@ long CalcToUnit( float nIn, SfxMapUnit eUnit )
 }
 
 
-long ItemToControl( long nIn, SfxMapUnit eItem, FieldUnit eCtrl )
+long ItemToControl( long nIn, MapUnit eItem, FieldUnit eCtrl )
 {
     long nOut = 0;
 
     switch ( eItem )
     {
-        case SFX_MAPUNIT_100TH_MM:
-        case SFX_MAPUNIT_10TH_MM:
-        case SFX_MAPUNIT_MM:
+        case MapUnit::Map100thMM:
+        case MapUnit::Map10thMM:
+        case MapUnit::MapMM:
         {
-            if ( eItem == SFX_MAPUNIT_10TH_MM )
+            if ( eItem == MapUnit::Map10thMM )
                 nIn /= 10;
-            else if ( eItem == SFX_MAPUNIT_100TH_MM )
+            else if ( eItem == MapUnit::Map100thMM )
                 nIn /= 100;
             nOut = TransformMetric( nIn, FUNIT_MM, eCtrl );
         }
         break;
 
-        case SFX_MAPUNIT_CM:
+        case MapUnit::MapCM:
         {
             nOut = TransformMetric( nIn, FUNIT_CM, eCtrl );
         }
         break;
 
-        case SFX_MAPUNIT_1000TH_INCH:
-        case SFX_MAPUNIT_100TH_INCH:
-        case SFX_MAPUNIT_10TH_INCH:
-        case SFX_MAPUNIT_INCH:
+        case MapUnit::Map1000thInch:
+        case MapUnit::Map100thInch:
+        case MapUnit::Map10thInch:
+        case MapUnit::MapInch:
         {
-            if ( eItem == SFX_MAPUNIT_10TH_INCH )
+            if ( eItem == MapUnit::Map10thInch )
                 nIn /= 10;
-            else if ( eItem == SFX_MAPUNIT_100TH_INCH )
+            else if ( eItem == MapUnit::Map100thInch )
                 nIn /= 100;
-            else if ( eItem == SFX_MAPUNIT_1000TH_INCH )
+            else if ( eItem == MapUnit::Map1000thInch )
                 nIn /= 1000;
             nOut = TransformMetric( nIn, FUNIT_INCH, eCtrl );
         }
         break;
 
-        case SFX_MAPUNIT_POINT:
+        case MapUnit::MapPoint:
         {
             nOut = TransformMetric( nIn, FUNIT_POINT, eCtrl );
         }
         break;
 
-        case SFX_MAPUNIT_TWIP:
+        case MapUnit::MapTwip:
         {
             nOut = TransformMetric( nIn, FUNIT_TWIP, eCtrl );
         }
@@ -230,34 +230,34 @@ long ItemToControl( long nIn, SfxMapUnit eItem, FieldUnit eCtrl )
 }
 
 
-long ControlToItem( long nIn, FieldUnit eCtrl, SfxMapUnit eItem )
+long ControlToItem( long nIn, FieldUnit eCtrl, MapUnit eItem )
 {
     return ItemToControl( nIn, eItem, eCtrl );
 }
 
 
-FieldUnit MapToFieldUnit( const SfxMapUnit eUnit )
+FieldUnit MapToFieldUnit( const MapUnit eUnit )
 {
     switch ( eUnit )
     {
-        case SFX_MAPUNIT_100TH_MM:
-        case SFX_MAPUNIT_10TH_MM:
-        case SFX_MAPUNIT_MM:
+        case MapUnit::Map100thMM:
+        case MapUnit::Map10thMM:
+        case MapUnit::MapMM:
             return FUNIT_MM;
 
-        case SFX_MAPUNIT_CM:
+        case MapUnit::MapCM:
             return FUNIT_CM;
 
-        case SFX_MAPUNIT_1000TH_INCH:
-        case SFX_MAPUNIT_100TH_INCH:
-        case SFX_MAPUNIT_10TH_INCH:
-        case SFX_MAPUNIT_INCH:
+        case MapUnit::Map1000thInch:
+        case MapUnit::Map100thInch:
+        case MapUnit::Map10thInch:
+        case MapUnit::MapInch:
             return FUNIT_INCH;
 
-        case SFX_MAPUNIT_POINT:
+        case MapUnit::MapPoint:
             return FUNIT_POINT;
 
-        case SFX_MAPUNIT_TWIP:
+        case MapUnit::MapTwip:
             return FUNIT_TWIP;
         default: ;//prevent warning
     }
@@ -265,32 +265,32 @@ FieldUnit MapToFieldUnit( const SfxMapUnit eUnit )
 }
 
 
-long CalcToPoint( long nIn, SfxMapUnit eUnit, sal_uInt16 nFactor )
+long CalcToPoint( long nIn, MapUnit eUnit, sal_uInt16 nFactor )
 {
-    DBG_ASSERT( eUnit == SFX_MAPUNIT_TWIP       ||
-                eUnit == SFX_MAPUNIT_100TH_MM   ||
-                eUnit == SFX_MAPUNIT_10TH_MM    ||
-                eUnit == SFX_MAPUNIT_MM         ||
-                eUnit == SFX_MAPUNIT_CM, "this unit is not implemented" );
+    DBG_ASSERT( eUnit == MapUnit::MapTwip       ||
+                eUnit == MapUnit::Map100thMM   ||
+                eUnit == MapUnit::Map10thMM    ||
+                eUnit == MapUnit::MapMM         ||
+                eUnit == MapUnit::MapCM, "this unit is not implemented" );
 
     long nRet = 0;
 
-    if ( SFX_MAPUNIT_TWIP == eUnit )
+    if ( MapUnit::MapTwip == eUnit )
         nRet = nIn;
     else
         nRet = nIn * 567;
 
     switch ( eUnit )
     {
-        case SFX_MAPUNIT_100TH_MM:  nRet /= 100; break;
-        case SFX_MAPUNIT_10TH_MM:   nRet /= 10;  break;
-        case SFX_MAPUNIT_MM:                     break;
-        case SFX_MAPUNIT_CM:        nRet *= 10;  break;
+        case MapUnit::Map100thMM:  nRet /= 100; break;
+        case MapUnit::Map10thMM:   nRet /= 10;  break;
+        case MapUnit::MapMM:                     break;
+        case MapUnit::MapCM:        nRet *= 10;  break;
         default: ;//prevent warning
     }
 
     // ggf. aufrunden
-    if ( SFX_MAPUNIT_TWIP != eUnit )
+    if ( MapUnit::MapTwip != eUnit )
     {
         long nMod = 10;
         long nTmp = nRet % nMod;
@@ -585,7 +585,7 @@ long Nothing( long nIn )
     return nRet;
 }
 
-FUNC_CONVERT ConvertTable[6][6] =
+FUNC_CONVERT const ConvertTable[6][6] =
 {
 //  CM,         MM          INCH         POINT        PICAS=32     TWIPS
     { Nothing,  CMToMM,     CMToInch,    CMToPoint,   CMToPica,    CMToTwips },

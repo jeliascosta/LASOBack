@@ -34,19 +34,15 @@ class WrappedCharacterHeightProperty_Base : public WrappedProperty
 {
 public:
     WrappedCharacterHeightProperty_Base( const OUString& rOuterEqualsInnerName, ReferenceSizePropertyProvider* pRefSizePropProvider );
-    virtual ~WrappedCharacterHeightProperty_Base();
+    virtual ~WrappedCharacterHeightProperty_Base() override;
 
-    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
-                        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
+    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
 
-    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
-                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
+    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
 
-    virtual css::uno::Any getPropertyDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
-                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
+    virtual css::uno::Any getPropertyDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
 
-    virtual css::beans::PropertyState getPropertyState( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
-                        throw (css::beans::UnknownPropertyException, css::uno::RuntimeException) override;
+    virtual css::beans::PropertyState getPropertyState( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
 
 protected:
     virtual css::uno::Any convertInnerToOuterValue( const css::uno::Any& rInnerValue ) const override;
@@ -60,7 +56,7 @@ class WrappedCharacterHeightProperty : public WrappedCharacterHeightProperty_Bas
 {
 public:
     explicit WrappedCharacterHeightProperty( ReferenceSizePropertyProvider* pRefSizePropProvider );
-    virtual ~WrappedCharacterHeightProperty();
+    virtual ~WrappedCharacterHeightProperty() override;
 
     static void addWrappedProperties( std::vector< WrappedProperty* >& rList, ReferenceSizePropertyProvider* pRefSizePropProvider );
 };
@@ -69,14 +65,14 @@ class WrappedAsianCharacterHeightProperty : public WrappedCharacterHeightPropert
 {
 public:
     explicit WrappedAsianCharacterHeightProperty( ReferenceSizePropertyProvider* pRefSizePropProvider );
-    virtual ~WrappedAsianCharacterHeightProperty();
+    virtual ~WrappedAsianCharacterHeightProperty() override;
 };
 
 class WrappedComplexCharacterHeightProperty : public WrappedCharacterHeightProperty_Base
 {
 public:
     explicit WrappedComplexCharacterHeightProperty( ReferenceSizePropertyProvider* pRefSizePropProvider );
-    virtual ~WrappedComplexCharacterHeightProperty();
+    virtual ~WrappedComplexCharacterHeightProperty() override;
 };
 
 } //namespace wrapper

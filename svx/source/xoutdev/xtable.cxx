@@ -123,13 +123,14 @@ XPropertyList::XPropertyList(
 //    fprintf (stderr, "Create type %d count %d\n", (int)meType, count++);
 }
 
+bool XPropertyList::isValidIdx(long nIndex) const
+{
+    return ((size_t)nIndex < maList.size() && nIndex >= 0);
+}
+
+
 XPropertyList::~XPropertyList()
 {
-//    fprintf (stderr, "Destroy type %d count %d\n", (int)meType, --count);
-    for(XPropertyEntry* p : maList)
-        delete p;
-
-    maList.clear();
 }
 
 long XPropertyList::Count() const
@@ -149,7 +150,10 @@ XPropertyEntry* XPropertyList::Get( long nIndex ) const
         if( !const_cast<XPropertyList*>(this)->Load() )
             const_cast<XPropertyList*>(this)->Create();
     }
-    return ( (size_t)nIndex < maList.size() ) ? maList[ nIndex ] : nullptr;
+    if (!isValidIdx(nIndex))
+        return nullptr;
+
+    return maList[nIndex].get();
 }
 
 long XPropertyList::GetIndex(const OUString& rName) const
@@ -171,46 +175,60 @@ long XPropertyList::GetIndex(const OUString& rName) const
 Bitmap XPropertyList::GetUiBitmap( long nIndex ) const
 {
     Bitmap aRetval;
-    XPropertyEntry* pEntry = ( (size_t)nIndex < maList.size() ) ? maList[ nIndex ] : nullptr;
-    if(pEntry)
-    {
-        aRetval = pEntry->GetUiBitmap();
+    if (!isValidIdx(nIndex))
+        return aRetval;
 
-        if(aRetval.IsEmpty())
-        {
-            aRetval = const_cast< XPropertyList* >(this)->CreateBitmapForUI(nIndex);
-            pEntry->SetUiBitmap(aRetval);
-        }
+    XPropertyEntry* pEntry = maList[nIndex].get();
+    aRetval = pEntry->GetUiBitmap();
+
+    if(aRetval.IsEmpty())
+    {
+        aRetval = const_cast< XPropertyList* >(this)->CreateBitmapForUI(nIndex);
+        pEntry->SetUiBitmap(aRetval);
     }
     return aRetval;
 }
 
-void XPropertyList::Insert( XPropertyEntry* pEntry, long nIndex )
+void XPropertyList::Insert(std::unique_ptr<XPropertyEntry> pEntry, long nIndex)
 {
-    if ( (size_t)nIndex < maList.size() ) {
-        maList.insert( maList.begin() + nIndex, pEntry );
+    if (!pEntry)
+    {
+        assert("empty XPropertyEntry not allowed in XPropertyList");
+        return;
+    }
+
+    if (isValidIdx(nIndex)) {
+        maList.insert( maList.begin()+nIndex, std::move(pEntry) );
     } else {
-        maList.push_back( pEntry );
+        maList.push_back( std::move(pEntry) );
     }
 }
 
-XPropertyEntry* XPropertyList::Replace( XPropertyEntry* pEntry, long nIndex )
+void XPropertyList::Replace(std::unique_ptr<XPropertyEntry> pEntry, long nIndex)
 {
-    XPropertyEntry* pOldEntry = (size_t)nIndex < maList.size() ? maList[ nIndex ] : nullptr;
-    if ( pOldEntry ) {
-        maList[ nIndex ] = pEntry;
+    if (!pEntry)
+    {
+        assert("empty XPropertyEntry not allowed in XPropertyList");
+        return;
     }
-    return pOldEntry;
+    if (!isValidIdx(nIndex))
+    {
+        assert("trying to replace invalid entry in XPropertyList");
+        return;
+    }
+
+    maList[nIndex] = std::move(pEntry);
 }
 
-XPropertyEntry* XPropertyList::Remove( long nIndex )
+void XPropertyList::Remove(long nIndex)
 {
-    XPropertyEntry* pEntry = nullptr;
-    if ( (size_t)nIndex < maList.size() ) {
-        pEntry = maList[ nIndex ];
-        maList.erase( maList.begin() + nIndex );
+    if (!isValidIdx(nIndex))
+    {
+        assert("trying to remove invalid entry in XPropertyList");
+        return;
     }
-    return pEntry;
+
+    maList.erase(maList.begin() + nIndex);
 }
 
 void XPropertyList::SetName( const OUString& rString )
@@ -255,7 +273,7 @@ bool XPropertyList::Load()
             if( aURL.getExtension().isEmpty() )
                 aURL.setExtension( GetDefaultExt() );
 
-            bool bRet = SvxXMLXTableImport::load(aURL.GetMainURL(INetURLObject::NO_DECODE),
+            bool bRet = SvxXMLXTableImport::load(aURL.GetMainURL(INetURLObject::DecodeMechanism::NONE),
                                              maReferer, uno::Reference < embed::XStorage >(),
                                              createInstance(), nullptr );
             if (bRet)
@@ -298,7 +316,7 @@ bool XPropertyList::Save()
     if( aURL.getExtension().isEmpty() )
         aURL.setExtension( GetDefaultExt() );
 
-    return SvxXMLXTableExportComponent::save( aURL.GetMainURL( INetURLObject::NO_DECODE ),
+    return SvxXMLXTableExportComponent::save( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ),
                                               createInstance(),
                                               uno::Reference< embed::XStorage >(), nullptr );
 }
@@ -316,23 +334,26 @@ XPropertyListRef XPropertyList::CreatePropertyList( XPropertyListType aType,
     XPropertyListRef pRet;
 
     switch (aType) {
-        case XCOLOR_LIST:
+        case XPropertyListType::Color:
             pRet = XPropertyListRef(new XColorList(rPath, rReferer));
             break;
-        case XLINE_END_LIST:
+        case XPropertyListType::LineEnd:
             pRet = XPropertyListRef(new XLineEndList(rPath, rReferer));
             break;
-        case XDASH_LIST:
+        case XPropertyListType::Dash:
             pRet = XPropertyListRef(new XDashList(rPath, rReferer));
             break;
-        case XHATCH_LIST:
+        case XPropertyListType::Hatch:
             pRet = XPropertyListRef(new XHatchList(rPath, rReferer));
             break;
-        case XGRADIENT_LIST:
+        case XPropertyListType::Gradient:
             pRet = XPropertyListRef(new XGradientList(rPath, rReferer));
             break;
-        case XBITMAP_LIST:
+        case XPropertyListType::Bitmap:
             pRet = XPropertyListRef(new XBitmapList(rPath, rReferer));
+            break;
+        case XPropertyListType::Pattern:
+            pRet = XPropertyListRef(new XPatternList(rPath, rReferer));
             break;
     default:
         OSL_FAIL("unknown xproperty type");
@@ -354,7 +375,7 @@ XPropertyList::CreatePropertyListFromURL( XPropertyListType t,
     aPathURL.removeFinalSlash();
 
     XPropertyListRef pList = XPropertyList::CreatePropertyList(
-        t, aPathURL.GetMainURL( INetURLObject::NO_DECODE ), "" );
+        t, aPathURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), "" );
     pList->SetName( aURL.getName() );
 
     return pList;
@@ -376,12 +397,13 @@ static struct {
     XPropertyListType t;
     const char *pExt;
 } pExtnMap[] = {
-    { XCOLOR_LIST,    "soc" },
-    { XLINE_END_LIST, "soe" },
-    { XDASH_LIST,     "sod" },
-    { XHATCH_LIST,    "soh" },
-    { XGRADIENT_LIST, "sog" },
-    { XBITMAP_LIST,   "sob" }
+    { XPropertyListType::Color,    "soc" },
+    { XPropertyListType::LineEnd, "soe" },
+    { XPropertyListType::Dash,     "sod" },
+    { XPropertyListType::Hatch,    "soh" },
+    { XPropertyListType::Gradient, "sog" },
+    { XPropertyListType::Bitmap,   "sob" },
+    { XPropertyListType::Pattern,  "sop"}
 };
 
 OUString XPropertyList::GetDefaultExt( XPropertyListType t )
@@ -392,12 +414,6 @@ OUString XPropertyList::GetDefaultExt( XPropertyListType t )
             return OUString::createFromAscii( i.pExt );
     }
     return OUString();
-}
-
-OUString XPropertyList::GetDefaultExtFilter( XPropertyListType t )
-{
-    OUString aFilter( "*." );
-    return aFilter + GetDefaultExt( t );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

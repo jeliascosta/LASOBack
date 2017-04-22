@@ -25,14 +25,14 @@
 #include <osl/file.h>
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/io/XSeekable.hpp>
-#include <cppuhelper/implbase2.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <cppuhelper/basemutex.hxx>
 
 #include <ucbhelper/ucbhelperdllapi.h>
 
 namespace ucbhelper
 {
-    typedef ::cppu::WeakImplHelper2<
+    typedef cppu::WeakImplHelper<
         css::io::XInputStream,
         css::io::XSeekable > FdInputStream_Base;
 
@@ -48,67 +48,41 @@ namespace ucbhelper
         /** Defines the storage kind found
          *  on which the inputstream acts.
          */
+        FdInputStream(oslFileHandle tmpfl);
 
-        FdInputStream(oslFileHandle tmpfl = nullptr);
-
-        virtual ~FdInputStream();
+        virtual ~FdInputStream() override;
 
         virtual sal_Int32 SAL_CALL
         readBytes(css::uno::Sequence< sal_Int8 >& aData,
-                  sal_Int32 nBytesToRead)
-            throw( css::io::NotConnectedException,
-                   css::io::BufferSizeExceededException,
-                   css::io::IOException,
-                   css::uno::RuntimeException, std::exception) override;
+                  sal_Int32 nBytesToRead) override;
 
         virtual sal_Int32 SAL_CALL
         readSomeBytes(css::uno::Sequence< sal_Int8 >& aData,
-                      sal_Int32 nMaxBytesToRead )
-            throw( css::io::NotConnectedException,
-                   css::io::BufferSizeExceededException,
-                   css::io::IOException,
-                   css::uno::RuntimeException, std::exception) override;
+                      sal_Int32 nMaxBytesToRead ) override;
 
         virtual void SAL_CALL
-        skipBytes(sal_Int32 nBytesToSkip)
-            throw(css::io::NotConnectedException,
-                  css::io::BufferSizeExceededException,
-                  css::io::IOException,
-                  css::uno::RuntimeException, std::exception ) override;
+        skipBytes(sal_Int32 nBytesToSkip) override;
 
         virtual sal_Int32 SAL_CALL
-        available()
-            throw(css::io::NotConnectedException,
-                  css::io::IOException,
-                  css::uno::RuntimeException, std::exception ) override;
+        available() override;
 
         virtual void SAL_CALL
-        closeInput()
-            throw(css::io::NotConnectedException,
-                  css::io::IOException,
-                  css::uno::RuntimeException, std::exception) override;
+        closeInput() override;
 
 
         /** XSeekable
          */
 
         virtual void SAL_CALL
-        seek(sal_Int64 location)
-            throw(css::lang::IllegalArgumentException,
-                  css::io::IOException,
-                  css::uno::RuntimeException, std::exception) override;
+        seek(sal_Int64 location) override;
 
 
         virtual sal_Int64 SAL_CALL
-        getPosition()
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception) override;
+        getPosition() override;
 
 
         virtual sal_Int64 SAL_CALL
-        getLength()
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception) override;
+        getLength() override;
 
     private:
         oslFileHandle m_tmpfl;

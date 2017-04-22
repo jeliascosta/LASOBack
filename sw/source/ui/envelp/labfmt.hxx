@@ -54,7 +54,7 @@ class SwLabPreview : public vcl::Window
 
     SwLabItem m_aItem;
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
 
     virtual Size GetOptimalSize() const override;
 
@@ -87,10 +87,10 @@ class SwLabFormatPage : public SfxTabPage
 
     SwLabItem    aItem;
 
-    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
-    DECL_LINK_TYPED( PreviewHdl, Idle *, void );
-    DECL_LINK_TYPED( LoseFocusHdl, Control&, void );
-    DECL_LINK_TYPED( SaveHdl, Button*, void );
+    DECL_LINK( ModifyHdl, Edit&, void );
+    DECL_LINK( PreviewHdl, Timer *, void );
+    DECL_LINK( LoseFocusHdl, Control&, void );
+    DECL_LINK( SaveHdl, Button*, void );
 
     void ChangeMinMax();
 
@@ -99,13 +99,13 @@ class SwLabFormatPage : public SfxTabPage
 
 public:
     SwLabFormatPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwLabFormatPage();
+    virtual ~SwLabFormatPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rSet);
 
     virtual void ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
+    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
             void FillItem(SwLabItem& rItem);
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;
@@ -123,12 +123,12 @@ class SwSaveLabelDlg : public ModalDialog
     VclPtr<SwLabFormatPage>   pLabPage;
     SwLabRec&       rLabRec;
 
-    DECL_LINK_TYPED(OkHdl, Button*, void);
-    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+    DECL_LINK(OkHdl, Button*, void);
+    DECL_LINK(ModifyHdl, Edit&, void);
 
 public:
     SwSaveLabelDlg(SwLabFormatPage* pParent, SwLabRec& rRec);
-    virtual ~SwSaveLabelDlg();
+    virtual ~SwSaveLabelDlg() override;
     virtual void dispose() override;
 
     void SetLabel(const OUString& rMake, const OUString& rType)

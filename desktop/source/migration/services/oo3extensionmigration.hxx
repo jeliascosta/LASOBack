@@ -87,25 +87,19 @@ namespace migration
     public:
         explicit OO3ExtensionMigration(css::uno::Reference<
             css::uno::XComponentContext > const & ctx);
-        virtual ~OO3ExtensionMigration();
+        virtual ~OO3ExtensionMigration() override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName()
-            throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName )
-            throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-            throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName() override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
         // XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
         // XJob
         virtual css::uno::Any SAL_CALL execute(
-            const css::uno::Sequence< css::beans::NamedValue >& Arguments )
-            throw (css::lang::IllegalArgumentException, css::uno::Exception,
-                css::uno::RuntimeException, std::exception) override;
+            const css::uno::Sequence< css::beans::NamedValue >& Arguments ) override;
     };
 
     class TmpRepositoryCommandEnv
@@ -114,26 +108,23 @@ namespace migration
                                           css::ucb::XProgressHandler >
     {
     public:
-        virtual ~TmpRepositoryCommandEnv();
+        virtual ~TmpRepositoryCommandEnv() override;
         TmpRepositoryCommandEnv();
 
         // XCommandEnvironment
         virtual css::uno::Reference< css::task::XInteractionHandler > SAL_CALL
-        getInteractionHandler() throw ( css::uno::RuntimeException, std::exception ) override;
+        getInteractionHandler() override;
         virtual css::uno::Reference< css::ucb::XProgressHandler >
-        SAL_CALL getProgressHandler() throw ( css::uno::RuntimeException, std::exception ) override;
+        SAL_CALL getProgressHandler() override;
 
         // XInteractionHandler
         virtual void SAL_CALL handle(
-            css::uno::Reference< css::task::XInteractionRequest > const & xRequest )
-            throw (css::uno::RuntimeException, std::exception) override;
+            css::uno::Reference< css::task::XInteractionRequest > const & xRequest ) override;
 
         // XProgressHandler
-        virtual void SAL_CALL push( css::uno::Any const & Status )
-            throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL update( css::uno::Any const & Status )
-            throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL pop() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL push( css::uno::Any const & Status ) override;
+        virtual void SAL_CALL update( css::uno::Any const & Status ) override;
+        virtual void SAL_CALL pop() override;
     };
 
 

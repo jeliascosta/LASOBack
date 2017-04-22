@@ -51,7 +51,8 @@ class IniParser
     IniSectionMap mAllSection;
 public:
     IniSectionMap& getAllSection() { return mAllSection; }
-    explicit IniParser(OUString const & rIniName) throw(css::io::IOException, std::exception);
+    /// @throws css::io::IOException
+    explicit IniParser(OUString const & rIniName);
 };
 
 #endif

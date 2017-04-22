@@ -29,7 +29,7 @@ namespace dbaui
 {
     class ORTFReader : public SvRTFParser , public ODatabaseExport
     {
-        ::std::vector<sal_Int32>    m_vecColor;
+        std::vector<sal_Int32>    m_vecColor;
 
     protected:
         virtual bool            CreateTable(int nToken) override;
@@ -37,15 +37,13 @@ namespace dbaui
         virtual TypeSelectionPageFactory
                                 getTypeSelectionPageFactory() override;
 
-        virtual ~ORTFReader();
+        virtual ~ORTFReader() override;
 
     public:
         ORTFReader( SvStream& rIn,
                     const SharedConnection& _rxConnection,
                     const css::uno::Reference< css::util::XNumberFormatter >& _rxNumberF,
-                    const css::uno::Reference< css::uno::XComponentContext >& _rxContext,
-                    const TColumnVector* rList = nullptr,
-                    const OTypeInfoMap* _pInfoMap = nullptr);
+                    const css::uno::Reference< css::uno::XComponentContext >& _rxContext);
         // required for automatic type recognition
         ORTFReader( SvStream& rIn,
                     sal_Int32 nRows,

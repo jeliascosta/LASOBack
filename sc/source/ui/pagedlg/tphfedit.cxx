@@ -72,7 +72,7 @@ ScEditWindow::ScEditWindow( vcl::Window* pParent, WinBits nBits, ScEditWindowLoc
     const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
     Color aBgColor = rStyleSettings.GetWindowColor();
 
-    SetMapMode( MAP_TWIP );
+    SetMapMode( MapUnit::MapTwip );
     SetPointer( PointerStyle::Text );
     SetBackground( aBgColor );
 
@@ -94,7 +94,7 @@ ScEditWindow::ScEditWindow( vcl::Window* pParent, WinBits nBits, ScEditWindowLoc
         pEdEngine->SetDefaultHorizontalTextDirection(EE_HTEXTDIR_R2L);
 
     pEdView = new EditView( pEdEngine, this );
-    pEdView->SetOutputArea( Rectangle( Point(0,0), GetOutputSize() ) );
+    pEdView->SetOutputArea( tools::Rectangle( Point(0,0), GetOutputSize() ) );
 
     pEdView->SetBackgroundColor( aBgColor );
     pEdEngine->InsertView( pEdView );
@@ -106,7 +106,7 @@ void ScEditWindow::Resize()
     Size aSize(aOutputSize);
     aSize.Height() *= 4;
     pEdEngine->SetPaperSize(aSize);
-    pEdView->SetOutputArea(Rectangle(Point(0,0), aOutputSize));
+    pEdView->SetOutputArea(tools::Rectangle(Point(0,0), aOutputSize));
     Control::Resize();
 }
 
@@ -143,8 +143,8 @@ void ScEditWindow::SetNumType(SvxNumType eNumType)
 
 EditTextObject* ScEditWindow::CreateTextObject()
 {
-    //  Absatzattribute zuruecksetzen
-    //  (GetAttribs beim Format-Dialog-Aufruf gibt immer gesetzte Items zurueck)
+    //  reset paragraph attributes
+    //  (GetAttribs at creation of format dialog always returns the set items)
 
     const SfxItemSet& rEmpty = pEdEngine->GetEmptyItemSet();
     sal_Int32 nParCnt = pEdEngine->GetParagraphCount();
@@ -160,11 +160,14 @@ void ScEditWindow::SetFont( const ScPatternAttr& rPattern )
     rPattern.FillEditItemSet( pSet );
     //  FillEditItemSet adjusts font height to 1/100th mm,
     //  but for header/footer twips is needed, as in the PatternAttr:
-    pSet->Put( rPattern.GetItem(ATTR_FONT_HEIGHT), EE_CHAR_FONTHEIGHT );
-    pSet->Put( rPattern.GetItem(ATTR_CJK_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CJK );
-    pSet->Put( rPattern.GetItem(ATTR_CTL_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CTL );
+    std::unique_ptr<SfxPoolItem> pNewItem(rPattern.GetItem(ATTR_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT));
+    pSet->Put( *pNewItem );
+    pNewItem.reset(rPattern.GetItem(ATTR_CJK_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CJK));
+    pSet->Put( *pNewItem );
+    pNewItem.reset(rPattern.GetItem(ATTR_CTL_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CTL));
+    pSet->Put( *pNewItem );
     if (mbRTL)
-        pSet->Put( SvxAdjustItem( SVX_ADJUST_RIGHT, EE_PARA_JUST ) );
+        pSet->Put( SvxAdjustItem( SvxAdjust::Right, EE_PARA_JUST ) );
     pEdEngine->SetDefaults( pSet );
 }
 
@@ -198,7 +201,7 @@ void ScEditWindow::SetCharAttributes()
         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateScCharDlg(
+        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateScCharDlg(
             GetParent(),  &aSet, pDocSh));
         OSL_ENSURE(pDlg, "Dialog create fail!");
         pDlg->SetText( ScGlobal::GetRscString( STR_TEXTATTRS ) );
@@ -213,7 +216,7 @@ void ScEditWindow::SetCharAttributes()
     }
 }
 
-void ScEditWindow::Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect )
+void ScEditWindow::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect )
 {
     const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
     Color aBgColor = rStyleSettings.GetWindowColor();
@@ -338,8 +341,19 @@ ScExtIButton::ScExtIButton(vcl::Window* pParent, WinBits nBits )
     pPopupMenu(nullptr)
 {
     nSelected=0;
-    aIdle.SetPriority(SchedulerPriority::LOWEST);
+    aIdle.SetPriority(TaskPriority::LOWEST);
     SetDropDown(PushButtonDropdownStyle::Toolbox);
+}
+
+ScExtIButton::~ScExtIButton()
+{
+    disposeOnce();
+}
+
+void ScExtIButton::dispose()
+{
+    pPopupMenu.clear();
+    ImageButton::dispose();
 }
 
 VCL_BUILDER_FACTORY_ARGS(ScExtIButton, 0 /* WB_BORDER|WB_TABSTOP */)
@@ -353,7 +367,7 @@ void ScExtIButton::MouseButtonDown( const MouseEvent& rMEvt )
 {
     if(!aIdle.IsActive())
     {
-        aIdle.SetIdleHdl(LINK( this, ScExtIButton, TimerHdl));
+        aIdle.SetInvokeHandler(LINK( this, ScExtIButton, TimerHdl));
         aIdle.Start();
     }
 
@@ -363,14 +377,14 @@ void ScExtIButton::MouseButtonDown( const MouseEvent& rMEvt )
 void ScExtIButton::MouseButtonUp( const MouseEvent& rMEvt)
 {
     aIdle.Stop();
-    aIdle.SetIdleHdl(Link<Idle *, void>());
+    aIdle.ClearInvokeHandler();
     ImageButton::MouseButtonUp(rMEvt );
 }
 
 void ScExtIButton::Click()
 {
     aIdle.Stop();
-    aIdle.SetIdleHdl(Link<Idle *, void>());
+    aIdle.ClearInvokeHandler();
     ImageButton::Click();
 }
 
@@ -409,7 +423,7 @@ bool ScExtIButton::PreNotify( NotifyEvent& rNEvt )
     return ImageButton::PreNotify(rNEvt );
 }
 
-IMPL_LINK_NOARG_TYPED(ScExtIButton, TimerHdl, Idle *, void)
+IMPL_LINK_NOARG(ScExtIButton, TimerHdl, Timer *, void)
 {
     StartPopup();
 }

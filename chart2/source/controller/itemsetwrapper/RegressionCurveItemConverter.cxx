@@ -34,8 +34,6 @@
 #include <functional>
 #include <algorithm>
 
-#include <boost/checked_delete.hpp>
-
 using namespace ::com::sun::star;
 
 namespace
@@ -51,7 +49,7 @@ bool lclConvertToPropertySet(const SfxItemSet& rItemSet, sal_uInt16 nWhichId, co
         bool aSuccess = xProperties->getPropertyValue( aPropertyID ) >>= aOldValue;
         if (!aSuccess || aOldValue != aValue)
         {
-            xProperties->setPropertyValue( aPropertyID , uno::makeAny( aValue ));
+            xProperties->setPropertyValue( aPropertyID , uno::Any( aValue ));
             return true;
         }
     }
@@ -77,7 +75,7 @@ void lclConvertToItemSetDouble(SfxItemSet& rItemSet, sal_uInt16 nWhichId, const 
     OSL_ASSERT(xProperties.is());
     if( xProperties.is() )
     {
-        double aValue = static_cast<double>(static_cast<const SvxDoubleItem&>(rItemSet.Get( nWhichId )).GetValue());
+        double aValue = static_cast<const SvxDoubleItem&>(rItemSet.Get( nWhichId )).GetValue();
         if(xProperties->getPropertyValue( aPropertyID ) >>= aValue)
         {
             rItemSet.Put(SvxDoubleItem( aValue, nWhichId ));
@@ -102,7 +100,7 @@ RegressionCurveItemConverter::RegressionCurveItemConverter(
         m_spGraphicConverter( new GraphicPropertyItemConverter(
                                   rPropertySet, rItemPool, rDrawModel,
                                   xNamedPropertyContainerFactory,
-                                  GraphicPropertyItemConverter::LINE_PROPERTIES )),
+                                  GraphicObjectType::LineProperties )),
         m_xCurveContainer( xContainer )
 {}
 
@@ -140,7 +138,6 @@ bool RegressionCurveItemConverter::GetItemProperty(
 
 bool RegressionCurveItemConverter::ApplySpecialItem(
     sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
-    throw( uno::Exception )
 {
     uno::Reference< chart2::XRegressionCurve > xCurve( GetPropertySet(), uno::UNO_QUERY );
     bool bChanged = false;
@@ -230,6 +227,20 @@ bool RegressionCurveItemConverter::ApplySpecialItem(
         }
         break;
 
+        case SCHATTR_REGRESSION_XNAME:
+        {
+            uno::Reference< beans::XPropertySet > xEqProp( xCurve->getEquationProperties());
+            bChanged = lclConvertToPropertySet<OUString, SfxStringItem>(rItemSet, nWhichId, xEqProp, "XName");
+        }
+        break;
+
+        case SCHATTR_REGRESSION_YNAME:
+        {
+            uno::Reference< beans::XPropertySet > xEqProp( xCurve->getEquationProperties());
+            bChanged = lclConvertToPropertySet<OUString, SfxStringItem>(rItemSet, nWhichId, xEqProp, "YName");
+        }
+        break;
+
         case SCHATTR_REGRESSION_SHOW_COEFF:
         {
             uno::Reference< beans::XPropertySet > xEqProp( xCurve->getEquationProperties());
@@ -242,7 +253,6 @@ bool RegressionCurveItemConverter::ApplySpecialItem(
 }
 
 void RegressionCurveItemConverter::FillSpecialItem(sal_uInt16 nWhichId, SfxItemSet& rOutItemSet ) const
-    throw( uno::Exception )
 {
     uno::Reference<chart2::XRegressionCurve> xCurve(GetPropertySet(), uno::UNO_QUERY);
     OSL_ASSERT(xCurve.is());
@@ -305,6 +315,18 @@ void RegressionCurveItemConverter::FillSpecialItem(sal_uInt16 nWhichId, SfxItemS
         case SCHATTR_REGRESSION_SHOW_EQUATION:
         {
             lclConvertToItemSet<bool, SfxBoolItem>(rOutItemSet, nWhichId, xCurve->getEquationProperties(), "ShowEquation");
+        }
+        break;
+
+        case SCHATTR_REGRESSION_XNAME:
+        {
+            lclConvertToItemSet<OUString, SfxStringItem>(rOutItemSet, nWhichId, xCurve->getEquationProperties(), "XName");
+        }
+        break;
+
+        case SCHATTR_REGRESSION_YNAME:
+        {
+            lclConvertToItemSet<OUString, SfxStringItem>(rOutItemSet, nWhichId, xCurve->getEquationProperties(), "YName");
         }
         break;
 

@@ -23,13 +23,14 @@ public:
 
     virtual void KeyInput( const KeyEvent& rKEvt ) override;
 
+    virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
+
     void createContextMenu();
 
-    DECL_LINK_TYPED(ContextMenuSelectHdl, Menu*, void);
+    DECL_LINK(ContextMenuSelectHdl, Menu*, void);
 protected:
     long    mnItemMaxSize;
     long    mnTextHeight;
-    long    mnItemPadding;
 };
 
 #endif // INCLUDED_SFX2_TEMPLATEDEFAULTVIEW_HXX

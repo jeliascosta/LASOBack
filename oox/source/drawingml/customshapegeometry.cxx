@@ -56,8 +56,7 @@ enum FormularCommand
     FC_SIN,
     FC_SQRT,
     FC_TAN,
-    FC_VAL,
-    FC_LAST
+    FC_VAL
 };
 struct FormularCommandNameTable
 {
@@ -217,7 +216,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
                     aGuide.maName = rValue;
                     aGuide.maFormula = "logheight" ;
 
-                    aRet.Value = Any( CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide ) );
+                    aRet.Value <<= CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide );
                     aRet.Type = EnhancedCustomShapeParameterType::EQUATION;
                 }
                 else
@@ -252,7 +251,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
                 aGuide.maName = rValue;
                 aGuide.maFormula = "logheight/" + OUString::number( nIntVal );
 
-                aRet.Value = Any( CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide ) );
+                aRet.Value <<= CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide );
                 aRet.Type = EnhancedCustomShapeParameterType::EQUATION;
             }
             break;
@@ -271,7 +270,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
                 aGuide.maName = rValue;
                 aGuide.maFormula = "max(logwidth,logheight)";
 
-                aRet.Value = Any( CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide ) );
+                aRet.Value <<= CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide );
                 aRet.Type = EnhancedCustomShapeParameterType::EQUATION;
             }
             break;
@@ -281,7 +280,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
                 aGuide.maName = rValue;
                 aGuide.maFormula = "min(logwidth,logheight)";
 
-                aRet.Value = Any( CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide ) );
+                aRet.Value <<= CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide );
                 aRet.Type = EnhancedCustomShapeParameterType::EQUATION;
             }
             break;
@@ -308,7 +307,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
                 aGuide.maName = rValue;
                 aGuide.maFormula = "min(logwidth,logheight)/" + OUString::number( nIntVal );
 
-                aRet.Value = Any( CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide ) );
+                aRet.Value <<= CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide );
                 aRet.Type = EnhancedCustomShapeParameterType::EQUATION;
             }
             break;
@@ -322,7 +321,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
                     aGuide.maName = rValue;
                     aGuide.maFormula = "logwidth" ;
 
-                    aRet.Value = Any( CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide ) );
+                    aRet.Value <<= CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide );
                     aRet.Type = EnhancedCustomShapeParameterType::EQUATION;
                 }
                 else
@@ -363,7 +362,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
                 aGuide.maName = rValue;
                 aGuide.maFormula = "logwidth/" + OUString::number( nIntVal );
 
-                aRet.Value = Any( CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide ) );
+                aRet.Value <<= CustomShapeProperties::SetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), aGuide );
                 aRet.Type = EnhancedCustomShapeParameterType::EQUATION;
             }
             break;
@@ -375,7 +374,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
         if ( bConstant )
         {
             if (nConstant != -1) {
-                aRet.Value = Any( nConstant );
+                aRet.Value <<= nConstant;
                 aRet.Type = EnhancedCustomShapeParameterType::NORMAL;
             }
         }
@@ -389,7 +388,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
             }
             if ( ( n >= '0' ) && ( n <= '9' ) )
             {   // seems to be a ST_Coordinate
-                aRet.Value = Any( (sal_Int32)(rValue.toInt32() ) );
+                aRet.Value <<= rValue.toInt32();
                 aRet.Type = EnhancedCustomShapeParameterType::NORMAL;
             }
             else
@@ -397,7 +396,7 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
                 sal_Int32 nGuideIndex = CustomShapeProperties::GetCustomShapeGuideValue( rCustomShapeProperties.getAdjustmentGuideList(), rValue );
                 if ( nGuideIndex >= 0 )
                 {
-                    aRet.Value = Any( nGuideIndex );
+                    aRet.Value <<= nGuideIndex;
                     aRet.Type = EnhancedCustomShapeParameterType::ADJUSTMENT;
                 }
                 else
@@ -405,13 +404,13 @@ static EnhancedCustomShapeParameter GetAdjCoordinate( CustomShapeProperties& rCu
                     nGuideIndex = CustomShapeProperties::GetCustomShapeGuideValue( rCustomShapeProperties.getGuideList(), rValue );
                     if ( nGuideIndex >= 0 )
                     {
-                        aRet.Value = Any( nGuideIndex );
+                        aRet.Value <<= nGuideIndex;
                         aRet.Type = EnhancedCustomShapeParameterType::EQUATION;
                     }
                     else
                     {
-                        OSL_TRACE("error: unhandled value '%s'", OUStringToOString( rValue, RTL_TEXTENCODING_ASCII_US ).getStr());
-                        aRet.Value = Any( rValue );
+                        SAL_WARN("oox", "error: unhandled value " << rValue);
+                        aRet.Value <<= rValue;
                     }
                 }
             }
@@ -443,7 +442,7 @@ static OUString convertToOOEquation( CustomShapeProperties& rCustomShapeProperti
 {
     if ( !pCommandHashMap )
     {
-        FormulaCommandHMap* pHM = new FormulaCommandHMap();
+        FormulaCommandHMap* pHM = new FormulaCommandHMap;
         for(const FormularCommandNameTable& i : pFormularCommandNameTable)
             (*pHM)[ OUString::createFromAscii( i.pS ) ] =  i.pE;
         pCommandHashMap = pHM;
@@ -707,6 +706,7 @@ PolarAdjustHandleContext::PolarAdjustHandleContext( ContextHandler2Helper& rPare
     const OUString aEmptyDefault;
     if ( rAttribs.hasAttribute( XML_gdRefR ) )
     {
+        mrAdjustHandle.polar = true ;
         mrAdjustHandle.gdRef1 = GetGeomGuideName( rAttribs.getString( XML_gdRefR, aEmptyDefault ) );
     }
     if ( rAttribs.hasAttribute( XML_minR ) )
@@ -719,6 +719,7 @@ PolarAdjustHandleContext::PolarAdjustHandleContext( ContextHandler2Helper& rPare
     }
     if ( rAttribs.hasAttribute( XML_gdRefAng ) )
     {
+        mrAdjustHandle.polar = true ;
         mrAdjustHandle.gdRef2 = GetGeomGuideName( rAttribs.getString( XML_gdRefAng, aEmptyDefault ) );
     }
     if ( rAttribs.hasAttribute( XML_minAng ) )
@@ -733,6 +734,7 @@ PolarAdjustHandleContext::PolarAdjustHandleContext( ContextHandler2Helper& rPare
 
 ContextHandlerRef PolarAdjustHandleContext::onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs )
 {
+    // mrAdjustHandle.pos uses planar coordinates.
     if ( aElementToken == A_TOKEN( pos ) )
         return new AdjPoint2DContext( *this, rAttribs, mrCustomShapeProperties, mrAdjustHandle.pos );   // CT_AdjPoint2D
     return nullptr;
@@ -928,7 +930,7 @@ class Path2DContext : public ContextHandler2
 {
 public:
     Path2DContext( ContextHandler2Helper& rParent, const AttributeList& rAttribs, CustomShapeProperties& rCustomShapeProperties, std::vector< css::drawing::EnhancedCustomShapeSegment >& rSegments, Path2D& rPath2D );
-    virtual ~Path2DContext();
+    virtual ~Path2DContext() override;
     virtual ::oox::core::ContextHandlerRef
         onCreateContext( sal_Int32 aElementToken, const ::oox::AttributeList& rAttribs ) override;
 
@@ -1059,7 +1061,7 @@ ContextHandlerRef Path2DContext::onCreateContext( sal_Int32 aElementToken,
             aGuide.maFormula = "("
                 + GetFormulaParameter( GetAdjCoordinate( mrCustomShapeProperties, rAttribs.getString( XML_stAng ).get() ) )
                 + ")/60000.0";
-            aAngles.First.Value = Any( CustomShapeProperties::SetCustomShapeGuideValue( mrCustomShapeProperties.getGuideList(), aGuide ) );
+            aAngles.First.Value <<= CustomShapeProperties::SetCustomShapeGuideValue( mrCustomShapeProperties.getGuideList(), aGuide );
             aAngles.First.Type = EnhancedCustomShapeParameterType::EQUATION;
 
             // swing angle
@@ -1067,7 +1069,7 @@ ContextHandlerRef Path2DContext::onCreateContext( sal_Int32 aElementToken,
             aGuide.maFormula = "("
                 + GetFormulaParameter( GetAdjCoordinate( mrCustomShapeProperties, rAttribs.getString( XML_swAng ).get() ) )
                 + ")/60000.0";
-            aAngles.Second.Value = Any( CustomShapeProperties::SetCustomShapeGuideValue( mrCustomShapeProperties.getGuideList(), aGuide ) );
+            aAngles.Second.Value <<= CustomShapeProperties::SetCustomShapeGuideValue( mrCustomShapeProperties.getGuideList(), aGuide );
             aAngles.Second.Type = EnhancedCustomShapeParameterType::EQUATION;
 
             mrPath2D.parameter.push_back( aScale );

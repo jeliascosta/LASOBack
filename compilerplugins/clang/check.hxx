@@ -33,15 +33,36 @@ class TypeCheck {
 public:
     explicit TypeCheck(clang::QualType type): type_(type) {}
 
+    explicit TypeCheck(clang::TypeDecl const * decl): type_(decl->getTypeForDecl(), 0) {}
+
     explicit operator bool() const { return !type_.isNull(); }
+
+    TypeCheck NonConstVolatile() const;
 
     TypeCheck Const() const;
 
+    TypeCheck Volatile() const;
+
+    TypeCheck ConstVolatile() const;
+
+    TerminalCheck Void() const;
+
     TerminalCheck Char() const;
+
+    TerminalCheck AnyBoolean() const;
+
+    TypeCheck Pointer() const;
+
+    TerminalCheck Enum() const;
 
     TypeCheck LvalueReference() const;
 
     template<std::size_t N> inline ContextCheck Class(char const (& id)[N])
+        const;
+
+    TypeCheck Typedef() const;
+
+    template<std::size_t N> inline ContextCheck Typedef(char const (& id)[N])
         const;
 
     TypeCheck NotSubstTemplateTypeParmType() const;
@@ -68,6 +89,11 @@ public:
         const;
 
     ContextCheck Operator(clang::OverloadedOperatorKind op) const;
+
+    template<std::size_t N> inline ContextCheck Var(char const (& id)[N])
+        const;
+
+    ContextCheck MemberFunction() const;
 
 private:
     clang::Decl const * const decl_;
@@ -146,6 +172,22 @@ template<std::size_t N> ContextCheck TypeCheck::Class(char const (& id)[N])
     return ContextCheck();
 }
 
+template<std::size_t N> ContextCheck TypeCheck::Typedef(char const (& id)[N])
+    const
+{
+    if (!type_.isNull()) {
+        if (auto const t = type_->getAs<clang::TypedefType>()) {
+            auto const d = t->getDecl();
+            auto const i = d->getIdentifier();
+            assert(i != nullptr);
+            if (i->isStr(id)) {
+                return ContextCheck(d->getDeclContext());
+            }
+        }
+    }
+    return ContextCheck();
+}
+
 template<std::size_t N> ContextCheck DeclCheck::Class(char const (& id)[N])
     const
 {
@@ -162,6 +204,19 @@ template<std::size_t N> ContextCheck DeclCheck::Function(char const (& id)[N])
     const
 {
     auto f = llvm::dyn_cast_or_null<clang::FunctionDecl>(decl_);
+    if (f != nullptr) {
+        auto const i = f->getIdentifier();
+        if (i != nullptr && i->isStr(id)) {
+            return ContextCheck(f->getDeclContext());
+        }
+    }
+    return ContextCheck();
+}
+
+template<std::size_t N> ContextCheck DeclCheck::Var(char const (& id)[N])
+    const
+{
+    auto f = llvm::dyn_cast_or_null<clang::VarDecl>(decl_);
     if (f != nullptr) {
         auto const i = f->getIdentifier();
         if (i != nullptr && i->isStr(id)) {

@@ -29,10 +29,10 @@ class BreakIterator_th : public BreakIterator_CTL
 {
 public:
     BreakIterator_th();
-    virtual ~BreakIterator_th();
+    virtual ~BreakIterator_th() override;
 
 protected:
-    void SAL_CALL makeIndex(const OUString& text, sal_Int32 pos) throw(css::uno::RuntimeException) override;
+    void SAL_CALL makeIndex(const OUString& text, sal_Int32 pos) override;
 };
 
 } } } }

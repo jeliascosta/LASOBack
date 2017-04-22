@@ -63,7 +63,7 @@ private:
     enum { nmBase, nmFound, nmNested }
                                 eNestedMode;    // action with nested content actions
 
-    inline bool                 FoundNestedMode() { return eNestedMode == nmFound; }
+    bool                 FoundNestedMode() { return eNestedMode == nmFound; }
 
     void                        DoAcceptRejectAction( ScChangeAction* pAction );
     void                        DoAcceptRejectAction( sal_uInt32 nFirst, sal_uInt32 nLast );
@@ -72,8 +72,6 @@ private:
     void                        DoDeleteRange( const ScRange& rRange );
 
     inline sal_uInt8            LookAtuInt8();
-    inline double               ReadRK();
-    inline bool                 ReadBool();
     inline void                 Read2DAddress( ScAddress& rAddress );
     inline void                 Read2DRange( ScRange& rRange );
     SCTAB                       ReadTabNum();
@@ -100,7 +98,7 @@ private:
 
 public:
                                 XclImpChangeTrack( const XclImpRoot& rRoot, const XclImpStream& rBookStrm );
-                                virtual ~XclImpChangeTrack();
+                                virtual ~XclImpChangeTrack() override;
 
                                 // reads extended 3D ref info following the formulas, returns sc tab nums
                                 // ( called by XclImpChTrFmlConverter::Read3DTabReference() )
@@ -116,16 +114,6 @@ inline sal_uInt8 XclImpChangeTrack::LookAtuInt8()
     nValue = pStrm->ReaduInt8();
     pStrm->PopPosition();
     return nValue;
-}
-
-inline double XclImpChangeTrack::ReadRK()
-{
-    return XclTools::GetDoubleFromRK( pStrm->ReadInt32() );
-}
-
-inline bool XclImpChangeTrack::ReadBool()
-{
-    return (pStrm->ReaduInt16() != 0);
 }
 
 inline void XclImpChangeTrack::Read2DAddress( ScAddress& rAddress )
@@ -153,7 +141,7 @@ private:
 
 public:
     XclImpChTrFmlConverter( XclImpRoot& rRoot, XclImpChangeTrack& rXclChTr );
-    virtual                     ~XclImpChTrFmlConverter();
+    virtual                     ~XclImpChTrFmlConverter() override;
 };
 
 #endif

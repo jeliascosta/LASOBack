@@ -39,7 +39,6 @@ class BrowserColumn;
 class BrowserDataWin;
 class MultiSelection;
 class BrowserHeader;
-
 typedef ::std::vector< BrowserColumn* > BrowserColumns;
 
 namespace svt {
@@ -64,7 +63,7 @@ enum class BrowserMode
     HLINES               = 0x000010,
     VLINES               = 0x000020,
 
-    HIDESELECT           = 0x000100, // old => don't use!
+    HIDESELECT           = 0x000100,
     HIDECURSOR           = 0x000200,
 
     NO_HSCROLL           = 0x000400,
@@ -126,7 +125,7 @@ class BrowseEvent
 {
     VclPtr<vcl::Window>     pWin;
     long                    nRow;
-    Rectangle               aRect;
+    tools::Rectangle               aRect;
     sal_uInt16              nCol;
     sal_uInt16              nColId;
 
@@ -134,13 +133,13 @@ public:
                         BrowseEvent( vcl::Window* pWindow,
                                      long nAbsRow,
                                      sal_uInt16 nColumn, sal_uInt16 nColumnId,
-                                     const Rectangle& rRect );
+                                     const tools::Rectangle& rRect );
 
     vcl::Window*        GetWindow() const { return pWin; }
     long                GetRow() const { return nRow; }
     sal_uInt16          GetColumn() const { return nCol; }
     sal_uInt16          GetColumnId() const { return nColId; }
-    const Rectangle&    GetRect() const { return aRect; }
+    const tools::Rectangle&    GetRect() const { return aRect; }
 };
 
 
@@ -150,7 +149,7 @@ public:
     BrowserMouseEvent( BrowserDataWin* pWin, const MouseEvent& rEvt );
     BrowserMouseEvent( vcl::Window* pWin, const MouseEvent& rEvt,
                        long nAbsRow, sal_uInt16 nColumn, sal_uInt16 nColumnId,
-                       const Rectangle& rRect );
+                       const tools::Rectangle& rRect );
 };
 
 
@@ -197,9 +196,9 @@ public:
     static const sal_uInt16 HandleColumnId = 0;
 
 private:
-    VclPtr<vcl::Window> pDataWin;       // window to display data rows
-    VclPtr<ScrollBar>  pVScroll;       // vertical scrollbar
-    VclPtr<ScrollBar>  aHScroll;       // horizontal scrollbar
+    VclPtr<BrowserDataWin> pDataWin;       // window to display data rows
+    VclPtr<ScrollBar>      pVScroll;       // vertical scrollbar
+    VclPtr<ScrollBar>      aHScroll;       // horizontal scrollbar
 
     long            nDataRowHeight; // height of a single data-row
     sal_uInt16      nTitleLines;    // number of lines in title row
@@ -241,7 +240,7 @@ private:
     TriState        bHideCursor;    // hide cursor (frame)
     Range           aSelRange;      // for selection expansion
 
-    BrowserColumns* pCols;          // array of column-descriptions
+    BrowserColumns pCols;           // array of column-descriptions
     union
     {
         MultiSelection* pSel;       // selected rows for multi-selection
@@ -287,14 +286,14 @@ private:
     SVT_DLLPRIVATE void            AutoSizeLastColumn();
 
     SVT_DLLPRIVATE long            ImpGetDataRowHeight() const;
-    SVT_DLLPRIVATE Rectangle       ImplFieldRectPixel( long nRow, sal_uInt16 nColId ) const;
+    SVT_DLLPRIVATE tools::Rectangle       ImplFieldRectPixel( long nRow, sal_uInt16 nColId ) const;
     SVT_DLLPRIVATE sal_uInt16      FrozenColCount() const;
 
     SVT_DLLPRIVATE void            ColumnInserted( sal_uInt16 nPos );
 
-    DECL_DLLPRIVATE_LINK_TYPED(    ScrollHdl, ScrollBar*, void );
-    DECL_DLLPRIVATE_LINK_TYPED(    EndScrollHdl, ScrollBar*, void );
-    DECL_DLLPRIVATE_LINK_TYPED(    StartDragHdl, HeaderBar*, void );
+    DECL_DLLPRIVATE_LINK(    ScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK(    EndScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK(    StartDragHdl, HeaderBar*, void );
 
     SVT_DLLPRIVATE long            GetFrozenWidth() const;
 
@@ -302,10 +301,8 @@ private:
 
     bool            GoToColumnId( sal_uInt16 nColId, bool bMakeVisible, bool bRowColMove = false);
     void            SelectColumnPos( sal_uInt16 nCol, bool _bSelect, bool bMakeVisible);
-    void            SelectColumnId( sal_uInt16 nColId, bool _bSelect, bool bMakeVisible)
-                        { SelectColumnPos( GetColumnPos(nColId), _bSelect, bMakeVisible); }
 
-    void            ImplPaintData(OutputDevice& _rOut, const Rectangle& _rRect, bool _bForeignDevice, bool _bDrawSelections);
+    void            ImplPaintData(OutputDevice& _rOut, const tools::Rectangle& _rRect, bool _bForeignDevice, bool _bDrawSelections);
 
     bool            PaintCursorIfHiddenOnce() const { return !m_bFocusOnlyCursor && !HasFocus(); }
 
@@ -339,8 +336,8 @@ protected:
     */
     virtual bool    SeekRow( long nRow ) = 0;
     void            DrawCursor();
-    void            PaintData(vcl::Window& rWin, vcl::RenderContext& rRenderContext, const Rectangle& rRect);
-    virtual void    PaintField(OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColumnId) const = 0;
+    void            PaintData(vcl::Window& rWin, vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
+    virtual void    PaintField(OutputDevice& rDev, const tools::Rectangle& rRect, sal_uInt16 nColumnId) const = 0;
     // Advice for the subclass: the visible scope of rows has changed.
     // The subclass is able to announce changes of the model with the
     // help of the methods RowInserted and RowRemoved. Because of the
@@ -358,8 +355,7 @@ protected:
     virtual void    VisibleRowsChanged( long nNewTopRow, sal_uInt16 nNumRows);
 
     // number of visible rows in the window (incl. "truncated" rows)
-    sal_uInt16      GetVisibleRows()
-                        { return (sal_uInt16)((pDataWin->GetOutputSizePixel().Height() - 1 )/ GetDataRowHeight() + 1); }
+    sal_uInt16      GetVisibleRows();
     long            GetTopRow() { return nTopRow; }
     sal_uInt16      GetFirstVisibleColNumber() const { return nFirstCol; }
 
@@ -375,28 +371,20 @@ protected:
 
     long            CalcReverseZoom(long nVal);
 
-    inline const DataFlavorExVector&
+    const DataFlavorExVector&
                     GetDataFlavors() const;
 
     bool            IsDropFormatSupported( SotClipboardFormatId nFormat );     // need this because the base class' IsDropFormatSupported is not const ...
 
-private:
-    void*           implGetDataFlavors() const;
-        // with this we can make GetDataFlavors() inline, which is strongly needed as SVTOOLS does not export
-        // any sysmbol containing an "_STL", so a non-inlined method would not be exported ....
-
 protected:
     // callbacks for the data window
     virtual void    ImplStartTracking();
-    virtual void    ImplTracking();
     virtual void    ImplEndTracking();
 
 public:
-                    BrowseBox( vcl::Window* pParent, WinBits nBits = 0,
+                    BrowseBox( vcl::Window* pParent, WinBits nBits,
                                BrowserMode nMode = BrowserMode::NONE );
-                    BrowseBox( vcl::Window* pParent, const ResId& rId,
-                               BrowserMode nMode = BrowserMode::NONE );
-    virtual         ~BrowseBox();
+    virtual         ~BrowseBox() override;
     virtual void    dispose() override;
 
     // override inherited handler
@@ -408,7 +396,7 @@ public:
     virtual void    LoseFocus() override;
     virtual void    GetFocus() override;
     virtual void    Resize() override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void    Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
     virtual void    Command( const CommandEvent& rEvt ) override;
     virtual void    StartDrag( sal_Int8 _nAction, const Point& _rPosPixel ) override;
@@ -441,7 +429,7 @@ public:
 
     // map-mode and font control
     void            SetFont( const vcl::Font& rNewFont );
-    const vcl::Font& GetFont() const { return pDataWin->GetFont(); }
+    const vcl::Font& GetFont() const;
     void            SetTitleFont( const vcl::Font& rNewFont )
                         { Control::SetFont( rNewFont ); }
 
@@ -468,7 +456,7 @@ public:
 
     // access to dynamic values of cursor row
     OUString        GetColumnTitle( sal_uInt16 nColumnId ) const;
-    Rectangle       GetFieldRect( sal_uInt16 nColumnId ) const;
+    tools::Rectangle       GetFieldRect( sal_uInt16 nColumnId ) const;
     sal_uLong       GetColumnWidth( sal_uInt16 nColumnId ) const;
     sal_uInt16      GetColumnId( sal_uInt16 nPos ) const;
     sal_uInt16      GetColumnPos( sal_uInt16 nColumnId ) const;
@@ -510,9 +498,9 @@ public:
     bool            IsResizing() const { return bResizing; }
 
     // access to positions of fields, column and rows
-    vcl::Window&    GetDataWindow() const { return *pDataWin; }
-    Rectangle       GetRowRectPixel( long nRow ) const;
-    Rectangle       GetFieldRectPixel( long nRow, sal_uInt16 nColId,
+    vcl::Window&    GetDataWindow() const;
+    tools::Rectangle       GetRowRectPixel( long nRow ) const;
+    tools::Rectangle       GetFieldRectPixel( long nRow, sal_uInt16 nColId,
                                        bool bRelToBrowser = true) const;
     bool            IsFieldVisible( long nRow, sal_uInt16 nColId,
                                     bool bComplete = false ) const;
@@ -528,11 +516,11 @@ public:
     void            RowInserted( long nRow, long nNumRows = 1, bool bDoPaint = true, bool bKeepSelection = false );
 
     // miscellaneous
-    void            ReserveControlArea( sal_uInt16 nWidth = USHRT_MAX );
-    Rectangle       GetControlArea() const;
+    bool            ReserveControlArea(sal_uInt16 nWidth = USHRT_MAX);
+    tools::Rectangle       GetControlArea() const;
     bool            ProcessKey( const KeyEvent& rEvt );
     void            Dispatch( sal_uInt16 nId );
-    void            SetMode( BrowserMode nMode = BrowserMode::NONE );
+    void            SetMode( BrowserMode nMode );
     BrowserMode     GetMode( ) const { return m_nCurrentMode; }
 
     void            SetCursorColor(const Color& _rCol);
@@ -550,7 +538,7 @@ public:
     struct BrowserColumnAccess { friend class BrowserColumn; private: BrowserColumnAccess() { } };
     /** public version of PaintField, with selected access rights for the BrowserColumn
     */
-    void            DoPaintField( OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColumnId, BrowserColumnAccess ) const
+    void            DoPaintField( OutputDevice& rDev, const tools::Rectangle& rRect, sal_uInt16 nColumnId, BrowserColumnAccess ) const
                     { PaintField( rDev, rRect, nColumnId ); }
 
     /** suggests a default width for a column containing a given text
@@ -621,7 +609,7 @@ public:
         @return
             the Rectangle
     */
-    virtual Rectangle calcHeaderRect(bool _bIsColumnBar, bool _bOnScreen = true) override;
+    virtual tools::Rectangle calcHeaderRect(bool _bIsColumnBar, bool _bOnScreen = true) override;
 
     /** calculates the Rectangle of the table
         @param  _bOnScreen
@@ -629,7 +617,7 @@ public:
         @return
             the Rectangle
     */
-    virtual Rectangle calcTableRect(bool _bOnScreen = true) override;
+    virtual tools::Rectangle calcTableRect(bool _bOnScreen = true) override;
 
     /**
         @param  _nRowId
@@ -641,7 +629,7 @@ public:
         @return
             the Rectangle
     */
-    virtual Rectangle GetFieldRectPixelAbs(sal_Int32 _nRowId, sal_uInt16 _nColId, bool _bIsHeader, bool _bOnScreen = true) override;
+    virtual tools::Rectangle GetFieldRectPixelAbs(sal_Int32 _nRowId, sal_uInt16 _nColId, bool _bIsHeader, bool _bOnScreen = true) override;
 
     /// return <TRUE/> if and only if the accessible object for this instance has been created and is alive
     bool isAccessibleAlive( ) const;
@@ -768,8 +756,8 @@ public:
     virtual void                    GetAllSelectedColumns( css::uno::Sequence< sal_Int32 >& _rColumns ) const override;
     virtual bool                    IsCellVisible( sal_Int32 _nRow, sal_uInt16 _nColumn ) const override;
     virtual OUString                GetAccessibleCellText(long _nRow, sal_uInt16 _nColPos) const override;
-    virtual bool                    GetGlyphBoundRects( const Point& rOrigin, const OUString& rStr, int nIndex, int nLen, int nBase, MetricVector& rVector ) override;
-    virtual Rectangle               GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const override;
+    virtual bool                    GetGlyphBoundRects( const Point& rOrigin, const OUString& rStr, int nIndex, int nLen, MetricVector& rVector ) override;
+    virtual tools::Rectangle               GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const override;
     virtual void                    GrabFocus() override;
     virtual css::uno::Reference< css::accessibility::XAccessible > GetAccessible() override;
     virtual vcl::Window*            GetAccessibleParentWindow() const override;
@@ -790,11 +778,6 @@ private:
     using Window::ToTop;
 };
 
-
-inline const DataFlavorExVector& BrowseBox::GetDataFlavors() const
-{
-    return *static_cast<DataFlavorExVector*>(implGetDataFlavors());
-}
 
 #endif // INCLUDED_SVTOOLS_BRWBOX_HXX
 

@@ -33,7 +33,7 @@ namespace com { namespace sun { namespace star {
     namespace script { struct ScriptEventDescriptor; }
 } } }
 
-class Rectangle;
+namespace tools { class Rectangle; }
 
 // Constants and Enumerations =================================================
 
@@ -294,13 +294,13 @@ struct XclObjAnchor : public XclRange
     explicit            XclObjAnchor();
 
     /** Calculates a rectangle from the contained coordinates. */
-    Rectangle           GetRect( const XclRoot& rRoot, SCTAB nScTab, MapUnit eMapUnit ) const;
+    tools::Rectangle           GetRect( const XclRoot& rRoot, SCTAB nScTab, MapUnit eMapUnit ) const;
     /** Initializes the anchor coordinates for a sheet. */
-    void                SetRect( const XclRoot& rRoot, SCTAB nScTab, const Rectangle& rRect, MapUnit eMapUnit );
+    void                SetRect( const XclRoot& rRoot, SCTAB nScTab, const tools::Rectangle& rRect, MapUnit eMapUnit );
 
     /** Initializes the anchor coordinates for an embedded draw page. */
     void                SetRect( const Size& rPageSize, sal_Int32 nScaleX, sal_Int32 nScaleY,
-                            const Rectangle& rRect, MapUnit eMapUnit );
+                            const tools::Rectangle& rRect, MapUnit eMapUnit );
 };
 
 inline SvStream& operator>>( SvStream& rStrm, XclObjAnchor& rAnchor )
@@ -360,8 +360,8 @@ struct XclObjLineData
 
     explicit            XclObjLineData();
 
-    inline bool         IsAuto() const { return ::get_flag( mnAuto, EXC_OBJ_LINE_AUTO ); }
-    inline bool         IsVisible() const { return IsAuto() || (mnStyle != EXC_OBJ_LINE_NONE); }
+    bool         IsAuto() const { return ::get_flag( mnAuto, EXC_OBJ_LINE_AUTO ); }
+    bool         IsVisible() const { return IsAuto() || (mnStyle != EXC_OBJ_LINE_NONE); }
 };
 
 XclImpStream& operator>>( XclImpStream& rStrm, XclObjLineData& rLineData );
@@ -375,8 +375,8 @@ struct XclObjFillData
 
     explicit            XclObjFillData();
 
-    inline bool         IsAuto() const { return ::get_flag( mnAuto, EXC_OBJ_FILL_AUTO ); }
-    inline bool         IsFilled() const { return IsAuto() || (mnPattern != EXC_PATT_NONE); }
+    bool         IsAuto() const { return ::get_flag( mnAuto, EXC_OBJ_FILL_AUTO ); }
+    bool         IsFilled() const { return IsAuto() || (mnPattern != EXC_PATT_NONE); }
 };
 
 XclImpStream& operator>>( XclImpStream& rStrm, XclObjFillData& rFillData );
@@ -402,8 +402,8 @@ struct XclObjTextData
     /** Reads text data from a BIFF8 TXO record. */
     void                ReadTxo8( XclImpStream& rStrm );
 
-    inline sal_uInt8    GetHorAlign() const { return ::extract_value< sal_uInt8 >( mnFlags, 1, 3 ); }
-    inline sal_uInt8    GetVerAlign() const { return ::extract_value< sal_uInt8 >( mnFlags, 4, 3 ); }
+    sal_uInt8    GetHorAlign() const { return ::extract_value< sal_uInt8 >( mnFlags, 1, 3 ); }
+    sal_uInt8    GetVerAlign() const { return ::extract_value< sal_uInt8 >( mnFlags, 4, 3 ); }
 };
 
 enum XclTbxEventType
@@ -421,18 +421,18 @@ class XclControlHelper
 public:
     /** Returns the API control model from the passed API shape object. */
     static css::uno::Reference< css::awt::XControlModel >
-                        GetControlModel( css::uno::Reference< css::drawing::XShape > xShape );
+                        GetControlModel( css::uno::Reference< css::drawing::XShape > const & xShape );
 
     /** Fills the macro descriptor according to the passed macro name. */
     static bool         FillMacroDescriptor(
                             css::script::ScriptEventDescriptor& rDescriptor,
                             XclTbxEventType eEventType,
                             const OUString& rXclMacroName,
-                            SfxObjectShell* pDocShell = nullptr );
+                            SfxObjectShell* pDocShell );
     /** Tries to extract an Excel macro name from the passed macro descriptor. */
     static OUString     ExtractFromMacroDescriptor(
                             const css::script::ScriptEventDescriptor& rDescriptor,
-                            XclTbxEventType eEventType, SfxObjectShell* pShell = nullptr );
+                            XclTbxEventType eEventType, SfxObjectShell* pShell );
 };
 
 #endif

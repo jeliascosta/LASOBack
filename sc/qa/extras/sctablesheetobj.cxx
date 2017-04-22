@@ -26,7 +26,6 @@ class ScTableSheetObj : public CalcUnoApiTest, public apitest::XSearchable, publ
 public:
     ScTableSheetObj();
 
-    virtual void setUp() override;
     virtual void tearDown() override;
 
     virtual uno::Reference< uno::XInterface > init() override;
@@ -48,8 +47,8 @@ private:
 
 ScTableSheetObj::ScTableSheetObj():
     CalcUnoApiTest("/sc/qa/extras/testdocuments"),
-    apitest::XSearchable(OUString("test"), 4),
-    apitest::XReplaceable(OUString("searchReplaceString"), OUString("replaceReplaceString"))
+    apitest::XSearchable("test", 4),
+    apitest::XReplaceable("searchReplaceString", "replaceReplaceString")
 {
 }
 
@@ -66,11 +65,6 @@ uno::Reference< uno::XInterface > ScTableSheetObj::init()
     uno::Reference< sheet::XSpreadsheet > xSheet( xIndex->getByIndex(0), UNO_QUERY_THROW);
 
     return xSheet;
-}
-
-void ScTableSheetObj::setUp()
-{
-    CalcUnoApiTest::setUp();
 }
 
 void ScTableSheetObj::tearDown()

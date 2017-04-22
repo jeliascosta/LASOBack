@@ -45,7 +45,6 @@
 #include <fmtftn.hxx>
 
 #include <docsh.hxx>
-#include <svl/smplhint.hxx>
 
 typedef std::vector<SwStartNode*> SwSttNdPtrs;
 
@@ -61,7 +60,7 @@ sal_uInt16 HighestLevel( SwNodes & rNodes, const SwNodeRange & rRange );
 SwNodes::SwNodes( SwDoc* pDocument )
     : m_vIndices(nullptr), m_pMyDoc( pDocument )
 {
-    m_bInNodesDel = m_bInDelUpdOutline = m_bInDelUpdNum = false;
+    m_bInNodesDel = m_bInDelUpdOutline = false;
 
     OSL_ENSURE( m_pMyDoc, "in which Doc am I?" );
 
@@ -248,7 +247,7 @@ void SwNodes::ChgNode( SwNodeIndex& rDelPos, sal_uLong nSz,
                 if( pTextNd )
                 {
                     SwpHints * const pHts = pTextNd->GetpSwpHints();
-                    // OultineNodes set the new nodes in the array
+                    // OutlineNodes set the new nodes in the array
                     if (bInsOutlineIdx && pTextNd->IsOutline())
                     {
                         rNds.m_pOutlineNodes->insert( pTextNd );
@@ -274,7 +273,7 @@ void SwNodes::ChgNode( SwNodeIndex& rDelPos, sal_uLong nSz,
                                     rNds.GetDoc()->getIDocumentFieldsAccess().InsDelFieldInFieldLst( !bToUndo, *pTextField );
 
                                     const SwFieldType* pTyp = pTextField->GetFormatField().GetField()->GetTyp();
-                                    if ( RES_POSTITFLD == pTyp->Which() )
+                                    if ( SwFieldIds::Postit == pTyp->Which() )
                                     {
                                         rNds.GetDoc()->GetDocShell()->Broadcast(
                                             SwFormatFieldHint(
@@ -283,7 +282,7 @@ void SwNodes::ChgNode( SwNodeIndex& rDelPos, sal_uLong nSz,
                                                   ? SwFormatFieldHintWhich::INSERTED
                                                   : SwFormatFieldHintWhich::REMOVED ) ) );
                                     }
-                                    else if( RES_DDEFLD == pTyp->Which() )
+                                    else if( SwFieldIds::Dde == pTyp->Which() )
                                     {
                                         if( bToUndo )
                                             const_cast<SwDDEFieldType*>(static_cast<const SwDDEFieldType*>(pTyp))->DecRefCnt();
@@ -415,7 +414,7 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
     SwNodeRange aRg( aRange );
 
     // skip "simple" start or end nodes
-    while( ND_STARTNODE == (pAktNode = &aRg.aStart.GetNode())->GetNodeType()
+    while( SwNodeType::Start == (pAktNode = &aRg.aStart.GetNode())->GetNodeType()
             || ( pAktNode->IsEndNode() &&
                 !pAktNode->m_pStartOfSection->IsSectionNode() ) )
         ++aRg.aStart;
@@ -426,7 +425,7 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
     while( ( (( pAktNode = &aRg.aEnd.GetNode())->GetStartNode() &&
             !pAktNode->IsSectionNode() ) ||
             ( pAktNode->IsEndNode() &&
-            ND_STARTNODE == pAktNode->m_pStartOfSection->GetNodeType()) ) &&
+            SwNodeType::Start == pAktNode->m_pStartOfSection->GetNodeType()) ) &&
             aRg.aEnd > aRg.aStart )
         --aRg.aEnd;
 
@@ -464,7 +463,7 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
     while( aRg.aStart < aRg.aEnd )
         switch( (pAktNode = &aRg.aEnd.GetNode())->GetNodeType() )
         {
-        case ND_ENDNODE:
+        case SwNodeType::End:
             {
                 if( nInsPos ) // move everything until here
                 {
@@ -608,7 +607,7 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
                         {
                             // create StartNode and EndNode at InsertPos
                             SwStartNode* pTmp = new SwStartNode( aIdx,
-                                                    ND_STARTNODE,
+                                                    SwNodeType::Start,
 /*?? NodeType ??*/                                  SwNormalStartNode );
 
                             nLevel++; // put the index to StartNode on the stack
@@ -679,7 +678,7 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
             }
             break;
 
-        case ND_SECTIONNODE:
+        case SwNodeType::Section:
             if( !nLevel &&
                 GetDoc()->GetIDocumentUndoRedo().IsUndoNodes(rNodes))
             {
@@ -699,8 +698,8 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
                 break;
             }
             SAL_FALLTHROUGH;
-        case ND_TABLENODE:
-        case ND_STARTNODE:
+        case SwNodeType::Table:
+        case SwNodeType::Start:
             {
                 // empty section -> nothing to do
                 //  and only if it's a top level section
@@ -715,7 +714,7 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
                     // create decrease
                     SwNodeIndex aTmpSIdx( aOrigInsPos.aStart, 1 );
                     SwStartNode* pTmpStt = new SwStartNode( aTmpSIdx,
-                                ND_STARTNODE,
+                                SwNodeType::Start,
                                 static_cast<SwStartNode*>(pAktNode)->GetStartNodeType() );
 
                     --aTmpSIdx;
@@ -781,7 +780,7 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
 
                 // delete all resulting empty start/end node pairs
                 SwNode* pTmpNode = (*this)[ aRg.aEnd.GetIndex()+1 ]->GetEndNode();
-                if( pTmpNode && ND_STARTNODE == (pAktNode = &aRg.aEnd.GetNode())
+                if( pTmpNode && SwNodeType::Start == (pAktNode = &aRg.aEnd.GetNode())
                     ->GetNodeType() && pAktNode->StartOfSectionIndex() &&
                     pTmpNode->StartOfSectionNode() == pAktNode )
                 {
@@ -791,7 +790,7 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
             }
             break;
 
-        case ND_TEXTNODE:
+        case SwNodeType::Text:
             //Add special function to text node.
             {
                 if( bNewFrames && pAktNode->GetContentNode() )
@@ -801,8 +800,8 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
                 --aRg.aEnd;
             }
             break;
-        case ND_GRFNODE:
-        case ND_OLENODE:
+        case SwNodeType::Grf:
+        case SwNodeType::Ole:
             {
                 if( bNewFrames && pAktNode->GetContentNode() )
                     static_cast<SwContentNode*>(pAktNode)->DelFrames();
@@ -813,7 +812,7 @@ bool SwNodes::MoveNodes( const SwNodeRange& aRange, SwNodes & rNodes,
             }
             break;
 
-        case ND_PLACEHOLDER:
+        case SwNodeType::PlaceHolder:
             if (GetDoc()->GetIDocumentUndoRedo().IsUndoNodes(*this))
             {
                 if( &rNodes == this ) // inside UndoNodesArray
@@ -918,7 +917,7 @@ void SwNodes::SectionDown(SwNodeRange *pRange, SwStartNodeType eSttNdTyp )
     else
     {
         // insert a new StartNode
-        SwNode* pSttNd = new SwStartNode( pRange->aStart, ND_STARTNODE, eSttNdTyp );
+        SwNode* pSttNd = new SwStartNode( pRange->aStart, SwNodeType::Start, eSttNdTyp );
         pRange->aStart = *pSttNd;
         aTmpIdx = pRange->aStart;
     }
@@ -968,7 +967,7 @@ void SwNodes::SectionUp(SwNodeRange *pRange)
     if( pAktNode->IsStartNode() )       // selbst StartNode
     {
         SwEndNode* pEndNd = pRange->aEnd.GetNode().GetEndNode();
-        if( pAktNode == pEndNd->m_pStartOfSection )
+        if (pEndNd && pAktNode == pEndNd->m_pStartOfSection)
         {
             // there was a pairwise reset, adjust only those in the range
             SwStartNode* pTmpSttNd = pAktNode->m_pStartOfSection;
@@ -1118,7 +1117,7 @@ void SwNodes::Delete(const SwNodeIndex &rIndex, sal_uLong nNodes)
                     pTableNd->DelFrames();
 
                 SwNode *pNd, *pChkNd = pAktNode->m_pStartOfSection;
-                sal_uInt16 nIdxPos;
+                SwOutlineNodes::size_type nIdxPos;
                 do {
                     pNd = &aRg.aEnd.GetNode();
 
@@ -1385,7 +1384,7 @@ void SwNodes::DelNodes( const SwNodeIndex & rStart, sal_uLong nCnt )
             if (pNd->IsTextNode() && pNd->GetTextNode()->IsOutline())
             {
                 // remove the outline indices
-                sal_uInt16 nIdxPos;
+                SwOutlineNodes::size_type nIdxPos;
                 if( m_pOutlineNodes->Seek_Entry( pNd, &nIdxPos ))
                 {
                     m_pOutlineNodes->erase(nIdxPos);
@@ -1480,7 +1479,7 @@ void SwNodes::MoveRange( SwPaM & rPam, SwPosition & rPos, SwNodes& rNodes )
         // move the content into the new node
         bool bOneNd = pStt->nNode == pEnd->nNode;
         const sal_Int32 nLen =
-                ( (bOneNd) ? pEnd->nContent.GetIndex() : pSrcNd->Len() )
+                ( (bOneNd) ? std::min(pEnd->nContent.GetIndex(), pSrcNd->Len()) : pSrcNd->Len() )
                 - pStt->nContent.GetIndex();
 
         if( !pEnd->nNode.GetNode().IsContentNode() )
@@ -1690,29 +1689,35 @@ void SwNodes::CopyNodes( const SwNodeRange& rRange,
     SwNodeRange aRg( rRange );
 
     // skip "simple" StartNodes or EndNodes
-    while( ND_STARTNODE == (pAktNode = & aRg.aStart.GetNode())->GetNodeType()
+    while( SwNodeType::Start == (pAktNode = & aRg.aStart.GetNode())->GetNodeType()
             || ( pAktNode->IsEndNode() &&
                 !pAktNode->m_pStartOfSection->IsSectionNode() ) )
         ++aRg.aStart;
 
-    // if aEnd-1 points to no ContentNode, search previous one
-    --aRg.aEnd;
-    // #i107142#: if aEnd is start node of a special section, do nothing.
-    // Otherwise this could lead to crash: going through all previous
-    // special section nodes and then one before the first.
-    if (aRg.aEnd.GetNode().StartOfSectionIndex() != 0)
-    {
-        while( ((pAktNode = & aRg.aEnd.GetNode())->GetStartNode() &&
-                !pAktNode->IsSectionNode() ) ||
-                ( pAktNode->IsEndNode() &&
-                ND_STARTNODE == pAktNode->m_pStartOfSection->GetNodeType()) )
-        {
-            --aRg.aEnd;
-        }
-    }
-    ++aRg.aEnd;
+    const SwNode *aEndNode = &aRg.aEnd.GetNode();
+    int nIsEndOfContent = (aEndNode == &aEndNode->GetNodes().GetEndOfContent()) ? 1 : 0;
 
-    // if in same array, check insertion position
+    if (0 == nIsEndOfContent)
+    {
+        // if aEnd-1 points to no ContentNode, search previous one
+        --aRg.aEnd;
+        // #i107142#: if aEnd is start node of a special section, do nothing.
+        // Otherwise this could lead to crash: going through all previous
+        // special section nodes and then one before the first.
+        if (aRg.aEnd.GetNode().StartOfSectionIndex() != 0)
+        {
+            while( ((pAktNode = & aRg.aEnd.GetNode())->GetStartNode() &&
+                    !pAktNode->IsSectionNode() ) ||
+                    ( pAktNode->IsEndNode() &&
+                    SwNodeType::Start == pAktNode->m_pStartOfSection->GetNodeType()) )
+            {
+                --aRg.aEnd;
+            }
+        }
+        ++aRg.aEnd;
+    }
+
+    // is there anything left to copy?
     if( aRg.aStart >= aRg.aEnd )
         return;
 
@@ -1736,7 +1741,7 @@ void SwNodes::CopyNodes( const SwNodeRange& rRange,
         pAktNode = &aRg.aStart.GetNode();
         switch( pAktNode->GetNodeType() )
         {
-        case ND_TABLENODE:
+        case SwNodeType::Table:
             // Does it copy a table in(to) a footnote?
             if( aInsPos < pDoc->GetNodes().GetEndOfInserts().GetIndex() &&
                     pDoc->GetNodes().GetEndOfInserts().StartOfSectionIndex()
@@ -1787,7 +1792,7 @@ void SwNodes::CopyNodes( const SwNodeRange& rRange,
                 if (nDistance < nNodeCnt)
                     nNodeCnt -= nDistance;
                 else
-                    nNodeCnt = 1;
+                    nNodeCnt = 1 - nIsEndOfContent;
 
                 aRg.aStart = pAktNode->EndOfSectionIndex();
 
@@ -1799,7 +1804,7 @@ void SwNodes::CopyNodes( const SwNodeRange& rRange,
             }
             break;
 
-        case ND_SECTIONNODE:
+        case SwNodeType::Section:
             // If the end of the section is outside the copy range,
             // the section node will skipped, not copied!
             // If someone want to change this behaviour, he has to adjust the function
@@ -1815,7 +1820,7 @@ void SwNodes::CopyNodes( const SwNodeRange& rRange,
                 if (nDistance < nNodeCnt)
                     nNodeCnt -= nDistance;
                 else
-                    nNodeCnt = 1;
+                    nNodeCnt = 1 - nIsEndOfContent;
                 aRg.aStart = pAktNode->EndOfSectionIndex();
 
                 if( bNewFrames && pSectNd &&
@@ -1824,9 +1829,9 @@ void SwNodes::CopyNodes( const SwNodeRange& rRange,
             }
             break;
 
-        case ND_STARTNODE:
+        case SwNodeType::Start:
             {
-                SwStartNode* pTmp = new SwStartNode( aInsPos, ND_STARTNODE,
+                SwStartNode* pTmp = new SwStartNode( aInsPos, SwNodeType::Start,
                             static_cast<SwStartNode*>(pAktNode)->GetStartNodeType() );
                 new SwEndNode( aInsPos, *pTmp );
                 --aInsPos;
@@ -1834,12 +1839,15 @@ void SwNodes::CopyNodes( const SwNodeRange& rRange,
             }
             break;
 
-        case ND_ENDNODE:
+        case SwNodeType::End:
             if( nLevel ) // complete section
             {
                 --nLevel;
                 ++aInsPos; // EndNode already exists
             }
+            else if( 1 == nNodeCnt && 1 == nIsEndOfContent )
+                // we have reached the EndOfContent node - nothing to do!
+                continue;
             else if( !pAktNode->m_pStartOfSection->IsSectionNode() )
             {
                 // create a section at the original InsertPosition
@@ -1849,9 +1857,9 @@ void SwNodes::CopyNodes( const SwNodeRange& rRange,
             }
             break;
 
-        case ND_TEXTNODE:
-        case ND_GRFNODE:
-        case ND_OLENODE:
+        case SwNodeType::Text:
+        case SwNodeType::Grf:
+        case SwNodeType::Ole:
             {
                 SwContentNode* pNew = static_cast<SwContentNode*>(pAktNode)->MakeCopy(
                                             pDoc, aInsPos );
@@ -1861,7 +1869,7 @@ void SwNodes::CopyNodes( const SwNodeRange& rRange,
             }
             break;
 
-        case ND_PLACEHOLDER:
+        case SwNodeType::PlaceHolder:
             if (GetDoc()->GetIDocumentUndoRedo().IsUndoNodes(*this))
             {
                 // than a SectionNode (start/end) is needed at the current
@@ -1888,7 +1896,7 @@ void SwNodes::DelDummyNodes( const SwNodeRange& rRg )
     SwNodeIndex aIdx( rRg.aStart );
     while( aIdx.GetIndex() < rRg.aEnd.GetIndex() )
     {
-        if (ND_PLACEHOLDER == aIdx.GetNode().GetNodeType())
+        if (SwNodeType::PlaceHolder == aIdx.GetNode().GetNodeType())
             RemoveNode( aIdx.GetIndex(), 1, true );
         else
             ++aIdx;
@@ -1898,7 +1906,7 @@ void SwNodes::DelDummyNodes( const SwNodeRange& rRg )
 SwStartNode* SwNodes::MakeEmptySection( const SwNodeIndex& rIdx,
                                         SwStartNodeType eSttNdTyp )
 {
-    SwStartNode* pSttNd = new SwStartNode( rIdx, ND_STARTNODE, eSttNdTyp );
+    SwStartNode* pSttNd = new SwStartNode( rIdx, SwNodeType::Start, eSttNdTyp );
     new SwEndNode( rIdx, *pSttNd );
     return pSttNd;
 }
@@ -1907,7 +1915,7 @@ SwStartNode* SwNodes::MakeTextSection( const SwNodeIndex & rWhere,
                                         SwStartNodeType eSttNdTyp,
                                         SwTextFormatColl *pColl )
 {
-    SwStartNode* pSttNd = new SwStartNode( rWhere, ND_STARTNODE, eSttNdTyp );
+    SwStartNode* pSttNd = new SwStartNode( rWhere, SwNodeType::Start, eSttNdTyp );
     new SwEndNode( rWhere, *pSttNd );
     MakeTextNode( SwNodeIndex( rWhere, - 1 ), pColl );
     return pSttNd;
@@ -1935,7 +1943,7 @@ SwContentNode* SwNodes::GoNextSection( SwNodeIndex * pIdx,
     while( aTmp < Count() - 1 )
     {
         pNd = & aTmp.GetNode();
-        if (ND_SECTIONNODE == pNd->GetNodeType())
+        if (SwNodeType::Section == pNd->GetNodeType())
         {
             const SwSection& rSect = static_cast<const SwSectionNode*>(pNd)->GetSection();
             if( (bSkipHidden && rSect.IsHiddenFlag()) ||
@@ -1955,7 +1963,7 @@ SwContentNode* SwNodes::GoNextSection( SwNodeIndex * pIdx,
                     aTmp = *pNd->EndOfSectionNode();
             }
         }
-        else if( ND_CONTENTNODE & pNd->GetNodeType() )
+        else if( SwNodeType::ContentMask & pNd->GetNodeType() )
         {
             const SwSectionNode* pSectNd;
             if( ( bSkipHidden || bSkipProtect ) &&
@@ -1987,7 +1995,7 @@ SwContentNode* SwNodes::GoPrevSection( SwNodeIndex * pIdx,
     while( aTmp > 0 )
     {
         pNd = & aTmp.GetNode();
-        if (ND_ENDNODE == pNd->GetNodeType())
+        if (SwNodeType::End == pNd->GetNodeType())
         {
             if( pNd->m_pStartOfSection->IsSectionNode() )
             {
@@ -2013,7 +2021,7 @@ SwContentNode* SwNodes::GoPrevSection( SwNodeIndex * pIdx,
                     aTmp = *pNd->StartOfSectionNode();
             }
         }
-        else if( ND_CONTENTNODE & pNd->GetNodeType() )
+        else if( SwNodeType::ContentMask & pNd->GetNodeType() )
         {
             const SwSectionNode* pSectNd;
             if( ( bSkipHidden || bSkipProtect ) &&
@@ -2171,13 +2179,13 @@ SwNode* SwNodes::FindPrvNxtFrameNode( SwNodeIndex& rFrameIdx,
 void SwNodes::ForEach( sal_uLong nStart, sal_uLong nEnd,
                        FnForEach_SwNodes fn, void* pArgs )
 {
-    if( nEnd > nSize )
-        nEnd = nSize;
+    if( nEnd > m_nSize )
+        nEnd = m_nSize;
 
     if( nStart < nEnd )
     {
         sal_uInt16 cur = Index2Block( nStart );
-        BlockInfo** pp = ppInf + cur;
+        BlockInfo** pp = m_ppInf + cur;
         BlockInfo* p = *pp;
         sal_uInt16 nElem = sal_uInt16( nStart - p->nStart );
         ElementPtr* pElem = p->pData + nElem;
@@ -2219,7 +2227,7 @@ void SwNodes::RemoveNode( sal_uLong nDelPos, sal_uLong nSz, bool bDel )
             if (pTextNd)
             {
                 pTextNd->RemoveFromList();
-                // remove FLY_AS_CHAR *before* adjusting SwNodeIndex
+                // remove RndStdIds::FLY_AS_CHAR *before* adjusting SwNodeIndex
                 // so their anchor still points to correct node when deleted!
                 // NOTE: this will call RemoveNode() recursively!
                 // so adjust our indexes to account for removed nodes
@@ -2348,7 +2356,7 @@ bool SwNodes::IsDocNodes() const
 
 void SwNodes::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swNodes"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwNodes"));
     for (sal_uLong i = 0; i < Count(); ++i)
         (*this)[i]->dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);

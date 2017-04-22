@@ -51,7 +51,6 @@
 #include <rtl/ustrbuf.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <vcl/window.hxx>
-#include <vcl/commandinfoprovider.hxx>
 #include <svtools/menuoptions.hxx>
 #include <unotools/cmdoptions.hxx>
 #include <svtools/miscopt.hxx>
@@ -67,15 +66,7 @@ using namespace ::com::sun::star::util;
 using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::ui;
 
-static const char CONFIGURE_TOOLBARS_CMD[]      = "ConfigureDialog";
-static const char CONFIGURE_TOOLBARS[]          = ".uno:ConfigureDialog";
-static const char CMD_COLORBAR[]                = ".uno:ColorControl";
-static const char CMD_FORMULABAR[]              = ".uno:InsertFormula";
-static const char CMD_INPUTLINEBAR[]            = ".uno:InputLineVisible";
 static const char CMD_RESTOREVISIBILITY[]       = ".cmd:RestoreVisibility";
-static const char ITEM_DESCRIPTOR_RESOURCEURL[] = "ResourceURL";
-static const char ITEM_DESCRIPTOR_UINAME[]      = "UIName";
-static const char STATIC_PRIVATE_TB_RESOURCE[]  = "private:resource/toolbar/";
 
 static const char STATIC_CMD_PART[]             = ".uno:AvailableToolbars?Toolbar:string=";
 static const char STATIC_INTERNAL_CMD_PART[]    = ".cmd:";
@@ -155,7 +146,7 @@ void ToolbarsMenuController::addCommand(
 
     OUString aLabel;
     if ( rLabel.isEmpty() )
-        aLabel = vcl::CommandInfoProvider::Instance().GetMenuLabelForCommand( rCommandURL, m_xFrame );
+        aLabel = vcl::CommandInfoProvider::GetMenuLabelForCommand( rCommandURL, m_aModuleName );
     else
         aLabel = rLabel;
 
@@ -175,7 +166,7 @@ void ToolbarsMenuController::addCommand(
     const StyleSettings& rSettings = Application::GetSettings().GetStyleSettings();
 
     if ( rSettings.GetUseImagesInMenus() )
-        aImage = vcl::CommandInfoProvider::Instance().GetImageForCommand( rCommandURL, false, m_xFrame );
+        aImage = vcl::CommandInfoProvider::GetImageForCommand(rCommandURL, m_xFrame);
 
     VCLXPopupMenu* pPopupMenu = static_cast<VCLXPopupMenu *>(VCLXPopupMenu::GetImplementation( rPopupMenu ));
     if ( pPopupMenu )
@@ -219,9 +210,9 @@ static void fillHashMap( const Sequence< Sequence< css::beans::PropertyValue > >
         const PropertyValue* pProperties = rSeqToolBars[i].getConstArray();
         for ( sal_Int32 j = 0; j < rSeqToolBars[i].getLength(); j++ )
         {
-            if ( pProperties[j].Name == ITEM_DESCRIPTOR_RESOURCEURL )
+            if ( pProperties[j].Name == "ResourceURL" )
                 pProperties[j].Value >>= aResourceURL;
-            else if ( pProperties[j].Name == ITEM_DESCRIPTOR_UINAME )
+            else if ( pProperties[j].Name == "UIName" )
                 pProperties[j].Value >>= aUIName;
         }
 
@@ -258,7 +249,7 @@ Sequence< Sequence< css::beans::PropertyValue > > ToolbarsMenuController::getLay
 
                     SolarMutexGuard aGuard;
                     Reference< css::awt::XWindow > xWindow( xUIElement->getRealInterface(), UNO_QUERY );
-                    vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+                    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
                     if ( pWindow )
                         aToolBarInfo.aToolBarUIName = pWindow->GetText();
 
@@ -427,21 +418,21 @@ void ToolbarsMenuController::fillPopupMenu( Reference< css::awt::XPopupMenu >& r
         {
             if ( m_aModuleIdentifier == "com.sun.star.drawing.DrawingDocument" ||
                  m_aModuleIdentifier == "com.sun.star.presentation.PresentationDocument" )
-                addCommand( m_xPopupMenu, CMD_COLORBAR, aEmptyString );
+                addCommand( m_xPopupMenu, ".uno:ColorControl", aEmptyString );
             else if ( m_aModuleIdentifier == "com.sun.star.sheet.SpreadsheetDocument" )
-                addCommand( m_xPopupMenu, CMD_INPUTLINEBAR, aEmptyString );
+                addCommand( m_xPopupMenu, ".uno:InputLineVisible", aEmptyString );
             else
-                addCommand( m_xPopupMenu, CMD_FORMULABAR, aEmptyString );
+                addCommand( m_xPopupMenu, ".uno:InsertFormula", aEmptyString );
         }
 
         bool          bAddCommand( true );
         SvtCommandOptions aCmdOptions;
-        OUString     aConfigureToolbar( CONFIGURE_TOOLBARS );
+        OUString     aConfigureToolbar( ".uno:ConfigureDialog" );
 
         if ( aCmdOptions.HasEntries( SvtCommandOptions::CMDOPTION_DISABLED ))
         {
             if ( aCmdOptions.Lookup( SvtCommandOptions::CMDOPTION_DISABLED,
-                                     CONFIGURE_TOOLBARS_CMD))
+                                     "ConfigureDialog"))
                 bAddCommand = false;
         }
 
@@ -475,7 +466,7 @@ void ToolbarsMenuController::fillPopupMenu( Reference< css::awt::XPopupMenu >& r
 }
 
 // XEventListener
-void SAL_CALL ToolbarsMenuController::disposing( const EventObject& ) throw ( RuntimeException, std::exception )
+void SAL_CALL ToolbarsMenuController::disposing( const EventObject& )
 {
     Reference< css::awt::XMenuListener > xHolder(static_cast<OWeakObject *>(this), UNO_QUERY );
 
@@ -492,7 +483,7 @@ void SAL_CALL ToolbarsMenuController::disposing( const EventObject& ) throw ( Ru
 }
 
 // XStatusListener
-void SAL_CALL ToolbarsMenuController::statusChanged( const FeatureStateEvent& Event ) throw ( RuntimeException, std::exception )
+void SAL_CALL ToolbarsMenuController::statusChanged( const FeatureStateEvent& Event )
 {
     OUString aFeatureURL( Event.FeatureURL.Complete );
 
@@ -544,7 +535,7 @@ void SAL_CALL ToolbarsMenuController::statusChanged( const FeatureStateEvent& Ev
 }
 
 // XMenuListener
-void SAL_CALL ToolbarsMenuController::itemSelected( const css::awt::MenuEvent& rEvent ) throw (RuntimeException, std::exception)
+void SAL_CALL ToolbarsMenuController::itemSelected( const css::awt::MenuEvent& rEvent )
 {
     Reference< css::awt::XPopupMenu >   xPopupMenu;
     Reference< XComponentContext >      xContext;
@@ -679,7 +670,7 @@ void SAL_CALL ToolbarsMenuController::itemSelected( const css::awt::MenuEvent& r
                     sal_Int32 nIndex = aCmd.indexOf( '=' );
                     if (( nIndex > 0 ) && (( nIndex+1 ) < aCmd.getLength() ))
                     {
-                        OUStringBuffer aBuf( STATIC_PRIVATE_TB_RESOURCE );
+                        OUStringBuffer aBuf( "private:resource/toolbar/" );
                         aBuf.append( aCmd.copy( nIndex+1 ));
 
                         bool      bShow( !pVCLPopupMenu->IsItemChecked( rEvent.MenuId ));
@@ -703,7 +694,7 @@ void SAL_CALL ToolbarsMenuController::itemSelected( const css::awt::MenuEvent& r
     }
 }
 
-void SAL_CALL ToolbarsMenuController::itemActivated( const css::awt::MenuEvent& ) throw (RuntimeException, std::exception)
+void SAL_CALL ToolbarsMenuController::itemActivated( const css::awt::MenuEvent& )
 {
     std::vector< OUString >   aCmdVector;
     Reference< XDispatchProvider > xDispatchProvider( m_xFrame, UNO_QUERY );
@@ -737,14 +728,14 @@ void SAL_CALL ToolbarsMenuController::itemActivated( const css::awt::MenuEvent& 
             // Special code to determine the enable/disable state of this command
             FeatureStateEvent aFeatureStateEvent;
             aFeatureStateEvent.FeatureURL.Complete = aCmdVector[i];
-            aFeatureStateEvent.IsEnabled = isContextSensitiveToolbarNonVisible();
+            aFeatureStateEvent.IsEnabled = m_bResetActive; // is context sensitive toolbar non visible
             statusChanged( aFeatureStateEvent );
         }
     }
 }
 
 // XPopupMenuController
-void SAL_CALL ToolbarsMenuController::setPopupMenu( const Reference< css::awt::XPopupMenu >& xPopupMenu ) throw ( RuntimeException, std::exception )
+void SAL_CALL ToolbarsMenuController::setPopupMenu( const Reference< css::awt::XPopupMenu >& xPopupMenu )
 {
     osl::MutexGuard aLock( m_aMutex );
 
@@ -762,7 +753,7 @@ void SAL_CALL ToolbarsMenuController::setPopupMenu( const Reference< css::awt::X
 }
 
 // XInitialization
-void SAL_CALL ToolbarsMenuController::initialize( const Sequence< Any >& aArguments ) throw ( Exception, RuntimeException, std::exception )
+void SAL_CALL ToolbarsMenuController::initialize( const Sequence< Any >& aArguments )
 {
     osl::MutexGuard aLock( m_aMutex );
     bool bInitalized( m_bInitialized );
@@ -805,7 +796,7 @@ void SAL_CALL ToolbarsMenuController::initialize( const Sequence< Any >& aArgume
     }
 }
 
-IMPL_STATIC_LINK_TYPED( ToolbarsMenuController, ExecuteHdl_Impl, void*, p, void )
+IMPL_STATIC_LINK( ToolbarsMenuController, ExecuteHdl_Impl, void*, p, void )
 {
     ExecuteInfo* pExecuteInfo = static_cast<ExecuteInfo*>(p);
     try

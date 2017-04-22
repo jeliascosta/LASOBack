@@ -30,7 +30,6 @@ using namespace ::com::sun::star::container;
 
 OCatalog::OCatalog(OConnection* _pCon) : connectivity::sdbcx::OCatalog(_pCon)
                 ,m_pConnection(_pCon)
-                ,m_xMetaData(m_pConnection->getMetaData(  ))
 {
 //  osl_atomic_increment( &m_refCount );
 //  refreshTables();
@@ -77,7 +76,7 @@ void OCatalog::refreshUsers()
 
 
 // XTablesSupplier
-Reference< XNameAccess > SAL_CALL OCatalog::getTables(  ) throw(RuntimeException, std::exception)
+Reference< XNameAccess > SAL_CALL OCatalog::getTables(  )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(rBHelper.bDisposed);

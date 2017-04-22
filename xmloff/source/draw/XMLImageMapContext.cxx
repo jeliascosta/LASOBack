@@ -97,17 +97,6 @@ class XMLImageMapObjectContext : public SvXMLImportContext
 
 protected:
 
-    const OUString sBoundary;
-    const OUString sCenter;
-    const OUString sTitle;
-    const OUString sDescription;
-    const OUString sIsActive;
-    const OUString sName;
-    const OUString sPolygon;
-    const OUString sRadius;
-    const OUString sTarget;
-    const OUString sURL;
-
     Reference<XIndexContainer> xImageMap;   /// the image map
     Reference<XPropertySet> xMapEntry;      /// one map-entry (one area)
 
@@ -126,7 +115,7 @@ public:
         SvXMLImport& rImport,
         sal_uInt16 nPrefix,
         const OUString& rLocalName,
-        css::uno::Reference<css::container::XIndexContainer> xMap,
+        css::uno::Reference<css::container::XIndexContainer> const & xMap,
         const sal_Char* pServiceName);
 
     void StartElement(
@@ -154,19 +143,9 @@ XMLImageMapObjectContext::XMLImageMapObjectContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
-    Reference<XIndexContainer> xMap,
+    Reference<XIndexContainer> const & xMap,
     const sal_Char* pServiceName) :
         SvXMLImportContext(rImport, nPrefix, rLocalName),
-        sBoundary("Boundary"),
-        sCenter("Center"),
-        sTitle("Title"),
-        sDescription("Description"),
-        sIsActive("IsActive"),
-        sName("Name"),
-        sPolygon("Polygon"),
-        sRadius("Radius"),
-        sTarget("Target"),
-        sURL("URL"),
         xImageMap(xMap),
         bIsActive(true),
         bValid(false)
@@ -285,12 +264,12 @@ void XMLImageMapObjectContext::ProcessAttribute(
 void XMLImageMapObjectContext::Prepare(
     Reference<XPropertySet> & rPropertySet)
 {
-    rPropertySet->setPropertyValue( sURL, Any( sUrl ) );
-    rPropertySet->setPropertyValue( sTitle, Any( sTitleBuffer.makeStringAndClear() ) );
-    rPropertySet->setPropertyValue( sDescription, Any( sDescriptionBuffer.makeStringAndClear() ) );
-    rPropertySet->setPropertyValue( sTarget, Any( sTargt ) );
-    rPropertySet->setPropertyValue( sIsActive, Any( bIsActive ) );
-    rPropertySet->setPropertyValue( sName, Any( sNam ) );
+    rPropertySet->setPropertyValue( "URL", Any( sUrl ) );
+    rPropertySet->setPropertyValue( "Title", Any( sTitleBuffer.makeStringAndClear() ) );
+    rPropertySet->setPropertyValue( "Description", Any( sDescriptionBuffer.makeStringAndClear() ) );
+    rPropertySet->setPropertyValue( "Target", Any( sTargt ) );
+    rPropertySet->setPropertyValue( "IsActive", Any( bIsActive ) );
+    rPropertySet->setPropertyValue( "Name", Any( sNam ) );
 }
 
 
@@ -309,9 +288,7 @@ public:
         SvXMLImport& rImport,
         sal_uInt16 nPrefix,
         const OUString& rLocalName,
-        css::uno::Reference<css::container::XIndexContainer> xMap);
-
-    virtual ~XMLImageMapRectangleContext();
+        css::uno::Reference<css::container::XIndexContainer> const & xMap);
 
 protected:
     virtual void ProcessAttribute(
@@ -327,17 +304,13 @@ XMLImageMapRectangleContext::XMLImageMapRectangleContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
-    Reference<XIndexContainer> xMap) :
+    Reference<XIndexContainer> const & xMap) :
         XMLImageMapObjectContext(rImport, nPrefix, rLocalName, xMap,
                                  "com.sun.star.image.ImageMapRectangleObject"),
         bXOK(false),
         bYOK(false),
         bWidthOK(false),
         bHeightOK(false)
-{
-}
-
-XMLImageMapRectangleContext::~XMLImageMapRectangleContext()
 {
 }
 
@@ -390,7 +363,7 @@ void XMLImageMapRectangleContext::ProcessAttribute(
 void XMLImageMapRectangleContext::Prepare(
     Reference<XPropertySet> & rPropertySet)
 {
-    rPropertySet->setPropertyValue( sBoundary, uno::Any(aRectangle) );
+    rPropertySet->setPropertyValue( "Boundary", uno::Any(aRectangle) );
 
     // common properties handled by super class
     XMLImageMapObjectContext::Prepare(rPropertySet);
@@ -411,9 +384,7 @@ public:
         SvXMLImport& rImport,
         sal_uInt16 nPrefix,
         const OUString& rLocalName,
-        css::uno::Reference<css::container::XIndexContainer> xMap);
-
-    virtual ~XMLImageMapPolygonContext();
+        css::uno::Reference<css::container::XIndexContainer> const & xMap);
 
 protected:
     virtual void ProcessAttribute(
@@ -429,15 +400,11 @@ XMLImageMapPolygonContext::XMLImageMapPolygonContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
-    Reference<XIndexContainer> xMap) :
+    Reference<XIndexContainer> const & xMap) :
         XMLImageMapObjectContext(rImport, nPrefix, rLocalName, xMap,
                                  "com.sun.star.image.ImageMapPolygonObject"),
         bViewBoxOK(false),
         bPointsOK(false)
-{
-}
-
-XMLImageMapPolygonContext::~XMLImageMapPolygonContext()
 {
 }
 
@@ -477,7 +444,7 @@ void XMLImageMapPolygonContext::Prepare(Reference<XPropertySet> & rPropertySet)
         {
             css::drawing::PointSequence aPointSequence;
             basegfx::tools::B2DPolygonToUnoPointSequence(aPolygon, aPointSequence);
-            rPropertySet->setPropertyValue(sPolygon, Any(aPointSequence));
+            rPropertySet->setPropertyValue("Polygon", Any(aPointSequence));
         }
     }
 
@@ -500,9 +467,7 @@ public:
         SvXMLImport& rImport,
         sal_uInt16 nPrefix,
         const OUString& rLocalName,
-        css::uno::Reference<css::container::XIndexContainer> xMap);
-
-    virtual ~XMLImageMapCircleContext();
+        css::uno::Reference<css::container::XIndexContainer> const & xMap);
 
 protected:
     virtual void ProcessAttribute(
@@ -518,17 +483,13 @@ XMLImageMapCircleContext::XMLImageMapCircleContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
-    Reference<XIndexContainer> xMap)
+    Reference<XIndexContainer> const & xMap)
     : XMLImageMapObjectContext(rImport, nPrefix, rLocalName, xMap,
           "com.sun.star.image.ImageMapCircleObject")
     , nRadius(0)
     , bXOK(false)
     , bYOK(false)
     , bRadiusOK(false)
-{
-}
-
-XMLImageMapCircleContext::~XMLImageMapCircleContext()
 {
 }
 
@@ -574,9 +535,9 @@ void XMLImageMapCircleContext::Prepare(
     Reference<XPropertySet> & rPropertySet)
 {
     // center (x,y)
-    rPropertySet->setPropertyValue( sCenter, uno::Any(aCenter) );
+    rPropertySet->setPropertyValue( "Center", uno::Any(aCenter) );
     // radius
-    rPropertySet->setPropertyValue( sRadius, uno::Any(nRadius) );
+    rPropertySet->setPropertyValue( "Radius", uno::Any(nRadius) );
 
     // common properties handled by super class
     XMLImageMapObjectContext::Prepare(rPropertySet);

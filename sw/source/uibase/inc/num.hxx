@@ -24,7 +24,6 @@
 #include <vcl/field.hxx>
 #include <vcl/fixed.hxx>
 #include <vcl/layout.hxx>
-#include <svtools/stdctrl.hxx>
 #include <vcl/button.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/edit.hxx>
@@ -84,23 +83,23 @@ class SwNumPositionTabPage : public SfxTabPage
 
     void                InitControls();
 
-    DECL_LINK_TYPED( LevelHdl, ListBox&, void );
-    DECL_LINK_TYPED(EditModifyHdl, ListBox&, void);
-    DECL_LINK_TYPED( DistanceHdl, SpinField&, void );
-    DECL_LINK_TYPED( DistanceLoseFocusHdl, Control&, void );
-    DECL_LINK_TYPED( RelativeHdl, Button*, void );
-    DECL_LINK_TYPED(StandardHdl, Button*, void);
+    DECL_LINK( LevelHdl, ListBox&, void );
+    DECL_LINK(EditModifyHdl, ListBox&, void);
+    DECL_LINK( DistanceHdl, SpinField&, void );
+    DECL_LINK( DistanceLoseFocusHdl, Control&, void );
+    DECL_LINK( RelativeHdl, Button*, void );
+    DECL_LINK(StandardHdl, Button*, void);
 
     void InitPosAndSpaceMode();
     void ShowControlsDependingOnPosAndSpaceMode();
 
-    DECL_LINK_TYPED(LabelFollowedByHdl_Impl, ListBox&, void);
-    DECL_LINK_TYPED( ListtabPosHdl_Impl, SpinField&, void );
-    DECL_LINK_TYPED( ListtabPosFocusHdl_Impl, Control&, void );
-    DECL_LINK_TYPED( AlignAtHdl_Impl, SpinField&, void );
-    DECL_LINK_TYPED( AlignAtFocusHdl_Impl, Control&, void );
-    DECL_LINK_TYPED( IndentAtHdl_Impl, SpinField&, void );
-    DECL_LINK_TYPED( IndentAtFocusHdl_Impl, Control&, void );
+    DECL_LINK(LabelFollowedByHdl_Impl, ListBox&, void);
+    DECL_LINK( ListtabPosHdl_Impl, SpinField&, void );
+    DECL_LINK( ListtabPosFocusHdl_Impl, Control&, void );
+    DECL_LINK( AlignAtHdl_Impl, SpinField&, void );
+    DECL_LINK( AlignAtFocusHdl_Impl, Control&, void );
+    DECL_LINK( IndentAtHdl_Impl, SpinField&, void );
+    DECL_LINK( IndentAtFocusHdl_Impl, Control&, void );
 
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
@@ -109,11 +108,11 @@ public:
 
     SwNumPositionTabPage(vcl::Window* pParent,
                                const SfxItemSet& rSet);
-    virtual ~SwNumPositionTabPage();
+    virtual ~SwNumPositionTabPage() override;
     virtual void        dispose() override;
 
     virtual void        ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg       DeactivatePage(SfxItemSet *pSet) override;
+    virtual DeactivateRC   DeactivatePage(SfxItemSet *pSet) override;
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
     virtual void        Reset( const SfxItemSet* rSet ) override;
 
@@ -144,12 +143,12 @@ class SwSvxNumBulletTabDialog : public SfxTabDialog
     protected:
         virtual short   Ok() override;
         virtual void    PageCreated(sal_uInt16 nPageId, SfxTabPage& rPage) override;
-        DECL_LINK_TYPED(RemoveNumberingHdl, Button*, void);
+        DECL_LINK(RemoveNumberingHdl, Button*, void);
     public:
         SwSvxNumBulletTabDialog(vcl::Window* pParent,
                     const SfxItemSet* pSwItemSet,
                     SwWrtShell &);
-        virtual ~SwSvxNumBulletTabDialog();
+        virtual ~SwSvxNumBulletTabDialog() override;
 };
 #endif // INCLUDED_SW_SOURCE_UIBASE_INC_NUM_HXX
 

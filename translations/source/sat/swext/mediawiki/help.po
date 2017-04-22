@@ -1,0 +1,750 @@
+#. extracted from swext/mediawiki/help
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2015-09-01 17:56+0000\n"
+"Last-Translator: Christian Lohmaier <lohmaier+pootle@googlemail.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: sat\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Accelerator-Marker: ~\n"
+"X-Generator: LibreOffice\n"
+"X-POOTLE-MTIME: 1441130184.000000\n"
+
+#: help.tree
+msgctxt ""
+"help.tree\n"
+"02\n"
+"help_section.text"
+msgid "MediaWiki"
+msgstr "मिडिया विकी"
+
+#: help.tree
+msgctxt ""
+"help.tree\n"
+"0224\n"
+"node.text"
+msgid "MediaWiki"
+msgstr "मिडिया विकी"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"tit\n"
+"help.text"
+msgid "Wiki Publisher"
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"bm_id3154408\n"
+"help.text"
+msgid "<bookmark_value>Wiki;Wiki Publisher</bookmark_value><bookmark_value>Wiki Publisher</bookmark_value><bookmark_value>extensions;MediaWiki</bookmark_value>"
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id5993530\n"
+"help.text"
+msgid "Wiki Publisher"
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9647511\n"
+"help.text"
+msgid "<ahelp hid=\".\">By using the Wiki Publisher you can upload your current Writer text document to a MediaWiki server. After uploading, all wiki users can read your document on the wiki.</ahelp>"
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id6468703\n"
+"help.text"
+msgid "<ahelp hid=\".\">Choose <item type=\"menuitem\">File - Send - To MediaWiki</item> to upload the current Writer document to a MediaWiki server.</ahelp>"
+msgstr "<मित् गोड़ो उकू=\".\">बाछाव मे<जिनिस लेकान =\"ञुतुम लिसटी जिनिस \"> रेत् - कुल - मिडियविकी रे </जिनिस>मिडियविकी सर्वर रे नितोक्  ओलाक् दोलिल लोदे दोलिल लादे ला़गित्.</मित् गोड़ो >"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id4554582\n"
+"help.text"
+msgid "System Requirements"
+msgstr "सेसटेम ला़कती आ"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9340495\n"
+"help.text"
+msgid "Java Runtime Environment"
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id7387615\n"
+"help.text"
+msgid "A wiki account on a supported <link href=\"http://www.mediawiki.org/wiki/MediaWiki\">MediaWiki</link> server"
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id8047120\n"
+"help.text"
+msgid "Installing Wiki Publisher"
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id4277169\n"
+"help.text"
+msgid "Before you use the Wiki Publisher, ensure that %PRODUCTNAME uses a Java Runtime Environment (JRE). To check the status of the JRE, choose <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - Advanced</item>. Ensure that “Use a Java runtime environment” is checked and that a Java runtime folder is selected in the big listbox. If no JRE was activated, then activate a JRE of version 1.4 or later and restart %PRODUCTNAME."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id5316019\n"
+"help.text"
+msgid "To Connect to a Wiki"
+msgstr "विकी रे जोनोड़ाव ला़गित्"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id2381969\n"
+"help.text"
+msgid "Note: You can store your user name and password for all respective dialogs inside %PRODUCTNAME. The password will be stored in a secure way, where access is maintained by a master password. To enable the master password, choose <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - Security</item>."
+msgstr "खाटो ओल: आम आमाक् बेभार ञुतुम आर दानाङ साबाद एम जोगाव दाड़ेयाक् आ  StarOffice/OpenOffice.org भितिर रे जोतो निजेराक् काथा को ला़गित्.  दानाङ साबाद जापती लेका ते जोगाक् आ, ओकारे आ़तुर मुल दानाङ साबाद दाराय ते ञेल सामटाक् आ. मुल दानाङ साबाद हुय होचो ला़गित्, बाछाव मे <जिनिस  लेकान=\"ञुतुम लिसटी जिनिस\">हा़तियार को - आपनार मोने तेयाक् - StarOffice/OpenOffice.org - जापती </जिनिस>."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id3751640\n"
+"help.text"
+msgid "Note: If you connect to the web using a proxy server, enter the proxy information to <item type=\"menuitem\">Tools - Options - Internet - Proxy</item>, and restart the software."
+msgstr "खाटो ओल: जुदी आम एड़े सर्वर बेभाराते बेव रेम जोड़ाव आ, एड़े ला़य सोदोर <जिनिस लेकान=\"ञुतुम लिसटी जिनिस\">टुल को - आपनार मोने तेयाक् - इन्टार नेट - एड़े</जिनिस> आदेर मे, आर सोफ्टबायर दोहड़ा एहोब मे."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9533677\n"
+"help.text"
+msgid "Open a Writer document, and choose <item type=\"menuitem\">Tools - Options - Internet - MediaWiki</item>."
+msgstr "ओओलाक् दोलिल झिज मे, आर बाछाव मे <जिनिस लेकान=\"ञुतुम लिसटी जिनिस\">टुल को - आपनार मोने तेयाक् - इन्टारनेट - मिडिया विकी</जिनिस>."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id368968\n"
+"help.text"
+msgid "In the <link href=\"com.sun.wiki-publisher/wikisettings.xhp\">Options</link> dialog, click Add."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id6962187\n"
+"help.text"
+msgid "In the <link href=\"com.sun.wiki-publisher/wikiaccount.xhp\">MediaWiki</link> dialog, enter the account information for the wiki."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id5328836\n"
+"help.text"
+msgid "In the URL text box, enter the address of a wiki that you want to connect to."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id389416\n"
+"help.text"
+msgid "You can copy the URL from a web browser and paste it into the textbox."
+msgstr "आम वेब पानतेयाक् खोन URL एम नोकोल आर ओनोल बाक्सा रेम लाठा दाड़ेयाक् आ."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id5906552\n"
+"help.text"
+msgid "In the Username box, enter your user ID for your wiki account."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9297158\n"
+"help.text"
+msgid "If the wiki allows anonymous write access, you can leave the Username and Password boxes empty."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id8869594\n"
+"help.text"
+msgid "In the Password box, enter the password for your wiki account, then click OK."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id292062\n"
+"help.text"
+msgid "Optionally enable “Save password” to save the password between sessions. A master password is used to maintain access to all saved passwords. Choose <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - Security</item> to enable the master password. “Save password” is unavailable when the master password is not enabled."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"hd_id7044892\n"
+"help.text"
+msgid "To Create a New Wiki Page"
+msgstr "नावा विकी साहटा तेयार ला़गित्"
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id3514206\n"
+"help.text"
+msgid "Open a Writer document."
+msgstr "ओओलाक् दोलिल झिज मे."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id944853\n"
+"help.text"
+msgid "Write the content of the wiki page. You can use formatting such as text formats, headings, footnotes, and more. See the <link href=\"com.sun.wiki-publisher/wikiformats.xhp\">list of supported formats</link>."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id4566484\n"
+"help.text"
+msgid "Choose <item type=\"menuitem\">File - Send - To MediaWiki</item>."
+msgstr "बाछाव मे <जिनिस लेकान=\"ञुतुम लिसटी जिनिस\">रेत् - कुल - मिडिया विकी रे</जिनिस>."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id228278\n"
+"help.text"
+msgid "In the <link href=\"com.sun.wiki-publisher/wikisend.xhp\">Send to MediaWiki</link> dialog, specify the settings for your entry."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id2564165\n"
+"help.text"
+msgid "<emph>MediaWiki server</emph>: Select the wiki."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id5566576\n"
+"help.text"
+msgid "<emph>Title</emph>: Type the title of your page. Type the title of an existing page to overwrite the page with your current text document. Type a new title to create a new page on the wiki."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id9688711\n"
+"help.text"
+msgid "<emph>Summary</emph>: Enter an optional short summary of your page."
+msgstr "<emph>सार काथा</emph>: आमाक् साहटा रेयाक् आपनार मोने तेयाक् खाटो सार काथा आदेर मे."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id4123661\n"
+"help.text"
+msgid "<emph>This is a minor edit</emph>: Check this box to mark the uploaded page as a minor edit of the already existing page with the same title."
+msgstr "<emph>नोवा दो हुडिञ सासापड़ाव काना</emph>: सोमान ञुतुम सांव माड़ाङ खोन मेनाक् साहटा रेयाक् हुडिञ सासापड़ाव लेका लादे साहटा चिनहा़ ला़गित् नोवा बाक्सा ञेल."
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id452284\n"
+"help.text"
+msgid "<emph>Show in web browser</emph>: Check this box to open your system web browser and show the uploaded wiki page."
+msgstr ""
+
+#: wiki.xhp
+msgctxt ""
+"wiki.xhp\n"
+"par_id8346812\n"
+"help.text"
+msgid "Click <emph>Send</emph>."
+msgstr ""
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"tit\n"
+"help.text"
+msgid "MediaWiki"
+msgstr "मिडिया विकी"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"hd_id960722\n"
+"help.text"
+msgid "MediaWiki"
+msgstr "मिडिया विकी"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id4571672\n"
+"help.text"
+msgid "Use the MediaWiki dialog to add or edit your MediaWiki account settings."
+msgstr "आमाक् मिडियाविकी खाता साजाव सेलेद आर बाङ सासापड़ाव ला़गित् मिडिया विकी काथा बेभार मे."
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id7631458\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Enter the URL of a MediaWiki server, starting with http://</ahelp>"
+msgstr "<गोड़ो उकू=\".\" ञेलोगाक्=\"उकुवाक्\">मिडियाविकी सर्वर रेयाक् URL आदेर मे, http://</मित् गोड़ो>सांव एहोब मे"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id7862483\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Enter your user name on the MediaWiki server. Leave empty for anonymous access.</ahelp>"
+msgstr "<मित् गोड़ो उकू=\".\" ञेलोगाक्=\"उकुवाक्\">मिडियाविकी सर्वर रे आमाक् बेभार ञुतुम आदेर मे. दानाङाक् आ़तुर ला़गित् एकेनाक् बा़गी.</मित् गोड़ो>"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id1113010\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Enter your password on the MediaWiki server. Leave empty for anonymous access.</ahelp>"
+msgstr "<मित् गोड़ो उकू=\".\" ञेलोगाक्=\"उकुवाक्\">मिडिया विकी सर्वर रे आमाक् दानाङ साबाद आदेर मे. दानाङाक् आ़तुर ला़गित् एकेनाक् बागियाक् मे.</मित् गोड़ो>"
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id656758\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Enable to store your password between sessions. The master password must be enabled; see <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - Security</item>.</ahelp>"
+msgstr ""
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id3112582\n"
+"help.text"
+msgid "Enter the Internet address of a wiki server in a format like “http://wiki.documentfoundation.org” or copy the URL from a web browser."
+msgstr ""
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id628070\n"
+"help.text"
+msgid "If the wiki allows anonymous access, you can leave the account text boxes empty. Else enter your user name and password."
+msgstr ""
+
+#: wikiaccount.xhp
+msgctxt ""
+"wikiaccount.xhp\n"
+"par_id9046601\n"
+"help.text"
+msgid "If you have enabled the master password feature on the Security tab page of the <item type=\"menuitem\">Tools - Options - %PRODUCTNAME</item> dialog, then the software can store your password and automatically insert the data where necessary. Enable the \"Save password\" checkbox to store your password."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"tit\n"
+"help.text"
+msgid "MediaWiki Formats"
+msgstr "मिडियाविकी तेयार को."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id3743095\n"
+"help.text"
+msgid "MediaWiki Formats"
+msgstr "मिडियाविकी तेयार को."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8654133\n"
+"help.text"
+msgid "The following list gives an overview of the text formats that the Wiki Publisher can upload to the wiki server."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id5630664\n"
+"help.text"
+msgid "The OpenDocument format used by Writer and the MediaWiki format are quite different. Only a subset of all features can be transformed from one format to the other."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id7178868\n"
+"help.text"
+msgid "Headings"
+msgstr "ञुतुम"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id508133\n"
+"help.text"
+msgid "Apply a heading paragraph style to the headings in your Writer document. The wiki will show the heading styles of the same outline level, formatted as defined by the wiki engine."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id7217627\n"
+"help.text"
+msgid "Hyperlinks"
+msgstr "माराङ खोंजा"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id3735465\n"
+"help.text"
+msgid "Native OpenDocument hyperlinks are transformed into “external” wiki links. Therefore, the built-in linking facility of OpenDocument should only be used to create links that point to other sites outside the wiki web. For creating wiki links that point to other subjects of the same wiki domain, use wiki links."
+msgstr ""
+
+#: wikiformats.xhp
+#, fuzzy
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id941190\n"
+"help.text"
+msgid "Lists"
+msgstr "लिसटी (~L)"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8942838\n"
+"help.text"
+msgid "Lists can be exported reliably when the whole list uses a consistent list style. Use the Numbering or Bullets icon to generate a list in Writer. If you need a list without numbering or bullets, use <emph>Format - Bullets and Numbering</emph> to define and apply the respective list style."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id7026886\n"
+"help.text"
+msgid "Paragraphs"
+msgstr "अनुच्छेद"
+
+#: wikiformats.xhp
+#, fuzzy
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id4436475\n"
+"help.text"
+msgid "Alignment"
+msgstr "#-#-#-#-#  config.po (PACKAGE VERSION)  #-#-#-#-#\\nथार होचो\\n#-#-#-#-#  fmtui.po (PACKAGE VERSION)  #-#-#-#-#\\nथार होचो\\n#-#-#-#-#  dlg.po (PACKAGE VERSION)  #-#-#-#-#\\nसोमान थार साजाव\\n#-#-#-#-#  styleui.po (PACKAGE VERSION)  #-#-#-#-#\\nथार होचो\\n#-#-#-#-#  app.po (PACKAGE VERSION)  #-#-#-#-#\\nसोमान थार साजाव\\n#-#-#-#-#  propctrlr.po (PACKAGE VERSION)  #-#-#-#-#\\nथार होचो\\n#-#-#-#-#  form.po (PACKAGE VERSION)  #-#-#-#-#\\n साजाव होचो \\n#-#-#-#-#  dialog.po (PACKAGE VERSION)  #-#-#-#-#\\nथार होचो\\n#-#-#-#-#  items.po (PACKAGE VERSION)  #-#-#-#-#\\nथार होचो\\n#-#-#-#-#  tbxctrls.po (PACKAGE VERSION)  #-#-#-#-#\\n साजाव होचो"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id376598\n"
+"help.text"
+msgid "Explicit text alignment should not be used in wiki articles. Nevertheless, text alignment is supported for left, centered, and right alignment of text."
+msgstr ""
+
+#: wikiformats.xhp
+#, fuzzy
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id7486190\n"
+"help.text"
+msgid "Pre-formatted text"
+msgstr "लाहा ते तेयाराक् ओनोल"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id1459395\n"
+"help.text"
+msgid "A paragraph style with a fixed-width font is transformed as pre-formatted text. Pre-formatted text is shown on the wiki with a border around the text."
+msgstr ""
+
+#: wikiformats.xhp
+#, fuzzy
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id4834131\n"
+"help.text"
+msgid "Character styles"
+msgstr "आखोर हुना़र"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id6397595\n"
+"help.text"
+msgid "Character styles modify the appearance of parts of a paragraph. The transformation supports bold, italics, bold/italics, subscript and superscript. All fixed-width fonts are transformed into the wiki typewriter style."
+msgstr ""
+
+#: wikiformats.xhp
+#, fuzzy
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id5152745\n"
+"help.text"
+msgid "Footnotes"
+msgstr "#-#-#-#-#  dialog.po (PACKAGE VERSION)  #-#-#-#-#\\nलातार ओल\\n#-#-#-#-#  fldui.po (PACKAGE VERSION)  #-#-#-#-#\\nपाद टीका\\n#-#-#-#-#  misc.po (PACKAGE VERSION)  #-#-#-#-#\\nलातार ओल"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id5238196\n"
+"help.text"
+msgid "Note: The transformation uses the new style of footnotes with <ref> and <references> tags that requires the Cite.php extension to be installed into MediaWiki. If those tags are shown as plain text in the transformation result, ask the wiki administrator to install this extension."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id9405499\n"
+"help.text"
+msgid "Images"
+msgstr "मोहडा उमुलचिता़र को "
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id3541673\n"
+"help.text"
+msgid "Images cannot be exported by a transformation producing a single file of wiki text. However, if the image is already uploaded to the target wiki domain (e. g., Wikimedia Commons), then the transformation produces a valid image tag that includes the image. Image captions are also supported."
+msgstr ""
+
+#: wikiformats.xhp
+#, fuzzy
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id2162236\n"
+"help.text"
+msgid "Tables"
+msgstr "#-#-#-#-#  utlui.po (PACKAGE VERSION)  #-#-#-#-#\\nता़लिका\\n#-#-#-#-#  index.po (PACKAGE VERSION)  #-#-#-#-#\\nता़लिका\\n#-#-#-#-#  fldui.po (PACKAGE VERSION)  #-#-#-#-#\\nसारणी\\n#-#-#-#-#  browser.po (PACKAGE VERSION)  #-#-#-#-#\\nता़लिका"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id3037202\n"
+"help.text"
+msgid "Simple tables are supported well. Table headers are translated into corresponding wiki-style table headers. However, custom formatting of table borders, column sizes and background colors is ignored."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id2954496\n"
+"help.text"
+msgid "Joined Cells"
+msgstr "खोंजा कुटरी को (~p)"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8253730\n"
+"help.text"
+msgid "OpenDocument and especially LibreOffice represent tables that have joined cells that span rows as tables with nested tables. In contrast, the wiki model of table is to declare column and row spans for such joined cells."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8163090\n"
+"help.text"
+msgid "If only columns of the same row are joined, the result of the transformation resembles the source document very well."
+msgstr "जुदी एकेन सोमान थार रेयाक् कांधा कोय खोंजा या, बोदोल को रेयाक् कुड़ा़य मुल दोलिल आ़डी बेस लेका मुल दोलिल ञेलोक् आ."
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id425122\n"
+"help.text"
+msgid "Borders"
+msgstr "सीमा धारे"
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id1831110\n"
+"help.text"
+msgid "Irrespective of custom table styles for border and background, a table is always exported as “prettytable,” which renders in the wiki engine with simple borders and bold header."
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"hd_id6255073\n"
+"help.text"
+msgid "Character set and special characters"
+msgstr ""
+
+#: wikiformats.xhp
+msgctxt ""
+"wikiformats.xhp\n"
+"par_id8216193\n"
+"help.text"
+msgid "The character set of the transformation result is fixed to UTF-8. Depending on your system, this might not be the default character set. This might cause “special characters” to look broken when viewed with default settings. However, you can switch your editor to UTF-8 encoding to fix this. If your editor does not support switching the encoding, you can display the result of the transformation in the Firefox browser and switch the encoding to UTF-8 there. Now, you can copy and paste the transformation result to your program of choice."
+msgstr ""
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"tit\n"
+"help.text"
+msgid "Send to MediaWiki"
+msgstr "मिडिया विकी रे कुल मे (~d)"
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"hd_id108340\n"
+"help.text"
+msgid "Send to MediaWiki"
+msgstr "मिडिया विकी रे कुल मे (~d)"
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id1743827\n"
+"help.text"
+msgid "In the Send to MediaWiki dialog, specify the settings for your current wiki upload."
+msgstr ""
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id664082\n"
+"help.text"
+msgid "<ahelp hid=\".\">Select the MediaWiki server where you want to publish your document. Click Add to add a new server to the list.</ahelp>"
+msgstr "<मित् गोड़ो उकू=\".\">मिडिया विकी सर्वर बाछाव मे ओकारे आम आमाक् दोलिल छापा सानाम काना. लिसटी रे नावा सर्वर सेलेद ला़गित् सेलेद ओताय मे.</मित् गोड़ो>"
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id2794885\n"
+"help.text"
+msgid "<ahelp hid=\".\">Enter the title of your wiki entry. This is the top heading of your wiki entry. For a new entry, the title must be unique on this wiki. If you enter an existing title, your upload will overwrite the existing wiki entry.</ahelp>"
+msgstr ""
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id2486342\n"
+"help.text"
+msgid "<ahelp hid=\".\">Enter an optional short summary or comment.</ahelp> See <link href=\"http://meta.wikimedia.org/wiki/Help:Edit_summary\">http://meta.wikimedia.org/wiki/Help:Edit_summary</link>."
+msgstr "<मित् गोड़ो उकू=\".\">आपनार मोने तेयाक् खाटो सार काथा आर बाङ ओकता आदेर मे.</मित् गोड़ो> ञेल मे <खोंजा href=\"http://माराङ.विकीमिडिया.org/विकी/गोड़ो:सासापड़ाव_सार काथा\">http://माराङ.विकी मिडिया.org/विकी/गोड़ो:सासापड़ाव_सारकाथा</खोंजा>."
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id823999\n"
+"help.text"
+msgid "<emph>This is a minor edit</emph>: <ahelp hid=\".\">Check this box to mark the uploaded page as a minor edit of the already existing page with the same title.</ahelp>"
+msgstr "<emph>नोवा दो हुडिञ सासापड़ावाक् काना</emph>: <मित् गोड़ो उकू=\".\">लादेयाक् साहटा चिनहा़य ला़गित् नोवा बाकसा ञेल मे सोमान ञुतुम सांव माड़ाङ खोन मेनाक् साहटा रेयाक् सासापड़ाव हुडिञ लेका.</मित् गोड़ो>"
+
+#: wikisend.xhp
+msgctxt ""
+"wikisend.xhp\n"
+"par_id6592913\n"
+"help.text"
+msgid "<emph>Show in web browser</emph>: <ahelp hid=\".\">Check this box to open your system web browser and show the uploaded wiki page.</ahelp>"
+msgstr ""
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"tit\n"
+"help.text"
+msgid "MediaWiki Options"
+msgstr "मिडिया विकी आपनार मोने तेयाक् को."
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"hd_id6425672\n"
+"help.text"
+msgid "MediaWiki Options"
+msgstr "मिडिया विकी आपनार मोने तेयाक् को."
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id1188390\n"
+"help.text"
+msgid "You can add, edit and remove MediaWiki servers. Open the options dialog by going to <item type=\"menuitem\">Tools - Options - Internet - MediaWiki</item>."
+msgstr ""
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id300607\n"
+"help.text"
+msgid "<ahelp hid=\".\">Click Add to add a new wiki server.<br/>Select an entry and click Edit to edit the account settings.<br/>Select an entry and click Remove to remove the entry from the list.</ahelp>"
+msgstr ""
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id9786065\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Opens the MediaWiki dialog to add a new entry to the list.</ahelp>"
+msgstr "<मित् गोड़ो उकू=\".\" ञेलोगाक्=\"उकुवाक्\">लिसटी रे नावा आदेर सेलेद ला़गित् मिडिया विकी काथा झिज मे.</मित् गोड़ो>"
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id3386333\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Opens the MediaWiki dialog to edit the selected entry.</ahelp>"
+msgstr "<मित् गोड़ो उकू=\".\" ञेलोगाक्=\"उकुवाक्\">बाछावाक् आदेर सासापड़ाव ला़गित् मिडिया विकी काथा राड़ाय मे.</मित् गोड़ो>"
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id7285073\n"
+"help.text"
+msgid "<ahelp hid=\".\" visibility=\"hidden\">Removes the selected entry from the list.</ahelp>"
+msgstr "<मित् गोड़ो उकू=\".\" ञेलोगाक्=\"उकुवाक्\">लिसटी खोन बाछावाक् आदेर ओचोग मे.</मित् गोड़ो>"
+
+#: wikisettings.xhp
+msgctxt ""
+"wikisettings.xhp\n"
+"par_id1029084\n"
+"help.text"
+msgid "When you click Add or Edit, the <link href=\"com.sun.wiki-publisher/wikiaccount.xhp\">MediaWiki</link> dialog opens."
+msgstr ""

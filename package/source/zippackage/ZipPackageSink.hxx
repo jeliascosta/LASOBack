@@ -28,11 +28,9 @@ protected:
     css::uno::Reference < css::io::XInputStream > xStream;
 public:
     ZipPackageSink();
-    virtual ~ZipPackageSink();
-    virtual void SAL_CALL setInputStream( const css::uno::Reference< css::io::XInputStream >& aStream )
-        throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream(  )
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual ~ZipPackageSink() override;
+    virtual void SAL_CALL setInputStream( const css::uno::Reference< css::io::XInputStream >& aStream ) override;
+    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream(  ) override;
 };
 #endif
 

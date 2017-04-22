@@ -45,7 +45,7 @@ public:
     XcsParser(int layer, Data & data);
 
 private:
-    virtual ~XcsParser();
+    virtual ~XcsParser() override;
 
     virtual xmlreader::XmlReader::Text getTextMode() override;
 
@@ -80,7 +80,7 @@ private:
         rtl::Reference< Node > node;
         OUString name;
 
-        inline Element(
+        Element(
             rtl::Reference< Node > const & theNode,
             OUString const & theName):
             node(theNode), name(theName) {}

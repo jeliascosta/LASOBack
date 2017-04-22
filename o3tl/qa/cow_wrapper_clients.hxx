@@ -22,6 +22,7 @@
 
 #include "o3tl/cow_wrapper.hxx"
 #include "cppunit/extensions/HelperMacros.h"
+#include <assert.h>
 
 /* Definition of Cow_Wrapper_Clients classes */
 
@@ -69,7 +70,9 @@ public:
     ~cow_wrapper_client2();
 
     cow_wrapper_client2( const cow_wrapper_client2& );
+    cow_wrapper_client2( cow_wrapper_client2&& );
     cow_wrapper_client2& operator=( const cow_wrapper_client2& );
+    cow_wrapper_client2& operator=( cow_wrapper_client2&& );
 
     void modify( int nVal );
     int  queryUnmodified() const;
@@ -98,7 +101,9 @@ public:
     ~cow_wrapper_client3();
 
     cow_wrapper_client3( const cow_wrapper_client3& );
+    cow_wrapper_client3( cow_wrapper_client3&& );
     cow_wrapper_client3& operator=( const cow_wrapper_client3& );
+    cow_wrapper_client3& operator=( cow_wrapper_client3&& );
 
     void modify( int nVal );
     int  queryUnmodified() const;
@@ -149,15 +154,12 @@ struct BogusRefCountPolicy
     static sal_uInt32 s_nEndOfScope;
     typedef sal_uInt32 ref_count_t;
     static void incrementCount( ref_count_t& rCount ) {
-        if(s_bShouldIncrement)
-        {
-            ++rCount;
-            s_bShouldIncrement = false;
-        }
-        else
-            CPPUNIT_FAIL("Ref-counting policy incremented when it should not have.");
+        assert(s_bShouldIncrement && "Ref-counting policy incremented when it should not have.");
+        ++rCount;
+        s_bShouldIncrement = false;
     }
     static bool decrementCount( ref_count_t& rCount ) {
+        assert((s_nEndOfScope || s_bShouldDecrement) && "Ref-counting policy decremented when it should not have.");
         if(s_nEndOfScope)
         {
             --rCount;
@@ -168,8 +170,6 @@ struct BogusRefCountPolicy
             --rCount;
             s_bShouldDecrement = false;
         }
-        else
-            CPPUNIT_FAIL("Ref-counting policy decremented when it should not have.");
         return rCount != 0;
     }
 };
@@ -186,6 +186,7 @@ public:
     cow_wrapper_client5& operator=( const cow_wrapper_client5& );
     cow_wrapper_client5& operator=( cow_wrapper_client5&& );
 
+    int queryUnmodified() const { return *maImpl; }
     sal_uInt32 use_count() const { return maImpl.use_count(); }
 
     bool operator==( const cow_wrapper_client5& rRHS ) const;
@@ -194,6 +195,14 @@ public:
 private:
     o3tl::cow_wrapper< int, BogusRefCountPolicy > maImpl;
 };
+
+template< typename charT, typename traits >
+inline std::basic_ostream<charT, traits> & operator <<(
+    std::basic_ostream<charT, traits> & stream, const cow_wrapper_client5& client )
+{
+    return stream << client.queryUnmodified();
+}
+
 } // namespace o3tltests
 
 #endif // INCLUDED_O3TL_QA_COW_WRAPPER_CLIENTS_HXX

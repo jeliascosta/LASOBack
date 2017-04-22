@@ -70,6 +70,8 @@
 #include "xfpadding.hxx"
 #include "xfshadow.hxx"
 
+#include <memory>
+
 class XFBorders;
 class XFFont;
 class XFBorders;
@@ -84,7 +86,7 @@ class XFCellStyle : public XFStyle
 public:
     XFCellStyle();
 
-    virtual ~XFCellStyle();
+    virtual ~XFCellStyle() override;
 
 public:
     /**
@@ -97,13 +99,13 @@ public:
                 between the border and the top of the text.
      * @param:  indent value of the padding.
      */
-    void    SetPadding(double left, double right = -1, double top = -1, double bottom = -1);
+    void    SetPadding(double left, double right, double top, double bottom);
 
     /**
      * @descr:  Set alignment property of the cell.
      * @param:  eAlign alignment type,left,right,center or justify.
      */
-    void    SetAlignType(enumXFAlignType hori=enumXFAlignNone, enumXFAlignType vert = enumXFAlignBottom);
+    void    SetAlignType(enumXFAlignType hori, enumXFAlignType vert);
 
     /**
      * @descr:  The borders is complex,so you have to create one before use.
@@ -143,7 +145,7 @@ private:
     XFPadding   m_aPadding;
     rtl::Reference<XFFont> m_pFont;
     XFShadow    m_aShadow;
-    XFBorders   *m_pBorders;
+    std::unique_ptr<XFBorders>  m_pBorders;
     bool    m_bWrapText;
 };
 

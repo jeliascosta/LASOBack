@@ -45,36 +45,12 @@ SwViewLayoutControl::SwViewLayoutControl( sal_uInt16 _nSlotId, sal_uInt16 _nId, 
 {
     mpImpl->mnState = 1;
 
-    mpImpl->maImageSingleColumn         = Image( SW_RES(IMG_VIEWLAYOUT_SINGLECOLUMN) );
-    mpImpl->maImageSingleColumn_Active  = Image( SW_RES(IMG_VIEWLAYOUT_SINGLECOLUMN_ACTIVE) );
-    mpImpl->maImageAutomatic            = Image( SW_RES(IMG_VIEWLAYOUT_AUTOMATIC) );
-    mpImpl->maImageAutomatic_Active     = Image( SW_RES(IMG_VIEWLAYOUT_AUTOMATIC_ACTIVE) );
-    mpImpl->maImageBookMode             = Image( SW_RES(IMG_VIEWLAYOUT_BOOKMODE) );
-    mpImpl->maImageBookMode_Active      = Image( SW_RES(IMG_VIEWLAYOUT_BOOKMODE_ACTIVE) );
-
-    sal_Int32 nScaleFactor = rStatusBar.GetDPIScaleFactor();
-    if (nScaleFactor != 1)
-    {
-        Image arr[6] = {mpImpl->maImageSingleColumn, mpImpl->maImageSingleColumn_Active,
-                        mpImpl->maImageAutomatic, mpImpl->maImageAutomatic_Active,
-                        mpImpl->maImageBookMode, mpImpl->maImageBookMode_Active};
-
-        for (Image & i : arr)
-        {
-            BitmapEx aBitmap = i.GetBitmapEx();
-            aBitmap.Scale(nScaleFactor, nScaleFactor, BmpScaleFlag::Fast);
-            i = Image(aBitmap);
-        }
-
-        mpImpl->maImageSingleColumn = arr[0];
-        mpImpl->maImageSingleColumn_Active = arr[1];
-
-        mpImpl->maImageAutomatic = arr[2];
-        mpImpl->maImageAutomatic_Active = arr[3];
-
-        mpImpl->maImageBookMode = arr[4];
-        mpImpl->maImageBookMode_Active = arr[5];
-    }
+    mpImpl->maImageSingleColumn         = Image(BitmapEx(SW_RES(RID_BMP_VIEWLAYOUT_SINGLECOLUMN)));
+    mpImpl->maImageSingleColumn_Active  = Image(BitmapEx(SW_RES(RID_BMP_VIEWLAYOUT_SINGLECOLUMN_ACTIVE)));
+    mpImpl->maImageAutomatic            = Image(BitmapEx(SW_RES(RID_BMP_VIEWLAYOUT_AUTOMATIC)));
+    mpImpl->maImageAutomatic_Active     = Image(BitmapEx(SW_RES(RID_BMP_VIEWLAYOUT_AUTOMATIC_ACTIVE)));
+    mpImpl->maImageBookMode             = Image(BitmapEx(SW_RES(RID_BMP_VIEWLAYOUT_BOOKMODE)));
+    mpImpl->maImageBookMode_Active      = Image(BitmapEx(SW_RES(RID_BMP_VIEWLAYOUT_BOOKMODE_ACTIVE)));
 }
 
 SwViewLayoutControl::~SwViewLayoutControl()
@@ -111,9 +87,9 @@ void SwViewLayoutControl::StateChanged( sal_uInt16 /*nSID*/, SfxItemState eState
 void SwViewLayoutControl::Paint( const UserDrawEvent& rUsrEvt )
 {
     vcl::RenderContext* pDev = rUsrEvt.GetRenderContext();
-    Rectangle aRect(rUsrEvt.GetRect());
+    tools::Rectangle aRect(rUsrEvt.GetRect());
 
-    const Rectangle aControlRect = getControlRect();
+    const tools::Rectangle aControlRect = getControlRect();
 
     const bool bSingleColumn    = 0 == mpImpl->mnState;
     const bool bAutomatic       = 1 == mpImpl->mnState;
@@ -143,7 +119,7 @@ void SwViewLayoutControl::Paint( const UserDrawEvent& rUsrEvt )
 
 bool SwViewLayoutControl::MouseButtonDown( const MouseEvent & rEvt )
 {
-    const Rectangle aRect = getControlRect();
+    const tools::Rectangle aRect = getControlRect();
     const Point aPoint = rEvt.GetPosPixel();
     const long nXDiff = aPoint.X() - aRect.Left();
 
@@ -191,7 +167,7 @@ bool SwViewLayoutControl::MouseButtonDown( const MouseEvent & rEvt )
 
 bool SwViewLayoutControl::MouseMove( const MouseEvent & rEvt )
 {
-    const Rectangle aRect = getControlRect();
+    const tools::Rectangle aRect = getControlRect();
     const Point aPoint = rEvt.GetPosPixel();
     const long nXDiff = aPoint.X() - aRect.Left();
 

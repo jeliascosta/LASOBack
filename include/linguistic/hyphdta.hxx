@@ -35,36 +35,30 @@ class HyphenatedWord :
     OUString     aHyphenatedWord;
     sal_Int16    nHyphPos;
     sal_Int16    nHyphenationPos;
-    sal_Int16    nLanguage;
+    sal_uInt16   nLanguage;
     bool         bIsAltSpelling;
 
     HyphenatedWord(const HyphenatedWord &) = delete;
     HyphenatedWord & operator = (const HyphenatedWord &) = delete;
 
 public:
-    HyphenatedWord(const OUString &rWord, sal_Int16 nLang, sal_Int16 nHyphenationPos,
+    HyphenatedWord(const OUString &rWord, sal_uInt16 nLang, sal_Int16 nHyphenationPos,
                    const OUString &rHyphenatedWord, sal_Int16 nHyphenPos );
-    virtual ~HyphenatedWord();
+    virtual ~HyphenatedWord() override;
 
     // XHyphenatedWord
     virtual OUString SAL_CALL
-        getWord()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getWord() override;
     virtual css::lang::Locale SAL_CALL
-        getLocale()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getLocale() override;
     virtual sal_Int16 SAL_CALL
-        getHyphenationPos()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getHyphenationPos() override;
     virtual OUString SAL_CALL
-        getHyphenatedWord()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getHyphenatedWord() override;
     virtual sal_Int16 SAL_CALL
-        getHyphenPos()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getHyphenPos() override;
     virtual sal_Bool SAL_CALL
-        isAlternativeSpelling()
-            throw(css::uno::RuntimeException, std::exception) override;
+        isAlternativeSpelling() override;
 
     static css::uno::Reference <css::linguistic2::XHyphenatedWord> LNG_DLLPUBLIC CreateHyphenatedWord(
         const OUString &rWord, sal_Int16 nLang, sal_Int16 nHyphenationPos,
@@ -81,30 +75,26 @@ class PossibleHyphens :
     OUString             aWord;
     OUString             aWordWithHyphens;
     css::uno::Sequence< sal_Int16 > aOrigHyphenPos;
-    sal_Int16                       nLanguage;
+    sal_uInt16           nLanguage;
 
     PossibleHyphens(const PossibleHyphens &) = delete;
     PossibleHyphens & operator = (const PossibleHyphens &) = delete;
 
 public:
-    PossibleHyphens(const OUString &rWord, sal_Int16 nLang,
+    PossibleHyphens(const OUString &rWord, sal_uInt16 nLang,
             const OUString &rHyphWord,
             const css::uno::Sequence< sal_Int16 > &rPositions);
-    virtual ~PossibleHyphens();
+    virtual ~PossibleHyphens() override;
 
     // XPossibleHyphens
     virtual OUString SAL_CALL
-        getWord()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getWord() override;
     virtual css::lang::Locale SAL_CALL
-        getLocale()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getLocale() override;
     virtual OUString SAL_CALL
-        getPossibleHyphens()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getPossibleHyphens() override;
     virtual css::uno::Sequence< sal_Int16 > SAL_CALL
-        getHyphenationPositions()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getHyphenationPositions() override;
 
     static css::uno::Reference < css::linguistic2::XPossibleHyphens > LNG_DLLPUBLIC CreatePossibleHyphens
         (const OUString &rWord, sal_Int16 nLang,

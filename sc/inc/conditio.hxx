@@ -31,6 +31,7 @@
 #include <svl/broadcast.hxx>
 
 #include <comphelper/stl_types.hxx>
+#include <com/sun/star/sheet/ConditionOperator.hpp>
 
 #include <rtl/math.hxx>
 #include <tools/date.hxx>
@@ -98,7 +99,7 @@ private:
 public:
     explicit ScFormulaListener(ScFormulaCell* pCell);
     explicit ScFormulaListener(ScDocument* pDoc);
-    virtual ~ScFormulaListener();
+    virtual ~ScFormulaListener() override;
 
     void Notify( const SfxHint& rHint ) override;
 
@@ -152,7 +153,7 @@ public:
     virtual void UpdateDeleteTab( sc::RefUpdateDeleteTabContext& rCxt ) = 0;
     virtual void UpdateMoveTab( sc::RefUpdateMoveTabContext& rCxt ) = 0;
 
-    virtual ScFormatEntry* Clone( ScDocument* pDoc = nullptr ) const = 0;
+    virtual ScFormatEntry* Clone( ScDocument* pDoc ) const = 0;
 
     virtual void SetParent( ScConditionalFormat* pNew ) = 0;
 
@@ -229,7 +230,7 @@ public:
             ScConditionEntry( const ScConditionEntry& r );  // flat copy of formulas
             // true copy of formulas (for Ref-Undo):
             ScConditionEntry( ScDocument* pDocument, const ScConditionEntry& r );
-    virtual ~ScConditionEntry();
+    virtual ~ScConditionEntry() override;
 
     bool            operator== ( const ScConditionEntry& r ) const;
 
@@ -268,9 +269,9 @@ public:
 
     virtual condformat::ScFormatEntryType GetType() const override { return condformat::CONDITION; }
 
-    virtual ScFormatEntry* Clone(ScDocument* pDoc = nullptr) const override;
+    virtual ScFormatEntry* Clone(ScDocument* pDoc) const override;
 
-    static ScConditionMode GetModeFromApi(sal_Int32 nOperator);
+    static ScConditionMode GetModeFromApi(css::sheet::ConditionOperator nOperator);
 
     virtual void endRendering() override;
     virtual void startRendering() override;
@@ -278,7 +279,7 @@ public:
     bool NeedsRepaint() const;
 
 protected:
-    virtual void    DataChanged( const ScRange* pModified ) const;
+    virtual void    DataChanged() const;
     ScDocument*     GetDocument() const     { return mpDoc; }
     ScConditionalFormat*    pCondFormat;
 
@@ -335,7 +336,7 @@ public:
                                 const OUString& rStyle );
             ScCondFormatEntry( const ScCondFormatEntry& r );
             ScCondFormatEntry( ScDocument* pDocument, const ScCondFormatEntry& r );
-    virtual ~ScCondFormatEntry();
+    virtual ~ScCondFormatEntry() override;
 
     bool            operator== ( const ScCondFormatEntry& r ) const;
 
@@ -344,7 +345,7 @@ public:
     virtual ScFormatEntry* Clone(ScDocument* pDoc) const override;
 
 protected:
-    virtual void    DataChanged( const ScRange* pModified ) const override;
+    virtual void    DataChanged() const override;
 };
 
 namespace condformat {
@@ -388,7 +389,7 @@ public:
     virtual void UpdateDeleteTab( sc::RefUpdateDeleteTabContext& ) override {}
     virtual void UpdateMoveTab( sc::RefUpdateMoveTabContext& ) override {}
 
-    virtual ScFormatEntry* Clone( ScDocument* pDoc = nullptr ) const override;
+    virtual ScFormatEntry* Clone( ScDocument* pDoc ) const override;
 
     virtual void SetParent( ScConditionalFormat* ) override {}
 
@@ -453,7 +454,7 @@ public:
 
     bool            EqualEntries( const ScConditionalFormat& r ) const;
 
-    void            DoRepaint( const ScRange* pModified );
+    void            DoRepaint();
 
     sal_uInt32      GetKey() const          { return nKey; }
     void            SetKey(sal_uInt32 nNew) { nKey = nNew; }    // only if not inserted!
@@ -481,7 +482,6 @@ public:
     ScConditionalFormatList() {}
     ScConditionalFormatList(const ScConditionalFormatList& rList);
     ScConditionalFormatList(ScDocument* pDoc, const ScConditionalFormatList& rList);
-    ~ScConditionalFormatList() {}
 
     void    InsertNew( ScConditionalFormat* pNew );
 
@@ -510,6 +510,11 @@ public:
 
     typedef ConditionalFormatContainer::iterator iterator;
     typedef ConditionalFormatContainer::const_iterator const_iterator;
+
+    ScRangeList GetCombinedRange() const;
+
+    void RemoveFromDocument(ScDocument* pDoc) const;
+    void AddToDocument(ScDocument* pDoc) const;
 
     iterator begin();
     const_iterator begin() const;

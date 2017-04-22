@@ -81,7 +81,7 @@ void lcl_RotateLightSource( const Reference< beans::XPropertySet >& xSceneProper
                     aLightVector = rRotationMatrix*aLightVector;
 
                     xSceneProperties->setPropertyValue( rLightSourceDirection
-                        , uno::makeAny( BaseGFXHelper::B3DVectorToDirection3D( aLightVector ) ) );
+                        , uno::Any( BaseGFXHelper::B3DVectorToDirection3D( aLightVector ) ) );
                 }
             }
         }
@@ -205,13 +205,13 @@ void lcl_setLightsForScheme( const uno::Reference< beans::XPropertySet >& xDiagr
     if( rScheme == ThreeDLookScheme_Unknown)
         return;
 
-    xDiagramProps->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_2, uno::makeAny( true ) );
+    xDiagramProps->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_2, uno::Any( true ) );
 
     uno::Reference< chart2::XDiagram > xDiagram( xDiagramProps, uno::UNO_QUERY );
     uno::Reference< chart2::XChartType > xChartType( DiagramHelper::getChartTypeByIndex( xDiagram, 0 ) );
-    uno::Any aADirection( uno::makeAny( rScheme == ThreeDLookScheme_Simple
+    uno::Any aADirection( rScheme == ThreeDLookScheme_Simple
         ? ChartTypeHelper::getDefaultSimpleLightDirection(xChartType)
-        : ChartTypeHelper::getDefaultRealisticLightDirection(xChartType) ) );
+        : ChartTypeHelper::getDefaultRealisticLightDirection(xChartType) );
 
     xDiagramProps->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTDIRECTION_2, aADirection );
     //rotate light direction when right angled axes are off but supported
@@ -230,10 +230,10 @@ void lcl_setLightsForScheme( const uno::Reference< beans::XPropertySet >& xDiagr
     }
 
     sal_Int32 nColor = ::chart::ChartTypeHelper::getDefaultDirectLightColor( rScheme==ThreeDLookScheme_Simple, xChartType );
-    xDiagramProps->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTCOLOR_2, uno::makeAny( nColor ) );
+    xDiagramProps->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTCOLOR_2, uno::Any( nColor ) );
 
     sal_Int32 nAmbientColor = ::chart::ChartTypeHelper::getDefaultAmbientLightColor( rScheme==ThreeDLookScheme_Simple, xChartType );
-    xDiagramProps->setPropertyValue( UNO_NAME_3D_SCENE_AMBIENTCOLOR, uno::makeAny( nAmbientColor ) );
+    xDiagramProps->setPropertyValue( UNO_NAME_3D_SCENE_AMBIENTCOLOR, uno::Any( nAmbientColor ) );
 }
 
 bool lcl_isRealisticScheme( drawing::ShadeMode aShadeMode
@@ -884,8 +884,8 @@ void ThreeDHelper::convertXYZAngleRadToElevationRotationDeg(
             E+=F_PI;
     }
 
-    rnElevationDeg = ::basegfx::fround( BaseGFXHelper::Rad2Deg( E ) );
-    rnRotationDeg = ::basegfx::fround( BaseGFXHelper::Rad2Deg( R ) );
+    rnElevationDeg = basegfx::fround(basegfx::rad2deg(E));
+    rnRotationDeg = basegfx::fround(basegfx::rad2deg(R));
 }
 
 double ThreeDHelper::getValueClippedToRange( double fAngle, const double& fPositivLimit )
@@ -899,8 +899,8 @@ double ThreeDHelper::getValueClippedToRange( double fAngle, const double& fPosit
 
 void ThreeDHelper::adaptRadAnglesForRightAngledAxes( double& rfXAngleRad, double& rfYAngleRad )
 {
-    rfXAngleRad = ThreeDHelper::getValueClippedToRange(rfXAngleRad, BaseGFXHelper::Deg2Rad(ThreeDHelper::getXDegreeAngleLimitForRightAngledAxes()) );
-    rfYAngleRad = ThreeDHelper::getValueClippedToRange(rfYAngleRad, BaseGFXHelper::Deg2Rad(ThreeDHelper::getYDegreeAngleLimitForRightAngledAxes()) );
+    rfXAngleRad = ThreeDHelper::getValueClippedToRange(rfXAngleRad, basegfx::deg2rad(ThreeDHelper::getXDegreeAngleLimitForRightAngledAxes()) );
+    rfYAngleRad = ThreeDHelper::getValueClippedToRange(rfYAngleRad, basegfx::deg2rad(ThreeDHelper::getYDegreeAngleLimitForRightAngledAxes()) );
 }
 
 void ThreeDHelper::getRotationAngleFromDiagram(
@@ -957,7 +957,7 @@ void ThreeDHelper::switchRightAngledAxes( const Reference< beans::XPropertySet >
             xSceneProperties->getPropertyValue( "RightAngledAxes") >>= bOldRightAngledAxes;
             if( bOldRightAngledAxes!=bRightAngledAxes)
             {
-                xSceneProperties->setPropertyValue( "RightAngledAxes", uno::makeAny( bRightAngledAxes ));
+                xSceneProperties->setPropertyValue( "RightAngledAxes", uno::Any( bRightAngledAxes ));
                 if(bRightAngledAxes)
                 {
                     ::basegfx::B3DHomMatrix aInverseRotation( lcl_getInverseRotationMatrix( xSceneProperties ) );
@@ -1012,7 +1012,7 @@ void ThreeDHelper::setRotationAngleToDiagram(
 
         //set new rotation to transformation matrix
         xSceneProperties->setPropertyValue(
-            "D3DTransformMatrix", uno::makeAny( BaseGFXHelper::B3DHomMatrixToHomogenMatrix( aSceneRotation )));
+            "D3DTransformMatrix", uno::Any( BaseGFXHelper::B3DHomMatrixToHomogenMatrix( aSceneRotation )));
 
         //rotate lights if RightAngledAxes are not set or not supported
         bool bRightAngledAxes = false;
@@ -1046,11 +1046,9 @@ void ThreeDHelper::getRotationFromDiagram( const uno::Reference< beans::XPropert
     }
     else
     {
-        rnHorizontalAngleDegree = basegfx::fround(
-            BaseGFXHelper::Rad2Deg(fXAngle));
-        rnVerticalAngleDegree = basegfx::fround(
-            -1.0 * BaseGFXHelper::Rad2Deg(fYAngle));
-        // nZRotation = basegfx::fround(-1.0 * BaseGFXHelper::Rad2Deg(fZAngle));
+        rnHorizontalAngleDegree = basegfx::fround(basegfx::rad2deg(fXAngle));
+        rnVerticalAngleDegree = basegfx::fround(-1.0 * basegfx::rad2deg(fYAngle));
+        // nZRotation = basegfx::fround(-1.0 * basegfx::rad2deg(fZAngle));
     }
 
     lcl_shiftAngleToIntervalMinus180To180( rnHorizontalAngleDegree );
@@ -1061,8 +1059,8 @@ void ThreeDHelper::setRotationToDiagram( const uno::Reference< beans::XPropertyS
             , sal_Int32 nHorizontalAngleDegree, sal_Int32 nVerticalYAngleDegree )
 {
     //todo: x and y is not equal to horz and vert in case of RightAngledAxes==false
-    double fXAngle = BaseGFXHelper::Deg2Rad( nHorizontalAngleDegree );
-    double fYAngle = BaseGFXHelper::Deg2Rad( -1*nVerticalYAngleDegree );
+    double fXAngle = basegfx::deg2rad(nHorizontalAngleDegree);
+    double fYAngle = basegfx::deg2rad(-1 * nVerticalYAngleDegree);
     double fZAngle = 0.0;
 
     if( !lcl_isRightAngledAxesSetAndSupported( xSceneProperties ) )
@@ -1131,7 +1129,7 @@ void ThreeDHelper::setCameraDistance(
         aVRP.setLength(fCameraDistance);
         aCG.vrp = BaseGFXHelper::B3DVectorToPosition3D( aVRP );
 
-        xSceneProperties->setPropertyValue( "D3DCameraGeometry", uno::makeAny( aCG ));
+        xSceneProperties->setPropertyValue( "D3DCameraGeometry", uno::Any( aCG ));
     }
     catch( const uno::Exception & ex )
     {
@@ -1227,7 +1225,7 @@ void ThreeDHelper::setScheme( const uno::Reference< XDiagram >& xDiagram, ThreeD
             if( ! ( (xProp->getPropertyValue( "D3DSceneShadeMode" )>>=aOldShadeMode) &&
                     aOldShadeMode == aShadeMode ))
             {
-                xProp->setPropertyValue( "D3DSceneShadeMode", uno::makeAny( aShadeMode ));
+                xProp->setPropertyValue( "D3DSceneShadeMode", uno::Any( aShadeMode ));
             }
         }
 
@@ -1258,13 +1256,13 @@ void ThreeDHelper::setDefaultRotation( const uno::Reference< beans::XPropertySet
         return;
 
     drawing::CameraGeometry aCameraGeo( ThreeDHelper::getDefaultCameraGeometry( bPieOrDonut ) );
-    xSceneProperties->setPropertyValue( "D3DCameraGeometry", uno::makeAny( aCameraGeo ));
+    xSceneProperties->setPropertyValue( "D3DCameraGeometry", uno::Any( aCameraGeo ));
 
     ::basegfx::B3DHomMatrix aSceneRotation;
     if( bPieOrDonut )
         aSceneRotation.rotate( -F_PI/3.0, 0, 0 );
     xSceneProperties->setPropertyValue( "D3DTransformMatrix",
-        uno::makeAny( BaseGFXHelper::B3DHomMatrixToHomogenMatrix( aSceneRotation )));
+        uno::Any( BaseGFXHelper::B3DHomMatrixToHomogenMatrix( aSceneRotation )));
 }
 
 void ThreeDHelper::setDefaultRotation( const uno::Reference< beans::XPropertySet >& xSceneProperties )
@@ -1282,13 +1280,13 @@ void ThreeDHelper::setDefaultIllumination( const uno::Reference< beans::XPropert
     try
     {
         xSceneProperties->getPropertyValue( "D3DSceneShadeMode" )>>= aShadeMode;
-        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_1, uno::makeAny( false ) );
-        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_3, uno::makeAny( false ) );
-        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_4, uno::makeAny( false ) );
-        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_5, uno::makeAny( false ) );
-        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_6, uno::makeAny( false ) );
-        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_7, uno::makeAny( false ) );
-        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_8, uno::makeAny( false ) );
+        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_1, uno::Any( false ) );
+        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_3, uno::Any( false ) );
+        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_4, uno::Any( false ) );
+        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_5, uno::Any( false ) );
+        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_6, uno::Any( false ) );
+        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_7, uno::Any( false ) );
+        xSceneProperties->setPropertyValue( UNO_NAME_3D_SCENE_LIGHTON_8, uno::Any( false ) );
     }
     catch( const uno::Exception & ex )
     {
@@ -1312,7 +1310,7 @@ void ThreeDHelper::getRoundedEdgesAndObjectLines(
 
         drawing::LineStyle aLineStyle( drawing::LineStyle_SOLID );
 
-        ::std::vector< uno::Reference< XDataSeries > > aSeriesList(
+        std::vector< uno::Reference< XDataSeries > > aSeriesList(
             DiagramHelper::getDataSeriesFromDiagram( xDiagram ) );
         sal_Int32 nSeriesCount = static_cast<sal_Int32>( aSeriesList.size() );
 
@@ -1334,7 +1332,7 @@ void ThreeDHelper::getRoundedEdgesAndObjectLines(
                     rnRoundedEdges = static_cast< sal_Int32 >( nPercentDiagonal );
 
                     if( DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries
-                        , aPercentDiagonalPropertyName, uno::makeAny(nPercentDiagonal) ) )
+                        , aPercentDiagonalPropertyName, uno::Any(nPercentDiagonal) ) )
                         bDifferentRoundedEdges = true;
                 }
                 catch( const uno::Exception& e )
@@ -1347,7 +1345,7 @@ void ThreeDHelper::getRoundedEdgesAndObjectLines(
                     xProp->getPropertyValue( aBorderStylePropertyName ) >>= aLineStyle;
 
                     if( DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries
-                        , aBorderStylePropertyName, uno::makeAny(aLineStyle) ) )
+                        , aBorderStylePropertyName, uno::Any(aLineStyle) ) )
                         bDifferentObjectLines = true;
                 }
                 catch( const uno::Exception& e )
@@ -1365,7 +1363,7 @@ void ThreeDHelper::getRoundedEdgesAndObjectLines(
                     sal_Int32 nCurrentRoundedEdges = static_cast< sal_Int32 >( nPercentDiagonal );
                     if(nCurrentRoundedEdges!=rnRoundedEdges
                         || DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries
-                            , aPercentDiagonalPropertyName, uno::makeAny( static_cast< sal_Int16 >(rnRoundedEdges) ) ) )
+                            , aPercentDiagonalPropertyName, uno::Any( static_cast< sal_Int16 >(rnRoundedEdges) ) ) )
                     {
                         bDifferentRoundedEdges = true;
                     }
@@ -1377,7 +1375,7 @@ void ThreeDHelper::getRoundedEdgesAndObjectLines(
                     xProp->getPropertyValue( aBorderStylePropertyName ) >>= aCurrentLineStyle;
                     if(aCurrentLineStyle!=aLineStyle
                         || DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries
-                            , aBorderStylePropertyName, uno::makeAny(aLineStyle) ) )
+                            , aBorderStylePropertyName, uno::Any(aLineStyle) ) )
                         bDifferentObjectLines = true;
                 }
             }
@@ -1409,10 +1407,10 @@ void ThreeDHelper::setRoundedEdgesAndObjectLines(
     if(nObjectLines==1)
         aLineStyle = drawing::LineStyle_SOLID;
 
-    uno::Any aALineStyle( uno::makeAny(aLineStyle));
-    uno::Any aARoundedEdges( uno::makeAny( static_cast< sal_Int16 >( nRoundedEdges )));
+    uno::Any aALineStyle( aLineStyle);
+    uno::Any aARoundedEdges( static_cast< sal_Int16 >( nRoundedEdges ));
 
-    ::std::vector< uno::Reference< XDataSeries > > aSeriesList(
+    std::vector< uno::Reference< XDataSeries > > aSeriesList(
         DiagramHelper::getDataSeriesFromDiagram( xDiagram ) );
     sal_Int32 nSeriesCount = static_cast<sal_Int32>( aSeriesList.size() );
     for( sal_Int32 nS = 0; nS < nSeriesCount; ++nS )

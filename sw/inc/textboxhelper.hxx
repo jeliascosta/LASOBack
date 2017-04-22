@@ -28,7 +28,10 @@ class SwFrameFormat;
 class SwFrameFormats;
 class SwFormatContent;
 class SwDoc;
+namespace tools
+{
 class Rectangle;
+}
 class ZSortFly;
 class SwNode;
 
@@ -62,31 +65,43 @@ public:
     /// Similar to syncProperty(), but used by the internal API (e.g. for UI purposes).
     static void syncFlyFrameAttr(SwFrameFormat& rShape, SfxItemSet& rSet);
 
-    /// If we have an associated TextFrame, then return that.
-    static SwFrameFormat* findTextBox(const SwFrameFormat* pShape);
-    static SwFrameFormat* findTextBox(const css::uno::Reference<css::drawing::XShape>& xShape);
-    /// Return the textbox rectangle of a draw shape (in twips).
-    static Rectangle getTextRectangle(SwFrameFormat* pShape, bool bAbsolute = true);
-
-    /// Look up TextFrames in a document, which are in fact TextBoxes.
-    static std::set<const SwFrameFormat*> findTextBoxes(const SwDoc* pDoc);
     /**
-     * Look up TextFrames in a document, which are in fact TextBoxes.
+     * If we have an associated TextFrame, then return that.
      *
-     * If rNode has a matching SwContentFrame, then only TextBoxes of rNode are
-     * returned.
+     * @param nType Expected frame format type.
+     *              Valid types are RES_DRAWFRMFMT and RES_FLYFRMFMT.
+     *
+     * @see isTextBox
      */
-    static std::set<const SwFrameFormat*> findTextBoxes(const SwNode& rNode);
+    static SwFrameFormat* getOtherTextBoxFormat(const SwFrameFormat* pFormat, sal_uInt16 nType);
+    /// If we have an associated TextFrame, then return that.
+    static SwFrameFormat* getOtherTextBoxFormat(css::uno::Reference<css::drawing::XShape> const& xShape);
+    /// Return the textbox rectangle of a draw shape (in twips).
+    static tools::Rectangle getTextRectangle(SwFrameFormat* pShape, bool bAbsolute = true);
+
+    /**
+     * Is the frame format a text box?
+     *
+     * A text box consists of a coupled fly and draw format. Most times you
+     * just want to check for a single type, otherwise you get duplicate results.
+     *
+     * @param nType Expected frame format input type.
+     *              Valid types are RES_DRAWFRMFMT and RES_FLYFRMFMT.
+     */
+    static bool isTextBox(const SwFrameFormat* pFormat, sal_uInt16 nType);
     /// Is pObject a textbox of a drawinglayer shape?
     static bool isTextBox(const SdrObject* pObject);
-    /// Build a textbox -> shape format map.
-    static std::map<SwFrameFormat*, SwFrameFormat*> findShapes(const SwDoc* pDoc);
+
     /// Count number of shapes in the document, excluding TextBoxes.
-    static sal_Int32 getCount(SdrPage* pPage, std::set<const SwFrameFormat*>& rTextBoxes);
+    static sal_Int32 getCount(const SwDoc* pDoc);
+    /// Count number of shapes on the page, excluding TextBoxes.
+    static sal_Int32 getCount(SdrPage* pPage);
     /// Get a shape by index, excluding TextBoxes.
-    static css::uno::Any getByIndex(SdrPage* pPage, sal_Int32 nIndex, std::set<const SwFrameFormat*>& rTextBoxes) throw(css::lang::IndexOutOfBoundsException);
+    ///
+    /// @throws css::lang::IndexOutOfBoundsException
+    static css::uno::Any getByIndex(SdrPage* pPage, sal_Int32 nIndex);
     /// Get the order of the shape, excluding TextBoxes.
-    static sal_Int32 getOrdNum(const SdrObject* pObject, std::set<const SwFrameFormat*>& rTextBoxes);
+    static sal_Int32 getOrdNum(const SdrObject* pObject);
     /// If pTextBox is a textbox, then set rWrapThrough to the surround of its shape.
     static void getShapeWrapThrough(const SwFrameFormat* pTextBox, bool& rWrapThrough);
 

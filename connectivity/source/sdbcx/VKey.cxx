@@ -36,16 +36,16 @@ using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::lang;
 
 
-OUString SAL_CALL OKey::getImplementationName(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+OUString SAL_CALL OKey::getImplementationName(  )
 {
     if(isNew())
         return OUString("com.sun.star.sdbcx.VKeyDescription");
     return OUString("com.sun.star.sdbcx.VKey");
 }
 
-::com::sun::star::uno::Sequence< OUString > SAL_CALL OKey::getSupportedServiceNames(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+css::uno::Sequence< OUString > SAL_CALL OKey::getSupportedServiceNames(  )
 {
-    ::com::sun::star::uno::Sequence< OUString > aSupported(1);
+    css::uno::Sequence< OUString > aSupported(1);
     if(isNew())
         aSupported[0] = "com.sun.star.sdbcx.KeyDescription";
     else
@@ -54,7 +54,7 @@ OUString SAL_CALL OKey::getImplementationName(  ) throw (::com::sun::star::uno::
     return aSupported;
 }
 
-sal_Bool SAL_CALL OKey::supportsService( const OUString& _rServiceName ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL OKey::supportsService( const OUString& _rServiceName )
 {
     return cppu::supportsService(this, _rServiceName);
 }
@@ -66,9 +66,9 @@ OKey::OKey(bool _bCase) :   ODescriptor_BASE(m_aMutex)
 {
 }
 
-OKey::OKey(const OUString& Name,const TKeyProperties& _rProps, bool _bCase)
+OKey::OKey(const OUString& Name,const std::shared_ptr<KeyProperties>& _rProps, bool _bCase)
 : ODescriptor_BASE(m_aMutex)
- ,ODescriptor(ODescriptor_BASE::rBHelper,_bCase)
+ ,ODescriptor(ODescriptor_BASE::rBHelper, _bCase)
  ,m_aProps(_rProps)
  ,m_pColumns(nullptr)
 {
@@ -92,10 +92,9 @@ OKey::OKey(const OUString& Name,const TKeyProperties& _rProps, bool _bCase)
 
 OKey::~OKey( )
 {
-    delete m_pColumns;
 }
 
-Any SAL_CALL OKey::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any SAL_CALL OKey::queryInterface( const Type & rType )
 {
     Any aRet = ODescriptor::queryInterface( rType);
     if(!aRet.hasValue())
@@ -109,7 +108,7 @@ Any SAL_CALL OKey::queryInterface( const Type & rType ) throw(RuntimeException, 
     return aRet;
 }
 
-Sequence< Type > SAL_CALL OKey::getTypes(  ) throw(RuntimeException, std::exception)
+Sequence< Type > SAL_CALL OKey::getTypes(  )
 {
     if(isNew())
         return ::comphelper::concatSequences(ODescriptor::getTypes(),ODescriptor_BASE::getTypes());
@@ -151,7 +150,7 @@ void SAL_CALL OKey::disposing()
     return *getArrayHelper(isNew() ? 1 : 0);
 }
 
-Reference< ::com::sun::star::container::XNameAccess > SAL_CALL OKey::getColumns(  ) throw(RuntimeException, std::exception)
+Reference< css::container::XNameAccess > SAL_CALL OKey::getColumns(  )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(ODescriptor_BASE::rBHelper.bDisposed);
@@ -171,10 +170,10 @@ Reference< ::com::sun::star::container::XNameAccess > SAL_CALL OKey::getColumns(
         // allowed
     }
 
-    return m_pColumns;
+    return m_pColumns.get();
 }
 
-Reference< XPropertySet > SAL_CALL OKey::createDataDescriptor(  ) throw(RuntimeException, std::exception)
+Reference< XPropertySet > SAL_CALL OKey::createDataDescriptor(  )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(ODescriptor_BASE::rBHelper.bDisposed);
@@ -183,17 +182,17 @@ Reference< XPropertySet > SAL_CALL OKey::createDataDescriptor(  ) throw(RuntimeE
     return this;
 }
 
-::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL OKey::getPropertySetInfo(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL OKey::getPropertySetInfo(  )
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }
 
-OUString SAL_CALL OKey::getName(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+OUString SAL_CALL OKey::getName(  )
 {
     return m_Name;
 }
 
-void SAL_CALL OKey::setName( const OUString& /*aName*/ ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+void SAL_CALL OKey::setName( const OUString& /*aName*/ )
 {
 }
 

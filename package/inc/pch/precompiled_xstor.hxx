@@ -33,7 +33,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <boost/checked_delete.hpp>
 #include <osl/diagnose.h>
 #include <osl/interlck.h>
 #include <osl/time.h>
@@ -65,7 +64,6 @@
 #include <com/sun/star/lang/XSingleComponentFactory.hpp>
 #include <com/sun/star/lang/XSingleServiceFactory.hpp>
 #include <com/sun/star/lang/XUnoTunnel.hpp>
-#include <com/sun/star/logging/DocumentIOLogRing.hpp>
 #include <com/sun/star/registry/XRegistryKey.hpp>
 #include <com/sun/star/ucb/SimpleFileAccess.hpp>
 #include <com/sun/star/uno/Any.h>

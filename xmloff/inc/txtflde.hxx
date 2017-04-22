@@ -65,16 +65,13 @@ enum FieldIdEnum {
 
     FIELD_ID_PLACEHOLDER,   // placeholder field == jump edit field
 
-    FIELD_ID_VARIABLE_DECL, // field type for set variable
     FIELD_ID_VARIABLE_GET,  // get variable == get expression
     FIELD_ID_VARIABLE_SET,  // set variable == set expression
     FIELD_ID_VARIABLE_INPUT,    // input field (variable)
-    FIELD_ID_USER_DECL,     // field type for user field
     FIELD_ID_USER_GET,      // user field
     FIELD_ID_USER_INPUT,    // input field (user field)
     FIELD_ID_TEXT_INPUT,    // input field (text)
     FIELD_ID_EXPRESSION,    // expression field = formula field
-    FIELD_ID_SEQUENCE_DECL, // field type for sequence
     FIELD_ID_SEQUENCE,      // sequence field
 
     FIELD_ID_DATABASE_NEXT,     // select next row
@@ -149,7 +146,7 @@ enum FieldIdEnum {
 };
 
 
-class XMLTextFieldExport
+class XMLTextFieldExport final
 {
     SvXMLExport& rExport;
 
@@ -163,13 +160,13 @@ public:
 
     XMLTextFieldExport( SvXMLExport& rExp,
                         /// XMLPropertyState for the combined characters field
-                        XMLPropertyState* pCombinedCharState = nullptr );
-    virtual ~XMLTextFieldExport();
+                        XMLPropertyState* pCombinedCharState );
+    ~XMLTextFieldExport();
 
     /// Export this field and the surrounding span element with the formatting.
     /// To be called for every field in the document body.
     void ExportField(const css::uno::Reference < css::text::XTextField > & rTextField,
-                     bool bProgress );
+                     bool bProgress, bool & rPrevCharIsSpace);
 
     /// collect styles (character styles, data styles, ...) for this field
     /// (if appropriate).
@@ -210,7 +207,7 @@ public:
     enum ::xmloff::token::XMLTokenEnum MapAuthorFieldName(const css::uno::Reference< css::beans::XPropertySet > & xPropSet);
     enum ::xmloff::token::XMLTokenEnum MapSenderFieldName(const css::uno::Reference< css::beans::XPropertySet > & xPropSet);
 
-protected:
+private:
 
     SvXMLExport& GetExport() { return rExport; }
 
@@ -220,7 +217,8 @@ protected:
         const css::uno::Reference< css::beans::XPropertySet> & rPropSet,
         const css::uno::Reference< css::beans::XPropertySet> & rRangePropSet,
         enum FieldIdEnum nToken,
-        bool bProgress );
+        bool bProgress,
+        bool & rPrevCharIsSpace);
 
     /// export an empty element
     void ExportElement(enum ::xmloff::token::XMLTokenEnum eElement, /// element token
@@ -237,7 +235,8 @@ protected:
 
     /// export text:meta-field (RDF metadata)
     void ExportMetaField( const css::uno::Reference< css::beans::XPropertySet> & i_xMeta,
-                          bool i_bAutoStyles, bool i_bProgress );
+                          bool i_bAutoStyles, bool i_bProgress,
+                          bool & rPrevCharIsSpace);
 
     /// export a boolean attribute
     void ProcessBoolean(
@@ -326,7 +325,7 @@ protected:
         enum ::xmloff::token::XMLTokenEnum eXMLName,    /// attribute token
         double dValue,              /// date/time value
         bool bIsDate,           /// export as date (rather than date/time)?
-        bool bIsDuration = false,           /// export as duration
+        bool bIsDuration,           /// export as duration
         bool bOmitDurationIfZero = true,    /// omit zero-length durat.
         sal_uInt16 nPrefix = XML_NAMESPACE_TEXT);   /// attribute name prefix
 
@@ -407,7 +406,6 @@ protected:
     static OUString MakeSequenceRefName(sal_Int16 nSeqNo,
                                               const OUString& rSeqName);
 
-private:
     // constants
 
     // service names

@@ -21,7 +21,6 @@
 #include "WeakListenerAdapter.hxx"
 #include "ChartModelHelper.hxx"
 #include "DataSourceHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "macros.hxx"
 #include "ObjectIdentifier.hxx"
 #include "DataSeriesHelper.hxx"
@@ -31,8 +30,6 @@
 #include <com/sun/star/drawing/XShape.hpp>
 #include <comphelper/sequence.hxx>
 
-#define PREFERED_DEFAULT_COLOR 0x0000ff
-
 using namespace ::com::sun::star;
 
 using ::com::sun::star::uno::Reference;
@@ -41,10 +38,12 @@ using ::com::sun::star::uno::Sequence;
 namespace
 {
 
+const auto defaultPreferredColor = COL_LIGHTBLUE;
+
 void lcl_fillRanges(
     Sequence< chart2::data::HighlightedRange > & rOutRanges,
     const Sequence< OUString >& aRangeStrings,
-    sal_Int32 nPreferredColor = PREFERED_DEFAULT_COLOR,
+    sal_Int32 nPreferredColor,
     sal_Int32 nIndex = -1 )
 {
     rOutRanges.realloc( aRangeStrings.getLength());
@@ -76,7 +75,6 @@ RangeHighlighter::~RangeHighlighter()
 
 // ____ XRangeHighlighter ____
 Sequence< chart2::data::HighlightedRange > SAL_CALL RangeHighlighter::getSelectedRanges()
-    throw (uno::RuntimeException, std::exception)
 {
     return m_aSelectedRanges;
 }
@@ -199,7 +197,7 @@ void RangeHighlighter::fillRangesForDiagram( const Reference< chart2::XDiagram >
     {
         m_aSelectedRanges[i].RangeRepresentation = aSelectedRanges[i];
         m_aSelectedRanges[i].Index = -1;
-        m_aSelectedRanges[i].PreferredColor = PREFERED_DEFAULT_COLOR;
+        m_aSelectedRanges[i].PreferredColor = defaultPreferredColor;
         m_aSelectedRanges[i].AllowMerginigWithOtherRanges = true;
     }
 }
@@ -209,7 +207,7 @@ void RangeHighlighter::fillRangesForDataSeries( const uno::Reference< chart2::XD
     Reference< chart2::data::XDataSource > xSource( xSeries, uno::UNO_QUERY );
     if( xSource.is())
     {
-        sal_Int32 nPreferredColor = PREFERED_DEFAULT_COLOR;
+        sal_Int32 nPreferredColor = defaultPreferredColor;
         lcl_fillRanges( m_aSelectedRanges,
                         ::chart::DataSourceHelper::getRangesFromDataSource( xSource ),
                         nPreferredColor );
@@ -240,7 +238,7 @@ void RangeHighlighter::fillRangesForErrorBars(
         Reference< chart2::data::XDataSource > xSource( xErrorBar, uno::UNO_QUERY );
         if( xSource.is())
         {
-            sal_Int32 nPreferredColor = PREFERED_DEFAULT_COLOR;
+            sal_Int32 nPreferredColor = defaultPreferredColor;
             lcl_fillRanges( m_aSelectedRanges,
                             ::chart::DataSourceHelper::getRangesFromDataSource( xSource ),
                             nPreferredColor );
@@ -258,7 +256,8 @@ void RangeHighlighter::fillRangesForCategories( const Reference< chart2::XAxis >
         return;
     chart2::ScaleData aData( xAxis->getScaleData());
     lcl_fillRanges( m_aSelectedRanges,
-                    DataSourceHelper::getRangesFromLabeledDataSequence( aData.Categories ));
+                    DataSourceHelper::getRangesFromLabeledDataSequence( aData.Categories ),
+                    defaultPreferredColor );
 }
 
 void RangeHighlighter::fillRangesForDataPoint( const Reference< uno::XInterface > & xDataSeries, sal_Int32 nIndex )
@@ -268,8 +267,8 @@ void RangeHighlighter::fillRangesForDataPoint( const Reference< uno::XInterface 
         Reference< chart2::data::XDataSource > xSource( xDataSeries, uno::UNO_QUERY );
         if( xSource.is() )
         {
-            sal_Int32 nPreferredColor = PREFERED_DEFAULT_COLOR;
-            ::std::vector< chart2::data::HighlightedRange > aHilightedRanges;
+            sal_Int32 nPreferredColor = defaultPreferredColor;
+            std::vector< chart2::data::HighlightedRange > aHilightedRanges;
             Sequence< Reference< chart2::data::XLabeledDataSequence > > aLSeqSeq( xSource->getDataSequences());
             for( sal_Int32 i=0; i<aLSeqSeq.getLength(); ++i )
             {
@@ -299,7 +298,6 @@ void RangeHighlighter::fillRangesForDataPoint( const Reference< uno::XInterface 
 }
 
 void SAL_CALL RangeHighlighter::addSelectionChangeListener( const Reference< view::XSelectionChangeListener >& xListener )
-    throw (uno::RuntimeException, std::exception)
 {
     if(!xListener.is())
         return;
@@ -315,7 +313,6 @@ void SAL_CALL RangeHighlighter::addSelectionChangeListener( const Reference< vie
 }
 
 void SAL_CALL RangeHighlighter::removeSelectionChangeListener( const Reference< view::XSelectionChangeListener >& xListener )
-    throw (uno::RuntimeException, std::exception)
 {
     rBHelper.removeListener( cppu::UnoType<decltype(xListener)>::get(), xListener );
     --m_nAddedListenerCount;
@@ -325,7 +322,6 @@ void SAL_CALL RangeHighlighter::removeSelectionChangeListener( const Reference< 
 
 // ____ XSelectionChangeListener ____
 void SAL_CALL RangeHighlighter::selectionChanged( const lang::EventObject& /*aEvent*/ )
-    throw (uno::RuntimeException, std::exception)
 {
     determineRanges();
 
@@ -352,7 +348,6 @@ void RangeHighlighter::fireSelectionEvent()
 }
 
 void SAL_CALL RangeHighlighter::disposing( const lang::EventObject& Source )
-    throw (uno::RuntimeException, std::exception)
 {
     if( Source.Source == m_xSelectionSupplier )
     {

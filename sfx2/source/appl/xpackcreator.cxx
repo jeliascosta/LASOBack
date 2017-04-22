@@ -18,6 +18,7 @@
  */
 
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XOutputStream.hpp>
 #include <com/sun/star/embed/XPackageStructureCreator.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
@@ -45,19 +46,17 @@ public:
     OPackageStructureCreator() {}
 
     // XPackageStructureCreator
-    virtual void SAL_CALL convertToPackage( const OUString& aFolderUrl, const uno::Reference< io::XOutputStream >& xTargetStream ) throw (io::IOException, uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL convertToPackage( const OUString& aFolderUrl, const uno::Reference< io::XOutputStream >& xTargetStream ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw (uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (uno::RuntimeException, std::exception) override;
-    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 };
 
 
 void SAL_CALL OPackageStructureCreator::convertToPackage( const OUString& aFolderUrl,
                                                           const uno::Reference< io::XOutputStream >& xTargetStream )
-        throw ( io::IOException,
-                uno::RuntimeException, std::exception )
 {
     uno::Reference< ucb::XCommandEnvironment > xComEnv;
 
@@ -83,9 +82,9 @@ void SAL_CALL OPackageStructureCreator::convertToPackage( const OUString& aFolde
 
                 if ( !aTempURL.isEmpty() )
                 {
-                    pTempStream = new SvFileStream( aTempURL, STREAM_STD_READWRITE );
+                    pTempStream = new SvFileStream( aTempURL, StreamMode::STD_READWRITE );
                     tools::SvRef<SotStorage> aTargetStorage = new SotStorage( true, *pTempStream );
-                    aStorage->CopyTo( aTargetStorage );
+                    aStorage->CopyTo( aTargetStorage.get() );
                     aTargetStorage->Commit();
 
                     if ( aStorage->GetError() || aTargetStorage->GetError() || pTempStream->GetError() )
@@ -102,7 +101,7 @@ void SAL_CALL OPackageStructureCreator::convertToPackage( const OUString& aFolde
                         if ( aSeq.getLength() < 32000 )
                             aSeq.realloc( 32000 );
 
-                        nRead = pTempStream->Read( aSeq.getArray(), 32000 );
+                        nRead = pTempStream->ReadBytes(aSeq.getArray(), 32000);
                         if ( nRead < 32000 )
                             aSeq.realloc( nRead );
                         xTargetStream->writeBytes( aSeq );
@@ -148,19 +147,16 @@ void SAL_CALL OPackageStructureCreator::convertToPackage( const OUString& aFolde
 }
 
 OUString SAL_CALL OPackageStructureCreator::getImplementationName()
-    throw ( uno::RuntimeException, std::exception )
 {
     return OUString("com.sun.star.comp.embed.PackageStructureCreator");
 }
 
 sal_Bool SAL_CALL OPackageStructureCreator::supportsService( const OUString& ServiceName )
-    throw ( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL OPackageStructureCreator::getSupportedServiceNames()
-    throw ( uno::RuntimeException, std::exception )
 {
     uno::Sequence< OUString > aRet(2);
     aRet[0] = "com.sun.star.embed.PackageStructureCreator";

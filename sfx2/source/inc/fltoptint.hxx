@@ -23,44 +23,39 @@
 #include <com/sun/star/frame/XModel.hpp>
 #include <comphelper/interaction.hxx>
 #include <cppuhelper/implbase.hxx>
+#include <rtl/ref.hxx>
 
 class FilterOptionsContinuation : public comphelper::OInteraction< css::document::XInteractionFilterOptions >
 {
     css::uno::Sequence< css::beans::PropertyValue > rProperties;
 
 public:
-    virtual void SAL_CALL setFilterOptions( const css::uno::Sequence< css::beans::PropertyValue >& rProp ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getFilterOptions(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFilterOptions( const css::uno::Sequence< css::beans::PropertyValue >& rProp ) override;
+    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getFilterOptions(  ) override;
 };
 
 class RequestFilterOptions : public ::cppu::WeakImplHelper< css::task::XInteractionRequest >
 {
     css::uno::Any m_aRequest;
 
-    css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > >
-                  m_lContinuations;
-
-    comphelper::OInteractionAbort*  m_pAbort;
-
-    FilterOptionsContinuation*  m_pOptions;
+    rtl::Reference<comphelper::OInteractionAbort>  m_xAbort;
+    rtl::Reference<FilterOptionsContinuation>      m_xOptions;
 
 public:
-    RequestFilterOptions( css::uno::Reference< css::frame::XModel > rModel,
+    RequestFilterOptions( css::uno::Reference< css::frame::XModel > const & rModel,
                               const css::uno::Sequence< css::beans::PropertyValue >& rProperties );
 
-    bool    isAbort() { return m_pAbort->wasSelected(); }
+    bool    isAbort() { return m_xAbort->wasSelected(); }
 
     css::uno::Sequence< css::beans::PropertyValue > getFilterOptions()
     {
-        return m_pOptions->getFilterOptions();
+        return m_xOptions->getFilterOptions();
     }
 
-    virtual css::uno::Any SAL_CALL getRequest()
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL getRequest() override;
 
     virtual css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation >
-            > SAL_CALL getContinuations()
-        throw( css::uno::RuntimeException, std::exception ) override;
+            > SAL_CALL getContinuations() override;
 };
 
 #endif

@@ -231,7 +231,7 @@ SwAccessibleChild SwAccessibleFrame::GetChildAtPixel( const SwRect& rVisArea,
                 SwRect aLogBounds( rLower.GetBounds( rAccMap ) );
                 if( !aLogBounds.IsEmpty() )
                 {
-                    Rectangle aPixBounds( rAccMap.CoreToPixel( aLogBounds.SVRect() ) );
+                    tools::Rectangle aPixBounds( rAccMap.CoreToPixel( aLogBounds.SVRect() ) );
                     if( aPixBounds.IsInside( rPixPos ) )
                         aRet = rLower;
                 }
@@ -262,7 +262,7 @@ SwAccessibleChild SwAccessibleFrame::GetChildAtPixel( const SwRect& rVisArea,
                 SwRect aLogBounds( rLower.GetBounds( rAccMap ) );
                 if( !aLogBounds.IsEmpty() )
                 {
-                    Rectangle aPixBounds( rAccMap.CoreToPixel( aLogBounds.SVRect() ) );
+                    tools::Rectangle aPixBounds( rAccMap.CoreToPixel( aLogBounds.SVRect() ) );
                     if( aPixBounds.IsInside( rPixPos ) )
                         aRet = rLower;
                 }
@@ -283,7 +283,7 @@ SwAccessibleChild SwAccessibleFrame::GetChildAtPixel( const SwRect& rVisArea,
 void SwAccessibleFrame::GetChildren( SwAccessibleMap& rAccMap,
                                      const SwRect& rVisArea,
                                      const SwFrame& rFrame,
-                                     ::std::list< SwAccessibleChild >& rChildren,
+                                     std::list< SwAccessibleChild >& rChildren,
                                      bool bInPagePreview )
 {
     if( SwAccessibleChildMap::IsSortingRequired( rFrame ) )
@@ -415,8 +415,7 @@ SwAccessibleFrame::SwAccessibleFrame( const SwRect& rVisArea,
                                       bool bIsPagePreview ) :
     maVisArea( rVisArea ),
     mpFrame( pF ),
-    mbIsInPagePreview( bIsPagePreview ),
-    bIsAccDocUse( false )
+    mbIsInPagePreview( bIsPagePreview )
 {
 }
 
@@ -433,7 +432,7 @@ const SwFrame* SwAccessibleFrame::GetParent( const SwAccessibleChild& rFrameOrOb
 OUString SwAccessibleFrame::GetFormattedPageNumber() const
 {
     sal_uInt16 nPageNum = GetFrame()->GetVirtPageNum();
-    sal_uInt32 nFormat = GetFrame()->FindPageFrame()->GetPageDesc()
+    SvxNumType nFormat = GetFrame()->FindPageFrame()->GetPageDesc()
                               ->GetNumType().GetNumberingType();
     if( SVX_NUM_NUMBER_NONE == nFormat )
         nFormat = SVX_NUM_ARABIC;
@@ -471,7 +470,7 @@ sw::access::SwAccessibleChild SwAccessibleFrame::GetChildAtPixel(
 }
 
 void SwAccessibleFrame::GetChildren( SwAccessibleMap& rAccMap,
-                                     ::std::list< sw::access::SwAccessibleChild >& rChildren ) const
+                                     std::list< sw::access::SwAccessibleChild >& rChildren ) const
 {
     GetChildren( rAccMap, maVisArea, *mpFrame, rChildren, IsInPagePreview() );
 }

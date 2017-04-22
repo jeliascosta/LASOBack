@@ -11,7 +11,7 @@
 
 #include <vcl/msgbox.hxx>
 #include <vcl/settings.hxx>
-
+#include <formula/errorcodes.hxx>
 #include <sfx2/app.hxx>
 
 #include "document.hxx"
@@ -36,6 +36,7 @@ ScNameDefDlg::ScNameDefDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* p
 
     maGlobalNameStr  ( ScGlobal::GetRscString(STR_GLOBAL_SCOPE) ),
     maErrInvalidNameStr( ScGlobal::GetRscString(STR_ERR_NAME_INVALID)),
+    maErrInvalidNameCellRefStr( ScGlobal::GetRscString(STR_ERR_NAME_INVALID_CELL_REF)),
     maErrNameInUse   ( ScGlobal::GetRscString(STR_ERR_NAME_EXISTS)),
     maRangeMap( aRangeMap )
 {
@@ -122,7 +123,7 @@ bool ScNameDefDlg::IsFormulaValid()
     ScCompiler aComp( mpDoc, maCursorPos);
     aComp.SetGrammar( mpDoc->GetGrammar() );
     ScTokenArray* pCode = aComp.CompileString(m_pEdRange->GetText());
-    if (pCode->GetCodeError())
+    if (pCode->GetCodeError() != FormulaError::NONE)
     {
         //TODO: info message
         delete pCode;
@@ -150,6 +151,7 @@ bool ScNameDefDlg::IsNameValid()
         pRangeName = maRangeMap.find(aScope)->second;
     }
 
+    ScRangeData::IsNameValidType eType;
     m_pFtInfo->SetControlBackground(GetSettings().GetStyleSettings().GetDialogColor());
     if ( aName.isEmpty() )
     {
@@ -157,10 +159,17 @@ bool ScNameDefDlg::IsNameValid()
         m_pFtInfo->SetText(maStrInfoDefault);
         return false;
     }
-    else if (!ScRangeData::IsNameValid( aName, mpDoc ))
+    else if ((eType = ScRangeData::IsNameValid( aName, mpDoc )) != ScRangeData::NAME_VALID)
     {
         m_pFtInfo->SetControlBackground(GetSettings().GetStyleSettings().GetHighlightColor());
-        m_pFtInfo->SetText(maErrInvalidNameStr);
+        if (eType == ScRangeData::NAME_INVALID_BAD_STRING)
+        {
+            m_pFtInfo->SetText(maErrInvalidNameStr);
+        }
+        else if (eType == ScRangeData::NAME_INVALID_CELL_REF)
+        {
+            m_pFtInfo->SetText(maErrInvalidNameCellRefStr);
+        }
         m_pBtnAdd->Disable();
         return false;
     }
@@ -233,9 +242,9 @@ void ScNameDefDlg::AddPushed()
             pNewEntry->AddType(nType);
 
             // aExpression valid?
-            if ( 0 == pNewEntry->GetErrCode() )
+            if ( FormulaError::NONE == pNewEntry->GetErrCode() )
             {
-                if ( !pRangeName->insert( pNewEntry ) )
+                if ( !pRangeName->insert( pNewEntry, false /*bReuseFreeIndex*/ ) )
                     pNewEntry = nullptr;
 
                 if (mbUndo)
@@ -256,7 +265,7 @@ void ScNameDefDlg::AddPushed()
                     // call invalidates the stream
                     if (nTab != -1)
                         mpDoc->SetStreamValid(nTab, false);
-                    SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_AREAS_CHANGED ) );
+                    SfxGetpApp()->Broadcast( SfxHint( SfxHintId::ScAreasChanged ) );
                     mpDocShell->SetDocumentModified();
                     Close();
                 }
@@ -319,22 +328,22 @@ void ScNameDefDlg::SetActive()
     RefInputDone();
 }
 
-IMPL_LINK_NOARG_TYPED(ScNameDefDlg, CancelBtnHdl, Button*, void)
+IMPL_LINK_NOARG(ScNameDefDlg, CancelBtnHdl, Button*, void)
 {
     CancelPushed();
 }
 
-IMPL_LINK_NOARG_TYPED(ScNameDefDlg, AddBtnHdl, Button*, void)
+IMPL_LINK_NOARG(ScNameDefDlg, AddBtnHdl, Button*, void)
 {
     AddPushed();
 };
 
-IMPL_LINK_NOARG_TYPED(ScNameDefDlg, NameModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(ScNameDefDlg, NameModifyHdl, Edit&, void)
 {
     IsNameValid();
 }
 
-IMPL_LINK_NOARG_TYPED(ScNameDefDlg, AssignGetFocusHdl, Control&, void)
+IMPL_LINK_NOARG(ScNameDefDlg, AssignGetFocusHdl, Control&, void)
 {
     IsNameValid();
 }

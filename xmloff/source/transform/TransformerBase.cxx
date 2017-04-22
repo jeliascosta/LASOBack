@@ -40,6 +40,7 @@
 #include "TransformerTokenMap.hxx"
 
 #include "TransformerBase.hxx"
+#include <xmloff/xmlimp.hxx>
 
 using namespace ::osl;
 using namespace ::xmloff::token;
@@ -122,17 +123,6 @@ XMLTransformerContext *XMLTransformerBase::CreateContext( sal_uInt16 nPrefix,
                     (*aIter).second.GetQNameTokenFromParam2(),
                        static_cast< XMLTokenEnum >(
                         (*aIter).second.m_nParam3 & 0xffff ) );
-        case XML_ETACTION_RENAME_ELEM_COND:
-            {
-                const XMLTransformerContext *pCurrent = GetCurrentContext();
-                if( pCurrent->HasQName(
-                            (*aIter).second.GetQNamePrefixFromParam2(),
-                            (*aIter).second.GetQNameTokenFromParam2() ) )
-                    return new XMLRenameElemTransformerContext( *this, rQName,
-                            (*aIter).second.GetQNamePrefixFromParam1(),
-                            (*aIter).second.GetQNameTokenFromParam1() );
-            }
-            break;
         case XML_ETACTION_RENAME_ELEM_PROC_ATTRS_COND:
             {
                 const XMLTransformerContext *pCurrent = GetCurrentContext();
@@ -207,20 +197,17 @@ XMLTransformerBase::~XMLTransformerBase() throw ()
 }
 
 void SAL_CALL XMLTransformerBase::startDocument()
-    throw( SAXException, RuntimeException, std::exception )
 {
     m_xHandler->startDocument();
 }
 
 void SAL_CALL XMLTransformerBase::endDocument()
-    throw( SAXException, RuntimeException, std::exception)
 {
     m_xHandler->endDocument();
 }
 
 void SAL_CALL XMLTransformerBase::startElement( const OUString& rName,
                                          const Reference< XAttributeList >& rAttrList )
-    throw(SAXException, RuntimeException, std::exception)
 {
     SvXMLNamespaceMap *pRewindMap = nullptr;
 
@@ -228,7 +215,7 @@ void SAL_CALL XMLTransformerBase::startElement( const OUString& rName,
     (void)bRect;
 
     // Process namespace attributes. This must happen before creating the
-    // context, because namespace decaration apply to the element name itself.
+    // context, because namespace declaration apply to the element name itself.
     XMLMutableAttributeList *pMutableAttrList = nullptr;
     Reference< XAttributeList > xAttrList( rAttrList );
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -317,7 +304,6 @@ void SAL_CALL XMLTransformerBase::endElement( const OUString&
 rName
 #endif
 )
-    throw(SAXException, RuntimeException, std::exception)
 {
     if( !m_pContexts.empty() )
     {
@@ -351,7 +337,6 @@ rName
 }
 
 void SAL_CALL XMLTransformerBase::characters( const OUString& rChars )
-    throw(SAXException, RuntimeException, std::exception)
 {
     if( !m_pContexts.empty() )
     {
@@ -360,53 +345,47 @@ void SAL_CALL XMLTransformerBase::characters( const OUString& rChars )
 }
 
 void SAL_CALL XMLTransformerBase::ignorableWhitespace( const OUString& rWhitespaces )
-    throw(SAXException, RuntimeException, std::exception)
 {
     m_xHandler->ignorableWhitespace( rWhitespaces );
 }
 
 void SAL_CALL XMLTransformerBase::processingInstruction( const OUString& rTarget,
                                        const OUString& rData )
-    throw(SAXException, RuntimeException, std::exception)
 {
     m_xHandler->processingInstruction( rTarget, rData );
 }
 
 void SAL_CALL XMLTransformerBase::setDocumentLocator( const Reference< XLocator >& rLocator )
-    throw(SAXException, RuntimeException, std::exception)
 {
     m_xLocator = rLocator;
 }
 
 // XExtendedDocumentHandler
-void SAL_CALL XMLTransformerBase::startCDATA() throw(SAXException, RuntimeException, std::exception)
+void SAL_CALL XMLTransformerBase::startCDATA()
 {
     if( m_xExtHandler.is() )
         m_xExtHandler->startCDATA();
 }
 
-void SAL_CALL XMLTransformerBase::endCDATA() throw(RuntimeException, std::exception)
+void SAL_CALL XMLTransformerBase::endCDATA()
 {
     if( m_xExtHandler.is() )
         m_xExtHandler->endCDATA();
 }
 
 void SAL_CALL XMLTransformerBase::comment( const OUString& rComment )
-    throw(SAXException, RuntimeException, std::exception)
 {
     if( m_xExtHandler.is() )
         m_xExtHandler->comment( rComment );
 }
 
 void SAL_CALL XMLTransformerBase::allowLineBreak()
-    throw(SAXException, RuntimeException, std::exception)
 {
     if( m_xExtHandler.is() )
         m_xExtHandler->allowLineBreak();
 }
 
 void SAL_CALL XMLTransformerBase::unknown( const OUString& rString )
-    throw(SAXException, RuntimeException, std::exception)
 {
     if( m_xExtHandler.is() )
         m_xExtHandler->unknown( rString );
@@ -414,7 +393,6 @@ void SAL_CALL XMLTransformerBase::unknown( const OUString& rString )
 
 // XInitialize
 void SAL_CALL XMLTransformerBase::initialize( const Sequence< Any >& aArguments )
-    throw(Exception, RuntimeException, std::exception)
 {
     const sal_Int32 nAnyCount = aArguments.getLength();
     const Any* pAny = aArguments.getConstArray();
@@ -429,7 +407,13 @@ void SAL_CALL XMLTransformerBase::initialize( const Sequence< Any >& aArguments 
 
         // document handler
         if( cppu::UnoType<XDocumentHandler>::get().isAssignableFrom( pAny->getValueType() ) )
+        {
             m_xHandler.set( *pAny, UNO_QUERY );
+        // Type change to avoid crashing of dynamic_cast
+            if (SvXMLImport *pFastHandler = dynamic_cast<SvXMLImport*>(
+                                uno::Reference< XFastDocumentHandler >( m_xHandler, uno::UNO_QUERY ).get() ) )
+                m_xHandler.set( new SvXMLLegacyToFastDocHandler( pFastHandler ) );
+        }
 
         // property set to transport data across
         if( cppu::UnoType<XPropertySet>::get().isAssignableFrom( pAny->getValueType() ) )
@@ -867,7 +851,7 @@ XMLMutableAttributeList *XMLTransformerBase::ProcessAttrList(
                         // no conversion of transparency value for document
                         // styles, because former OpenOffice.org version writes
                         // writes always a transparency value of 100% and doesn't
-                        // read the value. Thus, it's intepreted as 0%
+                        // read the value. Thus, it's interpreted as 0%
                         if ( !bIsDocumentStyle )
                         {
                             OUString aAttrValue( rAttrValue );
@@ -1297,7 +1281,7 @@ bool XMLTransformerBase::ConvertURIToOASIS( OUString& rURI,
                     switch( rURI[nPos] )
                     {
                     case '/':
-                        // a relative path segement
+                        // a relative path segment
                         nPos = nLen;    // leave loop
                         break;
                     case ':':
@@ -1362,7 +1346,7 @@ bool XMLTransformerBase::ConvertURIToOOo( OUString& rURI,
                     switch( rURI[nPos] )
                     {
                     case '/':
-                        // a relative path segement within the package
+                        // a relative path segment within the package
                         nPos = nLen;    // leave loop
                         break;
                     case ':':

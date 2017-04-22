@@ -64,7 +64,7 @@
 			<xsl:for-each select="key('masterPage','count')">
 				<!-- Check if this style is being used in the body -->
 				<xsl:if test="key('elementUsingStyle', ../@style:name)">
-					<!-- Check every master-page-name if it is not emtpy and return as ';' separated list  -->
+					<!-- Check every master-page-name if it is not empty and return as ';' separated list  -->
 					<xsl:if test="string-length(../@style:master-page-name) &gt; 0">
 						<xsl:value-of select="../@style:master-page-name"/>;
 					</xsl:if>
@@ -481,7 +481,7 @@
 		<xsl:param name="parentMarginLeft" />
 		<xsl:param name="pageMarginLeft" />
 
-<!-- 2DO: EXCHANGE FOLLOING SIBLING BY VARIABLE -->
+<!-- 2DO: EXCHANGE FOLLOWING SIBLING BY VARIABLE -->
 		<xsl:variable name="followingSiblingNode" select="following-sibling::node()[1]"/>
 
 
@@ -907,7 +907,7 @@
 			<xsl:for-each select="key('masterPage','count')">
 					<!-- Check if this style is being used in the body -->
 				<xsl:if test="key('elementUsingStyle', ../@style:name)">
-						<!-- Check every master-page-name if it is not emtpy and return as ';' separated list  -->
+						<!-- Check every master-page-name if it is not empty and return as ';' separated list  -->
 					<xsl:if test="string-length(../@style:master-page-name) &gt; 0">
 						<xsl:value-of select="../@style:master-page-name"/>;
 					</xsl:if>
@@ -1593,7 +1593,7 @@
 		G)
 		An Office list may (re)start on any arbitrary value by using @text:start-value on the text:list-item
 
-		INDENDATION:
+		INDENTATION:
 		============
 
 		The indent of a list label is not only calculated by using the text:space-before of the list level (listLevelStyle), but

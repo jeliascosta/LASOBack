@@ -42,7 +42,6 @@ enum SwCalcOper
     CALC_DIV='/',           CALC_PRINT=';',         CALC_ASSIGN='=',
     CALC_LP='(',            CALC_RP=')',            CALC_PHD='%',
     CALC_POW='^',
-    CALC_LISTOP = cListDelim,
     CALC_NOT=256,           CALC_AND=257,           CALC_OR=258,
     CALC_XOR=259,           CALC_EQ=260,            CALC_NEQ=261,
     CALC_LEQ=262,           CALC_GEQ=263,           CALC_LES=264,
@@ -88,16 +87,14 @@ extern const sal_Char sCalc_Round[];
 extern const sal_Char sCalc_Date[];
 
 //  Calculate ErrorCodes
-enum SwCalcError
+enum class SwCalcError
 {
-    CALC_NOERR=0,
-    CALC_SYNTAX,        //  syntax error
-    CALC_ZERODIV,       //  division by zero
-    CALC_BRACK,         //  faulty brackets
-    CALC_POWERR,        //  overflow in power function
-    CALC_VARNFND,       //  variable was not found
-    CALC_OVERFLOW,      //  overflow
-    CALC_WRONGTIME      //  wrong time format
+    NONE=0,
+    Syntax,           //  syntax error
+    DivByZero,        //  division by zero
+    FaultyBrackets,   //  faulty brackets
+    OverflowInPower,  //  overflow in power function
+    Overflow,         //  overflow
 };
 
 class SwSbxValue : public SbxValue
@@ -107,12 +104,6 @@ public:
     // always default to a number. otherwise it will become a SbxEMPTY
     SwSbxValue( long n = 0 ) : bVoid(false)  { PutLong( n ); }
     SwSbxValue( const double& rD ) : bVoid(false) { PutDouble( rD ); }
-    SwSbxValue( const SwSbxValue& rVal ) :
-        SvRefBase( rVal ),
-        SbxValue( rVal ),
-        bVoid(rVal.bVoid)
-        {}
-    virtual ~SwSbxValue();
 
     bool GetBool() const;
     double GetDouble() const;
@@ -122,13 +113,13 @@ public:
     void SetVoidValue(bool bSet) {bVoid = bSet;}
 };
 
-// Calculate HashTables for VarTable und Operations
+// Calculate HashTables for VarTable and Operations
 struct SwHash
 {
     SwHash( const OUString& rStr );
     virtual ~SwHash();
     OUString aStr;
-    SwHash *pNext;
+    std::unique_ptr<SwHash> pNext;
 };
 
 struct SwCalcExp : public SwHash
@@ -137,7 +128,7 @@ struct SwCalcExp : public SwHash
     const SwFieldType* pFieldType;
 
     SwCalcExp( const OUString& rStr, const SwSbxValue& rVal,
-                const SwFieldType* pFieldType = nullptr );
+                const SwFieldType* pFieldType );
 };
 
 SwHash* Find( const OUString& rSrch, SwHash* const * ppTable,
@@ -149,31 +140,35 @@ void DeleteHashTable( SwHash** ppTable, sal_uInt16 nTableSize );
 struct CalcOp;
 CalcOp* FindOperator( const OUString& rSearch );
 
+extern "C" typedef double (*pfCalc)(double);
+
 class SwCalc
 {
-    SwHash*     VarTable[ TBLSZ ];
-    OUString    aVarName, sCurrSym;
-    OUString    sCommand;
-    std::vector<const SwUserFieldType*> aRekurStack;
-    SwSbxValue  nLastLeft;
-    SwSbxValue  nNumberValue;
-    SwCalcExp   aErrExpr;
-    sal_Int32   nCommandPos;
+    SwHash*     m_aVarTable[ TBLSZ ];
+    OUString    m_aVarName, m_sCurrSym;
+    OUString    m_sCommand;
+    std::vector<const SwUserFieldType*> m_aRekurStack;
+    SwSbxValue  m_nLastLeft;
+    SwSbxValue  m_nNumberValue;
+    SwCalcExp   m_aErrExpr;
+    sal_Int32   m_nCommandPos;
 
-    SwDoc&      rDoc;
+    SwDoc&      m_rDoc;
     SvtSysLocale m_aSysLocale;
-    const LocaleDataWrapper* pLclData;
-    CharClass*  pCharClass;
+    const LocaleDataWrapper* m_pLocaleDataWrapper;
+    CharClass*  m_pCharClass;
 
-    sal_uInt16      nListPor;
-    SwCalcOper  eCurrOper;
-    SwCalcOper  eCurrListOper;
-    SwCalcError eError;
+    sal_uInt16      m_nListPor;
+    SwCalcOper  m_eCurrOper;
+    SwCalcOper  m_eCurrListOper;
+    SwCalcError m_eError;
 
     SwCalcOper  GetToken();
     SwSbxValue  Expr();
     SwSbxValue  Term();
+    SwSbxValue  PrimFunc(bool &rChkPow);
     SwSbxValue  Prim();
+    SwSbxValue  StdFunc(pfCalc pFnc, bool bChkTrig);
 
     static OUString  GetColumnName( const OUString& rName );
     OUString  GetDBName( const OUString& rName );
@@ -193,13 +188,13 @@ public:
     SwCalcExp*  VarLook( const OUString &rStr, bool bIns = false );
     void        VarChange( const OUString& rStr, const SwSbxValue& rValue );
     void        VarChange( const OUString& rStr, double );
-    SwHash**    GetVarTable()                       { return VarTable; }
+    SwHash**    GetVarTable()                       { return m_aVarTable; }
 
     bool        Push(const SwUserFieldType* pUserFieldType);
     void        Pop();
 
-    void        SetCalcError( SwCalcError eErr )    { eError = eErr; }
-    bool        IsCalcError() const                 { return 0 != eError; }
+    void        SetCalcError( SwCalcError eErr )    { m_eError = eErr; }
+    bool        IsCalcError() const                 { return SwCalcError::NONE != m_eError; }
 
     static bool Str2Double( const OUString& rStr, sal_Int32& rPos,
                                 double& rVal );

@@ -23,6 +23,7 @@
 #include <com/sun/star/embed/XTransactedObject.hpp>
 #include <com/sun/star/embed/StorageFactory.hpp>
 #include <com/sun/star/embed/FileSystemStorageFactory.hpp>
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/lang/XSingleServiceFactory.hpp>
 #include <com/sun/star/ucb/SimpleFileAccess.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -53,7 +54,6 @@ namespace comphelper {
 
 uno::Reference< lang::XSingleServiceFactory > OStorageHelper::GetStorageFactory(
                             const uno::Reference< uno::XComponentContext >& rxContext )
-        throw ( uno::Exception )
 {
     uno::Reference< uno::XComponentContext> xContext = rxContext.is() ? rxContext : ::comphelper::getProcessComponentContext();
 
@@ -63,7 +63,6 @@ uno::Reference< lang::XSingleServiceFactory > OStorageHelper::GetStorageFactory(
 
 uno::Reference< lang::XSingleServiceFactory > OStorageHelper::GetFileSystemStorageFactory(
                             const uno::Reference< uno::XComponentContext >& rxContext )
-        throw ( uno::Exception )
 {
     uno::Reference< uno::XComponentContext> xContext = rxContext.is() ? rxContext : ::comphelper::getProcessComponentContext();
 
@@ -73,13 +72,9 @@ uno::Reference< lang::XSingleServiceFactory > OStorageHelper::GetFileSystemStora
 
 uno::Reference< embed::XStorage > OStorageHelper::GetTemporaryStorage(
             const uno::Reference< uno::XComponentContext >& rxContext )
-    throw ( uno::Exception )
 {
     uno::Reference< embed::XStorage > xTempStorage( GetStorageFactory( rxContext )->createInstance(),
-                                                    uno::UNO_QUERY );
-    if ( !xTempStorage.is() )
-        throw uno::RuntimeException();
-
+                                                    uno::UNO_QUERY_THROW );
     return xTempStorage;
 }
 
@@ -88,17 +83,13 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageFromURL(
             const OUString& aURL,
             sal_Int32 nStorageMode,
             const uno::Reference< uno::XComponentContext >& rxContext )
-    throw ( uno::Exception )
 {
     uno::Sequence< uno::Any > aArgs( 2 );
     aArgs[0] <<= aURL;
     aArgs[1] <<= nStorageMode;
 
     uno::Reference< embed::XStorage > xTempStorage( GetStorageFactory( rxContext )->createInstanceWithArguments( aArgs ),
-                                                    uno::UNO_QUERY );
-    if ( !xTempStorage.is() )
-        throw uno::RuntimeException();
-
+                                                    uno::UNO_QUERY_THROW );
     return xTempStorage;
 }
 
@@ -107,7 +98,6 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageFromURL2(
             const OUString& aURL,
             sal_Int32 nStorageMode,
             const uno::Reference< uno::XComponentContext >& rxContext )
-    throw ( uno::Exception )
 {
     uno::Sequence< uno::Any > aArgs( 2 );
     aArgs[0] <<= aURL;
@@ -128,10 +118,7 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageFromURL2(
     if (!xFact.is()) throw uno::RuntimeException();
 
     uno::Reference< embed::XStorage > xTempStorage(
-        xFact->createInstanceWithArguments( aArgs ), uno::UNO_QUERY );
-    if ( !xTempStorage.is() )
-        throw uno::RuntimeException();
-
+        xFact->createInstanceWithArguments( aArgs ), uno::UNO_QUERY_THROW );
     return xTempStorage;
 }
 
@@ -139,17 +126,13 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageFromURL2(
 uno::Reference< embed::XStorage > OStorageHelper::GetStorageFromInputStream(
             const uno::Reference < io::XInputStream >& xStream,
             const uno::Reference< uno::XComponentContext >& rxContext )
-        throw ( uno::Exception )
 {
     uno::Sequence< uno::Any > aArgs( 2 );
     aArgs[0] <<= xStream;
     aArgs[1] <<= embed::ElementModes::READ;
 
     uno::Reference< embed::XStorage > xTempStorage( GetStorageFactory( rxContext )->createInstanceWithArguments( aArgs ),
-                                                    uno::UNO_QUERY );
-    if ( !xTempStorage.is() )
-        throw uno::RuntimeException();
-
+                                                    uno::UNO_QUERY_THROW );
     return xTempStorage;
 }
 
@@ -158,17 +141,13 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageFromStream(
             const uno::Reference < io::XStream >& xStream,
             sal_Int32 nStorageMode,
             const uno::Reference< uno::XComponentContext >& rxContext )
-        throw ( uno::Exception )
 {
     uno::Sequence< uno::Any > aArgs( 2 );
     aArgs[0] <<= xStream;
     aArgs[1] <<= nStorageMode;
 
     uno::Reference< embed::XStorage > xTempStorage( GetStorageFactory( rxContext )->createInstanceWithArguments( aArgs ),
-                                                    uno::UNO_QUERY );
-    if ( !xTempStorage.is() )
-        throw uno::RuntimeException();
-
+                                                    uno::UNO_QUERY_THROW );
     return xTempStorage;
 }
 
@@ -176,7 +155,6 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageFromStream(
 void OStorageHelper::CopyInputToOutput(
             const uno::Reference< io::XInputStream >& xInput,
             const uno::Reference< io::XOutputStream >& xOutput )
-    throw ( uno::Exception )
 {
     static const sal_Int32 nConstBufferSize = 32000;
 
@@ -201,7 +179,6 @@ void OStorageHelper::CopyInputToOutput(
 uno::Reference< io::XInputStream > OStorageHelper::GetInputStreamFromURL(
             const OUString& aURL,
             const uno::Reference< uno::XComponentContext >& context )
-    throw ( uno::Exception )
 {
     uno::Reference< io::XInputStream > xInputStream = ucb::SimpleFileAccess::create(context)->openFileRead( aURL );
     if ( !xInputStream.is() )
@@ -214,7 +191,6 @@ uno::Reference< io::XInputStream > OStorageHelper::GetInputStreamFromURL(
 void OStorageHelper::SetCommonStorageEncryptionData(
             const uno::Reference< embed::XStorage >& xStorage,
             const uno::Sequence< beans::NamedValue >& aEncryptionData )
-    throw ( uno::Exception )
 {
     uno::Reference< embed::XEncryptionProtectedSource2 > xEncrSet( xStorage, uno::UNO_QUERY );
     if ( !xEncrSet.is() )
@@ -226,7 +202,6 @@ void OStorageHelper::SetCommonStorageEncryptionData(
 
 sal_Int32 OStorageHelper::GetXStorageFormat(
             const uno::Reference< embed::XStorage >& xStorage )
-        throw ( uno::Exception, std::exception )
 {
     uno::Reference< beans::XPropertySet > xStorProps( xStorage, uno::UNO_QUERY_THROW );
 
@@ -275,12 +250,12 @@ sal_Int32 OStorageHelper::GetXStorageFormat(
     else
     {
         // the mediatype is not known
-        OUString aMsg(OSL_THIS_FUNC);
-        aMsg += ":";
-        aMsg += OUString::number(__LINE__);
-        aMsg += ": unknown media type '";
-        aMsg += aMediaType;
-        aMsg += "'";
+        OUString aMsg = OUString(OSL_THIS_FUNC)
+                      + ":"
+                      + OUString::number(__LINE__)
+                      + ": unknown media type '"
+                      + aMediaType
+                      + "'";
         throw beans::IllegalTypeException(aMsg);
     }
 
@@ -293,7 +268,6 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageOfFormatFromURL(
             const OUString& aURL,
             sal_Int32 nStorageMode,
             const uno::Reference< uno::XComponentContext >& rxContext )
-    throw ( uno::Exception )
 {
     uno::Sequence< beans::PropertyValue > aProps( 1 );
     aProps[0].Name = "StorageFormat";
@@ -305,10 +279,7 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageOfFormatFromURL(
     aArgs[2] <<= aProps;
 
     uno::Reference< embed::XStorage > xTempStorage( GetStorageFactory( rxContext )->createInstanceWithArguments( aArgs ),
-                                                    uno::UNO_QUERY );
-    if ( !xTempStorage.is() )
-        throw uno::RuntimeException();
-
+                                                    uno::UNO_QUERY_THROW );
     return xTempStorage;
 }
 
@@ -318,7 +289,6 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageOfFormatFromInputStr
             const uno::Reference < io::XInputStream >& xStream,
             const uno::Reference< uno::XComponentContext >& rxContext,
             bool bRepairStorage, bool bUseBufferedStream )
-        throw ( uno::Exception )
 {
     uno::Sequence< beans::PropertyValue > aProps( 1 );
     sal_Int32 nPos = 0;
@@ -347,10 +317,7 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageOfFormatFromInputStr
     aArgs[2] <<= aProps;
 
     uno::Reference< embed::XStorage > xTempStorage( GetStorageFactory( rxContext )->createInstanceWithArguments( aArgs ),
-                                                    uno::UNO_QUERY );
-    if ( !xTempStorage.is() )
-        throw uno::RuntimeException();
-
+                                                    uno::UNO_QUERY_THROW );
     return xTempStorage;
 }
 
@@ -361,7 +328,6 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageOfFormatFromStream(
             sal_Int32 nStorageMode,
             const uno::Reference< uno::XComponentContext >& rxContext,
             bool bRepairStorage, bool bUseBufferedStream )
-        throw ( uno::Exception )
 {
     uno::Sequence< beans::PropertyValue > aProps( 1 );
     sal_Int32 nPos = 0;
@@ -390,10 +356,7 @@ uno::Reference< embed::XStorage > OStorageHelper::GetStorageOfFormatFromStream(
     aArgs[2] <<= aProps;
 
     uno::Reference< embed::XStorage > xTempStorage( GetStorageFactory( rxContext )->createInstanceWithArguments( aArgs ),
-                                                    uno::UNO_QUERY );
-    if ( !xTempStorage.is() )
-        throw uno::RuntimeException();
-
+                                                    uno::UNO_QUERY_THROW );
     return xTempStorage;
 }
 
@@ -501,11 +464,11 @@ bool OStorageHelper::PathHasSegment( const OUString& aPath, const OUString& aSeg
 
     if ( !aSegment.isEmpty() && nPathLen >= nSegLen )
     {
-        OUString aEndSegment( "/" );
-        aEndSegment += aSegment;
+        OUString aEndSegment = "/"
+                             + aSegment;
 
-        OUString aInternalSegment( aEndSegment );
-        aInternalSegment += "/";
+        OUString aInternalSegment = aEndSegment
+                                  + "/";
 
         if ( aPath.indexOf( aInternalSegment ) >= 0 )
             bResult = true;
@@ -526,7 +489,7 @@ bool OStorageHelper::PathHasSegment( const OUString& aPath, const OUString& aSeg
 class LifecycleProxy::Impl
     : public std::vector< uno::Reference< embed::XStorage > > {};
 LifecycleProxy::LifecycleProxy()
-    : m_xBadness( new Impl() ) { }
+    : m_xBadness( new Impl ) { }
 LifecycleProxy::~LifecycleProxy() { }
 
 void LifecycleProxy::commitStorages()

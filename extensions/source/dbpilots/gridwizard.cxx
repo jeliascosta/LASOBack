@@ -100,9 +100,6 @@ namespace dbp
         if (!xColumnFactory.is() || !xColumnContainer.is())
             return;
 
-        static const char s_sDataFieldProperty [] = "DataField";
-        static const char s_sLabelProperty     [] = "Label";
-        static const char s_sWidthProperty     [] = "Width";
         static const char s_sMouseWheelBehavior[] = "MouseWheelBehavior";
         static const char s_sEmptyString[] = "";
 
@@ -201,11 +198,11 @@ namespace dbp
                     disambiguateName(xExistenceChecker, sColumnName);
 
                     // the data field the column should be bound to
-                    xColumn->setPropertyValue(s_sDataFieldProperty, makeAny(*pFormFieldName));
+                    xColumn->setPropertyValue("DataField", makeAny(*pFormFieldName));
                     // the label
-                    xColumn->setPropertyValue(s_sLabelProperty, makeAny(*pFormFieldName + *pColumnLabelPostfix));
+                    xColumn->setPropertyValue("Label", makeAny(*pFormFieldName + *pColumnLabelPostfix));
                     // the width (<void/> => column will be auto-sized)
-                    xColumn->setPropertyValue(s_sWidthProperty, Any());
+                    xColumn->setPropertyValue("Width", Any());
 
                     if ( xColumnPSI->hasPropertyByName( s_sMouseWheelBehavior ) )
                         xColumn->setPropertyValue( s_sMouseWheelBehavior, makeAny( MouseWheelBehavior::SCROLL_DISABLED ) );
@@ -391,9 +388,9 @@ namespace dbp
     }
 
 
-    IMPL_LINK_TYPED(OGridFieldsSelection, OnEntryDoubleClicked, ListBox&, _rList, void)
+    IMPL_LINK(OGridFieldsSelection, OnEntryDoubleClicked, ListBox&, _rList, void)
     {
-        PushButton* pSimulateButton = m_pExistFields == &_rList ? m_pSelectOne : m_pDeselectOne;
+        PushButton* pSimulateButton = m_pExistFields == &_rList ? m_pSelectOne.get() : m_pDeselectOne.get();
         if (pSimulateButton->IsEnabled())
         {
             OnMoveOneEntry( pSimulateButton );
@@ -401,13 +398,13 @@ namespace dbp
     }
 
 
-    IMPL_LINK_NOARG_TYPED(OGridFieldsSelection, OnEntrySelected, ListBox&, void)
+    IMPL_LINK_NOARG(OGridFieldsSelection, OnEntrySelected, ListBox&, void)
     {
         implCheckButtons();
     }
 
 
-    IMPL_LINK_TYPED(OGridFieldsSelection, OnMoveOneEntry, Button*, _pButton, void)
+    IMPL_LINK(OGridFieldsSelection, OnMoveOneEntry, Button*, _pButton, void)
     {
         bool bMoveRight = (m_pSelectOne == _pButton);
         ListBox& rMoveTo = bMoveRight ? *m_pSelFields : *m_pExistFields;
@@ -461,7 +458,7 @@ namespace dbp
     }
 
 
-    IMPL_LINK_TYPED(OGridFieldsSelection, OnMoveAllEntries, Button*, _pButton, void)
+    IMPL_LINK(OGridFieldsSelection, OnMoveAllEntries, Button*, _pButton, void)
     {
         bool bMoveRight = (m_pSelectAll == _pButton);
         m_pExistFields->Clear();

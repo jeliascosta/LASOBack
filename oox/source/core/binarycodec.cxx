@@ -112,8 +112,7 @@ sal_uInt16 CodecHelper::getPasswordHash( const AttributeList& rAttribs, sal_Int3
     return static_cast< sal_uInt16 >( ((0 <= nPasswordHash) && (nPasswordHash <= SAL_MAX_UINT16)) ? nPasswordHash : 0 );
 }
 
-BinaryCodec_XOR::BinaryCodec_XOR( CodecType eCodecType ) :
-    meCodecType( eCodecType ),
+BinaryCodec_XOR::BinaryCodec_XOR() :
     mnOffset( 0 ),
     mnBaseKey( 0 ),
     mnHash( 0 )
@@ -133,36 +132,28 @@ void BinaryCodec_XOR::initKey( const sal_uInt8 pnPassData[ 16 ] )
     mnBaseKey = lclGetKey( pnPassData, 16 );
     mnHash = lclGetHash( pnPassData, 16 );
 
-     static const sal_uInt8 spnFillChars[] =
+    static const sal_uInt8 spnFillChars[] =
     {
         0xBB, 0xFF, 0xFF, 0xBA,
         0xFF, 0xFF, 0xB9, 0x80,
         0x00, 0xBE, 0x0F, 0x00,
-        0xBF, 0x0F, 0x00
+        0xBF, 0x0F, 0x00, 0x00
     };
 
     (void)memcpy( mpnKey, pnPassData, 16 );
-    sal_Int32 nIndex;
     sal_Int32 nLen = lclGetLen( pnPassData, 16 );
     const sal_uInt8* pnFillChar = spnFillChars;
-    for( nIndex = nLen; nIndex < static_cast< sal_Int32 >( sizeof( mpnKey ) ); ++nIndex, ++pnFillChar )
+    for (sal_Int32 nIndex = nLen; nIndex < static_cast<sal_Int32>(sizeof(mpnKey)); ++nIndex, ++pnFillChar )
         mpnKey[ nIndex ] = *pnFillChar;
 
-    // rotation of key values is application dependent
-    size_t nRotateSize = 0;
-    switch( meCodecType )
-    {
-        case CODEC_WORD:    nRotateSize = 7;    break;
-        case CODEC_EXCEL:   nRotateSize = 2;    break;
-        // compiler will warn, if new codec type is introduced and not handled here
-    }
+    size_t nRotateSize = 2;
 
     // use little-endian base key to create key array
     sal_uInt8 pnBaseKeyLE[ 2 ];
     pnBaseKeyLE[ 0 ] = static_cast< sal_uInt8 >( mnBaseKey );
     pnBaseKeyLE[ 1 ] = static_cast< sal_uInt8 >( mnBaseKey >> 8 );
     sal_uInt8* pnKeyChar = mpnKey;
-    for( nIndex = 0; nIndex < static_cast< sal_Int32 >( sizeof( mpnKey ) ); ++nIndex, ++pnKeyChar )
+    for (sal_Int32 nIndex = 0; nIndex < static_cast<sal_Int32>(sizeof(mpnKey)); ++nIndex, ++pnKeyChar )
     {
         *pnKeyChar ^= pnBaseKeyLE[ nIndex & 1 ];
         lclRotateLeft( *pnKeyChar, nRotateSize );
@@ -203,49 +194,6 @@ uno::Sequence< beans::NamedValue > BinaryCodec_XOR::getEncryptionData()
 bool BinaryCodec_XOR::verifyKey( sal_uInt16 nKey, sal_uInt16 nHash ) const
 {
     return (nKey == mnBaseKey) && (nHash == mnHash);
-}
-
-void BinaryCodec_XOR::startBlock()
-{
-    mnOffset = 0;
-}
-
-void BinaryCodec_XOR::decode( sal_uInt8* pnDestData, const sal_uInt8* pnSrcData, sal_Int32 nBytes )
-{
-    const sal_uInt8* pnCurrKey = mpnKey + mnOffset;
-    const sal_uInt8* pnKeyLast = mpnKey + 0x0F;
-
-    // switch/case outside of the for loop (performance)
-    const sal_uInt8* pnSrcDataEnd = pnSrcData + nBytes;
-    switch( meCodecType )
-    {
-        case CODEC_WORD:
-        {
-            for( ; pnSrcData < pnSrcDataEnd; ++pnSrcData, ++pnDestData )
-            {
-                sal_uInt8 nData = *pnSrcData ^ *pnCurrKey;
-                if( (*pnSrcData != 0) && (nData != 0) )
-                    *pnDestData = nData;
-                if( pnCurrKey < pnKeyLast ) ++pnCurrKey; else pnCurrKey = mpnKey;
-            }
-        }
-        break;
-        case CODEC_EXCEL:
-        {
-            for( ; pnSrcData < pnSrcDataEnd; ++pnSrcData, ++pnDestData )
-            {
-                *pnDestData = *pnSrcData;
-                lclRotateLeft( *pnDestData, 3 );
-                *pnDestData ^= *pnCurrKey;
-                if( pnCurrKey < pnKeyLast ) ++pnCurrKey; else pnCurrKey = mpnKey;
-            }
-        }
-        break;
-        // compiler will warn, if new codec type is introduced and not handled here
-    }
-
-    // update offset and leave
-    skip( nBytes );
 }
 
 bool BinaryCodec_XOR::skip( sal_Int32 nBytes )
@@ -389,20 +337,6 @@ bool BinaryCodec_RCF::decode( sal_uInt8* pnDestData, const sal_uInt8* pnSrcData,
         pnSrcData, static_cast< sal_Size >( nBytes ),
         pnDestData, static_cast< sal_Size >( nBytes ) );
     return eResult == rtl_Cipher_E_None;
-}
-
-void BinaryCodec_RCF::skip( sal_Int32 nBytes )
-{
-    // decode dummy data in memory to update internal state of RC4 cipher
-    sal_uInt8 pnDummy[ 1024 ];
-    sal_Int32 nBytesLeft = nBytes;
-    bool bResult = true;
-    while( bResult && (nBytesLeft > 0) )
-    {
-        sal_Int32 nBlockLen = ::std::min( nBytesLeft, static_cast< sal_Int32 >( sizeof( pnDummy ) ) );
-        bResult = decode( pnDummy, pnDummy, nBlockLen );
-        nBytesLeft -= nBlockLen;
-    }
 }
 
 } // namespace core

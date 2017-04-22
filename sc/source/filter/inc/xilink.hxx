@@ -80,7 +80,7 @@ public:
         @return  The 0-based index of the sheet nCreatedId if it is contained in the list.
         Example: The buffer is 3;5;2;4;1, nCreatedId is 1 and nMaxTabId is 3. The function will
         return 2 which is the 0-based index of sheet 1 in the list 3;2;1. */
-    sal_uInt16          GetCurrentIndex( sal_uInt16 nCreatedId, sal_uInt16 nMaxTabId = 0xFFFF ) const;
+    sal_uInt16          GetCurrentIndex( sal_uInt16 nCreatedId, sal_uInt16 nMaxTabId ) const;
 
 private:
     typedef ::std::map< OUString, SCTAB > XclTabNameMap;
@@ -152,12 +152,12 @@ private:
     typedef ::std::unique_ptr< XclImpCachedMatrix > XclImpCachedMatrixPtr;
     typedef ::std::unique_ptr< ScTokenArray >       TokenArrayPtr;
 
-    XclImpCachedMatrixPtr mxDdeMatrix;      /// Cached results of the DDE link.
-    MOper*              mpMOper;            /// Cached values for OLE link
-    TokenArrayPtr       mxArray;            /// Formula tokens for external name.
-    OUString            maName;             /// The name of the external name.
-    sal_uInt32          mnStorageId;        /// Storage ID for OLE object storages.
-    XclImpExtNameType   meType;             /// Type of the external name.
+    XclImpCachedMatrixPtr  mxDdeMatrix;     /// Cached results of the DDE link.
+    std::unique_ptr<MOper> mpMOper;         /// Cached values for OLE link
+    TokenArrayPtr          mxArray;         /// Formula tokens for external name.
+    OUString               maName;          /// The name of the external name.
+    sal_uInt32             mnStorageId;     /// Storage ID for OLE object storages.
+    XclImpExtNameType      meType;          /// Type of the external name.
 };
 
 // Import link manager ========================================================
@@ -183,7 +183,7 @@ class XclImpLinkManager : protected XclImpRoot
 {
 public:
     explicit            XclImpLinkManager( const XclImpRoot& rRoot );
-                        virtual ~XclImpLinkManager();
+                        virtual ~XclImpLinkManager() override;
 
     /** Reads the EXTERNSHEET record. */
     void                ReadExternsheet( XclImpStream& rStrm );
@@ -194,7 +194,7 @@ public:
     /** Reads a CRN record and appends it to the current SUPBOOK. */
     void                ReadCrn( XclImpStream& rStrm );
     /** Reads an EXTERNNAME record and appends it to the current SUPBOOK. */
-    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv = nullptr );
+    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv );
 
     /** Returns true, if the specified XTI entry contains an internal reference. */
     bool                IsSelfRef( sal_uInt16 nXtiIndex ) const;

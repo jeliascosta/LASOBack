@@ -51,12 +51,6 @@ namespace {
     static const ::sal_Int32 s_nOffsetPassword          = 3;
     static const ::sal_Int32 s_nOffsetThumbnail         = 4;
 
-    const char s_sCommonHistory[] = "org.openoffice.Office.Common/History";
-    const char s_sHistories[] = "org.openoffice.Office.Histories/Histories";
-    const char s_sPickListSize[] = "PickListSize";
-    const char s_sHelpBookmarksSize[] = "HelpBookmarkSize";
-    const char s_sPickList[] = "PickList";
-    const char s_sHelpBookmarks[] = "HelpBookmarks";
     const char s_sItemList[] = "ItemList";
     const char s_sOrderList[] = "OrderList";
     const char s_sHistoryItemRef[] = "HistoryItemRef";
@@ -73,7 +67,6 @@ class SvtHistoryOptions_Impl
 {
 public:
     SvtHistoryOptions_Impl();
-    ~SvtHistoryOptions_Impl();
 
     /// Returns the maximum size of the internal lists, ie. the capacity not the size.
     sal_uInt32 GetCapacity(EHistoryType eHistory);
@@ -108,14 +101,14 @@ SvtHistoryOptions_Impl::SvtHistoryOptions_Impl()
         m_xCfg.set(
             ::comphelper::ConfigurationHelper::openConfig(
                 ::comphelper::getProcessComponentContext(),
-                s_sHistories,
+                "org.openoffice.Office.Histories/Histories",
                 ::comphelper::EConfigurationModes::Standard),
             uno::UNO_QUERY);
 
         m_xCommonXCU.set(
             ::comphelper::ConfigurationHelper::openConfig(
                 ::comphelper::getProcessComponentContext(),
-                s_sCommonHistory,
+                "org.openoffice.Office.Common/History",
                 ::comphelper::EConfigurationModes::Standard),
             uno::UNO_QUERY);
     }
@@ -126,10 +119,6 @@ SvtHistoryOptions_Impl::SvtHistoryOptions_Impl()
 
         SAL_WARN("unotools.config", "Caught unexpected: " << ex.Message);
     }
-}
-
-SvtHistoryOptions_Impl::~SvtHistoryOptions_Impl()
-{
 }
 
 sal_uInt32 SvtHistoryOptions_Impl::GetCapacity(EHistoryType eHistory)
@@ -146,11 +135,11 @@ sal_uInt32 SvtHistoryOptions_Impl::GetCapacity(EHistoryType eHistory)
         switch (eHistory)
         {
         case ePICKLIST:
-            xListAccess->getPropertyValue(s_sPickListSize) >>= nSize;
+            xListAccess->getPropertyValue("PickListSize") >>= nSize;
             break;
 
         case eHELPBOOKMARKS:
-            xListAccess->getPropertyValue(s_sHelpBookmarksSize) >>= nSize;
+            xListAccess->getPropertyValue("HelpBookmarkSize") >>= nSize;
             break;
 
         default:
@@ -174,11 +163,11 @@ uno::Reference<container::XNameAccess> SvtHistoryOptions_Impl::GetListAccess(EHi
         switch (eHistory)
         {
         case ePICKLIST:
-            m_xCfg->getByName(s_sPickList) >>= xListAccess;
+            m_xCfg->getByName("PickList") >>= xListAccess;
             break;
 
         case eHELPBOOKMARKS:
-            m_xCfg->getByName(s_sHelpBookmarks) >>= xListAccess;
+            m_xCfg->getByName("HelpBookmarks") >>= xListAccess;
             break;
 
         default:
@@ -306,10 +295,10 @@ Sequence< Sequence<PropertyValue> > SvtHistoryOptions_Impl::GetList(EHistoryType
             xItemList->getByName(sUrl) >>= xSet;
             seqProperties[s_nOffsetURL  ].Value <<= sUrl;
 
-            xSet->getPropertyValue(s_sFilter)   >>= seqProperties[s_nOffsetFilter   ].Value;
-            xSet->getPropertyValue(s_sTitle)    >>= seqProperties[s_nOffsetTitle    ].Value;
-            xSet->getPropertyValue(s_sPassword) >>= seqProperties[s_nOffsetPassword ].Value;
-            xSet->getPropertyValue(s_sThumbnail)>>= seqProperties[s_nOffsetThumbnail].Value;
+            seqProperties[s_nOffsetFilter   ].Value = xSet->getPropertyValue(s_sFilter);
+            seqProperties[s_nOffsetTitle    ].Value = xSet->getPropertyValue(s_sTitle);
+            seqProperties[s_nOffsetPassword ].Value = xSet->getPropertyValue(s_sPassword);
+            seqProperties[s_nOffsetThumbnail].Value = xSet->getPropertyValue(s_sThumbnail);
             aRet[nCount++] = seqProperties;
         }
         catch(const uno::Exception& ex)
@@ -523,66 +512,51 @@ void SvtHistoryOptions_Impl::DeleteItem(EHistoryType eHistory, const OUString& s
     }
 }
 
-// initialize static member
-// DON'T DO IT IN YOUR HEADER!
-// see definition for further information
+namespace {
 
-SvtHistoryOptions_Impl*  SvtHistoryOptions::m_pDataContainer = nullptr;
-sal_Int32     SvtHistoryOptions::m_nRefCount  = 0;
+std::weak_ptr<SvtHistoryOptions_Impl> g_pHistoryOptions;
 
-// constructor
+}
 
 SvtHistoryOptions::SvtHistoryOptions()
 {
     MutexGuard aGuard(theHistoryOptionsMutex::get());
 
-    // Increase our refcount ...
-    ++m_nRefCount;
-    // ... and initialize our data container only if it not already exist!
-    if( m_pDataContainer == nullptr )
+    m_pImpl = g_pHistoryOptions.lock();
+    if( !m_pImpl )
     {
-        m_pDataContainer = new SvtHistoryOptions_Impl;
-
-        ItemHolder1::holdConfigItem(E_HISTORYOPTIONS);
+        m_pImpl = std::make_shared<SvtHistoryOptions_Impl>();
+        g_pHistoryOptions = m_pImpl;
+        ItemHolder1::holdConfigItem(EItem::HistoryOptions);
     }
 }
-
-// destructor
 
 SvtHistoryOptions::~SvtHistoryOptions()
 {
     MutexGuard aGuard(theHistoryOptionsMutex::get());
 
-    // Decrease our refcount.
-    --m_nRefCount;
-    // If last instance was deleted ...
-    // we must destroy our static data container!
-    if( m_nRefCount <= 0 )
-    {
-        delete m_pDataContainer;
-        m_pDataContainer = nullptr;
-    }
+    m_pImpl.reset();
 }
 
 sal_uInt32 SvtHistoryOptions::GetSize( EHistoryType eHistory ) const
 {
     MutexGuard aGuard(theHistoryOptionsMutex::get());
 
-    return m_pDataContainer->GetCapacity(eHistory);
+    return m_pImpl->GetCapacity(eHistory);
 }
 
 void SvtHistoryOptions::Clear( EHistoryType eHistory )
 {
     MutexGuard aGuard(theHistoryOptionsMutex::get());
 
-    m_pDataContainer->Clear( eHistory );
+    m_pImpl->Clear( eHistory );
 }
 
 Sequence< Sequence< PropertyValue > > SvtHistoryOptions::GetList( EHistoryType eHistory ) const
 {
     MutexGuard aGuard(theHistoryOptionsMutex::get());
 
-    return m_pDataContainer->GetList( eHistory );
+    return m_pImpl->GetList( eHistory );
 }
 
 void SvtHistoryOptions::AppendItem(EHistoryType eHistory,
@@ -591,14 +565,14 @@ void SvtHistoryOptions::AppendItem(EHistoryType eHistory,
 {
     MutexGuard aGuard(theHistoryOptionsMutex::get());
 
-    m_pDataContainer->AppendItem(eHistory, sURL, sFilter, sTitle, sPassword, sThumbnail);
+    m_pImpl->AppendItem(eHistory, sURL, sFilter, sTitle, sPassword, sThumbnail);
 }
 
 void SvtHistoryOptions::DeleteItem(EHistoryType eHistory, const OUString& sURL)
 {
     MutexGuard aGuard(theHistoryOptionsMutex::get());
 
-    m_pDataContainer->DeleteItem(eHistory, sURL);
+    m_pImpl->DeleteItem(eHistory, sURL);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

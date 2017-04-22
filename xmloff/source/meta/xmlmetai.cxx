@@ -24,6 +24,7 @@
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
 #include <comphelper/processfactory.hxx>
+#include <rtl/character.hxx>
 #include <xmloff/xmlmetai.hxx>
 #include <xmloff/xmlimp.hxx>
 #include <xmloff/nmspmap.hxx>
@@ -45,8 +46,6 @@ public:
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         const css::uno::Reference< css::xml::dom::XSAXDocumentBuilder2>& rDocBuilder);
 
-    virtual ~XMLDocumentBuilderContext();
-
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
         const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList ) override;
@@ -64,10 +63,6 @@ XMLDocumentBuilderContext::XMLDocumentBuilderContext(SvXMLImport& rImport,
         const uno::Reference<xml::dom::XSAXDocumentBuilder2>& rDocBuilder) :
     SvXMLImportContext( rImport, nPrfx, rLName ),
     mxDocBuilder(rDocBuilder)
-{
-}
-
-XMLDocumentBuilderContext::~XMLDocumentBuilderContext()
 {
 }
 
@@ -122,9 +117,8 @@ lcl_initDocumentProperties(SvXMLImport & rImport,
         throw;
     } catch (const uno::Exception& e) {
         throw lang::WrappedTargetRuntimeException(
-            OUString(
-                "SvXMLMetaDocumentContext::initDocumentProperties: "
-                "properties init exception"),
+            "SvXMLMetaDocumentContext::initDocumentProperties: "
+            "properties init exception",
             rImport, makeAny(e));
     }
 }
@@ -159,6 +153,19 @@ SvXMLMetaDocumentContext::SvXMLMetaDocumentContext(SvXMLImport& rImport,
             sal_uInt16 nPrfx, const OUString& rLName,
             const uno::Reference<document::XDocumentProperties>& xDocProps) :
     SvXMLImportContext( rImport, nPrfx, rLName ),
+    mxDocProps(xDocProps),
+    mxDocBuilder(
+        xml::dom::SAXDocumentBuilder::create(
+            comphelper::getProcessComponentContext()))
+{
+// #i103539#: must always read meta.xml for generator, xDocProps unwanted then
+//    OSL_ENSURE(xDocProps.is(), "SvXMLMetaDocumentContext: no document props");
+}
+
+SvXMLMetaDocumentContext::SvXMLMetaDocumentContext(SvXMLImport& rImport,
+            sal_Int32 /*nElement*/,
+            const uno::Reference<document::XDocumentProperties>& xDocProps) :
+    SvXMLImportContext( rImport ),
     mxDocProps(xDocProps),
     mxDocBuilder(
         xml::dom::SAXDocumentBuilder::create(
@@ -268,7 +275,7 @@ void SvXMLMetaDocumentContext::setBuildId(OUString const& i_rBuildId, const uno:
         OUStringBuffer sNumber;
         for (sal_Int32 i = 0; i < rest.getLength(); ++i)
         {
-            if (isdigit(rest[i]))
+            if (rtl::isAsciiDigit(rest[i]))
             {
                 sNumber.append(rest[i]);
             }

@@ -22,15 +22,12 @@
 #include <doc.hxx>
 #include <dcontact.hxx>
 #include <proofreadingiterator.hxx>
-#include <com/sun/star/document/PrinterIndependentLayout.hpp>
-#include <com/sun/star/document/UpdateDocMode.hpp>
-#include <com/sun/star/text/XTextDocument.hpp>
 #include <com/sun/star/text/XFlatParagraphIteratorProvider.hpp>
 
 #include <comphelper/processfactory.hxx>
+#include <comphelper/random.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/virdev.hxx>
-#include <rtl/random.h>
 #include <sfx2/printer.hxx>
 #include <sfx2/docfile.hxx>
 #include <sfx2/frame.hxx>
@@ -120,23 +117,15 @@
 #include <sfx2/Metadatable.hxx>
 #include <fmtmeta.hxx>
 
-//UUUU
 #include <svx/xfillit0.hxx>
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::document;
 
-const sal_Char sFrameFormatStr[] = "Frameformat";
-const sal_Char sEmptyPageStr[] = "Empty Page";
-const sal_Char sColumnCntStr[] = "Columncontainer";
-const sal_Char sCharFormatStr[] = "Character style";
-const sal_Char sTextCollStr[] = "Paragraph style";
-const sal_Char sGrfCollStr[] = "Graphikformatvorlage";
-
 /*
  * global functions...
  */
- uno::Reference< linguistic2::XProofreadingIterator > SwDoc::GetGCIterator() const
+ uno::Reference< linguistic2::XProofreadingIterator > const & SwDoc::GetGCIterator() const
 {
     if (!m_xGCIterator.is() && SvtLinguConfig().HasGrammarChecker())
     {
@@ -225,21 +214,21 @@ SwDoc::SwDoc()
     m_pDocumentStatisticsManager( new ::sw::DocumentStatisticsManager( *this ) ),
     m_pDocumentLayoutManager( new ::sw::DocumentLayoutManager( *this ) ),
     m_pDocumentStylePoolManager( new ::sw::DocumentStylePoolManager( *this ) ),
-    m_pDocumentExternalDataManager( new ::sw::DocumentExternalDataManager() ),
-    mpDfltFrameFormat( new SwFrameFormat( GetAttrPool(), sFrameFormatStr, nullptr ) ),
-    mpEmptyPageFormat( new SwFrameFormat( GetAttrPool(), sEmptyPageStr, mpDfltFrameFormat ) ),
-    mpColumnContFormat( new SwFrameFormat( GetAttrPool(), sColumnCntStr, mpDfltFrameFormat ) ),
-    mpDfltCharFormat( new SwCharFormat( GetAttrPool(), sCharFormatStr, nullptr ) ),
-    mpDfltTextFormatColl( new SwTextFormatColl( GetAttrPool(), sTextCollStr ) ),
-    mpDfltGrfFormatColl( new SwGrfFormatColl( GetAttrPool(), sGrfCollStr ) ),
+    m_pDocumentExternalDataManager( new ::sw::DocumentExternalDataManager ),
+    mpDfltFrameFormat( new SwFrameFormat( GetAttrPool(), "Frameformat", nullptr ) ),
+    mpEmptyPageFormat( new SwFrameFormat( GetAttrPool(), "Empty Page", mpDfltFrameFormat ) ),
+    mpColumnContFormat( new SwFrameFormat( GetAttrPool(), "Columncontainer", mpDfltFrameFormat ) ),
+    mpDfltCharFormat( new SwCharFormat( GetAttrPool(), "Character style", nullptr ) ),
+    mpDfltTextFormatColl( new SwTextFormatColl( GetAttrPool(), "Paragraph style" ) ),
+    mpDfltGrfFormatColl( new SwGrfFormatColl( GetAttrPool(), "Graphikformatvorlage" ) ),
     mpFrameFormatTable( new SwFrameFormats() ),
-    mpCharFormatTable( new SwCharFormats() ),
+    mpCharFormatTable( new SwCharFormats ),
     mpSpzFrameFormatTable( new SwFrameFormats() ),
-    mpSectionFormatTable( new SwSectionFormats() ),
+    mpSectionFormatTable( new SwSectionFormats ),
     mpTableFrameFormatTable( new SwFrameFormats() ),
     mpTextFormatCollTable( new SwTextFormatColls() ),
     mpGrfFormatCollTable( new SwGrfFormatColls() ),
-    mpTOXTypes( new SwTOXTypes() ),
+    mpTOXTypes( new SwTOXTypes ),
     mpDefTOXBases( new SwDefTOXBase_Impl() ),
     mpOutlineRule( nullptr ),
     mpFootnoteInfo( new SwFootnoteInfo ),
@@ -257,6 +246,7 @@ SwDoc::SwDoc()
     mpLayoutCache( nullptr ),
     mpGrammarContact(createGrammarContact()),
     mpTableStyles(new SwTableAutoFormatTable),
+    mpCellStyles(new SwCellStyleTable),
     m_pXmlIdRegistry(),
     mReferenceCount(0),
     mbDtor(false),
@@ -279,10 +269,9 @@ SwDoc::SwDoc()
 #endif
     mbContainsAtPageObjWithContentAnchor(false), //#i119292#, fdo#37024
 
-    mbReadOnly(false),
     meDocType(DOCTYPE_NATIVE)
 {
-    //UUUU The DrawingLayer ItemPool which is used as 2nd pool for Writer documents' pool
+    // The DrawingLayer ItemPool which is used as 2nd pool for Writer documents' pool
     // has a default for the XFillStyleItem of XFILL_SOLID and the color for it is the default
     // fill color (blue7 or similar). This is a problem, in Writer we want the default fill
     // style to be drawing::FillStyle_NONE. This cannot simply be done by changing it in the 2nd pool at the
@@ -339,8 +328,9 @@ SwDoc::SwDoc()
     new SwTextNode( SwNodeIndex( GetNodes().GetEndOfContent() ),
                     getIDocumentStylePoolAccess().GetTextCollFromPool( RES_POOLCOLL_STANDARD ));
 
-    maOLEModifiedIdle.SetPriority( SchedulerPriority::LOWEST );
-    maOLEModifiedIdle.SetIdleHdl( LINK( this, SwDoc, DoUpdateModifiedOLE ));
+    maOLEModifiedIdle.SetPriority( TaskPriority::LOWEST );
+    maOLEModifiedIdle.SetInvokeHandler( LINK( this, SwDoc, DoUpdateModifiedOLE ));
+    maOLEModifiedIdle.SetDebugName( "sw::SwDoc maOLEModifiedIdle" );
 
 #if HAVE_FEATURE_DBCONNECTIVITY
     // Create DBManager
@@ -367,12 +357,11 @@ SwDoc::SwDoc()
     {
         // Initialize the session id of the current document to a random number
         // smaller than 2^21.
-        static rtlRandomPool aPool = rtl_random_createPool();
-        rtl_random_getBytes( aPool, &mnRsid, sizeof ( mnRsid ) );
-        mnRsid &= ( 1<<21 ) - 1;
-        mnRsid++;
+        mnRsid = comphelper::rng::uniform_uint_distribution(1, (1 << 21) - 1);
     }
     mnRsidRoot = mnRsid;
+
+    mpTableStyles->Load();
 
     getIDocumentState().ResetModified();
 }
@@ -424,12 +413,13 @@ SwDoc::~SwDoc()
     getIDocumentRedlineAccess().GetRedlineTable().DeleteAndDestroyAll();
     getIDocumentRedlineAccess().GetExtraRedlineTable().DeleteAndDestroyAll();
 
-    const sw::DocDisposingHint aHint;
+    const sw::UnoCursorHint aHint;
+    cleanupUnoCursorTable();
     for(const auto& pWeakCursor : mvUnoCursorTable)
     {
         auto pCursor(pWeakCursor.lock());
         if(pCursor)
-            pCursor->CallSwClientNotify(aHint);
+            pCursor->m_aNotifier.Broadcast(aHint);
     }
     delete mpACEWord;
 
@@ -493,6 +483,8 @@ SwDoc::~SwDoc()
     // Destroy these only after destroying the FormatIndices, because the content
     // of headers/footers has to be deleted as well. If in the headers/footers
     // there are still Flys registered at that point, we have a problem.
+    for( SwPageDesc *pPageDesc : m_PageDescs )
+        delete pPageDesc;
     m_PageDescs.clear();
 
     // Delete content selections.
@@ -541,7 +533,7 @@ SwDoc::~SwDoc()
 
 #if HAVE_FEATURE_DBCONNECTIVITY
     // On load, SwDBManager::setEmbeddedName() may register a data source.
-    // If we have an embedded one, then sDataSoure points to the registered name, so revoke it here.
+    // If we have an embedded one, then sDataSource points to the registered name, so revoke it here.
     if (!mpDBManager->getEmbeddedName().isEmpty() && !maDBData.sDataSource.isEmpty())
     {
         // Remove the revoke listener here first, so that we don't remove the data source from the document.
@@ -555,7 +547,7 @@ SwDoc::~SwDoc()
     // All Flys need to be destroyed before the Drawing Model,
     // because Flys can still contain DrawContacts, when no
     // Layout could be constructed due to a read error.
-    mpSpzFrameFormatTable->DeleteAndDestroy( 0, mpSpzFrameFormatTable->size() );
+    mpSpzFrameFormatTable->DeleteAndDestroyAll();
 
     // Only now destroy the Model, the drawing objects - which are also
     // contained in the Undo - need to remove their attributes from the
@@ -608,6 +600,7 @@ void SwDoc::SetDocShell( SwDocShell* pDSh )
         if (mpDocShell)
         {
             mpDocShell->SetUndoManager(& GetUndoManager());
+            GetUndoManager().SetDocShell(mpDocShell);
         }
 
         getIDocumentLinksAdministration().GetLinkManager().SetPersist( mpDocShell );
@@ -703,7 +696,9 @@ void SwDoc::ClearDoc()
     // remove the dummy pagedesc from the array and delete all the old ones
     size_t nDummyPgDsc = 0;
     if (FindPageDesc(pDummyPgDsc->GetName(), &nDummyPgDsc))
-        pDummyPgDsc = m_PageDescs[nDummyPgDsc].release();
+        m_PageDescs.erase( nDummyPgDsc );
+    for( SwPageDesc *pPageDesc : m_PageDescs )
+        delete pPageDesc;
     m_PageDescs.clear();
 
     // Delete for Collections
@@ -723,12 +718,12 @@ void SwDoc::ClearDoc()
     if( getIDocumentLayoutAccess().GetCurrentViewShell() )
     {
         // search the FrameFormat of the root frm. This is not allowed to delete
-        mpFrameFormatTable->erase( std::find( mpFrameFormatTable->begin(), mpFrameFormatTable->end(), getIDocumentLayoutAccess().GetCurrentViewShell()->GetLayout()->GetFormat() ) );
-        mpFrameFormatTable->DeleteAndDestroy(1, mpFrameFormatTable->size());
+        mpFrameFormatTable->erase( getIDocumentLayoutAccess().GetCurrentViewShell()->GetLayout()->GetFormat() );
+        mpFrameFormatTable->DeleteAndDestroyAll( true );
         mpFrameFormatTable->push_back( getIDocumentLayoutAccess().GetCurrentViewShell()->GetLayout()->GetFormat() );
     }
     else
-        mpFrameFormatTable->DeleteAndDestroy(1, mpFrameFormatTable->size());
+        mpFrameFormatTable->DeleteAndDestroyAll( true );
 
     mxForbiddenCharsTable.clear();
 
@@ -740,7 +735,7 @@ void SwDoc::ClearDoc()
     getIDocumentStylePoolAccess().GetPageDescFromPool( RES_POOLPAGE_STANDARD );
     pFirstNd->ChgFormatColl( getIDocumentStylePoolAccess().GetTextCollFromPool( RES_POOLCOLL_STANDARD ));
     nDummyPgDsc = m_PageDescs.size();
-    m_PageDescs.push_back(std::unique_ptr<SwPageDesc>(pDummyPgDsc));
+    m_PageDescs.push_back( pDummyPgDsc );
     // set the layout back to the new standard pagedesc
     pFirstNd->ResetAllAttr();
     // delete now the dummy pagedesc
@@ -870,6 +865,7 @@ void SwDoc::ReplaceCompatibilityOptions(const SwDoc& rSource)
 
 SfxObjectShell* SwDoc::CreateCopy( bool bCallInitNew, bool bEmpty ) const
 {
+    SAL_INFO( "sw.pageframe", "(SwDoc::CreateCopy in" );
     SwDoc* pRet = new SwDoc;
 
     // we have to use pointer here, since the callee has to decide whether
@@ -908,6 +904,7 @@ SfxObjectShell* SwDoc::CreateCopy( bool bCallInitNew, bool bEmpty ) const
 
     (void)pRet->release();
 
+    SAL_INFO( "sw.pageframe", "SwDoc::CreateCopy out)" );
     return pRetShell;
 }
 
@@ -951,21 +948,16 @@ static void lcl_CopyFollowPageDesc(
 SwNodeIndex SwDoc::AppendDoc(const SwDoc& rSource, sal_uInt16 const nStartPageNumber,
                              bool const bDeletePrevious, int pageOffset, const sal_uLong nDocNo)
 {
-    // GetEndOfExtras + 1 = StartOfContent == no content node!
-    // this ensures, that we have at least two nodes in the SwPaM.
-    // @see IDocumentContentOperations::CopyRange
-    SwNodeIndex aSourceIdx( rSource.GetNodes().GetEndOfExtras(), 1 );
-    SwNodeIndex aSourceEndIdx( rSource.GetNodes().GetEndOfContent(), -1 );
-    SwPaM aCpyPam( aSourceIdx );
+    SAL_INFO( "sw.pageframe", "(SwDoc::AppendDoc in " << bDeletePrevious );
 
-    if ( aSourceEndIdx.GetNode().IsTextNode() ) {
-        aCpyPam.SetMark();
-        // moves to the last content node before EOC; for single paragraph
-        // documents this would result in [n, n], which is considered empty
-        aCpyPam.Move( fnMoveForward, fnGoDoc );
-    }
-    else
-        aCpyPam = SwPaM( aSourceIdx, aSourceEndIdx );
+    // GetEndOfExtras + 1 = StartOfContent == no content node!
+    // This ensures it won't be merged in the SwTextNode at the position.
+    SwNodeIndex aSourceIdx( rSource.GetNodes().GetEndOfExtras(), 1 );
+    // CopyRange works on the range a [mark, point[ and considers an
+    // index < point outside the selection.
+    // @see IDocumentContentOperations::CopyRange
+    SwNodeIndex aSourceEndIdx( rSource.GetNodes().GetEndOfContent(), 0 );
+    SwPaM aCpyPam( aSourceIdx, aSourceEndIdx );
 
 #ifdef DBG_UTIL
     SAL_INFO( "sw.docappend", "NodeType 0x" << std::hex << (int) aSourceIdx.GetNode().GetNodeType()
@@ -973,7 +965,7 @@ SwNodeIndex SwDoc::AppendDoc(const SwDoc& rSource, sal_uInt16 const nStartPageNu
     aSourceIdx++;
     SAL_INFO( "sw.docappend", "NodeType 0x" << std::hex << (int) aSourceIdx.GetNode().GetNodeType()
                                             << std::dec << " " << aSourceIdx.GetNode().GetIndex() );
-    if ( aSourceIdx.GetNode().GetNodeType() != ND_ENDNODE ) {
+    if ( aSourceIdx.GetNode().GetNodeType() != SwNodeType::End ) {
         aSourceIdx++;
         SAL_INFO( "sw.docappend", "NodeType 0x" << std::hex << (int) aSourceIdx.GetNode().GetNodeType() << std::dec );
         aSourceIdx--;
@@ -982,10 +974,8 @@ SwNodeIndex SwDoc::AppendDoc(const SwDoc& rSource, sal_uInt16 const nStartPageNu
     SAL_INFO( "sw.docappend", ".." );
     SAL_INFO( "sw.docappend", "NodeType 0x" << std::hex << (int) aSourceEndIdx.GetNode().GetNodeType()
                               << std::dec << " " << aSourceEndIdx.GetNode().GetIndex() );
-    aSourceEndIdx++;
     SAL_INFO( "sw.docappend", "NodeType 0x" << std::hex << (int) aSourceEndIdx.GetNode().GetNodeType()
                               << std::dec << " " << aSourceEndIdx.GetNode().GetIndex() );
-    aSourceEndIdx--;
     SAL_INFO( "sw.docappend", "Src-Nd: " << CNTNT_DOC( &rSource ) );
     SAL_INFO( "sw.docappend", "Nd: " << CNTNT_DOC( this ) );
 #endif
@@ -1029,9 +1019,23 @@ SwNodeIndex SwDoc::AppendDoc(const SwDoc& rSource, sal_uInt16 const nStartPageNu
         }
 
         // Otherwise we have to handle SwPlaceholderNodes as first node
-        if ( pTargetPageDesc ) {
+        if ( pTargetPageDesc )
+        {
+            SwNodeIndex aBreakIdx( GetNodes().GetEndOfContent(), -1 );
+            SwPosition aBreakPos( aBreakIdx );
+            // InsertPageBreak just works on SwTextNode nodes, so make
+            // sure the last node is one!
+            bool bIsTextNode = aBreakIdx.GetNode().IsTextNode();
+            if ( !bIsTextNode )
+                getIDocumentContentOperations().AppendTextNode( aBreakPos );
             OUString name = pTargetPageDesc->GetName();
             pTargetShell->InsertPageBreak( &name, nStartPageNumber );
+            if ( !bIsTextNode )
+            {
+                pTargetShell->SttEndDoc( false );
+                --aBreakIdx;
+                GetNodes().Delete( aBreakIdx );
+            }
 
             // There is now a new empty text node on the new page. If it has
             // any marks, those are from the previous page: move them back
@@ -1058,6 +1062,15 @@ SwNodeIndex SwDoc::AppendDoc(const SwDoc& rSource, sal_uInt16 const nStartPageNu
                 for (sw::mark::IMark* pMark : aSeenMarks)
                     pMarkAccess->repositionMark(pMark, aPaM);
             }
+
+            // Flush the page break, if we want to keep it
+            if ( !bDeletePrevious )
+            {
+                SAL_INFO( "sw.pageframe", "(Flush pagebreak AKA EndAllAction" );
+                pTargetShell->EndAllAction();
+                SAL_INFO( "sw.pageframe",  "Flush changes AKA EndAllAction)" );
+                pTargetShell->StartAllAction();
+            }
         }
     }
 #ifdef DBG_UTIL
@@ -1079,10 +1092,11 @@ SwNodeIndex SwDoc::AppendDoc(const SwDoc& rSource, sal_uInt16 const nStartPageNu
                               << " " << aCpyPam.GetNode().GetIndex() << ")" );
 #endif
 
-    this->GetIDocumentUndoRedo().StartUndo( UNDO_INSGLOSSARY, nullptr );
+    this->GetIDocumentUndoRedo().StartUndo( SwUndoId::INSGLOSSARY, nullptr );
     this->getIDocumentFieldsAccess().LockExpFields();
 
-    // Position where the appended doc starts. Will be filled in later (uses GetEndOfContent() because SwNodeIndex has no default ctor).
+    // Position where the appended doc starts. Will be filled in later.
+    // Initially uses GetEndOfContent() because SwNodeIndex has no default ctor.
     SwNodeIndex aStartAppendIndex( GetNodes().GetEndOfContent() );
 
     {
@@ -1211,19 +1225,17 @@ else
         {
             const SwFrameFormat& rCpyFormat = *pCpyFormat;
             SwFormatAnchor aAnchor( rCpyFormat.GetAnchor() );
-            if (FLY_AT_PAGE != aAnchor.GetAnchorId())
+            if (RndStdIds::FLY_AT_PAGE != aAnchor.GetAnchorId())
                 continue;
-#ifdef DBG_UTIL
-    SAL_INFO( "sw.docappend", "PaAn: " << aAnchor.GetPageNum()
-                              << " => " << aAnchor.GetPageNum() + pageOffset );
-#endif
+            SAL_INFO( "sw.docappend", "PaAn: " << aAnchor.GetPageNum()
+                                      << " => " << aAnchor.GetPageNum() + pageOffset );
             if ( pageOffset != 0 )
                 aAnchor.SetPageNum( aAnchor.GetPageNum() + pageOffset );
             this->getIDocumentLayoutAccess().CopyLayoutFormat( rCpyFormat, aAnchor, true, true );
         }
     }
 
-    this->GetIDocumentUndoRedo().EndUndo( UNDO_INSGLOSSARY, nullptr );
+    this->GetIDocumentUndoRedo().EndUndo( SwUndoId::INSGLOSSARY, nullptr );
 
     getIDocumentFieldsAccess().UnlockExpFields();
     getIDocumentFieldsAccess().UpdateFields(false);
@@ -1231,6 +1243,7 @@ else
     if ( pTargetShell )
         pTargetShell->EndAllAction();
 
+    SAL_INFO( "sw.pageframe", "SwDoc::AppendDoc out)" );
     return aStartAppendIndex;
 }
 

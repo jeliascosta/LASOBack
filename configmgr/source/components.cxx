@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cstddef>
 #include <list>
 #include <set>
@@ -49,6 +50,7 @@
 #include <sal/log.hxx>
 #include <sal/types.h>
 #include <salhelper/thread.hxx>
+#include <comphelper/backupfilehelper.hxx>
 
 #include "additions.hxx"
 #include "components.hxx"
@@ -83,7 +85,7 @@ struct UnresolvedListItem {
 
     UnresolvedListItem(
         OUString const & theName,
-        rtl::Reference< ParseManager > theManager):
+        rtl::Reference< ParseManager > const & theManager):
         name(theName), manager(theManager) {}
 };
 
@@ -154,7 +156,7 @@ public:
     void flush() { delay_.set(); }
 
 private:
-    virtual ~WriteThread() {}
+    virtual ~WriteThread() override {}
 
     virtual void execute() override;
 
@@ -177,8 +179,7 @@ Components::WriteThread::WriteThread(
 }
 
 void Components::WriteThread::execute() {
-    TimeValue t = { 1, 0 }; // 1 sec
-    delay_.wait(&t); // must not throw; result_error is harmless and ignored
+    delay_.wait(std::chrono::seconds(1)); // must not throw; result_error is harmless and ignored
     osl::MutexGuard g(*lock_); // must not throw
     try {
         try {
@@ -224,10 +225,9 @@ rtl::Reference< Node > Components::resolvePathRepresentation(
         pathRepresentation, canonicRepresentation, path, finalizedLayer);
 }
 
-rtl::Reference< Node > Components::getTemplate(
-    int layer, OUString const & fullName) const
+rtl::Reference< Node > Components::getTemplate(OUString const & fullName) const
 {
-    return data_.getTemplate(layer, fullName);
+    return data_.getTemplate(Data::NO_LAYER, fullName);
 }
 
 void Components::addRootAccess(rtl::Reference< RootAccess > const & access) {
@@ -488,7 +488,7 @@ Components::Components(
         for (;; ++c) {
             if (c == conf.getLength() || conf[c] == ' ') {
                 throw css::uno::RuntimeException(
-                    "CONFIGURATION_LAYERS: missing \":\"");
+                    "CONFIGURATION_LAYERS: missing ':' in \"" + conf + "\"");
             }
             if (conf[c] == ':') {
                 break;
@@ -560,8 +560,9 @@ Components::Components(
             }
             OUString aTempFileURL;
             if (dumpWindowsRegistry(&aTempFileURL, eType)) {
-                parseFileLeniently(&parseXcuFile, aTempFileURL, layer, 0, 0, 0);
-                osl::File::remove(aTempFileURL);
+                parseFileLeniently(&parseXcuFile, aTempFileURL, layer, nullptr, nullptr, nullptr);
+                if (!getenv("SAL_CONFIG_WINREG_RETAIN_TMP"))
+                    osl::File::remove(aTempFileURL);
             }
             ++layer; //TODO: overflow
 #endif
@@ -613,7 +614,35 @@ Components::Components(
 
 Components::~Components()
 {
-    flushModifications();
+    // get flag if _exit was already called which is a sign to not secure user config.
+    // this is used for win only currently where calling _exit() unfortunately still
+    // calls destructors (what is not wanted). May be needed for other systems, too
+    // (unknown yet) but can do no harm
+    const bool bExitWasCalled(comphelper::BackupFileHelper::getExitWasCalled());
+
+#ifndef WNT
+    // we can add a SAL_WARN here for other systems where the destructor gets called after
+    // an _exit() call. Still safe - the getExitWasCalled() is used, but a hint that _exit
+    // behaves different on a system
+    SAL_WARN_IF(bExitWasCalled, "configmgr", "Components::~Components() called after _exit() call");
+#endif
+
+    if (bExitWasCalled)
+    {
+        // do not write, re-join threads
+        osl::MutexGuard g(*lock_);
+
+        if (writeThread_.is())
+        {
+            writeThread_->join();
+        }
+    }
+    else
+    {
+        // write changes
+        flushModifications();
+    }
+
     for (WeakRootSet::iterator i(roots_.begin()); i != roots_.end(); ++i) {
         (*i)->setAlive(false);
     }

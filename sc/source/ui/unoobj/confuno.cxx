@@ -30,6 +30,7 @@
 #include "sc.hrc"
 
 #include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <com/sun/star/document/LinkUpdateModes.hpp>
 #include <cppuhelper/supportsservice.hxx>
 #include <formula/grammar.hxx>
 #include <sfx2/printer.hxx>
@@ -99,19 +100,17 @@ ScDocumentConfiguration::~ScDocumentConfiguration()
 
 void ScDocumentConfiguration::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    //  Referenz-Update interessiert hier nicht
+    //  reference update does not matter here
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SfxHintId::Dying )
     {
-        pDocShell = nullptr;       // ungueltig geworden
+        pDocShell = nullptr;
     }
 }
 
 // XPropertySet
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScDocumentConfiguration::getPropertySetInfo()
-                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     static uno::Reference<beans::XPropertySetInfo> aRef(
@@ -121,9 +120,6 @@ uno::Reference<beans::XPropertySetInfo> SAL_CALL ScDocumentConfiguration::getPro
 
 void SAL_CALL ScDocumentConfiguration::setPropertyValue(
                         const OUString& aPropertyName, const uno::Any& aValue )
-                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
-                        lang::IllegalArgumentException, lang::WrappedTargetException,
-                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -159,18 +155,36 @@ void SAL_CALL ScDocumentConfiguration::setPropertyValue(
             aViewOpt.SetOption(VOPT_PAGEBREAKS, ScUnoHelpFunctions::GetBoolFromAny( aValue ) );
         else if ( aPropertyName == SC_UNONAME_LINKUPD )
         {
+            // XXX NOTE: this is the css::document::Settings property
+            // LinkUpdateMode, not the css::sheet::XGlobalSheetSettings
+            // attribute LinkUpdateMode.
             sal_Int16 n;
-            //TODO: css.sheet.XGlobalSheetSettings LinkUpdateMode property is
-            // documented to take values in the range 0--2 (always, never, on
-            // demand), but appears to be routinely set to 3 here,
-            // corresponding to ScLkUpdMode LM_UNKNOWN:
-            if (!(aValue >>= n) || n < 0 || n > 3) {
+            if (!(aValue >>= n) || n < css::document::LinkUpdateModes::NEVER ||
+                    n > css::document::LinkUpdateModes::GLOBAL_SETTING)
+            {
                 throw css::lang::IllegalArgumentException(
-                    ("LinkUpdateMode property value must be a SHORT in the"
-                     " range 0--3"),
+                    ("LinkUpdateMode property value must be a SHORT with a value in"
+                     " the range of the css::document::LinkUpdateModes constants"),
                     css::uno::Reference<css::uno::XInterface>(), -1);
             }
-            rDoc.SetLinkMode( static_cast<ScLkUpdMode>(n) );
+            ScLkUpdMode eMode;
+            switch (n)
+            {
+                case css::document::LinkUpdateModes::NEVER:
+                    eMode = LM_NEVER;
+                break;
+                case css::document::LinkUpdateModes::MANUAL:
+                    eMode = LM_ON_DEMAND;
+                break;
+                case css::document::LinkUpdateModes::AUTO:
+                    eMode = LM_ALWAYS;
+                break;
+                case css::document::LinkUpdateModes::GLOBAL_SETTING:
+                default:
+                    eMode = SC_MOD()->GetAppOptions().GetLinkMode();
+                break;
+            }
+            rDoc.SetLinkMode( eMode );
         }
         else if ( aPropertyName == SC_UNO_COLROWHDR )
             aViewOpt.SetOption(VOPT_HEADER, ScUnoHelpFunctions::GetBoolFromAny( aValue ) );
@@ -242,7 +256,7 @@ void SAL_CALL ScDocumentConfiguration::setPropertyValue(
         {
             // Int16 contains CharacterCompressionType values
             sal_Int16 nUno = ScUnoHelpFunctions::GetInt16FromAny( aValue );
-            rDoc.SetAsianCompression( (sal_uInt8) nUno );
+            rDoc.SetAsianCompression( (CharCompressType) nUno );
             bUpdateHeights = true;
         }
         else if ( aPropertyName == SC_UNO_ASIANKERN )
@@ -283,7 +297,7 @@ void SAL_CALL ScDocumentConfiguration::setPropertyValue(
             uno::Sequence< beans::PropertyValue > aInfo;
             if ( !( aValue >>= aInfo ) )
                 throw lang::IllegalArgumentException(
-                    OUString( "Value of type Sequence<PropertyValue> expected!" ),
+                    "Value of type Sequence<PropertyValue> expected!",
                     uno::Reference< uno::XInterface >(),
                     2 );
 
@@ -352,7 +366,7 @@ void SAL_CALL ScDocumentConfiguration::setPropertyValue(
             SCTAB nTabCount = rDoc.GetTableCount();
             for (SCTAB nTab=0; nTab<nTabCount; nTab++)
                 if ( !pDocShell->AdjustRowHeight( 0, MAXROW, nTab ) )
-                    pDocShell->PostPaint(ScRange(0, 0, nTab, MAXCOL, MAXROW, nTab), PAINT_GRID);
+                    pDocShell->PostPaint(ScRange(0, 0, nTab, MAXCOL, MAXROW, nTab), PaintPartFlags::Grid);
             pDocShell->SetDocumentModified();
         }
     }
@@ -361,8 +375,6 @@ void SAL_CALL ScDocumentConfiguration::setPropertyValue(
 }
 
 uno::Any SAL_CALL ScDocumentConfiguration::getPropertyValue( const OUString& aPropertyName )
-                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
-                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -392,7 +404,26 @@ uno::Any SAL_CALL ScDocumentConfiguration::getPropertyValue( const OUString& aPr
         else if ( aPropertyName == SC_UNO_SHOWPAGEBR )
             aRet <<= aViewOpt.GetOption( VOPT_PAGEBREAKS );
         else if ( aPropertyName == SC_UNONAME_LINKUPD )
-            aRet <<= static_cast<sal_Int16> ( rDoc.GetLinkMode() );
+        {
+            sal_Int16 nLUM;
+            switch (rDoc.GetLinkMode())
+            {
+                case LM_ALWAYS:
+                    nLUM = css::document::LinkUpdateModes::AUTO;
+                break;
+                case LM_NEVER:
+                    nLUM = css::document::LinkUpdateModes::NEVER;
+                break;
+                case LM_ON_DEMAND:
+                    nLUM = css::document::LinkUpdateModes::MANUAL;
+                break;
+                case LM_UNKNOWN:
+                default:
+                    nLUM = css::document::LinkUpdateModes::GLOBAL_SETTING;
+                break;
+            }
+            aRet <<= nLUM;
+        }
         else if ( aPropertyName == SC_UNO_COLROWHDR )
             aRet <<= aViewOpt.GetOption( VOPT_HEADER );
         else if ( aPropertyName == SC_UNO_SHEETTABS )
@@ -424,7 +455,7 @@ uno::Any SAL_CALL ScDocumentConfiguration::getPropertyValue( const OUString& aPr
                 sal_uInt32 nSize = aStream.Tell();
                 aStream.Seek ( STREAM_SEEK_TO_BEGIN );
                 uno::Sequence < sal_Int8 > aSequence( nSize );
-                aStream.Read ( aSequence.getArray(), nSize );
+                aStream.ReadBytes(aSequence.getArray(), nSize);
                 aRet <<= aSequence;
             }
             else
@@ -528,25 +559,20 @@ uno::Any SAL_CALL ScDocumentConfiguration::getPropertyValue( const OUString& aPr
 SC_IMPL_DUMMY_PROPERTY_LISTENER( ScDocumentConfiguration )
 
 // XServiceInfo
-OUString SAL_CALL ScDocumentConfiguration::getImplementationName() throw(uno::RuntimeException, std::exception)
+OUString SAL_CALL ScDocumentConfiguration::getImplementationName()
 {
     return OUString( "ScDocumentConfiguration" );
 }
 
 sal_Bool SAL_CALL ScDocumentConfiguration::supportsService( const OUString& rServiceName )
-                                                    throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence<OUString> SAL_CALL ScDocumentConfiguration::getSupportedServiceNames()
-                                                    throw(uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aRet(2);
-    OUString* pArray = aRet.getArray();
-    pArray[0] = "com.sun.star.comp.SpreadsheetSettings";
-    pArray[1] = "com.sun.star.document.Settings";
-    return aRet;
+    return {"com.sun.star.comp.SpreadsheetSettings",
+            "com.sun.star.document.Settings"};
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -19,6 +19,7 @@
 
 #include <com/sun/star/embed/Aspects.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
+#include <com/sun/star/embed/WrongStateException.hpp>
 #include <com/sun/star/datatransfer/XTransferable.hpp>
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/lang/DisposedException.hpp>
@@ -30,10 +31,6 @@
 using namespace ::com::sun::star;
 
 void SAL_CALL OCommonEmbeddedObject::setVisualAreaSize( sal_Int64 nAspect, const awt::Size& aSize )
-        throw ( lang::IllegalArgumentException,
-                embed::WrongStateException,
-                uno::Exception,
-                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -60,7 +57,7 @@ void SAL_CALL OCommonEmbeddedObject::setVisualAreaSize( sal_Int64 nAspect, const
         bBackToLoaded = m_bIsLink;
     }
 
-    bool bSuccess = m_pDocHolder->SetExtent( nAspect, aSize );
+    bool bSuccess = m_xDocHolder->SetExtent( nAspect, aSize );
 
     if ( bBackToLoaded )
         changeState( embed::EmbedStates::LOADED );
@@ -70,10 +67,6 @@ void SAL_CALL OCommonEmbeddedObject::setVisualAreaSize( sal_Int64 nAspect, const
 }
 
 awt::Size SAL_CALL OCommonEmbeddedObject::getVisualAreaSize( sal_Int64 nAspect )
-        throw ( lang::IllegalArgumentException,
-                embed::WrongStateException,
-                uno::Exception,
-                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -98,7 +91,7 @@ awt::Size SAL_CALL OCommonEmbeddedObject::getVisualAreaSize( sal_Int64 nAspect )
     }
 
     awt::Size aResult;
-    bool bSuccess = m_pDocHolder->GetExtent( nAspect, &aResult );
+    bool bSuccess = m_xDocHolder->GetExtent( nAspect, &aResult );
 
     if ( bBackToLoaded )
         changeState( embed::EmbedStates::LOADED );
@@ -110,8 +103,6 @@ awt::Size SAL_CALL OCommonEmbeddedObject::getVisualAreaSize( sal_Int64 nAspect )
 }
 
 sal_Int32 SAL_CALL OCommonEmbeddedObject::getMapUnit( sal_Int64 nAspect )
-        throw ( uno::Exception,
-                uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -139,7 +130,7 @@ sal_Int32 SAL_CALL OCommonEmbeddedObject::getMapUnit( sal_Int64 nAspect )
         bBackToLoaded = m_bIsLink;
     }
 
-    sal_Int32 nResult = m_pDocHolder->GetMapUnit( nAspect );
+    sal_Int32 nResult = m_xDocHolder->GetMapUnit( nAspect );
 
     if ( bBackToLoaded )
         changeState( embed::EmbedStates::LOADED );
@@ -151,10 +142,6 @@ sal_Int32 SAL_CALL OCommonEmbeddedObject::getMapUnit( sal_Int64 nAspect )
 }
 
 embed::VisualRepresentation SAL_CALL OCommonEmbeddedObject::getPreferredVisualRepresentation( sal_Int64 nAspect )
-        throw ( lang::IllegalArgumentException,
-                embed::WrongStateException,
-                uno::Exception,
-                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -174,6 +161,8 @@ embed::VisualRepresentation SAL_CALL OCommonEmbeddedObject::getPreferredVisualRe
     bool bBackToLoaded = false;
     if ( m_nObjectState == embed::EmbedStates::LOADED )
     {
+        // restore original VisualAreaSize, because writer objects set
+        // themselves to a default size OLESIZE
         awt::Size aOrigSize = getVisualAreaSize(nAspect);
         changeState(embed::EmbedStates::RUNNING);
         if (aOrigSize != getVisualAreaSize(nAspect))
@@ -183,25 +172,23 @@ embed::VisualRepresentation SAL_CALL OCommonEmbeddedObject::getPreferredVisualRe
         bBackToLoaded = m_bIsLink;
     }
 
-    SAL_WARN_IF( !m_pDocHolder->GetComponent().is(), "embeddedobj.common", "Running or Active object has no component!" );
+    SAL_WARN_IF( !m_xDocHolder->GetComponent().is(), "embeddedobj.common", "Running or Active object has no component!" );
 
     // TODO: return for the aspect of the document
     embed::VisualRepresentation aVisualRepresentation;
 
-    uno::Reference< embed::XVisualObject > xVisualObject( m_pDocHolder->GetComponent(), uno::UNO_QUERY );
+    uno::Reference< embed::XVisualObject > xVisualObject( m_xDocHolder->GetComponent(), uno::UNO_QUERY );
     if( xVisualObject.is())
     {
         aVisualRepresentation = xVisualObject->getPreferredVisualRepresentation( nAspect );
     }
     else
     {
-        uno::Reference< datatransfer::XTransferable > xTransferable( m_pDocHolder->GetComponent(), uno::UNO_QUERY );
-        if (!xTransferable.is() )
-            throw uno::RuntimeException();
+        uno::Reference< datatransfer::XTransferable > xTransferable( m_xDocHolder->GetComponent(), uno::UNO_QUERY_THROW );
 
         datatransfer::DataFlavor aDataFlavor(
-                OUString( "application/x-openoffice-gdimetafile;windows_formatname=\"GDIMetaFile\"" ),
-                OUString( "GDIMetaFile" ),
+                "application/x-openoffice-gdimetafile;windows_formatname=\"GDIMetaFile\"",
+                "GDIMetaFile",
                 cppu::UnoType<uno::Sequence< sal_Int8 >>::get() );
 
         if( xTransferable->isDataFlavorSupported( aDataFlavor ))

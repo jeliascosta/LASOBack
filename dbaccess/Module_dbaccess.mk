@@ -55,7 +55,7 @@ $(eval $(call gb_Module_add_check_targets,dbaccess,\
 ))
 endif
 
-# This runs a suite of peformance tests on embedded firebird and HSQLDB.
+# This runs a suite of performance tests on embedded firebird and HSQLDB.
 # Instructions on running the test can be found in qa/unit/embeddedb_performancetest
 ifeq ($(ENABLE_FIREBIRD_SDBC),TRUE)
 ifeq ($(ENABLE_JAVA),TRUE)
@@ -77,6 +77,11 @@ $(eval $(call gb_Module_add_subsequentcheck_targets,dbaccess,\
 ))
 endif
 endif
+
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,dbaccess,\
+    CppunitTest_dbaccess_dialogs_test \
+))
 
 endif
 

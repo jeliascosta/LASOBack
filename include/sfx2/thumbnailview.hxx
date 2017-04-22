@@ -71,7 +71,7 @@ namespace drawinglayer {
 
     WinBits
 
-    WB_VSCROLL          A scroolbar will be always shown. The visible number of
+    WB_VSCROLL          A scrollbar will be always shown. The visible number of
                         lines have to be specified with SetLineCount() if this
                         flag is set.
     WB_TABSTOP          It is possible to jump into the ValueSet with the tab key.
@@ -180,9 +180,9 @@ class SFX2_DLLPUBLIC ThumbnailView : public Control
 {
 public:
 
-    ThumbnailView(vcl::Window* pParent, WinBits nWinStyle = WB_TABSTOP, bool bDisableTransientChildren = false);
+    ThumbnailView(vcl::Window* pParent, WinBits nWinStyle = WB_TABSTOP);
 
-    virtual ~ThumbnailView();
+    virtual ~ThumbnailView() override;
     virtual void dispose() override;
 
     virtual void MouseMove(const MouseEvent& rMEvt) override;
@@ -226,10 +226,9 @@ public:
 
     void ShowTooltips( bool bShowTooltips );
 
-    void filterItems (const std::function<bool (const ThumbnailViewItem*) > &func);
+    void SetMultiSelectionEnabled( bool bIsMultiSelectionEnabled );
 
-    void sortItems (const std::function<bool (const ThumbnailViewItem*,
-                                                const ThumbnailViewItem*) > &func);
+    void filterItems (const std::function<bool (const ThumbnailViewItem*) > &func);
 
     void setItemStateHdl (const Link<const ThumbnailViewItem*,void> &aLink) { maItemStateHdl = aLink; }
 
@@ -245,11 +244,9 @@ protected:
 
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
 
-    virtual void MouseButtonUp( const MouseEvent& rMEvt ) override;
-
     virtual void Command( const CommandEvent& rCEvt ) override;
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
 
     virtual void GetFocus() override;
 
@@ -282,7 +279,6 @@ protected:
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
 
-    SFX2_DLLPRIVATE void         ImplInitScrollBar();
     SFX2_DLLPRIVATE void         ImplDeleteItems();
     SFX2_DLLPRIVATE size_t       ImplGetItem( const Point& rPoint ) const;
     SFX2_DLLPRIVATE ThumbnailViewItem*    ImplGetItem( size_t nPos );
@@ -290,7 +286,7 @@ protected:
     SFX2_DLLPRIVATE ThumbnailViewItem*    ImplGetVisibleItem( sal_uInt16 nVisiblePos );
     SFX2_DLLPRIVATE void         ImplFireAccessibleEvent( short nEventId, const css::uno::Any& rOldValue, const css::uno::Any& rNewValue );
     SFX2_DLLPRIVATE bool         ImplHasAccessibleListeners();
-    DECL_DLLPRIVATE_LINK_TYPED( ImplScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK( ImplScrollHdl, ScrollBar*, void );
 
 protected:
 
@@ -298,7 +294,6 @@ protected:
     ThumbnailValueItemList mFilteredItemList; ///< Cache to store the filtered items
     ThumbnailValueItemList::iterator mpStartSelRange;
     VclPtr<ScrollBar> mpScrBar;
-    long mnHeaderHeight;
     long mnItemWidth;
     long mnItemHeight;
     long mnItemPadding;
@@ -315,10 +310,11 @@ protected:
     bool mbIsTransientChildrenDisabled : 1;
     bool mbHasVisibleItems : 1;
     bool mbShowTooltips : 1;
+    bool mbIsMultiSelectionEnabled: 1;
     Color maFillColor;              ///< Background color of the thumbnail view widget.
     Color maTextColor;              ///< Text color.
     Color maHighlightColor;         ///< Color of the highlight (background) of the hovered item.
-    Color maHighlightTextColor;     ///< Color of the text for the higlighted item.
+    Color maHighlightTextColor;     ///< Color of the text for the highlighted item.
     Color maSelectHighlightColor;   ///< Color of the highlight (background) of the selected and hovered item.
     Color maSelectHighlightTextColor;   ///< Color of the text of the selected and hovered item.
     double mfHighlightTransparence; ///< Transparence of the highlight.

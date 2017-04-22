@@ -28,7 +28,7 @@
 #include <sal/macros.h>
 #include <rtl/tencinfo.h>
 #include <svtools/colorcfg.hxx>
-#include <toolkit/helper/vclunohelper.hxx>
+#include <vcl/unohelp.hxx>
 #include <editeng/svxfont.hxx>
 #include "global.hxx"
 #include "xlroot.hxx"
@@ -153,7 +153,7 @@ ColorData XclDefaultPalette::GetDefColorData( sal_uInt16 nXclIndex ) const
         case EXC_COLOR_NOTETEXT:        nColor = mnNoteText;    break;
         case EXC_COLOR_FONTAUTO:        nColor = COL_AUTO;      break;
         default:
-            OSL_TRACE( "XclDefaultPalette::GetDefColorData - unknown default color index: %d", nXclIndex );
+            SAL_WARN("sc",  "XclDefaultPalette::GetDefColorData - unknown default color index: " << nXclIndex );
             nColor = COL_AUTO;
     }
     return nColor;
@@ -286,11 +286,11 @@ FontLineStyle XclFontData::GetScUnderline() const
 
 SvxEscapement XclFontData::GetScEscapement() const
 {
-    SvxEscapement eScEscapem = SVX_ESCAPEMENT_OFF;
+    SvxEscapement eScEscapem = SvxEscapement::Off;
     switch( mnEscapem )
     {
-        case EXC_FONTESC_SUPER: eScEscapem = SVX_ESCAPEMENT_SUPERSCRIPT;    break;
-        case EXC_FONTESC_SUB:   eScEscapem = SVX_ESCAPEMENT_SUBSCRIPT;      break;
+        case EXC_FONTESC_SUPER: eScEscapem = SvxEscapement::Superscript;    break;
+        case EXC_FONTESC_SUB:   eScEscapem = SvxEscapement::Subscript;      break;
     }
     return eScEscapem;
 }
@@ -417,7 +417,7 @@ Awt::FontSlant XclFontData::GetApiPosture() const
 
 float XclFontData::GetApiWeight() const
 {
-    return VCLUnoHelper::ConvertFontWeight( GetScWeight() );
+    return vcl::unohelper::ConvertFontWeight( GetScWeight() );
 }
 
 sal_Int16 XclFontData::GetApiUnderline() const
@@ -479,7 +479,7 @@ void XclFontData::SetApiPosture( Awt::FontSlant eApiPosture )
 
 void XclFontData::SetApiWeight( float fApiWeight )
 {
-    SetScWeight( VCLUnoHelper::ConvertFontWeight( fApiWeight ) );
+    SetScWeight( vcl::unohelper::ConvertFontWeight( fApiWeight ) );
 }
 
 void XclFontData::SetApiUnderline( sal_Int16 nApiUnderl )
@@ -710,7 +710,7 @@ void XclFontPropSetHelper::WriteFontProperties(
             lclWriteChartFont( rPropSet, maHlpChCmplx, maHlpChCmplxNoName, rFontData, bHasCmplx );
 
             // font escapement
-            if( rFontData.GetScEscapement() != SVX_ESCAPEMENT_OFF )
+            if( rFontData.GetScEscapement() != SvxEscapement::Off )
             {
                 maHlpChEscapement.InitializeWrite();
                 maHlpChEscapement << rFontData.GetApiEscapement() << EXC_API_ESC_HEIGHT;
@@ -829,8 +829,8 @@ static const XclBuiltInFormat spBuiltInFormats_DONTKNOW[] =
     EXC_NUMFMT_OFFSET(   9, NF_PERCENT_INT ),           // 0%
     EXC_NUMFMT_OFFSET(  10, NF_PERCENT_DEC2 ),          // 0.00%
     EXC_NUMFMT_OFFSET(  11, NF_SCIENTIFIC_000E00 ),     // 0.00E+00
-    EXC_NUMFMT_OFFSET(  12, NF_FRACTION_1 ),            // # ?/?
-    EXC_NUMFMT_OFFSET(  13, NF_FRACTION_2 ),            // # ??/??
+    EXC_NUMFMT_OFFSET(  12, NF_FRACTION_1D ),            // # ?/?
+    EXC_NUMFMT_OFFSET(  13, NF_FRACTION_2D ),            // # ??/??
 
     // 14...22 date and time formats
     EXC_NUMFMT_OFFSET(  14, NF_DATE_SYS_DDMMYYYY ),
@@ -1449,7 +1449,7 @@ static const XclBuiltInFormatTable spBuiltInFormatTables[] =
 
 XclNumFmtBuffer::XclNumFmtBuffer( const XclRoot& rRoot ) :
     meSysLang( rRoot.GetSysLanguage() ),
-    mnStdScNumFmt( rRoot.GetFormatter().GetStandardFormat( ScGlobal::eLnge ) )
+    mnStdScNumFmt( rRoot.GetFormatter().GetStandardIndex( ScGlobal::eLnge ) )
 {
     // *** insert default formats (BIFF5+ only)***
 
@@ -1488,7 +1488,7 @@ void XclNumFmtBuffer::InsertBuiltinFormats()
     // language not supported
     if( aBuiltInVec.empty() )
     {
-        OSL_TRACE( "XclNumFmtBuffer::InsertBuiltinFormats - language 0x%04hX not supported (#i29949#)", meSysLang );
+        SAL_WARN("sc",  "XclNumFmtBuffer::InsertBuiltinFormats - language not supported (#i29949#) 0x" << std::hex << meSysLang );
         XclBuiltInMap::const_iterator aMIt = aBuiltInMap.find( LANGUAGE_DONTKNOW );
         OSL_ENSURE( aMIt != aBuiltInMap.end(), "XclNumFmtBuffer::InsertBuiltinFormats - default map not found" );
         if( aMIt != aBuiltInMap.end() )
@@ -1553,17 +1553,17 @@ XclCellAlign::XclCellAlign() :
 
 SvxCellHorJustify XclCellAlign::GetScHorAlign() const
 {
-    SvxCellHorJustify eHorJust = SVX_HOR_JUSTIFY_STANDARD;
+    SvxCellHorJustify eHorJust = SvxCellHorJustify::Standard;
     switch( mnHorAlign )
     {
-        case EXC_XF_HOR_GENERAL:    eHorJust = SVX_HOR_JUSTIFY_STANDARD;    break;
-        case EXC_XF_HOR_LEFT:       eHorJust = SVX_HOR_JUSTIFY_LEFT;        break;
+        case EXC_XF_HOR_GENERAL:    eHorJust = SvxCellHorJustify::Standard;    break;
+        case EXC_XF_HOR_LEFT:       eHorJust = SvxCellHorJustify::Left;        break;
         case EXC_XF_HOR_CENTER_AS:
-        case EXC_XF_HOR_CENTER:     eHorJust = SVX_HOR_JUSTIFY_CENTER;      break;
-        case EXC_XF_HOR_RIGHT:      eHorJust = SVX_HOR_JUSTIFY_RIGHT;       break;
-        case EXC_XF_HOR_FILL:       eHorJust = SVX_HOR_JUSTIFY_REPEAT;      break;
+        case EXC_XF_HOR_CENTER:     eHorJust = SvxCellHorJustify::Center;      break;
+        case EXC_XF_HOR_RIGHT:      eHorJust = SvxCellHorJustify::Right;       break;
+        case EXC_XF_HOR_FILL:       eHorJust = SvxCellHorJustify::Repeat;      break;
         case EXC_XF_HOR_JUSTIFY:
-        case EXC_XF_HOR_DISTRIB:    eHorJust = SVX_HOR_JUSTIFY_BLOCK;       break;
+        case EXC_XF_HOR_DISTRIB:    eHorJust = SvxCellHorJustify::Block;       break;
         default:    OSL_FAIL( "XclCellAlign::GetScHorAlign - unknown horizontal alignment" );
     }
     return eHorJust;
@@ -1571,7 +1571,7 @@ SvxCellHorJustify XclCellAlign::GetScHorAlign() const
 
 SvxCellJustifyMethod XclCellAlign::GetScHorJustifyMethod() const
 {
-    return (mnHorAlign == EXC_XF_HOR_DISTRIB) ? SVX_JUSTIFY_METHOD_DISTRIBUTE : SVX_JUSTIFY_METHOD_AUTO;
+    return (mnHorAlign == EXC_XF_HOR_DISTRIB) ? SvxCellJustifyMethod::Distribute : SvxCellJustifyMethod::Auto;
 }
 
 SvxCellVerJustify XclCellAlign::GetScVerAlign() const
@@ -1591,17 +1591,17 @@ SvxCellVerJustify XclCellAlign::GetScVerAlign() const
 
 SvxCellJustifyMethod XclCellAlign::GetScVerJustifyMethod() const
 {
-    return (mnVerAlign == EXC_XF_VER_DISTRIB) ? SVX_JUSTIFY_METHOD_DISTRIBUTE : SVX_JUSTIFY_METHOD_AUTO;
+    return (mnVerAlign == EXC_XF_VER_DISTRIB) ? SvxCellJustifyMethod::Distribute : SvxCellJustifyMethod::Auto;
 }
 
 SvxFrameDirection XclCellAlign::GetScFrameDir() const
 {
-    SvxFrameDirection eFrameDir = FRMDIR_ENVIRONMENT;
+    SvxFrameDirection eFrameDir = SvxFrameDirection::Environment;
     switch( mnTextDir )
     {
-        case EXC_XF_TEXTDIR_CONTEXT:    eFrameDir = FRMDIR_ENVIRONMENT;     break;
-        case EXC_XF_TEXTDIR_LTR:        eFrameDir = FRMDIR_HORI_LEFT_TOP;   break;
-        case EXC_XF_TEXTDIR_RTL:        eFrameDir = FRMDIR_HORI_RIGHT_TOP;  break;
+        case EXC_XF_TEXTDIR_CONTEXT:    eFrameDir = SvxFrameDirection::Environment;     break;
+        case EXC_XF_TEXTDIR_LTR:        eFrameDir = SvxFrameDirection::Horizontal_LR_TB;   break;
+        case EXC_XF_TEXTDIR_RTL:        eFrameDir = SvxFrameDirection::Horizontal_RL_TB;  break;
         default:    OSL_FAIL( "XclCellAlign::GetScFrameDir - unknown CTL text direction" );
     }
     return eFrameDir;
@@ -1611,12 +1611,12 @@ void XclCellAlign::SetScHorAlign( SvxCellHorJustify eHorJust )
 {
     switch( eHorJust )
     {
-        case SVX_HOR_JUSTIFY_STANDARD:  mnHorAlign = EXC_XF_HOR_GENERAL;    break;
-        case SVX_HOR_JUSTIFY_LEFT:      mnHorAlign = EXC_XF_HOR_LEFT;       break;
-        case SVX_HOR_JUSTIFY_CENTER:    mnHorAlign = EXC_XF_HOR_CENTER;     break;
-        case SVX_HOR_JUSTIFY_RIGHT:     mnHorAlign = EXC_XF_HOR_RIGHT;      break;
-        case SVX_HOR_JUSTIFY_BLOCK:     mnHorAlign = EXC_XF_HOR_JUSTIFY;    break;
-        case SVX_HOR_JUSTIFY_REPEAT:    mnHorAlign = EXC_XF_HOR_FILL;       break;
+        case SvxCellHorJustify::Standard:  mnHorAlign = EXC_XF_HOR_GENERAL;    break;
+        case SvxCellHorJustify::Left:      mnHorAlign = EXC_XF_HOR_LEFT;       break;
+        case SvxCellHorJustify::Center:    mnHorAlign = EXC_XF_HOR_CENTER;     break;
+        case SvxCellHorJustify::Right:     mnHorAlign = EXC_XF_HOR_RIGHT;      break;
+        case SvxCellHorJustify::Block:     mnHorAlign = EXC_XF_HOR_JUSTIFY;    break;
+        case SvxCellHorJustify::Repeat:    mnHorAlign = EXC_XF_HOR_FILL;       break;
         default:                        mnHorAlign = EXC_XF_HOR_GENERAL;
             OSL_FAIL( "XclCellAlign::SetScHorAlign - unknown horizontal alignment" );
     }
@@ -1639,9 +1639,9 @@ void XclCellAlign::SetScFrameDir( SvxFrameDirection eFrameDir )
 {
     switch( eFrameDir )
     {
-        case FRMDIR_ENVIRONMENT:    mnTextDir = EXC_XF_TEXTDIR_CONTEXT; break;
-        case FRMDIR_HORI_LEFT_TOP:  mnTextDir = EXC_XF_TEXTDIR_LTR;     break;
-        case FRMDIR_HORI_RIGHT_TOP: mnTextDir = EXC_XF_TEXTDIR_RTL;     break;
+        case SvxFrameDirection::Environment:      mnTextDir = EXC_XF_TEXTDIR_CONTEXT; break;
+        case SvxFrameDirection::Horizontal_LR_TB: mnTextDir = EXC_XF_TEXTDIR_LTR;     break;
+        case SvxFrameDirection::Horizontal_RL_TB: mnTextDir = EXC_XF_TEXTDIR_RTL;     break;
         default:                    mnTextDir = EXC_XF_TEXTDIR_CONTEXT;
             OSL_FAIL( "XclCellAlign::SetScFrameDir - unknown CTL text direction" );
     }

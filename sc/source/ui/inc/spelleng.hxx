@@ -36,15 +36,15 @@ public:
                             SfxItemPool* pEnginePool, ScViewData& rViewData,
                             ScDocument* pUndoDoc, ScDocument* pRedoDoc );
 
-    virtual             ~ScConversionEngineBase();
+    virtual             ~ScConversionEngineBase() override;
 
     /** Derived classes implement to convert all cells in the selection or sheet. */
     virtual void        ConvertAll( EditView& rEditView ) = 0;
 
     /** Returns true, if at least one cell has been modified. */
-    inline bool         IsAnyModified() const { return mbIsAnyModified; }
+    bool         IsAnyModified() const { return mbIsAnyModified; }
     /** Returns true, if the entire document/selection has been finished. */
-    inline bool         IsFinished() const { return mbFinished; }
+    bool         IsFinished() const { return mbFinished; }
 
 protected:
     /** Implementation of cell iteration. Finds a cell that needs conversion.
@@ -99,7 +99,7 @@ public:
                             ScViewData& rViewData,
                             ScDocument* pUndoDoc,
                             ScDocument* pRedoDoc,
-                            css::uno::Reference< css::linguistic2::XSpellChecker1 > xSpeller );
+                            css::uno::Reference< css::linguistic2::XSpellChecker1 > const & xSpeller );
 
     /** Checks spelling of all cells in the selection or sheet. */
     virtual void        ConvertAll( EditView& rEditView ) override;

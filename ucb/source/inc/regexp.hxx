@@ -37,13 +37,12 @@ public:
 
     inline bool operator ==(Regexp const & rOther) const;
 
-    inline bool isDefault() const
+    bool isDefault() const
     { return m_eKind == KIND_PREFIX && m_aPrefix.isEmpty(); }
 
-    inline Kind getKind() const { return m_eKind; }
+    Kind getKind() const { return m_eKind; }
 
-    bool matches(OUString const & rString, OUString * pTranslation,
-                 bool * pTranslated) const;
+    bool matches(OUString const & rString) const;
 
     OUString getRegexp() const;
 

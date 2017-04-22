@@ -37,10 +37,6 @@
 #define RID_CONTROL_START               RID_RPT_START
 #define RID_MISC_START                  RID_RPT_START
 
-// Dialog Control Id's -----------------------------------------------------------
-#define RID_DATETIME_DLG                ( RID_DIALOG_START + 2 )
-#define WIN_CONDITION                   ( RID_DIALOG_START + 4 )
-
 // strings
 #define RID_STR_CLASS_FORMATTEDFIELD        ( RID_STRING_START +   1 )
 #define RID_STR_CLASS_FIXEDTEXT             ( RID_STRING_START +   2 )
@@ -56,8 +52,6 @@
 // undo strings
 #define RID_STR_UNDO_REMOVE_REPORTHEADERFOOTER  ( RID_STRING_START +  11 )
 #define RID_STR_UNDO_ADD_REPORTHEADERFOOTER     ( RID_STRING_START +  12 )
-#define RID_STR_UNDO_REMOVE_PAGEHEADERFOOTER    ( RID_STRING_START +  13 )
-#define RID_STR_UNDO_ADD_PAGEHEADERFOOTER       ( RID_STRING_START +  14 )
 #define RID_STR_UNDO_PROPERTY                   ( RID_STRING_START +  15 )
 #define RID_STR_UNDO_REMOVE_GROUP               ( RID_STRING_START +  16 )
 #define RID_STR_UNDO_APPEND_GROUP               ( RID_STRING_START +  17 )
@@ -68,20 +62,12 @@
 #define RID_STR_UNDO_CHANGE_SIZE                ( RID_STRING_START +  22 )
 #define RID_STR_UNDO_INSERT_CONTROL             ( RID_STRING_START +  23 )
 #define RID_STR_UNDO_DELETE_CONTROL             ( RID_STRING_START +  24 )
-#define RID_STR_UNDO_GROUP                      ( RID_STRING_START +  25 )
-#define RID_STR_UNDO_UNGROUP                    ( RID_STRING_START +  26 )
 #define RID_STR_UNDO_CHANGEPOSITION             ( RID_STRING_START +  27 )
 #define RID_STR_UNDO_ADDFUNCTION                ( RID_STRING_START +  28 )
-#define RID_STR_UNDO_DELETEFUNCTION             ( RID_STRING_START +  29 )
 
-// title of tab pages
-#define RID_STR_DESIGN_VIEW                 ( RID_STRING_START +  30 )
-#define RID_STR_PREVIEW_VIEW                ( RID_STRING_START +  31 )
 // other
-#define STR_RPT_TITLE                       ( RID_STRING_START +  32 )
 #define STR_RPT_LABEL                       ( RID_STRING_START +  33 )
 #define STR_RPT_EXPRESSION                  ( RID_STRING_START +  34 )
-#define STR_RPT_SORTING                     ( RID_STRING_START +  35 )
 #define STR_RPT_PN_PAGE                     ( RID_STRING_START +  36 )
 #define STR_RPT_PN_PAGE_OF                  ( RID_STRING_START +  37 )
 #define STR_RPT_PREFIXCHARS                 ( RID_STRING_START +  38 )
@@ -109,13 +95,7 @@
 #define RID_STR_BRWTITLE_PROPERTIES         ( RID_STRING_START +  60 )
 #define RID_STR_BRWTITLE_NO_PROPERTIES      ( RID_STRING_START +  61 )
 #define RID_STR_BRWTITLE_MULTISELECT        ( RID_STRING_START +  62 )
-#define STR_SHOW_RULER                      ( RID_STRING_START +  63 )
-#define STR_SHOW_GRID                       ( RID_STRING_START +  64 )
 
-#define STR_COLOR_WHITE                     ( RID_STRING_START +  65 )
-#define STR_CHARCOLOR                       ( RID_STRING_START +  66 )
-#define STR_CHARBACKGROUND                  ( RID_STRING_START +  67 )
-#define STR_TRANSPARENT                     ( RID_STRING_START +  68 )
 #define RID_STR_FIELDSELECTION              ( RID_STRING_START +  69 )
 
 #define RID_STR_UNDO_ADD_GROUP_HEADER       ( RID_STRING_START +  70 )
@@ -148,11 +128,9 @@
 #define RID_STR_BACKCOLOR                   (RID_STRING_START + 93)
 #define RID_STR_PRINTREPEATEDVALUES         (RID_STRING_START + 94)
 #define RID_STR_CONDITIONALPRINTEXPRESSION  (RID_STRING_START + 95)
-#define RID_STR_COLUMNHEADERFOOTER_INSERT   (RID_STRING_START + 96)
 #define RID_STR_STARTNEWCOLUMN              (RID_STRING_START + 97)
 #define RID_STR_STARTNEWPAGE                (RID_STRING_START + 98)
 #define RID_STR_RESETPAGENUMBER             (RID_STRING_START + 99)
-#define RID_STR_COLUMNHEADERFOOTER_DELETE   (RID_STRING_START + 100)
 #define RID_STR_PRINTWHENGROUPCHANGE        (RID_STRING_START + 102)
 #define RID_STR_REPORTHEADERFOOTER_INSERT   (RID_STRING_START + 103)
 #define RID_STR_REPORTHEADERFOOTER_DELETE   (RID_STRING_START + 104)
@@ -167,8 +145,6 @@
 #define RID_STR_REPORT_HEADER               (RID_STRING_START + 112)
 #define RID_STR_REPORT_FOOTER               (RID_STRING_START + 113)
 #define RID_STR_SCOPE_GROUP                 (RID_STRING_START + 114)
-#define RID_APP_TITLE                       (RID_STRING_START + 115)
-#define RID_APP_NEW_DOC                     (RID_STRING_START + 116)
 #define RID_STR_UNDO_ALIGNMENT              (RID_STRING_START + 117)
 #define RID_STR_HEADER                      (RID_STRING_START + 118)
 #define RID_STR_FOOTER                      (RID_STRING_START + 119)
@@ -206,7 +182,7 @@
 #define RID_ERR_NO_COMMAND                  (RID_STRING_START + 151)
 #define RID_ERR_NO_OBJECTS                  (RID_STRING_START + 152)
 #define RID_STR_AREA                        (RID_STRING_START + 153)
-#define RID_STR_INSERT                      (RID_STRING_START + 154)
+// free
 #define RID_STR_UNDO_SHRINK                 (RID_STRING_START + 155)
 #define RID_STR_F_COUNTER                   (RID_STRING_START + 156)
 #define RID_STR_F_ACCUMULATION              (RID_STRING_START + 157)
@@ -215,25 +191,28 @@
 #define RID_STR_VERTICALALIGN               (RID_STRING_START + 160)
 #define RID_STR_PARAADJUST                  (RID_STRING_START + 161)
 
-#define RID_IMG_TREENODE_COLLAPSED          ( RID_IMAGE_START +   1 )
-#define RID_IMG_TREENODE_EXPANDED           ( RID_IMAGE_START +   2 )
-#define REPORT_TREE_ICON                    ( RID_IMAGE_START +   5 )
 // menu -----------------------------------------------------------------------
-#define RID_MENU_REPORT                     ( RID_MENU_START + 0 )
-#define RID_GROUPSROWPOPUPMENU              ( RID_MENU_START + 1 )
-#define RID_MENU_NAVIGATOR                  ( RID_MENU_START + 2 )
-#define RID_TB_SORTING                      ( RID_MENU_START + 3 )
-
-// free
-#define RID_SVXIMGLIST_RPTEXPL              (RID_IMAGELIST_START + 4)
-// free
-#define IMG_ADDFIELD_DLG_SC                 (RID_IMAGELIST_START + 8)
-// free
-#define IMG_ADDFIELD_DLG_LC                 (RID_IMAGELIST_START + 10)
-// free
-
-#define ADDFIELD_FL_HELP_SEPARATOR          (RID_IMAGELIST_START +  12)
-#define ADDFIELD_HELP_FIELD                 (RID_IMAGELIST_START +  13)
+#define RID_MENU_NAVIGATOR                  ( RID_MENU_START + 1 )
+// bitmaps
+#define RID_SVXBMP_SELECT_REPORT            (RID_BITMAP_START + 0 )
+#define RID_SVXBMP_FM_FIXEDTEXT             (RID_BITMAP_START + 1 )
+#define RID_SVXBMP_INSERT_HFIXEDLINE        (RID_BITMAP_START + 2 )
+#define RID_SVXBMP_INSERT_VFIXEDLINE        (RID_BITMAP_START + 3 )
+#define RID_SVXBMP_FM_IMAGECONTROL          (RID_BITMAP_START + 4 )
+#define RID_SVXBMP_FM_EDIT                  (RID_BITMAP_START + 5 )
+#define RID_SVXBMP_RPT_NEW_FUNCTION         (RID_BITMAP_START + 6 )
+#define RID_SVXBMP_REPORTHEADERFOOTER       (RID_BITMAP_START + 7 )
+#define RID_SVXBMP_PAGEHEADERFOOTER         (RID_BITMAP_START + 8 )
+#define RID_SVXBMP_GROUPHEADER              (RID_BITMAP_START + 9 )
+#define RID_SVXBMP_GROUPFOOTER              (RID_BITMAP_START + 10)
+#define RID_SVXBMP_COLLAPSEDNODE            (RID_BITMAP_START + 11)
+#define RID_SVXBMP_EXPANDEDNODE             (RID_BITMAP_START + 12)
+#define RID_SVXBMP_SORTINGANDGROUPING       (RID_BITMAP_START + 13)
+#define RID_SVXBMP_DRAWTBX_CS_BASIC         (RID_BITMAP_START + 14)
+#define RID_SVXBMP_GROUP                    (RID_BITMAP_START + 15)
+#define RID_SVXBMP_ICON_DETAIL              (RID_BITMAP_START + 16)
+#define RID_BMP_TREENODE_COLLAPSED          (RID_BITMAP_START + 17)
+#define RID_BMP_TREENODE_EXPANDED           (RID_BITMAP_START + 18)
 
 // untyped ---------------------------------------------------------------------
 #define RID_STR_BOOL                        (RID_UNTYPED_START +  0 )

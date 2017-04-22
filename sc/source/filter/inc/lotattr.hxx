@@ -42,13 +42,13 @@ struct LotAttrWK3
     sal_uInt8 nFontCol;
     sal_uInt8 nBack;
 
-    inline bool HasStyles () const
+    bool HasStyles () const
     {
         return ( nFont || nLineStyle || nFontCol || ( nBack & 0x7F ) );
-                    // !! ohne Center-Bit!!
+                    // !! without center bit!!
     }
 
-    inline bool IsCentered () const
+    bool IsCentered () const
     {
         return ( nBack & 0x80 );
     }
@@ -70,15 +70,15 @@ private:
 
     struct ENTRY
     {
-        ScPatternAttr*  pPattAttr;
-        sal_uInt32          nHash0;
+        std::unique_ptr<ScPatternAttr>  pPattAttr;
+        sal_uInt32                      nHash0;
 
-        ENTRY (ScPatternAttr* p);
+        ENTRY(ScPatternAttr* p);
 
-        ~ENTRY ();
+        ~ENTRY();
     };
 
-    inline static void  MakeHash( const LotAttrWK3& rAttr, sal_uInt32& rOut )
+    static void  MakeHash( const LotAttrWK3& rAttr, sal_uInt32& rOut )
     {
         reinterpret_cast<sal_uInt8*>(&rOut)[ 0 ] = rAttr.nFont & 0x7F;
         reinterpret_cast<sal_uInt8*>(&rOut)[ 1 ] = rAttr.nLineStyle;
@@ -93,7 +93,7 @@ private:
     const Color& GetColor( const sal_uInt8 nLotIndex ) const;
 
     ScDocumentPool*     pDocPool;
-    SvxColorItem*       ppColorItems[6];        // 0 und 7 fehlen!
+    SvxColorItem*       ppColorItems[6];        // 0 and 7 are missing!
     SvxColorItem*       pBlack;
     SvxColorItem*       pWhite;
     Color*              pColTab;

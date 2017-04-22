@@ -43,31 +43,19 @@ enum SmFormulaElement{
 };
 
 /** Bracket types that can be inserted */
-enum SmBracketType {
-    /** None brackets, left command "none" */
-    NoneBrackets,
+enum class SmBracketType {
     /** Round brackets, left command "(" */
-    RoundBrackets,
+    Round,
     /**Square brackets, left command "[" */
-    SquareBrackets,
-    /** Double square brackets, left command "ldbracket" */
-    DoubleSquareBrackets,
-    /** Line brackets, left command "lline" */
-    LineBrackets,
-    /** Double line brackets, left command "ldline" */
-    DoubleLineBrackets,
+    Square,
     /** Curly brackets, left command "lbrace" */
-    CurlyBrackets,
-    /** Angle brackets, left command "langle" */
-    AngleBrackets,
-    /** Ceiling brackets, left command "lceil" */
-    CeilBrackets,
-    /** Floor brackets, left command "lfloor" */
-    FloorBrackets
+    Curly,
 };
 
 /** A list of nodes */
 typedef std::list<SmNode*> SmNodeList;
+
+typedef std::list<std::unique_ptr<SmNode>> SmClipboard;
 
 class SmDocShell;
 
@@ -84,17 +72,11 @@ public:
         , mpPosition(nullptr)
         , mpTree(tree)
         , mpDocShell(pShell)
-        , mpClipboard(nullptr)
         , mnEditSections(0)
         , mbIsEnabledSetModifiedSmDocShell(false)
     {
         //Build graph
         BuildGraph();
-    }
-
-    ~SmCursor()
-    {
-        SetClipboard();
     }
 
     /** Get position */
@@ -107,7 +89,7 @@ public:
     void Move(OutputDevice* pDev, SmMovementDirection direction, bool bMoveAnchor = true);
 
     /** Move to the caret position closet to a given point */
-    void MoveTo(OutputDevice* pDev, Point pos, bool bMoveAnchor = true);
+    void MoveTo(OutputDevice* pDev, const Point& pos, bool bMoveAnchor);
 
     /** Delete the current selection or do nothing */
     void Delete();
@@ -202,7 +184,7 @@ public:
      *
      * This method is used for implementing backspace and delete.
      * If one of these causes a complex selection, e.g. a node with
-     * subnodes or similar, this should not be deleted imidiately.
+     * subnodes or similar, this should not be deleted immediately.
      */
     bool HasComplexSelection();
 
@@ -216,7 +198,7 @@ public:
     /** Draw the caret */
     void Draw(OutputDevice& pDev, Point Offset, bool isCaretVisible);
 
-    bool IsAtTailOfBracket(SmBracketType eBracketType, SmBraceNode** ppBraceNode = nullptr) const;
+    bool IsAtTailOfBracket(SmBracketType eBracketType, SmBraceNode** ppBraceNode) const;
     void MoveAfterBracket(SmBraceNode* pBraceNode);
 
 private:
@@ -231,7 +213,7 @@ private:
     /** Graph over caret position in the current tree */
     std::unique_ptr<SmCaretPosGraph> mpGraph;
     /** Clipboard holder */
-    SmNodeList* mpClipboard;
+    SmClipboard maClipboard;
 
     /** Returns a node that is selected, if any could be found */
     SmNode* FindSelectedNode(SmNode* pNode);
@@ -257,14 +239,14 @@ private:
      * that includes pLine!
      * This method also deletes SmErrorNode's as they're just meta info in the line.
      */
-    static SmNodeList* LineToList(SmStructureNode* pLine, SmNodeList* pList = new SmNodeList());
+    static SmNodeList* LineToList(SmStructureNode* pLine, SmNodeList* pList);
 
     /** Auxiliary function for calling LineToList on a node
      *
      * This method sets pNode = NULL and remove it from its parent.
      * (Assuming it has a parent, and is a child of it).
      */
-    static SmNodeList* NodeToList(SmNode*& rpNode, SmNodeList* pList = new SmNodeList()){
+    static SmNodeList* NodeToList(SmNode*& rpNode, SmNodeList* pList = new SmNodeList){
         //Remove from parent and NULL rpNode
         SmNode* pNode = rpNode;
         if(rpNode && rpNode->GetParent()){    //Don't remove this, correctness relies on it
@@ -281,13 +263,12 @@ private:
         return pList;
     }
 
-    /** Clone a visual line to a list
+    /** Clone a visual line to a clipboard
      *
-     * Doesn't clone SmErrorNode's these are ignored, as they are context dependent metadata.
+     * ... but the selected part only.
+     * Doesn't clone SmErrorNodes, which are ignored as they are context dependent metadata.
      */
-    static SmNodeList* CloneLineToList(SmStructureNode* pLine,
-                                       bool bOnlyIfSelected = false,
-                                       SmNodeList* pList = new SmNodeList());
+    static void CloneLineToClipboard(SmStructureNode* pLine, SmClipboard* pClipboard);
 
     /** Build pGraph over caret positions */
     void BuildGraph();
@@ -304,19 +285,12 @@ private:
     /** Set selected on nodes of the tree */
     void AnnotateSelection();
 
-    /** Set the clipboard, and release current clipboard
-     *
-     * Call this method with NULL to reset the clipboard
-     * @remarks: This method takes ownership of pList.
-     */
-    void SetClipboard(SmNodeList* pList = nullptr);
+    /** Clone list of nodes in a clipboard (creates a deep clone) */
+    static SmNodeList* CloneList(SmClipboard &rClipboard);
 
-    /** Clone list of nodes (creates a deep clone) */
-    static SmNodeList* CloneList(SmNodeList* pList);
-
-    /** Find an iterator pointing to the node in pLineList following aCaretPos
+    /** Find an iterator pointing to the node in pLineList following rCaretPos
      *
-     * If aCaretPos::pSelectedNode cannot be found it is assumed that it's in front of pLineList,
+     * If rCaretPos.pSelectedNode cannot be found it is assumed that it's in front of pLineList,
      * thus not an element in pLineList. In this case this method returns an iterator to the
      * first element in pLineList.
      *
@@ -324,7 +298,8 @@ private:
      * reason you should beaware that iterators to elements in pLineList may be invalidated, and
      * that you should call PatchLineList() with this iterator if no action is taken.
      */
-    static SmNodeList::iterator FindPositionInLineList(SmNodeList* pLineList, SmCaretPos aCaretPos);
+    static SmNodeList::iterator FindPositionInLineList(SmNodeList* pLineList,
+                                                       const SmCaretPos& rCaretPos);
 
     /** Patch a line list after modification, merge SmTextNode, remove SmPlaceNode etc.
      *
@@ -435,7 +410,7 @@ private:
     SmNodeList* pList;
     /** Get the current terminal */
     SmNode* Terminal(){
-        if(pList->size() > 0)
+        if (!pList->empty())
             return pList->front();
         return nullptr;
     }

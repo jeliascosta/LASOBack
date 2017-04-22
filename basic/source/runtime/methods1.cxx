@@ -67,7 +67,7 @@ using namespace com::sun::star::lang;
 using namespace com::sun::star::sheet;
 using namespace com::sun::star::uno;
 
-static Reference< XCalendar4 > getLocaleCalendar()
+static Reference< XCalendar4 > const & getLocaleCalendar()
 {
     static Reference< XCalendar4 > xCalendar;
     if( !xCalendar.is() )
@@ -214,9 +214,9 @@ RTLFUNC(CallByName)
 
             // Call method
             SbxVariableRef refVar = rPar.Get(0);
-            if( xArray.Is() )
-                pMeth->SetParameters( xArray );
-            pMeth->Call( refVar );
+            if( xArray.is() )
+                pMeth->SetParameters( xArray.get() );
+            pMeth->Call( refVar.get() );
             pMeth->SetParameters( nullptr );
         }
         break;
@@ -285,7 +285,7 @@ RTLFUNC(CDec)
     (void)bWrite;
 
 #ifdef _WIN32
-    SbxDecimal* pDec = NULL;
+    SbxDecimal* pDec = nullptr;
     if ( rPar.Count() == 2 )
     {
         SbxVariable *pSbxVariable = rPar.Get(1);
@@ -627,7 +627,7 @@ void Wait_Impl( bool bDurationBased, SbxArray& rPar )
     {
         double dWait = rPar.Get(1)->GetDouble();
         double dNow = Now_Impl();
-         double dSecs = (double)( ( dWait - dNow ) * (double)( 24.0*3600.0) );
+        double dSecs = ( dWait - dNow ) * 24.0 * 3600.0;
         nWait = (long)( dSecs * 1000 ); // wait in thousands of sec
     }
     else
@@ -747,7 +747,7 @@ RTLFUNC(TwipsPerPixelX)
 
     sal_Int32 nResult = 0;
     Size aSize( 100,0 );
-    MapMode aMap( MAP_TWIP );
+    MapMode aMap( MapUnit::MapTwip );
     OutputDevice* pDevice = Application::GetDefaultDevice();
     if( pDevice )
     {
@@ -764,7 +764,7 @@ RTLFUNC(TwipsPerPixelY)
 
     sal_Int32 nResult = 0;
     Size aSize( 0,100 );
-    MapMode aMap( MAP_TWIP );
+    MapMode aMap( MapUnit::MapTwip );
     OutputDevice* pDevice = Application::GetDefaultDevice();
     if( pDevice )
     {
@@ -827,21 +827,18 @@ RTLFUNC(Array)
     }
 
     // insert parameters into the array
-    // ATTENTION: Using type sal_uInt16 for loop variable is
-    // mandatory to workaround a problem with the
-    // Solaris Intel compiler optimizer! See i104354
     for( sal_uInt16 i = 0 ; i < nArraySize ; i++ )
     {
         SbxVariable* pVar = rPar.Get(i+1);
-        SbxVariable* pNew = new SbxVariable( *pVar );
+        SbxVariable* pNew = new SbxEnsureParentVariable(*pVar);
         pNew->SetFlag( SbxFlagBits::Write );
-        short index = static_cast< short >(i);
+        short aIdx[1];
+        aIdx[0] = static_cast< short >(i);
         if ( bIncIndex )
         {
-            ++index;
+            ++aIdx[0];
         }
-        // coverity[callee_ptr_arith]
-        pArray->Put( pNew, &index );
+        pArray->Put(pNew, aIdx);
     }
 
     // return array
@@ -987,7 +984,7 @@ RTLFUNC(FindPropertyObject)
 static bool lcl_WriteSbxVariable( const SbxVariable& rVar, SvStream* pStrm,
                                       bool bBinary, short nBlockLen, bool bIsArray )
 {
-    sal_Size nFPos = pStrm->Tell();
+    sal_uInt64 const nFPos = pStrm->Tell();
 
     bool bIsVariant = !rVar.IsFixed();
     SbxDataType eType = rVar.GetType();
@@ -1094,7 +1091,7 @@ static bool lcl_ReadSbxVariable( SbxVariable& rVar, SvStream* pStrm,
 
     double aDouble;
 
-    sal_Size nFPos = pStrm->Tell();
+    sal_uInt64 const nFPos = pStrm->Tell();
 
     bool bIsVariant = !rVar.IsFixed();
     SbxDataType eVarType = rVar.GetType();
@@ -1264,7 +1261,9 @@ void PutGet( SbxArray& rPar, bool bPut )
 
     if( bHasRecordNo )
     {
-        sal_Size nFilePos = bRandom ? (sal_Size)(nBlockLen * nRecordNo) : (sal_Size)nRecordNo;
+        sal_uInt64 const nFilePos = bRandom
+            ? static_cast<sal_uInt64>(nBlockLen * nRecordNo)
+            : static_cast<sal_uInt64>(nRecordNo);
         pStrm->Seek( nFilePos );
     }
 
@@ -1280,7 +1279,7 @@ void PutGet( SbxArray& rPar, bool bPut )
 
     if( pArr )
     {
-        sal_Size nFPos = pStrm->Tell();
+        sal_uInt64 const nFPos = pStrm->Tell();
         short nDims = pArr->GetDims();
         std::unique_ptr<short[]> pDims(new short[ nDims ]);
         bRet = lcl_WriteReadSbxArray(*pArr,pStrm,!bRandom,nDims,pDims.get(),bPut);
@@ -1346,9 +1345,9 @@ static double GetDialogZoomFactor( bool bX, long nValue )
         Size aRefSize( nValue, nValue );
         Fraction aFracX( 1, 26 );
         Fraction aFracY( 1, 24 );
-        MapMode aMap( MAP_APPFONT, Point(), aFracX, aFracY );
+        MapMode aMap( MapUnit::MapAppFont, Point(), aFracX, aFracY );
         Size aScaledSize = pDevice->LogicToPixel( aRefSize, aMap );
-        aRefSize = pDevice->LogicToPixel( aRefSize, MapMode(MAP_TWIP) );
+        aRefSize = pDevice->LogicToPixel( aRefSize, MapMode(MapUnit::MapTwip) );
 
         double nRef, nScaled;
         if( bX )
@@ -1644,7 +1643,7 @@ RTLFUNC(ConvertToUrl)
     {
         OUString aStr = rPar.Get(1)->GetOUString();
         INetURLObject aURLObj( aStr, INetProtocol::File );
-        OUString aFileURL = aURLObj.GetMainURL( INetURLObject::NO_DECODE );
+        OUString aFileURL = aURLObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
         if( aFileURL.isEmpty() )
         {
             ::osl::File::getFileURLFromSystemPath( aFileURL, aFileURL );
@@ -1725,12 +1724,12 @@ RTLFUNC(Join)
         OUString aRetStr;
         short nLower, nUpper;
         pArr->GetDim( 1, nLower, nUpper );
-        for (short i = nLower; i <= nUpper; ++i)
+        short aIdx[1];
+        for (aIdx[0] = nLower; aIdx[0] <= nUpper; ++aIdx[0])
         {
-            // coverity[callee_ptr_arith]
-            OUString aStr = pArr->Get( &i )->GetOUString();
+            OUString aStr = pArr->Get(aIdx)->GetOUString();
             aRetStr += aStr;
-            if( i != nUpper )
+            if (aIdx[0] != nUpper)
             {
                 aRetStr += aDelim;
             }
@@ -1758,7 +1757,7 @@ RTLFUNC(Split)
 
     OUString aExpression = rPar.Get(1)->GetOUString();
     short nArraySize = 0;
-    StringVector vRet;
+    std::vector< OUString > vRet;
     if( !aExpression.isEmpty() )
     {
         OUString aDelim;
@@ -2695,10 +2694,10 @@ RTLFUNC(SYD)
     // retrieve non-optional params
 
     Sequence< Any > aParams( 4 );
-    aParams[ 0 ] <<= makeAny( rPar.Get(1)->GetDouble() );
-    aParams[ 1 ] <<= makeAny( rPar.Get(2)->GetDouble() );
-    aParams[ 2 ] <<= makeAny( rPar.Get(3)->GetDouble() );
-    aParams[ 3 ] <<= makeAny( rPar.Get(4)->GetDouble() );
+    aParams[ 0 ] <<= rPar.Get(1)->GetDouble();
+    aParams[ 1 ] <<= rPar.Get(2)->GetDouble();
+    aParams[ 2 ] <<= rPar.Get(3)->GetDouble();
+    aParams[ 3 ] <<= rPar.Get(4)->GetDouble();
 
     CallFunctionAccessFunction( aParams, "SYD", rPar.Get( 0 ) );
 }
@@ -2719,9 +2718,9 @@ RTLFUNC(SLN)
     // retrieve non-optional params
 
     Sequence< Any > aParams( 3 );
-    aParams[ 0 ] <<= makeAny( rPar.Get(1)->GetDouble() );
-    aParams[ 1 ] <<= makeAny( rPar.Get(2)->GetDouble() );
-    aParams[ 2 ] <<= makeAny( rPar.Get(3)->GetDouble() );
+    aParams[ 0 ] <<= rPar.Get(1)->GetDouble();
+    aParams[ 1 ] <<= rPar.Get(2)->GetDouble();
+    aParams[ 2 ] <<= rPar.Get(3)->GetDouble();
 
     CallFunctionAccessFunction( aParams, "SLN", rPar.Get( 0 ) );
 }
@@ -2877,7 +2876,7 @@ RTLFUNC(NPV)
     }
 
     Sequence< Any > aParams( 2 );
-    aParams[ 0 ] <<= makeAny( rPar.Get(1)->GetDouble() );
+    aParams[ 0 ] <<= rPar.Get(1)->GetDouble();
     Any aValues = sbxToUnoValue( rPar.Get(2),
                 cppu::UnoType<Sequence<double>>::get() );
 
@@ -2886,7 +2885,7 @@ RTLFUNC(NPV)
     aValues >>= sValues[ 0 ];
     aValues <<= sValues;
 
-    aParams[ 1 ] <<= aValues;
+    aParams[ 1 ] = aValues;
 
     CallFunctionAccessFunction( aParams, "NPV", rPar.Get( 0 ) );
 }
@@ -2960,9 +2959,9 @@ RTLFUNC(MIRR)
     aValues >>= sValues[ 0 ];
     aValues <<= sValues;
 
-    aParams[ 0 ] <<= aValues;
-    aParams[ 1 ] <<= makeAny( rPar.Get(2)->GetDouble() );
-    aParams[ 2 ] <<= makeAny( rPar.Get(3)->GetDouble() );
+    aParams[ 0 ] = aValues;
+    aParams[ 1 ] <<= rPar.Get(2)->GetDouble();
+    aParams[ 2 ] <<= rPar.Get(3)->GetDouble();
 
     CallFunctionAccessFunction( aParams, "MIRR", rPar.Get( 0 ) );
 }
@@ -2998,7 +2997,7 @@ RTLFUNC(IRR)
     }
 
     Sequence< Any > aParams( 2 );
-    aParams[ 0 ] <<= aValues;
+    aParams[ 0 ] = aValues;
     aParams[ 1 ] <<= guess;
 
     CallFunctionAccessFunction( aParams, "IRR", rPar.Get( 0 ) );

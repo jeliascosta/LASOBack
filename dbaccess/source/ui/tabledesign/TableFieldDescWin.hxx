@@ -50,11 +50,11 @@ namespace dbaui
 
     protected:
         virtual void Resize() override;
-        virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+        virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
 
     public:
         explicit OTableFieldDescWin( vcl::Window* pParent);
-        virtual ~OTableFieldDescWin();
+        virtual ~OTableFieldDescWin() override;
         virtual void dispose() override;
 
         void Init();
@@ -86,8 +86,7 @@ namespace dbaui
         virtual void cut() override;
         virtual void paste() override;
 
-        inline OFieldDescGenWin* getGenPage() const { return m_pGenPage; }
-        inline OTableDesignHelpBar* getHelpBar() const { return m_pHelpBar; }
+        OFieldDescGenWin* getGenPage() const { return m_pGenPage; }
 
     };
 }

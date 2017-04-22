@@ -20,11 +20,17 @@
 #ifndef INCLUDED_DBACCESS_ICONTROLLER_HXX
 #define INCLUDED_DBACCESS_ICONTROLLER_HXX
 
-#include <com/sun/star/beans/PropertyValue.hpp>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
 #include <com/sun/star/uno/Sequence.hxx>
 #include <dbaccess/dbaccessdllapi.h>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
 
 namespace com { namespace sun { namespace star {
+    namespace beans {
+        struct PropertyValue;
+    }
     namespace util {
         struct URL;
     }
@@ -83,20 +89,6 @@ namespace dbaui
         */
         virtual bool isCommandEnabled( const OUString& _rCompleteCommandURL ) const = 0;
 
-        /** registers a command URL, giving it a unique name
-
-            If you call this with a command URL which is supported by the controller, then
-            you will simply get the controller's internal numeric shortcut to this command.
-
-            If you call this with a command URL which is not supported by the controller, then
-            you will get a new ID, which is unique during the lifetime of the controller.
-
-            If the command URL is invalid, or the controller cannot register new commands anymore,
-            then 0 is returned.
-        */
-        virtual sal_uInt16
-                        registerCommandURL( const OUString& _rCompleteCommandURL ) = 0;
-
         /** notifyHiContrastChanged will be called when the hicontrast mode changed.
             @param  _bHiContrast
                 <TRUE/> when in hicontrast mode.
@@ -113,9 +105,11 @@ namespace dbaui
 
             This must be the same model as returned by XController::getModel, and might be <NULL/> when
             the controller does not have an own model.
+
+            @throws css::uno::RuntimeException
         */
         virtual css::uno::Reference< css::frame::XController >
-                getXController() throw( css::uno::RuntimeException ) = 0;
+                getXController() = 0;
 
         /** allows interception of user input, aka mouse clicks and key events
         */

@@ -22,10 +22,12 @@
 
 #include <drawinglayer/drawinglayerdllapi.h>
 
-#include <cppuhelper/compbase1.hxx>
+#include <cppuhelper/compbase.hxx>
 #include <com/sun/star/graphic/XPrimitive2D.hpp>
-#include <comphelper/broadcasthelper.hxx>
+#include <com/sun/star/util/XAccounting.hpp>
+#include <cppuhelper/basemutex.hxx>
 #include <basegfx/range/b2drange.hxx>
+#include <deque>
 
 
 /** defines for DeclPrimitive2DIDBlock and ImplPrimitive2DIDBlock
@@ -49,26 +51,41 @@ namespace drawinglayer { namespace geometry {
 
 namespace drawinglayer { namespace primitive2d {
     /// typedefs for basePrimitive2DImplBase, Primitive2DSequence and Primitive2DReference
-    typedef cppu::WeakComponentImplHelper1< css::graphic::XPrimitive2D > BasePrimitive2DImplBase;
+    typedef cppu::WeakComponentImplHelper<
+                css::graphic::XPrimitive2D,
+                css::util::XAccounting
+            > BasePrimitive2DImplBase;
     typedef css::uno::Reference< css::graphic::XPrimitive2D > Primitive2DReference;
     typedef css::uno::Sequence< Primitive2DReference > Primitive2DSequence;
 
+    class Primitive2DContainer;
+    // Visitor class for walking a tree of Primitive2DReference in BasePrimitive2D::get2DDecomposition
+    class DRAWINGLAYER_DLLPUBLIC Primitive2DDecompositionVisitor {
+    public:
+        virtual void append(const Primitive2DReference&) = 0;
+        virtual void append(const Primitive2DContainer&) = 0;
+        virtual void append(Primitive2DContainer&&) = 0;
+        virtual ~Primitive2DDecompositionVisitor();
+    };
 
-    class SAL_WARN_UNUSED DRAWINGLAYER_DLLPUBLIC Primitive2DContainer : public std::vector< Primitive2DReference >
+    class SAL_WARN_UNUSED DRAWINGLAYER_DLLPUBLIC Primitive2DContainer : public std::deque< Primitive2DReference >,
+                                                                        public Primitive2DDecompositionVisitor
     {
     public:
         explicit Primitive2DContainer() {}
-        explicit Primitive2DContainer( size_type count ) : vector(count) {}
-        Primitive2DContainer( const Primitive2DContainer& other ) : vector(other) {}
-        Primitive2DContainer( const Primitive2DContainer&& other ) : vector(other) {}
-        Primitive2DContainer( const vector< Primitive2DReference >& other ) : vector(other) {}
-        Primitive2DContainer( std::initializer_list<Primitive2DReference> init ) : vector(init) {}
+        explicit Primitive2DContainer( size_type count ) : deque(count) {}
+        virtual ~Primitive2DContainer() override;
+        Primitive2DContainer( const Primitive2DContainer& other ) : deque(other) {}
+        Primitive2DContainer( const Primitive2DContainer&& other ) : deque(other) {}
+        Primitive2DContainer( const std::deque< Primitive2DReference >& other ) : deque(other) {}
+        Primitive2DContainer( std::initializer_list<Primitive2DReference> init ) : deque(init) {}
 
-        void append(const Primitive2DContainer& rSource);
+        virtual void append(const Primitive2DReference&) override;
+        virtual void append(const Primitive2DContainer& rSource) override;
+        virtual void append(Primitive2DContainer&& rSource) override;
         void append(const Primitive2DSequence& rSource);
-        void append(Primitive2DContainer&& rSource);
-        Primitive2DContainer& operator=(const Primitive2DContainer& r) { vector::operator=(r); return *this; }
-        Primitive2DContainer& operator=(const Primitive2DContainer&& r) { vector::operator=(r); return *this; }
+        Primitive2DContainer& operator=(const Primitive2DContainer& r) { deque::operator=(r); return *this; }
+        Primitive2DContainer& operator=(const Primitive2DContainer&& r) { deque::operator=(r); return *this; }
         bool operator==(const Primitive2DContainer& rB) const;
         bool operator!=(const Primitive2DContainer& rB) const { return !operator==(rB); }
         basegfx::B2DRange getB2DRange(const geometry::ViewInformation2D& aViewInformation) const;
@@ -95,7 +112,7 @@ namespace drawinglayer
             instance and copying or changing values is not intended. The idea is to hold all data
             needed for visualisation of this primitive in unchangeable form.
 
-            It is derived from comphelper::OBaseMutex to have a Mutex at hand; in a base
+            It is derived from cppu::BaseMutex to have a Mutex at hand; in a base
             implementation this may not be needed, but e.g. when buffering at last decomposition
             in a local member, multiple threads may try to decompose at the same time, so locking
             is needed to avoid race conditions seen from the UNO object implementation.
@@ -157,7 +174,7 @@ namespace drawinglayer
             in their get2DDecomposition/getB2DRange implementations.
          */
         class DRAWINGLAYER_DLLPUBLIC BasePrimitive2D
-        :   protected comphelper::OBaseMutex,
+        :   protected cppu::BaseMutex,
             public BasePrimitive2DImplBase
         {
             BasePrimitive2D(const BasePrimitive2D&) = delete;
@@ -165,7 +182,7 @@ namespace drawinglayer
         public:
             // constructor/destructor
             BasePrimitive2D();
-            virtual ~BasePrimitive2D();
+            virtual ~BasePrimitive2D() override;
 
             /** the ==operator is mainly needed to allow testing newly-created primitives against their last
                 incarnation which buffers/holds the made decompositions. The default implementation
@@ -185,7 +202,7 @@ namespace drawinglayer
             virtual sal_uInt32 getPrimitive2DID() const = 0;
 
             /// The default implementation will return an empty sequence
-            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const;
+            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const;
 
 
             // Methods from XPrimitive2D
@@ -194,12 +211,16 @@ namespace drawinglayer
             /** The getDecomposition implementation for UNO API will use getDecomposition from this implementation. It
                 will construct a ViewInformation2D from the ViewParameters for that purpose
              */
-            virtual Primitive2DSequence SAL_CALL getDecomposition( const css::uno::Sequence< css::beans::PropertyValue >& rViewParameters ) throw ( css::uno::RuntimeException, std::exception ) override;
+            virtual Primitive2DSequence SAL_CALL getDecomposition( const css::uno::Sequence< css::beans::PropertyValue >& rViewParameters ) override;
 
             /** The getRange implementation for UNO API will use getRange from this implementation. It
                 will construct a ViewInformation2D from the ViewParameters for that purpose
              */
-            virtual css::geometry::RealRectangle2D SAL_CALL getRange( const css::uno::Sequence< css::beans::PropertyValue >& rViewParameters ) throw ( css::uno::RuntimeException, std::exception ) override;
+            virtual css::geometry::RealRectangle2D SAL_CALL getRange( const css::uno::Sequence< css::beans::PropertyValue >& rViewParameters ) override;
+
+            // XAccounting
+            virtual sal_Int64 SAL_CALL estimateUsage() override;
+
         };
     } // end of namespace primitive2d
 } // end of namespace drawinglayer
@@ -214,7 +235,7 @@ namespace drawinglayer
         /** BufferedDecompositionPrimitive2D class
 
             Baseclass for all C++ implementations of css::graphic::XPrimitive2D
-            which want to buffer the decomoposition result
+            which want to buffer the decomposition result
 
             Buffering the decomposition is the most-used buffering and is thus used my most
             primitive implementations which support a decomposition as base class.
@@ -258,7 +279,7 @@ namespace drawinglayer
             /** method which is to be used to implement the local decomposition of a 2D primitive. The default
                 implementation will just return an empty decomposition
              */
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const;
 
         public:
             // constructor/destructor
@@ -270,7 +291,7 @@ namespace drawinglayer
                 overridden and the ViewInformation2D for the last decomposition need to be remembered, too, and
                 be used in the next call to decide if the buffered decomposition may be reused or not.
              */
-            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
         };
     } // end of namespace primitive2d
 } // end of namespace drawinglayer

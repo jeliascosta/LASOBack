@@ -18,6 +18,7 @@
  */
 
 #include <com/sun/star/embed/EmbedStates.hpp>
+#include <com/sun/star/embed/WrongStateException.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 
 #include "commonembobj.hxx"
@@ -36,9 +37,6 @@ bool RectanglesEqual( const awt::Rectangle& aRect1, const awt::Rectangle& aRect2
 
 void SAL_CALL OCommonEmbeddedObject::setObjectRectangles( const awt::Rectangle& aPosRect,
                                                            const awt::Rectangle& aClipRect )
-        throw ( embed::WrongStateException,
-                uno::Exception,
-                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -55,24 +53,19 @@ void SAL_CALL OCommonEmbeddedObject::setObjectRectangles( const awt::Rectangle& 
     // the clip rectangle changes view only in case interception is also changed
     if ( !RectanglesEqual( m_aOwnRectangle, aPosRect )
       || ( !RectanglesEqual( m_aClipRectangle, aPosRect ) && !RectanglesEqual( aOldRectToShow, aNewRectToShow ) ) )
-        m_pDocHolder->PlaceFrame( aNewRectToShow );
+        m_xDocHolder->PlaceFrame( aNewRectToShow );
 
     m_aOwnRectangle = aPosRect;
     m_aClipRectangle = aClipRect;
 }
 
 void SAL_CALL OCommonEmbeddedObject::enableModeless( sal_Bool /*bEnable*/ )
-        throw ( embed::WrongStateException,
-                uno::Exception,
-                uno::RuntimeException, std::exception )
 {
     // TODO: notify model that it can not use modal dialogs
 }
 
 void SAL_CALL OCommonEmbeddedObject::translateAccelerators(
                     const uno::Sequence< awt::KeyEvent >& /*aKeys*/ )
-        throw ( embed::WrongStateException,
-                uno::RuntimeException, std::exception )
 {
     // TODO: UI activation related
 }

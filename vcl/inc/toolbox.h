@@ -34,10 +34,9 @@ namespace vcl { class Window; }
 
 struct ImplToolItem
 {
-    VclPtr<vcl::Window> mpWindow;
+    VclPtr<vcl::Window> mpWindow; //don't dispose mpWindow - we get copied around
     void*               mpUserData;
     Image               maImage;
-    Image               maImageOriginal;
     long                mnImageAngle;
     bool                mbMirrorMode;
     OUString            maText;
@@ -45,8 +44,8 @@ struct ImplToolItem
     OUString            maHelpText;
     OUString            maCommandStr;
     OString             maHelpId;
-    Rectangle           maRect;
-    Rectangle           maCalcRect;
+    tools::Rectangle           maRect;
+    tools::Rectangle           maCalcRect;
     /// Widget layout may request size; set it as the minimal size (like, the item will always have at least this size).
     Size                maMinimalItemSize;
     /// The overall horizontal item size, including one or more of [image size + textlength + dropdown arrow]
@@ -75,10 +74,6 @@ struct ImplToolItem
                         ImplToolItem( sal_uInt16 nItemId, const Image& rImage,
                                       const OUString& rTxt,
                                       ToolBoxItemBits nItemBits );
-                        ~ImplToolItem();
-
-    ImplToolItem( const ImplToolItem& );
-    ImplToolItem& operator=(const ImplToolItem&);
 
     // returns the size of a item, taking toolbox orientation into account
     // the default size is the precomputed size for standard items
@@ -92,7 +87,7 @@ struct ImplToolItem
     // returns the rectangle which contains the drop down arrow
     // or an empty rect if there is none
     // bHorz denotes the toolbox alignment
-    Rectangle   GetDropDownRect( bool bHorz ) const;
+    tools::Rectangle   GetDropDownRect( bool bHorz ) const;
 
     // returns sal_True if the toolbar item is currently clipped, which can happen for docked toolbars
     bool IsClipped() const;
@@ -110,7 +105,6 @@ namespace vcl
 struct ToolBoxLayoutData : public ControlLayoutData
 {
     std::vector< sal_uInt16 >               m_aLineItemIds;
-    std::vector< sal_uInt16 >               m_aLineItemPositions;
 };
 
 } /* namespace vcl */
@@ -118,12 +112,12 @@ struct ToolBoxLayoutData : public ControlLayoutData
 struct ImplToolBoxPrivateData
 {
     vcl::ToolBoxLayoutData*         m_pLayoutData;
-    std::vector< ImplToolItem >     m_aItems;
+    ToolBox::ImplToolItems          m_aItems;
 
     ImplToolBoxPrivateData();
     ~ImplToolBoxPrivateData();
 
-    void ImplClearLayoutData() { delete m_pLayoutData; m_pLayoutData = NULL; }
+    void ImplClearLayoutData() { delete m_pLayoutData; m_pLayoutData = nullptr; }
 
     // called when dropdown items are clicked
     Link<ToolBox *, void> maDropdownClickHdl;
@@ -133,7 +127,8 @@ struct ImplToolBoxPrivateData
     ToolBoxButtonSize   meButtonSize;
 
     // the optional custom menu
-    PopupMenu*      mpMenu;
+    VclPtr<PopupMenu>   mpMenu;
+    tools::Rectangle       maMenuRect;
     ToolBoxMenuType maMenuType;
     ImplSVEvent *   mnEventId;
 

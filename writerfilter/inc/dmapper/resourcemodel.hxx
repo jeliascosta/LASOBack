@@ -270,7 +270,7 @@ public:
        Receives table.
 
        @param name     name of the table
-       @param ref      referecne to the table
+       @param ref      reference to the table
      */
     virtual void table(Id name,
                        writerfilter::Reference<Table>::Pointer_t ref) = 0;
@@ -347,7 +347,7 @@ public:
 };
 
 /**
-   An SPRM.
+   An SPRM: Section, Paragraph and Run Modifier
 
  */
 class Sprm

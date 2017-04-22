@@ -81,7 +81,7 @@ bool hasUnsupportedActions( const GDIMetaFile& rMtf )
         {
             case MetaActionType::RASTEROP:
                 // overpaint is okay - that's the default, anyway
-                if( ROP_OVERPAINT ==
+                if( RasterOp::OverPaint ==
                     static_cast<MetaRasterOpAction*>(pCurrAct)->GetRasterOp() )
                 {
                     break;
@@ -113,7 +113,7 @@ public:
         }
 
     //---  XGraphicRenderer  -----------------------------------
-    virtual void SAL_CALL render( const uno::Reference< graphic::XGraphic >& rGraphic ) throw (uno::RuntimeException, std::exception) override
+    virtual void SAL_CALL render( const uno::Reference< graphic::XGraphic >& rGraphic ) override
         {
             ::osl::MutexGuard aGuard( m_aMutex );
             mxGraphic = rGraphic;
@@ -127,33 +127,30 @@ public:
         against unsupported content, and, if necessary,
         returned as a pre-rendererd bitmap.
     */
-    GDIMetaFile getMtf( bool bForeignSource ) const
+    GDIMetaFileSharedPtr getMtf( bool bForeignSource ) const
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         Graphic aGraphic( mxGraphic );
 
-        if( aGraphic.GetType() == GRAPHIC_BITMAP ||
+        if( aGraphic.GetType() == GraphicType::Bitmap ||
             (bForeignSource &&
              hasUnsupportedActions(aGraphic.GetGDIMetaFile()) ) )
         {
             // wrap bitmap into GDIMetafile
-            GDIMetaFile     aMtf;
+            GDIMetaFileSharedPtr xMtf(new GDIMetaFile);
             ::Point         aEmptyPoint;
 
             ::BitmapEx      aBmpEx( aGraphic.GetBitmapEx() );
 
-            aMtf.AddAction( new MetaBmpExAction( aEmptyPoint,
+            xMtf->AddAction( new MetaBmpExAction( aEmptyPoint,
                                                  aBmpEx ) );
-            aMtf.SetPrefSize( aBmpEx.GetPrefSize() );
-            aMtf.SetPrefMapMode( aBmpEx.GetPrefMapMode() );
+            xMtf->SetPrefSize( aBmpEx.GetPrefSize() );
+            xMtf->SetPrefMapMode( aBmpEx.GetPrefMapMode() );
 
-            return aMtf;
+            return xMtf;
         }
-        else
-        {
-            return aGraphic.GetGDIMetaFile();
-        }
+        return GDIMetaFileSharedPtr(new GDIMetaFile(aGraphic.GetGDIMetaFile()));
     }
 
 private:
@@ -164,14 +161,16 @@ private:
 
 // Quick'n'dirty way: tunnel Graphic (only works for
 // in-process slideshow, of course)
-bool getMetaFile( const uno::Reference< lang::XComponent >&       xSource,
-                  const uno::Reference< drawing::XDrawPage >&     xContainingPage,
-                  GDIMetaFile&                                    rMtf,
-                  int                                             mtfLoadFlags,
-                  const uno::Reference< uno::XComponentContext >& rxContext )
+GDIMetaFileSharedPtr getMetaFile( const uno::Reference< lang::XComponent >&       xSource,
+                                  const uno::Reference< drawing::XDrawPage >&     xContainingPage,
+                                  int                                             mtfLoadFlags,
+                                  const uno::Reference< uno::XComponentContext >& rxContext )
 {
-    ENSURE_OR_RETURN_FALSE( rxContext.is(),
-                       "getMetaFile(): Invalid context" );
+    if (!rxContext.is())
+    {
+        SAL_WARN("slideshow.opengl", "getMetaFile(): Invalid context" );
+        return GDIMetaFileSharedPtr();
+    }
 
     // create dummy XGraphicRenderer, which receives the
     // generated XGraphic from the GraphicExporter
@@ -212,9 +211,9 @@ bool getMetaFile( const uno::Reference< lang::XComponent >&       xSource,
 
     xExporter->setSourceDocument( xSource );
     if( !xExporter->filter( aProps ) )
-        return false;
+        return GDIMetaFileSharedPtr();
 
-    rMtf = pRenderer->getMtf( (mtfLoadFlags & MTF_LOAD_FOREIGN_SOURCE) != 0 );
+    GDIMetaFileSharedPtr xMtf = pRenderer->getMtf( (mtfLoadFlags & MTF_LOAD_FOREIGN_SOURCE) != 0 );
 
     // pRenderer is automatically destroyed when xRenderer
     // goes out of scope
@@ -222,7 +221,7 @@ bool getMetaFile( const uno::Reference< lang::XComponent >&       xSource,
     // TODO(E3): Error handling. Exporter might have
     // generated nothing, a bitmap, threw an exception,
     // whatever.
-    return true;
+    return xMtf;
 }
 
 sal_Int32 getNextActionOffset( MetaAction * pCurrAct )
@@ -265,7 +264,6 @@ sal_Int32 getNextActionOffset( MetaAction * pCurrAct )
 
 bool getAnimationFromGraphic( VectorOfMtfAnimationFrames&   o_rFrames,
                               ::std::size_t&                o_rLoopCount,
-                              CycleMode&                    o_eCycleMode,
                               const Graphic&                rGraphic )
 {
     o_rFrames.clear();
@@ -291,32 +289,7 @@ bool getAnimationFromGraphic( VectorOfMtfAnimationFrames&   o_rFrames,
     pVDevMask->SetOutputSizePixel( aAnimSize );
     pVDevMask->EnableMapMode( false );
 
-    switch( aAnimation.GetCycleMode() )
-    {
-        case CYCLE_NOT:
-            o_rLoopCount = 1;
-            o_eCycleMode = CYCLE_LOOP;
-            break;
-
-        case CYCLE_FALLBACK:
-            // FALLTHROUGH intended
-        case CYCLE_NORMAL:
-            o_rLoopCount = aAnimation.GetLoopCount();
-            o_eCycleMode = CYCLE_LOOP;
-            break;
-
-        case CYCLE_REVERS:
-            // FALLTHROUGH intended
-        case CYCLE_REVERS_FALLBACK:
-            o_rLoopCount = aAnimation.GetLoopCount();
-            o_eCycleMode = CYCLE_PINGPONGLOOP;
-            break;
-
-        default:
-            ENSURE_OR_RETURN_FALSE(false,
-                              "getAnimationFromGraphic(): Unexpected case" );
-            break;
-    }
+    o_rLoopCount = aAnimation.GetLoopCount();
 
     for( sal_uInt16 i=0, nCount=aAnimation.Count(); i<nCount; ++i )
     {
@@ -331,7 +304,7 @@ bool getAnimationFromGraphic( VectorOfMtfAnimationFrames&   o_rFrames,
 
                 if( aMask.IsEmpty() )
                 {
-                    const Rectangle aRect(aEmptyPoint,
+                    const tools::Rectangle aRect(aEmptyPoint,
                                           pVDevMask->GetOutputSizePixel());
                     const Wallpaper aWallpaper(COL_BLACK);
                     pVDevMask->DrawWallpaper(aRect,
@@ -358,7 +331,7 @@ bool getAnimationFromGraphic( VectorOfMtfAnimationFrames&   o_rFrames,
 
                 if(aMask.IsEmpty())
                 {
-                    const Rectangle aRect(rAnimBmp.aPosPix, aContent.GetSizePixel());
+                    const tools::Rectangle aRect(rAnimBmp.aPosPix, aContent.GetSizePixel());
                     pVDevMask->SetFillColor(COL_BLACK);
                     pVDevMask->SetLineColor();
                     pVDevMask->DrawRect(aRect);
@@ -442,7 +415,7 @@ bool getRectanglesFromScrollMtf( ::basegfx::B2DRectangle&       o_rScrollRect,
                 if (pAct->GetComment().equalsIgnoreAsciiCase("XTEXT_SCROLLRECT"))
                 {
                     o_rScrollRect = vcl::unotools::b2DRectangleFromRectangle(
-                        *reinterpret_cast<Rectangle const *>(
+                        *reinterpret_cast<tools::Rectangle const *>(
                             pAct->GetData() ) );
 
                     bScrollRectSet = true;
@@ -450,7 +423,7 @@ bool getRectanglesFromScrollMtf( ::basegfx::B2DRectangle&       o_rScrollRect,
                 else if (pAct->GetComment().equalsIgnoreAsciiCase("XTEXT_PAINTRECT") )
                 {
                     o_rPaintRect = vcl::unotools::b2DRectangleFromRectangle(
-                        *reinterpret_cast<Rectangle const *>(
+                        *reinterpret_cast<tools::Rectangle const *>(
                             pAct->GetData() ) );
 
                     bPaintRectSet = true;

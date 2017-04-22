@@ -40,13 +40,12 @@ public:
     TimerTask (
         const PresenterTimer::Task& rTask,
         const TimeValue& rDueTime,
-        const sal_Int64 nRepeatIntervall,
+        const sal_Int64 nRepeatInterval,
         const sal_Int32 nTaskId);
-    ~TimerTask() {}
 
     PresenterTimer::Task maTask;
     TimeValue maDueTime;
-    const sal_Int64 mnRepeatIntervall;
+    const sal_Int64 mnRepeatInterval;
     const sal_Int32 mnTaskId;
     bool mbIsCanceled;
 };
@@ -75,7 +74,7 @@ public:
     static SharedTimerTask CreateTimerTask (
         const PresenterTimer::Task& rTask,
         const TimeValue& rDueTime,
-        const sal_Int64 nRepeatIntervall);
+        const sal_Int64 nRepeatInterval);
 
     void ScheduleTask (const SharedTimerTask& rpTask);
     void CancelTask (const sal_Int32 nTaskId);
@@ -103,7 +102,7 @@ private:
     SharedTimerTask mpCurrentTask;
 
     TimerScheduler();
-    virtual ~TimerScheduler();
+    virtual ~TimerScheduler() override;
     class Deleter {public: void operator () (TimerScheduler* pScheduler) { delete pScheduler; } };
     friend class Deleter;
 
@@ -118,7 +117,7 @@ private:
 sal_Int32 PresenterTimer::ScheduleRepeatedTask (
     const Task& rTask,
     const sal_Int64 nDelay,
-    const sal_Int64 nIntervall)
+    const sal_Int64 nInterval)
 {
     TimeValue aCurrentTime;
     if (TimerScheduler::GetCurrentTime(aCurrentTime))
@@ -127,7 +126,7 @@ sal_Int32 PresenterTimer::ScheduleRepeatedTask (
         TimerScheduler::ConvertToTimeValue(
             aDueTime,
             TimerScheduler::ConvertFromTimeValue (aCurrentTime) + nDelay);
-        SharedTimerTask pTask (TimerScheduler::CreateTimerTask(rTask, aDueTime, nIntervall));
+        SharedTimerTask pTask (TimerScheduler::CreateTimerTask(rTask, aDueTime, nInterval));
         TimerScheduler::Instance()->ScheduleTask(pTask);
         return pTask->mnTaskId;
     }
@@ -172,9 +171,9 @@ TimerScheduler::~TimerScheduler()
 SharedTimerTask TimerScheduler::CreateTimerTask (
     const PresenterTimer::Task& rTask,
     const TimeValue& rDueTime,
-    const sal_Int64 nRepeatIntervall)
+    const sal_Int64 nRepeatInterval)
 {
-    return std::make_shared<TimerTask>(rTask, rDueTime, nRepeatIntervall, ++mnTaskId);
+    return std::make_shared<TimerTask>(rTask, rDueTime, nRepeatInterval, ++mnTaskId);
 }
 
 void TimerScheduler::ScheduleTask (const SharedTimerTask& rpTask)
@@ -236,7 +235,7 @@ void SAL_CALL TimerScheduler::run()
             break;
         }
 
-        // Restrict access to the maScheduledTasks member to one, mutext
+        // Restrict access to the maScheduledTasks member to one, mutex
         // guarded, block.
         SharedTimerTask pTask;
         sal_Int64 nDifference = 0;
@@ -279,12 +278,12 @@ void SAL_CALL TimerScheduler::run()
                 pTask->maTask(aCurrentTime);
 
                 // Re-schedule repeating tasks.
-                if (pTask->mnRepeatIntervall > 0)
+                if (pTask->mnRepeatInterval > 0)
                 {
                     ConvertToTimeValue(
                         pTask->maDueTime,
                         ConvertFromTimeValue(pTask->maDueTime)
-                            + pTask->mnRepeatIntervall);
+                            + pTask->mnRepeatInterval);
                     ScheduleTask(pTask);
                 }
             }
@@ -340,11 +339,11 @@ namespace {
 TimerTask::TimerTask (
     const PresenterTimer::Task& rTask,
     const TimeValue& rDueTime,
-    const sal_Int64 nRepeatIntervall,
+    const sal_Int64 nRepeatInterval,
     const sal_Int32 nTaskId)
     : maTask(rTask),
       maDueTime(rDueTime),
-      mnRepeatIntervall(nRepeatIntervall),
+      mnRepeatInterval(nRepeatInterval),
       mnTaskId(nTaskId),
       mbIsCanceled(false)
 {
@@ -489,7 +488,6 @@ void PresenterClockTimer::CheckCurrentTime (const TimeValue& rCurrentTime)
 //----- XCallback -------------------------------------------------------------
 
 void SAL_CALL PresenterClockTimer::notify (const css::uno::Any& rUserData)
-    throw (css::uno::RuntimeException, std::exception)
 {
     (void)rUserData;
 

@@ -70,7 +70,7 @@ static bool lcl_PutBoolItem( sal_uInt16            nWhich,
 
 #define WAS_DEFAULT(w,s)    (SfxItemState::DEFAULT==(s).GetItemState((w)))
 #define GET_BOOL(sid,set)   static_cast<const SfxBoolItem&>((set).Get(GetWhich((sid)))).GetValue()
-#define GET_USHORT(sid,set) (sal_uInt16)static_cast<const SfxUInt16Item&>((set).Get(GetWhich((sid)))).GetValue()
+#define GET_USHORT(sid,set) static_cast<const SfxUInt16Item&>((set).Get(GetWhich((sid)))).GetValue()
 #define GET_SHOW(sid,set)   ( ScVObjMode( static_cast<const ScViewObjectModeItem&>((set).Get(GetWhich((sid)))).GetValue() ) \
                               == VOBJ_MODE_SHOW )
 // List box entries "Scaling mode"
@@ -117,7 +117,7 @@ ScTablePage::ScTablePage( vcl::Window* pParent, const SfxItemSet& rCoreAttrs ) :
 
 void ScTablePage::ShowImage()
 {
-    Image aImg = Image( ScResId( (m_pBtnLeftRight->IsChecked()) ? IMG_LEFTRIGHT : IMG_TOPDOWN ) );
+    Image aImg(BitmapEx(ScResId((m_pBtnLeftRight->IsChecked()) ? BMP_LEFTRIGHT : BMP_TOPDOWN)));
     m_pBmpPageDir->SetImage( aImg );
     m_pBmpPageDir->SetOutputSizePixel( aImg.GetSizePixel() );
 }
@@ -341,12 +341,12 @@ bool ScTablePage::FillItemSet( SfxItemSet* rCoreSet )
     return bDataChanged;
 }
 
-SfxTabPage::sfxpg ScTablePage::DeactivatePage( SfxItemSet* pSetP )
+DeactivateRC ScTablePage::DeactivatePage( SfxItemSet* pSetP )
 {
     if ( pSetP )
         FillItemSet( pSetP );
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void ScTablePage::DataChanged( const DataChangedEvent& rDCEvt )
@@ -358,12 +358,12 @@ void ScTablePage::DataChanged( const DataChangedEvent& rDCEvt )
 
 // Handler:
 
-IMPL_LINK_NOARG_TYPED(ScTablePage, PageDirHdl, Button*, void)
+IMPL_LINK_NOARG(ScTablePage, PageDirHdl, Button*, void)
 {
     ShowImage();
 }
 
-IMPL_LINK_TYPED( ScTablePage, PageNoHdl, Button*, pBtn, void )
+IMPL_LINK( ScTablePage, PageNoHdl, Button*, pBtn, void )
 {
     if ( m_pBtnPageNo->IsChecked() )
     {
@@ -375,7 +375,7 @@ IMPL_LINK_TYPED( ScTablePage, PageNoHdl, Button*, pBtn, void )
         m_pEdPageNo->Disable();
 }
 
-IMPL_LINK_NOARG_TYPED(ScTablePage, ScaleHdl, ListBox&, void)
+IMPL_LINK_NOARG(ScTablePage, ScaleHdl, ListBox&, void)
 {
     // controls for Box "Reduce/enlarge"
     m_pBxScaleAll->Show(m_pLbScaleMode->GetSelectEntryPos() == SC_TPTABLE_SCALE_PERCENT);

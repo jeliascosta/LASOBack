@@ -91,7 +91,7 @@ class VCL_DLLPUBLIC CommandExtTextInputData
 {
 private:
     OUString            maText;
-    ExtTextInputAttr*   mpTextAttr;
+    std::unique_ptr<ExtTextInputAttr[]> mpTextAttr;
     sal_Int32           mnCursorPos;
     sal_uInt16          mnCursorFlags;
     bool                mbOnlyCursor;
@@ -106,7 +106,7 @@ public:
                         ~CommandExtTextInputData();
 
     const OUString&     GetText() const { return maText; }
-    const ExtTextInputAttr* GetTextAttr() const { return mpTextAttr; }
+    const ExtTextInputAttr* GetTextAttr() const { return mpTextAttr.get(); }
 
     sal_Int32           GetCursorPos() const { return mnCursorPos; }
     bool                IsCursorVisible() const { return (mnCursorFlags & EXTTEXTINPUT_CURSOR_INVISIBLE) == 0; }
@@ -151,7 +151,7 @@ public:
                     CommandWheelData( long nWheelDelta, long nWheelNotchDelta,
                                       sal_uLong nScrollLines,
                                       CommandWheelMode nWheelMode, sal_uInt16 nKeyModifier,
-                                      bool bHorz = false, bool bDeltaIsPixel = false );
+                                      bool bHorz, bool bDeltaIsPixel = false );
 
     long            GetDelta() const { return mnDelta; }
     long            GetNotchDelta() const { return mnNotchDelta; }
@@ -187,15 +187,15 @@ public:
 class VCL_DLLPUBLIC CommandModKeyData
 {
 private:
-    sal_uInt16          mnCode;
+    ModKeyFlags     mnCode;
 
 public:
-                    CommandModKeyData( sal_uInt16 nCode );
+                    CommandModKeyData( ModKeyFlags nCode );
 
-    bool            IsMod1()    const { return (mnCode & MODKEY_MOD1) != 0; }
-    bool            IsMod2()    const { return (mnCode & MODKEY_MOD2) != 0; }
-    bool            IsLeftShift() const { return (mnCode & MODKEY_LSHIFT) != 0; }
-    bool            IsRightShift() const { return (mnCode & MODKEY_RSHIFT) != 0; }
+    bool            IsMod1()       const { return bool(mnCode & ModKeyFlags::Mod1Msk); }
+    bool            IsMod2()       const { return bool(mnCode & ModKeyFlags::Mod2Msk); }
+    bool            IsLeftShift()  const { return bool(mnCode & ModKeyFlags::LeftShift); }
+    bool            IsRightShift() const { return bool(mnCode & ModKeyFlags::RightShift); }
 };
 
 enum class ShowDialogId
@@ -208,7 +208,7 @@ class VCL_DLLPUBLIC CommandDialogData
 {
     ShowDialogId   m_nDialogId;
 public:
-    CommandDialogData( ShowDialogId nDialogId = ShowDialogId::Preferences )
+    CommandDialogData( ShowDialogId nDialogId )
     : m_nDialogId( nDialogId )
     {}
 
@@ -236,10 +236,8 @@ enum class MediaCommand
     VolumeMute            = 16,// Mute the volume.
     VolumeUp              = 17,// Raise the volume.
     Menu                  = 18,// Button Menu pressed.
-    MenuHold              = 19,// Button Menu (long) pressed.
     PlayHold              = 20,// Button Play (long) pressed.
     NextTrackHold         = 21,// Button Right holding pressed.
-    PreviousTrackHold     = 22,// Button Left holding pressed.
 };
 
 class VCL_DLLPUBLIC CommandMediaData
@@ -320,7 +318,6 @@ enum class CommandEventId
     CursorPos               = 11,
     PasteSelection          = 12,
     ModKeyChange            = 13,
-    HangulHanjaConversion   = 14,
     InputLanguageChange     = 15,
     ShowDialog              = 16,
     Media                   = 17,

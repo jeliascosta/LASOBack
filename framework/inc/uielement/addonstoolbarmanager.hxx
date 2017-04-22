@@ -47,21 +47,21 @@ class AddonsToolBarManager : public ToolBarManager
                               const css::uno::Reference< css::frame::XFrame >& rFrame,
                               const OUString& rResourceName,
                               ToolBox* pToolBar );
-        virtual ~AddonsToolBarManager();
+        virtual ~AddonsToolBarManager() override;
 
         // XComponent
-        void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
+        void SAL_CALL dispose() override;
 
         virtual void RefreshImages() override;
         using ToolBarManager::FillToolbar;
         void FillToolbar( const css::uno::Sequence< css::uno::Sequence< css::beans::PropertyValue > >& rAddonToolbar );
 
     protected:
-        DECL_LINK_TYPED(Click, ToolBox *, void);
-        DECL_LINK_TYPED(DoubleClick, ToolBox *, void);
-        DECL_LINK_TYPED(Select, ToolBox *, void);
-        DECL_LINK_TYPED(StateChanged, StateChangedType const *, void );
-        DECL_LINK_TYPED(DataChanged, DataChangedEvent const *, void );
+        DECL_LINK(Click, ToolBox *, void);
+        DECL_LINK(DoubleClick, ToolBox *, void);
+        DECL_LINK(Select, ToolBox *, void);
+        DECL_LINK(StateChanged, StateChangedType const *, void );
+        DECL_LINK(DataChanged, DataChangedEvent const *, void );
 
         virtual bool MenuItemAllowed( sal_uInt16 ) const override;
 };

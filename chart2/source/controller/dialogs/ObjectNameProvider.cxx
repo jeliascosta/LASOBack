@@ -487,13 +487,9 @@ OUString ObjectNameProvider::getHelpText( const OUString& rObjectCID, const Refe
     {
         if( bVerbose )
         {
-            OUString aNewLine( "\n" );
-
-            aRet=SCH_RESSTR(STR_TIP_DATAPOINT_INDEX);
-            aRet+=aNewLine;
-            aRet+=SCH_RESSTR(STR_TIP_DATASERIES);
-            aRet+=aNewLine;
-            aRet+=SCH_RESSTR(STR_TIP_DATAPOINT_VALUES);
+            aRet= SCH_RESSTR(STR_TIP_DATAPOINT_INDEX) + "\n"
+                + SCH_RESSTR(STR_TIP_DATASERIES) + "\n"
+                + SCH_RESSTR(STR_TIP_DATAPOINT_VALUES);
         }
         else
             aRet=SCH_RESSTR(STR_TIP_DATAPOINT);
@@ -517,7 +513,7 @@ OUString ObjectNameProvider::getHelpText( const OUString& rObjectCID, const Refe
             nIndex = aRet.indexOf( aWildcard );
             if( nIndex != -1 )
             {
-                ::std::vector< Reference< chart2::XDataSeries > > aSeriesVector(
+                std::vector< Reference< chart2::XDataSeries > > aSeriesVector(
                     DiagramHelper::getDataSeriesFromDiagram( xDiagram ) );
                 sal_Int32 nSeriesIndex = -1;
                 for( nSeriesIndex=aSeriesVector.size();nSeriesIndex--;)
@@ -567,6 +563,7 @@ OUString ObjectNameProvider::getHelpText( const OUString& rObjectCID, const Refe
                         sal_Int32 aPeriod = 2;
                         bool bForceIntercept = false;
                         double aInterceptValue = 0.0;
+                        OUString aXName ("x"), aYName ("f(x)");
                         const LocaleDataWrapper& rLocaleDataWrapper = Application::GetSettings().GetLocaleDataWrapper();
                         const OUString& aNumDecimalSep = rLocaleDataWrapper.getNumDecimalSep();
                         assert(aNumDecimalSep.getLength() > 0);
@@ -580,8 +577,17 @@ OUString ObjectNameProvider::getHelpText( const OUString& rObjectCID, const Refe
                                 xProperties->getPropertyValue( "ForceIntercept") >>= bForceIntercept;
                                 if (bForceIntercept)
                                         xProperties->getPropertyValue( "InterceptValue") >>= aInterceptValue;
+                                uno::Reference< beans::XPropertySet > xEqProp( xCurve->getEquationProperties());
+                                if( xEqProp.is())
+                                {
+                                    if ( !(xEqProp->getPropertyValue( "XName") >>= aXName) )
+                                        aXName = "x";
+                                    if ( !(xEqProp->getPropertyValue( "YName") >>= aYName) )
+                                        aYName = "f(x)";
+                                }
                         }
                         xCalculator->setRegressionProperties(aDegree, bForceIntercept, aInterceptValue, 2);
+                        xCalculator->setXYNames ( aXName, aYName );
                         RegressionCurveHelper::initializeCurveCalculator( xCalculator, xSeries, xChartModel );
 
                         // change text for Moving Average
@@ -637,9 +643,7 @@ OUString ObjectNameProvider::getHelpText( const OUString& rObjectCID, const Refe
                 Reference< chart2::XRegressionCurve > xCurve( RegressionCurveHelper::getRegressionCurveAtIndex(xCurveCnt, nCurveIndex) );
                 if( xCurve.is())
                 {
-                    aRet += " (";
-                    aRet += RegressionCurveHelper::getRegressionCurveName(xCurve);
-                    aRet += " )";
+                    aRet += " (" + RegressionCurveHelper::getRegressionCurveName(xCurve) + " )";
                 }
             }
         }
@@ -731,7 +735,7 @@ OUString ObjectNameProvider::getSelectedObjectText( const OUString & rObjectCID,
 
             // replace data series index
             {
-                ::std::vector< Reference< chart2::XDataSeries > > aSeriesVector(
+                std::vector< Reference< chart2::XDataSeries > > aSeriesVector(
                     DiagramHelper::getDataSeriesFromDiagram( xDiagram ) );
                 sal_Int32 nSeriesIndex = -1;
                 for( nSeriesIndex=aSeriesVector.size();nSeriesIndex--;)
@@ -790,19 +794,15 @@ OUString ObjectNameProvider::getNameForCID(
         case OBJECTTYPE_DATA_CURVE:
         case OBJECTTYPE_DATA_CURVE_EQUATION:
             {
-                OUString aRet = lcl_getFullSeriesName( rObjectCID, xModel );
-                aRet += " ";
+                OUString aRet = lcl_getFullSeriesName( rObjectCID, xModel ) + " ";
                 if( eType == OBJECTTYPE_DATA_POINT || eType == OBJECTTYPE_DATA_LABEL )
                 {
                     aRet += getName( OBJECTTYPE_DATA_POINT  );
                     sal_Int32 nPointIndex = ObjectIdentifier::getIndexFromParticleOrCID( rObjectCID );
-                    aRet += " ";
-                    aRet += OUString::number(nPointIndex+1);
-
+                    aRet += " " + OUString::number(nPointIndex+1);
                     if( eType == OBJECTTYPE_DATA_LABEL )
                     {
-                        aRet += " ";
-                        aRet += getName( OBJECTTYPE_DATA_LABEL  );
+                        aRet += " " + getName( OBJECTTYPE_DATA_LABEL  );
                     }
                 }
                 else if (eType == OBJECTTYPE_DATA_CURVE || eType == OBJECTTYPE_DATA_CURVE_EQUATION)
@@ -810,8 +810,7 @@ OUString ObjectNameProvider::getNameForCID(
                     Reference< chart2::XDataSeries > xSeries( ObjectIdentifier::getDataSeriesForCID( rObjectCID , xModel ));
                     Reference< chart2::XRegressionCurveContainer > xCurveCnt( xSeries, uno::UNO_QUERY );
 
-                    aRet += " ";
-                    aRet += getName(eType);
+                    aRet += " " + getName(eType);
 
                     if( xCurveCnt.is())
                     {
@@ -819,9 +818,7 @@ OUString ObjectNameProvider::getNameForCID(
                         Reference< chart2::XRegressionCurve > xCurve( RegressionCurveHelper::getRegressionCurveAtIndex(xCurveCnt, nCurveIndex) );
                         if( xCurve.is())
                         {
-                            aRet += " (";
-                            aRet += RegressionCurveHelper::getRegressionCurveName(xCurve);
-                            aRet += ")";
+                           aRet += " (" + RegressionCurveHelper::getRegressionCurveName(xCurve) + ")";
                         }
                     }
                 }

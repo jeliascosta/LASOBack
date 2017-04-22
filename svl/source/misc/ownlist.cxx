@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <ctype.h>
 #include <com/sun/star/beans/PropertyValues.hpp>
 
 #include <svl/ownlist.hxx>
@@ -61,7 +60,7 @@ void SvCommandList::FillSequence( css::uno::Sequence < css::beans::PropertyValue
     {
         aCommandSequence[nIndex].Name = aCommandList[ nIndex ].GetCommand();
         aCommandSequence[nIndex].Handle = -1;
-        aCommandSequence[nIndex].Value = uno::makeAny( aCommandList[ nIndex ].GetArgument() );
+        aCommandSequence[nIndex].Value <<= aCommandList[ nIndex ].GetArgument();
         aCommandSequence[nIndex].State = beans::PropertyState_DIRECT_VALUE;
     }
 }

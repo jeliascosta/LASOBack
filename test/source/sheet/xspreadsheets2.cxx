@@ -275,7 +275,7 @@ void XSpreadsheets2::testImportCellStyle()
     sal_Int32 aVertJustify = 0;
     CPPUNIT_ASSERT(xCellStyleProp->getPropertyValue(aProperty) >>= aVertJustify);
 
-    CPPUNIT_ASSERT_MESSAGE("New style: VertJustify not set", aVertJustify == table::CellVertJustify_CENTER);
+    CPPUNIT_ASSERT_MESSAGE("New style: VertJustify not set", (table::CellVertJustify)aVertJustify == table::CellVertJustify_CENTER);
 }
 
 uno::Reference< sheet::XSpreadsheetDocument> XSpreadsheets2::getDoc(const OUString& aFileBase, uno::Reference< lang::XComponent >& xComp)
@@ -293,7 +293,7 @@ uno::Reference< sheet::XSpreadsheetDocument> XSpreadsheets2::getDoc(const OUStri
     return xDoc;
 }
 
-uno::Reference< sheet::XNamedRanges> XSpreadsheets2::getNamedRanges(uno::Reference< sheet::XSpreadsheetDocument> xDoc)
+uno::Reference< sheet::XNamedRanges> XSpreadsheets2::getNamedRanges(uno::Reference< sheet::XSpreadsheetDocument> const & xDoc)
 {
     uno::Reference< beans::XPropertySet > xPropSet (xDoc, UNO_QUERY_THROW);
     OUString NamedRangesPropertyString("NamedRanges");

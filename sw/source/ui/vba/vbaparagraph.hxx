@@ -35,13 +35,14 @@ private:
     css::uno::Reference< css::text::XTextRange > mxTextRange;
 
 public:
-    SwVbaParagraph( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextDocument >& xDocument, const css::uno::Reference< css::text::XTextRange >& xTextRange ) throw ( css::uno::RuntimeException );
-    virtual ~SwVbaParagraph();
+    /// @throws css::uno::RuntimeException
+    SwVbaParagraph( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextDocument >& xDocument, const css::uno::Reference< css::text::XTextRange >& xTextRange );
+    virtual ~SwVbaParagraph() override;
 
     // XParagraph
-    virtual css::uno::Reference< ooo::vba::word::XRange > SAL_CALL getRange() throw ( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Any SAL_CALL getStyle() throw ( css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL setStyle( const css::uno::Any& style ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Reference< ooo::vba::word::XRange > SAL_CALL getRange() override;
+    virtual css::uno::Any SAL_CALL getStyle() override;
+    virtual void SAL_CALL setStyle( const css::uno::Any& style ) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;
@@ -55,12 +56,12 @@ class SwVbaParagraphs : public SwVbaParagraphs_BASE
 private:
     css::uno::Reference< css::text::XTextDocument > mxTextDocument;
 public:
-    SwVbaParagraphs( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::text::XTextDocument >& xDocument ) throw (css::uno::RuntimeException);
-    virtual ~SwVbaParagraphs() {}
+    /// @throws css::uno::RuntimeException
+    SwVbaParagraphs( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::text::XTextDocument >& xDocument );
 
     // XEnumerationAccess
-    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override;
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Type SAL_CALL getElementType() override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
 
     // SwVbaParagraphs_BASE
     virtual css::uno::Any createCollectionObject( const css::uno::Any& aSource ) override;

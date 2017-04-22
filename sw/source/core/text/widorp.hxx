@@ -37,7 +37,7 @@ public:
     bool IsBreakNow( SwTextMargin &rLine );
     bool IsKeepAlways() const { return m_bKeep; }
 
-    inline void SetKeep( const bool bNew ) { m_bKeep = bNew; }
+    void SetKeep( const bool bNew ) { m_bKeep = bNew; }
 
     bool IsInside( SwTextMargin &rLine ) const;
 
@@ -58,8 +58,6 @@ public:
     WidowsAndOrphans( SwTextFrame *pFrame, const SwTwips nRst = 0,
         bool bCheckKeep = true );
     bool FindWidows( SwTextFrame *pFrame, SwTextMargin &rLine );
-    sal_uInt16 GetWidowsLines() const
-    { return nWidLines; }
     sal_uInt16 GetOrphansLines() const
     { return nOrphLines; }
     void ClrOrphLines(){ nOrphLines = 0; }

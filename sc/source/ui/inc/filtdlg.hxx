@@ -24,7 +24,6 @@
 #include <vcl/lstbox.hxx>
 #include <vcl/layout.hxx>
 #include <vcl/morebtn.hxx>
-#include <svtools/stdctrl.hxx>
 #include "global.hxx"
 #include "address.hxx"
 #include "anyrefdg.hxx"
@@ -57,7 +56,7 @@ class ScFilterDlg : public ScAnyRefDlg
 public:
                     ScFilterDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pParent,
                                  const SfxItemSet&  rArgSet );
-                    virtual ~ScFilterDlg();
+                    virtual ~ScFilterDlg() override;
     virtual void    dispose() override;
 
     virtual void    SetReference( const ScRange& rRef, ScDocument* pDoc ) override;
@@ -148,15 +147,15 @@ private:
     ScQueryItem*    GetOutputItem   ();
 
     // Handler:
-    DECL_LINK_TYPED( LbSelectHdl,  ListBox&, void );
-    DECL_LINK_TYPED( ValModifyHdl, Edit&, void );
-    DECL_LINK_TYPED( CheckBoxHdl,  Button*, void );
-    DECL_LINK_TYPED( EndDlgHdl,    Button*, void );
-    DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
-    DECL_LINK_TYPED( MoreExpandedHdl, VclExpander&, void );
+    DECL_LINK( LbSelectHdl,  ListBox&, void );
+    DECL_LINK( ValModifyHdl, Edit&, void );
+    DECL_LINK( CheckBoxHdl,  Button*, void );
+    DECL_LINK( EndDlgHdl,    Button*, void );
+    DECL_LINK( ScrollHdl, ScrollBar*, void );
+    DECL_LINK( MoreExpandedHdl, VclExpander&, void );
 
     // Hack: RefInput control
-    DECL_LINK_TYPED( TimeOutHdl, Timer*, void );
+    DECL_LINK( TimeOutHdl, Timer*, void );
 };
 
 class ScSpecialFilterDlg : public ScAnyRefDlg
@@ -164,7 +163,7 @@ class ScSpecialFilterDlg : public ScAnyRefDlg
 public:
                     ScSpecialFilterDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pParent,
                                         const SfxItemSet&   rArgSet );
-                    virtual ~ScSpecialFilterDlg();
+                    virtual ~ScSpecialFilterDlg() override;
     virtual void    dispose() override;
 
     virtual void    SetReference( const ScRange& rRef, ScDocument* pDoc ) override;
@@ -216,12 +215,12 @@ private:
                                     const ScRange& rSource );
 
     // Handler
-    DECL_LINK_TYPED( FilterAreaSelHdl, ListBox&, void );
-    DECL_LINK_TYPED( FilterAreaModHdl, Edit&, void );
-    DECL_LINK_TYPED( EndDlgHdl,  Button*, void );
+    DECL_LINK( FilterAreaSelHdl, ListBox&, void );
+    DECL_LINK( FilterAreaModHdl, Edit&, void );
+    DECL_LINK( EndDlgHdl,  Button*, void );
 
     // Hack: RefInput control
-    DECL_LINK_TYPED( TimeOutHdl, Idle*, void );
+    DECL_LINK( TimeOutHdl, Timer*, void );
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_FILTDLG_HXX

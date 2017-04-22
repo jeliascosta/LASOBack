@@ -14,6 +14,16 @@
 
 namespace loplugin {
 
+TypeCheck TypeCheck::NonConstVolatile() const {
+    return
+        (!type_.isNull() && !type_.isConstQualified()
+         && !type_.isVolatileQualified())
+        ? *this : TypeCheck();
+        // returning TypeCheck(type_.getUnqualifiedType()) instead of *this
+        // may look tempting, but could remove sugar we might be interested in
+        // checking for
+}
+
 TypeCheck TypeCheck::Const() const {
     return
         (!type_.isNull() && type_.isConstQualified()
@@ -24,6 +34,32 @@ TypeCheck TypeCheck::Const() const {
         // checking for
 }
 
+TypeCheck TypeCheck::Volatile() const {
+    return
+        (!type_.isNull() && !type_.isConstQualified()
+         && type_.isVolatileQualified())
+        ? *this : TypeCheck();
+        // returning TypeCheck(type_.getUnqualifiedType()) instead of *this
+        // may look tempting, but could remove sugar we might be interested in
+        // checking for
+}
+
+TypeCheck TypeCheck::ConstVolatile() const {
+    return
+        (!type_.isNull() && type_.isConstQualified()
+         && type_.isVolatileQualified())
+        ? *this : TypeCheck();
+        // returning TypeCheck(type_.getUnqualifiedType()) instead of *this
+        // may look tempting, but could remove sugar we might be interested in
+        // checking for
+}
+
+TerminalCheck TypeCheck::Void() const {
+    return TerminalCheck(
+        !type_.isNull()
+        && type_->isSpecificBuiltinType(clang::BuiltinType::Void));
+}
+
 TerminalCheck TypeCheck::Char() const {
     return TerminalCheck(
         !type_.isNull()
@@ -31,11 +67,56 @@ TerminalCheck TypeCheck::Char() const {
             || type_->isSpecificBuiltinType(clang::BuiltinType::Char_U)));
 }
 
+TerminalCheck TypeCheck::AnyBoolean() const {
+    if (type_->isBooleanType()) {
+        return TerminalCheck(true);
+    }
+    auto t = type_->getAs<clang::TypedefType>();
+    if (t == nullptr) {
+        return TerminalCheck(false);
+    }
+    auto n =t->getDecl()->getName();
+    return TerminalCheck(
+        n == "sal_Bool" || n == "BOOL" || n == "Boolean" || n == "FT_Bool"
+        || n == "FcBool" || n == "GLboolean" || n == "NPBool" || n == "TW_BOOL"
+        || n == "UBool" || n == "boolean" || n == "dbus_bool_t"
+        || n == "gboolean" || n == "hb_bool_t" || n == "jboolean");
+}
+
 TypeCheck TypeCheck::LvalueReference() const {
     if (!type_.isNull()) {
         auto const t = type_->getAs<clang::LValueReferenceType>();
         if (t != nullptr) {
             return TypeCheck(t->getPointeeType());
+        }
+    }
+    return TypeCheck();
+}
+
+TypeCheck TypeCheck::Pointer() const {
+    if (!type_.isNull()) {
+        auto const t = type_->getAs<clang::PointerType>();
+        if (t != nullptr) {
+            return TypeCheck(t->getPointeeType());
+        }
+    }
+    return TypeCheck();
+}
+
+TerminalCheck TypeCheck::Enum() const {
+    if (!type_.isNull()) {
+        auto const t = type_->getAs<clang::EnumType>();
+        if (t != nullptr) {
+            return TerminalCheck(true);
+        }
+    }
+    return TerminalCheck(false);
+}
+
+TypeCheck TypeCheck::Typedef() const {
+    if (!type_.isNull()) {
+        if (auto const t = type_->getAs<clang::TypedefType>()) {
+            return TypeCheck(t->desugar());
         }
     }
     return TypeCheck();
@@ -54,6 +135,11 @@ ContextCheck DeclCheck::Operator(clang::OverloadedOperatorKind op) const {
     return ContextCheck(
         f != nullptr && f->getOverloadedOperator() == op
         ? f->getDeclContext() : nullptr);
+}
+
+ContextCheck DeclCheck::MemberFunction() const {
+    auto m = llvm::dyn_cast_or_null<clang::CXXMethodDecl>(decl_);
+    return ContextCheck(m == nullptr ? nullptr : m->getParent());
 }
 
 TerminalCheck ContextCheck::GlobalNamespace() const {

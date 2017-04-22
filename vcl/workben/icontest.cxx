@@ -20,8 +20,6 @@
 
 #include <math.h>
 
-#include <GL/glew.h>
-
 #include <glm/gtx/bit.hpp>
 
 #include <com/sun/star/lang/XComponent.hpp>
@@ -74,11 +72,11 @@ public:
     VclPtr<FixedBitmap> mpFixedBitmap;
 
     MyWorkWindow( vcl::Window* pParent, WinBits nWinStyle );
-    virtual ~MyWorkWindow() { disposeOnce(); }
+    virtual ~MyWorkWindow() override { disposeOnce(); }
     virtual void dispose() override { mpFixedBitmap.clear(); WorkWindow::dispose(); }
     void LoadGraphic( const OUString& sImageFile );
 
-    virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rRect ) override;
     virtual void Resize() override;
 };
 
@@ -103,7 +101,7 @@ void MyWorkWindow::LoadGraphic( const OUString& sImageFile )
     }
 }
 
-void MyWorkWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void MyWorkWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     std::cout << "==> Paint! " << mnPaintCount++ << " (vcl) " << GetSizePixel() << " " << getTimeNow() - mnStartTime << std::endl;
 

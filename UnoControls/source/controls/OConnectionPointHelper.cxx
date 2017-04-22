@@ -21,6 +21,7 @@
 
 #include "OConnectionPointContainerHelper.hxx"
 
+#include <com/sun/star/lang/InvalidListenerException.hpp>
 #include <cppuhelper/queryinterface.hxx>
 
 //  namespaces
@@ -51,7 +52,7 @@ OConnectionPointHelper::~OConnectionPointHelper()
 
 //  XInterface
 
-Any SAL_CALL OConnectionPointHelper::queryInterface( const Type& aType ) throw( RuntimeException, std::exception )
+Any SAL_CALL OConnectionPointHelper::queryInterface( const Type& aType )
 {
     // Attention:
     //  Don't use mutex or guard in this method!!! Is a method of XInterface.
@@ -96,7 +97,7 @@ void SAL_CALL OConnectionPointHelper::release() throw()
 
 //  XConnectionPoint
 
-Type SAL_CALL OConnectionPointHelper::getConnectionType() throw( RuntimeException, std::exception )
+Type SAL_CALL OConnectionPointHelper::getConnectionType()
 {
     // Ready for multithreading
     MutexGuard aGuard( m_aSharedMutex );
@@ -104,7 +105,7 @@ Type SAL_CALL OConnectionPointHelper::getConnectionType() throw( RuntimeExceptio
     // Set default return value, if method failed.
     if ( !impl_LockContainer() )
     {
-        // Container not exist! Its an runtime error.
+        // Container not exist! It's a runtime error.
         throw RuntimeException();
     }
 
@@ -118,7 +119,7 @@ Type SAL_CALL OConnectionPointHelper::getConnectionType() throw( RuntimeExceptio
 
 //  XConnectionPoint
 
-Reference< XConnectionPointContainer > SAL_CALL OConnectionPointHelper::getConnectionPointContainer() throw( RuntimeException, std::exception )
+Reference< XConnectionPointContainer > SAL_CALL OConnectionPointHelper::getConnectionPointContainer()
 {
     // Ready for multithreading
     MutexGuard aGuard( m_aSharedMutex );
@@ -128,9 +129,7 @@ Reference< XConnectionPointContainer > SAL_CALL OConnectionPointHelper::getConne
 
 //  XConnectionPoint
 
-void SAL_CALL OConnectionPointHelper::advise( const Reference< XInterface >& xListener ) throw( ListenerExistException      ,
-                                                                                                InvalidListenerException    ,
-                                                                                                RuntimeException, std::exception            )
+void SAL_CALL OConnectionPointHelper::advise( const Reference< XInterface >& xListener )
 {
     // Ready for multithreading
     MutexGuard aGuard( m_aSharedMutex );
@@ -144,13 +143,13 @@ void SAL_CALL OConnectionPointHelper::advise( const Reference< XInterface >& xLi
     }
 
     // ListenerExistException is obsolete!?
-    // Its the same container for XConnectionPointContainer and XConnectionPoint. But only here we must control, if a listener already exist!?
+    // It's the same container for XConnectionPointContainer and XConnectionPoint. But only here we must control, if a listener already exist!?
     // You can add a listener more than one time at XConnectionPointContainer, but here only one ...
 
     // Operation is permitted only, if reference to container is valid!
     if ( !impl_LockContainer() )
     {
-        // Container not exist! Its an runtime error.
+        // Container not exist! It's a runtime error.
         throw RuntimeException();
     }
     // Forward it to OConnectionPointHelperContainer!
@@ -161,14 +160,14 @@ void SAL_CALL OConnectionPointHelper::advise( const Reference< XInterface >& xLi
 
 //  XConnectionPoint
 
-void SAL_CALL OConnectionPointHelper::unadvise( const Reference< XInterface >& xListener ) throw( RuntimeException, std::exception )
+void SAL_CALL OConnectionPointHelper::unadvise( const Reference< XInterface >& xListener )
 {
     // Ready for multithreading
     MutexGuard aGuard( m_aSharedMutex );
     // Operation is permitted only, if reference to container is valid!
     if ( !impl_LockContainer() )
     {
-        // Container not exist! Its an runtime error.
+        // Container not exist! It's a runtime error.
         throw RuntimeException();
 
     }
@@ -180,14 +179,14 @@ void SAL_CALL OConnectionPointHelper::unadvise( const Reference< XInterface >& x
 
 //  XConnectionPoint
 
-Sequence< Reference< XInterface > > SAL_CALL OConnectionPointHelper::getConnections() throw( RuntimeException, std::exception )
+Sequence< Reference< XInterface > > SAL_CALL OConnectionPointHelper::getConnections()
 {
     // Ready for multithreading
     MutexGuard aGuard( m_aSharedMutex );
     // Operation is permitted only, if reference to container is valid!
     if ( !impl_LockContainer() )
     {
-        // Container not exist! Its an runtime error.
+        // Container not exist! It's a runtime error.
         throw RuntimeException();
     }
     // Set default return value, if method failed.

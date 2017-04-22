@@ -19,6 +19,7 @@
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/document/XDocumentProperties.hpp>
+#include <com/sun/star/text/WrapTextMode.hpp>
 #include <oox/helper/graphichelper.hxx>
 #include <oox/mathml/importutils.hxx>
 #include <rtl/strbuf.hxx>
@@ -34,6 +35,12 @@ namespace writerfilter
 {
 namespace rtftok
 {
+class RTFParserState;
+class RTFDocumentImpl;
+class RTFTokenizer;
+class RTFSdrImport;
+struct TableRowBuffer;
+
 enum class RTFBorderState
 {
     NONE,
@@ -59,7 +66,9 @@ enum RTFBufferTypes
     /// Imports a shape.
     BUFFER_RESOLVESHAPE,
     BUFFER_ENDSHAPE,
-    BUFFER_RESOLVESUBSTREAM
+    BUFFER_RESOLVESUBSTREAM,
+    /// Restores RTFParserState::aPicture.
+    BUFFER_PICTURE
 };
 
 /// Form field types
@@ -85,8 +94,6 @@ enum class RTFFieldStatus
     INSTRUCTION,
     RESULT
 };
-
-struct TableRowBuffer;
 
 /// A buffer storing dmapper calls.
 typedef std::tuple<RTFBufferTypes, RTFValue::Pointer_t,
@@ -140,7 +147,7 @@ public:
     sal_Int16 nVertOrientRelation; ///< Vertical text::RelOrientation for drawinglayer shapes.
     sal_uInt32 nHoriOrientRelationToken; ///< Horizontal dmapper token for Writer pictures.
     sal_uInt32 nVertOrientRelationToken; ///< Vertical dmapper token for Writer pictures.
-    int nWrap;
+    css::text::WrapTextMode nWrap;
     /// If shape is below text (true) or text is below shape (false).
     bool bInBackground;
     /// Wrap polygon, written by RTFSdrImport::resolve(), read by RTFDocumentImpl::resolvePict().
@@ -181,9 +188,6 @@ public:
     RTFBmpStyle eStyle;
 };
 
-class RTFParserState;
-class RTFDocumentImpl;
-
 /// Stores the properties of a frame
 class RTFFrame
 {
@@ -195,7 +199,7 @@ private:
     Id m_nHRule;
     boost::optional<Id> m_oWrap;
 public:
-    RTFFrame(RTFParserState* pParserState);
+    explicit RTFFrame(RTFParserState* pParserState);
     sal_Int16 m_nAnchorType;
 
     /// Convert the stored properties to Sprms
@@ -207,13 +211,11 @@ public:
     bool inFrame();
 };
 
-class RTFDocumentImpl;
-
 /// State of the parser, which gets saved / restored when changing groups.
 class RTFParserState
 {
 public:
-    RTFParserState(RTFDocumentImpl* pDocumentImpl);
+    explicit RTFParserState(RTFDocumentImpl* pDocumentImpl);
 
     RTFDocumentImpl* m_pDocumentImpl;
     RTFInternalState nInternalState;
@@ -268,23 +270,24 @@ public:
     RTFFrame aFrame;
 
     /// Maps to OOXML's ascii, cs or eastAsia.
-    enum { LOCH, HICH, DBCH } eRunType;
+    enum class RunType { LOCH, HICH, DBCH };
+    RunType eRunType;
     /// ltrch or rtlch
     bool isRightToLeft;
 
     // Info group.
-    int nYear;
-    int nMonth;
-    int nDay;
-    int nHour;
-    int nMinute;
+    sal_Int16 nYear;
+    sal_uInt16 nMonth;
+    sal_uInt16 nDay;
+    sal_uInt16 nHour;
+    sal_uInt16 nMinute;
 
     /// Text from special destinations.
     OUStringBuffer aDestinationText;
     /// point to the buffer of the current destination
     OUStringBuffer* pDestinationText;
 
-    void appendDestinationText(const OUString &rString)
+    void appendDestinationText(const OUString& rString)
     {
         if (pDestinationText)
             pDestinationText->append(rString);
@@ -369,9 +372,6 @@ bool findPropertyName(const std::vector<css::beans::PropertyValue>& rProperties,
 RTFSprms& getLastAttributes(RTFSprms& rSprms, Id nId);
 OString DTTM22OString(long nDTTM);
 
-class RTFTokenizer;
-class RTFSdrImport;
-
 /// Implementation of the RTFDocument interface.
 class RTFDocumentImpl
     : public RTFDocument, public RTFListener
@@ -384,7 +384,7 @@ public:
                     css::uno::Reference<css::frame::XFrame> const& xFrame,
                     css::uno::Reference<css::task::XStatusIndicator> const& xStatusIndicator,
                     const utl::MediaDescriptor& rMediaDescriptor);
-    virtual ~RTFDocumentImpl();
+    virtual ~RTFDocumentImpl() override;
 
     // RTFDocument
     virtual void resolve(Stream& rHandler) override;
@@ -412,11 +412,6 @@ public:
         return *m_pMapperStream;
     }
     void setSuperstream(RTFDocumentImpl* pSuperstream);
-    void setStreamType(Id nId);
-    void setAuthor(OUString& rAuthor);
-    void setAuthorInitials(OUString& rAuthorInitials);
-    void setIgnoreFirst(OUString& rIgnoreFirst);
-    void seek(sal_Size nPos);
     const css::uno::Reference<css::lang::XMultiServiceFactory>& getModelFactory()
     {
         return m_xModelFactory;
@@ -428,6 +423,8 @@ public:
 
     /// If this is the first run of the document, starts the initial paragraph.
     void checkFirstRun();
+    /// Send NS_ooxml::LN_settings_settings to dmapper.
+    void outputSettingsTable();
     /// If the initial paragraph is started.
     bool getFirstRun()
     {
@@ -459,8 +456,8 @@ private:
     writerfilter::Reference<Properties>::Pointer_t createStyleProperties();
     void resetSprms();
     void resetAttributes();
-    void resolveSubstream(sal_Size nPos, Id nId);
-    void resolveSubstream(sal_Size nPos, Id nId, OUString& rIgnoreFirst);
+    void resolveSubstream(std::size_t nPos, Id nId);
+    void resolveSubstream(std::size_t nPos, Id nId, OUString& rIgnoreFirst);
 
     void text(OUString& rString);
     // Sends a single character to dmapper, taking care of buffering.
@@ -584,8 +581,8 @@ private:
     RTFDocumentImpl* m_pSuperstream;
     /// Type of the stream: header, footer, footnote, etc.
     Id m_nStreamType;
-    std::queue< std::pair<Id, sal_Size> > m_nHeaderFooterPositions;
-    sal_Size m_nGroupStartPos;
+    std::queue< std::pair<Id, std::size_t> > m_nHeaderFooterPositions;
+    std::size_t m_nGroupStartPos;
     /// Ignore the first occurrence of this text.
     OUString m_aIgnoreFirst;
     /// Bookmark name <-> index map.

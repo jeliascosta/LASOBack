@@ -10,6 +10,7 @@
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/task/XInteractionHandler.hpp>
 #include <com/sun/star/ucb/XCommandInfo.hpp>
@@ -49,8 +50,7 @@ namespace cmis
 {
     RepoContent::RepoContent( const uno::Reference< uno::XComponentContext >& rxContext,
         ContentProvider *pProvider, const uno::Reference< ucb::XContentIdentifier >& Identifier,
-        vector< libcmis::RepositoryPtr > aRepos )
-            throw ( ucb::ContentCreationException )
+        vector< libcmis::RepositoryPtr > const & aRepos )
         : ContentImplHelper( rxContext, pProvider, Identifier ),
         m_pProvider( pProvider ),
         m_aURL( Identifier->getContentIdentifier( ) ),
@@ -73,7 +73,7 @@ namespace cmis
     uno::Any RepoContent::getBadArgExcept()
     {
         return uno::makeAny( lang::IllegalArgumentException(
-            OUString("Wrong argument type!"),
+            "Wrong argument type!",
             static_cast< cppu::OWeakObject * >( this ), -1) );
     }
 
@@ -176,7 +176,7 @@ namespace cmis
                         libcmis::OAuth2DataPtr oauth2Data;
                         if ( m_aURL.getBindingUrl( ) == GDRIVE_BASE_URL )
                         {
-                            libcmis::SessionFactory::setOAuth2AuthCodeProvider( authProvider.gdriveAuthCodeFallback );
+                            libcmis::SessionFactory::setOAuth2AuthCodeProvider( AuthProvider::gdriveAuthCodeFallback );
                             oauth2Data.reset( new libcmis::OAuth2Data(
                                 GDRIVE_AUTH_URL, GDRIVE_TOKEN_URL,
                                 GDRIVE_SCOPE, GDRIVE_REDIRECT_URI,
@@ -189,7 +189,7 @@ namespace cmis
                                 ALFRESCO_CLOUD_CLIENT_ID, ALFRESCO_CLOUD_CLIENT_SECRET ) );
                         if ( m_aURL.getBindingUrl( ) == ONEDRIVE_BASE_URL )
                         {
-                            libcmis::SessionFactory::setOAuth2AuthCodeProvider( authProvider.onedriveAuthCodeFallback );
+                            libcmis::SessionFactory::setOAuth2AuthCodeProvider( AuthProvider::onedriveAuthCodeFallback );
                             oauth2Data.reset( new libcmis::OAuth2Data(
                                 ONEDRIVE_AUTH_URL, ONEDRIVE_TOKEN_URL,
                                 ONEDRIVE_SCOPE, ONEDRIVE_REDIRECT_URI,
@@ -260,16 +260,16 @@ namespace cmis
     {
         static const beans::Property aGenericProperties[] =
         {
-            beans::Property( OUString( "IsDocument" ),
+            beans::Property( "IsDocument",
                 -1, cppu::UnoType<bool>::get(),
                 beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-            beans::Property( OUString( "IsFolder" ),
+            beans::Property( "IsFolder",
                 -1, cppu::UnoType<bool>::get(),
                 beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-            beans::Property( OUString( "Title" ),
+            beans::Property( "Title",
                 -1, cppu::UnoType<OUString>::get(),
                 beans::PropertyAttribute::BOUND ),
-            beans::Property( OUString( "IsReadOnly" ),
+            beans::Property( "IsReadOnly",
                 -1, cppu::UnoType<bool>::get(),
                 beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
         };
@@ -285,21 +285,21 @@ namespace cmis
         {
             // Required commands
             ucb::CommandInfo
-            ( OUString( "getCommandInfo" ),
+            ( "getCommandInfo",
               -1, cppu::UnoType<void>::get() ),
             ucb::CommandInfo
-            ( OUString( "getPropertySetInfo" ),
+            ( "getPropertySetInfo",
               -1, cppu::UnoType<void>::get() ),
             ucb::CommandInfo
-            ( OUString( "getPropertyValues" ),
+            ( "getPropertyValues",
               -1, cppu::UnoType<uno::Sequence< beans::Property >>::get() ),
             ucb::CommandInfo
-            ( OUString( "setPropertyValues" ),
+            ( "setPropertyValues",
               -1, cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get() ),
 
             // Optional standard commands
             ucb::CommandInfo
-            ( OUString( "open" ),
+            ( "open",
               -1, cppu::UnoType<ucb::OpenCommandArgument2>::get() ),
         };
 
@@ -320,34 +320,18 @@ namespace cmis
 
     XTYPEPROVIDER_COMMON_IMPL( RepoContent );
 
-    void SAL_CALL RepoContent::acquire() throw()
-    {
-        ContentImplHelper::acquire();
-    }
-
-    void SAL_CALL RepoContent::release() throw()
-    {
-        ContentImplHelper::release();
-    }
-
-    uno::Any SAL_CALL RepoContent::queryInterface( const uno::Type & rType ) throw ( uno::RuntimeException, std::exception )
-    {
-        return ContentImplHelper::queryInterface(rType);
-    }
-
-    OUString SAL_CALL RepoContent::getImplementationName() throw( uno::RuntimeException, std::exception )
+    OUString SAL_CALL RepoContent::getImplementationName()
     {
        return OUString("com.sun.star.comp.CmisRepoContent");
     }
 
     uno::Sequence< OUString > SAL_CALL RepoContent::getSupportedServiceNames()
-           throw( uno::RuntimeException, std::exception )
     {
        uno::Sequence<OUString> aSNS { "com.sun.star.ucb.Content" };
        return aSNS;
     }
 
-    OUString SAL_CALL RepoContent::getContentType() throw( uno::RuntimeException, std::exception )
+    OUString SAL_CALL RepoContent::getContentType()
     {
         return OUString( CMIS_REPO_TYPE );
     }
@@ -356,7 +340,6 @@ namespace cmis
         const ucb::Command& aCommand,
         sal_Int32 /*CommandId*/,
         const uno::Reference< ucb::XCommandEnvironment >& xEnv )
-            throw( uno::Exception, ucb::CommandAbortedException, uno::RuntimeException, std::exception )
     {
         SAL_INFO( "ucb.ucp.cmis", "RepoContent::execute( ) - " << aCommand.Name );
 
@@ -393,13 +376,13 @@ namespace cmis
         return aRet;
     }
 
-    void SAL_CALL RepoContent::abort( sal_Int32 /*CommandId*/ ) throw( uno::RuntimeException, std::exception )
+    void SAL_CALL RepoContent::abort( sal_Int32 /*CommandId*/ )
     {
         SAL_INFO( "ucb.ucp.cmis", "TODO - RepoContent::abort()" );
         // TODO Implement me
     }
 
-    uno::Sequence< uno::Type > SAL_CALL RepoContent::getTypes() throw( uno::RuntimeException, std::exception )
+    uno::Sequence< uno::Type > SAL_CALL RepoContent::getTypes()
     {
         static cppu::OTypeCollection aFolderCollection
             (CPPU_TYPE_REF( lang::XTypeProvider ),

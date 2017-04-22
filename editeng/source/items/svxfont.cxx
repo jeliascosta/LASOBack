@@ -32,7 +32,7 @@ SvxFont::SvxFont()
 {
     nKern = nEsc = 0;
     nPropr = 100;
-    eCaseMap = SVX_CASEMAP_NOT_MAPPED;
+    eCaseMap = SvxCaseMap::NotMapped;
     SetLanguage(LANGUAGE_SYSTEM);
 }
 
@@ -41,7 +41,7 @@ SvxFont::SvxFont( const vcl::Font &rFont )
 {
     nKern = nEsc = 0;
     nPropr = 100;
-    eCaseMap = SVX_CASEMAP_NOT_MAPPED;
+    eCaseMap = SvxCaseMap::NotMapped;
     SetLanguage(LANGUAGE_SYSTEM);
 }
 
@@ -55,7 +55,7 @@ SvxFont::SvxFont( const SvxFont &rFont )
     SetLanguage(rFont.GetLanguage());
 }
 
-void SvxFont::DrawArrow( OutputDevice &rOut, const Rectangle& rRect,
+void SvxFont::DrawArrow( OutputDevice &rOut, const tools::Rectangle& rRect,
     const Size& rSize, const Color& rCol, bool bLeft )
 {
     long nLeft = ( rRect.Left() + rRect.Right() - rSize.Width() )/ 2;
@@ -106,19 +106,19 @@ OUString SvxFont::CalcCaseMap(const OUString &rTxt) const
 
     switch( eCaseMap )
     {
-        case SVX_CASEMAP_KAPITAELCHEN:
-        case SVX_CASEMAP_VERSALIEN:
+        case SvxCaseMap::SmallCaps:
+        case SvxCaseMap::Uppercase:
         {
             aTxt = aCharClass.uppercase( aTxt );
             break;
         }
 
-        case SVX_CASEMAP_GEMEINE:
+        case SvxCaseMap::Lowercase:
         {
             aTxt = aCharClass.lowercase( aTxt );
             break;
         }
-        case SVX_CASEMAP_TITEL:
+        case SvxCaseMap::Capitalize:
         {
             // Every beginning of a word is capitalized,  the rest of the word
             // is taken over as is.
@@ -143,7 +143,7 @@ OUString SvxFont::CalcCaseMap(const OUString &rTxt) const
         }
         default:
         {
-            DBG_ASSERT(false, "SvxFont::CaseMapTxt: unknown casemap");
+            SAL_WARN( "editeng", "SvxFont::CaseMapTxt: unknown casemap");
             break;
         }
     }
@@ -587,8 +587,6 @@ public:
               pFont( _pFnt ),
               nKern( _nKrn )
             { }
-
-    virtual ~SvxDoGetCapitalSize() {}
 
     virtual void Do( const OUString &rTxt, const sal_Int32 nIdx,
                      const sal_Int32 nLen, const bool bUpper ) override;

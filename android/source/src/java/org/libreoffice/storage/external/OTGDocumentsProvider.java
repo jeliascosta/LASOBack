@@ -2,8 +2,8 @@ package org.libreoffice.storage.external;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 import org.libreoffice.R;
 import org.libreoffice.storage.DocumentProviderSettingsActivity;
@@ -63,7 +63,7 @@ public class OTGDocumentsProvider implements IExternalDocumentProvider,
         File f = IOUtils.getFileFromURIString(rootPathURI);
         if(IOUtils.isInvalidFile(f)) {
             //missing device
-            throw new RuntimeException(context.getString(R.string.otg_missing_error, context));
+            throw new RuntimeException(context.getString(R.string.otg_missing_error));
         }
 
         return new LocalFile(f);
@@ -80,5 +80,11 @@ public class OTGDocumentsProvider implements IExternalDocumentProvider,
     @Override
     public String guessRootURI() {
         return "";
+    }
+
+    @Override
+    public boolean checkProviderAvailability() {
+        // check if system supports USB Host
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
     }
 }

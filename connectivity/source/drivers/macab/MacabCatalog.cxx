@@ -34,8 +34,7 @@ using namespace ::cppu;
 
 MacabCatalog::MacabCatalog(MacabConnection* _pCon)
         : connectivity::sdbcx::OCatalog(_pCon),
-          m_pConnection(_pCon),
-          m_xMetaData(m_pConnection->getMetaData())
+          m_pConnection(_pCon)
 {
 }
 
@@ -86,7 +85,7 @@ const OUString& MacabCatalog::getDot()
 
 
 // XTablesSupplier
-Reference< XNameAccess > SAL_CALL MacabCatalog::getTables(  ) throw(RuntimeException)
+Reference< XNameAccess > SAL_CALL MacabCatalog::getTables(  )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(rBHelper.bDisposed);

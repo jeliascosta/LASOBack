@@ -45,19 +45,19 @@ class ComplexToolbarController : public svt::ToolboxController
                                   ToolBox* pToolBar,
                                   sal_uInt16       nID,
                                   const OUString& aCommand );
-        virtual ~ComplexToolbarController();
+        virtual ~ComplexToolbarController() override;
 
         // XComponent
-        virtual void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL dispose() override;
 
         // XToolbarController
-        virtual void SAL_CALL execute( sal_Int16 KeyModifier ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL execute( sal_Int16 KeyModifier ) override;
 
         // XStatusListener
-        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override;
 
-        DECL_STATIC_LINK_TYPED( ComplexToolbarController, ExecuteHdl_Impl, void*, void );
-        DECL_STATIC_LINK_TYPED( ComplexToolbarController, Notify_Impl, void*, void);
+        DECL_STATIC_LINK( ComplexToolbarController, ExecuteHdl_Impl, void*, void );
+        DECL_STATIC_LINK( ComplexToolbarController, Notify_Impl, void*, void);
 
         struct ExecuteInfo
         {

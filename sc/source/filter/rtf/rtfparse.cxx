@@ -35,7 +35,6 @@
 ScRTFParser::ScRTFParser( EditEngine* pEditP ) :
         ScEEParser( pEditP ),
         mnCurPos(0),
-        pColTwips( new ScRTFColTwips ),
         pActDefault( nullptr ),
         pDefMerge( nullptr ),
         nStartAdjust( (sal_uLong)~0 ),
@@ -43,7 +42,7 @@ ScRTFParser::ScRTFParser( EditEngine* pEditP ) :
         bNewDef( false )
 {
     // RTF default FontSize 12Pt
-    long nMM = OutputDevice::LogicToLogic( 12, MAP_POINT, MAP_100TH_MM );
+    long nMM = OutputDevice::LogicToLogic( 12, MapUnit::MapPoint, MapUnit::Map100thMM );
     pPool->SetPoolDefaultItem( SvxFontHeightItem( nMM, 100, EE_CHAR_FONTHEIGHT ) );
     // Free-flying pInsDefault
     pInsDefault = new ScRTFCellDefault( pPool );
@@ -52,14 +51,13 @@ ScRTFParser::ScRTFParser( EditEngine* pEditP ) :
 ScRTFParser::~ScRTFParser()
 {
     delete pInsDefault;
-    delete pColTwips;
     maDefaultList.clear();
 }
 
 sal_uLong ScRTFParser::Read( SvStream& rStream, const OUString& rBaseURL )
 {
-    Link<ImportInfo&,void> aOldLink = pEdit->GetImportHdl();
-    pEdit->SetImportHdl( LINK( this, ScRTFParser, RTFImportHdl ) );
+    Link<RtfImportInfo&,void> aOldLink = pEdit->GetRtfImportHdl();
+    pEdit->SetRtfImportHdl( LINK( this, ScRTFParser, RTFImportHdl ) );
     sal_uLong nErr = pEdit->Read( rStream, rBaseURL, EE_FORMAT_RTF );
     if ( nLastToken == RTF_PAR )
     {
@@ -83,7 +81,7 @@ sal_uLong ScRTFParser::Read( SvStream& rStream, const OUString& rBaseURL )
         }
     }
     ColAdjust();
-    pEdit->SetImportHdl( aOldLink );
+    pEdit->SetRtfImportHdl( aOldLink );
     return nErr;
 }
 
@@ -103,21 +101,21 @@ inline void ScRTFParser::NextRow()
 
 bool ScRTFParser::SeekTwips( sal_uInt16 nTwips, SCCOL* pCol )
 {
-    ScRTFColTwips::const_iterator it = pColTwips->find( nTwips );
-    bool bFound = it != pColTwips->end();
-    sal_uInt16 nPos = it - pColTwips->begin();
+    ScRTFColTwips::const_iterator it = aColTwips.find( nTwips );
+    bool bFound = it != aColTwips.end();
+    sal_uInt16 nPos = it - aColTwips.begin();
     *pCol = static_cast<SCCOL>(nPos);
     if ( bFound )
         return true;
-    sal_uInt16 nCount = pColTwips->size();
+    sal_uInt16 nCount = aColTwips.size();
     if ( !nCount )
         return false;
     SCCOL nCol = *pCol;
     // nCol is insertion position; the next one higher up is there (or not)
-    if ( nCol < static_cast<SCCOL>(nCount) && (((*pColTwips)[nCol] - SC_RTFTWIPTOL) <= nTwips) )
+    if ( nCol < static_cast<SCCOL>(nCount) && ((aColTwips[nCol] - SC_RTFTWIPTOL) <= nTwips) )
         return true;
     // Not smaller than everything else? Then compare with the next lower one
-    else if ( nCol != 0 && (((*pColTwips)[nCol-1] + SC_RTFTWIPTOL) >= nTwips) )
+    else if ( nCol != 0 && ((aColTwips[nCol-1] + SC_RTFTWIPTOL) >= nTwips) )
     {
         (*pCol)--;
         return true;
@@ -150,21 +148,21 @@ void ScRTFParser::ColAdjust()
                 nColMax = nCol;
         }
         nStartAdjust = (sal_uLong)~0;
-        pColTwips->clear();
+        aColTwips.clear();
     }
 }
 
-IMPL_LINK_TYPED( ScRTFParser, RTFImportHdl, ImportInfo&, rInfo, void )
+IMPL_LINK( ScRTFParser, RTFImportHdl, RtfImportInfo&, rInfo, void )
 {
     switch ( rInfo.eState )
     {
-        case RTFIMP_NEXTTOKEN:
+        case RtfImportState::NextToken:
             ProcToken( &rInfo );
             break;
-        case RTFIMP_UNKNOWNATTR:
+        case RtfImportState::UnknownAttr:
             ProcToken( &rInfo );
             break;
-        case RTFIMP_START:
+        case RtfImportState::Start:
         {
             SvxRTFParser* pParser = static_cast<SvxRTFParser*>(rInfo.pParser);
             pParser->SetAttrPool( pPool );
@@ -174,7 +172,7 @@ IMPL_LINK_TYPED( ScRTFParser, RTFImportHdl, ImportInfo&, rInfo, void )
             rMap.nShadow = ATTR_SHADOW;
         }
             break;
-        case RTFIMP_END:
+        case RtfImportState::End:
             if ( rInfo.aSelection.nEndPos )
             {   // If still text: create last paragraph
                 pActDefault = nullptr;
@@ -185,11 +183,11 @@ IMPL_LINK_TYPED( ScRTFParser, RTFImportHdl, ImportInfo&, rInfo, void )
                 ProcToken( &rInfo );
             }
             break;
-        case RTFIMP_SETATTR:
+        case RtfImportState::SetAttr:
             break;
-        case RTFIMP_INSERTTEXT:
+        case RtfImportState::InsertText:
             break;
-        case RTFIMP_INSERTPARA:
+        case RtfImportState::InsertPara:
             break;
         default:
             OSL_FAIL("unknown ImportInfo.eState");
@@ -199,7 +197,7 @@ IMPL_LINK_TYPED( ScRTFParser, RTFImportHdl, ImportInfo&, rInfo, void )
 // Bad behavior:
 // For RTF_INTBL or respectively at the start of the first RTF_CELL
 // after RTF_CELLX if there was no RTF_INTBL
-void ScRTFParser::NewCellRow( ImportInfo* /*pInfo*/ )
+void ScRTFParser::NewCellRow( RtfImportInfo* /*pInfo*/ )
 {
     if ( bNewDef )
     {
@@ -227,7 +225,7 @@ void ScRTFParser::NewCellRow( ImportInfo* /*pInfo*/ )
             const ScRTFCellDefault& rD = *pCellDefault.get();
             SCCOL nCol;
             if ( !SeekTwips(rD.nTwips, &nCol) )
-                pColTwips->insert( rD.nTwips );
+                aColTwips.insert( rD.nTwips );
         }
     }
     pDefMerge = nullptr;
@@ -263,7 +261,7 @@ void ScRTFParser::NewCellRow( ImportInfo* /*pInfo*/ )
 
  */
 
-void ScRTFParser::ProcToken( ImportInfo* pInfo )
+void ScRTFParser::ProcToken( RtfImportInfo* pInfo )
 {
     switch ( pInfo->nToken )
     {
@@ -327,7 +325,7 @@ void ScRTFParser::ProcToken( ImportInfo* pInfo )
         {
             OSL_ENSURE( pActDefault, "RTF_CELL: pActDefault==0" );
             if ( bNewDef || !pActDefault )
-                NewCellRow( pInfo );    // davor war kein \intbl, bad behavior
+                NewCellRow( pInfo );    // before was no \intbl, bad behavior
             // Broken RTF? Let's save what we can
             if ( !pActDefault )
                 pActDefault = pInsDefault;

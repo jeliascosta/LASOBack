@@ -74,7 +74,6 @@ ScCellEditSource::ScCellEditSource(ScDocShell* pDocSh, const ScAddress& rP) :
 
 ScCellEditSource::~ScCellEditSource()
 {
-    delete pCellTextData;
 }
 
 SvxEditSource* ScCellEditSource::Clone() const
@@ -144,7 +143,7 @@ SvxTextForwarder* ScAnnotationEditSource::GetTextForwarder()
 {
     if (!pEditEngine)
     {
-        // Notizen haben keine Felder
+        // notes don't have fields
         if ( pDocShell )
         {
             pEditEngine = new ScNoteEditEngine( pDocShell->GetDocument().GetNoteEngine() );
@@ -190,7 +189,7 @@ void ScAnnotationEditSource::UpdateData()
 
         aModificator.SetDocumentModified();
 
-        // bDataValid wird bei SetDocumentModified zurueckgesetzt
+        // SetDocumentModified will reset bDataValid
     }
 }
 
@@ -198,20 +197,20 @@ void ScAnnotationEditSource::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     if ( dynamic_cast<const ScUpdateRefHint*>(&rHint) )
     {
-        //! Ref-Update
+        //! reference update
     }
-    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) )
+    else
     {
-        const sal_uInt32 nId = static_cast<const SfxSimpleHint&>(rHint).GetId();
-        if ( nId == SFX_HINT_DYING )
+        const SfxHintId nId = rHint.GetId();
+        if ( nId == SfxHintId::Dying )
         {
-            pDocShell = nullptr;                       // ungueltig geworden
+            pDocShell = nullptr;
 
             DELETEZ( pForwarder );
             DELETEZ( pEditEngine );     // EditEngine uses document's pool
         }
-        else if ( nId == SFX_HINT_DATACHANGED )
-            bDataValid = false;                     // Text muss neu geholt werden
+        else if ( nId == SfxHintId::DataChanged )
+            bDataValid = false;                     // text must be retrieved again
     }
 }
 

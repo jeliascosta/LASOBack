@@ -18,7 +18,6 @@
  */
 
 #include "CharacterProperties.hxx"
-#include "ContainerHelper.hxx"
 #include "macros.hxx"
 
 #include <com/sun/star/beans/PropertyAttribute.hpp>
@@ -52,7 +51,7 @@ namespace chart
 {
 
 void CharacterProperties::AddPropertiesToVector(
-    ::std::vector< Property > & rOutProperties )
+    std::vector< Property > & rOutProperties )
 {
     // CharacterProperties
     rOutProperties.push_back(

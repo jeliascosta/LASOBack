@@ -114,7 +114,7 @@ namespace slideshow
 
             virtual css::uno::Reference< css::drawing::XShape > getXShape() const override;
 
-            virtual ~DrawShape();
+            virtual ~DrawShape() override;
 
 
             // View layer methods
@@ -199,7 +199,7 @@ namespace slideshow
                 crafted metafile, usable to display drawing layer text
                 animations.
             */
-            GDIMetaFileSharedPtr forceScrollTextMetaFile();
+            GDIMetaFileSharedPtr const & forceScrollTextMetaFile();
 
         private:
             /** Create a shape for the given XShape
@@ -262,8 +262,8 @@ namespace slideshow
              */
             DrawShape( const DrawShape&, const DocTreeNode& rTreeNode, double nPrio );
 
-            int  getUpdateFlags() const;
-            bool implRender( int nUpdateFlags ) const;
+            UpdateFlags getUpdateFlags() const;
+            bool implRender( UpdateFlags nUpdateFlags ) const;
             void updateStateIds() const;
 
             ViewShape::RenderArgs   getViewRenderArgs() const;
@@ -338,9 +338,6 @@ namespace slideshow
 
             /// Number of times the bitmap animation shall loop
             ::std::size_t                                                           mnAnimationLoopCount;
-
-            /// Cycle mode for bitmap animation
-            CycleMode                                                               meCycleMode;
 
             /// Whether shape is visible (without attribute layers)
             bool                                                                    mbIsVisible;

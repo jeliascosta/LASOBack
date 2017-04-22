@@ -32,7 +32,7 @@ class DocumentSettingManager :
     sal_uInt16  mnLinkUpdMode;       //< UpdateMode for links.
 
     SwFieldUpdateFlags    meFieldUpdMode;//< Automatically Update Mode for fields/charts.
-    SwCharCompressType meChrCmprType;//< for ASIAN: compress punctuation/kana
+    CharCompressType meChrCmprType;//< for ASIAN: compress punctuation/kana
 
     sal_uInt32  mn32DummyCompatibilityOptions1;
     sal_uInt32  mn32DummyCompatibilityOptions2;
@@ -133,11 +133,11 @@ class DocumentSettingManager :
     bool mbTableRowKeep                             : 1;
     bool mbIgnoreTabsAndBlanksForLineCalculation    : 1;   // #i3952#
     bool mbDoNotCaptureDrawObjsOnPage               : 1;   // #i62875#
-    bool mbOutlineLevelYieldsOutlineRule            : 1;
     bool mbClipAsCharacterAnchoredWriterFlyFrames   : 1;
     bool mbUnixForceZeroExtLeading                  : 1;   // #i60945#
     bool mbTabRelativeToIndent                      : 1;   // #i24363# tab stops relative to indent
     bool mbProtectForm                              : 1;
+    bool mbMsWordCompTrailingBlanks                 : 1;   // tdf#104349 tdf#104668
     bool mbInvertBorderSpacing                      : 1;
     bool mbCollapseEmptyCellPara                    : 1;
     bool mbTabAtLeftIndentForParagraphsInList;             // #i89181# - see above
@@ -147,7 +147,7 @@ class DocumentSettingManager :
     bool mbClippedPictures;
     bool mbBackgroundParaOverDrawings;
     bool mbTabOverMargin;
-    bool mbTreatSingleColumnBreakAsPageBreak;
+    bool mbTreatSingleColumnBreakAsPageBreak;              // tdf#76349
     bool mbSurroundTextWrapSmall;
     bool mbPropLineSpacingShrinksFirstLine; // fdo#79602
     bool mbSubtractFlys; // tdf#86578
@@ -158,7 +158,7 @@ class DocumentSettingManager :
 public:
 
     DocumentSettingManager(SwDoc &rDoc);
-    virtual ~DocumentSettingManager();
+    virtual ~DocumentSettingManager() override;
 
     // IDocumentSettingAccess
     virtual bool get(/*[in]*/ DocumentSettingId id) const override;
@@ -171,8 +171,8 @@ public:
     virtual void setLinkUpdateMode( /*[in]*/ sal_uInt16 nMode ) override;
     virtual SwFieldUpdateFlags getFieldUpdateFlags( /*[in]*/bool bGlobalSettings ) const override;
     virtual void setFieldUpdateFlags( /*[in]*/ SwFieldUpdateFlags eMode ) override;
-    virtual SwCharCompressType getCharacterCompressionType() const override;
-    virtual void setCharacterCompressionType( /*[in]*/SwCharCompressType nType ) override;
+    virtual CharCompressType getCharacterCompressionType() const override;
+    virtual void setCharacterCompressionType( /*[in]*/CharCompressType nType ) override;
 
 
 // Replace all compatibility options with those from rSource.

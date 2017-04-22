@@ -39,7 +39,7 @@ SwEditShell::InsertSection(
     if( !IsTableMode() )
     {
         StartAllAction();
-        GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_INSSECTION, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::INSSECTION, nullptr );
 
         for(SwPaM& rPaM : GetCursor()->GetRingContainer())
         {
@@ -49,7 +49,7 @@ SwEditShell::InsertSection(
                 pRet = pNew;
         }
 
-        GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_INSSECTION, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::INSSECTION, nullptr );
         EndAllAction();
     }
     return pRet;
@@ -368,7 +368,7 @@ static const SwNode* lcl_SpecialInsertNode(const SwPosition* pCurrentPos)
             ++aEnd;
         bool bEnd = ( aEnd == pInnermostNode->EndOfSectionNode()->GetIndex() );
 
-        // evalutate result: if both start + end, end is preferred
+        // evaluate result: if both start + end, end is preferred
         if( bEnd )
             pReturn = pInnermostNode->EndOfSectionNode();
         else if ( bStart )

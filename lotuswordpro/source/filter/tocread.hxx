@@ -61,22 +61,20 @@ namespace OpenStormBento
 class CBenTOCReader
 {
 public: // Methods
-    explicit CBenTOCReader(pLtcBenContainer pContainer)
+    explicit CBenTOCReader(LtcBenContainer * pContainer)
         : cpContainer(pContainer)
-        , cpTOC(nullptr)
         , cBlockSize(0)
         , cCurr(0)
         , cTOCSize(0)
         { }
-    ~CBenTOCReader() { delete[] cpTOC; }
     BenError ReadLabelAndTOC();
 
 private: // Methods
     BenError ReadLabel(unsigned long * pTOCOffset, unsigned long * pTOCSize);
     BenError SearchForLabel(BenByte * pLabel);
     BenError ReadTOC();
-    BenError ReadSegments(pCBenValue pValue, BenByte * pLookAhead);
-    BenError ReadSegment(pCBenValue pValue, BenByte * pLookAhead);
+    BenError ReadSegments(CBenValue * pValue, BenByte * pLookAhead);
+    BenError ReadSegment(CBenValue * pValue, BenByte * pLookAhead);
     bool CanGetData(unsigned long Amt);
     BenError GetByte(BenByte * pByte);
     BenError GetDWord(BenDWord * pDWord);
@@ -84,8 +82,8 @@ private: // Methods
     BenError GetData(void * pBuffer, unsigned long Amt);
 
 private: // Data
-    pLtcBenContainer cpContainer;
-    BenByte*         cpTOC;
+    LtcBenContainer * cpContainer;
+    std::unique_ptr<BenByte[]> cpTOC;
     unsigned long cBlockSize;
     unsigned long cCurr;
     unsigned long cTOCSize;

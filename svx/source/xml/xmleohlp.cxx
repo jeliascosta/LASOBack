@@ -73,12 +73,11 @@ class OutputStorageWrapper_Impl : public ::cppu::WeakImplHelper<XOutputStream>
 
 public:
     OutputStorageWrapper_Impl();
-    virtual ~OutputStorageWrapper_Impl();
 
 // css::io::XOutputStream
-    virtual void SAL_CALL writeBytes(const Sequence< sal_Int8 >& aData) throw(NotConnectedException, BufferSizeExceededException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL flush() throw(NotConnectedException, BufferSizeExceededException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL closeOutput() throw(NotConnectedException, BufferSizeExceededException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeBytes(const Sequence< sal_Int8 >& aData) override;
+    virtual void SAL_CALL flush() override;
+    virtual void SAL_CALL closeOutput() override;
 
     SvStream*   GetStream();
 };
@@ -88,12 +87,8 @@ OutputStorageWrapper_Impl::OutputStorageWrapper_Impl()
     , pStream(nullptr)
 {
     aTempFile.EnableKillingFile();
-    pStream = aTempFile.GetStream( STREAM_READWRITE );
+    pStream = aTempFile.GetStream( StreamMode::READWRITE );
     xOut = new OOutputStreamWrapper( *pStream );
-}
-
-OutputStorageWrapper_Impl::~OutputStorageWrapper_Impl()
-{
 }
 
 SvStream *OutputStorageWrapper_Impl::GetStream()
@@ -105,51 +100,40 @@ SvStream *OutputStorageWrapper_Impl::GetStream()
 
 void SAL_CALL OutputStorageWrapper_Impl::writeBytes(
         const Sequence< sal_Int8 >& aData)
-    throw(NotConnectedException, BufferSizeExceededException, RuntimeException, std::exception)
 {
     MutexGuard          aGuard( maMutex );
     xOut->writeBytes( aData );
 }
 
 void SAL_CALL OutputStorageWrapper_Impl::flush()
-    throw(NotConnectedException, BufferSizeExceededException, RuntimeException, std::exception)
 {
     MutexGuard          aGuard( maMutex );
     xOut->flush();
 }
 
 void SAL_CALL OutputStorageWrapper_Impl::closeOutput()
-    throw(NotConnectedException, BufferSizeExceededException, RuntimeException, std::exception)
 {
     MutexGuard          aGuard( maMutex );
     xOut->closeOutput();
     bStreamClosed = true;
 }
 
-struct OUStringLess
-{
-    bool operator() ( const OUString& r1, const OUString& r2 ) const
-    {
-        return r1 < r2;
-    }
-};
-
 SvXMLEmbeddedObjectHelper::SvXMLEmbeddedObjectHelper() :
-    WeakComponentImplHelper2< XEmbeddedObjectResolver, XNameAccess >( maMutex ),
+    WeakComponentImplHelper< XEmbeddedObjectResolver, XNameAccess >( maMutex ),
     maReplacementGraphicsContainerStorageName( XML_CONTAINERSTORAGE_NAME ),
     maReplacementGraphicsContainerStorageName60( XML_CONTAINERSTORAGE_NAME_60 ),
     mpDocPersist( nullptr ),
-    meCreateMode( EMBEDDEDOBJECTHELPER_MODE_READ ),
+    meCreateMode( SvXMLEmbeddedObjectHelperMode::Read ),
     mpStreamMap( nullptr )
 {
 }
 
 SvXMLEmbeddedObjectHelper::SvXMLEmbeddedObjectHelper( ::comphelper::IEmbeddedHelper& rDocPersist, SvXMLEmbeddedObjectHelperMode eCreateMode ) :
-    WeakComponentImplHelper2< XEmbeddedObjectResolver, XNameAccess >( maMutex ),
+    WeakComponentImplHelper< XEmbeddedObjectResolver, XNameAccess >( maMutex ),
     maReplacementGraphicsContainerStorageName( XML_CONTAINERSTORAGE_NAME ),
     maReplacementGraphicsContainerStorageName60( XML_CONTAINERSTORAGE_NAME_60 ),
     mpDocPersist( nullptr ),
-    meCreateMode( EMBEDDEDOBJECTHELPER_MODE_READ ),
+    meCreateMode( SvXMLEmbeddedObjectHelperMode::Read ),
     mpStreamMap( nullptr )
 {
     Init( nullptr, rDocPersist, eCreateMode );
@@ -175,7 +159,11 @@ SvXMLEmbeddedObjectHelper::~SvXMLEmbeddedObjectHelper()
 
 void SAL_CALL SvXMLEmbeddedObjectHelper::disposing()
 {
-    Flush();
+    if( mxTempStorage.is() )
+    {
+        Reference < XComponent > xComp( mxTempStorage, UNO_QUERY );
+        xComp->dispose();
+    }
 }
 
 void SvXMLEmbeddedObjectHelper::splitObjectURL(const OUString& _aURLNoPar,
@@ -270,7 +258,7 @@ bool SvXMLEmbeddedObjectHelper::ImplGetStorageNames(
             }
             else
             {
-                DBG_ASSERT( false, "invalid arguments was found in URL!" );
+                SAL_WARN( "svx", "invalid arguments was found in URL!" );
             }
         }
     }
@@ -329,7 +317,7 @@ bool SvXMLEmbeddedObjectHelper::ImplGetStorageNames(
     return true;
 }
 
-uno::Reference < embed::XStorage > SvXMLEmbeddedObjectHelper::ImplGetContainerStorage(
+uno::Reference < embed::XStorage > const & SvXMLEmbeddedObjectHelper::ImplGetContainerStorage(
         const OUString& rStorageName )
 {
     DBG_ASSERT( -1 == rStorageName.indexOf( '/' ) &&
@@ -340,7 +328,7 @@ uno::Reference < embed::XStorage > SvXMLEmbeddedObjectHelper::ImplGetContainerSt
     {
         if( mxContainerStorage.is() &&
             !maCurContainerStorageName.isEmpty() &&
-            EMBEDDEDOBJECTHELPER_MODE_WRITE == meCreateMode )
+            SvXMLEmbeddedObjectHelperMode::Write == meCreateMode )
         {
             uno::Reference < embed::XTransactedObject > xTrans( mxContainerStorage, uno::UNO_QUERY );
             if ( xTrans.is() )
@@ -349,7 +337,7 @@ uno::Reference < embed::XStorage > SvXMLEmbeddedObjectHelper::ImplGetContainerSt
 
         if( !rStorageName.isEmpty() && mxRootStorage.is() )
         {
-            sal_Int32 nMode = EMBEDDEDOBJECTHELPER_MODE_WRITE == meCreateMode
+            sal_Int32 nMode = SvXMLEmbeddedObjectHelperMode::Write == meCreateMode
                                     ? ::embed::ElementModes::READWRITE
                                     : ::embed::ElementModes::READ;
             mxContainerStorage = mxRootStorage->openStorageElement( rStorageName,
@@ -455,10 +443,10 @@ OUString SvXMLEmbeddedObjectHelper::ImplInsertEmbeddedObjectURL(
     OUString aContainerStorageName, aObjectStorageName;
     if( !ImplGetStorageNames( rURLStr, aContainerStorageName,
                               aObjectStorageName,
-                              EMBEDDEDOBJECTHELPER_MODE_WRITE == meCreateMode ) )
+                              SvXMLEmbeddedObjectHelperMode::Write == meCreateMode ) )
         return sRetURL;
 
-    if( EMBEDDEDOBJECTHELPER_MODE_READ == meCreateMode )
+    if( SvXMLEmbeddedObjectHelperMode::Read == meCreateMode )
     {
         OutputStorageWrapper_Impl *pOut = nullptr;
         SvXMLEmbeddedObjectHelper_Impl::iterator aIter;
@@ -595,18 +583,8 @@ void SvXMLEmbeddedObjectHelper::Destroy(
     }
 }
 
-void SvXMLEmbeddedObjectHelper::Flush()
-{
-    if( mxTempStorage.is() )
-    {
-        Reference < XComponent > xComp( mxTempStorage, UNO_QUERY );
-        xComp->dispose();
-    }
-}
-
 // XGraphicObjectResolver: alien objects!
 OUString SAL_CALL SvXMLEmbeddedObjectHelper::resolveEmbeddedObjectURL(const OUString& rURL)
-    throw(RuntimeException, std::exception)
 {
     MutexGuard          aGuard( maMutex );
 
@@ -631,11 +609,10 @@ OUString SAL_CALL SvXMLEmbeddedObjectHelper::resolveEmbeddedObjectURL(const OUSt
 // XNameAccess: alien objects!
 Any SAL_CALL SvXMLEmbeddedObjectHelper::getByName(
         const OUString& rURLStr )
-    throw (NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard          aGuard( maMutex );
     Any aRet;
-    if( EMBEDDEDOBJECTHELPER_MODE_READ == meCreateMode )
+    if( SvXMLEmbeddedObjectHelperMode::Read == meCreateMode )
     {
         Reference < XOutputStream > xStrm;
         if( mpStreamMap )
@@ -729,17 +706,14 @@ Any SAL_CALL SvXMLEmbeddedObjectHelper::getByName(
 }
 
 Sequence< OUString > SAL_CALL SvXMLEmbeddedObjectHelper::getElementNames()
-    throw (RuntimeException, std::exception)
 {
-    MutexGuard          aGuard( maMutex );
-    return Sequence< OUString >(0);
+   return Sequence< OUString >(0);
 }
 
 sal_Bool SAL_CALL SvXMLEmbeddedObjectHelper::hasByName( const OUString& rURLStr )
-    throw (RuntimeException, std::exception)
 {
     MutexGuard          aGuard( maMutex );
-    if( EMBEDDEDOBJECTHELPER_MODE_READ == meCreateMode )
+    if( SvXMLEmbeddedObjectHelperMode::Read == meCreateMode )
     {
         return true;
     }
@@ -759,20 +733,18 @@ sal_Bool SAL_CALL SvXMLEmbeddedObjectHelper::hasByName( const OUString& rURLStr 
 
 // XNameAccess
 Type SAL_CALL SvXMLEmbeddedObjectHelper::getElementType()
-    throw (RuntimeException, std::exception)
 {
     MutexGuard          aGuard( maMutex );
-    if( EMBEDDEDOBJECTHELPER_MODE_READ == meCreateMode )
+    if( SvXMLEmbeddedObjectHelperMode::Read == meCreateMode )
         return cppu::UnoType<XOutputStream>::get();
     else
         return cppu::UnoType<XInputStream>::get();
 }
 
 sal_Bool SAL_CALL SvXMLEmbeddedObjectHelper::hasElements()
-    throw (RuntimeException, std::exception)
 {
     MutexGuard          aGuard( maMutex );
-    if( EMBEDDEDOBJECTHELPER_MODE_READ == meCreateMode )
+    if( SvXMLEmbeddedObjectHelperMode::Read == meCreateMode )
     {
         return true;
     }

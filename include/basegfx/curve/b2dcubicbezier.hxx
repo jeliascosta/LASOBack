@@ -33,6 +33,7 @@ namespace basegfx
 {
     class BASEGFX_DLLPUBLIC B2DCubicBezier
     {
+    private:
         B2DPoint                                        maStartPoint;
         B2DPoint                                        maEndPoint;
         B2DPoint                                        maControlPointA;
@@ -116,7 +117,7 @@ namespace basegfx
             and the end point
             #i37443# allow the criteria to get unsharp in recursions
         */
-        void adaptiveSubdivideByAngle(B2DPolygon& rTarget, double fAngleBound, bool bAllowUnsharpen) const;
+        void adaptiveSubdivideByAngle(B2DPolygon& rTarget, double fAngleBound) const;
 
         /** #i37443# adaptive subdivide by nCount subdivisions
             no start point is added, but all necessary created edges
@@ -187,6 +188,12 @@ namespace basegfx
             sense to use reserve(4) at the vector as preparation.
         */
         void getAllExtremumPositions(::std::vector< double >& rResults) const;
+
+        /// apply transformation given in matrix form
+        void transform(const basegfx::B2DHomMatrix& rMatrix);
+
+        /// fround content
+        void fround();
     };
 } // end of namespace basegfx
 

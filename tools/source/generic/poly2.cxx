@@ -251,7 +251,7 @@ void PolyPolygon::Optimize( PolyOptimizeFlags nOptimizeFlags )
 
             if( bEdges )
             {
-                const Rectangle aBound( GetBoundRect() );
+                const tools::Rectangle aBound( GetBoundRect() );
 
                 fArea = ( aBound.GetWidth() + aBound.GetHeight() ) * 0.5;
                 nPercent = 50;
@@ -336,20 +336,6 @@ void PolyPolygon::ImplDoOperation( const tools::PolyPolygon& rPolyPoly, tools::P
         {
             // merge A and B (OR)
             aMergePolyPolygonA = basegfx::tools::solvePolygonOperationOr(aMergePolyPolygonA, aMergePolyPolygonB);
-            break;
-        }
-
-        case PolyClipOp::DIFF:
-        {
-            // subtract B from A (DIFF)
-            aMergePolyPolygonA = basegfx::tools::solvePolygonOperationDiff(aMergePolyPolygonA, aMergePolyPolygonB);
-            break;
-        }
-
-        case PolyClipOp::XOR:
-        {
-            // compute XOR between poly A and B
-            aMergePolyPolygonA = basegfx::tools::solvePolygonOperationXor(aMergePolyPolygonA, aMergePolyPolygonB);
             break;
         }
 
@@ -438,7 +424,7 @@ void PolyPolygon::Rotate( const Point& rCenter, double fSin, double fCos )
         mpImplPolyPolygon->mpPolyAry[ i ]->Rotate( rCenter, fSin, fCos );
 }
 
-void PolyPolygon::Clip( const Rectangle& rRect )
+void PolyPolygon::Clip( const tools::Rectangle& rRect )
 {
     sal_uInt16 nPolyCount = mpImplPolyPolygon->mnCount;
     sal_uInt16 i;
@@ -463,7 +449,7 @@ void PolyPolygon::Clip( const Rectangle& rRect )
     }
 }
 
-Rectangle PolyPolygon::GetBoundRect() const
+tools::Rectangle PolyPolygon::GetBoundRect() const
 {
     long    nXMin=0, nXMax=0, nYMin=0, nYMax=0;
     bool    bFirst = true;
@@ -500,9 +486,9 @@ Rectangle PolyPolygon::GetBoundRect() const
     }
 
     if ( !bFirst )
-        return Rectangle( nXMin, nYMin, nXMax, nYMax );
+        return tools::Rectangle( nXMin, nYMin, nXMax, nYMax );
     else
-        return Rectangle();
+        return tools::Rectangle();
 }
 
 Polygon& PolyPolygon::operator[]( sal_uInt16 nPos )
@@ -536,6 +522,12 @@ PolyPolygon& PolyPolygon::operator=( const tools::PolyPolygon& rPolyPoly )
     return *this;
 }
 
+PolyPolygon& PolyPolygon::operator=( tools::PolyPolygon&& rPolyPoly )
+{
+    std::swap(mpImplPolyPolygon, rPolyPoly.mpImplPolyPolygon);
+    return *this;
+}
+
 bool PolyPolygon::operator==( const tools::PolyPolygon& rPolyPoly ) const
 {
     if ( rPolyPoly.mpImplPolyPolygon == mpImplPolyPolygon )
@@ -546,8 +538,6 @@ bool PolyPolygon::operator==( const tools::PolyPolygon& rPolyPoly ) const
 
 SvStream& ReadPolyPolygon( SvStream& rIStream, tools::PolyPolygon& rPolyPoly )
 {
-    SAL_WARN_IF( !rIStream.GetVersion(), "tools", "PolyPolygon::>> - Solar-Version not set on rIStream" );
-
     tools::Polygon* pPoly;
     sal_uInt16 nPolyCount(0);
 
@@ -587,8 +577,6 @@ SvStream& ReadPolyPolygon( SvStream& rIStream, tools::PolyPolygon& rPolyPoly )
 
 SvStream& WritePolyPolygon( SvStream& rOStream, const tools::PolyPolygon& rPolyPoly )
 {
-    SAL_WARN_IF( !rOStream.GetVersion(), "tools", "PolyPolygon::<< - Solar-Version not set on rOStream" );
-
     // Write number of polygons
     sal_uInt16 nPolyCount = rPolyPoly.mpImplPolyPolygon->mnCount;
     rOStream.WriteUInt16( nPolyCount );
@@ -603,8 +591,6 @@ SvStream& WritePolyPolygon( SvStream& rOStream, const tools::PolyPolygon& rPolyP
 void PolyPolygon::Read( SvStream& rIStream )
 {
     VersionCompat aCompat( rIStream, StreamMode::READ );
-
-    SAL_WARN_IF( !rIStream.GetVersion(), "tools","PolyPolygon::>> - Solar-Version not set on rIStream" );
 
     tools::Polygon* pPoly;
     sal_uInt16 nPolyCount(0);

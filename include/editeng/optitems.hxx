@@ -42,9 +42,9 @@ public:
     SfxSpellCheckItem( const SfxSpellCheckItem& rItem );
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool            operator==( const SfxPoolItem& ) const override;
@@ -71,21 +71,21 @@ public:
 
     virtual bool             operator==( const SfxPoolItem& ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*     Create( SvStream& rStrm, sal_uInt16 nVer ) const override;
     virtual SvStream&        Store( SvStream& rStrm, sal_uInt16 ) const override;
 
-    inline sal_uInt8 &GetMinLead() { return nMinLead; }
-    inline sal_uInt8 GetMinLead() const { return nMinLead; }
+    sal_uInt8 &GetMinLead() { return nMinLead; }
+    sal_uInt8 GetMinLead() const { return nMinLead; }
 
-    inline sal_uInt8 &GetMinTrail() { return nMinTrail; }
-    inline sal_uInt8 GetMinTrail() const { return nMinTrail; }
+    sal_uInt8 &GetMinTrail() { return nMinTrail; }
+    sal_uInt8 GetMinTrail() const { return nMinTrail; }
 
-    inline SfxHyphenRegionItem& operator=( const SfxHyphenRegionItem& rNew )
+    SfxHyphenRegionItem& operator=( const SfxHyphenRegionItem& rNew )
     {
         nMinLead = rNew.GetMinLead();
         nMinTrail = rNew.GetMinTrail();

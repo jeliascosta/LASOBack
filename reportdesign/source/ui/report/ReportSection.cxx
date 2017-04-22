@@ -38,11 +38,13 @@
 #include <svx/svditer.hxx>
 #include <svx/dbaexchange.hxx>
 
-#include <vcl/commandinfoprovider.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 
 #include <com/sun/star/datatransfer/clipboard/XClipboard.hpp>
+#include <com/sun/star/frame/XPopupMenuController.hpp>
+#include <comphelper/propertyvalue.hxx>
+#include <toolkit/awt/vclxmenu.hxx>
 #include <toolkit/helper/convert.hxx>
 #include "RptDef.hxx"
 #include "SectionWindow.hxx"
@@ -86,11 +88,11 @@ OReportSection::OReportSection(OSectionWindow* _pParent,const uno::Reference< re
     , m_pReportListener(nullptr)
     , m_xSection(_xSection)
     , m_nPaintEntranceCount(0)
-    , m_eMode(RPTUI_SELECT)
+    , m_eMode(DlgEdMode::Select)
 {
     //EnableChildTransparentMode();
     SetHelpId(HID_REPORTSECTION);
-    SetMapMode(MapMode(MAP_100TH_MM));
+    SetMapMode(MapMode(MapUnit::Map100thMM));
     SetParentClipMode(ParentClipMode::Clip);
     EnableChildTransparentMode( false );
     SetPaintTransparent( false );
@@ -133,7 +135,7 @@ void OReportSection::dispose()
     vcl::Window::dispose();
 }
 
-void OReportSection::Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect )
+void OReportSection::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect )
 {
     Window::Paint(rRenderContext, rRect);
 
@@ -169,11 +171,6 @@ void OReportSection::Paint( vcl::RenderContext& rRenderContext, const Rectangle&
     }
 }
 
-void OReportSection::Resize()
-{
-    Window::Resize();
-}
-
 void OReportSection::fill()
 {
     if ( !m_xSection.is() )
@@ -207,11 +204,11 @@ void OReportSection::fill()
     m_pView->SetGridFine(aGridSizeFine);
 
     // #i93595# set snap grid width to snap to all existing subdivisions
-    const Fraction aX(aGridSizeFine.A());
-    const Fraction aY(aGridSizeFine.B());
+    const Fraction aX(aGridSizeFine.Width());
+    const Fraction aY(aGridSizeFine.Height());
     m_pView->SetSnapGridWidth(aX, aY);
 
-    m_pView->SetGridSnap( pDesignView->isGridSnap() );
+    m_pView->SetGridSnap( true );
     m_pView->SetGridFront( false );
     m_pView->SetDragStripes( true );
     m_pView->SetPageVisible();
@@ -234,7 +231,7 @@ void OReportSection::fill()
     m_pView->StartListening( *m_pModel  );
     m_pPage->SetSize( Size( getStyleProperty<awt::Size>(xReportDefinition,PROPERTY_PAPERSIZE).Width,5*m_xSection->getHeight()) );
     const Size aPageSize = m_pPage->GetSize();
-    m_pView->SetWorkArea( Rectangle( Point( nLeftMargin, 0), Size(aPageSize.Width() - nLeftMargin - nRightMargin,aPageSize.Height()) ) );
+    m_pView->SetWorkArea( tools::Rectangle( Point( nLeftMargin, 0), Size(aPageSize.Width() - nLeftMargin - nRightMargin,aPageSize.Height()) ) );
 }
 
 void OReportSection::Paste(const uno::Sequence< beans::NamedValue >& _aAllreadyCopiedObjects,bool _bForce)
@@ -271,10 +268,9 @@ void OReportSection::Paste(const uno::Sequence< beans::NamedValue >& _aAllreadyC
 
                             pNeuObj->SetPage( m_pPage );
                             pNeuObj->SetModel( m_pModel.get() );
-                            SdrInsertReason aReason(SDRREASON_VIEWCALL);
-                            m_pPage->InsertObject(pNeuObj, SAL_MAX_SIZE, &aReason);
+                            m_pPage->InsertObject(pNeuObj, SAL_MAX_SIZE);
 
-                            Rectangle aRet(VCLPoint((*pCopiesIter)->getPosition()),VCLSize((*pCopiesIter)->getSize()));
+                            tools::Rectangle aRet(VCLPoint((*pCopiesIter)->getPosition()),VCLSize((*pCopiesIter)->getSize()));
                             aRet.setHeight(aRet.getHeight() + 1);
                             aRet.setWidth(aRet.getWidth() + 1);
                             bool bOverlapping = true;
@@ -318,7 +314,7 @@ void OReportSection::SetMode( DlgEdMode eNewMode )
 {
     if ( eNewMode != m_eMode )
     {
-        if ( eNewMode == RPTUI_INSERT )
+        if ( eNewMode == DlgEdMode::Insert )
         {
             m_pFunc.reset(new DlgEdFuncInsert( this ));
         }
@@ -327,7 +323,7 @@ void OReportSection::SetMode( DlgEdMode eNewMode )
             m_pFunc.reset(new DlgEdFuncSelect( this ));
         }
         m_pFunc->setOverlappedControlColor(lcl_getOverlappedControlColor( ) );
-        m_pModel->SetReadOnly(eNewMode == RPTUI_READONLY);
+        m_pModel->SetReadOnly(false);
         m_eMode = eNewMode;
     }
 }
@@ -422,50 +418,13 @@ void OReportSection::SelectAll(const sal_uInt16 _nObjectType)
         else
         {
             m_pView->UnmarkAll();
-            SdrObjListIter aIter(*m_pPage,IM_DEEPNOGROUPS);
+            SdrObjListIter aIter(*m_pPage,SdrIterMode::DeepNoGroups);
             SdrObject* pObjIter = nullptr;
             while( (pObjIter = aIter.Next()) != nullptr )
             {
                 if ( pObjIter->GetObjIdentifier() == _nObjectType )
                     m_pView->MarkObj( pObjIter, m_pView->GetSdrPageView() );
             }
-        }
-    }
-}
-void lcl_insertMenuItemImages(
-    PopupMenu& rContextMenu,
-    OReportController& rController,
-    const uno::Reference< report::XReportDefinition>& _xReportDefinition,uno::Reference<frame::XFrame>& _rFrame
-)
-{
-    const sal_uInt16 nCount = rContextMenu.GetItemCount();
-    for (sal_uInt16 i = 0; i < nCount; ++i)
-    {
-        if ( MenuItemType::SEPARATOR != rContextMenu.GetItemType(i))
-        {
-            const sal_uInt16 nId = rContextMenu.GetItemId(i);
-            PopupMenu* pPopupMenu = rContextMenu.GetPopupMenu( nId );
-            if ( pPopupMenu )
-            {
-                lcl_insertMenuItemImages(*pPopupMenu,rController,_xReportDefinition,_rFrame);
-            }
-            else
-            {
-                const OUString sCommand = rContextMenu.GetItemCommand(nId);
-                rContextMenu.SetItemImage(nId, vcl::CommandInfoProvider::Instance().GetImageForCommand(sCommand, false, _rFrame));
-                if ( nId == SID_PAGEHEADERFOOTER )
-                {
-                    OUString sText = ModuleRes((_xReportDefinition.is() && _xReportDefinition->getPageHeaderOn()) ? RID_STR_PAGEHEADERFOOTER_DELETE : RID_STR_PAGEHEADERFOOTER_INSERT);
-                    rContextMenu.SetItemText(nId,sText);
-                }
-                else if ( nId == SID_REPORTHEADERFOOTER )
-                {
-                    OUString sText = ModuleRes((_xReportDefinition.is() && _xReportDefinition->getReportHeaderOn()) ? RID_STR_REPORTHEADERFOOTER_DELETE : RID_STR_REPORTHEADERFOOTER_INSERT);
-                    rContextMenu.SetItemText(nId,sText);
-                }
-            }
-            rContextMenu.CheckItem(nId,rController.isCommandChecked(nId));
-            rContextMenu.EnableItem(nId,rController.isCommandEnabled(nId));
         }
     }
 }
@@ -477,29 +436,33 @@ void OReportSection::Command( const CommandEvent& _rCEvt )
     {
         OReportController& rController = m_pParent->getViewsWindow()->getView()->getReportView()->getController();
         uno::Reference<frame::XFrame> xFrame = rController.getFrame();
-        PopupMenu aContextMenu( ModuleRes( RID_MENU_REPORT ) );
-        uno::Reference< report::XReportDefinition> xReportDefinition = getSection()->getReportDefinition();
+        css::uno::Sequence<css::uno::Any> aArgs {
+            css::uno::makeAny(comphelper::makePropertyValue("Value", OUString("report"))),
+            css::uno::makeAny(comphelper::makePropertyValue("Frame", xFrame)),
+            css::uno::makeAny(comphelper::makePropertyValue("IsContextMenu", true))
+        };
 
-        lcl_insertMenuItemImages(aContextMenu,rController,xReportDefinition,xFrame);
+        css::uno::Reference<css::uno::XComponentContext> xContext(rController.getORB());
+        css::uno::Reference<css::frame::XPopupMenuController> xMenuController(
+            xContext->getServiceManager()->createInstanceWithArgumentsAndContext(
+            "com.sun.star.comp.framework.ResourceMenuController", aArgs, xContext), css::uno::UNO_QUERY);
+
+        if (!xMenuController.is())
+            return;
+
+        rtl::Reference<VCLXPopupMenu> xPopupMenu(new VCLXPopupMenu);
+        xMenuController->setPopupMenu(xPopupMenu.get());
 
         Point aPos = _rCEvt.GetMousePosPixel();
         m_pView->EndAction();
-        const sal_uInt16 nId = aContextMenu.Execute(this, aPos);
-        if ( nId )
-        {
-            uno::Sequence< beans::PropertyValue> aArgs;
-            if ( nId == SID_ATTR_CHAR_COLOR_BACKGROUND )
-            {
-                aArgs.realloc(1);
-                aArgs[0].Name = "Selection";
-                aArgs[0].Value <<= m_xSection;
-            }
-            rController.executeChecked(nId,aArgs);
-        }
+        static_cast<PopupMenu*>(xPopupMenu->GetMenu())->Execute(this, aPos);
+
+        css::uno::Reference<css::lang::XComponent> xComponent(xMenuController, css::uno::UNO_QUERY);
+        xComponent->dispose();
     }
 }
 
-void OReportSection::_propertyChanged(const beans::PropertyChangeEvent& _rEvent) throw( uno::RuntimeException)
+void OReportSection::_propertyChanged(const beans::PropertyChangeEvent& _rEvent)
 {
     if ( m_xSection.is() )
     {
@@ -532,7 +495,7 @@ void OReportSection::_propertyChanged(const beans::PropertyChangeEvent& _rEvent)
             {
                 m_pPage->SetSize( Size( nPaperWidth,nNewHeight) );
                 const Size aPageSize = m_pPage->GetSize();
-                m_pView->SetWorkArea( Rectangle( Point( nLeftMargin, 0), Size(aPageSize.Width() - nLeftMargin - nRightMargin,aPageSize.Height()) ) );
+                m_pView->SetWorkArea( tools::Rectangle( Point( nLeftMargin, 0), Size(aPageSize.Width() - nLeftMargin - nRightMargin,aPageSize.Height()) ) );
             }
             impl_adjustObjectSizePosition(nPaperWidth,nLeftMargin,nRightMargin);
             m_pParent->Invalidate(InvalidateFlags::Update | InvalidateFlags::Transparent);
@@ -583,7 +546,7 @@ void OReportSection::impl_adjustObjectSizePosition(sal_Int32 i_nPaperWidth,sal_I
                 {
                     xReportComponent->setPosition(aPos);
                     correctOverlapping(pObject,*this,false);
-                    Rectangle aRet(VCLPoint(xReportComponent->getPosition()),VCLSize(xReportComponent->getSize()));
+                    tools::Rectangle aRet(VCLPoint(xReportComponent->getPosition()),VCLSize(xReportComponent->getSize()));
                     aRet.setHeight(aRet.getHeight() + 1);
                     aRet.setWidth(aRet.getWidth() + 1);
                     if ( m_xSection.is() && (static_cast<sal_uInt32>(aRet.getHeight() + aRet.Top()) > m_xSection->getHeight()) )
@@ -676,7 +639,7 @@ void OReportSection::createDefault(const OUString& _sType,SdrObject* _pObj)
     }
     if ( !bAttributesAppliedFromGallery )
     {
-        _pObj->SetMergedItem( SvxAdjustItem( SVX_ADJUST_CENTER ,ITEMID_ADJUST) );
+        _pObj->SetMergedItem( SvxAdjustItem( SvxAdjust::Center ,ITEMID_ADJUST) );
         _pObj->SetMergedItem( SdrTextVertAdjustItem( SDRTEXTVERTADJUST_CENTER ) );
         _pObj->SetMergedItem( SdrTextHorzAdjustItem( SDRTEXTHORZADJUST_BLOCK ) );
         _pObj->SetMergedItem( makeSdrTextAutoGrowHeightItem( false ) );
@@ -724,8 +687,6 @@ void OReportSection::fillControlModelSelection(::std::vector< uno::Reference< un
 
 sal_Int8 OReportSection::AcceptDrop( const AcceptDropEvent& _rEvt )
 {
-    OSL_TRACE("AcceptDrop::DropEvent.Action %i", _rEvt.mnAction);
-
     ::Point aDropPos(_rEvt.maPosPixel);
     const MouseEvent aMouseEvt(aDropPos);
     if ( m_pFunc->isOverlapping(aMouseEvt) )
@@ -774,7 +735,6 @@ sal_Int8 OReportSection::AcceptDrop( const AcceptDropEvent& _rEvt )
 
 sal_Int8 OReportSection::ExecuteDrop( const ExecuteDropEvent& _rEvt )
 {
-    OSL_TRACE("ExecuteDrop::DropEvent.Action %i", _rEvt.mnAction);
     ::Point aDropPos(PixelToLogic(_rEvt.maPosPixel));
     const MouseEvent aMouseEvt(aDropPos);
     if ( m_pFunc->isOverlapping(aMouseEvt) )
@@ -782,7 +742,7 @@ sal_Int8 OReportSection::ExecuteDrop( const ExecuteDropEvent& _rEvt )
 
     sal_Int8 nDropOption = DND_ACTION_NONE;
     const TransferableDataHelper aDropped(_rEvt.maDropEvent.Transferable);
-    DataFlavorExVector& rFlavors = aDropped.GetDataFlavorExVector();
+    const DataFlavorExVector& rFlavors = aDropped.GetDataFlavorExVector();
     bool bMultipleFormat = svx::OMultiColumnTransferable::canExtractDescriptor(rFlavors);
     if ( OReportExchange::canExtract(rFlavors) )
     {
@@ -797,7 +757,7 @@ sal_Int8 OReportSection::ExecuteDrop( const ExecuteDropEvent& _rEvt )
     {
         m_pParent->getViewsWindow()->getView()->setMarked(m_pView, true);
         m_pView->UnmarkAll();
-        const Rectangle& rRect = m_pView->GetWorkArea();
+        const tools::Rectangle& rRect = m_pView->GetWorkArea();
         if ( aDropPos.X() < rRect.Left() )
             aDropPos.X() = rRect.Left();
         else if ( aDropPos.X() > rRect.Right() )

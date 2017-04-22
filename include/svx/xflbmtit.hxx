@@ -26,7 +26,6 @@
 class SVX_DLLPUBLIC XFillBmpTileItem : public SfxBoolItem
 {
 public:
-                            static SfxPoolItem* CreateDefault();
                             XFillBmpTileItem( bool bTile = true );
                             XFillBmpTileItem( SvStream& rIn );
 
@@ -34,9 +33,9 @@ public:
     virtual SfxPoolItem*    Create( SvStream& rIn, sal_uInt16 nVer ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
     void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
 };
 

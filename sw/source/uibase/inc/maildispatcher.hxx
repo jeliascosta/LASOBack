@@ -50,8 +50,6 @@ public:
     using osl::Thread::operator delete;
     using osl::Thread::join;
 
-public:
-
     /**
         @param xSmtpService
         [in] a reference to a mail server. A user must be
@@ -61,13 +59,13 @@ public:
         @throws css::uno::RuntimeException
         on errors during construction of an instance of this class.
     */
-    MailDispatcher(css::uno::Reference< css::mail::XSmtpService> xMailService);
+    MailDispatcher(css::uno::Reference< css::mail::XSmtpService> const & xMailService);
 
     /**
         Shutdown the mail dispatcher. Every mail messages
         not yet sent will be discarded.
     */
-    virtual ~MailDispatcher();
+    virtual ~MailDispatcher() override;
 
     /**
         Enqueue a mail message for delivery. A client must
@@ -77,7 +75,7 @@ public:
         @param xMailMessage
         [in] a mail message that should be send.
     */
-    void enqueueMailMessage(css::uno::Reference< css::mail::XMailMessage> xMailMessage);
+    void enqueueMailMessage(css::uno::Reference< css::mail::XMailMessage> const & xMailMessage);
     /**
         Dequeues a mail message.
         This enables the caller to remove attachments when sending mails is to be cancelled.
@@ -117,20 +115,21 @@ public:
         @return
         <TRUE/> if the sending thread is running.
     */
-    bool isStarted() const { return run_;}
+    bool isStarted() const { return m_bActive; }
 
     /** returns if the thread is still running
     */
     using osl::Thread::isRunning;
 
-    /** returns if shutdown has already been called
-    */
-    bool isShutdownRequested() const
-        { return shutdown_requested_; }
     /**
-        Register a listener for mail dispatcher events.
-    */
-    void addListener(::rtl::Reference<IMailDispatcherListener> listener);
+     * returns if shutdown has already been called
+     */
+    bool isShutdownRequested() const { return m_bShutdownRequested; }
+
+    /**
+     * Register a listener for mail dispatcher events
+     */
+    void addListener(::rtl::Reference<IMailDispatcherListener> const & listener);
 
 protected:
     virtual void SAL_CALL run() override;
@@ -138,20 +137,20 @@ protected:
 
 private:
     std::list< ::rtl::Reference<IMailDispatcherListener> > cloneListener();
-    void sendMailMessageNotifyListener(css::uno::Reference< css::mail::XMailMessage> message);
+    void sendMailMessageNotifyListener(css::uno::Reference< css::mail::XMailMessage> const & message);
 
 private:
-    css::uno::Reference< css::mail::XSmtpService> mailserver_;
-    ::std::list< css::uno::Reference< css::mail::XMailMessage > > messages_;
-    ::std::list< ::rtl::Reference<IMailDispatcherListener> > listeners_;
-    ::osl::Mutex message_container_mutex_;
-    ::osl::Mutex listener_container_mutex_;
-    ::osl::Mutex thread_status_mutex_;
-    ::osl::Condition mail_dispatcher_active_;
-    ::osl::Condition wakening_call_;
+    css::uno::Reference< css::mail::XSmtpService> m_xMailserver;
+    std::list< css::uno::Reference< css::mail::XMailMessage > > m_aXMessageList;
+    std::list< ::rtl::Reference<IMailDispatcherListener> > m_aListenerList;
+    ::osl::Mutex m_aMessageContainerMutex;
+    ::osl::Mutex m_aListenerContainerMutex;
+    ::osl::Mutex m_aThreadStatusMutex;
+    ::osl::Condition m_aRunCondition;
+    ::osl::Condition m_aWakeupCondition;
     ::rtl::Reference<MailDispatcher> m_xSelfReference;
-    bool run_;
-    bool shutdown_requested_;
+    bool m_bActive;
+    bool m_bShutdownRequested;
 };
 
 #endif // INCLUDED_SW_SOURCE_UIBASE_INC_MAILDISPATCHER_HXX

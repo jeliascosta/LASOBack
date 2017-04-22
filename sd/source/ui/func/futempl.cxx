@@ -36,6 +36,8 @@
 #include <editeng/editeng.hxx>
 #include <editeng/lrspitem.hxx>
 #include <svx/svdopage.hxx>
+#include <editeng/colritem.hxx>
+#include <editeng/brushitem.hxx>
 #include <svx/svditer.hxx>
 #include <svx/sdr/properties/properties.hxx>
 
@@ -103,6 +105,10 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
     SfxStyleSheetBase* pStyleSheet = nullptr;
 
     const SfxPoolItem* pItem;
+    static const sal_uInt16 aRanges[] = {
+        EE_ITEMS_START, EE_ITEMS_END,
+        SID_ATTR_BRUSH_CHAR, SID_ATTR_BRUSH_CHAR
+    };
     SfxStyleFamily nFamily = (SfxStyleFamily)USHRT_MAX;
     if( pArgs && SfxItemState::SET == pArgs->GetItemState( SID_STYLE_FAMILY,
         false, &pItem ))
@@ -241,7 +247,7 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
                     (pStyleSheet->GetFamily() == SD_STYLE_FAMILY_GRAPHICS && pOldStyleSheet->GetHelpId( aStr ) == HID_PSEUDOSHEET_BACKGROUNDOBJECTS) ||
 
                     // allow if old was presentation and we are a drawing document
-                    (pOldStyleSheet->GetFamily() == SD_STYLE_FAMILY_MASTERPAGE && mpDoc->GetDocumentType() == DOCUMENT_TYPE_DRAW) )
+                    (pOldStyleSheet->GetFamily() == SD_STYLE_FAMILY_MASTERPAGE && mpDoc->GetDocumentType() == DocumentType::Draw) )
                 {
                     mpView->SetStyleSheet( static_cast<SfxStyleSheet*>(pStyleSheet));
                     mpDoc->SetChanged();
@@ -295,17 +301,25 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
 
             if( pStyleSheet )
             {
-                std::unique_ptr<SfxAbstractTabDialog> pStdDlg;
-                std::unique_ptr<SfxAbstractTabDialog> pPresDlg;
+                ScopedVclPtr<SfxAbstractTabDialog> pStdDlg;
+                ScopedVclPtr<SfxAbstractTabDialog> pPresDlg;
                 SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
                 bool bOldDocInOtherLanguage = false;
-                SfxItemSet aOriSet( pStyleSheet->GetItemSet() );
+                SfxItemSet aNewAttr(mpViewShell->GetPool(), aRanges);
+
+                if( aNewAttr.GetItemState( XATTR_FILLBACKGROUND, true, &pItem ) == SfxItemState::SET)
+                {
+                    Color aBackColor = static_cast<const SvxBackgroundColorItem*>(pItem)->GetValue();
+                    SvxBrushItem aBrushItem(aBackColor, XATTR_FILLBACKGROUND);
+                    aNewAttr.ClearItem(XATTR_FILLBACKGROUND);
+                    aNewAttr.Put(aBrushItem);
+                }
 
                 SfxStyleFamily eFamily = pStyleSheet->GetFamily();
 
                 if (eFamily == SD_STYLE_FAMILY_GRAPHICS)
                 {
-                    pStdDlg.reset(pFact ? pFact->CreateSdTabTemplateDlg(mpViewShell->GetActiveWindow(), mpDoc->GetDocSh(), *pStyleSheet, mpDoc, mpView) : nullptr);
+                    pStdDlg.disposeAndReset(pFact ? pFact->CreateSdTabTemplateDlg(mpViewShell->GetActiveWindow(), mpDoc->GetDocSh(), *pStyleSheet, mpDoc, mpView) : nullptr);
                 }
                 else if (eFamily == SD_STYLE_FAMILY_PSEUDO)
                 {
@@ -369,7 +383,7 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
 
                     if( !bOldDocInOtherLanguage )
                     {
-                        pPresDlg.reset(pFact ? pFact->CreateSdPresLayoutTemplateDlg( mpDocSh,  mpViewShell->GetActiveWindow(), SdResId(nDlgId), *pStyleSheet, ePO, pSSPool ) : nullptr);
+                        pPresDlg.disposeAndReset(pFact ? pFact->CreateSdPresLayoutTemplateDlg( mpDocSh,  mpViewShell->GetActiveWindow(), SdResId(nDlgId), *pStyleSheet, ePO, pSSPool ) : nullptr);
                     }
                 }
                 else if (eFamily == SD_STYLE_FAMILY_CELL)
@@ -400,6 +414,13 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
                             SfxItemSet aTempSet(*pOutSet);
                             static_cast<SdStyleSheet*>(pStyleSheet)->AdjustToFontHeight(aTempSet);
 
+                            const SvxBrushItem* pBrushItem = aTempSet.GetItem<SvxBrushItem>(XATTR_FILLBACKGROUND);
+                            if( pBrushItem )
+                            {
+                               SvxBackgroundColorItem aBackColorItem( pBrushItem->GetColor(), EE_CHAR_BKGCOLOR);
+                               aTempSet.ClearItem(XATTR_FILLBACKGROUND);
+                               aTempSet.Put(aBackColorItem);
+                            }
                             /* Special treatment: reset the INVALIDS to
                                NULL-Pointer (otherwise INVALIDs or pointer point
                                to DefaultItems in the template; both would
@@ -411,7 +432,7 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
                             {
                                 if (aTempSet.GetItemState(EE_PARA_NUMBULLET) == SfxItemState::SET)
                                 {
-                                    SvxNumRule aRule(*static_cast<const SvxNumBulletItem*>(aTempSet.GetItem(EE_PARA_NUMBULLET))->GetNumRule());
+                                    SvxNumRule aRule(*aTempSet.GetItem<SvxNumBulletItem>(EE_PARA_NUMBULLET)->GetNumRule());
 
                                     OUString sStyleName(SD_RESSTR(STR_PSEUDOSHEET_OUTLINE) + " 1");
                                     SfxStyleSheetBase* pFirstStyleSheet = pSSPool->Find( sStyleName, SD_STYLE_FAMILY_PSEUDO);
@@ -420,7 +441,7 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
                                     {
                                         pFirstStyleSheet->GetItemSet().Put( SvxNumBulletItem( aRule, EE_PARA_NUMBULLET ));
                                         SdStyleSheet* pRealSheet = static_cast<SdStyleSheet*>(pFirstStyleSheet)->GetRealStyleSheet();
-                                        pRealSheet->Broadcast(SfxSimpleHint(SFX_HINT_DATACHANGED));
+                                        pRealSheet->Broadcast(SfxHint(SfxHintId::DataChanged));
                                     }
 
                                     aTempSet.ClearItem( EE_PARA_NUMBULLET );
@@ -507,17 +528,17 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
                             }
                         }
 
-                        static_cast<SfxStyleSheet*>( pStyleSheet )->Broadcast( SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+                        static_cast<SfxStyleSheet*>( pStyleSheet )->Broadcast( SfxHint( SfxHintId::DataChanged ) );
 
                         DrawViewShell* pDrawViewShell = dynamic_cast< DrawViewShell* >( mpViewShell );
                         if( pDrawViewShell )
                         {
                             PageKind ePageKind = pDrawViewShell->GetPageKind();
-                            if( ePageKind == PK_NOTES || ePageKind == PK_HANDOUT )
+                            if( ePageKind == PageKind::Notes || ePageKind == PageKind::Handout )
                             {
                                 SdPage* pPage = mpViewShell->GetActualPage();
 
-                                if(pDrawViewShell->GetEditMode() == EM_MASTERPAGE)
+                                if(pDrawViewShell->GetEditMode() == EditMode::MasterPage)
                                 {
                                     pPage = static_cast<SdPage*>((&(pPage->TRG_GetMasterPage())));
                                 }
@@ -596,7 +617,7 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
                         mpView->SetStyleSheet( static_cast<SfxStyleSheet*>(pStyleSheet));
                     }
 
-                    static_cast<SfxStyleSheet*>( pStyleSheet )->Broadcast( SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+                    static_cast<SfxStyleSheet*>( pStyleSheet )->Broadcast( SfxHint( SfxHintId::DataChanged ) );
                     mpDoc->SetChanged();
 
                     mpViewShell->GetViewFrame()->GetBindings().Invalidate( SID_STYLE_FAMILY2 );
@@ -623,7 +644,7 @@ void FuTemplate::DoExecute( SfxRequest& rReq )
 
                     mpView->SetStyleSheet( static_cast<SfxStyleSheet*>(pStyleSheet));
 
-                    static_cast<SfxStyleSheet*>( pStyleSheet )->Broadcast( SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+                    static_cast<SfxStyleSheet*>( pStyleSheet )->Broadcast( SfxHint( SfxHintId::DataChanged ) );
                     mpDoc->SetChanged();
                     mpViewShell->GetViewFrame()->GetBindings().Invalidate( SID_STYLE_FAMILY2 );
                 }

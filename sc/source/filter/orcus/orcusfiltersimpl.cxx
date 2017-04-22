@@ -17,20 +17,24 @@
 #include <sfx2/frame.hxx>
 #include <sfx2/sfxsids.hrc>
 #include <svl/itemset.hxx>
+#include <rtl/bootstrap.hxx>
+#include <rtl/ustring.hxx>
+#include <comphelper/string.hxx>
 
 #include <orcus/spreadsheet/import_interface.hpp>
 #include <orcus/orcus_csv.hpp>
 #include <orcus/orcus_gnumeric.hpp>
 #include <orcus/orcus_xlsx.hpp>
 #include <orcus/orcus_ods.hpp>
+#include <orcus/orcus_import_ods.hpp>
 #include <orcus/global.hpp>
-
+#include <orcus/stream.hpp>
 #include <com/sun/star/task/XStatusIndicator.hpp>
 
 #ifdef _WIN32
-#define SYSTEM_PATH INetURLObject::FSYS_DOS
+#define SYSTEM_PATH FSysStyle::Dos
 #else
-#define SYSTEM_PATH INetURLObject::FSYS_UNX
+#define SYSTEM_PATH FSysStyle::Unix
 #endif
 
 using namespace com::sun::star;
@@ -43,7 +47,7 @@ uno::Reference<task::XStatusIndicator> getStatusIndicator(SfxMedium& rMedium)
     SfxItemSet* pSet = rMedium.GetItemSet();
     if (pSet)
     {
-        const SfxUnoAnyItem* pItem = static_cast<const SfxUsrAnyItem*>(pSet->GetItem(SID_PROGRESS_STATUSBAR_CONTROL));
+        const SfxUnoAnyItem* pItem = pSet->GetItem<SfxUsrAnyItem>(SID_PROGRESS_STATUSBAR_CONTROL);
         if (pItem)
             xStatusIndicator.set(pItem->GetValue(), uno::UNO_QUERY);
     }
@@ -136,6 +140,26 @@ bool ScOrcusFiltersImpl::importODS(ScDocument& rDoc, SfxMedium& rMedium) const
     catch (const std::exception& e)
     {
         SAL_WARN("sc", "Unable to load ods file! " << e.what());
+        return false;
+    }
+
+    return true;
+}
+
+bool ScOrcusFiltersImpl::importODS_Styles(ScDocument& rDoc, OUString& aPath) const
+{
+    OString aUrl = OUStringToOString(aPath, RTL_TEXTENCODING_UTF8);
+    const char* path = aUrl.getStr();
+
+    try
+    {
+        std::string content = orcus::load_file_content(path);
+        ScOrcusStyles styles(rDoc);
+        orcus::import_ods::read_styles(content.c_str(), content.size(), &styles);
+    }
+    catch (const std::exception& e)
+    {
+        SAL_WARN("sc", "Unable to load styles from xml file! " << e.what());
         return false;
     }
 

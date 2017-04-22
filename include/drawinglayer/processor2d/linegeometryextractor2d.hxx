@@ -33,7 +33,7 @@ namespace drawinglayer
     {
         /** LineGeometryExtractor2D class
 
-            This processor can extract the line geometry from feeded primpitives. The
+            This processor can extract the line geometry from feeded primitives. The
             hairlines and the fill geometry from fat lines are separated.
          */
         class DRAWINGLAYER_DLLPUBLIC LineGeometryExtractor2D : public BaseProcessor2D
@@ -42,7 +42,6 @@ namespace drawinglayer
             basegfx::B2DPolygonVector               maExtractedHairlines;
             basegfx::B2DPolyPolygonVector           maExtractedLineFills;
 
-            /// bitfield
             bool                                    mbInLineGeometry : 1;
 
             /// tooling methods
@@ -50,7 +49,7 @@ namespace drawinglayer
 
         public:
             LineGeometryExtractor2D(const geometry::ViewInformation2D& rViewInformation);
-            virtual ~LineGeometryExtractor2D();
+            virtual ~LineGeometryExtractor2D() override;
 
             const basegfx::B2DPolygonVector& getExtractedHairlines() const { return maExtractedHairlines; }
             const basegfx::B2DPolyPolygonVector& getExtractedLineFills() const { return maExtractedLineFills; }

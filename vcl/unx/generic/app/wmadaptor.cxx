@@ -31,7 +31,7 @@
 
 #include "unx/wmadaptor.hxx"
 #include "unx/saldisp.hxx"
-#include "unx/saldata.hxx"
+#include "unx/salinst.h"
 #include "unx/salframe.h"
 
 #include "salgdi.hxx"
@@ -50,12 +50,11 @@ class NetWMAdaptor : public WMAdaptor
     virtual bool isValid() const override;
 public:
     explicit NetWMAdaptor( SalDisplay* );
-    virtual ~NetWMAdaptor();
 
     virtual void setWMName( X11SalFrame* pFrame, const OUString& rWMName ) const override;
     virtual void maximizeFrame( X11SalFrame* pFrame, bool bHorizontal = true, bool bVertical = true ) const override;
     virtual void shade( X11SalFrame* pFrame, bool bToShaded ) const override;
-    virtual void setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType eType, int nDecorationFlags, X11SalFrame* pTransientFrame = nullptr ) const override;
+    virtual void setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType eType, int nDecorationFlags, X11SalFrame* pTransientFrame ) const override;
     virtual void enableAlwaysOnTop( X11SalFrame* pFrame, bool bEnable ) const override;
     virtual int handlePropertyNotify( X11SalFrame* pFrame, XPropertyEvent* pEvent ) const override;
     virtual void showFullScreen( X11SalFrame* pFrame, bool bFullScreen ) const override;
@@ -72,7 +71,6 @@ class GnomeWMAdaptor : public WMAdaptor
     virtual bool isValid() const override;
 public:
     explicit GnomeWMAdaptor( SalDisplay * );
-    virtual ~GnomeWMAdaptor();
 
     virtual void maximizeFrame( X11SalFrame* pFrame, bool bHorizontal = true, bool bVertical = true ) const override;
     virtual void shade( X11SalFrame* pFrame, bool bToShaded ) const override;
@@ -221,7 +219,6 @@ WMAdaptor* WMAdaptor::createWMAdaptor( SalDisplay* pSalDisplay )
 
 WMAdaptor::WMAdaptor( SalDisplay* pDisplay ) :
         m_pSalDisplay( pDisplay ),
-        m_bTransientBehaviour( true ),
         m_bEnableAlwaysOnTopWorks( false ),
         m_bLegacyPartialFullscreen( false ),
         m_nWinGravity( StaticGravity ),
@@ -237,8 +234,8 @@ WMAdaptor::WMAdaptor( SalDisplay* pDisplay ) :
 
     // default desktops
     m_nDesktops = 1;
-    m_aWMWorkAreas = ::std::vector< Rectangle >
-        ( 1, Rectangle( Point(), m_pSalDisplay->GetScreenSize( m_pSalDisplay->GetDefaultXScreen() ) ) );
+    m_aWMWorkAreas = ::std::vector< tools::Rectangle >
+        ( 1, tools::Rectangle( Point(), m_pSalDisplay->GetScreenSize( m_pSalDisplay->GetDefaultXScreen() ) ) );
     m_bEqualWorkAreas = true;
 
     memset( m_aWMAtoms, 0, sizeof( m_aWMAtoms ) );
@@ -335,7 +332,6 @@ NetWMAdaptor::NetWMAdaptor( SalDisplay* pSalDisplay ) :
         WMAdaptor( pSalDisplay )
 {
     // currently all _NET WMs do transient like expected
-    m_bTransientBehaviour = true;
 
     Atom                aRealType   = None;
     int                 nFormat     = 8;
@@ -461,7 +457,7 @@ NetWMAdaptor::NetWMAdaptor( SalDisplay* pSalDisplay ) :
                 && nItems == 4*(unsigned)m_nDesktops
                 )
             {
-                m_aWMWorkAreas = ::std::vector< Rectangle > ( m_nDesktops );
+                m_aWMWorkAreas = ::std::vector< tools::Rectangle > ( m_nDesktops );
                 long* pValues = reinterpret_cast<long*>(pProperty);
                 for( int i = 0; i < m_nDesktops; i++ )
                 {
@@ -469,7 +465,7 @@ NetWMAdaptor::NetWMAdaptor( SalDisplay* pSalDisplay ) :
                                   pValues[4*i+1] );
                     Size aSize( pValues[4*i+2],
                                 pValues[4*i+3] );
-                    Rectangle aWorkArea( aPoint, aSize );
+                    tools::Rectangle aWorkArea( aPoint, aSize );
                     m_aWMWorkAreas[i] = aWorkArea;
                     if( aWorkArea != m_aWMWorkAreas[0] )
                         m_bEqualWorkAreas = false;
@@ -510,13 +506,6 @@ NetWMAdaptor::NetWMAdaptor( SalDisplay* pSalDisplay ) :
 }
 
 /*
- *  NetWMAdaptor destructor
- */
-NetWMAdaptor::~NetWMAdaptor()
-{
-}
-
-/*
  *  GnomeWMAdaptor constructor
  */
 
@@ -525,7 +514,6 @@ GnomeWMAdaptor::GnomeWMAdaptor( SalDisplay* pSalDisplay ) :
         m_bValid( false )
 {
     // currently all Gnome WMs do transient like expected
-    m_bTransientBehaviour = true;
 
     Atom                aRealType   = None;
     int                 nFormat     = 8;
@@ -720,13 +708,6 @@ GnomeWMAdaptor::GnomeWMAdaptor( SalDisplay* pSalDisplay ) :
         XFree( pProperty );
         pProperty = nullptr;
     }
-}
-
-/*
- *  GnomeWMAdaptor destructor
- */
-GnomeWMAdaptor::~GnomeWMAdaptor()
-{
 }
 
 /*
@@ -1086,17 +1067,6 @@ void NetWMAdaptor::setNetWMState( X11SalFrame* pFrame ) const
         int nStateAtoms = 0;
 
         // set NET_WM_STATE_MODAL
-        if( m_aWMAtoms[ NET_WM_STATE_MODAL ]
-            && pFrame->meWindowType == windowType_ModalDialogue )
-        {
-            aStateAtoms[ nStateAtoms++ ] = m_aWMAtoms[ NET_WM_STATE_MODAL ];
-            /*
-             *  #90998# NET_WM_STATE_SKIP_TASKBAR set on a frame will
-             *  cause kwin not to give it the focus on map request
-             *  this seems to be a bug in kwin
-             *  aStateAtoms[ nStateAtoms++ ] = m_aWMAtoms[ NET_WM_STATE_SKIP_TASKBAR ];
-             */
-        }
         if( pFrame->mbMaximizedVert
             && m_aWMAtoms[ NET_WM_STATE_MAXIMIZED_VERT ] )
             aStateAtoms[ nStateAtoms++ ] = m_aWMAtoms[ NET_WM_STATE_MAXIMIZED_VERT ];
@@ -1109,7 +1079,7 @@ void NetWMAdaptor::setNetWMState( X11SalFrame* pFrame ) const
             aStateAtoms[ nStateAtoms++ ] = m_aWMAtoms[ NET_WM_STATE_SHADED ];
         if( pFrame->mbFullScreen && m_aWMAtoms[ NET_WM_STATE_FULLSCREEN ] )
             aStateAtoms[ nStateAtoms++ ] = m_aWMAtoms[ NET_WM_STATE_FULLSCREEN ];
-        if( pFrame->meWindowType == windowType_Utility && m_aWMAtoms[ NET_WM_STATE_SKIP_TASKBAR ] )
+        if( pFrame->meWindowType == WMWindowType::Utility && m_aWMAtoms[ NET_WM_STATE_SKIP_TASKBAR ] )
             aStateAtoms[ nStateAtoms++ ] = m_aWMAtoms[ NET_WM_STATE_SKIP_TASKBAR ];
 
         if( nStateAtoms )
@@ -1164,9 +1134,9 @@ void NetWMAdaptor::setNetWMState( X11SalFrame* pFrame ) const
                 if( nCurrent < 0 )
                     nCurrent = 0;
             }
-            Rectangle aPosSize = m_aWMWorkAreas[nCurrent];
+            tools::Rectangle aPosSize = m_aWMWorkAreas[nCurrent];
             const SalFrameGeometry& rGeom( pFrame->GetUnmirroredGeometry() );
-            aPosSize = Rectangle( Point( aPosSize.Left() + rGeom.nLeftDecoration,
+            aPosSize = tools::Rectangle( Point( aPosSize.Left() + rGeom.nLeftDecoration,
                                          aPosSize.Top()  + rGeom.nTopDecoration ),
                                   Size( aPosSize.GetWidth()
                                         - rGeom.nLeftDecoration
@@ -1254,9 +1224,9 @@ void GnomeWMAdaptor::setGnomeWMState( X11SalFrame* pFrame ) const
                 if( nCurrent < 0 )
                     nCurrent = 0;
             }
-            Rectangle aPosSize = m_aWMWorkAreas[nCurrent];
+            tools::Rectangle aPosSize = m_aWMWorkAreas[nCurrent];
             const SalFrameGeometry& rGeom( pFrame->GetUnmirroredGeometry() );
-            aPosSize = Rectangle( Point( aPosSize.Left() + rGeom.nLeftDecoration,
+            aPosSize = tools::Rectangle( Point( aPosSize.Left() + rGeom.nLeftDecoration,
                                          aPosSize.Top()  + rGeom.nTopDecoration ),
                                   Size( aPosSize.GetWidth()
                                         - rGeom.nLeftDecoration
@@ -1341,15 +1311,6 @@ void WMAdaptor::setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType eTy
                 aHint.func |= 1L << 5;
             }
         }
-        // evaluate window type
-        switch( eType )
-        {
-            case windowType_ModalDialogue:
-                aHint.input_mode = 1;
-                break;
-            default:
-                break;
-        }
 
         // set the hint
         XChangeProperty( m_pDisplay,
@@ -1402,24 +1363,23 @@ void NetWMAdaptor::setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType 
         int nWindowTypes = 0;
         switch( eType )
         {
-            case windowType_Utility:
+            case WMWindowType::Utility:
                 aWindowTypes[nWindowTypes++] =
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_UTILITY ] ?
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_UTILITY ] :
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_DIALOG ];
                 break;
-            case windowType_ModelessDialogue:
-            case windowType_ModalDialogue:
+            case WMWindowType::ModelessDialogue:
                 aWindowTypes[nWindowTypes++] =
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_DIALOG ];
                 break;
-            case windowType_Splash:
+            case WMWindowType::Splash:
                 aWindowTypes[nWindowTypes++] =
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_SPLASH ] ?
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_SPLASH ] :
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_NORMAL ];
                 break;
-            case windowType_Toolbar:
+            case WMWindowType::Toolbar:
                 if( m_aWMAtoms[ KDE_NET_WM_WINDOW_TYPE_OVERRIDE ] )
                     aWindowTypes[nWindowTypes++] = m_aWMAtoms[ KDE_NET_WM_WINDOW_TYPE_OVERRIDE ];
                 aWindowTypes[nWindowTypes++] =
@@ -1427,7 +1387,7 @@ void NetWMAdaptor::setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType 
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_TOOLBAR ] :
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_NORMAL];
                 break;
-            case windowType_Dock:
+            case WMWindowType::Dock:
                 aWindowTypes[nWindowTypes++] =
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_DOCK ] ?
                     m_aWMAtoms[ NET_WM_WINDOW_TYPE_DOCK ] :
@@ -1446,8 +1406,7 @@ void NetWMAdaptor::setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType 
                          reinterpret_cast<unsigned char*>(aWindowTypes),
                          nWindowTypes );
     }
-    if( ( eType == windowType_ModalDialogue ||
-          eType == windowType_ModelessDialogue )
+    if( ( eType == WMWindowType::ModelessDialogue )
         && ! pReferenceFrame )
     {
         XSetTransientForHint( m_pDisplay,
@@ -1489,7 +1448,7 @@ void WMAdaptor::maximizeFrame( X11SalFrame* pFrame, bool bHorizontal, bool bVert
         if( m_pSalDisplay->IsXinerama() )
         {
             Point aMed( aTL.X() + rGeom.nWidth/2, aTL.Y() + rGeom.nHeight/2 );
-            const std::vector< Rectangle >& rScreens = m_pSalDisplay->GetXineramaScreens();
+            const std::vector< tools::Rectangle >& rScreens = m_pSalDisplay->GetXineramaScreens();
             for(const auto & rScreen : rScreens)
                 if( rScreen.IsInside( aMed ) )
                 {
@@ -1498,7 +1457,7 @@ void WMAdaptor::maximizeFrame( X11SalFrame* pFrame, bool bHorizontal, bool bVert
                     break;
                 }
         }
-        Rectangle aTarget( aTL,
+        tools::Rectangle aTarget( aTL,
                            Size( aScreenSize.Width() - rGeom.nLeftDecoration - rGeom.nTopDecoration,
                                  aScreenSize.Height() - rGeom.nTopDecoration - rGeom.nBottomDecoration )
                            );
@@ -1529,7 +1488,7 @@ void WMAdaptor::maximizeFrame( X11SalFrame* pFrame, bool bHorizontal, bool bVert
                 rGeom.nY : pFrame->maRestorePosSize.Top();
         }
 
-        Rectangle aRestore( Point( rGeom.nX, rGeom.nY ), Size( rGeom.nWidth, rGeom.nHeight ) );
+        tools::Rectangle aRestore( Point( rGeom.nX, rGeom.nY ), Size( rGeom.nWidth, rGeom.nHeight ) );
         if( pFrame->bMapped_ )
         {
             XSetInputFocus( m_pDisplay,
@@ -1557,7 +1516,7 @@ void WMAdaptor::maximizeFrame( X11SalFrame* pFrame, bool bHorizontal, bool bVert
     else
     {
         pFrame->SetPosSize( pFrame->maRestorePosSize );
-        pFrame->maRestorePosSize = Rectangle();
+        pFrame->maRestorePosSize = tools::Rectangle();
         pFrame->nWidth_             = rGeom.nWidth;
         pFrame->nHeight_            = rGeom.nHeight;
     }
@@ -1618,12 +1577,12 @@ void NetWMAdaptor::maximizeFrame( X11SalFrame* pFrame, bool bHorizontal, bool bV
             setNetWMState( pFrame );
         }
         if( !bHorizontal && !bVertical )
-            pFrame->maRestorePosSize = Rectangle();
+            pFrame->maRestorePosSize = tools::Rectangle();
         else if( pFrame->maRestorePosSize.IsEmpty() )
         {
             const SalFrameGeometry& rGeom( pFrame->GetUnmirroredGeometry() );
             pFrame->maRestorePosSize =
-                Rectangle( Point( rGeom.nX, rGeom.nY ), Size( rGeom.nWidth, rGeom.nHeight ) );
+                tools::Rectangle( Point( rGeom.nX, rGeom.nY ), Size( rGeom.nWidth, rGeom.nHeight ) );
         }
     }
     else
@@ -1672,12 +1631,12 @@ void GnomeWMAdaptor::maximizeFrame( X11SalFrame* pFrame, bool bHorizontal, bool 
             setGnomeWMState( pFrame );
 
         if( !bHorizontal && !bVertical )
-            pFrame->maRestorePosSize = Rectangle();
+            pFrame->maRestorePosSize = tools::Rectangle();
         else if( pFrame->maRestorePosSize.IsEmpty() )
         {
             const SalFrameGeometry& rGeom( pFrame->GetUnmirroredGeometry() );
             pFrame->maRestorePosSize =
-                Rectangle( Point( rGeom.nX, rGeom.nY ), Size( rGeom.nWidth, rGeom.nHeight ) );
+                tools::Rectangle( Point( rGeom.nX, rGeom.nY ), Size( rGeom.nWidth, rGeom.nHeight ) );
         }
     }
     else
@@ -1856,14 +1815,14 @@ int NetWMAdaptor::handlePropertyNotify( X11SalFrame* pFrame, XPropertyEvent* pEv
         }
 
         if( ! (pFrame->mbMaximizedHorz || pFrame->mbMaximizedVert ) )
-            pFrame->maRestorePosSize = Rectangle();
+            pFrame->maRestorePosSize = tools::Rectangle();
         else
         {
             const SalFrameGeometry& rGeom = pFrame->GetUnmirroredGeometry();
             // the current geometry may already be changed by the corresponding
             // ConfigureNotify, but this cannot be helped
             pFrame->maRestorePosSize =
-                Rectangle( Point( rGeom.nX, rGeom.nY ),
+                tools::Rectangle( Point( rGeom.nX, rGeom.nY ),
                            Size( rGeom.nWidth, rGeom.nHeight ) );
         }
     }
@@ -1922,14 +1881,14 @@ int GnomeWMAdaptor::handlePropertyNotify( X11SalFrame* pFrame, XPropertyEvent* p
         }
 
         if( ! (pFrame->mbMaximizedHorz || pFrame->mbMaximizedVert ) )
-            pFrame->maRestorePosSize = Rectangle();
+            pFrame->maRestorePosSize = tools::Rectangle();
         else
         {
             const SalFrameGeometry& rGeom = pFrame->GetUnmirroredGeometry();
             // the current geometry may already be changed by the corresponding
             // ConfigureNotify, but this cannot be helped
             pFrame->maRestorePosSize =
-                Rectangle( Point( rGeom.nX, rGeom.nY ),
+                tools::Rectangle( Point( rGeom.nX, rGeom.nY ),
                            Size( rGeom.nWidth, rGeom.nHeight ) );
         }
     }
@@ -2088,7 +2047,7 @@ void NetWMAdaptor::showFullScreen( X11SalFrame* pFrame, bool bFullScreen ) const
                 m_pSalDisplay->GetRootWindow( pFrame->GetScreenNumber() ),
                 &aRoot, &aChild,
                 &root_x, &root_y, &lx, &ly, &mask );
-                const std::vector< Rectangle >& rScreens = m_pSalDisplay->GetXineramaScreens();
+                const std::vector< tools::Rectangle >& rScreens = m_pSalDisplay->GetXineramaScreens();
                 Point aMousePoint( root_x, root_y );
                 for(const auto & rScreen : rScreens)
                 {

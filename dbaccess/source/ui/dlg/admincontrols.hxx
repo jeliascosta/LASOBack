@@ -50,15 +50,15 @@ namespace dbaui
         Link<void*,void>            m_aControlModificationLink;
         ::svt::ControlDependencyManager
                                     m_aControlDependencies;
-        DECL_LINK_TYPED(RadioToggleHdl, RadioButton&, void);
-        DECL_LINK_TYPED(EditModifyHdl, Edit&, void);
+        DECL_LINK(RadioToggleHdl, RadioButton&, void);
+        DECL_LINK(EditModifyHdl, Edit&, void);
 
     public:
         MySQLNativeSettings( vcl::Window& _rParent, const Link<void*,void>& _rControlModificationLink );
-        virtual ~MySQLNativeSettings();
+        virtual ~MySQLNativeSettings() override;
         virtual void dispose() override;
-        void fillControls( ::std::vector< ISaveValueWrapper* >& _rControlList );
-        void fillWindows( ::std::vector< ISaveValueWrapper* >& _rControlList );
+        void fillControls( std::vector< ISaveValueWrapper* >& _rControlList );
+        void fillWindows( std::vector< ISaveValueWrapper* >& _rControlList );
 
         bool FillItemSet( SfxItemSet* _rCoreAttrs );
         void implInitControls( const SfxItemSet& _rSet );

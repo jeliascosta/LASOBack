@@ -49,12 +49,12 @@ using namespace ::com::sun::star;
 SwEnvPreview::SwEnvPreview(vcl::Window* pParent, WinBits nStyle)
     : Window(pParent, nStyle)
 {
-    SetMapMode(MapMode(MAP_PIXEL));
+    SetMapMode(MapMode(MapUnit::MapPixel));
 }
 
 Size SwEnvPreview::GetOptimalSize() const
 {
-    return LogicToPixel(Size(84 , 63), MAP_APPFONT);
+    return LogicToPixel(Size(84 , 63), MapUnit::MapAppFont);
 }
 
 VCL_BUILDER_FACTORY_ARGS(SwEnvPreview, 0)
@@ -66,7 +66,7 @@ void SwEnvPreview::DataChanged( const DataChangedEvent& rDCEvt )
         Invalidate();
 }
 
-void SwEnvPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle &)
+void SwEnvPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle &)
 {
     const StyleSettings& rSettings = rRenderContext.GetSettings().GetStyleSettings();
     SetBackground(rRenderContext.GetSettings().GetStyleSettings().GetDialogColor());
@@ -94,7 +94,7 @@ void SwEnvPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle &)
     const long nX = (GetOutputSizePixel().Width () - nW) / 2;
     const long nY = (GetOutputSizePixel().Height() - nH) / 2;
     rRenderContext.SetFillColor(aBack);
-    rRenderContext.DrawRect(Rectangle(Point(nX, nY), Size(nW, nH)));
+    rRenderContext.DrawRect(tools::Rectangle(Point(nX, nY), Size(nW, nH)));
 
     // Sender
     if (rItem.bSend)
@@ -105,7 +105,7 @@ void SwEnvPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle &)
         const long nSendH = static_cast<long>(f * (rItem.lAddrFromTop  - rItem.lSendFromTop  - 566));
         rRenderContext.SetFillColor(aMedium);
 
-        rRenderContext.DrawRect(Rectangle(Point(nSendX, nSendY), Size(nSendW, nSendH)));
+        rRenderContext.DrawRect(tools::Rectangle(Point(nSendX, nSendY), Size(nSendW, nSendH)));
     }
 
     // Addressee
@@ -114,7 +114,7 @@ void SwEnvPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle &)
     const long nAddrW = static_cast<long>(f * (nPageW - rItem.lAddrFromLeft - 566));
     const long nAddrH = static_cast<long>(f * (nPageH - rItem.lAddrFromTop  - 566));
     rRenderContext.SetFillColor(aMedium);
-    rRenderContext.DrawRect(Rectangle(Point(nAddrX, nAddrY), Size(nAddrW, nAddrH)));
+    rRenderContext.DrawRect(tools::Rectangle(Point(nAddrX, nAddrY), Size(nAddrW, nAddrH)));
 
     // Stamp
     const long nStmpW = static_cast<long>(f * 1417 /* 2,5 cm */);
@@ -123,7 +123,7 @@ void SwEnvPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle &)
     const long nStmpY = nY + static_cast<long>(f * 566);
 
     rRenderContext.SetFillColor(aBack);
-    rRenderContext.DrawRect(Rectangle(Point(nStmpX, nStmpY), Size(nStmpW, nStmpH)));
+    rRenderContext.DrawRect(tools::Rectangle(Point(nStmpX, nStmpY), Size(nStmpW, nStmpH)));
 }
 
 SwEnvDlg::SwEnvDlg(vcl::Window* pParent, const SfxItemSet& rSet,
@@ -156,6 +156,7 @@ void SwEnvDlg::dispose()
 {
     delete pAddresseeSet;
     delete pSenderSet;
+    pPrinter.clear();
     SfxTabDialog::dispose();
 }
 
@@ -225,7 +226,7 @@ SwEnvPage::SwEnvPage(vcl::Window* pParent, const SfxItemSet& rSet)
     m_pPreview->SetBorderStyle( WindowBorderStyle::MONO );
 
     SwDBData aData = pSh->GetDBData();
-    sActDBName = aData.sDataSource + OUString(DB_DELIM) + aData.sCommand;
+    sActDBName = aData.sDataSource + OUStringLiteral1(DB_DELIM) + aData.sCommand;
     InitDatabaseBox();
 }
 
@@ -247,7 +248,7 @@ void SwEnvPage::dispose()
     SfxTabPage::dispose();
 }
 
-IMPL_LINK_TYPED( SwEnvPage, DatabaseHdl, ListBox&, rListBox, void )
+IMPL_LINK( SwEnvPage, DatabaseHdl, ListBox&, rListBox, void )
 {
     SwWait aWait( *pSh->GetView().GetDocShell(), true );
 
@@ -255,7 +256,7 @@ IMPL_LINK_TYPED( SwEnvPage, DatabaseHdl, ListBox&, rListBox, void )
     {
         sActDBName = rListBox.GetSelectEntry();
         pSh->GetDBManager()->GetTableNames(m_pTableLB, sActDBName);
-        sActDBName += OUString(DB_DELIM);
+        sActDBName += OUStringLiteral1(DB_DELIM);
     }
     else
     {
@@ -265,7 +266,7 @@ IMPL_LINK_TYPED( SwEnvPage, DatabaseHdl, ListBox&, rListBox, void )
                                        m_pTableLB->GetSelectEntry());
 }
 
-IMPL_LINK_NOARG_TYPED(SwEnvPage, FieldHdl, Button*, void)
+IMPL_LINK_NOARG(SwEnvPage, FieldHdl, Button*, void)
 {
     OUString aStr("<" + m_pDatabaseLB->GetSelectEntry() + "." +
                   m_pTableLB->GetSelectEntry() + "." +
@@ -277,7 +278,7 @@ IMPL_LINK_NOARG_TYPED(SwEnvPage, FieldHdl, Button*, void)
     m_pAddrEdit->SetSelection(aSel);
 }
 
-IMPL_LINK_NOARG_TYPED(SwEnvPage, SenderHdl, Button*, void)
+IMPL_LINK_NOARG(SwEnvPage, SenderHdl, Button*, void)
 {
     const bool bEnable = m_pSenderBox->IsChecked();
     GetParentSwEnvDlg()->aEnvItem.bSend = bEnable;
@@ -328,12 +329,12 @@ void SwEnvPage::ActivatePage(const SfxItemSet& rSet)
     Reset(&aSet);
 }
 
-SfxTabPage::sfxpg SwEnvPage::DeactivatePage(SfxItemSet* _pSet)
+DeactivateRC SwEnvPage::DeactivatePage(SfxItemSet* _pSet)
 {
     FillItem(GetParentSwEnvDlg()->aEnvItem);
     if( _pSet )
         FillItemSet(_pSet);
-    return SfxTabPage::LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void SwEnvPage::FillItem(SwEnvItem& rItem)

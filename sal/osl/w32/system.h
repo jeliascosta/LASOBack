@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <ctype.h>
 #include <malloc.h>
 #include <limits.h>
 #include <process.h>
@@ -43,54 +42,16 @@
 */
 #define WIN32_LEAN_AND_MEAN
 
-#ifdef __GNUC__
-    // windows.h includes winsock2.h
-    // if _WIN32_WINNT > 0x0400
-    // so someone cannot include winsock.h
-    // at the same time without patching
-    // windows.h
-    #include <windows.h>
-    #include <winsock2.h>
-    #ifdef __cplusplus
-    extern "C" {
-    #endif
-    #include <ws2tcpip.h>
-    #ifdef __cplusplus
-    }
-    #endif
-    #include <shlobj.h>
-    #ifndef NO_DEBUG_CRT
-        #include <crtdbg.h>
-    #endif
-#else
-    // winsock2.h includes windows.h
-    #pragma warning(push,1) /* disable warnings within system headers */
-    #pragma warning(disable:4917)
-    #include <winsock2.h>
-    #include <wsipx.h>
-    #include <ws2tcpip.h>
-    #include <shlobj.h>
-    #ifndef NO_DEBUG_CRT
-        #include <crtdbg.h>
-    #endif
-    #pragma warning(pop)
+// winsock2.h includes windows.h
+#pragma warning(push,1) /* disable warnings within system headers */
+#pragma warning(disable:4917)
+#include <winsock2.h>
+#include <wsipx.h>
+#include <ws2tcpip.h>
+#include <shlobj.h>
+#ifndef NO_DEBUG_CRT
+    #include <crtdbg.h>
 #endif
-
-#ifdef __GNUC__
-    #   ifndef SA_FAMILY_DECL
-    #       define SA_FAMILY_DECL short sa_family
-    #   endif
-
-    typedef struct sockaddr_ipx {
-        SA_FAMILY_DECL;
-        char sa_netnum[4];
-        char sa_nodenum[6];
-        unsigned short sa_socket;
-    } SOCKADDR_IPX;
-
-    #   define NSPROTO_IPX      1000
-    #   define NSPROTO_SPX      1256
-    #   define NSPROTO_SPXII    1257
-#endif // #ifdef __GNUC__
+#pragma warning(pop)
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

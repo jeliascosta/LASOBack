@@ -20,8 +20,6 @@
 #ifndef INCLUDED_VCL_INC_UNX_GTK_GTKFRAME_HXX
 #define INCLUDED_VCL_INC_UNX_GTK_GTKFRAME_HXX
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #include <cairo.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
@@ -180,16 +178,14 @@ class GtkSalFrame : public SalFrame
     GdkNativeWindow                 m_aForeignParentWindow;
     GdkWindow*                      m_pForeignTopLevel;
     GdkNativeWindow                 m_aForeignTopLevelWindow;
-    Pixmap                          m_hBackgroundPixmap;
     SalFrameStyleFlags              m_nStyle;
-    SalExtStyle                     m_nExtStyle;
     GtkSalFrame*                    m_pParent;
     std::list< GtkSalFrame* >       m_aChildren;
     GdkWindowState                  m_nState;
     SystemEnvData                   m_aSystemData;
     GtkSalGraphics                 *m_pGraphics;
     bool                            m_bGraphics;
-    sal_uInt16                      m_nKeyModifiers;
+    ModKeyFlags                     m_nKeyModifiers;
     GdkCursor                      *m_pCurrentCursor;
     GdkVisibilityState              m_nVisibility;
     PointerStyle                    m_ePointerStyle;
@@ -201,7 +197,6 @@ class GtkSalFrame : public SalFrame
     bool                            m_bDefaultSize;
     bool                            m_bSendModChangeOnRelease;
     bool                            m_bWindowIsGtkPlug;
-    bool                            m_bSetFocusOnMap;
     OUString                        m_aTitle;
     OUString                        m_sWMClass;
 
@@ -209,11 +204,11 @@ class GtkSalFrame : public SalFrame
 
     Size                            m_aMaxSize;
     Size                            m_aMinSize;
-    Rectangle                       m_aRestorePosSize;
+    tools::Rectangle                       m_aRestorePosSize;
 
 #if GTK_CHECK_VERSION(3,0,0)
     OUString                        m_aTooltip;
-    Rectangle                       m_aHelpArea;
+    tools::Rectangle                       m_aHelpArea;
     long                            m_nWidthRequest;
     long                            m_nHeightRequest;
     cairo_region_t*                 m_pRegion;
@@ -223,6 +218,7 @@ class GtkSalFrame : public SalFrame
     GtkDnDTransferable*             m_pFormatConversionRequest;
 #else
     GdkRegion*                      m_pRegion;
+    bool                            m_bSetFocusOnMap;
 #endif
 
     SalMenu*                        m_pSalMenu;
@@ -249,6 +245,7 @@ class GtkSalFrame : public SalFrame
 #endif
 #if GTK_CHECK_VERSION(3,0,0)
     static gboolean     signalDraw( GtkWidget*, cairo_t *cr, gpointer );
+    static void         signalRealize(GtkWidget*, gpointer frame);
     static void         sizeAllocated(GtkWidget*, GdkRectangle *pAllocation, gpointer frame);
     static gboolean     signalTooltipQuery(GtkWidget*, gint x, gint y,
                                      gboolean keyboard_mode, GtkTooltip *tooltip,
@@ -273,6 +270,8 @@ class GtkSalFrame : public SalFrame
 #endif
 #else
     static gboolean     signalExpose( GtkWidget*, GdkEventExpose*, gpointer );
+    void askForXEmbedFocus( sal_Int32 nTimecode );
+    void grabKeyboard(bool bGrab);
 #endif
     static gboolean     signalFocus( GtkWidget*, GdkEventFocus*, gpointer );
     static gboolean     signalMap( GtkWidget*, GdkEvent*, gpointer );
@@ -303,7 +302,6 @@ class GtkSalFrame : public SalFrame
     static GdkNativeWindow findTopLevelSystemWindow( GdkNativeWindow aWindow );
 
     static int m_nFloats;
-    static std::vector<GtkWidget*> m_aGrabWidgetsBeforeShowFloat;
 
     bool isFloatGrabWindow() const
     {
@@ -323,13 +321,9 @@ class GtkSalFrame : public SalFrame
         return bool(m_nStyle & nMask);
     }
 
-    //call gtk_window_resize if the current size differs and
-    //block Paints until Configure is received and the size
-    //is valid again
+    //call gtk_window_resize
     void window_resize(long nWidth, long nHeight);
-    //call gtk_widget_set_size_request if the current size request differs and
-    //block Paints until Configure is received and the size
-    //is valid again
+    //call gtk_widget_set_size_request
     void widget_set_size_request(long nWidth, long nHeight);
 
     void resizeWindow( long nWidth, long nHeight );
@@ -339,7 +333,6 @@ class GtkSalFrame : public SalFrame
 
     void setMinMaxSize();
     void createNewWindow( ::Window aParent, bool bXEmbed, SalX11Screen nXScreen );
-    void askForXEmbedFocus( sal_Int32 nTimecode );
 
     void AllocateFrame();
     void TriggerPaintEvent();
@@ -348,12 +341,15 @@ class GtkSalFrame : public SalFrame
 
     enum class SetType { RetainSize, Fullscreen, UnFullscreen };
 
-    void SetScreen( unsigned int nNewScreen, SetType eType, Rectangle *pSize = nullptr );
+    void SetScreen( unsigned int nNewScreen, SetType eType, tools::Rectangle *pSize = nullptr );
 
 public:
 #if GTK_CHECK_VERSION(3,0,0)
     cairo_surface_t*                m_pSurface;
+    basegfx::B2IVector              m_aFrameSize;
     DamageHandler                   m_aDamageHandler;
+    int                             m_nGrabLevel;
+    bool                            m_bSalObjectSetPosSize;
 #endif
     GtkSalFrame( SalFrame* pParent, SalFrameStyleFlags nStyle );
     GtkSalFrame( SystemParentData* pSysData );
@@ -370,7 +366,6 @@ public:
     // be swallowed
     bool Dispatch( const XEvent* pEvent );
     void grabPointer(bool bGrab, bool bOwnerEvents = false);
-    void grabKeyboard(bool bGrab);
 
     static GtkSalDisplay*  getDisplay();
     static GdkDisplay*     getGdkDisplay();
@@ -385,7 +380,6 @@ public:
     GdkNativeWindow getForeignParentWindow() const { return m_aForeignParentWindow; }
     GdkWindow*  getForeignTopLevel() const { return m_pForeignTopLevel; }
     GdkNativeWindow getForeignTopLevelWindow() const { return m_aForeignTopLevelWindow; }
-    Pixmap getBackgroundPixmap() const { return m_hBackgroundPixmap; }
     const SalX11Screen& getXScreenNumber() const { return m_nXScreen; }
     int          GetDisplayScreen() const { return maGeometry.nDisplayScreenNumber; }
     void updateScreenNumber();
@@ -428,8 +422,14 @@ public:
     void startDrag(gint nButton, gint nDragOriginX, gint nDragOriginY,
                    GdkDragAction sourceActions, GtkTargetList* pTargetList);
 
+    void closePopup();
+
+    void addGrabLevel();
+    void removeGrabLevel();
+
+    void nopaint_container_resize_children(GtkContainer*);
 #endif
-    virtual ~GtkSalFrame();
+    virtual ~GtkSalFrame() override;
 
     // SalGraphics or NULL, but two Graphics for all SalFrames
     // must be returned
@@ -457,7 +457,7 @@ public:
     virtual void                SetMaxClientSize( long nWidth, long nHeight ) override;
     virtual void                SetPosSize( long nX, long nY, long nWidth, long nHeight, sal_uInt16 nFlags ) override;
     virtual void                GetClientSize( long& rWidth, long& rHeight ) override;
-    virtual void                GetWorkArea( Rectangle& rRect ) override;
+    virtual void                GetWorkArea( tools::Rectangle& rRect ) override;
     virtual SalFrame*           GetParent() const override;
     virtual void                SetWindowState( const SalFrameState* pState ) override;
     virtual bool                GetWindowState( SalFrameState* pState ) override;
@@ -527,18 +527,23 @@ public:
 
 #if GTK_CHECK_VERSION(3,0,0)
     virtual void                SetModal(bool bModal) override;
-    virtual bool                ShowTooltip(const OUString& rHelpText, const Rectangle& rHelpArea) override;
-    virtual sal_uIntPtr         ShowPopover(const OUString& rHelpText, const Rectangle& rHelpArea, QuickHelpFlags nFlags) override;
-    virtual bool                UpdatePopover(sal_uIntPtr nId, const OUString& rHelpText, const Rectangle& rHelpArea) override;
+    virtual bool                ShowTooltip(const OUString& rHelpText, const tools::Rectangle& rHelpArea) override;
+    virtual sal_uIntPtr         ShowPopover(const OUString& rHelpText, const tools::Rectangle& rHelpArea, QuickHelpFlags nFlags) override;
+    virtual bool                UpdatePopover(sal_uIntPtr nId, const OUString& rHelpText, const tools::Rectangle& rHelpArea) override;
     virtual bool                HidePopover(sal_uIntPtr nId) override;
-
-    virtual void                StartToolKitMoveBy() override;
 #endif
 
     static GtkSalFrame         *getFromWindow( GtkWindow *pWindow );
 
     sal_uIntPtr                 GetNativeWindowHandle(GtkWidget *pWidget);
     virtual sal_uIntPtr         GetNativeWindowHandle() override;
+
+    //Call the usual SalFrame Callback, but catch uno exceptions and delegate
+    //to GtkData to rethrow them after the gsignal is processed when its safe
+    //to do so again in our own code after the g_main_context_iteration call
+    //which triggers the gsignals.
+    long                        CallCallbackExc(SalEvent nEvent, const void* pEvent) const;
+
 
     static void                 KeyCodeToGdkKey(const vcl::KeyCode& rKeyCode,
         guint* pGdkKeyCode, GdkModifierType *pGdkModifiers);

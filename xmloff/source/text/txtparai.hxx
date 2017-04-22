@@ -63,7 +63,7 @@ public:
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             bool bHeading );
 
-    virtual ~XMLParaContext();
+    virtual ~XMLParaContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
             const OUString& rLocalName,
@@ -93,8 +93,6 @@ public:
             sal_uInt16 i_nPrefix,
             const OUString& i_rLocalName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & i_xAttrList );
-
-    virtual ~XMLNumberedParaContext();
 
     virtual void EndElement() override;
 

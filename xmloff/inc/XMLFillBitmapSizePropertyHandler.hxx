@@ -22,7 +22,7 @@
 
 #include <xmloff/xmlprhdl.hxx>
 
-struct SvXMLEnumMapEntry;
+template<typename EnumT> struct SvXMLEnumMapEntry;
 
 
 /** Abstract base-class for different XML-types. Derivations of this class
@@ -35,7 +35,7 @@ public:
     XMLFillBitmapSizePropertyHandler();
 
     // Just needed for virtual destruction
-    virtual ~XMLFillBitmapSizePropertyHandler();
+    virtual ~XMLFillBitmapSizePropertyHandler() override;
 
     /// Imports the given value in cas of the given XML-data-type
     virtual bool importXML(

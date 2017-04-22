@@ -52,15 +52,12 @@ public:
         bSuccess    ( false )
     {
     }
-    virtual ~ConvDicXMLExport()
-    {
-    }
 
     // SvXMLExport
     void ExportAutoStyles_() override    {}
     void ExportMasterStyles_() override  {}
     void ExportContent_() override;
-    sal_uInt32 exportDoc( enum ::xmloff::token::XMLTokenEnum eClass ) override;
+    sal_uInt32 exportDoc( enum ::xmloff::token::XMLTokenEnum eClass = ::xmloff::token::XML_TOKEN_INVALID ) override;
 
     bool    Export();
 };
@@ -77,7 +74,6 @@ class ConvDicXMLImport : public SvXMLImport
 
     sal_Int16       nLanguage;          // language of the dictionary
     sal_Int16       nConversionType;    // conversion type the dictionary is used for
-    bool        bSuccess;
 
 public:
 
@@ -88,15 +84,9 @@ public:
     {
         nLanguage       = LANGUAGE_NONE;
         nConversionType = -1;
-        bSuccess        = false;
     }
 
-    virtual ~ConvDicXMLImport() throw ()
-    {
-    }
-
-    virtual void SAL_CALL startDocument() throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL endDocument() throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL startDocument() override;
 
     virtual SvXMLImportContext * CreateContext(
         sal_uInt16 nPrefix, const OUString &rLocalName,

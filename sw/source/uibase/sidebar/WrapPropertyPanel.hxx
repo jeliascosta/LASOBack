@@ -26,6 +26,7 @@
 #include <sfx2/sidebar/ControllerItem.hxx>
 #include <com/sun/star/frame/XFrame.hpp>
 #include <vcl/lstbox.hxx>
+#include <svx/spacinglistbox.hxx>
 
 namespace sw { namespace sidebar {
 
@@ -46,7 +47,7 @@ namespace sw { namespace sidebar {
             const SfxPoolItem* pState,
             const bool bIsEnabled) override;
 
-        virtual ~WrapPropertyPanel();
+        virtual ~WrapPropertyPanel() override;
         virtual void dispose() override;
 
         WrapPropertyPanel(
@@ -65,7 +66,7 @@ namespace sw { namespace sidebar {
         VclPtr<RadioButton> mpRBIdealWrap;
         VclPtr<Button>      mpEditContour;
         VclPtr<CheckBox> mpEnableContour;
-        VclPtr<ListBox>  mpSpacingLB;
+        VclPtr<SpacingListBox>  mpSpacingLB;
         VclPtr<FixedText> mpCustomEntry;
 
         //Spacing
@@ -76,9 +77,6 @@ namespace sw { namespace sidebar {
 
         //custom entry
         OUString aCustomEntry;
-
-        //Image resource.
-        ImageList aWrapIL;
 
         // Controller Items
         ::sfx2::sidebar::ControllerItem maSwNoWrapControl;
@@ -95,10 +93,10 @@ namespace sw { namespace sidebar {
         void UpdateEditContour();
         void UpdateSpacingLB();
 
-        DECL_LINK_TYPED(WrapTypeHdl, Button*, void);
-        DECL_LINK_TYPED(EnableContourHdl, Button*, void);
-        DECL_LINK_TYPED(EditContourHdl, Button*, void);
-        DECL_LINK_TYPED(SpacingLBHdl, ListBox&, void);
+        DECL_LINK(WrapTypeHdl, Button*, void);
+        DECL_LINK(EnableContourHdl, Button*, void);
+        DECL_LINK(EditContourHdl, Button*, void);
+        DECL_LINK(SpacingLBHdl, ListBox&, void);
     };
 
 } } // end of namespace ::sw::sidebar

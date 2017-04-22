@@ -38,7 +38,7 @@ class XMLIndexSimpleEntryContext : public SvXMLImportContext
 {
 
     // entry type
-    const OUString& rEntryType;
+    const OUString rEntryType;
 
 protected:
     // character style
@@ -61,7 +61,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLocalName );
 
-    virtual ~XMLIndexSimpleEntryContext();
+    virtual ~XMLIndexSimpleEntryContext() override;
 
 protected:
 

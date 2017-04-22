@@ -30,11 +30,16 @@ AlphaMask::AlphaMask( const Bitmap& rBitmap ) :
     Bitmap( rBitmap )
 {
     if( !!rBitmap )
-        Bitmap::Convert( BMP_CONVERSION_8BIT_GREYS );
+        Convert( BmpConversion::N8BitGreys );
 }
 
 AlphaMask::AlphaMask( const AlphaMask& rAlphaMask ) :
     Bitmap( rAlphaMask )
+{
+}
+
+AlphaMask::AlphaMask( AlphaMask&& rAlphaMask ) :
+    Bitmap( std::move(rAlphaMask) )
 {
 }
 
@@ -54,7 +59,7 @@ AlphaMask& AlphaMask::operator=( const Bitmap& rBitmap )
     *static_cast<Bitmap*>(this) = rBitmap;
 
     if( !!rBitmap )
-        Bitmap::Convert( BMP_CONVERSION_8BIT_GREYS );
+        Convert( BmpConversion::N8BitGreys );
 
     return *this;
 }
@@ -83,8 +88,8 @@ bool AlphaMask::Erase( sal_uInt8 cTransparency )
 
 bool AlphaMask::Replace( const Bitmap& rMask, sal_uInt8 cReplaceTransparency )
 {
-    BitmapReadAccess*   pMaskAcc = ( (Bitmap&) rMask ).AcquireReadAccess();
-    BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+    Bitmap::ScopedReadAccess pMaskAcc( const_cast<Bitmap&>(rMask) );
+    AlphaMask::ScopedWriteAccess pAcc(*this);
     bool                bRet = false;
 
     if( pMaskAcc && pAcc )
@@ -99,16 +104,12 @@ bool AlphaMask::Replace( const Bitmap& rMask, sal_uInt8 cReplaceTransparency )
                 if( pMaskAcc->GetPixel( nY, nX ) == aMaskWhite )
                     pAcc->SetPixel( nY, nX, aReplace );
     }
-
-    Bitmap::ReleaseAccess( pMaskAcc );
-    ReleaseAccess( pAcc );
-
     return bRet;
 }
 
 bool AlphaMask::Replace( sal_uInt8 cSearchTransparency, sal_uInt8 cReplaceTransparency )
 {
-    BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+    AlphaMask::ScopedWriteAccess pAcc(*this);
     bool                bRet = false;
 
     if( pAcc && pAcc->GetBitCount() == 8 )
@@ -145,9 +146,6 @@ bool AlphaMask::Replace( sal_uInt8 cSearchTransparency, sal_uInt8 cReplaceTransp
         bRet = true;
     }
 
-    if( pAcc )
-        ReleaseAccess( pAcc );
-
     return bRet;
 }
 
@@ -156,7 +154,7 @@ void AlphaMask::ReleaseAccess( BitmapReadAccess* pAccess )
     if( pAccess )
     {
         Bitmap::ReleaseAccess( pAccess );
-        Bitmap::Convert( BMP_CONVERSION_8BIT_GREYS );
+        Convert( BmpConversion::N8BitGreys );
     }
 }
 

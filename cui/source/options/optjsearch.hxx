@@ -52,25 +52,27 @@ private:
     VclPtr<CheckBox>   m_pIgnoreWhitespace;
     VclPtr<CheckBox>   m_pIgnoreMiddleDot;
 
-    sal_Int32       nTransliterationFlags;
-    bool        bSaveOptions;
+    TransliterationFlags
+                       nTransliterationFlags;
+    bool               bSaveOptions;
 
-    sal_Int32               GetTransliterationFlags_Impl();
+    TransliterationFlags
+                        GetTransliterationFlags_Impl();
 
 public:
                         SvxJSearchOptionsPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxJSearchOptionsPage();
+    virtual ~SvxJSearchOptionsPage() override;
     virtual void dispose() override;
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rSet );
 
     virtual void        Reset( const SfxItemSet* rSet ) override;
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
 
-    bool                IsSaveOptions() const           { return bSaveOptions; }
     void                EnableSaveOptions( bool bVal )  { bSaveOptions = bVal; }
 
-    sal_Int32               GetTransliterationFlags() const { return nTransliterationFlags; }
-    void                SetTransliterationFlags( sal_Int32 nSettings );
+    TransliterationFlags
+                        GetTransliterationFlags() const { return nTransliterationFlags; }
+    void                SetTransliterationFlags( TransliterationFlags nSettings );
 };
 
 

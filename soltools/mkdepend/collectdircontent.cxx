@@ -1,5 +1,6 @@
 /* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 #include "collectdircontent.hxx"
+#include <rtl/character.hxx>
 
 using namespace std;
 
@@ -29,7 +30,11 @@ void IncludesCollection::add_to_collection(const string& dirPath) {
     }
     do {
         string winFileName(FindFileData.cFileName);
-        transform(winFileName.begin(), winFileName.end(), winFileName.begin(), ::tolower);
+        transform(
+            winFileName.begin(), winFileName.end(), winFileName.begin(),
+            [](char c) {
+                return rtl::toAsciiLowerCase(static_cast<unsigned char>(c));
+            });
         dirContent.insert(winFileName);
     } while (FindNextFile(hFind, &FindFileData));
 #else
@@ -51,7 +56,11 @@ void IncludesCollection::add_to_collection(const string& dirPath) {
 
 bool IncludesCollection::exists(string filePath) {
 #if defined(_WIN32)
-    transform(filePath.begin(), filePath.end(), filePath.begin(), ::tolower);
+    transform(
+        filePath.begin(), filePath.end(), filePath.begin(),
+        [](char c) {
+            return rtl::toAsciiLowerCase(static_cast<unsigned char>(c));
+        });
 #endif // defined( WNT )
     PathFilePair dirFile = split_path(filePath);
     string dirPath = dirFile.first;

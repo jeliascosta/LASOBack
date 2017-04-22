@@ -21,14 +21,13 @@
 
 #include <cassert>
 
-#include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/document/PrinterIndependentLayout.hpp>
 #include <com/sun/star/drawing/XDrawPage.hpp>
 #include <com/sun/star/drawing/XDrawPageSupplier.hpp>
-#include <com/sun/star/i18n/XForbiddenCharacters.hpp>
 #include <com/sun/star/text/XTextDocument.hpp>
 #include <com/sun/star/text/XTextRange.hpp>
 
+#include <o3tl/any.hxx>
 #include <xmloff/xmlnmspe.hxx>
 #include <xmloff/xmltkmap.hxx>
 #include <xmloff/xmlictxt.hxx>
@@ -98,7 +97,6 @@ enum SwXMLDocTokens
     XML_TOK_DOC_SCRIPT,
     XML_TOK_DOC_SETTINGS,
     XML_TOK_DOC_XFORMS,
-    XML_TOK_OFFICE_END=XML_TOK_UNKNOWN
 };
 
 static SvXMLTokenMapEntry aDocTokenMap[] =
@@ -124,8 +122,6 @@ public:
     SwXMLBodyContext_Impl( SwXMLImport& rImport, sal_uInt16 nPrfx,
                 const OUString& rLName,
                 const Reference< xml::sax::XAttributeList > & xAttrList );
-    virtual ~SwXMLBodyContext_Impl();
-
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                 const OUString& rLocalName,
@@ -138,11 +134,6 @@ SwXMLBodyContext_Impl::SwXMLBodyContext_Impl( SwXMLImport& rImport,
     SvXMLImportContext( rImport, nPrfx, rLName )
 {
 }
-
-SwXMLBodyContext_Impl::~SwXMLBodyContext_Impl()
-{
-}
-
 
 SvXMLImportContext *SwXMLBodyContext_Impl::CreateChildContext(
         sal_uInt16 /*nPrefix*/,
@@ -167,8 +158,6 @@ public:
     SwXMLDocContext_Impl( SwXMLImport& rImport, sal_uInt16 nPrfx,
                 const OUString& rLName,
                 const Reference< xml::sax::XAttributeList > & xAttrList );
-    virtual ~SwXMLDocContext_Impl();
-
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                 const OUString& rLocalName,
@@ -181,11 +170,6 @@ SwXMLDocContext_Impl::SwXMLDocContext_Impl( SwXMLImport& rImport,
     SvXMLImportContext( rImport, nPrfx, rLName )
 {
 }
-
-SwXMLDocContext_Impl::~SwXMLDocContext_Impl()
-{
-}
-
 
 SvXMLImportContext *SwXMLDocContext_Impl::CreateChildContext(
         sal_uInt16 nPrefix,
@@ -255,8 +239,6 @@ public:
                 const OUString& rLName,
                 const Reference< xml::sax::XAttributeList > & xAttrList,
                 const Reference< document::XDocumentProperties >& xDocProps);
-    virtual ~SwXMLOfficeDocContext_Impl();
-
 
     virtual SvXMLImportContext *CreateChildContext(
                 sal_uInt16 nPrefix,
@@ -275,11 +257,6 @@ SwXMLOfficeDocContext_Impl::SwXMLOfficeDocContext_Impl(
     SvXMLMetaDocumentContext( rImport, nPrfx, rLName, xDocProps)
 {
 }
-
-SwXMLOfficeDocContext_Impl::~SwXMLOfficeDocContext_Impl()
-{
-}
-
 
 SvXMLImportContext* SwXMLOfficeDocContext_Impl::CreateChildContext(
                 sal_uInt16 nPrefix,
@@ -317,8 +294,6 @@ public:
                                 sal_uInt16 nPrfx,
                                 const OUString& rLName,
                                 const Reference< xml::sax::XAttributeList > & xAttrList );
-    virtual ~SwXMLDocStylesContext_Impl();
-
 
     virtual void EndElement() override;
 };
@@ -332,11 +307,6 @@ SwXMLDocStylesContext_Impl::SwXMLDocStylesContext_Impl(
     SwXMLDocContext_Impl( rImport, nPrfx, rLName, xAttrList )
 {
 }
-
-SwXMLDocStylesContext_Impl::~SwXMLDocStylesContext_Impl()
-{
-}
-
 
 void SwXMLDocStylesContext_Impl::EndElement()
 {
@@ -408,10 +378,9 @@ SwXMLImport::SwXMLImport(
     m_bLoadDoc( true ),
     m_bInsert( false ),
     m_bBlock( false ),
-    m_bShowProgress( true ),
     m_bOrganizerMode( false ),
     m_bInititedXForms( false ),
-    m_bPreserveRedlineMode( true ),
+    m_bPreserveRedlineFlags( true ),
     m_pDoc( nullptr )
 {
     InitItemImport();
@@ -445,16 +414,6 @@ void SwXMLImport::setStyleInsertMode( SfxStyleFamily nFamilies,
     m_bLoadDoc = false;
 }
 
-void SwXMLImport::setBlockMode( )
-{
-    m_bBlock = true;
-}
-
-void SwXMLImport::setOrganizerMode( )
-{
-    m_bOrganizerMode = true;
-}
-
 namespace
 {
     class theSwXMLImportUnoTunnelId : public rtl::Static< UnoTunnelIdInit, theSwXMLImportUnoTunnelId > {};
@@ -466,7 +425,6 @@ const Sequence< sal_Int8 > & SwXMLImport::getUnoTunnelId() throw()
 }
 
 sal_Int64 SAL_CALL SwXMLImport::getSomething( const Sequence< sal_Int8 >& rId )
-    throw(RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
         && 0 == memcmp( getUnoTunnelId().getConstArray(),
@@ -490,9 +448,6 @@ static OTextCursorHelper *lcl_xml_GetSwXTextCursor( const Reference < XTextCurso
 }
 
 void SwXMLImport::startDocument()
-    throw (xml::sax::SAXException,
-           uno::RuntimeException,
-           std::exception)
 {
     // delegate to parent
     SvXMLImport::startDocument();
@@ -542,9 +497,11 @@ void SwXMLImport::startDocument()
                 if( xPropertySetInfo->hasPropertyByName(sStyleInsertModeOverwrite) )
                 {
                     aAny = xImportInfo->getPropertyValue(sStyleInsertModeOverwrite);
-                    if( aAny.getValueType() == cppu::UnoType<bool>::get() &&
-                        *static_cast<const sal_Bool*>(aAny.getValue()) )
-                        bOverwrite = true;
+                    if( auto b = o3tl::tryAccess<bool>(aAny) )
+                    {
+                        if( *b )
+                            bOverwrite = true;
+                    }
                 }
 
                 setStyleInsertMode( nFamilyMask, bOverwrite );
@@ -566,9 +523,11 @@ void SwXMLImport::startDocument()
         if( xPropertySetInfo->hasPropertyByName(sAutoTextMode) )
         {
             aAny = xImportInfo->getPropertyValue(sAutoTextMode);
-            if( aAny.getValueType() == cppu::UnoType<bool>::get() &&
-                *static_cast<const sal_Bool*>(aAny.getValue()) )
-                    setBlockMode();
+            if( auto b = o3tl::tryAccess<bool>(aAny) )
+            {
+                if( *b )
+                    m_bBlock = true;
+            }
         }
 
         // organizer mode
@@ -576,9 +535,11 @@ void SwXMLImport::startDocument()
         if( xPropertySetInfo->hasPropertyByName(sOrganizerMode) )
         {
             aAny = xImportInfo->getPropertyValue(sOrganizerMode);
-            if( aAny.getValueType() == cppu::UnoType<bool>::get() &&
-                *static_cast<const sal_Bool*>(aAny.getValue()) )
-                    setOrganizerMode();
+            if( auto b = o3tl::tryAccess<bool>(aAny) )
+            {
+                if( *b )
+                    m_bOrganizerMode = true;
+            }
         }
     }
 
@@ -682,7 +643,7 @@ void SwXMLImport::startDocument()
 
     if( !GetGraphicResolver().is() )
     {
-        m_pGraphicResolver = SvXMLGraphicHelper::Create( GRAPHICHELPER_MODE_READ );
+        m_pGraphicResolver = SvXMLGraphicHelper::Create( SvXMLGraphicHelperMode::Read );
         Reference< document::XGraphicObjectResolver > xGraphicResolver( m_pGraphicResolver );
         SetGraphicResolver( xGraphicResolver );
     }
@@ -694,7 +655,7 @@ void SwXMLImport::startDocument()
         {
             m_pEmbeddedResolver = SvXMLEmbeddedObjectHelper::Create(
                                             *pPersist,
-                                            EMBEDDEDOBJECTHELPER_MODE_READ );
+                                            SvXMLEmbeddedObjectHelperMode::Read );
             Reference< document::XEmbeddedObjectResolver > xEmbeddedResolver( m_pEmbeddedResolver );
             SetEmbeddedResolver( xEmbeddedResolver );
         }
@@ -702,7 +663,6 @@ void SwXMLImport::startDocument()
 }
 
 void SwXMLImport::endDocument()
-    throw( xml::sax::SAXException, uno::RuntimeException, std::exception )
 {
     OSL_ENSURE( GetModel().is(), "model missing; maybe startDocument wasn't called?" );
     if( !GetModel().is() )
@@ -935,7 +895,7 @@ class SvTextShapeImportHelper : public XMLTextShapeImportHelper
 
 public:
     explicit SvTextShapeImportHelper(SvXMLImport& rImp);
-    virtual ~SvTextShapeImportHelper();
+    virtual ~SvTextShapeImportHelper() override;
 };
 
 SvTextShapeImportHelper::SvTextShapeImportHelper(SvXMLImport& rImp) :
@@ -971,9 +931,9 @@ XMLTextImportHelper* SwXMLImport::CreateTextImport()
 {
     return new SwXMLTextImportHelper( GetModel(), *this, getImportInfo(),
                                       IsInsertMode(),
-                                      IsStylesOnlyMode(), m_bShowProgress,
-                                      IsBlockMode(), IsOrganizerMode(),
-                                      m_bPreserveRedlineMode );
+                                      IsStylesOnlyMode(),
+                                      IsBlockMode(), m_bOrganizerMode,
+                                      m_bPreserveRedlineFlags );
 }
 
 XMLShapeImportHelper* SwXMLImport::CreateShapeImport()
@@ -994,14 +954,14 @@ SvXMLImportContext *SwXMLImport::CreateFontDeclsContext(
 }
 void SwXMLImport::SetViewSettings(const Sequence < PropertyValue > & aViewProps)
 {
-    if (IsInsertMode() || IsStylesOnlyMode() || IsBlockMode() || IsOrganizerMode() || !GetModel().is() )
+    if (IsInsertMode() || IsStylesOnlyMode() || IsBlockMode() || m_bOrganizerMode || !GetModel().is() )
         return;
 
     // this method will modify the document directly -> lock SolarMutex
     SolarMutexGuard aGuard;
 
     SwDoc *pDoc = getDoc();
-    Rectangle aRect;
+    tools::Rectangle aRect;
     if( pDoc->GetDocShell() )
         aRect = pDoc->GetDocShell()->GetVisArea( ASPECT_CONTENT );
         //TODO/LATER: why that cast?!
@@ -1015,8 +975,8 @@ void SwXMLImport::SetViewSettings(const Sequence < PropertyValue > & aViewProps)
     bool bChangeShowRedline = false, bChangeBrowseMode = false;
 
     //TODO/LATER: why that cast?!
-    bool bTwip = pDoc->GetDocShell()->GetMapUnit ( ) == MAP_TWIP;
-    //sal_Bool bTwip = pDoc->GetDocShell()->SfxInPlaceObject::GetMapUnit ( ) == MAP_TWIP;
+    bool bTwip = pDoc->GetDocShell()->GetMapUnit ( ) == MapUnit::MapTwip;
+    //sal_Bool bTwip = pDoc->GetDocShell()->SfxInPlaceObject::GetMapUnit ( ) == MapUnit::MapTwip;
 
     for (sal_Int32 i = 0; i < nCount ; i++)
     {
@@ -1046,13 +1006,13 @@ void SwXMLImport::SetViewSettings(const Sequence < PropertyValue > & aViewProps)
         }
         else if ( pValue->Name == "ShowRedlineChanges" )
         {
-            bShowRedlineChanges = *static_cast<sal_Bool const *>(pValue->Value.getValue());
+            bShowRedlineChanges = *o3tl::doAccess<bool>(pValue->Value);
             bChangeShowRedline = true;
         }
 // Headers and footers are not displayed in BrowseView anymore
         else if ( pValue->Name == "InBrowseMode" )
         {
-            bBrowseMode = *static_cast<sal_Bool const *>(pValue->Value.getValue());
+            bBrowseMode = *o3tl::doAccess<bool>(pValue->Value);
             bChangeBrowseMode = true;
         }
         pValue++;
@@ -1134,7 +1094,6 @@ void SwXMLImport::SetConfigurationSettings(const Sequence < PropertyValue > & aC
     // below, and set them if not found
     bool bPrinterIndependentLayout = false;
     bool bUseOldNumbering = false;
-    bool bOutlineLevelYieldsOutlineRule = false;
     bool bAddExternalLeading = false;
     bool bAddParaSpacingToTableCells = false;
     bool bUseFormerLineSpacing = false;
@@ -1148,7 +1107,6 @@ void SwXMLImport::SetConfigurationSettings(const Sequence < PropertyValue > & aC
     bool bDoNotCaptureDrawObjsOnPage( false );
     bool bClipAsCharacterAnchoredWriterFlyFrames( false );
     bool bUnixForceZeroExtLeading = false;
-    bool bUseOldPrinterMetrics = false;
     bool bSmallCapsPercentage66 = false;
     bool bTabOverflow = false;
     bool bUnbreakableNumberings = false;
@@ -1217,8 +1175,6 @@ void SwXMLImport::SetConfigurationSettings(const Sequence < PropertyValue > & aC
                     bUseFormerTextWrapping = true;
                 else if ( pValues->Name == "UseOldNumbering" )
                     bUseOldNumbering = true;
-                else if ( pValues->Name == "OutlineLevelYieldsNumbering" )
-                    bOutlineLevelYieldsOutlineRule = true;
                 else if ( pValues->Name == "ConsiderTextWrapOnObjPos" )
                     bConsiderWrapOnObjPos = true;
                 else if ( pValues->Name == "IgnoreFirstLineIndentInNumbering" )
@@ -1235,8 +1191,6 @@ void SwXMLImport::SetConfigurationSettings(const Sequence < PropertyValue > & aC
                     bClipAsCharacterAnchoredWriterFlyFrames = true;
                 else if ( pValues->Name == "UnxForceZeroExtLeading" )
                     bUnixForceZeroExtLeading = true;
-                else if ( pValues->Name == "UseOldPrinterMetrics" )
-                    bUseOldPrinterMetrics = true;
                 else if ( pValues->Name == "SmallCapsPercentage66" )
                     bSmallCapsPercentage66 = true;
                 else if ( pValues->Name == "TabOverflow" )
@@ -1305,11 +1259,6 @@ void SwXMLImport::SetConfigurationSettings(const Sequence < PropertyValue > & aC
     if( !bUseOldNumbering )
     {
         xProps->setPropertyValue( "UseOldNumbering", makeAny(true) );
-    }
-
-    if( !bOutlineLevelYieldsOutlineRule )
-    {
-        xProps->setPropertyValue( "OutlineLevelYieldsNumbering", makeAny(true) );
     }
 
     if( !bAddParaSpacingToTableCells )
@@ -1381,11 +1330,6 @@ void SwXMLImport::SetConfigurationSettings(const Sequence < PropertyValue > & aC
     if ( !bUnixForceZeroExtLeading )
     {
         xProps->setPropertyValue( "UnxForceZeroExtLeading", makeAny( true ) );
-    }
-
-    if ( !bUseOldPrinterMetrics )
-    {
-        xProps->setPropertyValue( "UseOldPrinterMetrics", makeAny( true ) );
     }
 
     // Old LO versions had 66 as the value for small caps percentage, later changed to 80.
@@ -1468,21 +1412,20 @@ void SwXMLImport::SetDocumentSpecificSettings(
 
 void SwXMLImport::initialize(
     const Sequence<Any>& aArguments )
-    throw( uno::Exception, uno::RuntimeException, std::exception)
 {
     // delegate to super class
     SvXMLImport::initialize(aArguments);
 
-    // we are only looking for a PropertyValue "PreserveRedlineMode"
+    // we are only looking for a PropertyValue "PreserveRedlineFlags"
     sal_Int32 nLength = aArguments.getLength();
     for(sal_Int32 i = 0; i < nLength; i++)
     {
         beans::PropertyValue aValue;
         if ( aArguments[i] >>= aValue )
         {
-            if (aValue.Name == "PreserveRedlineMode")
+            if (aValue.Name == "PreserveRedlineFlags")
             {
-                OSL_VERIFY( aValue.Value >>= m_bPreserveRedlineMode );
+                OSL_VERIFY( aValue.Value >>= m_bPreserveRedlineFlags );
             }
             continue;
         }
@@ -1556,7 +1499,7 @@ extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface* SAL_CALL
 com_sun_star_comp_Writer_XMLOasisImporter_get_implementation(css::uno::XComponentContext* context,
         css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new SwXMLImport(context, OUString("com.sun.star.comp.Writer.XMLOasisImporter"),
+    return cppu::acquire(new SwXMLImport(context, "com.sun.star.comp.Writer.XMLOasisImporter",
                 SvXMLImportFlags::ALL));
 }
 
@@ -1565,7 +1508,7 @@ extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface* SAL_CALL
 com_sun_star_comp_Writer_XMLOasisStylesImporter_get_implementation(css::uno::XComponentContext* context,
         css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new SwXMLImport(context, OUString("com.sun.star.comp.Writer.XMLOasisStylesImporter"),
+    return cppu::acquire(new SwXMLImport(context, "com.sun.star.comp.Writer.XMLOasisStylesImporter",
                 SvXMLImportFlags::STYLES | SvXMLImportFlags::MASTERSTYLES | SvXMLImportFlags::AUTOSTYLES |
                 SvXMLImportFlags::FONTDECLS));
 }
@@ -1575,7 +1518,7 @@ extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface* SAL_CALL
 com_sun_star_comp_Writer_XMLOasisContentImporter_get_implementation(css::uno::XComponentContext* context,
         css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new SwXMLImport(context, OUString("com.sun.star.comp.Writer.XMLOasisContentImporter"),
+    return cppu::acquire(new SwXMLImport(context, "com.sun.star.comp.Writer.XMLOasisContentImporter",
                 SvXMLImportFlags::CONTENT | SvXMLImportFlags::SCRIPTS | SvXMLImportFlags::AUTOSTYLES |
                 SvXMLImportFlags::FONTDECLS));
 }
@@ -1584,7 +1527,7 @@ extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface* SAL_CALL
 com_sun_star_comp_Writer_XMLOasisMetaImporter_get_implementation(css::uno::XComponentContext* context,
         css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new SwXMLImport(context, OUString("com.sun.star.comp.Writer.XMLOasisMetaImporter"),
+    return cppu::acquire(new SwXMLImport(context, "com.sun.star.comp.Writer.XMLOasisMetaImporter",
                 SvXMLImportFlags::META));
 }
 
@@ -1593,7 +1536,7 @@ extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface* SAL_CALL
 com_sun_star_comp_Writer_XMLOasisSettingsImporter_get_implementation(css::uno::XComponentContext* context,
         css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new SwXMLImport(context, OUString("com.sun.star.comp.Writer.XMLOasisSettingsImporter"),
+    return cppu::acquire(new SwXMLImport(context, "com.sun.star.comp.Writer.XMLOasisSettingsImporter",
                 SvXMLImportFlags::SETTINGS));
 }
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

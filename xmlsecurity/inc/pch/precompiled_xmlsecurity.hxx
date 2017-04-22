@@ -17,7 +17,7 @@
  ./bin/update_pch xmlsecurity xmlsecurity --cutoff=6 --exclude:system --include:module --include:local
 
  If after updating build fails, use the following command to locate conflicting headers:
- ./bin/update_pch_bisect ./xmlsecurity/inc/pch/precompiled_xmlsecurity.hxx "make xmlsecurity.build" --find-conflicts
+ ./bin/update_pch_bisect ./inc/pch/precompiled_xmlsecurity.hxx "make xmlsecurity.build" --find-conflicts
 */
 
 #include <algorithm>
@@ -268,7 +268,6 @@
 #include <tools/contnr.hxx>
 #include <tools/date.hxx>
 #include <tools/datetime.hxx>
-#include <tools/debug.hxx>
 #include <tools/errinf.hxx>
 #include <tools/fldunit.hxx>
 #include <tools/fontenum.hxx>
@@ -304,6 +303,6 @@
 #include <unotools/readwritemutexguard.hxx>
 #include <unotools/syslocale.hxx>
 #include <unotools/unotoolsdllapi.h>
-#include <xmlsecurity/sigstruct.hxx>
+#include <sigstruct.hxx>
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

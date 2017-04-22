@@ -70,6 +70,7 @@ Panel::Panel(const PanelDescriptor& rPanelDescriptor,
 Panel::~Panel()
 {
     disposeOnce();
+    assert(!mpTitleBar);
 }
 
 void Panel::ApplySettings(vcl::RenderContext& rRenderContext)
@@ -99,9 +100,9 @@ void Panel::dispose()
     vcl::Window::dispose();
 }
 
-PanelTitleBar* Panel::GetTitleBar() const
+VclPtr<PanelTitleBar> Panel::GetTitleBar() const
 {
-    return mpTitleBar.get();
+    return mpTitleBar;
 }
 
 void Panel::SetUIElement (const Reference<ui::XUIElement>& rxElement)
@@ -137,11 +138,6 @@ bool Panel::HasIdPredicate (const OUString& rsId) const
     return msPanelId.equals(rsId);
 }
 
-void Panel::Paint (vcl::RenderContext& rRenderContext, const Rectangle& rUpdateArea)
-{
-    Window::Paint(rRenderContext, rUpdateArea);
-}
-
 void Panel::Resize()
 {
     Window::Resize();
@@ -154,11 +150,6 @@ void Panel::Resize()
         xElementWindow->setPosSize(0, 0, aSize.Width(), aSize.Height(),
                                    awt::PosSize::POSSIZE);
     }
-}
-
-void Panel::Activate()
-{
-    Window::Activate();
 }
 
 void Panel::DataChanged (const DataChangedEvent& rEvent)

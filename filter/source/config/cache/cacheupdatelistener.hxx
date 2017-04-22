@@ -65,7 +65,7 @@ class CacheUpdateListener : public BaseLock // must be the first one to guarante
 
         /** @short  initialize new instance of this class.
 
-            @descr  Listening wont be started here. It can be done
+            @descr  Listening won't be started here. It can be done
                     by calling startListening() on this instance.
 
             @see    startListening()
@@ -83,7 +83,7 @@ class CacheUpdateListener : public BaseLock // must be the first one to guarante
 
         /** @short  standard dtor.
          */
-        virtual ~CacheUpdateListener();
+        virtual ~CacheUpdateListener() override;
 
 
         /** @short  starts listening.
@@ -103,13 +103,11 @@ class CacheUpdateListener : public BaseLock // must be the first one to guarante
 
         // XChangesListener
 
-        virtual void SAL_CALL changesOccurred(const css::util::ChangesEvent& aEvent)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL changesOccurred(const css::util::ChangesEvent& aEvent) override;
 
 
         // lang.XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) override;
 };
 
     } // namespace config

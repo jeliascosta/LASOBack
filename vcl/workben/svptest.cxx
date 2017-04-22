@@ -85,13 +85,7 @@ class MyWin : public WorkWindow
 public:
                  MyWin( vcl::Window* pParent, WinBits nWinStyle );
 
-    virtual void MouseMove( const MouseEvent& rMEvt ) override;
-    virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
-    virtual void MouseButtonUp( const MouseEvent& rMEvt ) override;
-    virtual void KeyInput( const KeyEvent& rKEvt ) override;
-    virtual void KeyUp( const KeyEvent& rKEvt ) override;
-    virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
-    virtual void Resize() override;
+    virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rRect ) override;
 };
 
 void Main()
@@ -126,31 +120,6 @@ MyWin::MyWin( vcl::Window* pParent, WinBits nWinStyle ) :
         }
     }
     Bitmap::ReleaseAccess( pAcc );
-}
-
-void MyWin::MouseMove( const MouseEvent& rMEvt )
-{
-    WorkWindow::MouseMove( rMEvt );
-}
-
-void MyWin::MouseButtonDown( const MouseEvent& rMEvt )
-{
-    WorkWindow::MouseButtonDown( rMEvt );
-}
-
-void MyWin::MouseButtonUp( const MouseEvent& rMEvt )
-{
-    WorkWindow::MouseButtonUp( rMEvt );
-}
-
-void MyWin::KeyInput( const KeyEvent& rKEvt )
-{
-    WorkWindow::KeyInput( rKEvt );
-}
-
-void MyWin::KeyUp( const KeyEvent& rKEvt )
-{
-    WorkWindow::KeyUp( rKEvt );
 }
 
 static Point project( const Point& rPoint )
@@ -225,12 +194,12 @@ static Color approachColor( const Color& rFrom, const Color& rTo )
 }
 
 #define DELTA 5.0
-void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void MyWin::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     WorkWindow::Paint(rRenderContext, rRect);
 
     rRenderContext.Push();
-    MapMode aMapMode(MAP_100TH_MM);
+    MapMode aMapMode(MapUnit::Map100thMM);
 
     rRenderContext.SetMapMode(aMapMode);
 
@@ -240,14 +209,14 @@ void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
     Point aP1(aPaperSize.Width() / 48, 0), aP2(aPaperSize.Width() / 40, 0);
     Point aPoint;
 
-    rRenderContext.DrawRect(Rectangle(Point(0, 0), aPaperSize));
-    rRenderContext.DrawRect(Rectangle(Point(100, 100),
+    rRenderContext.DrawRect(tools::Rectangle(Point(0, 0), aPaperSize));
+    rRenderContext.DrawRect(tools::Rectangle(Point(100, 100),
                          Size(aPaperSize.Width() - 200,
                               aPaperSize.Height() - 200)));
-    rRenderContext.DrawRect(Rectangle(Point(200, 200),
+    rRenderContext.DrawRect(tools::Rectangle(Point(200, 200),
                          Size(aPaperSize.Width() - 400,
                               aPaperSize.Height() - 400)));
-    rRenderContext.DrawRect(Rectangle(Point(300, 300),
+    rRenderContext.DrawRect(tools::Rectangle(Point(300, 300),
                          Size(aPaperSize.Width() - 600,
                               aPaperSize.Height() - 600)));
 
@@ -271,14 +240,14 @@ void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 
         aPrintText.append( "SVP test program" );
 
-        rRenderContext.DrawText(Rectangle(Point((aPaperSize.Width() - 4000) / 2, 2000),
+        rRenderContext.DrawText(tools::Rectangle(Point((aPaperSize.Width() - 4000) / 2, 2000),
                                 Size(aPaperSize.Width() - 2100 - nMaxWidth, aPaperSize.Height() - 4000)),
                                 aPrintText.makeStringAndClear(),
                                 DrawTextFlags::MultiLine);
     }
 
     rRenderContext.SetFillColor();
-    DrawRect(Rectangle(Point(aPaperSize.Width() - 4000, 1000),
+    DrawRect(tools::Rectangle(Point(aPaperSize.Width() - 4000, 1000),
                        Size(3000, 3000)));
     rRenderContext.DrawBitmap(Point(aPaperSize.Width() - 4000, 1000),
                               Size( 3000,3000 ),
@@ -293,28 +262,28 @@ void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
     Color aLightGreen(0, 0xff, 0);
     Color aDarkGreen(0, 0x40, 0);
 
-    Gradient aGradient(GradientStyle_LINEAR, aBlack, aWhite);
+    Gradient aGradient(GradientStyle::Linear, aBlack, aWhite);
     aGradient.SetAngle(900);
-    rRenderContext.DrawGradient(Rectangle(Point(1000, 4500),
+    rRenderContext.DrawGradient(tools::Rectangle(Point(1000, 4500),
                                 Size(aPaperSize.Width() - 2000, 500)),
                                 aGradient);
     aGradient.SetStartColor(aDarkRed);
     aGradient.SetEndColor(aLightBlue);
-    rRenderContext.DrawGradient(Rectangle(Point(1000, 5300),
+    rRenderContext.DrawGradient(tools::Rectangle(Point(1000, 5300),
                                 Size(aPaperSize.Width() - 2000, 500)),
                                 aGradient);
     aGradient.SetStartColor(aDarkBlue);
     aGradient.SetEndColor(aLightGreen);
-    rRenderContext.DrawGradient(Rectangle(Point(1000, 6100),
+    rRenderContext.DrawGradient(tools::Rectangle(Point(1000, 6100),
                                 Size(aPaperSize.Width() - 2000, 500)),
                                 aGradient);
     aGradient.SetStartColor(aDarkGreen);
     aGradient.SetEndColor(aLightRed);
-    rRenderContext.DrawGradient(Rectangle(Point(1000, 6900),
+    rRenderContext.DrawGradient(tools::Rectangle(Point(1000, 6900),
                                 Size(aPaperSize.Width() - 2000, 500)),
                                 aGradient);
 
-    LineInfo aLineInfo(LINE_SOLID, 200);
+    LineInfo aLineInfo(LineStyle::Solid, 200);
     double sind = sin(DELTA * M_PI / 180.0);
     double cosd = cos(DELTA * M_PI / 180.0);
     double factor = 1 + (DELTA / 1000.0);
@@ -350,11 +319,6 @@ void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
         aP2 = aPoint;
     }
     rRenderContext.Pop();
-}
-
-void MyWin::Resize()
-{
-    WorkWindow::Resize();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

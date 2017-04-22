@@ -29,12 +29,6 @@ using namespace ::com::sun::star::uno;
 
 namespace migration
 {
-
-
-    static const char sSourceSubDir[] = "/user/wordbook";
-    static const char sTargetSubDir[] = "/user/wordbook";
-
-
     // component operations
 
 
@@ -101,13 +95,13 @@ namespace migration
 
     void WordbookMigration::checkAndCreateDirectory( INetURLObject& rDirURL )
     {
-        ::osl::FileBase::RC aResult = ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DECODE_TO_IURI ) );
+        ::osl::FileBase::RC aResult = ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ) );
         if ( aResult == ::osl::FileBase::E_NOENT )
         {
             INetURLObject aBaseURL( rDirURL );
             aBaseURL.removeSegment();
             checkAndCreateDirectory( aBaseURL );
-            ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DECODE_TO_IURI ) );
+            ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ) );
         }
     }
 
@@ -115,15 +109,15 @@ namespace migration
 bool IsUserWordbook( const OUString& rFile )
 {
     bool bRet = false;
-    SvStream* pStream = ::utl::UcbStreamHelper::CreateStream( OUString(rFile), STREAM_STD_READ );
+    SvStream* pStream = ::utl::UcbStreamHelper::CreateStream( OUString(rFile), StreamMode::STD_READ );
     if ( pStream && !pStream->GetError() )
     {
-        static const sal_Char*      pVerOOo7    = "OOoUserDict1";
-        sal_Size nSniffPos = pStream->Tell();
-        static sal_Size nVerOOo7Len = sal::static_int_cast< sal_Size >(strlen( pVerOOo7 ));
+        static const sal_Char* const pVerOOo7    = "OOoUserDict1";
+        sal_uInt64 const nSniffPos = pStream->Tell();
+        static std::size_t nVerOOo7Len = sal::static_int_cast< std::size_t >(strlen( pVerOOo7 ));
         sal_Char pMagicHeader[MAX_HEADER_LENGTH];
         pMagicHeader[ nVerOOo7Len ] = '\0';
-        if ((pStream->Read(static_cast<void *>(pMagicHeader), nVerOOo7Len) == nVerOOo7Len))
+        if ((pStream->ReadBytes(static_cast<void *>(pMagicHeader), nVerOOo7Len) == nVerOOo7Len))
         {
             if ( !strcmp(pMagicHeader, pVerOOo7) )
                 bRet = true;
@@ -134,7 +128,7 @@ bool IsUserWordbook( const OUString& rFile )
                 pStream->ReadUInt16( nLen );
                 if ( nLen < MAX_HEADER_LENGTH )
                 {
-                   pStream->Read(pMagicHeader, nLen);
+                   pStream->ReadBytes(pMagicHeader, nLen);
                    pMagicHeader[nLen] = '\0';
                     if ( !strcmp(pMagicHeader, "WBSWG2")
                      ||  !strcmp(pMagicHeader, "WBSWG5")
@@ -156,7 +150,7 @@ bool IsUserWordbook( const OUString& rFile )
         ::utl::Bootstrap::PathStatus aStatus = ::utl::Bootstrap::locateUserInstallation( sTargetDir );
         if ( aStatus == ::utl::Bootstrap::PATH_EXISTS )
         {
-            sTargetDir += sTargetSubDir;
+            sTargetDir += "/user/wordbook";
             TStringVectorPtr aFileList = getFiles( m_sSourceDir );
             TStringVector::const_iterator aI = aFileList->begin();
             while ( aI != aFileList->end() )
@@ -171,9 +165,10 @@ bool IsUserWordbook( const OUString& rFile )
                     ::osl::FileBase::RC aResult = ::osl::File::copy( *aI, sTargetName );
                     if ( aResult != ::osl::FileBase::E_None )
                     {
-                        OString aMsg( "WordbookMigration::copyFiles: cannot copy " );
-                        aMsg += OUStringToOString( *aI, RTL_TEXTENCODING_UTF8 ) + " to "
-                             +  OUStringToOString( sTargetName, RTL_TEXTENCODING_UTF8 );
+                        OString aMsg = "WordbookMigration::copyFiles: cannot copy "
+                                     + OUStringToOString( *aI, RTL_TEXTENCODING_UTF8 )
+                                     + " to "
+                                     + OUStringToOString( sTargetName, RTL_TEXTENCODING_UTF8 );
                         OSL_FAIL( aMsg.getStr() );
                     }
                 }
@@ -190,20 +185,19 @@ bool IsUserWordbook( const OUString& rFile )
     // XServiceInfo
 
 
-    OUString WordbookMigration::getImplementationName() throw (RuntimeException, std::exception)
+    OUString WordbookMigration::getImplementationName()
     {
         return WordbookMigration_getImplementationName();
     }
 
 
     sal_Bool WordbookMigration::supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception)
     {
         return cppu::supportsService(this, ServiceName);
     }
 
 
-    Sequence< OUString > WordbookMigration::getSupportedServiceNames() throw (RuntimeException, std::exception)
+    Sequence< OUString > WordbookMigration::getSupportedServiceNames()
     {
         return WordbookMigration_getSupportedServiceNames();
     }
@@ -212,7 +206,7 @@ bool IsUserWordbook( const OUString& rFile )
     // XInitialization
 
 
-    void WordbookMigration::initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception)
+    void WordbookMigration::initialize( const Sequence< Any >& aArguments )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -228,7 +222,7 @@ bool IsUserWordbook( const OUString& rFile )
                 {
                     OSL_FAIL( "WordbookMigration::initialize: argument UserData has wrong type!" );
                 }
-                m_sSourceDir += sSourceSubDir;
+                m_sSourceDir += "/user/wordbook";
                 break;
             }
         }
@@ -239,7 +233,6 @@ bool IsUserWordbook( const OUString& rFile )
 
 
     Any WordbookMigration::execute( const Sequence< beans::NamedValue >& )
-        throw (lang::IllegalArgumentException, Exception, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 

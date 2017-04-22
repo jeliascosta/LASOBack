@@ -355,7 +355,6 @@ public:
             SvXMLImport& rImport, sal_uInt16 nPrfx,
             const OUString& rLName,
             const uno::Reference< xml::sax::XAttributeList > & xAttrList );
-    virtual ~ScXMLMapContext();
 
     ScCondFormatEntry* CreateConditionEntry();
 };
@@ -414,10 +413,6 @@ ScCondFormatEntry* ScXMLMapContext::CreateConditionEntry()
 
     pEntry->SetSrcString(msBaseCell);
     return pEntry;
-}
-
-ScXMLMapContext::~ScXMLMapContext()
-{
 }
 
 void XMLTableStyleContext::SetAttribute( sal_uInt16 nPrefixKey,
@@ -586,7 +581,7 @@ void XMLTableStyleContext::AddProperty(const sal_Int16 nContextID, const uno::An
     sal_Int32 nIndex(static_cast<XMLTableStylesContext *>(pStyles)->GetIndex(nContextID));
     OSL_ENSURE(nIndex != -1, "Property not found in Map");
     XMLPropertyState aPropState(nIndex, rValue);
-    GetProperties().push_back(aPropState); // has to be insertes in a sort order later
+    GetProperties().push_back(aPropState); // has to be inserted in a sort order later
 }
 
 XMLPropertyState* XMLTableStyleContext::FindProperty(const sal_Int16 nContextID)
@@ -699,17 +694,17 @@ XMLTableStylesContext::XMLTableStylesContext( SvXMLImport& rImport,
         sal_uInt16 nPrfx ,
         const OUString& rLName ,
         const uno::Reference< XAttributeList > & xAttrList,
-        const bool bTempAutoStyles ) :
-    SvXMLStylesContext( rImport, nPrfx, rLName, xAttrList ),
-    sCellStyleServiceName( OUString( "com.sun.star.style.CellStyle" )),
-    sColumnStyleServiceName( OUString( XML_STYLE_FAMILY_TABLE_COLUMN_STYLES_NAME )),
-    sRowStyleServiceName( OUString( XML_STYLE_FAMILY_TABLE_ROW_STYLES_NAME )),
-    sTableStyleServiceName( OUString( XML_STYLE_FAMILY_TABLE_TABLE_STYLES_NAME )),
-    nNumberFormatIndex(-1),
-    nConditionalFormatIndex(-1),
-    nCellStyleIndex(-1),
-    nMasterPageNameIndex(-1),
-    bAutoStyles(bTempAutoStyles)
+        const bool bTempAutoStyles )
+    : SvXMLStylesContext( rImport, nPrfx, rLName, xAttrList )
+    , sCellStyleServiceName("com.sun.star.style.CellStyle")
+    , sColumnStyleServiceName(XML_STYLE_FAMILY_TABLE_COLUMN_STYLES_NAME)
+    , sRowStyleServiceName(XML_STYLE_FAMILY_TABLE_ROW_STYLES_NAME)
+    , sTableStyleServiceName(XML_STYLE_FAMILY_TABLE_TABLE_STYLES_NAME)
+    , nNumberFormatIndex(-1)
+    , nConditionalFormatIndex(-1)
+    , nCellStyleIndex(-1)
+    , nMasterPageNameIndex(-1)
+    , bAutoStyles(bTempAutoStyles)
 {
 }
 
@@ -791,8 +786,7 @@ uno::Reference < XNameContainer >
                 if( xTableStyles.is() )
                     xStyles.set(xTableStyles);
                 else
-                    sName =
-                        OUString( OUString( "TableStyles" ));
+                    sName = "TableStyles";
             }
             break;
             case XML_STYLE_FAMILY_TABLE_CELL:
@@ -800,8 +794,7 @@ uno::Reference < XNameContainer >
                 if( xCellStyles.is() )
                     xStyles.set(xCellStyles);
                 else
-                    sName =
-                        OUString( OUString( "CellStyles" ));
+                    sName = "CellStyles";
             }
             break;
             case XML_STYLE_FAMILY_TABLE_COLUMN:
@@ -809,8 +802,7 @@ uno::Reference < XNameContainer >
                 if( xColumnStyles.is() )
                     xStyles.set(xColumnStyles);
                 else
-                    sName =
-                        OUString( OUString( "ColumnStyles" ));
+                    sName = "ColumnStyles";
             }
             break;
             case XML_STYLE_FAMILY_TABLE_ROW:
@@ -818,8 +810,7 @@ uno::Reference < XNameContainer >
                 if( xRowStyles.is() )
                     xStyles.set(xRowStyles);
                 else
-                    sName =
-                        OUString( OUString( "RowStyles" ));
+                    sName = "RowStyles";
             }
             break;
         }
@@ -985,14 +976,6 @@ ScMasterPageContext::ScMasterPageContext( SvXMLImport& rImport,
 
 ScMasterPageContext::~ScMasterPageContext()
 {
-}
-
-SvXMLImportContext *ScMasterPageContext::CreateChildContext(
-        sal_uInt16 nPrefix,
-        const OUString& rLocalName,
-        const uno::Reference< XAttributeList > & xAttrList )
-{
-    return XMLTextMasterPageContext::CreateChildContext( nPrefix, rLocalName, xAttrList );
 }
 
 SvXMLImportContext *ScMasterPageContext::CreateHeaderFooterContext(

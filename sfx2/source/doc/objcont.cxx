@@ -151,8 +151,8 @@ SfxObjectShell::CreatePreviewMetaFile_Impl( bool bFullContent ) const
     }
 
     xFile->SetPrefSize( aTmpSize );
-    DBG_ASSERT( aTmpSize.Height()*aTmpSize.Width(),
-        "size of first page is 0, override GetFirstPageSize or set vis-area!" );
+    DBG_ASSERT( aTmpSize.Height() != 0 && aTmpSize.Width() != 0,
+        "size of first page is 0, override GetFirstPageSize or set visible-area!" );
 
     xFile->Record( pDevice );
 
@@ -163,7 +163,7 @@ SfxObjectShell::CreatePreviewMetaFile_Impl( bool bFullContent ) const
     else if ( SvtCTLOptions::NUMERALS_ARABIC == aCTLOptions.GetCTLTextNumerals() )
         eLang = LANGUAGE_ENGLISH;
     else
-        eLang = (LanguageType) Application::GetSettings().GetLanguageTag().getLanguageType();
+        eLang = Application::GetSettings().GetLanguageTag().getLanguageType();
 
     pDevice->SetDigitLanguage( eLang );
 
@@ -179,9 +179,9 @@ void SfxObjectShell::UpdateDocInfoForSave()
 {
     uno::Reference<document::XDocumentProperties> xDocProps(getDocProperties());
 
-    // clear user data if recommend (see 'Tools - Options - Open/StarOffice - Security')
+    // clear user data if recommend (see 'Tools - Options - LibreOffice - Security')
     if ( SvtSecurityOptions().IsOptionSet(
-            SvtSecurityOptions::E_DOCWARN_REMOVEPERSONALINFO ) )
+            SvtSecurityOptions::EOption::DocWarnRemovePersonalInfo ) )
     {
         xDocProps->resetUserData( OUString() );
     }
@@ -236,21 +236,21 @@ void SfxObjectShell::UpdateTime_Impl(
     sal_uIntPtr     nDays       = 0         ;   // Count of days between now and last editing
     tools::Time        nAddTime    (0)         ;   // Value to add on aOldTime
 
-    // Safe impossible cases!
-    // User has changed time to the past between last editing and now ... its not possible!!!
-    DBG_ASSERT( !(aNow.GetDate()<pImp->nTime.GetDate()), "Timestamp of last change is in the past ?!..." );
+    // Save impossible cases!
+    // User has changed time to the past between last editing and now ... it's not possible!!!
+    DBG_ASSERT( !(aNow.GetDate()<pImpl->nTime.GetDate()), "Timestamp of last change is in the past ?!..." );
 
     // Do the follow only, if user has NOT changed time to the past.
     // Else add a time of 0 to aOldTime ... !!!
-    if (aNow.GetDate()>=pImp->nTime.GetDate())
+    if (aNow.GetDate()>=pImpl->nTime.GetDate())
     {
         // Get count of days last editing.
-        nDays = aNow.GetSecFromDateTime(pImp->nTime.GetDate())/86400 ;
+        nDays = aNow.GetSecFromDateTime(Date(pImpl->nTime.GetDate()))/86400 ;
 
         if (nDays==0)
         {
             // If no day between now and last editing - calculate time directly.
-            nAddTime    =   (const tools::Time&)aNow - (const tools::Time&)pImp->nTime ;
+            nAddTime    =   (const tools::Time&)aNow - (const tools::Time&)pImpl->nTime ;
         }
         else if (nDays<=31)
         {
@@ -261,14 +261,14 @@ void SfxObjectShell::UpdateTime_Impl(
             // nAddTime = (24h - nTime) + (nDays * 24h) + aNow
             --nDays;
              nAddTime    =  nDays*n24Time.GetTime() ;
-            nAddTime    +=  n24Time-(const tools::Time&)pImp->nTime        ;
+            nAddTime    +=  n24Time-(const tools::Time&)pImpl->nTime        ;
             nAddTime    +=  aNow                    ;
         }
 
         lcl_add(editDuration, nAddTime);
     }
 
-    pImp->nTime = aNow;
+    pImpl->nTime = aNow;
     try {
         const sal_Int32 newSecs( (editDuration.Hours*3600)
             + (editDuration.Minutes*60) + editDuration.Seconds);
@@ -340,7 +340,7 @@ void SfxObjectShell::LoadStyles
         {
             pDest = &pMyPool->Make( pSource->GetName(),
                     pSource->GetFamily(), pSource->GetMask());
-            // Setting of Parents, the next style
+            // Setting of parents, the next style
         }
         pFound[nFound].pSource = pSource;
         pFound[nFound].pDest = pDest;
@@ -489,7 +489,7 @@ void SfxObjectShell::UpdateFromTemplate_Impl(  )
                 //xTemplDoc->SetBaseURL( aFoundName );
 
                 // TODO/LATER: make sure that we don't use binary templates!
-                SfxMedium aMedium( aFoundName, STREAM_STD_READ );
+                SfxMedium aMedium( aFoundName, StreamMode::STD_READ );
                 if ( xTemplDoc->LoadFrom( aMedium ) )
                 {
                     // transfer styles from xTemplDoc to this document
@@ -513,8 +513,8 @@ bool SfxObjectShell::IsHelpDocument() const
 
 void SfxObjectShell::ResetFromTemplate( const OUString& rTemplateName, const OUString& rFileName )
 {
-    // only care about reseting this data for openoffice formats otherwise
-    if ( IsOwnStorageFormat_Impl( *GetMedium())  )
+    // only care about resetting this data for LibreOffice formats otherwise
+    if ( IsOwnStorageFormat( *GetMedium())  )
     {
         uno::Reference<document::XDocumentProperties> xDocProps(getDocProperties());
         xDocProps->setTemplateURL( OUString() );
@@ -531,7 +531,7 @@ void SfxObjectShell::ResetFromTemplate( const OUString& rTemplateName, const OUS
             if( SfxGetpApp()->Get_Impl()->GetDocumentTemplates()->GetFull( OUString(), rTemplateName, aFoundName ) )
             {
                 INetURLObject aObj( rFileName );
-                xDocProps->setTemplateURL( aObj.GetMainURL(INetURLObject::DECODE_TO_IURI) );
+                xDocProps->setTemplateURL( aObj.GetMainURL(INetURLObject::DecodeMechanism::ToIUri) );
                 xDocProps->setTemplateName( rTemplateName );
 
                 ::DateTime now( ::DateTime::SYSTEM );
@@ -545,77 +545,77 @@ void SfxObjectShell::ResetFromTemplate( const OUString& rTemplateName, const OUS
 
 bool SfxObjectShell::IsQueryLoadTemplate() const
 {
-    return pImp->bQueryLoadTemplate;
+    return pImpl->bQueryLoadTemplate;
 }
 
 bool SfxObjectShell::IsUseUserData() const
 {
-    return pImp->bUseUserData;
+    return pImpl->bUseUserData;
 }
 
 bool SfxObjectShell::IsUseThumbnailSave() const
 {
-    return pImp->bUseThumbnailSave;
+    return pImpl->bUseThumbnailSave;
 }
 
 void SfxObjectShell::SetQueryLoadTemplate( bool bNew )
 {
-    if ( pImp->bQueryLoadTemplate != bNew )
+    if ( pImpl->bQueryLoadTemplate != bNew )
         SetModified();
-    pImp->bQueryLoadTemplate = bNew;
+    pImpl->bQueryLoadTemplate = bNew;
 }
 
 void SfxObjectShell::SetUseUserData( bool bNew )
 {
-    if ( pImp->bUseUserData != bNew )
+    if ( pImpl->bUseUserData != bNew )
         SetModified();
-    pImp->bUseUserData = bNew;
+    pImpl->bUseUserData = bNew;
 }
 
 void SfxObjectShell::SetUseThumbnailSave( bool _bNew )
 {
-    if ( pImp->bUseThumbnailSave != _bNew )
+    if ( pImpl->bUseThumbnailSave != _bNew )
         SetModified();
-    pImp->bUseThumbnailSave = _bNew;
+    pImpl->bUseThumbnailSave = _bNew;
 }
 
 bool SfxObjectShell::IsLoadReadonly() const
 {
-    return pImp->bLoadReadonly;
+    return pImpl->bLoadReadonly;
 }
 
 bool SfxObjectShell::IsSaveVersionOnClose() const
 {
-    return pImp->bSaveVersionOnClose;
+    return pImpl->bSaveVersionOnClose;
 }
 
 void SfxObjectShell::SetLoadReadonly( bool bNew )
 {
-    if ( pImp->bLoadReadonly != bNew )
+    if ( pImpl->bLoadReadonly != bNew )
         SetModified();
-    pImp->bLoadReadonly = bNew;
+    pImpl->bLoadReadonly = bNew;
 }
 
 void SfxObjectShell::SetSaveVersionOnClose( bool bNew )
 {
-    if ( pImp->bSaveVersionOnClose != bNew )
+    if ( pImpl->bSaveVersionOnClose != bNew )
         SetModified();
-    pImp->bSaveVersionOnClose = bNew;
+    pImpl->bSaveVersionOnClose = bNew;
 }
 
 sal_uInt32 SfxObjectShell::GetModifyPasswordHash() const
 {
-    return pImp->m_nModifyPasswordHash;
+    return pImpl->m_nModifyPasswordHash;
 }
 
 bool SfxObjectShell::SetModifyPasswordHash( sal_uInt32 nHash )
 {
     if ( ( !IsReadOnly() && !IsReadOnlyUI() )
-      || !(pImp->nFlagsInProgress & SfxLoadedFlags::MAINDOCUMENT ) )
+      || !(pImpl->nFlagsInProgress & SfxLoadedFlags::MAINDOCUMENT ) )
     {
         // the hash can be changed only in editable documents,
         // or during loading of document
-        pImp->m_nModifyPasswordHash = nHash;
+        pImpl->m_nModifyPasswordHash = nHash;
         return true;
     }
 
@@ -624,17 +624,17 @@ bool SfxObjectShell::SetModifyPasswordHash( sal_uInt32 nHash )
 
 const uno::Sequence< beans::PropertyValue >& SfxObjectShell::GetModifyPasswordInfo() const
 {
-    return pImp->m_aModifyPasswordInfo;
+    return pImpl->m_aModifyPasswordInfo;
 }
 
 bool SfxObjectShell::SetModifyPasswordInfo( const uno::Sequence< beans::PropertyValue >& aInfo )
 {
     if ( ( !IsReadOnly() && !IsReadOnlyUI() )
-      || !(pImp->nFlagsInProgress & SfxLoadedFlags::MAINDOCUMENT ) )
+      || !(pImpl->nFlagsInProgress & SfxLoadedFlags::MAINDOCUMENT ) )
     {
         // the hash can be changed only in editable documents,
         // or during loading of document
-        pImp->m_aModifyPasswordInfo = aInfo;
+        pImpl->m_aModifyPasswordInfo = aInfo;
         return true;
     }
 
@@ -643,17 +643,12 @@ bool SfxObjectShell::SetModifyPasswordInfo( const uno::Sequence< beans::Property
 
 void SfxObjectShell::SetModifyPasswordEntered( bool bEntered )
 {
-    pImp->m_bModifyPasswordEntered = bEntered;
+    pImpl->m_bModifyPasswordEntered = bEntered;
 }
 
 bool SfxObjectShell::IsModifyPasswordEntered()
 {
-    return pImp->m_bModifyPasswordEntered;
-}
-
-void SfxObjectShell::libreOfficeKitCallback(int /*nType*/, const char* /*pPayload*/) const
-{
-    SAL_INFO("sfx.tiledrendering", "SfxObjectShell::libreOfficeKitCallback interface not overridden for SfxObjectShell subclass typeId: " << typeid(*this).name());
+    return pImpl->m_bModifyPasswordEntered;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

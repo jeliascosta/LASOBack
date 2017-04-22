@@ -85,8 +85,8 @@ bool SvxColorValueSetData::WriteObject( tools::SvRef<SotStorageStream>& rxOStm, 
     return( rxOStm->GetError() == ERRCODE_NONE );
 }
 
-SvxColorValueSet_docking::SvxColorValueSet_docking( vcl::Window* _pParent, WinBits nWinStyle ) :
-    SvxColorValueSet( _pParent, nWinStyle ),
+SvxColorValueSet_docking::SvxColorValueSet_docking( vcl::Window* _pParent ) :
+    SvxColorValueSet( _pParent, WB_ITEMBORDER ),
     DragSourceHelper( this ),
     mbLeftButton(true)
 {
@@ -136,12 +136,6 @@ void SvxColorValueSet_docking::MouseButtonUp( const MouseEvent& rMEvt )
     SetNoSelection();
 }
 
-void SvxColorValueSet_docking::Command(const CommandEvent& rCEvt)
-{
-    // Basisklasse
-    SvxColorValueSet::Command(rCEvt);
-}
-
 void SvxColorValueSet_docking::StartDrag( sal_Int8 , const Point&  )
 {
     Application::PostUserEvent(LINK(this, SvxColorValueSet_docking, ExecDragHdl), nullptr, true);
@@ -166,7 +160,7 @@ void SvxColorValueSet_docking::DoDrag()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxColorValueSet_docking, ExecDragHdl, void*, void)
+IMPL_LINK_NOARG(SvxColorValueSet_docking, ExecDragHdl, void*, void)
 {
     // Als Link, damit asynchron ohne ImpMouseMoveMsg auf dem Stack auch die
     // Farbleiste geloescht werden darf
@@ -190,13 +184,13 @@ SvxColorDockingWindow::SvxColorDockingWindow
     nCount          ( 0 )
 {
     SetText(SVX_RESSTR(STR_COLORTABLE));
-    SetSizePixel(LogicToPixel(Size(150, 22), MapMode(MAP_APPFONT)));
+    SetSizePixel(LogicToPixel(Size(150, 22), MapMode(MapUnit::MapAppFont)));
     SetHelpId(HID_CTRL_COLOR);
 
     aColorSet->SetSelectHdl( LINK( this, SvxColorDockingWindow, SelectHdl ) );
     aColorSet->SetHelpId(HID_COLOR_CTL_COLORS);
-    aColorSet->SetPosSizePixel(LogicToPixel(Point(2, 2), MapMode(MAP_APPFONT)),
-                              LogicToPixel(Size(146, 18), MapMode(MAP_APPFONT)));
+    aColorSet->SetPosSizePixel(LogicToPixel(Point(2, 2), MapMode(MapUnit::MapAppFont)),
+                              LogicToPixel(Size(146, 18), MapMode(MapUnit::MapAppFont)));
 
     // Get the model from the view shell.  Using SfxObjectShell::Current()
     // is unreliable when called at the wrong times.
@@ -339,7 +333,7 @@ bool SvxColorDockingWindow::Close()
     return true;
 }
 
-IMPL_LINK_NOARG_TYPED(SvxColorDockingWindow, SelectHdl, ValueSet*, void)
+IMPL_LINK_NOARG(SvxColorDockingWindow, SelectHdl, ValueSet*, void)
 {
     SfxDispatcher* pDispatcher = GetBindings().GetDispatcher();
     sal_uInt16 nPos = aColorSet->GetSelectItemId();
@@ -500,7 +494,7 @@ void SvxColorDockingWindow::GetFocus()
     }
 }
 
-bool SvxColorDockingWindow::Notify( NotifyEvent& rNEvt )
+bool SvxColorDockingWindow::EventNotify( NotifyEvent& rNEvt )
 {
     bool bRet = false;
     if( ( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT ) )
@@ -516,7 +510,7 @@ bool SvxColorDockingWindow::Notify( NotifyEvent& rNEvt )
         }
     }
 
-    return bRet || SfxDockingWindow::Notify( rNEvt );
+    return bRet || SfxDockingWindow::EventNotify(rNEvt);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

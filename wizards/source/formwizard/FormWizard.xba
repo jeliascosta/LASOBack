@@ -22,7 +22,6 @@
 Public DocumentName as String
 Public FormPath as String
 Public WizardPath as String
-Public WebWizardPath as String
 Public WorkPath as String
 Public TempPath as String
 Public TexturePath as String
@@ -90,7 +89,6 @@ Dim SelList(0) as Integer
 Dim LocList() as String
 	SelList(0) = 0
 	BasicLibraries.LoadLibrary(&quot;Tools&quot;)
-	BasicLibraries.LoadLibrary(&quot;WebWizard&quot;)
 	bDebug = False
 	If Not bDebug Then
 		On Local Error GoTo WIZARDERROR
@@ -153,11 +151,11 @@ Dim LocList() as String
 						DlgFormDB.GetControl(&quot;lstTables&quot;).SelectItem(sContent, True)
 					Else
 						If CommandType = com.sun.star.sdb.CommandType.QUERY Then
-							SelIndex = IndexInArray(sContent, QueryNames()
+							SelIndex = IndexInArray(sContent, QueryNames())
 							DlgFormDB.GetControl(&quot;lstTables&quot;).SelectItemPos(SelIndex, True)
 						ElseIf CommandType = com.sun.star.sdb.CommandType.TABLE Then
-							SelIndex = IndexInArray(sContent, TableNames()
-							DlgFormDB.GetControl(&quot;lstTables&quot;).SelectItemPos(Ubound(QueryNames()+1 + SelIndex, True)
+							SelIndex = IndexInArray(sContent, TableNames())
+							DlgFormDB.GetControl(&quot;lstTables&quot;).SelectItemPos(Ubound(QueryNames()+1 + SelIndex, True))
 						End If
 					End If
 					CurCommandType = CommandType

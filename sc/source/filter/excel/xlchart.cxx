@@ -547,7 +547,7 @@ const XclChTypeInfo& XclChTypeInfoProvider::GetTypeInfoFromService( const OUStri
 
 // Property helpers ===========================================================
 
-XclChObjectTable::XclChObjectTable( Reference< XMultiServiceFactory > xFactory,
+XclChObjectTable::XclChObjectTable( Reference< XMultiServiceFactory > const & xFactory,
         const OUString& rServiceName, const OUString& rObjNameBase ) :
     mxFactory( xFactory ),
     maServiceName( rServiceName ),
@@ -1015,17 +1015,17 @@ void XclChPropSetHelper::WriteEscherProperties( ScfPropertySet& rPropSet,
 {
     if( rEscherFmt.mxItemSet )
     {
-        if( const XFillStyleItem* pStyleItem = static_cast< const XFillStyleItem* >( rEscherFmt.mxItemSet->GetItem( XATTR_FILLSTYLE, false ) ) )
+        if( const XFillStyleItem* pStyleItem = rEscherFmt.mxItemSet->GetItem<XFillStyleItem>( XATTR_FILLSTYLE, false ) )
         {
             switch( pStyleItem->GetValue() )
             {
                 case drawing::FillStyle_SOLID:
                     // #i84812# Excel 2007 writes Escher properties for solid fill
-                    if( const XFillColorItem* pColorItem = static_cast< const XFillColorItem* >( rEscherFmt.mxItemSet->GetItem( XATTR_FILLCOLOR, false ) ) )
+                    if( const XFillColorItem* pColorItem = rEscherFmt.mxItemSet->GetItem<XFillColorItem>( XATTR_FILLCOLOR, false ) )
                     {
                         namespace cssd = ::com::sun::star::drawing;
                         // get solid transparence too
-                        const XFillTransparenceItem* pTranspItem = static_cast< const XFillTransparenceItem* >( rEscherFmt.mxItemSet->GetItem( XATTR_FILLTRANSPARENCE, false ) );
+                        const XFillTransparenceItem* pTranspItem = rEscherFmt.mxItemSet->GetItem<XFillTransparenceItem>( XATTR_FILLTRANSPARENCE, false );
                         sal_uInt16 nTransp = pTranspItem ? pTranspItem->GetValue() : 0;
                         ScfPropSetHelper& rAreaHlp = GetAreaHelper( ePropMode );
                         rAreaHlp.InitializeWrite();
@@ -1034,7 +1034,7 @@ void XclChPropSetHelper::WriteEscherProperties( ScfPropertySet& rPropSet,
                     }
                 break;
                 case drawing::FillStyle_GRADIENT:
-                    if( const XFillGradientItem* pGradItem = static_cast< const XFillGradientItem* >( rEscherFmt.mxItemSet->GetItem( XATTR_FILLGRADIENT, false ) ) )
+                    if( const XFillGradientItem* pGradItem = rEscherFmt.mxItemSet->GetItem<XFillGradientItem>( XATTR_FILLGRADIENT, false ) )
                     {
                         Any aGradientAny;
                         if( pGradItem->QueryValue( aGradientAny, MID_FILLGRADIENT ) )
@@ -1052,7 +1052,7 @@ void XclChPropSetHelper::WriteEscherProperties( ScfPropertySet& rPropSet,
                     }
                 break;
                 case drawing::FillStyle_BITMAP:
-                    if( const XFillBitmapItem* pBmpItem = static_cast< const XFillBitmapItem* >( rEscherFmt.mxItemSet->GetItem( XATTR_FILLBITMAP, false ) ) )
+                    if( const XFillBitmapItem* pBmpItem = rEscherFmt.mxItemSet->GetItem<XFillBitmapItem>( XATTR_FILLBITMAP, false ) )
                     {
                         Any aBitmapAny;
                         if( pBmpItem->QueryValue( aBitmapAny, MID_GRAFURL ) )
@@ -1237,7 +1237,7 @@ XclChRootData::~XclChRootData()
 {
 }
 
-void XclChRootData::InitConversion( const XclRoot& rRoot, const Reference< XChartDocument >& rxChartDoc, const Rectangle& rChartRect )
+void XclChRootData::InitConversion( const XclRoot& rRoot, const Reference< XChartDocument >& rxChartDoc, const tools::Rectangle& rChartRect )
 {
     // remember chart document reference and chart shape position/size
     OSL_ENSURE( rxChartDoc.is(), "XclChRootData::InitConversion - missing chart document" );

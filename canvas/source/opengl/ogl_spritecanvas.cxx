@@ -62,7 +62,7 @@ namespace oglcanvas
 
         uno::Reference< awt::XWindow > xParentWindow;
         maArguments[4] >>= xParentWindow;
-        vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+        VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
         if( !pParentWindow )
             throw lang::NoSupportException(
                 "Parent window not VCL window, or canvas out-of-process!", nullptr);
@@ -88,7 +88,7 @@ namespace oglcanvas
         SpriteCanvasBaseT::disposeThis();
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::showBuffer( sal_Bool bUpdateAll ) throw (uno::RuntimeException, std::exception)
+    sal_Bool SAL_CALL SpriteCanvas::showBuffer( sal_Bool bUpdateAll )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -98,7 +98,7 @@ namespace oglcanvas
         return mbIsVisible && SpriteCanvasBaseT::showBuffer( bUpdateAll );
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::switchBuffer( sal_Bool bUpdateAll ) throw (uno::RuntimeException, std::exception)
+    sal_Bool SAL_CALL SpriteCanvas::switchBuffer( sal_Bool bUpdateAll )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -109,44 +109,38 @@ namespace oglcanvas
     }
 
     uno::Reference< rendering::XAnimatedSprite > SAL_CALL SpriteCanvas::createSpriteFromAnimation(
-        const uno::Reference< rendering::XAnimation >& /*animation*/ ) throw (lang::IllegalArgumentException,
-                                                                              uno::RuntimeException, std::exception)
+        const uno::Reference< rendering::XAnimation >& /*animation*/ )
     {
         return uno::Reference< rendering::XAnimatedSprite >();
     }
 
     uno::Reference< rendering::XAnimatedSprite > SAL_CALL SpriteCanvas::createSpriteFromBitmaps(
         const uno::Sequence< uno::Reference< rendering::XBitmap > >& /*animationBitmaps*/,
-        ::sal_Int8 /*interpolationMode*/ ) throw (lang::IllegalArgumentException,
-                                                  rendering::VolatileContentDestroyedException,
-                                                  uno::RuntimeException, std::exception)
+        ::sal_Int8 /*interpolationMode*/ )
     {
         return uno::Reference< rendering::XAnimatedSprite >();
     }
 
     uno::Reference< rendering::XCustomSprite > SAL_CALL SpriteCanvas::createCustomSprite(
-        const geometry::RealSize2D& spriteSize ) throw (lang::IllegalArgumentException,
-                                                        uno::RuntimeException, std::exception)
+        const geometry::RealSize2D& spriteSize )
     {
         return uno::Reference< rendering::XCustomSprite >(
             new CanvasCustomSprite(spriteSize, this, maDeviceHelper) );
     }
 
     uno::Reference< rendering::XSprite > SAL_CALL SpriteCanvas::createClonedSprite(
-        const uno::Reference< rendering::XSprite >& /*original*/ ) throw (lang::IllegalArgumentException,
-                                                                          uno::RuntimeException, std::exception)
+        const uno::Reference< rendering::XSprite >& /*original*/ )
     {
         return uno::Reference< rendering::XSprite >();
     }
 
     sal_Bool SAL_CALL SpriteCanvas::updateScreen(sal_Bool bUpdateAll)
-        throw (uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         return maDeviceHelper.showBuffer(mbIsVisible, bUpdateAll);
     }
 
-    ::rtl::OUString SAL_CALL SpriteCanvas::getServiceName(  ) throw (uno::RuntimeException, std::exception)
+    ::rtl::OUString SAL_CALL SpriteCanvas::getServiceName(  )
     {
         return ::rtl::OUString( SPRITECANVAS_SERVICE_NAME );
     }
@@ -175,7 +169,7 @@ namespace oglcanvas
         return xRet;
     }
 
-    sdecl::class_<SpriteCanvas, sdecl::with_args<true> > serviceImpl(&initCanvas);
+    sdecl::class_<SpriteCanvas, sdecl::with_args<true> > const serviceImpl(&initCanvas);
     const sdecl::ServiceDecl oglSpriteCanvasDecl(
         serviceImpl,
         SPRITECANVAS_IMPLEMENTATION_NAME,

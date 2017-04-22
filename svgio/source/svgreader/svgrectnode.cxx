@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svgrectnode.hxx>
+#include <svgrectnode.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 
@@ -42,7 +42,6 @@ namespace svgio
 
         SvgRectNode::~SvgRectNode()
         {
-            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgRectNode::getSvgStyleAttributes() const
@@ -72,7 +71,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setX(aNum);
+                        maX = aNum;
                     }
                     break;
                 }
@@ -82,7 +81,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setY(aNum);
+                        maY = aNum;
                     }
                     break;
                 }
@@ -94,7 +93,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setWidth(aNum);
+                            maWidth = aNum;
                         }
                     }
                     break;
@@ -107,7 +106,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setHeight(aNum);
+                            maHeight = aNum;
                         }
                     }
                     break;
@@ -120,7 +119,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setRx(aNum);
+                            maRx = aNum;
                         }
                     }
                     break;
@@ -133,7 +132,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setRy(aNum);
+                            maRy = aNum;
                         }
                     }
                     break;

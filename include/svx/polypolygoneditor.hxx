@@ -34,7 +34,7 @@ namespace sdr
 class SVX_DLLPUBLIC PolyPolygonEditor
 {
 public:
-    PolyPolygonEditor( const basegfx::B2DPolyPolygon& rPolyPolygon, bool bClosed );
+    PolyPolygonEditor( const basegfx::B2DPolyPolygon& rPolyPolygon);
 
     const basegfx::B2DPolyPolygon& GetPolyPolygon() const { return maPolyPolygon; }
 
@@ -51,14 +51,13 @@ public:
     */
     bool SetPointsSmooth( basegfx::B2VectorContinuity eFlags, const std::set< sal_uInt16 >& rAbsPoints);
 
-    /** Outputs the relative position ( polygon number and point number in that polygon ) from the absolut point number.
+    /** Outputs the relative position ( polygon number and point number in that polygon ) from the absolute point number.
         False is returned if the given absolute point is greater not inside this B2DPolyPolygon
     */
     static bool GetRelativePolyPoint( const basegfx::B2DPolyPolygon& rPoly, sal_uInt32 nAbsPnt, sal_uInt32& rPolyNum, sal_uInt32& rPointNum );
 
 private:
     basegfx::B2DPolyPolygon maPolyPolygon;
-    bool mbIsClosed;
 };
 
 }

@@ -24,7 +24,6 @@
 #include "LinePropertiesHelper.hxx"
 #include "UserDefinedProperties.hxx"
 #include "PropertyHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "CloneHelper.hxx"
 #include "AxisHelper.hxx"
 #include "EventListenerHelper.hxx"
@@ -59,8 +58,6 @@ using ::osl::MutexGuard;
 namespace
 {
 
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart2.Axis";
-
 enum
 {
     PROP_AXIS_SHOW,
@@ -88,7 +85,7 @@ enum
 };
 
 void lcl_AddPropertiesToVector(
-    ::std::vector< Property > & rOutProperties )
+    std::vector< Property > & rOutProperties )
 {
     rOutProperties.push_back(
         Property( "Show",
@@ -276,13 +273,13 @@ struct StaticAxisInfoHelper_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        ::std::vector< css::beans::Property > aProperties;
+        std::vector< css::beans::Property > aProperties;
         lcl_AddPropertiesToVector( aProperties );
         ::chart::CharacterProperties::AddPropertiesToVector( aProperties );
         ::chart::LinePropertiesHelper::AddPropertiesToVector( aProperties );
         ::chart::UserDefinedProperties::AddPropertiesToVector( aProperties );
 
-        ::std::sort( aProperties.begin(), aProperties.end(),
+        std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -353,7 +350,7 @@ Axis::Axis( Reference< uno::XComponentContext > const & /* xContext */ ) :
 {
     osl_atomic_increment(&m_refCount);
     setFastPropertyValue_NoBroadcast(
-        ::chart::LinePropertiesHelper::PROP_LINE_COLOR, uno::makeAny( static_cast< sal_Int32 >( 0xb3b3b3 ) ) );  // gray30
+        ::chart::LinePropertiesHelper::PROP_LINE_COLOR, uno::Any( static_cast< sal_Int32 >( 0xb3b3b3 ) ) );  // gray30
 
     if( m_xGrid.is())
         ModifyListenerHelper::addListener( m_xGrid, m_xModifyEventForwarder );
@@ -462,7 +459,6 @@ void Axis::AllocateSubGrids()
 
 // ____ XAxis ____
 void SAL_CALL Axis::setScaleData( const chart2::ScaleData& rScaleData )
-    throw (uno::RuntimeException, std::exception)
 {
     Reference< util::XModifyListener > xModifyEventForwarder;
     Reference< lang::XEventListener > xEventListener;
@@ -492,27 +488,23 @@ void SAL_CALL Axis::setScaleData( const chart2::ScaleData& rScaleData )
 }
 
 chart2::ScaleData SAL_CALL Axis::getScaleData()
-    throw (uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( m_aMutex );
     return m_aScaleData;
 }
 
 Reference< beans::XPropertySet > SAL_CALL Axis::getGridProperties()
-    throw (uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( m_aMutex );
     return m_xGrid;
 }
 Sequence< Reference< beans::XPropertySet > > SAL_CALL Axis::getSubGridProperties()
-    throw (uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( m_aMutex );
     return m_aSubGridProperties;
 }
 
 Sequence< Reference< beans::XPropertySet > > SAL_CALL Axis::getSubTickProperties()
-    throw (uno::RuntimeException, std::exception)
 {
     OSL_FAIL( "Not implemented yet" );
     return Sequence< Reference< beans::XPropertySet > >();
@@ -520,14 +512,12 @@ Sequence< Reference< beans::XPropertySet > > SAL_CALL Axis::getSubTickProperties
 
 // ____ XTitled ____
 Reference< chart2::XTitle > SAL_CALL Axis::getTitleObject()
-    throw (uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( GetMutex() );
     return m_xTitle;
 }
 
 void SAL_CALL Axis::setTitleObject( const Reference< chart2::XTitle >& xNewTitle )
-    throw (uno::RuntimeException, std::exception)
 {
     Reference< util::XModifyListener > xModifyEventForwarder;
     Reference< chart2::XTitle > xOldTitle;
@@ -548,7 +538,6 @@ void SAL_CALL Axis::setTitleObject( const Reference< chart2::XTitle >& xNewTitle
 
 // ____ XCloneable ____
 Reference< util::XCloneable > SAL_CALL Axis::createClone()
-    throw (uno::RuntimeException, std::exception)
 {
     Axis * pNewAxis( new Axis( *this ));
     // hold a reference to the clone
@@ -560,7 +549,6 @@ Reference< util::XCloneable > SAL_CALL Axis::createClone()
 
 // ____ XModifyBroadcaster ____
 void SAL_CALL Axis::addModifyListener( const Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -574,7 +562,6 @@ void SAL_CALL Axis::addModifyListener( const Reference< util::XModifyListener >&
 }
 
 void SAL_CALL Axis::removeModifyListener( const Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -589,14 +576,12 @@ void SAL_CALL Axis::removeModifyListener( const Reference< util::XModifyListener
 
 // ____ XModifyListener ____
 void SAL_CALL Axis::modified( const lang::EventObject& aEvent )
-    throw (uno::RuntimeException, std::exception)
 {
     m_xModifyEventForwarder->modified( aEvent );
 }
 
 // ____ XEventListener (base of XModifyListener) ____
 void SAL_CALL Axis::disposing( const lang::EventObject& Source )
-    throw (uno::RuntimeException, std::exception)
 {
     if( Source.Source == m_aScaleData.Categories )
         m_aScaleData.Categories = nullptr;
@@ -615,7 +600,6 @@ void Axis::fireModifyEvent()
 
 // ____ OPropertySet ____
 uno::Any Axis::GetDefaultValue( sal_Int32 nHandle ) const
-    throw (beans::UnknownPropertyException, uno::RuntimeException)
 {
     const tPropertyValueMap& rStaticDefaults = *StaticAxisDefaults::get();
     tPropertyValueMap::const_iterator aFound( rStaticDefaults.find( nHandle ) );
@@ -631,17 +615,8 @@ uno::Any Axis::GetDefaultValue( sal_Int32 nHandle ) const
 
 // ____ XPropertySet ____
 Reference< beans::XPropertySetInfo > SAL_CALL Axis::getPropertySetInfo()
-    throw (uno::RuntimeException, std::exception)
 {
     return *StaticAxisInfo::get();
-}
-
-Sequence< OUString > Axis::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 2 );
-    aServices[ 0 ] = "com.sun.star.chart2.Axis";
-    aServices[ 1 ] = "com.sun.star.beans.PropertySet";
-    return aServices;
 }
 
 using impl::Axis_Base;
@@ -651,26 +626,20 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2( Axis, Axis_Base, ::property::OPropertySet )
 
 // implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL Axis::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString Axis::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart2.Axis");
 }
 
 sal_Bool SAL_CALL Axis::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL Axis::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart2.Axis",
+        "com.sun.star.beans.PropertySet" };
 }
 
 } //  namespace chart

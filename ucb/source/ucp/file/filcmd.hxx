@@ -30,7 +30,7 @@ namespace fileaccess {
 
 
     // forward
-    class shell;
+    class TaskManager;
 
 
     class XCommandInfo_impl
@@ -39,59 +39,43 @@ namespace fileaccess {
     {
     public:
 
-        explicit XCommandInfo_impl( shell* pMyShell );
+        explicit XCommandInfo_impl( TaskManager* pMyShell );
 
-        virtual ~XCommandInfo_impl();
+        virtual ~XCommandInfo_impl() override;
 
         // XInterface
         virtual css::uno::Any SAL_CALL
-        queryInterface(
-            const css::uno::Type& aType )
-            throw( css::uno::RuntimeException, std::exception) override;
+        queryInterface( const css::uno::Type& aType ) override;
 
         virtual void SAL_CALL
-        acquire(
-            void )
+        acquire()
             throw() override;
 
         virtual void SAL_CALL
-        release(
-            void )
+        release()
             throw() override;
 
         // XCommandInfo
 
         virtual css::uno::Sequence< css::ucb::CommandInfo > SAL_CALL
-        getCommands(
-            void )
-            throw( css::uno::RuntimeException, std::exception) override;
+        getCommands() override;
 
         virtual css::ucb::CommandInfo SAL_CALL
-        getCommandInfoByName(
-            const OUString& Name )
-            throw( css::ucb::UnsupportedCommandException,
-                   css::uno::RuntimeException, std::exception) override;
+        getCommandInfoByName( const OUString& Name ) override;
 
         virtual css::ucb::CommandInfo SAL_CALL
-        getCommandInfoByHandle(
-            sal_Int32 Handle )
-            throw( css::ucb::UnsupportedCommandException,
-                   css::uno::RuntimeException, std::exception ) override;
+        getCommandInfoByHandle( sal_Int32 Handle ) override;
 
         virtual sal_Bool SAL_CALL
-        hasCommandByName(
-            const OUString& Name )
-            throw( css::uno::RuntimeException, std::exception ) override;
+        hasCommandByName( const OUString& Name ) override;
 
         virtual sal_Bool SAL_CALL
-        hasCommandByHandle(
-            sal_Int32 Handle )
-            throw( css::uno::RuntimeException, std::exception ) override;
+        hasCommandByHandle( sal_Int32 Handle ) override;
 
 
     private:
 
-        shell*                                            m_pMyShell;
+        TaskManager*                                            m_pMyShell;
     };
 
 }

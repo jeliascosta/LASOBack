@@ -22,15 +22,15 @@ class OGLManager : public ::cppu::WeakImplHelper< css::media::XManager, css::lan
 public:
 
     explicit OGLManager();
-    virtual ~OGLManager();
+    virtual ~OGLManager() override;
 
     // XManager
-    virtual css::uno::Reference< css::media::XPlayer > SAL_CALL createPlayer( const OUString& rURL ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::media::XPlayer > SAL_CALL createPlayer( const OUString& rURL ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 private:
 
 };

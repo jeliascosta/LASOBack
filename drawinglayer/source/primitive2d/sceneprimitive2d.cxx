@@ -52,8 +52,8 @@ namespace
             sal_uInt8 nInitAlpha(255);
             Bitmap aContent(aDestSize, 24);
             AlphaMask aAlpha(aDestSize, &nInitAlpha);
-            BitmapWriteAccess* pContent = aContent.AcquireWriteAccess();
-            BitmapWriteAccess* pAlpha = aAlpha.AcquireWriteAccess();
+            Bitmap::ScopedWriteAccess pContent(aContent);
+            AlphaMask::ScopedWriteAccess pAlpha(aAlpha);
 
             if (pContent && pAlpha)
             {
@@ -118,13 +118,13 @@ namespace
                 }
             }
 
-            aAlpha.ReleaseAccess(pAlpha);
-            Bitmap::ReleaseAccess(pContent);
+            pAlpha.reset();
+            pContent.reset();
 
             aRetval = BitmapEx(aContent, aAlpha);
 
             // #i101811# set PrefMapMode and PrefSize at newly created Bitmap
-            aRetval.SetPrefMapMode(MAP_PIXEL);
+            aRetval.SetPrefMapMode(MapUnit::MapPixel);
             aRetval.SetPrefSize(Size(nWidth, nHeight));
         }
 
@@ -221,10 +221,8 @@ namespace drawinglayer
             }
         }
 
-        Primitive2DContainer ScenePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void ScenePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
         {
-            Primitive2DContainer aRetval;
-
             // create 2D shadows from contained 3D primitives. This creates the shadow primitives on demand and tells if
             // there are some or not. Do this at start, the shadow might still be visible even when the scene is not
             if(impGetShadow3D(rViewInformation))
@@ -237,7 +235,7 @@ namespace drawinglayer
                 if(aViewRange.isEmpty() || aShadow2DRange.overlaps(aViewRange))
                 {
                     // add extracted 2d shadows (before 3d scene creations itself)
-                    aRetval = maShadowPrimitives;
+                    rContainer.insert(rContainer.end(), maShadowPrimitives.begin(), maShadowPrimitives.end());
                 }
             }
 
@@ -363,8 +361,8 @@ namespace drawinglayer
                 const double fFullViewSizeY((rViewInformation.getObjectToViewTransformation() * basegfx::B2DVector(0.0, fLogicY)).getLength());
 
                 // generate RasterWidth and RasterHeight for visible part
-                const sal_Int32 nRasterWidth((sal_Int32)basegfx::fround(fFullViewSizeX * aUnitVisibleRange.getWidth()) + 1);
-                const sal_Int32 nRasterHeight((sal_Int32)basegfx::fround(fFullViewSizeY * aUnitVisibleRange.getHeight()) + 1);
+                const sal_Int32 nRasterWidth(basegfx::fround(fFullViewSizeX * aUnitVisibleRange.getWidth()) + 1);
+                const sal_Int32 nRasterHeight(basegfx::fround(fFullViewSizeY * aUnitVisibleRange.getHeight()) + 1);
 
                 if(nRasterWidth && nRasterHeight)
                 {
@@ -400,9 +398,11 @@ namespace drawinglayer
 
                         public:
                             explicit Executor(
+                                std::shared_ptr<comphelper::ThreadTaskTag>& rTag,
                                 processor3d::ZBufferProcessor3D* pZBufferProcessor3D,
                                 const primitive3d::Primitive3DContainer& rChildren3D)
-                            :   mpZBufferProcessor3D(pZBufferProcessor3D),
+                            :   comphelper::ThreadTask(rTag),
+                                mpZBufferProcessor3D(pZBufferProcessor3D),
                                 mrChildren3D(rChildren3D)
                             {
                             }
@@ -417,6 +417,7 @@ namespace drawinglayer
 
                         std::vector< processor3d::ZBufferProcessor3D* > aProcessors;
                         const sal_uInt32 nLinesPerThread(aBZPixelRaster.getHeight() / nThreadCount);
+                        std::shared_ptr<comphelper::ThreadTaskTag> aTag = comphelper::ThreadPool::createThreadTaskTag();
 
                         for(sal_Int32 a(0); a < nThreadCount; a++)
                         {
@@ -432,11 +433,11 @@ namespace drawinglayer
                                 nLinesPerThread * a,
                                 a + 1 == nThreadCount ? aBZPixelRaster.getHeight() : nLinesPerThread * (a + 1));
                             aProcessors.push_back(pNewZBufferProcessor3D);
-                            Executor* pExecutor = new Executor(pNewZBufferProcessor3D, getChildren3D());
+                            Executor* pExecutor = new Executor(aTag, pNewZBufferProcessor3D, getChildren3D());
                             rThreadPool.pushTask(pExecutor);
                         }
 
-                        rThreadPool.waitUntilEmpty();
+                        rThreadPool.waitUntilDone(aTag);
                     }
                     else
                     {
@@ -474,8 +475,7 @@ namespace drawinglayer
                         aNew2DTransform *= aInverseOToV;
 
                         // create bitmap primitive and add
-                        const Primitive2DReference xRef(new BitmapPrimitive2D(maOldRenderedBitmap, aNew2DTransform));
-                        aRetval.push_back(xRef);
+                        rContainer.push_back(new BitmapPrimitive2D(maOldRenderedBitmap, aNew2DTransform));
 
                         // test: Allow to add an outline in the debugger when tests are needed
                         static bool bAddOutlineToCreated3DSceneRepresentation(false);
@@ -484,14 +484,11 @@ namespace drawinglayer
                         {
                             basegfx::B2DPolygon aOutline(basegfx::tools::createUnitPolygon());
                             aOutline.transform(aNew2DTransform);
-                            const Primitive2DReference xRef2(new PolygonHairlinePrimitive2D(aOutline, basegfx::BColor(1.0, 0.0, 0.0)));
-                            aRetval.push_back(xRef2);
+                            rContainer.push_back(new PolygonHairlinePrimitive2D(aOutline, basegfx::BColor(1.0, 0.0, 0.0)));
                         }
                     }
                 }
             }
-
-            return aRetval;
         }
 
         Primitive2DContainer ScenePrimitive2D::getGeometry2D() const
@@ -635,7 +632,7 @@ namespace drawinglayer
             return aRetval;
         }
 
-        Primitive2DContainer ScenePrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void ScenePrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
         {
             ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -692,7 +689,7 @@ namespace drawinglayer
             }
 
             // use parent implementation
-            return BufferedDecompositionPrimitive2D::get2DDecomposition(rViewInformation);
+            BufferedDecompositionPrimitive2D::get2DDecomposition(rVisitor, rViewInformation);
         }
 
         // provide unique ID

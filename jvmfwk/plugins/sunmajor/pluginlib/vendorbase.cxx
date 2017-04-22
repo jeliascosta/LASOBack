@@ -59,30 +59,27 @@ bool VendorBase::initialize(vector<pair<OUString, OUString> > props)
     //javax.accessibility.assistive_technologies from system properties
 
     typedef vector<pair<OUString, OUString> >::const_iterator it_prop;
-    OUString sVendorProperty("java.vendor");
-    OUString sVersionProperty("java.version");
-    OUString sHomeProperty("java.home");
-    OUString sAccessProperty("javax.accessibility.assistive_technologies");
 
     bool bVersion = false;
     bool bVendor = false;
     bool bHome = false;
     bool bAccess = false;
+    bool bArch = false;
 
     typedef vector<pair<OUString, OUString> >::const_iterator it_prop;
     for (it_prop i = props.begin(); i != props.end(); ++i)
     {
-        if(! bVendor && sVendorProperty.equals(i->first))
+        if(! bVendor && i->first == "java.vendor")
         {
             m_sVendor = i->second;
             bVendor = true;
         }
-        else if (!bVersion && sVersionProperty.equals(i->first))
+        else if (!bVersion && i->first == "java.version")
         {
             m_sVersion = i->second;
             bVersion = true;
         }
-        else if (!bHome && sHomeProperty.equals(i->first))
+        else if (!bHome && i->first == "java.home")
         {
 #ifndef JVM_ONE_PATH_CHECK
            OUString fileURL;
@@ -103,7 +100,13 @@ bool VendorBase::initialize(vector<pair<OUString, OUString> > props)
            bHome = true;
 #endif
         }
-        else if (!bAccess && sAccessProperty.equals(i->first))
+        else if (!bArch && i->first == "os.arch")
+        {
+            m_sArch = i->second;
+            bArch = true;
+        }
+        else if (!bAccess
+                 && i->first == "javax.accessibility.assistive_technologies")
         {
             if (!i->second.isEmpty())
             {
@@ -115,7 +118,7 @@ bool VendorBase::initialize(vector<pair<OUString, OUString> > props)
         //must search through all properties.
 
     }
-    if (!bVersion || !bVendor || !bHome)
+    if (!bVersion || !bVendor || !bHome || !bArch)
         return false;
 
     // init m_sRuntimeLibrary
@@ -201,6 +204,23 @@ const OUString & VendorBase::getRuntimeLibrary() const
 {
     return m_sRuntimeLibrary;
 }
+
+bool VendorBase::isValidArch() const
+{
+    // Warning: These values come from the "os.arch" property.
+    // It is not defined what the exact values are.
+    // Oracle JRE 8 has "x86" and "amd64", the others were found at http://lopica.sourceforge.net/os.html .
+    // There might still be missing some options; we need to extend the check once we find out.
+#if defined _WIN64
+    return m_sArch == "amd64" || m_sArch == "x86_64";
+#elif defined _WIN32
+    return m_sArch == "x86" || m_sArch == "i386" || m_sArch == "i686";
+#else
+    (void)this;
+    return true;
+#endif
+}
+
 bool VendorBase::supportsAccessibility() const
 {
     return m_bAccessibility;

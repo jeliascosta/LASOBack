@@ -39,8 +39,8 @@ class XclImpName : protected XclImpRoot
     {
         XclImpStream& mrStrm;
         XclImpStreamPos maStrmPos;
-        sal_Size mnStrmPos;
-        sal_Size mnStrmSize;
+        std::size_t mnStrmPos;
+        std::size_t mnStrmSize;
 
         TokenStrmData( XclImpStream& rStrm );
     };
@@ -51,12 +51,12 @@ public:
 
     explicit            XclImpName( XclImpStream& rStrm, sal_uInt16 nXclNameIdx );
 
-    inline const OUString& GetXclName() const { return maXclName; }
-    inline const OUString& GetScName() const { return maScName; }
-    inline SCTAB        GetScTab() const { return mnScTab; }
-    inline const ScRangeData* GetScRangeData() const { return mpScData; }
-    inline bool         IsGlobal() const { return mnScTab == SCTAB_MAX; }
-    inline bool         IsVBName() const { return mbVBName; }
+    const OUString& GetXclName() const { return maXclName; }
+    const OUString& GetScName() const { return maScName; }
+    SCTAB        GetScTab() const { return mnScTab; }
+    const ScRangeData* GetScRangeData() const { return mpScData; }
+    bool         IsGlobal() const { return mnScTab == SCTAB_MAX; }
+    bool         IsVBName() const { return mbVBName; }
     bool IsMacro() const { return mbMacro; }
     void ConvertTokens();
 
@@ -94,7 +94,7 @@ public:
         @param nScTab  The sheet index for local names or SCTAB_MAX for global names.
         If no local name is found, tries to find a matching global name.
         @return  Pointer to the defined name or 0 on error. */
-    const XclImpName*   FindName( const OUString& rXclName, SCTAB nScTab = SCTAB_MAX ) const;
+    const XclImpName*   FindName( const OUString& rXclName, SCTAB nScTab ) const;
 
     /** Returns the defined name specified by its Excel index.
         @param nXclNameIdx  The index of the internal defined name.

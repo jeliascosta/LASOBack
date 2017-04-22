@@ -131,13 +131,11 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER3( ScAccessibleCell, ScAccessibleCellBase, Access
 
 uno::Reference< XAccessible > SAL_CALL ScAccessibleCell::getAccessibleAtPoint(
         const awt::Point& rPoint )
-        throw (uno::RuntimeException, std::exception)
 {
     return AccessibleStaticTextBase::getAccessibleAtPoint(rPoint);
 }
 
 void SAL_CALL ScAccessibleCell::grabFocus(  )
-        throw (uno::RuntimeException, std::exception)
 {
      SolarMutexGuard aGuard;
     IsObjectValid();
@@ -152,16 +150,15 @@ void SAL_CALL ScAccessibleCell::grabFocus(  )
     }
 }
 
-Rectangle ScAccessibleCell::GetBoundingBoxOnScreen() const
-        throw (uno::RuntimeException, std::exception)
+tools::Rectangle ScAccessibleCell::GetBoundingBoxOnScreen() const
 {
-    Rectangle aCellRect(GetBoundingBox());
+    tools::Rectangle aCellRect(GetBoundingBox());
     if (mpViewShell)
     {
         vcl::Window* pWindow = mpViewShell->GetWindowByPos(meSplitPos);
         if (pWindow)
         {
-            Rectangle aRect = pWindow->GetWindowExtentsRelative(nullptr);
+            tools::Rectangle aRect = pWindow->GetWindowExtentsRelative(nullptr);
             aCellRect.setX(aCellRect.getX() + aRect.getX());
             aCellRect.setY(aCellRect.getY() + aRect.getY());
         }
@@ -169,10 +166,9 @@ Rectangle ScAccessibleCell::GetBoundingBoxOnScreen() const
     return aCellRect;
 }
 
-Rectangle ScAccessibleCell::GetBoundingBox() const
-        throw (uno::RuntimeException, std::exception)
+tools::Rectangle ScAccessibleCell::GetBoundingBox() const
 {
-    Rectangle aCellRect;
+    tools::Rectangle aCellRect;
     if (mpViewShell)
     {
         long nSizeX, nSizeY;
@@ -184,7 +180,7 @@ Rectangle ScAccessibleCell::GetBoundingBox() const
         vcl::Window* pWindow = mpViewShell->GetWindowByPos(meSplitPos);
         if (pWindow)
         {
-            Rectangle aRect(pWindow->GetWindowExtentsRelative(pWindow->GetAccessibleParentWindow()));
+            tools::Rectangle aRect(pWindow->GetWindowExtentsRelative(pWindow->GetAccessibleParentWindow()));
             aRect.Move(-aRect.Left(), -aRect.Top());
             aCellRect = aRect.Intersection(aCellRect);
         }
@@ -200,7 +196,7 @@ Rectangle ScAccessibleCell::GetBoundingBox() const
                 mpDoc->GetAttr( maCellAddress.Col(), maCellAddress.Row(), maCellAddress.Tab(), ATTR_ROTATE_VALUE ) );
             if( pItem && (pItem->GetValue() != 0) )
             {
-                Rectangle aParaRect = GetParagraphBoundingBox();
+                tools::Rectangle aParaRect = GetParagraphBoundingBox();
                 if( !aParaRect.IsEmpty() && (aCellRect.GetWidth() < aParaRect.GetWidth()) )
                     aCellRect.SetSize( Size( aParaRect.GetWidth(), aCellRect.GetHeight() ) );
             }
@@ -215,22 +211,18 @@ Rectangle ScAccessibleCell::GetBoundingBox() const
 
 sal_Int32 SAL_CALL
     ScAccessibleCell::getAccessibleChildCount()
-                    throw (uno::RuntimeException, std::exception)
 {
     return AccessibleStaticTextBase::getAccessibleChildCount();
 }
 
 uno::Reference< XAccessible > SAL_CALL
     ScAccessibleCell::getAccessibleChild(sal_Int32 nIndex)
-        throw (uno::RuntimeException,
-        lang::IndexOutOfBoundsException, std::exception)
 {
     return AccessibleStaticTextBase::getAccessibleChild(nIndex);
 }
 
 uno::Reference<XAccessibleStateSet> SAL_CALL
     ScAccessibleCell::getAccessibleStateSet()
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<XAccessibleStateSet> xParentStates;
@@ -286,7 +278,6 @@ uno::Reference<XAccessibleStateSet> SAL_CALL
 
 uno::Reference<XAccessibleRelationSet> SAL_CALL
        ScAccessibleCell::getAccessibleRelationSet()
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -295,7 +286,7 @@ uno::Reference<XAccessibleRelationSet> SAL_CALL
         pRelationSet = mpAccDoc->GetRelationSet(&maCellAddress);
     if (!pRelationSet)
         pRelationSet = new utl::AccessibleRelationSetHelper();
-    FillDependends(pRelationSet);
+    FillDependents(pRelationSet);
     FillPrecedents(pRelationSet);
     return pRelationSet;
 }
@@ -303,14 +294,12 @@ uno::Reference<XAccessibleRelationSet> SAL_CALL
     //=====  XServiceInfo  ====================================================
 
 OUString SAL_CALL ScAccessibleCell::getImplementationName()
-        throw (uno::RuntimeException, std::exception)
 {
     return OUString("ScAccessibleCell");
 }
 
 uno::Sequence< OUString> SAL_CALL
     ScAccessibleCell::getSupportedServiceNames()
-        throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString > aSequence = ScAccessibleContextBase::getSupportedServiceNames();
     sal_Int32 nOldSize(aSequence.getLength());
@@ -403,7 +392,7 @@ ScDocument* ScAccessibleCell::GetDocument(ScTabViewShell* pViewShell)
     return pEditSource;
 }
 
-void ScAccessibleCell::FillDependends(utl::AccessibleRelationSetHelper* pRelationSet)
+void ScAccessibleCell::FillDependents(utl::AccessibleRelationSetHelper* pRelationSet)
 {
     if (mpDoc)
     {
@@ -509,9 +498,6 @@ static OUString ReplaceFourChar(const OUString& oldOUString)
 }
 
 uno::Any SAL_CALL ScAccessibleCell::getExtendedAttributes()
-    throw (css::lang::IndexOutOfBoundsException,
-           css::uno::RuntimeException,
-           std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -543,7 +529,7 @@ uno::Any SAL_CALL ScAccessibleCell::getExtendedAttributes()
 }
 
 // cell has its own ParaIndent property, so when calling character attributes on cell, the ParaIndent should replace the ParaLeftMargin if its value is not zero.
-uno::Sequence< beans::PropertyValue > SAL_CALL ScAccessibleCell::getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& aRequestedAttributes ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
+uno::Sequence< beans::PropertyValue > SAL_CALL ScAccessibleCell::getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& aRequestedAttributes )
 {
     SolarMutexGuard aGuard;
 
@@ -558,7 +544,7 @@ uno::Sequence< beans::PropertyValue > SAL_CALL ScAccessibleCell::getCharacterAtt
         {
             if (sLeftMarginName == pAttribs[i].Name)
             {
-                pAttribs[i].Value = uno::makeAny( nParaIndent );
+                pAttribs[i].Value <<= nParaIndent;
                 break;
             }
         }
@@ -602,7 +588,7 @@ bool ScAccessibleCell::IsDropdown()
             SCTAB i;
             ScMarkData aMarks;
             for (i=nTab+1; i<nTabCount && mpDoc->IsScenario(i); i++)
-                mpDoc->MarkScenario( i, nTab, aMarks, false, SC_SCENARIO_SHOWFRAME );
+                mpDoc->MarkScenario( i, nTab, aMarks, false, ScScenarioFlags::ShowFrame );
             ScRangeList aRanges;
             aMarks.FillRangeListWithMarks( &aRanges, false );
             bool bHasScenario;

@@ -21,7 +21,7 @@
 #include <svl/itemset.hxx>
 #include <svl/style.hxx>
 #include <svl/itemiter.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <svx/svddef.hxx>
 #include <svx/svdotext.hxx>
 #include <svx/svdoutl.hxx>
@@ -273,7 +273,7 @@ namespace sdr
 
                             if(GetStyleSheet())
                             {
-                                if((OBJ_OUTLINETEXT == rObj.GetTextKind()) && (SdrInventor == rObj.GetObjInventor()))
+                                if((OBJ_OUTLINETEXT == rObj.GetTextKind()) && (SdrInventor::Default == rObj.GetObjInventor()))
                                 {
                                     OUString aNewStyleSheetName(GetStyleSheet()->GetName());
                                     aNewStyleSheetName = aNewStyleSheetName.copy(0, aNewStyleSheetName.getLength() - 1);
@@ -360,7 +360,7 @@ namespace sdr
         {
             SdrTextObj& rObj = static_cast<SdrTextObj&>(GetSdrObject());
 
-            if( rObj.GetObjInventor() == SdrInventor )
+            if( rObj.GetObjInventor() == SdrInventor::Default )
             {
                 const sal_uInt16 nSdrObjKind = rObj.GetObjIdentifier();
 
@@ -381,7 +381,7 @@ namespace sdr
             }
             else
             {
-                mpItemSet->Put(SvxAdjustItem(SVX_ADJUST_CENTER, EE_PARA_JUST));
+                mpItemSet->Put(SvxAdjustItem(SvxAdjust::Center, EE_PARA_JUST));
                 mpItemSet->Put(SdrTextHorzAdjustItem(SDRTEXTHORZADJUST_CENTER));
                 mpItemSet->Put(SdrTextVertAdjustItem(SDRTEXTVERTADJUST_CENTER));
             }
@@ -554,10 +554,9 @@ namespace sdr
                 const svx::ITextProvider& rTextProvider(getTextProvider());
                 if(dynamic_cast<const SfxStyleSheet *>(&rBC) != nullptr)
                 {
-                    const SfxSimpleHint* pSimple = dynamic_cast<const SfxSimpleHint*>(&rHint);
-                    sal_uInt32 nId(pSimple ? pSimple->GetId() : 0L);
+                    SfxHintId nId(rHint.GetId());
 
-                    if(SFX_HINT_DATACHANGED == nId)
+                    if(SfxHintId::DataChanged == nId)
                     {
                         rObj.SetPortionInfoChecked(false);
 
@@ -581,7 +580,7 @@ namespace sdr
                         maVersion++;
                     }
 
-                    if(SFX_HINT_DYING == nId)
+                    if(SfxHintId::Dying == nId)
                     {
                         rObj.SetPortionInfoChecked(false);
                         sal_Int32 nText = rTextProvider.getTextCount();
@@ -595,10 +594,10 @@ namespace sdr
                 }
                 else if(dynamic_cast<const SfxStyleSheetBasePool *>(&rBC) != nullptr)
                 {
-                    const SfxStyleSheetHintExtended* pExtendedHint = dynamic_cast<const SfxStyleSheetHintExtended*>(&rHint);
+                    const SfxStyleSheetModifiedHint* pExtendedHint = dynamic_cast<const SfxStyleSheetModifiedHint*>(&rHint);
 
                     if(pExtendedHint
-                        && SfxStyleSheetHintId::MODIFIED == pExtendedHint->GetHint())
+                        && SfxHintId::StyleSheetModified == pExtendedHint->GetId())
                     {
                         OUString aOldName(pExtendedHint->GetOldName());
                         OUString aNewName(pExtendedHint->GetStyleSheet()->GetName());

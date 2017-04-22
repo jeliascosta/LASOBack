@@ -36,15 +36,15 @@ using namespace ::com::sun::star::sdbc;
 using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::lang;
 
-OHSQLUser::OHSQLUser(   const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection >& _xConnection) : connectivity::sdbcx::OUser(true)
+OHSQLUser::OHSQLUser(   const css::uno::Reference< css::sdbc::XConnection >& _xConnection) : connectivity::sdbcx::OUser(true)
                 ,m_xConnection(_xConnection)
 {
     construct();
 }
 
-OHSQLUser::OHSQLUser(   const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection >& _xConnection,
+OHSQLUser::OHSQLUser(   const css::uno::Reference< css::sdbc::XConnection >& _xConnection,
                 const OUString& Name
-            ) : connectivity::sdbcx::OUser(Name, true)
+            ) : connectivity::sdbcx::OUser(Name,true)
                 ,m_xConnection(_xConnection)
 {
     construct();
@@ -54,7 +54,7 @@ void OHSQLUser::refreshGroups()
 {
 }
 
-OUserExtend::OUserExtend(   const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection >& _xConnection) : OHSQLUser(_xConnection)
+OUserExtend::OUserExtend(   const css::uno::Reference< css::sdbc::XConnection >& _xConnection) : OHSQLUser(_xConnection)
 {
     construct();
 }
@@ -77,7 +77,7 @@ cppu::IPropertyArrayHelper & OUserExtend::getInfoHelper()
 }
 typedef connectivity::sdbcx::OUser_BASE OUser_BASE_RBHELPER;
 
-sal_Int32 SAL_CALL OHSQLUser::getPrivileges( const OUString& objName, sal_Int32 objType ) throw(SQLException, RuntimeException, std::exception)
+sal_Int32 SAL_CALL OHSQLUser::getPrivileges( const OUString& objName, sal_Int32 objType )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OUser_BASE_RBHELPER::rBHelper.bDisposed);
@@ -87,7 +87,7 @@ sal_Int32 SAL_CALL OHSQLUser::getPrivileges( const OUString& objName, sal_Int32 
     return nRights;
 }
 
-void OHSQLUser::findPrivilegesAndGrantPrivileges(const OUString& objName, sal_Int32 objType,sal_Int32& nRights,sal_Int32& nRightsWithGrant) throw(SQLException, RuntimeException)
+void OHSQLUser::findPrivilegesAndGrantPrivileges(const OUString& objName, sal_Int32 objType,sal_Int32& nRights,sal_Int32& nRightsWithGrant)
 {
     nRightsWithGrant = nRights = 0;
     // first we need to create the sql stmt to select the privs
@@ -119,15 +119,6 @@ void OHSQLUser::findPrivilegesAndGrantPrivileges(const OUString& objName, sal_In
 
     if ( xRes.is() )
     {
-        static const char sSELECT   [] = "SELECT";
-        static const char sINSERT   [] = "INSERT";
-        static const char sUPDATE   [] = "UPDATE";
-        static const char sDELETE   [] = "DELETE";
-        static const char sREAD     [] = "READ";
-        static const char sCREATE   [] = "CREATE";
-        static const char sALTER    [] = "ALTER";
-        static const char sREFERENCE[] = "REFERENCE";
-        static const char sDROP     [] = "DROP";
         static const char sYes      [] = "YES";
 
         nRightsWithGrant = nRights = 0;
@@ -142,55 +133,55 @@ void OHSQLUser::findPrivilegesAndGrantPrivileges(const OUString& objName, sal_In
             if (!m_Name.equalsIgnoreAsciiCase(sGrantee))
                 continue;
 
-            if (sPrivilege.equalsIgnoreAsciiCase(sSELECT))
+            if (sPrivilege.equalsIgnoreAsciiCase("SELECT"))
             {
                 nRights |= Privilege::SELECT;
                 if ( sGrantable.equalsIgnoreAsciiCase(sYes) )
                     nRightsWithGrant |= Privilege::SELECT;
             }
-            else if (sPrivilege.equalsIgnoreAsciiCase(sINSERT))
+            else if (sPrivilege.equalsIgnoreAsciiCase("INSERT"))
             {
                 nRights |= Privilege::INSERT;
                 if ( sGrantable.equalsIgnoreAsciiCase(sYes) )
                     nRightsWithGrant |= Privilege::INSERT;
             }
-            else if (sPrivilege.equalsIgnoreAsciiCase(sUPDATE))
+            else if (sPrivilege.equalsIgnoreAsciiCase("UPDATE"))
             {
                 nRights |= Privilege::UPDATE;
                 if ( sGrantable.equalsIgnoreAsciiCase(sYes) )
                     nRightsWithGrant |= Privilege::UPDATE;
             }
-            else if (sPrivilege.equalsIgnoreAsciiCase(sDELETE))
+            else if (sPrivilege.equalsIgnoreAsciiCase("DELETE"))
             {
                 nRights |= Privilege::DELETE;
                 if ( sGrantable.equalsIgnoreAsciiCase(sYes) )
                     nRightsWithGrant |= Privilege::DELETE;
             }
-            else if (sPrivilege.equalsIgnoreAsciiCase(sREAD))
+            else if (sPrivilege.equalsIgnoreAsciiCase("READ"))
             {
                 nRights |= Privilege::READ;
                 if ( sGrantable.equalsIgnoreAsciiCase(sYes) )
                     nRightsWithGrant |= Privilege::READ;
             }
-            else if (sPrivilege.equalsIgnoreAsciiCase(sCREATE))
+            else if (sPrivilege.equalsIgnoreAsciiCase("CREATE"))
             {
                 nRights |= Privilege::CREATE;
                 if ( sGrantable.equalsIgnoreAsciiCase(sYes) )
                     nRightsWithGrant |= Privilege::CREATE;
             }
-            else if (sPrivilege.equalsIgnoreAsciiCase(sALTER))
+            else if (sPrivilege.equalsIgnoreAsciiCase("ALTER"))
             {
                 nRights |= Privilege::ALTER;
                 if ( sGrantable.equalsIgnoreAsciiCase(sYes) )
                     nRightsWithGrant |= Privilege::ALTER;
             }
-            else if (sPrivilege.equalsIgnoreAsciiCase(sREFERENCE))
+            else if (sPrivilege.equalsIgnoreAsciiCase("REFERENCE"))
             {
                 nRights |= Privilege::REFERENCE;
                 if ( sGrantable.equalsIgnoreAsciiCase(sYes) )
                     nRightsWithGrant |= Privilege::REFERENCE;
             }
-            else if (sPrivilege.equalsIgnoreAsciiCase(sDROP))
+            else if (sPrivilege.equalsIgnoreAsciiCase("DROP"))
             {
                 nRights |= Privilege::DROP;
                 if ( sGrantable.equalsIgnoreAsciiCase(sYes) )
@@ -201,7 +192,7 @@ void OHSQLUser::findPrivilegesAndGrantPrivileges(const OUString& objName, sal_In
     }
 }
 
-sal_Int32 SAL_CALL OHSQLUser::getGrantablePrivileges( const OUString& objName, sal_Int32 objType ) throw(SQLException, RuntimeException, std::exception)
+sal_Int32 SAL_CALL OHSQLUser::getGrantablePrivileges( const OUString& objName, sal_Int32 objType )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OUser_BASE_RBHELPER::rBHelper.bDisposed);
@@ -211,7 +202,7 @@ sal_Int32 SAL_CALL OHSQLUser::getGrantablePrivileges( const OUString& objName, s
     return nRightsWithGrant;
 }
 
-void SAL_CALL OHSQLUser::grantPrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OHSQLUser::grantPrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges )
 {
     if ( objType != PrivilegeObject::TABLE )
     {
@@ -238,7 +229,7 @@ void SAL_CALL OHSQLUser::grantPrivileges( const OUString& objName, sal_Int32 obj
     }
 }
 
-void SAL_CALL OHSQLUser::revokePrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OHSQLUser::revokePrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges )
 {
     if ( objType != PrivilegeObject::TABLE )
     {
@@ -265,7 +256,7 @@ void SAL_CALL OHSQLUser::revokePrivileges( const OUString& objName, sal_Int32 ob
 }
 
 // XUser
-void SAL_CALL OHSQLUser::changePassword( const OUString& /*oldPassword*/, const OUString& newPassword ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OHSQLUser::changePassword( const OUString& /*oldPassword*/, const OUString& newPassword )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OUser_BASE_RBHELPER::rBHelper.bDisposed);

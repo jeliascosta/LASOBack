@@ -23,7 +23,6 @@
 #include <vcl/opengl/OpenGLContext.hxx>
 
 #include <vcl/salbtype.hxx>
-#include "opengl/bmpop.hxx"
 #include "opengl/texture.hxx"
 
 #include <salbmp.hxx>
@@ -45,7 +44,6 @@ private:
     sal_uInt16                          mnBytesPerRow;
     int                                 mnWidth;
     int                                 mnHeight;
-    std::deque< OpenGLSalBitmapOp* >    maPendingOps;
 
     virtual void updateChecksum() const override;
 
@@ -53,7 +51,7 @@ private:
 
 public:
     OpenGLSalBitmap();
-    virtual ~OpenGLSalBitmap();
+    virtual ~OpenGLSalBitmap() override;
 
 public:
 
@@ -66,16 +64,17 @@ public:
                             Size& rSize,
                             bool bMask = false ) override;
 
-    void            Destroy() override;
+    void            Destroy() final override;
 
     Size            GetSize() const override;
     sal_uInt16      GetBitCount() const override;
 
-    BitmapBuffer   *AcquireBuffer( BitmapAccessMode nMode ) override;
+    BitmapBuffer*   AcquireBuffer( BitmapAccessMode nMode ) override;
     void            ReleaseBuffer( BitmapBuffer* pBuffer, BitmapAccessMode nMode ) override;
 
     bool            GetSystemData( BitmapSystemData& rData ) override;
 
+    bool            ScalingSupported() const override;
     bool            Scale( const double& rScaleX, const double& rScaleY, BmpScaleFlag nScaleFlag ) override;
     bool            Replace( const Color& rSearchColor, const Color& rReplaceColor, sal_uLong nTol ) override;
     bool            ConvertToGreyscale() override;
@@ -84,12 +83,10 @@ public:
 
     bool            Create( const OpenGLTexture& rTex, long nX, long nY, long nWidth, long nHeight );
     OpenGLTexture&  GetTexture() const;
-    static rtl::Reference<OpenGLContext> GetBitmapContext();
     const BitmapPalette& GetBitmapPalette() const { return maPalette; }
 
 private:
 
-    void            ExecuteOperations();
     GLuint          CreateTexture();
     bool            AllocateUserData();
     bool            ReadTexture();

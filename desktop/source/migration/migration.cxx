@@ -170,9 +170,7 @@ bool MigrationImpl::alreadyMigrated()
     File aFile(aStr);
     // create migration stamp, and/or check its existence
     bool bRet = aFile.open (osl_File_OpenFlag_Write | osl_File_OpenFlag_Create | osl_File_OpenFlag_NoLock) == FileBase::E_EXIST;
-    OSL_TRACE( "File '%s' exists? %d\n",
-               OUStringToOString(aStr, RTL_TEXTENCODING_ASCII_US).getStr(),
-               bRet );
+    SAL_INFO( "desktop.migration", "File '" << aStr << "' exists? " << bRet );
     return bRet;
 }
 
@@ -193,7 +191,7 @@ bool MigrationImpl::initializeMigration()
         bRet = !m_aInfo.userdata.isEmpty();
     }
 
-    OSL_TRACE( "Migration %s", bRet ? "needed" : "not required" );
+    SAL_INFO( "desktop.migration", "Migration " << ( bRet ? "needed" : "not required" ) );
 
     return bRet;
 }
@@ -209,8 +207,8 @@ void Migration::migrateSettingsIfNecessary()
     try {
         bResult = aImpl.doMigration();
     } catch (const Exception& e) {
-        OString aMsg("doMigration() exception: ");
-        aMsg += OUStringToOString(e.Message, RTL_TEXTENCODING_ASCII_US);
+        OString aMsg = "doMigration() exception: "
+                     + OUStringToOString(e.Message, RTL_TEXTENCODING_ASCII_US);
         OSL_FAIL(aMsg.getStr());
     }
     OSL_ENSURE(bResult, "Migration has not been successful");
@@ -234,7 +232,7 @@ bool MigrationImpl::doMigration()
     bool result = false;
     try {
         NewVersionUIInfo aNewVersionUIInfo;
-        ::std::vector< MigrationModuleInfo > vModulesInfo = dectectUIChangesForAllModules();
+        std::vector< MigrationModuleInfo > vModulesInfo = dectectUIChangesForAllModules();
         aNewVersionUIInfo.init(vModulesInfo);
 
         copyFiles();
@@ -294,7 +292,9 @@ bool MigrationImpl::doMigration()
         // execute custom migration services from Setup.xcu
         // and refresh the cache
         runServices();
-        refresh();
+        uno::Reference< XRefreshable >(
+            configuration::theDefaultProvider::get(comphelper::getProcessComponentContext()),
+            uno::UNO_QUERY_THROW)->refresh();
 
         result = true;
     } catch (css::uno::Exception & e) {
@@ -308,13 +308,6 @@ bool MigrationImpl::doMigration()
     // prevent running the migration multiple times
     setMigrationCompleted();
     return result;
-}
-
-void MigrationImpl::refresh()
-{
-    uno::Reference< XRefreshable >(
-        configuration::theDefaultProvider::get(comphelper::getProcessComponentContext()),
-        uno::UNO_QUERY_THROW)->refresh();
 }
 
 void MigrationImpl::setMigrationCompleted()
@@ -344,7 +337,7 @@ bool MigrationImpl::checkMigrationCompleted()
     } catch (const Exception&) {
         // just return false...
     }
-    OSL_TRACE( "Migration %s", bMigrationCompleted ? "already completed" : "not done" );
+    SAL_INFO( "desktop.migration", "Migration " << ( bMigrationCompleted ? "already completed" : "not done" ) );
 
     return bMigrationCompleted;
 }
@@ -387,8 +380,7 @@ bool MigrationImpl::readAvailableMigrations(migrations_available& rAvailableMigr
         for (sal_Int32 j=0; j<seqVersions.getLength(); j++)
             aSupportedMigration.supported_versions.push_back(seqVersions[j].trim());
         insertSorted( rAvailableMigrations, aSupportedMigration );
-        OSL_TRACE( " available migration '%s'\n",
-                   OUStringToOString( aSupportedMigration.name, RTL_TEXTENCODING_ASCII_US ).getStr() );
+        SAL_INFO( "desktop.migration", " available migration '" << aSupportedMigration.name << "'" );
     }
 
     return true;
@@ -466,12 +458,12 @@ migrations_vr MigrationImpl::readMigrationSteps(const OUString& rMigrationName)
 
 static FileBase::RC _checkAndCreateDirectory(INetURLObject& dirURL)
 {
-    FileBase::RC result = Directory::create(dirURL.GetMainURL(INetURLObject::DECODE_TO_IURI));
+    FileBase::RC result = Directory::create(dirURL.GetMainURL(INetURLObject::DecodeMechanism::ToIUri));
     if (result == FileBase::E_NOENT) {
         INetURLObject baseURL(dirURL);
         baseURL.removeSegment();
         _checkAndCreateDirectory(baseURL);
-        return Directory::create(dirURL.GetMainURL(INetURLObject::DECODE_TO_IURI));
+        return Directory::create(dirURL.GetMainURL(INetURLObject::DecodeMechanism::ToIUri));
     } else
         return result;
 }
@@ -515,7 +507,7 @@ void MigrationImpl::setInstallInfoIfExist(
     const OUString& rConfigDir,
     const OUString& rVersion)
 {
-    OUString url(INetURLObject(rConfigDir).GetMainURL(INetURLObject::NO_DECODE));
+    OUString url(INetURLObject(rConfigDir).GetMainURL(INetURLObject::DecodeMechanism::NONE));
     osl::DirectoryItem item;
     osl::FileStatus stat(osl_FileStatus_Mask_Type);
 
@@ -583,10 +575,8 @@ sal_Int32 MigrationImpl::findPreferredMigrationProcess(const migrations_availabl
         ++rIter;
     }
 
-    OSL_TRACE( " preferred migration is from product '%s'\n",
-               OUStringToOString( m_aInfo.productname, RTL_TEXTENCODING_ASCII_US ).getStr() );
-    OSL_TRACE( " and settings directory '%s'\n",
-               OUStringToOString( m_aInfo.userdata, RTL_TEXTENCODING_ASCII_US ).getStr() );
+    SAL_INFO( "desktop.migration", " preferred migration is from product '" << m_aInfo.productname << "'");
+    SAL_INFO( "desktop.migration", " and settings directory '" << m_aInfo.userdata << "'");
 
     return nIndex;
 }
@@ -600,7 +590,7 @@ strings_vr MigrationImpl::applyPatterns(const strings_v& vSet, const strings_v& 
     while (i_pat != vPatterns.end()) {
         // find matches for this pattern in input set
         // and copy them to the result
-        SearchParam param(*i_pat, SearchParam::SRCH_REGEXP);
+        SearchParam param(*i_pat, SearchParam::SearchType::Regexp);
         TextSearch ts(param, LANGUAGE_DONTKNOW);
         i_set = vSet.begin();
         sal_Int32 start = 0;
@@ -705,10 +695,7 @@ bool getComponent(OUString const & path, OUString * component)
 {
     OSL_ASSERT(component != nullptr);
     if (path.isEmpty() || path[0] != '/') {
-        OSL_TRACE(
-            ("configuration migration in/exclude path %s ignored (does not"
-             " start with slash)"),
-            OUStringToOString(path, RTL_TEXTENCODING_UTF8).getStr());
+        SAL_INFO( "desktop.migration", "configuration migration in/exclude path " << path << " ignored (does not start with slash)" );
         return false;
     }
     sal_Int32 i = path.indexOf('/', 1);
@@ -781,11 +768,7 @@ void MigrationImpl::copyConfig()
                             seg, rtl_UriCharClassPchar, rtl_UriEncodeStrict,
                             RTL_TEXTENCODING_UTF8));
                     if (enc.isEmpty() && !seg.isEmpty()) {
-                        OSL_TRACE(
-                            ("configuration migration component %s ignored (cannot"
-                             " be encoded as file path)"),
-                            OUStringToOString(
-                                i->first, RTL_TEXTENCODING_UTF8).getStr());
+                        SAL_INFO( "desktop.migration", "configuration migration component " << i->first << " ignored (cannot be encoded as file path)" );
                         goto next;
                     }
                     buf.append('/');
@@ -800,11 +783,7 @@ void MigrationImpl::copyConfig()
                 regFilePath, setToSeq(i->second.includedPaths),
                 setToSeq(i->second.excludedPaths));
         } else {
-            OSL_TRACE(
-                ("configuration migration component %s ignored (only excludes,"
-                 " no includes)"),
-                OUStringToOString(
-                    i->first, RTL_TEXTENCODING_UTF8).getStr());
+            SAL_INFO( "desktop.migration", "configuration migration component " << i->first << " ignored (only excludes, no includes)" );
         }
 next:
         ;
@@ -866,9 +845,10 @@ void MigrationImpl::copyFiles()
             _checkAndCreateDirectory(aURL);
             FileBase::RC copyResult = File::copy(*i_file, destName);
             if (copyResult != FileBase::E_None) {
-                OString msg("Cannot copy ");
-                msg += OUStringToOString(*i_file, RTL_TEXTENCODING_UTF8) + " to "
-                       +  OUStringToOString(destName, RTL_TEXTENCODING_UTF8);
+                OString msg = "Cannot copy "
+                            + OUStringToOString(*i_file, RTL_TEXTENCODING_UTF8)
+                            + " to "
+                            + OUStringToOString(destName, RTL_TEXTENCODING_UTF8);
                 OSL_FAIL(msg.getStr());
             }
             ++i_file;
@@ -882,10 +862,10 @@ void MigrationImpl::runServices()
 {
     // Build argument array
     uno::Sequence< uno::Any > seqArguments(3);
-    seqArguments[0] = uno::makeAny(NamedValue("Productname",
-                                   uno::makeAny(m_aInfo.productname)));
-    seqArguments[1] = uno::makeAny(NamedValue("UserData",
-                                   uno::makeAny(m_aInfo.userdata)));
+    seqArguments[0] <<= NamedValue("Productname",
+                                   uno::makeAny(m_aInfo.productname));
+    seqArguments[1] <<= NamedValue("UserData",
+                                   uno::makeAny(m_aInfo.userdata));
 
 
     // create an instance of every migration service
@@ -904,8 +884,8 @@ void MigrationImpl::runServices()
                 if ( nSize > 0 )
                     seqExtBlackList = comphelper::arrayToSequence< OUString >(
                                           &i_mig->excludeExtensions[0], nSize );
-                seqArguments[2] = uno::makeAny(NamedValue("ExtensionBlackList",
-                                               uno::makeAny( seqExtBlackList )));
+                seqArguments[2] <<= NamedValue("ExtensionBlackList",
+                                               uno::makeAny( seqExtBlackList ));
 
                 xMigrationJob.set(
                     xContext->getServiceManager()->createInstanceWithArgumentsAndContext(i_mig->service, seqArguments, xContext),
@@ -915,14 +895,15 @@ void MigrationImpl::runServices()
 
 
             } catch (const Exception& e) {
-                OString aMsg("Execution of migration service failed (Exception caught).\nService: ");
-                aMsg += OUStringToOString(i_mig->service, RTL_TEXTENCODING_ASCII_US) + "\nMessage: ";
-                aMsg += OUStringToOString(e.Message, RTL_TEXTENCODING_ASCII_US);
+                OString aMsg = "Execution of migration service failed (Exception caught).\nService: "
+                             + OUStringToOString(i_mig->service, RTL_TEXTENCODING_ASCII_US)
+                             + "\nMessage: "
+                             + OUStringToOString(e.Message, RTL_TEXTENCODING_ASCII_US);
                 OSL_FAIL(aMsg.getStr());
             } catch (...) {
-                OString aMsg("Execution of migration service failed (Exception caught).\nService: ");
-                aMsg += OUStringToOString(i_mig->service, RTL_TEXTENCODING_ASCII_US) +
-                        "\nNo message available";
+                OString aMsg = "Execution of migration service failed (Exception caught).\nService: "
+                             + OUStringToOString(i_mig->service, RTL_TEXTENCODING_ASCII_US)
+                             + "\nNo message available";
                 OSL_FAIL(aMsg.getStr());
             }
 
@@ -931,9 +912,9 @@ void MigrationImpl::runServices()
     }
 }
 
-::std::vector< MigrationModuleInfo > MigrationImpl::dectectUIChangesForAllModules() const
+std::vector< MigrationModuleInfo > MigrationImpl::dectectUIChangesForAllModules() const
 {
-    ::std::vector< MigrationModuleInfo > vModulesInfo;
+    std::vector< MigrationModuleInfo > vModulesInfo;
     const OUString MENUBAR("menubar");
     const OUString TOOLBAR("toolbar");
 
@@ -1006,8 +987,8 @@ void MigrationImpl::compareOldAndNewConfig(const OUString& sParent,
 {
     const OUString MENU_SEPARATOR(" | ");
 
-    ::std::vector< MigrationItem > vOldItems;
-    ::std::vector< MigrationItem > vNewItems;
+    std::vector< MigrationItem > vOldItems;
+    std::vector< MigrationItem > vNewItems;
     uno::Sequence< beans::PropertyValue > aProp;
     sal_Int32 nOldCount = xIndexOld->getCount();
     sal_Int32 nNewCount = xIndexNew->getCount();
@@ -1042,11 +1023,11 @@ void MigrationImpl::compareOldAndNewConfig(const OUString& sParent,
         }
     }
 
-    ::std::vector< MigrationItem >::iterator it;
+    std::vector< MigrationItem >::iterator it;
 
     OUString sSibling;
     for (it = vOldItems.begin(); it!=vOldItems.end(); ++it) {
-        ::std::vector< MigrationItem >::iterator pFound = ::std::find(vNewItems.begin(), vNewItems.end(), *it);
+        std::vector< MigrationItem >::iterator pFound = std::find(vNewItems.begin(), vNewItems.end(), *it);
         if (pFound != vNewItems.end() && it->m_xPopupMenu.is()) {
             OUString sName;
             if (!sParent.isEmpty())
@@ -1057,11 +1038,11 @@ void MigrationImpl::compareOldAndNewConfig(const OUString& sParent,
         } else if (pFound == vNewItems.end()) {
             MigrationItem aMigrationItem(sParent, sSibling, it->m_sCommandURL, it->m_xPopupMenu);
             if (m_aOldVersionItemsHashMap.find(sResourceURL)==m_aOldVersionItemsHashMap.end()) {
-                ::std::vector< MigrationItem > vMigrationItems;
+                std::vector< MigrationItem > vMigrationItems;
                 m_aOldVersionItemsHashMap.insert(MigrationHashMap::value_type(sResourceURL, vMigrationItems));
                 m_aOldVersionItemsHashMap[sResourceURL].push_back(aMigrationItem);
             } else {
-                if (::std::find(m_aOldVersionItemsHashMap[sResourceURL].begin(), m_aOldVersionItemsHashMap[sResourceURL].end(), aMigrationItem)==m_aOldVersionItemsHashMap[sResourceURL].end())
+                if (std::find(m_aOldVersionItemsHashMap[sResourceURL].begin(), m_aOldVersionItemsHashMap[sResourceURL].end(), aMigrationItem)==m_aOldVersionItemsHashMap[sResourceURL].end())
                     m_aOldVersionItemsHashMap[sResourceURL].push_back(aMigrationItem);
             }
         }
@@ -1079,7 +1060,7 @@ void MigrationImpl::mergeOldToNewVersion(const uno::Reference< ui::XUIConfigurat
     if (pFound==m_aOldVersionItemsHashMap.end())
         return;
 
-    ::std::vector< MigrationItem >::iterator it;
+    std::vector< MigrationItem >::iterator it;
     for (it=pFound->second.begin(); it!=pFound->second.end(); ++it) {
         uno::Reference< container::XIndexContainer > xTemp = xIndexContainer;
 
@@ -1210,7 +1191,7 @@ uno::Reference< container::XIndexContainer > NewVersionUIInfo::getNewToolbarSett
     return xNewToolbarSettings;
 }
 
-void NewVersionUIInfo::init(const ::std::vector< MigrationModuleInfo >& vModulesInfo)
+void NewVersionUIInfo::init(const std::vector< MigrationModuleInfo >& vModulesInfo)
 {
     m_lCfgManagerSeq.resize(vModulesInfo.size());
     m_lNewVersionMenubarSettingsSeq.realloc(vModulesInfo.size());

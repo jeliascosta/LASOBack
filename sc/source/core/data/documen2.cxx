@@ -31,6 +31,7 @@
 #include <sfx2/objsh.hxx>
 #include <sfx2/docfile.hxx>
 #include <sfx2/printer.hxx>
+#include <svl/asiancfg.hxx>
 #include <svl/zforlist.hxx>
 #include <svl/zformat.hxx>
 #include <vcl/virdev.hxx>
@@ -201,7 +202,7 @@ ScDocument::ScDocument( ScDocumentMode eMode, SfxObjectShell* pDocShell ) :
         bExpandRefs( false ),
         bDetectiveDirty( false ),
         bHasMacroFunc( false ),
-        nAsianCompression(SC_ASIANCOMPRESSION_INVALID),
+        nAsianCompression(CharCompressType::Invalid),
         nAsianKerning(SC_ASIANKERNING_INVALID),
         bPastingDrawFromOtherDoc( false ),
         nInDdeLinkUpdate( 0 ),
@@ -216,7 +217,9 @@ ScDocument::ScDocument( ScDocumentMode eMode, SfxObjectShell* pDocShell ) :
         mbStreamValidLocked( false ),
         mbUserInteractionEnabled(true),
         mnNamedRangesLockCount(0),
-        mbUseEmbedFonts(false)
+        mbUseEmbedFonts(false),
+        mbTrackFormulasPending(false),
+        mbFinalTrackFormulas(false)
 {
     SetStorageGrammar( formula::FormulaGrammar::GRAM_STORAGE_DEFAULT);
 
@@ -246,8 +249,8 @@ ScDocument::ScDocument( ScDocumentMode eMode, SfxObjectShell* pDocShell ) :
     // languages for a visible document are set by docshell later (from options)
     SetLanguage( ScGlobal::eLnge, ScGlobal::eLnge, ScGlobal::eLnge );
 
-    aTrackIdle.SetIdleHdl( LINK( this, ScDocument, TrackTimeHdl ) );
-    aTrackIdle.SetPriority( SchedulerPriority::LOW );
+    aTrackIdle.SetInvokeHandler( LINK( this, ScDocument, TrackTimeHdl ) );
+    aTrackIdle.SetPriority( TaskPriority::LOW );
 }
 
 sfx2::LinkManager* ScDocument::GetLinkManager()
@@ -319,7 +322,7 @@ void ScDocument::SetChangeTrack( ScChangeTrack* pTrack )
     pChangeTrack = pTrack;
 }
 
-IMPL_LINK_NOARG_TYPED(ScDocument, TrackTimeHdl, Idle *, void)
+IMPL_LINK_NOARG(ScDocument, TrackTimeHdl, Timer *, void)
 {
     if ( ScDdeLink::IsInUpdate() )      // do not nest
     {
@@ -328,7 +331,7 @@ IMPL_LINK_NOARG_TYPED(ScDocument, TrackTimeHdl, Idle *, void)
     else if (pShell)                    // execute
     {
         TrackFormulas();
-        pShell->Broadcast( SfxSimpleHint( FID_DATACHANGED ) );
+        pShell->Broadcast( SfxHint( SfxHintId::ScDataChanged ) );
 
             //  modified...
 
@@ -356,6 +359,14 @@ void ScDocument::StartTrackTimer()
         aTrackIdle.Start();
 }
 
+void ScDocument::ClosingClipboardSource()
+{
+    if (!bIsClip)
+        return;
+
+    ForgetNoteCaptions( ScRangeList( ScRange( 0,0,0, MAXCOL, MAXROW, GetTableCount()-1)), true);
+}
+
 ScDocument::~ScDocument()
 {
     OSL_PRECOND( !bInLinkUpdate, "bInLinkUpdate in dtor" );
@@ -377,13 +388,10 @@ ScDocument::~ScDocument()
         // copied from this document, forget it as it references this
         // document's drawing layer pages and what not, which otherwise when
         // pasting to another document after this document was destructed would
-        // attempt to access non-existing data.
-        /* XXX this is only a workaround to prevent a crash, the actual note
-         * content is lost, only a standard empty note caption will be pasted.
-         * TODO: come up with a solution. */
+        // attempt to access non-existing data. Preserve the text data though.
         ScDocument* pClipDoc = ScModule::GetClipDoc();
         if (pClipDoc)
-            pClipDoc->ForgetNoteCaptions( ScRangeList( ScRange( 0,0,0, MAXCOL, MAXROW, pClipDoc->GetTableCount()-1)));
+            pClipDoc->ClosingClipboardSource();
     }
 
     mxFormulaParserPool.reset();
@@ -399,7 +407,7 @@ ScDocument::~ScDocument()
     delete pBASM;       // BroadcastAreaSlotMachine
     pBASM = nullptr;
 
-    delete pUnoBroadcaster;     // broadcasted nochmal SFX_HINT_DYING
+    delete pUnoBroadcaster;     // broadcasts SfxHintId::Dying again
     pUnoBroadcaster = nullptr;
 
     delete pUnoRefUndoList;
@@ -495,11 +503,6 @@ SvNumberFormatter* ScDocument::GetFormatTable() const
     return xPoolHelper->GetFormTable();
 }
 
-SvNumberFormatter* ScDocument::CreateFormatTable() const
-{
-    return xPoolHelper->CreateNumberFormatter();
-}
-
 SfxItemPool* ScDocument::GetEditPool() const
 {
     return xPoolHelper->GetEditPool();
@@ -517,7 +520,7 @@ ScFieldEditEngine& ScDocument::GetEditEngine()
         pEditEngine = new ScFieldEditEngine(this, GetEnginePool(), GetEditPool());
         pEditEngine->SetUpdateMode( false );
         pEditEngine->EnableUndo( false );
-        pEditEngine->SetRefMapMode( MAP_100TH_MM );
+        pEditEngine->SetRefMapMode( MapUnit::Map100thMM );
         ApplyAsianEditSettings( *pEditEngine );
     }
     return *pEditEngine;
@@ -530,7 +533,7 @@ ScNoteEditEngine& ScDocument::GetNoteEngine()
         pNoteEngine = new ScNoteEditEngine( GetEnginePool(), GetEditPool() );
         pNoteEngine->SetUpdateMode( false );
         pNoteEngine->EnableUndo( false );
-        pNoteEngine->SetRefMapMode( MAP_100TH_MM );
+        pNoteEngine->SetRefMapMode( MapUnit::Map100thMM );
         ApplyAsianEditSettings( *pNoteEngine );
         const SfxItemSet& rItemSet = GetDefPattern()->GetItemSet();
         SfxItemSet* pEEItemSet = new SfxItemSet( pNoteEngine->GetEmptyItemSet() );
@@ -583,8 +586,7 @@ void ScDocument::ResetClip( ScDocument* pSourceDoc, SCTAB nTab )
         {
             maTabs.resize(nTab+1, nullptr );
         }
-        maTabs[nTab] = new ScTable(this, nTab,
-                            OUString("baeh"));
+        maTabs[nTab] = new ScTable(this, nTab, "baeh");
         if (nTab < static_cast<SCTAB>(pSourceDoc->maTabs.size()) && pSourceDoc->maTabs[nTab])
             maTabs[nTab]->SetLayoutRTL( pSourceDoc->maTabs[nTab]->IsLayoutRTL() );
     }
@@ -811,7 +813,7 @@ bool ScDocument::MoveTab( SCTAB nOldPos, SCTAB nNewPos, ScProgress* pProgress )
             SetAllFormulasDirty(aFormulaDirtyCxt);
 
             if (pDrawLayer)
-                DrawMovePage( static_cast<sal_uInt16>(nOldPos), static_cast<sal_uInt16>(nNewPos) );
+                pDrawLayer->ScMovePage( static_cast<sal_uInt16>(nOldPos), static_cast<sal_uInt16>(nNewPos) );
 
             bValid = true;
         }
@@ -905,7 +907,7 @@ bool ScDocument::CopyTab( SCTAB nOldPos, SCTAB nNewPos, const ScMarkData* pOnlyM
 
     if (bValid)
     {
-        SetNoListening( true );     // noch nicht bei CopyToTable/Insert
+        SetNoListening( true );     // not yet at CopyToTable/Insert
 
         const bool bGlobalNamesToLocal = true;
         const SCTAB nRealOldPos = (nNewPos < nOldPos) ? nOldPos - 1 : nOldPos;
@@ -941,7 +943,8 @@ bool ScDocument::CopyTab( SCTAB nOldPos, SCTAB nNewPos, const ScMarkData* pOnlyM
         SetAllFormulasDirty(aFormulaDirtyCxt);
 
         if (pDrawLayer) //  Skip cloning Note caption object
-            DrawCopyPage( static_cast<sal_uInt16>(nOldPos), static_cast<sal_uInt16>(nNewPos) );
+            // page is already created in ScTable ctor
+            pDrawLayer->ScCopyPage( static_cast<sal_uInt16>(nOldPos), static_cast<sal_uInt16>(nNewPos) );
 
         if (pDPCollection)
             pDPCollection->CopyToTab(nOldPos, nNewPos);
@@ -976,7 +979,7 @@ sal_uLong ScDocument::TransferTab( ScDocument* pSrcDoc, SCTAB nSrcPos,
 
     if (pSrcDoc->pShell->GetMedium())
     {
-        pSrcDoc->maFileURL = pSrcDoc->pShell->GetMedium()->GetURLObject().GetMainURL(INetURLObject::DECODE_TO_IURI);
+        pSrcDoc->maFileURL = pSrcDoc->pShell->GetMedium()->GetURLObject().GetMainURL(INetURLObject::DecodeMechanism::ToIUri);
         // for unsaved files use the title name and adjust during save of file
         if (pSrcDoc->maFileURL.isEmpty())
             pSrcDoc->maFileURL = pSrcDoc->pShell->GetName();
@@ -1026,7 +1029,7 @@ sal_uLong ScDocument::TransferTab( ScDocument* pSrcDoc, SCTAB nSrcPos,
             sc::CopyToDocContext aCxt(*this);
             nDestPos = std::min(nDestPos, (SCTAB)(GetTableCount() - 1));
             {   // scope for bulk broadcast
-                ScBulkBroadcast aBulkBroadcast( pBASM, SC_HINT_DATACHANGED);
+                ScBulkBroadcast aBulkBroadcast( pBASM, SfxHintId::ScDataChanged);
                 if (!bResultsOnly)
                 {
                     const bool bGlobalNamesToLocal = false;
@@ -1116,7 +1119,7 @@ sal_uLong ScDocument::TransferTab( ScDocument* pSrcDoc, SCTAB nSrcPos,
     return nRetVal;
 }
 
-void ScDocument::SetError( SCCOL nCol, SCROW nRow, SCTAB nTab, const sal_uInt16 nError)
+void ScDocument::SetError( SCCOL nCol, SCROW nRow, SCTAB nTab, const FormulaError nError)
 {
     if (ValidTab(nTab) && nTab < static_cast<SCTAB>(maTabs.size()))
         if (maTabs[nTab])
@@ -1274,7 +1277,7 @@ void ScDocument::ClearLookupCaches()
         pLookupCacheMapImpl->clear();
 }
 
-bool ScDocument::IsCellInChangeTrack(const ScAddress &cell,Color *pColCellBoder)
+bool ScDocument::IsCellInChangeTrack(const ScAddress &cell,Color *pColCellBorder)
 {
     ScChangeTrack* pTrack = GetChangeTrack();
     ScChangeViewSettings* pSettings = GetChangeViewSettings();
@@ -1302,11 +1305,11 @@ bool ScDocument::IsCellInChangeTrack(const ScAddress &cell,Color *pColCellBoder)
                 {
                     if (aRange.In(cell))
                     {
-                        if (pColCellBoder != nullptr)
+                        if (pColCellBorder != nullptr)
                         {
                             aColorChanger.Update( *pAction );
                             Color aColor( aColorChanger.GetColor() );
-                            *pColCellBoder = aColor;
+                            *pColCellBorder = aColor;
                         }
                         return true;
                     }
@@ -1322,11 +1325,11 @@ bool ScDocument::IsCellInChangeTrack(const ScAddress &cell,Color *pColCellBoder)
                 {
                     if (aRange.In(cell))
                     {
-                        if (pColCellBoder != nullptr)
+                        if (pColCellBorder != nullptr)
                         {
                             aColorChanger.Update( *pAction );
                             Color aColor( aColorChanger.GetColor() );
-                            *pColCellBoder = aColor;
+                            *pColCellBorder = aColor;
                         }
                         return true;
                     }

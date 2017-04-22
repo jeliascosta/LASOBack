@@ -209,7 +209,7 @@ SwNumFormat::SwNumFormat(const SvxNumberFormat& rNumFormat, SwDoc* pDoc)
         if( !pCFormat )
         {
             sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rCharStyleName,
-                                            nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                                            SwGetPoolIdFromName::ChrFmt );
             pCFormat = nId != USHRT_MAX
                         ? pDoc->getIDocumentStylePoolAccess().GetCharFormatFromPool( nId )
                         : pDoc->MakeCharFormat( rCharStyleName, nullptr );
@@ -222,7 +222,6 @@ SwNumFormat::SwNumFormat(const SvxNumberFormat& rNumFormat, SwDoc* pDoc)
 
 SwNumFormat::~SwNumFormat()
 {
-    delete m_pVertOrient;
 }
 
 // #i22362#
@@ -301,11 +300,6 @@ void SwNumFormat::Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew )
         CheckRegistration( pOld, pNew );
 }
 
-void SwNumFormat::SetCharFormatName(const OUString& rSet)
-{
-    SvxNumberFormat::SetCharFormatName(rSet);
-}
-
 OUString SwNumFormat::GetCharFormatName() const
 {
     if(static_cast<const SwCharFormat*>(GetRegisteredIn()))
@@ -320,16 +314,6 @@ void    SwNumFormat::SetGraphicBrush( const SvxBrushItem* pBrushItem, const Size
     if(pOrient)
         m_pVertOrient->SetVertOrient( *pOrient );
     SvxNumberFormat::SetGraphicBrush( pBrushItem, pSize, pOrient);
-}
-
-void    SwNumFormat::SetVertOrient(sal_Int16 eSet)
-{
-    SvxNumberFormat::SetVertOrient(eSet);
-}
-
-sal_Int16   SwNumFormat::GetVertOrient() const
-{
-    return SvxNumberFormat::GetVertOrient();
 }
 
 void SwNumFormat::UpdateNumNodes( SwDoc* pDoc )
@@ -366,7 +350,7 @@ const SwFormatVertOrient*      SwNumFormat::GetGraphicOrientation() const
     else
     {
         m_pVertOrient->SetVertOrient(eOrient);
-        return m_pVertOrient;
+        return m_pVertOrient.get();
     }
 }
 
@@ -636,7 +620,7 @@ OUString SwNumRule::MakeNumString( const SwNumberTree::tNumberVector & rNumVecto
 {
     OUString aStr;
 
-    unsigned int nLevel = rNumVector.size() - 1;
+    SwNumberTree::tNumberVector::size_type nLevel = rNumVector.size() - 1;
 
     if ( pExtremities )
         pExtremities->nPrefixChars = pExtremities->nSuffixChars = 0;
@@ -651,7 +635,7 @@ OUString SwNumRule::MakeNumString( const SwNumberTree::tNumberVector & rNumVecto
         const SwNumFormat& rMyNFormat = Get( static_cast<sal_uInt16>(nLevel) );
 
         {
-            sal_uInt8 i = static_cast<sal_uInt8>(nLevel);
+            SwNumberTree::tNumberVector::size_type i = nLevel;
 
             if( !IsContinusNum() &&
                 // - do not include upper levels, if level isn't numbered.
@@ -716,7 +700,7 @@ OUString SwNumRule::MakeNumString( const SwNumberTree::tNumberVector & rNumVecto
 
 OUString SwNumRule::MakeRefNumString( const SwNodeNum& rNodeNum,
                                     const bool bInclSuperiorNumLabels,
-                                    const sal_uInt8 nRestrictInclToThisLevel ) const
+                                    const int nRestrictInclToThisLevel ) const
 {
     OUString aRefNumStr;
 
@@ -798,7 +782,7 @@ OUString SwNumRule::MakeRefNumString( const SwNodeNum& rNodeNum,
             }
         } while ( pWorkingNodeNum &&
                   pWorkingNodeNum->GetLevelInListTree() >= 0 &&
-                  static_cast<sal_uInt8>(pWorkingNodeNum->GetLevelInListTree()) >= nRestrictInclToThisLevel );
+                  pWorkingNodeNum->GetLevelInListTree() >= nRestrictInclToThisLevel );
     }
 
     return aRefNumStr;
@@ -1026,7 +1010,7 @@ void SwNumRule::RemoveParagraphStyle( SwTextFormatColl& rTextFormatColl )
 
 void SwNumRule::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swNumRule"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwNumRule"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("msName"), BAD_CAST(msName.toUtf8().getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("mnPoolFormatId"), BAD_CAST(OString::number(mnPoolFormatId).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("mbAutoRuleFlag"), BAD_CAST(OString::boolean(mbAutoRuleFlag).getStr()));
@@ -1040,7 +1024,7 @@ void SwNumRule::GetGrabBagItem(uno::Any& rVal) const
     else
     {
         uno::Sequence<beans::PropertyValue> aValue(0);
-        rVal = uno::makeAny(aValue);
+        rVal <<= aValue;
     }
 }
 
@@ -1065,17 +1049,17 @@ namespace numfunc
                 return msFontname;
             }
 
-            inline bool IsFontnameUserDefined() const
+            bool IsFontnameUserDefined() const
             {
                 return mbUserDefinedFontname;
             }
 
-            inline const vcl::Font& GetFont() const
+            const vcl::Font& GetFont() const
             {
                 return *mpFont;
             }
 
-            inline sal_Unicode GetChar( sal_uInt8 p_nListLevel ) const
+            sal_Unicode GetChar( sal_uInt8 p_nListLevel ) const
             {
                 if (p_nListLevel >= MAXLEVEL)
                 {
@@ -1086,7 +1070,6 @@ namespace numfunc
             }
 
             SwDefBulletConfig();
-            virtual ~SwDefBulletConfig();
 
         private:
             /** sets internal default bullet configuration data to default values */
@@ -1114,7 +1097,7 @@ namespace numfunc
             sal_Unicode mnLevelChars[MAXLEVEL];
 
             // default bullet list font instance
-            vcl::Font* mpFont;
+            std::unique_ptr<vcl::Font> mpFont;
     };
 
     namespace
@@ -1129,7 +1112,7 @@ namespace numfunc
     }
 
     SwDefBulletConfig::SwDefBulletConfig()
-        : ConfigItem( OUString("Office.Writer/Numbering/DefaultBulletList") ),
+        : ConfigItem( "Office.Writer/Numbering/DefaultBulletList" ),
           // default bullet font is now OpenSymbol
           msFontname( OUString("OpenSymbol") ),
           mbUserDefinedFontname( false ),
@@ -1143,11 +1126,6 @@ namespace numfunc
 
         // enable notification for changes on default bullet configuration change
         EnableNotification( GetPropNames() );
-    }
-
-    SwDefBulletConfig::~SwDefBulletConfig()
-    {
-        delete mpFont;
     }
 
     void SwDefBulletConfig::SetToDefault()
@@ -1250,9 +1228,7 @@ namespace numfunc
 
     void SwDefBulletConfig::InitFont()
     {
-        delete mpFont;
-
-        mpFont = new vcl::Font( msFontname, OUString(), Size( 0, 14 ) );
+        mpFont.reset( new vcl::Font( msFontname, OUString(), Size( 0, 14 ) ) );
         mpFont->SetWeight( meFontWeight );
         mpFont->SetItalic( meFontItalic );
         mpFont->SetCharSet( RTL_TEXTENCODING_SYMBOL );
@@ -1299,7 +1275,7 @@ namespace numfunc
         public:
             static SwNumberingUIBehaviorConfig& getInstance();
 
-            inline bool ChangeIndentOnTabAtFirstPosOfFirstListItem() const
+            bool ChangeIndentOnTabAtFirstPosOfFirstListItem() const
             {
                 return mbChangeIndentOnTabAtFirstPosOfFirstListItem;
             }
@@ -1336,7 +1312,7 @@ namespace numfunc
     }
 
     SwNumberingUIBehaviorConfig::SwNumberingUIBehaviorConfig()
-        : ConfigItem( OUString("Office.Writer/Numbering/UserInterfaceBehavior") ),
+        : ConfigItem( "Office.Writer/Numbering/UserInterfaceBehavior" ),
           mbChangeIndentOnTabAtFirstPosOfFirstListItem( true )
     {
         SetToDefault();
@@ -1429,7 +1405,7 @@ namespace numfunc
 
 void SwNumRuleTable::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swNumRuleTable"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwNumRuleTable"));
     for (SwNumRule* pNumRule : *this)
         pNumRule->dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);

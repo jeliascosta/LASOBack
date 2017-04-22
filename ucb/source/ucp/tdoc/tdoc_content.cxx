@@ -27,19 +27,25 @@
 #include "osl/diagnose.h"
 #include "osl/doublecheckedlocking.h"
 #include "rtl/ustrbuf.hxx"
-
+#include "com/sun/star/beans/IllegalTypeException.hpp"
 #include "com/sun/star/beans/PropertyAttribute.hpp"
 #include "com/sun/star/beans/PropertyValue.hpp"
 #include "com/sun/star/beans/XPropertySet.hpp"
 #include "com/sun/star/embed/ElementModes.hpp"
+#include "com/sun/star/embed/InvalidStorageException.hpp"
+#include "com/sun/star/embed/StorageWrappedTargetException.hpp"
 #include "com/sun/star/embed/XStorage.hpp"
 #include "com/sun/star/embed/XTransactedObject.hpp"
+#include "com/sun/star/io/BufferSizeExceededException.hpp"
+#include "com/sun/star/io/IOException.hpp"
+#include "com/sun/star/io/NotConnectedException.hpp"
 #include "com/sun/star/io/XActiveDataSink.hpp"
 #include "com/sun/star/io/XActiveDataStreamer.hpp"
 #include "com/sun/star/lang/IllegalAccessException.hpp"
 #include "com/sun/star/sdbc/XRow.hpp"
 #include "com/sun/star/ucb/ContentAction.hpp"
 #include "com/sun/star/ucb/ContentInfoAttribute.hpp"
+#include "com/sun/star/ucb/IllegalIdentifierException.hpp"
 #include "com/sun/star/ucb/InsertCommandArgument.hpp"
 #include "com/sun/star/ucb/InteractiveBadTransferURLException.hpp"
 #include "com/sun/star/ucb/MissingInputStreamException.hpp"
@@ -183,7 +189,6 @@ void SAL_CALL Content::release()
 
 // virtual
 uno::Any SAL_CALL Content::queryInterface( const uno::Type & rType )
-    throw ( uno::RuntimeException, std::exception )
 {
     uno::Any aRet = ContentImplHelper::queryInterface( rType );
 
@@ -210,7 +215,6 @@ XTYPEPROVIDER_COMMON_IMPL( Content );
 
 // virtual
 uno::Sequence< uno::Type > SAL_CALL Content::getTypes()
-    throw( uno::RuntimeException, std::exception )
 {
     cppu::OTypeCollection * pCollection = nullptr;
 
@@ -289,7 +293,6 @@ uno::Sequence< uno::Type > SAL_CALL Content::getTypes()
 
 // virtual
 OUString SAL_CALL Content::getImplementationName()
-    throw( uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.ucb.TransientDocumentsContent" );
 }
@@ -297,7 +300,6 @@ OUString SAL_CALL Content::getImplementationName()
 
 // virtual
 uno::Sequence< OUString > SAL_CALL Content::getSupportedServiceNames()
-    throw( uno::RuntimeException, std::exception )
 {
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
 
@@ -321,7 +323,6 @@ uno::Sequence< OUString > SAL_CALL Content::getSupportedServiceNames()
 
 // virtual
 OUString SAL_CALL Content::getContentType()
-    throw( uno::RuntimeException, std::exception )
 {
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
     return m_aProps.getContentType();
@@ -331,7 +332,6 @@ OUString SAL_CALL Content::getContentType()
 // virtual
 uno::Reference< ucb::XContentIdentifier > SAL_CALL
 Content::getIdentifier()
-    throw( uno::RuntimeException, std::exception )
 {
     {
         osl::Guard< osl::Mutex > aGuard( m_aMutex );
@@ -355,9 +355,6 @@ uno::Any SAL_CALL Content::execute(
         const ucb::Command& aCommand,
         sal_Int32 /*CommandId*/,
         const uno::Reference< ucb::XCommandEnvironment >& Environment )
-    throw( uno::Exception,
-           ucb::CommandAbortedException,
-           uno::RuntimeException, std::exception )
 {
     uno::Any aRet;
 
@@ -372,7 +369,7 @@ uno::Any SAL_CALL Content::execute(
         {
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( lang::IllegalArgumentException(
-                                    OUString( "Wrong argument type!" ),
+                                    "Wrong argument type!",
                                     static_cast< cppu::OWeakObject * >( this ),
                                     -1 ) ),
                 Environment );
@@ -392,7 +389,7 @@ uno::Any SAL_CALL Content::execute(
         {
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( lang::IllegalArgumentException(
-                                    OUString( "Wrong argument type!" ),
+                                    "Wrong argument type!",
                                     static_cast< cppu::OWeakObject * >( this ),
                                     -1 ) ),
                 Environment );
@@ -403,7 +400,7 @@ uno::Any SAL_CALL Content::execute(
         {
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( lang::IllegalArgumentException(
-                                    OUString( "No properties!" ),
+                                    "No properties!",
                                     static_cast< cppu::OWeakObject * >( this ),
                                     -1 ) ),
                 Environment );
@@ -439,7 +436,7 @@ uno::Any SAL_CALL Content::execute(
         {
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( lang::IllegalArgumentException(
-                                    OUString( "Wrong argument type!" ),
+                                    "Wrong argument type!",
                                     static_cast< cppu::OWeakObject * >( this ),
                                     -1 ) ),
                 Environment );
@@ -459,14 +456,13 @@ uno::Any SAL_CALL Content::execute(
         {
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( ucb::UnsupportedCommandException(
-                                OUString( "insert command only supported by "
-                                        "folders and streams!"  ),
+                                "insert command only supported by "
+                                "folders and streams!",
                                 static_cast< cppu::OWeakObject * >( this ) ) ),
                 Environment );
             // Unreachable
         }
 
-#ifdef NO_STREAM_CREATION_WITHIN_DOCUMENT_ROOT
         if ( eType == STREAM )
         {
             Uri aUri( m_xIdentifier->getContentIdentifier() );
@@ -475,22 +471,22 @@ uno::Any SAL_CALL Content::execute(
             {
                 ucbhelper::cancelCommandExecution(
                     uno::makeAny( ucb::UnsupportedCommandException(
-                                    OUString( "insert command not supported by "
-                                            "streams that are direct children "
-                                            "of document root!"  ),
+                                    "insert command not supported by "
+                                    "streams that are direct children "
+                                    "of document root!",
                                     static_cast< cppu::OWeakObject * >(
                                         this ) ) ),
                     Environment );
                 // Unreachable
             }
         }
-#endif
+
         ucb::InsertCommandArgument aArg;
         if ( !( aCommand.Argument >>= aArg ) )
         {
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( lang::IllegalArgumentException(
-                                    OUString( "Wrong argument type!" ),
+                                    "Wrong argument type!",
                                     static_cast< cppu::OWeakObject * >( this ),
                                     -1 ) ),
                 Environment );
@@ -516,8 +512,8 @@ uno::Any SAL_CALL Content::execute(
             {
                 ucbhelper::cancelCommandExecution(
                     uno::makeAny( ucb::UnsupportedCommandException(
-                                    OUString( "delete command only supported by "
-                                            "folders and streams!"  ),
+                                    "delete command only supported by "
+                                    "folders and streams!",
                                     static_cast< cppu::OWeakObject * >(
                                         this ) ) ),
                     Environment );
@@ -535,7 +531,7 @@ uno::Any SAL_CALL Content::execute(
             uno::Any aProps
                 = uno::makeAny(
                          beans::PropertyValue(
-                             OUString( "Uri"),
+                             "Uri",
                              -1,
                              uno::makeAny(m_xIdentifier->
                                               getContentIdentifier()),
@@ -566,8 +562,8 @@ uno::Any SAL_CALL Content::execute(
             {
                 ucbhelper::cancelCommandExecution(
                     uno::makeAny( ucb::UnsupportedCommandException(
-                                    OUString( "transfer command only supported "
-                                            "by folders and documents!"  ),
+                                    "transfer command only supported "
+                                    "by folders and documents!",
                                     static_cast< cppu::OWeakObject * >(
                                         this ) ) ),
                     Environment );
@@ -581,7 +577,7 @@ uno::Any SAL_CALL Content::execute(
             OSL_FAIL( "Wrong argument type!" );
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( lang::IllegalArgumentException(
-                                    OUString( "Wrong argument type!" ),
+                                    "Wrong argument type!",
                                     static_cast< cppu::OWeakObject * >( this ),
                                     -1 ) ),
                 Environment );
@@ -604,9 +600,9 @@ uno::Any SAL_CALL Content::execute(
             {
                 ucbhelper::cancelCommandExecution(
                     uno::makeAny( ucb::UnsupportedCommandException(
-                                    OUString( "createNewContent command only "
-                                            "supported by folders and "
-                                            "documents!"  ),
+                                    "createNewContent command only "
+                                    "supported by folders and "
+                                    "documents!",
                                     static_cast< cppu::OWeakObject * >(
                                         this ) ) ),
                     Environment );
@@ -620,7 +616,7 @@ uno::Any SAL_CALL Content::execute(
             OSL_FAIL( "Wrong argument type!" );
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( lang::IllegalArgumentException(
-                                    OUString( "Wrong argument type!" ),
+                                    "Wrong argument type!",
                                     static_cast< cppu::OWeakObject * >( this ),
                                     -1 ) ),
                 Environment );
@@ -649,7 +645,6 @@ uno::Any SAL_CALL Content::execute(
 
 // virtual
 void SAL_CALL Content::abort( sal_Int32 /*CommandId*/ )
-    throw( uno::RuntimeException, std::exception )
 {
 }
 
@@ -660,7 +655,6 @@ void SAL_CALL Content::abort( sal_Int32 /*CommandId*/ )
 // virtual
 uno::Sequence< ucb::ContentInfo > SAL_CALL
 Content::queryCreatableContentsInfo()
-    throw( uno::RuntimeException, std::exception )
 {
     return m_aProps.getCreatableContentsInfo();
 }
@@ -669,7 +663,6 @@ Content::queryCreatableContentsInfo()
 // virtual
 uno::Reference< ucb::XContent > SAL_CALL
 Content::createNewContent( const ucb::ContentInfo& Info )
-    throw( uno::RuntimeException, std::exception )
 {
     if ( m_aProps.isContentCreator() )
     {
@@ -680,7 +673,6 @@ Content::createNewContent( const ucb::ContentInfo& Info )
 
         bool bCreateFolder = Info.Type == TDOC_FOLDER_CONTENT_TYPE;
 
-#ifdef NO_STREAM_CREATION_WITHIN_DOCUMENT_ROOT
         // streams cannot be created as direct children of document root
         if ( !bCreateFolder && ( m_aProps.getType() == DOCUMENT ) )
         {
@@ -688,7 +680,6 @@ Content::createNewContent( const ucb::ContentInfo& Info )
                         "created as direct children of document root!" );
             return uno::Reference< ucb::XContent >();
         }
-#endif
         if ( !bCreateFolder && Info.Type != TDOC_STREAM_CONTENT_TYPE )
         {
             OSL_FAIL( "Content::createNewContent - unsupported type!" );
@@ -1018,7 +1009,7 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
     {
         // Append all Core Properties.
         xRow->appendString (
-            beans::Property( OUString("ContentType"),
+            beans::Property( "ContentType",
                       -1,
                       cppu::UnoType<OUString>::get(),
                       beans::PropertyAttribute::BOUND
@@ -1028,7 +1019,7 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
         ContentType eType = rData.getType();
 
         xRow->appendString (
-            beans::Property( OUString("Title"),
+            beans::Property( "Title",
                       -1,
                       cppu::UnoType<OUString>::get(),
                       // Title is read-only for root and documents.
@@ -1038,14 +1029,14 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
                         : 0 ) ),
             rData.getTitle() );
         xRow->appendBoolean(
-            beans::Property( OUString("IsDocument"),
+            beans::Property( "IsDocument",
                       -1,
                       cppu::UnoType<bool>::get(),
                       beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY ),
             rData.getIsDocument() );
         xRow->appendBoolean(
-            beans::Property( OUString("IsFolder"),
+            beans::Property( "IsFolder",
                       -1,
                       cppu::UnoType<bool>::get(),
                       beans::PropertyAttribute::BOUND
@@ -1053,7 +1044,7 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
             rData.getIsFolder() );
         xRow->appendObject(
             beans::Property(
-                OUString("CreatableContentsInfo"),
+                "CreatableContentsInfo",
                 -1,
                 cppu::UnoType<uno::Sequence< ucb::ContentInfo >>::get(),
                 beans::PropertyAttribute::BOUND
@@ -1063,7 +1054,7 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
         // Storage is only supported by folders.
         if ( eType == FOLDER )
             xRow->appendObject(
-                beans::Property( OUString("Storage"),
+                beans::Property( "Storage",
                           -1,
                           cppu::UnoType<embed::XStorage>::get(),
                           beans::PropertyAttribute::BOUND
@@ -1073,7 +1064,7 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
         // DocumentModel is only supported by documents.
         if ( eType == DOCUMENT )
             xRow->appendObject(
-                beans::Property( OUString("DocumentModel"),
+                beans::Property( "DocumentModel",
                           -1,
                           cppu::UnoType<frame::XModel>::get(),
                           beans::PropertyAttribute::BOUND
@@ -1108,7 +1099,6 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
 uno::Sequence< uno::Any > Content::setPropertyValues(
         const uno::Sequence< beans::PropertyValue >& rValues,
         const uno::Reference< ucb::XCommandEnvironment > & xEnv )
-    throw( uno::Exception, std::exception )
 {
     osl::ClearableGuard< osl::Mutex > aGuard( m_aMutex );
 
@@ -1142,28 +1132,28 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
         {
             // Read-only property!
             aRet[ n ] <<= lang::IllegalAccessException(
-                            OUString( "Property is read-only!" ),
+                            "Property is read-only!",
                             static_cast< cppu::OWeakObject * >( this ) );
         }
         else if ( rValue.Name == "IsDocument" )
         {
             // Read-only property!
             aRet[ n ] <<= lang::IllegalAccessException(
-                            OUString( "Property is read-only!" ),
+                            "Property is read-only!",
                             static_cast< cppu::OWeakObject * >( this ) );
         }
         else if ( rValue.Name == "IsFolder" )
         {
             // Read-only property!
             aRet[ n ] <<= lang::IllegalAccessException(
-                            OUString( "Property is read-only!" ),
+                            "Property is read-only!",
                             static_cast< cppu::OWeakObject * >( this ) );
         }
         else if ( rValue.Name == "CreatableContentsInfo" )
         {
             // Read-only property!
             aRet[ n ] <<= lang::IllegalAccessException(
-                            OUString( "Property is read-only!" ),
+                            "Property is read-only!",
                             static_cast< cppu::OWeakObject * >( this ) );
         }
         else if ( rValue.Name == "Title" )
@@ -1173,7 +1163,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
             if ( ( eType == ROOT ) || ( eType == DOCUMENT ) )
             {
                 aRet[ n ] <<= lang::IllegalAccessException(
-                                OUString( "Property is read-only!" ),
+                                "Property is read-only!",
                                 static_cast< cppu::OWeakObject * >( this ) );
             }
             else
@@ -1203,7 +1193,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
                     else
                     {
                         aRet[ n ] <<= lang::IllegalArgumentException(
-                                    OUString( "Empty Title not allowed!" ),
+                                    "Empty Title not allowed!",
                                     static_cast< cppu::OWeakObject * >( this ),
                                     -1 );
                     }
@@ -1211,7 +1201,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
                 else
                 {
                     aRet[ n ] <<= beans::IllegalTypeException(
-                                OUString( "Title Property value has wrong type!" ),
+                                "Title Property value has wrong type!",
                                 static_cast< cppu::OWeakObject * >( this ) );
                 }
             }
@@ -1222,14 +1212,14 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
             if ( eType == FOLDER )
             {
                 aRet[ n ] <<= lang::IllegalAccessException(
-                                OUString( "Property is read-only!" ),
+                                "Property is read-only!",
                                 static_cast< cppu::OWeakObject * >( this ) );
             }
             else
             {
                 // Storage is only supported by folders.
                 aRet[ n ] <<= beans::UnknownPropertyException(
-                            OUString( "Storage property only supported by folders" ),
+                            "Storage property only supported by folders",
                             static_cast< cppu::OWeakObject * >( this ) );
             }
         }
@@ -1239,15 +1229,14 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
             if ( eType == DOCUMENT )
             {
                 aRet[ n ] <<= lang::IllegalAccessException(
-                                OUString( "Property is read-only!" ),
+                                "Property is read-only!",
                                 static_cast< cppu::OWeakObject * >( this ) );
             }
             else
             {
                 // Storage is only supported by folders.
                 aRet[ n ] <<= beans::UnknownPropertyException(
-                            OUString( "DocumentModel property only supported by "
-                                "documents" ),
+                            "DocumentModel property only supported by documents",
                             static_cast< cppu::OWeakObject * >( this ) );
             }
         }
@@ -1300,7 +1289,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
             else
             {
                 aRet[ n ] <<= uno::Exception(
-                                OUString( "No property set for storing the value!" ),
+                                "No property set for storing the value!",
                                 static_cast< cppu::OWeakObject * >( this ) );
             }
         }
@@ -1331,7 +1320,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
 
             // Set error .
             aRet[ nTitlePos ] <<= uno::Exception(
-                    OUString("Exchange failed!"),
+                    "Exchange failed!",
                     static_cast< cppu::OWeakObject * >( this ) );
         }
     }
@@ -1339,8 +1328,8 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
     if ( !aOldTitle.isEmpty() )
     {
         aEvent.PropertyName = "Title";
-        aEvent.OldValue     = uno::makeAny( aOldTitle );
-        aEvent.NewValue     = uno::makeAny( m_aProps.getTitle() );
+        aEvent.OldValue     <<= aOldTitle;
+        aEvent.NewValue     <<= m_aProps.getTitle();
 
         aChanges.getArray()[ nChanged ] = aEvent;
         nChanged++;
@@ -1356,7 +1345,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
                 uno::Any aProps
                     = uno::makeAny(
                              beans::PropertyValue(
-                                 OUString( "Uri"),
+                                 "Uri",
                                  -1,
                                  uno::makeAny(m_xIdentifier->
                                                   getContentIdentifier()),
@@ -1384,7 +1373,6 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
 uno::Any Content::open(
                 const ucb::OpenCommandArgument2& rArg,
                 const uno::Reference< ucb::XCommandEnvironment >& xEnv )
-    throw( uno::Exception )
 {
     if ( rArg.Mode == ucb::OpenMode::ALL ||
          rArg.Mode == ucb::OpenMode::FOLDERS ||
@@ -1431,7 +1419,7 @@ uno::Any Content::open(
                 uno::Any aProps
                     = uno::makeAny(
                              beans::PropertyValue(
-                                 OUString( "Uri"),
+                                 "Uri",
                                  -1,
                                  uno::makeAny(m_xIdentifier->
                                                   getContentIdentifier()),
@@ -1465,7 +1453,7 @@ uno::Any Content::open(
                     uno::Any aProps
                         = uno::makeAny(
                                  beans::PropertyValue(
-                                     OUString( "Uri"),
+                                     "Uri",
                                      -1,
                                      uno::makeAny(m_xIdentifier->
                                                       getContentIdentifier()),
@@ -1525,7 +1513,7 @@ uno::Any Content::open(
                         uno::Any aProps
                             = uno::makeAny(
                                      beans::PropertyValue(
-                                         OUString( "Uri"),
+                                         "Uri",
                                          -1,
                                          uno::makeAny(m_xIdentifier->
                                                           getContentIdentifier()),
@@ -1568,7 +1556,6 @@ void Content::insert( const uno::Reference< io::XInputStream >& xData,
                       sal_Int32 nNameClashResolve,
                       const uno::Reference<
                           ucb::XCommandEnvironment > & xEnv )
-    throw( uno::Exception )
 {
     osl::ClearableGuard< osl::Mutex > aGuard( m_aMutex );
 
@@ -1579,7 +1566,6 @@ void Content::insert( const uno::Reference< io::XInputStream >& xData,
 
     Uri aUri( m_xIdentifier->getContentIdentifier() );
 
-#ifdef NO_STREAM_CREATION_WITHIN_DOCUMENT_ROOT
 #if OSL_DEBUG_LEVEL > 0
     if ( eType == STREAM )
     {
@@ -1588,7 +1574,6 @@ void Content::insert( const uno::Reference< io::XInputStream >& xData,
                     "insert command not supported by streams that are direct "
                     "children of document root!" );
     }
-#endif
 #endif
 
     // Check, if all required properties were set.
@@ -1665,7 +1650,7 @@ void Content::insert( const uno::Reference< io::XInputStream >& xData,
                     ucbhelper::cancelCommandExecution(
                         uno::makeAny(
                             ucb::UnsupportedNameClashException(
-                                OUString( "Unable to resolve name clash!" ),
+                                "Unable to resolve name clash!",
                                 static_cast< cppu::OWeakObject * >( this ),
                                 nNameClashResolve ) ),
                         xEnv );
@@ -1711,7 +1696,7 @@ void Content::insert( const uno::Reference< io::XInputStream >& xData,
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  OUString( "Uri"),
+                                  "Uri",
                                   -1,
                                   uno::makeAny(m_xIdentifier->
                                                    getContentIdentifier()),
@@ -1740,7 +1725,6 @@ void Content::insert( const uno::Reference< io::XInputStream >& xData,
 void Content::destroy( bool bDeletePhysical,
                        const uno::Reference<
                            ucb::XCommandEnvironment > & xEnv )
-    throw( uno::Exception, std::exception )
 {
     // @@@ take care about bDeletePhysical -> trashcan support
 
@@ -1758,7 +1742,7 @@ void Content::destroy( bool bDeletePhysical,
     {
         ucbhelper::cancelCommandExecution(
             uno::makeAny( ucb::UnsupportedCommandException(
-                                OUString( "Not persistent!" ),
+                                "Not persistent!",
                                 static_cast< cppu::OWeakObject * >( this ) ) ),
             xEnv );
         // Unreachable
@@ -1889,7 +1873,6 @@ void Content::notifyChildInserted( const OUString & rRelativeChildUri )
 void Content::transfer(
             const ucb::TransferInfo& rInfo,
             const uno::Reference< ucb::XCommandEnvironment > & xEnv )
-    throw( uno::Exception, std::exception )
 {
     osl::ClearableGuard< osl::Mutex > aGuard( m_aMutex );
 
@@ -1898,7 +1881,7 @@ void Content::transfer(
     {
         ucbhelper::cancelCommandExecution(
             uno::makeAny( ucb::UnsupportedCommandException(
-                                OUString( "Not persistent!" ),
+                                "Not persistent!",
                                 static_cast< cppu::OWeakObject * >( this ) ) ),
             xEnv );
         // Unreachable
@@ -1937,7 +1920,7 @@ void Content::transfer(
     {
         ucbhelper::cancelCommandExecution(
             uno::makeAny( lang::IllegalArgumentException(
-                                OUString( "Invalid source URI! Syntax!" ),
+                                "Invalid source URI! Syntax!",
                                 static_cast< cppu::OWeakObject * >( this ),
                                 -1 ) ),
             xEnv );
@@ -1948,8 +1931,7 @@ void Content::transfer(
     {
         ucbhelper::cancelCommandExecution(
             uno::makeAny( lang::IllegalArgumentException(
-                                OUString( "Invalid source URI! "
-                                    "Must describe a folder or stream!" ),
+                                "Invalid source URI! Must describe a folder or stream!",
                                 static_cast< cppu::OWeakObject * >( this ),
                                 -1 ) ),
             xEnv );
@@ -1971,7 +1953,7 @@ void Content::transfer(
         {
             uno::Any aProps
                 = uno::makeAny(beans::PropertyValue(
-                                      OUString( "Uri"),
+                                      "Uri",
                                       -1,
                                       uno::makeAny( rInfo.SourceURL ),
                                       beans::PropertyState_DIRECT_VALUE));
@@ -1985,7 +1967,6 @@ void Content::transfer(
         }
     }
 
-#ifdef NO_STREAM_CREATION_WITHIN_DOCUMENT_ROOT
     if ( m_aProps.getType() == DOCUMENT )
     {
         bool bOK = false;
@@ -2001,9 +1982,9 @@ void Content::transfer(
                 {
                     ucbhelper::cancelCommandExecution(
                         uno::makeAny( lang::IllegalArgumentException(
-                                        OUString( "Invalid source URI! "
-                                            "Streams cannot be created as "
-                                            "children of document root!" ),
+                                        "Invalid source URI! "
+                                        "Streams cannot be created as "
+                                        "children of document root!",
                                         static_cast< cppu::OWeakObject * >(
                                             this ),
                                         -1 ) ),
@@ -2030,15 +2011,13 @@ void Content::transfer(
         {
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( lang::IllegalArgumentException(
-                                    OUString( "Invalid source URI! "
-                                        "Unable to determine source type!" ),
+                                    "Invalid source URI! Unable to determine source type!",
                                     static_cast< cppu::OWeakObject * >( this ),
                                     -1 ) ),
                 xEnv );
             // Unreachable
         }
     }
-#endif
 
 
     // Copy data.
@@ -2053,7 +2032,7 @@ void Content::transfer(
         uno::Any aProps
             = uno::makeAny(
                      beans::PropertyValue(
-                         OUString( "Uri"),
+                         "Uri",
                          -1,
                          uno::makeAny( rInfo.SourceURL ),
                          beans::PropertyState_DIRECT_VALUE));
@@ -2084,7 +2063,7 @@ void Content::transfer(
         uno::Any aProps
             = uno::makeAny(
                      beans::PropertyValue(
-                         OUString( "Uri"),
+                         "Uri",
                          -1,
                          uno::makeAny( rInfo.SourceURL ),
                          beans::PropertyState_DIRECT_VALUE));
@@ -2122,7 +2101,7 @@ void Content::transfer(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  OUString( "Uri"),
+                                  "Uri",
                                   -1,
                                   uno::makeAny( aTargetUri ),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -2164,7 +2143,7 @@ void Content::transfer(
         {
             uno::Any aProps
                 = uno::makeAny(beans::PropertyValue(
-                                      OUString( "Uri"),
+                                      "Uri",
                                       -1,
                                       uno::makeAny( rInfo.SourceURL ),
                                       beans::PropertyState_DIRECT_VALUE));
@@ -2186,7 +2165,7 @@ void Content::transfer(
             uno::Any aProps
                 = uno::makeAny(
                          beans::PropertyValue(
-                             OUString( "Uri"),
+                             "Uri",
                              -1,
                              uno::makeAny( rInfo.SourceURL ),
                              beans::PropertyState_DIRECT_VALUE));
@@ -2205,7 +2184,7 @@ void Content::transfer(
             uno::Any aProps
                 = uno::makeAny(
                          beans::PropertyValue(
-                             OUString( "Uri"),
+                             "Uri",
                              -1,
                              uno::makeAny( rInfo.SourceURL ),
                              beans::PropertyState_DIRECT_VALUE));
@@ -2329,9 +2308,6 @@ bool Content::loadData( ContentProvider* pProvider,
 bool Content::storeData( const uno::Reference< io::XInputStream >& xData,
                          const uno::Reference<
                             ucb::XCommandEnvironment >& xEnv )
-    throw ( ucb::CommandFailedException,
-            task::DocumentPasswordRequest,
-            css::uno::RuntimeException )
 {
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
 
@@ -2720,13 +2696,12 @@ bool Content::closeOutputStream(
     return false;
 }
 
-
+/// @throws ucb::CommandFailedException
+/// @throws task::DocumentPasswordRequest
 static OUString obtainPassword(
         const OUString & rName,
         task::PasswordRequestMode eMode,
         const uno::Reference< ucb::XCommandEnvironment > & xEnv )
-    throw ( ucb::CommandFailedException,
-            task::DocumentPasswordRequest )
 {
     rtl::Reference< DocumentPasswordRequest > xRequest
         = new DocumentPasswordRequest( eMode, rName );
@@ -2750,7 +2725,7 @@ static OUString obtainPassword(
                 if ( xAbort.is() )
                 {
                     throw ucb::CommandFailedException(
-                        OUString( "Abort requested by Interaction Handler."  ),
+                        "Abort requested by Interaction Handler.",
                         uno::Reference< uno::XInterface >(),
                         xRequest->getRequest() );
                 }
@@ -2764,7 +2739,7 @@ static OUString obtainPassword(
 
                 // Unknown selection. Should never happen.
                 throw ucb::CommandFailedException(
-                    OUString( "Interaction Handler selected unknown continuation!"  ),
+                    "Interaction Handler selected unknown continuation!",
                     uno::Reference< uno::XInterface >(),
                     xRequest->getRequest() );
             }
@@ -2780,9 +2755,6 @@ static OUString obtainPassword(
 
 uno::Reference< io::XInputStream > Content::getInputStream(
         const uno::Reference< ucb::XCommandEnvironment > & xEnv )
-    throw ( ucb::CommandFailedException,
-            task::DocumentPasswordRequest,
-            uno::RuntimeException )
 {
     OUString aUri;
     OUString aPassword;
@@ -2819,14 +2791,13 @@ uno::Reference< io::XInputStream > Content::getInputStream(
     }
 }
 
-
+/// @throws ucb::CommandFailedException
+/// @throws task::DocumentPasswordRequest
+/// @throws uno::RuntimeException
 static uno::Reference< io::XOutputStream > lcl_getTruncatedOutputStream(
                 const OUString & rUri,
                 ContentProvider * pProvider,
                 const uno::Reference< ucb::XCommandEnvironment > & xEnv )
-    throw ( ucb::CommandFailedException,
-            task::DocumentPasswordRequest,
-            uno::RuntimeException )
 {
     OUString aPassword;
     bool bPasswordRequested = false;
@@ -2855,9 +2826,6 @@ static uno::Reference< io::XOutputStream > lcl_getTruncatedOutputStream(
 
 uno::Reference< io::XOutputStream > Content::getTruncatedOutputStream(
         const uno::Reference< ucb::XCommandEnvironment > & xEnv )
-    throw ( ucb::CommandFailedException,
-            task::DocumentPasswordRequest,
-            css::uno::RuntimeException )
 {
     OSL_ENSURE( m_aProps.getType() == STREAM,
                 "Content::getTruncatedOutputStream - content is no stream!" );
@@ -2871,9 +2839,6 @@ uno::Reference< io::XOutputStream > Content::getTruncatedOutputStream(
 
 uno::Reference< io::XStream > Content::getStream(
         const uno::Reference< ucb::XCommandEnvironment > & xEnv )
-    throw ( ucb::CommandFailedException,
-            task::DocumentPasswordRequest,
-            uno::RuntimeException )
 {
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
 
@@ -2916,12 +2881,11 @@ ContentProperties::getCreatableContentsInfo() const
     {
         uno::Sequence< beans::Property > aProps( 1 );
         aProps.getArray()[ 0 ] = beans::Property(
-                    OUString("Title"),
+                    "Title",
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND );
 
-#ifdef NO_STREAM_CREATION_WITHIN_DOCUMENT_ROOT
         if ( getType() == DOCUMENT )
         {
             // streams cannot be created as direct children of document root
@@ -2936,7 +2900,6 @@ ContentProperties::getCreatableContentsInfo() const
         }
         else
         {
-#endif
             uno::Sequence< ucb::ContentInfo > aSeq( 2 );
 
             // Folder.
@@ -2953,9 +2916,7 @@ ContentProperties::getCreatableContentsInfo() const
             aSeq.getArray()[ 1 ].Properties = aProps;
 
             return aSeq;
-#ifdef NO_STREAM_CREATION_WITHIN_DOCUMENT_ROOT
         }
-#endif
     }
     else
     {

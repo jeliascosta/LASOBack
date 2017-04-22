@@ -47,7 +47,6 @@ AccContainerEventListener::~AccContainerEventListener()
  *  @param AccessibleEventObject    the event object which contains information about event
  */
 void  AccContainerEventListener::notifyEvent( const css::accessibility::AccessibleEventObject& aEvent )
-throw (css::uno::RuntimeException)
 {
     SolarMutexGuard g;
 
@@ -428,7 +427,7 @@ void AccContainerEventListener::HandleValueChangedEvent(Any, Any)
     pAgent->NotifyAccEvent(UM_EVENT_OBJECT_VALUECHANGE, m_xAccessible.get());
 }
 
-bool AccContainerEventListener::IsEditable(Reference<XAccessibleContext> xContext)
+bool AccContainerEventListener::IsEditable(Reference<XAccessibleContext> const & xContext)
 {
     bool ret = false;
     Reference< XAccessibleStateSet > pRState = xContext->getAccessibleStateSet();
@@ -495,7 +494,7 @@ void AccContainerEventListener::UpdateAllChildrenState(XAccessible* pXAccessible
         return;
     }
     css::accessibility::XAccessibleContext* pAccessibleContext = xContext.get();
-    if(pAccessibleContext == NULL)
+    if(pAccessibleContext == nullptr)
     {
         return;
     }
@@ -512,7 +511,7 @@ void AccContainerEventListener::UpdateAllChildrenState(XAccessible* pXAccessible
         = pAccessibleContext->getAccessibleChild(i);
 
         css::accessibility::XAccessible* mpAccessible = mxAccessible.get();
-        if(mpAccessible != NULL)
+        if(mpAccessible != nullptr)
         {
             pAgent->UpdateState(mpAccessible);
             UpdateAllChildrenState(mpAccessible);

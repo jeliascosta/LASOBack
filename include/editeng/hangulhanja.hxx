@@ -48,7 +48,7 @@ namespace editeng
             </ul>
             For instance, you could have two independent selections within your document, which are then
             two text portions. A text unit would be single Hangul/Hanja words within a portion, or even
-            single Hangul syllabills when "replace by character" is enabled.
+            single Hangul syllabification when "replace by character" is enabled.
         </p>
     */
     class EDITENG_DLLPUBLIC HangulHanjaConversion
@@ -193,7 +193,7 @@ namespace editeng
             <p>pseudo-abstract, needs to be overridden</p>
 
             <p>Note an important thing about the indices: They are always relative to the <em>previous
-            call</em> of ReplaceUnit. This means whe you get a call to ReplaceUnit, and replace some text
+            call</em> of ReplaceUnit. This means when you get a call to ReplaceUnit, and replace some text
             in your document, than you have to remember the document position immediately <em>behind</em>
             the changed text. In a next call to ReplaceUnit, an index of <em>0</em> will denote exactly
             this position behind the previous replacement<br/>

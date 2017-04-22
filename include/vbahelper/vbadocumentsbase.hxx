@@ -19,10 +19,30 @@
 #ifndef INCLUDED_VBAHELPER_VBADOCUMENTSBASE_HXX
 #define INCLUDED_VBAHELPER_VBADOCUMENTSBASE_HXX
 
+#include <exception>
 
-#include <vbahelper/vbacollectionimpl.hxx>
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <com/sun/star/uno/Type.hxx>
 #include <ooo/vba/XDocumentsBase.hpp>
-#include <com/sun/star/container/XEnumerationAccess.hpp>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbacollectionimpl.hxx>
+#include <vbahelper/vbadllapi.h>
+#include <vbahelper/vbahelper.hxx>
+
+namespace com { namespace sun { namespace star {
+    namespace beans { struct PropertyValue; }
+    namespace container { class XEnumeration; }
+    namespace uno { class XComponentContext; }
+} } }
+
+namespace ooo { namespace vba {
+    class XDocumentsBase;
+    class XHelperInterface;
+} }
 
 typedef CollTestImplHelper< ooo::vba::XDocumentsBase > VbaDocumentsBase_BASE;
 
@@ -39,19 +59,21 @@ private:
     DOCUMENT_TYPE meDocType;
 
 public:
-    VbaDocumentsBase( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext, DOCUMENT_TYPE eDocType ) throw (css::uno::RuntimeException);
-    virtual ~VbaDocumentsBase() {}
+    /// @throws css::uno::RuntimeException
+    VbaDocumentsBase( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext, DOCUMENT_TYPE eDocType );
 
     // XEnumerationAccess
-    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override = 0;
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override = 0;
+    virtual css::uno::Type SAL_CALL getElementType() override = 0;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override = 0;
 
     // VbaDocumentsBase_BASE
     virtual css::uno::Any createCollectionObject( const css::uno::Any& aSource ) override = 0;
 
 protected:
-    css::uno::Any createDocument() throw (css::uno::RuntimeException, std::exception);
-    css::uno::Any openDocument( const OUString& Filename, const css::uno::Any& ReadOnly, const css::uno::Sequence< css::beans::PropertyValue >& rProps ) throw (css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    css::uno::Any createDocument();
+    /// @throws css::uno::RuntimeException
+    css::uno::Any openDocument( const OUString& Filename, const css::uno::Any& ReadOnly, const css::uno::Sequence< css::beans::PropertyValue >& rProps );
 };
 
 #endif /* SC_ INCLUDED_VBAHELPER_VBADOCUMENTSBASE_HXX */

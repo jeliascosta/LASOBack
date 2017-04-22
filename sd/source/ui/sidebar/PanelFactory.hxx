@@ -37,23 +37,17 @@ namespace sd {
 
 namespace sd { namespace sidebar {
 
-namespace
-{
-    typedef ::cppu::WeakComponentImplHelper <
-        css::ui::XUIElementFactory
-        > PanelFactoryInterfaceBase;
-}
+typedef ::cppu::WeakComponentImplHelper <
+    css::ui::XUIElementFactory
+    > PanelFactoryInterfaceBase;
 
 class PanelFactory
     : private ::cppu::BaseMutex,
       public PanelFactoryInterfaceBase
 {
 public:
-    static css::uno::Reference<css::uno::XInterface> SAL_CALL createInstance (
-        const css::uno::Reference<css::lang::XMultiServiceFactory>& rxFactory);
-
     explicit PanelFactory (const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~PanelFactory();
+    virtual ~PanelFactory() override;
     PanelFactory(const PanelFactory&) = delete;
     PanelFactory& operator=(const PanelFactory&) = delete;
 
@@ -63,11 +57,7 @@ public:
 
     css::uno::Reference<css::ui::XUIElement> SAL_CALL createUIElement (
         const ::rtl::OUString& rsResourceURL,
-        const css::uno::Sequence<css::beans::PropertyValue>& rArguments)
-        throw(
-            css::container::NoSuchElementException,
-            css::lang::IllegalArgumentException,
-            css::uno::RuntimeException, std::exception) override;
+        const css::uno::Sequence<css::beans::PropertyValue>& rArguments) override;
 };
 
 } } // end of namespace sd::sidebar

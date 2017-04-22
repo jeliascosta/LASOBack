@@ -68,9 +68,9 @@ private:
     VclPtr<FixedText>          msMonitorExternal;
     VclPtr<FixedText>          msExternal;
 
-                        DECL_LINK_TYPED( ChangeRangeHdl, Button*, void );
-                        DECL_LINK_TYPED( ClickWindowPresentationHdl, Button*, void );
-                        DECL_LINK_TYPED( ChangePauseHdl, Edit&, void );
+                        DECL_LINK( ChangeRangeHdl, Button*, void );
+                        DECL_LINK( ClickWindowPresentationHdl, Button*, void );
+                        DECL_LINK( ChangePauseHdl, Edit&, void );
 
     void                InitMonitorSettings();
     enum DisplayType {
@@ -87,7 +87,7 @@ public:
                                 const SfxItemSet& rInAttrs,
                                 const std::vector<OUString> &rPageNames,
                                 SdCustomShowList* pCSList );
-    virtual             ~SdStartPresentationDlg();
+    virtual             ~SdStartPresentationDlg() override;
     virtual void        dispose() override;
 
     void                GetAttr( SfxItemSet& rOutAttrs );

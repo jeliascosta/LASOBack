@@ -29,34 +29,38 @@
 
 #include <com/sun/star/ucb/AuthenticationRequest.hpp>
 
+#include <com/sun/star/ucb/CertificateValidationRequest.hpp>
+
 namespace comphelper{
 
 StillReadWriteInteraction::StillReadWriteInteraction(const css::uno::Reference< css::task::XInteractionHandler >& xHandler,
-                                                     const css::uno::Reference< css::task::XInteractionHandler >& xAuthenticationHandler)
+                                                     const css::uno::Reference< css::task::XInteractionHandler >& xAuxiliaryHandler)
              : m_bUsed                    (false)
              , m_bHandledByMySelf         (false)
              , m_bHandledByInternalHandler(false)
-             , m_xAuthenticationHandler(xAuthenticationHandler)
+             , m_xAuxiliaryHandler(xAuxiliaryHandler)
 {
-    ::std::vector< ::ucbhelper::InterceptedInteraction::InterceptedRequest > lInterceptions;
+    std::vector< ::ucbhelper::InterceptedInteraction::InterceptedRequest > lInterceptions;
     ::ucbhelper::InterceptedInteraction::InterceptedRequest                  aInterceptedRequest;
 
     aInterceptedRequest.Handle = HANDLE_INTERACTIVEIOEXCEPTION;
     aInterceptedRequest.Request <<= css::ucb::InteractiveIOException();
     aInterceptedRequest.Continuation = cppu::UnoType<css::task::XInteractionAbort>::get();
-    aInterceptedRequest.MatchExact = false;
     lInterceptions.push_back(aInterceptedRequest);
 
     aInterceptedRequest.Handle = HANDLE_UNSUPPORTEDDATASINKEXCEPTION;
     aInterceptedRequest.Request <<= css::ucb::UnsupportedDataSinkException();
     aInterceptedRequest.Continuation = cppu::UnoType<css::task::XInteractionAbort>::get();
-    aInterceptedRequest.MatchExact = false;
     lInterceptions.push_back(aInterceptedRequest);
 
     aInterceptedRequest.Handle = HANDLE_AUTHENTICATIONREQUESTEXCEPTION;
     aInterceptedRequest.Request <<= css::ucb::AuthenticationRequest();
     aInterceptedRequest.Continuation = cppu::UnoType<css::task::XInteractionApprove>::get();
-    aInterceptedRequest.MatchExact = false;
+    lInterceptions.push_back(aInterceptedRequest);
+
+    aInterceptedRequest.Handle = HANDLE_CERTIFICATEVALIDATIONREQUESTEXCEPTION;
+    aInterceptedRequest.Request <<= css::ucb::CertificateValidationRequest();
+    aInterceptedRequest.Continuation = cppu::UnoType<css::task::XInteractionApprove>::get();
     lInterceptions.push_back(aInterceptedRequest);
 
     setInterceptedHandler(xHandler);
@@ -65,7 +69,7 @@ StillReadWriteInteraction::StillReadWriteInteraction(const css::uno::Reference< 
 
 void StillReadWriteInteraction::resetInterceptions()
 {
-    setInterceptions(::std::vector< ::ucbhelper::InterceptedInteraction::InterceptedRequest >());
+    setInterceptions(std::vector< ::ucbhelper::InterceptedInteraction::InterceptedRequest >());
 }
 
 void StillReadWriteInteraction::resetErrorStates()
@@ -108,12 +112,13 @@ ucbhelper::InterceptedInteraction::EInterceptionState StillReadWriteInteraction:
             bAbort = true;
         }
         break;
+    case HANDLE_CERTIFICATEVALIDATIONREQUESTEXCEPTION:
     case HANDLE_AUTHENTICATIONREQUESTEXCEPTION:
        {
-//use internal authentication dedicated handler and return
-           if (m_xAuthenticationHandler.is())
+//use internal auxiliary handler and return
+           if (m_xAuxiliaryHandler.is())
            {
-               m_xAuthenticationHandler->handle(xRequest);
+               m_xAuxiliaryHandler->handle(xRequest);
                return ::ucbhelper::InterceptedInteraction::E_INTERCEPTED;
            }
            else //simply abort

@@ -46,14 +46,14 @@ namespace framework
 {
 
 // Wrapper class to notify controller about events from ListBox.
-// Unfortunaltly the events are notifed through virtual methods instead
+// Unfortunaltly the events are notified through virtual methods instead
 // of Listeners.
 
 class ListBoxControl : public ListBox
 {
     public:
         ListBoxControl( vcl::Window* pParent, WinBits nStyle, DropdownToolbarController* pListBoxListener );
-        virtual ~ListBoxControl();
+        virtual ~ListBoxControl() override;
         virtual void dispose() override;
 
         virtual void Select() override;
@@ -130,7 +130,7 @@ DropdownToolbarController::DropdownToolbarController(
 
     // default dropdown size
     ::Size aLogicalSize( 0, 160 );
-    ::Size aPixelSize = m_pListBoxControl->LogicToPixel( aLogicalSize, MAP_APPFONT );
+    ::Size aPixelSize = m_pListBoxControl->LogicToPixel( aLogicalSize, MapUnit::MapAppFont );
 
     m_pListBoxControl->SetSizePixel( ::Size( nWidth, aPixelSize.Height() ));
     m_pToolbar->SetItemWindow( m_nID, m_pListBoxControl );
@@ -142,7 +142,6 @@ DropdownToolbarController::~DropdownToolbarController()
 }
 
 void SAL_CALL DropdownToolbarController::dispose()
-throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 

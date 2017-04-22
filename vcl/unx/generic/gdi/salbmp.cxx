@@ -35,7 +35,6 @@
 #include <com/sun/star/beans/XFastPropertySet.hpp>
 
 #include <unx/salunx.h>
-#include <unx/saldata.hxx>
 #include <unx/saldisp.hxx>
 #include <unx/salgdi.h>
 #include <unx/salbmp.h>
@@ -83,7 +82,7 @@ void X11SalBitmap::ImplCreateCache()
 
 void X11SalBitmap::ImplDestroyCache()
 {
-    DBG_ASSERT( mnCacheInstCount, "X11SalBitmap::ImplDestroyCache(): underflow" );
+    SAL_WARN_IF( !mnCacheInstCount, "vcl", "X11SalBitmap::ImplDestroyCache(): underflow" );
 
     if( mnCacheInstCount && !--mnCacheInstCount )
     {
@@ -782,8 +781,8 @@ bool X11SalBitmap::Create(
                                     depth,
                                     0,
                                     0,
-                                    (long) rSize.Width(),
-                                    (long) rSize.Height()
+                                    rSize.Width(),
+                                    rSize.Height()
                                 );
                 bool bFreePixmap = false;
                 if( bSuccess && (args[0] >>= bFreePixmap) && bFreePixmap )
@@ -894,6 +893,11 @@ bool X11SalBitmap::GetSystemData( BitmapSystemData& rData )
         return true;
     }
 
+    return false;
+}
+
+bool X11SalBitmap::ScalingSupported() const
+{
     return false;
 }
 
@@ -1067,10 +1071,9 @@ struct ImplBmpObj
 {
     X11SalBitmap*   mpBmp;
     sal_uLong       mnMemSize;
-    sal_uLong       mnFlags;
 
-                ImplBmpObj( X11SalBitmap* pBmp, sal_uLong nMemSize, sal_uLong nFlags ) :
-                    mpBmp( pBmp ), mnMemSize( nMemSize ), mnFlags( nFlags ) {}
+                ImplBmpObj( X11SalBitmap* pBmp, sal_uLong nMemSize ) :
+                    mpBmp( pBmp ), mnMemSize( nMemSize ) {}
 };
 
 ImplSalBitmapCache::ImplSalBitmapCache() :
@@ -1104,10 +1107,9 @@ void ImplSalBitmapCache::ImplAdd( X11SalBitmap* pBmp, sal_uLong nMemSize )
     {
         mnTotalSize -= pObj->mnMemSize;
         pObj->mnMemSize = nMemSize;
-        pObj->mnFlags = 0;
     }
     else
-        maBmpList.push_back( new ImplBmpObj( pBmp, nMemSize, 0 ) );
+        maBmpList.push_back( new ImplBmpObj( pBmp, nMemSize ) );
 }
 
 void ImplSalBitmapCache::ImplRemove( X11SalBitmap* pBmp )

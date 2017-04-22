@@ -62,7 +62,7 @@ void WindowCommandDispatch::impl_startListening()
     {
         SolarMutexGuard aSolarLock;
 
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow(xWindow);
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xWindow);
         if ( ! pWindow)
             return;
 
@@ -82,7 +82,7 @@ void WindowCommandDispatch::impl_stopListening()
     {
         SolarMutexGuard aSolarLock;
 
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow(xWindow);
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xWindow);
         if (!pWindow)
             return;
 
@@ -92,14 +92,14 @@ void WindowCommandDispatch::impl_stopListening()
     }
 }
 
-IMPL_LINK_TYPED(WindowCommandDispatch, impl_notifyCommand, VclWindowEvent&, rEvent, void)
+IMPL_LINK(WindowCommandDispatch, impl_notifyCommand, VclWindowEvent&, rEvent, void)
 {
-    if (rEvent.GetId() == VCLEVENT_OBJECT_DYING)
+    if (rEvent.GetId() == VclEventId::ObjectDying)
     {
         impl_stopListening();
         return;
     }
-    if (rEvent.GetId() != VCLEVENT_WINDOW_COMMAND)
+    if (rEvent.GetId() != VclEventId::WindowCommand)
         return;
 
     const CommandEvent* pCommand = static_cast<CommandEvent*>(rEvent.GetData());
@@ -127,11 +127,6 @@ IMPL_LINK_TYPED(WindowCommandDispatch, impl_notifyCommand, VclWindowEvent&, rEve
                 return;
     }
 
-    impl_dispatchCommand(sCommand);
-}
-
-void WindowCommandDispatch::impl_dispatchCommand(const OUString& sCommand)
-{
     // ignore all errors here. It's clicking a menu entry only ...
     // The user will try it again, in case nothing happens .-)
     try

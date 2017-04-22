@@ -22,6 +22,7 @@
 
 #include "featuredispatcher.hxx"
 #include <tools/link.hxx>
+#include <rtl/ref.hxx>
 
 class TransferableClipboardListener;
 class TransferableDataHelper;
@@ -48,7 +49,7 @@ namespace frm
 
     protected:
         // XDispatch
-        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
 
         // ORichTextFeatureDispatcher
         virtual void    invalidateFeatureState_Broadcast() override;
@@ -65,14 +66,14 @@ namespace frm
     class OPasteClipboardDispatcher : public OClipboardDispatcher
     {
     private:
-        TransferableClipboardListener*  m_pClipListener;
+        rtl::Reference<TransferableClipboardListener>  m_pClipListener;
         bool                        m_bPastePossible;
 
     public:
         explicit OPasteClipboardDispatcher( EditView& _rView );
 
     protected:
-        virtual ~OPasteClipboardDispatcher();
+        virtual ~OPasteClipboardDispatcher() override;
 
         // OClipboardDispatcher
         virtual bool    implIsEnabled( ) const override;
@@ -81,7 +82,7 @@ namespace frm
         virtual void    disposing( ::osl::ClearableMutexGuard& _rClearBeforeNotify ) override;
 
     private:
-        DECL_LINK_TYPED( OnClipboardChanged, TransferableDataHelper*, void );
+        DECL_LINK( OnClipboardChanged, TransferableDataHelper*, void );
     };
 
 

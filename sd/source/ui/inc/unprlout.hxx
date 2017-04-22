@@ -20,6 +20,8 @@
 #ifndef INCLUDED_SD_SOURCE_UI_INC_UNPRLOUT_HXX
 #define INCLUDED_SD_SOURCE_UI_INC_UNPRLOUT_HXX
 
+#include <xmloff/autolayout.hxx>
+
 #include "sdundo.hxx"
 #include "pres.hxx"
 
@@ -45,7 +47,7 @@ public:
                          bool            bSet,
                          SdPage*         pThePage);
 
-    virtual ~SdPresentationLayoutUndoAction();
+    virtual ~SdPresentationLayoutUndoAction() override;
     virtual void Undo() override;
     virtual void Redo() override;
 

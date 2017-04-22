@@ -44,16 +44,11 @@ public:
         : ::sfx2::SvBaseLink( ::SfxLinkUpdateMode::ONCALL, SotClipboardFormatId::SIMPLE_FILE ),
             pSdrObj( pObj1 )
     {}
-    virtual ~ImpSdrObjTextLink();
 
     virtual void Closed() override;
     virtual ::sfx2::SvBaseLink::UpdateResult DataChanged(
         const OUString& rMimeType, const css::uno::Any & rValue ) override;
 };
-
-ImpSdrObjTextLink::~ImpSdrObjTextLink()
-{
-}
 
 void ImpSdrObjTextLink::Closed()
 {
@@ -101,7 +96,7 @@ void ImpSdrObjTextLink::Closed()
 
 
 ImpSdrObjTextLinkUserData::ImpSdrObjTextLinkUserData():
-    SdrObjUserData(SdrInventor,SDRUSERDATA_OBJTEXTLINK),
+    SdrObjUserData(SdrInventor::Default,SDRUSERDATA_OBJTEXTLINK),
     aFileDate0( DateTime::EMPTY ),
     pLink(nullptr),
     eCharSet(RTL_TEXTENCODING_DONTKNOW)
@@ -110,7 +105,6 @@ ImpSdrObjTextLinkUserData::ImpSdrObjTextLinkUserData():
 
 ImpSdrObjTextLinkUserData::~ImpSdrObjTextLinkUserData()
 {
-    delete pLink;
 }
 
 SdrObjUserData* ImpSdrObjTextLinkUserData::Clone(SdrObject* ) const
@@ -149,7 +143,7 @@ void SdrTextObj::ReleaseTextLink()
     for (sal_uInt16 nNum=nCount; nNum>0;) {
         nNum--;
         SdrObjUserData* pData=GetUserData(nNum);
-        if (pData->GetInventor()==SdrInventor && pData->GetId()==SDRUSERDATA_OBJTEXTLINK) {
+        if (pData->GetInventor()==SdrInventor::Default && pData->GetId()==SDRUSERDATA_OBJTEXTLINK) {
             DeleteUserData(nNum);
         }
     }
@@ -170,7 +164,7 @@ bool SdrTextObj::ReloadLinkedText( bool bForceLoad)
             INetURLObject aURL( pData->aFileName );
             DBG_ASSERT( aURL.GetProtocol() != INetProtocol::NotValid, "invalid URL" );
 
-            ::ucbhelper::Content aCnt( aURL.GetMainURL( INetURLObject::NO_DECODE ), css::uno::Reference< css::ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
+            ::ucbhelper::Content aCnt( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), css::uno::Reference< css::ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
             css::uno::Any aAny( aCnt.getPropertyValue("DateModified") );
             css::util::DateTime aDateTime;
 
@@ -219,7 +213,7 @@ bool SdrTextObj::LoadText(const OUString& rFileName, const OUString& /*rFilterNa
 
     DBG_ASSERT( aFileURL.GetProtocol() != INetProtocol::NotValid, "invalid URL" );
 
-    std::unique_ptr<SvStream> pIStm(::utl::UcbStreamHelper::CreateStream( aFileURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ ));
+    std::unique_ptr<SvStream> pIStm(::utl::UcbStreamHelper::CreateStream( aFileURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READ ));
 
     if( pIStm )
     {
@@ -227,7 +221,7 @@ bool SdrTextObj::LoadText(const OUString& rFileName, const OUString& /*rFilterNa
 
         char cRTF[5];
         cRTF[4] = 0;
-        pIStm->Read(cRTF, 5);
+        pIStm->ReadBytes(cRTF, 5);
 
         bool bRTF = cRTF[0] == '{' && cRTF[1] == '\\' && cRTF[2] == 'r' && cRTF[3] == 't' && cRTF[4] == 'f';
 
@@ -235,7 +229,7 @@ bool SdrTextObj::LoadText(const OUString& rFileName, const OUString& /*rFilterNa
 
         if( !pIStm->GetError() )
         {
-            SetText( *pIStm, aFileURL.GetMainURL( INetURLObject::NO_DECODE ), sal::static_int_cast< sal_uInt16 >( bRTF ? EE_FORMAT_RTF : EE_FORMAT_TEXT ) );
+            SetText( *pIStm, aFileURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), sal::static_int_cast< sal_uInt16 >( bRTF ? EE_FORMAT_RTF : EE_FORMAT_TEXT ) );
             bRet = true;
         }
     }
@@ -249,7 +243,7 @@ ImpSdrObjTextLinkUserData* SdrTextObj::GetLinkUserData() const
     for (sal_uInt16 nNum=nCount; nNum>0;) {
         nNum--;
         SdrObjUserData * pData=GetUserData(nNum);
-        if (pData->GetInventor() == SdrInventor
+        if (pData->GetInventor() == SdrInventor::Default
             && pData->GetId() == SDRUSERDATA_OBJTEXTLINK)
         {
             return static_cast<ImpSdrObjTextLinkUserData *>(pData);
@@ -276,7 +270,7 @@ void SdrTextObj::ImpLinkAbmeldung()
     sfx2::LinkManager* pLinkManager=pModel!=nullptr ? pModel->GetLinkManager() : nullptr;
     if (pLinkManager!=nullptr && pData!=nullptr && pData->pLink!=nullptr) { // don't register twice
         // when doing Remove, *pLink is deleted implicitly
-        pLinkManager->Remove( pData->pLink );
+        pLinkManager->Remove( pData->pLink.get() );
         pData->pLink=nullptr;
     }
 }

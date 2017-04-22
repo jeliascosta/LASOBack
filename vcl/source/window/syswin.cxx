@@ -31,6 +31,9 @@
 #include <vcl/syswin.hxx>
 #include <vcl/taskpanelist.hxx>
 #include <vcl/unowrap.hxx>
+#include <vcl/tabctrl.hxx>
+#include <vcl/tabpage.hxx>
+#include <vcl/mnemonic.hxx>
 
 #include <rtl/strbuf.hxx>
 
@@ -46,9 +49,9 @@ class SystemWindow::ImplData
 {
 public:
     ImplData();
-    ~ImplData();
 
-    TaskPaneList*   mpTaskPaneList;
+    std::unique_ptr<TaskPaneList>
+                    mpTaskPaneList;
     Size            maMaxOutSize;
     OUString        maRepresentedURL;
     Link<SystemWindow&,void> maCloseHdl;
@@ -60,40 +63,26 @@ SystemWindow::ImplData::ImplData()
     maMaxOutSize = Size( SHRT_MAX, SHRT_MAX );
 }
 
-SystemWindow::ImplData::~ImplData()
+SystemWindow::SystemWindow(WindowType nType)
+    : Window(nType)
+    , mbRollUp(false)
+    , mbRollFunc(false)
+    , mbDockBtn(false)
+    , mbHideBtn(false)
+    , mbSysChild(false)
+    , mbIsCalculatingInitialLayoutSize(false)
+    , mnMenuBarMode(MenuBarMode::Normal)
+    , mnIcon(0)
+    , mpImplData(new ImplData)
+    , mbIsDefferedInit(false)
 {
-    delete mpTaskPaneList;
-}
-
-void SystemWindow::Init()
-{
-    mpImplData          = new ImplData;
     mpWindowImpl->mbSysWin            = true;
     mpWindowImpl->mnActivateMode      = ActivateModeFlags::GrabFocus;
 
-    mpMenuBar           = nullptr;
-    mbPinned            = false;
-    mbRollUp            = false;
-    mbRollFunc          = false;
-    mbDockBtn           = false;
-    mbHideBtn           = false;
-    mbSysChild          = false;
-    mbIsCalculatingInitialLayoutSize = false;
-    mbInitialLayoutDone = false;
-    mnMenuBarMode       = MenuBarMode::Normal;
-    mnIcon              = 0;
-    mpDialogParent      = nullptr;
-
     //To-Do, reuse maResizeTimer
-    maLayoutIdle.SetPriority(SchedulerPriority::RESIZE);
-    maLayoutIdle.SetIdleHdl( LINK( this, SystemWindow, ImplHandleLayoutTimerHdl ) );
-}
-
-SystemWindow::SystemWindow(WindowType nType)
-    : Window(nType)
-    , mbIsDefferedInit(false)
-{
-    Init();
+    maLayoutIdle.SetPriority(TaskPriority::RESIZE);
+    maLayoutIdle.SetInvokeHandler( LINK( this, SystemWindow, ImplHandleLayoutTimerHdl ) );
+    maLayoutIdle.SetDebugName( "vcl::SystemWindow maLayoutIdle" );
 }
 
 void SystemWindow::loadUI(vcl::Window* pParent, const OString& rID, const OUString& rUIXMLDescription,
@@ -101,7 +90,7 @@ void SystemWindow::loadUI(vcl::Window* pParent, const OString& rID, const OUStri
 {
     mbIsDefferedInit = true;
     mpDialogParent = pParent; //should be unset in doDeferredInit
-    m_pUIBuilder = new VclBuilder(this, getUIRootDir(), rUIXMLDescription, rID, rFrame);
+    m_pUIBuilder.reset( new VclBuilder(this, getUIRootDir(), rUIXMLDescription, rID, rFrame) );
 }
 
 SystemWindow::~SystemWindow()
@@ -120,17 +109,77 @@ void SystemWindow::dispose()
     mpWindowImpl->mbSysWin = false;
     disposeBuilder();
     mpDialogParent.clear();
+    mpMenuBar.clear();
     Window::dispose();
 }
 
-bool SystemWindow::Notify( NotifyEvent& rNEvt )
+void ImplHandleControlAccelerator( vcl::Window* pWindow, bool bShow )
 {
+    Control *pControl = dynamic_cast<Control*>(pWindow->ImplGetWindow());
+    if (pControl && pControl->GetText().indexOf('~') != -1)
+    {
+        pControl->SetShowAccelerator( bShow );
+        pControl->Invalidate(InvalidateFlags::Update);
+    }
+}
+
+namespace
+{
+    void processChildren(vcl::Window *pParent, bool bShowAccel)
+    {
+        // go through its children
+        vcl::Window* pChild = firstLogicalChildOfParent(pParent);
+        while (pChild)
+        {
+            if (pChild->GetType() == WindowType::TABCONTROL)
+            {
+                // find currently shown tab page
+                TabControl* pTabControl = static_cast<TabControl*>(pChild);
+                TabPage* pTabPage = pTabControl->GetTabPage( pTabControl->GetCurPageId() );
+                processChildren(pTabPage, bShowAccel);
+            }
+            else if (pChild->GetType() == WindowType::TABPAGE)
+            {
+                // bare tabpage without tabcontrol parent (options dialog)
+                processChildren(pChild, bShowAccel);
+            }
+            else if ((pChild->GetStyle() & (WB_DIALOGCONTROL | WB_NODIALOGCONTROL)) == WB_DIALOGCONTROL)
+            {
+                // special controls that manage their children outside of widget layout
+                processChildren(pChild, bShowAccel);
+            }
+            else
+            {
+                ImplHandleControlAccelerator(pChild, bShowAccel);
+            }
+            pChild = nextLogicalChildOfParent(pParent, pChild);
+        }
+    }
+}
+
+bool Accelerator::ToggleMnemonicsOnHierarchy(const CommandEvent& rCEvent, vcl::Window *pWindow)
+{
+    if (rCEvent.GetCommand() == CommandEventId::ModKeyChange && ImplGetSVData()->maNWFData.mbAutoAccel)
+    {
+        const CommandModKeyData *pCData = rCEvent.GetModKeyData();
+        const bool bShowAccel = pCData && pCData->IsMod2();
+        processChildren(pWindow, bShowAccel);
+        return true;
+    }
+    return false;
+}
+
+bool SystemWindow::EventNotify( NotifyEvent& rNEvt )
+{
+    if (rNEvt.GetType() == MouseNotifyEvent::COMMAND)
+        Accelerator::ToggleMnemonicsOnHierarchy(*rNEvt.GetCommandEvent(), this);
+
     // capture KeyEvents for menu handling
     if (rNEvt.GetType() == MouseNotifyEvent::KEYINPUT ||
         rNEvt.GetType() == MouseNotifyEvent::COMMAND)
     {
         MenuBar* pMBar = mpMenuBar;
-        if ( !pMBar && ( GetType() == WINDOW_FLOATINGWINDOW ) )
+        if ( !pMBar && ( GetType() == WindowType::FLOATINGWINDOW ) )
         {
             vcl::Window* pWin = ImplGetFrameWindow()->ImplGetWindow();
             if( pWin && pWin->IsSystemWindow() )
@@ -148,7 +197,7 @@ bool SystemWindow::Notify( NotifyEvent& rNEvt )
             return true;
     }
 
-    return Window::Notify( rNEvt );
+    return Window::EventNotify( rNEvt );
 }
 
 bool SystemWindow::PreNotify( NotifyEvent& rNEvt )
@@ -166,12 +215,12 @@ bool SystemWindow::PreNotify( NotifyEvent& rNEvt )
         }
         else
         {
-            TaskPaneList *pTList = mpImplData->mpTaskPaneList;
-            if( !pTList && ( GetType() == WINDOW_FLOATINGWINDOW ) )
+            TaskPaneList *pTList = mpImplData->mpTaskPaneList.get();
+            if( !pTList && ( GetType() == WindowType::FLOATINGWINDOW ) )
             {
                 vcl::Window* pWin = ImplGetFrameWindow()->ImplGetWindow();
                 if( pWin && pWin->IsSystemWindow() )
-                    pTList = static_cast<SystemWindow*>(pWin)->mpImplData->mpTaskPaneList;
+                    pTList = static_cast<SystemWindow*>(pWin)->mpImplData->mpTaskPaneList.get();
             }
             if( !pTList )
             {
@@ -184,7 +233,7 @@ bool SystemWindow::PreNotify( NotifyEvent& rNEvt )
                     if( pWin && pWin->IsSystemWindow() )
                         pSysWin = static_cast<SystemWindow*>(pWin);
                 }
-                pTList = pSysWin->mpImplData->mpTaskPaneList;
+                pTList = pSysWin->mpImplData->mpTaskPaneList.get();
             }
             if( pTList && pTList->HandleKeyEvent( *rNEvt.GetKeyEvent() ) )
                 return true;
@@ -198,12 +247,12 @@ TaskPaneList* SystemWindow::GetTaskPaneList()
     if( !mpImplData )
         return nullptr;
     if( mpImplData->mpTaskPaneList )
-        return mpImplData->mpTaskPaneList ;
+        return mpImplData->mpTaskPaneList.get();
     else
     {
-        mpImplData->mpTaskPaneList = new TaskPaneList();
+        mpImplData->mpTaskPaneList.reset( new TaskPaneList );
         MenuBar* pMBar = mpMenuBar;
-        if ( !pMBar && ( GetType() == WINDOW_FLOATINGWINDOW ) )
+        if ( !pMBar && ( GetType() == WindowType::FLOATINGWINDOW ) )
         {
             vcl::Window* pWin = ImplGetFrameWindow()->ImplGetWindow();
             if ( pWin && pWin->IsSystemWindow() )
@@ -211,14 +260,14 @@ TaskPaneList* SystemWindow::GetTaskPaneList()
         }
         if( pMBar )
             mpImplData->mpTaskPaneList->AddWindow( pMBar->ImplGetWindow() );
-        return mpImplData->mpTaskPaneList;
+        return mpImplData->mpTaskPaneList.get();
     }
 }
 
 bool SystemWindow::Close()
 {
     VclPtr<vcl::Window> xWindow = this;
-    CallEventListeners( VCLEVENT_WINDOW_CLOSE );
+    CallEventListeners( VclEventId::WindowClose );
     if ( xWindow->IsDisposed() )
         return false;
 
@@ -241,14 +290,6 @@ bool SystemWindow::Close()
 }
 
 void SystemWindow::TitleButtonClick( TitleButton )
-{
-}
-
-void SystemWindow::Pin()
-{
-}
-
-void SystemWindow::Roll()
 {
 }
 
@@ -324,16 +365,6 @@ bool SystemWindow::IsTitleButtonVisible( TitleButton nButton ) const
         return mbDockBtn;
     else /* if ( nButton == TitleButton::Hide ) */
         return mbHideBtn;
-}
-
-void SystemWindow::SetPin( bool bPin )
-{
-    if ( bPin != mbPinned )
-    {
-        mbPinned = bPin;
-        if ( mpWindowImpl->mpBorderWindow )
-            static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->SetPin( bPin );
-    }
 }
 
 void SystemWindow::RollUp()
@@ -563,7 +594,7 @@ static OString ImplWindowStateToStr(const WindowStateData& rData)
 
 void SystemWindow::ImplMoveToScreen( long& io_rX, long& io_rY, long i_nWidth, long i_nHeight, vcl::Window* i_pConfigureWin )
 {
-    Rectangle aScreenRect;
+    tools::Rectangle aScreenRect;
     if( !Application::IsUnifiedDisplay() )
         aScreenRect = Application::GetScreenPosSizePixel( GetScreenNumber() );
     else
@@ -667,7 +698,7 @@ void SystemWindow::SetWindowStateData( const WindowStateData& rData )
         if( !((rData.GetMask() & WindowStateMask::State) && (nState & WindowStateState::Maximized)) )
             if( rData.GetMask() & (WindowStateMask::Pos|WindowStateMask::Width|WindowStateMask::Height) )
             {
-                Rectangle aDesktop = GetDesktopRectPixel();
+                tools::Rectangle aDesktop = GetDesktopRectPixel();
                 ImplSVData *pSVData = ImplGetSVData();
                 vcl::Window *pWin = pSVData->maWinData.mpFirstFrame;
                 bool bWrapped = false;
@@ -879,10 +910,10 @@ void SystemWindow::SetMenuBar(MenuBar* pMenuBar)
     {
         MenuBar* pOldMenuBar = mpMenuBar;
         vcl::Window*  pOldWindow = nullptr;
-        vcl::Window*  pNewWindow=nullptr;
+        VclPtr<vcl::Window> pNewWindow;
         mpMenuBar = pMenuBar;
 
-        if ( mpWindowImpl->mpBorderWindow && (mpWindowImpl->mpBorderWindow->GetType() == WINDOW_BORDERWINDOW) )
+        if ( mpWindowImpl->mpBorderWindow && (mpWindowImpl->mpBorderWindow->GetType() == WindowType::BORDERWINDOW) )
         {
             if ( pOldMenuBar )
                 pOldWindow = pOldMenuBar->ImplGetWindow();
@@ -890,17 +921,17 @@ void SystemWindow::SetMenuBar(MenuBar* pMenuBar)
                 pOldWindow = nullptr;
             if ( pOldWindow )
             {
-                CallEventListeners( VCLEVENT_WINDOW_MENUBARREMOVED, static_cast<void*>(pOldMenuBar) );
+                CallEventListeners( VclEventId::WindowMenubarRemoved, static_cast<void*>(pOldMenuBar) );
                 pOldWindow->SetAccessible( css::uno::Reference< css::accessibility::XAccessible >() );
             }
             if ( pMenuBar )
             {
-                DBG_ASSERT( !pMenuBar->pWindow, "SystemWindow::SetMenuBar() - MenuBars can only set in one SystemWindow at time" );
+                SAL_WARN_IF( pMenuBar->pWindow, "vcl", "SystemWindow::SetMenuBar() - MenuBars can only set in one SystemWindow at time" );
 
                 pNewWindow = MenuBar::ImplCreate(mpWindowImpl->mpBorderWindow, pOldWindow, pMenuBar);
                 static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->SetMenuBarWindow(pNewWindow);
 
-                CallEventListeners( VCLEVENT_WINDOW_MENUBARADDED, static_cast<void*>(pMenuBar) );
+                CallEventListeners( VclEventId::WindowMenubarAdded, static_cast<void*>(pMenuBar) );
             }
             else
                 static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->SetMenuBarWindow( nullptr );
@@ -944,7 +975,15 @@ void SystemWindow::SetNotebookBar(const OUString& rUIXMLDescription, const css::
     {
         static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->SetNotebookBar(rUIXMLDescription, rFrame);
         maNotebookBarUIFile = rUIXMLDescription;
+        if(GetNotebookBar())
+            GetNotebookBar()->SetSystemWindow(this);
     }
+}
+
+void SystemWindow::CloseNotebookBar()
+{
+    static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->CloseNotebookBar();
+    maNotebookBarUIFile.clear();
 }
 
 VclPtr<NotebookBar> SystemWindow::GetNotebookBar() const
@@ -957,7 +996,7 @@ void SystemWindow::SetMenuBarMode( MenuBarMode nMode )
     if ( mnMenuBarMode != nMode )
     {
         mnMenuBarMode = nMode;
-        if ( mpWindowImpl->mpBorderWindow && (mpWindowImpl->mpBorderWindow->GetType() == WINDOW_BORDERWINDOW) )
+        if ( mpWindowImpl->mpBorderWindow && (mpWindowImpl->mpBorderWindow->GetType() == WindowType::BORDERWINDOW) )
         {
             if ( nMode == MenuBarMode::Hide )
                 static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->SetMenuBarMode( true );
@@ -1031,10 +1070,8 @@ Size SystemWindow::GetOptimalSize() const
 
     sal_Int32 nBorderWidth = get_border_width();
 
-    aSize.Height() += mpWindowImpl->mnLeftBorder + mpWindowImpl->mnRightBorder
-        + 2*nBorderWidth;
-    aSize.Width() += mpWindowImpl->mnTopBorder + mpWindowImpl->mnBottomBorder
-        + 2*nBorderWidth;
+    aSize.Height() += 2 * nBorderWidth;
+    aSize.Width()  += 2 * nBorderWidth;
 
     return Window::CalcWindowSize(aSize);
 }
@@ -1047,10 +1084,10 @@ void SystemWindow::setPosSizeOnContainee(Size aSize, Window &rBox)
     aSize.Height() -= 2 * nBorderWidth;
 
     Point aPos(nBorderWidth, nBorderWidth);
-    VclContainer::setLayoutAllocation(rBox, aPos, aSize);
+    VclContainer::setLayoutAllocation(rBox, aPos, CalcOutputSize(aSize));
 }
 
-IMPL_LINK_NOARG_TYPED( SystemWindow, ImplHandleLayoutTimerHdl, Idle*, void )
+IMPL_LINK_NOARG( SystemWindow, ImplHandleLayoutTimerHdl, Timer*, void )
 {
     if (!isLayoutEnabled())
     {
@@ -1102,8 +1139,8 @@ void SystemWindow::setOptimalLayoutSize()
 
 void SystemWindow::DoInitialLayout()
 {
-    if ( GetSettings().GetStyleSettings().GetAutoMnemonic() )
-       ImplWindowAutoMnemonic( this );
+    if (GetSettings().GetStyleSettings().GetAutoMnemonic())
+       Accelerator::GenerateAutoMnemonicsOnHierarchy(this);
 
     if (isLayoutEnabled())
     {
@@ -1111,7 +1148,6 @@ void SystemWindow::DoInitialLayout()
         setDeferredProperties();
         setOptimalLayoutSize();
         mbIsCalculatingInitialLayoutSize = false;
-        mbInitialLayoutDone = true;
     }
 }
 

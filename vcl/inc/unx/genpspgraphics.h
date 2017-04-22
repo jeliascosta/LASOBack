@@ -33,7 +33,7 @@ class PhysicalFontCollection;
 
 namespace psp { struct JobData; class PrinterGfx; }
 
-class ServerFont;
+class FreetypeFont;
 class FontAttributes;
 class SalInfoPrinter;
 class GlyphCache;
@@ -45,29 +45,24 @@ class VCL_DLLPUBLIC GenPspGraphics : public SalGraphics
     psp::JobData*           m_pJobData;
     psp::PrinterGfx*        m_pPrinterGfx;
 
-    ServerFont*             m_pServerFont[ MAX_FALLBACK ];
+    FreetypeFont*           m_pFreetypeFont[ MAX_FALLBACK ];
     bool                    m_bFontVertical;
     SalInfoPrinter*         m_pInfoPrinter;
 public:
                             GenPspGraphics();
-    virtual                ~GenPspGraphics();
+    virtual                ~GenPspGraphics() override;
 
     void                    Init( psp::JobData* pJob, psp::PrinterGfx* pGfx,
                                   SalInfoPrinter* pInfoPrinter );
 
     // helper methods
-    static const void *     DoGetEmbedFontData ( psp::fontID aFont, const sal_Ucs* pUnicodes,
-                                                 sal_Int32* pWidths, size_t nLen, FontSubsetInfo& rInfo,
-                                                 long* pDataLen );
+    static const void *     DoGetEmbedFontData(psp::fontID aFont, long* pDataLen);
     static void             DoFreeEmbedFontData( const void* pData, long nLen );
 
     // helper methods for sharing with X11SalGraphics
-    static const Ucs2SIntMap* DoGetFontEncodingVector( psp::fontID aFont,
-                                                       const Ucs2OStrMap** pNonEncoded,
-                                                       std::set<sal_Unicode> const** ppPriority);
     static void             DoGetGlyphWidths( psp::fontID aFont,
                                               bool bVertical,
-                                              Int32Vector& rWidths,
+                                              std::vector< sal_Int32 >& rWidths,
                                               Ucs2UIntMap& rUnicodeEnc );
 
     static FontAttributes Info2FontAttributes( const psp::FastPrintFontInfo& );
@@ -75,7 +70,7 @@ public:
                                            const psp::FastPrintFontInfo& );
 
     // override all pure virtual methods
-    virtual SalGraphicsImpl*GetImpl() const override { return NULL; };
+    virtual SalGraphicsImpl*GetImpl() const override { return nullptr; };
     virtual void            GetResolution( sal_Int32& rDPIX, sal_Int32& rDPIY ) override;
     virtual sal_uInt16      GetBitCount() const override;
     virtual long            GetGraphicsWidth() const override;
@@ -87,14 +82,14 @@ public:
     virtual void            SetLineColor( SalColor nSalColor ) override;
     virtual void            SetFillColor() override;
     virtual void            SetFillColor( SalColor nSalColor ) override;
-    virtual void            SetXORMode( bool bSet, bool ) override;
+    virtual void            SetXORMode( bool bSet ) override;
     virtual void            SetROPLineColor( SalROPColor nROPColor ) override;
     virtual void            SetROPFillColor( SalROPColor nROPColor ) override;
 
     virtual void            SetTextColor( SalColor nSalColor ) override;
     virtual void            SetFont( FontSelectPattern*, int nFallbackLevel ) override;
-    virtual void            GetFontMetric( ImplFontMetricDataPtr&, int nFallbackLevel ) override;
-    virtual const FontCharMapPtr GetFontCharMap() const override;
+    virtual void            GetFontMetric( ImplFontMetricDataRef&, int nFallbackLevel ) override;
+    virtual const FontCharMapRef GetFontCharMap() const override;
     virtual bool            GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const override;
     virtual void            GetDevFontList( PhysicalFontCollection* ) override;
     // graphics must drop any cached font info
@@ -114,24 +109,16 @@ public:
                                               sal_Int32* pWidths,
                                               int nGlyphs,
                                               FontSubsetInfo& rInfo ) override;
-    virtual const Ucs2SIntMap* GetFontEncodingVector( const PhysicalFontFace*,
-                                                      const Ucs2OStrMap** ppNonEncoded,
-                                                      std::set<sal_Unicode> const** ppPriority) override;
-    virtual const void*     GetEmbedFontData( const PhysicalFontFace*,
-                                              const sal_Ucs* pUnicodes,
-                                              sal_Int32* pWidths,
-                                              size_t nLen,
-                                              FontSubsetInfo& rInfo,
-                                              long* pDataLen ) override;
+    virtual const void*     GetEmbedFontData(const PhysicalFontFace*, long* pDataLen) override;
     virtual void            FreeEmbedFontData( const void* pData, long nDataLen ) override;
     virtual void            GetGlyphWidths( const PhysicalFontFace*,
                                             bool bVertical,
-                                            Int32Vector& rWidths,
+                                            std::vector< sal_Int32 >& rWidths,
                                             Ucs2UIntMap& rUnicodeEnc ) override;
-    virtual bool            GetGlyphBoundRect( sal_GlyphId, Rectangle& ) override;
-    virtual bool            GetGlyphOutline( sal_GlyphId, basegfx::B2DPolyPolygon& ) override;
+    virtual bool            GetGlyphBoundRect(const GlyphItem&, tools::Rectangle&) override;
+    virtual bool            GetGlyphOutline(const GlyphItem&, basegfx::B2DPolyPolygon&) override;
     virtual SalLayout*      GetTextLayout( ImplLayoutArgs&, int nFallbackLevel ) override;
-    virtual void            DrawServerFontLayout( const ServerFontLayout& ) override;
+    virtual void            DrawTextLayout( const CommonSalLayout& ) override;
     virtual bool            supportsOperation( OutDevSupportType ) const override;
     virtual void            drawPixel( long nX, long nY ) override;
     virtual void            drawPixel( long nX, long nY, SalColor nSalColor ) override;
@@ -152,14 +139,14 @@ public:
                                           double fMiterMinimumAngle) override;
     virtual bool            drawPolyLineBezier( sal_uInt32 nPoints,
                                                 const SalPoint* pPtAry,
-                                                const sal_uInt8* pFlgAry ) override;
+                                                const PolyFlags* pFlgAry ) override;
     virtual bool            drawPolygonBezier( sal_uInt32 nPoints,
                                                const SalPoint* pPtAry,
-                                               const sal_uInt8* pFlgAry ) override;
+                                               const PolyFlags* pFlgAry ) override;
     virtual bool            drawPolyPolygonBezier( sal_uInt32 nPoly,
                                                    const sal_uInt32* pPoints,
                                                    const SalPoint* const* pPtAry,
-                                                   const sal_uInt8* const* pFlgAry ) override;
+                                                   const PolyFlags* const* pFlgAry ) override;
     virtual bool            drawGradient( const tools::PolyPolygon&, const Gradient& ) override { return false; };
 
     virtual void            copyArea( long nDestX,

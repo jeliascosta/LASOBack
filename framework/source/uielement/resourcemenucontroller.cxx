@@ -28,29 +28,28 @@ class ResourceMenuController : public cppu::ImplInheritanceHelper< svt::PopupMen
 public:
     ResourceMenuController( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                             const css::uno::Sequence< css::uno::Any >& rxArgs, bool bToolbarContainer );
-    virtual ~ResourceMenuController();
 
     // XPopupMenuController
-    virtual void SAL_CALL updatePopupMenu() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL updatePopupMenu() override;
 
     // XStatusListener
-    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent ) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& rEvent ) override;
 
     // XUIConfigurationListener
-    virtual void SAL_CALL elementInserted( const css::ui::ConfigurationEvent& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL elementRemoved( const css::ui::ConfigurationEvent& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL elementReplaced( const css::ui::ConfigurationEvent& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL elementInserted( const css::ui::ConfigurationEvent& rEvent ) override;
+    virtual void SAL_CALL elementRemoved( const css::ui::ConfigurationEvent& rEvent ) override;
+    virtual void SAL_CALL elementReplaced( const css::ui::ConfigurationEvent& rEvent ) override;
 
     // XMenuListener
-    virtual void SAL_CALL itemActivated( const css::awt::MenuEvent& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL itemSelected( const css::awt::MenuEvent& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL itemActivated( const css::awt::MenuEvent& rEvent ) override;
+    virtual void SAL_CALL itemSelected( const css::awt::MenuEvent& rEvent ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw ( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
 private:
     OUString m_aMenuURL;
@@ -85,6 +84,9 @@ ResourceMenuController::ResourceMenuController( const css::uno::Reference< css::
             {
                 OUString aMenuName;
                 aPropValue.Value >>= aMenuName;
+                if ( aMenuName.isEmpty() )
+                    continue;
+
                 if ( m_bToolbarContainer )
                     m_aMenuURL = "private:resource/toolbar/" + aMenuName;
                 else
@@ -105,15 +107,9 @@ ResourceMenuController::ResourceMenuController( const css::uno::Reference< css::
         m_bInitialized = true;
 }
 
-ResourceMenuController::~ResourceMenuController()
-{
-}
-
 void ResourceMenuController::updatePopupMenu()
-    throw ( css::uno::RuntimeException, std::exception )
 {
-    if ( m_xMenuContainer.is() && !m_bContextMenu )
-        // Container is still valid, no need to do anything on our side.
+    if ( ( m_xMenuContainer.is() && !m_bContextMenu ) || m_aMenuURL.isEmpty() )
         return;
 
     if ( m_aModuleName.isEmpty() )
@@ -160,14 +156,28 @@ void ResourceMenuController::updatePopupMenu()
         {}
     }
 
-    if ( !m_xMenuContainer.is() )
+    if ( !m_xMenuContainer.is() && m_xConfigManager.is() )
     {
         try
         {
-            if ( m_xConfigManager.is() && m_xConfigManager->hasSettings( m_aMenuURL ) )
-                m_xMenuContainer.set( m_xConfigManager->getSettings( m_aMenuURL, false ) );
-            else if ( m_xModuleConfigManager.is() && m_xModuleConfigManager->hasSettings( m_aMenuURL ) )
-                m_xMenuContainer.set( m_xModuleConfigManager->getSettings( m_aMenuURL, false ) );
+            m_xMenuContainer.set( m_xConfigManager->getSettings( m_aMenuURL, false ) );
+        }
+        catch ( const css::container::NoSuchElementException& )
+        {
+            // Not an error - element may exist only in the module.
+        }
+        catch ( const css::lang::IllegalArgumentException& )
+        {
+            SAL_WARN( "fwk.uielement", "The given URL is not valid: " << m_aMenuURL );
+            return;
+        }
+    }
+
+    if ( !m_xMenuContainer.is() && m_xModuleConfigManager.is() )
+    {
+        try
+        {
+            m_xMenuContainer.set( m_xModuleConfigManager->getSettings( m_aMenuURL, false ) );
         }
         catch ( const css::container::NoSuchElementException& )
         {
@@ -216,7 +226,6 @@ void ResourceMenuController::updatePopupMenu()
 }
 
 void ResourceMenuController::statusChanged( const css::frame::FeatureStateEvent& rEvent )
-    throw ( css::uno::RuntimeException, std::exception )
 {
     css::uno::Sequence< css::embed::VerbDescriptor > aVerbs;
     if ( rEvent.IsEnabled && ( rEvent.State >>= aVerbs ) )
@@ -302,7 +311,6 @@ void ResourceMenuController::fillToolbarData()
 }
 
 void ResourceMenuController::itemActivated( const css::awt::MenuEvent& /*rEvent*/ )
-    throw ( css::uno::RuntimeException, std::exception )
 {
     // Must initialize MenuBarManager here, because we want to let the app do context menu interception before.
     if ( !m_xMenuBarManager.is() )
@@ -310,37 +318,33 @@ void ResourceMenuController::itemActivated( const css::awt::MenuEvent& /*rEvent*
         VCLXMenu* pAwtMenu = VCLXMenu::GetImplementation( m_xPopupMenu );
         css::uno::Reference< css::frame::XDispatchProvider > xDispatchProvider( m_xFrame, css::uno::UNO_QUERY );
         m_xMenuBarManager.set( new framework::MenuBarManager(
-            m_xContext, m_xFrame, m_xURLTransformer, xDispatchProvider, m_aModuleName, pAwtMenu->GetMenu(), false, true, !m_bContextMenu && !m_bInToolbar ) );
+            m_xContext, m_xFrame, m_xURLTransformer, xDispatchProvider, m_aModuleName, pAwtMenu->GetMenu(), false, !m_bContextMenu && !m_bInToolbar ) );
+        m_xFrame->addFrameActionListener( m_xMenuBarManager.get() );
     }
 }
 
 void ResourceMenuController::itemSelected( const css::awt::MenuEvent& /*rEvent*/ )
-    throw ( css::uno::RuntimeException, std::exception )
 {
     // Must override this, because we are managed by MenuBarManager, so don't want the handler found in the base class.
 }
 
 void ResourceMenuController::elementInserted( const css::ui::ConfigurationEvent& rEvent )
-    throw ( css::uno::RuntimeException, std::exception )
 {
     if ( rEvent.ResourceURL == m_aMenuURL )
         m_xMenuContainer.clear();
 }
 
 void ResourceMenuController::elementRemoved( const css::ui::ConfigurationEvent& rEvent )
-    throw ( css::uno::RuntimeException, std::exception )
 {
     elementInserted( rEvent );
 }
 
 void ResourceMenuController::elementReplaced( const css::ui::ConfigurationEvent& rEvent )
-    throw ( css::uno::RuntimeException, std::exception )
 {
     elementInserted( rEvent );
 }
 
 void ResourceMenuController::disposing( const css::lang::EventObject& rEvent )
-    throw ( css::uno::RuntimeException, std::exception )
 {
     if ( rEvent.Source == m_xConfigManager )
         m_xConfigManager.clear();
@@ -380,7 +384,6 @@ void ResourceMenuController::disposing()
 }
 
 OUString ResourceMenuController::getImplementationName()
-    throw ( css::uno::RuntimeException, std::exception )
 {
     if ( m_bToolbarContainer )
         return OUString( "com.sun.star.comp.framework.ToolbarAsMenuController" );
@@ -389,9 +392,52 @@ OUString ResourceMenuController::getImplementationName()
 }
 
 css::uno::Sequence< OUString > ResourceMenuController::getSupportedServiceNames()
-    throw ( css::uno::RuntimeException, std::exception )
 {
     return { "com.sun.star.frame.PopupMenuController" };
+}
+
+class SaveAsMenuController : public ResourceMenuController
+{
+public:
+    SaveAsMenuController( const css::uno::Reference< css::uno::XComponentContext >& rContext,
+                          const css::uno::Sequence< css::uno::Any >& rArgs );
+
+    // XServiceInfo
+    virtual OUString SAL_CALL getImplementationName() override;
+
+private:
+    virtual void impl_setPopupMenu() override;
+};
+
+SaveAsMenuController::SaveAsMenuController( const css::uno::Reference< css::uno::XComponentContext >& rContext,
+                                            const css::uno::Sequence< css::uno::Any >& rArgs )
+    : ResourceMenuController( rContext, rArgs, false )
+{
+}
+
+void SaveAsMenuController::impl_setPopupMenu()
+{
+    VCLXMenu* pPopupMenu    = VCLXMenu::GetImplementation( m_xPopupMenu );
+    Menu*     pVCLPopupMenu = nullptr;
+
+    SolarMutexGuard aGuard;
+
+    if ( pPopupMenu )
+        pVCLPopupMenu = pPopupMenu->GetMenu();
+
+    if ( !pVCLPopupMenu )
+        return;
+
+    pVCLPopupMenu->InsertItem( ".uno:SaveAs", nullptr );
+    pVCLPopupMenu->InsertItem( ".uno:ExportTo", nullptr );
+    pVCLPopupMenu->InsertItem( ".uno:SaveAsTemplate", nullptr );
+    pVCLPopupMenu->InsertSeparator();
+    pVCLPopupMenu->InsertItem( ".uno:SaveAsRemote", nullptr );
+}
+
+OUString SaveAsMenuController::getImplementationName()
+{
+    return OUString( "com.sun.star.comp.framework.SaveAsMenuController" );
 }
 
 }
@@ -410,6 +456,14 @@ com_sun_star_comp_framework_ToolbarAsMenuController_get_implementation(
     css::uno::Sequence< css::uno::Any > const & args )
 {
     return cppu::acquire( new ResourceMenuController( context, args, true ) );
+}
+
+extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface * SAL_CALL
+com_sun_star_comp_framework_SaveAsMenuController_get_implementation(
+    css::uno::XComponentContext* context,
+    css::uno::Sequence< css::uno::Any > const & args )
+{
+    return cppu::acquire( new SaveAsMenuController( context, args ) );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -25,7 +25,6 @@
 #include <vcl/settings.hxx>
 #include <sot/exchange.hxx>
 #include <svtools/transfer.hxx>
-#include <tools/shl.hxx>
 #include <unotools/syslocale.hxx>
 #include <sfx2/objsh.hxx>
 #include <sfx2/viewsh.hxx>
@@ -41,6 +40,7 @@
 #include <sfx2/sfxsids.hrc>
 #include <svl/eitem.hxx>
 #include <svl/languageoptions.hxx>
+#include <svtools/svlbitm.hxx>
 #include <svx/SmartTagMgr.hxx>
 #include <com/sun/star/smarttags/XSmartTagRecognizer.hpp>
 #include <com/sun/star/smarttags/XSmartTagAction.hpp>
@@ -115,6 +115,8 @@ OfaAutoCorrDlg::OfaAutoCorrDlg(vcl::Window* pParent, const SfxItemSet* _pSet )
 
     if( SvtLanguageOptions().IsCTLFontEnabled() )
         nLangList |= SvxLanguageListFlags::CTL;
+    if( SvtLanguageOptions().IsCJKFontEnabled() )
+        nLangList |= SvxLanguageListFlags::CJK;
     m_pLanguageLB->SetLanguageList( nLangList, true, true );
     m_pLanguageLB->SelectLanguage( LANGUAGE_NONE );
     sal_Int32 nPos = m_pLanguageLB->GetSelectEntryPos();
@@ -173,7 +175,7 @@ static bool lcl_FindEntry( ListBox& rLB, const OUString& rEntry,
     return false;
 }
 
-IMPL_LINK_TYPED(OfaAutoCorrDlg, SelectLanguageHdl, ListBox&, rBox, void)
+IMPL_LINK(OfaAutoCorrDlg, SelectLanguageHdl, ListBox&, rBox, void)
 {
     sal_Int32 nPos = rBox.GetSelectEntryPos();
     void* pVoid = rBox.GetEntryData(nPos);
@@ -311,7 +313,7 @@ public:
     {
         get(m_pPrcntMF, "margin");
     }
-    virtual ~OfaAutoFmtPrcntSet() { disposeOnce(); }
+    virtual ~OfaAutoFmtPrcntSet() override { disposeOnce(); }
     virtual void dispose() override { m_pPrcntMF.clear(); ModalDialog::dispose(); }
 
     MetricField& GetPrcntFld()
@@ -436,7 +438,7 @@ OfaSwAutoFmtOptionsPage::OfaSwAutoFmtOptionsPage( vcl::Window* pParent,
 
     SvSimpleTableContainer* pCheckLBContainer(get<SvSimpleTableContainer>("list"));
     Size aControlSize(248 , 149);
-    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
+    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
     pCheckLBContainer->set_width_request(aControlSize.Width());
     pCheckLBContainer->set_height_request(aControlSize.Height());
     m_pCheckLB = VclPtr<OfaACorrCheckListBox>::Create(*pCheckLBContainer);
@@ -714,18 +716,18 @@ void OfaSwAutoFmtOptionsPage::Reset( const SfxItemSet* )
     m_pCheckLB->SetUpdateMode(true);
 }
 
-IMPL_LINK_TYPED(OfaSwAutoFmtOptionsPage, SelectHdl, SvTreeListBox*, pBox, void)
+IMPL_LINK(OfaSwAutoFmtOptionsPage, SelectHdl, SvTreeListBox*, pBox, void)
 {
     m_pEditPB->Enable(nullptr != pBox->FirstSelected()->GetUserData());
 }
 
-IMPL_LINK_NOARG_TYPED(OfaSwAutoFmtOptionsPage, DoubleClickEditHdl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG(OfaSwAutoFmtOptionsPage, DoubleClickEditHdl, SvTreeListBox*, bool)
 {
     EditHdl(nullptr);
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED(OfaSwAutoFmtOptionsPage, EditHdl, Button*, void)
+IMPL_LINK_NOARG(OfaSwAutoFmtOptionsPage, EditHdl, Button*, void)
 {
     sal_uLong nSelEntryPos = m_pCheckLB->GetSelectEntryPos();
     if( nSelEntryPos == REPLACE_BULLETS ||
@@ -797,7 +799,7 @@ void OfaACorrCheckListBox::SetCheckButtonState( SvTreeListEntry* pEntry, sal_uIn
 {
     SvLBoxButton& rItem = static_cast<SvLBoxButton&>(pEntry->GetItem(nCol + 1));
 
-    if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
+    if (rItem.GetType() == SvLBoxItemType::Button)
     {
         switch( eState )
         {
@@ -822,7 +824,7 @@ SvButtonState OfaACorrCheckListBox::GetCheckButtonState( SvTreeListEntry* pEntry
     SvButtonState eState = SvButtonState::Unchecked;
     SvLBoxButton& rItem = static_cast<SvLBoxButton&>(pEntry->GetItem(nCol + 1));
 
-    if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
+    if (rItem.GetType() == SvLBoxItemType::Button)
     {
         SvItemStateFlags nButtonFlags = rItem.GetButtonFlags();
         eState = SvLBoxButtonData::ConvertToButtonState( nButtonFlags );
@@ -846,7 +848,7 @@ void    OfaACorrCheckListBox::KeyInput( const KeyEvent& rKEvt )
         if ( nCol < 2 )
         {
             CheckEntryPos( nSelPos, nCol, !IsChecked( nSelPos, nCol ) );
-            CallImplEventListeners( VCLEVENT_CHECKBOX_TOGGLE, static_cast<void*>(GetEntry( nSelPos )) );
+            CallImplEventListeners( VclEventId::CheckboxToggle, static_cast<void*>(GetEntry( nSelPos )) );
         }
         else
         {
@@ -882,7 +884,7 @@ OfaAutocorrReplacePage::OfaAutocorrReplacePage( vcl::Window* pParent,
     get(m_pReplaceTLB, "tabview");
     m_pReplaceTLB->set_height_request(16 * GetTextHeight());
 
-    SfxModule *pMod = *reinterpret_cast<SfxModule**>(GetAppData(SHL_WRITER));
+    SfxModule *pMod = SfxApplication::GetModule(SfxToolsModule::Writer);
     bSWriter = pMod == SfxModule::GetActiveModule();
 
     LanguageTag aLanguageTag( eLastDialogLanguage );
@@ -945,9 +947,9 @@ void OfaAutocorrReplacePage::ActivatePage( const SfxItemSet& )
     static_cast<OfaAutoCorrDlg*>(GetTabDialog())->EnableLanguage(true);
 }
 
-SfxTabPage::sfxpg OfaAutocorrReplacePage::DeactivatePage( SfxItemSet*  )
+DeactivateRC OfaAutocorrReplacePage::DeactivatePage( SfxItemSet*  )
 {
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 bool OfaAutocorrReplacePage::FillItemSet( SfxItemSet* )
@@ -1037,9 +1039,7 @@ void OfaAutocorrReplacePage::RefillReplaceBox(bool bFromReset,
             // formatted text is only in Writer
             if(bSWriter || bTextOnly)
             {
-                OUString sEntry(rDouble.sShort);
-                sEntry += "\t";
-                sEntry += rDouble.sLong;
+                OUString sEntry = rDouble.sShort + "\t" + rDouble.sLong;
                 SvTreeListEntry* pEntry = m_pReplaceTLB->InsertEntry(sEntry);
                 m_pTextOnlyCB->Check(bTextOnly);
                 if(!bTextOnly)
@@ -1065,9 +1065,7 @@ void OfaAutocorrReplacePage::RefillReplaceBox(bool bFromReset,
             // formatted text is only in Writer
             if(bSWriter || bTextOnly)
             {
-                OUString sEntry(pWordPtr->GetShort());
-                sEntry += "\t";
-                sEntry += pWordPtr->GetLong();
+                OUString sEntry = pWordPtr->GetShort() + "\t" + pWordPtr->GetLong();
                 SvTreeListEntry* pEntry = m_pReplaceTLB->InsertEntry(sEntry);
                 m_pTextOnlyCB->Check(pWordPtr->IsTextOnly());
                 if(!bTextOnly)
@@ -1122,7 +1120,7 @@ void OfaAutocorrReplacePage::SetLanguage(LanguageType eSet)
     }
 }
 
-IMPL_LINK_TYPED(OfaAutocorrReplacePage, SelectHdl, SvTreeListBox*, pBox, void)
+IMPL_LINK(OfaAutocorrReplacePage, SelectHdl, SvTreeListBox*, pBox, void)
 {
     if(!bFirstSelect || !bHasSelectionText)
     {
@@ -1212,12 +1210,12 @@ void OfaAutocorrReplacePage::DeleteEntry(const OUString& sShort, const OUString&
     rDeletedArray.push_back(aDeletedString);
 }
 
-IMPL_LINK_TYPED(OfaAutocorrReplacePage, NewDelButtonHdl, Button*, pBtn, void)
+IMPL_LINK(OfaAutocorrReplacePage, NewDelButtonHdl, Button*, pBtn, void)
 {
     NewDelHdl(pBtn);
 }
 
-IMPL_LINK_TYPED(OfaAutocorrReplacePage, NewDelActionHdl, AutoCorrEdit&, rEdit, bool)
+IMPL_LINK(OfaAutocorrReplacePage, NewDelActionHdl, AutoCorrEdit&, rEdit, bool)
 {
     return NewDelHdl(&rEdit);
 }
@@ -1247,8 +1245,7 @@ bool OfaAutocorrReplacePage::NewDelHdl(void* pBtn)
             NewEntry(m_pShortED->GetText(), m_pReplaceED->GetText(), bKeepSourceFormatting);
             m_pReplaceTLB->SetUpdateMode(false);
             sal_uLong nPos = TREELIST_ENTRY_NOTFOUND;
-            sEntry += "\t";
-            sEntry += m_pReplaceED->GetText();
+            sEntry += "\t" + m_pReplaceED->GetText();
             if(_pNewEntry)
             {
                 nPos = m_pReplaceTLB->GetModel()->GetAbsPos(_pNewEntry);
@@ -1292,7 +1289,7 @@ bool OfaAutocorrReplacePage::NewDelHdl(void* pBtn)
     return true;
 }
 
-IMPL_LINK_TYPED(OfaAutocorrReplacePage, ModifyHdl, Edit&, rEdt, void)
+IMPL_LINK(OfaAutocorrReplacePage, ModifyHdl, Edit&, rEdt, void)
 {
     SvTreeListEntry* pFirstSel = m_pReplaceTLB->FirstSelected();
     bool bShort = &rEdt == m_pShortED;
@@ -1464,9 +1461,9 @@ void    OfaAutocorrExceptPage::ActivatePage( const SfxItemSet& )
     static_cast<OfaAutoCorrDlg*>(GetTabDialog())->EnableLanguage(true);
 }
 
-SfxTabPage::sfxpg OfaAutocorrExceptPage::DeactivatePage( SfxItemSet* )
+DeactivateRC OfaAutocorrExceptPage::DeactivatePage( SfxItemSet* )
 {
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 bool OfaAutocorrExceptPage::FillItemSet( SfxItemSet*  )
@@ -1663,12 +1660,12 @@ void OfaAutocorrExceptPage::Reset( const SfxItemSet* )
     m_pAutoCapsCB->SaveValue();
 }
 
-IMPL_LINK_TYPED(OfaAutocorrExceptPage, NewDelButtonHdl, Button*, pBtn, void)
+IMPL_LINK(OfaAutocorrExceptPage, NewDelButtonHdl, Button*, pBtn, void)
 {
     NewDelHdl(pBtn);
 }
 
-IMPL_LINK_TYPED(OfaAutocorrExceptPage, NewDelActionHdl, AutoCorrEdit&, rEdit, bool)
+IMPL_LINK(OfaAutocorrExceptPage, NewDelActionHdl, AutoCorrEdit&, rEdit, bool)
 {
     return NewDelHdl(&rEdit);
 }
@@ -1700,7 +1697,7 @@ bool OfaAutocorrExceptPage::NewDelHdl(void* pBtn)
     return false;
 }
 
-IMPL_LINK_TYPED(OfaAutocorrExceptPage, SelectHdl, ListBox&, rBox, void)
+IMPL_LINK(OfaAutocorrExceptPage, SelectHdl, ListBox&, rBox, void)
 {
     if (&rBox == m_pAbbrevLB)
     {
@@ -1716,7 +1713,7 @@ IMPL_LINK_TYPED(OfaAutocorrExceptPage, SelectHdl, ListBox&, rBox, void)
     }
 }
 
-IMPL_LINK_TYPED(OfaAutocorrExceptPage, ModifyHdl, Edit&, rEdt, void)
+IMPL_LINK(OfaAutocorrExceptPage, ModifyHdl, Edit&, rEdt, void)
 {
 //  sal_Bool bSame = pEdt->GetText() == ->GetSelectEntry();
     const OUString& sEntry = rEdt.GetText();
@@ -1777,7 +1774,7 @@ void AutoCorrEdit::Resize()
     Edit::Resize();
     if (!m_xReplaceTLB)
         return;
-    m_xReplaceTLB->SetTab(m_nCol, GetPosPixel().X(), MAP_PIXEL);
+    m_xReplaceTLB->SetTab(m_nCol, GetPosPixel().X(), MapUnit::MapPixel);
 }
 
 enum OfaQuoteOptions
@@ -1827,7 +1824,7 @@ OfaQuoteTabPage::OfaQuoteTabPage(vcl::Window* pParent, const SfxItemSet& rSet)
 
     SvSimpleTableContainer *pListContainer = get<SvSimpleTableContainer>("list");
     Size aControlSize(252 , 85);
-    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
+    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
     pListContainer->set_width_request(aControlSize.Width());
     pListContainer->set_height_request(aControlSize.Height());
     m_pSwCheckLB = VclPtr<OfaACorrCheckListBox>::Create(*pListContainer);
@@ -1868,10 +1865,7 @@ OfaQuoteTabPage::OfaQuoteTabPage(vcl::Window* pParent, const SfxItemSet& rSet)
         m_pSwCheckLB->SetStyle(m_pSwCheckLB->GetStyle() | WB_HSCROLL| WB_VSCROLL);
 
         m_pSwCheckLB->SvSimpleTable::SetTabs(aStaticTabs);
-        OUString sHeader(get<vcl::Window>("m")->GetText());
-        sHeader += "\t";
-        sHeader += get<vcl::Window>("t")->GetText();
-        sHeader += "\t";
+        OUString sHeader = get<vcl::Window>("m")->GetText() + "\t" + get<vcl::Window>("t")->GetText() + "\t";
         m_pSwCheckLB->InsertHeaderEntry( sHeader, HEADERBAR_APPEND,
                         HeaderBarItemBits::CENTER | HeaderBarItemBits::VCENTER | HeaderBarItemBits::FIXEDPOS | HeaderBarItemBits::FIXED);
         m_pCheckLB->Hide();
@@ -2057,7 +2051,7 @@ void OfaQuoteTabPage::Reset( const SfxItemSet* )
 #define DBL_END         3
 
 
-IMPL_LINK_TYPED( OfaQuoteTabPage, QuoteHdl, Button*, pBtn, void )
+IMPL_LINK( OfaQuoteTabPage, QuoteHdl, Button*, pBtn, void )
 {
     sal_uInt16 nMode = SGL_START;
     if (pBtn == m_pSglEndQuotePB)
@@ -2129,7 +2123,7 @@ IMPL_LINK_TYPED( OfaQuoteTabPage, QuoteHdl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK_TYPED( OfaQuoteTabPage, StdQuoteHdl, Button*, pBtn, void )
+IMPL_LINK( OfaQuoteTabPage, StdQuoteHdl, Button*, pBtn, void )
 {
     if (pBtn == m_pDblStandardPB)
     {
@@ -2202,7 +2196,7 @@ OfaAutoCompleteTabPage::OfaAutoCompleteTabPage(vcl::Window* pParent,
     get(m_pNFMaxEntries, "maxentries");
     get(m_pLBEntries, "entries");
     m_pLBEntries->SetPage(this);
-    aSize = LogicToPixel(Size(121, 158), MAP_APPFONT);
+    aSize = LogicToPixel(Size(121, 158), MapUnit::MapAppFont);
     m_pLBEntries->set_width_request(aSize.Width());
     m_pLBEntries->set_height_request(aSize.Height());
     get(m_pPBEntries, "delete");
@@ -2364,7 +2358,7 @@ void OfaAutoCompleteTabPage::ActivatePage( const SfxItemSet& )
     static_cast<OfaAutoCorrDlg*>(GetTabDialog())->EnableLanguage( false );
 }
 
-IMPL_LINK_NOARG_TYPED(OfaAutoCompleteTabPage, DeleteHdl, Button*, void)
+IMPL_LINK_NOARG(OfaAutoCompleteTabPage, DeleteHdl, Button*, void)
 {
     sal_Int32 nSelCnt =
         (m_pAutoCompleteList) ? m_pLBEntries->GetSelectEntryCount() : 0;
@@ -2378,7 +2372,7 @@ IMPL_LINK_NOARG_TYPED(OfaAutoCompleteTabPage, DeleteHdl, Button*, void)
     }
 }
 
-IMPL_LINK_TYPED( OfaAutoCompleteTabPage, CheckHdl, CheckBox&, rBox, void )
+IMPL_LINK( OfaAutoCompleteTabPage, CheckHdl, CheckBox&, rBox, void )
 {
     bool bEnable = rBox.IsChecked();
     if (&rBox == m_pCBActiv)
@@ -2398,16 +2392,9 @@ void OfaAutoCompleteTabPage::CopyToClipboard() const
     if (m_pAutoCompleteList && nSelCnt)
     {
         TransferDataContainer* pCntnr = new TransferDataContainer;
-        css::uno::Reference<
-            css::datatransfer::XTransferable > xRef( pCntnr );
+        css::uno::Reference< css::datatransfer::XTransferable > xRef( pCntnr );
 
         OStringBuffer sData;
-        const sal_Char aLineEnd[] =
-#if defined(_WIN32)
-                "\015\012";
-#else
-                "\012";
-#endif
 
         rtl_TextEncoding nEncode = osl_getThreadTextEncoding();
 
@@ -2415,7 +2402,11 @@ void OfaAutoCompleteTabPage::CopyToClipboard() const
         {
             sData.append(OUStringToOString(m_pLBEntries->GetSelectEntry(n),
                 nEncode));
-            sData.append(aLineEnd);
+#if defined(_WIN32)
+            sData.append("\015\012");
+#else
+            sData.append("\012");
+#endif
         }
         pCntnr->CopyByteString( SotClipboardFormatId::STRING, sData.makeStringAndClear() );
         pCntnr->CopyToClipboard( static_cast<vcl::Window*>(const_cast<OfaAutoCompleteTabPage *>(this)) );
@@ -2484,7 +2475,7 @@ OfaSmartTagOptionsTabPage::OfaSmartTagOptionsTabPage( vcl::Window* pParent,
     // some options for the list box:
     m_pSmartTagTypesLB->SetStyle( m_pSmartTagTypesLB->GetStyle() | WB_HSCROLL | WB_HIDESELECTION );
     m_pSmartTagTypesLB->SetHighlightRange();
-    Size aControlSize(LogicToPixel(Size(172, 154), MAP_APPFONT));
+    Size aControlSize(LogicToPixel(Size(172, 154), MapUnit::MapAppFont));
     m_pSmartTagTypesLB->set_width_request(aControlSize.Width());
     m_pSmartTagTypesLB->set_height_request(aControlSize.Height());
 
@@ -2521,7 +2512,7 @@ struct ImplSmartTagLBUserData
     sal_Int32 mnSmartTagIdx;
 
     ImplSmartTagLBUserData( const OUString& rSmartTagType,
-                            uno::Reference< smarttags::XSmartTagRecognizer > xRec,
+                            uno::Reference< smarttags::XSmartTagRecognizer > const & xRec,
                             sal_Int32 nSmartTagIdx ) :
         maSmartTagType( rSmartTagType ),
         mxRec( xRec ),
@@ -2584,7 +2575,7 @@ void OfaSmartTagOptionsTabPage::FillListBox( const SmartTagMgr& rSmartTagMgr )
 
 /** Handler for the push button
 */
-IMPL_LINK_NOARG_TYPED(OfaSmartTagOptionsTabPage, ClickHdl, Button*, void)
+IMPL_LINK_NOARG(OfaSmartTagOptionsTabPage, ClickHdl, Button*, void)
 {
     const sal_uLong nPos = m_pSmartTagTypesLB->GetSelectEntryPos();
     const SvTreeListEntry* pEntry = m_pSmartTagTypesLB->GetEntry(nPos);
@@ -2599,7 +2590,7 @@ IMPL_LINK_NOARG_TYPED(OfaSmartTagOptionsTabPage, ClickHdl, Button*, void)
 
 /** Handler for the check box
 */
-IMPL_LINK_NOARG_TYPED(OfaSmartTagOptionsTabPage, CheckHdl, CheckBox&, void)
+IMPL_LINK_NOARG(OfaSmartTagOptionsTabPage, CheckHdl, CheckBox&, void)
 {
     const bool bEnable = m_pMainCB->IsChecked();
     m_pSmartTagTypesLB->Enable( bEnable );
@@ -2616,7 +2607,7 @@ IMPL_LINK_NOARG_TYPED(OfaSmartTagOptionsTabPage, CheckHdl, CheckBox&, void)
 
 /** Handler for the list box
 */
-IMPL_LINK_NOARG_TYPED(OfaSmartTagOptionsTabPage, SelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(OfaSmartTagOptionsTabPage, SelectHdl, SvTreeListBox*, void)
 {
     if ( m_pSmartTagTypesLB->GetEntryCount() < 1 )
         return;

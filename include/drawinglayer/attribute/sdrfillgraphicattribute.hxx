@@ -64,7 +64,9 @@ namespace drawinglayer
                 bool bLogSize);
             SdrFillGraphicAttribute();
             SdrFillGraphicAttribute(const SdrFillGraphicAttribute& rCandidate);
+            SdrFillGraphicAttribute(SdrFillGraphicAttribute&& rCandidate);
             SdrFillGraphicAttribute& operator=(const SdrFillGraphicAttribute& rCandidate);
+            SdrFillGraphicAttribute& operator=(SdrFillGraphicAttribute&& rCandidate);
             ~SdrFillGraphicAttribute();
 
             // checks if the incarnation is default constructed
@@ -81,7 +83,6 @@ namespace drawinglayer
             const basegfx::B2DVector& getOffsetPosition() const;
             const basegfx::B2DVector& getRectPoint() const;
             bool getTiling() const;
-            bool getStretch() const;
 
             // FillGraphicAttribute generator
             FillGraphicAttribute createFillGraphicAttribute(const basegfx::B2DRange& rRange) const;

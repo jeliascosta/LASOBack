@@ -22,7 +22,6 @@
 
 #include <hintids.hxx>
 
-#include <com/sun/star/i18n/ScriptType.hpp>
 #include <editeng/twolinesitem.hxx>
 #include <editeng/charrotateitem.hxx>
 #include <vcl/outdev.hxx>
@@ -258,11 +257,16 @@ SwDoubleLinePortion::SwDoubleLinePortion(SwDoubleLinePortion& rDouble, sal_Int32
 // internet style, which contains the 2-line-attribute.
 SwDoubleLinePortion::SwDoubleLinePortion(const SwMultiCreator& rCreate, sal_Int32 nEnd)
     : SwMultiPortion(nEnd)
-    , pBracket(new SwBracket())
+    , pBracket(new SwBracket)
     , nLineDiff(0)
     , nBlank1(0)
     , nBlank2(0)
 {
+    pBracket->nAscent = 0;
+    pBracket->nHeight = 0;
+    pBracket->nPreWidth = 0;
+    pBracket->nPostWidth = 0;
+
     SetDouble();
     const SvxTwoLinesItem* pTwo = static_cast<const SvxTwoLinesItem*>(rCreate.pItem);
     if( pTwo )
@@ -306,8 +310,7 @@ SwDoubleLinePortion::SwDoubleLinePortion(const SwMultiCreator& rCreate, sal_Int3
 
     if( !pBracket->cPre && !pBracket->cPost )
     {
-        delete pBracket;
-        pBracket = nullptr;
+        pBracket.reset();
     }
 
     // double line portions have the same direction as the frame directions
@@ -341,14 +344,13 @@ void SwDoubleLinePortion::PaintBracket( SwTextPaintInfo &rInf,
     aBlank.Width( nChWidth );
     aBlank.Height( pBracket->nHeight );
     {
-        SwFont* pTmpFnt = new SwFont( *rInf.GetFont() );
+        std::unique_ptr<SwFont> pTmpFnt( new SwFont( *rInf.GetFont() ) );
         SwFontScript nAct = bOpen ? pBracket->nPreScript : pBracket->nPostScript;
         if( SW_SCRIPTS > nAct )
             pTmpFnt->SetActual( nAct );
         pTmpFnt->SetProportion( 100 );
-        SwFontSave aSave( rInf, pTmpFnt );
+        SwFontSave aSave( rInf, pTmpFnt.get() );
         aBlank.Paint( rInf );
-        delete pTmpFnt;
     }
     if( bOpen )
         rInf.X( rInf.X() + PreWidth() );
@@ -360,7 +362,7 @@ void SwDoubleLinePortion::SetBrackets( const SwDoubleLinePortion& rDouble )
 {
     if( rDouble.pBracket )
     {
-        pBracket = new SwBracket;
+        pBracket.reset( new SwBracket );
         pBracket->cPre = rDouble.pBracket->cPre;
         pBracket->cPost = rDouble.pBracket->cPost;
         pBracket->nPreScript = rDouble.pBracket->nPreScript;
@@ -527,7 +529,6 @@ void SwDoubleLinePortion::ResetSpaceAdd( SwLineLayout* pCurr )
 
 SwDoubleLinePortion::~SwDoubleLinePortion()
 {
-    delete pBracket;
 }
 
 // constructs a ruby portion, i.e. an additional text is displayed
@@ -595,10 +596,10 @@ SwRubyPortion::SwRubyPortion( const SwMultiCreator& rCreate, const SwFont& rFnt,
     if ( rCreate.nLevel % 2 )
     {
         // switch right and left ruby adjustment in rtl environment
-        if ( 0 == nAdjustment )
-            nAdjustment = 2;
-        else if ( 2 == nAdjustment )
-            nAdjustment = 0;
+        if ( css::text::RubyAdjust_LEFT == nAdjustment )
+            nAdjustment = css::text::RubyAdjust_RIGHT;
+        else if ( css::text::RubyAdjust_RIGHT == nAdjustment )
+            nAdjustment = css::text::RubyAdjust_LEFT;
 
         SetDirection( DIR_RIGHT2LEFT );
     }
@@ -641,12 +642,12 @@ void SwRubyPortion::Adjust_( SwTextFormatInfo &rInf )
     sal_Int32 nSub = 0;
     switch ( nAdjustment )
     {
-        case 1: nRight = static_cast<sal_uInt16>(nLineDiff / 2);
+        case css::text::RubyAdjust_CENTER: nRight = static_cast<sal_uInt16>(nLineDiff / 2);
             SAL_FALLTHROUGH;
-        case 2: nLeft  = static_cast<sal_uInt16>(nLineDiff - nRight); break;
-        case 3: nSub   = 1;
+        case css::text::RubyAdjust_RIGHT: nLeft  = static_cast<sal_uInt16>(nLineDiff - nRight); break;
+        case css::text::RubyAdjust_BLOCK: nSub   = 1;
             SAL_FALLTHROUGH;
-        case 4:
+        case css::text::RubyAdjust_INDENT_BLOCK:
         {
             sal_Int32 nCharCnt = 0;
             SwLinePortion *pPor;
@@ -683,14 +684,14 @@ void SwRubyPortion::Adjust_( SwTextFormatInfo &rInf )
             pCurr->SetPortion(SwTextPortion::CopyLinePortion(*pCurr));
         if( nLeft )
         {
-            SwMarginPortion *pMarg = new SwMarginPortion( 0 );
+            SwMarginPortion *pMarg = new SwMarginPortion;
             pMarg->AddPrtWidth( nLeft );
             pMarg->SetPortion( pCurr->GetPortion() );
             pCurr->SetPortion( pMarg );
         }
         if( nRight )
         {
-            SwMarginPortion *pMarg = new SwMarginPortion( 0 );
+            SwMarginPortion *pMarg = new SwMarginPortion;
             pMarg->AddPrtWidth( nRight );
             pCurr->FindLastPortion()->Append( pMarg );
         }
@@ -944,7 +945,7 @@ SwMultiCreator* SwTextSizeInfo::GetMultiCreator( sal_Int32 &rPos,
         // At this moment we know that at position rPos the "winner"-attribute
         // causes a 2-line-portion. The end of the attribute is the end of the
         // portion, if there's no interrupting attribute.
-        // There are two kinds of interruptors:
+        // There are two kinds of interrupters:
         // - ruby attributes stops the 2-line-attribute, the end of the
         //   multiline is the start of the ruby attribute
         // - 2-line-attributes with value "Off" or with different brackets,
@@ -1178,7 +1179,7 @@ public:
     SwSpaceManipulator( SwTextPaintInfo& rInf, SwMultiPortion& rMult );
     ~SwSpaceManipulator();
     void SecondLine();
-    inline long GetSpaceAdd() const { return nSpaceAdd; }
+    long GetSpaceAdd() const { return nSpaceAdd; }
 };
 
 SwSpaceManipulator::SwSpaceManipulator( SwTextPaintInfo& rInf,
@@ -1923,8 +1924,8 @@ bool SwTextFormatter::BuildMultiPortion( SwTextFormatInfo &rInf,
                 // kashida justification is accomplished by elongating characters at certain chosen points.
                 // Kashida justification can be combined with white-space justification to various extents.
                 // The default value of bSkipKashida (the 4th parameter passed to 'CalcNewBlock') is false.
-                // Only when Adjust is SVX_ADJUST_BLOCK ( alignment is justify ), multiportion will be showed in justification in new code.
-                CalcNewBlock( pLine, nullptr, rMulti.Width(), GetAdjust() != SVX_ADJUST_BLOCK );
+                // Only when Adjust is SvxAdjust::Block ( alignment is justify ), multiportion will be showed in justification in new code.
+                CalcNewBlock( pLine, nullptr, rMulti.Width(), GetAdjust() != SvxAdjust::Block );
 
                 GetInfo().SetMulti( false );
             }

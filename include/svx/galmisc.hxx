@@ -50,18 +50,16 @@ struct ExchangeData
         }
 };
 
-enum SgaObjKind
+enum class SgaObjKind
 {
-    SGA_OBJ_NONE = 0,   // abstract object
-    SGA_OBJ_BMP = 1,    // bitmap object
-    SGA_OBJ_SOUND = 2,  // sound object
-    SGA_OBJ_VIDEO = 3,  // video object
-    SGA_OBJ_ANIM = 4,   // animation object
-    SGA_OBJ_SVDRAW = 5, // Svdraw object
-    SGA_OBJ_INET = 6    // graphics from the internet
+    NONE = 0,   // abstract object
+    Bitmap = 1,    // bitmap object
+    Sound = 2,  // sound object
+    Animation = 4,   // animation object
+    SvDraw = 5, // Svdraw object
+    Inet = 6    // graphics from the internet
 };
 
-#define IV_IMAPINFO             (sal_uInt32('S')*0x00000001+sal_uInt32('D')*0x00000100+sal_uInt32('U')*0x00010000+sal_uInt32('D')*0x01000000)
 #define ID_IMAPINFO             2
 
 #define GAL_RES(nId)            ResId(nId, *GetGalleryResMgr())
@@ -70,7 +68,7 @@ enum SgaObjKind
 
 enum class GalleryGraphicImportRet
 {
-    IMPORT_NONE, IMPORT_FILE, IMPORT_INET
+    IMPORT_NONE, IMPORT_FILE
 };
 
 #define GALLERY_PROGRESS_RANGE  10000
@@ -106,13 +104,11 @@ class SgaIMapInfo : public SdrObjUserData, public SfxListener
     ImageMap                aImageMap;
 
 public:
-                            SgaIMapInfo() : SdrObjUserData( IV_IMAPINFO, ID_IMAPINFO ) {};
+                            SgaIMapInfo() : SdrObjUserData( SdrInventor::SgaImap, ID_IMAPINFO ) {};
 
                             SgaIMapInfo( const ImageMap& rImageMap) :
-                                SdrObjUserData( IV_IMAPINFO, ID_IMAPINFO ),
+                                SdrObjUserData( SdrInventor::SgaImap, ID_IMAPINFO ),
                                 aImageMap( rImageMap ) {};
-
-    virtual                 ~SgaIMapInfo() {};
 
     virtual SdrObjUserData* Clone( SdrObject* ) const override
                             {
@@ -130,7 +126,7 @@ public:
     SgaUserDataFactory() { SdrObjFactory::InsertMakeUserDataHdl( LINK(this,SgaUserDataFactory,MakeUserData) ); }
     ~SgaUserDataFactory() { SdrObjFactory::RemoveMakeUserDataHdl( LINK(this,SgaUserDataFactory,MakeUserData) ); }
 
-    DECL_STATIC_LINK_TYPED( SgaUserDataFactory, MakeUserData, SdrObjFactory*, void );
+    DECL_STATIC_LINK( SgaUserDataFactory, MakeUserData, SdrObjUserDataCreatorParams, SdrObjUserData* );
 };
 
 class GraphicFilter;
@@ -170,7 +166,7 @@ private:
 protected:
 
                                     GalleryTransferable( GalleryTheme* pTheme, sal_uIntPtr nObjectPos, bool bLazy );
-                                    virtual ~GalleryTransferable();
+                                    virtual ~GalleryTransferable() override;
 
     void                            InitData( bool bLazy );
 
@@ -181,7 +177,6 @@ protected:
     virtual void                    DragFinished( sal_Int8 nDropAction ) override;
     virtual void                    ObjectReleased() override;
 
-    void                            CopyToClipboard( vcl::Window* pWindow );
     void                            StartDrag( vcl::Window* pWindow, sal_Int8 nDragSourceActions );
 };
 

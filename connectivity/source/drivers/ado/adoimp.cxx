@@ -185,9 +185,9 @@ const int JET_ENGINETYPE_PARADOX7X  = 53;
 const int JET_ENGINETYPE_TEXT1X     = 60;
 const int JET_ENGINETYPE_HTML1X     = 70;
 
-sal_Bool ADOS::isJetEngine(sal_Int32 _nEngineType)
+bool ADOS::isJetEngine(sal_Int32 _nEngineType)
 {
-    sal_Bool bRet = sal_False;
+    bool bRet = false;
     switch(_nEngineType)
     {
         case JET_ENGINETYPE_UNKNOWN:
@@ -214,7 +214,7 @@ sal_Bool ADOS::isJetEngine(sal_Int32 _nEngineType)
         case JET_ENGINETYPE_PARADOX7X:
         case JET_ENGINETYPE_TEXT1X:
         case JET_ENGINETYPE_HTML1X:
-            bRet = sal_True;
+            bRet = true;
             break;
     }
     return bRet;
@@ -268,7 +268,7 @@ sal_Int32 ADOS::mapAdoRights2Sdbc(RightsEnum eRights)
     if((eRights & adRightInsert) == adRightInsert)
         nRights |= Privilege::INSERT;
     if((eRights & adRightDelete) == adRightDelete)
-        nRights |= ::com::sun::star::sdbcx::Privilege::DELETE;
+        nRights |= css::sdbcx::Privilege::DELETE;
     if((eRights & adRightUpdate) == adRightUpdate)
         nRights |= Privilege::UPDATE;
     if((eRights & adRightWriteDesign) == adRightWriteDesign)
@@ -305,19 +305,19 @@ sal_Int32 ADOS::mapRights2Ado(sal_Int32 nRights)
     return eRights;
 }
 
-WpADOField ADOS::getField(ADORecordset* _pRecordSet,sal_Int32 _nColumnIndex) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException)
+WpADOField ADOS::getField(ADORecordset* _pRecordSet,sal_Int32 _nColumnIndex)
 {
     if ( !_pRecordSet )
         return WpADOField();
 
-    ADOFields* pFields  = NULL;
+    ADOFields* pFields  = nullptr;
     _pRecordSet->get_Fields(&pFields);
     WpOLEAppendCollection<ADOFields, ADOField, WpADOField>  aFields(pFields);
     if(_nColumnIndex <= 0 || _nColumnIndex > aFields.GetItemCount())
-        ::dbtools::throwInvalidIndexException(NULL);
+        ::dbtools::throwInvalidIndexException(nullptr);
     WpADOField aField(aFields.GetItem(_nColumnIndex-1));
     if(!aField.IsValid())
-        ::dbtools::throwInvalidIndexException(NULL);
+        ::dbtools::throwInvalidIndexException(nullptr);
     return aField;
 }
 

@@ -27,7 +27,7 @@
 #include <com/sun/star/lang/XEventListener.hpp>
 #include <comphelper/interfacecontainer2.hxx>
 #include <cppuhelper/queryinterface.hxx>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <cppuhelper/propshlp.hxx>
 
 using namespace com::sun::star;
@@ -40,15 +40,14 @@ struct ContainerStats {
     ContainerStats() : m_nAlive(0), m_nDisposed(0) {}
 };
 
-class ContainerListener : public ::cppu::WeakImplHelper1< XEventListener >
+class ContainerListener : public cppu::WeakImplHelper< XEventListener >
 {
     ContainerStats *m_pStats;
 public:
     explicit ContainerListener(ContainerStats *pStats)
         : m_pStats(pStats) { m_pStats->m_nAlive++; }
-    virtual ~ContainerListener() { m_pStats->m_nAlive--; }
-    virtual void SAL_CALL disposing( const EventObject& )
-        throw (RuntimeException, std::exception) override
+    virtual ~ContainerListener() override { m_pStats->m_nAlive--; }
+    virtual void SAL_CALL disposing( const EventObject& ) override
     {
         m_pStats->m_nDisposed++;
     }
@@ -68,8 +67,8 @@ namespace comphelper_ifcontainer
 
             pContainer = new comphelper::OInterfaceContainerHelper2(m_aGuard);
 
-            CPPUNIT_ASSERT_MESSAGE("Empty container not empty",
-                                   pContainer->getLength() == 0);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("Empty container not empty",
+                                   static_cast<sal_Int32>(0), pContainer->getLength());
 
             int i;
             for (i = 0; i < nTests; i++)
@@ -77,21 +76,21 @@ namespace comphelper_ifcontainer
                 Reference<XEventListener> xRef = new ContainerListener(&aStats);
                 int nNewLen = pContainer->addInterface(xRef);
 
-                CPPUNIT_ASSERT_MESSAGE("addition length mismatch",
-                                       nNewLen == i + 1);
-                CPPUNIT_ASSERT_MESSAGE("addition length mismatch",
-                                       pContainer->getLength() == i + 1);
+                CPPUNIT_ASSERT_EQUAL_MESSAGE("addition length mismatch",
+                                       i + 1, nNewLen);
+                CPPUNIT_ASSERT_EQUAL_MESSAGE("addition length mismatch",
+                                       static_cast<sal_Int32>(i + 1), pContainer->getLength());
             }
-            CPPUNIT_ASSERT_MESSAGE("alive count mismatch",
-                                   aStats.m_nAlive == nTests);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("alive count mismatch",
+                                   nTests, aStats.m_nAlive);
 
             EventObject aObj;
             pContainer->disposeAndClear(aObj);
 
-            CPPUNIT_ASSERT_MESSAGE("dispose count mismatch",
-                                   aStats.m_nDisposed == nTests);
-            CPPUNIT_ASSERT_MESSAGE("leaked container left alive",
-                                   aStats.m_nAlive == 0);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("dispose count mismatch",
+                                   nTests, aStats.m_nDisposed);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("leaked container left alive",
+                                   0, aStats.m_nAlive);
 
             delete pContainer;
         }
@@ -119,13 +118,13 @@ namespace comphelper_ifcontainer
                 for (i = 0; i < nTests; i++)
                 {
                     CPPUNIT_ASSERT_MESSAGE("mismatching elements",
-                                           aElements[i] == aListeners[i]);
+                                           bool(aElements[i] == aListeners[i]));
                 }
             }
             pContainer->clear();
 
-            CPPUNIT_ASSERT_MESSAGE("non-empty container post clear",
-                                   pContainer->getLength() == 0);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("non-empty container post clear",
+                                   static_cast<sal_Int32>(0), pContainer->getLength());
             delete pContainer;
         }
 

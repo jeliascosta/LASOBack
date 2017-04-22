@@ -53,34 +53,27 @@ class StorageElementFactory;
 
 class ContentProvider :
     public ::ucbhelper::ContentProviderImplHelper,
-    public css::frame::XTransientDocumentsDocumentContentFactory,
-    public OfficeDocumentsEventListener
+    public css::frame::XTransientDocumentsDocumentContentFactory
 {
 public:
     explicit ContentProvider( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~ContentProvider();
+    virtual ~ContentProvider() override;
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
         throw() override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     static OUString getImplementationName_Static();
     static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
@@ -91,16 +84,12 @@ public:
 
     // XContentProvider
     virtual css::uno::Reference< css::ucb::XContent > SAL_CALL
-    queryContent( const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier )
-        throw( css::ucb::IllegalIdentifierException,
-               css::uno::RuntimeException, std::exception ) override;
+    queryContent( const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier ) override;
 
     // XTransientDocumentsDocumentContentFactory
     virtual css::uno::Reference< css::ucb::XContent > SAL_CALL
     createDocumentContent( const css::uno::Reference<
-                                css::frame::XModel >& Model )
-        throw ( css::lang::IllegalArgumentException,
-                css::uno::RuntimeException, std::exception ) override;
+                                css::frame::XModel >& Model ) override;
 
     // Non-UNO interfaces
     css::uno::Reference< css::embed::XStorage >
@@ -109,25 +98,25 @@ public:
     css::uno::Reference< css::embed::XStorage >
     queryStorageClone( const OUString & rUri ) const;
 
+    /// @throws css::packages::WrongPasswordException
+    /// @throws css::uno::RuntimeException
     css::uno::Reference< css::io::XInputStream >
     queryInputStream( const OUString & rUri,
-                      const OUString & rPassword ) const
-        throw ( css::packages::WrongPasswordException,
-                css::uno::RuntimeException );
+                      const OUString & rPassword ) const;
 
+    /// @throws css::packages::WrongPasswordException
+    /// @throws css::uno::RuntimeException
     css::uno::Reference< css::io::XOutputStream >
     queryOutputStream( const OUString & rUri,
                        const OUString & rPassword,
-                       bool bTruncate ) const
-        throw ( css::packages::WrongPasswordException,
-                css::uno::RuntimeException );
+                       bool bTruncate ) const;
 
+    /// @throws css::packages::WrongPasswordException
+    /// @throws css::uno::RuntimeException
     css::uno::Reference< css::io::XStream >
     queryStream( const OUString & rUri,
                  const OUString & rPassword,
-                 bool bTruncate ) const
-        throw ( css::packages::WrongPasswordException,
-                css::uno::RuntimeException );
+                 bool bTruncate ) const;
 
     bool queryNamesOfChildren(
         const OUString & rUri,
@@ -140,8 +129,8 @@ public:
     queryDocumentModel( const OUString & rUri ) const;
 
     // interface OfficeDocumentsEventListener
-    virtual void notifyDocumentOpened( const OUString & rDocId ) override;
-    virtual void notifyDocumentClosed( const OUString & rDocId ) override;
+    void notifyDocumentOpened( const OUString & rDocId );
+    void notifyDocumentClosed( const OUString & rDocId );
 
 private:
     rtl::Reference< OfficeDocumentsManager > m_xDocsMgr;

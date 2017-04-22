@@ -23,7 +23,7 @@
 #include <com/sun/star/container/XNameReplace.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/uno/XInterface.hpp>
-#include <cppuhelper/implbase2.hxx>
+#include <cppuhelper/implbase.hxx>
 
 class SvxMacroTableDtor;
 class SvxMacroItem;
@@ -54,7 +54,7 @@ struct SvEventDescription
  * All details of how to actually get and set SvxMacroItem(s) have to
  * be supplied by the base class.
  */
-class SVT_DLLPUBLIC SvBaseEventDescriptor : public cppu::WeakImplHelper2
+class SVT_DLLPUBLIC SvBaseEventDescriptor : public cppu::WeakImplHelper
 <
     css::container::XNameReplace,
     css::lang::XServiceInfo
@@ -69,7 +69,7 @@ public:
 
      SvBaseEventDescriptor(const SvEventDescription* pSupportedMacroItems);
 
-    virtual ~SvBaseEventDescriptor();
+    virtual ~SvBaseEventDescriptor() override;
 
 
     // XNameReplace
@@ -77,73 +77,60 @@ public:
     virtual void SAL_CALL replaceByName(
         const OUString& rName,                /// API name of event
         const css::uno::Any& rElement ) /// event (PropertyValues)
-            throw(
-                css::lang::IllegalArgumentException,
-                css::container::NoSuchElementException,
-                css::lang::WrappedTargetException,
-                css::uno::RuntimeException, std::exception) override;
+             override;
 
     // XNameAccess (via XNameReplace)
     /// calls getByName(sal_uInt16)
     virtual css::uno::Any SAL_CALL getByName(
         const OUString& rName )  /// API name of event
-            throw(
-                css::container::NoSuchElementException,
-                css::lang::WrappedTargetException,
-                css::uno::RuntimeException, std::exception) override;
+             override;
 
     // XNameAxcess (via XNameReplace)
     virtual css::uno::Sequence< OUString > SAL_CALL
-                                                        getElementNames()
-        throw(css::uno::RuntimeException, std::exception) override;
+                                                        getElementNames() override;
 
     // XNameAccess (via XNameReplace)
     virtual sal_Bool SAL_CALL hasByName(
-        const OUString& rName )
-            throw(css::uno::RuntimeException, std::exception) override;
+        const OUString& rName ) override;
 
     // XElementAccess (via XNameReplace)
-    virtual css::uno::Type SAL_CALL getElementType()
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Type SAL_CALL getElementType() override;
 
     // XElementAccess (via XNameReplace)
-    virtual sal_Bool SAL_CALL hasElements()
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() override;
 
     // XServiceInfo
     /// must be implemented in subclass
-    virtual OUString SAL_CALL getImplementationName()
-        throw( css::uno::RuntimeException, std::exception ) override = 0;
+    virtual OUString SAL_CALL getImplementationName() override = 0;
 
     // XServiceInfo
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName)
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
 
     // XServiceInfo
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames()
-            throw( css::uno::RuntimeException, std::exception ) override;
+        getSupportedServiceNames() override;
 
 protected:
 
     /// Must be implemented in subclass.
+    ///
+    /// @throws css::lang::IllegalArgumentException
+    /// @throws css::container::NoSuchElementException
+    /// @throws css::lang::WrappedTargetException
+    /// @throws css::uno::RuntimeException
     virtual void replaceByName(
         const sal_uInt16 nEvent,        /// item ID of event
         const SvxMacro& rMacro)     /// event (will be copied)
-            throw(
-                css::lang::IllegalArgumentException,
-                css::container::NoSuchElementException,
-                css::lang::WrappedTargetException,
-                css::uno::RuntimeException) = 0;
+             = 0;
 
     /// Must be implemented in subclass.
+    ///
+    /// @throws css::container::NoSuchElementException
+    /// @throws css::lang::WrappedTargetException
+    /// @throws css::uno::RuntimeException
     virtual void getByName(
         SvxMacro& rMacro,
-        const sal_uInt16 nEvent )
-            throw(
-                css::container::NoSuchElementException,
-                css::lang::WrappedTargetException,
-                css::uno::RuntimeException) = 0;
+        const sal_uInt16 nEvent ) = 0;
 
     /// convert an API event name to the event ID as used by SvxMacroItem
     sal_uInt16 mapNameToEventID(const OUString& rName) const;
@@ -176,7 +163,7 @@ public:
      SvEventDescriptor(css::uno::XInterface& rParent,
                       const SvEventDescription* pSupportedMacroItems);
 
-    virtual ~SvEventDescriptor();
+    virtual ~SvEventDescriptor() override;
 
 
 protected:
@@ -186,20 +173,13 @@ protected:
     virtual void replaceByName(
         const sal_uInt16 nEvent,        /// item ID of event
         const SvxMacro& rMacro)     /// event (will be copied)
-            throw(
-                css::lang::IllegalArgumentException,
-                css::container::NoSuchElementException,
-                css::lang::WrappedTargetException,
-                css::uno::RuntimeException) override;
+             override;
 
     using SvBaseEventDescriptor::getByName;
     virtual void getByName(
         SvxMacro& rMacros,          /// macro to be filled with values
         const sal_uInt16 nEvent )       /// item ID of event
-            throw(
-                css::container::NoSuchElementException,
-                css::lang::WrappedTargetException,
-                css::uno::RuntimeException) override;
+             override;
 
 
     /// Get the SvxMacroItem from the parent.
@@ -230,11 +210,10 @@ public:
 
      SvDetachedEventDescriptor(const SvEventDescription* pSupportedMacroItems);
 
-    virtual ~SvDetachedEventDescriptor();
+    virtual ~SvDetachedEventDescriptor() override;
 
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
 
 protected:
 
@@ -244,29 +223,21 @@ protected:
     virtual void replaceByName(
         const sal_uInt16 nEvent,        /// item ID of event
         const SvxMacro& rMacro)     /// event (will be copied)
-            throw(
-                css::lang::IllegalArgumentException,
-                css::container::NoSuchElementException,
-                css::lang::WrappedTargetException,
-                css::uno::RuntimeException) override;
+             override;
 
     using SvBaseEventDescriptor::getByName;
     virtual void getByName(
         SvxMacro& rMacro,           /// macro to be filled
         const sal_uInt16 nEvent )       /// item ID of event
-            throw(
-                css::container::NoSuchElementException,
-                css::lang::WrappedTargetException,
-                css::uno::RuntimeException) override;
+             override;
 
     /// do we have an event?
     /// return true: we have a macro for the event
     /// return false: no macro; getByName() will return an empty macro
-    /// IllegalArgumentException: the event is not supported
+    /// @throws css::lang::IllegalArgumentException if the event is not supported
     bool hasById(
         const sal_uInt16 nEvent ) const     /// item ID of event
-             throw(
-                css::lang::IllegalArgumentException);
+             ;
 
 };
 
@@ -278,9 +249,8 @@ public:
      SvMacroTableEventDescriptor(const SvxMacroTableDtor& aFmt,
                                 const SvEventDescription* pSupportedMacroItems);
 
-    virtual ~SvMacroTableEventDescriptor();
+    virtual ~SvMacroTableEventDescriptor() override;
 
-    void copyMacrosFromTable(const SvxMacroTableDtor& aFmt);
     void copyMacrosIntoTable(SvxMacroTableDtor& aFmt);
 };
 

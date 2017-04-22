@@ -198,7 +198,7 @@ Any OXMLDataSourceSetting::convertString(const css::uno::Type& _rExpectedType, c
                 if (TypeClass_SHORT == _rExpectedType.getTypeClass())
                     aReturn <<= (sal_Int16)nValue;
                 else
-                    aReturn <<= (sal_Int32)nValue;
+                    aReturn <<= nValue;
                 break;
             }
         case TypeClass_HYPER:
@@ -214,7 +214,7 @@ Any OXMLDataSourceSetting::convertString(const css::uno::Type& _rExpectedType, c
             SAL_WARN_IF(!bSuccess, "dbaccess",
                 "OXMLDataSourceSetting::convertString: could not convert \""
                 << _rReadCharacters << "\" into a double!");
-            aReturn <<= (double)nValue;
+            aReturn <<= nValue;
         }
         break;
         case TypeClass_STRING:

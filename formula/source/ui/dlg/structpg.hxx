@@ -20,7 +20,6 @@
 #ifndef INCLUDED_FORMULA_SOURCE_UI_DLG_STRUCTPG_HXX
 #define INCLUDED_FORMULA_SOURCE_UI_DLG_STRUCTPG_HXX
 
-#include <svtools/stdctrl.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/group.hxx>
 #include <svtools/svmedit.hxx>
@@ -35,7 +34,7 @@ namespace formula
 {
 
 class IFormulaToken;
-class   StructListBox : public SvTreeListBox
+class StructListBox : public SvTreeListBox
 {
 private:
 
@@ -52,11 +51,11 @@ public:
     SvTreeListEntry*    InsertStaticEntry(
                         const OUString& rText,
                         const Image& rEntryImg,
-                        SvTreeListEntry* pParent = nullptr,
-                        sal_uLong nPos = TREELIST_APPEND,
-                        IFormulaToken* pToken = nullptr );
+                        SvTreeListEntry* pParent,
+                        sal_uLong nPos,
+                        IFormulaToken* pToken );
 
-    void            SetActiveFlag(bool bFlag=true);
+    void            SetActiveFlag(bool bFlag);
     bool            GetActiveFlag() { return bActiveFlag;}
     void            GetFocus() override;
     void            LoseFocus() override;
@@ -75,7 +74,7 @@ private:
 
     IFormulaToken*  pSelectedToken;
 
-    DECL_LINK_TYPED( SelectHdl, SvTreeListBox*, void );
+    DECL_LINK( SelectHdl, SvTreeListBox*, void );
 
     using Window::GetParent;
 
@@ -86,12 +85,12 @@ protected:
 public:
 
     explicit StructPage(vcl::Window* pParent);
-    virtual         ~StructPage();
+    virtual         ~StructPage() override;
     virtual void    dispose() override;
 
     void            ClearStruct();
     SvTreeListEntry* InsertEntry(const OUString& rText, SvTreeListEntry* pParent,
-                                sal_uInt16 nFlag,sal_uLong nPos=0,IFormulaToken* pScToken=nullptr);
+                                sal_uInt16 nFlag,sal_uLong nPos,IFormulaToken* pScToken);
 
     OUString        GetEntryText(SvTreeListEntry* pEntry) const;
 

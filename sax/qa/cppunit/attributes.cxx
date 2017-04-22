@@ -8,11 +8,12 @@
  */
 
 #include <sal/types.h>
-
+#include <com/sun/star/xml/sax/SAXException.hpp>
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/plugin/TestPlugIn.h>
 
+#include <rtl/ref.hxx>
 #include <sax/fastattribs.hxx>
 
 using namespace css;
@@ -32,13 +33,13 @@ public:
 
 void AttributesTest::test()
 {
-    uno::Reference<sax_fastparser::FastAttributeList> xAttributeList( new sax_fastparser::FastAttributeList(nullptr) );
+    rtl::Reference<sax_fastparser::FastAttributeList> xAttributeList( new sax_fastparser::FastAttributeList(nullptr) );
     xAttributeList->add(1, "1");
     xAttributeList->add(2, OString("2"));
 
     // We can't test getValueToken() and getOptionalValueToken()
     // without XFastTokenHandler :-(
-    // Uncomment to get segmantation fault:
+    // Uncomment to get segmentation fault:
     // xAttributeList->getOptionalValueToken(1, 0);
     // xAttributeList->getValueToken(2);
 

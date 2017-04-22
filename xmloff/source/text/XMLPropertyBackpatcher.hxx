@@ -61,15 +61,6 @@ class XMLPropertyBackpatcher
     /// name of property that gets set or backpatched
      OUString sPropertyName;
 
-    /// should a default value be set for unresolved properties
-    bool bDefaultHandling;
-
-    /// should the sPreservePropertyName be preserved
-    bool bPreserveProperty;
-
-    /// name of the property to preserve
-    OUString sPreservePropertyName;
-
     /// backpatch list type
     typedef ::std::vector<
                 css::uno::Reference<css::beans::XPropertySet> > BackpatchListType;
@@ -110,11 +101,6 @@ public:
     void SetProperty(
         css::uno::Reference<css::beans::XPropertySet> & xPropSet,
         const OUString& sName);
-
-    /// set default (if bDefaultHandling) for unresolved names
-    /// called by destructor
-    void SetDefault();
-
 };
 
 #endif

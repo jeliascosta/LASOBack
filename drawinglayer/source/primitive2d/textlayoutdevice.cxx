@@ -65,7 +65,7 @@ namespace
 
     public:
         explicit ImpTimedRefDev(scoped_timed_RefDev& rOwnerofMe);
-        virtual ~ImpTimedRefDev();
+        virtual ~ImpTimedRefDev() override;
         virtual void Invoke() override;
 
         VirtualDevice& acquireVirtualDevice();
@@ -73,7 +73,7 @@ namespace
     };
 
     ImpTimedRefDev::ImpTimedRefDev(scoped_timed_RefDev& rOwnerOfMe)
-    :   Timer( "Timer to destroy drawinglayer reference device" ),
+    :   Timer( "drawinglayer ImpTimedRefDev destroy mpVirDev" ),
         mrOwnerOfMe(rOwnerOfMe),
         mpVirDev(nullptr),
         mnUseCount(0L)
@@ -85,7 +85,7 @@ namespace
     ImpTimedRefDev::~ImpTimedRefDev()
     {
         OSL_ENSURE(0L == mnUseCount, "destruction of a still used ImpTimedRefDev (!)");
-        const SolarMutexGuard aGuard;
+        const SolarMutexGuard aSolarGuard;
         mpVirDev.disposeAndClear();
     }
 
@@ -100,7 +100,7 @@ namespace
         if(!mpVirDev)
         {
             mpVirDev = VclPtr<VirtualDevice>::Create();
-            mpVirDev->SetReferenceDevice( VirtualDevice::REFDEV_MODE_MSO1 );
+            mpVirDev->SetReferenceDevice( VirtualDevice::RefDevMode::MSO1 );
         }
 
         if(!mnUseCount)
@@ -152,7 +152,8 @@ namespace drawinglayer
         }
 
         TextLayouterDevice::TextLayouterDevice()
-        :   mrDevice(acquireGlobalVirtualDevice())
+        :   maSolarGuard(),
+            mrDevice(acquireGlobalVirtualDevice())
         {
         }
 
@@ -233,7 +234,7 @@ namespace drawinglayer
             const OUString& rText,
             sal_uInt32 nIndex,
             sal_uInt32 nLength,
-            const ::std::vector< double >& rDXArray) const
+            const std::vector< double >& rDXArray) const
         {
             const sal_uInt32 nDXArrayCount(rDXArray.size());
             sal_uInt32 nTextLength(nLength);
@@ -260,7 +261,6 @@ namespace drawinglayer
                     nIndex,
                     nIndex,
                     nLength,
-                    true,
                     0,
                     &(aIntegerDXArray[0]));
             }
@@ -290,7 +290,7 @@ namespace drawinglayer
 
             if(nTextLength)
             {
-                Rectangle aRect;
+                tools::Rectangle aRect;
 
                 mrDevice.GetTextBoundRect(
                     aRect,
@@ -324,7 +324,7 @@ namespace drawinglayer
         }
 
         void TextLayouterDevice::addTextRectActions(
-            const Rectangle& rRectangle,
+            const tools::Rectangle& rRectangle,
             const OUString& rText,
             DrawTextFlags nStyle,
             GDIMetaFile& rGDIMetaFile) const
@@ -333,12 +333,12 @@ namespace drawinglayer
                 rRectangle, rText, nStyle, rGDIMetaFile);
         }
 
-        ::std::vector< double > TextLayouterDevice::getTextArray(
+        std::vector< double > TextLayouterDevice::getTextArray(
             const OUString& rText,
             sal_uInt32 nIndex,
             sal_uInt32 nLength) const
         {
-            ::std::vector< double > aRetval;
+            std::vector< double > aRetval;
             sal_uInt32 nTextLength(nLength);
             const sal_uInt32 nStringLength(rText.getLength());
 
@@ -350,7 +350,7 @@ namespace drawinglayer
             if(nTextLength)
             {
                 aRetval.reserve(nTextLength);
-                ::std::vector<long> aArray(nTextLength);
+                std::vector<long> aArray(nTextLength);
                 mrDevice.GetTextArray(rText, &aArray[0], nIndex, nLength);
                 aRetval.assign(aArray.begin(), aArray.end());
             }

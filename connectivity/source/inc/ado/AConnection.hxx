@@ -38,13 +38,13 @@ namespace connectivity
             ::connectivity::OTypeInfo       aSimpleType;    // the general type info
             DataTypeEnum                    eType;
 
-            inline OUString getDBName() const { return aSimpleType.aTypeName; }
+            OUString getDBName() const { return aSimpleType.aTypeName; }
         };
 
         class WpADOConnection;
         class ODriver;
         class OCatalog;
-        typedef ::std::multimap<DataTypeEnum, OExtendedTypeInfo*>       OTypeInfoMap;
+        typedef std::multimap<DataTypeEnum, OExtendedTypeInfo*>       OTypeInfoMap;
         typedef connectivity::OMetaConnection                           OConnection_BASE;
 
 
@@ -60,29 +60,29 @@ namespace connectivity
             OTypeInfoMap                m_aTypeInfo;    //  vector containing an entry
                                                                                 //  for each row returned by
                                                                                 //  DatabaseMetaData.getTypeInfo.
-            ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbcx::XTablesSupplier>      m_xCatalog;
+            css::uno::WeakReference< css::sdbcx::XTablesSupplier>      m_xCatalog;
             ODriver*                    m_pDriver;
         private:
             WpADOConnection*            m_pAdoConnection;
             OCatalog*                   m_pCatalog;
             sal_Int32                   m_nEngineType;
-            sal_Bool                    m_bClosed;
-            sal_Bool                    m_bAutocommit;
+            bool                        m_bClosed;
+            bool                        m_bAutocommit;
 
         protected:
-            void buildTypeInfo() throw( ::com::sun::star::sdbc::SQLException);
+            /// @throws css::sdbc::SQLException
+            void buildTypeInfo();
         public:
-
-            OConnection(ODriver*        _pDriver) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
+            /// @throws css::sdbc::SQLException
+            /// @throws css::uno::RuntimeException
+            OConnection(ODriver*        _pDriver);
             //  OConnection(const SQLHANDLE _pConnectionHandle);
-            ~OConnection();
-            void construct(const OUString& url,const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info);
-
-            void closeAllStatements () throw( ::com::sun::star::sdbc::SQLException);
+            ~OConnection() override;
+            void construct(const OUString& url,const css::uno::Sequence< css::beans::PropertyValue >& info);
 
             //XUnoTunnel
-            virtual sal_Int64 SAL_CALL getSomething( const ::com::sun::star::uno::Sequence< sal_Int8 >& aIdentifier ) throw (::com::sun::star::uno::RuntimeException) override;
-            static ::com::sun::star::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
+            virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+            static css::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
             // XServiceInfo
             DECLARE_SERVICE_INFO();
             // OComponentHelper
@@ -91,32 +91,32 @@ namespace connectivity
             virtual void SAL_CALL release() throw() override;
 
             // XConnection
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XStatement > SAL_CALL createStatement(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareCall( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual OUString SAL_CALL nativeSQL( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual void SAL_CALL setAutoCommit( sal_Bool autoCommit ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual sal_Bool SAL_CALL getAutoCommit(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual void SAL_CALL commit(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual void SAL_CALL rollback(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual sal_Bool SAL_CALL isClosed(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual void SAL_CALL setReadOnly( sal_Bool readOnly ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual sal_Bool SAL_CALL isReadOnly(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual void SAL_CALL setCatalog( const OUString& catalog ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual OUString SAL_CALL getCatalog(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual void SAL_CALL setTransactionIsolation( sal_Int32 level ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual sal_Int32 SAL_CALL getTransactionIsolation(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess > SAL_CALL getTypeMap(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual void SAL_CALL setTypeMap( const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
+            virtual css::uno::Reference< css::sdbc::XStatement > SAL_CALL createStatement(  ) override;
+            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const OUString& sql ) override;
+            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareCall( const OUString& sql ) override;
+            virtual OUString SAL_CALL nativeSQL( const OUString& sql ) override;
+            virtual void SAL_CALL setAutoCommit( sal_Bool autoCommit ) override;
+            virtual sal_Bool SAL_CALL getAutoCommit(  ) override;
+            virtual void SAL_CALL commit(  ) override;
+            virtual void SAL_CALL rollback(  ) override;
+            virtual sal_Bool SAL_CALL isClosed(  ) override;
+            virtual css::uno::Reference< css::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) override;
+            virtual void SAL_CALL setReadOnly( sal_Bool readOnly ) override;
+            virtual sal_Bool SAL_CALL isReadOnly(  ) override;
+            virtual void SAL_CALL setCatalog( const OUString& catalog ) override;
+            virtual OUString SAL_CALL getCatalog(  ) override;
+            virtual void SAL_CALL setTransactionIsolation( sal_Int32 level ) override;
+            virtual sal_Int32 SAL_CALL getTransactionIsolation(  ) override;
+            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getTypeMap(  ) override;
+            virtual void SAL_CALL setTypeMap( const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
             // XCloseable
-            virtual void SAL_CALL close(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
+            virtual void SAL_CALL close(  ) override;
             // XWarningsSupplier
-            virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
-            virtual void SAL_CALL clearWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
+            virtual css::uno::Any SAL_CALL getWarnings(  ) override;
+            virtual void SAL_CALL clearWarnings(  ) override;
 
             WpADOConnection* getConnection() { return m_pAdoConnection; }
-            void setCatalog(const ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbcx::XTablesSupplier>& _xCat) { m_xCatalog = _xCat; }
+            void setCatalog(const css::uno::WeakReference< css::sdbcx::XTablesSupplier>& _xCat) { m_xCatalog = _xCat; }
             void setCatalog(OCatalog* _pCatalog) { m_pCatalog = _pCatalog; }
 
             const OTypeInfoMap* getTypeInfo() const { return &m_aTypeInfo;}
@@ -124,7 +124,7 @@ namespace connectivity
             {
                 if ( m_xCatalog.get().is() )
                     return m_pCatalog;
-                return NULL;
+                return nullptr;
             }
 
             sal_Int32 getEngineType()   const { return m_nEngineType; }
@@ -135,7 +135,7 @@ namespace connectivity
                                const OUString& _sTypeName,
                                sal_Int32 _nPrecision,
                                sal_Int32 _nScale,
-                               sal_Bool& _brForceToType);
+                               bool& _brForceToType);
         };
     }
 }

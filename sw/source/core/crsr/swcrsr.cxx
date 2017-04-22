@@ -20,7 +20,6 @@
 #include <hintids.hxx>
 #include <editeng/protitem.hxx>
 #include <com/sun/star/i18n/WordType.hpp>
-#include <com/sun/star/i18n/CharType.hpp>
 #include <unotools/charclass.hxx>
 #include <svl/ctloptions.hxx>
 #include <swmodule.hxx>
@@ -167,7 +166,7 @@ bool SwCursor::IsSkipOverProtectSections() const
 // own SaveObjects if needed and validate them in the virtual check routines.
 void SwCursor::SaveState()
 {
-    SwCursor_SavePos* pNew = CreateNewSavePos();
+    SwCursor_SavePos* pNew = new SwCursor_SavePos( *this );
     pNew->pNext = m_pSavePos;
     m_pSavePos = pNew;
 }
@@ -182,11 +181,6 @@ void SwCursor::RestoreState()
     }
 }
 
-SwCursor_SavePos* SwCursor::CreateNewSavePos() const
-{
-    return new SwCursor_SavePos( *this );
-}
-
 /// determine if point is outside of the node-array's content area
 bool SwCursor::IsNoContent() const
 {
@@ -194,17 +188,17 @@ bool SwCursor::IsNoContent() const
             GetDoc()->GetNodes().GetEndOfExtras().GetIndex();
 }
 
-bool SwCursor::IsSelOvrCheck(int)
+bool SwCursor::IsSelOvrCheck(SwCursorSelOverFlags)
 {
     return false;
 }
 
 // extracted from IsSelOvr()
-bool SwTableCursor::IsSelOvrCheck(int eFlags)
+bool SwTableCursor::IsSelOvrCheck(SwCursorSelOverFlags eFlags)
 {
     SwNodes& rNds = GetDoc()->GetNodes();
     // check sections of nodes array
-    if( (nsSwCursorSelOverFlags::SELOVER_CHECKNODESSECTION & eFlags)
+    if( (SwCursorSelOverFlags::CheckNodeSection & eFlags)
         && HasMark() )
     {
         SwNodeIndex aOldPos( rNds, GetSavePos()->nNode );
@@ -229,7 +223,7 @@ namespace
     }
 }
 
-bool SwCursor::IsSelOvr( int eFlags )
+bool SwCursor::IsSelOvr( SwCursorSelOverFlags eFlags )
 {
     SwDoc* pDoc = GetDoc();
     SwNodes& rNds = pDoc->GetNodes();
@@ -253,7 +247,7 @@ bool SwCursor::IsSelOvr( int eFlags )
             ((bSkipOverHiddenSections && pSectNd->GetSection().IsHiddenFlag() ) ||
             (bSkipOverProtectSections && pSectNd->GetSection().IsProtectFlag() )))
         {
-            if( 0 == ( nsSwCursorSelOverFlags::SELOVER_CHANGEPOS & eFlags ) )
+            if( !( SwCursorSelOverFlags::ChangePos & eFlags ) )
             {
                 // then we're already done
                 RestoreSavePos();
@@ -267,7 +261,7 @@ bool SwCursor::IsSelOvr( int eFlags )
             SwContentNode* pCNd = bGoNxt
                 ? rNds.GoNextSection( &rPtIdx, bSkipOverHiddenSections, bSkipOverProtectSections)
                 : SwNodes::GoPrevSection( &rPtIdx, bSkipOverHiddenSections, bSkipOverProtectSections);
-            if( !pCNd && ( nsSwCursorSelOverFlags::SELOVER_ENABLEREVDIREKTION & eFlags ))
+            if( !pCNd && ( SwCursorSelOverFlags::EnableRevDirection & eFlags ))
             {
                 bGoNxt = !bGoNxt;
                 pCNd = bGoNxt ? rNds.GoNextSection( &rPtIdx, bSkipOverHiddenSections, bSkipOverProtectSections)
@@ -343,7 +337,7 @@ bool SwCursor::IsSelOvr( int eFlags )
     if( pNd->IsContentNode() && !dynamic_cast<SwUnoCursor*>(this) )
     {
         const SwContentFrame* pFrame = static_cast<const SwContentNode*>(pNd)->getLayoutFrame( pDoc->getIDocumentLayoutAccess().GetCurrentLayout() );
-        if ( (nsSwCursorSelOverFlags::SELOVER_CHANGEPOS & eFlags)   //allowed to change position if it's a bad one
+        if ( (SwCursorSelOverFlags::ChangePos & eFlags)   //allowed to change position if it's a bad one
             && pFrame && pFrame->IsValid() && !pFrame->Frame().Height()     //a bad zero height position
             && !InputFieldAtPos(GetPoint()) )                       //unless it's a (vertical) input field
         {
@@ -403,7 +397,7 @@ bool SwCursor::IsSelOvr( int eFlags )
     }
 
     // is the cursor allowed to be in a protected node?
-    if( 0 == ( nsSwCursorSelOverFlags::SELOVER_CHANGEPOS & eFlags ) && !IsAtValidPos() )
+    if( !( SwCursorSelOverFlags::ChangePos & eFlags ) && !IsAtValidPos() )
     {
         DeleteMark();
         RestoreSavePos();
@@ -438,11 +432,11 @@ bool SwCursor::IsSelOvr( int eFlags )
         if ( pInputFieldTextAttrAtPoint != pInputFieldTextAttrAtMark )
         {
             const sal_uLong nRefNodeIdx =
-                ( nsSwCursorSelOverFlags::SELOVER_TOGGLE & eFlags )
+                ( SwCursorSelOverFlags::Toggle & eFlags )
                 ? m_pSavePos->nNode
                 : GetMark()->nNode.GetIndex();
             const sal_Int32 nRefContentIdx =
-                ( nsSwCursorSelOverFlags::SELOVER_TOGGLE & eFlags )
+                ( SwCursorSelOverFlags::Toggle & eFlags )
                 ? m_pSavePos->nContent
                 : GetMark()->nContent.GetIndex();
             const bool bIsForwardSelection =
@@ -485,10 +479,10 @@ bool SwCursor::IsSelOvr( int eFlags )
 
     // Note: this cannot happen in TableMode
     // Only Point in Table then go behind/in front of table
-    if (nsSwCursorSelOverFlags::SELOVER_CHANGEPOS & eFlags)
+    if (SwCursorSelOverFlags::ChangePos & eFlags)
     {
         bool bSelTop = GetPoint()->nNode.GetIndex() <
-            ((nsSwCursorSelOverFlags::SELOVER_TOGGLE & eFlags)
+            ((SwCursorSelOverFlags::Toggle & eFlags)
                  ? m_pSavePos->nNode : GetMark()->nNode.GetIndex());
 
         do { // loop for table after table
@@ -599,16 +593,17 @@ bool SwCursor::IsInProtectTable( bool bMove, bool bChgCursor )
         SwNodeIndex aCellStt( *GetNode().FindTableBoxStartNode()->EndOfSectionNode(), 1 );
         bool bProt = true;
 GoNextCell:
-        do {
+        for (;;) {
             if( !aCellStt.GetNode().IsStartNode() )
                 break;
             ++aCellStt;
             if( nullptr == ( pCNd = aCellStt.GetNode().GetContentNode() ))
                 pCNd = aCellStt.GetNodes().GoNext( &aCellStt );
-            if( !( bProt = pCNd->IsProtect() ))
+            bProt = pCNd->IsProtect();
+            if( !bProt )
                 break;
             aCellStt.Assign( *pCNd->FindTableBoxStartNode()->EndOfSectionNode(), 1 );
-        } while( bProt );
+        }
 
 SetNextCursor:
         if( !bProt ) // found free cell
@@ -620,8 +615,8 @@ SetNextCursor:
                 GetPoint()->nContent.Assign( pTmpCNd, 0 );
                 return false;
             }
-            return IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE |
-                             nsSwCursorSelOverFlags::SELOVER_CHANGEPOS );
+            return IsSelOvr( SwCursorSelOverFlags::Toggle |
+                             SwCursorSelOverFlags::ChangePos );
         }
         // end of table, so go to next node
         ++aCellStt;
@@ -648,16 +643,17 @@ SetNextCursor:
         SwNode* pNd;
         bool bProt = true;
 GoPrevCell:
-        do {
+        for (;;) {
             if( !( pNd = &aCellStt.GetNode())->IsEndNode() )
                 break;
             aCellStt.Assign( *pNd->StartOfSectionNode(), +1 );
             if( nullptr == ( pCNd = aCellStt.GetNode().GetContentNode() ))
                 pCNd = pNd->GetNodes().GoNext( &aCellStt );
-            if( !( bProt = pCNd->IsProtect() ))
+            bProt = pCNd->IsProtect();
+            if( !bProt )
                 break;
             aCellStt.Assign( *pNd->FindTableBoxStartNode(), -1 );
-        } while( bProt );
+        }
 
 SetPrevCursor:
         if( !bProt ) // found free cell
@@ -669,8 +665,8 @@ SetPrevCursor:
                 GetPoint()->nContent.Assign( pTmpCNd, 0 );
                 return false;
             }
-            return IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE |
-                             nsSwCursorSelOverFlags::SELOVER_CHANGEPOS );
+            return IsSelOvr( SwCursorSelOverFlags::Toggle |
+                             SwCursorSelOverFlags::ChangePos );
         }
         // at the beginning of a table, so go to next node
         --aCellStt;
@@ -721,7 +717,7 @@ bool SwCursor::IsAtValidPos( bool bPoint ) const
 void SwCursor::SaveTableBoxContent( const SwPosition* ) {}
 
 /// set range for search in document
-SwMoveFnCollection* SwCursor::MakeFindRange( SwDocPositions nStart,
+SwMoveFnCollection const & SwCursor::MakeFindRange( SwDocPositions nStart,
                                 SwDocPositions nEnd, SwPaM* pRange ) const
 {
     pRange->SetMark();
@@ -729,14 +725,14 @@ SwMoveFnCollection* SwCursor::MakeFindRange( SwDocPositions nStart,
     FillFindPos( nEnd, *pRange->GetPoint() );
 
     // determine direction of search
-    return ( DOCPOS_START == nStart || DOCPOS_OTHERSTART == nStart ||
-              (DOCPOS_CURR == nStart &&
-                (DOCPOS_END == nEnd || DOCPOS_OTHEREND == nEnd ) ))
+    return ( SwDocPositions::Start == nStart || SwDocPositions::OtherStart == nStart ||
+              (SwDocPositions::Curr == nStart &&
+                (SwDocPositions::End == nEnd || SwDocPositions::OtherEnd == nEnd ) ))
                 ? fnMoveForward : fnMoveBackward;
 }
 
 static sal_uLong lcl_FindSelection( SwFindParas& rParas, SwCursor* pCurrentCursor,
-                        SwMoveFn fnMove, SwCursor*& pFndRing,
+                        SwMoveFnCollection const & fnMove, SwCursor*& pFndRing,
                         SwPaM& aRegion, FindRanges eFndRngs,
                         bool bInReadOnly, bool& bCancel )
 {
@@ -744,14 +740,14 @@ static sal_uLong lcl_FindSelection( SwFindParas& rParas, SwCursor* pCurrentCurso
     bool const bDoesUndo = pDoc->GetIDocumentUndoRedo().DoesUndo();
     int nFndRet = 0;
     sal_uLong nFound = 0;
-    const bool bSrchBkwrd = fnMove == fnMoveBackward;
+    const bool bSrchBkwrd = &fnMove == &fnMoveBackward;
     SwPaM *pTmpCursor = pCurrentCursor, *pSaveCursor = pCurrentCursor;
 
     // only create progress bar for ShellCursor
     bool bIsUnoCursor = dynamic_cast<SwUnoCursor*>(pCurrentCursor) !=  nullptr;
     std::unique_ptr<PercentHdl> pPHdl;
     sal_uInt16 nCursorCnt = 0;
-    if( FND_IN_SEL & eFndRngs )
+    if( FindRanges::InSel & eFndRngs )
     {
         while( pCurrentCursor != ( pTmpCursor = pTmpCursor->GetNext() ))
             ++nCursorCnt;
@@ -759,7 +755,7 @@ static sal_uLong lcl_FindSelection( SwFindParas& rParas, SwCursor* pCurrentCurso
             pPHdl.reset(new PercentHdl( 0, nCursorCnt, pDoc->GetDocShell() ));
     }
     else
-        pSaveCursor = static_cast<SwPaM*>(pSaveCursor->GetPrev());
+        pSaveCursor = pSaveCursor->GetPrev();
 
     bool bEnd = false;
     do {
@@ -797,7 +793,7 @@ static sal_uLong lcl_FindSelection( SwFindParas& rParas, SwCursor* pCurrentCurso
 
             ++nFound;
 
-            if( !( eFndRngs & FND_IN_SELALL) )
+            if( !( eFndRngs & FindRanges::InSelAll) )
             {
                 bEnd = true;
                 break;
@@ -841,7 +837,7 @@ static sal_uLong lcl_FindSelection( SwFindParas& rParas, SwCursor* pCurrentCurso
             }
         }
 
-        if( bEnd || !( eFndRngs & ( FND_IN_SELALL | FND_IN_SEL )) )
+        if( bEnd || !( eFndRngs & ( FindRanges::InSelAll | FindRanges::InSel )) )
             break;
 
         pTmpCursor = pTmpCursor->GetNext();
@@ -933,17 +929,17 @@ sal_uLong SwCursor::FindAll( SwFindParas& rParas,
 
     // create region without adding it to the ring
     SwPaM aRegion( *GetPoint() );
-    SwMoveFn fnMove = MakeFindRange( nStart, nEnde, &aRegion );
+    SwMoveFnCollection const & fnMove = MakeFindRange( nStart, nEnde, &aRegion );
 
     sal_uLong nFound = 0;
-    const bool bMvBkwrd = fnMove == fnMoveBackward;
+    const bool bMvBkwrd = &fnMove == &fnMoveBackward;
     bool bInReadOnly = IsReadOnlyAvailable();
 
     SwCursor* pFndRing = nullptr;
     SwNodes& rNds = GetDoc()->GetNodes();
 
     // search in sections?
-    if( FND_IN_SEL & eFndRngs )
+    if( FindRanges::InSel & eFndRngs )
     {
         // if string was not found in region then get all sections (cursors
         // stays unchanged)
@@ -962,7 +958,7 @@ sal_uLong SwCursor::FindAll( SwFindParas& rParas,
         pFndRing->GetRingContainer().merge( GetRingContainer() );
         delete pFndRing;
     }
-    else if( FND_IN_OTHER & eFndRngs )
+    else if( FindRanges::InOther & eFndRngs )
     {
         // put cursor as copy of current into ring
         // chaining points always to first created, so forward
@@ -999,7 +995,7 @@ sal_uLong SwCursor::FindAll( SwFindParas& rParas,
         }
         pSav.release();
 
-        if( !( FND_IN_SELALL & eFndRngs ))
+        if( !( FindRanges::InSelAll & eFndRngs ))
         {
             // there should only be a single one, thus add it
             // independent from search direction: SPoint is always bigger than
@@ -1021,11 +1017,11 @@ sal_uLong SwCursor::FindAll( SwFindParas& rParas,
         }
         delete pFndRing;
     }
-    else if( FND_IN_SELALL & eFndRngs )
+    else if( FindRanges::InSelAll & eFndRngs )
     {
-        ::std::unique_ptr< SwCursor> pSav( Create( this ) );  // save the current cursor
+        std::unique_ptr< SwCursor> pSav( Create( this ) );    // save the current cursor
 
-        const SwNode* pSttNd = ( FND_IN_BODYONLY & eFndRngs )
+        const SwNode* pSttNd = ( FindRanges::InBodyOnly & eFndRngs )
                             ? rNds.GetEndOfContent().StartOfSectionNode()
                             : rNds.GetEndOfPostIts().StartOfSectionNode();
 
@@ -1065,7 +1061,7 @@ sal_uLong SwCursor::FindAll( SwFindParas& rParas,
         // if a GetMark is set then keep the GetMark of the found object
         // This allows spanning an area with this search.
         SwPosition aMarkPos( *GetMark() );
-        const bool bMarkPos = HasMark() && !eFndRngs;
+        const bool bMarkPos = HasMark() && (eFndRngs == FindRanges::InBody);
 
         if( 0 != (nFound = rParas.Find( this, fnMove,
                                         &aRegion, bInReadOnly ) ? 1 : 0)
@@ -1073,7 +1069,7 @@ sal_uLong SwCursor::FindAll( SwFindParas& rParas,
             *GetMark() = aMarkPos;
     }
 
-    if( nFound && SwCursor::IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE ) )
+    if( nFound && SwCursor::IsSelOvr( SwCursorSelOverFlags::Toggle ) )
         nFound = 0;
     return nFound;
 }
@@ -1086,20 +1082,20 @@ void SwCursor::FillFindPos( SwDocPositions ePos, SwPosition& rPos ) const
 
     switch( ePos )
     {
-    case DOCPOS_START:
+    case SwDocPositions::Start:
         rPos.nNode = *rNds.GetEndOfContent().StartOfSectionNode();
         pCNd = rNds.GoNext( &rPos.nNode );
         break;
-    case DOCPOS_END:
+    case SwDocPositions::End:
         rPos.nNode = rNds.GetEndOfContent();
         pCNd = SwNodes::GoPrevious( &rPos.nNode );
         bIsStart = false;
         break;
-    case DOCPOS_OTHERSTART:
+    case SwDocPositions::OtherStart:
         rPos.nNode = *rNds[ sal_uLong(0) ];
         pCNd = rNds.GoNext( &rPos.nNode );
         break;
-    case DOCPOS_OTHEREND:
+    case SwDocPositions::OtherEnd:
         rPos.nNode = *rNds.GetEndOfContent().StartOfSectionNode();
         pCNd = SwNodes::GoPrevious( &rPos.nNode );
         bIsStart = false;
@@ -1432,10 +1428,10 @@ static OUString lcl_MaskDeletedRedlines( const SwTextNode* pTextNd )
         //mask deleted redlines
         OUString sNodeText(pTextNd->GetText());
         const SwDoc& rDoc = *pTextNd->GetDoc();
-        const bool bShowChg = IDocumentRedlineAccess::IsShowChanges( rDoc.getIDocumentRedlineAccess().GetRedlineMode() );
+        const bool bShowChg = IDocumentRedlineAccess::IsShowChanges( rDoc.getIDocumentRedlineAccess().GetRedlineFlags() );
         if ( bShowChg )
         {
-            sal_uInt16 nAct = rDoc.getIDocumentRedlineAccess().GetRedlinePos( *pTextNd, USHRT_MAX );
+            SwRedlineTable::size_type nAct = rDoc.getIDocumentRedlineAccess().GetRedlinePos( *pTextNd, USHRT_MAX );
             for ( ; nAct < rDoc.getIDocumentRedlineAccess().GetRedlineTable().size(); nAct++ )
             {
                 const SwRangeRedline* pRed = rDoc.getIDocumentRedlineAccess().GetRedlineTable()[ nAct ];
@@ -1629,13 +1625,13 @@ bool SwCursor::LeftRight( bool bLeft, sal_uInt16 nCnt, sal_uInt16 nMode,
 
     // can the cursor be moved n times?
     SwCursorSaveState aSave( *this );
-    SwMoveFn fnMove = bLeft ? fnMoveBackward : fnMoveForward;
+    SwMoveFnCollection const & fnMove = bLeft ? fnMoveBackward : fnMoveForward;
 
     SwGoInDoc fnGo;
     if ( bSkipHidden )
-        fnGo = CRSR_SKIP_CELLS == nMode ? fnGoContentCellsSkipHidden : fnGoContentSkipHidden;
+        fnGo = CRSR_SKIP_CELLS == nMode ? GoInContentCellsSkipHidden : GoInContentSkipHidden;
     else
-        fnGo = CRSR_SKIP_CELLS == nMode ? fnGoContentCells : fnGoContent;
+        fnGo = CRSR_SKIP_CELLS == nMode ? GoInContentCells : GoInContent;
 
     while( nCnt )
     {
@@ -1739,8 +1735,8 @@ bool SwCursor::LeftRight( bool bLeft, sal_uInt16 nCnt, sal_uInt16 nMode,
     }
 
     return 0 == nCnt && !IsInProtectTable( true ) &&
-            !IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE |
-                       nsSwCursorSelOverFlags::SELOVER_CHANGEPOS );
+            !IsSelOvr( SwCursorSelOverFlags::Toggle |
+                       SwCursorSelOverFlags::ChangePos );
 }
 
 // calculate cursor bidi level: extracted from UpDown()
@@ -1828,7 +1824,7 @@ bool SwCursor::UpDown( bool bUp, sal_uInt16 nCnt,
             {
                 const SwNode* pEndNd = pTableNd->EndOfSectionNode();
                 GetPoint()->nNode = *pEndNd;
-                pTableCursor->Move( fnMoveBackward, fnGoNode );
+                pTableCursor->Move( fnMoveBackward, GoInNode );
                    pFrame = GetContentNode()->getLayoutFrame( GetDoc()->getIDocumentLayoutAccess().GetCurrentLayout(), &aPt, GetPoint() );
             }
         }
@@ -1843,8 +1839,8 @@ bool SwCursor::UpDown( bool bUp, sal_uInt16 nCnt,
         }
 
         // iterate over whole number of items?
-        if( !nCnt && !IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE |
-                                nsSwCursorSelOverFlags::SELOVER_CHANGEPOS ) )
+        if( !nCnt && !IsSelOvr( SwCursorSelOverFlags::Toggle |
+                                SwCursorSelOverFlags::ChangePos ) )
         {
             if( !pTableCursor )
             {
@@ -1868,7 +1864,7 @@ bool SwCursor::UpDown( bool bUp, sal_uInt16 nCnt,
                 }
                 pFrame->GetCursorOfst( GetPoint(), aPt, &eTmpState );
             }
-            bRet = !IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE | nsSwCursorSelOverFlags::SELOVER_CHANGEPOS );
+            bRet = !IsSelOvr( SwCursorSelOverFlags::Toggle | SwCursorSelOverFlags::ChangePos );
         }
         else
             *GetPoint() = aOldPos;
@@ -1890,7 +1886,7 @@ bool SwCursor::LeftRightMargin( bool bLeft, bool bAPI )
     SwCursorSaveState aSave( *this );
     return pFrame
            && (bLeft ? pFrame->LeftMargin( this ) : pFrame->RightMargin( this, bAPI ) )
-           && !IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE | nsSwCursorSelOverFlags::SELOVER_CHANGEPOS );
+           && !IsSelOvr( SwCursorSelOverFlags::Toggle | SwCursorSelOverFlags::ChangePos );
 }
 
 bool SwCursor::IsAtLeftRightMargin( bool bLeft, bool bAPI ) const
@@ -1915,13 +1911,13 @@ bool SwCursor::SttEndDoc( bool bStt )
     SwCursorSaveState aSave( *this );
     // Never jump over section boundaries during selection!
     // Can the cursor still moved on?
-    SwMoveFn fnMove = bStt ? fnMoveBackward : fnMoveForward;
+    SwMoveFnCollection const & fnMove = bStt ? fnMoveBackward : fnMoveForward;
     bool bRet = (!HasMark() || !IsNoContent() ) &&
-                    Move( fnMove, fnGoDoc ) &&
+                    Move( fnMove, GoInDoc ) &&
                     !IsInProtectTable( true ) &&
-                    !IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE |
-                               nsSwCursorSelOverFlags::SELOVER_CHANGEPOS |
-                               nsSwCursorSelOverFlags::SELOVER_ENABLEREVDIREKTION );
+                    !IsSelOvr( SwCursorSelOverFlags::Toggle |
+                               SwCursorSelOverFlags::ChangePos |
+                               SwCursorSelOverFlags::EnableRevDirection );
     return bRet;
 }
 
@@ -1965,7 +1961,10 @@ bool SwCursor::GoPrevNextCell( bool bNext, sal_uInt16 nCnt )
             (!bNext && !aCellIdx.GetNode().IsEndNode()) )
             return false;
 
-        rPtIdx = bNext ? aCellIdx : SwNodeIndex(*aCellIdx.GetNode().StartOfSectionNode());
+        if (bNext)
+            rPtIdx = aCellIdx;
+        else
+            rPtIdx.Assign(*aCellIdx.GetNode().StartOfSectionNode());
 
         pTableBoxStartNode = rPtIdx.GetNode().FindTableBoxStartNode();
         pTableBox = pTableBoxStartNode->GetTableBox();
@@ -2004,7 +2003,7 @@ bool SwCursor::GotoTable( const OUString& rName )
             SwCursorSaveState aSave( *this );
             GetPoint()->nNode = *pTmpTable->GetTabSortBoxes()[ 0 ]->
                                 GetSttNd()->FindTableNode();
-            Move( fnMoveForward, fnGoContent );
+            Move( fnMoveForward, GoInContent );
             bRet = !IsSelOvr();
         }
     }
@@ -2025,28 +2024,28 @@ bool SwCursor::GotoTableBox( const OUString& rName )
         {
             SwCursorSaveState aSave( *this );
             GetPoint()->nNode = *pTableBox->GetSttNd();
-            Move( fnMoveForward, fnGoContent );
+            Move( fnMoveForward, GoInContent );
             bRet = !IsSelOvr();
         }
     }
     return bRet;
 }
 
-bool SwCursor::MovePara(SwWhichPara fnWhichPara, SwPosPara fnPosPara )
+bool SwCursor::MovePara(SwWhichPara fnWhichPara, SwMoveFnCollection const & fnPosPara )
 {
     // for optimization test something before
     const SwNode* pNd = &GetPoint()->nNode.GetNode();
     bool bShortCut = false;
-    if ( fnWhichPara == fnParaCurr )
+    if ( fnWhichPara == GoCurrPara )
     {
         // #i41048#
-        // If fnWhichPara == fnParaCurr then (*fnWhichPara)( *this, fnPosPara )
+        // If fnWhichPara == GoCurrPara then (*fnWhichPara)( *this, fnPosPara )
         // can already move the cursor to a different text node. In this case
         // we better check if IsSelOvr().
         const SwContentNode* pContentNd = pNd->GetContentNode();
         if ( pContentNd )
         {
-            const sal_Int32 nSttEnd = fnPosPara == fnMoveForward ? 0 : pContentNd->Len();
+            const sal_Int32 nSttEnd = &fnPosPara == &fnMoveForward ? 0 : pContentNd->Len();
             if ( GetPoint()->nContent.GetIndex() != nSttEnd )
                 bShortCut = true;
         }
@@ -2055,7 +2054,7 @@ bool SwCursor::MovePara(SwWhichPara fnWhichPara, SwPosPara fnPosPara )
     {
         if ( pNd->IsTextNode() &&
              pNd->GetNodes()[ pNd->GetIndex() +
-                    (fnWhichPara == fnParaNext ? 1 : -1 ) ]->IsTextNode() )
+                    (fnWhichPara == GoNextPara ? 1 : -1 ) ]->IsTextNode() )
             bShortCut = true;
     }
 
@@ -2067,18 +2066,18 @@ bool SwCursor::MovePara(SwWhichPara fnWhichPara, SwPosPara fnPosPara )
     SwCursorSaveState aSave( *this );
     return (*fnWhichPara)( *this, fnPosPara ) &&
             !IsInProtectTable( true ) &&
-            !IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE |
-                       nsSwCursorSelOverFlags::SELOVER_CHANGEPOS );
+            !IsSelOvr( SwCursorSelOverFlags::Toggle |
+                       SwCursorSelOverFlags::ChangePos );
 }
 
 bool SwCursor::MoveSection( SwWhichSection fnWhichSect,
-                                SwPosSection fnPosSect)
+                                SwMoveFnCollection const & fnPosSect)
 {
     SwCursorSaveState aSave( *this );
     return (*fnWhichSect)( *this, fnPosSect ) &&
             !IsInProtectTable( true ) &&
-            !IsSelOvr( nsSwCursorSelOverFlags::SELOVER_TOGGLE |
-                       nsSwCursorSelOverFlags::SELOVER_CHANGEPOS );
+            !IsSelOvr( SwCursorSelOverFlags::Toggle |
+                       SwCursorSelOverFlags::ChangePos );
 }
 
 void SwCursor::RestoreSavePos()
@@ -2108,8 +2107,8 @@ void SwCursor::RestoreSavePos()
     }
 }
 
-SwTableCursor::SwTableCursor( const SwPosition &rPos, SwPaM* pRing )
-    : SwCursor( rPos, pRing )
+SwTableCursor::SwTableCursor( const SwPosition &rPos )
+    : SwCursor( rPos, nullptr )
 {
     m_bParked = false;
     m_bChanged = false;

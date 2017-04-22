@@ -26,11 +26,11 @@ private:
     virtual void DataChanged (DataChangedEvent const& rDCEvt) override;
 
 protected:
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
 
 public:
     LineNumberWindow (vcl::Window* pParent, ModulWindow* pModulWin);
-    virtual ~LineNumberWindow();
+    virtual ~LineNumberWindow() override;
     virtual void dispose() override;
 
     void DoScroll( long nVertScroll );

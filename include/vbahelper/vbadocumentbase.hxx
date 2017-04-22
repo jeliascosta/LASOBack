@@ -19,9 +19,29 @@
 #ifndef INCLUDED_VBAHELPER_VBADOCUMENTBASE_HXX
 #define INCLUDED_VBAHELPER_VBADOCUMENTBASE_HXX
 
-#include <com/sun/star/frame/XModel.hpp>
+#include <exception>
+
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <com/sun/star/uno/XInterface.hpp>
 #include <ooo/vba/XDocumentBase.hpp>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbadllapi.h>
+#include <vbahelper/vbahelper.hxx>
 #include <vbahelper/vbahelperinterface.hxx>
+
+namespace com { namespace sun { namespace star {
+    namespace frame { class XModel; }
+    namespace uno { class XComponentContext; }
+} } }
+
+namespace ooo { namespace vba {
+    class XDocumentBase;
+    class XHelperInterface;
+} }
 
 typedef InheritedHelperInterfaceWeakImpl< ooo::vba::XDocumentBase > VbaDocumentBase_BASE;
 
@@ -34,26 +54,26 @@ protected:
     const css::uno::Reference< css::frame::XModel >& getModel() { return mxModel; }
 public:
     VbaDocumentBase(    const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext,
-            css::uno::Reference< css::frame::XModel > xModel );
+            css::uno::Reference< css::frame::XModel > const & xModel );
     VbaDocumentBase(    css::uno::Sequence< css::uno::Any > const& aArgs, css::uno::Reference< css::uno::XComponentContext >const& xContext );
-    virtual ~VbaDocumentBase() {}
 
     // Attributes
-    virtual OUString SAL_CALL getName() throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getPath() throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getFullName() throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL getSaved() throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL setSaved( sal_Bool bSave ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL getVBProject() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getName() override;
+    virtual OUString SAL_CALL getPath() override;
+    virtual OUString SAL_CALL getFullName() override;
+    virtual sal_Bool SAL_CALL getSaved() override;
+    virtual void SAL_CALL setSaved( sal_Bool bSave ) override;
+    virtual css::uno::Any SAL_CALL getVBProject() override;
 
     // Methods
     virtual void SAL_CALL Close( const css::uno::Any &bSaveChanges,
                                  const css::uno::Any &aFileName,
-                                 const css::uno::Any &bRouteWorkbook ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL Protect( const css::uno::Any &aPassword ) throw (css::uno::RuntimeException);
-    virtual void SAL_CALL Unprotect( const css::uno::Any &aPassword ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL Save() throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL Activate() throw (css::uno::RuntimeException, std::exception) override;
+                                 const css::uno::Any &bRouteWorkbook ) override;
+    /// @throws css::uno::RuntimeException
+    virtual void SAL_CALL Protect( const css::uno::Any &aPassword );
+    virtual void SAL_CALL Unprotect( const css::uno::Any &aPassword ) override;
+    virtual void SAL_CALL Save() override;
+    virtual void SAL_CALL Activate() override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

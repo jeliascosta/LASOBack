@@ -21,21 +21,19 @@
 #define INCLUDED_VCL_ACCEL_HXX
 
 #include <tools/link.hxx>
-#include <tools/resid.hxx>
-#include <tools/rc.hxx>
 #include <vcl/keycod.hxx>
 #include <vcl/dllapi.h>
 
 class ImplAccelData;
 class ImplAccelEntry;
+class CommandEvent;
 
-class VCL_DLLPUBLIC Accelerator : public Resource
+class VCL_DLLPUBLIC Accelerator
 {
     friend class ImplAccelManager;
 
 private:
     ImplAccelData*          mpData;
-    OUString                maHelpStr;
     Link<Accelerator&,void> maActivateHdl;
     Link<Accelerator&,void> maSelectHdl;
 
@@ -43,7 +41,6 @@ private:
     vcl::KeyCode            maCurKeyCode;
     sal_uInt16              mnCurId;
     sal_uInt16              mnCurRepeat;
-    bool                    mbIsCancel;
     bool*                   mpDel;
 
     SAL_DLLPRIVATE  void    ImplInit();
@@ -61,7 +58,7 @@ private:
 public:
                             Accelerator();
                             Accelerator( const Accelerator& rAccel );
-    virtual                 ~Accelerator();
+                            ~Accelerator();
 
     void                    Activate();
     void                    Select();
@@ -73,7 +70,6 @@ public:
 
     sal_uInt16              GetItemCount() const;
     sal_uInt16              GetItemId( sal_uInt16 nPos ) const;
-    vcl::KeyCode            GetKeyCode( sal_uInt16 nItemId ) const;
 
     Accelerator*            GetAccel( sal_uInt16 nItemId ) const;
 
@@ -81,6 +77,9 @@ public:
     void                    SetSelectHdl( const Link<Accelerator&,void>& rLink ) { maSelectHdl = rLink; }
 
     Accelerator&            operator=( const Accelerator& rAccel );
+
+    static bool             ToggleMnemonicsOnHierarchy(const CommandEvent& rCEvent, vcl::Window *pWindow);
+    static void             GenerateAutoMnemonicsOnHierarchy(vcl::Window* pWindow);
 };
 
 #endif // INCLUDED_VCL_ACCEL_HXX

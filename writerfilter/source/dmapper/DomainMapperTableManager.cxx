@@ -57,7 +57,6 @@ DomainMapperTableManager::DomainMapperTableManager() :
     m_bHasBtlrCell(false),
     m_bTableSizeTypeInserted(false),
     m_nLayoutType(0),
-    m_nMaxFixedWidth(0),
     m_pTablePropsHandler(new TablePropertiesHandler())
 {
     m_pTablePropsHandler->SetTableManager( this );
@@ -79,26 +78,26 @@ bool DomainMapperTableManager::attribute(Id nName, Value& rValue)
         TablePropertyMapPtr pPropMap(new TablePropertyMap());
         pPropMap->Insert(PROP_TBL_LOOK, uno::makeAny<sal_Int32>(rValue.getInt()));
         insertTableProps(pPropMap);
-        m_aTableLook["val"] = uno::makeAny<sal_Int32>(rValue.getInt());
+        m_aTableLook["val"] <<= (sal_Int32)rValue.getInt();
     }
     break;
     case NS_ooxml::LN_CT_TblLook_noVBand:
-        m_aTableLook["noVBand"] = uno::makeAny<sal_Int32>(rValue.getInt());
+        m_aTableLook["noVBand"] <<= (sal_Int32)rValue.getInt();
     break;
     case NS_ooxml::LN_CT_TblLook_noHBand:
-        m_aTableLook["noHBand"] = uno::makeAny<sal_Int32>(rValue.getInt());
+        m_aTableLook["noHBand"] <<= (sal_Int32)rValue.getInt();
     break;
     case NS_ooxml::LN_CT_TblLook_lastColumn:
-        m_aTableLook["lastColumn"] = uno::makeAny<sal_Int32>(rValue.getInt());
+        m_aTableLook["lastColumn"] <<= (sal_Int32)rValue.getInt();
     break;
     case NS_ooxml::LN_CT_TblLook_lastRow:
-        m_aTableLook["lastRow"] = uno::makeAny<sal_Int32>(rValue.getInt());
+        m_aTableLook["lastRow"] <<= (sal_Int32)rValue.getInt();
     break;
     case NS_ooxml::LN_CT_TblLook_firstColumn:
-        m_aTableLook["firstColumn"] = uno::makeAny<sal_Int32>(rValue.getInt());
+        m_aTableLook["firstColumn"] <<= (sal_Int32)rValue.getInt();
     break;
     case NS_ooxml::LN_CT_TblLook_firstRow:
-        m_aTableLook["firstRow"] = uno::makeAny<sal_Int32>(rValue.getInt());
+        m_aTableLook["firstRow"] <<= (sal_Int32)rValue.getInt();
     break;
     default:
         bRet = false;
@@ -456,7 +455,6 @@ void DomainMapperTableManager::startLevel( )
     m_nCell.push_back( 0 );
     m_nTableWidth = 0;
     m_nLayoutType = 0;
-    m_nMaxFixedWidth = 0;
 
     // And push it back to the right level.
     if (oCurrentWidth)
@@ -480,7 +478,6 @@ void DomainMapperTableManager::endLevel( )
     m_nCell.pop_back( );
     m_nTableWidth = 0;
     m_nLayoutType = 0;
-    m_nMaxFixedWidth = 0;
 
     m_aTmpPosition.pop_back( );
     m_aTmpTableProperties.pop_back( );

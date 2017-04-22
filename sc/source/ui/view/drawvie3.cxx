@@ -22,7 +22,7 @@
 #include <sfx2/app.hxx>
 #include <sfx2/viewfrm.hxx>
 
-#include "sc.hrc"
+#include "scres.hrc"
 #include "scresid.hxx"
 #include "drawview.hxx"
 #include "drwlayer.hxx"
@@ -75,8 +75,8 @@ void ScDrawView::SetPageAnchored()
             pViewData->GetDocShell()->SetDrawModified();
 
         // Remove the anchor object.
-        maHdlList.RemoveAllByKind(HDL_ANCHOR);
-        maHdlList.RemoveAllByKind(HDL_ANCHOR_TR);
+        maHdlList.RemoveAllByKind(SdrHdlKind::Anchor);
+        maHdlList.RemoveAllByKind(SdrHdlKind::Anchor_TR);
     }
 }
 
@@ -139,7 +139,7 @@ namespace {
  */
 void adjustAnchoredPosition(const SdrHint& rHint, const ScDocument& rDoc, SCTAB nTab)
 {
-    if (rHint.GetKind() != HINT_OBJCHG && rHint.GetKind() != HINT_OBJINSERTED)
+    if (rHint.GetKind() != SdrHintKind::ObjectChange && rHint.GetKind() != SdrHintKind::ObjectInserted)
         return;
 
     SdrObject* pObj = const_cast<SdrObject*>(rHint.GetObject());

@@ -53,7 +53,7 @@ sw::DropDownFieldDialog::DropDownFieldDialog(vcl::Window *pParent, SwWrtShell &r
         m_pNextPB->Show();
         m_pNextPB->SetClickHdl(aButtonLk);
     }
-    if( RES_DROPDOWN == pField->GetTyp()->Which() )
+    if( SwFieldIds::Dropdown == pField->GetTyp()->Which() )
     {
 
         pDropField = static_cast<SwDropDownField*>(pField);
@@ -108,12 +108,12 @@ void sw::DropDownFieldDialog::Apply()
     }
 }
 
-IMPL_LINK_TYPED(sw::DropDownFieldDialog, ButtonHdl, Button*, pButton, void)
+IMPL_LINK(sw::DropDownFieldDialog, ButtonHdl, Button*, pButton, void)
 {
     EndDialog(m_pNextPB == pButton ? RET_OK : RET_YES );
 }
 
-IMPL_LINK_NOARG_TYPED(sw::DropDownFieldDialog, DoubleClickHdl, ListBox&, void)
+IMPL_LINK_NOARG(sw::DropDownFieldDialog, DoubleClickHdl, ListBox&, void)
 {
     EndDialog(RET_OK);
 }

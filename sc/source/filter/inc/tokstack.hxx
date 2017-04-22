@@ -44,9 +44,9 @@ struct TokenId
                         TokenId() : nId( 0 ) {}
                         TokenId( sal_uInt16 n ) : nId( n ) {}
                         TokenId( const TokenId& r ) : nId( r.nId ) {}
-    inline  TokenId&    operator =( const TokenId& r ) { nId = r.nId; return *this; }
-    inline  TokenId&    operator =( sal_uInt16 n ) { nId = n; return *this; }
-    inline              operator const sal_uInt16&() const { return nId; }
+    TokenId&    operator =( const TokenId& r ) { nId = r.nId; return *this; }
+    TokenId&    operator =( sal_uInt16 n ) { nId = n; return *this; }
+    operator const sal_uInt16&() const { return nId; }
 };
 
 struct ScComplexRefData;
@@ -66,8 +66,7 @@ enum E_TYPE
     T_Matrix,   // token for inline arrays
     T_ExtName,  // token for external names
     T_ExtRefC,
-    T_ExtRefA,
-    T_Error     // for check in case of error
+    T_ExtRefA
 };
 
 class TokenPool
@@ -81,12 +80,12 @@ private:
         sal_uInt16                      nP_Str;     // ...with size
         sal_uInt16                      nP_StrAkt;  // ...and Write-Mark
 
-        double*                     pP_Dbl;     // Pool for Doubles
+        double*                         pP_Dbl;     // Pool for Doubles
         sal_uInt16                      nP_Dbl;
         sal_uInt16                      nP_DblAkt;
 
         sal_uInt16*                     pP_Err;     // Pool for error codes
-        sal_uInt16                      nP_Err;
+        static const sal_uInt16         nP_Err = 8;
         sal_uInt16                      nP_ErrAkt;
 
         ScSingleRefData**               ppP_RefTr;  // Pool for References
@@ -222,18 +221,18 @@ class TokenStack
 
 {
     private:
-        TokenId*                    pStack;     // Stack as Array
-        sal_uInt16                      nPos;       // Write-mark
-        sal_uInt16                      nSize;      // first Index outside of stack
+        std::unique_ptr<TokenId[]>  pStack;       // Stack as Array
+        sal_uInt16                  nPos;         // Write-mark
+        static const sal_uInt16     nSize = 1024; // first Index outside of stack
     public:
-                                    TokenStack( sal_uInt16 nNewSize = 1024 );
+                                    TokenStack();
                                     ~TokenStack();
         inline TokenStack&          operator <<( const TokenId& rNewId );
         inline void                 operator >>( TokenId &rId );
 
         inline void                 Reset();
 
-        inline bool                 HasMoreTokens() const { return nPos > 0; }
+        bool                 HasMoreTokens() const { return nPos > 0; }
         inline const TokenId        Get();
 };
 

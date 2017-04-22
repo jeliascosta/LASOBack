@@ -45,7 +45,6 @@ namespace svx
         css::uno::Any                       m_aLastKnownState;
         const sal_Int16                     m_nFormFeature;
         bool                                m_bLastKnownEnabled;
-        bool                                m_bDisposed;
 
     public:
         /** constructs the dispatcher
@@ -76,9 +75,9 @@ namespace svx
 
     protected:
         // XDispatch
-        virtual void SAL_CALL dispatch( const css::util::URL& _rURL, const css::uno::Sequence< css::beans::PropertyValue >& _rArguments ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL addStatusListener( const css::uno::Reference< css::frame::XStatusListener >& _rxControl, const css::util::URL& _rURL ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL removeStatusListener( const css::uno::Reference< css::frame::XStatusListener >& _rxControl, const css::util::URL& _rURL ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL dispatch( const css::util::URL& _rURL, const css::uno::Sequence< css::beans::PropertyValue >& _rArguments ) override;
+        virtual void SAL_CALL addStatusListener( const css::uno::Reference< css::frame::XStatusListener >& _rxControl, const css::util::URL& _rURL ) override;
+        virtual void SAL_CALL removeStatusListener( const css::uno::Reference< css::frame::XStatusListener >& _rxControl, const css::util::URL& _rURL ) override;
 
     protected:
         /** notifies our current state to one or all listeners
@@ -97,16 +96,6 @@ namespace svx
                 );
 
     private:
-        /** checks whether our instance is alive
-
-            If the instance already received a <member>dispose</member> call, then a
-            <type scope="css::lang">DisposedException</type> is thrown.
-
-            @precond
-                our Mutex is locked - else calling the method would not make sense, since
-                its result could be out-of-date as soon as it's returned to the caller.
-        */
-        void    checkAlive() const;
 
         /** retrieves the current status of our feature, in a format which can be used
             for UNO notifications

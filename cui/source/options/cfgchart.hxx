@@ -29,7 +29,7 @@
 class SvxChartColorTable
 {
 private:
-    ::std::vector< XColorEntry >     m_aColorEntries;
+    std::vector< XColorEntry >     m_aColorEntries;
     int                              nNextElementNumber;
     OUString                         sDefaultNamePrefix;
     OUString                         sDefaultNamePostfix;
@@ -75,7 +75,7 @@ private:
 
 public:
     SvxChartOptions();
-    virtual ~SvxChartOptions();
+    virtual ~SvxChartOptions() override;
 
     const SvxChartColorTable&   GetDefaultColors();
     void                        SetDefaultColors( const SvxChartColorTable& aCol );

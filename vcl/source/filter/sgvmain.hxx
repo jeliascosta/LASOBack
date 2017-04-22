@@ -116,7 +116,7 @@ class ObjTextType {
 public:
     ObjLineType  L;             // text outline (future)
     ObjAreaType  F;             // inner text
-    sal_uInt16   FontLo,FontHi; // e.g. 92500 (CG Times), split due to DWordAllign in TextType.
+    sal_uInt16   FontLo,FontHi; // e.g. 92500 (CG Times), split due to DWord-Align in TextType.
     sal_uInt16   Grad;          // 0.5..32767.5 pt - we should stop at 1000 pt
     sal_uInt16   Breite;        // 1..65535%  please not more as 500%
     sal_uInt8    Justify;       // 2 bit vertical (Hi), 3 bit horizontal (Lo)
@@ -243,22 +243,22 @@ class TextType: public ObjkType {
 public:
     sal_uInt8   Flags;       // (cheat due to alignment in NT)
     sal_uInt8   Reserve;     // for Word Align
-    ObjTextType T;           // 64 bytes  << DWord-Allign needed for FontID
+    ObjTextType T;           // 64 bytes  << DWord-Align needed for FontID
     PointType   Pos1;        // reference point (upper left)
     PointType   Pos2;        //                 (lower right)
     sal_Int16   TopOfs;      // from upper side to start of text (future for vJustify)
     sal_uInt16  RotationAngle;    //    0...<360
     sal_uInt16  BoxSlant;    // >270...<90 (only Box)
     sal_uInt16  BufSize;     // size of buffer for Load, Save, Copy etc.
-    sal_uInt16  BufLo,BufHi; // (UCHAR*) pointer to Textbuffer << ShortArr, otherwise DWord-Allign needed
-    sal_uInt16  ExtLo,ExtHi; // (Ptr)  text over more frames << ShortArr, otherwise DWord-Allign needed
+    sal_uInt16  BufLo,BufHi; // (UCHAR*) pointer to Textbuffer << ShortArr, otherwise DWord-Align needed
+    sal_uInt16  ExtLo,ExtHi; // (Ptr)  text over more frames << ShortArr, otherwise DWord-Align needed
     PointType   FitSize;     // size of origin for Fit2Size
     sal_Int16   FitBreit;    // width to format for Fit2Size
     UCHAR*      Buffer;      // this variable is not set by reading from disk, but explicit!
     friend SvStream& ReadTextType(SvStream& rIStream, TextType& rText);
     virtual void Draw(OutputDevice& rOut) override;
 };
-#define TextOutlBit 0x01     /*       1=Sourcecode for outliner (ignored byDrawObjekt()) */
+#define TextOutlBit 0x01     /*       1=Sourcecode for outliner (ignored byDrawObject()) */
 #define TextFitSBit 0x02     /* Bit1: 1=Text-Fit2Size, also outliner  (2.0)              */
 #define TextFitZBit 0x08     /* Bit3: 1=Fit2Size line by line         (2.0)              */
 #define TextFitBits (TextFitSBit | TextFitZBit)
@@ -357,6 +357,8 @@ public:
     void RausList();
     SgfFontOne* GetFontDesc(sal_uInt32 ID);
 };
+
+extern SgfFontLst* pSgfFonts;
 
 #endif // INCLUDED_VCL_SOURCE_FILTER_SGVMAIN_HXX
 

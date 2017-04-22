@@ -156,12 +156,12 @@ short ODateTimeDialog::Execute()
             if ( m_pDate->IsChecked() )
             {
                 OUString sDateFormat = m_pDateListBox->GetSelectEntry();
-                nWidth = LogicToLogic(PixelToLogic(Size(GetCtrlTextWidth(sDateFormat),0)).Width(),GetMapMode().GetMapUnit(),MAP_100TH_MM);
+                nWidth = LogicToLogic(PixelToLogic(Size(GetCtrlTextWidth(sDateFormat),0)).Width(),GetMapMode().GetMapUnit(),MapUnit::Map100thMM);
             }
             if ( m_pTime->IsChecked() )
             {
                 OUString sDateFormat = m_pTimeListBox->GetSelectEntry();
-                nWidth = ::std::max<sal_Int32>(LogicToLogic(PixelToLogic(Size(GetCtrlTextWidth(sDateFormat),0)).Width(),GetMapMode().GetMapUnit(),MAP_100TH_MM),nWidth);
+                nWidth = ::std::max<sal_Int32>(LogicToLogic(PixelToLogic(Size(GetCtrlTextWidth(sDateFormat),0)).Width(),GetMapMode().GetMapUnit(),MapUnit::Map100thMM),nWidth);
             }
 
             if ( nWidth > 4000 )
@@ -197,7 +197,7 @@ OUString ODateTimeDialog::getFormatStringByKey(::sal_Int32 _nNumberFormatKey,con
     {
         Date aCurrentDate( Date::SYSTEM );
         static css::util::Date STANDARD_DB_DATE(30,12,1899);
-        nValue = ::dbtools::DBTypeConversion::toDouble(::dbtools::DBTypeConversion::toDate(static_cast<sal_Int32>(aCurrentDate.GetDate())),STANDARD_DB_DATE);
+        nValue = ::dbtools::DBTypeConversion::toDouble(::dbtools::DBTypeConversion::toDate(aCurrentDate.GetDate()),STANDARD_DB_DATE);
     }
 
     uno::Reference< util::XNumberFormatPreviewer> xPreviewer(m_pController->getReportNumberFormatter(),uno::UNO_QUERY);
@@ -205,7 +205,7 @@ OUString ODateTimeDialog::getFormatStringByKey(::sal_Int32 _nNumberFormatKey,con
     return xPreviewer->convertNumberToPreviewString(sFormat,nValue,m_nLocale,true);
 }
 
-IMPL_LINK_TYPED( ODateTimeDialog, CBClickHdl, Button*, _pBox, void )
+IMPL_LINK( ODateTimeDialog, CBClickHdl, Button*, _pBox, void )
 {
     if ( _pBox == m_pDate || _pBox == m_pTime)
     {

@@ -65,6 +65,7 @@
 #include "xfshadow.hxx"
 #include "xfcolor.hxx"
 #include "xfbreaks.hxx"
+#include <memory>
 
 class XFBGImage;
 class XFTableStyle : public XFStyle
@@ -72,14 +73,14 @@ class XFTableStyle : public XFStyle
 public:
     XFTableStyle();
 
-    virtual ~XFTableStyle();
+    virtual ~XFTableStyle() override;
 
 public:
     void    SetWidth(double width);
 
     void    SetAlign(enumXFAlignType eAlign, double offset = 0);
 
-    void    SetShadow(enumXFShadowPos pos, double offset = 0.18, XFColor color=XFColor(128,128,0) );
+    void    SetShadow(enumXFShadowPos pos, double offset, XFColor color );
 
     void    SetBackColor(XFColor& color);
 
@@ -92,7 +93,7 @@ public:
 private:
     double  m_fWidth;
     XFColor m_aBackColor;
-    XFBGImage   *m_pBGImage;
+    std::unique_ptr<XFBGImage> m_pBGImage;
     XFShadow    m_aShadow;
     XFMargins   m_aMargins;
     XFBreaks    m_aBreaks;

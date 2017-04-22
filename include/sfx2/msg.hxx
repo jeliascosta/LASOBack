@@ -23,9 +23,13 @@
 #include <rtl/string.hxx>
 #include <rtl/ustring.hxx>
 #include <sfx2/dllapi.h>
-#include <svl/itemset.hxx>
 #include <o3tl/typed_flags_set.hxx>
 #include <functional>
+
+class SfxItemPool;
+class SfxItemSet;
+class SfxPoolItem;
+class SfxRequest;
 
 enum class SfxSlotMode {
     NONE            =    0x0000L, // default
@@ -38,7 +42,6 @@ enum class SfxSlotMode {
     RECORDPERITEM   =    0x0200L, // each item, one statement
     RECORDPERSET    =    0x0400L, // The whole Set is a Statement, default
     RECORDABSOLUTE  = 0x1000000L, // Recording with absolute Target
-    STANDARD        =   0x00400L, // RECORDPERSET;
 
     METHOD          =    0x4000L,
 
@@ -49,24 +52,19 @@ enum class SfxSlotMode {
     ACCELCONFIG     =   0x80000L, // configurable keys
 
     CONTAINER       =  0x100000L, // Operated by the container at InPlace
-    READONLYDOC     =  0x200000L, // also available for read-only Documents
-    IMAGEROTATION   =  0x400000L, // Rotate image on Vertical/Bi-directional writing
-    IMAGEREFLECTION =  0x800000L  // Mirror image on Vertical/Bi-directional writing
+    READONLYDOC     =  0x200000L  // also available for read-only Documents
 };
 
 namespace o3tl
 {
-    template<> struct typed_flags<SfxSlotMode> : is_typed_flags<SfxSlotMode, 0x1fec72cL> {};
+    template<> struct typed_flags<SfxSlotMode> : is_typed_flags<SfxSlotMode, 0x13ec72cL> {};
 }
-
-
-class SfxRequest;
 
 #define SFX_EXEC_STUB( aShellClass, aExecMethod) \
  void SfxStub##aShellClass##aExecMethod( \
    SfxShell *pShell, SfxRequest& rReq) \
   { \
-      static_cast<aShellClass*>(pShell)->aExecMethod( rReq ); \
+      ::tools::detail::castTo<aShellClass*>(pShell)->aExecMethod( rReq ); \
   }
 
 #define SFX_STATE_STUB( aShellClass, aStateMethod) \
@@ -87,7 +85,6 @@ class SfxRequest;
 enum class SfxSlotKind
 {
     Standard,
-    Enum,
     Attribute
 };
 
@@ -97,7 +94,7 @@ struct SfxTypeAttrib
     sal_uInt16                  nAID;
     const char* pName;
 };
-class SfxPoolItem;
+
 template<class T> SfxPoolItem* createSfxPoolItem()
 {
     return T::CreateDefault();
@@ -111,7 +108,7 @@ struct SfxType
 
     const std::type_info* Type() const{return pType;}
     SfxPoolItem*    CreateItem() const
-                    { return static_cast<SfxPoolItem*>(createSfxPoolItemFunc()); }
+                    { return createSfxPoolItemFunc(); }
 };
 
 struct SfxType0
@@ -157,38 +154,18 @@ SFX_DECL_TYPE(23); // for SvxSearchItem
                  ExecMethodPtr, \
                  StateMethodPtr, \
                  (const SfxType*) &a##ItemClass##_Impl, \
-                 0, 0, \
-                 &a##aShellClass##Args_Impl[nArg0], nArgs, 0, Name \
+                 0, \
+                 &a##aShellClass##Args_Impl[nArg0], nArgs, SfxDisableFlags::NONE, Name \
                }
 
-#define SFX_SLOT( aShellClass, id, GroupId, ExecMethodPtr, StateMethodPtr, Flags, ItemClass ) \
-               { id, GroupId, Flags, \
-                 0, 0, \
-                 ExecMethodPtr, \
-                 StateMethodPtr, \
-                 (const SfxType*) &a##ItemClass##_Impl, \
-                 0, 0, 0, 0, 0 \
-               }
-
-#define SFX_NEW_SLOT_ARG( aShellClass, id, GroupId, pLinked, pNext, ExecMethodPtr, StateMethodPtr, Flags, DisableFlags, ItemClass, nArg0, nArgs, Prop, UnoName ) \
+#define SFX_NEW_SLOT_ARG( aShellClass, id, GroupId, pNext, ExecMethodPtr, StateMethodPtr, Flags, DisableFlags, ItemClass, nArg0, nArgs, Prop, UnoName ) \
                { id, GroupId, Flags | Prop, \
                  USHRT_MAX, 0, \
                  ExecMethodPtr, \
                  StateMethodPtr, \
                  (const SfxType*) &a##ItemClass##_Impl, \
-                 pLinked, pNext, \
-                 &a##aShellClass##Args_Impl[nArg0], nArgs, DisableFlags, UnoName \
-               }
-
-#define SFX_NEW_SLOT_ENUM( SlaveId, GroupId, pMaster, pNext, MasterId, Value, Flags, DisableFlags, UnoName  ) \
-               { SlaveId, GroupId, Flags,   \
-                 MasterId,  Value, \
-                 0, \
-                 0, \
-                 (const SfxType*) &aSfxBoolItem_Impl, \
-                 pMaster, \
                  pNext, \
-                 0, 0, DisableFlags, UnoName \
+                 &a##aShellClass##Args_Impl[nArg0], nArgs, DisableFlags, UnoName \
                }
 
 struct SfxFormalArgument
@@ -217,12 +194,11 @@ public:
 
     const SfxType*  pType;       // SfxPoolItem-Type (Status)
 
-    const SfxSlot*  pLinkedSlot; // Master-Slot for Enum value
     const SfxSlot*  pNextSlot;   // with the same Status-Method
 
     const SfxFormalArgument*  pFirstArgDef;  // first formal Argument-Definition
     sal_uInt16                nArgDefCount;  // Number of formal Arguments
-    long                      nDisableFlags; // DisableFlags that need to be
+    SfxDisableFlags           nDisableFlags; // DisableFlags that need to be
                                              // present, so that the Slot
                                              // can be enabled
     const char*     pUnoName;      // UnoName for the Slots
@@ -234,9 +210,7 @@ public:
     SfxSlotMode         GetMode() const;
     bool                IsMode( SfxSlotMode nMode ) const;
     sal_uInt16          GetGroupId() const;
-    sal_uInt16          GetMasterSlotId() const { return nMasterSlotId; }
     sal_uInt16          GetWhich( const SfxItemPool &rPool ) const;
-    sal_uInt16          GetValue() const { return nValue; }
     const SfxType*  GetType() const { return pType; }
     const char*     GetUnoName() const { return pUnoName; }
     SFX2_DLLPUBLIC OString    GetCommand() const;
@@ -249,7 +223,6 @@ public:
     SfxExecFunc     GetExecFnc() const { return fnExec; }
     SfxStateFunc    GetStateFnc() const { return fnState; }
 
-    const SfxSlot*  GetLinkedSlot() const { return pLinkedSlot; }
     const SfxSlot*  GetNextSlot() const { return pNextSlot; }
 };
 

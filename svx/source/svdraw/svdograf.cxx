@@ -71,7 +71,7 @@ const Graphic ImpLoadLinkedGraphic( const OUString& aFileName, const OUString& a
 {
     Graphic aGraphic;
 
-    SfxMedium aMed( aFileName, aReferer, STREAM_STD_READ );
+    SfxMedium aMed( aFileName, aReferer, StreamMode::STD_READ );
     aMed.Download();
 
     SvStream* pInStrm = aMed.GetInStream();
@@ -91,11 +91,11 @@ const Graphic ImpLoadLinkedGraphic( const OUString& aFileName, const OUString& a
         // But this link is required by some filters to access the native graphic (PDF export/MS export),
         // there we should create a new service to provide this data if needed
         aFilterData[ 0 ].Name = "CreateNativeLink";
-        aFilterData[ 0 ].Value = Any( true );
+        aFilterData[ 0 ].Value <<= true;
 
         // #i123042# for e.g SVG the path is needed, so hand it over here. I have no real idea
         // what consequences this may have; maybe this is not handed over by purpose here. Not
-        // handing it over means that any GraphicFormat that internallv needs a path as base
+        // handing it over means that any GraphicFormat that internally needs a path as base
         // to interpret included links may fail.
         // Alternatively the path may be set at the result after this call when it is known
         // that it is a SVG graphic, but only because no one yet tried to interpret it.
@@ -112,7 +112,7 @@ class SdrGraphicLink : public sfx2::SvBaseLink
 
 public:
     explicit            SdrGraphicLink(SdrGrafObj& rObj);
-    virtual             ~SdrGraphicLink();
+    virtual             ~SdrGraphicLink() override;
 
     virtual void        Closed() override;
 
@@ -131,7 +131,6 @@ class SdrGraphicUpdater : public ::osl::Thread
 {
 public:
     SdrGraphicUpdater( const OUString& rFileName, const OUString& rFilterName, SdrGraphicLink& );
-    virtual ~SdrGraphicUpdater();
 
     void SAL_CALL Terminate();
 
@@ -165,10 +164,6 @@ SdrGraphicUpdater::SdrGraphicUpdater( const OUString& rFileName, const OUString&
 , mbIsTerminated( false )
 {
     create();
-}
-
-SdrGraphicUpdater::~SdrGraphicUpdater()
-{
 }
 
 void SdrGraphicUpdater::Terminate()
@@ -355,7 +350,7 @@ SdrGrafObj::SdrGrafObj()
     mbSupportTextIndentingOnLineWidthChange = false;
 }
 
-SdrGrafObj::SdrGrafObj(const Graphic& rGrf, const Rectangle& rRect)
+SdrGrafObj::SdrGrafObj(const Graphic& rGrf, const tools::Rectangle& rRect)
 :   SdrRectObj      ( rRect ),
     pGraphicLink    ( nullptr ),
     bMirrored       ( false )
@@ -443,6 +438,9 @@ const GraphicObject* SdrGrafObj::GetReplacementGraphicObject() const
         {
             const_cast< SdrGrafObj* >(this)->mpReplacementGraphic = new GraphicObject(rSvgDataPtr->getReplacement());
         }
+        else if (pGraphic->GetGraphic().getPdfData().hasElements())
+            // Replacement graphic for bitmap + PDF is just the bitmap.
+            const_cast<SdrGrafObj*>(this)->mpReplacementGraphic = new GraphicObject(pGraphic->GetGraphic().GetBitmapEx());
     }
 
     return mpReplacementGraphic;
@@ -481,14 +479,14 @@ Graphic SdrGrafObj::GetTransformedGraphic( SdrGrafObjTransformsAttrs nTransformF
     const Size      aDestSize( GetLogicRect().GetSize() );
     const bool      bMirror = bool( nTransformFlags & SdrGrafObjTransformsAttrs::MIRROR );
     const bool      bRotate = bool( nTransformFlags & SdrGrafObjTransformsAttrs::ROTATE ) &&
-        ( aGeo.nRotationAngle && aGeo.nRotationAngle != 18000 ) && ( GRAPHIC_NONE != eType );
+        ( aGeo.nRotationAngle && aGeo.nRotationAngle != 18000 ) && ( GraphicType::NONE != eType );
 
     // Need cropping info earlier
     const_cast<SdrGrafObj*>(this)->ImpSetAttrToGrafInfo();
     GraphicAttr aActAttr;
 
     if( SdrGrafObjTransformsAttrs::NONE != nTransformFlags &&
-        GRAPHIC_NONE != eType )
+        GraphicType::NONE != eType )
     {
         // Actually transform the graphic only in this case.
         // Cropping always happens, though.
@@ -561,17 +559,25 @@ OUString SdrGrafObj::GetGrafStreamURL() const
 
 Size SdrGrafObj::getOriginalSize() const
 {
-    Size aSize;
+    Size aSize = GetGrafPrefSize();
 
-    if ( GetGrafPrefMapMode().GetMapUnit() == MAP_PIXEL )
-        aSize = Application::GetDefaultDevice()->PixelToLogic( GetGrafPrefSize(),
-                                                               GetModel()->GetScaleUnit() );
-    else
+    if (aGrafInfo.IsCropped())
     {
-        aSize = OutputDevice::LogicToLogic( GetGrafPrefSize(),
-                                            GetGrafPrefMapMode(),
-                                            GetModel()->GetScaleUnit() );
+        long aCroppedTop = OutputDevice::LogicToLogic( aGrafInfo.GetTopCrop(), GetModel()->GetScaleUnit(), GetGrafPrefMapMode().GetMapUnit());
+        long aCroppedBottom = OutputDevice::LogicToLogic( aGrafInfo.GetBottomCrop(), GetModel()->GetScaleUnit(), GetGrafPrefMapMode().GetMapUnit());
+        long aCroppedLeft = OutputDevice::LogicToLogic( aGrafInfo.GetLeftCrop(), GetModel()->GetScaleUnit(), GetGrafPrefMapMode().GetMapUnit());
+        long aCroppedRight = OutputDevice::LogicToLogic( aGrafInfo.GetRightCrop(), GetModel()->GetScaleUnit(), GetGrafPrefMapMode().GetMapUnit());
+
+        long aCroppedWidth = aSize.getWidth() - aCroppedLeft + aCroppedRight;
+        long aCroppedHeight = aSize.getHeight() - aCroppedTop + aCroppedBottom;
+
+        aSize = Size ( aCroppedWidth, aCroppedHeight);
     }
+
+    if ( GetGrafPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
+        aSize = Application::GetDefaultDevice()->PixelToLogic( aSize, GetModel()->GetScaleUnit() );
+    else
+        aSize = OutputDevice::LogicToLogic( aSize, GetGrafPrefMapMode(), GetModel()->GetScaleUnit() );
 
     return aSize;
 }
@@ -595,8 +601,8 @@ void SdrGrafObj::ForceSwapIn() const
         pGraphic->FireSwapInRequest();
 
     if( pGraphic->IsSwappedOut() ||
-        ( pGraphic->GetType() == GRAPHIC_NONE ) ||
-        ( pGraphic->GetType() == GRAPHIC_DEFAULT ) )
+        ( pGraphic->GetType() == GraphicType::NONE ) ||
+        ( pGraphic->GetType() == GraphicType::Default ) )
     {
         Graphic aDefaultGraphic;
         aDefaultGraphic.SetDefaultType();
@@ -659,7 +665,7 @@ bool SdrGrafObj::IsLinkedGraphic() const
 
 void SdrGrafObj::TakeObjInfo(SdrObjTransformInfoRec& rInfo) const
 {
-    bool bNoPresGrf = ( pGraphic->GetType() != GRAPHIC_NONE ) && !bEmptyPresObj;
+    bool bNoPresGrf = ( pGraphic->GetType() != GraphicType::NONE ) && !bEmptyPresObj;
 
     rInfo.bResizeFreeAllowed = aGeo.nRotationAngle % 9000 == 0 ||
                                aGeo.nRotationAngle % 18000 == 0 ||
@@ -733,7 +739,7 @@ OUString SdrGrafObj::TakeObjNameSingul() const
     {
         switch( pGraphic->GetType() )
         {
-            case GRAPHIC_BITMAP:
+            case GraphicType::Bitmap:
             {
                 const sal_uInt16 nId = ( ( pGraphic->IsTransparent() || static_cast<const SdrGrafTransparenceItem&>( GetObjectItem( SDRATTR_GRAFTRANSPARENCE ) ).GetValue() ) ?
                                      ( IsLinkedGraphic() ? STR_ObjNameSingulGRAFBMPTRANSLNK : STR_ObjNameSingulGRAFBMPTRANS ) :
@@ -743,11 +749,11 @@ OUString SdrGrafObj::TakeObjNameSingul() const
             }
             break;
 
-            case GRAPHIC_GDIMETAFILE:
+            case GraphicType::GdiMetafile:
                 sName.append(ImpGetResStr(IsLinkedGraphic() ? STR_ObjNameSingulGRAFMTFLNK : STR_ObjNameSingulGRAFMTF));
             break;
 
-            case GRAPHIC_NONE:
+            case GraphicType::NONE:
                 sName.append(ImpGetResStr(IsLinkedGraphic() ? STR_ObjNameSingulGRAFNONELNK : STR_ObjNameSingulGRAFNONE));
             break;
 
@@ -786,7 +792,7 @@ OUString SdrGrafObj::TakeObjNamePlural() const
     {
         switch( pGraphic->GetType() )
         {
-            case GRAPHIC_BITMAP:
+            case GraphicType::Bitmap:
             {
                 const sal_uInt16 nId = ( ( pGraphic->IsTransparent() || static_cast<const SdrGrafTransparenceItem&>( GetObjectItem( SDRATTR_GRAFTRANSPARENCE ) ).GetValue() ) ?
                                      ( IsLinkedGraphic() ? STR_ObjNamePluralGRAFBMPTRANSLNK : STR_ObjNamePluralGRAFBMPTRANS ) :
@@ -796,11 +802,11 @@ OUString SdrGrafObj::TakeObjNamePlural() const
             }
             break;
 
-            case GRAPHIC_GDIMETAFILE:
+            case GraphicType::GdiMetafile:
                 sName.append(ImpGetResStr(IsLinkedGraphic() ? STR_ObjNamePluralGRAFMTFLNK : STR_ObjNamePluralGRAFMTF));
             break;
 
-            case GRAPHIC_NONE:
+            case GraphicType::NONE:
                 sName.append(ImpGetResStr(IsLinkedGraphic() ? STR_ObjNamePluralGRAFNONELNK : STR_ObjNamePluralGRAFNONE));
             break;
 
@@ -872,7 +878,7 @@ basegfx::B2DPolyPolygon SdrGrafObj::TakeXorPoly() const
 
         // take grown rectangle
         const sal_Int32 nHalfLineWidth(ImpGetLineWdt() / 2);
-        const Rectangle aGrownRect(
+        const tools::Rectangle aGrownRect(
             maRect.Left() - nHalfLineWidth,
             maRect.Top() - nHalfLineWidth,
             maRect.Right() + nHalfLineWidth,
@@ -911,31 +917,10 @@ void SdrGrafObj::NbcResize(const Point& rRef, const Fraction& xFact, const Fract
         bMirrored = !bMirrored;
 }
 
-void SdrGrafObj::NbcRotate(const Point& rRef, long nAngle, double sn, double cs)
-{
-    SdrRectObj::NbcRotate(rRef,nAngle,sn,cs);
-}
-
 void SdrGrafObj::NbcMirror(const Point& rRef1, const Point& rRef2)
 {
     SdrRectObj::NbcMirror(rRef1,rRef2);
     bMirrored = !bMirrored;
-}
-
-void SdrGrafObj::NbcShear(const Point& rRef, long nAngle, double tn, bool bVShear)
-{
-    // #i118485# Call Shear now, old version redirected to rotate
-    SdrRectObj::NbcShear(rRef, nAngle, tn, bVShear);
-}
-
-void SdrGrafObj::NbcSetSnapRect(const Rectangle& rRect)
-{
-    SdrRectObj::NbcSetSnapRect(rRect);
-}
-
-void SdrGrafObj::NbcSetLogicRect( const Rectangle& rRect)
-{
-    SdrRectObj::NbcSetLogicRect(rRect);
 }
 
 SdrObjGeoData* SdrGrafObj::NewGeoData() const
@@ -1027,12 +1012,12 @@ void SdrGrafObj::StartAnimation( OutputDevice* /*pOutDev*/, const Point& /*rPoin
 
 bool SdrGrafObj::HasGDIMetaFile() const
 {
-    return( pGraphic->GetType() == GRAPHIC_GDIMETAFILE );
+    return( pGraphic->GetType() == GraphicType::GdiMetafile );
 }
 
 bool SdrGrafObj::isEmbeddedSvg() const
 {
-    return GRAPHIC_BITMAP == GetGraphicType() && GetGraphic().getSvgData().get();
+    return GraphicType::Bitmap == GetGraphicType() && GetGraphic().getSvgData().get();
 }
 
 GDIMetaFile SdrGrafObj::getMetafileFromEmbeddedSvg() const
@@ -1042,7 +1027,7 @@ GDIMetaFile SdrGrafObj::getMetafileFromEmbeddedSvg() const
     if(isEmbeddedSvg() && GetModel())
     {
         ScopedVclPtrInstance< VirtualDevice > pOut;
-        const Rectangle aBoundRect(GetCurrentBoundRect());
+        const tools::Rectangle aBoundRect(GetCurrentBoundRect());
         const MapMode aMap(GetModel()->GetScaleUnit(), Point(), GetModel()->GetScaleFraction(), GetModel()->GetScaleFraction());
 
         pOut->EnableOutput(false);
@@ -1059,30 +1044,33 @@ GDIMetaFile SdrGrafObj::getMetafileFromEmbeddedSvg() const
     return aRetval;
 }
 
-SdrObject* SdrGrafObj::DoConvertToPolyObj(bool bBezier, bool bAddText ) const
+GDIMetaFile SdrGrafObj::GetMetaFile(GraphicType &rGraphicType) const
 {
-    SdrObject* pRetval = nullptr;
-    GraphicType aGraphicType(GetGraphicType());
-    GDIMetaFile aMtf;
-
-    if(isEmbeddedSvg())
+    if (isEmbeddedSvg())
     {
         // Embedded Svg
         // There is currently no helper to create SdrObjects from primitives (even if I'm thinking
         // about writing one for some time). To get the roundtrip to SdrObjects it is necessary to
         // use the old converter path over the MetaFile mechanism. Create Metafile from Svg
         // primitives here pretty directly
-        aMtf = getMetafileFromEmbeddedSvg();
-        aGraphicType = GRAPHIC_GDIMETAFILE;
+        rGraphicType = GraphicType::GdiMetafile;
+        return getMetafileFromEmbeddedSvg();
     }
-    else if(GRAPHIC_GDIMETAFILE == aGraphicType)
+    else if (GraphicType::GdiMetafile == rGraphicType)
     {
-        aMtf = GetTransformedGraphic(SdrGrafObjTransformsAttrs::COLOR|SdrGrafObjTransformsAttrs::MIRROR).GetGDIMetaFile();
+        return GetTransformedGraphic(SdrGrafObjTransformsAttrs::COLOR|SdrGrafObjTransformsAttrs::MIRROR).GetGDIMetaFile();
     }
+    return GDIMetaFile();
+}
 
+SdrObject* SdrGrafObj::DoConvertToPolyObj(bool bBezier, bool bAddText ) const
+{
+    SdrObject* pRetval = nullptr;
+    GraphicType aGraphicType(GetGraphicType());
+    GDIMetaFile aMtf(GetMetaFile(aGraphicType));
     switch(aGraphicType)
     {
-        case GRAPHIC_GDIMETAFILE:
+        case GraphicType::GdiMetafile:
         {
             // Sort into group and return ONLY those objects that can be created from the MetaFile.
             ImpSdrGDIMetaFileImport aFilter(*GetModel(), GetLayer(), maRect);
@@ -1168,7 +1156,7 @@ SdrObject* SdrGrafObj::DoConvertToPolyObj(bool bBezier, bool bAddText ) const
 
             break;
         }
-        case GRAPHIC_BITMAP:
+        case GraphicType::Bitmap:
         {
             // create basic object and add fill
             pRetval = SdrRectObj::DoConvertToPolyObj(bBezier, bAddText);
@@ -1188,8 +1176,8 @@ SdrObject* SdrGrafObj::DoConvertToPolyObj(bool bBezier, bool bAddText ) const
             }
             break;
         }
-        case GRAPHIC_NONE:
-        case GRAPHIC_DEFAULT:
+        case GraphicType::NONE:
+        case GraphicType::Default:
         {
             pRetval = SdrRectObj::DoConvertToPolyObj(bBezier, bAddText);
             break;
@@ -1233,16 +1221,16 @@ void SdrGrafObj::ImpSetAttrToGrafInfo()
     SetRectsDirty();
 }
 
-void SdrGrafObj::AdjustToMaxRect( const Rectangle& rMaxRect, bool bShrinkOnly )
+void SdrGrafObj::AdjustToMaxRect( const tools::Rectangle& rMaxRect, bool bShrinkOnly )
 {
     Size aSize;
     Size aMaxSize( rMaxRect.GetSize() );
-    if ( pGraphic->GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
-        aSize = Application::GetDefaultDevice()->PixelToLogic( pGraphic->GetPrefSize(), MAP_100TH_MM );
+    if ( pGraphic->GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
+        aSize = Application::GetDefaultDevice()->PixelToLogic( pGraphic->GetPrefSize(), MapUnit::Map100thMM );
     else
         aSize = OutputDevice::LogicToLogic( pGraphic->GetPrefSize(),
                                             pGraphic->GetPrefMapMode(),
-                                            MapMode( MAP_100TH_MM ) );
+                                            MapMode( MapUnit::Map100thMM ) );
 
     if( aSize.Height() != 0 && aSize.Width() != 0 )
     {
@@ -1279,11 +1267,11 @@ void SdrGrafObj::AdjustToMaxRect( const Rectangle& rMaxRect, bool bShrinkOnly )
 
         aPos.X() -= aSize.Width() / 2;
         aPos.Y() -= aSize.Height() / 2;
-        SetLogicRect( Rectangle( aPos, aSize ) );
+        SetLogicRect( tools::Rectangle( aPos, aSize ) );
     }
 }
 
-IMPL_LINK_TYPED( SdrGrafObj, ImpSwapHdl, const GraphicObject*, pO, SvStream* )
+IMPL_LINK( SdrGrafObj, ImpSwapHdl, const GraphicObject*, pO, SvStream* )
 {
     SvStream* pRet = GRFMGR_AUTOSWAPSTREAM_NONE;
 
@@ -1424,7 +1412,7 @@ Reference< XInputStream > SdrGrafObj::getInputStream()
                 sal_uInt8 * pBuffer = new sal_uInt8[ nSize ];
                 memcpy( pBuffer, pSourceData, nSize );
 
-                SvMemoryStream* pStream = new SvMemoryStream( static_cast<void*>(pBuffer), (sal_Size)nSize, StreamMode::READ );
+                SvMemoryStream* pStream = new SvMemoryStream( static_cast<void*>(pBuffer), (std::size_t)nSize, StreamMode::READ );
                 pStream->ObjectOwnsMemory( true );
                 xStream.set( new utl::OInputStreamWrapper( pStream, true ) );
             }
@@ -1535,21 +1523,21 @@ void SdrGrafObj::addCropHandles(SdrHdlList& rTarget) const
     basegfx::B2DPoint aPos;
 
     aPos = aMatrix * basegfx::B2DPoint(0.0, 0.0);
-    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), HDL_UPLFT, fShearX, fRotate));
+    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), SdrHdlKind::UpperLeft, fShearX, fRotate));
     aPos = aMatrix * basegfx::B2DPoint(0.5, 0.0);
-    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), HDL_UPPER, fShearX, fRotate));
+    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), SdrHdlKind::Upper, fShearX, fRotate));
     aPos = aMatrix * basegfx::B2DPoint(1.0, 0.0);
-    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), HDL_UPRGT, fShearX, fRotate));
+    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), SdrHdlKind::UpperRight, fShearX, fRotate));
     aPos = aMatrix * basegfx::B2DPoint(0.0, 0.5);
-    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), HDL_LEFT , fShearX, fRotate));
+    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), SdrHdlKind::Left , fShearX, fRotate));
     aPos = aMatrix * basegfx::B2DPoint(1.0, 0.5);
-    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), HDL_RIGHT, fShearX, fRotate));
+    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), SdrHdlKind::Right, fShearX, fRotate));
     aPos = aMatrix * basegfx::B2DPoint(0.0, 1.0);
-    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), HDL_LWLFT, fShearX, fRotate));
+    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), SdrHdlKind::LowerLeft, fShearX, fRotate));
     aPos = aMatrix * basegfx::B2DPoint(0.5, 1.0);
-    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), HDL_LOWER, fShearX, fRotate));
+    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), SdrHdlKind::Lower, fShearX, fRotate));
     aPos = aMatrix * basegfx::B2DPoint(1.0, 1.0);
-    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), HDL_LWRGT, fShearX, fRotate));
+    rTarget.AddHdl(new SdrCropHdl(Point(basegfx::fround(aPos.getX()), basegfx::fround(aPos.getY())), SdrHdlKind::LowerRight, fShearX, fRotate));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

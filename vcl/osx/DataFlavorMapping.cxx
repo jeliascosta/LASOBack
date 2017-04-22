@@ -25,6 +25,7 @@
 #include "com/sun/star/datatransfer/UnsupportedFlavorException.hpp"
 #include "com/sun/star/datatransfer/XMimeContentType.hpp"
 #include "com/sun/star/datatransfer/MimeContentTypeFactory.hpp"
+#include "com/sun/star/lang/IllegalArgumentException.hpp"
 #include "com/sun/star/uno/Sequence.hxx"
 #include "comphelper/processfactory.hxx"
 
@@ -44,7 +45,7 @@ using namespace com::sun::star::lang;
 using namespace cppu;
 using namespace std;
 
-namespace // private
+namespace
 {
   /* Determine whether or not a DataFlavor is valid.
    */
@@ -139,7 +140,7 @@ namespace // private
     return (theType == cppu::UnoType<OUString>::get() );
   }
 
-} // namespace private
+} // unnamed namespace
 
 /* A base class for other data provider.
  */
@@ -148,7 +149,7 @@ class DataProviderBaseImpl : public DataProvider
 public:
   DataProviderBaseImpl(const Any& data);
   DataProviderBaseImpl(id data);
-  virtual ~DataProviderBaseImpl();
+  virtual ~DataProviderBaseImpl() override;
 
 protected:
   Any mData;
@@ -215,9 +216,9 @@ Any UniDataProvider::getOOoData()
 
   if (mSystemData)
     {
-      oOOData = makeAny(OUString(static_cast<const sal_Char*>([mSystemData bytes]),
+      oOOData <<= OUString(static_cast<const sal_Char*>([mSystemData bytes]),
                                  [mSystemData length],
-                                 RTL_TEXTENCODING_UTF8));
+                                 RTL_TEXTENCODING_UTF8);
     }
   else
     {
@@ -267,7 +268,7 @@ Any ByteSequenceDataProvider::getOOoData()
       Sequence<sal_Int8> byteSequence;
       byteSequence.realloc(flavorDataLength);
       memcpy(byteSequence.getArray(), [mSystemData bytes], flavorDataLength);
-      oOOData = makeAny(byteSequence);
+      oOOData <<= byteSequence;
     }
   else
     {
@@ -323,7 +324,7 @@ Any HTMLFormatDataProvider::getOOoData()
           pPlainHtml = &plainHtml;
         }
 
-      oOOData = makeAny(*pPlainHtml);
+      oOOData <<= *pPlainHtml;
     }
   else
     {
@@ -387,7 +388,7 @@ Any PNGDataProvider::getOOoData()
 
         Sequence<sal_Int8> pngData;
         if( ImageToPNG( imgData, pngData, meImageType))
-            oOOData = makeAny( pngData);
+            oOOData <<= pngData;
     }
     else
     {
@@ -449,7 +450,7 @@ Any FileListDataProvider::getOOoData()
           pBuffer += l + 1;
         }
 
-      oOOData = makeAny(oOOFileList);
+      oOOData <<= oOOFileList;
     }
   else
     {
@@ -537,7 +538,7 @@ NSString* DataFlavorMapper::openOfficeImageToSystemFlavor(NSPasteboard* pPastebo
     return sysFlavor;
 }
 
-DataProviderPtr_t DataFlavorMapper::getDataProvider( const NSString* systemFlavor, Reference<XTransferable> rTransferable) const
+DataProviderPtr_t DataFlavorMapper::getDataProvider( const NSString* systemFlavor, Reference<XTransferable> const & rTransferable) const
 {
   DataProviderPtr_t dp;
 

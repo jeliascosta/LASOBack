@@ -24,6 +24,7 @@
 #include <uielement/itemcontainer.hxx>
 
 #include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 
 #include <cppuhelper/implbase.hxx>
 #include <comphelper/propertysetinfo.hxx>
@@ -163,7 +164,7 @@ Reference< XIndexAccess > ConstItemContainer::deepCopyContainer( const Reference
 }
 
 // XUnoTunnel
-sal_Int64 ConstItemContainer::getSomething( const css::uno::Sequence< sal_Int8 >& rIdentifier ) throw(css::uno::RuntimeException, std::exception)
+sal_Int64 ConstItemContainer::getSomething( const css::uno::Sequence< sal_Int8 >& rIdentifier )
 {
     if( ( rIdentifier.getLength() == 16 ) && ( 0 == memcmp( ConstItemContainer::GetUnoTunnelId().getConstArray(), rIdentifier.getConstArray(), 16 ) ) )
     {
@@ -191,20 +192,17 @@ ConstItemContainer* ConstItemContainer::GetImplementation( const css::uno::Refer
 
 // XElementAccess
 sal_Bool SAL_CALL ConstItemContainer::hasElements()
-throw ( RuntimeException, std::exception )
 {
     return ( !m_aItemVector.empty() );
 }
 
 // XIndexAccess
 sal_Int32 SAL_CALL ConstItemContainer::getCount()
-throw ( RuntimeException, std::exception )
 {
     return m_aItemVector.size();
 }
 
 Any SAL_CALL ConstItemContainer::getByIndex( sal_Int32 Index )
-throw ( IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception )
 {
     if ( sal_Int32( m_aItemVector.size()) > Index )
         return makeAny( m_aItemVector[Index] );
@@ -214,7 +212,6 @@ throw ( IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std
 
 // XPropertySet
 Reference< XPropertySetInfo > SAL_CALL ConstItemContainer::getPropertySetInfo()
-throw (css::uno::RuntimeException, std::exception)
 {
     // Optimize this method !
     // We initialize a static variable only one time. And we don't must use a mutex at every call!
@@ -230,7 +227,7 @@ throw (css::uno::RuntimeException, std::exception)
         {
             // Create structure of propertysetinfo for baseclass "OPropertySetHelper".
             // (Use method "getInfoHelper()".)
-            static Reference< XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
+            static Reference< XPropertySetInfo > xInfo = new ::comphelper::PropertySetInfo(getInfoHelper().getProperties());
             pInfo = &xInfo;
         }
     }
@@ -239,12 +236,10 @@ throw (css::uno::RuntimeException, std::exception)
 }
 
 void SAL_CALL ConstItemContainer::setPropertyValue( const OUString&, const Any& )
-throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
 }
 
 Any SAL_CALL ConstItemContainer::getPropertyValue( const OUString& PropertyName )
-throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     if ( PropertyName == PROPNAME_UINAME )
         return makeAny( m_aUIName );
@@ -253,36 +248,30 @@ throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, 
 }
 
 void SAL_CALL ConstItemContainer::addPropertyChangeListener( const OUString&, const css::uno::Reference< css::beans::XPropertyChangeListener >& )
-throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL ConstItemContainer::removePropertyChangeListener( const OUString&, const css::uno::Reference< css::beans::XPropertyChangeListener >& )
-throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     // Only read-only properties - do nothing
 }
 
 void SAL_CALL ConstItemContainer::addVetoableChangeListener( const OUString&, const css::uno::Reference< css::beans::XVetoableChangeListener >& )
-throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     // Only read-only properties - do nothing
 }
 
 void SAL_CALL ConstItemContainer::removeVetoableChangeListener( const OUString&, const css::uno::Reference< css::beans::XVetoableChangeListener >& )
-throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     // Only read-only properties - do nothing
 }
 
 // XFastPropertySet
 void SAL_CALL ConstItemContainer::setFastPropertyValue( sal_Int32, const css::uno::Any& )
-throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
 }
 
 Any SAL_CALL ConstItemContainer::getFastPropertyValue( sal_Int32 nHandle )
-throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     if ( nHandle == PROPHANDLE_UINAME )
         return makeAny( m_aUIName );
@@ -327,21 +316,14 @@ const css::uno::Sequence< css::beans::Property > ConstItemContainer::impl_getSta
 
     const css::beans::Property pProperties[] =
     {
-        css::beans::Property( OUString(PROPNAME_UINAME), PROPHANDLE_UINAME ,
-                                         cppu::UnoType<OUString>::get(),
-                                         css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY  )
+        css::beans::Property( PROPNAME_UINAME, PROPHANDLE_UINAME ,
+                              cppu::UnoType<OUString>::get(),
+                              css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY  )
     };
     // Use it to initialize sequence!
     const css::uno::Sequence< css::beans::Property > lPropertyDescriptor( pProperties, PROPCOUNT );
     // Return "PropertyDescriptor"
     return lPropertyDescriptor;
-}
-
-Reference < XPropertySetInfo > ConstItemContainer::createPropertySetInfo(
-    IPropertyArrayHelper & rProperties )
-{
-    return static_cast<XPropertySetInfo *>(
-            new ::comphelper::PropertySetInfo(rProperties.getProperties()));
 }
 
 } // namespace framework

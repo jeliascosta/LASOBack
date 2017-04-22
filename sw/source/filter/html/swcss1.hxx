@@ -73,7 +73,7 @@ protected:
 
 public:
     SwCSS1Parser( SwDoc *pDoc, sal_uInt32 aFHeight[7], const OUString& rBaseURL, bool bNewDoc );
-    virtual ~SwCSS1Parser();
+    virtual ~SwCSS1Parser() override;
 
     virtual bool ParseStyleSheet( const OUString& rIn ) override;
 
@@ -127,13 +127,11 @@ public:
 
     static void AddClassName( OUString& rFormatName, const OUString& rClass );
 
-    static inline void AddFirstLetterExt( OUString& rFormatName );
-
     static bool MayBePositioned( const SvxCSS1PropertyInfo& rPropInfo,
                                  bool bAutoWidth=false );
 
-    static sal_uInt16 GetScriptFromClass( OUString& rClass,
-                                      bool bSubClassOnly = true );
+    static Css1ScriptFlags GetScriptFromClass( OUString& rClass,
+                                               bool bSubClassOnly = true );
 
     bool IsBodyBGColorSet() const { return bBodyBGColorSet; }
     bool IsBodyBackgroundSet() const { return bBodyBackgroundSet; }
@@ -159,11 +157,6 @@ public:
 
     virtual void SetDfltEncoding( rtl_TextEncoding eEnc ) override;
 };
-
-inline void SwCSS1Parser::AddFirstLetterExt( OUString& rFormatName )
-{
-    rFormatName += ".FL";   // first letter
-}
 
 inline const SwPageDesc* SwCSS1Parser::GetFirstPageDesc( bool bCreate )
 {

@@ -33,12 +33,12 @@ namespace connectivity
 {
     namespace evoab
     {
+        /// @throws css::uno::Exception
+        css::uno::Reference< css::uno::XInterface > SAL_CALL OEvoabDriver_CreateInstance(const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxFactory);
 
-        ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface > SAL_CALL OEvoabDriver_CreateInstance(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory) throw( ::com::sun::star::uno::Exception );
 
-
-        typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::sdbc::XDriver,
-                                ::com::sun::star::lang::XServiceInfo > ODriver_BASE;
+        typedef ::cppu::WeakComponentImplHelper< css::sdbc::XDriver,
+                                                 css::lang::XServiceInfo > ODriver_BASE;
 
 
         class OEvoabDriver : public ODriver_BASE
@@ -47,36 +47,38 @@ namespace connectivity
         protected:
             ::osl::Mutex                                        m_aMutex;
             connectivity::OWeakRefArray                         m_xConnections;
-            ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory > m_xFactory;
+            css::uno::Reference< css::lang::XMultiServiceFactory > m_xFactory;
 
         public:
-            explicit OEvoabDriver(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory);
-            virtual ~OEvoabDriver();
+            explicit OEvoabDriver(const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxFactory);
+            virtual ~OEvoabDriver() override;
 
             // OComponentHelper
             virtual void SAL_CALL disposing() override;
 
             // XInterface
-            static OUString getImplementationName_Static(  ) throw(::com::sun::star::uno::RuntimeException);
-            static ::com::sun::star::uno::Sequence< OUString > getSupportedServiceNames_Static(  ) throw (::com::sun::star::uno::RuntimeException);
+            /// @throws css::uno::RuntimeException
+            static OUString getImplementationName_Static(  );
+            /// @throws css::uno::RuntimeException
+            static css::uno::Sequence< OUString > getSupportedServiceNames_Static(  );
 
             // XServiceInfo
-            virtual OUString SAL_CALL getImplementationName(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getImplementationName(  ) override;
+            virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+            virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
 
             // XDriver
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > SAL_CALL connect( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL acceptsURL( const OUString& url ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Sequence< ::com::sun::star::sdbc::DriverPropertyInfo > SAL_CALL getPropertyInfo( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Int32 SAL_CALL getMajorVersion(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Int32 SAL_CALL getMinorVersion(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::sdbc::XConnection > SAL_CALL connect( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info ) override;
+            virtual sal_Bool SAL_CALL acceptsURL( const OUString& url ) override;
+            virtual css::uno::Sequence< css::sdbc::DriverPropertyInfo > SAL_CALL getPropertyInfo( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info ) override;
+            virtual sal_Int32 SAL_CALL getMajorVersion(  ) override;
+            virtual sal_Int32 SAL_CALL getMinorVersion(  ) override;
 
         public:
-            const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >
+            const css::uno::Reference< css::lang::XMultiServiceFactory >
                         & getMSFactory() const { return  m_xFactory; }
-            ::com::sun::star::uno::Reference< ::com::sun::star::uno::XComponentContext >
+            css::uno::Reference< css::uno::XComponentContext >
                         getComponentContext( ) const { return comphelper::getComponentContext( m_xFactory ); }
 
             // static methods

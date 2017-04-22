@@ -21,6 +21,7 @@
 #include "macros.hxx"
 #include <com/sun/star/lang/XComponent.hpp>
 #include <osl/diagnose.h>
+#include <svl/itempool.hxx>
 #include <svl/itemprop.hxx>
 #include <svl/itemiter.hxx>
 #include <svl/whiter.hxx>
@@ -114,7 +115,8 @@ void ItemConverter::FillItemSet( SfxItemSet & rOutItemSet ) const
                         }
                         else
                         {
-                            rOutItemSet.Put( *pItem, nWhich );
+                            pItem->SetWhich(nWhich);
+                            rOutItemSet.Put( *pItem );
                             delete pItem;
                         }
                     }
@@ -151,14 +153,12 @@ void ItemConverter::FillItemSet( SfxItemSet & rOutItemSet ) const
 
 void ItemConverter::FillSpecialItem(
     sal_uInt16 /*nWhichId*/, SfxItemSet & /*rOutItemSet*/ ) const
-    throw (uno::Exception, std::exception)
 {
     OSL_FAIL( "ItemConverter: Unhandled special item found!" );
 }
 
 bool ItemConverter::ApplySpecialItem(
     sal_uInt16 /*nWhichId*/, const SfxItemSet & /*rItemSet*/ )
-    throw( uno::Exception )
 {
     OSL_FAIL( "ItemConverter: Unhandled special item found!" );
     return false;

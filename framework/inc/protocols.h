@@ -53,27 +53,23 @@ namespace framework{
 // for sending news
 #define SPECIALPROTOCOL_NEWS              "news:"
 
+/** well known protocols */
+enum class EProtocol
+{
+    PrivateObject,
+    PrivateStream,
+    PrivateFactory,
+    Slot,
+    Uno,
+    Macro,
+    Service,
+    MailTo,
+    News
+};
+
 class ProtocolCheck
 {
     public:
-
-    /**
-        enums for well known protocols
-     */
-    enum EProtocol
-    {
-        E_UNKNOWN_PROTOCOL  ,
-        E_PRIVATE           ,
-        E_PRIVATE_OBJECT    ,
-        E_PRIVATE_STREAM    ,
-        E_PRIVATE_FACTORY   ,
-        E_SLOT              ,
-        E_UNO               ,
-        E_MACRO             ,
-        E_SERVICE           ,
-        E_MAILTO            ,
-        E_NEWS
-    };
 
     /**
         it checks if given URL match the required protocol only
@@ -82,41 +78,38 @@ class ProtocolCheck
      */
     static bool isProtocol( const OUString& sURL, EProtocol eRequired )
     {
-        bool bRet = sal_False;
+        bool bRet = false;
         switch(eRequired)
         {
-            case E_PRIVATE:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_PRIVATE));
+            case EProtocol::PrivateObject:
+                bRet = sURL.startsWith(SPECIALPROTOCOL_PRIVATE_OBJECT);
                 break;
-            case E_PRIVATE_OBJECT:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_PRIVATE_OBJECT));
+            case EProtocol::PrivateStream:
+                bRet = sURL.startsWith(SPECIALPROTOCOL_PRIVATE_STREAM);
                 break;
-            case E_PRIVATE_STREAM:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_PRIVATE_STREAM));
+            case EProtocol::PrivateFactory:
+                bRet = sURL.startsWith(SPECIALPROTOCOL_PRIVATE_FACTORY);
                 break;
-            case E_PRIVATE_FACTORY:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_PRIVATE_FACTORY));
+            case EProtocol::Slot:
+                bRet = sURL.startsWith(SPECIALPROTOCOL_SLOT);
                 break;
-            case E_SLOT:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_SLOT));
+            case EProtocol::Uno:
+                bRet = sURL.startsWith(SPECIALPROTOCOL_UNO);
                 break;
-            case E_UNO:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_UNO));
+            case EProtocol::Macro:
+                bRet = sURL.startsWith(SPECIALPROTOCOL_MACRO);
                 break;
-            case E_MACRO:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_MACRO));
+            case EProtocol::Service:
+                bRet = sURL.startsWith(SPECIALPROTOCOL_SERVICE);
                 break;
-            case E_SERVICE:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_SERVICE));
+            case EProtocol::MailTo:
+                bRet = sURL.startsWith(SPECIALPROTOCOL_MAILTO);
                 break;
-            case E_MAILTO:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_MAILTO));
-                break;
-            case E_NEWS:
-                bRet = sURL.matchAsciiL(RTL_CONSTASCII_STRINGPARAM(SPECIALPROTOCOL_NEWS));
+            case EProtocol::News:
+                bRet = sURL.startsWith(SPECIALPROTOCOL_NEWS);
                 break;
             default:
-                bRet = sal_False;
+                bRet = false;
                 break;
         }
         return bRet;

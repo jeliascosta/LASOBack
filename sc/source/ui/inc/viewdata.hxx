@@ -26,6 +26,7 @@
 #include "docsh.hxx"
 
 #include <memory>
+#include <o3tl/typed_flags_set.hxx>
 
 #define SC_SIZE_NONE        65535
 const SCCOL SC_TABSTART_NONE = SCCOL_MAX;
@@ -77,12 +78,25 @@ enum ScMarkType
 #endif
 };
 
-enum ScPasteFlags
+enum class ScPasteFlags
 {
-    SC_PASTE_NONE   = 0,    // No flags specified
-    SC_PASTE_MODE   = 1,    // Enable paste-mode
-    SC_PASTE_BORDER = 2,    // Show a border around the source cells
+    NONE   = 0,    // No flags specified
+    Mode   = 1,    // Enable paste-mode
+    Border = 2,    // Show a border around the source cells
 };
+namespace o3tl {
+    template<> struct typed_flags<ScPasteFlags> : is_typed_flags<ScPasteFlags, 0x03> {};
+}
+
+// for internal Drag&Drop:
+enum class ScDragSrc{
+    Undefined = 0,
+    Navigator = 1,
+    Table     = 2
+};
+namespace o3tl {
+    template<> struct typed_flags<ScDragSrc> : is_typed_flags<ScDragSrc, 0x00000003> {};
+}
 
 class ScDocFunc;
 class ScDocShell;
@@ -207,14 +221,21 @@ private:
 
     ScSplitPos          eEditActivePart;            // the part that was active when edit mode was started
     ScFillMode          nFillMode;
+    SvxAdjust           eEditAdjust;
     bool                bEditActive[4];             // Active?
     bool                bActive:1;                  // Active Window ?
     bool                bIsRefMode:1;               // Reference input
     bool                bDelMarkValid:1;            // Only valid at SC_REFTYPE_FILL
     bool                bPagebreak:1;               // Page break preview mode
     bool                bSelCtrlMouseClick:1;       // special selection handling for ctrl-mouse-click
+    bool                bMoveArea:1;
 
-    DECL_DLLPRIVATE_LINK_TYPED( EditEngineHdl, EditStatus&, void );
+    bool                bGrowing;
+
+    long                m_nLOKPageUpDownOffset;
+
+    DECL_DLLPRIVATE_LINK( EditEngineHdl, EditStatus&, void );
+
 
     SAL_DLLPRIVATE void          CalcPPT();
     SAL_DLLPRIVATE void          CreateTabData( SCTAB nNewTab );
@@ -289,8 +310,8 @@ public:
     SCROW           GetMaxTiledRow() const                  { return pThisTab->nMaxTiledRow; }
 
     bool            IsPagebreakMode() const                 { return bPagebreak; }
-    bool            IsPasteMode() const                     { return (nPasteFlags & SC_PASTE_MODE) != 0; }
-    bool            ShowPasteSource() const                 { return (nPasteFlags & SC_PASTE_BORDER) != 0; }
+    bool            IsPasteMode() const                     { return bool(nPasteFlags & ScPasteFlags::Mode); }
+    bool            ShowPasteSource() const                 { return bool(nPasteFlags & ScPasteFlags::Border); }
 
     void            SetPosX( ScHSplitPos eWhich, SCCOL nNewPosX );
     void            SetPosY( ScVSplitPos eWhich, SCROW nNewPosY );
@@ -343,8 +364,11 @@ public:
 
     bool            IsMultiMarked();
 
-                    /// Disallow paste on Ctrl+A all selected. We'd go DOOM.
-    bool            SelectionForbidsPaste();
+                    /** Disallow cell fill (Paste,Fill,...) on Ctrl+A all
+                        selected or another high amount of selected cells.
+                        We'd go DOOM.
+                     */
+    bool            SelectionForbidsCellFill();
                     /// Determine DOOM condition, i.e. from selected range.
     static bool     SelectionFillDOOM( const ScRange& rRange );
 
@@ -357,6 +381,9 @@ public:
     bool            IsAnyFillMode()             { return nFillMode != ScFillMode::NONE; }
     bool            IsFillMode()                { return nFillMode == ScFillMode::FILL; }
     ScFillMode      GetFillMode()               { return nFillMode; }
+
+    SvxAdjust       GetEditAdjust() const {return eEditAdjust; }
+    void            SetEditAdjust( SvxAdjust eNewEditAdjust ) { eEditAdjust = eNewEditAdjust; }
 
                     // TRUE: Cell is merged
     bool            GetMergeSizePixel( SCCOL nX, SCROW nY, long& rSizeXPix, long& rSizeYPix ) const;
@@ -407,6 +434,11 @@ public:
     void    SetHScrollMode  ( bool bNewMode )   { pOptions->SetOption( VOPT_HSCROLL, bNewMode ); }
     bool    IsOutlineMode   () const            { return pOptions->GetOption( VOPT_OUTLINER ); }
     void    SetOutlineMode  ( bool bNewMode )   { pOptions->SetOption( VOPT_OUTLINER, bNewMode ); }
+    void    SetNotesMode    ( bool bNewMode )   { pOptions->SetOption( VOPT_NOTES, bNewMode ); }
+
+    /// Force page size for PgUp/PgDown to overwrite the computation based on m_aVisArea.
+    void ForcePageUpDownOffset(long nTwips) { m_nLOKPageUpDownOffset = nTwips; }
+    long GetPageUpDownOffset() { return m_nLOKPageUpDownOffset; }
 
     void            KillEditView();
     void            ResetEditView();
@@ -419,7 +451,19 @@ public:
     EditView*       GetEditView( ScSplitPos eWhich ) const
                                         { return pEditView[eWhich]; }
 
+    /**
+     * Extend the output area for the edit engine view in a horizontal
+     * direction as needed.
+     */
     void            EditGrowX();
+
+    /**
+     * Extend the output area for the edit engine view in a vertical direction
+     * as needed.
+     *
+     * @param bInitial when true, then the call originates from a brand-new
+     *                 edit engine instance.
+     */
     void            EditGrowY( bool bInitial = false );
 
     ScSplitPos      GetEditActivePart() const       { return eEditActivePart; }
@@ -430,7 +474,7 @@ public:
     SCCOL           GetEditEndCol() const           { return nEditEndCol; }
     SCROW           GetEditEndRow() const           { return nEditEndRow; }
 
-    Rectangle       GetEditArea( ScSplitPos eWhich, SCCOL nPosX, SCROW nPosY, vcl::Window* pWin,
+    tools::Rectangle       GetEditArea( ScSplitPos eWhich, SCCOL nPosX, SCROW nPosY, vcl::Window* pWin,
                                     const ScPatternAttr* pPattern, bool bForceToTop );
 
     void            SetTabNo( SCTAB nNewTab );
@@ -451,7 +495,7 @@ public:
 
     bool            IsOle();
     void            SetScreen( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2 );
-    void            SetScreen( const Rectangle& rVisArea );
+    void            SetScreen( const tools::Rectangle& rVisArea );
     void            SetScreenPos( const Point& rVisAreaStart );
 
     void            UpdateScreenZoom( const Fraction& rNewX, const Fraction& rNewY );

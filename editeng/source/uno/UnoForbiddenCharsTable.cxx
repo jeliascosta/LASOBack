@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/container/NoSuchElementException.hpp>
 #include <editeng/UnoForbiddenCharsTable.hxx>
 #include <editeng/forbiddencharacterstable.hxx>
 #include <osl/mutex.hxx>
@@ -30,7 +33,7 @@ using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::i18n;
 using namespace ::cppu;
 
-SvxUnoForbiddenCharsTable::SvxUnoForbiddenCharsTable(::rtl::Reference<SvxForbiddenCharactersTable> xForbiddenChars) :
+SvxUnoForbiddenCharsTable::SvxUnoForbiddenCharsTable(::rtl::Reference<SvxForbiddenCharactersTable> const & xForbiddenChars) :
     mxForbiddenChars( xForbiddenChars )
 {
 }
@@ -44,7 +47,6 @@ void SvxUnoForbiddenCharsTable::onChange()
 }
 
 ForbiddenCharacters SvxUnoForbiddenCharsTable::getForbiddenCharacters( const lang::Locale& rLocale )
-    throw(NoSuchElementException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -60,7 +62,6 @@ ForbiddenCharacters SvxUnoForbiddenCharsTable::getForbiddenCharacters( const lan
 }
 
 sal_Bool SvxUnoForbiddenCharsTable::hasForbiddenCharacters( const lang::Locale& rLocale )
-    throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -74,7 +75,6 @@ sal_Bool SvxUnoForbiddenCharsTable::hasForbiddenCharacters( const lang::Locale& 
 }
 
 void SvxUnoForbiddenCharsTable::setForbiddenCharacters(const lang::Locale& rLocale, const ForbiddenCharacters& rForbiddenCharacters )
-    throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -88,7 +88,6 @@ void SvxUnoForbiddenCharsTable::setForbiddenCharacters(const lang::Locale& rLoca
 }
 
 void SvxUnoForbiddenCharsTable::removeForbiddenCharacters( const lang::Locale& rLocale )
-    throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -103,7 +102,6 @@ void SvxUnoForbiddenCharsTable::removeForbiddenCharacters( const lang::Locale& r
 
 // XSupportedLocales
 Sequence< lang::Locale > SAL_CALL SvxUnoForbiddenCharsTable::getLocales()
-    throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -126,7 +124,6 @@ Sequence< lang::Locale > SAL_CALL SvxUnoForbiddenCharsTable::getLocales()
 }
 
 sal_Bool SAL_CALL SvxUnoForbiddenCharsTable::hasLocale( const lang::Locale& aLocale )
-    throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 

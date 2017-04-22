@@ -36,17 +36,6 @@
 
 #include <stdio.h>
 
-
-/* cfront 1.2 defines "c_plusplus" instead of "__cplusplus" */
-#ifdef c_plusplus
-#ifndef __cplusplus
-#define __cplusplus
-#endif
-#endif
-
-
-#ifdef __cplusplus
-
 #include <stdlib.h>
 #ifndef _WIN32
 #include <unistd.h>
@@ -60,16 +49,6 @@
 
 /* The "const" storage-class-modifier is valid. */
 #define YY_USE_CONST
-
-#else   /* ! __cplusplus */
-
-#if __STDC__
-
-#define YY_USE_PROTOS
-#define YY_USE_CONST
-
-#endif  /* __STDC__ */
-#endif  /* ! __cplusplus */
 
 #ifdef YY_USE_CONST
 #define yyconst const
@@ -111,9 +90,6 @@
 #define YY_BUF_SIZE 16384
 
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
-
-extern int yyleng;
-extern FILE *yyin, *yyout;
 
 #define EOB_ACT_CONTINUE_SCAN 0
 #define EOB_ACT_END_OF_FILE 1
@@ -200,7 +176,7 @@ static char yy_hold_char;
 static int yy_n_chars;      /* number of characters read into yy_ch_buf */
 
 
-int yyleng;
+static int yyleng;
 
 /* Points to current character in buffer. */
 static char *yy_c_buf_p = nullptr;
@@ -230,9 +206,8 @@ static void *yy_flex_realloc YY_PROTO(( void *, yy_size_t ));
 static void yy_flex_free YY_PROTO(( void * ));
 
 typedef unsigned char YY_CHAR;
-FILE *yyin = nullptr, *yyout = nullptr;
+static FILE *yyin = nullptr, *yyout = nullptr;
 typedef int yy_state_type;
-extern char *yytext;
 #define yytext_ptr yytext
 
 static yy_state_type yy_get_previous_state YY_PROTO(( void ));
@@ -954,9 +929,8 @@ static char *yy_last_accepting_cpos;
 
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-char *yytext;
+static char *yytext;
 #define INITIAL 0
-#include <stdlib.h>
 #include <string.h>
 #include "nodes.h"
 
@@ -966,18 +940,11 @@ char *yytext;
 #define isatty _isatty
 #endif
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 #include "grammar.h"
 int yywrap();
-#ifdef __cplusplus
 }
-#endif
 
-#ifdef _WIN32
-extern YYSTYPE yylval;
-#endif
 #ifdef TOKEN_DEBUG
 #define token_debug printf
 #else
@@ -1023,11 +990,7 @@ static int yy_top_state YY_PROTO(( void ));
 #ifdef YY_MALLOC_DECL
 YY_MALLOC_DECL
 #else
-#if defined __STDC__ && __STDC__
-#ifndef __cplusplus
-#include <stdlib.h>
-#endif
-#else
+#if !(defined __STDC__ && __STDC__)
 /* Just try to get by without declaring the routines.  This will fail
  * miserably on non-ANSI systems for which sizeof(size_t) != sizeof(int)
  * or sizeof(void*) != sizeof(int).

@@ -101,7 +101,7 @@ namespace sdr
 
         void OverlayManagerBuffered::ImpRestoreBackground() const
         {
-            const Rectangle aRegionRectanglePixel(
+            const tools::Rectangle aRegionRectanglePixel(
                 maBufferRememberedRangePixel.getMinX(), maBufferRememberedRangePixel.getMinY(),
                 maBufferRememberedRangePixel.getMaxX(), maBufferRememberedRangePixel.getMaxY());
             const vcl::Region aRegionPixel(aRegionRectanglePixel);
@@ -175,7 +175,7 @@ namespace sdr
             }
 
             // also limit to buffer size
-            const Rectangle aBufferDeviceRectanglePixel(Point(), mpBufferDevice->GetOutputSizePixel());
+            const tools::Rectangle aBufferDeviceRectanglePixel(Point(), mpBufferDevice->GetOutputSizePixel());
             aRegion.Intersect(aBufferDeviceRectanglePixel);
 
             // MapModes off
@@ -205,7 +205,7 @@ namespace sdr
             mpBufferDevice->EnableMapMode(bMapModeWasEnabledSource);
         }
 
-        IMPL_LINK_NOARG_TYPED(OverlayManagerBuffered, ImpBufferTimerHandler, Idle*, void)
+        IMPL_LINK_NOARG(OverlayManagerBuffered, ImpBufferTimerHandler, Timer*, void)
         {
             //Resolves: fdo#46728 ensure this exists until end of scope
             rtl::Reference<OverlayManager> xRef(this);
@@ -238,7 +238,7 @@ namespace sdr
                     }
                 }
 
-                if(DoRefreshWithPreRendering())
+                if(mbRefreshWithPreRendering)
                 {
                     // #i73602# ensure valid and sized mpOutputBufferDevice
                     const Size aDestinationSizePixel(mpBufferDevice->GetOutputSizePixel());
@@ -256,7 +256,7 @@ namespace sdr
                     mpOutputBufferDevice->SetAntialiasing(mpBufferDevice->GetAntialiasing());
 
                     // calculate sizes
-                    Rectangle aRegionRectanglePixel(
+                    tools::Rectangle aRegionRectanglePixel(
                         maBufferRememberedRangePixel.getMinX(), maBufferRememberedRangePixel.getMinY(),
                         maBufferRememberedRangePixel.getMaxX(), maBufferRememberedRangePixel.getMaxY());
 
@@ -342,12 +342,12 @@ namespace sdr
                 // care for a repaint of the child window. A transparent child window is NOT
                 // a window which always keeps it's content consistent over the parent, but it's
                 // more like just a paint flag for the parent.
-                // To get the update, the windows in question are updated manulally here.
+                // To get the update, the windows in question are updated manually here.
                 if(bTargetIsWindow)
                 {
                     vcl::Window& rWindow = static_cast< vcl::Window& >(mrOutputDevice);
 
-                    const Rectangle aRegionRectanglePixel(
+                    const tools::Rectangle aRegionRectanglePixel(
                         maBufferRememberedRangePixel.getMinX(),
                         maBufferRememberedRangePixel.getMinY(),
                         maBufferRememberedRangePixel.getMaxX(),
@@ -383,8 +383,9 @@ namespace sdr
             mbRefreshWithPreRendering(bRefreshWithPreRendering)
         {
             // Init timer
-            maBufferIdle.SetPriority( SchedulerPriority::POST_PAINT );
-            maBufferIdle.SetIdleHdl(LINK(this, OverlayManagerBuffered, ImpBufferTimerHandler));
+            maBufferIdle.SetPriority( TaskPriority::POST_PAINT );
+            maBufferIdle.SetInvokeHandler(LINK(this, OverlayManagerBuffered, ImpBufferTimerHandler));
+            maBufferIdle.SetDebugName( "sdr::overlay::OverlayManagerBuffered maBufferIdle" );
         }
 
         rtl::Reference<OverlayManager> OverlayManagerBuffered::create(

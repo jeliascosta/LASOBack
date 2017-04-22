@@ -37,17 +37,17 @@ using namespace css;
 
 SwHTMLPosFlyFrame::SwHTMLPosFlyFrame( const SwPosFlyFrame& rPosFly,
                                   const SdrObject *pSdrObj,
-                                  sal_uInt8 nOutMode ) :
+                                  AllHtmlFlags nFlags ) :
     pFrameFormat( &rPosFly.GetFormat() ),
     pSdrObject( pSdrObj ),
     pNdIdx( new SwNodeIndex( rPosFly.GetNdIndex() ) ),
     nOrdNum( rPosFly.GetOrdNum() ),
     nContentIdx( 0 ),
-    nOutputMode( nOutMode )
+    nAllFlags( nFlags )
 {
     const SwFormatAnchor& rAnchor = rPosFly.GetFormat().GetAnchor();
-    if ((FLY_AT_CHAR == rAnchor.GetAnchorId()) &&
-        HTML_POS_INSIDE == GetOutPos() )
+    if ((RndStdIds::FLY_AT_CHAR == rAnchor.GetAnchorId()) &&
+        HtmlPosition::Inside == GetOutPos() )
     {
         // Auto-gebundene Rahmen werden ein Zeichen weiter hinten
         // ausgegeben, weil dann die Positionierung mit Netscape

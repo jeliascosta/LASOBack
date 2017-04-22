@@ -33,7 +33,7 @@
 #include "com/sun/star/uno/Any.hxx"
 #include <unordered_map>
 #include "msci.hxx"
-#include "bridges/cpp_uno/shared/except.hxx"
+#include "except.hxx"
 
 
 #pragma pack(push, 8)
@@ -391,12 +391,7 @@ void * ExceptionInfos::getRaiseInfo( typelib_TypeDescription * pTypeDescr ) thro
         MutexGuard aGuard( Mutex::getGlobalMutex() );
         if (! s_pInfos)
         {
-#ifdef LEAK_STATIC_DATA
             s_pInfos = new ExceptionInfos();
-#else
-            static ExceptionInfos s_allExceptionInfos;
-            s_pInfos = &s_allExceptionInfos;
-#endif
         }
     }
 
@@ -439,12 +434,7 @@ type_info * msci_getRTTI( OUString const & rUNOname )
         MutexGuard aGuard( Mutex::getGlobalMutex() );
         if (! s_pRTTIs)
         {
-#ifdef LEAK_STATIC_DATA
             s_pRTTIs = new RTTInfos();
-#else
-            static RTTInfos s_aRTTIs;
-            s_pRTTIs = &s_aRTTIs;
-#endif
         }
     }
     return s_pRTTIs->getRTTI( rUNOname );
@@ -494,21 +484,7 @@ int msci_filterCppException(
 
     if (rethrow && pRecord == pPointers->ExceptionRecord)
     {
-        pRecord = *reinterpret_cast< EXCEPTION_RECORD ** >(
-#if _MSC_VER >= 1900 // VC 2015 (and later?)
-           __current_exception()
-#else
-            // hack to get msvcrt internal _curexception field:
-            reinterpret_cast< char * >( __pxcptinfoptrs() ) +
-            // as long as we don't demand msvcr source as build prerequisite
-            // (->platform sdk), we have to code those offsets here.
-            //
-            // crt\src\mtdll.h:
-            // offsetof (_tiddata, _curexception) -
-            // offsetof (_tiddata, _tpxcptinfoptrs):
-            0x28 // msvcr80.dll (and later?)
-#endif
-            );
+        pRecord = *reinterpret_cast< EXCEPTION_RECORD ** >(__current_exception());
     }
     // rethrow: handle only C++ exceptions:
     if (pRecord == 0 || pRecord->ExceptionCode != MSVC_ExceptionCode)

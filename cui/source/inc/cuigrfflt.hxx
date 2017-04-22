@@ -42,7 +42,7 @@ private:
     double    mfScaleX;
     double    mfScaleY;
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect) override;
     virtual void Resize() override;
     virtual Size GetOptimalSize() const override;
 
@@ -73,8 +73,8 @@ private:
     Size            maSizePixel;
     bool            bIsBitmap;
 
-    DECL_LINK_TYPED( ImplPreviewTimeoutHdl, Timer *, void );
-    DECL_LINK_TYPED( ImplModifyHdl, LinkParamNone*, void);
+    DECL_LINK( ImplPreviewTimeoutHdl, Timer *, void );
+    DECL_LINK( ImplModifyHdl, LinkParamNone*, void);
 
 protected:
     VclPtr<GraphicPreviewWindow>  mpPreview;
@@ -85,7 +85,7 @@ protected:
 public:
 
     GraphicFilterDialog(vcl::Window* pParent, const OUString& rID, const OUString& rUIXMLDescription, const Graphic& rGraphic);
-    virtual ~GraphicFilterDialog();
+    virtual ~GraphicFilterDialog() override;
     virtual void dispose() override;
 
     virtual Graphic GetFilteredGraphic( const Graphic& rGraphic, double fScaleX, double fScaleY ) = 0;
@@ -95,16 +95,15 @@ class GraphicFilterSmooth : public GraphicFilterDialog
 {
 private:
     VclPtr<NumericField>   mpMtrRadius;
-    DECL_LINK_TYPED(EditModifyHdl, Edit&, void);
+    DECL_LINK(EditModifyHdl, Edit&, void);
 
 public:
 
     GraphicFilterSmooth( vcl::Window* pParent, const Graphic& rGraphic, double nRadius);
-    virtual ~GraphicFilterSmooth();
+    virtual ~GraphicFilterSmooth() override;
     virtual void dispose() override;
 
     virtual Graphic GetFilteredGraphic( const Graphic& rGraphic, double fScaleX, double fScaleY ) override;
-    double          GetRadius() const { return mpMtrRadius->GetValue() / 10.0; }
 };
 
 class GraphicFilterMosaic : public GraphicFilterDialog
@@ -113,18 +112,16 @@ private:
     VclPtr<MetricField>    mpMtrWidth;
     VclPtr<MetricField>    mpMtrHeight;
     VclPtr<CheckBox>       mpCbxEdges;
-    DECL_LINK_TYPED(CheckBoxModifyHdl, CheckBox&, void);
-    DECL_LINK_TYPED(EditModifyHdl, Edit&, void);
+    DECL_LINK(CheckBoxModifyHdl, CheckBox&, void);
+    DECL_LINK(EditModifyHdl, Edit&, void);
 public:
 
     GraphicFilterMosaic(vcl::Window* pParent, const Graphic& rGraphic,
         sal_uInt16 nTileWidth, sal_uInt16 nTileHeight, bool bEnhanceEdges);
-    virtual ~GraphicFilterMosaic();
+    virtual ~GraphicFilterMosaic() override;
     virtual void dispose() override;
 
     virtual Graphic GetFilteredGraphic( const Graphic& rGraphic, double fScaleX, double fScaleY ) override;
-    long            GetTileWidth() const { return static_cast<long>(mpMtrWidth->GetValue()); }
-    long            GetTileHeight() const { return static_cast<long>(mpMtrHeight->GetValue()); }
     bool            IsEnhanceEdges() const { return mpCbxEdges->IsChecked(); }
 };
 
@@ -133,18 +130,17 @@ class GraphicFilterSolarize : public GraphicFilterDialog
 private:
     VclPtr<MetricField>    mpMtrThreshold;
     VclPtr<CheckBox>       mpCbxInvert;
-    DECL_LINK_TYPED(CheckBoxModifyHdl, CheckBox&, void);
-    DECL_LINK_TYPED(EditModifyHdl, Edit&, void);
+    DECL_LINK(CheckBoxModifyHdl, CheckBox&, void);
+    DECL_LINK(EditModifyHdl, Edit&, void);
 
 public:
 
     GraphicFilterSolarize( vcl::Window* pParent, const Graphic& rGraphic,
                                            sal_uInt8 nGreyThreshold, bool bInvert );
-    virtual ~GraphicFilterSolarize();
+    virtual ~GraphicFilterSolarize() override;
     virtual void dispose() override;
 
     virtual Graphic     GetFilteredGraphic( const Graphic& rGraphic, double fScaleX, double fScaleY ) override;
-    sal_uInt8           GetGreyThreshold() const { return( (sal_uInt8) FRound( mpMtrThreshold->GetValue() * 2.55 ) ); }
     bool            IsInvert() const { return mpCbxInvert->IsChecked(); }
 };
 
@@ -152,32 +148,27 @@ class GraphicFilterSepia : public GraphicFilterDialog
 {
 private:
     VclPtr<MetricField>    mpMtrSepia;
-    DECL_LINK_TYPED(EditModifyHdl, Edit&, void);
+    DECL_LINK(EditModifyHdl, Edit&, void);
 public:
     GraphicFilterSepia( vcl::Window* pParent, const Graphic& rGraphic,
                         sal_uInt16 nSepiaPercent );
-    virtual ~GraphicFilterSepia();
+    virtual ~GraphicFilterSepia() override;
     virtual void dispose() override;
     virtual Graphic GetFilteredGraphic( const Graphic& rGraphic, double fScaleX, double fScaleY ) override;
-    sal_uInt16 GetSepiaPercent() const
-    {
-        return sal::static_int_cast< sal_uInt16 >(mpMtrSepia->GetValue());
-    }
 };
 
 class GraphicFilterPoster : public GraphicFilterDialog
 {
 private:
     VclPtr<NumericField>   mpNumPoster;
-    DECL_LINK_TYPED(EditModifyHdl, Edit&, void);
+    DECL_LINK(EditModifyHdl, Edit&, void);
 public:
     GraphicFilterPoster( vcl::Window* pParent, const Graphic& rGraphic,
                          sal_uInt16 nPosterColorCount );
-    virtual ~GraphicFilterPoster();
+    virtual ~GraphicFilterPoster() override;
     virtual void dispose() override;
 
     virtual Graphic GetFilteredGraphic( const Graphic& rGraphic, double fScaleX, double fScaleY ) override;
-    sal_uInt16      GetPosterColorCount() const { return( (sal_uInt16) mpNumPoster->GetValue() ); }
 };
 
 class EmbossControl : public SvxRectCtl
@@ -199,8 +190,8 @@ private:
     VclPtr<EmbossControl>  mpCtlLight;
 public:
     GraphicFilterEmboss( vcl::Window* pParent, const Graphic& rGraphic,
-                         RECT_POINT eLightSource );
-    virtual ~GraphicFilterEmboss();
+                         RectPoint eLightSource );
+    virtual ~GraphicFilterEmboss() override;
     virtual void dispose() override;
 
     virtual Graphic GetFilteredGraphic( const Graphic& rGraphic, double fScaleX, double fScaleY ) override;

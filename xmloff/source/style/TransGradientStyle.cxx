@@ -49,11 +49,10 @@ enum SvXMLTokenMapAttrs
     XML_TOK_GRADIENT_START,
     XML_TOK_GRADIENT_END,
     XML_TOK_GRADIENT_ANGLE,
-    XML_TOK_GRADIENT_BORDER,
-    XML_TOK_TABSTOP_END=XML_TOK_UNKNOWN
+    XML_TOK_GRADIENT_BORDER
 };
 
-SvXMLEnumMapEntry const pXML_GradientStyle_Enum[] =
+SvXMLEnumMapEntry<awt::GradientStyle> const pXML_GradientStyle_Enum[] =
 {
     { XML_GRADIENTSTYLE_LINEAR,         awt::GradientStyle_LINEAR },
     { XML_GRADIENTSTYLE_AXIAL,          awt::GradientStyle_AXIAL },
@@ -61,7 +60,7 @@ SvXMLEnumMapEntry const pXML_GradientStyle_Enum[] =
     { XML_GRADIENTSTYLE_ELLIPSOID,      awt::GradientStyle_ELLIPTICAL },
     { XML_GRADIENTSTYLE_SQUARE,         awt::GradientStyle_SQUARE },
     { XML_GRADIENTSTYLE_RECTANGULAR,    awt::GradientStyle_RECT },
-    { XML_TOKEN_INVALID,                0 }
+    { XML_TOKEN_INVALID,                (awt::GradientStyle)0 }
 };
 
 // Import
@@ -100,7 +99,9 @@ void XMLTransGradientStyleImport::importXML(
         { XML_NAMESPACE_DRAW, XML_START, XML_TOK_GRADIENT_START },
         { XML_NAMESPACE_DRAW, XML_END, XML_TOK_GRADIENT_END },
         { XML_NAMESPACE_DRAW, XML_GRADIENT_ANGLE, XML_TOK_GRADIENT_ANGLE },
-        { XML_NAMESPACE_DRAW, XML_GRADIENT_BORDER, XML_TOK_GRADIENT_BORDER },
+        { XML_NAMESPACE_DRAW, XML_GRADIENT_BORDER, XML_TOK_GRADIENT_BORDER,
+            NAMESPACE_TOKEN( XML_NAMESPACE_DRAW ) | XML_BORDER },
+        //  XML_GRADIENT_BORDER is a duplicate of XML_BORDER
         XML_TOKEN_MAP_END
     };
 
@@ -131,11 +132,7 @@ void XMLTransGradientStyleImport::importXML(
             break;
         case XML_TOK_GRADIENT_STYLE:
             {
-                sal_uInt16 eValue;
-                if( SvXMLUnitConverter::convertEnum( eValue, rStrValue, pXML_GradientStyle_Enum ) )
-                {
-                    aGradient.Style = (awt::GradientStyle) eValue;
-                }
+                SvXMLUnitConverter::convertEnum( aGradient.Style, rStrValue, pXML_GradientStyle_Enum );
             }
             break;
         case XML_TOK_GRADIENT_CX:

@@ -286,7 +286,6 @@
 #include <rsc/rsc-vcl-shared-types.hxx>
 #include <sot/formats.hxx>
 #include <svl/hint.hxx>
-#include <svl/smplhint.hxx>
 #include <svl/svldllapi.h>
 #include <svtools/AccessibleBrowseBoxObjType.hxx>
 #include <svtools/accessibletable.hxx>
@@ -337,21 +336,21 @@
 #include <unotools/fontdefs.hxx>
 #include <unotools/options.hxx>
 #include <unotools/unotoolsdllapi.h>
-#include <accessibility/extended/AccessibleBrowseBox.hxx>
-#include <accessibility/extended/AccessibleBrowseBoxBase.hxx>
-#include <accessibility/extended/AccessibleBrowseBoxTableBase.hxx>
-#include <accessibility/extended/AccessibleGridControl.hxx>
-#include <accessibility/extended/AccessibleGridControlBase.hxx>
-#include <accessibility/extended/AccessibleGridControlTableCell.hxx>
-#include <accessibility/extended/accessibletabbarbase.hxx>
-#include <accessibility/helper/accresmgr.hxx>
-#include <accessibility/helper/characterattributeshelper.hxx>
-#include <accessibility/helper/listboxhelper.hxx>
-#include <accessibility/standard/accessiblemenubasecomponent.hxx>
-#include <accessibility/standard/accessiblemenuitemcomponent.hxx>
-#include <accessibility/standard/vclxaccessiblebox.hxx>
-#include <accessibility/standard/vclxaccessibleedit.hxx>
-#include <accessibility/standard/vclxaccessiblelist.hxx>
-#include <accessibility/standard/vclxaccessibletextcomponent.hxx>
+#include <extended/AccessibleBrowseBox.hxx>
+#include <extended/AccessibleBrowseBoxBase.hxx>
+#include <extended/AccessibleBrowseBoxTableBase.hxx>
+#include <extended/AccessibleGridControl.hxx>
+#include <extended/AccessibleGridControlBase.hxx>
+#include <extended/AccessibleGridControlTableCell.hxx>
+#include <extended/accessibletabbarbase.hxx>
+#include <helper/accresmgr.hxx>
+#include <helper/characterattributeshelper.hxx>
+#include <helper/listboxhelper.hxx>
+#include <standard/accessiblemenubasecomponent.hxx>
+#include <standard/accessiblemenuitemcomponent.hxx>
+#include <standard/vclxaccessiblebox.hxx>
+#include <standard/vclxaccessibleedit.hxx>
+#include <standard/vclxaccessiblelist.hxx>
+#include <standard/vclxaccessibletextcomponent.hxx>
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

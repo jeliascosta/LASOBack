@@ -216,7 +216,6 @@ bool PropertyChgHelper::propertyChange_Impl( const PropertyChangeEvent& rEvt )
 
 void SAL_CALL
     PropertyChgHelper::propertyChange( const PropertyChangeEvent& rEvt )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     propertyChange_Impl( rEvt );
@@ -259,7 +258,6 @@ void PropertyChgHelper::LaunchEvent( const LinguServiceEvent &rEvt )
 
 
 void SAL_CALL PropertyChgHelper::disposing( const EventObject& rSource )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     if (rSource.Source == xPropSet)
@@ -274,7 +272,6 @@ void SAL_CALL PropertyChgHelper::disposing( const EventObject& rSource )
 sal_Bool SAL_CALL
     PropertyChgHelper::addLinguServiceEventListener(
             const Reference< XLinguServiceEventListener >& rxListener )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -291,7 +288,6 @@ sal_Bool SAL_CALL
 sal_Bool SAL_CALL
     PropertyChgHelper::removeLinguServiceEventListener(
             const Reference< XLinguServiceEventListener >& rxListener )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -322,7 +318,6 @@ PropertyHelper_Thes::~PropertyHelper_Thes()
 
 void SAL_CALL
     PropertyHelper_Thes::propertyChange( const PropertyChangeEvent& rEvt )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     PropertyChgHelper::propertyChange_Impl( rEvt );
@@ -440,7 +435,7 @@ bool PropertyHelper_Spell::propertyChange_Impl( const PropertyChangeEvent& rEvt 
                 break;
             }
             default:
-                DBG_ASSERT( false, "unknown property" );
+                SAL_WARN( "linguistic", "unknown property" );
         }
         if (pbVal)
             rEvt.NewValue >>= *pbVal;
@@ -467,7 +462,6 @@ bool PropertyHelper_Spell::propertyChange_Impl( const PropertyChangeEvent& rEvt 
 
 void SAL_CALL
     PropertyHelper_Spell::propertyChange( const PropertyChangeEvent& rEvt )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     propertyChange_Impl( rEvt );
@@ -504,7 +498,7 @@ void PropertyHelper_Spell::SetTmpPropVals( const PropertyValues &rPropVals )
                     case UPH_IS_SPELL_WITH_DIGITS    : pbResVal = &bResIsSpellWithDigits; break;
                     case UPH_IS_SPELL_CAPITALIZATION : pbResVal = &bResIsSpellCapitalization; break;
                     default:
-                        DBG_ASSERT( false, "unknown property" );
+                        SAL_WARN( "linguistic", "unknown property" );
                 }
                 if (pbResVal)
                     pVal[i].Value >>= *pbResVal;
@@ -601,7 +595,7 @@ bool PropertyHelper_Hyphen::propertyChange_Impl( const PropertyChangeEvent& rEvt
             case UPH_HYPH_MIN_TRAILING    : pnVal = &nHyphMinTrailing; break;
             case UPH_HYPH_MIN_WORD_LENGTH : pnVal = &nHyphMinWordLength; break;
             default:
-                DBG_ASSERT( false, "unknown property" );
+                SAL_WARN( "linguistic", "unknown property" );
         }
         if (pnVal)
             rEvt.NewValue >>= *pnVal;
@@ -623,7 +617,6 @@ bool PropertyHelper_Hyphen::propertyChange_Impl( const PropertyChangeEvent& rEvt
 
 void SAL_CALL
     PropertyHelper_Hyphen::propertyChange( const PropertyChangeEvent& rEvt )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     propertyChange_Impl( rEvt );
@@ -735,14 +728,12 @@ sal_Int16 PropertyHelper_Hyphenation::GetMinWordLength() const
 
 bool PropertyHelper_Hyphenation::addLinguServiceEventListener(
                 const css::uno::Reference< css::linguistic2::XLinguServiceEventListener >& rxListener )
-            throw(css::uno::RuntimeException)
 {
     return pInst->addLinguServiceEventListener( rxListener );
 }
 
 bool PropertyHelper_Hyphenation::removeLinguServiceEventListener(
                 const css::uno::Reference< css::linguistic2::XLinguServiceEventListener >& rxListener )
-            throw(css::uno::RuntimeException)
 {
     return pInst->removeLinguServiceEventListener( rxListener );
 }
@@ -792,7 +783,6 @@ bool PropertyHelper_Spelling::IsSpellCapitalization() const
 bool PropertyHelper_Spelling::addLinguServiceEventListener(
                 const css::uno::Reference<
                     css::linguistic2::XLinguServiceEventListener >& rxListener )
-            throw(css::uno::RuntimeException)
 {
     return pInst->addLinguServiceEventListener( rxListener );
 }
@@ -800,7 +790,6 @@ bool PropertyHelper_Spelling::addLinguServiceEventListener(
 bool PropertyHelper_Spelling::removeLinguServiceEventListener(
                 const css::uno::Reference<
                     css::linguistic2::XLinguServiceEventListener >& rxListener )
-            throw(css::uno::RuntimeException)
 {
     return pInst->removeLinguServiceEventListener( rxListener );
 }

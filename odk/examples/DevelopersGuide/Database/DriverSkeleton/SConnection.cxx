@@ -74,7 +74,7 @@ OConnection::~OConnection()
 
 void SAL_CALL OConnection::release() throw()
 {
-    relase_ChildImpl();
+    release_ChildImpl();
 }
 
 
@@ -379,7 +379,7 @@ void OConnection::buildTypeInfo() throw( SQLException)
 
 void OConnection::disposing()
 {
-    // we noticed that we should be destroied in near future so we have to dispose our statements
+    // we noticed that we should be destroyed in near future so we have to dispose our statements
     ::osl::MutexGuard aGuard(m_aMutex);
 
     for (OWeakRefArray::iterator i = m_aStatements.begin(); m_aStatements.end() != i; ++i)

@@ -11,7 +11,10 @@
 
 $(eval $(call gb_CppunitTest_CppunitTest,sd_misc_tests))
 
-$(eval $(call gb_CppunitTest_use_external,sd_misc_tests,boost_headers))
+$(eval $(call gb_CppunitTest_use_externals,sd_misc_tests,\
+	boost_headers \
+	libxml2 \
+))
 
 $(eval $(call gb_CppunitTest_add_exception_objects,sd_misc_tests, \
     sd/qa/unit/misc-tests \
@@ -62,10 +65,7 @@ $(eval $(call gb_CppunitTest_set_include,sd_misc_tests,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sd_misc_tests,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sd_misc_tests))
 
 $(eval $(call gb_CppunitTest_use_externals,sd_misc_tests,\
     boost_headers \
@@ -113,8 +113,8 @@ $(eval $(call gb_CppunitTest_use_components,sd_misc_tests,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
+    uui/util/uui \
     xmloff/util/xo \
-    xmlsecurity/util/xsec_fw \
     xmlsecurity/util/xmlsecurity \
 ))
 

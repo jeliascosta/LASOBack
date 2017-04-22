@@ -197,7 +197,6 @@ Export::Export(const OString &rOutput)
                 bNextMustBeDefineEOL( false ),
                 nLevel( 0 ),
                 nList( ExportListType::NONE ),
-                nListIndex( 0 ),
                 nListLevel( 0 ),
                 bMergeMode( false ),
                 bError( false ),
@@ -221,7 +220,6 @@ Export::Export(
                 bNextMustBeDefineEOL( false ),
                 nLevel( 0 ),
                 nList( ExportListType::NONE ),
-                nListIndex( 0 ),
                 nListLevel( 0 ),
                 bMergeMode( true ),
                 sMergeSrc( rMergeSource ),
@@ -238,7 +236,8 @@ Export::Export(
         std::exit(EXIT_FAILURE);
     }
 
-    if ( bUTF8BOM ) WriteUTF8ByteOrderMarkToOutput();
+    if ( bUTF8BOM )
+        *aOutput.mSimple << '\xEF' << '\xBB' << '\xBF';
 }
 
 void Export::Init()
@@ -248,7 +247,6 @@ void Export::Init()
     bNextMustBeDefineEOL = false;
     nLevel = 0;
     nList = ExportListType::NONE;
-    nListIndex = 0;
     for ( size_t i = 0, n = aResStack.size(); i < n;  ++i )
         delete aResStack[ i ];
     aResStack.clear();
@@ -349,8 +347,7 @@ void Export::Execute( int nToken, const char * pToken )
         sal_uInt16 nOpen = 0;
         sal_uInt16 nClose = 0;
         bool bReadOver1 = false;
-        sal_uInt16 i = 0;
-        for ( i = 0; i < sToken.getLength(); i++ ) {
+        for ( sal_Int32 i = 0; i < sToken.getLength(); i++ ) {
             if ( sToken[i] == '"' )
                 bReadOver1 = !bReadOver1;
             if ( !bReadOver1 && ( sToken[i] == '{' ))
@@ -358,7 +355,7 @@ void Export::Execute( int nToken, const char * pToken )
         }
 
         bReadOver1 = false;
-        for ( i = 0; i < sToken.getLength(); i++ ) {
+        for ( sal_Int32 i = 0; i < sToken.getLength(); i++ ) {
             if ( sToken[i] == '"' )
                 bReadOver1 = !bReadOver1;
             if ( !bReadOver1 && ( sToken[i] == '}' ))
@@ -403,7 +400,7 @@ void Export::Execute( int nToken, const char * pToken )
             OString sCondition;
             if ( sId.indexOf( '#' ) != -1 )
             {
-                // between ResTyp, Id and paranthes is a precomp. condition
+                // between ResTyp, Id and parentheses is a precomp. condition
                 sCondition = "#";
                 sal_Int32 n = 0;
                 sId = sId.getToken(0, '#', n);
@@ -510,13 +507,11 @@ void Export::Execute( int nToken, const char * pToken )
             else if (sKey =="STRINGLIST")
             {
                 nList = ExportListType::String;
-                nListIndex = 0;
                 nListLevel = 1;
             }
             else if (sKey == "FILTERLIST")
             {
                 nList = ExportListType::Filter;
-                nListIndex = 0;
                 nListLevel = 1;
             }
             if (sToken.indexOf( '{' ) != -1
@@ -557,7 +552,6 @@ void Export::Execute( int nToken, const char * pToken )
                 }
                 if( nList != ExportListType::NONE )
                 {
-                    nListIndex = 0;
                     nListLevel = 1;
                 }
             }
@@ -851,9 +845,6 @@ void Export::InsertListEntry(const OString &rLine)
     if (!pResData)
         std::exit(EXIT_FAILURE);
 
-    if( pResData->m_aList.empty() )
-        nListIndex = 0;
-
     pResData->m_aList.push_back(rLine);
 }
 
@@ -1004,7 +995,7 @@ void Export::ConvertExportContent( OString& rText )
     rText = helper::unEscapeAll(rText,"\\n""\\t""\\\\""\\\"","\n""\t""\\""\"");
 }
 
-void Export::ResData2Output( MergeEntrys *pEntry, sal_uInt16 nType, const OString& rTextType )
+void Export::ResData2Output( MergeEntrys *pEntry, StringType nType, const OString& rTextType )
 {
     bool bAddSemicolon = false;
     bool bFirst = true;
@@ -1066,13 +1057,13 @@ void Export::MergeRest( ResData *pResData )
     if ( pEntry )
     {
         if ( pResData->bText )
-            ResData2Output( pEntry, STRING_TYP_TEXT, pResData->sTextTyp );
+            ResData2Output( pEntry, StringType::Text, pResData->sTextTyp );
 
         if ( pResData->bQuickHelpText )
-            ResData2Output( pEntry, STRING_TYP_QUICKHELPTEXT, OString("QuickHelpText") );
+            ResData2Output( pEntry, StringType::QuickHelpText, OString("QuickHelpText") );
 
         if ( pResData->bTitle )
-            ResData2Output( pEntry, STRING_TYP_TITLE, OString("Title") );
+            ResData2Output( pEntry, StringType::Title, OString("Title") );
     }
 
     // Merge Lists
@@ -1151,7 +1142,7 @@ void Export::MergeRest( ResData *pResData )
                 if( pEntrys )
                 {
                     OString sText;
-                    pEntrys->GetText( sText, STRING_TYP_TEXT, sCur );
+                    pEntrys->GetText( sText, StringType::Text, sCur );
                     if( !sText.isEmpty())
                     {
                         ConvertMergeContent( sText );

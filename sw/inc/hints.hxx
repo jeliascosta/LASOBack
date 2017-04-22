@@ -20,6 +20,7 @@
 #define INCLUDED_SW_INC_HINTS_HXX
 
 #include <swatrset.hxx>
+#include <swtypes.hxx>
 #include <vcl/vclptr.hxx>
 #include <vector>
 
@@ -147,8 +148,8 @@ public:
 class SwDocPosUpdate : public SwMsgPoolItem
 {
 public:
-    const long nDocPos;
-    SwDocPosUpdate( const long nDocPos );
+    const SwTwips nDocPos;
+    SwDocPosUpdate( const SwTwips nDocPos );
 };
 
 /// SwTableFormulaUpdate is sent when the table has to be newly calculated or when a table itself is merged or splitted
@@ -198,7 +199,7 @@ class SwAttrSetChg: public SwMsgPoolItem
 public:
     SwAttrSetChg( const SwAttrSet& rTheSet, SwAttrSet& rSet );
     SwAttrSetChg( const SwAttrSetChg& );
-    virtual ~SwAttrSetChg();
+    virtual ~SwAttrSetChg() override;
 
     /// What has changed
     const SwAttrSet* GetChgSet() const     { return m_pChgSet; }
@@ -208,7 +209,7 @@ public:
     const SwAttrSet* GetTheChgdSet() const { return m_pTheChgdSet; }
 
     sal_uInt16 Count() const { return m_pChgSet->Count(); }
-    void ClearItem( sal_uInt16 nWhichL = 0 )
+    void ClearItem( sal_uInt16 nWhichL )
 #ifdef DBG_UTIL
         ;
 #else

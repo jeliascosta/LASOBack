@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <tools/stream.hxx>
 #include <unotools/configmgr.hxx>
 #include <unotools/syslocale.hxx>
@@ -27,7 +30,6 @@
 #include "usrpref.hxx"
 #include "crstate.hxx"
 #include <linguistic/lngprops.hxx>
-#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/uno/Sequence.hxx>
 #include <unotools/localedatawrapper.hxx>
@@ -44,40 +46,39 @@ void SwMasterUsrPref::SetUsrPref(const SwViewOption &rCopy)
 }
 
 SwMasterUsrPref::SwMasterUsrPref(bool bWeb) :
-    eFieldUpdateFlags(AUTOUPD_OFF),
-    nLinkUpdateMode(0),
-    bIsHScrollMetricSet(false),
-    bIsVScrollMetricSet(false),
-    nDefTab( MM50 * 4 ),
-    bIsSquaredPageMode(false),
-    bIsAlignMathObjectsToBaseline(false),
-    aContentConfig(bWeb, *this),
-    aLayoutConfig(bWeb, *this),
-    aGridConfig(bWeb, *this),
-    aCursorConfig(*this),
-    pWebColorConfig(bWeb ? new SwWebColorConfig(*this) : nullptr),
-    bApplyCharUnit(false)
+    m_eFieldUpdateFlags(AUTOUPD_OFF),
+    m_nLinkUpdateMode(0),
+    m_bIsHScrollMetricSet(false),
+    m_bIsVScrollMetricSet(false),
+    m_nDefTab( MM50 * 4 ),
+    m_bIsSquaredPageMode(false),
+    m_bIsAlignMathObjectsToBaseline(false),
+    m_aContentConfig(bWeb, *this),
+    m_aLayoutConfig(bWeb, *this),
+    m_aGridConfig(bWeb, *this),
+    m_aCursorConfig(*this),
+    m_pWebColorConfig(bWeb ? new SwWebColorConfig(*this) : nullptr),
+    m_bApplyCharUnit(false)
 {
     if (utl::ConfigManager::IsAvoidConfig())
     {
-        eHScrollMetric = eVScrollMetric = eUserMetric = FUNIT_CM;
+        m_eHScrollMetric = m_eVScrollMetric = m_eUserMetric = FUNIT_CM;
         return;
     }
     MeasurementSystem eSystem = SvtSysLocale().GetLocaleData().getMeasurementSystemEnum();
-    eUserMetric = MEASURE_METRIC == eSystem ? FUNIT_CM : FUNIT_INCH;
-    eHScrollMetric = eVScrollMetric = eUserMetric;
+    m_eUserMetric = MEASURE_METRIC == eSystem ? FUNIT_CM : FUNIT_INCH;
+    m_eHScrollMetric = m_eVScrollMetric = m_eUserMetric;
 
-    aContentConfig.Load();
-    aLayoutConfig.Load();
-    aGridConfig.Load();
-    aCursorConfig.Load();
-    if(pWebColorConfig)
-        pWebColorConfig->Load();
+    m_aContentConfig.Load();
+    m_aLayoutConfig.Load();
+    m_aGridConfig.Load();
+    m_aCursorConfig.Load();
+    if(m_pWebColorConfig)
+        m_pWebColorConfig->Load();
 }
 
 SwMasterUsrPref::~SwMasterUsrPref()
 {
-    delete pWebColorConfig;
 }
 
 Sequence<OUString> SwContentViewConfig::GetPropertyNames()
@@ -183,7 +184,7 @@ void SwContentViewConfig::Load()
         {
             if(pValues[nProp].hasValue())
             {
-                bool bSet = nProp != 16 && *static_cast<sal_Bool const *>(pValues[nProp].getValue());
+                bool bSet = nProp != 16 && *o3tl::doAccess<bool>(pValues[nProp]);
                 switch(nProp)
                 {
                     case  0: rParent.SetGraphic(bSet);  break;// "Display/GraphicObject",
@@ -286,12 +287,12 @@ void SwLayoutViewConfig::ImplCommit()
             case  4: rVal <<= rParent.IsViewHRuler(true); break;         // "Window/HorizontalRuler",
             case  5: rVal <<= rParent.IsViewVRuler(true); break;         // "Window/VerticalRuler",
             case  6:
-                if(rParent.bIsHScrollMetricSet)
-                    rVal <<= (sal_Int32)rParent.eHScrollMetric;                     // "Window/HorizontalRulerUnit"
+                if(rParent.m_bIsHScrollMetricSet)
+                    rVal <<= (sal_Int32)rParent.m_eHScrollMetric;                     // "Window/HorizontalRulerUnit"
             break;
             case  7:
-                if(rParent.bIsVScrollMetricSet)
-                    rVal <<= (sal_Int32)rParent.eVScrollMetric;                     // "Window/VerticalRulerUnit"
+                if(rParent.m_bIsVScrollMetricSet)
+                    rVal <<= (sal_Int32)rParent.m_eVScrollMetric;                     // "Window/VerticalRulerUnit"
             break;
             case  8: rVal <<= rParent.IsSmoothScroll(); break;                      // "Window/SmoothScroll",
             case  9: rVal <<= (sal_Int32)rParent.GetZoom(); break;                  // "Zoom/Value",
@@ -337,14 +338,14 @@ void SwLayoutViewConfig::Load()
                     case  5: rParent.SetViewVRuler(bSet); break;// "Window/VerticalRuler",
                     case  6:
                     {
-                        rParent.bIsHScrollMetricSet = true;
-                        rParent.eHScrollMetric = ((FieldUnit)nInt32Val);  // "Window/HorizontalRulerUnit"
+                        rParent.m_bIsHScrollMetricSet = true;
+                        rParent.m_eHScrollMetric = ((FieldUnit)nInt32Val);  // "Window/HorizontalRulerUnit"
                     }
                     break;
                     case  7:
                     {
-                        rParent.bIsVScrollMetricSet = true;
-                        rParent.eVScrollMetric = ((FieldUnit)nInt32Val); // "Window/VerticalRulerUnit"
+                        rParent.m_bIsVScrollMetricSet = true;
+                        rParent.m_eVScrollMetric = ((FieldUnit)nInt32Val); // "Window/VerticalRulerUnit"
                     }
                     break;
                     case  8: rParent.SetSmoothScroll(bSet); break;// "Window/SmoothScroll",
@@ -436,7 +437,7 @@ void SwGridConfig::Load()
         {
             if(pValues[nProp].hasValue())
             {
-                bool bSet = nProp < 3 && *static_cast<sal_Bool const *>(pValues[nProp].getValue());
+                bool bSet = nProp < 3 && *o3tl::doAccess<bool>(pValues[nProp]);
                 sal_Int32 nSet = 0;
                 if(nProp >= 3)
                     pValues[nProp] >>= nSet;
@@ -465,7 +466,6 @@ Sequence<OUString> SwCursorConfig::GetPropertyNames()
         "DirectCursor/UseDirectCursor", // 0
         "DirectCursor/Insert",          // 1
         "Option/ProtectedArea",         // 2
-        "Option/IgnoreProtectedArea"    // 3
     };
     const int nCount = SAL_N_ELEMENTS(aPropNames);
     Sequence<OUString> aNames(nCount);
@@ -497,10 +497,9 @@ void SwCursorConfig::ImplCommit()
     {
         switch(nProp)
         {
-            case  0: pValues[nProp] <<= rParent.IsShadowCursor(); break;//  "DirectCursor/UseDirectCursor",
-            case  1: pValues[nProp] <<= (sal_Int32)rParent.GetShdwCursorFillMode();   break;//  "DirectCursor/Insert",
-            case  2: pValues[nProp] <<= rParent.IsCursorInProtectedArea(); break;// "Option/ProtectedArea"
-            case  3: pValues[nProp] <<= rParent.IsIgnoreProtectedArea(); break; // "Option/IgnoreProtectedArea"
+            case  0: pValues[nProp] <<= rParent.IsShadowCursor();                   break; // "DirectCursor/UseDirectCursor",
+            case  1: pValues[nProp] <<= (sal_Int32)rParent.GetShdwCursorFillMode(); break; // "DirectCursor/Insert",
+            case  2: pValues[nProp] <<= rParent.IsCursorInProtectedArea();          break; // "Option/ProtectedArea"
         }
     }
     PutProperties(aNames, aValues);
@@ -522,15 +521,14 @@ void SwCursorConfig::Load()
                 bool bSet = false;
                 sal_Int32 nSet = 0;
                 if(nProp != 1 )
-                    bSet = *static_cast<sal_Bool const *>(pValues[nProp].getValue());
+                    bSet = *o3tl::doAccess<bool>(pValues[nProp]);
                 else
                     pValues[nProp] >>= nSet;
                 switch(nProp)
                 {
-                    case  0: rParent.SetShadowCursor(bSet);         break;//  "DirectCursor/UseDirectCursor",
-                    case  1: rParent.SetShdwCursorFillMode((sal_uInt8)nSet); break;//  "DirectCursor/Insert",
-                    case  2: rParent.SetCursorInProtectedArea(bSet); break;// "Option/ProtectedArea"
-                    case  3: rParent.SetIgnoreProtectedArea(bSet); break; // "Option/IgnoreProtectedArea"
+                    case  0: rParent.SetShadowCursor(bSet);                  break; // "DirectCursor/UseDirectCursor",
+                    case  1: rParent.SetShdwCursorFillMode((sal_uInt8)nSet); break; // "DirectCursor/Insert",
+                    case  2: rParent.SetCursorInProtectedArea(bSet);         break; // "Option/ProtectedArea"
                 }
             }
         }

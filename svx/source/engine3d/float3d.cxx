@@ -24,6 +24,7 @@
 #include <svtools/colrdlg.hxx>
 #include <vcl/msgbox.hxx>
 #include <sfx2/viewsh.hxx>
+#include <svx/colorbox.hxx>
 #include <svx/xflclit.hxx>
 #include <svx/svdmodel.hxx>
 #include <svx/globl3d.hxx>
@@ -34,7 +35,6 @@
 #include <svx/camera3d.hxx>
 #include <svx/fmmodel.hxx>
 #include <svx/fmpage.hxx>
-#include <svx/polysc3d.hxx>
 #include <editeng/eeitem.hxx>
 #include <svl/style.hxx>
 #include <svx/dlgutil.hxx>
@@ -86,20 +86,19 @@ namespace {
 Svx3DWin::Svx3DWin(SfxBindings* pInBindings, SfxChildWindow *pCW, vcl::Window* pParent)
     : SfxDockingWindow (pInBindings, pCW, pParent,
         "Docking3DEffects", "svx/ui/docking3deffects.ui")
-    , aImgLightOn(SVX_RES(RID_SVXIMAGE_LIGHT_ON))
-    , aImgLightOff(SVX_RES(RID_SVXIMAGE_LIGHT_OFF))
+    , aImgLightOn(BitmapEx(SVX_RES(RID_SVXBMP_LAMP_ON)))
+    , aImgLightOff(BitmapEx(SVX_RES(RID_SVXBMP_LAMP_OFF)))
     , bUpdate(false)
-    , eViewType(VIEWTYPE_GEO)
+    , eViewType(ViewType3D::Geo)
     , pModel(nullptr)
     , pVDev(nullptr)
     , pBindings(pInBindings)
     , pControllerItem(nullptr)
     , pConvertTo3DItem(nullptr)
     , pConvertTo3DLatheItem(nullptr)
-    , mpImpl(new Svx3DWinImpl())
-    , ePoolUnit(SFX_MAPUNIT_MM)
+    , mpImpl(new Svx3DWinImpl)
+    , ePoolUnit(MapUnit::MapMM)
     , mpRemember2DAttributes(nullptr)
-    , bOnly3DChanged(false)
 {
     get(m_pBtnGeo, "geometry");
     get(m_pBtnRepresentation, "representation");
@@ -192,7 +191,7 @@ Svx3DWin::Svx3DWin(SfxBindings* pInBindings, SfxChildWindow *pCW, vcl::Window* p
 
     get(m_pCtlPreview, "preview");
     get(m_pCtlLightPreview, "lightpreview");
-    Size aSize(LogicToPixel(Size(83, 76), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(83, 76), MapUnit::MapAppFont));
     m_pCtlPreview->set_width_request(aSize.Width());
     m_pCtlLightPreview->set_width_request(aSize.Width());
     m_pCtlPreview->set_height_request(aSize.Height());
@@ -274,19 +273,20 @@ Svx3DWin::Svx3DWin(SfxBindings* pInBindings, SfxChildWindow *pCW, vcl::Window* p
 
 
     Link<ListBox&,void> aLink2 = LINK( this, Svx3DWin, SelectHdl );
+    Link<SvxColorListBox&,void> aLink4 = LINK( this, Svx3DWin, SelectColorHdl );
     m_pLbMatFavorites->SetSelectHdl( aLink2 );
-    m_pLbMatColor->SetSelectHdl( aLink2 );
-    m_pLbMatEmission->SetSelectHdl( aLink2 );
-    m_pLbMatSpecular->SetSelectHdl( aLink2 );
-    m_pLbLight1->SetSelectHdl( aLink2 );
-    m_pLbLight2->SetSelectHdl( aLink2 );
-    m_pLbLight3->SetSelectHdl( aLink2 );
-    m_pLbLight4->SetSelectHdl( aLink2 );
-    m_pLbLight5->SetSelectHdl( aLink2 );
-    m_pLbLight6->SetSelectHdl( aLink2 );
-    m_pLbLight7->SetSelectHdl( aLink2 );
-    m_pLbLight8->SetSelectHdl( aLink2 );
-    m_pLbAmbientlight->SetSelectHdl( aLink2 );
+    m_pLbMatColor->SetSelectHdl( aLink4 );
+    m_pLbMatEmission->SetSelectHdl( aLink4 );
+    m_pLbMatSpecular->SetSelectHdl( aLink4 );
+    m_pLbLight1->SetSelectHdl( aLink4 );
+    m_pLbLight2->SetSelectHdl( aLink4 );
+    m_pLbLight3->SetSelectHdl( aLink4 );
+    m_pLbLight4->SetSelectHdl( aLink4 );
+    m_pLbLight5->SetSelectHdl( aLink4 );
+    m_pLbLight6->SetSelectHdl( aLink4 );
+    m_pLbLight7->SetSelectHdl( aLink4 );
+    m_pLbLight8->SetSelectHdl( aLink4 );
+    m_pLbAmbientlight->SetSelectHdl( aLink4 );
     m_pLbShademode->SetSelectHdl( aLink2 );
 
     Link<Edit&,void> aLink3 = LINK( this, Svx3DWin, ModifyHdl );
@@ -336,7 +336,7 @@ void Svx3DWin::dispose()
 
     delete mpRemember2DAttributes;
 
-    delete mpImpl;
+    mpImpl.reset();
 
     m_pBtnGeo.clear();
     m_pBtnRepresentation.clear();
@@ -345,6 +345,82 @@ void Svx3DWin::dispose()
     m_pBtnMaterial.clear();
     m_pBtnUpdate.clear();
     m_pBtnAssign.clear();
+    m_pFLGeometrie.clear();
+    m_pFtPercentDiagonal.clear();
+    m_pMtrPercentDiagonal.clear();
+    m_pFtBackscale.clear();
+    m_pMtrBackscale.clear();
+    m_pFtEndAngle.clear();
+    m_pMtrEndAngle.clear();
+    m_pFtDepth.clear();
+    m_pMtrDepth.clear();
+    m_pFLSegments.clear();
+    m_pNumHorizontal.clear();
+    m_pNumVertical.clear();
+    m_pFLNormals.clear();
+    m_pBtnNormalsObj.clear();
+    m_pBtnNormalsFlat.clear();
+    m_pBtnNormalsSphere.clear();
+    m_pBtnNormalsInvert.clear();
+    m_pBtnTwoSidedLighting.clear();
+    m_pBtnDoubleSided.clear();
+    m_pFLRepresentation.clear();
+    m_pLbShademode.clear();
+    m_pFLShadow.clear();
+    m_pBtnShadow3d.clear();
+    m_pFtSlant.clear();
+    m_pMtrSlant.clear();
+    m_pFLCamera.clear();
+    m_pMtrDistance.clear();
+    m_pMtrFocalLength.clear();
+    m_pFLLight.clear();
+    m_pBtnLight1.clear();
+    m_pBtnLight2.clear();
+    m_pBtnLight3.clear();
+    m_pBtnLight4.clear();
+    m_pBtnLight5.clear();
+    m_pBtnLight6.clear();
+    m_pBtnLight7.clear();
+    m_pBtnLight8.clear();
+    m_pLbLight1.clear();
+    m_pLbLight2.clear();
+    m_pLbLight3.clear();
+    m_pLbLight4.clear();
+    m_pLbLight5.clear();
+    m_pLbLight6.clear();
+    m_pLbLight7.clear();
+    m_pLbLight8.clear();
+    m_pBtnLightColor.clear();
+    m_pLbAmbientlight.clear();
+    m_pBtnAmbientColor.clear();
+    m_pFLTexture.clear();
+    m_pBtnTexLuminance.clear();
+    m_pBtnTexColor.clear();
+    m_pBtnTexReplace.clear();
+    m_pBtnTexModulate.clear();
+    m_pBtnTexBlend.clear();
+    m_pBtnTexObjectX.clear();
+    m_pBtnTexParallelX.clear();
+    m_pBtnTexCircleX.clear();
+    m_pBtnTexObjectY.clear();
+    m_pBtnTexParallelY.clear();
+    m_pBtnTexCircleY.clear();
+    m_pBtnTexFilter.clear();
+    m_pFLMaterial.clear();
+    m_pLbMatFavorites.clear();
+    m_pLbMatColor.clear();
+    m_pBtnMatColor.clear();
+    m_pLbMatEmission.clear();
+    m_pBtnEmissionColor.clear();
+    m_pFLMatSpecular.clear();
+    m_pLbMatSpecular.clear();
+    m_pBtnSpecularColor.clear();
+    m_pMtrMatSpecularIntensity.clear();
+    m_pCtlPreview.clear();
+    m_pCtlLightPreview.clear();
+    m_pBtnConvertTo3D.clear();
+    m_pBtnLatheObject.clear();
+    m_pBtnPerspective.clear();
 
     SfxDockingWindow::dispose();
 }
@@ -860,13 +936,12 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
 
 // Lighting
     Color aColor;
-    basegfx::B3DVector aVector;
     // Light 1 (Color)
     eState = rAttrs.GetItemState(SDRATTR_3DSCENE_LIGHTCOLOR_1);
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DSCENE_LIGHTCOLOR_1)).GetValue();
-        ColorLB* pLb = m_pLbLight1;
+        SvxColorListBox* pLb = m_pLbLight1;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -875,7 +950,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbLight1->GetSelectEntryCount() != 0 )
+        if (!m_pLbLight1->IsNoSelection())
         {
             m_pLbLight1->SetNoSelection();
             bUpdate = true;
@@ -915,7 +990,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DSCENE_LIGHTCOLOR_2)).GetValue();
-        ColorLB* pLb = m_pLbLight2;
+        SvxColorListBox* pLb = m_pLbLight2;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -924,7 +999,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbLight2->GetSelectEntryCount() != 0 )
+        if (!m_pLbLight2->IsNoSelection())
         {
             m_pLbLight2->SetNoSelection();
             bUpdate = true;
@@ -964,7 +1039,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DSCENE_LIGHTCOLOR_3)).GetValue();
-        ColorLB* pLb = m_pLbLight3;
+        SvxColorListBox* pLb = m_pLbLight3;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -973,7 +1048,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbLight3->GetSelectEntryCount() != 0 )
+        if (!m_pLbLight3->IsNoSelection())
         {
             m_pLbLight3->SetNoSelection();
             bUpdate = true;
@@ -1013,7 +1088,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DSCENE_LIGHTCOLOR_4)).GetValue();
-        ColorLB* pLb = m_pLbLight4;
+        SvxColorListBox* pLb = m_pLbLight4;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -1022,7 +1097,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbLight4->GetSelectEntryCount() != 0 )
+        if (!m_pLbLight4->IsNoSelection())
         {
             m_pLbLight4->SetNoSelection();
             bUpdate = true;
@@ -1062,7 +1137,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DSCENE_LIGHTCOLOR_5)).GetValue();
-        ColorLB* pLb = m_pLbLight5;
+        SvxColorListBox* pLb = m_pLbLight5;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -1071,7 +1146,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbLight5->GetSelectEntryCount() != 0 )
+        if (!m_pLbLight5->IsNoSelection())
         {
             m_pLbLight5->SetNoSelection();
             bUpdate = true;
@@ -1111,7 +1186,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DSCENE_LIGHTCOLOR_6)).GetValue();
-        ColorLB* pLb = m_pLbLight6;
+        SvxColorListBox* pLb = m_pLbLight6;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -1120,7 +1195,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbLight6->GetSelectEntryCount() != 0 )
+        if (!m_pLbLight6->IsNoSelection())
         {
             m_pLbLight6->SetNoSelection();
             bUpdate = true;
@@ -1160,7 +1235,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DSCENE_LIGHTCOLOR_7)).GetValue();
-        ColorLB* pLb = m_pLbLight7;
+        SvxColorListBox* pLb = m_pLbLight7;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -1169,7 +1244,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbLight7->GetSelectEntryCount() != 0 )
+        if (!m_pLbLight7->IsNoSelection())
         {
             m_pLbLight7->SetNoSelection();
             bUpdate = true;
@@ -1209,7 +1284,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DSCENE_LIGHTCOLOR_8)).GetValue();
-        ColorLB* pLb = m_pLbLight8;
+        SvxColorListBox* pLb = m_pLbLight8;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -1218,7 +1293,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbLight8->GetSelectEntryCount() != 0 )
+        if (!m_pLbLight8->IsNoSelection())
         {
             m_pLbLight8->SetNoSelection();
             bUpdate = true;
@@ -1258,7 +1333,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DSCENE_AMBIENTCOLOR)).GetValue();
-        ColorLB* pLb = m_pLbAmbientlight;
+        SvxColorListBox* pLb = m_pLbAmbientlight;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -1267,7 +1342,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbAmbientlight->GetSelectEntryCount() != 0 )
+        if (!m_pLbAmbientlight->IsNoSelection())
         {
             m_pLbAmbientlight->SetNoSelection();
             bUpdate = true;
@@ -1418,7 +1493,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const XFillColorItem&>(rAttrs.Get(XATTR_FILLCOLOR)).GetColorValue();
-        ColorLB* pLb = m_pLbMatColor;
+        SvxColorListBox* pLb = m_pLbMatColor;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -1427,7 +1502,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbMatColor->GetSelectEntryCount() != 0 )
+        if (!m_pLbMatColor->IsNoSelection())
         {
             m_pLbMatColor->SetNoSelection();
             bUpdate = true;
@@ -1439,7 +1514,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DOBJ_MAT_EMISSION)).GetValue();
-        ColorLB* pLb = m_pLbMatEmission;
+        SvxColorListBox* pLb = m_pLbMatEmission;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -1448,7 +1523,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbMatEmission->GetSelectEntryCount() != 0 )
+        if (!m_pLbMatEmission->IsNoSelection())
         {
             m_pLbMatEmission->SetNoSelection();
             bUpdate = true;
@@ -1460,7 +1535,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         aColor = static_cast<const SvxColorItem&>(rAttrs.Get(SDRATTR_3DOBJ_MAT_SPECULAR)).GetValue();
-        ColorLB* pLb = m_pLbMatSpecular;
+        SvxColorListBox* pLb = m_pLbMatSpecular;
         if( aColor != pLb->GetSelectEntryColor() )
         {
             LBSelectColor( pLb, aColor );
@@ -1469,7 +1544,7 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     }
     else
     {
-        if( m_pLbMatSpecular->GetSelectEntryCount() != 0 )
+        if (!m_pLbMatSpecular->IsNoSelection())
         {
             m_pLbMatSpecular->SetNoSelection();
             bUpdate = true;
@@ -1503,14 +1578,14 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
     if( eState != SfxItemState::DONTCARE )
     {
         ProjectionType ePT = (ProjectionType)static_cast<const Svx3DPerspectiveItem&>(rAttrs.Get(SDRATTR_3DSCENE_PERSPECTIVE)).GetValue();
-        if( ( !m_pBtnPerspective->IsChecked() && ePT == PR_PERSPECTIVE ) ||
-            ( m_pBtnPerspective->IsChecked() && ePT == PR_PARALLEL ) )
+        if( ( !m_pBtnPerspective->IsChecked() && ePT == ProjectionType::Perspective ) ||
+            ( m_pBtnPerspective->IsChecked() && ePT == ProjectionType::Parallel ) )
         {
-            m_pBtnPerspective->Check( ePT == PR_PERSPECTIVE );
+            m_pBtnPerspective->Check( ePT == ProjectionType::Perspective );
             bUpdate = true;
         }
         if( m_pBtnPerspective->GetState() == TRISTATE_INDET )
-            m_pBtnPerspective->Check( ePT == PR_PERSPECTIVE );
+            m_pBtnPerspective->Check( ePT == ProjectionType::Perspective );
     }
     else
     {
@@ -1521,55 +1596,52 @@ void Svx3DWin::Update( SfxItemSet& rAttrs )
         }
     }
 
-    if( !bUpdate && !bOnly3DChanged )
+    if( !bUpdate )
     {
         // however the 2D attributes may be different. Compare these and decide
 
         bUpdate = true;
     }
 
-    if( bUpdate || bOnly3DChanged )
+    // Update preview
+    SfxItemSet aSet(rAttrs);
+
+    // set LineStyle hard to drawing::LineStyle_NONE when it's not set so that
+    // the default (drawing::LineStyle_SOLID) is not used for 3d preview
+    if(SfxItemState::SET != aSet.GetItemState(XATTR_LINESTYLE, false))
+        aSet.Put(XLineStyleItem(drawing::LineStyle_NONE));
+
+    // set FillColor hard to WHITE when it's SfxItemState::DONTCARE so that
+    // the default (Blue7) is not used for 3d preview
+    if(SfxItemState::DONTCARE == aSet.GetItemState(XATTR_FILLCOLOR, false))
+        aSet.Put(XFillColorItem(OUString(), Color(COL_WHITE)));
+
+    m_pCtlPreview->Set3DAttributes(aSet);
+    m_pCtlLightPreview->GetSvx3DLightControl().Set3DAttributes(aSet);
+
+    // try to select light corresponding to active button
+    sal_uInt32 nNumber(0xffffffff);
+
+    if(m_pBtnLight1->IsChecked())
+        nNumber = 0;
+    else if(m_pBtnLight2->IsChecked())
+        nNumber = 1;
+    else if(m_pBtnLight3->IsChecked())
+        nNumber = 2;
+    else if(m_pBtnLight4->IsChecked())
+        nNumber = 3;
+    else if(m_pBtnLight5->IsChecked())
+        nNumber = 4;
+    else if(m_pBtnLight6->IsChecked())
+        nNumber = 5;
+    else if(m_pBtnLight7->IsChecked())
+        nNumber = 6;
+    else if(m_pBtnLight8->IsChecked())
+        nNumber = 7;
+
+    if(nNumber != 0xffffffff)
     {
-        // Update preview
-        SfxItemSet aSet(rAttrs);
-
-        // set LineStyle hard to drawing::LineStyle_NONE when it's not set so that
-        // the default (drawing::LineStyle_SOLID) is not used for 3d preview
-        if(SfxItemState::SET != aSet.GetItemState(XATTR_LINESTYLE, false))
-            aSet.Put(XLineStyleItem(drawing::LineStyle_NONE));
-
-        // set FillColor hard to WHITE when it's SfxItemState::DONTCARE so that
-        // the default (Blue7) is not used for 3d preview
-        if(SfxItemState::DONTCARE == aSet.GetItemState(XATTR_FILLCOLOR, false))
-            aSet.Put(XFillColorItem(OUString(), Color(COL_WHITE)));
-
-        m_pCtlPreview->Set3DAttributes(aSet);
-        m_pCtlLightPreview->GetSvx3DLightControl().Set3DAttributes(aSet);
-
-        // try to select light corresponding to active button
-        sal_uInt32 nNumber(0xffffffff);
-
-        if(m_pBtnLight1->IsChecked())
-            nNumber = 0;
-        else if(m_pBtnLight2->IsChecked())
-            nNumber = 1;
-        else if(m_pBtnLight3->IsChecked())
-            nNumber = 2;
-        else if(m_pBtnLight4->IsChecked())
-            nNumber = 3;
-        else if(m_pBtnLight5->IsChecked())
-            nNumber = 4;
-        else if(m_pBtnLight6->IsChecked())
-            nNumber = 5;
-        else if(m_pBtnLight7->IsChecked())
-            nNumber = 6;
-        else if(m_pBtnLight8->IsChecked())
-            nNumber = 7;
-
-        if(nNumber != 0xffffffff)
-        {
-            m_pCtlLightPreview->GetSvx3DLightControl().SelectLight(nNumber);
-        }
+        m_pCtlLightPreview->GetSvx3DLightControl().SelectLight(nNumber);
     }
 
     // handle state of converts possible
@@ -1602,11 +1674,11 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
     // Perspective
     if( m_pBtnPerspective->GetState() != TRISTATE_INDET )
     {
-        sal_uInt16 nValue;
+        ProjectionType nValue;
         if( m_pBtnPerspective->IsChecked() )
-            nValue = PR_PERSPECTIVE;
+            nValue = ProjectionType::Perspective;
         else
-            nValue = PR_PARALLEL;
+            nValue = ProjectionType::Parallel;
         rAttrs.Put(Svx3DPerspectiveItem(nValue));
     }
     else
@@ -1773,14 +1845,12 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
     else
         rAttrs.InvalidateItem(SDRATTR_3DSCENE_FOCAL_LENGTH);
 
-// Lighting
-    Image aImg;
-    basegfx::B3DVector aVector;
+    // Lighting
     Color aColor;
     const SfxItemSet aLightItemSet(m_pCtlLightPreview->GetSvx3DLightControl().Get3DAttributes());
 
     // Light 1 color
-    if( m_pLbLight1->GetSelectEntryCount() )
+    if (!m_pLbLight1->IsNoSelection())
     {
         aColor = m_pLbLight1->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DLightcolor1Item(aColor));
@@ -1805,7 +1875,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
 
 
     // Light 2 color
-    if( m_pLbLight2->GetSelectEntryCount() )
+    if (!m_pLbLight2->IsNoSelection())
     {
         aColor = m_pLbLight2->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DLightcolor2Item(aColor));
@@ -1829,7 +1899,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
         rAttrs.InvalidateItem(SDRATTR_3DSCENE_LIGHTON_2);
 
     // Light 3 color
-    if( m_pLbLight3->GetSelectEntryCount() )
+    if (!m_pLbLight3->IsNoSelection())
     {
         aColor = m_pLbLight3->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DLightcolor3Item(aColor));
@@ -1853,7 +1923,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
         rAttrs.InvalidateItem(SDRATTR_3DSCENE_LIGHTON_3);
 
     // Light 4 color
-    if( m_pLbLight4->GetSelectEntryCount() )
+    if (!m_pLbLight4->IsNoSelection())
     {
         aColor = m_pLbLight4->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DLightcolor4Item(aColor));
@@ -1877,7 +1947,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
         rAttrs.InvalidateItem(SDRATTR_3DSCENE_LIGHTON_4);
 
     // Light 5 color
-    if( m_pLbLight5->GetSelectEntryCount() )
+    if (!m_pLbLight5->IsNoSelection())
     {
         aColor = m_pLbLight5->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DLightcolor5Item(aColor));
@@ -1901,7 +1971,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
         rAttrs.InvalidateItem(SDRATTR_3DSCENE_LIGHTON_5);
 
     // Light 6 color
-    if( m_pLbLight6->GetSelectEntryCount() )
+    if (!m_pLbLight6->IsNoSelection())
     {
         aColor = m_pLbLight6->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DLightcolor6Item(aColor));
@@ -1925,7 +1995,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
         rAttrs.InvalidateItem(SDRATTR_3DSCENE_LIGHTON_6);
 
     // Light 7 color
-    if( m_pLbLight7->GetSelectEntryCount() )
+    if (!m_pLbLight7->IsNoSelection())
     {
         aColor = m_pLbLight7->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DLightcolor7Item(aColor));
@@ -1949,7 +2019,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
         rAttrs.InvalidateItem(SDRATTR_3DSCENE_LIGHTON_7);
 
     // Light 8 color
-    if( m_pLbLight8->GetSelectEntryCount() )
+    if (!m_pLbLight8->IsNoSelection())
     {
         aColor = m_pLbLight8->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DLightcolor8Item(aColor));
@@ -1973,7 +2043,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
         rAttrs.InvalidateItem(SDRATTR_3DSCENE_LIGHTON_8);
 
     // Ambient light
-    if( m_pLbAmbientlight->GetSelectEntryCount() )
+    if (!m_pLbAmbientlight->IsNoSelection())
     {
         aColor = m_pLbAmbientlight->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DAmbientcolorItem(aColor));
@@ -2049,7 +2119,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
 
 // Material
     // Object color
-    if( m_pLbMatColor->GetSelectEntryCount() )
+    if (!m_pLbMatColor->IsNoSelection())
     {
         aColor = m_pLbMatColor->GetSelectEntryColor();
         rAttrs.Put( XFillColorItem( "", aColor) );
@@ -2060,7 +2130,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
     }
 
     // luminous color
-    if( m_pLbMatEmission->GetSelectEntryCount() )
+    if (!m_pLbMatEmission->IsNoSelection())
     {
         aColor = m_pLbMatEmission->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DMaterialEmissionItem(aColor));
@@ -2069,7 +2139,7 @@ void Svx3DWin::GetAttr( SfxItemSet& rAttrs )
         rAttrs.InvalidateItem(SDRATTR_3DOBJ_MAT_EMISSION);
 
     // Specular
-    if( m_pLbMatSpecular->GetSelectEntryCount() )
+    if (!m_pLbMatSpecular->IsNoSelection())
     {
         aColor = m_pLbMatSpecular->GetSelectEntryColor();
         rAttrs.Put(makeSvx3DMaterialSpecularItem(aColor));
@@ -2138,7 +2208,7 @@ void Svx3DWin::Resize()
     SfxDockingWindow::Resize();
 }
 
-IMPL_LINK_NOARG_TYPED(Svx3DWin, ClickUpdateHdl, Button*, void)
+IMPL_LINK_NOARG(Svx3DWin, ClickUpdateHdl, Button*, void)
 {
     bUpdate = !m_pBtnUpdate->IsChecked();
     m_pBtnUpdate->Check( bUpdate );
@@ -2160,7 +2230,7 @@ IMPL_LINK_NOARG_TYPED(Svx3DWin, ClickUpdateHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(Svx3DWin, ClickAssignHdl, Button*, void)
+IMPL_LINK_NOARG(Svx3DWin, ClickAssignHdl, Button*, void)
 {
     SfxDispatcher* pDispatcher = LocalGetDispatcher(pBindings);
     if (pDispatcher != nullptr)
@@ -2172,7 +2242,7 @@ IMPL_LINK_NOARG_TYPED(Svx3DWin, ClickAssignHdl, Button*, void)
 }
 
 
-IMPL_LINK_TYPED( Svx3DWin, ClickViewTypeHdl, Button*, pBtn, void )
+IMPL_LINK( Svx3DWin, ClickViewTypeHdl, Button*, pBtn, void )
 {
 
     if( pBtn )
@@ -2187,18 +2257,18 @@ IMPL_LINK_TYPED( Svx3DWin, ClickViewTypeHdl, Button*, pBtn, void )
         m_pBtnMaterial->Check(m_pBtnMaterial == pBtn);
 
         if( m_pBtnGeo->IsChecked() )
-            eViewType = VIEWTYPE_GEO;
+            eViewType = ViewType3D::Geo;
         if( m_pBtnRepresentation->IsChecked() )
-            eViewType = VIEWTYPE_REPRESENTATION;
+            eViewType = ViewType3D::Representation;
         if( m_pBtnLight->IsChecked() )
-            eViewType = VIEWTYPE_LIGHT;
+            eViewType = ViewType3D::Light;
         if( m_pBtnTexture->IsChecked() )
-            eViewType = VIEWTYPE_TEXTURE;
+            eViewType = ViewType3D::Texture;
         if( m_pBtnMaterial->IsChecked() )
-            eViewType = VIEWTYPE_MATERIAL;
+            eViewType = ViewType3D::Material;
 
         // Geometry
-        if( eViewType == VIEWTYPE_GEO )
+        if( eViewType == ViewType3D::Geo )
         {
             m_pFLSegments->Show();
             m_pFLGeometrie->Show();
@@ -2212,7 +2282,7 @@ IMPL_LINK_TYPED( Svx3DWin, ClickViewTypeHdl, Button*, pBtn, void )
         }
 
         // Representation
-        if( eViewType == VIEWTYPE_REPRESENTATION )
+        if( eViewType == ViewType3D::Representation )
         {
             m_pFLShadow->Show();
             m_pFLCamera->Show();
@@ -2226,11 +2296,11 @@ IMPL_LINK_TYPED( Svx3DWin, ClickViewTypeHdl, Button*, pBtn, void )
         }
 
         // Lighting
-        if( eViewType == VIEWTYPE_LIGHT )
+        if( eViewType == ViewType3D::Light )
         {
             m_pFLLight->Show();
 
-            ColorLB* pLb = GetLbByButton();
+            SvxColorListBox* pLb = GetLbByButton();
             if( pLb )
                 pLb->Show();
 
@@ -2249,13 +2319,13 @@ IMPL_LINK_TYPED( Svx3DWin, ClickViewTypeHdl, Button*, pBtn, void )
         }
 
         // Textures
-        if (eViewType == VIEWTYPE_TEXTURE)
+        if (eViewType == ViewType3D::Texture)
             m_pFLTexture->Show();
         else
             m_pFLTexture->Hide();
 
         // Material
-        if( eViewType == VIEWTYPE_MATERIAL )
+        if( eViewType == ViewType3D::Material )
         {
             m_pFLMatSpecular->Show();
             m_pFLMaterial->Show();
@@ -2271,16 +2341,16 @@ IMPL_LINK_TYPED( Svx3DWin, ClickViewTypeHdl, Button*, pBtn, void )
     }
     else
     {
-        m_pBtnGeo->Check( eViewType == VIEWTYPE_GEO );
-        m_pBtnRepresentation->Check( eViewType == VIEWTYPE_REPRESENTATION );
-        m_pBtnLight->Check( eViewType == VIEWTYPE_LIGHT );
-        m_pBtnTexture->Check( eViewType == VIEWTYPE_TEXTURE );
-        m_pBtnMaterial->Check( eViewType == VIEWTYPE_MATERIAL );
+        m_pBtnGeo->Check( eViewType == ViewType3D::Geo );
+        m_pBtnRepresentation->Check( eViewType == ViewType3D::Representation );
+        m_pBtnLight->Check( eViewType == ViewType3D::Light );
+        m_pBtnTexture->Check( eViewType == ViewType3D::Texture );
+        m_pBtnMaterial->Check( eViewType == ViewType3D::Material );
      }
 }
 
 
-IMPL_LINK_TYPED( Svx3DWin, ClickHdl, Button *, pButton, void )
+IMPL_LINK( Svx3DWin, ClickHdl, Button *, pButton, void )
 {
     PushButton* pBtn = static_cast<PushButton*>(pButton);
     if( pBtn )
@@ -2316,7 +2386,7 @@ IMPL_LINK_TYPED( Svx3DWin, ClickHdl, Button *, pButton, void )
                  pBtn == m_pBtnLight8 )
         {
             // Lighting
-            ColorLB* pLb = GetLbByButton( pBtn );
+            SvxColorListBox* pLb = GetLbByButton( pBtn );
             pLb->Show();
 
             if( pBtn->IsChecked() )
@@ -2438,10 +2508,10 @@ IMPL_LINK_TYPED( Svx3DWin, ClickHdl, Button *, pButton, void )
 }
 
 
-IMPL_LINK_TYPED( Svx3DWin, ClickColorHdl, Button *, pBtn, void)
+IMPL_LINK( Svx3DWin, ClickColorHdl, Button *, pBtn, void)
 {
     SvColorDialog aColorDlg( this );
-    ColorLB* pLb;
+    SvxColorListBox* pLb;
 
     if( pBtn == m_pBtnLightColor )
         pLb = GetLbByButton();
@@ -2460,13 +2530,12 @@ IMPL_LINK_TYPED( Svx3DWin, ClickColorHdl, Button *, pBtn, void)
     if( aColorDlg.Execute() == RET_OK )
     {
         aColor = aColorDlg.GetColor();
-        if( LBSelectColor( pLb, aColor ) )
-            SelectHdl( *pLb );
+        LBSelectColor(pLb, aColor);
+        SelectColorHdl(*pLb);
     }
 }
 
-
-IMPL_LINK_TYPED( Svx3DWin, SelectHdl, ListBox&, rListBox, void )
+IMPL_LINK( Svx3DWin, SelectHdl, ListBox&, rListBox, void )
 {
     bool bUpdatePreview = false;
 
@@ -2532,9 +2601,20 @@ IMPL_LINK_TYPED( Svx3DWin, SelectHdl, ListBox&, rListBox, void )
 
         bUpdatePreview = true;
     }
-    else if( &rListBox == m_pLbMatColor ||
-             &rListBox == m_pLbMatEmission ||
-             &rListBox == m_pLbMatSpecular )
+    else if (&rListBox == m_pLbShademode)
+        bUpdatePreview = true;
+
+    if( bUpdatePreview )
+        UpdatePreview();
+}
+
+IMPL_LINK( Svx3DWin, SelectColorHdl, SvxColorListBox&, rListBox, void )
+{
+    bool bUpdatePreview = false;
+
+    if( &rListBox == m_pLbMatColor ||
+        &rListBox == m_pLbMatEmission ||
+        &rListBox == m_pLbMatSpecular )
     {
         m_pLbMatFavorites->SelectEntryPos( 0 );
         bUpdatePreview = true;
@@ -2555,15 +2635,13 @@ IMPL_LINK_TYPED( Svx3DWin, SelectHdl, ListBox&, rListBox, void )
     {
         bUpdatePreview = true;
     }
-    else if (&rListBox == m_pLbShademode)
-        bUpdatePreview = true;
 
     if( bUpdatePreview )
         UpdatePreview();
 }
 
 
-IMPL_LINK_TYPED( Svx3DWin, ModifyHdl, Edit&, rField, void )
+IMPL_LINK( Svx3DWin, ModifyHdl, Edit&, rField, void )
 {
     bool bUpdatePreview = false;
 
@@ -2593,7 +2671,7 @@ IMPL_LINK_TYPED( Svx3DWin, ModifyHdl, Edit&, rField, void )
 void Svx3DWin::ClickLight(PushButton& rBtn)
 {
     sal_uInt16 nLightSource = GetLightSource( &rBtn );
-    ColorLB* pLb = GetLbByButton( &rBtn );
+    SvxColorListBox* pLb = GetLbByButton( &rBtn );
     Color aColor( pLb->GetSelectEntryColor() );
     SfxItemSet aLightItemSet(m_pCtlLightPreview->GetSvx3DLightControl().Get3DAttributes());
     const bool bOnOff(GetUILightState( static_cast<const ImageButton&>(rBtn) ));
@@ -2617,7 +2695,7 @@ void Svx3DWin::ClickLight(PushButton& rBtn)
 }
 
 
-IMPL_LINK_NOARG_TYPED(Svx3DWin, ChangeSelectionCallbackHdl, SvxLightCtl3D*, void)
+IMPL_LINK_NOARG(Svx3DWin, ChangeSelectionCallbackHdl, SvxLightCtl3D*, void)
 {
     const sal_uInt32 nLight(m_pCtlLightPreview->GetSvx3DLightControl().GetSelectedLight());
     PushButton* pBtn = nullptr;
@@ -2684,54 +2762,33 @@ IMPL_LINK_NOARG_TYPED(Svx3DWin, ChangeSelectionCallbackHdl, SvxLightCtl3D*, void
     }
 }
 
-
-// Method to ensure that the LB is also associated with a color
-// returns true if color was added
-
-bool Svx3DWin::LBSelectColor( ColorLB* pLb, const Color& rColor )
+namespace
 {
-    bool bRet = false;
-
-    pLb->SetNoSelection();
-    pLb->SelectEntry( rColor );
-    if( pLb->GetSelectEntryCount() == 0 )
+    OUString lcl_makeColorName(const Color& rColor)
     {
-        OUString aStr(SVX_RESSTR(RID_SVXFLOAT3D_FIX_R));
-
-        aStr += OUString::number((sal_Int32)rColor.GetRed());
-        aStr += " ";
-        aStr += SVX_RESSTR(RID_SVXFLOAT3D_FIX_G);
-        aStr += OUString::number((sal_Int32)rColor.GetGreen());
-        aStr += " ";
-        aStr += SVX_RESSTR(RID_SVXFLOAT3D_FIX_B);
-        aStr += OUString::number((sal_Int32)rColor.GetBlue());
-
-        const sal_Int32 nPos = pLb->InsertEntry( rColor, aStr );
-        pLb->SelectEntryPos( nPos );
-        bRet = true;
+        OUString aStr = SVX_RESSTR(RID_SVXFLOAT3D_FIX_R) +
+                        OUString::number(rColor.GetRed()) +
+                        " " +
+                        SVX_RESSTR(RID_SVXFLOAT3D_FIX_G) +
+                        OUString::number(rColor.GetGreen()) +
+                        " " +
+                        SVX_RESSTR(RID_SVXFLOAT3D_FIX_B) +
+                        OUString::number(rColor.GetBlue());
+        return aStr;
     }
-    return bRet;
 }
 
+// Method to ensure that the LB is also associated with a color
+void Svx3DWin::LBSelectColor( SvxColorListBox* pLb, const Color& rColor )
+{
+    pLb->SetNoSelection();
+    pLb->SelectEntry(std::make_pair(rColor, lcl_makeColorName(rColor)));
+}
 
 void Svx3DWin::UpdatePreview()
 {
     if( pModel == nullptr )
         pModel = new FmFormModel();
-
-    if(bOnly3DChanged)
-    {
-        // Execute slot
-        SfxDispatcher* pDispatcher = LocalGetDispatcher(pBindings);
-        if (pDispatcher != nullptr)
-        {
-            SfxBoolItem aItem( SID_3D_STATE, true );
-            pDispatcher->ExecuteList(SID_3D_STATE,
-                SfxCallMode::SYNCHRON | SfxCallMode::RECORD, { &aItem });
-        }
-        // Reset Flag
-        bOnly3DChanged = false;
-    }
 
     // Get Itemset
     SfxItemSet aSet( pModel->GetItemPool(), SDRATTR_START, SDRATTR_END);
@@ -2750,22 +2807,8 @@ void Svx3DWin::DocumentReload()
     mpRemember2DAttributes = nullptr;
 }
 
-
-void Svx3DWin::InitColorLB( const SdrModel* pDoc )
+void Svx3DWin::InitColorLB()
 {
-    m_pLbLight1->Fill( pDoc->GetColorList() );
-    m_pLbLight2->CopyEntries( *m_pLbLight1 );
-    m_pLbLight3->CopyEntries( *m_pLbLight1 );
-    m_pLbLight4->CopyEntries( *m_pLbLight1 );
-    m_pLbLight5->CopyEntries( *m_pLbLight1 );
-    m_pLbLight6->CopyEntries( *m_pLbLight1 );
-    m_pLbLight7->CopyEntries( *m_pLbLight1 );
-    m_pLbLight8->CopyEntries( *m_pLbLight1 );
-    m_pLbAmbientlight->CopyEntries( *m_pLbLight1 );
-    m_pLbMatColor->CopyEntries( *m_pLbLight1 );
-    m_pLbMatEmission->CopyEntries( *m_pLbLight1 );
-    m_pLbMatSpecular->CopyEntries( *m_pLbLight1 );
-
     // First...
     Color aColWhite( COL_WHITE );
     Color aColBlack( COL_BLACK );
@@ -2830,9 +2873,9 @@ sal_uInt16 Svx3DWin::GetLightSource( const PushButton* pBtn )
 };
 
 
-ColorLB* Svx3DWin::GetLbByButton( const PushButton* pBtn )
+SvxColorListBox* Svx3DWin::GetLbByButton( const PushButton* pBtn )
 {
-    ColorLB* pLb = nullptr;
+    SvxColorListBox* pLb = nullptr;
 
     if( pBtn == nullptr )
     {

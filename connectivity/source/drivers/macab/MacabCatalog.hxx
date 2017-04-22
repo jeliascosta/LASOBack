@@ -31,12 +31,11 @@ namespace connectivity
         class MacabCatalog : public connectivity::sdbcx::OCatalog
         {
             MacabConnection* m_pConnection;     // used to get the metadata
-            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData > m_xMetaData; // just to make things easier
 
         public:
             explicit MacabCatalog(MacabConnection* _pCon);
 
-            inline MacabConnection* getConnection() const { return m_pConnection; }
+            MacabConnection* getConnection() const { return m_pConnection; }
 
             static const OUString& getDot();
 
@@ -47,8 +46,8 @@ namespace connectivity
             virtual void refreshUsers() override;
 
             // XTablesSupplier
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess > SAL_CALL getTables(
-                    ) throw(::com::sun::star::uno::RuntimeException) override;
+            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getTables(
+                    ) override;
         };
     }
 }

@@ -27,10 +27,11 @@
 #include "uiitems.hxx"
 #include "scresid.hxx"
 #include "docsh.hxx"
-#include "sc.hrc"
+#include "scres.hrc"
 #include "globstr.hrc"
 #include <appoptio.hxx>
 #include <scmod.hxx>
+#include <svx/colorbox.hxx>
 #include <svx/dlgutil.hxx>
 #include <svx/drawitem.hxx>
 #include <svx/xtable.hxx>
@@ -151,9 +152,9 @@ bool    ScTpContentOptions::FillItemSet( SfxItemSet* rCoreSet )
         pBreakCB       ->IsValueChangedFromSaved() ||
         pGuideLineCB   ->IsValueChangedFromSaved())
     {
-        pLocalOptions->SetGridColor( pColorLB->GetSelectEntryColor(),
-                                     pColorLB->GetSelectEntry() );
-        rCoreSet->Put(ScTpViewItem(SID_SCVIEWOPTIONS, *pLocalOptions));
+        NamedColor aNamedColor = pColorLB->GetSelectEntry();
+        pLocalOptions->SetGridColor(aNamedColor.first, aNamedColor.second);
+        rCoreSet->Put(ScTpViewItem(*pLocalOptions));
         bRet = true;
     }
     if(pRangeFindCB->IsValueChangedFromSaved())
@@ -235,14 +236,14 @@ void ScTpContentOptions::ActivatePage( const SfxItemSet& rSet)
         *pLocalOptions = static_cast<const ScTpViewItem*>(pItem)->GetViewOptions();
 }
 
-SfxTabPage::sfxpg ScTpContentOptions::DeactivatePage( SfxItemSet* pSetP )
+DeactivateRC ScTpContentOptions::DeactivatePage( SfxItemSet* pSetP )
 {
     if(pSetP)
         FillItemSet(pSetP);
-    return SfxTabPage::LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
-IMPL_LINK_TYPED( ScTpContentOptions, SelLbObjHdl, ListBox&, rLb, void )
+IMPL_LINK( ScTpContentOptions, SelLbObjHdl, ListBox&, rLb, void )
 {
     const sal_Int32 nSelPos = rLb.GetSelectEntryPos();
     ScVObjMode  eMode   = ScVObjMode(nSelPos);
@@ -256,7 +257,7 @@ IMPL_LINK_TYPED( ScTpContentOptions, SelLbObjHdl, ListBox&, rLb, void )
     pLocalOptions->SetObjMode( eType, eMode );
 }
 
-IMPL_LINK_TYPED( ScTpContentOptions, CBHdl, Button*, pBtn, void )
+IMPL_LINK( ScTpContentOptions, CBHdl, Button*, pBtn, void )
 {
     ScViewOption eOption = VOPT_FORMULAS;
     bool         bChecked = static_cast<CheckBox*>(pBtn)->IsChecked();
@@ -302,61 +303,17 @@ void ScTpContentOptions::InitGridOpt()
 
     pGridLB->SelectEntryPos (nSelPos);
 
-    if ( pColorLB->GetEntryCount() == 0 )
-    {
-        SfxObjectShell* pDocSh = SfxObjectShell::Current();
-        // there might be another DocShell here
-        pDocSh = dynamic_cast<ScDocShell*>( pDocSh );
-
-        XColorListRef pColorList;
-        if ( pDocSh  )
-        {
-            const SfxPoolItem* pItem = pDocSh->GetItem( SID_COLOR_TABLE );
-            if ( pItem )
-                pColorList = static_cast<const SvxColorListItem*>(pItem)->GetColorList();
-        }
-        else
-            pColorList = XColorList::GetStdColorList();
-
-        if ( !pColorList.is() )
-            return;
-
-        pColorLB->SetUpdateMode( false );
-
-        // items from ColorTable
-
-        long nCount = pColorList->Count();
-        for ( long n=0; n<nCount; n++ )
-        {
-            XColorEntry* pEntry = pColorList->GetColor(n);
-            pColorLB->InsertEntry( pEntry->GetColor(), pEntry->GetName() );
-        }
-
-        // default GridColor
-
-        Color aStdCol( SC_STD_GRIDCOLOR );          // same default as in ScViewOptions
-        if ( LISTBOX_ENTRY_NOTFOUND ==
-                pColorLB->GetEntryPos( aStdCol ) )
-            pColorLB->InsertEntry( aStdCol, ScGlobal::GetRscString( STR_GRIDCOLOR ) );
-
-        pColorLB->SetUpdateMode( true );
-
-        Invalidate();
-    }
-
-    //  also select grid color entry on subsequent calls
-
+    //  select grid color entry
     OUString  aName;
     Color     aCol    = pLocalOptions->GetGridColor( &aName );
-    nSelPos = pColorLB->GetEntryPos( aCol );
 
-    if ( LISTBOX_ENTRY_NOTFOUND != nSelPos )
-        pColorLB->SelectEntryPos( nSelPos );
-    else
-        pColorLB->SelectEntryPos( pColorLB->InsertEntry( aCol, aName ) );
+    if (aName.trim().isEmpty() && aCol == Color(SC_STD_GRIDCOLOR))
+        aName = ScGlobal::GetRscString(STR_GRIDCOLOR);
+
+    pColorLB->SelectEntry(std::make_pair(aCol, aName));
 }
 
-IMPL_LINK_TYPED( ScTpContentOptions, GridHdl, ListBox&, rLb, void )
+IMPL_LINK( ScTpContentOptions, GridHdl, ListBox&, rLb, void )
 {
     sal_Int32   nSelPos = rLb.GetSelectEntryPos();
     bool    bGrid = ( nSelPos <= 1 );
@@ -412,7 +369,7 @@ ScTpLayoutOptions::ScTpLayoutOptions(   vcl::Window* pParent,
             case FUNIT_PICA:
             case FUNIT_INCH:
             {
-                // nur diese Metriken benutzen
+                // only use these metrics
                 sal_Int32 nPos = m_pUnitLB->InsertEntry( sMetric );
                 m_pUnitLB->SetEntryData( nPos, reinterpret_cast<void*>((sal_IntPtr)eFUnit) );
             }
@@ -459,7 +416,7 @@ VclPtr<SfxTabPage> ScTpLayoutOptions::Create( vcl::Window*          pParent,
     ScDocShell* pDocSh = dynamic_cast< ScDocShell *>( SfxObjectShell::Current() );
 
     if(pDocSh!=nullptr)
-        pNew->SetDocument(&pDocSh->GetDocument());
+        pNew->pDoc = &pDocSh->GetDocument();
     return pNew;
 }
 
@@ -470,8 +427,7 @@ bool    ScTpLayoutOptions::FillItemSet( SfxItemSet* rCoreSet )
     if ( m_pUnitLB->IsValueChangedFromSaved() )
     {
         sal_uInt16 nFieldUnit = (sal_uInt16)reinterpret_cast<sal_IntPtr>(m_pUnitLB->GetEntryData( nMPos ));
-        rCoreSet->Put( SfxUInt16Item( SID_ATTR_METRIC,
-                                     (sal_uInt16)nFieldUnit ) );
+        rCoreSet->Put( SfxUInt16Item( SID_ATTR_METRIC, nFieldUnit ) );
         bRet = true;
     }
 
@@ -671,14 +627,14 @@ void    ScTpLayoutOptions::ActivatePage( const SfxItemSet& /* rCoreSet */ )
 {
 }
 
-SfxTabPage::sfxpg ScTpLayoutOptions::DeactivatePage( SfxItemSet* pSetP )
+DeactivateRC ScTpLayoutOptions::DeactivatePage( SfxItemSet* pSetP )
 {
     if(pSetP)
         FillItemSet(pSetP);
-    return SfxTabPage::LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
-IMPL_LINK_NOARG_TYPED(ScTpLayoutOptions, MetricHdl, ListBox&, void)
+IMPL_LINK_NOARG(ScTpLayoutOptions, MetricHdl, ListBox&, void)
 {
     const sal_Int32 nMPos = m_pUnitLB->GetSelectEntryPos();
     if(nMPos != LISTBOX_ENTRY_NOTFOUND)
@@ -691,7 +647,7 @@ IMPL_LINK_NOARG_TYPED(ScTpLayoutOptions, MetricHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_TYPED( ScTpLayoutOptions, AlignHdl, Button*, pBox, void )
+IMPL_LINK( ScTpLayoutOptions, AlignHdl, Button*, pBox, void )
 {
     m_pAlignLB->Enable(static_cast<CheckBox*>(pBox)->IsChecked());
 }

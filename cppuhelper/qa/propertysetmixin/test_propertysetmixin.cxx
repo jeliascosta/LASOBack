@@ -46,7 +46,7 @@
 #include <com/sun/star/uno/Type.hxx>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <cppuhelper/bootstrap.hxx>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 #include "cppunit/TestAssert.h"
 #include "cppunit/TestFixture.h"
 #include "cppunit/extensions/HelperMacros.h"
@@ -82,7 +82,7 @@ std::ostream & operator <<(std::ostream & out, css::uno::Any const & value) {
 }
 
 class BoundListener:
-    public cppu::WeakImplHelper1< css::beans::XPropertyChangeListener >
+    public cppu::WeakImplHelper< css::beans::XPropertyChangeListener >
 {
 public:
     BoundListener(): m_count(0) {}
@@ -116,7 +116,7 @@ private:
 };
 
 class VetoListener:
-    public cppu::WeakImplHelper1< css::beans::XVetoableChangeListener >
+    public cppu::WeakImplHelper< css::beans::XVetoableChangeListener >
 {
 public:
     VetoListener(): m_count(0) {}
@@ -426,14 +426,14 @@ void Test::testFull(
         !info->hasPropertyByName(
             rtl::OUString("first")));
     CPPUNIT_ASSERT_EQUAL(
-        css::uno::makeAny(static_cast< sal_Int32 >(0)),
+        css::uno::Any(static_cast< sal_Int32 >(0)),
         fullp->getPropertyValue(
             rtl::OUString("First")));
     fullp->setPropertyValue(
         rtl::OUString("First"),
-        css::uno::makeAny(static_cast< sal_Int32 >(-100)));
+        css::uno::Any(static_cast< sal_Int32 >(-100)));
     CPPUNIT_ASSERT_EQUAL(
-        css::uno::makeAny(static_cast< sal_Int32 >(-100)),
+        css::uno::Any(static_cast< sal_Int32 >(-100)),
         fullp->getPropertyValue(
             rtl::OUString("First")));
     css::uno::Any voidAny;
@@ -443,9 +443,9 @@ void Test::testFull(
             rtl::OUString("Second")));
     fullp->setPropertyValue(
         rtl::OUString("Second"),
-        css::uno::makeAny(static_cast< sal_Int32 >(100)));
+        css::uno::Any(static_cast< sal_Int32 >(100)));
     CPPUNIT_ASSERT_EQUAL(
-        css::uno::makeAny(static_cast< sal_Int32 >(100)),
+        css::uno::Any(static_cast< sal_Int32 >(100)),
         fullp->getPropertyValue(
             rtl::OUString("Second")));
     CPPUNIT_ASSERT(full->getSecond().Value.Value.IsPresent);
@@ -466,7 +466,7 @@ void Test::testFull(
     try {
         fullp->setPropertyValue(
             rtl::OUString("Third"),
-            css::uno::makeAny(static_cast< sal_Int32 >(100)));
+            css::uno::Any(static_cast< sal_Int32 >(100)));
         CPPUNIT_FAIL("exception expected");
     } catch (css::beans::UnknownPropertyException &) {}
     try {
@@ -477,7 +477,7 @@ void Test::testFull(
     try {
         fullp->setPropertyValue(
             rtl::OUString("Fourth"),
-            css::uno::makeAny(static_cast< sal_Int32 >(100)));
+            css::uno::Any(static_cast< sal_Int32 >(100)));
         CPPUNIT_FAIL("exception expected");
     } catch (css::beans::UnknownPropertyException &) {}
     try {
@@ -500,12 +500,12 @@ void Test::testFull(
         full, css::uno::UNO_QUERY);
     CPPUNIT_ASSERT(fullf.is());
     CPPUNIT_ASSERT_EQUAL(
-        css::uno::makeAny(static_cast< sal_Int32 >(-100)),
+        css::uno::Any(static_cast< sal_Int32 >(-100)),
         fullf->getFastPropertyValue(0));
     fullf->setFastPropertyValue(
-        0, css::uno::makeAny(static_cast< sal_Int32 >(0)));
+        0, css::uno::Any(static_cast< sal_Int32 >(0)));
     CPPUNIT_ASSERT_EQUAL(
-        css::uno::makeAny(static_cast< sal_Int32 >(0)),
+        css::uno::Any(static_cast< sal_Int32 >(0)),
         fullf->getFastPropertyValue(0));
     try {
         fullf->getFastPropertyValue(-1);
@@ -523,7 +523,7 @@ void Test::testFull(
         rtl::OUString("First"), vs[0].Name);
     CPPUNIT_ASSERT_EQUAL(static_cast< sal_Int32 >(0), vs[0].Handle);
     CPPUNIT_ASSERT_EQUAL(
-        css::uno::makeAny(static_cast< sal_Int32 >(0)), vs[0].Value);
+        css::uno::Any(static_cast< sal_Int32 >(0)), vs[0].Value);
     CPPUNIT_ASSERT_EQUAL(css::beans::PropertyState_DIRECT_VALUE, vs[0].State);
     CPPUNIT_ASSERT_EQUAL(
         rtl::OUString("Second"), vs[1].Name);
@@ -539,12 +539,12 @@ void Test::testFull(
     CPPUNIT_ASSERT_EQUAL(
         rtl::OUString("First"), vs[0].Name);
     CPPUNIT_ASSERT_EQUAL(
-        css::uno::makeAny(static_cast< sal_Int32 >(-100)), vs[0].Value);
+        css::uno::Any(static_cast< sal_Int32 >(-100)), vs[0].Value);
     CPPUNIT_ASSERT_EQUAL(css::beans::PropertyState_DIRECT_VALUE, vs[0].State);
     CPPUNIT_ASSERT_EQUAL(
         rtl::OUString("Second"), vs[1].Name);
     CPPUNIT_ASSERT_EQUAL(
-        css::uno::makeAny(static_cast< sal_Int32 >(100)), vs[1].Value);
+        css::uno::Any(static_cast< sal_Int32 >(100)), vs[1].Value);
     CPPUNIT_ASSERT_EQUAL(
         css::beans::PropertyState_AMBIGUOUS_VALUE, vs[1].State);
     CPPUNIT_ASSERT(full->getSecond().Value.Value.IsPresent);

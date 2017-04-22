@@ -58,6 +58,8 @@
 #define INCLUDED_LOTUSWORDPRO_SOURCE_FILTER_LWPPAGELAYOUT_HXX
 
 #include "lwplayout.hxx"
+#include "xfilter/xfmasterpage.hxx"
+
 
 class LwpHeaderLayout;
 class LwpFooterLayout;
@@ -66,7 +68,7 @@ class LwpPageLayout: public LwpLayout
 {
 public:
     LwpPageLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpPageLayout();
+    virtual ~LwpPageLayout() override;
     virtual void RegisterStyle() override;
     OUString RegisterEndnoteStyle();
     virtual void Parse(IXFStream* pOutputStream) override;
@@ -90,29 +92,27 @@ protected:
     double GetWidth() override;
     double GetHeight() override;
 protected:
-    LwpAtomHolder*  m_pPrinterBinName;
+    LwpAtomHolder   m_PrinterBinName;
     sal_uInt16      m_nPrinterBin;
     sal_Int32       m_nBdroffset;
-    LwpAtomHolder*  m_pPaperName;
-    XFPageMaster* m_pXFPageMaster;
+    LwpAtomHolder   m_PaperName;
+    XFPageMaster*   m_pXFPageMaster;
 public:
     bool HasColumns();
     bool HasFillerPageText(LwpFoundry* pFoundry);
     void ConvertFillerPageText(XFContentContainer* pCont);
     void ResetXFColumns();
     LwpPageLayout* GetOddChildLayout();
-    virtual sal_Int32 GetPageNumber(sal_uInt16 nLayoutNumber = 0) override;
+    virtual sal_Int32 GetPageNumber(sal_uInt16 nLayoutNumber) override;
     bool operator <(LwpPageLayout& Other);
     LwpPara* GetPagePosition();
 };
-
-#include "xfilter/xfmasterpage.hxx"
 
 class LwpHeaderLayout: public LwpPlacableLayout
 {
 public:
     LwpHeaderLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpHeaderLayout();
+    virtual ~LwpHeaderLayout() override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_HEADER_LAYOUT;}
     using LwpPlacableLayout::RegisterStyle;
     void RegisterStyle( XFPageMaster* pm1 );
@@ -135,7 +135,7 @@ class LwpFooterLayout: public LwpPlacableLayout
 {
 public:
     LwpFooterLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpFooterLayout();
+    virtual ~LwpFooterLayout() override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_FOOTER_LAYOUT;}
     using LwpPlacableLayout::RegisterStyle;
     void RegisterStyle(XFPageMaster* pm1);

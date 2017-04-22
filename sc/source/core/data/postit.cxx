@@ -118,7 +118,7 @@ void ScCaptionUtil::SetDefaultItems( SdrCaptionObj& rCaption, ScDocument& rDoc )
     aItemSet.Put( XLineStartCenterItem( false ) );
     aItemSet.Put( XFillStyleItem( drawing::FillStyle_SOLID ) );
     aItemSet.Put( XFillColorItem( OUString(), ScDetectiveFunc::GetCommentColor() ) );
-    aItemSet.Put( SdrCaptionEscDirItem( SDRCAPT_ESCBESTFIT ) );
+    aItemSet.Put( SdrCaptionEscDirItem( SdrCaptionEscDir::BestFit ) );
 
     // shadow
     /*  SdrShadowItem has sal_False, instead the shadow is set for the
@@ -161,17 +161,17 @@ public:
     /** Create a new caption. The caption will not be inserted into the document. */
     explicit            ScCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, bool bTailFront );
     /** Manipulate an existing caption. */
-    explicit            ScCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, SdrCaptionObj& rCaption );
+    explicit            ScCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, ScCaptionPtr& xCaption );
 
     /** Returns the drawing layer page of the sheet contained in maPos. */
     SdrPage*            GetDrawPage();
     /** Returns the caption drawing object. */
-    inline SdrCaptionObj* GetCaption() { return mpCaption; }
+    ScCaptionPtr GetCaption() { return mxCaption; }
 
     /** Moves the caption inside the passed rectangle. Uses page area if 0 is passed. */
-    void                FitCaptionToRect( const Rectangle* pVisRect = nullptr );
+    void                FitCaptionToRect( const tools::Rectangle* pVisRect = nullptr );
     /** Places the caption inside the passed rectangle, tries to keep the cell rectangle uncovered. Uses page area if 0 is passed. */
-    void                AutoPlaceCaption( const Rectangle* pVisRect = nullptr );
+    void                AutoPlaceCaption( const tools::Rectangle* pVisRect = nullptr );
     /** Updates caption tail and textbox according to current cell position. Uses page area if 0 is passed. */
     void                UpdateCaptionPos();
 
@@ -188,38 +188,36 @@ private:
     /** Initializes all members. */
     void                Initialize();
     /** Returns the passed rectangle if existing, page rectangle otherwise. */
-    inline const Rectangle& GetVisRect( const Rectangle* pVisRect ) const { return pVisRect ? *pVisRect : maPageRect; }
+    const tools::Rectangle& GetVisRect( const tools::Rectangle* pVisRect ) const { return pVisRect ? *pVisRect : maPageRect; }
 
 private:
     ScDocument&         mrDoc;
     ScAddress           maPos;
-    SdrCaptionObj*      mpCaption;
-    Rectangle           maPageRect;
-    Rectangle           maCellRect;
+    ScCaptionPtr        mxCaption;
+    tools::Rectangle           maPageRect;
+    tools::Rectangle           maCellRect;
     bool                mbNegPage;
 };
 
 ScCaptionCreator::ScCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, bool bTailFront ) :
     mrDoc( rDoc ),
-    maPos( rPos ),
-    mpCaption( nullptr )
+    maPos( rPos )
 {
     Initialize();
     CreateCaption( true/*bShown*/, bTailFront );
 }
 
-ScCaptionCreator::ScCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, SdrCaptionObj& rCaption ) :
+ScCaptionCreator::ScCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, ScCaptionPtr& xCaption ) :
     mrDoc( rDoc ),
     maPos( rPos ),
-    mpCaption( &rCaption )
+    mxCaption( xCaption )
 {
     Initialize();
 }
 
 ScCaptionCreator::ScCaptionCreator( ScDocument& rDoc, const ScAddress& rPos ) :
     mrDoc( rDoc ),
-    maPos( rPos ),
-    mpCaption( nullptr )
+    maPos( rPos )
 {
     Initialize();
 }
@@ -230,18 +228,18 @@ SdrPage* ScCaptionCreator::GetDrawPage()
     return pDrawLayer ? pDrawLayer->GetPage( static_cast< sal_uInt16 >( maPos.Tab() ) ) : nullptr;
 }
 
-void ScCaptionCreator::FitCaptionToRect( const Rectangle* pVisRect )
+void ScCaptionCreator::FitCaptionToRect( const tools::Rectangle* pVisRect )
 {
-    const Rectangle& rVisRect = GetVisRect( pVisRect );
+    const tools::Rectangle& rVisRect = GetVisRect( pVisRect );
 
     // tail position
-    Point aTailPos = mpCaption->GetTailPos();
+    Point aTailPos = mxCaption->GetTailPos();
     aTailPos.X() = ::std::max( ::std::min( aTailPos.X(), rVisRect.Right() ), rVisRect.Left() );
     aTailPos.Y() = ::std::max( ::std::min( aTailPos.Y(), rVisRect.Bottom() ), rVisRect.Top() );
-    mpCaption->SetTailPos( aTailPos );
+    mxCaption->SetTailPos( aTailPos );
 
     // caption rectangle
-    Rectangle aCaptRect = mpCaption->GetLogicRect();
+    tools::Rectangle aCaptRect = mxCaption->GetLogicRect();
     Point aCaptPos = aCaptRect.TopLeft();
     // move textbox inside right border of visible area
     aCaptPos.X() = ::std::min< long >( aCaptPos.X(), rVisRect.Right() - aCaptRect.GetWidth() );
@@ -253,15 +251,15 @@ void ScCaptionCreator::FitCaptionToRect( const Rectangle* pVisRect )
     aCaptPos.Y() = ::std::max< long >( aCaptPos.Y(), rVisRect.Top() );
     // update caption
     aCaptRect.SetPos( aCaptPos );
-    mpCaption->SetLogicRect( aCaptRect );
+    mxCaption->SetLogicRect( aCaptRect );
 }
 
-void ScCaptionCreator::AutoPlaceCaption( const Rectangle* pVisRect )
+void ScCaptionCreator::AutoPlaceCaption( const tools::Rectangle* pVisRect )
 {
-    const Rectangle& rVisRect = GetVisRect( pVisRect );
+    const tools::Rectangle& rVisRect = GetVisRect( pVisRect );
 
     // caption rectangle
-    Rectangle aCaptRect = mpCaption->GetLogicRect();
+    tools::Rectangle aCaptRect = mxCaption->GetLogicRect();
     long nWidth = aCaptRect.GetWidth();
     long nHeight = aCaptRect.GetHeight();
 
@@ -319,7 +317,7 @@ void ScCaptionCreator::AutoPlaceCaption( const Rectangle* pVisRect )
 
     // update textbox position in note caption object
     aCaptRect.SetPos( aCaptPos );
-    mpCaption->SetLogicRect( aCaptRect );
+    mxCaption->SetLogicRect( aCaptRect );
     FitCaptionToRect( pVisRect );
 }
 
@@ -328,33 +326,33 @@ void ScCaptionCreator::UpdateCaptionPos()
     ScDrawLayer* pDrawLayer = mrDoc.GetDrawLayer();
 
     // update caption position
-    const Point& rOldTailPos = mpCaption->GetTailPos();
+    const Point& rOldTailPos = mxCaption->GetTailPos();
     Point aTailPos = CalcTailPos( false );
     if( rOldTailPos != aTailPos )
     {
         // create drawing undo action
         if( pDrawLayer && pDrawLayer->IsRecording() )
-            pDrawLayer->AddCalcUndo( new SdrUndoGeoObj( *mpCaption ) );
+            pDrawLayer->AddCalcUndo( new SdrUndoGeoObj( *mxCaption ) );
         // calculate new caption rectangle (#i98141# handle LTR<->RTL switch correctly)
-        Rectangle aCaptRect = mpCaption->GetLogicRect();
+        tools::Rectangle aCaptRect = mxCaption->GetLogicRect();
         long nDiffX = (rOldTailPos.X() >= 0) ? (aCaptRect.Left() - rOldTailPos.X()) : (rOldTailPos.X() - aCaptRect.Right());
         if( mbNegPage ) nDiffX = -nDiffX - aCaptRect.GetWidth();
         long nDiffY = aCaptRect.Top() - rOldTailPos.Y();
         aCaptRect.SetPos( aTailPos + Point( nDiffX, nDiffY ) );
         // set new tail position and caption rectangle
-        mpCaption->SetTailPos( aTailPos );
-        mpCaption->SetLogicRect( aCaptRect );
+        mxCaption->SetTailPos( aTailPos );
+        mxCaption->SetLogicRect( aCaptRect );
         // fit caption into draw page
         FitCaptionToRect();
     }
 
     // update cell position in caption user data
-    ScDrawObjData* pCaptData = ScDrawLayer::GetNoteCaptionData( mpCaption, maPos.Tab() );
+    ScDrawObjData* pCaptData = ScDrawLayer::GetNoteCaptionData( mxCaption.get(), maPos.Tab() );
     if( pCaptData && (maPos != pCaptData->maStart) )
     {
         // create drawing undo action
         if( pDrawLayer && pDrawLayer->IsRecording() )
-            pDrawLayer->AddCalcUndo( new ScUndoObjData( mpCaption, pCaptData->maStart, pCaptData->maEnd, maPos, pCaptData->maEnd ) );
+            pDrawLayer->AddCalcUndo( new ScUndoObjData( mxCaption.get(), pCaptData->maStart, pCaptData->maEnd, maPos, pCaptData->maEnd ) );
         // set new position
         pCaptData->maStart = maPos;
     }
@@ -374,11 +372,11 @@ Point ScCaptionCreator::CalcTailPos( bool bTailFront )
 void ScCaptionCreator::CreateCaption( bool bShown, bool bTailFront )
 {
     // create the caption drawing object
-    Rectangle aTextRect( Point( 0 , 0 ), Size( SC_NOTECAPTION_WIDTH, SC_NOTECAPTION_HEIGHT ) );
+    tools::Rectangle aTextRect( Point( 0 , 0 ), Size( SC_NOTECAPTION_WIDTH, SC_NOTECAPTION_HEIGHT ) );
     Point aTailPos = CalcTailPos( bTailFront );
-    mpCaption = new SdrCaptionObj( aTextRect, aTailPos );
+    mxCaption.reset( new SdrCaptionObj( aTextRect, aTailPos ));
     // basic caption settings
-    ScCaptionUtil::SetBasicCaptionSettings( *mpCaption, bShown );
+    ScCaptionUtil::SetBasicCaptionSettings( *mxCaption, bShown );
 }
 
 void ScCaptionCreator::Initialize()
@@ -387,7 +385,7 @@ void ScCaptionCreator::Initialize()
     mbNegPage = mrDoc.IsNegativePage( maPos.Tab() );
     if( SdrPage* pDrawPage = GetDrawPage() )
     {
-        maPageRect = Rectangle( Point( 0, 0 ), pDrawPage->GetSize() );
+        maPageRect = tools::Rectangle( Point( 0, 0 ), pDrawPage->GetSize() );
         /*  #i98141# SdrPage::GetSize() returns negative width in RTL mode.
             The call to Rectangle::Adjust() orders left/right coordinate
             accordingly. */
@@ -402,7 +400,7 @@ public:
     /** Create a new caption object and inserts it into the document. */
     explicit            ScNoteCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, ScNoteData& rNoteData );
     /** Manipulate an existing caption. */
-    explicit            ScNoteCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, SdrCaptionObj& rCaption, bool bShown );
+    explicit            ScNoteCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, ScCaptionPtr& xCaption, bool bShown );
 };
 
 ScNoteCaptionCreator::ScNoteCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, ScNoteData& rNoteData ) :
@@ -414,44 +412,411 @@ ScNoteCaptionCreator::ScNoteCaptionCreator( ScDocument& rDoc, const ScAddress& r
     {
         // create the caption drawing object
         CreateCaption( rNoteData.mbShown, false );
-        rNoteData.mpCaption = GetCaption();
-        OSL_ENSURE( rNoteData.mpCaption, "ScNoteCaptionCreator::ScNoteCaptionCreator - missing caption object" );
-        if( rNoteData.mpCaption )
+        rNoteData.mxCaption = GetCaption();
+        OSL_ENSURE( rNoteData.mxCaption, "ScNoteCaptionCreator::ScNoteCaptionCreator - missing caption object" );
+        if( rNoteData.mxCaption )
         {
             // store note position in user data of caption object
-            ScCaptionUtil::SetCaptionUserData( *rNoteData.mpCaption, rPos );
+            ScCaptionUtil::SetCaptionUserData( *rNoteData.mxCaption, rPos );
             // insert object into draw page
-            pDrawPage->InsertObject( rNoteData.mpCaption );
+            rNoteData.mxCaption.insertToDrawPage( *pDrawPage );
         }
     }
 }
 
-ScNoteCaptionCreator::ScNoteCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, SdrCaptionObj& rCaption, bool bShown ) :
-    ScCaptionCreator( rDoc, rPos, rCaption )
+ScNoteCaptionCreator::ScNoteCaptionCreator( ScDocument& rDoc, const ScAddress& rPos, ScCaptionPtr& xCaption, bool bShown ) :
+    ScCaptionCreator( rDoc, rPos, xCaption )
 {
     SdrPage* pDrawPage = GetDrawPage();
     OSL_ENSURE( pDrawPage, "ScNoteCaptionCreator::ScNoteCaptionCreator - no drawing page" );
-    OSL_ENSURE( rCaption.GetPage() == pDrawPage, "ScNoteCaptionCreator::ScNoteCaptionCreator - wrong drawing page in caption" );
-    if( pDrawPage && (rCaption.GetPage() == pDrawPage) )
+    OSL_ENSURE( xCaption->GetPage() == pDrawPage, "ScNoteCaptionCreator::ScNoteCaptionCreator - wrong drawing page in caption" );
+    if( pDrawPage && (xCaption->GetPage() == pDrawPage) )
     {
         // store note position in user data of caption object
-        ScCaptionUtil::SetCaptionUserData( rCaption, rPos );
+        ScCaptionUtil::SetCaptionUserData( *xCaption, rPos );
         // basic caption settings
-        ScCaptionUtil::SetBasicCaptionSettings( rCaption, bShown );
+        ScCaptionUtil::SetBasicCaptionSettings( *xCaption, bShown );
         // set correct tail position
-        rCaption.SetTailPos( CalcTailPos( false ) );
+        xCaption->SetTailPos( CalcTailPos( false ) );
     }
 }
 
 } // namespace
 
+
+ScCaptionPtr::ScCaptionPtr() :
+    mpHead(nullptr), mpNext(nullptr), mpCaption(nullptr), mbNotOwner(false)
+{
+}
+
+ScCaptionPtr::ScCaptionPtr( SdrCaptionObj* p ) :
+    mpHead(nullptr), mpNext(nullptr), mpCaption(p), mbNotOwner(false)
+{
+    if (p)
+    {
+        newHead();
+    }
+}
+
+ScCaptionPtr::ScCaptionPtr( const ScCaptionPtr& r ) :
+    mpHead(r.mpHead), mpCaption(r.mpCaption), mbNotOwner(false)
+{
+    if (r.mpCaption)
+    {
+        assert(r.mpHead);
+        r.incRef();
+        // Insert into list.
+        mpNext = r.mpNext;
+        r.mpNext = this;
+    }
+    else
+    {
+        assert(!r.mpHead);
+        mpNext = nullptr;
+    }
+}
+
+ScCaptionPtr::ScCaptionPtr( ScCaptionPtr&& r ) :
+    mpHead(r.mpHead), mpNext(r.mpNext), mpCaption(r.mpCaption), mbNotOwner(false)
+{
+    r.replaceInList( this );
+    r.mpCaption = nullptr;
+    r.mbNotOwner = false;
+}
+
+ScCaptionPtr& ScCaptionPtr::operator=( ScCaptionPtr&& r )
+{
+    assert(this != &r);
+
+    mpHead = r.mpHead;
+    mpNext = r.mpNext;
+    mpCaption = r.mpCaption;
+    mbNotOwner = r.mbNotOwner;
+
+    r.replaceInList( this );
+    r.mpCaption = nullptr;
+    r.mbNotOwner = false;
+
+    return *this;
+}
+
+ScCaptionPtr& ScCaptionPtr::operator=( const ScCaptionPtr& r )
+{
+    if (this == &r)
+        return *this;
+
+    if (mpCaption == r.mpCaption)
+    {
+        // Two lists for the same caption is bad.
+        assert(!mpCaption || mpHead == r.mpHead);
+        assert(!mpCaption);     // assigning same caption pointer within same list is weird
+        // Nullptr captions are not inserted to the list, so nothing to do here
+        // if both are.
+        return *this;
+    }
+
+    // Let's find some weird usage.
+    // Assigning without head doesn't make sense unless it is a nullptr caption.
+    assert(r.mpHead || !r.mpCaption);
+    // A nullptr caption must not be in a list and thus not have a head.
+    assert(!r.mpHead || r.mpCaption);
+    // Same captions were caught above, so here different heads must be present.
+    assert(r.mpHead != mpHead);
+
+    r.incRef();
+    decRefAndDestroy();
+    removeFromList();
+
+    mpCaption = r.mpCaption;
+    mbNotOwner = r.mbNotOwner;
+    // That head is this' master.
+    mpHead = r.mpHead;
+    // Insert into list.
+    mpNext = r.mpNext;
+    r.mpNext = this;
+
+    return *this;
+}
+
+void ScCaptionPtr::setNotOwner()
+{
+    mbNotOwner = true;
+}
+
+ScCaptionPtr::Head::Head( ScCaptionPtr* p ) :
+    mpFirst(p), mnRefs(1)
+{
+}
+
+void ScCaptionPtr::newHead()
+{
+    assert(!mpHead);
+    mpHead = new Head(this);
+}
+
+void ScCaptionPtr::replaceInList( ScCaptionPtr* pNew )
+{
+    if (!mpHead && !mpNext)
+        return;
+
+    assert(mpHead);
+    assert(mpCaption == pNew->mpCaption);
+
+    ScCaptionPtr* pThat = mpHead->mpFirst;
+    while (pThat && pThat != this && pThat->mpNext != this)
+    {
+        pThat = pThat->mpNext;
+    }
+    if (pThat && pThat != this)
+    {
+        assert(pThat->mpNext == this);
+        pThat->mpNext = pNew;
+    }
+    pNew->mpNext = mpNext;
+    if (mpHead->mpFirst == this)
+        mpHead->mpFirst = pNew;
+
+    mpHead = nullptr;
+    mpNext = nullptr;
+}
+
+void ScCaptionPtr::removeFromList()
+{
+    if (!mpHead && !mpNext && !mpCaption)
+        return;
+
+#if OSL_DEBUG_LEVEL > 0
+    oslInterlockedCount nCount = 0;
+#endif
+    ScCaptionPtr* pThat = (mpHead ? mpHead->mpFirst : nullptr);
+    while (pThat && pThat != this && pThat->mpNext != this)
+    {
+        // Use the walk to check consistency on the fly.
+        assert(pThat->mpHead == mpHead);            // all belong to the same
+        assert(pThat->mpHead || !pThat->mpNext);    // next without head is bad
+        assert(pThat->mpCaption == mpCaption);
+        pThat = pThat->mpNext;
+#if OSL_DEBUG_LEVEL > 0
+        ++nCount;
+#endif
+    }
+    assert(pThat || !mpHead);   // not found only if this was standalone
+    if (pThat)
+    {
+        if (pThat != this)
+        {
+#if OSL_DEBUG_LEVEL > 0
+            // The while loop above was not executed, and for this
+            // (pThat->mpNext) the loop below won't either.
+            ++nCount;
+#endif
+            pThat->mpNext = mpNext;
+        }
+#if OSL_DEBUG_LEVEL > 0
+        do
+        {
+            assert(pThat->mpHead == mpHead);            // all belong to the same
+            assert(pThat->mpHead || !pThat->mpNext);    // next without head is bad
+            assert(pThat->mpCaption == mpCaption);
+            ++nCount;
+        }
+        while ((pThat = pThat->mpNext) != nullptr);
+#endif
+    }
+#if OSL_DEBUG_LEVEL > 0
+    // If part of a list then refs were already decremented.
+    assert(nCount == (mpHead ? mpHead->mnRefs + 1 : 0));
+#endif
+    if (mpHead && mpHead->mpFirst == this)
+    {
+        if (mpNext)
+            mpHead->mpFirst = mpNext;
+        else
+        {
+            // The only one destroys also head.
+            assert(mpHead->mnRefs == 0);    // cough
+            delete mpHead;                  // DEAD now
+        }
+    }
+    mpHead = nullptr;
+    mpNext = nullptr;
+}
+
+void ScCaptionPtr::reset( SdrCaptionObj* p )
+{
+    assert(!p || p != mpCaption);
+#if OSL_DEBUG_LEVEL > 0
+    if (p)
+    {
+        // Check if we end up with a duplicated management in this list.
+        ScCaptionPtr* pThat = (mpHead ? mpHead->mpFirst : nullptr);
+        while (pThat)
+        {
+            assert(pThat->mpCaption != p);
+            pThat = pThat->mpNext;
+        }
+    }
+#endif
+    decRefAndDestroy();
+    removeFromList();
+    mpCaption = p;
+    mbNotOwner = false;
+    if (p)
+    {
+        newHead();
+    }
+}
+
+ScCaptionPtr::~ScCaptionPtr()
+{
+    decRefAndDestroy();
+    removeFromList();
+}
+
+oslInterlockedCount ScCaptionPtr::getRefs() const
+{
+    return mpHead ? mpHead->mnRefs : 0;
+}
+
+void ScCaptionPtr::incRef() const
+{
+    if (mpHead)
+        osl_atomic_increment(&mpHead->mnRefs);
+}
+
+bool ScCaptionPtr::decRef() const
+{
+    return mpHead && mpHead->mnRefs > 0 && !osl_atomic_decrement(&mpHead->mnRefs);
+}
+
+void ScCaptionPtr::decRefAndDestroy()
+{
+    if (decRef())
+    {
+        assert(mpHead->mpFirst == this);    // this must be one and only one
+        assert(!mpNext);                    // this must be one and only one
+        assert(mpCaption);
+
+#if 0
+        // Quick workaround for when there are still cases where the caption
+        // pointer is dangling
+        mpCaption = nullptr;
+        mbNotOwner = false;
+#else
+        // Destroying Draw Undo and some other delete the SdrObject, don't
+        // attempt that twice.
+        if (mbNotOwner)
+        {
+            mpCaption = nullptr;
+            mbNotOwner = false;
+        }
+        else
+        {
+            removeFromDrawPageAndFree( true );  // ignoring Undo
+            if (mpCaption)
+            {
+                // There's no draw page associated so removeFromDrawPageAndFree()
+                // didn't do anything, but still we want to delete the caption
+                // object. release()/dissolve() also resets mpCaption.
+                SdrObject* pObj = release();
+                SdrObject::Free( pObj );
+            }
+        }
+#endif
+        delete mpHead;
+        mpHead = nullptr;
+    }
+}
+
+void ScCaptionPtr::insertToDrawPage( SdrPage& rDrawPage )
+{
+    assert(mpHead && mpCaption);
+
+    rDrawPage.InsertObject( mpCaption );
+}
+
+void ScCaptionPtr::removeFromDrawPage( SdrPage& rDrawPage )
+{
+    assert(mpHead && mpCaption);
+    SdrObject* pObj = rDrawPage.RemoveObject( mpCaption->GetOrdNum() );
+    assert(pObj == mpCaption); (void)pObj;
+}
+
+void ScCaptionPtr::removeFromDrawPageAndFree( bool bIgnoreUndo )
+{
+    assert(mpHead && mpCaption);
+    SdrPage* pDrawPage = mpCaption->GetPage();
+    SAL_WARN_IF( !pDrawPage, "sc.core", "ScCaptionPtr::removeFromDrawPageAndFree - object without drawing page");
+    if (pDrawPage)
+    {
+        pDrawPage->RecalcObjOrdNums();
+        bool bRecording = false;
+        if (!bIgnoreUndo)
+        {
+            ScDrawLayer* pDrawLayer = dynamic_cast<ScDrawLayer*>(mpCaption->GetModel());
+            SAL_WARN_IF( !pDrawLayer, "sc.core", "ScCaptionPtr::removeFromDrawPageAndFree - object without drawing layer");
+            // create drawing undo action (before removing the object to have valid draw page in undo action)
+            bRecording = (pDrawLayer && pDrawLayer->IsRecording());
+            if (bRecording)
+                pDrawLayer->AddCalcUndo( new SdrUndoDelObj( *mpCaption ));
+        }
+        // remove the object from the drawing page, delete if undo is disabled
+        removeFromDrawPage( *pDrawPage );
+        // If called from outside mnRefs must be 1 to delete. If called from
+        // decRefAndDestroy() mnRefs is already 0.
+        if (!bRecording && getRefs() <= 1)
+        {
+            SdrObject* pObj = release();
+            SdrObject::Free( pObj );
+        }
+    }
+}
+
+SdrCaptionObj* ScCaptionPtr::release()
+{
+    SdrCaptionObj* pTmp = mpCaption;
+    dissolve();
+    return pTmp;
+}
+
+bool ScCaptionPtr::forget()
+{
+    bool bRet = decRef();
+    removeFromList();
+    mpCaption = nullptr;
+    mbNotOwner = false;
+    return bRet;
+}
+
+void ScCaptionPtr::dissolve()
+{
+    ScCaptionPtr::Head* pHead = mpHead;
+    ScCaptionPtr* pThat = (mpHead ? mpHead->mpFirst : this);
+    while (pThat)
+    {
+        assert(!pThat->mpNext || pThat->mpHead);    // next without head is bad
+        assert(pThat->mpHead == pHead);             // same head required within one list
+        ScCaptionPtr* p = pThat->mpNext;
+        pThat->clear();
+        pThat = p;
+    }
+    assert(!mpHead && !mpNext && !mpCaption);       // should had been cleared during list walk
+    delete pHead;
+}
+
+void ScCaptionPtr::clear()
+{
+    mpHead = nullptr;
+    mpNext = nullptr;
+    mpCaption = nullptr;
+    mbNotOwner = false;
+}
+
+
 struct ScCaptionInitData
 {
-    typedef ::std::unique_ptr< SfxItemSet >           SfxItemSetPtr;
-    typedef ::std::unique_ptr< OutlinerParaObject >   OutlinerParaObjPtr;
-
-    SfxItemSetPtr       mxItemSet;          /// Caption object formatting.
-    OutlinerParaObjPtr  mxOutlinerObj;      /// Text object with all text portion formatting.
+    std::unique_ptr< SfxItemSet >       mxItemSet;          /// Caption object formatting.
+    std::unique_ptr< OutlinerParaObject >  mxOutlinerObj;      /// Text object with all text portion formatting.
     OUString     maSimpleText;       /// Simple text without formatting.
     Point               maCaptionOffset;    /// Caption position relative to cell corner.
     Size                maCaptionSize;      /// Size of the caption object.
@@ -466,7 +831,6 @@ ScCaptionInitData::ScCaptionInitData() :
 }
 
 ScNoteData::ScNoteData( bool bShown ) :
-    mpCaption( nullptr ),
     mbShown( bShown )
 {
 }
@@ -487,8 +851,8 @@ ScPostIt::ScPostIt( ScDocument& rDoc, const ScAddress& rPos, const ScPostIt& rNo
     mrDoc( rDoc ),
     maNoteData( rNote.maNoteData )
 {
-    maNoteData.mpCaption = nullptr;
-    CreateCaption( rPos, rNote.maNoteData.mpCaption );
+    maNoteData.mxCaption.reset(nullptr);
+    CreateCaption( rPos, rNote.maNoteData.mxCaption.get() );
 }
 
 ScPostIt::ScPostIt( ScDocument& rDoc, const ScAddress& rPos, const ScNoteData& rNoteData, bool bAlwaysCreateCaption ) :
@@ -528,8 +892,8 @@ void ScPostIt::AutoStamp()
 
 const OutlinerParaObject* ScPostIt::GetOutlinerObject() const
 {
-    if( maNoteData.mpCaption )
-        return maNoteData.mpCaption->GetOutlinerParaObject();
+    if( maNoteData.mxCaption )
+        return maNoteData.mxCaption->GetOutlinerParaObject();
     if( maNoteData.mxInitData.get() )
         return maNoteData.mxInitData->mxOutlinerObj.get();
     return nullptr;
@@ -574,22 +938,42 @@ bool ScPostIt::HasMultiLineText() const
 void ScPostIt::SetText( const ScAddress& rPos, const OUString& rText )
 {
     CreateCaptionFromInitData( rPos );
-    if( maNoteData.mpCaption )
-        maNoteData.mpCaption->SetText( rText );
+    if( maNoteData.mxCaption )
+        maNoteData.mxCaption->SetText( rText );
 }
 
 SdrCaptionObj* ScPostIt::GetOrCreateCaption( const ScAddress& rPos ) const
 {
     CreateCaptionFromInitData( rPos );
-    return maNoteData.mpCaption;
+    return maNoteData.mxCaption.get();
 }
 
-void ScPostIt::ForgetCaption()
+void ScPostIt::ForgetCaption( bool bPreserveData )
 {
-    /*  This function is used in undo actions to give up the responsibility for
-        the caption object which is handled by separate drawing undo actions. */
-    maNoteData.mpCaption = nullptr;
-    maNoteData.mxInitData.reset();
+    if (bPreserveData)
+    {
+        // Used in clipboard when the originating document is destructed to be
+        // able to paste into another document. Caption size and relative
+        // position are not preserved but default created when pasted. Also the
+        // MergedItemSet can not be carried over or it had to be adapted to
+        // defaults and pool. At least preserve the text and outline object if
+        // possible.
+        ScCaptionInitData* pInitData = new ScCaptionInitData;
+        const OutlinerParaObject* pOPO = GetOutlinerObject();
+        if (pOPO)
+            pInitData->mxOutlinerObj.reset( new OutlinerParaObject(*pOPO));
+        pInitData->maSimpleText = GetText();
+
+        maNoteData.mxInitData.reset(pInitData);
+        maNoteData.mxCaption.forget();
+    }
+    else
+    {
+        /*  This function is used in undo actions to give up the responsibility for
+            the caption object which is handled by separate drawing undo actions. */
+        maNoteData.mxCaption.forget();
+        maNoteData.mxInitData.reset();
+    }
 }
 
 void ScPostIt::ShowCaption( const ScAddress& rPos, bool bShow )
@@ -597,23 +981,23 @@ void ScPostIt::ShowCaption( const ScAddress& rPos, bool bShow )
     CreateCaptionFromInitData( rPos );
     // no separate drawing undo needed, handled completely inside ScUndoShowHideNote
     maNoteData.mbShown = bShow;
-    if( maNoteData.mpCaption )
-        ScCaptionUtil::SetCaptionLayer( *maNoteData.mpCaption, bShow );
+    if( maNoteData.mxCaption )
+        ScCaptionUtil::SetCaptionLayer( *maNoteData.mxCaption, bShow );
 }
 
 void ScPostIt::ShowCaptionTemp( const ScAddress& rPos, bool bShow )
 {
     CreateCaptionFromInitData( rPos );
-    if( maNoteData.mpCaption )
-        ScCaptionUtil::SetCaptionLayer( *maNoteData.mpCaption, maNoteData.mbShown || bShow );
+    if( maNoteData.mxCaption )
+        ScCaptionUtil::SetCaptionLayer( *maNoteData.mxCaption, maNoteData.mbShown || bShow );
 }
 
 void ScPostIt::UpdateCaptionPos( const ScAddress& rPos )
 {
     CreateCaptionFromInitData( rPos );
-    if( maNoteData.mpCaption )
+    if( maNoteData.mxCaption )
     {
-        ScCaptionCreator aCreator( mrDoc, rPos, *maNoteData.mpCaption );
+        ScCaptionCreator aCreator( mrDoc, rPos, maNoteData.mxCaption );
         aCreator.UpdateCaptionPos();
     }
 }
@@ -622,56 +1006,67 @@ void ScPostIt::UpdateCaptionPos( const ScAddress& rPos )
 
 void ScPostIt::CreateCaptionFromInitData( const ScAddress& rPos ) const
 {
-    OSL_ENSURE( maNoteData.mpCaption || maNoteData.mxInitData.get(), "ScPostIt::CreateCaptionFromInitData - need caption object or initial caption data" );
+    // Captions are not created in Undo documents and only rarely in Clipboard,
+    // but otherwise we need caption or initial data.
+    assert((maNoteData.mxCaption || maNoteData.mxInitData.get()) || mrDoc.IsUndo() || mrDoc.IsClipboard());
     if( maNoteData.mxInitData.get() )
     {
         /*  This function is called from ScPostIt::Clone() when copying cells
             to the clipboard/undo document, and when copying cells from the
             clipboard/undo document. The former should always be called first,
             so if called in an clipboard/undo document, the caption should have
-            been created already. */
-        OSL_ENSURE( !mrDoc.IsUndo() && !mrDoc.IsClipboard(), "ScPostIt::CreateCaptionFromInitData - note caption should not be created in undo/clip documents" );
+            been created already. However, for clipboard in case the
+            originating document was destructed a new caption has to be
+            created. */
+        OSL_ENSURE( !mrDoc.IsUndo() && (!mrDoc.IsClipboard() || !maNoteData.mxCaption),
+                "ScPostIt::CreateCaptionFromInitData - note caption should not be created in undo/clip documents" );
 
         /*  #i104915# Never try to create notes in Undo document, leads to
             crash due to missing document members (e.g. row height array). */
-        if( !maNoteData.mpCaption && !mrDoc.IsUndo() )
+        if( !maNoteData.mxCaption && !mrDoc.IsUndo() )
         {
+            if (mrDoc.IsClipboard())
+                mrDoc.InitDrawLayer();  // ensure there is a drawing layer
+
             // ScNoteCaptionCreator c'tor creates the caption and inserts it into the document and maNoteData
             ScNoteCaptionCreator aCreator( mrDoc, rPos, maNoteData );
-            if( maNoteData.mpCaption )
+            if( maNoteData.mxCaption )
             {
+                // Prevent triple change broadcasts of the same object.
+                SdrDelayBroadcastObjectChange aDelayChange( *maNoteData.mxCaption);
+
                 ScCaptionInitData& rInitData = *maNoteData.mxInitData;
 
                 // transfer ownership of outliner object to caption, or set simple text
                 OSL_ENSURE( rInitData.mxOutlinerObj.get() || !rInitData.maSimpleText.isEmpty(),
                     "ScPostIt::CreateCaptionFromInitData - need either outliner para object or simple text" );
                 if( rInitData.mxOutlinerObj.get() )
-                    maNoteData.mpCaption->SetOutlinerParaObject( rInitData.mxOutlinerObj.release() );
+                    maNoteData.mxCaption->SetOutlinerParaObject( rInitData.mxOutlinerObj.release() );
                 else
-                    maNoteData.mpCaption->SetText( rInitData.maSimpleText );
+                    maNoteData.mxCaption->SetText( rInitData.maSimpleText );
 
                 // copy all items or set default items; reset shadow items
-                ScCaptionUtil::SetDefaultItems( *maNoteData.mpCaption, mrDoc );
+                ScCaptionUtil::SetDefaultItems( *maNoteData.mxCaption, mrDoc );
                 if( rInitData.mxItemSet.get() )
-                    ScCaptionUtil::SetCaptionItems( *maNoteData.mpCaption, *rInitData.mxItemSet );
+                    ScCaptionUtil::SetCaptionItems( *maNoteData.mxCaption, *rInitData.mxItemSet );
 
                 // set position and size of the caption object
                 if( rInitData.mbDefaultPosSize )
                 {
                     // set other items and fit caption size to text
-                    maNoteData.mpCaption->SetMergedItem( makeSdrTextMinFrameWidthItem( SC_NOTECAPTION_WIDTH ) );
-                    maNoteData.mpCaption->SetMergedItem( makeSdrTextMaxFrameWidthItem( SC_NOTECAPTION_MAXWIDTH_TEMP ) );
-                    maNoteData.mpCaption->AdjustTextFrameWidthAndHeight();
+                    maNoteData.mxCaption->SetMergedItem( makeSdrTextMinFrameWidthItem( SC_NOTECAPTION_WIDTH ) );
+                    maNoteData.mxCaption->SetMergedItem( makeSdrTextMaxFrameWidthItem( SC_NOTECAPTION_MAXWIDTH_TEMP ) );
+                    maNoteData.mxCaption->AdjustTextFrameWidthAndHeight();
                     aCreator.AutoPlaceCaption();
                 }
                 else
                 {
-                    Rectangle aCellRect = ScDrawLayer::GetCellRect( mrDoc, rPos, true );
+                    tools::Rectangle aCellRect = ScDrawLayer::GetCellRect( mrDoc, rPos, true );
                     bool bNegPage = mrDoc.IsNegativePage( rPos.Tab() );
                     long nPosX = bNegPage ? (aCellRect.Left() - rInitData.maCaptionOffset.X()) : (aCellRect.Right() + rInitData.maCaptionOffset.X());
                     long nPosY = aCellRect.Top() + rInitData.maCaptionOffset.Y();
-                    Rectangle aCaptRect( Point( nPosX, nPosY ), rInitData.maCaptionSize );
-                    maNoteData.mpCaption->SetLogicRect( aCaptRect );
+                    tools::Rectangle aCaptRect( Point( nPosX, nPosY ), rInitData.maCaptionSize );
+                    maNoteData.mxCaption->SetLogicRect( aCaptRect );
                     aCreator.FitCaptionToRect();
                 }
             }
@@ -683,8 +1078,8 @@ void ScPostIt::CreateCaptionFromInitData( const ScAddress& rPos ) const
 
 void ScPostIt::CreateCaption( const ScAddress& rPos, const SdrCaptionObj* pCaption )
 {
-    OSL_ENSURE( !maNoteData.mpCaption, "ScPostIt::CreateCaption - unexpected caption object found" );
-    maNoteData.mpCaption = nullptr;
+    OSL_ENSURE( !maNoteData.mxCaption, "ScPostIt::CreateCaption - unexpected caption object found" );
+    maNoteData.mxCaption.reset(nullptr);
 
     /*  #i104915# Never try to create notes in Undo document, leads to
         crash due to missing document members (e.g. row height array). */
@@ -698,68 +1093,64 @@ void ScPostIt::CreateCaption( const ScAddress& rPos, const SdrCaptionObj* pCapti
 
     // ScNoteCaptionCreator c'tor creates the caption and inserts it into the document and maNoteData
     ScNoteCaptionCreator aCreator( mrDoc, rPos, maNoteData );
-    if( maNoteData.mpCaption )
+    if( maNoteData.mxCaption )
     {
         // clone settings of passed caption
         if( pCaption )
         {
             // copy edit text object (object must be inserted into page already)
             if( OutlinerParaObject* pOPO = pCaption->GetOutlinerParaObject() )
-                maNoteData.mpCaption->SetOutlinerParaObject( new OutlinerParaObject( *pOPO ) );
+                maNoteData.mxCaption->SetOutlinerParaObject( new OutlinerParaObject( *pOPO ) );
             // copy formatting items (after text has been copied to apply font formatting)
-            maNoteData.mpCaption->SetMergedItemSetAndBroadcast( pCaption->GetMergedItemSet() );
+            maNoteData.mxCaption->SetMergedItemSetAndBroadcast( pCaption->GetMergedItemSet() );
             // move textbox position relative to new cell, copy textbox size
-            Rectangle aCaptRect = pCaption->GetLogicRect();
-            Point aDist = maNoteData.mpCaption->GetTailPos() - pCaption->GetTailPos();
+            tools::Rectangle aCaptRect = pCaption->GetLogicRect();
+            Point aDist = maNoteData.mxCaption->GetTailPos() - pCaption->GetTailPos();
             aCaptRect.Move( aDist.X(), aDist.Y() );
-            maNoteData.mpCaption->SetLogicRect( aCaptRect );
+            maNoteData.mxCaption->SetLogicRect( aCaptRect );
             aCreator.FitCaptionToRect();
         }
         else
         {
             // set default formatting and default position
-            ScCaptionUtil::SetDefaultItems( *maNoteData.mpCaption, mrDoc );
+            ScCaptionUtil::SetDefaultItems( *maNoteData.mxCaption, mrDoc );
             aCreator.AutoPlaceCaption();
         }
 
         // create undo action
         if( ScDrawLayer* pDrawLayer = mrDoc.GetDrawLayer() )
             if( pDrawLayer->IsRecording() )
-                pDrawLayer->AddCalcUndo( new SdrUndoNewObj( *maNoteData.mpCaption ) );
+                pDrawLayer->AddCalcUndo( new SdrUndoNewObj( *maNoteData.mxCaption ) );
     }
 }
 
 void ScPostIt::RemoveCaption()
 {
+    if (!maNoteData.mxCaption)
+        return;
 
     /*  Remove caption object only, if this note is its owner (e.g. notes in
         undo documents refer to captions in original document, do not remove
         them from drawing layer here). */
     ScDrawLayer* pDrawLayer = mrDoc.GetDrawLayer();
-    if( maNoteData.mpCaption && (pDrawLayer == maNoteData.mpCaption->GetModel()) )
+    if (pDrawLayer == maNoteData.mxCaption->GetModel())
+        maNoteData.mxCaption.removeFromDrawPageAndFree();
+
+    SAL_INFO("sc.core","ScPostIt::RemoveCaption - refs: " << maNoteData.mxCaption.getRefs() <<
+            "  IsUndo: " << mrDoc.IsUndo() << "  IsClip: " << mrDoc.IsClipboard() <<
+            "  Dtor: " << mrDoc.IsInDtorClear());
+
+    // Forget the caption object if removeFromDrawPageAndFree() did not free it.
+    if (maNoteData.mxCaption)
     {
-        OSL_ENSURE( pDrawLayer, "ScPostIt::RemoveCaption - object without drawing layer" );
-        SdrPage* pDrawPage = maNoteData.mpCaption->GetPage();
-        OSL_ENSURE( pDrawPage, "ScPostIt::RemoveCaption - object without drawing page" );
-        if( pDrawPage )
-        {
-            pDrawPage->RecalcObjOrdNums();
-            // create drawing undo action (before removing the object to have valid draw page in undo action)
-            const bool bRecording = (pDrawLayer && pDrawLayer->IsRecording());
-            if( bRecording )
-                pDrawLayer->AddCalcUndo( new SdrUndoDelObj( *maNoteData.mpCaption ) );
-            // remove the object from the drawing page, delete if undo is disabled
-            SdrObject* pObj = pDrawPage->RemoveObject( maNoteData.mpCaption->GetOrdNum() );
-            if( !bRecording )
-                SdrObject::Free( pObj );
-        }
+        SAL_INFO("sc.core","ScPostIt::RemoveCaption - forgetting one ref");
+        maNoteData.mxCaption.forget();
     }
-    maNoteData.mpCaption = nullptr;
 }
 
-SdrCaptionObj* ScNoteUtil::CreateTempCaption(
+ScCaptionPtr ScNoteUtil::CreateTempCaption(
         ScDocument& rDoc, const ScAddress& rPos, SdrPage& rDrawPage,
-        const OUString& rUserText, const Rectangle& rVisRect, bool bTailFront )
+        const OUString& rUserText, const tools::Rectangle& rVisRect, bool bTailFront )
 {
     OUStringBuffer aBuffer( rUserText );
     // add plain text of invisible (!) cell note (no formatting etc.)
@@ -774,10 +1165,10 @@ SdrCaptionObj* ScNoteUtil::CreateTempCaption(
 
     // create a caption if any text exists
     if( !pNoteCaption && aBuffer.isEmpty() )
-        return nullptr;
+        return ScCaptionPtr();
 
     // prepare visible rectangle (add default distance to all borders)
-    Rectangle aVisRect(
+    tools::Rectangle aVisRect(
         rVisRect.Left() + SC_NOTECAPTION_BORDERDIST_TEMP,
         rVisRect.Top() + SC_NOTECAPTION_BORDERDIST_TEMP,
         rVisRect.Right() - SC_NOTECAPTION_BORDERDIST_TEMP,
@@ -785,10 +1176,11 @@ SdrCaptionObj* ScNoteUtil::CreateTempCaption(
 
     // create the caption object
     ScCaptionCreator aCreator( rDoc, rPos, bTailFront );
-    SdrCaptionObj* pCaption = aCreator.GetCaption();
 
     // insert caption into page (needed to set caption text)
-    rDrawPage.InsertObject( pCaption );
+    aCreator.GetCaption().insertToDrawPage( rDrawPage );
+
+    SdrCaptionObj* pCaption = aCreator.GetCaption().get();  // just for ease of use
 
     // clone the edit text object, unless user text is present, then set this text
     if( pNoteCaption && rUserText.isEmpty() )
@@ -797,7 +1189,7 @@ SdrCaptionObj* ScNoteUtil::CreateTempCaption(
             pCaption->SetOutlinerParaObject( new OutlinerParaObject( *pOPO ) );
         // set formatting (must be done after setting text) and resize the box to fit the text
         pCaption->SetMergedItemSetAndBroadcast( pNoteCaption->GetMergedItemSet() );
-        Rectangle aCaptRect( pCaption->GetLogicRect().TopLeft(), pNoteCaption->GetLogicRect().GetSize() );
+        tools::Rectangle aCaptRect( pCaption->GetLogicRect().TopLeft(), pNoteCaption->GetLogicRect().GetSize() );
         pCaption->SetLogicRect( aCaptRect );
     }
     else
@@ -816,28 +1208,30 @@ SdrCaptionObj* ScNoteUtil::CreateTempCaption(
 
     // move caption into visible area
     aCreator.AutoPlaceCaption( &aVisRect );
-    return pCaption;
+
+    // XXX Note it is already inserted to the draw page.
+    return aCreator.GetCaption();
 }
 
 ScPostIt* ScNoteUtil::CreateNoteFromCaption(
-        ScDocument& rDoc, const ScAddress& rPos, SdrCaptionObj& rCaption, bool bShown )
+        ScDocument& rDoc, const ScAddress& rPos, SdrCaptionObj* pCaption, bool bShown )
 {
     ScNoteData aNoteData( bShown );
-    aNoteData.mpCaption = &rCaption;
+    aNoteData.mxCaption.reset( pCaption );
     ScPostIt* pNote = new ScPostIt( rDoc, rPos, aNoteData, false );
     pNote->AutoStamp();
 
     rDoc.SetNote(rPos, pNote);
 
     // ScNoteCaptionCreator c'tor updates the caption object to be part of a note
-    ScNoteCaptionCreator aCreator( rDoc, rPos, rCaption, bShown );
+    ScNoteCaptionCreator aCreator( rDoc, rPos, aNoteData.mxCaption, bShown );
 
     return pNote;
 }
 
 ScPostIt* ScNoteUtil::CreateNoteFromObjectData(
         ScDocument& rDoc, const ScAddress& rPos, SfxItemSet* pItemSet,
-        OutlinerParaObject* pOutlinerObj, const Rectangle& rCaptionRect,
+        OutlinerParaObject* pOutlinerObj, const tools::Rectangle& rCaptionRect,
         bool bShown, bool bAlwaysCreateCaption )
 {
     OSL_ENSURE( pItemSet && pOutlinerObj, "ScNoteUtil::CreateNoteFromObjectData - item set and outliner object expected" );
@@ -851,7 +1245,7 @@ ScPostIt* ScNoteUtil::CreateNoteFromObjectData(
     rInitData.mbDefaultPosSize = rCaptionRect.IsEmpty();
     if( !rInitData.mbDefaultPosSize )
     {
-        Rectangle aCellRect = ScDrawLayer::GetCellRect( rDoc, rPos, true );
+        tools::Rectangle aCellRect = ScDrawLayer::GetCellRect( rDoc, rPos, true );
         bool bNegPage = rDoc.IsNegativePage( rPos.Tab() );
         rInitData.maCaptionOffset.X() = bNegPage ? (aCellRect.Left() - rCaptionRect.Right()) : (rCaptionRect.Left() - aCellRect.Right());
         rInitData.maCaptionOffset.Y() = rCaptionRect.Top() - aCellRect.Top();

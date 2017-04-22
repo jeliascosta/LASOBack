@@ -46,6 +46,7 @@ endef
 define gb_CObject__command_pattern
 $(call gb_Helper_abbreviate_dirs,\
 	mkdir -p $(dir $(1)) $(dir $(4)) && cd $(SRCDIR) && \
+	$(gb_COMPILER_SETUP) \
 	$(if $(5),$(gb_COMPILER_PLUGINS_SETUP)) \
 	$(if $(filter %.c %.m,$(3)), $(gb_CC), $(gb_CXX)) \
 		$(DEFS) \
@@ -53,89 +54,16 @@ $(call gb_Helper_abbreviate_dirs,\
 		$(if $(VISIBILITY),,$(gb_VISIBILITY_FLAGS)) \
 		$(if $(WARNINGS_NOT_ERRORS),$(if $(ENABLE_WERROR),$(if $(PLUGIN_WARNINGS_AS_ERRORS),$(gb_COMPILER_PLUGINS_WARNINGS_AS_ERRORS))),$(gb_CFLAGS_WERROR)) \
 		$(if $(5),$(gb_COMPILER_PLUGINS)) \
+		$(if $(COMPILER_TEST),-fsyntax-only -ferror-limit=0 -Xclang -verify) \
 		$(2) \
 		$(if $(EXTERNAL_CODE),$(gb_CXXFLAGS_Wundef),$(gb_DEFS_INTERNAL)) \
 		-c $(3) \
 		-o $(1) \
-		$(call gb_cxx_dep_generation_options,$(1),$(4)) \
+		$(if $(COMPILER_TEST),,$(call gb_cxx_dep_generation_options,$(1),$(4))) \
 		-I$(dir $(3)) \
 		$(INCLUDE) \
 		$(PCHFLAGS) \
-		$(call gb_cxx_dep_copy,$(4)) \
-		)
-endef
-
-# Used to run a compiler plugin tool.
-# $(call gb_CObject__tool_command,relative-source,source)
-define gb_CObject__tool_command
-$(call gb_Output_announce,$(1).c,$(true),C  ,3)
-$(call gb_Helper_abbreviate_dirs,\
-        ICECC=no CCACHE_DISABLE=1 \
-	$(gb_CC) \
-		$(DEFS) \
-		$(gb_LTOFLAGS) \
-		$(if $(VISIBILITY),,$(gb_VISIBILITY_FLAGS)) \
-		$(if $(WARNINGS_NOT_ERRORS),$(if $(ENABLE_WERROR),$(if $(PLUGIN_WARNINGS_AS_ERRORS),$(gb_COMPILER_PLUGINS_WARNINGS_AS_ERRORS))),$(gb_CFLAGS_WERROR)) \
-		$(gb_COMPILER_PLUGINS) \
-		$(T_CFLAGS) $(T_CFLAGS_APPEND) \
-		$(if $(EXTERNAL_CODE),$(gb_CXXFLAGS_Wundef),$(gb_DEFS_INTERNAL)) \
-		-c $(2) \
-		-I$(dir $(2)) \
-		$(INCLUDE) \
-		)
-endef
-define gb_ObjCObject__tool_command
-$(call gb_Output_announce,$(1).m,$(true),OCC,3)
-$(call gb_Helper_abbreviate_dirs,\
-        ICECC=no CCACHE_DISABLE=1 \
-	$(gb_CC) \
-		$(DEFS) \
-		$(gb_LTOFLAGS) \
-		$(if $(VISIBILITY),,$(gb_VISIBILITY_FLAGS)) \
-		$(if $(WARNINGS_NOT_ERRORS),$(if $(ENABLE_WERROR),$(if $(PLUGIN_WARNINGS_AS_ERRORS),$(gb_COMPILER_PLUGINS_WARNINGS_AS_ERRORS))),$(gb_CFLAGS_WERROR)) \
-		$(gb_COMPILER_PLUGINS) \
-		$(T_OBJCFLAGS) $(T_OBJCFLAGS_APPEND) \
-		$(if $(EXTERNAL_CODE),$(gb_CXXFLAGS_Wundef),$(gb_DEFS_INTERNAL)) \
-		-c $(2) \
-		-I$(dir $(2)) \
-		$(INCLUDE) \
-		)
-endef
-
-# Used to run a compiler plugin tool.
-# $(call gb_CxxObject__tool_command,relative-source,source)
-define gb_CxxObject__tool_command
-$(call gb_Output_announce,$(1).cxx,$(true),CXX,3)
-$(call gb_Helper_abbreviate_dirs,\
-        ICECC=no CCACHE_DISABLE=1 \
-	$(gb_CXX) \
-		$(DEFS) \
-		$(gb_LTOFLAGS) \
-		$(if $(VISIBILITY),,$(gb_VISIBILITY_FLAGS)) \
-		$(if $(WARNINGS_NOT_ERRORS),$(if $(ENABLE_WERROR),$(if $(PLUGIN_WARNINGS_AS_ERRORS),$(gb_COMPILER_PLUGINS_WARNINGS_AS_ERRORS))),$(gb_CFLAGS_WERROR)) \
-		$(gb_COMPILER_PLUGINS) \
-		$(T_CXXFLAGS) $(T_CXXFLAGS_APPEND) \
-		$(if $(EXTERNAL_CODE),$(gb_CXXFLAGS_Wundef),$(gb_DEFS_INTERNAL)) \
-		-c $(2) \
-		-I$(dir $(2)) \
-		$(INCLUDE) \
-		)
-endef
-define gb_ObjCxxObject__tool_command
-$(call gb_Output_announce,$(1).mm,$(true),OCX,3)
-$(call gb_Helper_abbreviate_dirs,\
-        ICECC=no CCACHE_DISABLE=1 \
-	$(gb_CXX) \
-		$(DEFS) \
-		$(gb_LTOFLAGS) \
-		$(if $(VISIBILITY),,$(gb_VISIBILITY_FLAGS)) \
-		$(if $(WARNINGS_NOT_ERRORS),$(if $(ENABLE_WERROR),$(if $(PLUGIN_WARNINGS_AS_ERRORS),$(gb_COMPILER_PLUGINS_WARNINGS_AS_ERRORS))),$(gb_CFLAGS_WERROR)) \
-		$(gb_COMPILER_PLUGINS) \
-		$(T_OBJCXXFLAGS) $(T_OBJCXXFLAGS_APPEND) \
-		$(if $(EXTERNAL_CODE),$(gb_CXXFLAGS_Wundef),$(gb_DEFS_INTERNAL)) \
-		-c $(2) \
-		-I$(dir $(2)) \
-		$(INCLUDE) \
+		$(if $(COMPILER_TEST),,$(call gb_cxx_dep_copy,$(4))) \
 		)
 endef
 

@@ -7,15 +7,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-gb_Top_MODULE_CHECK_TARGETS := slowcheck unitcheck subsequentcheck perfcheck
+gb_Top_MODULE_CHECK_TARGETS := slowcheck unitcheck subsequentcheck perfcheck uicheck screenshot
 
 .PHONY : all check-if-root bootstrap gbuild build build-non-l10n-only build-l10n-only check clean clean-build clean-host test-install distclean distro-pack-install docs download etags fetch findunusedcode get-submodules id install install-strip tags debugrun help showmodules translations packageinfo internal.clean $(gb_Top_MODULE_CHECK_TARGETS)
 
 MAKECMDGOALS?=all
 build_goal:=$(if $(filter build check,$(MAKECMDGOALS)),all)\
- $(if $(filter build-nocheck,$(MAKECMDGOALS)),build)\
+ $(if $(filter build-nocheck uicheck,$(MAKECMDGOALS)),build)\
  $(if $(filter check,$(MAKECMDGOALS)),subsequentcheck)\
- $(filter all build-l10n-only build-non-l10n-only debugrun help showmodules translations $(gb_Top_MODULE_CHECK_TARGETS) check packageinfo,$(MAKECMDGOALS))
+ $(filter all build-l10n-only build-non-l10n-only debugrun help showmodules translations $(gb_Top_MODULE_CHECK_TARGETS) check packageinfo gbuildtojson,$(MAKECMDGOALS))
 
 SRCDIR := @SRC_ROOT@
 BUILDDIR := @BUILDDIR@
@@ -52,10 +52,10 @@ $(BUILDDIR)/config_host.mk : $(wildcard \
 
 else # MAKE_RESTARTS
 
-all: check-if-root build
+all: build
 
 check-if-root:
-	@if test `id -u` = 0; then \
+	@if test `id -u` = 0 && ! grep -q 'lxc\|docker' /proc/self/cgroup; then \
 		echo; \
 		echo 'No. You make ME a sandwich.'; \
 		echo; \
@@ -90,7 +90,10 @@ define gb_Top_GbuildModuleRules
 $(1): bootstrap fetch
 	cd $(SRCDIR)/$(2) && $$(MAKE) $(IWYU_OPTION) $(PARALLELISM_OPTION) $(GMAKE_OPTIONS)
 
-$(1).build $(1).check $(1).clean $(1).showdeliverables $(foreach target,$(gb_Top_MODULE_CHECK_TARGETS),$(1).$(target)):
+$(1).build $(1).check $(foreach target,$(gb_Top_MODULE_CHECK_TARGETS),$(1).$(target)): bootstrap fetch
+	cd $(SRCDIR)/$(2) && $$(MAKE) $(PARALLELISM_OPTION) $(GMAKE_OPTIONS) $$(patsubst $(1).%,%,$$@)
+
+$(1).clean $(1).showdeliverables:
 	cd $(SRCDIR)/$(2) && $$(MAKE) $(PARALLELISM_OPTION) $(GMAKE_OPTIONS) $$(patsubst $(1).%,%,$$@)
 
 $(1).all: bootstrap fetch
@@ -118,6 +121,7 @@ gbuild_TARGETS := AllLangHelp \
 	CliLibrary \
 	CliNativeLibrary \
 	CliUnoApi \
+	CompilerTest \
 	Configuration \
 	CppunitTest \
 	CustomTarget \
@@ -146,6 +150,7 @@ gbuild_TARGETS := AllLangHelp \
 	Rdb \
 	StaticLibrary \
 	UIConfig \
+	UITest \
 	UnoApi \
 	UnpackedTarball \
 	WinResTarget \
@@ -181,6 +186,9 @@ distclean : clean compilerplugins-clean
         $(BUILDDIR)/Makefile \
         $(BUILDDIR)/aclocal.m4 \
         $(BUILDDIR)/autom4te.cache \
+        $(BUILDDIR)/bin/bffvalidator.sh \
+        $(BUILDDIR)/bin/odfvalidator.sh \
+        $(BUILDDIR)/bin/officeotron.sh \
         $(BUILDDIR)/config.log \
         $(BUILDDIR)/config.Build.log \
         $(BUILDDIR)/config.status \
@@ -241,9 +249,9 @@ fetch:
 endif
 
 #
-# Bootstap
+# Bootstrap
 #
-bootstrap: compilerplugins
+bootstrap: check-if-root compilerplugins
 
 #
 # Build
@@ -263,7 +271,7 @@ endif
 
 build-non-l10n-only build-l10n-only build-nocheck check debugrun translations packageinfo $(gb_Top_MODULE_CHECK_TARGETS): build
 
-help showmodules:
+help showmodules gbuildtojson:
 	$(MAKE) $(PARALLELISM_OPTION) $(GMAKE_OPTIONS) -f $(SRCDIR)/Makefile.gbuild $@
 
 cross-toolset: bootstrap fetch
@@ -319,37 +327,37 @@ ifneq ($(MACOSX_CODESIGNING_IDENTITY),)
 #
 # Create Resources/*.lproj directories for languages supported by OS X
 	set -x; for lang in ca cs da de el en es fi fr hr hu id it ja ko ms nl no pl pt pt_PT ro ru sk sv th tr uk vi zh_CN zh_TW; do \
-		lproj=$(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/Resources/$$lang.lproj; \
-		mkdir $$lproj; \
+		lproj=$(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/Resources/$$lang.lproj; \
+		mkdir "$$lproj"; \
 	done
 #
 # And remove the "bin" folder which should not be there
-	rm -rf $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/bin
+	rm -rf $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/bin
 #
 # Remove unnecessary executables in the LibreOfficePython framework
-	rm -rf $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/Frameworks/LibreOfficePython.framework/Versions/[1-9]*/bin
+	rm -rf $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/Frameworks/LibreOfficePython.framework/Versions/[1-9]*/bin
 #
 # Remove the python.o object file which is weird and interferes with app store uploading
 # And with it removed, presumably the other stuff in the Python lib/python3.3/config-3.3m probably does not make sense either.
-	rm -rf $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/Frameworks/LibreOfficePython.framework/Versions/[1-9]*/lib/python[1-9]*/config-[1-9]*
+	rm -rf $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/Frameworks/LibreOfficePython.framework/Versions/[1-9]*/lib/python[1-9]*/config-[1-9]*
 #
 ifneq ($ENABLE_MACOSX_SANDBOX),)
-# Remove the gengal.bin binary and unopkg script that we don't want
-	rm $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/MacOS/gengal.bin
-	rm $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app/Contents/MacOS/unopkg
+# Remove the gengal binary and unopkg script that we don't want
+	rm $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/MacOS/gengal
+	rm $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app/Contents/MacOS/unopkg
 endif
 #
 # Then use the macosx-codesign-app-bundle script
-	@$(SRCDIR)/solenv/bin/macosx-codesign-app-bundle $(TESTINSTALLDIR)/LibreOffice$(if $(ENABLE_RELEASE_BUILD),,Dev).app
+	@$(SRCDIR)/solenv/bin/macosx-codesign-app-bundle $(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app
 endif
 endif
 	@$(call gb_Top_InstallFinished,Test Installation,$(TESTINSTALLDIR))
 
 mac-app-store-package: test-install
 ifneq ($(MACOSX_PACKAGE_SIGNING_IDENTITY),)
-	rm -rf "$(MACOSX_APP_NAME).app"
-	mv "$(TESTINSTALLDIR)/$(PRODUCTNAME).app" "$(MACOSX_APP_NAME).app"
-	productbuild --component "$(MACOSX_APP_NAME).app" /Applications --sign $(MACOSX_PACKAGE_SIGNING_IDENTITY) $(shell echo "$(MACOSX_APP_NAME)" | tr ' ' '-').pkg
+	rm -rf "$(PRODUCTNAME).app"
+	mv "$(TESTINSTALLDIR)/$(PRODUCTNAME_WITHOUT_SPACES).app" "$(PRODUCTNAME).app"
+	productbuild --component "$(PRODUCTNAME).app" /Applications --sign $(MACOSX_PACKAGE_SIGNING_IDENTITY) $(PRODUCTNAME_WITHOUT_SPACES).pkg
 else
 	@echo You did not provide an installer signing identity with --enable-macosx-package-signing
 	@exit 1
@@ -387,6 +395,7 @@ symbols:
 	mkdir -p $(WORKDIR)/symbols/
 ifeq ($(OS),WNT)
 	$(SRCDIR)/bin/symbolstore.py $(WORKDIR)/UnpackedTarball/breakpad/src/tools/windows/binaries/dump_syms.exe $(WORKDIR)/symbols/ $(INSTDIR)/program/*
+	$(SRCDIR)/bin/symstore.sh
 else
 	$(SRCDIR)/bin/symbolstore.py $(WORKDIR)/UnpackedTarball/breakpad/src/tools/linux/dump_syms/dump_syms $(WORKDIR)/symbols/ $(INSTDIR)/program/*
 endif
@@ -406,21 +415,38 @@ dump-deps-sort:
 	@$(SRCDIR)/bin/module-deps.pl -t $(MAKE) $(SRCDIR)/Makefile.gbuild
 
 define gb_Top_GbuildToIdeIntegration
-$(1)-ide-integration:
-	cd $(SRCDIR) && (LC_MESSAGES=C $(MAKE) cmd="$(MAKE) -npf Makefile.gbuild all" cmd || true) | $(SRCDIR)/bin/gbuild-to-ide --ide $(1)
+$(1)-ide-integration: gbuildtojson $(if $(filter MACOSX,$(OS_FOR_BUILD)),python3.all)
+	cd $(SRCDIR) && \
+		$(if $(filter MACOSX,$(OS_FOR_BUILD)),PATH="$(INSTROOT_FOR_BUILD)/Frameworks/LibreOfficePython.framework/Versions/Current/bin:$(PATH)") \
+		$(SRCDIR)/bin/gbuild-to-ide --ide $(1) --make $(MAKE)
+
+endef
+
+define gb_Top_GbuildToIdeIntegrationNS
+$(1)-ide-integration: gbuildtojson $(if $(filter MACOSX,$(OS_FOR_BUILD)),python3.all)
+	cd $(SRCDIR) && \
+		$(if $(filter MACOSX,$(OS_FOR_BUILD)),PATH="$(INSTROOT_FOR_BUILD)/Frameworks/LibreOfficePython.framework/Versions/Current/bin:$(PATH)") \
+		$(SRCDIR)/bin/gbuild-to-ideNS --ide $(1) --make $(MAKE)
 
 endef
 
 $(foreach ide,\
 	debug \
-	kdevelop \
-	vs2012 \
-	vs2013 \
-	vim \
-	xcode \
-	qtcreator \
-        eclipsecdt,\
+	testIde \
+	xcode, \
 $(eval $(call gb_Top_GbuildToIdeIntegration,$(ide))))
+
+$(foreach ide,\
+	codelite \
+	vs2013 \
+	vs2015 \
+	kdevelop \
+	vim \
+	qtcreator \
+    eclipsecdt,\
+$(eval $(call gb_Top_GbuildToIdeIntegrationNS,$(ide))))
+
+fuzzers: Library_sal Library_salhelper Library_reg Library_store Library_unoidl codemaker Library_cppu Library_i18nlangtag Library_cppuhelper Library_comphelper StaticLibrary_ulingu StaticLibrary_findsofficepath Library_tl Library_basegfx Library_canvastools Library_cppcanvas Library_dbtools Library_deploymentmisc Library_deploymentmisc Library_editeng Library_fwe Library_fwi Library_i18nutil Library_localebe1 Library_sax Library_sofficeapp Library_ucbhelper Library_opencl Rdb_services udkapi offapi Library_clew Library_gie Library_icg Library_reflection Library_invocadapt Library_bootstrap Library_introspection Library_stocservices Library_xmlreader Library_gcc3_uno instsetoo_native more_fonts StaticLibrary_fuzzer Executable_wmffuzzer Executable_jpgfuzzer Executable_giffuzzer Executable_xbmfuzzer Executable_xpmfuzzer Executable_pngfuzzer Executable_bmpfuzzer Executable_svmfuzzer Executable_pcdfuzzer Executable_dxffuzzer Executable_metfuzzer Executable_ppmfuzzer Executable_psdfuzzer Executable_epsfuzzer Executable_pctfuzzer Executable_pcxfuzzer Executable_rasfuzzer Executable_tgafuzzer Executable_tiffuzzer Executable_hwpfuzzer Executable_602fuzzer Executable_lwpfuzzer Executable_olefuzzer AllLangResTarget_sd Executable_pptfuzzer Executable_rtffuzzer Executable_cgmfuzzer
 
 endif # MAKE_RESTARTS
 

@@ -13,16 +13,14 @@ Integrating LOK into other software
 LOK functionality can be accessed by including LibreOfficeKit.h[xx] in your
 program.
 
-LOK initialisation (lok_init) requires the inclusion of LibreOfficeKitInit.h
-in your program. Should you be using the C++ LibreOfficeKit.hxx header you
-must first include LibreOfficeKitInit.h followed by LibreOfficeKit.hxx in any
-files where you need to use lok_cpp_init.
+LOK initialisation (lok_init) requires the inclusion of LibreOfficeKitInit.h in
+your program. If you use the C++ LibreOfficeKit.hxx header, it already includes
+LibreOfficeKitInit.h for you.
 
 (LibreOfficeKit.hxx is a simple and fully inlined C++ wrapper for the same
 functionality as in LibreOfficeKit.h.)
 
-An example program (currently using the older shim.c/static library
-integration) can be seen on:
+An example program can be seen on:
 https://github.com/ojwb/lloconv
 
 Tiled Rendering
@@ -34,7 +32,7 @@ To use LOK Tiled Rendering you will need the following before the LOK includes:
 (This must be define before ANY LOK header, i.e. including the Init header.)
 
 Currently only bitmap-buffer rendering is supported, with a 32-bit BGRA
-colourspace (further alternatives could feasibly be implemented as needed).
+colorspace (further alternatives could feasibly be implemented as needed).
 Scanlines are ordered top-down (whereas LibreOffice will internally default
 to bottom-up).
 

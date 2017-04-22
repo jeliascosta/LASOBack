@@ -39,7 +39,7 @@ void WrappedSceneProperty::addWrappedProperties( std::vector< WrappedProperty* >
 }
 
 WrappedD3DTransformMatrixProperty::WrappedD3DTransformMatrixProperty(
-            std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+            const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact )
             : WrappedProperty("D3DTransformMatrix","D3DTransformMatrix")
             , m_spChart2ModelContact( spChart2ModelContact )
 {
@@ -50,7 +50,6 @@ WrappedD3DTransformMatrixProperty::~WrappedD3DTransformMatrixProperty()
 }
 
 void WrappedD3DTransformMatrixProperty::setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
-                throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException)
 {
     if( DiagramHelper::isPieOrDonutChart( m_spChart2ModelContact->getChart2Diagram() ) )
     {
@@ -67,7 +66,7 @@ void WrappedD3DTransformMatrixProperty::setPropertyValue( const Any& rOuterValue
 
             aHM = BaseGFXHelper::B3DHomMatrixToHomogenMatrix(aNewMatrix);
 
-            WrappedProperty::setPropertyValue( uno::makeAny(aHM), xInnerPropertySet );
+            WrappedProperty::setPropertyValue( uno::Any(aHM), xInnerPropertySet );
             return;
         }
     }
@@ -76,7 +75,6 @@ void WrappedD3DTransformMatrixProperty::setPropertyValue( const Any& rOuterValue
 }
 
 Any WrappedD3DTransformMatrixProperty::getPropertyValue( const Reference< beans::XPropertySet >& xInnerPropertySet ) const
-                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     if( DiagramHelper::isPieOrDonutChart( m_spChart2ModelContact->getChart2Diagram() ) )
     {
@@ -94,17 +92,11 @@ Any WrappedD3DTransformMatrixProperty::getPropertyValue( const Reference< beans:
 
             aHM = BaseGFXHelper::B3DHomMatrixToHomogenMatrix(aNewMatrix);
 
-            return uno::makeAny(aHM);
+            return uno::Any(aHM);
         }
     }
 
     return WrappedProperty::getPropertyValue( xInnerPropertySet );
-}
-
-Any WrappedD3DTransformMatrixProperty::getPropertyDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
-                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
-{
-    return WrappedProperty::getPropertyDefault( xInnerPropertyState );
 }
 
 } //namespace wrapper

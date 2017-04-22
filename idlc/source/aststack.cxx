@@ -18,8 +18,8 @@
  */
 
 #include <rtl/alloc.h>
-#include <idlc/aststack.hxx>
-#include <idlc/astscope.hxx>
+#include <aststack.hxx>
+#include <astscope.hxx>
 
 #define STACKSIZE_INCREMENT 64
 
@@ -64,7 +64,7 @@ AstScope* AstStack::nextToTop()
         return nullptr;
 
     tmp = top();        // Save top
-    (void) pop();       // Pop it
+    pop();              // Pop it
     retval = top();     // Get next one down
     (void) push(tmp);   // Push top back
     return retval;      // Return next one down

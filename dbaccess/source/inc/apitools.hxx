@@ -38,22 +38,20 @@ class OSubComponent : public ::cppu::OComponentHelper
 protected:
     // the parent must support the tunnel implementation
     css::uno::Reference< css::uno::XInterface > m_xParent;
-    virtual ~OSubComponent();
+    virtual ~OSubComponent() override;
 
 public:
     OSubComponent(::osl::Mutex& _rMutex,
                   const css::uno::Reference< css::uno::XInterface >& _xParent);
 
 // css::lang::XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
 
 // css::uno::XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
-            throw(css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL acquire() throw() override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
     virtual void SAL_CALL release() throw() override;
 
-    inline operator css::uno::Reference< css::uno::XInterface > () const
+    operator css::uno::Reference< css::uno::XInterface > () const
         { return static_cast<css::uno::XWeak *>(const_cast<OSubComponent *>(this)); }
 
 };
@@ -62,23 +60,23 @@ public:
 
 // (internal - not to be used outside - usually)
 #define IMPLEMENT_SERVICE_INFO_IMPLNAME(classname, implasciiname)   \
-    OUString SAL_CALL classname::getImplementationName(  ) throw (css::uno::RuntimeException, std::exception)   \
+    OUString SAL_CALL classname::getImplementationName(  )   \
     {   \
         return OUString(implasciiname); \
     }   \
 
 #define IMPLEMENT_SERVICE_INFO_IMPLNAME_STATIC(classname, implasciiname)    \
-    OUString SAL_CALL classname::getImplementationName(  ) throw (css::uno::RuntimeException, std::exception)   \
+    OUString SAL_CALL classname::getImplementationName(  )   \
     {   \
         return getImplementationName_Static();  \
     }   \
-    OUString SAL_CALL classname::getImplementationName_Static(  ) throw (css::uno::RuntimeException)    \
+    OUString SAL_CALL classname::getImplementationName_Static(  )    \
     {   \
         return OUString(implasciiname); \
     }   \
 
 #define IMPLEMENT_SERVICE_INFO_SUPPORTS(classname)  \
-    sal_Bool SAL_CALL classname::supportsService( const OUString& _rServiceName ) throw(css::uno::RuntimeException, std::exception) \
+    sal_Bool SAL_CALL classname::supportsService( const OUString& _rServiceName ) \
     {   \
         css::uno::Sequence< OUString > aSupported(getSupportedServiceNames());  \
         const OUString* pSupported = aSupported.getConstArray(); \
@@ -90,22 +88,22 @@ public:
     }   \
 
 #define IMPLEMENT_SERVICE_INFO_GETSUPPORTED1_STATIC(classname, serviceasciiname)    \
-    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception)  \
+    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  )  \
     {   \
         return getSupportedServiceNames_Static();   \
     }   \
-    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames_Static(  ) throw(css::uno::RuntimeException)   \
+    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames_Static(  )   \
     {   \
         css::uno::Sequence< OUString > aSupported { serviceasciiname }; \
         return aSupported;  \
     }   \
 
 #define IMPLEMENT_SERVICE_INFO_GETSUPPORTED2_STATIC(classname, serviceasciiname1, serviceasciiname2)    \
-    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception)  \
+    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  )  \
     {   \
         return getSupportedServiceNames_Static();   \
     }   \
-    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames_Static(  ) throw(css::uno::RuntimeException)   \
+    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames_Static(  )   \
     {   \
         css::uno::Sequence< OUString > aSupported(2);   \
         aSupported[0] = serviceasciiname1;    \
@@ -113,17 +111,10 @@ public:
         return aSupported;  \
     }   \
 
-#define DECLARE_SERVICE_INFO_STATIC()   \
-    DECLARE_SERVICE_INFO(); \
-    static OUString SAL_CALL getImplementationName_Static(  ) throw (css::uno::RuntimeException);   \
-    static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static(  ) throw(css::uno::RuntimeException);  \
-    static css::uno::Reference< css::uno::XInterface >    \
-        SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&)    \
-
 #define IMPLEMENT_SERVICE_INFO1(classname, implasciiname, serviceasciiname) \
     IMPLEMENT_SERVICE_INFO_IMPLNAME(classname, implasciiname)   \
     IMPLEMENT_SERVICE_INFO_SUPPORTS(classname)  \
-    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception)  \
+    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  )  \
     {   \
         return css::uno::Sequence< OUString > { serviceasciiname }; \
     }   \
@@ -132,7 +123,7 @@ public:
 #define IMPLEMENT_SERVICE_INFO2(classname, implasciiname, serviceasciiname1, serviceasciiname2) \
     IMPLEMENT_SERVICE_INFO_IMPLNAME(classname, implasciiname)   \
     IMPLEMENT_SERVICE_INFO_SUPPORTS(classname)  \
-    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception)  \
+    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  )  \
     {   \
         return css::uno::Sequence< OUString > { serviceasciiname1, serviceasciiname2 };    \
     }
@@ -152,7 +143,7 @@ public:
 #define IMPLEMENT_SERVICE_INFO3(classname, implasciiname, serviceasciiname1, serviceasciiname2, serviceasciiname3)  \
     IMPLEMENT_SERVICE_INFO_IMPLNAME(classname, implasciiname)   \
     IMPLEMENT_SERVICE_INFO_SUPPORTS(classname)  \
-    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception)  \
+    css::uno::Sequence< OUString > SAL_CALL classname::getSupportedServiceNames(  )  \
     {   \
         return css::uno::Sequence< OUString > { serviceasciiname1, serviceasciiname2, serviceasciiname3 };  \
     }   \
@@ -175,13 +166,13 @@ css::uno::Sequence< sal_Int8 > classname::getUnoTunnelImplementationId() \
     }   \
     return pId->getImplementationId();  \
 } \
-css::uno::Sequence< sal_Int8 > classname::getImplementationId() throw (css::uno::RuntimeException, std::exception)    \
+css::uno::Sequence< sal_Int8 > classname::getImplementationId()    \
 {   \
     return css::uno::Sequence<sal_Int8>(); \
 }
 
 #define IMPLEMENT_GETTYPES2( classname, baseclass1, baseclass2 )    \
-    css::uno::Sequence< css::uno::Type > classname::getTypes() throw (css::uno::RuntimeException, std::exception)    \
+    css::uno::Sequence< css::uno::Type > classname::getTypes()    \
     {   \
         return  ::comphelper::concatSequences(  \
             baseclass1::getTypes( ),    \
@@ -190,7 +181,7 @@ css::uno::Sequence< sal_Int8 > classname::getImplementationId() throw (css::uno:
     }
 
 #define IMPLEMENT_GETTYPES3( classname, baseclass1, baseclass2, baseclass3 )    \
-    css::uno::Sequence< css::uno::Type > classname::getTypes() throw (css::uno::RuntimeException, std::exception)    \
+    css::uno::Sequence< css::uno::Type > classname::getTypes()    \
     {   \
         return  ::comphelper::concatSequences(  \
             baseclass1::getTypes( ),    \
@@ -201,12 +192,12 @@ css::uno::Sequence< sal_Int8 > classname::getImplementationId() throw (css::uno:
 
 // helper for declaring/implementing classes based on the OPropertyContainer and an OPropertyArrayUsageHelper
 #define DECLARE_PROPERTYCONTAINER_DEFAULTS( )   \
-    virtual css::uno::Reference< css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() throw(css::uno::RuntimeException, std::exception) override; \
+    virtual css::uno::Reference< css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() override; \
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override; \
     virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const override
 
 #define IMPLEMENT_PROPERTYCONTAINER_DEFAULTS2( classname , baseclass1)  \
-    css::uno::Reference< css::beans::XPropertySetInfo >  SAL_CALL classname::getPropertySetInfo() throw(css::uno::RuntimeException, std::exception)  \
+    css::uno::Reference< css::beans::XPropertySetInfo >  SAL_CALL classname::getPropertySetInfo()  \
     {   \
         Reference< XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );    \
         return xInfo;   \

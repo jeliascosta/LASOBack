@@ -86,17 +86,12 @@ void LwpFribCHBlock::Read(LwpObjectStream* pObjStrm, sal_uInt16 /*len*/)
     m_nType = pObjStrm->QuickReaduInt8();
 }
 
-LwpCHBlkMarker* LwpFribCHBlock::GetMarker()
-{
-    return dynamic_cast<LwpCHBlkMarker*>(m_objMarker.obj().get());
-}
-
 void LwpFribCHBlock::XFConvert(XFContentContainer* pXFPara,LwpStory* pStory)
 {
     sal_uInt8 type = GetType();
     if (!pStory)
         return;
-    LwpCHBlkMarker* pMarker = GetMarker();
+    LwpCHBlkMarker* pMarker = dynamic_cast<LwpCHBlkMarker*>(m_objMarker.obj().get());
 
     if (!pMarker)
         return;
@@ -151,27 +146,25 @@ void  LwpFribBookMark::RegisterStyle(LwpFoundry* pFoundry)
     LwpBookmarkMgr* pMarkMgr = pGlobal->GetLwpBookmarkMgr();
     if (type == MARKER_START)
     {
-        XFBookmarkStart* pMarkStart = new XFBookmarkStart;
-        pMarkStart->SetDivision(sDivision);
-        pMarkStart->SetName(name);
-        pMarkMgr->AddXFBookmarkStart(name,pMarkStart);//add to map
-        m_pStart = pMarkStart;
+        rtl::Reference<XFBookmarkStart> xMarkStart(new XFBookmarkStart);
+        xMarkStart->SetDivision(sDivision);
+        xMarkStart->SetName(name);
+        pMarkMgr->AddXFBookmarkStart(name, xMarkStart.get());//add to map
+        m_xStart = xMarkStart;
     }
     else if(type == MARKER_END)
     {
-        XFBookmarkEnd* pMarkEnd = new XFBookmarkEnd;
-        pMarkEnd->SetDivision(sDivision);
-        pMarkEnd->SetName(name);
-        pMarkMgr->AddXFBookmarkEnd(name,pMarkEnd);  //add to map
-        m_pEnd = pMarkEnd;
+        rtl::Reference<XFBookmarkEnd> xMarkEnd(new XFBookmarkEnd);
+        xMarkEnd->SetDivision(sDivision);
+        xMarkEnd->SetName(name);
+        pMarkMgr->AddXFBookmarkEnd(name, xMarkEnd.get());  //add to map
+        m_xEnd = xMarkEnd;
     }
 }
 
 LwpFribBookMark::LwpFribBookMark(LwpPara* pPara )
     : LwpFrib(pPara)
     , m_nType(0)
-    , m_pStart(nullptr)
-    , m_pEnd(nullptr)
 {
 }
 
@@ -190,13 +183,13 @@ void LwpFribBookMark::XFConvert(XFContentContainer* pXFPara)
 {
     sal_uInt8 type = GetType();
 
-    if (type == MARKER_START && m_pStart)
+    if (type == MARKER_START && m_xStart)
     {
-        pXFPara->Add(m_pStart);
+        pXFPara->Add(m_xStart.get());
     }
-    else if(type == MARKER_END && m_pEnd)
+    else if(type == MARKER_END && m_xEnd)
     {
-        pXFPara->Add(m_pEnd);
+        pXFPara->Add(m_xEnd.get());
     }
 }
 
@@ -1369,7 +1362,7 @@ void LwpFribField::ConvertCrossRefStart(XFContentContainer* pXFPara,LwpFieldMark
     XFCrossRefStart* pRef = new XFCrossRefStart;
     pRef->SetRefType(m_nCrossRefType);
     pRef->SetMarkName(m_sFormula);
-//  pFieldMark->SetStart(sal_True);//for some disnormal cases
+//  pFieldMark->SetStart(sal_True);//for some unusual cases
     if (m_ModFlag)
     {
         XFTextSpanStart* pSpan = new XFTextSpanStart;
@@ -1401,11 +1394,6 @@ LwpFribRubyMarker::LwpFribRubyMarker( LwpPara* pPara )
 {
 }
 
-LwpRubyMarker* LwpFribRubyMarker::GetMarker()
-{
-    return dynamic_cast<LwpRubyMarker*>(m_objMarker.obj(VO_RUBYMARKER).get());
-}
-
 void LwpFribRubyMarker::Read(LwpObjectStream* pObjStrm, sal_uInt16 /*len*/)
 {
     m_objMarker.ReadIndexed(pObjStrm);
@@ -1415,7 +1403,7 @@ void LwpFribRubyMarker::Read(LwpObjectStream* pObjStrm, sal_uInt16 /*len*/)
 void LwpFribRubyMarker::XFConvert(XFContentContainer* pXFPara)
 {
     sal_uInt8 type = GetType();
-    LwpRubyMarker* pMarker = GetMarker();
+    LwpRubyMarker* pMarker = dynamic_cast<LwpRubyMarker*>(m_objMarker.obj(VO_RUBYMARKER).get());
 
     if (type == MARKER_START)
     {

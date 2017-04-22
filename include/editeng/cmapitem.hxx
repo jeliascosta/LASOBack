@@ -32,39 +32,34 @@ class SvXMLUnitConverter;
     This item describe the font type (uppercase, small caps ,...).
 */
 
-class EDITENG_DLLPUBLIC SvxCaseMapItem : public SfxEnumItem
+class EDITENG_DLLPUBLIC SvxCaseMapItem : public SfxEnumItem<SvxCaseMap>
 {
 public:
     static SfxPoolItem* CreateDefault();
 
-    SvxCaseMapItem( const SvxCaseMap eMap /*= SVX_CASEMAP_NOT_MAPPED*/,
+    SvxCaseMapItem( const SvxCaseMap eMap /*= SvxCaseMap::NotMapped*/,
                     const sal_uInt16 nId );
 
     // "pure virtual Methods" from SfxPoolItem + SfxEnumItem
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
+                                    MapUnit eCoreMetric,
+                                    MapUnit ePresMetric,
                                     OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create(SvStream &, sal_uInt16) const override;
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion) const override;
-    virtual OUString   GetValueTextByPos( sal_uInt16 nPos ) const override;
+    virtual OUString        GetValueTextByPos( sal_uInt16 nPos ) const override;
     virtual sal_uInt16      GetValueCount() const override;
 
-    // MS VC4.0 kommt durcheinander
-    void                    SetValue( sal_uInt16 nNewVal )
-                                {SfxEnumItem::SetValue(nNewVal); }
-
-    inline SvxCaseMapItem& operator=(const SvxCaseMapItem& rMap)
+    SvxCaseMapItem& operator=(const SvxCaseMapItem& rMap)
         {
             SetValue( rMap.GetValue() );
             return *this;
         }
 
     // enum cast
-    SvxCaseMap              GetCaseMap() const
-                                { return (SvxCaseMap)GetValue(); }
+    SvxCaseMap              GetCaseMap() const { return GetValue(); }
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 };

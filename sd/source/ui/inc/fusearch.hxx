@@ -23,10 +23,9 @@
 #include "fupoor.hxx"
 
 class SvxSearchItem;
+class SdOutliner;
 
 namespace sd {
-
-class Outliner;
 
 class FuSearch : public FuPoor
 {
@@ -38,9 +37,9 @@ public:
     void SearchAndReplace( const SvxSearchItem* pSearchItem );
 
 protected:
-    virtual ~FuSearch();
+    virtual ~FuSearch() override;
 
-    ::sd::Outliner* pSdOutliner;
+    SdOutliner* pSdOutliner;
     bool bOwnOutliner;
 
 private:

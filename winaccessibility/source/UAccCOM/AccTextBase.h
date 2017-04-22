@@ -22,7 +22,7 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCTEXTBASE_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCTEXTBASE_H
 
-#include <com/sun/star/uno/reference.hxx>
+#include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/accessibility/XAccessibleText.hpp>
 #include "UNOXWrapper.h"
 
@@ -97,13 +97,13 @@ public:
     STDMETHOD(scrollSubstringToPoint)(long startIndex, long endIndex,enum IA2CoordinateType coordinateType, long x, long y );
 
     // Override of IUNOXWrapper.
-    STDMETHOD(put_XInterface)(hyper pXInterface);
+    STDMETHOD(put_XInterface)(hyper pXInterface) override;
 
 private:
 
     css::uno::Reference<css::accessibility::XAccessibleText> pRXText;
 
-    inline css::accessibility::XAccessibleText* GetXInterface()
+    css::accessibility::XAccessibleText* GetXInterface()
     {
         return pRXText.get();
     }

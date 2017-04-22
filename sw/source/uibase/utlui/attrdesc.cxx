@@ -63,12 +63,10 @@ using namespace com::sun::star;
 // query the attribute descriptions
 void SwAttrSet::GetPresentation(
         SfxItemPresentation ePres,
-        SfxMapUnit eCoreMetric,
-        SfxMapUnit ePresMetric,
+        MapUnit eCoreMetric,
+        MapUnit ePresMetric,
         OUString &rText ) const
 {
-    static sal_Char const sComma[] = ", ";
-
     rText.clear();
     OUString aStr;
     if( Count() )
@@ -82,7 +80,7 @@ void SwAttrSet::GetPresentation(
                                                  ePresMetric, aStr,
                                                  &rInt );
             if( rText.getLength() && aStr.getLength() )
-                rText += sComma;
+                rText += ", ";
             rText += aStr;
             if( aIter.IsAtEnd() )
                 break;
@@ -94,8 +92,8 @@ void SwAttrSet::GetPresentation(
 bool SwFormatCharFormat::GetPresentation
 (
     SfxItemPresentation ePres,
-    SfxMapUnit          eCoreUnit,
-    SfxMapUnit          ePresUnit,
+    MapUnit             eCoreUnit,
+    MapUnit             ePresUnit,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -116,8 +114,8 @@ bool SwFormatCharFormat::GetPresentation
 bool SwFormatAutoFormat::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -129,8 +127,8 @@ bool SwFormatAutoFormat::GetPresentation
 bool SwFormatINetFormat::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -140,8 +138,8 @@ bool SwFormatINetFormat::GetPresentation
 }
 
 bool SwFormatRuby::GetPresentation( SfxItemPresentation /*ePres*/,
-                            SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/,
-                            OUString &rText, const IntlWrapper* /*pIntl*/ ) const
+                                    MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/,
+                                    OUString &rText, const IntlWrapper* /*pIntl*/ ) const
 {
     rText.clear();
     return true;
@@ -150,8 +148,8 @@ bool SwFormatRuby::GetPresentation( SfxItemPresentation /*ePres*/,
 bool SwFormatDrop::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -178,8 +176,8 @@ bool SwFormatDrop::GetPresentation
 bool SwRegisterItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -192,8 +190,8 @@ bool SwRegisterItem::GetPresentation
 bool SwNumRuleItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -209,8 +207,8 @@ bool SwNumRuleItem::GetPresentation
 bool SwParaConnectBorderItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -225,8 +223,8 @@ bool SwParaConnectBorderItem::GetPresentation
 bool SwFormatFrameSize::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          eCoreUnit,
-    SfxMapUnit          ePresUnit,
+    MapUnit             eCoreUnit,
+    MapUnit             ePresUnit,
     OUString&           rText,
     const IntlWrapper*        pIntl
 )   const
@@ -267,8 +265,8 @@ bool SwFormatFrameSize::GetPresentation
 bool SwFormatHeader::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -284,8 +282,8 @@ bool SwFormatHeader::GetPresentation
 bool SwFormatFooter::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -298,31 +296,31 @@ bool SwFormatFooter::GetPresentation
 bool SwFormatSurround::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
 {
     sal_uInt16 nId = 0;
-    switch ( (SwSurround)GetValue() )
+    switch ( (css::text::WrapTextMode)GetValue() )
     {
-        case SURROUND_NONE:
+        case css::text::WrapTextMode_NONE:
             nId = STR_SURROUND_NONE;
         break;
-        case SURROUND_THROUGHT:
-            nId = STR_SURROUND_THROUGHT;
+        case css::text::WrapTextMode_THROUGH:
+            nId = STR_SURROUND_THROUGH;
         break;
-        case SURROUND_PARALLEL:
+        case css::text::WrapTextMode_PARALLEL:
             nId = STR_SURROUND_PARALLEL;
         break;
-        case SURROUND_IDEAL:
+        case css::text::WrapTextMode_DYNAMIC:
             nId = STR_SURROUND_IDEAL;
         break;
-        case SURROUND_LEFT:
+        case css::text::WrapTextMode_LEFT:
             nId = STR_SURROUND_LEFT;
         break;
-        case SURROUND_RIGHT:
+        case css::text::WrapTextMode_RIGHT:
             nId = STR_SURROUND_RIGHT;
         break;
         default:;//prevent warning
@@ -342,8 +340,8 @@ bool SwFormatSurround::GetPresentation
 bool SwFormatVertOrient::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          eCoreUnit,
-    SfxMapUnit          ePresUnit,
+    MapUnit             eCoreUnit,
+    MapUnit             ePresUnit,
     OUString&           rText,
     const IntlWrapper*        pIntl
 )   const
@@ -388,8 +386,8 @@ bool SwFormatVertOrient::GetPresentation
 bool SwFormatHoriOrient::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          eCoreUnit,
-    SfxMapUnit          ePresUnit,
+    MapUnit             eCoreUnit,
+    MapUnit             ePresUnit,
     OUString&           rText,
     const IntlWrapper*        pIntl
 )   const
@@ -434,8 +432,8 @@ bool SwFormatHoriOrient::GetPresentation
 bool SwFormatAnchor::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -443,13 +441,13 @@ bool SwFormatAnchor::GetPresentation
     sal_uInt16 nId = 0;
     switch ( GetAnchorId() )
     {
-        case FLY_AT_PARA:
+        case RndStdIds::FLY_AT_PARA:
             nId = STR_FLY_AT_PARA;
             break;
-        case FLY_AS_CHAR:
+        case RndStdIds::FLY_AS_CHAR:
             nId = STR_FLY_AS_CHAR;
             break;
-        case FLY_AT_PAGE:
+        case RndStdIds::FLY_AT_PAGE:
             nId = STR_FLY_AT_PAGE;
             break;
         default:;//prevent warning
@@ -462,8 +460,8 @@ bool SwFormatAnchor::GetPresentation
 bool SwFormatPageDesc::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -481,8 +479,8 @@ bool SwFormatPageDesc::GetPresentation
 bool SwFormatCol::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          eCoreUnit,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             eCoreUnit,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        pIntl
 )   const
@@ -496,7 +494,7 @@ bool SwFormatCol::GetPresentation
             const long nWdth = static_cast<long>(GetLineWidth());
             rText = rText + " " + SW_RESSTR( STR_LINE_WIDTH ) + " " +
                     ::GetMetricText( nWdth, eCoreUnit,
-                                      SFX_MAPUNIT_POINT, pIntl );
+                                      MapUnit::MapPoint, pIntl );
         }
     }
     else
@@ -509,8 +507,8 @@ bool SwFormatCol::GetPresentation
 bool SwFormatURL::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -536,8 +534,8 @@ bool SwFormatURL::GetPresentation
 bool SwFormatEditInReadonly::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -550,7 +548,7 @@ bool SwFormatEditInReadonly::GetPresentation
 
 void SwFormatEditInReadonly::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swFormatEditInReadonly"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwFormatEditInReadonly"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::boolean(GetValue()).getStr()));
     xmlTextWriterEndElement(pWriter);
@@ -559,8 +557,8 @@ void SwFormatEditInReadonly::dumpAsXml(xmlTextWriterPtr pWriter) const
 bool SwFormatLayoutSplit::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -573,8 +571,8 @@ bool SwFormatLayoutSplit::GetPresentation
 bool SwFormatRowSplit::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           /*rText*/,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -585,8 +583,8 @@ bool SwFormatRowSplit::GetPresentation
 bool SwFormatFootnoteEndAtTextEnd::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           /*rText*/,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -597,8 +595,8 @@ bool SwFormatFootnoteEndAtTextEnd::GetPresentation
 bool SwFormatChain::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -621,8 +619,8 @@ bool SwFormatChain::GetPresentation
 bool SwFormatLineNumber::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*    /*pIntl*/
 )   const
@@ -642,8 +640,8 @@ bool SwFormatLineNumber::GetPresentation
 bool SwTextGridItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper*  /*pIntl*/
 )   const
@@ -670,8 +668,8 @@ bool SwTextGridItem::GetPresentation
 bool SwHeaderAndFooterEatSpacingItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           /*rText*/,
     const IntlWrapper*        /*pIntl*/
 )   const
@@ -682,16 +680,16 @@ bool SwHeaderAndFooterEatSpacingItem::GetPresentation
 // Graphic attributes
 
 bool SwMirrorGrf::GetPresentation(
-    SfxItemPresentation /*ePres*/, SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+    SfxItemPresentation /*ePres*/, MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
     OUString& rText, const IntlWrapper* /*pIntl*/ ) const
 {
     sal_uInt16 nId;
     switch( GetValue() )
     {
-    case RES_MIRROR_GRAPH_DONT:     nId = STR_NO_MIRROR;    break;
-    case RES_MIRROR_GRAPH_VERT: nId = STR_VERT_MIRROR;  break;
-    case RES_MIRROR_GRAPH_HOR:  nId = STR_HORI_MIRROR;  break;
-    case RES_MIRROR_GRAPH_BOTH: nId = STR_BOTH_MIRROR;  break;
+    case MirrorGraph::Dont:     nId = STR_NO_MIRROR;    break;
+    case MirrorGraph::Vertical: nId = STR_VERT_MIRROR;  break;
+    case MirrorGraph::Horizontal:  nId = STR_HORI_MIRROR;  break;
+    case MirrorGraph::Both: nId = STR_BOTH_MIRROR;  break;
     default:                    nId = 0;    break;
     }
     if ( nId )
@@ -704,10 +702,10 @@ bool SwMirrorGrf::GetPresentation(
 }
 
 bool SwRotationGrf::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
     OUString &rText, const IntlWrapper* /*pIntl*/) const
 {
-    if( SFX_ITEM_PRESENTATION_COMPLETE == ePres )
+    if( SfxItemPresentation::Complete == ePres )
         rText = SW_RESSTR( STR_ROTATION );
     else if( rText.getLength() )
         rText.clear();
@@ -716,10 +714,10 @@ bool SwRotationGrf::GetPresentation(
 }
 
 bool SwLuminanceGrf::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
     OUString &rText, const IntlWrapper* /*pIntl*/) const
 {
-    if( SFX_ITEM_PRESENTATION_COMPLETE == ePres )
+    if( SfxItemPresentation::Complete == ePres )
         rText = SW_RESSTR( STR_LUMINANCE );
     else if( rText.getLength() )
         rText.clear();
@@ -729,10 +727,10 @@ bool SwLuminanceGrf::GetPresentation(
 }
 
 bool SwContrastGrf::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
     OUString &rText, const IntlWrapper* /*pIntl*/) const
 {
-    if( SFX_ITEM_PRESENTATION_COMPLETE == ePres )
+    if( SfxItemPresentation::Complete == ePres )
         rText = SW_RESSTR( STR_CONTRAST );
     else if( rText.getLength() )
         rText.clear();
@@ -742,10 +740,10 @@ bool SwContrastGrf::GetPresentation(
 }
 
 bool SwChannelGrf::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
     OUString &rText, const IntlWrapper* /*pIntl*/) const
 {
-    if( SFX_ITEM_PRESENTATION_COMPLETE == ePres )
+    if( SfxItemPresentation::Complete == ePres )
     {
         sal_uInt16 nId;
         switch ( Which() )
@@ -768,11 +766,11 @@ bool SwChannelGrf::GetPresentation(
 }
 
 bool SwGammaGrf::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
     OUString &rText, const IntlWrapper* /*pIntl*/) const
 {
     OUStringBuffer aText;
-    if( SFX_ITEM_PRESENTATION_COMPLETE == ePres )
+    if( SfxItemPresentation::Complete == ePres )
         aText.append(SW_RESSTR(STR_GAMMA));
     aText.append(unicode::formatPercent(GetValue(),
         Application::GetSettings().GetUILanguageTag()));
@@ -781,11 +779,11 @@ bool SwGammaGrf::GetPresentation(
 }
 
 bool SwInvertGrf::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
     OUString &rText, const IntlWrapper* /*pIntl*/) const
 {
     rText.clear();
-    if( SFX_ITEM_PRESENTATION_COMPLETE == ePres )
+    if( SfxItemPresentation::Complete == ePres )
     {
         const sal_uInt16 nId = GetValue() ? STR_INVERT : STR_INVERT_NOT;
         rText = SW_RESSTR( nId );
@@ -794,10 +792,10 @@ bool SwInvertGrf::GetPresentation(
 }
 
 bool SwTransparencyGrf::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
     OUString &rText, const IntlWrapper* /*pIntl*/) const
 {
-    if( SFX_ITEM_PRESENTATION_COMPLETE == ePres )
+    if( SfxItemPresentation::Complete == ePres )
         rText = SW_RESSTR( STR_TRANSPARENCY );
     else if( rText.getLength() )
         rText.clear();
@@ -807,19 +805,19 @@ bool SwTransparencyGrf::GetPresentation(
 }
 
 bool SwDrawModeGrf::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
     OUString &rText, const IntlWrapper* /*pIntl*/) const
 {
     rText.clear();
-    if( SFX_ITEM_PRESENTATION_COMPLETE == ePres )
+    if( SfxItemPresentation::Complete == ePres )
     {
         sal_uInt16 nId;
         switch ( GetValue() )
         {
 
-        case GRAPHICDRAWMODE_GREYS:     nId = STR_DRAWMODE_GREY; break;
-        case GRAPHICDRAWMODE_MONO:      nId = STR_DRAWMODE_BLACKWHITE; break;
-        case GRAPHICDRAWMODE_WATERMARK: nId = STR_DRAWMODE_WATERMARK; break;
+        case GraphicDrawMode::Greys:     nId = STR_DRAWMODE_GREY; break;
+        case GraphicDrawMode::Mono:      nId = STR_DRAWMODE_BLACKWHITE; break;
+        case GraphicDrawMode::Watermark: nId = STR_DRAWMODE_WATERMARK; break;
         default:                        nId = STR_DRAWMODE_STD; break;
         }
         rText = SW_RESSTR( STR_DRAWMODE ) + SW_RESSTR( nId );
@@ -828,13 +826,13 @@ bool SwDrawModeGrf::GetPresentation(
 }
 
 bool SwFormatFollowTextFlow::GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit /*eCoreMetric*/,
-                                    SfxMapUnit /*ePresMetric*/,
-                                    OUString &rText,
-                                    const IntlWrapper*    /*pIntl*/ ) const
+                                              MapUnit /*eCoreMetric*/,
+                                              MapUnit /*ePresMetric*/,
+                                              OUString &rText,
+                                              const IntlWrapper*    /*pIntl*/ ) const
 {
     rText.clear();
-    if( SFX_ITEM_PRESENTATION_COMPLETE == ePres )
+    if( SfxItemPresentation::Complete == ePres )
     {
         const sal_uInt16 nId = GetValue() ? STR_FOLLOW_TEXT_FLOW : STR_DONT_FOLLOW_TEXT_FLOW;
         rText = SW_RESSTR( nId );
@@ -844,7 +842,7 @@ bool SwFormatFollowTextFlow::GetPresentation( SfxItemPresentation ePres,
 
 void SwFormatFollowTextFlow::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swFormatFollowTextFlow"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwFormatFollowTextFlow"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::boolean(GetValue()).getStr()));
     xmlTextWriterEndElement(pWriter);

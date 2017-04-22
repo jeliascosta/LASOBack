@@ -16,25 +16,31 @@ class SwView;
 
 namespace sw
 {
+namespace annotation
+{
+class SwAnnotationWin;
+}
+}
+
+namespace sw
+{
 namespace sidebarwindows
 {
-
-class SwSidebarWin;
 
 /// Similar to the VCL scrollbar, but instrumented with Writer-specific details for LOK.
 class SidebarScrollBar : public ScrollBar
 {
-    SwSidebarWin& m_rSidebarWin;
+    sw::annotation::SwAnnotationWin& m_rSidebarWin;
     SwView& m_rView;
 
 protected:
     /// @see OutputDevice::LogicInvalidate().
-    void LogicInvalidate(const Rectangle* pRectangle) override;
+    void LogicInvalidate(const tools::Rectangle* pRectangle) override;
     void MouseMove(const MouseEvent& rMouseEvent) override;
     void MouseButtonUp(const MouseEvent& rMouseEvent) override;
 public:
-    SidebarScrollBar(SwSidebarWin& rSidebarWin, WinBits nStyle, SwView& rView);
-    virtual ~SidebarScrollBar();
+    SidebarScrollBar(sw::annotation::SwAnnotationWin& rSidebarWin, WinBits nStyle, SwView& rView);
+    virtual ~SidebarScrollBar() override;
 };
 
 }

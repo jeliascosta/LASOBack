@@ -42,8 +42,8 @@ public:
 
     // "pure virtual Methods" from SfxPoolItem + SfxEnumItem
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
+                                    MapUnit eCoreMetric,
+                                    MapUnit ePresMetric,
                                     OUString &rText,
                                     const IntlWrapper * = nullptr ) const override;
 
@@ -55,7 +55,7 @@ public:
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
-    inline SvxEmphasisMarkItem& operator=(const SvxEmphasisMarkItem& rItem )
+    SvxEmphasisMarkItem& operator=(const SvxEmphasisMarkItem& rItem )
     {
         SetValue( rItem.GetValue() );
         return *this;

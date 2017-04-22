@@ -25,8 +25,8 @@
 #include <com/sun/star/sdbcx/XGroupsSupplier.hpp>
 #include <comphelper/proparrhlp.hxx>
 #include <cppuhelper/compbase.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <connectivity/CommonTools.hxx>
-#include <comphelper/broadcasthelper.hxx>
 #include <connectivity/sdbcx/VCollection.hxx>
 #include <com/sun/star/container/XNamed.hpp>
 #include <connectivity/sdbcx/IRefreshable.hxx>
@@ -45,14 +45,14 @@ namespace connectivity
                                                  css::lang::XServiceInfo> OUser_BASE;
 
         class OOO_DLLPUBLIC_DBTOOLS OUser :
-                        public comphelper::OBaseMutex,
+                        public cppu::BaseMutex,
                         public OUser_BASE,
                         public IRefreshableGroups,
                         public ::comphelper::OPropertyArrayUsageHelper<OUser>,
                         public ODescriptor
         {
         protected:
-            OGroups*        m_pGroups;
+            std::unique_ptr<OGroups>  m_pGroups;
 
             using OUser_BASE::rBHelper;
 
@@ -64,33 +64,33 @@ namespace connectivity
             OUser(bool _bCase);
             OUser(const OUString& Name,bool _bCase);
 
-            virtual ~OUser( );
+            virtual ~OUser( ) override;
 
             DECLARE_SERVICE_INFO();
 
             // ::cppu::OComponentHelper
             virtual void SAL_CALL disposing() override;
             //XInterface
-            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
             virtual void SAL_CALL acquire() throw() override;
             virtual void SAL_CALL release() throw() override;
             //XTypeProvider
-            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
             // XPropertySet
-            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
             // XUser
-            virtual void SAL_CALL changePassword( const OUString& objPassword, const OUString& newPassword ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL changePassword( const OUString& objPassword, const OUString& newPassword ) override;
             // XAuthorizable
-            virtual sal_Int32 SAL_CALL getPrivileges( const OUString& objName, sal_Int32 objType ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
-            virtual sal_Int32 SAL_CALL getGrantablePrivileges( const OUString& objName, sal_Int32 objType ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL grantPrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL revokePrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
+            virtual sal_Int32 SAL_CALL getPrivileges( const OUString& objName, sal_Int32 objType ) override;
+            virtual sal_Int32 SAL_CALL getGrantablePrivileges( const OUString& objName, sal_Int32 objType ) override;
+            virtual void SAL_CALL grantPrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges ) override;
+            virtual void SAL_CALL revokePrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges ) override;
             // XGroupsSupplier
-            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getGroups(  ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getGroups(  ) override;
 
             // XNamed
-            virtual OUString SAL_CALL getName(  ) throw(css::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setName( const OUString& aName ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getName(  ) override;
+            virtual void SAL_CALL setName( const OUString& aName ) override;
         };
     }
 }

@@ -24,13 +24,8 @@
 #ifdef _WIN32
 #include <prewin.h>
 #include <postwin.h>
-
-#ifndef __MINGW32__
 #include <comutil.h>
-#endif
 #include <oleauto.h>
-
-#endif
 #endif
 
 #include <basic/sbx.hxx>
@@ -100,8 +95,11 @@ public:
 
     bool isZero();
 
-    enum CmpResult { LT, EQ, GT };
+    // must match the return values of the Microsoft VarDecCmp Automation function
+    enum class CmpResult { LT, EQ, GT };
     friend CmpResult compare( const SbxDecimal &rLeft, const SbxDecimal &rRight );
 };
+
+#endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

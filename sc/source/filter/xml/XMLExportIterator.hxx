@@ -24,7 +24,6 @@
 #include <list>
 #include <set>
 #include <com/sun/star/sheet/XSpreadsheet.hpp>
-#include <com/sun/star/table/CellAddress.hpp>
 #include <com/sun/star/table/CellRangeAddress.hpp>
 #include <com/sun/star/table/XCell.hpp>
 #include <com/sun/star/text/XText.hpp>
@@ -46,7 +45,7 @@ class   ScFormatRangeStyles;
 class ScMyIteratorBase
 {
 protected:
-    virtual bool                GetFirstAddress( css::table::CellAddress& rCellAddress ) = 0;
+    virtual bool                GetFirstAddress( ScAddress& rCellAddress ) = 0;
 
 public:
                                 ScMyIteratorBase();
@@ -55,13 +54,13 @@ public:
     virtual void                SetCellData( ScMyCell& rMyCell ) = 0;
     virtual void                Sort() = 0;
 
-    void                        UpdateAddress( css::table::CellAddress& rCellAddress );
+    void                        UpdateAddress( ScAddress& rCellAddress );
 };
 
 struct ScMyShape
 {
-    ScAddress   aAddress;
-    ScAddress   aEndAddress;
+    ScAddress       aAddress;
+    ScAddress       aEndAddress;
     sal_Int32       nEndX;
     sal_Int32       nEndY;
     css::uno::Reference<css::drawing::XShape> xShape;
@@ -76,10 +75,10 @@ class ScMyShapesContainer : public ScMyIteratorBase
 private:
     ScMyShapeList               aShapeList;
 protected:
-    virtual bool                GetFirstAddress( css::table::CellAddress& rCellAddress ) override;
+    virtual bool                GetFirstAddress( ScAddress& rCellAddress ) override;
 public:
                                 ScMyShapesContainer();
-    virtual                     ~ScMyShapesContainer();
+    virtual                     ~ScMyShapesContainer() override;
 
                                 using ScMyIteratorBase::UpdateAddress;
     void                        AddNewShape(const ScMyShape& aShape);
@@ -105,10 +104,10 @@ class ScMyNoteShapesContainer : public ScMyIteratorBase
 private:
     ScMyNoteShapeList           aNoteShapeList;
 protected:
-    virtual bool                GetFirstAddress( css::table::CellAddress& rCellAddress ) override;
+    virtual bool                GetFirstAddress( ScAddress& rCellAddress ) override;
 public:
                                 ScMyNoteShapesContainer();
-    virtual                     ~ScMyNoteShapesContainer();
+    virtual                     ~ScMyNoteShapesContainer() override;
 
     using ScMyIteratorBase::UpdateAddress;
     void                        AddNewNote(const ScMyNoteShape& aNote);
@@ -120,7 +119,7 @@ public:
 
 struct ScMyMergedRange
 {
-    css::table::CellRangeAddress aCellRange;
+    ScRange                     aCellRange;
     sal_Int32                   nRows;
     bool                        bIsFirst;
     bool                        operator<(const ScMyMergedRange& aRange) const;
@@ -133,11 +132,11 @@ class ScMyMergedRangesContainer : public ScMyIteratorBase
 private:
     ScMyMergedRangeList         aRangeList;
 protected:
-    virtual bool                GetFirstAddress( css::table::CellAddress& rCellAddress ) override;
+    virtual bool                GetFirstAddress( ScAddress& rCellAddress ) override;
 public:
                                 ScMyMergedRangesContainer();
-    virtual                     ~ScMyMergedRangesContainer();
-    void                        AddRange(const css::table::CellRangeAddress& rMergedRange);
+    virtual                     ~ScMyMergedRangesContainer() override;
+    void                        AddRange(const ScRange& rMergedRange);
 
                                 using ScMyIteratorBase::UpdateAddress;
     virtual void                SetCellData( ScMyCell& rMyCell ) override;
@@ -151,13 +150,13 @@ struct ScMyAreaLink
     OUString             sFilterOptions;
     OUString             sURL;
     OUString             sSourceStr;
-    css::table::CellRangeAddress aDestRange;
+    ScRange                     aDestRange;
     sal_Int32                   nRefresh;
 
-    inline                      ScMyAreaLink() : nRefresh( 0 ) {}
+    ScMyAreaLink() : nRefresh( 0 ) {}
 
-    inline sal_Int32            GetColCount() const { return aDestRange.EndColumn - aDestRange.StartColumn + 1; }
-    inline sal_Int32            GetRowCount() const { return aDestRange.EndRow - aDestRange.StartRow + 1; }
+    sal_Int32            GetColCount() const { return aDestRange.aEnd.Col() - aDestRange.aStart.Col() + 1; }
+    sal_Int32            GetRowCount() const { return aDestRange.aEnd.Row() - aDestRange.aStart.Col() + 1; }
 
     bool                        Compare( const ScMyAreaLink& rAreaLink ) const;
     bool                        operator<(const ScMyAreaLink& rAreaLink ) const;
@@ -170,12 +169,12 @@ class ScMyAreaLinksContainer : public ScMyIteratorBase
 private:
     ScMyAreaLinkList            aAreaLinkList;
 protected:
-    virtual bool                GetFirstAddress( css::table::CellAddress& rCellAddress ) override;
+    virtual bool                GetFirstAddress( ScAddress& rCellAddress ) override;
 public:
                                 ScMyAreaLinksContainer();
-    virtual                     ~ScMyAreaLinksContainer();
+    virtual                     ~ScMyAreaLinksContainer() override;
 
-    inline void                 AddNewAreaLink( const ScMyAreaLink& rAreaLink )
+    void                 AddNewAreaLink( const ScMyAreaLink& rAreaLink )
                                     { aAreaLinkList.push_back( rAreaLink ); }
 
                                 using ScMyIteratorBase::UpdateAddress;
@@ -184,23 +183,17 @@ public:
     void                        SkipTable(SCTAB nSkip);
 };
 
-struct ScMyCellRangeAddress : css::table::CellRangeAddress
-{
-    explicit ScMyCellRangeAddress(const css::table::CellRangeAddress& rRange);
-    bool                        operator<(const ScMyCellRangeAddress& rCellRangeAddress ) const;
-};
-
-typedef std::list<ScMyCellRangeAddress> ScMyEmptyDatabaseRangeList;
+typedef std::list<ScRange> ScMyEmptyDatabaseRangeList;
 
 class ScMyEmptyDatabaseRangesContainer : public ScMyIteratorBase
 {
 private:
     ScMyEmptyDatabaseRangeList  aDatabaseList;
 protected:
-    virtual bool                GetFirstAddress( css::table::CellAddress& rCellAddress ) override;
+    virtual bool                GetFirstAddress( ScAddress& rCellAddress ) override;
 public:
                                 ScMyEmptyDatabaseRangesContainer();
-    virtual                     ~ScMyEmptyDatabaseRangesContainer();
+    virtual                     ~ScMyEmptyDatabaseRangesContainer() override;
     void                        AddNewEmptyDatabaseRange(const css::table::CellRangeAddress& aCellRangeAddress);
 
                                 using ScMyIteratorBase::UpdateAddress;
@@ -211,8 +204,8 @@ public:
 
 struct ScMyDetectiveObj
 {
-    css::table::CellAddress        aPosition;
-    css::table::CellRangeAddress   aSourceRange;
+    ScAddress                      aPosition;
+    ScRange                        aSourceRange;
     ScDetectiveObjType             eObjType;
     bool                           bHasError;
     bool operator<(const ScMyDetectiveObj& rDetObj) const;
@@ -226,10 +219,10 @@ class ScMyDetectiveObjContainer : public ScMyIteratorBase
 private:
     ScMyDetectiveObjList        aDetectiveObjList;
 protected:
-    virtual bool                GetFirstAddress( css::table::CellAddress& rCellAddress ) override;
+    virtual bool                GetFirstAddress( ScAddress& rCellAddress ) override;
 public:
                                 ScMyDetectiveObjContainer();
-    virtual                     ~ScMyDetectiveObjContainer();
+    virtual                     ~ScMyDetectiveObjContainer() override;
 
     void                        AddObject(
                                     ScDetectiveObjType eObjType,
@@ -246,7 +239,7 @@ public:
 
 struct ScMyDetectiveOp
 {
-    css::table::CellAddress    aPosition;
+    ScAddress                  aPosition;
     ScDetOpType                eOpType;
     sal_Int32                  nIndex;
     bool operator<(const ScMyDetectiveOp& rDetOp) const;
@@ -260,10 +253,10 @@ class ScMyDetectiveOpContainer : public ScMyIteratorBase
 private:
     ScMyDetectiveOpList         aDetectiveOpList;
 protected:
-    virtual bool                GetFirstAddress( css::table::CellAddress& rCellAddress ) override;
+    virtual bool                GetFirstAddress( ScAddress& rCellAddress ) override;
 public:
                                 ScMyDetectiveOpContainer();
-    virtual                     ~ScMyDetectiveOpContainer();
+    virtual                     ~ScMyDetectiveOpContainer() override;
 
     void                        AddOperation( ScDetOpType eOpType, const ScAddress& rPosition, sal_uInt32 nIndex );
 
@@ -278,9 +271,9 @@ struct ScMyCell
 {
     ScAddress maCellAddress; /// Use this instead of the UNO one.
 
-    css::table::CellAddress      aCellAddress;
-    css::table::CellRangeAddress aMergeRange;
-    css::table::CellRangeAddress aMatrixRange;
+    ScAddress                   aCellAddress;
+    ScRange                     aMergeRange;
+    ScRange                     aMatrixRange;
 
     ScMyAreaLink                aAreaLink;
     ScMyShapeList               aShapeList;
@@ -321,7 +314,7 @@ class ScMyNotEmptyCellsIterator
 
     css::uno::Reference<css::sheet::XSpreadsheet> xTable;
     css::uno::Reference<css::table::XCellRange> xCellRange;
-    css::table::CellAddress             aLastAddress;
+    ScAddress                           aLastAddress;
 
     ScMyShapesContainer*                pShapes;
     ScMyNoteShapesContainer*            pNoteShapes;
@@ -338,8 +331,8 @@ class ScMyNotEmptyCellsIterator
     SCROW                       nCellRow;
     SCTAB                       nCurrentTable;
 
-    void                        UpdateAddress( css::table::CellAddress& rAddress );
-    void SetCellData( ScMyCell& rMyCell, const css::table::CellAddress& rAddress );
+    void                        UpdateAddress( ScAddress& rAddress );
+    void SetCellData( ScMyCell& rMyCell, const ScAddress& rAddress );
 
     void                        HasAnnotation( ScMyCell& aCell );
 public:
@@ -348,19 +341,19 @@ public:
 
     void                        Clear();
 
-    inline void                 SetShapes(ScMyShapesContainer* pNewShapes)
+    void                 SetShapes(ScMyShapesContainer* pNewShapes)
                                     { pShapes = pNewShapes; }
-    inline void                 SetNoteShapes(ScMyNoteShapesContainer* pNewNoteShapes)
+    void                 SetNoteShapes(ScMyNoteShapesContainer* pNewNoteShapes)
                                     { pNoteShapes = pNewNoteShapes; }
-    inline void                 SetEmptyDatabaseRanges(ScMyEmptyDatabaseRangesContainer* pNewEmptyDatabaseRanges)
+    void                 SetEmptyDatabaseRanges(ScMyEmptyDatabaseRangesContainer* pNewEmptyDatabaseRanges)
                                     { pEmptyDatabaseRanges = pNewEmptyDatabaseRanges; }
-    inline void                 SetMergedRanges(ScMyMergedRangesContainer* pNewMergedRanges)
+    void                 SetMergedRanges(ScMyMergedRangesContainer* pNewMergedRanges)
                                     { pMergedRanges = pNewMergedRanges; }
-    inline void                 SetAreaLinks(ScMyAreaLinksContainer* pNewAreaLinks)
+    void                 SetAreaLinks(ScMyAreaLinksContainer* pNewAreaLinks)
                                     { pAreaLinks = pNewAreaLinks; }
-    inline void                 SetDetectiveObj(ScMyDetectiveObjContainer* pNewDetectiveObj)
+    void                 SetDetectiveObj(ScMyDetectiveObjContainer* pNewDetectiveObj)
                                     { pDetectiveObj = pNewDetectiveObj; }
-    inline void                 SetDetectiveOp(ScMyDetectiveOpContainer* pNewDetectiveOp)
+    void                 SetDetectiveOp(ScMyDetectiveOpContainer* pNewDetectiveOp)
                                     { pDetectiveOp = pNewDetectiveOp; }
 
     void                        SetCurrentTable(const SCTAB nTable,

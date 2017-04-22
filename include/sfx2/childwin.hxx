@@ -92,7 +92,7 @@ typedef SfxChildWindowContext* (*SfxChildWinContextCtor)( vcl::Window *pParentWi
 struct SfxChildWinContextFactory
 {
     SfxChildWinContextCtor  pCtor;      // Factory method
-    sal_uInt16              nContextId; // Idenifier for SfxInterface
+    sal_uInt16              nContextId; // Identifier for SfxInterface
 
     SfxChildWinContextFactory( SfxChildWinContextCtor pTheCtor, sal_uInt16 nID )
         : pCtor(pTheCtor)
@@ -108,7 +108,7 @@ struct SFX2_DLLPUBLIC SfxChildWinFactory
     sal_uInt16                  nId;    // ChildWindow-Id ( SlotId )
     SfxChildWinInfo             aInfo;  // Configuration
     sal_uInt16                  nPos;   // Position in UI
-    SfxChildWinContextArr_Impl *pArr;   // Array for Contexts
+    std::unique_ptr<SfxChildWinContextArr_Impl> pArr;   // Array for Contexts
 
     SfxChildWinFactory( SfxChildWinCtor pTheCtor, sal_uInt16 nID, sal_uInt16 n );
     ~SfxChildWinFactory();
@@ -135,9 +135,8 @@ public:
     sal_uInt16          GetContextId() const
                         { return nContextId; }
 
-    FloatingWindow*     GetFloatingWindow() const;
+    static FloatingWindow* GetFloatingWindow(vcl::Window *pParent);
 
-    virtual void        Resizing( Size& rSize );
     static void         RegisterChildWindowContext(SfxModule*, sal_uInt16, SfxChildWinContextFactory*);
 };
 
@@ -192,7 +191,6 @@ public:
     static SfxChildWindow* CreateChildWindow( sal_uInt16, vcl::Window*, SfxBindings*, SfxChildWinInfo&);
     void                SetHideNotDelete( bool bOn );
     bool                IsHideNotDelete() const;
-    bool                IsHideAtToggle() const;
     bool                IsVisible() const;
     void                SetWantsFocus( bool );
     bool                WantsFocus() const;
@@ -205,7 +203,6 @@ public:
     void                SetVisible_Impl( bool bVis );
     SAL_DLLPRIVATE void SetWorkWindow_Impl( SfxWorkWindow* );
     SAL_DLLPRIVATE void Activate_Impl();
-    SAL_DLLPRIVATE void Deactivate_Impl();
 
     SAL_DLLPRIVATE SfxChildWindowContext*
                         GetContext_Impl() const

@@ -49,7 +49,7 @@
 #include <sfx2/bindings.hxx>
 #include <sfx2/docfile.hxx>
 #include "objshimp.hxx"
-#include <stringhint.hxx>
+#include <openurlhint.hxx>
 #include <sfx2/docfilt.hxx>
 
 #include <rtl/instance.hxx>
@@ -66,96 +66,19 @@ class StringLength : public ::cppu::WeakImplHelper< XStringWidth >
 {
     public:
         StringLength() {}
-        virtual ~StringLength() {}
 
         // XStringWidth
-        sal_Int32 SAL_CALL queryStringWidth( const OUString& aString )
-            throw (css::uno::RuntimeException, std::exception) override
+        sal_Int32 SAL_CALL queryStringWidth( const OUString& aString ) override
         {
             return aString.getLength();
         }
 };
 
-void SfxPickList::CreatePicklistMenuTitle( Menu* pMenu, sal_uInt16 nItemId, const OUString& aURLString, sal_uInt32 nNo )
-{
-    OUStringBuffer aPickEntry;
-
-    if ( nNo < 9 )
-    {
-        aPickEntry.append('~');
-        aPickEntry.append(OUString::number(nNo + 1));
-    }
-    else if ( nNo == 9 )
-        aPickEntry.append("1~0");
-    else
-        aPickEntry.append(OUString::number(nNo + 1));
-    aPickEntry.append(": ");
-
-    INetURLObject   aURL( aURLString );
-    OUString   aTipHelpText;
-    OUString   aAccessibleName = aPickEntry.toString();
-
-    if ( aURL.GetProtocol() == INetProtocol::File )
-    {
-        // Do handle file URL differently => convert it to a system
-        // path and abbreviate it with a special function:
-        OUString aFileSystemPath( aURL.getFSysPath( INetURLObject::FSYS_DETECT ) );
-
-        OUString aSystemPath( aFileSystemPath );
-        OUString aCompactedSystemPath;
-
-        aTipHelpText = aSystemPath;
-        aAccessibleName += aSystemPath;
-        oslFileError nError = osl_abbreviateSystemPath( aSystemPath.pData, &aCompactedSystemPath.pData, 46, nullptr );
-        if ( !nError )
-            aPickEntry.append( aCompactedSystemPath );
-        else
-            aPickEntry.append( aFileSystemPath );
-
-        if ( aPickEntry.getLength() > 50 )
-        {
-            aPickEntry.setLength( 47 );
-            aPickEntry.append("...");
-        }
-    }
-    else
-    {
-        // Use INetURLObject to abbreviate all other URLs
-        OUString aShortURL;
-        aShortURL = aURL.getAbbreviated( m_xStringLength, 46, INetURLObject::DECODE_UNAMBIGUOUS );
-        aPickEntry.append(aShortURL);
-        aTipHelpText = aURLString;
-        aAccessibleName += aURLString;
-    }
-
-    // Set menu item text, tip help and accessible name
-    pMenu->SetItemText( nItemId, aPickEntry.toString() );
-    pMenu->SetTipHelpText( nItemId, aTipHelpText );
-    pMenu->SetAccessibleName( nItemId, aAccessibleName );
-}
 
 namespace
 {
     class thePickListMutex
         : public rtl::Static<osl::Mutex, thePickListMutex> {};
-}
-
-void SfxPickList::RemovePickListEntries()
-{
-    ::osl::MutexGuard aGuard( thePickListMutex::get() );
-    for (PickListEntry* p : m_aPicklistVector)
-        delete p;
-    m_aPicklistVector.clear();
-}
-
-SfxPickList::PickListEntry* SfxPickList::GetPickListEntry( sal_uInt32 nIndex )
-{
-    OSL_ASSERT( m_aPicklistVector.size() > nIndex );
-
-    if ( nIndex < m_aPicklistVector.size() )
-        return m_aPicklistVector[ nIndex ];
-    else
-        return nullptr;
 }
 
 void SfxPickList::AddDocumentToPickList( SfxObjectShell* pDocSh )
@@ -230,14 +153,14 @@ void SfxPickList::AddDocumentToPickList( SfxObjectShell* pDocSh )
 
     // add to svtool history options
     SvtHistoryOptions().AppendItem( ePICKLIST,
-            aURL.GetURLNoPass( INetURLObject::NO_DECODE ),
+            aURL.GetURLNoPass( INetURLObject::DecodeMechanism::NONE ),
             aFilter,
             aTitle,
             OUString(),
             aThumbnail);
 
     if ( aURL.GetProtocol() == INetProtocol::File )
-        Application::AddToRecentDocumentList( aURL.GetURLNoPass( INetURLObject::NO_DECODE ),
+        Application::AddToRecentDocumentList( aURL.GetURLNoPass( INetURLObject::DecodeMechanism::NONE ),
                                                                  (pFilter) ? pFilter->GetMimeType() : OUString(),
                                                                  (pFilter) ? pFilter->GetServiceName() : OUString() );
 }
@@ -258,89 +181,15 @@ SfxPickList::SfxPickList( sal_uInt32 nAllowedMenuSize ) :
 
 SfxPickList::~SfxPickList()
 {
-    RemovePickListEntries();
 }
 
-void SfxPickList::CreatePickListEntries()
-{
-    RemovePickListEntries();
-
-    // Reading the pick list
-    Sequence< Sequence< PropertyValue > > seqPicklist = SvtHistoryOptions().GetList( ePICKLIST );
-
-    sal_uInt32 nCount   = seqPicklist.getLength();
-    sal_uInt32 nEntries = ::std::min( m_nAllowedMenuSize, nCount );
-
-    for( sal_uInt32 nItem=0; nItem < nEntries; ++nItem )
-    {
-        Sequence< PropertyValue > seqPropertySet = seqPicklist[ nItem ];
-
-        INetURLObject   aURL;
-        OUString sURL;
-        OUString sFilter;
-        OUString sTitle;
-
-        sal_uInt32 nPropertyCount = seqPropertySet.getLength();
-        for( sal_uInt32 nProperty=0; nProperty<nPropertyCount; ++nProperty )
-        {
-            if( seqPropertySet[nProperty].Name == HISTORY_PROPERTYNAME_URL )
-            {
-                seqPropertySet[nProperty].Value >>= sURL;
-            }
-            else if( seqPropertySet[nProperty].Name == HISTORY_PROPERTYNAME_FILTER )
-            {
-                seqPropertySet[nProperty].Value >>= sFilter;
-            }
-            else if( seqPropertySet[nProperty].Name == HISTORY_PROPERTYNAME_TITLE )
-            {
-                seqPropertySet[nProperty].Value >>= sTitle;
-            }
-        }
-
-        aURL.SetSmartURL( sURL );
-        aURL.SetPass( OUString() );
-
-        PickListEntry *pPick = new PickListEntry( aURL.GetMainURL( INetURLObject::NO_DECODE ), sFilter );
-        m_aPicklistVector.push_back( pPick );
-    }
-}
-
-void SfxPickList::ExecuteEntry( sal_uInt32 nIndex )
-{
-    ::osl::ClearableMutexGuard aGuard( thePickListMutex::get() );
-
-    PickListEntry *pPick = SfxPickList::Get().GetPickListEntry( nIndex );
-
-    if ( pPick )
-    {
-        SfxRequest aReq( SID_OPENDOC, SfxCallMode::ASYNCHRON, SfxGetpApp()->GetPool() );
-        aReq.AppendItem( SfxStringItem( SID_FILE_NAME, pPick->aName ));
-        aReq.AppendItem( SfxStringItem( SID_REFERER, "private:user" ) );
-        aReq.AppendItem( SfxStringItem( SID_TARGETNAME, "_default" ) );
-        OUString aFilter( pPick->aFilter );
-        aGuard.clear();
-
-        sal_Int32 nPos = aFilter.indexOf('|');
-        if( nPos != -1 )
-        {
-            OUString aOptions(aFilter.copy(nPos+1));
-            aFilter = aFilter.copy( 0, nPos );
-            aReq.AppendItem( SfxStringItem(SID_FILE_FILTEROPTIONS, aOptions));
-        }
-
-        aReq.AppendItem(SfxStringItem( SID_FILTER_NAME, aFilter ));
-        aReq.AppendItem( SfxBoolItem( SID_TEMPLATE, false ) );
-        SfxGetpApp()->ExecuteSlot( aReq );
-    }
-}
 
 void SfxPickList::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxStringHint* pStringHint = dynamic_cast<const SfxStringHint*>(&rHint);
-    if ( pStringHint )
+    const SfxOpenUrlHint* pOpenUrlHint = dynamic_cast<const SfxOpenUrlHint*>(&rHint);
+    if ( pOpenUrlHint )
     {
-        if ( pStringHint->GetId() == SID_OPENURL )
-            INetURLHistory::GetOrCreate()->PutUrl( INetURLObject( pStringHint->GetObject() ));
+        INetURLHistory::GetOrCreate()->PutUrl( INetURLObject( pOpenUrlHint->GetDocumentURL() ));
     }
 
     const SfxEventHint* pEventHint = dynamic_cast<const SfxEventHint*>(&rHint);
@@ -353,7 +202,7 @@ void SfxPickList::Notify( SfxBroadcaster&, const SfxHint& rHint )
 
         switch ( pEventHint->GetEventId() )
         {
-            case SFX_EVENT_CREATEDOC:
+            case SfxEventHintId::CreateDoc:
             {
                 bool bAllowModif = pDocSh->IsEnableSetModified();
                 if ( bAllowModif )
@@ -373,17 +222,17 @@ void SfxPickList::Notify( SfxBroadcaster&, const SfxHint& rHint )
             }
             break;
 
-            case SFX_EVENT_OPENDOC:
-            case SFX_EVENT_SAVEDOCDONE:
-            case SFX_EVENT_SAVEASDOCDONE:
-            case SFX_EVENT_SAVETODOCDONE:
-            case SFX_EVENT_CLOSEDOC:
+            case SfxEventHintId::OpenDoc:
+            case SfxEventHintId::SaveDocDone:
+            case SfxEventHintId::SaveAsDocDone:
+            case SfxEventHintId::SaveToDocDone:
+            case SfxEventHintId::CloseDoc:
             {
                 AddDocumentToPickList(pDocSh);
             }
             break;
 
-            case SFX_EVENT_SAVEASDOC:
+            case SfxEventHintId::SaveAsDoc:
             {
                 SfxMedium *pMedium = pDocSh->GetMedium();
                 if (!pMedium)
@@ -400,6 +249,7 @@ void SfxPickList::Notify( SfxBroadcaster&, const SfxHint& rHint )
                 }
             }
             break;
+            default: break;
         }
     }
 }

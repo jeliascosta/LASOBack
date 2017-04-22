@@ -221,7 +221,7 @@ void PresenterButton::SetCanvas (
     }
 }
 
-css::geometry::IntegerSize2D PresenterButton::GetSize()
+css::geometry::IntegerSize2D const & PresenterButton::GetSize()
 {
     if (maButtonSize.Width < 0)
         CalculateButtonSize();
@@ -231,28 +231,24 @@ css::geometry::IntegerSize2D PresenterButton::GetSize()
 //----- XWindowListener -------------------------------------------------------
 
 void SAL_CALL PresenterButton::windowResized (const css::awt::WindowEvent& rEvent)
-    throw (css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
 }
 
 void SAL_CALL PresenterButton::windowMoved (const css::awt::WindowEvent& rEvent)
-    throw (css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
 }
 
 void SAL_CALL PresenterButton::windowShown (const css::lang::EventObject& rEvent)
-    throw (css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
 }
 
 void SAL_CALL PresenterButton::windowHidden (const css::lang::EventObject& rEvent)
-    throw (css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
@@ -261,7 +257,6 @@ void SAL_CALL PresenterButton::windowHidden (const css::lang::EventObject& rEven
 //----- XPaintListener --------------------------------------------------------
 
 void SAL_CALL PresenterButton::windowPaint (const css::awt::PaintEvent& rEvent)
-    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     if (mxWindow.is() && mxCanvas.is())
@@ -294,7 +289,6 @@ void SAL_CALL PresenterButton::windowPaint (const css::awt::PaintEvent& rEvent)
 //----- XMouseListener --------------------------------------------------------
 
 void SAL_CALL PresenterButton::mousePressed (const css::awt::MouseEvent& rEvent)
-    throw(css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
@@ -302,7 +296,6 @@ void SAL_CALL PresenterButton::mousePressed (const css::awt::MouseEvent& rEvent)
 }
 
 void SAL_CALL PresenterButton::mouseReleased (const css::awt::MouseEvent& rEvent)
-    throw(css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
@@ -318,7 +311,6 @@ void SAL_CALL PresenterButton::mouseReleased (const css::awt::MouseEvent& rEvent
 }
 
 void SAL_CALL PresenterButton::mouseEntered (const css::awt::MouseEvent& rEvent)
-    throw(css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
@@ -327,7 +319,6 @@ void SAL_CALL PresenterButton::mouseEntered (const css::awt::MouseEvent& rEvent)
 }
 
 void SAL_CALL PresenterButton::mouseExited (const css::awt::MouseEvent& rEvent)
-    throw(css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
@@ -338,14 +329,12 @@ void SAL_CALL PresenterButton::mouseExited (const css::awt::MouseEvent& rEvent)
 //----- XMouseMotionListener --------------------------------------------------
 
 void SAL_CALL PresenterButton::mouseMoved (const css::awt::MouseEvent& rEvent)
-    throw (css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
 }
 
 void SAL_CALL PresenterButton::mouseDragged (const css::awt::MouseEvent& rEvent)
-    throw (css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
@@ -354,7 +343,6 @@ void SAL_CALL PresenterButton::mouseDragged (const css::awt::MouseEvent& rEvent)
 //----- lang::XEventListener --------------------------------------------------
 
 void SAL_CALL PresenterButton::disposing (const css::lang::EventObject& rEvent)
-    throw (css::uno::RuntimeException, std::exception)
 {
     if (rEvent.Source == mxWindow)
         mxWindow = nullptr;
@@ -503,12 +491,11 @@ Reference<beans::XPropertySet> PresenterButton::GetConfigurationProperties (
 }
 
 void PresenterButton::ThrowIfDisposed() const
-    throw (css::lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {
         throw lang::DisposedException (
-            OUString( "PresenterButton object has already been disposed"),
+            "PresenterButton object has already been disposed",
             const_cast<uno::XWeak*>(static_cast<const uno::XWeak*>(this)));
     }
 }

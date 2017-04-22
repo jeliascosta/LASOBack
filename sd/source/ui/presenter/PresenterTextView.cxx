@@ -76,7 +76,7 @@ public:
     void SetTop (const sal_Int32 nTop);
     void SetText (const OUString& Text);
     sal_Int32 ParseDistance (const OUString& rsDistance) const;
-    Reference<rendering::XBitmap> GetBitmap();
+    Reference<rendering::XBitmap> const & GetBitmap();
     sal_Int32 GetTotalHeight();
 
 private:
@@ -92,7 +92,6 @@ private:
     sal_Int32 mnTop;
     sal_Int32 mnTotalHeight;
 
-    void GetEditEngine();
     EditEngine* CreateEditEngine();
     void CheckTop();
 };
@@ -116,7 +115,6 @@ void SAL_CALL PresenterTextView::disposing()
 
 // XInitialization
 void SAL_CALL PresenterTextView::initialize (const Sequence<Any>& rArguments)
-    throw (Exception, RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -218,7 +216,6 @@ Any PresenterTextView::SetPropertyValue (
 }
 
 void PresenterTextView::ThrowIfDisposed()
-    throw (css::lang::DisposedException)
 {
     if (PresenterTextViewInterfaceBase::rBHelper.bDisposed
         || PresenterTextViewInterfaceBase::rBHelper.bInDispose
@@ -252,9 +249,9 @@ PresenterTextView::Implementation::Implementation()
       mnTop(0),
       mnTotalHeight(-1)
 {
-    mpOutputDevice->SetMapMode(MAP_PIXEL);
+    mpOutputDevice->SetMapMode(MapUnit::MapPixel);
 
-    GetEditEngine();
+    mpEditEngine = CreateEditEngine ();
 }
 
 PresenterTextView::Implementation::~Implementation()
@@ -262,12 +259,6 @@ PresenterTextView::Implementation::~Implementation()
     delete mpEditEngine;
     SfxItemPool::Free(mpEditEngineItemPool);
     mpOutputDevice.disposeAndClear();
-}
-
-void PresenterTextView::Implementation::GetEditEngine()
-{
-    if (mpEditEngine == nullptr)
-        mpEditEngine = CreateEditEngine ();
 }
 
 EditEngine* PresenterTextView::Implementation::CreateEditEngine()
@@ -330,7 +321,7 @@ EditEngine* PresenterTextView::Implementation::CreateEditEngine()
                 EEControlBits(~EEControlBits::PASTESPECIAL) );
 
         pEditEngine->SetWordDelimiters (" .=+-*/(){}[];\"");
-        pEditEngine->SetRefMapMode (MAP_PIXEL);
+        pEditEngine->SetRefMapMode (MapUnit::MapPixel);
         pEditEngine->SetPaperSize (Size(800, 0));
         pEditEngine->EraseVirtualDevice();
         pEditEngine->ClearModifyFlag();
@@ -387,7 +378,7 @@ void PresenterTextView::Implementation::SetFontDescriptor (
 
     SvxFontHeightItem aFontHeight(
         Application::GetDefaultDevice()->LogicToPixel(
-            Size(0, nFontHeight), MapMode (MAP_POINT)).Height(),
+            Size(0, nFontHeight), MapMode (MapUnit::MapPoint)).Height(),
         100,
         EE_CHAR_FONTHEIGHT);
     mpEditEngineItemPool->SetPoolDefaultItem( aFontHeight);
@@ -445,7 +436,7 @@ sal_Int32 PresenterTextView::Implementation::ParseDistance (const OUString& rsDi
     return nDistance;
 }
 
-Reference<rendering::XBitmap> PresenterTextView::Implementation::GetBitmap()
+Reference<rendering::XBitmap> const & PresenterTextView::Implementation::GetBitmap()
 {
     DBG_ASSERT(mpEditEngine!=nullptr, "EditEngine missing");
 
@@ -454,7 +445,7 @@ Reference<rendering::XBitmap> PresenterTextView::Implementation::GetBitmap()
         mpOutputDevice.disposeAndClear();
         mpOutputDevice = VclPtr<VirtualDevice>::Create(*Application::GetDefaultDevice(),
                                                        DeviceFormat::DEFAULT, DeviceFormat::DEFAULT);
-        mpOutputDevice->SetMapMode(MAP_PIXEL);
+        mpOutputDevice->SetMapMode(MapUnit::MapPixel);
         mpOutputDevice->SetOutputSizePixel(maSize);
         mpOutputDevice->SetLineColor();
         mpOutputDevice->SetFillColor();
@@ -464,7 +455,7 @@ Reference<rendering::XBitmap> PresenterTextView::Implementation::GetBitmap()
         MapMode aMapMode (mpOutputDevice->GetMapMode());
         aMapMode.SetOrigin(Point(0,0));
         mpOutputDevice->SetMapMode(aMapMode);
-        const Rectangle aWindowBox (Point(0,0), maSize);
+        const ::tools::Rectangle aWindowBox (Point(0,0), maSize);
         mpOutputDevice->DrawRect(aWindowBox);
 
         mpEditEngine->Clear();

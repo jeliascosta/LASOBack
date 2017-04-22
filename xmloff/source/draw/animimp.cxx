@@ -48,7 +48,7 @@ using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::presentation;
 using namespace ::xmloff::token;
 
-SvXMLEnumMapEntry aXML_AnimationEffect_EnumMap[] =
+const SvXMLEnumMapEntry<XMLEffect> aXML_AnimationEffect_EnumMap[] =
 {
     { XML_NONE,         EK_none },
     { XML_FADE,         EK_fade },
@@ -67,10 +67,10 @@ SvXMLEnumMapEntry aXML_AnimationEffect_EnumMap[] =
     { XML_CHECKERBOARD, EK_checkerboard },
     { XML_ROTATE,       EK_rotate },
     { XML_STRETCH,      EK_stretch },
-    { XML_TOKEN_INVALID, 0 }
+    { XML_TOKEN_INVALID, (XMLEffect)0 }
 };
 
-SvXMLEnumMapEntry aXML_AnimationDirection_EnumMap[] =
+const SvXMLEnumMapEntry<XMLEffectDirection> aXML_AnimationDirection_EnumMap[] =
 {
     { XML_NONE,             ED_none },
     { XML_FROM_LEFT,        ED_from_left },
@@ -100,15 +100,15 @@ SvXMLEnumMapEntry aXML_AnimationDirection_EnumMap[] =
     { XML_TO_CENTER,        ED_to_center },
     { XML_CLOCKWISE,        ED_clockwise },
     { XML_COUNTER_CLOCKWISE,ED_cclockwise },
-    { XML_TOKEN_INVALID, 0 }
+    { XML_TOKEN_INVALID, (XMLEffectDirection)0 }
 };
 
-SvXMLEnumMapEntry aXML_AnimationSpeed_EnumMap[] =
+const SvXMLEnumMapEntry<AnimationSpeed> aXML_AnimationSpeed_EnumMap[] =
 {
     { XML_SLOW,     AnimationSpeed_SLOW },
     { XML_MEDIUM,   AnimationSpeed_MEDIUM },
     { XML_FAST,     AnimationSpeed_FAST },
-    { XML_TOKEN_INVALID, 0 }
+    { XML_TOKEN_INVALID, (AnimationSpeed)0 }
 };
 
 AnimationEffect ImplSdXMLgetEffect( XMLEffect eKind, XMLEffectDirection eDirection, sal_Int16 nStartScale, bool /*bIn*/ )
@@ -361,7 +361,7 @@ enum XMLActionKind
 class XMLAnimationsEffectContext : public SvXMLImportContext
 {
 public:
-    AnimImpImpl*    mpImpl;
+    std::shared_ptr<AnimImpImpl> mpImpl;
 
     XMLActionKind   meKind;
     bool        mbTextEffect;
@@ -383,8 +383,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLocalName,
         const Reference< XAttributeList >& xAttrList,
-        AnimImpImpl* pImpl);
-    virtual ~XMLAnimationsEffectContext();
+        const std::shared_ptr<AnimImpImpl>& pImpl);
 
     virtual void EndElement() override;
 
@@ -399,7 +398,6 @@ class XMLAnimationsSoundContext : public SvXMLImportContext
 public:
 
     XMLAnimationsSoundContext( SvXMLImport& rImport, sal_uInt16 nPrfx, const OUString& rLocalName, const Reference< XAttributeList >& xAttrList, XMLAnimationsEffectContext* pParent );
-    virtual ~XMLAnimationsSoundContext();
 };
 
 
@@ -434,12 +432,7 @@ XMLAnimationsSoundContext::XMLAnimationsSoundContext( SvXMLImport& rImport, sal_
     }
 }
 
-XMLAnimationsSoundContext::~XMLAnimationsSoundContext()
-{
-}
-
-
-XMLAnimationsEffectContext::XMLAnimationsEffectContext( SvXMLImport& rImport,  sal_uInt16 nPrfx, const OUString& rLocalName,  const Reference< XAttributeList >& xAttrList, AnimImpImpl* pImpl )
+XMLAnimationsEffectContext::XMLAnimationsEffectContext( SvXMLImport& rImport,  sal_uInt16 nPrfx, const OUString& rLocalName,  const Reference< XAttributeList >& xAttrList, const std::shared_ptr<AnimImpImpl>& pImpl )
 :   SvXMLImportContext(rImport, nPrfx, rLocalName),
     mpImpl( pImpl ),
     meKind( XMLE_SHOW ), mbTextEffect( false ),
@@ -503,15 +496,11 @@ XMLAnimationsEffectContext::XMLAnimationsEffectContext( SvXMLImport& rImport,  s
         case XML_NAMESPACE_PRESENTATION:
             if( IsXMLToken( aLocalName, XML_EFFECT ) )
             {
-                sal_uInt16 eEnum;
-                if( SvXMLUnitConverter::convertEnum( eEnum, sValue, aXML_AnimationEffect_EnumMap ) )
-                    meEffect = (XMLEffect)eEnum;
+                SvXMLUnitConverter::convertEnum( meEffect, sValue, aXML_AnimationEffect_EnumMap );
             }
             else if( IsXMLToken(aLocalName, XML_DIRECTION ) )
             {
-                sal_uInt16 eEnum;
-                if( SvXMLUnitConverter::convertEnum( eEnum, sValue, aXML_AnimationDirection_EnumMap ) )
-                    meDirection = (XMLEffectDirection)eEnum;
+                SvXMLUnitConverter::convertEnum( meDirection, sValue, aXML_AnimationDirection_EnumMap );
             }
             else if( IsXMLToken( aLocalName, XML_START_SCALE ) )
             {
@@ -521,9 +510,7 @@ XMLAnimationsEffectContext::XMLAnimationsEffectContext( SvXMLImport& rImport,  s
             }
             else if( IsXMLToken( aLocalName, XML_SPEED ) )
             {
-                sal_uInt16 eEnum;
-                if( SvXMLUnitConverter::convertEnum( eEnum, sValue, aXML_AnimationSpeed_EnumMap ) )
-                    meSpeed = (AnimationSpeed)eEnum;
+                SvXMLUnitConverter::convertEnum( meSpeed, sValue, aXML_AnimationSpeed_EnumMap );
             }
             else if( IsXMLToken( aLocalName, XML_PATH_ID ) )
             {
@@ -532,10 +519,6 @@ XMLAnimationsEffectContext::XMLAnimationsEffectContext( SvXMLImport& rImport,  s
             break;
         }
     }
-}
-
-XMLAnimationsEffectContext::~XMLAnimationsEffectContext()
-{
 }
 
 SvXMLImportContext * XMLAnimationsEffectContext::CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const Reference< XAttributeList>& xAttrList )
@@ -638,13 +621,8 @@ void XMLAnimationsEffectContext::EndElement()
 XMLAnimationsContext::XMLAnimationsContext( SvXMLImport& rImport, sal_uInt16 nPrfx, const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& )
 : SvXMLImportContext(rImport, nPrfx, rLocalName)
+, mpImpl(std::make_shared<AnimImpImpl>())
 {
-    mpImpl = new AnimImpImpl();
-}
-
-XMLAnimationsContext::~XMLAnimationsContext()
-{
-    delete mpImpl;
 }
 
 SvXMLImportContext * XMLAnimationsContext::CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName,

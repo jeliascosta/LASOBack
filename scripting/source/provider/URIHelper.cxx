@@ -18,7 +18,7 @@
  */
 
 #include <config_folders.h>
-
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/uri/XVndSunStarScriptUrl.hpp>
 #include <com/sun/star/uri/UriReferenceFactory.hpp>
 #include <cppuhelper/supportsservice.hxx>
@@ -35,9 +35,7 @@ namespace lang = ::com::sun::star::lang;
 namespace uri = ::com::sun::star::uri;
 
 static const char SHARE[] = "share";
-static const char SHARE_URI[] = "vnd.sun.star.expand:$BRAND_BASE_DIR";
 
-static const char SHARE_UNO_PACKAGES[] = "share:uno_packages";
 static const char SHARE_UNO_PACKAGES_URI[] =
     "vnd.sun.star.expand:$UNO_SHARED_PACKAGES_CACHE";
 
@@ -45,16 +43,10 @@ static const char USER[] = "user";
 static const char USER_URI[] =
     "vnd.sun.star.expand:${$BRAND_BASE_DIR/" LIBO_ETC_FOLDER "/" SAL_CONFIGFILE( "bootstrap") "::UserInstallation}";
 
-static const char USER_UNO_PACKAGES[] = "user:uno_packages";
-static const char USER_UNO_PACKAGES_DIR[] =
-    "/user/uno_packages/cache";
 
-static const char DOCUMENT[] = "document";
-static const char TDOC_SCHEME[] = "vnd.sun.star.tdoc";
 
 ScriptingFrameworkURIHelper::ScriptingFrameworkURIHelper(
     const uno::Reference< uno::XComponentContext >& xContext)
-        throw( uno::RuntimeException )
 {
     try
     {
@@ -83,7 +75,6 @@ ScriptingFrameworkURIHelper::~ScriptingFrameworkURIHelper()
 void SAL_CALL
 ScriptingFrameworkURIHelper::initialize(
     const uno::Sequence < uno::Any >& args )
-throw ( uno::Exception, uno::RuntimeException, std::exception )
 {
     if ( args.getLength() != 2 ||
          args[0].getValueType() != ::cppu::UnoType<OUString>::get() ||
@@ -118,26 +109,26 @@ ScriptingFrameworkURIHelper::initBaseURI()
         uri = USER_URI;
         bAppendScriptsPart = true;
     }
-    else if ( m_sLocation == USER_UNO_PACKAGES )
+    else if ( m_sLocation == "user:uno_packages" )
     {
         test = "uno_packages";
-        uri = OUStringLiteral(USER_URI) + USER_UNO_PACKAGES_DIR;
+        uri = OUStringLiteral(USER_URI) + "/user/uno_packages/cache";
     }
     else if (m_sLocation == SHARE)
     {
         test = SHARE;
-        uri = SHARE_URI;
+        uri = "vnd.sun.star.expand:$BRAND_BASE_DIR";
         bAppendScriptsPart = true;
     }
-    else if (m_sLocation == SHARE_UNO_PACKAGES)
+    else if (m_sLocation == "share:uno_packages")
     {
         test = "uno_packages";
         uri = SHARE_UNO_PACKAGES_URI;
     }
-    else if (m_sLocation.startsWith(TDOC_SCHEME))
+    else if (m_sLocation.startsWith("vnd.sun.star.tdoc"))
     {
         m_sBaseURI = m_sLocation.concat( SCRIPTS_PART );
-        m_sLocation = DOCUMENT;
+        m_sLocation = "document";
         return true;
     }
     else
@@ -159,13 +150,8 @@ ScriptingFrameworkURIHelper::initBaseURI()
         OUString child = children[i];
         sal_Int32 idx = child.lastIndexOf(test);
 
-        // OSL_TRACE("Trying: %s", PRTSTR(child));
-        // OSL_TRACE("idx=%d, testlen=%d, children=%d",
-        //     idx, test.getLength(), child.getLength());
-
         if ( idx != -1 && (idx + test.getLength()) == child.getLength() )
         {
-            // OSL_TRACE("FOUND PATH: %s", PRTSTR(child));
             if ( bAppendScriptsPart )
             {
                 m_sBaseURI = child.concat( SCRIPTS_PART );
@@ -206,7 +192,6 @@ ScriptingFrameworkURIHelper::getLanguagePath(const OUString& rLanguagePart)
 
 OUString SAL_CALL
 ScriptingFrameworkURIHelper::getScriptURI(const OUString& rStorageURI)
-    throw( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     OUStringBuffer buf(120);
 
@@ -222,7 +207,6 @@ ScriptingFrameworkURIHelper::getScriptURI(const OUString& rStorageURI)
 
 OUString SAL_CALL
 ScriptingFrameworkURIHelper::getStorageURI(const OUString& rScriptURI)
-    throw( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     OUString sLanguagePart;
     try
@@ -234,8 +218,8 @@ ScriptingFrameworkURIHelper::getStorageURI(const OUString& rScriptURI)
     catch ( uno::Exception& )
     {
         throw lang::IllegalArgumentException(
-            OUString("Script URI not valid"),
-                uno::Reference< uno::XInterface >(), 1 );
+            "Script URI not valid",
+            uno::Reference< uno::XInterface >(), 1 );
     }
 
     OUStringBuffer buf(120);
@@ -250,14 +234,12 @@ ScriptingFrameworkURIHelper::getStorageURI(const OUString& rScriptURI)
 
 OUString SAL_CALL
 ScriptingFrameworkURIHelper::getRootStorageURI()
-    throw( uno::RuntimeException, std::exception )
 {
     return m_sBaseURI;
 }
 
 OUString SAL_CALL
 ScriptingFrameworkURIHelper::getImplementationName()
-    throw( uno::RuntimeException, std::exception )
 {
     return OUString(
         "com.sun.star.script.provider.ScriptURIHelper" );
@@ -265,14 +247,12 @@ ScriptingFrameworkURIHelper::getImplementationName()
 
 sal_Bool SAL_CALL
 ScriptingFrameworkURIHelper::supportsService( const OUString& serviceName )
-    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService( this, serviceName );
 }
 
 uno::Sequence< OUString > SAL_CALL
 ScriptingFrameworkURIHelper::getSupportedServiceNames()
-    throw( uno::RuntimeException, std::exception )
 {
     OUString serviceNameList[] = {
         OUString(

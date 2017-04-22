@@ -9,7 +9,7 @@
 
 #include <GL3DBarChart.hxx>
 
-#include <GL/glew.h>
+#include <epoxy/gl.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -504,7 +504,7 @@ GL3DBarChart::GL3DBarChart(
     mpWindow(pWindow),
     mpCamera(nullptr),
     mbValidContext(true),
-    mpTextCache(new opengl3D::TextCache()),
+    mpTextCache(new opengl3D::TextCache),
     mnMaxX(0),
     mnMaxY(0),
     mnDistance(0.0),
@@ -558,8 +558,9 @@ GL3DBarChart::GL3DBarChart(
         {
             mbAutoFly = atoi(aAutoFly);
         }
-        maIdle.SetPriority(SchedulerPriority::REPAINT);
-        maIdle.SetIdleHdl(LINK(this, GL3DBarChart, UpdateTimerHdl));
+        maIdle.SetPriority(TaskPriority::REPAINT);
+        maIdle.SetInvokeHandler(LINK(this, GL3DBarChart, UpdateTimerHdl));
+        maIdle.SetDebugName( "charttypes::GL3DBarChart maIdle" );
         maIdle.Start();
         osl_getSystemTime(&maFPSRenderStartTime);
         osl_getSystemTime(&maFPSRenderEndTime);
@@ -840,8 +841,8 @@ void GL3DBarChart::create3DShapes(const std::vector<std::unique_ptr<VDataSeries>
         //if scroll the bars, set the speed and distance first
         if (mbScrollFlg)
         {
-            mpRenderer->SetScrollSpeed((float)(BAR_SIZE_X + BAR_DISTANCE_X) / (float)miScrollRate);
-            mpRenderer->SetScrollDistance((float)(BAR_SIZE_X + BAR_DISTANCE_X));
+            mpRenderer->SetScrollSpeed((BAR_SIZE_X + BAR_DISTANCE_X) / (float)miScrollRate);
+            mpRenderer->SetScrollDistance(BAR_SIZE_X + BAR_DISTANCE_X);
         }
         spawnRenderThread(new RenderBenchMarkThread(this));
     }
@@ -1207,7 +1208,7 @@ void GL3DBarChart::updateDataUpdateFPS()
 
 void GL3DBarChart::recordBarHistory(sal_uInt32 &nBarID, float &nVal)
 {
-    std::list<float>& aList = maBarHistory[nBarID];
+    std::deque<float>& aList = maBarHistory[nBarID];
     if(aList.size() == HISTORY_NUM)
         aList.pop_front();
     aList.push_back(nVal);
@@ -1249,7 +1250,7 @@ void GL3DBarChart::updateClickEvent()
 {
     if (maRenderEvent == EVENT_CLICK || maRenderEvent == EVENT_AUTO_FLY || maRenderEvent == EVENT_SHOW_SELECT)
     {
-        std::list<float>& aList = maBarHistory[mnSelectBarId];
+        std::deque<float>& aList = maBarHistory[mnSelectBarId];
         sal_uInt32 nIdex = 0;
         sal_uInt32 nBarIdArray[DISPLAY_BARS_NUM] = {0};
         OUString aTitle;
@@ -1275,7 +1276,7 @@ void GL3DBarChart::updateClickEvent()
             nMaxXCoord = std::max(nMaxXCoord, 0.55f + nTextWidth);
         }
         getNeighborBarID(mnSelectBarId, nBarIdArray);
-        for (std::list<float>::iterator it = aList.begin();it != aList.end();++it)
+        for (std::deque<float>::iterator it = aList.begin();it != aList.end();++it)
         {
             if (nIdex + 1 < aList.size())
             {
@@ -1311,7 +1312,7 @@ void GL3DBarChart::updateClickEvent()
         aTitle = " ";
         maScreenTextShapes.push_back(o3tl::make_unique<opengl3D::ScreenText>(mpRenderer.get(), *mpTextCache, aTitle, glm::vec4(0.0f, 0.0f, 0.0f, 0.5f), 0));
         opengl3D::ScreenText* pScreenText = static_cast<opengl3D::ScreenText*>(maScreenTextShapes.back().get());
-        pScreenText->setPosition(glm::vec2(nMinXCoord, 0.99f), glm::vec2(nMaxXCoord, 0.99f - nMaxHight));
+        pScreenText->setPosition(glm::vec2(nMinXCoord, 0.99f), glm::vec2(nMaxXCoord, 0.99f - nMaxHight), glm::vec3(0.0, 0.0, 0.0));
     }
 }
 
@@ -1470,7 +1471,7 @@ void GL3DBarChart::processAutoFly(sal_uInt32 nId, sal_uInt32 nColor)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(GL3DBarChart, UpdateTimerHdl, Idle *, void)
+IMPL_LINK_NOARG(GL3DBarChart, UpdateTimerHdl, Timer *, void)
 {
     updateScreenText();
     maIdle.Start();

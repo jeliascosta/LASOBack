@@ -43,7 +43,7 @@ public:
     /** Sets text data for this portion. */
     void                setText( const OUString& rText );
     /** Creates and returns a new font formatting object. */
-    FontRef             createFont();
+    FontRef const &     createFont();
     /** Links this portion to a font object from the global font list. */
     void                setFontId( sal_Int32 nFontId );
 
@@ -51,19 +51,18 @@ public:
     void                finalizeImport();
 
     /** Returns the text data of this portion. */
-    inline const OUString& getText() const { return maText; }
+    const OUString& getText() const { return maText; }
     /** Returns true, if the portion contains font formatting. */
-    inline bool         hasFont() const { return mxFont.get() != nullptr; }
+    bool         hasFont() const { return mxFont.get() != nullptr; }
 
     /** Converts the portion and replaces or appends to the passed XText. */
     void                convert(
                             const css::uno::Reference< css::text::XText >& rxText,
-                            const oox::xls::Font* pFont, bool bReplace );
+                            bool bReplace );
     void                convert( ScEditEngineDefaulter& rEE, ESelection& rSelection, const oox::xls::Font* pFont );
 
     void                writeFontProperties(
-        const css::uno::Reference< css::text::XText >& rxText,
-        const oox::xls::Font* pFont ) const;
+                            const css::uno::Reference< css::text::XText >& rxText ) const;
 
 private:
     OUString            maText;         /// Portion text.
@@ -73,13 +72,6 @@ private:
 };
 
 typedef std::shared_ptr< RichStringPortion > RichStringPortionRef;
-
-enum BiffFontPortionMode
-{
-    BIFF_FONTPORTION_8BIT,              /// Font portion with 8-bit values.
-    BIFF_FONTPORTION_16BIT,             /// Font portion with 16-bit values.
-    BIFF_FONTPORTION_OBJ                /// Font portion in OBJ or TXO record.
-};
 
 /** Represents a position in a rich-string containing current font identifier.
 
@@ -92,9 +84,8 @@ struct FontPortionModel
     sal_Int32           mnPos;          /// First character in the string.
     sal_Int32           mnFontId;       /// Font identifier for the next characters.
 
-    explicit inline     FontPortionModel() : mnPos( 0 ), mnFontId( -1 ) {}
-    explicit inline     FontPortionModel( sal_Int32 nPos, sal_Int32 nFontId ) :
-                            mnPos( nPos ), mnFontId( nFontId ) {}
+    explicit FontPortionModel() : mnPos( 0 ), mnFontId( -1 ) {}
+    explicit FontPortionModel( sal_Int32 nPos ) : mnPos( nPos ), mnFontId( -1 ) {}
 
     void                read( SequenceInputStream& rStrm );
 };
@@ -104,7 +95,7 @@ class FontPortionModelList {
     ::std::vector< FontPortionModel > mvModels;
 
 public:
-    inline explicit     FontPortionModelList() : mvModels() {}
+    explicit     FontPortionModelList() : mvModels() {}
 
     bool empty() const { return mvModels.empty(); }
 
@@ -183,8 +174,8 @@ struct PhoneticPortionModel
     sal_Int32           mnBasePos;      /// First character in base text.
     sal_Int32           mnBaseLen;      /// Number of characters in base text.
 
-    explicit inline     PhoneticPortionModel() : mnPos( -1 ), mnBasePos( -1 ), mnBaseLen( 0 ) {}
-    explicit inline     PhoneticPortionModel( sal_Int32 nPos, sal_Int32 nBasePos, sal_Int32 nBaseLen ) :
+    explicit PhoneticPortionModel() : mnPos( -1 ), mnBasePos( -1 ), mnBaseLen( 0 ) {}
+    explicit PhoneticPortionModel( sal_Int32 nPos, sal_Int32 nBasePos, sal_Int32 nBaseLen ) :
                             mnPos( nPos ), mnBasePos( nBasePos ), mnBaseLen( nBaseLen ) {}
 
     void                read( SequenceInputStream& rStrm );
@@ -194,7 +185,7 @@ struct PhoneticPortionModel
 class PhoneticPortionModelList
 {
 public:
-    inline explicit     PhoneticPortionModelList() : mvModels() {}
+    explicit     PhoneticPortionModelList() : mvModels() {}
 
     bool empty() const { return mvModels.empty(); }
 
@@ -238,14 +229,12 @@ public:
         if there is only one unformatted portion. */
     bool                extractPlainString(
                             OUString& orString,
-                            const oox::xls::Font* pFirstPortionFont = nullptr ) const;
+                            const oox::xls::Font* pFirstPortionFont ) const;
 
-    /** Converts the string and writes it into the passed XText.
+    /** Converts the string and writes it into the passed XText, replace old contents of the text object,.
         @param rxText  The XText interface of the target object.
-        @param bReplaceOld  True = replace old contents of the text object. */
-    void                convert(
-                            const css::uno::Reference< css::text::XText >& rxText,
-                            bool bReplaceOld ) const;
+     */
+    void                convert( const css::uno::Reference< css::text::XText >& rxText ) const;
     ::EditTextObject*   convert( ScEditEngineDefaulter& rEE, const oox::xls::Font* pFont ) const;
 
 private:

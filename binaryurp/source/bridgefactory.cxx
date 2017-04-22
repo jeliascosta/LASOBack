@@ -23,7 +23,9 @@
 #include <cassert>
 #include <exception>
 
+#include "com/sun/star/bridge/BridgeExistsException.hpp"
 #include "com/sun/star/connection/XConnection.hpp"
+#include "com/sun/star/lang/IllegalArgumentException.hpp"
 #include "com/sun/star/uno/Exception.hpp"
 #include "com/sun/star/uno/Reference.hxx"
 #include "com/sun/star/uno/RuntimeException.hpp"
@@ -42,9 +44,9 @@
 namespace binaryurp {
 
 css::uno::Reference< css::uno::XInterface > BridgeFactory::static_create(
-    css::uno::Reference< css::uno::XComponentContext > const & xContext)
+    css::uno::Reference< css::uno::XComponentContext > const & /*xContext*/)
 {
-    return static_cast< cppu::OWeakObject * >(new BridgeFactory(xContext));
+    return static_cast< cppu::OWeakObject * >(new BridgeFactory);
 }
 
 OUString BridgeFactory::static_getImplementationName() {
@@ -76,29 +78,24 @@ void BridgeFactory::removeBridge(
     }
 }
 
-BridgeFactory::BridgeFactory(
-    css::uno::Reference< css::uno::XComponentContext > const & context):
-    BridgeFactoryBase(m_aMutex), context_(context)
+BridgeFactory::BridgeFactory():
+    BridgeFactoryBase(m_aMutex)
 {
-    assert(context.is());
 }
 
 BridgeFactory::~BridgeFactory() {}
 
 OUString BridgeFactory::getImplementationName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return static_getImplementationName();
 }
 
 sal_Bool BridgeFactory::supportsService(OUString const & ServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence< OUString > BridgeFactory::getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return static_getSupportedServiceNames();
 }
@@ -108,9 +105,6 @@ css::uno::Reference< css::bridge::XBridge > BridgeFactory::createBridge(
     css::uno::Reference< css::connection::XConnection > const & aConnection,
     css::uno::Reference< css::bridge::XInstanceProvider > const &
         anInstanceProvider)
-    throw (
-        css::bridge::BridgeExistsException, css::lang::IllegalArgumentException,
-        css::uno::RuntimeException, std::exception)
 {
     rtl::Reference< Bridge > b;
     {
@@ -143,7 +137,7 @@ css::uno::Reference< css::bridge::XBridge > BridgeFactory::createBridge(
 }
 
 css::uno::Reference< css::bridge::XBridge > BridgeFactory::getBridge(
-    OUString const & sName) throw (css::uno::RuntimeException, std::exception)
+    OUString const & sName)
 {
     osl::MutexGuard g(m_aMutex);
     BridgeMap::iterator i(named_.find(sName));
@@ -152,7 +146,7 @@ css::uno::Reference< css::bridge::XBridge > BridgeFactory::getBridge(
 }
 
 css::uno::Sequence< css::uno::Reference< css::bridge::XBridge > >
-BridgeFactory::getExistingBridges() throw (css::uno::RuntimeException, std::exception) {
+BridgeFactory::getExistingBridges() {
     osl::MutexGuard g(m_aMutex);
     if (unnamed_.size() > SAL_MAX_INT32) {
         throw css::uno::RuntimeException(

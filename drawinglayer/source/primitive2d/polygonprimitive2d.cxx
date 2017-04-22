@@ -91,7 +91,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolygonMarkerPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void PolygonMarkerPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
         {
             // calculate logic DashLength
             const basegfx::B2DVector aDashVector(rViewInformation.getInverseObjectToViewTransformation() * basegfx::B2DVector(getDiscreteDashLength(), 0.0));
@@ -100,7 +100,7 @@ namespace drawinglayer
             if(fLogicDashLength > 0.0 && !getRGBColorA().equal(getRGBColorB()))
             {
                 // apply dashing; get line and gap snippets
-                ::std::vector< double > aDash;
+                std::vector< double > aDash;
                 basegfx::B2DPolyPolygon aDashedPolyPolyA;
                 basegfx::B2DPolyPolygon aDashedPolyPolyB;
 
@@ -108,18 +108,12 @@ namespace drawinglayer
                 aDash.push_back(fLogicDashLength);
                 basegfx::tools::applyLineDashing(getB2DPolygon(), aDash, &aDashedPolyPolyA, &aDashedPolyPolyB, 2.0 * fLogicDashLength);
 
-                // prepare return value
-                Primitive2DContainer aRetval(2);
-
-                aRetval[0] = Primitive2DReference(new PolyPolygonHairlinePrimitive2D(aDashedPolyPolyA, getRGBColorA()));
-                aRetval[1] = Primitive2DReference(new PolyPolygonHairlinePrimitive2D(aDashedPolyPolyB, getRGBColorB()));
-
-                return aRetval;
+                rContainer.push_back(new PolyPolygonHairlinePrimitive2D(aDashedPolyPolyA, getRGBColorA()));
+                rContainer.push_back(new PolyPolygonHairlinePrimitive2D(aDashedPolyPolyB, getRGBColorB()));
             }
             else
             {
-                const Primitive2DReference xRef(new PolygonHairlinePrimitive2D(getB2DPolygon(), getRGBColorA()));
-                return Primitive2DContainer { xRef };
+                rContainer.push_back(new PolygonHairlinePrimitive2D(getB2DPolygon(), getRGBColorA()));
             }
         }
 
@@ -174,7 +168,7 @@ namespace drawinglayer
             return aRetval;
         }
 
-        Primitive2DContainer PolygonMarkerPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void PolygonMarkerPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
         {
             ::osl::MutexGuard aGuard( m_aMutex );
             bool bNeedNewDecomposition(false);
@@ -201,7 +195,7 @@ namespace drawinglayer
             }
 
             // use parent implementation
-            return BufferedDecompositionPrimitive2D::get2DDecomposition(rViewInformation);
+            BufferedDecompositionPrimitive2D::get2DDecomposition(rVisitor, rViewInformation);
         }
 
         // provide unique ID
@@ -222,7 +216,7 @@ namespace drawinglayer
 
     namespace primitive2d
     {
-        Primitive2DContainer PolygonStrokePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolygonStrokePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             if(getB2DPolygon().count())
             {
@@ -267,9 +261,6 @@ namespace drawinglayer
                             fMiterMinimumAngle));
                     }
 
-                    // prepare return value
-                    Primitive2DContainer aRetval(aAreaPolyPolygon.count());
-
                     // create primitive
                     for(sal_uInt32 b(0L); b < aAreaPolyPolygon.count(); b++)
                     {
@@ -281,26 +272,16 @@ namespace drawinglayer
                         const basegfx::BColor aColor(bTestByUsingRandomColor
                             ? basegfx::BColor(tools::getRandomColorRange(), tools::getRandomColorRange(), tools::getRandomColorRange())
                             : getLineAttribute().getColor());
-                        const Primitive2DReference xRef(new PolyPolygonColorPrimitive2D(aNewPolyPolygon, aColor));
-                        aRetval[b] = xRef;
+                        rContainer.push_back(new PolyPolygonColorPrimitive2D(aNewPolyPolygon, aColor));
                     }
-
-                    return aRetval;
                 }
                 else
                 {
-                    // prepare return value
-                    const Primitive2DReference xRef(
+                    rContainer.push_back(
                         new PolyPolygonHairlinePrimitive2D(
                             aHairLinePolyPolygon,
                             getLineAttribute().getColor()));
-
-                    return Primitive2DContainer { xRef };
                 }
-            }
-            else
-            {
-                return Primitive2DContainer();
             }
         }
 
@@ -364,10 +345,16 @@ namespace drawinglayer
                     bUseDecomposition = true;
                 }
 
-                if(bUseDecomposition)
+                if (bUseDecomposition)
                 {
                     // get correct range by using the decomposition fallback, reasons see above cases
+
+                    // ofz#947 to optimize calculating the range, turn any slow dashes into a solid line
+                    // when just calculating bounds
+                    attribute::StrokeAttribute aOrigStrokeAttribute = maStrokeAttribute;
+                    const_cast<PolygonStrokePrimitive2D*>(this)->maStrokeAttribute = attribute::StrokeAttribute();
                     aRetval = BufferedDecompositionPrimitive2D::getB2DRange(rViewInformation);
+                    const_cast<PolygonStrokePrimitive2D*>(this)->maStrokeAttribute = aOrigStrokeAttribute;
                 }
                 else
                 {
@@ -410,10 +397,8 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolygonWavePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolygonWavePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
-            Primitive2DContainer aRetval;
-
             if(getB2DPolygon().count())
             {
                 const bool bHasWidth(!basegfx::fTools::equalZero(getWaveWidth()));
@@ -423,18 +408,14 @@ namespace drawinglayer
                 {
                     // create waveline curve
                     const basegfx::B2DPolygon aWaveline(basegfx::tools::createWaveline(getB2DPolygon(), getWaveWidth(), getWaveHeight()));
-                    const Primitive2DReference xRef(new PolygonStrokePrimitive2D(aWaveline, getLineAttribute(), getStrokeAttribute()));
-                    aRetval = Primitive2DContainer { xRef };
+                    rContainer.push_back(new PolygonStrokePrimitive2D(aWaveline, getLineAttribute(), getStrokeAttribute()));
                 }
                 else
                 {
                     // flat waveline, decompose to simple line primitive
-                    const Primitive2DReference xRef(new PolygonStrokePrimitive2D(getB2DPolygon(), getLineAttribute(), getStrokeAttribute()));
-                    aRetval = Primitive2DContainer { xRef };
+                    rContainer.push_back(new PolygonStrokePrimitive2D(getB2DPolygon(), getLineAttribute(), getStrokeAttribute()));
                 }
             }
-
-            return aRetval;
         }
 
         PolygonWavePrimitive2D::PolygonWavePrimitive2D(
@@ -522,7 +503,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolygonStrokeArrowPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolygonStrokeArrowPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             // copy local polygon, it may be changed
             basegfx::B2DPolygon aLocalPolygon(getB2DPolygon());
@@ -569,33 +550,24 @@ namespace drawinglayer
                 }
             }
 
-            // prepare return value
-            Primitive2DContainer aRetval(1L + (aArrowA.count() ? 1L : 0L) + (aArrowB.count() ? 1L : 0L));
-            sal_uInt32 nInd(0L);
-
             // add shaft
-            const Primitive2DReference xRefShaft(new
+            rContainer.push_back(new
                 PolygonStrokePrimitive2D(
                     aLocalPolygon, getLineAttribute(), getStrokeAttribute()));
-            aRetval[nInd++] = xRefShaft;
 
             if(aArrowA.count())
             {
-                const Primitive2DReference xRefA(
+                rContainer.push_back(
                     new PolyPolygonColorPrimitive2D(
                         aArrowA, getLineAttribute().getColor()));
-                aRetval[nInd++] = xRefA;
             }
 
             if(aArrowB.count())
             {
-                const Primitive2DReference xRefB(
+                rContainer.push_back(
                     new PolyPolygonColorPrimitive2D(
                         aArrowB, getLineAttribute().getColor()));
-                aRetval[nInd++] = xRefB;
             }
-
-            return aRetval;
         }
 
         PolygonStrokeArrowPrimitive2D::PolygonStrokeArrowPrimitive2D(
@@ -636,8 +608,6 @@ namespace drawinglayer
 
         basegfx::B2DRange PolygonStrokeArrowPrimitive2D::getB2DRange(const geometry::ViewInformation2D& rViewInformation) const
         {
-            basegfx::B2DRange aRetval;
-
             if(getStart().isActive() || getEnd().isActive())
             {
                 // use decomposition when line start/end is used

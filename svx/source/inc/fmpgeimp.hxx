@@ -46,7 +46,7 @@ class SdrObject;
 // eingefuegt worden sind und wann diese entfernt wurden
 
 
-class SVX_DLLPRIVATE FmFormPageImpl
+class FmFormPageImpl
 {
     css::uno::Reference< css::form::XForm >               xCurrentForm;
     css::uno::Reference< css::form::XForms >              m_xForms;
@@ -83,8 +83,8 @@ public:
     );
 
     // activation handling
-    inline  bool    hasEverBeenActivated( ) const { return !m_bFirstActivation; }
-    inline  void        setHasBeenActivated( ) { m_bFirstActivation = false; }
+    bool    hasEverBeenActivated( ) const { return !m_bFirstActivation; }
+    void        setHasBeenActivated( ) { m_bFirstActivation = false; }
 
     const css::uno::Reference< css::form::XForms>& getForms( bool _bForceCreate = true );
 

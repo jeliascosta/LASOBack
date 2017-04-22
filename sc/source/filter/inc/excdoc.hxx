@@ -30,8 +30,6 @@
 
 class SvStream;
 
-class NameBuffer;
-
 class XclExpChangeTrack;
 
 // class ExcTable -
@@ -50,11 +48,9 @@ private:
     XclExpCellTableRef          mxCellTable;
 
     SCTAB                       mnScTab;    // table number SC document
-    sal_uInt16                      nExcTab;    // table number Excel document
+    sal_uInt16                  nExcTab;    // table number Excel document
 
-    NameBuffer*                 pTabNames;
-
-    XclExpNoteListRef   mxNoteList;
+    XclExpNoteListRef           mxNoteList;
 
     // re-create and forget pRec; delete is done by ExcTable itself!
     void                        Add( XclExpRecordBase* pRec );
@@ -62,7 +58,7 @@ private:
 public:
                                 ExcTable( const XclExpRoot& rRoot );
                                 ExcTable( const XclExpRoot& rRoot, SCTAB nScTab );
-                                virtual ~ExcTable();
+                                virtual ~ExcTable() override;
 
     void FillAsHeaderBinary( ExcBoundsheetList& rBoundsheetList );
     void FillAsHeaderXml( ExcBoundsheetList& rBoundsheetList );
@@ -91,11 +87,11 @@ private:
     ExcTableList        maTableList;
     ExcBoundsheetList   maBoundsheetList;
 
-    XclExpChangeTrack*  pExpChangeTrack;
+    std::unique_ptr<XclExpChangeTrack> m_xExpChangeTrack;
 
 public:
     explicit                    ExcDocument( const XclExpRoot& rRoot );
-    virtual                     ~ExcDocument();
+    virtual                     ~ExcDocument() override;
 
     void                ReadDoc();
     void                Write( SvStream& rSvStrm );

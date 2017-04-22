@@ -19,9 +19,6 @@
 #ifndef INCLUDED_SW_SOURCE_FILTER_INC_FLTSHELL_HXX
 #define INCLUDED_SW_SOURCE_FILTER_INC_FLTSHELL_HXX
 
-#include <com/sun/star/text/HoriOrientation.hpp>
-#include <com/sun/star/text/VertOrientation.hpp>
-#include <com/sun/star/text/RelOrientation.hpp>
 #include <hintids.hxx>
 #include <vcl/keycod.hxx>
 #include <tools/datetime.hxx>
@@ -32,6 +29,8 @@
 #include <pam.hxx>
 #include <IDocumentRedlineAccess.hxx>
 
+#include <cstddef>
+#include <limits>
 #include <memory>
 #include <deque>
 
@@ -89,7 +88,7 @@ public:
     }
 };
 
-// Stack-Eintrag fuer die Attribute Es werden immer Pointer auf neue Attribute uebergeben.
+// Stack entry for the attributes. It is always pointers to new attributes that are passed.
 class SwFltStackEntry
 {
 private:
@@ -100,7 +99,7 @@ public:
     SwFltPosition m_aMkPos;
     SwFltPosition m_aPtPos;
 
-    SfxPoolItem * pAttr;// Format Attribute
+    std::unique_ptr<SfxPoolItem> pAttr;// Format Attribute
 
     bool bOld;          // to mark Attributes *before* skipping field results
     bool bOpen;     //Entry open, awaiting being closed
@@ -148,7 +147,7 @@ protected:
 
     virtual void SetAttrInDoc(const SwPosition& rTmpPos, SwFltStackEntry& rEntry);
     virtual sal_Int32 GetCurrAttrCP() const {return -1;}
-    virtual bool IsParaEndInCPs(sal_Int32 nStart,sal_Int32 nEnd,bool bSdOD=true) const;
+    virtual bool IsParaEndInCPs(sal_Int32 nStart,sal_Int32 nEnd,bool bSdOD) const;
 
     //Clear the para end position recorded in reader intermittently for the least impact on loading performance
     virtual void ClearParaEndPosition(){};
@@ -165,9 +164,7 @@ public:
         BOOK_TO_VAR_REF,
         BOOK_AND_REF,
         TAGS_IN_TEXT,
-        ALLOW_FLD_CR,
-        NO_FLD_CR,
-        DONT_HARD_PROTECT
+        ALLOW_FLD_CR
     };
 
     SwFltControlStack(SwDoc* pDo, sal_uLong nFieldFl);
@@ -177,12 +174,12 @@ public:
 
     void NewAttr(const SwPosition& rPos, const SfxPoolItem & rAttr );
 
-    virtual SwFltStackEntry* SetAttr(const SwPosition& rPos, sal_uInt16 nAttrId=0, bool bTstEnde=true, long nHand = LONG_MAX, bool consumedByField=false);
+    virtual SwFltStackEntry* SetAttr(const SwPosition& rPos, sal_uInt16 nAttrId, bool bTstEnde=true, long nHand = LONG_MAX, bool consumedByField=false);
 
     void StealAttr(const SwNodeIndex& rNode);
     void MarkAllAttrsOld();
     void KillUnlockedAttrs(const SwPosition& pPos);
-    SfxPoolItem* GetFormatStackAttr(sal_uInt16 nWhich, sal_uInt16 * pPos = nullptr);
+    SfxPoolItem* GetFormatStackAttr(sal_uInt16 nWhich, sal_uInt16 * pPos);
     const SfxPoolItem* GetOpenStackAttr(const SwPosition& rPos, sal_uInt16 nWhich);
     void Delete(const SwPaM &rPam);
 
@@ -198,14 +195,14 @@ class SwFltAnchorClient;
 class SW_DLLPUBLIC SwFltAnchor : public SfxPoolItem
 {
     SwFrameFormat* pFrameFormat;
-    SwFltAnchorClient * pClient;
+    std::unique_ptr<SwFltAnchorClient> pClient;
 
 public:
     SwFltAnchor(SwFrameFormat* pFlyFormat);
     SwFltAnchor(const SwFltAnchor&);
-    virtual ~SwFltAnchor();
+    virtual ~SwFltAnchor() override;
 
-    // "pure virtual Methoden" vom SfxPoolItem
+    // "purely virtual methods" of SfxPoolItem
     virtual bool operator==(const SfxPoolItem&) const override;
     virtual SfxPoolItem* Clone(SfxItemPool* = nullptr) const override;
     void SetFrameFormat(SwFrameFormat * _pFrameFormat);
@@ -230,22 +227,22 @@ public:
     DateTime        aStampPrev;
     RedlineType_t   eType;
     RedlineType_t   eTypePrev;
-    sal_uInt16          nAutorNo;
-    sal_uInt16          nAutorNoPrev;
+    std::size_t     nAutorNo;
+    std::size_t     nAutorNoPrev;
+
+    static constexpr auto NoPrevAuthor
+        = std::numeric_limits<std::size_t>::max();
 
     SwFltRedline(RedlineType_t   eType_,
-                 sal_uInt16          nAutorNo_,
+                 std::size_t     nAutorNo_,
                  const DateTime& rStamp_,
                  RedlineType_t   eTypePrev_    = nsRedlineType_t::REDLINE_INSERT,
-                 sal_uInt16          nAutorNoPrev_ = USHRT_MAX,
-                 const DateTime* pStampPrev_   = nullptr)
+                 std::size_t     nAutorNoPrev_ = NoPrevAuthor)
         : SfxPoolItem(RES_FLTR_REDLINE), aStamp(rStamp_),
         aStampPrev( DateTime::EMPTY ),
         eType(eType_),
         eTypePrev(eTypePrev_), nAutorNo(nAutorNo_), nAutorNoPrev(nAutorNoPrev_)
     {
-            if( pStampPrev_ )
-                aStampPrev = *pStampPrev_;
     }
 
     SwFltRedline(const SwFltRedline& rCpy):
@@ -257,7 +254,7 @@ public:
         nAutorNo(       rCpy.nAutorNo     ),
         nAutorNoPrev(   rCpy.nAutorNoPrev )
         {}
-    // "pure virtual Methoden" vom SfxPoolItem
+    // "purely virtual methods" of SfxPoolItem
     virtual bool operator==(const SfxPoolItem& rItem) const override;
     virtual SfxPoolItem* Clone(SfxItemPool* = nullptr) const override;
 };
@@ -278,7 +275,7 @@ public:
                    const bool bIsTOCBookmark = false );
     SwFltBookmark( const SwFltBookmark& );
 
-    // "pure virtual Methoden" vom SfxPoolItem
+    // "purely virtual methods" of SfxPoolItem
     virtual bool operator==(const SfxPoolItem&) const override;
     virtual SfxPoolItem* Clone(SfxItemPool* = nullptr) const override;
 
@@ -318,7 +315,7 @@ class SW_DLLPUBLIC SwFltTOX : public SfxPoolItem
 public:
     SwFltTOX(SwTOXBase* pBase);
     SwFltTOX(const SwFltTOX&);
-    // "pure virtual Methoden" vom SfxPoolItem
+    // "purely virtual methods" of SfxPoolItem
     virtual bool operator==(const SfxPoolItem&) const override;
     virtual SfxPoolItem* Clone(SfxItemPool* = nullptr) const override;
     SwTOXBase* GetBase()            { return pTOXBase; }
@@ -328,9 +325,9 @@ public:
     bool HadPageDescItem() const { return bHadPageDescItem; }
 };
 
-// Der WWEndStack verhaelt sich wie der WWControlStck, nur dass die Attribute
-// auf ihm bis ans Ende des Dokuments gehortet werden, falls auf sie noch
-// zugegriffen werden muss (z.B. Book/RefMarks, Index u.s.w.)
+// The WWEndStack behaves like the WWControlStack, except that the attributes
+// on it are hoarded to the end of the document if they need to be accessed
+// (e.g., book/RefMarks, index, etc.).
 class SwFltEndStack : public SwFltControlStack
 {
 public:

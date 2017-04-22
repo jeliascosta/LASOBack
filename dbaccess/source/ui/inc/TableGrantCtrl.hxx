@@ -60,7 +60,7 @@ class OTableGrantControl : public ::svt::EditBrowseBox
 
 public:
     OTableGrantControl( vcl::Window* pParent, WinBits nBits);
-    virtual ~OTableGrantControl();
+    virtual ~OTableGrantControl() override;
     virtual void dispose() override;
     void UpdateTables();
     void setUserName(const OUString& _sUserName);
@@ -81,14 +81,12 @@ public:
     CreateAccessibleCell( sal_Int32 nRow, sal_uInt16 nColumnId ) override;
 
 protected:
-    virtual void Resize() override;
-
     virtual bool PreNotify(NotifyEvent& rNEvt ) override;
 
     virtual bool IsTabAllowed(bool bForward) const override;
     virtual void InitController( ::svt::CellControllerRef& rController, long nRow, sal_uInt16 nCol ) override;
     virtual ::svt::CellController* GetController( long nRow, sal_uInt16 nCol ) override;
-    virtual void PaintCell( OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColId ) const override;
+    virtual void PaintCell( OutputDevice& rDev, const tools::Rectangle& rRect, sal_uInt16 nColId ) const override;
     virtual bool SeekRow( long nRow ) override;
     virtual bool SaveModified() override;
     virtual OUString GetCellText( long nRow, sal_uInt16 nColId ) const override;
@@ -96,8 +94,8 @@ protected:
     virtual void CellModified() override;
 
 private:
-    DECL_LINK_TYPED( AsynchActivate, void*, void );
-    DECL_LINK_TYPED( AsynchDeactivate, void*, void );
+    DECL_LINK( AsynchActivate, void*, void );
+    DECL_LINK( AsynchDeactivate, void*, void );
 
     static bool isAllowed(sal_uInt16 _nColumnId,sal_Int32 _nPrivilege);
     void        fillPrivilege(sal_Int32 _nRow) const;

@@ -17,12 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <sfx2/sidebar/Theme.hxx>
 #include <sfx2/sidebar/ControlFactory.hxx>
 #include "CellAppearancePropertyPanel.hxx"
-#include <CellAppearancePropertyPanel.hrc>
-#include "sc.hrc"
+#include "scres.hrc"
 #include "scresid.hxx"
 #include <sfx2/bindings.hxx>
 #include <sfx2/dispatch.hxx>
@@ -33,12 +31,9 @@
 #include <editeng/lineitem.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
-#include <svx/sidebar/PopupContainer.hxx>
 #include "CellLineStyleControl.hxx"
-#include "CellLineStylePopup.hxx"
 #include "CellBorderUpdater.hxx"
 #include "CellBorderStyleControl.hxx"
-#include "CellBorderStylePopup.hxx"
 
 using namespace css;
 using namespace css::uno;
@@ -49,32 +44,6 @@ const char UNO_LINESTYLE[] = ".uno:LineStyle";
 // namespace open
 
 namespace sc { namespace sidebar {
-
-svx::sidebar::PopupControl* CellAppearancePropertyPanel::CreateCellLineStylePopupControl(svx::sidebar::PopupContainer* pParent)
-{
-    return VclPtr<CellLineStyleControl>::Create(pParent, *this);
-}
-
-void CellAppearancePropertyPanel::EndCellLineStylePopupMode()
-{
-    if(mpCellLineStylePopup.get())
-    {
-        mpCellLineStylePopup->Hide();
-    }
-}
-
-svx::sidebar::PopupControl* CellAppearancePropertyPanel::CreateCellBorderStylePopupControl(svx::sidebar::PopupContainer* pParent)
-{
-    return VclPtr<CellBorderStyleControl>::Create(pParent, *this);
-}
-
-void CellAppearancePropertyPanel::EndCellBorderStylePopupMode()
-{
-    if(mpCellBorderStylePopup.get())
-    {
-        mpCellBorderStylePopup->Hide();
-    }
-}
 
 CellAppearancePropertyPanel::CellAppearancePropertyPanel(
     vcl::Window* pParent,
@@ -89,16 +58,16 @@ CellAppearancePropertyPanel::CellAppearancePropertyPanel(
     maBorderTLBRControl(SID_ATTR_BORDER_DIAG_TLBR, *pBindings, *this),
     maBorderBLTRControl(SID_ATTR_BORDER_DIAG_BLTR, *pBindings, *this),
 
-    maIMGCellBorder(ScResId(IMG_CELL_BORDER)),
-    maIMGLineStyle1(ScResId(IMG_LINE_STYLE1)),
-    maIMGLineStyle2(ScResId(IMG_LINE_STYLE2)),
-    maIMGLineStyle3(ScResId(IMG_LINE_STYLE3)),
-    maIMGLineStyle4(ScResId(IMG_LINE_STYLE4)),
-    maIMGLineStyle5(ScResId(IMG_LINE_STYLE5)),
-    maIMGLineStyle6(ScResId(IMG_LINE_STYLE6)),
-    maIMGLineStyle7(ScResId(IMG_LINE_STYLE7)),
-    maIMGLineStyle8(ScResId(IMG_LINE_STYLE8)),
-    maIMGLineStyle9(ScResId(IMG_LINE_STYLE9)),
+    maIMGCellBorder(BitmapEx(ScResId(RID_BMP_CELL_BORDER))),
+    maIMGLineStyle1(BitmapEx(ScResId(RID_BMP_LINE_STYLE1))),
+    maIMGLineStyle2(BitmapEx(ScResId(RID_BMP_LINE_STYLE2))),
+    maIMGLineStyle3(BitmapEx(ScResId(RID_BMP_LINE_STYLE3))),
+    maIMGLineStyle4(BitmapEx(ScResId(RID_BMP_LINE_STYLE4))),
+    maIMGLineStyle5(BitmapEx(ScResId(RID_BMP_LINE_STYLE5))),
+    maIMGLineStyle6(BitmapEx(ScResId(RID_BMP_LINE_STYLE6))),
+    maIMGLineStyle7(BitmapEx(ScResId(RID_BMP_LINE_STYLE7))),
+    maIMGLineStyle8(BitmapEx(ScResId(RID_BMP_LINE_STYLE8))),
+    maIMGLineStyle9(BitmapEx(ScResId(RID_BMP_LINE_STYLE9))),
 
     mnIn(0),
     mnOut(0),
@@ -120,10 +89,8 @@ CellAppearancePropertyPanel::CellAppearancePropertyPanel(
     mbInnerBorder(false),
     mbTLBR(false),
     mbBLTR(false),
-
-    mpCellLineStylePopup(),
-    mpCellBorderStylePopup(),
-
+    mxCellLineStylePopup(),
+    mxCellBorderStylePopup(),
     maContext(),
     mpBindings(pBindings)
 {
@@ -148,6 +115,8 @@ void CellAppearancePropertyPanel::dispose()
     mpTBLineStyle.clear();
     mpTBLineColor.clear();
 
+    mxCellBorderStylePopup.disposeAndClear();
+    mxCellLineStylePopup.disposeAndClear();
     maLineStyleControl.dispose();
     maBorderOuterControl.dispose();
     maBorderInnerControl.dispose();
@@ -176,53 +145,30 @@ void CellAppearancePropertyPanel::Initialize()
     mpTBLineStyle->Disable();
 
     mpTBLineColor->Disable();
-
-    mpTBLineColor->SetAccessibleRelationLabeledBy(mpTBLineColor);
-    mpTBLineStyle->SetAccessibleRelationLabeledBy(mpTBLineStyle);
 }
 
-IMPL_LINK_TYPED(CellAppearancePropertyPanel, TbxCellBorderSelectHdl, ToolBox*, pToolBox, void)
+IMPL_LINK(CellAppearancePropertyPanel, TbxCellBorderSelectHdl, ToolBox*, pToolBox, void)
 {
     const OUString aCommand(pToolBox->GetItemCommand(pToolBox->GetCurItemId()));
 
-    if(aCommand == UNO_SETBORDERSTYLE)
+    if (aCommand == UNO_SETBORDERSTYLE)
     {
-        // create popup on demand
-        if(!mpCellBorderStylePopup.get())
-        {
-            mpCellBorderStylePopup.reset(
-                new CellBorderStylePopup(
-                    this,
-                    [this] (svx::sidebar::PopupContainer* pParent) { return this->CreateCellBorderStylePopupControl(pParent); } ));
-        }
-
-        if(mpCellBorderStylePopup.get())
-        {
-            mpCellBorderStylePopup->Show(*pToolBox);
-        }
+        if (!mxCellBorderStylePopup)
+            mxCellBorderStylePopup = VclPtr<CellBorderStylePopup>::Create(GetBindings()->GetDispatcher());
+        mxCellBorderStylePopup->StartPopupMode(pToolBox, FloatWinPopupFlags::GrabFocus);
     }
 }
 
-IMPL_LINK_TYPED(CellAppearancePropertyPanel, TbxLineStyleSelectHdl, ToolBox*, pToolBox, void)
+IMPL_LINK(CellAppearancePropertyPanel, TbxLineStyleSelectHdl, ToolBox*, pToolBox, void)
 {
     const OUString aCommand(pToolBox->GetItemCommand(pToolBox->GetCurItemId()));
 
-    if(aCommand == UNO_LINESTYLE)
+    if (aCommand == UNO_LINESTYLE)
     {
-        // create popup on demand
-        if(!mpCellLineStylePopup.get())
-        {
-            mpCellLineStylePopup.reset(
-                new CellLineStylePopup(
-                    this,
-                    [this] (svx::sidebar::PopupContainer* pParent) { return this->CreateCellLineStylePopupControl(pParent); } ));
-        }
-
-        if(mpCellLineStylePopup.get())
-        {
-            mpCellLineStylePopup->SetLineStyleSelect(mnOut, mnIn, mnDis);
-            mpCellLineStylePopup->Show(*pToolBox);
-        }
+        if (!mxCellLineStylePopup)
+            mxCellLineStylePopup = VclPtr<CellLineStylePopup>::Create(GetBindings()->GetDispatcher());
+        mxCellLineStylePopup->SetLineStyleSelect(mnOut, mnIn, mnDis);
+        mxCellLineStylePopup->StartPopupMode(pToolBox, FloatWinPopupFlags::GrabFocus);
     }
 }
 
@@ -248,7 +194,7 @@ void CellAppearancePropertyPanel::DataChanged(
     (void)rEvent;
 }
 
-void CellAppearancePropertyPanel::HandleContextChange(const ::sfx2::sidebar::EnumContext& rContext)
+void CellAppearancePropertyPanel::HandleContextChange(const vcl::EnumContext& rContext)
 {
     if (maContext == rContext)
     {

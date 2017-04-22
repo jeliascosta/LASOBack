@@ -56,11 +56,7 @@ static LPTSTR   *GetCommandArgs( int *pArgc )
 #endif
 }
 
-#ifdef __MINGW32__
-int WINAPI WinMain( HINSTANCE, HINSTANCE, LPSTR, int )
-#else
 int WINAPI _tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
-#endif
 {
     TCHAR               szTargetFileName[MAX_PATH] = TEXT("");
     TCHAR               szIniDirectory[MAX_PATH];
@@ -71,17 +67,23 @@ int WINAPI _tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
     ZeroMemory( &aStartupInfo, sizeof(aStartupInfo) );
     aStartupInfo.cb = sizeof(aStartupInfo);
 
-    GetStartupInfo( &aStartupInfo );
-
     // Create process with same command line, environment and stdio handles which
     // are directed to the created pipes
+    GetStartupInfo(&aStartupInfo);
+
+    // If this process hasn't its stdio handles set, then check if its parent
+    // has a console (i.e. this process is launched from command line), and if so,
+    // attach to it. It will enable child process to retrieve this console if it needs
+    // to output to console
+    if ((aStartupInfo.dwFlags & STARTF_USESTDHANDLES) == 0)
+        AttachConsole(ATTACH_PARENT_PROCESS);
 
     DWORD   dwExitCode = (DWORD)-1;
 
     BOOL    fSuccess = FALSE;
-    LPTSTR  lpCommandLine = NULL;
+    LPTSTR  lpCommandLine = nullptr;
     int argc = 0;
-    LPTSTR * argv = NULL;
+    LPTSTR * argv = nullptr;
     bool bFirst = true;
     WCHAR cwd[MAX_PATH];
     DWORD cwdLen = GetCurrentDirectoryW(MAX_PATH, cwd);
@@ -159,11 +161,11 @@ int WINAPI _tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
         fSuccess = CreateProcess(
             szTargetFileName,
             lpCommandLine,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             TRUE,
             0,
-            NULL,
+            nullptr,
             szIniDirectory,
             &aStartupInfo,
             &aProcessInfo );
@@ -183,7 +185,7 @@ int WINAPI _tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
                 {
                     MSG msg;
 
-                    PeekMessage( &msg, NULL, 0, 0, PM_REMOVE );
+                    PeekMessage( &msg, nullptr, 0, 0, PM_REMOVE );
                 }
             } while ( WAIT_OBJECT_0 + 1 == dwWaitResult );
 

@@ -91,7 +91,7 @@ void ScMacrosTest::testMSP()
     aRet >>= sResult;
 
     SAL_INFO("sc.qa", "Result is " << sResult );
-    CPPUNIT_ASSERT_MESSAGE("TestMSP ( for fdo#67547) failed", sResult == "OK" );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("TestMSP ( for fdo#67547) failed", OUString("OK"), sResult);
     pDocSh->DoClose();
 }
 
@@ -124,7 +124,7 @@ void ScMacrosTest::testPasswordProtectedStarBasic()
         aParams, aRet, aOutParamIndex, aOutParam);
 
     OUString aValue = rDoc.GetString(0,0,0);
-    CPPUNIT_ASSERT_MESSAGE("User defined types script did not change the value of Sheet1.A1", aValue == "success");
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("User defined types script did not change the value of Sheet1.A1", OUString("success"), aValue);
 
     // Big Module
 
@@ -134,7 +134,7 @@ void ScMacrosTest::testPasswordProtectedStarBasic()
         aParams, aRet, aOutParamIndex, aOutParam);
 
     aValue = rDoc.GetString(1,0,0);
-    CPPUNIT_ASSERT_MESSAGE("Big module script did not change the value of Sheet1.B1", aValue == "success");
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Big module script did not change the value of Sheet1.B1", OUString("success"), aValue);
 
     // far big method tdf#94617
 
@@ -144,7 +144,7 @@ void ScMacrosTest::testPasswordProtectedStarBasic()
         aParams, aRet, aOutParamIndex, aOutParam);
 
     aValue = rDoc.GetString(2,0,0);
-    CPPUNIT_ASSERT_MESSAGE("Far Method script did not change the value of Sheet1.C1", aValue == "success");
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Far Method script did not change the value of Sheet1.C1", OUString("success"), aValue);
 
 
     pDocSh->DoClose();
@@ -292,7 +292,7 @@ void ScMacrosTest::testVba()
     OUString sTempDirURL;
     osl::FileBase:: getTempDirURL( sTempDirURL );
     osl::FileBase::getSystemPathFromFileURL( sTempDirURL, sTempDir );
-    sTempDir += OUStringLiteral1<SAL_PATHDELIMITER>();
+    sTempDir += OUStringLiteral1(SAL_PATHDELIMITER);
     OUString sTestFileName("My Test WorkBook.xls");
     Sequence< uno::Any > aParams;
     for ( sal_uInt32  i=0; i<SAL_N_ELEMENTS( testInfo ); ++i )
@@ -330,8 +330,8 @@ void ScMacrosTest::testVba()
             aOutParam);
         OUString aStringRes;
         aRet >>= aStringRes;
-        SAL_INFO("sc.qa", "value of Ret " << aStringRes);
-        CPPUNIT_ASSERT_MESSAGE( "script reported failure", aStringRes == "OK" );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE(
+            "script reported failure", OUString("OK"), aStringRes);
         pFoundShell->DoClose();
         if ( bWorkbooksHandling )
         {

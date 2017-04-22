@@ -116,9 +116,10 @@ sal_uInt16 SwEditShell::GetCntType() const
     else
         switch( GetCursor()->GetNode().GetNodeType() )
         {
-        case ND_TEXTNODE:   nRet = CNT_TXT; break;
-        case ND_GRFNODE:    nRet = CNT_GRF; break;
-        case ND_OLENODE:    nRet = CNT_OLE; break;
+        case SwNodeType::Text:   nRet = CNT_TXT; break;
+        case SwNodeType::Grf:    nRet = CNT_GRF; break;
+        case SwNodeType::Ole:    nRet = CNT_OLE; break;
+        default: break;
         }
 
     OSL_ASSERT( nRet );
@@ -144,8 +145,6 @@ bool SwEditShell::HasOtherCnt() const
 
     return false;
 }
-
-// access control functions for file name handling
 
 SwActContext::SwActContext(SwEditShell *pShell)
     : m_rShell(*pShell)
@@ -224,11 +223,18 @@ SwUndoId SwEditShell::EndUndo(SwUndoId eUndoId, const SwRewriter *pRewriter)
 { return GetDoc()->GetIDocumentUndoRedo().EndUndo(eUndoId, pRewriter); }
 
 bool     SwEditShell::GetLastUndoInfo(OUString *const o_pStr,
-                                      SwUndoId *const o_pId) const
-{ return GetDoc()->GetIDocumentUndoRedo().GetLastUndoInfo(o_pStr, o_pId); }
+                                      SwUndoId *const o_pId,
+                                      const SwView* pView) const
+{
+    return GetDoc()->GetIDocumentUndoRedo().GetLastUndoInfo(o_pStr, o_pId, pView);
+}
 
-bool     SwEditShell::GetFirstRedoInfo(OUString *const o_pStr) const
-{ return GetDoc()->GetIDocumentUndoRedo().GetFirstRedoInfo(o_pStr); }
+bool SwEditShell::GetFirstRedoInfo(OUString *const o_pStr,
+                                   SwUndoId *const o_pId,
+                                   const SwView* pView) const
+{
+    return GetDoc()->GetIDocumentUndoRedo().GetFirstRedoInfo(o_pStr, o_pId, pView);
+}
 
 SwUndoId SwEditShell::GetRepeatInfo(OUString *const o_pStr) const
 { return GetDoc()->GetIDocumentUndoRedo().GetRepeatInfo(o_pStr); }

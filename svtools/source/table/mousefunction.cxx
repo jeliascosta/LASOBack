@@ -70,7 +70,7 @@ namespace svt { namespace table
         // show tracking line
         i_tableControl.hideTracking();
         i_tableControl.showTracking(
-            Rectangle(
+            tools::Rectangle(
                 Point( aPoint.X(), 0 ),
                 Size( 1, tableSize.Height() )
             ),
@@ -148,7 +148,7 @@ namespace svt { namespace table
                     requestedWidthLogical = maxWidthLogical;
             }
             pColumn->setWidth( requestedWidthLogical );
-            i_tableControl.invalidate( TableAreaAll );
+            i_tableControl.invalidate( TableArea::All );
         }
 
         i_tableControl.setPointer( Pointer() );
@@ -175,7 +175,7 @@ namespace svt { namespace table
         TableCell const tableCell( i_tableControl.hitTest( i_event.GetPosPixel() ) );
         if ( tableCell.nRow >= 0 )
         {
-            if ( i_tableControl.getSelEngine()->GetSelectionMode() == NO_SELECTION )
+            if ( i_tableControl.getSelEngine()->GetSelectionMode() == SelectionMode::NONE )
             {
                 i_tableControl.activateCell( tableCell.nColumn, tableCell.nRow );
                 handled = true;
@@ -197,7 +197,7 @@ namespace svt { namespace table
         TableCell const tableCell = i_tableControl.hitTest( i_event.GetPosPixel() );
         if ( tableCell.nRow >= 0 )
         {
-            if ( i_tableControl.getSelEngine()->GetSelectionMode() != NO_SELECTION )
+            if ( i_tableControl.getSelEngine()->GetSelectionMode() != SelectionMode::NONE )
             {
                 i_tableControl.getSelEngine()->SelMouseButtonUp( i_event );
             }

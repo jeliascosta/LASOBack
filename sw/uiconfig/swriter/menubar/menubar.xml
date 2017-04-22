@@ -73,7 +73,12 @@
       <menu:menuitem menu:id=".uno:Print"/>
       <menu:menuitem menu:id=".uno:PrinterSetup"/>
       <menu:menuseparator/>
-      <menu:menuitem menu:id=".uno:Signature"/>
+      <menu:menu menu:id=".uno:SignaturesMenu">
+        <menu:menupopup>
+          <menu:menuitem menu:id=".uno:Signature"/>
+          <menu:menuitem menu:id=".uno:SignPDF"/>
+        </menu:menupopup>
+      </menu:menu>
       <menu:menuitem menu:id=".uno:SetDocumentProperties"/>
       <menu:menuseparator/>
       <menu:menuitem menu:id=".uno:Quit"/>
@@ -124,6 +129,14 @@
       </menu:menu>
       <menu:menuseparator/>
       <menu:menuitem menu:id=".uno:EditHyperlink"/>
+      <menu:menu menu:id=".uno:EditCommentsMenu">
+        <menu:menupopup>
+          <menu:menuitem menu:id=".uno:ReplyComment"/>
+          <menu:menuitem menu:id=".uno:DeleteComment"/>
+          <menu:menuitem menu:id=".uno:DeleteAuthor"/>
+          <menu:menuitem menu:id=".uno:DeleteAllNotes"/>
+        </menu:menupopup>
+      </menu:menu>
       <menu:menu menu:id=".uno:EditLinksMenu">
         <menu:menupopup>
           <menu:menuitem menu:id=".uno:EditFootnote"/>
@@ -146,7 +159,9 @@
       <menu:menuitem menu:id=".uno:PrintLayout" menu:style="radio"/>
       <menu:menuitem menu:id=".uno:BrowseView" menu:style="radio"/>
       <menu:menuseparator/>
+      <menu:menuitem menu:id=".uno:ToolbarMode"/>
       <menu:menuitem menu:id=".uno:AvailableToolbars"/>
+      <menu:menuitem menu:id=".uno:Notebookbar"/>
       <menu:menuitem menu:id=".uno:StatusBarVisible"/>
       <menu:menu menu:id=".uno:RulerMenu">
         <menu:menupopup>
@@ -245,7 +260,11 @@
             </menu:menupopup>
           </menu:menu>
           <menu:menuitem menu:id=".uno:BasicShapes"/>
+          <menu:menuitem menu:id=".uno:ArrowShapes"/>
           <menu:menuitem menu:id=".uno:SymbolShapes"/>
+          <menu:menuitem menu:id=".uno:StarShapes"/>
+          <menu:menuitem menu:id=".uno:CalloutShapes"/>
+          <menu:menuitem menu:id=".uno:FlowChartShapes"/>
         </menu:menupopup>
       </menu:menu>
       <menu:menuitem menu:id=".uno:FontworkGalleryFloater"/>
@@ -528,6 +547,7 @@
         <menu:menupopup>
           <menu:menuitem menu:id=".uno:RotateLeft"/>
           <menu:menuitem menu:id=".uno:RotateRight"/>
+          <menu:menuitem menu:id=".uno:Rotate180"/>
         </menu:menupopup>
       </menu:menu>
       <menu:menu menu:id=".uno:GroupMenu">
@@ -705,7 +725,7 @@
           <menu:menuitem menu:id=".uno:MacroRecorder"/>
           <menu:menuitem menu:id=".uno:RunMacro"/>
           <menu:menuitem menu:id=".uno:BasicIDEAppear"/>
-          <menu:menu menu:id=".uno:ScriptOrganizer"/>
+          <menu:menuitem menu:id=".uno:ScriptOrganizer"/>
           <menu:menuseparator/>
           <menu:menuitem menu:id=".uno:MacroSignature"/>
           <menu:menuitem menu:id=".uno:MacroOrganizer?TabId:short=1"/>
@@ -728,8 +748,12 @@
     <menu:menupopup>
       <menu:menuitem menu:id=".uno:HelpIndex"/>
       <menu:menuitem menu:id=".uno:ExtendedHelp"/>
+      <menu:menuitem menu:id=".uno:Documentation"/>
       <menu:menuseparator/>
+      <menu:menuitem menu:id=".uno:QuestionAnswers"/>
       <menu:menuitem menu:id=".uno:SendFeedback"/>
+      <menu:menuseparator/>
+      <menu:menuitem menu:id=".uno:SafeMode"/>
       <menu:menuseparator/>
       <menu:menuitem menu:id=".uno:ShowLicense"/>
       <menu:menuitem menu:id=".uno:About"/>

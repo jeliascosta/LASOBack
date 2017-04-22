@@ -25,6 +25,7 @@
 #include <com/sun/star/frame/XUIControllerFactory.hpp>
 
 #include <rtl/ustrbuf.hxx>
+#include <rtl/ref.hxx>
 #include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -46,26 +47,26 @@ class UIControllerFactory : private cppu::BaseMutex,
                             public UIControllerFactory_BASE
 {
 public:
-    virtual ~UIControllerFactory();
+    virtual ~UIControllerFactory() override;
 
     // XMultiComponentFactory
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithContext( const OUString& aServiceSpecifier, const css::uno::Reference< css::uno::XComponentContext >& Context ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArgumentsAndContext( const OUString& ServiceSpecifier, const css::uno::Sequence< css::uno::Any >& Arguments, const css::uno::Reference< css::uno::XComponentContext >& Context ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getAvailableServiceNames() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithContext( const OUString& aServiceSpecifier, const css::uno::Reference< css::uno::XComponentContext >& Context ) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArgumentsAndContext( const OUString& ServiceSpecifier, const css::uno::Sequence< css::uno::Any >& Arguments, const css::uno::Reference< css::uno::XComponentContext >& Context ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getAvailableServiceNames() override;
 
     // XUIControllerRegistration
-    virtual sal_Bool SAL_CALL hasController( const OUString& aCommandURL, const OUString& aModuleName ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL registerController( const OUString& aCommandURL, const OUString& aModuleName, const OUString& aControllerImplementationName ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL deregisterController( const OUString& aCommandURL, const OUString& aModuleName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasController( const OUString& aCommandURL, const OUString& aModuleName ) override;
+    virtual void SAL_CALL registerController( const OUString& aCommandURL, const OUString& aModuleName, const OUString& aControllerImplementationName ) override;
+    virtual void SAL_CALL deregisterController( const OUString& aCommandURL, const OUString& aModuleName ) override;
 
 protected:
     UIControllerFactory( const css::uno::Reference< css::uno::XComponentContext >& xContext, const rtl::OUString &rUINode  );
-    bool                                                                         m_bConfigRead;
-    css::uno::Reference< css::uno::XComponentContext >     m_xContext;
-    ConfigurationAccess_ControllerFactory*                                           m_pConfigAccess;
+    bool                                                    m_bConfigRead;
+    css::uno::Reference< css::uno::XComponentContext >       m_xContext;
+    rtl::Reference<ConfigurationAccess_ControllerFactory>    m_pConfigAccess;
 
 private:
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing() final override;
 };
 
 UIControllerFactory::UIControllerFactory(
@@ -78,7 +79,6 @@ UIControllerFactory::UIControllerFactory(
 {
     m_pConfigAccess = new ConfigurationAccess_ControllerFactory(m_xContext,
             "/org.openoffice.Office.UI.Controller/Registered/" + rConfigurationNode);
-    m_pConfigAccess->acquire();
 }
 
 UIControllerFactory::~UIControllerFactory()
@@ -89,19 +89,13 @@ UIControllerFactory::~UIControllerFactory()
 void SAL_CALL UIControllerFactory::disposing()
 {
     osl::MutexGuard g(rBHelper.rMutex);
-    if (m_pConfigAccess)
-    {
-        // reduce reference count
-        m_pConfigAccess->release();
-        m_pConfigAccess = nullptr;
-    }
+    m_pConfigAccess.clear();
 }
 
 // XMultiComponentFactory
 Reference< XInterface > SAL_CALL UIControllerFactory::createInstanceWithContext(
     const OUString& aServiceSpecifier,
     const Reference< XComponentContext >& )
-throw (Exception, RuntimeException, std::exception)
 {
     // SAFE
     osl::MutexGuard g(rBHelper.rMutex);
@@ -124,7 +118,6 @@ Reference< XInterface > SAL_CALL UIControllerFactory::createInstanceWithArgument
     const OUString&                  ServiceSpecifier,
     const Sequence< Any >&                  Arguments,
     const Reference< XComponentContext >& )
-throw (Exception, RuntimeException, std::exception)
 {
     const OUString aPropModuleName( "ModuleIdentifier" );
     const OUString aPropValueName( "Value" );
@@ -184,7 +177,6 @@ throw (Exception, RuntimeException, std::exception)
 }
 
 Sequence< OUString > SAL_CALL UIControllerFactory::getAvailableServiceNames()
-throw (RuntimeException, std::exception)
 {
     return Sequence< OUString >();
 }
@@ -193,7 +185,6 @@ throw (RuntimeException, std::exception)
 sal_Bool SAL_CALL UIControllerFactory::hasController(
     const OUString& aCommandURL,
     const OUString& aModuleName )
-throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(rBHelper.rMutex);
 
@@ -210,7 +201,6 @@ void SAL_CALL UIControllerFactory::registerController(
     const OUString& aCommandURL,
     const OUString& aModuleName,
     const OUString& aControllerImplementationName )
-throw (RuntimeException, std::exception)
 {
     // SAFE
     osl::MutexGuard g(rBHelper.rMutex);
@@ -228,7 +218,6 @@ throw (RuntimeException, std::exception)
 void SAL_CALL UIControllerFactory::deregisterController(
     const OUString& aCommandURL,
     const OUString& aModuleName )
-throw (RuntimeException, std::exception)
 {
     // SAFE
     osl::MutexGuard g(rBHelper.rMutex);
@@ -248,31 +237,25 @@ class PopupMenuControllerFactory :  public UIControllerFactory
 public:
     explicit PopupMenuControllerFactory( const css::uno::Reference< css::uno::XComponentContext >& xContext );
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.framework.PopupMenuControllerFactory");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.PopupMenuControllerFactory" };
-        return aSeq;
+        return {"com.sun.star.frame.PopupMenuControllerFactory"};
     }
 
 };
 
 PopupMenuControllerFactory::PopupMenuControllerFactory( const Reference< XComponentContext >& xContext ) :
-    UIControllerFactory(
-        xContext,
-        OUString( "PopupMenu") )
+    UIControllerFactory( xContext, "PopupMenu" )
 {
 }
 
@@ -299,31 +282,25 @@ class ToolbarControllerFactory :  public UIControllerFactory
 public:
     explicit ToolbarControllerFactory( const css::uno::Reference< css::uno::XComponentContext >& xContext );
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.framework.ToolBarControllerFactory");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.ToolbarControllerFactory" };
-        return aSeq;
+        return {"com.sun.star.frame.ToolbarControllerFactory"};
     }
 
 };
 
 ToolbarControllerFactory::ToolbarControllerFactory( const Reference< XComponentContext >& xContext ) :
-    UIControllerFactory(
-        xContext,
-        OUString( "ToolBar" ))
+    UIControllerFactory( xContext, "ToolBar" )
 {
 }
 
@@ -350,31 +327,25 @@ class StatusbarControllerFactory :  public UIControllerFactory
 public:
     explicit StatusbarControllerFactory( const css::uno::Reference< css::uno::XComponentContext >& xContext );
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.framework.StatusBarControllerFactory");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.StatusbarControllerFactory" };
-        return aSeq;
+        return {"com.sun.star.frame.StatusbarControllerFactory"};
     }
 
 };
 
 StatusbarControllerFactory::StatusbarControllerFactory( const Reference< XComponentContext >& xContext ) :
-    UIControllerFactory(
-        xContext,
-        OUString( "StatusBar" ) )
+    UIControllerFactory( xContext, "StatusBar" )
 {
 }
 

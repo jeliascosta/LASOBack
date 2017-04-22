@@ -28,13 +28,12 @@
 #include <vcl/gradient.hxx>
 
 #include "unx/salunx.h"
-#include "unx/saldata.hxx"
 #include "unx/saldisp.hxx"
 #include "unx/salbmp.h"
 #include "unx/salgdi.h"
-#include "unx/salframe.h"
 #include "unx/salvd.h"
 #include <unx/x11/xlimits.hxx>
+#include "salframe.hxx"
 #include "xrender_peer.hxx"
 
 #include "outdata.hxx"
@@ -49,6 +48,7 @@
 #include "basegfx/matrix/b2dhommatrixtools.hxx"
 #include "basegfx/polygon/b2dpolypolygoncutter.hxx"
 #include "basegfx/polygon/b2dtrapezoid.hxx"
+#include "ControlCacheKey.hxx"
 
 #undef SALGDI2_TESTTRANS
 
@@ -64,40 +64,34 @@
 #define DBG_TESTTRANS( _def_drawable )
 #endif // (OSL_DEBUG_LEVEL > 1) && defined SALGDI2_TESTTRANS
 
-#define STATIC_POINTS 64
-
 /* From <X11/Intrinsic.h> */
 typedef unsigned long Pixel;
 
 class SalPolyLine
 {
-    XPoint Points_[STATIC_POINTS];
-    XPoint *pFirst_;
+    std::vector<XPoint> Points_;
 public:
     SalPolyLine(sal_uLong nPoints, const SalPoint *p)
-        : pFirst_(nPoints+1 > STATIC_POINTS ? new XPoint[nPoints+1] : Points_)
+        : Points_(nPoints+1)
     {
-        for( sal_uLong i = 0; i < nPoints; i++ )
+        for (sal_uLong i = 0; i < nPoints; ++i)
         {
-            pFirst_[i].x = (short)p[i].mnX;
-            pFirst_[i].y = (short)p[i].mnY;
+            Points_[i].x = (short)p[i].mnX;
+            Points_[i].y = (short)p[i].mnY;
         }
-        pFirst_[nPoints] = pFirst_[0]; // close polyline
+        Points_[nPoints] = Points_[0]; // close polyline
     }
 
-    ~SalPolyLine()
+    const XPoint &operator[](sal_uLong n) const
     {
-        if( pFirst_ != Points_ )
-            delete [] pFirst_;
+        return Points_[n];
     }
 
-    XPoint &operator [] ( sal_uLong n ) const
+    XPoint &operator[](sal_uLong n)
     {
-        return pFirst_[n];
+        return Points_[n];
     }
 };
-
-#undef STATIC_POINTS
 
 namespace
 {
@@ -378,17 +372,8 @@ GC X11SalGraphicsImpl::GetInvert50GC()
                                   | GCFillStyle
                                   | GCStipple;
 
-        char* pEnv = getenv( "SAL_DO_NOT_USE_INVERT50" );
-        if( pEnv && ! strcasecmp( pEnv, "true" ) )
-        {
-            values.fill_style = FillSolid;
-            nValueMask &= ~ GCStipple;
-        }
-        else
-        {
-            values.fill_style           = FillStippled;
-            values.stipple              = mrParent.GetDisplay()->GetInvert50( mrParent.m_nXScreen );
-        }
+        values.fill_style           = FillStippled;
+        values.stipple              = mrParent.GetDisplay()->GetInvert50( mrParent.m_nXScreen );
 
         mpInvert50GC = XCreateGC( mrParent.GetXDisplay(), mrParent.GetDrawable(),
                                   nValueMask,
@@ -425,7 +410,7 @@ GC X11SalGraphicsImpl::SelectBrush()
 {
     Display *pDisplay = mrParent.GetXDisplay();
 
-    DBG_ASSERT( mnBrushColor != SALCOLOR_NONE, "Brush Transparent" );
+    SAL_WARN_IF( mnBrushColor == SALCOLOR_NONE, "vcl", "Brush Transparent" );
 
     if( !mpBrushGC )
     {
@@ -490,11 +475,10 @@ GC X11SalGraphicsImpl::SelectPen()
     return mpPenGC;
 }
 
-void X11SalGraphicsImpl::DrawLines( sal_uLong              nPoints,
-                                const SalPolyLine &rPoints,
-                                GC                 pGC,
-                                bool               bClose
-                                )
+void X11SalGraphicsImpl::DrawLines(sal_uLong              nPoints,
+                                   const SalPolyLine &rPoints,
+                                   GC                 pGC,
+                                   bool               bClose)
 {
     // calculate how many lines XWindow can draw in one go
     sal_uLong nMaxLines = (mrParent.GetDisplay()->GetMaxRequestSize() - sizeof(xPolyPointReq))
@@ -507,7 +491,7 @@ void X11SalGraphicsImpl::DrawLines( sal_uLong              nPoints,
         XDrawLines( mrParent.GetXDisplay(),
                     mrParent.GetDrawable(),
                     pGC,
-                    &rPoints[n],
+                    const_cast<XPoint*>(&rPoints[n]),
                     nMaxLines,
                     CoordModeOrigin );
 
@@ -515,7 +499,7 @@ void X11SalGraphicsImpl::DrawLines( sal_uLong              nPoints,
         XDrawLines( mrParent.GetXDisplay(),
                     mrParent.GetDrawable(),
                     pGC,
-                    &rPoints[n],
+                    const_cast<XPoint*>(&rPoints[n]),
                     nPoints - n,
                     CoordModeOrigin );
     if( bClose )
@@ -670,7 +654,7 @@ void X11SalGraphicsImpl::drawBitmap( const SalTwoRect& rPosAry,
                                  const SalBitmap& rSrcBitmap,
                                  const SalBitmap& rMaskBitmap )
 {
-    DBG_ASSERT( !mrParent.bPrinter_, "Drawing of transparent bitmaps on printer devices is strictly forbidden" );
+    SAL_WARN_IF( mrParent.bPrinter_, "vcl", "Drawing of transparent bitmaps on printer devices is strictly forbidden" );
 
     // decide if alpha masking or transparency masking is needed
     BitmapBuffer* pAlphaBuffer = const_cast<SalBitmap&>(rMaskBitmap).AcquireBuffer( BitmapAccessMode::Read );
@@ -1191,7 +1175,7 @@ void X11SalGraphicsImpl::SetROPFillColor( SalROPColor nROPColor )
     mbBrushGC       = false;
 }
 
-void X11SalGraphicsImpl::SetXORMode( bool bSet, bool )
+void X11SalGraphicsImpl::SetXORMode( bool bSet )
 {
     if (mbXORMode != bSet)
     {
@@ -1312,8 +1296,8 @@ void X11SalGraphicsImpl::drawPolygon( sal_uInt32 nPoints, const SalPoint* pPtAry
      * menubar background. workaround for the special case of
      * of a rectangle overlapping to the left.
      */
-    if( nPoints == 5 &&
-    Points[ 0 ].x == Points[ 1 ].x &&
+    if (nPoints == 5 &&
+        Points[ 0 ].x == Points[ 1 ].x &&
         Points[ 1 ].y == Points[ 2 ].y &&
         Points[ 2 ].x == Points[ 3 ].x &&
         Points[ 0 ].x == Points[ 4 ].x && Points[ 0 ].y == Points[ 4 ].y
@@ -1322,15 +1306,15 @@ void X11SalGraphicsImpl::drawPolygon( sal_uInt32 nPoints, const SalPoint* pPtAry
         bool bLeft = false;
         bool bRight = false;
         for(unsigned int i = 0; i < nPoints; i++ )
-    {
+        {
             if( Points[i].x < 0 )
                 bLeft = true;
             else
                 bRight= true;
-    }
-    if( bLeft && ! bRight )
-        return;
-    if( bLeft && bRight )
+        }
+        if( bLeft && ! bRight )
+            return;
+        if( bLeft && bRight )
         {
             for( unsigned int i = 0; i < nPoints; i++ )
                 if( Points[i].x < 0 )
@@ -1396,18 +1380,18 @@ void X11SalGraphicsImpl::drawPolyPolygon( sal_uInt32 nPoly,
            drawPolyLine( pPoints[i], pPtAry[i], true );
 }
 
-bool X11SalGraphicsImpl::drawPolyLineBezier( sal_uInt32, const SalPoint*, const sal_uInt8* )
+bool X11SalGraphicsImpl::drawPolyLineBezier( sal_uInt32, const SalPoint*, const PolyFlags* )
 {
     return false;
 }
 
-bool X11SalGraphicsImpl::drawPolygonBezier( sal_uInt32, const SalPoint*, const sal_uInt8* )
+bool X11SalGraphicsImpl::drawPolygonBezier( sal_uInt32, const SalPoint*, const PolyFlags* )
 {
     return false;
 }
 
 bool X11SalGraphicsImpl::drawPolyPolygonBezier( sal_uInt32, const sal_uInt32*,
-                                                const SalPoint* const*, const sal_uInt8* const* )
+                                                const SalPoint* const*, const PolyFlags* const* )
 {
     return false;
 }

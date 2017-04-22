@@ -66,9 +66,9 @@ public:
 
     bool Read( SvStream& rStream );
 
-    sal_uLong GetBreakIndex( sal_uInt16 nIdx ) const { return mIndices[ nIdx ]; }
+    sal_uLong GetBreakIndex( size_t nIdx ) const { return mIndices[ nIdx ]; }
     sal_Int32 GetBreakOfst( size_t nIdx ) const { return aOffset[ nIdx ]; }
-    sal_uInt16 GetBreakType( sal_uInt16 nIdx ) const { return aType[ nIdx ]; }
+    sal_uInt16 GetBreakType( size_t nIdx ) const { return aType[ nIdx ]; }
 
     size_t GetFlyCount() const { return m_FlyCache.size(); }
     SwFlyCache& GetFlyCache( size_t nIdx ) { return m_FlyCache[ nIdx ]; }
@@ -103,19 +103,19 @@ class SwLayHelper
     SwPageFrame* &rpPage;
     SwLayoutFrame* &rpLay;
     SwActualSection* &rpActualSection;
-    bool &rbBreakAfter;
+    bool mbBreakAfter;
     SwDoc* pDoc;
     SwLayCacheImpl* pImpl;
     sal_uLong nMaxParaPerPage;
     sal_uLong nParagraphCnt;
     sal_uLong nStartOfContent;
-    sal_uInt16 nIndex;                      // the index in the page break array
+    size_t nIndex;                          // the index in the page break array
     size_t nFlyIdx;                         // the index in the fly cache array
     bool bFirst : 1;
     void CheckFlyCache_( SwPageFrame* pPage );
 public:
     SwLayHelper( SwDoc *pD, SwFrame* &rpF, SwFrame* &rpP, SwPageFrame* &rpPg,
-            SwLayoutFrame* &rpL, SwActualSection* &rpA, bool &rBrk,
+            SwLayoutFrame* &rpL, SwActualSection* &rpA,
             sal_uLong nNodeIndex, bool bCache );
     ~SwLayHelper();
     sal_uLong CalcPageCount();

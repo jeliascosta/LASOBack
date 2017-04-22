@@ -35,9 +35,9 @@ class SfxTemplateControllerItem;
 #include <rsc/rscsfx.hxx>
 
 #include <sfx2/childwin.hxx>
+#include <sfx2/styfitem.hxx>
 #include <sfx2/templdlg.hxx>
 
-class SfxStyleFamilies;
 class SfxStyleFamilyItem;
 class SfxTemplateItem;
 class SfxBindings;
@@ -55,7 +55,7 @@ namespace com { namespace sun { namespace star { namespace frame {
 class DropListBox_Impl : public SvTreeListBox
 {
 private:
-    DECL_LINK_TYPED(OnAsyncExecuteDrop, void *, void);
+    DECL_LINK(OnAsyncExecuteDrop, void *, void);
 
 protected:
     SfxCommonTemplateDialog_Impl* pDialog;
@@ -80,7 +80,7 @@ public:
         return nModifier;
     }
 
-    virtual bool Notify( NotifyEvent& rNEvt ) override;
+    virtual bool EventNotify( NotifyEvent& rNEvt ) override;
 };
 
 typedef std::vector<OUString> ExpandedEntries_t;
@@ -97,8 +97,7 @@ private:
     OUString  aStyle;
 
 protected:
-    virtual void Command(const CommandEvent& rMEvt) override;
-    virtual bool Notify(NotifyEvent& rNEvt) override;
+    virtual bool EventNotify(NotifyEvent& rNEvt) override;
     virtual bool DoubleClickHdl() override;
     virtual bool ExpandingHdl() override;
     virtual void ExpandedHdl() override;
@@ -106,7 +105,7 @@ protected:
                 SvTreeListEntry* pTarget, SvTreeListEntry* pEntry,
                 SvTreeListEntry*& rpNewParent, sal_uIntPtr& rNewChildPos) override;
 public:
-    StyleTreeListBox_Impl( SfxCommonTemplateDialog_Impl* pParent, WinBits nWinStyle = 0);
+    StyleTreeListBox_Impl( SfxCommonTemplateDialog_Impl* pParent, WinBits nWinStyle);
 
     void Recalc();
 
@@ -131,7 +130,7 @@ public:
     }
     void MakeExpanded_Impl(ExpandedEntries_t& rEntries) const;
 
-    virtual std::unique_ptr<PopupMenu> CreateContextMenu() override;
+    virtual VclPtr<PopupMenu> CreateContextMenu() override;
 };
 
 class SfxActionListBox : public DropListBox_Impl
@@ -140,7 +139,7 @@ protected:
 public:
     SfxActionListBox( SfxCommonTemplateDialog_Impl* pParent, WinBits nWinBits );
 
-    virtual std::unique_ptr<PopupMenu> CreateContextMenu() override;
+    virtual VclPtr<PopupMenu> CreateContextMenu() override;
     void Recalc();
 };
 
@@ -163,8 +162,8 @@ private:
     DeletionWatcher* impl_setDeletionWatcher(DeletionWatcher* pNewWatcher);
 
 protected:
-#define MAX_FAMILIES            5
-#define COUNT_BOUND_FUNC        13
+#define MAX_FAMILIES            6
+#define COUNT_BOUND_FUNC        14
 
     friend class DropListBox_Impl;
     friend class SfxTemplateControllerItem;
@@ -173,10 +172,12 @@ protected:
     SfxTemplateControllerItem* pBoundItems[COUNT_BOUND_FUNC];
 
     VclPtr<vcl::Window> pWindow;
+    std::unique_ptr<VclBuilder> mxBuilder;
+    VclPtr<PopupMenu> mxMenu;
+    OString sLastItemIdent;
     SfxModule* pModule;
     Idle* pIdle;
 
-    ResId* m_pStyleFamiliesId;
     SfxStyleFamilies* pStyleFamilies;
     SfxTemplateItem* pFamilyState[MAX_FAMILIES];
     SfxStyleSheetBasePool* pStyleSheetPool;
@@ -186,6 +187,7 @@ protected:
     DeletionWatcher* m_pDeletionWatcher;
 
     VclPtr<SfxActionListBox> aFmtLb;
+    VclPtr<CheckBox> aPreviewCheckbox;
     VclPtr<ListBox> aFilterLb;
 
     sal_uInt16 nActFamily; // Id in the ToolBox = Position - 1
@@ -209,12 +211,13 @@ protected:
     bool m_bWantHierarchical :1;
     bool bBindingUpdate :1;
 
-    DECL_LINK_TYPED( FilterSelectHdl, ListBox&, void );
-    DECL_LINK_TYPED( FmtSelectHdl, SvTreeListBox*, void );
-    DECL_LINK_TYPED( ApplyHdl, LinkParamNone*, void );
-    DECL_LINK_TYPED( TreeListApplyHdl, SvTreeListBox*, bool );
-    DECL_LINK_TYPED( DropHdl, StyleTreeListBox_Impl&, bool );
-    DECL_LINK_TYPED( TimeOut, Idle*, void );
+    DECL_LINK( FilterSelectHdl, ListBox&, void );
+    DECL_LINK( FmtSelectHdl, SvTreeListBox*, void );
+    DECL_LINK( ApplyHdl, LinkParamNone*, void );
+    DECL_LINK( TreeListApplyHdl, SvTreeListBox*, bool );
+    DECL_LINK( DropHdl, StyleTreeListBox_Impl&, bool );
+    DECL_LINK( TimeOut, Timer*, void );
+    DECL_LINK( PreviewHdl, Button*, void);
 
     virtual void EnableItem(sal_uInt16 /*nMesId*/, bool /*bCheck*/ = true)
     {}
@@ -228,8 +231,8 @@ protected:
     {}
 
     void InvalidateBindings();
-    virtual void InsertFamilyItem( sal_uInt16 nId, const SfxStyleFamilyItem* pItem ) = 0;
-    virtual void EnableFamilyItem( sal_uInt16 nId, bool bEnabled = true ) = 0;
+    virtual void InsertFamilyItem( sal_uInt16 nId, const SfxStyleFamilyItem& rItem ) = 0;
+    virtual void EnableFamilyItem( sal_uInt16 nId, bool bEnabled ) = 0;
     virtual void ClearFamilyList() = 0;
     virtual void ReplaceUpdateButtonByMenu();
 
@@ -249,12 +252,11 @@ protected:
     {
         return nActFamily != 0xffff;
     }
-    void ResetFocus();
     void EnableDelete();
     void Initialize();
     void EnableHierarchical(bool);
 
-    void FilterSelect( sal_uInt16 nFilterIdx, bool bForce = false );
+    void FilterSelect( sal_uInt16 nFilterIdx, bool bForce );
     void SetFamilyState( sal_uInt16 nSlotId, const SfxTemplateItem* );
     void SetWaterCanState( const SfxBoolItem* pItem );
     bool IsSafeForWaterCan() const;
@@ -272,7 +274,7 @@ protected:
 
     void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
-    void FamilySelect( sal_uInt16 nId );
+    void FamilySelect( sal_uInt16 nId, bool bPreviewRefresh = false );
     void SetFamily(SfxStyleFamily nFamily);
     void ActionSelect( sal_uInt16 nId );
 
@@ -282,29 +284,29 @@ protected:
 
 public:
 
-    SfxCommonTemplateDialog_Impl( SfxBindings* pB, vcl::Window*, bool );
-    virtual ~SfxCommonTemplateDialog_Impl();
+    SfxCommonTemplateDialog_Impl( SfxBindings* pB, vcl::Window* );
+    virtual ~SfxCommonTemplateDialog_Impl() override;
 
-    DECL_LINK_TYPED( MenuSelectHdl, Menu*, bool );
-    DECL_LINK_TYPED( MenuSelectAsyncHdl, void*, void );
+    DECL_LINK( MenuSelectHdl, Menu*, bool );
+    DECL_LINK( MenuSelectAsyncHdl, void*, void );
 
-    virtual void EnableEdit( bool b = true )
+    virtual void EnableEdit( bool b )
     {
         bCanEdit = b;
     }
-    void EnableDel( bool b = true )
+    void EnableDel( bool b )
     {
         bCanDel = b;
     }
-    void EnableNew( bool b = true )
+    void EnableNew( bool b )
     {
         bCanNew = b;
     }
-    void EnableHide( bool b = true )
+    void EnableHide( bool b )
     {
         bCanHide = b;
     }
-    void EnableShow( bool b = true )
+    void EnableShow( bool b )
     {
         bCanShow = b;
     }
@@ -314,7 +316,7 @@ public:
         return pWindow;
     }
 
-    void EnableTreeDrag(bool b = true);
+    void EnableTreeDrag(bool b);
     void EnableExample_Impl(sal_uInt16 nId, bool bEnable);
     SfxStyleFamily GetActualFamily() const;
     OUString GetSelectedEntry() const;
@@ -325,7 +327,7 @@ public:
     }
 
     // normally for derivates from SvTreeListBoxes, but in this case the dialog handles context menus
-    std::unique_ptr<PopupMenu> CreateContextMenu();
+    VclPtr<PopupMenu> CreateContextMenu();
 };
 
 class DropToolBox_Impl : public ToolBox, public DropTargetHelper
@@ -349,33 +351,30 @@ private:
     VclPtr<DropToolBox_Impl>    m_aActionTbL;
     VclPtr<ToolBox>             m_aActionTbR;
 
-    DECL_LINK_TYPED( ToolBoxLSelect, ToolBox*, void );
-    DECL_LINK_TYPED( ToolBoxRSelect, ToolBox*, void );
-    DECL_LINK_TYPED( ToolBoxRClick, ToolBox*, void );
-    DECL_LINK_TYPED( MenuSelectHdl, Menu*, bool );
+    DECL_LINK( ToolBoxLSelect, ToolBox*, void );
+    DECL_LINK( ToolBoxRSelect, ToolBox*, void );
+    DECL_LINK( ToolBoxRClick, ToolBox*, void );
+    DECL_LINK( MenuSelectHdl, Menu*, bool );
 
 protected:
-    virtual void EnableEdit( bool = true ) override;
+    virtual void EnableEdit( bool ) override;
     virtual void EnableItem( sal_uInt16 nMesId, bool bCheck = true ) override;
     virtual void CheckItem( sal_uInt16 nMesId, bool bCheck = true ) override;
     virtual bool IsCheckedItem( sal_uInt16 nMesId ) override;
     virtual void LoadedFamilies() override;
-    virtual void InsertFamilyItem( sal_uInt16 nId, const SfxStyleFamilyItem* pIten ) override;
-    virtual void EnableFamilyItem( sal_uInt16 nId, bool bEnabled = true ) override;
+    virtual void InsertFamilyItem( sal_uInt16 nId, const SfxStyleFamilyItem& rItem ) override;
+    virtual void EnableFamilyItem( sal_uInt16 nId, bool bEnabled ) override;
     virtual void ClearFamilyList() override;
     virtual void ReplaceUpdateButtonByMenu() override;
 
     void Resize();
     Size GetMinOutputSizePixel();
 
-    void updateFamilyImages();
-    void updateNonFamilyImages();
-
 public:
     friend class SfxTemplateDialog;
 
     SfxTemplateDialog_Impl( SfxBindings*, SfxTemplatePanelControl* pDlgWindow );
-    virtual ~SfxTemplateDialog_Impl();
+    virtual ~SfxTemplateDialog_Impl() override;
 
     void Initialize();
 };

@@ -21,6 +21,7 @@
 
 #include <xml/statusbardocumenthandler.hxx>
 
+#include <com/sun/star/xml/sax/SAXException.hpp>
 #include <com/sun/star/xml/sax/XExtendedDocumentHandler.hpp>
 #include <com/sun/star/ui/ItemStyle.hpp>
 #include <com/sun/star/ui/ItemType.hpp>
@@ -128,7 +129,7 @@ struct StatusBarEntryProperty
     char                                                    aEntryName[20];
 };
 
-StatusBarEntryProperty StatusBarEntries[OReadStatusBarDocumentHandler::SB_XML_ENTRY_COUNT] =
+StatusBarEntryProperty const StatusBarEntries[OReadStatusBarDocumentHandler::SB_XML_ENTRY_COUNT] =
 {
     { OReadStatusBarDocumentHandler::SB_NS_STATUSBAR,   ELEMENT_STATUSBAR       },
     { OReadStatusBarDocumentHandler::SB_NS_STATUSBAR,   ELEMENT_STATUSBARITEM   },
@@ -170,7 +171,6 @@ OReadStatusBarDocumentHandler::OReadStatusBarDocumentHandler(
     }
 
     m_bStatusBarStartFound          = false;
-    m_bStatusBarEndFound            = false;
     m_bStatusBarItemStartFound      = false;
 }
 
@@ -180,17 +180,14 @@ OReadStatusBarDocumentHandler::~OReadStatusBarDocumentHandler()
 
 // XDocumentHandler
 void SAL_CALL OReadStatusBarDocumentHandler::startDocument()
-throw ( SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadStatusBarDocumentHandler::endDocument()
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
-    if (( m_bStatusBarStartFound && !m_bStatusBarEndFound ) ||
-        ( !m_bStatusBarStartFound && m_bStatusBarEndFound )     )
+    if ( m_bStatusBarStartFound )
     {
         OUString aErrorMessage = getErrorLineString();
         aErrorMessage += "No matching start or end element 'statusbar' found!";
@@ -200,7 +197,6 @@ throw(  SAXException, RuntimeException, std::exception )
 
 void SAL_CALL OReadStatusBarDocumentHandler::startElement(
     const OUString& aName, const Reference< XAttributeList > &xAttribs )
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -385,7 +381,7 @@ throw(  SAXException, RuntimeException, std::exception )
                             aStatusbarItemProp[2].Value <<= nOffset;
                             aStatusbarItemProp[3].Value <<= nItemBits;
                             aStatusbarItemProp[4].Value <<= nWidth;
-                            aStatusbarItemProp[5].Value = makeAny( css::ui::ItemType::DEFAULT );
+                            aStatusbarItemProp[5].Value <<= css::ui::ItemType::DEFAULT;
 
                             m_aStatusBarItems->insertByIndex( m_aStatusBarItems->getCount(), makeAny( aStatusbarItemProp ) );
                        }
@@ -399,7 +395,6 @@ throw(  SAXException, RuntimeException, std::exception )
 }
 
 void SAL_CALL OReadStatusBarDocumentHandler::endElement(const OUString& aName)
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -441,24 +436,20 @@ throw(  SAXException, RuntimeException, std::exception )
 }
 
 void SAL_CALL OReadStatusBarDocumentHandler::characters(const OUString&)
-throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadStatusBarDocumentHandler::ignorableWhitespace(const OUString&)
-throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadStatusBarDocumentHandler::processingInstruction(
     const OUString& /*aTarget*/, const OUString& /*aData*/ )
-throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadStatusBarDocumentHandler::setDocumentLocator(
     const Reference< XLocator > &xLocator)
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -498,8 +489,7 @@ OWriteStatusBarDocumentHandler::~OWriteStatusBarDocumentHandler()
 {
 }
 
-void OWriteStatusBarDocumentHandler::WriteStatusBarDocument() throw
-( SAXException, RuntimeException )
+void OWriteStatusBarDocumentHandler::WriteStatusBarDocument()
 {
     SolarMutexGuard g;
 
@@ -569,7 +559,6 @@ void OWriteStatusBarDocumentHandler::WriteStatusBarItem(
     sal_Int16            nOffset,
     sal_Int16            nStyle,
     sal_Int16            nWidth )
-throw ( SAXException, RuntimeException )
 {
     ::comphelper::AttributeList* pList = new ::comphelper::AttributeList;
     Reference< XAttributeList > xList( static_cast<XAttributeList *>(pList) , UNO_QUERY );

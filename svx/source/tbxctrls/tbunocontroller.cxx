@@ -49,30 +49,29 @@ class FontHeightToolBoxControl : public svt::ToolboxController,
     public:
         explicit FontHeightToolBoxControl(
             const css::uno::Reference< css::uno::XComponentContext >& rServiceManager );
-        virtual ~FontHeightToolBoxControl();
 
         // XInterface
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
         virtual void SAL_CALL acquire() throw () override;
         virtual void SAL_CALL release() throw () override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+        virtual OUString SAL_CALL getImplementationName() override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
         // XComponent
-        virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL dispose() override;
 
         // XStatusListener
-        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override;
 
         // XToolbarController
-        virtual void SAL_CALL execute( sal_Int16 KeyModifier ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL click() throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL doubleClick() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createPopupWindow() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createItemWindow( const css::uno::Reference< css::awt::XWindow >& Parent ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL execute( sal_Int16 KeyModifier ) override;
+        virtual void SAL_CALL click() override;
+        virtual void SAL_CALL doubleClick() override;
+        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createPopupWindow() override;
+        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createItemWindow( const css::uno::Reference< css::awt::XWindow >& Parent ) override;
 
         void dispatchCommand( const css::uno::Sequence< css::beans::PropertyValue >& rArgs );
         using svt::ToolboxController::dispatchCommand;
@@ -89,11 +88,11 @@ public:
                                              const uno::Reference< frame::XFrame >& _xFrame,
                                              FontHeightToolBoxControl& rCtrl );
 
-    void                statusChanged_Impl( long nHeight, bool bErase = false );
+    void                statusChanged_Impl( long nHeight, bool bErase );
     void                UpdateFont( const css::awt::FontDescriptor& rCurrentFont );
     void                SetOptimalSize();
 
-    virtual bool        Notify( NotifyEvent& rNEvt ) override;
+    virtual bool        EventNotify( NotifyEvent& rNEvt ) override;
 
 protected:
     virtual void        Select() override;
@@ -149,7 +148,7 @@ void SvxFontSizeBox_Impl::Select()
 
         uno::Sequence< beans::PropertyValue > aArgs( 1 );
         aArgs[0].Name  = "FontHeight.Height";
-        aArgs[0].Value = uno::makeAny( fSelVal );
+        aArgs[0].Value <<= fSelVal;
 
         /*  #i33380# DR 2004-09-03 Moved the following line above the Dispatch() call.
             This instance may be deleted in the meantime (i.e. when a dialog is opened
@@ -207,7 +206,7 @@ void SvxFontSizeBox_Impl::UpdateFont( const css::awt::FontDescriptor& rCurrentFo
 }
 
 
-bool SvxFontSizeBox_Impl::Notify( NotifyEvent& rNEvt )
+bool SvxFontSizeBox_Impl::EventNotify( NotifyEvent& rNEvt )
 {
     bool bHandled = false;
 
@@ -242,12 +241,12 @@ bool SvxFontSizeBox_Impl::Notify( NotifyEvent& rNEvt )
             SetText(GetSavedValue());
     }
 
-    return bHandled || FontSizeBox::Notify( rNEvt );
+    return bHandled || FontSizeBox::EventNotify( rNEvt );
 }
 
 void SvxFontSizeBox_Impl::SetOptimalSize()
 {
-    Size aPrefSize(LogicToPixel(m_aLogicalSize, MAP_APPFONT));
+    Size aPrefSize(LogicToPixel(m_aLogicalSize, MapUnit::MapAppFont));
     aPrefSize.Width() = get_preferred_size().Width();
     SetSizePixel(aPrefSize);
 }
@@ -266,19 +265,14 @@ void SvxFontSizeBox_Impl::DataChanged( const DataChangedEvent& rDCEvt )
 FontHeightToolBoxControl::FontHeightToolBoxControl( const uno::Reference< uno::XComponentContext >& rxContext )
  : svt::ToolboxController( rxContext,
                            uno::Reference< frame::XFrame >(),
-                           OUString( ".uno:FontHeight" ) ),
+                           ".uno:FontHeight" ),
    m_pBox( nullptr )
 {
     addStatusListener( ".uno:CharFontName");
 }
 
-FontHeightToolBoxControl::~FontHeightToolBoxControl()
-{
-}
-
 // XInterface
 css::uno::Any SAL_CALL FontHeightToolBoxControl::queryInterface( const css::uno::Type& aType )
-throw (css::uno::RuntimeException, std::exception)
 {
     uno::Any a = ToolboxController::queryInterface( aType );
     if ( a.hasValue() )
@@ -299,19 +293,16 @@ void SAL_CALL FontHeightToolBoxControl::release() throw ()
 
 // XServiceInfo
 sal_Bool SAL_CALL FontHeightToolBoxControl::supportsService( const OUString& ServiceName )
-throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 OUString SAL_CALL FontHeightToolBoxControl::getImplementationName()
-throw( uno::RuntimeException, std::exception )
 {
     return OUString("com.sun.star.svx.FontHeightToolBoxController");
 }
 
 uno::Sequence< OUString > SAL_CALL FontHeightToolBoxControl::getSupportedServiceNames(  )
-throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence<OUString> aSNS { "com.sun.star.frame.ToolbarController" };
     return aSNS;
@@ -319,7 +310,6 @@ throw( uno::RuntimeException, std::exception )
 
 // XComponent
 void SAL_CALL FontHeightToolBoxControl::dispose()
-throw (uno::RuntimeException, std::exception)
 {
     svt::ToolboxController::dispose();
 
@@ -330,7 +320,6 @@ throw (uno::RuntimeException, std::exception)
 // XStatusListener
 void SAL_CALL FontHeightToolBoxControl::statusChanged(
     const frame::FeatureStateEvent& rEvent )
-throw ( uno::RuntimeException, std::exception )
 {
     if ( m_pBox )
     {
@@ -342,7 +331,7 @@ throw ( uno::RuntimeException, std::exception )
                 m_pBox->Enable();
                 frame::status::FontHeight aFontHeight;
                 if ( rEvent.State >>= aFontHeight )
-                    m_pBox->statusChanged_Impl( long( 10. * aFontHeight.Height ) );
+                    m_pBox->statusChanged_Impl( long( 10. * aFontHeight.Height ), false );
                 else
                     m_pBox->statusChanged_Impl( long( -1 ), true );
             }
@@ -359,33 +348,28 @@ throw ( uno::RuntimeException, std::exception )
 
 // XToolbarController
 void SAL_CALL FontHeightToolBoxControl::execute( sal_Int16 /*KeyModifier*/ )
-throw (css::uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL FontHeightToolBoxControl::click()
-throw (css::uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL FontHeightToolBoxControl::doubleClick()
-throw (css::uno::RuntimeException, std::exception)
 {
 }
 
 uno::Reference< awt::XWindow > SAL_CALL FontHeightToolBoxControl::createPopupWindow()
-throw (css::uno::RuntimeException, std::exception)
 {
     return uno::Reference< awt::XWindow >();
 }
 
 uno::Reference< awt::XWindow > SAL_CALL FontHeightToolBoxControl::createItemWindow(
     const uno::Reference< awt::XWindow >& xParent )
-    throw (css::uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XWindow > xItemWindow;
 
-    vcl::Window* pParent = VCLUnoHelper::GetWindow( xParent );
+    VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( xParent );
     if ( pParent )
     {
         SolarMutexGuard aSolarMutexGuard;

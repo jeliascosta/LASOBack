@@ -49,7 +49,6 @@ namespace svt
     SmartContent::SmartContent()
         :m_pContent( nullptr )
         ,m_eState( NOT_BOUND )
-        ,m_pOwnInteraction( nullptr )
     {
     }
 
@@ -57,7 +56,6 @@ namespace svt
     SmartContent::SmartContent( const OUString& _rInitialURL )
         :m_pContent( nullptr )
         ,m_eState( NOT_BOUND )
-        ,m_pOwnInteraction( nullptr )
     {
         bindTo( _rInitialURL );
     }
@@ -76,7 +74,6 @@ namespace svt
            TODO: If there is real need for caching the content, it must
            be done here.
         */
-        delete m_pContent;
     }
 
 
@@ -86,19 +83,15 @@ namespace svt
         Reference< XInteractionHandler > xGlobalInteractionHandler(
             InteractionHandler::createWithParent(xContext, nullptr), UNO_QUERY_THROW );
 
-        m_pOwnInteraction = new ::svt::OFilePickerInteractionHandler(xGlobalInteractionHandler);
-        m_pOwnInteraction->enableInterceptions(eInterceptions);
-        m_xOwnInteraction = m_pOwnInteraction;
+        m_xOwnInteraction = new ::svt::OFilePickerInteractionHandler(xGlobalInteractionHandler);
+        m_xOwnInteraction->enableInterceptions(eInterceptions);
 
-        m_xCmdEnv = new ::ucbhelper::CommandEnvironment( m_xOwnInteraction, Reference< XProgressHandler >() );
+        m_xCmdEnv = new ::ucbhelper::CommandEnvironment( m_xOwnInteraction.get(), Reference< XProgressHandler >() );
     }
 
 
     void SmartContent::enableDefaultInteractionHandler()
     {
-        // Don't free the memory here! It will be done by the next
-        // call automatically - releasing of the uno reference ...
-        m_pOwnInteraction = nullptr;
         m_xOwnInteraction.clear();
 
         Reference< XComponentContext > xContext = ::comphelper::getProcessComponentContext();
@@ -110,9 +103,7 @@ namespace svt
 
     ::svt::OFilePickerInteractionHandler* SmartContent::getOwnInteractionHandler() const
     {
-        if (!m_xOwnInteraction.is())
-            return nullptr;
-        return m_pOwnInteraction;
+        return m_xOwnInteraction.get();
     }
 
 
@@ -130,11 +121,7 @@ namespace svt
 
     void SmartContent::disableInteractionHandler()
     {
-        // Don't free the memory here! It will be done by the next
-        // call automatically - releasing of the uno reference ...
-        m_pOwnInteraction = nullptr;
         m_xOwnInteraction.clear();
-
         m_xCmdEnv.clear();
     }
 
@@ -145,7 +132,7 @@ namespace svt
             // nothing to do, regardless of the state
             return;
 
-        DELETEZ( m_pContent );
+        m_pContent.reset();
         m_eState = INVALID; // default to INVALID
         m_sURL = _rURL;
 
@@ -153,7 +140,7 @@ namespace svt
         {
             try
             {
-                m_pContent = new ::ucbhelper::Content( _rURL, m_xCmdEnv, comphelper::getProcessComponentContext() );
+                m_pContent.reset( new ::ucbhelper::Content( _rURL, m_xCmdEnv, comphelper::getProcessComponentContext() ) );
                 m_eState = UNKNOWN;
                     // from now on, the state is unknown -> we cannot know for sure if the content
                     // is really valid (some UCP's only tell this when asking for properties, not upon
@@ -328,7 +315,7 @@ namespace svt
                 Sequence< OUString > aNames { "Title" };
                 Sequence< Any > aValues( 1 );
                 Any* pValues = aValues.getArray();
-                pValues[0] = makeAny( _rTitle );
+                pValues[0] <<= _rTitle;
                 m_pContent->insertNewContent( sFolderType, aNames, aValues, aCreated );
 
                 aCreatedUrl = aCreated.getURL();

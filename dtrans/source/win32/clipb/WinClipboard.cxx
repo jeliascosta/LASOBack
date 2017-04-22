@@ -25,8 +25,6 @@
 #include <cppuhelper/supportsservice.hxx>
 #include "WinClipbImpl.hxx"
 
-// namespace directives
-
 using namespace osl;
 using namespace std;
 using namespace cppu;
@@ -38,8 +36,6 @@ using namespace com::sun::star::lang;
 
 #define WINCLIPBOARD_IMPL_NAME  "com.sun.star.datatransfer.clipboard.ClipboardW32"
 
-// helper functions
-
 namespace
 {
     Sequence< OUString > SAL_CALL WinClipboard_getSupportedServiceNames()
@@ -48,8 +44,6 @@ namespace
         return aRet;
     }
 }
-
-// ctor
 
 /*XEventListener,*/
 CWinClipboard::CWinClipboard( const Reference< XComponentContext >& rxContext, const OUString& aClipboardName ) :
@@ -61,14 +55,13 @@ CWinClipboard::CWinClipboard( const Reference< XComponentContext >& rxContext, c
 
 // XClipboard
 
-// getContent
 // to avoid unnecessary traffic we check first if there is a clipboard
 // content which was set via setContent, in this case we don't need
 // to query the content from the clipboard, create a new wrapper object
 // and so on, we simply return the original XTransferable instead of our
 // DOTransferable
 
-Reference< XTransferable > SAL_CALL CWinClipboard::getContents( ) throw( RuntimeException )
+Reference< XTransferable > SAL_CALL CWinClipboard::getContents( )
 {
     MutexGuard aGuard( m_aMutex );
 
@@ -76,17 +69,14 @@ Reference< XTransferable > SAL_CALL CWinClipboard::getContents( ) throw( Runtime
         throw DisposedException("object is already disposed",
                                  static_cast< XClipboardEx* >( this ) );
 
-    if ( NULL != m_pImpl.get( ) )
+    if ( nullptr != m_pImpl.get( ) )
         return m_pImpl->getContents( );
 
     return Reference< XTransferable >( );
 }
 
-// setContent
-
 void SAL_CALL CWinClipboard::setContents( const Reference< XTransferable >& xTransferable,
                                           const Reference< XClipboardOwner >& xClipboardOwner )
-                                          throw( RuntimeException )
 {
     MutexGuard aGuard( m_aMutex );
 
@@ -94,19 +84,17 @@ void SAL_CALL CWinClipboard::setContents( const Reference< XTransferable >& xTra
         throw DisposedException("object is already disposed",
                                  static_cast< XClipboardEx* >( this ) );
 
-    if ( NULL != m_pImpl.get( ) )
+    if ( nullptr != m_pImpl.get( ) )
         m_pImpl->setContents( xTransferable, xClipboardOwner );
 }
 
-// getName
-
-OUString SAL_CALL CWinClipboard::getName(  ) throw( RuntimeException )
+OUString SAL_CALL CWinClipboard::getName(  )
 {
     if ( rBHelper.bDisposed )
         throw DisposedException("object is already disposed",
                                  static_cast< XClipboardEx* >( this ) );
 
-    if ( NULL != m_pImpl.get( ) )
+    if ( nullptr != m_pImpl.get( ) )
         return m_pImpl->getName( );
 
     return OUString("");
@@ -114,7 +102,7 @@ OUString SAL_CALL CWinClipboard::getName(  ) throw( RuntimeException )
 
 // XFlushableClipboard
 
-void SAL_CALL CWinClipboard::flushClipboard( ) throw( RuntimeException )
+void SAL_CALL CWinClipboard::flushClipboard( )
 {
     MutexGuard aGuard( m_aMutex );
 
@@ -122,30 +110,27 @@ void SAL_CALL CWinClipboard::flushClipboard( ) throw( RuntimeException )
         throw DisposedException("object is already disposed",
                                  static_cast< XClipboardEx* >( this ) );
 
-    if ( NULL != m_pImpl.get( ) )
+    if ( nullptr != m_pImpl.get( ) )
         m_pImpl->flushClipboard( );
 }
 
 // XClipboardEx
 
-sal_Int8 SAL_CALL CWinClipboard::getRenderingCapabilities(  ) throw( RuntimeException )
+sal_Int8 SAL_CALL CWinClipboard::getRenderingCapabilities(  )
 {
     if ( rBHelper.bDisposed )
         throw DisposedException("object is already disposed",
                                  static_cast< XClipboardEx* >( this ) );
 
-    if ( NULL != m_pImpl.get( ) )
-        return m_pImpl->getRenderingCapabilities( );
+    if ( nullptr != m_pImpl.get( ) )
+        return CWinClipbImpl::getRenderingCapabilities( );
 
     return 0;
 }
 
 // XClipboardNotifier
 
-// getName
-
 void SAL_CALL CWinClipboard::addClipboardListener( const Reference< XClipboardListener >& listener )
-    throw( RuntimeException )
 {
     if ( rBHelper.bDisposed )
         throw DisposedException("object is already disposed",
@@ -160,10 +145,7 @@ void SAL_CALL CWinClipboard::addClipboardListener( const Reference< XClipboardLi
     rBHelper.aLC.addInterface( cppu::UnoType<decltype(listener)>::get(), listener );
 }
 
-// getName
-
 void SAL_CALL CWinClipboard::removeClipboardListener( const Reference< XClipboardListener >& listener )
-    throw( RuntimeException )
 {
     if ( rBHelper.bDisposed )
         throw DisposedException("object is already disposed",
@@ -177,8 +159,6 @@ void SAL_CALL CWinClipboard::removeClipboardListener( const Reference< XClipboar
 
     rBHelper.aLC.removeInterface( cppu::UnoType<decltype(listener)>::get(), listener );
 }
-
-// getName
 
 void SAL_CALL CWinClipboard::notifyAllClipboardListener( )
 {
@@ -242,22 +222,16 @@ void SAL_CALL CWinClipboard::disposing()
 // XServiceInfo
 
 OUString SAL_CALL CWinClipboard::getImplementationName(  )
-    throw(RuntimeException)
 {
     return OUString( WINCLIPBOARD_IMPL_NAME );
 }
 
-//  XServiceInfo
 sal_Bool SAL_CALL CWinClipboard::supportsService( const OUString& ServiceName )
-    throw(RuntimeException)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-//  XServiceInfo
-
 Sequence< OUString > SAL_CALL CWinClipboard::getSupportedServiceNames(   )
-    throw(RuntimeException)
 {
     return WinClipboard_getSupportedServiceNames();
 }

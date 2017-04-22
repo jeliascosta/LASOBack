@@ -90,8 +90,8 @@ HandlerCache::HandlerCache()
 
     if (m_nRefCount==0)
     {
-        m_pHandler = new HandlerHash();
-        m_pPattern = new PatternHash();
+        m_pHandler = new HandlerHash;
+        m_pPattern = new PatternHash;
         m_pConfig  = new HandlerCFGAccess(PACKAGENAME_PROTOCOLHANDLER);
         m_pConfig->read(&m_pHandler,&m_pPattern);
         m_pConfig->setCache(this);
@@ -201,7 +201,7 @@ void HandlerCFGAccess::read( HandlerHash** ppHandler ,
                              PatternHash** ppPattern )
 {
     // list of all uno implementation names without encoding
-    css::uno::Sequence< OUString > lNames = GetNodeNames( SETNAME_HANDLER, ::utl::CONFIG_NAME_LOCAL_PATH );
+    css::uno::Sequence< OUString > lNames = GetNodeNames( SETNAME_HANDLER, ::utl::ConfigNameFormat::LocalPath );
     sal_Int32 nSourceCount = lNames.getLength();
     sal_Int32 nTargetCount = nSourceCount;
     // list of all full qualified path names of configuration entries

@@ -24,6 +24,7 @@
 #include "pcrservices.hxx"
 
 #include <com/sun/star/form/binding/XValueBinding.hpp>
+#include <com/sun/star/lang/NullPointerException.hpp>
 #include <com/sun/star/table/CellAddress.hpp>
 #include <com/sun/star/inspection/XObjectInspectorUI.hpp>
 #include <tools/debug.hxx>
@@ -56,13 +57,13 @@ namespace pcr
     }
 
 
-    OUString SAL_CALL CellBindingPropertyHandler::getImplementationName_static(  ) throw (RuntimeException)
+    OUString SAL_CALL CellBindingPropertyHandler::getImplementationName_static(  )
     {
         return OUString( "com.sun.star.comp.extensions.CellBindingPropertyHandler" );
     }
 
 
-    Sequence< OUString > SAL_CALL CellBindingPropertyHandler::getSupportedServiceNames_static(  ) throw (RuntimeException)
+    Sequence< OUString > SAL_CALL CellBindingPropertyHandler::getSupportedServiceNames_static(  )
     {
         Sequence<OUString> aSupported { "com.sun.star.form.inspection.CellBindingPropertyHandler" };
         return aSupported;
@@ -85,7 +86,7 @@ namespace pcr
     }
 
 
-    Sequence< OUString > SAL_CALL CellBindingPropertyHandler::getActuatingProperties( ) throw (RuntimeException, std::exception)
+    Sequence< OUString > SAL_CALL CellBindingPropertyHandler::getActuatingProperties( )
     {
         Sequence< OUString > aInterestingProperties( 3 );
         aInterestingProperties[0] = PROPERTY_LIST_CELL_RANGE;
@@ -95,7 +96,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL CellBindingPropertyHandler::actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& /*_rOldValue*/, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit ) throw (NullPointerException, RuntimeException, std::exception)
+    void SAL_CALL CellBindingPropertyHandler::actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& /*_rOldValue*/, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         PropertyId nActuatingPropId( impl_getPropertyId_throwRuntime( _rActuatingPropertyName ) );
@@ -106,7 +107,7 @@ namespace pcr
         if ( !_rxInspectorUI.is() )
             throw NullPointerException();
 
-        ::std::vector< PropertyId > aDependentProperties;
+        std::vector< PropertyId > aDependentProperties;
 
         switch ( nActuatingPropId )
         {
@@ -161,7 +162,10 @@ namespace pcr
                 try
                 {
                     if ( !xSource.is() )
+                    {
                         setPropertyValue( PROPERTY_STRINGITEMLIST, makeAny( Sequence< OUString >() ) );
+                        setPropertyValue( PROPERTY_TYPEDITEMLIST, makeAny( Sequence< Any >() ) );
+                    }
                 }
                 catch( const Exception& )
                 {
@@ -185,7 +189,7 @@ namespace pcr
             OSL_FAIL( "CellBindingPropertyHandler::actuatingPropertyChanged: did not register for this property!" );
         }
 
-        for ( ::std::vector< PropertyId >::const_iterator loopAffected = aDependentProperties.begin();
+        for ( std::vector< PropertyId >::const_iterator loopAffected = aDependentProperties.begin();
               loopAffected != aDependentProperties.end();
               ++loopAffected
             )
@@ -223,7 +227,7 @@ namespace pcr
     }
 
 
-    Any SAL_CALL CellBindingPropertyHandler::getPropertyValue( const OUString& _rPropertyName ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    Any SAL_CALL CellBindingPropertyHandler::getPropertyValue( const OUString& _rPropertyName )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         PropertyId nPropId( impl_getPropertyId_throwUnknownProperty( _rPropertyName ) );
@@ -269,7 +273,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL CellBindingPropertyHandler::setPropertyValue( const OUString& _rPropertyName, const Any& _rValue ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    void SAL_CALL CellBindingPropertyHandler::setPropertyValue( const OUString& _rPropertyName, const Any& _rValue )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         PropertyId nPropId( impl_getPropertyId_throwUnknownProperty( _rPropertyName ) );
@@ -308,7 +312,7 @@ namespace pcr
                 if ( xBinding.is() )
                 {
                     bool bNeedIntegerBinding = ( nExchangeType == 1 );
-                    if ( (bool)bNeedIntegerBinding != CellBindingHelper::isCellIntegerBinding( xBinding ) )
+                    if ( bNeedIntegerBinding != CellBindingHelper::isCellIntegerBinding( xBinding ) )
                     {
                         CellAddress aAddress;
                         if ( m_pHelper->getAddressFromCellBinding( xBinding, aAddress ) )
@@ -341,7 +345,7 @@ namespace pcr
     }
 
 
-    Any SAL_CALL CellBindingPropertyHandler::convertToPropertyValue( const OUString& _rPropertyName, const Any& _rControlValue ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    Any SAL_CALL CellBindingPropertyHandler::convertToPropertyValue( const OUString& _rPropertyName, const Any& _rControlValue )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         Any aPropertyValue;
@@ -390,7 +394,7 @@ namespace pcr
 
 
     Any SAL_CALL CellBindingPropertyHandler::convertToControlValue( const OUString& _rPropertyName,
-        const Any& _rPropertyValue, const Type& /*_rControlValueType*/ ) throw (UnknownPropertyException, RuntimeException, std::exception)
+        const Any& _rPropertyValue, const Type& /*_rControlValueType*/ )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         Any aControlValue;
@@ -440,7 +444,7 @@ namespace pcr
 
     Sequence< Property > SAL_CALL CellBindingPropertyHandler::doDescribeSupportedProperties() const
     {
-        ::std::vector< Property > aProperties;
+        std::vector< Property > aProperties;
 
         bool bAllowCellLinking      = m_pHelper.get() && m_pHelper->isCellBindingAllowed();
         bool bAllowCellIntLinking   = m_pHelper.get() && m_pHelper->isCellIntegerBindingAllowed();

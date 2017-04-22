@@ -31,16 +31,19 @@
 #include <com/sun/star/lang/XMultiComponentFactory.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/util/MalformedNumberFormatException.hpp>
 #include <com/sun/star/util/XNumberFormatsSupplier.hpp>
 #include <com/sun/star/awt/XControlModel.hpp>
 #include <com/sun/star/awt/FontDescriptor.hpp>
 #include <com/sun/star/awt/FontEmphasisMark.hpp>
 #include <com/sun/star/awt/FontRelief.hpp>
 #include <com/sun/star/xml/input/XRoot.hpp>
+#include <com/sun/star/xml/sax/SAXException.hpp>
 #include <com/sun/star/script/XLibraryContainer.hpp>
 #include <com/sun/star/container/ElementExistException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <osl/diagnose.h>
+#include <rtl/ref.hxx>
 #include <memory>
 #include <vector>
 
@@ -114,21 +117,21 @@ struct DialogImport
     : public ::cppu::WeakImplHelper< css::xml::input::XRoot >
 {
     friend class ImportContext;
-
+private:
     css::uno::Reference< css::uno::XComponentContext > _xContext;
     css::uno::Reference< css::util::XNumberFormatsSupplier > _xSupplier;
 
     std::shared_ptr< std::vector< OUString > > _pStyleNames;
     std::shared_ptr< std::vector< css::uno::Reference< css::xml::input::XElement > > > _pStyles;
 
+    css::uno::Reference< css::frame::XModel > _xDoc;
+public:
     css::uno::Reference< css::container::XNameContainer > _xDialogModel;
     css::uno::Reference< css::lang::XMultiServiceFactory > _xDialogModelFactory;
-    css::uno::Reference< css::frame::XModel > _xDoc;
 
     sal_Int32 XMLNS_DIALOGS_UID, XMLNS_SCRIPT_UID;
 
-public:
-    inline bool isEventElement(
+    bool isEventElement(
         sal_Int32 nUid, OUString const & rLocalName )
     {
         return ((XMLNS_SCRIPT_UID == nUid && (rLocalName == "event" || rLocalName == "listener-event" )) ||
@@ -141,12 +144,12 @@ public:
     css::uno::Reference< css::xml::input::XElement > getStyle(
         OUString const & rStyleId ) const;
 
-    inline css::uno::Reference< css::uno::XComponentContext >
+    css::uno::Reference< css::uno::XComponentContext >
     const & getComponentContext()  { return _xContext; }
     css::uno::Reference< css::util::XNumberFormatsSupplier >
     const & getNumberFormatsSupplier();
 
-    inline DialogImport(
+    DialogImport(
         css::uno::Reference<css::uno::XComponentContext> const & xContext,
         css::uno::Reference<css::container::XNameContainer>
         const & xDialogModel,
@@ -156,57 +159,54 @@ public:
         : _xContext( xContext )
         , _pStyleNames( pStyleNames )
         , _pStyles( pStyles )
+        , _xDoc( xDoc )
         , _xDialogModel( xDialogModel )
-        , _xDialogModelFactory( xDialogModel, css::uno::UNO_QUERY_THROW ), _xDoc( xDoc )
+        , _xDialogModelFactory( xDialogModel, css::uno::UNO_QUERY_THROW )
         , XMLNS_DIALOGS_UID( 0 )
         , XMLNS_SCRIPT_UID( 0 )
         { OSL_ASSERT( _xDialogModel.is() && _xDialogModelFactory.is() &&
                       _xContext.is() ); }
-    inline DialogImport( const DialogImport& rOther ) :
+    DialogImport( const DialogImport& rOther ) :
         ::cppu::WeakImplHelper< css::xml::input::XRoot >()
         , _xContext( rOther._xContext )
         , _xSupplier( rOther._xSupplier )
         , _pStyleNames( rOther._pStyleNames )
         , _pStyles( rOther._pStyles )
+        , _xDoc( rOther._xDoc )
         , _xDialogModel( rOther._xDialogModel )
         , _xDialogModelFactory( rOther._xDialogModelFactory )
-        , _xDoc( rOther._xDoc )
         , XMLNS_DIALOGS_UID( rOther.XMLNS_DIALOGS_UID )
         , XMLNS_SCRIPT_UID( rOther.XMLNS_SCRIPT_UID ) {}
 
-    virtual ~DialogImport();
+    virtual ~DialogImport() override;
 
     const css::uno::Reference< css::frame::XModel >& getDocOwner() { return _xDoc; }
 
     // XRoot
     virtual void SAL_CALL startDocument(
         css::uno::Reference< css::xml::input::XNamespaceMapping >
-        const & xNamespaceMapping )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endDocument()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        const & xNamespaceMapping ) override;
+    virtual void SAL_CALL endDocument() override;
     virtual void SAL_CALL processingInstruction(
-        OUString const & rTarget, OUString const & rData )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        OUString const & rTarget, OUString const & rData ) override;
     virtual void SAL_CALL setDocumentLocator(
-        css::uno::Reference< css::xml::sax::XLocator > const & xLocator )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference< css::xml::sax::XLocator > const & xLocator ) override;
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startRootElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
 };
 
 class ElementBase
     : public ::cppu::WeakImplHelper< css::xml::input::XElement >
 {
 protected:
-    DialogImport * const _pImport;
-    ElementBase * const _pParent;
-
+    rtl::Reference<DialogImport> const m_xImport;
+    rtl::Reference<ElementBase> const m_xParent;
+private:
     const sal_Int32 _nUid;
     const OUString _aLocalName;
+protected:
     const css::uno::Reference< css::xml::input::XAttributes > _xAttributes;
 
 public:
@@ -214,32 +214,24 @@ public:
         sal_Int32 nUid, OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport );
-    virtual ~ElementBase();
+    virtual ~ElementBase() override;
 
     // XElement
-    virtual css::uno::Reference<css::xml::input::XElement> SAL_CALL getParent()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getLocalName()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL getUid()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference<css::xml::input::XElement> SAL_CALL getParent() override;
+    virtual OUString SAL_CALL getLocalName() override;
+    virtual sal_Int32 SAL_CALL getUid() override;
     virtual css::uno::Reference< css::xml::input::XAttributes >
-    SAL_CALL getAttributes() throw (css::uno::RuntimeException, std::exception) override;
+    SAL_CALL getAttributes() override;
     virtual void SAL_CALL ignorableWhitespace(
-        OUString const & rWhitespaces )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL characters( OUString const & rChars )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        OUString const & rWhitespaces ) override;
+    virtual void SAL_CALL characters( OUString const & rChars ) override;
     virtual void SAL_CALL processingInstruction(
-        OUString const & Target, OUString const & Data )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        OUString const & Target, OUString const & Data ) override;
+    virtual void SAL_CALL endElement() override;
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
 };
 
 class StylesElement
@@ -249,10 +241,9 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
 
-    inline StylesElement(
+    StylesElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -285,10 +276,8 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
     void importTextColorStyle(
         css::uno::Reference< css::beans::XPropertySet > const & xProps );
@@ -338,10 +327,9 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
 
-    inline MenuPopupElement(
+    MenuPopupElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -385,7 +373,7 @@ protected:
     const OUString _aId;
 
 public:
-    inline ImportContext(
+    ImportContext(
         DialogImport * pImport,
         css::uno::Reference< css::beans::XPropertySet > const & xControlModel_,
         OUString const & id )
@@ -477,7 +465,7 @@ public:
 class ControlImportContext : public ImportContext
 {
 public:
-    inline ControlImportContext(
+    ControlImportContext(
         DialogImport * pImport,
         OUString const & rId, OUString const & rControlName )
         : ImportContext(
@@ -486,7 +474,7 @@ public:
                 pImport->_xDialogModelFactory->createInstance( rControlName ),
                 css::uno::UNO_QUERY_THROW ), rId )
         {}
-    inline ControlImportContext(
+    ControlImportContext(
         DialogImport * pImport,
         const css::uno::Reference< css::beans::XPropertySet >& xProps, OUString const & rControlName )
         : ImportContext(
@@ -494,11 +482,10 @@ public:
                 xProps,
                 rControlName )
         {}
-    inline ~ControlImportContext()
-    {
-    }
 
-    inline void finish() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception)
+    /// @throws css::xml::sax::SAXException
+    /// @throws css::uno::RuntimeException
+    void finish()
     {
         try
         {
@@ -521,16 +508,14 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline WindowElement(
+    WindowElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
-        ElementBase * pParent, DialogImport * pImport )
-        : ControlElement( rLocalName, xAttributes, pParent, pImport )
+        DialogImport * pImport )
+        : ControlElement( rLocalName, xAttributes, nullptr, pImport )
         {}
 };
 
@@ -538,10 +523,9 @@ class EventElement
     : public ElementBase
 {
 public:
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline EventElement(
+    EventElement(
         sal_Int32 nUid, OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -556,8 +540,7 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
 
     BulletinBoardElement(
         OUString const & rLocalName,
@@ -572,12 +555,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline ButtonElement(
+    ButtonElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -592,12 +573,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline CheckBoxElement(
+    CheckBoxElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -613,12 +592,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline ComboBoxElement(
+    ComboBoxElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -634,12 +611,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline MenuListElement(
+    MenuListElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -654,10 +629,9 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
 
-    inline RadioElement(
+    RadioElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -673,12 +647,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    void SAL_CALL endElement() override;
 
-    inline RadioGroupElement(
+    RadioGroupElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -695,12 +667,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline TitledBoxElement(
+    TitledBoxElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -715,12 +685,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline TextElement(
+    TextElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -734,12 +702,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline FixedHyperLinkElement(
+    FixedHyperLinkElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -754,12 +720,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline TextFieldElement(
+    TextFieldElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -774,12 +738,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline ImageControlElement(
+    ImageControlElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -794,12 +756,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline FileControlElement(
+    FileControlElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -814,12 +774,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline TreeControlElement(
+    TreeControlElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -834,12 +792,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline CurrencyFieldElement(
+    CurrencyFieldElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -854,12 +810,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline DateFieldElement(
+    DateFieldElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -874,12 +828,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline NumericFieldElement(
+    NumericFieldElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -894,12 +846,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline TimeFieldElement(
+    TimeFieldElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -914,12 +864,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline PatternFieldElement(
+    PatternFieldElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -934,12 +882,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline FormattedFieldElement(
+    FormattedFieldElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -954,12 +900,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline FixedLineElement(
+    FixedLineElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -974,12 +918,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline ScrollBarElement(
+    ScrollBarElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -994,12 +936,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline SpinButtonElement(
+    SpinButtonElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -1014,18 +954,16 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline MultiPage(
+    MultiPage(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
         : ControlElement( rLocalName, xAttributes, pParent, pImport )
         {
-            m_xContainer.set( _pImport->_xDialogModelFactory->createInstance( "com.sun.star.awt.UnoMultiPageModel" ), css::uno::UNO_QUERY );
+            m_xContainer.set( m_xImport->_xDialogModelFactory->createInstance( "com.sun.star.awt.UnoMultiPageModel" ), css::uno::UNO_QUERY );
         }
 private:
     css::uno::Reference< css::container::XNameContainer > m_xContainer;
@@ -1039,12 +977,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline Frame(
+    Frame(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
@@ -1061,18 +997,16 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline Page(
+    Page(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )
         : ControlElement( rLocalName, xAttributes, pParent, pImport )
         {
-            m_xContainer.set( _pImport->_xDialogModelFactory->createInstance( "com.sun.star.awt.UnoPageModel" ), css::uno::UNO_QUERY );
+            m_xContainer.set( m_xImport->_xDialogModelFactory->createInstance( "com.sun.star.awt.UnoPageModel" ), css::uno::UNO_QUERY );
         }
 private:
     css::uno::Reference< css::container::XNameContainer > m_xContainer;
@@ -1085,12 +1019,10 @@ public:
     virtual css::uno::Reference< css::xml::input::XElement >
     SAL_CALL startChildElement(
         sal_Int32 nUid, OUString const & rLocalName,
-        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes )
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL endElement()
-        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::xml::input::XAttributes> const & xAttributes ) override;
+    virtual void SAL_CALL endElement() override;
 
-    inline ProgressBarElement(
+    ProgressBarElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         ElementBase * pParent, DialogImport * pImport )

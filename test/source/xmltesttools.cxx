@@ -42,9 +42,9 @@ xmlDocPtr XmlTestTools::parseXml(utl::TempFile& aTempFile)
 
 xmlDocPtr XmlTestTools::parseXmlStream(SvStream* pStream)
 {
-    sal_Size nSize = pStream->remainingSize();
+    std::size_t nSize = pStream->remainingSize();
     std::unique_ptr<sal_uInt8[]> pBuffer(new sal_uInt8[nSize + 1]);
-    pStream->Read(pBuffer.get(), nSize);
+    pStream->ReadBytes(pBuffer.get(), nSize);
     pBuffer[nSize] = 0;
     return xmlParseDoc(reinterpret_cast<xmlChar*>(pBuffer.get()));
 }
@@ -97,6 +97,15 @@ void XmlTestTools::assertXPath(xmlDocPtr pXmlDoc, const OString& rXPath, const O
     OUString aValue = getXPath(pXmlDoc, rXPath, rAttribute);
     CPPUNIT_ASSERT_EQUAL_MESSAGE(OString("In <" + OString(pXmlDoc->name) + ">, attribute '" + rAttribute + "' of '" + rXPath + "' incorrect value.").getStr(),
                                  rExpectedValue, aValue);
+}
+
+
+void XmlTestTools::assertXPathAttrs(xmlDocPtr pXmlDoc, const OString& rXPath, std::vector<std::pair<OString, OUString>> aPairVector)
+{
+    for (auto& rPair : aPairVector)
+    {
+        assertXPath(pXmlDoc, rXPath, rPair.first, rPair.second);
+    }
 }
 
 void XmlTestTools::assertXPath(xmlDocPtr pXmlDoc, const OString& rXPath, int nNumberOfNodes)

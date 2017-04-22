@@ -22,10 +22,10 @@
         export CXX=afl-clang-fast++
         make
         cp workdir/LinkTarget/Executable/fftester instdir/program
-        LD_LIBRARY_PATH=`pwd`/instdir/program SAL_USE_VCLPLUGIN=svp AFL_PERSISTENT=1 afl-fuzz -t 50 -i ~/fuzz/in.png -o ~/fuzz/out.png -d -T png -m 50000000 instdir/program/fftester @@ png
+        LD_LIBRARY_PATH=`pwd`/instdir/program AFL_PERSISTENT=1 afl-fuzz -t 50 -i ~/fuzz/in.png -o ~/fuzz/out.png -d -T png -m 50000000 instdir/program/fftester @@ png
 
         On slower file formats like .doc you can probably drop the -t and rely on the
-        estimations, on faster file formats ironically not specifing a timeout will
+        estimations, on faster file formats ironically not specifying a timeout will
         result in a hilarious dramatic falloff in performance from thousands per second
         to teens per second as tiny variations from the initial calculated
         timeout will trigger a shutdown of the fftester and a restart and the
@@ -50,6 +50,7 @@
 #include <vcl/wrkwin.hxx>
 #include <vcl/fltcall.hxx>
 #include <osl/file.hxx>
+#include <unistd.h>
 #include <signal.h>
 
 #include <../source/filter/igif/gifread.hxx>
@@ -61,17 +62,19 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::lang;
 using namespace cppu;
 
+#ifndef DISABLE_DYNLOADING
 extern "C" { static void SAL_CALL thisModule() {} }
+#endif
 
 typedef bool (*WFilterCall)(const OUString &rUrl, const OUString &rFlt);
-typedef bool (*HFilterCall)(const OUString &rUrl);
+typedef bool (*FFilterCall)(SvStream &rStream);
 
 /* This constant specifies the number of inputs to process before restarting.
  * This is optional, but helps limit the impact of memory leaks and similar
  * hiccups. */
 
 #define PERSIST_MAX 1000
-unsigned int persist_cnt;
+static unsigned int persist_cnt;
 
 SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
 {
@@ -83,6 +86,12 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
             fprintf(stderr, "Usage: fftester <filename> <wmf|jpg>\n");
             return -1;
         }
+
+        setenv("SAL_USE_VCLPLUGIN", "svp", 1);
+        setenv("JPEGMEM", "768M", 1);
+        setenv("SAL_WMF_COMPLEXCLIP_VIA_REGION", "1", 1);
+        setenv("SAL_DISABLE_PRINTERLIST", "1", 1);
+        setenv("SAL_NO_FONT_LOOKUP", "1", 1);
 
         OUString in(argv[1], strlen(argv[1]), RTL_TEXTENCODING_UTF8);
         OUString out;
@@ -135,7 +144,6 @@ try_again:
             {
                 SvFileStream aFileStream(out, StreamMode::READ);
                 vcl::PNGReader aReader(aFileStream);
-                aReader.Read();
             }
             else if (strcmp(argv[2], "bmp") == 0)
             {
@@ -149,20 +157,21 @@ try_again:
                 SvFileStream aFileStream(out, StreamMode::READ);
                 ReadGDIMetaFile(aFileStream, aGDIMetaFile);
             }
+#ifndef DISABLE_DYNLOADING
             else if (strcmp(argv[2], "pcd") == 0)
             {
                 static PFilterCall pfnImport(nullptr);
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libicdlo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("icdGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if (strcmp(argv[2], "dxf") == 0)
             {
@@ -170,14 +179,14 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libidxlo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("idxGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if (strcmp(argv[2], "met") == 0)
             {
@@ -185,14 +194,14 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libimelo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("imeGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if ((strcmp(argv[2], "pbm") == 0) || strcmp(argv[2], "ppm") == 0)
             {
@@ -200,14 +209,14 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libipblo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("ipbGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if (strcmp(argv[2], "psd") == 0)
             {
@@ -215,14 +224,14 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libipdlo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("ipdGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if (strcmp(argv[2], "eps") == 0)
             {
@@ -230,14 +239,14 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libipslo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("ipsGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if (strcmp(argv[2], "pct") == 0)
             {
@@ -245,14 +254,14 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libiptlo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("iptGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if (strcmp(argv[2], "pcx") == 0)
             {
@@ -260,14 +269,14 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libipxlo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("ipxGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if (strcmp(argv[2], "ras") == 0)
             {
@@ -275,14 +284,14 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libiralo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("iraGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if (strcmp(argv[2], "tga") == 0)
             {
@@ -290,14 +299,14 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libitglo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("itgGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
             else if (strcmp(argv[2], "tif") == 0)
             {
@@ -305,35 +314,70 @@ try_again:
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
-                    aLibrary.loadRelative(&thisModule, "libitilo.so");
+                    aLibrary.loadRelative(&thisModule, "libgielo.so");
                     pfnImport = reinterpret_cast<PFilterCall>(
-                        aLibrary.getFunctionSymbol("GraphicImport"));
+                        aLibrary.getFunctionSymbol("itiGraphicImport"));
                     aLibrary.release();
                 }
-                Graphic aTarget;
+                Graphic aGraphic;
                 SvFileStream aFileStream(out, StreamMode::READ);
-                ret = (int) (*pfnImport)(aFileStream, aTarget, nullptr);
+                ret = (int) (*pfnImport)(aFileStream, aGraphic, nullptr);
             }
-            else if ( (strcmp(argv[2], "doc") == 0) ||
-                      (strcmp(argv[2], "ww8") == 0) ||
-                      (strcmp(argv[2], "ww6") == 0) ||
-                      (strcmp(argv[2], "ww2") == 0) )
+            else if ((strcmp(argv[2], "doc") == 0) || (strcmp(argv[2], "ww8") == 0))
             {
-                static WFilterCall pfnImport(nullptr);
+                static FFilterCall pfnImport(nullptr);
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
                     aLibrary.loadRelative(&thisModule, "libmswordlo.so", SAL_LOADMODULE_LAZY);
-                    pfnImport = reinterpret_cast<WFilterCall>(
-                        aLibrary.getFunctionSymbol("TestImportDOC"));
+                    pfnImport = reinterpret_cast<FFilterCall>(
+                        aLibrary.getFunctionSymbol("TestImportWW8"));
                     aLibrary.release();
                 }
-                if (strcmp(argv[2], "ww6") == 0)
-                    ret = (int) (*pfnImport)(out, OUString("CWW6"));
-                else if (strcmp(argv[2], "ww2") == 0)
-                    ret = (int) (*pfnImport)(out, OUString("WW6"));
-                else
-                    ret = (int) (*pfnImport)(out, OUString("CWW8"));
+                SvFileStream aFileStream(out, StreamMode::READ);
+                ret = (int) (*pfnImport)(aFileStream);
+            }
+            else if (strcmp(argv[2], "ww6") == 0)
+            {
+                static FFilterCall pfnImport(nullptr);
+                if (!pfnImport)
+                {
+                    osl::Module aLibrary;
+                    aLibrary.loadRelative(&thisModule, "libmswordlo.so", SAL_LOADMODULE_LAZY);
+                    pfnImport = reinterpret_cast<FFilterCall>(
+                        aLibrary.getFunctionSymbol("TestImportWW6"));
+                    aLibrary.release();
+                }
+                SvFileStream aFileStream(out, StreamMode::READ);
+                ret = (int) (*pfnImport)(aFileStream);
+            }
+            else if (strcmp(argv[2], "ww2") == 0)
+            {
+                static FFilterCall pfnImport(nullptr);
+                if (!pfnImport)
+                {
+                    osl::Module aLibrary;
+                    aLibrary.loadRelative(&thisModule, "libmswordlo.so", SAL_LOADMODULE_LAZY);
+                    pfnImport = reinterpret_cast<FFilterCall>(
+                        aLibrary.getFunctionSymbol("TestImportWW2"));
+                    aLibrary.release();
+                }
+                SvFileStream aFileStream(out, StreamMode::READ);
+                ret = (int) (*pfnImport)(aFileStream);
+            }
+            else if (strcmp(argv[2], "rtf") == 0)
+            {
+                static FFilterCall pfnImport(nullptr);
+                if (!pfnImport)
+                {
+                    osl::Module aLibrary;
+                    aLibrary.loadRelative(&thisModule, "libmswordlo.so", SAL_LOADMODULE_LAZY);
+                    pfnImport = reinterpret_cast<FFilterCall>(
+                        aLibrary.getFunctionSymbol("TestImportRTF"));
+                    aLibrary.release();
+                }
+                SvFileStream aFileStream(out, StreamMode::READ);
+                ret = (int) (*pfnImport)(aFileStream);
             }
             else if ( (strcmp(argv[2], "xls") == 0) ||
                       (strcmp(argv[2], "wb2") == 0) )
@@ -351,56 +395,76 @@ try_again:
             }
             else if (strcmp(argv[2], "hwp") == 0)
             {
-                static HFilterCall pfnImport(nullptr);
+                static FFilterCall pfnImport(nullptr);
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
                     aLibrary.loadRelative(&thisModule, "libhwplo.so", SAL_LOADMODULE_LAZY);
-                    pfnImport = reinterpret_cast<HFilterCall>(
+                    pfnImport = reinterpret_cast<FFilterCall>(
                         aLibrary.getFunctionSymbol("TestImportHWP"));
                     aLibrary.release();
                 }
-                ret = (int) (*pfnImport)(out);
+                SvFileStream aFileStream(out, StreamMode::READ);
+                ret = (int) (*pfnImport)(aFileStream);
             }
             else if (strcmp(argv[2], "602") == 0)
             {
-                static HFilterCall pfnImport(nullptr);
+                static FFilterCall pfnImport(nullptr);
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
                     aLibrary.loadRelative(&thisModule, "libt602filterlo.so", SAL_LOADMODULE_LAZY);
-                    pfnImport = reinterpret_cast<HFilterCall>(
+                    pfnImport = reinterpret_cast<FFilterCall>(
                         aLibrary.getFunctionSymbol("TestImport602"));
                     aLibrary.release();
                 }
-                ret = (int) (*pfnImport)(out);
+                SvFileStream aFileStream(out, StreamMode::READ);
+                ret = (int) (*pfnImport)(aFileStream);
             }
             else if (strcmp(argv[2], "lwp") == 0)
             {
-                static HFilterCall pfnImport(nullptr);
+                static FFilterCall pfnImport(nullptr);
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
                     aLibrary.loadRelative(&thisModule, "liblwpftlo.so", SAL_LOADMODULE_LAZY);
-                    pfnImport = reinterpret_cast<HFilterCall>(
+                    pfnImport = reinterpret_cast<FFilterCall>(
                         aLibrary.getFunctionSymbol("TestImportLWP"));
                     aLibrary.release();
                 }
-                ret = (int) (*pfnImport)(out);
+                SvFileStream aFileStream(out, StreamMode::READ);
+                ret = (int) (*pfnImport)(aFileStream);
             }
             else if (strcmp(argv[2], "ppt") == 0)
             {
-                static HFilterCall pfnImport(nullptr);
+                static FFilterCall pfnImport(nullptr);
                 if (!pfnImport)
                 {
                     osl::Module aLibrary;
                     aLibrary.loadRelative(&thisModule, "libsdfiltlo.so", SAL_LOADMODULE_LAZY);
-                    pfnImport = reinterpret_cast<HFilterCall>(
+                    pfnImport = reinterpret_cast<FFilterCall>(
                         aLibrary.getFunctionSymbol("TestImportPPT"));
                     aLibrary.release();
                 }
-                ret = (int) (*pfnImport)(out);
+                SvFileStream aFileStream(out, StreamMode::READ);
+                ret = (int) (*pfnImport)(aFileStream);
             }
+            else if (strcmp(argv[2], "cgm") == 0)
+            {
+                static FFilterCall pfnImport(nullptr);
+                if (!pfnImport)
+                {
+                    osl::Module aLibrary;
+                    aLibrary.loadRelative(&thisModule, "libsdlo.so", SAL_LOADMODULE_LAZY);
+                    pfnImport = reinterpret_cast<FFilterCall>(
+                        aLibrary.getFunctionSymbol("TestImportCGM"));
+                    aLibrary.release();
+                }
+                SvFileStream aFileStream(out, StreamMode::READ);
+                ret = (int) (*pfnImport)(aFileStream);
+            }
+
+#endif
         }
 
         /* To signal successful completion of a run, we need to deliver

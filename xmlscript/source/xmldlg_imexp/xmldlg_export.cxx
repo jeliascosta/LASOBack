@@ -19,6 +19,7 @@
 
 #include "exp_share.hxx"
 
+#include <o3tl/any.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <sal/log.hxx>
 #include <tools/diagnose_ex.h>
@@ -260,12 +261,12 @@ Reference< xml::sax::XAttributeList > Style::createElement()
         // dialog:font-charwidth CDATA #IMPLIED
         if (def_descr.CharacterWidth != _descr.CharacterWidth)
         {
-            pStyle->addAttribute( XMLNS_DIALOGS_PREFIX ":font-charwidth", OUString::number( (float)_descr.CharacterWidth ) );
+            pStyle->addAttribute( XMLNS_DIALOGS_PREFIX ":font-charwidth", OUString::number( _descr.CharacterWidth ) );
         }
         // dialog:font-weight CDATA #IMPLIED
         if (def_descr.Weight != _descr.Weight)
         {
-            pStyle->addAttribute( XMLNS_DIALOGS_PREFIX ":font-weight", OUString::number( (float)_descr.Weight ) );
+            pStyle->addAttribute( XMLNS_DIALOGS_PREFIX ":font-weight", OUString::number( _descr.Weight ) );
         }
         // dialog:font-slant "(oblique|italic|reverse_oblique|reverse_italic)" #IMPLIED
         if (def_descr.Slant != _descr.Slant)
@@ -378,7 +379,7 @@ Reference< xml::sax::XAttributeList > Style::createElement()
         // dialog:font-orientation CDATA #IMPLIED
         if (def_descr.Orientation != _descr.Orientation)
         {
-            pStyle->addAttribute( XMLNS_DIALOGS_PREFIX ":font-orientation", OUString::number( (float)_descr.Orientation ) );
+            pStyle->addAttribute( XMLNS_DIALOGS_PREFIX ":font-orientation", OUString::number( _descr.Orientation ) );
         }
         // dialog:font-kerning %boolean; #IMPLIED
         if (bool(def_descr.Kerning) != bool(_descr.Kerning))
@@ -517,9 +518,9 @@ void ElementDescriptor::readHexLongAttr( OUString const & rPropName, OUString co
     if (beans::PropertyState_DEFAULT_VALUE != _xPropState->getPropertyState( rPropName ))
     {
         Any a( _xProps->getPropertyValue( rPropName ) );
-        if (a.getValueTypeClass() == TypeClass_LONG)
+        if (auto n = o3tl::tryAccess<sal_uInt32>(a))
         {
-            addAttribute( rAttrName, "0x" + OUString::number((sal_Int64)(sal_uInt64)*static_cast<sal_uInt32 const *>(a.getValue()),16)  );
+            addAttribute( rAttrName, "0x" + OUString::number(*n, 16)  );
         }
     }
 }
@@ -529,9 +530,9 @@ void ElementDescriptor::readDateFormatAttr( OUString const & rPropName, OUString
     if (beans::PropertyState_DEFAULT_VALUE != _xPropState->getPropertyState( rPropName ))
     {
         Any a( _xProps->getPropertyValue( rPropName ) );
-        if (a.getValueTypeClass() == TypeClass_SHORT)
+        if (auto n = o3tl::tryAccess<sal_Int16>(a))
         {
-            switch (*static_cast<sal_Int16 const *>(a.getValue()))
+            switch (*n)
             {
             case 0:
                 addAttribute( rAttrName, "system_short" );
@@ -626,9 +627,9 @@ void ElementDescriptor::readTimeFormatAttr( OUString const & rPropName, OUString
     if (beans::PropertyState_DEFAULT_VALUE != _xPropState->getPropertyState( rPropName ))
     {
         Any a( _xProps->getPropertyValue( rPropName ) );
-        if (a.getValueTypeClass() == TypeClass_SHORT)
+        if (auto n = o3tl::tryAccess<sal_Int16>(a))
         {
-            switch (*static_cast<sal_Int16 const *>(a.getValue()))
+            switch (*n)
             {
             case 0:
                 addAttribute( rAttrName, "24h_short" );
@@ -663,9 +664,9 @@ void ElementDescriptor::readAlignAttr( OUString const & rPropName, OUString cons
     if (beans::PropertyState_DEFAULT_VALUE != _xPropState->getPropertyState( rPropName ))
     {
         Any a( _xProps->getPropertyValue( rPropName ) );
-        if (a.getValueTypeClass() == TypeClass_SHORT)
+        if (auto n = o3tl::tryAccess<sal_Int16>(a))
         {
-            switch (*static_cast<sal_Int16 const *>(a.getValue()))
+            switch (*n)
             {
             case 0:
                 addAttribute( rAttrName, "left" );
@@ -744,9 +745,9 @@ void ElementDescriptor::readImageAlignAttr( OUString const & rPropName, OUString
     if (beans::PropertyState_DEFAULT_VALUE != _xPropState->getPropertyState( rPropName ))
     {
         Any a( _xProps->getPropertyValue( rPropName ) );
-        if (a.getValueTypeClass() == TypeClass_SHORT)
+        if (auto n = o3tl::tryAccess<sal_Int16>(a))
         {
-            switch (*static_cast<sal_Int16 const *>(a.getValue()))
+            switch (*n)
             {
             case 0:
                 addAttribute( rAttrName, "left" );
@@ -775,9 +776,9 @@ void ElementDescriptor::readImagePositionAttr( OUString const & rPropName, OUStr
     if (beans::PropertyState_DEFAULT_VALUE != _xPropState->getPropertyState( rPropName ))
     {
         Any a( _xProps->getPropertyValue( rPropName ) );
-        if (a.getValueTypeClass() == TypeClass_SHORT)
+        if (auto n = o3tl::tryAccess<sal_Int16>(a))
         {
-            switch (*static_cast<sal_Int16 const *>(a.getValue()))
+            switch (*n)
             {
             case awt::ImagePosition::LeftTop:
                 addAttribute( rAttrName, "left-top" );
@@ -831,9 +832,9 @@ void ElementDescriptor::readButtonTypeAttr( OUString const & rPropName, OUString
     if (beans::PropertyState_DEFAULT_VALUE != _xPropState->getPropertyState( rPropName ))
     {
         Any a( _xProps->getPropertyValue( rPropName ) );
-        if (a.getValueTypeClass() == TypeClass_SHORT)
+        if (auto n = o3tl::tryAccess<sal_Int16>(a))
         {
-            switch (*static_cast<sal_Int16 const *>(a.getValue()))
+            switch ((awt::PushButtonType)*n)
             {
             case awt::PushButtonType_STANDARD:
                 addAttribute( rAttrName, "standard" );
@@ -860,9 +861,9 @@ void ElementDescriptor::readOrientationAttr( OUString const & rPropName, OUStrin
     if (beans::PropertyState_DEFAULT_VALUE != _xPropState->getPropertyState( rPropName ))
     {
         Any a( _xProps->getPropertyValue( rPropName ) );
-        if (a.getValueTypeClass() == TypeClass_LONG)
+        if (auto n = o3tl::tryAccess<sal_Int16>(a))
         {
-            switch (*static_cast<sal_Int32 const *>(a.getValue()))
+            switch (*n)
             {
             case 0:
                 addAttribute( rAttrName, "horizontal" );
@@ -883,9 +884,9 @@ void ElementDescriptor::readLineEndFormatAttr( OUString const & rPropName, OUStr
     if (beans::PropertyState_DEFAULT_VALUE != _xPropState->getPropertyState( rPropName ))
     {
         Any a( _xProps->getPropertyValue( rPropName ) );
-        if (a.getValueTypeClass() == TypeClass_SHORT)
+        if (auto n = o3tl::tryAccess<sal_Int16>(a))
         {
-            switch (*static_cast<sal_Int16 const *>(a.getValue()))
+            switch (*n)
             {
             case awt::LineEndFormat::CARRIAGE_RETURN:
                 addAttribute( rAttrName, "carriage-return" );
@@ -1020,7 +1021,7 @@ void ElementDescriptor::readImageScaleModeAttr( OUString const & rPropName, OUSt
 
         if (aImageScaleMode.getValueTypeClass() == TypeClass_SHORT)
         {
-            sal_Int16 nImageScaleMode;
+            sal_Int16 nImageScaleMode = 0;
             aImageScaleMode >>= nImageScaleMode;
 
             switch(nImageScaleMode)
@@ -1067,7 +1068,7 @@ void ElementDescriptor::readDefaults( bool supportPrintable, bool supportVisible
                     addAttribute( XMLNS_DIALOGS_PREFIX ":control-implementation", sCtrlName );
         }
     }
-    addAttribute( XMLNS_DIALOGS_PREFIX ":id", * static_cast< const OUString * >( a.getValue() ) );
+    addAttribute( XMLNS_DIALOGS_PREFIX ":id", *o3tl::doAccess<OUString>(a) );
     readShortAttr( "TabIndex", XMLNS_DIALOGS_PREFIX ":tab-index" );
 
     bool bEnabled = false;
@@ -1102,24 +1103,24 @@ void ElementDescriptor::readDefaults( bool supportPrintable, bool supportVisible
     }
     // force writing of pos/size
     a = _xProps->getPropertyValue( "PositionX" );
-    if (a.getValueTypeClass() == TypeClass_LONG)
+    if (auto n = o3tl::tryAccess<sal_Int32>(a))
     {
-        addAttribute( XMLNS_DIALOGS_PREFIX ":left", OUString::number( *static_cast<sal_Int32 const *>(a.getValue()) ) );
+        addAttribute( XMLNS_DIALOGS_PREFIX ":left", OUString::number(*n) );
     }
     a = _xProps->getPropertyValue( "PositionY" );
-    if (a.getValueTypeClass() == TypeClass_LONG)
+    if (auto n = o3tl::tryAccess<sal_Int32>(a))
     {
-        addAttribute( XMLNS_DIALOGS_PREFIX ":top", OUString::number( *static_cast<sal_Int32 const *>(a.getValue()) ) );
+        addAttribute( XMLNS_DIALOGS_PREFIX ":top", OUString::number(*n) );
     }
     a = _xProps->getPropertyValue( "Width" );
-    if (a.getValueTypeClass() == TypeClass_LONG)
+    if (auto n = o3tl::tryAccess<sal_Int32>(a))
     {
-        addAttribute( XMLNS_DIALOGS_PREFIX ":width", OUString::number( *static_cast<sal_Int32 const *>(a.getValue()) ) );
+        addAttribute( XMLNS_DIALOGS_PREFIX ":width", OUString::number(*n) );
     }
     a = _xProps->getPropertyValue( "Height" );
-    if (a.getValueTypeClass() == TypeClass_LONG)
+    if (auto n = o3tl::tryAccess<sal_Int32>(a))
     {
-        addAttribute( XMLNS_DIALOGS_PREFIX ":height", OUString::number( *static_cast<sal_Int32 const *>(a.getValue()) ) );
+        addAttribute( XMLNS_DIALOGS_PREFIX ":height", OUString::number(*n) );
     }
 
     if (supportPrintable)
@@ -1131,14 +1132,6 @@ void ElementDescriptor::readDefaults( bool supportPrintable, bool supportVisible
     readStringAttr( "HelpText", XMLNS_DIALOGS_PREFIX ":help-text" );
     readStringAttr( "HelpURL", XMLNS_DIALOGS_PREFIX ":help-url" );
 }
-
-struct StringTriple
-{
-    char const * first;
-    char const * second;
-    char const * third;
-};
-extern StringTriple const * const g_pEventTranslations;
 
 void ElementDescriptor::readEvents()
 {
@@ -1206,7 +1199,7 @@ void ElementDescriptor::readEvents()
                     if ( descr.ScriptType == "StarBasic" )
                     {
                         // separate optional location
-                        sal_Int32 nIndex = descr.ScriptCode.indexOf( (sal_Unicode)':' );
+                        sal_Int32 nIndex = descr.ScriptCode.indexOf( ':' );
                         if (nIndex >= 0)
                         {
                             pElem->addAttribute( XMLNS_SCRIPT_PREFIX ":location", descr.ScriptCode.copy( 0, nIndex ) );

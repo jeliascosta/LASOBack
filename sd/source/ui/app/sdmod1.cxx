@@ -33,6 +33,7 @@
 #include <sfx2/request.hxx>
 #include <sfx2/printer.hxx>
 #include <sfx2/docfile.hxx>
+#include <sfx2/templatedlg.hxx>
 #include <editeng/paperinf.hxx>
 #include <editeng/eeitem.hxx>
 #include <unotools/useroptions.hxx>
@@ -72,14 +73,13 @@ using ::com::sun::star::uno::Sequence;
 
 namespace {
 
-class OutlineToImpressFinalizer
+class OutlineToImpressFinalizer final
 {
 public:
     OutlineToImpressFinalizer (
         ::sd::ViewShellBase& rBase,
         SdDrawDocument& rDocument,
         SvLockBytes& rBytes);
-    virtual ~OutlineToImpressFinalizer() {};
     void operator() (bool bEventSeen);
 private:
     ::sd::ViewShellBase& mrBase;
@@ -193,7 +193,6 @@ void SdModule::Execute(SfxRequest& rReq)
         }
         break;
 
-        case SID_SD_AUTOPILOT:
         case SID_NEWSD:
             {
                 SfxFrame* pFrame = ExecuteNewDocument( rReq );
@@ -314,30 +313,6 @@ bool SdModule::OutlineToImpress(SfxRequest& rRequest)
 
 void SdModule::GetState(SfxItemSet& rItemSet)
 {
-    // disable Autopilot during presentation
-    if (rItemSet.GetItemState(SID_SD_AUTOPILOT) != SfxItemState::UNKNOWN)
-    {
-        if (!SvtModuleOptions().IsImpress())
-        {
-            rItemSet.DisableItem(SID_SD_AUTOPILOT);
-        }
-        else
-        {
-            ::sd::DrawDocShell* pDocShell = dynamic_cast< ::sd::DrawDocShell *>( SfxObjectShell::Current() );
-            if (pDocShell)
-            {
-                ::sd::ViewShell* pViewShell = pDocShell->GetViewShell();
-                if (pViewShell)
-                {
-                    if( sd::SlideShow::IsRunning( pViewShell->GetViewShellBase() ) )
-                    {
-                        rItemSet.DisableItem(SID_SD_AUTOPILOT);
-                    }
-                }
-            }
-        }
-    }
-
     if( SfxItemState::DEFAULT == rItemSet.GetItemState( SID_ATTR_METRIC ) )
     {
         ::sd::DrawDocShell* pDocSh = dynamic_cast< ::sd::DrawDocShell *>( SfxObjectShell::Current() );
@@ -405,7 +380,7 @@ void SdModule::GetState(SfxItemSet& rItemSet)
         {
             ::sd::ViewShell* pViewShell = pDocShell->GetViewShell();
 
-            if( pViewShell && (pDocShell->GetDocumentType() == DOCUMENT_TYPE_IMPRESS) )
+            if( pViewShell && (pDocShell->GetDocumentType() == DocumentType::Impress) )
             {
                 // add our event listener as soon as possible
                 Application::AddEventListener( LINK( this, SdModule, EventListenerHdl ) );
@@ -415,9 +390,9 @@ void SdModule::GetState(SfxItemSet& rItemSet)
     }
 }
 
-IMPL_STATIC_LINK_TYPED( SdModule, EventListenerHdl, VclSimpleEvent&, rSimpleEvent, void )
+IMPL_STATIC_LINK( SdModule, EventListenerHdl, VclSimpleEvent&, rSimpleEvent, void )
 {
-    if( (rSimpleEvent.GetId() == VCLEVENT_WINDOW_COMMAND) && static_cast<VclWindowEvent*>(&rSimpleEvent)->GetData() )
+    if( (rSimpleEvent.GetId() == VclEventId::WindowCommand) && static_cast<VclWindowEvent*>(&rSimpleEvent)->GetData() )
     {
         const CommandEvent& rEvent = *static_cast<const CommandEvent*>(static_cast<VclWindowEvent*>(&rSimpleEvent)->GetData());
 
@@ -435,7 +410,7 @@ IMPL_STATIC_LINK_TYPED( SdModule, EventListenerHdl, VclSimpleEvent&, rSimpleEven
                         ::sd::ViewShell* pViewShell = pDocShell->GetViewShell();
 
                         // #i97925# start the presentation if and only if an Impress document is focused
-                        if( pViewShell && (pDocShell->GetDocumentType() == DOCUMENT_TYPE_IMPRESS) )
+                        if( pViewShell && (pDocShell->GetDocumentType() == DocumentType::Impress) )
                             pViewShell->GetViewFrame()->GetDispatcher()->Execute( SID_PRESENTATION );
                     }
                     break;
@@ -448,45 +423,6 @@ IMPL_STATIC_LINK_TYPED( SdModule, EventListenerHdl, VclSimpleEvent&, rSimpleEven
     }
 }
 
-void SdModule::AddSummaryPage (SfxViewFrame* pViewFrame, SdDrawDocument* pDocument)
-{
-    if( !pViewFrame || !pViewFrame->GetDispatcher() || !pDocument )
-        return;
-
-    pViewFrame->GetDispatcher()->Execute(SID_SUMMARY_PAGE,
-        SfxCallMode::SYNCHRON | SfxCallMode::RECORD);
-
-    OSL_ASSERT (pDocument!=nullptr);
-
-    sal_Int32 nPageCount = pDocument->GetSdPageCount (PK_STANDARD);
-
-    // We need at least two pages: the summary page and one to use as
-    // template to take the transition parameters from.
-    if (nPageCount >= 2)
-    {
-        // Get a page from which to retrieve the transition parameters.
-        SdPage* pTemplatePage = pDocument->GetSdPage (0, PK_STANDARD);
-        OSL_ASSERT (pTemplatePage!=nullptr);
-
-        // The summary page, if it exists, is the last page.
-        SdPage* pSummaryPage = pDocument->GetSdPage (
-            (sal_uInt16)nPageCount-1, PK_STANDARD);
-        OSL_ASSERT (pSummaryPage!=nullptr);
-
-        // Take the change mode of the template page as indication of the
-        // document's kiosk mode.
-        pSummaryPage->setTransitionDuration(pTemplatePage->getTransitionDuration());
-        pSummaryPage->SetPresChange(pTemplatePage->GetPresChange());
-        pSummaryPage->SetTime(pTemplatePage->GetTime());
-        pSummaryPage->SetSound(pTemplatePage->IsSoundOn());
-        pSummaryPage->SetSoundFile(pTemplatePage->GetSoundFile());
-        pSummaryPage->setTransitionType(pTemplatePage->getTransitionType());
-        pSummaryPage->setTransitionSubtype(pTemplatePage->getTransitionSubtype());
-        pSummaryPage->setTransitionDirection(pTemplatePage->getTransitionDirection());
-        pSummaryPage->setTransitionFadeColor(pTemplatePage->getTransitionFadeColor());
-        pSummaryPage->setTransitionDuration(pTemplatePage->getTransitionDuration());
-    }
-}
 
 SfxFrame* SdModule::CreateFromTemplate( const OUString& rTemplatePath, const Reference< XFrame >& i_rFrame )
 {
@@ -526,11 +462,12 @@ SfxFrame* SdModule::ExecuteNewDocument( SfxRequest& rReq )
         if ( pFrmItem )
             xTargetFrame = pFrmItem->GetFrame();
 
-        SdOptions* pOpt = GetSdOptions(DOCUMENT_TYPE_IMPRESS);
+        SdOptions* pOpt = GetSdOptions(DocumentType::Impress);
         bool bStartWithTemplate = pOpt->IsStartWithTemplate();
 
         bool bNewDocDirect = rReq.GetSlot() == SID_NEWSD;
-        if( bNewDocDirect && !bStartWithTemplate )
+
+        if( bNewDocDirect )
         {
             //we start without wizard
 
@@ -549,161 +486,19 @@ SfxFrame* SdModule::ExecuteNewDocument( SfxRequest& rReq )
                 pFrame = CreateEmptyDocument( xTargetFrame );
             }
         }
-        else
+
+        if(bStartWithTemplate)
         {
-            SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-            std::unique_ptr< AbstractAssistentDlg > pPilotDlg( pFact ? pFact->CreateAssistentDlg( !bNewDocDirect ) : nullptr );
+            //Launch TemplateSelectionDialog
+            ScopedVclPtrInstance< SfxTemplateSelectionDlg > aTemplDlg( SfxGetpApp()->GetTopWindow());
+            aTemplDlg->Execute();
 
-            // Open the Pilot
-            if( pPilotDlg.get() && pPilotDlg->Execute()==RET_OK )
-            {
-                const OUString aDocPath( pPilotDlg->GetDocPath());
-                const bool bIsDocEmpty = pPilotDlg->IsDocEmpty();
+            //check to disable the dialog
+            pOpt->SetStartWithTemplate( aTemplDlg->IsStartWithTemplate() );
 
-                // So that you can open the document without AutoLayout-Dialog
-                pOpt->SetStartWithTemplate(false);
-                if(bNewDocDirect && !pPilotDlg->GetStartWithFlag())
-                    bStartWithTemplate = false;
-
-                if( pPilotDlg->GetStartType() == ST_OPEN )
-                {
-                    DBG_ASSERT( !aDocPath.isEmpty(), "The autopilot should have asked for a file itself already!" );
-                    if (!aDocPath.isEmpty())
-                    {
-                        css::uno::Sequence< css::beans::NamedValue > aPasswrd( pPilotDlg->GetPassword() );
-
-                        SfxStringItem aFile( SID_FILE_NAME, aDocPath );
-                        SfxStringItem aReferer( SID_REFERER, OUString());
-                        SfxUnoAnyItem aPassword( SID_ENCRYPTIONDATA, css::uno::makeAny(aPasswrd) );
-
-                        if ( xTargetFrame.is() )
-                        {
-                            SfxAllItemSet aSet( *rReq.GetArgs()->GetPool() );
-                            aSet.Put( aFile );
-                            aSet.Put( aReferer );
-                            // Put the password into the request
-                            // only if it is not empty.
-                            if (aPasswrd.getLength() > 0)
-                                aSet.Put( aPassword );
-
-                            const SfxPoolItem* pRet = SfxFrame::OpenDocumentSynchron( aSet, xTargetFrame );
-                            const SfxViewFrameItem* pFrameItem = dynamic_cast<const SfxViewFrameItem*>( pRet  );
-                            if ( pFrameItem && pFrameItem->GetFrame() )
-                                pFrame = &pFrameItem->GetFrame()->GetFrame();
-                        }
-                        else
-                        {
-                            SfxRequest aRequest (SID_OPENDOC, SfxCallMode::SYNCHRON, SfxGetpApp()->GetPool());
-                            aRequest.AppendItem (aFile);
-                            aRequest.AppendItem (aReferer);
-                            // Put the password into the request
-                            // only if it is not empty.
-                            if (aPasswrd.getLength() > 0)
-                                aRequest.AppendItem (aPassword);
-                            aRequest.AppendItem (SfxStringItem (
-                                SID_TARGETNAME,
-                                OUString("_default")));
-                            try
-                            {
-                                const SfxPoolItem* pRet = SfxGetpApp()->ExecuteSlot (aRequest);
-                                const SfxViewFrameItem* pFrameItem = dynamic_cast<const SfxViewFrameItem*>( pRet  );
-                                if ( pFrameItem )
-                                    pFrame = &pFrameItem->GetFrame()->GetFrame();
-                            }
-                            catch (const css::uno::Exception&)
-                            {
-                                DBG_ASSERT (false, "caught IllegalArgumentException while loading document from Impress autopilot");
-                            }
-                        }
-                    }
-
-                    pOpt->SetStartWithTemplate(bStartWithTemplate);
-                    if(bNewDocDirect && !bStartWithTemplate)
-                    {
-                        std::unique_ptr< SfxItemSet > pRet( CreateItemSet( SID_SD_EDITOPTIONS ) );
-                        if(pRet.get())
-                            ApplyItemSet( SID_SD_EDITOPTIONS, *pRet.get() );
-
-                    }
-                }
-                else
-                {
-                    SfxObjectShellLock xShell( pPilotDlg->GetDocument() );
-                    SfxObjectShell* pShell = xShell;
-                    if( pShell )
-                    {
-                        SfxViewFrame* pViewFrame = SfxViewFrame::LoadDocumentIntoFrame( *pShell, xTargetFrame );
-                        DBG_ASSERT( pViewFrame, "no ViewFrame!!" );
-                        pFrame = pViewFrame ? &pViewFrame->GetFrame() : nullptr;
-
-                        if(bNewDocDirect && !bStartWithTemplate)
-                        {
-                            std::unique_ptr< SfxItemSet > pRet( CreateItemSet( SID_SD_EDITOPTIONS ) );
-                            if(pRet.get())
-                                ApplyItemSet( SID_SD_EDITOPTIONS, *pRet.get() );
-                        }
-
-                        ::sd::DrawDocShell* pDocShell(nullptr);
-                        ::sd::ViewShellBase* pBase(nullptr);
-                        SdDrawDocument* pDoc(nullptr);
-                        if (pShell && pViewFrame)
-                        {
-                            pDocShell = dynamic_cast< ::sd::DrawDocShell *>( pShell );
-                            pDoc = pDocShell ? pDocShell->GetDoc() : nullptr;
-                            pBase = ::sd::ViewShellBase::GetViewShellBase(pViewFrame);
-                        }
-
-                        if (pDoc && pBase)
-                        {
-                            std::shared_ptr<sd::ViewShell> pViewSh = pBase->GetMainViewShell();
-                            SdOptions* pOptions = GetSdOptions(pDoc->GetDocumentType());
-
-                            if (pOptions && pViewSh.get())
-                            {
-                                // The AutoPilot-document shall be open without its own options
-                                ::sd::FrameView* pFrameView = pViewSh->GetFrameView();
-                                pFrameView->Update(pOptions);
-                                pViewSh->ReadFrameViewData(pFrameView);
-                            }
-
-                            ChangeMedium( pDocShell, pViewFrame, pPilotDlg->GetOutputMedium() );
-
-                            if(pPilotDlg->IsSummary())
-                                AddSummaryPage(pViewFrame, pDoc);
-
-                            // empty document
-                            if (aDocPath.isEmpty() && pViewFrame && pViewFrame->GetDispatcher())
-                            {
-                                SfxBoolItem aIsChangedItem(SID_MODIFYPAGE, !bIsDocEmpty);
-                                SfxUInt32Item eAutoLayout( ID_VAL_WHATLAYOUT, (sal_uInt32) AUTOLAYOUT_TITLE );
-                                pViewFrame->GetDispatcher()->ExecuteList(SID_MODIFYPAGE,
-                                   SfxCallMode::ASYNCHRON | SfxCallMode::RECORD,
-                                   { &aIsChangedItem, &eAutoLayout });
-                            }
-
-                            // clear document info
-                            using namespace ::com::sun::star;
-                            uno::Reference<document::XDocumentPropertiesSupplier> xDPS(
-                                pDocShell->GetModel(), uno::UNO_QUERY_THROW);
-                            uno::Reference<document::XDocumentProperties>
-                                xDocProps(xDPS->getDocumentProperties());
-                            DBG_ASSERT(xDocProps.is(), "no DocumentProperties");
-                            xDocProps->resetUserData(
-                                SvtUserOptions().GetFullName() );
-                            xDocProps->setTemplateName(xDocProps->getTitle());
-                            xDocProps->setTemplateURL(pPilotDlg->GetDocPath());
-
-                            pDoc->SetChanged(!bIsDocEmpty);
-
-                            pDocShell->SetUseUserData(true);
-
-                            // clear UNDO stack after autopilot
-                            pDocShell->ClearUndoBuffer();
-                        }
-                    }
-                    pOpt->SetStartWithTemplate(bStartWithTemplate);
-                }
-            }
+            //pFrame is loaded with the desired template
+            if(!aTemplDlg->getTemplatePath().isEmpty())
+                pFrame = CreateFromTemplate(aTemplDlg->getTemplatePath(), xTargetFrame);
         }
     }
 
@@ -716,7 +511,7 @@ SfxFrame* SdModule::CreateEmptyDocument( const Reference< XFrame >& i_rFrame )
 
     SfxObjectShellLock xDocShell;
     ::sd::DrawDocShell* pNewDocSh;
-    xDocShell = pNewDocSh = new ::sd::DrawDocShell(SfxObjectCreateMode::STANDARD,false,DOCUMENT_TYPE_IMPRESS);
+    xDocShell = pNewDocSh = new ::sd::DrawDocShell(SfxObjectCreateMode::STANDARD,false,DocumentType::Impress);
     pNewDocSh->DoInitNew();
     SdDrawDocument* pDoc = pNewDocSh->GetDoc();
     if (pDoc)
@@ -730,163 +525,6 @@ SfxFrame* SdModule::CreateEmptyDocument( const Reference< XFrame >& i_rFrame )
     pFrame = pViewFrame ? &pViewFrame->GetFrame() : nullptr;
 
     return pFrame;
-}
-
-void SdModule::ChangeMedium( ::sd::DrawDocShell* pDocShell, SfxViewFrame* pViewFrame, const sal_Int32 eMedium )
-{
-    if( !pDocShell )
-        return;
-
-    SdDrawDocument* pDoc = pDocShell->GetDoc();
-    if( !pDoc )
-        return;
-
-    // settings for the Outputmedium
-    Size aNewSize;
-    sal_uInt32 nLeft = 0;
-    sal_uInt32 nRight = 0;
-    sal_uInt32 nLower = 0;
-    sal_uInt32 nUpper = 0;
-    switch(eMedium)
-    {
-        case OUTPUT_PAGE:
-        case OUTPUT_OVERHEAD:
-        {
-            SfxPrinter* pPrinter = pDocShell->GetPrinter(true);
-
-            if( pPrinter && pPrinter->IsValid())
-            {
-                // Unfortunately, the printer does not provide an exact format
-                // like A4
-                Size aSize(pPrinter->GetPaperSize());
-                Paper ePaper = SvxPaperInfo::GetSvxPaper( aSize, MAP_100TH_MM, true);
-
-                if (ePaper != PAPER_USER)
-                {
-                    // get correct size
-                    aSize = SvxPaperInfo::GetPaperSize(ePaper, MAP_100TH_MM);
-                }
-
-                if (aSize.Height() > aSize.Width())
-                {
-                     // always landscape
-                     aNewSize.Width()  = aSize.Height();
-                     aNewSize.Height() = aSize.Width();
-                }
-                else
-                {
-                     aNewSize = aSize;
-                }
-            }
-            else
-            {
-                aNewSize=Size(29700, 21000);
-            }
-
-            if (eMedium == OUTPUT_PAGE)
-            {
-                nLeft =1000;
-                nRight=1000;
-                nUpper=1000;
-                nLower=1000;
-            }
-            else
-            {
-                nLeft =0;
-                nRight=0;
-                nUpper=0;
-                nLower=0;
-            }
-        }
-        break;
-
-        case OUTPUT_SLIDE:
-        {
-            aNewSize = Size(27000, 18000);
-            nLeft =0;
-            nRight=0;
-            nUpper=0;
-            nLower=0;
-        }
-        break;
-
-        case OUTPUT_WIDESCREEN:
-        {
-            aNewSize = Size(28000, 15750);
-            nLeft =0;
-            nRight=0;
-            nUpper=0;
-            nLower=0;
-        }
-        break;
-
-        case OUTPUT_PRESENTATION:
-        {
-            aNewSize = Size(28000, 21000);
-            nLeft =0;
-            nRight=0;
-            nUpper=0;
-            nLower=0;
-        }
-        break;
-    }
-
-    bool bScaleAll = true;
-    sal_uInt16 nPageCnt = pDoc->GetMasterSdPageCount(PK_STANDARD);
-    sal_uInt16 i;
-    SdPage* pPage;
-
-    // master pages first
-    for (i = 0; i < nPageCnt; i++)
-    {
-        pPage = pDoc->GetMasterSdPage(i, PK_STANDARD);
-
-        if (pPage)
-        {
-            if(eMedium != OUTPUT_ORIGINAL)
-            {
-                Rectangle aBorderRect(nLeft, nUpper, nRight, nLower);
-                pPage->ScaleObjects(aNewSize, aBorderRect, bScaleAll);
-                pPage->SetSize(aNewSize);
-                pPage->SetBorder(nLeft, nUpper, nRight, nLower);
-            }
-            SdPage* pNotesPage = pDoc->GetMasterSdPage(i, PK_NOTES);
-            DBG_ASSERT( pNotesPage, "Wrong page ordering!" );
-            if( pNotesPage ) pNotesPage->CreateTitleAndLayout();
-            pPage->CreateTitleAndLayout();
-        }
-    }
-
-    nPageCnt = pDoc->GetSdPageCount(PK_STANDARD);
-
-    // then slides
-    for (i = 0; i < nPageCnt; i++)
-    {
-        pPage = pDoc->GetSdPage(i, PK_STANDARD);
-
-        if (pPage)
-        {
-            if(eMedium != OUTPUT_ORIGINAL)
-            {
-                Rectangle aBorderRect(nLeft, nUpper, nRight, nLower);
-                pPage->ScaleObjects(aNewSize, aBorderRect, bScaleAll);
-                pPage->SetSize(aNewSize);
-                pPage->SetBorder(nLeft, nUpper, nRight, nLower);
-            }
-            SdPage* pNotesPage = pDoc->GetSdPage(i, PK_NOTES);
-            DBG_ASSERT( pNotesPage, "Wrong page ordering!" );
-            if( pNotesPage ) pNotesPage->SetAutoLayout( pNotesPage->GetAutoLayout() );
-            pPage->SetAutoLayout( pPage->GetAutoLayout() );
-        }
-    }
-
-    SdPage* pHandoutPage = pDoc->GetSdPage(0, PK_HANDOUT);
-    pHandoutPage->CreateTitleAndLayout(true);
-
-    if( (eMedium != OUTPUT_ORIGINAL) && pViewFrame && pViewFrame->GetDispatcher())
-    {
-        pViewFrame->GetDispatcher()->Execute(SID_SIZE_PAGE, SfxCallMode::SYNCHRON | SfxCallMode::RECORD);
-    }
 }
 
 //===== OutlineToImpressFinalize ==============================================
@@ -910,7 +548,7 @@ OutlineToImpressFinalizer::OutlineToImpressFinalizer (
         // Create a memory stream and prepare to fill it with the content of
         // the original stream.
         mpStream.reset(new SvMemoryStream());
-        static const sal_Size nBufferSize = 4096;
+        static const std::size_t nBufferSize = 4096;
         ::std::unique_ptr<sal_Int8[]> pBuffer (new sal_Int8[nBufferSize]);
 
         sal_uInt64 nReadPosition(0);
@@ -918,7 +556,7 @@ OutlineToImpressFinalizer::OutlineToImpressFinalizer (
         while (bLoop)
         {
             // Read the next part of the original stream.
-            sal_Size nReadByteCount (0);
+            std::size_t nReadByteCount (0);
             const ErrCode nErrorCode (
                 rBytes.ReadAt(
                     nReadPosition,
@@ -946,7 +584,7 @@ OutlineToImpressFinalizer::OutlineToImpressFinalizer (
             // Append the read bytes to the end of the memory stream.
             if (nReadByteCount > 0)
             {
-                mpStream->Write(pBuffer.get(), nReadByteCount);
+                mpStream->WriteBytes(pBuffer.get(), nReadByteCount);
                 nReadPosition += nReadByteCount;
             }
         }
@@ -968,16 +606,16 @@ void OutlineToImpressFinalizer::operator() (bool)
         sd::OutlineView* pView = static_cast<sd::OutlineView*>(pOutlineShell->GetView());
         // mba: the stream can't contain any relative URLs, because we don't
         // have any information about a BaseURL!
-        if ( pOutlineShell->Read(*mpStream, OUString(), EE_FORMAT_RTF) == 0 )
+        if ( pOutlineShell->ReadRtf(*mpStream, OUString()) == 0 )
         {
         }
 
         // Call UpdatePreview once for every slide to resync the
         // document with the outliner of the OutlineViewShell.
-        sal_uInt16 nPageCount (mrDocument.GetSdPageCount(PK_STANDARD));
+        sal_uInt16 nPageCount (mrDocument.GetSdPageCount(PageKind::Standard));
         for (sal_uInt16 nIndex=0; nIndex<nPageCount; nIndex++)
         {
-            SdPage* pPage = mrDocument.GetSdPage(nIndex, PK_STANDARD);
+            SdPage* pPage = mrDocument.GetSdPage(nIndex, PageKind::Standard);
             // Make the page the actual page so that the
             // following UpdatePreview() call accesses the
             // correct paragraphs.
@@ -985,7 +623,7 @@ void OutlineToImpressFinalizer::operator() (bool)
             pOutlineShell->UpdatePreview(pPage, true);
         }
         // Select the first slide.
-        SdPage* pPage = mrDocument.GetSdPage(0, PK_STANDARD);
+        SdPage* pPage = mrDocument.GetSdPage(0, PageKind::Standard);
         pView->SetActualPage(pPage);
         pOutlineShell->UpdatePreview(pPage, true);
     }

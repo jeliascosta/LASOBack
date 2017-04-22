@@ -60,8 +60,6 @@
 #include "xfsaxstream.hxx"
 #include "xfsaxattrlist.hxx"
 
-#include <cppuhelper/implbase1.hxx>
-#include <cppuhelper/implbase3.hxx>
 #include <cppuhelper/factory.hxx>
 
 #include <com/sun/star/document/XFilter.hpp>
@@ -82,12 +80,11 @@ using namespace ::com::sun::star::uno;
 XFSaxStream::XFSaxStream(Reference<XDocumentHandler>& xHandler)
 {
     m_aHandler = xHandler;
-    m_pAttrList = new XFSaxAttrList();
+    m_pAttrList.reset(new XFSaxAttrList );
 }
 
 XFSaxStream::~XFSaxStream()
 {
-    delete m_pAttrList;
 }
 
 void        XFSaxStream::StartDocument()
@@ -126,7 +123,7 @@ void        XFSaxStream::Characters(const OUString& oustr)
 
 IXFAttrList*    XFSaxStream::GetAttrList()
 {
-    return m_pAttrList;
+    return m_pAttrList.get();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

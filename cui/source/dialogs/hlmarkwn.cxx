@@ -34,6 +34,7 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/document/XLinkTargetSupplier.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/io/IOException.hpp>
 
 #include <toolkit/helper/vclunohelper.hxx>
 #include "svtools/treelistentry.hxx"
@@ -84,21 +85,14 @@ void SvxHlmarkTreeLBox::dispose()
     SvTreeListBox::dispose();
 }
 
-VCL_BUILDER_DECL_FACTORY(SvxHlmarkTreeLBox)
-{
-    WinBits nWinStyle = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SvxHlmarkTreeLBox>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxHlmarkTreeLBox, WB_TABSTOP)
 
 Size SvxHlmarkTreeLBox::GetOptimalSize() const
 {
-    return LogicToPixel(Size(103, 162), MAP_APPFONT);
+    return LogicToPixel(Size(103, 162), MapUnit::MapAppFont);
 }
 
-void SvxHlmarkTreeLBox::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void SvxHlmarkTreeLBox::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect)
 {
     if (!mpParentWnd || mpParentWnd->mnError == LERR_NOERROR)
     {
@@ -108,7 +102,7 @@ void SvxHlmarkTreeLBox::Paint(vcl::RenderContext& rRenderContext, const Rectangl
     {
         Erase(rRenderContext);
 
-        Rectangle aDrawRect(Point( 0, 0 ), GetSizePixel());
+        ::tools::Rectangle aDrawRect(Point( 0, 0 ), GetSizePixel());
 
         OUString aStrMessage;
 
@@ -263,7 +257,7 @@ void SvxHlinkDlgMarkWnd::RestoreLastSelection()
 
     OUString sLastSelectedMark;
     std::deque<OUString> aLastSelectedPath;
-    SvtViewOptions aViewSettings( E_DIALOG, TG_SETTING_MANAGER );
+    SvtViewOptions aViewSettings( EViewType::Dialog, TG_SETTING_MANAGER );
     if (aViewSettings.Exists())
     {
         //Maybe we might want to have some sort of mru list and keep a mapping
@@ -453,7 +447,7 @@ int SvxHlinkDlgMarkWnd::FillTree( const uno::Reference< container::XNameAccess >
                     uno::Reference< awt::XBitmap > aXBitmap( xTarget->getPropertyValue( aProp_LinkDisplayBitmap ), uno::UNO_QUERY );
                     if( aXBitmap.is() )
                     {
-                        Image aBmp( VCLUnoHelper::GetBitmap( aXBitmap ).GetBitmap(), aMaskColor );
+                        Image aBmp(BitmapEx(VCLUnoHelper::GetBitmap(aXBitmap).GetBitmap(), aMaskColor));
                         // insert Displayname into treelist with bitmaps
                         pEntry = mpLbTree->InsertEntry ( aStrDisplayname,
                                                         aBmp, aBmp,
@@ -561,13 +555,13 @@ bool SvxHlinkDlgMarkWnd::SelectEntry(const OUString& aStrMark)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHlinkDlgMarkWnd, DoubleClickApplyHdl_Impl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG(SvxHlinkDlgMarkWnd, DoubleClickApplyHdl_Impl, SvTreeListBox*, bool)
 {
     ClickApplyHdl_Impl(nullptr);
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED(SvxHlinkDlgMarkWnd, ClickApplyHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxHlinkDlgMarkWnd, ClickApplyHdl_Impl, Button*, void)
 {
     SvTreeListEntry* pEntry = mpLbTree->GetCurEntry();
 
@@ -588,7 +582,7 @@ IMPL_LINK_NOARG_TYPED(SvxHlinkDlgMarkWnd, ClickApplyHdl_Impl, Button*, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHlinkDlgMarkWnd, ClickCloseHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxHlinkDlgMarkWnd, ClickCloseHdl_Impl, Button*, void)
 {
     SvTreeListEntry* pEntry = mpLbTree->GetCurEntry();
     if ( pEntry )
@@ -612,12 +606,12 @@ IMPL_LINK_NOARG_TYPED(SvxHlinkDlgMarkWnd, ClickCloseHdl_Impl, Button*, void)
 
         uno::Sequence< beans::NamedValue > aSettings
         {
-            { TG_SETTING_LASTMARK, css::uno::makeAny(sLastSelectedMark) },
-            { TG_SETTING_LASTPATH, css::uno::makeAny(comphelper::containerToSequence<OUString>(aLastSelectedPath)) }
+            { TG_SETTING_LASTMARK, css::uno::Any(sLastSelectedMark) },
+            { TG_SETTING_LASTPATH, css::uno::Any(comphelper::containerToSequence(aLastSelectedPath)) }
         };
 
         // write
-        SvtViewOptions aViewSettings( E_DIALOG, TG_SETTING_MANAGER );
+        SvtViewOptions aViewSettings( EViewType::Dialog, TG_SETTING_MANAGER );
         aViewSettings.SetUserData( aSettings );
     }
 

@@ -35,6 +35,7 @@
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
 #include <unotools/accessiblestatesethelper.hxx>
+#include <rtl/ref.hxx>
 
 #include <map>
 #include <memory>
@@ -92,18 +93,16 @@ class AccessibleBase :
     public impl::AccessibleBase_Base
 {
 public:
-    enum EventType
+    enum class EventType
     {
-        OBJECT_CHANGE,
         GOT_SELECTION,
-        LOST_SELECTION,
-        PROPERTY_CHANGE
+        LOST_SELECTION
     };
 
     AccessibleBase( const AccessibleElementInfo & rAccInfo,
                     bool bMayHaveChildren,
                     bool bAlwaysTransparent = false );
-    virtual ~AccessibleBase();
+    virtual ~AccessibleBase() override;
 
 protected:
     // for all calls to protected methods it is assumed that the mutex is locked
@@ -113,8 +112,9 @@ protected:
                object is already disposed
         @return true, if the component is already disposed and bThrowException is false,
                 false otherwise
+        @throws css::lang::DisposedException
      */
-    bool             CheckDisposeState( bool bThrowException = true ) const throw (css::lang::DisposedException);
+    bool             CheckDisposeState( bool bThrowException = true ) const;
 
     /** Events coming from the core have to be processed in this methods.  The
         default implementation returns false, which indicates that the object is
@@ -132,13 +132,17 @@ protected:
     bool     NotifyEvent( EventType eType, const AccessibleUniqueId & rId );
 
     /** Adds a state to the set.
+
+        @throws css::uno::RuntimeException
     */
-    void             AddState( sal_Int16 aState ) throw (css::uno::RuntimeException);
+    void             AddState( sal_Int16 aState );
 
     /** Removes a state from the set if the set contains the state, otherwise
         nothing is done.
+
+        @throws css::uno::RuntimeException
     */
-    void             RemoveState( sal_Int16 aState ) throw (css::uno::RuntimeException);
+    void             RemoveState( sal_Int16 aState );
 
     /** has to be overridden by derived classes that support child elements.
         With this method a rescan is initiated that should result in a correct
@@ -200,17 +204,19 @@ protected:
 
     /** Is called from getAccessibleChild(). Before this method is called, an
         update of children is done if necessary.
+
+        @throws css::lang::IndexOutOfBoundsException
+        @throws css::uno::RuntimeException
      */
     virtual css::uno::Reference< css::accessibility::XAccessible >
-        ImplGetAccessibleChildById( sal_Int32 i ) const
-        throw (css::lang::IndexOutOfBoundsException,
-               css::uno::RuntimeException);
+        ImplGetAccessibleChildById( sal_Int32 i ) const;
 
     /** Is called from getAccessibleChildCount(). Before this method is called,
         an update of children is done if necessary.
+
+        @throws css::uno::RuntimeException
      */
-    virtual sal_Int32 ImplGetAccessibleChildCount() const
-        throw (css::uno::RuntimeException);
+    virtual sal_Int32 ImplGetAccessibleChildCount() const;
 
     const AccessibleElementInfo& GetInfo() const { return m_aAccInfo;}
     void SetInfo( const AccessibleElementInfo & rNewInfo );
@@ -220,84 +226,58 @@ protected:
     virtual void SAL_CALL disposing() override;
 
     // ________ XAccessible ________
-    virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext() override;
 
     // ________ XAccessibleContext ________
-    virtual sal_Int32 SAL_CALL getAccessibleChildCount()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getAccessibleChildCount() override;
     virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL
-        getAccessibleChild( sal_Int32 i )
-        throw (css::lang::IndexOutOfBoundsException,
-               css::uno::RuntimeException, std::exception) override;
+        getAccessibleChild( sal_Int32 i ) override;
     virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL
-        getAccessibleParent()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL getAccessibleIndexInParent()
-        throw (css::uno::RuntimeException, std::exception) override;
+        getAccessibleParent() override;
+    virtual sal_Int32 SAL_CALL getAccessibleIndexInParent() override;
     /// @return AccessibleRole.SHAPE
-    virtual sal_Int16 SAL_CALL getAccessibleRole()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getAccessibleRole() override;
     // has to be implemented by derived classes
 //     virtual OUString SAL_CALL getAccessibleName()
 //         throw (css::uno::RuntimeException);
     virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL
-        getAccessibleRelationSet()
-        throw (css::uno::RuntimeException, std::exception) override;
+        getAccessibleRelationSet() override;
     virtual css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL
-        getAccessibleStateSet()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::lang::Locale SAL_CALL getLocale()
-        throw (css::accessibility::IllegalAccessibleComponentStateException,
-               css::uno::RuntimeException, std::exception) override;
+        getAccessibleStateSet() override;
+    virtual css::lang::Locale SAL_CALL getLocale() override;
     // has to be implemented by derived classes
 //     virtual OUString SAL_CALL getAccessibleDescription()
 //         throw (css::uno::RuntimeException);
 
     // ________ XAccessibleComponent ________
     virtual sal_Bool SAL_CALL containsPoint(
-        const css::awt::Point& aPoint )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::awt::Point& aPoint ) override;
     virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL
-        getAccessibleAtPoint( const css::awt::Point& aPoint )
-        throw (css::uno::RuntimeException, std::exception) override;
+        getAccessibleAtPoint( const css::awt::Point& aPoint ) override;
     // has to be defined in derived classes
-    virtual css::awt::Rectangle SAL_CALL getBounds()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::awt::Point SAL_CALL getLocation()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::awt::Point SAL_CALL getLocationOnScreen()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::awt::Size SAL_CALL getSize()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL grabFocus()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL getForeground()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL getBackground()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Rectangle SAL_CALL getBounds() override;
+    virtual css::awt::Point SAL_CALL getLocation() override;
+    virtual css::awt::Point SAL_CALL getLocationOnScreen() override;
+    virtual css::awt::Size SAL_CALL getSize() override;
+    virtual void SAL_CALL grabFocus() override;
+    virtual sal_Int32 SAL_CALL getForeground() override;
+    virtual sal_Int32 SAL_CALL getBackground() override;
 
     // ________ XServiceInfo ________
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
     virtual sal_Bool SAL_CALL supportsService(
-        const OUString& ServiceName )
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override;
+        const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     // ________ XEventListener ________
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& Source ) override;
 
     // ________ XAccessibleEventBroadcaster ________
     virtual void SAL_CALL addAccessibleEventListener(
-        const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) override;
     virtual void SAL_CALL removeAccessibleEventListener(
-        const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) override;
 
 private:
     enum eColorType
@@ -310,11 +290,11 @@ private:
 private:
     /** type of the vector containing the accessible children
      */
-    typedef ::std::vector< css::uno::Reference< css::accessibility::XAccessible > > ChildListVectorType;
+    typedef std::vector< css::uno::Reference< css::accessibility::XAccessible > > ChildListVectorType;
     /** type of the hash containing a vector index for every AccessibleUniqueId
         of the object in the child list
      */
-    typedef ::std::map< ObjectIdentifier, css::uno::Reference< css::accessibility::XAccessible > > ChildOIDMap;
+    typedef std::map< ObjectIdentifier, css::uno::Reference< css::accessibility::XAccessible > > ChildOIDMap;
 
     bool                                  m_bIsDisposed;
     const bool                            m_bMayHaveChildren;
@@ -329,17 +309,7 @@ private:
 
         Note: This member must come before m_aStateSet!
      */
-    ::utl::AccessibleStateSetHelper *     m_pStateSetHelper;
-    /** this is returned in getAccessibleStateSet().
-
-        The implementation is an ::utl::AccessibleStateSetHelper.  To access
-        implementation methods use m_pStateSetHelper.
-
-        Note: Keeping this reference ensures, that the helper object is only
-              destroyed after this object has been disposed().
-     */
-    css::uno::Reference< css::accessibility::XAccessibleStateSet >
-        m_aStateSet;
+    rtl::Reference<::utl::AccessibleStateSetHelper>     m_xStateSetHelper;
 
     AccessibleElementInfo  m_aAccInfo;
     const bool             m_bAlwaysTransparent;

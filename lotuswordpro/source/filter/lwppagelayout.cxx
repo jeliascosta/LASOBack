@@ -75,24 +75,14 @@
 
 LwpPageLayout::LwpPageLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm)
     : LwpLayout(objHdr, pStrm)
-    , m_pPrinterBinName(new LwpAtomHolder)
     , m_nPrinterBin(0)
     , m_nBdroffset(0)
-    , m_pPaperName(new LwpAtomHolder)
     , m_pXFPageMaster(nullptr)
 {
 }
 
 LwpPageLayout::~LwpPageLayout()
 {
-    if (m_pPrinterBinName)
-    {
-        delete m_pPrinterBinName;
-    }
-    if (m_pPaperName)
-    {
-        delete m_pPaperName;
-    }
 }
 void LwpPageLayout::Read()
 {
@@ -104,14 +94,14 @@ void LwpPageLayout::Read()
     }
 
     m_nPrinterBin = m_pObjStrm->QuickReaduInt16();
-    m_pPrinterBinName->Read(m_pObjStrm);
+    m_PrinterBinName.Read(m_pObjStrm.get());
 
     if (LwpFileHeader::m_nFileRevision >= 0x000B)
         m_nBdroffset = m_pObjStrm->QuickReadInt32();
 
     if (m_pObjStrm->CheckExtra())
     {
-        m_pPaperName->Read(m_pObjStrm);
+        m_PaperName.Read(m_pObjStrm.get());
         m_pObjStrm->SkipExtra();
     }
 
@@ -312,38 +302,37 @@ void LwpPageLayout::ParseFootNoteSeparator(XFPageMaster * pm1)
 */
 void LwpPageLayout::RegisterStyle()
 {
-    XFPageMaster* pm1 = new XFPageMaster();
-    m_pXFPageMaster = pm1;
+    std::unique_ptr<XFPageMaster> xpm1(new XFPageMaster);
 
-    ParseGeometry( pm1 );
+    ParseGeometry(xpm1.get());
     //Does not process LayoutScale, for watermark is not supported in SODC.
-    ParseWaterMark( pm1);
-    ParseMargins( pm1);
-    ParseColumns(pm1);
-    ParseBorders(pm1);
-    ParseShadow(pm1);
-//  ParseBackColor(pm1);
-    ParseBackGround(pm1);
-    ParseFootNoteSeparator(pm1);
-    pm1->SetTextDir(GetTextDirection());
+    ParseWaterMark(xpm1.get());
+    ParseMargins(xpm1.get());
+    ParseColumns(xpm1.get());
+    ParseBorders(xpm1.get());
+    ParseShadow(xpm1.get());
+    ParseBackGround(xpm1.get());
+    ParseFootNoteSeparator(xpm1.get());
+    xpm1->SetTextDir(GetTextDirection());
 
     LwpUseWhen* pUseWhen = GetUseWhen();
     if(IsComplex() ||( pUseWhen && pUseWhen->IsUseOnAllOddPages()))
     {
-        pm1->SetPageUsage(enumXFPageUsageMirror);
+        xpm1->SetPageUsage(enumXFPageUsageMirror);
     }
 
     //Add the page master to stylemanager
     XFStyleManager* pXFStyleManager = LwpGlobalMgr::GetInstance()->GetXFStyleManager();
-    m_pXFPageMaster = pm1 = static_cast<XFPageMaster*>(pXFStyleManager->AddStyle(pm1).m_pStyle);
+    XFPageMaster* pm1 = static_cast<XFPageMaster*>(pXFStyleManager->AddStyle(xpm1.release()).m_pStyle);
+    m_pXFPageMaster = pm1;
     OUString pmname = pm1->GetStyleName();
 
     //Add master page
-    XFMasterPage* p1 = new XFMasterPage();
+    std::unique_ptr<XFMasterPage> p1(new XFMasterPage);
     p1->SetStyleName(GetName().str());
     p1->SetPageMaster(pmname);
-    p1 = static_cast<XFMasterPage*>(pXFStyleManager->AddStyle(p1).m_pStyle);
-    m_StyleName = p1->GetStyleName();
+    XFMasterPage* p1_added = static_cast<XFMasterPage*>(pXFStyleManager->AddStyle(p1.release()).m_pStyle);
+    m_StyleName = p1_added->GetStyleName();
 
     //Set footer style
     LwpFooterLayout* pLayoutFooter = GetFooterLayout();
@@ -351,7 +340,7 @@ void LwpPageLayout::RegisterStyle()
     {
         pLayoutFooter->SetFoundry(m_pFoundry);
         pLayoutFooter->RegisterStyle(pm1);
-        pLayoutFooter->RegisterStyle(p1);
+        pLayoutFooter->RegisterStyle(p1_added);
     }
 
     //Set header style
@@ -360,7 +349,7 @@ void LwpPageLayout::RegisterStyle()
     {
         pLayoutHeader->SetFoundry(m_pFoundry);
         pLayoutHeader->RegisterStyle(pm1);
-        pLayoutHeader->RegisterStyle(p1);
+        pLayoutHeader->RegisterStyle(p1_added);
     }
     //register child layout style for mirror page and frame
     RegisterChildStyle();
@@ -372,18 +361,15 @@ void LwpPageLayout::RegisterStyle()
 */
 OUString LwpPageLayout::RegisterEndnoteStyle()
 {
-    XFPageMaster* pm1 = new XFPageMaster();
-    m_pXFPageMaster = pm1;
+    std::unique_ptr<XFPageMaster> pm1(new XFPageMaster);
 
-    ParseGeometry( pm1 );
-    ParseWaterMark( pm1);
-    ParseMargins( pm1);
-    ParseColumns(pm1);
-    ParseBorders(pm1);
-    ParseShadow(pm1);
-//  ParseBackColor(pm1);
-    ParseBackGround(pm1);
-    //ParseFootNoteSeparator(pm1);
+    ParseGeometry(pm1.get());
+    ParseWaterMark(pm1.get());
+    ParseMargins(pm1.get());
+    ParseColumns(pm1.get());
+    ParseBorders(pm1.get());
+    ParseShadow(pm1.get());
+    ParseBackGround(pm1.get());
     pm1->SetTextDir(GetTextDirection());
 
     LwpUseWhen* pUseWhen = GetUseWhen();
@@ -394,11 +380,11 @@ OUString LwpPageLayout::RegisterEndnoteStyle()
 
     //Add the page master to stylemanager
     XFStyleManager* pXFStyleManager = LwpGlobalMgr::GetInstance()->GetXFStyleManager();
-    m_pXFPageMaster = pm1 = static_cast<XFPageMaster*>(pXFStyleManager->AddStyle(pm1).m_pStyle);
-    OUString pmname = pm1->GetStyleName();
+    m_pXFPageMaster = static_cast<XFPageMaster*>(pXFStyleManager->AddStyle(pm1.release()).m_pStyle);
+    OUString pmname = m_pXFPageMaster->GetStyleName();
 
     //Add master page
-    XFMasterPage* p1 = new XFMasterPage();
+    std::unique_ptr<XFMasterPage> p1(new XFMasterPage);
     p1->SetStyleName("Endnote");
     p1->SetPageMaster(pmname);
 
@@ -407,8 +393,8 @@ OUString LwpPageLayout::RegisterEndnoteStyle()
     if(pLayoutFooter)
     {
         pLayoutFooter->SetFoundry(m_pFoundry);
-        pLayoutFooter->RegisterStyle(pm1);
-        pLayoutFooter->RegisterStyle(p1);
+        pLayoutFooter->RegisterStyle(m_pXFPageMaster);
+        pLayoutFooter->RegisterStyle(p1.get());
     }
 
     //Set header style
@@ -416,11 +402,11 @@ OUString LwpPageLayout::RegisterEndnoteStyle()
     if(pLayoutHeader)
     {
         pLayoutHeader->SetFoundry(m_pFoundry);
-        pLayoutHeader->RegisterStyle(pm1);
-        pLayoutHeader->RegisterStyle(p1);
+        pLayoutHeader->RegisterStyle(m_pXFPageMaster);
+        pLayoutHeader->RegisterStyle(p1.get());
     }
 
-    return pXFStyleManager->AddStyle(p1).m_pStyle->GetStyleName();
+    return pXFStyleManager->AddStyle(p1.release()).m_pStyle->GetStyleName();
 }
 /**
 * @descr:   Whether current page layout has columns
@@ -644,7 +630,7 @@ void LwpPageLayout::GetWidthAndHeight(double& fWidth, double& fHeight)
         if (!bScreen)//Printer available
         {
             Size aPaperSize = pPrinter->GetPaperSize();
-            aPaperSize = pPrinter->PixelToLogic( aPaperSize, MapMode( MAP_10TH_MM ) );
+            aPaperSize = pPrinter->PixelToLogic( aPaperSize, MapMode( MapUnit::Map10thMM ) );
             fWidth = static_cast<double>(aPaperSize.Width())/100;   //cm unit
             fHeight = static_cast<double>(aPaperSize.Height())/100;
         }
@@ -754,23 +740,22 @@ void LwpHeaderLayout::Read()
 
 void LwpHeaderLayout::RegisterStyle(XFPageMaster* pm1)
 {
-    XFHeaderStyle* pHeaderStyle = new XFHeaderStyle();
+    std::unique_ptr<XFHeaderStyle> xHeaderStyle(new XFHeaderStyle);
 
     //Modify page top margin
     //page top marging: from top of header to the top edge
     double top = GetMarginsValue(MARGIN_TOP);
     pm1->SetMargins(-1, -1, top, -1);
 
-    ParseMargins(pHeaderStyle);
-    ParseBorder(pHeaderStyle);
-    ParseShadow(pHeaderStyle);
-//  ParseBackColor(pHeaderStyle);
-    ParseBackGround(pHeaderStyle);
+    ParseMargins(xHeaderStyle.get());
+    ParseBorder(xHeaderStyle.get());
+    ParseShadow(xHeaderStyle.get());
+    ParseBackGround(xHeaderStyle.get());
 
-    ParseWaterMark(pHeaderStyle);
+    ParseWaterMark(xHeaderStyle.get());
     //End by
 
-    pm1->SetHeaderStyle(pHeaderStyle);
+    pm1->SetHeaderStyle(xHeaderStyle.release());
 }
 
 void LwpHeaderLayout::ParseMargins(XFHeaderStyle* ph1)
@@ -873,7 +858,7 @@ void LwpHeaderLayout::ParseWaterMark(XFHeaderStyle * pHeaderStyle)
 
 void LwpHeaderLayout::RegisterStyle(XFMasterPage* mp1)
 {
-    XFHeader* pHeader = new XFHeader();
+    rtl::Reference<XFHeader> xHeader(new XFHeader);
     rtl::Reference<LwpObject> pStory = m_Content.obj();
     if(pStory.is())
     {
@@ -888,12 +873,12 @@ void LwpHeaderLayout::RegisterStyle(XFMasterPage* mp1)
         //register child layout style for framelayout,
         RegisterChildStyle();
         //End
-        pChangeMgr->SetHeadFootChange(pHeader);
-        pStory->DoXFConvert(pHeader);
+        pChangeMgr->SetHeadFootChange(xHeader.get());
+        pStory->DoXFConvert(xHeader.get());
 
         pChangeMgr->SetHeadFootFribMap(false);
     }
-    mp1->SetHeader(pHeader);
+    mp1->SetHeader(xHeader);
 }
 
 LwpFooterLayout::LwpFooterLayout( LwpObjectHeader &objHdr, LwpSvStream* pStrm )
@@ -919,23 +904,21 @@ void LwpFooterLayout::Read()
 
 void LwpFooterLayout::RegisterStyle(XFPageMaster* pm1)
 {
-    XFFooterStyle* pFooterStyle = new XFFooterStyle();
+    std::unique_ptr<XFFooterStyle> xFooterStyle(new XFFooterStyle);
 
     //Modify page bottom margin
     //page bottom margin: from bottom of footer to the bottom edge
     double bottom = GetMarginsValue(MARGIN_BOTTOM);
     pm1->SetMargins(-1, -1, -1, bottom);
 
-    ParseMargins(pFooterStyle);
-    ParseBorder(pFooterStyle);
-    ParseShadow(pFooterStyle);
-    ParseBackGround(pFooterStyle);
-//  ParseBackColor(pFooterStyle);
+    ParseMargins(xFooterStyle.get());
+    ParseBorder(xFooterStyle.get());
+    ParseShadow(xFooterStyle.get());
+    ParseBackGround(xFooterStyle.get());
 
-    ParseWaterMark(pFooterStyle);
-    //End by
+    ParseWaterMark(xFooterStyle.get());
 
-    pm1->SetFooterStyle(pFooterStyle);
+    pm1->SetFooterStyle(xFooterStyle.release());
 }
 
 void LwpFooterLayout::ParseMargins(XFFooterStyle* pFooterStyle)
@@ -1026,7 +1009,7 @@ void LwpFooterLayout::ParseBackColor(XFFooterStyle* pFooterStyle)
 
 void LwpFooterLayout::RegisterStyle(XFMasterPage* mp1)
 {
-    XFFooter* pFooter = new XFFooter();
+    rtl::Reference<XFFooter> xFooter(new XFFooter);
     rtl::Reference<LwpObject> pStory = m_Content.obj(VO_STORY);
     //Call the RegisterStyle first to register the styles in footer paras, and then XFConvert()
     if(pStory.is())
@@ -1040,13 +1023,13 @@ void LwpFooterLayout::RegisterStyle(XFMasterPage* mp1)
         //register child layout style for framelayout,
         RegisterChildStyle();
 
-        pChangeMgr->SetHeadFootChange(pFooter);
+        pChangeMgr->SetHeadFootChange(xFooter.get());
 
-        pStory->DoXFConvert(pFooter);
+        pStory->DoXFConvert(xFooter.get());
 
         pChangeMgr->SetHeadFootFribMap(false);
     }
-    mp1->SetFooter(pFooter);
+    mp1->SetFooter(xFooter);
 }
 
 void LwpFooterLayout::ParseWaterMark(XFFooterStyle * pFooterStyle)

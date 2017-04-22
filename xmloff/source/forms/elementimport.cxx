@@ -1133,7 +1133,7 @@ namespace xmloff
         {
             OSL_VERIFY( PropertyConversion::convertString(
                 cppu::UnoType<decltype(m_nImagePosition)>::get(),
-                _rValue, OEnumMapper::getEnumMap( OEnumMapper::epImagePosition )
+                _rValue, aImagePositionMap
             ) >>= m_nImagePosition );
             m_bHaveImagePosition = true;
             return true;
@@ -1143,7 +1143,7 @@ namespace xmloff
         {
             OSL_VERIFY( PropertyConversion::convertString(
                 cppu::UnoType<decltype(m_nImageAlign)>::get(),
-                _rValue, OEnumMapper::getEnumMap( OEnumMapper::epImageAlign )
+                _rValue, aImageAlignMap
             ) >>= m_nImageAlign );
             return true;
         }
@@ -1421,7 +1421,7 @@ namespace xmloff
         const sal_Int32 m_nHandle;
         explicit EqualHandle( sal_Int32 _nHandle ) : m_nHandle( _nHandle ) { }
 
-        inline bool operator()( const PropertyValue& _rProp )
+        bool operator()( const PropertyValue& _rProp )
         {
             return _rProp.Handle == m_nHandle;
         }
@@ -1471,10 +1471,10 @@ namespace xmloff
 
     struct EqualName : public ::std::unary_function< PropertyValue, bool >
     {
-        const OUString m_sName;
+        const OUString & m_sName;
         explicit EqualName( const OUString& _rName ) : m_sName( _rName ) { }
 
-        inline bool operator()( const PropertyValue& _rProp )
+        bool operator()( const PropertyValue& _rProp )
         {
             return _rProp.Name == m_sName;
         }
@@ -1488,7 +1488,7 @@ namespace xmloff
         PropertyValueArray::iterator aDefaultControlPropertyPos = ::std::find_if(
             m_aValues.begin(),
             m_aValues.end(),
-            EqualName( OUString( "DefaultControl"  ) )
+            EqualName( "DefaultControl" )
         );
         if ( aDefaultControlPropertyPos != m_aValues.end() )
         {
@@ -1553,13 +1553,11 @@ namespace xmloff
             const Reference< XAttributeList >& _rxAttrList)
     {
         // is it the "option" sub tag of a listbox ?
-        static const char s_sOptionElementName[] = "option";
-        if (s_sOptionElementName == _rLocalName)
+        if (_rLocalName == "option")
             return new OListOptionImport(GetImport(), _nPrefix, _rLocalName, this);
 
         // is it the "item" sub tag of a combobox ?
-        static const char s_sItemElementName[] = "item";
-        if (s_sItemElementName == _rLocalName)
+        if (_rLocalName == "item")
             return new OComboItemImport(GetImport(), _nPrefix, _rLocalName, this);
 
         // everything else
@@ -1681,7 +1679,7 @@ namespace xmloff
             PropertyConversion::convertString(
                 ::cppu::UnoType<sal_Int16>::get(),
                 _rValue,
-                OEnumMapper::getEnumMap( OEnumMapper::epListLinkageType )
+                aListLinkageMap
             ) >>= nLinkageType;
 
             m_bLinkWithIndexes = ( nLinkageType != 0 );
@@ -1792,14 +1790,14 @@ namespace xmloff
 
         // propagate the selected flag
         bool bSelected(false);
-        ::sax::Converter::convertBool(bSelected,
+        (void)::sax::Converter::convertBool(bSelected,
             _rxAttrList->getValueByName(sSelectedAttribute));
         if (bSelected)
             m_xListBoxImport->implSelectCurrentItem();
 
         // same for the default selected
         bool bDefaultSelected(false);
-        ::sax::Converter::convertBool(bDefaultSelected,
+        (void)::sax::Converter::convertBool(bDefaultSelected,
             _rxAttrList->getValueByName(sDefaultSelectedAttribute));
         if (bDefaultSelected)
             m_xListBoxImport->implDefaultSelectCurrentItem();

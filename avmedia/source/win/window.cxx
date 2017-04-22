@@ -43,13 +43,13 @@ namespace avmedia { namespace win {
 
 static ::osl::Mutex& ImplGetOwnStaticMutex()
 {
-    static ::osl::Mutex* pMutex = NULL;
+    static ::osl::Mutex* pMutex = nullptr;
 
-    if( pMutex == NULL )
+    if( pMutex == nullptr )
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
 
-        if( pMutex == NULL )
+        if( pMutex == nullptr )
         {
             static ::osl::Mutex aMutex;
             pMutex = &aMutex;
@@ -61,7 +61,7 @@ static ::osl::Mutex& ImplGetOwnStaticMutex()
 
 LRESULT CALLBACK MediaPlayerWndProc( HWND hWnd,UINT nMsg, WPARAM nPar1, LPARAM nPar2 )
 {
-    Window* pWindow = (Window*) ::GetWindowLongPtr( hWnd, 0 );
+    Window* pWindow = reinterpret_cast<Window*>(::GetWindowLongPtr( hWnd, 0 ));
     bool    bProcessed = true;
 
     if( pWindow )
@@ -159,18 +159,18 @@ LRESULT CALLBACK MediaPlayerWndProc( HWND hWnd,UINT nMsg, WPARAM nPar1, LPARAM n
 
 WNDCLASS* lcl_getWndClass()
 {
-    static WNDCLASS* s_pWndClass = NULL;
+    static WNDCLASS* s_pWndClass = nullptr;
     if ( !s_pWndClass )
     {
         s_pWndClass = new WNDCLASS;
 
         memset( s_pWndClass, 0, sizeof( *s_pWndClass ) );
-        s_pWndClass->hInstance = GetModuleHandle( NULL );
+        s_pWndClass->hInstance = GetModuleHandle( nullptr );
         s_pWndClass->cbWndExtra = sizeof( DWORD );
         s_pWndClass->lpfnWndProc = MediaPlayerWndProc;
         s_pWndClass->lpszClassName = "com_sun_star_media_PlayerWnd";
-        s_pWndClass->hbrBackground = (HBRUSH) ::GetStockObject( BLACK_BRUSH );
-        s_pWndClass->hCursor = ::LoadCursor( NULL, IDC_ARROW );
+        s_pWndClass->hbrBackground = static_cast<HBRUSH>(::GetStockObject( BLACK_BRUSH ));
+        s_pWndClass->hCursor = ::LoadCursor( nullptr, IDC_ARROW );
 
         ::RegisterClass( s_pWndClass );
     }
@@ -182,8 +182,8 @@ Window::Window( const uno::Reference< lang::XMultiServiceFactory >& rxMgr, Playe
     maListeners( maMutex ),
     meZoomLevel( media::ZoomLevel_NOT_AVAILABLE ),
     mrPlayer( rPlayer ),
-    mnFrameWnd( 0 ),
-    mnParentWnd( 0 ),
+    mnFrameWnd( nullptr ),
+    mnParentWnd( nullptr ),
     mnPointerType( awt::SystemPointer::ARROW )
 {
     ::osl::MutexGuard aGuard( ImplGetOwnStaticMutex() );
@@ -297,17 +297,17 @@ bool Window::create( const uno::Sequence< uno::Any >& rArguments )
 
         mnParentWnd = reinterpret_cast<HWND>(nWnd);
 
-        mnFrameWnd = ::CreateWindow( mpWndClass->lpszClassName, NULL,
+        mnFrameWnd = ::CreateWindow( mpWndClass->lpszClassName, nullptr,
                                            WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
                                            aRect.X, aRect.Y, aRect.Width, aRect.Height,
-                                           mnParentWnd, NULL, mpWndClass->hInstance, 0 );
+                                           mnParentWnd, nullptr, mpWndClass->hInstance, nullptr );
 
         if( mnFrameWnd )
         {
-            ::SetWindowLongPtr( mnFrameWnd, 0, (LONG_PTR) this );
+            ::SetWindowLongPtr( mnFrameWnd, 0, reinterpret_cast<LONG_PTR>(this) );
 
-                        pVideoWindow->put_Owner( (OAHWND) mnFrameWnd );
-                        pVideoWindow->put_MessageDrain( (OAHWND) mnFrameWnd );
+                        pVideoWindow->put_Owner( reinterpret_cast<OAHWND>(mnFrameWnd) );
+                        pVideoWindow->put_MessageDrain( reinterpret_cast<OAHWND>(mnFrameWnd) );
                         pVideoWindow->put_WindowStyle( WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN );
 
                         mrPlayer.setNotifyWnd( mnFrameWnd );
@@ -317,7 +317,7 @@ bool Window::create( const uno::Sequence< uno::Any >& rArguments )
         }
     }
 
-    return( mnFrameWnd != 0 );
+    return( mnFrameWnd != nullptr );
 }
 
 void Window::processGraphEvent()
@@ -340,17 +340,15 @@ void Window::updatePointer()
         break;
     }
 
-    ::SetCursor( ::LoadCursor( NULL, pCursorName ) );
+    ::SetCursor( ::LoadCursor( nullptr, pCursorName ) );
 }
 
 void SAL_CALL Window::update(  )
-    throw (uno::RuntimeException)
 {
-    ::RedrawWindow( (HWND) mnFrameWnd, NULL, NULL, RDW_ALLCHILDREN | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE  );
+    ::RedrawWindow( mnFrameWnd, nullptr, nullptr, RDW_ALLCHILDREN | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE  );
 }
 
 sal_Bool SAL_CALL Window::setZoomLevel( media::ZoomLevel eZoomLevel )
-    throw (uno::RuntimeException)
 {
         boolean bRet = false;
 
@@ -370,19 +368,16 @@ sal_Bool SAL_CALL Window::setZoomLevel( media::ZoomLevel eZoomLevel )
 }
 
 media::ZoomLevel SAL_CALL Window::getZoomLevel(  )
-    throw (uno::RuntimeException)
 {
     return meZoomLevel;
 }
 
 void SAL_CALL Window::setPointerType( sal_Int32 nPointerType )
-    throw (uno::RuntimeException)
 {
     mnPointerType = nPointerType;
 }
 
 void SAL_CALL Window::setPosSize( sal_Int32 X, sal_Int32 Y, sal_Int32 Width, sal_Int32 Height, sal_Int16 )
-    throw (uno::RuntimeException)
 {
     if( mnFrameWnd )
     {
@@ -392,7 +387,6 @@ void SAL_CALL Window::setPosSize( sal_Int32 X, sal_Int32 Y, sal_Int32 Width, sal
 }
 
 awt::Rectangle SAL_CALL Window::getPosSize()
-    throw (uno::RuntimeException)
 {
     awt::Rectangle aRet;
 
@@ -413,7 +407,6 @@ awt::Rectangle SAL_CALL Window::getPosSize()
 }
 
 void SAL_CALL Window::setVisible( sal_Bool bVisible )
-    throw (uno::RuntimeException)
 {
     if( mnFrameWnd )
     {
@@ -427,104 +420,87 @@ void SAL_CALL Window::setVisible( sal_Bool bVisible )
 }
 
 void SAL_CALL Window::setEnable( sal_Bool bEnable )
-    throw (uno::RuntimeException)
 {
     if( mnFrameWnd )
         ::EnableWindow( mnFrameWnd, bEnable );
 }
 
 void SAL_CALL Window::setFocus(  )
-    throw (uno::RuntimeException)
 {
     if( mnFrameWnd )
         ::SetFocus( mnFrameWnd );
 }
 
 void SAL_CALL Window::addWindowListener( const uno::Reference< awt::XWindowListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.addInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::removeWindowListener( const uno::Reference< awt::XWindowListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.removeInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::addFocusListener( const uno::Reference< awt::XFocusListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.addInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::removeFocusListener( const uno::Reference< awt::XFocusListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.removeInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::addKeyListener( const uno::Reference< awt::XKeyListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.addInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::removeKeyListener( const uno::Reference< awt::XKeyListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.removeInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::addMouseListener( const uno::Reference< awt::XMouseListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.addInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::removeMouseListener( const uno::Reference< awt::XMouseListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.removeInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::addMouseMotionListener( const uno::Reference< awt::XMouseMotionListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.addInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::removeMouseMotionListener( const uno::Reference< awt::XMouseMotionListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.removeInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::addPaintListener( const uno::Reference< awt::XPaintListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.addInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::removePaintListener( const uno::Reference< awt::XPaintListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.removeInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::dispose(  )
-    throw (uno::RuntimeException)
 {
 }
 
 void SAL_CALL Window::addEventListener( const uno::Reference< lang::XEventListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.addInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 void SAL_CALL Window::removeEventListener( const uno::Reference< lang::XEventListener >& xListener )
-    throw (uno::RuntimeException)
 {
     maListeners.removeInterface( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
@@ -582,23 +558,18 @@ void Window::fireSetFocusEvent( const css::awt::FocusEvent& rEvt )
 }
 
 OUString SAL_CALL Window::getImplementationName(  )
-    throw (uno::RuntimeException)
 {
     return OUString( AVMEDIA_WIN_WINDOW_IMPLEMENTATIONNAME );
 }
 
 sal_Bool SAL_CALL Window::supportsService( const OUString& ServiceName )
-    throw (uno::RuntimeException)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL Window::getSupportedServiceNames(  )
-    throw (uno::RuntimeException)
 {
-    uno::Sequence<OUString> aRet { AVMEDIA_WIN_WINDOW_SERVICENAME };
-
-    return aRet;
+    return { AVMEDIA_WIN_WINDOW_SERVICENAME };
 }
 
 } // namespace win

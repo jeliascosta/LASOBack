@@ -38,13 +38,13 @@ namespace basegfx
         sal_uInt32                  mnWidth;
         sal_uInt32                  mnHeight;
         sal_uInt32                  mnCount;
-        BPixel*                     mpContent;
+        std::unique_ptr<BPixel[]>   mpContent;
 
     public:
         // reset
         void reset()
         {
-            memset(mpContent, 0, sizeof(BPixel) * mnCount);
+            memset(mpContent.get(), 0, sizeof(BPixel) * mnCount);
         }
 
         // constructor/destructor
@@ -55,11 +55,6 @@ namespace basegfx
             mpContent(new BPixel[mnCount])
         {
             reset();
-        }
-
-        ~BPixelRaster()
-        {
-            delete [] mpContent;
         }
 
         // coordinate calcs between X/Y and span

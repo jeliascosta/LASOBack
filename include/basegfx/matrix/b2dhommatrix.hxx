@@ -29,7 +29,7 @@ namespace basegfx
     class B2DTuple;
     class Impl2DHomMatrix;
 
-    class BASEGFX_DLLPUBLIC B2DHomMatrix
+    class SAL_WARN_UNUSED BASEGFX_DLLPUBLIC B2DHomMatrix
     {
     public:
         typedef o3tl::cow_wrapper< Impl2DHomMatrix > ImplType;
@@ -40,6 +40,7 @@ namespace basegfx
     public:
         B2DHomMatrix();
         B2DHomMatrix(const B2DHomMatrix& rMat);
+        B2DHomMatrix(B2DHomMatrix&& rMat);
         ~B2DHomMatrix();
 
         /** constructor to allow setting all needed values for a 3x2 matrix at once. The
@@ -90,6 +91,7 @@ namespace basegfx
 
         // assignment operator
         B2DHomMatrix& operator=(const B2DHomMatrix& rMat);
+        B2DHomMatrix& operator=(B2DHomMatrix&& rMat);
 
         // Help routine to decompose given homogen 3x3 matrix to components. A correction of
         // the components is done to avoid inaccuracies.

@@ -39,17 +39,17 @@ typedef CollTestImplHelper< ov::excel::XHPageBreaks > ScVbaHPageBreaks_BASE;
 class ScVbaHPageBreaks : public ScVbaHPageBreaks_BASE
 {
 public:
+    /// @throws css::uno::RuntimeException
     ScVbaHPageBreaks( const css::uno::Reference< ov::XHelperInterface >& xParent,
                     const css::uno::Reference< css::uno::XComponentContext >& xContext,
-                    css::uno::Reference< css::sheet::XSheetPageBreak >& xSheetPageBreak) throw (css::uno::RuntimeException);
-    virtual ~ScVbaHPageBreaks(){}
+                    css::uno::Reference< css::sheet::XSheetPageBreak >& xSheetPageBreak);
 
     // XHPageBreaks
-    virtual css::uno::Any SAL_CALL Add( const css::uno::Any& Before) throw ( css::script::BasicErrorException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL Add( const css::uno::Any& Before) override;
 
     // XEnumerationAccess
-    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override;
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Type SAL_CALL getElementType() override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
     virtual css::uno::Any createCollectionObject(const css::uno::Any&) override;
 
     // XHelperInterface
@@ -63,18 +63,19 @@ typedef CollTestImplHelper< ov::excel::XVPageBreaks > ScVbaVPageBreaks_BASE;
 class ScVbaVPageBreaks : public ScVbaVPageBreaks_BASE
 {
 public:
+    /// @throws css::uno::RuntimeException
     ScVbaVPageBreaks( const css::uno::Reference< ov::XHelperInterface >& xParent,
                       const css::uno::Reference< css::uno::XComponentContext >& xContext,
-                      css::uno::Reference< css::sheet::XSheetPageBreak >& xSheetPageBreak ) throw ( css::uno::RuntimeException );
+                      css::uno::Reference< css::sheet::XSheetPageBreak >& xSheetPageBreak );
 
-    virtual ~ScVbaVPageBreaks();
+    virtual ~ScVbaVPageBreaks() override;
 
     // XVPageBreaks
-    virtual css::uno::Any SAL_CALL Add( const css::uno::Any& Before ) throw ( css::script::BasicErrorException, css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL Add( const css::uno::Any& Before ) override;
 
     // XEnumerationAccess
-    virtual css::uno::Type SAL_CALL getElementType() throw ( css::uno::RuntimeException ) override;
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw ( css::uno::RuntimeException ) override;
+    virtual css::uno::Type SAL_CALL getElementType() override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
     virtual css::uno::Any createCollectionObject( const css::uno::Any& ) override;
 
     // XHelperInterface

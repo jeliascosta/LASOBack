@@ -60,53 +60,44 @@ namespace x11 {
         static css::uno::Reference<css::datatransfer::clipboard::XClipboard>
         create( SelectionManager& rManager, Atom aSelection );
 
-        virtual ~X11Clipboard();
+        virtual ~X11Clipboard() override;
 
         /*
          * XServiceInfo
          */
 
-        virtual OUString SAL_CALL getImplementationName(  )
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName(  ) override;
 
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
 
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
         /*
          * XClipboard
          */
 
-        virtual css::uno::Reference< css::datatransfer::XTransferable > SAL_CALL getContents()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::datatransfer::XTransferable > SAL_CALL getContents() override;
 
         virtual void SAL_CALL setContents(
             const css::uno::Reference< css::datatransfer::XTransferable >& xTrans,
-            const css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner >& xClipboardOwner )
-            throw(css::uno::RuntimeException, std::exception) override;
+            const css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner >& xClipboardOwner ) override;
 
-        virtual OUString SAL_CALL getName()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getName() override;
 
         /*
          * XClipboardEx
          */
 
-        virtual sal_Int8 SAL_CALL getRenderingCapabilities()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int8 SAL_CALL getRenderingCapabilities() override;
 
         /*
          * XClipboardNotifier
          */
         virtual void SAL_CALL addClipboardListener(
-            const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener )
-            throw(css::uno::RuntimeException, std::exception) override;
+            const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener ) override;
 
         virtual void SAL_CALL removeClipboardListener(
-            const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener )
-            throw(css::uno::RuntimeException, std::exception) override;
+            const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener ) override;
 
         /*
          *  SelectionAdaptor

@@ -100,7 +100,7 @@ protected:
     void ApplyMenu(
         css::uno::Reference< css::container::XIndexContainer >& rMenuBar,
         css::uno::Reference< css::lang::XSingleComponentFactory >& rFactory,
-        SvxConfigEntry *pMenuData = nullptr );
+        SvxConfigEntry *pMenuData );
 
     bool LoadSubMenus(
         const css::uno::Reference< css::container::XIndexAccess >& xMenuSettings,
@@ -187,7 +187,7 @@ public:
         const OUString& aModuleId,
         bool docConfig );
 
-    virtual ~MenuSaveInData();
+    virtual ~MenuSaveInData() override;
 
     /// methods inherited from SaveInData
     SvxEntries*         GetEntries() override;
@@ -210,7 +210,7 @@ public:
         const css::uno::Reference< css::ui::XUIConfigurationManager >& xCfgMgr,
         const css::uno::Reference< css::ui::XUIConfigurationManager >& xParentCfgMgr,
         const OUString& aModuleId, bool bIsDocConfig );
-    virtual ~ContextMenuSaveInData();
+    virtual ~ContextMenuSaveInData() override;
 
     SvxEntries* GetEntries() override;
     void SetEntries( SvxEntries* pNewEntries ) override;
@@ -304,7 +304,7 @@ public:
     void    SetVisible( bool b ) { bIsVisible = b; }
     bool    IsVisible() const { return bIsVisible; }
 
-    void    SetBackupGraphic( css::uno::Reference< css::graphic::XGraphic > graphic )
+    void    SetBackupGraphic( css::uno::Reference< css::graphic::XGraphic > const & graphic )
                 { xBackupGraphic = graphic; }
 
     const css::uno::Reference< css::graphic::XGraphic >& GetBackupGraphic()
@@ -326,7 +326,7 @@ protected:
 
 public:
     SvxMenuEntriesListBox(vcl::Window*, SvxConfigPage*);
-    virtual ~SvxMenuEntriesListBox();
+    virtual ~SvxMenuEntriesListBox() override;
     virtual void dispose() override;
 
     virtual sal_Int8    AcceptDrop( const AcceptDropEvent& rEvt ) override;
@@ -354,8 +354,8 @@ private:
     bool                                bInitialised;
     SaveInData*                         pCurrentSaveInData;
 
-    DECL_LINK_TYPED(  SelectSaveInLocation, ListBox&, void );
-    DECL_LINK_TYPED( AsyncInfoMsg, void*, void );
+    DECL_LINK(  SelectSaveInLocation, ListBox&, void );
+    DECL_LINK( AsyncInfoMsg, void*, void );
 
 protected:
 
@@ -367,6 +367,11 @@ protected:
     VclPtr<PushButton>                         m_pNewTopLevelButton;
     VclPtr<MenuButton>                         m_pModifyTopLevelButton;
 
+    VclPtr<FixedText>                          m_pToolbarStyleLabel;
+    VclPtr<RadioButton>                        m_pIconsOnlyRB;
+    VclPtr<RadioButton>                        m_pTextOnlyRB;
+    VclPtr<RadioButton>                        m_pIconsAndTextRB;
+
     // the contents section where the contents of the selected
     // menu or toolbar are displayed
     VclPtr<VclFrame>                           m_pContents;
@@ -375,7 +380,12 @@ protected:
     VclPtr<SvTreeListBox>                      m_pContentsListBox;
 
     VclPtr<PushButton>                         m_pAddCommandsButton;
+    VclPtr<PushButton>                         m_pAddSeparatorButton;
+    VclPtr<PushButton>                         m_pAddSubmenuButton;
     VclPtr<MenuButton>                         m_pModifyCommandButton;
+    VclPtr<PushButton>                         m_pDeleteCommandButton;
+    // Resets the top level toolbar to default settings
+    VclPtr<PushButton>                         m_pResetTopLevelButton;
 
     VclPtr<PushButton>                         m_pMoveUpButton;
     VclPtr<PushButton>                         m_pMoveDownButton;
@@ -393,7 +403,7 @@ protected:
 
     SvxConfigPage( vcl::Window*, const SfxItemSet& );
 
-    DECL_LINK_TYPED( MoveHdl, Button *, void );
+    DECL_LINK( MoveHdl, Button *, void );
 
     virtual SaveInData* CreateSaveInData(
         const css::uno::Reference< css::ui::XUIConfigurationManager >&,
@@ -422,7 +432,7 @@ protected:
 
 public:
 
-    virtual ~SvxConfigPage();
+    virtual ~SvxConfigPage() override;
     virtual void dispose() override;
 
     static bool     CanConfig( const OUString& rModuleId );
@@ -468,13 +478,16 @@ class SvxMenuConfigPage : public SvxConfigPage
 {
 private:
     bool m_bIsMenuBar;
-    DECL_LINK_TYPED( SelectMenu, ListBox&, void );
-    DECL_LINK_TYPED( SelectMenuEntry, SvTreeListBox *, void );
-    DECL_LINK_TYPED( NewMenuHdl, Button *, void );
-    DECL_LINK_TYPED( MenuSelectHdl, MenuButton *, void );
-    DECL_LINK_TYPED( EntrySelectHdl, MenuButton *, void );
-    DECL_LINK_TYPED( AddCommandsHdl, Button *, void );
-    DECL_LINK_TYPED( AddFunctionHdl, SvxScriptSelectorDialog&, void );
+    DECL_LINK( SelectMenu, ListBox&, void );
+    DECL_LINK( SelectMenuEntry, SvTreeListBox *, void );
+    DECL_LINK( NewMenuHdl, Button *, void );
+    DECL_LINK( MenuSelectHdl, MenuButton *, void );
+    DECL_LINK( EntrySelectHdl, MenuButton *, void );
+    DECL_LINK( AddCommandsHdl, Button *, void );
+    DECL_LINK( AddSeparatorHdl, Button *, void );
+    DECL_LINK( AddSubmenuHdl, Button *, void );
+    DECL_LINK( DeleteCommandHdl, Button *, void );
+    DECL_LINK( AddFunctionHdl, SvxScriptSelectorDialog&, void );
 
     void            Init() override;
     void            UpdateButtonStates() override;
@@ -484,7 +497,7 @@ private:
 
 public:
     SvxMenuConfigPage( vcl::Window *pParent, const SfxItemSet& rItemSet, bool bIsMenuBar = true );
-    virtual ~SvxMenuConfigPage();
+    virtual ~SvxMenuConfigPage() override;
     virtual void dispose() override;
 
     SaveInData* CreateSaveInData(
@@ -510,15 +523,15 @@ class SvxMainMenuOrganizerDialog : public ModalDialog
 
     void UpdateButtonStates();
 
-    DECL_LINK_TYPED( MoveHdl, Button *, void );
-    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
-    DECL_LINK_TYPED( SelectHdl, SvTreeListBox*, void );
+    DECL_LINK( MoveHdl, Button *, void );
+    DECL_LINK( ModifyHdl, Edit&, void );
+    DECL_LINK( SelectHdl, SvTreeListBox*, void );
 
 public:
     SvxMainMenuOrganizerDialog (
         vcl::Window*, SvxEntries*,
         SvxConfigEntry*, bool bCreateMenu = false );
-    virtual ~SvxMainMenuOrganizerDialog();
+    virtual ~SvxMainMenuOrganizerDialog() override;
     virtual void dispose() override;
 
     SvxEntries*     GetEntries() { return mpEntries;}
@@ -544,7 +557,7 @@ protected:
 public:
 
     SvxToolbarEntriesListBox(vcl::Window* pParent, SvxToolbarConfigPage* pPg);
-    virtual ~SvxToolbarEntriesListBox();
+    virtual ~SvxToolbarEntriesListBox() override;
     virtual void dispose() override;
 
     virtual TriState NotifyMoving(
@@ -560,14 +573,18 @@ class SvxToolbarConfigPage : public SvxConfigPage
 {
 private:
 
-    DECL_LINK_TYPED( SelectToolbar, ListBox&, void );
-    DECL_LINK_TYPED( SelectToolbarEntry, SvTreeListBox*, void );
-    DECL_LINK_TYPED( ToolbarSelectHdl, MenuButton *, void );
-    DECL_LINK_TYPED( EntrySelectHdl, MenuButton *, void );
-    DECL_LINK_TYPED( NewToolbarHdl, Button *, void );
-    DECL_LINK_TYPED( AddCommandsHdl, Button *, void );
-    DECL_LINK_TYPED( AddFunctionHdl, SvxScriptSelectorDialog&, void );
-    DECL_LINK_TYPED( MoveHdl, Button *, void );
+    DECL_LINK( SelectToolbar, ListBox&, void );
+    DECL_LINK( SelectToolbarEntry, SvTreeListBox*, void );
+    DECL_LINK( ToolbarSelectHdl, MenuButton *, void );
+    DECL_LINK( EntrySelectHdl, MenuButton *, void );
+    DECL_LINK( StyleChangeHdl, Button *, void );
+    DECL_LINK( NewToolbarHdl, Button *, void );
+    DECL_LINK( AddCommandsHdl, Button *, void );
+    DECL_LINK( AddSeparatorHdl, Button *, void );
+    DECL_LINK( DeleteCommandHdl, Button *, void );
+    DECL_LINK( ResetTopLevelHdl, Button *, void );
+    DECL_LINK( AddFunctionHdl, SvxScriptSelectorDialog&, void );
+    DECL_LINK( MoveHdl, Button *, void );
 
     void            UpdateButtonStates() override;
     short           QueryReset() override;
@@ -575,9 +592,12 @@ private:
     void            DeleteSelectedContent() override;
     void            DeleteSelectedTopLevel() override;
 
+    VclPtr<PopupMenu> m_pMenu;
+    VclPtr<PopupMenu> m_pEntry;
+
 public:
     SvxToolbarConfigPage( vcl::Window *pParent, const SfxItemSet& rItemSet );
-    virtual ~SvxToolbarConfigPage();
+    virtual ~SvxToolbarConfigPage() override;
     virtual void dispose() override;
 
     void            AddFunction( SvTreeListEntry* pTarget = nullptr,
@@ -598,7 +618,7 @@ class ToolbarSaveInData : public SaveInData
 {
 private:
 
-    SvxConfigEntry*                                pRootEntry;
+    std::unique_ptr<SvxConfigEntry>           pRootEntry;
     OUString                                  m_aDescriptorContainer;
 
     css::uno::Reference
@@ -611,7 +631,7 @@ private:
     void        ApplyToolbar(
         css::uno::Reference< css::container::XIndexContainer >& rNewToolbarBar,
         css::uno::Reference< css::lang::XSingleComponentFactory >& rFactory,
-        SvxConfigEntry *pToolbar = nullptr );
+        SvxConfigEntry *pToolbar );
 
 public:
 
@@ -621,7 +641,7 @@ public:
         const OUString& aModuleId,
         bool docConfig );
 
-    virtual ~ToolbarSaveInData();
+    virtual ~ToolbarSaveInData() override;
 
     void            CreateToolbar( SvxConfigEntry* pToolbar );
     void            RestoreToolbar( SvxConfigEntry* pToolbar );
@@ -654,7 +674,7 @@ private:
 
 public:
     SvxNewToolbarDialog(vcl::Window* pWindow, const OUString& rName);
-    virtual ~SvxNewToolbarDialog();
+    virtual ~SvxNewToolbarDialog() override;
     virtual void dispose() override;
 
     VclPtr<ListBox>        m_pSaveInListBox;
@@ -703,15 +723,15 @@ public:
         const css::uno::Reference< css::ui::XImageManager >& rXParentImageManager
             );
 
-    virtual ~SvxIconSelectorDialog();
+    virtual ~SvxIconSelectorDialog() override;
     virtual void dispose() override;
 
     css::uno::Reference< css::graphic::XGraphic >
         GetSelectedIcon();
 
-    DECL_LINK_TYPED( SelectHdl, ToolBox *, void );
-    DECL_LINK_TYPED( ImportHdl, Button *, void );
-    DECL_LINK_TYPED( DeleteHdl, Button *, void );
+    DECL_LINK( SelectHdl, ToolBox *, void );
+    DECL_LINK( ImportHdl, Button *, void );
+    DECL_LINK( DeleteHdl, Button *, void );
 };
 
 class SvxIconReplacementDialog : public MessBox
@@ -737,7 +757,7 @@ private:
     VclPtr<VclMultiLineEdit>   pLineEditDescription;
 public:
     SvxIconChangeDialog(vcl::Window *pWindow, const OUString& aMessage);
-    virtual ~SvxIconChangeDialog();
+    virtual ~SvxIconChangeDialog() override;
     virtual void dispose() override;
 };
 #endif // INCLUDED_CUI_SOURCE_INC_CFG_HXX

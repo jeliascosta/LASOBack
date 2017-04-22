@@ -37,17 +37,17 @@ private:
                             SystemChildWindow & operator= (const SystemChildWindow &) = delete;
 
 public:
-    explicit                SystemChildWindow( vcl::Window* pParent, WinBits nStyle = 0 );
+    explicit                SystemChildWindow( vcl::Window* pParent, WinBits nStyle );
                             // create a SystemChildWindow using the given SystemWindowData
     explicit                SystemChildWindow( vcl::Window* pParent, WinBits nStyle, SystemWindowData *pData, bool bShow = true );
-    virtual                 ~SystemChildWindow();
+    virtual                 ~SystemChildWindow() override;
     virtual void            dispose() override;
 
     virtual const SystemEnvData* GetSystemData() const override;
 
     //  per default systemchildwindows erase their background for better plugin support
     //  however, this might not always be required
-    void                    EnableEraseBackground( bool bEnable = true );
+    void                    EnableEraseBackground( bool bEnable );
     void                    SetForwardKey( bool bEnable );
     // return the platform specific handle/id of this window;
     sal_IntPtr              GetParentWindowHandle();

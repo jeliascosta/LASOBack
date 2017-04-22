@@ -27,6 +27,7 @@
 #include <X11/Xutil.h>
 
 #include <vclpluginapi.h>
+#include "salframe.h"
 #include <vector>
 
 class SalDisplay;
@@ -88,7 +89,6 @@ public:
         WIN_APP_STATE,
         WIN_EXPANDED_SIZE,
         WIN_ICONS,
-        WIN_WORKSPACE_NAMES,
         WIN_CLIENT_LIST,
 
         // atoms for general WM hints
@@ -107,7 +107,6 @@ public:
         SAL_USEREVENT,
         SAL_EXTTEXTEVENT,
         SAL_GETTIMEEVENT,
-        DTWM_IS_RUNNING,
         VCL_SYSTEM_SETTINGS,
         XSETTINGS,
         XEMBED,
@@ -126,20 +125,6 @@ public:
     static const int decoration_CloseBtn        = 0x00000020;
     static const int decoration_All         = 0x10000000;
 
-    /*
-     *  window type
-     */
-    enum WMWindowType
-    {
-        windowType_Normal,
-        windowType_ModalDialogue,
-        windowType_ModelessDialogue,
-        windowType_Utility,
-        windowType_Splash,
-        windowType_Toolbar,
-        windowType_Dock
-    };
-
 protected:
     SalDisplay*             m_pSalDisplay;      // Display to use
     Display*                m_pDisplay;         // X Display of SalDisplay
@@ -147,9 +132,8 @@ protected:
     Atom                    m_aWMAtoms[ NetAtomMax];
     int                     m_nDesktops;
     bool                    m_bEqualWorkAreas;
-    ::std::vector< Rectangle >
+    ::std::vector< tools::Rectangle >
                             m_aWMWorkAreas;
-    bool                    m_bTransientBehaviour;
     bool                    m_bEnableAlwaysOnTopWorks;
     bool                    m_bLegacyPartialFullscreen;
     int                     m_nWinGravity;
@@ -195,7 +179,7 @@ public:
     /*
      *  gets the specified workarea
      */
-    const Rectangle& getWorkArea( int n ) const
+    const tools::Rectangle& getWorkArea( int n ) const
     { return m_aWMWorkAreas[n]; }
 
     /*
@@ -259,7 +243,7 @@ public:
      *  set hints what decoration is needed;
      *  must be called before showing the frame
      */
-    virtual void setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType eType, int nDecorationFlags, X11SalFrame* pTransientFrame = nullptr ) const;
+    virtual void setFrameTypeAndDecoration( X11SalFrame* pFrame, WMWindowType eType, int nDecorationFlags, X11SalFrame* pTransientFrame ) const;
 
     /*
      *  tells whether there is WM support for splash screens
@@ -296,13 +280,6 @@ public:
     { return m_nWinGravity; }
     int getInitWinGravity() const
     { return m_nInitWinGravity; }
-
-    /*
-     *  expected behaviour is that the WM will not allow transient
-     *  windows to get stacked behind the windows they are transient for
-     */
-    bool isTransientBehaviourAsExpected() const
-    { return m_bTransientBehaviour; }
 
     /*
      *  changes the transient hint of a window to reference frame

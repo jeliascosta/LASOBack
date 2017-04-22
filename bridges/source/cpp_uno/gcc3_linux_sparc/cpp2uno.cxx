@@ -21,10 +21,10 @@
 #include <sal/log.hxx>
 #include <typelib/typedescription.hxx>
 #include <uno/data.h>
-#include "bridges/cpp_uno/shared/bridge.hxx"
-#include "bridges/cpp_uno/shared/cppinterfaceproxy.hxx"
-#include "bridges/cpp_uno/shared/types.hxx"
-#include "bridges/cpp_uno/shared/vtablefactory.hxx"
+#include "bridge.hxx"
+#include "cppinterfaceproxy.hxx"
+#include "types.hxx"
+#include "vtablefactory.hxx"
 #include "share.hxx"
 
 using namespace com::sun::star::uno;
@@ -426,7 +426,7 @@ void * pRegReturn = &nRegReturn;
     if( bComplex )
     {
         __asm__( "add %i7, 4, %i7\n\t" );
-        // after call to complex return valued funcion there is an unimp instruction
+        // after call to complex return valued function there is an unimp instruction
     }
 
 }
@@ -485,7 +485,7 @@ bridges::cpp_uno::shared::VtableFactory::mapBlockToVtable(void * block)
     return static_cast< Slot * >(block) + 2;
 }
 
-sal_Size bridges::cpp_uno::shared::VtableFactory::getBlockSize(
+std::size_t bridges::cpp_uno::shared::VtableFactory::getBlockSize(
     sal_Int32 slotCount)
 {
     return (slotCount + 2) * sizeof (Slot) + slotCount * codeSnippetSize;

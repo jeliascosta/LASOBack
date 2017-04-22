@@ -36,12 +36,12 @@ MenuItemData::~MenuItemData()
         aUserValueReleaseFunc(nUserValue);
     if( pAutoSubMenu )
     {
-        static_cast<PopupMenu*>(pAutoSubMenu)->pRefAutoSubMenu = nullptr;
-        delete pAutoSubMenu;
-        pAutoSubMenu = nullptr;
+        static_cast<PopupMenu*>(pAutoSubMenu.get())->pRefAutoSubMenu = nullptr;
+        pAutoSubMenu.disposeAndClear();
     }
     if( pSalMenuItem )
         ImplGetSVData()->mpDefInst->DestroyMenuItem( pSalMenuItem );
+    pSubMenu.disposeAndClear();
 }
 
 MenuItemList::~MenuItemList()
@@ -73,8 +73,6 @@ MenuItemData* MenuItemList::Insert(
     pData->bEnabled         = true;
     pData->bVisible         = true;
     pData->bIsTemporary     = false;
-    pData->bMirrorMode      = false;
-    pData->nItemImageAngle  = 0;
 
     SalItemParams aSalMIData;
     aSalMIData.nId = nId;
@@ -109,8 +107,6 @@ void MenuItemList::InsertSeparator(const OString &rIdent, size_t nPos)
     pData->bEnabled         = true;
     pData->bVisible         = true;
     pData->bIsTemporary     = false;
-    pData->bMirrorMode      = false;
-    pData->nItemImageAngle  = 0;
 
     SalItemParams aSalMIData;
     aSalMIData.nId = 0;
@@ -139,6 +135,13 @@ void MenuItemList::Remove( size_t nPos )
     }
 }
 
+void MenuItemList::Clear()
+{
+    for (MenuItemData* i : maItemList)
+        delete i;
+    maItemList.resize(0);
+}
+
 MenuItemData* MenuItemList::GetData( sal_uInt16 nSVId, size_t& rPos ) const
 {
     for( size_t i = 0, n = maItemList.size(); i < n; ++i )
@@ -155,9 +158,9 @@ MenuItemData* MenuItemList::GetData( sal_uInt16 nSVId, size_t& rPos ) const
 MenuItemData* MenuItemList::SearchItem(
     sal_Unicode cSelectChar,
     KeyCode aKeyCode,
-    sal_uInt16& rPos,
-    sal_uInt16& nDuplicates,
-    sal_uInt16 nCurrentPos
+    size_t& rPos,
+    size_t& nDuplicates,
+    size_t nCurrentPos
 ) const
 {
     const vcl::I18nHelper& rI18nHelper = Application::GetSettings().GetUILocaleI18nHelper();

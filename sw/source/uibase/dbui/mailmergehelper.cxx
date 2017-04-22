@@ -19,13 +19,13 @@
 
 #include <swtypes.hxx>
 #include <mailmergehelper.hxx>
-#include <svtools/stdctrl.hxx>
 #include <mmconfigitem.hxx>
 #include <docsh.hxx>
 #include <sfx2/filedlghelper.hxx>
 #include <sfx2/docfile.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/fcontnr.hxx>
+#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/sdbcx/XColumnsSupplier.hpp>
 #include <com/sun/star/sdb/XColumn.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -56,7 +56,7 @@ OUString CallSaveAsDialog(OUString& rFilter)
 {
     ::sfx2::FileDialogHelper aDialog( ui::dialogs::TemplateDescription::FILESAVE_AUTOEXTENSION,
                 FileDialogFlags::NONE,
-                OUString::createFromAscii(SwDocShell::Factory().GetShortName()) );
+                SwDocShell::Factory().GetFactoryName() );
 
     if (aDialog.Execute()!=ERRCODE_NONE)
     {
@@ -123,7 +123,7 @@ uno::Reference< mail::XSmtpService > ConnectToSmtpServer(
                     new SwConnectionContext(
                         rConfigItem.GetInServerName(),
                         rConfigItem.GetInServerPort(),
-                        OUString("Insecure"));
+                        "Insecure");
             xInMailService->connect(xConnectionContext, xAuthenticator);
             rxInMailService = xInMailService;
         }
@@ -165,7 +165,7 @@ uno::Reference< mail::XSmtpService > ConnectToSmtpServer(
 
 struct  SwAddressPreview_Impl
 {
-    ::std::vector< OUString >    aAddresses;
+    std::vector< OUString >      aAddresses;
     sal_uInt16                          nRows;
     sal_uInt16                          nColumns;
     sal_uInt16                          nSelectedAddress;
@@ -201,14 +201,7 @@ void SwAddressPreview::dispose()
     vcl::Window::dispose();
 }
 
-VCL_BUILDER_DECL_FACTORY(SwAddressPreview)
-{
-    WinBits nWinStyle = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SwAddressPreview>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SwAddressPreview, WB_TABSTOP)
 
 void SwAddressPreview::positionScrollBar()
 {
@@ -225,7 +218,7 @@ void SwAddressPreview::Resize()
     positionScrollBar();
 }
 
-IMPL_LINK_NOARG_TYPED(SwAddressPreview, ScrollHdl, ScrollBar*, void)
+IMPL_LINK_NOARG(SwAddressPreview, ScrollHdl, ScrollBar*, void)
 {
     Invalidate();
 }
@@ -309,12 +302,12 @@ void SwAddressPreview::UpdateScrollBar()
     }
 }
 
-void SwAddressPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void SwAddressPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     const StyleSettings& rSettings = rRenderContext.GetSettings().GetStyleSettings();
     rRenderContext.SetFillColor(rSettings.GetWindowColor());
     rRenderContext.SetLineColor(Color(COL_TRANSPARENT));
-    rRenderContext.DrawRect(Rectangle(Point(0, 0), GetOutputSizePixel()));
+    rRenderContext.DrawRect(tools::Rectangle(Point(0, 0), GetOutputSizePixel()));
     Color aPaintColor(IsEnabled() ? rSettings.GetWindowTextColor() : rSettings.GetDisableColor());
     rRenderContext.SetLineColor(aPaintColor);
     vcl::Font aFont(rRenderContext.GetFont());
@@ -437,12 +430,12 @@ void SwAddressPreview::StateChanged( StateChangedType nStateChange )
 void SwAddressPreview::DrawText_Impl(vcl::RenderContext& rRenderContext, const OUString& rAddress,
                                      const Point& rTopLeft, const Size& rSize, bool bIsSelected)
 {
-    rRenderContext.SetClipRegion(vcl::Region(Rectangle(rTopLeft, rSize)));
+    rRenderContext.SetClipRegion(vcl::Region(tools::Rectangle(rTopLeft, rSize)));
     if (bIsSelected)
     {
         //selection rectangle
         rRenderContext.SetFillColor(Color(COL_TRANSPARENT));
-        rRenderContext.DrawRect(Rectangle(rTopLeft, rSize));
+        rRenderContext.DrawRect(tools::Rectangle(rTopLeft, rSize));
     }
     sal_Int32 nHeight = GetTextHeight();
     Point aStart = rTopLeft;
@@ -500,8 +493,8 @@ OUString SwAddressPreview::FillData(
 
             //find the appropriate assignment
             OUString sConvertedColumn = aItem.sText;
-            for(sal_uInt16 nColumn = 0;
-                    nColumn < rDefHeaders.Count() && nColumn < aAssignment.getLength();
+            for(sal_uInt32 nColumn = 0;
+                    nColumn < rDefHeaders.Count() && nColumn < sal_uInt32(aAssignment.getLength());
                                                                                 ++nColumn)
             {
                 if (rDefHeaders.GetString(nColumn).equals(aItem.sText) &&
@@ -598,7 +591,7 @@ SwMergeAddressItem   SwAddressIterator::Next()
                     nOpen = sAddress.getLength();
                 if (nReturn == -1)
                     nReturn = sAddress.getLength();
-                sal_Int32 nTarget = ::std::min(nOpen, nReturn);
+                sal_Int32 nTarget = std::min(nOpen, nReturn);
                 aRet.sText = sAddress.copy(0, nTarget);
                 sAddress = sAddress.copy(nTarget);
             }
@@ -612,17 +605,16 @@ SwAuthenticator::~SwAuthenticator()
 {
 }
 
-OUString SwAuthenticator::getUserName( ) throw (RuntimeException, std::exception)
+OUString SwAuthenticator::getUserName( )
 {
     return m_aUserName;
 }
 
-OUString SwAuthenticator::getPassword(  ) throw (RuntimeException, std::exception)
+OUString SwAuthenticator::getPassword(  )
 {
     if(!m_aUserName.isEmpty() && m_aPassword.isEmpty() && m_pParentWindow)
     {
-       SfxPasswordDialog* pPasswdDlg =
-                VclPtr<SfxPasswordDialog>::Create( m_pParentWindow );
+       ScopedVclPtrInstance<SfxPasswordDialog> pPasswdDlg( m_pParentWindow );
        pPasswdDlg->SetMinLen( 0 );
        if(RET_OK == pPasswdDlg->Execute())
             m_aPassword = pPasswdDlg->GetPassword();
@@ -644,7 +636,6 @@ SwConnectionContext::~SwConnectionContext()
 }
 
 uno::Any SwConnectionContext::getValueByName( const OUString& rName )
-                                                throw (uno::RuntimeException, std::exception)
 {
     uno::Any aRet;
     if( rName == "ServerName" )
@@ -661,17 +652,14 @@ SwConnectionListener::~SwConnectionListener()
 }
 
 void SwConnectionListener::connected(const lang::EventObject& /*aEvent*/)
-    throw (uno::RuntimeException, std::exception)
 {
 }
 
 void SwConnectionListener::disconnected(const lang::EventObject& /*aEvent*/)
-    throw (uno::RuntimeException, std::exception)
 {
 }
 
 void SwConnectionListener::disposing(const lang::EventObject& /*aEvent*/)
-    throw(uno::RuntimeException, std::exception)
 {
 }
 
@@ -698,16 +686,14 @@ SwMailTransferable::~SwMailTransferable()
 }
 
 uno::Any SwMailTransferable::getTransferData( const datatransfer::DataFlavor& /*aFlavor*/ )
-                            throw (datatransfer::UnsupportedFlavorException,
-                            io::IOException, uno::RuntimeException, std::exception)
 {
     uno::Any aRet;
     if( m_bIsBody )
-        aRet <<= OUString(m_sBody);
+        aRet <<= m_sBody;
     else
     {
         Sequence<sal_Int8> aData;
-        SfxMedium aMedium( m_aURL, STREAM_STD_READ );
+        SfxMedium aMedium( m_aURL, StreamMode::STD_READ );
         SvStream* pStream = aMedium.GetInStream();
         if ( aMedium.GetErrorCode() == ERRCODE_NONE && pStream)
         {
@@ -715,7 +701,7 @@ uno::Any SwMailTransferable::getTransferData( const datatransfer::DataFlavor& /*
             aData.realloc(pStream->Tell());
             pStream->Seek(0);
             sal_Int8 * pData = aData.getArray();
-            pStream->Read( pData, aData.getLength() );
+            pStream->ReadBytes( pData, aData.getLength() );
         }
         aRet <<= aData;
     }
@@ -723,7 +709,6 @@ uno::Any SwMailTransferable::getTransferData( const datatransfer::DataFlavor& /*
 }
 
 uno::Sequence< datatransfer::DataFlavor > SwMailTransferable::getTransferDataFlavors(  )
-                            throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence< datatransfer::DataFlavor > aRet(1);
     aRet[0].MimeType = m_aMimeType;
@@ -741,24 +726,20 @@ uno::Sequence< datatransfer::DataFlavor > SwMailTransferable::getTransferDataFla
 
 sal_Bool SwMailTransferable::isDataFlavorSupported(
             const datatransfer::DataFlavor& aFlavor )
-                            throw (uno::RuntimeException, std::exception)
 {
     return (aFlavor.MimeType == m_aMimeType);
 }
 
-uno::Reference< beans::XPropertySetInfo > SwMailTransferable::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
+uno::Reference< beans::XPropertySetInfo > SwMailTransferable::getPropertySetInfo(  )
 {
     return uno::Reference< beans::XPropertySetInfo >();
 }
 
 void SwMailTransferable::setPropertyValue( const OUString& , const uno::Any& )
-    throw(beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException,
-          lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
 }
 
 uno::Any SwMailTransferable::getPropertyValue( const OUString& rPropertyName )
-    throw(beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     uno::Any aRet;
     if ( rPropertyName == "URL" )
@@ -768,28 +749,24 @@ uno::Any SwMailTransferable::getPropertyValue( const OUString& rPropertyName )
 
 void SwMailTransferable::addPropertyChangeListener(
     const OUString&, const uno::Reference< beans::XPropertyChangeListener >&  )
-    throw(beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
 }
 
 void SwMailTransferable::removePropertyChangeListener(
     const OUString&,
     const uno::Reference< beans::XPropertyChangeListener >& )
-    throw(beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
 }
 
 void SwMailTransferable::addVetoableChangeListener(
     const OUString&,
     const uno::Reference< beans::XVetoableChangeListener >& )
-    throw(beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
 }
 
 void SwMailTransferable::removeVetoableChangeListener(
     const OUString& ,
     const uno::Reference< beans::XVetoableChangeListener >&  )
-        throw(beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
 }
 
@@ -802,93 +779,88 @@ SwMailMessage::~SwMailMessage()
 {
 }
 
-OUString SwMailMessage::getSenderName() throw (uno::RuntimeException, std::exception)
+OUString SwMailMessage::getSenderName()
 {
     return m_sSenderName;
 }
 
-OUString SwMailMessage::getSenderAddress() throw (uno::RuntimeException, std::exception)
+OUString SwMailMessage::getSenderAddress()
 {
     return m_sSenderAddress;
 }
 
-OUString SwMailMessage::getReplyToAddress() throw (uno::RuntimeException, std::exception)
+OUString SwMailMessage::getReplyToAddress()
 {
     return m_sReplyToAddress;
 }
 
-void SwMailMessage::setReplyToAddress( const OUString& _replytoaddress ) throw (uno::RuntimeException, std::exception)
+void SwMailMessage::setReplyToAddress( const OUString& _replytoaddress )
 {
     m_sReplyToAddress = _replytoaddress;
 }
 
-OUString SwMailMessage::getSubject() throw (uno::RuntimeException, std::exception)
+OUString SwMailMessage::getSubject()
 {
     return m_sSubject;
 }
 
-void SwMailMessage::setSubject( const OUString& _subject ) throw (uno::RuntimeException, std::exception)
+void SwMailMessage::setSubject( const OUString& _subject )
 {
     m_sSubject = _subject;
 }
 
-uno::Reference< datatransfer::XTransferable > SwMailMessage::getBody() throw (uno::RuntimeException, std::exception)
+uno::Reference< datatransfer::XTransferable > SwMailMessage::getBody()
 {
     return m_xBody;
 }
 
 void SwMailMessage::setBody(
         const uno::Reference< datatransfer::XTransferable >& rBody )
-                                                throw (uno::RuntimeException, std::exception)
 {
     m_xBody = rBody;
 }
 
 void  SwMailMessage::addRecipient( const OUString& rRecipientAddress )
-        throw (uno::RuntimeException, std::exception)
 {
     m_aRecipients.realloc(m_aRecipients.getLength() + 1);
     m_aRecipients[m_aRecipients.getLength() - 1] = rRecipientAddress;
 }
 
 void  SwMailMessage::addCcRecipient( const OUString& rRecipientAddress )
-        throw (uno::RuntimeException, std::exception)
 {
     m_aCcRecipients.realloc(m_aCcRecipients.getLength() + 1);
     m_aCcRecipients[m_aCcRecipients.getLength() - 1] = rRecipientAddress;
 
 }
 
-void  SwMailMessage::addBccRecipient( const OUString& rRecipientAddress ) throw (uno::RuntimeException, std::exception)
+void  SwMailMessage::addBccRecipient( const OUString& rRecipientAddress )
 {
     m_aBccRecipients.realloc(m_aBccRecipients.getLength() + 1);
     m_aBccRecipients[m_aBccRecipients.getLength() - 1] = rRecipientAddress;
 }
 
-uno::Sequence< OUString > SwMailMessage::getRecipients(  ) throw (uno::RuntimeException, std::exception)
+uno::Sequence< OUString > SwMailMessage::getRecipients(  )
 {
     return m_aRecipients;
 }
 
-uno::Sequence< OUString > SwMailMessage::getCcRecipients(  ) throw (uno::RuntimeException, std::exception)
+uno::Sequence< OUString > SwMailMessage::getCcRecipients(  )
 {
     return m_aCcRecipients;
 }
 
-uno::Sequence< OUString > SwMailMessage::getBccRecipients(  ) throw (uno::RuntimeException, std::exception)
+uno::Sequence< OUString > SwMailMessage::getBccRecipients(  )
 {
     return m_aBccRecipients;
 }
 
 void SwMailMessage::addAttachment( const mail::MailAttachment& rMailAttachment )
-            throw (uno::RuntimeException, std::exception)
 {
     m_aAttachments.realloc(m_aAttachments.getLength() + 1);
     m_aAttachments[m_aAttachments.getLength() - 1] = rMailAttachment;
 }
 
 uno::Sequence< mail::MailAttachment > SwMailMessage::getAttachments(  )
-                                            throw (uno::RuntimeException, std::exception)
 {
     return m_aAttachments;
 }

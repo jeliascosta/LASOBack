@@ -59,7 +59,7 @@ namespace basegfx
 
         // define vector of simple edges
 
-        typedef ::std::vector< TrDeSimpleEdge > TrDeSimpleEdges;
+        typedef std::vector< TrDeSimpleEdge > TrDeSimpleEdges;
 
         // helper class for holding a traversing edge. It will always have some
         // distance in YPos. The slope (in a numerically useful form, see comments) is
@@ -108,7 +108,7 @@ namespace basegfx
                     std::swap(mpStart, mpEnd);
                 }
 
-                // no horizontal edges allowed, all neeed to traverse vertically
+                // no horizontal edges allowed, all need to traverse vertically
                 OSL_ENSURE(mpEnd->getY() > mpStart->getY(), "Illegal TrDeEdgeEntry constructed (!)");
             }
 
@@ -121,7 +121,7 @@ namespace basegfx
                 {
                     mpStart = pNewStart;
 
-                    // no horizontal edges allowed, all neeed to traverse vertically
+                    // no horizontal edges allowed, all need to traverse vertically
                     OSL_ENSURE(mpEnd->getY() > mpStart->getY(), "Illegal TrDeEdgeEntry constructed (!)");
                 }
             }
@@ -135,7 +135,7 @@ namespace basegfx
                 {
                     mpEnd = pNewEnd;
 
-                    // no horizontal edges allowed, all neeed to traverse vertically
+                    // no horizontal edges allowed, all need to traverse vertically
                     OSL_ENSURE(mpEnd->getY() > mpStart->getY(), "Illegal TrDeEdgeEntry constructed (!)");
                 }
             }
@@ -180,7 +180,7 @@ namespace basegfx
 
         // define double linked list of edges (for fast random insert)
 
-        typedef ::std::list< TrDeEdgeEntry > TrDeEdgeEntries;
+        typedef std::list< TrDeEdgeEntry > TrDeEdgeEntries;
 
     } // end of anonymous namespace
 } // end of namespace basegfx
@@ -250,7 +250,7 @@ namespace basegfx
             // local data
             sal_uInt32                  mnInitialEdgeEntryCount;
             TrDeEdgeEntries             maTrDeEdgeEntries;
-            ::std::vector< B2DPoint >   maPoints;
+            std::vector< B2DPoint >   maPoints;
             /// new points allocated for cuts
             PointBlockAllocator         maNewPoints;
 
@@ -1178,39 +1178,6 @@ namespace basegfx
             }
         }
 
-        void createLineTrapezoidFromB2DPolyPolygon(
-            B2DTrapezoidVector& ro_Result,
-            const B2DPolyPolygon& rPolyPolygon,
-            double fLineWidth)
-        {
-            if(fTools::lessOrEqual(fLineWidth, 0.0))
-            {
-                return;
-            }
-
-            // ensure there are no curves used
-            B2DPolyPolygon aSource(rPolyPolygon);
-
-            if(aSource.areControlPointsUsed())
-            {
-                aSource = aSource.getDefaultAdaptiveSubdivision();
-            }
-
-            const sal_uInt32 nCount(aSource.count());
-
-            if(!nCount)
-            {
-                return;
-            }
-
-            for(sal_uInt32 a(0); a < nCount; a++)
-            {
-                createLineTrapezoidFromB2DPolygon(
-                    ro_Result,
-                    aSource.getB2DPolygon(a),
-                    fLineWidth);
-            }
-        }
 
     } // end of namespace tools
 } // end of namespace basegfx

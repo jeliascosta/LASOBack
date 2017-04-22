@@ -28,7 +28,6 @@
 #include <vcl/mapmod.hxx>
 #include <tools/color.hxx>
 #include <svl/poolitem.hxx>
-#include <svl/itempool.hxx>
 #include <editeng/editengdllapi.h>
 #include <editeng/editeng.hxx>
 
@@ -142,7 +141,7 @@ public:
     virtual sal_Int32   GetParagraphCount() const = 0;
     virtual sal_Int32   GetTextLen( sal_Int32 nParagraph ) const = 0;
     virtual OUString    GetText( const ESelection& rSel ) const = 0;
-    virtual SfxItemSet  GetAttribs( const ESelection& rSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs_All ) const = 0;
+    virtual SfxItemSet  GetAttribs( const ESelection& rSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs::All ) const = 0;
     virtual SfxItemSet  GetParaAttribs( sal_Int32 nPara ) const = 0;
     virtual void        SetParaAttribs( sal_Int32 nPara, const SfxItemSet& rSet ) = 0;
     virtual void        RemoveAttribs( const ESelection& rSelection ) = 0;
@@ -234,7 +233,7 @@ public:
         left corner of text. The coordinates returned here are to be
         interpreted in the map mode given by GetMapMode().
     */
-    virtual Rectangle       GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const = 0;
+    virtual tools::Rectangle       GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const = 0;
 
     /** Query the bounding rectangle of the given paragraph
 
@@ -245,7 +244,7 @@ public:
         left corner of text. The coordinates returned here are to be
         interpreted in the map mode given by GetMapMode().
      */
-    virtual Rectangle       GetParaBounds( sal_Int32 nPara ) const = 0;
+    virtual tools::Rectangle       GetParaBounds( sal_Int32 nPara ) const = 0;
 
     /** Query the map mode of the underlying EditEngine/Outliner
 
@@ -270,7 +269,7 @@ public:
 
         @param rPoint
         Point to query text position of. Is interpreted in logical
-        coordinates, relativ to the upper left corner of the text, and
+        coordinates, relative to the upper left corner of the text, and
         in the map mode given by GetMapMode()
 
         @param rPara[0 .. n-1]
@@ -462,7 +461,7 @@ public:
         values are already in screen coordinates (pixel), and have to
         be relative to the EditEngine/Outliner's upper left corner.
      */
-    virtual Rectangle   GetVisArea() const = 0;
+    virtual tools::Rectangle   GetVisArea() const = 0;
 
     /** Convert from logical, EditEngine-relative coordinates to screen coordinates
 

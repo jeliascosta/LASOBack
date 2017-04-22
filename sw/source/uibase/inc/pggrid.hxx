@@ -24,6 +24,7 @@
 #include <vcl/field.hxx>
 #include <vcl/fixed.hxx>
 #include <svtools/ctrlbox.hxx>
+#include <svx/colorbox.hxx>
 
 // TabPage Format/(Styles/)Page/Text grid
 class SwTextGridPage: public SfxTabPage
@@ -57,7 +58,7 @@ class SwTextGridPage: public SfxTabPage
 
     VclPtr<CheckBox>        m_pDisplayCB;
     VclPtr<CheckBox>        m_pPrintCB;
-    VclPtr<ColorListBox>    m_pColorLB;
+    VclPtr<SvxColorListBox> m_pColorLB;
 
     sal_Int32       m_nRubyUserValue;
     bool        m_bRubyUserValue;
@@ -71,21 +72,23 @@ class SwTextGridPage: public SfxTabPage
     void PutGridItem(SfxItemSet& rSet);
     static void SetLinesOrCharsRanges(FixedText & rField, const sal_Int32 nValue );
 
-    DECL_LINK_TYPED(GridTypeHdl, Button*, void);
-    DECL_LINK_TYPED(CharorLineChangedHdl, SpinField&, void);
-    DECL_LINK_TYPED(CharorLineLoseFocusdHdl, Control&, void);
-    DECL_LINK_TYPED(TextSizeChangedHdl, SpinField&, void);
-    DECL_LINK_TYPED(TextSizeLoseFocusHdl, Control&, void);
-    DECL_LINK_TYPED(GridModifyHdl, ListBox&, void);
-    DECL_LINK_TYPED(GridModifyClickHdl, Button*, void);
-    DECL_LINK_TYPED(DisplayGridHdl, Button*, void);
+    void GridModifyHdl();
+
+    DECL_LINK(GridTypeHdl, Button*, void);
+    DECL_LINK(CharorLineChangedHdl, SpinField&, void);
+    DECL_LINK(CharorLineLoseFocusdHdl, Control&, void);
+    DECL_LINK(TextSizeChangedHdl, SpinField&, void);
+    DECL_LINK(TextSizeLoseFocusHdl, Control&, void);
+    DECL_LINK(ColorModifyHdl, SvxColorListBox&, void);
+    DECL_LINK(GridModifyClickHdl, Button*, void);
+    DECL_LINK(DisplayGridHdl, Button*, void);
 
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
 
 public:
     SwTextGridPage(vcl::Window *pParent, const SfxItemSet &rSet);
-    virtual ~SwTextGridPage();
+    virtual ~SwTextGridPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window *pParent, const SfxItemSet *rSet);
@@ -95,7 +98,7 @@ public:
     virtual void    Reset(const SfxItemSet *rSet) override;
 
     virtual void    ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg   DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
 };
 
 #endif

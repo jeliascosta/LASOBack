@@ -17,7 +17,7 @@
 #include "document.hxx"
 #include "rangeutl.hxx"
 #include "tabvwsh.hxx"
-#include <sc.hrc>
+#include <scres.hrc>
 #include "scresid.hxx"
 
 namespace sc {
@@ -30,7 +30,7 @@ SearchResultsDlg::SearchResultsDlg( SfxBindings* _pBindings, vcl::Window* pParen
 
     SvSimpleTableContainer *pContainer = get<SvSimpleTableContainer>("results");
     Size aControlSize(150, 120);
-    aControlSize = pContainer->LogicToPixel(aControlSize, MAP_APPFONT);
+    aControlSize = pContainer->LogicToPixel(aControlSize, MapUnit::MapAppFont);
     pContainer->set_width_request(aControlSize.Width());
     pContainer->set_height_request(aControlSize.Height());
 
@@ -57,7 +57,7 @@ namespace
 {
     class ListWrapper {
         size_t mnCount;
-        const size_t mnMaximum;
+        static const size_t mnMaximum = 1000;
         OUStringBuffer maName;
         VclPtr<FixedText> mpLabel;
         VclPtr<SvSimpleTable> mpList;
@@ -65,7 +65,6 @@ namespace
         ListWrapper(const VclPtr<SvSimpleTable> &pList,
                     const VclPtr<FixedText> &pLabel) :
             mnCount(0),
-            mnMaximum(1000),
             mpLabel(pLabel),
             mpList(pList)
         {
@@ -120,7 +119,7 @@ void SearchResultsDlg::FillResults( ScDocument* pDoc, const ScRangeList &rMatche
     {
         for (size_t i = 0, n = nMatchMax; i < n; ++i)
         {
-            /* TODO: a CellNotes iterator would come handy and migt speed
+            /* TODO: a CellNotes iterator would come handy and might speed
              * things up a little, though we only loop through the
              * search/replace result positions here. */
             ScRange aRange( *rMatchedRanges[i] );
@@ -185,7 +184,7 @@ bool SearchResultsDlg::Close()
     return ModelessDialog::Close();
 }
 
-IMPL_LINK_NOARG_TYPED( SearchResultsDlg, ListSelectHdl, SvTreeListBox*, void )
+IMPL_LINK_NOARG( SearchResultsDlg, ListSelectHdl, SvTreeListBox*, void )
 {
     if (!mpDoc)
         return;

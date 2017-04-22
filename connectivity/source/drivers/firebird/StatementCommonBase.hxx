@@ -42,10 +42,10 @@ namespace connectivity
     namespace firebird
     {
 
-        typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::sdbc::XWarningsSupplier,
-                                                   ::com::sun::star::util::XCancellable,
-                                                   ::com::sun::star::sdbc::XCloseable,
-                                                   ::com::sun::star::sdbc::XMultipleResults> OStatementCommonBase_Base;
+        typedef ::cppu::WeakComponentImplHelper<   css::sdbc::XWarningsSupplier,
+                                                   css::util::XCancellable,
+                                                   css::sdbc::XCloseable,
+                                                   css::sdbc::XMultipleResults> OStatementCommonBase_Base;
 
         class OStatementCommonBase  :   public  OStatementCommonBase_Base,
                                         public  ::cppu::OPropertySetHelper,
@@ -55,7 +55,7 @@ namespace connectivity
         protected:
             ::osl::Mutex        m_aMutex;
 
-            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet>    m_xResultSet;   // The last ResultSet created
+            css::uno::Reference< css::sdbc::XResultSet> m_xResultSet;   // The last ResultSet created
             //  for this Statement
 
             ::rtl::Reference<Connection>                m_pConnection;
@@ -65,8 +65,8 @@ namespace connectivity
 
         protected:
             virtual void disposeResultSet();
-            void freeStatementHandle()
-                throw (::com::sun::star::sdbc::SQLException);
+            /// @throws css::sdbc::SQLException
+            void freeStatementHandle();
 
             // OPropertyArrayUsageHelper
             virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const override;
@@ -74,35 +74,34 @@ namespace connectivity
             using OPropertySetHelper::getFastPropertyValue;
             virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
             virtual sal_Bool SAL_CALL convertFastPropertyValue(
-                                                                ::com::sun::star::uno::Any & rConvertedValue,
-                                                                ::com::sun::star::uno::Any & rOldValue,
+                                                                css::uno::Any & rConvertedValue,
+                                                                css::uno::Any & rOldValue,
                                                                 sal_Int32 nHandle,
-                                                                const ::com::sun::star::uno::Any& rValue )
-                                                            throw (::com::sun::star::lang::IllegalArgumentException) override;
+                                                                const css::uno::Any& rValue ) override;
             virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
                                                                 sal_Int32 nHandle,
-                                                                const ::com::sun::star::uno::Any& rValue)   throw (::com::sun::star::uno::Exception, std::exception) override;
+                                                                const css::uno::Any& rValue) override;
             virtual void SAL_CALL getFastPropertyValue(
-                                                                ::com::sun::star::uno::Any& rValue,
+                                                                css::uno::Any& rValue,
                                                                 sal_Int32 nHandle) const override;
-            virtual ~OStatementCommonBase();
+            virtual ~OStatementCommonBase() override;
 
+            /// @throws css::sdbc::SQLException
             void prepareAndDescribeStatement(const OUString& sqlIn,
                                              XSQLDA*& pOutSqlda,
-                                             XSQLDA* pInSqlda=nullptr)
-                throw (::com::sun::star::sdbc::SQLException);
+                                             XSQLDA* pInSqlda=nullptr);
 
-            short getSqlInfoItem(char aInfoItem)
-                throw (::com::sun::star::sdbc::SQLException);
-            bool isDDLStatement()
-                throw (::com::sun::star::sdbc::SQLException);
-            sal_Int32 getStatementChangeCount()
-                throw (::com::sun::star::sdbc::SQLException);
+            /// @throws css::sdbc::SQLException
+            short getSqlInfoItem(char aInfoItem);
+            /// @throws css::sdbc::SQLException
+            bool isDDLStatement();
+            /// @throws css::sdbc::SQLException
+            sal_Int32 getStatementChangeCount();
 
         public:
 
             explicit OStatementCommonBase(Connection* _pConnection);
-            using OStatementCommonBase_Base::operator ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >;
+            using OStatementCommonBase_Base::operator css::uno::Reference< css::uno::XInterface >;
 
             // OComponentHelper
             virtual void SAL_CALL disposing() override {
@@ -113,25 +112,25 @@ namespace connectivity
             virtual void SAL_CALL release() throw() override;
             virtual void SAL_CALL acquire() throw() override;
             // XInterface
-            virtual ::com::sun::star::uno::Any SAL_CALL queryInterface( const ::com::sun::star::uno::Type & rType ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
             //XTypeProvider
-            virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL getTypes(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
 
             // XPropertySet
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
 
             // XWarningsSupplier - UNSUPPORTED
-            virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL clearWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL getWarnings(  ) override;
+            virtual void SAL_CALL clearWarnings(  ) override;
             // XMultipleResults - UNSUPPORTED
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL getResultSet(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Int32 SAL_CALL getUpdateCount(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL getMoreResults(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL getResultSet(  ) override;
+            virtual sal_Int32 SAL_CALL getUpdateCount(  ) override;
+            virtual sal_Bool SAL_CALL getMoreResults(  ) override;
 
             // XCancellable
-            virtual void SAL_CALL cancel(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL cancel(  ) override;
             // XCloseable
-            virtual void SAL_CALL close(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL close(  ) override;
 
         };
     }

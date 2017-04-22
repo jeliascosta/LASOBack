@@ -63,7 +63,6 @@ DocumentInserter::DocumentInserter(
 
 DocumentInserter::~DocumentInserter()
 {
-    delete m_pFileDlg;
 }
 
 void DocumentInserter::StartExecuteModal( const Link<sfx2::FileDialogHelper*,void>& _rDialogClosedLink )
@@ -72,14 +71,14 @@ void DocumentInserter::StartExecuteModal( const Link<sfx2::FileDialogHelper*,voi
     m_nError = ERRCODE_NONE;
     if ( !m_pFileDlg )
     {
-        m_pFileDlg = new FileDialogHelper(
+        m_pFileDlg.reset( new FileDialogHelper(
                 ui::dialogs::TemplateDescription::FILEOPEN_SIMPLE,
-                m_nDlgFlags, m_sDocFactory );
+                m_nDlgFlags, m_sDocFactory ) );
     }
     m_pFileDlg->StartExecuteModal( LINK( this, DocumentInserter, DialogClosedHdl ) );
 }
 
-SfxMedium* DocumentInserter::CreateMedium()
+SfxMedium* DocumentInserter::CreateMedium(char const*const pFallbackHack)
 {
     std::unique_ptr<SfxMedium> pMedium;
     if (!m_nError && m_pItemSet && !m_pURLList.empty())
@@ -90,14 +89,20 @@ SfxMedium* DocumentInserter::CreateMedium()
                 sURL, SFX_STREAM_READONLY,
                 SfxGetpApp()->GetFilterMatcher().GetFilter4FilterName( m_sFilter ), m_pItemSet ));
         pMedium->UseInteractionHandler( true );
-        SfxFilterMatcher* pMatcher = nullptr;
+        std::unique_ptr<SfxFilterMatcher> pMatcher;
         if ( !m_sDocFactory.isEmpty() )
-            pMatcher = new SfxFilterMatcher( m_sDocFactory );
+            pMatcher.reset(new SfxFilterMatcher(m_sDocFactory));
         else
-            pMatcher = new SfxFilterMatcher();
+            pMatcher.reset(new SfxFilterMatcher());
 
         std::shared_ptr<const SfxFilter> pFilter;
         sal_uInt32 nError = pMatcher->DetectFilter( *pMedium, pFilter );
+        // tdf#101813 hack: check again if it's a global document
+        if (ERRCODE_NONE != nError && pFallbackHack)
+        {
+            pMatcher.reset(new SfxFilterMatcher(OUString::createFromAscii(pFallbackHack)));
+            nError = pMatcher->DetectFilter( *pMedium, pFilter );
+        }
         if ( nError == ERRCODE_NONE && pFilter )
             pMedium->SetFilter( pFilter );
         else
@@ -105,8 +110,6 @@ SfxMedium* DocumentInserter::CreateMedium()
 
         if ( pMedium && CheckPasswd_Impl( nullptr, SfxGetpApp()->GetPool(), pMedium.get() ) == ERRCODE_ABORT )
             pMedium.reset();
-
-        DELETEZ( pMatcher );
     }
 
     return pMedium.release();
@@ -156,18 +159,18 @@ void impl_FillURLList( sfx2::FileDialogHelper* _pFileDlg, std::vector<OUString>&
         for ( sal_Int32 i = 0; i < aPathSeq.getLength(); ++i )
         {
             INetURLObject aPathObj( aPathSeq[i] );
-            _rpURLList.push_back(aPathObj.GetMainURL(INetURLObject::NO_DECODE));
+            _rpURLList.push_back(aPathObj.GetMainURL(INetURLObject::DecodeMechanism::NONE));
         }
     }
 }
 
-IMPL_LINK_NOARG_TYPED(DocumentInserter, DialogClosedHdl, sfx2::FileDialogHelper*, void)
+IMPL_LINK_NOARG(DocumentInserter, DialogClosedHdl, sfx2::FileDialogHelper*, void)
 {
     DBG_ASSERT( m_pFileDlg, "DocumentInserter::DialogClosedHdl(): no file dialog" );
 
     m_nError = m_pFileDlg->GetError();
     if ( ERRCODE_NONE == m_nError )
-        impl_FillURLList( m_pFileDlg, m_pURLList );
+        impl_FillURLList( m_pFileDlg.get(), m_pURLList );
 
     Reference < XFilePicker2 > xFP = m_pFileDlg->GetFilePicker();
     Reference < XFilePickerControlAccess > xCtrlAccess( xFP, UNO_QUERY );
@@ -263,7 +266,7 @@ IMPL_LINK_NOARG_TYPED(DocumentInserter, DialogClosedHdl, sfx2::FileDialogHelper*
 
     m_sFilter = m_pFileDlg->GetRealFilter();
 
-    m_aDialogClosedLink.Call( m_pFileDlg );
+    m_aDialogClosedLink.Call( m_pFileDlg.get() );
 }
 
 } // namespace sfx2

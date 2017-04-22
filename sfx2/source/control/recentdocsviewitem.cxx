@@ -18,7 +18,7 @@
 #include <officecfg/Office/Common.hxx>
 #include <sfx2/recentdocsview.hxx>
 #include <sfx2/sfxresid.hxx>
-#include <sfx2/templateabstractview.hxx>
+#include <sfx2/templatelocalview.hxx>
 #include <tools/urlobj.hxx>
 #include <unotools/historyoptions.hxx>
 #include <vcl/svapp.hxx>
@@ -36,19 +36,19 @@ RecentDocsViewItem::RecentDocsViewItem(ThumbnailView &rView, const OUString &rUR
     : ThumbnailViewItem(rView, nId),
       maURL(rURL),
       m_bRemoveIconHighlighted(false),
-      m_aRemoveRecentBitmap(SfxResId(IMG_RECENTDOC_REMOVE)),
-      m_aRemoveRecentBitmapHighlighted(SfxResId(IMG_RECENTDOC_REMOVE_HIGHLIGHTED))
+      m_aRemoveRecentBitmap(SfxResId(BMP_RECENTDOC_REMOVE)),
+      m_aRemoveRecentBitmapHighlighted(SfxResId(BMP_RECENTDOC_REMOVE_HIGHLIGHTED))
 {
     OUString aTitle(rTitle);
     INetURLObject aURLObj(rURL);
 
     if( aURLObj.GetProtocol() == INetProtocol::File )
-        m_sHelpText = aURLObj.getFSysPath(INetURLObject::FSYS_DETECT);
+        m_sHelpText = aURLObj.getFSysPath(FSysStyle::Detect);
     if( m_sHelpText.isEmpty() )
         m_sHelpText = aURLObj.GetURLNoPass();
 
     if (aTitle.isEmpty())
-        aTitle = aURLObj.GetName(INetURLObject::DECODE_WITH_CHARSET);
+        aTitle = aURLObj.GetName(INetURLObject::DecodeMechanism::WithCharset);
 
     BitmapEx aThumbnail(rThumbnail);
     //fdo#74834: only load thumbnail if the corresponding option is not disabled in the configuration
@@ -59,13 +59,14 @@ RecentDocsViewItem::RecentDocsViewItem(ThumbnailView &rView, const OUString &rUR
     if (aThumbnail.IsEmpty())
     {
         // Use the default thumbnail if we have nothing else
-        BitmapEx aExt(RecentDocsView::getDefaultThumbnail(rURL));
+        BitmapEx aExt(sfx2::RecentDocsView::getDefaultThumbnail(rURL));
         Size aExtSize(aExt.GetSizePixel());
 
         // attempt to make it appear as if it is on a piece of paper
         long nPaperHeight;
         long nPaperWidth;
-        if( RecentDocsView::typeMatchesExtension(TYPE_IMPRESS, aURLObj.getExtension()) )
+        if (sfx2::RecentDocsView::typeMatchesExtension(
+                sfx2::ApplicationType::TYPE_IMPRESS, aURLObj.getExtension()))
         {
             // Swap width and height (PAPER_SCREEN_4_3 definition make it needed)
             PaperInfo aInfo(PAPER_SCREEN_4_3);
@@ -83,7 +84,7 @@ RecentDocsViewItem::RecentDocsViewItem(ThumbnailView &rView, const OUString &rUR
 
         if (aExtSize.Width() > aThumbnailSize.Width() || aExtSize.Height() > aThumbnailSize.Height())
         {
-            aExt = TemplateAbstractView::scaleImg(aExt, aThumbnailSize.Width(), aThumbnailSize.Height());
+            aExt = TemplateLocalView::scaleImg(aExt, aThumbnailSize.Width(), aThumbnailSize.Height());
             aExtSize = aExt.GetSizePixel();
         }
 
@@ -92,18 +93,18 @@ RecentDocsViewItem::RecentDocsViewItem(ThumbnailView &rView, const OUString &rUR
         aThumbnail = BitmapEx(Bitmap(aThumbnailSize, 24), AlphaMask(aThumbnailSize, &nAlpha));
 
         aThumbnail.CopyPixel(
-                Rectangle(Point((aThumbnailSize.Width() - aExtSize.Width()) / 2, (aThumbnailSize.Height() - aExtSize.Height()) / 2), aExtSize),
-                Rectangle(Point(0, 0), aExtSize),
+                ::tools::Rectangle(Point((aThumbnailSize.Width() - aExtSize.Width()) / 2, (aThumbnailSize.Height() - aExtSize.Height()) / 2), aExtSize),
+                ::tools::Rectangle(Point(0, 0), aExtSize),
                 &aExt);
     }
 
     maTitle = aTitle;
-    maPreview1 = TemplateAbstractView::scaleImg(aThumbnail, nThumbnailSize, nThumbnailSize);
+    maPreview1 = TemplateLocalView::scaleImg(aThumbnail, nThumbnailSize, nThumbnailSize);
 }
 
-Rectangle RecentDocsViewItem::updateHighlight(bool bVisible, const Point& rPoint)
+::tools::Rectangle RecentDocsViewItem::updateHighlight(bool bVisible, const Point& rPoint)
 {
-    Rectangle aRect(ThumbnailViewItem::updateHighlight(bVisible, rPoint));
+    ::tools::Rectangle aRect(ThumbnailViewItem::updateHighlight(bVisible, rPoint));
 
     if (bVisible && getRemoveIconArea().IsInside(rPoint))
     {
@@ -123,12 +124,12 @@ Rectangle RecentDocsViewItem::updateHighlight(bool bVisible, const Point& rPoint
     return aRect;
 }
 
-Rectangle RecentDocsViewItem::getRemoveIconArea() const
+::tools::Rectangle RecentDocsViewItem::getRemoveIconArea() const
 {
-    Rectangle aArea(getDrawArea());
+    ::tools::Rectangle aArea(getDrawArea());
     Size aSize(m_aRemoveRecentBitmap.GetSizePixel());
 
-    return Rectangle(
+    return ::tools::Rectangle(
             Point(aArea.Right() - aSize.Width() - THUMBNAILVIEW_ITEM_CORNER, aArea.Top() + THUMBNAILVIEW_ITEM_CORNER),
             aSize);
 }
@@ -197,11 +198,11 @@ void RecentDocsViewItem::OpenDocument()
     sal_Int32 nSize = 2;
     aArgsList.realloc(nSize);
     aArgsList[0].Name = "Referer";
-    aArgsList[0].Value = makeAny(OUString("private:user"));
+    aArgsList[0].Value <<= OUString("private:user");
 
     // documents will never be opened as templates
     aArgsList[1].Name = "AsTemplate";
-    aArgsList[1].Value = makeAny(false);
+    aArgsList[1].Value <<= false;
 
     xDispatch = xDispatchProvider->queryDispatch(aTargetURL, "_default", 0);
 
@@ -210,13 +211,13 @@ void RecentDocsViewItem::OpenDocument()
         // Call dispatch asynchronously as we can be destroyed while dispatch is
         // executed. VCL is not able to survive this as it wants to call listeners
         // after select!!!
-        LoadRecentFile* pLoadRecentFile = new LoadRecentFile;
+        sfx2::LoadRecentFile *const pLoadRecentFile = new sfx2::LoadRecentFile;
         pLoadRecentFile->xDispatch = xDispatch;
         pLoadRecentFile->aTargetURL = aTargetURL;
         pLoadRecentFile->aArgSeq = aArgsList;
         pLoadRecentFile->pView.set(&mrParent);
 
-        Application::PostUserEvent(LINK(nullptr, RecentDocsView, ExecuteHdl_Impl), pLoadRecentFile, true);
+        Application::PostUserEvent(LINK(nullptr, sfx2::RecentDocsView, ExecuteHdl_Impl), pLoadRecentFile, true);
     }
 }
 

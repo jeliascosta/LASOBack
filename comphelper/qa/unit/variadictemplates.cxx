@@ -40,18 +40,15 @@ inline void extract(
 {
     if (nArg >= seq.getLength()) {
         throw ::com::sun::star::lang::IllegalArgumentException(
-            OUString( "No such argument available!"),
+            "No such argument available!",
             xErrorContext, static_cast<sal_Int16>(nArg) );
     }
-    if (! (seq[nArg] >>= v)) {
-        OUStringBuffer buf;
-        buf.append( "Cannot extract ANY { " );
-        buf.append( seq[nArg].getValueType().getTypeName() );
-        buf.append( " } to " );
-        buf.append( ::cppu::UnoType<T>::get().getTypeName() );
-        buf.append( static_cast<sal_Unicode>('!') );
+    if (! fromAny(seq[nArg], &v)) {
         throw ::com::sun::star::lang::IllegalArgumentException(
-            buf.makeStringAndClear(), xErrorContext,
+            "Cannot extract ANY { "
+            + seq[nArg].getValueType().getTypeName()
+            + " } to " + ::cppu::UnoType<T>::get().getTypeName(),
+            xErrorContext,
             static_cast<sal_Int16>(nArg) );
     }
 }
@@ -128,12 +125,12 @@ void VariadicTemplatesTest::testUnwrapArgs() {
         ::com::sun::star::uno::Any* p1 = seq1.getArray();
         ::com::sun::star::uno::Any* p2 = seq2.getArray();
 
-        for( sal_Int16 i = 0; i < seq1.getLength() && i < seq2.getLength(); ++i ) {
-            CPPUNIT_ASSERT_MESSAGE( "seq1 and seq2 are equal",
-                                    p1[i] == p2[i] );
+        for( sal_Int32 i = 0; i < seq1.getLength() && i < seq2.getLength(); ++i ) {
+            CPPUNIT_ASSERT_EQUAL_MESSAGE( "seq1 and seq2 are equal",
+                                    p1[i], p2[i] );
         }
         CPPUNIT_ASSERT_MESSAGE( "seq1 and seq2 are equal",
-                                seq1 == seq2 );
+                                bool(seq1 == seq2) );
     }
     catch( ::com::sun::star::lang::IllegalArgumentException& err ) {
         std::stringstream ss;
@@ -171,8 +168,8 @@ void VariadicTemplatesTest::testUnwrapArgs() {
             CPPUNIT_FAIL( "unwrapArgs failed while the baseline did not throw" );
         }
         catch( ::com::sun::star::lang::IllegalArgumentException& err2 ) {
-            CPPUNIT_ASSERT_MESSAGE( "err1.ArgumentPosition == err2.ArgumentPosition",
-                                    err1.ArgumentPosition == err2.ArgumentPosition );
+            CPPUNIT_ASSERT_EQUAL_MESSAGE( "err1.ArgumentPosition == err2.ArgumentPosition",
+                                    err1.ArgumentPosition, err2.ArgumentPosition );
         }
     }
 }

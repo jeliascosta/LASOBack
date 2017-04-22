@@ -15,9 +15,7 @@ SmWordExportBase::SmWordExportBase(const SmNode* pIn)
 {
 }
 
-SmWordExportBase::~SmWordExportBase()
-{
-}
+SmWordExportBase::~SmWordExportBase() = default;
 
 void SmWordExportBase::HandleNode(const SmNode* pNode, int nLevel)
 {
@@ -46,14 +44,14 @@ void SmWordExportBase::HandleNode(const SmNode* pNode, int nLevel)
         HandleBinaryOperation(static_cast< const SmBinHorNode* >(pNode), nLevel);
         break;
     case NBINVER:
-        HandleFractions(pNode,nLevel);
+        HandleFractions(pNode,nLevel,nullptr);
         break;
     case NROOT:
         HandleRoot(static_cast< const SmRootNode* >(pNode), nLevel);
         break;
     case NSPECIAL:
     {
-        const SmTextNode* pText= static_cast< const SmTextNode* >(pNode);
+        auto pText= static_cast<const SmTextNode*>(pNode);
         //if the token str and the result text are the same then this
         //is to be seen as text, else assume it's a mathchar
         if (pText->GetText() == pText->GetToken().aText)

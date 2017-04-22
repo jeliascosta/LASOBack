@@ -51,7 +51,7 @@ struct SwRedlineDataParent
     SvTreeListEntry*            pTLBParent; // corresponding TreeListBox entry
     OUString                    sComment;   // redline comment
 
-    inline bool operator< ( const SwRedlineDataParent& rObj ) const
+    bool operator< ( const SwRedlineDataParent& rObj ) const
                         { return (pData && pData->GetSeqNo() <  rObj.pData->GetSeqNo()); }
 };
 
@@ -59,14 +59,14 @@ class SwRedlineDataParentSortArr : public o3tl::sorted_vector<SwRedlineDataParen
 
 typedef std::vector<std::unique_ptr<SwRedlineDataChild>> SwRedlineDataChildArr;
 
-class SW_DLLPUBLIC SwRedlineAcceptDlg
+class SW_DLLPUBLIC SwRedlineAcceptDlg final
 {
     VclPtr<vcl::Window>     m_pParentDlg;
     std::vector<std::unique_ptr<SwRedlineDataParent>> m_RedlineParents;
     SwRedlineDataChildArr   m_RedlineChildren;
     SwRedlineDataParentSortArr m_aUsedSeqNo;
     VclPtr<SvxAcceptChgCtr>    m_aTabPagesCTRL;
-    PopupMenu               m_aPopup;
+    VclPtr<PopupMenu>       m_xPopup;
     Timer                   m_aDeselectTimer;
     Timer                   m_aSelectTimer;
     OUString                m_sInserted;
@@ -81,7 +81,6 @@ class SW_DLLPUBLIC SwRedlineAcceptDlg
     Link<SvTreeListBox*,void> m_aOldSelectHdl;
     Link<SvTreeListBox*,void> m_aOldDeselectHdl;
     bool                    m_bOnlyFormatedRedlines;
-    bool                    m_bHasReadonlySel;
     bool                    m_bRedlnAutoFormat;
 
     // prevent update dialog data during longer operations (cf #102657#)
@@ -93,41 +92,41 @@ class SW_DLLPUBLIC SwRedlineAcceptDlg
     Image                   m_aTableChgd;
     Image                   m_aFormatCollSet;
 
-    DECL_DLLPRIVATE_LINK_TYPED( AcceptHdl,     SvxTPView*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( AcceptAllHdl,  SvxTPView*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( RejectHdl,     SvxTPView*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( RejectAllHdl,  SvxTPView*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( UndoHdl,       SvxTPView*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( DeselectHdl, SvTreeListBox*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( SelectHdl,   SvTreeListBox*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( SelectTimerHdl, Timer*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( GotoHdl, Timer*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( CommandHdl, SvSimpleTable*, void );
+    DECL_DLLPRIVATE_LINK( AcceptHdl,     SvxTPView*, void );
+    DECL_DLLPRIVATE_LINK( AcceptAllHdl,  SvxTPView*, void );
+    DECL_DLLPRIVATE_LINK( RejectHdl,     SvxTPView*, void );
+    DECL_DLLPRIVATE_LINK( RejectAllHdl,  SvxTPView*, void );
+    DECL_DLLPRIVATE_LINK( UndoHdl,       SvxTPView*, void );
+    DECL_DLLPRIVATE_LINK( DeselectHdl, SvTreeListBox*, void );
+    DECL_DLLPRIVATE_LINK( SelectHdl,   SvTreeListBox*, void );
+    DECL_DLLPRIVATE_LINK( SelectTimerHdl, Timer*, void );
+    DECL_DLLPRIVATE_LINK( GotoHdl, Timer*, void );
+    DECL_DLLPRIVATE_LINK( CommandHdl, SvSimpleTable*, void );
 
-    SAL_DLLPRIVATE sal_uInt16    CalcDiff(sal_uInt16 nStart, bool bChild);
+    SAL_DLLPRIVATE SwRedlineTable::size_type CalcDiff(SwRedlineTable::size_type nStart, bool bChild);
     SAL_DLLPRIVATE void          InsertChildren(SwRedlineDataParent *pParent, const SwRangeRedline& rRedln, const sal_uInt16 nAutoFormat);
-    SAL_DLLPRIVATE void          InsertParents(sal_uInt16 nStart, sal_uInt16 nEnd = USHRT_MAX);
-    SAL_DLLPRIVATE void          RemoveParents(sal_uInt16 nStart, sal_uInt16 nEnd);
+    SAL_DLLPRIVATE void          InsertParents(SwRedlineTable::size_type nStart, SwRedlineTable::size_type nEnd = SwRedlineTable::npos);
+    SAL_DLLPRIVATE void          RemoveParents(SwRedlineTable::size_type nStart, SwRedlineTable::size_type nEnd);
     SAL_DLLPRIVATE void          InitAuthors();
 
-    SAL_DLLPRIVATE OUString      GetRedlineText(const SwRangeRedline& rRedln, DateTime &rDateTime, sal_uInt16 nStack = 0);
+    SAL_DLLPRIVATE static OUString GetRedlineText(const SwRangeRedline& rRedln, DateTime &rDateTime, sal_uInt16 nStack = 0);
     SAL_DLLPRIVATE Image         GetActionImage(const SwRangeRedline& rRedln, sal_uInt16 nStack = 0);
     SAL_DLLPRIVATE OUString      GetActionText(const SwRangeRedline& rRedln, sal_uInt16 nStack = 0);
-    SAL_DLLPRIVATE sal_uInt16    GetRedlinePos( const SvTreeListEntry& rEntry) const;
+    SAL_DLLPRIVATE static SwRedlineTable::size_type GetRedlinePos( const SvTreeListEntry& rEntry);
 
     SwRedlineAcceptDlg(SwRedlineAcceptDlg const&) = delete;
     SwRedlineAcceptDlg& operator=(SwRedlineAcceptDlg const&) = delete;
 
 public:
     SwRedlineAcceptDlg(vcl::Window *pParent, VclBuilderContainer *pBuilder, vcl::Window *pContentArea, bool bAutoFormat = false);
-    virtual ~SwRedlineAcceptDlg();
+    ~SwRedlineAcceptDlg();
 
-    DECL_LINK_TYPED( FilterChangedHdl, SvxTPFilter*, void );
+    DECL_LINK( FilterChangedHdl, SvxTPFilter*, void );
 
-    inline SvxAcceptChgCtr& GetChgCtrl()        { return *m_aTabPagesCTRL.get(); }
-    inline bool     HasRedlineAutoFormat() const   { return m_bRedlnAutoFormat; }
+    SvxAcceptChgCtr& GetChgCtrl()        { return *m_aTabPagesCTRL.get(); }
+    bool     HasRedlineAutoFormat() const   { return m_bRedlnAutoFormat; }
 
-    void            Init(sal_uInt16 nStart = 0);
+    void            Init(SwRedlineTable::size_type nStart = 0);
     void            CallAcceptReject( bool bSelect, bool bAccept );
 
     void            Initialize(const OUString &rExtraData);
@@ -143,7 +142,7 @@ class SwModelessRedlineAcceptDlg : public SfxModelessDialog
 
 public:
     SwModelessRedlineAcceptDlg(SfxBindings*, SwChildWinWrapper*, vcl::Window *pParent);
-    virtual ~SwModelessRedlineAcceptDlg();
+    virtual ~SwModelessRedlineAcceptDlg() override;
     virtual void dispose() override;
 
     virtual void    Activate() override;
@@ -170,11 +169,10 @@ class SwRedlineAcceptPanel : public PanelLayout, public SfxListener
     SwRedlineAcceptDlg* mpImplDlg;
 public:
     SwRedlineAcceptPanel(vcl::Window* pParent, const css::uno::Reference<css::frame::XFrame>& rFrame);
-    virtual ~SwRedlineAcceptPanel();
+    virtual ~SwRedlineAcceptPanel() override;
     virtual void dispose() override;
 
-    /// We need to be a SfxListener to be able to update the list of changes when we get SFX_HINT_DOCCHANGED.
-    using Control::Notify;
+    /// We need to be a SfxListener to be able to update the list of changes when we get SfxHintId::DocChanged.
     virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override;
 };
 

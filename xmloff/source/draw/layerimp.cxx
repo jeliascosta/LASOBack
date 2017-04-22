@@ -52,7 +52,6 @@ class SdXMLLayerContext : public SvXMLImportContext
 {
 public:
     SdXMLLayerContext( SvXMLImport& rImport, sal_uInt16 nPrefix, const OUString& rLocalName, const Reference< XAttributeList >& xAttrList, const Reference< XNameAccess >& xLayerManager );
-    virtual ~SdXMLLayerContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const Reference< XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
@@ -86,10 +85,6 @@ SdXMLLayerContext::SdXMLLayerContext( SvXMLImport& rImport, sal_uInt16 nPrefix, 
 
 }
 
-SdXMLLayerContext::~SdXMLLayerContext()
-{
-}
-
 SvXMLImportContext * SdXMLLayerContext::CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const Reference< XAttributeList >& )
 {
     if( (XML_NAMESPACE_SVG == nPrefix) && IsXMLToken(rLocalName, XML_TITLE) )
@@ -108,7 +103,7 @@ SvXMLImportContext * SdXMLLayerContext::CreateChildContext( sal_uInt16 nPrefix, 
 
 void SdXMLLayerContext::EndElement()
 {
-    DBG_ASSERT( !msName.isEmpty(), "xmloff::SdXMLLayerContext::EndElement(), draw:layer element without draw:name!" );
+    SAL_WARN_IF( msName.isEmpty(), "xmloff", "xmloff::SdXMLLayerContext::EndElement(), draw:layer element without draw:name!" );
     if( !msName.isEmpty() ) try
     {
         Reference< XPropertySet > xLayer;
@@ -116,14 +111,14 @@ void SdXMLLayerContext::EndElement()
         if( mxLayerManager->hasByName( msName ) )
         {
             mxLayerManager->getByName( msName ) >>= xLayer;
-            DBG_ASSERT( xLayer.is(), "xmloff::SdXMLLayerContext::EndElement(), failed to get existing XLayer!" );
+            SAL_WARN_IF( !xLayer.is(), "xmloff", "xmloff::SdXMLLayerContext::EndElement(), failed to get existing XLayer!" );
         }
         else
         {
             Reference< XLayerManager > xLayerManager( mxLayerManager, UNO_QUERY );
             if( xLayerManager.is() )
                 xLayer.set( xLayerManager->insertNewByIndex( xLayerManager->getCount() ), UNO_QUERY );
-            DBG_ASSERT( xLayer.is(), "xmloff::SdXMLLayerContext::EndElement(), failed to create new XLayer!" );
+            SAL_WARN_IF( !xLayer.is(), "xmloff", "xmloff::SdXMLLayerContext::EndElement(), failed to create new XLayer!" );
 
             if( xLayer.is() )
                 xLayer->setPropertyValue("Name", Any( msName ) );
@@ -147,7 +142,7 @@ SdXMLLayerSetContext::SdXMLLayerSetContext( SvXMLImport& rImport, sal_uInt16 nPr
 : SvXMLImportContext(rImport, nPrfx, rLocalName)
 {
     Reference< XLayerSupplier > xLayerSupplier( rImport.GetModel(), UNO_QUERY );
-    DBG_ASSERT( xLayerSupplier.is(), "xmloff::SdXMLLayerSetContext::SdXMLLayerSetContext(), XModel is not supporting XLayerSupplier!" );
+    SAL_WARN_IF( !xLayerSupplier.is(), "xmloff", "xmloff::SdXMLLayerSetContext::SdXMLLayerSetContext(), XModel is not supporting XLayerSupplier!" );
     if( xLayerSupplier.is() )
         mxLayerManager = xLayerSupplier->getLayerManager();
 }

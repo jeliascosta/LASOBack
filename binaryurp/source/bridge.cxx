@@ -779,7 +779,7 @@ void Bridge::handleCommitChangeRequest(
             bCcMode = false;
             bExc = true;
             ret = mapCppToBinaryAny(
-                css::uno::makeAny(
+                css::uno::Any(
                     css::bridge::InvalidProtocolChangeException(
                         "InvalidProtocolChangeException",
                         css::uno::Reference< css::uno::XInterface >(), s[i],
@@ -848,7 +848,7 @@ Bridge::~Bridge() {
 }
 
 css::uno::Reference< css::uno::XInterface > Bridge::getInstance(
-    OUString const & sInstanceName) throw (css::uno::RuntimeException, std::exception)
+    OUString const & sInstanceName)
 {
     if (sInstanceName.isEmpty()) {
         throw css::uno::RuntimeException(
@@ -882,21 +882,21 @@ css::uno::Reference< css::uno::XInterface > Bridge::getInstance(
             binaryToCppMapping_.mapInterface(
                 *static_cast< uno_Interface ** >(ret.getValue(ifc)),
                 ifc.get())),
-        css::uno::UNO_REF_NO_ACQUIRE);
+        SAL_NO_ACQUIRE);
 }
 
-OUString Bridge::getName() throw (css::uno::RuntimeException, std::exception) {
+OUString Bridge::getName() {
     return name_;
 }
 
-OUString Bridge::getDescription() throw (css::uno::RuntimeException, std::exception) {
+OUString Bridge::getDescription() {
     OUStringBuffer b(name_);
     b.append(':');
     b.append(connection_->getDescription());
     return b.makeStringAndClear();
 }
 
-void Bridge::dispose() throw (css::uno::RuntimeException, std::exception) {
+void Bridge::dispose() {
     // For terminate(true) not to deadlock, an external protocol must ensure
     // that dispose is not called from a thread pool worker thread (that dispose
     // is never called from the reader or writer thread is already ensured
@@ -911,7 +911,6 @@ void Bridge::dispose() throw (css::uno::RuntimeException, std::exception) {
 
 void Bridge::addEventListener(
     css::uno::Reference< css::lang::XEventListener > const & xListener)
-    throw (css::uno::RuntimeException, std::exception)
 {
     assert(xListener.is());
     {
@@ -928,7 +927,6 @@ void Bridge::addEventListener(
 
 void Bridge::removeEventListener(
     css::uno::Reference< css::lang::XEventListener > const & aListener)
-    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(mutex_);
     Listeners::iterator i(
@@ -943,7 +941,7 @@ void Bridge::sendCommitChangeRequest() {
     css::uno::Sequence< css::bridge::ProtocolProperty > s(1);
     s[0].Name = "CurrentContext";
     std::vector< BinaryAny > a;
-    a.push_back(mapCppToBinaryAny(css::uno::makeAny(s)));
+    a.push_back(mapCppToBinaryAny(css::uno::Any(s)));
     sendProtPropRequest(OutgoingRequest::KIND_COMMIT_CHANGE, a);
 }
 

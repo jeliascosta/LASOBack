@@ -90,14 +90,11 @@ namespace slideshow
             import (currently, the UnoGraphicExporter needs this
             information).
 
-            @param o_rMtf
-            Metafile to extract shape content into
         */
-        bool getMetaFile( const css::uno::Reference< css::lang::XComponent >&        xSource,
-                          const css::uno::Reference< css::drawing::XDrawPage >&      xContainingPage,
-                          GDIMetaFile&                                               o_rMtf,
-                          int                                                        mtfLoadFlags,
-                          const css::uno::Reference< css::uno::XComponentContext >&  rxContext );
+        GDIMetaFileSharedPtr getMetaFile( const css::uno::Reference< css::lang::XComponent >&        xSource,
+                                          const css::uno::Reference< css::drawing::XDrawPage >&      xContainingPage,
+                                          int                                                        mtfLoadFlags,
+                                          const css::uno::Reference< css::uno::XComponentContext >&  rxContext );
 
         /** Gets the next action offset for iterating meta actions which is most
             often returns 1.
@@ -112,15 +109,11 @@ namespace slideshow
             @param o_rLoopCount
             Number of times the bitmap animation shall be repeated
 
-            @param o_eCycleMode
-            Repeat mode (normal, or ping-pong mode)
-
             @param rGraphic
             Input graphic object, to extract animations from
          */
         bool getAnimationFromGraphic( VectorOfMtfAnimationFrames& o_rFrames,
                                       ::std::size_t&              o_rLoopCount,
-                                      CycleMode&                  o_eCycleMode,
                                       const Graphic&              rGraphic );
 
         /** Retrieve scroll text animation rectangles from given metafile

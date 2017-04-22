@@ -35,15 +35,15 @@ private:
     OObjectListener(const OObjectListener&) = delete;
     void operator =(const OObjectListener&) = delete;
 protected:
-    virtual ~OObjectListener();
+    virtual ~OObjectListener() override;
 public:
     OObjectListener(OObjectBase* _pObject);
 
     // XEventListener
-    virtual void SAL_CALL disposing( const  css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const  css::lang::EventObject& Source ) override;
 
     // XPropertyChangeListener
-    virtual void SAL_CALL propertyChange( const  css::beans::PropertyChangeEvent& evt ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL propertyChange( const  css::beans::PropertyChangeEvent& evt ) override;
 };
 }
 #endif // INCLUDED_REPORTDESIGN_SOURCE_CORE_INC_RPTOBJECTLISTENER_HXX

@@ -26,7 +26,7 @@
 
 namespace fileaccess {
 
-    class shell;
+    class TaskManager;
 
     class FileContentIdentifier :
         public cppu::OWeakObject,
@@ -39,45 +39,33 @@ namespace fileaccess {
         FileContentIdentifier( const OUString& aUnqPath,
                                bool IsNormalized = true );
 
-        virtual ~FileContentIdentifier();
+        virtual ~FileContentIdentifier() override;
 
         // XInterface
         virtual css::uno::Any SAL_CALL
-        queryInterface(
-            const css::uno::Type& aType )
-            throw( css::uno::RuntimeException, std::exception ) override;
+        queryInterface( const css::uno::Type& aType ) override;
 
         virtual void SAL_CALL
-        acquire(
-            void )
+        acquire()
             throw() override;
 
         virtual void SAL_CALL
-        release(
-            void )
+        release()
             throw() override;
 
         // XTypeProvider
         virtual css::uno::Sequence< css::uno::Type > SAL_CALL
-        getTypes(
-            void )
-            throw( css::uno::RuntimeException, std::exception ) override;
+        getTypes() override;
 
         virtual css::uno::Sequence< sal_Int8 > SAL_CALL
-        getImplementationId(
-            void )
-            throw( css::uno::RuntimeException, std::exception ) override;
+        getImplementationId() override;
 
         // XContentIdentifier
         virtual OUString SAL_CALL
-        getContentIdentifier(
-            void )
-            throw( css::uno::RuntimeException, std::exception ) override;
+        getContentIdentifier() override;
 
         virtual OUString SAL_CALL
-        getContentProviderScheme(
-            void )
-            throw( css::uno::RuntimeException, std::exception ) override;
+        getContentProviderScheme() override;
 
     private:
         OUString m_aContentId;              // The URL string

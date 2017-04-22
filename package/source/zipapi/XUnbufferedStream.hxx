@@ -56,7 +56,7 @@ protected:
     sal_Int32 mnBlockSize;
     css::uno::Reference< css::xml::crypto::XCipherContext > m_xCipherContext;
     ZipUtils::Inflater maInflater;
-    bool mbRawStream, mbWrappedRaw, mbFinished;
+    bool mbRawStream, mbWrappedRaw;
     sal_Int16 mnHeaderToRead;
     sal_Int64 mnZipCurrent, mnZipEnd, mnZipSize, mnMyCurrent;
     CRC32 maCRC;
@@ -67,7 +67,7 @@ public:
                  const css::uno::Reference< css::uno::XComponentContext >& xContext,
                  const rtl::Reference<SotMutexHolder>& aMutexHolder,
                  ZipEntry & rEntry,
-                 css::uno::Reference < css::io::XInputStream > xNewZipStream,
+                 css::uno::Reference < css::io::XInputStream > const & xNewZipStream,
                  const ::rtl::Reference< EncryptionData >& rData,
                  sal_Int8 nStreamMode,
                  bool bIsEncrypted,
@@ -80,19 +80,14 @@ public:
                  const css::uno::Reference < css::io::XInputStream >& xRawStream,
                  const ::rtl::Reference< EncryptionData >& rData );
 
-    virtual ~XUnbufferedStream();
+    virtual ~XUnbufferedStream() override;
 
     // XInputStream
-    virtual sal_Int32 SAL_CALL readBytes( css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead )
-        throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL readSomeBytes( css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead )
-        throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip )
-        throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL available(  )
-        throw(css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL closeInput(  )
-        throw(css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL readBytes( css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead ) override;
+    virtual sal_Int32 SAL_CALL readSomeBytes( css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead ) override;
+    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip ) override;
+    virtual sal_Int32 SAL_CALL available(  ) override;
+    virtual void SAL_CALL closeInput(  ) override;
 };
 #endif
 

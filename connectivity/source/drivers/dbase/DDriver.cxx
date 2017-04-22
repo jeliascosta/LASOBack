@@ -35,24 +35,24 @@ using namespace ::com::sun::star::lang;
 
 // static ServiceInfo
 
-OUString ODriver::getImplementationName_Static(  ) throw(RuntimeException)
+OUString ODriver::getImplementationName_Static(  )
 {
     return OUString("com.sun.star.comp.sdbc.dbase.ODriver");
 }
 
 
-OUString SAL_CALL ODriver::getImplementationName(  ) throw(RuntimeException, std::exception)
+OUString SAL_CALL ODriver::getImplementationName(  )
 {
     return getImplementationName_Static();
 }
 
 
-::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >  SAL_CALL connectivity::dbase::ODriver_CreateInstance(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory) throw( ::com::sun::star::uno::Exception )
+css::uno::Reference< css::uno::XInterface >  SAL_CALL connectivity::dbase::ODriver_CreateInstance(const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxFactory)
 {
     return *(new ODriver( comphelper::getComponentContext(_rxFactory) ));
 }
 
-Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url, const Sequence< PropertyValue >& info ) throw(SQLException, RuntimeException, std::exception)
+Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url, const Sequence< PropertyValue >& info )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (ODriver_BASE::rBHelper.bDisposed)
@@ -69,40 +69,40 @@ Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url, const S
     return xCon;
 }
 
-sal_Bool SAL_CALL ODriver::acceptsURL( const OUString& url ) throw(SQLException, RuntimeException, std::exception)
+sal_Bool SAL_CALL ODriver::acceptsURL( const OUString& url )
 {
     return url.startsWith("sdbc:dbase:");
 }
 
-Sequence< DriverPropertyInfo > SAL_CALL ODriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ ) throw(SQLException, RuntimeException, std::exception)
+Sequence< DriverPropertyInfo > SAL_CALL ODriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ )
 {
     if ( acceptsURL(url) )
     {
-        ::std::vector< DriverPropertyInfo > aDriverInfo;
+        std::vector< DriverPropertyInfo > aDriverInfo;
 
         Sequence< OUString > aBoolean(2);
         aBoolean[0] = "0";
         aBoolean[1] = "1";
 
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("CharSet")
-                ,OUString("CharSet of the database.")
+                "CharSet"
+                ,"CharSet of the database."
                 ,false
                 ,OUString()
                 ,Sequence< OUString >())
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("ShowDeleted")
-                ,OUString("Display inactive records.")
+                "ShowDeleted"
+                ,"Display inactive records."
                 ,false
-                ,OUString("0")
+                ,"0"
                 ,aBoolean)
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("EnableSQL92Check")
-                ,OUString("Use SQL92 naming constraints.")
+                "EnableSQL92Check"
+                ,"Use SQL92 naming constraints."
                 ,false
-                ,OUString("0")
+                ,"0"
                 ,aBoolean)
                 );
         return Sequence< DriverPropertyInfo >(&(aDriverInfo[0]),aDriverInfo.size());

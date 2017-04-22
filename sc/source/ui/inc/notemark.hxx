@@ -24,9 +24,9 @@
 #include <vcl/timer.hxx>
 #include "global.hxx"
 #include "address.hxx"
+#include "postit.hxx"
 
 class SdrModel;
-class SdrObject;
 
 class ScNoteMarker
 {
@@ -38,18 +38,18 @@ private:
     ScDocument* pDoc;
     ScAddress   aDocPos;
     OUString    aUserText;
-    Rectangle   aVisRect;
+    tools::Rectangle   aVisRect;
     Timer       aTimer;
     MapMode     aMapMode;
     bool        bLeft;
     bool        bByKeyboard;
 
-    Rectangle       aRect;
+    tools::Rectangle       aRect;
     SdrModel*       pModel;
-    SdrObject*      pObject;
+    ScCaptionPtr    mxObject;
     bool            bVisible;
     Point           aGridOff;
-    DECL_LINK_TYPED( TimeHdl, Timer*, void );
+    DECL_LINK( TimeHdl, Timer*, void );
 
 public:
                 ScNoteMarker( vcl::Window* pWin, vcl::Window* pRight, vcl::Window* pBottom, vcl::Window* pDiagonal,

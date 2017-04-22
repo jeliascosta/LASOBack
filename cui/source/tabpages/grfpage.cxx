@@ -119,7 +119,7 @@ SvxGrfCropPage::SvxGrfCropPage ( vcl::Window *pParent, const SfxItemSet &rSet )
 
     m_pOrigSizePB->SetClickHdl( LINK(this, SvxGrfCropPage, OrigSizeHdl) );
 
-    aTimer.SetTimeoutHdl(LINK(this, SvxGrfCropPage, Timeout));
+    aTimer.SetInvokeHandler(LINK(this, SvxGrfCropPage, Timeout));
     aTimer.SetTimeout( 1500 );
 }
 
@@ -217,8 +217,8 @@ void SvxGrfCropPage::Reset( const SfxItemSet *rSet )
     {
         aPageSize = OutputDevice::LogicToLogic(
                         Size( CM_1_TO_TWIP,  CM_1_TO_TWIP ),
-                        MapMode( MAP_TWIP ),
-                        MapMode( (MapUnit)rSet->GetPool()->GetMetric( nW ) ) );
+                        MapMode( MapUnit::MapTwip ),
+                        MapMode( rSet->GetPool()->GetMetric( nW ) ) );
     }
 
     bool bFound = false;
@@ -234,7 +234,7 @@ void SvxGrfCropPage::Reset( const SfxItemSet *rSet )
         if( pGrf )
         {
             aOrigSize = GetGrfOrigSize( *pGrf );
-            if (pGrf->GetType() == GRAPHIC_BITMAP && aOrigSize.Width() && aOrigSize.Height())
+            if (pGrf->GetType() == GraphicType::Bitmap && aOrigSize.Width() && aOrigSize.Height())
             {
                 Bitmap aBitmap = pGrf->GetBitmap();
                 aOrigPixelSize = aBitmap.GetSizePixel();
@@ -326,7 +326,7 @@ void SvxGrfCropPage::ActivatePage(const SfxItemSet& rSet)
 {
 #ifdef DBG_UTIL
     SfxItemPool* pPool = GetItemSet().GetPool();
-    DBG_ASSERT( pPool, "Wo ist der Pool" );
+    DBG_ASSERT( pPool, "Where is the pool?" );
 #endif
 
     bSetOrigSize = false;
@@ -388,7 +388,7 @@ void SvxGrfCropPage::ActivatePage(const SfxItemSet& rSet)
         {
             m_pExampleWN->SetGraphic( *pGrf );
             aOrigSize = GetGrfOrigSize( *pGrf );
-            if (pGrf->GetType() == GRAPHIC_BITMAP && aOrigSize.Width() > 1 && aOrigSize.Height() > 1) {
+            if (pGrf->GetType() == GraphicType::Bitmap && aOrigSize.Width() > 1 && aOrigSize.Height() > 1) {
                 Bitmap aBitmap = pGrf->GetBitmap();
                 aOrigPixelSize = aBitmap.GetSizePixel();
             }
@@ -403,21 +403,21 @@ void SvxGrfCropPage::ActivatePage(const SfxItemSet& rSet)
     CalcZoom();
 }
 
-SfxTabPage::sfxpg SvxGrfCropPage::DeactivatePage(SfxItemSet *_pSet)
+DeactivateRC SvxGrfCropPage::DeactivatePage(SfxItemSet *_pSet)
 {
     if ( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 /*--------------------------------------------------------------------
     description: scale changed, adjust size
  --------------------------------------------------------------------*/
 
-IMPL_LINK_TYPED( SvxGrfCropPage, ZoomHdl, Edit&, rField, void )
+IMPL_LINK( SvxGrfCropPage, ZoomHdl, Edit&, rField, void )
 {
     SfxItemPool* pPool = GetItemSet().GetPool();
-    DBG_ASSERT( pPool, "Wo ist der Pool" );
+    DBG_ASSERT( pPool, "Where is the pool?" );
     FieldUnit eUnit = MapToFieldUnit( pPool->GetMetric( pPool->GetWhich(
                                                     SID_ATTR_GRAF_CROP ) ) );
 
@@ -443,10 +443,10 @@ IMPL_LINK_TYPED( SvxGrfCropPage, ZoomHdl, Edit&, rField, void )
     description: change size, adjust scale
  --------------------------------------------------------------------*/
 
-IMPL_LINK_TYPED( SvxGrfCropPage, SizeHdl, Edit&, rField, void )
+IMPL_LINK( SvxGrfCropPage, SizeHdl, Edit&, rField, void )
 {
     SfxItemPool* pPool = GetItemSet().GetPool();
-    DBG_ASSERT( pPool, "Wo ist der Pool" );
+    DBG_ASSERT( pPool, "Where is the pool?" );
     FieldUnit eUnit = MapToFieldUnit( pPool->GetMetric( pPool->GetWhich(
                                                     SID_ATTR_GRAF_CROP ) ) );
 
@@ -479,10 +479,10 @@ IMPL_LINK_TYPED( SvxGrfCropPage, SizeHdl, Edit&, rField, void )
     description: evaluate border
  --------------------------------------------------------------------*/
 
-IMPL_LINK_TYPED( SvxGrfCropPage, CropHdl, SpinField&, rField, void )
+IMPL_LINK( SvxGrfCropPage, CropHdl, SpinField&, rField, void )
 {
     SfxItemPool* pPool = GetItemSet().GetPool();
-    DBG_ASSERT( pPool, "Wo ist der Pool" );
+    DBG_ASSERT( pPool, "Where is the pool?" );
     FieldUnit eUnit = MapToFieldUnit( pPool->GetMetric( pPool->GetWhich(
                                                     SID_ATTR_GRAF_CROP ) ) );
 
@@ -563,10 +563,10 @@ IMPL_LINK_TYPED( SvxGrfCropPage, CropHdl, SpinField&, rField, void )
     description: set original size
  --------------------------------------------------------------------*/
 
-IMPL_LINK_NOARG_TYPED(SvxGrfCropPage, OrigSizeHdl, Button*, void)
+IMPL_LINK_NOARG(SvxGrfCropPage, OrigSizeHdl, Button*, void)
 {
     SfxItemPool* pPool = GetItemSet().GetPool();
-    DBG_ASSERT( pPool, "Wo ist der Pool" );
+    DBG_ASSERT( pPool, "Where is the pool?" );
     FieldUnit eUnit = MapToFieldUnit( pPool->GetMetric( pPool->GetWhich(
                                                     SID_ATTR_GRAF_CROP ) ) );
 
@@ -589,7 +589,7 @@ IMPL_LINK_NOARG_TYPED(SvxGrfCropPage, OrigSizeHdl, Button*, void)
 void SvxGrfCropPage::CalcZoom()
 {
     SfxItemPool* pPool = GetItemSet().GetPool();
-    DBG_ASSERT( pPool, "Wo ist der Pool" );
+    DBG_ASSERT( pPool, "Where is the pool?" );
     FieldUnit eUnit = MapToFieldUnit( pPool->GetMetric( pPool->GetWhich(
                                                     SID_ATTR_GRAF_CROP ) ) );
 
@@ -618,7 +618,7 @@ void SvxGrfCropPage::CalcZoom()
 void SvxGrfCropPage::CalcMinMaxBorder()
 {
     SfxItemPool* pPool = GetItemSet().GetPool();
-    DBG_ASSERT( pPool, "Wo ist der Pool" );
+    DBG_ASSERT( pPool, "Where is the pool?" );
     FieldUnit eUnit = MapToFieldUnit( pPool->GetMetric( pPool->GetWhich(
                                                     SID_ATTR_GRAF_CROP ) ) );
     long nR = lcl_GetValue(*m_pRightMF, eUnit );
@@ -649,7 +649,7 @@ void SvxGrfCropPage::GraphicHasChanged( bool bFound )
     if( bFound )
     {
         SfxItemPool* pPool = GetItemSet().GetPool();
-        DBG_ASSERT( pPool, "Wo ist der Pool" );
+        DBG_ASSERT( pPool, "Where is the pool?" );
         FieldUnit eUnit = MapToFieldUnit( pPool->GetMetric( pPool->GetWhich(
                                                     SID_ATTR_GRAF_CROP ) ));
 
@@ -699,8 +699,7 @@ void SvxGrfCropPage::GraphicHasChanged( bool bFound )
         OUString sTemp = aFld->GetText();
         aFld->SetValue( aFld->Normalize( aOrigSize.Height() ), eUnit );
         // multiplication sign (U+00D7)
-        sTemp += OUString( sal_Unicode (0x00D7) );
-        sTemp += aFld->GetText();
+        sTemp += OUStringLiteral1(0x00D7) + aFld->GetText();
 
         if ( aOrigPixelSize.Width() && aOrigPixelSize.Height() ) {
              sal_Int32 ax = sal_Int32(floor((float)aOrigPixelSize.Width() /
@@ -711,8 +710,7 @@ void SvxGrfCropPage::GraphicHasChanged( bool bFound )
              sTemp += CUI_RESSTR( RID_SVXSTR_PPI );
              OUString sPPI = OUString::number(ax);
              if (abs(ax - ay) > 1) {
-                sPPI += OUString( sal_Unicode (0x00D7) );
-                sPPI += OUString::number(ay);
+                sPPI += OUStringLiteral1(0x00D7) + OUString::number(ay);
              }
              sTemp = sTemp.replaceAll("%1", sPPI);
         }
@@ -726,7 +724,7 @@ void SvxGrfCropPage::GraphicHasChanged( bool bFound )
     m_pZoomConstRB->Enable(bFound);
 }
 
-IMPL_LINK_NOARG_TYPED(SvxGrfCropPage, Timeout, Timer *, void)
+IMPL_LINK_NOARG(SvxGrfCropPage, Timeout, Timer *, void)
 {
     DBG_ASSERT(pLastCropField,"Timeout ohne Feld?");
     CropHdl(*pLastCropField);
@@ -734,7 +732,7 @@ IMPL_LINK_NOARG_TYPED(SvxGrfCropPage, Timeout, Timer *, void)
 }
 
 
-IMPL_LINK_TYPED( SvxGrfCropPage, CropLoseFocusHdl, Control&, rControl, void )
+IMPL_LINK( SvxGrfCropPage, CropLoseFocusHdl, Control&, rControl, void )
 {
     MetricField* pField = static_cast<MetricField*>(&rControl);
     aTimer.Stop();
@@ -743,7 +741,7 @@ IMPL_LINK_TYPED( SvxGrfCropPage, CropLoseFocusHdl, Control&, rControl, void )
 }
 
 
-IMPL_LINK_TYPED( SvxGrfCropPage, CropModifyHdl, Edit&, rField, void )
+IMPL_LINK( SvxGrfCropPage, CropModifyHdl, Edit&, rField, void )
 {
     aTimer.Start();
     pLastCropField = static_cast<MetricField*>(&rField);
@@ -751,9 +749,9 @@ IMPL_LINK_TYPED( SvxGrfCropPage, CropModifyHdl, Edit&, rField, void )
 
 Size SvxGrfCropPage::GetGrfOrigSize( const Graphic& rGrf ) const
 {
-    const MapMode aMapTwip( MAP_TWIP );
+    const MapMode aMapTwip( MapUnit::MapTwip );
     Size aSize( rGrf.GetPrefSize() );
-    if( MAP_PIXEL == rGrf.GetPrefMapMode().GetMapUnit() )
+    if( MapUnit::MapPixel == rGrf.GetPrefMapMode().GetMapUnit() )
         aSize = PixelToLogic( aSize, aMapTwip );
     else
         aSize = OutputDevice::LogicToLogic( aSize,
@@ -767,7 +765,7 @@ SvxCropExample::SvxCropExample( vcl::Window* pPar, WinBits nStyle )
     : Window( pPar, nStyle)
     , aFrameSize( OutputDevice::LogicToLogic(
                             Size( CM_1_TO_TWIP / 2, CM_1_TO_TWIP / 2 ),
-                            MapMode( MAP_TWIP ), GetMapMode() ))
+                            MapMode( MapUnit::MapTwip ), GetMapMode() ))
     , aTopLeft(0,0)
     , aBottomRight(0,0)
 {
@@ -776,28 +774,21 @@ SvxCropExample::SvxCropExample( vcl::Window* pPar, WinBits nStyle )
 
 Size SvxCropExample::GetOptimalSize() const
 {
-    return LogicToPixel(Size(78, 78), MAP_APPFONT);
+    return LogicToPixel(Size(78, 78), MapUnit::MapAppFont);
 }
 
-VCL_BUILDER_DECL_FACTORY(SvxCropExample)
-{
-    WinBits nWinStyle = 0;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SvxCropExample>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxCropExample, 0)
 
-void SvxCropExample::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void SvxCropExample::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle&)
 {
     Size aWinSize(rRenderContext.PixelToLogic(GetOutputSizePixel()));
     rRenderContext.SetLineColor();
     rRenderContext.SetFillColor(rRenderContext.GetSettings().GetStyleSettings().GetWindowColor());
-    rRenderContext.SetRasterOp(ROP_OVERPAINT);
-    rRenderContext.DrawRect(Rectangle(Point(), aWinSize));
+    rRenderContext.SetRasterOp(RasterOp::OverPaint);
+    rRenderContext.DrawRect(::tools::Rectangle(Point(), aWinSize));
 
     rRenderContext.SetLineColor(Color(COL_WHITE));
-    Rectangle aRect(Point((aWinSize.Width() - aFrameSize.Width())/2,
+    ::tools::Rectangle aRect(Point((aWinSize.Width() - aFrameSize.Width())/2,
                           (aWinSize.Height() - aFrameSize.Height())/2),
                           aFrameSize);
     aGrf.Draw(&rRenderContext, aRect.TopLeft(), aRect.GetSize());
@@ -805,7 +796,7 @@ void SvxCropExample::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
     Size aSz(2, 0);
     aSz = rRenderContext.PixelToLogic(aSz);
     rRenderContext.SetFillColor(Color(COL_TRANSPARENT));
-    rRenderContext.SetRasterOp(ROP_INVERT);
+    rRenderContext.SetRasterOp(RasterOp::Invert);
     aRect.Left()    += aTopLeft.Y();
     aRect.Top()     += aTopLeft.X();
     aRect.Right()   -= aBottomRight.Y();

@@ -40,7 +40,7 @@ void lcl_parseAdjustmentValue(std::vector<drawing::EnhancedCustomShapeAdjustment
         else if (aToken.startsWith(aValuePrefix))
         {
             OString aValue = aToken.copy(strlen(aValuePrefix), aToken.getLength() - strlen(aValuePrefix) - strlen(" }"));
-            aAdjustmentValue.Value = uno::makeAny(aValue.toInt32());
+            aAdjustmentValue.Value <<= aValue.toInt32();
         }
         else if (!aToken.startsWith("State = "))
             SAL_WARN("oox", "lcl_parseAdjustmentValue: unexpected prefix: " << aToken);
@@ -77,11 +77,11 @@ drawing::EnhancedCustomShapeParameterPair lcl_parseEnhancedCustomShapeParameterP
 {
     drawing::EnhancedCustomShapeParameterPair aPair;
     OString aToken = rValue;
-    // We expect the followings here: First.Value, First.Type, Second.Value, Second.Type
+    // We expect the following here: First.Value, First.Type, Second.Value, Second.Type
     static const char aExpectedFVPrefix[] = "First = (com.sun.star.drawing.EnhancedCustomShapeParameter) { Value = (any) { (long) ";
     assert(aToken.startsWith(aExpectedFVPrefix));
     sal_Int32 nIndex = strlen(aExpectedFVPrefix);
-    aPair.First.Value = uno::makeAny(static_cast<sal_uInt32>(aToken.getToken(0, '}', nIndex).toInt32()));
+    aPair.First.Value <<= static_cast<sal_uInt32>(aToken.getToken(0, '}', nIndex).toInt32());
 
     static const char aExpectedFTPrefix[] = ", Type = (short) ";
     aToken = aToken.copy(nIndex);
@@ -93,7 +93,7 @@ drawing::EnhancedCustomShapeParameterPair lcl_parseEnhancedCustomShapeParameterP
     aToken = aToken.copy(nIndex);
     assert(aToken.startsWith(aExpectedSVPrefix));
     nIndex = strlen(aExpectedSVPrefix);
-    aPair.Second.Value = uno::makeAny(static_cast<sal_uInt32>(aToken.getToken(0, '}', nIndex).toInt32()));
+    aPair.Second.Value <<= static_cast<sal_uInt32>(aToken.getToken(0, '}', nIndex).toInt32());
 
     static const char aExpectedSTPrefix[] = ", Type = (short) ";
     aToken = aToken.copy(nIndex);
@@ -107,7 +107,7 @@ drawing::EnhancedCustomShapeSegment lcl_parseEnhancedCustomShapeSegment(const OS
 {
     drawing::EnhancedCustomShapeSegment aSegment;
     OString aToken = rValue;
-    // We expect the followings here: Command, Count
+    // We expect the following here: Command, Count
     static const char aExpectedCommandPrefix[] = "Command = (short) ";
     assert(aToken.startsWith(aExpectedCommandPrefix));
     sal_Int32 nIndex = strlen(aExpectedCommandPrefix);
@@ -125,29 +125,29 @@ awt::Rectangle lcl_parseRectangle(const OString& rValue)
 {
     awt::Rectangle aRectangle;
     OString aToken = rValue;
-    // We expect the followings here: X, Y, Width, Height
+    // We expect the following here: X, Y, Width, Height
     static const char aExpectedXPrefix[] = "X = (long) ";
     assert(aToken.startsWith(aExpectedXPrefix));
     sal_Int32 nIndex = strlen(aExpectedXPrefix);
-    aRectangle.X = static_cast<sal_Int32>(aToken.getToken(0, ',', nIndex).toInt32());
+    aRectangle.X = aToken.getToken(0, ',', nIndex).toInt32();
 
     static const char aExpectedYPrefix[] = " Y = (long) ";
     aToken = aToken.copy(nIndex);
     assert(aToken.startsWith(aExpectedYPrefix));
     nIndex = strlen(aExpectedYPrefix);
-    aRectangle.Y = static_cast<sal_Int32>(aToken.getToken(0, ',', nIndex).toInt32());
+    aRectangle.Y = aToken.getToken(0, ',', nIndex).toInt32();
 
     static const char aExpectedWidthPrefix[] = " Width = (long) ";
     aToken = aToken.copy(nIndex);
     assert(aToken.startsWith(aExpectedWidthPrefix));
     nIndex = strlen(aExpectedWidthPrefix);
-    aRectangle.Width = static_cast<sal_Int32>(aToken.getToken(0, ',', nIndex).toInt32());
+    aRectangle.Width = aToken.getToken(0, ',', nIndex).toInt32();
 
     static const char aExpectedHeightPrefix[] = " Height = (long) ";
     aToken = aToken.copy(nIndex);
     assert(aToken.startsWith(aExpectedHeightPrefix));
     nIndex = strlen(aExpectedHeightPrefix);
-    aRectangle.Height = static_cast<sal_Int32>(aToken.copy(nIndex).toInt32());
+    aRectangle.Height = aToken.copy(nIndex).toInt32();
 
     return aRectangle;
 }
@@ -156,17 +156,17 @@ awt::Size lcl_parseSize(const OString& rValue)
 {
     awt::Size aSize;
     OString aToken = rValue;
-    // We expect the followings here: Width, Height
+    // We expect the following here: Width, Height
     static const char aExpectedWidthPrefix[] = "Width = (long) ";
     assert(aToken.startsWith(aExpectedWidthPrefix));
     sal_Int32 nIndex = strlen(aExpectedWidthPrefix);
-    aSize.Width = static_cast<sal_Int32>(aToken.getToken(0, ',', nIndex).toInt32());
+    aSize.Width = aToken.getToken(0, ',', nIndex).toInt32();
 
     static const char aExpectedHeightPrefix[] = " Height = (long) ";
     aToken = aToken.copy(nIndex);
     assert(aToken.startsWith(aExpectedHeightPrefix));
     nIndex = strlen(aExpectedHeightPrefix);
-    aSize.Height = static_cast<sal_Int32>(aToken.copy(nIndex).toInt32());
+    aSize.Height = aToken.copy(nIndex).toInt32();
 
     return aSize;
 }
@@ -250,7 +250,7 @@ void lcl_parseHandlePosition(std::vector<beans::PropertyValue>& rHandle, const O
 
                 beans::PropertyValue aPropertyValue;
                 aPropertyValue.Name = "Position";
-                aPropertyValue.Value = uno::makeAny(lcl_parseEnhancedCustomShapeParameterPair(aToken));
+                aPropertyValue.Value <<= lcl_parseEnhancedCustomShapeParameterPair(aToken);
                 rHandle.push_back(aPropertyValue);
             }
             else if (!aToken.startsWith("Name =") && !aToken.startsWith("Handle ="))
@@ -289,11 +289,11 @@ void lcl_parseHandleRange(std::vector<beans::PropertyValue>& rHandle, const OStr
             {
                 drawing::EnhancedCustomShapeParameter aParameter;
                 aToken = aToken.copy(strlen(aExpectedPrefix), aToken.getLength() - strlen(aExpectedPrefix) - strlen(" } }"));
-                // We expect the followings here: Value and Type
+                // We expect the following here: Value and Type
                 static const char aExpectedVPrefix[] = "Value = (any) { (long) ";
                 assert(aToken.startsWith(aExpectedVPrefix));
                 sal_Int32 nIndex = strlen(aExpectedVPrefix);
-                aParameter.Value = uno::makeAny(aToken.getToken(0, '}', nIndex).toInt32());
+                aParameter.Value <<= aToken.getToken(0, '}', nIndex).toInt32();
 
                 static const char aExpectedTPrefix[] = ", Type = (short) ";
                 aToken = aToken.copy(nIndex);
@@ -303,7 +303,7 @@ void lcl_parseHandleRange(std::vector<beans::PropertyValue>& rHandle, const OStr
 
                 beans::PropertyValue aPropertyValue;
                 aPropertyValue.Name = rName;
-                aPropertyValue.Value = uno::makeAny(aParameter);
+                aPropertyValue.Value <<= aParameter;
                 rHandle.push_back(aPropertyValue);
 
             }
@@ -317,15 +317,17 @@ void lcl_parseHandleRange(std::vector<beans::PropertyValue>& rHandle, const OStr
 // Parses a string like: Name = "RefY", Handle = (long) 0, Value = (any) { (long) 0 }, State = (com.sun.star.beans.PropertyState) DIRECT_VALUE
 void lcl_parseHandleRef(std::vector<beans::PropertyValue>& rHandle, const OString& rValue, const OUString& rName)
 {
-    static const char aExpectedXPrefix[] = "Name = \"RefX\", Handle = (long) 0, Value = (any) { (long) ";
-    static const char aExpectedYPrefix[] = "Name = \"RefY\", Handle = (long) 0, Value = (any) { (long) ";
-    if (rValue.startsWith(aExpectedXPrefix) || rValue.startsWith(aExpectedYPrefix))
+    static const char aPrefix[] = "\", Handle = (long) 0, Value = (any) { (long) ";
+    const sal_Int32 nCheck= SAL_N_ELEMENTS(aPrefix) - 1;
+    const sal_Int32 nStart= SAL_N_ELEMENTS("Name = \"") - 1 + rName.getLength();
+
+    if (rValue.copy(nStart , nCheck).equalsL(aPrefix, nCheck))
     {
-        sal_Int32 nIndex = strlen(aExpectedXPrefix);
+        sal_Int32 nIndex = nStart + nCheck;
         beans::PropertyValue aPropertyValue;
         aPropertyValue.Name = rName;
         // We only expect a Value here
-        aPropertyValue.Value = uno::makeAny(rValue.getToken(0, '}', nIndex).toInt32());
+        aPropertyValue.Value <<= rValue.getToken(0, '}', nIndex).toInt32();
         rHandle.push_back(aPropertyValue);
     }
     else
@@ -369,6 +371,10 @@ uno::Sequence<beans::PropertyValue> lcl_parseHandle(const OString& rValue)
                     lcl_parseHandleRef(aRet, aToken, "RefX");
                 else if (aToken.startsWith("Name = \"RefY\""))
                     lcl_parseHandleRef(aRet, aToken, "RefY");
+                else if (aToken.startsWith("Name = \"RefR\""))
+                    lcl_parseHandleRef(aRet, aToken, "RefR");
+                else if (aToken.startsWith("Name = \"RefAngle\""))
+                    lcl_parseHandleRef(aRet, aToken, "RefAngle");
                 else
                     SAL_WARN("oox", "lcl_parseHandle: unexpected token: " << aToken);
             }
@@ -443,7 +449,7 @@ void lcl_parsePathCoordinateValues(std::vector<beans::PropertyValue>& rPath, con
 
     beans::PropertyValue aPropertyValue;
     aPropertyValue.Name = "Coordinates";
-    aPropertyValue.Value = uno::makeAny(comphelper::containerToSequence(aPairs));
+    aPropertyValue.Value <<= comphelper::containerToSequence(aPairs);
     rPath.push_back(aPropertyValue);
 }
 
@@ -507,7 +513,7 @@ void lcl_parsePathSegmentValues(std::vector<beans::PropertyValue>& rPath, const 
 
     beans::PropertyValue aPropertyValue;
     aPropertyValue.Name = "Segments";
-    aPropertyValue.Value = uno::makeAny(comphelper::containerToSequence(aSegments));
+    aPropertyValue.Value <<= comphelper::containerToSequence(aSegments);
     rPath.push_back(aPropertyValue);
 }
 
@@ -571,7 +577,7 @@ void lcl_parsePathTextFrameValues(std::vector<beans::PropertyValue>& rPath, cons
 
     beans::PropertyValue aPropertyValue;
     aPropertyValue.Name = "TextFrames";
-    aPropertyValue.Value = uno::makeAny(comphelper::containerToSequence(aTextFrames));
+    aPropertyValue.Value <<= comphelper::containerToSequence(aTextFrames);
     rPath.push_back(aPropertyValue);
 }
 
@@ -635,7 +641,7 @@ void lcl_parsePathSubViewSizeValues(std::vector<beans::PropertyValue>& rPath, co
 
     beans::PropertyValue aPropertyValue;
     aPropertyValue.Name = "SubViewSize";
-    aPropertyValue.Value = uno::makeAny(comphelper::containerToSequence(aSizes));
+    aPropertyValue.Value <<= comphelper::containerToSequence(aSizes);
     rPath.push_back(aPropertyValue);
 }
 

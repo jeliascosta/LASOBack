@@ -21,11 +21,11 @@
 #define INCLUDED_BASIC_MODSIZEEXCEEDED_HXX
 
 #include <com/sun/star/task/XInteractionHandler.hpp>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <basic/basicdllapi.h>
 #include <vector>
 
-class BASIC_DLLPUBLIC ModuleSizeExceeded : public ::cppu::WeakImplHelper1< css::task::XInteractionRequest >
+class BASIC_DLLPUBLIC ModuleSizeExceeded : public cppu::WeakImplHelper< css::task::XInteractionRequest >
 {
 // C++ interface
 public:
@@ -36,8 +36,8 @@ public:
 
 // UNO interface
 public:
-    virtual css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL getContinuations() throw( css::uno::RuntimeException, std::exception ) override { return m_lContinuations; }
-    css::uno::Any SAL_CALL getRequest() throw( css::uno::RuntimeException, std::exception ) override
+    virtual css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL getContinuations() override { return m_lContinuations; }
+    css::uno::Any SAL_CALL getRequest() override
     {
         return m_aRequest;
     }

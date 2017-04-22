@@ -23,6 +23,7 @@
 // But watch out, the parser might have
 // state not visible to this code!
 #define BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE
+
 #if OSL_DEBUG_LEVEL >= 2 && defined(DBG_UTIL)
 #include <typeinfo>
 #define BOOST_SPIRIT_DEBUG
@@ -57,7 +58,7 @@ class ConstantValueExpression : public ExpressionNode
 
 public:
 
-    explicit ConstantValueExpression( ORowSetValueDecoratorRef rValue ) :
+    explicit ConstantValueExpression( ORowSetValueDecoratorRef const & rValue ) :
         maValue( rValue )
     {
     }
@@ -77,12 +78,12 @@ public:
 class BinaryFunctionExpression : public ExpressionNode
 {
     const ExpressionFunct   meFunct;
-    ExpressionNodeSharedPtr mpFirstArg;
-    ExpressionNodeSharedPtr mpSecondArg;
+    std::shared_ptr<ExpressionNode> mpFirstArg;
+    std::shared_ptr<ExpressionNode> mpSecondArg;
 
 public:
 
-    BinaryFunctionExpression( const ExpressionFunct eFunct, const ExpressionNodeSharedPtr& rFirstArg, const ExpressionNodeSharedPtr& rSecondArg ) :
+    BinaryFunctionExpression( const ExpressionFunct eFunct, const std::shared_ptr<ExpressionNode>& rFirstArg, const std::shared_ptr<ExpressionNode>& rSecondArg ) :
         meFunct( eFunct ),
         mpFirstArg( rFirstArg ),
         mpSecondArg( rSecondArg )
@@ -93,13 +94,13 @@ public:
         ORowSetValueDecoratorRef aRet;
         switch(meFunct)
         {
-            case ENUM_FUNC_EQUATION:
+            case ExpressionFunct::Equation:
                 aRet = new ORowSetValueDecorator( mpFirstArg->evaluate(_aRow )->getValue() == mpSecondArg->evaluate(_aRow )->getValue() );
                 break;
-            case ENUM_FUNC_AND:
+            case ExpressionFunct::And:
                 aRet = new ORowSetValueDecorator( mpFirstArg->evaluate(_aRow )->getValue().getBool() && mpSecondArg->evaluate(_aRow )->getValue().getBool() );
                 break;
-            case ENUM_FUNC_OR:
+            case ExpressionFunct::Or:
                 aRet = new ORowSetValueDecorator( mpFirstArg->evaluate(_aRow )->getValue().getBool() || mpSecondArg->evaluate(_aRow )->getValue().getBool() );
                 break;
             default:
@@ -111,7 +112,7 @@ public:
     {
         switch(meFunct)
         {
-            case ENUM_FUNC_EQUATION:
+            case ExpressionFunct::Equation:
                 (*mpFirstArg->evaluate(_aRow )) = mpSecondArg->evaluate(_aRow )->getValue();
                 break;
             default:
@@ -128,7 +129,7 @@ typedef const sal_Char* StringIteratorT;
 
 struct ParserContext
 {
-    typedef ::std::stack< ExpressionNodeSharedPtr > OperandStack;
+    typedef std::stack< std::shared_ptr<ExpressionNode> > OperandStack;
 
     // stores a stack of not-yet-evaluated operands. This is used
     // by the operators (i.e. '+', '*', 'sin' etc.) to pop their
@@ -156,7 +157,7 @@ public:
     void operator()( StringIteratorT rFirst,StringIteratorT rSecond) const
     {
         OUString sVal( rFirst, rSecond - rFirst, RTL_TEXTENCODING_UTF8 );
-        mpContext->maOperandStack.push( ExpressionNodeSharedPtr( new ConstantValueExpression( new ORowSetValueDecorator( sVal ) ) ) );
+        mpContext->maOperandStack.push( std::shared_ptr<ExpressionNode>( new ConstantValueExpression( new ORowSetValueDecorator( sVal ) ) ) );
     }
 };
 
@@ -173,7 +174,7 @@ public:
     }
     void operator()( sal_Int32 n ) const
     {
-        mpContext->maOperandStack.push( ExpressionNodeSharedPtr( new ConstantValueExpression( new ORowSetValueDecorator( n ) ) ) );
+        mpContext->maOperandStack.push( std::shared_ptr<ExpressionNode>( new ConstantValueExpression( new ORowSetValueDecorator( n ) ) ) );
     }
 };
 
@@ -205,13 +206,13 @@ public:
             throw ParseError( "Not enough arguments for binary operator" );
 
         // retrieve arguments
-        ExpressionNodeSharedPtr pSecondArg( rNodeStack.top() );
+        std::shared_ptr<ExpressionNode> pSecondArg( rNodeStack.top() );
         rNodeStack.pop();
-        ExpressionNodeSharedPtr pFirstArg( rNodeStack.top() );
+        std::shared_ptr<ExpressionNode> pFirstArg( rNodeStack.top() );
         rNodeStack.pop();
 
         // create combined ExpressionNode
-        ExpressionNodeSharedPtr pNode = ExpressionNodeSharedPtr( new BinaryFunctionExpression( meFunct, pFirstArg, pSecondArg ) );
+        std::shared_ptr<ExpressionNode> pNode = std::shared_ptr<ExpressionNode>( new BinaryFunctionExpression( meFunct, pFirstArg, pSecondArg ) );
         // check for constness
         rNodeStack.push( pNode );
     }
@@ -221,10 +222,10 @@ public:
     */
 class UnaryFunctionExpression : public ExpressionNode
 {
-    ExpressionNodeSharedPtr mpArg;
+    std::shared_ptr<ExpressionNode> mpArg;
 
 public:
-    explicit UnaryFunctionExpression( const ExpressionNodeSharedPtr& rArg ) :
+    explicit UnaryFunctionExpression( const std::shared_ptr<ExpressionNode>& rArg ) :
         mpArg( rArg )
     {
     }
@@ -256,10 +257,10 @@ public:
             throw ParseError( "Not enough arguments for unary operator" );
 
         // retrieve arguments
-        ExpressionNodeSharedPtr pArg( rNodeStack.top() );
+        std::shared_ptr<ExpressionNode> pArg( rNodeStack.top() );
         rNodeStack.pop();
 
-        rNodeStack.push( ExpressionNodeSharedPtr( new UnaryFunctionExpression( pArg ) ) );
+        rNodeStack.push( std::shared_ptr<ExpressionNode>( new UnaryFunctionExpression( pArg ) ) );
     }
 };
 
@@ -334,18 +335,18 @@ public:
 
             assignment =
                     unaryFunction >> ch_p('=') >> argument
-                                [ BinaryFunctionFunctor( ENUM_FUNC_EQUATION,  self.getContext()) ]
+                                [ BinaryFunctionFunctor( ExpressionFunct::Equation,  self.getContext()) ]
                ;
 
             andExpression =
                     assignment
                 |   ( '(' >> orExpression >> ')' )
-                |   ( assignment >> AND_ >> assignment )  [ BinaryFunctionFunctor( ENUM_FUNC_AND,  self.getContext()) ]
+                |   ( assignment >> AND_ >> assignment )  [ BinaryFunctionFunctor( ExpressionFunct::And,  self.getContext()) ]
                 ;
 
             orExpression =
                     andExpression
-                |   ( orExpression >> OR_ >> andExpression ) [ BinaryFunctionFunctor( ENUM_FUNC_OR,  self.getContext()) ]
+                |   ( orExpression >> OR_ >> andExpression ) [ BinaryFunctionFunctor( ExpressionFunct::Or,  self.getContext()) ]
                 ;
 
             basicExpression =
@@ -385,10 +386,9 @@ private:
     ParserContextSharedPtr          mpParserContext; // might get modified during parsing
 };
 
-#ifdef BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE
 const ParserContextSharedPtr& getParserContext()
 {
-    static ParserContextSharedPtr lcl_parserContext( new ParserContext() );
+    static ParserContextSharedPtr lcl_parserContext( new ParserContext );
 
     // clear node stack (since we reuse the static object, that's
     // the whole point here)
@@ -397,10 +397,10 @@ const ParserContextSharedPtr& getParserContext()
 
     return lcl_parserContext;
 }
-#endif
+
 }
 
-ExpressionNodeSharedPtr FunctionParser::parseFunction( const OUString& _sFunction)
+std::shared_ptr<ExpressionNode> FunctionParser::parseFunction( const OUString& _sFunction)
 {
     // TODO(Q1): Check if a combination of the RTL_UNICODETOTEXT_FLAGS_*
     // gives better conversion robustness here (we might want to map space
@@ -413,13 +413,9 @@ ExpressionNodeSharedPtr FunctionParser::parseFunction( const OUString& _sFunctio
 
     ParserContextSharedPtr pContext;
 
-#ifdef BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE
     // static parser context, because the actual
     // Spirit parser is also a static object
     pContext = getParserContext();
-#else
-    pContext.reset( new ParserContext() );
-#endif
 
     ExpressionGrammar aExpressionGrammer( pContext );
 
@@ -430,7 +426,7 @@ ExpressionNodeSharedPtr FunctionParser::parseFunction( const OUString& _sFunctio
                                     ::boost::spirit::space_p ) );
 
 #if (OSL_DEBUG_LEVEL > 0)
-    ::std::cout.flush(); // needed to keep stdout and cout in sync
+    std::cout.flush(); // needed to keep stdout and cout in sync
 #endif
 
     // input fully congested by the parser?

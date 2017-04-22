@@ -35,7 +35,7 @@ class AnnotationTag : public SmartTag
 {
 public:
     AnnotationTag( AnnotationManagerImpl& rManager, ::sd::View& rView, const css::uno::Reference< css::office::XAnnotation >& xAnnotation, Color& rColor, int nIndex, const vcl::Font& rFont );
-    virtual ~AnnotationTag();
+    virtual ~AnnotationTag() override;
 
     /// @return true if the SmartTag handled the event.
     virtual bool MouseButtonDown( const MouseEvent&, SmartHdl& ) override;
@@ -52,9 +52,9 @@ public:
     // callbacks from sdr view
     virtual sal_uLong GetMarkablePointCount() const override;
     virtual sal_uLong GetMarkedPointCount() const override;
-    virtual bool MarkPoint(SdrHdl& rHdl, bool bUnmark=false) override;
+    virtual bool MarkPoint(SdrHdl& rHdl, bool bUnmark) override;
     virtual void CheckPossibilities() override;
-    virtual bool MarkPoints(const Rectangle* pRect, bool bUnmark) override;
+    virtual bool MarkPoints(const ::tools::Rectangle* pRect, bool bUnmark) override;
 
     void Move( int nDX, int nDY );
     bool OnMove( const KeyEvent& rKEvt );
@@ -73,8 +73,8 @@ protected:
     virtual void select() override;
     virtual void deselect() override;
 
-    DECL_LINK_TYPED( WindowEventHandler, VclWindowEvent&, void );
-    DECL_LINK_TYPED( ClosePopupHdl, void*, void );
+    DECL_LINK( WindowEventHandler, VclWindowEvent&, void );
+    DECL_LINK( ClosePopupHdl, void*, void );
 
 private:
     AnnotationManagerImpl& mrManager;

@@ -28,48 +28,9 @@
 
 class VCL_DLLPUBLIC SpinField : public Edit
 {
-protected:
-    VclPtr<Edit>    mpEdit;
-    AutoTimer       maRepeatTimer;
-    Rectangle       maUpperRect;
-    Rectangle       maLowerRect;
-    Rectangle       maDropDownRect; // noch nicht angebunden...
-    Link<SpinField&,void>  maUpHdlLink;
-    Link<SpinField&,void>  maDownHdlLink;
-    Link<SpinField&,void>  maFirstHdlLink;
-    Link<SpinField&,void>  maLastHdlLink;
-    bool            mbRepeat:1,
-                    mbSpin:1,
-                    mbInitialUp:1,
-                    mbInitialDown:1,
-                    mbNoSelect:1,
-                    mbUpperIn:1,
-                    mbLowerIn:1,
-                    mbInDropDown:1;
-
-    using Window::ImplInit;
-    SAL_DLLPRIVATE void   ImplInit( vcl::Window* pParent, WinBits nStyle );
-
-private:
-    DECL_DLLPRIVATE_LINK_TYPED( ImplTimeout, Timer*, void );
-    SAL_DLLPRIVATE void   ImplInitSpinFieldData();
-    SAL_DLLPRIVATE void   ImplCalcButtonAreas( OutputDevice* pDev, const Size& rOutSz, Rectangle& rDDArea, Rectangle& rSpinUpArea, Rectangle& rSpinDownArea );
-
-protected:
-    explicit        SpinField( WindowType nTyp );
-
-    virtual bool    Notify( NotifyEvent& rNEvt ) override;
-    virtual void    Command( const CommandEvent& rCEvt ) override;
-
-    void            EndDropDown();
-
-    virtual void    FillLayoutData() const override;
-    Rectangle *     ImplFindPartRect( const Point& rPt );
-
 public:
-    explicit        SpinField( vcl::Window* pParent, WinBits nWinStyle = 0 );
-    explicit        SpinField( vcl::Window* pParent, const ResId& );
-    virtual         ~SpinField();
+    explicit        SpinField( vcl::Window* pParent, WinBits nWinStyle );
+    virtual         ~SpinField() override;
     virtual void    dispose() override;
 
     virtual bool    ShowDropDown( bool bShow );
@@ -82,7 +43,7 @@ public:
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonUp( const MouseEvent& rMEvt ) override;
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void    Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
     virtual void    Resize() override;
     virtual void    StateChanged( StateChangedType nType ) override;
@@ -99,6 +60,43 @@ public:
     virtual Size    CalcMinimumSizeForText(const OUString &rString) const override;
     virtual Size    GetOptimalSize() const override;
     virtual Size    CalcSize(sal_Int32 nChars) const override;
+
+    virtual FactoryFunction GetUITestFactory() const override;
+
+protected:
+    tools::Rectangle       maUpperRect;
+    tools::Rectangle       maLowerRect;
+    tools::Rectangle       maDropDownRect; // not yet attached ...
+
+    using Window::ImplInit;
+    SAL_DLLPRIVATE void   ImplInit( vcl::Window* pParent, WinBits nStyle );
+
+    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
+
+    void            EndDropDown();
+
+    virtual void    FillLayoutData() const override;
+    tools::Rectangle *     ImplFindPartRect( const Point& rPt );
+
+private:
+    DECL_DLLPRIVATE_LINK( ImplTimeout, Timer*, void );
+    SAL_DLLPRIVATE void   ImplInitSpinFieldData();
+    SAL_DLLPRIVATE void   ImplCalcButtonAreas( OutputDevice* pDev, const Size& rOutSz, tools::Rectangle& rDDArea, tools::Rectangle& rSpinUpArea, tools::Rectangle& rSpinDownArea );
+
+    VclPtr<Edit>    mpEdit;
+    AutoTimer       maRepeatTimer;
+    Link<SpinField&,void>  maUpHdlLink;
+    Link<SpinField&,void>  maDownHdlLink;
+    Link<SpinField&,void>  maFirstHdlLink;
+    Link<SpinField&,void>  maLastHdlLink;
+    bool            mbRepeat:1,
+                    mbSpin:1,
+                    mbInitialUp:1,
+                    mbInitialDown:1,
+                    mbNoSelect:1,
+                    mbUpperIn:1,
+                    mbLowerIn:1,
+                    mbInDropDown:1;
 };
 
 #endif // INCLUDED_VCL_SPINFLD_HXX

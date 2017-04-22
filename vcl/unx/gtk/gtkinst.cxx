@@ -234,6 +234,16 @@ SalObject* GtkInstance::CreateObject( SalFrame* pParent, SystemWindowData* pWind
     return new GtkSalObject( static_cast<GtkSalFrame*>(pParent), bShow );
 }
 
+#if !GTK_CHECK_VERSION(3,0,0)
+SalI18NImeStatus* GtkInstance::CreateI18NImeStatus()
+{
+    //we want the default SalInstance::CreateI18NImeStatus returns the no-op
+    //stub here, not the X11Instance::CreateI18NImeStatus which the gtk2
+    //one would use otherwise
+    return SalInstance::CreateI18NImeStatus();
+}
+#endif
+
 extern "C"
 {
     typedef void*(* getDefaultFnc)();
@@ -339,7 +349,9 @@ SalVirtualDevice* GtkInstance::CreateVirtualDevice( SalGraphics *pG,
     GtkSalGraphics *pGtkSalGraphics = dynamic_cast<GtkSalGraphics*>(pG);
     assert(pGtkSalGraphics);
     return CreateX11VirtualDevice(pG, nDX, nDY, eFormat, pGd,
-            new GtkSalGraphics(pGtkSalGraphics->GetGtkFrame(), pGtkSalGraphics->GetGtkWidget()));
+            new GtkSalGraphics(pGtkSalGraphics->GetGtkFrame(),
+                               pGtkSalGraphics->GetGtkWidget(),
+                               pGtkSalGraphics->GetScreenNumber()));
 #endif
 }
 
@@ -471,7 +483,7 @@ GenPspGraphics *GtkInstance::CreatePrintGraphics()
     return new GenPspGraphics();
 }
 
-std::shared_ptr<vcl::unx::GtkPrintWrapper>
+std::shared_ptr<vcl::unx::GtkPrintWrapper> const &
 GtkInstance::getPrintWrapper() const
 {
     if (!m_xPrintWrapper)

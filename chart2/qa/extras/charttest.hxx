@@ -24,6 +24,9 @@
 #include <com/sun/star/table/XTableChartsSupplier.hpp>
 #include <com/sun/star/table/XTableCharts.hpp>
 #include <com/sun/star/table/XTableChart.hpp>
+#include <com/sun/star/table/XTablePivotChartsSupplier.hpp>
+#include <com/sun/star/table/XTablePivotCharts.hpp>
+#include <com/sun/star/table/XTablePivotChart.hpp>
 #include <com/sun/star/document/XEmbeddedObjectSupplier.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
@@ -113,7 +116,8 @@ void ChartTest::load( const OUString& aDir, const OUString& aName )
     {
         maServiceName = "com.sun.star.drawing.DrawingDocument";
     }
-
+    if (mxComponent.is())
+        mxComponent->dispose();
     mxComponent = loadFromDesktop(m_directories.getURLFromSrc(aDir) + aName, maServiceName);
     CPPUNIT_ASSERT(mxComponent.is());
 }
@@ -122,7 +126,7 @@ std::shared_ptr<utl::TempFile> ChartTest::save(const OUString& rFilterName)
 {
     uno::Reference<frame::XStorable> xStorable(mxComponent, uno::UNO_QUERY);
     auto aArgs(::comphelper::InitPropertySequence({
-        { "FilterName", makeAny(rFilterName) }
+        { "FilterName", Any(rFilterName) }
     }));
     std::shared_ptr<utl::TempFile> pTempFile = std::make_shared<utl::TempFile>();
     pTempFile->EnableKillingFile();
@@ -150,7 +154,11 @@ std::shared_ptr<utl::TempFile> ChartTest::reload(const OUString& rFilterName)
         if(!mbSkipValidation)
             validate(pTempFile->GetFileName(), test::ODF);
     }
-
+    else if(rFilterName == "MS Excel 97")
+    {
+        if(!mbSkipValidation)
+            validate(pTempFile->GetFileName(), test::MSBINARY);
+    }
     CPPUNIT_ASSERT(mxComponent.is());
     return pTempFile;
 }
@@ -171,7 +179,7 @@ void ChartTest::tearDown()
 
 }
 
-Reference< lang::XComponent > getChartCompFromSheet( sal_Int32 nSheet, uno::Reference< lang::XComponent > xComponent )
+Reference< lang::XComponent > getChartCompFromSheet( sal_Int32 nSheet, uno::Reference< lang::XComponent > const & xComponent )
 {
     // let us assume that we only have one chart per sheet
 
@@ -201,14 +209,72 @@ Reference< lang::XComponent > getChartCompFromSheet( sal_Int32 nSheet, uno::Refe
 
 }
 
-Reference< chart2::XChartDocument > getChartDocFromSheet( sal_Int32 nSheet, uno::Reference< lang::XComponent > xComponent )
+Reference< chart2::XChartDocument > getChartDocFromSheet( sal_Int32 nSheet, uno::Reference< lang::XComponent > const & xComponent )
 {
     uno::Reference< chart2::XChartDocument > xChartDoc ( getChartCompFromSheet(nSheet, xComponent), UNO_QUERY_THROW );
     CPPUNIT_ASSERT(xChartDoc.is());
     return xChartDoc;
 }
 
-Reference< chart2::XChartType > getChartTypeFromDoc( Reference< chart2::XChartDocument > xChartDoc,
+uno::Reference<table::XTablePivotCharts> getTablePivotChartsFromSheet(sal_Int32 nSheet, uno::Reference<lang::XComponent> const & xComponent)
+{
+    uno::Reference<sheet::XSpreadsheetDocument> xDoc(xComponent, UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xDoc.is());
+
+    uno::Reference<container::XIndexAccess> xIA(xDoc->getSheets(), UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xIA.is());
+
+    uno::Reference<table::XTablePivotChartsSupplier> xChartSupplier(xIA->getByIndex(nSheet), UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xChartSupplier.is());
+
+    uno::Reference<table::XTablePivotCharts> xTablePivotCharts = xChartSupplier->getPivotCharts();
+    CPPUNIT_ASSERT(xTablePivotCharts.is());
+
+    return xTablePivotCharts;
+}
+
+Reference<lang::XComponent> getPivotChartCompFromSheet(sal_Int32 nSheet, uno::Reference<lang::XComponent> const & xComponent)
+{
+    uno::Reference<table::XTablePivotCharts> xTablePivotCharts = getTablePivotChartsFromSheet(nSheet, xComponent);
+
+    uno::Reference<container::XIndexAccess> xIACharts(xTablePivotCharts, UNO_QUERY_THROW);
+    uno::Reference<table::XTablePivotChart> xTablePivotChart(xIACharts->getByIndex(0), UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xTablePivotChart.is());
+
+    uno::Reference<document::XEmbeddedObjectSupplier> xEmbObjectSupplier(xTablePivotChart, UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xEmbObjectSupplier.is());
+
+    uno::Reference<lang::XComponent> xChartComp(xEmbObjectSupplier->getEmbeddedObject(), UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xChartComp.is());
+
+    return xChartComp;
+}
+
+Reference<chart2::XChartDocument> getPivotChartDocFromSheet(sal_Int32 nSheet, uno::Reference<lang::XComponent> const & xComponent)
+{
+    uno::Reference<chart2::XChartDocument> xChartDoc(getPivotChartCompFromSheet(nSheet, xComponent), UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xChartDoc.is());
+    return xChartDoc;
+}
+
+Reference<chart2::XChartDocument> getPivotChartDocFromSheet(uno::Reference<table::XTablePivotCharts> const & xTablePivotCharts, sal_Int32 nIndex)
+{
+    uno::Reference<container::XIndexAccess> xIACharts(xTablePivotCharts, UNO_QUERY_THROW);
+    uno::Reference<table::XTablePivotChart> xTablePivotChart(xIACharts->getByIndex(nIndex), UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xTablePivotChart.is());
+
+    uno::Reference<document::XEmbeddedObjectSupplier> xEmbObjectSupplier(xTablePivotChart, UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xEmbObjectSupplier.is());
+
+    uno::Reference<lang::XComponent> xChartComp(xEmbObjectSupplier->getEmbeddedObject(), UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xChartComp.is());
+
+    uno::Reference<chart2::XChartDocument> xChartDoc(xChartComp, UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xChartDoc.is());
+    return xChartDoc;
+}
+
+Reference< chart2::XChartType > getChartTypeFromDoc( Reference< chart2::XChartDocument > const & xChartDoc,
                                                                 sal_Int32 nChartType, sal_Int32 nCooSys = 0 )
 {
     CPPUNIT_ASSERT( xChartDoc.is() );
@@ -252,8 +318,20 @@ Reference<chart2::XAxis> getAxisFromDoc(
     return xAxis;
 }
 
-Reference< chart2::XDataSeries > getDataSeriesFromDoc( uno::Reference< chart2::XChartDocument > xChartDoc,
-                                                                sal_Int32 nDataSeries, sal_Int32 nChartType = 0, sal_Int32 nCooSys = 0 )
+sal_Int32 getNumberOfDataSeries(uno::Reference<chart2::XChartDocument> const & xChartDoc,
+                                sal_Int32 nChartType = 0, sal_Int32 nCooSys = 0)
+{
+    Reference<chart2::XChartType> xChartType = getChartTypeFromDoc(xChartDoc, nChartType, nCooSys);
+    Reference<chart2::XDataSeriesContainer> xDataSeriesContainer(xChartType, UNO_QUERY_THROW);
+    CPPUNIT_ASSERT(xDataSeriesContainer.is());
+
+    uno::Sequence<uno::Reference<chart2::XDataSeries>> xSeriesSequence(xDataSeriesContainer->getDataSeries());
+    return xSeriesSequence.getLength();
+}
+
+Reference< chart2::XDataSeries > getDataSeriesFromDoc(uno::Reference<chart2::XChartDocument> const & xChartDoc,
+                                                      sal_Int32 nDataSeries, sal_Int32 nChartType = 0,
+                                                      sal_Int32 nCooSys = 0)
 {
     Reference< chart2::XChartType > xChartType = getChartTypeFromDoc( xChartDoc, nChartType, nCooSys );
     Reference< chart2::XDataSeriesContainer > xDataSeriesContainer( xChartType, UNO_QUERY_THROW );
@@ -268,7 +346,7 @@ Reference< chart2::XDataSeries > getDataSeriesFromDoc( uno::Reference< chart2::X
 }
 
 Reference< chart2::data::XDataSequence > getLabelDataSequenceFromDoc(
-        Reference< chart2::XChartDocument > xChartDoc,
+        Reference< chart2::XChartDocument > const & xChartDoc,
         sal_Int32 nDataSeries = 0, sal_Int32 nChartType = 0 )
 {
     Reference< chart2::XDataSeries > xDataSeries =
@@ -291,7 +369,7 @@ Reference< chart2::data::XDataSequence > getLabelDataSequenceFromDoc(
 }
 
 Reference< chart2::data::XDataSequence > getDataSequenceFromDocByRole(
-        Reference< chart2::XChartDocument > xChartDoc, const OUString& rRole,
+        Reference< chart2::XChartDocument > const & xChartDoc, const OUString& rRole,
         sal_Int32 nDataSeries = 0, sal_Int32 nChartType = 0 )
 {
     Reference< chart2::XDataSeries > xDataSeries =
@@ -313,11 +391,10 @@ Reference< chart2::data::XDataSequence > getDataSequenceFromDocByRole(
             return xLabelSeq;
     }
 
-    CPPUNIT_FAIL("no Label sequence found");
     return Reference< chart2::data::XDataSequence > ();
 }
 
-uno::Sequence < OUString > getWriterChartColumnDescriptions( Reference< lang::XComponent > mxComponent )
+uno::Sequence < OUString > getWriterChartColumnDescriptions( Reference< lang::XComponent > const & mxComponent )
 {
     uno::Reference<drawing::XDrawPageSupplier> xDrawPageSupplier(mxComponent, uno::UNO_QUERY);
     uno::Reference<drawing::XDrawPage> xDrawPage = xDrawPageSupplier->getDrawPage();

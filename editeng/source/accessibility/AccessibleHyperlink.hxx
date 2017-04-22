@@ -29,6 +29,8 @@
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/accessibility/XAccessibleHyperlink.hpp>
 
+#include <memory>
+
 class SvxFieldItem;
 class SvxAccessibleTextAdapter;
 
@@ -40,7 +42,7 @@ namespace accessibility
     private:
 
         SvxAccessibleTextAdapter& rTA;
-        SvxFieldItem* pFld;
+        std::unique_ptr<SvxFieldItem> pFld;
         sal_Int32 nPara;  // EE values
         sal_uInt16 nRealIdx;  // EE values
         sal_Int32 nStartIdx, nEndIdx;   // translated values
@@ -48,20 +50,20 @@ namespace accessibility
 
     public:
         AccessibleHyperlink( SvxAccessibleTextAdapter& r, SvxFieldItem* p, sal_Int32 nP, sal_uInt16 nR, sal_Int32 nStt, sal_Int32 nEnd, const OUString& rD );
-        virtual ~AccessibleHyperlink();
+        virtual ~AccessibleHyperlink() override;
 
         // XAccessibleAction
-        virtual sal_Int32 SAL_CALL getAccessibleActionCount() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL doAccessibleAction( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getAccessibleActionDescription( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::accessibility::XAccessibleKeyBinding > SAL_CALL getAccessibleActionKeyBinding( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getAccessibleActionCount() override;
+        virtual sal_Bool SAL_CALL doAccessibleAction( sal_Int32 nIndex ) override;
+        virtual OUString SAL_CALL getAccessibleActionDescription( sal_Int32 nIndex ) override;
+        virtual css::uno::Reference< css::accessibility::XAccessibleKeyBinding > SAL_CALL getAccessibleActionKeyBinding( sal_Int32 nIndex ) override;
 
         // XAccessibleHyperlink
-        virtual css::uno::Any SAL_CALL getAccessibleActionAnchor( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Any SAL_CALL getAccessibleActionObject( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getStartIndex() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getEndIndex() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL isValid() throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL getAccessibleActionAnchor( sal_Int32 nIndex ) override;
+        virtual css::uno::Any SAL_CALL getAccessibleActionObject( sal_Int32 nIndex ) override;
+        virtual sal_Int32 SAL_CALL getStartIndex() override;
+        virtual sal_Int32 SAL_CALL getEndIndex() override;
+        virtual sal_Bool SAL_CALL isValid() override;
     };
 
 } // end of namespace accessibility

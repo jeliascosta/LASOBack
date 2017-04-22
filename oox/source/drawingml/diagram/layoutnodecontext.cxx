@@ -120,7 +120,7 @@ public:
                 }
                 else
                 {
-                    OSL_TRACE( "ignoring second else clause" );
+                    SAL_WARN("oox",  "ignoring second else clause" );
                 }
                 break;
             default:
@@ -158,17 +158,12 @@ public:
         {
         }
 
-    virtual ~LayoutVariablePropertySetContext()
-        {
-        }
-
-    virtual ContextHandlerRef onCreateContext( ::sal_Int32 aElement, const AttributeList& rAttribs )
-        throw (SAXException, RuntimeException) override
+    virtual ContextHandlerRef onCreateContext( ::sal_Int32 aElement, const AttributeList& rAttribs ) override
         {
             sal_Int32 nIdx =  LayoutNodeContext::tagToVarIdx( getBaseToken( aElement ) );
             if( nIdx != -1 )
             {
-                mVariables[ nIdx ] = makeAny( rAttribs.getString( XML_val ).get() );
+                mVariables[ nIdx ] <<= rAttribs.getString( XML_val ).get();
             }
 
             return this;
@@ -273,7 +268,7 @@ LayoutNodeContext::onCreateContext( ::sal_Int32 aElement,
         }
         else
         {
-            OSL_TRACE( "OOX: encountered a shape in a non layoutNode context" );
+            SAL_WARN("oox",  "OOX: encountered a shape in a non layoutNode context" );
         }
         break;
     }
@@ -328,7 +323,7 @@ LayoutNodeContext::onCreateContext( ::sal_Int32 aElement,
         }
         else
         {
-            OSL_TRACE( "OOX: encountered a varLst in a non layoutNode context" );
+            SAL_WARN("oox",  "OOX: encountered a varLst in a non layoutNode context" );
         }
         break;
     }

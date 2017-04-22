@@ -164,6 +164,8 @@ GtkSalPrinter::GtkSalPrinter(SalInfoPrinter* const i_pInfoPrinter)
 {
 }
 
+GtkSalPrinter::~GtkSalPrinter() = default;
+
 bool
 GtkSalPrinter::impl_doJob(
         const OUString* const i_pFileName,
@@ -905,7 +907,7 @@ void GtkPrintDialog::ExportAsPDF(const OUString &rFileURL, GtkPrintSettings *pSe
         if (xController.is())
             xDoc.set(xController->getModel(), UNO_QUERY);
 
-        SvFileStream aStream(rFileURL, STREAM_READWRITE | StreamMode::SHARE_DENYWRITE | StreamMode::TRUNC);
+        SvFileStream aStream(rFileURL, StreamMode::READWRITE | StreamMode::SHARE_DENYWRITE | StreamMode::TRUNC);
         uno::Reference< XOutputStream > xOStm(new utl::OOutputStreamWrapper(aStream));
 
         uno::Reference< XExporter > xExport(xFilter, UNO_QUERY);

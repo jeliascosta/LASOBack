@@ -22,6 +22,7 @@
 
 #include <sot/exchange.hxx>
 #include <sot/formats.hxx>
+#include <vcl/vclptr.hxx>
 #include <com/sun/star/container/XContainer.hpp>
 
 class SvTreeListEntry;
@@ -67,14 +68,11 @@ namespace dbaui
     class SAL_NO_VTABLE IContextMenuProvider
     {
     public:
-        /** returns the context menu for the control
+        /** returns the context menu resource name for the control
 
-            Note that the menu does not need to care for the controls selection, or its
-            state in general.
-            The control itself will, using the controller provided by getCommandController,
-            disable menu entries as needed.
+            Supposed to be a valid name from uiconfig/<module>/popupmenu folder.
         */
-        virtual PopupMenu*      getContextMenu( Control& _rControl ) const = 0;
+        virtual OUString getContextMenuResourceName( Control& _rControl ) const = 0;
 
         /** returns the controller which is responsible for providing states of certain features,
             and executing them.

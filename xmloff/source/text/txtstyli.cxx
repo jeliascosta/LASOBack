@@ -39,6 +39,8 @@
 #include <com/sun/star/style/ParagraphStyleCategory.hpp>
 #include <com/sun/star/style/XStyle.hpp>
 
+#include <o3tl/any.hxx>
+
 #include <sax/tools/converter.hxx>
 
 #include <tools/debug.hxx>
@@ -49,7 +51,6 @@
 #include <utility>
 #include <vector>
 
-//UUUU
 #include <xmlsdtypes.hxx>
 #include <xmloff/xmlerror.hxx>
 
@@ -65,7 +66,7 @@ using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::container;
 using namespace ::xmloff::token;
 
-static const SvXMLEnumMapEntry aCategoryMap[] =
+static const SvXMLEnumMapEntry<sal_uInt16> aCategoryMap[] =
 {
     { XML_TEXT,     ParagraphStyleCategory::TEXT },
     { XML_CHAPTER,  ParagraphStyleCategory::CHAPTER },
@@ -144,13 +145,11 @@ XMLTextStyleContext::XMLTextStyleContext( SvXMLImport& rImport,
 ,   bHasCombinedCharactersLetter( false )
 // Inherited paragraph style lost information about unset numbering (#i69523#)
 ,   mbListStyleSet( false )
-,   pEventContext( nullptr )
 {
 }
 
 XMLTextStyleContext::~XMLTextStyleContext()
-{
-}
+{}
 
 SvXMLImportContext *XMLTextStyleContext::CreateChildContext(
         sal_uInt16 nPrefix,
@@ -190,10 +189,9 @@ SvXMLImportContext *XMLTextStyleContext::CreateChildContext(
     {
         // create and remember events import context
         // (for delayed processing of events)
-        pEventContext = new XMLEventsImportContext( GetImport(), nPrefix,
-                                                   rLocalName);
-        pEventContext->AddFirstRef();
-        pContext = pEventContext;
+        mxEventContext.set(new XMLEventsImportContext( GetImport(), nPrefix,
+                                                   rLocalName));
+        pContext = mxEventContext.get();
     }
 
     if( !pContext )
@@ -228,12 +226,12 @@ void XMLTextStyleContext::CreateAndInsert( bool bOverwrite )
     }
 
     // tell the style about it's events (if applicable)
-    if (nullptr != pEventContext)
+    if (mxEventContext.is())
     {
-        // set event suppplier and release reference to context
+        // pass events into event suppplier
         Reference<document::XEventsSupplier> xEventsSupplier(xStyle,UNO_QUERY);
-        pEventContext->SetEvents(xEventsSupplier);
-        pEventContext->ReleaseRef();
+        mxEventContext->SetEvents(xEventsSupplier);
+        mxEventContext.clear();
     }
 
     // XML import: reconstrution of assignment of paragraph style to outline levels (#i69629#)
@@ -385,7 +383,7 @@ void XMLTextStyleContext::FillPropertySet(
     // catch the combined characters attribute
 
     // imitate XMLPropStyleContext::FillPropertySet(...)
-    SvXMLStylesContext* pSvXMLStylesContext = static_cast< SvXMLStylesContext* >(GetStyles());
+    SvXMLStylesContext* pSvXMLStylesContext = GetStyles();
     rtl::Reference < SvXMLImportPropertyMapper > xImpPrMap = pSvXMLStylesContext->GetImportPropertyMapper(GetFamily());
     DBG_ASSERT(xImpPrMap.is(),"Where is the import prop mapper?");
 
@@ -482,7 +480,7 @@ void XMLTextStyleContext::FillPropertySet(
         if ( nIndex != -1 )
         {
             Any& rAny = GetProperties()[nIndex].maValue;
-            bool bVal = *static_cast<sal_Bool const *>(rAny.getValue());
+            bool bVal = *o3tl::doAccess<bool>(rAny);
             bHasCombinedCharactersLetter = bVal;
         }
 
@@ -494,7 +492,7 @@ void XMLTextStyleContext::FillPropertySet(
         if(IsDefaultStyle() && XML_STYLE_FAMILY_TABLE_ROW == GetFamily())
         {
             OUString sIsSplitAllowed("IsSplitAllowed");
-            DBG_ASSERT( rPropSet->getPropertySetInfo()->hasPropertyByName( sIsSplitAllowed ), "property missing?" );
+            SAL_WARN_IF( !rPropSet->getPropertySetInfo()->hasPropertyByName( sIsSplitAllowed ), "xmloff", "property missing?" );
             rPropSet->setPropertyValue(
                 sIsSplitAllowed,
                 (aContextIDs[1].nIndex == -1) ? makeAny( false ) : GetProperties()[aContextIDs[1].nIndex].maValue );
@@ -503,7 +501,7 @@ void XMLTextStyleContext::FillPropertySet(
         if(IsDefaultStyle() && XML_STYLE_FAMILY_TABLE_TABLE == GetFamily())
         {
             OUString sCollapsingBorders("CollapsingBorders");
-            DBG_ASSERT( rPropSet->getPropertySetInfo()->hasPropertyByName( sCollapsingBorders ), "property missing?" );
+            SAL_WARN_IF( !rPropSet->getPropertySetInfo()->hasPropertyByName( sCollapsingBorders ), "xmloff", "property missing?" );
             rPropSet->setPropertyValue(
                 sCollapsingBorders,
                 (aContextIDs[2].nIndex == -1)
@@ -533,7 +531,7 @@ void XMLTextStyleContext::FillPropertySet(
                         rtl::OUString sStyleName;
                         rState.maValue >>= sStyleName;
 
-                        //UUUU translate the used name from ODF intern to the name used in the Model
+                        // translate the used name from ODF intern to the name used in the Model
                         sStyleName = GetImport().GetStyleDisplayName(aFamilies[i - 7], sStyleName);
 
                         if(bAutomatic)

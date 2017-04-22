@@ -22,7 +22,6 @@
 #include <editeng/svxenum.hxx>
 #include <svx/dialogs.hrc>
 #include <cuires.hrc>
-#include "align.hrc"
 #include <svx/rotmodit.hxx>
 
 #include <svx/algitem.hxx>
@@ -40,30 +39,34 @@
 #include <sfx2/request.hxx>
 #include <vcl/settings.hxx>
 
+#define IID_BOTTOMLOCK 1
+#define IID_TOPLOCK    2
+#define IID_CELLLOCK   3
+
 namespace svx {
 
 // item connections ===========================================================
 
 // horizontal alignment -------------------------------------------------------
 
-typedef sfx::ValueItemWrapper< SvxHorJustifyItem, SvxCellHorJustify, sal_uInt16 > HorJustItemWrapper;
+typedef sfx::ValueItemWrapper< SvxHorJustifyItem, SvxCellHorJustify > HorJustItemWrapper;
 typedef sfx::ListBoxConnection< HorJustItemWrapper > HorJustConnection;
 
 static const HorJustConnection::MapEntryType s_pHorJustMap[] =
 {
-    { ALIGNDLG_HORALIGN_STD,    SVX_HOR_JUSTIFY_STANDARD    },
-    { ALIGNDLG_HORALIGN_LEFT,   SVX_HOR_JUSTIFY_LEFT        },
-    { ALIGNDLG_HORALIGN_CENTER, SVX_HOR_JUSTIFY_CENTER      },
-    { ALIGNDLG_HORALIGN_RIGHT,  SVX_HOR_JUSTIFY_RIGHT       },
-    { ALIGNDLG_HORALIGN_BLOCK,  SVX_HOR_JUSTIFY_BLOCK       },
-    { ALIGNDLG_HORALIGN_FILL,   SVX_HOR_JUSTIFY_REPEAT      },
-    { ALIGNDLG_HORALIGN_DISTRIBUTED, SVX_HOR_JUSTIFY_BLOCK  },
-    { WRAPPER_LISTBOX_ENTRY_NOTFOUND,   SVX_HOR_JUSTIFY_STANDARD    }
+    { ALIGNDLG_HORALIGN_STD,    SvxCellHorJustify::Standard    },
+    { ALIGNDLG_HORALIGN_LEFT,   SvxCellHorJustify::Left        },
+    { ALIGNDLG_HORALIGN_CENTER, SvxCellHorJustify::Center      },
+    { ALIGNDLG_HORALIGN_RIGHT,  SvxCellHorJustify::Right       },
+    { ALIGNDLG_HORALIGN_BLOCK,  SvxCellHorJustify::Block       },
+    { ALIGNDLG_HORALIGN_FILL,   SvxCellHorJustify::Repeat      },
+    { ALIGNDLG_HORALIGN_DISTRIBUTED, SvxCellHorJustify::Block  },
+    { WRAPPER_LISTBOX_ENTRY_NOTFOUND,   SvxCellHorJustify::Standard    }
 };
 
 // vertical alignment ---------------------------------------------------------
 
-typedef sfx::ValueItemWrapper< SvxVerJustifyItem, SvxCellVerJustify, sal_uInt16 > VerJustItemWrapper;
+typedef sfx::ValueItemWrapper< SvxVerJustifyItem, SvxCellVerJustify > VerJustItemWrapper;
 typedef sfx::ListBoxConnection< VerJustItemWrapper > VerJustConnection;
 
 static const VerJustConnection::MapEntryType s_pVerJustMap[] =
@@ -79,7 +82,7 @@ static const VerJustConnection::MapEntryType s_pVerJustMap[] =
 
 // cell rotate mode -----------------------------------------------------------
 
-typedef sfx::ValueItemWrapper< SvxRotateModeItem, SvxRotateMode, sal_uInt16 > RotateModeItemWrapper;
+typedef sfx::ValueItemWrapper< SvxRotateModeItem, SvxRotateMode > RotateModeItemWrapper;
 typedef sfx::ValueSetConnection< RotateModeItemWrapper > RotateModeConnection;
 
 static const RotateModeConnection::MapEntryType s_pRotateModeMap[] =
@@ -117,7 +120,7 @@ void lcl_MaybeResetAlignToDistro(
         // alignment not set.
         return;
 
-    const SfxEnumItem* p = static_cast<const SfxEnumItem*>(pItem);
+    const SfxEnumItemInterface* p = static_cast<const SfxEnumItemInterface*>(pItem);
     JustContainerType eVal = static_cast<JustContainerType>(p->GetEnumValue());
     if (eVal != eBlock)
         // alignment is not 'justify'.  No need to go further.
@@ -127,18 +130,18 @@ void lcl_MaybeResetAlignToDistro(
         // justification method is not set.
         return;
 
-    p = static_cast<const SfxEnumItem*>(pItem);
+    p = static_cast<const SfxEnumItemInterface*>(pItem);
     SvxCellJustifyMethod eMethod = static_cast<SvxCellJustifyMethod>(p->GetEnumValue());
-    if (eMethod == SVX_JUSTIFY_METHOD_DISTRIBUTE)
+    if (eMethod == SvxCellJustifyMethod::Distribute)
         // Select the 'distribute' entry in the specified list box.
         rLB.SelectEntryPos(nListPos);
 }
 
 void lcl_SetJustifyMethodToItemSet(SfxItemSet& rSet, sal_uInt16 nWhichJM, const ListBox& rLB, sal_uInt16 nListPos)
 {
-    SvxCellJustifyMethod eJM = SVX_JUSTIFY_METHOD_AUTO;
+    SvxCellJustifyMethod eJM = SvxCellJustifyMethod::Auto;
     if (rLB.GetSelectEntryPos() == nListPos)
-        eJM = SVX_JUSTIFY_METHOD_DISTRIBUTE;
+        eJM = SvxCellJustifyMethod::Distribute;
 
     SvxJustifyMethodItem aItem(eJM, nWhichJM);
     rSet.Put(aItem);
@@ -208,30 +211,30 @@ AlignmentTabPage::AlignmentTabPage( vcl::Window* pParent, const SfxItemSet& rCor
     // Asian vertical mode
     m_pCbAsianMode->Show( SvtCJKOptions().IsVerticalTextEnabled() );
 
-    m_pLbFrameDir->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_LTR ), FRMDIR_HORI_LEFT_TOP );
-    m_pLbFrameDir->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_RTL ), FRMDIR_HORI_RIGHT_TOP );
-    m_pLbFrameDir->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_SUPER ), FRMDIR_ENVIRONMENT );
+    m_pLbFrameDir->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_LTR ), SvxFrameDirection::Horizontal_LR_TB );
+    m_pLbFrameDir->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_RTL ), SvxFrameDirection::Horizontal_RL_TB );
+    m_pLbFrameDir->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_SUPER ), SvxFrameDirection::Environment );
 
     // This page needs ExchangeSupport.
     SetExchangeSupport();
 
-    AddItemConnection( new HorJustConnection( SID_ATTR_ALIGN_HOR_JUSTIFY, *m_pLbHorAlign, s_pHorJustMap, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_INDENT, *m_pFtIndent, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::MetricConnection<sfx::UInt16ItemWrapper>( SID_ATTR_ALIGN_INDENT, *m_pEdIndent, FUNIT_TWIP, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_VER_JUSTIFY, *m_pFtVerAlign, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new VerJustConnection( SID_ATTR_ALIGN_VER_JUSTIFY, *m_pLbVerAlign, s_pVerJustMap, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new DialControlConnection( SID_ATTR_ALIGN_DEGREES, *m_pCtrlDial, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_DEGREES, *m_pFtRotate, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_LOCKPOS, *m_pFtRefEdge, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new RotateModeConnection( SID_ATTR_ALIGN_LOCKPOS, *m_pVsRefEdge, s_pRotateModeMap, sfx::ITEMCONN_HIDE_UNKNOWN ) );
+    AddItemConnection( new HorJustConnection( SID_ATTR_ALIGN_HOR_JUSTIFY, *m_pLbHorAlign, s_pHorJustMap, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_INDENT, *m_pFtIndent, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::MetricConnection<sfx::UInt16ItemWrapper>( SID_ATTR_ALIGN_INDENT, *m_pEdIndent, FUNIT_TWIP, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_VER_JUSTIFY, *m_pFtVerAlign, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new VerJustConnection( SID_ATTR_ALIGN_VER_JUSTIFY, *m_pLbVerAlign, s_pVerJustMap, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new DialControlConnection( SID_ATTR_ALIGN_DEGREES, *m_pCtrlDial, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_DEGREES, *m_pFtRotate, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_LOCKPOS, *m_pFtRefEdge, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new RotateModeConnection( SID_ATTR_ALIGN_LOCKPOS, *m_pVsRefEdge, s_pRotateModeMap, ItemConnFlags::HideUnknown ) );
     AddItemConnection( new OrientStackedConnection( SID_ATTR_ALIGN_STACKED, *m_pOrientHlp ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_STACKED, *m_pCbStacked, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_ASIANVERTICAL, *m_pCbAsianMode, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_LINEBREAK, *m_pBtnWrap, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_HYPHENATION, *m_pBtnHyphen, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_SHRINKTOFIT, *m_pBtnShrink, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_FRAMEDIRECTION, *m_pBoxDirection, sfx::ITEMCONN_HIDE_UNKNOWN ) );
-    AddItemConnection( new FrameDirListBoxConnection( SID_ATTR_FRAMEDIRECTION, *m_pLbFrameDir, sfx::ITEMCONN_HIDE_UNKNOWN ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_ALIGN_STACKED, *m_pCbStacked, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_ASIANVERTICAL, *m_pCbAsianMode, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_LINEBREAK, *m_pBtnWrap, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_HYPHENATION, *m_pBtnHyphen, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::CheckBoxConnection( SID_ATTR_ALIGN_SHRINKTOFIT, *m_pBtnShrink, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new sfx::DummyItemConnection( SID_ATTR_FRAMEDIRECTION, *m_pBoxDirection, ItemConnFlags::HideUnknown ) );
+    AddItemConnection( new FrameDirListBoxConnection( SID_ATTR_FRAMEDIRECTION, *m_pLbFrameDir, ItemConnFlags::HideUnknown ) );
 
 }
 
@@ -306,7 +309,7 @@ void AlignmentTabPage::Reset( const SfxItemSet* rCoreAttrs )
     lcl_MaybeResetAlignToDistro<SvxCellHorJustify, SvxCellHorJustify>(
         *m_pLbHorAlign, ALIGNDLG_HORALIGN_DISTRIBUTED, *rCoreAttrs,
         GetWhich(SID_ATTR_ALIGN_HOR_JUSTIFY), GetWhich(SID_ATTR_ALIGN_HOR_JUSTIFY_METHOD),
-        SVX_HOR_JUSTIFY_BLOCK);
+        SvxCellHorJustify::Block);
 
     lcl_MaybeResetAlignToDistro<SvxCellVerJustify, SvxCellVerJustify>(
         *m_pLbVerAlign, ALIGNDLG_VERALIGN_DISTRIBUTED, *rCoreAttrs,
@@ -316,11 +319,11 @@ void AlignmentTabPage::Reset( const SfxItemSet* rCoreAttrs )
     UpdateEnableControls();
 }
 
-SfxTabPage::sfxpg AlignmentTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC AlignmentTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void AlignmentTabPage::DataChanged( const DataChangedEvent& rDCEvt )
@@ -337,29 +340,26 @@ void AlignmentTabPage::InitVsRefEgde()
     // remember selection - is deleted in call to ValueSet::Clear()
     sal_uInt16 nSel = m_pVsRefEdge->GetSelectItemId();
 
-    ResId aResId( IL_LOCK_BMPS, CUI_MGR() );
-    ImageList aImageList( aResId );
+    BitmapEx aBottomLock(ResId(RID_SVXBMP_BOTTOMLOCK, CUI_MGR()));
+    BitmapEx aTopLock(ResId(RID_SVXBMP_TOPLOCK, CUI_MGR()));
+    BitmapEx aCellLock(ResId(RID_SVXBMP_CELLLOCK, CUI_MGR()));
 
     if( GetDPIScaleFactor() > 1 )
     {
-        for (short i = 0; i < aImageList.GetImageCount(); i++)
-        {
-            OUString rImageName = aImageList.GetImageName(i);
-            BitmapEx b = aImageList.GetImage(rImageName).GetBitmapEx();
-            b.Scale(GetDPIScaleFactor(), GetDPIScaleFactor(), BmpScaleFlag::Fast);
-            aImageList.ReplaceImage(rImageName, Image(b));
-        }
+        aBottomLock.Scale(GetDPIScaleFactor(), GetDPIScaleFactor(), BmpScaleFlag::Fast);
+        aTopLock.Scale(GetDPIScaleFactor(), GetDPIScaleFactor(), BmpScaleFlag::Fast);
+        aCellLock.Scale(GetDPIScaleFactor(), GetDPIScaleFactor(), BmpScaleFlag::Fast);
     }
 
-    Size aItemSize( aImageList.GetImage( IID_BOTTOMLOCK ).GetSizePixel() );
+    Size aItemSize(aBottomLock.GetSizePixel());
 
     m_pVsRefEdge->Clear();
     m_pVsRefEdge->SetStyle( m_pVsRefEdge->GetStyle() | WB_ITEMBORDER | WB_DOUBLEBORDER );
 
     m_pVsRefEdge->SetColCount( 3 );
-    m_pVsRefEdge->InsertItem( IID_BOTTOMLOCK, aImageList.GetImage( IID_BOTTOMLOCK ),  m_pFtBotLock->GetText() );
-    m_pVsRefEdge->InsertItem( IID_TOPLOCK,    aImageList.GetImage( IID_TOPLOCK ),     m_pFtTopLock->GetText() );
-    m_pVsRefEdge->InsertItem( IID_CELLLOCK,   aImageList.GetImage( IID_CELLLOCK ),    m_pFtCelLock->GetText() );
+    m_pVsRefEdge->InsertItem(IID_BOTTOMLOCK, Image(aBottomLock),  m_pFtBotLock->GetText());
+    m_pVsRefEdge->InsertItem(IID_TOPLOCK,    Image(aTopLock),     m_pFtTopLock->GetText());
+    m_pVsRefEdge->InsertItem(IID_CELLLOCK,   Image(aCellLock),    m_pFtCelLock->GetText());
 
     m_pVsRefEdge->SetSizePixel( m_pVsRefEdge->CalcWindowSizePixel( aItemSize ) );
 
@@ -400,29 +400,29 @@ bool AlignmentTabPage::HasAlignmentChanged( const SfxItemSet& rNew, sal_uInt16 n
 {
     const SfxItemSet& rOld = GetItemSet();
     const SfxPoolItem* pItem;
-    SvxCellJustifyMethod eMethodOld = SVX_JUSTIFY_METHOD_AUTO;
-    SvxCellJustifyMethod eMethodNew = SVX_JUSTIFY_METHOD_AUTO;
+    SvxCellJustifyMethod eMethodOld = SvxCellJustifyMethod::Auto;
+    SvxCellJustifyMethod eMethodNew = SvxCellJustifyMethod::Auto;
     if (rOld.GetItemState(nWhich, true, &pItem) == SfxItemState::SET)
     {
-        const SfxEnumItem* p = static_cast<const SfxEnumItem*>(pItem);
+        const SfxEnumItemInterface* p = static_cast<const SfxEnumItemInterface*>(pItem);
         eMethodOld = static_cast<SvxCellJustifyMethod>(p->GetEnumValue());
     }
 
     if (rNew.GetItemState(nWhich, true, &pItem) == SfxItemState::SET)
     {
-        const SfxEnumItem* p = static_cast<const SfxEnumItem*>(pItem);
+        const SfxEnumItemInterface* p = static_cast<const SfxEnumItemInterface*>(pItem);
         eMethodNew = static_cast<SvxCellJustifyMethod>(p->GetEnumValue());
     }
 
     return eMethodOld != eMethodNew;
 }
 
-IMPL_LINK_NOARG_TYPED(AlignmentTabPage, UpdateEnableClickHdl, Button*, void)
+IMPL_LINK_NOARG(AlignmentTabPage, UpdateEnableClickHdl, Button*, void)
 {
     UpdateEnableControls();
 }
 
-IMPL_LINK_NOARG_TYPED(AlignmentTabPage, UpdateEnableHdl, ListBox&, void)
+IMPL_LINK_NOARG(AlignmentTabPage, UpdateEnableHdl, ListBox&, void)
 {
     UpdateEnableControls();
 }

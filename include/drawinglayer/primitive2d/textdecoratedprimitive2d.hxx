@@ -56,7 +56,6 @@ namespace drawinglayer
             TextEmphasisMark                            meTextEmphasisMark;
             TextRelief                                  meTextRelief;
 
-            /// bitfield
             bool                                        mbUnderlineAbove : 1;
             bool                                        mbWordLineMode : 1;
             bool                                        mbEmphasisMarkAbove : 1;
@@ -75,7 +74,7 @@ namespace drawinglayer
 
         protected:
             /// local decomposition.
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -118,10 +117,6 @@ namespace drawinglayer
             bool getEmphasisMarkAbove() const { return mbEmphasisMarkAbove; }
             bool getEmphasisMarkBelow() const { return mbEmphasisMarkBelow; }
             bool getShadow() const { return mbShadow; }
-
-            /// check if this needs to be a TextDecoratedPortionPrimitive2D or
-            /// if a TextSimplePortionPrimitive2D would be suficcient
-            bool decoratedIsNeeded() const;
 
             /// compare operator
             virtual bool operator==( const BasePrimitive2D& rPrimitive ) const override;

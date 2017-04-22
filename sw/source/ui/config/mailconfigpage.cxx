@@ -20,9 +20,7 @@
 #include <swmodule.hxx>
 #include <swtypes.hxx>
 #include <mailconfigpage.hxx>
-#include <sfx2/imgmgr.hxx>
 #include <svtools/svmedit.hxx>
-#include <svtools/stdctrl.hxx>
 #include <svtools/svtabbx.hxx>
 #include <svtools/headbar.hxx>
 #include <mmconfigitem.hxx>
@@ -36,6 +34,7 @@
 #include <vcl/msgbox.hxx>
 #include <globals.hrc>
 #include <config.hrc>
+#include <dbui.hrc>
 #include <helpid.h>
 
 using namespace ::com::sun::star;
@@ -67,11 +66,11 @@ class SwTestAccountSettingsDialog : public SfxModalDialog
     bool                m_bStop;
 
     void                Test();
-    DECL_LINK_TYPED(StopHdl, Button*, void);
-    DECL_LINK_TYPED(TestHdl, void*, void);
+    DECL_LINK(StopHdl, Button*, void);
+    DECL_LINK(TestHdl, void*, void);
 public:
     explicit SwTestAccountSettingsDialog(SwMailConfigPage* pParent);
-    virtual ~SwTestAccountSettingsDialog();
+    virtual ~SwTestAccountSettingsDialog() override;
     virtual void dispose() override;
 };
 
@@ -105,13 +104,13 @@ class SwAuthenticationSettingsDialog : public SfxModalDialog
 
     SwMailMergeConfigItem& rConfigItem;
 
-    DECL_LINK_TYPED(OKHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( CheckBoxHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(RadioButtonHdl_Impl, Button*, void);
+    DECL_LINK(OKHdl_Impl, Button*, void);
+    DECL_LINK( CheckBoxHdl_Impl, Button*, void);
+    DECL_LINK(RadioButtonHdl_Impl, Button*, void);
 
 public:
     SwAuthenticationSettingsDialog(SwMailConfigPage* pParent, SwMailMergeConfigItem& rItem);
-    virtual ~SwAuthenticationSettingsDialog();
+    virtual ~SwAuthenticationSettingsDialog() override;
     virtual void dispose() override;
 };
 
@@ -207,26 +206,28 @@ void SwMailConfigPage::Reset( const SfxItemSet* /*rSet*/ )
     m_pSecureCB     ->SaveValue();
 }
 
-IMPL_LINK_TYPED(SwMailConfigPage, ReplyToHdl, Button*, pBox, void)
+IMPL_LINK(SwMailConfigPage, ReplyToHdl, Button*, pBox, void)
 {
     bool bEnable = static_cast<CheckBox*>(pBox)->IsChecked();
     m_pReplyToFT->Enable(bEnable);
     m_pReplyToED->Enable(bEnable);
 }
 
-IMPL_LINK_NOARG_TYPED(SwMailConfigPage, AuthenticationHdl, Button*, void)
+IMPL_LINK_NOARG(SwMailConfigPage, AuthenticationHdl, Button*, void)
 {
     ScopedVclPtrInstance< SwAuthenticationSettingsDialog > aDlg(this, *m_pConfigItem);
     aDlg->Execute();
 }
 
-IMPL_LINK_NOARG_TYPED(SwMailConfigPage, TestHdl, Button*, void)
+IMPL_LINK_NOARG(SwMailConfigPage, TestHdl, Button*, void)
 {
     ScopedVclPtrInstance<SwTestAccountSettingsDialog>(this)->Execute();
 }
 
 SwTestAccountSettingsDialog::SwTestAccountSettingsDialog(SwMailConfigPage* pParent)
     : SfxModalDialog(pParent, "TestMailSettings", "modules/swriter/ui/testmailsettings.ui")
+    , m_aCompletedImg(BitmapEx(SW_RES(RID_BMP_FORMULA_APPLY)))
+    , m_aFailedImg(BitmapEx(SW_RES(RID_BMP_FORMULA_CANCEL)))
     , m_pParent(pParent)
     , m_bStop(false)
 {
@@ -244,10 +245,6 @@ SwTestAccountSettingsDialog::SwTestAccountSettingsDialog(SwMailConfigPage* pPare
     get(m_pResult2, "result2");
     m_sCompleted = m_pResult1->GetText();
     m_sFailed = m_pResult2->GetText();
-
-    SfxImageManager* pManager = SfxImageManager::GetImageManager(*SW_MOD());
-    m_aFailedImg = pManager->GetImage(FN_FORMULA_CANCEL);
-    m_aCompletedImg = pManager->GetImage(FN_FORMULA_APPLY);
 
     m_pStopPB->SetClickHdl(LINK(this, SwTestAccountSettingsDialog, StopHdl));
 
@@ -273,12 +270,12 @@ void SwTestAccountSettingsDialog::dispose()
     SfxModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SwTestAccountSettingsDialog, StopHdl, Button*, void)
+IMPL_LINK_NOARG(SwTestAccountSettingsDialog, StopHdl, Button*, void)
 {
     m_bStop = true;
 }
 
-IMPL_LINK_NOARG_TYPED(SwTestAccountSettingsDialog, TestHdl, void*, void)
+IMPL_LINK_NOARG(SwTestAccountSettingsDialog, TestHdl, void*, void)
 {
     EnterWait();
     Test();
@@ -326,7 +323,7 @@ void SwTestAccountSettingsDialog::Test()
                     new SwConnectionContext(
                         m_pParent->m_pConfigItem->GetInServerName(),
                         m_pParent->m_pConfigItem->GetInServerPort(),
-                        OUString("Insecure"));
+                        "Insecure");
             xInMailService->connect(xConnectionContext, xAuthenticator);
         }
         if(m_bStop)
@@ -476,7 +473,7 @@ void SwAuthenticationSettingsDialog::dispose()
     SfxModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SwAuthenticationSettingsDialog, OKHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SwAuthenticationSettingsDialog, OKHdl_Impl, Button*, void)
 {
     rConfigItem.SetAuthentication( m_pAuthenticationCB->IsChecked() );
     rConfigItem.SetSMTPAfterPOP(m_pSMTPAfterPOPRB->IsChecked());
@@ -491,7 +488,7 @@ IMPL_LINK_NOARG_TYPED(SwAuthenticationSettingsDialog, OKHdl_Impl, Button*, void)
     EndDialog(RET_OK);
 }
 
-IMPL_LINK_TYPED( SwAuthenticationSettingsDialog, CheckBoxHdl_Impl, Button*, pBox, void)
+IMPL_LINK( SwAuthenticationSettingsDialog, CheckBoxHdl_Impl, Button*, pBox, void)
 {
     bool bChecked = static_cast<CheckBox*>(pBox)->IsChecked();
     m_pSeparateAuthenticationRB->Enable(bChecked);
@@ -499,7 +496,7 @@ IMPL_LINK_TYPED( SwAuthenticationSettingsDialog, CheckBoxHdl_Impl, Button*, pBox
     RadioButtonHdl_Impl( nullptr );
 }
 
-IMPL_LINK_NOARG_TYPED(SwAuthenticationSettingsDialog, RadioButtonHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SwAuthenticationSettingsDialog, RadioButtonHdl_Impl, Button*, void)
 {
     bool bSeparate = m_pSeparateAuthenticationRB->IsChecked();
     bool bIsEnabled = m_pSeparateAuthenticationRB->IsEnabled();

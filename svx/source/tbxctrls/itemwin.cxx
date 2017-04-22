@@ -52,24 +52,24 @@ using namespace ::com::sun::star::util;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::beans;
 
-SvxLineBox::SvxLineBox( vcl::Window* pParent, const Reference< XFrame >& rFrame, WinBits nBits ) :
-    LineLB( pParent, nBits ),
+SvxLineBox::SvxLineBox( vcl::Window* pParent, const Reference< XFrame >& rFrame ) :
+    LineLB( pParent, WB_BORDER | WB_DROPDOWN | WB_AUTOHSCROLL ),
     nCurPos     ( 0 ),
     aLogicalSize(40,140),
     bRelease    ( true ),
     mpSh        ( nullptr ),
     mxFrame     ( rFrame )
 {
-    SetSizePixel( LogicToPixel( aLogicalSize, MAP_APPFONT ));
+    SetSizePixel( LogicToPixel( aLogicalSize, MapUnit::MapAppFont ));
     Show();
 
     aDelayTimer.SetTimeout( DELAY_TIMEOUT );
-    aDelayTimer.SetTimeoutHdl( LINK( this, SvxLineBox, DelayHdl_Impl ) );
+    aDelayTimer.SetInvokeHandler( LINK( this, SvxLineBox, DelayHdl_Impl ) );
     aDelayTimer.Start();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineBox, DelayHdl_Impl, Timer *, void)
+IMPL_LINK_NOARG(SvxLineBox, DelayHdl_Impl, Timer *, void)
 {
     if ( GetEntryCount() == 0 )
     {
@@ -173,9 +173,9 @@ bool SvxLineBox::PreNotify( NotifyEvent& rNEvt )
 }
 
 
-bool SvxLineBox::Notify( NotifyEvent& rNEvt )
+bool SvxLineBox::EventNotify( NotifyEvent& rNEvt )
 {
-    bool bHandled = LineLB::Notify( rNEvt );
+    bool bHandled = LineLB::EventNotify( rNEvt );
 
     if ( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
     {
@@ -221,7 +221,7 @@ void SvxLineBox::DataChanged( const DataChangedEvent& rDCEvt )
     if ( (rDCEvt.GetType() == DataChangedEventType::SETTINGS) &&
          (rDCEvt.GetFlags() & AllSettingsFlags::STYLE) )
     {
-        SetSizePixel(LogicToPixel(aLogicalSize, MAP_APPFONT));
+        SetSizePixel(LogicToPixel(aLogicalSize, MapUnit::MapAppFont));
     }
 
     LineLB::DataChanged( rDCEvt );
@@ -242,17 +242,15 @@ void SvxLineBox::FillControl()
 }
 
 SvxMetricField::SvxMetricField(
-    vcl::Window* pParent, const Reference< XFrame >& rFrame, WinBits nBits )
-    : MetricField(pParent, nBits)
+    vcl::Window* pParent, const Reference< XFrame >& rFrame )
+    : MetricField(pParent, WB_BORDER | WB_SPIN | WB_REPEAT)
     , aCurTxt()
-    , ePoolUnit(SFX_MAPUNIT_CM)
+    , ePoolUnit(MapUnit::MapCM)
     , mxFrame(rFrame)
 {
-    Size aSize(GetTextWidth( "99,99mm" ),GetTextHeight());
-    aSize.Width() += 20;
-    aSize.Height() += 6;
+    Size aSize( CalcMinimumSize() );
     SetSizePixel( aSize );
-    aLogicalSize = PixelToLogic(aSize, MAP_APPFONT);
+    aLogicalSize = PixelToLogic(aSize, MapUnit::MapAppFont);
     SetUnit( FUNIT_MM );
     SetDecimalDigits( 2 );
     SetMax( 5000 );
@@ -305,17 +303,7 @@ void SvxMetricField::ReleaseFocus_Impl()
     }
 }
 
-void SvxMetricField::Down()
-{
-    MetricField::Down();
-}
-
-void SvxMetricField::Up()
-{
-    MetricField::Up();
-}
-
-void SvxMetricField::SetCoreUnit( SfxMapUnit eUnit )
+void SvxMetricField::SetCoreUnit( MapUnit eUnit )
 {
     ePoolUnit = eUnit;
 }
@@ -341,9 +329,9 @@ bool SvxMetricField::PreNotify( NotifyEvent& rNEvt )
 }
 
 
-bool SvxMetricField::Notify( NotifyEvent& rNEvt )
+bool SvxMetricField::EventNotify( NotifyEvent& rNEvt )
 {
-    bool bHandled = MetricField::Notify( rNEvt );
+    bool bHandled = MetricField::EventNotify( rNEvt );
 
     if ( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
     {
@@ -386,21 +374,21 @@ void SvxMetricField::DataChanged( const DataChangedEvent& rDCEvt )
     if ( (rDCEvt.GetType() == DataChangedEventType::SETTINGS) &&
          (rDCEvt.GetFlags() & AllSettingsFlags::STYLE) )
     {
-        SetSizePixel(LogicToPixel(aLogicalSize, MAP_APPFONT));
+        SetSizePixel(LogicToPixel(aLogicalSize, MapUnit::MapAppFont));
     }
 
     MetricField::DataChanged( rDCEvt );
 }
 
-SvxFillTypeBox::SvxFillTypeBox( vcl::Window* pParent, WinBits nBits ) :
-    FillTypeLB( pParent, nBits | WB_TABSTOP ),
+SvxFillTypeBox::SvxFillTypeBox( vcl::Window* pParent ) :
+    FillTypeLB( pParent, WB_BORDER | WB_DROPDOWN | WB_AUTOHSCROLL | WB_TABSTOP ),
     nCurPos ( 0 ),
     bSelect ( false ),
     bRelease( true )
 {
-    SetSizePixel( LogicToPixel( Size(40, 40 ),MAP_APPFONT ));
+    SetSizePixel( LogicToPixel( Size(40, 40 ),MapUnit::MapAppFont ));
     Fill();
-    SelectEntryPos( drawing::FillStyle_SOLID );
+    SelectEntryPos( (sal_Int32)drawing::FillStyle_SOLID );
     Show();
 }
 
@@ -429,9 +417,9 @@ bool SvxFillTypeBox::PreNotify( NotifyEvent& rNEvt )
 }
 
 
-bool SvxFillTypeBox::Notify( NotifyEvent& rNEvt )
+bool SvxFillTypeBox::EventNotify( NotifyEvent& rNEvt )
 {
-    bool bHandled = FillTypeLB::Notify( rNEvt );
+    bool bHandled = FillTypeLB::EventNotify( rNEvt );
 
     if (isDisposed())
         return false;
@@ -473,14 +461,14 @@ void SvxFillTypeBox::ReleaseFocus_Impl()
     }
 }
 
-SvxFillAttrBox::SvxFillAttrBox( vcl::Window* pParent, WinBits nBits ) :
-    FillAttrLB( pParent, nBits | WB_TABSTOP ),
+SvxFillAttrBox::SvxFillAttrBox( vcl::Window* pParent ) :
+    FillAttrLB( pParent, WB_BORDER | WB_DROPDOWN | WB_AUTOHSCROLL | WB_TABSTOP ),
     nCurPos( 0 ),
     bRelease( true )
 
 {
     SetPosPixel( Point( 90, 0 ) );
-    SetSizePixel( LogicToPixel( Size(50, 80 ), MAP_APPFONT ));
+    SetSizePixel( LogicToPixel( Size(50, 80 ), MapUnit::MapAppFont ));
     Show();
 }
 
@@ -497,9 +485,9 @@ bool SvxFillAttrBox::PreNotify( NotifyEvent& rNEvt )
 }
 
 
-bool SvxFillAttrBox::Notify( NotifyEvent& rNEvt )
+bool SvxFillAttrBox::EventNotify( NotifyEvent& rNEvt )
 {
-    bool bHandled = FillAttrLB::Notify( rNEvt );
+    bool bHandled = FillAttrLB::EventNotify( rNEvt );
 
     if ( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
     {
@@ -524,12 +512,6 @@ bool SvxFillAttrBox::Notify( NotifyEvent& rNEvt )
         }
     }
     return bHandled;
-}
-
-
-void SvxFillAttrBox::Select()
-{
-    FillAttrLB::Select();
 }
 
 

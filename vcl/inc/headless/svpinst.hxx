@@ -45,7 +45,7 @@ class SvpSalTimer : public SalTimer
     SvpSalInstance* m_pInstance;
 public:
     SvpSalTimer( SvpSalInstance* pInstance ) : m_pInstance( pInstance ) {}
-    virtual ~SvpSalTimer();
+    virtual ~SvpSalTimer() override;
 
     // override all pure virtual methods
     virtual void Start( sal_uLong nMS ) override;
@@ -70,7 +70,7 @@ class VCL_DLLPUBLIC SvpSalInstance : public SalGenericInstance
         ImplSVEvent*        m_pData;
         SalEvent            m_nEvent;
 
-        SalUserEvent( const SalFrame* pFrame, ImplSVEvent* pData, SalEvent nEvent = SalEvent::UserEvent )
+        SalUserEvent( const SalFrame* pFrame, ImplSVEvent* pData, SalEvent nEvent )
                 : m_pFrame( pFrame ),
                   m_pData( pData ),
                   m_nEvent( nEvent )
@@ -90,7 +90,7 @@ public:
     static SvpSalInstance*  s_pDefaultInstance;
 
     SvpSalInstance( SalYieldMutex *pMutex );
-    virtual ~SvpSalInstance();
+    virtual ~SvpSalInstance() override;
 
     void                    CloseWakeupPipe(bool log);
     void                    CreateWakeupPipe(bool log);
@@ -118,7 +118,7 @@ public:
     virtual void            DestroyFrame( SalFrame* pFrame ) override;
 
     // Object (System Child Window)
-    virtual SalObject*      CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow = true ) override;
+    virtual SalObject*      CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow ) override;
     virtual void            DestroyObject( SalObject* pObject ) override;
 
     // VirtualDevice
@@ -131,7 +131,7 @@ public:
 
     // Printer
     // pSetupData->mpDriverData can be 0
-    // pSetupData must be updatet with the current
+    // pSetupData must be updated with the current
     // JobSetup
     virtual SalInfoPrinter* CreateInfoPrinter( SalPrinterQueueInfo* pQueueInfo,
                                                ImplJobSetup* pSetupData ) override;
@@ -147,8 +147,6 @@ public:
 
     // SalTimer
     virtual SalTimer*       CreateSalTimer() override;
-    // SalI18NImeStatus
-    virtual SalI18NImeStatus*   CreateI18NImeStatus() override;
     // SalSystem
     virtual SalSystem*      CreateSalSystem() override;
     // SalBitmap
@@ -165,7 +163,7 @@ public:
 
     virtual OpenGLContext*  CreateOpenGLContext() override;
 
-    virtual void*           GetConnectionIdentifier( ConnectionIdentifierType& rReturnedType, int& rReturnedBytes ) override;
+    virtual OUString        GetConnectionIdentifier() override;
 
     virtual void            AddToRecentDocumentList(const OUString& rFileUrl, const OUString& rMimeType, const OUString& rDocumentService) override;
 

@@ -56,7 +56,7 @@ class XMLFootnoteConfigurationImportContext : public SvXMLStyleContext
     OUString sBeginNotice;
     OUString sEndNotice;
 
-    SvXMLTokenMap* pAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap> pAttrTokenMap;
 
     sal_Int16 nOffset;
     sal_Int16 nNumbering;
@@ -72,7 +72,7 @@ public:
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList> & xAttrList);
 
-    virtual ~XMLFootnoteConfigurationImportContext();
+    virtual ~XMLFootnoteConfigurationImportContext() override;
 
     /// parse attributes
     virtual void StartElement(

@@ -31,7 +31,6 @@ SbiScanner::SbiScanner( const OUString& rBuf, StarBASIC* p ) : aBuf( rBuf )
     eScanType = SbxVARIANT;
     nErrors  = 0;
     nBufPos  = 0;
-    nCurCol1 = 0;
     nSavedCol1 = 0;
     nColLock = 0;
     nLine    = 0;
@@ -213,6 +212,7 @@ bool SbiScanner::NextSym()
     eScanType = SbxVARIANT;
     aSym.clear();
     bHash = bSymbol = bNumber = bSpaces = false;
+    bool bCompilerDirective = false;
 
     // read in line?
     if( !pLine )
@@ -247,7 +247,11 @@ bool SbiScanner::NextSym()
     {
         ++pLine;
         ++nCol;
-        bHash = true;
+        //ignore compiler directives (# is first non-space character)
+        if( nOldCol2 == 0 )
+            bCompilerDirective = true;
+        else
+            bHash = true;
     }
 
     // copy character if symbol
@@ -422,7 +426,7 @@ bool SbiScanner::NextSym()
     }
 
     // Hex/octal number? Read in and convert:
-    else if(nCol < aLine.getLength() && aLine[nCol] == '&')
+    else if(aLine.getLength() - nCol > 1 && aLine[nCol] == '&')
     {
         ++pLine; ++nCol;
         sal_Unicode base = 16;
@@ -552,7 +556,9 @@ bool SbiScanner::NextSym()
 PrevLineCommentLbl:
 
     if( bPrevLineExtentsComment || (eScanType != SbxSTRING &&
-                                    ( aSym.startsWith("'") || aSym.equalsIgnoreAsciiCase( "REM" ) ) ) )
+                                    ( bCompilerDirective ||
+                                      aSym.startsWith("'") ||
+                                      aSym.equalsIgnoreAsciiCase( "REM" ) ) ) )
     {
         bPrevLineExtentsComment = false;
         aSym = "REM";
@@ -570,12 +576,11 @@ eoln:
     {
         pLine = nullptr;
         bool bRes = NextSym();
-        if( bVBASupportOn && aSym[0] == '.' )
+        if( bVBASupportOn && aSym.startsWith(".") )
         {
             // object _
             //    .Method
             // ^^^  <- spaces is legal in MSO VBA
-            OSL_TRACE("*** resetting bSpaces***");
             bSpaces = false;
         }
         return bRes;

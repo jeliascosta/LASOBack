@@ -29,7 +29,7 @@ class SwChildWinWrapper : public SfxChildWindow
     Timer       m_aUpdateTimer;
     SwDocShell* m_pDocSh;
 
-    DECL_LINK_TYPED( UpdateHdl, Timer*, void );
+    DECL_LINK( UpdateHdl, Timer*, void );
 
     // Implementation in fldtdlg.cxx
 protected:
@@ -38,8 +38,8 @@ protected:
 public:
     virtual bool    ReInitDlg(SwDocShell *pDocSh);
 
-    inline SwDocShell*  GetOldDocShell()                    { return m_pDocSh; }
-    inline void         SetOldDocShell(SwDocShell *pDcSh)   { m_pDocSh = pDcSh; }
+    SwDocShell*  GetOldDocShell()                    { return m_pDocSh; }
+    void         SetOldDocShell(SwDocShell *pDcSh)   { m_pDocSh = pDcSh; }
 };
 
 #endif

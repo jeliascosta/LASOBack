@@ -33,8 +33,6 @@
 class EDITENG_DLLPUBLIC SvxScriptSpaceItem : public SfxBoolItem
 {
 public:
-    static SfxPoolItem* CreateDefault();
-
     SvxScriptSpaceItem( bool bOn /*= false*/,
                         const sal_uInt16 nId  );
 
@@ -43,12 +41,12 @@ public:
     virtual sal_uInt16          GetVersion( sal_uInt16 nFileVersion ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper * = nullptr ) const override;
 
-    inline SvxScriptSpaceItem& operator=(const SvxScriptSpaceItem& rItem )
+    SvxScriptSpaceItem& operator=(const SvxScriptSpaceItem& rItem )
     {
         SetValue( rItem.GetValue() );
         return *this;

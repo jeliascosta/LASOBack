@@ -20,9 +20,9 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCIMAGE_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCIMAGE_H
 
-#include "resource.h"        // main symbols
+#include "Resource.h"        // main symbols
 
-#include <com/sun/star/uno/reference.hxx>
+#include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/accessibility/XAccessibleImage.hpp>
 #include "UNOXWrapper.h"
 
@@ -45,13 +45,20 @@ public:
     BEGIN_COM_MAP(CAccImage)
     COM_INTERFACE_ENTRY(IAccessibleImage)
     COM_INTERFACE_ENTRY(IUNOXWrapper)
-    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,_SmartQI)
+    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,SmartQI_)
+#if defined __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winconsistent-missing-override"
+#endif
     END_COM_MAP()
+#if defined __clang__
+#pragma clang diagnostic pop
+#endif
 
-    static HRESULT WINAPI _SmartQI(void* pv,
+    static HRESULT WINAPI SmartQI_(void* pv,
                                    REFIID iid, void** ppvObject, DWORD_PTR)
     {
-        return ((CAccImage*)pv)->SmartQI(iid,ppvObject);
+        return static_cast<CAccImage*>(pv)->SmartQI(iid,ppvObject);
     }
 
     HRESULT SmartQI(REFIID iid, void** ppvObject)
@@ -67,24 +74,24 @@ public:
     // IAccessibleImage
 
     // Gets the description of the image.
-    STDMETHOD(get_description)(BSTR * description);
+    STDMETHOD(get_description)(BSTR * description) override;
 
     STDMETHOD(get_imagePosition)( enum IA2CoordinateType coordinateType,
                                   long __RPC_FAR *x,
-                                  long __RPC_FAR *y);
+                                  long __RPC_FAR *y) override;
 
     STDMETHOD(get_imageSize)(
         long __RPC_FAR *height,
-        long __RPC_FAR *width);
+        long __RPC_FAR *width) override;
 
     // Override of IUNOXWrapper.
-    STDMETHOD(put_XInterface)(hyper pXInterface);
+    STDMETHOD(put_XInterface)(hyper pXInterface) override;
 
 private:
 
     css::uno::Reference<css::accessibility::XAccessibleImage> pRXImg;
 
-    inline css::accessibility::XAccessibleImage* GetXInterface()
+    css::accessibility::XAccessibleImage* GetXInterface()
     {
         return pRXImg.get();
     }

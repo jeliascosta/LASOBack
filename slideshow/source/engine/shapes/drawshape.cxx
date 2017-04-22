@@ -77,17 +77,18 @@ namespace slideshow
         // Private methods
 
 
-        GDIMetaFileSharedPtr DrawShape::forceScrollTextMetaFile()
+        GDIMetaFileSharedPtr const & DrawShape::forceScrollTextMetaFile()
         {
             if ((mnCurrMtfLoadFlags & MTF_LOAD_SCROLL_TEXT_MTF) != MTF_LOAD_SCROLL_TEXT_MTF)
             {
                 // reload with added flags:
-                mpCurrMtf.reset( new GDIMetaFile );
                 mnCurrMtfLoadFlags |= MTF_LOAD_SCROLL_TEXT_MTF;
-                getMetaFile(
-                    uno::Reference<lang::XComponent>(mxShape, uno::UNO_QUERY),
-                    mxPage, *mpCurrMtf, mnCurrMtfLoadFlags,
-                    mxComponentContext );
+                mpCurrMtf = getMetaFile(uno::Reference<lang::XComponent>(mxShape, uno::UNO_QUERY),
+                                        mxPage, mnCurrMtfLoadFlags,
+                                        mxComponentContext);
+
+                if (!mpCurrMtf)
+                    mpCurrMtf.reset( new GDIMetaFile );
 
                 // TODO(F1): Currently, the scroll metafile will
                 // never contain any verbose text comments. Thus,
@@ -143,7 +144,7 @@ namespace slideshow
                 mnPriority);
         }
 
-        bool DrawShape::implRender( int nUpdateFlags ) const
+        bool DrawShape::implRender( UpdateFlags nUpdateFlags ) const
         {
             SAL_INFO( "slideshow", "::presentation::internal::DrawShape::implRender()" );
             SAL_INFO( "slideshow", "::presentation::internal::DrawShape: 0x" << std::hex << this );
@@ -187,15 +188,15 @@ namespace slideshow
             return true;
         }
 
-        int DrawShape::getUpdateFlags() const
+        UpdateFlags DrawShape::getUpdateFlags() const
         {
             // default: update nothing, unless ShapeAttributeStack
             // tells us below, or if the attribute layer was revoked
-            int nUpdateFlags(ViewShape::NONE);
+            UpdateFlags nUpdateFlags(UpdateFlags::NONE);
 
             // possibly the whole shape content changed
             if( mbAttributeLayerRevoked )
-                nUpdateFlags = ViewShape::CONTENT;
+                nUpdateFlags = UpdateFlags::Content;
 
 
             // determine what has to be updated
@@ -215,30 +216,30 @@ namespace slideshow
                         // content change because when the visibility
                         // changes then usually a sprite is shown or hidden
                         // and the background under has to be painted once.
-                        nUpdateFlags |= ViewShape::CONTENT;
+                        nUpdateFlags |= UpdateFlags::Content;
                     }
 
                     // TODO(P1): This can be done without conditional branching.
                     // See HAKMEM.
                     if( mpAttributeLayer->getPositionState() != mnAttributePositionState )
                     {
-                        nUpdateFlags |= ViewShape::POSITION;
+                        nUpdateFlags |= UpdateFlags::Position;
                     }
                     if( mpAttributeLayer->getAlphaState() != mnAttributeAlphaState )
                     {
-                        nUpdateFlags |= ViewShape::ALPHA;
+                        nUpdateFlags |= UpdateFlags::Alpha;
                     }
                     if( mpAttributeLayer->getClipState() != mnAttributeClipState )
                     {
-                        nUpdateFlags |= ViewShape::CLIP;
+                        nUpdateFlags |= UpdateFlags::Clip;
                     }
                     if( mpAttributeLayer->getTransformationState() != mnAttributeTransformationState )
                     {
-                        nUpdateFlags |= ViewShape::TRANSFORMATION;
+                        nUpdateFlags |= UpdateFlags::Transformation;
                     }
                     if( mpAttributeLayer->getContentState() != mnAttributeContentState )
                     {
-                        nUpdateFlags |= ViewShape::CONTENT;
+                        nUpdateFlags |= UpdateFlags::Content;
                     }
                 }
             }
@@ -382,7 +383,6 @@ namespace slideshow
             maSubsetting(),
             mnIsAnimatedCount(0),
             mnAnimationLoopCount(0),
-            meCycleMode(CYCLE_LOOP),
             mbIsVisible( true ),
             mbForceUpdate( false ),
             mbAttributeLayerRevoked( false ),
@@ -402,13 +402,12 @@ namespace slideshow
 
             // must NOT be called from within initializer list, uses
             // state from mnCurrMtfLoadFlags!
-            mpCurrMtf.reset( new GDIMetaFile );
-            getMetaFile(
-                uno::Reference<lang::XComponent>(xShape, uno::UNO_QUERY),
-                xContainingPage, *mpCurrMtf, mnCurrMtfLoadFlags,
-                mxComponentContext );
-            ENSURE_OR_THROW( mpCurrMtf,
-                              "DrawShape::DrawShape(): Invalid metafile" );
+            mpCurrMtf = getMetaFile(uno::Reference<lang::XComponent>(xShape, uno::UNO_QUERY),
+                                    xContainingPage, mnCurrMtfLoadFlags,
+                                    mxComponentContext );
+            if (!mpCurrMtf)
+                mpCurrMtf.reset(new GDIMetaFile);
+
             maSubsetting.reset( mpCurrMtf );
 
             prepareHyperlinkIndices();
@@ -443,7 +442,6 @@ namespace slideshow
             maSubsetting(),
             mnIsAnimatedCount(0),
             mnAnimationLoopCount(0),
-            meCycleMode(CYCLE_LOOP),
             mbIsVisible( true ),
             mbForceUpdate( false ),
             mbAttributeLayerRevoked( false ),
@@ -454,7 +452,6 @@ namespace slideshow
 
             getAnimationFromGraphic( maAnimationFrames,
                                      mnAnimationLoopCount,
-                                     meCycleMode,
                                      rGraphic );
 
             ENSURE_OR_THROW( !maAnimationFrames.empty() &&
@@ -495,7 +492,6 @@ namespace slideshow
             maSubsetting( rTreeNode, mpCurrMtf ),
             mnIsAnimatedCount(0),
             mnAnimationLoopCount(0),
-            meCycleMode(CYCLE_LOOP),
             mbIsVisible( rSrc.mbIsVisible ),
             mbForceUpdate( false ),
             mbAttributeLayerRevoked( false ),
@@ -531,7 +527,7 @@ namespace slideshow
             {
                 OSL_ASSERT( pShape->maAnimationFrames.empty() );
                 if( pShape->getNumberOfTreeNodes(
-                        DocTreeNode::NODETYPE_LOGICAL_PARAGRAPH) > 0 )
+                        DocTreeNode::NodeType::LogicalParagraph) > 0 )
                 {
                     pShape->mpIntrinsicAnimationActivity =
                         createDrawingLayerAnimActivity(
@@ -580,8 +576,7 @@ namespace slideshow
                         pShape,
                         pWakeupEvent,
                         aTimeout,
-                        pShape->mnAnimationLoopCount,
-                        pShape->meCycleMode);
+                        pShape->mnAnimationLoopCount);
 
                 pWakeupEvent->setActivity( pActivity );
                 pShape->mpIntrinsicAnimationActivity = pActivity;
@@ -644,7 +639,7 @@ namespace slideshow
             {
                 pNewShape->update( mpCurrMtf,
                                    getViewRenderArgs(),
-                                   ViewShape::FORCE,
+                                   UpdateFlags::Force,
                                    isVisible() );
             }
         }
@@ -700,15 +695,15 @@ namespace slideshow
             // force redraw. Have to also pass on the update flags,
             // because e.g. content update (regeneration of the
             // metafile renderer) is normally not performed. A simple
-            // ViewShape::FORCE would only paint the metafile in its
+            // UpdateFlags::Force would only paint the metafile in its
             // old state.
-            return implRender( ViewShape::FORCE | getUpdateFlags() );
+            return implRender( UpdateFlags::Force | getUpdateFlags() );
         }
 
         bool DrawShape::isContentChanged() const
         {
             return mbForceUpdate ||
-                getUpdateFlags() != ViewShape::NONE;
+                getUpdateFlags() != UpdateFlags::NONE;
         }
 
 

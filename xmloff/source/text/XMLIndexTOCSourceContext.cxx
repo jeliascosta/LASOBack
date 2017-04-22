@@ -40,22 +40,12 @@ using ::com::sun::star::uno::Reference;
 using ::com::sun::star::uno::Any;
 using ::com::sun::star::xml::sax::XAttributeList;
 
-const sal_Char sAPI_CreateFromOutline[] = "CreateFromOutline";
-const sal_Char sAPI_CreateFromMarks[] = "CreateFromMarks";
-const sal_Char sAPI_Level[] = "Level";
-const sal_Char sAPI_CreateFromLevelParagraphStyles[] = "CreateFromLevelParagraphStyles";
-
-
 XMLIndexTOCSourceContext::XMLIndexTOCSourceContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrfx,
     const OUString& rLocalName,
     Reference<XPropertySet> & rPropSet)
 :   XMLIndexSourceBaseContext(rImport, nPrfx, rLocalName, rPropSet, true)
-,   sCreateFromMarks(sAPI_CreateFromMarks)
-,   sLevel(sAPI_Level)
-,   sCreateFromOutline(sAPI_CreateFromOutline)
-,   sCreateFromLevelParagraphStyles(sAPI_CreateFromLevelParagraphStyles)
     // use all chapters by default
 ,   nOutlineLevel(rImport.GetTextImport()->GetChapterNumbering()->getCount())
 ,   bUseOutline(true)
@@ -135,11 +125,11 @@ void XMLIndexTOCSourceContext::ProcessAttribute(
 
 void XMLIndexTOCSourceContext::EndElement()
 {
-    rIndexPropertySet->setPropertyValue(sCreateFromMarks, css::uno::Any(bUseMarks));
-    rIndexPropertySet->setPropertyValue(sCreateFromOutline, css::uno::Any(bUseOutline));
-    rIndexPropertySet->setPropertyValue(sCreateFromLevelParagraphStyles, css::uno::Any(bUseParagraphStyles));
+    rIndexPropertySet->setPropertyValue("CreateFromMarks", css::uno::Any(bUseMarks));
+    rIndexPropertySet->setPropertyValue("CreateFromOutline", css::uno::Any(bUseOutline));
+    rIndexPropertySet->setPropertyValue("CreateFromLevelParagraphStyles", css::uno::Any(bUseParagraphStyles));
 
-    rIndexPropertySet->setPropertyValue(sLevel, css::uno::Any((sal_Int16)nOutlineLevel));
+    rIndexPropertySet->setPropertyValue("Level", css::uno::Any((sal_Int16)nOutlineLevel));
 
     // process common attributes
     XMLIndexSourceBaseContext::EndElement();

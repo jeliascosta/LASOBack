@@ -24,6 +24,7 @@
 #include <com/sun/star/lang/XComponent.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <com/sun/star/form/XLoadable.hpp>
+#include <rtl/ref.hxx>
 
 
 namespace bib
@@ -37,12 +38,11 @@ namespace bib
         friend class OComponentAdapterBase;
 
     private:
-        OComponentAdapterBase*  m_pAdapter;
-        ::osl::Mutex&           m_rMutex;
+        rtl::Reference<OComponentAdapterBase>  m_xAdapter;
+        ::osl::Mutex&                          m_rMutex;
     protected:
         explicit OComponentListener( ::osl::Mutex& _rMutex )
-            :m_pAdapter( nullptr )
-            ,m_rMutex( _rMutex )
+            :m_rMutex( _rMutex )
         {
         }
 
@@ -59,7 +59,6 @@ namespace bib
     private:
         css::uno::Reference< css::lang::XComponent >  m_xComponent;
         OComponentListener*                 m_pListener;
-        sal_Int32                           m_nLockCount;
         bool                                m_bListening    : 1;
 
         // impl method for dispose - virtual, 'cause you at least need to remove the listener from the broadcaster
@@ -90,16 +89,13 @@ namespace bib
         virtual void SAL_CALL acquire(  ) throw () = 0;
         virtual void SAL_CALL release(  ) throw () = 0;
 
-    // helper
-        /// get the lock count
-        sal_Int32   locked() const { return m_nLockCount; }
-
         /// dispose the object - stop listening and such
         void dispose();
 
     protected:
     // XEventListener
-        virtual void SAL_CALL disposing( const  css::lang::EventObject& Source ) throw( css::uno::RuntimeException, std::exception);
+        /// @throws css::uno::RuntimeException
+        virtual void SAL_CALL disposing( const  css::lang::EventObject& Source );
     };
 
     class OLoadListener : public OComponentListener
@@ -140,14 +136,14 @@ namespace bib
 
     protected:
     // XEventListener
-        virtual void SAL_CALL disposing( const  css::lang::EventObject& _rSource ) throw( css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const  css::lang::EventObject& _rSource ) override;
 
     // XLoadListener
-        virtual void SAL_CALL loaded( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL unloading( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL unloaded( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL reloading( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL reloaded( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL loaded( const css::lang::EventObject& aEvent ) override;
+        virtual void SAL_CALL unloading( const css::lang::EventObject& aEvent ) override;
+        virtual void SAL_CALL unloaded( const css::lang::EventObject& aEvent ) override;
+        virtual void SAL_CALL reloading( const css::lang::EventObject& aEvent ) override;
+        virtual void SAL_CALL reloaded( const css::lang::EventObject& aEvent ) override;
     };
 
 

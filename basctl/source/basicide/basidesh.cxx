@@ -39,10 +39,19 @@
 #include <svl/aeitem.hxx>
 #include <svl/srchitem.hxx>
 
+#ifdef DISABLE_DYNLOADING
+/* Avoid clash with the ones from svx/source/form/typemap.cxx */
+#define aSfxDocumentInfoItem_Impl basctl_source_basicide_basidesh_aSfxDocumentInfoItem_Impl
+#endif
+
 #define basctl_Shell
 #define SFX_TYPEMAP
-#include <idetemp.hxx>
 #include <basslots.hxx>
+
+#ifdef DISABLE_DYNLOADING
+#undef aSfxDocumentInfoItem_Impl
+#endif
+
 #include <iderdll.hxx>
 #include <svx/pszctrl.hxx>
 #include <svx/insctrl.hxx>
@@ -68,10 +77,6 @@ class ContainerListenerImpl : public ::cppu::WeakImplHelper< container::XContain
 public:
     explicit ContainerListenerImpl(Shell* pShell)
         : mpShell(pShell)
-    {
-    }
-
-    virtual ~ContainerListenerImpl()
     {
     }
 
@@ -103,17 +108,17 @@ public:
     }
 
     // XEventListener
-    virtual void SAL_CALL disposing( const lang::EventObject& ) throw( uno::RuntimeException, std::exception ) override {}
+    virtual void SAL_CALL disposing( const lang::EventObject& ) override {}
 
     // XContainerListener
-    virtual void SAL_CALL elementInserted( const container::ContainerEvent& Event ) throw( uno::RuntimeException, std::exception ) override
+    virtual void SAL_CALL elementInserted( const container::ContainerEvent& Event ) override
     {
         OUString sModuleName;
         if( mpShell && ( Event.Accessor >>= sModuleName ) )
             mpShell->FindBasWin( mpShell->m_aCurDocument, mpShell->m_aCurLibName, sModuleName, true );
     }
-    virtual void SAL_CALL elementReplaced( const container::ContainerEvent& ) throw( css::uno::RuntimeException, std::exception ) override { }
-    virtual void SAL_CALL elementRemoved( const container::ContainerEvent& Event ) throw( css::uno::RuntimeException, std::exception ) override
+    virtual void SAL_CALL elementReplaced( const container::ContainerEvent& ) override { }
+    virtual void SAL_CALL elementRemoved( const container::ContainerEvent& Event ) override
     {
         OUString sModuleName;
         if( mpShell && ( Event.Accessor >>= sModuleName ) )
@@ -136,7 +141,7 @@ SFX_IMPL_INTERFACE(basctl_Shell, SfxViewShell)
 void basctl_Shell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterChildWindow(SID_SEARCH_DLG);
-    GetStaticInterface()->RegisterChildWindow(SID_SHOW_PROPERTYBROWSER, false, BASICIDE_UI_FEATURE_SHOW_BROWSER);
+    GetStaticInterface()->RegisterChildWindow(SID_SHOW_PROPERTYBROWSER, false, SfxShellFeature::BasicShowBrowser);
     GetStaticInterface()->RegisterChildWindow(SfxInfoBarContainerChild::GetChildWindowId());
 
     GetStaticInterface()->RegisterPopupMenu("dialog");
@@ -145,7 +150,7 @@ void basctl_Shell::InitInterface_Impl()
 unsigned Shell::nShellCount = 0;
 
 Shell::Shell( SfxViewFrame* pFrame_, SfxViewShell* /* pOldShell */ ) :
-    SfxViewShell( pFrame_, SfxViewShellFlags::CAN_PRINT | SfxViewShellFlags::NO_NEWWINDOW ),
+    SfxViewShell( pFrame_, SfxViewShellFlags::NO_NEWWINDOW ),
     m_aCurDocument( ScriptDocument::getApplicationScriptDocument() ),
     aHScrollBar( VclPtr<ScrollBar>::Create(&GetViewFrame()->GetWindow(), WinBits( WB_HSCROLL | WB_DRAG )) ),
     aVScrollBar( VclPtr<ScrollBar>::Create(&GetViewFrame()->GetWindow(), WinBits( WB_VSCROLL | WB_DRAG )) ),
@@ -173,7 +178,6 @@ void Shell::Init()
     GetExtraData()->ShellInCriticalSection() = true;
 
     SetName( "BasicIDE" );
-    SetHelpId( SVX_INTERFACE_BASIDE_VIEWSH );
 
     LibBoxControl::RegisterControl( SID_BASICIDE_LIBSELECTOR );
     LanguageBoxControl::RegisterControl( SID_BASICIDE_CURRENT_LANG );
@@ -313,9 +317,8 @@ void Shell::onDocumentClosed( const ScriptDocument& _rDocument )
         }
     }
     // delete windows outside main loop so we don't invalidate the original iterator
-    for (auto it = aDeleteVec.begin(); it != aDeleteVec.end(); ++it)
+    for (VclPtr<BaseWindow> const & pWin : aDeleteVec)
     {
-        BaseWindow* pWin = *it;
         pWin->StoreData();
         if ( pWin == pCurWin )
             bSetCurWindow = true;
@@ -437,11 +440,11 @@ void Shell::OuterResizePixel( const Point &rPos, const Size &rSize )
 }
 
 
-IMPL_LINK_TYPED( Shell, TabBarHdl, ::TabBar *, pCurTabBar, void )
+IMPL_LINK( Shell, TabBarHdl, ::TabBar *, pCurTabBar, void )
 {
     sal_uInt16 nCurId = pCurTabBar->GetCurPageId();
-    BaseWindow* pWin = aWindowTable[ nCurId ];
-    DBG_ASSERT( pWin, "Eintrag in TabBar passt zu keinem Fenster!" );
+    BaseWindow* pWin = aWindowTable[ nCurId ].get();
+    DBG_ASSERT( pWin, "Entry in TabBar is not matching a window!" );
     SetCurWindow( pWin );
 }
 
@@ -458,7 +461,7 @@ bool Shell::NextPage( bool bPrev )
 
     if ( nPos < pTabBar->GetPageCount() )
     {
-        BaseWindow* pWin = aWindowTable[ pTabBar->GetPageId( nPos ) ];
+        VclPtr<BaseWindow> pWin = aWindowTable[ pTabBar->GetPageId( nPos ) ];
         SetCurWindow( pWin, true );
         bRet = true;
     }
@@ -480,71 +483,64 @@ void Shell::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
     if (GetShell())
     {
-        if (SfxSimpleHint const* pSimpleHint = dynamic_cast<SfxSimpleHint const*>(&rHint))
+        if (rHint.GetId() == SfxHintId::Dying)
         {
-            switch (pSimpleHint->GetId())
+            EndListening( rBC, true /* log off all */ );
+            aObjectCatalog->UpdateEntries();
+        }
+
+        if (SbxHint const* pSbxHint = dynamic_cast<SbxHint const*>(&rHint))
+        {
+            const SfxHintId nHintId = pSbxHint->GetId();
+            if (    ( nHintId == SfxHintId::BasicStart ) ||
+                    ( nHintId == SfxHintId::BasicStop ) )
             {
-                case SFX_HINT_DYING:
+                if (SfxBindings* pBindings = GetBindingsPtr())
                 {
-                    EndListening( rBC, true /* log off all */ );
-                    aObjectCatalog->UpdateEntries();
+                    pBindings->Invalidate( SID_BASICRUN );
+                    pBindings->Update( SID_BASICRUN );
+                    pBindings->Invalidate( SID_BASICCOMPILE );
+                    pBindings->Update( SID_BASICCOMPILE );
+                    pBindings->Invalidate( SID_BASICSTEPOVER );
+                    pBindings->Update( SID_BASICSTEPOVER );
+                    pBindings->Invalidate( SID_BASICSTEPINTO );
+                    pBindings->Update( SID_BASICSTEPINTO );
+                    pBindings->Invalidate( SID_BASICSTEPOUT );
+                    pBindings->Update( SID_BASICSTEPOUT );
+                    pBindings->Invalidate( SID_BASICSTOP );
+                    pBindings->Update( SID_BASICSTOP );
+                    pBindings->Invalidate( SID_BASICIDE_TOGGLEBRKPNT );
+                    pBindings->Update( SID_BASICIDE_TOGGLEBRKPNT );
+                    pBindings->Invalidate( SID_BASICIDE_MANAGEBRKPNTS );
+                    pBindings->Update( SID_BASICIDE_MANAGEBRKPNTS );
+                    pBindings->Invalidate( SID_BASICIDE_MODULEDLG );
+                    pBindings->Update( SID_BASICIDE_MODULEDLG );
+                    pBindings->Invalidate( SID_BASICLOAD );
+                    pBindings->Update( SID_BASICLOAD );
                 }
-                break;
-            }
 
-            if (SbxHint const* pSbxHint = dynamic_cast<SbxHint const*>(&rHint))
-            {
-                const sal_uInt32 nHintId = pSbxHint->GetId();
-                if (    ( nHintId == SBX_HINT_BASICSTART ) ||
-                        ( nHintId == SBX_HINT_BASICSTOP ) )
+                if ( nHintId == SfxHintId::BasicStop )
                 {
-                    if (SfxBindings* pBindings = GetBindingsPtr())
-                    {
-                        pBindings->Invalidate( SID_BASICRUN );
-                        pBindings->Update( SID_BASICRUN );
-                        pBindings->Invalidate( SID_BASICCOMPILE );
-                        pBindings->Update( SID_BASICCOMPILE );
-                        pBindings->Invalidate( SID_BASICSTEPOVER );
-                        pBindings->Update( SID_BASICSTEPOVER );
-                        pBindings->Invalidate( SID_BASICSTEPINTO );
-                        pBindings->Update( SID_BASICSTEPINTO );
-                        pBindings->Invalidate( SID_BASICSTEPOUT );
-                        pBindings->Update( SID_BASICSTEPOUT );
-                        pBindings->Invalidate( SID_BASICSTOP );
-                        pBindings->Update( SID_BASICSTOP );
-                        pBindings->Invalidate( SID_BASICIDE_TOGGLEBRKPNT );
-                        pBindings->Update( SID_BASICIDE_TOGGLEBRKPNT );
-                        pBindings->Invalidate( SID_BASICIDE_MANAGEBRKPNTS );
-                        pBindings->Update( SID_BASICIDE_MANAGEBRKPNTS );
-                        pBindings->Invalidate( SID_BASICIDE_MODULEDLG );
-                        pBindings->Update( SID_BASICIDE_MODULEDLG );
-                        pBindings->Invalidate( SID_BASICLOAD );
-                        pBindings->Update( SID_BASICLOAD );
-                    }
+                    // not only at error/break or explicit stoppage,
+                    // if the update is turned off due to a programming bug
+                    BasicStopped();
+                    if (pLayout)
+                        pLayout->UpdateDebug(true); // clear...
+                    if( m_pCurLocalizationMgr )
+                        m_pCurLocalizationMgr->handleBasicStopped();
+                }
+                else if( m_pCurLocalizationMgr )
+                {
+                    m_pCurLocalizationMgr->handleBasicStarted();
+                }
 
-                    if ( nHintId == SBX_HINT_BASICSTOP )
-                    {
-                        // not only at error/break or explicit stoppage,
-                        // if the update is turned off due to a programming bug
-                        BasicStopped();
-                        if (pLayout)
-                            pLayout->UpdateDebug(true); // clear...
-                        if( m_pCurLocalizationMgr )
-                            m_pCurLocalizationMgr->handleBasicStopped();
-                    }
-                    else if( m_pCurLocalizationMgr )
-                    {
-                        m_pCurLocalizationMgr->handleBasicStarted();
-                    }
-
-                    for (WindowTableIt it = aWindowTable.begin(); it != aWindowTable.end(); ++it)
-                    {
-                        BaseWindow* pWin = it->second;
-                        if ( nHintId == SBX_HINT_BASICSTART )
-                            pWin->BasicStarted();
-                        else
-                            pWin->BasicStopped();
-                    }
+                for (WindowTableIt it = aWindowTable.begin(); it != aWindowTable.end(); ++it)
+                {
+                    BaseWindow* pWin = it->second;
+                    if ( nHintId == SfxHintId::BasicStart )
+                        pWin->BasicStarted();
+                    else
+                        pWin->BasicStopped();
                 }
             }
         }
@@ -562,9 +558,8 @@ void Shell::CheckWindows()
         if ( pWin->GetStatus() & BASWIN_TOBEKILLED )
             aDeleteVec.push_back( pWin );
     }
-    for ( auto it = aDeleteVec.begin(); it != aDeleteVec.end(); ++it )
+    for ( VclPtr<BaseWindow> const & pWin : aDeleteVec )
     {
-        BaseWindow* pWin = *it;
         pWin->StoreData();
         if ( pWin == pCurWin )
             bSetCurWindow = true;
@@ -585,9 +580,8 @@ void Shell::RemoveWindows( const ScriptDocument& rDocument, const OUString& rLib
         if ( pWin->IsDocument( rDocument ) && pWin->GetLibName() == rLibName )
             aDeleteVec.push_back( pWin );
     }
-    for ( auto it = aDeleteVec.begin(); it != aDeleteVec.end(); ++it )
+    for ( VclPtr<BaseWindow> const & pWin : aDeleteVec )
     {
-        BaseWindow* pWin = *it;
         if ( pWin == pCurWin )
             bChangeCurWindow = true;
         pWin->StoreData();
@@ -674,7 +668,7 @@ void Shell::UpdateWindows()
                     {
                         StarBASIC* pLib = doc->getBasicManager()->GetLib( aLibName );
                         if ( pLib )
-                            ImplStartListening( pLib );
+                            StartListening( pLib->GetBroadcaster(), true /* log on only once */ );
 
                         try
                         {
@@ -685,7 +679,7 @@ void Shell::UpdateWindows()
                             for ( sal_Int32 j = 0 ; j < nModCount ; j++ )
                             {
                                 OUString aModName = pModNames[ j ];
-                                ModulWindow* pWin = FindBasWin( *doc, aLibName, aModName );
+                                VclPtr<ModulWindow> pWin = FindBasWin( *doc, aLibName, aModName );
                                 if ( !pWin )
                                     pWin = CreateBasWin( *doc, aLibName, aModName );
                                 if ( !pNextActiveWindow && pLibInfoItem && pLibInfoItem->GetCurrentName() == aModName &&
@@ -740,7 +734,7 @@ void Shell::UpdateWindows()
     {
         if ( !pNextActiveWindow )
         {
-            pNextActiveWindow = FindApplicationWindow();
+            pNextActiveWindow = FindApplicationWindow().get();
         }
         SetCurWindow( pNextActiveWindow, true );
     }
@@ -750,7 +744,7 @@ void Shell::RemoveWindow( BaseWindow* pWindow_, bool bDestroy, bool bAllowChange
 {
     VclPtr<BaseWindow> pWindowTmp( pWindow_ );
 
-    DBG_ASSERT( pWindow_, "Kann keinen NULL-Pointer loeschen!" );
+    DBG_ASSERT( pWindow_, "Cannot delete NULL-Pointer!" );
     sal_uLong nKey = GetWindowId( pWindow_ );
     pTabBar->RemovePage( (sal_uInt16)nKey );
     aWindowTable.erase( nKey );
@@ -845,7 +839,7 @@ void Shell::InvalidateBasicIDESlots()
             pBindings->Invalidate( SID_BASICIDE_MANAGEBRKPNTS );
             pBindings->Invalidate( SID_BASICIDE_ADDWATCH );
             pBindings->Invalidate( SID_BASICIDE_REMOVEWATCH );
-            pBindings->Invalidate( SID_CHOOSE_CONTROLS );
+
             pBindings->Invalidate( SID_PRINTDOC );
             pBindings->Invalidate( SID_PRINTDOCDIRECT );
             pBindings->Invalidate( SID_SETUPPRINTER );
@@ -856,6 +850,49 @@ void Shell::InvalidateBasicIDESlots()
             pBindings->Invalidate( SID_BASICIDE_STAT_POS );
             pBindings->Invalidate( SID_ATTR_INSERT );
             pBindings->Invalidate( SID_ATTR_SIZE );
+        }
+    }
+}
+
+void Shell::InvalidateControlSlots()
+{
+    if (GetShell())
+    {
+        if (SfxBindings* pBindings = GetBindingsPtr())
+        {
+            pBindings->Invalidate( SID_INSERT_FORM_RADIO );
+            pBindings->Invalidate( SID_INSERT_FORM_CHECK );
+            pBindings->Invalidate( SID_INSERT_FORM_LIST );
+            pBindings->Invalidate( SID_INSERT_FORM_COMBO );
+            pBindings->Invalidate( SID_INSERT_FORM_VSCROLL );
+            pBindings->Invalidate( SID_INSERT_FORM_HSCROLL );
+            pBindings->Invalidate( SID_INSERT_FORM_SPIN );
+
+            pBindings->Invalidate( SID_INSERT_SELECT );
+            pBindings->Invalidate( SID_INSERT_PUSHBUTTON );
+            pBindings->Invalidate( SID_INSERT_RADIOBUTTON );
+            pBindings->Invalidate( SID_INSERT_CHECKBOX );
+            pBindings->Invalidate( SID_INSERT_LISTBOX );
+            pBindings->Invalidate( SID_INSERT_COMBOBOX );
+            pBindings->Invalidate( SID_INSERT_GROUPBOX );
+            pBindings->Invalidate( SID_INSERT_EDIT );
+            pBindings->Invalidate( SID_INSERT_FIXEDTEXT );
+            pBindings->Invalidate( SID_INSERT_IMAGECONTROL );
+            pBindings->Invalidate( SID_INSERT_PROGRESSBAR );
+            pBindings->Invalidate( SID_INSERT_HSCROLLBAR );
+            pBindings->Invalidate( SID_INSERT_VSCROLLBAR );
+            pBindings->Invalidate( SID_INSERT_HFIXEDLINE );
+            pBindings->Invalidate( SID_INSERT_VFIXEDLINE );
+            pBindings->Invalidate( SID_INSERT_DATEFIELD );
+            pBindings->Invalidate( SID_INSERT_TIMEFIELD );
+            pBindings->Invalidate( SID_INSERT_NUMERICFIELD );
+            pBindings->Invalidate( SID_INSERT_CURRENCYFIELD );
+            pBindings->Invalidate( SID_INSERT_FORMATTEDFIELD );
+            pBindings->Invalidate( SID_INSERT_PATTERNFIELD );
+            pBindings->Invalidate( SID_INSERT_FILECONTROL );
+            pBindings->Invalidate( SID_INSERT_SPINBUTTON );
+            pBindings->Invalidate( SID_INSERT_TREECONTROL );
+            pBindings->Invalidate( SID_CHOOSE_CONTROLS );
         }
     }
 }
@@ -914,11 +951,6 @@ void Shell::SetCurLibForLocalization( const ScriptDocument& rDocument, const OUS
 
     m_pCurLocalizationMgr = std::make_shared<LocalizationMgr>(this, rDocument, aLibName, xStringResourceManager);
     m_pCurLocalizationMgr->handleTranslationbar();
-}
-
-void Shell::ImplStartListening( StarBASIC* pBasic )
-{
-    StartListening( pBasic->GetBroadcaster(), true /* log on only once */ );
 }
 
 } // namespace basctl

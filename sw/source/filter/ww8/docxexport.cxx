@@ -31,11 +31,13 @@
 #include <com/sun/star/xml/sax/XSAXSerializable.hpp>
 #include <com/sun/star/xml/sax/Writer.hpp>
 
+#include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
 #include <oox/export/drawingml.hxx>
 #include <oox/export/vmlexport.hxx>
 #include <oox/export/chartexport.hxx>
 #include <oox/export/shapes.hxx>
+#include <oox/helper/propertyset.hxx>
 
 #include <map>
 #include <algorithm>
@@ -273,7 +275,7 @@ void DocxExport::WriteHeadersFooters( sal_uInt8 nHeadFootFlags,
 #endif
 }
 
-void DocxExport::OutputField( const SwField* pField, ww::eField eFieldType, const OUString& rFieldCmd, sal_uInt8 nMode )
+void DocxExport::OutputField( const SwField* pField, ww::eField eFieldType, const OUString& rFieldCmd, FieldFlags nMode )
 {
     m_pAttrOutput->WriteField_Impl( pField, eFieldType, rFieldCmd, nMode );
 }
@@ -347,10 +349,10 @@ void DocxExport::DoComboBox(const OUString& rName,
 
 void DocxExport::DoFormText(const SwInputField* /*pField*/)
 {
-    OSL_TRACE( "TODO DocxExport::ForFormText()" );
+    SAL_INFO("sw.ww8", "TODO DocxExport::ForFormText()" );
 }
 
-OString DocxExport::OutputChart( uno::Reference< frame::XModel >& xModel, sal_Int32 nCount, ::sax_fastparser::FSHelperPtr m_pSerializer )
+OString DocxExport::OutputChart( uno::Reference< frame::XModel >& xModel, sal_Int32 nCount, ::sax_fastparser::FSHelperPtr const & m_pSerializer )
 {
     OUString aFileName = "charts/chart" + OUString::number(nCount) + ".xml";
     OUString sId = m_pFilter->addRelation( m_pSerializer->getOutputStream(),
@@ -429,7 +431,7 @@ void DocxExport::OutputDML(uno::Reference<drawing::XShape>& xShape)
 void DocxExport::ExportDocument_Impl()
 {
     // Set the 'Track Revisions' flag in the settings structure
-    m_aSettings.trackRevisions = 0 != ( nsRedlineMode_t::REDLINE_ON & m_nOrigRedlineMode );
+    m_aSettings.trackRevisions = bool( RedlineFlags::On & m_nOrigRedlineFlags );
 
     InitStyles();
 
@@ -508,6 +510,10 @@ void DocxExport::OutputEndNode( const SwEndNode& rEndNode )
             AttrOutput().SectionBreak( msword::PageBreak, m_pSections->CurrentSectionInfo( ) );
             m_pSections->AppendSection( m_pAktPageDesc, pParentFormat, nRstLnNum );
         }
+        else
+        {
+            AttrOutput().SectionBreaks( rEndNode );
+        }
     }
     else if (TXT_MAINTEXT == m_nTextTyp && rEndNode.StartOfSectionNode()->IsTableNode())
         // End node of a table: see if a section break should be written after the table.
@@ -516,12 +522,12 @@ void DocxExport::OutputEndNode( const SwEndNode& rEndNode )
 
 void DocxExport::OutputGrfNode( const SwGrfNode& )
 {
-    OSL_TRACE( "TODO DocxExport::OutputGrfNode( const SwGrfNode& )" );
+    SAL_INFO("sw.ww8", "TODO DocxExport::OutputGrfNode( const SwGrfNode& )" );
 }
 
 void DocxExport::OutputOLENode( const SwOLENode& )
 {
-    OSL_TRACE( "TODO DocxExport::OutputOLENode( const SwOLENode& )" );
+    SAL_INFO("sw.ww8", "TODO DocxExport::OutputOLENode( const SwOLENode& )" );
 }
 
 void DocxExport::OutputLinkedOLE( const OUString& )
@@ -598,11 +604,14 @@ void DocxExport::WriteFootnotesEndnotes()
 
         // switch the serializer to redirect the output to word/footnotes.xml
         m_pAttrOutput->SetSerializer( pFootnotesFS );
+        // tdf#99227
+        m_pSdrExport->setSerializer( pFootnotesFS );
 
         // do the work
         m_pAttrOutput->FootnotesEndnotes( true );
 
         // switch the serializer back
+        m_pSdrExport->setSerializer( m_pDocumentFS );
         m_pAttrOutput->SetSerializer( m_pDocumentFS );
     }
 
@@ -619,11 +628,14 @@ void DocxExport::WriteFootnotesEndnotes()
 
         // switch the serializer to redirect the output to word/endnotes.xml
         m_pAttrOutput->SetSerializer( pEndnotesFS );
+        // tdf#99227
+        m_pSdrExport->setSerializer( pEndnotesFS );
 
         // do the work
         m_pAttrOutput->FootnotesEndnotes( false );
 
         // switch the serializer back
+        m_pSdrExport->setSerializer( m_pDocumentFS );
         m_pAttrOutput->SetSerializer( m_pDocumentFS );
     }
 }
@@ -662,12 +674,13 @@ void DocxExport::WriteNumbering()
 
     // switch the serializer to redirect the output to word/numbering.xml
     m_pAttrOutput->SetSerializer( pNumberingFS );
+    m_pDrawingML->SetFS( pNumberingFS );
 
     pNumberingFS->startElementNS( XML_w, XML_numbering,
-            FSNS( XML_xmlns, XML_w ), "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
-            FSNS( XML_xmlns, XML_o ), "urn:schemas-microsoft-com:office:office",
-            FSNS( XML_xmlns, XML_r ), "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-            FSNS( XML_xmlns, XML_v ), "urn:schemas-microsoft-com:vml",
+            FSNS( XML_xmlns, XML_w ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(doc)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_o ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(vmlOffice)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_r ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(officeRel)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_v ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(vml)), RTL_TEXTENCODING_UTF8).getStr(),
             FSEND );
 
     BulletDefinitions();
@@ -679,6 +692,7 @@ void DocxExport::WriteNumbering()
     pNumberingFS->endElementNS( XML_w, XML_numbering );
 
     // switch the serializer back
+    m_pDrawingML->SetFS( m_pDocumentFS );
     m_pAttrOutput->SetSerializer( m_pDocumentFS );
 }
 
@@ -771,8 +785,8 @@ void DocxExport::WriteFonts()
             "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml" );
 
     pFS->startElementNS( XML_w, XML_fonts,
-            FSNS( XML_xmlns, XML_w ), "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
-            FSNS( XML_xmlns, XML_r ), "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+            FSNS( XML_xmlns, XML_w ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(doc)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_r ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(officeRel)), RTL_TEXTENCODING_UTF8).getStr(),
             FSEND );
 
     // switch the serializer to redirect the output to word/styles.xml
@@ -817,7 +831,7 @@ void DocxExport::WriteSettings()
             "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml" );
 
     pFS->startElementNS( XML_w, XML_settings,
-            FSNS( XML_xmlns, XML_w ), "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+            FSNS( XML_xmlns, XML_w ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(doc)), RTL_TEXTENCODING_UTF8).getStr(),
             FSEND );
 
     // Zoom
@@ -1264,7 +1278,7 @@ void DocxExport::WriteEmbeddings()
         embeddingsList[j].Value >>= embeddingsStream;
 
         OUString contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-        // FIXME: this .xlsm hack is silly - if anything the mime-type for an existing embedded object shoud be read from [Content_Types].xml
+        // FIXME: this .xlsm hack is silly - if anything the mime-type for an existing embedded object should be read from [Content_Types].xml
         if (embeddingPath.endsWith(".xlsm"))
             contentType = "application/vnd.ms-excel.sheet.macroEnabled.12";
         else if (embeddingPath.endsWith(".bin"))
@@ -1307,7 +1321,7 @@ void DocxExport::WriteEmbeddings()
 bool DocxExport::isMirroredMargin()
 {
     bool bMirroredMargins = false;
-    if ( nsUseOnPage::PD_MIRROR == (nsUseOnPage::PD_MIRROR & m_pDoc->GetPageDesc(0).ReadUseOn()) )
+    if ( UseOnPage::Mirror == (UseOnPage::Mirror & m_pDoc->GetPageDesc(0).ReadUseOn()) )
     {
         bMirroredMargins = true;
     }
@@ -1357,17 +1371,17 @@ void DocxExport::WriteMainText()
 XFastAttributeListRef DocxExport::MainXmlNamespaces()
 {
     FastAttributeList* pAttr = FastSerializerHelper::createAttrList();
-    pAttr->add( FSNS( XML_xmlns, XML_o ), "urn:schemas-microsoft-com:office:office" );
-    pAttr->add( FSNS( XML_xmlns, XML_r ), "http://schemas.openxmlformats.org/officeDocument/2006/relationships" );
-    pAttr->add( FSNS( XML_xmlns, XML_v ), "urn:schemas-microsoft-com:vml" );
-    pAttr->add( FSNS( XML_xmlns, XML_w ), "http://schemas.openxmlformats.org/wordprocessingml/2006/main" );
-    pAttr->add( FSNS( XML_xmlns, XML_w10 ), "urn:schemas-microsoft-com:office:word" );
-    pAttr->add( FSNS( XML_xmlns, XML_wp ), "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" );
-    pAttr->add( FSNS( XML_xmlns, XML_wps ), "http://schemas.microsoft.com/office/word/2010/wordprocessingShape" );
-    pAttr->add( FSNS( XML_xmlns, XML_wpg ), "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" );
-    pAttr->add( FSNS( XML_xmlns, XML_mc ), "http://schemas.openxmlformats.org/markup-compatibility/2006" );
-    pAttr->add( FSNS( XML_xmlns, XML_wp14 ), "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" );
-    pAttr->add( FSNS( XML_xmlns, XML_w14 ), "http://schemas.microsoft.com/office/word/2010/wordml" );
+    pAttr->add( FSNS( XML_xmlns, XML_o ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(vmlOffice)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_r ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(officeRel)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_v ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(vml)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_w ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(doc)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_w10 ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(vmlWord)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_wp ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(dmlWordDr)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_wps ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(wps)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_wpg ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(wpg)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_mc ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(mce)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_wp14 ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(wp14)), RTL_TEXTENCODING_UTF8).getStr() );
+    pAttr->add( FSNS( XML_xmlns, XML_w14 ), OUStringToOString(m_pFilter->getNamespaceURL(OOX_NS(w14)), RTL_TEXTENCODING_UTF8).getStr() );
     pAttr->add( FSNS( XML_mc, XML_Ignorable ), "w14 wp14" );
     return XFastAttributeListRef( pAttr );
 }
@@ -1427,7 +1441,7 @@ void DocxExport::WriteOutliner(const OutlinerParaObject& rParaObj, sal_uInt8 nTy
     }
 }
 
-void DocxExport::SetFS( ::sax_fastparser::FSHelperPtr pFS )
+void DocxExport::SetFS( ::sax_fastparser::FSHelperPtr const & pFS )
 {
     mpFS = pFS;
 }

@@ -19,8 +19,6 @@
 
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
-#include <com/sun/star/accessibility/AccessibleRole.hpp>
-#include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <unotools/accessiblestatesethelper.hxx>
 #include <frmfmt.hxx>
@@ -33,7 +31,6 @@
 #include <accnotexthyperlink.hxx>
 #include <svtools/imap.hxx>
 #include <unotools/accessiblerelationsethelper.hxx>
-#include <com/sun/star/accessibility/AccessibleRelationType.hpp>
 #include <com/sun/star/accessibility/XAccessibleRelationSet.hpp>
 #include <doc.hxx>
 
@@ -60,7 +57,7 @@ const SwNoTextNode *SwAccessibleNoTextFrame::GetNoTextNode() const
 }
 
 SwAccessibleNoTextFrame::SwAccessibleNoTextFrame(
-        SwAccessibleMap* pInitMap,
+        std::shared_ptr<SwAccessibleMap> const& pInitMap,
         sal_Int16 nInitRole,
         const SwFlyFrame* pFlyFrame  ) :
     SwAccessibleFrameBase( pInitMap, nInitRole, pFlyFrame ),
@@ -164,23 +161,22 @@ void SwAccessibleNoTextFrame::Modify( const SfxPoolItem* pOld, const SfxPoolItem
     }
 }
 
-void SwAccessibleNoTextFrame::Dispose( bool bRecursive )
+void SwAccessibleNoTextFrame::Dispose(bool bRecursive, bool bCanSkipInvisible)
 {
     SolarMutexGuard aGuard;
 
     if( aDepend.GetRegisteredIn() )
         aDepend.GetRegisteredIn()->Remove( &aDepend );
 
-    SwAccessibleFrameBase::Dispose( bRecursive );
+    SwAccessibleFrameBase::Dispose(bRecursive, bCanSkipInvisible);
 }
 
 // #i73249#
 OUString SAL_CALL SwAccessibleNoTextFrame::getAccessibleName()
-        throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    CHECK_FOR_DEFUNC( XAccessibleContext )
+    ThrowIfDisposed();
 
     if ( !msTitle.isEmpty() )
     {
@@ -191,11 +187,10 @@ OUString SAL_CALL SwAccessibleNoTextFrame::getAccessibleName()
 }
 
 OUString SAL_CALL SwAccessibleNoTextFrame::getAccessibleDescription()
-        throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    CHECK_FOR_DEFUNC( XAccessibleContext )
+    ThrowIfDisposed();
 
     return msDesc;
 }
@@ -203,7 +198,6 @@ OUString SAL_CALL SwAccessibleNoTextFrame::getAccessibleDescription()
 // XInterface
 
 uno::Any SAL_CALL SwAccessibleNoTextFrame::queryInterface( const uno::Type& aType )
-    throw (uno::RuntimeException, std::exception)
 {
     if( aType ==
         ::cppu::UnoType<XAccessibleImage>::get() )
@@ -222,7 +216,7 @@ uno::Any SAL_CALL SwAccessibleNoTextFrame::queryInterface( const uno::Type& aTyp
 
 // XTypeProvider
 
-uno::Sequence< uno::Type > SAL_CALL SwAccessibleNoTextFrame::getTypes() throw(uno::RuntimeException, std::exception)
+uno::Sequence< uno::Type > SAL_CALL SwAccessibleNoTextFrame::getTypes()
 {
     uno::Sequence< uno::Type > aTypes( SwAccessibleFrameBase::getTypes() );
 
@@ -241,70 +235,66 @@ uno::Sequence< uno::Type > SAL_CALL SwAccessibleNoTextFrame::getTypes() throw(un
     methods. So we just delegate to those. */
 
 OUString SAL_CALL SwAccessibleNoTextFrame::getAccessibleImageDescription()
-    throw ( uno::RuntimeException, std::exception )
 {
     return getAccessibleDescription();
 }
 
 sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getAccessibleImageHeight(  )
-    throw ( uno::RuntimeException, std::exception )
 {
     return getSize().Height;
 }
 
 sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getAccessibleImageWidth(  )
-    throw ( uno::RuntimeException, std::exception )
 {
     return getSize().Width;
 }
 
-// XAccesibleText
-sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getCaretPosition(  ) throw (css::uno::RuntimeException, std::exception){return 0;}
-sal_Bool SAL_CALL SwAccessibleNoTextFrame::setCaretPosition( sal_Int32 ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception){return 0;}
-sal_Unicode SAL_CALL SwAccessibleNoTextFrame::getCharacter( sal_Int32 ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception){return 0;}
-css::uno::Sequence< css::beans::PropertyValue > SAL_CALL SwAccessibleNoTextFrame::getCharacterAttributes( sal_Int32 , const css::uno::Sequence< OUString >& ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
+// XAccessibleText
+sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getCaretPosition(  ){return 0;}
+sal_Bool SAL_CALL SwAccessibleNoTextFrame::setCaretPosition( sal_Int32 ){return false;}
+sal_Unicode SAL_CALL SwAccessibleNoTextFrame::getCharacter( sal_Int32 ){return 0;}
+css::uno::Sequence< css::beans::PropertyValue > SAL_CALL SwAccessibleNoTextFrame::getCharacterAttributes( sal_Int32 , const css::uno::Sequence< OUString >& )
 {
     uno::Sequence<beans::PropertyValue> aValues(0);
     return aValues;
 }
-css::awt::Rectangle SAL_CALL SwAccessibleNoTextFrame::getCharacterBounds( sal_Int32 ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
+css::awt::Rectangle SAL_CALL SwAccessibleNoTextFrame::getCharacterBounds( sal_Int32 )
 {
     return css::awt::Rectangle(0, 0, 0, 0 );
 }
-sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getCharacterCount(  ) throw (css::uno::RuntimeException, std::exception){return 0;}
-sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getIndexAtPoint( const css::awt::Point& ) throw (css::uno::RuntimeException, std::exception){return 0;}
-OUString SAL_CALL SwAccessibleNoTextFrame::getSelectedText(  ) throw (css::uno::RuntimeException, std::exception){return OUString();}
-sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getSelectionStart(  ) throw (css::uno::RuntimeException, std::exception){return 0;}
-sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getSelectionEnd(  ) throw (css::uno::RuntimeException, std::exception){return 0;}
-sal_Bool SAL_CALL SwAccessibleNoTextFrame::setSelection( sal_Int32 , sal_Int32 ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception){return true;}
-OUString SAL_CALL SwAccessibleNoTextFrame::getText(  ) throw (css::uno::RuntimeException, std::exception){return OUString();}
-OUString SAL_CALL SwAccessibleNoTextFrame::getTextRange( sal_Int32 , sal_Int32 ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception){return OUString();}
-css::accessibility::TextSegment SAL_CALL SwAccessibleNoTextFrame::getTextAtIndex( sal_Int32 , sal_Int16 ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
+sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getCharacterCount(  ){return 0;}
+sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getIndexAtPoint( const css::awt::Point& ){return 0;}
+OUString SAL_CALL SwAccessibleNoTextFrame::getSelectedText(  ){return OUString();}
+sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getSelectionStart(  ){return 0;}
+sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getSelectionEnd(  ){return 0;}
+sal_Bool SAL_CALL SwAccessibleNoTextFrame::setSelection( sal_Int32 , sal_Int32 ){return true;}
+OUString SAL_CALL SwAccessibleNoTextFrame::getText(  ){return OUString();}
+OUString SAL_CALL SwAccessibleNoTextFrame::getTextRange( sal_Int32 , sal_Int32 ){return OUString();}
+css::accessibility::TextSegment SAL_CALL SwAccessibleNoTextFrame::getTextAtIndex( sal_Int32 , sal_Int16 )
 {
     css::accessibility::TextSegment aResult;
     return aResult;
 }
-css::accessibility::TextSegment SAL_CALL SwAccessibleNoTextFrame::getTextBeforeIndex( sal_Int32, sal_Int16 ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
+css::accessibility::TextSegment SAL_CALL SwAccessibleNoTextFrame::getTextBeforeIndex( sal_Int32, sal_Int16 )
 {
     css::accessibility::TextSegment aResult;
     return aResult;
 }
-css::accessibility::TextSegment SAL_CALL SwAccessibleNoTextFrame::getTextBehindIndex( sal_Int32 , sal_Int16 ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
+css::accessibility::TextSegment SAL_CALL SwAccessibleNoTextFrame::getTextBehindIndex( sal_Int32 , sal_Int16 )
 {
     css::accessibility::TextSegment aResult;
     return aResult;
 }
 
-sal_Bool SAL_CALL SwAccessibleNoTextFrame::copyText( sal_Int32, sal_Int32 ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception){return true;}
+sal_Bool SAL_CALL SwAccessibleNoTextFrame::copyText( sal_Int32, sal_Int32 ){return true;}
 
 //  XAccessibleHyperText
 
 sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getHyperLinkCount()
-throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    CHECK_FOR_DEFUNC( XAccessibleHypertext );
+    ThrowIfDisposed();
 
     sal_Int32 nCount = 0;
     SwFormatURL aURL( static_cast<const SwLayoutFrame*>(GetFrame())->GetFormat()->GetURL() );
@@ -317,10 +307,10 @@ throw (uno::RuntimeException, std::exception)
 
 uno::Reference< XAccessibleHyperlink > SAL_CALL
     SwAccessibleNoTextFrame::getHyperLink( sal_Int32 nLinkIndex )
-    throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
-    CHECK_FOR_DEFUNC( XAccessibleHypertext );
+
+    ThrowIfDisposed();
 
     uno::Reference< XAccessibleHyperlink > xRet;
 
@@ -343,18 +333,12 @@ uno::Reference< XAccessibleHyperlink > SAL_CALL
 }
 
 sal_Int32 SAL_CALL SwAccessibleNoTextFrame::getHyperLinkIndex( sal_Int32 )
-    throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
 {
-    SolarMutexGuard aGuard;
-
     return 0;
 }
 
 uno::Reference<XAccessibleRelationSet> SAL_CALL SwAccessibleNoTextFrame::getAccessibleRelationSet( )
-    throw ( uno::RuntimeException, std::exception )
 {
-    SolarMutexGuard aGuard;
-
     return new AccessibleRelationSetHelper();
 }
 

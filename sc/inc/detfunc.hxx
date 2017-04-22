@@ -37,7 +37,7 @@ class ScRange;
 
 #define SC_DET_MAXCIRCLE    1000
 
-enum ScDetectiveDelete { SC_DET_ALL, SC_DET_DETECTIVE, SC_DET_CIRCLES, SC_DET_ARROWS };
+enum class ScDetectiveDelete { Detective, Circles, Arrows };
 
 enum ScDetectiveObjType
 {
@@ -58,23 +58,21 @@ class SC_DLLPUBLIC ScDetectiveFunc
     ScDocument*     pDoc;
     SCTAB           nTab;
 
-    enum DrawPosMode
+    enum class DrawPosMode
     {
-        DRAWPOS_TOPLEFT,        ///< Top-left edge of the cell.
-        DRAWPOS_BOTTOMRIGHT,    ///< Bottom-right edge of the cell.
-        DRAWPOS_DETARROW,       ///< Position inside cell for detective arrows.
-        DRAWPOS_CAPTIONLEFT,    ///< Top-left edge of the cell for captions.
-        DRAWPOS_CAPTIONRIGHT    ///< Top-right edge of the cell for captions (incl. merged cells).
+        TopLeft,        ///< Top-left edge of the cell.
+        BottomRight,    ///< Bottom-right edge of the cell.
+        DetectiveArrow, ///< Position inside cell for detective arrows.
     };
 
     /** @return a drawing layer position for the passed cell address. */
     Point       GetDrawPos( SCCOL nCol, SCROW nRow, DrawPosMode eMode ) const;
 
     /** @return the drawing layer rectangle for the passed cell range. */
-    Rectangle   GetDrawRect( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2 ) const;
+    tools::Rectangle   GetDrawRect( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2 ) const;
 
     /** @return the drawing layer rectangle for the passed cell address. */
-    Rectangle   GetDrawRect( SCCOL nCol, SCROW nRow ) const;
+    tools::Rectangle   GetDrawRect( SCCOL nCol, SCROW nRow ) const;
 
     bool        HasArrow( const ScAddress& rStart,
                             SCCOL nEndCol, SCROW nEndRow, SCTAB nEndTab );

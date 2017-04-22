@@ -403,11 +403,7 @@ PyObject *PyUNO_invoke( PyObject *object, const char *name , PyObject *args )
             OUString attrName = OUString::createFromAscii(name);
             if (! me->members->xInvocation->hasMethod (attrName))
             {
-                OUStringBuffer buf;
-                buf.append( "Attribute " );
-                buf.append( attrName );
-                buf.append( " unknown" );
-                throw RuntimeException( buf.makeStringAndClear() );
+                throw RuntimeException( "Attribute " + attrName + " unknown" );
             }
             callable = PyUNO_callable_new (
                 me->members->xInvocation,
@@ -922,7 +918,7 @@ int lcl_setitem_index( PyUNO *me, PyObject *pKey, PyObject *pValue )
 
         try
         {
-            aValue <<= runtime.pyObject2Any( pValue );
+            aValue = runtime.pyObject2Any( pValue );
         }
         catch ( const css::uno::RuntimeException )
         {
@@ -1043,7 +1039,7 @@ int lcl_setitem_slice( PyUNO *me, PyObject *pKey, PyObject *pValue )
                 Any aItem;
                 try
                 {
-                    aItem <<= runtime.pyObject2Any( rItem.get() );
+                    aItem = runtime.pyObject2Any( rItem.get() );
                 }
                 catch ( const css::uno::RuntimeException )
                 {
@@ -1102,7 +1098,7 @@ int lcl_setitem_string( PyUNO *me, PyObject *pKey, PyObject *pValue )
         isTuple = PyTuple_Check( pValue );
         try
         {
-            aValue <<= runtime.pyObject2Any( pValue );
+            aValue = runtime.pyObject2Any( pValue );
         }
         catch( const css::uno::RuntimeException )
         {
@@ -1301,7 +1297,7 @@ int PyUNO_contains( PyObject *self, PyObject *pKey )
         Any aValue;
         try
         {
-            aValue <<= runtime.pyObject2Any( pKey );
+            aValue = runtime.pyObject2Any( pKey );
         }
         catch( const css::uno::RuntimeException )
         {
@@ -1338,8 +1334,7 @@ int PyUNO_contains( PyObject *self, PyObject *pKey )
         PyRef rIterator( PyUNO_iter( self ), SAL_NO_ACQUIRE );
         if ( rIterator.is() )
         {
-            PyObject* pItem;
-            while ( (pItem = PyIter_Next( rIterator.get() )) )
+            while ( PyObject* pItem = PyIter_Next( rIterator.get() ) )
             {
                 PyRef rItem( pItem, SAL_NO_ACQUIRE );
                 if ( PyObject_RichCompareBool( pKey, rItem.get(), Py_EQ ) == 1 )
@@ -1710,9 +1705,7 @@ PyRef PyUNO_new (
     {
         PyThreadDetach antiguard;
         xInvocation.set(
-            ssf->createInstanceWithArguments( Sequence<Any>( &targetInterface, 1 ) ), UNO_QUERY );
-        if( !xInvocation.is() )
-            throw RuntimeException("XInvocation2 not implemented, cannot interact with object");
+            ssf->createInstanceWithArguments( Sequence<Any>( &targetInterface, 1 ) ), css::uno::UNO_QUERY_THROW );
 
         Reference<XUnoTunnel> xUnoTunnel (
             xInvocation->getIntrospection()->queryAdapter(cppu::UnoType<XUnoTunnel>::get()), UNO_QUERY );
@@ -1729,7 +1722,7 @@ PyRef PyUNO_new (
     PyUNO* self = PyObject_New (PyUNO, &PyUNOType);
     if (self == nullptr)
         return PyRef(); // == error
-    self->members = new PyUNOInternals();
+    self->members = new PyUNOInternals;
     self->members->xInvocation = xInvocation;
     self->members->wrappedObject = targetInterface;
     return PyRef( reinterpret_cast<PyObject*>(self), SAL_NO_ACQUIRE );

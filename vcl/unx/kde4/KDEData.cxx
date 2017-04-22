@@ -46,6 +46,10 @@ void KDEData::initNWF()
     pSVData->maNWFData.mbDockingAreaSeparateTB = true;
     // no borders for menu, theming does that
     pSVData->maNWFData.mbFlatMenu = true;
+    // Qt theme engines may support a rollover menubar
+    pSVData->maNWFData.mbRolloverMenubar = true;
+
+    pSVData->maNWFData.mbNoFocusRects = true;
 
     // Styled menus need additional space
     QStyle *style = QApplication::style();

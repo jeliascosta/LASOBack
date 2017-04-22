@@ -70,7 +70,7 @@ void FuConstructArc::DoExecute( SfxRequest& rReq )
     FuConstruct::DoExecute( rReq );
 
     mpViewShell->GetViewShellBase().GetToolBarManager()->SetToolBar(
-        ToolBarManager::TBG_FUNCTION,
+        ToolBarManager::ToolBarGroup::Function,
         ToolBarManager::msDrawingObjectToolBar);
 
     const SfxItemSet *pArgs = rReq.GetArgs ();
@@ -84,7 +84,7 @@ void FuConstructArc::DoExecute( SfxRequest& rReq )
         const SfxUInt32Item* pPhiStart = rReq.GetArg<SfxUInt32Item>(ID_VAL_ANGLESTART);
         const SfxUInt32Item* pPhiEnd = rReq.GetArg<SfxUInt32Item>(ID_VAL_ANGLEEND);
 
-        Rectangle   aNewRectangle (pCenterX->GetValue () - pAxisX->GetValue () / 2,
+        ::tools::Rectangle   aNewRectangle (pCenterX->GetValue () - pAxisX->GetValue () / 2,
                                    pCenterY->GetValue () - pAxisY->GetValue () / 2,
                                    pCenterX->GetValue () + pAxisX->GetValue () / 2,
                                    pCenterY->GetValue () + pAxisY->GetValue () / 2);
@@ -127,11 +127,6 @@ bool FuConstructArc::MouseButtonDown( const MouseEvent& rMEvt )
     return bReturn;
 }
 
-bool FuConstructArc::MouseMove( const MouseEvent& rMEvt )
-{
-    return FuConstruct::MouseMove(rMEvt);
-}
-
 bool FuConstructArc::MouseButtonUp( const MouseEvent& rMEvt )
 {
     bool bReturn = false;
@@ -141,7 +136,7 @@ bool FuConstructArc::MouseButtonUp( const MouseEvent& rMEvt )
     {
         const size_t nCount = mpView->GetSdrPageView()->GetObjList()->GetObjCount();
 
-        if (mpView->EndCreateObj(SDRCREATE_NEXTPOINT) )
+        if (mpView->EndCreateObj(SdrCreateCmd::NextPoint) )
         {
             if (nCount != mpView->GetSdrPageView()->GetObjList()->GetObjCount())
             {
@@ -158,15 +153,6 @@ bool FuConstructArc::MouseButtonUp( const MouseEvent& rMEvt )
         mpViewShell->GetViewFrame()->GetDispatcher()->Execute(SID_OBJECT_SELECT, SfxCallMode::ASYNCHRON);
 
     return bReturn;
-}
-
-/**
- * Process keyboard input
- * @returns sal_True if a KeyEvent is being processed, sal_False otherwise
- */
-bool FuConstructArc::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
 }
 
 void FuConstructArc::Activate()
@@ -212,12 +198,7 @@ void FuConstructArc::Activate()
     FuConstruct::Activate();
 }
 
-void FuConstructArc::Deactivate()
-{
-    FuConstruct::Deactivate();
-}
-
-SdrObject* FuConstructArc::CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle)
+SdrObject* FuConstructArc::CreateDefaultObject(const sal_uInt16 nID, const ::tools::Rectangle& rRectangle)
 {
 
     SdrObject* pObj = SdrObjFactory::MakeNewObject(
@@ -228,7 +209,7 @@ SdrObject* FuConstructArc::CreateDefaultObject(const sal_uInt16 nID, const Recta
     {
         if( dynamic_cast< const SdrCircObj *>( pObj ) !=  nullptr)
         {
-            Rectangle aRect(rRectangle);
+            ::tools::Rectangle aRect(rRectangle);
 
             if(SID_DRAW_ARC == nID ||
                 SID_DRAW_CIRCLEARC == nID ||

@@ -109,7 +109,7 @@ public final class socketConnector implements XConnector {
         throws NoConnectException, ConnectionSetupException
     {
         if (connected)
-            throw new ConnectionSetupException("alread connected");
+            throw new ConnectionSetupException("already connected");
 
         ConnectionDescriptor desc;
         try {
@@ -154,6 +154,12 @@ public final class socketConnector implements XConnector {
 
             con = new SocketConnection(connectionDescription, socket);
         } catch (IOException e) {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch(IOException ioException) {
+                }
+            }
             throw new NoConnectException(e);
         }
         connected = true;

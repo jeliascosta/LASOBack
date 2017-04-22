@@ -44,7 +44,7 @@ namespace connectivity
 
     namespace mysql
     {
-        Reference< XInterface >  SAL_CALL ODriverDelegator_CreateInstance(const Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFac) throw( Exception )
+        Reference< XInterface >  SAL_CALL ODriverDelegator_CreateInstance(const Reference< css::lang::XMultiServiceFactory >& _rxFac)
         {
             return *(new ODriverDelegator( comphelper::getComponentContext(_rxFac) ));
         }
@@ -152,7 +152,7 @@ namespace connectivity
 
         Sequence< PropertyValue > lcl_convertProperties(T_DRIVERTYPE _eType,const Sequence< PropertyValue >& info,const OUString& _sUrl)
         {
-            ::std::vector<PropertyValue> aProps;
+            std::vector<PropertyValue> aProps;
             const PropertyValue* pSupported = info.getConstArray();
             const PropertyValue* pEnd = pSupported + info.getLength();
 
@@ -170,12 +170,12 @@ namespace connectivity
             if ( _eType == T_DRIVERTYPE::Odbc )
             {
                 aProps.push_back( PropertyValue(
-                                    OUString("Silent")
+                                    "Silent"
                                     ,0
                                     ,makeAny(true)
                                     ,PropertyState_DIRECT_VALUE) );
                 aProps.push_back( PropertyValue(
-                                    OUString("PreventGetVersionColumns")
+                                    "PreventGetVersionColumns"
                                     ,0
                                     ,makeAny(true)
                                     ,PropertyState_DIRECT_VALUE) );
@@ -185,7 +185,7 @@ namespace connectivity
                 if (!jdc)
                 {
                     aProps.push_back( PropertyValue(
-                                          OUString("JavaDriverClass")
+                                          "JavaDriverClass"
                                           ,0
                                           ,makeAny(OUString("com.mysql.jdbc.Driver"))
                                           ,PropertyState_DIRECT_VALUE) );
@@ -194,23 +194,23 @@ namespace connectivity
             else
             {
                 aProps.push_back( PropertyValue(
-                                    OUString("PublicConnectionURL")
+                                    "PublicConnectionURL"
                                     ,0
                                     ,makeAny(_sUrl)
                                     ,PropertyState_DIRECT_VALUE) );
             }
             aProps.push_back( PropertyValue(
-                                OUString("IsAutoRetrievingEnabled")
+                                "IsAutoRetrievingEnabled"
                                 ,0
                                 ,makeAny(true)
                                 ,PropertyState_DIRECT_VALUE) );
             aProps.push_back( PropertyValue(
-                                OUString("AutoRetrievingStatement")
+                                "AutoRetrievingStatement"
                                 ,0
                                 ,makeAny(OUString("SELECT LAST_INSERT_ID()"))
                                 ,PropertyState_DIRECT_VALUE) );
             aProps.push_back( PropertyValue(
-                                OUString("ParameterNameSubstitution")
+                                "ParameterNameSubstitution"
                                 ,0
                                 ,makeAny(true)
                                 ,PropertyState_DIRECT_VALUE) );
@@ -248,7 +248,7 @@ namespace connectivity
     }
 
 
-    Reference< XConnection > SAL_CALL ODriverDelegator::connect( const OUString& url, const Sequence< PropertyValue >& info ) throw (SQLException, RuntimeException, std::exception)
+    Reference< XConnection > SAL_CALL ODriverDelegator::connect( const OUString& url, const Sequence< PropertyValue >& info )
     {
         Reference< XConnection > xConnection;
         if ( acceptsURL(url) )
@@ -310,7 +310,7 @@ namespace connectivity
     }
 
 
-    sal_Bool SAL_CALL ODriverDelegator::acceptsURL( const OUString& url ) throw (SQLException, RuntimeException, std::exception)
+    sal_Bool SAL_CALL ODriverDelegator::acceptsURL( const OUString& url )
     {
         Sequence< PropertyValue > info;
 
@@ -323,9 +323,9 @@ namespace connectivity
     }
 
 
-    Sequence< DriverPropertyInfo > SAL_CALL ODriverDelegator::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& info ) throw (SQLException, RuntimeException, std::exception)
+    Sequence< DriverPropertyInfo > SAL_CALL ODriverDelegator::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& info )
     {
-        ::std::vector< DriverPropertyInfo > aDriverInfo;
+        std::vector< DriverPropertyInfo > aDriverInfo;
         if ( !acceptsURL(url) )
             return Sequence< DriverPropertyInfo >();
 
@@ -335,25 +335,25 @@ namespace connectivity
 
 
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("CharSet")
-                ,OUString("CharSet of the database.")
+                "CharSet"
+                ,"CharSet of the database."
                 ,false
                 ,OUString()
                 ,Sequence< OUString >())
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("SuppressVersionColumns")
-                ,OUString("Display version columns (when available).")
+                "SuppressVersionColumns"
+                ,"Display version columns (when available)."
                 ,false
-                ,OUString("0")
+                ,"0"
                 ,aBoolean)
                 );
         const T_DRIVERTYPE eType = lcl_getDriverType( url );
         if ( eType == T_DRIVERTYPE::Jdbc )
         {
             aDriverInfo.push_back(DriverPropertyInfo(
-                    OUString("JavaDriverClass")
-                    ,OUString("The JDBC driver class name.")
+                    "JavaDriverClass"
+                    ,"The JDBC driver class name."
                     ,true
                     ,getJavaDriverClass(info)
                     ,Sequence< OUString >())
@@ -362,15 +362,15 @@ namespace connectivity
         else if ( eType == T_DRIVERTYPE::Native )
         {
             aDriverInfo.push_back(DriverPropertyInfo(
-                    OUString("LocalSocket")
-                    ,OUString("The file path of a socket to connect to a local MySQL server.")
+                    "LocalSocket"
+                    ,"The file path of a socket to connect to a local MySQL server."
                     ,false
                     ,OUString()
                     ,Sequence< OUString >())
                     );
             aDriverInfo.push_back(DriverPropertyInfo(
-                    OUString("NamedPipe")
-                    ,OUString("The name of a pipe to connect to a local MySQL server.")
+                    "NamedPipe"
+                    ,"The name of a pipe to connect to a local MySQL server."
                     ,false
                     ,OUString()
                     ,Sequence< OUString >())
@@ -381,19 +381,19 @@ namespace connectivity
     }
 
 
-    sal_Int32 SAL_CALL ODriverDelegator::getMajorVersion(  ) throw (RuntimeException, std::exception)
+    sal_Int32 SAL_CALL ODriverDelegator::getMajorVersion(  )
     {
         return 1;
     }
 
 
-    sal_Int32 SAL_CALL ODriverDelegator::getMinorVersion(  ) throw (RuntimeException, std::exception)
+    sal_Int32 SAL_CALL ODriverDelegator::getMinorVersion(  )
     {
         return 0;
     }
 
 
-    Reference< XTablesSupplier > SAL_CALL ODriverDelegator::getDataDefinitionByConnection( const Reference< XConnection >& connection ) throw (SQLException, RuntimeException, std::exception)
+    Reference< XTablesSupplier > SAL_CALL ODriverDelegator::getDataDefinitionByConnection( const Reference< XConnection >& connection )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         checkDisposed(ODriverDelegator_BASE::rBHelper.bDisposed);
@@ -443,7 +443,7 @@ namespace connectivity
     }
 
 
-    Reference< XTablesSupplier > SAL_CALL ODriverDelegator::getDataDefinitionByURL( const OUString& url, const Sequence< PropertyValue >& info ) throw (SQLException, RuntimeException, std::exception)
+    Reference< XTablesSupplier > SAL_CALL ODriverDelegator::getDataDefinitionByURL( const OUString& url, const Sequence< PropertyValue >& info )
     {
         if ( ! acceptsURL(url) )
         {
@@ -458,12 +458,12 @@ namespace connectivity
     // XServiceInfo
 
 
-    OUString ODriverDelegator::getImplementationName_Static(  ) throw(RuntimeException)
+    OUString ODriverDelegator::getImplementationName_Static(  )
     {
         return OUString("org.openoffice.comp.drivers.MySQL.Driver");
     }
 
-    Sequence< OUString > ODriverDelegator::getSupportedServiceNames_Static(  ) throw (RuntimeException)
+    Sequence< OUString > ODriverDelegator::getSupportedServiceNames_Static(  )
     {
         Sequence< OUString > aSNS( 2 );
         aSNS[0] = "com.sun.star.sdbc.Driver";
@@ -471,17 +471,17 @@ namespace connectivity
         return aSNS;
     }
 
-    OUString SAL_CALL ODriverDelegator::getImplementationName(  ) throw(RuntimeException, std::exception)
+    OUString SAL_CALL ODriverDelegator::getImplementationName(  )
     {
         return getImplementationName_Static();
     }
 
-    sal_Bool SAL_CALL ODriverDelegator::supportsService( const OUString& _rServiceName ) throw(RuntimeException, std::exception)
+    sal_Bool SAL_CALL ODriverDelegator::supportsService( const OUString& _rServiceName )
     {
         return cppu::supportsService(this, _rServiceName);
     }
 
-    Sequence< OUString > SAL_CALL ODriverDelegator::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
+    Sequence< OUString > SAL_CALL ODriverDelegator::getSupportedServiceNames(  )
     {
         return getSupportedServiceNames_Static();
     }

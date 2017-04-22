@@ -40,15 +40,11 @@ struct SfxFrameDescriptor_Impl
 
 SfxFrameDescriptor::SfxFrameDescriptor() :
     aMargin( -1, -1 ),
-    nWidth( 0L ),
-    eScroll( ScrollingAuto ),
-    eSizeSelector( SIZE_ABS ),
+    eScroll( ScrollingMode::Auto ),
     bHasBorder( true ),
     bHasBorderSet( false ),
-    nItemId( 0 ),
     bResizeHorizontal( true ),
     bResizeVertical( true ),
-    bHasUI( true ),
     bReadOnly( false ),
     pImpl( new SfxFrameDescriptor_Impl )
 {
@@ -68,7 +64,7 @@ SfxItemSet* SfxFrameDescriptor::GetArgs()
 void SfxFrameDescriptor::SetURL( const OUString& rURL )
 {
     aURL = INetURLObject(rURL);
-    SetActualURL( aURL );
+    SetActualURL(aURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ));
 }
 
 void SfxFrameDescriptor::SetActualURL( const OUString& rURL )
@@ -78,51 +74,9 @@ void SfxFrameDescriptor::SetActualURL( const OUString& rURL )
         pImpl->pArgs->ClearItem();
 }
 
-void SfxFrameDescriptor::SetActualURL( const INetURLObject& rURL )
-{
-    SetActualURL(rURL.GetMainURL( INetURLObject::DECODE_TO_IURI ));
-}
-
 void SfxFrameDescriptor::SetEditable( bool bSet )
 {
     pImpl->bEditable = bSet;
-}
-
-bool SfxFrameDescriptor::IsEditable() const
-{
-    return pImpl->bEditable;
-}
-
-SfxFrameDescriptor* SfxFrameDescriptor::Clone() const
-{
-    SfxFrameDescriptor *pFrame = new SfxFrameDescriptor;
-
-    pFrame->aURL = aURL;
-    pFrame->aActualURL = aActualURL;
-    pFrame->aName = aName;
-    pFrame->aMargin = aMargin;
-    pFrame->nWidth = nWidth;
-    pFrame->eSizeSelector = eSizeSelector;
-    pFrame->eScroll = eScroll;
-    pFrame->bResizeHorizontal = bResizeHorizontal;
-    pFrame->bResizeVertical = bResizeVertical;
-    pFrame->bHasBorder = bHasBorder;
-    pFrame->bHasBorderSet = bHasBorderSet;
-    pFrame->bHasUI = bHasUI;
-    pFrame->SetReadOnly( IsReadOnly() );
-    pFrame->SetEditable( IsEditable() );
-    if ( pImpl->pWallpaper )
-        pFrame->pImpl->pWallpaper = new Wallpaper( *pImpl->pWallpaper );
-    if( pImpl->pArgs )
-    {
-        // Currently in the clone of SfxAllItemSets there is still a bug ...
-        pFrame->pImpl->pArgs = new SfxAllItemSet( SfxGetpApp()->GetPool() );
-        pFrame->pImpl->pArgs->Put(*pImpl->pArgs);
-    }
-
-    pFrame->nItemId = nItemId;
-
-    return pFrame;
 }
 
 void SfxFrameDescriptor::SetWallpaper( const Wallpaper& rWallpaper )

@@ -158,12 +158,11 @@ class LwpDocData : public LwpObject
 public:
     LwpDocData(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
 private:
-    virtual ~LwpDocData();
+    virtual ~LwpDocData() override;
 
     LwpDocOptions m_DocOptions;
     LwpDocInfo m_DocInfo;
     LwpDocControl m_DocControl;
-//  static std::map<sal_uInt16,LwpEditorAttr*> m_EditorAttrMap;
 private:
     LtTm m_nCreationTime;
     LtTm m_nLastRevisionTime;

@@ -39,11 +39,17 @@ class SelectionEngine;
 class VirtualDevice;
 struct TextDDInfo;
 
-namespace com { namespace sun { namespace star { namespace datatransfer { namespace clipboard {
-    class XClipboard;
+namespace com { namespace sun { namespace star {
+    namespace datatransfer { namespace clipboard {
+        class XClipboard;
 }}}}}
+namespace i18nutil {
+    struct SearchOptions;
+}
+
 
 struct ImpTextView;
+class ExtTextEngine;
 
 class VCL_DLLPUBLIC TextView : public vcl::unohelper::DragAndDropClient
 {
@@ -51,7 +57,6 @@ class VCL_DLLPUBLIC TextView : public vcl::unohelper::DragAndDropClient
     friend class        TextUndo;
     friend class        TextUndoManager;
     friend class        TextSelFunctionSet;
-    friend class        ExtTextView;
 
 private:
     std::unique_ptr<ImpTextView>  mpImpl;
@@ -60,6 +65,7 @@ private:
     TextView&           operator=( const TextView& ) = delete;
 
 protected:
+    bool                ImpIndentBlock( bool bRight );
     void                ShowSelection();
     void                HideSelection();
     void                ShowSelection( const TextSelection& rSel );
@@ -69,8 +75,8 @@ protected:
     TextPaM             ImpDelete( sal_uInt8 nMode, sal_uInt8 nDelMode );
     bool                IsInSelection( const TextPaM& rPaM );
 
-    void                ImpPaint(vcl::RenderContext& rRenderContext, const Point& rStartPos, Rectangle const* pPaintArea, TextSelection const* pPaintRange = nullptr, TextSelection const* pSelection = nullptr);
-    void                ImpPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
+    void                ImpPaint(vcl::RenderContext& rRenderContext, const Point& rStartPos, tools::Rectangle const* pPaintArea, TextSelection const* pSelection);
+    void                ImpPaint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
     void                ImpShowCursor( bool bGotoCursor, bool bForceVisCursor, bool bEndKey );
     void                ImpHighlight( const TextSelection& rSel );
     void                ImpSetSelection( const TextSelection& rSelection );
@@ -83,20 +89,20 @@ protected:
     bool                ImplCheckTextLen( const OUString& rNewText );
 
     // DragAndDropClient
-    virtual void        dragGestureRecognized( const css::datatransfer::dnd::DragGestureEvent& dge ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void        dragDropEnd( const css::datatransfer::dnd::DragSourceDropEvent& dsde ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void        drop( const css::datatransfer::dnd::DropTargetDropEvent& dtde ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void        dragEnter( const css::datatransfer::dnd::DropTargetDragEnterEvent& dtdee ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void        dragExit( const css::datatransfer::dnd::DropTargetEvent& dte ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void        dragOver( const css::datatransfer::dnd::DropTargetDragEvent& dtde ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void        dragGestureRecognized( const css::datatransfer::dnd::DragGestureEvent& dge ) override;
+    virtual void        dragDropEnd( const css::datatransfer::dnd::DragSourceDropEvent& dsde ) override;
+    virtual void        drop( const css::datatransfer::dnd::DropTargetDropEvent& dtde ) override;
+    virtual void        dragEnter( const css::datatransfer::dnd::DropTargetDragEnterEvent& dtdee ) override;
+    virtual void        dragExit( const css::datatransfer::dnd::DropTargetEvent& dte ) override;
+    virtual void        dragOver( const css::datatransfer::dnd::DropTargetDragEvent& dtde ) override;
 
             using       DragAndDropClient::dragEnter;
             using       DragAndDropClient::dragExit;
             using       DragAndDropClient::dragOver;
 
 public:
-                        TextView( TextEngine* pEng, vcl::Window* pWindow );
-    virtual            ~TextView();
+                        TextView( ExtTextEngine* pEng, vcl::Window* pWindow );
+    virtual            ~TextView() override;
 
     TextEngine*         GetTextEngine() const;
     vcl::Window*             GetWindow() const;
@@ -123,7 +129,7 @@ public:
     void                InsertText( const OUString& rNew );
 
     bool                KeyInput( const KeyEvent& rKeyEvent );
-    void                Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
+    void                Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
     void                MouseButtonUp( const MouseEvent& rMouseEvent );
     void                MouseButtonDown( const MouseEvent& rMouseEvent );
     void                MouseMove( const MouseEvent& rMouseEvent );
@@ -139,7 +145,7 @@ public:
     void                Undo();
     void                Redo();
 
-    bool            Read( SvStream& rInput );
+    bool                Read( SvStream& rInput );
 
     void                SetStartDocPos( const Point& rPos );
     const Point&        GetStartDocPos() const;
@@ -148,18 +154,18 @@ public:
     Point               GetWindowPos( const Point& rDocPos ) const;
 
     void                SetInsertMode( bool bInsert );
-    bool            IsInsertMode() const;
+    bool                IsInsertMode() const;
 
     void                SetAutoIndentMode( bool bAutoIndent );
 
     void                SetReadOnly( bool bReadOnly );
-    bool            IsReadOnly() const;
+    bool                IsReadOnly() const;
 
     void                SetAutoScroll( bool bAutoScroll );
-    bool            IsAutoScroll() const;
+    bool                IsAutoScroll() const;
 
-    bool            SetCursorAtPoint( const Point& rPointPixel );
-    bool            IsSelectionAtPoint( const Point& rPointPixel );
+    bool                SetCursorAtPoint( const Point& rPointPixel );
+    bool                IsSelectionAtPoint( const Point& rPointPixel );
 
     void                SetPaintSelection( bool bPaint);
 
@@ -194,6 +200,14 @@ public:
         if enabled, -1 otherwise.
      */
     sal_Int32           GetLineNumberOfCursorInSelection() const;
+
+    bool                MatchGroup();
+
+    bool                Search( const i18nutil::SearchOptions& rSearchOptions, bool bForward );
+    sal_uInt16          Replace( const i18nutil::SearchOptions& rSearchOptions, bool bAll, bool bForward );
+
+    bool                IndentBlock();
+    bool                UnindentBlock();
 };
 
 #endif

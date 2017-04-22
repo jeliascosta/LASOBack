@@ -58,11 +58,10 @@ private:
     virtual void Resize() override;
     virtual void GetFocus() override;
 
-    DECL_LINK_TYPED(SplitHdl, Splitter*, void);
+    DECL_LINK(SplitHdl, Splitter*, void);
 
 protected:
-    void ThemeSelectionHasChanged();
-    virtual ~GalleryControl();
+    virtual ~GalleryControl() override;
     virtual void dispose() override;
 };
 

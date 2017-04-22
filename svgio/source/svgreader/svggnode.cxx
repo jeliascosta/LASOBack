@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svggnode.hxx>
+#include <svggnode.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
 #include <drawinglayer/primitive2d/unifiedtransparenceprimitive2d.hxx>
 
@@ -33,12 +33,11 @@ namespace svgio
             maSvgStyleAttributes(*this),
             mpaTransform(nullptr)
         {
-            OSL_ENSURE(aType == SVGTokenDefs || aType == SVGTokenG, "SvgGNode should ony be used for Group and Defs (!)");
+            OSL_ENSURE(aType == SVGTokenDefs || aType == SVGTokenG, "SvgGNode should only be used for Group and Defs (!)");
         }
 
         SvgGNode::~SvgGNode()
         {
-            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgGNode::getSvgStyleAttributes() const

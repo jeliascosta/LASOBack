@@ -33,8 +33,7 @@ namespace drawinglayer
         enum class BreakupUnit
         {
             Character,
-            Word,
-            Sentence
+            Word
         };
 
         class DRAWINGLAYER_DLLPUBLIC TextBreakupHelper
@@ -45,7 +44,6 @@ namespace drawinglayer
             TextLayouterDevice                      maTextLayouter;
             basegfx::tools::B2DHomMatrixBufferedOnDemandDecompose maDecTrans;
 
-            /// bitfield
             bool                                    mbNoDXArray : 1;
 
             /// create a portion from nIndex to nLength and append to rTempResult

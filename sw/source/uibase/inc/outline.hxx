@@ -24,7 +24,6 @@
 #include <vcl/menu.hxx>
 
 #include <vcl/button.hxx>
-#include <svtools/stdctrl.hxx>
 
 #include <vcl/fixed.hxx>
 
@@ -53,15 +52,15 @@ class SwOutlineTabDialog : public SfxTabDialog
     OUString            aCollNames[MAXLEVEL];
 
     SwWrtShell&         rWrtSh;
-    SwNumRule*          pNumRule;
+    std::unique_ptr<SwNumRule>  xNumRule;
     SwChapterNumRules*  pChapterNumRules;
 
     bool                bModified : 1;
 
 protected:
-    DECL_LINK_TYPED(CancelHdl, Button*, void);
-    DECL_LINK_TYPED( FormHdl, Button *, void );
-    DECL_LINK_TYPED( MenuSelectHdl, Menu *, bool );
+    DECL_LINK(CancelHdl, Button*, void);
+    DECL_LINK( FormHdl, Button *, void );
+    DECL_LINK( MenuSelectHdl, Menu *, bool );
 
         virtual void    PageCreated(sal_uInt16 nPageId, SfxTabPage& rPage) override;
         virtual short   Ok() override;
@@ -70,10 +69,10 @@ public:
         SwOutlineTabDialog(vcl::Window* pParent,
                     const SfxItemSet* pSwItemSet,
                     SwWrtShell &);
-        virtual ~SwOutlineTabDialog();
+        virtual ~SwOutlineTabDialog() override;
     virtual void        dispose() override;
 
-    SwNumRule*          GetNumRule() {return pNumRule;}
+    SwNumRule*          GetNumRule() { return xNumRule.get(); }
     sal_uInt16          GetLevel(const OUString &rFormatName) const;
     OUString*           GetCollNames() {return aCollNames;}
 
@@ -102,14 +101,14 @@ class SwOutlineSettingsTabPage : public SfxTabPage
     OUString*           pCollNames;
     sal_uInt16              nActLevel;
 
-    DECL_LINK_TYPED( LevelHdl, ListBox&, void );
-    DECL_LINK_TYPED( ToggleComplete, Edit&, void );
-    DECL_LINK_TYPED( CollSelect, ListBox&, void );
-    DECL_LINK_TYPED( CollSelectGetFocus, Control&, void );
-    DECL_LINK_TYPED( NumberSelect, ListBox&, void );
-    DECL_LINK_TYPED( DelimModify, Edit&, void );
-    DECL_LINK_TYPED( StartModified, Edit&, void );
-    DECL_LINK_TYPED( CharFormatHdl, ListBox&, void );
+    DECL_LINK( LevelHdl, ListBox&, void );
+    DECL_LINK( ToggleComplete, Edit&, void );
+    DECL_LINK( CollSelect, ListBox&, void );
+    DECL_LINK( CollSelectGetFocus, Control&, void );
+    DECL_LINK( NumberSelect, ListBox&, void );
+    DECL_LINK( DelimModify, Edit&, void );
+    DECL_LINK( StartModified, Edit&, void );
+    DECL_LINK( CharFormatHdl, ListBox&, void );
 
     void    Update();
 
@@ -121,13 +120,13 @@ class SwOutlineSettingsTabPage : public SfxTabPage
 
 public:
     SwOutlineSettingsTabPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwOutlineSettingsTabPage();
+    virtual ~SwOutlineSettingsTabPage() override;
     virtual void dispose() override;
 
     void SetWrtShell(SwWrtShell* pShell);
 
     virtual void        ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg       DeactivatePage(SfxItemSet *pSet) override;
+    virtual DeactivateRC   DeactivatePage(SfxItemSet *pSet) override;
 
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
     virtual void        Reset( const SfxItemSet* rSet ) override;

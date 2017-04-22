@@ -70,19 +70,6 @@ rtl::Reference<FuPoor> FuConstructBezierPolygon::Create( ViewShell* pViewSh, ::s
     return xFunc;
 }
 
-void FuConstructBezierPolygon::DoExecute( SfxRequest& rReq )
-{
-    FuConstruct::DoExecute( rReq );
-
-    const SfxItemSet* pArgs = rReq.GetArgs();
-    if( pArgs )
-    {
-        const SfxPoolItem*  pPoolItem = nullptr;
-        if( SfxItemState::SET == pArgs->GetItemState( SID_ADD_MOTION_PATH, true, &pPoolItem ) )
-            maTargets = static_cast<const SfxUnoAnyItem*>( pPoolItem )->GetValue();
-    }
-}
-
 bool FuConstructBezierPolygon::MouseButtonDown(const MouseEvent& rMEvt)
 {
     bool bReturn = FuConstruct::MouseButtonDown(rMEvt);
@@ -90,19 +77,19 @@ bool FuConstructBezierPolygon::MouseButtonDown(const MouseEvent& rMEvt)
     SdrViewEvent aVEvt;
     SdrHitKind eHit = mpView->PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt);
 
-    if (eHit == SDRHIT_HANDLE || rMEvt.IsMod1())
+    if (eHit == SdrHitKind::Handle || rMEvt.IsMod1())
     {
-        mpView->SetEditMode(SDREDITMODE_EDIT);
+        mpView->SetEditMode(SdrViewEditMode::Edit);
     }
     else
     {
-        mpView->SetEditMode(SDREDITMODE_CREATE);
+        mpView->SetEditMode(SdrViewEditMode::Create);
     }
 
-    if (aVEvt.eEvent == SDREVENT_BEGTEXTEDIT)
+    if (aVEvt.eEvent == SdrEventKind::BeginTextEdit)
     {
         // here, we do not allow text input
-        aVEvt.eEvent = SDREVENT_BEGDRAGOBJ;
+        aVEvt.eEvent = SdrEventKind::BeginDragObj;
         mpView->EnableExtendedMouseEventDispatcher(false);
     }
     else
@@ -110,7 +97,7 @@ bool FuConstructBezierPolygon::MouseButtonDown(const MouseEvent& rMEvt)
         mpView->EnableExtendedMouseEventDispatcher(true);
     }
 
-    if (eHit == SDRHIT_MARKEDOBJECT && nEditMode == SID_BEZIER_INSERT)
+    if (eHit == SdrHitKind::MarkedObject && nEditMode == SID_BEZIER_INSERT)
     {
         // insert glue point
         mpView->BegInsObjPoint(aMDPos, rMEvt.IsMod1());
@@ -132,11 +119,6 @@ bool FuConstructBezierPolygon::MouseButtonDown(const MouseEvent& rMEvt)
     return bReturn;
 }
 
-bool FuConstructBezierPolygon::MouseMove(const MouseEvent& rMEvt)
-{
-    return FuConstruct::MouseMove(rMEvt);
-}
-
 bool FuConstructBezierPolygon::MouseButtonUp(const MouseEvent& rMEvt )
 {
     bool bReturn = false;
@@ -149,14 +131,14 @@ bool FuConstructBezierPolygon::MouseButtonUp(const MouseEvent& rMEvt )
 
     if (mpView->IsInsObjPoint())
     {
-        mpView->EndInsObjPoint(SDRCREATE_FORCEEND);
+        mpView->EndInsObjPoint(SdrCreateCmd::ForceEnd);
     }
     else
     {
         mpView->MouseButtonUp(rMEvt, mpWindow);
     }
 
-    if (aVEvt.eEvent == SDREVENT_ENDCREATE)
+    if (aVEvt.eEvent == SdrEventKind::EndCreate)
     {
         bReturn = true;
 
@@ -213,15 +195,6 @@ bool FuConstructBezierPolygon::MouseButtonUp(const MouseEvent& rMEvt )
     }
 
     return bReturn;
-}
-
-/**
- * Process keyboard input
- * @returns sal_True if a KeyEvent is being processed, sal_False otherwise
- */
-bool FuConstructBezierPolygon::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
 }
 
 void FuConstructBezierPolygon::Activate()
@@ -311,7 +284,7 @@ void FuConstructBezierPolygon::SetEditMode(sal_uInt16 nMode)
     rBindings.Invalidate(SID_BEZIER_INSERT);
 }
 
-SdrObject* FuConstructBezierPolygon::CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle)
+SdrObject* FuConstructBezierPolygon::CreateDefaultObject(const sal_uInt16 nID, const ::tools::Rectangle& rRectangle)
 {
     // case SID_DRAW_POLYGON:
     // case SID_DRAW_POLYGON_NOFILL:

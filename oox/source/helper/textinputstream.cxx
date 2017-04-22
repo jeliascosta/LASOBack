@@ -19,6 +19,7 @@
 
 #include "oox/helper/textinputstream.hxx"
 
+#include <com/sun/star/io/NotConnectedException.hpp>
 #include <com/sun/star/io/XActiveDataSink.hpp>
 #include <com/sun/star/io/TextInputStream.hpp>
 #include <cppuhelper/implbase.hxx>
@@ -43,19 +44,15 @@ class UnoBinaryInputStream : public UnoBinaryInputStream_BASE
 public:
     explicit            UnoBinaryInputStream( BinaryInputStream& rInStrm );
 
-    virtual sal_Int32 SAL_CALL readBytes( Sequence< sal_Int8 >& rData, sal_Int32 nBytesToRead )
-                        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL readSomeBytes( Sequence< sal_Int8 >& rData, sal_Int32 nMaxBytesToRead )
-                        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip )
-                        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL available()
-                        throw (NotConnectedException, IOException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL closeInput()
-                        throw (NotConnectedException, IOException, RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL readBytes( Sequence< sal_Int8 >& rData, sal_Int32 nBytesToRead ) override;
+    virtual sal_Int32 SAL_CALL readSomeBytes( Sequence< sal_Int8 >& rData, sal_Int32 nMaxBytesToRead ) override;
+    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip ) override;
+    virtual sal_Int32 SAL_CALL available() override;
+    virtual void SAL_CALL closeInput() override;
 
 private:
-    void                ensureConnected() const throw (NotConnectedException);
+    /// @throws NotConnectedException
+    void                ensureConnected() const;
 
 private:
     BinaryInputStream*  mpInStrm;
@@ -67,40 +64,37 @@ UnoBinaryInputStream::UnoBinaryInputStream( BinaryInputStream& rInStrm ) :
 }
 
 sal_Int32 SAL_CALL UnoBinaryInputStream::readBytes( Sequence< sal_Int8 >& rData, sal_Int32 nBytesToRead )
-        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     ensureConnected();
     return mpInStrm->readData( rData, nBytesToRead );
 }
 
 sal_Int32 SAL_CALL UnoBinaryInputStream::readSomeBytes( Sequence< sal_Int8 >& rData, sal_Int32 nMaxBytesToRead )
-        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     ensureConnected();
     return mpInStrm->readData( rData, nMaxBytesToRead );
 }
 
 void SAL_CALL UnoBinaryInputStream::skipBytes( sal_Int32 nBytesToSkip )
-        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     ensureConnected();
     mpInStrm->skip( nBytesToSkip );
 }
 
-sal_Int32 SAL_CALL UnoBinaryInputStream::available() throw (NotConnectedException, IOException, RuntimeException, std::exception)
+sal_Int32 SAL_CALL UnoBinaryInputStream::available()
 {
     ensureConnected();
     throw RuntimeException( "Functionality not supported", Reference< XInputStream >() );
 }
 
-void SAL_CALL UnoBinaryInputStream::closeInput() throw (NotConnectedException, IOException, RuntimeException, std::exception)
+void SAL_CALL UnoBinaryInputStream::closeInput()
 {
     ensureConnected();
     mpInStrm->close();
     mpInStrm = nullptr;
 }
 
-void UnoBinaryInputStream::ensureConnected() const throw (NotConnectedException)
+void UnoBinaryInputStream::ensureConnected() const
 {
     if( !mpInStrm )
         throw NotConnectedException( "Stream closed" );
@@ -202,7 +196,7 @@ OUString TextInputStream::createFinalString( const OUString& rString )
     if( mcPendingChar == 0 )
         return rString;
 
-    OUString aString = OUString( mcPendingChar ) + rString;
+    OUString aString = OUStringLiteral1( mcPendingChar ) + rString;
     mcPendingChar = 0;
     return aString;
 }

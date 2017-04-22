@@ -23,7 +23,6 @@
 #include "CommonConverters.hxx"
 #include "LabelPositionHelper.hxx"
 #include "ChartTypeHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "DataSeriesHelper.hxx"
 #include "RegressionCurveHelper.hxx"
 #include <unonames.hxx>
@@ -97,7 +96,7 @@ namespace
 {
 struct lcl_LessXOfPoint
 {
-    inline bool operator() ( const std::vector< double >& first,
+    bool operator() ( const std::vector< double >& first,
                              const std::vector< double >& second )
     {
         if( !first.empty() && !second.empty() )
@@ -286,7 +285,7 @@ void VDataSeries::doSortByXValues()
     if( m_aValues_X.is() && m_aValues_X.Doubles.getLength() )
     {
         //prepare a vector for sorting
-        std::vector< ::std::vector< double > > aTmp;//outer vector are points, inner vector are the different values of the point
+        std::vector< std::vector< double > > aTmp;//outer vector are points, inner vector are the different values of the point
         double fNan;
         ::rtl::math::setNan( & fNan );
         sal_Int32 nPointIndex = 0;
@@ -726,7 +725,7 @@ double VDataSeries::getMaximumofAllDifferentYValues( sal_Int32 index ) const
     return fMax;
 }
 
-uno::Sequence< double > VDataSeries::getAllX() const
+uno::Sequence< double > const & VDataSeries::getAllX() const
 {
     if(!m_aValues_X.is() && !m_aValues_X.getLength() && m_nPointCount)
     {
@@ -739,7 +738,7 @@ uno::Sequence< double > VDataSeries::getAllX() const
     return m_aValues_X.Doubles;
 }
 
-uno::Sequence< double > VDataSeries::getAllY() const
+uno::Sequence< double > const & VDataSeries::getAllY() const
 {
     if(!m_aValues_Y.is() && !m_aValues_Y.getLength() && m_nPointCount)
     {
@@ -781,7 +780,7 @@ double VDataSeries::getYMeanValue() const
 
 std::unique_ptr<Symbol> getSymbolPropertiesFromPropertySet( const uno::Reference< beans::XPropertySet >& xProp )
 {
-    ::std::unique_ptr< Symbol > apSymbolProps( new Symbol() );
+    std::unique_ptr< Symbol > apSymbolProps( new Symbol() );
     try
     {
         if( xProp->getPropertyValue("Symbol") >>= *apSymbolProps )
@@ -927,7 +926,7 @@ uno::Reference<beans::XPropertySet> VDataSeries::getPropertiesOfSeries() const
 
 std::unique_ptr<DataPointLabel> getDataPointLabelFromPropertySet( const uno::Reference< beans::XPropertySet >& xProp )
 {
-    ::std::unique_ptr< DataPointLabel > apLabel( new DataPointLabel() );
+    std::unique_ptr< DataPointLabel > apLabel( new DataPointLabel() );
     try
     {
         if( !(xProp->getPropertyValue(CHART_UNONAME_LABEL) >>= *apLabel) )

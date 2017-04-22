@@ -478,8 +478,6 @@ SfxVoidItem BulletsAndNumberingDialog FN_NUMBER_BULLETS
     RecordPerSet;
     Asynchron;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -665,7 +663,7 @@ SfxVoidItem ClosePreview FN_CLOSE_PAGEPREVIEW
 ]
 
 SfxVoidItem CommentChangeTracking FN_REDLINE_COMMENT
-()
+(SfxUInt32Item ChangeTrackingId FN_REDLINE_COMMENT,SvxPostItTextItem Text SID_ATTR_POSTIT_TEXT)
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -715,7 +713,7 @@ SfxVoidItem ConvertTableText FN_CONVERT_TEXT_TABLE
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
-    GroupId = GID_OPTIONS;
+    GroupId = GID_TABLE;
 ]
 
 SfxVoidItem CreateAbstract FN_ABSTRACT_NEWDOC
@@ -763,8 +761,6 @@ SfxVoidItem DecrementLevel FN_NUM_BULLET_DOWN
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -782,8 +778,6 @@ SfxVoidItem DecrementSubLevels FN_NUM_BULLET_OUTLINE_DOWN
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -1082,6 +1076,24 @@ SfxVoidItem EditRegion FN_EDIT_REGION
     GroupId = GID_EDIT;
 ]
 
+SfxVoidItem EditCurrentRegion FN_EDIT_CURRENT_REGION
+()
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+    Asynchron;
+
+    AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_EDIT;
+]
+
 SfxVoidItem EndOfDocumentSel FN_END_OF_DOCUMENT_SEL
 ()
 [
@@ -1292,6 +1304,24 @@ SvxColorItem FontColor SID_ATTR_CHAR_COLOR2
 ]
 
 SfxVoidItem FootnoteDialog FN_FORMAT_FOOTNOTE_DLG
+()
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+    Asynchron;
+
+    AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_FORMAT;
+]
+
+SfxVoidItem CurrentFootnoteDialog FN_FORMAT_CURRENT_FOOTNOTE_DLG
 ()
 [
     AutoUpdate = FALSE,
@@ -1840,7 +1870,7 @@ SfxBoolItem GotoNextWrongTableFormula FN_NEXT_TBLFML_ERR
     GroupId = GID_NAVIGATOR;
 ]
 
-SfxVoidItem GotoPage FN_NAVIGATION_PI_GOTO_PAGE
+SfxVoidItem GotoPage FN_GOTO_PAGE
 ()
 [
     AutoUpdate = FALSE,
@@ -2400,8 +2430,6 @@ SfxVoidItem IncrementLevel FN_NUM_BULLET_UP
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -2419,8 +2447,6 @@ SfxVoidItem IncrementSubLevels FN_NUM_BULLET_OUTLINE_UP
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -2760,9 +2786,6 @@ SfxBoolItem InsertField FN_INSERT_FIELD
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
-
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -2977,8 +3000,6 @@ SfxVoidItem InsertNeutralParagraph FN_NUM_BULLET_NONUM
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -4094,8 +4115,6 @@ SfxVoidItem MoveDown FN_NUM_BULLET_MOVEDOWN
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -4113,8 +4132,6 @@ SfxVoidItem MoveDownSubItems FN_NUM_BULLET_OUTLINE_MOVEDOWN
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -4132,8 +4149,6 @@ SfxVoidItem MoveUp FN_NUM_BULLET_MOVEUP
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -4151,8 +4166,6 @@ SfxVoidItem MoveUpSubItems FN_NUM_BULLET_OUTLINE_MOVEUP
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -4381,9 +4394,6 @@ SfxBoolItem NumberingStart FN_NUMBER_NEWSTART
     Container = FALSE,
     RecordAbsolute = FALSE,
     RecordPerSet;
-
-    ImageRotation = TRUE;
-        ImageReflection = TRUE;
 
     AccelConfig = FALSE,
     MenuConfig = FALSE,
@@ -4793,8 +4803,6 @@ SfxVoidItem RemoveBullets FN_NUM_BULLET_OFF
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -5765,6 +5773,24 @@ SfxBoolItem SuperScript FN_SET_SUPER_SCRIPT
     GroupId = GID_FORMAT;
 ]
 
+SfxBoolItem SmallCaps FN_SET_SMALL_CAPS
+
+[
+    AutoUpdate = TRUE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_FORMAT;
+]
+
 SfxVoidItem SwBrwInsert FN_SBA_BRW_INSERT
 ()
 [
@@ -6326,8 +6352,6 @@ SfxBoolItem WrapContour FN_FRAME_WRAP_CONTOUR
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -6379,8 +6403,6 @@ SfxBoolItem WrapOff FN_FRAME_NOWRAP
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -6398,8 +6420,6 @@ SfxBoolItem WrapOn FN_FRAME_WRAP
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -6434,8 +6454,6 @@ SfxBoolItem WrapThrough FN_FRAME_WRAPTHRU
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -6800,9 +6818,6 @@ SfxBoolItem InsertFieldDataOnly FN_INSERT_FIELD_DATA_ONLY()
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
-
     AccelConfig = FALSE,
     MenuConfig = FALSE,
     ToolBoxConfig = FALSE,
@@ -6950,7 +6965,7 @@ SfxVoidItem ConvertTableToText FN_CONVERT_TABLE_TO_TEXT
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
-    GroupId = GID_OPTIONS;
+    GroupId = GID_TABLE;
 ]
 
 SfxVoidItem ConvertTextToTable FN_CONVERT_TEXT_TO_TABLE
@@ -6975,7 +6990,7 @@ SfxVoidItem ConvertTextToTable FN_CONVERT_TEXT_TO_TABLE
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
-    GroupId = GID_OPTIONS;
+    GroupId = GID_TABLE;
 ]
 
 SfxVoidItem HeadingRowsRepeat FN_TABLE_HEADLINE_REPEAT
@@ -7084,7 +7099,7 @@ SfxBoolItem SelectionModeDefault FN_SELECTION_MODE_DEFAULT
 ]
 
 SfxVoidItem ReplyComment FN_REPLY
-()
+(SvxPostItIdItem Id SID_ATTR_POSTIT_ID,SvxPostItTextItem Text SID_ATTR_POSTIT_TEXT)
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -7101,7 +7116,7 @@ SfxVoidItem ReplyComment FN_REPLY
 ]
 
 SfxVoidItem DeleteComment FN_DELETE_COMMENT
-()
+(SvxPostItIdItem Id SID_ATTR_POSTIT_ID)
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -7273,6 +7288,7 @@ SfxBoolItem SpellingAndGrammarDialog FN_SPELL_GRAMMAR_DIALOG
 ]
 
 SfxVoidItem AcceptTrackedChange FN_REDLINE_ACCEPT_DIRECT
+( SfxUInt32Item AcceptTrackedChange FN_REDLINE_ACCEPT_DIRECT )
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -7291,6 +7307,7 @@ SfxVoidItem AcceptTrackedChange FN_REDLINE_ACCEPT_DIRECT
 ]
 
 SfxVoidItem RejectTrackedChange FN_REDLINE_REJECT_DIRECT
+( SfxUInt32Item RejectTrackedChange FN_REDLINE_REJECT_DIRECT )
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -7309,6 +7326,7 @@ SfxVoidItem RejectTrackedChange FN_REDLINE_REJECT_DIRECT
 ]
 
 SfxVoidItem NextTrackedChange FN_REDLINE_NEXT_CHANGE
+( SfxUInt32Item NextTrackedChange FN_REDLINE_NEXT_CHANGE )
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,
@@ -7426,6 +7444,7 @@ SfxVoidItem OpenFromWriter FN_OPEN_FILE
     Container = FALSE,
     RecordAbsolute = FALSE,
     RecordPerSet;
+    Asynchron;
 
     SlotType = SfxStringItem
 
@@ -7449,7 +7468,7 @@ SfxInt16Item PageColumnType SID_ATTR_PAGE_COLUMN
 
     AccelConfig = FALSE,
     MenuConfig = FALSE,
-    ToolBoxConfig = FALSE,
+    ToolBoxConfig = TRUE,
     GroupId = GID_FORMAT;
 ]
 
@@ -7477,6 +7496,168 @@ SvxLongLRSpaceItem SwPageLRMargin SID_ATTR_PAGE_LRSPACE
     AutoUpdate = FALSE,
     FastCall = FALSE,
     ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_FORMAT;
+]
+
+SfxVoidItem PageMargin SID_ATTR_PAGE_MARGIN
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_FORMAT;
+]
+
+SfxBoolItem SwPageHeaderItem SID_ATTR_PAGE_HEADER
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_FORMAT;
+]
+
+SvxLongLRSpaceItem SwPageHeaderLRMargin SID_ATTR_PAGE_HEADER_LRMARGIN
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_FORMAT;
+]
+
+SvxLongULSpaceItem SwPageHeaderSpacing SID_ATTR_PAGE_HEADER_SPACING
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_FORMAT;
+]
+
+SfxInt16Item SwPageHeaderLayout SID_ATTR_PAGE_HEADER_LAYOUT
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_FORMAT;
+]
+
+SfxBoolItem SwPageFooterItem SID_ATTR_PAGE_FOOTER
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_FORMAT;
+]
+
+SvxLongLRSpaceItem SwPageFooterLRMargin SID_ATTR_PAGE_FOOTER_LRMARGIN
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_FORMAT;
+]
+
+SvxLongULSpaceItem SwPageFooterSpacing SID_ATTR_PAGE_FOOTER_SPACING
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_FORMAT;
+]
+
+SfxInt16Item SwPageFooterLayout SID_ATTR_PAGE_FOOTER_LAYOUT
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
     Toggle = FALSE,
     Container = FALSE,
     RecordAbsolute = FALSE,

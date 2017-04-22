@@ -41,7 +41,6 @@ FrameStatusListener::FrameStatusListener(
     const Reference< XComponentContext >& rxContext,
     const Reference< XFrame >& xFrame ) :
     OWeakObject()
-    ,   m_bInitialized( true )
     ,   m_bDisposed( false )
     ,   m_xFrame( xFrame )
     ,   m_xContext( rxContext )
@@ -54,7 +53,6 @@ FrameStatusListener::~FrameStatusListener()
 
 // XInterface
 Any SAL_CALL FrameStatusListener::queryInterface( const Type& rType )
-throw ( RuntimeException, std::exception )
 {
     Any a = ::cppu::queryInterface(
                 rType ,
@@ -82,7 +80,6 @@ void SAL_CALL FrameStatusListener::release() throw ()
 
 // XComponent
 void SAL_CALL FrameStatusListener::dispose()
-throw (css::uno::RuntimeException, std::exception)
 {
     Reference< XComponent > xThis( static_cast< OWeakObject* >(this), UNO_QUERY );
 
@@ -116,20 +113,17 @@ throw (css::uno::RuntimeException, std::exception)
 }
 
 void SAL_CALL FrameStatusListener::addEventListener( const Reference< XEventListener >& )
-throw ( RuntimeException, std::exception )
 {
     // helper class for status updates - no need to support listener
 }
 
 void SAL_CALL FrameStatusListener::removeEventListener( const Reference< XEventListener >& )
-throw ( RuntimeException, std::exception )
 {
     // helper class for status updates - no need to support listener
 }
 
 // XEventListener
 void SAL_CALL FrameStatusListener::disposing( const EventObject& Source )
-throw ( RuntimeException, std::exception )
 {
     Reference< XInterface > xSource( Source.Source );
 
@@ -150,7 +144,6 @@ throw ( RuntimeException, std::exception )
 }
 
 void FrameStatusListener::frameAction( const FrameActionEvent& Action )
-throw ( RuntimeException, std::exception )
 {
     if ( Action.Action == FrameAction_CONTEXT_CHANGED )
         bindListener();
@@ -170,44 +163,32 @@ void FrameStatusListener::addStatusListener( const OUString& aCommandURL )
         if ( pIter != m_aListenerMap.end() )
             return;
 
-        // Check if we are already initialized. Implementation starts adding itself as status listener when
-        // intialize is called.
-        if ( !m_bInitialized )
+        Reference< XDispatchProvider > xDispatchProvider( m_xFrame, UNO_QUERY );
+        if ( m_xContext.is() && xDispatchProvider.is() )
         {
-            // Put into the unordered_map of status listener. Will be activated when initialized is called
-            m_aListenerMap.insert( URLToDispatchMap::value_type( aCommandURL, Reference< XDispatch >() ));
-            return;
-        }
-        else
-        {
-            // Add status listener directly as intialize has already been called.
-            Reference< XDispatchProvider > xDispatchProvider( m_xFrame, UNO_QUERY );
-            if ( m_xContext.is() && xDispatchProvider.is() )
+            Reference< XURLTransformer > xURLTransformer( css::util::URLTransformer::create( m_xContext ) );
+            aTargetURL.Complete = aCommandURL;
+            xURLTransformer->parseStrict( aTargetURL );
+            xDispatch = xDispatchProvider->queryDispatch( aTargetURL, OUString(), 0 );
+
+            xStatusListener.set( static_cast< OWeakObject* >( this ), UNO_QUERY );
+            URLToDispatchMap::iterator aIter = m_aListenerMap.find( aCommandURL );
+            if ( aIter != m_aListenerMap.end() )
             {
-                Reference< XURLTransformer > xURLTransformer( css::util::URLTransformer::create( m_xContext ) );
-                aTargetURL.Complete = aCommandURL;
-                xURLTransformer->parseStrict( aTargetURL );
-                xDispatch = xDispatchProvider->queryDispatch( aTargetURL, OUString(), 0 );
+                Reference< XDispatch > xOldDispatch( aIter->second );
+                aIter->second = xDispatch;
 
-                xStatusListener.set( static_cast< OWeakObject* >( this ), UNO_QUERY );
-                URLToDispatchMap::iterator aIter = m_aListenerMap.find( aCommandURL );
-                if ( aIter != m_aListenerMap.end() )
+                try
                 {
-                    Reference< XDispatch > xOldDispatch( aIter->second );
-                    aIter->second = xDispatch;
-
-                    try
-                    {
-                        if ( xOldDispatch.is() )
-                            xOldDispatch->removeStatusListener( xStatusListener, aTargetURL );
-                    }
-                    catch (const Exception&)
-                    {
-                    }
+                    if ( xOldDispatch.is() )
+                        xOldDispatch->removeStatusListener( xStatusListener, aTargetURL );
                 }
-                else
-                    m_aListenerMap.insert( URLToDispatchMap::value_type( aCommandURL, xDispatch ));
+                catch (const Exception&)
+                {
+                }
             }
+            else
+                m_aListenerMap.insert( URLToDispatchMap::value_type( aCommandURL, xDispatch ));
         }
     }
 
@@ -230,9 +211,6 @@ void FrameStatusListener::bindListener()
 
     {
         SolarMutexGuard aSolarMutexGuard;
-
-        if ( !m_bInitialized )
-            return;
 
         // Collect all registered command URL's and store them temporary
         Reference< XDispatchProvider > xDispatchProvider( m_xFrame, UNO_QUERY );
@@ -291,45 +269,6 @@ void FrameStatusListener::bindListener()
         }
         catch (const Exception&)
         {
-        }
-    }
-}
-
-void FrameStatusListener::unbindListener()
-{
-    SolarMutexGuard aSolarMutexGuard;
-
-    if ( !m_bInitialized )
-        return;
-
-    // Collect all registered command URL's and store them temporary
-    Reference< XDispatchProvider > xDispatchProvider( m_xFrame, UNO_QUERY );
-    if ( m_xContext.is() && xDispatchProvider.is() )
-    {
-        Reference< XStatusListener > xStatusListener( static_cast< OWeakObject* >( this ), UNO_QUERY );
-        URLToDispatchMap::iterator pIter = m_aListenerMap.begin();
-        while ( pIter != m_aListenerMap.end() )
-        {
-            Reference< XURLTransformer > xURLTransformer( css::util::URLTransformer::create( m_xContext ) );
-            css::util::URL aTargetURL;
-            aTargetURL.Complete = pIter->first;
-            xURLTransformer->parseStrict( aTargetURL );
-
-            Reference< XDispatch > xDispatch( pIter->second );
-            if ( xDispatch.is() )
-            {
-                // We already have a dispatch object => we have to requery.
-                // Release old dispatch object and remove it as listener
-                try
-                {
-                    xDispatch->removeStatusListener( xStatusListener, aTargetURL );
-                }
-                catch (const Exception&)
-                {
-                }
-            }
-            pIter->second.clear();
-            ++pIter;
         }
     }
 }

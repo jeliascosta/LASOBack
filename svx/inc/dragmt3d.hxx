@@ -58,7 +58,7 @@ protected:
     ::std::vector< E3dDragMethodUnit >  maGrp;
     E3dDragConstraint                   meConstraint;
     Point                               maLastPos;
-    Rectangle                           maFullBound;
+    tools::Rectangle                           maFullBound;
     bool                                mbMoveFull;
     bool                                mbMovedAtAll;
 
@@ -66,7 +66,7 @@ public:
     E3dDragMethod(
         SdrDragView &rView,
         const SdrMarkList& rMark,
-        E3dDragConstraint eConstr = E3DDRAG_CONSTR_XYZ,
+        E3dDragConstraint eConstr,
         bool bFull = false);
 
     virtual void TakeSdrDragComment(OUString& rStr) const override;
@@ -88,7 +88,7 @@ public:
     E3dDragRotate(
         SdrDragView &rView,
         const SdrMarkList& rMark,
-        E3dDragConstraint eConstr = E3DDRAG_CONSTR_XYZ,
+        E3dDragConstraint eConstr,
         bool bFull = false);
 
     virtual void MoveSdrDrag(const Point& rPnt) override;
@@ -105,8 +105,8 @@ public:
     E3dDragMove(
         SdrDragView &rView,
         const SdrMarkList& rMark,
-        SdrHdlKind eDrgHdl = HDL_MOVE,
-        E3dDragConstraint eConstr = E3DDRAG_CONSTR_XYZ,
+        SdrHdlKind eDrgHdl,
+        E3dDragConstraint eConstr = E3dDragConstraint::XYZ,
         bool bFull = false);
 
     virtual void MoveSdrDrag(const Point& rPnt) override;

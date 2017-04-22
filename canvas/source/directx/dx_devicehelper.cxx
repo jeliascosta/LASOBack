@@ -19,8 +19,6 @@
 
 #include <sal/config.h>
 
-#include <cctype>
-
 #include <basegfx/tools/canvastools.hxx>
 #include <com/sun/star/lang/NoSupportException.hpp>
 #include <osl/mutex.hxx>
@@ -44,9 +42,9 @@ using namespace ::com::sun::star;
 namespace dxcanvas
 {
     DeviceHelper::DeviceHelper() :
-        mpDevice( NULL ),
-        mnHDC(0),
-        mpOutDev(0)
+        mpDevice( nullptr ),
+        mnHDC(nullptr),
+        mpOutDev(nullptr)
     {
     }
 
@@ -65,9 +63,9 @@ namespace dxcanvas
     void DeviceHelper::disposing()
     {
         // release all references
-        mnHDC = 0;
-        mpDevice = NULL;
-        mpOutDev = 0;
+        mnHDC = nullptr;
+        mpDevice = nullptr;
+        mpOutDev = nullptr;
     }
 
     geometry::RealSize2D DeviceHelper::getPhysicalResolution()
@@ -178,12 +176,12 @@ namespace dxcanvas
 
     uno::Any DeviceHelper::isAccelerated() const
     {
-        return css::uno::makeAny(false);
+        return css::uno::Any(false);
     }
 
     uno::Any DeviceHelper::getDeviceHandle() const
     {
-        return uno::makeAny( reinterpret_cast< sal_Int64 >(mpOutDev.get()) );
+        return uno::Any( reinterpret_cast< sal_Int64 >(mpOutDev.get()) );
     }
 
     uno::Any DeviceHelper::getSurfaceHandle() const

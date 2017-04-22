@@ -276,7 +276,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
     // start with empty region
     aClips.push_back(basegfx::B2DPolyPolygon());
 
-    // start with default MapMode (MAP_PIXEL)
+    // start with default MapMode (MapUnit::MapPixel)
     aMapModes.push_back(MapMode());
 
     for(sal_uLong i(0); i < nObjCount; ++i)
@@ -313,7 +313,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
             case MetaActionType::ISECTRECTCLIPREGION :
             {
                 const MetaISectRectClipRegionAction* pA = static_cast< const MetaISectRectClipRegionAction* >(pAction);
-                const Rectangle& rRect = pA->GetRect();
+                const tools::Rectangle& rRect = pA->GetRect();
 
                 if(!rRect.IsEmpty() && aClips.size() && aClips.back().count())
                 {
@@ -501,7 +501,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                 case MetaActionType::RECT :
                 {
                     const MetaRectAction* pA = static_cast< const MetaRectAction* >(pAction);
-                    const Rectangle& rRect = pA->GetRect();
+                    const tools::Rectangle& rRect = pA->GetRect();
 
                     if(rRect.IsEmpty())
                     {
@@ -526,7 +526,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                 case MetaActionType::ROUNDRECT :
                 {
                     const MetaRoundRectAction* pA = static_cast< const MetaRoundRectAction* >(pAction);
-                    const Rectangle& rRect = pA->GetRect();
+                    const tools::Rectangle& rRect = pA->GetRect();
 
                     if(rRect.IsEmpty())
                     {
@@ -565,7 +565,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                 case MetaActionType::ELLIPSE :
                 {
                     const MetaEllipseAction* pA = static_cast< const MetaEllipseAction* >(pAction);
-                    const Rectangle& rRect = pA->GetRect();
+                    const tools::Rectangle& rRect = pA->GetRect();
 
                     if(rRect.IsEmpty())
                     {
@@ -591,7 +591,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                 case MetaActionType::ARC :
                 {
                     const MetaArcAction* pA = static_cast< const MetaArcAction* >(pAction);
-                    const Rectangle& rRect = pA->GetRect();
+                    const tools::Rectangle& rRect = pA->GetRect();
 
                     if(rRect.IsEmpty())
                     {
@@ -603,7 +603,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                                 rRect,
                                 pA->GetStartPoint(),
                                 pA->GetEndPoint(),
-                                POLY_ARC);
+                                PolyStyle::Arc);
 
                         bDone = handleGeometricContent(
                             aClips.back(),
@@ -617,7 +617,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                 case MetaActionType::PIE :
                 {
                     const MetaPieAction* pA = static_cast< const MetaPieAction* >(pAction);
-                    const Rectangle& rRect = pA->GetRect();
+                    const tools::Rectangle& rRect = pA->GetRect();
 
                     if(rRect.IsEmpty())
                     {
@@ -629,7 +629,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                                 rRect,
                                 pA->GetStartPoint(),
                                 pA->GetEndPoint(),
-                                POLY_PIE);
+                                PolyStyle::Pie);
 
                         bDone = handleGeometricContent(
                             aClips.back(),
@@ -643,7 +643,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                 case MetaActionType::CHORD :
                 {
                     const MetaChordAction* pA = static_cast< const MetaChordAction* >(pAction);
-                    const Rectangle& rRect = pA->GetRect();
+                    const tools::Rectangle& rRect = pA->GetRect();
 
                     if(rRect.IsEmpty())
                     {
@@ -655,7 +655,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                                 rRect,
                                 pA->GetStartPoint(),
                                 pA->GetEndPoint(),
-                                POLY_CHORD);
+                                PolyStyle::Chord);
 
                         bDone = handleGeometricContent(
                             aClips.back(),
@@ -715,7 +715,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                     // combination with the current MapMode
                     Size aLogicalSize(rBitmapEx.GetPrefSize());
 
-                    if(MAP_PIXEL == rBitmapEx.GetPrefMapMode().GetMapUnit())
+                    if(MapUnit::MapPixel == rBitmapEx.GetPrefMapMode().GetMapUnit())
                     {
                         aLogicalSize = Application::GetDefaultDevice()->PixelToLogic(aLogicalSize, aMapModes.back().GetMapUnit());
                     }
@@ -742,7 +742,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                     // combination with the current MapMode
                     Size aLogicalSize(rBitmap.GetPrefSize());
 
-                    if(MAP_PIXEL == rBitmap.GetPrefMapMode().GetMapUnit())
+                    if(MapUnit::MapPixel == rBitmap.GetPrefMapMode().GetMapUnit())
                     {
                         aLogicalSize = Application::GetDefaultDevice()->PixelToLogic(aLogicalSize, aMapModes.back().GetMapUnit());
                     }
@@ -799,7 +799,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                     else
                     {
                         BitmapEx aCroppedBitmapEx(rBitmapEx);
-                        const Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
+                        const tools::Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
 
                         if(aCropRectangle.IsEmpty())
                         {
@@ -833,7 +833,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                     else
                     {
                         Bitmap aCroppedBitmap(rBitmap);
-                        const Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
+                        const tools::Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
 
                         if(aCropRectangle.IsEmpty())
                         {
@@ -864,7 +864,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                     if(rComment.equalsIgnoreAsciiCase("XGRAD_SEQ_BEGIN"))
                     {
                         // nothing to do; this just means that between here and XGRAD_SEQ_END
-                        // exists a MetaActionType::GRADIENTEX mixed with Xor-tricked painiting
+                        // exists a MetaActionType::GRADIENTEX mixed with Xor-tricked painting
                         // commands. This comment is used to scan over these and filter for
                         // the gradient action. It is needed to support MetaActionType::GRADIENTEX
                         // in this processor to solve usages.
@@ -964,7 +964,7 @@ void clipMetafileContentAgainstOwnRegions(GDIMetaFile& rSource)
                 case MetaActionType::GRADIENT :
                 {
                     const MetaGradientAction* pA = static_cast< const MetaGradientAction* >(pAction);
-                    const Rectangle& rRect = pA->GetRect();
+                    const tools::Rectangle& rRect = pA->GetRect();
 
                     if(rRect.IsEmpty())
                     {

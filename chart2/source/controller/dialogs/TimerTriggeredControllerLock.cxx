@@ -32,7 +32,7 @@ TimerTriggeredControllerLock::TimerTriggeredControllerLock( const uno::Reference
     , m_aTimer()
 {
     m_aTimer.SetTimeout( 4*EDIT_UPDATEDATA_TIMEOUT );
-    m_aTimer.SetTimeoutHdl( LINK( this, TimerTriggeredControllerLock, TimerTimeout ) );
+    m_aTimer.SetInvokeHandler( LINK( this, TimerTriggeredControllerLock, TimerTimeout ) );
 }
 TimerTriggeredControllerLock::~TimerTriggeredControllerLock()
 {
@@ -45,7 +45,7 @@ void TimerTriggeredControllerLock::startTimer()
         m_apControllerLockGuard.reset( new  ControllerLockGuardUNO(m_xModel) );
     m_aTimer.Start();
 }
-IMPL_LINK_NOARG_TYPED(TimerTriggeredControllerLock, TimerTimeout, Timer *, void)
+IMPL_LINK_NOARG(TimerTriggeredControllerLock, TimerTimeout, Timer *, void)
 {
     m_apControllerLockGuard.reset();
 }

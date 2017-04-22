@@ -69,12 +69,12 @@
 #include <editeng/borderline.hxx>
 #include <unotools/syslocale.hxx>
 
-// Without sc.hrc: error C2679: binary '=' : no operator defined which takes a
+// Without scres.hrc: error C2679: binary '=' : no operator defined which takes a
 // right-hand operand of type 'const class String (__stdcall *)(class ScResId)'
 // at
 // const String aStrTable( ScResId( SCSTR_TABLE ) ); aStrOut = aStrTable;
 // ?!???
-#include "sc.hrc"
+#include "scres.hrc"
 #include "globstr.hrc"
 
 #include <com/sun/star/uno/Reference.h>
@@ -87,15 +87,9 @@ using namespace ::com::sun::star;
 
 const static sal_Char sMyBegComment[]   = "<!-- ";
 const static sal_Char sMyEndComment[]   = " -->";
-const static sal_Char sFontFamily[]     = "font-family:";
-const static sal_Char sFontSize[]       = "font-size:";
 const static sal_Char sDisplay[]        = "display:";
 const static sal_Char sBorder[]         = "border:";
-const static sal_Char sPadding[]        = "padding:";
-const static sal_Char sPosition[]       = "position:";
 const static sal_Char sBackground[]     = "background:";
-const static sal_Char sWidth[]          = "width:";
-const static sal_Char sHeight[]         = "height:";
 
 const sal_uInt16 ScHTMLExport::nDefaultFontSize[SC_HTML_FONTSIZES] =
 {
@@ -189,16 +183,12 @@ static void lcl_AddStamp( OUString& rStr, const OUString& rName,
 
 static OString lcl_makeHTMLColorTriplet(const Color& rColor)
 {
-    OStringBuffer aStr( "\"#" );
+    sal_Char    buf[24];
+
     // <font COLOR="#00FF40">hello</font>
-    sal_Char    buf[64];
-    sal_Char*   p = buf;
-    p += sprintf( p, "%02X", rColor.GetRed() );
-    p += sprintf( p, "%02X", rColor.GetGreen() );
-    sprintf( p, "%02X", rColor.GetBlue() );
-    aStr.append(buf);
-    aStr.append('\"');
-    return aStr.makeStringAndClear();
+    snprintf( buf, 24, "\"#%02X%02X%02X\"", rColor.GetRed(), rColor.GetGreen(), rColor.GetBlue() );
+
+    return OString(buf);
 }
 
 ScHTMLExport::ScHTMLExport( SvStream& rStrmP, const OUString& rBaseURL, ScDocument* pDocP,
@@ -252,18 +242,6 @@ ScHTMLExport::ScHTMLExport( SvStream& rStrmP, const OUString& rBaseURL, ScDocume
         if ( !IsEmptyTable( nTab ) )
             nUsedTables++;
     }
-
-    // Content-Id for Mail export?
-    SfxObjectShell* pDocSh = pDoc->GetDocumentShell();
-    if ( pDocSh )
-    {
-        const SfxPoolItem* pItem = pDocSh->GetItem( SID_ORIGURL );
-        if( pItem )
-        {
-            aCId = static_cast<const SfxStringItem *>(pItem)->GetValue();
-            OSL_ENSURE( !aCId.isEmpty(), "CID without length!" );
-        }
-    }
 }
 
 ScHTMLExport::~ScHTMLExport()
@@ -296,7 +274,7 @@ sal_uInt16 ScHTMLExport::ToPixel( sal_uInt16 nVal )
     if( nVal )
     {
         nVal = (sal_uInt16)pAppWin->LogicToPixel(
-                    Size( nVal, nVal ), MapMode( MAP_TWIP ) ).Width();
+                    Size( nVal, nVal ), MapMode( MapUnit::MapTwip ) ).Width();
         if( !nVal ) // If there's a Twip there should also be a Pixel
             nVal = 1;
     }
@@ -306,7 +284,7 @@ sal_uInt16 ScHTMLExport::ToPixel( sal_uInt16 nVal )
 Size ScHTMLExport::MMToPixel( const Size& rSize )
 {
     Size aSize( rSize );
-    aSize = pAppWin->LogicToPixel( rSize, MapMode( MAP_100TH_MM ) );
+    aSize = pAppWin->LogicToPixel( rSize, MapMode( MapUnit::Map100thMM ) );
     // If there's something there should also be a Pixel
     if ( !aSize.Width() && rSize.Width() )
         aSize.Width() = 1;
@@ -371,7 +349,8 @@ void ScHTMLExport::WriteHeader()
     rStrm.WriteCharPtr( OOO_STRING_SVTOOLS_HTML_body ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_division ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_table ).WriteCharPtr( "," )
        .WriteCharPtr( OOO_STRING_SVTOOLS_HTML_thead ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tbody ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tfoot ).WriteCharPtr( "," )
        .WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tablerow ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tableheader ).WriteCharPtr( "," )
-       .WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tabledata ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_parabreak ).WriteCharPtr( " { " ).WriteCharPtr( sFontFamily );
+       .WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tabledata ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_parabreak )
+       .WriteCharPtr( " { " ).WriteCharPtr( "font-family:" );
     sal_Int32 nFonts = comphelper::string::getTokenCount(aHTMLStyle.aFontFamilyName, ';');
     if ( nFonts == 1 )
     {
@@ -383,7 +362,7 @@ void ScHTMLExport::WriteHeader()
     {   // Fontlist, VCL: Semicolon as separator
         // CSS1: Comma as separator and every single font name quoted
         const OUString& rList = aHTMLStyle.aFontFamilyName;
-        for ( sal_Int32 j = 0, nPos = 0; j < (sal_Int32) nFonts; j++ )
+        for ( sal_Int32 j = 0, nPos = 0; j < nFonts; j++ )
         {
             rStrm.WriteChar( '\"' );
             OUT_STR( rList.getToken( 0, ';', nPos ) );
@@ -392,7 +371,7 @@ void ScHTMLExport::WriteHeader()
                 rStrm.WriteCharPtr( ", " );
         }
     }
-    rStrm.WriteCharPtr( "; " ).WriteCharPtr( sFontSize )
+    rStrm.WriteCharPtr( "; " ).WriteCharPtr( "font-size:" )
        .WriteCharPtr( GetFontSizeCss( ( sal_uInt16 ) aHTMLStyle.nFontHeight ) ).WriteCharPtr( " }" );
 
     OUT_LF();
@@ -402,10 +381,10 @@ void ScHTMLExport::WriteHeader()
     rStrm.WriteCharPtr( OOO_STRING_SVTOOLS_HTML_anchor ).WriteCharPtr(".comment-indicator:hover")
        .WriteCharPtr(" + ").WriteCharPtr( OOO_STRING_SVTOOLS_HTML_comment2 ).WriteCharPtr(" { ")
        .WriteCharPtr(sBackground).WriteCharPtr("#ffd").WriteCharPtr("; ")
-       .WriteCharPtr(sPosition).WriteCharPtr("absolute").WriteCharPtr("; ")
+       .WriteCharPtr("position:").WriteCharPtr("absolute").WriteCharPtr("; ")
        .WriteCharPtr(sDisplay).WriteCharPtr("block").WriteCharPtr("; ")
        .WriteCharPtr(sBorder).WriteCharPtr("1px solid black").WriteCharPtr("; ")
-       .WriteCharPtr(sPadding).WriteCharPtr("0.5em").WriteCharPtr("; ")
+       .WriteCharPtr("padding:").WriteCharPtr("0.5em").WriteCharPtr("; ")
        .WriteCharPtr(" } ");
 
     OUT_LF();
@@ -415,8 +394,8 @@ void ScHTMLExport::WriteHeader()
         .WriteCharPtr(sBackground).WriteCharPtr("red").WriteCharPtr("; ")
         .WriteCharPtr(sDisplay).WriteCharPtr("inline-block").WriteCharPtr("; ")
         .WriteCharPtr(sBorder).WriteCharPtr("1px solid black").WriteCharPtr("; ")
-        .WriteCharPtr(sWidth).WriteCharPtr("0.5em").WriteCharPtr("; ")
-        .WriteCharPtr(sHeight).WriteCharPtr("0.5em").WriteCharPtr("; ")
+        .WriteCharPtr("width:").WriteCharPtr("0.5em").WriteCharPtr("; ")
+        .WriteCharPtr("height:").WriteCharPtr("0.5em").WriteCharPtr("; ")
         .WriteCharPtr(" } ");
 
     OUT_LF();
@@ -532,37 +511,37 @@ OString ScHTMLExport::BorderToStyle(const char* pBorderName,
             append("px ");
         switch (pLine->GetBorderLineStyle())
         {
-            case table::BorderLineStyle::SOLID:
+            case SvxBorderLineStyle::SOLID:
                 aOut.append("solid");
                 break;
-            case table::BorderLineStyle::DOTTED:
+            case SvxBorderLineStyle::DOTTED:
                 aOut.append("dotted");
                 break;
-            case table::BorderLineStyle::DASHED:
-            case table::BorderLineStyle::DASH_DOT:
-            case table::BorderLineStyle::DASH_DOT_DOT:
+            case SvxBorderLineStyle::DASHED:
+            case SvxBorderLineStyle::DASH_DOT:
+            case SvxBorderLineStyle::DASH_DOT_DOT:
                 aOut.append("dashed");
                 break;
-            case table::BorderLineStyle::DOUBLE:
-            case table::BorderLineStyle::DOUBLE_THIN:
-            case table::BorderLineStyle::THINTHICK_SMALLGAP:
-            case table::BorderLineStyle::THINTHICK_MEDIUMGAP:
-            case table::BorderLineStyle::THINTHICK_LARGEGAP:
-            case table::BorderLineStyle::THICKTHIN_SMALLGAP:
-            case table::BorderLineStyle::THICKTHIN_MEDIUMGAP:
-            case table::BorderLineStyle::THICKTHIN_LARGEGAP:
+            case SvxBorderLineStyle::DOUBLE:
+            case SvxBorderLineStyle::DOUBLE_THIN:
+            case SvxBorderLineStyle::THINTHICK_SMALLGAP:
+            case SvxBorderLineStyle::THINTHICK_MEDIUMGAP:
+            case SvxBorderLineStyle::THINTHICK_LARGEGAP:
+            case SvxBorderLineStyle::THICKTHIN_SMALLGAP:
+            case SvxBorderLineStyle::THICKTHIN_MEDIUMGAP:
+            case SvxBorderLineStyle::THICKTHIN_LARGEGAP:
                 aOut.append("double");
                 break;
-            case table::BorderLineStyle::EMBOSSED:
+            case SvxBorderLineStyle::EMBOSSED:
                 aOut.append("ridge");
                 break;
-            case table::BorderLineStyle::ENGRAVED:
+            case SvxBorderLineStyle::ENGRAVED:
                 aOut.append("groove");
                 break;
-            case table::BorderLineStyle::OUTSET:
+            case SvxBorderLineStyle::OUTSET:
                 aOut.append("outset");
                 break;
-            case table::BorderLineStyle::INSET:
+            case SvxBorderLineStyle::INSET:
                 aOut.append("inset");
                 break;
             default:
@@ -1036,14 +1015,14 @@ void ScHTMLExport::WriteCell( SCCOL nCol, SCROW nRow, SCTAB nTab )
 
     switch( rHorJustifyItem.GetValue() )
     {
-        case SVX_HOR_JUSTIFY_STANDARD:
+        case SvxCellHorJustify::Standard:
             pChar = (bValueData ? OOO_STRING_SVTOOLS_HTML_AL_right : OOO_STRING_SVTOOLS_HTML_AL_left);
             break;
-        case SVX_HOR_JUSTIFY_CENTER:    pChar = OOO_STRING_SVTOOLS_HTML_AL_center;  break;
-        case SVX_HOR_JUSTIFY_BLOCK:     pChar = OOO_STRING_SVTOOLS_HTML_AL_justify; break;
-        case SVX_HOR_JUSTIFY_RIGHT:     pChar = OOO_STRING_SVTOOLS_HTML_AL_right;   break;
-        case SVX_HOR_JUSTIFY_LEFT:
-        case SVX_HOR_JUSTIFY_REPEAT:
+        case SvxCellHorJustify::Center:    pChar = OOO_STRING_SVTOOLS_HTML_AL_center;  break;
+        case SvxCellHorJustify::Block:     pChar = OOO_STRING_SVTOOLS_HTML_AL_justify; break;
+        case SvxCellHorJustify::Right:     pChar = OOO_STRING_SVTOOLS_HTML_AL_right;   break;
+        case SvxCellHorJustify::Left:
+        case SvxCellHorJustify::Repeat:
         default:                        pChar = OOO_STRING_SVTOOLS_HTML_AL_left;    break;
     }
 
@@ -1137,7 +1116,7 @@ void ScHTMLExport::WriteCell( SCCOL nCol, SCROW nRow, SCTAB nTab )
             else
             {   // Font list, VCL: Semicolon as separator, HTML: Comma
                 const OUString& rList = rFontItem.GetFamilyName();
-                for ( sal_Int32 j = 0, nPos = 0; j < (sal_Int32)nFonts; j++ )
+                for ( sal_Int32 j = 0, nPos = 0; j < nFonts; j++ )
                 {
                     OString aTmpStr = HTMLOutFuncs::ConvertStringToHTML(
                         rList.getToken( 0, ';', nPos ), eDestEnc,
@@ -1306,7 +1285,7 @@ void ScHTMLExport::CopyLocalFileToINet( OUString& rFileNm,
         }
         else
         {
-            pFileNameMap.reset( new std::map<OUString, OUString>() );
+            pFileNameMap.reset( new std::map<OUString, OUString> );
         }
 
         bool bRet = false;

@@ -109,15 +109,15 @@ namespace svt
     }
 
     //= RoadmapWizard
-    RoadmapWizard::RoadmapWizard( vcl::Window* _pParent, const WinBits i_nStyle, WizardButtonFlags _nButtonFlags )
-        :OWizardMachine( _pParent, i_nStyle, _nButtonFlags )
+    RoadmapWizard::RoadmapWizard( vcl::Window* _pParent, const WinBits i_nStyle )
+        :OWizardMachine( _pParent, i_nStyle, WizardButtonFlags::NEXT | WizardButtonFlags::PREVIOUS | WizardButtonFlags::FINISH | WizardButtonFlags::CANCEL | WizardButtonFlags::HELP )
         ,m_pImpl( new RoadmapWizardImpl )
     {
         impl_construct();
     }
 
-    RoadmapWizard::RoadmapWizard( vcl::Window* _pParent, WizardButtonFlags _nButtonFlags )
-        :OWizardMachine( _pParent, _nButtonFlags )
+    RoadmapWizard::RoadmapWizard( vcl::Window* _pParent )
+        :OWizardMachine( _pParent, WizardButtonFlags::NEXT | WizardButtonFlags::PREVIOUS | WizardButtonFlags::FINISH | WizardButtonFlags::CANCEL | WizardButtonFlags::HELP )
         ,m_pImpl( new RoadmapWizardImpl )
     {
         impl_construct();
@@ -133,7 +133,7 @@ namespace svt
         m_pImpl->pRoadmap->SetPosPixel( Point( 0, 0 ) );
         m_pImpl->pRoadmap->SetItemSelectHdl( LINK( this, RoadmapWizard, OnRoadmapItemSelected ) );
 
-        Size aRoadmapSize =( LogicToPixel( Size( 85, 0 ), MAP_APPFONT ) );
+        Size aRoadmapSize =( LogicToPixel( Size( 85, 0 ), MapUnit::MapAppFont ) );
         aRoadmapSize.Height() = GetSizePixel().Height();
         m_pImpl->pRoadmap->SetSizePixel( aRoadmapSize );
 
@@ -150,8 +150,7 @@ namespace svt
 
     void RoadmapWizard::dispose()
     {
-        delete m_pImpl;
-        m_pImpl = nullptr;
+        m_pImpl.reset();
         OWizardMachine::dispose();
     }
 
@@ -282,7 +281,7 @@ namespace svt
 
         // now, we have to remove all items after nCurrentStatePathIndex, and insert the items from the active
         // path, up to (excluding) nUpperStepBoundary
-        RoadmapTypes::ItemIndex nLoopUntil = ::std::max( (RoadmapTypes::ItemIndex)nUpperStepBoundary, m_pImpl->pRoadmap->GetItemCount() );
+        RoadmapTypes::ItemIndex nLoopUntil = ::std::max( nUpperStepBoundary, m_pImpl->pRoadmap->GetItemCount() );
         for ( RoadmapTypes::ItemIndex nItemIndex = nCurrentStatePathIndex; nItemIndex < nLoopUntil; ++nItemIndex )
         {
             bool bExistentItem = ( nItemIndex < m_pImpl->pRoadmap->GetItemCount() );
@@ -322,7 +321,8 @@ namespace svt
                 m_pImpl->pRoadmap->InsertRoadmapItem(
                     nItemIndex,
                     getStateDisplayName( nState ),
-                    nState
+                    nState,
+                    true
                 );
             }
 
@@ -430,7 +430,7 @@ namespace svt
     }
 
 
-    IMPL_LINK_NOARG_TYPED(RoadmapWizard, OnRoadmapItemSelected, LinkParamNone*, void)
+    IMPL_LINK_NOARG(RoadmapWizard, OnRoadmapItemSelected, LinkParamNone*, void)
     {
 
         RoadmapTypes::ItemId nCurItemId = m_pImpl->pRoadmap->GetCurrentRoadmapItemID();
@@ -559,7 +559,7 @@ namespace svt
     {
         const WizardPath& rActivePath( m_pImpl->aPaths[ m_pImpl->nActivePath ] );
         RoadmapTypes::ItemIndex nUpperStepBoundary = (RoadmapTypes::ItemIndex)rActivePath.size();
-        RoadmapTypes::ItemIndex nLoopUntil = ::std::max( (RoadmapTypes::ItemIndex)nUpperStepBoundary, m_pImpl->pRoadmap->GetItemCount() );
+        RoadmapTypes::ItemIndex nLoopUntil = ::std::max( nUpperStepBoundary, m_pImpl->pRoadmap->GetItemCount() );
         sal_Int32 nCurrentStatePathIndex = -1;
         if ( m_pImpl->nActivePath != -1 )
             nCurrentStatePathIndex = m_pImpl->getStateIndexInPath( getCurrentState(), m_pImpl->nActivePath );

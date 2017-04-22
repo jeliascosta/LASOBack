@@ -69,11 +69,9 @@ using namespace ::com::sun::star::awt;
 // OHTMLReader
 OHTMLReader::OHTMLReader(SvStream& rIn,const SharedConnection& _rxConnection,
                         const Reference< css::util::XNumberFormatter >& _rxNumberF,
-                        const css::uno::Reference< css::uno::XComponentContext >& _rxContext,
-                        const TColumnVector* pList,
-                        const OTypeInfoMap* _pInfoMap)
+                        const css::uno::Reference< css::uno::XComponentContext >& _rxContext)
     : HTMLParser(rIn)
-    , ODatabaseExport( _rxConnection, _rxNumberF, _rxContext, pList, _pInfoMap, rIn )
+    , ODatabaseExport( _rxConnection, _rxNumberF, _rxContext, rIn )
     , m_nTableCount(0)
     , m_nWidth(0)
     , m_nColumnWidth(87)
@@ -116,7 +114,7 @@ SvParserState OHTMLReader::CallParser()
     rInput.ResetError();
     SvParserState  eParseState = HTMLParser::CallParser();
     SetColumnTypes(m_pColumnList,m_pInfoMap);
-    return m_bFoundTable ? eParseState : SVPAR_ERROR;
+    return m_bFoundTable ? eParseState : SvParserState::Error;
 }
 
 void OHTMLReader::NextToken( int nToken )
@@ -150,7 +148,7 @@ void OHTMLReader::NextToken( int nToken )
             case HTML_THEAD_ON:
             case HTML_TBODY_ON:
                 {
-                    sal_Size nTell = rInput.Tell(); // perhaps alters position of the stream
+                    sal_uInt64 const nTell = rInput.Tell(); // perhaps alters position of the stream
                     if ( !m_xTable.is() )
                     {// use first line as header
                         m_bError = !CreateTable(nToken);
@@ -318,13 +316,13 @@ void OHTMLReader::TableDataOn(SvxCellHorJustify& eVal)
             {
                 const OUString& rOptVal = rOption.GetString();
                 if (rOptVal.equalsIgnoreAsciiCase( OOO_STRING_SVTOOLS_HTML_AL_right ))
-                    eVal = SVX_HOR_JUSTIFY_RIGHT;
+                    eVal = SvxCellHorJustify::Right;
                 else if (rOptVal.equalsIgnoreAsciiCase( OOO_STRING_SVTOOLS_HTML_AL_center ))
-                    eVal = SVX_HOR_JUSTIFY_CENTER;
+                    eVal = SvxCellHorJustify::Center;
                 else if (rOptVal.equalsIgnoreAsciiCase( OOO_STRING_SVTOOLS_HTML_AL_left ))
-                    eVal = SVX_HOR_JUSTIFY_LEFT;
+                    eVal = SvxCellHorJustify::Left;
                 else
-                    eVal = SVX_HOR_JUSTIFY_STANDARD;
+                    eVal = SvxCellHorJustify::Standard;
             }
             break;
             case HTML_O_WIDTH:
@@ -386,13 +384,13 @@ sal_Int16 OHTMLReader::GetWidthPixel( const HTMLOption& rOption )
     const OUString& rOptVal = rOption.GetString();
     if ( rOptVal.indexOf('%') != -1 )
     {   // percentage
-        OSL_ENSURE( m_nColumnWidth, "WIDTH Option: m_nColumnWidth==0 und Width%" );
+        OSL_ENSURE( m_nColumnWidth, "WIDTH Option: m_nColumnWidth==0 and Width%" );
         return (sal_Int16)((rOption.GetNumber() * m_nColumnWidth) / 100);
     }
     else
     {
         if ( rOptVal.indexOf('*') != -1 )
-        {   // relativ to what?!?
+        {   // relative to what?!?
 //TODO: collect ColArray of all relevant values and then MakeCol
             return 0;
         }
@@ -451,7 +449,7 @@ bool OHTMLReader::CreateTable(int nToken)
                     aColumnName.clear();
                     m_sCurrent.clear();
 
-                    eVal = SVX_HOR_JUSTIFY_STANDARD;
+                    eVal = SvxCellHorJustify::Standard;
                     bTableHeader = false;
                 }
                 break;

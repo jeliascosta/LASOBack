@@ -19,7 +19,7 @@
 #ifndef INCLUDED_STARMATH_INC_PARSE_HXX
 #define INCLUDED_STARMATH_INC_PARSE_HXX
 
-#include <com/sun/star/lang/Locale.hpp>
+#include <unotools/charclass.hxx>
 #include <memory>
 #include <set>
 #include <vector>
@@ -33,21 +33,22 @@ class SmParser
 {
     OUString        m_aBufferString;
     SmToken         m_aCurToken;
-    SmNodeStack     m_aNodeStack;
     std::vector<std::unique_ptr<SmErrorDesc>> m_aErrDescList;
     int             m_nCurError;
     sal_Int32       m_nBufferIndex,
                     m_nTokenIndex;
-    sal_Int32       m_Row,
-                    m_nColOff;
-    bool            bImportSymNames,
+    sal_Int32       m_nRow,    // 1-based
+                    m_nColOff; // 0-based
+    bool            m_bImportSymNames,
                     m_bExportSymNames;
 
     // map of used symbols (used to reduce file size by exporting only actually used symbols)
     std::set< OUString >   m_aUsedSymbols;
 
-    //! locale where '.' is decimal separator!
-    css::lang::Locale m_aDotLoc;
+    // CharClass representing a locale for parsing numbers
+    CharClass m_aNumCC;
+    // pointer to System locale's CharClass, which is alive inside SM_MOD()
+    const CharClass* m_pSysCC;
 
     SmParser(const SmParser&) = delete;
     SmParser& operator=(const SmParser&) = delete;
@@ -59,54 +60,50 @@ class SmParser
     inline bool     TokenInGroup( TG nGroup );
 
     // grammar
-    void    DoTable();
-    void    DoLine();
-    void    DoExpression();
-    void    DoRelation();
-    void    DoSum();
-    void    DoProduct();
-    void    DoSubSup(TG nActiveGroup);
-    void    DoOpSubSup();
-    void    DoPower();
-    void    DoBlank();
-    void    DoTerm(bool bGroupNumberIdent);
-    void    DoEscape();
-    void    DoOperator();
-    void    DoOper();
-    void    DoUnOper();
-    void    DoAlign();
-    void    DoFontAttribut();
-    void    DoAttribut();
-    void    DoFont();
-    void    DoFontSize();
-    void    DoColor();
-    void    DoBrace();
-    void    DoBracebody(bool bIsLeftRight);
-    void    DoFunction();
-    void    DoBinom();
-    void    DoStack();
-    void    DoMatrix();
-    void    DoSpecial();
-    void    DoGlyphSpecial();
+    SmTableNode *DoTable();
+    SmLineNode *DoLine();
+    SmNode *DoExpression(bool bUseExtraSpaces = true);
+    SmNode *DoRelation();
+    SmNode *DoSum();
+    SmNode *DoProduct();
+    SmNode *DoSubSup(TG nActiveGroup, SmNode *pGivenNode);
+    SmNode *DoOpSubSup();
+    SmNode *DoPower();
+    SmBlankNode *DoBlank();
+    SmNode *DoTerm(bool bGroupNumberIdent);
+    SmNode *DoEscape();
+    SmOperNode *DoOperator();
+    SmNode *DoOper();
+    SmStructureNode *DoUnOper();
+    SmNode *DoAlign(bool bUseExtraSpaces = true);
+    SmStructureNode *DoFontAttribut();
+    SmAttributNode *DoAttribut();
+    SmStructureNode *DoFont();
+    SmStructureNode *DoFontSize();
+    SmStructureNode *DoColor();
+    SmStructureNode *DoBrace();
+    SmBracebodyNode *DoBracebody(bool bIsLeftRight);
+    SmTextNode *DoFunction();
+    SmTableNode *DoBinom();
+    SmStructureNode *DoStack();
+    SmStructureNode *DoMatrix();
+    SmSpecialNode *DoSpecial();
+    SmGlyphSpecialNode *DoGlyphSpecial();
+    SmExpressionNode *DoError(SmParseError Error);
     // end of grammar
-
-    void    Error(SmParseError Error);
-
-    void    ClearUsedSymbols()                              { m_aUsedSymbols.clear(); }
-    void    AddToUsedSymbols( const OUString &rSymbolName ) { m_aUsedSymbols.insert( rSymbolName ); }
 
 public:
                  SmParser();
 
     /** Parse rBuffer to formula tree */
-    SmNode      *Parse(const OUString &rBuffer);
+    SmTableNode *Parse(const OUString &rBuffer);
     /** Parse rBuffer to formula subtree that constitutes an expression */
     SmNode      *ParseExpression(const OUString &rBuffer);
 
     const OUString & GetText() const { return m_aBufferString; };
 
-    bool        IsImportSymbolNames() const        { return bImportSymNames; }
-    void        SetImportSymbolNames(bool bVal)    { bImportSymNames = bVal; }
+    bool        IsImportSymbolNames() const        { return m_bImportSymNames; }
+    void        SetImportSymbolNames(bool bVal)    { m_bImportSymNames = bVal; }
     bool        IsExportSymbolNames() const        { return m_bExportSymNames; }
     void        SetExportSymbolNames(bool bVal)    { m_bExportSymNames = bVal; }
 

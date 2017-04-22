@@ -21,7 +21,7 @@
 #define INCLUDED_SVTOOLS_DIALOGCLOSEDLISTENER_HXX
 
 #include <svtools/svtdllapi.h>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <com/sun/star/ui/dialogs/XDialogClosedListener.hpp>
 #include <tools/link.hxx>
 
@@ -36,7 +36,7 @@ namespace svt
         C++ class to implement a css::ui::dialogs::XDialogClosedListener
     */
     class SVT_DLLPUBLIC DialogClosedListener :
-        public ::cppu::WeakImplHelper1< css::ui::dialogs::XDialogClosedListener >
+        public cppu::WeakImplHelper< css::ui::dialogs::XDialogClosedListener >
     {
     private:
         /**
@@ -47,13 +47,13 @@ namespace svt
     public:
         DialogClosedListener();
 
-        inline void SetDialogClosedLink( const Link<css::ui::dialogs::DialogClosedEvent*,void>& rLink ) { m_aDialogClosedLink = rLink; }
+        void SetDialogClosedLink( const Link<css::ui::dialogs::DialogClosedEvent*,void>& rLink ) { m_aDialogClosedLink = rLink; }
 
         // XDialogClosedListener methods
-        virtual void SAL_CALL   dialogClosed( const css::ui::dialogs::DialogClosedEvent& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL   dialogClosed( const css::ui::dialogs::DialogClosedEvent& aEvent ) override;
 
         // XEventListener methods
-        virtual void SAL_CALL   disposing( const css::lang::EventObject& Source ) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL   disposing( const css::lang::EventObject& Source ) override;
     };
 
 

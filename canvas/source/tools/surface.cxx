@@ -28,7 +28,7 @@
 namespace canvas
 {
     Surface::Surface( const PageManagerSharedPtr&  rPageManager,
-                      const IColorBufferSharedPtr& rColorBuffer,
+                      const std::shared_ptr<IColorBuffer>& rColorBuffer,
                       const ::basegfx::B2IPoint&   rPos,
                       const ::basegfx::B2ISize&    rSize ) :
         mpColorBuffer(rColorBuffer),
@@ -93,7 +93,7 @@ namespace canvas
                         const ::basegfx::B2DPoint&      rPos,
                         const ::basegfx::B2DHomMatrix&  rTransform )
     {
-        IRenderModuleSharedPtr pRenderModule(mpPageManager->getRenderModule());
+        std::shared_ptr<IRenderModule> pRenderModule(mpPageManager->getRenderModule());
 
         RenderModuleGuard aGuard( pRenderModule );
 
@@ -193,7 +193,7 @@ namespace canvas
         if( rArea.isEmpty() )
             return true; // immediate exit for empty area
 
-        IRenderModuleSharedPtr pRenderModule(mpPageManager->getRenderModule());
+        std::shared_ptr<IRenderModule> pRenderModule(mpPageManager->getRenderModule());
 
         RenderModuleGuard aGuard( pRenderModule );
 
@@ -208,10 +208,10 @@ namespace canvas
             ::basegfx::fround(rArea.getMaximum().getY()) );
 
         // clip the positions to the area this surface covers
-        aPos1.setX(::std::max(aPos1.getX(),maSourceOffset.getX()));
-        aPos1.setY(::std::max(aPos1.getY(),maSourceOffset.getY()));
-        aPos2.setX(::std::min(aPos2.getX(),maSourceOffset.getX()+maSize.getX()));
-        aPos2.setY(::std::min(aPos2.getY(),maSourceOffset.getY()+maSize.getY()));
+        aPos1.setX(std::max(aPos1.getX(),maSourceOffset.getX()));
+        aPos1.setY(std::max(aPos1.getY(),maSourceOffset.getY()));
+        aPos2.setX(std::min(aPos2.getX(),maSourceOffset.getX()+maSize.getX()));
+        aPos2.setY(std::min(aPos2.getY(),maSourceOffset.getY()+maSize.getY()));
 
         // if the resulting area is empty, return immediately
         ::basegfx::B2IVector aSize(aPos2 - aPos1);
@@ -310,7 +310,7 @@ namespace canvas
                                 const ::basegfx::B2DPolygon&    rClipPoly,
                                 const ::basegfx::B2DHomMatrix&  rTransform )
     {
-        IRenderModuleSharedPtr pRenderModule(mpPageManager->getRenderModule());
+        std::shared_ptr<IRenderModule> pRenderModule(mpPageManager->getRenderModule());
 
         RenderModuleGuard aGuard( pRenderModule );
 
@@ -378,12 +378,6 @@ namespace canvas
             vertex.b = 1.0f;
             vertex.a = static_cast<float>(fAlpha);
             vertex.z = 0.0f;
-
-#if defined(TRIANGLE_LOG) && defined(DBG_UTIL)
-            OSL_TRACE( "Surface::draw(): numvertices %d numtriangles %d\n",
-                        nVertexCount,
-                        nVertexCount/3 );
-#endif
 
             pRenderModule->beginPrimitive( canvas::IRenderModule::PrimitiveType::Triangle );
 

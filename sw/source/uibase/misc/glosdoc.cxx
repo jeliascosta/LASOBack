@@ -23,9 +23,7 @@
 
 #include <unotools/transliterationwrapper.hxx>
 
-#ifndef __RSC //autogen
 #include <tools/errinf.hxx>
-#endif
 #include <osl/diagnose.h>
 #include <svl/urihelper.hxx>
 #include <svl/fstathelper.hxx>
@@ -177,7 +175,7 @@ SwTextBlocks* SwGlossaries::GetGroupDoc(const OUString &rName,
     return GetGlosDoc( rName, bCreate );
 }
 
-// Creates a new document with the group name. temporarly also created as file
+// Creates a new document with the group name. temporarily also created as file
 // so that groups remain there later (without access).
 bool SwGlossaries::NewGroupDoc(OUString& rGroupName, const OUString& rTitle)
 {
@@ -187,7 +185,7 @@ bool SwGlossaries::NewGroupDoc(OUString& rGroupName, const OUString& rTitle)
         return false;
     const OUString sNewFilePath(m_PathArr[nNewPath]);
     const OUString sNewGroup = lcl_CheckFileName(sNewFilePath, rGroupName.getToken(0, GLOS_DELIM))
-        + OUStringLiteral1<GLOS_DELIM>() + sNewPath;
+        + OUStringLiteral1(GLOS_DELIM) + sNewPath;
     SwTextBlocks *pBlock = GetGlosDoc( sNewGroup );
     if(pBlock)
     {
@@ -235,7 +233,7 @@ bool    SwGlossaries::RenameGroupDoc(
 
     RemoveFileFromList( rOldGroup );
 
-    rNewGroup = sNewFileName + OUStringLiteral1<GLOS_DELIM>() + OUString::number(nNewPath);
+    rNewGroup = sNewFileName + OUStringLiteral1(GLOS_DELIM) + OUString::number(nNewPath);
     if (m_GlosArr.empty())
     {
         GetNameList();
@@ -259,7 +257,7 @@ bool SwGlossaries::DelGroupDoc(const OUString &rName)
         return false;
     const OUString sBaseName(rName.getToken(0, GLOS_DELIM));
     const OUString sFileURL = lcl_FullPathName(m_PathArr[nPath], sBaseName);
-    const OUString aName = sBaseName + OUStringLiteral1<GLOS_DELIM>() + OUString::number(nPath);
+    const OUString aName = sBaseName + OUStringLiteral1(GLOS_DELIM) + OUString::number(nPath);
     // Even if the file doesn't exist it has to be deleted from
     // the list of text block regions
     // no && because of CFfront
@@ -322,14 +320,14 @@ std::vector<OUString> & SwGlossaries::GetNameList()
             {
                 const OUString aTitle = *filesIt;
                 const OUString sName( aTitle.copy( 0, aTitle.getLength() - sExt.getLength() )
-                    + OUStringLiteral1<GLOS_DELIM>() + OUString::number( static_cast<sal_Int16>(i) ));
+                    + OUStringLiteral1(GLOS_DELIM) + OUString::number( static_cast<sal_Int16>(i) ));
                 m_GlosArr.push_back(sName);
             }
         }
         if (m_GlosArr.empty())
         {
             // the standard block is inside of the path's first part
-            m_GlosArr.push_back( SwGlossaries::GetDefName() + OUStringLiteral1<GLOS_DELIM>() + "0" );
+            m_GlosArr.push_back( SwGlossaries::GetDefName() + OUStringLiteral1(GLOS_DELIM) + "0" );
         }
     }
     return m_GlosArr;
@@ -402,7 +400,7 @@ void SwGlossaries::UpdateGlosPath(bool bFull)
 
                 ErrorHandler::HandleError( *new StringErrorInfo(
                                         ERR_AUTOPATH_ERROR, lcl_makePath(m_aInvalidPaths),
-                                        ERRCODE_BUTTON_OK | ERRCODE_MSG_ERROR ));
+                                        ErrorHandlerFlags::ButtonsOk | ErrorHandlerFlags::MessageError ) );
                 m_bError = true;
             }
             else
@@ -422,7 +420,7 @@ void SwGlossaries::UpdateGlosPath(bool bFull)
 void SwGlossaries::ShowError()
 {
     sal_uInt32 nPathError = *new StringErrorInfo(ERR_AUTOPATH_ERROR,
-                                            lcl_makePath(m_aInvalidPaths), ERRCODE_BUTTON_OK );
+                                            lcl_makePath(m_aInvalidPaths), ErrorHandlerFlags::ButtonsOk );
     ErrorHandler::HandleError( nPathError );
 }
 
@@ -444,18 +442,22 @@ void SwGlossaries::RemoveFileFromList( const OUString& rGroup )
                     // tell the UNO AutoTextGroup object that it's not valid anymore
                     for (   UnoAutoTextGroups::iterator aLoop = m_aGlossaryGroups.begin();
                             aLoop != m_aGlossaryGroups.end();
-                            ++aLoop
                         )
                     {
                         Reference< container::XNamed > xNamed( aLoop->get(), UNO_QUERY );
-                        if ( xNamed.is() && ( xNamed->getName() == rGroup ) )
+                        if ( !xNamed.is() )
+                        {
+                            aLoop = m_aGlossaryGroups.erase(aLoop);
+                        }
+                        else if ( xNamed->getName() == rGroup )
                         {
                             static_cast< SwXAutoTextGroup* >( xNamed.get() )->Invalidate();
                                 // note that this static_cast works because we know that the array only
                                 // contains SwXAutoTextGroup implementation
                             m_aGlossaryGroups.erase( aLoop );
                             break;
-                        }
+                        } else
+                            ++aLoop;
                     }
                 }
 

@@ -36,7 +36,7 @@ class SwXMLBrushItemImportContext : public SvXMLImportContext
 {
 private:
     css::uno::Reference < css::io::XOutputStream > xBase64Stream;
-    SvxBrushItem                *pItem;
+    std::unique_ptr<SvxBrushItem>                  pItem;
 
     void ProcessAttrs(
                const css::uno::Reference<css::xml::sax::XAttributeList > & xAttrList,
@@ -60,7 +60,7 @@ public:
             const SvXMLUnitConverter& rUnitConv,
             sal_uInt16 nWhich   );
 
-    virtual ~SwXMLBrushItemImportContext();
+    virtual ~SwXMLBrushItemImportContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                 const OUString& rLocalName,

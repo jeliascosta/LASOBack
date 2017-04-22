@@ -41,8 +41,6 @@ extern "C" {
 #   elif __BYTE_ORDER == __BIG_ENDIAN
 #       define OSL_BIGENDIAN
 #   endif
-#elif defined EMSCRIPTEN
-#   define OSL_LITENDIAN
 #elif defined IOS || defined MACOSX || defined NETBSD
 #   include <machine/endian.h>
 #   if BYTE_ORDER == LITTLE_ENDIAN
@@ -65,7 +63,7 @@ extern "C" {
 #   elif BYTE_ORDER == BIG_ENDIAN
 #       define OSL_BIGENDIAN
 #   endif
-#elif defined SOLARIS
+#elif defined __sun
 #   include <sys/isa_defs.h>
 #   if defined _LITTLE_ENDIAN
 #       define OSL_LITENDIAN

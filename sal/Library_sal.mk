@@ -26,7 +26,6 @@ $(eval $(call gb_Library_add_defs,sal,\
 	$(if $(filter $(OS),IOS), \
 		-DNO_CHILD_PROCESSES \
 	) \
-	$(LFS_CFLAGS) \
 	-DSAL_DLLIMPLEMENTATION \
 	-DRTL_OS="\"$(RTL_OS)\"" \
 	-DRTL_ARCH="\"$(RTL_ARCH)\"" \
@@ -127,8 +126,7 @@ $(eval $(call gb_Library_add_cxxflags,sal,\
 ))
 endif
 
-ifeq ($(OS),ANDROID)
-$(eval $(call gb_Library_add_exception_objects,sal,\
+sal_textenc_code= \
 	sal/textenc/context \
 	sal/textenc/convertbig5hkscs \
 	sal/textenc/converteuctw \
@@ -142,6 +140,15 @@ $(eval $(call gb_Library_add_exception_objects,sal,\
 	sal/textenc/tcvtbyte \
 	sal/textenc/tcvtmb \
 	sal/textenc/tcvtutf7 \
+
+ifeq ($(OS),ANDROID)
+$(eval $(call gb_Library_add_exception_objects,sal,\
+    $(sal_textenc_code) \
+))
+else ifeq ($(DISABLE_DYNLOADING),TRUE)
+
+$(eval $(call gb_Library_add_exception_objects,sal,\
+    $(sal_textenc_code) \
 ))
 endif
 
@@ -173,7 +180,7 @@ $(eval $(call gb_Library_add_exception_objects,sal,\
 	sal/osl/unx/tempfile \
 	sal/osl/unx/thread \
 	sal/osl/unx/time \
-        $(if $(filter DESKTOP,$(BUILD_TYPE)), sal/osl/unx/salinit) \
+	$(if $(filter-out ANDROID IOS,$(OS)), sal/osl/unx/salinit) \
 ))
 
 # Note that the uunxapi.mm file just includes the uunxapi.cxx one
@@ -192,7 +199,7 @@ $(eval $(call gb_Library_add_exception_objects,sal,\
 	sal/osl/unx/osxlocale \
 ))
 endif
-ifneq ($(filter $(OS),SOLARIS FREEBSD NETBSD MACOSX AIX OPENBSD DRAGONFLY)$(filter $(OS)$(CPUNAME),LINUXSPARC),)
+ifneq ($(OS),WNT)
 $(eval $(call gb_Library_add_cobjects,sal,\
 	sal/osl/unx/backtrace \
 ))
@@ -218,30 +225,28 @@ else # $(OS) == WNT
 
 $(eval $(call gb_Library_add_exception_objects,sal,\
 	sal/osl/w32/backtrace \
+	sal/osl/w32/conditn \
+	sal/osl/w32/dllentry \
 	sal/osl/w32/file \
 	sal/osl/w32/file_dirvol \
+	sal/osl/w32/file_error \
 	sal/osl/w32/file_url \
+	sal/osl/w32/interlck \
+	sal/osl/w32/memory \
 	sal/osl/w32/module \
+	sal/osl/w32/mutex \
+	sal/osl/w32/nlsupport \
 	sal/osl/w32/path_helper \
+	sal/osl/w32/pipe \
 	sal/osl/w32/process \
 	sal/osl/w32/procimpl \
 	sal/osl/w32/profile \
+	sal/osl/w32/random \
 	sal/osl/w32/salinit \
+	sal/osl/w32/security \
 	sal/osl/w32/signal \
 	sal/osl/w32/socket \
 	sal/osl/w32/tempfile \
-))
-$(eval $(call gb_Library_add_cobjects,sal,\
-	sal/osl/w32/conditn \
-	sal/osl/w32/dllentry \
-	sal/osl/w32/file_error \
-	sal/osl/w32/interlck \
-	sal/osl/w32/memory \
-	sal/osl/w32/mutex \
-	sal/osl/w32/nlsupport \
-	sal/osl/w32/pipe \
-	sal/osl/w32/random \
-	sal/osl/w32/security \
 	sal/osl/w32/thread \
 	sal/osl/w32/time \
 ))

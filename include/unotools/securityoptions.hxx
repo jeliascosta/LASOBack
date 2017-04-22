@@ -25,6 +25,7 @@
 #include <com/sun/star/uno/Sequence.h>
 #include <rtl/ustring.hxx>
 #include <unotools/options.hxx>
+#include <memory>
 
 /*-************************************************************************************************************
     @short          forward declaration to our private date container implementation
@@ -58,31 +59,23 @@ class SAL_WARN_UNUSED UNOTOOLS_DLLPUBLIC SvtSecurityOptions : public utl::detail
 {
     public:
 
-        enum EOption
+        enum class EOption
         {
-            E_SECUREURLS,
-            E_BASICMODE,                    // xmlsec05 deprecated
-            E_EXECUTEPLUGINS,               // xmlsec05 deprecated
-            E_WARNING,                      // xmlsec05 deprecated
-            E_CONFIRMATION,                 // xmlsec05 deprecated
-            E_DOCWARN_SAVEORSEND,
-            E_DOCWARN_SIGNING,
-            E_DOCWARN_PRINT,
-            E_DOCWARN_CREATEPDF,
-            E_DOCWARN_REMOVEPERSONALINFO,
-            E_DOCWARN_RECOMMENDPASSWORD,
-            E_MACRO_SECLEVEL,
-            E_MACRO_TRUSTEDAUTHORS,
-            E_MACRO_DISABLE,
-            E_CTRLCLICK_HYPERLINK,
-            E_BLOCKUNTRUSTEDREFERERLINKS
-        };
-
-        enum MacroAction
-        {
-            MA_DONTRUN = 0,
-            MA_CONFIRM,
-            MA_RUN
+            SecureUrls,
+            BasicMode,                    // xmlsec05 deprecated
+            ExecutePlugins,               // xmlsec05 deprecated
+            Warning,                      // xmlsec05 deprecated
+            Confirmation,                 // xmlsec05 deprecated
+            DocWarnSaveOrSend,
+            DocWarnSigning,
+            DocWarnPrint,
+            DocWarnCreatePdf,
+            DocWarnRemovePersonalInfo,
+            DocWarnRecommendPassword,
+            MacroSecLevel,
+            MacroTrustedAuthors,
+            CtrlClickHyperlink,
+            BlockUntrustedRefererLinks
         };
 
         typedef css::uno::Sequence< OUString > Certificate;
@@ -98,19 +91,8 @@ class SAL_WARN_UNUSED UNOTOOLS_DLLPUBLIC SvtSecurityOptions : public utl::detail
         */
 
     public:
-        /*-****************************************************************************************************
-            @short      standard constructor and destructor
-            @descr      This will initialize an instance with default values.
-                        We implement these class with a refcount mechanism! Every instance of this class increase it
-                        at create and decrease it at delete time - but all instances use the same data container!
-                        He is implemented as a static member ...
-
-            @seealso    member m_nRefCount
-            @seealso    member m_pDataContainer
-        *//*-*****************************************************************************************************/
-
          SvtSecurityOptions();
-        virtual ~SvtSecurityOptions();
+        virtual ~SvtSecurityOptions() override;
 
         /*-****************************************************************************************************
             @short      returns readonly state
@@ -223,17 +205,7 @@ class SAL_WARN_UNUSED UNOTOOLS_DLLPUBLIC SvtSecurityOptions : public utl::detail
     //  private member
 
     private:
-
-        /*Attention
-
-            Don't initialize these static members in these headers!
-            a) Double defined symbols will be detected ...
-            b) and unresolved externals exist at linking time.
-            Do it in your source only.
-         */
-
-        static SvtSecurityOptions_Impl* m_pDataContainer;
-        static sal_Int32                m_nRefCount;
+        std::shared_ptr<SvtSecurityOptions_Impl> m_pImpl;
 
 };      // class SvtSecurityOptions
 

@@ -61,7 +61,6 @@ namespace cppcanvas
              */
             CachedPrimitiveBase( const CanvasSharedPtr& rCanvas,
                                  bool                   bOnlyRedrawWithSameTransform );
-            virtual ~CachedPrimitiveBase() {}
 
             CachedPrimitiveBase(const CachedPrimitiveBase&) = delete;
             const CachedPrimitiveBase& operator=(const CachedPrimitiveBase&) = delete;

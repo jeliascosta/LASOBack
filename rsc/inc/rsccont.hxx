@@ -41,10 +41,9 @@ class RscBaseCont : public RscTop
 {
 protected:
     RscTop *        pTypeClass; // type of entries
-    RscTop *        pTypeClass1;// two different types may exist
     bool            bNoId;      // whether there is no identifier
-    sal_uInt32      nSize;      // size of this class and super classes instance data
-    sal_uInt32      nOffInstData;// offset of own instance data
+    const sal_uInt32 nOffInstData;// offset of own instance data
+    const sal_uInt32 nSize;      // size of this class and super classes instance data
     static void     DestroyElements( RscBaseContInst * pClassData );
     RSCINST         SearchElePos( const RSCINST & rInst, const RscId & rEleName,
                                   RscTop * pClass, sal_uInt32 nPos );
@@ -52,19 +51,17 @@ protected:
     void            ContWriteSrc( const RSCINST & rInst, FILE * fOutput,
                                   RscTypCont * pTC, sal_uInt32 nTab, const char * );
     ERRTYPE         ContWriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                                 RscTypCont * pTC, sal_uInt32, bool bExtra );
+                                 RscTypCont * pTC, sal_uInt32 );
 public:
-                    RscBaseCont( Atom nId, sal_uInt32 nTypId,
-                                 RscTop * pSuper = nullptr,
-                                 bool bNoId = true );
-                    virtual ~RscBaseCont();
+                    RscBaseCont( Atom nId, RESOURCE_TYPE nTypId,
+                                 bool bNoId );
+                    virtual ~RscBaseCont() override;
     virtual RSCCLASS_TYPE   GetClassType() const override;
-    void            SetTypeClass( RscTop * pClass, RscTop * pClass1 = nullptr )
+    void            SetTypeClass( RscTop * pClass )
                         {
                             pTypeClass = pClass;
-                            pTypeClass1 = pClass1;
                         }
-    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool ) override;
+    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool bOwnClass = false ) override;
     void            Destroy( const RSCINST & rInst ) override;
     ERRTYPE         GetElement( const RSCINST & rInst, const RscId & rEleName,
                                 RscTop * pCreateClass, const RSCINST & rCreateInst,
@@ -86,7 +83,7 @@ public:
     ERRTYPE         SetRef( const RSCINST & rInst, const RscId & rRefId ) override;
 
                     // returns the class size in bytes
-    sal_uInt32      Size() override { return nSize; }
+    sal_uInt32      Size() const override { return nSize; }
 
     bool            IsConsistent( const RSCINST & rInst ) override;
     void            SetToDefault( const RSCINST & rInst ) override;
@@ -100,14 +97,13 @@ public:
     void            WriteSrc( const RSCINST & rInst, FILE * fOutput,
                               RscTypCont * pTC, sal_uInt32 nTab, const char * ) override;
     ERRTYPE         WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32 , bool bExtra) override;
+                             RscTypCont * pTC, sal_uInt32 ) override;
 };
 
 class RscContWriteSrc : public RscBaseCont
 {
 public:
-                    RscContWriteSrc( Atom nId, sal_uInt32 nTypId,
-                                     RscTop * pSuper = nullptr );
+                    RscContWriteSrc( Atom nId, RESOURCE_TYPE nTypId );
     void            WriteSrc( const RSCINST & rInst, FILE * fOutput,
                               RscTypCont * pTC, sal_uInt32 nTab, const char * ) override;
 };
@@ -115,19 +111,9 @@ public:
 class RscCont : public RscContWriteSrc
 {
 public:
-                    RscCont( Atom nId, sal_uInt32 nTypId,
-                             RscTop * pSuper = nullptr );
+                    RscCont( Atom nId, RESOURCE_TYPE nTypId );
     ERRTYPE         WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32, bool bExtra ) override;
-};
-
-class RscContExtraData : public RscContWriteSrc
-{
-public:
-                    RscContExtraData( Atom nId, sal_uInt32 nTypId,
-                                      RscTop * pSuper = nullptr );
-    ERRTYPE         WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32, bool bExtra ) override;
+                             RscTypCont * pTC, sal_uInt32 ) override;
 };
 
 #endif // INCLUDED_RSC_INC_RSCCONT_HXX

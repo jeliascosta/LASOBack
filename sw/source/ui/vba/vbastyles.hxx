@@ -19,6 +19,7 @@
 #ifndef INCLUDED_SW_SOURCE_UI_VBA_VBASTYLES_HXX
 #define INCLUDED_SW_SOURCE_UI_VBA_VBASTYLES_HXX
 
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <ooo/vba/word/XStyles.hpp>
 #include <vbahelper/vbacollectionimpl.hxx>
 
@@ -28,15 +29,14 @@ class SwVbaStyles: public SwVbaStyles_BASE
     css::uno::Reference< css::frame::XModel > mxModel;
     css::uno::Reference< css::lang::XMultiServiceFactory > mxMSF;
 public:
-    SwVbaStyles( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::frame::XModel >& xModel )
-        throw ( css::script::BasicErrorException, css::uno::RuntimeException );
+    /// @throws css::script::BasicErrorException
+    /// @throws css::uno::RuntimeException
+    SwVbaStyles( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::frame::XModel >& xModel );
 
-    virtual css::uno::Any SAL_CALL Item(const css::uno::Any& Index1, const css::uno::Any& Index2)
-        throw (css::lang::IndexOutOfBoundsException, css::script::BasicErrorException,
-               css::uno::RuntimeException) override;
+    virtual css::uno::Any SAL_CALL Item(const css::uno::Any& Index1, const css::uno::Any& Index2) override;
     // XEnumerationAccess
-    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override;
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Type SAL_CALL getElementType() override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
     virtual css::uno::Any createCollectionObject(const css::uno::Any&) override;
     // XHelperInterface
     virtual OUString getServiceImplName() override;

@@ -19,44 +19,40 @@
 #ifndef INCLUDED_EDITENG_FRMDIRITEM_HXX
 #define INCLUDED_EDITENG_FRMDIRITEM_HXX
 
-#include <svl/intitem.hxx>
+#include <svl/eitem.hxx>
 #include <editeng/frmdir.hxx>
 #include <editeng/editengdllapi.h>
 
-// class SvxFrameDirectionItem ----------------------------------------------
-
-/* [Description]
-
-    This item defines a frame direction, which place the content inside
+/*  This item defines a frame direction, which place the content inside
     a frame. It exist different kind of directions which are used to the
     layout text for Western, CJK and CTL languages.
 */
 
-class EDITENG_DLLPUBLIC SvxFrameDirectionItem : public SfxUInt16Item
+class EDITENG_DLLPUBLIC SvxFrameDirectionItem : public SfxEnumItem<SvxFrameDirection>
 {
 public:
-    static SfxPoolItem* CreateDefault();
-
-    SvxFrameDirectionItem( SvxFrameDirection nValue /*= FRMDIR_HORI_LEFT_TOP*/,
-                            sal_uInt16 nWhich  );
-    virtual ~SvxFrameDirectionItem();
+    SvxFrameDirectionItem( SvxFrameDirection nValue, sal_uInt16 nWhich  );
+    virtual ~SvxFrameDirectionItem() override;
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create(SvStream &, sal_uInt16) const override;
-    virtual SvStream&       Store(SvStream & rStrm, sal_uInt16 nIVer) const override;
-    virtual sal_uInt16          GetVersion( sal_uInt16 nFileVersion ) const override;
+    virtual sal_uInt16      GetVersion( sal_uInt16 nFileVersion ) const override;
     virtual bool            operator==( const SfxPoolItem& ) const override;
 
-    virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper * = nullptr ) const override;
+    virtual bool            GetPresentation( SfxItemPresentation ePres,
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper * = nullptr ) const override;
 
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
-    inline SvxFrameDirectionItem& operator=( const SvxFrameDirectionItem& rItem )
+    virtual sal_uInt16      GetValueCount() const override
+    {
+        return (sal_uInt16)SvxFrameDirection::Environment + 1;
+    }
+    SvxFrameDirectionItem& operator=( const SvxFrameDirectionItem& rItem )
     {
         SetValue( rItem.GetValue() );
         return *this;

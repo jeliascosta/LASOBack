@@ -20,7 +20,7 @@ $(eval $(call gb_Library_add_defs,xmlsecurity,\
     -DXMLSECURITY_DLLIMPLEMENTATION \
 ))
 
-$(eval $(call gb_Library_use_external,xmlsecurity,boost_headers))
+$(eval $(call gb_Library_use_externals,xmlsecurity,boost_headers))
 
 $(eval $(call gb_Library_set_precompiled_header,xmlsecurity,$(SRCDIR)/xmlsecurity/inc/pch/precompiled_xmlsecurity))
 
@@ -41,8 +41,16 @@ $(eval $(call gb_Library_use_libraries,xmlsecurity,\
 	vcl \
 	xo \
 	i18nlangtag \
+	xsec_fw \
+	xsec_xmlsec \
 	$(gb_UWINAPI) \
 ))
+
+ifneq ($(filter-out WNT MACOSX ANDROID IOS,$(OS)),)
+$(eval $(call gb_Library_use_libraries,xmlsecurity,\
+	xsec_gpg \
+))
+endif
 
 $(eval $(call gb_Library_add_exception_objects,xmlsecurity,\
 	xmlsecurity/source/component/certificatecontainer \
@@ -57,12 +65,36 @@ $(eval $(call gb_Library_add_exception_objects,xmlsecurity,\
 	xmlsecurity/source/helper/documentsignaturemanager \
 	xmlsecurity/source/helper/ooxmlsecparser \
 	xmlsecurity/source/helper/ooxmlsecexporter \
+	xmlsecurity/source/helper/pdfsignaturehelper \
 	xmlsecurity/source/helper/xmlsignaturehelper2 \
 	xmlsecurity/source/helper/xmlsignaturehelper \
 	xmlsecurity/source/helper/xsecctl \
 	xmlsecurity/source/helper/xsecparser \
 	xmlsecurity/source/helper/xsecsign \
 	xmlsecurity/source/helper/xsecverify \
+	xmlsecurity/source/pdfio/pdfdocument \
 ))
+
+$(eval $(call gb_Library_use_externals,xmlsecurity,\
+    libxml2 \
+))
+ifeq ($(OS),WNT)
+$(eval $(call gb_Library_add_defs,xmlsecurity,\
+    -DXMLSEC_CRYPTO_MSCRYPTO \
+))
+$(eval $(call gb_Library_use_system_win32_libs,xmlsecurity,\
+    crypt32 \
+))
+else
+ifneq (,$(filter DESKTOP,$(BUILD_TYPE)))
+$(eval $(call gb_Library_add_defs,xmlsecurity,\
+    -DXMLSEC_CRYPTO_NSS \
+))
+$(eval $(call gb_Library_use_externals,xmlsecurity,\
+    nss3 \
+    plc4 \
+))
+endif # BUILD_TYPE=DESKTOP
+endif
 
 # vim: set noet sw=4 ts=4:

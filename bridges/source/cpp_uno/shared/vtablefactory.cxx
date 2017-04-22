@@ -18,11 +18,11 @@
  */
 
 
-#include "bridges/cpp_uno/shared/vtablefactory.hxx"
+#include "vtablefactory.hxx"
 
 #include "guardedarray.hxx"
 
-#include "bridges/cpp_uno/shared/vtables.hxx"
+#include "vtables.hxx"
 
 #include "osl/thread.h"
 #include "osl/security.hxx"
@@ -67,7 +67,7 @@ namespace {
 extern "C" void * SAL_CALL allocExec(
     SAL_UNUSED_PARAMETER rtl_arena_type *, sal_Size * size)
 {
-    sal_Size pagesize;
+    std::size_t pagesize;
 #if defined SAL_UNX
 #if defined FREEBSD || defined NETBSD || defined OPENBSD || defined DRAGONFLY
     pagesize = getpagesize();
@@ -81,7 +81,7 @@ extern "C" void * SAL_CALL allocExec(
 #else
 #error Unsupported platform
 #endif
-    sal_Size n = (*size + (pagesize - 1)) & ~(pagesize - 1);
+    std::size_t n = (*size + (pagesize - 1)) & ~(pagesize - 1);
     void * p;
 #if defined SAL_UNX
     p = mmap(
@@ -96,7 +96,7 @@ extern "C" void * SAL_CALL allocExec(
         p = nullptr;
     }
 #elif defined SAL_W32
-    p = VirtualAlloc(0, n, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    p = VirtualAlloc(nullptr, n, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 #endif
     if (p != nullptr) {
         *size = n;
@@ -155,9 +155,7 @@ private:
     sal_Int32 calculate(
         typelib_InterfaceTypeDescription * type, sal_Int32 offset);
 
-    typedef std::unordered_map< OUString, sal_Int32, OUStringHash > Map;
-
-    Map m_map;
+    std::unordered_map< OUString, sal_Int32, OUStringHash > m_map;
 };
 
 sal_Int32 VtableFactory::BaseOffset::calculate(
@@ -168,7 +166,7 @@ sal_Int32 VtableFactory::BaseOffset::calculate(
         for (sal_Int32 i = 0; i < type->nBaseTypes; ++i) {
             offset = calculate(type->ppBaseTypes[i], offset);
         }
-        m_map.insert(Map::value_type(name, offset));
+        m_map.insert({name, offset});
         typelib_typedescription_complete(
             reinterpret_cast< typelib_TypeDescription ** >(&type));
         offset += bridges::cpp_uno::shared::getLocalFunctions(type);
@@ -228,8 +226,8 @@ VtableFactory::Vtables VtableFactory::getVtables(
 #ifdef USE_DOUBLE_MMAP
 bool VtableFactory::createBlock(Block &block, sal_Int32 slotCount) const
 {
-    sal_Size size = getBlockSize(slotCount);
-    sal_Size pagesize = sysconf(_SC_PAGESIZE);
+    std::size_t size = getBlockSize(slotCount);
+    std::size_t pagesize = sysconf(_SC_PAGESIZE);
     block.size = (size + (pagesize - 1)) & ~(pagesize - 1);
     block.fd = -1;
 
@@ -360,7 +358,7 @@ sal_Int32 VtableFactory::createVtables(
 #ifdef USE_DOUBLE_MMAP
         //Finished generating block, swap writable pointer with executable
         //pointer
-            ::std::swap(block.start, block.exec);
+            std::swap(block.start, block.exec);
 #endif
             blocks.push_back(block);
         } catch (...) {

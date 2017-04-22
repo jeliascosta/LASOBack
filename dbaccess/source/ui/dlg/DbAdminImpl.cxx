@@ -217,14 +217,14 @@ bool ODbDataSourceAdministrationHelper::getCurrentSettings(Sequence< PropertyVal
     if (!m_pItemSetHelper->getOutputSet())
         return false;
 
-    ::std::vector< PropertyValue > aReturn;
+    std::vector< PropertyValue > aReturn;
         // collecting this in a vector because it has a push_back, in opposite to sequences
 
     // user: DSID_USER -> "user"
     const SfxStringItem* pUser = m_pItemSetHelper->getOutputSet()->GetItem<SfxStringItem>(DSID_USER);
     if (pUser && pUser->GetValue().getLength())
         aReturn.push_back(
-            PropertyValue(  OUString("user"), 0,
+            PropertyValue(  "user", 0,
                             makeAny(OUString(pUser->GetValue())), PropertyState_DIRECT_VALUE));
 
     // check if the connection type requires a password
@@ -310,7 +310,7 @@ bool ODbDataSourceAdministrationHelper::getCurrentSettings(Sequence< PropertyVal
 
         if (!sPassword.isEmpty())
             aReturn.push_back(
-                PropertyValue(  OUString("password"), 0,
+                PropertyValue(  "password", 0,
                                 makeAny(OUString(sPassword)), PropertyState_DIRECT_VALUE));
     }
 
@@ -348,9 +348,9 @@ void ODbDataSourceAdministrationHelper::clearPassword()
         m_pItemSetHelper->getWriteOutputSet()->ClearItem(DSID_PASSWORD);
 }
 
-::std::pair< Reference<XConnection>,sal_Bool> ODbDataSourceAdministrationHelper::createConnection()
+std::pair< Reference<XConnection>,sal_Bool> ODbDataSourceAdministrationHelper::createConnection()
 {
-    ::std::pair< Reference<XConnection>,sal_Bool> aRet;
+    std::pair< Reference<XConnection>,sal_Bool> aRet;
     aRet.second = false;
     Sequence< PropertyValue > aConnectionParams;
     if ( getCurrentSettings(aConnectionParams) )
@@ -396,8 +396,8 @@ Reference< XDriver > ODbDataSourceAdministrationHelper::getDriver(const OUString
     catch (const Exception& e)
     {
         // wrap the exception into an SQLException
-        SQLException aSQLWrapper(e.Message, getORB(), OUString("S1000"), 0, Any());
-        throw SQLException(sCurrentActionError, getORB(), OUString("S1000"), 0, makeAny(aSQLWrapper));
+        SQLException aSQLWrapper(e.Message, getORB(), "S1000", 0, Any());
+        throw SQLException(sCurrentActionError, getORB(), "S1000", 0, makeAny(aSQLWrapper));
     }
 
     Reference< XDriver > xDriver = xDriverManager->getDriverByURL(_sURL);
@@ -406,12 +406,12 @@ Reference< XDriver > ODbDataSourceAdministrationHelper::getDriver(const OUString
         sCurrentActionError = ModuleRes(STR_NOREGISTEREDDRIVER);
         sCurrentActionError = sCurrentActionError.replaceFirst("#connurl#", _sURL);
         // will be caught and translated into an SQLContext exception
-        throw SQLException(sCurrentActionError, getORB(), OUString("S1000"), 0, Any());
+        throw SQLException(sCurrentActionError, getORB(), "S1000", 0, Any());
     }
     return xDriver;
 }
 
-Reference< XPropertySet > ODbDataSourceAdministrationHelper::getCurrentDataSource()
+Reference< XPropertySet > const & ODbDataSourceAdministrationHelper::getCurrentDataSource()
 {
     if ( !m_xDatasource.is() )
     {
@@ -709,14 +709,14 @@ void ODbDataSourceAdministrationHelper::fillDatasourceInfo(const SfxItemSet& _rS
 
     // first determine which of all the items are relevant for the data source (depends on the connection url)
     OUString eType = getDatasourceType(_rSource);
-    ::std::vector< sal_Int32> aDetailIds;
+    std::vector< sal_Int32> aDetailIds;
     ODriversSettings::getSupportedIndirectSettings(eType, getORB(), aDetailIds);
 
     // collect the translated property values for the relevant items
     PropertyValueSet aRelevantSettings;
     MapInt2String::const_iterator aTranslation;
-    ::std::vector< sal_Int32>::const_iterator aDetailsEnd = aDetailIds.end();
-    for (::std::vector< sal_Int32>::const_iterator aIter = aDetailIds.begin();aIter != aDetailsEnd ; ++aIter)
+    std::vector< sal_Int32>::const_iterator aDetailsEnd = aDetailIds.end();
+    for (std::vector< sal_Int32>::const_iterator aIter = aDetailIds.begin();aIter != aDetailsEnd ; ++aIter)
     {
         const SfxPoolItem* pCurrent = _rSource.GetItem((sal_uInt16)*aIter);
         aTranslation = m_aIndirectPropTranslator.find(*aIter);
@@ -771,13 +771,13 @@ void ODbDataSourceAdministrationHelper::fillDatasourceInfo(const SfxItemSet& _rS
 
         // for this, we need a string-controlled quick access to m_aIndirectPropTranslator
         StringSet aIndirectProps;
-        ::std::transform(m_aIndirectPropTranslator.begin(),
+        std::transform(m_aIndirectPropTranslator.begin(),
                          m_aIndirectPropTranslator.end(),
-                         ::std::insert_iterator<StringSet>(aIndirectProps,aIndirectProps.begin()),
+                         std::insert_iterator<StringSet>(aIndirectProps,aIndirectProps.begin()),
                          ::o3tl::select2nd< MapInt2String::value_type >());
 
         // now check the to-be-preserved props
-        ::std::vector< sal_Int32 > aRemoveIndexes;
+        std::vector< sal_Int32 > aRemoveIndexes;
         sal_Int32 nPositionCorrector = 0;
         MapInt2String::const_iterator aPreservedEnd = aPreservedSettings.end();
         for (   MapInt2String::const_iterator aPreserved = aPreservedSettings.begin();
@@ -792,8 +792,8 @@ void ODbDataSourceAdministrationHelper::fillDatasourceInfo(const SfxItemSet& _rS
             }
         }
         // now finally remove all such props
-        ::std::vector< sal_Int32 >::const_iterator aRemoveEnd = aRemoveIndexes.end();
-        for (   ::std::vector< sal_Int32 >::const_iterator aRemoveIndex = aRemoveIndexes.begin();
+        std::vector< sal_Int32 >::const_iterator aRemoveEnd = aRemoveIndexes.end();
+        for (   std::vector< sal_Int32 >::const_iterator aRemoveIndex = aRemoveIndexes.begin();
                 aRemoveIndex != aRemoveEnd;
                 ++aRemoveIndex
             )
@@ -807,7 +807,7 @@ void ODbDataSourceAdministrationHelper::fillDatasourceInfo(const SfxItemSet& _rS
     // here we have a special entry for types from oracle
     if ( aTypeSettings.getLength() )
     {
-        aRelevantSettings.insert(PropertyValue(OUString("TypeInfoSettings"), 0, makeAny(aTypeSettings), PropertyState_DIRECT_VALUE));
+        aRelevantSettings.insert(PropertyValue("TypeInfoSettings", 0, makeAny(aTypeSettings), PropertyState_DIRECT_VALUE));
     }
 
     // check which values are still left ('cause they were not present in the original sequence, but are to be set)

@@ -38,6 +38,7 @@ namespace sc {
     struct SpellCheckContext;
 }
 
+class FmFormView;
 struct ScTableInfo;
 class ScDPObject;
 class ScCheckListMenuWindow;
@@ -101,7 +102,11 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
     std::unique_ptr<sdr::overlay::OverlayObjectList> mpOOHeader;
     std::unique_ptr<sdr::overlay::OverlayObjectList> mpOOShrink;
 
-    std::unique_ptr<Rectangle> mpAutoFillRect;
+    std::unique_ptr<tools::Rectangle> mpAutoFillRect;
+
+    /// LibreOfficeKit needs a persistent FmFormView for tiled rendering,
+    /// otherwise the invalidations from drawinglayer do not work.
+    std::unique_ptr<FmFormView> mpLOKDrawView;
 
     struct MouseEventState;
 
@@ -143,7 +148,8 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
 
     sal_uInt16              nButtonDown;
     sal_uInt8               nMouseStatus;
-    sal_uInt8               nNestedButtonState;     // track nested button up/down calls
+    enum class ScNestedButtonState { NONE, Down, Up };
+    ScNestedButtonState     nNestedButtonState;     // track nested button up/down calls
 
     long                    nDPField;
     ScDPObject*             pDragDPObj; //! name?
@@ -166,19 +172,17 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
     SCROW                   nDragEndY;
     InsCellCmd              meDragInsertMode;
 
-    sal_uInt16              nCurrentPointer;
-
     ScDDComboBoxButton      aComboButton;
 
     Point                   aCurMousePos;
 
     sal_uInt16              nPaintCount;
-    Rectangle               aRepaintPixel;
+    tools::Rectangle               aRepaintPixel;
 
     ScAddress               aAutoMarkPos;
     ScAddress               aListValPos;
 
-    Rectangle               aInvertRect;
+    tools::Rectangle               aInvertRect;
 
     RfCorner                aRFSelectedCorned;
 
@@ -194,8 +198,8 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
     bool                    bAutoMarkVisible:1;
     bool                    bListValButton:1;
 
-    DECL_LINK_TYPED( PopupModeEndHdl, FloatingWindow*, void );
-    DECL_LINK_TYPED( PopupSpellingHdl, SpellCallbackInfo&, void );
+    DECL_LINK( PopupModeEndHdl, FloatingWindow*, void );
+    DECL_LINK( PopupSpellingHdl, SpellCallbackInfo&, void );
 
     bool            TestMouse( const MouseEvent& rMEvt, bool bAction );
 
@@ -214,23 +218,19 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
      *         mouse event handling is necessary, false otherwise.
      */
     bool DPTestFieldPopupArrow(const MouseEvent& rMEvt, const ScAddress& rPos, const ScAddress& rDimPos, ScDPObject* pDPObj);
-    void            DPLaunchFieldPopupMenu(
-        const Point& rScrPos, const Size& rScrSize, const ScAddress& rPos, ScDPObject* pDPObj);
+
+    void DPLaunchFieldPopupMenu(const Point& rScrPos, const Size& rScrSize, const ScAddress& rPos, ScDPObject* pDPObj);
 
     void            RFMouseMove( const MouseEvent& rMEvt, bool bUp );
 
     void            PagebreakMove( const MouseEvent& rMEvt, bool bUp );
 
-    void            UpdateDragRect( bool bShowRange, const Rectangle& rPosRect );
+    void            UpdateDragRect( bool bShowRange, const tools::Rectangle& rPosRect );
 
     bool            IsAutoFilterActive( SCCOL nCol, SCROW nRow, SCTAB nTab );
-    void            ExecFilter( sal_uLong nSel, SCCOL nCol, SCROW nRow,
-                                const OUString& aValue, bool bCheckForDates );
     void            FilterSelect( sal_uLong nSel );
 
     void            ExecDataSelect( SCCOL nCol, SCROW nRow, const OUString& rStr );
-
-    void            ExecPageFieldSelect( SCCOL nCol, SCROW nRow, bool bHasSelection, const OUString& rStr );
 
     bool            HasScenarioButton( const Point& rPosPixel, ScRange& rScenRange );
 
@@ -254,10 +254,10 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
     SdrObject*      GetEditObject();
     bool            IsMyModel(SdrEditView* pSdrView);
 
-    void            DrawRedraw( ScOutputData& rOutputData, ScUpdateMode eMode, sal_uLong nLayer );
-    void            DrawSdrGrid( const Rectangle& rDrawingRect, OutputDevice* pContentDev );
+    void            DrawRedraw( ScOutputData& rOutputData, sal_uLong nLayer );
+    void            DrawSdrGrid( const tools::Rectangle& rDrawingRect, OutputDevice* pContentDev );
     void            DrawAfterScroll();
-    Rectangle       GetListValButtonRect( const ScAddress& rButtonPos );
+    tools::Rectangle       GetListValButtonRect( const ScAddress& rButtonPos );
 
     void            DrawPagePreview( SCCOL nX1, SCROW nY1, SCCOL nX2, SCROW nY2, vcl::RenderContext& rRenderContext);
 
@@ -266,11 +266,11 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
 
     bool IsSpellErrorAtPos( const Point& rPos, SCCOL nCol1, SCROW nRow );
 
-    bool            HitRangeFinder( const Point& rMouse, RfCorner& rCorner, sal_uInt16* pIndex = nullptr,
-                                    SCsCOL* pAddX = nullptr, SCsROW* pAddY = nullptr );
+    bool            HitRangeFinder( const Point& rMouse, RfCorner& rCorner, sal_uInt16* pIndex,
+                                    SCsCOL* pAddX, SCsROW* pAddY );
 
-    sal_uInt16          HitPageBreak( const Point& rMouse, ScRange* pSource = nullptr,
-                                    SCCOLROW* pBreak = nullptr, SCCOLROW* pPrev = nullptr );
+    sal_uInt16      HitPageBreak( const Point& rMouse, ScRange* pSource,
+                                  SCCOLROW* pBreak, SCCOLROW* pPrev );
 
     /** The cell may be covered by text that overflows from a previous cell.
 
@@ -284,13 +284,12 @@ class ScGridWindow : public vcl::Window, public DropTargetHelper, public DragSou
 
     void            SelectForContextMenu( const Point& rPosPixel, SCsCOL nCellX, SCsROW nCellY );
 
-    void            GetSelectionRects( ::std::vector< Rectangle >& rPixelRects );
+    void            GetSelectionRects( ::std::vector< tools::Rectangle >& rPixelRects );
 
 
-    void            updateLibreOfficeKitCellCursor();
 protected:
     virtual void    PrePaint(vcl::RenderContext& rRenderContext) override;
-    virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void    Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual void    GetFocus() override;
     virtual void    LoseFocus() override;
 
@@ -304,7 +303,7 @@ public:
     enum AutoFilterMode { Normal, Top10, Custom, Empty, NonEmpty, SortAscending, SortDescending };
 
     ScGridWindow( vcl::Window* pParent, ScViewData* pData, ScSplitPos eWhichPos );
-    virtual ~ScGridWindow();
+    virtual ~ScGridWindow() override;
     virtual void dispose() override;
 
     virtual void    KeyInput(const KeyEvent& rKEvt) override;
@@ -327,14 +326,14 @@ public:
                                long nTileWidth, long nTileHeight );
 
     /// @see OutputDevice::LogicInvalidate().
-    void LogicInvalidate(const Rectangle* pRectangle) override;
+    void LogicInvalidate(const tools::Rectangle* pRectangle) override;
 
     /// Update the cell selection according to what handles have been dragged.
     /// @see vcl::ITiledRenderable::setTextSelection() for the values of nType.
     /// Coordinates are in pixels.
     void SetCellSelectionPixel(int nType, int nPixelX, int nPixelY);
     /// Get the cell selection, coordinates are in logic units.
-    void GetCellSelection(std::vector<Rectangle>& rLogicRects);
+    void GetCellSelection(std::vector<tools::Rectangle>& rLogicRects);
 
     virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessible() override;
 
@@ -345,7 +344,7 @@ public:
 
     void            ClickExtern();
 
-    void            SetPointer( const Pointer& rPointer );
+    using Window::SetPointer;
 
     void            MoveMouseStatus( ScGridWindow &rDestWin );
 
@@ -366,14 +365,17 @@ public:
 
     css::sheet::DataPilotFieldOrientation GetDPFieldOrientation( SCCOL nCol, SCROW nRow ) const;
 
+    void DPLaunchFieldPopupMenu(const Point& rScrPos, const Size& rScrSize,
+                                long nDimIndex, ScDPObject* pDPObj);
+
     void DrawButtons(SCCOL nX1, SCCOL nX2, const ScTableInfo& rTabInfo, OutputDevice* pContentDev);
 
     using Window::Draw;
     void            Draw( SCCOL nX1, SCROW nY1, SCCOL nX2, SCROW nY2,
-                          ScUpdateMode eMode = SC_UPDATE_ALL );
+                          ScUpdateMode eMode );
 
     /// Draw content of the gridwindow; shared between the desktop and the tiled rendering.
-    void DrawContent(OutputDevice &rDevice, const ScTableInfo& rTableInfo, ScOutputData& aOutputData, bool bLogicText, ScUpdateMode eMode);
+    void DrawContent(OutputDevice &rDevice, const ScTableInfo& rTableInfo, ScOutputData& aOutputData, bool bLogicText);
 
     void            CreateAnchorHandle(SdrHdlList& rHdl, const ScAddress& rAddress);
 
@@ -394,7 +396,7 @@ public:
 
     bool            NeedsRepaint() { return bNeedsRepaint; }
 
-    void            DoInvertRect( const Rectangle& rPixel );
+    void            DoInvertRect( const tools::Rectangle& rPixel );
 
     void            CheckNeedsRepaint();
 
@@ -428,11 +430,15 @@ public:
 
     /// @see ScModelObj::getCellCursor().
     OString         getCellCursor(const Fraction& rZoomX,
-                                  const Fraction& rZoomY);
+                                  const Fraction& rZoomY) const;
     OString         getCellCursor(int nOutputWidth,
                                   int nOutputHeight,
                                   long nTileWidth,
                                   long nTileHeight);
+    void updateLibreOfficeKitCellCursor(SfxViewShell* pOtherShell) const;
+
+    ScViewData* getViewData();
+    virtual FactoryFunction GetUITestFactory() const override;
 
 protected:
     void ImpCreateOverlayObjects();
@@ -445,6 +451,7 @@ private:
     void dumpColumnInformationPixel();
     void dumpColumnInformationHmm();
     void dumpGraphicInformation();
+    void dumpColumnCellStorage();
 #endif
 
 };

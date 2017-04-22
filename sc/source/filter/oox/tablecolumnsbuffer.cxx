@@ -19,7 +19,6 @@
 
 #include "tablecolumnsbuffer.hxx"
 
-#include <com/sun/star/sheet/XDatabaseRange.hpp>
 #include <rtl/ustrbuf.hxx>
 #include <osl/diagnose.h>
 #include <oox/helper/attributelist.hxx>
@@ -28,16 +27,11 @@
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
-#include "biffinputstream.hxx"
 #include "defnamesbuffer.hxx"
 #include "dbdata.hxx"
 
 namespace oox {
 namespace xls {
-
-using namespace ::com::sun::star::sheet;
-using namespace ::com::sun::star::table;
-using namespace ::com::sun::star::uno;
 
 TableColumn::TableColumn( const WorkbookHelper& rHelper ) :
     WorkbookHelper( rHelper ),

@@ -28,7 +28,7 @@ class SwWrtShell;
 class SwForm;
 
 // manager for directory functionality
-//one single method will be sufficient to insert AND upate indexes
+//one single method will be sufficient to insert AND update indexes
 class SW_DLLPUBLIC SwTOXDescription
 {
     TOXTypes            m_eTOXType;
@@ -39,9 +39,9 @@ class SW_DLLPUBLIC SwTOXDescription
     OUString*           m_pTitle;
     OUString*           m_pTOUName;
     SwForm*             m_pForm;
-    sal_uInt16          m_nContent;
-    sal_uInt16          m_nIndexOptions;
-    sal_uInt16          m_nOLEOptions;
+    SwTOXElement        m_nContent;
+    SwTOIOptions        m_nIndexOptions;
+    SwTOOElements       m_nOLEOptions;
     LanguageType        m_eLanguage;
     OUString            m_sSortAlgorithm;
 
@@ -71,10 +71,10 @@ public:
         m_pTitle(nullptr),
         m_pTOUName(nullptr),
         m_pForm(nullptr),
-        m_nContent(nsSwTOXElement::TOX_MARK | nsSwTOXElement::TOX_OUTLINELEVEL),
-        m_nIndexOptions(nsSwTOIOptions::TOI_SAME_ENTRY|nsSwTOIOptions::TOI_FF|nsSwTOIOptions::TOI_CASE_SENSITIVE),
-        m_nOLEOptions(0),
-        m_eLanguage((LanguageType)::GetAppLanguage()),
+        m_nContent(SwTOXElement::Mark | SwTOXElement::OutlineLevel),
+        m_nIndexOptions(SwTOIOptions::SameEntry|SwTOIOptions::FF|SwTOIOptions::CaseSensitive),
+        m_nOLEOptions(SwTOOElements::NONE),
+        m_eLanguage(::GetAppLanguage()),
         m_eCaptionDisplay(CAPTION_COMPLETE),
         m_nLevel(MAXLEVEL),
         m_bFromObjectNames(false),
@@ -110,11 +110,11 @@ public:
     void            SetForm(const SwForm& rSet) {delete m_pForm; m_pForm = new SwForm(rSet);}
     const SwForm*   GetForm() const {return m_pForm;}
 
-    void            SetContentOptions(sal_uInt16 nSet) { m_nContent = nSet;}
-    sal_uInt16          GetContentOptions() const { return m_nContent;}
+    void            SetContentOptions(SwTOXElement nSet) { m_nContent = nSet;}
+    SwTOXElement    GetContentOptions() const { return m_nContent;}
 
-    void            SetIndexOptions(sal_uInt16 nSet) { m_nIndexOptions = nSet;}
-    sal_uInt16          GetIndexOptions() const { return m_nIndexOptions;}
+    void            SetIndexOptions(SwTOIOptions nSet) { m_nIndexOptions = nSet;}
+    SwTOIOptions    GetIndexOptions() const { return m_nIndexOptions;}
 
     const OUString& GetMainEntryCharStyle() const {return m_sMainEntryCharStyle;}
     void            SetMainEntryCharStyle(const OUString& rSet)  {m_sMainEntryCharStyle = rSet;}
@@ -137,8 +137,8 @@ public:
     void            SetReadonly(bool bSet){m_bReadonly = bSet;}
     bool            IsReadonly() const {return m_bReadonly;}
 
-    sal_uInt16          GetOLEOptions() const {return m_nOLEOptions;}
-    void            SetOLEOptions(sal_uInt16 nOpt) {m_nOLEOptions = nOpt;}
+    SwTOOElements   GetOLEOptions() const {return m_nOLEOptions;}
+    void            SetOLEOptions(SwTOOElements nOpt) {m_nOLEOptions = nOpt;}
 
     bool            IsLevelFromChapter() const {return m_bLevelFromChapter;}
     void            SetLevelFromChapter(bool bSet) {m_bLevelFromChapter = bSet;}
@@ -281,11 +281,9 @@ public:
 
     // methods for directories
 
-    bool    UpdateOrInsertTOX(const SwTOXDescription& rDesc, SwTOXBase** ppBase = nullptr, const SfxItemSet* pSet = nullptr);
+    bool    UpdateOrInsertTOX(const SwTOXDescription& rDesc, SwTOXBase** ppBase, const SfxItemSet* pSet);
 
     const SwTOXType*    GetTOXType(TOXTypes eTyp) const;
-    const SwTOXBase*    GetCurTOX();
-
 };
 
 // inlines

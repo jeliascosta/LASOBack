@@ -37,7 +37,6 @@
 #include "editeng/unolingu.hxx"
 
 #include <svx/dialogs.hrc>
-#include "frmsel.hrc"
 
 namespace svx {
 namespace a11y {
@@ -56,17 +55,14 @@ using namespace ::com::sun::star::accessibility;
 
 
 AccFrameSelector::AccFrameSelector( FrameSelector& rFrameSel, FrameBorderType eBorder ) :
-    Resource( SVX_RES( RID_SVXSTR_BORDER_CONTROL ) ),
     mpFrameSel( &rFrameSel ),
     meBorder( eBorder ),
     maFocusListeners( maFocusMutex ),
     maPropertyListeners( maPropertyMutex ),
-    maNames( SVX_RES( ARR_TEXTS ) ),
-    maDescriptions( SVX_RES(ARR_DESCRIPTIONS ) ),
+    maNames( SVX_RES( RID_SVXSTR_FRMSEL_TEXTS ) ),
+    maDescriptions( SVX_RES(RID_SVXSTR_FRMSEL_DESCRIPTIONS) ),
     mnClientId( 0 )
 {
-    FreeResource();
-
     if ( mpFrameSel )
     {
         mpFrameSel->AddEventListener( LINK( this, AccFrameSelector, WindowEventListener ) );
@@ -90,26 +86,24 @@ void AccFrameSelector::RemoveFrameSelEventListener()
 
 
 Reference< XAccessibleContext > AccFrameSelector::getAccessibleContext(  )
-    throw (RuntimeException, std::exception)
 {
     return this;
 }
 
 
-sal_Int32 AccFrameSelector::getAccessibleChildCount(  ) throw (RuntimeException, std::exception)
+sal_Int32 AccFrameSelector::getAccessibleChildCount(  )
 {
     SolarMutexGuard aGuard;
     IsValid();
-    return (meBorder == FRAMEBORDER_NONE) ? mpFrameSel->GetEnabledBorderCount() : 0;
+    return (meBorder == FrameBorderType::NONE) ? mpFrameSel->GetEnabledBorderCount() : 0;
 }
 
 Reference< XAccessible > AccFrameSelector::getAccessibleChild( sal_Int32 i )
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
     Reference< XAccessible > xRet;
-    if( meBorder == FRAMEBORDER_NONE )
+    if( meBorder == FrameBorderType::NONE )
         xRet = mpFrameSel->GetChildAccessible( i );
     if( !xRet.is() )
         throw RuntimeException();
@@ -117,12 +111,11 @@ Reference< XAccessible > AccFrameSelector::getAccessibleChild( sal_Int32 i )
 }
 
 Reference< XAccessible > AccFrameSelector::getAccessibleParent(  )
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
     Reference< XAccessible > xRet;
-    if(meBorder == FRAMEBORDER_NONE)
+    if(meBorder == FrameBorderType::NONE)
         xRet = mpFrameSel->GetParent()->GetAccessible();
     else
         xRet = mpFrameSel->CreateAccessible();
@@ -130,13 +123,12 @@ Reference< XAccessible > AccFrameSelector::getAccessibleParent(  )
 }
 
 sal_Int32 AccFrameSelector::getAccessibleIndexInParent(  )
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
 
     sal_Int32 nIdx = 0;
-    if( meBorder == FRAMEBORDER_NONE )
+    if( meBorder == FrameBorderType::NONE )
     {
         vcl::Window* pTabPage = mpFrameSel->GetParent();
         sal_Int32 nChildren = pTabPage->GetChildCount();
@@ -152,35 +144,32 @@ sal_Int32 AccFrameSelector::getAccessibleIndexInParent(  )
     return nIdx;
 }
 
-sal_Int16 AccFrameSelector::getAccessibleRole(  ) throw (RuntimeException, std::exception)
+sal_Int16 AccFrameSelector::getAccessibleRole(  )
 {
-    return meBorder == FRAMEBORDER_NONE ? AccessibleRole::OPTION_PANE : AccessibleRole::CHECK_BOX;
+    return meBorder == FrameBorderType::NONE ? AccessibleRole::OPTION_PANE : AccessibleRole::CHECK_BOX;
 }
 
 OUString AccFrameSelector::getAccessibleDescription(  )
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
-    return maDescriptions.GetString(meBorder);
+    return maDescriptions.GetString((sal_uInt32)meBorder);
 }
 
 OUString AccFrameSelector::getAccessibleName(  )
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
-    return maNames.GetString(meBorder);
+    return maNames.GetString((sal_uInt32)meBorder);
 }
 
 Reference< XAccessibleRelationSet > AccFrameSelector::getAccessibleRelationSet(  )
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
     utl::AccessibleRelationSetHelper* pHelper;
     Reference< XAccessibleRelationSet > xRet = pHelper = new utl::AccessibleRelationSetHelper;
-    if(meBorder == FRAMEBORDER_NONE)
+    if(meBorder == FrameBorderType::NONE)
     {
         //add the label relation
         vcl::Window *pLabeledBy = mpFrameSel->GetAccessibleRelationLabeledBy();
@@ -206,7 +195,6 @@ Reference< XAccessibleRelationSet > AccFrameSelector::getAccessibleRelationSet( 
 }
 
 Reference< XAccessibleStateSet > AccFrameSelector::getAccessibleStateSet(  )
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     utl::AccessibleStateSetHelper* pStateSetHelper = new utl::AccessibleStateSetHelper;
@@ -237,7 +225,7 @@ Reference< XAccessibleStateSet > AccFrameSelector::getAccessibleStateSet(  )
             pStateSetHelper->AddState(AccessibleStateType::SENSITIVE);
         }
 
-        bool bIsParent = meBorder == FRAMEBORDER_NONE;
+        bool bIsParent = meBorder == FrameBorderType::NONE;
         if(mpFrameSel->HasFocus() &&
             (bIsParent || mpFrameSel->IsBorderSelected(meBorder)))
         {
@@ -250,13 +238,11 @@ Reference< XAccessibleStateSet > AccFrameSelector::getAccessibleStateSet(  )
 }
 
 Locale AccFrameSelector::getLocale(  )
-    throw (IllegalAccessibleComponentStateException, RuntimeException, std::exception)
 {
     return Application::GetSettings().GetUILanguageTag().getLocale();
 }
 
 sal_Bool AccFrameSelector::containsPoint( const css::awt::Point& aPt )
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
@@ -266,7 +252,6 @@ sal_Bool AccFrameSelector::containsPoint( const css::awt::Point& aPt )
 
 Reference< XAccessible > AccFrameSelector::getAccessibleAtPoint(
     const css::awt::Point& aPt )
-        throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
@@ -274,7 +259,7 @@ Reference< XAccessible > AccFrameSelector::getAccessibleAtPoint(
     return mpFrameSel->GetChildAccessible( Point( aPt.X, aPt.Y ) );
 }
 
-css::awt::Rectangle AccFrameSelector::getBounds(  ) throw (RuntimeException, std::exception)
+css::awt::Rectangle AccFrameSelector::getBounds(  )
 {
     SolarMutexGuard aGuard;
     IsValid();
@@ -282,12 +267,12 @@ css::awt::Rectangle AccFrameSelector::getBounds(  ) throw (RuntimeException, std
     Point aPos;
     switch(meBorder)
     {
-        case FRAMEBORDER_NONE:
+        case FrameBorderType::NONE:
             aSz = mpFrameSel->GetSizePixel();
             aPos = mpFrameSel->GetPosPixel();
         break;
         default:
-            const Rectangle aSpot = mpFrameSel->GetClickBoundRect( meBorder );
+            const tools::Rectangle aSpot = mpFrameSel->GetClickBoundRect( meBorder );
             aPos = aSpot.TopLeft();
             aSz = aSpot.GetSize();
     }
@@ -300,18 +285,18 @@ css::awt::Rectangle AccFrameSelector::getBounds(  ) throw (RuntimeException, std
 }
 
 
-css::awt::Point AccFrameSelector::getLocation(  ) throw (RuntimeException, std::exception)
+css::awt::Point AccFrameSelector::getLocation(  )
 {
     SolarMutexGuard aGuard;
     IsValid();
     Point aPos;
     switch(meBorder)
     {
-        case FRAMEBORDER_NONE:
+        case FrameBorderType::NONE:
             aPos = mpFrameSel->GetPosPixel();
         break;
         default:
-            const Rectangle aSpot = mpFrameSel->GetClickBoundRect( meBorder );
+            const tools::Rectangle aSpot = mpFrameSel->GetClickBoundRect( meBorder );
             aPos = aSpot.TopLeft();
     }
     css::awt::Point aRet(aPos.X(), aPos.Y());
@@ -319,18 +304,18 @@ css::awt::Point AccFrameSelector::getLocation(  ) throw (RuntimeException, std::
 }
 
 
-css::awt::Point AccFrameSelector::getLocationOnScreen(  ) throw (RuntimeException, std::exception)
+css::awt::Point AccFrameSelector::getLocationOnScreen(  )
 {
     SolarMutexGuard aGuard;
     IsValid();
     Point aPos;
     switch(meBorder)
     {
-        case FRAMEBORDER_NONE:
+        case FrameBorderType::NONE:
             aPos = mpFrameSel->GetPosPixel();
         break;
         default:
-            const Rectangle aSpot = mpFrameSel->GetClickBoundRect( meBorder );
+            const tools::Rectangle aSpot = mpFrameSel->GetClickBoundRect( meBorder );
             aPos = aSpot.TopLeft();
     }
     aPos = mpFrameSel->OutputToAbsoluteScreenPixel( aPos );
@@ -339,25 +324,25 @@ css::awt::Point AccFrameSelector::getLocationOnScreen(  ) throw (RuntimeExceptio
 }
 
 
-css::awt::Size AccFrameSelector::getSize(  ) throw (RuntimeException, std::exception)
+css::awt::Size AccFrameSelector::getSize(  )
 {
     SolarMutexGuard aGuard;
     IsValid();
     Size aSz;
     switch(meBorder)
     {
-        case FRAMEBORDER_NONE:
+        case FrameBorderType::NONE:
             aSz = mpFrameSel->GetSizePixel();
         break;
         default:
-            const Rectangle aSpot = mpFrameSel->GetClickBoundRect( meBorder );
+            const tools::Rectangle aSpot = mpFrameSel->GetClickBoundRect( meBorder );
             aSz = aSpot.GetSize();
     }
     css::awt::Size aRet(aSz.Width(), aSz.Height());
     return aRet;
 }
 
-void AccFrameSelector::grabFocus(  ) throw (RuntimeException, std::exception)
+void AccFrameSelector::grabFocus(  )
 {
     SolarMutexGuard aGuard;
     IsValid();
@@ -365,7 +350,6 @@ void AccFrameSelector::grabFocus(  ) throw (RuntimeException, std::exception)
 }
 
 sal_Int32 AccFrameSelector::getForeground(  )
-        throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
@@ -373,14 +357,13 @@ sal_Int32 AccFrameSelector::getForeground(  )
 }
 
 sal_Int32 AccFrameSelector::getBackground(  )
-        throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsValid();
     return mpFrameSel->GetControlBackground().GetColor();
 }
 
-void AccFrameSelector::addAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener ) throw (RuntimeException, std::exception)
+void AccFrameSelector::addAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener )
 {
     SolarMutexGuard aGuard;
 
@@ -394,7 +377,7 @@ void AccFrameSelector::addAccessibleEventListener( const Reference< XAccessibleE
     }
 }
 
-void AccFrameSelector::removeAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener ) throw (RuntimeException, std::exception)
+void AccFrameSelector::removeAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener )
 {
     SolarMutexGuard aGuard;
 
@@ -411,19 +394,17 @@ void AccFrameSelector::removeAccessibleEventListener( const Reference< XAccessib
     }
 }
 
-OUString AccFrameSelector::getImplementationName(  ) throw (RuntimeException, std::exception)
+OUString AccFrameSelector::getImplementationName(  )
 {
     return OUString("AccFrameSelector");
 }
 
 sal_Bool AccFrameSelector::supportsService( const OUString& rServiceName )
-    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > AccFrameSelector::getSupportedServiceNames(  )
-    throw (RuntimeException, std::exception)
 {
     Sequence< OUString > aRet(3);
     OUString* pArray = aRet.getArray();
@@ -433,7 +414,7 @@ Sequence< OUString > AccFrameSelector::getSupportedServiceNames(  )
     return aRet;
 }
 
-void AccFrameSelector::IsValid() throw (RuntimeException)
+void AccFrameSelector::IsValid()
 {
     if(!mpFrameSel)
         throw RuntimeException();
@@ -479,24 +460,18 @@ void AccFrameSelector::NotifyFocusListeners(bool bGetFocus)
 }
 
 
-IMPL_LINK_TYPED( AccFrameSelector, WindowEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( AccFrameSelector, WindowEventListener, VclWindowEvent&, rEvent, void )
 {
     vcl::Window* pWindow = rEvent.GetWindow();
     DBG_ASSERT( pWindow, "AccFrameSelector::WindowEventListener: no window!" );
-    if ( !pWindow->IsAccessibilityEventsSuppressed() || ( rEvent.GetId() == VCLEVENT_OBJECT_DYING ) )
-    {
-        ProcessWindowEvent( rEvent );
-    }
-}
+    if ( pWindow->IsAccessibilityEventsSuppressed() && ( rEvent.GetId() != VclEventId::ObjectDying ) )
+        return;
 
-
-void AccFrameSelector::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
-{
-    switch ( rVclWindowEvent.GetId() )
+    switch ( rEvent.GetId() )
     {
-        case VCLEVENT_WINDOW_GETFOCUS:
+        case VclEventId::WindowGetFocus:
         {
-            if ( meBorder == FRAMEBORDER_NONE )
+            if ( meBorder == FrameBorderType::NONE )
             {
                 Any aOldValue, aNewValue;
                 aNewValue <<= AccessibleStateType::FOCUSED;
@@ -504,9 +479,9 @@ void AccFrameSelector::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent
             }
         }
         break;
-        case VCLEVENT_WINDOW_LOSEFOCUS:
+        case VclEventId::WindowLoseFocus:
         {
-            if ( meBorder == FRAMEBORDER_NONE )
+            if ( meBorder == FrameBorderType::NONE )
             {
                 Any aOldValue, aNewValue;
                 aOldValue <<= AccessibleStateType::FOCUSED;

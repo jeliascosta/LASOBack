@@ -58,7 +58,6 @@ public:
         mnBulletOffset(0),
         mnBulletLen(0),
         mbInBullet(false) {};
-    ~SvxAccessibleTextIndex() {};
 
     // Get/Set current paragraph
     void SetParagraph( sal_Int32 nPara )
@@ -103,7 +102,6 @@ public:
     void SetBulletOffset( sal_Int32 nOffset, sal_Int32 nLen ) { mnBulletOffset = nOffset; mnBulletLen = nLen; }
     sal_Int32 GetBulletOffset() const { return mnBulletOffset; }
     sal_Int32 GetBulletLen() const { return mnBulletLen; }
-    void AreInBullet() { mbInBullet = true; }
     bool InBullet() const { return mbInBullet; }
 
     /// returns false if the given range is non-editable (e.g. contains bullets or _parts_ of fields)
@@ -209,7 +207,7 @@ void SvxAccessibleTextIndex::SetEEIndex( sal_uInt16 nEEIndex, const SvxTextForwa
             break;
         }
 
-        mnIndex += ::std::max(aFieldInfo.aCurrentText.getLength()-1, (sal_Int32)0);
+        mnIndex += std::max(aFieldInfo.aCurrentText.getLength()-1, (sal_Int32)0);
     }
 }
 
@@ -245,7 +243,7 @@ void SvxAccessibleTextIndex::SetIndex( sal_Int32 nIndex, const SvxTextForwarder&
 
         if( nIndex < nBulletLen )
         {
-            AreInBullet();
+            mbInBullet = true;
             SetBulletOffset( nIndex, nBulletLen );
             mnEEIndex = 0;
             return;
@@ -262,13 +260,13 @@ void SvxAccessibleTextIndex::SetIndex( sal_Int32 nIndex, const SvxTextForwarder&
         if( aFieldInfo.aPosition.nIndex > mnEEIndex )
             break;
 
-        mnEEIndex -= ::std::max(aFieldInfo.aCurrentText.getLength()-1, (sal_Int32)0);
+        mnEEIndex -= std::max(aFieldInfo.aCurrentText.getLength()-1, (sal_Int32)0);
 
         // we're within a field
         if( aFieldInfo.aPosition.nIndex >= mnEEIndex )
         {
             AreInField();
-            SetFieldOffset( ::std::max(aFieldInfo.aCurrentText.getLength()-1, (sal_Int32)0) - (aFieldInfo.aPosition.nIndex - mnEEIndex),
+            SetFieldOffset( std::max(aFieldInfo.aCurrentText.getLength()-1, (sal_Int32)0) - (aFieldInfo.aPosition.nIndex - mnEEIndex),
                             aFieldInfo.aCurrentText.getLength() );
             mnEEIndex = aFieldInfo.aPosition.nIndex ;
             break;
@@ -306,7 +304,7 @@ SvxEditSource* SvxEditSourceAdapter::Clone() const
 {
     if( mbEditSourceValid && mpAdaptee.get() )
     {
-        ::std::unique_ptr< SvxEditSource > pClonedAdaptee( mpAdaptee->Clone() );
+        std::unique_ptr< SvxEditSource > pClonedAdaptee( mpAdaptee->Clone() );
 
         if( pClonedAdaptee.get() )
         {
@@ -390,7 +388,7 @@ SfxBroadcaster& SvxEditSourceAdapter::GetBroadcaster() const
     return maDummyBroadcaster;
 }
 
-void SvxEditSourceAdapter::SetEditSource( ::std::unique_ptr< SvxEditSource > && pAdaptee )
+void SvxEditSourceAdapter::SetEditSource( std::unique_ptr< SvxEditSource > && pAdaptee )
 {
     if( pAdaptee.get() )
     {
@@ -444,7 +442,7 @@ OUString SvxAccessibleTextAdapter::GetText( const ESelection& rSel ) const
     if( rSel.nStartPara > rSel.nEndPara ||
         (rSel.nStartPara == rSel.nEndPara && rSel.nStartPos > rSel.nEndPos) )
     {
-        ::std::swap( aStartIndex, aEndIndex );
+        std::swap( aStartIndex, aEndIndex );
     }
 
     OUString sStr = mpTextForwarder->GetText( MakeEESelection(aStartIndex, aEndIndex) );
@@ -695,7 +693,7 @@ bool SvxAccessibleTextAdapter::GetUpdateModeForAcc( ) const
     return mpTextForwarder->GetUpdateModeForAcc();
 }
 
-Rectangle SvxAccessibleTextAdapter::GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const
+tools::Rectangle SvxAccessibleTextAdapter::GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const
 {
     assert(mpTextForwarder && "SvxAccessibleTextAdapter: no forwarder");
 
@@ -704,7 +702,7 @@ Rectangle SvxAccessibleTextAdapter::GetCharBounds( sal_Int32 nPara, sal_Int32 nI
 
     // preset if anything goes wrong below
     // n-th char in GetParagraphIndex's paragraph
-    Rectangle aRect = mpTextForwarder->GetCharBounds( nPara, aIndex.GetEEIndex() );
+    tools::Rectangle aRect = mpTextForwarder->GetCharBounds( nPara, aIndex.GetEEIndex() );
 
     if( aIndex.InBullet() )
     {
@@ -742,7 +740,7 @@ Rectangle SvxAccessibleTextAdapter::GetCharBounds( sal_Int32 nPara, sal_Int32 nI
                                                   aFont,
                                                   mpTextForwarder->GetText( aSel ) );
 
-                Rectangle aStartRect = mpTextForwarder->GetCharBounds( nPara, aIndex.GetEEIndex() );
+                tools::Rectangle aStartRect = mpTextForwarder->GetCharBounds( nPara, aIndex.GetEEIndex() );
 
                 aStringWrap.GetCharacterBounds( aIndex.GetFieldOffset(), aRect );
                 aRect.Move( aStartRect.Left(), aStartRect.Top() );
@@ -753,7 +751,7 @@ Rectangle SvxAccessibleTextAdapter::GetCharBounds( sal_Int32 nPara, sal_Int32 nI
     return aRect;
 }
 
-Rectangle SvxAccessibleTextAdapter::GetParaBounds( sal_Int32 nPara ) const
+tools::Rectangle SvxAccessibleTextAdapter::GetParaBounds( sal_Int32 nPara ) const
 {
     assert(mpTextForwarder && "SvxAccessibleTextAdapter: no forwarder");
 
@@ -764,7 +762,7 @@ Rectangle SvxAccessibleTextAdapter::GetParaBounds( sal_Int32 nPara ) const
         aBulletInfo.nType != SVX_NUM_BITMAP )
     {
         // include bullet in para bounding box
-        Rectangle aRect( mpTextForwarder->GetParaBounds( nPara ) );
+        tools::Rectangle aRect( mpTextForwarder->GetParaBounds( nPara ) );
 
         aRect.Union( aBulletInfo.aBounds );
 
@@ -848,7 +846,7 @@ bool SvxAccessibleTextAdapter::GetIndexAtPoint( const Point& rPoint, sal_Int32& 
                                           aFont,
                                           mpTextForwarder->GetText( aSelection ) );
 
-        Rectangle aRect = mpTextForwarder->GetCharBounds( nPara, aIndex.GetEEIndex() );
+        tools::Rectangle aRect = mpTextForwarder->GetCharBounds( nPara, aIndex.GetEEIndex() );
         Point aPoint = rPoint;
         aPoint.Move( -aRect.Left(), -aRect.Top() );
 
@@ -1095,7 +1093,7 @@ bool SvxAccessibleTextAdapter::IsEditable( const ESelection& rSel )
     if( rSel.nStartPara > rSel.nEndPara ||
         (rSel.nStartPara == rSel.nEndPara && rSel.nStartPos > rSel.nEndPos) )
     {
-        ::std::swap( aStartIndex, aEndIndex );
+        std::swap( aStartIndex, aEndIndex );
     }
 
     return aStartIndex.IsEditableRange( aEndIndex );
@@ -1142,7 +1140,7 @@ bool SvxAccessibleTextEditViewAdapter::IsValid() const
         return false;
 }
 
-Rectangle SvxAccessibleTextEditViewAdapter::GetVisArea() const
+tools::Rectangle SvxAccessibleTextEditViewAdapter::GetVisArea() const
 {
     DBG_ASSERT(mpViewForwarder, "SvxAccessibleTextEditViewAdapter: no forwarder");
 

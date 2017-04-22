@@ -39,11 +39,11 @@ namespace accessibility {
 class SVX_DLLPUBLIC DescriptionGenerator
 {
 public:
-    enum PropertyType {
-        COLOR,
-        INTEGER,
-        STRING,
-        FILL_STYLE
+    enum class PropertyType {
+        Color,
+        Integer,
+        String,
+        FillStyle
     };
 
     /** Creates a new description generator with an empty description
@@ -178,7 +178,7 @@ private:
             Name of the property.
     */
     SVX_DLLPRIVATE void AddString (const OUString& sPropertyName,
-        const OUString& sLocalizedName, long nWhichId = -1);
+        const OUString& sLocalizedName, long nWhichId);
 
     /** Add a property value formatted as fill style to the description
         string.  If the fill style is <const>HATCH</const>,

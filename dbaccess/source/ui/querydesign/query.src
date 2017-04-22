@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 #include "dbu_qry.hrc"
-#include "Query.hrc"
 #include <sfx2/cntids.hrc>
 #include "browserids.hxx"
 #include "dbaccess_helpid.hrc"
@@ -54,37 +53,9 @@ Menu RID_MENU_JOINVIEW_TABLE
      };
 };
 
-Menu RID_QUERYCOLPOPUPMENU
+Bitmap BMP_PRIMARY_KEY
 {
-    ItemList =
-    {
-        MenuItem
-        {
-            Identifier = ID_BROWSER_COLWIDTH ;
-            HelpID = HID_BROWSER_COLUMNWIDTH ;
-            Text [ en-US ] = "Column ~Width..." ;
-        };
-        MenuItem
-        {
-            Separator = TRUE ;
-        };
-        MenuItem
-        {
-            Identifier = SID_DELETE ;
-            Command = ".uno:Delete" ;
-            Text [ en-US ] = "~Delete" ;
-        };
-    };
-};
-
-ImageList IMG_JOINS
-{
-    Prefix = "jo";
-    MaskColor   = Color { Red   = 0xffff; Green = 0x0000; Blue  = 0xffff; };
-    IdList = {
-        IMG_PRIMARY_KEY; IMG_FOREIGN_KEY;
-    };
-    IdCount = { 2; };
+    File = "jo01.png";
 };
 
 String STR_QUERY_UNDO_TABWINSHOW
@@ -125,19 +96,9 @@ String STR_QUERY_UNDO_TABFIELDCREATE
     Text [ en-US ] = "Add Column" ;
 };
 
-String RID_STR_TABLE_DOESNT_EXIST
-{
-    Text [ en-US ] = "Invalid expression, table '$name$' does not exist.";
-};
-
 String RID_STR_FIELD_DOESNT_EXIST
 {
     Text [ en-US ] = "Invalid expression, field name '$name$' does not exist.";
-};
-
-String RID_STR_TOMUCHTABLES
-{
-    Text [ en-US ] = "The query covers #num# tables. The selected database type, however, can only process a maximum of #maxnum# table(s) per statement.";
 };
 
 String STR_QUERY_UNDO_TABWINDELETE
@@ -249,11 +210,6 @@ String STR_QRY_NOSELECT
     Text [ en-US ] = "Nothing has been selected." ;
 };
 
-String STR_QRY_TOOMANYCOND
-{
-    Text [ en-US ] = "Too many search criteria" ;
-};
-
 String STR_QRY_SYNTAX
 {
     Text [ en-US ] = "SQL syntax error" ;
@@ -324,16 +280,6 @@ String STR_QRY_CHECK_CASESENSITIVE
     Text [ en-US ] = "The column could not be found. Please note that the database is case-sensitive.";
 };
 
-String STR_QUERYDESIGN
-{
-    Text [ en-US ] = " - %PRODUCTNAME Base: Query Design";
-};
-
-String STR_VIEWDESIGN
-{
-    Text [ en-US ] = " - %PRODUCTNAME Base: View Design";
-};
-
 String STR_QUERY_SAVEMODIFIED
 {
     Text [ en-US ] = "$object$ has been changed.\nDo you want to save the changes?" ;
@@ -354,30 +300,19 @@ String STR_INFO_OPENING_IN_SQL_VIEW
         "(except \"SQL command\", which doesn't make sense here) will be inserted.";
 };
 
-Resource RSC_QUERY_OBJECT_TYPE
+StringArray RSC_QUERY_OBJECT_TYPE
 {
-    String 1
+    ItemList [ en-US ] =
     {
-        Text [ en-US ] = "The table view";
-    };
-    String 2
-    {
-        Text [ en-US ] = "The query";
-    };
-    String 3
-    {
-        Text [ en-US ] = "The SQL statement";
+        < "The table view"; >;
+        < "The query"; >;
+        < "The SQL statement"; >;
     };
 };
 
 String STR_STATEMENT_WITHOUT_RESULT_SET
 {
     Text [ en-US ] = "The query does not create a result set, and thus cannot be part of another query.";
-};
-
-String STR_NO_DATASOURCE_OR_CONNECTION
-{
-    Text [ en-US ] = "Both the ActiveConnection and the DataSourceName parameter are missing or wrong - cannot initialize the query designer.";
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

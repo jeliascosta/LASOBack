@@ -48,8 +48,8 @@ namespace comphelper
         OCommonAccessibleText();
         virtual ~OCommonAccessibleText();
 
-        css::uno::Reference < css::i18n::XBreakIterator >             implGetBreakIterator();
-        css::uno::Reference < css::i18n::XCharacterClassification >   implGetCharacterClassification();
+        css::uno::Reference < css::i18n::XBreakIterator > const &            implGetBreakIterator();
+        css::uno::Reference < css::i18n::XCharacterClassification > const &  implGetCharacterClassification();
         static bool                      implIsValidBoundary( css::i18n::Boundary& rBoundary, sal_Int32 nLength );
         static bool                      implIsValidIndex( sal_Int32 nIndex, sal_Int32 nLength );
         static bool                      implIsValidRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex, sal_Int32 nLength );
@@ -63,17 +63,36 @@ namespace comphelper
         virtual void                     implGetLineBoundary( css::i18n::Boundary& rBoundary, sal_Int32 nIndex );
 
         /** non-virtual versions of the methods
+
+            @throws css::lang::IndexOutOfBoundsException
+            @throws css::uno::RuntimeException
         */
-        sal_Unicode SAL_CALL getCharacter( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException);
-        sal_Int32 SAL_CALL getCharacterCount() throw (css::uno::RuntimeException);
-        OUString SAL_CALL getSelectedText() throw (css::uno::RuntimeException);
-        sal_Int32 SAL_CALL getSelectionStart() throw (css::uno::RuntimeException);
-        sal_Int32 SAL_CALL getSelectionEnd() throw (css::uno::RuntimeException);
-        OUString SAL_CALL getText() throw (css::uno::RuntimeException);
-        OUString SAL_CALL getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException);
-        css::accessibility::TextSegment SAL_CALL getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException);
-        css::accessibility::TextSegment SAL_CALL getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException);
-        css::accessibility::TextSegment SAL_CALL getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException);
+        sal_Unicode SAL_CALL getCharacter( sal_Int32 nIndex );
+        /// @throws css::uno::RuntimeException
+        sal_Int32 SAL_CALL getCharacterCount();
+        /// @throws css::uno::RuntimeException
+        OUString SAL_CALL getSelectedText();
+        /// @throws css::uno::RuntimeException
+        sal_Int32 SAL_CALL getSelectionStart();
+        /// @throws css::uno::RuntimeException
+        sal_Int32 SAL_CALL getSelectionEnd();
+        /// @throws css::uno::RuntimeException
+        OUString SAL_CALL getText();
+        /// @throws css::lang::IndexOutOfBoundsException
+        /// @throws css::uno::RuntimeException
+        OUString SAL_CALL getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex );
+        /// @throws css::lang::IndexOutOfBoundsException
+        /// @throws css::lang::IllegalArgumentException
+        /// @throws css::uno::RuntimeException
+        css::accessibility::TextSegment SAL_CALL getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType );
+        /// @throws css::lang::IndexOutOfBoundsException
+        /// @throws css::lang::IllegalArgumentException
+        /// @throws css::uno::RuntimeException
+        css::accessibility::TextSegment SAL_CALL getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType );
+        /// @throws css::lang::IndexOutOfBoundsException
+        /// @throws css::lang::IllegalArgumentException
+        /// @throws css::uno::RuntimeException
+        css::accessibility::TextSegment SAL_CALL getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType );
 
     public:
 
@@ -120,16 +139,16 @@ namespace comphelper
         DECLARE_XTYPEPROVIDER( )
 
         // XAccessibleText
-        virtual sal_Unicode SAL_CALL getCharacter( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getCharacterCount() throw (css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getSelectedText() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getSelectionStart() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getSelectionEnd() throw (css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getText() throw (css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual css::accessibility::TextSegment SAL_CALL getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-        virtual css::accessibility::TextSegment SAL_CALL getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-        virtual css::accessibility::TextSegment SAL_CALL getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Unicode SAL_CALL getCharacter( sal_Int32 nIndex ) override;
+        virtual sal_Int32 SAL_CALL getCharacterCount() override;
+        virtual OUString SAL_CALL getSelectedText() override;
+        virtual sal_Int32 SAL_CALL getSelectionStart() override;
+        virtual sal_Int32 SAL_CALL getSelectionEnd() override;
+        virtual OUString SAL_CALL getText() override;
+        virtual OUString SAL_CALL getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) override;
+        virtual css::accessibility::TextSegment SAL_CALL getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType ) override;
+        virtual css::accessibility::TextSegment SAL_CALL getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType ) override;
+        virtual css::accessibility::TextSegment SAL_CALL getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType ) override;
     };
 
 

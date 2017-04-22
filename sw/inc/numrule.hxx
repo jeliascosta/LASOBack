@@ -49,7 +49,7 @@ const sal_Unicode cBulletChar = 0x2022; ///< Character for lists.
 
 class SW_DLLPUBLIC SwNumFormat : public SvxNumberFormat, public SwClient
 {
-    SwFormatVertOrient* m_pVertOrient;
+    std::unique_ptr<SwFormatVertOrient> m_pVertOrient;
     //For i120928,record the cp info of graphic within bullet
     sal_Unicode     m_cGrfBulletCP;
     SAL_DLLPRIVATE void UpdateNumNodes( SwDoc* pDoc );
@@ -65,7 +65,7 @@ public:
     SwNumFormat( const SwNumFormat& );
     SwNumFormat( const SvxNumberFormat&, SwDoc* pDoc);
 
-    virtual ~SwNumFormat();
+    virtual ~SwNumFormat() override;
 
     SwNumFormat& operator=( const SwNumFormat& );
 
@@ -75,7 +75,7 @@ public:
     SwCharFormat* GetCharFormat() const { return const_cast<SwCharFormat*>(static_cast<const SwCharFormat*>(GetRegisteredIn())); }
     void       SetCharFormat( SwCharFormat* );
 
-    void                    SetCharFormatName(const OUString& rSet);
+    using SvxNumberFormat::SetCharFormatName;
     virtual OUString        GetCharFormatName() const override;
 
     //For i120928,access the cp info of graphic within bullet
@@ -84,8 +84,6 @@ public:
 
     virtual void    SetGraphicBrush( const SvxBrushItem* pBrushItem, const Size* pSize = nullptr, const sal_Int16* pOrient = nullptr) override;
 
-    virtual void                SetVertOrient(sal_Int16 eSet) override;
-    virtual sal_Int16   GetVertOrient() const override;
     const SwFormatVertOrient*      GetGraphicOrientation() const;
 
     bool IsEnumeration() const; // #i22362#
@@ -173,8 +171,8 @@ public:
                           const unsigned int _nRestrictToThisLevel = MAXLEVEL,
                           Extremities* pExtremities = nullptr ) const;
     OUString MakeRefNumString( const SwNodeNum& rNodeNum,
-                             const bool bInclSuperiorNumLabels = false,
-                             const sal_uInt8 nRestrictInclToThisLevel = 0 ) const;
+                             const bool bInclSuperiorNumLabels,
+                             const int nRestrictInclToThisLevel ) const;
 
     /**
 
@@ -190,7 +188,7 @@ public:
     void AddParagraphStyle( SwTextFormatColl& rTextFormatColl );
     void RemoveParagraphStyle( SwTextFormatColl& rTextFormatColl );
 
-    inline void SetDefaultListId( const OUString& sDefaultListId )
+    void SetDefaultListId( const OUString& sDefaultListId )
     {
         msDefaultListId = sDefaultListId;
     }

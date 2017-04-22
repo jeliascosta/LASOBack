@@ -26,6 +26,7 @@
 
 #include <editeng/outliner.hxx>
 #include <editeng/editview.hxx>
+#include <editeng/editeng.hxx>
 
 #include "app.hrc"
 #include "helpids.h"
@@ -37,11 +38,14 @@
 #include "drawdoc.hxx"
 #include "AccessibleDrawDocumentView.hxx"
 #include "WindowUpdater.hxx"
+#include "ViewShellBase.hxx"
+#include "uiobject.hxx"
 
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
 #include <comphelper/lok.hxx>
+#include <sfx2/lokhelper.hxx>
 
 namespace sd {
 
@@ -63,7 +67,6 @@ Window::Window(vcl::Window* pParent)
       mnMinZoom(MIN_ZOOM),
       mnMaxZoom(MAX_ZOOM),
       mbMinZoomAutoCalc(false),
-      mbCalcMinZoomByMinSide(true),
       mbCenterAllowed(true),
       mnTicks (0),
       mpViewShell(nullptr),
@@ -72,7 +75,7 @@ Window::Window(vcl::Window* pParent)
     SetDialogControlFlags( DialogControlFlags::Return | DialogControlFlags::WantFocus );
 
     MapMode aMap(GetMapMode());
-    aMap.SetMapUnit(MAP_100TH_MM);
+    aMap.SetMapUnit(MapUnit::Map100thMM);
     SetMapMode(aMap);
 
     // whit it, the vcl::WindowColor is used in the slide mode
@@ -102,6 +105,7 @@ void Window::dispose()
             pWindowUpdater->UnregisterWindow (this);
     }
     mpShareWin.clear();
+    DropTargetHelper::dispose();
     vcl::Window::dispose();
 }
 
@@ -125,6 +129,11 @@ void Window::SetViewShell (ViewShell* pViewSh)
         if (pWindowUpdater != nullptr)
             pWindowUpdater->RegisterWindow (this);
     }
+}
+
+ViewShell* Window::GetViewShell()
+{
+    return mpViewShell;
 }
 
 void Window::CalcMinZoom()
@@ -153,13 +162,9 @@ void Window::CalcMinZoom()
                 * (double) ZOOM_MULTIPLICATOR / (double) maViewSize.Height());
 
             // Decide whether to take the larger or the smaller factor.
-            sal_uLong nFact;
-            if (mbCalcMinZoomByMinSide)
-                nFact = std::min(nX, nY);
-            else
-                nFact = std::max(nX, nY);
+            sal_uLong nFact = std::min(nX, nY);
 
-            // The factor is tansfomed according to the current zoom factor.
+            // The factor is transformed according to the current zoom factor.
             nFact = nFact * nZoom / ZOOM_MULTIPLICATOR;
             mnMinZoom = std::max((sal_uInt16) MIN_ZOOM, (sal_uInt16) nFact);
         }
@@ -209,7 +214,7 @@ void Window::PrePaint(vcl::RenderContext& /*rRenderContext*/)
         mpViewShell->PrePaint();
 }
 
-void Window::Paint(vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect)
+void Window::Paint(vcl::RenderContext& /*rRenderContext*/, const ::tools::Rectangle& rRect)
 {
     if ( mpViewShell )
         mpViewShell->Paint(rRect, this);
@@ -220,6 +225,9 @@ void Window::KeyInput(const KeyEvent& rKEvt)
     if (getenv("SD_DEBUG") && rKEvt.GetKeyCode().GetCode() == KEY_F12 && mpViewShell)
     {
         mpViewShell->GetDoc()->dumpAsXml(nullptr);
+        OutlinerView *pOLV = mpViewShell->GetView()->GetTextEditOutlinerView();
+        if (pOLV)
+            pOLV->GetEditView().GetEditEngine()->dumpAsXmlEditDoc(nullptr);
         return;
     }
 
@@ -258,11 +266,14 @@ void Window::MouseButtonUp(const MouseEvent& rMEvt)
 
 void Window::Command(const CommandEvent& rCEvt)
 {
-    if ( mpViewShell )
+    if (mpViewShell)
         mpViewShell->Command(rCEvt, this);
+    //pass at least alt press/release to parent impl
+    if (rCEvt.GetCommand() == CommandEventId::ModKeyChange)
+        vcl::Window::Command(rCEvt);
 }
 
-bool Window::Notify( NotifyEvent& rNEvt )
+bool Window::EventNotify( NotifyEvent& rNEvt )
 {
     bool bResult = false;
     if ( mpViewShell )
@@ -270,7 +281,7 @@ bool Window::Notify( NotifyEvent& rNEvt )
         bResult = mpViewShell->Notify(rNEvt, this);
     }
     if( !bResult )
-        bResult = vcl::Window::Notify( rNEvt );
+        bResult = vcl::Window::EventNotify(rNEvt);
 
     return bResult;
 }
@@ -375,7 +386,7 @@ void Window::SetZoomIntegral(long nZoom)
     SetZoomFactor(nZoom);
 }
 
-long Window::GetZoomForRect( const Rectangle& rZoomRect )
+long Window::GetZoomForRect( const ::tools::Rectangle& rZoomRect )
 {
     long nRetZoom = 100;
 
@@ -434,7 +445,7 @@ long Window::GetZoomForRect( const Rectangle& rZoomRect )
     is displayed centered and as large as possible while still being fully
     visible in the window.
 */
-long Window::SetZoomRect (const Rectangle& rZoomRect)
+long Window::SetZoomRect (const ::tools::Rectangle& rZoomRect)
 {
     long nNewZoom = 100;
 
@@ -746,20 +757,6 @@ void Window::DataChanged( const DataChangedEvent& rDCEvt )
         if ( (rDCEvt.GetType() == DataChangedEventType::SETTINGS) &&
              (rDCEvt.GetFlags() & AllSettingsFlags::STYLE) )
         {
-            // When the screen zoom factor has changed then reset the zoom
-            // factor of the frame to always display the whole page.
-            const AllSettings* pOldSettings = rDCEvt.GetOldSettings ();
-            const AllSettings& rNewSettings = GetSettings ();
-            if (pOldSettings && mpViewShell)
-            {
-                if (pOldSettings->GetStyleSettings().GetScreenZoom()
-                    != rNewSettings.GetStyleSettings().GetScreenZoom())
-                {
-                    mpViewShell->GetViewFrame()->GetDispatcher()->
-                        Execute(SID_SIZE_PAGE, SfxCallMode::ASYNCHRON | SfxCallMode::RECORD);
-                }
-            }
-
             /* Rearrange or initiate Resize for scroll bars since the size of
                the scroll bars my have changed. Within this, inside the resize-
                handler, the size of the scroll bars will be asked from the
@@ -965,7 +962,7 @@ css::uno::Reference<css::accessibility::XAccessible>
     }
     else
     {
-        OSL_TRACE ("::sd::Window::CreateAccessible: no view shell");
+        SAL_WARN("sd", "::sd::Window::CreateAccessible: no view shell");
         return vcl::Window::CreateAccessible ();
     }
 }
@@ -999,7 +996,7 @@ Selection Window::GetSurroundingTextSelection() const
     }
 }
 
-void Window::LogicInvalidate(const Rectangle* pRectangle)
+void Window::LogicInvalidate(const ::tools::Rectangle* pRectangle)
 {
     DrawViewShell* pDrawViewShell = dynamic_cast<DrawViewShell*>(mpViewShell);
     if (pDrawViewShell && pDrawViewShell->IsInSwitchPage())
@@ -1010,12 +1007,21 @@ void Window::LogicInvalidate(const Rectangle* pRectangle)
         sRectangle = "EMPTY";
     else
     {
-        Rectangle aRectangle(*pRectangle);
-        if (GetMapMode().GetMapUnit() == MAP_100TH_MM)
-            aRectangle = OutputDevice::LogicToLogic(aRectangle, MAP_100TH_MM, MAP_TWIP);
+        ::tools::Rectangle aRectangle(*pRectangle);
+        if (GetMapMode().GetMapUnit() == MapUnit::Map100thMM)
+            aRectangle = OutputDevice::LogicToLogic(aRectangle, MapUnit::Map100thMM, MapUnit::MapTwip);
         sRectangle = aRectangle.toString();
     }
-    mpViewShell->GetDoc()->libreOfficeKitCallback(LOK_CALLBACK_INVALIDATE_TILES, sRectangle.getStr());
+    SfxViewShell& rSfxViewShell = mpViewShell->GetViewShellBase();
+    SfxLokHelper::notifyInvalidation(&rSfxViewShell, sRectangle);
+}
+
+FactoryFunction Window::GetUITestFactory() const
+{
+    if (get_id() == "impress_win")
+        return ImpressWindowUIObject::create;
+
+    return WindowUIObject::create;
 }
 
 } // end of namespace sd

@@ -23,9 +23,8 @@
 
 
 RefNode::RefNode( Atom nTyp )
+    : nTypNameId(nTyp), pObjBiTree(nullptr)
 {
-    pObjBiTree = nullptr;
-    nTypNameId = nTyp;
 }
 
 sal_uInt32 RefNode::GetId() const
@@ -57,14 +56,14 @@ ObjNode * RefNode::GetObjNode( const RscId & rRscId )
     return nullptr;
 }
 
-ObjNode::ObjNode( const RscId & rId, CLASS_DATA pData, sal_uLong lKey )
+ObjNode::ObjNode( const RscId & rId, CLASS_DATA pData, RscFileTab::Index lKey )
+    : aRscId(rId)
+    , pRscObj(pData)
+    , lFileKey(lKey)
 {
-    pRscObj  = pData;
-    aRscId   = rId;
-    lFileKey = lKey;
 }
 
-ObjNode * ObjNode::DelObjNode( RscTop * pClass, sal_uLong nFileKey )
+ObjNode * ObjNode::DelObjNode( RscTop * pClass, RscFileTab::Index nFileKey )
 {
     ObjNode * pRetNode = this;
 
@@ -96,14 +95,14 @@ ObjNode * ObjNode::DelObjNode( RscTop * pClass, sal_uLong nFileKey )
 
 sal_uInt32 ObjNode::GetId() const
 {
-    return (sal_uInt32)(long)aRscId;
+    return aRscId.GetNumber();
 }
 
 bool ObjNode::IsConsistent()
 {
     bool bRet = true;
 
-    if( (long)aRscId > 0x7FFF || (long)aRscId < 1 )
+    if( aRscId.GetNumber() > 0x7FFF || aRscId.GetNumber() < 1 )
     {
         bRet = false;
     }

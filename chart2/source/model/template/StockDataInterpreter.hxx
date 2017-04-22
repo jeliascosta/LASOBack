@@ -30,23 +30,19 @@ class StockDataInterpreter : public DataInterpreter
 {
 public:
     explicit StockDataInterpreter(
-        StockChartTypeTemplate::StockVariant eVariant,
-        const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~StockDataInterpreter();
+        StockChartTypeTemplate::StockVariant eVariant );
+    virtual ~StockDataInterpreter() override;
 
 protected:
     // ____ XDataInterpreter ____
     virtual css::chart2::InterpretedData SAL_CALL interpretDataSource(
         const css::uno::Reference< css::chart2::data::XDataSource >& xSource,
         const css::uno::Sequence< css::beans::PropertyValue >& aArguments,
-        const css::uno::Sequence< css::uno::Reference< css::chart2::XDataSeries > >& aSeriesToReUse )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::uno::Sequence< css::uno::Reference< css::chart2::XDataSeries > >& aSeriesToReUse ) override;
     virtual sal_Bool SAL_CALL isDataCompatible(
-        const css::chart2::InterpretedData& aInterpretedData )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::chart2::InterpretedData& aInterpretedData ) override;
     virtual css::chart2::InterpretedData SAL_CALL reinterpretDataSeries(
-        const css::chart2::InterpretedData& aInterpretedData )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::chart2::InterpretedData& aInterpretedData ) override;
 
 private:
     StockChartTypeTemplate::StockVariant m_eStockVariant;

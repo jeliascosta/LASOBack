@@ -66,13 +66,11 @@ public:
         , nVAlign(0)
         , nPendingAttributes(0)
         , nInsertion(0)
-        , nDefaultSize(12)
         , nLSize(0)
         , nDSize(0)
         , nCurSize(0)
         , nLastSize(0)
         , nSpec(0)
-        , bIsSilent(false)
         , bIsReInterpBrace(false)
         , nPostSup(0)
         , nPostlSup(0)
@@ -94,13 +92,11 @@ public:
         , nVAlign(0)
         , nPendingAttributes(0)
         , nInsertion(0)
-        , nDefaultSize(12)
         , nLSize(0)
         , nDSize(0)
         , nCurSize(0)
         , nLastSize(0)
         , nSpec(0)
-        , bIsSilent(false)
         , bIsReInterpBrace(false)
         , nPostSup(0)
         , nPostlSup(0)
@@ -124,7 +120,7 @@ private:
 
     void Init();
 
-    bool HandleRecords(int nLevel =0, sal_uInt8 nSelector =0xFF,
+    bool HandleRecords(int nLevel, sal_uInt8 nSelector =0xFF,
         sal_uInt8 nVariation =0xFF, int nRows =0, int nCols =0);
     bool HandleSize(sal_Int16 nLSize, sal_Int16 nDSize, int &rSetSize);
     void HandleAlign(sal_uInt8 nHAlign, sal_uInt8 nVAlign, int &rSetAlign);
@@ -144,7 +140,7 @@ private:
     static int xfEMBELL(sal_uInt8 nTest) {return nTest&0x20;}
     static int xfNULL(sal_uInt8 nTest) {return nTest&0x10;}
 
-    void HandleNodes(SmNode *pNode,int nLevel=0);
+    void HandleNodes(SmNode *pNode,int nLevel);
     int StartTemplate(sal_uInt16 nSelector,sal_uInt16 nVariation=0);
     void EndTemplate(int nOldPendingAttributes);
     void HandleSmMatrix(SmMatrixNode *pMatrix,int nLevel);
@@ -174,13 +170,12 @@ private:
     sal_uLong nInsertion;
 
     std::vector<sal_Int16> aSizeTable;
-    sal_Int16 nDefaultSize;
     sal_Int16 nLSize;
     sal_Int16 nDSize;
     sal_Int16 nCurSize;
     sal_Int16 nLastSize;
     sal_uInt8 nSpec;
-    bool  bIsSilent, bIsReInterpBrace;
+    bool  bIsReInterpBrace;
     OUString  sPost;
     sal_Int32 nPostSup;
     sal_Int32 nPostlSup;
@@ -193,11 +188,11 @@ private:
         tmANGLE,tmPAREN,tmBRACE,tmBRACK,tmBAR,tmDBAR,tmFLOOR,tmCEILING,
         tmLBLB,tmRBRB,tmRBLB,tmLBRP,tmLPRB,tmROOT,tmFRACT,tmSCRIPT,tmUBAR,
         tmOBAR,tmLARROW,tmRARROW,tmBARROW,tmSINT,tmDINT,tmTINT,tmSSINT,
-        tmDSINT,tmTSINT,tmUHBRACE,tmLHBRACE,tmSUM,tmTINTD
+        tmDSINT,tmTSINT,tmUHBRACE,tmLHBRACE,tmSUM
     };
 public:
     static bool LookupChar(sal_Unicode nChar,OUString &rRet,
-        sal_uInt8 nVersion=3,sal_uInt8 nTypeFace=0);
+        sal_uInt8 nVersion,sal_uInt8 nTypeFace=0);
 };
 
 

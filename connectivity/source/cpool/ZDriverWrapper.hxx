@@ -23,6 +23,7 @@
 #include <com/sun/star/sdbc/XDriver.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <osl/mutex.hxx>
+#include <rtl/ref.hxx>
 #include <com/sun/star/uno/XAggregation.hpp>
 
 
@@ -32,17 +33,17 @@ namespace connectivity
 
     class OConnectionPool;
 
-    typedef ::cppu::WeakImplHelper<   ::com::sun::star::sdbc::XDriver
-                                  >   ODriverWrapper_BASE;
+    typedef ::cppu::WeakImplHelper< css::sdbc::XDriver >  ODriverWrapper_BASE;
 
     class ODriverWrapper : public ODriverWrapper_BASE
     {
     protected:
-        ::com::sun::star::uno::Reference< ::com::sun::star::uno::XAggregation >
+        css::uno::Reference< css::uno::XAggregation >
                             m_xDriverAggregate;
-        ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDriver >
+        css::uno::Reference< css::sdbc::XDriver >
                             m_xDriver;
-        OConnectionPool*    m_pConnectionPool;
+        rtl::Reference<OConnectionPool>
+                            m_pConnectionPool;
 
     public:
         /** creates a new wrapper for a driver
@@ -50,23 +51,23 @@ namespace connectivity
                 the driver to aggregate. The object will be reset to <NULL/> when returning from the ctor.
         */
         ODriverWrapper(
-            ::com::sun::star::uno::Reference< ::com::sun::star::uno::XAggregation >& _rxAggregateDriver,
+            css::uno::Reference< css::uno::XAggregation >& _rxAggregateDriver,
             OConnectionPool* _pPool
             );
 
 
         // XInterface
-        virtual ::com::sun::star::uno::Any SAL_CALL queryInterface( const ::com::sun::star::uno::Type& aType ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
 
     protected:
         /// dtor
-        virtual ~ODriverWrapper();
+        virtual ~ODriverWrapper() override;
         // XDriver
-        virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > SAL_CALL connect( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL acceptsURL( const OUString& url ) throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-        virtual ::com::sun::star::uno::Sequence< ::com::sun::star::sdbc::DriverPropertyInfo > SAL_CALL getPropertyInfo( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getMajorVersion(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getMinorVersion(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::sdbc::XConnection > SAL_CALL connect( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info ) override;
+        virtual sal_Bool SAL_CALL acceptsURL( const OUString& url ) override;
+        virtual css::uno::Sequence< css::sdbc::DriverPropertyInfo > SAL_CALL getPropertyInfo( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info ) override;
+        virtual sal_Int32 SAL_CALL getMajorVersion(  ) override;
+        virtual sal_Int32 SAL_CALL getMinorVersion(  ) override;
     };
 
 

@@ -40,7 +40,7 @@ public:
         SvxRulerSupportFlags nRulerFlags,
         SfxBindings& rBindings,
         WinBits nWinStyle);
-    virtual ~Ruler();
+    virtual ~Ruler() override;
     virtual void dispose() override;
 
     void SetNullOffset(const Point& rOffset);
@@ -55,8 +55,6 @@ protected:
     bool bHorz;
 
     virtual void    MouseButtonDown(const MouseEvent& rMEvt) override;
-    virtual void    MouseButtonUp(const MouseEvent& rMEvt) override;
-    virtual void    MouseMove(const MouseEvent& rMEvt) override;
     virtual void    Command(const CommandEvent& rCEvt) override;
     virtual void    ExtraDown() override;
 };

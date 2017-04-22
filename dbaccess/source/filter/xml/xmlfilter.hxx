@@ -28,8 +28,6 @@
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
-#include <cppuhelper/implbase1.hxx>
-#include <cppuhelper/implbase5.hxx>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/io/XActiveDataSource.hpp>
 #include <osl/diagnose.h>
@@ -60,22 +58,22 @@ class ODBFilter : public SvXMLImport
 {
 public:
     typedef std::map< OUString, Sequence<PropertyValue> > TPropertyNameMap;
-    typedef ::std::vector< css::beans::PropertyValue> TInfoSequence;
+    typedef std::vector< css::beans::PropertyValue> TInfoSequence;
 private:
     TPropertyNameMap                                m_aQuerySettings;
     TPropertyNameMap                                m_aTablesSettings;
     TInfoSequence                                   m_aInfoSequence;
 
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pDocElemTokenMap;
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pDatabaseElemTokenMap;
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pDataSourceElemTokenMap;
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pLoginElemTokenMap;
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pDatabaseDescriptionElemTokenMap;
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pDataSourceInfoElemTokenMap;
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pDocumentsElemTokenMap;
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pComponentElemTokenMap;
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pQueryElemTokenMap;
-    mutable ::std::unique_ptr<SvXMLTokenMap>          m_pColumnElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pDocElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pDatabaseElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pDataSourceElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pLoginElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pDatabaseDescriptionElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pDataSourceInfoElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pDocumentsElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pComponentElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pQueryElemTokenMap;
+    mutable std::unique_ptr<SvXMLTokenMap>          m_pColumnElemTokenMap;
 
     mutable rtl::Reference < XMLPropertySetMapper >   m_xTableStylesPropertySetMapper;
     mutable rtl::Reference < XMLPropertySetMapper >   m_xColumnStylesPropertySetMapper;
@@ -83,7 +81,8 @@ private:
     Reference<XPropertySet>                         m_xDataSource;
     bool                                            m_bNewFormat;
 
-    bool                            implImport( const Sequence< PropertyValue >& rDescriptor ) throw (RuntimeException, std::exception);
+    /// @throws RuntimeException
+    bool                            implImport( const Sequence< PropertyValue >& rDescriptor );
 
     /** fills the map with the Properties
         @param  _rValue
@@ -95,7 +94,6 @@ private:
 
     SvXMLImportContext* CreateStylesContext(sal_uInt16 nPrefix,const OUString& rLocalName,
                                      const Reference< XAttributeList>& xAttrList, bool bIsAutoStyle );
-    SvXMLImportContext* CreateScriptContext( const OUString& rLocalName );
 
 protected:
     // SvXMLImport
@@ -103,19 +101,20 @@ protected:
                                       const OUString& rLocalName,
                                       const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 
-    virtual ~ODBFilter()  throw();
+    virtual ~ODBFilter()  throw() override;
 public:
 
     explicit ODBFilter( const Reference< XComponentContext >& _rxContext );
 
     // XFilter
-    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& rDescriptor ) throw(RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& rDescriptor ) override;
 
-    static OUString SAL_CALL getImplementationName_Static()
-        throw (css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    static OUString SAL_CALL getImplementationName_Static();
 
+    /// @throws css::uno::RuntimeException
     static css::uno::Sequence<OUString> SAL_CALL
-    getSupportedServiceNames_Static() throw (css::uno::RuntimeException);
+    getSupportedServiceNames_Static();
 
     static css::uno::Reference<css::uno::XInterface> SAL_CALL Create(
         css::uno::Reference<css::lang::XMultiServiceFactory> const & _rxORB);
@@ -126,7 +125,7 @@ public:
 
     const Reference<XPropertySet>& getDataSource() const { return m_xDataSource; }
 
-    inline const TPropertyNameMap& getQuerySettings() const { return m_aQuerySettings;}
+    const TPropertyNameMap& getQuerySettings() const { return m_aQuerySettings;}
 
     const SvXMLTokenMap& GetDocElemTokenMap() const;
     const SvXMLTokenMap& GetDatabaseElemTokenMap() const;
@@ -139,22 +138,22 @@ public:
     const SvXMLTokenMap& GetQueryElemTokenMap() const;
     const SvXMLTokenMap& GetColumnElemTokenMap() const;
 
-    rtl::Reference < XMLPropertySetMapper > GetTableStylesPropertySetMapper() const;
-    rtl::Reference < XMLPropertySetMapper > GetColumnStylesPropertySetMapper() const;
-    rtl::Reference < XMLPropertySetMapper > GetCellStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetTableStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetColumnStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetCellStylesPropertySetMapper() const;
 
     /** add a Info to the sequence which will be appended to the data source
         @param  _rInfo The property to append.
     */
-    inline void addInfo(const css::beans::PropertyValue& _rInfo)
+    void addInfo(const css::beans::PropertyValue& _rInfo)
     {
         m_aInfoSequence.push_back(_rInfo);
     }
 
     void setPropertyInfo();
 
-    inline bool isNewFormat() const { return m_bNewFormat; }
-    inline void setNewFormat(bool _bNewFormat) { m_bNewFormat = _bNewFormat; }
+    bool isNewFormat() const { return m_bNewFormat; }
+    void setNewFormat(bool _bNewFormat) { m_bNewFormat = _bNewFormat; }
 };
 
 } // namespace dbaxml

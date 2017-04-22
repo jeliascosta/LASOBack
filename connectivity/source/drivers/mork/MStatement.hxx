@@ -34,9 +34,9 @@ namespace connectivity
     {
         class OResultSet;
 
-        typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::sdbc::XStatement,
-                                                   ::com::sun::star::sdbc::XWarningsSupplier,
-                                                   ::com::sun::star::sdbc::XCloseable> OCommonStatement_IBASE;
+        typedef ::cppu::WeakComponentImplHelper<   css::sdbc::XStatement,
+                                                   css::sdbc::XWarningsSupplier,
+                                                   css::sdbc::XCloseable> OCommonStatement_IBASE;
 
 
         //************ Class: OCommonStatement
@@ -45,7 +45,7 @@ namespace connectivity
         class OCommonStatement;
         typedef ::connectivity::OSubComponent< OCommonStatement, OCommonStatement_IBASE >  OCommonStatement_SBASE;
 
-        class OCommonStatement  :public comphelper::OBaseMutex
+        class OCommonStatement  :public cppu::BaseMutex
                                 ,public OCommonStatement_IBASE
                                 ,public ::cppu::OPropertySetHelper
                                 ,public ::comphelper::OPropertyArrayUsageHelper< OCommonStatement >
@@ -54,17 +54,17 @@ namespace connectivity
             friend class ::connectivity::OSubComponent< OCommonStatement, OCommonStatement_IBASE >;
 
         private:
-            ::com::sun::star::sdbc::SQLWarning                            m_aLastWarning;
+            css::sdbc::SQLWarning                              m_aLastWarning;
 
         protected:
-            ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbc::XResultSet >   m_xResultSet;
-            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData> m_xDBMetaData;
-            ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess>  m_xColNames; // table columns
+            css::uno::WeakReference< css::sdbc::XResultSet >   m_xResultSet;
+            css::uno::Reference< css::sdbc::XDatabaseMetaData> m_xDBMetaData;
+            css::uno::Reference< css::container::XNameAccess>  m_xColNames; // table columns
 
             //  for this Statement
 
             OTable*                                     m_pTable;
-            OConnection*                                m_pConnection;  // The owning Connection object
+            rtl::Reference<OConnection>                 m_pConnection;  // The owning Connection object
 
             OValueRow                                   m_aRow;
 
@@ -74,9 +74,9 @@ namespace connectivity
 
             connectivity::OSQLParseNode*                m_pParseTree;
 
-            ::std::vector<sal_Int32>                    m_aColMapping;
-            ::std::vector<sal_Int32>                    m_aOrderbyColumnNumber;
-            ::std::vector<TAscendingOrder>              m_aOrderbyAscending;
+            std::vector<sal_Int32>                    m_aColMapping;
+            std::vector<sal_Int32>                    m_aOrderbyColumnNumber;
+            std::vector<TAscendingOrder>              m_aOrderbyAscending;
 
         protected:
 
@@ -85,18 +85,17 @@ namespace connectivity
             // OPropertySetHelper
             virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
             virtual sal_Bool SAL_CALL convertFastPropertyValue(
-                                                                ::com::sun::star::uno::Any & rConvertedValue,
-                                                                ::com::sun::star::uno::Any & rOldValue,
+                                                                css::uno::Any & rConvertedValue,
+                                                                css::uno::Any & rOldValue,
                                                                 sal_Int32 nHandle,
-                                                                const ::com::sun::star::uno::Any& rValue )
-                                                            throw (::com::sun::star::lang::IllegalArgumentException) override;
+                                                                const css::uno::Any& rValue ) override;
             virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
                                                                 sal_Int32 nHandle,
-                                                                const ::com::sun::star::uno::Any& rValue)   throw (::com::sun::star::uno::Exception, std::exception) override;
+                                                                const css::uno::Any& rValue) override;
             virtual void SAL_CALL getFastPropertyValue(
-                                                                ::com::sun::star::uno::Any& rValue,
+                                                                css::uno::Any& rValue,
                                                                 sal_Int32 nHandle) const override;
-            virtual ~OCommonStatement();
+            virtual ~OCommonStatement() override;
 
         protected:
 
@@ -104,9 +103,12 @@ namespace connectivity
 
             enum StatementType { eSelect, eCreateTable };
             /** called to do the parsing of a to-be-executed SQL statement, and set all members as needed
+
+                @throws css::sdbc::SQLException
+                @throws css::uno::RuntimeException
             */
             virtual StatementType
-                            parseSql( const OUString& sql , bool bAdjusted = false) throw ( ::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException );
+                            parseSql( const OUString& sql , bool bAdjusted = false);
             /** called to initialize a result set, according to a previously parsed SQL statement
             */
             virtual void    initializeResultSet( OResultSet* _pResult );
@@ -120,7 +122,7 @@ namespace connectivity
 
             /** executes the current query (the one which has been passed to the last parseSql call)
             */
-            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet >
+            css::uno::Reference< css::sdbc::XResultSet >
                             impl_executeCurrentQuery();
 
             void         createColumnMapping();
@@ -130,10 +132,10 @@ namespace connectivity
 
         public:
             // other methods
-            OConnection* getOwnConnection() const { return m_pConnection;}
+            OConnection* getOwnConnection() const { return m_pConnection.get(); }
 
             explicit OCommonStatement(OConnection* _pConnection );
-            using OCommonStatement_IBASE::operator ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >;
+            using OCommonStatement_IBASE::operator css::uno::Reference< css::uno::XInterface >;
 
             // OComponentHelper
             virtual void SAL_CALL disposing() override;
@@ -142,38 +144,38 @@ namespace connectivity
             virtual void SAL_CALL release() throw() override;
             virtual void SAL_CALL acquire() throw() override;
             // XInterface
-            virtual ::com::sun::star::uno::Any SAL_CALL queryInterface( const ::com::sun::star::uno::Type & rType ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
             //XTypeProvider
-            virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL getTypes(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
 
             // XPropertySet
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
             // XStatement
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL executeQuery( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
-            virtual sal_Int32 SAL_CALL executeUpdate( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
-            virtual sal_Bool SAL_CALL execute( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > SAL_CALL getConnection(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
+            virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL executeQuery( const OUString& sql ) override ;
+            virtual sal_Int32 SAL_CALL executeUpdate( const OUString& sql ) override ;
+            virtual sal_Bool SAL_CALL execute( const OUString& sql ) override ;
+            virtual css::uno::Reference< css::sdbc::XConnection > SAL_CALL getConnection(  ) override ;
             // XWarningsSupplier
-            virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL clearWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL getWarnings(  ) override;
+            virtual void SAL_CALL clearWarnings(  ) override;
             // XCloseable
-            virtual void SAL_CALL close(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL close(  ) override;
 
         protected:
             using OPropertySetHelper::getFastPropertyValue;
         };
 
         class OStatement :  public OCommonStatement,
-                            public ::com::sun::star::lang::XServiceInfo
+                            public css::lang::XServiceInfo
         {
         protected:
-            virtual ~OStatement(){}
+            virtual ~OStatement() override {}
         public:
             // a constructor, for when the object needs to be returned:
             explicit OStatement( OConnection* _pConnection);
             DECLARE_SERVICE_INFO();
 
-            virtual ::com::sun::star::uno::Any SAL_CALL queryInterface( const ::com::sun::star::uno::Type & rType ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
             virtual void SAL_CALL acquire() throw() override;
             virtual void SAL_CALL release() throw() override;
         };

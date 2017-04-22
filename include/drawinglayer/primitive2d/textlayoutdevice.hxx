@@ -26,6 +26,7 @@
 #include <vector>
 #include <com/sun/star/lang/Locale.hpp>
 #include <basegfx/polygon/b2dpolypolygon.hxx>
+#include <vcl/svapp.hxx>
 
 // predefines
 class VirtualDevice;
@@ -35,7 +36,7 @@ namespace rtl {
 };
 class OutputDevice;
 class GDIMetaFile;
-class Rectangle;
+namespace tools { class Rectangle; }
 enum class DrawTextFlags;
 namespace drawinglayer { namespace attribute {
     class FontAttribute;
@@ -57,6 +58,7 @@ namespace drawinglayer
         class DRAWINGLAYER_DLLPUBLIC TextLayouterDevice
         {
             /// internally used VirtualDevice
+            SolarMutexGuard                 maSolarGuard;
             VirtualDevice&                  mrDevice;
 
         public:
@@ -100,7 +102,7 @@ namespace drawinglayer
             double getFontDescent() const;
 
             void addTextRectActions(
-                const Rectangle& rRectangle,
+                const tools::Rectangle& rRectangle,
                 const rtl::OUString& rText,
                 DrawTextFlags nStyle,
                 GDIMetaFile& rGDIMetaFile) const;

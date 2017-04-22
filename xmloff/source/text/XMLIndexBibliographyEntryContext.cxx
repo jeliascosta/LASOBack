@@ -45,7 +45,7 @@ XMLIndexBibliographyEntryContext::XMLIndexBibliographyEntryContext(
     sal_uInt16 nPrfx,
     const OUString& rLocalName ) :
         XMLIndexSimpleEntryContext(rImport,
-                                   rTemplate.sTokenBibliographyDataField,
+                                   "TokenBibliographyDataField",
                                    rTemplate,
                                    nPrfx, rLocalName),
         nBibliographyInfo(BibliographyDataField::IDENTIFIER),
@@ -57,7 +57,7 @@ XMLIndexBibliographyEntryContext::~XMLIndexBibliographyEntryContext()
 {
 }
 
-const SvXMLEnumMapEntry aBibliographyDataFieldMap[] =
+const SvXMLEnumMapEntry<sal_uInt16> aBibliographyDataFieldMap[] =
 {
     { XML_ADDRESS,              BibliographyDataField::ADDRESS },
     { XML_ANNOTE,               BibliographyDataField::ANNOTE },
@@ -154,8 +154,8 @@ void XMLIndexBibliographyEntryContext::FillPropertyValues(
 
     // bibliography data field
     sal_Int32 nIndex = bCharStyleNameOK ? 2 : 1;
-    rValues[nIndex].Name = rTemplateContext.sBibliographyDataField;
-    rValues[nIndex].Value = css::uno::Any(nBibliographyInfo);
+    rValues[nIndex].Name = "BibliographyDataField";
+    rValues[nIndex].Value <<= nBibliographyInfo;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

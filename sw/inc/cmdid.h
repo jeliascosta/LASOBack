@@ -23,10 +23,6 @@
 #include <sfx2/sfx.hrc>
 #include <unomid.h>
 
-/* Flags that are being used in the slot definitions for the disable-features */
-#define SW_DISABLE_ON_PROTECTED_CURSOR  0x00000001
-#define SW_DISABLE_ON_MAILBOX_EDITOR    0x00000002
-
 #define FN_FILE                 SID_SW_START
 #define FN_EDIT                 (SID_SW_START +  100)
 #define FN_VIEW                 (SID_SW_START +  200)
@@ -110,28 +106,15 @@
 
 #define FN_EDIT_REGION          (FN_EDIT + 65)  /* Edit region */
 #define FN_GOTO_REFERENCE       (FN_EDIT + 66)  /* From Refmark to the reference */
+#define FN_EDIT_CURRENT_REGION  (FN_EDIT + 67)  /* Edit current region*/
 
 // already defined in SVX
 #define FN_NEXT_BOOKMARK        (FN_EDIT + 68)  /*  */
 #define FN_PREV_BOOKMARK        (FN_EDIT + 69)  /*  */
 
-/*Navigator ToolBoxes*/
-#define FN_ITEM_DOWN                 (FN_EDIT + 71)  /**/
-#define FN_ITEM_LEFT                 (FN_EDIT + 72)  /**/
-#define FN_ITEM_RIGHT                (FN_EDIT + 73)  /**/
-#define FN_ITEM_UP                   (FN_EDIT + 74)  /**/
-#define FN_DOWN                      (FN_EDIT + 75)  /**/
-
-#define FN_SELECT_FOOTER             (FN_EDIT + 77)  /**/
-#define FN_SELECT_HEADER             (FN_EDIT + 79)  /**/
 #define FN_PAGENUMBER                (FN_EDIT + 80)  /**/
-#define FN_SELECT_FOOTNOTE           (FN_EDIT + 82)  /**/
-#define FN_SELECT_SET_AUTO_BOOKMARK  (FN_EDIT + 83)  /**/
-#define FN_UP                        (FN_EDIT + 86)  /**/
 
 #define FN_SELECT_PARA               (FN_EDIT + 97) /* select paragraph*/
-
-#define FN_SELECT_CONTENT            (FN_EDIT + 99) /* Navigator - Content Type */
 
 #define FN_UPDATE_ALL_LINKS          (FN_EDIT2 + 24) /* update all links */
 
@@ -178,28 +161,13 @@
 
 #define FN_SET_PAGE             (FN_VIEW + 29)  /* Set page template to paragraph */
 
-// more Navigator
-#define FN_SHOW_CONTENT_BOX     (FN_VIEW + 33)  /**/
-#define FN_SHOW_ROOT            (FN_VIEW + 34)  /**/
-#define FN_DROP_REGION          (FN_VIEW + 35)  /**/
-#define FN_OUTLINE_LEVEL        (FN_VIEW + 36)  /**/
-
 #define FN_PRINT_LAYOUT         (FN_VIEW + 37)  /* print layout */
-
-#define FN_DROP_REGION_LINK     (FN_VIEW + 38)  /**/
-#define FN_DROP_REGION_COPY     (FN_VIEW + 39)  /**/
 
 #define FN_SCROLL_NAVIGATION    (FN_VIEW + 40)  /* Navigation Controller */
 
 #define FN_VIEW_HIDDEN_PARA     (FN_VIEW + 42)  /* View hidden paragraphs */
 #define FN_VIEW_SMOOTH_SCROLL   (FN_VIEW + 43)
 
-#define FN_GLOBAL_SWITCH        (FN_VIEW + 44)  /* Toggle between Global and Content */
-#define FN_GLOBAL_EDIT          (FN_VIEW + 45)  /* edit */
-#define FN_GLOBAL_UPDATE        (FN_VIEW + 46)  /* update */
-#define FN_GLOBAL_OPEN          (FN_VIEW + 47)  /* open */
-#define FN_GLOBAL_SAVE_CONTENT  (FN_VIEW + 48)  /* save content of link */
-#define FN_CREATE_NAVIGATION    (FN_VIEW + 49)  /* create Navigations-Controller */
 #define FN_PREVIEW_ZOOM          (FN_VIEW + 51)  /* create table controller for zoom */
 
 #define FN_SET_MODOPT_TBLNUMFMT  (FN_VIEW + 52) /* Number recognition in tables */
@@ -311,6 +279,7 @@
 #define FN_AUTOFORMAT_REDLINE_APPLY (FN_FORMAT + 6 ) /* apply autoformat with Redlining */
 #define FN_SET_SUPER_SCRIPT     (FN_FORMAT + 11) /* superscript */
 #define FN_SET_SUB_SCRIPT       (FN_FORMAT + 12) /* subscript */
+#define FN_SET_SMALL_CAPS       (FN_FORMAT + 13) /* small caps */
 
 #define FN_FORMAT_PAGE_SETTING_DLG  (FN_FORMAT + 42)  /*  */
 #define FN_NUM_FORMAT_TABLE_DLG     (FN_FORMAT + 45)  /* number format in table */
@@ -324,8 +293,9 @@
 #define FN_FORMAT_GRAFIC_DLG        (FN_FORMAT + 58)  /* graphic */
 #define FN_FORMAT_TABLE_DLG         (FN_FORMAT + 60)  /* table */
 
-#define FN_UPDATE_STYLE_BY_EXAMPLE  (FN_FORMAT + 63)  /* update style */
-#define FN_FORMAT_FOOTNOTE_DLG      (FN_FORMAT + 68)  /* footnote dialog */
+#define FN_UPDATE_STYLE_BY_EXAMPLE            (FN_FORMAT + 63)  /* update style */
+#define FN_FORMAT_FOOTNOTE_DLG                (FN_FORMAT + 68)  /* footnote dialog */
+#define FN_FORMAT_CURRENT_FOOTNOTE_DLG        (FN_FORMAT + 64)  /* Contextual footnote dialog */
 
 #define FN_FRAME_NOWRAP             (FN_FORMAT + 72)
 #define FN_FRAME_WRAP               (FN_FORMAT + 73)
@@ -505,7 +475,7 @@
 #define FN_UPDATE_CUR_TOX           (FN_EXTRA + 54)   /* update current index */
 #define FN_REMOVE_CUR_TOX           (FN_EXTRA + 55)  /* remove the current TOX*/
 
-#define FN_NAVIGATION_PI_GOTO_PAGE  (FN_EXTRA + 59 )  /* goto page from navigation-PI */
+#define FN_GOTO_PAGE                (FN_EXTRA + 59 )  /* goto page */
 
 #define FN_COLL_TYPE                (FN_EXTRA + 98)   /* type for GlobalDoc-Collection*/
 #define FN_COLL_ADD                 (FN_EXTRA + 99)
@@ -623,6 +593,7 @@
 #define FN_UNO_REPLACEMENT_GRAPHIC_U_R_L    (FN_EXTRA2 + 121)
 #define FN_UNO_HIDDEN                       (FN_EXTRA2 + 122)
 #define FN_UNO_STYLE_INTEROP_GRAB_BAG       (FN_EXTRA2 + 123)
+#define FN_UNO_TABLE_TEMPLATE_NAME          (FN_EXTRA2 + 124)
 
 // Area: Help
 // Region: Traveling & Selection
@@ -740,13 +711,6 @@
 #define FN_REPLY                    (FN_NOTES+7)
 #define FN_FORMAT_ALL_NOTES         (FN_NOTES+8)
 
-#define FN_HEADERFOOTER_EDIT        (FN_HEADERFOOTER+1)
-#define FN_HEADERFOOTER_DELETE      (FN_HEADERFOOTER+2)
-#define FN_HEADERFOOTER_BORDERBACK  (FN_HEADERFOOTER+3)
-
-#define FN_PAGEBREAK_EDIT           (FN_PAGEBREAK+1)
-#define FN_PAGEBREAK_DELETE         (FN_PAGEBREAK+2)
-
 // Region: Parameter
 #define FN_PARAM_MOVE_COUNT         (FN_PARAM+2)
 #define FN_PARAM_MOVE_SELECTION     (FN_PARAM+3)
@@ -813,7 +777,6 @@
 #define FN_SHAPE_ENDPOSITION_IN_HORI_L2R   (FN_PARAM2+26)
 #define FN_PARAM_PAM                    (FN_PARAM2+27) /* Point and Mark */
 #define FN_TEXT_BOX                     (FN_PARAM2+28) /* TextBox Property*/
-#define FN_PARAM_IGNORE_PROTECTED       (FN_PARAM2+29) /* Ignore protected areas */
 
 // Status: not more than 19!
 #define FN_STAT_PAGE                (FN_STAT + 1)
@@ -849,6 +812,15 @@
 #define SID_ATTR_PAGE_COLUMN            (FN_SIDEBAR + 0)
 #define SID_ATTR_PAGE_ULSPACE           (FN_SIDEBAR + 1)
 #define SID_ATTR_PAGE_LRSPACE           (FN_SIDEBAR + 2)
+#define SID_ATTR_PAGE_HEADER            (FN_SIDEBAR + 3)
+#define SID_ATTR_PAGE_HEADER_LRMARGIN   (FN_SIDEBAR + 4)
+#define SID_ATTR_PAGE_HEADER_SPACING    (FN_SIDEBAR + 5)
+#define SID_ATTR_PAGE_HEADER_LAYOUT     (FN_SIDEBAR + 6)
+#define SID_ATTR_PAGE_FOOTER            (FN_SIDEBAR + 7)
+#define SID_ATTR_PAGE_FOOTER_LRMARGIN   (FN_SIDEBAR + 8)
+#define SID_ATTR_PAGE_FOOTER_SPACING    (FN_SIDEBAR + 9)
+#define SID_ATTR_PAGE_FOOTER_LAYOUT     (FN_SIDEBAR + 10)
+#define SID_ATTR_PAGE_MARGIN            (FN_SIDEBAR + 11)
 
 //Member IDs for Fill / SetVariable of items
 #define         MID_STYLE       0xe0

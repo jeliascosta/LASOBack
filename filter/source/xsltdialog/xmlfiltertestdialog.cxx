@@ -74,10 +74,10 @@ public:
     explicit GlobalEventListenerImpl( XMLFilterTestDialog* pDialog );
 
     // XDocumentEventListener
-    virtual void SAL_CALL documentEventOccured( const css::document::DocumentEvent& Event ) throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL documentEventOccured( const css::document::DocumentEvent& Event ) override;
 
     // lang::XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 private:
     VclPtr<XMLFilterTestDialog> mpDialog;
 };
@@ -87,7 +87,7 @@ GlobalEventListenerImpl::GlobalEventListenerImpl( XMLFilterTestDialog* pDialog )
 {
 }
 
-void SAL_CALL GlobalEventListenerImpl::documentEventOccured( const css::document::DocumentEvent& Event ) throw (RuntimeException, std::exception)
+void SAL_CALL GlobalEventListenerImpl::documentEventOccured( const css::document::DocumentEvent& Event )
 {
     ::SolarMutexGuard aGuard;
     if( Event.EventName == "OnFocus" || Event.EventName == "OnUnload" )
@@ -97,7 +97,7 @@ void SAL_CALL GlobalEventListenerImpl::documentEventOccured( const css::document
     }
 }
 
-void SAL_CALL GlobalEventListenerImpl::disposing( const css::lang::EventObject& /* Source */ ) throw (RuntimeException, std::exception)
+void SAL_CALL GlobalEventListenerImpl::disposing( const css::lang::EventObject& /* Source */ )
 {
 }
 
@@ -114,7 +114,7 @@ static bool checkComponent( Reference< XComponent >& rxComponent, const OUString
                 // special case for impress documents which supports same service as draw documents
                 if ( rServiceName == "com.sun.star.drawing.DrawingDocument" )
                 {
-                    // so if we want a draw we need to check if its not an impress
+                    // so if we want a draw we need to check if it's not an impress
                     if( !xInfo->supportsService("com.sun.star.presentation.PresentationDocument") )
                         return true;
                 }
@@ -226,7 +226,7 @@ void XMLFilterTestDialog::test( const filter_info_impl& rFilterInfo )
 static OUString getFileNameFromURL( OUString& rURL )
 {
     INetURLObject aURL( rURL );
-    OUString aName( aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET) );
+    OUString aName( aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset) );
     return aName;
 }
 
@@ -587,11 +587,6 @@ void XMLFilterTestDialog::onImportBrowse()
     initDialog();
 }
 
-void XMLFilterTestDialog::onImportRecentDocument()
-{
-    import( m_sImportRecentFile );
-}
-
 void XMLFilterTestDialog::import( const OUString& rURL )
 {
     try
@@ -655,7 +650,7 @@ void XMLFilterTestDialog::import( const OUString& rURL )
     }
 }
 
-IMPL_LINK_TYPED(XMLFilterTestDialog, ClickHdl_Impl, Button *, pButton, void )
+IMPL_LINK(XMLFilterTestDialog, ClickHdl_Impl, Button *, pButton, void )
 {
     if (m_pPBExportBrowse == pButton)
     {
@@ -671,7 +666,7 @@ IMPL_LINK_TYPED(XMLFilterTestDialog, ClickHdl_Impl, Button *, pButton, void )
     }
     else if (m_pPBRecentFile == pButton)
     {
-        onImportRecentDocument();
+        import( m_sImportRecentFile );
     }
     else if (m_pPBClose == pButton)
     {

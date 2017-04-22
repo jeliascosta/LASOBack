@@ -59,8 +59,10 @@
  ************************************************************************/
 
 #include "lwplaypiece.hxx"
-
+#include "lwpstyledef.hxx"
 #include "lwpfilehdr.hxx"
+
+
 LwpRotor::LwpRotor()
     : m_nRotation(0)
 {}
@@ -91,9 +93,9 @@ void LwpLayoutGeometry::Read()
     {
         m_nWidth = m_pObjStrm->QuickReadInt32();
         m_nHeight = m_pObjStrm->QuickReadInt32();
-        m_Origin.Read(m_pObjStrm);
-        m_AbsoluteOrigin.Read(m_pObjStrm);
-        m_ContainerRotor.Read(m_pObjStrm);
+        m_Origin.Read(m_pObjStrm.get());
+        m_AbsoluteOrigin.Read(m_pObjStrm.get());
+        m_ContainerRotor.Read(m_pObjStrm.get());
         m_ContentOrientation = m_pObjStrm->QuickReaduInt8();
         m_pObjStrm->SkipExtra();
     }
@@ -125,7 +127,7 @@ void LwpLayoutScale::Read()
         m_nScaleWidth = m_pObjStrm->QuickReadInt32();
         m_nScaleHeight = m_pObjStrm->QuickReadInt32();
         m_nContentRotation = m_pObjStrm->QuickReaduInt16();
-        m_Offset.Read(m_pObjStrm);
+        m_Offset.Read(m_pObjStrm.get());
 
         m_nPlacement = m_pObjStrm->QuickReaduInt16();
         m_pObjStrm->SkipExtra();
@@ -148,9 +150,9 @@ void LwpLayoutMargins::Read()
 
     if( LwpFileHeader::m_nFileRevision >= 0x000B )
     {
-        m_Margins.Read(m_pObjStrm);
-        m_ExtMargins.Read(m_pObjStrm);
-        m_ExtraMargins.Read(m_pObjStrm);
+        m_Margins.Read(m_pObjStrm.get());
+        m_ExtMargins.Read(m_pObjStrm.get());
+        m_ExtraMargins.Read(m_pObjStrm.get());
         m_pObjStrm->SkipExtra();
     }
 }
@@ -171,7 +173,7 @@ void LwpLayoutBorder::Read()
 
     if( LwpFileHeader::m_nFileRevision >= 0x000B )
     {
-        m_BorderStuff.Read(m_pObjStrm);
+        m_BorderStuff.Read(m_pObjStrm.get());
         m_pObjStrm->SkipExtra();
     }
 }
@@ -192,7 +194,7 @@ void LwpLayoutBackground::Read()
 
     if( LwpFileHeader::m_nFileRevision >= 0x000B )
     {
-        m_BackgroundStuff.Read(m_pObjStrm);
+        m_BackgroundStuff.Read(m_pObjStrm.get());
         m_pObjStrm->SkipExtra();
     }
 }
@@ -237,7 +239,7 @@ void LwpLayoutExternalBorder::Read()
 
     if( LwpFileHeader::m_nFileRevision >= 0x000B )
     {
-        m_ExtranalBorder.Read(m_pObjStrm);
+        m_ExtranalBorder.Read(m_pObjStrm.get());
         m_pObjStrm->SkipExtra();
     }
 }
@@ -285,7 +287,7 @@ void LwpLayoutColumns::Read()
         m_pColumns = new LwpColumnInfo[m_nNumCols];
         for(int i=0; i<m_nNumCols; i++)
         {
-            m_pColumns[i].Read(m_pObjStrm);
+            m_pColumns[i].Read(m_pObjStrm.get());
         }
         m_pObjStrm->SkipExtra();
     }
@@ -325,7 +327,7 @@ void LwpLayoutGutters::Read()
 
     if( LwpFileHeader::m_nFileRevision >= 0x000B )
     {
-        m_BorderBuffer.Read(m_pObjStrm);
+        m_BorderBuffer.Read(m_pObjStrm.get());
         m_pObjStrm->SkipExtra();
     }
 }
@@ -345,7 +347,6 @@ LwpJoinStuff::LwpJoinStuff()
 LwpJoinStuff::~LwpJoinStuff()
 {}
 
-#include "lwpstyledef.hxx"
 void LwpJoinStuff:: Read(LwpObjectStream *pStrm)
 {
     m_nWidth = pStrm->QuickReadInt32();
@@ -379,7 +380,7 @@ void LwpLayoutJoins::Read()
 
     if( LwpFileHeader::m_nFileRevision >= 0x000B )
     {
-        m_JoinStuff.Read(m_pObjStrm);
+        m_JoinStuff.Read(m_pObjStrm.get());
         m_pObjStrm->SkipExtra();
     }
 }
@@ -400,7 +401,7 @@ void LwpLayoutShadow::Read()
 
     if( LwpFileHeader::m_nFileRevision >= 0x000B )
     {
-        m_Shadow.Read(m_pObjStrm);
+        m_Shadow.Read(m_pObjStrm.get());
         m_pObjStrm->SkipExtra();
     }
 }
@@ -452,7 +453,7 @@ void LwpLayoutRelativity::Read()
     LwpVirtualPiece::Read();
     if(LwpFileHeader::m_nFileRevision >= 0x000B)
     {
-        m_RelGuts.Read(m_pObjStrm);
+        m_RelGuts.Read(m_pObjStrm.get());
         m_pObjStrm->SkipExtra();
     }
 }

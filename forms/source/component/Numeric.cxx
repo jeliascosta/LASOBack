@@ -42,7 +42,7 @@ ONumericControl::ONumericControl(const Reference<XComponentContext>& _rxFactory)
 }
 
 
-css::uno::Sequence<OUString> ONumericControl::getSupportedServiceNames() throw(std::exception)
+css::uno::Sequence<OUString> ONumericControl::getSupportedServiceNames()
 {
     css::uno::Sequence<OUString> aSupported = OBoundControl::getSupportedServiceNames();
     aSupported.realloc(aSupported.getLength() + 2);
@@ -53,20 +53,7 @@ css::uno::Sequence<OUString> ONumericControl::getSupportedServiceNames() throw(s
     return aSupported;
 }
 
-
-Sequence<Type> ONumericControl::_getTypes()
-{
-    return OBoundControl::_getTypes();
-}
-
-
 // ONumericModel
-
-Sequence<Type> ONumericModel::_getTypes()
-{
-    return OEditBaseModel::_getTypes();
-}
-
 
 ONumericModel::ONumericModel(const Reference<XComponentContext>& _rxFactory)
                 :OEditBaseModel( _rxFactory, VCL_CONTROLMODEL_NUMERICFIELD, FRM_SUN_CONTROL_NUMERICFIELD, true, true )
@@ -94,7 +81,7 @@ IMPLEMENT_DEFAULT_CLONING( ONumericModel )
 
 // XServiceInfo
 
-css::uno::Sequence<OUString> ONumericModel::getSupportedServiceNames() throw(std::exception)
+css::uno::Sequence<OUString> ONumericModel::getSupportedServiceNames()
 {
     css::uno::Sequence<OUString> aSupported = OBoundControlModel::getSupportedServiceNames();
 
@@ -128,7 +115,7 @@ void ONumericModel::describeFixedProperties( Sequence< Property >& _rProps ) con
 }
 
 
-OUString SAL_CALL ONumericModel::getServiceName() throw ( css::uno::RuntimeException, std::exception)
+OUString SAL_CALL ONumericModel::getServiceName()
 {
     return OUString(FRM_COMPONENT_NUMERICFIELD);  // old (non-sun) name for compatibility !
 }
@@ -160,7 +147,7 @@ bool ONumericModel::commitControlValueToDbColumn( bool /*_bPostReset*/ )
 
 Any ONumericModel::translateDbColumnToControlValue()
 {
-    m_aSaveValue <<= (double)m_xColumn->getDouble();
+    m_aSaveValue <<= m_xColumn->getDouble();
     if ( m_xColumn->wasNull() )
         m_aSaveValue.clear();
 

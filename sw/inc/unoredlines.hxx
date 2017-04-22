@@ -19,6 +19,9 @@
 #ifndef INCLUDED_SW_INC_UNOREDLINES_HXX
 #define INCLUDED_SW_INC_UNOREDLINES_HXX
 
+#include <sal/config.h>
+
+#include <docary.hxx>
 #include <unocoll.hxx>
 #include <unobaseclass.hxx>
 #include <com/sun/star/container/XEnumerationAccess.hpp>
@@ -41,25 +44,25 @@ class SwXRedlines : public SwRedlinesBaseClass,
     public SwUnoCollection
 {
 protected:
-    virtual ~SwXRedlines();
+    virtual ~SwXRedlines() override;
 public:
     SwXRedlines(SwDoc* pDoc);
 
     //XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount(  ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL getByIndex(sal_Int32 nIndex) throw( css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Int32 SAL_CALL getCount(  ) override;
+    virtual css::uno::Any SAL_CALL getByIndex(sal_Int32 nIndex) override;
 
     //XEnumerationAccess - was: XParagraphEnumerationAccess
-    virtual css::uno::Reference< css::container::XEnumeration >  SAL_CALL createEnumeration() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Reference< css::container::XEnumeration >  SAL_CALL createEnumeration() override;
 
     //XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType(  ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasElements(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Type SAL_CALL getElementType(  ) override;
+    virtual sal_Bool SAL_CALL hasElements(  ) override;
 
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     static css::beans::XPropertySet*           GetObject( SwRangeRedline& rRedline, SwDoc& rDoc );
 };
@@ -69,23 +72,23 @@ class SwXRedlineEnumeration
     , public SwClient
 {
     SwDoc* pDoc;
-    sal_uInt16 nCurrentIndex;
+    SwRedlineTable::size_type nCurrentIndex;
 protected:
-    virtual ~SwXRedlineEnumeration();
+    virtual ~SwXRedlineEnumeration() override;
 public:
     SwXRedlineEnumeration(SwDoc& rDoc);
 
     //XEnumeration
-    virtual sal_Bool SAL_CALL hasMoreElements() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Any SAL_CALL nextElement() throw( css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL hasMoreElements() override;
+    virtual css::uno::Any SAL_CALL nextElement() override;
 
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 protected:
     //SwClient
-   virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
+    virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 };
 
 #endif

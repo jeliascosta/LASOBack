@@ -40,7 +40,7 @@ namespace pcr
     class CellBindingPropertyHandler : public CellBindingPropertyHandler_Base
     {
     private:
-        ::std::unique_ptr< CellBindingHelper >          m_pHelper;
+        std::unique_ptr< CellBindingHelper >          m_pHelper;
         ::rtl::Reference< IPropertyEnumRepresentation > m_pCellExchangeConverter;
 
     public:
@@ -48,20 +48,22 @@ namespace pcr
             const css::uno::Reference< css::uno::XComponentContext >& _rxContext
         );
 
-        static OUString SAL_CALL getImplementationName_static(  ) throw (css::uno::RuntimeException);
-        static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_static(  ) throw (css::uno::RuntimeException);
+        /// @throws css::uno::RuntimeException
+        static OUString SAL_CALL getImplementationName_static(  );
+        /// @throws css::uno::RuntimeException
+        static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_static(  );
 
     protected:
-        virtual ~CellBindingPropertyHandler();
+        virtual ~CellBindingPropertyHandler() override;
 
     protected:
         // XPropertyHandler overriables
-        virtual css::uno::Any                   SAL_CALL getPropertyValue( const OUString& _rPropertyName ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
-        virtual void                            SAL_CALL setPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rValue ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Any                   SAL_CALL convertToPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rControlValue ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Any                   SAL_CALL convertToControlValue( const OUString& _rPropertyName, const css::uno::Any& _rPropertyValue, const css::uno::Type& _rControlValueType ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString >  SAL_CALL getActuatingProperties( ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void                            SAL_CALL actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const css::uno::Any& _rNewValue, const css::uno::Any& _rOldValue, const css::uno::Reference< css::inspection::XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit ) throw (css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any                   SAL_CALL getPropertyValue( const OUString& _rPropertyName ) override;
+        virtual void                            SAL_CALL setPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rValue ) override;
+        virtual css::uno::Any                   SAL_CALL convertToPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rControlValue ) override;
+        virtual css::uno::Any                   SAL_CALL convertToControlValue( const OUString& _rPropertyName, const css::uno::Any& _rPropertyValue, const css::uno::Type& _rControlValueType ) override;
+        virtual css::uno::Sequence< OUString >  SAL_CALL getActuatingProperties( ) override;
+        virtual void                            SAL_CALL actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const css::uno::Any& _rNewValue, const css::uno::Any& _rOldValue, const css::uno::Reference< css::inspection::XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit ) override;
 
         // PropertyHandler overridables
         virtual css::uno::Sequence< css::beans::Property >

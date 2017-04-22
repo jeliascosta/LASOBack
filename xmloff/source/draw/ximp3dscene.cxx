@@ -79,12 +79,12 @@ SdXML3DLightContext::SdXML3DLightContext(
             }
             case XML_TOK_3DLIGHT_ENABLED:
             {
-                ::sax::Converter::convertBool(mbEnabled, sValue);
+                (void)::sax::Converter::convertBool(mbEnabled, sValue);
                 break;
             }
             case XML_TOK_3DLIGHT_SPECULAR:
             {
-                ::sax::Converter::convertBool(mbSpecular, sValue);
+                (void)::sax::Converter::convertBool(mbSpecular, sValue);
                 break;
             }
         }
@@ -226,24 +226,15 @@ SdXML3DSceneAttributesHelper::SdXML3DSceneAttributesHelper( SvXMLImport& rImport
 {
 }
 
-SdXML3DSceneAttributesHelper::~SdXML3DSceneAttributesHelper()
-{
-    // release remembered light contexts, they are no longer needed
-    for ( size_t i = maList.size(); i > 0; )
-        maList[ --i ]->ReleaseRef();
-    maList.clear();
-}
-
 /** creates a 3d light context and adds it to the internal list for later processing */
 SvXMLImportContext * SdXML3DSceneAttributesHelper::create3DLightContext( sal_uInt16 nPrfx, const OUString& rLName, const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList)
 {
-    SvXMLImportContext* pContext = new SdXML3DLightContext(mrImport, nPrfx, rLName, xAttrList);
+    const rtl::Reference<SdXML3DLightContext> xContext{new SdXML3DLightContext(mrImport, nPrfx, rLName, xAttrList)};
 
     // remember SdXML3DLightContext for later evaluation
-    pContext->AddFirstRef();
-    maList.push_back( static_cast<SdXML3DLightContext*>(pContext) );
+    maList.push_back(xContext);
 
-    return pContext;
+    return xContext.get();
 }
 
 /** this should be called for each scene attribute */
@@ -338,7 +329,7 @@ void SdXML3DSceneAttributesHelper::processSceneAttribute( sal_uInt16 nPrefix, co
         }
         else if( IsXMLToken( rLocalName, XML_LIGHTING_MODE ) )
         {
-            ::sax::Converter::convertBool(mbLightingMode, rValue);
+            (void)::sax::Converter::convertBool(mbLightingMode, rValue);
             return;
         }
     }
@@ -376,7 +367,7 @@ void SdXML3DSceneAttributesHelper::setSceneAttributes( const css::uno::Reference
         // set lights
         for( size_t a = 0; a < maList.size(); a++)
         {
-            SdXML3DLightContext* pCtx = maList[ a ];
+            SdXML3DLightContext* pCtx = maList[ a ].get();
 
             // set anys
             aAny <<= pCtx->GetDiffuseColor();

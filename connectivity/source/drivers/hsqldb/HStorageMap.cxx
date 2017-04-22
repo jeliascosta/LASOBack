@@ -79,21 +79,21 @@ namespace connectivity
             }
         }
 
-        Reference< XInputStream> StreamHelper::getInputStream()
+        Reference< XInputStream> const & StreamHelper::getInputStream()
         {
             if ( !m_xInputStream.is() )
                 m_xInputStream = m_xStream->getInputStream();
             return m_xInputStream;
         }
 
-        Reference< XOutputStream> StreamHelper::getOutputStream()
+        Reference< XOutputStream> const & StreamHelper::getOutputStream()
         {
             if ( !m_xOutputStream.is() )
                 m_xOutputStream = m_xStream->getOutputStream();
             return m_xOutputStream;
         }
 
-        Reference< XSeekable> StreamHelper::getSeek()
+        Reference< XSeekable> const & StreamHelper::getSeek()
         {
             if ( !m_xSeek.is() )
                 m_xSeek.set(m_xStream,UNO_QUERY);
@@ -191,7 +191,7 @@ namespace connectivity
             OSL_ENSURE(_xStorage.is(),"Storage is NULL!");
             TStorages& rMap = lcl_getStorageMap();
             // check if the storage is already in our map
-            TStorages::const_iterator aFind = ::std::find_if(rMap.begin(),rMap.end(),
+            TStorages::const_iterator aFind = std::find_if(rMap.begin(),rMap.end(),
                 [&_xStorage] (const TStorages::value_type& storage) {
                     return storage.second.mapStorage() == _xStorage;
                 });
@@ -222,7 +222,7 @@ namespace connectivity
             OSL_ENSURE(_xStorage.is(),"Storage is NULL!");
             TStorages& rMap = lcl_getStorageMap();
             // check if the storage is already in our map
-            TStorages::const_iterator aFind = ::std::find_if(rMap.begin(),rMap.end(),
+            TStorages::const_iterator aFind = std::find_if(rMap.begin(),rMap.end(),
                 [&_xStorage] (const TStorages::value_type& storage) {
                     return storage.second.mapStorage() == _xStorage;
                 });
@@ -358,8 +358,8 @@ namespace connectivity
         {
             if (env->ExceptionCheck())
                 env->ExceptionClear();
+            SAL_WARN("connectivity.hsqldb", "forwarding Exception: " << _aException.Message );
             OString cstr( OUStringToOString(_aException.Message, RTL_TEXTENCODING_JAVA_UTF8 ) );
-            OSL_TRACE( __FILE__": forwarding Exception: %s", cstr.getStr() );
             env->ThrowNew(env->FindClass("java/io/IOException"), cstr.getStr());
         }
 

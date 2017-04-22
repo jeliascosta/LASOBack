@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <uielement/itemcontainer.hxx>
 #include <uielement/constitemcontainer.hxx>
 #include <comphelper/servicehelper.hxx>
@@ -148,7 +151,6 @@ ItemContainer* ItemContainer::GetImplementation( const css::uno::Reference< css:
 
 // XElementAccess
 sal_Bool SAL_CALL ItemContainer::hasElements()
-throw ( RuntimeException, std::exception )
 {
     ShareGuard aLock( m_aShareMutex );
     return ( !m_aItemVector.empty() );
@@ -156,14 +158,12 @@ throw ( RuntimeException, std::exception )
 
 // XIndexAccess
 sal_Int32 SAL_CALL ItemContainer::getCount()
-throw ( RuntimeException, std::exception )
 {
     ShareGuard aLock( m_aShareMutex );
     return m_aItemVector.size();
 }
 
 Any SAL_CALL ItemContainer::getByIndex( sal_Int32 Index )
-throw ( IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception )
 {
     ShareGuard aLock( m_aShareMutex );
     if ( sal_Int32( m_aItemVector.size()) > Index )
@@ -174,7 +174,6 @@ throw ( IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std
 
 // XIndexContainer
 void SAL_CALL ItemContainer::insertByIndex( sal_Int32 Index, const Any& aItem )
-throw ( IllegalArgumentException, IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception )
 {
     Sequence< PropertyValue > aSeq;
     if ( aItem >>= aSeq )
@@ -192,12 +191,11 @@ throw ( IllegalArgumentException, IndexOutOfBoundsException, WrappedTargetExcept
             throw IndexOutOfBoundsException( OUString(), static_cast<OWeakObject *>(this) );
     }
     else
-        throw IllegalArgumentException( OUString( WRONG_TYPE_EXCEPTION ),
+        throw IllegalArgumentException( WRONG_TYPE_EXCEPTION,
                                         static_cast<OWeakObject *>(this), 2 );
 }
 
 void SAL_CALL ItemContainer::removeByIndex( sal_Int32 nIndex )
-throw ( IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception )
 {
     ShareGuard aLock( m_aShareMutex );
     if ( (sal_Int32)m_aItemVector.size() > nIndex )
@@ -209,7 +207,6 @@ throw ( IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std
 }
 
 void SAL_CALL ItemContainer::replaceByIndex( sal_Int32 Index, const Any& aItem )
-throw ( IllegalArgumentException, IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception )
 {
     Sequence< PropertyValue > aSeq;
     if ( aItem >>= aSeq )
@@ -221,7 +218,7 @@ throw ( IllegalArgumentException, IndexOutOfBoundsException, WrappedTargetExcept
             throw IndexOutOfBoundsException( OUString(), static_cast<OWeakObject *>(this) );
     }
     else
-        throw IllegalArgumentException( OUString( WRONG_TYPE_EXCEPTION ),
+        throw IllegalArgumentException( WRONG_TYPE_EXCEPTION,
                                         static_cast<OWeakObject *>(this), 2 );
 }
 

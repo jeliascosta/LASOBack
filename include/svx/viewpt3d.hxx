@@ -31,12 +31,11 @@ namespace basegfx { class B3DRange; } // end of namespace basegfx
 
 /*************************************************************************
 |*
-|* enums for projection and aspect ratio
+|* enums for projection
 |*
 \************************************************************************/
 
-enum ProjectionType { PR_PARALLEL, PR_PERSPECTIVE };
-enum AspectMapType  { AS_NO_MAPPING, AS_HOLD_SIZE, AS_HOLD_X, AS_HOLD_Y };
+enum class ProjectionType { Parallel, Perspective };
 
 
 /*************************************************************************
@@ -57,9 +56,7 @@ class SVX_DLLPUBLIC Viewport3D
     double          fVPD;           // View Plane Distance
 
     ProjectionType  eProjection;    // kind of the projection
-    AspectMapType   eAspectMapping; // flag for the acclimatization of the aspect ratio
-                                    // for display on the device
-    Rectangle aDeviceRect;          // position and size of the output area
+    tools::Rectangle aDeviceRect;          // position and size of the output area
 
     struct
     {
@@ -72,8 +69,6 @@ class SVX_DLLPUBLIC Viewport3D
 
     double fWRatio;                 // device/view aspect ratio
     double fHRatio;
-
-    void MakeTransform();
 
  public:
     Viewport3D();
@@ -91,12 +86,10 @@ class SVX_DLLPUBLIC Viewport3D
         { eProjection = ePrj; bTfValid = false; }
     ProjectionType GetProjection() const { return eProjection; }
 
-    AspectMapType GetAspectMapping() { return eAspectMapping; }
-
     void SetViewWindow(double fX, double fY, double fW, double fH);
 
-    void SetDeviceWindow(const Rectangle& rRect);
-    const Rectangle& GetDeviceWindow() const { return aDeviceRect; }
+    void SetDeviceWindow(const tools::Rectangle& rRect);
+    const tools::Rectangle& GetDeviceWindow() const { return aDeviceRect; }
 
     // returns observers position in world coordinates
     const basegfx::B3DPoint&    GetViewPoint();

@@ -93,8 +93,8 @@ namespace dbaui
         AutoTimer               m_aInvalidateClipboard;             // for testing the state of the CUT/COPY/PASTE-slots
 
         TransferableDataHelper  m_aSystemClipboard;     // content of the clipboard
-        TransferableClipboardListener*
-                                m_pClipbordNotifier;    // notifier for changes in the clipboard
+        rtl::Reference<TransferableClipboardListener>
+                                m_pClipboardNotifier;    // notifier for changes in the clipboard
 
         OAsynchronousLink       m_aAsyncGetCellFocus;
         OAsynchronousLink       m_aAsyncDisplayError;
@@ -113,19 +113,18 @@ namespace dbaui
         bool                    m_bCannotSelectUnfiltered : 1;  // received an DATA_CANNOT_SELECT_UNFILTERED error
 
     protected:
-        class FormErrorHelper
+        class FormErrorHelper final
         {
             SbaXDataBrowserController*  m_pOwner;
         public:
             FormErrorHelper(SbaXDataBrowserController* pOwner) : m_pOwner(pOwner) { m_pOwner->enterFormAction(); }
-            virtual ~FormErrorHelper() { m_pOwner->leaveFormAction(); }
+            ~FormErrorHelper() { m_pOwner->leaveFormAction(); }
         };
         friend class FormErrorHelper;
 
     // attribute access
     protected:
         const css::uno::Reference< css::sdbc::XRowSet >&             getRowSet()         const   { return m_xRowSet; }
-        const css::uno::Reference< css::sdbcx::XColumnsSupplier >&   getColumnsSupplier()const   { return m_xColumnsSupplier; }
         const css::uno::Reference< css::form::XLoadable >&           getLoadable()       const   { return m_xLoadable; }
 
         const css::uno::Reference< css::form::XFormComponent >&      getFormComponent()  const   { return m_xGridModel; }
@@ -147,62 +146,62 @@ namespace dbaui
         virtual bool Construct(vcl::Window* pParent) override;
 
         // UNO
-        virtual css::uno::Any  SAL_CALL queryInterface(const css::uno::Type& _rType) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any  SAL_CALL queryInterface(const css::uno::Type& _rType) override;
 
         // XTypeProvider
-        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
 
         // css::lang::XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& Source) override;
 
         // css::util::XModifyListener
-        virtual void SAL_CALL modified(const css::lang::EventObject& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL modified(const css::lang::EventObject& aEvent) override;
 
         // css::container::XContainerListener
-        virtual void SAL_CALL elementInserted(const css::container::ContainerEvent& Event) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual void SAL_CALL elementRemoved(const css::container::ContainerEvent& Event) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual void SAL_CALL elementReplaced(const css::container::ContainerEvent& Event) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL elementInserted(const css::container::ContainerEvent& Event) override;
+        virtual void SAL_CALL elementRemoved(const css::container::ContainerEvent& Event) override;
+        virtual void SAL_CALL elementReplaced(const css::container::ContainerEvent& Event) override;
 
         // XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) override;
 
         // XModule
-        virtual void SAL_CALL setIdentifier( const OUString& Identifier ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getIdentifier(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setIdentifier( const OUString& Identifier ) override;
+        virtual OUString SAL_CALL getIdentifier(  ) override;
 
         // css::awt::XFocusListener
-        virtual void SAL_CALL focusGained(const css::awt::FocusEvent& e) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual void SAL_CALL focusLost(const css::awt::FocusEvent& e) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL focusGained(const css::awt::FocusEvent& e) override;
+        virtual void SAL_CALL focusLost(const css::awt::FocusEvent& e) override;
 
         // css::frame::XController
-        virtual sal_Bool SAL_CALL suspend(sal_Bool bSuspend) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual sal_Bool SAL_CALL suspend(sal_Bool bSuspend) override;
 
         // css::lang::XComponent
         virtual void        SAL_CALL disposing() override;
 
         // css::frame::XFrameActionListener
-        virtual void        SAL_CALL frameAction(const css::frame::FrameActionEvent& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void        SAL_CALL frameAction(const css::frame::FrameActionEvent& aEvent) override;
 
         // css::sdb::XSQLErrorListener
-        virtual void        SAL_CALL errorOccured(const css::sdb::SQLErrorEvent& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void        SAL_CALL errorOccured(const css::sdb::SQLErrorEvent& aEvent) override;
 
         // css::form::XDatabaseParameterListener
-        virtual sal_Bool    SAL_CALL approveParameter(const css::form::DatabaseParameterEvent& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual sal_Bool    SAL_CALL approveParameter(const css::form::DatabaseParameterEvent& aEvent) override;
 
         // css::form::XConfirmDeleteListener
-        virtual sal_Bool    SAL_CALL confirmDelete(const css::sdb::RowChangeEvent& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual sal_Bool    SAL_CALL confirmDelete(const css::sdb::RowChangeEvent& aEvent) override;
 
         // css::form::XLoadListener
-        virtual void SAL_CALL loaded(const css::lang::EventObject& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual void SAL_CALL unloading(const css::lang::EventObject& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual void SAL_CALL unloaded(const css::lang::EventObject& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual void SAL_CALL reloading(const css::lang::EventObject& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual void SAL_CALL reloaded(const css::lang::EventObject& aEvent) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL loaded(const css::lang::EventObject& aEvent) override;
+        virtual void SAL_CALL unloading(const css::lang::EventObject& aEvent) override;
+        virtual void SAL_CALL unloaded(const css::lang::EventObject& aEvent) override;
+        virtual void SAL_CALL reloading(const css::lang::EventObject& aEvent) override;
+        virtual void SAL_CALL reloaded(const css::lang::EventObject& aEvent) override;
 
         // css::form::XResetListener
-        virtual sal_Bool SAL_CALL approveReset(const css::lang::EventObject& rEvent) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual void SAL_CALL resetted(const css::lang::EventObject& rEvent) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual sal_Bool SAL_CALL approveReset(const css::lang::EventObject& rEvent) override;
+        virtual void SAL_CALL resetted(const css::lang::EventObject& rEvent) override;
 
         // SbaGridListener
         virtual void RowChanged() override;
@@ -216,7 +215,7 @@ namespace dbaui
     public:
 
     protected:
-        virtual ~SbaXDataBrowserController();
+        virtual ~SbaXDataBrowserController() override;
 
         // all the features which should be handled by this class
         virtual void            describeSupportedFeatures() override;
@@ -246,8 +245,6 @@ namespace dbaui
             // you most probably don't want to override this behavior
 
         // the default implementation of disposing distributes the events to the following disposingXXX functions
-        void disposingGridControl(const css::lang::EventObject& Source);   // calls removeControlListeners
-        void disposingGridModel(const css::lang::EventObject& Source);     // calls removeModelListeners
         void disposingFormModel(const css::lang::EventObject& Source);
         void disposingColumnModel(const css::lang::EventObject& Source);
 
@@ -327,16 +324,16 @@ namespace dbaui
         void        impl_checkForCannotSelectUnfiltered( const ::dbtools::SQLExceptionInfo& _rError );
 
         // time to check the CUT/COPY/PASTE-slot-states
-        DECL_LINK_TYPED( OnInvalidateClipboard, Timer*, void );
-        DECL_LINK_TYPED( OnClipboardChanged, TransferableDataHelper*, void );
+        DECL_LINK( OnInvalidateClipboard, Timer*, void );
+        DECL_LINK( OnClipboardChanged, TransferableDataHelper*, void );
 
         // search callbacks
-        DECL_LINK_TYPED(OnSearchContextRequest, FmSearchContext&, sal_uInt32);
-        DECL_LINK_TYPED(OnFoundData, FmFoundRecordInformation&, void);
-        DECL_LINK_TYPED(OnCanceledNotFound, FmFoundRecordInformation&, void);
+        DECL_LINK(OnSearchContextRequest, FmSearchContext&, sal_uInt32);
+        DECL_LINK(OnFoundData, FmFoundRecordInformation&, void);
+        DECL_LINK(OnCanceledNotFound, FmFoundRecordInformation&, void);
 
-        DECL_LINK_TYPED( OnAsyncGetCellFocus, void*, void );
-        DECL_LINK_TYPED( OnAsyncDisplayError, void*, void );
+        DECL_LINK( OnAsyncGetCellFocus, void*, void );
+        DECL_LINK( OnAsyncDisplayError, void*, void );
     };
 }
 

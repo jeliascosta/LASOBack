@@ -35,6 +35,8 @@
 #include <filter/msfilter/util.hxx>
 #include <filter/msfilter/escherex.hxx>
 
+#include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/beans/XPropertySetInfo.hpp>
 #include <com/sun/star/drawing/XShape.hpp>
 #include <com/sun/star/text/HoriOrientation.hpp>
 #include <com/sun/star/text/VertOrientation.hpp>
@@ -49,8 +51,8 @@ using namespace com::sun::star;
 static const sal_Int32 Tag_Container = 44444;
 static const sal_Int32 Tag_Commit = 44445;
 
-VMLExport::VMLExport( ::sax_fastparser::FSHelperPtr pSerializer, VMLTextExport* pTextExport )
-    : EscherEx( std::make_shared<EscherExGlobal>(0), nullptr, /*bOOXML=*/true )
+VMLExport::VMLExport( ::sax_fastparser::FSHelperPtr const & pSerializer, VMLTextExport* pTextExport )
+    : EscherEx( std::make_shared<EscherExGlobal>(), nullptr, /*bOOXML=*/true )
     , m_pSerializer( pSerializer )
     , m_pTextExport( pTextExport )
     , m_eHOri( 0 )
@@ -62,11 +64,10 @@ VMLExport::VMLExport( ::sax_fastparser::FSHelperPtr pSerializer, VMLTextExport* 
     , m_pShapeAttrList( nullptr )
     , m_nShapeType( ESCHER_ShpInst_Nil )
     , m_nShapeFlags(0)
-    , m_pShapeStyle( new OStringBuffer( 200 ) )
-    , m_pShapeTypeWritten( new bool[ ESCHER_ShpInst_COUNT ] )
+    , m_ShapeStyle( 200 )
+    , m_aShapeTypeWritten( ESCHER_ShpInst_COUNT )
 {
     mnGroupLevel = 1;
-    memset( m_pShapeTypeWritten, 0, ESCHER_ShpInst_COUNT * sizeof( bool ) );
 }
 
 void VMLExport::SetFS( const ::sax_fastparser::FSHelperPtr& pSerializer )
@@ -78,10 +79,6 @@ VMLExport::~VMLExport()
 {
     delete mpOutStrm;
     mpOutStrm = nullptr;
-    delete m_pShapeStyle;
-    m_pShapeStyle = nullptr;
-    delete[] m_pShapeTypeWritten;
-    m_pShapeTypeWritten = nullptr;
 }
 
 void VMLExport::OpenContainer( sal_uInt16 nEscherContainer, int nRecInstance )
@@ -98,10 +95,8 @@ void VMLExport::OpenContainer( sal_uInt16 nEscherContainer, int nRecInstance )
         m_nShapeType = ESCHER_ShpInst_Nil;
         m_pShapeAttrList = FastSerializerHelper::createAttrList();
 
-        if ( !m_pShapeStyle->isEmpty() )
-            m_pShapeStyle->makeStringAndClear();
-
-        m_pShapeStyle->ensureCapacity( 200 );
+        m_ShapeStyle.setLength(0);
+        m_ShapeStyle.ensureCapacity(200);
 
         // postpone the output so that we are able to write even the elements
         // that we learn inside Commit()
@@ -128,7 +123,7 @@ void VMLExport::CloseContainer()
     EscherEx::CloseContainer();
 }
 
-sal_uInt32 VMLExport::EnterGroup( const OUString& rShapeName, const Rectangle* pRect )
+sal_uInt32 VMLExport::EnterGroup( const OUString& rShapeName, const tools::Rectangle* pRect )
 {
     sal_uInt32 nShapeId = GenerateShapeId();
 
@@ -357,7 +352,7 @@ void  VMLExport::AddSdrObjectVMLObject( const SdrObject& rObj)
 {
    m_pSdrObject = &rObj;
 }
-void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect )
+void VMLExport::Commit( EscherPropertyContainer& rProps, const tools::Rectangle& rRect )
 {
     if ( m_nShapeType == ESCHER_ShpInst_Nil )
         return;
@@ -370,7 +365,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
     if ( m_nShapeType == ESCHER_ShpInst_Line )
         AddLineDimensions( rRect );
     else
-        AddRectangleDimensions( *m_pShapeStyle, rRect );
+        AddRectangleDimensions( m_ShapeStyle, rRect );
 
     // properties
     bool bAlreadyWritten[ 0xFFF ];
@@ -586,7 +581,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
                     {
                         SvMemoryStream aStream;
                         int nHeaderSize = 25; // The first bytes are WW8-specific, we're only interested in the PNG
-                        aStream.Write(aStruct.pBuf + nHeaderSize, aStruct.nPropSize - nHeaderSize);
+                        aStream.WriteBytes(aStruct.pBuf + nHeaderSize, aStruct.nPropSize - nHeaderSize);
                         aStream.Seek(0);
                         Graphic aGraphic;
                         GraphicConverter::Import(aStream, aGraphic);
@@ -761,7 +756,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
 
             case ESCHER_Prop_fHidden:
                 if ( !it->nPropValue )
-                    m_pShapeStyle->append( ";visibility:hidden" );
+                    m_ShapeStyle.append( ";visibility:hidden" );
                 break;
             case ESCHER_Prop_shadowColor:
             case ESCHER_Prop_fshadowObscured:
@@ -796,7 +791,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
                     if (rProps.GetOpt(ESCHER_Prop_gtextUNICODE, aUnicode))
                     {
                         SvMemoryStream aStream;
-                        aStream.Write(it->pBuf, it->nPropSize);
+                        aStream.WriteBytes(it->pBuf, it->nPropSize);
                         aStream.Seek(0);
                         OUString aTextPathString = SvxMSDffManager::MSDFFReadZString(aStream, it->nPropSize, true);
                         aStream.Seek(0);
@@ -813,7 +808,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
                         OUString aStyle;
                         if (rProps.GetOpt(ESCHER_Prop_gtextFont, aFont))
                         {
-                            aStream.Write(aFont.pBuf, aFont.nPropSize);
+                            aStream.WriteBytes(aFont.pBuf, aFont.nPropSize);
                             aStream.Seek(0);
                             OUString aTextPathFont = SvxMSDffManager::MSDFFReadZString(aStream, aFont.nPropSize, true);
                             aStyle += "font-family:\"" + aTextPathFont + "\"";
@@ -830,7 +825,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
             case ESCHER_Prop_Rotation:
                 {
                     // The higher half of the variable contains the angle.
-                    m_pShapeStyle->append(";rotation:").append(double(it->nPropValue >> 16));
+                    m_ShapeStyle.append(";rotation:").append(double(it->nPropValue >> 16));
                     bAlreadyWritten[ESCHER_Prop_Rotation] = true;
                 }
                 break;
@@ -844,7 +839,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
             case ESCHER_Prop_wzName:
                 {
                     SvMemoryStream aStream;
-                    aStream.Write(it->pBuf, it->nPropSize);
+                    aStream.WriteBytes(it->pBuf, it->nPropSize);
                     aStream.Seek(0);
                     OUString idStr = SvxMSDffManager::MSDFFReadZString(aStream, it->nPropSize, true);
                     aStream.Seek(0);
@@ -887,19 +882,19 @@ void VMLExport::AddFlipXY( )
     const sal_uInt32 nFlipHandV = SHAPEFLAG_FLIPH + SHAPEFLAG_FLIPV;
     switch ( m_nShapeFlags & nFlipHandV )
     {
-        case SHAPEFLAG_FLIPH:   m_pShapeStyle->append( ";flip:x" );  break;
-        case SHAPEFLAG_FLIPV:   m_pShapeStyle->append( ";flip:y" );  break;
-        case nFlipHandV:        m_pShapeStyle->append( ";flip:xy" ); break;
+        case SHAPEFLAG_FLIPH:   m_ShapeStyle.append( ";flip:x" );  break;
+        case SHAPEFLAG_FLIPV:   m_ShapeStyle.append( ";flip:y" );  break;
+        case nFlipHandV:        m_ShapeStyle.append( ";flip:xy" ); break;
     }
 }
 
-void VMLExport::AddLineDimensions( const Rectangle& rRectangle )
+void VMLExport::AddLineDimensions( const tools::Rectangle& rRectangle )
 {
     // style
-    if ( !m_pShapeStyle->isEmpty() )
-        m_pShapeStyle->append( ";" );
+    if (!m_ShapeStyle.isEmpty())
+        m_ShapeStyle.append( ";" );
 
-    m_pShapeStyle->append( "position:absolute" );
+    m_ShapeStyle.append( "position:absolute" );
 
     AddFlipXY();
 
@@ -933,7 +928,7 @@ void VMLExport::AddLineDimensions( const Rectangle& rRectangle )
             .makeStringAndClear() );
 }
 
-void VMLExport::AddRectangleDimensions( OStringBuffer& rBuffer, const Rectangle& rRectangle, bool rbAbsolutePos)
+void VMLExport::AddRectangleDimensions( OStringBuffer& rBuffer, const tools::Rectangle& rRectangle, bool rbAbsolutePos)
 {
     if ( !rBuffer.isEmpty() )
         rBuffer.append( ";" );
@@ -1041,10 +1036,10 @@ sal_Int32 VMLExport::StartShape()
                 if ( aShapeType != "NULL" )
                 {
                     bReferToShapeType = true;
-                    if ( !m_pShapeTypeWritten[ m_nShapeType ] )
+                    if ( !m_aShapeTypeWritten[ m_nShapeType ] )
                     {
                         m_pSerializer->write( aShapeType.getStr() );
-                        m_pShapeTypeWritten[ m_nShapeType ] = true;
+                        m_aShapeTypeWritten[ m_nShapeType ] = true;
                     }
                 }
                 else
@@ -1060,19 +1055,19 @@ sal_Int32 VMLExport::StartShape()
     switch (m_eHOri)
     {
         case text::HoriOrientation::LEFT:
-            m_pShapeStyle->append(";mso-position-horizontal:left");
+            m_ShapeStyle.append(";mso-position-horizontal:left");
             break;
         case text::HoriOrientation::CENTER:
-            m_pShapeStyle->append(";mso-position-horizontal:center");
+            m_ShapeStyle.append(";mso-position-horizontal:center");
             break;
         case text::HoriOrientation::RIGHT:
-            m_pShapeStyle->append(";mso-position-horizontal:right");
+            m_ShapeStyle.append(";mso-position-horizontal:right");
             break;
         case text::HoriOrientation::INSIDE:
-            m_pShapeStyle->append(";mso-position-horizontal:inside");
+            m_ShapeStyle.append(";mso-position-horizontal:inside");
             break;
         case text::HoriOrientation::OUTSIDE:
-            m_pShapeStyle->append(";mso-position-horizontal:outside");
+            m_ShapeStyle.append(";mso-position-horizontal:outside");
             break;
         default:
         case text::HoriOrientation::NONE:
@@ -1081,15 +1076,15 @@ sal_Int32 VMLExport::StartShape()
     switch (m_eHRel)
     {
         case text::RelOrientation::PAGE_PRINT_AREA:
-            m_pShapeStyle->append(";mso-position-horizontal-relative:margin");
+            m_ShapeStyle.append(";mso-position-horizontal-relative:margin");
             break;
         case text::RelOrientation::PAGE_FRAME:
         case text::RelOrientation::PAGE_LEFT:
         case text::RelOrientation::PAGE_RIGHT:
-            m_pShapeStyle->append(";mso-position-horizontal-relative:page");
+            m_ShapeStyle.append(";mso-position-horizontal-relative:page");
             break;
         case text::RelOrientation::CHAR:
-            m_pShapeStyle->append(";mso-position-horizontal-relative:char");
+            m_ShapeStyle.append(";mso-position-horizontal-relative:char");
             break;
         default:
             break;
@@ -1100,16 +1095,16 @@ sal_Int32 VMLExport::StartShape()
         case text::VertOrientation::TOP:
         case text::VertOrientation::LINE_TOP:
         case text::VertOrientation::CHAR_TOP:
-            m_pShapeStyle->append(";mso-position-vertical:top");
+            m_ShapeStyle.append(";mso-position-vertical:top");
             break;
         case text::VertOrientation::CENTER:
         case text::VertOrientation::LINE_CENTER:
-            m_pShapeStyle->append(";mso-position-vertical:center");
+            m_ShapeStyle.append(";mso-position-vertical:center");
             break;
         case text::VertOrientation::BOTTOM:
         case text::VertOrientation::LINE_BOTTOM:
         case text::VertOrientation::CHAR_BOTTOM:
-            m_pShapeStyle->append(";mso-position-vertical:bottom");
+            m_ShapeStyle.append(";mso-position-vertical:bottom");
             break;
         default:
         case text::VertOrientation::NONE:
@@ -1118,17 +1113,17 @@ sal_Int32 VMLExport::StartShape()
     switch (m_eVRel)
     {
         case text::RelOrientation::PAGE_PRINT_AREA:
-            m_pShapeStyle->append(";mso-position-vertical-relative:margin");
+            m_ShapeStyle.append(";mso-position-vertical-relative:margin");
             break;
         case text::RelOrientation::PAGE_FRAME:
-            m_pShapeStyle->append(";mso-position-vertical-relative:page");
+            m_ShapeStyle.append(";mso-position-vertical-relative:page");
             break;
         default:
             break;
     }
 
     // add style
-    m_pShapeAttrList->add( XML_style, m_pShapeStyle->makeStringAndClear() );
+    m_pShapeAttrList->add( XML_style, m_ShapeStyle.makeStringAndClear() );
 
     OUString sAnchorId = lcl_getAnchorIdFromGrabBag(m_pSdrObject);
     if (!sAnchorId.isEmpty())

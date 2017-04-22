@@ -56,21 +56,21 @@ class SW_DLLPUBLIC SwGrfNode: public SwNoTextNode
                const OUString& rGrfName, const OUString& rFltName,
                const Graphic* pGraphic,
                SwGrfFormatColl* pGrfColl,
-               SwAttrSet* pAutoAttr = nullptr );
+               SwAttrSet* pAutoAttr );
     ///< Ctor for reading (SW/G) without graphics.
     SwGrfNode( const SwNodeIndex& rWhere,
                const OUString& rGrfName, const OUString& rFltName,
                SwGrfFormatColl* pGrfColl,
-               SwAttrSet* pAutoAttr = nullptr );
+               SwAttrSet* pAutoAttr );
     SwGrfNode( const SwNodeIndex& rWhere,
                const GraphicObject& rGrfObj,
                SwGrfFormatColl* pGrfColl,
-               SwAttrSet* pAutoAttr = nullptr );
+               SwAttrSet* pAutoAttr );
 
     void InsertLink( const OUString& rGrfName, const OUString& rFltName );
     bool ImportGraphic( SvStream& rStrm );
 
-    DECL_LINK_TYPED( SwapGraphic, const GraphicObject*, SvStream* );
+    DECL_LINK( SwapGraphic, const GraphicObject*, SvStream* );
 
     /** helper method to determine stream for the embedded graphic.
 
@@ -116,7 +116,7 @@ class SW_DLLPUBLIC SwGrfNode: public SwNoTextNode
     void onGraphicChanged();
 
 public:
-    virtual ~SwGrfNode();
+    virtual ~SwGrfNode() override;
     const Graphic&          GetGrf(bool bWait = false) const;
     const GraphicObject&    GetGrfObj(bool bWait = false) const;
     const GraphicObject* GetReplacementGrfObj() const;
@@ -126,8 +126,9 @@ public:
     void SetGraphic(const Graphic& rGraphic, const OUString& rLink);
 
     /// wrappers for non-const calls at GraphicObject
-    void StartGraphicAnimation(OutputDevice* pOut, const Point& rPt, const Size& rSz, long nExtraData = 0, const GraphicAttr* pAttr = nullptr, GraphicManagerDrawFlags nFlags = GraphicManagerDrawFlags::STANDARD, OutputDevice* pFirstFrameOutDev = nullptr) { maGrfObj.StartAnimation(pOut, rPt, rSz, nExtraData, pAttr, nFlags, pFirstFrameOutDev); }
-    void StopGraphicAnimation(OutputDevice* pOut = nullptr, long nExtraData = 0) { maGrfObj.StopAnimation(pOut, nExtraData); }
+    void StartGraphicAnimation(OutputDevice* pOut, const Point& rPt, const Size& rSz, long nExtraData, OutputDevice* pFirstFrameOutDev)
+    { maGrfObj.StartAnimation(pOut, rPt, rSz, nExtraData, pFirstFrameOutDev); }
+    void StopGraphicAnimation(OutputDevice* pOut, long nExtraData) { maGrfObj.StopAnimation(pOut, nExtraData); }
 
     virtual Size GetTwipSize() const override;
     void SetTwipSize( const Size& rSz );
@@ -177,7 +178,7 @@ public:
     virtual bool RestorePersistentData() override;
 
     /// Query link-data.
-    bool IsGrfLink() const                  { return refLink.Is(); }
+    bool IsGrfLink() const                  { return refLink.is(); }
     bool IsLinkedFile() const;
     bool IsLinkedDDE() const;
     const tools::SvRef<sfx2::SvBaseLink>& GetLink() const    { return refLink; }
@@ -204,22 +205,22 @@ public:
 // Inline methods from Node.hxx - it is only now that we know TextNode!!
 inline       SwGrfNode   *SwNode::GetGrfNode()
 {
-     return ND_GRFNODE == m_nNodeType ? static_cast<SwGrfNode*>(this) : nullptr;
+     return SwNodeType::Grf == m_nNodeType ? static_cast<SwGrfNode*>(this) : nullptr;
 }
 
 inline const SwGrfNode   *SwNode::GetGrfNode() const
 {
-     return ND_GRFNODE == m_nNodeType ? static_cast<const SwGrfNode*>(this) : nullptr;
+     return SwNodeType::Grf == m_nNodeType ? static_cast<const SwGrfNode*>(this) : nullptr;
 }
 
 inline bool SwGrfNode::IsLinkedFile() const
 {
-    return refLink.Is() && OBJECT_CLIENT_GRF == refLink->GetObjType();
+    return refLink.is() && OBJECT_CLIENT_GRF == refLink->GetObjType();
 }
 
 inline bool SwGrfNode::IsLinkedDDE() const
 {
-    return refLink.Is() && OBJECT_CLIENT_DDE == refLink->GetObjType();
+    return refLink.is() && OBJECT_CLIENT_DDE == refLink->GetObjType();
 }
 
 #endif

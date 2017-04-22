@@ -33,9 +33,8 @@ namespace helpdatafileproxy {
 void HDFData::copyToBuffer( const char* pSrcData, int nSize )
 {
     m_nSize = nSize;
-    delete [] m_pBuffer;
-    m_pBuffer = new char[m_nSize+1];
-    memcpy( m_pBuffer, pSrcData, m_nSize );
+    m_pBuffer.reset( new char[m_nSize+1] );
+    memcpy( m_pBuffer.get(), pSrcData, m_nSize );
     m_pBuffer[m_nSize] = 0;
 }
 
@@ -69,13 +68,13 @@ void Hdf::createHashMap( bool bOptimizeForPerformance )
     {
         if( m_pStringToDataMap != nullptr )
             return;
-        m_pStringToDataMap = new StringToDataMap();
+        m_pStringToDataMap = new StringToDataMap;
     }
     else
     {
         if( m_pStringToValPosMap != nullptr )
             return;
-        m_pStringToValPosMap = new StringToValPosMap();
+        m_pStringToValPosMap = new StringToValPosMap;
     }
 
     Reference< XInputStream > xIn = m_xSFA->openFileRead( m_aFileURL );

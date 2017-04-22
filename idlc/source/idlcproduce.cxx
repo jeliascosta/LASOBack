@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <idlc/idlc.hxx>
-#include <idlc/astmodule.hxx>
+#include <idlc.hxx>
+#include <astmodule.hxx>
 #include <rtl/strbuf.hxx>
 #include <osl/file.hxx>
 #include <osl/thread.h>
@@ -39,7 +39,7 @@
 
 using namespace ::osl;
 
-StringList* pCreatedDirectories = nullptr;
+static std::list< OString >* pCreatedDirectories = nullptr;
 
 static bool checkOutputPath(const OString& completeName)
 {
@@ -71,7 +71,7 @@ static bool checkOutputPath(const OString& completeName)
 #if defined(SAL_UNX)
             if (mkdir(buffer.getStr(), 0777) == -1)
 #else
-            if (mkdir((char*)buffer.getStr()) == -1)
+            if (mkdir(buffer.getStr()) == -1)
 #endif
             {
                 if (errno == ENOENT)
@@ -83,7 +83,7 @@ static bool checkOutputPath(const OString& completeName)
             } else
             {
                 if ( !pCreatedDirectories )
-                    pCreatedDirectories = new StringList();
+                    pCreatedDirectories = new std::list< OString >;
                 pCreatedDirectories->push_front(buffer.getStr());
             }
         }
@@ -96,8 +96,8 @@ static bool cleanPath()
 {
     if ( pCreatedDirectories )
     {
-        StringList::iterator iter = pCreatedDirectories->begin();
-        StringList::iterator end = pCreatedDirectories->end();
+        std::list< OString >::iterator iter = pCreatedDirectories->begin();
+        std::list< OString >::iterator end = pCreatedDirectories->end();
         while ( iter != end )
         {
 //#ifdef SAL_UNX

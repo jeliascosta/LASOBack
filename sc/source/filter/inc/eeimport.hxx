@@ -39,8 +39,10 @@ class ScEEImport : public ScEEAbsImport
 protected:
     ScRange             maRange;
     ScDocument*         mpDoc;
-    ScEEParser*         mpParser;
-    ScTabEditEngine*    mpEngine;
+    std::unique_ptr<ScTabEditEngine>
+                        mpEngine;
+    std::unique_ptr<ScEEParser>        // needs mpEngine
+                        mpParser;      // must reset before mpEngine resets
     RowHeightMap        maRowHeights;
 
     bool                GraphicSize( SCCOL nCol, SCROW nRow, SCTAB nTab,
@@ -49,7 +51,7 @@ protected:
                                        ScEEParseEntry* );
 public:
     ScEEImport( ScDocument* pDoc, const ScRange& rRange );
-    virtual ~ScEEImport();
+    virtual ~ScEEImport() override;
 
     virtual sal_uLong    Read( SvStream& rStream, const OUString& rBaseURL ) override;
     virtual ScRange  GetRange() override { return maRange; }

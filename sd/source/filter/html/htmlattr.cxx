@@ -27,26 +27,17 @@ SdHtmlAttrPreview::SdHtmlAttrPreview(vcl::Window* pParent, WinBits nStyle)
 {
 }
 
-VCL_BUILDER_DECL_FACTORY(SdHtmlAttrPreview)
-{
-    WinBits nWinStyle = 0;
-
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-
-    rRet = VclPtr<SdHtmlAttrPreview>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SdHtmlAttrPreview, 0)
 
 SdHtmlAttrPreview::~SdHtmlAttrPreview()
 {
 }
 
-void SdHtmlAttrPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void SdHtmlAttrPreview::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect)
 {
     DecorationView aDecoView(&rRenderContext);
 
-    Rectangle aTextRect;
+    ::tools::Rectangle aTextRect;
     aTextRect.SetSize(GetOutputSize());
 
     rRenderContext.SetLineColor(m_aBackColor);

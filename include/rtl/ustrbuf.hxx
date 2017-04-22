@@ -24,7 +24,7 @@
 
 #include <cassert>
 #include <cstddef>
-#include <string.h>
+#include <cstring>
 
 #include <rtl/ustrbuf.h>
 #include <rtl/ustring.hxx>
@@ -33,6 +33,10 @@
 
 #ifdef LIBO_INTERNAL_ONLY // "RTL_FAST_STRING"
 #include <rtl/stringconcat.hxx>
+#endif
+
+#ifdef RTL_STRING_UNITTEST
+extern bool rtl_string_unittest_invalid_conversion;
 #endif
 
 // The unittest uses slightly different code to help check that the proper
@@ -146,6 +150,31 @@ public:
 #endif
     }
 
+#if defined LIBO_INTERNAL_ONLY
+    /** @overload @since LibreOffice 5.3 */
+    template<typename T>
+    OUStringBuffer(
+        T & literal,
+        typename libreoffice_internal::ConstCharArrayDetector<
+            T, libreoffice_internal::Dummy>::TypeUtf16
+                = libreoffice_internal::Dummy()):
+        pData(nullptr),
+        nCapacity(libreoffice_internal::ConstCharArrayDetector<T>::length + 16)
+    {
+        rtl_uStringbuffer_newFromStr_WithLength(
+            &pData,
+            libreoffice_internal::ConstCharArrayDetector<T>::toPointer(literal),
+            libreoffice_internal::ConstCharArrayDetector<T>::length);
+    }
+
+    /** @overload @since LibreOffice 5.4 */
+    OUStringBuffer(OUStringLiteral const & literal):
+        pData(nullptr), nCapacity(literal.size + 16) //TODO: check for overflow
+    {
+        rtl_uString_newFromLiteral(&pData, literal.data, literal.size, 16);
+    }
+#endif
+
 #ifdef RTL_STRING_UNITTEST
     /**
      * Only used by unittests to detect incorrect conversions.
@@ -204,6 +233,97 @@ public:
         return *this;
     }
 
+    /** Assign from a string.
+
+        @since LibreOffice 5.3
+    */
+    OUStringBuffer & operator =(OUString const & string) {
+        sal_Int32 n = string.getLength();
+        if (n >= nCapacity) {
+            ensureCapacity(n + 16); //TODO: check for overflow
+        }
+        std::memcpy(
+            pData->buffer, string.pData->buffer,
+            (n + 1) * sizeof (sal_Unicode));
+        pData->length = n;
+        return *this;
+    }
+
+    /** Assign from a string literal.
+
+        @since LibreOffice 5.3
+    */
+    template<typename T>
+    typename
+        libreoffice_internal::ConstCharArrayDetector<T, OUStringBuffer &>::Type
+    operator =(T & literal) {
+        assert(
+            libreoffice_internal::ConstCharArrayDetector<T>::isValid(literal));
+        sal_Int32 const n
+            = libreoffice_internal::ConstCharArrayDetector<T>::length;
+        if (n >= nCapacity) {
+            ensureCapacity(n + 16); //TODO: check for overflow
+        }
+        char const * from
+            = libreoffice_internal::ConstCharArrayDetector<T>::toPointer(
+                literal);
+        sal_Unicode * to = pData->buffer;
+        for (sal_Int32 i = 0; i <= n; ++i) {
+            to[i] = from[i];
+        }
+        pData->length = n;
+        return *this;
+    }
+
+#if defined LIBO_INTERNAL_ONLY
+    /** @overload @since LibreOffice 5.3 */
+    template<typename T>
+    typename libreoffice_internal::ConstCharArrayDetector<
+        T, OUStringBuffer &>::TypeUtf16
+    operator =(T & literal) {
+        sal_Int32 const n
+            = libreoffice_internal::ConstCharArrayDetector<T>::length;
+        if (n >= nCapacity) {
+            ensureCapacity(n + 16); //TODO: check for overflow
+        }
+        std::memcpy(
+            pData->buffer,
+            libreoffice_internal::ConstCharArrayDetector<T>::toPointer(literal),
+            (n + 1) * sizeof (sal_Unicode)); //TODO: check for overflow
+        pData->length = n;
+        return *this;
+    }
+
+    /** @overload @since LibreOffice 5.4 */
+    OUStringBuffer & operator =(OUStringLiteral const & literal) {
+        sal_Int32 const n = literal.size;
+        if (n >= nCapacity) {
+            ensureCapacity(n + 16); //TODO: check for overflow
+        }
+        char const * from = literal.data;
+        sal_Unicode * to = pData->buffer;
+        for (sal_Int32 i = 0; i <= n; ++i) {
+            to[i] = from[i];
+        }
+        pData->length = n;
+        return *this;
+    }
+#endif
+
+#if defined LIBO_INTERNAL_ONLY
+    /** @overload @since LibreOffice 5.3 */
+    template<typename T1, typename T2>
+    OUStringBuffer & operator =(OUStringConcat<T1, T2> const & concat) {
+        sal_Int32 const n = concat.length();
+        if (n >= nCapacity) {
+            ensureCapacity(n + 16); //TODO: check for overflow
+        }
+        *concat.addData(pData->buffer) = 0;
+        pData->length = n;
+        return *this;
+    }
+#endif
+
     /**
         Release the string data.
      */
@@ -220,7 +340,7 @@ public:
 
         @return the string previously contained in the buffer.
      */
-    OUString makeStringAndClear()
+    SAL_WARN_UNUSED_RESULT OUString makeStringAndClear()
     {
         return OUString(
                   rtl_uStringBuffer_makeStringAndClear( &pData, &nCapacity ),
@@ -484,6 +604,27 @@ public:
         return *this;
     }
 
+#if defined LIBO_INTERNAL_ONLY
+    /** @overload @since LibreOffice 5.3 */
+    template<typename T>
+    typename libreoffice_internal::ConstCharArrayDetector<
+        T, OUStringBuffer &>::TypeUtf16
+    append(T & literal) {
+        rtl_uStringbuffer_insert(
+            &pData, &nCapacity, getLength(),
+            libreoffice_internal::ConstCharArrayDetector<T>::toPointer(literal),
+            libreoffice_internal::ConstCharArrayDetector<T>::length);
+        return *this;
+    }
+
+    /** @overload @since LibreOffice 5.4 */
+    OUStringBuffer & append(OUStringLiteral const & literal) {
+        rtl_uStringbuffer_insert_ascii(
+            &pData, &nCapacity, getLength(), literal.data, literal.size);
+        return *this;
+    }
+#endif
+
 #ifdef LIBO_INTERNAL_ONLY // "RTL_FAST_STRING"
     /**
      @overload
@@ -638,9 +779,7 @@ public:
         return append( &c, 1 );
     }
 
-#if LIBO_INTERNAL_ONLY && \
-    (!defined SAL_W32 || defined __MINGW32__ || defined __clang__)
-        // cf. sal/types.h sal_Unicode
+#if defined LIBO_INTERNAL_ONLY
     void append(sal_uInt16) = delete;
 #endif
 
@@ -835,6 +974,27 @@ public:
             libreoffice_internal::ConstCharArrayDetector<T>::length);
         return *this;
     }
+
+#if defined LIBO_INTERNAL_ONLY
+    /** @overload @since LibreOffice 5.3 */
+    template<typename T>
+    typename libreoffice_internal::ConstCharArrayDetector<
+        T, OUStringBuffer &>::TypeUtf16
+    insert(sal_Int32 offset, T & literal) {
+        rtl_uStringbuffer_insert(
+            &pData, &nCapacity, offset,
+            libreoffice_internal::ConstCharArrayDetector<T>::toPointer(literal),
+            libreoffice_internal::ConstCharArrayDetector<T>::length);
+        return *this;
+    }
+
+    /** @overload @since LibreOffice 5.4 */
+    OUStringBuffer & insert(sal_Int32 offset, OUStringLiteral const & literal) {
+        rtl_uStringbuffer_insert_ascii(
+            &pData, &nCapacity, offset, literal.data, literal.size);
+        return *this;
+    }
+#endif
 
     /**
         Inserts the string representation of the <code>sal_Bool</code>
@@ -1116,7 +1276,7 @@ public:
         This output parameter receives a pointer to the internal capacity.
         pInternalCapacity itself must not be null.
      */
-    inline void accessInternals(rtl_uString *** pInternalData,
+    void accessInternals(rtl_uString *** pInternalData,
                                 sal_Int32 ** pInternalCapacity)
     {
         *pInternalData = &pData;
@@ -1225,6 +1385,31 @@ public:
         return n < 0 ? n : n + fromIndex;
     }
 
+#if defined LIBO_INTERNAL_ONLY
+    /** @overload @since LibreOffice 5.3 */
+    template<typename T>
+    typename
+        libreoffice_internal::ConstCharArrayDetector<T, sal_Int32>::TypeUtf16
+    indexOf(T & literal, sal_Int32 fromIndex = 0) const {
+        assert(fromIndex >= 0);
+        auto n = rtl_ustr_indexOfStr_WithLength(
+            pData->buffer + fromIndex, pData->length - fromIndex,
+            libreoffice_internal::ConstCharArrayDetector<T>::toPointer(literal),
+            libreoffice_internal::ConstCharArrayDetector<T>::length);
+        return n < 0 ? n : n + fromIndex;
+    }
+
+    /** @overload @since LibreOffice 5.4 */
+    sal_Int32 indexOf(OUStringLiteral const & literal, sal_Int32 fromIndex = 0)
+        const
+    {
+        sal_Int32 n = rtl_ustr_indexOfAscii_WithLength(
+            pData->buffer + fromIndex, pData->length - fromIndex, literal.data,
+            literal.size);
+        return n < 0 ? n : n + fromIndex;
+    }
+#endif
+
     /**
        Returns the index within this string of the last occurrence of
        the specified substring, searching backward starting at the end.
@@ -1290,6 +1475,25 @@ public:
             libreoffice_internal::ConstCharArrayDetector<T>::length);
     }
 
+#if defined LIBO_INTERNAL_ONLY
+    /** @overload @since LibreOffice 5.3 */
+    template<typename T>
+    typename
+        libreoffice_internal::ConstCharArrayDetector<T, sal_Int32>::TypeUtf16
+    lastIndexOf(T & literal) const {
+        return rtl_ustr_lastIndexOfStr_WithLength(
+            pData->buffer, pData->length,
+            libreoffice_internal::ConstCharArrayDetector<T>::toPointer(literal),
+            libreoffice_internal::ConstCharArrayDetector<T>::length);
+    }
+
+    /** @overload @since LibreOffice 5.4 */
+    sal_Int32 lastIndexOf(OUStringLiteral const & literal) const {
+        return rtl_ustr_lastIndexOfAscii_WithLength(
+            pData->buffer, pData->length, literal.data, literal.size);
+    }
+#endif
+
     /**
        Strip the given character from the start of the buffer.
 
@@ -1299,7 +1503,7 @@ public:
        @return   The number of characters stripped
 
     */
-    sal_Int32 stripStart(sal_Unicode c = (sal_Unicode)' ')
+    sal_Int32 stripStart(sal_Unicode c = ' ')
     {
         sal_Int32 index;
         for(index = 0; index < getLength() ; index++)
@@ -1325,7 +1529,7 @@ public:
        @return   The number of characters stripped
 
     */
-    sal_Int32 stripEnd(sal_Unicode c = (sal_Unicode)' ')
+    sal_Int32 stripEnd(sal_Unicode c = ' ')
     {
         sal_Int32 result = getLength();
         sal_Int32 index;
@@ -1351,7 +1555,7 @@ public:
        @return   The number of characters stripped
 
     */
-    sal_Int32 strip(sal_Unicode c = (sal_Unicode)' ')
+    sal_Int32 strip(sal_Unicode c = ' ')
     {
         return stripStart(c) + stripEnd(c);
     }
@@ -1410,20 +1614,6 @@ private:
      */
     sal_Int32       nCapacity;
 };
-
-#ifdef LIBO_INTERNAL_ONLY // "RTL_FAST_STRING"
-/**
- @internal
-*/
-template<>
-struct ToStringHelper< OUStringBuffer >
-    {
-    static int length( const OUStringBuffer& s ) { return s.getLength(); }
-    static sal_Unicode* addData( sal_Unicode* buffer, const OUStringBuffer& s ) { return addDataHelper( buffer, s.getStr(), s.getLength()); }
-    static const bool allowOStringConcat = false;
-    static const bool allowOUStringConcat = true;
-    };
-#endif
 
 }
 

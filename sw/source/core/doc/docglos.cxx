@@ -167,7 +167,7 @@ bool SwDoc::InsertGlossary( SwTextBlocks& rBlock, const OUString& rEntry,
             aCpyPam.GetPoint()->nContent.Assign(
                     pContentNd, (pContentNd) ? pContentNd->Len() : 0 );
 
-            GetIDocumentUndoRedo().StartUndo( UNDO_INSGLOSSARY, nullptr );
+            GetIDocumentUndoRedo().StartUndo( SwUndoId::INSGLOSSARY, nullptr );
             SwPaM *_pStartCursor = &rPaM, *_pStartCursor2 = _pStartCursor;
             do {
 
@@ -192,9 +192,9 @@ bool SwDoc::InsertGlossary( SwTextBlocks& rBlock, const OUString& rEntry,
                 aACD.RestoreDontExpandItems( rInsPos );
                 if( pShell )
                     pShell->SaveTableBoxContent( &rInsPos );
-            } while( (_pStartCursor = static_cast<SwPaM *>(_pStartCursor->GetNext())) !=
+            } while( (_pStartCursor = _pStartCursor->GetNext()) !=
                         _pStartCursor2 );
-            GetIDocumentUndoRedo().EndUndo( UNDO_INSGLOSSARY, nullptr );
+            GetIDocumentUndoRedo().EndUndo( SwUndoId::INSGLOSSARY, nullptr );
 
             getIDocumentFieldsAccess().UnlockExpFields();
             if( !getIDocumentFieldsAccess().IsExpFieldsLocked() )

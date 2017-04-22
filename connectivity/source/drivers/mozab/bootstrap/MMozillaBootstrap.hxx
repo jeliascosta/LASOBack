@@ -19,6 +19,10 @@
 #ifndef INCLUDED_CONNECTIVITY_SOURCE_DRIVERS_MOZAB_BOOTSTRAP_MMOZILLABOOTSTRAP_HXX
 #define INCLUDED_CONNECTIVITY_SOURCE_DRIVERS_MOZAB_BOOTSTRAP_MMOZILLABOOTSTRAP_HXX
 
+#include <sal/config.h>
+
+#include <memory>
+
 #include <com/sun/star/mozilla/XMozillaBootstrap.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <cppuhelper/compbase.hxx>
@@ -31,17 +35,16 @@ namespace connectivity
 {
     namespace mozab
     {
-        typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::mozilla::XMozillaBootstrap,
-                                                   ::com::sun::star::lang::XServiceInfo > OMozillaBootstrap_BASE;
+        typedef ::cppu::WeakComponentImplHelper<   css::mozilla::XMozillaBootstrap,
+                                                   css::lang::XServiceInfo > OMozillaBootstrap_BASE;
         class ProfileAccess;
         class ProfileManager;
         class MozillaBootstrap : public OMozillaBootstrap_BASE
         {
-        protected:
+        private:
             ::osl::Mutex                m_aMutex;       // mutex is need to control member access
-            virtual ~MozillaBootstrap();
-        protected:
-            ProfileAccess * m_ProfileAccess;
+            virtual ~MozillaBootstrap() override;
+            std::unique_ptr<ProfileAccess> m_ProfileAccess;
         public:
 
             void Init();
@@ -49,35 +52,32 @@ namespace connectivity
 
             // OComponentHelper
             virtual void SAL_CALL disposing() override;
-            // XInterface
-            static OUString getImplementationName_Static(  ) throw(::com::sun::star::uno::RuntimeException);
-            static ::com::sun::star::uno::Sequence< OUString > getSupportedServiceNames_Static(  ) throw (::com::sun::star::uno::RuntimeException);
 
             // XServiceInfo
-            virtual OUString SAL_CALL getImplementationName(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getImplementationName(  ) override;
+            virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+            virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
             // XMozillaBootstrap
 
             // XProfileDiscover
-            virtual ::sal_Int32 SAL_CALL getProfileCount( ::com::sun::star::mozilla::MozillaProductType product) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::sal_Int32 SAL_CALL getProfileList( ::com::sun::star::mozilla::MozillaProductType product, ::com::sun::star::uno::Sequence< OUString >& list ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual OUString SAL_CALL getDefaultProfile( ::com::sun::star::mozilla::MozillaProductType product ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual OUString SAL_CALL getProfilePath( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL isProfileLocked( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL getProfileExists( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual ::sal_Int32 SAL_CALL getProfileCount( css::mozilla::MozillaProductType product) override;
+            virtual ::sal_Int32 SAL_CALL getProfileList( css::mozilla::MozillaProductType product, css::uno::Sequence< OUString >& list ) override;
+            virtual OUString SAL_CALL getDefaultProfile( css::mozilla::MozillaProductType product ) override;
+            virtual OUString SAL_CALL getProfilePath( css::mozilla::MozillaProductType product, const OUString& profileName ) override;
+            virtual sal_Bool SAL_CALL isProfileLocked( css::mozilla::MozillaProductType product, const OUString& profileName ) override;
+            virtual sal_Bool SAL_CALL getProfileExists( css::mozilla::MozillaProductType product, const OUString& profileName ) override;
 
             // XProfileManager
-            virtual ::sal_Int32 SAL_CALL bootupProfile( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::sal_Int32 SAL_CALL shutdownProfile(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::mozilla::MozillaProductType SAL_CALL getCurrentProduct(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual OUString SAL_CALL getCurrentProfile(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL isCurrentProfileLocked(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual OUString SAL_CALL setCurrentProfile( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual ::sal_Int32 SAL_CALL bootupProfile( css::mozilla::MozillaProductType product, const OUString& profileName ) override;
+            virtual ::sal_Int32 SAL_CALL shutdownProfile(  ) override;
+            virtual css::mozilla::MozillaProductType SAL_CALL getCurrentProduct(  ) override;
+            virtual OUString SAL_CALL getCurrentProfile(  ) override;
+            virtual sal_Bool SAL_CALL isCurrentProfileLocked(  ) override;
+            virtual OUString SAL_CALL setCurrentProfile( css::mozilla::MozillaProductType product, const OUString& profileName ) override;
 
             // XProxyRunner
-            virtual ::sal_Int32 SAL_CALL Run( const ::com::sun::star::uno::Reference< ::com::sun::star::mozilla::XCodeProxy >& aCode ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual ::sal_Int32 SAL_CALL Run( const css::uno::Reference< css::mozilla::XCodeProxy >& aCode ) override;
         };
     }
 

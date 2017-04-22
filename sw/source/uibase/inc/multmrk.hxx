@@ -22,7 +22,6 @@
 
 #include <svx/stddlg.hxx>
 #include <vcl/fixed.hxx>
-#include <svtools/stdctrl.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/button.hxx>
 
@@ -31,7 +30,7 @@ class SwTOXMgr;
 // insert mark for index entry
 class SwMultiTOXMarkDlg : public SvxStandardDialog
 {
-    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
+    DECL_LINK( SelectHdl, ListBox&, void );
     VclPtr<FixedText>         m_pTextFT;
     VclPtr<ListBox>           m_pTOXLB;
 
@@ -41,7 +40,7 @@ class SwMultiTOXMarkDlg : public SvxStandardDialog
     void                Apply() override;
 public:
     SwMultiTOXMarkDlg( vcl::Window* pParent, SwTOXMgr &rTOXMgr );
-    virtual ~SwMultiTOXMarkDlg();
+    virtual ~SwMultiTOXMarkDlg() override;
     virtual void dispose() override;
 };
 

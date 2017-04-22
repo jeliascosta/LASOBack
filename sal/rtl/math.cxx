@@ -54,18 +54,16 @@ static double getN10Exp( int nExp )
         // because -nExp = nExp
         if ( -nExp <= n10Count && -nExp > 0 )
             return n10s[1][-nExp-1];
-        else
-            return pow( 10.0, static_cast<double>( nExp ) );
+        return pow( 10.0, static_cast<double>( nExp ) );
     }
-    else if ( nExp > 0 )
+    if ( nExp > 0 )
     {
         if ( nExp <= n10Count )
             return n10s[0][nExp-1];
-        else
-            return pow( 10.0, static_cast<double>( nExp ) );
+        return pow( 10.0, static_cast<double>( nExp ) );
     }
-    else // ( nExp == 0 )
-        return 1.0;
+    // ( nExp == 0 )
+    return 1.0;
 }
 
 namespace {
@@ -81,19 +79,19 @@ struct StringTraits
 
     typedef rtl_String String;
 
-    static inline void createString(rtl_String ** pString,
+    static void createString(rtl_String ** pString,
                                     sal_Char const * pChars, sal_Int32 nLen)
     {
         rtl_string_newFromStr_WithLength(pString, pChars, nLen);
     }
 
-    static inline void createBuffer(rtl_String ** pBuffer,
+    static void createBuffer(rtl_String ** pBuffer,
                                     sal_Int32 * pCapacity)
     {
         rtl_string_new_WithLength(pBuffer, *pCapacity);
     }
 
-    static inline void appendChars(rtl_String ** pBuffer, sal_Int32 * pCapacity,
+    static void appendChars(rtl_String ** pBuffer, sal_Int32 * pCapacity,
                                    sal_Int32 * pOffset, sal_Char const * pChars,
                                    sal_Int32 nLen)
     {
@@ -102,7 +100,7 @@ struct StringTraits
         *pOffset += nLen;
     }
 
-    static inline void appendAscii(rtl_String ** pBuffer, sal_Int32 * pCapacity,
+    static void appendAscii(rtl_String ** pBuffer, sal_Int32 * pCapacity,
                                    sal_Int32 * pOffset, sal_Char const * pStr,
                                    sal_Int32 nLen)
     {
@@ -118,19 +116,19 @@ struct UStringTraits
 
     typedef rtl_uString String;
 
-    static inline void createString(rtl_uString ** pString,
+    static void createString(rtl_uString ** pString,
                                     sal_Unicode const * pChars, sal_Int32 nLen)
     {
         rtl_uString_newFromStr_WithLength(pString, pChars, nLen);
     }
 
-    static inline void createBuffer(rtl_uString ** pBuffer,
+    static void createBuffer(rtl_uString ** pBuffer,
                                     sal_Int32 * pCapacity)
     {
         rtl_uString_new_WithLength(pBuffer, *pCapacity);
     }
 
-    static inline void appendChars(rtl_uString ** pBuffer,
+    static void appendChars(rtl_uString ** pBuffer,
                                    sal_Int32 * pCapacity, sal_Int32 * pOffset,
                                    sal_Unicode const * pChars, sal_Int32 nLen)
     {
@@ -139,7 +137,7 @@ struct UStringTraits
         *pOffset += nLen;
     }
 
-    static inline void appendAscii(rtl_uString ** pBuffer,
+    static void appendAscii(rtl_uString ** pBuffer,
                                    sal_Int32 * pCapacity, sal_Int32 * pOffset,
                                    sal_Char const * pStr, sal_Int32 nLen)
     {
@@ -149,10 +147,30 @@ struct UStringTraits
     }
 };
 
-// Solaris C++ 5.2 compiler has problems when "StringT ** pResult" is
-// "typename T::String ** pResult" instead:
-template< typename T, typename StringT >
-inline void doubleToString(StringT ** pResult,
+/** If value (passed as absolute value) is an integer representable as double,
+    which we handle explicitly at some places.
+ */
+bool isRepresentableInteger(double fAbsValue)
+{
+    assert(fAbsValue >= 0.0);
+    const sal_Int64 kMaxInt = (static_cast<sal_Int64>(1) << 53) - 1;
+    if (fAbsValue <= static_cast<double>(kMaxInt))
+    {
+        sal_Int64 nInt = static_cast<sal_Int64>(fAbsValue);
+        // Check the integer range again because double comparison may yield
+        // true within the precision range.
+        // XXX loplugin:fpcomparison complains about floating-point comparison
+        // for static_cast<double>(nInt) == fAbsValue, though we actually want
+        // this here.
+        double fInt;
+        return (nInt <= kMaxInt &&
+                (!((fInt = static_cast<double>(nInt)) < fAbsValue) && !(fInt > fAbsValue)));
+    }
+    return false;
+}
+
+template< typename T >
+inline void doubleToString(typename T::String ** pResult,
                            sal_Int32 * pResultCapacity, sal_Int32 nResultOffset,
                            double fValue, rtl_math_StringFormat eFormat,
                            sal_Int32 nDecPlaces, typename T::Char cDecSeparator,
@@ -606,7 +624,7 @@ void SAL_CALL rtl_math_doubleToString(rtl_String ** pResult,
                                       sal_Bool bEraseTrailingDecZeros)
     SAL_THROW_EXTERN_C()
 {
-    doubleToString< StringTraits, StringTraits::String >(
+    doubleToString< StringTraits >(
         pResult, pResultCapacity, nResultOffset, fValue, eFormat, nDecPlaces,
         cDecSeparator, pGroups, cGroupSeparator, bEraseTrailingDecZeros);
 }
@@ -622,7 +640,7 @@ void SAL_CALL rtl_math_doubleToUString(rtl_uString ** pResult,
                                        sal_Bool bEraseTrailingDecZeros)
     SAL_THROW_EXTERN_C()
 {
-    doubleToString< UStringTraits, UStringTraits::String >(
+    doubleToString< UStringTraits >(
         pResult, pResultCapacity, nResultOffset, fValue, eFormat, nDecPlaces,
         cDecSeparator, pGroups, cGroupSeparator, bEraseTrailingDecZeros);
 }
@@ -669,7 +687,7 @@ inline double stringToDouble(CharT const * pBegin, CharT const * pEnd,
     bool bDone = false;
 
     // #i112652# XMLSchema-2
-    if (3 >= (pEnd - p))
+    if (3 <= (pEnd - p))
     {
         if ((CharT('N') == p[0]) && (CharT('a') == p[1])
             && (CharT('N') == p[2]))
@@ -694,6 +712,7 @@ inline double stringToDouble(CharT const * pBegin, CharT const * pEnd,
         while (p != pEnd && (*p == CharT('0') || *p == cGroupSeparator))
             ++p;
 
+        CharT const * pFirstSignificant = p;
         long nValExp = 0;       // carry along exponent of mantissa
 
         // integer part of mantissa
@@ -741,7 +760,19 @@ inline double stringToDouble(CharT const * pBegin, CharT const * pEnd,
             if ( fFrac != 0.0 )
                 fVal += rtl::math::pow10Exp( fFrac, nFracExp );
             else if ( nValExp < 0 )
+            {
+                if (pFirstSignificant + 1 == p)
+                {
+                    // No digit at all, only separator(s) without integer or
+                    // fraction part. Bail out. No number. No error.
+                    if (pStatus != nullptr)
+                        *pStatus = eStatus;
+                    if (pParsedEnd != nullptr)
+                        *pParsedEnd = pBegin;
+                    return fVal;
+                }
                 nValExp = 0;    // no digit other than 0 after decimal point
+            }
         }
 
         if ( nValExp > 0 )
@@ -885,8 +916,12 @@ double SAL_CALL rtl_math_stringToDouble(sal_Char const * pBegin,
                                         sal_Char const ** pParsedEnd)
     SAL_THROW_EXTERN_C()
 {
-    return stringToDouble(pBegin, pEnd, cDecSeparator, cGroupSeparator, pStatus,
-                          pParsedEnd);
+    return stringToDouble(
+        reinterpret_cast<unsigned char const *>(pBegin),
+        reinterpret_cast<unsigned char const *>(pEnd),
+        static_cast<unsigned char>(cDecSeparator),
+        static_cast<unsigned char>(cGroupSeparator), pStatus,
+        reinterpret_cast<unsigned char const **>(pParsedEnd));
 }
 
 double SAL_CALL rtl_math_uStringToDouble(sal_Unicode const * pBegin,
@@ -1051,6 +1086,24 @@ double SAL_CALL rtl_math_approxValue( double fValue ) SAL_THROW_EXTERN_C()
     return bSign ? -fValue : fValue;
 }
 
+bool SAL_CALL rtl_math_approxEqual(double a, double b) SAL_THROW_EXTERN_C()
+{
+    static const double e48 = 1.0 / (16777216.0 * 16777216.0);
+    static const double e44 = e48 * 16.0;
+    if (a == b)
+        return true;
+    if (a == 0.0 || b == 0.0)
+        return false;
+    const double d = fabs(a - b);
+    if (!rtl::math::isFinite(d))
+        return false;   // Nan or Inf involved
+    if (d > ((a = fabs(a)) * e44) || d > ((b = fabs(b)) * e44))
+        return false;
+    if (isRepresentableInteger(d) && isRepresentableInteger(a) && isRepresentableInteger(b))
+        return false;   // special case for representable integers.
+    return (d < a * e48 && d < b * e48);
+}
+
 double SAL_CALL rtl_math_expm1( double fValue ) SAL_THROW_EXTERN_C()
 {
     return expm1(fValue);
@@ -1058,6 +1111,10 @@ double SAL_CALL rtl_math_expm1( double fValue ) SAL_THROW_EXTERN_C()
 
 double SAL_CALL rtl_math_log1p( double fValue ) SAL_THROW_EXTERN_C()
 {
+#ifdef __APPLE__
+    if (fValue == -0.0)
+        return fValue; // OS X 10.8 libc returns 0.0 for -0.0
+#endif
     return log1p(fValue);
 }
 
@@ -1085,21 +1142,19 @@ double SAL_CALL rtl_math_asinh( double fX ) SAL_THROW_EXTERN_C()
 {
     if ( fX == 0.0 )
         return 0.0;
-    else
+
+    double fSign = 1.0;
+    if ( fX < 0.0 )
     {
-        double fSign = 1.0;
-        if ( fX < 0.0 )
-        {
-            fX = - fX;
-            fSign = -1.0;
-        }
-        if ( fX < 0.125 )
-            return fSign * rtl_math_log1p( fX + fX*fX / (1.0 + sqrt( 1.0 + fX*fX)));
-        else if ( fX < 1.25e7 )
-            return fSign * log( fX + sqrt( 1.0 + fX*fX));
-        else
-            return fSign * log( 2.0*fX);
+        fX = - fX;
+        fSign = -1.0;
     }
+    if ( fX < 0.125 )
+        return fSign * rtl_math_log1p( fX + fX*fX / (1.0 + sqrt( 1.0 + fX*fX)));
+    if ( fX < 1.25e7 )
+        return fSign * log( fX + sqrt( 1.0 + fX*fX));
+
+    return fSign * log( 2.0*fX);
 }
 
 /** improved accuracy of acosh for x large and for x near 1
@@ -1114,14 +1169,13 @@ double SAL_CALL rtl_math_acosh( double fX ) SAL_THROW_EXTERN_C()
         ::rtl::math::setNan( &fResult );
         return fResult;
     }
-    else if ( fX == 1.0 )
+    if ( fX == 1.0 )
         return 0.0;
-    else if ( fX < 1.1 )
+    if ( fX < 1.1 )
         return rtl_math_log1p( fZ + sqrt( fZ*fZ + 2.0*fZ));
-    else if ( fX < 1.25e7 )
+    if ( fX < 1.25e7 )
         return log( fX + sqrt( fX*fX - 1.0));
-    else
-        return log( 2.0*fX);
+    return log( 2.0*fX);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

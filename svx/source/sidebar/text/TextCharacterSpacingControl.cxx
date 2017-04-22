@@ -19,7 +19,6 @@
 #include <sfx2/bindings.hxx>
 #include "TextCharacterSpacingControl.hxx"
 #include "TextPropertyPanel.hrc"
-#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <svx/dialogs.hrc>
 #include <svx/dialmgr.hxx>
 #include <unotools/viewoptions.hxx>
@@ -75,9 +74,9 @@ TextCharacterSpacingControl::~TextCharacterSpacingControl()
 
 void TextCharacterSpacingControl::dispose()
 {
-    if (GetLastCustomState() == SPACING_CLOSE_BY_CUS_EDIT)
+    if (mnLastCus == SPACING_CLOSE_BY_CUS_EDIT)
     {
-        SvtViewOptions aWinOpt(E_WINDOW, SIDEBAR_SPACING_GLOBAL_VALUE);
+        SvtViewOptions aWinOpt(EViewType::Window, SIDEBAR_SPACING_GLOBAL_VALUE);
         css::uno::Sequence<css::beans::NamedValue> aSeq
             { { "Spacing", css::uno::makeAny(OUString::number(GetLastCustomValue())) } };
         aWinOpt.SetUserData(aSeq);
@@ -106,7 +105,7 @@ void TextCharacterSpacingControl::Initialize()
     if(pKerningItem)
         nKerning = pKerningItem->GetValue();
 
-    SvtViewOptions aWinOpt(E_WINDOW, SIDEBAR_SPACING_GLOBAL_VALUE);
+    SvtViewOptions aWinOpt(EViewType::Window, SIDEBAR_SPACING_GLOBAL_VALUE);
     if(aWinOpt.Exists())
     {
         css::uno::Sequence<css::beans::NamedValue> aSeq = aWinOpt.GetUserData();
@@ -125,9 +124,9 @@ void TextCharacterSpacingControl::Initialize()
 
     if(eState >= SfxItemState::DEFAULT)
     {
-        SfxMapUnit eUnit = GetCoreMetric();
-        MapUnit eOrgUnit = (MapUnit)eUnit;
-        MapUnit ePntUnit(MAP_POINT);
+        MapUnit eUnit = GetCoreMetric();
+        MapUnit eOrgUnit = eUnit;
+        MapUnit ePntUnit(MapUnit::MapPoint);
         long nBig = maEditKerning->Normalize(nKerning);
         nKerning = LogicToLogic(nBig, eOrgUnit, ePntUnit);
         maEditKerning->SetValue(nKerning);
@@ -146,12 +145,12 @@ void TextCharacterSpacingControl::Initialize()
 
 void TextCharacterSpacingControl::ExecuteCharacterSpacing(long nValue, bool bClose)
 {
-    SfxMapUnit eUnit = GetCoreMetric();
+    MapUnit eUnit = GetCoreMetric();
 
     long nSign = (nValue < 0) ? -1 : 1;
     nValue = nValue * nSign;
 
-    long nVal = LogicToLogic(nValue, MAP_POINT, (MapUnit)eUnit);
+    long nVal = LogicToLogic(nValue, MapUnit::MapPoint, eUnit);
     short nKern = (nValue == 0) ? 0 : (short)maEditKerning->Denormalize(nVal);
 
     SvxKerningItem aKernItem(nSign * nKern, SID_ATTR_CHAR_KERNING);
@@ -163,7 +162,7 @@ void TextCharacterSpacingControl::ExecuteCharacterSpacing(long nValue, bool bClo
         EndPopupMode();
 }
 
-IMPL_LINK_TYPED(TextCharacterSpacingControl, PredefinedValuesHdl, Button*, pControl, void)
+IMPL_LINK(TextCharacterSpacingControl, PredefinedValuesHdl, Button*, pControl, void)
 {
     mnLastCus = SPACING_CLOSE_BY_CLICK_ICON;
 
@@ -193,7 +192,7 @@ IMPL_LINK_TYPED(TextCharacterSpacingControl, PredefinedValuesHdl, Button*, pCont
     }
 }
 
-IMPL_LINK_NOARG_TYPED(TextCharacterSpacingControl, KerningModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(TextCharacterSpacingControl, KerningModifyHdl, Edit&, void)
 {
     mnLastCus = SPACING_CLOSE_BY_CUS_EDIT;
     mnCustomKern = static_cast<long>(maEditKerning->GetValue());
@@ -201,7 +200,7 @@ IMPL_LINK_NOARG_TYPED(TextCharacterSpacingControl, KerningModifyHdl, Edit&, void
     ExecuteCharacterSpacing(mnCustomKern, false);
 }
 
-SfxMapUnit TextCharacterSpacingControl::GetCoreMetric() const
+MapUnit TextCharacterSpacingControl::GetCoreMetric() const
 {
     SfxItemPool &rPool = SfxGetpApp()->GetPool();
     sal_uInt16 nWhich = rPool.GetWhich(mnId);

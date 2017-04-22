@@ -215,14 +215,23 @@ void ScTabViewShell::ExecDraw(SfxRequest& rReq)
     switch (nNewId)
     {
         case SID_OBJECT_SELECT:
-            // Nicht immer zurueckschalten
+            // not always switch back
             if(pView->GetMarkedObjectList().GetMarkCount() == 0) SetDrawShell(bEx);
             pTabView->SetDrawFuncPtr(new FuSelection(this, pWin, pView, pDoc, aNewReq));
             break;
 
         case SID_DRAW_LINE:
+        case SID_DRAW_XLINE:
+        case SID_LINE_ARROW_END:
+        case SID_LINE_ARROW_CIRCLE:
+        case SID_LINE_ARROW_SQUARE:
+        case SID_LINE_ARROW_START:
+        case SID_LINE_CIRCLE_ARROW:
+        case SID_LINE_SQUARE_ARROW:
+        case SID_LINE_ARROWS:
         case SID_DRAW_RECT:
         case SID_DRAW_ELLIPSE:
+        case SID_DRAW_MEASURELINE:
             pTabView->SetDrawFuncPtr(new FuConstRectangle(this, pWin, pView, pDoc, aNewReq));
             break;
 
@@ -310,11 +319,11 @@ void ScTabViewShell::ExecDraw(SfxRequest& rReq)
         sal_uInt32 nDefaultObjectSizeHeight = rAppOpt.GetDefaultObjectSizeHeight();
 
         // calc position and size
-        Rectangle aVisArea = pWin->PixelToLogic(Rectangle(Point(0,0), pWin->GetOutputSizePixel()));
+        tools::Rectangle aVisArea = pWin->PixelToLogic(tools::Rectangle(Point(0,0), pWin->GetOutputSizePixel()));
         Point aPagePos = aVisArea.Center();
         aPagePos.X() -= nDefaultObjectSizeWidth / 2;
         aPagePos.Y() -= nDefaultObjectSizeHeight / 2;
-        Rectangle aNewObjectRectangle(aPagePos, Size(nDefaultObjectSizeWidth, nDefaultObjectSizeHeight));
+        tools::Rectangle aNewObjectRectangle(aPagePos, Size(nDefaultObjectSizeWidth, nDefaultObjectSizeHeight));
 
         ScDrawView* pDrView = GetScDrawView();
 
@@ -364,6 +373,15 @@ void ScTabViewShell::GetDrawState(SfxItemSet &rSet)
                 break;
 
             case SID_DRAW_LINE:
+            case SID_DRAW_XLINE:
+            case SID_LINE_ARROW_END:
+            case SID_LINE_ARROW_CIRCLE:
+            case SID_LINE_ARROW_SQUARE:
+            case SID_LINE_ARROW_START:
+            case SID_LINE_CIRCLE_ARROW:
+            case SID_LINE_SQUARE_ARROW:
+            case SID_LINE_ARROWS:
+            case SID_DRAW_MEASURELINE:
             case SID_DRAW_RECT:
             case SID_DRAW_ELLIPSE:
             case SID_DRAW_POLYGON:

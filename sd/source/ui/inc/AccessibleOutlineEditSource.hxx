@@ -53,7 +53,7 @@ namespace accessibility
             SdrView& rView,
             OutlinerView& rOutlView,
             const vcl::Window& rViewWindow );
-        virtual ~AccessibleOutlineEditSource();
+        virtual ~AccessibleOutlineEditSource() override;
 
         /// This method is disabled and always returns NULL
         virtual SvxEditSource*          Clone() const override;
@@ -65,7 +65,7 @@ namespace accessibility
 
         // the view forwarder
         virtual bool        IsValid() const override;
-        virtual Rectangle   GetVisArea() const override;
+        virtual ::tools::Rectangle   GetVisArea() const override;
         virtual Point       LogicToPixel( const Point& rPoint, const MapMode& rMapMode ) const override;
         virtual Point       PixelToLogic( const Point& rPoint, const MapMode& rMapMode ) const override;
 
@@ -76,7 +76,7 @@ namespace accessibility
         AccessibleOutlineEditSource( const AccessibleOutlineEditSource& ) = delete;
         AccessibleOutlineEditSource& operator=( const AccessibleOutlineEditSource& ) = delete;
 
-        DECL_LINK_TYPED( NotifyHdl, EENotify&, void );
+        DECL_LINK( NotifyHdl, EENotify&, void );
 
         SdrView&                        mrView;
         const vcl::Window& mrWindow;

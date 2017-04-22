@@ -44,7 +44,7 @@ sdbcx::ObjectType KabColumns::createObject(const OUString& _rName)
     Reference< XResultSet > xResult = m_pTable->getConnection()->getMetaData()->getColumns(
         aCatalog, sSchemaName, sTableName, _rName);
 
-    sdbcx::ObjectType xRet = NULL;
+    sdbcx::ObjectType xRet = nullptr;
     if (xResult.is())
     {
         Reference< XRow > xRow(xResult,UNO_QUERY);
@@ -78,7 +78,7 @@ sdbcx::ObjectType KabColumns::createObject(const OUString& _rName)
     return xRet;
 }
 
-void KabColumns::impl_refresh() throw(RuntimeException)
+void KabColumns::impl_refresh()
 {
     m_pTable->refreshColumns();
 }

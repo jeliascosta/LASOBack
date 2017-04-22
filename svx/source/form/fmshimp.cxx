@@ -203,28 +203,28 @@ static const sal_Int16 nConvertSlots[] =
     SID_FM_CONVERTTO_NAVIGATIONBAR
 };
 
-static const sal_Int16 nCreateSlots[] =
+static const sal_Int16 nImgIds[] =
 {
-    SID_FM_EDIT,
-    SID_FM_PUSHBUTTON,
-    SID_FM_FIXEDTEXT,
-    SID_FM_LISTBOX,
-    SID_FM_CHECKBOX,
-    SID_FM_RADIOBUTTON,
-    SID_FM_GROUPBOX,
-    SID_FM_COMBOBOX,
-    SID_FM_IMAGEBUTTON,
-    SID_FM_FILECONTROL,
-    SID_FM_DATEFIELD,
-    SID_FM_TIMEFIELD,
-    SID_FM_NUMERICFIELD,
-    SID_FM_CURRENCYFIELD,
-    SID_FM_PATTERNFIELD,
-    SID_FM_IMAGECONTROL,
-    SID_FM_FORMATTEDFIELD,
-    SID_FM_SCROLLBAR,
-    SID_FM_SPINBUTTON,
-    SID_FM_NAVIGATIONBAR
+    RID_SVXBMP_EDITBOX,
+    RID_SVXBMP_BUTTON,
+    RID_SVXBMP_FIXEDTEXT,
+    RID_SVXBMP_LISTBOX,
+    RID_SVXBMP_CHECKBOX,
+    RID_SVXBMP_RADIOBUTTON,
+    RID_SVXBMP_GROUPBOX,
+    RID_SVXBMP_COMBOBOX,
+    RID_SVXBMP_IMAGEBUTTON,
+    RID_SVXBMP_FILECONTROL,
+    RID_SVXBMP_DATEFIELD,
+    RID_SVXBMP_TIMEFIELD,
+    RID_SVXBMP_NUMERICFIELD,
+    RID_SVXBMP_CURRENCYFIELD,
+    RID_SVXBMP_PATTERNFIELD,
+    RID_SVXBMP_IMAGECONTROL,
+    RID_SVXBMP_FORMATTEDFIELD,
+    RID_SVXBMP_SCROLLBAR,
+    RID_SVXBMP_SPINBUTTON,
+    RID_SVXBMP_NAVIGATIONBAR
 };
 
 static const sal_Int16 nObjectTypes[] =
@@ -311,14 +311,14 @@ namespace
     }
 
 
-    sal_Int16 GridView2ModelPos(const Reference< XIndexAccess>& rColumns, sal_Int16 nViewPos)
+    sal_Int32 GridView2ModelPos(const Reference< XIndexAccess>& rColumns, sal_Int16 nViewPos)
     {
         try
         {
             if (rColumns.is())
             {
                 // loop through all columns
-                sal_Int16 i;
+                sal_Int32 i;
                 Reference< XPropertySet> xCur;
                 for (i=0; i<rColumns->getCount(); ++i)
                 {
@@ -341,7 +341,7 @@ namespace
         {
             DBG_UNHANDLED_EXCEPTION();
         }
-        return (sal_Int16)-1;
+        return -1;
     }
 
 
@@ -580,14 +580,14 @@ bool isControlList(const SdrMarkList& rMarkList)
                 SdrObjListIter aIter(*pObj->GetSubList());
                 while (aIter.IsMore() && bControlList)
                 {
-                    bControlList = FmFormInventor == aIter.Next()->GetObjInventor();
+                    bControlList = SdrInventor::FmForm == aIter.Next()->GetObjInventor();
                     bHadAnyLeafs = true;
                 }
             }
             else
             {
                 bHadAnyLeafs = true;
-                bControlList = FmFormInventor == pObj->GetObjInventor();
+                bControlList = SdrInventor::FmForm == pObj->GetObjInventor();
             }
         }
     }
@@ -614,20 +614,9 @@ FmXFormShell_Base_Disambiguation::FmXFormShell_Base_Disambiguation( ::osl::Mutex
 {
 }
 
-void SAL_CALL FmXFormShell_Base_Disambiguation::disposing()
-{
-    WeakComponentImplHelperBase::disposing();
-    // Note:
-    // This is a HACK.
-    // Normally it should be sufficient to call the "disposing" of our direct
-    // base class, but SUN PRO 5 does not like this and claims there is a conflict
-    // with the XEventListener::disposing(EventObject) of our various listener
-    // base classes.
-}
-
 FmXFormShell::FmXFormShell( FmFormShell& _rShell, SfxViewFrame* _pViewFrame )
         :FmXFormShell_BASE(m_aMutex)
-        ,FmXFormShell_CFGBASE(OUString("Office.Common/Misc"), ConfigItemMode::DelayedUpdate)
+        ,FmXFormShell_CFGBASE("Office.Common/Misc", ConfigItemMode::DelayedUpdate)
         ,m_eNavigate( NavigationBarMode_NONE )
         ,m_nInvalidationEvent( nullptr )
         ,m_nActivationEvent( nullptr )
@@ -649,7 +638,8 @@ FmXFormShell::FmXFormShell( FmFormShell& _rShell, SfxViewFrame* _pViewFrame )
         ,m_bFirstActivation( true )
 {
     m_aMarkTimer.SetTimeout(100);
-    m_aMarkTimer.SetTimeoutHdl(LINK(this,FmXFormShell,OnTimeOut));
+    m_aMarkTimer.SetInvokeHandler(LINK(this,FmXFormShell,OnTimeOut));
+    m_aMarkTimer.SetDebugName("svx::FmXFormShell m_aMarkTimer");
 
     m_xAttachedFrame = _pViewFrame->GetFrame().GetFrameInterface();
 
@@ -669,7 +659,6 @@ FmXFormShell::FmXFormShell( FmFormShell& _rShell, SfxViewFrame* _pViewFrame )
 
 FmXFormShell::~FmXFormShell()
 {
-    delete m_pTextShell;
 }
 
 
@@ -744,7 +733,7 @@ bool FmXFormShell::IsReadonlyDoc() const
 
 //  EventListener
 
-void SAL_CALL FmXFormShell::disposing(const lang::EventObject& e) throw( RuntimeException, std::exception )
+void SAL_CALL FmXFormShell::disposing(const lang::EventObject& e)
 {
 
     if (m_xActiveController == e.Source)
@@ -782,7 +771,7 @@ void SAL_CALL FmXFormShell::disposing(const lang::EventObject& e) throw( Runtime
 }
 
 
-void SAL_CALL FmXFormShell::propertyChange(const PropertyChangeEvent& evt) throw(css::uno::RuntimeException, std::exception)
+void SAL_CALL FmXFormShell::propertyChange(const PropertyChangeEvent& evt)
 {
     if ( impl_checkDisposed() )
         return;
@@ -847,7 +836,7 @@ void FmXFormShell::invalidateFeatures( const ::std::vector< sal_Int32 >& _rFeatu
 }
 
 
-void SAL_CALL FmXFormShell::formActivated(const lang::EventObject& rEvent) throw( RuntimeException, std::exception )
+void SAL_CALL FmXFormShell::formActivated(const lang::EventObject& rEvent)
 {
     if ( impl_checkDisposed() )
         return;
@@ -858,7 +847,7 @@ void SAL_CALL FmXFormShell::formActivated(const lang::EventObject& rEvent) throw
 }
 
 
-void SAL_CALL FmXFormShell::formDeactivated(const lang::EventObject& rEvent) throw( RuntimeException, std::exception )
+void SAL_CALL FmXFormShell::formDeactivated(const lang::EventObject& rEvent)
 {
     if ( impl_checkDisposed() )
         return;
@@ -1002,7 +991,7 @@ void FmXFormShell::LockSlotInvalidation(bool bLock)
 }
 
 
-IMPL_LINK_NOARG_TYPED(FmXFormShell, OnInvalidateSlots, void*,void)
+IMPL_LINK_NOARG(FmXFormShell, OnInvalidateSlots, void*,void)
 {
     if ( impl_checkDisposed() )
         return;
@@ -1039,22 +1028,17 @@ void FmXFormShell::ForceUpdateSelection()
     }
 }
 
-
-PopupMenu* FmXFormShell::GetConversionMenu()
+VclPtr<PopupMenu> FmXFormShell::GetConversionMenu()
 {
 
-    PopupMenu* pNewMenu = new PopupMenu(SVX_RES( RID_FMSHELL_CONVERSIONMENU ));
-
-    ImageList aImageList( SVX_RES( RID_SVXIMGLIST_FMEXPL) );
+    VclPtrInstance<PopupMenu> pNewMenu(SVX_RES( RID_FMSHELL_CONVERSIONMENU ));
     for ( size_t i = 0; i < SAL_N_ELEMENTS(nConvertSlots); ++i )
     {
         // das entsprechende Image dran
-        pNewMenu->SetItemImage(nConvertSlots[i], aImageList.GetImage(nCreateSlots[i]));
+        pNewMenu->SetItemImage(nConvertSlots[i], Image(BitmapEx(SVX_RES(nImgIds[i]))));
     }
-
     return pNewMenu;
 }
-
 
 bool FmXFormShell::isControlConversionSlot( sal_uInt16 nSlotId )
 {
@@ -1063,7 +1047,6 @@ bool FmXFormShell::isControlConversionSlot( sal_uInt16 nSlotId )
             return true;
     return false;
 }
-
 
 void FmXFormShell::executeControlConversionSlot( sal_uInt16 _nSlotId )
 {
@@ -1535,7 +1518,7 @@ void FmXFormShell::ExecuteSearch()
                     xColumns.set(xGridPeer->getColumns(),UNO_QUERY);
 
                 sal_Int16 nViewCol = xGrid->getCurrentColumnPosition();
-                sal_Int16 nModelCol = GridView2ModelPos(xColumns, nViewCol);
+                sal_Int32 nModelCol = GridView2ModelPos(xColumns, nViewCol);
                 Reference< XPropertySet> xCurrentCol;
                 if(xColumns.is())
                     xColumns->getByIndex(nModelCol) >>= xCurrentCol;
@@ -1561,9 +1544,9 @@ void FmXFormShell::ExecuteSearch()
     // ausgeraeumt sind, sollte hier ein SM_USETHREAD rein, denn die Suche in einem eigenen Thread ist doch etwas fluessiger
     // sollte allerdings irgendwie von dem unterliegenden Cursor abhaengig gemacht werden, DAO zum Beispiel ist nicht thread-sicher
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-    std::unique_ptr<AbstractFmSearchDialog> pDialog;
+    ScopedVclPtr<AbstractFmSearchDialog> pDialog;
     if ( pFact )
-        pDialog.reset(pFact->CreateFmSearchDialog( &m_pShell->GetViewShell()->GetViewFrame()->GetWindow(), strInitialText, aContextNames, nInitialContext, LINK( this, FmXFormShell, OnSearchContextRequest ) ));
+        pDialog.disposeAndReset(pFact->CreateFmSearchDialog( &m_pShell->GetViewShell()->GetViewFrame()->GetWindow(), strInitialText, aContextNames, nInitialContext, LINK( this, FmXFormShell, OnSearchContextRequest ) ));
     DBG_ASSERT( pDialog, "FmXFormShell::ExecuteSearch: could not create the search dialog!" );
     if ( pDialog )
     {
@@ -1571,7 +1554,7 @@ void FmXFormShell::ExecuteSearch()
         pDialog->SetFoundHandler( LINK( this, FmXFormShell, OnFoundData ) );
         pDialog->SetCanceledNotFoundHdl( LINK( this, FmXFormShell, OnCanceledNotFound ) );
         pDialog->Execute();
-        pDialog.reset();
+        pDialog.disposeAndClear();
     }
 
     // GridControls wieder restaurieren
@@ -2189,7 +2172,7 @@ void FmXFormShell::ShowSelectionProperties( bool bShow )
 }
 
 
-IMPL_LINK_TYPED(FmXFormShell, OnFoundData, FmFoundRecordInformation&, rfriWhere, void)
+IMPL_LINK(FmXFormShell, OnFoundData, FmFoundRecordInformation&, rfriWhere, void)
 {
     if ( impl_checkDisposed() )
         return;
@@ -2271,7 +2254,7 @@ IMPL_LINK_TYPED(FmXFormShell, OnFoundData, FmFoundRecordInformation&, rfriWhere,
 }
 
 
-IMPL_LINK_TYPED(FmXFormShell, OnCanceledNotFound, FmFoundRecordInformation&, rfriWhere, void)
+IMPL_LINK(FmXFormShell, OnCanceledNotFound, FmFoundRecordInformation&, rfriWhere, void)
 {
     if ( impl_checkDisposed() )
         return;
@@ -2300,7 +2283,7 @@ IMPL_LINK_TYPED(FmXFormShell, OnCanceledNotFound, FmFoundRecordInformation&, rfr
 }
 
 
-IMPL_LINK_TYPED(FmXFormShell, OnSearchContextRequest, FmSearchContext&, rfmscContextInfo, sal_uInt32)
+IMPL_LINK(FmXFormShell, OnSearchContextRequest, FmSearchContext&, rfmscContextInfo, sal_uInt32)
 {
     if ( impl_checkDisposed() )
         return 0;
@@ -2411,7 +2394,7 @@ IMPL_LINK_TYPED(FmXFormShell, OnSearchContextRequest, FmSearchContext&, rfmscCon
                         if (!IsSearchableControl(xCurrentColumn))
                             continue;
 
-                        sal_Int16 nModelPos = GridView2ModelPos(xModelColumns, nViewPos);
+                        sal_Int32 nModelPos = GridView2ModelPos(xModelColumns, nViewPos);
                         Reference< XPropertySet> xCurrentColModel;
                         xModelColumns->getByIndex(nModelPos) >>= xCurrentColModel;
                         aName = ::comphelper::getString(xCurrentColModel->getPropertyValue(FM_PROP_CONTROLSOURCE));
@@ -2503,7 +2486,7 @@ IMPL_LINK_TYPED(FmXFormShell, OnSearchContextRequest, FmSearchContext&, rfmscCon
 
   // XContainerListener
 
-void FmXFormShell::elementInserted(const ContainerEvent& evt) throw(css::uno::RuntimeException, std::exception)
+void FmXFormShell::elementInserted(const ContainerEvent& evt)
 {
     if ( impl_checkDisposed() )
         return;
@@ -2518,7 +2501,7 @@ void FmXFormShell::elementInserted(const ContainerEvent& evt) throw(css::uno::Ru
 }
 
 
-void FmXFormShell::elementReplaced(const ContainerEvent& evt) throw(css::uno::RuntimeException, std::exception)
+void FmXFormShell::elementReplaced(const ContainerEvent& evt)
 {
     if ( impl_checkDisposed() )
         return;
@@ -2531,7 +2514,7 @@ void FmXFormShell::elementReplaced(const ContainerEvent& evt) throw(css::uno::Ru
 }
 
 
-void FmXFormShell::elementRemoved(const ContainerEvent& evt) throw(css::uno::RuntimeException, std::exception)
+void FmXFormShell::elementRemoved(const ContainerEvent& evt)
 {
     if ( impl_checkDisposed() )
         return;
@@ -2639,7 +2622,7 @@ void FmXFormShell::impl_RemoveElement_nothrow(const Reference< XInterface>& Elem
 }
 
 
-void FmXFormShell::selectionChanged(const lang::EventObject& rEvent) throw(css::uno::RuntimeException, std::exception)
+void FmXFormShell::selectionChanged(const lang::EventObject& rEvent)
 {
     if ( impl_checkDisposed() )
         return;
@@ -2668,7 +2651,7 @@ void FmXFormShell::selectionChanged(const lang::EventObject& rEvent) throw(css::
 }
 
 
-IMPL_LINK_NOARG_TYPED(FmXFormShell, OnTimeOut, Timer*, void)
+IMPL_LINK_NOARG(FmXFormShell, OnTimeOut, Timer*, void)
 {
     if ( impl_checkDisposed() )
         return;
@@ -3189,7 +3172,7 @@ void FmXFormShell::CreateExternalView()
             if ( m_xExternalViewController == getActiveController() )
             {
                 Reference< runtime::XFormController > xAsFormController( m_xExternalViewController, UNO_QUERY );
-                ControllerFeatures aHelper( xAsFormController, nullptr );
+                ControllerFeatures aHelper( xAsFormController );
                 (void)aHelper->commitCurrentControl();
             }
 
@@ -3284,7 +3267,7 @@ void FmXFormShell::CreateExternalView()
 #endif
                         // remember the position within the columns
                         if (aRadioPositions.find(aGroupName) == aRadioPositions.end())
-                            aRadioPositions[aGroupName] = (sal_Int16)nAddedColumns;
+                            aRadioPositions[aGroupName] = nAddedColumns;
 
                         // any further handling is done below
                     }
@@ -3384,7 +3367,7 @@ void FmXFormShell::CreateExternalView()
 
                 // columns props are a dispatch argument
                 pDispatchArgs->Name = "ColumnProperties"; // TODO : fmurl.*
-                pDispatchArgs->Value = makeAny(aColumnProps);
+                pDispatchArgs->Value <<= aColumnProps;
                 ++pDispatchArgs;
                 DBG_ASSERT(nDispatchArgs == (pDispatchArgs - aDispatchArgs.getConstArray()),
                     "FmXFormShell::CreateExternalView : forgot to adjust nDispatchArgs ?");
@@ -3424,7 +3407,7 @@ void FmXFormShell::CreateExternalView()
                 // content type
                 pListBoxDescription->Name = FM_PROP_LISTSOURCETYPE;
                  ListSourceType eType = ListSourceType_VALUELIST;
-                 pListBoxDescription->Value = makeAny(eType);
+                 pListBoxDescription->Value <<= eType;
                 ++pListBoxDescription;
 
                 // list source
@@ -3432,7 +3415,7 @@ void FmXFormShell::CreateExternalView()
                 DBG_ASSERT(aCurrentListSource != aRadioListSources.end(),
                     "FmXFormShell::CreateExternalView : inconsistent radio descriptions !");
                 pListBoxDescription->Name = FM_PROP_LISTSOURCE;
-                pListBoxDescription->Value = makeAny((*aCurrentListSource).second);
+                pListBoxDescription->Value <<= (*aCurrentListSource).second;
                 ++pListBoxDescription;
 
                 // value list
@@ -3440,7 +3423,7 @@ void FmXFormShell::CreateExternalView()
                 DBG_ASSERT(aCurrentValueList != aRadioValueLists.end(),
                     "FmXFormShell::CreateExternalView : inconsistent radio descriptions !");
                 pListBoxDescription->Name = FM_PROP_STRINGITEMLIST;
-                pListBoxDescription->Value = makeAny(((*aCurrentValueList).second));
+                pListBoxDescription->Value <<= (*aCurrentValueList).second;
                 ++pListBoxDescription;
 
                 DBG_ASSERT(nListBoxDescription == (pListBoxDescription - aListBoxDescription.getConstArray()),
@@ -3471,7 +3454,7 @@ void FmXFormShell::CreateExternalView()
 
                 // the
                 pDispatchArgs->Name = "ColumnProperties"; // TODO : fmurl.*
-                pDispatchArgs->Value = makeAny(aListBoxDescription);
+                pDispatchArgs->Value <<= aListBoxDescription;
                 ++pDispatchArgs;
                 DBG_ASSERT(nDispatchArgs == (pDispatchArgs - aDispatchArgs.getConstArray()),
                     "FmXFormShell::CreateExternalView : forgot to adjust nDispatchArgs ?");
@@ -3599,7 +3582,7 @@ void FmXFormShell::viewDeactivated( FmFormView& _rCurrentView, bool _bDeactivate
 }
 
 
-IMPL_LINK_NOARG_TYPED( FmXFormShell, OnFirstTimeActivation, void*, void )
+IMPL_LINK_NOARG( FmXFormShell, OnFirstTimeActivation, void*, void )
 {
     if ( impl_checkDisposed() )
         return;
@@ -3619,7 +3602,7 @@ IMPL_LINK_NOARG_TYPED( FmXFormShell, OnFirstTimeActivation, void*, void )
 }
 
 
-IMPL_LINK_NOARG_TYPED( FmXFormShell, OnFormsCreated, FmFormPageImpl&, void )
+IMPL_LINK_NOARG( FmXFormShell, OnFormsCreated, FmFormPageImpl&, void )
 {
     UpdateForms( true );
 }
@@ -3661,10 +3644,10 @@ void FmXFormShell::viewActivated( FmFormView& _rCurrentView, bool _bSyncAction /
 
     UpdateForms( true );
 
-    if ( !hasEverBeenActivated() )
+    if ( m_bFirstActivation )
     {
         m_nActivationEvent = Application::PostUserEvent( LINK( this, FmXFormShell, OnFirstTimeActivation ) );
-        setHasBeenActivated();
+        m_bFirstActivation = false;
     }
 
     // find a default "current form", if there is none, yet
@@ -3762,7 +3745,7 @@ void FmXFormShell::smartControlReset( const Reference< XIndexAccess >& _rxModels
 }
 
 
-IMPL_LINK_NOARG_TYPED( FmXFormShell, OnLoadForms, void*, void )
+IMPL_LINK_NOARG( FmXFormShell, OnLoadForms, void*, void )
 {
     FmLoadAction aAction = m_aLoadingPages.front();
     m_aLoadingPages.pop();
@@ -3926,7 +3909,7 @@ void FmXFormShell::handleMouseButtonDown( const SdrViewEvent& _rViewEvent )
     // catch simple double clicks
     if ( ( _rViewEvent.nMouseClicks == 2 ) && ( _rViewEvent.nMouseCode == MOUSE_LEFT ) )
     {
-        if ( _rViewEvent.eHit == SDRHIT_MARKEDOBJECT )
+        if ( _rViewEvent.eHit == SdrHitKind::MarkedObject )
         {
             if ( onlyControlsAreMarked() )
                 ShowSelectionProperties( true );
@@ -3960,7 +3943,7 @@ bool FmXFormShell::HasControlFocus() const
 }
 
 
-SearchableControlIterator::SearchableControlIterator(Reference< XInterface> xStartingPoint)
+SearchableControlIterator::SearchableControlIterator(Reference< XInterface> const & xStartingPoint)
     :IndexAccessIterator(xStartingPoint)
 {
 }

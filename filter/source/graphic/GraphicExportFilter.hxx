@@ -56,17 +56,17 @@ class GraphicExportFilter :
 
 public:
     explicit GraphicExportFilter( const Reference<XComponentContext>& rxContext );
-    virtual ~GraphicExportFilter();
+    virtual ~GraphicExportFilter() override;
 
     // XFilter
-    virtual sal_Bool SAL_CALL filter( const Sequence<PropertyValue>& rDescriptor ) throw(RuntimeException, std::exception) override;
-    virtual void SAL_CALL cancel( ) throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL filter( const Sequence<PropertyValue>& rDescriptor ) override;
+    virtual void SAL_CALL cancel( ) override;
 
     // XExporter
-    virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDocument ) throw(IllegalArgumentException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDocument ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const Sequence<Any>& aArguments ) throw(Exception, RuntimeException, std::exception) override;
+    virtual void SAL_CALL initialize( const Sequence<Any>& aArguments ) override;
 };
 
 #endif

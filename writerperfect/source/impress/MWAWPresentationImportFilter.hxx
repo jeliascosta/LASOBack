@@ -27,28 +27,15 @@ public:
         : writerperfect::ImportFilter<OdpGenerator>(rxContext) {}
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-    throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString &ServiceName)
-    throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString &ServiceName) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
 private:
     virtual bool doDetectFormat(librevenge::RVNGInputStream &rInput, OUString &rTypeName) override;
     virtual bool doImportDocument(librevenge::RVNGInputStream &rInput, OdpGenerator &rGenerator, utl::MediaDescriptor &) override;
     virtual void doRegisterHandlers(OdpGenerator &rGenerator) override;
 };
-
-OUString MWAWPresentationImportFilter_getImplementationName()
-throw (css::uno::RuntimeException);
-
-css::uno::Sequence< OUString > SAL_CALL MWAWPresentationImportFilter_getSupportedServiceNames()
-throw (css::uno::RuntimeException);
-
-css::uno::Reference< css::uno::XInterface >
-SAL_CALL MWAWPresentationImportFilter_createInstance(const css::uno::Reference< css::uno::XComponentContext > &rContext)
-throw (css::uno::Exception);
 
 #endif
 

@@ -61,7 +61,6 @@ ChildWindowPane::ChildWindowPane (
                     // The ViewShellBase has already been activated.  Make
                     // the child window visible as soon as possible.
                     pViewFrame->SetChildWindow(mnChildWindowId, true);
-                    OSL_TRACE("ChildWindowPane:activating now");
                 }
                 else
                 {
@@ -69,12 +68,11 @@ ChildWindowPane::ChildWindowPane (
                     // ConfigurationUpdater to try another update, and with
                     // that another request for this window, in a short
                     // time.
-                    OSL_TRACE("ChildWindowPane:activated asynchronously");
                 }
             }
             else
             {
-                OSL_TRACE("ChildWindowPane:not known");
+                SAL_WARN("sd", "ChildWindowPane:not known");
             }
         }
         else
@@ -83,7 +81,6 @@ ChildWindowPane::ChildWindowPane (
             // window and wait a little before it is made visible.  See
             // comments in the GetWindow() method for an explanation.
             pViewFrame->SetChildWindow(mnChildWindowId, false);
-            OSL_TRACE("ChildWindowPane:base not active");
         }
     }
 }
@@ -186,7 +183,6 @@ vcl::Window* ChildWindowPane::GetWindow()
 }
 
 Reference<awt::XWindow> SAL_CALL ChildWindowPane::getWindow()
-    throw (RuntimeException, std::exception)
 {
     if (mpWindow == nullptr || ! mxWindow.is())
         GetWindow();
@@ -205,7 +201,6 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2(
 //----- XEventListener --------------------------------------------------------
 
 void SAL_CALL ChildWindowPane::disposing (const lang::EventObject& rEvent)
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 

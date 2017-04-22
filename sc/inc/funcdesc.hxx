@@ -50,7 +50,7 @@ public:
     /**
       Clears the object
 
-      Deletes all objets referenced by the pointers in the class,
+      Deletes all objects referenced by the pointers in the class,
       sets pointers to NULL, and all numerical variables to 0
     */
     void Clear();
@@ -206,9 +206,8 @@ public:
     struct ParameterFlags
     {
         bool    bOptional   :1;     /**< Parameter is optional */
-        bool    bSuppress   :1;     /**< Suppress parameter in UI because not implemented yet */
 
-        ParameterFlags() : bOptional(false), bSuppress(false) {}
+        ParameterFlags() : bOptional(false) {}
     };
 
     OUString      *pFuncName;              /**< Function name */
@@ -220,7 +219,7 @@ public:
     sal_uInt16            nCategory;              /**< Function category */
     sal_uInt16            nArgCount;              /**< All parameter count, suppressed and unsuppressed */
     sal_uInt16            nVarArgsStart;          /**< Start of variable arguments, for numbering */
-    OString          sHelpId;                /**< HelpId of function */
+    OString               sHelpId;                /**< HelpId of function */
     bool                  bIncomplete         :1; /**< Incomplete argument info (set for add-in info from configuration) */
     bool                  bHasSuppressedArgs  :1; /**< Whether there is any suppressed parameter. */
     bool                  mbHidden            :1; /**< Whether function is hidden */

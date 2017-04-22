@@ -49,7 +49,7 @@ OTableFieldDescWin::OTableFieldDescWin( vcl::Window* pParent)
     , m_eChildFocus(NONE)
 {
     // Header
-    m_pHeader = VclPtr<FixedText>::Create( this, WB_CENTER | WB_INFO );
+    m_pHeader = VclPtr<FixedText>::Create( this, WB_CENTER );
     m_pHeader->SetText( OUString(ModuleRes(STR_TAB_PROPERTIES)) );
     m_pHeader->Show();
 
@@ -102,7 +102,7 @@ void OTableFieldDescWin::SaveData( OFieldDescription* pFieldDescr )
     getGenPage()->SaveData( pFieldDescr );
 }
 
-void OTableFieldDescWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/)
+void OTableFieldDescWin::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/)
 {
     // 3D-line at the top window border
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
@@ -209,7 +209,7 @@ IClipboardTest* OTableFieldDescWin::getActiveChild() const
             pTest = getGenPage();
             break;
         default:
-            pTest = getHelpBar();
+            pTest = m_pHelpBar;
             break;
     }
     return pTest;

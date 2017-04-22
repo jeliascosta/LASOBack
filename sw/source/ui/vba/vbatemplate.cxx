@@ -24,6 +24,7 @@
 #include <comphelper/processfactory.hxx>
 #include <comphelper/string.hxx>
 #include <tools/urlobj.hxx>
+#include <rtl/character.hxx>
 #include <osl/file.hxx>
 
 using namespace ::ooo::vba;
@@ -39,7 +40,7 @@ static OUString lcl_CheckGroupName( const OUString& rGroupName )
         if (rtl::isAsciiAlphanumeric(cChar) ||
             cChar == '_' || cChar == 0x20)
         {
-            sRet += OUString(cChar);
+            sRet += OUStringLiteral1(cChar);
         }
     }
     return comphelper::string::strip(sRet, ' ');
@@ -55,7 +56,7 @@ SwVbaTemplate::~SwVbaTemplate()
 }
 
 OUString
-SwVbaTemplate::getName() throw ( css::uno::RuntimeException, std::exception )
+SwVbaTemplate::getName()
 {
     OUString sName;
     if( !msFullUrl.isEmpty() )
@@ -67,13 +68,13 @@ SwVbaTemplate::getName() throw ( css::uno::RuntimeException, std::exception )
 }
 
 OUString
-SwVbaTemplate::getPath() throw ( css::uno::RuntimeException, std::exception )
+SwVbaTemplate::getPath()
 {
     OUString sPath;
     if( !msFullUrl.isEmpty() )
     {
         INetURLObject aURL( msFullUrl );
-        OUString sURL( aURL.GetMainURL( INetURLObject::DECODE_TO_IURI ) );
+        OUString sURL( aURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ) );
         sURL = sURL.copy( 0, sURL.getLength() - aURL.GetLastName().getLength() - 1 );
         ::osl::File::getSystemPathFromFileURL( sURL, sPath );
     }
@@ -81,7 +82,7 @@ SwVbaTemplate::getPath() throw ( css::uno::RuntimeException, std::exception )
 }
 
 uno::Any SAL_CALL
-SwVbaTemplate::AutoTextEntries( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
+SwVbaTemplate::AutoTextEntries( const uno::Any& index )
 {
     uno::Reference< uno::XComponentContext > xContext = comphelper::getProcessComponentContext();
     uno::Reference< text::XAutoTextContainer2 > xAutoTextContainer = text::AutoTextContainer::create( xContext );

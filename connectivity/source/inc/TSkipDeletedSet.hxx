@@ -32,7 +32,7 @@ namespace connectivity
     */
     class OOO_DLLPUBLIC_DBTOOLS OSkipDeletedSet
     {
-        ::std::vector<sal_Int32>                m_aBookmarksPositions;// vector of iterators to position map, the order is the logical position
+        std::vector<sal_Int32>                m_aBookmarksPositions;// vector of iterators to position map, the order is the logical position
         IResultSetHelper*                       m_pHelper;            // used for moving in the resultset
         bool                                    m_bDeletedVisible;
 
@@ -41,13 +41,13 @@ namespace connectivity
         OSkipDeletedSet(IResultSetHelper* _pHelper);
         ~OSkipDeletedSet();
 
-        inline static void * SAL_CALL operator new( size_t nSize )
+        static void * SAL_CALL operator new( size_t nSize )
             { return ::rtl_allocateMemory( nSize ); }
-        inline static void * SAL_CALL operator new( size_t,void* _pHint )
+        static void * SAL_CALL operator new( size_t,void* _pHint )
             { return _pHint; }
-        inline static void SAL_CALL operator delete( void * pMem )
+        static void SAL_CALL operator delete( void * pMem )
             { ::rtl_freeMemory( pMem ); }
-        inline static void SAL_CALL operator delete( void *,void* )
+        static void SAL_CALL operator delete( void *,void* )
             {  }
 
         /**
@@ -55,7 +55,7 @@ namespace connectivity
             it guarantees that the row isn't deleted
                 @param
                     IResultSetHelper::Movement  _eCursorPosition        in which direction the resultset should be moved
-                    sal_Int32                   _nOffset                the position relativ to the movement
+                    sal_Int32                   _nOffset                the position relative to the movement
                     sal_Bool                    _bRetrieveData          is true when the current row should be filled which data
                 @return
                     true when the movement was successful otherwise false
@@ -85,7 +85,7 @@ namespace connectivity
                 sal_Int32 _nPos the logical position
         */
         void        deletePosition(sal_Int32 _nPos);
-        inline void SetDeletedVisible(bool _bDeletedVisible) { m_bDeletedVisible = _bDeletedVisible; }
+        void SetDeletedVisible(bool _bDeletedVisible) { m_bDeletedVisible = _bDeletedVisible; }
     };
 }
 #endif // INCLUDED_CONNECTIVITY_SOURCE_INC_TSKIPDELETEDSET_HXX

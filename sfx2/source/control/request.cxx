@@ -32,7 +32,7 @@
 
 #include <comphelper/processfactory.hxx>
 
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 
 #include <sfx2/request.hxx>
 #include <sfx2/dispatch.hxx>
@@ -64,10 +64,12 @@ struct SfxRequest_Impl: public SfxListener
     bool            bCancelled;  // no longer notify
     SfxCallMode     nCallMode;   // Synch/Asynch/API/Record
     bool            bAllowRecording;
-    SfxAllItemSet*  pInternalArgs;
+    std::unique_ptr<SfxAllItemSet>
+                    pInternalArgs;
     SfxViewFrame*   pViewFrame;
 
     css::uno::Reference< css::frame::XDispatchRecorder > xRecorder;
+    css::uno::Reference< uno::XComponentContext > xContext;
 
     explicit SfxRequest_Impl( SfxRequest *pOwner )
         : pAnti( pOwner)
@@ -81,11 +83,10 @@ struct SfxRequest_Impl: public SfxListener
         , bCancelled(false)
         , nCallMode( SfxCallMode::SYNCHRON )
         , bAllowRecording( false )
-        , pInternalArgs( nullptr )
         , pViewFrame(nullptr)
-        {}
-    virtual ~SfxRequest_Impl() { delete pInternalArgs; }
-
+        , xContext(comphelper::getProcessComponentContext())
+    {
+    }
 
     void                SetPool( SfxItemPool *pNewPool );
     virtual void        Notify( SfxBroadcaster &rBC, const SfxHint &rHint ) override;
@@ -95,8 +96,7 @@ struct SfxRequest_Impl: public SfxListener
 
 void SfxRequest_Impl::Notify( SfxBroadcaster&, const SfxHint &rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SfxHintId::Dying )
         pAnti->Cancel();
 }
 
@@ -147,7 +147,7 @@ SfxRequest::SfxRequest
     pImpl->nModifier = rOrig.pImpl->nModifier;
 
     // deep copy needed !
-    pImpl->pInternalArgs = (rOrig.pImpl->pInternalArgs ? new SfxAllItemSet(*rOrig.pImpl->pInternalArgs) : nullptr);
+    pImpl->pInternalArgs.reset( rOrig.pImpl->pInternalArgs ? new SfxAllItemSet(*rOrig.pImpl->pInternalArgs) : nullptr);
 
     if ( pArgs )
         pImpl->SetPool( pArgs->GetPool() );
@@ -268,6 +268,18 @@ SfxRequest::SfxRequest
 }
 
 
+SfxRequest::SfxRequest
+(
+    sal_uInt16                  nSlotId,
+    SfxCallMode                 nMode,
+    const SfxAllItemSet&        rSfxArgs,
+    const SfxAllItemSet&        rSfxInternalArgs
+)
+: SfxRequest(nSlotId, nMode, rSfxArgs)
+{
+    SetInternalArgs_Impl(rSfxInternalArgs);
+}
+
 SfxCallMode SfxRequest::GetCallMode() const
 {
     return pImpl->nCallMode;
@@ -290,13 +302,12 @@ void SfxRequest::SetSynchronCall( bool bSynchron )
 
 void SfxRequest::SetInternalArgs_Impl( const SfxAllItemSet& rArgs )
 {
-    delete pImpl->pInternalArgs;
-    pImpl->pInternalArgs = new SfxAllItemSet( rArgs );
+    pImpl->pInternalArgs.reset( new SfxAllItemSet( rArgs ) );
 }
 
 const SfxItemSet* SfxRequest::GetInternalArgs_Impl() const
 {
-    return pImpl->pInternalArgs;
+    return pImpl->pInternalArgs.get();
 }
 
 
@@ -339,8 +350,6 @@ void SfxRequest_Impl::Record
                 }
             }
         }
-
-        uno::Reference< uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
 
         uno::Reference< util::XURLTransformer > xTransform = util::URLTransformer::create( xContext );
 
@@ -484,7 +493,7 @@ void SfxRequest::Done( bool bRelease )
 void SfxRequest::ForgetAllArgs()
 {
     DELETEZ( pArgs );
-    DELETEZ( pImpl->pInternalArgs );
+    pImpl->pInternalArgs.reset();
 }
 
 
@@ -743,7 +752,7 @@ bool SfxRequest::AllowsRecording() const
 void SfxRequest::ReleaseArgs()
 {
     DELETEZ( pArgs );
-    DELETEZ( pImpl->pInternalArgs );
+    pImpl->pInternalArgs.reset();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

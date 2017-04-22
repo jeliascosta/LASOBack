@@ -29,7 +29,7 @@
 // class XLineCapItem
 
 
-class SVX_DLLPUBLIC XLineCapItem : public SfxEnumItem
+class SVX_DLLPUBLIC XLineCapItem : public SfxEnumItem<css::drawing::LineCap>
 {
 public:
     static SfxPoolItem* CreateDefault();
@@ -43,11 +43,11 @@ public:
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric, MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    virtual sal_uInt16          GetValueCount() const override;
-    css::drawing::LineCap GetValue() const;
+    css::drawing::LineCap   GetValue() const;
+    virtual sal_uInt16      GetValueCount() const override;
 };
 
 #endif // INCLUDED_SVX_XLNCAPIT_HXX

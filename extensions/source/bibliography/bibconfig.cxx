@@ -25,6 +25,7 @@
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/sdb/DatabaseContext.hpp>
 #include <comphelper/processfactory.hxx>
+#include <o3tl/any.hxx>
 #include <o3tl/make_unique.hxx>
 
 using namespace ::com::sun::star::uno;
@@ -36,7 +37,7 @@ using namespace ::com::sun::star::sdb;
 
 const char cDataSourceHistory[] = "DataSourceHistory";
 
-Sequence<OUString> BibConfig::GetPropertyNames()
+Sequence<OUString> const & BibConfig::GetPropertyNames()
 {
     static Sequence<OUString> aNames;
     if(!aNames.getLength())
@@ -116,7 +117,7 @@ BibConfig::BibConfig()
                     case  5: pValues[nProp] >>= sQueryText ;  break;
                     case  6: pValues[nProp] >>= sQueryField;  break;
                     case  7:
-                        bShowColumnAssignmentWarning = *static_cast<sal_Bool const *>(pValues[nProp].getValue());
+                        bShowColumnAssignmentWarning = *o3tl::doAccess<bool>(pValues[nProp]);
                     break;
                 }
             }
@@ -219,25 +220,13 @@ void BibConfig::Notify( const css::uno::Sequence<OUString>& )
 
 void    BibConfig::ImplCommit()
 {
-    const Sequence<OUString> aPropertyNames = GetPropertyNames();
-    Sequence<Any> aValues(aPropertyNames.getLength());
-    Any* pValues = aValues.getArray();
-
-    for(int nProp = 0; nProp < aPropertyNames.getLength(); nProp++)
-    {
-        switch(nProp)
-        {
-            case  0: pValues[nProp] <<= sDataSource; break;
-            case  1: pValues[nProp] <<= sTableOrQuery; break;
-            case  2: pValues[nProp] <<= nTblOrQuery;  break;
-            case  3: pValues[nProp] <<= nBeamerSize;  break;
-            case  4: pValues[nProp] <<= nViewSize;  break;
-            case  5: pValues[nProp] <<= sQueryText;  break;
-            case  6: pValues[nProp] <<= sQueryField;  break;
-            case  7: pValues[nProp] <<= bShowColumnAssignmentWarning; break;
-        }
-    }
-    PutProperties(aPropertyNames, aValues);
+    PutProperties(
+        GetPropertyNames(),
+        {css::uno::Any(sDataSource), css::uno::Any(sTableOrQuery),
+         css::uno::Any(nTblOrQuery), css::uno::Any(nBeamerSize),
+         css::uno::Any(nViewSize), css::uno::Any(sQueryText),
+         css::uno::Any(sQueryField),
+         css::uno::Any(bShowColumnAssignmentWarning)});
     ClearNodeSet(cDataSourceHistory);
     Sequence< PropertyValue > aNodeValues(pMappingsArr->size() * 3);
     PropertyValue* pNodeValues = aNodeValues.getArray();

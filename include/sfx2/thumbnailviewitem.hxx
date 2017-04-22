@@ -98,23 +98,23 @@ public:
 
         Returns rectangle that needs to be invalidated.
     */
-    virtual Rectangle updateHighlight(bool bVisible, const Point& rPoint);
+    virtual tools::Rectangle updateHighlight(bool bVisible, const Point& rPoint);
 
     /// Text to be used for the tooltip.
 
     void setHelpText (const OUString &sText) { maHelpText = sText; }
 
     virtual OUString getHelpText() const { return maHelpText; };
-    virtual OUString getTitle() const { return maTitle; };
+    OUString getTitle() const { return maTitle; };
 
     void setTitle (const OUString& rTitle);
 
-    css::uno::Reference< css::accessibility::XAccessible >
+    css::uno::Reference< css::accessibility::XAccessible > const &
                         GetAccessible( bool bIsTransientChildrenDisabled );
 
-    void setDrawArea (const Rectangle &area);
+    void setDrawArea (const tools::Rectangle &area);
 
-    const Rectangle& getDrawArea () const { return maDrawArea; }
+    const tools::Rectangle& getDrawArea () const { return maDrawArea; }
 
     virtual void calculateItemsPosition (const long nThumbnailHeight, const long nDisplayHeight,
                                          const long nPadding, sal_uInt32 nMaxTextLength,
@@ -133,7 +133,7 @@ protected:
 
     Point maTextPos;
     Point maPrev1Pos;
-    Rectangle maDrawArea;
+    tools::Rectangle maDrawArea;
 };
 
 #endif // INCLUDED_SFX2_THUMBNAILVIEWITEM_HXX

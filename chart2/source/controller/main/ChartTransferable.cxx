@@ -17,8 +17,13 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <memory>
+
 #include "ChartTransferable.hxx"
 
+#include <o3tl/make_unique.hxx>
 #include <sot/exchange.hxx>
 #include <sot/storage.hxx>
 #include <unotools/streamwrap.hxx>
@@ -32,8 +37,6 @@
 #include <svx/unomodel.hxx>
 #include <svx/svdview.hxx>
 
-#define CHARTTRANSFER_OBJECTTYPE_DRAWMODEL      SotClipboardFormatId::STRING
-
 using namespace ::com::sun::star;
 
 using ::com::sun::star::uno::Reference;
@@ -45,7 +48,7 @@ ChartTransferable::ChartTransferable( SdrModel* pDrawModel, SdrObject* pSelected
     :m_pMarkedObjModel( nullptr )
     ,m_bDrawing( bDrawing )
 {
-    SdrExchangeView * pExchgView( new SdrView( pDrawModel ));
+    std::unique_ptr<SdrExchangeView> pExchgView(o3tl::make_unique<SdrView>( pDrawModel ));
     SdrPageView* pPv = pExchgView->ShowSdrPage( pDrawModel->GetPage( 0 ));
     if( pSelectedObj )
         pExchgView->MarkObj( pSelectedObj, pPv );
@@ -57,7 +60,6 @@ ChartTransferable::ChartTransferable( SdrModel* pDrawModel, SdrObject* pSelected
     {
         m_pMarkedObjModel = pExchgView->GetMarkedObjModel();
     }
-    delete pExchgView;
 }
 
 ChartTransferable::~ChartTransferable()
@@ -83,7 +85,7 @@ bool ChartTransferable::GetData( const css::datatransfer::DataFlavor& rFlavor, c
     {
         if ( nFormat == SotClipboardFormatId::DRAWING )
         {
-            bResult = SetObject( m_pMarkedObjModel, CHARTTRANSFER_OBJECTTYPE_DRAWMODEL, rFlavor );
+            bResult = SetObject( m_pMarkedObjModel, SotClipboardFormatId::STRING, rFlavor );
         }
         else if ( nFormat == SotClipboardFormatId::GDIMETAFILE )
         {
@@ -108,7 +110,7 @@ bool ChartTransferable::WriteObject( tools::SvRef<SotStorageStream>& rxOStm, voi
     bool bRet = false;
     switch ( nUserObjectId )
     {
-        case CHARTTRANSFER_OBJECTTYPE_DRAWMODEL:
+        case SotClipboardFormatId::STRING:
             {
                 SdrModel* pMarkedObjModel = static_cast< SdrModel* >( pUserObject );
                 if ( pMarkedObjModel )
@@ -124,7 +126,7 @@ bool ChartTransferable::WriteObject( tools::SvRef<SotStorageStream>& rxOStm, voi
                     for ( sal_uInt16 i = 0; i < nCount; ++i )
                     {
                         const SdrPage* pPage = pMarkedObjModel->GetPage( i );
-                        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+                        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
                         while ( aIter.IsMore() )
                         {
                             SdrObject* pObj = aIter.Next();

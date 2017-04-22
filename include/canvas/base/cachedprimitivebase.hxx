@@ -25,8 +25,8 @@
 #include <com/sun/star/rendering/XCanvas.hpp>
 #include <com/sun/star/rendering/XCachedPrimitive.hpp>
 #include <com/sun/star/rendering/ViewState.hpp>
-#include <cppuhelper/compbase2.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/compbase.hxx>
+#include <cppuhelper/basemutex.hxx>
 
 #include <canvas/canvastoolsdllapi.h>
 
@@ -34,14 +34,14 @@
 
 namespace canvas
 {
-    typedef ::cppu::WeakComponentImplHelper2< css::rendering::XCachedPrimitive,
-                                              css::lang::XServiceInfo > CachedPrimitiveBase_Base;
+    typedef cppu::WeakComponentImplHelper< css::rendering::XCachedPrimitive,
+                                           css::lang::XServiceInfo > CachedPrimitiveBase_Base;
 
     /** Base class, providing common functionality for implementers of
         the XCachedPrimitive interface.
      */
     class CANVASTOOLS_DLLPUBLIC CachedPrimitiveBase:
-        public comphelper::OBaseMutex, public CachedPrimitiveBase_Base
+        public cppu::BaseMutex, public CachedPrimitiveBase_Base
     {
     public:
 
@@ -52,31 +52,23 @@ namespace canvas
 
             @param rTarget
             The target canvas the repaint should happen on.
-
-            @param bFailForChangedViewTransform
-            When true, derived classes will never receive doRedraw()
-            calls with dissimilar view transformations and
-            bSameViewTransform set to false. This is useful for cached
-            objects where re-transforming the generated output is not
-            desirable, e.g. for hinted font output.
          */
         CachedPrimitiveBase( const css::rendering::ViewState&  rUsedViewState,
-                             const css::uno::Reference< css::rendering::XCanvas >& rTarget,
-                             bool                              bFailForChangedViewTransform );
+                             const css::uno::Reference< css::rendering::XCanvas >& rTarget );
 
         /// Dispose all internal references
         virtual void SAL_CALL disposing() override;
 
         // XCachedPrimitive
-        virtual ::sal_Int8 SAL_CALL redraw( const css::rendering::ViewState& aState ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+        virtual ::sal_Int8 SAL_CALL redraw( const css::rendering::ViewState& aState ) override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName(  ) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
     protected:
-        virtual ~CachedPrimitiveBase(); // we're a ref-counted UNO class. _We_ destroy ourselves.
+        virtual ~CachedPrimitiveBase() override; // we're a ref-counted UNO class. _We_ destroy ourselves.
 
     private:
         CachedPrimitiveBase( const CachedPrimitiveBase& ) = delete;
@@ -106,7 +98,6 @@ namespace canvas
 
         css::rendering::ViewState                         maUsedViewState;
         css::uno::Reference< css::rendering::XCanvas >    mxTarget;
-        const bool                                        mbFailForChangedViewTransform;
     };
 }
 

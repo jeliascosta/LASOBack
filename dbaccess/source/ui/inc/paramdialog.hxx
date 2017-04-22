@@ -36,11 +36,22 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <connectivity/predicateinput.hxx>
 #include "svx/ParseContext.hxx"
+#include <o3tl/typed_flags_set.hxx>
 
 namespace connectivity
 {
     class OSQLParseNode;
 }
+
+enum class VisitFlags {
+    NONE        = 0x00,
+    Visited     = 0x01,
+    Dirty       = 0x02,
+};
+namespace o3tl {
+    template<> struct typed_flags<VisitFlags> : is_typed_flags<VisitFlags, 0x03> {};
+}
+
 
 namespace dbaui
 {
@@ -69,7 +80,7 @@ namespace dbaui
         ::dbtools::OPredicateInputController
                                m_aPredicateInput;
 
-        ByteVector             m_aVisitedParams;
+        std::vector<VisitFlags>  m_aVisitedParams;
         Timer                  m_aResetVisitFlag;
             // we reset the "visited flag" 1 second after and entry has been selected
 
@@ -83,7 +94,7 @@ namespace dbaui
             const css::uno::Reference< css::container::XIndexAccess > & _rParamContainer,
             const css::uno::Reference< css::sdbc::XConnection > & _rxConnection,
             const css::uno::Reference< css::uno::XComponentContext >& rxContext);
-        virtual ~OParameterDialog();
+        virtual ~OParameterDialog() override;
         virtual void dispose() override;
 
         const css::uno::Sequence< css::beans::PropertyValue >&
@@ -93,11 +104,11 @@ namespace dbaui
         void Construct();
 
     private:
-        DECL_LINK_TYPED(OnVisitedTimeout, Timer*, void);
-        DECL_LINK_TYPED(OnValueModified, Edit&, void);
-        DECL_LINK_TYPED(OnEntryListBoxSelected, ListBox&, void);
-        DECL_LINK_TYPED(OnButtonClicked, Button*, void);
-        DECL_LINK_TYPED(OnValueLoseFocusHdl, Control&, void);
+        DECL_LINK(OnVisitedTimeout, Timer*, void);
+        DECL_LINK(OnValueModified, Edit&, void);
+        DECL_LINK(OnEntryListBoxSelected, ListBox&, void);
+        DECL_LINK(OnButtonClicked, Button*, void);
+        DECL_LINK(OnValueLoseFocusHdl, Control&, void);
         bool OnValueLoseFocus();
         bool OnEntrySelected();
     };

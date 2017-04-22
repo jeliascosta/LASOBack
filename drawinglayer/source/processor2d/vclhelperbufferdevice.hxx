@@ -28,7 +28,7 @@
 namespace basegfx { class B2DRange; }
 
 
-// support methods for vcl direct gradient renderering
+// support methods for vcl direct gradient rendering
 
 namespace drawinglayer
 {
@@ -38,7 +38,7 @@ namespace drawinglayer
         VclPtr<VirtualDevice>               mpContent;
         VclPtr<VirtualDevice>               mpMask;
         VclPtr<VirtualDevice>               mpAlpha;
-        Rectangle                           maDestPixel;
+        tools::Rectangle                           maDestPixel;
 
     public:
         impBufferDevice(

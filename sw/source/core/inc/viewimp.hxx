@@ -74,7 +74,9 @@ class SwViewShellImp
                                  // Is registered by the SwLayAction ctor and deregistered by the dtor
     SwLayIdle     *m_pIdleAct;     // The same as SwLayAction for SwLayIdle
 
-    SwAccessibleMap *m_pAccessibleMap;    // Accessible wrappers
+    /// note: the map is *uniquely* owned here - the shared_ptr is only
+    /// used so that SwAccessibleContext can check via weak_ptr that it's alive
+    std::shared_ptr<SwAccessibleMap> m_pAccessibleMap;
 
     bool m_bFirstPageInvalid : 1; // Pointer to the first Page invalid?
     bool m_bResetHdlHiddenPaint : 1; // Ditto
@@ -169,8 +171,9 @@ public:
      */
     void   PaintLayer( const SdrLayerID _nLayerID,
                        SwPrintData const*const pPrintData,
+                       SwPageFrame const& rPageFrame,
                        const SwRect& _rRect,
-                       const Color* _pPageBackgrdColor = nullptr,
+                       const Color* _pPageBackgrdColor,
                        const bool _bIsPageRightToLeft = false,
                        sdr::contact::ViewObjectContactRedirector* pRedirector = nullptr );
 
@@ -210,7 +213,7 @@ public:
 
     void InitPagePreviewLayout();
 
-    inline SwPagePreviewLayout* PagePreviewLayout()
+    SwPagePreviewLayout* PagePreviewLayout()
     {
         return m_pPagePreviewLayout;
     }
@@ -225,10 +228,10 @@ public:
 
     /// Remove a frame from the accessible view
     void DisposeAccessible( const SwFrame *pFrame, const SdrObject *pObj,
-                            bool bRecursive );
+                            bool bRecursive, bool bCanSkipInvisible );
     inline void DisposeAccessibleFrame( const SwFrame *pFrame,
                                bool bRecursive = false );
-    inline void DisposeAccessibleObj( const SdrObject *pObj );
+    inline void DisposeAccessibleObj( const SdrObject *pObj, bool bCanSkipInvisible );
 
     /// Move a frame's position in the accessible view
     void MoveAccessible( const SwFrame *pFrame, const SdrObject *pObj,
@@ -247,7 +250,7 @@ public:
     void InvalidateAccessibleCursorPosition( const SwFrame *pFrame );
 
     /// Invalidate editable state for all accessible frames
-    void InvalidateAccessibleEditableState( bool bAllShells = true,
+    void InvalidateAccessibleEditableState( bool bAllShells,
                                                const SwFrame *pFrame=nullptr );
 
     /// Invalidate frame's relation set (for chained frames)
@@ -278,12 +281,12 @@ inline SwAccessibleMap& SwViewShellImp::GetAccessibleMap()
 inline void SwViewShellImp::DisposeAccessibleFrame( const SwFrame *pFrame,
                                bool bRecursive )
 {
-    DisposeAccessible( pFrame, nullptr, bRecursive );
+    DisposeAccessible( pFrame, nullptr, bRecursive, true );
 }
 
-inline void SwViewShellImp::DisposeAccessibleObj( const SdrObject *pObj )
+inline void SwViewShellImp::DisposeAccessibleObj( const SdrObject *pObj, bool bCanSkipInvisible )
 {
-    DisposeAccessible( nullptr, pObj, false );
+    DisposeAccessible( nullptr, pObj, false, bCanSkipInvisible );
 }
 
 inline void SwViewShellImp::MoveAccessibleFrame( const SwFrame *pFrame,

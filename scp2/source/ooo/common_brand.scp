@@ -48,45 +48,23 @@ Module gid_Module_Root_Brand
             gid_Brand_Dir_Share_Uno_Packages,
             gid_Brand_Dir_Share_Uno_Packages_Cache,
             gid_Brand_Dir_Share_Ure,
-            gid_Brand_Dir_Share_Ure_Etc,
             gid_Brand_Dir_Share_Ure_Share,
-            gid_Brand_Dir_Share_Glade,
-            gid_Brand_Dir_Share_Labels,
             gid_Brand_Dir_Share_Registry,
             gid_Brand_Dir_Share_Xdg);
     Files = (auto_brand_ALL,
              gid_Brand_File_Gdb_Trace,
-             gid_Brand_File_Bin_Soffice,
-             gid_Brand_File_Bin_Soffice_Bin_Manifest,
              gid_Brand_File_Bin_Unoinfo,
-             gid_Brand_File_Bmp_IntroAboutShell,
-             gid_Brand_File_Bmp_IntroAboutShell_custom,
 	     gid_Brand_File_Desktophelper_Txt,
-             gid_Brand_File_Html_Thirdpartylicensereadme,
-             gid_Brand_File_Lib_Dbghelp,
-             gid_Brand_File_Lib_Mingw_GccS,
-             gid_Brand_File_Lib_Mingw_Stdcpp,
-             gid_Brand_File_Lib_Msvcr80,
-             gid_Brand_File_Lib_Msvcp80,
-             gid_Brand_File_Lib_Msvcm80,
-             gid_Brand_File_Msvcm80crt_Manifest,
-             gid_Brand_File_Share_Registry_O5oo_Xcd,
              gid_Brand_File_Script_Unopkg,
              gid_Brand_File_Share_Xdg_Base,
              gid_Brand_File_Share_Xdg_Calc,
              gid_Brand_File_Share_Xdg_Draw,
-             gid_Brand_File_Share_Xdg_Extension,
              gid_Brand_File_Share_Xdg_Impress,
              gid_Brand_File_Share_Xdg_Math,
              gid_Brand_File_Share_Xdg_QStart,
              gid_Brand_File_Share_Xdg_StartCenter,
              gid_Brand_File_Share_Xdg_Writer,
-             gid_Brand_File_Share_Xdg_XsltFilter,
-             gid_Brand_File_Txt_Package,
-	     gid_License_Txt,
-	     git_License_Odt,
-	     gid_Credits_Odt,
-	     gid_Apache_Notice);
+             gid_Brand_File_Share_Xdg_XsltFilter);
 End
 
 // Language specific brand module
@@ -100,8 +78,7 @@ Module gid_Module_Langpack_Brand_Template
     Dirs = (gid_Brand_Dir_Program_Shell,
             gid_Brand_Dir_Readme);
     Files = (gid_Brand_File_Readme_Readme,
-             gid_Brand_File_Share_Registry_Cjk_Xcd,
-             gid_Brand_File_Txt_Readme);
+             gid_Brand_File_Share_Registry_Cjk_Xcd);
 End
 
 // Directories
@@ -114,15 +91,6 @@ Directory gid_Brand_Dir_Program
     ParentID = gid_Dir_Brand_Root;
     DosName = "program";
 #endif
-End
-
-Directory gid_Brand_Dir_Program_Shell
-#if defined MACOSX
-    ParentID = gid_Brand_Dir_Share;
-#else
-    ParentID = gid_Brand_Dir_Program;
-#endif
-    DosName = "shell";
 End
 
 Directory gid_Brand_Dir_Readme
@@ -148,266 +116,6 @@ Directory gid_Brand_Dir_Share_Config
     DosName = "config";
 End
 
-Directory gid_Brand_Dir_Share_Extensions
-    ParentID = gid_Brand_Dir_Share;
-    DosName = "extensions";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Af
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-af";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_An
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-an";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Ar
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-ar";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Be
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-be";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Bg
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-bg";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Bn
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-bn";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Br
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-br";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Bs
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-bs";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Ca
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-ca";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Cs
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-cs";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Da
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-da";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_De
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-de";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_En
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-en";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_El
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-el";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Es
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-es";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Et
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-et";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Fr
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-fr";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Gd
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-gd";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Gl
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-gl";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Gu
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-gu";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_He
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-he";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Hi
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-hi";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Hu
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-hu";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Hr
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-hr";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Is
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-is";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_It
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-it";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Kmr_Latn
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-kmr-Latn";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Lo
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-lo";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Lt
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-lt";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Lv
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-lv";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Ne
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-ne";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Nl
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-nl";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_No
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-no";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Oc
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-oc";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Pl
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-pl";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Pt_Br
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-pt-BR";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Pt_Pt
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-pt-PT";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Ro
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-ro";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Ru
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-ru";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Si
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-si";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Sk
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-sk";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Sl
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-sl";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Sr
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-sr";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Sv
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-sv";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Sw
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-sw";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Te
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-te";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Th
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-th";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Uk
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-uk";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Vi
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-vi";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Dict_Zu
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "dict-zu";
-End
-
-Directory gid_Brand_Dir_Share_Extensions_Oooimprovement
-    ParentID = gid_Brand_Dir_Share_Extensions;
-    DosName = "OOoImprovement";
-End
-
 Directory gid_Brand_Dir_Share_Uno_Packages
     ParentID = gid_Brand_Dir_Share;
     DosName = "uno_packages";
@@ -426,26 +134,11 @@ Directory gid_Brand_Dir_Share_Uno_Packages_Cache_Uno_Packages
     Styles = (CREATE);
 End
 
-Directory gid_Brand_Dir_Share_Glade
-    ParentID = gid_Brand_Dir_Share;
-    DosName = "glade";
-End
-
-Directory gid_Brand_Dir_Share_Labels
-    ParentID = gid_Brand_Dir_Share;
-    DosName = "labels";
-End
-
 #if defined MACOSX
 
 Directory gid_Brand_Dir_Share_Ure
     ParentID = gid_Brand_Dir_Share;
     DosName = "ure";
-End
-
-Directory gid_Brand_Dir_Share_Ure_Etc
-    ParentID = gid_Brand_Dir_Share_Ure;
-    DosName = "etc";
 End
 
 Directory gid_Brand_Dir_Share_Ure_Share
@@ -469,17 +162,6 @@ End
 
 // Files
 
-File gid_Brand_File_Html_Thirdpartylicensereadme
-    Name = "LICENSE.html";
-#if defined MACOSX
-    Dir = gid_Dir_Bundle_Contents_Resources;
-#else
-    Dir = gid_Dir_Brand_Root;
-#endif
-    Styles = (WORKSTATION);
-    TXT_FILE_BODY;
-End
-
 #if defined UNX && !defined MACOSX
 
 File gid_Brand_File_Gdb_Trace
@@ -487,17 +169,6 @@ File gid_Brand_File_Gdb_Trace
     Dir = gid_Brand_Dir_Program;
     Name = gdbtrace;
     Styles = (PACKED);
-End
-
-#endif
-
-#if !defined MACOSX && !defined WNT
-
-File gid_Brand_File_Bin_Soffice
-    BIN_FILE_BODY;
-    Dir = FILELIST_DIR;
-    Name = "desktop_soffice_sh.filelist";
-    Styles = (FILELIST, PACKED);
 End
 
 #endif
@@ -530,27 +201,16 @@ File gid_Brand_File_Script_Unopkg
 End
 #endif
 
-File gid_Brand_File_Bmp_IntroAboutShell
-    TXT_FILE_BODY;
-    Dir = FILELIST_DIR;
-    Name = "desktop_branding.filelist";
-    Styles = (FILELIST);
-End
-
-#if defined CUSTOM_BRANDING
-File gid_Brand_File_Bmp_IntroAboutShell_custom
-    TXT_FILE_BODY;
-    Dir = FILELIST_DIR;
-    Name = "desktop_branding_custom.filelist";
-    Styles = (FILELIST);
-End
-#endif
-
-File gid_Brand_File_Txt_Package
-    TXT_FILE_BODY;
-    Dir = gid_Brand_Dir_Share_Extensions;
-    Name = "package.txt";
-    Styles = (PACKED);
+File gid_Brand_File_Readme_Readme
+  TXT_FILE_BODY;
+  Dir = gid_Brand_Dir_Readme;
+  #ifdef UNX
+    README_ALL_LANG(Name, README);
+  #endif
+  #ifdef WNT
+    README_TXT_ALL_LANG(Name, readme, txt);
+  #endif
+    Styles = (PACKED, SCPZIP_REPLACE);
 End
 
 File gid_Brand_File_Share_Registry_Cjk_Xcd
@@ -692,15 +352,6 @@ End
 
 // ProfileItems
 
-ProfileItem gid_Brand_Profileitem_Bootstrap_Errorreport_Server
-    ProfileID = gid_Brand_Profile_Bootstrap_Ini;
-    ModuleID = gid_Module_Root_Brand;
-    Section = "ErrorReport";
-    Order = 8;
-    Key = "ErrorReportServer";
-    Value = "report.libreoffice.org";
-End
-
 ProfileItem gid_Brand_Profileitem_Bootstrap_Productkey
     ProfileID = gid_Brand_Profile_Bootstrap_Ini;
     ModuleID = gid_Module_Root_Brand;
@@ -708,15 +359,6 @@ ProfileItem gid_Brand_Profileitem_Bootstrap_Productkey
     Order = 1;
     Key = "ProductKey";
     Value = "<productkey>";
-End
-
-ProfileItem gid_Brand_Profileitem_Bootstrap_Errorreport_Port
-    ProfileID = gid_Brand_Profile_Bootstrap_Ini;
-    ModuleID = gid_Module_Root_Brand;
-    Section = "ErrorReport";
-    Order = 7;
-    Key = "ErrorReportPort";
-    Value = "80";
 End
 
 ProfileItem gid_Brand_Profileitem_Bootstrap_Installmode
@@ -830,6 +472,55 @@ ProfileItem gid_Brand_Profileitem_Soffice_Hideeula
     Order = 7;
     Key = "HideEula";
     Value = "1";
+End
+
+ProfileItem gid_Brand_Profileitem_Soffice_CrashDirectory
+    ProfileID = gid_Brand_Profile_Soffice_Ini;
+    ModuleID = gid_Module_Root_Brand;
+    Section = "Bootstrap";
+    Key = "CrashDirectory";
+    Value = "${$BRAND_BASE_DIR/" LIBO_ETC_FOLDER "/" PROFILENAME(bootstrap) ":UserInstallation}/crash";
+End
+
+ProfileItem gid_Brand_Profileitem_Soffice_SecureUserConfig
+    ProfileID = gid_Brand_Profile_Soffice_Ini;
+    ModuleID = gid_Module_Root_Brand;
+    Section = "Bootstrap";
+    Key = "SecureUserConfig";
+    Value = "true";
+End
+
+ProfileItem gid_Brand_Profileitem_Soffice_SecureUserConfigCompress
+    ProfileID = gid_Brand_Profile_Soffice_Ini;
+    ModuleID = gid_Module_Root_Brand;
+    Section = "Bootstrap";
+    Key = "SecureUserConfigCompress";
+    Value = "true";
+End
+
+ProfileItem gid_Brand_Profileitem_Soffice_SecureUserConfigNumCopies
+    ProfileID = gid_Brand_Profile_Soffice_Ini;
+    ModuleID = gid_Module_Root_Brand;
+    Section = "Bootstrap";
+    Key = "SecureUserConfigNumCopies";
+    Value = "2";
+End
+
+
+ProfileItem gid_Brand_Profileitem_Soffice_SecureUserConfigMode
+    ProfileID = gid_Brand_Profile_Soffice_Ini;
+    ModuleID = gid_Module_Root_Brand;
+    Section = "Bootstrap";
+    Key = "SecureUserConfigMode";
+    Value = "1";
+End
+
+ProfileItem gid_Brand_Profileitem_Soffice_SecureUserConfigExtensions
+    ProfileID = gid_Brand_Profile_Soffice_Ini;
+    ModuleID = gid_Module_Root_Brand;
+    Section = "Bootstrap";
+    Key = "SecureUserConfigExtensions";
+    Value = "true";
 End
 
 ProfileItem gid_Brand_Profileitem_Version_Buildid
@@ -1135,7 +826,7 @@ ProfileItem gid_Brand_Profileitem_Fundamental_Configuration_Layers
     ModuleID = gid_Module_Root_Brand;
     Section = "Bootstrap";
     Key = "CONFIGURATION_LAYERS";
-    Value = "xcsxcu:${BRAND_BASE_DIR}/" LIBO_SHARE_FOLDER "/registry res:${BRAND_BASE_DIR}/" LIBO_SHARE_FOLDER "/registry" CONFIGURATION_LAYERS_DCONF CONFIGURATION_LAYERS_WINREG " bundledext:${${BRAND_BASE_DIR}/" LIBO_ETC_FOLDER "/" PROFILENAME(louno) ":BUNDLED_EXTENSIONS_USER}/registry/com.sun.star.comp.deployment.configuration.PackageRegistryBackend/configmgr.ini sharedext:${${BRAND_BASE_DIR}/" LIBO_ETC_FOLDER "/" PROFILENAME(louno) ":SHARED_EXTENSIONS_USER}/registry/com.sun.star.comp.deployment.configuration.PackageRegistryBackend/configmgr.ini userext:${${BRAND_BASE_DIR}/" LIBO_ETC_FOLDER "/" PROFILENAME(louno) ":UNO_USER_PACKAGES_CACHE}/registry/com.sun.star.comp.deployment.configuration.PackageRegistryBackend/configmgr.ini " CONFIGURATION_LAYERS_WINUSERREG " user:!${$BRAND_BASE_DIR/" LIBO_ETC_FOLDER "/" PROFILENAME(bootstrap) ":UserInstallation}/user/registrymodifications.xcu";
+    Value = "xcsxcu:${BRAND_BASE_DIR}/" LIBO_SHARE_FOLDER "/registry res:${BRAND_BASE_DIR}/" LIBO_SHARE_FOLDER "/registry" CONFIGURATION_LAYERS_DCONF CONFIGURATION_LAYERS_WINREG " bundledext:${${BRAND_BASE_DIR}/" LIBO_ETC_FOLDER "/" PROFILENAME(louno) ":BUNDLED_EXTENSIONS_USER}/registry/com.sun.star.comp.deployment.configuration.PackageRegistryBackend/configmgr.ini sharedext:${${BRAND_BASE_DIR}/" LIBO_ETC_FOLDER "/" PROFILENAME(louno) ":SHARED_EXTENSIONS_USER}/registry/com.sun.star.comp.deployment.configuration.PackageRegistryBackend/configmgr.ini userext:${${BRAND_BASE_DIR}/" LIBO_ETC_FOLDER "/" PROFILENAME(louno) ":UNO_USER_PACKAGES_CACHE}/registry/com.sun.star.comp.deployment.configuration.PackageRegistryBackend/configmgr.ini" CONFIGURATION_LAYERS_WINUSERREG " user:!${$BRAND_BASE_DIR/" LIBO_ETC_FOLDER "/" PROFILENAME(bootstrap) ":UserInstallation}/user/registrymodifications.xcu";
 End
 #undef CONFIGURATION_LAYERS_DCONF
 #undef CONFIGURATION_LAYERS_WINREG
@@ -1265,52 +956,3 @@ ProfileItem gid_Brand_Profileitem_Setup_Install
     Styles = (INIFILETABLE);
 End
 #endif
-
-File gid_License_Txt
-  TXT_FILE_BODY;
-#if defined MACOSX
-    Dir = gid_Dir_Bundle_Contents_Resources;
-#else
-    Dir = gid_Dir_Brand_Root;
-#endif
-  #ifdef UNX
-    Name = "LICENSE";
-  #endif
-  #ifdef WNT
-    Name = "license.txt";
-  #endif
-    Styles = (PACKED);
-End
-
-File gid_License_Odt
-    TXT_FILE_BODY;
-#if defined MACOSX
-    Dir = gid_Dir_Bundle_Contents_Resources;
-#else
-    Dir = gid_Dir_Brand_Root;
-#endif
-    Name = "LICENSE.fodt";
-    Styles = (PACKED);
-End
-
-File gid_Credits_Odt
-    TXT_FILE_BODY;
-#if defined MACOSX
-    Dir = gid_Dir_Bundle_Contents_Resources;
-#else
-    Dir = gid_Dir_Brand_Root;
-#endif
-    Name = "CREDITS.fodt";
-    Styles = (PACKED);
-End
-
-File gid_Apache_Notice
-    TXT_FILE_BODY;
-#if defined MACOSX
-    Dir = gid_Dir_Bundle_Contents_Resources;
-#else
-    Dir = gid_Dir_Brand_Root;
-#endif
-    Name = "NOTICE";
-    Styles = (PACKED);
-End

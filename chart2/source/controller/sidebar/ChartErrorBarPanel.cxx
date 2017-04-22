@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <sfx2/sidebar/ControlFactory.hxx>
 
 #include <com/sun/star/chart/ChartAxisLabelPosition.hpp>
@@ -102,7 +101,7 @@ void setShowPositiveError(const css::uno::Reference<css::frame::XModel>& xModel,
     if (!xPropSet.is())
         return;
 
-    xPropSet->setPropertyValue("ShowPositiveError", css::uno::makeAny(bShow));
+    xPropSet->setPropertyValue("ShowPositiveError", css::uno::Any(bShow));
 }
 
 void setShowNegativeError(const css::uno::Reference<css::frame::XModel>& xModel,
@@ -114,7 +113,7 @@ void setShowNegativeError(const css::uno::Reference<css::frame::XModel>& xModel,
     if (!xPropSet.is())
         return;
 
-    xPropSet->setPropertyValue("ShowNegativeError", css::uno::makeAny(bShow));
+    xPropSet->setPropertyValue("ShowNegativeError", css::uno::Any(bShow));
 }
 
 struct ErrorBarTypeMap
@@ -175,7 +174,7 @@ void setTypePos(const css::uno::Reference<css::frame::XModel>& xModel,
             nApi = i.nApi;
     }
 
-    xPropSet->setPropertyValue("ErrorBarStyle", css::uno::makeAny(nApi));
+    xPropSet->setPropertyValue("ErrorBarStyle", css::uno::Any(nApi));
 }
 
 double getValue(const css::uno::Reference<css::frame::XModel>& xModel,
@@ -215,7 +214,7 @@ void setValue(const css::uno::Reference<css::frame::XModel>& xModel,
     if (eDir == ErrorBarDirection::NEGATIVE)
         aName = "NegativeError";
 
-    xPropSet->setPropertyValue(aName, css::uno::makeAny(nVal));
+    xPropSet->setPropertyValue(aName, css::uno::Any(nVal));
 }
 
 OUString getCID(const css::uno::Reference<css::frame::XModel>& xModel)
@@ -374,7 +373,7 @@ void ChartErrorBarPanel::DataChanged(
 }
 
 void ChartErrorBarPanel::HandleContextChange(
-    const ::sfx2::sidebar::EnumContext& )
+    const vcl::EnumContext& )
 {
     updateData();
 }
@@ -408,7 +407,7 @@ void ChartErrorBarPanel::updateModel(
     xBroadcasterNew->addModifyListener(mxListener);
 }
 
-IMPL_LINK_NOARG_TYPED(ChartErrorBarPanel, RadioBtnHdl, RadioButton&, void)
+IMPL_LINK_NOARG(ChartErrorBarPanel, RadioBtnHdl, RadioButton&, void)
 {
     OUString aCID = getCID(mxModel);
     bool bPos = mpRBPosAndNeg->IsChecked() || mpRBPos->IsChecked();
@@ -418,7 +417,7 @@ IMPL_LINK_NOARG_TYPED(ChartErrorBarPanel, RadioBtnHdl, RadioButton&, void)
     setShowNegativeError(mxModel, aCID, bNeg);
 }
 
-IMPL_LINK_NOARG_TYPED(ChartErrorBarPanel, ListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG(ChartErrorBarPanel, ListBoxHdl, ListBox&, void)
 {
     OUString aCID = getCID(mxModel);
     sal_Int32 nPos = mpLBType->GetSelectEntryPos();
@@ -426,7 +425,7 @@ IMPL_LINK_NOARG_TYPED(ChartErrorBarPanel, ListBoxHdl, ListBox&, void)
     setTypePos(mxModel, aCID, nPos);
 }
 
-IMPL_LINK_TYPED(ChartErrorBarPanel, NumericFieldHdl, Edit&, rMetricField, void)
+IMPL_LINK(ChartErrorBarPanel, NumericFieldHdl, Edit&, rMetricField, void)
 {
     OUString aCID = getCID(mxModel);
     double nVal = static_cast<NumericField&>(rMetricField).GetValue();

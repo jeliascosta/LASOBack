@@ -52,11 +52,10 @@ class XmlFilterBase;
 class OOX_DLLPUBLIC FragmentHandler2 : public FragmentHandler, public ContextHandler2Helper
 {
 protected:
-    enum MCE_STATE
+    enum class MCE_STATE
     {
-        MCE_UNUSED,
-        MCE_STARTED,
-        MCE_FOUND_CHOICE
+        Started,
+        FoundChoice
     };
     ::std::vector<MCE_STATE>           aMceState;
 
@@ -68,7 +67,7 @@ public:
                             XmlFilterBase& rFilter,
                             const OUString& rFragmentPath,
                             bool bEnableTrimSpace = true );
-    virtual             ~FragmentHandler2();
+    virtual             ~FragmentHandler2() override;
 
     // resolve ambiguity from base classes
     virtual void SAL_CALL acquire() throw() override { FragmentHandler::acquire(); }
@@ -79,33 +78,21 @@ public:
     virtual css::uno::Reference< css::xml::sax::XFastContextHandler > SAL_CALL
                         createFastChildContext(
                             sal_Int32 nElement,
-                            const css::uno::Reference< css::xml::sax::XFastAttributeList >& rxAttribs )
-                            throw(  css::xml::sax::SAXException,
-                                    css::uno::RuntimeException, std::exception ) final override;
+                            const css::uno::Reference< css::xml::sax::XFastAttributeList >& rxAttribs ) final override;
 
     virtual void SAL_CALL startFastElement(
                             sal_Int32 nElement,
-                            const css::uno::Reference< css::xml::sax::XFastAttributeList >& rxAttribs )
-                            throw(  css::xml::sax::SAXException,
-                                    css::uno::RuntimeException, std::exception ) final override;
+                            const css::uno::Reference< css::xml::sax::XFastAttributeList >& rxAttribs ) final override;
 
-    virtual void SAL_CALL characters( const OUString& rChars )
-                            throw(  css::xml::sax::SAXException,
-                                    css::uno::RuntimeException, std::exception ) final override;
+    virtual void SAL_CALL characters( const OUString& rChars ) final override;
 
-    virtual void SAL_CALL endFastElement( sal_Int32 nElement )
-                            throw(  css::xml::sax::SAXException,
-                                    css::uno::RuntimeException, std::exception ) final override;
+    virtual void SAL_CALL endFastElement( sal_Int32 nElement ) final override;
 
     // com.sun.star.xml.sax.XFastDocumentHandler interface --------------------
 
-    virtual void SAL_CALL startDocument()
-                            throw(  css::xml::sax::SAXException,
-                                    css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL startDocument() override;
 
-    virtual void SAL_CALL endDocument()
-                            throw(  css::xml::sax::SAXException,
-                                    css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL endDocument() override;
 
     // oox.core.ContextHandler interface --------------------------------------
 

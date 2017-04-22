@@ -70,10 +70,6 @@ public:
     {
     }
 
-    virtual ~LwpTabOverride()
-    {
-    }
-
     virtual LwpTabOverride* clone() const override;
 
     virtual void Read(LwpObjectStream *pStrm) override
@@ -88,9 +84,7 @@ public:
     }
 
     inline LwpObjectID& GetTabRackID();
-    inline bool IsTabRackOverridden();
     inline void Override(LwpTabOverride* pOther);
-    inline void OverrideTabRack(LwpObjectID* pTabRackID);
 
 protected:
     LwpTabOverride(LwpTabOverride const& rOther);
@@ -115,21 +109,11 @@ inline void LwpTabOverride::Override(LwpTabOverride* pOther)
 {
     if (m_nApply & TO_TABRACK)
     {
-        if (IsTabRackOverridden())
-            //m_aTabRackID = *(pOther->GetTabRackID());
-            pOther->OverrideTabRack(&GetTabRackID());
+        if ((m_nOverride & TO_TABRACK) != 0)
+            pOther->m_aTabRackID = GetTabRackID();
     }
 }
 
-inline bool LwpTabOverride::IsTabRackOverridden()
-{
-    return (m_nOverride & TO_TABRACK) != 0;
-}
-
-inline void LwpTabOverride::OverrideTabRack(LwpObjectID* pTabRackID)
-{
-    m_aTabRackID = *pTabRackID;
-}
 #endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

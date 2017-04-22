@@ -21,6 +21,7 @@ $(eval $(call gb_CppunitTest_use_libraries,sw_htmlexport, \
 	cppuhelper \
 	i18nlangtag \
     sal \
+    sfx \
     sw \
     test \
 	tl \
@@ -43,10 +44,7 @@ $(eval $(call gb_CppunitTest_set_include,sw_htmlexport,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sw_htmlexport,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sw_htmlexport))
 
 $(eval $(call gb_CppunitTest_use_ure,sw_htmlexport))
 $(eval $(call gb_CppunitTest_use_vcl,sw_htmlexport))
@@ -83,6 +81,7 @@ $(eval $(call gb_CppunitTest_use_components,sw_htmlexport,\
     ucb/source/ucp/file/ucpfile1 \
     unotools/util/utl \
     unoxml/source/service/unoxml \
+    uui/util/uui \
     writerfilter/util/writerfilter \
     xmloff/util/xo \
 ))

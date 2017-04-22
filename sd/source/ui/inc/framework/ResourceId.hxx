@@ -31,17 +31,13 @@
 #include <cppuhelper/implbase.hxx>
 #include <memory>
 
-namespace {
+namespace sd { namespace framework {
 
 typedef ::cppu::WeakImplHelper <
     css::drawing::framework::XResourceId,
     css::lang::XInitialization,
     css::lang::XServiceInfo
     > ResourceIdInterfaceBase;
-
-} // end of anonymous namespace.
-
-namespace sd { namespace framework {
 
 /** Implementation of the css::drawing::framework::ResourceId
     service and the css::drawing::framework::XResourceId
@@ -99,72 +95,58 @@ public:
         const OUString& rsFirstAnchorURL,
         const css::uno::Sequence<OUString>& rAnchorURLs);
 
-    virtual ~ResourceId();
+    virtual ~ResourceId() override;
 
     //===== XResourceId =======================================================
 
     virtual OUString SAL_CALL
-        getResourceURL()
-        throw(css::uno::RuntimeException, std::exception) override;
+        getResourceURL() override;
 
     virtual css::util::URL SAL_CALL
-        getFullResourceURL()
-        throw(css::uno::RuntimeException, std::exception) override;
+        getFullResourceURL() override;
 
     virtual sal_Bool SAL_CALL
-        hasAnchor()
-        throw (css::uno::RuntimeException, std::exception) override;
+        hasAnchor() override;
 
     virtual css::uno::Reference<
         css::drawing::framework::XResourceId> SAL_CALL
-        getAnchor()
-        throw (css::uno::RuntimeException, std::exception) override;
+        getAnchor() override;
 
     virtual css::uno::Sequence<OUString> SAL_CALL
-        getAnchorURLs()
-        throw (css::uno::RuntimeException, std::exception) override;
+        getAnchorURLs() override;
 
     virtual OUString SAL_CALL
-        getResourceTypePrefix()
-        throw (css::uno::RuntimeException, std::exception) override;
+        getResourceTypePrefix() override;
 
     virtual sal_Int16 SAL_CALL
         compareTo (const css::uno::Reference<
-            css::drawing::framework::XResourceId>& rxResourceId)
-        throw (css::uno::RuntimeException, std::exception) override;
+            css::drawing::framework::XResourceId>& rxResourceId) override;
 
     virtual sal_Bool SAL_CALL
         isBoundTo (
             const css::uno::Reference<
                 css::drawing::framework::XResourceId>& rxResourceId,
-            css::drawing::framework::AnchorBindingMode eMode)
-        throw(css::uno::RuntimeException, std::exception) override;
+            css::drawing::framework::AnchorBindingMode eMode) override;
 
     virtual sal_Bool SAL_CALL
         isBoundToURL (
             const OUString& rsAnchorURL,
-            css::drawing::framework::AnchorBindingMode eMode)
-        throw (css::uno::RuntimeException, std::exception) override;
+            css::drawing::framework::AnchorBindingMode eMode) override;
 
     virtual css::uno::Reference<
         css::drawing::framework::XResourceId> SAL_CALL
-        clone()
-        throw(css::uno::RuntimeException, std::exception) override;
+        clone() override;
 
     //===== XInitialization ===================================================
 
     void SAL_CALL initialize (
-        const css::uno::Sequence<css::uno::Any>& aArguments)
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::uno::Sequence<css::uno::Any>& aArguments) override;
 
-    OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override;
+    OUString SAL_CALL getImplementationName() override;
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override;
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override;
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
 
 private:
     /** The set of URLs that consist of the resource URL at index 0 and the

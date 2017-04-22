@@ -103,28 +103,28 @@ void LwpFribFootnote::XFConvert(XFContentContainer* pCont)
     LwpFootnote* pFootnote = GetFootnote();
     if(pFootnote)
     {
-        XFContentContainer* pContent = nullptr;
+        rtl::Reference<XFContentContainer> xContent;
         if(pFootnote->GetType() == FN_FOOTNOTE)
         {
-            pContent = new XFFootNote();
+            xContent.set(new XFFootNote);
         }
         else
         {
-            pContent = new XFEndNote();
+            xContent.set(new XFEndNote);
         }
-        pFootnote->XFConvert(pContent);
-        if(m_ModFlag)
+        pFootnote->XFConvert(xContent.get());
+        if (m_ModFlag)
         {
             //set footnote number font style
-            XFTextSpan *pSpan = new XFTextSpan();
-            pSpan->SetStyleName(GetStyleName());
+            rtl::Reference<XFTextSpan> xSpan(new XFTextSpan);
+            xSpan->SetStyleName(GetStyleName());
             //add the xffootnote into the content container
-            pSpan->Add(pContent);
-            pCont->Add(pSpan);
+            xSpan->Add(xContent.get());
+            pCont->Add(xSpan.get());
         }
         else
         {
-            pCont->Add(pContent);
+            pCont->Add(xContent.get());
         }
     }
 }
@@ -157,7 +157,7 @@ void LwpFootnote::Read()
     LwpOrderedObject::Read();
     m_nType = m_pObjStrm->QuickReaduInt16();
     m_nRow = m_pObjStrm->QuickReaduInt16();
-    m_Content.ReadIndexed(m_pObjStrm);
+    m_Content.ReadIndexed(m_pObjStrm.get());
     m_pObjStrm->SkipExtra();
 }
 
@@ -447,14 +447,14 @@ LwpFootnoteOptions::~LwpFootnoteOptions()
 void LwpFootnoteOptions::Read()
 {
     m_nFlag = m_pObjStrm->QuickReaduInt16();
-    m_FootnoteNumbering.Read(m_pObjStrm);
-    m_EndnoteDivisionNumbering.Read(m_pObjStrm);
-    m_EndnoteDivisionGroupNumbering.Read(m_pObjStrm);
-    m_EndnoteDocNumbering.Read(m_pObjStrm);
-    m_FootnoteSeparator.Read(m_pObjStrm);
-    m_FootnoteContinuedSeparator.Read(m_pObjStrm);
-    m_ContinuedOnMessage.Read(m_pObjStrm);
-    m_ContinuedFromMessage.Read(m_pObjStrm);
+    m_FootnoteNumbering.Read(m_pObjStrm.get());
+    m_EndnoteDivisionNumbering.Read(m_pObjStrm.get());
+    m_EndnoteDivisionGroupNumbering.Read(m_pObjStrm.get());
+    m_EndnoteDocNumbering.Read(m_pObjStrm.get());
+    m_FootnoteSeparator.Read(m_pObjStrm.get());
+    m_FootnoteContinuedSeparator.Read(m_pObjStrm.get());
+    m_ContinuedOnMessage.Read(m_pObjStrm.get());
+    m_ContinuedFromMessage.Read(m_pObjStrm.get());
     m_pObjStrm->SkipExtra();
 }
 
@@ -472,27 +472,26 @@ void LwpFootnoteOptions::RegisterStyle()
  */
 void LwpFootnoteOptions::RegisterFootnoteStyle()
 {
-    XFFootnoteConfig* pFootnoteConfig = new XFFootnoteConfig();
-    pFootnoteConfig->SetStartValue(m_FootnoteNumbering.GetStartingNumber() -1);
-    pFootnoteConfig->SetNumPrefix(m_FootnoteNumbering.GetLeadingText());
-    pFootnoteConfig->SetNumSuffix(m_FootnoteNumbering.GetTrailingText());
+    std::unique_ptr<XFFootnoteConfig> xFootnoteConfig(new XFFootnoteConfig);
+    xFootnoteConfig->SetStartValue(m_FootnoteNumbering.GetStartingNumber() -1);
+    xFootnoteConfig->SetNumPrefix(m_FootnoteNumbering.GetLeadingText());
+    xFootnoteConfig->SetNumSuffix(m_FootnoteNumbering.GetTrailingText());
     if(m_FootnoteNumbering.GetReset() == LwpFootnoteNumberOptions::RESET_PAGE)
     {
-        pFootnoteConfig->SetRestartOnPage();
+        xFootnoteConfig->SetRestartOnPage();
     }
     if(GetContinuedFrom())
     {
-        pFootnoteConfig->SetMessageFrom(GetContinuedFromMessage());
+        xFootnoteConfig->SetMessageFrom(GetContinuedFromMessage());
     }
     if(GetContinuedOn())
     {
-        pFootnoteConfig->SetMessageOn(GetContinuedOnMessage());
+        xFootnoteConfig->SetMessageOn(GetContinuedOnMessage());
     }
 
-    pFootnoteConfig->SetMasterPage( m_strMasterPage);
+    xFootnoteConfig->SetMasterPage( m_strMasterPage);
     XFStyleManager* pXFStyleManager = LwpGlobalMgr::GetInstance()->GetXFStyleManager();
-    pXFStyleManager->SetFootnoteConfig(pFootnoteConfig);
-
+    pXFStyleManager->SetFootnoteConfig(xFootnoteConfig.release());
 }
 
 /**
@@ -500,29 +499,29 @@ void LwpFootnoteOptions::RegisterFootnoteStyle()
  */
 void LwpFootnoteOptions::RegisterEndnoteStyle()
 {
-    XFEndnoteConfig* pEndnoteConfig = new XFEndnoteConfig();
-    pEndnoteConfig->SetStartValue(m_EndnoteDocNumbering.GetStartingNumber() -1);
+    std::unique_ptr<XFEndnoteConfig> xEndnoteConfig(new XFEndnoteConfig);
+    xEndnoteConfig->SetStartValue(m_EndnoteDocNumbering.GetStartingNumber() -1);
     OUString message = m_EndnoteDocNumbering.GetLeadingText();
     if(message.isEmpty())
     {
         message = "[";//default prefix
     }
-    pEndnoteConfig->SetNumPrefix(message);
+    xEndnoteConfig->SetNumPrefix(message);
     message = m_EndnoteDocNumbering.GetTrailingText();
     if(message.isEmpty())
     {
         message = "]";//default suffix
     }
-    pEndnoteConfig->SetNumSuffix(message);
+    xEndnoteConfig->SetNumSuffix(message);
     if(m_EndnoteDocNumbering.GetReset() == LwpFootnoteNumberOptions::RESET_PAGE)
     {
-        pEndnoteConfig->SetRestartOnPage();
+        xEndnoteConfig->SetRestartOnPage();
     }
 
-    pEndnoteConfig->SetMasterPage( m_strMasterPage);
+    xEndnoteConfig->SetMasterPage( m_strMasterPage);
 
     XFStyleManager* pXFStyleManager = LwpGlobalMgr::GetInstance()->GetXFStyleManager();
-    pXFStyleManager->SetEndnoteConfig(pEndnoteConfig);
+    pXFStyleManager->SetEndnoteConfig(xEndnoteConfig.release());
 }
 
 /**

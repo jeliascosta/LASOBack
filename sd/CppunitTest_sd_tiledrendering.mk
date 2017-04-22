@@ -19,6 +19,7 @@ $(eval $(call gb_CppunitTest_use_libraries,sd_tiledrendering, \
     comphelper \
     cppu \
     cppuhelper \
+    drawinglayer \
     editeng \
     sal \
     sfx \
@@ -46,10 +47,7 @@ $(eval $(call gb_CppunitTest_set_include,sd_tiledrendering,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sd_tiledrendering,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sd_tiledrendering))
 
 $(eval $(call gb_CppunitTest_use_ure,sd_tiledrendering))
 $(eval $(call gb_CppunitTest_use_vcl,sd_tiledrendering))

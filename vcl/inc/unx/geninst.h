@@ -56,7 +56,7 @@ protected:
 
 public:
                         SalYieldMutex();
-                        virtual ~SalYieldMutex();
+                        virtual ~SalYieldMutex() override;
 
     virtual void        acquire() override;
     virtual void        release() override;
@@ -75,12 +75,12 @@ class VCL_DLLPUBLIC SalGenericInstance : public SalInstance
 {
 protected:
     bool           mbPrinterInit;
-    SalYieldMutex *mpSalYieldMutex;
+    std::unique_ptr<SalYieldMutex> mpSalYieldMutex;
 
 public:
     SalGenericInstance( SalYieldMutex* pMutex )
         : mbPrinterInit( false ), mpSalYieldMutex( pMutex ) {}
-    virtual ~SalGenericInstance();
+    virtual ~SalGenericInstance() override;
 
     // Yield mutex
     virtual comphelper::SolarMutex* GetYieldMutex() override;
@@ -109,12 +109,11 @@ public:
 
     // prolly belongs somewhere else ... just a font help
     static void RegisterFontSubstitutors( PhysicalFontCollection* pFontCollection );
-    static int  FetchFontSubstitutionFlags();
 
 protected:
     static void configurePspInfoPrinter( PspSalInfoPrinter* pInfoPrinter,
-                                  SalPrinterQueueInfo* pQueueInfo,
-                                  ImplJobSetup* pSetupData );
+                                         SalPrinterQueueInfo* pQueueInfo,
+                                         ImplJobSetup* pSetupData );
 };
 
 inline SalGenericInstance *GetGenericInstance()

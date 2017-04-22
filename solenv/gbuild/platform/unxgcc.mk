@@ -34,6 +34,7 @@ gb_OSDEFS := \
 	-DUNIX \
 	-DUNX \
 	$(PTHREAD_CFLAGS) \
+	$(LFS_CFLAGS) \
 
 gb_CFLAGS := \
 	$(gb_CFLAGS_COMMON) \
@@ -110,15 +111,10 @@ gb_LinkTarget__RPATHS := \
 gb_LinkTarget_CFLAGS := $(gb_CFLAGS)
 gb_LinkTarget_CXXFLAGS := $(gb_CXXFLAGS)
 
-ifeq ($(gb_SYMBOL),$(true))
-gb_LinkTarget_CXXFLAGS += $(gb_DEBUGINFO_FLAGS)
-gb_LinkTarget_CFLAGS += $(gb_DEBUGINFO_FLAGS)
-endif
-
 # note that `cat $(extraobjectlist)` is needed to build with older gcc versions, e.g. 4.1.2 on SLED10
 # we want to use @$(extraobjectlist) in the long run
 # link with C compiler if there are no C++ files (pyuno_wrapper depends on this)
-# But always link with C++ compiler e.g. under -fsanitze=undefined, as sal uses
+# But always link with C++ compiler e.g. under -fsanitize=undefined, as sal uses
 # __ubsan_handle_dynamic_type_cache_miss_abort and __ubsan_vptr_type_cache from
 # libclang_rt.ubsan_cxx-x86_64.a, and oosplash links against sal but itself only
 # contains .c sources:
@@ -137,13 +133,20 @@ $(call gb_Helper_abbreviate_dirs,\
 		$(foreach object,$(GENCOBJECTS),$(call gb_GenCObject_get_target,$(object))) \
 		$(foreach object,$(GENCXXOBJECTS),$(call gb_GenCxxObject_get_target,$(object))) \
 		$(foreach extraobjectlist,$(EXTRAOBJECTLISTS),`cat $(extraobjectlist)`) \
-		-Wl$(COMMA)--start-group \
-		$(foreach lib,$(LINKED_STATIC_LIBS),\
-			$(call gb_StaticLibrary_get_target,$(lib))) \
-		$(T_LIBS) \
-		-Wl$(COMMA)--end-group \
-		-Wl$(COMMA)--no-as-needed \
-		$(patsubst lib%.a,-l%,$(patsubst lib%.so,-l%,$(patsubst %.$(gb_Library_UDK_MAJORVER),%,$(foreach lib,$(LINKED_LIBS),$(call gb_Library_get_filename,$(lib)))))) \
+		$(if $(filter TRUE,$(DISABLE_DYNLOADING)), \
+		    -Wl$(COMMA)--start-group \
+		    $(patsubst lib%.a,-l%,$(patsubst lib%.so,-l%,$(patsubst %.$(gb_Library_UDK_MAJORVER),%,$(foreach lib,$(LINKED_LIBS),$(call gb_Library_get_filename,$(lib)))))) \
+		    $(foreach lib,$(LINKED_STATIC_LIBS),$(call gb_StaticLibrary_get_target,$(lib))) \
+		    $(T_LIBS) \
+		    -Wl$(COMMA)--end-group \
+		    , \
+		    -Wl$(COMMA)--start-group \
+		    $(foreach lib,$(LINKED_STATIC_LIBS),$(call gb_StaticLibrary_get_target,$(lib))) \
+		    $(T_LIBS) \
+		    -Wl$(COMMA)--end-group \
+		    -Wl$(COMMA)--no-as-needed \
+		    $(patsubst lib%.a,-l%,$(patsubst lib%.so,-l%,$(patsubst %.$(gb_Library_UDK_MAJORVER),%,$(foreach lib,$(LINKED_LIBS),$(call gb_Library_get_filename,$(lib)))))) \
+                ) \
 		-o $(1) \
 	$(if $(SOVERSIONSCRIPT),&& ln -sf ../../program/$(notdir $(1)) $(ILIBTARGET)))
 	$(if $(filter Library,$(TARGETTYPE)), $(call gb_Helper_abbreviate_dirs,\
@@ -171,7 +174,8 @@ endef
 
 define gb_LinkTarget__command
 $(call gb_Output_announce,$(2),$(true),LNK,4)
-$(if $(filter Library CppunitTest Executable,$(TARGETTYPE)),$(call gb_LinkTarget__command_dynamiclink,$(1),$(2)))
+$(if $(filter CppunitTest Executable,$(TARGETTYPE)),$(call gb_LinkTarget__command_dynamiclink,$(1),$(2)))
+$(if $(filter Library,$(TARGETTYPE)),$(if $(filter TRUE,$(DISABLE_DYNLOADING)),$(call gb_LinkTarget__command_staticlink,$(1)),$(call gb_LinkTarget__command_dynamiclink,$(1),$(2))))
 $(if $(filter StaticLibrary,$(TARGETTYPE)),$(call gb_LinkTarget__command_staticlink,$(1)))
 endef
 
@@ -179,12 +183,23 @@ endef
 # Library class
 
 gb_Library_DEFS :=
-gb_Library_TARGETTYPEFLAGS := -shared -Wl,-z,noexecstack
-gb_Library_UDK_MAJORVER := 3
 gb_Library_SYSPRE := lib
 gb_Library_UNOVERPRE := $(gb_Library_SYSPRE)uno_
+
+ifeq ($(DISABLE_DYNLOADING),TRUE)
+
+gb_Library_PLAINEXT := .a
+gb_Library_DLLEXT := .a
+
+else
+
+gb_Library_TARGETTYPEFLAGS := -shared -Wl,-z,noexecstack
+gb_Library_UDK_MAJORVER := 3
 gb_Library_PLAINEXT := .so
 gb_Library_DLLEXT := .so
+
+endif
+
 gb_Library_RTEXT := gcc3$(gb_Library_PLAINEXT)
 
 gb_Library_OOOEXT := $(gb_Library_DLLPOSTFIX)$(gb_Library_PLAINEXT)
@@ -197,10 +212,21 @@ gb_Library_FILENAMES := \
 	$(foreach lib,$(gb_Library_PLAINLIBS_OOO),$(lib):$(gb_Library_SYSPRE)$(lib)$(gb_Library_PLAINEXT)) \
 	$(foreach lib,$(gb_Library_PLAINLIBS_OXT),$(lib):$(gb_Library_SYSPRE)$(lib)$(gb_Library_PLAINEXT)) \
 	$(foreach lib,$(gb_Library_PRIVATELIBS_URE),$(lib):$(gb_Library_SYSPRE)$(lib)$(gb_Library_OOOEXT)) \
-	$(foreach lib,$(gb_Library_RTVERLIBS),$(lib):$(gb_Library_SYSPRE)$(lib)$(gb_Library_RTEXT).$(gb_Library_UDK_MAJORVER)) \
-	$(foreach lib,$(gb_Library_UNOVERLIBS),$(lib):$(gb_Library_UNOVERPRE)$(lib)$(gb_Library_PLAINEXT).$(gb_Library_UDK_MAJORVER)) \
 	$(foreach lib,$(gb_Library_EXTENSIONLIBS),$(lib):$(lib)$(gb_Library_UNOEXT)) \
 
+ifeq ($(DISABLE_DYNLOADING),TRUE)
+
+gb_Library_FILENAMES += \
+	$(foreach lib,$(gb_Library_RTVERLIBS),$(lib):$(gb_Library_SYSPRE)$(lib)$(gb_Library_RTEXT)) \
+	$(foreach lib,$(gb_Library_UNOVERLIBS),$(lib):$(gb_Library_UNOVERPRE)$(lib)$(gb_Library_PLAINEXT)) \
+
+else
+
+gb_Library_FILENAMES += \
+	$(foreach lib,$(gb_Library_RTVERLIBS),$(lib):$(gb_Library_SYSPRE)$(lib)$(gb_Library_RTEXT).$(gb_Library_UDK_MAJORVER)) \
+	$(foreach lib,$(gb_Library_UNOVERLIBS),$(lib):$(gb_Library_UNOVERPRE)$(lib)$(gb_Library_PLAINEXT).$(gb_Library_UDK_MAJORVER)) \
+
+endif
 
 gb_Library_LAYER := \
 	$(foreach lib,$(gb_Library_OOOLIBS),$(lib):OOO) \
@@ -319,8 +345,6 @@ $(call gb_InstallModuleTarget_add_defs,$(1),\
 	$(gb_CPUDEFS) \
 	$(gb_OSDEFS) \
 	-DCOMID=gcc3 \
-	-DSHORTSTDC3=$(gb_SHORTSTDC3) \
-	-DSHORTSTDCPP3=$(gb_SHORTSTDCPP3) \
 	-D_gcc3 \
 )
 

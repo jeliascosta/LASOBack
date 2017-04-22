@@ -457,7 +457,7 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
         m_aStates.top().aCharacterAttributes = getDefaultState().aCharacterAttributes;
         m_aStates.top().nCurrentCharacterStyleIndex = -1;
         m_aStates.top().isRightToLeft = false;
-        m_aStates.top().eRunType = RTFParserState::LOCH;
+        m_aStates.top().eRunType = RTFParserState::RunType::LOCH;
     }
     break;
     case RTF_PARD:
@@ -726,13 +726,13 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
         // These should be mapped to NS_ooxml::LN_EG_SectPrContents_pgNumType, but dmapper has no API for that at the moment.
         break;
     case RTF_LOCH:
-        m_aStates.top().eRunType = RTFParserState::LOCH;
+        m_aStates.top().eRunType = RTFParserState::RunType::LOCH;
         break;
     case RTF_HICH:
-        m_aStates.top().eRunType = RTFParserState::HICH;
+        m_aStates.top().eRunType = RTFParserState::RunType::HICH;
         break;
     case RTF_DBCH:
-        m_aStates.top().eRunType = RTFParserState::DBCH;
+        m_aStates.top().eRunType = RTFParserState::RunType::DBCH;
         break;
     case RTF_TITLEPG:
     {
@@ -889,10 +889,10 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
         {
             m_aStates.top().aDrawingObject.xShape.set(getModelFactory()->createInstance("com.sun.star.text.TextFrame"), uno::UNO_QUERY);
             std::vector<beans::PropertyValue> aDefaults = RTFSdrImport::getTextFrameDefaults(false);
-            for (std::size_t i = 0; i < aDefaults.size(); ++i)
+            for (const auto& rDefault : aDefaults)
             {
-                if (!findPropertyName(m_aStates.top().aDrawingObject.aPendingProperties, aDefaults[i].Name))
-                    m_aStates.top().aDrawingObject.aPendingProperties.push_back(aDefaults[i]);
+                if (!findPropertyName(m_aStates.top().aDrawingObject.aPendingProperties, rDefault.Name))
+                    m_aStates.top().aDrawingObject.aPendingProperties.push_back(rDefault);
             }
             checkFirstRun();
             Mapper().startShape(m_aStates.top().aDrawingObject.xShape);
@@ -969,14 +969,14 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
     break;
     case RTF_PNDEC:
     {
-        auto pValue = std::make_shared<RTFValue>(0); // decimal, same as \levelnfc0
+        auto pValue = std::make_shared<RTFValue>(NS_ooxml::LN_Value_ST_NumberFormat_decimal);
         m_aStates.top().aTableSprms.set(NS_ooxml::LN_CT_Lvl_numFmt, pValue);
     }
     break;
     case RTF_PNLVLBLT:
     {
         m_aStates.top().aTableAttributes.set(NS_ooxml::LN_CT_AbstractNum_nsid, std::make_shared<RTFValue>(1));
-        m_aStates.top().aTableSprms.set(NS_ooxml::LN_CT_Lvl_numFmt, std::make_shared<RTFValue>(23)); // bullets, same as \levelnfc23
+        m_aStates.top().aTableSprms.set(NS_ooxml::LN_CT_Lvl_numFmt, std::make_shared<RTFValue>(NS_ooxml::LN_Value_ST_NumberFormat_bullet));
     }
     break;
     case RTF_LANDSCAPE:
@@ -1069,6 +1069,9 @@ RTFError RTFDocumentImpl::dispatchFlag(RTFKeyword nKeyword)
         putNestedAttribute(m_aStates.top().aSectionSprms, NS_ooxml::LN_EG_SectPrContents_pgNumType, NS_ooxml::LN_CT_PageNumber_fmt, pIntValue);
     }
     break;
+    case RTF_HTMAUTSP:
+        m_aSettingsTableSprms.set(NS_ooxml::LN_CT_Compat_doNotUseHTMLParagraphAutoSpacing, std::make_shared<RTFValue>(0));
+        break;
     default:
     {
         SAL_INFO("writerfilter", "TODO handle flag '" << keywordToString(nKeyword) << "'");

@@ -9,11 +9,13 @@
 
 $(eval $(call gb_Library_Library,xsec_fw))
 
-$(eval $(call gb_Library_set_componentfile,xsec_fw,xmlsecurity/util/xsec_fw))
-
 $(eval $(call gb_Library_set_include,xsec_fw,\
 	$$(INCLUDE) \
 	-I$(SRCDIR)/xmlsecurity/inc \
+))
+
+$(eval $(call gb_Library_add_defs,xsec_fw,\
+    -DXSECFW_DLLIMPLEMENTATION \
 ))
 
 $(eval $(call gb_Library_set_precompiled_header,xsec_fw,$(SRCDIR)/xmlsecurity/inc/pch/precompiled_xsec_fw))
@@ -30,19 +32,14 @@ $(eval $(call gb_Library_use_libraries,xsec_fw,\
 
 $(eval $(call gb_Library_add_exception_objects,xsec_fw,\
 	xmlsecurity/source/framework/buffernode \
-	xmlsecurity/source/framework/decryptorimpl \
 	xmlsecurity/source/framework/elementcollector \
 	xmlsecurity/source/framework/elementmark \
-	xmlsecurity/source/framework/encryptionengine \
-	xmlsecurity/source/framework/encryptorimpl \
 	xmlsecurity/source/framework/saxeventkeeperimpl \
 	xmlsecurity/source/framework/securityengine \
 	xmlsecurity/source/framework/signaturecreatorimpl \
 	xmlsecurity/source/framework/signatureengine \
 	xmlsecurity/source/framework/signatureverifierimpl \
-	xmlsecurity/source/framework/xmlencryptiontemplateimpl \
 	xmlsecurity/source/framework/xmlsignaturetemplateimpl \
-	xmlsecurity/source/framework/xsec_framework \
 ))
 
 # vim: set noet sw=4 ts=4:

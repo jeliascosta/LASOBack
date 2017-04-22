@@ -24,6 +24,7 @@
 #include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
 #include <com/sun/star/lang/XEventListener.hpp>
+#include <com/sun/star/linguistic2/XHyphenatedWord.hpp>
 #include <com/sun/star/linguistic2/DictionaryList.hpp>
 #include <com/sun/star/linguistic2/XAvailableLocales.hpp>
 #include <com/sun/star/linguistic2/LinguServiceManager.hpp>
@@ -74,40 +75,29 @@ static uno::Reference< XLinguServiceManager2 > GetLngSvcMgr_Impl()
 class ThesDummy_Impl :
     public cppu::WeakImplHelper< XThesaurus >
 {
-    uno::Reference< XThesaurus >     xThes;      // the real one...
-    Sequence< lang::Locale >         *pLocaleSeq;
+    uno::Reference< XThesaurus >              xThes;      // the real one...
+    std::unique_ptr<Sequence< lang::Locale >> pLocaleSeq;
 
     void GetCfgLocales();
 
     void GetThes_Impl();
 
 public:
-    ThesDummy_Impl() : pLocaleSeq(nullptr)  {}
-    virtual ~ThesDummy_Impl();
+    ThesDummy_Impl() {}
 
     // XSupportedLocales
     virtual css::uno::Sequence< css::lang::Locale > SAL_CALL
-        getLocales()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getLocales() override;
     virtual sal_Bool SAL_CALL
-        hasLocale( const css::lang::Locale& rLocale )
-            throw(css::uno::RuntimeException, std::exception) override;
+        hasLocale( const css::lang::Locale& rLocale ) override;
 
     // XThesaurus
     virtual css::uno::Sequence<
             css::uno::Reference< css::linguistic2::XMeaning > > SAL_CALL
         queryMeanings( const OUString& rTerm,
                 const css::lang::Locale& rLocale,
-                const css::beans::PropertyValues& rProperties )
-            throw(css::lang::IllegalArgumentException,
-                  css::uno::RuntimeException, std::exception) override;
+                const css::beans::PropertyValues& rProperties ) override;
 };
-
-
-ThesDummy_Impl::~ThesDummy_Impl()
-{
-    delete pLocaleSeq;
-}
 
 
 void ThesDummy_Impl::GetCfgLocales()
@@ -119,7 +109,7 @@ void ThesDummy_Impl::GetCfgLocales()
         Sequence < OUString > aNodeNames( aCfg.GetNodeNames( aNode ) );
         const OUString *pNodeNames = aNodeNames.getConstArray();
         sal_Int32 nLen = aNodeNames.getLength();
-        pLocaleSeq = new Sequence< lang::Locale >( nLen );
+        pLocaleSeq.reset( new Sequence< lang::Locale >( nLen ) );
         lang::Locale *pLocale = pLocaleSeq->getArray();
         for (sal_Int32 i = 0;  i < nLen;  ++i)
         {
@@ -139,7 +129,7 @@ void ThesDummy_Impl::GetThes_Impl()
         if (xThes.is())
         {
             // no longer needed...
-            delete pLocaleSeq;    pLocaleSeq = nullptr;
+            pLocaleSeq.reset();
         }
     }
 }
@@ -147,7 +137,6 @@ void ThesDummy_Impl::GetThes_Impl()
 
 uno::Sequence< lang::Locale > SAL_CALL
         ThesDummy_Impl::getLocales()
-            throw(uno::RuntimeException, std::exception)
 {
     GetThes_Impl();
     if (xThes.is())
@@ -160,7 +149,6 @@ uno::Sequence< lang::Locale > SAL_CALL
 
 sal_Bool SAL_CALL
         ThesDummy_Impl::hasLocale( const lang::Locale& rLocale )
-            throw(uno::RuntimeException, std::exception)
 {
     GetThes_Impl();
     if (xThes.is())
@@ -186,8 +174,6 @@ uno::Sequence< uno::Reference< linguistic2::XMeaning > > SAL_CALL
                 const OUString& rTerm,
                 const lang::Locale& rLocale,
                 const beans::PropertyValues& rProperties )
-            throw(lang::IllegalArgumentException,
-                  uno::RuntimeException, std::exception)
 {
     GetThes_Impl();
     uno::Sequence< uno::Reference< linguistic2::XMeaning > > aRes;
@@ -212,23 +198,17 @@ public:
 
     // XSupportedLanguages (for XSpellChecker1)
     virtual css::uno::Sequence< sal_Int16 > SAL_CALL
-        getLanguages()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getLanguages() override;
     virtual sal_Bool SAL_CALL
-        hasLanguage( sal_Int16 nLanguage )
-            throw(css::uno::RuntimeException, std::exception) override;
+        hasLanguage( sal_Int16 nLanguage ) override;
 
     // XSpellChecker1 (same as XSpellChecker but sal_Int16 for language)
     virtual sal_Bool SAL_CALL
         isValid( const OUString& rWord, sal_Int16 nLanguage,
-                const css::beans::PropertyValues& rProperties )
-            throw(css::lang::IllegalArgumentException,
-                  css::uno::RuntimeException, std::exception) override;
+                const css::beans::PropertyValues& rProperties ) override;
     virtual css::uno::Reference< css::linguistic2::XSpellAlternatives > SAL_CALL
         spell( const OUString& rWord, sal_Int16 nLanguage,
-                const css::beans::PropertyValues& rProperties )
-            throw(css::lang::IllegalArgumentException,
-                  css::uno::RuntimeException, std::exception) override;
+                const css::beans::PropertyValues& rProperties ) override;
 };
 
 
@@ -244,7 +224,6 @@ void SpellDummy_Impl::GetSpell_Impl()
 
 uno::Sequence< sal_Int16 > SAL_CALL
     SpellDummy_Impl::getLanguages()
-        throw(uno::RuntimeException, std::exception)
 {
     GetSpell_Impl();
     if (xSpell.is())
@@ -256,7 +235,6 @@ uno::Sequence< sal_Int16 > SAL_CALL
 
 sal_Bool SAL_CALL
     SpellDummy_Impl::hasLanguage( sal_Int16 nLanguage )
-        throw(uno::RuntimeException, std::exception)
 {
     GetSpell_Impl();
     bool bRes = false;
@@ -269,8 +247,6 @@ sal_Bool SAL_CALL
 sal_Bool SAL_CALL
     SpellDummy_Impl::isValid( const OUString& rWord, sal_Int16 nLanguage,
             const beans::PropertyValues& rProperties )
-        throw(lang::IllegalArgumentException,
-              uno::RuntimeException, std::exception)
 {
     GetSpell_Impl();
     bool bRes = true;
@@ -283,8 +259,6 @@ sal_Bool SAL_CALL
 uno::Reference< linguistic2::XSpellAlternatives > SAL_CALL
     SpellDummy_Impl::spell( const OUString& rWord, sal_Int16 nLanguage,
             const beans::PropertyValues& rProperties )
-        throw(lang::IllegalArgumentException,
-              uno::RuntimeException, std::exception)
 {
     GetSpell_Impl();
     uno::Reference< linguistic2::XSpellAlternatives > xRes;
@@ -309,11 +283,9 @@ public:
     // XSupportedLocales
     virtual css::uno::Sequence<
             css::lang::Locale > SAL_CALL
-        getLocales()
-            throw(css::uno::RuntimeException, std::exception) override;
+        getLocales() override;
     virtual sal_Bool SAL_CALL
-        hasLocale( const css::lang::Locale& rLocale )
-            throw(css::uno::RuntimeException, std::exception) override;
+        hasLocale( const css::lang::Locale& rLocale ) override;
 
     // XHyphenator
     virtual css::uno::Reference<
@@ -321,25 +293,19 @@ public:
         hyphenate( const OUString& rWord,
                 const css::lang::Locale& rLocale,
                 sal_Int16 nMaxLeading,
-                const css::beans::PropertyValues& rProperties )
-            throw(css::lang::IllegalArgumentException,
-                  css::uno::RuntimeException, std::exception) override;
+                const css::beans::PropertyValues& rProperties ) override;
     virtual css::uno::Reference<
             css::linguistic2::XHyphenatedWord > SAL_CALL
         queryAlternativeSpelling( const OUString& rWord,
                 const css::lang::Locale& rLocale,
                 sal_Int16 nIndex,
-                const css::beans::PropertyValues& rProperties )
-            throw(css::lang::IllegalArgumentException,
-                  css::uno::RuntimeException, std::exception) override;
+                const css::beans::PropertyValues& rProperties ) override;
     virtual css::uno::Reference<
             css::linguistic2::XPossibleHyphens > SAL_CALL
         createPossibleHyphens(
                 const OUString& rWord,
                 const css::lang::Locale& rLocale,
-                const css::beans::PropertyValues& rProperties )
-            throw(css::lang::IllegalArgumentException,
-                  css::uno::RuntimeException, std::exception) override;
+                const css::beans::PropertyValues& rProperties ) override;
 };
 
 
@@ -355,7 +321,6 @@ void HyphDummy_Impl::GetHyph_Impl()
 
 uno::Sequence< lang::Locale > SAL_CALL
     HyphDummy_Impl::getLocales()
-        throw(uno::RuntimeException, std::exception)
 {
     GetHyph_Impl();
     if (xHyph.is())
@@ -367,7 +332,6 @@ uno::Sequence< lang::Locale > SAL_CALL
 
 sal_Bool SAL_CALL
     HyphDummy_Impl::hasLocale( const lang::Locale& rLocale )
-        throw(uno::RuntimeException, std::exception)
 {
     GetHyph_Impl();
     bool bRes = false;
@@ -383,8 +347,6 @@ uno::Reference< linguistic2::XHyphenatedWord > SAL_CALL
             const lang::Locale& rLocale,
             sal_Int16 nMaxLeading,
             const beans::PropertyValues& rProperties )
-        throw(lang::IllegalArgumentException,
-              uno::RuntimeException, std::exception)
 {
     GetHyph_Impl();
     uno::Reference< linguistic2::XHyphenatedWord > xRes;
@@ -400,8 +362,6 @@ uno::Reference< linguistic2::XHyphenatedWord > SAL_CALL
             const lang::Locale& rLocale,
             sal_Int16 nIndex,
             const PropertyValues& rProperties )
-        throw(lang::IllegalArgumentException,
-              uno::RuntimeException, std::exception)
 {
     GetHyph_Impl();
     uno::Reference< linguistic2::XHyphenatedWord > xRes;
@@ -416,8 +376,6 @@ uno::Reference< linguistic2::XPossibleHyphens > SAL_CALL
             const OUString& rWord,
             const lang::Locale& rLocale,
             const beans::PropertyValues& rProperties )
-        throw(lang::IllegalArgumentException,
-              uno::RuntimeException, std::exception)
 {
     GetHyph_Impl();
     uno::Reference< linguistic2::XPossibleHyphens > xRes;
@@ -434,11 +392,10 @@ class LinguMgrExitLstnr : public cppu::WeakImplHelper<XEventListener>
 
 public:
     LinguMgrExitLstnr();
-    virtual ~LinguMgrExitLstnr();
+    virtual ~LinguMgrExitLstnr() override;
 
     // lang::XEventListener
-    virtual void    SAL_CALL disposing(const EventObject& rSource)
-            throw( RuntimeException, std::exception ) override;
+    virtual void    SAL_CALL disposing(const EventObject& rSource) override;
 };
 
 LinguMgrExitLstnr::LinguMgrExitLstnr()
@@ -462,7 +419,6 @@ LinguMgrExitLstnr::~LinguMgrExitLstnr()
 }
 
 void LinguMgrExitLstnr::disposing(const EventObject& rSource)
-        throw( RuntimeException, std::exception )
 {
     if (xDesktop.is()  &&  rSource.Source == xDesktop)
     {
@@ -716,50 +672,6 @@ uno::Reference< XDictionary > LinguMgr::GetStandard()
     return xDic;
 }
 
-uno::Reference< XSpellChecker1 >  SvxGetSpellChecker()
-{
-    return LinguMgr::GetSpellChecker();
-}
-
-uno::Reference< XHyphenator >  SvxGetHyphenator()
-{
-    return LinguMgr::GetHyphenator();
-}
-
-uno::Reference< XThesaurus >  SvxGetThesaurus()
-{
-    return LinguMgr::GetThesaurus();
-}
-
-uno::Reference< XSearchableDictionaryList >  SvxGetDictionaryList()
-{
-    return LinguMgr::GetDictionaryList();
-}
-
-uno::Reference< XLinguProperties >  SvxGetLinguPropertySet()
-{
-    return LinguMgr::GetLinguPropertySet();
-}
-
-//TODO: remove argument or provide SvxGetIgnoreAllList with the same one
-uno::Reference< XDictionary >  SvxGetOrCreatePosDic(
-        uno::Reference< XSearchableDictionaryList >  /* xDicList */ )
-{
-    return LinguMgr::GetStandardDic();
-}
-
-uno::Reference< XDictionary >  SvxGetIgnoreAllList()
-{
-    return LinguMgr::GetIgnoreAllList();
-}
-
-uno::Reference< XDictionary >  SvxGetChangeAllList()
-{
-    return LinguMgr::GetChangeAllList();
-}
-
-#include <com/sun/star/linguistic2/XHyphenatedWord.hpp>
-
 SvxAlternativeSpelling SvxGetAltSpelling(
         const css::uno::Reference< css::linguistic2::XHyphenatedWord > & rHyphWord )
 {
@@ -791,7 +703,7 @@ SvxAlternativeSpelling SvxGetAltSpelling(
             ++nR;
 
         aRes.aReplacement       = aAltWord.copy( nL, nAltLen - nL - nR );
-        aRes.nChangedPos        = (sal_Int16) nL;
+        aRes.nChangedPos        = nL;
         aRes.nChangedLength     = nLen - nL - nR;
         aRes.bIsAltSpelling     = true;
         aRes.xHyphWord          = rHyphWord;
@@ -831,7 +743,7 @@ short SvxDicError( vcl::Window *pParent, linguistic::DictionaryError nError )
                 nRid = RID_SVXSTR_DIC_ERR_UNKNOWN;
                 SAL_WARN("editeng", "unexpected case");
         }
-        nRes = ScopedVclPtrInstance<InfoBox>(pParent, EE_RESSTR(nRid))->Execute();
+        nRes = ScopedVclPtrInstance<InfoBox>(pParent, EditResId::GetString(nRid))->Execute();
     }
     return nRes;
 }

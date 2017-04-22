@@ -23,14 +23,11 @@ Module gid_Module_Root
     PackageInfo = "packinfo_office.txt";
     InstallOrder = "20";
     MOD_NAME_DESC(MODULE_ROOT_OSL);
-    Files = (gid_File_Bin_Senddoc,
-             gid_File_Script_Gengal,
-             gid_File_Txt_Pagein_Common,
+    Files = (gid_File_Txt_Pagein_Common,
              gid_File_Txt_Pagein_Calc,
              gid_File_Txt_Pagein_Draw,
              gid_File_Txt_Pagein_Impress,
              gid_File_Txt_Pagein_Writer,
-             gid_File_extras_newfiles,
              gid_File_Rdb_Offapi,
              gid_Starregistry_Services_Rdb,
              auto_ooo_ALL,
@@ -45,18 +42,7 @@ Module gid_Module_Root
              gid_File_Lib_Cli_Oootypes_Assembly,
              gid_File_Lib_Policy_Cli_Oootypes_Assembly,
              gid_File_Lib_Policy_Cli_Oootypes_Config,
-             gid_File_Basic_User,
-             gid_File_Basic_Share,
-             gid_File_Basic_User_Standard,
-             gid_File_Extra_Autotextuser,
-             gid_File_Extra_Cfgusr,
-             gid_File_Extra_Palettes,
-             gid_File_Extra_Database,
-             gid_File_Extra_Databasebiblio,
              gid_File_Extra_Gallsound,
-             gid_File_Extra_Autocorr,
-             gid_File_Extra_Autocorr_Lang,
-             gid_File_Extra_Gallroot,
              gid_File_Extra_Gallarrows,
              gid_File_Extra_Gallcomputers,
              gid_File_Extra_Galldiagrams,
@@ -67,23 +53,8 @@ Module gid_Module_Root
              gid_File_Extra_Gallsymbols,
              gid_File_Extra_Galltransport,
              gid_File_Extra_Galltxtshapes,
-             gid_File_Extra_Gallbullets,
-             gid_File_Extra_Gallhtmlexpo,
-             gid_File_Extra_Gallsystem,
              gid_File_Extra_Gallsounds,
-             gid_File_Extra_Gallwwwback,
-             gid_File_Extra_Gallwwwgraf,
-             gid_File_Extra_Tpllayoutimpr,
-             gid_File_Extra_Tplofficorr,
-             gid_File_Extra_Tploffimisc,
-             gid_File_Extra_Tplpresnt,
-             gid_File_Extra_Tpl_styles,
-             gid_File_Extra_Tplpersonal,
-             gid_File_Extra_Tplwizbitmap,
-             gid_File_Extra_Tplwizletter,
              gid_File_Basic_Form,
-             gid_File_Extra_Cfgsrv,
-             gid_File_sd_web,
              gid_File_Share_Config_Sofficecfg_uiconfig_basicide,
              gid_File_Share_Config_Sofficecfg_uiconfig_cui,
 #ifdef DBCONNECTIVITY
@@ -118,9 +89,6 @@ Module gid_Module_Root
              gid_File_Share_Config_Sofficecfg_uiconfig_swreport,
              gid_File_Share_Config_Sofficecfg_uiconfig_swriter,
              gid_File_Share_Config_Sofficecfg_uiconfig_swxform,
-#ifdef ENABLE_TELEPATHY
-             gid_File_Share_Config_Sofficecfg_uiconfig_tubes,
-#endif
              gid_File_Share_Config_Sofficecfg_uiconfig_uui,
              gid_File_Share_Config_Sofficecfg_uiconfig_vcl,
              gid_File_Share_Config_Sofficecfg_uiconfig_writerperfect,
@@ -128,7 +96,6 @@ Module gid_Module_Root
              gid_File_Share_Registry_Main_Xcd,
              gid_File_Share_Registry_Forcedefault_Xcd,
              gid_File_Extra_Fontunxpsprint,
-             gid_File_Extra_Fontunxppds,
              gid_File_Extra_Fontunxafm);
     Unixlinks = (gid_Unixlink_File_Lib_Curl,
                  gid_Unixlink_File_Lib_Raptor,
@@ -219,6 +186,17 @@ Module gid_Module_Root_Extension_Dictionary_Bn
     InstallOrder = "2000";
     Sortkey = "514";
     Spellcheckerlanguage = "bn";
+    PackageInfo = "packinfo_office.txt";
+    ParentID = gid_Module_Dictionaries;
+    Styles = ();
+End
+
+Module gid_Module_Root_Extension_Dictionary_Bo
+    MOD_NAME_DESC ( MODULE_EXTENSION_DICTIONARY_BO );
+    Files = (gid_File_Extension_Dictionary_Bo);
+    InstallOrder = "2000";
+    Sortkey = "525";
+    Spellcheckerlanguage = "bo";
     PackageInfo = "packinfo_office.txt";
     ParentID = gid_Module_Dictionaries;
     Styles = ();

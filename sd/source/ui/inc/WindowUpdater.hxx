@@ -55,7 +55,7 @@ class SD_DLLPUBLIC WindowUpdater
 {
 public:
     explicit WindowUpdater();
-    virtual ~WindowUpdater() throw();
+    virtual ~WindowUpdater() throw() override;
 
     /** Add the given device to the list of devices which will be updated
         when one of the monitored values changes.
@@ -98,7 +98,7 @@ public:
     /** Callback that waits for notifications of a
         <type>SvtCTLOptions</type> object.
     */
-    virtual void ConfigurationChanged ( utl::ConfigurationBroadcaster*, sal_uInt32 nHint) override;
+    virtual void ConfigurationChanged ( utl::ConfigurationBroadcaster*, ConfigurationHints nHint) override;
 
 private:
     /// Options to monitor for changes.

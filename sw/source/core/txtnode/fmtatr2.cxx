@@ -23,6 +23,7 @@
 #include "unomid.h"
 
 #include <basic/sbxvar.hxx>
+#include <o3tl/any.hxx>
 #include <svl/macitem.hxx>
 #include <svl/stritem.hxx>
 #include <svl/stylepool.hxx>
@@ -84,14 +85,14 @@ SfxPoolItem* SwFormatCharFormat::Clone( SfxItemPool* ) const
     return new SwFormatCharFormat( *this );
 }
 
-// weiterleiten an das TextAttribut
+// forward to the TextAttribute
 void SwFormatCharFormat::Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew )
 {
     if( pTextAttr )
         pTextAttr->ModifyNotification( pOld, pNew );
 }
 
-// weiterleiten an das TextAttribut
+// forward to the TextAttribute
 bool SwFormatCharFormat::GetInfo( SfxPoolItem& rInfo ) const
 {
     return pTextAttr && pTextAttr->GetInfo( rInfo );
@@ -100,13 +101,13 @@ bool SwFormatCharFormat::QueryValue( uno::Any& rVal, sal_uInt8 ) const
 {
     OUString sCharFormatName;
     if(GetCharFormat())
-        SwStyleNameMapper::FillProgName(GetCharFormat()->GetName(), sCharFormatName,  nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, true );
+        SwStyleNameMapper::FillProgName(GetCharFormat()->GetName(), sCharFormatName,  SwGetPoolIdFromName::ChrFmt, true );
     rVal <<= sCharFormatName;
     return true;
 }
 bool SwFormatCharFormat::PutValue( const uno::Any& , sal_uInt8   )
 {
-    OSL_FAIL("Zeichenvorlage kann mit PutValue nicht gesetzt werden!");
+    OSL_FAIL("format cannot be set with PutValue!");
     return false;
 }
 
@@ -150,7 +151,7 @@ bool SwFormatAutoFormat::PutValue( const uno::Any& , sal_uInt8 )
 
 void SwFormatAutoFormat::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swFormatAutoFormat"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwFormatAutoFormat"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     mpHandle->dumpAsXml(pWriter);
@@ -193,18 +194,16 @@ SwFormatINetFormat::SwFormatINetFormat( const SwFormatINetFormat& rAttr )
     , msINetFormatName( rAttr.msINetFormatName )
     , msVisitedFormatName( rAttr.msVisitedFormatName )
     , msHyperlinkName( rAttr.msHyperlinkName )
-    , mpMacroTable( nullptr )
     , mpTextAttr( nullptr )
     , mnINetFormatId( rAttr.mnINetFormatId )
     , mnVisitedFormatId( rAttr.mnVisitedFormatId )
 {
     if ( rAttr.GetMacroTable() )
-        mpMacroTable = new SvxMacroTableDtor( *rAttr.GetMacroTable() );
+        mpMacroTable.reset( new SvxMacroTableDtor( *rAttr.GetMacroTable() ) );
 }
 
 SwFormatINetFormat::~SwFormatINetFormat()
 {
-    delete mpMacroTable;
 }
 
 bool SwFormatINetFormat::operator==( const SfxPoolItem& rAttr ) const
@@ -222,7 +221,7 @@ bool SwFormatINetFormat::operator==( const SfxPoolItem& rAttr ) const
     if( !bRet )
         return false;
 
-    const SvxMacroTableDtor* pOther = static_cast<const SwFormatINetFormat&>(rAttr).mpMacroTable;
+    const SvxMacroTableDtor* pOther = static_cast<const SwFormatINetFormat&>(rAttr).mpMacroTable.get();
     if( !mpMacroTable )
         return ( !pOther || pOther->empty() );
     if( !pOther )
@@ -246,19 +245,18 @@ void SwFormatINetFormat::SetMacroTable( const SvxMacroTableDtor* pNewTable )
         if( mpMacroTable )
             *mpMacroTable = *pNewTable;
         else
-            mpMacroTable = new SvxMacroTableDtor( *pNewTable );
+            mpMacroTable.reset( new SvxMacroTableDtor( *pNewTable ) );
     }
     else
     {
-        delete mpMacroTable;
-        mpMacroTable = nullptr;
+        mpMacroTable.reset();
     }
 }
 
 void SwFormatINetFormat::SetMacro( sal_uInt16 nEvent, const SvxMacro& rMacro )
 {
     if( !mpMacroTable )
-        mpMacroTable = new SvxMacroTableDtor;
+        mpMacroTable.reset( new SvxMacroTableDtor );
 
     mpMacroTable->Insert( nEvent, rMacro );
 }
@@ -292,7 +290,7 @@ bool SwFormatINetFormat::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
                 SwStyleNameMapper::FillUIName(mnVisitedFormatId, sVal);
             if (!sVal.isEmpty())
                 SwStyleNameMapper::FillProgName(sVal, sVal,
-                        nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, true);
+                        SwGetPoolIdFromName::ChrFmt, true);
             rVal <<= sVal;
         }
         break;
@@ -303,7 +301,7 @@ bool SwFormatINetFormat::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
                 SwStyleNameMapper::FillUIName(mnINetFormatId, sVal);
             if (!sVal.isEmpty())
                 SwStyleNameMapper::FillProgName(sVal, sVal,
-                        nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, true);
+                        SwGetPoolIdFromName::ChrFmt, true);
             rVal <<= sVal;
         }
         break;
@@ -374,10 +372,10 @@ bool SwFormatINetFormat::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
                 OUString sVal;
                 rVal >>= sVal;
                 OUString aString;
-                SwStyleNameMapper::FillUIName( sVal, aString, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, true );
+                SwStyleNameMapper::FillUIName( sVal, aString, SwGetPoolIdFromName::ChrFmt, true );
                 msVisitedFormatName = aString;
                 mnVisitedFormatId = SwStyleNameMapper::GetPoolIdFromUIName( msVisitedFormatName,
-                                               nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                                               SwGetPoolIdFromName::ChrFmt );
             }
             break;
             case MID_URL_UNVISITED_FMT:
@@ -385,9 +383,9 @@ bool SwFormatINetFormat::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
                 OUString sVal;
                 rVal >>= sVal;
                 OUString aString;
-                SwStyleNameMapper::FillUIName( sVal, aString, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, true );
+                SwStyleNameMapper::FillUIName( sVal, aString, SwGetPoolIdFromName::ChrFmt, true );
                 msINetFormatName = aString;
-                mnINetFormatId = SwStyleNameMapper::GetPoolIdFromUIName( msINetFormatName, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                mnINetFormatId = SwStyleNameMapper::GetPoolIdFromUIName( msINetFormatName, SwGetPoolIdFromName::ChrFmt );
             }
             break;
             default:
@@ -403,7 +401,7 @@ SwFormatRuby::SwFormatRuby( const OUString& rRubyText )
     pTextAttr( nullptr ),
     nCharFormatId( 0 ),
     nPosition( 0 ),
-    nAdjustment( 0 )
+    nAdjustment( css::text::RubyAdjust_LEFT )
 {
 }
 
@@ -460,7 +458,7 @@ bool SwFormatRuby::QueryValue( uno::Any& rVal,
         case MID_RUBY_CHARSTYLE:
         {
             OUString aString;
-            SwStyleNameMapper::FillProgName(sCharFormatName, aString, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, true );
+            SwStyleNameMapper::FillProgName(sCharFormatName, aString, SwGetPoolIdFromName::ChrFmt, true );
             rVal <<= aString;
         }
         break;
@@ -492,8 +490,8 @@ bool SwFormatRuby::PutValue( const uno::Any& rVal,
         {
             sal_Int16 nSet = 0;
             rVal >>= nSet;
-            if(nSet >= 0 && nSet <= text::RubyAdjust_INDENT_BLOCK)
-                nAdjustment = nSet;
+            if(nSet >= (sal_Int16)text::RubyAdjust_LEFT && nSet <= (sal_Int16)text::RubyAdjust_INDENT_BLOCK)
+                nAdjustment = (text::RubyAdjust)nSet;
             else
                 bRet = false;
         }
@@ -503,7 +501,7 @@ bool SwFormatRuby::PutValue( const uno::Any& rVal,
             const uno::Type& rType = cppu::UnoType<bool>::get();
             if(rVal.hasValue() && rVal.getValueType() == rType)
             {
-                bool bAbove = *static_cast<sal_Bool const *>(rVal.getValue());
+                bool bAbove = *o3tl::doAccess<bool>(rVal);
                 nPosition = bAbove ? 0 : 1;
             }
         }
@@ -513,7 +511,7 @@ bool SwFormatRuby::PutValue( const uno::Any& rVal,
             OUString sTmp;
             bRet = rVal >>= sTmp;
             if(bRet)
-                sCharFormatName = SwStyleNameMapper::GetUIName(sTmp, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                sCharFormatName = SwStyleNameMapper::GetUIName(sTmp, SwGetPoolIdFromName::ChrFmt );
         }
         break;
         default:
@@ -652,8 +650,9 @@ SwTextMeta * Meta::GetTextAttr() const
 }
 
 
-void Meta::NotifyChangeTextNodeImpl()
+void Meta::NotifyChangeTextNode(SwTextNode *const pTextNode)
 {
+    m_pTextNode = pTextNode;
     if (m_pTextNode && (GetRegisteredIn() != m_pTextNode))
     {
         m_pTextNode->Add(this);
@@ -662,12 +661,6 @@ void Meta::NotifyChangeTextNodeImpl()
     {
         GetRegisteredInNonConst()->Remove(this);
     }
-}
-
-void Meta::NotifyChangeTextNode(SwTextNode *const pTextNode)
-{
-    m_pTextNode = pTextNode;
-    NotifyChangeTextNodeImpl();
     if (!pTextNode) // text node gone? invalidate UNO object!
     {
         SwPtrMsgPoolItem aMsgHint( RES_REMOVE_UNO_OBJECT,
@@ -808,23 +801,23 @@ struct MakeUnoObject
     }
 };
 
-::std::vector< uno::Reference<text::XTextField> >
+std::vector< uno::Reference<text::XTextField> >
 MetaFieldManager::getMetaFields()
 {
     // erase deleted fields
     const MetaFieldList_t::iterator iter(
-        ::std::remove_if(m_MetaFields.begin(), m_MetaFields.end(),
+        std::remove_if(m_MetaFields.begin(), m_MetaFields.end(),
             [] (std::weak_ptr<MetaField> const& rField) { return rField.expired(); }));
     m_MetaFields.erase(iter, m_MetaFields.end());
     // filter out fields in UNDO
     MetaFieldList_t filtered(m_MetaFields.size());
     const MetaFieldList_t::iterator iter2(
-    ::std::remove_copy_if(m_MetaFields.begin(), m_MetaFields.end(),
+    std::remove_copy_if(m_MetaFields.begin(), m_MetaFields.end(),
         filtered.begin(), IsInUndo()));
     filtered.erase(iter2, filtered.end());
     // create uno objects
-    ::std::vector< uno::Reference<text::XTextField> > ret(filtered.size());
-    ::std::transform(filtered.begin(), filtered.end(), ret.begin(),
+    std::vector< uno::Reference<text::XTextField> > ret(filtered.size());
+    std::transform(filtered.begin(), filtered.end(), ret.begin(),
             MakeUnoObject());
     return ret;
 }

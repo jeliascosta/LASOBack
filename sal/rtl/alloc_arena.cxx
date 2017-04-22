@@ -217,8 +217,9 @@ rtl_arena_freelist_insert (
 )
 {
     rtl_arena_segment_type * head;
-
-    head = &(arena->m_freelist_head[highbit(segment->m_size) - 1]);
+    const auto bit = highbit(segment->m_size);
+    assert(bit > 0);
+    head = &(arena->m_freelist_head[bit - 1]);
     QUEUE_INSERT_TAIL_NAMED(head, segment, f);
 
     arena->m_freelist_bitmap |= head->m_size;
@@ -428,8 +429,8 @@ rtl_arena_segment_alloc (
     assert(*ppSegment == nullptr);
     if (!RTL_MEMORY_ISP2(size))
     {
-        int msb = highbit(size);
-        if (RTL_ARENA_FREELIST_SIZE == sal::static_int_cast< size_t >(msb))
+        unsigned int msb = highbit(size);
+        if (RTL_ARENA_FREELIST_SIZE == msb)
         {
             /* highest possible freelist: fall back to first fit */
             rtl_arena_segment_type *head, *segment;
@@ -660,9 +661,7 @@ rtl_arena_destructor (void * obj)
 
     assert(arena->m_hash_table == arena->m_hash_table_0);
     assert(arena->m_hash_size  == RTL_ARENA_HASH_SIZE);
-    assert(
-        arena->m_hash_shift ==
-        sal::static_int_cast< unsigned >(highbit(arena->m_hash_size) - 1));
+    assert(arena->m_hash_shift == highbit(arena->m_hash_size) - 1);
 }
 
 /* ================================================================= */
@@ -1100,7 +1099,7 @@ SAL_CALL rtl_arena_free (
 #if defined(SAL_UNX)
 #include <sys/mman.h>
 #elif defined(SAL_W32)
-#define MAP_FAILED 0
+#define MAP_FAILED nullptr
 #endif /* SAL_UNX || SAL_W32 */
 
 namespace
@@ -1119,7 +1118,7 @@ SAL_CALL rtl_machdep_alloc (
 
     assert(pArena == gp_machdep_arena);
 
-#if defined(SOLARIS) && defined(SPARC)
+#if defined(__sun) && defined(SPARC)
     /* see @ mmap(2) man pages */
     size += (pArena->m_quantum + pArena->m_quantum); /* "red-zone" pages */
     if (size > (4 << 20))
@@ -1144,7 +1143,7 @@ SAL_CALL rtl_machdep_alloc (
 #if defined(SAL_UNX)
     addr = mmap (nullptr, (size_t)(size), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 #elif defined(SAL_W32)
-    addr = VirtualAlloc (NULL, (SIZE_T)(size), MEM_COMMIT, PAGE_READWRITE);
+    addr = VirtualAlloc (nullptr, (SIZE_T)(size), MEM_COMMIT, PAGE_READWRITE);
 #endif /* (SAL_UNX || SAL_W32) */
 
     if (addr != MAP_FAILED)
@@ -1177,7 +1176,7 @@ SAL_CALL rtl_machdep_free (
 #if defined(SAL_UNX)
     (void) munmap(pAddr, nSize);
 #elif defined(SAL_W32)
-    (void) VirtualFree ((LPVOID)(pAddr), (SIZE_T)(0), MEM_RELEASE);
+    (void) VirtualFree (pAddr, (SIZE_T)(0), MEM_RELEASE);
 #endif /* (SAL_UNX || SAL_W32) */
 }
 

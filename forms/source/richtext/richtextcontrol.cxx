@@ -63,7 +63,7 @@ namespace frm
     IMPLEMENT_FORWARD_XTYPEPROVIDER2( ORichTextControl, UnoEditControl, ORichTextControl_Base )
 
 
-    Any SAL_CALL ORichTextControl::queryAggregation( const Type& _rType ) throw ( RuntimeException, std::exception )
+    Any SAL_CALL ORichTextControl::queryAggregation( const Type& _rType )
     {
         Any aReturn = UnoEditControl::queryAggregation( _rType );
 
@@ -86,7 +86,7 @@ namespace frm
         }
 
 
-        void implAdjustTwoStateFlag( const Any& _rValue, WinBits& _rAllBits, WinBits _nFlag, bool _bInvert = false )
+        void implAdjustTwoStateFlag( const Any& _rValue, WinBits& _rAllBits, WinBits _nFlag, bool _bInvert )
         {
             bool bFlagValue = false;
             if ( _rValue >>= bFlagValue )
@@ -144,7 +144,7 @@ namespace frm
     }
 
 
-    void SAL_CALL ORichTextControl::createPeer( const Reference< XToolkit >& _rToolkit, const Reference< XWindowPeer >& _rParentPeer ) throw( RuntimeException, std::exception )
+    void SAL_CALL ORichTextControl::createPeer( const Reference< XToolkit >& _rToolkit, const Reference< XWindowPeer >& _rParentPeer )
     {
         bool bReallyActAsRichText = false;
         try
@@ -175,7 +175,7 @@ namespace frm
             {
                 VCLXWindow* pParentXWin = VCLXWindow::GetImplementation( _rParentPeer );
                 if ( pParentXWin )
-                    pParentWin = pParentXWin->GetWindow();
+                    pParentWin = pParentXWin->GetWindow().get();
                 DBG_ASSERT( pParentWin, "ORichTextControl::createPeer: could not obtain the VCL-level parent window!" );
             }
 
@@ -215,33 +215,19 @@ namespace frm
         }
     }
 
-
-    OUString SAL_CALL ORichTextControl::getImplementationName()  throw( RuntimeException, std::exception )
-    {
-        return getImplementationName_Static();
-    }
-
-
-    Sequence< OUString > SAL_CALL ORichTextControl::getSupportedServiceNames()  throw( RuntimeException, std::exception )
-    {
-        return getSupportedServiceNames_Static();
-    }
-
-    OUString SAL_CALL ORichTextControl::getImplementationName_Static()
+    OUString SAL_CALL ORichTextControl::getImplementationName()
     {
         return OUString( "com.sun.star.comp.form.ORichTextControl" );
     }
 
-    Sequence< OUString > SAL_CALL ORichTextControl::getSupportedServiceNames_Static()
+    Sequence< OUString > SAL_CALL ORichTextControl::getSupportedServiceNames()
     {
-        Sequence< OUString > aServices( 3 );
-        aServices[ 0 ] = "com.sun.star.awt.UnoControl";
-        aServices[ 1 ] = "com.sun.star.awt.UnoControlEdit";
-        aServices[ 2 ] = FRM_SUN_CONTROL_RICHTEXTCONTROL;
-        return aServices;
+        return { "com.sun.star.awt.UnoControl",
+                 "com.sun.star.awt.UnoControlEdit",
+                 FRM_SUN_CONTROL_RICHTEXTCONTROL };
     }
 
-    Reference< XDispatch > SAL_CALL ORichTextControl::queryDispatch( const css::util::URL& _rURL, const OUString& _rTargetFrameName, sal_Int32 _nSearchFlags ) throw (RuntimeException, std::exception)
+    Reference< XDispatch > SAL_CALL ORichTextControl::queryDispatch( const css::util::URL& _rURL, const OUString& _rTargetFrameName, sal_Int32 _nSearchFlags )
     {
         Reference< XDispatch > aReturn;
         Reference< XDispatchProvider > xTypedPeer( getPeer(), UNO_QUERY );
@@ -252,7 +238,7 @@ namespace frm
         return aReturn;
     }
 
-    Sequence< Reference< XDispatch > > SAL_CALL ORichTextControl::queryDispatches( const Sequence< DispatchDescriptor >& _rRequests ) throw (RuntimeException, std::exception)
+    Sequence< Reference< XDispatch > > SAL_CALL ORichTextControl::queryDispatches( const Sequence< DispatchDescriptor >& _rRequests )
     {
         Sequence< Reference< XDispatch > > aReturn;
         Reference< XDispatchProvider > xTypedPeer( getPeer(), UNO_QUERY );
@@ -304,7 +290,7 @@ namespace frm
     }
 
 
-    void ORichTextPeer::dispose( ) throw(RuntimeException, std::exception)
+    void ORichTextPeer::dispose( )
     {
         {
             SolarMutexGuard aGuard;
@@ -330,7 +316,7 @@ namespace frm
     }
 
 
-    void SAL_CALL ORichTextPeer::draw( sal_Int32 _nX, sal_Int32 _nY ) throw(css::uno::RuntimeException, std::exception)
+    void SAL_CALL ORichTextPeer::draw( sal_Int32 _nX, sal_Int32 _nY )
     {
         SolarMutexGuard aGuard;
 
@@ -345,12 +331,12 @@ namespace frm
 
         ::Size aSize = pControl->GetSizePixel();
         const MapUnit eTargetUnit = pTargetDevice->GetMapMode().GetMapUnit();
-        if ( eTargetUnit != MAP_PIXEL )
+        if ( eTargetUnit != MapUnit::MapPixel )
             aSize = pTargetDevice->PixelToLogic( aSize );
 
         ::Point aPos( _nX, _nY );
         // the XView::draw API talks about pixels, always ...
-        if ( eTargetUnit != MAP_PIXEL )
+        if ( eTargetUnit != MapUnit::MapPixel )
             aPos = pTargetDevice->PixelToLogic( aPos );
 
         pControl->Draw( pTargetDevice, aPos, aSize, DrawFlags::NoControls );
@@ -358,8 +344,6 @@ namespace frm
 
 
     void SAL_CALL ORichTextPeer::setProperty( const OUString& _rPropertyName, const Any& _rValue )
-        throw (RuntimeException,
-               std::exception)
     {
         SolarMutexGuard g;
 
@@ -555,31 +539,18 @@ namespace frm
 
                 if ( bNeedParametrizedDispatcher )
                 {
-                #if OSL_DEBUG_LEVEL > 0
-                    OString sTrace( "ORichTextPeer::implCreateDispatcher: creating *parametrized* dispatcher for " );
-                    sTrace += OString( _rURL.Complete.getStr(), _rURL.Complete.getLength(), RTL_TEXTENCODING_ASCII_US );
-                    OSL_TRACE( "%s", sTrace.getStr() );
-                #endif
                     pAttributeDispatcher = new OParametrizedAttributeDispatcher( pRichTextControl->getView(), _nSlotId, _rURL, pRichTextControl );
                 }
                 else
                 {
-                #if OSL_DEBUG_LEVEL > 0
-                    OString sTrace( "ORichTextPeer::implCreateDispatcher: creating *normal* dispatcher for " );
-                    sTrace += OString( _rURL.Complete.getStr(), _rURL.Complete.getLength(), RTL_TEXTENCODING_ASCII_US );
-                    OSL_TRACE( "%s", sTrace.getStr() );
-                #endif
                     pAttributeDispatcher = new OAttributeDispatcher( pRichTextControl->getView(), _nSlotId, _rURL, pRichTextControl );
                 }
             }
-        #if OSL_DEBUG_LEVEL > 0
             else
             {
-                OString sTrace( "ORichTextPeer::implCreateDispatcher: not creating dispatcher (unsupported slot) for " );
-                sTrace += OString( _rURL.Complete.getStr(), _rURL.Complete.getLength(), RTL_TEXTENCODING_ASCII_US );
-                OSL_TRACE( "%s", sTrace.getStr() );
+                SAL_WARN("forms.richtext", "ORichTextPeer::implCreateDispatcher: not creating dispatcher (unsupported slot) for "
+                    << _rURL.Complete);
             }
-        #endif
         }
         break;
         }
@@ -621,7 +592,7 @@ namespace frm
     }
 
 
-    Reference< XDispatch > SAL_CALL ORichTextPeer::queryDispatch( const css::util::URL& _rURL, const OUString& /*_rTargetFrameName*/, sal_Int32 /*_nSearchFlags*/ ) throw (RuntimeException, std::exception)
+    Reference< XDispatch > SAL_CALL ORichTextPeer::queryDispatch( const css::util::URL& _rURL, const OUString& /*_rTargetFrameName*/, sal_Int32 /*_nSearchFlags*/ )
     {
         Reference< XDispatch > xReturn;
         if ( !GetWindow() )
@@ -658,7 +629,7 @@ namespace frm
     }
 
 
-    Sequence< Reference< XDispatch > > SAL_CALL ORichTextPeer::queryDispatches( const Sequence< DispatchDescriptor >& _rRequests ) throw (RuntimeException, std::exception)
+    Sequence< Reference< XDispatch > > SAL_CALL ORichTextPeer::queryDispatches( const Sequence< DispatchDescriptor >& _rRequests )
     {
         Sequence< Reference< XDispatch > >  aReturn( _rRequests.getLength() );
         Reference< XDispatch >*             pReturn = aReturn.getArray();

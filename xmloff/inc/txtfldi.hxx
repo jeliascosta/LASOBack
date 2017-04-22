@@ -95,8 +95,6 @@ enum XMLTextFieldAttrTokens
     XML_TOK_TEXTFIELD_HREF,
     XML_TOK_TEXTFIELD_TARGET_FRAME,
 
-    XML_TOK_TEXTFIELD_OFFICE_CREATE_DATE,
-    XML_TOK_TEXTFIELD_OFFICE_AUTHOR,
     XML_TOK_TEXTFIELD_ANNOTATION,
     XML_TOK_TEXTFIELD_LANGUAGE,
 
@@ -104,8 +102,6 @@ enum XMLTextFieldAttrTokens
     XML_TOK_TEXTFIELD_TABLE_TYPE,
 
     XML_TOK_TEXTFIELD_NOTE_CLASS,
-
-    XML_TOK_TEXTFIELD_UNKNOWN
 };
 
 /// abstract class for text field import
@@ -132,8 +128,6 @@ public:
         sal_uInt16 nPrfx,                       /// namespace prefix
         const OUString& rLocalName);     /// element name w/o prefix
 
-    virtual ~XMLTextFieldImportContext();
-
     /// process character data: will be collected in member sContentBuffer
     virtual void Characters( const OUString& sContent ) override;
 
@@ -155,12 +149,12 @@ public:
 
 protected:
     /// get helper
-    inline XMLTextImportHelper& GetImportHelper() { return rTextImportHelper; }
+    XMLTextImportHelper& GetImportHelper() { return rTextImportHelper; }
 
     const OUString& GetServiceName() { return sServiceName; }
-    inline void SetServiceName(const OUString& sStr) { sServiceName = sStr; }
+    void SetServiceName(const OUString& sStr) { sServiceName = sStr; }
 
-    OUString GetContent();
+    OUString const & GetContent();
 
     /// process attribute values
     virtual void ProcessAttribute( sal_uInt16 nAttrToken,
@@ -175,7 +169,7 @@ protected:
                          const OUString& sServiceName);
 
     /// force an update of the field's value
-    /// call update on optional XUptadeable interface; (disable Fixed property)
+    /// call update on optional XUpdatable interface; (disable Fixed property)
     static void ForceUpdate(
         const css::uno::Reference< css::beans::XPropertySet> & rPropertySet);
 };
@@ -239,6 +233,10 @@ protected:
     /// start element
     virtual void StartElement(
         const css::uno::Reference< css::xml::sax::XAttributeList> & xAttrList) override;
+
+    /// process attribute values
+    virtual void ProcessAttribute( sal_uInt16 nAttrToken,
+                                   const OUString& sAttrValue ) override;
 
     /// prepare XTextField for insertion into document
     virtual void PrepareField(
@@ -851,8 +849,6 @@ protected:
 /** import page variable fields (<text:get-page-variable>) */
 class XMLPageVarGetFieldImportContext : public XMLTextFieldImportContext
 {
-    const OUString sPropertyNumberingType;
-
     OUString sNumberFormat;
     OUString sLetterSync;
 
@@ -878,9 +874,6 @@ protected:
 /** import page variable fields (<text:get-page-variable>) */
 class XMLPageVarSetFieldImportContext : public XMLTextFieldImportContext
 {
-    const OUString sPropertyOn;
-    const OUString sPropertyOffset;
-
     sal_Int16 nAdjust;
     bool bActive;
 
@@ -904,10 +897,6 @@ protected:
 /** import macro fields (<text:execute-macro>) */
 class XMLMacroFieldImportContext : public XMLTextFieldImportContext
 {
-    const OUString sPropertyHint;
-    const OUString sPropertyMacroName;
-    const OUString sPropertyScriptURL;
-
     OUString sDescription;
     SvXMLImportContextRef xEventContext;
 
@@ -941,11 +930,6 @@ protected:
 /** import reference fields (<text:reference-get>) */
 class XMLReferenceFieldImportContext : public XMLTextFieldImportContext
 {
-    const OUString sPropertyReferenceFieldPart;
-    const OUString sPropertyReferenceFieldSource;
-    const OUString sPropertySourceName;
-    const OUString sPropertyCurrentPresentation;
-
     OUString sName;
     sal_uInt16 nElementToken;
     sal_Int16 nSource;
@@ -996,12 +980,6 @@ public:
 /** import dde field declaration (<text:dde-connection-decl>) */
 class XMLDdeFieldDeclImportContext : public SvXMLImportContext
 {
-    const OUString sPropertyIsAutomaticUpdate;
-    const OUString sPropertyName;
-    const OUString sPropertyDDECommandType;
-    const OUString sPropertyDDECommandFile;
-    const OUString sPropertyDDECommandElement;
-
     const SvXMLTokenMap& rTokenMap;
 
 public:
@@ -1086,10 +1064,6 @@ public:
 /** import hyperlinks as URL fields (Calc, Impress, Draw) (<office:a>) */
 class XMLUrlFieldImportContext : public XMLTextFieldImportContext
 {
-    const OUString sPropertyURL;
-    const OUString sPropertyTargetFrame;
-    const OUString sPropertyRepresentation;
-
     OUString sURL;
     OUString sFrame;
     bool bFrameOK;
@@ -1114,8 +1088,6 @@ protected:
 /** import bibliography info fields (<text:bibliography-mark>) */
 class XMLBibliographyFieldImportContext : public XMLTextFieldImportContext
 {
-    const OUString sPropertyFields;
-
     ::std::vector< css::beans::PropertyValue> aValues;
 
 public:
@@ -1144,13 +1116,6 @@ protected:
 /** Import an annotation field (<text:annotation>) */
 class XMLAnnotationImportContext : public XMLTextFieldImportContext
 {
-    const OUString sPropertyAuthor;
-    const OUString sPropertyInitials;
-    const OUString sPropertyContent;
-    const OUString sPropertyDate;
-    const OUString sPropertyTextRange;
-    const OUString sPropertyName;
-
     OUStringBuffer aAuthorBuffer;
     OUStringBuffer aInitialsBuffer;
     OUString aName;
@@ -1190,10 +1155,6 @@ protected:
 /** Import a script field (<text:script>) */
 class XMLScriptImportContext : public XMLTextFieldImportContext
 {
-    const OUString sPropertyScriptType;
-    const OUString sPropertyURLContent;
-    const OUString sPropertyContent;
-
     OUString sContent;
     OUString sScriptType;
 
@@ -1250,12 +1211,6 @@ class XMLDropDownFieldImportContext : public XMLTextFieldImportContext
     bool bNameOK;
     bool bHelpOK;
     bool bHintOK;
-
-    const OUString sPropertyItems;
-    const OUString sPropertySelectedItem;
-    const OUString sPropertyName;
-    const OUString sPropertyHelp;
-    const OUString sPropertyToolTip;
 
 public:
 

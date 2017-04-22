@@ -54,7 +54,7 @@ struct PopupMenuControllerBaseDispatchInfo
 };
 
 PopupMenuControllerBase::PopupMenuControllerBase( const Reference< XComponentContext >& xContext ) :
-    ::comphelper::OBaseMutex(),
+    ::cppu::BaseMutex(),
     PopupMenuControllerBaseType(m_aMutex),
     m_bInitialized( false )
 {
@@ -67,7 +67,7 @@ PopupMenuControllerBase::~PopupMenuControllerBase()
 }
 
 // protected function
-void PopupMenuControllerBase::throwIfDisposed() throw ( RuntimeException )
+void PopupMenuControllerBase::throwIfDisposed()
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
         throw css::lang::DisposedException();
@@ -92,13 +92,13 @@ void SAL_CALL PopupMenuControllerBase::disposing()
 }
 
 // XServiceInfo
-sal_Bool SAL_CALL PopupMenuControllerBase::supportsService( const OUString& ServiceName ) throw (RuntimeException, std::exception)
+sal_Bool SAL_CALL PopupMenuControllerBase::supportsService( const OUString& ServiceName )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // XEventListener
-void SAL_CALL PopupMenuControllerBase::disposing( const EventObject& ) throw ( RuntimeException, std::exception )
+void SAL_CALL PopupMenuControllerBase::disposing( const EventObject& )
 {
     osl::MutexGuard aLock( m_aMutex );
     m_xFrame.clear();
@@ -107,11 +107,11 @@ void SAL_CALL PopupMenuControllerBase::disposing( const EventObject& ) throw ( R
 }
 
 // XMenuListener
-void SAL_CALL PopupMenuControllerBase::itemHighlighted( const awt::MenuEvent& ) throw (RuntimeException, std::exception)
+void SAL_CALL PopupMenuControllerBase::itemHighlighted( const awt::MenuEvent& )
 {
 }
 
-void SAL_CALL PopupMenuControllerBase::itemSelected( const awt::MenuEvent& rEvent ) throw (RuntimeException, std::exception)
+void SAL_CALL PopupMenuControllerBase::itemSelected( const awt::MenuEvent& rEvent )
 {
     throwIfDisposed();
 
@@ -124,7 +124,9 @@ void SAL_CALL PopupMenuControllerBase::itemSelected( const awt::MenuEvent& rEven
     }
 }
 
-void PopupMenuControllerBase::dispatchCommand( const OUString& sCommandURL, const css::uno::Sequence< css::beans::PropertyValue >& rArgs )
+void PopupMenuControllerBase::dispatchCommand( const OUString& sCommandURL,
+                                               const css::uno::Sequence< css::beans::PropertyValue >& rArgs,
+                                               const OUString& sTarget )
 {
     osl::MutexGuard aLock( m_aMutex );
 
@@ -137,7 +139,7 @@ void PopupMenuControllerBase::dispatchCommand( const OUString& sCommandURL, cons
         aURL.Complete = sCommandURL;
         m_xURLTransformer->parseStrict( aURL );
 
-        Reference< XDispatch > xDispatch( xDispatchProvider->queryDispatch( aURL, OUString(), 0 ), UNO_QUERY_THROW );
+        Reference< XDispatch > xDispatch( xDispatchProvider->queryDispatch( aURL, sTarget, 0 ), UNO_QUERY_THROW );
 
         Application::PostUserEvent( LINK(nullptr, PopupMenuControllerBase, ExecuteHdl_Impl), new PopupMenuControllerBaseDispatchInfo( xDispatch, aURL, rArgs ) );
 
@@ -148,22 +150,22 @@ void PopupMenuControllerBase::dispatchCommand( const OUString& sCommandURL, cons
 
 }
 
-IMPL_STATIC_LINK_TYPED( PopupMenuControllerBase, ExecuteHdl_Impl, void*, p, void )
+IMPL_STATIC_LINK( PopupMenuControllerBase, ExecuteHdl_Impl, void*, p, void )
 {
     PopupMenuControllerBaseDispatchInfo* pDispatchInfo = static_cast<PopupMenuControllerBaseDispatchInfo*>(p);
     pDispatchInfo->mxDispatch->dispatch( pDispatchInfo->maURL, pDispatchInfo->maArgs );
     delete pDispatchInfo;
 }
 
-void SAL_CALL PopupMenuControllerBase::itemActivated( const awt::MenuEvent& ) throw (RuntimeException, std::exception)
+void SAL_CALL PopupMenuControllerBase::itemActivated( const awt::MenuEvent& )
 {
 }
 
-void SAL_CALL PopupMenuControllerBase::itemDeactivated( const awt::MenuEvent& ) throw (RuntimeException, std::exception)
+void SAL_CALL PopupMenuControllerBase::itemDeactivated( const awt::MenuEvent& )
 {
 }
 
-void SAL_CALL PopupMenuControllerBase::updatePopupMenu() throw ( css::uno::RuntimeException, std::exception )
+void SAL_CALL PopupMenuControllerBase::updatePopupMenu()
 {
     osl::ClearableMutexGuard aLock( m_aMutex );
     throwIfDisposed();
@@ -197,7 +199,6 @@ PopupMenuControllerBase::queryDispatch(
     const URL& /*aURL*/,
     const OUString& /*sTarget*/,
     sal_Int32 /*nFlags*/ )
-throw( RuntimeException, std::exception )
 {
     // must be implemented by subclass
     osl::MutexGuard aLock( m_aMutex );
@@ -206,7 +207,7 @@ throw( RuntimeException, std::exception )
     return Reference< XDispatch >();
 }
 
-Sequence< Reference< XDispatch > > SAL_CALL PopupMenuControllerBase::queryDispatches( const Sequence< DispatchDescriptor >& lDescriptor ) throw( RuntimeException, std::exception )
+Sequence< Reference< XDispatch > > SAL_CALL PopupMenuControllerBase::queryDispatches( const Sequence< DispatchDescriptor >& lDescriptor )
 {
     // Create return list - which must have same size then the given descriptor
     // It's not allowed to pack it!
@@ -233,7 +234,6 @@ void SAL_CALL
 PopupMenuControllerBase::dispatch(
     const URL& /*aURL*/,
     const Sequence< PropertyValue >& /*seqProperties*/ )
-throw( css::uno::RuntimeException, std::exception )
 {
     // must be implemented by subclass
     osl::MutexGuard aLock( m_aMutex );
@@ -244,7 +244,6 @@ void SAL_CALL
 PopupMenuControllerBase::addStatusListener(
     const Reference< XStatusListener >& xControl,
     const URL& aURL )
-throw( css::uno::RuntimeException, std::exception )
 {
     osl::ResettableMutexGuard aLock( m_aMutex );
     throwIfDisposed();
@@ -273,7 +272,6 @@ throw( css::uno::RuntimeException, std::exception )
 void SAL_CALL PopupMenuControllerBase::removeStatusListener(
     const Reference< XStatusListener >& xControl,
     const URL& /*aURL*/ )
-throw( css::uno::RuntimeException, std::exception )
 {
     rBHelper.removeListener( cppu::UnoType<decltype(xControl)>::get(), xControl );
 }
@@ -300,7 +298,7 @@ OUString PopupMenuControllerBase::determineBaseURL( const OUString& aURL )
 }
 
 // XInitialization
-void SAL_CALL PopupMenuControllerBase::initialize( const Sequence< Any >& aArguments ) throw ( Exception, RuntimeException, std::exception )
+void SAL_CALL PopupMenuControllerBase::initialize( const Sequence< Any >& aArguments )
 {
     osl::MutexGuard aLock( m_aMutex );
 
@@ -334,7 +332,7 @@ void SAL_CALL PopupMenuControllerBase::initialize( const Sequence< Any >& aArgum
     }
 }
 // XPopupMenuController
-void SAL_CALL PopupMenuControllerBase::setPopupMenu( const Reference< awt::XPopupMenu >& xPopupMenu ) throw ( RuntimeException, std::exception )
+void SAL_CALL PopupMenuControllerBase::setPopupMenu( const Reference< awt::XPopupMenu >& xPopupMenu )
 {
     osl::MutexGuard aLock( m_aMutex );
     throwIfDisposed();

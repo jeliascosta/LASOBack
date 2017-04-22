@@ -20,18 +20,39 @@
 #ifndef INCLUDED_SVX_ACCESSIBLECONTROLSHAPE_HXX
 #define INCLUDED_SVX_ACCESSIBLECONTROLSHAPE_HXX
 
+#include <exception>
+
+#include <com/sun/star/accessibility/XAccessibleEventListener.hpp>
+#include <com/sun/star/beans/XPropertyChangeListener.hpp>
+#include <com/sun/star/container/XContainerListener.hpp>
+#include <com/sun/star/lang/EventObject.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/util/XModeChangeListener.hpp>
+#include <comphelper/uno3.hxx>
+#include <cppuhelper/implbase4.hxx>
+#include <cppuhelper/weakref.hxx>
+#include <rtl/ref.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
 #include <svx/AccessibleShape.hxx>
 
-#include <com/sun/star/accessibility/XAccessibleAction.hpp>
-#include <com/sun/star/accessibility/XAccessibleEventListener.hpp>
-#include <com/sun/star/util/XModeChangeBroadcaster.hpp>
-#include <com/sun/star/container/XContainerListener.hpp>
-#include <cppuhelper/implbase4.hxx>
-#include <comphelper/uno3.hxx>
-
-namespace com { namespace sun { namespace star { namespace awt {
-    class XControl;
-} } } }
+namespace com { namespace sun { namespace star {
+    namespace accessibility { class XAccessible; }
+    namespace accessibility { class XAccessibleContext; }
+    namespace accessibility { struct AccessibleEventObject; }
+    namespace accessibility { class XAccessibleRelationSet; }
+    namespace awt { class XControl; }
+    namespace beans { class XPropertySet; }
+    namespace beans { class XPropertySetInfo; }
+    namespace beans { struct PropertyChangeEvent; }
+    namespace container { struct ContainerEvent; }
+    namespace lang { class XComponent; }
+    namespace lang { class XTypeProvider; }
+    namespace uno { class XAggregation; }
+    namespace util { struct ModeChangeEvent; }
+} } }
 
 namespace comphelper
 {
@@ -40,6 +61,9 @@ namespace comphelper
 
 class SdrObject;
 namespace accessibility {
+
+    class AccessibleShapeInfo;
+    class AccessibleShapeTreeInfo;
 
     typedef ::cppu::ImplHelper4 <   css::beans::XPropertyChangeListener
                                 ,   css::util::XModeChangeListener
@@ -57,25 +81,23 @@ public:
     AccessibleControlShape(
         const AccessibleShapeInfo& rShapeInfo,
         const AccessibleShapeTreeInfo& rShapeTreeInfo);
-    virtual ~AccessibleControlShape( );
+    virtual ~AccessibleControlShape( ) override;
 
     const css::uno::Reference< css::beans::XPropertySet >& SAL_CALL  GetControlModel( ) { return m_xControlModel;} ;
     AccessibleControlShape* SAL_CALL GetLabeledByControlShape();
 protected:
-    //---  XAccessible  ----------------------------------------
-    virtual css::uno::Reference< css::accessibility::XAccessibleContext> SAL_CALL getAccessibleContext( ) throw(css::uno::RuntimeException, std::exception) override;
 
     //---  XAccessibleComponent  -------------------------------
     /// forward the focus to the contained control(in alive mode)
-    virtual void SAL_CALL grabFocus( ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL grabFocus( ) override;
 
     //---  XAccessibleContext  ---------------------------------
-    virtual sal_Int32 SAL_CALL getAccessibleChildCount( ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) throw(css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getAccessibleChildCount( ) override;
+    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) override;
+    virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet(  ) override;
 
     //---  XServiceInfo  ---------------------------------------
-    virtual OUString SAL_CALL getImplementationName( ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName( ) override;
 
     //---  XInterface  -----------------------------------------
     DECLARE_XINTERFACE( )
@@ -84,27 +106,27 @@ protected:
     DECLARE_XTYPEPROVIDER( )
 
     //---  XPropertyChangeListener  ----------------------------
-    virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& _rEvent ) override;
 
     //---  XComponent  -----------------------------------------
     virtual void SAL_CALL disposing( ) override;
 
     //---  XEventListener  -------------------------------------
-    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) override;
 
     //---  XModeChangeListener  --------------------------------
-    virtual void SAL_CALL modeChanged( const css::util::ModeChangeEvent& _rSource ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL modeChanged( const css::util::ModeChangeEvent& _rSource ) override;
 
     //---  XAccessibleEventListener ----------------------------
-    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) override;
 
     //---  document::XEventListener ----------------------------
     using AccessibleShape::notifyEvent;
 
     // XVclContainerListener
-    virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) override;
+    virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) override;
+    virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) override;
 
 protected:
     /** Initialize a new shape.  See the documentation of the base' constructor
@@ -114,20 +136,17 @@ protected:
 
     /// Create a name string that contains the accessible name.
     virtual OUString
-        CreateAccessibleBaseName( )
-        throw(css::uno::RuntimeException) override;
+        CreateAccessibleBaseName( ) override;
 
     /** Create a unique name string that contains the accessible name.  The
         name consists of the base name and the index.
     */
     virtual OUString
-        CreateAccessibleName( )
-        throw(css::uno::RuntimeException, std::exception) override;
+        CreateAccessibleName( ) override;
 
     /// Create a description string that contains the accessible description.
     virtual OUString
-        CreateAccessibleDescription( )
-        throw(css::uno::RuntimeException, std::exception) override;
+        CreateAccessibleDescription( ) override;
 
 #ifdef DBG_UTIL
     /// Set the specified state
@@ -148,9 +167,6 @@ protected:
     void    startStateMultiplexing( );
     /// stops multiplexing the state changes of our aggregate context
     void    stopStateMultiplexing( );
-
-    /// retrieves the SdrObject of the shape we represent
-    SdrObject*  getSdrObject( ) const;
 
     /** adjusts our AccessibleRole, depending on the control type we're working for
 
@@ -183,7 +199,7 @@ private:
     css::uno::Reference< css::lang::XComponent >
                     m_xControlContextComponent;     // cached interface of our aggregate
 
-    ::comphelper::OWrappedAccessibleChildrenManager*
+    rtl::Reference<::comphelper::OWrappedAccessibleChildrenManager>
                     m_pChildManager;
 
     bool        m_bListeningForName     : 1;    // are we currently listening for changes of the "Name" property?

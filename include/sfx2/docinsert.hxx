@@ -45,11 +45,12 @@ private:
     FileDialogFlags const m_nDlgFlags;
     ErrCode                 m_nError;
 
-    sfx2::FileDialogHelper* m_pFileDlg;
+    std::unique_ptr<sfx2::FileDialogHelper>
+                            m_pFileDlg;
     SfxItemSet*             m_pItemSet;
     std::vector<OUString>   m_pURLList;
 
-    DECL_LINK_TYPED(DialogClosedHdl, sfx2::FileDialogHelper*, void);
+    DECL_LINK(DialogClosedHdl, sfx2::FileDialogHelper*, void);
 
 public:
     DocumentInserter(const OUString& rFactory,
@@ -57,7 +58,7 @@ public:
     ~DocumentInserter();
 
     void                    StartExecuteModal( const Link<sfx2::FileDialogHelper*,void>& _rDialogClosedLink );
-    SfxMedium*              CreateMedium();
+    SfxMedium*              CreateMedium(char const* pFallbackHack = nullptr);
     SfxMediumList*          CreateMediumList();
 };
 

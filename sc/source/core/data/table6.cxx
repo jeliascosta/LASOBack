@@ -17,8 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/i18n/TransliterationModules.hpp>
-
 #include <unotools/textsearch.hxx>
 #include <svl/srchitem.hxx>
 #include <editeng/editobj.hxx>
@@ -52,7 +50,7 @@ bool lcl_GetTextWithBreaks( const EditTextObject& rData, ScDocument* pDoc, OUStr
 bool ScTable::SearchCell(const SvxSearchItem& rSearchItem, SCCOL nCol, SCROW nRow,
                          const ScMarkData& rMark, OUString& rUndoStr, ScDocument* pUndoDoc)
 {
-    if (!ValidColRow( nCol, nRow))
+    if ( !IsColRowValid( nCol, nRow ) )
         return false;
 
     bool    bFound = false;
@@ -153,19 +151,19 @@ bool ScTable::SearchCell(const SvxSearchItem& rSearchItem, SCCOL nCol, SCROW nRo
         return bFound;
     }
 
-    sal_uInt8 cMatrixFlag = MM_NONE;
+    ScMatrixMode cMatrixFlag = ScMatrixMode::NONE;
     if ( bFound &&
         ( (rSearchItem.GetCommand() == SvxSearchCmd::REPLACE)
         ||(rSearchItem.GetCommand() == SvxSearchCmd::REPLACE_ALL) ) &&
             // Don't split the matrix, only replace Matrix formulas
             !( (eCellType == CELLTYPE_FORMULA &&
-            ((cMatrixFlag = aCell.mpFormula->GetMatrixFlag()) == MM_REFERENCE))
+            ((cMatrixFlag = aCell.mpFormula->GetMatrixFlag()) == ScMatrixMode::Reference))
             // No UndoDoc => Matrix not restorable => don't replace
-            || (cMatrixFlag != MM_NONE && !pUndoDoc) ) &&
+            || (cMatrixFlag != ScMatrixMode::NONE && !pUndoDoc) ) &&
          IsBlockEditable(nCol, nRow, nCol, nRow)
         )
     {
-        if ( cMatrixFlag == MM_NONE && rSearchItem.GetCommand() == SvxSearchCmd::REPLACE )
+        if ( cMatrixFlag == ScMatrixMode::NONE && rSearchItem.GetCommand() == SvxSearchCmd::REPLACE )
             rUndoStr = aString;
         else if (pUndoDoc)
         {
@@ -237,7 +235,7 @@ bool ScTable::SearchCell(const SvxSearchItem& rSearchItem, SCCOL nCol, SCROW nRo
             if (pNote)
                 pNote->SetText( ScAddress( nCol, nRow, nTab ), aString );
         }
-        else if ( cMatrixFlag != MM_NONE )
+        else if ( cMatrixFlag != ScMatrixMode::NONE )
         {   // don't split Matrix
             if ( aString.getLength() > 2 )
             {   // remove {} here so that "{=" can be replaced by "{=..."
@@ -571,10 +569,14 @@ bool ScTable::ReplaceAll(
     else
         GetLastDataPos(nLastCol, nLastRow);
 
+    // tdf#92160 - columnular replace is faster, and more memory efficient.
+    SvxSearchItem aCopyItem(rSearchItem);
+    aCopyItem.SetRowDirection(false);
+
     bool bEverFound = false;
     while (true)
     {
-        bool bFound = Search(rSearchItem, nCol, nRow, nLastCol, nLastRow, rMark, rUndoStr, pUndoDoc);
+        bool bFound = Search(aCopyItem, nCol, nRow, nLastCol, nLastRow, rMark, rUndoStr, pUndoDoc);
 
         if (bFound)
         {
@@ -605,7 +607,7 @@ bool ScTable::SearchStyle(const SvxSearchItem& rSearchItem, SCCOL& rCol, SCROW& 
 
     if (bRows)                                      // by row
     {
-        if (!ValidCol(nCol))
+        if ( !IsColValid( nCol ) )
         {
             SAL_WARN( "sc.core", "SearchStyle: bad column " << nCol);
             return false;
@@ -625,23 +627,30 @@ bool ScTable::SearchStyle(const SvxSearchItem& rSearchItem, SCCOL& rCol, SCROW& 
                 bFound = true;
             }
         }
-        while (!bFound && ValidCol(nCol));
+        while ( !bFound && IsColValid( nCol ) );
     }
-    else                                            // by column
+    else                                    // by column
     {
-        SCsROW nNextRows[MAXCOLCOUNT];
+        SCsCOL aColSize = aCol.size();
+        std::vector< SCsROW > nNextRows ( aColSize );
         SCsCOL i;
-        for (i=0; i<=MAXCOL; i++)
+        for (i=0; i < aColSize; ++i)
         {
             SCsROW nSRow = nRow;
-            if (bBack)  { if (i>=nCol) --nSRow; }
-            else        { if (i<=nCol) ++nSRow; }
+            if (bBack)
+            {
+                if (i>=nCol) --nSRow;
+            }
+            else
+            {
+                if (i<=nCol) ++nSRow;
+            }
             nNextRows[i] = aCol[i].SearchStyle( nSRow, pSearchStyle, bBack, bSelect, rMark );
         }
         if (bBack)                          // backwards
         {
             nRow = -1;
-            for (i=MAXCOL; i>=0; i--)
+            for (i = aColSize - 1; i>=0; --i)
                 if (nNextRows[i]>nRow)
                 {
                     nCol = i;
@@ -652,7 +661,7 @@ bool ScTable::SearchStyle(const SvxSearchItem& rSearchItem, SCCOL& rCol, SCROW& 
         else                                // forwards
         {
             nRow = MAXROW+1;
-            for (i=0; i<=MAXCOL; i++)
+            for (i=0; i < aColSize; ++i)
                 if (nNextRows[i]<nRow)
                 {
                     nCol = i;
@@ -687,7 +696,7 @@ bool ScTable::ReplaceStyle(const SvxSearchItem& rSearchItem, SCCOL& rCol, SCROW&
                                         rSearchItem.GetReplaceString(), SfxStyleFamily::Para ));
 
         if (pReplaceStyle)
-            ApplyStyle( rCol, rRow, *pReplaceStyle );
+            ApplyStyle( rCol, rRow, pReplaceStyle );
         else
         {
             OSL_FAIL("pReplaceStyle==0");
@@ -707,7 +716,7 @@ bool ScTable::SearchAllStyle(
     bool bBack = rSearchItem.GetBackward();
     bool bEverFound = false;
 
-    for (SCCOL i=0; i<=MAXCOL; i++)
+    for (SCCOL i=0; i < aCol.size(); ++i)
     {
         bool bFound = true;
         SCsROW nRow = 0;
@@ -747,8 +756,8 @@ bool ScTable::ReplaceAllStyle(
         if (pReplaceStyle)
         {
             if (pUndoDoc)
-                pDocument->CopyToDocument( 0,0,nTab, MAXCOL,MAXROW,nTab,
-                                            InsertDeleteFlags::ATTRIB, true, pUndoDoc, &rMark );
+                pDocument->CopyToDocument(0, 0 ,nTab, MAXCOL,MAXROW,nTab,
+                                          InsertDeleteFlags::ATTRIB, true, *pUndoDoc, &rMark);
             ApplySelectionStyle( *pReplaceStyle, rMark );
         }
         else
@@ -789,7 +798,7 @@ bool ScTable::SearchAndReplace(
         else
         {
             //  SearchParam no longer needed - SearchOptions contains all settings
-            css::util::SearchOptions2 aSearchOptions = rSearchItem.GetSearchOptions();
+            i18nutil::SearchOptions2 aSearchOptions = rSearchItem.GetSearchOptions();
             aSearchOptions.Locale = *ScGlobal::GetLocale();
 
             if (aSearchOptions.searchString.isEmpty() || ( rSearchItem.GetRegExp() && aSearchOptions.searchString == "^$" ) )
@@ -803,8 +812,8 @@ bool ScTable::SearchAndReplace(
             //  This is also done in SvxSearchDialog CommandHdl, but not in API object.
             if ( !rSearchItem.IsUseAsianOptions() )
                 aSearchOptions.transliterateFlags &=
-                    ( css::i18n::TransliterationModules_IGNORE_CASE |
-                      css::i18n::TransliterationModules_IGNORE_WIDTH );
+                    ( TransliterationFlags::IGNORE_CASE |
+                      TransliterationFlags::IGNORE_WIDTH );
 
             pSearchText = new utl::TextSearch( aSearchOptions );
 

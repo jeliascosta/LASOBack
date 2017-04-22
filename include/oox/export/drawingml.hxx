@@ -26,6 +26,7 @@
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/uno/Sequence.hxx>
+#include <com/sun/star/style/ParagraphAdjust.hpp>
 #include <oox/dllapi.h>
 #include <oox/drawingml/drawingmltypes.hxx>
 #include <oox/token/tokens.hxx>
@@ -75,7 +76,7 @@ namespace uno {
 
 struct EscherConnectorListEntry;
 class OutlinerParaObject;
-class Rectangle;
+namespace tools { class Rectangle; }
 
 namespace tools {
     class PolyPolygon;
@@ -190,7 +191,7 @@ public:
 
     void WriteShapeTransformation( const css::uno::Reference< css::drawing::XShape >& rXShape,
                   sal_Int32 nXmlNamespace, bool bFlipH = false, bool bFlipV = false, bool bSuppressRotation = false );
-    void WriteTransformation( const Rectangle& rRectangle,
+    void WriteTransformation( const tools::Rectangle& rRectangle,
                   sal_Int32 nXmlNamespace, bool bFlipH = false, bool bFlipV = false, sal_Int32 nRotation = 0 );
 
     void WriteText( const css::uno::Reference< css::uno::XInterface >& rXIface, const OUString& presetWarp, bool bBodyPr = true, bool bText = true, sal_Int32 nXmlNamespace = 0);
@@ -204,6 +205,7 @@ public:
     void WriteRunProperties( const css::uno::Reference< css::beans::XPropertySet >& rRun, bool bIsField, sal_Int32 nElement, bool bCheckDirect,
                              bool& rbOverridingCharHeight, sal_Int32& rnCharHeight );
 
+    void WritePresetShape( const char* pShape , std::vector< std::pair<sal_Int32,sal_Int32>> & rAvList );
     void WritePresetShape( const char* pShape );
     void WritePresetShape( const char* pShape, MSO_SPT eShapeType, bool bPredefinedHandlesUsed, sal_Int32 nAdjustmentsWhichNeedsToBeConverted, const css::beans::PropertyValue& rProp );
     bool WriteCustomGeometry( const css::uno::Reference<css::drawing::XShape>& rXShape );
@@ -225,7 +227,7 @@ public:
 
     static sal_uInt32 ColorWithIntensity( sal_uInt32 nColor, sal_uInt32 nIntensity );
 
-    static const char* GetAlignment( sal_Int32 nAlignment );
+    static const char* GetAlignment( css::style::ParagraphAdjust nAlignment );
 
     sax_fastparser::FSHelperPtr     CreateOutputStream (
                                         const OUString& sFullStream,

@@ -34,7 +34,7 @@ ScXMLContentContext::ScXMLContentContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& /* xAttrList */,
                                       OUStringBuffer& sTempValue) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     sOUText(),
     sValue(sTempValue)
 {
@@ -69,7 +69,7 @@ SvXMLImportContext *ScXMLContentContext::CreateChildContext( sal_uInt16 nPrefix,
             sOUText.append(' ');
     }
 
-    return new SvXMLImportContext( GetImport(), nPrefix, rLName );;
+    return new SvXMLImportContext( GetImport(), nPrefix, rLName );
 }
 
 void ScXMLContentContext::Characters( const OUString& rChars )

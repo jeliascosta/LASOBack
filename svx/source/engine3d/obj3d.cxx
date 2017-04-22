@@ -29,7 +29,6 @@
 #include "svx/globl3d.hxx"
 #include <svx/camera3d.hxx>
 #include <svx/scene3d.hxx>
-#include <svx/polysc3d.hxx>
 #include <svx/cube3d.hxx>
 #include <svx/lathe3d.hxx>
 #include <svx/sphere3d.hxx>
@@ -84,8 +83,8 @@ using namespace com::sun::star;
 // List for 3D-Objects
 
 
-E3dObjList::E3dObjList(SdrModel* pNewModel, SdrPage* pNewPage, E3dObjList* pNewUpList)
-:   SdrObjList(pNewModel, pNewPage, pNewUpList)
+E3dObjList::E3dObjList()
+:   SdrObjList(nullptr, nullptr)
 {
 }
 
@@ -105,7 +104,7 @@ E3dObjList::~E3dObjList()
 {
 }
 
-void E3dObjList::NbcInsertObject(SdrObject* pObj, size_t nPos, const SdrInsertReason* pReason)
+void E3dObjList::NbcInsertObject(SdrObject* pObj, size_t nPos)
 {
     // Get owner
     DBG_ASSERT(dynamic_cast<const E3dObject*>(GetOwnerObj()), "Insert 3D object in parent != 3DObject");
@@ -115,7 +114,7 @@ void E3dObjList::NbcInsertObject(SdrObject* pObj, size_t nPos, const SdrInsertRe
     {
         // Normal 3D object, insert means
         // call parent
-        SdrObjList::NbcInsertObject(pObj, nPos, pReason);
+        SdrObjList::NbcInsertObject(pObj, nPos);
     }
     else
     {
@@ -124,12 +123,12 @@ void E3dObjList::NbcInsertObject(SdrObject* pObj, size_t nPos, const SdrInsertRe
     }
 }
 
-void E3dObjList::InsertObject(SdrObject* pObj, size_t nPos, const SdrInsertReason* pReason)
+void E3dObjList::InsertObject(SdrObject* pObj, size_t nPos)
 {
     OSL_ENSURE(dynamic_cast<const E3dObject*>(GetOwnerObj()), "Insert 3D object in non-3D Parent");
 
     // call parent
-    SdrObjList::InsertObject(pObj, nPos, pReason);
+    SdrObjList::InsertObject(pObj, nPos);
 
     E3dScene* pScene = static_cast<E3dObject*>(GetOwnerObj())->GetScene();
     if(pScene)
@@ -187,7 +186,7 @@ E3dObject::E3dObject()
 {
     bIs3DObj = true;
     maSubList.SetOwnerObj(this);
-    maSubList.SetListKind(SDROBJLIST_GROUPOBJ);
+    maSubList.SetListKind(SdrObjListKind::GroupObj);
     bClosedObj = true;
 }
 
@@ -197,7 +196,7 @@ E3dObject::~E3dObject()
 
 void E3dObject::SetSelected(bool bNew)
 {
-    if((bool)mbIsSelected != bNew)
+    if(mbIsSelected != bNew)
     {
         mbIsSelected = bNew;
     }
@@ -243,9 +242,9 @@ void E3dObject::SetRectsDirty(bool bNotMyself)
     }
 }
 
-sal_uInt32 E3dObject::GetObjInventor() const
+SdrInventor E3dObject::GetObjInventor() const
 {
-    return E3dInventor;
+    return SdrInventor::E3d;
 }
 
 sal_uInt16 E3dObject::GetObjIdentifier() const
@@ -384,7 +383,7 @@ void E3dObject::NbcMove(const Size& rSize)
     if(pScene)
     {
         //Dimensions of the scene in 3D and 2D for comparison
-        Rectangle aRect = pScene->GetSnapRect();
+        tools::Rectangle aRect = pScene->GetSnapRect();
 
         basegfx::B3DHomMatrix aInvDispTransform;
         if(GetParentObj())
@@ -435,7 +434,7 @@ SdrObjList* E3dObject::GetSubList() const
 
 void E3dObject::RecalcSnapRect()
 {
-    maSnapRect = Rectangle();
+    maSnapRect = tools::Rectangle();
 
     for(size_t a = 0; a < maSubList.GetObjCount(); ++a)
     {
@@ -652,7 +651,7 @@ void E3dObject::SetTransform(const basegfx::B3DHomMatrix& rMatrix)
         NbcSetTransform(rMatrix);
         SetChanged();
         BroadcastObjectChange();
-        if (pUserCall != nullptr) pUserCall->Changed(*this, SDRUSERCALL_RESIZE, Rectangle());
+        if (pUserCall != nullptr) pUserCall->Changed(*this, SdrUserCallType::Resize, tools::Rectangle());
     }
 }
 
@@ -866,7 +865,7 @@ void E3dCompoundObject::AddToHdlList(SdrHdlList& rHdlList) const
                 // to 2d world coor
                 aPos2D *= rVCScene.getObjectTransformation();
 
-                rHdlList.AddHdl(new SdrHdl(Point(basegfx::fround(aPos2D.getX()), basegfx::fround(aPos2D.getY())), HDL_BWGT));
+                rHdlList.AddHdl(new SdrHdl(Point(basegfx::fround(aPos2D.getX()), basegfx::fround(aPos2D.getY())), SdrHdlKind::BezierWeight));
             }
         }
     }
@@ -890,7 +889,7 @@ void E3dCompoundObject::RecalcSnapRect()
     const uno::Sequence< beans::PropertyValue > aEmptyParameters;
     drawinglayer::geometry::ViewInformation3D aViewInfo3D(aEmptyParameters);
     E3dScene* pRootScene = fillViewInformation3DForCompoundObject(aViewInfo3D, *this);
-    maSnapRect = Rectangle();
+    maSnapRect = tools::Rectangle();
 
     if(pRootScene)
     {
@@ -920,7 +919,7 @@ void E3dCompoundObject::RecalcSnapRect()
                 aSnapRange.transform(rVCScene.getObjectTransformation());
 
                 // snap to integer
-                maSnapRect = Rectangle(
+                maSnapRect = tools::Rectangle(
                     sal_Int32(floor(aSnapRange.getMinX())), sal_Int32(floor(aSnapRange.getMinY())),
                     sal_Int32(ceil(aSnapRange.getMaxX())), sal_Int32(ceil(aSnapRange.getMaxY())));
             }

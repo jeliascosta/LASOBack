@@ -57,12 +57,15 @@ namespace pcr
         {
             ::osl::MutexGuard aGuard(m_aMutex);
             if (m_pDialog)
+            {
                 destroyDialog();
+                ControlCharacterDialog::destroyItemSet(m_pFontItems, m_pItemPool, m_pItemPoolDefaults);
+            }
         }
     }
 
 
-    Sequence<sal_Int8> SAL_CALL OControlFontDialog::getImplementationId(  ) throw(RuntimeException, std::exception)
+    Sequence<sal_Int8> SAL_CALL OControlFontDialog::getImplementationId(  )
     {
         return css::uno::Sequence<sal_Int8>();
     }
@@ -74,31 +77,31 @@ namespace pcr
     }
 
 
-    OUString SAL_CALL OControlFontDialog::getImplementationName() throw(RuntimeException, std::exception)
+    OUString SAL_CALL OControlFontDialog::getImplementationName()
     {
         return getImplementationName_static();
     }
 
 
-    OUString OControlFontDialog::getImplementationName_static() throw(RuntimeException)
+    OUString OControlFontDialog::getImplementationName_static()
     {
         return OUString("org.openoffice.comp.form.ui.OControlFontDialog");
     }
 
 
-    css::uno::Sequence<OUString> SAL_CALL OControlFontDialog::getSupportedServiceNames() throw(RuntimeException, std::exception)
+    css::uno::Sequence<OUString> SAL_CALL OControlFontDialog::getSupportedServiceNames()
     {
         return getSupportedServiceNames_static();
     }
 
 
-    css::uno::Sequence<OUString> OControlFontDialog::getSupportedServiceNames_static() throw(RuntimeException)
+    css::uno::Sequence<OUString> OControlFontDialog::getSupportedServiceNames_static()
     {
         css::uno::Sequence<OUString> aSupported { "com.sun.star.form.ControlFontDialog" };
         return aSupported;
     }
 
-    void OControlFontDialog::initialize( const Sequence< Any >& aArguments ) throw(Exception, RuntimeException, std::exception)
+    void OControlFontDialog::initialize( const Sequence< Any >& aArguments )
     {
         Reference<XPropertySet> xGridModel;
         if (aArguments.getLength() == 1 && (aArguments[0] >>= xGridModel))
@@ -115,7 +118,7 @@ namespace pcr
     }
 
 
-    Reference<XPropertySetInfo>  SAL_CALL OControlFontDialog::getPropertySetInfo() throw(RuntimeException, std::exception)
+    Reference<XPropertySetInfo>  SAL_CALL OControlFontDialog::getPropertySetInfo()
     {
         Reference<XPropertySetInfo>  xInfo( createPropertySetInfo( getInfoHelper() ) );
         return xInfo;
@@ -149,14 +152,6 @@ namespace pcr
 
         return VclPtr<ControlCharacterDialog>::Create(_pParent, *m_pFontItems);
     }
-
-
-    void OControlFontDialog::destroyDialog()
-    {
-        OGenericUnoDialog::destroyDialog();
-        ControlCharacterDialog::destroyItemSet(m_pFontItems, m_pItemPool, m_pItemPoolDefaults);
-    }
-
 
     void OControlFontDialog::executedDialog(sal_Int16 _nExecutionResult)
     {

@@ -35,7 +35,7 @@ namespace basegfx
 
         @see B3DTuple
     */
-    class BASEGFX_DLLPUBLIC B3DVector : public ::basegfx::B3DTuple
+    class SAL_WARN_UNUSED BASEGFX_DLLPUBLIC B3DVector : public ::basegfx::B3DTuple
     {
     public:
         /** Create a 3D Vector
@@ -78,9 +78,6 @@ namespace basegfx
         */
         B3DVector(const ::basegfx::B3DTuple& rTuple)
         :   B3DTuple(rTuple)
-        {}
-
-        ~B3DVector()
         {}
 
         /** *=operator to allow usage from B3DVector, too

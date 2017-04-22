@@ -20,19 +20,18 @@
 #define NOMAIN
 
 #include <stdio.h>
-#include <ctype.h>
 #include "cppdef.h"
 #include "cpp.h"
 
 FILE* pCppOut = NULL;
-FILE* pCppIn  = NULL;
+static FILE* pCppIn  = NULL;
 
 #if OSL_DEBUG_LEVEL > 1
-FILE* pDefOut = NULL;       /* ER  evtl. #define's dump */
+FILE* pDefOut = NULL;       /* ER  possible #define's dump */
 #endif
 
 #ifdef B200
-/* einzige Moeglichkeit unter BC Stack und Heap festzusetzen */
+/* only possibility under BC to set stack and head */
 extern unsigned _stklen  = 24000;
 extern unsigned _heaplen = 30000;
 #endif
@@ -187,12 +186,12 @@ char* magic[] =
 
 static char* sharpfilename = NULL;
 
-int nRunde = 0;
+static int nRunde = 0;
 
 void InitCpp1()
 {
     int i;
-    /* in der LIB-Version muessen alle Variablen initialisiert werden */
+    /* in LIB-Version all variables must be initialized */
 
     line = wrongline = errors = recursion = 0;
     for( i = 0; i < IDMAX; i++ )
@@ -278,6 +277,7 @@ int MAIN(int argc, char** argv)
                 }
             }                           /* Continue by opening output    */
         }
+        /* fall through */
 #endif
     case 3:
         /*
@@ -293,6 +293,7 @@ int MAIN(int argc, char** argv)
                 exit(IO_ERROR);
             }
         }                           /* Continue by opening input    */
+        /* fall through */
     case 2:                         /* One file -> stdin            */
         /*
          * Open input file, "-" means use stdin.
@@ -309,6 +310,7 @@ int MAIN(int argc, char** argv)
             strncpy(work, useargv[1], NWORK);  /* Remember input filename      */
             break;
         }                           /* Else, just get stdin         */
+        /* fall through */
     case 0:                         /* No args?                     */
     case 1:                         /* No files, stdin -> stdout    */
         work[0] = EOS;              /* Unix can't find stdin name   */

@@ -21,12 +21,7 @@
 #include <vcl/builderfactory.hxx>
 #include "actctrl.hxx"
 
-void NumEditAction::Action()
-{
-    aActionLink.Call( *this );
-}
-
-bool NumEditAction::Notify( NotifyEvent& rNEvt )
+bool NumEditAction::EventNotify( NotifyEvent& rNEvt )
 {
     bool bHandled = false;
 
@@ -38,13 +33,13 @@ bool NumEditAction::Notify( NotifyEvent& rNEvt )
         if( aKeyCode.GetCode() == KEY_RETURN &&
                 !nModifier)
         {
-            Action();
+            aActionLink.Call( *this );
             bHandled = true;
         }
 
     }
     if(!bHandled)
-        NumericField::Notify( rNEvt );
+        NumericField::EventNotify(rNEvt);
     return bHandled;
 }
 

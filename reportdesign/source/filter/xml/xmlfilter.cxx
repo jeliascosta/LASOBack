@@ -19,6 +19,7 @@
 
 #include <sal/config.h>
 
+#include <com/sun/star/packages/WrongPasswordException.hpp>
 #include <com/sun/star/packages/zip/ZipIOException.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/beans/NamedValue.hpp>
@@ -89,7 +90,7 @@ public:
             ORptFilter& rImport, sal_uInt16 nPrfx,
             const OUString& rLName ,
             const uno::Reference< xml::sax::XAttributeList > & xAttrList );
-    virtual ~RptMLMasterStylesContext_Impl();
+
     RptMLMasterStylesContext_Impl(const RptMLMasterStylesContext_Impl&) = delete;
     RptMLMasterStylesContext_Impl& operator=(const RptMLMasterStylesContext_Impl&) = delete;
     virtual void EndElement() override;
@@ -101,10 +102,6 @@ RptMLMasterStylesContext_Impl::RptMLMasterStylesContext_Impl(
         const uno::Reference< xml::sax::XAttributeList > & xAttrList ) :
     XMLTextMasterStylesContext( rImport, nPrfx, rLName, xAttrList )
     ,m_rImport(rImport)
-{
-}
-
-RptMLMasterStylesContext_Impl::~RptMLMasterStylesContext_Impl()
 {
 }
 
@@ -282,12 +279,12 @@ uno::Reference< uno::XInterface > ORptImportHelper::create(uno::Reference< uno::
     return static_cast< XServiceInfo* >(new ORptFilter(xContext, SvXMLImportFlags::SETTINGS ));
 }
 
-OUString ORptImportHelper::getImplementationName_Static(  ) throw (RuntimeException)
+OUString ORptImportHelper::getImplementationName_Static(  )
 {
     return OUString(SERVICE_SETTINGSIMPORTER);
 }
 
-Sequence< OUString > ORptImportHelper::getSupportedServiceNames_Static(  ) throw(RuntimeException)
+Sequence< OUString > ORptImportHelper::getSupportedServiceNames_Static(  )
 {
     Sequence< OUString > aSupported { SERVICE_IMPORTFILTER };
     return aSupported;
@@ -299,12 +296,12 @@ Reference< XInterface > ORptContentImportHelper::create(const Reference< XCompon
         SvXMLImportFlags::FONTDECLS ));
 }
 
-OUString ORptContentImportHelper::getImplementationName_Static(  ) throw (RuntimeException)
+OUString ORptContentImportHelper::getImplementationName_Static(  )
 {
     return OUString(SERVICE_CONTENTIMPORTER);
 }
 
-Sequence< OUString > ORptContentImportHelper::getSupportedServiceNames_Static(  ) throw(RuntimeException)
+Sequence< OUString > ORptContentImportHelper::getSupportedServiceNames_Static(  )
 {
     Sequence< OUString > aSupported { SERVICE_IMPORTFILTER };
     return aSupported;
@@ -318,12 +315,12 @@ Reference< XInterface > ORptStylesImportHelper::create(Reference< XComponentCont
         SvXMLImportFlags::FONTDECLS ));
 }
 
-OUString ORptStylesImportHelper::getImplementationName_Static(  ) throw (RuntimeException)
+OUString ORptStylesImportHelper::getImplementationName_Static(  )
 {
     return OUString(SERVICE_STYLESIMPORTER);
 }
 
-Sequence< OUString > ORptStylesImportHelper::getSupportedServiceNames_Static(  ) throw(RuntimeException)
+Sequence< OUString > ORptStylesImportHelper::getSupportedServiceNames_Static(  )
 {
     Sequence< OUString > aSupported { SERVICE_IMPORTFILTER };
     return aSupported;
@@ -336,12 +333,12 @@ Reference< XInterface > ORptMetaImportHelper::create(Reference< XComponentContex
         SvXMLImportFlags::META));
 }
 
-OUString ORptMetaImportHelper::getImplementationName_Static(  ) throw (RuntimeException)
+OUString ORptMetaImportHelper::getImplementationName_Static(  )
 {
     return OUString(SERVICE_METAIMPORTER);
 }
 
-Sequence< OUString > ORptMetaImportHelper::getSupportedServiceNames_Static(  ) throw(RuntimeException)
+Sequence< OUString > ORptMetaImportHelper::getSupportedServiceNames_Static(  )
 {
     Sequence< OUString > aSupported { SERVICE_IMPORTFILTER };
     return aSupported;
@@ -379,12 +376,12 @@ uno::Reference< XInterface > ORptFilter::create(uno::Reference< XComponentContex
 }
 
 
-OUString ORptFilter::getImplementationName_Static(  ) throw(uno::RuntimeException)
+OUString ORptFilter::getImplementationName_Static(  )
 {
     return OUString("com.sun.star.comp.report.OReportFilter");
 }
 
-uno::Sequence< OUString > ORptFilter::getSupportedServiceNames_Static(  ) throw(uno::RuntimeException)
+uno::Sequence< OUString > ORptFilter::getSupportedServiceNames_Static(  )
 {
     uno::Sequence< OUString > aServices { SERVICE_IMPORTFILTER };
 
@@ -392,7 +389,6 @@ uno::Sequence< OUString > ORptFilter::getSupportedServiceNames_Static(  ) throw(
 }
 
 sal_Bool SAL_CALL ORptFilter::filter( const Sequence< PropertyValue >& rDescriptor )
-    throw (RuntimeException, std::exception)
 {
     vcl::Window*     pFocusWindow = Application::GetFocusWindow();
     bool    bRet = false;
@@ -410,7 +406,6 @@ sal_Bool SAL_CALL ORptFilter::filter( const Sequence< PropertyValue >& rDescript
 }
 
 bool ORptFilter::implImport( const Sequence< PropertyValue >& rDescriptor )
-    throw (RuntimeException, std::exception)
 {
     OUString                     sFileName;
     uno::Reference< embed::XStorage >   xStorage;
@@ -449,7 +444,7 @@ bool ORptFilter::implImport( const Sequence< PropertyValue >& rDescriptor )
         tools::SvRef<SfxMedium> pMedium = new SfxMedium(
                 sFileName, ( StreamMode::READ | StreamMode::NOCREATE ) );
 
-        if( pMedium )
+        if( pMedium.is() )
         {
             try
             {
@@ -490,7 +485,7 @@ bool ORptFilter::implImport( const Sequence< PropertyValue >& rDescriptor )
                 uno::UNO_QUERY );
 
         uno::Reference< lang::XMultiServiceFactory > xReportServiceFactory( m_xReportDefinition, uno::UNO_QUERY);
-        aArgs[0] <<= beans::NamedValue(OUString("Storage"),uno::makeAny(xStorage));
+        aArgs[0] <<= beans::NamedValue("Storage",uno::makeAny(xStorage));
         xEmbeddedObjectResolver.set( xReportServiceFactory->createInstanceWithArguments("com.sun.star.document.ImportEmbeddedObjectResolver",aArgs) , uno::UNO_QUERY);
 
         static const char s_sOld[] = "OldFormat";
@@ -636,7 +631,7 @@ SvXMLImportContext* ORptFilter::CreateContext( sal_uInt16 nPrefix,
                         pAutoStyle->FillPropertySet(getReportDefinition().get());
                     }
                 }
-                pContext = new OXMLReport( *this, nPrefix, rLocalName,xAttrList,getReportDefinition(),nullptr );
+                pContext = new OXMLReport( *this, nPrefix, rLocalName,xAttrList,getReportDefinition() );
             }
             break;
         case XML_TOK_DOC_STYLES:
@@ -963,7 +958,6 @@ const OUString& ORptFilter::convertFormula(const OUString& _sFormula)
 }
 
 void SAL_CALL ORptFilter::startDocument()
-    throw( xml::sax::SAXException, uno::RuntimeException, std::exception )
 {
     m_xReportDefinition.set(GetModel(),UNO_QUERY_THROW);
     OSL_ENSURE(m_xReportDefinition.is(),"ReportDefinition is NULL!");
@@ -977,7 +971,6 @@ void SAL_CALL ORptFilter::startDocument()
 }
 
 void ORptFilter::endDocument()
-    throw( xml::sax::SAXException, uno::RuntimeException, std::exception )
 {
     OSL_ENSURE( GetModel().is(), "model missing; maybe startDocument wasn't called?" );
     if( !GetModel().is() )

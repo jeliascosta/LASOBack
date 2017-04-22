@@ -64,35 +64,29 @@ namespace comphelper
 
             Subsequent instantiations of a ComponentMethodGuard won't throw the NotInitializedException now.
         */
-        inline void setInitialized()    { m_bInitialized = true; }
+        void setInitialized()    { m_bInitialized = true; }
 
     public:
         /// helper struct to grant access to selected public methods to the ComponentMethodGuard class
         struct GuardAccess { friend class ComponentMethodGuard; private: GuardAccess() { } };
 
         /// retrieves the component's mutex
-        inline  ::osl::Mutex&   getMutex( GuardAccess )                 { return getMutex(); }
+        ::osl::Mutex&   getMutex( GuardAccess )                 { return getMutex(); }
         /// checks whether the component is already disposed, throws a DisposedException if so.
-        inline  void            checkDisposed( GuardAccess ) const      { impl_checkDisposed_throw(); }
+        void                    checkDisposed( GuardAccess ) const;
         /// checks whether the component is already initialized, throws a NotInitializedException if not.
-        inline  void            checkInitialized( GuardAccess ) const   { impl_checkInitialized_throw(); }
+        void                    checkInitialized( GuardAccess ) const;
 
     protected:
         /// retrieves the component's broadcast helper
-        inline  ::cppu::OBroadcastHelper&   getBroadcastHelper()    { return m_rBHelper; }
+        ::cppu::OBroadcastHelper&   getBroadcastHelper()    { return m_rBHelper; }
         /// retrieves the component's mutex
-        inline  ::osl::Mutex&               getMutex()              { return m_rBHelper.rMutex; }
+        ::osl::Mutex&               getMutex()              { return m_rBHelper.rMutex; }
         /// determines whether the instance is already disposed
-        inline  bool                        impl_isDisposed() const { return m_rBHelper.bDisposed; }
-
-        /// checks whether the component is already disposed. Throws a DisposedException if so.
-        void    impl_checkDisposed_throw() const;
-
-        /// checks whether the component is already initialized. Throws a NotInitializedException if not.
-        void    impl_checkInitialized_throw() const;
+        bool                        impl_isDisposed() const { return m_rBHelper.bDisposed; }
 
         /// determines whether the component is already initialized
-        inline  bool
+        bool
                 impl_isInitialized_nothrow() const { return m_bInitialized; }
 
         /** returns the context to be used when throwing exceptions
@@ -127,11 +121,7 @@ namespace comphelper
             _rComponent.checkDisposed( ComponentBase::GuardAccess() );
         }
 
-        ~ComponentMethodGuard()
-        {
-        }
-
-        inline void clear()
+        void clear()
         {
             m_aMutexGuard.clear();
         }

@@ -52,7 +52,6 @@ DateScaling::~DateScaling()
 }
 
 double SAL_CALL DateScaling::doScaling( double value )
-    throw (uno::RuntimeException, std::exception)
 {
     double fResult(value);
     if( ::rtl::math::isNan( value ) || ::rtl::math::isInf( value ) )
@@ -93,45 +92,28 @@ double SAL_CALL DateScaling::doScaling( double value )
 }
 
 uno::Reference< XScaling > SAL_CALL DateScaling::getInverseScaling()
-    throw (uno::RuntimeException, std::exception)
 {
     return new InverseDateScaling( m_aNullDate, m_nTimeUnit, m_bShifted );
 }
 
 OUString SAL_CALL DateScaling::getServiceName()
-    throw (uno::RuntimeException, std::exception)
 {
     return OUString(lcl_aServiceName_DateScaling);
 }
 
-uno::Sequence< OUString > DateScaling::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aSeq { lcl_aServiceName_DateScaling };
-    return aSeq;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL DateScaling::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString DateScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_DateScaling);
 }
 
 sal_Bool SAL_CALL DateScaling::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL DateScaling::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { lcl_aServiceName_DateScaling };
 }
 
 InverseDateScaling::InverseDateScaling( const Date& rNullDate, sal_Int32 nTimeUnit, bool bShifted )
@@ -146,7 +128,6 @@ InverseDateScaling::~InverseDateScaling()
 }
 
 double SAL_CALL InverseDateScaling::doScaling( double value )
-    throw (uno::RuntimeException, std::exception)
 {
     double fResult(value);
     if( ::rtl::math::isNan( value ) || ::rtl::math::isInf( value ) )
@@ -194,45 +175,28 @@ double SAL_CALL InverseDateScaling::doScaling( double value )
 }
 
 uno::Reference< XScaling > SAL_CALL InverseDateScaling::getInverseScaling()
-    throw (uno::RuntimeException, std::exception)
 {
     return new DateScaling( m_aNullDate, m_nTimeUnit, m_bShifted );
 }
 
 OUString SAL_CALL InverseDateScaling::getServiceName()
-    throw (uno::RuntimeException, std::exception)
 {
     return OUString(lcl_aServiceName_InverseDateScaling);
 }
 
-uno::Sequence< OUString > InverseDateScaling::getSupportedServiceNames_Static()
-{
-    uno::Sequence<OUString> aSeq { lcl_aServiceName_InverseDateScaling };
-    return aSeq;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL InverseDateScaling::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString InverseDateScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_InverseDateScaling);
 }
 
 sal_Bool SAL_CALL InverseDateScaling::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL InverseDateScaling::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { lcl_aServiceName_InverseDateScaling };
 }
 
 } //namespace chart

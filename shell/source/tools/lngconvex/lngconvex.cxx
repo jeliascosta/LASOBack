@@ -130,12 +130,11 @@ class StreamExceptionsEnabler
 {
 public:
     explicit StreamExceptionsEnabler(
-        std::ios& iostrm,
-        std::ios::iostate NewIos = std::ios::failbit | std::ios::badbit) :
+        std::ios& iostrm ) :
         m_IoStrm(iostrm),
         m_OldIos(m_IoStrm.exceptions())
     {
-        m_IoStrm.exceptions(NewIos);
+        m_IoStrm.exceptions(std::ios::failbit | std::ios::badbit);
     }
 
     ~StreamExceptionsEnabler()
@@ -266,7 +265,7 @@ private:
 
         if (iso_lang_replacement_table_.end() == iter)
         {
-            prt = new replacement_table_t();
+            prt = new replacement_table_t;
             iso_lang_replacement_table_.insert(std::make_pair(iso_lang, prt));
         }
         else
@@ -431,7 +430,7 @@ void start_language_section(
     int subLangID = SUBLANGID(ltype);
     // Our resources are normally not sub language dependent.
     // Esp. for spanish we don't want to distinguish between trad.
-    // and internatinal sorting ( which leads to two different sub languages )
+    // and international sorting (which leads to two different sub languages)
     // Setting the sub language to neutral allows us to use one
     // stringlist for all spanish variants
     if ( ( primLangID == LANG_SPANISH ) &&

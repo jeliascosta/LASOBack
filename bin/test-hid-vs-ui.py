@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- Mode: makefile-gmake; tab-width: 4; indent-tabs-mode: t -*-
+# -*- tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
 #
 # This file is part of the LibreOffice project.
 #
@@ -112,6 +112,8 @@ if __name__ == "__main__":
             uifile = "sfx2" + uifile[3:]
         elif uifile.startswith("svt"):
             uifile = "svtools" + uifile[3:]
+        elif uifile.startswith("fps"):
+            uifile = "fpicker" + uifile[3:]
         components = uifile.split('/',1);
         uifile = components[0] + '/uiconfig/' + components[1]
         targets[uifile].add(compname.split(':')[0])
@@ -183,4 +185,4 @@ Note: The bot generating this message can be found and improved here:
     else:
         print errors
 
-# vim: set et sw=4 ts=4:
+# vim: set shiftwidth=4 softtabstop=4 expandtab:

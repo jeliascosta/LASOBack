@@ -77,19 +77,13 @@ ConfigurationUpdater::ConfigurationUpdater (
     // and the requested configuration differ.  With the timer we try
     // updates until the two configurations are the same.
     maUpdateTimer.SetTimeout(snNormalTimeout);
-    maUpdateTimer.SetTimeoutHdl(LINK(this,ConfigurationUpdater,TimeoutHandler));
-    SetControllerManager(rxControllerManager);
+    maUpdateTimer.SetInvokeHandler(LINK(this,ConfigurationUpdater,TimeoutHandler));
+    mxControllerManager = rxControllerManager;
 }
 
 ConfigurationUpdater::~ConfigurationUpdater()
 {
     maUpdateTimer.Stop();
-}
-
-void ConfigurationUpdater::SetControllerManager(
-    const Reference<XControllerManager>& rxControllerManager)
-{
-    mxControllerManager = rxControllerManager;
 }
 
 void ConfigurationUpdater::RequestUpdate (
@@ -326,9 +320,8 @@ void ConfigurationUpdater::CheckPureAnchors (
         if (bDeactiveCurrentResource)
         {
             SAL_INFO("sd.fwk", OSL_THIS_FUNC << ": deactivating pure anchor " <<
-                OUStringToOString(
-                    FrameworkHelper::ResourceIdToString(xResourceId),
-                    RTL_TEXTENCODING_UTF8).getStr() << "because it has no children");
+                    FrameworkHelper::ResourceIdToString(xResourceId) <<
+                    "because it has no children");
             // Erase element from current configuration.
             for (sal_Int32 nI=nIndex; nI<nCount-2; ++nI)
                 aResources[nI] = aResources[nI+1];
@@ -364,16 +357,14 @@ void ConfigurationUpdater::SetUpdateBeingProcessed (bool bValue)
     mbUpdateBeingProcessed = bValue;
 }
 
-IMPL_LINK_NOARG_TYPED(ConfigurationUpdater, TimeoutHandler, Timer *, void)
+IMPL_LINK_NOARG(ConfigurationUpdater, TimeoutHandler, Timer *, void)
 {
-    OSL_TRACE("configuration update timer");
     if ( ! mbUpdateBeingProcessed
         && mxCurrentConfiguration.is()
         && mxRequestedConfiguration.is())
     {
         if ( ! AreConfigurationsEquivalent(mxCurrentConfiguration, mxRequestedConfiguration))
         {
-            OSL_TRACE("configurations differ, requesting update");
             RequestUpdate(mxRequestedConfiguration);
         }
     }

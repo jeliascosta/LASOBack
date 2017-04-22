@@ -93,7 +93,7 @@ void SdrVirtObj::TakeObjInfo(SdrObjTransformInfoRec& rInfo) const
     rRefObj.TakeObjInfo(rInfo);
 }
 
-sal_uInt32 SdrVirtObj::GetObjInventor() const
+SdrInventor SdrVirtObj::GetObjInventor() const
 {
     return rRefObj.GetObjInventor();
 }
@@ -108,14 +108,14 @@ SdrObjList* SdrVirtObj::GetSubList() const
     return rRefObj.GetSubList();
 }
 
-const Rectangle& SdrVirtObj::GetCurrentBoundRect() const
+const tools::Rectangle& SdrVirtObj::GetCurrentBoundRect() const
 {
     const_cast<SdrVirtObj*>(this)->aOutRect=rRefObj.GetCurrentBoundRect(); // TODO: Optimize this.
     const_cast<SdrVirtObj*>(this)->aOutRect+=aAnchor;
     return aOutRect;
 }
 
-const Rectangle& SdrVirtObj::GetLastBoundRect() const
+const tools::Rectangle& SdrVirtObj::GetLastBoundRect() const
 {
     const_cast<SdrVirtObj*>(this)->aOutRect=rRefObj.GetLastBoundRect(); // TODO: Optimize this.
     const_cast<SdrVirtObj*>(this)->aOutRect+=aAnchor;
@@ -126,11 +126,6 @@ void SdrVirtObj::RecalcBoundRect()
 {
     aOutRect=rRefObj.GetCurrentBoundRect();
     aOutRect+=aAnchor;
-}
-
-void SdrVirtObj::SetChanged()
-{
-    SdrObject::SetChanged();
 }
 
 SdrVirtObj* SdrVirtObj::Clone() const
@@ -373,49 +368,49 @@ void SdrVirtObj::NbcShear(const Point& rRef, long nAngle, double tn, bool bVShea
 void SdrVirtObj::Move(const Size& rSiz)
 {
     if (rSiz.Width()!=0 || rSiz.Height()!=0) {
-        Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+        tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
         NbcMove(rSiz);
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_MOVEONLY,aBoundRect0);
+        SendUserCall(SdrUserCallType::MoveOnly,aBoundRect0);
     }
 }
 
 void SdrVirtObj::Resize(const Point& rRef, const Fraction& xFact, const Fraction& yFact, bool bUnsetRelative)
 {
     if (xFact.GetNumerator()!=xFact.GetDenominator() || yFact.GetNumerator()!=yFact.GetDenominator()) {
-        Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+        tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
         rRefObj.Resize(rRef-aAnchor,xFact,yFact, bUnsetRelative);
         SetRectsDirty();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
 }
 
 void SdrVirtObj::Rotate(const Point& rRef, long nAngle, double sn, double cs)
 {
     if (nAngle!=0) {
-        Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+        tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
         rRefObj.Rotate(rRef-aAnchor,nAngle,sn,cs);
         SetRectsDirty();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
 }
 
 void SdrVirtObj::Mirror(const Point& rRef1, const Point& rRef2)
 {
-    Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+    tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
     rRefObj.Mirror(rRef1-aAnchor,rRef2-aAnchor);
     SetRectsDirty();
-    SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize,aBoundRect0);
 }
 
 void SdrVirtObj::Shear(const Point& rRef, long nAngle, double tn, bool bVShear)
 {
     if (nAngle!=0) {
-        Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+        tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
         rRefObj.Shear(rRef-aAnchor,nAngle,tn,bVShear);
         SetRectsDirty();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
 }
 
@@ -426,54 +421,54 @@ void SdrVirtObj::RecalcSnapRect()
     aSnapRect+=aAnchor;
 }
 
-const Rectangle& SdrVirtObj::GetSnapRect() const
+const tools::Rectangle& SdrVirtObj::GetSnapRect() const
 {
     const_cast<SdrVirtObj*>(this)->aSnapRect=rRefObj.GetSnapRect();
     const_cast<SdrVirtObj*>(this)->aSnapRect+=aAnchor;
     return aSnapRect;
 }
 
-void SdrVirtObj::SetSnapRect(const Rectangle& rRect)
+void SdrVirtObj::SetSnapRect(const tools::Rectangle& rRect)
 {
     {
-        Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
-        Rectangle aR(rRect);
+        tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+        tools::Rectangle aR(rRect);
         aR-=aAnchor;
         rRefObj.SetSnapRect(aR);
         SetRectsDirty();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
 }
 
-void SdrVirtObj::NbcSetSnapRect(const Rectangle& rRect)
+void SdrVirtObj::NbcSetSnapRect(const tools::Rectangle& rRect)
 {
-    Rectangle aR(rRect);
+    tools::Rectangle aR(rRect);
     aR-=aAnchor;
     SetRectsDirty();
     rRefObj.NbcSetSnapRect(aR);
 }
 
 
-const Rectangle& SdrVirtObj::GetLogicRect() const
+const tools::Rectangle& SdrVirtObj::GetLogicRect() const
 {
     const_cast<SdrVirtObj*>(this)->aSnapRect=rRefObj.GetLogicRect();  // An abuse of aSnapRect!
     const_cast<SdrVirtObj*>(this)->aSnapRect+=aAnchor;                // If there's trouble, we need another Rectangle Member (or a Heap).
     return aSnapRect;
 }
 
-void SdrVirtObj::SetLogicRect(const Rectangle& rRect)
+void SdrVirtObj::SetLogicRect(const tools::Rectangle& rRect)
 {
-    Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
-    Rectangle aR(rRect);
+    tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+    tools::Rectangle aR(rRect);
     aR-=aAnchor;
     rRefObj.SetLogicRect(aR);
     SetRectsDirty();
-    SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize,aBoundRect0);
 }
 
-void SdrVirtObj::NbcSetLogicRect(const Rectangle& rRect)
+void SdrVirtObj::NbcSetLogicRect(const tools::Rectangle& rRect)
 {
-    Rectangle aR(rRect);
+    tools::Rectangle aR(rRect);
     aR-=aAnchor;
     SetRectsDirty();
     rRefObj.NbcSetLogicRect(aR);
@@ -551,10 +546,10 @@ SdrObjGeoData* SdrVirtObj::GetGeoData() const
 
 void SdrVirtObj::SetGeoData(const SdrObjGeoData& rGeo)
 {
-    Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+    tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
     rRefObj.SetGeoData(rGeo);
     SetRectsDirty();
-    SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize,aBoundRect0);
 }
 
 
@@ -584,7 +579,7 @@ Pointer SdrVirtObj::GetMacroPointer(const SdrObjMacroHitRec& rRec) const
     return rRefObj.GetMacroPointer(rRec); // TODO: positioning offset
 }
 
-void SdrVirtObj::PaintMacro(OutputDevice& rOut, const Rectangle& rDirtyRect, const SdrObjMacroHitRec& rRec) const
+void SdrVirtObj::PaintMacro(OutputDevice& rOut, const tools::Rectangle& rDirtyRect, const SdrObjMacroHitRec& rRec) const
 {
     rRefObj.PaintMacro(rOut,rDirtyRect,rRec); // TODO: positioning offset
 }

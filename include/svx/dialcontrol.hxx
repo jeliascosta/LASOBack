@@ -43,7 +43,7 @@ public:
     void                DrawElements( const OUString& rText, sal_Int32 nAngle );
 
 protected:
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
     bool                mbEnabled;
 
 private:
@@ -79,7 +79,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC DialControl : public Control
 public:
     explicit            DialControl( vcl::Window* pParent, WinBits nBits );
 
-    virtual void        Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void        Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
 
     virtual void        StateChanged( StateChangedType nStateChange ) override;
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -105,7 +105,7 @@ public:
 
     /** Links the passed numeric edit field to the control (bi-directional).
      *  nDecimalPlaces:
-     *     field value is usign given decimal places
+     *     field value is unsign given decimal places
      *     default is 0 which means field values are in degrees,
      *     2 means 100th of degree
      */
@@ -155,10 +155,10 @@ protected:
 private:
     void                InvalidateControl();
 
-    DECL_LINK_TYPED( LinkedFieldModifyHdl, Edit&, void );
-    DECL_LINK_TYPED( LinkedFieldFocusHdl, Control&, void );
+    DECL_LINK( LinkedFieldModifyHdl, Edit&, void );
+    DECL_LINK( LinkedFieldFocusHdl, Control&, void );
     void LinkedFieldModifyHdl();
-    DECL_LINK_TYPED(SpinFieldHdl, SpinField&, void);
+    DECL_LINK(SpinFieldHdl, SpinField&, void);
 };
 
 /** Wrapper for usage of a DialControl in item connections. */

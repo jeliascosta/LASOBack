@@ -31,25 +31,35 @@ private:
     SwTable* pTable;
 
 private:
-    SwTableBox* GetTabBox( sal_Int32 nCol, sal_Int32 nRow ) throw (css::uno::RuntimeException);
-    void    InitTabCols( SwTabCols& rCols, const SwTableBox *pStart, bool bCurRowOnly  = false );
+    /// @throws css::uno::RuntimeException
+    SwTableBox* GetTabBox( sal_Int32 nCol, sal_Int32 nRow );
+    void    InitTabCols( SwTabCols& rCols, const SwTableBox *pStart, bool bCurRowOnly );
     static sal_Int32 GetRightSeparator( SwTabCols& rCols, sal_Int32 nNum);
     static sal_Int32 GetColCount( SwTabCols& rCols );
-    static sal_Int32 GetColWidth( SwTabCols& rCols, sal_Int32 nNum ) throw (css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    static sal_Int32 GetColWidth( SwTabCols& rCols, sal_Int32 nNum );
 
 public:
-    explicit SwVbaTableHelper( const css::uno::Reference< css::text::XTextTable >& xTextTable ) throw (css::uno::RuntimeException);
-    ~SwVbaTableHelper() {}
-    sal_Int32 getTabColumnsCount( sal_Int32 nRowIndex ) throw (css::uno::RuntimeException);
-    sal_Int32 getTabColumnsMaxCount( ) throw (css::uno::RuntimeException);
-    sal_Int32 getTabRowIndex( const OUString& sCellName ) throw (css::uno::RuntimeException);
-    sal_Int32 getTabColIndex( const OUString& sCellName ) throw (css::uno::RuntimeException);
-    sal_Int32 getTableWidth( ) throw (css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    explicit SwVbaTableHelper( const css::uno::Reference< css::text::XTextTable >& xTextTable );
+    /// @throws css::uno::RuntimeException
+    sal_Int32 getTabColumnsCount( sal_Int32 nRowIndex );
+    /// @throws css::uno::RuntimeException
+    sal_Int32 getTabColumnsMaxCount( );
+    /// @throws css::uno::RuntimeException
+    sal_Int32 getTabRowIndex( const OUString& sCellName );
+    /// @throws css::uno::RuntimeException
+    sal_Int32 getTabColIndex( const OUString& sCellName );
+    /// @throws css::uno::RuntimeException
+    sal_Int32 getTableWidth( );
 
-    sal_Int32 GetColWidth( sal_Int32 nCol, sal_Int32 nRow = 0, bool bCurRowOnly  = false ) throw (css::uno::RuntimeException);
-    void SetColWidth( sal_Int32 _width, sal_Int32 nCol, sal_Int32 nRow = 0, bool bCurRowOnly  = false ) throw (css::uno::RuntimeException, std::exception);
+    /// @throws css::uno::RuntimeException
+    sal_Int32 GetColWidth( sal_Int32 nCol, sal_Int32 nRow = 0, bool bCurRowOnly  = false );
+    /// @throws css::uno::RuntimeException
+    void SetColWidth( sal_Int32 _width, sal_Int32 nCol, sal_Int32 nRow = 0, bool bCurRowOnly  = false );
 
-    static SwTable* GetSwTable( const css::uno::Reference< css::text::XTextTable >& xTextTable ) throw (css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    static SwTable* GetSwTable( const css::uno::Reference< css::text::XTextTable >& xTextTable );
     static OUString getColumnStr( sal_Int32 nCol );
 };
 

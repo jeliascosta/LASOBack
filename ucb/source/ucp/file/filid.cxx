@@ -18,7 +18,7 @@
  */
 
 #include "filid.hxx"
-#include "shell.hxx"
+#include "filtask.hxx"
 
 #include <cppuhelper/queryinterface.hxx>
 
@@ -33,15 +33,15 @@ FileContentIdentifier::FileContentIdentifier(
 {
     if( IsNormalized )
     {
-        fileaccess::shell::getUrlFromUnq( aUnqPath,m_aContentId );
+        fileaccess::TaskManager::getUrlFromUnq( aUnqPath,m_aContentId );
         m_aNormalizedId = aUnqPath;
-        shell::getScheme( m_aProviderScheme );
+        TaskManager::getScheme( m_aProviderScheme );
     }
     else
     {
-        fileaccess::shell::getUnqFromUrl( aUnqPath,m_aNormalizedId );
+        fileaccess::TaskManager::getUnqFromUrl( aUnqPath,m_aNormalizedId );
         m_aContentId = aUnqPath;
-        shell::getScheme( m_aProviderScheme );
+        TaskManager::getScheme( m_aProviderScheme );
     }
 }
 
@@ -51,8 +51,7 @@ FileContentIdentifier::~FileContentIdentifier()
 
 
 void SAL_CALL
-FileContentIdentifier::acquire(
-    void )
+FileContentIdentifier::acquire()
     throw()
 {
     OWeakObject::acquire();
@@ -60,8 +59,7 @@ FileContentIdentifier::acquire(
 
 
 void SAL_CALL
-FileContentIdentifier::release(
-                void )
+FileContentIdentifier::release()
   throw()
 {
   OWeakObject::release();
@@ -69,9 +67,7 @@ FileContentIdentifier::release(
 
 
 uno::Any SAL_CALL
-FileContentIdentifier::queryInterface(
-    const uno::Type& rType )
-    throw( uno::RuntimeException, std::exception )
+FileContentIdentifier::queryInterface( const uno::Type& rType )
 {
     uno::Any aRet = cppu::queryInterface( rType,
                                           (static_cast< lang::XTypeProvider* >(this)),
@@ -82,16 +78,13 @@ FileContentIdentifier::queryInterface(
 
 uno::Sequence< sal_Int8 > SAL_CALL
 FileContentIdentifier::getImplementationId()
-    throw( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 
 uno::Sequence< uno::Type > SAL_CALL
-FileContentIdentifier::getTypes(
-    void )
-    throw( uno::RuntimeException, std::exception )
+FileContentIdentifier::getTypes()
 {
     static cppu::OTypeCollection* pCollection = nullptr;
     if ( !pCollection ) {
@@ -110,18 +103,14 @@ FileContentIdentifier::getTypes(
 
 OUString
 SAL_CALL
-FileContentIdentifier::getContentIdentifier(
-    void )
-    throw( uno::RuntimeException, std::exception )
+FileContentIdentifier::getContentIdentifier()
 {
     return m_aContentId;
 }
 
 
 OUString SAL_CALL
-FileContentIdentifier::getContentProviderScheme(
-    void )
-    throw( uno::RuntimeException, std::exception )
+FileContentIdentifier::getContentProviderScheme()
 {
     return m_aProviderScheme;
 }

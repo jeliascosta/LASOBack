@@ -22,8 +22,6 @@
 
 #include "rcid.hrc"
 
-#define DLG_INSERT_BOOKMARK         (RC_MISC_BEGIN + 17)
-
 #define DLG_SORTING                 (RC_MISC_BEGIN + 19)
 
 #define DLG_TAB_OUTLINE             (RC_MISC_BEGIN + 29)
@@ -39,8 +37,6 @@
 #define STR_CHANGE_END              (RC_MISC_BEGIN + 45)
 #define STR_SAVE_GLOSSARY           (RC_MISC_BEGIN + 46)
 
-#define MN_REDLINE_POPUP            (RC_MISC_BEGIN + 61)
-#define STRRES_NUMTYPES             (RC_MISC_BEGIN + 63)
 #define STR_MY_AUTOTEXT             (RC_MISC_BEGIN + 64)
 
 #define STR_COMMENTS_LABEL          (RC_MISC_BEGIN + 65)

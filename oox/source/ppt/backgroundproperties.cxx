@@ -18,7 +18,7 @@
  */
 
 #include "oox/ppt/backgroundproperties.hxx"
-#include "drawingml/fillpropertiesgroupcontext.hxx"
+#include "drawingml/misccontexts.hxx"
 #include "oox/drawingml/drawingmltypes.hxx"
 #include "oox/core/contexthandler2.hxx"
 #include <oox/token/namespaces.hxx>
@@ -44,7 +44,6 @@ BackgroundPropertiesContext::BackgroundPropertiesContext( FragmentHandler2& rPar
         return this;
     }
 
-    // FillPropertiesGroupContext
     return dynamic_cast <ContextHandler *> (::oox::drawingml::FillPropertiesContext::createFillContext( *this, aElementToken, rAttribs, mrFillProperties ).get());
 }
 

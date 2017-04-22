@@ -32,8 +32,6 @@ struct ImplMoreButtonData
 void MoreButton::ImplInit( vcl::Window* pParent, WinBits nStyle )
 {
     mpMBData     = new ImplMoreButtonData;
-    mnDelta      = 0;
-    meUnit       = MAP_PIXEL;
     mbState      = false;
 
     mpMBData->mpItemList = nullptr;
@@ -71,7 +69,7 @@ void MoreButton::ShowState()
 }
 
 MoreButton::MoreButton( vcl::Window* pParent, WinBits nStyle ) :
-    PushButton( WINDOW_MOREBUTTON )
+    PushButton( WindowType::MOREBUTTON )
 {
     ImplInit( pParent, nStyle );
 }
@@ -92,7 +90,7 @@ void MoreButton::Click()
 {
     vcl::Window*     pParent = GetParent();
     Size        aSize( pParent->GetSizePixel() );
-    long        nDeltaPixel = LogicToPixel( Size( 0, mnDelta ), meUnit ).Height();
+    long        nDeltaPixel = LogicToPixel( Size( 0, 0 ), MapUnit::MapPixel ).Height();
 
     // Change status
     mbState = !mbState;
@@ -110,7 +108,7 @@ void MoreButton::Click()
 
         // Adapt dialogbox
         Point aPos( pParent->GetPosPixel() );
-        Rectangle aDeskRect( pParent->ImplGetFrameWindow()->GetDesktopRectPixel() );
+        tools::Rectangle aDeskRect( pParent->ImplGetFrameWindow()->GetDesktopRectPixel() );
 
         aSize.Height() += nDeltaPixel;
         if ( (aPos.Y()+aSize.Height()) > aDeskRect.Bottom() )
@@ -140,16 +138,6 @@ void MoreButton::Click()
     }
     // Call Click handler here, so that we can initialize the Controls
     PushButton::Click();
-}
-
-void MoreButton::SetText( const OUString& rText )
-{
-    PushButton::SetText( rText );
-}
-
-OUString MoreButton::GetText() const
-{
-    return PushButton::GetText();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

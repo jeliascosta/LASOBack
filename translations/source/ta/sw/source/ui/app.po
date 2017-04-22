@@ -1,0 +1,1540 @@
+#. extracted from sw/source/ui/app
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2016-08-25 18:42+0000\n"
+"Last-Translator: tamil <translate.libreoffice@gmail.com>\n"
+"Language-Team: American English <>\n"
+"Language: ta\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Accelerator-Marker: ~\n"
+"X-Generator: LibreOffice\n"
+"X-POOTLE-MTIME: 1472150568.000000\n"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PRINT_MERGE_MACRO\n"
+"string.text"
+msgid "Print form letters"
+msgstr "படிவக்கடிதங்களை அச்சிடு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGE_COUNT_MACRO\n"
+"string.text"
+msgid "Changing the page count"
+msgstr "பக்க எண்ணிக்கையை மாற்று"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PARAGRAPHSTYLEFAMILY\n"
+"string.text"
+msgid "Paragraph Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CHARACTERSTYLEFAMILY\n"
+"string.text"
+msgid "Character Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FRAMESTYLEFAMILY\n"
+"string.text"
+msgid "Frame Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGESTYLEFAMILY\n"
+"string.text"
+msgid "Page Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LISTSTYLEFAMILY\n"
+"string.text"
+msgid "List Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_TABLESTYLEFAMILY\n"
+"string.text"
+msgid "Table Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"All Styles\n"
+"itemlist.text"
+msgid "All Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Automatic\n"
+"itemlist.text"
+msgid "Automatic"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Text Styles\n"
+"itemlist.text"
+msgid "Text Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Chapter Styles\n"
+"itemlist.text"
+msgid "Chapter Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"List Styles\n"
+"itemlist.text"
+msgid "List Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Index Styles\n"
+"itemlist.text"
+msgid "Index Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Special Styles\n"
+"itemlist.text"
+msgid "Special Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"HTML Styles\n"
+"itemlist.text"
+msgid "HTML Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Conditional Styles\n"
+"itemlist.text"
+msgid "Conditional Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ENV_TITLE\n"
+"string.text"
+msgid "Envelope"
+msgstr "உறை"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LAB_TITLE\n"
+"string.text"
+msgid "Labels"
+msgstr "பெயர்கள்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_HUMAN_SWDOC_NAME\n"
+"string.text"
+msgid "Text"
+msgstr "உரை"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WRITER_DOCUMENT_FULLTYPE\n"
+"string.text"
+msgid "%PRODUCTNAME %PRODUCTVERSION Text Document"
+msgstr "%PRODUCTNAME %PRODUCTVERSION உரை ஆவணம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CANTOPEN\n"
+"string.text"
+msgid "Cannot open document."
+msgstr "ஆவணத்தை திறக்க முடியவில்லை."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CANTCREATE\n"
+"string.text"
+msgid "Can't create document."
+msgstr "ஆவணத்தை உருவாக்க முடியவில்லை."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DLLNOTFOUND\n"
+"string.text"
+msgid "Filter not found."
+msgstr "வடிப்பி இல்லை."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_UNBENANNT\n"
+"string.text"
+msgid "Untitled"
+msgstr "தலைப்பில்லாத"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LOAD_GLOBAL_DOC\n"
+"string.text"
+msgid "Name and Path of Master Document"
+msgstr "முதன்மை ஆவணத்தின் பெயரும் பாதையும்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LOAD_HTML_DOC\n"
+"string.text"
+msgid "Name and Path of the HTML Document"
+msgstr "HTML ஆவணத்தின் பெயரும் பாதையும்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_JAVA_EDIT\n"
+"string.text"
+msgid "Edit Script"
+msgstr "வரிவடிவத்தைத் தொகு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REMOVE_WARNING\n"
+"string.text"
+msgid "The following characters are not valid and have been removed: "
+msgstr "பின்வரும் எழுத்துக்கள் செல்லாதவையாதலால் அகற்றப்பட்டன: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BOOKMARK_NAME\n"
+"string.text"
+msgid "Name"
+msgstr "பெயர்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BOOKMARK_TEXT\n"
+"string.text"
+msgid "Text"
+msgstr "உரை"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"SW_STR_NONE\n"
+"string.text"
+msgid "[None]"
+msgstr "[None]"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_BEGINNING\n"
+"string.text"
+msgid "Start"
+msgstr "தொடங்கு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_END\n"
+"string.text"
+msgid "End"
+msgstr "முடிவு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_ABOVE\n"
+"string.text"
+msgid "Above"
+msgstr "மேலே"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_BELOW\n"
+"string.text"
+msgid "Below"
+msgstr "கீழே"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"SW_STR_READONLY\n"
+"string.text"
+msgid "read-only"
+msgstr "வாசிக்கமட்டும்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_READONLY_PATH\n"
+"string.text"
+msgid "The 'AutoText' directories are read-only. Do you want to call the path settings dialog?"
+msgstr "'தன்னியக்க உரை' கோப்பகங்கள் வாசிக்க மட்டுமே. பாதை அமைவு உரையாடலை அழைக்க வேண்டுகிறீரா?"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ERROR_PASSWD\n"
+"string.text"
+msgid "Invalid password"
+msgstr "செல்லாத கடவுச்சொல்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FMT_STD\n"
+"string.text"
+msgid "(none)"
+msgstr "(எதுவுமில்லை)"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DOC_STAT\n"
+"string.text"
+msgid "Statistics"
+msgstr "புள்ளியியல்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_W4WREAD\n"
+"string.text"
+msgid "Importing document..."
+msgstr "ஆவணத்தை இறக்குகிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_W4WWRITE\n"
+"string.text"
+msgid "Exporting document..."
+msgstr "ஆவணத்தை ஏற்றுகிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGREAD\n"
+"string.text"
+msgid "Loading document..."
+msgstr "ஆவணத்தை ஏற்றுகிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGWRITE\n"
+"string.text"
+msgid "Saving document..."
+msgstr "ஆவணச் சேமிப்பு..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_REFORMAT\n"
+"string.text"
+msgid "Repagination..."
+msgstr "பக்க மீட்டமைப்பு..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_AUTOFORMAT\n"
+"string.text"
+msgid "Formatting document automatically..."
+msgstr "தானாக ஆவணம் வடிவூட்டப்படுகிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_IMPGRF\n"
+"string.text"
+msgid "Importing images..."
+msgstr "பிம்பங்களை இறக்குகிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SEARCH\n"
+"string.text"
+msgid "Search..."
+msgstr "தேடு..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_FORMAT\n"
+"string.text"
+msgid "Formatting..."
+msgstr "சீரமைக்கிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_PRINT\n"
+"string.text"
+msgid "Printing..."
+msgstr "அச்சிடுகிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_LAYOUTINIT\n"
+"string.text"
+msgid "Converting..."
+msgstr "மாற்றுகிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_LETTER\n"
+"string.text"
+msgid "Letter"
+msgstr "கடிதம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SPELL\n"
+"string.text"
+msgid "Spellcheck..."
+msgstr "சொல்திருத்தம்..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_HYPHEN\n"
+"string.text"
+msgid "Hyphenation..."
+msgstr "இணைப்புக்கோடிடல்..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_TOX_INSERT\n"
+"string.text"
+msgid "Inserting Index..."
+msgstr "அகவரிசை நுழைத்தல்..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_TOX_UPDATE\n"
+"string.text"
+msgid "Updating Index..."
+msgstr "அகரவரிசையை மேம்படுத்துகிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SUMMARY\n"
+"string.text"
+msgid "Creating abstract..."
+msgstr "சுருக்கத்தை உருவாக்குகிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGPRTOLENOTIFY\n"
+"string.text"
+msgid "Adapt Objects..."
+msgstr "பொருட்களை தகவமைக்கிறது..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_TABLE_DEFNAME\n"
+"string.text"
+msgid "Table"
+msgstr "அட்டவணை"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_GRAPHIC_DEFNAME\n"
+"string.text"
+msgid "Image"
+msgstr "பிம்பம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_OBJECT_DEFNAME\n"
+"string.text"
+msgid "Object"
+msgstr "பொருள்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FRAME_DEFNAME\n"
+"string.text"
+msgid "Frame"
+msgstr "சட்டம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SHAPE_DEFNAME\n"
+"string.text"
+msgid "Shape"
+msgstr "வடிவம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REGION_DEFNAME\n"
+"string.text"
+msgid "Section"
+msgstr "பிரிவு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NUMRULE_DEFNAME\n"
+"string.text"
+msgid "Numbering"
+msgstr "எண்ணிடல்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_EMPTYPAGE\n"
+"string.text"
+msgid "blank page"
+msgstr "வெற்றுப் பக்கம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ABSTRACT_TITLE\n"
+"string.text"
+msgid "Abstract: "
+msgstr "சுருக்கம்: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_TEMPLATE_BUTTON\n"
+"string.text"
+msgid "Style"
+msgstr "தோற்றம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_TEMPLATE_NAME\n"
+"string.text"
+msgid "separated by: "
+msgstr "பிரித்தது: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_OUTLINE_LEVEL\n"
+"string.text"
+msgid "Outline: Level "
+msgstr "வெளிகோடு: நிலை "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_STYLE\n"
+"string.text"
+msgid "Style: "
+msgstr "தோற்றம்: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGEOFFSET\n"
+"string.text"
+msgid "Page number: "
+msgstr "பக்க எண்: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGEBREAK\n"
+"string.text"
+msgid "Break before new page"
+msgstr "புதிய பக்கத்திற்கு முன் பிரிப்பு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WESTERN_FONT\n"
+"string.text"
+msgid "Western text: "
+msgstr "மேற்கத்திய உரை: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CJK_FONT\n"
+"string.text"
+msgid "Asian text: "
+msgstr "ஆசிய உரை: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REDLINE_UNKNOWN_AUTHOR\n"
+"string.text"
+msgid "Unknown Author"
+msgstr "தெரியாத"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DELETE_NOTE_AUTHOR\n"
+"string.text"
+msgid "Delete ~All Comments by $1"
+msgstr "$1 இன் எல்லாக் கருத்துரைகளையும் அழி"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_HIDE_NOTE_AUTHOR\n"
+"string.text"
+msgid "H~ide All Comments by $1"
+msgstr "$1 இன் எல்லாக் கருத்துரைகளையும் மறை"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DONT_ASK_AGAIN\n"
+"string.text"
+msgid "~Do not show warning again"
+msgstr "எச்சரிக்கையை மீண்டும் காட்ட வேண்டாம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_OUTLINE_NUMBERING\n"
+"string.text"
+msgid "Outline Numbering"
+msgstr "வெளிகோடு எண்ணிடல்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATUSBAR_WORDCOUNT_NO_SELECTION\n"
+"string.text"
+msgid "%1 words, %2 characters"
+msgstr "%1 சொற்கள், %2 எழுத்துக்கள்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATUSBAR_WORDCOUNT\n"
+"string.text"
+msgid "%1 words, %2 characters selected"
+msgstr "%1 சொற்கள், %2 எழுத்துக்கள் தேரப்பட்டது"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CONVERT_TEXT_TABLE\n"
+"string.text"
+msgid "Convert Text to Table"
+msgstr "உரை பட்டிக்கு மாற்றுக"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ADD_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Add AutoFormat"
+msgstr "AutoFormat ஐச் சேர்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ADD_AUTOFORMAT_LABEL\n"
+"string.text"
+msgid "Name"
+msgstr "பெயர்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DEL_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Delete AutoFormat"
+msgstr "AutoFormat ஐ நீக்கு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DEL_AUTOFORMAT_MSG\n"
+"string.text"
+msgid "The following AutoFormat entry will be deleted:"
+msgstr "தன்னியக்கவடிவமைப்பு பதிவு நீக்கப்படும்:"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_RENAME_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Rename AutoFormat"
+msgstr "AutoFormat ஐ மறுபெயரிடு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BTN_AUTOFORMAT_CLOSE\n"
+"string.text"
+msgid "~Close"
+msgstr "மூடு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_JAN\n"
+"string.text"
+msgid "Jan"
+msgstr "ஜன"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FEB\n"
+"string.text"
+msgid "Feb"
+msgstr "பிப்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_MAR\n"
+"string.text"
+msgid "Mar"
+msgstr "மார்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NORTH\n"
+"string.text"
+msgid "North"
+msgstr "வடக்கு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_MID\n"
+"string.text"
+msgid "Mid"
+msgstr "நடுவில்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SOUTH\n"
+"string.text"
+msgid "South"
+msgstr "தெற்கு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SUM\n"
+"string.text"
+msgid "Sum"
+msgstr "மொத்தம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_INVALID_AUTOFORMAT_NAME\n"
+"string.text"
+msgid ""
+"You have entered an invalid name.\n"
+"The desired AutoFormat could not be created. \n"
+"Try again using a different name."
+msgstr ""
+"நீங்கள் செல்லாத பெயரை உள்ளிட்டுள்ளீர்கள்.\n"
+"விரும்பிய AutoFormat ஐ உருவாக்க முடியவில்லை. \n"
+"வேறொரு பெயரைக் கொண்டு மீண்டும் முயற்சிக்கவும்."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NUMERIC\n"
+"string.text"
+msgid "Numeric"
+msgstr "எண்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ROW\n"
+"string.text"
+msgid "Rows"
+msgstr "நிரைகள்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_COL\n"
+"string.text"
+msgid "Column"
+msgstr "நிரல்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SIMPLE\n"
+"string.text"
+msgid "Plain"
+msgstr "எளிய"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_AUTHMRK_EDIT\n"
+"string.text"
+msgid "Edit Bibliography Entry"
+msgstr "நூல்விவர உள்ளீட்டைத் தொகு"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_AUTHMRK_INSERT\n"
+"string.text"
+msgid "Insert Bibliography Entry"
+msgstr "நூல்விவர உள்ளீட்டை நுழை"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ACCESS_PAGESETUP_SPACING\n"
+"string.text"
+msgid "Spacing between %1 and %2"
+msgstr "%1 க்கும் %2 க்குமான இடைவெளி"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ACCESS_COLUMN_WIDTH\n"
+"string.text"
+msgid "Column %1 Width"
+msgstr "நிரல் %1 அகலம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_TABLE\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Table"
+msgstr "%PRODUCTNAME ரைட்டர் அட்டவணை"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_FRAME\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Frame"
+msgstr "%PRODUCTNAME ரைட்டர் சட்டகம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_GRAPHIC\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Image"
+msgstr "%PRODUCTNAME ரைட்டர் படம்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_OLE\n"
+"string.text"
+msgid "Other OLE Objects"
+msgstr "பிற OLE பொருட்கள்"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WRONG_TABLENAME\n"
+"string.text"
+msgid "The name of the table must not contain spaces."
+msgstr "அட்டவணைப் பெயர் இடைவெளிகளை கொண்டிருக்கக் கூடாது."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ERR_TABLE_MERGE\n"
+"string.text"
+msgid "Selected table cells are too complex to merge."
+msgstr "தேர்ந்த அட்டவணை கலங்களை ஒன்றாக்குவது அதிக சிக்கலானது."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SRTERR\n"
+"string.text"
+msgid "Cannot sort selection"
+msgstr "தேர்ந்தெடுத்தவற்றை அடுக்கவியலாது"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_COMCORE_READERROR\n"
+"string.text"
+msgid "Read Error"
+msgstr ""
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_COMCORE_CANT_SHOW\n"
+"string.text"
+msgid "Image cannot be displayed."
+msgstr "பிம்பத்தை காட்ட முடியவில்லை."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_ERROR_CLPBRD_READ\n"
+"string.text"
+msgid "Error reading from the clipboard."
+msgstr "ஒட்டுப்பலகத்திலிருந்து வாசிக்கும்போது பிழை."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_FILE_FORMAT_ERROR )\n"
+"string.text"
+msgid "File format error found."
+msgstr "கோப்பு முறைமையில் பிழை உள்ளது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_READ_ERROR )\n"
+"string.text"
+msgid "Error reading file."
+msgstr "கோப்பு வாசிப்பில் வழு."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_INPUT_FILE )\n"
+"string.text"
+msgid "Input file error."
+msgstr "உள்ளீடு கோப்பு வழு."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_NOWRITER_FILE )\n"
+"string.text"
+msgid "This is not a %PRODUCTNAME Writer file."
+msgstr "இது %PRODUCTNAME ரைட்டர் கோப்பு இல்லை."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_UNEXPECTED_EOF )\n"
+"string.text"
+msgid "Unexpected end of file."
+msgstr "எதிர்பாராத கோப்பு முடிவு."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_PASSWD )\n"
+"string.text"
+msgid "Password-protected files cannot be opened."
+msgstr "கடவுச்சொல்லால் காக்கப்பட்ட கோப்புகளை திறக்க முடியவில்லை."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW6_NO_WW6_FILE_ERR )\n"
+"string.text"
+msgid "This is not a valid WinWord6 file."
+msgstr "இது WinWord6 கோப்பு இல்லை."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW6_FASTSAVE_ERR )\n"
+"string.text"
+msgid "This file was saved with WinWord in 'Fast Save' mode. Please unmark the WinWord option 'Allow Fast Saves' and save the file again."
+msgstr "இக்கோப்பு WinWord உடன் 'வேகமாக சேமி' முறைமையில் சேமிக்கப்பட்டது. 'வேகமாக சேமிக்க‌ அனுமதி' என்ற WinWord விருப்பத்தேர்வைக் குறியகற்றி மீண்டும் கோப்பினை சேமிக்க‌வும்."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_ROWCOL )\n"
+"string.text"
+msgid "File format error found at $(ARG1)(row,col)."
+msgstr "$(ARG1)(row,col) இல் கோப்பு வடிவூட்ட பிழை கிடைத்தது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_NEW_VERSION )\n"
+"string.text"
+msgid "File has been written in a newer version."
+msgstr "கோப்பு புதிய பதிப்பாக எழுதப்பட்டுள்ளது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW8_NO_WW8_FILE_ERR )\n"
+"string.text"
+msgid "This is not a valid WinWord97 file."
+msgstr "இது WinWord97 கோப்பு அல்ல."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_FILE_ROWCOL )\n"
+"string.text"
+msgid "Format error discovered in the file in sub-document $(ARG1) at $(ARG2)(row,col)."
+msgstr "$(ARG2)(row,col) இலுள்ள $(ARG1) துணை ஆவணக் கோப்பில் வடிவூட்ட பிழை கண்டறியப்பட்டது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_WRITE_ERROR )\n"
+"string.text"
+msgid "Error writing file."
+msgstr "கோப்பு எழுதுவதில் வழு."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_OLD_GLOSSARY )\n"
+"string.text"
+msgid "Wrong AutoText document version."
+msgstr "தவறான தானியக்க உரை ஆவண பதிப்பு."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_WRITE_ERROR_FILE )\n"
+"string.text"
+msgid "Error in writing sub-document $(ARG1)."
+msgstr "துணை ஆவணம் $(ARG1) இல் எழுதுவதில் வழு."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_INTERNAL_ERROR )\n"
+"string.text"
+msgid "Internal error in %PRODUCTNAME Writer file format."
+msgstr "%PRODUCTNAME ரைட்டர் கோப்பு வடிவூட்டத்தில் உள் வழு."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_INTERNAL_ERROR )\n"
+"string.text"
+msgid "Internal error in %PRODUCTNAME Writer file format."
+msgstr "%PRODUCTNAME ரைட்டர் கோப்பு வடிவூட்டத்தில் உள் வழு."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_LOCKING , ERR_TXTBLOCK_NEWFILE_ERROR )\n"
+"string.text"
+msgid "$(ARG1) has changed."
+msgstr "$(ARG1) மாற்றப்பட்டது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_PATH , ERR_AUTOPATH_ERROR )\n"
+"string.text"
+msgid "$(ARG1) does not exist."
+msgstr "$(ARG1) இருக்கவில்லை."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLSPLIT_ERROR )\n"
+"string.text"
+msgid "Cells cannot be further split."
+msgstr "கலங்களை மேலும் பிரிக்க முடியாது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLINSCOL_ERROR )\n"
+"string.text"
+msgid "Additional columns cannot be inserted."
+msgstr "கூடுதல் நிரல்களை நுழைக்க முடியாது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLDDECHG_ERROR )\n"
+"string.text"
+msgid "The structure of a linked table cannot be modified."
+msgstr "இணைக்கப்பட்ட அட்டவணைகளின் அமைப்பினை மாற்ற முடியாது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_NO_DRAWINGS )\n"
+"string.text"
+msgid "No drawings could be read."
+msgstr "ஓவியங்களை எதையும் வாசிக்க முடியாது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_WW6_FASTSAVE_ERR )\n"
+"string.text"
+msgid "This file was saved with WinWord in 'Fast Save' mode. Please unmark the WinWord option 'Allow Fast Saves' and save the file again."
+msgstr "இக்கோப்பு WinWord உடன் 'வேகமாக சேமி' முறைமையில் சேமிக்கப்பட்டது. 'வேகமாக சேமிக்க‌ அனுமதி' என்ற WinWord விருப்பத்தேர்வைக் குறியகற்றி மீண்டும் கோப்பினை சேமிக்க‌வும்."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_FEATURES_LOST )\n"
+"string.text"
+msgid "Not all attributes could be read."
+msgstr "அனைத்து மதிப்புருக்களும் வாசிக்க முடியாது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_FEATURES_LOST )\n"
+"string.text"
+msgid "Not all attributes could be recorded."
+msgstr "அனைத்து மதிப்புருக்களும் பதிவு செய்ய முடியாது."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_OLE )\n"
+"string.text"
+msgid "Some OLE objects could only be loaded as images."
+msgstr "சில OLE பொருட்களை படங்களாக மட்டுமே ஏற்ற முடியும்."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_OLE )\n"
+"string.text"
+msgid "Some OLE objects could only be saved as images."
+msgstr "சில OLE பொருள்களைப் படங்களாக மட்டுமே சேமிக்க முடியும்."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_POOR_LOAD )\n"
+"string.text"
+msgid "Document could not be completely loaded."
+msgstr "ஆவணத்தை முழுமையாக ஏற்ற முடியவில்லை."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_POOR_LOAD )\n"
+"string.text"
+msgid "Document could not be completely saved."
+msgstr "ஆவணத்தை முழுமையாக சேமிக்க முடியவில்லை."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_HTML_NO_MACROS)\n"
+"string.text"
+msgid ""
+"This HTML document contains %PRODUCTNAME Basic macros.\n"
+"They were not saved with the current export settings."
+msgstr ""
+"இந்த HTML ஆவணம் %PRODUCTNAME அடிப்படை பெருமங்களைக் கொண்டுள்ளது.\n"
+"அவற்றை நடப்பு ஏற்றுமதி அமைவுகளுடன் சேமிக்க முடியவில்லை."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , WARN_WRITE_ERROR_FILE )\n"
+"string.text"
+msgid "Error in writing sub-document $(ARG1)."
+msgstr "துணை ஆவணம் $(ARG1) இல் எழுதுவதில் வழு."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , WARN_FORMAT_FILE_ROWCOL )\n"
+"string.text"
+msgid "Format error discovered in the file in sub-document $(ARG1) at $(ARG2)(row,col)."
+msgstr "$(ARG2)(row,col) இலுள்ள $(ARG1) துணை ஆவணக் கோப்பில் வடிவூட்ட பிழை கண்டறியப்பட்டது."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_REPLY\n"
+"menuitem.text"
+msgid "Reply"
+msgstr "பதிலளி"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_COMMENT\n"
+"menuitem.text"
+msgid "Delete ~Comment"
+msgstr "கருத்துரையை அழி"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_NOTE_AUTHOR\n"
+"menuitem.text"
+msgid "Delete ~All Comments by $1"
+msgstr "$1 இன் எல்லாக் கருத்துரைகளையும் அழி"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_ALL_NOTES\n"
+"menuitem.text"
+msgid "~Delete All Comments"
+msgstr "எல்லாக் கருத்துரைகளையும் அழி"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_FORMAT_ALL_NOTES\n"
+"menuitem.text"
+msgid "~Format All Comments..."
+msgstr "எல்லாக் கருத்துரைகளையும் வடிவூட்டு..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_HEADERFOOTER_BUTTON\n"
+"FN_HEADERFOOTER_BORDERBACK\n"
+"menuitem.text"
+msgid "Border and Background..."
+msgstr "எல்லயும் பின்புலமும்..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_PAGEBREAK_BUTTON\n"
+"FN_PAGEBREAK_EDIT\n"
+"menuitem.text"
+msgid "Edit Page Break..."
+msgstr "பக்க முறிப்பைத் தொகு..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_PAGEBREAK_BUTTON\n"
+"FN_PAGEBREAK_DELETE\n"
+"menuitem.text"
+msgid "Delete Page Break"
+msgstr "பக்க முறிப்பை அழி"

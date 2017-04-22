@@ -39,7 +39,6 @@ namespace com { namespace sun { namespace star { namespace text {
 
 class SwTextNode;
 class ModelToViewHelper;
-class SfxPoolItem;
 
 /** Implementation of the css::text::XTextMarkup interface
  */
@@ -52,19 +51,19 @@ class SwXTextMarkup
 public:
     SwXTextMarkup(SwTextNode *const rTextNode,
             const ModelToViewHelper& rConversionMap);
-    virtual ~SwXTextMarkup();
+    virtual ~SwXTextMarkup() override;
 
     // css::text::XTextMarkup:
-    virtual css::uno::Reference< css::container::XStringKeyMap > SAL_CALL getMarkupInfoContainer() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::container::XStringKeyMap > SAL_CALL getMarkupInfoContainer() override;
 
     virtual void SAL_CALL commitStringMarkup(::sal_Int32 nType, const OUString & aIdentifier, ::sal_Int32 nStart, ::sal_Int32 nLength,
-                                           const css::uno::Reference< css::container::XStringKeyMap > & xMarkupInfoContainer) throw (css::uno::RuntimeException, std::exception) override;
+                                           const css::uno::Reference< css::container::XStringKeyMap > & xMarkupInfoContainer) override;
 
     virtual void SAL_CALL commitTextRangeMarkup(::sal_Int32 nType, const OUString & aIdentifier, const css::uno::Reference< css::text::XTextRange> & xRange,
-                                                const css::uno::Reference< css::container::XStringKeyMap > & xMarkupInfoContainer) throw (css::uno::RuntimeException, std::exception) override;
+                                                const css::uno::Reference< css::container::XStringKeyMap > & xMarkupInfoContainer) override;
 
     // css::text::XMultiTextMarkup:
-    virtual void SAL_CALL commitMultiTextMarkup( const css::uno::Sequence< css::text::TextMarkupDescriptor >& aMarkups ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL commitMultiTextMarkup( const css::uno::Sequence< css::text::TextMarkupDescriptor >& aMarkups ) override;
 
 private:
     SwXTextMarkup( const SwXTextMarkup & ) = delete;
@@ -89,18 +88,18 @@ public:
     SwXStringKeyMap();
 
     // css::container::XStringKeyMap:
-    virtual css::uno::Any SAL_CALL getValue(const OUString & aKey) throw (css::uno::RuntimeException, css::container::NoSuchElementException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasValue(const OUString & aKey) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL insertValue(const OUString & aKey, const css::uno::Any & aValue) throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, css::container::ElementExistException, std::exception) override;
-    virtual ::sal_Int32 SAL_CALL getCount() throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getKeyByIndex(::sal_Int32 nIndex) throw (css::uno::RuntimeException, css::lang::IndexOutOfBoundsException, std::exception) override;
-    virtual css::uno::Any SAL_CALL getValueByIndex(::sal_Int32 nIndex) throw (css::uno::RuntimeException, css::lang::IndexOutOfBoundsException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getValue(const OUString & aKey) override;
+    virtual sal_Bool SAL_CALL hasValue(const OUString & aKey) override;
+    virtual void SAL_CALL insertValue(const OUString & aKey, const css::uno::Any & aValue) override;
+    virtual ::sal_Int32 SAL_CALL getCount() override;
+    virtual OUString SAL_CALL getKeyByIndex(::sal_Int32 nIndex) override;
+    virtual css::uno::Any SAL_CALL getValueByIndex(::sal_Int32 nIndex) override;
 
 private:
     SwXStringKeyMap(SwXStringKeyMap &) = delete;
     void operator =(SwXStringKeyMap &) = delete;
 
-    virtual ~SwXStringKeyMap() {}
+    virtual ~SwXStringKeyMap() override {}
 
     std::map< OUString, css::uno::Any > maMap;
 };

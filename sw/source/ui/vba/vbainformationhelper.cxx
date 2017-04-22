@@ -32,18 +32,18 @@ using namespace ::com::sun::star;
 
 static const sal_Int32 DEFAULT_PAGE_DISTANCE = 500;
 
-sal_Int32 SwVbaInformationHelper::handleWdActiveEndPageNumber( const css::uno::Reference< css::text::XTextViewCursor >& xTVCursor ) throw( css::uno::RuntimeException )
+sal_Int32 SwVbaInformationHelper::handleWdActiveEndPageNumber( const css::uno::Reference< css::text::XTextViewCursor >& xTVCursor )
 {
     uno::Reference< text::XPageCursor > xPageCursor( xTVCursor, uno::UNO_QUERY_THROW );
     return xPageCursor->getPage();
 }
 
-sal_Int32 SwVbaInformationHelper::handleWdNumberOfPagesInDocument( const css::uno::Reference< css::frame::XModel >& xModel ) throw( css::uno::RuntimeException )
+sal_Int32 SwVbaInformationHelper::handleWdNumberOfPagesInDocument( const css::uno::Reference< css::frame::XModel >& xModel )
 {
     return word::getPageCount( xModel );
 }
 
-double SwVbaInformationHelper::handleWdVerticalPositionRelativeToPage( const css::uno::Reference< css::frame::XModel >& xModel, const css::uno::Reference< css::text::XTextViewCursor >& xTVCursor ) throw( css::uno::RuntimeException )
+double SwVbaInformationHelper::handleWdVerticalPositionRelativeToPage( const css::uno::Reference< css::frame::XModel >& xModel, const css::uno::Reference< css::text::XTextViewCursor >& xTVCursor )
 {
     xTVCursor->collapseToStart();
     uno::Reference< beans::XPropertySet > xStyleProps( word::getCurrentPageStyle( xModel ), uno::UNO_QUERY_THROW );
@@ -55,7 +55,7 @@ double SwVbaInformationHelper::handleWdVerticalPositionRelativeToPage( const css
     SwDoc* pDoc = word::getDocShell( xModel )->GetDoc();
     SwViewShell* pViewSh = pDoc->getIDocumentLayoutAccess().GetCurrentViewShell();
     sal_Int32 nPageHeight = pViewSh ? pViewSh->GetPageSize( nCurrentPage, false ).Height() : 0;
-    // FIXME: handle multipul page style
+    // FIXME: handle multiple page style
     // it is very strange that the cursor position is incorrect when open Word file.
     // e.g. if current cursor in the top left of the text body of the first page without header,
     // the top value of current position should be 0, but is 201 when open a Word file.

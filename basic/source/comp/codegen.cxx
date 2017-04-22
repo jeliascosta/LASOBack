@@ -143,7 +143,6 @@ void SbiCodeGen::Save()
     int nIfaceCount = 0;
     if( rMod.mnType == css::script::ModuleType::CLASS )
     {
-                OSL_TRACE("COdeGen::save() classmodule processing");
         rMod.bIsProxyModule = true;
         p->SetFlag( SbiImageFlags::CLASSMODULE );
         GetSbData()->pClassFac->AddClassModule( &rMod );
@@ -158,7 +157,7 @@ void SbiCodeGen::Save()
                 const OUString& rIfaceName = pParser->aIfaceVector[i];
                 SbxVariable* pIfaceVar = new SbxVariable( SbxVARIANT );
                 pIfaceVar->SetName( rIfaceName );
-                SbxArray* pIfaces = rMod.pClassData->mxIfaces;
+                SbxArray* pIfaces = rMod.pClassData->mxIfaces.get();
                 pIfaces->Insert( pIfaceVar, pIfaces->Count() );
             }
         }
@@ -262,8 +261,6 @@ void SbiCodeGen::Save()
                     {
                         aPropName = aPropName.copy( aIfaceName.getLength() + 1 );
                     }
-                    OSL_TRACE("*** getProcedureProperty for thing %s",
-                              OUStringToOString( aPropName,RTL_TEXTENCODING_UTF8 ).getStr() );
                     rMod.GetProcedureProperty( aPropName, ePropType );
                 }
                 if( nPass == 1 )

@@ -26,7 +26,6 @@
 #include "view.hxx"
 #include "wfrmsh.hxx"
 #include "globals.hrc"
-#include "popup.hrc"
 #include "shells.hrc"
 #include "web.hrc"
 
@@ -43,14 +42,13 @@ void SwWebFrameShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("frame");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_WEBFRAME_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_WEBFRAME_TOOLBOX);
 }
 
 
 SwWebFrameShell::SwWebFrameShell(SwView &_rView) :
     SwFrameShell(_rView)
 {
-    SetHelpId(SW_WEBFRAMESHELL);
 }
 
 SwWebFrameShell::~SwWebFrameShell()

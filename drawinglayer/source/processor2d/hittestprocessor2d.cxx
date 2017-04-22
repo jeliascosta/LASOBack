@@ -47,7 +47,6 @@ namespace drawinglayer
             mfDiscreteHitTolerance(0.0),
             mbHit(false),
             mbHitToleranceUsed(false),
-            mbUseInvisiblePrimitiveContent(true),
             mbHitTextOnly(bHitTextOnly)
         {
             // init hit tolerance
@@ -294,7 +293,7 @@ namespace drawinglayer
                             {
                                 // if line is mitered, use decomposition since mitered line
                                 // geometry may use more space than the geometry grown by half line width
-                                process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                                process(rCandidate);
                             }
                             else
                             {
@@ -430,7 +429,7 @@ namespace drawinglayer
                     if(!getHitTextOnly())
                     {
                         // The recently added BitmapEx::GetTransparency() makes it easy to extend
-                        // the BitmapPrimitive2D HitTest to take the contained BotmapEx and it's
+                        // the BitmapPrimitive2D HitTest to take the contained BitmapEx and it's
                         // transparency into account
                         const basegfx::B2DRange aRange(rCandidate.getB2DRange(getViewInformation2D()));
 
@@ -498,7 +497,7 @@ namespace drawinglayer
                 }
                 case PRIMITIVE2D_ID_HIDDENGEOMETRYPRIMITIVE2D :
                 {
-                    // HiddenGeometryPrimitive2D; the default decomposition would return an empty seqence,
+                    // HiddenGeometryPrimitive2D; the default decomposition would return an empty sequence,
                     // so force this primitive to process its children directly if the switch is set
                     // (which is the default). Else, ignore invisible content
                     const primitive2d::HiddenGeometryPrimitive2D& rHiddenGeometry(static_cast< const primitive2d::HiddenGeometryPrimitive2D& >(rCandidate));
@@ -506,10 +505,7 @@ namespace drawinglayer
 
                     if(!rChildren.empty())
                     {
-                        if(getUseInvisiblePrimitiveContent())
-                        {
-                            process(rChildren);
-                        }
+                        process(rChildren);
                     }
 
                     break;
@@ -539,7 +535,7 @@ namespace drawinglayer
                 default :
                 {
                     // process recursively
-                    process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                    process(rCandidate);
 
                     break;
                 }

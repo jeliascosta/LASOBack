@@ -32,16 +32,10 @@ using namespace ::com::sun::star::awt;
 using namespace ::com::sun::star::lang;
 
 OComponentEventThread::OComponentEventThread( ::cppu::OComponentHelper* pCompImpl ) :
-    m_pCompImpl( pCompImpl )
+    m_xComp( pCompImpl )
 {
 
     osl_atomic_increment(&m_refCount);
-
-    // Hold a reference of the Control
-    {
-        css::uno::Reference<css::uno::XInterface> xIFace(static_cast<XWeak*>(pCompImpl));
-        m_xComp.set(xIFace, css::uno::UNO_QUERY);
-    }
 
     // and add us at the Control
     {
@@ -61,7 +55,7 @@ OComponentEventThread::~OComponentEventThread()
     impl_clearEventQueue();
 }
 
-Any SAL_CALL OComponentEventThread::queryInterface(const Type& _rType) throw (RuntimeException, std::exception)
+Any SAL_CALL OComponentEventThread::queryInterface(const Type& _rType)
 {
     Any aReturn;
 
@@ -86,9 +80,9 @@ void OComponentEventThread::impl_clearEventQueue()
     m_aFlags.erase( m_aFlags.begin(), m_aFlags.end() );
 }
 
-void OComponentEventThread::disposing( const EventObject& evt ) throw ( css::uno::RuntimeException, std::exception)
+void OComponentEventThread::disposing( const EventObject& evt )
 {
-    if( evt.Source == m_xComp )
+    if( evt.Source == static_cast<XWeak*>(m_xComp.get()) )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -101,8 +95,7 @@ void OComponentEventThread::disposing( const EventObject& evt ) throw ( css::uno
 
         // Free the Control and set pCompImpl to 0,
         // so that the thread knows, that it should terminate.
-        m_xComp = nullptr;
-        m_pCompImpl = nullptr;
+        m_xComp.clear();
 
         // Wake up the thread and terminate
         m_aCond.set();
@@ -135,28 +128,18 @@ void OComponentEventThread::addEvent( const EventObject* _pEvt,
     m_aCond.set();
 }
 
-void OComponentEventThread::implStarted( )
-{
-    acquire( );
-}
-
-void OComponentEventThread::implTerminated( )
-{
-    release( );
-}
-
 void SAL_CALL OComponentEventThread::onTerminated()
 {
     OComponentEventThread_TBASE::onTerminated();
 
-    implTerminated( );
+    release( );
 }
 
 void OComponentEventThread::run()
 {
     osl_setThreadName("frm::OComponentEventThread");
 
-    implStarted( );
+    acquire( );
 
     // Hold on to ourselves, so that we're not deleted if a dispose is called at some point in time
     css::uno::Reference<css::uno::XInterface> xThis(static_cast<XWeak*>(this));
@@ -168,8 +151,7 @@ void OComponentEventThread::run()
         while( m_aEvents.size() > 0 )
         {
             // Get the Control and hold on to it so that it cannot be deleted during actionPerformed
-            Reference<XComponent>  xComp = m_xComp;
-            ::cppu::OComponentHelper *pCompImpl = m_pCompImpl;
+            rtl::Reference<::cppu::OComponentHelper> xComp = m_xComp;
 
             ThreadEvents::iterator firstEvent( m_aEvents.begin() );
             std::unique_ptr<EventObject> pEvt(*firstEvent);
@@ -193,7 +175,7 @@ void OComponentEventThread::run()
                         xControlAdapter->queryAdapted(), css::uno::UNO_QUERY);
 
                 if( xComp.is() )
-                    processEvent( pCompImpl, pEvt.get(), xControl, bFlag );
+                    processEvent( xComp.get(), pEvt.get(), xControl, bFlag );
             }
         }
 

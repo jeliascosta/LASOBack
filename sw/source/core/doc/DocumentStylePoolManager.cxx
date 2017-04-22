@@ -26,7 +26,6 @@
 #include <paratr.hxx>
 #include <poolfmt.hxx>
 #include <fmtornt.hxx>
-#include <fmtsrndenum.hxx>
 #include <charfmt.hxx>
 #include <fmtsrnd.hxx>
 #include <docary.hxx>
@@ -230,9 +229,9 @@ namespace
         if( bTab )
         {
             long nRightMargin = lcl_GetRightMargin( *pDoc );
-            SvxTabStopItem aTStops( 0, 0, SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP );
+            SvxTabStopItem aTStops( 0, 0, SvxTabAdjust::Default, RES_PARATR_TABSTOP );
             aTStops.Insert( SvxTabStop( nRightMargin - nLeft,
-                                        SVX_TAB_ADJUST_RIGHT,
+                                        SvxTabAdjust::Right,
                                         cDfltDecimalChar, '.' ));
             rSet.Put( aTStops );
         }
@@ -357,9 +356,9 @@ SwTextFormatColl* DocumentStylePoolManager::GetTextCollFromPool( sal_uInt16 nId,
             {
                 sal_uLong nAppLanguage = GetAppLanguage();
                 if (GetDefaultFrameDirection(nAppLanguage) ==
-                    FRMDIR_HORI_RIGHT_TOP)
+                    SvxFrameDirection::Horizontal_RL_TB)
                 {
-                    SvxAdjustItem aAdjust(SVX_ADJUST_RIGHT, RES_PARATR_ADJUST );
+                    SvxAdjustItem aAdjust(SvxAdjust::Right, RES_PARATR_ADJUST );
                     aSet.Put(aAdjust);
                 }
                 if (nAppLanguage == LANGUAGE_KOREAN)
@@ -495,70 +494,70 @@ SwTextFormatColl* DocumentStylePoolManager::GetTextCollFromPool( sal_uInt16 nId,
             }
             break;
 
-        case RES_POOLCOLL_HEADLINE1:        // Headinline 1
+        case RES_POOLCOLL_HEADLINE1:        // Heading 1
             {
                 SvxULSpaceItem aUL( PT_12, PT_6, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 0, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE2:        // Headinline 2
+        case RES_POOLCOLL_HEADLINE2:        // Heading 2
             {
                 SvxULSpaceItem aUL( PT_10, PT_6, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 1, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE3:        // Headinline 3
+        case RES_POOLCOLL_HEADLINE3:        // Heading 3
             {
                 SvxULSpaceItem aUL( PT_7, PT_6, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 2, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE4:        // Headinline 4
+        case RES_POOLCOLL_HEADLINE4:        // Heading 4
             {
                 SvxULSpaceItem aUL( PT_6, PT_6, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 3, true );
             }
             break;
-        case RES_POOLCOLL_HEADLINE5:        // Headinline 5
+        case RES_POOLCOLL_HEADLINE5:        // Heading 5
             {
                 SvxULSpaceItem aUL( PT_6, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 4, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE6:        // Headinline 6
+        case RES_POOLCOLL_HEADLINE6:        // Heading 6
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 5, true );
             }
             break;
-        case RES_POOLCOLL_HEADLINE7:        // Headinline 7
+        case RES_POOLCOLL_HEADLINE7:        // Heading 7
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 6, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE8:        // Headinline 8
+        case RES_POOLCOLL_HEADLINE8:        // Heading 8
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 7, true );
             }
             break;
-        case RES_POOLCOLL_HEADLINE9:        // Headinline 9
+        case RES_POOLCOLL_HEADLINE9:        // Heading 9
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 8, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE10:       // Headinline 10
+        case RES_POOLCOLL_HEADLINE10:       // Heading 10
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
@@ -582,9 +581,9 @@ SwTextFormatColl* DocumentStylePoolManager::GetTextCollFromPool( sal_uInt16 nId,
 
                 long nRightMargin = lcl_GetRightMargin( m_rDoc );
 
-                SvxTabStopItem aTStops( 0, 0, SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP );
-                aTStops.Insert( SvxTabStop( nRightMargin / 2, SVX_TAB_ADJUST_CENTER ) );
-                aTStops.Insert( SvxTabStop( nRightMargin, SVX_TAB_ADJUST_RIGHT ) );
+                SvxTabStopItem aTStops( 0, 0, SvxTabAdjust::Default, RES_PARATR_TABSTOP );
+                aTStops.Insert( SvxTabStop( nRightMargin / 2, SvxTabAdjust::Center ) );
+                aTStops.Insert( SvxTabStop( nRightMargin, SvxTabAdjust::Right ) );
 
                 aSet.Put( aTStops );
             }
@@ -593,7 +592,7 @@ SwTextFormatColl* DocumentStylePoolManager::GetTextCollFromPool( sal_uInt16 nId,
         case RES_POOLCOLL_TABLE_HDLN:
             {
                 SetAllScriptItem( aSet, SvxWeightItem( WEIGHT_BOLD, RES_CHRATR_WEIGHT ) );
-                aSet.Put( SvxAdjustItem( SVX_ADJUST_CENTER, RES_PARATR_ADJUST ) );
+                aSet.Put( SvxAdjustItem( SvxAdjust::Center, RES_PARATR_ADJUST ) );
                 SwFormatLineNumber aLN;
                 aLN.SetCountLines( false );
                 aSet.Put( aLN );
@@ -978,7 +977,7 @@ SwTextFormatColl* DocumentStylePoolManager::GetTextCollFromPool( sal_uInt16 nId,
                 SetAllScriptItem( aSet, SvxWeightItem( WEIGHT_BOLD, RES_CHRATR_WEIGHT ) );
                 SetAllScriptItem( aSet, SvxFontHeightItem( PT_28, 100, RES_CHRATR_FONTSIZE ) );
 
-                aSet.Put( SvxAdjustItem( SVX_ADJUST_CENTER, RES_PARATR_ADJUST ) );
+                aSet.Put( SvxAdjustItem( SvxAdjust::Center, RES_PARATR_ADJUST ) );
 
                 pNewColl->SetNextTextFormatColl( *GetTextCollFromPool( RES_POOLCOLL_TEXT ));
             }
@@ -990,7 +989,7 @@ SwTextFormatColl* DocumentStylePoolManager::GetTextCollFromPool( sal_uInt16 nId,
                 aSet.Put( aUL );
                 SetAllScriptItem( aSet, SvxFontHeightItem( PT_18, 100, RES_CHRATR_FONTSIZE ));
 
-                aSet.Put( SvxAdjustItem( SVX_ADJUST_CENTER, RES_PARATR_ADJUST ));
+                aSet.Put( SvxAdjustItem( SvxAdjust::Center, RES_PARATR_ADJUST ));
 
                 pNewColl->SetNextTextFormatColl( *GetTextCollFromPool( RES_POOLCOLL_TEXT ));
             }
@@ -1029,7 +1028,7 @@ SwTextFormatColl* DocumentStylePoolManager::GetTextCollFromPool( sal_uInt16 nId,
             {
                 SvxBoxItem aBox( RES_BOX );
                 Color aColor( COL_GRAY );
-                SvxBorderLine aNew(&aColor, 1, table::BorderLineStyle::DOUBLE);
+                SvxBorderLine aNew(&aColor, 1, SvxBorderLineStyle::DOUBLE);
                 aBox.SetLine( &aNew, SvxBoxItemLine::BOTTOM );
 
                 aSet.Put( aBox );
@@ -1227,7 +1226,7 @@ SwFormat* DocumentStylePoolManager::GetFormatFromPool( sal_uInt16 nId )
             Color aCol( COL_CYAN );
             aSet.Put( SvxColorItem( aCol, RES_CHRATR_COLOR ) );
             aSet.Put( SvxUnderlineItem( LINESTYLE_DOTTED, RES_CHRATR_UNDERLINE ) );
-            aSet.Put( SvxCaseMapItem( SVX_CASEMAP_KAPITAELCHEN, RES_CHRATR_CASEMAP ) );
+            aSet.Put( SvxCaseMapItem( SvxCaseMap::SmallCaps, RES_CHRATR_CASEMAP ) );
         }
         break;
 
@@ -1272,14 +1271,14 @@ SwFormat* DocumentStylePoolManager::GetFormatFromPool( sal_uInt16 nId )
         {
             if ( m_rDoc.GetDocumentSettingManager().get(DocumentSettingId::HTML_MODE) )
             {
-                aSet.Put( SwFormatAnchor( FLY_AS_CHAR ));
+                aSet.Put( SwFormatAnchor( RndStdIds::FLY_AS_CHAR ));
                 aSet.Put( SwFormatVertOrient( 0, text::VertOrientation::LINE_CENTER, text::RelOrientation::PRINT_AREA ) );
-                aSet.Put( SwFormatSurround( SURROUND_NONE ) );
+                aSet.Put( SwFormatSurround( css::text::WrapTextMode_NONE ) );
             }
             else
             {
-                aSet.Put( SwFormatAnchor( FLY_AT_PARA ));
-                aSet.Put( SwFormatSurround( SURROUND_PARALLEL ) );
+                aSet.Put( SwFormatAnchor( RndStdIds::FLY_AT_PARA ));
+                aSet.Put( SwFormatSurround( css::text::WrapTextMode_PARALLEL ) );
                 aSet.Put( SwFormatHoriOrient( 0, text::HoriOrientation::CENTER, text::RelOrientation::PRINT_AREA ) );
                 aSet.Put( SwFormatVertOrient( 0, text::VertOrientation::TOP, text::RelOrientation::PRINT_AREA ) );
                 Color aCol( COL_BLACK );
@@ -1289,38 +1288,38 @@ SwFormat* DocumentStylePoolManager::GetFormatFromPool( sal_uInt16 nId )
                 aBox.SetLine( &aLine, SvxBoxItemLine::BOTTOM );
                 aBox.SetLine( &aLine, SvxBoxItemLine::LEFT );
                 aBox.SetLine( &aLine, SvxBoxItemLine::RIGHT );
-                aBox.SetDistance( 85 );
+                aBox.SetAllDistances( 85 );
                 aSet.Put( aBox );
                 aSet.Put( SvxLRSpaceItem( 114, 114, 0, 0, RES_LR_SPACE ) );
                 aSet.Put( SvxULSpaceItem( 114, 114, RES_UL_SPACE ) );
             }
 
-            //UUUU for styles of FlyFrames do not set the FillStyle to make it a derived attribute
+            // for styles of FlyFrames do not set the FillStyle to make it a derived attribute
             aSet.ClearItem(XATTR_FILLSTYLE);
         }
         break;
     case RES_POOLFRM_GRAPHIC:
     case RES_POOLFRM_OLE:
         {
-            aSet.Put( SwFormatAnchor( FLY_AT_PARA ));
+            aSet.Put( SwFormatAnchor( RndStdIds::FLY_AT_PARA ));
             aSet.Put( SwFormatHoriOrient( 0, text::HoriOrientation::CENTER, text::RelOrientation::FRAME ));
             aSet.Put( SwFormatVertOrient( 0, text::VertOrientation::TOP, text::RelOrientation::FRAME ));
-            aSet.Put( SwFormatSurround( SURROUND_IDEAL ));
+            aSet.Put( SwFormatSurround( css::text::WrapTextMode_DYNAMIC ));
         }
         break;
     case RES_POOLFRM_FORMEL:
         {
-            aSet.Put( SwFormatAnchor( FLY_AS_CHAR ) );
+            aSet.Put( SwFormatAnchor( RndStdIds::FLY_AS_CHAR ) );
             aSet.Put( SwFormatVertOrient( 0, text::VertOrientation::CHAR_CENTER, text::RelOrientation::FRAME ) );
             aSet.Put( SvxLRSpaceItem( 114, 114, 0, 0, RES_LR_SPACE ) );
         }
         break;
     case RES_POOLFRM_MARGINAL:
         {
-            aSet.Put( SwFormatAnchor( FLY_AT_PARA ));
+            aSet.Put( SwFormatAnchor( RndStdIds::FLY_AT_PARA ));
             aSet.Put( SwFormatHoriOrient( 0, text::HoriOrientation::LEFT, text::RelOrientation::FRAME ));
             aSet.Put( SwFormatVertOrient( 0, text::VertOrientation::TOP, text::RelOrientation::FRAME ));
-            aSet.Put( SwFormatSurround( SURROUND_PARALLEL ));
+            aSet.Put( SwFormatSurround( css::text::WrapTextMode_PARALLEL ));
             // Set the default width to 3.5 cm, use the minimum value for the height
             aSet.Put( SwFormatFrameSize( ATT_MIN_SIZE,
                     GetMetricVal( CM_1 ) * 3 + GetMetricVal( CM_05 ),
@@ -1329,16 +1328,16 @@ SwFormat* DocumentStylePoolManager::GetFormatFromPool( sal_uInt16 nId )
         break;
     case RES_POOLFRM_WATERSIGN:
         {
-            aSet.Put( SwFormatAnchor( FLY_AT_PAGE ));
+            aSet.Put( SwFormatAnchor( RndStdIds::FLY_AT_PAGE ));
             aSet.Put( SwFormatHoriOrient( 0, text::HoriOrientation::CENTER, text::RelOrientation::FRAME ));
             aSet.Put( SwFormatVertOrient( 0, text::VertOrientation::CENTER, text::RelOrientation::FRAME ));
             aSet.Put( SvxOpaqueItem( RES_OPAQUE, false ));
-            aSet.Put( SwFormatSurround( SURROUND_THROUGHT ));
+            aSet.Put( SwFormatSurround( css::text::WrapTextMode_THROUGH ));
         }
         break;
     case RES_POOLFRM_LABEL:
         {
-            aSet.Put( SwFormatAnchor( FLY_AS_CHAR ) );
+            aSet.Put( SwFormatAnchor( RndStdIds::FLY_AS_CHAR ) );
             aSet.Put( SwFormatVertOrient( 0, text::VertOrientation::TOP, text::RelOrientation::FRAME ) );
             aSet.Put( SvxLRSpaceItem( 114, 114, 0, 0, RES_LR_SPACE ) );
 
@@ -1428,7 +1427,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
         {
             aSet.Put( aLR );
             aSet.Put( aUL );
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL | nsUseOnPage::PD_FIRSTSHARE );
+            pNewPgDsc->SetUseOn( UseOnPage::All | UseOnPage::FirstShare );
         }
         break;
 
@@ -1438,7 +1437,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             lcl_PutStdPageSizeIntoItemSet( &m_rDoc, aSet );
             aSet.Put( aLR );
             aSet.Put( aUL );
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
             if( RES_POOLPAGE_FIRST == nId )
                 pNewPgDsc->SetFollow( GetPageDescFromPool( RES_POOLPAGE_STANDARD ));
         }
@@ -1450,7 +1449,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aLR );
             aSet.Put( aUL );
             bSetLeft = false;
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_LEFT );
+            pNewPgDsc->SetUseOn( UseOnPage::Left );
             // this relies on GetPageDescFromPool() not going into infinite recursion
             // (by this point RES_POOLPAGE_LEFT will not reach this place again)
             pNewPgDsc->SetFollow( GetPageDescFromPool( RES_POOLPAGE_RIGHT ));
@@ -1462,7 +1461,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aLR );
             aSet.Put( aUL );
             bSetLeft = false;
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_RIGHT );
+            pNewPgDsc->SetUseOn( UseOnPage::Right );
             pNewPgDsc->SetFollow( GetPageDescFromPool( RES_POOLPAGE_LEFT ));
         }
         break;
@@ -1477,7 +1476,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aLR );
             aSet.Put( aUL );
 
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
             pNewPgDsc->SetLandscape( true );
         }
         break;
@@ -1491,7 +1490,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aLR );
             aSet.Put( aUL );
 
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
         }
         break;
 
@@ -1501,7 +1500,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             lcl_PutStdPageSizeIntoItemSet( &m_rDoc, aSet );
             aSet.Put( aLR );
             aSet.Put( aUL );
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
             SwPageFootnoteInfo aInf( pNewPgDsc->GetFootnoteInfo() );
             aInf.SetLineWidth( 0 );
             aInf.SetTopDist( 0 );
@@ -1523,7 +1522,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aFrameSz );
             aSet.Put( aLR );
             aSet.Put( aUL );
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
             pNewPgDsc->SetLandscape( true );
         }
         break;
@@ -1992,7 +1991,7 @@ SwNumRule* DocumentStylePoolManager::GetNumRuleFromPool( sal_uInt16 nId )
 
             for (sal_uInt16 n = 0; n < MAXLEVEL; ++n)
             {
-                aFormat.SetBulletChar( ( n & 1 ? 0x25a1 : 0x2611 ) );
+                aFormat.SetBulletChar( ( (n & 1) ? 0x25a1 : 0x2611 ) );
 
                 if ( eNumberFormatPositionAndSpaceMode == SvxNumberFormat::LABEL_WIDTH_AND_POSITION )
                 {
@@ -2125,7 +2124,7 @@ bool DocumentStylePoolManager::IsPoolTextCollUsed( sal_uInt16 nId ) const
 
     SwTextFormatColl* pNewColl = nullptr;
     bool bFnd = false;
-    for( sal_uInt16 n = 0; !bFnd && n < m_rDoc.GetTextFormatColls()->size(); ++n )
+    for( SwTextFormatColls::size_type n = 0; !bFnd && n < m_rDoc.GetTextFormatColls()->size(); ++n )
     {
         pNewColl = (*m_rDoc.GetTextFormatColls())[ n ];
         if( nId == pNewColl->GetPoolFormatId() )

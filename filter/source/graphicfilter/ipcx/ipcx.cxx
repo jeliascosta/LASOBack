@@ -40,9 +40,10 @@ private:
     sal_uInt16          nPaletteInfo;
 
     sal_uLong           nWidth, nHeight;    // dimension in pixel
-    sal_uInt16          nResX, nResY;       // resolution in pixel per inch oder 0,0
+    sal_uInt16          nResX, nResY;       // resolution in pixel per inch or 0,0
     sal_uInt16          nDestBitsPerPixel;  // bits per pixel in destination bitmap 1,4,8 or 24
-    sal_uInt8*          pPalette;
+    std::unique_ptr<sal_uInt8[]>
+                        pPalette;
     bool                bStatus;            // from now on do not read status from stream ( SJ )
 
 
@@ -52,7 +53,6 @@ private:
 
 public:
     explicit PCXReader(SvStream &rStream);
-    ~PCXReader();
     bool                ReadPCX(Graphic & rGraphic );
                         // Reads a PCX file from the stream and fills the GDIMetaFile
 };
@@ -72,14 +72,9 @@ PCXReader::PCXReader(SvStream &rStream)
     , nResX(0)
     , nResY(0)
     , nDestBitsPerPixel(0)
+    , pPalette(new sal_uInt8[ 768 ])
     , bStatus(false)
 {
-    pPalette = new sal_uInt8[ 768 ];
-}
-
-PCXReader::~PCXReader()
-{
-    delete[] pPalette;
 }
 
 bool PCXReader::ReadPCX(Graphic & rGraphic)
@@ -95,8 +90,14 @@ bool PCXReader::ReadPCX(Graphic & rGraphic)
 
     ImplReadHeader();
 
+    // sanity check there is enough data before trying allocation
+    if (bStatus && nBytesPerPlaneLin > m_rPCX.remainingSize() / nPlanes)
+    {
+        bStatus = false;
+    }
+
     // Write BMP header and conditionally (maybe invalid for now) color palette:
-    if ( bStatus )
+    if (bStatus)
     {
         aBmp = Bitmap( Size( nWidth, nHeight ), nDestBitsPerPixel );
         Bitmap::ScopedWriteAccess pAcc(aBmp);
@@ -106,13 +107,14 @@ bool PCXReader::ReadPCX(Graphic & rGraphic)
         if ( nDestBitsPerPixel <= 8 )
         {
             sal_uInt16 nColors = 1 << nDestBitsPerPixel;
-            sal_uInt8* pPal = pPalette;
+            sal_uInt8* pPal = pPalette.get();
             pAcc->SetPaletteEntryCount( nColors );
             for ( sal_uInt16 i = 0; i < nColors; i++, pPal += 3 )
             {
                 pAcc->SetPaletteColor( i, BitmapColor ( pPal[ 0 ], pPal[ 1 ], pPal[ 2 ] ) );
             }
         }
+
         // read bitmap data
         ImplReadBody(pAcc.get());
 
@@ -120,7 +122,7 @@ bool PCXReader::ReadPCX(Graphic & rGraphic)
         // and write again in palette:
         if ( nDestBitsPerPixel == 8 && bStatus )
         {
-            sal_uInt8* pPal = pPalette;
+            sal_uInt8* pPal = pPalette.get();
             m_rPCX.SeekRel(1);
             ImplReadPalette(256);
             pAcc->SetPaletteEntryCount( 256 );
@@ -129,14 +131,8 @@ bool PCXReader::ReadPCX(Graphic & rGraphic)
                 pAcc->SetPaletteColor( i, BitmapColor ( pPal[ 0 ], pPal[ 1 ], pPal[ 2 ] ) );
             }
         }
-    /*
-        // set resolution:
-        if (nResX!=0 && nResY!=0) {
-            MapMode aMapMode(MAP_INCH,Point(0,0),Fraction(1,nResX),Fraction(1,nResY));
-            rBitmap.SetPrefMapMode(aMapMode);
-            rBitmap.SetPrefSize(Size(nWidth,nHeight));
-        }
-    */  if ( bStatus )
+
+        if ( bStatus )
         {
             rGraphic = aBmp;
             return true;
@@ -211,13 +207,6 @@ void PCXReader::ImplReadBody(BitmapWriteAccess * pAcc)
     sal_uLong   nLastPercent = 0;
     sal_uInt8   nDat = 0, nCol = 0;
 
-    //sanity check there is enough data before trying allocation
-    if (nBytesPerPlaneLin > m_rPCX.remainingSize() / nPlanes)
-    {
-        bStatus = false;
-        return;
-    }
-
     for( np = 0; np < nPlanes; np++ )
         pPlane[ np ] = new sal_uInt8[ nBytesPerPlaneLin ];
 
@@ -237,7 +226,7 @@ void PCXReader::ImplReadBody(BitmapWriteAccess * pAcc)
         for ( np = 0; np < nPlanes; np++)
         {
             if ( nEncoding == 0)
-                m_rPCX.Read( static_cast<void *>(pPlane[ np ]), nBytesPerPlaneLin );
+                m_rPCX.ReadBytes( static_cast<void *>(pPlane[ np ]), nBytesPerPlaneLin );
             else
             {
                 pDest = pPlane[ np ];
@@ -389,7 +378,7 @@ void PCXReader::ImplReadBody(BitmapWriteAccess * pAcc)
 void PCXReader::ImplReadPalette( sal_uLong nCol )
 {
     sal_uInt8   r, g, b;
-    sal_uInt8*  pPtr = pPalette;
+    sal_uInt8*  pPtr = pPalette.get();
     for ( sal_uLong i = 0; i < nCol; i++ )
     {
         m_rPCX.ReadUChar( r ).ReadUChar( g ).ReadUChar( b );

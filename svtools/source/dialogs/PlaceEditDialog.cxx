@@ -98,9 +98,9 @@ PlaceEditDialog::PlaceEditDialog(vcl::Window* pParent, const std::shared_ptr<Pla
             if ( rUrl.HasUserData( ) )
             {
                 m_pEDUsername->SetText( INetURLObject::decode( rUrl.GetUser( ),
-                                                              INetURLObject::DECODE_WITH_CHARSET ) );
+                                                              INetURLObject::DecodeMechanism::WithCharset ) );
                 m_aDetailsContainers[i]->setUsername( INetURLObject::decode( rUrl.GetUser( ),
-                                                              INetURLObject::DECODE_WITH_CHARSET ) );
+                                                              INetURLObject::DecodeMechanism::WithCharset ) );
             }
 
             m_pLBServerType->SelectEntryPos( i );
@@ -128,6 +128,9 @@ void PlaceEditDialog::dispose()
     m_pBTDelete.clear();
     m_pEDPassword.clear();
     m_pFTPasswordLabel.clear();
+    m_pCBPassword.clear();
+    m_pBTRepoRefresh.clear();
+    m_pTypeGrid.clear();
     ModalDialog::dispose();
 }
 
@@ -141,7 +144,7 @@ OUString PlaceEditDialog::GetServerUrl()
         if ( !sUsername.isEmpty( ) )
             aUrl.SetUser( sUsername );
         if ( !aUrl.HasError( ) )
-            sUrl = aUrl.GetMainURL( INetURLObject::NO_DECODE );
+            sUrl = aUrl.GetMainURL( INetURLObject::DecodeMechanism::NONE );
     }
 
     return sUrl;
@@ -172,7 +175,7 @@ void PlaceEditDialog::InitDetails( )
     unsigned int nPos = 0;
     for ( sal_Int32 i = 0; i < aTypesUrlsList.getLength( ) && aTypesNamesList.getLength( ); ++i )
     {
-        OUString sUrl = aTypesUrlsList[i];
+        OUString sUrl = aTypesUrlsList[i].replaceFirst("<host", "<" + SVT_RESSTR(STR_SVT_HOST)).replaceFirst("port>",  SVT_RESSTR(STR_SVT_PORT) + ">");
 
         if ((sUrl == GDRIVE_BASE_URL && bSkipGDrive) ||
             (sUrl.startsWith( ALFRESCO_CLOUD_BASE_URL) && bSkipAlfresco) ||
@@ -218,7 +221,48 @@ void PlaceEditDialog::InitDetails( )
     SelectTypeHdl( *m_pLBServerType );
 }
 
-void PlaceEditDialog::UpdateLabel( )
+IMPL_LINK( PlaceEditDialog, OKHdl, Button*, /*pBtn*/, void)
+{
+    if ( m_xCurrentDetails.get() )
+    {
+        OUString sUrl = m_xCurrentDetails->getUrl().GetHost( INetURLObject::DecodeMechanism::WithCharset );
+        OUString sGDriveHost( GDRIVE_BASE_URL );
+        OUString sAlfrescoHost( ALFRESCO_CLOUD_BASE_URL );
+        OUString sOneDriveHost( ONEDRIVE_BASE_URL );
+
+        if ( sUrl.compareTo( sGDriveHost, sGDriveHost.getLength() ) == 0
+           || sUrl.compareTo( sAlfrescoHost, sAlfrescoHost.getLength() ) == 0
+           || sUrl.compareTo( sOneDriveHost, sOneDriveHost.getLength() ) == 0 )
+        {
+            m_pBTRepoRefresh->Click();
+
+            sUrl = m_xCurrentDetails->getUrl().GetHost( INetURLObject::DecodeMechanism::WithCharset );
+            INetURLObject aHostUrl( sUrl );
+            OUString sRepoId = aHostUrl.GetMark();
+
+            if ( !sRepoId.isEmpty() )
+            {
+                EndDialog( RET_OK );
+            }
+            else
+            {
+                // TODO: repository id missing. Auth error?
+            }
+        }
+        else
+        {
+            EndDialog( RET_OK );
+        }
+    }
+}
+
+IMPL_LINK( PlaceEditDialog, DelHdl, Button*, /*pButton*/, void)
+{
+    // ReUsing existing symbols...
+    EndDialog( RET_NO );
+}
+
+IMPL_LINK_NOARG( PlaceEditDialog, EditHdl, DetailsContainer*, void )
 {
     if( !bLabelChanged )
     {
@@ -242,70 +286,24 @@ void PlaceEditDialog::UpdateLabel( )
             m_pEDServerName->SetText( m_pLBServerType->GetSelectEntry( ) );
         }
     }
-}
-
-IMPL_LINK_TYPED( PlaceEditDialog, OKHdl, Button*, /*pBtn*/, void)
-{
-    if ( m_xCurrentDetails.get() )
-    {
-        OUString sUrl = m_xCurrentDetails->getUrl().GetHost( INetURLObject::DECODE_WITH_CHARSET );
-        OUString sGDriveHost( GDRIVE_BASE_URL );
-        OUString sAlfrescoHost( ALFRESCO_CLOUD_BASE_URL );
-        OUString sOneDriveHost( ONEDRIVE_BASE_URL );
-
-        if ( sUrl.compareTo( sGDriveHost, sGDriveHost.getLength() ) == 0
-           || sUrl.compareTo( sAlfrescoHost, sAlfrescoHost.getLength() ) == 0
-           || sUrl.compareTo( sOneDriveHost, sOneDriveHost.getLength() ) == 0 )
-        {
-            m_pBTRepoRefresh->Click();
-
-            sUrl = m_xCurrentDetails->getUrl().GetHost( INetURLObject::DECODE_WITH_CHARSET );
-            INetURLObject aHostUrl( sUrl );
-            OUString sRepoId = aHostUrl.GetMark();
-
-            if ( !sRepoId.isEmpty() )
-            {
-                EndDialog( RET_OK );
-            }
-            else
-            {
-                // TODO: repository id missing. Auth error?
-            }
-        }
-        else
-        {
-            EndDialog( RET_OK );
-        }
-    }
-}
-
-IMPL_LINK_TYPED( PlaceEditDialog, DelHdl, Button*, /*pButton*/, void)
-{
-    // ReUsing existing symbols...
-    EndDialog( RET_NO );
-}
-
-IMPL_LINK_NOARG_TYPED( PlaceEditDialog, EditHdl, DetailsContainer*, void )
-{
-    UpdateLabel( );
 
     OUString sUrl = GetServerUrl( );
     OUString sName = m_pEDServerName->GetText().trim( );
     m_pBTOk->Enable( !sName.isEmpty( ) && !sUrl.isEmpty( ) );
 }
 
-IMPL_LINK_NOARG_TYPED( PlaceEditDialog, ModifyHdl, Edit&, void )
+IMPL_LINK_NOARG( PlaceEditDialog, ModifyHdl, Edit&, void )
 {
     EditHdl(nullptr);
 }
 
-IMPL_LINK_NOARG_TYPED( PlaceEditDialog, EditLabelHdl, Edit&, void )
+IMPL_LINK_NOARG( PlaceEditDialog, EditLabelHdl, Edit&, void )
 {
     bLabelChanged = true;
     EditHdl(nullptr);
 }
 
-IMPL_LINK_NOARG_TYPED( PlaceEditDialog, EditUsernameHdl, Edit&, void )
+IMPL_LINK_NOARG( PlaceEditDialog, EditUsernameHdl, Edit&, void )
 {
     for ( std::vector< std::shared_ptr< DetailsContainer > >::iterator it = m_aDetailsContainers.begin( );
             it != m_aDetailsContainers.end( ); ++it )
@@ -317,7 +315,7 @@ IMPL_LINK_NOARG_TYPED( PlaceEditDialog, EditUsernameHdl, Edit&, void )
     EditHdl(nullptr);
 }
 
-IMPL_LINK_NOARG_TYPED( PlaceEditDialog, SelectTypeHdl, ListBox&, void )
+IMPL_LINK_NOARG( PlaceEditDialog, SelectTypeHdl, ListBox&, void )
 {
     if ( m_pLBServerType->GetSelectEntry() == "--------------------" )
     {

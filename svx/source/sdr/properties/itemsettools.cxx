@@ -24,7 +24,6 @@
 #include <svl/whiter.hxx>
 #include <svx/svdogrp.hxx>
 #include <svx/svditer.hxx>
-#include <vcl/region.hxx>
 #include <vcl/outdev.hxx>
 #include <memory>
 
@@ -36,9 +35,9 @@ namespace sdr
     {
         ItemChangeBroadcaster::ItemChangeBroadcaster(const SdrObject& rObj)
         {
-            if(dynamic_cast<const SdrObjGroup*>( &rObj ) !=  nullptr)
+            if (const SdrObjGroup* pGroupObj = dynamic_cast<const SdrObjGroup*>(&rObj))
             {
-                SdrObjListIter aIter(static_cast<const SdrObjGroup&>(rObj), IM_DEEPNOGROUPS);
+                SdrObjListIter aIter(*pGroupObj, SdrIterMode::DeepNoGroups);
                 mpData = new RectangleVector;
                 DBG_ASSERT(mpData, "ItemChangeBroadcaster: No memory (!)");
                 static_cast<RectangleVector*>(mpData)->reserve(aIter.Count());
@@ -53,37 +52,36 @@ namespace sdr
                     }
                 }
 
-                mnCount = static_cast<RectangleVector*>(mpData)->size();
+                mbSingleRect = false;
             }
             else
             {
-                mpData = new Rectangle(rObj.GetLastBoundRect());
-                mnCount = 1L;
+                mpData = new tools::Rectangle(rObj.GetLastBoundRect());
+                mbSingleRect = true;
             }
         }
 
         ItemChangeBroadcaster::~ItemChangeBroadcaster()
         {
-            if(mnCount > 1)
+            if (!mbSingleRect)
             {
                 delete static_cast<RectangleVector*>(mpData);
             }
             else
             {
-                delete static_cast<Rectangle*>(mpData);
+                delete static_cast<tools::Rectangle*>(mpData);
             }
         }
 
-
-        const Rectangle& ItemChangeBroadcaster::GetRectangle(sal_uInt32 nIndex) const
+        const tools::Rectangle& ItemChangeBroadcaster::GetRectangle(sal_uInt32 nIndex) const
         {
-            if(mnCount > 1)
+            if (!mbSingleRect)
             {
                 return (*static_cast<RectangleVector*>(mpData))[nIndex];
             }
             else
             {
-                return *static_cast<Rectangle*>(mpData);
+                return *static_cast<tools::Rectangle*>(mpData);
             }
         }
     } // end of namespace properties

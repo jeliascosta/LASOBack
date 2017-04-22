@@ -42,21 +42,25 @@ typedef CollTestImplHelper< ov::XCollection > ScVbaSheetObjects_BASE;
 class ScVbaSheetObjectsBase : public ScVbaSheetObjects_BASE
 {
 public:
-    explicit ScVbaSheetObjectsBase( const ScVbaObjectContainerRef& rxContainer ) throw (css::uno::RuntimeException);
-    virtual ~ScVbaSheetObjectsBase();
+    /// @throws css::uno::RuntimeException
+    explicit ScVbaSheetObjectsBase( const ScVbaObjectContainerRef& rxContainer );
+    virtual ~ScVbaSheetObjectsBase() override;
 
-    /** Updates the collection by fetching all shapes from the draw page. */
-    void collectShapes() throw (css::uno::RuntimeException);
+    /** Updates the collection by fetching all shapes from the draw page.
+
+        @throws css::uno::RuntimeException
+    */
+    void collectShapes();
 
     // XEnumerationAccess
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Type SAL_CALL getElementType() override;
 
     // ScVbaCollectionBase
     virtual css::uno::Any createCollectionObject( const css::uno::Any& rSource ) override;
-    virtual css::uno::Any getItemByStringIndex( const OUString& rIndex ) throw (css::uno::RuntimeException) override;
+    virtual css::uno::Any getItemByStringIndex( const OUString& rIndex ) override;
 
 protected:
     ScVbaObjectContainerRef mxContainer;
@@ -70,25 +74,27 @@ typedef ::cppu::ImplInheritanceHelper< ScVbaSheetObjectsBase, ov::excel::XGraphi
 class ScVbaGraphicObjectsBase : public ScVbaGraphicObjects_BASE
 {
 public:
-    explicit ScVbaGraphicObjectsBase( const ScVbaObjectContainerRef& rxContainer ) throw (css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    explicit ScVbaGraphicObjectsBase( const ScVbaObjectContainerRef& rxContainer );
 
     // XGraphicObjects
     virtual css::uno::Any SAL_CALL Add(
         const css::uno::Any& rLeft,
         const css::uno::Any& rTop,
         const css::uno::Any& rWidth,
-        const css::uno::Any& rHeight ) throw (css::uno::RuntimeException, std::exception) override;
+        const css::uno::Any& rHeight ) override;
 };
 
 /** Collection containing all button controls from a sheet (not ActiveX controls). */
 class ScVbaButtons : public ScVbaGraphicObjectsBase
 {
 public:
+    /// @throws css::uno::RuntimeException
     explicit ScVbaButtons(
         const css::uno::Reference< ov::XHelperInterface >& rxParent,
         const css::uno::Reference< css::uno::XComponentContext >& rxContext,
         const css::uno::Reference< css::frame::XModel >& rxModel,
-        const css::uno::Reference< css::sheet::XSpreadsheet >& rxSheet ) throw (css::uno::RuntimeException);
+        const css::uno::Reference< css::sheet::XSpreadsheet >& rxSheet );
 
     VBAHELPER_DECL_XHELPERINTERFACE
 };

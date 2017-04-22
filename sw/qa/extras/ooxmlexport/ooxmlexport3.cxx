@@ -49,8 +49,11 @@
 #include <com/sun/star/drawing/EnhancedCustomShapeParameterPair.hpp>
 #include <com/sun/star/drawing/TextVerticalAdjust.hpp>
 #include <com/sun/star/drawing/Hatch.hpp>
+#include <ftninfo.hxx>
 
 #include <string>
+
+#if !defined(_WIN32)
 
 class Test : public SwModelTestBase
 {
@@ -72,8 +75,6 @@ protected:
         return (OString(filename).endsWith(".docx") && std::find(vBlacklist.begin(), vBlacklist.end(), filename) == vBlacklist.end());
     }
 };
-
-#if !defined(_WIN32)
 
 DECLARE_OOXMLEXPORT_TEST(testFdo68418, "fdo68418.docx")
 {
@@ -108,6 +109,15 @@ DECLARE_OOXMLEXPORT_TEST(testFdo68787, "fdo68787.docx")
     uno::Reference<beans::XPropertySet> xPageStyle(getStyles("PageStyles")->getByName("Standard"), uno::UNO_QUERY);
     // This was 25, the 'lack of w:separator' <-> '0 line width' mapping was missing.
     CPPUNIT_ASSERT_EQUAL(sal_Int32(0), getProperty<sal_Int32>(xPageStyle, "FootnoteLineRelativeWidth"));
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf92470_footnoteRestart, "tdf92470_footnoteRestart.docx")
+{
+    SwXTextDocument* pTextDoc = dynamic_cast<SwXTextDocument*>(mxComponent.get());
+    CPPUNIT_ASSERT( pTextDoc );
+    SwDoc* pDoc = pTextDoc->GetDocShell()->GetDoc();
+    CPPUNIT_ASSERT( pDoc );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Footnote doesn't restart every Page", FTNNUM_PAGE, pDoc->GetFootnoteInfo().eNum );
 }
 
 DECLARE_OOXMLEXPORT_TEST(testCharacterBorder, "charborder.odt")
@@ -620,6 +630,17 @@ DECLARE_OOXMLEXPORT_TEST(testImageCrop, "ImageCrop.docx")
     CPPUNIT_ASSERT_EQUAL( sal_Int32( 2291 ), aGraphicCropStruct.Bottom );
 }
 
+DECLARE_OOXMLEXPORT_TEST(testTdf106974_int32Crop, "tdf106974_int32Crop.docx")
+{
+    uno::Reference<drawing::XShape> image = getShape(1);
+    uno::Reference<beans::XPropertySet> imageProperties(image, uno::UNO_QUERY);
+    css::text::GraphicCrop aGraphicCropStruct;
+
+    imageProperties->getPropertyValue( "GraphicCrop" ) >>= aGraphicCropStruct;
+
+    CPPUNIT_ASSERT( sal_Int32( 41000 ) < aGraphicCropStruct.Right );
+}
+
 DECLARE_OOXMLEXPORT_TEST(testLineSpacingexport, "test_line_spacing.docx")
 {
      // The Problem was that the w:line attribute value in w:spacing tag was incorrect
@@ -699,7 +720,7 @@ DECLARE_OOXMLEXPORT_TEST(testCellGridSpan, "cell-grid-span.docx")
 {
     // The problem was during export gridSpan value for 1st & 2nd cells for test document
     // used to get set wrongly to 5 and 65532 respectively which was the reason for crash during save operation
-    // Varifying gridSpan element is not present in RoundTripped Document (As it's Default value is 1).
+    // Verifying gridSpan element is not present in RoundTripped Document (As it's Default value is 1).
     xmlDocPtr pXmlDoc = parseExport();
     if (!pXmlDoc)
         return;
@@ -769,6 +790,19 @@ DECLARE_OOXMLEXPORT_TEST(testPNGImageCrop, "test_PNG_ImageCrop.docx")
     CPPUNIT_ASSERT_EQUAL( sal_Int32( 1164 ), aGraphicCropStruct.Top );
     CPPUNIT_ASSERT_EQUAL( sal_Int32( 635 ), aGraphicCropStruct.Bottom );
 #endif
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf41542_imagePadding, "tdf41542_imagePadding.odt")
+{
+    // borderlessImage - image WITHOUT BORDERS : simulate padding with -crop
+    text::GraphicCrop crop = getProperty<text::GraphicCrop>(getShape(2), "GraphicCrop");
+    CPPUNIT_ASSERT( crop.Left != 0 && crop.Right != 0 );
+    CPPUNIT_ASSERT( crop.Left == crop.Top && crop.Right == crop.Bottom && crop.Left == crop.Right);
+
+    // borderedImage - image WITH BORDERS : simulate padding with -crop
+    crop = getProperty<text::GraphicCrop>(getShape(3), "GraphicCrop");
+    CPPUNIT_ASSERT( crop.Left != 0 && crop.Right != 0 );
+    CPPUNIT_ASSERT( crop.Left == crop.Top && crop.Right == crop.Bottom && crop.Left == crop.Right);
 }
 
 DECLARE_OOXMLEXPORT_TEST(testFootnoteParagraphTag, "testFootnote.docx")
@@ -936,6 +970,14 @@ DECLARE_OOXMLEXPORT_TEST(testDontSplitTable, "tdf101589_dontSplitTable.odt")
 {
     //single row tables need to prevent split by setting row to no split
     CPPUNIT_ASSERT_EQUAL( OUString("Row 1"), parseDump("/root/page[2]/body/tab[1]/row[1]/cell[1]/txt[1]") );
+
+    uno::Reference<text::XTextTablesSupplier> xTablesSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<container::XIndexAccess> xTables(xTablesSupplier->getTextTables(), uno::UNO_QUERY);
+    uno::Reference<text::XTextTable> xTable (xTables->getByIndex(0), uno::UNO_QUERY);
+    CPPUNIT_ASSERT_EQUAL(false, getProperty<bool>(xTable, "Split"));
+
+    uno::Reference<table::XTableRows> xTableRows(xTable->getRows(), uno::UNO_QUERY);
+    CPPUNIT_ASSERT_EQUAL(false, getProperty<bool>(xTableRows->getByIndex(0), "IsSplitAllowed"));
 }
 
 DECLARE_OOXMLEXPORT_TEST(testExtraSectionBreak, "1_page.docx")

@@ -43,15 +43,15 @@ namespace dbaui
     {
     public:
         SubComponentManager( OApplicationController& _rController, const ::comphelper::SharedMutex& _rMutex );
-        virtual ~SubComponentManager();
+        virtual ~SubComponentManager() override;
 
         void    disposing();
 
         // XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
         // XDatabaseDocumentUI helpers
         css::uno::Sequence< css::uno::Reference< css::lang::XComponent> >
@@ -113,7 +113,7 @@ namespace dbaui
                     );
 
     private:
-        ::std::unique_ptr< SubComponentManager_Data > m_pData;
+        std::unique_ptr< SubComponentManager_Data > m_pData;
     };
 
 } // namespace dbaui

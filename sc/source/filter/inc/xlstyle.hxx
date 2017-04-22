@@ -22,7 +22,6 @@
 
 #include <map>
 #include <com/sun/star/awt/FontSlant.hpp>
-#include <com/sun/star/awt/FontUnderline.hpp>
 #include <com/sun/star/awt/FontStrikeout.hpp>
 #include <tools/color.hxx>
 #include <vcl/vclenum.hxx>
@@ -256,16 +255,16 @@ public:
     explicit            XclDefaultPalette( const XclRoot& rRoot );
 
     /** Returns the color count in the current palette. */
-    inline sal_uInt32   GetColorCount() const { return mnTableSize - EXC_COLOR_USEROFFSET; }
+    sal_uInt32   GetColorCount() const { return mnTableSize - EXC_COLOR_USEROFFSET; }
 
     /** Returns the default RGB color data for a (non-zero-based) Excel color or COL_AUTO on error. */
     ColorData           GetDefColorData( sal_uInt16 nXclIndex ) const;
     /** Returns the default color for a (non-zero-based) Excel color or COL_AUTO on error. */
-    inline Color        GetDefColor( sal_uInt16 nXclIndex ) const
+    Color        GetDefColor( sal_uInt16 nXclIndex ) const
                             { return Color( GetDefColorData( nXclIndex ) ); }
 
     /** Returns true, if the passed Excel color index is a system color. */
-    inline bool         IsSystemColor( sal_uInt16 nXclIndex ) const { return nXclIndex >= mnTableSize; }
+    bool         IsSystemColor( sal_uInt16 nXclIndex ) const { return nXclIndex >= mnTableSize; }
 
 private:
     const ColorData*    mpnColorTable;      /// The table with RGB values.
@@ -390,12 +389,11 @@ struct XclFontData
 bool operator==( const XclFontData& rLeft, const XclFontData& rRight );
 
 /** Enumerates different types of Which-IDs for font items. */
-enum XclFontItemType
+enum class XclFontItemType
 {
-    EXC_FONTITEM_CELL,          /// Use Calc Which-IDs (ATTR_*).
-    EXC_FONTITEM_EDITENG,       /// Use edit engine Which-IDs (EE_CHAR_*).
-    EXC_FONTITEM_HF,            /// Use header/footer edit engine Which-IDs (EE_CHAR_*).
-    EXC_FONTITEM_NOTE           /// Use note edit engine Which-IDs (EE_CHAR_*), special font handling.
+    Cell,          /// Use Calc Which-IDs (ATTR_*).
+    Editeng,       /// Use edit engine Which-IDs (EE_CHAR_*).
+    HeaderFooter   /// Use header/footer edit engine Which-IDs (EE_CHAR_*).
 };
 
 /** Enumerates different types for objects with font settings (using different property names). */
@@ -421,7 +419,7 @@ public:
                             ScfPropertySet& rPropSet, XclFontPropSetType eType,
                             const XclFontData& rFontData,
                             bool bHasWstrn, bool bHasAsian, bool bHasCmplx,
-                            const Color* pFontColor = nullptr );
+                            const Color* pFontColor );
 
 private:
     /** Returns a chart property set helper according to the passed script type. */
@@ -454,7 +452,7 @@ public:
     explicit            XclNumFmtBuffer( const XclRoot& rRoot );
 
     /** Returns the core index of the current standard number format. */
-    inline sal_uLong        GetStdScNumFmt() const { return mnStdScNumFmt; }
+    sal_uLong        GetStdScNumFmt() const { return mnStdScNumFmt; }
 
 protected:
     typedef ::std::map< sal_uInt16, XclNumFmt > XclNumFmtMap;
@@ -463,7 +461,7 @@ protected:
     void                InitializeImport();
 
     /** Returns the current number format map. */
-    inline const XclNumFmtMap& GetFormatMap() const { return maFmtMap; }
+    const XclNumFmtMap& GetFormatMap() const { return maFmtMap; }
 
     /** Inserts a new number format for the specified Excel format index. */
     void                InsertFormat( sal_uInt16 nXclNumFmt, const OUString& rFormat );
@@ -577,9 +575,9 @@ public:
     bool                HasUsedFlags() const;
 
     /** Returns true, if this is a hard cell format. */
-    inline bool         IsCellXF() const    { return mbCellXF; }
+    bool         IsCellXF() const    { return mbCellXF; }
     /** Returns true, if this is a cell style. */
-    inline bool         IsStyleXF() const   { return !IsCellXF(); }
+    bool         IsStyleXF() const   { return !IsCellXF(); }
 
 protected:
     /** Returns true, if this object is equal to the passed. */

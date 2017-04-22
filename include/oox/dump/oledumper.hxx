@@ -50,7 +50,7 @@ protected:
     OUString     dumpAnsiString32( const String& rName );
     OUString     dumpUniString32( const String& rName );
 
-    sal_Int32           dumpStdClipboardFormat( const String& rName = EMPTY_STRING );
+    sal_Int32    dumpStdClipboardFormat( const String& rName );
     OUString     dumpAnsiString32OrStdClip( const String& rName );
     OUString     dumpUniString32OrStdClip( const String& rName );
 
@@ -144,7 +144,6 @@ protected:
     OleStorageObject() {}
 
     using               StorageObjectBase::construct;
-    void                construct( const ObjectBase& rParent, const StorageRef& rxStrg, const OUString& rSysPath );
 
     virtual void        implDumpStream(
                             const css::uno::Reference< css::io::XInputStream >& rxStrm,
@@ -735,10 +734,9 @@ protected:
     virtual void        implDumpRecordBody() override;
 
 private:
-    OUString     dumpByteString( const String& rName = EMPTY_STRING );
-    OUString     dumpUniString( const String& rName = EMPTY_STRING );
-
-    OUString     dumpByteStringWithLength( const String& rName = EMPTY_STRING );
+    OUString     dumpByteString( const String& rName );
+    OUString     dumpUniString( const String& rName );
+    OUString     dumpByteStringWithLength( const String& rName );
 
 private:
     VbaSharedData&      mrVbaData;

@@ -44,7 +44,7 @@ DragAndDropContext::DragAndDropContext (SlideSorter& rSlideSorter)
       mnInsertionIndex(-1)
 {
     // No Drag-and-Drop for master pages.
-    if (rSlideSorter.GetModel().GetEditMode() != EM_PAGE)
+    if (rSlideSorter.GetModel().GetEditMode() != EditMode::Page)
         return;
 
     // For properly handling transferables created by the navigator we
@@ -86,7 +86,7 @@ void DragAndDropContext::UpdatePosition (
     // Convert window coordinates into model coordinates (we need the
     // window coordinates for auto-scrolling because that remains
     // constant while scrolling.)
-    sd::Window *pWindow (mpTargetSlideSorter->GetContentWindow());
+    sd::Window *pWindow = mpTargetSlideSorter->GetContentWindow().get();
     const Point aMouseModelPosition (pWindow->PixelToLogic(rMousePosition));
     std::shared_ptr<InsertionIndicatorHandler> pInsertionIndicatorHandler (
         mpTargetSlideSorter->GetController().GetInsertionIndicatorHandler());
@@ -109,9 +109,8 @@ void DragAndDropContext::UpdatePosition (
     }
 }
 
-void DragAndDropContext::SetTargetSlideSorter (
-    const Point& rMousePosition,
-    const InsertionIndicatorHandler::Mode eMode)
+void DragAndDropContext::SetTargetSlideSorter(
+    const Point& rMousePosition)
 {
     if (mpTargetSlideSorter != nullptr)
     {
@@ -128,7 +127,7 @@ void DragAndDropContext::SetTargetSlideSorter (
             false/*bIsOverSourceView*/);
         mpTargetSlideSorter->GetController().GetInsertionIndicatorHandler()->UpdatePosition(
             rMousePosition,
-            eMode);
+            InsertionIndicatorHandler::UnknownMode);
 
     }
 }

@@ -22,7 +22,7 @@
 #include <cassert>
 
 #include "helpid.hrc"
-#include "baside2.hrc"
+#include <basidesh.hrc>
 
 #include "baside2.hxx"
 #include "brkdlg.hxx"
@@ -76,8 +76,7 @@ SbxVariable* IsSbxVariable (SbxBase* pBase)
 
 Image GetImage (unsigned nId)
 {
-    static ImageList const aImagesNormal(IDEResId(RID_IMGLST_LAYOUT));
-    return aImagesNormal.GetImage(nId);
+    return Image(BitmapEx(IDEResId(nId)));
 }
 
 int const nScrollLine = 12;
@@ -101,7 +100,7 @@ OUString getTextEngineText (ExtTextEngine& rEngine)
     aMemStream.SetStreamCharSet( RTL_TEXTENCODING_UTF8 );
     aMemStream.SetLineDelimiter( LINEEND_LF );
     rEngine.Write( aMemStream );
-    sal_Size nSize = aMemStream.Tell();
+    std::size_t nSize = aMemStream.Tell();
     OUString aText( static_cast<const sal_Char*>(aMemStream.GetData()),
         nSize, RTL_TEXTENCODING_UTF8 );
     return aText;
@@ -182,16 +181,16 @@ public:
     explicit ChangesListener(EditorWindow & editor): editor_(editor) {}
 
 private:
-    virtual ~ChangesListener() {}
+    virtual ~ChangesListener() override {}
 
-    virtual void SAL_CALL disposing(lang::EventObject const &) throw (RuntimeException, std::exception) override
+    virtual void SAL_CALL disposing(lang::EventObject const &) override
     {
         osl::MutexGuard g(editor_.mutex_);
         editor_.notifier_.clear();
     }
 
     virtual void SAL_CALL propertiesChange(
-        Sequence< beans::PropertyChangeEvent > const &) throw (RuntimeException, std::exception) override
+        Sequence< beans::PropertyChangeEvent > const &) override
     {
         SolarMutexGuard g;
         editor_.ImplSetFont();
@@ -222,12 +221,12 @@ EditorWindow::EditorWindow (vcl::Window* pParent, ModulWindow* pModulWindow) :
     rModulWindow(*pModulWindow),
     nCurTextWidth(0),
     aHighlighter(HighlighterLanguage::Basic),
-    bHighlightning(false),
+    bHighlighting(false),
     bDoSyntaxHighlight(true),
     bDelayHighlight(true),
     pCodeCompleteWnd(VclPtr<CodeCompleteWindow>::Create(this))
 {
-    SetBackground(Wallpaper(GetSettings().GetStyleSettings().GetFieldColor()));
+    SetBackground(Wallpaper(rModulWindow.GetLayout().GetBackgroundColor()));
     SetPointer( Pointer( PointerStyle::Text ) );
     SetHelpId( HID_BASICIDE_EDITORWINDOW );
 
@@ -239,10 +238,8 @@ EditorWindow::EditorWindow (vcl::Window* pParent, ModulWindow* pModulWindow) :
         osl::MutexGuard g(mutex_);
         notifier_ = n;
     }
-    Sequence< OUString > s(2);
-    s[0] = "FontHeight";
-    s[1] = "FontName";
-    n->addPropertiesChangeListener(s, listener_.get());
+    const Sequence<OUString> aPropertyNames{"FontHeight", "FontName"};
+    n->addPropertiesChangeListener(aPropertyNames, listener_.get());
 }
 
 
@@ -366,8 +363,7 @@ void EditorWindow::RequestHelp( const HelpEvent& rHEvt )
                             aHelpText = pVar->GetName();
                             if ( aHelpText.isEmpty() )     // name is not copied with the passed parameters
                                 aHelpText = aWord;
-                            aHelpText += "=";
-                            aHelpText += pVar->GetOUString();
+                            aHelpText += "=" + pVar->GetOUString();
                         }
                     }
                     if ( !aHelpText.isEmpty() )
@@ -380,7 +376,7 @@ void EditorWindow::RequestHelp( const HelpEvent& rHEvt )
                     }
                 }
             }
-            Help::ShowQuickHelp( this, Rectangle( aTopLeft, Size( 1, 1 ) ), aHelpText, QuickHelpFlags::Top|QuickHelpFlags::Left);
+            Help::ShowQuickHelp( this, tools::Rectangle( aTopLeft, Size( 1, 1 ) ), aHelpText, QuickHelpFlags::Top|QuickHelpFlags::Left);
             bDone = true;
         }
     }
@@ -480,7 +476,7 @@ bool EditorWindow::ImpCanModify()
     if ( StarBASIC::IsRunning() && rModulWindow.GetBasicStatus().bIsRunning )
     {
         // If in Trace-mode, abort the trace or refuse input
-        // Remove markers in the modules in Notify at Basic::Stoped
+        // Remove markers in the modules in Notify at Basic::Stopped
         if (ScopedVclPtrInstance<QueryBox>(nullptr, WB_OK_CANCEL, IDEResId(RID_STR_WILLSTOPPRG).toString())->Execute() == RET_OK)
         {
             rModulWindow.GetBasicStatus().bIsRunning = false;
@@ -648,7 +644,7 @@ void EditorWindow::HandleAutoCorrect()
         else
         {
             //autocorrect procedures
-            SbxArray* pArr = rModulWindow.GetSbModule()->GetMethods();
+            SbxArray* pArr = rModulWindow.GetSbModule()->GetMethods().get();
             for( sal_uInt32 i=0; i < pArr->Count32(); ++i )
             {
                 if( pArr->Get32(i)->GetName().equalsIgnoreAsciiCase( sStr ) )
@@ -906,7 +902,7 @@ void EditorWindow::SetupAndShowCodeCompleteWnd( const std::vector< OUString >& a
     pEditView->GetWindow()->GrabFocus();
 }
 
-void EditorWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void EditorWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     if (!pEditEngine)     // We need it now at latest
         CreateEditEngine();
@@ -957,15 +953,15 @@ void EditorWindow::CreateEditEngine()
         return;
 
     pEditEngine.reset(new ExtTextEngine);
-    pEditView.reset(new ExtTextView(pEditEngine.get(), this));
+    pEditView.reset(new TextView(pEditEngine.get(), this));
     pEditView->SetAutoIndentMode(true);
     pEditEngine->SetUpdateMode(false);
     pEditEngine->InsertView(pEditView.get());
 
     ImplSetFont();
 
-    aSyntaxIdle.SetPriority( SchedulerPriority::LOWER );
-    aSyntaxIdle.SetIdleHdl( LINK( this, EditorWindow, SyntaxTimerHdl ) );
+    aSyntaxIdle.SetPriority( TaskPriority::LOWER );
+    aSyntaxIdle.SetInvokeHandler( LINK( this, EditorWindow, SyntaxTimerHdl ) );
 
     bool bWasDoSyntaxHighlight = bDoSyntaxHighlight;
     bDoSyntaxHighlight = false; // too slow for large texts...
@@ -1036,40 +1032,12 @@ void EditorWindow::CreateEditEngine()
         rModulWindow.SetReadOnly(true);
 }
 
-// virtual
-void EditorWindow::DataChanged(DataChangedEvent const & rDCEvt)
-{
-    Window::DataChanged(rDCEvt);
-    if (rDCEvt.GetType() == DataChangedEventType::SETTINGS
-        && (rDCEvt.GetFlags() & AllSettingsFlags::STYLE))
-    {
-        Color aColor(GetSettings().GetStyleSettings().GetFieldColor());
-        const AllSettings* pOldSettings = rDCEvt.GetOldSettings();
-        if (!pOldSettings || aColor != pOldSettings->GetStyleSettings().GetFieldColor())
-        {
-            SetBackground(Wallpaper(aColor));
-            Invalidate();
-        }
-        if (pEditEngine != nullptr)
-        {
-            aColor = GetSettings().GetStyleSettings().GetFieldTextColor();
-            if (!pOldSettings || aColor !=
-                    pOldSettings-> GetStyleSettings().GetFieldTextColor())
-            {
-                vcl::Font aFont(pEditEngine->GetFont());
-                aFont.SetColor(aColor);
-                pEditEngine->SetFont(aFont);
-            }
-        }
-    }
-}
-
 void EditorWindow::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
 {
     if (TextHint const* pTextHint = dynamic_cast<TextHint const*>(&rHint))
     {
         TextHint const& rTextHint = *pTextHint;
-        if( rTextHint.GetId() == TEXT_HINT_VIEWSCROLLED )
+        if( rTextHint.GetId() == SfxHintId::TextViewScrolled )
         {
             if ( rModulWindow.GetHScrollBar() )
                 rModulWindow.GetHScrollBar()->SetThumbPos( pEditView->GetStartDocPos().X() );
@@ -1079,7 +1047,7 @@ void EditorWindow::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
             rModulWindow.GetLineNumberWindow().DoScroll
                 ( rModulWindow.GetLineNumberWindow().GetCurYOffset() - pEditView->GetStartDocPos().Y() );
         }
-        else if( rTextHint.GetId() == TEXT_HINT_TEXTHEIGHTCHANGED )
+        else if( rTextHint.GetId() == SfxHintId::TextHeightChanged )
         {
             if ( pEditView->GetStartDocPos().Y() )
             {
@@ -1093,7 +1061,7 @@ void EditorWindow::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
 
             SetScrollBarRanges();
         }
-        else if( rTextHint.GetId() == TEXT_HINT_TEXTFORMATTED )
+        else if( rTextHint.GetId() == SfxHintId::TextFormatted )
         {
             if ( rModulWindow.GetHScrollBar() )
             {
@@ -1110,20 +1078,20 @@ void EditorWindow::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
             if ( nCurTextWidth != nPrevTextWidth )
                 SetScrollBarRanges();
         }
-        else if( rTextHint.GetId() == TEXT_HINT_PARAINSERTED )
+        else if( rTextHint.GetId() == SfxHintId::TextParaInserted )
         {
             ParagraphInsertedDeleted( rTextHint.GetValue(), true );
             DoDelayedSyntaxHighlight( rTextHint.GetValue() );
         }
-        else if( rTextHint.GetId() == TEXT_HINT_PARAREMOVED )
+        else if( rTextHint.GetId() == SfxHintId::TextParaRemoved )
         {
             ParagraphInsertedDeleted( rTextHint.GetValue(), false );
         }
-        else if( rTextHint.GetId() == TEXT_HINT_PARACONTENTCHANGED )
+        else if( rTextHint.GetId() == SfxHintId::TextParaContentChanged )
         {
             DoDelayedSyntaxHighlight( rTextHint.GetValue() );
         }
-        else if( rTextHint.GetId() == TEXT_HINT_VIEWSELECTIONCHANGED )
+        else if( rTextHint.GetId() == SfxHintId::TextViewSelectionChanged )
         {
             if (SfxBindings* pBindings = GetBindingsPtr())
             {
@@ -1139,8 +1107,7 @@ OUString EditorWindow::GetActualSubName( sal_uLong nLine )
     SbxArrayRef pMethods = rModulWindow.GetSbModule()->GetMethods();
     for( sal_uInt16 i=0; i < pMethods->Count(); i++ )
     {
-        SbxVariable* p = dynamic_cast<SbMethod*>( pMethods->Get( i )  );
-        SbMethod* pMeth = dynamic_cast<SbMethod*>( p  );
+        SbMethod* pMeth = dynamic_cast<SbMethod*>( pMethods->Get( i )  );
         if( pMeth )
         {
             sal_uInt16 l1,l2;
@@ -1210,6 +1177,16 @@ void EditorWindow::ImpDoHighlight( sal_uLong nLine )
     }
 }
 
+void EditorWindow::ChangeFontColor( Color aColor )
+{
+    if (pEditEngine)
+    {
+        vcl::Font aFont(pEditEngine->GetFont());
+        aFont.SetColor(aColor);
+        pEditEngine->SetFont(aFont);
+    }
+}
+
 void EditorWindow::UpdateSyntaxHighlighting ()
 {
     const sal_uInt32 nCount = pEditEngine->GetParagraphCount();
@@ -1229,7 +1206,7 @@ void EditorWindow::ImplSetFont()
     }
     Size aFontSize(0, officecfg::Office::Common::Font::SourceViewFont::FontHeight::get());
     vcl::Font aFont(sFontName, aFontSize);
-    aFont.SetColor(Application::GetSettings().GetStyleSettings().GetFieldTextColor());
+    aFont.SetColor(rModulWindow.GetLayout().GetFontColor());
     SetPointFont(*this, aFont); // FIXME RenderContext
     aFont = GetFont();
 
@@ -1264,7 +1241,7 @@ void EditorWindow::DoDelayedSyntaxHighlight( sal_uLong nPara )
     if ( pProgress )
         pProgress->StepProgress();
 
-    if ( !bHighlightning && bDoSyntaxHighlight )
+    if ( !bHighlighting && bDoSyntaxHighlight )
     {
         if ( bDelayHighlight )
         {
@@ -1276,14 +1253,14 @@ void EditorWindow::DoDelayedSyntaxHighlight( sal_uLong nPara )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(EditorWindow, SyntaxTimerHdl, Idle *, void)
+IMPL_LINK_NOARG(EditorWindow, SyntaxTimerHdl, Timer *, void)
 {
-    DBG_ASSERT( pEditView, "Noch keine View, aber Syntax-Highlight ?!" );
+    DBG_ASSERT( pEditView, "Not yet a View, but Syntax-Highlight?!" );
 
     bool const bWasModified = pEditEngine->IsModified();
     //pEditEngine->SetUpdateMode(false);
 
-    bHighlightning = true;
+    bHighlighting = true;
     for ( std::set<sal_uInt16>::const_iterator it = aSyntaxLineTable.begin();
           it != aSyntaxLineTable.end(); ++it )
     {
@@ -1298,7 +1275,7 @@ IMPL_LINK_NOARG_TYPED(EditorWindow, SyntaxTimerHdl, Idle *, void)
     pEditEngine->SetModified( bWasModified );
 
     aSyntaxLineTable.clear();
-    bHighlightning = false;
+    bHighlighting = false;
 }
 
 void EditorWindow::ParagraphInsertedDeleted( sal_uLong nPara, bool bInserted )
@@ -1318,7 +1295,7 @@ void EditorWindow::ParagraphInsertedDeleted( sal_uLong nPara, bool bInserted )
 
         long nLineHeight = GetTextHeight();
         Size aSz = rModulWindow.GetBreakPointWindow().GetOutputSize();
-        Rectangle aInvRect( Point( 0, 0 ), aSz );
+        tools::Rectangle aInvRect( Point( 0, 0 ), aSz );
         long nY = nPara*nLineHeight - rModulWindow.GetBreakPointWindow().GetCurYOffset();
         aInvRect.Top() = nY;
         rModulWindow.GetBreakPointWindow().Invalidate( aInvRect );
@@ -1332,7 +1309,7 @@ void EditorWindow::ParagraphInsertedDeleted( sal_uLong nPara, bool bInserted )
 
 void EditorWindow::CreateProgress( const OUString& rText, sal_uLong nRange )
 {
-    DBG_ASSERT( !pProgress, "ProgressInfo existiert schon" );
+    DBG_ASSERT( !pProgress, "ProgressInfo exists already" );
     pProgress.reset(new ProgressInfo(
         GetShell()->GetViewFrame()->GetObjectShell(),
         rText,
@@ -1348,7 +1325,7 @@ void EditorWindow::DestroyProgress()
 void EditorWindow::ForceSyntaxTimeout()
 {
     aSyntaxIdle.Stop();
-    aSyntaxIdle.GetIdleHdl().Call(&aSyntaxIdle);
+    aSyntaxIdle.Invoke();
 }
 
 // BreakPointWindow
@@ -1364,7 +1341,7 @@ BreakPointWindow::BreakPointWindow (vcl::Window* pParent, ModulWindow* pModulWin
     SetHelpId(HID_BASICIDE_BREAKPOINTWINDOW);
 }
 
-void BreakPointWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void BreakPointWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     if (SyncYOffset())
         return;
@@ -1374,8 +1351,8 @@ void BreakPointWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle
 
     Image const aBrk[2] =
     {
-        GetImage(IMGID_BRKDISABLED),
-        GetImage(IMGID_BRKENABLED)
+        GetImage(RID_BMP_BRKDISABLED),
+        GetImage(RID_BMP_BRKENABLED)
     };
 
     Size const aBmpSz = rRenderContext.PixelToLogic(aBrk[1].GetSizePixel());
@@ -1401,7 +1378,7 @@ void BreakPointWindow::ShowMarker(vcl::RenderContext& rRenderContext)
     Size const aOutSz = GetOutputSize();
     long const nLineHeight = GetTextHeight();
 
-    Image aMarker = GetImage(bErrorMarker ? IMGID_ERRORMARKER : IMGID_STEPMARKER);
+    Image aMarker = GetImage(bErrorMarker ? RID_BMP_ERRORMARKER : RID_BMP_STEPMARKER);
 
     Size aMarkerSz(aMarker.GetSizePixel());
     aMarkerSz = rRenderContext.PixelToLogic(aMarkerSz);
@@ -1479,40 +1456,36 @@ void BreakPointWindow::Command( const CommandEvent& rCEvt )
         BreakPoint* pBrk = rCEvt.IsMouseEvent() ? FindBreakPoint( aEventPos ) : nullptr;
         if ( pBrk )
         {
+            if (!mpUIBuilder)
+                mpUIBuilder.reset(new VclBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/BasicIDE/ui/breakpointmenus.ui", ""));
+
             // test if break point is enabled...
-            PopupMenu aBrkPropMenu( IDEResId( RID_POPUP_BRKPROPS ) );
-            aBrkPropMenu.CheckItem( RID_ACTIV, pBrk->bEnabled );
-            switch ( aBrkPropMenu.Execute( this, aPos ) )
+            VclPtr<PopupMenu> xBrkPropMenu = mpUIBuilder->get_menu("breakmenu");
+            xBrkPropMenu->CheckItem(xBrkPropMenu->GetItemId("active"), pBrk->bEnabled);
+            OString sCommand = xBrkPropMenu->GetItemIdent(xBrkPropMenu->Execute(this, aPos));
+            if (sCommand == "active")
             {
-                case RID_ACTIV:
-                {
-                    pBrk->bEnabled = !pBrk->bEnabled;
-                    rModulWindow.UpdateBreakPoint( *pBrk );
-                    Invalidate();
-                }
-                break;
-                case RID_BRKPROPS:
-                {
-                    ScopedVclPtrInstance< BreakPointDialog > aBrkDlg( this, GetBreakPoints() );
-                    aBrkDlg->SetCurrentBreakPoint( pBrk );
-                    aBrkDlg->Execute();
-                    Invalidate();
-                }
-                break;
+                pBrk->bEnabled = !pBrk->bEnabled;
+                rModulWindow.UpdateBreakPoint( *pBrk );
+                Invalidate();
+            }
+            else if (sCommand == "properties")
+            {
+                ScopedVclPtrInstance<BreakPointDialog> aBrkDlg(this, GetBreakPoints());
+                aBrkDlg->SetCurrentBreakPoint( pBrk );
+                aBrkDlg->Execute();
+                Invalidate();
             }
         }
         else
         {
-            PopupMenu aBrkListMenu( IDEResId( RID_POPUP_BRKDLG ) );
-            switch ( aBrkListMenu.Execute( this, aPos ) )
+            VclPtr<PopupMenu> xBrkListMenu = mpUIBuilder->get_menu("breaklistmenu");
+            OString sCommand = xBrkListMenu->GetItemIdent(xBrkListMenu->Execute(this, aPos));
+            if (sCommand == "manage")
             {
-                case RID_BRKDLG:
-                {
-                    ScopedVclPtrInstance< BreakPointDialog > aBrkDlg( this, GetBreakPoints() );
-                    aBrkDlg->Execute();
-                    Invalidate();
-                }
-                break;
+                ScopedVclPtrInstance< BreakPointDialog > aBrkDlg( this, GetBreakPoints() );
+                aBrkDlg->Execute();
+                Invalidate();
             }
         }
     }
@@ -1556,6 +1529,12 @@ void BreakPointWindow::setBackgroundColor(Color aColor)
     SetBackground(Wallpaper(aColor));
 }
 
+void BreakPointWindow::dispose()
+{
+    mpUIBuilder.reset();
+    Window::dispose();
+}
+
 namespace
 {
     const sal_uInt16 ITEM_ID_VARIABLE = 1;
@@ -1563,16 +1542,19 @@ namespace
     const sal_uInt16 ITEM_ID_TYPE = 3;
 }
 
-WatchWindow::WatchWindow (Layout* pParent) :
-    DockingWindow(pParent),
-    aWatchStr( IDEResId( RID_STR_REMOVEWATCH ) ),
-    aXEdit( VclPtr<ExtendedEdit>::Create(this, IDEResId( RID_EDT_WATCHEDIT )) ),
-    aRemoveWatchButton( VclPtr<ImageButton>::Create(this, IDEResId( RID_IMGBTN_REMOVEWATCH )) ),
-    aTreeListBox( VclPtr<WatchTreeListBox>::Create(this, WB_BORDER | WB_3DLOOK | WB_HASBUTTONS | WB_HASLINES | WB_HSCROLL | WB_TABSTOP
-                                  | WB_HASLINESATROOT | WB_HASBUTTONSATROOT) ),
-    aHeaderBar( VclPtr<HeaderBar>::Create( this, WB_BUTTONSTYLE | WB_BORDER ) )
+WatchWindow::WatchWindow (Layout* pParent)
+    : DockingWindow(pParent)
+    , aWatchStr(IDEResId( RID_STR_REMOVEWATCH))
+    , aXEdit(VclPtr<ExtendedEdit>::Create(this, WB_BORDER | WB_3DLOOK))
+    , aRemoveWatchButton(VclPtr<ImageButton>::Create(this, WB_SMALLSTYLE))
+    , aTreeListBox(VclPtr<WatchTreeListBox>::Create(this, WB_BORDER | WB_3DLOOK | WB_HASBUTTONS |
+                                                          WB_HASLINES | WB_HSCROLL | WB_TABSTOP |
+                                                          WB_HASLINESATROOT | WB_HASBUTTONSATROOT))
+    , aHeaderBar(VclPtr<HeaderBar>::Create(this, WB_BUTTONSTYLE | WB_BORDER))
 {
     aXEdit->SetAccessibleName(IDEResId(RID_STR_WATCHNAME).toString());
+    aXEdit->SetHelpId(HID_BASICIDE_WATCHWINDOW_EDIT);
+    aXEdit->SetSizePixel(aXEdit->LogicToPixel(Size(80, 12), MapUnit::MapAppFont));
     aTreeListBox->SetAccessibleName(IDEResId(RID_STR_WATCHNAME).toString());
 
     long nTextLen = GetTextWidth( aWatchStr ) + DWBORDER + 3;
@@ -1585,6 +1567,9 @@ WatchWindow::WatchWindow (Layout* pParent) :
     aRemoveWatchButton->Disable();
     aRemoveWatchButton->SetClickHdl( LINK( this, WatchWindow, ButtonHdl ) );
     aRemoveWatchButton->SetPosPixel( Point( nTextLen + aXEdit->GetSizePixel().Width() + 4, 2 ) );
+    aRemoveWatchButton->SetHelpId(HID_BASICIDE_REMOVEWATCH);
+    aRemoveWatchButton->SetModeImage(Image(BitmapEx(IDEResId(RID_BMP_REMOVEWATCH))));
+    aRemoveWatchButton->SetQuickHelpText(IDEResId(RID_STR_REMOVEWATCHTIP));
     Size aSz( aRemoveWatchButton->GetModeImage().GetSizePixel() );
     aSz.Width() += 6;
     aSz.Height() += 6;
@@ -1621,7 +1606,7 @@ WatchWindow::WatchWindow (Layout* pParent) :
     tabs[ 1 ] = 0;
     tabs[ 2 ] = nVarTabWidth;
     tabs[ 3 ] = nVarTabWidth + nValueTabWidth;
-    aTreeListBox->SvHeaderTabListBox::SetTabs( tabs, MAP_PIXEL );
+    aTreeListBox->SvHeaderTabListBox::SetTabs( tabs, MapUnit::MapPixel );
     aTreeListBox->InitHeaderBar( aHeaderBar.get() );
 
     aTreeListBox->SetNodeDefaultImages( );
@@ -1655,7 +1640,7 @@ void WatchWindow::dispose()
     DockingWindow::dispose();
 }
 
-void WatchWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void WatchWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     rRenderContext.DrawText(Point(DWBORDER, 7), aWatchStr);
     lcl_DrawIDEWindowFrame(this, rRenderContext);
@@ -1716,7 +1701,7 @@ WatchItem* WatchItem::GetRootItem()
     WatchItem* pItem = mpArrayParentItem;
     while( pItem )
     {
-        if( pItem->mpArray.Is() )
+        if( pItem->mpArray.is() )
             break;
         pItem = pItem->mpArrayParentItem;
     }
@@ -1728,7 +1713,7 @@ SbxDimArray* WatchItem::GetRootArray()
     WatchItem* pRootItem = GetRootItem();
     SbxDimArray* pRet = nullptr;
     if( pRootItem )
-        pRet = pRootItem->mpArray;
+        pRet = pRootItem->mpArray.get();
     return pRet;
 }
 
@@ -1738,8 +1723,7 @@ void WatchWindow::AddWatch( const OUString& rVName )
     lcl_SeparateNameAndIndex( rVName, aVar, aIndex );
     WatchItem* pWatchItem = new WatchItem(aVar);
 
-    OUString aWatchStr_( aVar );
-    aWatchStr_ += "\t\t";
+    OUString aWatchStr_ = aVar + "\t\t";
     SvTreeListEntry* pNewEntry = aTreeListBox->InsertEntry( aWatchStr_, nullptr, true );
     pNewEntry->SetUserData( pWatchItem );
 
@@ -1747,7 +1731,7 @@ void WatchWindow::AddWatch( const OUString& rVName )
     aTreeListBox->MakeVisible(pNewEntry);
     aRemoveWatchButton->Enable();
 
-    UpdateWatches();
+    UpdateWatches(false);
 }
 
 void WatchWindow::RemoveSelectedWatch()
@@ -1767,21 +1751,21 @@ void WatchWindow::RemoveSelectedWatch()
 }
 
 
-IMPL_LINK_TYPED( WatchWindow, ButtonHdl, Button *, pButton, void )
+IMPL_LINK( WatchWindow, ButtonHdl, Button *, pButton, void )
 {
     if (pButton == aRemoveWatchButton.get())
         if (SfxDispatcher* pDispatcher = GetDispatcher())
             pDispatcher->Execute(SID_BASICIDE_REMOVEWATCH);
 }
 
-IMPL_LINK_NOARG_TYPED(WatchWindow, TreeListHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(WatchWindow, TreeListHdl, SvTreeListBox*, void)
 {
     SvTreeListEntry* pCurEntry = aTreeListBox->GetCurEntry();
     if ( pCurEntry && pCurEntry->GetUserData() )
         aXEdit->SetText( static_cast<WatchItem*>(pCurEntry->GetUserData())->maName );
 }
 
-IMPL_LINK_NOARG_TYPED( WatchWindow, implEndDragHdl, HeaderBar *, void )
+IMPL_LINK_NOARG( WatchWindow, implEndDragHdl, HeaderBar *, void )
 {
     const sal_Int32 TAB_WIDTH_MIN = 10;
     sal_Int32 nMaxWidth =
@@ -1807,11 +1791,11 @@ IMPL_LINK_NOARG_TYPED( WatchWindow, implEndDragHdl, HeaderBar *, void )
     for( sal_uInt16 i = 1 ; i < nTabs ; ++i )
     {
         nPos += aHeaderBar->GetItemSize( i );
-        aTreeListBox->SetTab( i, nPos, MAP_PIXEL );
+        aTreeListBox->SetTab( i, nPos, MapUnit::MapPixel );
     }
 }
 
-IMPL_LINK_TYPED( WatchWindow, EditAccHdl, Accelerator&, rAcc, void )
+IMPL_LINK( WatchWindow, EditAccHdl, Accelerator&, rAcc, void )
 {
     switch ( rAcc.GetCurKeyCode().GetCode() )
     {
@@ -1851,7 +1835,7 @@ StackWindow::StackWindow (Layout* pParent) :
     aTreeListBox->SetAccessibleName(IDEResId(RID_STR_STACKNAME).toString());
     aTreeListBox->SetPosPixel( Point( DWBORDER, nVirtToolBoxHeight ) );
     aTreeListBox->SetHighlightRange();
-    aTreeListBox->SetSelectionMode( NO_SELECTION );
+    aTreeListBox->SetSelectionMode( SelectionMode::NONE );
     aTreeListBox->InsertEntry( OUString() );
     aTreeListBox->Show();
 
@@ -1877,7 +1861,7 @@ void StackWindow::dispose()
     DockingWindow::dispose();
 }
 
-void StackWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void StackWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     rRenderContext.DrawText(Point(DWBORDER, 7), aStackStr);
     lcl_DrawIDEWindowFrame(this, rRenderContext);
@@ -1906,7 +1890,7 @@ void StackWindow::UpdateCalls()
     if (StarBASIC::IsRunning())
     {
         SbxError eOld = SbxBase::GetError();
-        aTreeListBox->SetSelectionMode( SINGLE_SELECTION );
+        aTreeListBox->SetSelectionMode( SelectionMode::Single );
 
         sal_Int32 nScope = 0;
         SbMethod* pMethod = StarBASIC::GetActiveMethod( nScope );
@@ -1966,7 +1950,7 @@ void StackWindow::UpdateCalls()
     }
     else
     {
-        aTreeListBox->SetSelectionMode( NO_SELECTION );
+        aTreeListBox->SetSelectionMode( SelectionMode::NONE );
         aTreeListBox->InsertEntry( OUString() );
     }
 
@@ -2033,11 +2017,11 @@ void ComplexEditorWindow::Resize()
     aEWVScrollBar->SetPosSizePixel( Point( aOutSz.Width() - DWBORDER - nSBWidth, DWBORDER ), Size( nSBWidth, aSz.Height() ) );
 }
 
-IMPL_LINK_TYPED(ComplexEditorWindow, ScrollHdl, ScrollBar *, pCurScrollBar, void )
+IMPL_LINK(ComplexEditorWindow, ScrollHdl, ScrollBar *, pCurScrollBar, void )
 {
     if (aEdtWindow->GetEditView())
     {
-        DBG_ASSERT( pCurScrollBar == aEWVScrollBar.get(), "Wer scrollt hier ?" );
+        DBG_ASSERT( pCurScrollBar == aEWVScrollBar.get(), "Who is scrolling?" );
         long nDiff = aEdtWindow->GetEditView()->GetStartDocPos().Y() - pCurScrollBar->GetThumbPos();
         aEdtWindow->GetEditView()->Scroll( 0, nDiff );
         aBrkWindow->DoScroll( nDiff );
@@ -2137,7 +2121,7 @@ void WatchTreeListBox::RequestingChildren( SvTreeListEntry * pParent )
     SvTreeListEntry* pEntry = pParent;
     WatchItem* pItem = static_cast<WatchItem*>(pEntry->GetUserData());
 
-    SbxDimArray* pArray = pItem->mpArray;
+    SbxDimArray* pArray = pItem->mpArray.get();
     SbxDimArray* pRootArray = pItem->GetRootArray();
     bool bArrayIsRootArray = false;
     if( !pArray && pRootArray )
@@ -2146,7 +2130,7 @@ void WatchTreeListBox::RequestingChildren( SvTreeListEntry * pParent )
         bArrayIsRootArray = true;
     }
 
-    SbxObject* pObj = pItem->mpObject;
+    SbxObject* pObj = pItem->mpObject.get();
     if( pObj )
     {
         createAllObjectProperties( pObj );
@@ -2236,7 +2220,7 @@ SbxBase* WatchTreeListBox::ImplGetSBXForEntry( SvTreeListEntry* pEntry, bool& rb
     WatchItem* pParentItem = pParentEntry ? static_cast<WatchItem*>(pParentEntry->GetUserData()) : nullptr;
     if( pParentItem )
     {
-        SbxObject* pObj = pParentItem->mpObject;
+        SbxObject* pObj = pParentItem->mpObject.get();
         SbxDimArray* pArray;
         if( pObj )
         {
@@ -2277,7 +2261,7 @@ bool WatchTreeListBox::EditingEntry( SvTreeListEntry* pEntry, Selection& )
         if (IsSbxVariable(pSbx) || bArrayElement)
         {
             // Accept no objects and only end nodes of arrays for editing
-            if( !pItem->mpObject && (pItem->mpArray == nullptr || pItem->nDimLevel == pItem->nDimCount) )
+            if( !pItem->mpObject.is() && ( !pItem->mpArray.is() || pItem->nDimLevel == pItem->nDimCount ) )
             {
                 aEditingRes = SvHeaderTabListBox::GetEntryText( pEntry, ITEM_ID_VALUE-1 );
                 aEditingRes = comphelper::string::strip(aEditingRes, ' ');
@@ -2354,7 +2338,7 @@ OUString implCreateTypeStringForDimArray( WatchItem* pItem, SbxDataType eType )
 {
     OUString aRetStr = getBasicTypeName( eType );
 
-    SbxDimArray* pArray = pItem->mpArray;
+    SbxDimArray* pArray = pItem->mpArray.get();
     if( !pArray )
         pArray = pItem->GetRootArray();
     if( pArray )
@@ -2429,10 +2413,10 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
                 SbxDataType eType = pVar->GetType();
                 if ( eType & SbxARRAY )
                 {
-                    // consider multidimensinal arrays!
+                    // consider multidimensional arrays!
                     if (SbxDimArray* pNewArray = dynamic_cast<SbxDimArray*>(pVar->GetObject()))
                     {
-                        SbxDimArray* pOldArray = pItem->mpArray;
+                        SbxDimArray* pOldArray = pItem->mpArray.get();
 
                         bool bArrayChanged = false;
                         if( pNewArray != nullptr && pOldArray != nullptr )
@@ -2499,7 +2483,7 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
                 {
                     if (SbxObject* pObj = dynamic_cast<SbxObject*>(pVar->GetObject()))
                     {
-                        if (pItem->mpObject && !pItem->maMemberList.empty())
+                        if ( pItem->mpObject.is() && !pItem->maMemberList.empty() )
                         {
                             bool bObjChanged = false; // Check if member list has changed
                             SbxArray* pProps = pObj->GetProperties();
@@ -2527,7 +2511,7 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
                     else
                     {
                         aWatchStr = "Null";
-                        if( pItem->mpObject != nullptr )
+                        if( pItem->mpObject.is() )
                         {
                             bCollapse = true;
                             pItem->clearWatchItem();
@@ -2538,7 +2522,7 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
                 }
                 else
                 {
-                    if( pItem->mpObject != nullptr )
+                    if( pItem->mpObject.is() )
                     {
                         bCollapse = true;
                         pItem->clearWatchItem();
@@ -2580,7 +2564,7 @@ void WatchTreeListBox::UpdateWatches( bool bBasicStopped )
         }
         else if( bBasicStopped )
         {
-            if( pItem->mpObject || pItem->mpArray )
+            if( pItem->mpObject.is() || pItem->mpArray.is() )
             {
                 implCollapseModifiedObjectEntry( pEntry, this );
                 pItem->mpObject = nullptr;
@@ -2621,24 +2605,24 @@ void CodeCompleteListBox::dispose()
     ListBox::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(CodeCompleteListBox, ImplDoubleClickHdl, ListBox&, void)
+IMPL_LINK_NOARG(CodeCompleteListBox, ImplDoubleClickHdl, ListBox&, void)
 {
     InsertSelectedEntry();
 }
 
-IMPL_LINK_NOARG_TYPED(CodeCompleteListBox, ImplSelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(CodeCompleteListBox, ImplSelectHdl, ListBox&, void)
 {//give back the focus to the parent
     pCodeCompleteWindow->pParent->GrabFocus();
 }
 
-ExtTextView* CodeCompleteListBox::GetParentEditView()
+TextView* CodeCompleteListBox::GetParentEditView()
 {
     return pCodeCompleteWindow->pParent->GetEditView();
 }
 
 void CodeCompleteListBox::InsertSelectedEntry()
 {
-    if( !aFuncBuffer.toString().isEmpty() )
+    if( !aFuncBuffer.isEmpty() )
     {
         // if the user typed in something: remove, and insert
         GetParentEditView()->SetSelection( pCodeCompleteWindow->pParent->GetLastHighlightPortionTextSelection() );
@@ -2743,7 +2727,7 @@ void CodeCompleteListBox::KeyInput( const KeyEvent& rKeyEvt )
                 HideAndRestoreFocus();
                 break;
             case KEY_BACKSPACE: case KEY_DELETE:
-                if( !aFuncBuffer.toString().isEmpty() )
+                if( !aFuncBuffer.isEmpty() )
                 {
                     //if there was something inserted by tab: add it to aFuncBuffer
                     TextSelection aSel( GetParentEditView()->GetSelection() );
@@ -2754,10 +2738,9 @@ void CodeCompleteListBox::KeyInput( const KeyEvent& rKeyEvt )
 
                     if( !aTabInsertedStr.isEmpty() && aTabInsertedStr != aFuncBuffer.toString() )
                     {
-                        aFuncBuffer.makeStringAndClear();
-                        aFuncBuffer = aFuncBuffer.append(aTabInsertedStr);
+                        aFuncBuffer = aTabInsertedStr;
                     }
-                    aFuncBuffer = aFuncBuffer.remove(aFuncBuffer.getLength()-1, 1);
+                    aFuncBuffer.remove(aFuncBuffer.getLength()-1, 1);
                     SetMatchingEntries();
                 }
                 else
@@ -2817,7 +2800,7 @@ void CodeCompleteWindow::InsertEntry( const OUString& aStr )
 void CodeCompleteWindow::ClearListBox()
 {
     pListBox->Clear();
-    pListBox->aFuncBuffer.makeStringAndClear();
+    pListBox->aFuncBuffer.setLength(0);
 }
 
 void CodeCompleteWindow::SetTextSelection( const TextSelection& aSel )
@@ -2831,7 +2814,7 @@ void CodeCompleteWindow::ResizeAndPositionListBox()
     if( pListBox->GetEntryCount() >= 1 )
     {// if there is at least one element inside
         // calculate basic position: under the current line
-        Rectangle aRect = static_cast<TextEngine*>(pParent->GetEditEngine())->PaMtoEditCursor( pParent->GetEditView()->GetSelection().GetEnd() );
+        tools::Rectangle aRect = static_cast<TextEngine*>(pParent->GetEditEngine())->PaMtoEditCursor( pParent->GetEditView()->GetSelection().GetEnd() );
         long nViewYOffset = pParent->GetEditView()->GetStartDocPos().Y();
         Point aPos = aRect.BottomRight();// this variable will be used later (if needed)
         aPos.Y() = (aPos.Y() - nViewYOffset) + nBasePad;
@@ -2855,7 +2838,7 @@ void CodeCompleteWindow::ResizeAndPositionListBox()
         pListBox->SetSizePixel( aSize );
 
         //calculate position
-        const Rectangle aVisArea( pParent->GetEditView()->GetStartDocPos(), pParent->GetOutputSizePixel() ); //the visible area
+        const tools::Rectangle aVisArea( pParent->GetEditView()->GetStartDocPos(), pParent->GetOutputSizePixel() ); //the visible area
         const Point& aBottomPoint = aVisArea.BottomRight();
 
         if( aVisArea.TopRight().getY() + aPos.getY() + aSize.getHeight() > aBottomPoint.getY() )
@@ -2908,12 +2891,12 @@ UnoTypeCodeCompletetor::UnoTypeCodeCompletetor( const std::vector< OUString >& a
         return;
     }
 
-    unsigned int j = 1;//start from aVect[1]: aVect[0] is the variable name
+    auto j = aVect.begin() + 1;//start from aVect[1]: aVect[0] is the variable name
     OUString sMethName;
 
-    while( j != aVect.size() )
+    while( j != aVect.end() )
     {
-        sMethName = aVect[j];
+        sMethName = *j;
 
         if( CodeCompleteOptions::IsExtendedTypeDeclaration() )
         {

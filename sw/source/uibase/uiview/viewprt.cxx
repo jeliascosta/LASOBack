@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/text/NotePrintMode.hpp>
 #include <cstdarg>
+#include <libxml/xmlwriter.h>
 #include <cmdid.h>
 #include <sfx2/request.hxx>
 #include <sfx2/progress.hxx>
@@ -64,6 +64,7 @@
 #include <svl/slstitm.hxx>
 
 #include <unomid.h>
+#include <uivwimp.hxx>
 
 using namespace ::com::sun::star;
 
@@ -175,7 +176,7 @@ void SwView::ExecutePrint(SfxRequest& rReq)
             }
             else
             {
-                ScopedVclPtrInstance< MessageDialog > aInfoBox(&GetEditWin(), SW_RES(STR_ERR_NO_FAX), VCL_MESSAGE_INFO);
+                ScopedVclPtrInstance< MessageDialog > aInfoBox(&GetEditWin(), SW_RES(STR_ERR_NO_FAX), VclMessageType::Info);
                 sal_uInt16 nResNo = bWeb ? STR_WEBOPTIONS : STR_TEXTOPTIONS;
                 aInfoBox->set_primary_text(aInfoBox->get_primary_text().replaceFirst("%1", OUString(SW_RES(nResNo))));
                 aInfoBox->Execute();
@@ -196,7 +197,6 @@ void SwView::ExecutePrint(SfxRequest& rReq)
             if(pPrintFromMergeItem)
                 rReq.RemoveItem(FN_QRY_MERGE);
             bool bFromMerge = pPrintFromMergeItem && pPrintFromMergeItem->GetValue();
-            SwMiscConfig aMiscConfig;
             bool bPrintSelection = false;
             if(!bSilent && !bFromMerge &&
                     SW_MOD()->GetModuleConfig()->IsAskForMailMerge() && pSh->IsAnyDatabaseFieldInDoc())
@@ -247,6 +247,35 @@ void SwView::ExecutePrint(SfxRequest& rReq)
     }
 }
 
+int SwView::getPart() const
+{
+    return 0;
+}
+
+void SwView::dumpAsXml(xmlTextWriterPtr pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwView"));
+    SfxViewShell::dumpAsXml(pWriter);
+    if (m_pWrtShell)
+        m_pWrtShell->dumpAsXml(pWriter);
+    xmlTextWriterEndElement(pWriter);
+}
+
+void SwView::SetRedlineAuthor(const OUString& rAuthor)
+{
+    m_pViewImpl->m_sRedlineAuthor = rAuthor;
+}
+
+const OUString& SwView::GetRedlineAuthor()
+{
+    return m_pViewImpl->m_sRedlineAuthor;
+}
+
+void SwView::NotifyCursor(SfxViewShell* pViewShell) const
+{
+    m_pWrtShell->NotifyCursor(pViewShell);
+}
+
 // Create page printer/additions for SwView and SwPagePreview
 
 VclPtr<SfxTabPage> CreatePrintOptionsPage( vcl::Window *pParent,
@@ -283,7 +312,7 @@ void SetAppPrintOptions( SwViewShell* pSh, bool bWeb )
     if( rIDDA.getPrinter( false ) )
     {
         // Close application own printing options in SfxPrinter.
-        SwAddPrinterItem aAddPrinterItem (FN_PARAM_ADDPRINTER, aPrtData);
+        SwAddPrinterItem aAddPrinterItem(aPrtData);
         SfxItemSet aSet( pSh->GetAttrPool(),
                     FN_PARAM_ADDPRINTER,        FN_PARAM_ADDPRINTER,
                     SID_HTML_MODE,              SID_HTML_MODE,

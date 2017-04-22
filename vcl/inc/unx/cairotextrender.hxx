@@ -26,49 +26,15 @@
 
 #include <deque>
 
-typedef struct FT_FaceRec_* FT_Face;
-
-class FontConfigFontOptions;
-class ServerFont;
+class FreetypeFont;
 class GlyphCache;
-class FontConfigFontOptions;
 typedef struct _cairo cairo_t;
-
-class VCL_DLLPUBLIC CairoFontsCache
-{
-public:
-    struct CacheId
-    {
-        FT_Face maFace;
-        const FontConfigFontOptions *mpOptions;
-        bool mbEmbolden;
-        bool mbVerticalMetrics;
-        bool operator ==(const CacheId& rOther) const
-        {
-            return maFace == rOther.maFace &&
-                mpOptions == rOther.mpOptions &&
-                mbEmbolden == rOther.mbEmbolden &&
-                mbVerticalMetrics == rOther.mbVerticalMetrics;
-        }
-    };
-
-private:
-    typedef         std::deque< std::pair<void *, CacheId> > LRUFonts;
-    static LRUFonts maLRUFonts;
-public:
-                                CairoFontsCache() = delete;
-
-    static void                 CacheFont(void *pFont, const CacheId &rId);
-    static void*                FindCachedFont(const CacheId &rId);
-};
 
 class VCL_DLLPUBLIC CairoTextRender : public TextRenderImpl
 {
-    ServerFont*     mpServerFont[ MAX_FALLBACK ];
+    FreetypeFont*   mpFreetypeFont[ MAX_FALLBACK ];
 
     SalColor        mnTextColor;
-
-    bool            bDisableGraphite_;
 
 protected:
     virtual GlyphCache&         getPlatformGlyphCache() = 0;
@@ -86,8 +52,8 @@ public:
 
     virtual void                SetTextColor( SalColor nSalColor ) override;
     virtual void                SetFont( FontSelectPattern*, int nFallbackLevel ) override;
-    virtual void                GetFontMetric( ImplFontMetricDataPtr&, int nFallbackLevel ) override;
-    virtual const FontCharMapPtr GetFontCharMap() const override;
+    virtual void                GetFontMetric( ImplFontMetricDataRef&, int nFallbackLevel ) override;
+    virtual const FontCharMapRef GetFontCharMap() const override;
     virtual bool                GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const override;
     virtual void                GetDevFontList( PhysicalFontCollection* ) override;
     virtual void                ClearDevFontCache() override;
@@ -101,32 +67,22 @@ public:
                                     int nGlyphs,
                                     FontSubsetInfo& rInfo) override;
 
-    virtual const Ucs2SIntMap*  GetFontEncodingVector( const PhysicalFontFace*, const Ucs2OStrMap** ppNonEncoded, std::set<sal_Unicode> const**) override;
-    virtual const void*         GetEmbedFontData(
-                                    const PhysicalFontFace*,
-                                    const sal_Ucs* pUnicodes,
-                                    sal_Int32* pWidths,
-                                    size_t nLen,
-                                    FontSubsetInfo& rInfo,
-                                    long* pDataLen ) override;
-
+    virtual const void*         GetEmbedFontData(const PhysicalFontFace*, long* pDataLen) override;
     virtual void                FreeEmbedFontData( const void* pData, long nDataLen ) override;
     virtual void                GetGlyphWidths(
                                     const PhysicalFontFace*,
                                     bool bVertical,
-                                    Int32Vector& rWidths,
+                                    std::vector< sal_Int32 >& rWidths,
                                     Ucs2UIntMap& rUnicodeEnc ) override;
 
-    virtual bool                GetGlyphBoundRect( sal_GlyphId nIndex, Rectangle& ) override;
-    virtual bool                GetGlyphOutline( sal_GlyphId nIndex, basegfx::B2DPolyPolygon& ) override;
+    virtual bool                GetGlyphBoundRect(const GlyphItem&, tools::Rectangle&) override;
+    virtual bool                GetGlyphOutline(const GlyphItem&, basegfx::B2DPolyPolygon&) override;
     virtual SalLayout*          GetTextLayout( ImplLayoutArgs&, int nFallbackLevel ) override;
-    virtual void                DrawServerFontLayout( const ServerFontLayout& ) override;
+    virtual void                DrawTextLayout(const CommonSalLayout&) override;
 #if ENABLE_CAIRO_CANVAS
     virtual SystemFontData      GetSysFontData( int nFallbackLevel ) const override;
 #endif
 };
-
-FontConfigFontOptions* GetFCFontOptions( const FontAttributes& rFontAttributes, int nSize);
 
 #endif
 

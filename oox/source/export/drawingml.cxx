@@ -23,7 +23,8 @@
 #include "oox/export/drawingml.hxx"
 #include "oox/export/utils.hxx"
 #include <oox/drawingml/color.hxx>
-#include <oox/drawingml/fillproperties.hxx>
+#include <drawingml/fillproperties.hxx>
+#include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
 #include <oox/drawingml/drawingmltypes.hxx>
 
@@ -47,6 +48,7 @@
 #include <com/sun/star/drawing/EnhancedCustomShapeParameterPair.hpp>
 #include <com/sun/star/drawing/EnhancedCustomShapeSegment.hpp>
 #include <com/sun/star/drawing/EnhancedCustomShapeSegmentCommand.hpp>
+#include <com/sun/star/drawing/Hatch.hpp>
 #include <com/sun/star/drawing/LineDash.hpp>
 #include <com/sun/star/drawing/LineJoint.hpp>
 #include <com/sun/star/drawing/LineStyle.hpp>
@@ -59,7 +61,6 @@
 #include <com/sun/star/io/XOutputStream.hpp>
 #include <com/sun/star/style/LineSpacing.hpp>
 #include <com/sun/star/style/LineSpacingMode.hpp>
-#include <com/sun/star/style/ParagraphAdjust.hpp>
 #include <com/sun/star/text/WritingMode.hpp>
 #include <com/sun/star/text/WritingMode2.hpp>
 #include <com/sun/star/text/GraphicCrop.hpp>
@@ -68,6 +69,7 @@
 #include <com/sun/star/text/XTextField.hpp>
 #include <com/sun/star/text/XTextRange.hpp>
 #include <com/sun/star/style/CaseMap.hpp>
+#include <o3tl/any.hxx>
 #include <tools/stream.hxx>
 #include <unotools/fontdefs.hxx>
 #include <vcl/cvtgrf.hxx>
@@ -101,6 +103,17 @@ using namespace ::css::text;
 using ::css::io::XOutputStream;
 using ::sax_fastparser::FSHelperPtr;
 using ::sax_fastparser::FastSerializerHelper;
+
+#if defined(ANDROID)
+namespace std
+{
+template<typename T>
+T lround(T x)
+{
+    return ::lround(x);
+}
+}
+#endif
 
 namespace oox {
 namespace drawingml {
@@ -225,7 +238,7 @@ void DrawingML::WriteColorTransformations( const Sequence< PropertyValue >& aTra
         if( nToken != XML_TOKEN_INVALID && aTransformations[i].Value.hasValue() )
         {
             sal_Int32 nValue = aTransformations[i].Value.get<sal_Int32>();
-            mpFS->singleElementNS( XML_a, nToken, XML_val, I32S( nValue ), FSEND );
+            mpFS->singleElementNS( XML_a, nToken, XML_val, IS( nValue ), FSEND );
         }
     }
 }
@@ -319,7 +332,7 @@ void DrawingML::WriteSolidFill( const Reference< XPropertySet >& rXPropSet )
 void DrawingML::WriteGradientStop( sal_uInt16 nStop, sal_uInt32 nColor )
 {
     mpFS->startElementNS( XML_a, XML_gs,
-                          XML_pos, I32S( nStop * 1000 ),
+                          XML_pos, IS( nStop * 1000 ),
                           FSEND );
     WriteColor( nColor );
     mpFS->endElementNS( XML_a, XML_gs );
@@ -351,7 +364,7 @@ void DrawingML::WriteGradientFill( const Reference< XPropertySet >& rXPropSet )
     awt::Gradient aGradient;
     if( GETA( FillGradient ) )
     {
-        aGradient = *static_cast< const awt::Gradient* >( mAny.getValue() );
+        aGradient = *o3tl::doAccess<awt::Gradient>(mAny);
 
         // get InteropGrabBag and search the relevant attributes
         awt::Gradient aOriginalGradient;
@@ -436,7 +449,7 @@ void DrawingML::WriteGrabBagGradientFill( const Sequence< PropertyValue >& aGrad
     mpFS->endElementNS( XML_a, XML_gsLst );
 
     mpFS->singleElementNS( XML_a, XML_lin,
-                           XML_ang, I32S( ( ( ( 3600 - rGradient.Angle + 900 ) * 6000 ) % 21600000 ) ),
+                           XML_ang, IS( ( ( ( 3600 - rGradient.Angle + 900 ) * 6000 ) % 21600000 ) ),
                            FSEND );
 }
 
@@ -445,34 +458,34 @@ void DrawingML::WriteGradientFill( awt::Gradient rGradient )
     switch( rGradient.Style )
     {
         default:
-        case GradientStyle_LINEAR:
+        case awt::GradientStyle_LINEAR:
             mpFS->startElementNS( XML_a, XML_gsLst, FSEND );
             WriteGradientStop( 0, ColorWithIntensity( rGradient.StartColor, rGradient.StartIntensity ) );
             WriteGradientStop( 100, ColorWithIntensity( rGradient.EndColor, rGradient.EndIntensity ) );
             mpFS->endElementNS( XML_a, XML_gsLst );
             mpFS->singleElementNS( XML_a, XML_lin,
-                    XML_ang, I32S( ( ( ( 3600 - rGradient.Angle + 900 ) * 6000 ) % 21600000 ) ),
+                    XML_ang, IS( ( ( ( 3600 - rGradient.Angle + 900 ) * 6000 ) % 21600000 ) ),
                     FSEND );
             break;
 
-        case GradientStyle_AXIAL:
+        case awt::GradientStyle_AXIAL:
             mpFS->startElementNS( XML_a, XML_gsLst, FSEND );
             WriteGradientStop( 0, ColorWithIntensity( rGradient.EndColor, rGradient.EndIntensity ) );
             WriteGradientStop( 50, ColorWithIntensity( rGradient.StartColor, rGradient.StartIntensity ) );
             WriteGradientStop( 100, ColorWithIntensity( rGradient.EndColor, rGradient.EndIntensity ) );
             mpFS->endElementNS( XML_a, XML_gsLst );
             mpFS->singleElementNS( XML_a, XML_lin,
-                    XML_ang, I32S( ( ( ( 3600 - rGradient.Angle + 900 ) * 6000 ) % 21600000 ) ),
+                    XML_ang, IS( ( ( ( 3600 - rGradient.Angle + 900 ) * 6000 ) % 21600000 ) ),
                     FSEND );
             break;
 
             /* I don't see how to apply transformation to gradients, so
              * elliptical will end as radial and square as
              * rectangular. also position offsets are not applied */
-        case GradientStyle_RADIAL:
-        case GradientStyle_ELLIPTICAL:
-        case GradientStyle_RECT:
-        case GradientStyle_SQUARE:
+        case awt::GradientStyle_RADIAL:
+        case awt::GradientStyle_ELLIPTICAL:
+        case awt::GradientStyle_RECT:
+        case awt::GradientStyle_SQUARE:
             mpFS->startElementNS( XML_a, XML_gsLst, FSEND );
             WriteGradientStop( 0, ColorWithIntensity( rGradient.EndColor, rGradient.EndIntensity ) );
             WriteGradientStop( 100, ColorWithIntensity( rGradient.StartColor, rGradient.StartIntensity ) );
@@ -648,7 +661,7 @@ void DrawingML::WriteOutline( const Reference<XPropertySet>& rXPropSet )
     mpFS->startElementNS( XML_a, XML_ln,
                           XML_cap, cap,
                           XML_w, nLineWidth > 1 && nStyleLineWidth != nLineWidth ?
-                                  I64S( oox::drawingml::convertHmmToEmu( nLineWidth ) ) :nullptr,
+                                  IS( oox::drawingml::convertHmmToEmu( nLineWidth ) ) :nullptr,
                           FSEND );
 
     if( bColorSet )
@@ -720,17 +733,17 @@ void DrawingML::WriteOutline( const Reference<XPropertySet>& rXPropSet )
             }
 
             SAL_WARN_IF(nLineWidth <= 0,
-                        "oox", "while writing outline - custom dash - line width was < 0  : " << nLineWidth);
+                        "oox.shape", "while writing outline - custom dash - line width was < 0  : " << nLineWidth);
             SAL_WARN_IF(aLineDash.Dashes < 0,
-                        "oox", "while writing outline - custom dash - number of dashes was < 0  : " << aLineDash.Dashes);
+                        "oox.shape", "while writing outline - custom dash - number of dashes was < 0  : " << aLineDash.Dashes);
             SAL_WARN_IF(aLineDash.Dashes > 0 && aLineDash.DashLen <= 0,
-                        "oox", "while writing outline - custom dash - dash length was < 0  : " << aLineDash.DashLen);
+                        "oox.shape", "while writing outline - custom dash - dash length was < 0  : " << aLineDash.DashLen);
             SAL_WARN_IF(aLineDash.Dots < 0,
-                        "oox", "while writing outline - custom dash - number of dots was < 0  : " << aLineDash.Dots);
+                        "oox.shape", "while writing outline - custom dash - number of dots was < 0  : " << aLineDash.Dots);
             SAL_WARN_IF(aLineDash.Dots > 0 && aLineDash.DotLen <= 0,
-                        "oox", "while writing outline - custom dash - dot length was < 0  : " << aLineDash.DotLen);
+                        "oox.shape", "while writing outline - custom dash - dot length was < 0  : " << aLineDash.DotLen);
             SAL_WARN_IF(aLineDash.Distance <= 0,
-                        "oox", "while writing outline - custom dash - distance was < 0  : " << aLineDash.Distance);
+                        "oox.shape", "while writing outline - custom dash - distance was < 0  : " << aLineDash.Distance);
 
             mpFS->endElementNS( XML_a, XML_custDash );
         }
@@ -838,56 +851,56 @@ OUString DrawingML::WriteImage( const Graphic& rGraphic , bool bRelPathToMedia )
 
     SvMemoryStream aStream;
     const void* aData = aLink.GetData();
-    sal_Size nDataSize = aLink.GetDataSize();
+    std::size_t nDataSize = aLink.GetDataSize();
 
     switch ( aLink.GetType() )
     {
-        case GFX_LINK_TYPE_NATIVE_GIF:
+        case GfxLinkType::NativeGif:
             sMediaType = "image/gif";
             pExtension = ".gif";
             break;
 
         // #i15508# added BMP type for better exports
         // export not yet active, so adding for reference (not checked)
-        case GFX_LINK_TYPE_NATIVE_BMP:
+        case GfxLinkType::NativeBmp:
             sMediaType = "image/bmp";
             pExtension = ".bmp";
             break;
 
-        case GFX_LINK_TYPE_NATIVE_JPG:
+        case GfxLinkType::NativeJpg:
             sMediaType = "image/jpeg";
             pExtension = ".jpeg";
             break;
-        case GFX_LINK_TYPE_NATIVE_PNG:
+        case GfxLinkType::NativePng:
             sMediaType = "image/png";
             pExtension = ".png";
             break;
-        case GFX_LINK_TYPE_NATIVE_TIF:
+        case GfxLinkType::NativeTif:
             sMediaType = "image/tiff";
             pExtension = ".tif";
             break;
-        case GFX_LINK_TYPE_NATIVE_WMF:
+        case GfxLinkType::NativeWmf:
             sMediaType = "image/x-wmf";
             pExtension = ".wmf";
             break;
-        case GFX_LINK_TYPE_NATIVE_MET:
+        case GfxLinkType::NativeMet:
             sMediaType = "image/x-met";
             pExtension = ".met";
             break;
-        case GFX_LINK_TYPE_NATIVE_PCT:
+        case GfxLinkType::NativePct:
             sMediaType = "image/x-pict";
             pExtension = ".pct";
             break;
-        case GFX_LINK_TYPE_NATIVE_MOV:
+        case GfxLinkType::NativeMov:
             sMediaType = "application/movie";
             pExtension = ".MOV";
             break;
         default:
         {
             GraphicType aType = rGraphic.GetType();
-            if ( aType == GRAPHIC_BITMAP || aType == GRAPHIC_GDIMETAFILE)
+            if ( aType == GraphicType::Bitmap || aType == GraphicType::GdiMetafile)
             {
-                if ( aType == GRAPHIC_BITMAP )
+                if ( aType == GraphicType::Bitmap )
                 {
                     (void)GraphicConverter::Export( aStream, rGraphic, ConvertDataFormat::PNG );
                     sMediaType = "image/png";
@@ -902,7 +915,7 @@ OUString DrawingML::WriteImage( const Graphic& rGraphic , bool bRelPathToMedia )
             }
             else
             {
-                OSL_TRACE( "unhandled graphic type" );
+                SAL_WARN("oox.shape", "unhandled graphic type" );
                 /*Earlier, even in case of unhandled graphic types we were
                   proceeding to write the image, which would eventually
                   write an empty image with a zero size, and return a valid
@@ -973,8 +986,8 @@ OUString DrawingML::WriteBlip( const Reference< XPropertySet >& rXPropSet, const
     if( nBright || nContrast )
     {
         mpFS->singleElementNS( XML_a, XML_lum,
-                   XML_bright, nBright ? I32S( nBright*1000 ) : nullptr,
-                   XML_contrast, nContrast ? I32S( nContrast*1000 ) : nullptr,
+                   XML_bright, nBright ? IS( nBright*1000 ) : nullptr,
+                   XML_contrast, nContrast ? IS( nContrast*1000 ) : nullptr,
                    FSEND );
     }
     WriteArtisticEffect( rXPropSet );
@@ -1089,8 +1102,8 @@ void DrawingML::WriteSrcRect( const Reference< XPropertySet >& rXPropSet, const 
     const MapMode& rMapMode = aGraphicObject.GetPrefMapMode();
 
     // GraphicCrop is in mm100, so in case the original size is in pixels, convert it over.
-    if (rMapMode.GetMapUnit() == MAP_PIXEL)
-        aOriginalSize = Application::GetDefaultDevice()->PixelToLogic(aOriginalSize, MapMode(MAP_100TH_MM));
+    if (rMapMode.GetMapUnit() == MapUnit::MapPixel)
+        aOriginalSize = Application::GetDefaultDevice()->PixelToLogic(aOriginalSize, MapMode(MapUnit::Map100thMM));
 
     if ( GetProperty( rXPropSet, "GraphicCrop" ) )
     {
@@ -1100,10 +1113,10 @@ void DrawingML::WriteSrcRect( const Reference< XPropertySet >& rXPropSet, const 
         if ( (0 != aGraphicCropStruct.Left) || (0 != aGraphicCropStruct.Top) || (0 != aGraphicCropStruct.Right) || (0 != aGraphicCropStruct.Bottom) )
         {
             mpFS->singleElementNS( XML_a, XML_srcRect,
-                          XML_l, I32S(rtl::math::round(static_cast<double>(aGraphicCropStruct.Left) * 100000 / aOriginalSize.Width())),
-                          XML_t, I32S(rtl::math::round(static_cast<double>(aGraphicCropStruct.Top) * 100000 / aOriginalSize.Height())),
-                          XML_r, I32S(rtl::math::round(static_cast<double>(aGraphicCropStruct.Right) * 100000 / aOriginalSize.Width())),
-                          XML_b, I32S(rtl::math::round(static_cast<double>(aGraphicCropStruct.Bottom) * 100000 / aOriginalSize.Height())),
+                          XML_l, IS(rtl::math::round(static_cast<double>(aGraphicCropStruct.Left) * 100000 / aOriginalSize.Width())),
+                          XML_t, IS(rtl::math::round(static_cast<double>(aGraphicCropStruct.Top) * 100000 / aOriginalSize.Height())),
+                          XML_r, IS(rtl::math::round(static_cast<double>(aGraphicCropStruct.Right) * 100000 / aOriginalSize.Width())),
+                          XML_b, IS(rtl::math::round(static_cast<double>(aGraphicCropStruct.Bottom) * 100000 / aOriginalSize.Height())),
                           FSEND );
         }
     }
@@ -1123,10 +1136,10 @@ void DrawingML::WriteStretch( const css::uno::Reference< css::beans::XPropertySe
         {
             Size aOriginalSize( GraphicObject::CreateGraphicObjectFromURL( rURL ).GetPrefSize() );
             mpFS->singleElementNS( XML_a, XML_fillRect,
-                          XML_l, I32S(((aGraphicCropStruct.Left) * 100000)/aOriginalSize.Width()),
-                          XML_t, I32S(((aGraphicCropStruct.Top) * 100000)/aOriginalSize.Height()),
-                          XML_r, I32S(((aGraphicCropStruct.Right) * 100000)/aOriginalSize.Width()),
-                          XML_b, I32S(((aGraphicCropStruct.Bottom) * 100000)/aOriginalSize.Height()),
+                          XML_l, IS(((aGraphicCropStruct.Left) * 100000)/aOriginalSize.Width()),
+                          XML_t, IS(((aGraphicCropStruct.Top) * 100000)/aOriginalSize.Height()),
+                          XML_r, IS(((aGraphicCropStruct.Right) * 100000)/aOriginalSize.Width()),
+                          XML_b, IS(((aGraphicCropStruct.Bottom) * 100000)/aOriginalSize.Height()),
                           FSEND );
             bCrop = true;
         }
@@ -1140,13 +1153,13 @@ void DrawingML::WriteStretch( const css::uno::Reference< css::beans::XPropertySe
     mpFS->endElementNS( XML_a, XML_stretch );
 }
 
-void DrawingML::WriteTransformation( const Rectangle& rRect,
+void DrawingML::WriteTransformation( const tools::Rectangle& rRect,
         sal_Int32 nXmlNamespace, bool bFlipH, bool bFlipV, sal_Int32 nRotation )
 {
     mpFS->startElementNS( nXmlNamespace, XML_xfrm,
                           XML_flipH, bFlipH ? "1" : nullptr,
                           XML_flipV, bFlipV ? "1" : nullptr,
-                          XML_rot, (nRotation % 21600000) ? I32S( nRotation ) : nullptr,
+                          XML_rot, (nRotation % 21600000) ? IS( nRotation ) : nullptr,
                           FSEND );
 
     sal_Int32 nLeft = rRect.Left();
@@ -1200,7 +1213,7 @@ void DrawingML::WriteShapeTransformation( const Reference< XShape >& rXShape, sa
         if (xPropertySetInfo->hasPropertyByName("RotateAngle"))
             xPropertySet->getPropertyValue("RotateAngle") >>= nRotation;
     }
-    WriteTransformation( Rectangle( Point( aPos.X, aPos.Y ), Size( aSize.Width, aSize.Height ) ), nXmlNamespace, bFlipH, bFlipV, OOX_DRAWINGML_EXPORT_ROTATE_CLOCKWISIFY(nRotation) );
+    WriteTransformation( tools::Rectangle( Point( aPos.X, aPos.Y ), Size( aSize.Width, aSize.Height ) ), nXmlNamespace, bFlipH, bFlipV, OOX_DRAWINGML_EXPORT_ROTATE_CLOCKWISIFY(nRotation) );
 }
 
 void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool bIsField, sal_Int32 nElement, bool bCheckDirect,
@@ -1227,7 +1240,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
     }
     else if( GETA( CharHeight ) )
     {
-        nSize = (sal_Int32) (100*(*static_cast<float const *>(mAny.getValue())));
+        nSize = (sal_Int32) (100*(*o3tl::doAccess<float>(mAny)));
         if ( nElement == XML_rPr )
         {
             rbOverridingCharHeight = true;
@@ -1236,7 +1249,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
     }
 
      if( GETA( CharKerning ) )
-        nCharKerning = (sal_Int32)(*static_cast<short const *>(mAny.getValue()));
+        nCharKerning = (sal_Int32)(*o3tl::doAccess<sal_Int16>(mAny));
     /**  While setting values in propertymap,
     *    CharKerning converted using GetTextSpacingPoint
     *    i.e set @ http://opengrok.libreoffice.org/xref/core/oox/source/drawingml/textcharacterproperties.cxx#129
@@ -1247,12 +1260,12 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if ( ( bComplex && GETA( CharWeightComplex ) ) || GETA( CharWeight ) )
     {
-        if ( *static_cast<float const *>(mAny.getValue()) >= awt::FontWeight::SEMIBOLD )
+        if ( *o3tl::doAccess<float>(mAny) >= awt::FontWeight::SEMIBOLD )
             bold = "1";
     }
 
     if ( ( bComplex && GETA( CharPostureComplex ) ) || GETA( CharPosture ) )
-        switch ( *static_cast<awt::FontSlant const *>(mAny.getValue()) )
+        switch ( *o3tl::doAccess<awt::FontSlant>(mAny) )
         {
             case awt::FontSlant_OBLIQUE :
             case awt::FontSlant_ITALIC :
@@ -1264,7 +1277,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if ( CGETAD( CharUnderline ) )
     {
-        switch ( *static_cast<sal_Int16 const *>(mAny.getValue()) )
+        switch ( *o3tl::doAccess<sal_Int16>(mAny) )
         {
             case awt::FontUnderline::SINGLE :
                 underline = "sng";
@@ -1319,7 +1332,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if ( CGETAD( CharStrikeout ) )
     {
-        switch ( *static_cast<sal_Int16 const *>(mAny.getValue()) )
+        switch ( *o3tl::doAccess<sal_Int16>(mAny) )
         {
             case awt::FontStrikeout::NONE :
                strikeout = "noStrike";
@@ -1366,7 +1379,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if( GETA( CharCaseMap ) )
     {
-        switch ( *static_cast<sal_Int16 const *>(mAny.getValue()) )
+        switch ( *o3tl::doAccess<sal_Int16>(mAny) )
         {
             case CaseMap::UPPERCASE :
                 cap = "all";
@@ -1393,7 +1406,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
     // mso doesn't like text color to be placed after typeface
     if( CGETAD( CharColor ) )
     {
-        sal_uInt32 color = *static_cast<sal_uInt32 const *>(mAny.getValue());
+        sal_uInt32 color = *o3tl::doAccess<sal_uInt32>(mAny);
         SAL_INFO("oox.shape", "run color: " << color << " auto: " << COL_AUTO);
 
         if( color == COL_AUTO )  // nCharColor depends to the background color
@@ -1409,7 +1422,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if( CGETAD( CharUnderlineColor ) )
     {
-        sal_uInt32 color = *static_cast<sal_uInt32 const *>(mAny.getValue());
+        sal_uInt32 color = *o3tl::doAccess<sal_uInt32>(mAny);
 
         mpFS->startElementNS( XML_a, XML_uFill,FSEND);
         WriteSolidFill( color );
@@ -1418,8 +1431,8 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if( GETA( CharFontName ) )
     {
-        const char* pitch = nullptr;
-        const char* charset = nullptr;
+        const char* const pitch = nullptr;
+        const char* const charset = nullptr;
         OUString usTypeface;
 
         mAny >>= usTypeface;
@@ -1434,8 +1447,8 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if( ( bComplex && GETAD( CharFontNameComplex ) ) || ( !bComplex && GETAD( CharFontNameAsian ) ) )
     {
-        const char* pitch = nullptr;
-        const char* charset = nullptr;
+        const char* const pitch = nullptr;
+        const char* const charset = nullptr;
         OUString usTypeface;
 
         mAny >>= usTypeface;
@@ -1483,7 +1496,7 @@ OUString DrawingML::GetFieldValue( const css::uno::Reference< css::text::XTextRa
 
     if( GETA( TextPortionType ) )
     {
-        aFieldType = OUString( *static_cast<OUString const *>(mAny.getValue()) );
+        aFieldType = *o3tl::doAccess<OUString>(mAny);
         SAL_INFO("oox.shape", "field type: " << aFieldType);
     }
 
@@ -1663,7 +1676,7 @@ void DrawingML::WriteRun( const Reference< XTextRange >& rRun,
     }
 }
 
-OUString GetAutoNumType(sal_Int16 nNumberingType, bool bSDot, bool bPBehind, bool bPBoth)
+OUString GetAutoNumType(SvxNumType nNumberingType, bool bSDot, bool bPBehind, bool bPBoth)
 {
     OUString sPrefixSuffix;
 
@@ -1674,7 +1687,7 @@ OUString GetAutoNumType(sal_Int16 nNumberingType, bool bSDot, bool bPBehind, boo
     else if (bSDot)
         sPrefixSuffix = "Period";
 
-    switch( (SvxExtNumType)nNumberingType )
+    switch( nNumberingType )
     {
         case SVX_NUM_CHARS_UPPER_LETTER_N :
         case SVX_NUM_CHARS_UPPER_LETTER :
@@ -1726,7 +1739,7 @@ void DrawingML::WriteParagraphNumbering( const Reference< XPropertySet >& rXProp
 
     const PropertyValue* pPropValue = aPropertySequence.getArray();
 
-    sal_Int16 nNumberingType = SVX_NUM_NUMBER_NONE;
+    SvxNumType nNumberingType = SVX_NUM_NUMBER_NONE;
     bool bSDot = false;
     bool bPBehind = false;
     bool bPBoth = false;
@@ -1741,73 +1754,68 @@ void DrawingML::WriteParagraphNumbering( const Reference< XPropertySet >& rXProp
 
     for ( sal_Int32 i = 0; i < nPropertyCount; i++ )
     {
-        const void* pValue = pPropValue[ i ].Value.getValue();
-        if ( pValue )
+        OUString aPropName( pPropValue[ i ].Name );
+        SAL_INFO("oox.shape", "pro name: " << aPropName);
+        if ( aPropName == "NumberingType" )
         {
-            OUString aPropName( pPropValue[ i ].Name );
-            SAL_INFO("oox.shape", "pro name: " << aPropName);
-            if ( aPropName == "NumberingType" )
-            {
-                nNumberingType = *( static_cast<sal_Int16 const *>(pValue) );
-            }
-            else if ( aPropName == "Prefix" )
-            {
-                if( *static_cast<OUString const *>(pValue) == ")")
-                    bPBoth = true;
-            }
-            else if ( aPropName == "Suffix" )
-            {
-                if( *static_cast<OUString const *>(pValue) == ".")
-                    bSDot = true;
-                else if( *static_cast<OUString const *>(pValue) == ")")
-                    bPBehind = true;
-            }
-            else if(aPropName == "BulletColor")
-            {
-                nBulletColor = *static_cast<sal_uInt32 const *>(pValue);
-                bHasBulletColor = true;
-            }
-            else if ( aPropName == "BulletChar" )
-            {
-                aBulletChar = OUString ( *( static_cast<OUString const *>(pValue) ) )[ 0 ];
-            }
-            else if ( aPropName == "BulletFont" )
-            {
-                aFontDesc = *static_cast<awt::FontDescriptor const *>(pValue);
-                bHasFontDesc = true;
+            nNumberingType = (SvxNumType)*o3tl::doAccess<sal_Int16>(pPropValue[i].Value);
+        }
+        else if ( aPropName == "Prefix" )
+        {
+            if( *o3tl::doAccess<OUString>(pPropValue[i].Value) == ")")
+                bPBoth = true;
+        }
+        else if ( aPropName == "Suffix" )
+        {
+            auto s = o3tl::doAccess<OUString>(pPropValue[i].Value);
+            if( *s == ".")
+                bSDot = true;
+            else if( *s == ")")
+                bPBehind = true;
+        }
+        else if(aPropName == "BulletColor")
+        {
+            nBulletColor = *o3tl::doAccess<sal_uInt32>(pPropValue[i].Value);
+            bHasBulletColor = true;
+        }
+        else if ( aPropName == "BulletChar" )
+        {
+            aBulletChar = (*o3tl::doAccess<OUString>(pPropValue[i].Value))[ 0 ];
+        }
+        else if ( aPropName == "BulletFont" )
+        {
+            aFontDesc = *o3tl::doAccess<awt::FontDescriptor>(pPropValue[i].Value);
+            bHasFontDesc = true;
 
-                // Our numbullet dialog has set the wrong textencoding for our "StarSymbol" font,
-                // instead of a Unicode encoding the encoding RTL_TEXTENCODING_SYMBOL was used.
-                // Because there might exist a lot of damaged documemts I added this two lines
-                // which fixes the bullet problem for the export.
-                if ( aFontDesc.Name.equalsIgnoreAsciiCase("StarSymbol") )
-                    aFontDesc.CharSet = RTL_TEXTENCODING_MS_1252;
+            // Our numbullet dialog has set the wrong textencoding for our "StarSymbol" font,
+            // instead of a Unicode encoding the encoding RTL_TEXTENCODING_SYMBOL was used.
+            // Because there might exist a lot of damaged documemts I added this two lines
+            // which fixes the bullet problem for the export.
+            if ( aFontDesc.Name.equalsIgnoreAsciiCase("StarSymbol") )
+                aFontDesc.CharSet = RTL_TEXTENCODING_MS_1252;
 
-            }
-            else if ( aPropName == "BulletRelSize" )
+        }
+        else if ( aPropName == "BulletRelSize" )
+        {
+            nBulletRelSize = *o3tl::doAccess<sal_Int16>(pPropValue[i].Value);
+        }
+        else if ( aPropName == "StartWith" )
+        {
+            nStartWith = *o3tl::doAccess<sal_Int16>(pPropValue[i].Value);
+        }
+        else if ( aPropName == "GraphicURL" )
+        {
+            aGraphicURL = *o3tl::doAccess<OUString>(pPropValue[i].Value);
+            SAL_INFO("oox.shape", "graphic url: " << aGraphicURL);
+        }
+        else if ( aPropName == "GraphicSize" )
+        {
+            if (auto aSize = o3tl::tryAccess<awt::Size>(pPropValue[i].Value))
             {
-                nBulletRelSize = *static_cast<sal_Int16 const *>(pValue);
-            }
-            else if ( aPropName == "StartWith" )
-            {
-                nStartWith = *static_cast<sal_Int16 const *>(pValue);
-            }
-            else if ( aPropName == "GraphicURL" )
-            {
-                aGraphicURL = *static_cast<OUString const *>(pValue);
-                SAL_INFO("oox.shape", "graphic url: " << aGraphicURL);
-            }
-            else if ( aPropName == "GraphicSize" )
-            {
-                if ( pPropValue[ i ].Value.getValueType() == cppu::UnoType<awt::Size>::get())
-                {
-                    // don't cast awt::Size to Size as on 64-bits they are not the same.
-                    css::awt::Size aSize;
-                    pPropValue[ i ].Value >>= aSize;
-                    //aBuGraSize.nA = aSize.Width;
-                    //aBuGraSize.nB = aSize.Height;
-                    SAL_INFO("oox.shape", "graphic size: " << aSize.Width << "x" << aSize.Height);
-                }
+                // don't cast awt::Size to Size as on 64-bits they are not the same.
+                //aBuGraSize.nA = aSize.Width;
+                //aBuGraSize.nB = aSize.Height;
+                SAL_INFO("oox.shape", "graphic size: " << aSize->Width << "x" << aSize->Height);
             }
         }
     }
@@ -1889,20 +1897,16 @@ sal_Int32 DrawingML::getBulletMarginIndentation (const Reference< XPropertySet >
 
     for ( sal_Int32 i = 0; i < nPropertyCount; i++ )
     {
-        const void* pValue = pPropValue[ i ].Value.getValue();
-        if ( pValue )
-        {
-            OUString aPropName( pPropValue[ i ].Name );
-            SAL_INFO("oox.shape", "pro name: " << aPropName);
-            if ( aPropName == propName )
-                return *( static_cast<sal_Int32 const *>(pValue) );
-        }
+        OUString aPropName( pPropValue[ i ].Name );
+        SAL_INFO("oox.shape", "pro name: " << aPropName);
+        if ( aPropName == propName )
+            return *o3tl::doAccess<sal_Int32>(pPropValue[i].Value);
     }
 
     return 0;
 }
 
-const char* DrawingML::GetAlignment( sal_Int32 nAlignment )
+const char* DrawingML::GetAlignment( style::ParagraphAdjust nAlignment )
 {
     const char* sAlignment = nullptr;
 
@@ -1929,13 +1933,13 @@ void DrawingML::WriteLinespacing( LineSpacing& rSpacing )
     if( rSpacing.Mode == LineSpacingMode::PROP )
     {
         mpFS->singleElementNS( XML_a, XML_spcPct,
-                               XML_val, I32S( ((sal_Int32)rSpacing.Height)*1000 ),
+                               XML_val, IS( ((sal_Int32)rSpacing.Height)*1000 ),
                                FSEND );
     }
     else
     {
         mpFS->singleElementNS( XML_a, XML_spcPts,
-                               XML_val, I32S( rSpacing.Height ),
+                               XML_val, IS( rSpacing.Height ),
                                FSEND );
     }
 }
@@ -1952,8 +1956,9 @@ void DrawingML::WriteParagraphProperties( const Reference< XTextContent >& rPara
     sal_Int16 nLevel = -1;
     GET( nLevel, NumberingLevel );
 
-    sal_Int16 nAlignment( style::ParagraphAdjust_LEFT );
-    GET( nAlignment, ParaAdjust );
+    sal_Int16 nTmp( (sal_Int16)style::ParagraphAdjust_LEFT );
+    GET( nTmp, ParaAdjust );
+    style::ParagraphAdjust nAlignment = (style::ParagraphAdjust)nTmp;
 
     bool bHasLinespacing = false;
     LineSpacing aLineSpacing;
@@ -1989,19 +1994,19 @@ void DrawingML::WriteParagraphProperties( const Reference< XTextContent >& rPara
         || nAlignment != style::ParagraphAdjust_LEFT
         || bHasLinespacing )
     {
-        if (nParaLeftMargin) // For Paraghraph
+        if (nParaLeftMargin) // For Paragraph
             mpFS->startElementNS( XML_a, XML_pPr,
-                               XML_lvl, nLevel > 0 ? I32S( nLevel ) : nullptr,
-                               XML_marL, nParaLeftMargin > 0 ? I32S( oox::drawingml::convertHmmToEmu( nParaLeftMargin ) ) : nullptr,
-                               XML_indent, nParaFirstLineIndent ? I32S( oox::drawingml::convertHmmToEmu( nParaFirstLineIndent ) ) : nullptr,
+                               XML_lvl, nLevel > 0 ? IS( nLevel ) : nullptr,
+                               XML_marL, nParaLeftMargin > 0 ? IS( oox::drawingml::convertHmmToEmu( nParaLeftMargin ) ) : nullptr,
+                               XML_indent, nParaFirstLineIndent ? IS( oox::drawingml::convertHmmToEmu( nParaFirstLineIndent ) ) : nullptr,
                                XML_algn, GetAlignment( nAlignment ),
                                XML_rtl, bRtl ? BS(bRtl) : nullptr,
                                FSEND );
         else
             mpFS->startElementNS( XML_a, XML_pPr,
-                               XML_lvl, nLevel > 0 ? I32S( nLevel ) : nullptr,
-                               XML_marL, nLeftMargin > 0 ? I32S( oox::drawingml::convertHmmToEmu( nLeftMargin ) ) : nullptr,
-                               XML_indent, nLineIndentation ? I32S( oox::drawingml::convertHmmToEmu( nLineIndentation ) ) : nullptr,
+                               XML_lvl, nLevel > 0 ? IS( nLevel ) : nullptr,
+                               XML_marL, nLeftMargin > 0 ? IS( oox::drawingml::convertHmmToEmu( nLeftMargin ) ) : nullptr,
+                               XML_indent, nLineIndentation ? IS( oox::drawingml::convertHmmToEmu( nLineIndentation ) ) : nullptr,
                                XML_algn, GetAlignment( nAlignment ),
                                XML_rtl, bRtl ? BS(bRtl) : nullptr,
                                FSEND );
@@ -2019,7 +2024,7 @@ void DrawingML::WriteParagraphProperties( const Reference< XTextContent >& rPara
             mpFS->startElementNS( XML_a, XML_spcBef, FSEND );
             {
                 mpFS->singleElementNS( XML_a, XML_spcPts,
-                                       XML_val, I32S( std::lround( nParaTopMargin / 25.4 * 72 ) ),
+                                       XML_val, IS( std::lround( nParaTopMargin / 25.4 * 72 ) ),
                                        FSEND );
             }
             mpFS->endElementNS( XML_a, XML_spcBef );
@@ -2030,7 +2035,7 @@ void DrawingML::WriteParagraphProperties( const Reference< XTextContent >& rPara
             mpFS->startElementNS( XML_a, XML_spcAft, FSEND );
             {
                 mpFS->singleElementNS( XML_a, XML_spcPts,
-                                       XML_val, I32S( std::lround( nParaBottomMargin / 25.4 * 72 ) ),
+                                       XML_val, IS( std::lround( nParaBottomMargin / 25.4 * 72 ) ),
                                        FSEND );
             }
             mpFS->endElementNS( XML_a, XML_spcAft );
@@ -2182,7 +2187,7 @@ void DrawingML::WriteText( const Reference< XInterface >& rXIface, const OUStrin
                                XML_anchorCtr, bHorizontalCenter ? "1" : nullptr,
                                XML_vert, sWritingMode,
                                FSEND );
-        if( presetWarp != nullptr  && !presetWarp.isEmpty())
+        if( !presetWarp.isEmpty())
         {
             mpFS->singleElementNS(XML_a, XML_prstTxWarp, XML_prst, presetWarp.toUtf8().getStr(),
                 FSEND );
@@ -2256,6 +2261,33 @@ void DrawingML::WriteText( const Reference< XInterface >& rXIface, const OUStrin
     }
 }
 
+void DrawingML::WritePresetShape( const char* pShape , std::vector< std::pair<sal_Int32,sal_Int32>> & rAvList )
+{
+    mpFS->startElementNS( XML_a, XML_prstGeom,
+                          XML_prst, pShape,
+                          FSEND );
+    if ( !rAvList.empty() )
+    {
+
+        mpFS->startElementNS( XML_a, XML_avLst, FSEND );
+        for(auto iter = rAvList.begin() ; iter != rAvList.end() ; ++iter)
+        {
+            OString sName = OString("adj") + ( ( iter->first > 0 ) ? OString::number(iter->first) : OString("") );
+            OString sFmla = OString("val ") + OString::number( iter->second );
+
+            mpFS->singleElementNS( XML_a, XML_gd,
+                    XML_name, sName.getStr(),
+                    XML_fmla, sFmla.getStr(),
+                    FSEND );
+        }
+        mpFS->endElementNS( XML_a, XML_avLst );
+    }
+    else
+        mpFS->singleElementNS( XML_a, XML_avLst, FSEND );
+
+    mpFS->endElementNS(  XML_a, XML_prstGeom );
+}
+
 void DrawingML::WritePresetShape( const char* pShape )
 {
     mpFS->startElementNS( XML_a, XML_prstGeom,
@@ -2273,7 +2305,7 @@ std::map< OString, std::vector<OString> > lcl_getAdjNames()
     rtl::Bootstrap::expandMacros(aPath);
     SvFileStream aStream(aPath, StreamMode::READ);
     if (aStream.GetError() != ERRCODE_NONE)
-        SAL_WARN("oox", "failed to open oox-drawingml-adj-names");
+        SAL_WARN("oox.shape", "failed to open oox-drawingml-adj-names");
     OString aLine;
     bool bNotDone = aStream.ReadLine(aLine);
     while (bNotDone)
@@ -2358,8 +2390,7 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
     }
 
 
-    uno::Sequence< beans::PropertyValue > const * pGeometrySeq =
-        static_cast<uno::Sequence< beans::PropertyValue > const *>(aAny.getValue());
+    auto pGeometrySeq = o3tl::tryAccess<uno::Sequence<beans::PropertyValue>>(aAny);
 
     if ( pGeometrySeq )
     {
@@ -2409,7 +2440,7 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
 
                 if ( nExpectedPairCount > aPairs.getLength() )
                 {
-                    SAL_WARN("oox", "Segments need " << nExpectedPairCount << " coordinates, but Coordinates have only " << aPairs.getLength() << " pairs.");
+                    SAL_WARN("oox.shape", "Segments need " << nExpectedPairCount << " coordinates, but Coordinates have only " << aPairs.getLength() << " pairs.");
                     return false;
                 }
 
@@ -2424,8 +2455,8 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                 if ( aPathSize.hasElements() )
                 {
                     mpFS->startElementNS( XML_a, XML_path,
-                          XML_w, I64S( aPathSize[0].Width ),
-                          XML_h, I64S( aPathSize[0].Height ),
+                          XML_w, IS( aPathSize[0].Width ),
+                          XML_h, IS( aPathSize[0].Height ),
                           FSEND );
                 }
                 else
@@ -2450,8 +2481,8 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                             nYMax = nCandidate;
                     }
                     mpFS->startElementNS( XML_a, XML_path,
-                          XML_w, I64S( nXMax - nXMin ),
-                          XML_h, I64S( nYMax - nYMin ),
+                          XML_w, IS( nXMax - nXMin ),
+                          XML_h, IS( nYMax - nYMin ),
                           FSEND );
                 }
 
@@ -2476,8 +2507,8 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                                 aPairs[nPairIndex].Second.Value >>= nY;
 
                                 mpFS->singleElementNS( XML_a, XML_pt,
-                                   XML_x, I64S(nX),
-                                   XML_y, I64S(nY),
+                                   XML_x, IS(nX),
+                                   XML_y, IS(nY),
                                    FSEND );
 
                                 mpFS->endElementNS( XML_a, XML_moveTo );
@@ -2493,8 +2524,8 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                                 aPairs[nPairIndex].Second.Value >>= nY;
 
                                 mpFS->singleElementNS( XML_a, XML_pt,
-                                   XML_x, I64S(nX),
-                                   XML_y, I64S(nY),
+                                   XML_x, IS(nX),
+                                   XML_y, IS(nY),
                                    FSEND );
                                 mpFS->endElementNS( XML_a, XML_lnTo );
                                 nPairIndex++;
@@ -2510,8 +2541,8 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                                     aPairs[nPairIndex+l].Second.Value >>= nY;
 
                                     mpFS->singleElementNS( XML_a, XML_pt,
-                                    XML_x, I64S( nX ),
-                                    XML_y, I64S( nY ),
+                                    XML_x, IS( nX ),
+                                    XML_y, IS( nY ),
                                     FSEND );
 
                                 }
@@ -2549,8 +2580,8 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                                     aPairs[nPairIndex+l].Second.Value >>= nY;
 
                                     mpFS->singleElementNS( XML_a, XML_pt,
-                                        XML_x, I64S( nX ),
-                                        XML_y, I64S( nY ),
+                                        XML_x, IS( nX ),
+                                        XML_y, IS( nY ),
                                         FSEND );
 
                                 }
@@ -2581,7 +2612,9 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
 
 void DrawingML::WritePolyPolygon( const tools::PolyPolygon& rPolyPolygon )
 {
-    if( rPolyPolygon.Count() < 1 )
+    // In case of Writer, the parent element is <wps:spPr>, and there the
+    // <a:custGeom> element is not optional.
+    if (rPolyPolygon.Count() < 1 && GetDocumentType() != DOCUMENT_DOCX)
         return;
 
     mpFS->startElementNS( XML_a, XML_custGeom, FSEND );
@@ -2597,24 +2630,27 @@ void DrawingML::WritePolyPolygon( const tools::PolyPolygon& rPolyPolygon )
 
     mpFS->startElementNS( XML_a, XML_pathLst, FSEND );
 
+    const tools::Rectangle aRect( rPolyPolygon.GetBoundRect() );
+
+    // Put all polygons of rPolyPolygon in the same path elemnt
+    // to subtract the overlapped areas.
+    mpFS->startElementNS( XML_a, XML_path,
+            XML_w, IS( aRect.GetWidth() ),
+            XML_h, IS( aRect.GetHeight() ),
+            FSEND );
+
     for( sal_uInt16 i = 0; i < rPolyPolygon.Count(); i ++ )
     {
 
         const tools::Polygon& rPoly = rPolyPolygon[ i ];
-        Rectangle aRect( rPoly.GetBoundRect() );
-
-        mpFS->startElementNS( XML_a, XML_path,
-                              XML_w, I64S( aRect.GetWidth() ),
-                              XML_h, I64S( aRect.GetHeight() ),
-                              FSEND );
 
         if( rPoly.GetSize() > 0 )
         {
             mpFS->startElementNS( XML_a, XML_moveTo, FSEND );
 
             mpFS->singleElementNS( XML_a, XML_pt,
-                                   XML_x, I64S( rPoly[ 0 ].X() - aRect.Left() ),
-                                   XML_y, I64S( rPoly[ 0 ].Y() - aRect.Top() ),
+                                   XML_x, IS( rPoly[ 0 ].X() - aRect.Left() ),
+                                   XML_y, IS( rPoly[ 0 ].Y() - aRect.Top() ),
                                    FSEND );
 
             mpFS->endElementNS( XML_a, XML_moveTo );
@@ -2622,19 +2658,19 @@ void DrawingML::WritePolyPolygon( const tools::PolyPolygon& rPolyPolygon )
 
         for( sal_uInt16 j = 1; j < rPoly.GetSize(); j ++ )
         {
-            enum PolyFlags flags = rPoly.GetFlags(j);
-            if( flags == POLY_CONTROL )
+            PolyFlags flags = rPoly.GetFlags(j);
+            if( flags == PolyFlags::Control )
             {
                 // a:cubicBezTo can only contain 3 a:pt elements, so we need to make sure of this
-                if( j+2 < rPoly.GetSize() && rPoly.GetFlags(j+1) == POLY_CONTROL && rPoly.GetFlags(j+2) != POLY_CONTROL )
+                if( j+2 < rPoly.GetSize() && rPoly.GetFlags(j+1) == PolyFlags::Control && rPoly.GetFlags(j+2) != PolyFlags::Control )
                 {
 
                     mpFS->startElementNS( XML_a, XML_cubicBezTo, FSEND );
                     for( sal_uInt8 k = 0; k <= 2; ++k )
                     {
                         mpFS->singleElementNS( XML_a, XML_pt,
-                                               XML_x, I64S( rPoly[j+k].X() - aRect.Left() ),
-                                               XML_y, I64S( rPoly[j+k].Y() - aRect.Top() ),
+                                               XML_x, IS( rPoly[j+k].X() - aRect.Left() ),
+                                               XML_y, IS( rPoly[j+k].Y() - aRect.Top() ),
                                                FSEND );
 
                     }
@@ -2642,19 +2678,18 @@ void DrawingML::WritePolyPolygon( const tools::PolyPolygon& rPolyPolygon )
                     j += 2;
                 }
             }
-            else if( flags == POLY_NORMAL )
+            else if( flags == PolyFlags::Normal )
             {
                 mpFS->startElementNS( XML_a, XML_lnTo, FSEND );
                 mpFS->singleElementNS( XML_a, XML_pt,
-                                       XML_x, I64S( rPoly[j].X() - aRect.Left() ),
-                                       XML_y, I64S( rPoly[j].Y() - aRect.Top() ),
+                                       XML_x, IS( rPoly[j].X() - aRect.Left() ),
+                                       XML_y, IS( rPoly[j].Y() - aRect.Top() ),
                                        FSEND );
                 mpFS->endElementNS( XML_a, XML_lnTo );
             }
         }
-
-        mpFS->endElementNS( XML_a, XML_path );
     }
+    mpFS->endElementNS( XML_a, XML_path );
 
     mpFS->endElementNS( XML_a, XML_pathLst );
 
@@ -2666,15 +2701,15 @@ void DrawingML::WriteConnectorConnections( EscherConnectorListEntry& rConnectorE
     if( nStartID != -1 )
     {
         mpFS->singleElementNS( XML_a, XML_stCxn,
-                               XML_id, I32S( nStartID ),
-                               XML_idx, I64S( rConnectorEntry.GetConnectorRule( true ) ),
+                               XML_id, IS( nStartID ),
+                               XML_idx, IS( rConnectorEntry.GetConnectorRule( true ) ),
                                FSEND );
     }
     if( nEndID != -1 )
     {
         mpFS->singleElementNS( XML_a, XML_endCxn,
-                               XML_id, I32S( nEndID ),
-                               XML_idx, I64S( rConnectorEntry.GetConnectorRule( false ) ),
+                               XML_id, IS( nEndID ),
+                               XML_idx, IS( rConnectorEntry.GetConnectorRule( false ) ),
                                FSEND );
     }
 }
@@ -2769,14 +2804,14 @@ void DrawingML::WriteStyleProperties( sal_Int32 nTokenId, const Sequence< Proper
             else if( aProperties[i].Name == "Transformations" )
                 aProperties[i].Value >>= aTransformations;
         }
-        mpFS->startElementNS( XML_a, nTokenId, XML_idx, I32S( nIdx ), FSEND );
+        mpFS->startElementNS( XML_a, nTokenId, XML_idx, IS( nIdx ), FSEND );
         WriteColor( sSchemeClr, aTransformations );
         mpFS->endElementNS( XML_a, nTokenId );
     }
     else
     {
         // write mock <a:*Ref> tag
-        mpFS->singleElementNS( XML_a, nTokenId, XML_idx, I32S( 0 ), FSEND );
+        mpFS->singleElementNS( XML_a, nTokenId, XML_idx, IS( 0 ), FSEND );
     }
 }
 
@@ -3017,12 +3052,12 @@ void DrawingML::WriteShapeEffects( const Reference< XPropertySet >& rXPropSet )
             rXPropSet->getPropertyValue( "ShadowYDistance" ) >>= dY;
 
             aShadowAttribsGrabBag[0].Name = "dist";
-            aShadowAttribsGrabBag[0].Value = Any(static_cast< sal_Int32 >(sqrt(dX*dX + dY*dY) * 360));
+            aShadowAttribsGrabBag[0].Value <<= static_cast< sal_Int32 >(sqrt(dX*dX + dY*dY) * 360);
             aShadowAttribsGrabBag[1].Name = "dir";
-            aShadowAttribsGrabBag[1].Value = Any((static_cast< sal_Int32 >(atan2(dY,dX) * 180 * 60000 / M_PI) + 21600000) % 21600000);
+            aShadowAttribsGrabBag[1].Value <<= (static_cast< sal_Int32 >(atan2(dY,dX) * 180 * 60000 / M_PI) + 21600000) % 21600000;
 
             aShadowGrabBag[0].Name = "Attribs";
-            aShadowGrabBag[0].Value = Any(aShadowAttribsGrabBag);
+            aShadowGrabBag[0].Value <<= aShadowAttribsGrabBag;
             aShadowGrabBag[1].Name = "RgbClr";
             aShadowGrabBag[1].Value = rXPropSet->getPropertyValue( "ShadowColor" );
             aShadowGrabBag[2].Name = "RgbClrTransparency";
@@ -3387,7 +3422,7 @@ void DrawingML::WriteArtisticEffect( const Reference< XPropertySet >& rXPropSet 
                           XML_uri, "{BEBA8EAE-BF5A-486C-A8C5-ECC9F3942E4B}",
                           FSEND );
     mpFS->startElementNS( XML_a14, XML_imgProps,
-                          FSNS( XML_xmlns, XML_a14 ), "http://schemas.microsoft.com/office/drawing/2010/main",
+                          FSNS( XML_xmlns, XML_a14 ), OUStringToOString(mpFB->getNamespaceURL(OOX_NS(a14)), RTL_TEXTENCODING_UTF8).getStr(),
                           FSEND );
     mpFS->startElementNS( XML_a14, XML_imgLayer,
                           FSNS( XML_r, XML_embed), sRelId.getStr(),

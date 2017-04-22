@@ -19,11 +19,6 @@
 
 #include <sfx2/sfx.hrc>
 
-String STR_ACCTITLE_PRODUCTIVITYTOOLS
-{
-    Text [ en-US ] = "%PRODUCTNAME";
-};
-
 String STR_PASSWD_MIN_LEN
 {
     Text [ en-US ] = "(Minimum $(MINLEN) characters)" ;
@@ -37,11 +32,6 @@ String STR_PASSWD_MIN_LEN1
 String STR_PASSWD_EMPTY
 {
     Text [ en-US ] = "(The password can be empty)" ;
-};
-
-String STR_PASSWD
-{
-    Text [ en-US ] = "Password" ;
 };
 
 String STR_MODULENOTINSTALLED

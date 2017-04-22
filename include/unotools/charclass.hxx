@@ -22,11 +22,13 @@
 
 #include <unotools/unotoolsdllapi.h>
 #include <i18nlangtag/languagetag.hxx>
+#include <com/sun/star/i18n/DirectionProperty.hpp>
 #include <com/sun/star/i18n/KCharacterType.hpp>
 #include <com/sun/star/i18n/KParseTokens.hpp>
 #include <com/sun/star/i18n/KParseType.hpp>
 #include <com/sun/star/i18n/ParseResult.hpp>
 #include <com/sun/star/i18n/XCharacterClassification.hpp>
+#include <com/sun/star/i18n/UnicodeScript.hpp>
 #include <osl/mutex.hxx>
 #include <rtl/character.hxx>
 
@@ -96,14 +98,14 @@ public:
     static bool isAsciiAlpha( const OUString& rStr );
 
     /// whether type is pure numeric or not, e.g. return of getStringType
-    static inline bool isNumericType( sal_Int32 nType )
+    static bool isNumericType( sal_Int32 nType )
     {
         return ((nType & nCharClassNumericType) != 0) &&
             ((nType & ~(nCharClassNumericTypeMask)) == 0);
     }
 
     /// whether type is pure alphanumeric or not, e.g. return of getStringType
-    static inline bool isAlphaNumericType( sal_Int32 nType )
+    static bool isAlphaNumericType( sal_Int32 nType )
     {
         return ((nType & (nCharClassAlphaType |
             nCharClassNumericType)) != 0) &&
@@ -112,14 +114,14 @@ public:
     }
 
     /// whether type is pure letter or not, e.g. return of getStringType
-    static inline bool isLetterType( sal_Int32 nType )
+    static bool isLetterType( sal_Int32 nType )
     {
         return ((nType & nCharClassLetterType) != 0) &&
             ((nType & ~(nCharClassLetterTypeMask)) == 0);
     }
 
     /// whether type is pure letternumeric or not, e.g. return of getStringType
-    static inline bool isLetterNumericType( sal_Int32 nType )
+    static bool isLetterNumericType( sal_Int32 nType )
     {
         return ((nType & (nCharClassLetterType |
             nCharClassNumericType)) != 0) &&
@@ -147,8 +149,8 @@ public:
     }
 
     sal_Int16 getType( const OUString& rStr, sal_Int32 nPos ) const;
-    sal_Int16 getCharacterDirection( const OUString& rStr, sal_Int32 nPos ) const;
-    sal_Int16 getScript( const OUString& rStr, sal_Int32 nPos ) const;
+    css::i18n::DirectionProperty getCharacterDirection( const OUString& rStr, sal_Int32 nPos ) const;
+    css::i18n::UnicodeScript getScript( const OUString& rStr, sal_Int32 nPos ) const;
     sal_Int32 getCharacterType( const OUString& rStr, sal_Int32 nPos ) const;
     sal_Int32 getStringType( const OUString& rStr, sal_Int32 nPos, sal_Int32 nCount ) const;
 

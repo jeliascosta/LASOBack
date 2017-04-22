@@ -41,7 +41,7 @@
 
 namespace sd {
 
-static sal_uInt16 SidArray[] = {
+static const sal_uInt16 SidArray[] = {
                 SID_STYLE_FAMILY2,
                 SID_STYLE_FAMILY3,
                 SID_STYLE_FAMILY5,
@@ -72,22 +72,43 @@ static sal_uInt16 SidArray[] = {
                 SID_SET_SUPER_SCRIPT,
                 SID_SET_SUB_SCRIPT,
                 SID_HYPERLINK_GETLINK,
-                SID_PRESENTATION_TEMPLATES,
+                SID_PARASPACE_INCREASE,
+                SID_PARASPACE_DECREASE,
                 SID_STATUS_PAGE,
                 SID_STATUS_LAYOUT,
                 SID_EXPAND_PAGE,
                 SID_SUMMARY_PAGE,
-                SID_PARASPACE_INCREASE,
-                SID_PARASPACE_DECREASE,
                 0 };
 
 
 FuOutlineText::FuOutlineText(ViewShell* pViewShell, ::sd::Window* pWindow,
                              ::sd::View* pView, SdDrawDocument* pDoc,
                              SfxRequest& rReq)
-       : FuOutline(pViewShell, pWindow, pView, pDoc, rReq)
+       : FuPoor(pViewShell, pWindow, pView, pDoc, rReq),
+         pOutlineViewShell (static_cast<OutlineViewShell*>(pViewShell)),
+         pOutlineView (static_cast<OutlineView*>(pView))
 {
 }
+
+/**
+ * forward to OutlinerView
+ */
+bool FuOutlineText::Command(const CommandEvent& rCEvt)
+{
+    bool bResult = false;
+
+    OutlinerView* pOlView =
+        static_cast<OutlineView*>(mpView)->GetViewByWindow(mpWindow);
+    DBG_ASSERT (pOlView, "no OutlineView found");
+
+    if (pOlView)
+    {
+        pOlView->Command(rCEvt);        // unfortunately, we do not get a return value
+        bResult = true;
+    }
+    return bResult;
+}
+
 
 rtl::Reference<FuPoor> FuOutlineText::Create( ViewShell* pViewSh, ::sd::Window* pWin, ::sd::View* pView, SdDrawDocument* pDoc, SfxRequest& rReq )
 {
@@ -109,7 +130,7 @@ bool FuOutlineText::MouseButtonDown(const MouseEvent& rMEvt)
     }
     else
     {
-        bReturn = FuOutline::MouseButtonDown(rMEvt);
+        bReturn = FuPoor::MouseButtonDown(rMEvt);
     }
 
     return bReturn;
@@ -121,7 +142,7 @@ bool FuOutlineText::MouseMove(const MouseEvent& rMEvt)
 
     if (!bReturn)
     {
-        bReturn = FuOutline::MouseMove(rMEvt);
+        bReturn = FuPoor::MouseMove(rMEvt);
     }
 
     return bReturn;
@@ -172,7 +193,7 @@ bool FuOutlineText::MouseButtonUp(const MouseEvent& rMEvt)
     }
 
     if( !bReturn )
-        bReturn = FuOutline::MouseButtonUp(rMEvt);
+        bReturn = FuPoor::MouseButtonUp(rMEvt);
 
     return bReturn;
 }
@@ -202,7 +223,7 @@ bool FuOutlineText::KeyInput(const KeyEvent& rKEvt)
         }
         else
         {
-            bReturn = FuOutline::KeyInput(rKEvt);
+            bReturn = FuPoor::KeyInput(rKEvt);
         }
     }
 
@@ -237,16 +258,6 @@ void FuOutlineText::UpdateForKeyPress (const KeyEvent& rEvent)
     }
     if (bUpdatePreview)
         pOutlineViewShell->UpdatePreview (pOutlineViewShell->GetActualPage());
-}
-
-void FuOutlineText::Activate()
-{
-    FuOutline::Activate();
-}
-
-void FuOutlineText::Deactivate()
-{
-    FuOutline::Deactivate();
 }
 
 /**

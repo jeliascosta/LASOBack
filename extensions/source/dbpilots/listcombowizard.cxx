@@ -254,7 +254,7 @@ namespace dbp
             }
             catch(const Exception&)
             {
-                DBG_ASSERT(false, "OLinkFieldsPage::initializePage: caught an exception while retrieving the columns!");
+                SAL_WARN( "extensions.dbpilots", "OLinkFieldsPage::initializePage: caught an exception while retrieving the columns!");
             }
         }
         return aColumnNames;
@@ -298,13 +298,13 @@ namespace dbp
     }
 
 
-    IMPL_LINK_NOARG_TYPED( OContentTableSelection, OnTableSelected, ListBox&, void )
+    IMPL_LINK_NOARG( OContentTableSelection, OnTableSelected, ListBox&, void )
     {
         updateDialogTravelUI();
     }
 
 
-    IMPL_LINK_TYPED( OContentTableSelection, OnTableDoubleClicked, ListBox&, _rListBox, void )
+    IMPL_LINK( OContentTableSelection, OnTableDoubleClicked, ListBox&, _rListBox, void )
     {
         if (_rListBox.GetSelectEntryCount())
             getDialog()->travelNext();
@@ -372,11 +372,6 @@ namespace dbp
         OLCPage::dispose();
     }
 
-    void OContentFieldSelection::ActivatePage()
-    {
-        OLCPage::ActivatePage();
-    }
-
 
     void OContentFieldSelection::initializePage()
     {
@@ -399,14 +394,14 @@ namespace dbp
     }
 
 
-    IMPL_LINK_NOARG_TYPED( OContentFieldSelection, OnTableDoubleClicked, ListBox&, void )
+    IMPL_LINK_NOARG( OContentFieldSelection, OnTableDoubleClicked, ListBox&, void )
     {
         if (m_pSelectTableField->GetSelectEntryCount())
             getDialog()->travelNext();
     }
 
 
-    IMPL_LINK_NOARG_TYPED( OContentFieldSelection, OnFieldSelected, ListBox&, void )
+    IMPL_LINK_NOARG( OContentFieldSelection, OnFieldSelected, ListBox&, void )
     {
         updateDialogTravelUI();
         m_pDisplayedField->SetText(m_pSelectTableField->GetSelectEntry());
@@ -486,12 +481,12 @@ namespace dbp
     }
 
 
-    IMPL_LINK_NOARG_TYPED(OLinkFieldsPage, OnSelectionModified, Edit&, void)
+    IMPL_LINK_NOARG(OLinkFieldsPage, OnSelectionModified, Edit&, void)
     {
         implCheckFinish();
     }
 
-    IMPL_LINK_NOARG_TYPED(OLinkFieldsPage, OnSelectionModifiedCombBox, ComboBox&, void)
+    IMPL_LINK_NOARG(OLinkFieldsPage, OnSelectionModifiedCombBox, ComboBox&, void)
     {
         implCheckFinish();
     }
@@ -516,7 +511,7 @@ namespace dbp
 
     OUString& OComboDBFieldPage::getDBFieldSetting()
     {
-        return getSettings().sLinkedFormField;
+        return static_cast<OListComboWizard*>(getDialog())->getSettings().sLinkedFormField;
     }
 
 

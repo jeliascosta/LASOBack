@@ -31,10 +31,113 @@ class EditTextObject;
 class OutlinerParaObject;
 class SdrCaptionObj;
 class SdrPage;
+
 class SfxItemSet;
 class ScDocument;
-class Rectangle;
+namespace tools { class Rectangle; }
 struct ScCaptionInitData;
+
+/** Some desperate attempt to fight against the caption object ownership mess,
+    to which none of shared/weak/plain pointer is a cure.
+ */
+class ScCaptionPtr
+{
+public:
+    ScCaptionPtr();
+    explicit ScCaptionPtr( SdrCaptionObj* p );
+    ScCaptionPtr( const ScCaptionPtr& r );
+    ScCaptionPtr( ScCaptionPtr&& r );
+    ~ScCaptionPtr();
+
+    ScCaptionPtr& operator=( const ScCaptionPtr& r );
+    ScCaptionPtr& operator=( ScCaptionPtr&& r );
+    explicit operator bool() const    { return mpCaption != nullptr; }
+    SdrCaptionObj* get() const        { return mpCaption; }
+    SdrCaptionObj* operator->() const { return mpCaption; }
+    SdrCaptionObj& operator*() const  { return *mpCaption; }
+
+    // Does not default to nullptr to make it visually obvious where such is used.
+    void reset( SdrCaptionObj* p );
+
+    /** Insert to draw page. The caption object is owned by the draw page then.
+     */
+    void insertToDrawPage( SdrPage& rDrawPage );
+
+    /** Remove from draw page. The caption object is not owned anymore by the
+        draw page then.
+     */
+    void removeFromDrawPage( SdrPage& rDrawPage );
+
+    /** Remove from draw page and free caption object if no Undo recording.
+     */
+    void removeFromDrawPageAndFree( bool bIgnoreUndo = false );
+
+    /** Release all management of the SdrCaptionObj* in all instances of this
+        list and dissolve. The SdrCaptionObj pointer returned is ready to be
+        managed elsewhere.
+     */
+    SdrCaptionObj* release();
+
+    /** Forget the SdrCaptionObj pointer in this one instance.
+        Decrements a use count but does not destroy the object, it's up to the
+        caller to manage this mess..
+        @returns <TRUE/> if the last reference was decremented.
+     */
+    bool forget();
+
+    /** Flag that this instance is in Undo, so drawing layer owns it. */
+    void setNotOwner();
+
+    oslInterlockedCount getRefs() const;
+
+private:
+
+    struct Head
+    {
+        ScCaptionPtr*       mpFirst;        ///< first in list
+        oslInterlockedCount mnRefs;         ///< use count
+
+        Head() = delete;
+        explicit Head( ScCaptionPtr* );
+    };
+
+    Head*                 mpHead;       ///< points to the "master" entry
+    mutable ScCaptionPtr* mpNext;       ///< next in list
+    SdrCaptionObj*        mpCaption;    ///< the caption object, managed by head master
+    bool                  mbNotOwner;   ///< whether this caption object is owned by something else, e.g. held in Undo
+                                            /* TODO: can that be moved to Head?
+                                             * It's unclear when to reset, so
+                                             * each instance has its own flag.
+                                             * The last reference count
+                                             * decrement automatically has the
+                                             * then current state available.
+                                             * */
+
+    void newHead();             //< Allocate a new Head and init.
+    void incRef() const;
+    bool decRef() const;        //< @returns <TRUE/> if the last reference was decremented.
+    void decRefAndDestroy();    //< Destroys caption object if the last reference was decremented.
+
+    /** Remove from current list and close gap.
+
+        Usually there are only very few instances, so maintaining a doubly
+        linked list isn't worth memory/performance wise and a simple walk does
+        it.
+     */
+    void removeFromList();
+
+    /** Replace this instance with pNew in a list, if any.
+
+        Used by move-ctor and move assignment operator.
+     */
+    void replaceInList( ScCaptionPtr* pNew );
+
+    /** Dissolve list when the caption object is released or gone. */
+    void dissolve();
+
+    /** Just clear everything, while dissolving the list. */
+    void clear();
+};
 
 /** Internal data for a cell annotation. */
 struct SC_DLLPUBLIC ScNoteData
@@ -44,7 +147,7 @@ struct SC_DLLPUBLIC ScNoteData
     OUString     maDate;             /// Creation date of the note.
     OUString     maAuthor;           /// Author of the note.
     ScCaptionInitDataRef mxInitData;        /// Initial data for invisible notes without SdrObject.
-    SdrCaptionObj*      mpCaption;          /// Drawing object representing the cell note.
+    ScCaptionPtr        mxCaption;          /// Drawing object representing the cell note.
     bool                mbShown;            /// True = note is visible.
 
     explicit            ScNoteData( bool bShown = false );
@@ -124,16 +227,26 @@ public:
     void                SetText( const ScAddress& rPos, const OUString& rText );
 
     /** Returns an existing note caption object. returns null, if the note
-        contains initial caption data needed to construct a caption object. */
-    SdrCaptionObj* GetCaption() const { return maNoteData.mpCaption;}
+        contains initial caption data needed to construct a caption object.
+        The SdrCaptionObj* returned is still managed by the underlying
+        ScNoteData::ScCaptionPtr and must not be stored elsewhere. */
+    SdrCaptionObj*      GetCaption() const { return maNoteData.mxCaption.get();}
     /** Returns the caption object of this note. Creates the caption object, if
-        the note contains initial caption data instead of the caption. */
+        the note contains initial caption data instead of the caption.
+        The SdrCaptionObj* returned is still managed by the underlying
+        ScNoteData::ScCaptionPtr and must not be stored elsewhere. */
     SdrCaptionObj*      GetOrCreateCaption( const ScAddress& rPos ) const;
-    /** Forgets the pointer to the note caption object. */
-    void                ForgetCaption();
+
+    /** Forgets the pointer to the note caption object.
+
+        @param  bPreserveData
+                If true then the note text is remembered in maNoteData to be able
+                to later reconstruct a caption from it.
+     */
+    void                ForgetCaption( bool bPreserveData = false );
 
     /** Shows or hides the note caption object. */
-    void                ShowCaption( const ScAddress& rPos, bool bShow = true );
+    void                ShowCaption( const ScAddress& rPos, bool bShow );
     /** Returns true, if the caption object is visible. */
     bool IsCaptionShown() const { return maNoteData.mbShown;}
 
@@ -164,17 +277,19 @@ class SC_DLLPUBLIC ScNoteUtil
 public:
 
     /** Creates and returns a caption object for a temporary caption. */
-    static SdrCaptionObj* CreateTempCaption( ScDocument& rDoc, const ScAddress& rPos,
+    static ScCaptionPtr CreateTempCaption( ScDocument& rDoc, const ScAddress& rPos,
                             SdrPage& rDrawPage, const OUString& rUserText,
-                            const Rectangle& rVisRect, bool bTailFront );
+                            const tools::Rectangle& rVisRect, bool bTailFront );
 
     /** Creates a cell note using the passed caption drawing object.
 
         This function is used in import filters to reuse the imported drawing
         object as note caption object.
 
-        @param rCaption  The drawing object for the cell note. This object MUST
+        @param pCaption  The drawing object for the cell note. This object MUST
             be inserted into the document at the correct drawing page already.
+            The underlying ScPostIt::ScNoteData::ScCaptionPtr takes managing
+            ownership of the pointer.
 
         @return  Pointer to the new cell note object if insertion was
             successful (i.e. the passed cell position was valid), null
@@ -184,7 +299,7 @@ public:
      */
     static ScPostIt*    CreateNoteFromCaption(
                             ScDocument& rDoc, const ScAddress& rPos,
-                            SdrCaptionObj& rCaption, bool bShown );
+                            SdrCaptionObj* pCaption, bool bShown );
 
     /** Creates a cell note based on the passed caption object data.
 
@@ -220,7 +335,7 @@ public:
     static ScPostIt*    CreateNoteFromObjectData(
                             ScDocument& rDoc, const ScAddress& rPos,
                             SfxItemSet* pItemSet, OutlinerParaObject* pOutlinerObj,
-                            const Rectangle& rCaptionRect, bool bShown,
+                            const tools::Rectangle& rCaptionRect, bool bShown,
                             bool bAlwaysCreateCaption );
 
     /** Creates a cell note based on the passed string and inserts it into the

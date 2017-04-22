@@ -67,10 +67,6 @@ using ::com::sun::star::beans::XVetoableChangeListener;
 using ::com::sun::star::container::XIndexReplace;
 
 #if OSL_DEBUG_LEVEL > 0
-#include <cstdio>
-#include <com/sun/star/style/LineSpacing.hpp>
-#include <com/sun/star/style/LineSpacingMode.hpp>
-#include <com/sun/star/text/WritingMode.hpp>
 #define USS(x) OUStringToOString( x, RTL_TEXTENCODING_UTF8 ).getStr()
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::drawing;
@@ -104,18 +100,18 @@ public:
     explicit            GenericPropertySet( const PropertyMap& rPropMap );
 
     // XPropertySet
-    virtual Reference< XPropertySetInfo > SAL_CALL getPropertySetInfo() throw (RuntimeException, std::exception) override;
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const Any& aValue ) throw (UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception) override;
-    virtual Any SAL_CALL getPropertyValue( const OUString& PropertyName ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const Reference< XPropertyChangeListener >& xListener ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const Reference< XPropertyChangeListener >& aListener ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const Reference< XVetoableChangeListener >& aListener ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const Reference< XVetoableChangeListener >& aListener ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception) override;
+    virtual Reference< XPropertySetInfo > SAL_CALL getPropertySetInfo() override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const Any& aValue ) override;
+    virtual Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
+    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const Reference< XPropertyChangeListener >& xListener ) override;
+    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const Reference< XPropertyChangeListener >& aListener ) override;
+    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const Reference< XVetoableChangeListener >& aListener ) override;
+    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const Reference< XVetoableChangeListener >& aListener ) override;
 
     // XPropertySetInfo
-    virtual Sequence< Property > SAL_CALL getProperties() throw (RuntimeException, std::exception) override;
-    virtual Property SAL_CALL getPropertyByName( const OUString& aName ) throw (UnknownPropertyException, RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasPropertyByName( const OUString& Name ) throw (RuntimeException, std::exception) override;
+    virtual Sequence< Property > SAL_CALL getProperties() override;
+    virtual Property SAL_CALL getPropertyByName( const OUString& aName ) override;
+    virtual sal_Bool SAL_CALL hasPropertyByName( const OUString& Name ) override;
 
 private:
     osl::Mutex mMutex;
@@ -127,18 +123,18 @@ GenericPropertySet::GenericPropertySet( const PropertyMap& rPropMap )
     rPropMap.fillPropertyNameMap(maPropMap);
 }
 
-Reference< XPropertySetInfo > SAL_CALL GenericPropertySet::getPropertySetInfo() throw (RuntimeException, std::exception)
+Reference< XPropertySetInfo > SAL_CALL GenericPropertySet::getPropertySetInfo()
 {
     return this;
 }
 
-void SAL_CALL GenericPropertySet::setPropertyValue( const OUString& rPropertyName, const Any& rValue ) throw (UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
+void SAL_CALL GenericPropertySet::setPropertyValue( const OUString& rPropertyName, const Any& rValue )
 {
     ::osl::MutexGuard aGuard( mMutex );
     maPropMap[ rPropertyName ] = rValue;
 }
 
-Any SAL_CALL GenericPropertySet::getPropertyValue( const OUString& rPropertyName ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
+Any SAL_CALL GenericPropertySet::getPropertyValue( const OUString& rPropertyName )
 {
     PropertyNameMap::iterator aIt = maPropMap.find( rPropertyName );
     if( aIt == maPropMap.end() )
@@ -147,13 +143,13 @@ Any SAL_CALL GenericPropertySet::getPropertyValue( const OUString& rPropertyName
 }
 
 // listeners are not supported by this implementation
-void SAL_CALL GenericPropertySet::addPropertyChangeListener( const OUString& , const Reference< XPropertyChangeListener >& ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception) {}
-void SAL_CALL GenericPropertySet::removePropertyChangeListener( const OUString& , const Reference< XPropertyChangeListener >&  ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception) {}
-void SAL_CALL GenericPropertySet::addVetoableChangeListener( const OUString& , const Reference< XVetoableChangeListener >&  ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception) {}
-void SAL_CALL GenericPropertySet::removeVetoableChangeListener( const OUString& , const Reference< XVetoableChangeListener >&  ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception) {}
+void SAL_CALL GenericPropertySet::addPropertyChangeListener( const OUString& , const Reference< XPropertyChangeListener >& ) {}
+void SAL_CALL GenericPropertySet::removePropertyChangeListener( const OUString& , const Reference< XPropertyChangeListener >&  ) {}
+void SAL_CALL GenericPropertySet::addVetoableChangeListener( const OUString& , const Reference< XVetoableChangeListener >&  ) {}
+void SAL_CALL GenericPropertySet::removeVetoableChangeListener( const OUString& , const Reference< XVetoableChangeListener >&  ) {}
 
 // XPropertySetInfo
-Sequence< Property > SAL_CALL GenericPropertySet::getProperties() throw (RuntimeException, std::exception)
+Sequence< Property > SAL_CALL GenericPropertySet::getProperties()
 {
     Sequence< Property > aSeq( static_cast< sal_Int32 >( maPropMap.size() ) );
     Property* pProperty = aSeq.getArray();
@@ -167,7 +163,7 @@ Sequence< Property > SAL_CALL GenericPropertySet::getProperties() throw (Runtime
     return aSeq;
 }
 
-Property SAL_CALL GenericPropertySet::getPropertyByName( const OUString& rPropertyName ) throw (UnknownPropertyException, RuntimeException, std::exception)
+Property SAL_CALL GenericPropertySet::getPropertyByName( const OUString& rPropertyName )
 {
     PropertyNameMap::iterator aIt = maPropMap.find( rPropertyName );
     if( aIt == maPropMap.end() )
@@ -180,7 +176,7 @@ Property SAL_CALL GenericPropertySet::getPropertyByName( const OUString& rProper
     return aProperty;
 }
 
-sal_Bool SAL_CALL GenericPropertySet::hasPropertyByName( const OUString& rPropertyName ) throw (RuntimeException, std::exception)
+sal_Bool SAL_CALL GenericPropertySet::hasPropertyByName( const OUString& rPropertyName )
 {
     return maPropMap.find( rPropertyName ) != maPropMap.end();
 }
@@ -369,17 +365,17 @@ static void lclDumpAnyValue( const Any& value)
         } else if( value >>= aMatrix ) {
             fprintf (stderr,"Matrix\n%f %f %f\n%f %f %f\n%f %f %f\n", aMatrix.Line1.Column1, aMatrix.Line1.Column2, aMatrix.Line1.Column3, aMatrix.Line2.Column1, aMatrix.Line2.Column2, aMatrix.Line2.Column3, aMatrix.Line3.Column1, aMatrix.Line3.Column2, aMatrix.Line3.Column3);
         } else if( value >>= intValue )
-            fprintf (stderr,"%" SAL_PRIdINT32 "            (hex: %" SAL_PRIxUINT32 ")\n", intValue, intValue);
+            fprintf (stderr,"%-10" SAL_PRIdINT32 "  (hex: %" SAL_PRIxUINT32 ")\n", intValue, intValue);
         else if( value >>= uintValue )
-            fprintf (stderr,"%" SAL_PRIuUINT32 "            (hex: %" SAL_PRIxUINT32 ")\n", uintValue, uintValue);
+            fprintf (stderr,"%-10" SAL_PRIuUINT32 "  (hex: %" SAL_PRIxUINT32 ")\n", uintValue, uintValue);
         else if( value >>= int16Value )
-            fprintf (stderr,"%d            (hex: %x)\n", int16Value, int16Value);
+            fprintf (stderr,"%-10d  (hex: %x)\n", int16Value, int16Value);
         else if( value >>= uint16Value )
-            fprintf (stderr,"%d            (hex: %x)\n", uint16Value, uint16Value);
+            fprintf (stderr,"%-10d  (hex: %x)\n", uint16Value, uint16Value);
         else if( value >>= floatValue )
             fprintf (stderr,"%f\n", floatValue);
         else if( value >>= boolValue )
-            fprintf (stderr,"%d            (bool)\n", boolValue);
+            fprintf (stderr,"%-10d  (bool)\n", boolValue);
         else if( value >>= xNumRule ) {
             fprintf (stderr, "XIndexReplace\n");
             if (xNumRule.is()) {
@@ -397,7 +393,7 @@ static void lclDumpAnyValue( const Any& value)
                 fprintf (stderr, "empty reference\n");
             }
         } else if( value >>= aWritingMode )
-            fprintf (stderr, "%d writing mode\n", aWritingMode);
+            fprintf(stderr, "%d writing mode\n", static_cast<int>(aWritingMode));
         else if( value >>= aTextVertAdj ) {
             const char* s = "unknown";
             switch( aTextVertAdj ) {
@@ -413,7 +409,7 @@ static void lclDumpAnyValue( const Any& value)
             case TextVerticalAdjust_BLOCK:
                 s = "block";
                 break;
-            case TextVerticalAdjust_MAKE_FIXED_SIZE:
+            case TextVerticalAdjust::TextVerticalAdjust_MAKE_FIXED_SIZE:
                 s = "make_fixed_size";
                 break;
         }
@@ -433,7 +429,7 @@ static void lclDumpAnyValue( const Any& value)
             case TextHorizontalAdjust_BLOCK:
                 s = "block";
                 break;
-            case TextHorizontalAdjust_MAKE_FIXED_SIZE:
+            case TextHorizontalAdjust::TextHorizontalAdjust_MAKE_FIXED_SIZE:
                 s = "make_fixed_size";
                 break;
         }
@@ -553,7 +549,7 @@ static void printParameterPairData(int level, EnhancedCustomShapeParameterPair &
     fprintf (stderr, "}");
 }
 
-static const char* lclDumpAnyValueCode( const Any& value, int level = 0)
+static const char* lclDumpAnyValueCode( const Any& value, int level)
 {
     OUString strValue;
     Sequence< OUString > strArray;
@@ -823,7 +819,7 @@ static const char* lclDumpAnyValueCode( const Any& value, int level = 0)
         }
     }
     else if( value >>= aWritingMode )
-        fprintf (stderr, "%d writing mode\n", aWritingMode);
+        fprintf (stderr, "%d writing mode\n", static_cast<int>(aWritingMode));
     else if( value >>= aTextVertAdj ) {
         const char* s = "unknown";
         switch( aTextVertAdj ) {
@@ -839,7 +835,7 @@ static const char* lclDumpAnyValueCode( const Any& value, int level = 0)
             case TextVerticalAdjust_BLOCK:
                 s = "block";
                 break;
-            case TextVerticalAdjust_MAKE_FIXED_SIZE:
+            case TextVerticalAdjust::TextVerticalAdjust_MAKE_FIXED_SIZE:
                 s = "make_fixed_size";
                 break;
         }
@@ -860,7 +856,7 @@ static const char* lclDumpAnyValueCode( const Any& value, int level = 0)
             case TextHorizontalAdjust_BLOCK:
                 s = "block";
                 break;
-            case TextHorizontalAdjust_MAKE_FIXED_SIZE:
+            case TextHorizontalAdjust::TextHorizontalAdjust_MAKE_FIXED_SIZE:
                 s = "make_fixed_size";
                 break;
         }

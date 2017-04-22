@@ -23,8 +23,8 @@
 #include <memory>
 #include <com/sun/star/awt/Size.hpp>
 #include <com/sun/star/awt/Point.hpp>
-
 #include <com/sun/star/drawing/XShape.hpp>
+#include <com/sun/star/text/WrapTextMode.hpp>
 
 namespace com{ namespace sun{ namespace star{
     namespace graphic{
@@ -60,7 +60,7 @@ class OLEHandler : public LoggedProperties
 
     sal_Int32                   m_nDxaOrig;
     sal_Int32                   m_nDyaOrig;
-    sal_Int32                   m_nWrapMode;
+    css::text::WrapTextMode     m_nWrapMode;
 
     css::uno::Reference<css::drawing::XShape> m_xShape;
 
@@ -77,8 +77,8 @@ class OLEHandler : public LoggedProperties
     virtual void lcl_sprm(Sprm & sprm) override;
 
 public:
-    OLEHandler(DomainMapper& rDomainMapper);
-    virtual ~OLEHandler();
+    explicit OLEHandler(DomainMapper& rDomainMapper);
+    virtual ~OLEHandler() override;
 
     const css::uno::Reference<css::drawing::XShape>& getShape() { return m_xShape; };
 

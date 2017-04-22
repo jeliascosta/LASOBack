@@ -62,11 +62,10 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer SvgGradientHelper::createSingleGradientEntryFill() const
+        void SvgGradientHelper::createSingleGradientEntryFill(Primitive2DContainer& rContainer) const
         {
             const SvgGradientEntryVector& rEntries = getGradientEntries();
             const sal_uInt32 nCount(rEntries.size());
-            Primitive2DContainer xRetval;
 
             if(nCount)
             {
@@ -90,15 +89,13 @@ namespace drawinglayer
                                 1.0 - fOpacity));
                     }
 
-                    xRetval = Primitive2DContainer { xRef };
+                    rContainer.push_back(xRef);
                 }
             }
             else
             {
                 OSL_ENSURE(false, "Single gradient entry construction without entry (!)");
             }
-
-            return xRetval;
         }
 
         void SvgGradientHelper::checkPreconditions()
@@ -235,13 +232,13 @@ namespace drawinglayer
             return fPos;
         }
 
-        Primitive2DContainer SvgGradientHelper::createResult(
+        void SvgGradientHelper::createResult(
+            Primitive2DContainer& rContainer,
             const Primitive2DContainer& rTargetColor,
             const Primitive2DContainer& rTargetOpacity,
             const basegfx::B2DHomMatrix& rUnitGradientToObject,
             bool bInvert) const
         {
-            Primitive2DContainer xRetval;
             const Primitive2DContainer aTargetColorEntries(rTargetColor.maybeInvert(bInvert));
             const Primitive2DContainer aTargetOpacityEntries(rTargetOpacity.maybeInvert(bInvert));
 
@@ -266,14 +263,10 @@ namespace drawinglayer
                         aTargetColorEntries);
                 }
 
-                xRefContent = new MaskPrimitive2D(
+                rContainer.push_back(new MaskPrimitive2D(
                     getPolyPolygon(),
-                    Primitive2DContainer { xRefContent });
-
-                xRetval = Primitive2DContainer { xRefContent };
+                    Primitive2DContainer { xRefContent }));
             }
-
-            return xRetval;
         }
 
         SvgGradientHelper::SvgGradientHelper(
@@ -372,10 +365,8 @@ namespace drawinglayer
             }
         }
 
-        Primitive2DContainer SvgLinearGradientPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void SvgLinearGradientPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
-            Primitive2DContainer xRetval;
-
             if(!getPreconditionsChecked())
             {
                 const_cast< SvgLinearGradientPrimitive2D* >(this)->checkPreconditions();
@@ -384,7 +375,7 @@ namespace drawinglayer
             if(getSingleEntry())
             {
                 // fill with last existing color
-                xRetval = createSingleGradientEntryFill();
+                createSingleGradientEntryFill(rContainer);
             }
             else if(getCreatesContent())
             {
@@ -550,10 +541,8 @@ namespace drawinglayer
                     }
                 }
 
-                xRetval = createResult(aTargetColor, aTargetOpacity, aUnitGradientToObject);
+                createResult(rContainer, aTargetColor, aTargetOpacity, aUnitGradientToObject);
             }
-
-            return xRetval;
         }
 
         SvgLinearGradientPrimitive2D::SvgLinearGradientPrimitive2D(
@@ -715,10 +704,8 @@ namespace drawinglayer
             }
         }
 
-        Primitive2DContainer SvgRadialGradientPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void SvgRadialGradientPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
-            Primitive2DContainer xRetval;
-
             if(!getPreconditionsChecked())
             {
                 const_cast< SvgRadialGradientPrimitive2D* >(this)->checkPreconditions();
@@ -727,7 +714,7 @@ namespace drawinglayer
             if(getSingleEntry())
             {
                 // fill with last existing color
-                xRetval = createSingleGradientEntryFill();
+                createSingleGradientEntryFill(rContainer);
             }
             else if(getCreatesContent())
             {
@@ -837,10 +824,8 @@ namespace drawinglayer
                     }
                 }
 
-                xRetval = createResult(aTargetColor, aTargetOpacity, aUnitGradientToObject, true);
+                createResult(rContainer, aTargetColor, aTargetOpacity, aUnitGradientToObject, true);
             }
-
-            return xRetval;
         }
 
         SvgRadialGradientPrimitive2D::SvgRadialGradientPrimitive2D(
@@ -919,9 +904,8 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer SvgLinearAtomPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void SvgLinearAtomPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
-            Primitive2DContainer xRetval;
             const double fDelta(getOffsetB() - getOffsetA());
 
             if(!basegfx::fTools::equalZero(fDelta))
@@ -945,21 +929,16 @@ namespace drawinglayer
                 double fUnitScale(0.0);
                 const double fUnitStep(1.0 / nSteps);
 
-                // prepare result set (known size)
-                xRetval.resize(nSteps);
-
                 for(sal_uInt32 a(0); a < nSteps; a++, fUnitScale += fUnitStep)
                 {
                     basegfx::B2DPolygon aNew(aPolygon);
 
                     aNew.transform(basegfx::tools::createTranslateB2DHomMatrix(fDelta * fUnitScale, 0.0));
-                    xRetval[a] = new PolyPolygonColorPrimitive2D(
+                    rContainer.push_back(new PolyPolygonColorPrimitive2D(
                         basegfx::B2DPolyPolygon(aNew),
-                        basegfx::interpolate(getColorA(), getColorB(), fUnitScale));
+                        basegfx::interpolate(getColorA(), getColorB(), fUnitScale)));
                 }
             }
-
-            return xRetval;
         }
 
         SvgLinearAtomPrimitive2D::SvgLinearAtomPrimitive2D(
@@ -974,7 +953,7 @@ namespace drawinglayer
             if(mfOffsetA > mfOffsetB)
             {
                 OSL_ENSURE(false, "Wrong offset order (!)");
-                ::std::swap(mfOffsetA, mfOffsetB);
+                std::swap(mfOffsetA, mfOffsetB);
             }
         }
 
@@ -1006,9 +985,8 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer SvgRadialAtomPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void SvgRadialAtomPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
-            Primitive2DContainer xRetval;
             const double fDeltaScale(getScaleB() - getScaleA());
 
             if(!basegfx::fTools::equalZero(fDeltaScale))
@@ -1022,9 +1000,6 @@ namespace drawinglayer
                 // prepare loop ([0.0 .. 1.0[, full polygons, no polypolygons with holes)
                 double fUnitScale(0.0);
                 const double fUnitStep(1.0 / nSteps);
-
-                // prepare result set (known size)
-                xRetval.resize(nSteps);
 
                 for(sal_uInt32 a(0); a < nSteps; a++, fUnitScale += fUnitStep)
                 {
@@ -1055,13 +1030,11 @@ namespace drawinglayer
                     basegfx::B2DPolygon aNew(basegfx::tools::createPolygonFromUnitCircle());
 
                     aNew.transform(aTransform);
-                    xRetval[a] = new PolyPolygonColorPrimitive2D(
+                    rContainer.push_back(new PolyPolygonColorPrimitive2D(
                         basegfx::B2DPolyPolygon(aNew),
-                        basegfx::interpolate(getColorB(), getColorA(), fUnitScale));
+                        basegfx::interpolate(getColorB(), getColorA(), fUnitScale)));
                 }
             }
-
-            return xRetval;
         }
 
         SvgRadialAtomPrimitive2D::SvgRadialAtomPrimitive2D(
@@ -1081,18 +1054,18 @@ namespace drawinglayer
             }
 
             // scale A and B have to be positive
-            mfScaleA = ::std::max(mfScaleA, 0.0);
-            mfScaleB = ::std::max(mfScaleB, 0.0);
+            mfScaleA = std::max(mfScaleA, 0.0);
+            mfScaleB = std::max(mfScaleB, 0.0);
 
             // scale B has to be bigger than scale A; swap if different
             if(mfScaleA > mfScaleB)
             {
                 OSL_ENSURE(false, "Wrong offset order (!)");
-                ::std::swap(mfScaleA, mfScaleB);
+                std::swap(mfScaleA, mfScaleB);
 
                 if(mpTranslate)
                 {
-                    ::std::swap(mpTranslate->maTranslateA, mpTranslate->maTranslateB);
+                    std::swap(mpTranslate->maTranslateA, mpTranslate->maTranslateB);
                 }
             }
         }
@@ -1108,14 +1081,14 @@ namespace drawinglayer
             mpTranslate(nullptr)
         {
             // scale A and B have to be positive
-            mfScaleA = ::std::max(mfScaleA, 0.0);
-            mfScaleB = ::std::max(mfScaleB, 0.0);
+            mfScaleA = std::max(mfScaleA, 0.0);
+            mfScaleB = std::max(mfScaleB, 0.0);
 
             // scale B has to be bigger than scale A; swap if different
             if(mfScaleA > mfScaleB)
             {
                 OSL_ENSURE(false, "Wrong offset order (!)");
-                ::std::swap(mfScaleA, mfScaleB);
+                std::swap(mfScaleA, mfScaleB);
             }
         }
 

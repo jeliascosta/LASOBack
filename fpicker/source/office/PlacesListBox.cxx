@@ -28,7 +28,7 @@ PlacesListBox_Impl::PlacesListBox_Impl( PlacesListBox* pParent, const OUString& 
     mpHeaderBar->SetPosSizePixel( Point( 0, 0 ), Size( 600, 16 ) );
 
     long pTabs[] = { 2, 20, 600 };
-    SetTabs( &pTabs[0], MAP_PIXEL );
+    SetTabs( &pTabs[0], MapUnit::MapPixel );
     mpHeaderBar->InsertItem( COLUMN_NAME, rTitle, 600, HeaderBarItemBits::LEFT | HeaderBarItemBits::VCENTER );
 
     Size aHeadSize = mpHeaderBar->GetSizePixel();
@@ -167,7 +167,7 @@ void PlacesListBox::SetSizePixel( const Size& rNewSize )
     mpDelBtn->SetPosPixel( Point( 6 + 24, nBtnY ) );
 }
 
-bool PlacesListBox::Notify( NotifyEvent& rNEvt )
+bool PlacesListBox::EventNotify( NotifyEvent& rNEvt )
 {
     if( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
     {
@@ -181,18 +181,18 @@ bool PlacesListBox::Notify( NotifyEvent& rNEvt )
             return true;
         }
     }
-    return Control::Notify( rNEvt );
+    return Control::EventNotify(rNEvt);
 }
 
 Image PlacesListBox::getEntryIcon( const PlacePtr& pPlace )
 {
-    Image theImage = mpDlg->GetButtonImage( IMG_FILEDLG_PLACE_LOCAL );
+    Image theImage = SvtFileDialog::GetButtonImage( BMP_FILEDLG_PLACE_LOCAL );
     if ( !pPlace->IsLocal( ) )
-        theImage = mpDlg->GetButtonImage( IMG_FILEDLG_PLACE_REMOTE );
+        theImage = SvtFileDialog::GetButtonImage( BMP_FILEDLG_PLACE_REMOTE );
     return theImage;
 }
 
-IMPL_LINK_NOARG_TYPED( PlacesListBox, Selection, SvTreeListBox*, void )
+IMPL_LINK_NOARG( PlacesListBox, Selection, SvTreeListBox*, void )
 {
     sal_uInt32 nSelected = mpImpl->GetCurrRow();
     PlacePtr pPlace = maPlaces[nSelected];
@@ -204,7 +204,7 @@ IMPL_LINK_NOARG_TYPED( PlacesListBox, Selection, SvTreeListBox*, void )
         mpDlg->RemovablePlaceSelected(false);
 }
 
-IMPL_LINK_NOARG_TYPED( PlacesListBox, DoubleClick, SvTreeListBox*, bool )
+IMPL_LINK_NOARG( PlacesListBox, DoubleClick, SvTreeListBox*, bool )
 {
     sal_uInt16 nSelected = mpImpl->GetCurrRow();
     PlacePtr pPlace = maPlaces[nSelected];

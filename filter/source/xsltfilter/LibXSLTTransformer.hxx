@@ -64,7 +64,7 @@ namespace XSLT
         int SAL_CALL closeOutput();
 
     private:
-        virtual ~Reader();
+        virtual ~Reader() override;
 
         static const sal_Int32 OUTPUT_BUFFER_SIZE;
         static const sal_Int32 INPUT_BUFFER_SIZE;
@@ -118,7 +118,7 @@ namespace XSLT
         rtl::Reference<Reader> m_Reader;
 
     protected:
-        virtual ~LibXSLTTransformer() {
+        virtual ~LibXSLTTransformer() override {
             if (m_Reader.is()) {
                 m_Reader->terminate();
                 m_Reader->forceStateStopped();
@@ -133,29 +133,25 @@ namespace XSLT
 
         // XActiveDataSink
         virtual void SAL_CALL
-        setInputStream(const css::uno::Reference<XInputStream>& inputStream)
-                throw (RuntimeException, std::exception) override;
+        setInputStream(const css::uno::Reference<XInputStream>& inputStream) override;
         virtual css::uno::Reference<XInputStream> SAL_CALL
-        getInputStream() throw (RuntimeException, std::exception) override;
+        getInputStream() override;
         // XActiveDataSource
         virtual void SAL_CALL
-        setOutputStream(const css::uno::Reference<XOutputStream>& outputStream)
-                throw (RuntimeException, std::exception) override;
+        setOutputStream(const css::uno::Reference<XOutputStream>& outputStream) override;
         virtual css::uno::Reference<XOutputStream> SAL_CALL
-        getOutputStream() throw (RuntimeException, std::exception) override;
+        getOutputStream() override;
         // XActiveDataControl
         virtual void SAL_CALL
-        addListener(const css::uno::Reference<XStreamListener>& listener)
-                throw (RuntimeException, std::exception) override;
+        addListener(const css::uno::Reference<XStreamListener>& listener) override;
         virtual void SAL_CALL
-        removeListener(const css::uno::Reference<XStreamListener>& listener)
-                throw (RuntimeException, std::exception) override;
+        removeListener(const css::uno::Reference<XStreamListener>& listener) override;
         virtual void SAL_CALL
-        start() throw (RuntimeException, std::exception) override;
+        start() override;
         virtual void SAL_CALL
-        terminate() throw (RuntimeException, std::exception) override;
+        terminate() override;
         virtual void SAL_CALL
-        initialize(const Sequence<Any>& params) throw (RuntimeException, std::exception) override;
+        initialize(const Sequence<Any>& params) override;
 
         void SAL_CALL
         done();

@@ -29,15 +29,10 @@
 #include <image.h>
 #include <memory>
 
-ImplImage::ImplImage()
-    : mnRefCount(1)
-    , maBitmapChecksum(0)
-    , mpBitmapEx()
+ImplImage::ImplImage(const BitmapEx &rBitmapEx)
+    : maBitmapChecksum(0)
+    , maBitmapEx(rBitmapEx)
     , maDisabledBitmapEx()
-{
-}
-
-ImplImage::~ImplImage()
 {
 }
 

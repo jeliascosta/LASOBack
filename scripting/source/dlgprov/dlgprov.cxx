@@ -86,15 +86,12 @@ namespace comp_DialogModelProvider
 namespace dlgprov
 {
 
-
-static const char aResourceResolverPropName[] = "ResourceResolver";
-
     Reference< resource::XStringResourceManager > lcl_getStringResourceManager(const Reference< XComponentContext >& i_xContext,const OUString& i_sURL)
     {
         INetURLObject aInetObj( i_sURL );
         OUString aDlgName = aInetObj.GetBase();
         aInetObj.removeSegment();
-        OUString aDlgLocation = aInetObj.GetMainURL( INetURLObject::NO_DECODE );
+        OUString aDlgLocation = aInetObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
         bool bReadOnly = true;
         css::lang::Locale aLocale = Application::GetSettings().GetUILanguageTag().getLocale();
         OUString aComment;
@@ -131,7 +128,7 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
         const Reference< io::XInputStream >& xInput,
         const Reference< frame::XModel >& xModel,
         const Reference< resource::XStringResourceManager >& xStringResourceManager,
-        const Any &aDialogSourceURL) throw ( Exception )
+        const Any &aDialogSourceURL)
     {
         Reference< container::XNameContainer > xDialogModel(  lcl_createControlModel(i_xContext) );
 
@@ -153,7 +150,7 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
             Reference< beans::XPropertySet > xDlgPSet( xDialogModel, UNO_QUERY );
             Any aStringResourceManagerAny;
             aStringResourceManagerAny <<= xStringResourceManager;
-            xDlgPSet->setPropertyValue( aResourceResolverPropName, aStringResourceManagerAny );
+            xDlgPSet->setPropertyValue( "ResourceResolver", aStringResourceManagerAny );
         }
 
         return xDialogModel;
@@ -234,12 +231,12 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
     Reference< container::XNameContainer > DialogProviderImpl::createDialogModel(
         const Reference< io::XInputStream >& xInput,
         const Reference< resource::XStringResourceManager >& xStringResourceManager,
-        const Any &aDialogSourceURL) throw ( Exception )
+        const Any &aDialogSourceURL)
     {
         return lcl_createDialogModel(m_xContext,xInput,m_xModel,xStringResourceManager,aDialogSourceURL);
     }
 
-    Reference< XControlModel > DialogProviderImpl::createDialogModelForBasic() throw ( Exception )
+    Reference< XControlModel > DialogProviderImpl::createDialogModelForBasic()
     {
         if ( !m_BasicInfo.get() )
             // shouln't get here
@@ -280,10 +277,8 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
             uriRef.set( xFac->parse( aURL ), UNO_QUERY );
             if ( !uriRef.is() )
             {
-                OUString errorMsg("DialogProviderImpl::getDialogModel: failed to parse URI: ");
-                errorMsg += aURL;
-                throw IllegalArgumentException( errorMsg,
-                                                Reference< XInterface >(), 1 );
+                OUString errorMsg = "DialogProviderImpl::getDialogModel: failed to parse URI: " + aURL;
+                throw IllegalArgumentException( errorMsg, Reference< XInterface >(), 1 );
             }
             Reference < uri::XVndSunStarExpandUrl > sxUri( uriRef, UNO_QUERY );
             if( !sxUri.is() )
@@ -313,10 +308,10 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
 
             sal_Int32 nIndex = 0;
 
-            OUString sLibName = sDescription.getToken( 0, (sal_Unicode)'.', nIndex );
+            OUString sLibName = sDescription.getToken( 0, '.', nIndex );
             OUString sDlgName;
             if ( nIndex != -1 )
-                sDlgName = sDescription.getToken( 0, (sal_Unicode)'.', nIndex );
+                sDlgName = sDescription.getToken( 0, '.', nIndex );
 
             OUString sLocation = sfUri->getParameter( "location" );
 
@@ -558,17 +553,17 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
     // XServiceInfo
 
 
-    OUString DialogProviderImpl::getImplementationName(  ) throw (RuntimeException, std::exception)
+    OUString DialogProviderImpl::getImplementationName(  )
     {
         return getImplementationName_DialogProviderImpl();
     }
 
-    sal_Bool DialogProviderImpl::supportsService( const OUString& rServiceName ) throw (RuntimeException, std::exception)
+    sal_Bool DialogProviderImpl::supportsService( const OUString& rServiceName )
     {
         return cppu::supportsService(this, rServiceName);
     }
 
-    Sequence< OUString > DialogProviderImpl::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
+    Sequence< OUString > DialogProviderImpl::getSupportedServiceNames(  )
     {
         return getSupportedServiceNames_DialogProviderImpl();
     }
@@ -577,7 +572,7 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
     // XInitialization
 
 
-    void DialogProviderImpl::initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception)
+    void DialogProviderImpl::initialize( const Sequence< Any >& aArguments )
     {
         ::osl::MutexGuard aGuard( getMutex() );
 
@@ -594,7 +589,7 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
         {
             // call from RTL_Impl_CreateUnoDialog
             aArguments[0] >>= m_xModel;
-            m_BasicInfo.reset( new BasicRTLParams() );
+            m_BasicInfo.reset( new BasicRTLParams );
             m_BasicInfo->mxInput.set( aArguments[ 1 ], UNO_QUERY_THROW );
             // allow null mxDlgLib, a document dialog instantiated from
             // from application basic is unable to provide ( or find ) it's
@@ -616,12 +611,10 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
 
 
     static const char aDecorationPropName[] = "Decoration";
-    static const char aTitlePropName[] = "Title";
 
     Reference < XControl > DialogProviderImpl::createDialogImpl(
         const OUString& URL, const Reference< XInterface >& xHandler,
         const Reference< XWindowPeer >& xParent, bool bDialogProviderMode )
-            throw (IllegalArgumentException, RuntimeException)
     {
         // if the dialog is located in a document, the document must already be open!
 
@@ -666,7 +659,7 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
                         if( !bDecoration )
                         {
                             xDlgModPropSet->setPropertyValue( aDecorationPropName, makeAny( true ) );
-                            xDlgModPropSet->setPropertyValue( aTitlePropName, makeAny( OUString() ) );
+                            xDlgModPropSet->setPropertyValue( "Title", makeAny( OUString() ) );
                         }
                     }
                     catch( UnknownPropertyException& )
@@ -686,7 +679,6 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
     }
 
     Reference < XDialog > DialogProviderImpl::createDialog( const OUString& URL )
-        throw (IllegalArgumentException, RuntimeException, std::exception)
     {
         Reference< XInterface > xDummyHandler;
         Reference< XWindowPeer > xDummyPeer;
@@ -697,7 +689,6 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
 
     Reference < XDialog > DialogProviderImpl::createDialogWithHandler(
         const OUString& URL, const Reference< XInterface >& xHandler )
-            throw (IllegalArgumentException, RuntimeException, std::exception)
     {
         if( !xHandler.is() )
         {
@@ -713,7 +704,6 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
 
     Reference < XDialog > DialogProviderImpl::createDialogWithArguments(
         const OUString& URL, const Sequence< NamedValue >& Arguments )
-            throw (IllegalArgumentException, RuntimeException, std::exception)
     {
         ::comphelper::NamedValueCollection aArguments( Arguments );
 
@@ -739,7 +729,6 @@ static const char aResourceResolverPropName[] = "ResourceResolver";
     Reference< XWindow > DialogProviderImpl::createContainerWindow(
         const OUString& URL, const OUString& WindowType,
         const Reference< XWindowPeer >& xParent, const Reference< XInterface >& xHandler )
-            throw (lang::IllegalArgumentException, RuntimeException, std::exception)
     {
         (void)WindowType;   // for future use
         if( !xParent.is() )

@@ -23,10 +23,12 @@
 #include <osl/thread.h>
 #include <osl/process.h>
 #include <osl/file.hxx>
+#include <rtl/strbuf.hxx>
 #include <rtl/ustrbuf.hxx>
 
 #include <rtl/uri.hxx>
 #include "shellexec.hxx"
+#include <com/sun/star/system/SystemShellExecuteException.hpp>
 #include <com/sun/star/system/SystemShellExecuteFlags.hpp>
 
 #include <com/sun/star/util/theMacroExpander.hpp>
@@ -42,42 +44,36 @@
 #include <errno.h>
 #include <unistd.h>
 
-
-// namespace directives
-
-
 using com::sun::star::system::XSystemShellExecute;
 using com::sun::star::system::SystemShellExecuteException;
-
 
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::system::SystemShellExecuteFlags;
 using namespace cppu;
 
-namespace // private
+namespace
 {
     Sequence< OUString > SAL_CALL ShellExec_getSupportedServiceNames()
     {
         Sequence< OUString > aRet { "com.sun.star.system.SystemShellExecute" };
         return aRet;
     }
-}
 
-void escapeForShell( OStringBuffer & rBuffer, const OString & rURL)
-{
-    sal_Int32 nmax = rURL.getLength();
-    for(sal_Int32 n=0; n < nmax; ++n)
+    void escapeForShell( OStringBuffer & rBuffer, const OString & rURL)
     {
-        // escape every non alpha numeric characters (excluding a few "known good") by prepending a '\'
-        sal_Char c = rURL[n];
-        if( ( c < 'A' || c > 'Z' ) && ( c < 'a' || c > 'z' ) && ( c < '0' || c > '9' )  && c != '/' && c != '.' )
-            rBuffer.append( '\\' );
+        sal_Int32 nmax = rURL.getLength();
+        for(sal_Int32 n=0; n < nmax; ++n)
+        {
+            // escape every non alpha numeric characters (excluding a few "known good") by prepending a '\'
+            sal_Char c = rURL[n];
+            if( ( c < 'A' || c > 'Z' ) && ( c < 'a' || c > 'z' ) && ( c < '0' || c > '9' )  && c != '/' && c != '.' )
+                rBuffer.append( '\\' );
 
-        rBuffer.append( c );
+            rBuffer.append( c );
+        }
     }
 }
-
 
 ShellExec::ShellExec( const Reference< XComponentContext >& xContext ) :
     WeakImplHelper< XSystemShellExecute, XServiceInfo >(),
@@ -100,9 +96,7 @@ ShellExec::ShellExec( const Reference< XComponentContext >& xContext ) :
     }
 }
 
-
 void SAL_CALL ShellExec::execute( const OUString& aCommand, const OUString& aParameter, sal_Int32 nFlags )
-    throw (IllegalArgumentException, SystemShellExecuteException, RuntimeException, std::exception)
 {
     OStringBuffer aBuffer, aLaunchBuffer;
 
@@ -217,22 +211,18 @@ void SAL_CALL ShellExec::execute( const OUString& aCommand, const OUString& aPar
 }
 
 // XServiceInfo
+
 OUString SAL_CALL ShellExec::getImplementationName(  )
-    throw( RuntimeException, std::exception )
 {
     return OUString("com.sun.star.comp.system.SystemShellExecute");
 }
 
-//  XServiceInfo
 sal_Bool SAL_CALL ShellExec::supportsService( const OUString& ServiceName )
-    throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-//  XServiceInfo
 Sequence< OUString > SAL_CALL ShellExec::getSupportedServiceNames(   )
-    throw( RuntimeException, std::exception )
 {
     return ShellExec_getSupportedServiceNames();
 }

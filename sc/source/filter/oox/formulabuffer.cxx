@@ -10,15 +10,9 @@
 #include "formulabuffer.hxx"
 #include "formulaparser.hxx"
 #include <externallinkbuffer.hxx>
-#include <com/sun/star/sheet/XFormulaTokens.hpp>
-#include <com/sun/star/sheet/XArrayFormulaTokens.hpp>
-#include <com/sun/star/container/XIndexAccess.hpp>
-#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
-#include <com/sun/star/table/XCell2.hpp>
 #include "formulacell.hxx"
 #include "document.hxx"
 #include "documentimport.hxx"
-#include "convuno.hxx"
 
 #include "rangelst.hxx"
 #include "autonamecache.hxx"
@@ -30,11 +24,8 @@
 #include <oox/token/tokens.hxx>
 #include <svl/sharedstringpool.hxx>
 
-using namespace com::sun::star;
 using namespace ::com::sun::star::uno;
-using namespace ::com::sun::star::table;
 using namespace ::com::sun::star::sheet;
-using namespace ::com::sun::star::container;
 
 #include <memory>
 
@@ -68,9 +59,8 @@ public:
 
     ~CachedTokenArray()
     {
-        ColCacheType::const_iterator it = maCache.begin(), itEnd = maCache.end();
-        for (; it != itEnd; ++it)
-            delete it->second;
+        for (const std::pair<SCCOL, Item*>& rCacheItem : maCache)
+            delete rCacheItem.second;
     }
 
     Item* get( const ScAddress& rPos, const OUString& rFormula )
@@ -124,12 +114,11 @@ void applySharedFormulas(
     sc::SharedFormulaGroups aGroups;
     {
         // Process shared formulas first.
-        std::vector<FormulaBuffer::SharedFormulaEntry>::const_iterator it = rSharedFormulas.begin(), itEnd = rSharedFormulas.end();
-        for (; it != itEnd; ++it)
+        for (const FormulaBuffer::SharedFormulaEntry& rEntry : rSharedFormulas)
         {
-            const ScAddress& aPos = it->maAddress;
-            sal_Int32 nId = it->mnSharedId;
-            const OUString& rTokenStr = it->maTokenStr;
+            const ScAddress& aPos = rEntry.maAddress;
+            sal_Int32 nId = rEntry.mnSharedId;
+            const OUString& rTokenStr = rEntry.maTokenStr;
 
             ScCompiler aComp(&rDoc.getDoc(), aPos);
             aComp.SetNumberFormatter(&rFormatter);
@@ -145,17 +134,16 @@ void applySharedFormulas(
 
     {
         // Process formulas that use shared formulas.
-        std::vector<FormulaBuffer::SharedFormulaDesc>::const_iterator it = rCells.begin(), itEnd = rCells.end();
-        for (; it != itEnd; ++it)
+        for (const FormulaBuffer::SharedFormulaDesc& rDesc : rCells)
         {
-            const ScAddress& aPos = it->maAddress;
-            const ScTokenArray* pArray = aGroups.get(it->mnSharedId);
+            const ScAddress& aPos = rDesc.maAddress;
+            const ScTokenArray* pArray = aGroups.get(rDesc.mnSharedId);
             if (!pArray)
                 continue;
 
             ScFormulaCell* pCell = new ScFormulaCell(&rDoc.getDoc(), aPos, *pArray);
             rDoc.setFormulaCell(aPos, pCell);
-            if (it->maCellValue.isEmpty())
+            if (rDesc.maCellValue.isEmpty())
             {
                 // No cached cell value. Mark it for re-calculation.
                 pCell->SetDirty();
@@ -164,11 +152,11 @@ void applySharedFormulas(
 
             // Set cached formula results. For now, we only use numeric
             // results. Find out how to utilize cached results of other types.
-            switch (it->mnValueType)
+            switch (rDesc.mnValueType)
             {
                 case XML_n:
                     // numeric value.
-                    pCell->SetResultDouble(it->maCellValue.toDouble());
+                    pCell->SetResultDouble(rDesc.maCellValue.toDouble());
                 break;
                 default:
                     // Mark it for re-calculation.
@@ -180,14 +168,13 @@ void applySharedFormulas(
 
 void applyCellFormulas(
     ScDocumentImport& rDoc, CachedTokenArray& rCache, SvNumberFormatter& rFormatter,
-    const uno::Sequence<sheet::ExternalLinkInfo>& rExternalLinks,
+    const Sequence<ExternalLinkInfo>& rExternalLinks,
     const std::vector<FormulaBuffer::TokenAddressItem>& rCells )
 {
-    std::vector<FormulaBuffer::TokenAddressItem>::const_iterator it = rCells.begin(), itEnd = rCells.end();
-    for (; it != itEnd; ++it)
+    for (const FormulaBuffer::TokenAddressItem& rItem : rCells)
     {
-        const ScAddress& aPos = it->maCellAddress;
-        CachedTokenArray::Item* p = rCache.get(aPos, it->maTokenStr);
+        const ScAddress& aPos = rItem.maAddress;
+        CachedTokenArray::Item* p = rCache.get(aPos, rItem.maTokenStr);
         if (p)
         {
             // Use the cached version to avoid re-compilation.
@@ -223,7 +210,7 @@ void applyCellFormulas(
         aCompiler.SetNumberFormatter(&rFormatter);
         aCompiler.SetGrammar(formula::FormulaGrammar::GRAM_OOXML);
         aCompiler.SetExternalLinks(rExternalLinks);
-        ScTokenArray* pCode = aCompiler.CompileString(it->maTokenStr);
+        ScTokenArray* pCode = aCompiler.CompileString(rItem.maTokenStr);
         if (!pCode)
             continue;
 
@@ -238,19 +225,16 @@ void applyArrayFormulas(
     ScDocumentImport& rDoc, SvNumberFormatter& rFormatter,
     const std::vector<FormulaBuffer::TokenRangeAddressItem>& rArrays )
 {
-    std::vector<FormulaBuffer::TokenRangeAddressItem>::const_iterator it = rArrays.begin(), itEnd = rArrays.end();
-    for (; it != itEnd; ++it)
+    for (const FormulaBuffer::TokenRangeAddressItem& rAddressItem : rArrays)
     {
-        const ScAddress& aPos = it->maTokenAndAddress.maCellAddress;
-        ScRange aRange;
-        ScUnoConversion::FillScRange(aRange, it->maCellRangeAddress);
+        const ScAddress& aPos = rAddressItem.maTokenAndAddress.maAddress;
 
         ScCompiler aComp(&rDoc.getDoc(), aPos);
         aComp.SetNumberFormatter(&rFormatter);
         aComp.SetGrammar(formula::FormulaGrammar::GRAM_OOXML);
-        std::unique_ptr<ScTokenArray> pArray(aComp.CompileString(it->maTokenAndAddress.maTokenStr));
+        std::unique_ptr<ScTokenArray> pArray(aComp.CompileString(rAddressItem.maTokenAndAddress.maTokenStr));
         if (pArray)
-            rDoc.setMatrixCells(aRange, *pArray, formula::FormulaGrammar::GRAM_OOXML);
+            rDoc.setMatrixCells(rAddressItem.maRange, *pArray, formula::FormulaGrammar::GRAM_OOXML);
     }
 }
 
@@ -259,16 +243,15 @@ void applyCellFormulaValues(
 {
     svl::SharedStringPool& rStrPool = rDoc.getDoc().GetSharedStringPool();
 
-    std::vector<FormulaBuffer::FormulaValue>::const_iterator it = rVector.begin(), itEnd = rVector.end();
-    for (; it != itEnd; ++it)
+    for (const FormulaBuffer::FormulaValue& rValue : rVector)
     {
-        const ScAddress& aCellPos = it->maCellAddress;
+        const ScAddress& aCellPos = rValue.maAddress;
         ScFormulaCell* pCell = rDoc.getDoc().GetFormulaCell(aCellPos);
-        const OUString& rValueStr = it->maValueStr;
+        const OUString& rValueStr = rValue.maValueStr;
         if (!pCell)
             continue;
 
-        switch (it->mnCellType)
+        switch (rValue.mnCellType)
         {
             case XML_n:
             {
@@ -304,7 +287,7 @@ void applyCellFormulaValues(
 
 void processSheetFormulaCells(
     ScDocumentImport& rDoc, FormulaBuffer::SheetItem& rItem, SvNumberFormatter& rFormatter,
-    const uno::Sequence<sheet::ExternalLinkInfo>& rExternalLinks, bool bGeneratorKnownGood )
+    const Sequence<ExternalLinkInfo>& rExternalLinks, bool bGeneratorKnownGood )
 {
     if (rItem.mpSharedFormulaEntries && rItem.mpSharedFormulaIDs)
         applySharedFormulas(rDoc, rFormatter, *rItem.mpSharedFormulaEntries, *rItem.mpSharedFormulaIDs);
@@ -322,34 +305,6 @@ void processSheetFormulaCells(
         applyCellFormulaValues(rDoc, *rItem.mpCellFormulaValues, bGeneratorKnownGood);
 }
 
-class WorkerThread: public salhelper::Thread
-{
-    ScDocumentImport& mrDoc;
-    FormulaBuffer::SheetItem& mrItem;
-    std::unique_ptr<SvNumberFormatter> mpFormatter;
-    const uno::Sequence<sheet::ExternalLinkInfo>& mrExternalLinks;
-    bool mbGeneratorKnownGood;
-
-public:
-    WorkerThread(const WorkerThread&) = delete;
-    const WorkerThread& operator=(const WorkerThread&) = delete;
-
-    WorkerThread(
-        ScDocumentImport& rDoc, FormulaBuffer::SheetItem& rItem, SvNumberFormatter* pFormatter,
-        const uno::Sequence<sheet::ExternalLinkInfo>& rExternalLinks, bool bGeneratorKnownGood ) :
-        salhelper::Thread("xlsx-import-formula-buffer-worker-thread"),
-        mrDoc(rDoc), mrItem(rItem), mpFormatter(pFormatter), mrExternalLinks(rExternalLinks),
-        mbGeneratorKnownGood(bGeneratorKnownGood) {}
-
-    virtual ~WorkerThread() {}
-
-protected:
-    virtual void execute() override
-    {
-        processSheetFormulaCells(mrDoc, mrItem, *mpFormatter, mrExternalLinks, mbGeneratorKnownGood);
-    }
-};
-
 }
 
 FormulaBuffer::SharedFormulaEntry::SharedFormulaEntry(
@@ -357,20 +312,10 @@ FormulaBuffer::SharedFormulaEntry::SharedFormulaEntry(
     const OUString& rTokenStr, sal_Int32 nSharedId ) :
     maAddress(rAddr), maTokenStr(rTokenStr), mnSharedId(nSharedId) {}
 
-FormulaBuffer::SharedFormulaEntry::SharedFormulaEntry(
-    const css::table::CellAddress& rAddr,
-    const OUString& rTokenStr, sal_Int32 nSharedId ) :
-    maAddress( ScAddress( rAddr.Column, rAddr.Row, rAddr.Sheet ) ), maTokenStr(rTokenStr), mnSharedId(nSharedId) {}
-
 FormulaBuffer::SharedFormulaDesc::SharedFormulaDesc(
     const ScAddress& rAddr, sal_Int32 nSharedId,
     const OUString& rCellValue, sal_Int32 nValueType ) :
     maAddress(rAddr), mnSharedId(nSharedId), maCellValue(rCellValue), mnValueType(nValueType) {}
-
-FormulaBuffer::SharedFormulaDesc::SharedFormulaDesc(
-    const css::table::CellAddress& rAddr, sal_Int32 nSharedId,
-    const OUString& rCellValue, sal_Int32 nValueType ) :
-    maAddress( ScAddress( rAddr.Column, rAddr.Row, rAddr.Sheet ) ), mnSharedId(nSharedId), maCellValue(rCellValue), mnValueType(nValueType) {}
 
 FormulaBuffer::SheetItem::SheetItem() :
     mpCellFormulas(nullptr),
@@ -396,7 +341,6 @@ void FormulaBuffer::finalizeImport()
 {
     ISegmentProgressBarRef xFormulaBar = getProgressBar().createSegment( getProgressBar().getFreeLength() );
 
-    const size_t nThreadCount = 1;
     ScDocumentImport& rDoc = getDocImport();
     rDoc.getDoc().SetAutoNameCache(new ScAutoNameCache(&rDoc.getDoc()));
     ScExternalRefManager::ApiGuard aExtRefGuard(&rDoc.getDoc());
@@ -409,46 +353,9 @@ void FormulaBuffer::finalizeImport()
     for (SCTAB nTab = 0; nTab < nTabCount; ++nTab)
         aSheetItems.push_back(getSheetItem(nTab));
 
-    std::vector<SheetItem>::iterator it = aSheetItems.begin(), itEnd = aSheetItems.end();
-
-    if (nThreadCount == 1)
-    {
-        for (; it != itEnd; ++it)
-            processSheetFormulaCells(rDoc, *it, *rDoc.getDoc().GetFormatTable(), getExternalLinks().getLinkInfos(),
-                    isGeneratorKnownGood());
-    }
-    else
-    {
-        typedef rtl::Reference<WorkerThread> WorkerThreadRef;
-        std::vector<WorkerThreadRef> aThreads;
-        aThreads.reserve(nThreadCount);
-        // TODO: Right now we are spawning multiple threads all at once and block
-        // on them all at once.  Any more clever thread management would require
-        // use of condition variables which our own osl thread framework seems to
-        // lack.
-        while (it != itEnd)
-        {
-            for (size_t i = 0; i < nThreadCount; ++i)
-            {
-                if (it == itEnd)
-                    break;
-
-                WorkerThreadRef xThread(new WorkerThread(rDoc, *it, rDoc.getDoc().CreateFormatTable(),
-                            getExternalLinks().getLinkInfos(), isGeneratorKnownGood()));
-                ++it;
-                aThreads.push_back(xThread);
-                xThread->launch();
-            }
-
-            for (rtl::Reference<WorkerThread> & xThread : aThreads)
-            {
-                if (xThread.is())
-                    xThread->join();
-            }
-
-            aThreads.clear();
-        }
-    }
+    for (SheetItem& rItem : aSheetItems)
+        processSheetFormulaCells(rDoc, rItem, *rDoc.getDoc().GetFormatTable(), getExternalLinks().getLinkInfos(),
+                isGeneratorKnownGood());
 
     // With formula results being set and not recalculated we need to
     // force-trigger adding all linked external files to the LinkManager.
@@ -486,16 +393,6 @@ FormulaBuffer::SheetItem FormulaBuffer::getSheetItem( SCTAB nTab )
 }
 
 void FormulaBuffer::createSharedFormulaMapEntry(
-    const table::CellAddress& rAddress,
-    sal_Int32 nSharedId, const OUString& rTokens )
-{
-    assert( rAddress.Sheet >= 0 && (size_t)rAddress.Sheet < maSharedFormulas.size() );
-    std::vector<SharedFormulaEntry>& rSharedFormulas = maSharedFormulas[ rAddress.Sheet ];
-    SharedFormulaEntry aEntry(rAddress, rTokens, nSharedId);
-    rSharedFormulas.push_back( aEntry );
-}
-
-void FormulaBuffer::createSharedFormulaMapEntry(
     const ScAddress& rAddress,
     sal_Int32 nSharedId, const OUString& rTokens )
 {
@@ -505,24 +402,10 @@ void FormulaBuffer::createSharedFormulaMapEntry(
     rSharedFormulas.push_back( aEntry );
 }
 
-void FormulaBuffer::setCellFormula( const css::table::CellAddress& rAddress, const OUString& rTokenStr )
-{
-    assert( rAddress.Sheet >= 0 && (size_t)rAddress.Sheet < maCellFormulas.size() );
-    maCellFormulas[ rAddress.Sheet ].push_back( TokenAddressItem( rTokenStr, rAddress ) );
-}
-
 void FormulaBuffer::setCellFormula( const ScAddress& rAddress, const OUString& rTokenStr )
 {
     assert( rAddress.Tab() >= 0 && (size_t)rAddress.Tab() < maCellFormulas.size() );
     maCellFormulas[ rAddress.Tab() ].push_back( TokenAddressItem( rTokenStr, rAddress ) );
-}
-
-void FormulaBuffer::setCellFormula(
-    const table::CellAddress& rAddress, sal_Int32 nSharedId, const OUString& rCellValue, sal_Int32 nValueType )
-{
-    assert( rAddress.Sheet >= 0 && (size_t)rAddress.Sheet < maSharedFormulaIds.size() );
-    maSharedFormulaIds[rAddress.Sheet].push_back(
-        SharedFormulaDesc(rAddress, nSharedId, rCellValue, nValueType));
 }
 
 void FormulaBuffer::setCellFormula(
@@ -533,31 +416,12 @@ void FormulaBuffer::setCellFormula(
         SharedFormulaDesc(rAddress, nSharedId, rCellValue, nValueType));
 }
 
-void FormulaBuffer::setCellArrayFormula( const css::table::CellRangeAddress& rRangeAddress, const css::table::CellAddress& rTokenAddress, const OUString& rTokenStr )
+void FormulaBuffer::setCellArrayFormula( const ScRange& rRangeAddress, const ScAddress& rTokenAddress, const OUString& rTokenStr )
 {
 
     TokenAddressItem tokenPair( rTokenStr, rTokenAddress );
-    assert( rRangeAddress.Sheet >= 0 && (size_t)rRangeAddress.Sheet < maCellArrayFormulas.size() );
-    maCellArrayFormulas[ rRangeAddress.Sheet ].push_back( TokenRangeAddressItem( tokenPair, rRangeAddress ) );
-}
-
-void FormulaBuffer::setCellArrayFormula( const css::table::CellRangeAddress& rRangeAddress, const ScAddress& rTokenAddress, const OUString& rTokenStr )
-{
-
-    TokenAddressItem tokenPair( rTokenStr, rTokenAddress );
-    assert( rRangeAddress.Sheet >= 0 && (size_t)rRangeAddress.Sheet < maCellArrayFormulas.size() );
-    maCellArrayFormulas[ rRangeAddress.Sheet ].push_back( TokenRangeAddressItem( tokenPair, rRangeAddress ) );
-}
-
-void FormulaBuffer::setCellFormulaValue(
-        const css::table::CellAddress& rAddress, const OUString& rValueStr, sal_Int32 nCellType )
-{
-    assert( rAddress.Sheet >= 0 && (size_t)rAddress.Sheet < maCellFormulaValues.size() );
-    FormulaValue aVal;
-    aVal.maCellAddress = ScAddress ( rAddress.Column, rAddress.Row, rAddress.Sheet );
-    aVal.maValueStr = rValueStr;
-    aVal.mnCellType = nCellType;
-    maCellFormulaValues[rAddress.Sheet].push_back(aVal);
+    assert( rRangeAddress.aStart.Tab() >= 0 && (size_t)rRangeAddress.aStart.Tab() < maCellArrayFormulas.size() );
+    maCellArrayFormulas[ rRangeAddress.aStart.Tab() ].push_back( TokenRangeAddressItem( tokenPair, rRangeAddress ) );
 }
 
 void FormulaBuffer::setCellFormulaValue(
@@ -565,7 +429,7 @@ void FormulaBuffer::setCellFormulaValue(
 {
     assert( rAddress.Tab() >= 0 && (size_t)rAddress.Tab() < maCellFormulaValues.size() );
     FormulaValue aVal;
-    aVal.maCellAddress = rAddress;
+    aVal.maAddress = rAddress;
     aVal.maValueStr = rValueStr;
     aVal.mnCellType = nCellType;
     maCellFormulaValues[rAddress.Tab()].push_back(aVal);

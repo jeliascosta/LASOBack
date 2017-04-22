@@ -46,33 +46,26 @@ class ConfigColorScheme :
 {
 public:
     explicit ConfigColorScheme( const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    SAL_DLLPRIVATE virtual ~ConfigColorScheme();
+    virtual ~ConfigColorScheme() override;
 
     /// declare XServiceInfo methods
-    virtual OUString SAL_CALL getImplementationName()
-            throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-            throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-            throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     // ____ ConfigItemListener ____
-    SAL_DLLPRIVATE void notify( const OUString & rPropertyName );
+    void notify( const OUString & rPropertyName );
 
 protected:
     // ____ XColorScheme ____
-    SAL_DLLPRIVATE virtual ::sal_Int32 SAL_CALL getColorByIndex( ::sal_Int32 nIndex )
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getColorByIndex( ::sal_Int32 nIndex ) override;
 
 private:
-    SAL_DLLPRIVATE void retrieveConfigColors();
+    void retrieveConfigColors();
 
     // member variables
     css::uno::Reference< css::uno::XComponentContext >    m_xContext;
-    ::std::unique_ptr< impl::ChartConfigItem >            m_apChartConfigItem;
+    std::unique_ptr< impl::ChartConfigItem >            m_apChartConfigItem;
     mutable css::uno::Sequence< sal_Int64 >               m_aColorSequence;
     mutable sal_Int32                                     m_nNumberOfColors;
     bool                                                  m_bNeedsUpdate;

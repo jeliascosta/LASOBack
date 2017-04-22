@@ -32,7 +32,7 @@ namespace cppu
 
 /** Context entries init struct calling createComponentContext().
 */
-struct ContextEntry_Init
+struct SAL_WARN_UNUSED ContextEntry_Init
 {
     /** late init denotes a object that will be raised when first get() is calling for it
 
@@ -50,7 +50,7 @@ struct ContextEntry_Init
 
     /** Default ctor.
     */
-    inline ContextEntry_Init()
+    ContextEntry_Init()
         : bLateInitService( false )
         {}
     /** Ctor.
@@ -63,7 +63,7 @@ struct ContextEntry_Init
                whether this entry is a late-init named object entry
                (value is object factory or service string)
     */
-    inline ContextEntry_Init(
+    ContextEntry_Init(
         ::rtl::OUString const & name_,
         css::uno::Any const & value_,
         bool bLateInitService_ = false )

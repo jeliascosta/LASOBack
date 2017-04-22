@@ -49,7 +49,6 @@ OGenericUnoDialog::OGenericUnoDialog(const Reference< XComponentContext >& _rxCo
         :OPropertyContainer(GetBroadcastHelper())
         ,m_pDialog(nullptr)
         ,m_bExecuting(false)
-        ,m_bCanceled(false)
         ,m_bTitleAmbiguous(true)
         ,m_bInitialized( false )
         ,m_bNeedInitialization( false )
@@ -74,7 +73,7 @@ OGenericUnoDialog::~OGenericUnoDialog()
 }
 
 
-Any SAL_CALL OGenericUnoDialog::queryInterface(const Type& _rType) throw (RuntimeException, std::exception)
+Any SAL_CALL OGenericUnoDialog::queryInterface(const Type& _rType)
 {
     Any aReturn = OGenericUnoDialogBase::queryInterface(_rType);
 
@@ -89,7 +88,7 @@ Any SAL_CALL OGenericUnoDialog::queryInterface(const Type& _rType) throw (Runtim
 }
 
 
-Sequence<Type> SAL_CALL OGenericUnoDialog::getTypes(  ) throw(RuntimeException, std::exception)
+Sequence<Type> SAL_CALL OGenericUnoDialog::getTypes(  )
 {
     return ::comphelper::concatSequences(
         OGenericUnoDialogBase::getTypes(),
@@ -97,13 +96,13 @@ Sequence<Type> SAL_CALL OGenericUnoDialog::getTypes(  ) throw(RuntimeException, 
     );
 }
 
-sal_Bool SAL_CALL OGenericUnoDialog::supportsService(const OUString& ServiceName) throw(RuntimeException, std::exception)
+sal_Bool SAL_CALL OGenericUnoDialog::supportsService(const OUString& ServiceName)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 
-void OGenericUnoDialog::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue ) throw(Exception, std::exception)
+void OGenericUnoDialog::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue )
 {
     // TODO : need some handling if we're currently executing ...
 
@@ -120,7 +119,7 @@ void OGenericUnoDialog::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, con
 }
 
 
-sal_Bool OGenericUnoDialog::convertFastPropertyValue( Any& rConvertedValue, Any& rOldValue, sal_Int32 nHandle, const Any& rValue) throw(IllegalArgumentException)
+sal_Bool OGenericUnoDialog::convertFastPropertyValue( Any& rConvertedValue, Any& rOldValue, sal_Int32 nHandle, const Any& rValue)
 {
     switch (nHandle)
     {
@@ -140,7 +139,7 @@ sal_Bool OGenericUnoDialog::convertFastPropertyValue( Any& rConvertedValue, Any&
 }
 
 
-void SAL_CALL OGenericUnoDialog::setTitle( const OUString& _rTitle ) throw(RuntimeException, std::exception)
+void SAL_CALL OGenericUnoDialog::setTitle( const OUString& _rTitle )
 {
     UnoDialogEntryGuard aGuard( *this );
 
@@ -169,7 +168,7 @@ bool OGenericUnoDialog::impl_ensureDialog_lck()
     // get the parameters for the dialog from the current settings
 
     // the parent window
-    vcl::Window* pParent = nullptr;
+    VclPtr<vcl::Window> pParent;
     VCLXWindow* pImplementation = VCLXWindow::GetImplementation(m_xParent);
     if (pImplementation)
         pParent = pImplementation->GetWindow();
@@ -196,7 +195,7 @@ bool OGenericUnoDialog::impl_ensureDialog_lck()
 }
 
 
-sal_Int16 SAL_CALL OGenericUnoDialog::execute(  ) throw(RuntimeException, std::exception)
+sal_Int16 SAL_CALL OGenericUnoDialog::execute(  )
 {
     // both creation and execution of the dialog must be guarded with the SolarMutex, so be generous here
     SolarMutexGuard aSolarGuard;
@@ -212,7 +211,6 @@ sal_Int16 SAL_CALL OGenericUnoDialog::execute(  ) throw(RuntimeException, std::e
                     *this
                   );
 
-        m_bCanceled = false;
         m_bExecuting = true;
 
         if ( !impl_ensureDialog_lck() )
@@ -227,12 +225,6 @@ sal_Int16 SAL_CALL OGenericUnoDialog::execute(  ) throw(RuntimeException, std::e
         nReturn = pDialogToExecute->Execute();
 
     {
-        ::osl::MutexGuard aExecutionGuard(m_aExecutionMutex);
-        if (m_bCanceled)
-            nReturn = RET_CANCEL;
-    }
-
-    {
         ::osl::MutexGuard aGuard(m_aMutex);
 
         // get the settings of the dialog
@@ -244,35 +236,6 @@ sal_Int16 SAL_CALL OGenericUnoDialog::execute(  ) throw(RuntimeException, std::e
     // outta here
     return nReturn;
 }
-
-#ifdef AWT_DIALOG
-
-void SAL_CALL OGenericUnoDialog::endExecute(  ) throw(RuntimeException)
-{
-    UnoDialogEntryGuard aGuard( *this );
-    if (!m_bExecuting)
-        throw RuntimeException();
-
-    {
-        ::osl::MutexGuard aExecutionGuard(m_aExecutionMutex);
-        OSL_ENSURE(m_pDialog, "OGenericUnoDialog::endExecute : executing which dialog ?");
-            // m_bExecuting is true but we have no dialog ?
-        if (!m_pDialog)
-            throw RuntimeException();
-
-        if (!m_pDialog->IsInExecute())
-            // we tightly missed it... another thread finished the execution of the dialog,
-            // but did not manage it to reset m_bExecuting, it currently tries to acquire
-            // m_aMutex or m_aExecutionMutex
-            // => nothing to do
-            return;
-
-        m_pDialog->EndDialog(RET_CANCEL);
-        m_bCanceled = sal_True;
-    }
-}
-#endif
-
 
 void OGenericUnoDialog::implInitialize(const Any& _rValue)
 {
@@ -296,7 +259,7 @@ void OGenericUnoDialog::implInitialize(const Any& _rValue)
 }
 
 
-void SAL_CALL OGenericUnoDialog::initialize( const Sequence< Any >& aArguments ) throw(Exception, RuntimeException, std::exception)
+void SAL_CALL OGenericUnoDialog::initialize( const Sequence< Any >& aArguments )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bInitialized )
@@ -317,10 +280,10 @@ void OGenericUnoDialog::destroyDialog()
 }
 
 
-IMPL_LINK_TYPED( OGenericUnoDialog, OnDialogDying, VclWindowEvent&, _rEvent, void )
+IMPL_LINK( OGenericUnoDialog, OnDialogDying, VclWindowEvent&, _rEvent, void )
 {
     OSL_ENSURE( _rEvent.GetWindow() == m_pDialog, "OGenericUnoDialog::OnDialogDying: where does this come from?" );
-    if ( _rEvent.GetId() == VCLEVENT_OBJECT_DYING )
+    if ( _rEvent.GetId() == VclEventId::ObjectDying )
         m_pDialog = nullptr;
 }
 

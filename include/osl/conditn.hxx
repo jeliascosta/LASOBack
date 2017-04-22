@@ -28,10 +28,20 @@
 
 #include <osl/conditn.h>
 
+#if defined(MACOSX) && defined(__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES)
+#   if __ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES == 1
+#       undef check
+#   endif
+#endif
 
 namespace osl
 {
     /**
+     * A deprecated condition.
+     *
+     * @deprecated use C++11's std::condition_variable instead
+     *             for a more robust and helpful condition.
+     *
      * Warning: the Condition abstraction is inadequate for any
      * situation where there may be multiple threads setting,
      * waiting, and resetting the same condition. It can only be
@@ -50,7 +60,11 @@ namespace osl
             result_timeout = osl_cond_result_timeout
         };
 
-        /* Create a condition.
+        /**
+         * Create a condition.
+         *
+         * @deprecated use C++11's std::condition_variable instead
+         *             for a more robust and helpful condition.
          */
         Condition()
         {

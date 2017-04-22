@@ -71,6 +71,8 @@ namespace dbtools
             const css::uno::Reference< css::sdbc::XConnection >& _connection );
         DatabaseMetaData( const DatabaseMetaData& _copyFrom );
         DatabaseMetaData& operator=( const DatabaseMetaData& _copyFrom );
+        DatabaseMetaData( DatabaseMetaData&& _copyFrom );
+        DatabaseMetaData& operator=( DatabaseMetaData&& _copyFrom );
 
         ~DatabaseMetaData();
 
@@ -84,7 +86,7 @@ namespace dbtools
 
         /** resets the instance so that it's based on a new connection
         */
-        inline  void    reset( const css::uno::Reference< css::sdbc::XConnection >& _connection )
+        void    reset( const css::uno::Reference< css::sdbc::XConnection >& _connection )
         {
             *this = DatabaseMetaData( _connection );
         }

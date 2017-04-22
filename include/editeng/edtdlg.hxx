@@ -34,26 +34,31 @@ namespace com { namespace sun { namespace star { namespace linguistic2
 } } } }
 
 namespace vcl { class Window; }
-class ResId;
 class SvxSpellWrapper;
 class Button;
 class CheckBox;
 
 class AbstractThesaurusDialog : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractThesaurusDialog() override = default;
 public:
     virtual OUString    GetWord() = 0;
 };
 
 class AbstractHyphenWordDialog : public VclAbstractDialog
 {
+protected:
+    virtual ~AbstractHyphenWordDialog() override = default;
 public:
     virtual vcl::Window* GetWindow() = 0;
 };
 
 class AbstractHangulHanjaConversionDialog : public VclAbstractTerminatedDialog
 {
- public:
+protected:
+    virtual ~AbstractHangulHanjaConversionDialog() override = default;
+public:
     virtual void     EnableRubySupport( bool _bVal ) = 0;
     virtual void     SetByCharacter( bool _bByCharacter ) = 0;
     virtual void     SetConversionDirectionState( bool _bTryBothDirections, editeng::HangulHanjaConversion::ConversionDirection _ePrimaryConversionDirection ) = 0;
@@ -83,16 +88,16 @@ class AbstractHangulHanjaConversionDialog : public VclAbstractTerminatedDialog
 class EDITENG_DLLPUBLIC EditAbstractDialogFactory : virtual public VclAbstractDialogFactory
 {
 public:
-                                        virtual ~EditAbstractDialogFactory();   // needed for export of vtable
+                                        virtual ~EditAbstractDialogFactory() override;   // needed for export of vtable
     static EditAbstractDialogFactory*   Create();
-    virtual AbstractThesaurusDialog*        CreateThesaurusDialog( vcl::Window*, css::uno::Reference< css::linguistic2::XThesaurus >  xThesaurus,
+    virtual VclPtr<AbstractThesaurusDialog>  CreateThesaurusDialog( vcl::Window*, css::uno::Reference< css::linguistic2::XThesaurus >  xThesaurus,
                                                 const OUString &rWord, sal_Int16 nLanguage ) = 0;
 
-    virtual AbstractHyphenWordDialog*       CreateHyphenWordDialog( vcl::Window*,
+    virtual VclPtr<AbstractHyphenWordDialog> CreateHyphenWordDialog( vcl::Window*,
                                                 const OUString &rWord, LanguageType nLang,
                                                 css::uno::Reference< css::linguistic2::XHyphenator >  &xHyphen,
                                                 SvxSpellWrapper* pWrapper ) = 0;
-    virtual AbstractHangulHanjaConversionDialog * CreateHangulHanjaConversionDialog( vcl::Window* _pParent,
+    virtual VclPtr<AbstractHangulHanjaConversionDialog> CreateHangulHanjaConversionDialog( vcl::Window* _pParent,
                                             editeng::HangulHanjaConversion::ConversionDirection _ePrimaryDirection ) = 0;
 };
 

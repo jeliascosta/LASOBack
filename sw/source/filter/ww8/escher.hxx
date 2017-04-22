@@ -77,7 +77,7 @@ class SwEscherExGlobal : public EscherExGlobal
 {
 public:
     explicit            SwEscherExGlobal();
-    virtual             ~SwEscherExGlobal();
+    virtual             ~SwEscherExGlobal() override;
 
 private:
     /** Override to create a new memory stream for picture data. */
@@ -103,7 +103,7 @@ protected:
     void WriteOLEPicture(EscherPropertyContainer &rPropOpt,
         sal_uInt32 nShapeFlags, const Graphic &rGraphic, const SdrObject &rObj,
         sal_uInt32 nShapeId, const css::awt::Rectangle* pVisArea );
-    static void WriteGrfAttr(const SwNoTextNode& rNd,EscherPropertyContainer& rPropOpt);
+    static void WriteGrfAttr(const SwNoTextNode& rNd, const SwFrameFormat& rFormat, EscherPropertyContainer& rPropOpt);
 
     sal_Int32 DrawModelToEmu(sal_Int32 nVal) const
         { return BigMulDiv(nVal, mnEmuMul, mnEmuDiv); }
@@ -122,7 +122,7 @@ public:
     void WriteEmptyFlyFrame(const SwFrameFormat& rFormat, sal_uInt32 nShapeId);
     virtual void WriteFrameExtraData(const SwFrameFormat&);
     virtual void WritePictures();
-    virtual ~SwBasicEscherEx();
+    virtual ~SwBasicEscherEx() override;
     //i120927,this function is added to export hyperlink info,such as graphic/frame/OLE
     bool IsRelUrl();
     OUString GetBasePath();
@@ -162,13 +162,13 @@ private:
         EscherPropertyContainer &rPropOpt) override;
 public:
     SwEscherEx( SvStream* pStrm, WW8Export& rWW8Wrt );
-    virtual ~SwEscherEx();
+    virtual ~SwEscherEx() override;
     void FinishEscher();
     virtual void WritePictures() override;
 
     virtual void WriteFrameExtraData(const SwFrameFormat& rFormat) override;
 
-    EscherExHostAppData* StartShape(const css::uno::Reference< css::drawing::XShape > &, const Rectangle*) override {return &aHostData;}
+    EscherExHostAppData* StartShape(const css::uno::Reference< css::drawing::XShape > &, const tools::Rectangle*) override {return &aHostData;}
 private:
     SwEscherEx(const SwEscherEx&) = delete;
     SwEscherEx &operator=(const SwEscherEx&) = delete;

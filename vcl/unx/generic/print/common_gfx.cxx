@@ -77,8 +77,8 @@ PrinterGfx::Init (const JobData& rData)
     mbColor         = rData.m_nColorDevice ? ( rData.m_nColorDevice != -1 ) : ( rData.m_pParser == nullptr || rData.m_pParser->isColorDevice() );
     int nRes = rData.m_aContext.getRenderResolution();
     mnDpi           = nRes;
-    mfScaleX        = (double)72.0 / (double)mnDpi;
-    mfScaleY        = (double)72.0 / (double)mnDpi;
+    mfScaleX        = 72.0 / (double)mnDpi;
+    mfScaleY        = 72.0 / (double)mnDpi;
     const PrinterInfo& rInfo( PrinterInfoManager::get().getPrinterInfo( rData.m_aPrinterName ) );
     mbUploadPS42Fonts = rInfo.m_pParser && rInfo.m_pParser->isType42Capable();
 }
@@ -95,11 +95,9 @@ PrinterGfx::PrinterGfx()
     , mpPageHeader(nullptr)
     , mpPageBody(nullptr)
     , mnFontID(0)
-    , mnFallbackID(0)
     , mnTextAngle(0)
     , mbTextVertical(false)
     , mrFontMgr(PrintFontManager::get())
-    , mbCompressBmp(true)
     , maFillColor(0xff,0,0)
     , maTextColor(0,0,0)
     , maLineColor(0, 0xff, 0)
@@ -129,7 +127,6 @@ PrinterGfx::Clear()
     maLineColor                     = PrinterColor();
     maFillColor                     = PrinterColor();
     maTextColor                     = PrinterColor();
-    mbCompressBmp                   = true;
     mnDpi                           = 300;
     mnDepth                         = 24;
     mnPSLevel                       = 2;
@@ -163,21 +160,21 @@ void
 PrinterGfx::UnionClipRegion (sal_Int32 nX,sal_Int32 nY,sal_Int32 nDX,sal_Int32 nDY)
 {
     if( nDX && nDY )
-        maClipRegion.push_back (Rectangle(Point(nX,nY ), Size(nDX,nDY)));
+        maClipRegion.push_back (tools::Rectangle(Point(nX,nY ), Size(nDX,nDY)));
 }
 
 bool
-PrinterGfx::JoinVerticalClipRectangles( std::list< Rectangle >::iterator& it,
+PrinterGfx::JoinVerticalClipRectangles( std::list< tools::Rectangle >::iterator& it,
                                         Point& rOldPoint, sal_Int32& rColumn )
 {
     bool bSuccess = false;
 
-    std::list< Rectangle >::iterator tempit, nextit;
+    std::list< tools::Rectangle >::iterator tempit, nextit;
     nextit = it;
     ++nextit;
     std::list< Point > leftside, rightside;
 
-    Rectangle aLastRect( *it );
+    tools::Rectangle aLastRect( *it );
     leftside.push_back( Point( it->Left(), it->Top() ) );
     rightside.push_back( Point( it->Right()+1, it->Top() ) );
     while( nextit != maClipRegion.end() )
@@ -277,7 +274,7 @@ PrinterGfx::EndSetClipRegion()
     Point aOldPoint (0, 0);
     sal_Int32 nColumn = 0;
 
-    std::list< Rectangle >::iterator it = maClipRegion.begin();
+    std::list< tools::Rectangle >::iterator it = maClipRegion.begin();
     while( it != maClipRegion.end() )
     {
         // try to concatenate adjacent rectangles
@@ -304,7 +301,7 @@ PrinterGfx::EndSetClipRegion()
  */
 
 void
-PrinterGfx::DrawRect (const Rectangle& rRectangle )
+PrinterGfx::DrawRect (const tools::Rectangle& rRectangle )
 {
     char pRect [128];
     sal_Int32 nChar = 0;
@@ -480,7 +477,7 @@ PrinterGfx::DrawPolyPolygon (sal_uInt32 nPoly, const sal_uInt32* pSizes, const P
  */
 
 void
-PrinterGfx::DrawPolyLineBezier (sal_uInt32 nPoints, const Point* pPath, const sal_uInt8* pFlgAry)
+PrinterGfx::DrawPolyLineBezier (sal_uInt32 nPoints, const Point* pPath, const PolyFlags* pFlgAry)
 {
     const sal_uInt32 nBezString= 1024;
     sal_Char pString[nBezString];
@@ -499,7 +496,7 @@ PrinterGfx::DrawPolyLineBezier (sal_uInt32 nPoints, const Point* pPath, const sa
         // - a normal point followed by 2 control points and a normal point is a curve
         for (unsigned int i=1; i<nPoints;)
         {
-            if (pFlgAry[i] != POLY_CONTROL) //If the next point is a POLY_NORMAL, we're drawing a line
+            if (pFlgAry[i] != PolyFlags::Control) //If the next point is a PolyFlags::Normal, we're drawing a line
             {
                 snprintf(pString, nBezString, "%li %li lineto\n", pPath[i].X(), pPath[i].Y());
                 i++;
@@ -508,8 +505,8 @@ PrinterGfx::DrawPolyLineBezier (sal_uInt32 nPoints, const Point* pPath, const sa
             {
                 if (i+2 >= nPoints)
                     return; //Error: wrong sequence of contol/normal points somehow
-                if ((pFlgAry[i] == POLY_CONTROL) && (pFlgAry[i+1] == POLY_CONTROL) &&
-                    (pFlgAry[i+2] != POLY_CONTROL))
+                if ((pFlgAry[i] == PolyFlags::Control) && (pFlgAry[i+1] == PolyFlags::Control) &&
+                    (pFlgAry[i+2] != PolyFlags::Control))
                 {
                     snprintf(pString, nBezString, "%li %li %li %li %li %li curveto\n",
                              pPath[i].X(), pPath[i].Y(),
@@ -531,7 +528,7 @@ PrinterGfx::DrawPolyLineBezier (sal_uInt32 nPoints, const Point* pPath, const sa
 }
 
 void
-PrinterGfx::DrawPolygonBezier (sal_uInt32 nPoints, const Point* pPath, const sal_uInt8* pFlgAry)
+PrinterGfx::DrawPolygonBezier (sal_uInt32 nPoints, const Point* pPath, const PolyFlags* pFlgAry)
 {
     const sal_uInt32 nBezString = 1024;
     sal_Char pString[nBezString];
@@ -540,10 +537,10 @@ PrinterGfx::DrawPolygonBezier (sal_uInt32 nPoints, const Point* pPath, const sal
         return;
 
     snprintf(pString, nBezString, "%li %li moveto\n", pPath[0].X(), pPath[0].Y());
-    WritePS(mpPageBody, pString); //Move to the starting point for the PolyPoygon
+    WritePS(mpPageBody, pString); //Move to the starting point for the PolyPolygon
     for (unsigned int i=1; i < nPoints;)
     {
-        if (pFlgAry[i] != POLY_CONTROL)
+        if (pFlgAry[i] != PolyFlags::Control)
         {
             snprintf(pString, nBezString, "%li %li lineto\n", pPath[i].X(), pPath[i].Y());
             WritePS(mpPageBody, pString);
@@ -553,8 +550,8 @@ PrinterGfx::DrawPolygonBezier (sal_uInt32 nPoints, const Point* pPath, const sal
         {
             if (i+2 >= nPoints)
                 return; //Error: wrong sequence of contol/normal points somehow
-            if ((pFlgAry[i] == POLY_CONTROL) && (pFlgAry[i+1] == POLY_CONTROL) &&
-                    (pFlgAry[i+2] != POLY_CONTROL))
+            if ((pFlgAry[i] == PolyFlags::Control) && (pFlgAry[i+1] == PolyFlags::Control) &&
+                    (pFlgAry[i+2] != PolyFlags::Control))
             {
                 snprintf(pString, nBezString, "%li %li %li %li %li %li curveto\n",
                         pPath[i].X(), pPath[i].Y(),
@@ -587,7 +584,7 @@ PrinterGfx::DrawPolygonBezier (sal_uInt32 nPoints, const Point* pPath, const sal
 }
 
 void
-PrinterGfx::DrawPolyPolygonBezier (sal_uInt32 nPoly, const sal_uInt32 * pPoints, const Point* const * pPtAry, const sal_uInt8* const* pFlgAry)
+PrinterGfx::DrawPolyPolygonBezier (sal_uInt32 nPoly, const sal_uInt32 * pPoints, const Point* const * pPtAry, const PolyFlags* const* pFlgAry)
 {
     const sal_uInt32 nBezString = 1024;
     sal_Char pString[nBezString];
@@ -607,7 +604,7 @@ PrinterGfx::DrawPolyPolygonBezier (sal_uInt32 nPoly, const sal_uInt32 * pPoints,
         {
             // if no flag array exists for this polygon, then it must be a regular
             // polygon without beziers
-            if ( ! pFlgAry[i] || pFlgAry[i][j] != POLY_CONTROL)
+            if ( ! pFlgAry[i] || pFlgAry[i][j] != PolyFlags::Control)
             {
                 snprintf(pString, nBezString, "%li %li lineto\n", pPtAry[i][j].X(), pPtAry[i][j].Y());
                 WritePS(mpPageBody, pString);
@@ -617,7 +614,7 @@ PrinterGfx::DrawPolyPolygonBezier (sal_uInt32 nPoly, const sal_uInt32 * pPoints,
             {
                 if (j+2 >= nPoints)
                     break; //Error: wrong sequence of contol/normal points somehow
-                if ((pFlgAry[i][j] == POLY_CONTROL) && (pFlgAry[i][j+1] == POLY_CONTROL) && (pFlgAry[i][j+2] != POLY_CONTROL))
+                if ((pFlgAry[i][j] == PolyFlags::Control) && (pFlgAry[i][j+1] == PolyFlags::Control) && (pFlgAry[i][j+2] != PolyFlags::Control))
                 {
                     snprintf(pString, nBezString, "%li %li %li %li %li %li curveto\n",
                             pPtAry[i][j].X(), pPtAry[i][j].Y(),
@@ -1015,39 +1012,8 @@ PrinterGfx::PSHexString (const unsigned char* pString, sal_Int16 nLen)
     WritePS (mpPageBody, pHexString, nChar);
 }
 
-/* psshowtext helper routines: draw an array for xshow ps operator */
 void
-PrinterGfx::PSDeltaArray (const sal_Int32 *pArray, sal_Int16 nEntries)
-{
-    sal_Char pPSArray [128];
-    sal_Int32 nChar = 0;
-
-    nChar  = psp::appendStr  ("[", pPSArray + nChar);
-    nChar += psp::getValueOf (pArray[0], pPSArray + nChar);
-
-    for (int i = 1; i < nEntries; i++)
-    {
-        if (nChar >= (nMaxTextColumn - 1))
-        {
-            nChar += psp::appendStr ("\n", pPSArray + nChar);
-            WritePS (mpPageBody, pPSArray, nChar);
-            nChar = 0;
-        }
-
-        nChar += psp::appendStr  (" ", pPSArray + nChar);
-        nChar += psp::getValueOf (pArray[i] - pArray[i-1], pPSArray + nChar);
-    }
-
-    nChar  += psp::appendStr (" 0]\n", pPSArray + nChar);
-    WritePS (mpPageBody, pPSArray, nChar);
-}
-
-/* the DrawText equivalent, pDeltaArray may be NULL. For Type1 fonts or single byte
- * fonts in general nBytes and nGlyphs is the same. For printer resident Composite
- * fonts it may be different (these fonts may be SJIS encoded for example) */
-void
-PrinterGfx::PSShowText (const unsigned char* pStr, sal_Int16 nGlyphs, sal_Int16 nBytes,
-                        const sal_Int32* pDeltaArray)
+PrinterGfx::PSShowGlyph (const unsigned char nGlyphId)
 {
     PSSetColor (maTextColor);
     PSSetColor ();
@@ -1069,58 +1035,25 @@ PrinterGfx::PSShowText (const unsigned char* pStr, sal_Int16 nGlyphs, sal_Int16 
             nLW = nLW < maVirtualStatus.mnTextHeight ? nLW : maVirtualStatus.mnTextHeight;
         psp::getValueOfDouble( pBuffer, (double)nLW / 30.0 );
     }
-    // dispatch to the drawing method
-    if (pDeltaArray == nullptr)
-    {
-        PSHexString (pStr, nBytes);
 
-        if( maVirtualStatus.mbArtBold )
-        {
-            WritePS( mpPageBody, pBuffer );
-            WritePS( mpPageBody, " bshow\n" );
-        }
-        else
-            WritePS (mpPageBody, "show\n");
+    // dispatch to the drawing method
+    PSHexString (&nGlyphId, 1);
+
+    if( maVirtualStatus.mbArtBold )
+    {
+        WritePS( mpPageBody, pBuffer );
+        WritePS( mpPageBody, " bshow\n" );
     }
     else
-    {
-        PSHexString (pStr, nBytes);
-        PSDeltaArray (pDeltaArray, nGlyphs - 1);
-        if( maVirtualStatus.mbArtBold )
-        {
-            WritePS( mpPageBody, pBuffer );
-            WritePS( mpPageBody, " bxshow\n" );
-        }
-        else
-            WritePS (mpPageBody, "xshow\n");
-    }
+        WritePS (mpPageBody, "show\n");
 
     // restore the user coordinate system
     if (mnTextAngle != 0)
         PSGRestore ();
 }
 
-void
-PrinterGfx::PSComment( const sal_Char* pComment )
-{
-    const sal_Char* pLast = pComment;
-    while( pComment && *pComment )
-    {
-        while( *pComment && *pComment != '\n' && *pComment != '\r' )
-            pComment++;
-        if( pComment - pLast > 1 )
-        {
-            WritePS( mpPageBody, "% ", 2 );
-            WritePS( mpPageBody, pLast, pComment - pLast );
-            WritePS( mpPageBody, "\n", 1 );
-        }
-        if( *pComment )
-            pLast = ++pComment;
-    }
-}
-
 bool
-PrinterGfx::DrawEPS( const Rectangle& rBoundingBox, void* pPtr, sal_uInt32 nSize )
+PrinterGfx::DrawEPS( const tools::Rectangle& rBoundingBox, void* pPtr, sal_uInt32 nSize )
 {
     if( nSize == 0 )
         return true;

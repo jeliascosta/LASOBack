@@ -17,8 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-
-#include <ctype.h>
 #include <tools/diagnose_ex.h>
 #include <rtl/tencinfo.h>
 #include <svl/itemiter.hxx>
@@ -59,7 +57,7 @@ static rtl_TextEncoding lcl_GetDefaultTextEncodingForRTF()
 // -------------- Methods --------------------
 
 SvxRTFParser::SvxRTFParser( SfxItemPool& rPool, SvStream& rIn,
-            uno::Reference<document::XDocumentProperties> i_xDocProps )
+            uno::Reference<document::XDocumentProperties> const & i_xDocProps )
     : SvRTFParser( rIn, 5 )
     , aPlainMap(rPool)
     , aPardMap(rPool)
@@ -107,14 +105,14 @@ SvParserState SvxRTFParser::CallParser()
     DBG_ASSERT( pInsPos, "no insertion position");
 
     if( !pInsPos )
-        return SVPAR_ERROR;
+        return SvParserState::Error;
 
     if( !aColorTbl.empty() )
         ClearColorTbl();
     if (!m_FontTable.empty())
-        ClearFontTbl();
+        m_FontTable.clear();
     if (!m_StyleTable.empty())
-        ClearStyleTbl();
+        m_StyleTable.clear();
     if( !aAttrStack.empty() )
         ClearAttrStack();
 
@@ -134,7 +132,7 @@ void SvxRTFParser::Continue( int nToken )
 {
     SvRTFParser::Continue( nToken );
 
-    if( SVPAR_PENDING != GetStatus() )
+    if( SvParserState::Pending != GetStatus() )
     {
         SetAllAttrOfStk();
     //Regardless of what "color 0" is, word defaults to auto as the default colour.
@@ -259,7 +257,7 @@ INSINGLECHAR:
     default:
         switch( nToken & ~(0xff | RTF_SWGDEFS) )
         {
-        case RTF_PARFMT:        // hier gibts keine Swg-Defines
+        case RTF_PARFMT:        // here are no SWGDEFS
             ReadAttr( nToken, &GetAttrSet() );
             break;
 
@@ -298,7 +296,7 @@ void SvxRTFParser::ReadStyleTable()
     sal_uInt16 nStyleNo = 0;
     bool bHasStyleNo = false;
     int _nOpenBrakets = 1;      // the first was already detected earlier!!
-    ::std::unique_ptr<SvxRTFStyleType> pStyle(
+    std::unique_ptr<SvxRTFStyleType> pStyle(
             new SvxRTFStyleType( *pAttrPool, &aWhichMap[0] ));
     pStyle->aAttrSet.Put( GetRTFDefaults() );
 
@@ -328,7 +326,7 @@ void SvxRTFParser::ReadStyleTable()
                     ReadUnknownData();
                     nToken = GetNextToken();
                     if( '}' != nToken )
-                        eState = SVPAR_ERROR;
+                        eState = SvParserState::Error;
                     break;
                 }
                 ++_nOpenBrakets;
@@ -367,7 +365,7 @@ void SvxRTFParser::ReadStyleTable()
         default:
             switch( nToken & ~(0xff | RTF_SWGDEFS) )
             {
-            case RTF_PARFMT:        // hier gibts keine Swg-Defines
+            case RTF_PARFMT:        // here are no SWGDEFS
                 ReadAttr( nToken, &pStyle->aAttrSet );
                 break;
 
@@ -486,7 +484,7 @@ void SvxRTFParser::ReadFontTable()
                     ReadUnknownData();
                     nToken = GetNextToken();
                     if( '}' != nToken )
-                        eState = SVPAR_ERROR;
+                        eState = SvParserState::Error;
                     break;
                 }
                 ++_nOpenBrakets;
@@ -580,16 +578,6 @@ void SvxRTFParser::ReadFontTable()
         SetDefault( RTF_DEFF, nDfltFont );
 }
 
-void SvxRTFParser::ReadBitmapData()
-{
-    SvRTFParser::ReadBitmapData();
-}
-
-void SvxRTFParser::ReadOLEData()
-{
-    SvRTFParser::ReadOLEData();
-}
-
 OUString& SvxRTFParser::GetTextToEndGroup( OUString& rStr )
 {
     rStr.clear();
@@ -612,7 +600,7 @@ OUString& SvxRTFParser::GetTextToEndGroup( OUString& rStr )
                     ReadUnknownData();
                     int nToken = GetNextToken();
                     if( '}' != nToken )
-                        eState = SVPAR_ERROR;
+                        eState = SvParserState::Error;
                     break;
                 }
                 ++_nOpenBrakets;
@@ -676,7 +664,7 @@ void SvxRTFParser::ReadInfo()
                     ReadUnknownData();
                     nToken = GetNextToken();
                     if( '}' != nToken )
-                        eState = SVPAR_ERROR;
+                        eState = SvParserState::Error;
                     break;
                 }
                 ++_nOpenBrakets;
@@ -757,16 +745,6 @@ void SvxRTFParser::ClearColorTbl()
     }
 }
 
-void SvxRTFParser::ClearFontTbl()
-{
-    m_FontTable.clear();
-}
-
-void SvxRTFParser::ClearStyleTbl()
-{
-    m_StyleTable.clear();
-}
-
 void SvxRTFParser::ClearAttrStack()
 {
     for( size_t nCnt = aAttrStack.size(); nCnt; --nCnt )
@@ -835,7 +813,7 @@ void SvxRTFParser::ClearStyleAttr_( SvxRTFItemStackType& rStkType )
     {
         for( sal_uInt16 nWhich = aIter.GetCurWhich(); nWhich; nWhich = aIter.NextWhich() )
         {
-            if( SFX_WHICH_MAX > nWhich &&
+            if (SfxItemPool::IsWhich(nWhich) &&
                 SfxItemState::SET == rSet.GetItemState( nWhich, false, &pItem ) &&
                      rPool.GetDefaultItem( nWhich ) == *pItem )
                 rSet.ClearItem( nWhich );       // delete
@@ -856,7 +834,7 @@ void SvxRTFParser::ClearStyleAttr_( SvxRTFItemStackType& rStkType )
                     && *pItem == *pSItem )
                     rSet.ClearItem( nWhich );       // delete
             }
-            else if( SFX_WHICH_MAX > nWhich &&
+            else if (SfxItemPool::IsWhich(nWhich) &&
                     SfxItemState::SET == rSet.GetItemState( nWhich, false, &pItem ) &&
                      rPool.GetDefaultItem( nWhich ) == *pItem )
                 rSet.ClearItem( nWhich );       // delete
@@ -931,7 +909,7 @@ void SvxRTFParser::AttrGroupEnd()   // process the current, delete from Stack
                         // - all character attributes sre keep the area
                         // - all paragraph attributes to get the area
                         //   up to the previous paragraph
-                        ::std::unique_ptr<SvxRTFItemStackType> pNew(
+                        std::unique_ptr<SvxRTFItemStackType> pNew(
                             new SvxRTFItemStackType(*pOld, *pInsPos, true));
                         pNew->aAttrSet.SetParent( pOld->aAttrSet.GetParent() );
 
@@ -1169,7 +1147,7 @@ SvxRTFItemStackType::~SvxRTFItemStackType()
 void SvxRTFItemStackType::Add(std::unique_ptr<SvxRTFItemStackType> pIns)
 {
     if (!m_pChildList)
-         m_pChildList = new SvxRTFItemStackList();
+         m_pChildList = new SvxRTFItemStackList;
     m_pChildList->push_back(std::move(pIns));
 }
 
@@ -1188,7 +1166,7 @@ void SvxRTFItemStackType::MoveFullNode(const EditNodeIdx &rOldNode,
 {
     bool bSameEndAsStart = (pSttNd == pEndNd);
 
-    if (GetSttNodeIdx() == rOldNode.GetIdx())
+    if (pSttNd->GetIdx() == rOldNode.GetIdx())
     {
         delete pSttNd;
         pSttNd = rNewNode.Clone();
@@ -1196,7 +1174,7 @@ void SvxRTFItemStackType::MoveFullNode(const EditNodeIdx &rOldNode,
             pEndNd = pSttNd;
     }
 
-    if (!bSameEndAsStart && GetEndNodeIdx() == rOldNode.GetIdx())
+    if (!bSameEndAsStart && pEndNd->GetIdx() == rOldNode.GetIdx())
     {
         delete pEndNd;
         pEndNd = rNewNode.Clone();
@@ -1345,7 +1323,6 @@ RTFPlainAttrMapIds::RTFPlainAttrMapIds( const SfxItemPool& rPool )
     nCTLWeight = rPool.GetTrueWhich( SID_ATTR_CHAR_CTL_WEIGHT, false );
     nEmphasis = rPool.GetTrueWhich( SID_ATTR_CHAR_EMPHASISMARK, false );
     nTwoLines = rPool.GetTrueWhich( SID_ATTR_CHAR_TWO_LINES, false );
-    nRuby = 0; //rPool.GetTrueWhich( SID_ATTR_CHAR_CJK_RUBY, sal_False );
     nCharScaleX = rPool.GetTrueWhich( SID_ATTR_CHAR_SCALEWIDTH, false );
     nHorzVert = rPool.GetTrueWhich( SID_ATTR_CHAR_ROTATED, false );
     nRelief = rPool.GetTrueWhich( SID_ATTR_CHAR_RELIEF, false );

@@ -20,11 +20,12 @@
 #define INCLUDED_I18NUTIL_CASEFOLDING_HXX
 
 #include <sal/types.h>
-#include <com/sun/star/i18n/TransliterationModules.hpp>
 #include <com/sun/star/lang/Locale.hpp>
 #include <com/sun/star/uno/RuntimeException.hpp>
 #include <i18nutil/i18nutildllapi.h>
 #include <o3tl/typed_flags_set.hxx>
+
+enum class TransliterationFlags;
 
 enum class MappingType {
     NONE             = 0x00,
@@ -72,9 +73,12 @@ struct MappingElement
 class I18NUTIL_DLLPUBLIC casefolding
 {
 public:
-    static Mapping& getValue(const sal_Unicode* str, sal_Int32 pos, sal_Int32 len, css::lang::Locale& aLocale, MappingType nMappingType) throw (css::uno::RuntimeException);
-    static Mapping& getConditionalValue(const sal_Unicode* str, sal_Int32 pos, sal_Int32 len, css::lang::Locale& aLocale, MappingType nMappingType) throw (css::uno::RuntimeException);
-    static sal_Unicode getNextChar(const sal_Unicode *str, sal_Int32& idx, sal_Int32 len, MappingElement& e, css::lang::Locale& aLocale, MappingType nMappingtype, TransliterationModules moduleLoaded) throw (css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    static Mapping& getValue(const sal_Unicode* str, sal_Int32 pos, sal_Int32 len, css::lang::Locale& aLocale, MappingType nMappingType);
+    /// @throws css::uno::RuntimeException
+    static Mapping& getConditionalValue(const sal_Unicode* str, sal_Int32 pos, sal_Int32 len, css::lang::Locale& aLocale, MappingType nMappingType);
+    /// @throws css::uno::RuntimeException
+    static sal_Unicode getNextChar(const sal_Unicode *str, sal_Int32& idx, sal_Int32 len, MappingElement& e, css::lang::Locale& aLocale, MappingType nMappingtype, TransliterationFlags moduleLoaded);
 
 };
 

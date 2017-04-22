@@ -31,28 +31,19 @@ public:
         const css::uno::Reference< css::uno::XComponentContext > & xContext,
         sal_Int32 nDimensionCount = 2 );
     explicit PolarCoordinateSystem( const PolarCoordinateSystem & rSource );
-    virtual ~PolarCoordinateSystem();
+    virtual ~PolarCoordinateSystem() override;
 
     // ____ XCoordinateSystem ____
-    virtual OUString SAL_CALL getCoordinateSystemType()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getViewServiceName()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getCoordinateSystemType() override;
+    virtual OUString SAL_CALL getViewServiceName() override;
 
     // ____ XCloneable ____
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() override;
 
     // ____ XServiceInfo ____
-    virtual OUString SAL_CALL getImplementationName()
-            throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-            throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-            throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 };
 
 class PolarCoordinateSystem2d : public PolarCoordinateSystem
@@ -60,18 +51,12 @@ class PolarCoordinateSystem2d : public PolarCoordinateSystem
 public:
     explicit PolarCoordinateSystem2d(
         const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~PolarCoordinateSystem2d();
+    virtual ~PolarCoordinateSystem2d() override;
 
     // ____ XServiceInfo ____
-    virtual OUString SAL_CALL getImplementationName()
-            throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-            throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-            throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 };
 
 class PolarCoordinateSystem3d : public PolarCoordinateSystem
@@ -79,18 +64,12 @@ class PolarCoordinateSystem3d : public PolarCoordinateSystem
 public:
     explicit PolarCoordinateSystem3d(
         const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~PolarCoordinateSystem3d();
+    virtual ~PolarCoordinateSystem3d() override;
 
     // ____ XServiceInfo ____
-    virtual OUString SAL_CALL getImplementationName()
-            throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-            throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-            throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 };
 
 }  // namespace chart

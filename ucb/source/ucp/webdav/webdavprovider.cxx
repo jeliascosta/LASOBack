@@ -26,6 +26,7 @@
 #include <comphelper/processfactory.hxx>
 #include <com/sun/star/beans/NamedValue.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
+#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 
 using namespace com::sun::star;
 using namespace http_dav_ucp;
@@ -37,17 +38,14 @@ using namespace http_dav_ucp;
 ContentProvider::ContentProvider(
                 const uno::Reference< uno::XComponentContext >& rContext )
 : ::ucbhelper::ContentProviderImplHelper( rContext ),
-  m_xDAVSessionFactory( new DAVSessionFactory() ),
-  m_pProps( 0 )
+  m_xDAVSessionFactory( new DAVSessionFactory() )
 {
 }
 
 
 // virtual
 ContentProvider::~ContentProvider()
-{
-    delete m_pProps;
-}
+{}
 
 
 // XInterface methods.
@@ -64,7 +62,6 @@ void SAL_CALL ContentProvider::release()
 }
 
 css::uno::Any SAL_CALL ContentProvider::queryInterface( const css::uno::Type & rType )
-    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
     (static_cast< lang::XTypeProvider* >(this)),
@@ -85,11 +82,23 @@ XTYPEPROVIDER_IMPL_3( ContentProvider,
 
 // XServiceInfo methods.
 
+XSERVICEINFO_COMMOM_IMPL( ContentProvider,
+                          OUString( "com.sun.star.comp.WebDAVContentProvider" ) )
+/// @throws css::uno::Exception
+static css::uno::Reference< css::uno::XInterface > SAL_CALL
+ContentProvider_CreateInstance( const css::uno::Reference< css::lang::XMultiServiceFactory> & rSMgr )
+{
+    css::lang::XServiceInfo* pX =
+                static_cast<css::lang::XServiceInfo*>(new ContentProvider( ucbhelper::getComponentContext(rSMgr) ));
+    return css::uno::Reference< css::uno::XInterface >::query( pX );
+}
 
-XSERVICEINFO_IMPL_1_CTX( ContentProvider,
-                     OUString( "com.sun.star.comp.WebDAVContentProvider" ),
-                     WEBDAV_CONTENT_PROVIDER_SERVICE_NAME );
-
+css::uno::Sequence< OUString >
+ContentProvider::getSupportedServiceNames_Static()
+{
+    css::uno::Sequence< OUString > aSNS { WEBDAV_CONTENT_PROVIDER_SERVICE_NAME };
+    return aSNS;
+}
 
 // Service factory implementation.
 
@@ -105,8 +114,6 @@ uno::Reference< ucb::XContent > SAL_CALL
 ContentProvider::queryContent(
             const uno::Reference<
                     ucb::XContentIdentifier >& Identifier )
-    throw( ucb::IllegalIdentifierException,
-           uno::RuntimeException )
 {
     // Check URL scheme...
 
@@ -134,28 +141,28 @@ ContentProvider::queryContent(
     {
         aURL = aURL.replaceAt( 0,
                                WEBDAV_URL_SCHEME_LENGTH,
-                               OUString( HTTP_URL_SCHEME ) );
+                               HTTP_URL_SCHEME );
         bNewId = true;
     }
     else if ( aScheme == WEBDAVS_URL_SCHEME )
     {
         aURL = aURL.replaceAt( 0,
                                WEBDAVS_URL_SCHEME_LENGTH,
-                               OUString( HTTPS_URL_SCHEME ) );
+                               HTTPS_URL_SCHEME );
         bNewId = true;
     }
     else if ( aScheme == DAV_URL_SCHEME )
     {
         aURL = aURL.replaceAt( 0,
                                DAV_URL_SCHEME_LENGTH,
-                               OUString( HTTP_URL_SCHEME ) );
+                               HTTP_URL_SCHEME );
         bNewId = true;
     }
     else if ( aScheme == DAVS_URL_SCHEME )
     {
         aURL = aURL.replaceAt( 0,
                                DAVS_URL_SCHEME_LENGTH,
-                               OUString( HTTPS_URL_SCHEME ) );
+                               HTTPS_URL_SCHEME );
         bNewId = true;
     }
 

@@ -24,7 +24,7 @@
 
 #include <cassert>
 #include <cstddef>
-#include <string.h>
+#include <cstring>
 
 #include <rtl/strbuf.h>
 #include <rtl/string.hxx>
@@ -32,6 +32,11 @@
 
 #ifdef LIBO_INTERNAL_ONLY // "RTL_FAST_STRING"
 #include <rtl/stringconcat.hxx>
+#endif
+
+#ifdef RTL_STRING_UNITTEST
+extern bool rtl_string_unittest_const_literal;
+extern bool rtl_string_unittest_const_literal_function;
 #endif
 
 // The unittest uses slightly different code to help check that the proper
@@ -234,6 +239,57 @@ public:
         return *this;
     }
 
+    /** Assign from a string.
+
+        @since LibreOffice 5.3
+    */
+    OStringBuffer & operator =(OString const & string) {
+        sal_Int32 n = string.getLength();
+        if (n >= nCapacity) {
+            ensureCapacity(n + 16); //TODO: check for overflow
+        }
+        std::memcpy(pData->buffer, string.pData->buffer, n + 1);
+        pData->length = n;
+        return *this;
+    }
+
+    /** Assign from a string literal.
+
+        @since LibreOffice 5.3
+    */
+    template<typename T>
+    typename
+        libreoffice_internal::ConstCharArrayDetector<T, OStringBuffer &>::Type
+    operator =(T & literal) {
+        assert(
+            libreoffice_internal::ConstCharArrayDetector<T>::isValid(literal));
+        sal_Int32 const n
+            = libreoffice_internal::ConstCharArrayDetector<T>::length;
+        if (n >= nCapacity) {
+            ensureCapacity(n + 16); //TODO: check for overflow
+        }
+        std::memcpy(
+            pData->buffer,
+            libreoffice_internal::ConstCharArrayDetector<T>::toPointer(literal),
+            n + 1);
+        pData->length = n;
+        return *this;
+    }
+
+#if defined LIBO_INTERNAL_ONLY
+    /** @overload @since LibreOffice 5.3 */
+    template<typename T1, typename T2>
+    OStringBuffer & operator =(OStringConcat<T1, T2> const & concat) {
+        sal_Int32 const n = concat.length();
+        if (n >= nCapacity) {
+            ensureCapacity(n + 16); //TODO: check for overflow
+        }
+        *concat.addData(pData->buffer) = 0;
+        pData->length = n;
+        return *this;
+    }
+#endif
+
     /**
         Release the string data.
      */
@@ -250,7 +306,7 @@ public:
 
         @return the string previously contained in the buffer.
      */
-    OString makeStringAndClear()
+    SAL_WARN_UNUSED_RESULT OString makeStringAndClear()
     {
         OString aRet( pData );
         rtl_string_new(&pData);
@@ -932,6 +988,30 @@ public:
         return *this;
     }
 
+    /** Allows access to the internal data of this OStringBuffer, for effective
+        manipulation.
+
+        This function should be used with care.  After you have called this
+        function, you may use the returned pInternalData and pInternalCapacity
+        only as long as you make no other calls on this OUStringBuffer.
+
+        @param pInternalData
+        This output parameter receives a pointer to the internal data
+        (rtl_String pointer).  pInternalData itself must not be null.
+
+        @param pInternalCapacity
+        This output parameter receives a pointer to the internal capacity.
+        pInternalCapacity itself must not be null.
+
+        @since LibreOffice 5.4
+    */
+    void accessInternals(
+        rtl_String *** pInternalData, sal_Int32 ** pInternalCapacity)
+    {
+        *pInternalData = &pData;
+        *pInternalCapacity = &nCapacity;
+    }
+
 private:
     /**
         A pointer to the data structure which contains the data.
@@ -943,21 +1023,6 @@ private:
      */
     sal_Int32       nCapacity;
 };
-
-#ifdef LIBO_INTERNAL_ONLY // "RTL_FAST_STRING"
-/**
- @internal
-*/
-template<>
-struct ToStringHelper< OStringBuffer >
-    {
-    static int length( const OStringBuffer& s ) { return s.getLength(); }
-    static char* addData( char* buffer, const OStringBuffer& s ) { return addDataHelper( buffer, s.getStr(), s.getLength()); }
-    static const bool allowOStringConcat = true;
-    static const bool allowOUStringConcat = false;
-    };
-#endif
-
 
 }
 

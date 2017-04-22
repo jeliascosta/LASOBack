@@ -40,6 +40,7 @@
 #include <cppuhelper/queryinterface.hxx>
 
 #include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <com/sun/star/sdbc/SQLException.hpp>
 
 #include "pq_xview.hxx"
 #include "pq_xviews.hxx"
@@ -48,8 +49,6 @@
 
 using osl::MutexGuard;
 using osl::Mutex;
-
-using com::sun::star::container::ElementExistException;
 
 using com::sun::star::uno::Reference;
 using com::sun::star::uno::Sequence;
@@ -67,7 +66,7 @@ namespace pq_sdbc_driver
 {
 
 View::View( const ::rtl::Reference< RefCountedMutex > & refMutex,
-            const Reference< com::sun::star::sdbc::XConnection > & connection,
+            const Reference< css::sdbc::XConnection > & connection,
             ConnectionSettings *pSettings)
     : ReflectionBase(
         getStatics().refl.view.implName,
@@ -78,7 +77,7 @@ View::View( const ::rtl::Reference< RefCountedMutex > & refMutex,
         * getStatics().refl.view.pProps )
 {}
 
-Reference< XPropertySet > View::createDataDescriptor(  ) throw (RuntimeException, std::exception)
+Reference< XPropertySet > View::createDataDescriptor(  )
 {
     ViewDescriptor * pView = new ViewDescriptor(
         m_refMutex, m_conn, m_pSettings );
@@ -88,9 +87,6 @@ Reference< XPropertySet > View::createDataDescriptor(  ) throw (RuntimeException
 }
 
 void View::rename( const OUString& newName )
-        throw (::com::sun::star::sdbc::SQLException,
-               ::com::sun::star::container::ElementExistException,
-               ::com::sun::star::uno::RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
 
@@ -131,7 +127,7 @@ void View::rename( const OUString& newName )
             disposeNoThrow( statement );
             schema = newSchemaName;
         }
-        catch( com::sun::star::sdbc::SQLException &e )
+        catch( css::sdbc::SQLException &e )
         {
             OUString buf( e.Message + "(NOTE: Only postgresql server >= V8.1 support changing a table's schema)" );
             e.Message = buf;
@@ -158,7 +154,7 @@ void View::rename( const OUString& newName )
     }
 }
 
-Sequence<Type > View::getTypes() throw( RuntimeException, std::exception )
+Sequence<Type > View::getTypes()
 {
     static cppu::OTypeCollection *pCollection;
     if( ! pCollection )
@@ -167,7 +163,7 @@ Sequence<Type > View::getTypes() throw( RuntimeException, std::exception )
         if( !pCollection )
         {
             static cppu::OTypeCollection collection(
-                cppu::UnoType<com::sun::star::sdbcx::XRename>::get(),
+                cppu::UnoType<css::sdbcx::XRename>::get(),
                 ReflectionBase::getTypes());
             pCollection = &collection;
         }
@@ -175,12 +171,12 @@ Sequence<Type > View::getTypes() throw( RuntimeException, std::exception )
     return pCollection->getTypes();
 }
 
-Sequence< sal_Int8> View::getImplementationId() throw( RuntimeException, std::exception )
+Sequence< sal_Int8> View::getImplementationId()
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-Any View::queryInterface( const Type & reqType ) throw (RuntimeException, std::exception)
+Any View::queryInterface( const Type & reqType )
 {
     Any ret;
 
@@ -188,12 +184,12 @@ Any View::queryInterface( const Type & reqType ) throw (RuntimeException, std::e
     if( ! ret.hasValue() )
         ret = ::cppu::queryInterface(
             reqType,
-            static_cast< com::sun::star::sdbcx::XRename * > ( this )
+            static_cast< css::sdbcx::XRename * > ( this )
             );
     return ret;
 }
 
-OUString View::getName(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+OUString View::getName(  )
 {
     Statics & st = getStatics();
     return concatQualified(
@@ -201,7 +197,7 @@ OUString View::getName(  ) throw (::com::sun::star::uno::RuntimeException, std::
         extractStringProperty( this, st.NAME ) );
 }
 
-void View::setName( const OUString& aName ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+void View::setName( const OUString& aName )
 {
     rename( aName );
 }
@@ -209,7 +205,7 @@ void View::setName( const OUString& aName ) throw (::com::sun::star::uno::Runtim
 
 ViewDescriptor::ViewDescriptor(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const Reference< com::sun::star::sdbc::XConnection > & connection,
+    const Reference< css::sdbc::XConnection > & connection,
     ConnectionSettings *pSettings)
     : ReflectionBase(
         getStatics().refl.viewDescriptor.implName,
@@ -220,7 +216,7 @@ ViewDescriptor::ViewDescriptor(
         * getStatics().refl.viewDescriptor.pProps )
 {}
 
-Reference< XPropertySet > ViewDescriptor::createDataDescriptor(  ) throw (RuntimeException, std::exception)
+Reference< XPropertySet > ViewDescriptor::createDataDescriptor(  )
 {
     ViewDescriptor * pView = new ViewDescriptor(
         m_refMutex, m_conn, m_pSettings );

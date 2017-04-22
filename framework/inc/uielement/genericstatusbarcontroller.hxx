@@ -35,16 +35,16 @@ class GenericStatusbarController : public svt::StatusbarController
                                     const css::uno::Reference< css::frame::XFrame >& rFrame,
                                     const css::uno::Reference< css::ui::XStatusbarItem >& rxItem,
                                     AddonStatusbarItemData *pItemData );
-        virtual ~GenericStatusbarController();
+        virtual ~GenericStatusbarController() override;
 
         // XComponent
-        virtual void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL dispose() override;
         // XStatusListener
-        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override;
 
         virtual void SAL_CALL paint( const css::uno::Reference< css::awt::XGraphics >& xGraphics,
                                      const css::awt::Rectangle& rOutputRectangle,
-                                     ::sal_Int32 nStyle ) throw (css::uno::RuntimeException, std::exception) override;
+                                     ::sal_Int32 nStyle ) override;
 
     protected:
         bool                                              m_bEnabled;

@@ -22,7 +22,6 @@
 
 #include <sfx2/dockwin.hxx>
 #include <vcl/fixed.hxx>
-#include <svtools/stdctrl.hxx>
 #include <tools/fract.hxx>
 #include <vcl/group.hxx>
 #include <sfx2/ctrlitem.hxx>
@@ -66,9 +65,9 @@ private:
 
 public:
     SdDisplay(vcl::Window* pWin);
-    virtual ~SdDisplay();
+    virtual ~SdDisplay() override;
 
-    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect ) override;
 
     void    SetBitmapEx( BitmapEx* pBmpEx );
     void    SetScale( const Fraction& rFrac );
@@ -84,7 +83,7 @@ class AnimationWindow : public SfxDockingWindow
 
 public:
     AnimationWindow(SfxBindings* pBindings, SfxChildWindow *pCW, vcl::Window* pParent);
-    virtual ~AnimationWindow();
+    virtual ~AnimationWindow() override;
     virtual void dispose() override;
 
     void    AddObj( ::sd::View& rView );
@@ -95,7 +94,6 @@ public:
 protected:
     virtual bool    Close() override;
     virtual void    Resize() override;
-    virtual void    FillInfo( SfxChildWinInfo& ) const override;
 
 private:
     VclPtr<SdDisplay>      m_pCtlDisplay;
@@ -133,16 +131,16 @@ private:
 
     ScopeLock       maPlayLock;
 
-    DECL_LINK_TYPED( ClickFirstHdl, Button*, void );
-    DECL_LINK_TYPED( ClickStopHdl, Button*, void );
-    DECL_LINK_TYPED( ClickPlayHdl, Button*, void );
-    DECL_LINK_TYPED( ClickLastHdl, Button*, void );
-    DECL_LINK_TYPED( ClickGetObjectHdl, Button*, void );
-    DECL_LINK_TYPED( ClickRemoveBitmapHdl, Button*, void );
-    DECL_LINK_TYPED( ClickRbtHdl, Button*, void );
-    DECL_LINK_TYPED( ClickCreateGroupHdl, Button*, void );
-    DECL_LINK_TYPED( ModifyBitmapHdl, Edit&, void );
-    DECL_LINK_TYPED( ModifyTimeHdl, Edit&, void );
+    DECL_LINK( ClickFirstHdl, Button*, void );
+    DECL_LINK( ClickStopHdl, Button*, void );
+    DECL_LINK( ClickPlayHdl, Button*, void );
+    DECL_LINK( ClickLastHdl, Button*, void );
+    DECL_LINK( ClickGetObjectHdl, Button*, void );
+    DECL_LINK( ClickRemoveBitmapHdl, Button*, void );
+    DECL_LINK( ClickRbtHdl, Button*, void );
+    DECL_LINK( ClickCreateGroupHdl, Button*, void );
+    DECL_LINK( ModifyBitmapHdl, Edit&, void );
+    DECL_LINK( ModifyTimeHdl, Edit&, void );
 
     void            UpdateControl(bool bDisableCtrls = false);
     void            ResetAttrs();

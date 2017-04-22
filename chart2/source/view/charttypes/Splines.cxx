@@ -26,8 +26,6 @@
 #include <functional>
 #include <memory>
 
-#define MAX_BSPLINE_DEGREE 15
-
 namespace chart
 {
 using namespace ::com::sun::star;
@@ -35,8 +33,8 @@ using namespace ::com::sun::star;
 namespace
 {
 
-typedef ::std::pair< double, double >   tPointType;
-typedef ::std::vector< tPointType >     tPointVecType;
+typedef std::pair< double, double >   tPointType;
+typedef std::vector< tPointType >     tPointVecType;
 typedef tPointVecType::size_type        lcl_tSizeType;
 
 class lcl_SplineCalculation
@@ -78,7 +76,7 @@ private:
     tPointVecType            m_aPoints;
 
     /// the result of the Calculate() method
-    ::std::vector< double >         m_aSecDerivY;
+    std::vector< double >         m_aSecDerivY;
 
     double m_fYp1;
     double m_fYpN;
@@ -148,7 +146,7 @@ void lcl_SplineCalculation::Calculate()
 
     // n is the last valid index to m_aPoints
     const lcl_tSizeType n = m_aPoints.size() - 1;
-    ::std::vector< double > u( n );
+    std::vector< double > u( n );
     m_aSecDerivY.resize( n + 1, 0.0 );
 
     if( ::rtl::math::isInf( m_fYp1 ) )
@@ -221,25 +219,25 @@ void lcl_SplineCalculation::CalculatePeriodic()
 
     // u is used for vector f in A*c=f in [3], vector a in  Ax=a in [2],
     // vector z in Rtranspose z = a and Dr=z in [2]
-    ::std::vector< double > u( n + 1, 0.0 );
+    std::vector< double > u( n + 1, 0.0 );
 
     // used for vector c in A*c=f and vector x in Ax=a in [2]
     m_aSecDerivY.resize( n + 1, 0.0 );
 
     // diagonal of matrix A, used index 1 to n
-    ::std::vector< double > Adiag( n + 1, 0.0 );
+    std::vector< double > Adiag( n + 1, 0.0 );
 
     // secondary diagonal of matrix A with index 1 to n-1 and upper right element in A[n]
-    ::std::vector< double > Aupper( n + 1, 0.0 );
+    std::vector< double > Aupper( n + 1, 0.0 );
 
     // diagonal of matrix D in A=(R transpose)*D*R in [2], used index 1 to n
-    ::std::vector< double > Ddiag( n+1, 0.0 );
+    std::vector< double > Ddiag( n+1, 0.0 );
 
     // right column of matrix R, used index 1 to n-2
-    ::std::vector< double > Rright( n-1, 0.0 );
+    std::vector< double > Rright( n-1, 0.0 );
 
     // secondary diagonal of matrix R, used index 1 to n-1
-    ::std::vector< double > Rupper( n, 0.0 );
+    std::vector< double > Rupper( n, 0.0 );
 
     if (n<4)
     {
@@ -540,17 +538,14 @@ void SplineCalculater::CalculateCubicSplines(
 {
     OSL_PRECOND( nGranularity > 0, "Granularity is invalid" );
 
-    rResult.SequenceX.realloc(0);
-    rResult.SequenceY.realloc(0);
-    rResult.SequenceZ.realloc(0);
-
     sal_uInt32 nOuterCount = rInput.SequenceX.getLength();
-    if( !nOuterCount )
-        return;
 
     rResult.SequenceX.realloc(nOuterCount);
     rResult.SequenceY.realloc(nOuterCount);
     rResult.SequenceZ.realloc(nOuterCount);
+
+    if( !nOuterCount )
+        return;
 
     for( sal_uInt32 nOuter = 0; nOuter < nOuterCount; ++nOuter )
     {
@@ -562,7 +557,7 @@ void SplineCalculater::CalculateCubicSplines(
         const double* pOldY = rInput.SequenceY[nOuter].getConstArray();
         const double* pOldZ = rInput.SequenceZ[nOuter].getConstArray();
 
-        ::std::vector < double > aParameter(nMaxIndexPoints+1);
+        std::vector < double > aParameter(nMaxIndexPoints+1);
         aParameter[0]=0.0;
         for( sal_uInt32 nIndex=1; nIndex<=nMaxIndexPoints; nIndex++ )
         {
@@ -676,20 +671,17 @@ void SplineCalculater::CalculateBSplines(
     OSL_ASSERT( nResolution > 1 );
     OSL_ASSERT( nDegree >= 1 );
 
-    // limit the b-spline degree to prevent insanely large sets of points
-    sal_uInt32 p = std::min<sal_uInt32>(nDegree, MAX_BSPLINE_DEGREE);
-
-    rResult.SequenceX.realloc(0);
-    rResult.SequenceY.realloc(0);
-    rResult.SequenceZ.realloc(0);
+    // limit the b-spline degree at 15 to prevent insanely large sets of points
+    sal_uInt32 p = std::min<sal_uInt32>(nDegree, 15);
 
     sal_Int32 nOuterCount = rInput.SequenceX.getLength();
-    if( !nOuterCount )
-        return; // no input
 
     rResult.SequenceX.realloc(nOuterCount);
     rResult.SequenceY.realloc(nOuterCount);
     rResult.SequenceZ.realloc(nOuterCount);
+
+    if( !nOuterCount )
+        return; // no input
 
     for( sal_Int32 nOuter = 0; nOuter < nOuterCount; ++nOuter )
     {
@@ -711,7 +703,7 @@ void SplineCalculater::CalculateBSplines(
           aPointsIn[ i ].first = pOldX[i];
           aPointsIn[ i ].second = pOldY[i];
         }
-        aPointsIn.erase( ::std::unique( aPointsIn.begin(), aPointsIn.end()),
+        aPointsIn.erase( std::unique( aPointsIn.begin(), aPointsIn.end()),
                      aPointsIn.end() );
 
         // n is the last valid index to the reduced aPointsIn

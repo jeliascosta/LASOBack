@@ -56,7 +56,7 @@ namespace rptui
         ::rtl::Reference<comphelper::OPropertyChangeMultiplexer >
                                     m_pReportDefinitionMultiPlexer; // listener for property changes
 
-        DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void);
+        DECL_LINK( ScrollHdl, ScrollBar*, void);
         Size ResizeScrollBars();
         void ImplInitSettings();
         void impl_initScrollBar( ScrollBar& _rScrollBar ) const;
@@ -67,27 +67,27 @@ namespace rptui
         virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
         // window
         virtual void            Resize() override;
-        virtual bool            Notify( NotifyEvent& rNEvt ) override;
+        virtual bool            EventNotify( NotifyEvent& rNEvt ) override;
         // OPropertyChangeListener
-        virtual void            _propertyChanged(const css::beans::PropertyChangeEvent& _rEvent) throw( css::uno::RuntimeException, std::exception) override;
+        virtual void            _propertyChanged(const css::beans::PropertyChangeEvent& _rEvent) override;
     public:
         OScrollWindowHelper( ODesignView* _pReportDesignView);
-        virtual ~OScrollWindowHelper();
+        virtual ~OScrollWindowHelper() override;
         virtual void dispose() override;
 
         /** late ctor
         */
         void                    initialize();
 
-        inline Point            getThumbPos() const { return Point(m_aHScroll->GetThumbPos(),m_aVScroll->GetThumbPos())/*m_aScrollOffset*/; }
+        Point            getThumbPos() const { return Point(m_aHScroll->GetThumbPos(),m_aVScroll->GetThumbPos())/*m_aScrollOffset*/; }
         void                    setTotalSize(sal_Int32 _nWidth, sal_Int32 _nHeight);
         const Size&             getTotalSize() const { return m_aTotalPixelSize; }
-        inline ScrollBar&       GetHScroll() { return *m_aHScroll.get(); }
-        inline ScrollBar&       GetVScroll() { return *m_aVScroll.get(); }
+        ScrollBar&       GetHScroll() { return *m_aHScroll.get(); }
+        ScrollBar&       GetVScroll() { return *m_aVScroll.get(); }
 
         // forwards
         void                    SetMode( DlgEdMode _eMode );
-        void                    SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType = OUString());
+        void                    SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType);
         OUString                GetInsertObjString() const;
         void                    setGridSnap(bool bOn);
         void                    setDragStripes(bool bOn);
@@ -130,7 +130,7 @@ namespace rptui
         */
         void                    addSection(const css::uno::Reference< css::report::XSection >& _xSection
                                     ,const OUString& _sColorEntry
-                                    ,sal_uInt16 _nPosition = USHRT_MAX);
+                                    ,sal_uInt16 _nPosition);
 
         sal_uInt16                  getSectionCount() const;
 
@@ -140,11 +140,9 @@ namespace rptui
         */
         void                    toggleGrid(bool _bVisible);
 
-        /** unmark all objects on the views without the given one.
-        *
-        * @param _pSectionView The view where the objects should not be unmarked.
+        /** unmark all objects on the views.
         */
-        void                    unmarkAllObjects(OSectionView* _pSectionView);
+        void                    unmarkAllObjects();
 
         /** shows or hides the ruler.
         */
@@ -191,7 +189,7 @@ namespace rptui
 
         /** align all marked objects in all sections
         */
-        void alignMarkedObjects(sal_Int32 _nControlModification, bool _bAlignAtSection);
+        void alignMarkedObjects(ControlModification _nControlModification, bool _bAlignAtSection);
 
         sal_uInt32 getMarkedObjectCount() const;
 

@@ -35,7 +35,7 @@
 #include "drawview.hxx"
 #include "scresid.hxx"
 #include <svx/svdobj.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 
 #define ScOleObjectShell
 #include "scslots.hxx"
@@ -44,7 +44,8 @@ SFX_IMPL_INTERFACE(ScOleObjectShell, ScDrawShell)
 
 void ScOleObjectShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT|SFX_VISIBILITY_STANDARD|SFX_VISIBILITY_SERVER,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT,
+                                            SfxVisibilityFlags::Standard | SfxVisibilityFlags::Server,
                                             RID_DRAW_OBJECTBAR);
 
     GetStaticInterface()->RegisterPopupMenu("oleobject");
@@ -54,9 +55,8 @@ void ScOleObjectShell::InitInterface_Impl()
 ScOleObjectShell::ScOleObjectShell(ScViewData* pData) :
     ScDrawShell(pData)
 {
-    SetHelpId(HID_SCSHELL_OLEOBEJCTSH);
     SetName("OleObject");
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_OLE));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::OLE));
 }
 
 ScOleObjectShell::~ScOleObjectShell()

@@ -28,6 +28,8 @@
 #include <sfx2/basedlgs.hxx>
 #include <tools/fract.hxx>
 
+class SvxColorListBox;
+
 namespace sd {
 
 class View;
@@ -39,9 +41,8 @@ class CopyDlg
     : public SfxModalDialog
 {
 public:
-    CopyDlg( vcl::Window* pWindow, const SfxItemSet& rInAttrs,
-        const XColorListRef &pColList, ::sd::View* pView );
-    virtual ~CopyDlg();
+    CopyDlg(vcl::Window* pWindow, const SfxItemSet& rInAttrs, ::sd::View* pView);
+    virtual ~CopyDlg() override;
     virtual void dispose() override;
 
     void    GetAttr( SfxItemSet& rOutAttrs );
@@ -58,20 +59,19 @@ private:
     VclPtr<MetricField>        m_pMtrFldWidth;
     VclPtr<MetricField>        m_pMtrFldHeight;
 
-    VclPtr<ColorLB>            m_pLbStartColor;
+    VclPtr<SvxColorListBox>    m_pLbStartColor;
     VclPtr<FixedText>          m_pFtEndColor;
-    VclPtr<ColorLB>            m_pLbEndColor;
+    VclPtr<SvxColorListBox>    m_pLbEndColor;
 
     VclPtr<PushButton>         m_pBtnSetDefault;
 
     const SfxItemSet&   mrOutAttrs;
-    XColorListRef       mpColorList;
     Fraction            maUIScale;
     ::sd::View*         mpView;
 
-    DECL_LINK_TYPED( SelectColorHdl, ListBox&, void );
-    DECL_LINK_TYPED( SetViewData, Button*, void );
-    DECL_LINK_TYPED( SetDefault, Button*, void );
+    DECL_LINK( SelectColorHdl, SvxColorListBox&, void );
+    DECL_LINK( SetViewData, Button*, void );
+    DECL_LINK( SetDefault, Button*, void );
 };
 
 } // end of namespace sd

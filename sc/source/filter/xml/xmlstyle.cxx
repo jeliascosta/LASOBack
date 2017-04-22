@@ -40,7 +40,6 @@
 #include <com/sun/star/table/CellVertJustify2.hpp>
 #include <com/sun/star/table/CellHoriJustify.hpp>
 #include <com/sun/star/table/CellJustifyMethod.hpp>
-#include <com/sun/star/table/TableBorder.hpp>
 #include <com/sun/star/table/BorderLine2.hpp>
 #include <com/sun/star/sheet/XSheetConditionalEntry.hpp>
 #include <com/sun/star/sheet/XSheetCondition.hpp>
@@ -716,9 +715,9 @@ void ScXMLAutoStylePoolP::exportStyleContent(
                                         {
                                             if (aOperator == sheet::ConditionOperator_FORMULA)
                                             {
-                                                OUString sCondition("is-true-formula(");
-                                                sCondition += xSheetCondition->getFormula1();
-                                                sCondition += ")";
+                                                OUString sCondition = "is-true-formula("
+                                                                    + xSheetCondition->getFormula1()
+                                                                    + ")";
                                                 rScXMLExport.AddAttribute(XML_NAMESPACE_STYLE, XML_CONDITION, sCondition);
                                                 rScXMLExport.AddAttribute(XML_NAMESPACE_STYLE, XML_APPLY_STYLE_NAME, rScXMLExport.EncodeStyleName( sStyleName ));
                                                 OUString sOUBaseAddress;
@@ -738,10 +737,10 @@ void ScXMLAutoStylePoolP::exportStyleContent(
                                                         sCondition = "cell-content-is-between(";
                                                     else
                                                         sCondition = "cell-content-is-not-between(";
-                                                    sCondition += xSheetCondition->getFormula1();
-                                                    sCondition += ",";
-                                                    sCondition += xSheetCondition->getFormula2();
-                                                    sCondition += ")";
+                                                    sCondition += xSheetCondition->getFormula1()
+                                                                + ","
+                                                                + xSheetCondition->getFormula2()
+                                                                + ")";
                                                 }
                                                 else
                                                 {
@@ -1013,7 +1012,7 @@ bool XmlScPropHdl_CellProtection::importXML(
         }
         else
         {
-            sal_Int16 i(0);
+            sal_Int32 i(0);
             while (i < rStrImpValue.getLength() && rStrImpValue[i] != ' ')
                 ++i;
             OUString sFirst(rStrImpValue.copy(0, i));
@@ -1555,9 +1554,7 @@ bool XmlScPropHdl_RotateAngle::exportXML(
 
     if(rValue >>= nVal)
     {
-        OUStringBuffer sValue;
-        ::sax::Converter::convertNumber(sValue, sal_Int32(nVal / 100));
-        rStrExpValue = sValue.makeStringAndClear();
+        rStrExpValue = OUString::number(nVal / 100);
         bRetval = true;
     }
 

@@ -18,6 +18,7 @@
  */
 
 #include <com/sun/star/uno/XComponentContext.hpp>
+#include <rtl/ref.hxx>
 
 #include <transliteration_Ignore.hxx>
 #include <transliteration_OneToOne.hxx>
@@ -29,26 +30,24 @@ namespace com { namespace sun { namespace star { namespace i18n {
 
 OUString SAL_CALL
 ignoreWidth::folding( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, Sequence< sal_Int32 >& offset )
-  throw(RuntimeException, std::exception)
 {
-    Reference< fullwidthToHalfwidth > t1(new fullwidthToHalfwidth);
+    rtl::Reference< fullwidthToHalfwidth > t1(new fullwidthToHalfwidth);
     return t1->transliterate(inStr, startPos, nCount, offset);
 }
 
 Sequence< OUString > SAL_CALL
 ignoreWidth::transliterateRange( const OUString& str1, const OUString& str2 )
-  throw(RuntimeException, std::exception)
 {
-    Reference< fullwidthToHalfwidth > t1(new fullwidthToHalfwidth);
-    Reference< halfwidthToFullwidth > t2(new halfwidthToFullwidth);
+    rtl::Reference< fullwidthToHalfwidth > t1(new fullwidthToHalfwidth);
+    rtl::Reference< halfwidthToFullwidth > t2(new halfwidthToFullwidth);
 
     return transliteration_Ignore::transliterateRange(str1, str2, *t1.get(), *t2.get());
 }
 
 sal_Unicode SAL_CALL
-ignoreWidth::transliterateChar2Char( sal_Unicode inChar) throw(RuntimeException, MultipleCharsOutputException, std::exception)
+ignoreWidth::transliterateChar2Char( sal_Unicode inChar)
 {
-    Reference< fullwidthToHalfwidth > t1(new fullwidthToHalfwidth);
+    rtl::Reference< fullwidthToHalfwidth > t1(new fullwidthToHalfwidth);
     return t1->transliterateChar2Char(inChar);
 }
 

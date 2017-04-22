@@ -27,6 +27,7 @@
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/util/URLTransformer.hpp>
 #include <com/sun/star/util/XURLTransformer.hpp>
+#include <com/sun/star/frame/XDispatchProvider.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/frame/XTitle.hpp>
@@ -42,7 +43,7 @@
 using namespace ::com::sun::star;
 using namespace ::ooo::vba;
 
-VbaDocumentBase::VbaDocumentBase( const uno::Reference< ov::XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, uno::Reference< frame::XModel > xModel ) : VbaDocumentBase_BASE( xParent, xContext ),  mxModel( xModel )
+VbaDocumentBase::VbaDocumentBase( const uno::Reference< ov::XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, uno::Reference< frame::XModel > const & xModel ) : VbaDocumentBase_BASE( xParent, xContext ),  mxModel( xModel )
 {
 }
 
@@ -52,7 +53,7 @@ VbaDocumentBase::VbaDocumentBase( uno::Sequence< uno::Any> const & args,
 }
 
 OUString
-VbaDocumentBase::getName() throw (uno::RuntimeException, std::exception)
+VbaDocumentBase::getName()
 {
     return VbaDocumentBase::getNameFromModel( getModel() );
 }
@@ -75,10 +76,10 @@ OUString VbaDocumentBase::getNameFromModel( const uno::Reference< frame::XModel 
     return sName;
 }
 OUString
-VbaDocumentBase::getPath() throw (uno::RuntimeException, std::exception)
+VbaDocumentBase::getPath()
 {
     INetURLObject aURL( getModel()->getURL() );
-    OUString sURL = aURL.GetMainURL( INetURLObject::DECODE_TO_IURI );
+    OUString sURL = aURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
     OUString sPath;
     if( !sURL.isEmpty() )
     {
@@ -89,7 +90,7 @@ VbaDocumentBase::getPath() throw (uno::RuntimeException, std::exception)
 }
 
 OUString
-VbaDocumentBase::getFullName() throw (uno::RuntimeException, std::exception)
+VbaDocumentBase::getFullName()
 {
     OUString sPath = getName();
     //::osl::File::getSystemPathFromFileURL( getModel()->getURL(), sPath );
@@ -98,7 +99,7 @@ VbaDocumentBase::getFullName() throw (uno::RuntimeException, std::exception)
 
 void
 VbaDocumentBase::Close( const uno::Any &rSaveArg, const uno::Any &rFileArg,
-                      const uno::Any &rRouteArg ) throw (uno::RuntimeException, std::exception)
+                      const uno::Any &rRouteArg )
 {
     bool bSaveChanges = false;
     OUString aFileName;
@@ -189,7 +190,7 @@ VbaDocumentBase::Close( const uno::Any &rSaveArg, const uno::Any &rFileArg,
 }
 
 void
-VbaDocumentBase::Protect( const uno::Any &aPassword ) throw (uno::RuntimeException)
+VbaDocumentBase::Protect( const uno::Any &aPassword )
 {
     OUString rPassword;
     uno::Reference< util::XProtectable > xProt( getModel(), uno::UNO_QUERY_THROW );
@@ -201,7 +202,7 @@ VbaDocumentBase::Protect( const uno::Any &aPassword ) throw (uno::RuntimeExcepti
 }
 
 void
-VbaDocumentBase::Unprotect( const uno::Any &aPassword ) throw (uno::RuntimeException, std::exception)
+VbaDocumentBase::Unprotect( const uno::Any &aPassword )
 {
     OUString rPassword;
     uno::Reference< util::XProtectable > xProt( getModel(), uno::UNO_QUERY_THROW );
@@ -217,7 +218,7 @@ VbaDocumentBase::Unprotect( const uno::Any &aPassword ) throw (uno::RuntimeExcep
 }
 
 void
-VbaDocumentBase::setSaved( sal_Bool bSave ) throw (uno::RuntimeException, std::exception)
+VbaDocumentBase::setSaved( sal_Bool bSave )
 {
     uno::Reference< util::XModifiable > xModifiable( getModel(), uno::UNO_QUERY_THROW );
     try
@@ -239,14 +240,14 @@ VbaDocumentBase::setSaved( sal_Bool bSave ) throw (uno::RuntimeException, std::e
 }
 
 sal_Bool
-VbaDocumentBase::getSaved() throw (uno::RuntimeException, std::exception)
+VbaDocumentBase::getSaved()
 {
     uno::Reference< util::XModifiable > xModifiable( getModel(), uno::UNO_QUERY_THROW );
     return !xModifiable->isModified();
 }
 
 void
-VbaDocumentBase::Save() throw (uno::RuntimeException, std::exception)
+VbaDocumentBase::Save()
 {
     OUString url(".uno:Save");
     uno::Reference< frame::XModel > xModel = getModel();
@@ -254,14 +255,14 @@ VbaDocumentBase::Save() throw (uno::RuntimeException, std::exception)
 }
 
 void
-VbaDocumentBase::Activate() throw (uno::RuntimeException, std::exception)
+VbaDocumentBase::Activate()
 {
     uno::Reference< frame::XFrame > xFrame( getModel()->getCurrentController()->getFrame(), uno::UNO_QUERY_THROW );
     xFrame->activate();
 }
 
 uno::Any SAL_CALL
-VbaDocumentBase::getVBProject() throw (uno::RuntimeException, std::exception)
+VbaDocumentBase::getVBProject()
 {
     if( !mxVBProject.is() ) try
     {

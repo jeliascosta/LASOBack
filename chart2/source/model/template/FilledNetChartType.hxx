@@ -28,31 +28,23 @@ class FilledNetChartType : public NetChartType_Base
 {
 public:
     explicit FilledNetChartType( css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~FilledNetChartType();
+    virtual ~FilledNetChartType() override;
 
     virtual OUString SAL_CALL
-        getImplementationName()
-            throw( css::uno::RuntimeException, std::exception ) override;
+        getImplementationName() override;
     virtual sal_Bool SAL_CALL
-        supportsService( const OUString& ServiceName )
-            throw( css::uno::RuntimeException, std::exception ) override;
+        supportsService( const OUString& ServiceName ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames()
-            throw( css::uno::RuntimeException, std::exception ) override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static();
+        getSupportedServiceNames() override;
 
 protected:
     explicit FilledNetChartType( const FilledNetChartType & rOther );
 
     // ____ XChartType ____
-    virtual OUString SAL_CALL getChartType()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getChartType() override;
 
     // ____ XCloneable ____
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() override;
 };
 
 } //  namespace chart

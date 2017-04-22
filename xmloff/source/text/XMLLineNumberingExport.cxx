@@ -21,6 +21,7 @@
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/text/XLineNumberingProperties.hpp>
 #include <com/sun/star/style/LineNumberPosition.hpp>
+#include <o3tl/any.hxx>
 #include <sax/tools/converter.hxx>
 #include <xmloff/xmlexp.hxx>
 #include <xmloff/xmluconv.hxx>
@@ -38,22 +39,11 @@ using ::com::sun::star::text::XLineNumberingProperties;
 
 
 XMLLineNumberingExport::XMLLineNumberingExport(SvXMLExport& rExp)
-:   sCharStyleName("CharStyleName")
-,   sCountEmptyLines("CountEmptyLines")
-,   sCountLinesInFrames("CountLinesInFrames")
-,   sDistance("Distance")
-,   sInterval("Interval")
-,   sSeparatorText("SeparatorText")
-,   sNumberPosition("NumberPosition")
-,   sNumberingType("NumberingType")
-,   sIsOn("IsOn")
-,   sRestartAtEachPage("RestartAtEachPage")
-,   sSeparatorInterval("SeparatorInterval")
-,   rExport(rExp)
+: rExport(rExp)
 {
 }
 
-SvXMLEnumMapEntry const aLineNumberPositionMap[] =
+SvXMLEnumMapEntry<sal_uInt16> const aLineNumberPositionMap[] =
 {
     { XML_LEFT,     style::LineNumberPosition::LEFT },
     { XML_RIGHT,    style::LineNumberPosition::RIGHT },
@@ -78,7 +68,7 @@ void XMLLineNumberingExport::Export()
             Any aAny;
 
             // char style
-            aAny = xLineNumbering->getPropertyValue(sCharStyleName);
+            aAny = xLineNumbering->getPropertyValue("CharStyleName");
             OUString sTmp;
             aAny >>= sTmp;
             if (!sTmp.isEmpty())
@@ -88,39 +78,39 @@ void XMLLineNumberingExport::Export()
             }
 
             // enable
-            aAny = xLineNumbering->getPropertyValue(sIsOn);
-            if (! *static_cast<sal_Bool const *>(aAny.getValue()))
+            aAny = xLineNumbering->getPropertyValue("IsOn");
+            if (! *o3tl::doAccess<bool>(aAny))
             {
                 rExport.AddAttribute(XML_NAMESPACE_TEXT,
                                      XML_NUMBER_LINES, XML_FALSE);
             }
 
             // count empty lines
-            aAny = xLineNumbering->getPropertyValue(sCountEmptyLines);
-            if (! *static_cast<sal_Bool const *>(aAny.getValue()))
+            aAny = xLineNumbering->getPropertyValue("CountEmptyLines");
+            if (! *o3tl::doAccess<bool>(aAny))
             {
                 rExport.AddAttribute(XML_NAMESPACE_TEXT,
                                      XML_COUNT_EMPTY_LINES, XML_FALSE);
             }
 
             // count in frames
-            aAny = xLineNumbering->getPropertyValue(sCountLinesInFrames);
-            if (*static_cast<sal_Bool const *>(aAny.getValue()))
+            aAny = xLineNumbering->getPropertyValue("CountLinesInFrames");
+            if (*o3tl::doAccess<bool>(aAny))
             {
                 rExport.AddAttribute(XML_NAMESPACE_TEXT,
                                      XML_COUNT_IN_TEXT_BOXES, XML_TRUE);
             }
 
             // restart numbering
-            aAny = xLineNumbering->getPropertyValue(sRestartAtEachPage);
-            if (*static_cast<sal_Bool const *>(aAny.getValue()))
+            aAny = xLineNumbering->getPropertyValue("RestartAtEachPage");
+            if (*o3tl::doAccess<bool>(aAny))
             {
                 rExport.AddAttribute(XML_NAMESPACE_TEXT,
                                      XML_RESTART_ON_PAGE, XML_TRUE);
             }
 
             // Distance
-            aAny = xLineNumbering->getPropertyValue(sDistance);
+            aAny = xLineNumbering->getPropertyValue("Distance");
             sal_Int32 nLength = 0;
             aAny >>= nLength;
             if (nLength != 0)
@@ -134,7 +124,7 @@ void XMLLineNumberingExport::Export()
 
             // NumeringType
             OUStringBuffer sNumPosBuf;
-            aAny = xLineNumbering->getPropertyValue(sNumberingType);
+            aAny = xLineNumbering->getPropertyValue("NumberingType");
             sal_Int16 nFormat = 0;
             aAny >>= nFormat;
             rExport.GetMM100UnitConverter().convertNumFormat( sNumPosBuf, nFormat );
@@ -149,8 +139,8 @@ void XMLLineNumberingExport::Export()
             }
 
             // number position
-            aAny = xLineNumbering->getPropertyValue(sNumberPosition);
-            sal_Int16 nPosition = 0;
+            aAny = xLineNumbering->getPropertyValue("NumberPosition");
+            sal_uInt16 nPosition = 0;
             aAny >>= nPosition;
             if (SvXMLUnitConverter::convertEnum(sNumPosBuf, nPosition,
                                                 aLineNumberPositionMap))
@@ -160,34 +150,29 @@ void XMLLineNumberingExport::Export()
             }
 
             // sInterval
-            aAny = xLineNumbering->getPropertyValue(sInterval);
+            aAny = xLineNumbering->getPropertyValue("Interval");
             sal_Int16 nLineInterval = 0;
             aAny >>= nLineInterval;
-            OUStringBuffer sBuf;
-            ::sax::Converter::convertNumber(sBuf,
-                                              (sal_Int32)nLineInterval);
             rExport.AddAttribute(XML_NAMESPACE_TEXT, XML_INCREMENT,
-                                 sBuf.makeStringAndClear());
+                                 OUString::number(nLineInterval));
 
             SvXMLElementExport aConfigElem(rExport, XML_NAMESPACE_TEXT,
                                            XML_LINENUMBERING_CONFIGURATION,
                                            true, true);
 
             // line separator
-            aAny = xLineNumbering->getPropertyValue(sSeparatorText);
+            aAny = xLineNumbering->getPropertyValue("SeparatorText");
             OUString sSeparator;
             aAny >>= sSeparator;
             if (!sSeparator.isEmpty())
             {
 
                 // SeparatorInterval
-                aAny = xLineNumbering->getPropertyValue(sSeparatorInterval);
+                aAny = xLineNumbering->getPropertyValue("SeparatorInterval");
                 sal_Int16 nLineDistance = 0;
                 aAny >>= nLineDistance;
-                ::sax::Converter::convertNumber(sBuf,
-                                                  (sal_Int32)nLineDistance);
                 rExport.AddAttribute(XML_NAMESPACE_TEXT, XML_INCREMENT,
-                                     sBuf.makeStringAndClear());
+                                     OUString::number(nLineDistance));
 
                 SvXMLElementExport aSeparatorElem(rExport, XML_NAMESPACE_TEXT,
                                                   XML_LINENUMBERING_SEPARATOR,

@@ -1,0 +1,1540 @@
+#. extracted from sw/source/ui/app
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2017-01-02 16:49+0000\n"
+"Last-Translator: abelardoayala <abe_aya@hotmail.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: gug\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Accelerator-Marker: ~\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1483375745.000000\n"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PRINT_MERGE_MACRO\n"
+"string.text"
+msgid "Print form letters"
+msgstr "Imprimir modelo cartas"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGE_COUNT_MACRO\n"
+"string.text"
+msgid "Changing the page count"
+msgstr "Ojemoambue cuenta roguégui"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PARAGRAPHSTYLEFAMILY\n"
+"string.text"
+msgid "Paragraph Styles"
+msgstr "Haipyvo mbohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CHARACTERSTYLEFAMILY\n"
+"string.text"
+msgid "Character Styles"
+msgstr "Tai ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FRAMESTYLEFAMILY\n"
+"string.text"
+msgid "Frame Styles"
+msgstr "Kora ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGESTYLEFAMILY\n"
+"string.text"
+msgid "Page Styles"
+msgstr "Kuatiarogue ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LISTSTYLEFAMILY\n"
+"string.text"
+msgid "List Styles"
+msgstr "Tysýi ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_TABLESTYLEFAMILY\n"
+"string.text"
+msgid "Table Styles"
+msgstr "Tabla ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"All Styles\n"
+"itemlist.text"
+msgid "All Styles"
+msgstr "Opaichagua ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "Ñembohekoha ñemíva"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "Ñembohekoha jepurupyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "Ñembohekoha mba'etéva"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Automatic\n"
+"itemlist.text"
+msgid "Automatic"
+msgstr "Automático"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Text Styles\n"
+"itemlist.text"
+msgid "Text Styles"
+msgstr "Moñe'ẽrã ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Chapter Styles\n"
+"itemlist.text"
+msgid "Chapter Styles"
+msgstr "Vore ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"List Styles\n"
+"itemlist.text"
+msgid "List Styles"
+msgstr "Tysýi ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Index Styles\n"
+"itemlist.text"
+msgid "Index Styles"
+msgstr "Mbopapapy ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Special Styles\n"
+"itemlist.text"
+msgid "Special Styles"
+msgstr "Ñembohekoha moha'eñoperéva"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"HTML Styles\n"
+"itemlist.text"
+msgid "HTML Styles"
+msgstr "HTML ñembohekoha"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Conditional Styles\n"
+"itemlist.text"
+msgid "Conditional Styles"
+msgstr "Ñembohekoha hendapýva"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "Opavavete"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "Ñembohekoha ñemíva"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "Mba'eichagua jepurupyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "Mba'eichagua ñemomba'etepyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "Opavavete"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "Mba'eichagua kañýva"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "Mba'eichagua jepurupyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "Mba'eichagua ñemomba'etepyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "Opavavete"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "Estilo Okañy va'ekue"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "Mba'eichagua jepurupyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "Mba'eichagua ñemomba'etepyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "Opavavete"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "Mba'eichagua kañýva"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "Mba'eichagua jepurupyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "Mba'eichagua ñemomba'etepyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "Opavavete"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "Mba'eichagua kañýva"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "Mba'eichagua jepurupyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "Mba'eichagua ñemomba'etepyre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ENV_TITLE\n"
+"string.text"
+msgid "Envelope"
+msgstr "Sobre"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LAB_TITLE\n"
+"string.text"
+msgid "Labels"
+msgstr "Etiqueta"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_HUMAN_SWDOC_NAME\n"
+"string.text"
+msgid "Text"
+msgstr "Moñe'ẽrã"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WRITER_DOCUMENT_FULLTYPE\n"
+"string.text"
+msgid "%PRODUCTNAME %PRODUCTVERSION Text Document"
+msgstr "Documento Moñe'ẽrã%PRODUCTNAME %PRODUCTVERSION"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CANTOPEN\n"
+"string.text"
+msgid "Cannot open document."
+msgstr "Nikatúi eavri documento."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CANTCREATE\n"
+"string.text"
+msgid "Can't create document."
+msgstr "Nikatúi jejapo documento."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DLLNOTFOUND\n"
+"string.text"
+msgid "Filter not found."
+msgstr "Nojetopái mbogua."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_UNBENANNT\n"
+"string.text"
+msgid "Untitled"
+msgstr "Título'ỹ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LOAD_GLOBAL_DOC\n"
+"string.text"
+msgid "Name and Path of Master Document"
+msgstr "Téra ha Tape Documentogui Master"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LOAD_HTML_DOC\n"
+"string.text"
+msgid "Name and Path of the HTML Document"
+msgstr "Téra ha Tape Documentogui HTML"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_JAVA_EDIT\n"
+"string.text"
+msgid "Edit Script"
+msgstr "Editar Script"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REMOVE_WARNING\n"
+"string.text"
+msgid "The following characters are not valid and have been removed: "
+msgstr "Caracteres oseguía no valéi ha ojejuka va'ekue: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BOOKMARK_NAME\n"
+"string.text"
+msgid "Name"
+msgstr "Téra"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BOOKMARK_TEXT\n"
+"string.text"
+msgid "Text"
+msgstr "Moñe'ẽrã"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"SW_STR_NONE\n"
+"string.text"
+msgid "[None]"
+msgstr "[Mavave]"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_BEGINNING\n"
+"string.text"
+msgid "Start"
+msgstr "Ñepyrũ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_END\n"
+"string.text"
+msgid "End"
+msgstr "Opa"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_ABOVE\n"
+"string.text"
+msgid "Above"
+msgstr "Hi'ári"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_BELOW\n"
+"string.text"
+msgid "Below"
+msgstr "Yvýpe"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"SW_STR_READONLY\n"
+"string.text"
+msgid "read-only"
+msgstr "moñe'ẽ-año"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_READONLY_PATH\n"
+"string.text"
+msgid "The 'AutoText' directories are read-only. Do you want to call the path settings dialog?"
+msgstr "Carpeta kuéra 'Moñe'ẽrã Automático' ha'e moñe'ẽ-año peguarã.¿Rehenoise ñemongeta peguarã ojeguatyrõ va'ekue tapegui kuéra?"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ERROR_PASSWD\n"
+"string.text"
+msgid "Invalid password"
+msgstr "Password no valéi"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FMT_STD\n"
+"string.text"
+msgid "(none)"
+msgstr "(mavave)"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DOC_STAT\n"
+"string.text"
+msgid "Statistics"
+msgstr "Estadísticas"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_W4WREAD\n"
+"string.text"
+msgid "Importing document..."
+msgstr "Ojegueru documento..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_W4WWRITE\n"
+"string.text"
+msgid "Exporting document..."
+msgstr "Ojemondo documento..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGREAD\n"
+"string.text"
+msgid "Loading document..."
+msgstr "Ojehupi documento..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGWRITE\n"
+"string.text"
+msgid "Saving document..."
+msgstr "Ñongatu documento..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_REFORMAT\n"
+"string.text"
+msgid "Repagination..."
+msgstr "Repaginando..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_AUTOFORMAT\n"
+"string.text"
+msgid "Formatting document automatically..."
+msgstr "Formateando documento automáticamente…"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_IMPGRF\n"
+"string.text"
+msgid "Importing images..."
+msgstr "Ojegueru ta'anga kuéra..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SEARCH\n"
+"string.text"
+msgid "Search..."
+msgstr "Heka..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_FORMAT\n"
+"string.text"
+msgid "Formatting..."
+msgstr "Formateando..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_PRINT\n"
+"string.text"
+msgid "Printing..."
+msgstr "Imprimiendo..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_LAYOUTINIT\n"
+"string.text"
+msgid "Converting..."
+msgstr "Convirtiendo..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_LETTER\n"
+"string.text"
+msgid "Letter"
+msgstr "Carta"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SPELL\n"
+"string.text"
+msgid "Spellcheck..."
+msgstr "Techa-jey ortográfica..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_HYPHEN\n"
+"string.text"
+msgid "Hyphenation..."
+msgstr "Odividi hína palabras..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_TOX_INSERT\n"
+"string.text"
+msgid "Inserting Index..."
+msgstr "Moinge índice..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_TOX_UPDATE\n"
+"string.text"
+msgid "Updating Index..."
+msgstr "Oñemoĩ hína al día Índice..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SUMMARY\n"
+"string.text"
+msgid "Creating abstract..."
+msgstr "Mba'apo mbyky..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGPRTOLENOTIFY\n"
+"string.text"
+msgid "Adapt Objects..."
+msgstr "Mba'e Ojeajusta..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_TABLE_DEFNAME\n"
+"string.text"
+msgid "Table"
+msgstr "Tabla"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_GRAPHIC_DEFNAME\n"
+"string.text"
+msgid "Image"
+msgstr "Ta'anga"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_OBJECT_DEFNAME\n"
+"string.text"
+msgid "Object"
+msgstr "Mba'e"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FRAME_DEFNAME\n"
+"string.text"
+msgid "Frame"
+msgstr "Marco"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SHAPE_DEFNAME\n"
+"string.text"
+msgid "Shape"
+msgstr "Forma"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REGION_DEFNAME\n"
+"string.text"
+msgid "Section"
+msgstr "Pehẽ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NUMRULE_DEFNAME\n"
+"string.text"
+msgid "Numbering"
+msgstr "Numeración"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_EMPTYPAGE\n"
+"string.text"
+msgid "blank page"
+msgstr "rogue nandi"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ABSTRACT_TITLE\n"
+"string.text"
+msgid "Abstract: "
+msgstr "Mbyky: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_TEMPLATE_BUTTON\n"
+"string.text"
+msgid "Style"
+msgstr "Estilo"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_TEMPLATE_NAME\n"
+"string.text"
+msgid "separated by: "
+msgstr "odividi rehe: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_OUTLINE_LEVEL\n"
+"string.text"
+msgid "Outline: Level "
+msgstr "Trazado: Nivel "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_STYLE\n"
+"string.text"
+msgid "Style: "
+msgstr "Estilo: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGEOFFSET\n"
+"string.text"
+msgid "Page number: "
+msgstr "Papapy rogue: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGEBREAK\n"
+"string.text"
+msgid "Break before new page"
+msgstr "Kytĩ rogue pyahu mboyve"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WESTERN_FONT\n"
+"string.text"
+msgid "Western text: "
+msgstr "Moñe'ẽrã Occidental: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CJK_FONT\n"
+"string.text"
+msgid "Asian text: "
+msgstr "Moñe'ẽrã Asiático: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REDLINE_UNKNOWN_AUTHOR\n"
+"string.text"
+msgid "Unknown Author"
+msgstr "Apohára Nojekuaaiva"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DELETE_NOTE_AUTHOR\n"
+"string.text"
+msgid "Delete ~All Comments by $1"
+msgstr "Juka ~Opavave Oje'éva de $1"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_HIDE_NOTE_AUTHOR\n"
+"string.text"
+msgid "H~ide All Comments by $1"
+msgstr "M~okañy Opavave Oje'éva $1"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DONT_ASK_AGAIN\n"
+"string.text"
+msgid "~Do not show warning again"
+msgstr "Hechauka'ỹ ko marandu jey"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_OUTLINE_NUMBERING\n"
+"string.text"
+msgid "Outline Numbering"
+msgstr "Numeración Trazado gui"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATUSBAR_WORDCOUNT_NO_SELECTION\n"
+"string.text"
+msgid "%1 words, %2 characters"
+msgstr "%1 ñe'ẽkuéra, %2 caracteres"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATUSBAR_WORDCOUNT\n"
+"string.text"
+msgid "%1 words, %2 characters selected"
+msgstr "%1 ñe'ẽkuéra, %2 caracteres ojeporavo va'ekue"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CONVERT_TEXT_TABLE\n"
+"string.text"
+msgid "Convert Text to Table"
+msgstr "Convertir Moñe'ẽrã Tabla ramo"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ADD_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Add AutoFormat"
+msgstr "Mboheta formato automático"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ADD_AUTOFORMAT_LABEL\n"
+"string.text"
+msgid "Name"
+msgstr "Téra"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DEL_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Delete AutoFormat"
+msgstr "Juka AutoFormato"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DEL_AUTOFORMAT_MSG\n"
+"string.text"
+msgid "The following AutoFormat entry will be deleted:"
+msgstr "Ojejukata siguiente jeikeha formato automáticogui:"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_RENAME_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Rename AutoFormat"
+msgstr "Térajey AutoFormato"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BTN_AUTOFORMAT_CLOSE\n"
+"string.text"
+msgid "~Close"
+msgstr "~Mboty"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_JAN\n"
+"string.text"
+msgid "Jan"
+msgstr "Ene"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FEB\n"
+"string.text"
+msgid "Feb"
+msgstr "Feb"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_MAR\n"
+"string.text"
+msgid "Mar"
+msgstr "Mar"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NORTH\n"
+"string.text"
+msgid "North"
+msgstr "Yvate"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_MID\n"
+"string.text"
+msgid "Mid"
+msgstr "Mbytepe"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SOUTH\n"
+"string.text"
+msgid "South"
+msgstr "Yvy"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SUM\n"
+"string.text"
+msgid "Sum"
+msgstr "Suma"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_INVALID_AUTOFORMAT_NAME\n"
+"string.text"
+msgid ""
+"You have entered an invalid name.\n"
+"The desired AutoFormat could not be created. \n"
+"Try again using a different name."
+msgstr ""
+"Oñeme'ẽ peteĩ téra no valéia.\n"
+"Nikatúi ojejapo formato automático.\n"
+"Ejapo jey ambue térare."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NUMERIC\n"
+"string.text"
+msgid "Numeric"
+msgstr "Numérico"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ROW\n"
+"string.text"
+msgid "Rows"
+msgstr "Tysỹi kuéra"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_COL\n"
+"string.text"
+msgid "Column"
+msgstr "Columna"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SIMPLE\n"
+"string.text"
+msgid "Plain"
+msgstr "Ndahasýi"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_AUTHMRK_EDIT\n"
+"string.text"
+msgid "Edit Bibliography Entry"
+msgstr "Editar Jeikeha Bibliográfica"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_AUTHMRK_INSERT\n"
+"string.text"
+msgid "Insert Bibliography Entry"
+msgstr "Moinge Jeikeha Bibliográfica"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ACCESS_PAGESETUP_SPACING\n"
+"string.text"
+msgid "Spacing between %1 and %2"
+msgstr "Henda %1 ha %2 mbytepe"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ACCESS_COLUMN_WIDTH\n"
+"string.text"
+msgid "Column %1 Width"
+msgstr "Columnapekue %1"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_TABLE\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Table"
+msgstr "Tabla %PRODUCTNAME Writer"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_FRAME\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Frame"
+msgstr "Marco %PRODUCTNAME Writer"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_GRAPHIC\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Image"
+msgstr "Ta'anga %PRODUCTNAME Writer"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_OLE\n"
+"string.text"
+msgid "Other OLE Objects"
+msgstr "Ambue mba'ekuéra OLE"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WRONG_TABLENAME\n"
+"string.text"
+msgid "The name of the table must not contain spaces."
+msgstr "Téra tabla nikatúi oguereko espacios."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ERR_TABLE_MERGE\n"
+"string.text"
+msgid "Selected table cells are too complex to merge."
+msgstr "Koty'i kuéra ojeporavo va'ekue tablagui complicado'ite joajuhaguã."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SRTERR\n"
+"string.text"
+msgid "Cannot sort selection"
+msgstr "Nikatúi jamohenda poravo"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_COMCORE_READERROR\n"
+"string.text"
+msgid "Read Error"
+msgstr "Moñe'ẽrã jejavy"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_COMCORE_CANT_SHOW\n"
+"string.text"
+msgid "Image cannot be displayed."
+msgstr "Nikatúi jachuka ta'anga"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_ERROR_CLPBRD_READ\n"
+"string.text"
+msgid "Error reading from the clipboard."
+msgstr "Jejavy moñe'ẽjave kuatia-jokohagui"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_FILE_FORMAT_ERROR )\n"
+"string.text"
+msgid "File format error found."
+msgstr "Jejavy ojetopa va'ekue formatope ñongatuhagui."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_READ_ERROR )\n"
+"string.text"
+msgid "Error reading file."
+msgstr "Jejavy moñe'ẽjave ñongatuha."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_INPUT_FILE )\n"
+"string.text"
+msgid "Input file error."
+msgstr "Jejavy jaikéramo ñongatuhape."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_NOWRITER_FILE )\n"
+"string.text"
+msgid "This is not a %PRODUCTNAME Writer file."
+msgstr "Koa nahaei ñongatuha %PRODUCTNAME Writer."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_UNEXPECTED_EOF )\n"
+"string.text"
+msgid "Unexpected end of file."
+msgstr "Paha ñongatuha ndojehaaroĩ va'ekue."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_PASSWD )\n"
+"string.text"
+msgid "Password-protected files cannot be opened."
+msgstr "Nikatúi ojeavri documentogui oñeñangareko password rehe."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW6_NO_WW6_FILE_ERR )\n"
+"string.text"
+msgid "This is not a valid WinWord6 file."
+msgstr "WinWord6 marandurenda oikóva."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW6_FASTSAVE_ERR )\n"
+"string.text"
+msgid "This file was saved with WinWord in 'Fast Save' mode. Please unmark the WinWord option 'Allow Fast Saves' and save the file again."
+msgstr "Ko ñongatuha oñeñongatu WinWordpe en modo 'Ñongatu Pya'e'. Mbogue opcionáke 'Ojepermiti Ñongatu Pya'e Porã' de WinWord ha ñongatu jey ñongatuha."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_ROWCOL )\n"
+"string.text"
+msgid "File format error found at $(ARG1)(row,col)."
+msgstr "Jejavy formatope ñongatuhagui ojetopa va'ekue $(ARG1)(tysỹi,col)."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_NEW_VERSION )\n"
+"string.text"
+msgid "File has been written in a newer version."
+msgstr "Ojemoambue va'ekue ñongatuha peteĩ versíonpe ypyahuvéva."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW8_NO_WW8_FILE_ERR )\n"
+"string.text"
+msgid "This is not a valid WinWord97 file."
+msgstr "WinWord6 marandurenda oiko'ỹva."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_FILE_ROWCOL )\n"
+"string.text"
+msgid "Format error discovered in the file in sub-document $(ARG1) at $(ARG2)(row,col)."
+msgstr "Jejavy formatogui ojetopá va'ekue ñongatuhape sub-documentope $(ARG1) en $(ARG2)(tysỹi,col)."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_WRITE_ERROR )\n"
+"string.text"
+msgid "Error writing file."
+msgstr "Jejavy jahaijave ñongatuha."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_OLD_GLOSSARY )\n"
+"string.text"
+msgid "Wrong AutoText document version."
+msgstr "Versión heko katu'ỹ documentogui moñe'ẽrã automático."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_WRITE_ERROR_FILE )\n"
+"string.text"
+msgid "Error in writing sub-document $(ARG1)."
+msgstr "Jejavy ojehairõ sub-documento $(ARG1)."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_INTERNAL_ERROR )\n"
+"string.text"
+msgid "Internal error in %PRODUCTNAME Writer file format."
+msgstr "Hyepy jejavy fomatope ñongatuhagui %PRODUCTNAME Writer."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_INTERNAL_ERROR )\n"
+"string.text"
+msgid "Internal error in %PRODUCTNAME Writer file format."
+msgstr "Hyepy jejavy fomatope ñongatuhagui %PRODUCTNAME Writer."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_LOCKING , ERR_TXTBLOCK_NEWFILE_ERROR )\n"
+"string.text"
+msgid "$(ARG1) has changed."
+msgstr "$(ARG1) ojemoambue va'ekue."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_PATH , ERR_AUTOPATH_ERROR )\n"
+"string.text"
+msgid "$(ARG1) does not exist."
+msgstr "$(ARG1) naipóri."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLSPLIT_ERROR )\n"
+"string.text"
+msgid "Cells cannot be further split."
+msgstr "Koty'i kuéra nikatúi odividive."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLINSCOL_ERROR )\n"
+"string.text"
+msgid "Additional columns cannot be inserted."
+msgstr "Nikatúi moinge colúmnasve."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLDDECHG_ERROR )\n"
+"string.text"
+msgid "The structure of a linked table cannot be modified."
+msgstr "Nikatúi moambue estructura peteĩ tabla amoirũgui va'ekue."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_NO_DRAWINGS )\n"
+"string.text"
+msgid "No drawings could be read."
+msgstr "Mavave dibujo kuéra nikatúi va'ekue ojemoñe'ẽ."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_WW6_FASTSAVE_ERR )\n"
+"string.text"
+msgid "This file was saved with WinWord in 'Fast Save' mode. Please unmark the WinWord option 'Allow Fast Saves' and save the file again."
+msgstr "Ko ñongatuha oñeñongatu WinWordpe en modo 'Ñongatu Pya'e'. Mbogue opcionáke 'Ojepermiti Ñongatu Pya'e Porã' de WinWord ha ñongatu jey ñongatuha."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_FEATURES_LOST )\n"
+"string.text"
+msgid "Not all attributes could be read."
+msgstr "Nikatúi oñemoñe'ẽ opavave atributo kuéra."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_FEATURES_LOST )\n"
+"string.text"
+msgid "Not all attributes could be recorded."
+msgstr "Nikatúi ojeregristra va'ekue opavave atributo kuéra."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_OLE )\n"
+"string.text"
+msgid "Some OLE objects could only be loaded as images."
+msgstr "Oimeraẽ mba'ekuéra OLE ikatu ojehupi mba'éicha ta'anga kuéra."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_OLE )\n"
+"string.text"
+msgid "Some OLE objects could only be saved as images."
+msgstr "Oimeraẽ mba'ekuéra OLE ikatu oñeñongatu mba'éicha ta'anga kuéra."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_POOR_LOAD )\n"
+"string.text"
+msgid "Document could not be completely loaded."
+msgstr "Nikatúi jehupi va'ekue documento completamente."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_POOR_LOAD )\n"
+"string.text"
+msgid "Document could not be completely saved."
+msgstr "Nikatúi ojeñongatu va'ekue documento completamente."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_HTML_NO_MACROS)\n"
+"string.text"
+msgid ""
+"This HTML document contains %PRODUCTNAME Basic macros.\n"
+"They were not saved with the current export settings."
+msgstr ""
+"Ko documento HTML oguereko macros de %PRODUCTNAME Basic.\n"
+"Noñeñongatui ojeguatyrõ va'ekue mondogui ko'ãgagua."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , WARN_WRITE_ERROR_FILE )\n"
+"string.text"
+msgid "Error in writing sub-document $(ARG1)."
+msgstr "Jejavy ojehairõ sub-documento $(ARG1)."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , WARN_FORMAT_FILE_ROWCOL )\n"
+"string.text"
+msgid "Format error discovered in the file in sub-document $(ARG1) at $(ARG2)(row,col)."
+msgstr "Jejavy formatogui ojetopá va'ekue ñongatuhape sub-documentope $(ARG1) en $(ARG2)(tysỹi,col)."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_REPLY\n"
+"menuitem.text"
+msgid "Reply"
+msgstr "Mbohovái"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_COMMENT\n"
+"menuitem.text"
+msgid "Delete ~Comment"
+msgstr "Juka ~Oje'éva"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_NOTE_AUTHOR\n"
+"menuitem.text"
+msgid "Delete ~All Comments by $1"
+msgstr "Juka ~Opavave Oje'éva $1"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_ALL_NOTES\n"
+"menuitem.text"
+msgid "~Delete All Comments"
+msgstr "~Juka Opavave Oje'éva"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_FORMAT_ALL_NOTES\n"
+"menuitem.text"
+msgid "~Format All Comments..."
+msgstr "~Formatear Opavave Oje'éva kuéra..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_HEADERFOOTER_BUTTON\n"
+"FN_HEADERFOOTER_BORDERBACK\n"
+"menuitem.text"
+msgid "Border and Background..."
+msgstr "Bordes ha Hapykuegua..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_PAGEBREAK_BUTTON\n"
+"FN_PAGEBREAK_EDIT\n"
+"menuitem.text"
+msgid "Edit Page Break..."
+msgstr "Editar Kytĩ Roguégui..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_PAGEBREAK_BUTTON\n"
+"FN_PAGEBREAK_DELETE\n"
+"menuitem.text"
+msgid "Delete Page Break"
+msgstr "Juka Kytĩ Roguégui"

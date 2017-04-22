@@ -35,7 +35,7 @@ namespace dbaui
         FKT_AGGREGATE   =0x00000002,
         FKT_CONDITION   =0x00000004,
         FKT_NUMERIC     =0x00000008
-        // if this function type is set, it is either EXISTS oder UNIQUE,
+        // if this function type is set, it is either EXISTS or UNIQUE,
         // the FieldName contains the complete statement
     };
 
@@ -56,7 +56,6 @@ namespace dbaui
         FULL_JOIN=0,
         LEFT_JOIN,
         RIGHT_JOIN,
-        UNION_JOIN,
         CROSS_JOIN,
         INNER_JOIN
     };

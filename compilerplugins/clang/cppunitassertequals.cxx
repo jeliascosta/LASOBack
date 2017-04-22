@@ -13,7 +13,7 @@
 #include <fstream>
 #include <set>
 #include "plugin.hxx"
-#include "compat.hxx"
+#include "check.hxx"
 
 /**
   Check for calls to CPPUNIT_ASSERT when it should be using CPPUNIT_ASSERT_EQUALS
@@ -88,7 +88,9 @@ void CppunitAssertEquals::checkExpr(const Stmt* stmt)
         return;
     }
     const FunctionDecl* functionDecl = callExpr->getDirectCallee()->getCanonicalDecl();
-    if (!functionDecl || functionDecl->getQualifiedNameAsString().find("Asserter::failIf") == std::string::npos) {
+    if (!functionDecl ||
+        !loplugin::DeclCheck(functionDecl).Function("failIf").Namespace("Asserter").Namespace("CppUnit").GlobalNamespace())
+    {
         return;
     }
     report(
@@ -97,7 +99,7 @@ void CppunitAssertEquals::checkExpr(const Stmt* stmt)
       << stmt->getSourceRange();
 }
 
-loplugin::Plugin::Registration< CppunitAssertEquals > X("cppunitassertequals", false);
+loplugin::Plugin::Registration< CppunitAssertEquals > X("cppunitassertequals");
 
 }
 

@@ -201,14 +201,15 @@ String2Float( uno::Any& rAny, const gchar * value )
     if( 1 != sscanf( value, "%g", &fval ) )
         return false;
 
-    rAny = uno::makeAny( fval );
+    rAny <<= fval;
     return true;
 }
 
 /*****************************************************************************/
 
+/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleComponent>
-    getComponent( AtkText *pText ) throw (uno::RuntimeException)
+    getComponent( AtkText *pText )
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( pText );
     if( pWrap )
@@ -290,7 +291,7 @@ String2Color( uno::Any& rAny, const gchar * value )
         return false;
 
     sal_Int32 nColor = (sal_Int32) blue | ( (sal_Int32) green << 8 ) | ( ( sal_Int32 ) red << 16 );
-    rAny = uno::makeAny( nColor );
+    rAny <<= nColor;
     return true;
 }
 
@@ -342,20 +343,20 @@ Style2FontSlant( uno::Any& rAny, const gchar * value )
 {
     awt::FontSlant aFontSlant;
 
-    if( strncmp( value, STRNCMP_PARAM( "normal" ) ) )
+    if( strncmp( value, STRNCMP_PARAM( "normal" ) ) == 0 )
         aFontSlant = awt::FontSlant_NONE;
-    else if( strncmp( value, STRNCMP_PARAM( "oblique" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "oblique" ) ) == 0 )
         aFontSlant = awt::FontSlant_OBLIQUE;
-    else if( strncmp( value, STRNCMP_PARAM( "italic" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "italic" ) ) == 0 )
         aFontSlant = awt::FontSlant_ITALIC;
-    else if( strncmp( value, STRNCMP_PARAM( "reverse oblique" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "reverse oblique" ) ) == 0 )
         aFontSlant = awt::FontSlant_REVERSE_OBLIQUE;
-    else if( strncmp( value, STRNCMP_PARAM( "reverse italic" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "reverse italic" ) ) == 0 )
         aFontSlant = awt::FontSlant_REVERSE_ITALIC;
     else
         return false;
 
-    rAny = uno::makeAny( aFontSlant );
+    rAny <<= aFontSlant;
     return true;
 }
 
@@ -375,7 +376,7 @@ String2Weight( uno::Any& rAny, const gchar * value )
     if( 1 != sscanf( value, "%g", &weight ) )
         return false;
 
-    rAny = uno::makeAny( weight / 4 );
+    rAny <<= weight / 4;
     return true;
 }
 
@@ -386,7 +387,7 @@ Adjust2Justification(const uno::Any& rAny)
 {
     const gchar * value = nullptr;
 
-    switch( rAny.get<short>() )
+    switch( (style::ParagraphAdjust)rAny.get<short>() )
     {
         case style::ParagraphAdjust_LEFT:
             value = "left";
@@ -418,26 +419,26 @@ Adjust2Justification(const uno::Any& rAny)
 static bool
 Justification2Adjust( uno::Any& rAny, const gchar * value )
 {
-    short nParagraphAdjust;
+    style::ParagraphAdjust nParagraphAdjust;
 
-    if( strncmp( value, STRNCMP_PARAM( "left" ) ) )
+    if( strncmp( value, STRNCMP_PARAM( "left" ) ) == 0 )
         nParagraphAdjust = style::ParagraphAdjust_LEFT;
-    else if( strncmp( value, STRNCMP_PARAM( "right" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "right" ) ) == 0 )
         nParagraphAdjust = style::ParagraphAdjust_RIGHT;
-    else if( strncmp( value, STRNCMP_PARAM( "fill" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "fill" ) ) == 0 )
         nParagraphAdjust = style::ParagraphAdjust_BLOCK;
-    else if( strncmp( value, STRNCMP_PARAM( "center" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "center" ) ) == 0 )
         nParagraphAdjust = style::ParagraphAdjust_CENTER;
     else
         return false;
 
-    rAny = uno::makeAny( nParagraphAdjust );
+    rAny <<= (short)nParagraphAdjust;
     return true;
 }
 
 /*****************************************************************************/
 
-const gchar * font_strikethrough[] = {
+const gchar * const font_strikethrough[] = {
     "none",   // FontStrikeout::NONE
     "single", // FontStrikeout::SINGLE
     "double", // FontStrikeout::DOUBLE
@@ -468,7 +469,7 @@ String2Strikeout( uno::Any& rAny, const gchar * value )
         if( ( nullptr != font_strikethrough[n] ) &&
             0 == strncmp( value, font_strikethrough[n], strlen( font_strikethrough[n] ) ) )
         {
-            rAny = uno::makeAny( n );
+            rAny <<= n;
             return true;
         }
     }
@@ -512,16 +513,16 @@ String2Underline( uno::Any& rAny, const gchar * value )
 {
     short nUnderline;
 
-    if( strncmp( value, STRNCMP_PARAM( "none" ) ) )
+    if( strncmp( value, STRNCMP_PARAM( "none" ) ) == 0 )
         nUnderline = awt::FontUnderline::NONE;
-    else if( strncmp( value, STRNCMP_PARAM( "single" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "single" ) ) == 0 )
         nUnderline = awt::FontUnderline::SINGLE;
-    else if( strncmp( value, STRNCMP_PARAM( "double" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "double" ) ) == 0 )
         nUnderline = awt::FontUnderline::DOUBLE;
     else
         return false;
 
-    rAny = uno::makeAny( nUnderline );
+    rAny <<= nUnderline;
     return true;
 }
 
@@ -545,7 +546,7 @@ SetString( uno::Any& rAny, const gchar * value )
 
     if( !aFontName.isEmpty() )
     {
-        rAny = uno::makeAny( OStringToOUString( aFontName, RTL_TEXTENCODING_UTF8 ) );
+        rAny <<= OStringToOUString( aFontName, RTL_TEXTENCODING_UTF8 );
         return true;
     }
 
@@ -576,7 +577,7 @@ UnitString2CMM( uno::Any& rAny, const gchar * value )
 
     fValue = fValue * 100;
 
-    rAny = uno::makeAny( (sal_Int32) fValue);
+    rAny <<= (sal_Int32) fValue;
     return true;
 }
 
@@ -600,14 +601,14 @@ String2Bool( uno::Any& rAny, const gchar * value )
 {
     bool bValue;
 
-    if( strncmp( value, STRNCMP_PARAM( "true" ) ) )
+    if( strncmp( value, STRNCMP_PARAM( "true" ) ) == 0 )
         bValue = true;
-    else if( strncmp( value, STRNCMP_PARAM( "false" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "false" ) ) == 0 )
         bValue = false;
     else
         return false;
 
-    rAny = uno::makeAny(bValue);
+    rAny <<= bValue;
     return true;
 }
 
@@ -627,7 +628,7 @@ String2Scale( uno::Any& rAny, const gchar * value )
     if( 1 != sscanf( value, "%lg", &dval ) )
         return false;
 
-    rAny = uno::makeAny((sal_Int16) (dval * 100));
+    rAny <<= (sal_Int16) (dval * 100);
     return true;
 }
 
@@ -657,20 +658,20 @@ String2CaseMap( uno::Any& rAny, const gchar * value )
 {
     short nCaseMap;
 
-    if( strncmp( value, STRNCMP_PARAM( "normal" ) ) )
+    if( strncmp( value, STRNCMP_PARAM( "normal" ) ) == 0 )
         nCaseMap = style::CaseMap::NONE;
-    else if( strncmp( value, STRNCMP_PARAM( "small_caps" ) ) )
+    else if( strncmp( value, STRNCMP_PARAM( "small_caps" ) ) == 0 )
         nCaseMap = style::CaseMap::SMALLCAPS;
     else
         return false;
 
-    rAny = uno::makeAny( nCaseMap );
+    rAny <<= nCaseMap;
     return true;
 }
 
 /*****************************************************************************/
 
-const gchar * font_stretch[] = {
+const gchar * const font_stretch[] = {
     "ultra_condensed",
     "extra_condensed",
     "condensed",
@@ -731,7 +732,7 @@ String2Locale( uno::Any& rAny, const gchar * value )
             g_free(country);
         }
 
-        rAny = uno::makeAny(aLocale);
+        rAny <<= aLocale;
     }
 
     g_strfreev(str_array);
@@ -742,7 +743,7 @@ String2Locale( uno::Any& rAny, const gchar * value )
 
 // @see http://www.w3.org/TR/2002/WD-css3-fonts-20020802/#font-effect-prop
 static const gchar * relief[] = { "none", "emboss", "engrave" };
-static const gchar * outline  = "outline";
+static const gchar * const outline  = "outline";
 
 static gchar *
 get_font_effect(const uno::Sequence< beans::PropertyValue >& rAttributeList,
@@ -842,7 +843,7 @@ Short2Degree( const uno::Any& rAny )
 
 /*****************************************************************************/
 
-const gchar * directions[] = { "ltr", "rtl", "rtl", "ltr", "none" };
+const gchar * const directions[] = { "ltr", "rtl", "rtl", "ltr", "none" };
 
 static gchar *
 WritingMode2Direction( const uno::Any& rAny )
@@ -857,7 +858,7 @@ WritingMode2Direction( const uno::Any& rAny )
 
 // @see http://www.w3.org/TR/2001/WD-css3-text-20010517/#PrimaryTextAdvanceDirection
 
-const gchar * writing_modes[] = { "lr-tb", "rl-tb", "tb-rl", "tb-lr", "none" };
+const gchar * const writing_modes[] = { "lr-tb", "rl-tb", "tb-rl", "tb-lr", "none" };
 static gchar *
 WritingMode2String( const uno::Any& rAny )
 {
@@ -871,7 +872,7 @@ WritingMode2String( const uno::Any& rAny )
 
 /*****************************************************************************/
 
-const char * baseline_values[] = { "baseline", "sub", "super" };
+const char * const baseline_values[] = { "baseline", "sub", "super" };
 
 // @see http://www.w3.org/TR/REC-CSS2/visudet.html#propdef-vertical-align
 static gchar *
@@ -926,7 +927,7 @@ TabStopList2String( const uno::Any& rAny, bool default_tabs )
     {
         sal_Int32 indexOfTab = 0;
         sal_Int32 numberOfTabs = theTabStops.getLength();
-        sal_Unicode lastFillChar = (sal_Unicode) ' ';
+        sal_Unicode lastFillChar = ' ';
 
         for( ; indexOfTab < numberOfTabs; ++indexOfTab )
         {
@@ -964,19 +965,19 @@ TabStopList2String( const uno::Any& rAny, bool default_tabs )
                 lastFillChar = theTabStops[indexOfTab].FillChar;
                 switch (lastFillChar)
                 {
-                    case (sal_Unicode) ' ':
+                    case ' ':
                         lead_char = "blank ";
                         break;
 
-                    case (sal_Unicode) '.':
+                    case '.':
                         lead_char = "dotted ";
                         break;
 
-                    case (sal_Unicode) '-':
+                    case '-':
                         lead_char = "dashed ";
                         break;
 
-                    case (sal_Unicode) '_':
+                    case '_':
                         lead_char = "lined ";
                         break;
 

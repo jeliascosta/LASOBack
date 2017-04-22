@@ -24,9 +24,7 @@
 #include <registry/regtype.h>
 #include <rtl/ustring.hxx>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /** specifies a collection of function pointers which represents the complete registry C-API.
 
@@ -73,10 +71,7 @@ struct Registry_Api
 */
 REG_DLLPUBLIC Registry_Api* REGISTRY_CALLTYPE initRegistry_Api();
 
-#ifdef __cplusplus
 }
-#endif
-
 
 class RegistryKey;
 
@@ -95,11 +90,23 @@ public:
     /// Copy constructor
     inline Registry(const Registry& toCopy);
 
+    Registry(Registry && other): m_pApi(other.m_pApi), m_hImpl(other.m_hImpl)
+    { other.m_hImpl = nullptr; }
+
     /// Destructor. The Destructor close the registry if it is open.
     inline ~Registry();
 
     /// Assign operator
     inline Registry& operator = (const Registry& toAssign);
+
+    Registry & operator =(Registry && other) {
+        if (m_hImpl != nullptr) {
+            m_pApi->release(m_hImpl);
+        }
+        m_hImpl = other.m_hImpl;
+        other.m_hImpl = nullptr;
+        return *this;
+    }
 
     /// checks if the registry points to a valid registry data file.
     inline bool isValid() const;
@@ -158,7 +165,6 @@ public:
                         If keyName is an empty string the registry information under the key specified
                         by rKey is merged with the information from the specified file.
         @param  regFileName specifies the file containing the registry information.
-        @param  bWarnings if TRUE the function returns an error if a key already exists.
         @param  bReport if TRUE the function reports warnings on stdout if a key already exists.
         @return RegError::NO_ERROR if succeeds else an error code. If it returns an error the registry will
                 restore the state before merging.
@@ -166,8 +172,7 @@ public:
     inline RegError mergeKey(RegistryKey& rKey,
                                 const rtl::OUString& keyName,
                                 const rtl::OUString& regFileName,
-                                bool bWarnings = false,
-                                bool bReport = false);
+                                bool bReport);
 
     friend class RegistryKey;
     friend class RegistryKeyArray;
@@ -235,7 +240,7 @@ public:
     /// Destructor, the internal array with key names will be deleted.
     inline ~RegistryKeyNames();
 
-    /// returns the name of the key sepecified by index.
+    /// returns the name of the key specified by index.
     inline rtl::OUString getElement(sal_uInt32 index);
 
     /// returns the length of the array.
@@ -366,7 +371,7 @@ public:
 
     /** creates a new key or opens a key if the specified key already exists.
 
-        The specified keyname is relativ to this key.
+        The specified keyname is relative to this key.
         @param  keyName specifies the name of the key which will be opened or created.
         @param  rNewKey references a RegistryKey which will be filled with the new or open key.
         @return RegError::NO_ERROR if succeeds else an error code.
@@ -376,7 +381,7 @@ public:
 
     /** opens the specified key.
 
-        The specified keyname is relativ to this key.
+        The specified keyname is relative to this key.
         @param  keyName specifies the name of the key which will be opened.
         @param  rOpenKey references a RegistryKey which will be filled with the open key.
         @return RegError::NO_ERROR if succeeds else an error code.
@@ -386,7 +391,7 @@ public:
 
     /** opens all subkeys of the specified key.
 
-        The specified keyname is relativ to this key.
+        The specified keyname is relative to this key.
         @param  keyName specifies the name of the key which subkeys will be opened.
         @param  rSubKeys reference a RegistryKeyArray which will be filled with the open subkeys.
         @return RegError::NO_ERROR if succeeds else an error code.
@@ -396,7 +401,7 @@ public:
 
     /** returns an array with the names of all subkeys of the specified key.
 
-        The specified keyname is relativ to this key.
+        The specified keyname is relative to this key.
         @param  keyName specifies the name of the key which subkey names will be returned.
         @param  rSubKeyNames reference a RegistryKeyNames array which will be filled with the subkey names.
         @return RegError::NO_ERROR if succeeds else an error code.
@@ -527,32 +532,6 @@ public:
     */
     inline RegError getUnicodeListValue(const rtl::OUString& keyName,
                                               RegistryValueList<sal_Unicode*>& rValueList);
-
-    /** used to create a link.
-
-        @deprecated Links are no longer supported.
-
-        @return RegError::INVALID_LINK
-     */
-    inline RegError createLink(const rtl::OUString& linkName,
-                               const rtl::OUString& linkTarget);
-
-    /** used to delete a link.
-
-        @deprecated Links are no longer supported.
-
-        @return RegError::INVALID_LINK
-     */
-    inline RegError deleteLink(const rtl::OUString& linkName);
-
-    /** used to return the target of a link.
-
-        @deprecated Links are no longer supported.
-
-        @return RegError::INVALID_LINK
-     */
-    inline RegError getLinkTarget(const rtl::OUString& linkName,
-                                    rtl::OUString& rLinkTarget) const;
 
     /** resolves a keyname.
 
@@ -964,33 +943,6 @@ inline RegError RegistryKey::getUnicodeListValue(const rtl::OUString& keyName,
             return RegError::INVALID_KEY;
     }
 
-inline RegError RegistryKey::createLink(const rtl::OUString& ,
-                                        const rtl::OUString& )
-    {
-        if (m_registry.isValid())
-            return RegError::INVALID_LINK; // links are no longer supported
-        else
-            return RegError::INVALID_KEY;
-    }
-
-inline RegError RegistryKey::deleteLink(const rtl::OUString& )
-    {
-        if (m_registry.isValid())
-            return RegError::INVALID_LINK; // links are no longer supported
-        else
-            return RegError::INVALID_KEY;
-    }
-
-inline RegError RegistryKey::getLinkTarget(const rtl::OUString& ,
-                                                 rtl::OUString& ) const
-    {
-        if (m_registry.isValid())
-            return RegError::INVALID_LINK; // links are no longer supported
-        else
-            return RegError::INVALID_KEY;
-    }
-
-
 inline RegError RegistryKey::getResolvedKeyName(const rtl::OUString& keyName,
                                                       rtl::OUString& rResolvedName) const
     {
@@ -1099,9 +1051,8 @@ inline RegError Registry::destroy(const rtl::OUString& registryName)
 inline RegError Registry::mergeKey(RegistryKey& rKey,
                                          const rtl::OUString& keyName,
                                          const rtl::OUString& regFileName,
-                                         bool bWarnings,
                                          bool bReport)
-    {  return m_pApi->mergeKey(m_hImpl, rKey.m_hImpl, keyName.pData, regFileName.pData, bWarnings, bReport); }
+    {  return m_pApi->mergeKey(m_hImpl, rKey.m_hImpl, keyName.pData, regFileName.pData, false/*bWarnings*/, bReport); }
 
 
 #endif

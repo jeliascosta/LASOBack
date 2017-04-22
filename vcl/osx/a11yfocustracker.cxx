@@ -49,25 +49,25 @@ void AquaA11yFocusTracker::WindowEventHandler(void * pThis, VclSimpleEvent& rEve
         pThis);
     switch (rEvent.GetId())
     {
-    case VCLEVENT_WINDOW_PAINT:
+    case VclEventId::WindowPaint:
         pFocusTracker-> toolbox_open_floater( getWindow(&rEvent) );
         break;
-    case VCLEVENT_WINDOW_GETFOCUS:
+    case VclEventId::WindowGetFocus:
         pFocusTracker->window_got_focus( getWindow(&rEvent) );
         break;
-    case VCLEVENT_OBJECT_DYING:
+    case VclEventId::ObjectDying:
         pFocusTracker->m_aDocumentWindowList.erase( getWindow(&rEvent) );
         SAL_FALLTHROUGH;
-    case VCLEVENT_TOOLBOX_HIGHLIGHTOFF:
+    case VclEventId::ToolboxHighlightOff:
         pFocusTracker->toolbox_highlight_off( getWindow(&rEvent) );
         break;
-    case VCLEVENT_TOOLBOX_HIGHLIGHT:
+    case VclEventId::ToolboxHighlight:
         pFocusTracker->toolbox_highlight_on( getWindow(&rEvent) );
         break;
-    case VCLEVENT_TABPAGE_ACTIVATE:
+    case VclEventId::TabpageActivate:
         pFocusTracker->tabpage_activated( getWindow(&rEvent) );
         break;
-    case VCLEVENT_MENU_HIGHLIGHT:
+    case VclEventId::MenuHighlight:
         // Inspired by code in WindowEventHandler in
         // vcl/unx/gtk/a11y/atkutil.cxx, find out what kind of event
         // it is to avoid blindly using a static_cast and crash,
@@ -96,6 +96,8 @@ AquaA11yFocusTracker::AquaA11yFocusTracker() :
     window_got_focus(Application::GetFocusWindow());
 }
 
+AquaA11yFocusTracker::~AquaA11yFocusTracker() {}
+
 void AquaA11yFocusTracker::setFocusedObject(const Reference< XAccessible >& xAccessible)
 {
     if( xAccessible != m_xFocusedObject )
@@ -117,9 +119,10 @@ void AquaA11yFocusTracker::notify_toolbox_item_focus(ToolBox *pToolBox)
 
         if( xContext.is() )
         {
-            sal_Int32 nPos = pToolBox->GetItemPos( pToolBox->GetHighlightItemId() );
-            if( nPos != TOOLBOX_ITEM_NOTFOUND )
+            ToolBox::ImplToolItems::size_type nPos = pToolBox->GetItemPos( pToolBox->GetHighlightItemId() );
+            if( nPos != ToolBox::ITEM_NOTFOUND )
                 setFocusedObject( xContext->getAccessibleChild( nPos ) );
+                    //TODO: ToolBox::ImplToolItems::size_type -> sal_Int32!
         }
     }
 }
@@ -130,9 +133,9 @@ void AquaA11yFocusTracker::toolbox_open_floater(vcl::Window *pWindow)
     bool bFloatingWindowFound = false;
     vcl::Window * pFloatingWindow = nullptr;
     while ( pWindow != nullptr ) {
-        if ( pWindow->GetType() == WINDOW_TOOLBOX ) {
+        if ( pWindow->GetType() == WindowType::TOOLBOX ) {
             bToolboxFound = true;
-        } else if ( pWindow->GetType() == WINDOW_FLOATINGWINDOW ) {
+        } else if ( pWindow->GetType() == WindowType::FLOATINGWINDOW ) {
             bFloatingWindowFound = true;
             pFloatingWindow = pWindow;
         }
@@ -207,15 +210,15 @@ void AquaA11yFocusTracker::menu_highlighted(const VclMenuEvent *pEvent)
 
 void AquaA11yFocusTracker::window_got_focus(vcl::Window *pWindow)
 {
-    // The menu bar is handled through VCLEVENT_MENU_HIGHLIGHTED
-    if( ! pWindow || !pWindow->IsReallyVisible() || pWindow->GetType() == WINDOW_MENUBARWINDOW )
+    // The menu bar is handled through VclEventId::MenuHighlightED
+    if( ! pWindow || !pWindow->IsReallyVisible() || pWindow->GetType() == WindowType::MENUBARWINDOW )
         return;
 
-    // ToolBoxes are handled through VCLEVENT_TOOLBOX_HIGHLIGHT
-    if( pWindow->GetType() == WINDOW_TOOLBOX )
+    // ToolBoxes are handled through VclEventId::ToolboxHighlight
+    if( pWindow->GetType() == WindowType::TOOLBOX )
         return;
 
-    if( pWindow->GetType() == WINDOW_TABCONTROL )
+    if( pWindow->GetType() == WindowType::TABCONTROL )
     {
         tabpage_activated( pWindow );
         return;
@@ -239,7 +242,7 @@ void AquaA11yFocusTracker::window_got_focus(vcl::Window *pWindow)
 /* the UNO ToolBox wrapper does not (yet?) support XAccessibleSelection, so we
  * need to add listeners to the children instead of re-using the tabpage stuff
  */
-    if( xStateSet->contains(AccessibleStateType::FOCUSED) && (pWindow->GetType() != WINDOW_TREELISTBOX) )
+    if( xStateSet->contains(AccessibleStateType::FOCUSED) && (pWindow->GetType() != WindowType::TREELISTBOX) )
     {
         setFocusedObject( xAccessible );
     }

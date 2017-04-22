@@ -29,15 +29,13 @@ class SwWrtShell;
 
 class SW_DLLPUBLIC SwDBTreeList : public SvTreeListBox
 {
-    ImageList       aImageList;
-
     OUString        sDefDBName;
     bool            bInitialized;
     bool            bShowColumns;
 
-    SwDBTreeList_Impl* pImpl;
+    std::unique_ptr<SwDBTreeList_Impl> pImpl;
 
-    DECL_DLLPRIVATE_LINK_TYPED( DBCompare, const SvSortData&, sal_Int32 );
+    DECL_DLLPRIVATE_LINK( DBCompare, const SvSortData&, sal_Int32 );
 
     SAL_DLLPRIVATE void          InitTreeList();
     SAL_DLLPRIVATE virtual void  RequestingChildren( SvTreeListEntry* pParent ) override;
@@ -49,7 +47,7 @@ class SW_DLLPUBLIC SwDBTreeList : public SvTreeListBox
 
 public:
     SwDBTreeList(vcl::Window* pParent, WinBits nStyle);
-    virtual ~SwDBTreeList();
+    virtual ~SwDBTreeList() override;
     virtual void dispose() override;
     virtual Size GetOptimalSize() const override;
 

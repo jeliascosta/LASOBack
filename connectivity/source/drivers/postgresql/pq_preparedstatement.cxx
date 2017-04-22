@@ -51,6 +51,7 @@
 
 #include <com/sun/star/sdbc/ResultSetConcurrency.hpp>
 #include <com/sun/star/sdbc/ResultSetType.hpp>
+#include <com/sun/star/sdbc/SQLException.hpp>
 
 #include <string.h>
 
@@ -98,34 +99,34 @@ static ::cppu::IPropertyArrayHelper & getPreparedStatementPropertyArrayHelper()
             static Property aTable[] =
                 {
                     Property(
-                        OUString("CursorName"), 0,
+                        "CursorName", 0,
                         ::cppu::UnoType<OUString>::get() , 0 ),
                     Property(
-                        OUString("EscapeProcessing"), 1,
+                        "EscapeProcessing", 1,
                         cppu::UnoType<bool>::get() , 0 ),
                     Property(
-                        OUString("FetchDirection"), 2,
+                        "FetchDirection", 2,
                         ::cppu::UnoType<sal_Int32>::get() , 0 ),
                     Property(
-                        OUString("FetchSize"), 3,
+                        "FetchSize", 3,
                         ::cppu::UnoType<sal_Int32>::get() , 0 ),
                     Property(
-                        OUString("MaxFieldSize"), 4,
+                        "MaxFieldSize", 4,
                         ::cppu::UnoType<sal_Int32>::get() , 0 ),
                     Property(
-                        OUString("MaxRows"), 5,
+                        "MaxRows", 5,
                         ::cppu::UnoType<sal_Int32>::get() , 0 ),
                     Property(
-                        OUString("QueryTimeOut"), 6,
+                        "QueryTimeOut", 6,
                         ::cppu::UnoType<sal_Int32>::get() , 0 ),
                     Property(
-                        OUString("ResultSetConcurrency"), 7,
+                        "ResultSetConcurrency", 7,
                         ::cppu::UnoType<sal_Int32>::get() , 0 ),
                     Property(
-                        OUString("ResultSetType"), 8,
+                        "ResultSetType", 8,
                         ::cppu::UnoType<sal_Int32>::get() , 0 )
                 };
-            OSL_ASSERT( sizeof(aTable)/ sizeof(Property)  == PREPARED_STATEMENT_SIZE );
+            static_assert( SAL_N_ELEMENTS(aTable) == PREPARED_STATEMENT_SIZE, "wrong number of elements" );
             static ::cppu::OPropertyArrayHelper arrayHelper( aTable, PREPARED_STATEMENT_SIZE, true );
             pArrayHelper = &arrayHelper;
         }
@@ -135,7 +136,7 @@ static ::cppu::IPropertyArrayHelper & getPreparedStatementPropertyArrayHelper()
 
 static bool isOperator( char c )
 {
-    static const char * operators = "<>=()!/&%.,;";
+    static const char * const operators = "<>=()!/&%.,;";
 
     const char * w = operators;
     while (*w && *w != c)
@@ -171,12 +172,12 @@ PreparedStatement::PreparedStatement(
     , m_multipleResultUpdateCount(0)
     , m_lastOidInserted( InvalidOid )
 {
-    m_props[PREPARED_STATEMENT_QUERY_TIME_OUT] = makeAny( (sal_Int32)0 );
-    m_props[PREPARED_STATEMENT_MAX_ROWS] = makeAny( (sal_Int32)0 );
-    m_props[PREPARED_STATEMENT_RESULT_SET_CONCURRENCY] = makeAny(
-        com::sun::star::sdbc::ResultSetConcurrency::READ_ONLY );
-    m_props[PREPARED_STATEMENT_RESULT_SET_TYPE] = makeAny(
-        com::sun::star::sdbc::ResultSetType::SCROLL_INSENSITIVE );
+    m_props[PREPARED_STATEMENT_QUERY_TIME_OUT] <<= (sal_Int32)0;
+    m_props[PREPARED_STATEMENT_MAX_ROWS] <<= (sal_Int32)0;
+    m_props[PREPARED_STATEMENT_RESULT_SET_CONCURRENCY] <<=
+        css::sdbc::ResultSetConcurrency::READ_ONLY;
+    m_props[PREPARED_STATEMENT_RESULT_SET_TYPE] <<=
+        css::sdbc::ResultSetType::SCROLL_INSENSITIVE;
 
     splitSQL( m_stmt, m_splittedStatement );
     int elements = 0;
@@ -212,18 +213,16 @@ void PreparedStatement::checkColumnIndex( sal_Int32 parameterIndex )
 {
     if( parameterIndex < 1 || parameterIndex > (sal_Int32) m_vars.size() )
     {
-        OUStringBuffer buf( 128 );
-        buf.append( "pq_preparedstatement: parameter index out of range (expected 1 to " );
-        buf.append( (sal_Int32 ) m_vars.size() );
-        buf.append( ", got " );
-        buf.append( parameterIndex );
-        buf.append( ", statement '" );
-        buf.append( OStringToOUString( m_stmt, m_pSettings->encoding ) );
-        buf.append( "')" );
-        throw SQLException( buf.makeStringAndClear(), *this, OUString(), 1, Any () );
+        throw SQLException(
+            "pq_preparedstatement: parameter index out of range (expected 1 to "
+            + OUString::number( m_vars.size() )
+            + ", got " + OUString::number( parameterIndex )
+            + ", statement '" + OStringToOUString( m_stmt, ConnectionSettings::encoding )
+            + "')",
+            *this, OUString(), 1, Any () );
     }
 }
-void PreparedStatement::checkClosed() throw (SQLException, RuntimeException )
+void PreparedStatement::checkClosed()
 {
     if( ! m_pSettings || ! m_pSettings->pConnection )
         throw SQLException(
@@ -231,14 +230,14 @@ void PreparedStatement::checkClosed() throw (SQLException, RuntimeException )
             *this, OUString(),1,Any());
 }
 
-Any PreparedStatement::queryInterface( const Type & rType ) throw (RuntimeException, std::exception)
+Any PreparedStatement::queryInterface( const Type & rType )
 {
     Any aRet = PreparedStatement_BASE::queryInterface(rType);
     return aRet.hasValue() ? aRet : OPropertySetHelper::queryInterface(rType);
 }
 
 
-Sequence< Type > PreparedStatement::getTypes() throw ( RuntimeException, std::exception )
+Sequence< Type > PreparedStatement::getTypes()
 {
     static Sequence< Type > *pCollection;
     if( ! pCollection )
@@ -256,12 +255,12 @@ Sequence< Type > PreparedStatement::getTypes() throw ( RuntimeException, std::ex
     return *pCollection;
 }
 
-Sequence< sal_Int8> PreparedStatement::getImplementationId() throw ( RuntimeException, std::exception )
+Sequence< sal_Int8> PreparedStatement::getImplementationId()
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-void PreparedStatement::close(  ) throw (SQLException, RuntimeException, std::exception)
+void PreparedStatement::close(  )
 {
     // let the connection die without acquired mutex !
     Reference< XConnection > r;
@@ -282,22 +281,20 @@ void PreparedStatement::close(  ) throw (SQLException, RuntimeException, std::ex
 }
 
 void PreparedStatement::raiseSQLException( const char * errorMsg )
-    throw( SQLException )
 {
     OUStringBuffer buf(128);
     buf.append( "pq_driver: ");
     buf.append(
-        OUString( errorMsg, strlen(errorMsg) , m_pSettings->encoding ) );
+        OUString( errorMsg, strlen(errorMsg) , ConnectionSettings::encoding ) );
     buf.append( " (caused by statement '" );
     buf.appendAscii( m_executedStatement.getStr() );
     buf.append( "')" );
     OUString error = buf.makeStringAndClear();
-    log( m_pSettings, LogLevel::ERROR, error );
+    log(m_pSettings, LogLevel::Error, error);
     throw SQLException( error, *this, OUString(), 1, Any() );
 }
 
 Reference< XResultSet > PreparedStatement::executeQuery( )
-        throw (SQLException, RuntimeException, std::exception)
 {
     Reference< XCloseable > lastResultSet = m_lastResultset;
     if( lastResultSet.is() )
@@ -307,11 +304,10 @@ Reference< XResultSet > PreparedStatement::executeQuery( )
     {
         raiseSQLException(  "not a query" );
     }
-    return Reference< XResultSet > ( m_lastResultset, com::sun::star::uno::UNO_QUERY );
+    return Reference< XResultSet > ( m_lastResultset, css::uno::UNO_QUERY );
 }
 
 sal_Int32 PreparedStatement::executeUpdate( )
-        throw (SQLException, RuntimeException, std::exception)
 {
     if( execute( ) )
     {
@@ -321,7 +317,6 @@ sal_Int32 PreparedStatement::executeUpdate( )
 }
 
 sal_Bool PreparedStatement::execute( )
-        throw (SQLException, RuntimeException, std::exception)
 {
     osl::MutexGuard guard( m_refMutex->mutex );
 
@@ -400,7 +395,6 @@ sal_Bool PreparedStatement::execute( )
 }
 
 Reference< XConnection > PreparedStatement::getConnection(  )
-        throw (SQLException, RuntimeException, std::exception)
 {
     Reference< XConnection > ret;
     {
@@ -413,7 +407,6 @@ Reference< XConnection > PreparedStatement::getConnection(  )
 
 
 void PreparedStatement::setNull( sal_Int32 parameterIndex, sal_Int32 sqlType )
-    throw (SQLException, RuntimeException, std::exception)
 {
     (void)sqlType;
     MutexGuard guard( m_refMutex->mutex );
@@ -424,7 +417,6 @@ void PreparedStatement::setNull( sal_Int32 parameterIndex, sal_Int32 sqlType )
 
 void PreparedStatement::setObjectNull(
     sal_Int32 parameterIndex, sal_Int32 sqlType, const OUString& typeName )
-    throw (SQLException, RuntimeException, std::exception)
 {
     (void) sqlType; (void) typeName;
     MutexGuard guard( m_refMutex->mutex );
@@ -435,7 +427,6 @@ void PreparedStatement::setObjectNull(
 
 
 void PreparedStatement::setBoolean( sal_Int32 parameterIndex, sal_Bool x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard(m_refMutex->mutex );
     checkClosed();
@@ -447,19 +438,16 @@ void PreparedStatement::setBoolean( sal_Int32 parameterIndex, sal_Bool x )
 }
 
 void PreparedStatement::setByte( sal_Int32 parameterIndex, sal_Int8 x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     setInt(parameterIndex,x);
 }
 
 void PreparedStatement::setShort( sal_Int32 parameterIndex, sal_Int16 x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     setInt(parameterIndex, x );
 }
 
 void PreparedStatement::setInt( sal_Int32 parameterIndex, sal_Int32 x )
-    throw (SQLException, RuntimeException, std::exception)
 {
 //     printf( "setString %d %d\n ",  parameterIndex, x);
     MutexGuard guard(m_refMutex->mutex );
@@ -467,26 +455,24 @@ void PreparedStatement::setInt( sal_Int32 parameterIndex, sal_Int32 x )
     checkColumnIndex( parameterIndex );
     OStringBuffer buf( 20 );
     buf.append( "'" );
-    buf.append( (sal_Int32) x );
+    buf.append( x );
     buf.append( "'" );
     m_vars[parameterIndex-1] = buf.makeStringAndClear();
 }
 
 void PreparedStatement::setLong( sal_Int32 parameterIndex, sal_Int64 x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard(m_refMutex->mutex );
     checkClosed();
     checkColumnIndex( parameterIndex );
     OStringBuffer buf( 20 );
     buf.append( "'" );
-    buf.append( (sal_Int64) x );
+    buf.append( x );
     buf.append( "'" );
     m_vars[parameterIndex-1] = buf.makeStringAndClear();
 }
 
 void PreparedStatement::setFloat( sal_Int32 parameterIndex, float x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard(m_refMutex->mutex );
     checkClosed();
@@ -499,7 +485,6 @@ void PreparedStatement::setFloat( sal_Int32 parameterIndex, float x )
 }
 
 void PreparedStatement::setDouble( sal_Int32 parameterIndex, double x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard(m_refMutex->mutex );
     checkClosed();
@@ -512,7 +497,6 @@ void PreparedStatement::setDouble( sal_Int32 parameterIndex, double x )
 }
 
 void PreparedStatement::setString( sal_Int32 parameterIndex, const OUString& x )
-    throw (SQLException, RuntimeException, std::exception)
 {
 //     printf( "setString %d %s\n ", parameterIndex,
 //             OUStringToOString( x , RTL_TEXTENCODING_ASCII_US ).getStr());
@@ -521,7 +505,7 @@ void PreparedStatement::setString( sal_Int32 parameterIndex, const OUString& x )
     checkColumnIndex( parameterIndex );
     OStringBuffer buf( 20 );
     buf.append( "'" );
-    OString y = OUStringToOString( x, m_pSettings->encoding );
+    OString y = OUStringToOString( x, ConnectionSettings::encoding );
     buf.ensureCapacity( y.getLength() * 2 + 2 );
     int len = PQescapeString( const_cast<char*>(buf.getStr())+1, y.getStr() , y.getLength() );
     buf.setLength( 1 + len );
@@ -531,7 +515,6 @@ void PreparedStatement::setString( sal_Int32 parameterIndex, const OUString& x )
 
 void PreparedStatement::setBytes(
     sal_Int32 parameterIndex, const Sequence< sal_Int8 >& x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard(m_refMutex->mutex );
     checkClosed();
@@ -554,30 +537,26 @@ void PreparedStatement::setBytes(
 }
 
 
-void PreparedStatement::setDate( sal_Int32 parameterIndex, const ::com::sun::star::util::Date& x )
-    throw (SQLException, RuntimeException, std::exception)
+void PreparedStatement::setDate( sal_Int32 parameterIndex, const css::util::Date& x )
 {
     setString( parameterIndex, DBTypeConversion::toDateString( x ) );
 }
 
-void PreparedStatement::setTime( sal_Int32 parameterIndex, const ::com::sun::star::util::Time& x )
-    throw (SQLException, RuntimeException, std::exception)
+void PreparedStatement::setTime( sal_Int32 parameterIndex, const css::util::Time& x )
 {
     setString( parameterIndex, DBTypeConversion::toTimeString( x ) );
 }
 
 void PreparedStatement::setTimestamp(
-    sal_Int32 parameterIndex, const ::com::sun::star::util::DateTime& x )
-    throw (SQLException, RuntimeException, std::exception)
+    sal_Int32 parameterIndex, const css::util::DateTime& x )
 {
     setString( parameterIndex, DBTypeConversion::toDateTimeString( x ) );
 }
 
 void PreparedStatement::setBinaryStream(
     sal_Int32 parameterIndex,
-    const Reference< ::com::sun::star::io::XInputStream >& x,
+    const Reference< css::io::XInputStream >& x,
     sal_Int32 length )
-    throw (SQLException, RuntimeException, std::exception)
 {
     (void) parameterIndex; (void)x; (void) length;
     throw SQLException(
@@ -587,9 +566,8 @@ void PreparedStatement::setBinaryStream(
 
 void PreparedStatement::setCharacterStream(
     sal_Int32 parameterIndex,
-    const Reference< ::com::sun::star::io::XInputStream >& x,
+    const Reference< css::io::XInputStream >& x,
     sal_Int32 length )
-    throw (SQLException, RuntimeException, std::exception)
 {
     (void) parameterIndex; (void)x; (void) length;
     throw SQLException(
@@ -598,14 +576,12 @@ void PreparedStatement::setCharacterStream(
 }
 
 void PreparedStatement::setObject( sal_Int32 parameterIndex, const Any& x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     if( ! implSetObject( this, parameterIndex, x ))
     {
-        OUStringBuffer buf;
-        buf.append( "pq_preparedstatement::setObject: can't convert value of type " );
-        buf.append( x.getValueTypeName() );
-        throw SQLException( buf.makeStringAndClear(), *this, OUString(), 1, Any () );
+        throw SQLException(
+            "pq_preparedstatement::setObject: can't convert value of type " + x.getValueTypeName(),
+            *this, OUString(), 1, Any () );
     }
 }
 
@@ -614,11 +590,10 @@ void PreparedStatement::setObjectWithInfo(
     const Any& x,
     sal_Int32 targetSqlType,
     sal_Int32 scale )
-    throw (SQLException, RuntimeException, std::exception)
 {
     (void) scale;
-    if( com::sun::star::sdbc::DataType::DECIMAL == targetSqlType ||
-        com::sun::star::sdbc::DataType::NUMERIC == targetSqlType )
+    if( css::sdbc::DataType::DECIMAL == targetSqlType ||
+        css::sdbc::DataType::NUMERIC == targetSqlType )
     {
         double myDouble = 0.0;
         OUString myString;
@@ -637,11 +612,10 @@ void PreparedStatement::setObjectWithInfo(
         }
         else
         {
-            OUStringBuffer buf;
-            buf.append( "pq_preparedstatement::setObjectWithInfo: can't convert value of type " );
-            buf.append( x.getValueTypeName() );
-            buf.append( " to type DECIMAL or NUMERIC" );
-            throw SQLException( buf.makeStringAndClear(), *this, OUString(), 1, Any () );
+            throw SQLException(
+                "pq_preparedstatement::setObjectWithInfo: can't convert value of type "
+                +  x.getValueTypeName() + " to type DECIMAL or NUMERIC",
+                *this, OUString(), 1, Any () );
         }
     }
     else
@@ -654,7 +628,6 @@ void PreparedStatement::setObjectWithInfo(
 void PreparedStatement::setRef(
     sal_Int32 parameterIndex,
     const Reference< XRef >& x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     (void) parameterIndex; (void)x;
     throw SQLException(
@@ -665,7 +638,6 @@ void PreparedStatement::setRef(
 void PreparedStatement::setBlob(
     sal_Int32 parameterIndex,
     const Reference< XBlob >& x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     (void) parameterIndex; (void)x;
     throw SQLException(
@@ -676,7 +648,6 @@ void PreparedStatement::setBlob(
 void PreparedStatement::setClob(
     sal_Int32 parameterIndex,
     const Reference< XClob >& x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     (void) parameterIndex; (void)x;
     throw SQLException(
@@ -687,34 +658,29 @@ void PreparedStatement::setClob(
 void PreparedStatement::setArray(
     sal_Int32 parameterIndex,
     const Reference< XArray >& x )
-    throw (SQLException, RuntimeException, std::exception)
 {
     setString( parameterIndex, array2String( x->getArray( nullptr ) ) );
 }
 
 void PreparedStatement::clearParameters(  )
-    throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard(m_refMutex->mutex );
     m_vars = OStringVector ( m_vars.size() );
 }
 
 Any PreparedStatement::getWarnings(  )
-        throw (SQLException,RuntimeException, std::exception)
 {
     return Any();
 }
 
 void PreparedStatement::clearWarnings(  )
-        throw (SQLException, RuntimeException, std::exception)
 {
 }
 
-Reference< ::com::sun::star::sdbc::XResultSetMetaData > PreparedStatement::getMetaData()
-            throw (SQLException,RuntimeException, std::exception)
+Reference< css::sdbc::XResultSetMetaData > PreparedStatement::getMetaData()
 {
-    Reference< com::sun::star::sdbc::XResultSetMetaData > ret;
-    Reference< com::sun::star::sdbc::XResultSetMetaDataSupplier > supplier( m_lastResultset, UNO_QUERY );
+    Reference< css::sdbc::XResultSetMetaData > ret;
+    Reference< css::sdbc::XResultSetMetaDataSupplier > supplier( m_lastResultset, UNO_QUERY );
     if( supplier.is() )
         ret = supplier->getMetaData();
     return ret;
@@ -728,7 +694,6 @@ Reference< ::com::sun::star::sdbc::XResultSetMetaData > PreparedStatement::getMe
 
 sal_Bool PreparedStatement::convertFastPropertyValue(
         Any & rConvertedValue, Any & rOldValue, sal_Int32 nHandle, const Any& rValue )
-        throw (IllegalArgumentException)
 {
     bool bRet;
     rOldValue = m_props[nHandle];
@@ -738,14 +703,14 @@ sal_Bool PreparedStatement::convertFastPropertyValue(
     {
         OUString val;
         bRet = ( rValue >>= val );
-        rConvertedValue = makeAny( val );
+        rConvertedValue <<= val;
         break;
     }
     case PREPARED_STATEMENT_ESCAPE_PROCESSING:
     {
         bool val(false);
         bRet = ( rValue >>= val );
-        rConvertedValue = makeAny( val );
+        rConvertedValue <<= val;
         break;
     }
     case PREPARED_STATEMENT_FETCH_DIRECTION:
@@ -758,16 +723,15 @@ sal_Bool PreparedStatement::convertFastPropertyValue(
     {
         sal_Int32 val;
         bRet = ( rValue >>= val );
-        rConvertedValue = makeAny( val );
+        rConvertedValue <<= val;
         break;
     }
     default:
     {
-        OUStringBuffer buf(128);
-        buf.append( "pq_statement: Invalid property handle (" );
-        buf.append( nHandle );
-        buf.append( ")" );
-        throw IllegalArgumentException( buf.makeStringAndClear(), *this, 2 );
+        throw IllegalArgumentException(
+            "pq_statement: Invalid property handle ("
+            + OUString::number( nHandle ) +  ")",
+            *this, 2 );
     }
     }
     return bRet;
@@ -775,7 +739,7 @@ sal_Bool PreparedStatement::convertFastPropertyValue(
 
 
 void PreparedStatement::setFastPropertyValue_NoBroadcast(
-    sal_Int32 nHandle,const Any& rValue ) throw (Exception, std::exception)
+    sal_Int32 nHandle,const Any& rValue )
 {
     m_props[nHandle] = rValue;
 }
@@ -786,7 +750,6 @@ void PreparedStatement::getFastPropertyValue( Any& rValue, sal_Int32 nHandle ) c
 }
 
 Reference < XPropertySetInfo >  PreparedStatement::getPropertySetInfo()
-        throw(RuntimeException, std::exception)
 {
     return OPropertySetHelper::createPropertySetInfo( getPreparedStatementPropertyArrayHelper() );
 }
@@ -798,23 +761,19 @@ void PreparedStatement::disposing()
 
 
 Reference< XResultSet > PreparedStatement::getResultSet(  )
-    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
-    return Reference< XResultSet > ( m_lastResultset, com::sun::star::uno::UNO_QUERY );
+    return Reference< XResultSet > ( m_lastResultset, css::uno::UNO_QUERY );
 }
 sal_Int32 PreparedStatement::getUpdateCount(  )
-    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     return m_multipleResultUpdateCount;
 }
 sal_Bool PreparedStatement::getMoreResults(  )
-    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     return false;
 }
 
 Reference< XResultSet > PreparedStatement::getGeneratedValues(  )
-        throw (SQLException, RuntimeException, std::exception)
 {
     osl::MutexGuard guard( m_refMutex->mutex );
     return getGeneratedValuesFromLastInsert(

@@ -24,7 +24,7 @@
 
 using comphelper::ConfigurationListener;
 
-static rtl::Reference<ConfigurationListener> getMiscListener()
+static rtl::Reference<ConfigurationListener> const & getMiscListener()
 {
     static rtl::Reference<ConfigurationListener> xListener;
     if (!xListener.is())
@@ -34,13 +34,13 @@ static rtl::Reference<ConfigurationListener> getMiscListener()
 
 bool ScCalcConfig::isOpenCLEnabled()
 {
-    static comphelper::ConfigurationListenerProperty<bool> gOpenCLEnabled(getMiscListener(), OUString("UseOpenCL"));
+    static comphelper::ConfigurationListenerProperty<bool> gOpenCLEnabled(getMiscListener(), "UseOpenCL");
     return gOpenCLEnabled.get();
 }
 
 bool ScCalcConfig::isSwInterpreterEnabled()
 {
-    static comphelper::ConfigurationListenerProperty<bool> gSwInterpreterEnabled(getMiscListener(), OUString("UseSwInterpreter"));
+    static comphelper::ConfigurationListenerProperty<bool> gSwInterpreterEnabled(getMiscListener(), "UseSwInterpreter");
     return gSwInterpreterEnabled.get();
 }
 
@@ -170,7 +170,7 @@ OUString ScOpCodeSetToSymbolicString(const ScCalcConfig::OpCodeSet& rOpCodes)
 
 ScCalcConfig::OpCodeSet ScStringToOpCodeSet(const OUString& rOpCodes)
 {
-    ScCalcConfig::OpCodeSet result(new std::set< OpCode >());
+    ScCalcConfig::OpCodeSet result(new std::set< OpCode >);
     formula::FormulaCompiler aCompiler;
     formula::FormulaCompiler::OpCodeMapPtr pOpCodeMap(aCompiler.GetOpCodeMap(css::sheet::FormulaLanguage::ENGLISH));
 
@@ -192,7 +192,7 @@ ScCalcConfig::OpCodeSet ScStringToOpCodeSet(const OUString& rOpCodes)
             {
                 auto opcode(pHashMap->find(element));
                 if (opcode != pHashMap->end())
-                    result->insert(static_cast<OpCode>(opcode->second));
+                    result->insert(opcode->second);
                 else
                     SAL_WARN("sc.opencl", "Unrecognized OpCode " << element << " in OpCode set string");
             }

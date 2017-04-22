@@ -18,9 +18,9 @@
  */
 
 
-#include "accessibility/extended/accessibletablistboxtable.hxx"
-#include "accessibility/extended/AccessibleBrowseBoxTableCell.hxx"
-#include "accessibility/extended/AccessibleBrowseBoxCheckBoxCell.hxx"
+#include "extended/accessibletablistboxtable.hxx"
+#include "extended/AccessibleBrowseBoxTableCell.hxx"
+#include "extended/AccessibleBrowseBoxCheckBoxCell.hxx"
 #include <svtools/svtabbx.hxx>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 
@@ -65,21 +65,21 @@ namespace accessibility
     {
         if ( isAlive() )
         {
-            sal_uLong nEventId = rVclWindowEvent.GetId();
+            VclEventId nEventId = rVclWindowEvent.GetId();
             switch ( nEventId )
             {
-                case  VCLEVENT_OBJECT_DYING :
+                case  VclEventId::ObjectDying :
                 {
                     m_pTabListBox->RemoveEventListener( LINK( this, AccessibleTabListBoxTable, WindowEventListener ) );
                     m_pTabListBox = nullptr;
                     break;
                 }
 
-                case VCLEVENT_CONTROL_GETFOCUS :
-                case VCLEVENT_CONTROL_LOSEFOCUS :
+                case VclEventId::ControlGetFocus :
+                case VclEventId::ControlLoseFocus :
                 {
                     uno::Any aOldValue, aNewValue;
-                    if ( VCLEVENT_CONTROL_GETFOCUS == nEventId )
+                    if ( VclEventId::ControlGetFocus == nEventId )
                         aNewValue <<= AccessibleStateType::FOCUSED;
                     else
                         aOldValue <<= AccessibleStateType::FOCUSED;
@@ -87,7 +87,7 @@ namespace accessibility
                     break;
                 }
 
-                case VCLEVENT_LISTBOX_SELECT :
+                case VclEventId::ListboxSelect :
                 {
                     // First send an event that tells the listeners of a
                     // modified selection.  The active descendant event is
@@ -131,7 +131,7 @@ namespace accessibility
                     }
                     break;
                 }
-                case VCLEVENT_WINDOW_GETFOCUS :
+                case VclEventId::WindowGetFocus :
                 {
                     uno::Any aOldValue, aNewValue;
                     aNewValue <<= AccessibleStateType::FOCUSED;
@@ -139,14 +139,14 @@ namespace accessibility
                     break;
 
                 }
-                case VCLEVENT_WINDOW_LOSEFOCUS :
+                case VclEventId::WindowLoseFocus :
                 {
                     uno::Any aOldValue, aNewValue;
                     aOldValue <<= AccessibleStateType::FOCUSED;
                     commitEvent( AccessibleEventId::STATE_CHANGED, aNewValue, aOldValue );
                     break;
                 }
-                case VCLEVENT_LISTBOX_TREESELECT:
+                case VclEventId::ListboxTreeSelect:
                     {
                         SvTreeListEntry* pEntry = static_cast< SvTreeListEntry* >( rVclWindowEvent.GetData() );
                         if (pEntry)
@@ -167,7 +167,7 @@ namespace accessibility
                         }
                     }
                     break;
-                case VCLEVENT_LISTBOX_TREEFOCUS:
+                case VclEventId::ListboxTreeFocus:
                     {
                         if ( m_pTabListBox && m_pTabListBox->HasFocus() )
                         {
@@ -189,7 +189,7 @@ namespace accessibility
                     }
                     break;
 
-                case VCLEVENT_CHECKBOX_TOGGLE :
+                case VclEventId::CheckboxToggle :
                 {
                     if ( m_pTabListBox && m_pTabListBox->HasFocus() )
                     {
@@ -212,7 +212,7 @@ namespace accessibility
                     break;
                 }
 
-                case VCLEVENT_TABLECELL_NAMECHANGED :
+                case VclEventId::TableCellNameChanged :
                 {
                     if ( m_pTabListBox->IsTransientChildrenDisabled() )
                     {
@@ -226,7 +226,7 @@ namespace accessibility
                             Reference< XAccessible > xChild =
                                 m_pTabListBox->CreateAccessibleCell( nRow, nCol );
                             uno::Any aOldValue, aNewValue;
-                            aOldValue <<= OUString( pData->m_sOldText );
+                            aOldValue <<= pData->m_sOldText;
                             OUString sNewText( m_pTabListBox->GetCellText( nRow, nCol ) );
                             aNewValue <<= sNewText;
                             TriState eState = TRISTATE_INDET;
@@ -247,11 +247,12 @@ namespace accessibility
                     }
                     break;
                 }
+                default: break;
             }
         }
     }
 
-    IMPL_LINK_TYPED( AccessibleTabListBoxTable, WindowEventListener, VclWindowEvent&, rEvent, void )
+    IMPL_LINK( AccessibleTabListBoxTable, WindowEventListener, VclWindowEvent&, rEvent, void )
     {
         OSL_ENSURE( rEvent.GetWindow() && m_pTabListBox, "no event window" );
         ProcessWindowEvent( rEvent );
@@ -260,13 +261,8 @@ namespace accessibility
 
     void AccessibleTabListBoxTable::ensureValidIndex( sal_Int32 _nIndex ) const
     {
-        if ( ( _nIndex < 0 ) || ( _nIndex >= implGetCellCount() ) )
+        if ( ( _nIndex < 0 ) || ( _nIndex >= (implGetRowCount() * implGetColumnCount()) ) )
             throw IndexOutOfBoundsException();
-    }
-
-    bool AccessibleTabListBoxTable::implIsRowSelected( sal_Int32 _nRow ) const
-    {
-        return m_pTabListBox && m_pTabListBox->IsSelected( m_pTabListBox->GetEntry( _nRow ) );
     }
 
     void AccessibleTabListBoxTable::implSelectRow( sal_Int32 _nRow, bool _bSelect )
@@ -315,17 +311,17 @@ namespace accessibility
 
     // XServiceInfo
 
-    OUString AccessibleTabListBoxTable::getImplementationName() throw (RuntimeException, std::exception)
+    OUString AccessibleTabListBoxTable::getImplementationName()
     {
         return OUString( "com.sun.star.comp.svtools.AccessibleTabListBoxTable" );
     }
 
     // XAccessibleSelection
 
-    void SAL_CALL AccessibleTabListBoxTable::selectAccessibleChild( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+    void SAL_CALL AccessibleTabListBoxTable::selectAccessibleChild( sal_Int32 nChildIndex )
     {
         SolarMutexGuard aSolarGuard;
-        ::osl::MutexGuard aGuard( getOslMutex() );
+        ::osl::MutexGuard aGuard( getMutex() );
 
         ensureIsAlive();
         ensureValidIndex( nChildIndex );
@@ -333,51 +329,51 @@ namespace accessibility
         implSelectRow( implGetRow( nChildIndex ), true );
     }
 
-    sal_Bool SAL_CALL AccessibleTabListBoxTable::isAccessibleChildSelected( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+    sal_Bool SAL_CALL AccessibleTabListBoxTable::isAccessibleChildSelected( sal_Int32 nChildIndex )
     {
         SolarMutexGuard aSolarGuard;
-        ::osl::MutexGuard aGuard( getOslMutex() );
+        ::osl::MutexGuard aGuard( getMutex() );
 
         ensureIsAlive();
         ensureValidIndex( nChildIndex );
 
-        return implIsRowSelected( implGetRow( nChildIndex ) );
+        return m_pTabListBox && m_pTabListBox->IsSelected( m_pTabListBox->GetEntry( implGetRow( nChildIndex ) ) );
     }
 
-    void SAL_CALL AccessibleTabListBoxTable::clearAccessibleSelection(  ) throw (RuntimeException, std::exception)
+    void SAL_CALL AccessibleTabListBoxTable::clearAccessibleSelection(  )
     {
         SolarMutexGuard aSolarGuard;
-        ::osl::MutexGuard aGuard( getOslMutex() );
+        ::osl::MutexGuard aGuard( getMutex() );
 
         ensureIsAlive();
 
         m_pTabListBox->SetNoSelection();
     }
 
-    void SAL_CALL AccessibleTabListBoxTable::selectAllAccessibleChildren(  ) throw (RuntimeException, std::exception)
+    void SAL_CALL AccessibleTabListBoxTable::selectAllAccessibleChildren(  )
     {
         SolarMutexGuard aSolarGuard;
-        ::osl::MutexGuard aGuard( getOslMutex() );
+        ::osl::MutexGuard aGuard( getMutex() );
 
         ensureIsAlive();
 
         m_pTabListBox->SelectAll();
     }
 
-    sal_Int32 SAL_CALL AccessibleTabListBoxTable::getSelectedAccessibleChildCount(  ) throw (RuntimeException, std::exception)
+    sal_Int32 SAL_CALL AccessibleTabListBoxTable::getSelectedAccessibleChildCount(  )
     {
         SolarMutexGuard aSolarGuard;
-        ::osl::MutexGuard aGuard( getOslMutex() );
+        ::osl::MutexGuard aGuard( getMutex() );
 
         ensureIsAlive();
 
         return implGetColumnCount() * implGetSelRowCount();
     }
 
-    Reference< XAccessible > SAL_CALL AccessibleTabListBoxTable::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+    Reference< XAccessible > SAL_CALL AccessibleTabListBoxTable::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex )
     {
         SolarMutexGuard aSolarGuard;
-        ::osl::MutexGuard aGuard( getOslMutex() );
+        ::osl::MutexGuard aGuard( getMutex() );
 
         ensureIsAlive();
 
@@ -390,10 +386,10 @@ namespace accessibility
         return getAccessibleCellAt( nRow, nColumn );
     }
 
-    void SAL_CALL AccessibleTabListBoxTable::deselectAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+    void SAL_CALL AccessibleTabListBoxTable::deselectAccessibleChild( sal_Int32 nSelectedChildIndex )
     {
         SolarMutexGuard aSolarGuard;
-        ::osl::MutexGuard aGuard( getOslMutex() );
+        ::osl::MutexGuard aGuard( getMutex() );
 
         ensureIsAlive();
         ensureValidIndex( nSelectedChildIndex );

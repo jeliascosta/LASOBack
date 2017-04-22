@@ -104,7 +104,6 @@ SwHyperlinkEventDescriptor::~SwHyperlinkEventDescriptor()
 }
 
 OUString SwHyperlinkEventDescriptor::getImplementationName()
-    throw( RuntimeException, std::exception )
 {
     return OUString("SwHyperlinkEventDescriptor");
 }
@@ -155,7 +154,7 @@ void SwHyperlinkEventDescriptor::copyMacrosFromNameReplace(
     }
 }
 
-// use double cast in superclass constructor to avoid ambigous cast
+// use double cast in superclass constructor to avoid ambiguous cast
 SwFrameEventDescriptor::SwFrameEventDescriptor(
     SwXTextFrame& rFrameRef ) :
         SvEventDescriptor((text::XTextFrame&)rFrameRef, aFrameEvents),
@@ -198,7 +197,6 @@ sal_uInt16 SwFrameEventDescriptor::getMacroItemWhich() const
 }
 
 OUString SwFrameEventDescriptor::getImplementationName()
-    throw( RuntimeException, std::exception )
 {
     return sSwFrameEventDescriptor;
 }
@@ -230,7 +228,6 @@ const SvxMacroItem& SwFrameStyleEventDescriptor::getMacroItem()
 }
 
 OUString SwFrameStyleEventDescriptor::getImplementationName()
-    throw( RuntimeException, std::exception )
 {
     return sSwFrameStyleEventDescriptor;
 }

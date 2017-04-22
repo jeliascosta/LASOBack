@@ -482,6 +482,9 @@ static const sal_Unicode aWebDingsTab[224] =
         0xe3db,    0xe3dc,    0xe3dd,    0xe3de
 };
 
+// See http://www.iana.org/assignments/character-sets/character-sets.xml
+// See ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/ADOBE/symbol.txt
+
 static const sal_Unicode aAdobeSymbolTab[224] =
 {
 //TODO:
@@ -526,7 +529,7 @@ static const sal_Unicode aAdobeSymbolTab[224] =
              0,         0,         0,         0,
              0,         0,         0,         0,
     // F0a0
-        0xe11a,    0x03d2,    0x0384,    0xe11b,
+        0xe11a,    0x03d2,    0x2032,    0xe11b,
         0x2215,    0xe11c,    0xe11d,    0xe11e,
         0x2666,    0xe11f,    0xe120,    0xe121,
         0xe122,    0xe123,    0xe124,    0xe125,
@@ -547,14 +550,14 @@ static const sal_Unicode aAdobeSymbolTab[224] =
         0xe14b,    0x21d1,    0xe14c,    0x21d3,
     // F0e0
         0x25ca,    0xe14d,    0xe14e,    0xe14f,
-        0xe150,    0xe151,    0xe152,    0xe153,
-        0xe154,    0xe155,    0xe156,    0xe157,
-        0xe158,    0xe159,    0xe15a,    0xe15b,
+        0xe150,    0xe151,    0xf8eb,    0xf8ec,
+        0xf8ed,    0xf8ee,    0xf8ef,    0xf8f0,
+        0xf8f1,    0xf8f2,    0xf8f3,    0xf8f4,
     // F0f0
-             0,    0xe15c,    0xe15d,    0xe15e,
-        0xe15f,    0xe160,    0xe161,    0xe162,
-        0xe163,    0xe164,    0xe165,    0xe166,
-        0xe167,    0xe168,    0xe169,         0,
+             0,    0x232a,    0x222b,    0x2320,
+        0xf8f5,    0x2321,    0xf8f6,    0xf8f7,
+        0xf8f8,    0xf8f9,    0xf8fa,    0xf8fb,
+        0xf8fc,    0xf8fd,    0xf8fe,         0,
 };
 
 static const sal_Unicode aMonotypeSortsTab[224] =
@@ -1015,7 +1018,7 @@ enum SymbolFont
     Wingdings3=32, MTExtra=64, TimesNewRoman=128
 };
 
-const char *aSymbolNames[] =
+const char * const aSymbolNames[] =
 {
     "Symbol", "Wingdings", "Monotype Sorts", "Webdings", "Wingdings 2",
     "Wingdings 3", "MT Extra", "Times New Roman"
@@ -1038,7 +1041,7 @@ public:
 
 struct ExtraTable { sal_Unicode cStar; sal_uInt8 cMS;};
 
-ExtraTable aWingDingsExtraTab[] =
+ExtraTable const aWingDingsExtraTab[] =
 {
     {0x25cf, 0x6C}, {0x2714, 0xFC}, {0x2717, 0xFB}, {0x2794, 0xE8},
     {0x27a2, 0xD8}, {0xe000, 0x6F}, {0xe001, 0x73}, {0xe002, 0x74},
@@ -1056,7 +1059,7 @@ ExtraTable aWingDingsExtraTab[] =
     {0xe034, 0x4D}, {0xe0aa, 0x71}, {0xe422, 0x44}
 };
 
-ExtraTable aSymbolExtraTab2[] =
+ExtraTable const aSymbolExtraTab2[] =
 {
     {0x0020, 0x20}, {0x00A0, 0x20}, {0x0021, 0x21}, {0x2200, 0x22},
     {0x0023, 0x23}, {0x2203, 0x24}, {0x0025, 0x25}, {0x0026, 0x26},
@@ -1084,7 +1087,7 @@ ExtraTable aSymbolExtraTab2[] =
     {0x2320, 0xF3}, {0x2321, 0xF5}, {0x2013, 0x2D}
 };
 
-ExtraTable aSymbolExtraTab[] =
+ExtraTable const aSymbolExtraTab[] =
 {
     {0xe021, 0xD3}, {0xe024, 0xD2}, {0xe035, 0x20}, {0xe036, 0x28},
     {0xe037, 0x29}, {0xe039, 0x20}, {0xe083, 0x2B}, {0xe084, 0x3C},
@@ -1106,7 +1109,7 @@ ExtraTable aSymbolExtraTab[] =
     {0xe0dc, 0xAD}, {0xe0dd, 0xAF}
 };
 
-ExtraTable aTNRExtraTab[] =
+ExtraTable const aTNRExtraTab[] =
 {
     {0xe021, 0xA9},
     {0xe022, 0x40},
@@ -1204,7 +1207,7 @@ StarSymbolToMSMultiFontImpl::StarSymbolToMSMultiFontImpl()
 
 const char *SymbolFontToString(int nResult)
 {
-    const char **ppName = aSymbolNames;
+    const char * const *ppName = aSymbolNames;
     int nI = Symbol;
     while (nI <= nResult)
     {
@@ -1350,7 +1353,10 @@ const ConvertChar* ConvertChar::GetRecodeData( const OUString& rOrgFontName, con
         {
             const RecodeTable& r = aStarSymbolRecodeTable[i];
             if( aOrgName.equalsAscii( r.pOrgName ) )
-                { pCvt = &r.aCvt; break; }
+            {
+                pCvt = &r.aCvt;
+                break;
+            }
         }
     }
     //It's plausible that it's better to implement this
@@ -1363,7 +1369,10 @@ const ConvertChar* ConvertChar::GetRecodeData( const OUString& rOrgFontName, con
         {
             const RecodeTable& r = aAppleSymbolRecodeTable[i];
             if( aOrgName.equalsAscii( r.pOrgName ) )
-                { pCvt = &r.aCvt; break; }
+            {
+                pCvt = &r.aCvt;
+                break;
+            }
         }
     }
     else if( aMapName == "starbats" )
@@ -1408,12 +1417,6 @@ FontToSubsFontConverter CreateFontToSubsFontConverter( const OUString& rOrgName,
     }
 
     return const_cast<ConvertChar *>(pCvt);
-}
-
-void DestroyFontToSubsFontConverter(
-    SAL_UNUSED_PARAMETER FontToSubsFontConverter )
-{
-    //TODO: nothing to do for now, because we use static ImplCvtChars
 }
 
 sal_Unicode ConvertFontToSubsFontChar(

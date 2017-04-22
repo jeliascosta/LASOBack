@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "sc.hrc"
+#include "scres.hrc"
 
 String STR_NOT_PROTECTED
 {
@@ -37,11 +37,6 @@ String STR_HASH_BAD
 String STR_HASH_GOOD
 {
     Text [ en-US ] = "Hash compatible" ;
-};
-
-String STR_HASH_REGENERATED
-{
-    Text [ en-US ] = "Hash re-generated" ;
 };
 
 String STR_RETYPE

@@ -115,8 +115,6 @@ char const *g_arSearchPaths[] = {
 
 namespace jfw_plugin
 {
-extern VendorSupportMapEntry gVendorMap[];
-
 #if defined(_WIN32)
 bool getSDKInfoFromRegistry(vector<OUString> & vecHome);
 bool getJREInfoFromRegistry(vector<OUString>& vecJavaHome);
@@ -214,7 +212,7 @@ public:
     FileHandleGuard(const FileHandleGuard&) = delete;
     FileHandleGuard& operator=(const FileHandleGuard&) = delete;
 
-    inline oslFileHandle & getHandle() { return m_rHandle; }
+    oslFileHandle & getHandle() { return m_rHandle; }
 
 private:
     oslFileHandle & m_rHandle;
@@ -322,7 +320,7 @@ class AsynchReader: public salhelper::Thread
     bool m_bDone;
     FileHandleGuard m_aGuard;
 
-    virtual ~AsynchReader() {}
+    virtual ~AsynchReader() override {}
 
     void execute() override;
 public:
@@ -501,6 +499,7 @@ bool getJavaProps(const OUString & exePath,
 
     //Use this thread to read output stream
     FileHandleReader::Result rs = FileHandleReader::RESULT_OK;
+    JFW_TRACE2("Properties found:");
     while (true)
     {
         OString aLine;
@@ -510,7 +509,7 @@ bool getJavaProps(const OUString & exePath,
         OUString sLine;
         if (!decodeOutput(aLine, &sLine))
             continue;
-        JFW_TRACE2(" \"" << sLine << " \"");
+        JFW_TRACE2("  \"" << sLine << "\"");
         sLine = sLine.trim();
         if (sLine.isEmpty())
             continue;
@@ -621,7 +620,7 @@ bool getJavaInfoFromRegistry(const wchar_t* szRegKey,
         DWORD nNameLen = sizeof(bufVersion);
 
         // Iterate over all subkeys of HKEY_LOCAL_MACHINE\Software\JavaSoft\Java Runtime Environment
-        while (RegEnumKeyExW(hRoot, dwIndex, bufVersion, &nNameLen, NULL, NULL, NULL, &fileTime) != ERROR_NO_MORE_ITEMS)
+        while (RegEnumKeyExW(hRoot, dwIndex, bufVersion, &nNameLen, nullptr, nullptr, nullptr, &fileTime) != ERROR_NO_MORE_ITEMS)
         {
             HKEY    hKey;
             // Open a Java Runtime Environment sub key, e.g. "1.4.0"
@@ -631,14 +630,14 @@ bool getJavaInfoFromRegistry(const wchar_t* szRegKey,
                 DWORD   dwTmpPathLen= 0;
                 // Get the path to the JavaHome every JRE entry
                 // Find out how long the string for JavaHome is and allocate memory to hold the path
-                if( RegQueryValueExW(hKey, L"JavaHome", 0, &dwType, NULL, &dwTmpPathLen)== ERROR_SUCCESS)
+                if( RegQueryValueExW(hKey, L"JavaHome", nullptr, &dwType, nullptr, &dwTmpPathLen)== ERROR_SUCCESS)
                 {
-                    char* szTmpPath= (char *) malloc( dwTmpPathLen);
+                    unsigned char* szTmpPath= static_cast<unsigned char *>(malloc( dwTmpPathLen));
                     // Get the path for the runtime lib
-                    if(RegQueryValueExW(hKey, L"JavaHome", 0, &dwType, (unsigned char*) szTmpPath, &dwTmpPathLen) == ERROR_SUCCESS)
+                    if(RegQueryValueExW(hKey, L"JavaHome", nullptr, &dwType, szTmpPath, &dwTmpPathLen) == ERROR_SUCCESS)
                     {
                         // There can be several version entries referring with the same JavaHome,e.g 1.4 and 1.4.1
-                        OUString usHome((sal_Unicode*) szTmpPath);
+                        OUString usHome(reinterpret_cast<sal_Unicode*>(szTmpPath));
                         // check if there is already an entry with the same JavaHomeruntime lib
                         // if so, we use the one with the more accurate version
                         OUString usHomeUrl;
@@ -1176,7 +1175,7 @@ bool makeDriveLetterSame(OUString * fileURL)
 }
 
 #ifdef UNX
-#ifdef SOLARIS
+#ifdef __sun
 
 void addJavaInfosDirScan(
     std::vector<rtl::Reference<VendorBase>> & allInfos,
@@ -1299,7 +1298,7 @@ void addJavaInfosDirScan(
                 {
                     //usr/java
                     //When we look directly into a dir like /usr, /usr/lib, etc. then we only
-                    //look for certain java directories, such as jre, jdk, etc. Whe do not want
+                    //look for certain java directories, such as jre, jdk, etc. We do not want
                     //to examine the whole directory because of performance reasons.
                     DirectoryItem item2;
                     if(DirectoryItem::get(usDir2, item2) == File::E_None)
@@ -1329,7 +1328,7 @@ void addJavaInfosDirScan(
     }
 #endif // MACOSX
 }
-#endif // ifdef SOLARIS
+#endif // ifdef __sun
 #endif // ifdef UNX
 }
 

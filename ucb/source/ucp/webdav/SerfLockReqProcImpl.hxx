@@ -38,7 +38,7 @@ public:
                          const DAVRequestHeaders& inRequestHeaders,
                          SerfSession& rSession,
                          const css::ucb::Lock& rLock,
-                         sal_Int32* plastChanceToSendRefreshRequest = 0 );
+                         sal_Int32* plastChanceToSendRefreshRequest = nullptr );
 
     virtual ~SerfLockReqProcImpl() override;
 
@@ -57,7 +57,7 @@ private:
     // if m_plastChanceToSendRefreshRequest is not 0 we are sending just refresh request
     sal_Int32* m_plastChanceToSendRefreshRequest;
     TimeValue m_aStartCall;
-    css::uno::Reference< SerfInputStream > m_xInputStream;
+    rtl::Reference< SerfInputStream > m_xInputStream;
 };
 
 } // namespace http_dav_ucp

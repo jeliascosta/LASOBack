@@ -82,7 +82,6 @@ namespace treeview {
         }
 
         enum Kind {
-            tree_view,
             tree_node,
             tree_leaf,
             other
@@ -126,7 +125,7 @@ namespace treeview {
                                     RTL_TEXTENCODING_UTF8 );
         }
 
-        OUString getTargetURL()
+        OUString const & getTargetURL()
         {
             if( targetURL.isEmpty() )
             {
@@ -255,9 +254,6 @@ TVRead::~TVRead()
 
 Any SAL_CALL
 TVRead::getByName( const OUString& aName )
-    throw( NoSuchElementException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     bool found( true );
     Any aAny;
@@ -281,7 +277,6 @@ TVRead::getByName( const OUString& aName )
 
 Sequence< OUString > SAL_CALL
 TVRead::getElementNames( )
-    throw( RuntimeException, std::exception )
 {
     Sequence< OUString > seq( 3 );
 
@@ -294,7 +289,6 @@ TVRead::getElementNames( )
 
 sal_Bool SAL_CALL
 TVRead::hasByName( const OUString& aName )
-    throw( RuntimeException, std::exception )
 {
     if( aName == "Title"     ||
         aName == "TargetURL" ||
@@ -308,8 +302,6 @@ TVRead::hasByName( const OUString& aName )
 
 Any SAL_CALL
 TVRead::getByHierarchicalName( const OUString& aName )
-    throw( NoSuchElementException,
-           RuntimeException, std::exception )
 {
     sal_Int32 idx;
 
@@ -322,7 +314,6 @@ TVRead::getByHierarchicalName( const OUString& aName )
 
 sal_Bool SAL_CALL
 TVRead::hasByHierarchicalName( const OUString& aName )
-    throw( RuntimeException, std::exception )
 {
     sal_Int32 idx;
 
@@ -526,9 +517,6 @@ bool TVChildTarget::SearchAndInsert(TVDom* p, TVDom* tvDom)
 
 Any SAL_CALL
 TVChildTarget::getByName( const OUString& aName )
-    throw( NoSuchElementException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     OUString num( aName.getStr()+2,aName.getLength()-4 );
     sal_Int32 idx = num.toInt32() - 1;
@@ -541,7 +529,6 @@ TVChildTarget::getByName( const OUString& aName )
 
 Sequence< OUString > SAL_CALL
 TVChildTarget::getElementNames( )
-    throw( RuntimeException, std::exception )
 {
     Sequence< OUString > seq( Elements.size() );
     for( size_t i = 0; i < Elements.size(); ++i )
@@ -552,7 +539,6 @@ TVChildTarget::getElementNames( )
 
 sal_Bool SAL_CALL
 TVChildTarget::hasByName( const OUString& aName )
-    throw( RuntimeException, std::exception )
 {
     OUString num( aName.getStr()+2,aName.getLength()-4 );
     sal_Int32 idx = num.toInt32() - 1;
@@ -566,8 +552,6 @@ TVChildTarget::hasByName( const OUString& aName )
 
 Any SAL_CALL
 TVChildTarget::getByHierarchicalName( const OUString& aName )
-    throw( NoSuchElementException,
-           RuntimeException, std::exception )
 {
     sal_Int32 idx;
 
@@ -587,7 +571,6 @@ TVChildTarget::getByHierarchicalName( const OUString& aName )
 
 sal_Bool SAL_CALL
 TVChildTarget::hasByHierarchicalName( const OUString& aName )
-    throw( RuntimeException, std::exception )
 {
     sal_Int32 idx;
 
@@ -643,7 +626,7 @@ ConfigData TVChildTarget::init( const Reference< XComponentContext >& xContext )
         beans::PropertyValue                       aParam ;
         aParam.Name    = "nodepath";
         aParam.Value <<= OUString("/org.openoffice.Setup/Product");
-        lParams[0] = uno::makeAny(aParam);
+        lParams[0] <<= aParam;
 
         // open it
         uno::Reference< uno::XInterface > xCFG( xConfigProvider->createInstanceWithArguments(
@@ -865,7 +848,7 @@ void TVChildTarget::subst( OUString& instpath )
 static const char aHelpMediaType[] = "application/vnd.sun.star.help";
 
 ExtensionIteratorBase::ExtensionIteratorBase( const OUString& aLanguage )
-        : m_eState( USER_EXTENSIONS )
+        : m_eState( IteratorState::UserExtensions )
         , m_aLanguage( aLanguage )
 {
     init();
@@ -958,7 +941,7 @@ Reference< deployment::XPackage > ExtensionIteratorBase::implGetNextUserHelpPack
 
     if( m_iUserPackage == m_aUserPackagesSeq.getLength() )
     {
-        m_eState = SHARED_EXTENSIONS;       // Later: SHARED_MODULE
+        m_eState = IteratorState::SharedExtensions;       // Later: SHARED_MODULE
     }
     else
     {
@@ -988,7 +971,7 @@ Reference< deployment::XPackage > ExtensionIteratorBase::implGetNextSharedHelpPa
 
     if( m_iSharedPackage == m_aSharedPackagesSeq.getLength() )
     {
-        m_eState = BUNDLED_EXTENSIONS;
+        m_eState = IteratorState::BundledExtensions;
     }
     else
     {
@@ -1018,7 +1001,7 @@ Reference< deployment::XPackage > ExtensionIteratorBase::implGetNextBundledHelpP
 
     if( m_iBundledPackage == m_aBundledPackagesSeq.getLength() )
     {
-        m_eState = END_REACHED;
+        m_eState = IteratorState::EndReached;
     }
     else
     {
@@ -1074,11 +1057,11 @@ OUString TreeFileIterator::nextTreeFile( sal_Int32& rnFileSize )
 {
     OUString aRetFile;
 
-    while( aRetFile.isEmpty() && m_eState != END_REACHED )
+    while( aRetFile.isEmpty() && m_eState != IteratorState::EndReached )
     {
         switch( m_eState )
         {
-            case USER_EXTENSIONS:
+            case IteratorState::UserExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextUserHelpPackage( xParentPackageBundle );
@@ -1089,7 +1072,7 @@ OUString TreeFileIterator::nextTreeFile( sal_Int32& rnFileSize )
                 break;
             }
 
-            case SHARED_EXTENSIONS:
+            case IteratorState::SharedExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextSharedHelpPackage( xParentPackageBundle );
@@ -1099,7 +1082,7 @@ OUString TreeFileIterator::nextTreeFile( sal_Int32& rnFileSize )
                 aRetFile = implGetTreeFileFromPackage( rnFileSize, xHelpPackage );
                 break;
             }
-            case BUNDLED_EXTENSIONS:
+            case IteratorState::BundledExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextBundledHelpPackage( xParentPackageBundle );
@@ -1110,8 +1093,8 @@ OUString TreeFileIterator::nextTreeFile( sal_Int32& rnFileSize )
                 break;
             }
 
-        case END_REACHED:
-                OSL_FAIL( "DataBaseIterator::nextTreeFile(): Invalid case END_REACHED" );
+        case IteratorState::EndReached:
+                OSL_FAIL( "DataBaseIterator::nextTreeFile(): Invalid case IteratorState::EndReached" );
                 break;
         }
     }

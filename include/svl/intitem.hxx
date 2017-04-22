@@ -55,12 +55,10 @@ public:
         SfxPoolItem(rItem), m_nValue(rItem.m_nValue)
     {}
 
-    virtual ~SfxInt16Item() {}
-
     virtual bool operator ==(const SfxPoolItem & rItem) const override;
 
     virtual bool GetPresentation(SfxItemPresentation,
-                                                SfxMapUnit, SfxMapUnit,
+                                                MapUnit, MapUnit,
                                                 OUString & rText,
                                                 const IntlWrapper * = nullptr)
         const override;

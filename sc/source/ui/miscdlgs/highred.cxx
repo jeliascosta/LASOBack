@@ -78,9 +78,7 @@ void ScHighlightChgDlg::dispose()
 
 void ScHighlightChgDlg::Init()
 {
-    ScRange aRange;
-
-    OSL_ENSURE( pViewData && pDoc, "ViewData oder Document nicht gefunden!" );
+    OSL_ENSURE( pViewData && pDoc, "ViewData or Document not found!" );
 
     ScChangeTrack* pChanges=pDoc->GetChangeTrack();
     if(pChanges!=nullptr)
@@ -174,7 +172,7 @@ bool ScHighlightChgDlg::IsRefInputMode() const
     return m_pEdAssign->IsVisible();
 }
 
-IMPL_LINK_TYPED( ScHighlightChgDlg, HighlightHandle, Button*, pCb, void )
+IMPL_LINK( ScHighlightChgDlg, HighlightHandle, Button*, pCb, void )
 {
     if(pCb!=nullptr)
     {
@@ -193,7 +191,7 @@ IMPL_LINK_TYPED( ScHighlightChgDlg, HighlightHandle, Button*, pCb, void )
     }
 }
 
-IMPL_LINK_TYPED( ScHighlightChgDlg, RefHandle, SvxTPFilter*, pRef, void )
+IMPL_LINK( ScHighlightChgDlg, RefHandle, SvxTPFilter*, pRef, void )
 {
     if(pRef!=nullptr)
     {
@@ -206,7 +204,7 @@ IMPL_LINK_TYPED( ScHighlightChgDlg, RefHandle, SvxTPFilter*, pRef, void )
     }
 }
 
-IMPL_LINK_TYPED( ScHighlightChgDlg, OKBtnHdl, Button*, pOKBtn, void )
+IMPL_LINK( ScHighlightChgDlg, OKBtnHdl, Button*, pOKBtn, void )
 {
     if (pOKBtn == m_pOkButton)
     {

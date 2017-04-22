@@ -43,18 +43,17 @@ class Gradient;
 #define GDI_METAFILE_END                ((size_t)0xFFFFFFFF)
 #define GDI_METAFILE_LABEL_NOTFOUND     ((size_t)0xFFFFFFFF)
 
-enum MtfConversion
+enum class MtfConversion
 {
-    MTF_CONVERSION_NONE = 0,
-    MTF_CONVERSION_1BIT_THRESHOLD = 1,
-    MTF_CONVERSION_8BIT_GREYS = 2
+    N1BitThreshold,
+    N8BitGreys
 };
 
 
 typedef Color (*ColorExchangeFnc)( const Color& rColor, const void* pColParam );
 typedef BitmapEx (*BmpExchangeFnc)( const BitmapEx& rBmpEx, const void* pBmpParam );
 
-class VCL_DLLPUBLIC GDIMetaFile
+class VCL_DLLPUBLIC GDIMetaFile final
 {
 private:
     ::std::vector< MetaAction* > m_aList;
@@ -85,29 +84,25 @@ private:
     SAL_DLLPRIVATE void                 ImplExchangeColors( ColorExchangeFnc pFncCol, const void* pColParam,
                                                             BmpExchangeFnc pFncBmp, const void* pBmpParam );
 
-    SAL_DLLPRIVATE Point                ImplGetRotatedPoint( const Point& rPt, const Point& rRotatePt,
+    SAL_DLLPRIVATE static Point         ImplGetRotatedPoint( const Point& rPt, const Point& rRotatePt,
                                                              const Size& rOffset, double fSin, double fCos );
-    SAL_DLLPRIVATE tools::Polygon       ImplGetRotatedPolygon( const tools::Polygon& rPoly, const Point& rRotatePt,
+    SAL_DLLPRIVATE static tools::Polygon ImplGetRotatedPolygon( const tools::Polygon& rPoly, const Point& rRotatePt,
                                                                const Size& rOffset, double fSin, double fCos );
-    SAL_DLLPRIVATE tools::PolyPolygon   ImplGetRotatedPolyPolygon( const tools::PolyPolygon& rPoly, const Point& rRotatePt,
+    SAL_DLLPRIVATE static tools::PolyPolygon ImplGetRotatedPolyPolygon( const tools::PolyPolygon& rPoly, const Point& rRotatePt,
                                                                    const Size& rOffset, double fSin, double fCos );
-    SAL_DLLPRIVATE void                 ImplAddGradientEx( GDIMetaFile& rMtf,
+    SAL_DLLPRIVATE static void          ImplAddGradientEx( GDIMetaFile& rMtf,
                                                            const OutputDevice& rMapDev,
                                                            const tools::PolyPolygon& rPolyPoly,
                                                            const Gradient& rGrad );
 
     SAL_DLLPRIVATE bool                 ImplPlayWithRenderer( OutputDevice* pOut, const Point& rPos, Size rLogicDestSize );
-    SAL_DLLPRIVATE void                 ImplDelegate2PluggableRenderer( const MetaCommentAction* pAct, OutputDevice* pOut );
-
-
-protected:
 
     void                                Linker( OutputDevice* pOut, bool bLink );
 
 public:
                     GDIMetaFile();
                     GDIMetaFile( const GDIMetaFile& rMtf );
-    virtual         ~GDIMetaFile();
+                    ~GDIMetaFile();
 
     GDIMetaFile&    operator=( const GDIMetaFile& rMtf );
     bool            operator==( const GDIMetaFile& rMtf ) const;
@@ -116,12 +111,12 @@ public:
     void            Clear();
     bool            Mirror( BmpMirrorFlags nMirrorFlags );
     void            Move( long nX, long nY );
-    // additional Move method getting specifics how to handle MapMode( MAP_PIXEL )
+    // additional Move method getting specifics how to handle MapMode( MapUnit::MapPixel )
     void            Move( long nX, long nY, long nDPIX, long nDPIY );
     void            Scale( double fScaleX, double fScaleY );
     void            Scale( const Fraction& rScaleX, const Fraction& rScaleY );
     void            Rotate( long nAngle10 );
-    void            Clip( const Rectangle& );
+    void            Clip( const tools::Rectangle& );
     /* get the bound rect of the contained actions
      * caveats:
      * - clip actions will limit the contained actions,
@@ -129,9 +124,9 @@ public:
      * - coordinates of actions will be transformed to preferred mapmode
      * - the returned rectangle is relative to the preferred mapmode of the metafile
     */
-    Rectangle       GetBoundRect( OutputDevice& i_rReference, Rectangle* pHairline = nullptr ) const;
+    tools::Rectangle       GetBoundRect( OutputDevice& i_rReference, tools::Rectangle* pHairline = nullptr ) const;
 
-    void            Adjust( short nLuminancePercent = 0, short nContrastPercent = 0,
+    void            Adjust( short nLuminancePercent, short nContrastPercent,
                             short nChannelRPercent = 0,  short nChannelGPercent = 0,
                             short nChannelBPercent = 0,  double fGamma = 1.0,
                             bool bInvert = false, bool msoBrightness = false );
@@ -195,10 +190,9 @@ public:
     friend VCL_DLLPUBLIC SvStream& ReadGDIMetaFile( SvStream& rIStm, GDIMetaFile& rGDIMetaFile );
     friend VCL_DLLPUBLIC SvStream& WriteGDIMetaFile( SvStream& rOStm, const GDIMetaFile& rGDIMetaFile );
 
-    /// Creates an antialiased thumbnail, with maximum width or height of nMaximumExtent.
+    /// Creates an antialiased thumbnail
     bool            CreateThumbnail(BitmapEx& rBitmapEx,
-                                    sal_uInt32 nMaximumExtent = 256,
-                                    BmpConversion nColorConversion = BMP_CONVERSION_24BIT,
+                                    BmpConversion nColorConversion = BmpConversion::N24Bit,
                                     BmpScaleFlag nScaleFlag = BmpScaleFlag::BestQuality) const;
 
     void            UseCanvas( bool _bUseCanvas );

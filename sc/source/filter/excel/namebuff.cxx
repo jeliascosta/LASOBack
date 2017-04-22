@@ -47,22 +47,6 @@ sal_uInt32 StringHashEntry::MakeHashCode( const OUString& r )
     return n;
 }
 
-NameBuffer::~NameBuffer()
-{
-    std::vector<StringHashEntry*>::iterator pIter;
-    for ( pIter = maHashes.begin(); pIter != maHashes.end(); ++pIter )
-        delete *pIter;
-}
-
-//void NameBuffer::operator <<( const SpString &rNewString )
-void NameBuffer::operator <<( const OUString &rNewString )
-{
-    OSL_ENSURE( maHashes.size() + nBase < 0xFFFF,
-        "*NameBuffer::GetLastIndex(): Ich hab' die Nase voll!" );
-
-    maHashes.push_back( new StringHashEntry( rNewString ) );
-}
-
 SharedFormulaBuffer::SharedFormulaBuffer( RootData* pRD ) : ExcRoot(pRD) {}
 
 SharedFormulaBuffer::~SharedFormulaBuffer()
@@ -157,37 +141,9 @@ bool ExtSheetBuffer::GetScTabIndex( sal_uInt16 nExcIndex, sal_uInt16& rScIndex )
     return false;
 }
 
-bool ExtSheetBuffer::IsLink( const sal_uInt16 nExcIndex ) const
-{
-    OSL_ENSURE( nExcIndex > 0, "*ExtSheetBuffer::IsLink(): Index has to be >0!" );
-
-    if (!nExcIndex || nExcIndex > maEntries.size() )
-        return false;
-
-    return maEntries[ nExcIndex -1 ].bLink;
-}
-
-void ExtSheetBuffer::GetLink( const sal_uInt16 nExcIndex, OUString& rAppl, OUString& rDoc ) const
-{
-    OSL_ENSURE( nExcIndex > 0, "*ExtSheetBuffer::GetLink(): Index has to be >0!" );
-
-    if (!nExcIndex || nExcIndex > maEntries.size() )
-        return;
-
-    const Cont &rRet = maEntries[ nExcIndex -1 ];
-
-    rAppl = rRet.aFile;
-    rDoc = rRet.aTab;
-}
-
 void ExtSheetBuffer::Reset()
 {
     maEntries.clear();
-}
-
-bool ExtName::IsDDE() const
-{
-    return ( nFlags & 0x0001 ) != 0;
 }
 
 bool ExtName::IsOLE() const
@@ -200,22 +156,22 @@ ExtNameBuff::ExtNameBuff( const XclImpRoot& rRoot ) :
 {
 }
 
-void ExtNameBuff::AddDDE( const OUString& rName, sal_Int16 nRefIdx )
+void ExtNameBuff::AddDDE( sal_Int16 nRefIdx )
 {
-    ExtName aNew( rName, 0x0001 );
+    ExtName aNew( 0x0001 );
     maExtNames[ nRefIdx ].push_back( aNew );
 }
 
-void ExtNameBuff::AddOLE( const OUString& rName, sal_Int16 nRefIdx, sal_uInt32 nStorageId )
+void ExtNameBuff::AddOLE( sal_Int16 nRefIdx, sal_uInt32 nStorageId )
 {
-    ExtName aNew( rName, 0x0002 );
+    ExtName aNew( 0x0002 );
     aNew.nStorageId = nStorageId;
     maExtNames[ nRefIdx ].push_back( aNew );
 }
 
-void ExtNameBuff::AddName( const OUString& rName, sal_Int16 nRefIdx )
+void ExtNameBuff::AddName( sal_Int16 nRefIdx )
 {
-    ExtName aNew( GetScAddInName( rName ), 0x0004 );
+    ExtName aNew( 0x0004 );
     maExtNames[ nRefIdx ].push_back( aNew );
 }
 

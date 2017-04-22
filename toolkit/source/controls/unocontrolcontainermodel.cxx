@@ -40,20 +40,18 @@ UnoControlContainerModel::UnoControlContainerModel( const css::uno::Reference< c
     ImplRegisterProperty( BASEPROPERTY_TEXT );
 }
 
-OUString UnoControlContainerModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
+OUString UnoControlContainerModel::getServiceName()
 {
     return OUString::createFromAscii( szServiceName_UnoControlContainerModel );
 }
 
 OUString UnoControlContainerModel::getImplementationName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlContainerModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlContainerModel::getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -68,12 +66,12 @@ css::uno::Any UnoControlContainerModel::ImplGetDefaultValue( sal_uInt16 nPropId 
     if ( nPropId == BASEPROPERTY_BORDER )
         aDefault <<= (sal_Int16) 0;
     else
-        aDefault <<= UnoControlModel::ImplGetDefaultValue( nPropId );
+        aDefault = UnoControlModel::ImplGetDefaultValue( nPropId );
     return aDefault;
 }
 
 
-css::uno::Reference< css::beans::XPropertySetInfo > UnoControlContainerModel::getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception)
+css::uno::Reference< css::beans::XPropertySetInfo > UnoControlContainerModel::getPropertySetInfo(  )
 {
     static css::uno::Reference< css::beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;

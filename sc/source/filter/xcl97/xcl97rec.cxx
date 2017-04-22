@@ -33,6 +33,7 @@
 #include <tools/urlobj.hxx>
 
 #include <rtl/math.hxx>
+#include <rtl/uuid.h>
 #include <svl/zformat.hxx>
 #include "formulacell.hxx"
 #include "drwlayer.hxx"
@@ -69,17 +70,15 @@
 #include "patattr.hxx"
 #include "tabprotection.hxx"
 
-#include <com/sun/star/sheet/XCellAddressable.hpp>
-#include <com/sun/star/sheet/XCellRangeAddressable.hpp>
 #include <com/sun/star/embed/Aspects.hpp>
 #include <com/sun/star/chart2/XCoordinateSystemContainer.hpp>
 #include <com/sun/star/chart2/XChartTypeContainer.hpp>
 #include <oox/token/tokens.hxx>
+#include <oox/token/namespaces.hxx>
 #include <oox/export/shapes.hxx>
 #include <oox/export/utils.hxx>
 #include <oox/export/vmlexport.hxx>
 
-#include <boost/checked_delete.hpp>
 #include <memory>
 
 using namespace ::com::sun::star;
@@ -103,14 +102,14 @@ XclExpObjList::XclExpObjList( const XclExpRoot& rRoot, XclEscherEx& rEscherEx ) 
     pMsodrawingPerSheet = new XclExpMsoDrawing( rEscherEx );
     // open the DGCONTAINER and the patriarch group shape
     mrEscherEx.OpenContainer( ESCHER_DgContainer );
-    Rectangle aRect( 0, 0, 0, 0 );
+    tools::Rectangle aRect( 0, 0, 0, 0 );
     mrEscherEx.EnterGroup( &aRect );
     mrEscherEx.UpdateDffFragmentEnd();
 }
 
 XclExpObjList::~XclExpObjList()
 {
-    std::for_each(maObjs.begin(), maObjs.end(), boost::checked_deleter<XclObj>());
+    std::for_each(maObjs.begin(), maObjs.end(), std::default_delete<XclObj>());
     delete pMsodrawingPerSheet;
     delete pSolverContainer;
 }
@@ -263,9 +262,9 @@ void SaveDrawingMLObjects( XclExpObjList& rList, XclExpXmlStream& rStrm, sal_Int
 
     rStrm.PushStream( pDrawing );
     pDrawing->startElement( FSNS( XML_xdr, XML_wsDr ),
-            FSNS( XML_xmlns, XML_xdr ), "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing",
-            FSNS( XML_xmlns, XML_a ),   "http://schemas.openxmlformats.org/drawingml/2006/main",
-            FSNS( XML_xmlns, XML_r ),   "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+            FSNS( XML_xmlns, XML_xdr ), XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(dmlSpreadDr))).getStr(),
+            FSNS( XML_xmlns, XML_a ),   XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(dml))).getStr(),
+            FSNS( XML_xmlns, XML_r ),   XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(officeRel))).getStr(),
             FSEND );
 
     for (it = aList.begin(), itEnd = aList.end(); it != itEnd; ++it)
@@ -297,10 +296,10 @@ void SaveVmlObjects( XclExpObjList& rList, XclExpXmlStream& rStrm, sal_Int32& nV
 
     rStrm.PushStream( pVmlDrawing );
     pVmlDrawing->startElement( XML_xml,
-            FSNS( XML_xmlns, XML_v ),   "urn:schemas-microsoft-com:vml",
-            FSNS( XML_xmlns, XML_o ),   "urn:schemas-microsoft-com:office:office",
-            FSNS( XML_xmlns, XML_x ),   "urn:schemas-microsoft-com:office:excel",
-            FSNS( XML_xmlns, XML_w10 ), "urn:schemas-microsoft-com:office:word",
+            FSNS( XML_xmlns, XML_v ),   XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(vml))).getStr(),
+            FSNS( XML_xmlns, XML_o ),   XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(vmlOffice))).getStr(),
+            FSNS( XML_xmlns, XML_x ),   XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(vmlExcel))).getStr(),
+            FSNS( XML_xmlns, XML_w10 ), XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(vmlWord))).getStr(),
             FSEND );
 
     std::vector<XclObj*>::iterator pIter;
@@ -365,7 +364,7 @@ XclObj::~XclObj()
     delete pTxo;
 }
 
-void XclObj::ImplWriteAnchor( const XclExpRoot& /*rRoot*/, const SdrObject* pSdrObj, const Rectangle* pChildAnchor )
+void XclObj::ImplWriteAnchor( const XclExpRoot& /*rRoot*/, const SdrObject* pSdrObj, const tools::Rectangle* pChildAnchor )
 {
     if( pChildAnchor )
     {
@@ -460,8 +459,26 @@ void XclObj::Save( XclExpStream& rStrm )
     SaveTextRecs( rStrm );
 }
 
-void XclObj::WriteSubRecs( XclExpStream& /*rStrm*/ )
+void XclObj::WriteSubRecs( XclExpStream& rStrm )
 {
+    if( mnObjType == EXC_OBJTYPE_NOTE )
+    {
+        // FtNts subrecord
+        AddRecSize( 26 );
+        // ft, cb
+        rStrm << EXC_ID_OBJNTS << sal_uInt16(0x0016);
+        sal_uInt8 aGUID[16];
+        rtl_createUuid( aGUID, nullptr, false );
+        // guid
+        rStrm.SetSliceSize( 16 );
+        for( int i = 0; i < 16; i++ )
+            rStrm << aGUID[i];
+        rStrm.SetSliceSize( 0 );
+        // fSharedNote
+        rStrm << sal_uInt16(0);
+        // unused
+        rStrm.WriteZeroBytes( 4 );
+    }
 }
 
 void XclObj::SaveTextRecs( XclExpStream& rStrm )
@@ -476,10 +493,10 @@ void XclObj::SaveTextRecs( XclExpStream& rStrm )
 
   // --- class XclObjComment ------------------------------------------
 
-XclObjComment::XclObjComment( XclExpObjectManager& rObjMgr, const Rectangle& rRect, const EditTextObject& rEditObj, SdrCaptionObj* pCaption, bool bVisible, const ScAddress& rAddress, Rectangle &rFrom, Rectangle &rTo ) :
+XclObjComment::XclObjComment( XclExpObjectManager& rObjMgr, const tools::Rectangle& rRect, const EditTextObject& rEditObj, SdrCaptionObj* pCaption, bool bVisible, const ScAddress& rAddress, tools::Rectangle &rFrom, tools::Rectangle &rTo ) :
     XclObj( rObjMgr, EXC_OBJTYPE_NOTE, true )
             , maScPos( rAddress )
-            , mpCaption( static_cast< SdrCaptionObj* >( pCaption->Clone() ) )
+            , mpCaption( pCaption->Clone() )
             , mbVisible( bVisible )
             , maFrom ( rFrom )
             , maTo ( rTo )
@@ -538,7 +555,7 @@ static void lcl_FillProps( EscherPropertyContainer& rPropOpt, SdrObject* pCaptio
     rPropOpt.AddOpt( ESCHER_Prop_fPrint, nFlags );                  // bool field
 }
 
-void XclObjComment::ProcessEscherObj( const XclExpRoot& rRoot, const Rectangle& rRect, SdrObject* pCaption, const bool bVisible )
+void XclObjComment::ProcessEscherObj( const XclExpRoot& rRoot, const tools::Rectangle& rRect, SdrObject* pCaption, const bool bVisible )
 {
     EscherPropertyContainer aPropOpt;
 
@@ -577,13 +594,13 @@ class VmlCommentExporter : public VMLExport
     ScAddress           maScPos;
     SdrCaptionObj*      mpCaption;
     bool                mbVisible;
-    Rectangle           maFrom;
-    Rectangle           maTo;
+    tools::Rectangle           maFrom;
+    tools::Rectangle           maTo;
 
 public:
-                        VmlCommentExporter ( sax_fastparser::FSHelperPtr p, ScAddress aScPos, SdrCaptionObj* pCaption, bool bVisible, Rectangle &aFrom, Rectangle &aTo );
+                        VmlCommentExporter ( sax_fastparser::FSHelperPtr p, ScAddress aScPos, SdrCaptionObj* pCaption, bool bVisible, tools::Rectangle &aFrom, tools::Rectangle &aTo );
 protected:
-    virtual void        Commit( EscherPropertyContainer& rProps, const Rectangle& rRect ) override;
+    virtual void        Commit( EscherPropertyContainer& rProps, const tools::Rectangle& rRect ) override;
     using VMLExport::StartShape;
     virtual sal_Int32   StartShape() override;
     using VMLExport::EndShape;
@@ -591,7 +608,7 @@ protected:
 };
 
 VmlCommentExporter::VmlCommentExporter( sax_fastparser::FSHelperPtr p, ScAddress aScPos, SdrCaptionObj* pCaption,
-                                        bool bVisible, Rectangle &aFrom, Rectangle &aTo )
+                                        bool bVisible, tools::Rectangle &aFrom, tools::Rectangle &aTo )
     : VMLExport( p )
     , maScPos( aScPos )
     , mpCaption( pCaption )
@@ -601,7 +618,7 @@ VmlCommentExporter::VmlCommentExporter( sax_fastparser::FSHelperPtr p, ScAddress
 {
 }
 
-void VmlCommentExporter::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect )
+void VmlCommentExporter::Commit( EscherPropertyContainer& rProps, const tools::Rectangle& rRect )
 {
     lcl_FillProps( rProps, mpCaption, mbVisible );
     rProps.AddOpt( ESCHER_Prop_fHidden, sal_uInt32(mbVisible) ); // bool field
@@ -721,10 +738,10 @@ static sal_uInt8 lcl_GetHorAlignFromItemSet( const SfxItemSet& rItemSet )
 
     switch( static_cast< const SvxAdjustItem& >( rItemSet.Get( EE_PARA_JUST ) ).GetAdjust() )
     {
-        case SVX_ADJUST_LEFT:   nHorAlign = EXC_OBJ_HOR_LEFT;      break;
-        case SVX_ADJUST_CENTER: nHorAlign = EXC_OBJ_HOR_CENTER;    break;
-        case SVX_ADJUST_RIGHT:  nHorAlign = EXC_OBJ_HOR_RIGHT;     break;
-        case SVX_ADJUST_BLOCK:  nHorAlign = EXC_OBJ_HOR_JUSTIFY;   break;
+        case SvxAdjust::Left:   nHorAlign = EXC_OBJ_HOR_LEFT;      break;
+        case SvxAdjust::Center: nHorAlign = EXC_OBJ_HOR_CENTER;    break;
+        case SvxAdjust::Right:  nHorAlign = EXC_OBJ_HOR_RIGHT;     break;
+        case SvxAdjust::Block:  nHorAlign = EXC_OBJ_HOR_JUSTIFY;   break;
         default:;
     }
     return nHorAlign;
@@ -864,7 +881,7 @@ sal_uInt16 XclTxo::GetNum() const
     return EXC_ID_TXO;
 }
 
-sal_Size XclTxo::GetLen() const
+std::size_t XclTxo::GetLen() const
 {
     return 18;
 }
@@ -874,7 +891,7 @@ sal_Size XclTxo::GetLen() const
 XclObjOle::XclObjOle( XclExpObjectManager& rObjMgr, const SdrObject& rObj ) :
     XclObj( rObjMgr, EXC_OBJTYPE_PICTURE ),
     rOleObj( rObj ),
-    pRootStorage( rObjMgr.GetRoot().GetRootStorage() )
+    pRootStorage( rObjMgr.GetRoot().GetRootStorage().get() )
 {
 }
 
@@ -892,7 +909,7 @@ void XclObjOle::WriteSubRecs( XclExpStream& rStrm )
     sprintf( aBuf, "%08X", static_cast< unsigned int >( nPictureId ) );
     aStorageName += OUString::createFromAscii(aBuf);
     tools::SvRef<SotStorage>    xOleStg = pRootStorage->OpenSotStorage( aStorageName );
-    if( xOleStg.Is() )
+    if( xOleStg.is() )
     {
         uno::Reference < embed::XEmbeddedObject > xObj( static_cast<const SdrOle2Obj&>(rOleObj).GetObjRef() );
         if ( xObj.is() )
@@ -990,8 +1007,6 @@ ExcBof8_Base::ExcBof8_Base()
     nVers           = 0x0600;
     nRupBuild       = 0x0dbb;
     nRupYear        = 0x07cc;
-//  nFileHistory    = 0x00000001;   // last edited by Microsoft Excel for Windows
-    nFileHistory    = 0x00000000;
     nLowestBiffVer  = 0x00000006;   // Biff8
 }
 void XclObjAny::WriteFromTo( XclExpXmlStream& rStrm, const Reference< XShape >& rShape, SCTAB nTab )
@@ -1000,9 +1015,9 @@ void XclObjAny::WriteFromTo( XclExpXmlStream& rStrm, const Reference< XShape >& 
 
     awt::Point  aTopLeft    = rShape->getPosition();
     awt::Size   aSize       = rShape->getSize();
-    Rectangle   aLocation( aTopLeft.X, aTopLeft.Y, aTopLeft.X + aSize.Width, aTopLeft.Y + aSize.Height );
+    tools::Rectangle   aLocation( aTopLeft.X, aTopLeft.Y, aTopLeft.X + aSize.Width, aTopLeft.Y + aSize.Height );
     ScRange     aRange      = rStrm.GetRoot().GetDoc().GetRange( nTab, aLocation );
-    Rectangle   aRangeRect  = rStrm.GetRoot().GetDoc().GetMMRect( aRange.aStart.Col(), aRange.aStart.Row(),
+    tools::Rectangle   aRangeRect  = rStrm.GetRoot().GetDoc().GetMMRect( aRange.aStart.Col(), aRange.aStart.Row(),
             aRange.aEnd.Col()-1, aRange.aEnd.Row()-1,
             nTab );
 
@@ -1099,7 +1114,7 @@ bool transformURL(const OUString& rOldURL, OUString& rNewURL, ScDocument* pDoc)
     {
         //  URL has to be decoded for escaped characters (%20)
         OUString aURL = INetURLObject::decode( rOldURL,
-                INetURLObject::DECODE_WITH_CHARSET );
+                INetURLObject::DecodeMechanism::WithCharset );
         OUString aAddressString = aURL.copy(1);
 
         ScRange aRange;
@@ -1188,7 +1203,7 @@ void ExcBof8_Base::SaveCont( XclExpStream& rStrm )
 {
     rStrm.DisableEncryption();
     rStrm   << nVers << nDocType << nRupBuild << nRupYear
-            << nFileHistory << nLowestBiffVer;
+            << sal_uInt32(0)/*nFileHistory*/ << nLowestBiffVer;
 }
 
 sal_uInt16 ExcBof8_Base::GetNum() const
@@ -1196,7 +1211,7 @@ sal_uInt16 ExcBof8_Base::GetNum() const
     return 0x0809;
 }
 
-sal_Size ExcBof8_Base::GetLen() const
+std::size_t ExcBof8_Base::GetLen() const
 {
     return 16;
 }
@@ -1239,7 +1254,7 @@ void ExcBundlesheet8::SaveCont( XclExpStream& rStrm )
     rStrm << nGrbit << GetName();
 }
 
-sal_Size ExcBundlesheet8::GetLen() const
+std::size_t ExcBundlesheet8::GetLen() const
 {   // Text max 255 chars
     return 8 + GetName().GetBufferSize();
 }
@@ -1270,7 +1285,7 @@ sal_uInt16 XclObproj::GetNum() const
     return 0x00D3;
 }
 
-sal_Size XclObproj::GetLen() const
+std::size_t XclObproj::GetLen() const
 {
     return 0;
 }
@@ -1291,7 +1306,7 @@ sal_uInt16 XclCodename::GetNum() const
     return 0x01BA;
 }
 
-sal_Size XclCodename::GetLen() const
+std::size_t XclCodename::GetLen() const
 {
     return aName.GetSize();
 }
@@ -1332,7 +1347,7 @@ ExcEScenario::ExcEScenario( const XclExpRoot& rRoot, SCTAB nTab )
     OUString  sTmpComm;
     OUString aTmp;
     Color   aDummyCol;
-    sal_uInt16  nFlags;
+    ScScenarioFlags nFlags;
 
     ScDocument& rDoc = rRoot.GetDoc();
     rDoc.GetName(nTab, aTmp);
@@ -1345,7 +1360,7 @@ ExcEScenario::ExcEScenario( const XclExpRoot& rRoot, SCTAB nTab )
     sComment.Assign( sTmpComm, EXC_STR_DEFAULT, 255 );
     if( sComment.Len() )
         nRecLen += sComment.GetSize();
-    bProtected = (nFlags & SC_SCENARIO_PROTECT);
+    bProtected = (nFlags & ScScenarioFlags::Protected) != ScScenarioFlags::NONE;
 
     sUserName.Assign( rRoot.GetUserName(), EXC_STR_DEFAULT, 255 );
     nRecLen += sUserName.GetSize();
@@ -1402,7 +1417,7 @@ void ExcEScenario::SaveCont( XclExpStream& rStrm )
 {
     sal_uInt16 count = aCells.size();
 
-    rStrm   << (sal_uInt16) count               // number of cells
+    rStrm   << count                            // number of cells
             << sal_uInt8(bProtected)            // fProtection
             << (sal_uInt8) 0                    // fHidden
             << (sal_uInt8) sName.Len()          // length of scen name
@@ -1430,7 +1445,7 @@ sal_uInt16 ExcEScenario::GetNum() const
     return 0x00AF;
 }
 
-sal_Size ExcEScenario::GetLen() const
+std::size_t ExcEScenario::GetLen() const
 {
     return nRecLen;
 }
@@ -1466,7 +1481,7 @@ ExcEScenarioManager::ExcEScenarioManager( const XclExpRoot& rRoot, SCTAB nTab ) 
 
     while( rDoc.IsScenario( nNewTab ) )
     {
-        aScenes.push_back( new ExcEScenario( rRoot, nNewTab ) );
+        aScenes.emplace_back( rRoot, nNewTab  );
 
         if( rDoc.IsActiveScenario( nNewTab ) )
             nActive = static_cast<sal_uInt16>(nNewTab - nFirstTab);
@@ -1476,9 +1491,6 @@ ExcEScenarioManager::ExcEScenarioManager( const XclExpRoot& rRoot, SCTAB nTab ) 
 
 ExcEScenarioManager::~ExcEScenarioManager()
 {
-    std::vector<ExcEScenario*>::iterator pIter;
-    for( pIter = aScenes.begin(); pIter != aScenes.end(); ++pIter )
-        delete *pIter;
 }
 
 void ExcEScenarioManager::SaveCont( XclExpStream& rStrm )
@@ -1494,9 +1506,8 @@ void ExcEScenarioManager::Save( XclExpStream& rStrm )
     if( !aScenes.empty() )
         ExcRecord::Save( rStrm );
 
-    std::vector<ExcEScenario*>::iterator pIter;
-    for( pIter = aScenes.begin(); pIter != aScenes.end(); ++pIter )
-        (*pIter)->Save( rStrm );
+    for( ExcEScenario& rScenario : aScenes )
+        rScenario.Save( rStrm );
 }
 
 void ExcEScenarioManager::SaveXml( XclExpXmlStream& rStrm )
@@ -1511,9 +1522,8 @@ void ExcEScenarioManager::SaveXml( XclExpXmlStream& rStrm )
             // OOXTODO: XML_sqref,
             FSEND );
 
-    std::vector<ExcEScenario*>::iterator pIter;
-    for( pIter = aScenes.begin(); pIter != aScenes.end(); ++pIter )
-        (*pIter)->SaveXml( rStrm );
+    for( ExcEScenario& rScenario : aScenes )
+        rScenario.SaveXml( rStrm );
 
     rWorkbook->endElement( XML_scenarios );
 }
@@ -1523,7 +1533,7 @@ sal_uInt16 ExcEScenarioManager::GetNum() const
     return 0x00AE;
 }
 
-sal_Size ExcEScenarioManager::GetLen() const
+std::size_t ExcEScenarioManager::GetLen() const
 {
     return 8;
 }
@@ -1609,7 +1619,7 @@ void XclExpSheetEnhancedProtection::WriteBody( XclExpStream& rStrm )
     rStrm.WriteZeroBytesToRecord(5);        // reserved1 (1 bytes) and reserved2 (4 bytes)
 
     XclRangeList aRefs;
-    if (maEnhancedProtection.maRangeList.Is())
+    if (maEnhancedProtection.maRangeList.is())
         mrRoot.GetAddressConverter().ConvertRangeList( aRefs, *maEnhancedProtection.maRangeList, false);
     sal_uInt16 nCref = ulimit_cast<sal_uInt16>(aRefs.size());
     rStrm << nCref;                         // cref
@@ -1648,7 +1658,7 @@ sal_uInt16 XclCalccount::GetNum() const
     return 0x000C;
 }
 
-sal_Size XclCalccount::GetLen() const
+std::size_t XclCalccount::GetLen() const
 {
     return 2;
 }
@@ -1675,7 +1685,7 @@ sal_uInt16 XclIteration::GetNum() const
     return 0x0011;
 }
 
-sal_Size XclIteration::GetLen() const
+std::size_t XclIteration::GetLen() const
 {
     return 2;
 }
@@ -1702,7 +1712,7 @@ sal_uInt16 XclDelta::GetNum() const
     return 0x0010;
 }
 
-sal_Size XclDelta::GetLen() const
+std::size_t XclDelta::GetLen() const
 {
     return 8;
 }
@@ -1799,8 +1809,8 @@ void XclExpWriteAccess::WriteBody( XclExpStream& rStrm )
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 };
 
-    sal_Size nDataSize = sizeof(aData);
-    for (sal_Size i = 0; i < nDataSize; ++i)
+    std::size_t nDataSize = sizeof(aData);
+    for (std::size_t i = 0; i < nDataSize; ++i)
         rStrm << aData[i];
 }
 

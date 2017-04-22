@@ -78,17 +78,18 @@ using namespace ::dbtools;
 class ScriptEventListenerWrapper : public cppu::WeakImplHelper< XScriptListener >
 {
 public:
-    explicit ScriptEventListenerWrapper( FmFormModel& _rModel) throw ( RuntimeException )
+    /// @throws css::uno::RuntimeException
+    explicit ScriptEventListenerWrapper( FmFormModel& _rModel)
         :m_rModel( _rModel )
         ,m_attemptedListenerCreation( false )
     {
 
     }
     // XEventListener
-    virtual void SAL_CALL disposing(const EventObject& ) throw( RuntimeException, std::exception ) override {}
+    virtual void SAL_CALL disposing(const EventObject& ) override {}
 
     // XScriptListener
-    virtual void SAL_CALL firing(const  ScriptEvent& evt) throw(RuntimeException, std::exception) override
+    virtual void SAL_CALL firing(const  ScriptEvent& evt) override
     {
         attemptListenerCreation();
         if ( m_vbaListener.is() )
@@ -97,7 +98,7 @@ public:
         }
     }
 
-    virtual Any SAL_CALL approveFiring(const ScriptEvent& evt) throw( css::reflection::InvocationTargetException, RuntimeException, std::exception) override
+    virtual Any SAL_CALL approveFiring(const ScriptEvent& evt) override
     {
         attemptListenerCreation();
         if ( m_vbaListener.is() )
@@ -125,7 +126,7 @@ private:
             Reference< XPropertySet > const xListenerProps( xScriptListener, UNO_QUERY_THROW );
             // SfxObjectShellRef is good here since the model controls the lifetime of the shell
             SfxObjectShellRef const xObjectShell = m_rModel.GetObjectShell();
-            ENSURE_OR_THROW( xObjectShell.Is(), "no object shell!" );
+            ENSURE_OR_THROW( xObjectShell.is(), "no object shell!" );
             xListenerProps->setPropertyValue("Model", makeAny( xObjectShell->GetModel() ) );
 
             m_vbaListener = xScriptListener;
@@ -164,7 +165,7 @@ struct PropertySetInfo
 typedef std::map<Reference< XPropertySet >, PropertySetInfo> PropertySetInfoCache;
 
 
-OUString static_STR_UNDO_PROPERTY;
+static OUString static_STR_UNDO_PROPERTY;
 
 
 FmXUndoEnvironment::FmXUndoEnvironment(FmFormModel& _rModel)
@@ -184,7 +185,6 @@ FmXUndoEnvironment::FmXUndoEnvironment(FmFormModel& _rModel)
     }
 }
 
-
 FmXUndoEnvironment::~FmXUndoEnvironment()
 {
     if ( !m_bDisposed )   // i120746, call FormScriptingEnvironment::dispose to avoid memory leak
@@ -193,7 +193,6 @@ FmXUndoEnvironment::~FmXUndoEnvironment()
     if (m_pPropertySetCache)
         delete static_cast<PropertySetInfoCache*>(m_pPropertySetCache);
 }
-
 
 void FmXUndoEnvironment::dispose()
 {
@@ -288,17 +287,16 @@ void FmXUndoEnvironment::ModeChanged()
 
 void FmXUndoEnvironment::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
 {
-    const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint);
-    if (pSdrHint)
+    if (const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint))
     {
-        switch( pSdrHint->GetKind() )
+        switch (pSdrHint->GetKind())
         {
-            case HINT_OBJINSERTED:
+            case SdrHintKind::ObjectInserted:
             {
                 SdrObject* pSdrObj = const_cast<SdrObject*>(pSdrHint->GetObject());
                 Inserted( pSdrObj );
             }   break;
-            case HINT_OBJREMOVED:
+            case SdrHintKind::ObjectRemoved:
             {
                 SdrObject* pSdrObj = const_cast<SdrObject*>(pSdrHint->GetObject());
                 Removed( pSdrObj );
@@ -308,36 +306,36 @@ void FmXUndoEnvironment::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
                 break;
         }
     }
-    else if (dynamic_cast<const SfxSimpleHint*>(&rHint))
+    else if (rHint.GetId() != SfxHintId::NONE)
     {
-        switch ( static_cast<const SfxSimpleHint*>(&rHint)->GetId() )
+        switch (rHint.GetId())
         {
-            case SFX_HINT_DYING:
+            case SfxHintId::Dying:
                 dispose();
                 rModel.SetObjectShell( nullptr );
                 break;
-            case SFX_HINT_MODECHANGED:
+            case SfxHintId::ModeChanged:
                 ModeChanged();
                 break;
+            default: break;
         }
     }
-    else if (dynamic_cast<const SfxEventHint*>(&rHint))
+    else if (const SfxEventHint* pEventHint = dynamic_cast<const SfxEventHint*>(&rHint))
     {
-        switch ( static_cast<const SfxEventHint*>(&rHint)->GetEventId() )
+        switch (pEventHint->GetEventId())
         {
-        case SFX_EVENT_CREATEDOC:
-            case SFX_EVENT_OPENDOC:
+            case SfxEventHintId::CreateDoc:
+            case SfxEventHintId::OpenDoc:
                 ModeChanged();
                 break;
+            default: break;
         }
     }
-
 }
-
 
 void FmXUndoEnvironment::Inserted(SdrObject* pObj)
 {
-    if (pObj->GetObjInventor() == FmFormInventor)
+    if (pObj->GetObjInventor() == SdrInventor::FmForm)
     {
         FmFormObj* pFormObj = dynamic_cast<FmFormObj*>( pObj );
         Inserted( pFormObj );
@@ -451,7 +449,7 @@ void FmXUndoEnvironment::Removed(SdrObject* pObj)
         // object, which is sufficient here
         return;
 
-    if (pObj->GetObjInventor() == FmFormInventor)
+    if (pObj->GetObjInventor() == SdrInventor::FmForm)
     {
         FmFormObj* pFormObj = dynamic_cast<FmFormObj*>( pObj );
         Removed(pFormObj);
@@ -511,7 +509,7 @@ void FmXUndoEnvironment::Removed(FmFormObj* pObj)
 
 //  XEventListener
 
-void SAL_CALL FmXUndoEnvironment::disposing(const EventObject& e) throw( RuntimeException, std::exception )
+void SAL_CALL FmXUndoEnvironment::disposing(const EventObject& e)
 {
     // check if it's an object we have cached information about
     if (m_pPropertySetCache)
@@ -529,7 +527,7 @@ void SAL_CALL FmXUndoEnvironment::disposing(const EventObject& e) throw( Runtime
 
 // XPropertyChangeListener
 
-void SAL_CALL FmXUndoEnvironment::propertyChange(const PropertyChangeEvent& evt) throw(css::uno::RuntimeException, std::exception)
+void SAL_CALL FmXUndoEnvironment::propertyChange(const PropertyChangeEvent& evt)
 {
     ::osl::ClearableMutexGuard aGuard( m_aMutex );
 
@@ -540,13 +538,13 @@ void SAL_CALL FmXUndoEnvironment::propertyChange(const PropertyChangeEvent& evt)
             return;
 
         // if it's a "default value" property of a control model, set the according "value" property
-        static const OUString pDefaultValueProperties[] = {
-            OUString(FM_PROP_DEFAULT_TEXT), OUString(FM_PROP_DEFAULTCHECKED), OUString(FM_PROP_DEFAULT_DATE), OUString(FM_PROP_DEFAULT_TIME),
-            OUString(FM_PROP_DEFAULT_VALUE), OUString(FM_PROP_DEFAULT_SELECT_SEQ), OUString(FM_PROP_EFFECTIVE_DEFAULT)
+        static const OUStringLiteral pDefaultValueProperties[] = {
+            FM_PROP_DEFAULT_TEXT, FM_PROP_DEFAULTCHECKED, FM_PROP_DEFAULT_DATE, FM_PROP_DEFAULT_TIME,
+            FM_PROP_DEFAULT_VALUE, FM_PROP_DEFAULT_SELECT_SEQ, FM_PROP_EFFECTIVE_DEFAULT
         };
-        const OUString aValueProperties[] = {
-            OUString(FM_PROP_TEXT), OUString(FM_PROP_STATE), OUString(FM_PROP_DATE), OUString(FM_PROP_TIME),
-            OUString(FM_PROP_VALUE), OUString(FM_PROP_SELECT_SEQ), OUString(FM_PROP_EFFECTIVE_VALUE)
+        static const OUStringLiteral aValueProperties[] = {
+            FM_PROP_TEXT, FM_PROP_STATE, FM_PROP_DATE, FM_PROP_TIME,
+            FM_PROP_VALUE, FM_PROP_SELECT_SEQ, FM_PROP_EFFECTIVE_VALUE
         };
         sal_Int32 nDefaultValueProps = SAL_N_ELEMENTS(pDefaultValueProperties);
         OSL_ENSURE(SAL_N_ELEMENTS(aValueProperties) == nDefaultValueProps,
@@ -724,7 +722,7 @@ void SAL_CALL FmXUndoEnvironment::propertyChange(const PropertyChangeEvent& evt)
 
 // XContainerListener
 
-void SAL_CALL FmXUndoEnvironment::elementInserted(const ContainerEvent& evt) throw(css::uno::RuntimeException, std::exception)
+void SAL_CALL FmXUndoEnvironment::elementInserted(const ContainerEvent& evt)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -748,7 +746,7 @@ void FmXUndoEnvironment::implSetModified()
 }
 
 
-void SAL_CALL FmXUndoEnvironment::elementReplaced(const ContainerEvent& evt) throw(css::uno::RuntimeException, std::exception)
+void SAL_CALL FmXUndoEnvironment::elementReplaced(const ContainerEvent& evt)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -765,7 +763,7 @@ void SAL_CALL FmXUndoEnvironment::elementReplaced(const ContainerEvent& evt) thr
 }
 
 
-void SAL_CALL FmXUndoEnvironment::elementRemoved(const ContainerEvent& evt) throw(css::uno::RuntimeException, std::exception)
+void SAL_CALL FmXUndoEnvironment::elementRemoved(const ContainerEvent& evt)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -778,7 +776,7 @@ void SAL_CALL FmXUndoEnvironment::elementRemoved(const ContainerEvent& evt) thro
 }
 
 
-void SAL_CALL FmXUndoEnvironment::modified( const EventObject& /*aEvent*/ ) throw (RuntimeException, std::exception)
+void SAL_CALL FmXUndoEnvironment::modified( const EventObject& /*aEvent*/ )
 {
     implSetModified();
 }

@@ -53,7 +53,7 @@ class XclExpSst : public XclExpRecordBase
 {
 public:
     explicit            XclExpSst();
-    virtual             ~XclExpSst();
+    virtual             ~XclExpSst() override;
 
     /** Inserts a new string into the table.
         @return  The index of the string in the SST, used in other records. */
@@ -101,10 +101,10 @@ public:
     /** Constructs the HLINK record from an URL text field. */
     explicit            XclExpHyperlink( const XclExpRoot& rRoot,
                             const SvxURLField& rUrlField, const ScAddress& rScPos );
-    virtual             ~XclExpHyperlink();
+    virtual             ~XclExpHyperlink() override;
 
     /** Returns the cell representation text or 0, if not available. */
-    inline const OUString* GetRepr() const { return m_Repr.isEmpty() ? nullptr : &m_Repr; }
+    const OUString* GetRepr() const { return m_Repr.isEmpty() ? nullptr : &m_Repr; }
 
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
 
@@ -131,7 +131,6 @@ private:
     sal_uInt32          mnFlags;            /// Option flags.
     XclExpStringRef     mxTextMark;         /// Location within m_Repr
     OUString            msTarget;           /// Target URL
-    bool                mbSetDisplay;       /// True if display attribute it written
 };
 
 typedef XclExpRecordList< XclExpHyperlink > XclExpHyperlinkList;
@@ -171,7 +170,7 @@ class XclExpCF : public XclExpRecord, protected XclExpRoot
 {
 public:
     explicit            XclExpCF( const XclExpRoot& rRoot, const ScCondFormatEntry& rFormatEntry, sal_Int32 nPriority );
-    virtual             ~XclExpCF();
+    virtual             ~XclExpCF() override;
 
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
 
@@ -188,7 +187,7 @@ class XclExpDateFormat : public XclExpRecord, protected XclExpRoot
 {
 public:
     explicit XclExpDateFormat( const XclExpRoot& rRoot, const ScCondDateFormatEntry& rFormatEntry, sal_Int32 nPriority );
-    virtual ~XclExpDateFormat();
+    virtual ~XclExpDateFormat() override;
 
     virtual void SaveXml( XclExpXmlStream& rStrm ) override;
 
@@ -201,7 +200,6 @@ class XclExpCfvo : public XclExpRecord, protected XclExpRoot
 {
 public:
     explicit XclExpCfvo( const XclExpRoot& rRoot, const ScColorScaleEntry& rFormatEntry, const ScAddress& rPos, bool bFirst = true);
-    virtual ~XclExpCfvo() {}
 
     virtual void SaveXml( XclExpXmlStream& rStrm ) override;
 private:
@@ -214,7 +212,7 @@ class XclExpColScaleCol : public XclExpRecord, protected XclExpRoot
 {
 public:
     explicit XclExpColScaleCol( const XclExpRoot& rRoot, const Color& rColor);
-    virtual ~XclExpColScaleCol();
+    virtual ~XclExpColScaleCol() override;
 
     virtual void SaveXml( XclExpXmlStream& rStrm ) override;
 private:
@@ -229,10 +227,11 @@ class XclExpCondfmt : public XclExpRecord, protected XclExpRoot
 {
 public:
     explicit            XclExpCondfmt( const XclExpRoot& rRoot, const ScConditionalFormat& rCondFormat, XclExtLstRef xExtLst, sal_Int32& rIndex );
-    virtual             ~XclExpCondfmt();
+    virtual             ~XclExpCondfmt() override;
 
     /** Returns true, if this conditional format contains at least one cell range and CF record. */
-    bool                IsValid() const;
+    bool                IsValidForBinary() const;
+    bool                IsValidForXml() const;
 
     /** Writes the CONDFMT record with following CF records, if there is valid data. */
     virtual void        Save( XclExpStream& rStrm ) override;
@@ -321,10 +320,10 @@ class XclExpDV : public XclExpRecord, protected XclExpRoot
 {
 public:
     explicit            XclExpDV( const XclExpRoot& rRoot, sal_uLong nScHandle );
-    virtual             ~XclExpDV();
+    virtual             ~XclExpDV() override;
 
     /** Returns the core handle of the validation data. */
-    inline sal_uLong        GetScHandle() const { return mnScHandle; }
+    sal_uLong        GetScHandle() const { return mnScHandle; }
 
     /** Inserts a new cell range into the cell range list. */
     void                InsertCellRange( const ScRange& rPos );
@@ -359,7 +358,7 @@ class XclExpDval : public XclExpRecord, protected XclExpRoot
 {
 public:
     explicit            XclExpDval( const XclExpRoot& rRoot );
-    virtual             ~XclExpDval();
+    virtual             ~XclExpDval() override;
 
     /** Inserts the cell range into the range list of the DV record with the specified handle. */
     void                InsertCellRange( const ScRange& rRange, sal_uLong nScHandle );
@@ -398,7 +397,7 @@ public:
                             const OUString& rUrl,
                             const OUString& rSource,
                             sal_Int32 nRefrSecs );
-    virtual             ~XclExpWebQuery();
+    virtual             ~XclExpWebQuery() override;
 
     /** Writes all needed records for this web query. */
     virtual void        Save( XclExpStream& rStrm ) override;

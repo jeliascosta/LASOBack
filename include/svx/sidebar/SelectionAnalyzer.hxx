@@ -19,12 +19,12 @@
 #ifndef INCLUDED_SVX_SIDEBAR_SELECTIONANALYZER_HXX
 #define INCLUDED_SVX_SIDEBAR_SELECTIONANALYZER_HXX
 
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svx/svxdllapi.h>
 
 class SdrMarkList;
 class SdrObject;
-
+enum class SdrInventor : sal_uInt32;
 
 namespace svx { namespace sidebar {
 
@@ -36,28 +36,27 @@ namespace svx { namespace sidebar {
 class SVX_DLLPUBLIC SelectionAnalyzer
 {
 public:
-    static sfx2::sidebar::EnumContext::Context GetContextForSelection_SC (
+    static vcl::EnumContext::Context GetContextForSelection_SC (
         const SdrMarkList& rMarkList);
 
-    enum ViewType
+    enum class ViewType
     {
-        VT_Standard,
-        VT_Master,
-        VT_Handout,
-        VT_Notes,
-        VT_Outline
+        Standard,
+        Master,
+        Handout,
+        Notes,
     };
-    static sfx2::sidebar::EnumContext::Context GetContextForSelection_SD (
+    static vcl::EnumContext::Context GetContextForSelection_SD (
         const SdrMarkList& rMarkList,
         const ViewType eViewType);
 
 private:
-    static sfx2::sidebar::EnumContext::Context GetContextForObjectId_SC (
+    static vcl::EnumContext::Context GetContextForObjectId_SC (
         const sal_uInt16 nObjectId);
-    static sfx2::sidebar::EnumContext::Context GetContextForObjectId_SD (
+    static vcl::EnumContext::Context GetContextForObjectId_SD (
         const sal_uInt16 nObjectId,
         const ViewType eViewType);
-    static sal_uInt32 GetInventorTypeFromMark (
+    static SdrInventor GetInventorTypeFromMark (
         const SdrMarkList& rMarkList);
     static sal_uInt16 GetObjectTypeFromMark (
         const SdrMarkList& rMarkList);

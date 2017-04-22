@@ -92,7 +92,7 @@
 
 // wird fuer Invalidate verwendet -> mitpflegen
 // aufsteigend sortieren !!!!!!
-sal_uInt16 ControllerSlotMap[] =    // slots des Controllers
+sal_uInt16 const ControllerSlotMap[] =    // slots des Controllers
 {
     SID_FM_CONFIG,
     SID_FM_PUSHBUTTON,
@@ -154,51 +154,39 @@ FmDesignModeChangedHint::~FmDesignModeChangedHint()
 {
 }
 
-const sal_uInt32 FM_UI_FEATURE_SHOW_DATABASEBAR         = 0x00000001;
-const sal_uInt32 FM_UI_FEATURE_SHOW_FIELD               = 0x00000002;
-const sal_uInt32 FM_UI_FEATURE_SHOW_PROPERTIES          = 0x00000004;
-const sal_uInt32 FM_UI_FEATURE_SHOW_EXPLORER            = 0x00000008;
-const sal_uInt32 FM_UI_FEATURE_SHOW_FILTERBAR           = 0x00000010;
-const sal_uInt32 FM_UI_FEATURE_SHOW_FILTERNAVIGATOR     = 0x00000020;
-const sal_uInt32 FM_UI_FEATURE_SHOW_TEXT_CONTROL_BAR    = 0x00000040;
-const sal_uInt32 FM_UI_FEATURE_TB_CONTROLS              = 0x00000080;
-const sal_uInt32 FM_UI_FEATURE_TB_MORECONTROLS          = 0x00000100;
-const sal_uInt32 FM_UI_FEATURE_TB_FORMDESIGN            = 0x00000200;
-const sal_uInt32 FM_UI_FEATURE_SHOW_DATANAVIGATOR       = 0x00000400;
-
 SFX_IMPL_INTERFACE(FmFormShell, SfxShell)
 
 void FmFormShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_NAVIGATION|SFX_VISIBILITY_STANDARD|SFX_VISIBILITY_READONLYDOC,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_NAVIGATION, SfxVisibilityFlags::Standard|SfxVisibilityFlags::ReadonlyDoc,
                                             RID_SVXTBX_FORM_NAVIGATION,
-                                            FM_UI_FEATURE_SHOW_DATABASEBAR);
+                                            SfxShellFeature::FormShowDatabaseBar);
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_NAVIGATION|SFX_VISIBILITY_STANDARD|SFX_VISIBILITY_READONLYDOC,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_NAVIGATION, SfxVisibilityFlags::Standard|SfxVisibilityFlags::ReadonlyDoc,
                                             RID_SVXTBX_FORM_FILTER,
-                                            FM_UI_FEATURE_SHOW_FILTERBAR);
+                                            SfxShellFeature::FormShowFilterBar);
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT | SFX_VISIBILITY_STANDARD | SFX_VISIBILITY_READONLYDOC,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Standard | SfxVisibilityFlags::ReadonlyDoc,
                                             RID_SVXTBX_TEXT_CONTROL_ATTRIBUTES,
-                                            FM_UI_FEATURE_SHOW_TEXT_CONTROL_BAR);
+                                            SfxShellFeature::FormShowTextControlBar);
 
-    GetStaticInterface()->RegisterChildWindow(SID_FM_ADD_FIELD, false, FM_UI_FEATURE_SHOW_FIELD);
-    GetStaticInterface()->RegisterChildWindow(SID_FM_SHOW_PROPERTIES, false, FM_UI_FEATURE_SHOW_PROPERTIES);
-    GetStaticInterface()->RegisterChildWindow(SID_FM_SHOW_FMEXPLORER, false, FM_UI_FEATURE_SHOW_EXPLORER);
-    GetStaticInterface()->RegisterChildWindow(SID_FM_FILTER_NAVIGATOR, false, FM_UI_FEATURE_SHOW_FILTERNAVIGATOR);
-    GetStaticInterface()->RegisterChildWindow(SID_FM_SHOW_DATANAVIGATOR, false, FM_UI_FEATURE_SHOW_DATANAVIGATOR);
+    GetStaticInterface()->RegisterChildWindow(SID_FM_ADD_FIELD, false, SfxShellFeature::FormShowField);
+    GetStaticInterface()->RegisterChildWindow(SID_FM_SHOW_PROPERTIES, false, SfxShellFeature::FormShowProperies);
+    GetStaticInterface()->RegisterChildWindow(SID_FM_SHOW_FMEXPLORER, false, SfxShellFeature::FormShowExplorer);
+    GetStaticInterface()->RegisterChildWindow(SID_FM_FILTER_NAVIGATOR, false, SfxShellFeature::FormShowFilterNavigator);
+    GetStaticInterface()->RegisterChildWindow(SID_FM_SHOW_DATANAVIGATOR, false, SfxShellFeature::FormShowDataNavigator);
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT | SFX_VISIBILITY_STANDARD,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Standard,
                                             RID_SVXTBX_CONTROLS,
-                                            FM_UI_FEATURE_TB_CONTROLS);
+                                            SfxShellFeature::FormTBControls);
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT | SFX_VISIBILITY_STANDARD,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Standard,
                                             RID_SVXTBX_MORECONTROLS,
-                                            FM_UI_FEATURE_TB_MORECONTROLS);
+                                            SfxShellFeature::FormTBMoreControls);
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT | SFX_VISIBILITY_STANDARD,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Standard,
                                             RID_SVXTBX_FORMDESIGN,
-                                            FM_UI_FEATURE_TB_FORMDESIGN);
+                                            SfxShellFeature::FormTBDesign);
 }
 
 
@@ -211,7 +199,6 @@ FmFormShell::FmFormShell( SfxViewShell* _pParent, FmFormView* pView )
             ,m_bDesignMode( true )
             ,m_bHasForms(false)
 {
-    m_pImpl->acquire();
     SetPool( &SfxGetpApp()->GetPool() );
     SetName( "Form" );
 
@@ -225,8 +212,6 @@ FmFormShell::~FmFormShell()
         SetView( nullptr );
 
     m_pImpl->dispose();
-    m_pImpl->release();
-    m_pImpl = nullptr;
 }
 
 
@@ -312,46 +297,47 @@ void FmFormShell::impl_setDesignMode(bool bDesign)
 }
 
 
-bool FmFormShell::HasUIFeature( sal_uInt32 nFeature )
+bool FmFormShell::HasUIFeature(SfxShellFeature nFeature) const
 {
+    assert((nFeature & ~SfxShellFeature::FormMask) == SfxShellFeature::NONE);
     bool bResult = false;
-    if ((nFeature & FM_UI_FEATURE_SHOW_DATABASEBAR) == FM_UI_FEATURE_SHOW_DATABASEBAR)
+    if (nFeature & SfxShellFeature::FormShowDatabaseBar)
     {
         // nur wenn auch formulare verfuegbar
         bResult = !m_bDesignMode && GetImpl()->hasDatabaseBar() && !GetImpl()->isInFilterMode();
     }
-    else if ((nFeature & FM_UI_FEATURE_SHOW_FILTERBAR) == FM_UI_FEATURE_SHOW_FILTERBAR)
+    else if (nFeature & SfxShellFeature::FormShowFilterBar)
     {
         // nur wenn auch formulare verfuegbar
         bResult = !m_bDesignMode && GetImpl()->hasDatabaseBar() && GetImpl()->isInFilterMode();
     }
-    else if ((nFeature & FM_UI_FEATURE_SHOW_FILTERNAVIGATOR) == FM_UI_FEATURE_SHOW_FILTERNAVIGATOR)
+    else if (nFeature & SfxShellFeature::FormShowFilterNavigator)
     {
         bResult = !m_bDesignMode && GetImpl()->hasDatabaseBar() && GetImpl()->isInFilterMode();
     }
-    else if ((nFeature & FM_UI_FEATURE_SHOW_FIELD) == FM_UI_FEATURE_SHOW_FIELD)
+    else if (nFeature & SfxShellFeature::FormShowField)
     {
         bResult = m_bDesignMode && m_pFormView && m_bHasForms;
     }
-    else if ((nFeature & FM_UI_FEATURE_SHOW_PROPERTIES) == FM_UI_FEATURE_SHOW_PROPERTIES)
+    else if (nFeature & SfxShellFeature::FormShowProperies)
     {
         bResult = m_bDesignMode && m_pFormView && m_bHasForms;
     }
-    else if ((nFeature & FM_UI_FEATURE_SHOW_EXPLORER) == FM_UI_FEATURE_SHOW_EXPLORER)
+    else if (nFeature & SfxShellFeature::FormShowExplorer)
     {
         bResult = m_bDesignMode; // OJ #101593# && m_pFormView && m_bHasForms;
     }
-    else if ( ( nFeature & FM_UI_FEATURE_SHOW_TEXT_CONTROL_BAR ) == FM_UI_FEATURE_SHOW_TEXT_CONTROL_BAR )
+    else if (nFeature & SfxShellFeature::FormShowTextControlBar)
     {
         bResult = !GetImpl()->IsReadonlyDoc() && m_pImpl->IsActiveControl( true );
     }
-    else if ((nFeature & FM_UI_FEATURE_SHOW_DATANAVIGATOR) == FM_UI_FEATURE_SHOW_DATANAVIGATOR)
+    else if (nFeature & SfxShellFeature::FormShowDataNavigator)
     {
         bResult = GetImpl()->isEnhancedForm();
     }
-    else if (  ( ( nFeature & FM_UI_FEATURE_TB_CONTROLS ) == FM_UI_FEATURE_TB_CONTROLS )
-            || ( ( nFeature & FM_UI_FEATURE_TB_MORECONTROLS ) == FM_UI_FEATURE_TB_MORECONTROLS )
-            || ( ( nFeature & FM_UI_FEATURE_TB_FORMDESIGN ) == FM_UI_FEATURE_TB_FORMDESIGN )
+    else if (  (nFeature & SfxShellFeature::FormTBControls)
+            || (nFeature & SfxShellFeature::FormTBMoreControls)
+            || (nFeature & SfxShellFeature::FormTBDesign)
             )
     {
         bResult = true;
@@ -391,7 +377,6 @@ void FmFormShell::Execute(SfxRequest &rReq)
         case SID_FM_SCROLLBAR:
         case SID_FM_SPINBUTTON:
             m_nLastSlot = nSlot;
-            GetViewShell()->GetViewFrame()->GetBindings().Invalidate( SID_FM_CONFIG );
             break;
     }
 
@@ -500,7 +485,7 @@ void FmFormShell::Execute(SfxRequest &rReq)
             }
 
             SfxUInt16Item aIdentifierItem( SID_FM_CONTROL_IDENTIFIER, nIdentifier );
-            SfxUInt32Item aInventorItem( SID_FM_CONTROL_INVENTOR, FmFormInventor );
+            SfxUInt32Item aInventorItem( SID_FM_CONTROL_INVENTOR, (sal_uInt32) SdrInventor::FmForm );
             const SfxPoolItem* pArgs[] =
             {
                 &aIdentifierItem, &aInventorItem, nullptr
@@ -553,10 +538,13 @@ void FmFormShell::Execute(SfxRequest &rReq)
             const bool bHasControlFocus = GetImpl()->HasControlFocus();
             if ( bHasControlFocus )
             {
-                const OutputDevice* pDevice = GetCurrentViewDevice();
-                vcl::Window* pWindow = dynamic_cast< vcl::Window* >( const_cast< OutputDevice* >( pDevice ) );
-                if ( pWindow )
-                    pWindow->GrabFocus();
+                if (m_pFormView)
+                {
+                    const OutputDevice* pDevice = m_pFormView->GetActualOutDev();
+                    vcl::Window* pWindow = dynamic_cast< vcl::Window* >( const_cast< OutputDevice* >( pDevice ) );
+                    if ( pWindow )
+                        pWindow->GrabFocus();
+                }
             }
             else
             {
@@ -595,7 +583,6 @@ void FmFormShell::Execute(SfxRequest &rReq)
             break;
         case SID_FM_LEAVE_CREATE:
             m_nLastSlot = 0;
-            GetViewShell()->GetViewFrame()->GetBindings().Invalidate( SID_FM_CONFIG );
             rReq.Done();
             break;
         case SID_FM_SHOW_PROPERTY_BROWSER:
@@ -670,7 +657,6 @@ void FmFormShell::Execute(SfxRequest &rReq)
                 rReq.Done();
 
             m_nLastSlot = SID_FM_DESIGN_MODE;
-            GetViewShell()->GetViewFrame()->GetBindings().Invalidate( SID_FM_CONFIG );
         }
         break;
 
@@ -751,7 +737,7 @@ void FmFormShell::Execute(SfxRequest &rReq)
                 DBG_ASSERT( pFact, "no dialog factory!" );
                 if ( pFact )
                 {
-                    std::unique_ptr< AbstractFmInputRecordNoDialog > dlg( pFact->CreateFmInputRecordNoDialog() );
+                    ScopedVclPtr< AbstractFmInputRecordNoDialog > dlg( pFact->CreateFmInputRecordNoDialog() );
                     DBG_ASSERT( dlg.get(), "Dialog creation failed!" );
                     dlg->SetValue( rController->getCursor()->getRow() );
                     if ( dlg->Execute() == RET_OK )
@@ -762,7 +748,7 @@ void FmFormShell::Execute(SfxRequest &rReq)
             }
 
             if ( nRecord != -1 )
-                rController->execute( nSlot, "Position", makeAny( (sal_Int32)nRecord ) );
+                rController->execute( nSlot, "Position", makeAny( nRecord ) );
 
             rReq.Done();
         }   break;
@@ -902,7 +888,7 @@ void FmFormShell::GetState(SfxItemSet &rSet)
                     bool bLayerLocked = false;
                     if (m_pFormView)
                     {
-                        // Ist der css::drawing::Layer gelocked, so m???ssen die Slots disabled werden. #36897
+                        // Ist der css::drawing::Layer gelocked, so müssen die Slots disabled werden. #36897
                         SdrPageView* pPV = m_pFormView->GetSdrPageView();
                         if (pPV != nullptr)
                             bLayerLocked = pPV->IsLayerLocked(m_pFormView->GetActiveLayer());
@@ -999,9 +985,6 @@ void FmFormShell::GetState(SfxItemSet &rSet)
                 if (!m_pFormView || !m_bDesignMode || !GetImpl()->getCurrentForm().is() )
                     rSet.DisableItem( nWhich );
                 break;
-            case SID_FM_CONFIG:
-                rSet.Put(SfxUInt16Item(nWhich, m_nLastSlot));
-                break;
             case SID_FM_DESIGN_MODE:
                 if (!m_pFormView || GetImpl()->IsReadonlyDoc() )
                     rSet.DisableItem( nWhich );
@@ -1038,7 +1021,7 @@ void FmFormShell::GetState(SfxItemSet &rSet)
                     rSet.DisableItem( nWhich );
                 else
                 {
-                    if ( !GetImpl()->canConvertCurrentSelectionToControl( OBJ_FM_FIXEDTEXT ) )
+                    if ( !GetImpl()->canConvertCurrentSelectionToControl( SID_FM_CONVERTTO_FIXEDTEXT ) )
                         // if it cannot be converted to a fixed text, it is no single control
                         rSet.DisableItem( nWhich );
                 }
@@ -1153,7 +1136,7 @@ void FmFormShell::GetFormState(SfxItemSet &rSet, sal_uInt16 nWhich)
             case SID_FM_SORTDOWN:
             case SID_FM_AUTOFILTER:
             case SID_FM_ORDERCRIT:
-                bEnable = GetImpl()->IsFormSlotEnabled( nWhich );
+                bEnable = GetImpl()->IsFormSlotEnabled( nWhich, nullptr );
                 break;
 
             case SID_FM_FORM_FILTERED:
@@ -1276,7 +1259,7 @@ void FmFormShell::GetTextAttributeState( SfxItemSet& _rSet )
 
 bool FmFormShell::IsActiveControl() const
 {
-    return m_pImpl->IsActiveControl();
+    return m_pImpl->IsActiveControl(false);
 }
 
 

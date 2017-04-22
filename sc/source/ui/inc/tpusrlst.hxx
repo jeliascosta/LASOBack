@@ -39,12 +39,12 @@ public:
     virtual bool        FillItemSet     ( SfxItemSet* rCoreAttrs ) override;
     virtual void        Reset           ( const SfxItemSet* rCoreAttrs ) override;
     using SfxTabPage::DeactivatePage;
-    virtual sfxpg       DeactivatePage  ( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC   DeactivatePage  ( SfxItemSet* pSet ) override;
 
 private:
             ScTpUserLists( vcl::Window*              pParent,
                            const SfxItemSet&    rArgSet );
-            virtual ~ScTpUserLists();
+            virtual ~ScTpUserLists() override;
     virtual void dispose() override;
 
 private:
@@ -94,9 +94,9 @@ private:
                                   const ScRefAddress& rEndPos );
 
     // Handler:
-    DECL_LINK_TYPED( LbSelectHdl, ListBox&, void );
-    DECL_LINK_TYPED( BtnClickHdl, Button*, void );
-    DECL_LINK_TYPED( EdEntriesModHdl, Edit&, void);
+    DECL_LINK( LbSelectHdl, ListBox&, void );
+    DECL_LINK( BtnClickHdl, Button*, void );
+    DECL_LINK( EdEntriesModHdl, Edit&, void);
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_TPUSRLST_HXX

@@ -22,14 +22,12 @@
 
 #include <sfx2/tabdlg.hxx>
 #include <svx/pageitem.hxx>
-#include <svtools/stdctrl.hxx>
 #include <vcl/group.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/timer.hxx>
 #include <vcl/virdev.hxx>
 #include "scdllapi.h"
 #include "scitems.hxx"
-#include "popmenu.hxx"
 #include <com/sun/star/accessibility/XAccessible.hpp>
 #include <cppuhelper/weakref.hxx>
 
@@ -54,7 +52,7 @@ class SC_DLLPUBLIC ScEditWindow : public Control
 {
 public:
             ScEditWindow( vcl::Window* pParent,  WinBits nBits , ScEditWindowLocation eLoc );
-            virtual ~ScEditWindow();
+            virtual ~ScEditWindow() override;
     virtual void dispose() override;
 
     using Control::SetFont;
@@ -76,7 +74,7 @@ public:
 
     void SetLocation(ScEditWindowLocation eLoc) { eLocation = eLoc; }
 protected:
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonUp( const MouseEvent& rMEvt ) override;
@@ -104,12 +102,12 @@ class SC_DLLPUBLIC ScExtIButton : public ImageButton
 private:
 
     Idle            aIdle;
-    PopupMenu*      pPopupMenu;
+    VclPtr<PopupMenu>        pPopupMenu;
     Link<ScExtIButton&,void> aMLink;
     sal_uInt16      nSelected;
     OString         aSelectedIdent;
 
-                    DECL_DLLPRIVATE_LINK_TYPED( TimerHdl, Idle*, void );
+                    DECL_DLLPRIVATE_LINK( TimerHdl, Timer*, void );
 
 protected:
 
@@ -122,6 +120,8 @@ protected:
 public:
 
     ScExtIButton(vcl::Window* pParent, WinBits nBits );
+    virtual ~ScExtIButton() override;
+    virtual void dispose() override;
 
     void            SetPopupMenu(PopupMenu* pPopUp);
 

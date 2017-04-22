@@ -32,13 +32,13 @@
 #include "document.hxx"
 #include "gridwin.hxx"
 
-//  Maximal erlaubte Mausbewegung um noch Drag&Drop zu starten
-//! fusel,fuconstr,futext - zusammenfassen!
+//  maximal permitted mouse movement to start Drag&Drop
+//! fusel,fuconstr,futext - combine them!
 #define SC_MAXDRAGMOVE  3
 
 /*************************************************************************
 |*
-|* Konstruktor
+|* ctor
 |*
 \************************************************************************/
 
@@ -50,17 +50,12 @@ FuConstruct::FuConstruct(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView*
 
 /*************************************************************************
 |*
-|* Destruktor
+|* dtor
 |*
 \************************************************************************/
 
 FuConstruct::~FuConstruct()
 {
-}
-
-sal_uInt8 FuConstruct::Command(const CommandEvent& rCEvt)
-{
-    return FuDraw::Command( rCEvt );
 }
 
 // Calculate and return offset at current zoom. rInOutPos is adjusted by
@@ -79,7 +74,7 @@ Point FuConstruct::CurrentGridSyncOffsetAndPos( Point& rInOutPos )
         // that's the actual correct position for the object (when you
         // restore the zoom.
         bool bNegative = pDoc->IsNegativePage(pView->GetTab());
-        Rectangle aObjRect( rInOutPos, rInOutPos );
+        tools::Rectangle aObjRect( rInOutPos, rInOutPos );
         ScRange aRange = pDoc->GetRange( pView->GetTab(), aObjRect );
         ScAddress aOldStt = aRange.aStart;
         Point aOldPos( pDoc->GetColOffset( aOldStt.Col(), aOldStt.Tab()  ), pDoc->GetRowOffset( aOldStt.Row(), aOldStt.Tab() ) );
@@ -216,7 +211,7 @@ bool FuConstruct::MouseButtonUp(const MouseEvent& rMEvt)
 
     bool bReturn = SimpleMouseButtonUp( rMEvt );
 
-    //      Doppelklick auf Textobjekt? (->fusel)
+    //      Double-click on text object? (->fusel)
 
     sal_uInt16 nClicks = rMEvt.GetClicks();
     if ( nClicks == 2 && rMEvt.IsLeft() )
@@ -229,7 +224,7 @@ bool FuConstruct::MouseButtonUp(const MouseEvent& rMEvt)
                 SdrMark* pMark = rMarkList.GetMark(0);
                 SdrObject* pObj = pMark->GetMarkedSdrObj();
 
-                //  bei Uno-Controls nicht in Textmodus
+                //  if Uno-Controls no text mode
                 if ( dynamic_cast<const SdrTextObj*>( pObj) != nullptr && dynamic_cast<const SdrUnoObj*>( pObj) ==  nullptr )
                 {
                     OutlinerParaObject* pOPO = pObj->GetOutlinerParaObject();
@@ -239,9 +234,9 @@ bool FuConstruct::MouseButtonUp(const MouseEvent& rMEvt)
                     pViewShell->GetViewData().GetDispatcher().
                         Execute(nTextSlotId, SfxCallMode::SLOT | SfxCallMode::RECORD);
 
-                    // jetzt den erzeugten FuText holen und in den EditModus setzen
+                    // Get the created FuText now and change into EditModus
                     FuPoor* pPoor = pViewShell->GetViewData().GetView()->GetDrawFuncPtr();
-                    if ( pPoor && pPoor->GetSlotID() == nTextSlotId )    // hat keine RTTI
+                    if ( pPoor && pPoor->GetSlotID() == nTextSlotId )    // has no RTTI
                     {
                         FuText* pText = static_cast<FuText*>(pPoor);
                         Point aMousePixel = rMEvt.GetPosPixel();
@@ -258,7 +253,7 @@ bool FuConstruct::MouseButtonUp(const MouseEvent& rMEvt)
     return bReturn;
 }
 
-//      SimpleMouseButtonUp - ohne Test auf Doppelklick
+//      SimpleMouseButtonUp - no test on double-click
 
 bool FuConstruct::SimpleMouseButtonUp(const MouseEvent& rMEvt)
 {
@@ -300,10 +295,9 @@ bool FuConstruct::SimpleMouseButtonUp(const MouseEvent& rMEvt)
 
 /*************************************************************************
 |*
-|* Tastaturereignisse bearbeiten
+|* Handle keyboard events
 |*
-|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
-|* FALSE.
+|* If we handle a KeyEvent, then the return value is sal_True else FALSE.
 |*
 \************************************************************************/
 
@@ -320,7 +314,7 @@ bool FuConstruct::KeyInput(const KeyEvent& rKEvt)
                 pWindow->ReleaseMouse();
                 bReturn = true;
             }
-            else                            // Zeichenmodus beenden
+            else                            // end drawing mode
             {
                 pViewShell->GetViewData().GetDispatcher().
                     Execute(aSfxRequest.GetSlot(), SfxCallMode::SLOT | SfxCallMode::RECORD);
@@ -339,28 +333,6 @@ bool FuConstruct::KeyInput(const KeyEvent& rKEvt)
     }
 
     return bReturn;
-}
-
-/*************************************************************************
-|*
-|* Function aktivieren
-|*
-\************************************************************************/
-
-void FuConstruct::Activate()
-{
-    FuDraw::Activate();
-}
-
-/*************************************************************************
-|*
-|* Function deaktivieren
-|*
-\************************************************************************/
-
-void FuConstruct::Deactivate()
-{
-    FuDraw::Deactivate();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

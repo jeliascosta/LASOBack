@@ -40,36 +40,30 @@ Manager::~Manager()
 }
 
 uno::Reference< media::XPlayer > SAL_CALL Manager::createPlayer( const OUString& rURL )
-    throw (uno::RuntimeException, std::exception)
 {
     Player*                             pPlayer( new Player );
     uno::Reference< media::XPlayer >    xRet( pPlayer );
     const INetURLObject                 aURL( rURL );
 
-    if( !pPlayer->create( aURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS ) )  )
+    if( !pPlayer->create( aURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous ) )  )
         xRet.clear();
 
     return xRet;
 }
 
 OUString SAL_CALL Manager::getImplementationName(  )
-    throw (uno::RuntimeException, std::exception)
 {
     return OUString( AVMEDIA_GST_MANAGER_IMPLEMENTATIONNAME );
 }
 
 sal_Bool SAL_CALL Manager::supportsService( const OUString& ServiceName )
-    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL Manager::getSupportedServiceNames(  )
-    throw (uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aRet { AVMEDIA_GST_MANAGER_SERVICENAME };
-
-    return aRet;
+    return { AVMEDIA_GST_MANAGER_SERVICENAME };
 }
 
 } // namespace gstreamer

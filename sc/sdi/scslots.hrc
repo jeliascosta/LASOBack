@@ -23,5 +23,6 @@
 #include <editeng/editids.hrc>
 #include <editeng/memberids.hrc>
 #include <sc.hrc>
+#include <mid.hrc>
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -102,13 +102,13 @@ namespace migration
 
     void BasicMigration::checkAndCreateDirectory( INetURLObject& rDirURL )
     {
-        ::osl::FileBase::RC aResult = ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DECODE_TO_IURI ) );
+        ::osl::FileBase::RC aResult = ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ) );
         if ( aResult == ::osl::FileBase::E_NOENT )
         {
             INetURLObject aBaseURL( rDirURL );
             aBaseURL.removeSegment();
             checkAndCreateDirectory( aBaseURL );
-            ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DECODE_TO_IURI ) );
+            ::osl::Directory::create( rDirURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ) );
         }
     }
 
@@ -132,9 +132,10 @@ namespace migration
                 ::osl::FileBase::RC aResult = ::osl::File::copy( *aI, sTargetName );
                 if ( aResult != ::osl::FileBase::E_None )
                 {
-                    OString aMsg( "BasicMigration::copyFiles: cannot copy " );
-                    aMsg += OUStringToOString( *aI, RTL_TEXTENCODING_UTF8 ) + " to "
-                         +  OUStringToOString( sTargetName, RTL_TEXTENCODING_UTF8 );
+                    OString aMsg = "BasicMigration::copyFiles: cannot copy "
+                                 + OUStringToOString( *aI, RTL_TEXTENCODING_UTF8 )
+                                 + " to "
+                                 + OUStringToOString( sTargetName, RTL_TEXTENCODING_UTF8 );
                     OSL_FAIL( aMsg.getStr() );
                 }
                 ++aI;
@@ -150,20 +151,19 @@ namespace migration
     // XServiceInfo
 
 
-    OUString BasicMigration::getImplementationName() throw (RuntimeException, std::exception)
+    OUString BasicMigration::getImplementationName()
     {
         return BasicMigration_getImplementationName();
     }
 
 
     sal_Bool BasicMigration::supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception)
     {
         return cppu::supportsService(this, ServiceName);
     }
 
 
-    Sequence< OUString > BasicMigration::getSupportedServiceNames() throw (RuntimeException, std::exception)
+    Sequence< OUString > BasicMigration::getSupportedServiceNames()
     {
         return BasicMigration_getSupportedServiceNames();
     }
@@ -172,7 +172,7 @@ namespace migration
     // XInitialization
 
 
-    void BasicMigration::initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception)
+    void BasicMigration::initialize( const Sequence< Any >& aArguments )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -199,7 +199,6 @@ namespace migration
 
 
     Any BasicMigration::execute( const Sequence< beans::NamedValue >& )
-        throw (lang::IllegalArgumentException, Exception, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 

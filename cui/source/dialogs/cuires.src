@@ -70,31 +70,34 @@ String RID_SVXSTR_EDIT_GRAPHIC
     Text [ en-US ] = "Link" ;
 };
 
-#define MASKCOLOR  MaskColor = \
-    Color { Red = 0xFFFF ; Green = 0x0000 ; Blue = 0xFFFF ; };
-
-Image RID_CUIIMG_HARDDISK
+Bitmap RID_CUIBMP_HARDDISK
 {
-    ImageBitmap = Bitmap { File = "harddisk_16.bmp" ; };
-    MASKCOLOR
+    File = "harddisk_16.png";
 };
 
-Image RID_CUIIMG_LIB
+Bitmap RID_CUIBMP_LIB
 {
-    ImageBitmap = Bitmap { File = "im30820.png"; };
-    MASKCOLOR
+    File = "im30820.png";
 };
 
-Image RID_CUIIMG_MACRO
+Bitmap RID_CUIBMP_MACRO
 {
-    ImageBitmap = Bitmap { File = "im30821.png"; };
-    MASKCOLOR
+    File = "im30821.png";
 };
 
-Image RID_CUIIMG_DOC
+Bitmap RID_CUIBMP_DOC
 {
-    ImageBitmap = Bitmap { File = "im30826.png"; };
-    MASKCOLOR
+    File = "im30826.png";
+};
+
+Bitmap RID_CUIBMP_COLLAPSED
+{
+    File = "plus.bmp" ;
+};
+
+Bitmap RID_CUIBMP_EXPANDED
+{
+    File = "minus.bmp" ;
 };
 
 String RID_SVXSTR_LOADACCELCONFIG
@@ -135,6 +138,16 @@ String RID_SVXSTR_HANGUL
 String RID_SVXSTR_HANJA
 {
     Text [ en-US ] = "Hanja";
+};
+
+String RID_SVXSTR_BASICMACROS
+{
+    Text [ en-US ] = "BASIC Macros" ;
+};
+
+String RID_SVXSTR_GROUP_STYLES
+{
+    Text [ en-US ] = "Styles" ;
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -29,13 +29,13 @@
 #include "oox/ppt/pptshapecontext.hxx"
 #include "oox/ppt/pptshapegroupcontext.hxx"
 #include "oox/drawingml/graphicshapecontext.hxx"
-#include "oox/drawingml/lineproperties.hxx"
+#include "drawingml/lineproperties.hxx"
 #include "oox/drawingml/drawingmltypes.hxx"
 #include "drawingml/customshapegeometry.hxx"
 #include "drawingml/shapepropertiescontext.hxx"
 #include "drawingml/textbodycontext.hxx"
 #include "oox/drawingml/connectorshapecontext.hxx"
-#include "oox/drawingml/fillproperties.hxx"
+#include "drawingml/fillproperties.hxx"
 #include "extdrawingfragmenthandler.hxx"
 #include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
@@ -101,7 +101,15 @@ ContextHandlerRef PPTShapeGroupContext::onCreateContext( sal_Int32 aElementToken
             std::shared_ptr<PPTShape> pShape( new PPTShape( meShapeLocation, "com.sun.star.drawing.CustomShape" ) );
             if( rAttribs.getBool( XML_useBgFill, false ) )
             {
-                const oox::drawingml::FillPropertiesPtr pBackgroundPropertiesPtr = mpSlidePersistPtr->getBackgroundProperties();
+                oox::drawingml::FillPropertiesPtr pBackgroundPropertiesPtr = mpSlidePersistPtr->getBackgroundProperties();
+                if (!pBackgroundPropertiesPtr)
+                {
+                    // The shape wants a background, but the slide doesn't have
+                    // one: default to white.
+                    pBackgroundPropertiesPtr.reset(new oox::drawingml::FillProperties);
+                    pBackgroundPropertiesPtr->moFillType = XML_solidFill;
+                    pBackgroundPropertiesPtr->maFillColor.setSrgbClr(0xFFFFFF);
+                }
                 if ( pBackgroundPropertiesPtr ) {
                     pShape->getFillProperties().assignUsed( *pBackgroundPropertiesPtr );
                 }

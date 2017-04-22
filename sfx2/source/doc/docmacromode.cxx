@@ -121,20 +121,11 @@ namespace sfx2
         }
     }
 
-
     //= DocumentMacroMode
-
-
     DocumentMacroMode::DocumentMacroMode( IMacroDocumentAccess& rDocumentAccess )
         :m_xData( new DocumentMacroMode_Data( rDocumentAccess ) )
     {
     }
-
-
-    DocumentMacroMode::~DocumentMacroMode()
-    {
-    }
-
 
     bool DocumentMacroMode::allowMacroExecution()
     {
@@ -142,13 +133,11 @@ namespace sfx2
         return true;
     }
 
-
     bool DocumentMacroMode::disallowMacroExecution()
     {
         m_xData->m_rDocumentAccess.setCurrentMacroExecMode( MacroExecMode::NEVER_EXECUTE );
         return false;
     }
-
 
     bool DocumentMacroMode::adjustMacroMode( const Reference< XInteractionHandler >& rxInteraction )
     {
@@ -218,7 +207,7 @@ namespace sfx2
 
             OUString aLocation;
             if ( aURLReferer.removeSegment() )
-                aLocation = aURLReferer.GetMainURL( INetURLObject::NO_DECODE );
+                aLocation = aURLReferer.GetMainURL( INetURLObject::DecodeMechanism::NONE );
 
             if ( !aLocation.isEmpty() && xSignatures->isLocationTrusted( aLocation ) )
             {
@@ -241,10 +230,6 @@ namespace sfx2
                 SignatureState nSignatureState = m_xData->m_rDocumentAccess.getScriptingSignatureState();
                 if ( nSignatureState == SignatureState::BROKEN )
                 {
-                    // the signature is broken, no macro execution
-                    if ( nMacroExecutionMode != MacroExecMode::FROM_LIST_AND_SIGNED_NO_WARN )
-                        m_xData->m_rDocumentAccess.showBrokenSignatureWarning( rxInteraction );
-
                     return disallowMacroExecution();
                 }
                 else if ( bHasTrustedMacroSignature )

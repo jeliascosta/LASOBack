@@ -65,19 +65,22 @@ class MediaTypeDetectionHelper  :   public ::cppu::WeakImplHelper< css::util::XS
             @descr      This method destruct an instance of this class and clear some member.
         *//*-*****************************************************************************************************/
 
-        virtual ~MediaTypeDetectionHelper();
+        virtual ~MediaTypeDetectionHelper() override;
 
         //  XInterface, XTypeProvider, XServiceInfo
 
-        DECLARE_XSERVICEINFO
+        DECLARE_XSERVICEINFO_NOFACTORY
+        /* Helper for registry */
+        /// @throws css::uno::Exception
+        static css::uno::Reference< css::uno::XInterface >             SAL_CALL impl_createInstance                ( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager );
+        static css::uno::Reference< css::lang::XSingleServiceFactory > SAL_CALL impl_createFactory                 ( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager );
 
         //  XStringMapping
 
         /*-****************************************************************************************************
         *//*-*****************************************************************************************************/
 
-        virtual sal_Bool SAL_CALL mapStrings(css::uno::Sequence< OUString >& seqParameter)
-            throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL mapStrings(css::uno::Sequence< OUString >& seqParameter) override;
 
 };
 

@@ -100,7 +100,7 @@ bool SmartTag::MarkPoint(SdrHdl& /*rHdl*/, bool /*bUnmark*/ )
     return false;
 }
 
-bool SmartTag::MarkPoints(const Rectangle* /*pRect*/, bool /*bUnmark*/ )
+bool SmartTag::MarkPoints(const ::tools::Rectangle* /*pRect*/, bool /*bUnmark*/ )
 {
     return false;
 }
@@ -335,7 +335,7 @@ bool SmartTagSet::MarkPoint(SdrHdl& rHdl, bool bUnmark )
     return false;
 }
 
-bool SmartTagSet::MarkPoints(const Rectangle* pRect, bool bUnmark)
+bool SmartTagSet::MarkPoints(const ::tools::Rectangle* pRect, bool bUnmark)
 {
     if( mxSelectedTag.is() )
         return mxSelectedTag->MarkPoints( pRect, bUnmark );
@@ -348,14 +348,14 @@ void SmartTagSet::CheckPossibilities()
         mxSelectedTag->CheckPossibilities();
 }
 
-SmartHdl::SmartHdl( const SmartTagReference& xTag, SdrObject* pObject, const Point& rPnt, SdrHdlKind eNewKind /*=HDL_MOVE*/ )
+SmartHdl::SmartHdl( const SmartTagReference& xTag, SdrObject* pObject, const Point& rPnt, SdrHdlKind eNewKind /*=SdrHdlKind::Move*/ )
 : SdrHdl( rPnt, eNewKind )
 , mxTag( xTag )
 {
     SetObj( pObject );
 }
 
-SmartHdl::SmartHdl( const SmartTagReference& xTag, const Point& rPnt, SdrHdlKind eNewKind /*=HDL_MOVE*/ )
+SmartHdl::SmartHdl( const SmartTagReference& xTag, const Point& rPnt, SdrHdlKind eNewKind /*=SdrHdlKind::Move*/ )
 : SdrHdl( rPnt, eNewKind )
 , mxTag( xTag )
 {

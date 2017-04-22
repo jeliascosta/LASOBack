@@ -88,7 +88,7 @@ OpenGLContext& OpenGLWindow::getContext()
     return mxImpl->getContext();
 }
 
-void OpenGLWindow::Paint(vcl::RenderContext& /*rRenderContext*/, const Rectangle&)
+void OpenGLWindow::Paint(vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle&)
 {
     if(mpRenderer)
         mpRenderer->update();
@@ -141,14 +141,9 @@ void OpenGLWindow::setRenderer(IRenderer* pRenderer)
     mpRenderer = pRenderer;
 }
 
-bool OpenGLWindow::IsInitialized() const
-{
-    return mxImpl->IsInitialized();
-}
-
 void OpenGLWindow::Initialize()
 {
-    if (!IsInitialized())
+    if (!mxImpl->IsInitialized())
         mxImpl->Initialize();
 }
 

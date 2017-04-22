@@ -24,7 +24,7 @@
 #include <svx/svxdllapi.h>
 
 
-//   Vorausdeklarationen
+// Forward declarations
 
 
 class SdrObjList;
@@ -42,13 +42,12 @@ protected:
     virtual sdr::contact::ViewContact* CreateObjectSpecificViewContact() override;
     virtual sdr::properties::BaseProperties* CreateObjectSpecificProperties() override;
 
-    SdrObjList*                 pSub;    // Subliste (Kinder)
-    Point                       aRefPoint; // Referenzpunkt innerhalb der Objektgruppe
-    bool                        bRefPoint; // Ist ein RefPoint gesetzt?
+    std::unique_ptr<SdrObjList> pSub;    // sub list (children)
+    Point                       aRefPoint; // Reference point inside the object group
 
 public:
     SdrObjGroup();
-    virtual ~SdrObjGroup();
+    virtual ~SdrObjGroup() override;
 
     virtual void SetBoundRectDirty() override;
     virtual sal_uInt16 GetObjIdentifier() const override;
@@ -60,8 +59,8 @@ public:
     virtual void SetModel(SdrModel* pNewModel) override;
     virtual SdrObjList* GetSubList() const override;
 
-    virtual const Rectangle& GetCurrentBoundRect() const override;
-    virtual const Rectangle& GetSnapRect() const override;
+    virtual const tools::Rectangle& GetCurrentBoundRect() const override;
+    virtual const tools::Rectangle& GetSnapRect() const override;
 
     virtual SdrObjGroup* Clone() const override;
     SdrObjGroup& operator=(const SdrObjGroup& rObj);
@@ -87,8 +86,8 @@ public:
     virtual void Shear(const Point& rRef, long nAngle, double tn, bool bVShear) override;
     virtual void SetAnchorPos(const Point& rPnt) override;
     virtual void SetRelativePos(const Point& rPnt) override;
-    virtual void SetSnapRect(const Rectangle& rRect) override;
-    virtual void SetLogicRect(const Rectangle& rRect) override;
+    virtual void SetSnapRect(const tools::Rectangle& rRect) override;
+    virtual void SetLogicRect(const tools::Rectangle& rRect) override;
 
     virtual void NbcMove(const Size& rSiz) override;
     virtual void NbcResize(const Point& rRef, const Fraction& xFact, const Fraction& yFact) override;
@@ -97,8 +96,8 @@ public:
     virtual void NbcShear(const Point& rRef, long nAngle, double tn, bool bVShear) override;
     virtual void NbcSetAnchorPos(const Point& rPnt) override;
     virtual void NbcSetRelativePos(const Point& rPnt) override;
-    virtual void NbcSetSnapRect(const Rectangle& rRect) override;
-    virtual void NbcSetLogicRect(const Rectangle& rRect) override;
+    virtual void NbcSetSnapRect(const tools::Rectangle& rRect) override;
+    virtual void NbcSetLogicRect(const tools::Rectangle& rRect) override;
 
     virtual void NbcReformatText() override;
     virtual void ReformatText() override;

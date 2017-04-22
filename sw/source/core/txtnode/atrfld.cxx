@@ -39,7 +39,6 @@
 #include "hints.hxx"
 #include <IDocumentFieldsAccess.hxx>
 #include <fieldhint.hxx>
-#include <svl/smplhint.hxx>
 
 
 // constructor for default item in attribute-pool
@@ -59,18 +58,18 @@ SwFormatField::SwFormatField( const SwField &rField )
     , mpField( rField.CopyField() )
     , mpTextField( nullptr )
 {
-    if ( GetField()->GetTyp()->Which() == RES_INPUTFLD )
+    if ( GetField()->GetTyp()->Which() == SwFieldIds::Input )
     {
         // input field in-place editing
         SetWhich( RES_TXTATR_INPUTFIELD );
         static_cast<SwInputField*>(GetField())->SetFormatField( *this );
     }
-    else if (GetField()->GetTyp()->Which() == RES_SETEXPFLD)
+    else if (GetField()->GetTyp()->Which() == SwFieldIds::SetExp)
     {
         // see SwWrtShell::StartInputFieldDlg
         static_cast<SwSetExpField *>(GetField())->SetFormatField(*this);
     }
-    else if ( GetField()->GetTyp()->Which() == RES_POSTITFLD )
+    else if ( GetField()->GetTyp()->Which() == SwFieldIds::Postit )
     {
         // text annotation field
         SetWhich( RES_TXTATR_ANNOTATION );
@@ -92,7 +91,7 @@ SwFormatField::SwFormatField( const SwFormatField& rAttr )
     {
         rAttr.GetField()->GetTyp()->Add(this);
         mpField = rAttr.GetField()->CopyField();
-        if ( GetField()->GetTyp()->Which() == RES_INPUTFLD )
+        if ( GetField()->GetTyp()->Which() == SwFieldIds::Input )
         {
             // input field in-place editing
             SetWhich( RES_TXTATR_INPUTFIELD );
@@ -101,12 +100,12 @@ SwFormatField::SwFormatField( const SwFormatField& rAttr )
             if (pField)
                 pField->SetFormatField( *this );
         }
-        else if (GetField()->GetTyp()->Which() == RES_SETEXPFLD)
+        else if (GetField()->GetTyp()->Which() == SwFieldIds::SetExp)
         {
             // see SwWrtShell::StartInputFieldDlg
             static_cast<SwSetExpField *>(GetField())->SetFormatField(*this);
         }
-        else if ( GetField()->GetTyp()->Which() == RES_POSTITFLD )
+        else if ( GetField()->GetTyp()->Which() == SwFieldIds::Postit )
         {
             // text annotation field
             SetWhich( RES_TXTATR_ANNOTATION );
@@ -118,34 +117,35 @@ SwFormatField::~SwFormatField()
 {
     SwFieldType* pType = mpField ? mpField->GetTyp() : nullptr;
 
-    if (pType && pType->Which() == RES_DBFLD)
-        pType = nullptr;  // DB-Feldtypen zerstoeren sich selbst
+    if (pType && pType->Which() == SwFieldIds::Database)
+        pType = nullptr;  // DB field types destroy themselves
 
     Broadcast( SwFormatFieldHint( this, SwFormatFieldHintWhich::REMOVED ) );
     delete mpField;
 
-    // bei einige FeldTypen muessen wir den FeldTypen noch loeschen
+    // some fields need to delete their field type
     if( pType && pType->HasOnlyOneListener() )
     {
         bool bDel = false;
         switch( pType->Which() )
         {
-        case RES_USERFLD:
+        case SwFieldIds::User:
             bDel = static_cast<SwUserFieldType*>(pType)->IsDeleted();
             break;
 
-        case RES_SETEXPFLD:
+        case SwFieldIds::SetExp:
             bDel = static_cast<SwSetExpFieldType*>(pType)->IsDeleted();
             break;
 
-        case RES_DDEFLD:
+        case SwFieldIds::Dde:
             bDel = static_cast<SwDDEFieldType*>(pType)->IsDeleted();
             break;
+        default: break;
         }
 
         if( bDel )
         {
-            // vorm loeschen erstmal austragen
+            // unregister before deleting
             pType->Remove( this );
             delete pType;
         }
@@ -162,11 +162,11 @@ void SwFormatField::SetField(SwField * _pField)
     delete mpField;
 
     mpField = _pField;
-    if ( GetField()->GetTyp()->Which() == RES_INPUTFLD )
+    if ( GetField()->GetTyp()->Which() == SwFieldIds::Input )
     {
         static_cast<SwInputField* >(GetField())->SetFormatField( *this );
     }
-    else if (GetField()->GetTyp()->Which() == RES_SETEXPFLD)
+    else if (GetField()->GetTyp()->Which() == SwFieldIds::SetExp)
     {
         // see SwWrtShell::StartInputFieldDlg
         static_cast<SwSetExpField *>(GetField())->SetFormatField(*this);
@@ -247,26 +247,21 @@ void SwFormatField::Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew )
         return;
 
     SwTextNode* pTextNd = &mpTextField->GetTextNode();
-    OSL_ENSURE( pTextNd, "wo ist denn mein Node?" );
+    OSL_ENSURE( pTextNd, "Where is my Node?" );
     if( pNew )
     {
         switch( pNew->Which() )
         {
-        case RES_TXTATR_FLDCHG:
-                // "Farbe hat sich geaendert !"
-                // this, this fuer "nur Painten"
-                pTextNd->ModifyNotification( this, this );
-                return;
         case RES_REFMARKFLD_UPDATE:
-                // GetReferenz-Felder aktualisieren
-                if( RES_GETREFFLD == GetField()->GetTyp()->Which() )
+                // update GetRef fields
+                if( SwFieldIds::GetRef == GetField()->GetTyp()->Which() )
                 {
                     // #i81002#
                     static_cast<SwGetRefField*>(GetField())->UpdateField( mpTextField );
                 }
                 break;
         case RES_DOCPOS_UPDATE:
-                // Je nach DocPos aktualisieren (SwTextFrame::Modify())
+                // handled in SwTextFrame::Modify()
                 pTextNd->ModifyNotification( pNew, this );
                 return;
 
@@ -281,19 +276,20 @@ void SwFormatField::Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew )
 
     switch (GetField()->GetTyp()->Which())
     {
-        case RES_HIDDENPARAFLD:
+        case SwFieldIds::HiddenPara:
             if( !pOld || RES_HIDDENPARA_PRINT != pOld->Which() )
                 break;
             SAL_FALLTHROUGH;
-        case RES_DBSETNUMBERFLD:
-        case RES_DBNUMSETFLD:
-        case RES_DBNEXTSETFLD:
-        case RES_DBNAMEFLD:
+        case SwFieldIds::DbSetNumber:
+        case SwFieldIds::DbNumSet:
+        case SwFieldIds::DbNextSet:
+        case SwFieldIds::DatabaseName:
             pTextNd->ModifyNotification( nullptr, pNew);
             return;
+        default: break;
     }
 
-    if( RES_USERFLD == GetField()->GetTyp()->Which() )
+    if( SwFieldIds::User == GetField()->GetTyp()->Which() )
     {
         SwUserFieldType* pType = static_cast<SwUserFieldType*>(GetField()->GetTyp());
         if(!pType->IsValid())
@@ -334,7 +330,7 @@ bool SwFormatField::IsProtect() const
 
 void SwFormatField::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swFormatField"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwFormatField"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("mpTextField"), "%p", mpTextField);
 
@@ -384,15 +380,14 @@ void SwTextField::ExpandTextField(const bool bForceNotify) const
 
     if (aNewExpand == m_aExpand)
     {
-        // Bei Seitennummernfeldern
-        const sal_uInt16 nWhich = pField->GetTyp()->Which();
-        if ( RES_CHAPTERFLD != nWhich
-             && RES_PAGENUMBERFLD != nWhich
-             && RES_REFPAGEGETFLD != nWhich
+        const SwFieldIds nWhich = pField->GetTyp()->Which();
+        if ( SwFieldIds::Chapter != nWhich
+             && SwFieldIds::PageNumber != nWhich
+             && SwFieldIds::RefPageGet != nWhich
              // Page count fields to not use aExpand during formatting,
              // therefore an invalidation of the text frame has to be triggered even if aNewExpand == aExpand:
-             && ( RES_DOCSTATFLD != nWhich || DS_PAGE != static_cast<const SwDocStatField*>(pField)->GetSubType() )
-             && ( RES_GETEXPFLD != nWhich || static_cast<const SwGetExpField*>(pField)->IsInBodyText() ) )
+             && ( SwFieldIds::DocStat != nWhich || DS_PAGE != static_cast<const SwDocStatField*>(pField)->GetSubType() )
+             && ( SwFieldIds::GetExp != nWhich || static_cast<const SwGetExpField*>(pField)->IsInBodyText() ) )
         {
             if( m_pTextNode->CalcHiddenParaField() )
             {
@@ -420,19 +415,18 @@ void SwTextField::CopyTextField( SwTextField *pDest ) const
     IDocumentFieldsAccess* pDestIDFA = &pDest->m_pTextNode->getIDocumentFieldsAccess();
 
     SwFormatField& rDestFormatField = (SwFormatField&)pDest->GetFormatField();
-    const sal_uInt16 nFieldWhich = rDestFormatField.GetField()->GetTyp()->Which();
+    const SwFieldIds nFieldWhich = rDestFormatField.GetField()->GetTyp()->Which();
 
     if( pIDFA != pDestIDFA )
     {
-        // Die Hints stehen in unterschiedlichen Dokumenten,
-        // der Feldtyp muss im neuen Dokument angemeldet werden.
-        // Z.B: Kopieren ins ClipBoard.
+        // different documents, e.g. clipboard:
+        // register field type in target document
         SwFieldType* pFieldType;
-        if( nFieldWhich != RES_DBFLD
-            && nFieldWhich != RES_USERFLD
-            && nFieldWhich != RES_SETEXPFLD
-            && nFieldWhich != RES_DDEFLD
-            && RES_AUTHORITY != nFieldWhich )
+        if( nFieldWhich != SwFieldIds::Database
+            && nFieldWhich != SwFieldIds::User
+            && nFieldWhich != SwFieldIds::SetExp
+            && nFieldWhich != SwFieldIds::Dde
+            && SwFieldIds::TableOfAuthorities != nFieldWhich )
         {
             pFieldType = pDestIDFA->GetSysFieldType( nFieldWhich );
         }
@@ -441,8 +435,8 @@ void SwTextField::CopyTextField( SwTextField *pDest ) const
             pFieldType = pDestIDFA->InsertFieldType( *rDestFormatField.GetField()->GetTyp() );
         }
 
-        // Sonderbehandlung fuer DDE-Felder
-        if( RES_DDEFLD == nFieldWhich )
+        // DDE fields need special treatment
+        if( SwFieldIds::Dde == nFieldWhich )
         {
             if( rDestFormatField.GetTextField() )
             {
@@ -451,26 +445,26 @@ void SwTextField::CopyTextField( SwTextField *pDest ) const
             static_cast<SwDDEFieldType*>(pFieldType)->IncRefCnt();
         }
 
-        OSL_ENSURE( pFieldType, "unbekannter FieldType" );
-        pFieldType->Add( &rDestFormatField );          // ummelden
+        OSL_ENSURE( pFieldType, "unknown FieldType" );
+        pFieldType->Add( &rDestFormatField ); // register at the field type
         rDestFormatField.GetField()->ChgTyp( pFieldType );
     }
 
-    // Expressionfelder Updaten
-    if( nFieldWhich == RES_SETEXPFLD
-        || nFieldWhich == RES_GETEXPFLD
-        || nFieldWhich == RES_HIDDENTXTFLD )
+    // update expression fields
+    if( nFieldWhich == SwFieldIds::SetExp
+        || nFieldWhich == SwFieldIds::GetExp
+        || nFieldWhich == SwFieldIds::HiddenText )
     {
         SwTextField* pField = const_cast<SwTextField*>(this);
         pDestIDFA->UpdateExpFields( pField, true );
     }
-    // Tabellenfelder auf externe Darstellung
-    else if( RES_TABLEFLD == nFieldWhich
+    // table fields: external display
+    else if( SwFieldIds::Table == nFieldWhich
              && static_cast<SwTableField*>(rDestFormatField.GetField())->IsIntrnlName() )
     {
-        // erzeuge aus der internen (fuer CORE) die externe (fuer UI) Formel
+        // convert internal (core) to external (UI) formula
         const SwTableNode* pTableNd = m_pTextNode->FindTableNode();
-        if( pTableNd )        // steht in einer Tabelle
+        if( pTableNd )        // in a table?
             static_cast<SwTableField*>(rDestFormatField.GetField())->PtrToBoxNm( &pTableNd->GetTable() );
     }
 }

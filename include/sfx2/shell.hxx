@@ -26,6 +26,8 @@
 #include <sfx2/dllapi.h>
 #include <sfx2/sfxuno.hxx>
 #include <svl/SfxBroadcaster.hxx>
+#include <o3tl/typed_flags_set.hxx>
+#include <o3tl/strong_int.hxx>
 
 class ResMgr;
 namespace vcl { class Window; }
@@ -63,56 +65,60 @@ namespace svl
     Id for <SfxInterface>s, gives a quasi-static access to the interface
     through an array to <SfxApplication>.
 */
-enum SfxInterfaceId
-{
-    SFX_INTERFACE_NONE,
-    SFX_INTERFACE_SFXAPP,
-    SFX_INTERFACE_SFXDOCSH,
-    SFX_INTERFACE_SFXIPFRM,
-    SFX_INTERFACE_SFXVIEWSH,
-    SFX_INTERFACE_SFXVIEWFRM,
-    SFX_INTERFACE_SFXPLUGINFRM,
-    SFX_INTERFACE_SFXPLUGINOBJ,
-    SFX_INTERFACE_SFXPLUGINVIEWSH,
-    SFX_INTERFACE_SFXFRAMESETOBJ,
-    SFX_INTERFACE_SFXFRAMESETVIEWSH,
-    SFX_INTERFACE_SFXINTERNALFRM,
-    SFX_INTERFACE_SFXCOMPONENTDOCSH,
-    SFX_INTERFACE_SFXGENERICOBJ,
-    SFX_INTERFACE_SFXGENERICVIEWSH,
-    SFX_INTERFACE_SFXEXPLOBJ,
-    SFX_INTERFACE_SFXEXPLVIEWSH,
-    SFX_INTERFACE_SFXPLUGINVIEWSHDYNAMIC,
-    SFX_INTERFACE_SFXEXTERNALVIEWFRM,
-    SFX_INTERFACE_SFXMODULE,
-    SFX_INTERFACE_SFXFRAMESETVIEW,
-    SFX_INTERFACE_SFXFRAMESETSOURCEVIEW,
-    SFX_INTERFACE_SFXHELP_DOCSH,
-    SFX_INTERFACE_SFXHELP_VIEWSH,
-    SFX_INTERFACE_SFXTASK,
-    SFX_INTERFACE_OFA_START         =  100,
-    SFX_INTERFACE_OFA_END           =  100,
-    SFX_INTERFACE_SC_START          =  150,
-    SFX_INTERFACE_SC_END            =  199,
-    SFX_INTERFACE_SD_START          =  200,
-    SFX_INTERFACE_SD_END            =  249,
-    SFX_INTERFACE_SW_START          =  250,
-    SFX_INTERFACE_SW_END            =  299,
-    SFX_INTERFACE_SIM_START         =  300,
-    SFX_INTERFACE_SIM_END           =  319,
-    SFX_INTERFACE_SCH_START         =  320,
-    SFX_INTERFACE_SCH_END           =  339,
-    SFX_INTERFACE_SMA_START         =  340,
-    SFX_INTERFACE_SMA_END           =  359,
-    SFX_INTERFACE_SBA_START         =  360,
-    SFX_INTERFACE_SBA_END           =  399,
-    SFX_INTERFACE_IDE_START         =  400,
-    SFX_INTERFACE_IDE_END           =  409,
-    //-if one is still needed
-    SFX_INTERFACE_APP               =  SFX_INTERFACE_SW_START,
-    SFX_INTERFACE_LIB               =  450
-};
+struct SfxInterfaceIdTag {};
+typedef o3tl::strong_int<sal_uInt16, SfxInterfaceIdTag> SfxInterfaceId;
 
+constexpr auto SFX_INTERFACE_NONE         = SfxInterfaceId(0);
+constexpr auto SFX_INTERFACE_SFXAPP       = SfxInterfaceId(1);
+constexpr auto SFX_INTERFACE_SFXDOCSH     = SfxInterfaceId(2);
+constexpr auto SFX_INTERFACE_SFXVIEWSH    = SfxInterfaceId(3);
+constexpr auto SFX_INTERFACE_SFXVIEWFRM   = SfxInterfaceId(4);
+constexpr auto SFX_INTERFACE_SFXMODULE    = SfxInterfaceId(5);
+constexpr auto SFX_INTERFACE_SC_START     = SfxInterfaceId(150);
+constexpr auto SFX_INTERFACE_SD_START     = SfxInterfaceId(200);
+constexpr auto SFX_INTERFACE_SW_START     = SfxInterfaceId(250);
+constexpr auto SFX_INTERFACE_SMA_START    = SfxInterfaceId(340);
+constexpr auto SFX_INTERFACE_IDE_START    = SfxInterfaceId(400);
+constexpr auto SFX_INTERFACE_IDE_END      = SfxInterfaceId(409);
+
+enum class SfxShellFeature
+{
+    NONE                    = 0x0000,
+    // Writer only, class SwView
+    SwChildWindowLabel      = 0x0001,
+    // Basic only, class Shell
+    BasicShowBrowser        = 0x0004,
+    // Forms only, class FmFormShell
+    FormShowDatabaseBar     = 0x0008,
+    FormShowField           = 0x0010,
+    FormShowProperies       = 0x0020,
+    FormShowExplorer        = 0x0040,
+    FormShowFilterBar       = 0x0080,
+    FormShowFilterNavigator = 0x0100,
+    FormShowTextControlBar  = 0x0200,
+    FormTBControls          = 0x0400,
+    FormTBMoreControls      = 0x0800,
+    FormTBDesign            = 0x1000,
+    FormShowDataNavigator   = 0x2000,
+    // masks to make sure modules don't use flags from an other
+    SwMask                  = 0x0001,
+    BasicMask               = 0x0004,
+    FormMask                = 0x3ff8
+};
+namespace o3tl
+{
+    template<> struct typed_flags<SfxShellFeature> : is_typed_flags<SfxShellFeature, 0x3ffd> {};
+}
+
+/* Flags that are being used in the slot definitions for the disable-features */
+enum class SfxDisableFlags {
+    NONE,
+    SwOnProtectedCursor = 0x0001,
+    SwOnMailboxEditor   = 0x0002,
+};
+namespace o3tl {
+    template<> struct typed_flags<SfxDisableFlags> : is_typed_flags<SfxDisableFlags, 0x0003> {};
+}
 
 typedef void (*SfxExecFunc)(SfxShell *, SfxRequest &rReq);
 typedef void (*SfxStateFunc)(SfxShell *, SfxItemSet &rSet);
@@ -168,7 +174,7 @@ public:
         The SbxObject may continue to exist, but can not any longer perform
         any functions and can not provide any properties.
         */
-    virtual                     ~SfxShell();
+    virtual                     ~SfxShell() override;
 
     /**
         With this virtual method, which is automatically overridden by each subclass
@@ -301,7 +307,7 @@ public:
         On the given <SfxUndoManager> is automatically the current
         Max-Undo-Action-Count setting set form the options.
 
-        'pNewUndoMgr' must exist until the Destuctor of SfxShell instance is called
+        'pNewUndoMgr' must exist until the Destructor of SfxShell instance is called
         or until the next 'SetUndoManager()'.
         */
     void                        SetUndoManager( ::svl::IUndoManager *pNewUndoMgr );
@@ -336,7 +342,7 @@ public:
     /**
         With this method can the slots of the subclasses be invalidated through the
         slot Id or alternatively through the Which ID. Slot IDs, which are
-        inherited by the subclass are also invalidert.
+        inherited by the subclass are also invalidated.
 
         [Cross-reference]
 
@@ -400,7 +406,7 @@ public:
         */
     SfxViewFrame*               GetFrame() const;
 
-    virtual bool                HasUIFeature( sal_uInt32 nFeature );
+    virtual bool                HasUIFeature(SfxShellFeature nFeature) const;
     void                        UIFeatureChanged();
 
     // Items
@@ -441,11 +447,9 @@ public:
     static void                 VerbState (SfxItemSet&);
     SAL_DLLPRIVATE const SfxSlot* GetVerbSlot_Impl(sal_uInt16 nId) const;
 
-    void                        SetHelpId(sal_uIntPtr nId);
-    sal_uIntPtr                     GetHelpId() const;
     virtual SfxObjectShell*     GetObjectShell();
-    void                        SetDisableFlags( sal_uIntPtr nFlags );
-    sal_uIntPtr                     GetDisableFlags() const;
+    void                        SetDisableFlags( SfxDisableFlags nFlags );
+    SfxDisableFlags             GetDisableFlags() const;
 
     virtual SfxItemSet*         CreateItemSet( sal_uInt16 nId );
     virtual void                ApplyItemSet( sal_uInt16 nId, const SfxItemSet& rSet );
@@ -530,16 +534,16 @@ inline void SfxShell::SetPool
     pPool = pNewPool;
 }
 
-#define SFX_DECL_INTERFACE(nId)                                             \
-            static SfxInterface*                pInterface;                 \
-            static SfxInterface*                GetStaticInterface();       \
-            static SfxInterfaceId               GetInterfaceId() {return SfxInterfaceId(nId);} \
-            static void                         RegisterInterface(SfxModule* pMod=nullptr); \
-            virtual SfxInterface*       GetInterface() const override;
+#define SFX_DECL_INTERFACE(nId)                                  \
+            static SfxInterface*     pInterface;                 \
+            static SfxInterface*     GetStaticInterface();       \
+            static SfxInterfaceId    GetInterfaceId() {return nId;} \
+            static void              RegisterInterface(SfxModule* pMod=nullptr); \
+            virtual SfxInterface*    GetInterface() const override;
 
 #define SFX_TMPL_INTERFACE(Class,SuperClass,Abstract)                       \
                                                                             \
-    SfxInterface* Class::pInterface = nullptr;                                    \
+    SfxInterface* Class::pInterface = nullptr;                              \
     SfxInterface* Class::GetStaticInterface()                               \
     {                                                                       \
         if ( !pInterface )                                                  \
@@ -571,17 +575,18 @@ SFX_TMPL_INTERFACE(Class,SuperClass,false)                                  \
 #define SFX_IMPL_SUPERCLASS_INTERFACE(Class,SuperClass)                     \
 SFX_TMPL_INTERFACE(Class,SuperClass,true)                                   \
 
-#define SFX_POSITION_MASK               0x000F
-#define SFX_VISIBILITY_MASK             0xFFF0
-#define SFX_VISIBILITY_UNVISIBLE        0x0000  // Never visible
-#define SFX_VISIBILITY_VIEWER           0x0040
-#define SFX_VISIBILITY_READONLYDOC      0x0400
-#define SFX_VISIBILITY_DESKTOP          0x0800
-#define SFX_VISIBILITY_STANDARD         0x1000
-#define SFX_VISIBILITY_FULLSCREEN       0x2000
-#define SFX_VISIBILITY_CLIENT           0x4000
-#define SFX_VISIBILITY_SERVER           0x8000
-
+enum class SfxVisibilityFlags {
+    Invisible        = 0x0000, // Never visible
+    Viewer           = 0x0040,
+    ReadonlyDoc      = 0x0400,
+    Standard         = 0x1000,
+    FullScreen       = 0x2000,
+    Client           = 0x4000,
+    Server           = 0x8000,
+};
+namespace o3tl {
+    template<> struct typed_flags<SfxVisibilityFlags> : is_typed_flags<SfxVisibilityFlags, 0xf440> {};
+}
 #endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

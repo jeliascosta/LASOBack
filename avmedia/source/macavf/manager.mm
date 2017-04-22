@@ -29,7 +29,6 @@ namespace avmedia { namespace macavf {
 Manager::Manager( const uno::Reference< lang::XMultiServiceFactory >& rxMgr ) :
     mxMgr( rxMgr )
 {
-    OSL_TRACE( "Constructing avmedia::macavf::Manager" );
 }
 
 
@@ -38,15 +37,12 @@ Manager::~Manager()
 
 
 uno::Reference< media::XPlayer > SAL_CALL Manager::createPlayer( const ::rtl::OUString& rURL )
-    throw (uno::RuntimeException)
 {
     Player*                             pPlayer( new Player( mxMgr ) );
     uno::Reference< media::XPlayer >    xRet( pPlayer );
     INetURLObject                       aURL( rURL );
 
-    OSL_TRACE( "avmediamacavf: Manager::createPlayer" );
-
-    if( !pPlayer->create( aURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS ) )  )
+    if( !pPlayer->create( aURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous ) )  )
         xRet.clear();
 
     return xRet;
@@ -54,25 +50,20 @@ uno::Reference< media::XPlayer > SAL_CALL Manager::createPlayer( const ::rtl::OU
 
 
 ::rtl::OUString SAL_CALL Manager::getImplementationName(  )
-    throw (uno::RuntimeException)
 {
-    return ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( AVMEDIA_MACAVF_MANAGER_IMPLEMENTATIONNAME ) );
+    return ::rtl::OUString( AVMEDIA_MACAVF_MANAGER_IMPLEMENTATIONNAME );
 }
 
 
 sal_Bool SAL_CALL Manager::supportsService( const ::rtl::OUString& ServiceName )
-    throw (uno::RuntimeException)
 {
-    return ServiceName.equalsAsciiL( RTL_CONSTASCII_STRINGPARAM ( AVMEDIA_MACAVF_MANAGER_SERVICENAME ) );
+    return ServiceName == AVMEDIA_MACAVF_MANAGER_SERVICENAME;
 }
 
 
 uno::Sequence< ::rtl::OUString > SAL_CALL Manager::getSupportedServiceNames(  )
-    throw (uno::RuntimeException)
 {
-    uno::Sequence< ::rtl::OUString > aRet { AVMEDIA_MACAVF_MANAGER_SERVICENAME };
-
-    return aRet;
+    return { AVMEDIA_MACAVF_MANAGER_SERVICENAME };
 }
 
 } // namespace macavf

@@ -17,11 +17,15 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/embed/XHierarchicalStorageAccess2.hpp>
 #include <com/sun/star/embed/XTransactedObject.hpp>
 #include <com/sun/star/embed/XTransactionBroadcaster.hpp>
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 
 #include "ohierarchyholder.hxx"
@@ -90,9 +94,7 @@ uno::Reference< embed::XExtendedStorageStream > OHierarchyElement_Impl::GetStrea
     uno::Reference< embed::XStorage > xOwnStor;
 
     xOwnStor = m_xOwnStorage.is() ? m_xOwnStorage
-                : uno::Reference< embed::XStorage >( m_xWeakOwnStorage.get(), uno::UNO_QUERY );
-    if ( !xOwnStor.is() )
-        throw uno::RuntimeException();
+                : uno::Reference< embed::XStorage >( m_xWeakOwnStorage.get(), uno::UNO_QUERY_THROW );
 
     if ( aListPath.empty() )
     {
@@ -138,7 +140,7 @@ uno::Reference< embed::XExtendedStorageStream > OHierarchyElement_Impl::GetStrea
             if ( !xChildStorage.is() )
                 throw uno::RuntimeException();
 
-            aElement = new OHierarchyElement_Impl( nullptr, xChildStorage );
+            aElement = new OHierarchyElement_Impl( xChildStorage );
         }
 
         xResult = aElement->GetStreamHierarchically( nStorageMode, aListPath, nStreamMode, aEncryptionData );
@@ -173,9 +175,7 @@ void OHierarchyElement_Impl::RemoveStreamHierarchically( OStringList_Impl& aList
     uno::Reference< embed::XStorage > xOwnStor;
 
     xOwnStor = m_xOwnStorage.is() ? m_xOwnStorage
-                : uno::Reference< embed::XStorage >( m_xWeakOwnStorage.get(), uno::UNO_QUERY );
-    if ( !xOwnStor.is() )
-        throw uno::RuntimeException();
+                : uno::Reference< embed::XStorage >( m_xWeakOwnStorage.get(), uno::UNO_QUERY_THROW );
 
     if ( aListPath.empty() )
     {
@@ -195,7 +195,7 @@ void OHierarchyElement_Impl::RemoveStreamHierarchically( OStringList_Impl& aList
             if ( !xChildStorage.is() )
                 throw uno::RuntimeException();
 
-            aElement = new OHierarchyElement_Impl( nullptr, xChildStorage );
+            aElement = new OHierarchyElement_Impl( xChildStorage );
         }
 
         aElement->RemoveStreamHierarchically( aListPath );
@@ -259,7 +259,6 @@ void OHierarchyElement_Impl::TestForClosing()
 }
 
 void SAL_CALL OHierarchyElement_Impl::disposing( const lang::EventObject& Source )
-        throw ( uno::RuntimeException, std::exception )
 {
     try
     {
@@ -303,12 +302,10 @@ void OHierarchyElement_Impl::RemoveElement( const ::rtl::Reference< OHierarchyEl
 
 // XTransactionListener
 void SAL_CALL OHierarchyElement_Impl::preCommit( const css::lang::EventObject& /*aEvent*/ )
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL OHierarchyElement_Impl::commited( const css::lang::EventObject& /*aEvent*/ )
-    throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -324,12 +321,10 @@ void SAL_CALL OHierarchyElement_Impl::commited( const css::lang::EventObject& /*
 }
 
 void SAL_CALL OHierarchyElement_Impl::preRevert( const css::lang::EventObject& /*aEvent*/ )
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL OHierarchyElement_Impl::reverted( const css::lang::EventObject& /*aEvent*/ )
-    throw (css::uno::RuntimeException, std::exception)
 {
 }
 

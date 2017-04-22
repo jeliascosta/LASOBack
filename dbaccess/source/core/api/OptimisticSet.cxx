@@ -91,7 +91,7 @@ OptimisticSet::OptimisticSet(const Reference<XComponentContext>& _rContext,
                              sal_Int32& o_nRowCount)
             :OKeySet(nullptr,nullptr,OUString(),_xComposer,_aParameterValueForCache,i_nMaxRows,o_nRowCount)
             ,m_aSqlParser( _rContext )
-            ,m_aSqlIterator( i_xConnection, Reference<XTablesSupplier>(_xComposer,UNO_QUERY)->getTables(), m_aSqlParser, nullptr )
+            ,m_aSqlIterator( i_xConnection, Reference<XTablesSupplier>(_xComposer,UNO_QUERY)->getTables(), m_aSqlParser )
             ,m_bResultSetChanged(false)
 {
 }
@@ -118,14 +118,14 @@ void OptimisticSet::construct(const Reference< XResultSet>& _xDriverSet,const OU
     const OUString* pTableNameEnd = pTableNameIter + aTableNames.getLength();
     for( ; pTableNameIter != pTableNameEnd ; ++pTableNameIter)
     {
-        ::std::unique_ptr<SelectColumnsMetaData> pKeyColumNames(new SelectColumnsMetaData(bCase));
+        std::unique_ptr<SelectColumnsMetaData> pKeyColumNames(new SelectColumnsMetaData(bCase));
         findTableColumnsMatching_throw(xTables->getByName(*pTableNameIter),*pTableNameIter,xMeta,xQueryColumns,pKeyColumNames);
         m_pKeyColumnNames->insert(pKeyColumNames->begin(),pKeyColumNames->end());
     }
 
     // the first row is empty because it's now easier for us to distinguish when we are beforefirst or first
     // without extra variable to be set
-    OKeySetValue keySetValue(nullptr,::std::pair<sal_Int32,Reference<XRow> >(0,Reference<XRow>()));
+    OKeySetValue keySetValue(nullptr,std::pair<sal_Int32,Reference<XRow> >(0,Reference<XRow>()));
     m_aKeyMap.insert(OKeySetMatrix::value_type(0,keySetValue));
     m_aKeyIter = m_aKeyMap.begin();
 
@@ -136,7 +136,7 @@ void OptimisticSet::construct(const Reference< XResultSet>& _xDriverSet,const OU
     xAnalyzer->setElementaryQuery(xSourceComposer->getElementaryQuery());
     // check for joins
     OUString aErrorMsg;
-    ::std::unique_ptr<OSQLParseNode> pStatementNode( m_aSqlParser.parseTree( aErrorMsg, sQuery ) );
+    std::unique_ptr<OSQLParseNode> pStatementNode( m_aSqlParser.parseTree( aErrorMsg, sQuery ) );
     m_aSqlIterator.setParseTree( pStatementNode.get() );
     m_aSqlIterator.traverseAll();
     fillJoinedColumns_throw(m_aSqlIterator.getJoinConditions());
@@ -167,15 +167,14 @@ void OptimisticSet::makeNewStatement( )
     ::comphelper::disposeComponent(xAnalyzer);
 }
 
-void SAL_CALL OptimisticSet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& /*_xTable*/  ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OptimisticSet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& /*_xTable*/  )
 {
     if ( m_aJoinedKeyColumns.empty() )
         throw SQLException();
     // list all columns that should be set
-    static const char s_sPara[] = " = ?";
     OUString aQuote  = getIdentifierQuoteString();
 
-    ::std::map< OUString,bool > aResultSetChanged;
+    std::map< OUString,bool > aResultSetChanged;
     TSQLStatements aKeyConditions;
     TSQLStatements aSql;
 
@@ -197,7 +196,7 @@ void SAL_CALL OptimisticSet::updateRow(const ORowSetRow& _rInsertRow ,const ORow
             if ( m_aJoinedKeyColumns.find(aIter->second.nPosition) != m_aJoinedKeyColumns.end() )
                 throw SQLException();
 
-            ::std::map<sal_Int32,sal_Int32>::const_iterator aJoinIter = m_aJoinedColumns.find(aIter->second.nPosition);
+            std::map<sal_Int32,sal_Int32>::const_iterator aJoinIter = m_aJoinedColumns.find(aIter->second.nPosition);
             if ( aJoinIter != m_aJoinedColumns.end() )
             {
                 (_rInsertRow->get())[aJoinIter->second] = (_rInsertRow->get())[aIter->second.nPosition];
@@ -205,7 +204,7 @@ void SAL_CALL OptimisticSet::updateRow(const ORowSetRow& _rInsertRow ,const ORow
             OUStringBuffer& rPart = aSql[aIter->second.sTableName];
             if ( !rPart.isEmpty() )
                 rPart.append(", ");
-            rPart.append(sQuotedColumnName + s_sPara);
+            rPart.append(sQuotedColumnName + " = ?");
         }
     }
 
@@ -214,9 +213,6 @@ void SAL_CALL OptimisticSet::updateRow(const ORowSetRow& _rInsertRow ,const ORow
 
     if( aKeyConditions.empty() )
         ::dbtools::throwSQLException( DBACORE_RESSTRING( RID_STR_NO_CONDITION_FOR_PK ), StandardSQLState::GENERAL_ERROR, m_xConnection );
-
-    static const char s_sUPDATE[] = "UPDATE ";
-    static const char s_sSET[] = " SET ";
 
     Reference<XDatabaseMetaData> xMetaData = m_xConnection->getMetaData();
 
@@ -229,8 +225,8 @@ void SAL_CALL OptimisticSet::updateRow(const ORowSetRow& _rInsertRow ,const ORow
             m_bResultSetChanged = m_bResultSetChanged || aResultSetChanged[aSqlIter->first];
             OUString sCatalog,sSchema,sTable;
             ::dbtools::qualifiedNameComponents(xMetaData,aSqlIter->first,sCatalog,sSchema,sTable,::dbtools::EComposeRule::InDataManipulation);
-            OUStringBuffer sSql(s_sUPDATE + ::dbtools::composeTableNameForSelect( m_xConnection, sCatalog, sSchema, sTable ) +
-                                       s_sSET + aSqlIter->second.toString());
+            OUStringBuffer sSql("UPDATE " + ::dbtools::composeTableNameForSelect( m_xConnection, sCatalog, sSchema, sTable ) +
+                                       " SET " + aSqlIter->second.toString());
             OUStringBuffer& rCondition = aKeyConditions[aSqlIter->first];
             if ( !rCondition.isEmpty() )
                 sSql.append(" WHERE " + rCondition.toString() );
@@ -240,12 +236,12 @@ void SAL_CALL OptimisticSet::updateRow(const ORowSetRow& _rInsertRow ,const ORow
     }
 }
 
-void SAL_CALL OptimisticSet::insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& /*_xTable*/ ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OptimisticSet::insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& /*_xTable*/ )
 {
     TSQLStatements aSql;
     TSQLStatements aParameter;
     TSQLStatements aKeyConditions;
-    ::std::map< OUString,bool > aResultSetChanged;
+    std::map< OUString,bool > aResultSetChanged;
     OUString aQuote  = getIdentifierQuoteString();
 
     // here we build the condition part for the update statement
@@ -264,7 +260,7 @@ void SAL_CALL OptimisticSet::insertRow( const ORowSetRow& _rInsertRow,const conn
                 lcl_fillKeyCondition(aIter->second.sTableName,sQuotedColumnName,(_rInsertRow->get())[aIter->second.nPosition],aKeyConditions);
                 aResultSetChanged[aIter->second.sTableName] = true;
             }
-            ::std::map<sal_Int32,sal_Int32>::const_iterator aJoinIter = m_aJoinedColumns.find(aIter->second.nPosition);
+            std::map<sal_Int32,sal_Int32>::const_iterator aJoinIter = m_aJoinedColumns.find(aIter->second.nPosition);
             if ( aJoinIter != m_aJoinedColumns.end() )
             {
                 (_rInsertRow->get())[aJoinIter->second] = (_rInsertRow->get())[aIter->second.nPosition];
@@ -283,8 +279,6 @@ void SAL_CALL OptimisticSet::insertRow( const ORowSetRow& _rInsertRow,const conn
         ::dbtools::throwSQLException( DBACORE_RESSTRING( RID_STR_NO_VALUE_CHANGED ), StandardSQLState::GENERAL_ERROR, m_xConnection );
 
     Reference<XDatabaseMetaData> xMetaData = m_xConnection->getMetaData();
-    static const char s_sINSERT[] = "INSERT INTO ";
-    static const char s_sVALUES[] = ") VALUES ( ";
     TSQLStatements::iterator aSqlIter = aSql.begin();
     TSQLStatements::iterator aSqlEnd  = aSql.end();
     for(;aSqlIter != aSqlEnd ; ++aSqlIter)
@@ -295,8 +289,8 @@ void SAL_CALL OptimisticSet::insertRow( const ORowSetRow& _rInsertRow,const conn
             OUString sCatalog,sSchema,sTable;
             ::dbtools::qualifiedNameComponents(xMetaData,aSqlIter->first,sCatalog,sSchema,sTable,::dbtools::EComposeRule::InDataManipulation);
             OUString sComposedTableName = ::dbtools::composeTableNameForSelect( m_xConnection, sCatalog, sSchema, sTable );
-            OUString sSql(s_sINSERT + sComposedTableName + " ( " + aSqlIter->second.toString() +
-                                 s_sVALUES + aParameter[aSqlIter->first].toString() + " )");
+            OUString sSql("INSERT INTO " + sComposedTableName + " ( " + aSqlIter->second.toString() +
+                                 ") VALUES ( " + aParameter[aSqlIter->first].toString() + " )");
 
             OUStringBuffer& rCondition = aKeyConditions[aSqlIter->first];
             if ( !rCondition.isEmpty() )
@@ -337,7 +331,7 @@ void SAL_CALL OptimisticSet::insertRow( const ORowSetRow& _rInsertRow,const conn
     }
 }
 
-void SAL_CALL OptimisticSet::deleteRow(const ORowSetRow& _rDeleteRow,const connectivity::OSQLTable& /*_xTable*/   ) throw(SQLException, RuntimeException)
+void SAL_CALL OptimisticSet::deleteRow(const ORowSetRow& _rDeleteRow,const connectivity::OSQLTable& /*_xTable*/   )
 {
     OUString aQuote  = getIdentifierQuoteString();
     TSQLStatements aKeyConditions;
@@ -397,9 +391,9 @@ void OptimisticSet::executeDelete(const ORowSetRow& _rDeleteRow,const OUString& 
     }
 }
 
-void OptimisticSet::fillJoinedColumns_throw(const ::std::vector< TNodePair >& i_aJoinColumns)
+void OptimisticSet::fillJoinedColumns_throw(const std::vector< TNodePair >& i_aJoinColumns)
 {
-    ::std::vector< TNodePair >::const_iterator aIter = i_aJoinColumns.begin();
+    std::vector< TNodePair >::const_iterator aIter = i_aJoinColumns.begin();
     for(;aIter != i_aJoinColumns.end();++aIter)
     {
         OUString sColumnName,sTableName;
@@ -458,10 +452,10 @@ bool OptimisticSet::isResultSetChanged() const
     return bOld;
 }
 
-void OptimisticSet::mergeColumnValues(sal_Int32 i_nColumnIndex,ORowSetValueVector::Vector& io_aInsertRow,ORowSetValueVector::Vector& io_aRow,::std::vector<sal_Int32>& o_aChangedColumns)
+void OptimisticSet::mergeColumnValues(sal_Int32 i_nColumnIndex,ORowSetValueVector::Vector& io_aInsertRow,ORowSetValueVector::Vector& io_aRow,std::vector<sal_Int32>& o_aChangedColumns)
 {
     o_aChangedColumns.push_back(i_nColumnIndex);
-    ::std::map<sal_Int32,sal_Int32>::const_iterator aJoinIter = m_aJoinedColumns.find(i_nColumnIndex);
+    std::map<sal_Int32,sal_Int32>::const_iterator aJoinIter = m_aJoinedColumns.find(i_nColumnIndex);
     if ( aJoinIter != m_aJoinedColumns.end() )
     {
         io_aRow[aJoinIter->second] = io_aRow[i_nColumnIndex];
@@ -471,19 +465,19 @@ void OptimisticSet::mergeColumnValues(sal_Int32 i_nColumnIndex,ORowSetValueVecto
     }
 }
 
-bool OptimisticSet::updateColumnValues(const ORowSetValueVector::Vector& io_aCachedRow,ORowSetValueVector::Vector& io_aRow,const ::std::vector<sal_Int32>& i_aChangedColumns)
+bool OptimisticSet::updateColumnValues(const ORowSetValueVector::Vector& io_aCachedRow,ORowSetValueVector::Vector& io_aRow,const std::vector<sal_Int32>& i_aChangedColumns)
 {
     bool bRet = false;
     for( const auto& aColIdx : i_aChangedColumns )
     {
-        SelectColumnsMetaData::const_iterator aFind = ::std::find_if(
+        SelectColumnsMetaData::const_iterator aFind = std::find_if(
             m_pKeyColumnNames->begin(),m_pKeyColumnNames->end(),
             [&aColIdx]( const SelectColumnsMetaData::value_type& aType )
             { return aType.second.nPosition == aColIdx; } );
         if ( aFind != m_pKeyColumnNames->end() )
         {
             const OUString sTableName = aFind->second.sTableName;
-            aFind = ::std::find_if( m_pKeyColumnNames->begin(),m_pKeyColumnNames->end(),
+            aFind = std::find_if( m_pKeyColumnNames->begin(),m_pKeyColumnNames->end(),
                                     [&sTableName]
                                     ( const SelectColumnsMetaData::value_type& rCurr )
                                     { return rCurr.second.sTableName == sTableName; } );
@@ -517,14 +511,14 @@ bool OptimisticSet::columnValuesUpdated(ORowSetValueVector::Vector& o_aCachedRow
     for( const auto& aCol : *m_pColumnNames )
     {
         sal_Int32 nPos = aCol.second.nPosition;
-        SelectColumnsMetaData::const_iterator aFind = ::std::find_if(
+        SelectColumnsMetaData::const_iterator aFind = std::find_if(
             m_pKeyColumnNames->begin(),m_pKeyColumnNames->end(),
             [&nPos] ( const SelectColumnsMetaData::value_type& aType )
             { return aType.second.nPosition == nPos; } );
         if ( aFind != m_pKeyColumnNames->end() )
         {
             const OUString sTableName = aFind->second.sTableName;
-            aFind = ::std::find_if( m_pKeyColumnNames->begin(),m_pKeyColumnNames->end(),
+            aFind = std::find_if( m_pKeyColumnNames->begin(),m_pKeyColumnNames->end(),
                                     [&sTableName]
                                     ( const SelectColumnsMetaData::value_type& rCurr )
                                     { return rCurr.second.sTableName == sTableName; } );
@@ -557,7 +551,6 @@ void OptimisticSet::fillMissingValues(ORowSetValueVector::Vector& io_aRow) const
 {
     TSQLStatements aSql;
     TSQLStatements aKeyConditions;
-    ::std::map< OUString,bool > aResultSetChanged;
     OUString aQuote  = getIdentifierQuoteString();
     // here we build the condition part for the update statement
     SelectColumnsMetaData::const_iterator aColIter = m_pColumnNames->begin();

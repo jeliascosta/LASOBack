@@ -34,8 +34,8 @@ ErrCode SvxImportMSVBasic::SaveOrDelMSVBAStorage( bool bSaveInto,
     uno::Reference < embed::XStorage > xSrcRoot( rDocSh.GetStorage() );
     OUString aDstStgName( GetMSBasicStorageName() );
     tools::SvRef<SotStorage> xVBAStg( SotStorage::OpenOLEStorage( xSrcRoot, aDstStgName,
-                                STREAM_READWRITE | StreamMode::NOCREATE | StreamMode::SHARE_DENYALL ) );
-    if( xVBAStg.Is() && !xVBAStg->GetError() )
+                                StreamMode::READWRITE | StreamMode::NOCREATE | StreamMode::SHARE_DENYALL ) );
+    if( xVBAStg.is() && !xVBAStg->GetError() )
     {
         xVBAStg = nullptr;
         if( bSaveInto )
@@ -45,9 +45,9 @@ ErrCode SvxImportMSVBasic::SaveOrDelMSVBAStorage( bool bSaveInto,
             if( pBasicMan && pBasicMan->IsBasicModified() )
                 nRet = ERRCODE_SVX_MODIFIED_VBASIC_STORAGE;
 #endif
-            tools::SvRef<SotStorage> xSrc = SotStorage::OpenOLEStorage( xSrcRoot, aDstStgName, STREAM_STD_READ );
-            tools::SvRef<SotStorage> xDst = xRoot->OpenSotStorage( rStorageName, STREAM_READWRITE | StreamMode::TRUNC );
-            xSrc->CopyTo( xDst );
+            tools::SvRef<SotStorage> xSrc = SotStorage::OpenOLEStorage( xSrcRoot, aDstStgName, StreamMode::STD_READ );
+            tools::SvRef<SotStorage> xDst = xRoot->OpenSotStorage( rStorageName, StreamMode::READWRITE | StreamMode::TRUNC );
+            xSrc->CopyTo( xDst.get() );
             xDst->Commit();
             ErrCode nError = xDst->GetError();
             if ( nError == ERRCODE_NONE )
@@ -67,7 +67,7 @@ ErrCode SvxImportMSVBasic::GetSaveWarningOfMSVBAStorage( SfxObjectShell &rDocSh)
     uno::Reference < embed::XStorage > xSrcRoot( rDocSh.GetStorage() );
     tools::SvRef<SotStorage> xVBAStg( SotStorage::OpenOLEStorage( xSrcRoot, GetMSBasicStorageName(),
                     StreamMode::READ | StreamMode::NOCREATE | StreamMode::SHARE_DENYALL ));
-    return ( xVBAStg.Is() && !xVBAStg->GetError() )
+    return ( xVBAStg.is() && !xVBAStg->GetError() )
                     ? ERRCODE_SVX_VBASIC_STORAGE_EXIST
                     : ERRCODE_NONE;
 }

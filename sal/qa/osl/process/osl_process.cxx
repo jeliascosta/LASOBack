@@ -39,7 +39,7 @@
 
 #if defined HAVE_VALGRIND_HEADERS
 #include <valgrind/valgrind.h>
-#else
+#elif !defined _WIN32
 #define RUNNING_ON_VALGRIND false
 #endif
 
@@ -66,12 +66,6 @@
 # endif
 #endif
 
-#if defined(_WIN32)
-    const rtl::OUString EXECUTABLE_NAME ("osl_process_child.exe");
-#else
-    const rtl::OUString EXECUTABLE_NAME ("osl_process_child");
-#endif
-
 using namespace osl;
 
 using ::rtl::OUString;
@@ -94,6 +88,8 @@ inline ::rtl::OUString getExecutablePath()
 //rtl::OUString CWD = getExecutablePath();
 
 typedef std::vector<OString> string_container_t;
+
+#if !defined _WIN32
 
 class exclude : public std::unary_function<OString, bool>
 {
@@ -154,27 +150,13 @@ namespace
     }
 }
 
-#ifdef _WIN32
-    void read_parent_environment(string_container_t* env_container)
-    {
-        LPTSTR env = reinterpret_cast<LPTSTR>(GetEnvironmentStrings());
-        LPTSTR p   = env;
-
-        while (size_t l = _tcslen(p))
-        {
-            env_container->push_back(OString(p));
-            p += l + 1;
-        }
-        FreeEnvironmentStrings(env);
-        tidy_container(*env_container);
-    }
-#else
     void read_parent_environment(string_container_t* env_container)
     {
         for (int i = 0; nullptr != environ[i]; i++)
             env_container->push_back(OString(environ[i]));
         tidy_container(*env_container);
     }
+
 #endif
 
 class Test_osl_executeProcess : public CppUnit::TestFixture
@@ -184,7 +166,7 @@ class Test_osl_executeProcess : public CppUnit::TestFixture
     OUString     temp_file_url_;
     OUString     temp_file_path_;
     rtl_uString* parameters_[2];
-    int          parameters_count_;
+    static const int parameters_count_ = 2;
     OUString    suCWD;
     OUString    suExecutableFileURL;
 
@@ -192,12 +174,16 @@ public:
 
     // ctor
     Test_osl_executeProcess() :
-        env_param_(OUString("-env")),
-        parameters_count_(2)
+        env_param_(OUString("-env"))
     {
         parameters_[0] = env_param_.pData;
         suCWD = getExecutablePath();
-        suExecutableFileURL = suCWD + "/" + EXECUTABLE_NAME;
+
+#if defined(_WIN32)
+        suExecutableFileURL = suCWD + "/" "osl_process_child.exe";
+#else
+        suExecutableFileURL = suCWD + "/" "osl_process_child";
+#endif
     }
 
     virtual void setUp() override
@@ -222,6 +208,8 @@ public:
 
         return temp_file_path;
     }
+
+#if !defined _WIN32
 
     void read_child_environment(string_container_t* env_container)
     {
@@ -420,6 +408,8 @@ public:
         );
     }
 
+#endif
+
     void osl_execProc_test_batch()
     {
         oslProcess process;
@@ -468,7 +458,5 @@ public:
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Test_osl_executeProcess);
-
-CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -13,7 +13,6 @@
 #include <fstream>
 #include <set>
 #include "plugin.hxx"
-#include "compat.hxx"
 
 /**
 the comma operator is best used sparingly
@@ -40,6 +39,21 @@ bool CommaOperator::VisitBinaryOperator(const BinaryOperator* binaryOp)
     if (ignoreLocation(binaryOp)) {
         return true;
     }
+    // Ignore FD_SET expanding to "...} while(0, 0)" in some Microsoft
+    // winsock2.h (TODO: improve heuristic of determining that the whole
+    // binaryOp is part of a single macro body expansion):
+    if (compiler.getSourceManager().isMacroBodyExpansion(
+            binaryOp->getLocStart())
+        && compiler.getSourceManager().isMacroBodyExpansion(
+            binaryOp->getOperatorLoc())
+        && compiler.getSourceManager().isMacroBodyExpansion(
+            binaryOp->getLocEnd())
+        && ignoreLocation(
+            compiler.getSourceManager().getSpellingLoc(
+                binaryOp->getOperatorLoc())))
+    {
+        return true;
+    }
     if (binaryOp->getOpcode() != BO_Comma) {
         return true;
     }
@@ -64,7 +78,7 @@ bool CommaOperator::VisitBinaryOperator(const BinaryOperator* binaryOp)
 //    parent->dump();
     report(
         DiagnosticsEngine::Warning, "comma operator hides code",
-        binaryOp->getSourceRange().getBegin())
+        binaryOp->getOperatorLoc())
       << binaryOp->getSourceRange();
     return true;
 }

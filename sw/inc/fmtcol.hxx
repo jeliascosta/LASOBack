@@ -77,7 +77,7 @@ protected:
     }
 
     SwTextFormatColl( SwAttrPool& rPool, const OUString &rFormatCollName,
-                    SwTextFormatColl* pDerFrom = nullptr,
+                    SwTextFormatColl* pDerFrom,
                     sal_uInt16 nFormatWh = RES_TXTFMTCOLL )
         : SwFormatColl(rPool, rFormatCollName, aTextFormatCollSetRange, pDerFrom, nFormatWh)
         , mbStayAssignedToListLevelOfOutlineStyle(false)
@@ -105,7 +105,7 @@ public:
     // to which the Paragraph Style is assigned.
     int  GetAssignedOutlineStyleLevel() const;
 
-    inline bool IsAssignedToListLevelOfOutlineStyle() const
+    bool IsAssignedToListLevelOfOutlineStyle() const
     {
         return mbAssignedToOutlineStyle;
     }
@@ -124,7 +124,7 @@ public:
     /// Override <ResetAllFormatAttr()> to stay assigned to list level of outline style.
     virtual sal_uInt16 ResetAllFormatAttr() override;
 
-    inline bool StayAssignedToListLevelOfOutlineStyle() const
+    bool StayAssignedToListLevelOfOutlineStyle() const
     {
         return mbStayAssignedToListLevelOfOutlineStyle;
     }
@@ -145,7 +145,7 @@ protected:
     {}
 
     SwGrfFormatColl( SwAttrPool& rPool, const OUString &rFormatCollName,
-                    SwGrfFormatColl* pDerFrom = nullptr )
+                    SwGrfFormatColl* pDerFrom )
         : SwFormatColl( rPool, rFormatCollName, aGrfFormatCollSetRange,
                     pDerFrom, RES_GRFFMTCOLL )
     {}
@@ -155,38 +155,31 @@ public:
 
 // FEATURE::CONDCOLL
 /// Conditional styles.
-enum Master_CollConditions
+enum class Master_CollCondition
 {
-    PARA_IN_LIST        = 0x0001,
-    PARA_IN_OUTLINE     = 0x0002,
-    PARA_IN_FRAME       = 0x0004,
-    PARA_IN_TABLEHEAD   = 0x0008,
-    PARA_IN_TABLEBODY   = 0x0010,
-    PARA_IN_SECTION     = 0x0020,
-    PARA_IN_FOOTENOTE   = 0x0040,
-    PARA_IN_FOOTER      = 0x0080,
-    PARA_IN_HEADER      = 0x0100,
-    PARA_IN_ENDNOTE     = 0x0200,
-
-    USRFLD_EXPRESSION   = (int)0x8000
+    NONE,
+    PARA_IN_LIST,
+    PARA_IN_OUTLINE,
+    PARA_IN_FRAME,
+    PARA_IN_TABLEHEAD,
+    PARA_IN_TABLEBODY,
+    PARA_IN_SECTION,
+    PARA_IN_FOOTNOTE,
+    PARA_IN_FOOTER,
+    PARA_IN_HEADER,
+    PARA_IN_ENDNOTE
 };
 
 class SW_DLLPUBLIC SwCollCondition : public SwClient
 {
-    sal_uLong m_nCondition;
-    union
-    {
-        sal_uLong nSubCondition;
-        OUString* pFieldExpression;
-    } m_aSubCondition;
+    Master_CollCondition m_nCondition;
+    sal_uLong m_nSubCondition;
 
 public:
 
-    SwCollCondition( SwTextFormatColl* pColl, sal_uLong nMasterCond,
-                    sal_uLong nSubCond = 0 );
-    SwCollCondition( SwTextFormatColl* pColl, sal_uLong nMasterCond,
-                    const OUString& rSubExp );
-    virtual ~SwCollCondition();
+    SwCollCondition( SwTextFormatColl* pColl, Master_CollCondition nMasterCond,
+                    sal_uLong nSubCond );
+    virtual ~SwCollCondition() override;
 
     /// @@@ public copy ctor, but no copy assignment?
     SwCollCondition( const SwCollCondition& rCpy );
@@ -197,17 +190,15 @@ public:
 
     bool operator==( const SwCollCondition& rCmp ) const;
 
-    sal_uLong GetCondition() const      { return m_nCondition; }
-    sal_uLong GetSubCondition() const   { return m_aSubCondition.nSubCondition; }
-    const OUString* GetFieldExpression() const
-                                    { return m_aSubCondition.pFieldExpression; }
+    Master_CollCondition GetCondition() const      { return m_nCondition; }
+    sal_uLong GetSubCondition() const   { return m_nSubCondition; }
 
-    void SetCondition( sal_uLong nCond, sal_uLong nSubCond );
+    void SetCondition( Master_CollCondition nCond, sal_uLong nSubCond );
     SwTextFormatColl* GetTextFormatColl() const     { return const_cast<SwTextFormatColl*>(static_cast<const SwTextFormatColl*>(GetRegisteredIn())); }
     void RegisterToFormat( SwFormat& );
 };
 
-class SwFormatCollConditions : public std::vector<std::unique_ptr<SwCollCondition>> {};
+using SwFormatCollConditions = std::vector<std::unique_ptr<SwCollCondition>>;
 
 class SW_DLLPUBLIC SwConditionTextFormatColl : public SwTextFormatColl
 {
@@ -217,13 +208,13 @@ protected:
     SwFormatCollConditions m_CondColls;
 
     SwConditionTextFormatColl( SwAttrPool& rPool, const OUString &rFormatCollName,
-                            SwTextFormatColl* pDerFrom = nullptr )
+                            SwTextFormatColl* pDerFrom )
         : SwTextFormatColl( rPool, rFormatCollName, pDerFrom, RES_CONDTXTFMTCOLL )
     {}
 
 public:
 
-    virtual ~SwConditionTextFormatColl();
+    virtual ~SwConditionTextFormatColl() override;
 
     const SwCollCondition* HasCondition( const SwCollCondition& rCond ) const;
     const SwFormatCollConditions& GetCondColls() const { return m_CondColls; }

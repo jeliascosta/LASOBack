@@ -59,9 +59,13 @@ namespace
         {
             return 1020;
         }
-        if(rString.endsWith(".svg"))
+        if(rString.endsWith(".pdf"))
         {
             return 1030;
+        }
+        if(rString.endsWith(".svg"))
+        {
+            return 1040;
         }
 
         return nRetval;
@@ -85,12 +89,12 @@ SvXMLImportContextRef MultiImageImportHelper::solveMultipleImages()
     {
         // multiple child contexts were imported, decide which is the most valuable one
         // and remove the rest
-        sal_uInt32 nIndexOfPreferred(maImplContextVector.size());
-        sal_uInt32 nBestQuality(0), a(0);
+        std::vector<SvXMLImportContextRef>::size_type nIndexOfPreferred(maImplContextVector.size());
+        sal_uInt32 nBestQuality(0);
 
-        for(a = 0; a < maImplContextVector.size(); a++)
+        for(std::vector<SvXMLImportContextRef>::size_type a = 0; a < maImplContextVector.size(); a++)
         {
-            const OUString aStreamURL(getGraphicURLFromImportContext(*maImplContextVector[a]));
+            const OUString aStreamURL(getGraphicURLFromImportContext(*maImplContextVector[a].get()));
             const sal_uInt32 nNewQuality(getQualityIndex(aStreamURL));
 
             if(nNewQuality > nBestQuality)
@@ -112,16 +116,9 @@ SvXMLImportContextRef MultiImageImportHelper::solveMultipleImages()
         maImplContextVector.erase(aRemove);
 
         // remove the rest from parent
-        for(a = 0; a < maImplContextVector.size(); a++)
+        for(std::vector<SvXMLImportContextRef>::size_type a = 0; a < maImplContextVector.size(); a++)
         {
-            SvXMLImportContext& rCandidate = *maImplContextVector[a];
-
-            if(pContext)
-            {
-                // #i124143# evtl. copy imported GluePoints before deprecating
-                // this graphic and context
-                pContext->onDemandRescueUsefulDataFromTemporary(rCandidate);
-            }
+            SvXMLImportContext& rCandidate = *maImplContextVector[a].get();
 
             removeGraphicFromImportContext(rCandidate);
         }

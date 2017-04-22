@@ -25,6 +25,7 @@
 #include <comphelper/processfactory.hxx>
 #include <editeng/forbiddencharacterstable.hxx>
 #include <svx/svdmodel.hxx>
+#include <svl/asiancfg.hxx>
 #include <unotools/compatibility.hxx>
 #include <unotools/configmgr.hxx>
 #include <drawdoc.hxx>
@@ -41,7 +42,7 @@ sw::DocumentSettingManager::DocumentSettingManager(SwDoc &rDoc)
     :m_rDoc(rDoc),
     mnLinkUpdMode( GLOBALSETTING ),
     meFieldUpdMode( AUTOUPD_GLOBALSETTING ),
-    meChrCmprType( CHARCOMPRESS_NONE ),
+    meChrCmprType( CharCompressType::NONE ),
     mn32DummyCompatibilityOptions1(0),
     mn32DummyCompatibilityOptions2(0),
     mbHTMLMode(false),
@@ -67,11 +68,11 @@ sw::DocumentSettingManager::DocumentSettingManager(SwDoc &rDoc)
     mbTableRowKeep(false),
     mbIgnoreTabsAndBlanksForLineCalculation(false),
     mbDoNotCaptureDrawObjsOnPage(false),
-    mbOutlineLevelYieldsOutlineRule(false),
     mbClipAsCharacterAnchoredWriterFlyFrames(false),
     mbUnixForceZeroExtLeading(false),
     mbTabRelativeToIndent(true),
     mbProtectForm(false), // i#78591#
+    mbMsWordCompTrailingBlanks(false), // tdf#104349 tdf#104668
     mbInvertBorderSpacing (false),
     mbCollapseEmptyCellPara(true),
     mbTabAtLeftIndentForParagraphsInList(false), //#i89181#
@@ -98,18 +99,18 @@ sw::DocumentSettingManager::DocumentSettingManager(SwDoc &rDoc)
     if (!utl::ConfigManager::IsAvoidConfig())
     {
         const SvtCompatibilityOptions aOptions;
-        mbParaSpaceMax                      = aOptions.IsAddSpacing();
-        mbParaSpaceMaxAtPages               = aOptions.IsAddSpacingAtPages();
-        mbTabCompat                         = !aOptions.IsUseOurTabStops();
-        mbUseVirtualDevice                  = !aOptions.IsUsePrtDevice();
-        mbAddExternalLeading                = !aOptions.IsNoExtLeading();
-        mbOldLineSpacing                    = aOptions.IsUseLineSpacing();
-        mbAddParaSpacingToTableCells        = aOptions.IsAddTableSpacing();
-        mbUseFormerObjectPos                = aOptions.IsUseObjectPositioning();
-        mbUseFormerTextWrapping             = aOptions.IsUseOurTextWrapping();
-        mbConsiderWrapOnObjPos              = aOptions.IsConsiderWrappingStyle();
-
-        mbDoNotJustifyLinesWithManualBreak      = !aOptions.IsExpandWordSpace();
+        mbParaSpaceMax                      = aOptions.GetDefault( SvtCompatibilityEntry::Index::AddSpacing );
+        mbParaSpaceMaxAtPages               = aOptions.GetDefault( SvtCompatibilityEntry::Index::AddSpacingAtPages );
+        mbTabCompat                         = !aOptions.GetDefault( SvtCompatibilityEntry::Index::UseOurTabStops );
+        mbUseVirtualDevice                  = !aOptions.GetDefault( SvtCompatibilityEntry::Index::UsePrtMetrics );
+        mbAddExternalLeading                = !aOptions.GetDefault( SvtCompatibilityEntry::Index::NoExtLeading );
+        mbOldLineSpacing                    = aOptions.GetDefault( SvtCompatibilityEntry::Index::UseLineSpacing );
+        mbAddParaSpacingToTableCells        = aOptions.GetDefault( SvtCompatibilityEntry::Index::AddTableSpacing );
+        mbUseFormerObjectPos                = aOptions.GetDefault( SvtCompatibilityEntry::Index::UseObjectPositioning );
+        mbUseFormerTextWrapping             = aOptions.GetDefault( SvtCompatibilityEntry::Index::UseOurTextWrapping );
+        mbConsiderWrapOnObjPos              = aOptions.GetDefault( SvtCompatibilityEntry::Index::ConsiderWrappingStyle );
+        mbDoNotJustifyLinesWithManualBreak  = !aOptions.GetDefault( SvtCompatibilityEntry::Index::ExpandWordSpace );
+        mbMsWordCompTrailingBlanks          = aOptions.GetDefault( SvtCompatibilityEntry::Index::MsWordTrailingBlanks );
     }
     else
     {
@@ -124,6 +125,7 @@ sw::DocumentSettingManager::DocumentSettingManager(SwDoc &rDoc)
         mbUseFormerTextWrapping             = false;
         mbConsiderWrapOnObjPos              = false;
         mbDoNotJustifyLinesWithManualBreak  = true;
+        mbMsWordCompTrailingBlanks          = false;
     }
 
     // COMPATIBILITY FLAGS END
@@ -157,7 +159,6 @@ bool sw::DocumentSettingManager::get(/*[in]*/ DocumentSettingId id) const
         case DocumentSettingId::CONSIDER_WRAP_ON_OBJECT_POSITION: return mbConsiderWrapOnObjPos;
         case DocumentSettingId::DO_NOT_JUSTIFY_LINES_WITH_MANUAL_BREAK: return mbDoNotJustifyLinesWithManualBreak;
         case DocumentSettingId::IGNORE_FIRST_LINE_INDENT_IN_NUMBERING: return mbIgnoreFirstLineIndentInNumbering;
-        case DocumentSettingId::OUTLINE_LEVEL_YIELDS_OUTLINE_RULE: return mbOutlineLevelYieldsOutlineRule;
         case DocumentSettingId::TABLE_ROW_KEEP: return mbTableRowKeep;
         case DocumentSettingId::IGNORE_TABS_AND_BLANKS_FOR_LINE_CALCULATION: return mbIgnoreTabsAndBlanksForLineCalculation;
         case DocumentSettingId::DO_NOT_CAPTURE_DRAW_OBJS_ON_PAGE: return mbDoNotCaptureDrawObjsOnPage;
@@ -166,6 +167,8 @@ bool sw::DocumentSettingManager::get(/*[in]*/ DocumentSettingId id) const
         case DocumentSettingId::UNIX_FORCE_ZERO_EXT_LEADING: return mbUnixForceZeroExtLeading;
         case DocumentSettingId::TABS_RELATIVE_TO_INDENT : return mbTabRelativeToIndent;
         case DocumentSettingId::PROTECT_FORM: return mbProtectForm;
+        // tdf#104349 tdf#104668
+        case DocumentSettingId::MS_WORD_COMP_TRAILING_BLANKS: return mbMsWordCompTrailingBlanks;
         // #i89181#
         case DocumentSettingId::TAB_AT_LEFT_INDENT_FOR_PARA_IN_LIST: return mbTabAtLeftIndentForParagraphsInList;
         case DocumentSettingId::INVERT_BORDER_SPACING: return mbInvertBorderSpacing;
@@ -272,10 +275,6 @@ void sw::DocumentSettingManager::set(/*[in]*/ DocumentSettingId id, /*[in]*/ boo
             mbIgnoreFirstLineIndentInNumbering = value;
             break;
 
-        case DocumentSettingId::OUTLINE_LEVEL_YIELDS_OUTLINE_RULE:
-            mbOutlineLevelYieldsOutlineRule = value;
-            break;
-
         case DocumentSettingId::TABLE_ROW_KEEP:
             mbTableRowKeep = value;
             break;
@@ -299,6 +298,11 @@ void sw::DocumentSettingManager::set(/*[in]*/ DocumentSettingId id, /*[in]*/ boo
 
         case DocumentSettingId::PROTECT_FORM:
             mbProtectForm = value;
+            break;
+
+        // tdf#140349
+        case DocumentSettingId::MS_WORD_COMP_TRAILING_BLANKS:
+            mbMsWordCompTrailingBlanks = value;
             break;
 
         case DocumentSettingId::TABS_RELATIVE_TO_INDENT:
@@ -492,12 +496,12 @@ void sw::DocumentSettingManager::setFieldUpdateFlags(/*[in]*/SwFieldUpdateFlags 
     meFieldUpdMode = eMode;
 }
 
-SwCharCompressType sw::DocumentSettingManager::getCharacterCompressionType() const
+CharCompressType sw::DocumentSettingManager::getCharacterCompressionType() const
 {
     return meChrCmprType;
 }
 
-void sw::DocumentSettingManager::setCharacterCompressionType( /*[in]*/SwCharCompressType n )
+void sw::DocumentSettingManager::setCharacterCompressionType( /*[in]*/CharCompressType n )
 {
     if( meChrCmprType != n )
     {
@@ -506,7 +510,7 @@ void sw::DocumentSettingManager::setCharacterCompressionType( /*[in]*/SwCharComp
         SdrModel *pDrawModel = m_rDoc.getIDocumentDrawModelAccess().GetDrawModel();
         if( pDrawModel )
         {
-            pDrawModel->SetCharCompressType( static_cast<sal_uInt16>(n) );
+            pDrawModel->SetCharCompressType( n );
             if( !m_rDoc.IsInReading() )
                 pDrawModel->ReformatAllTextObjects();
         }
@@ -545,7 +549,6 @@ void sw::DocumentSettingManager::ReplaceCompatibilityOptions(const DocumentSetti
     mbIgnoreFirstLineIndentInNumbering = rSource.mbIgnoreFirstLineIndentInNumbering;
     mbDoNotJustifyLinesWithManualBreak = rSource.mbDoNotJustifyLinesWithManualBreak;
     mbDoNotResetParaAttrsForNumFont = rSource.mbDoNotResetParaAttrsForNumFont;
-    mbOutlineLevelYieldsOutlineRule = rSource.mbOutlineLevelYieldsOutlineRule;
     mbTableRowKeep = rSource.mbTableRowKeep;
     mbIgnoreTabsAndBlanksForLineCalculation = rSource.mbIgnoreTabsAndBlanksForLineCalculation;
     mbDoNotCaptureDrawObjsOnPage = rSource.mbDoNotCaptureDrawObjsOnPage;
@@ -553,6 +556,7 @@ void sw::DocumentSettingManager::ReplaceCompatibilityOptions(const DocumentSetti
     mbUnixForceZeroExtLeading = rSource.mbUnixForceZeroExtLeading;
     mbTabRelativeToIndent = rSource.mbTabRelativeToIndent;
     mbTabAtLeftIndentForParagraphsInList = rSource.mbTabAtLeftIndentForParagraphsInList;
+    mbMsWordCompTrailingBlanks = rSource.mbMsWordCompTrailingBlanks;
 }
 
 sal_uInt32 sw::DocumentSettingManager::Getn32DummyCompatibilityOptions1() const

@@ -25,6 +25,7 @@
 #include <basic/basmgr.hxx>
 #include <basic/sbmod.hxx>
 #include <basic/sbmeth.hxx>
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/document/XDocumentPropertiesSupplier.hpp>
 #include <com/sun/star/document/XDocumentProperties.hpp>
 #include <com/sun/star/script/vba/XVBACompatibility.hpp>
@@ -34,6 +35,8 @@
 #include <tools/urlobj.hxx>
 #include <osl/file.hxx>
 #include <unotools/pathoptions.hxx>
+#include <rtl/character.hxx>
+#include <sfx2/objsh.hxx>
 
 #include <com/sun/star/awt/KeyModifier.hpp>
 #include <svtools/acceleratorexecute.hxx>
@@ -89,7 +92,6 @@ SfxObjectShell* findShellForUrl( const OUString& sMacroURLOrPath )
         osl::FileBase::getFileURLFromSystemPath( sMacroURLOrPath, aURL );
         aObj.SetURL( aURL );
     }
-    OSL_TRACE("Trying to find shell for url %s", OUStringToOString( aURL, RTL_TEXTENCODING_UTF8 ).getStr() );
     while ( pShell )
     {
 
@@ -182,10 +184,6 @@ bool hasMacro( SfxObjectShell* pShell, const OUString& sLibrary, OUString& sMod,
 #else
     if ( !sLibrary.isEmpty() && !sMacro.isEmpty() )
     {
-        OSL_TRACE("** Searching for %s.%s in library %s"
-            ,OUStringToOString( sMod, RTL_TEXTENCODING_UTF8 ).getStr()
-            ,OUStringToOString( sMacro, RTL_TEXTENCODING_UTF8 ).getStr()
-            ,OUStringToOString( sLibrary, RTL_TEXTENCODING_UTF8 ).getStr() );
         BasicManager* pBasicMgr = pShell-> GetBasicManager();
         if ( pBasicMgr )
         {
@@ -201,15 +199,9 @@ bool hasMacro( SfxObjectShell* pShell, const OUString& sLibrary, OUString& sMod,
                 if ( !sMod.isEmpty() ) // we wish to find the macro is a specific module
                 {
                     SbModule* pModule = pBasic->FindModule( sMod );
-                    if ( pModule )
+                    if ( pModule && pModule->FindMethod( sMacro, SbxClassType::Method ))
                     {
-                        SbxArray* pMethods = pModule->GetMethods();
-                        if ( pMethods )
-                        {
-                            SbMethod* pMethod = static_cast< SbMethod* >( pMethods->Find( sMacro, SbxClassType::Method ) );
-                            if ( pMethod )
-                              bFound = true;
-                        }
+                        bFound = true;
                     }
                 }
                 else if( SbMethod* pMethod = dynamic_cast< SbMethod* >( pBasic->Find( sMacro, SbxClassType::Method ) ) )
@@ -517,7 +509,7 @@ OUString VBAMacroResolver_getImplementationName()
     return OUString( "com.sun.star.comp.vba.VBAMacroResolver" );
 }
 
-uno::Reference< uno::XInterface > SAL_CALL VBAMacroResolver_createInstance( const uno::Reference< uno::XComponentContext >& ) throw (uno::Exception)
+uno::Reference< uno::XInterface > SAL_CALL VBAMacroResolver_createInstance( const uno::Reference< uno::XComponentContext >& )
 {
     return static_cast< ::cppu::OWeakObject* >( new VBAMacroResolver );
 }
@@ -534,24 +526,24 @@ VBAMacroResolver::~VBAMacroResolver()
 
 // com.sun.star.lang.XServiceInfo interface -----------------------------------
 
-OUString SAL_CALL VBAMacroResolver::getImplementationName() throw (uno::RuntimeException, std::exception)
+OUString SAL_CALL VBAMacroResolver::getImplementationName()
 {
     return VBAMacroResolver_getImplementationName();
 }
 
-sal_Bool SAL_CALL VBAMacroResolver::supportsService( const OUString& rService ) throw (uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL VBAMacroResolver::supportsService( const OUString& rService )
 {
     return cppu::supportsService(this, rService);
 }
 
-uno::Sequence< OUString > SAL_CALL VBAMacroResolver::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
+uno::Sequence< OUString > SAL_CALL VBAMacroResolver::getSupportedServiceNames()
 {
     return VBAMacroResolver_getSupportedServiceNames();
 }
 
 // com.sun.star.lang.XInitialization interface --------------------------------
 
-void SAL_CALL VBAMacroResolver::initialize( const uno::Sequence< uno::Any >& rArgs ) throw (uno::Exception, uno::RuntimeException, std::exception)
+void SAL_CALL VBAMacroResolver::initialize( const uno::Sequence< uno::Any >& rArgs )
 {
     OSL_ENSURE( rArgs.getLength() < 2, "VBAMacroResolver::initialize - missing arguments" );
     if( rArgs.getLength() < 2 )
@@ -571,7 +563,7 @@ void SAL_CALL VBAMacroResolver::initialize( const uno::Sequence< uno::Any >& rAr
 
 // com.sun.star.script.vba.XVBAMacroResolver interface ------------------------
 
-OUString SAL_CALL VBAMacroResolver::resolveVBAMacroToScriptURL( const OUString& rVBAMacroName ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
+OUString SAL_CALL VBAMacroResolver::resolveVBAMacroToScriptURL( const OUString& rVBAMacroName )
 {
     if( !mpObjShell )
         throw uno::RuntimeException();
@@ -602,41 +594,39 @@ OUString SAL_CALL VBAMacroResolver::resolveVBAMacroToScriptURL( const OUString& 
     return makeMacroURL( aInfo.msResolvedMacro );
 }
 
-OUString SAL_CALL VBAMacroResolver::resolveScriptURLtoVBAMacro( const OUString& /*rScriptURL*/ ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
+OUString SAL_CALL VBAMacroResolver::resolveScriptURLtoVBAMacro( const OUString& /*rScriptURL*/ )
 {
     OSL_ENSURE( false, "VBAMacroResolver::resolveScriptURLtoVBAMacro - not implemented" );
     throw uno::RuntimeException();
 }
 
-bool getModifier( char c, sal_uInt16& mod )
+bool getModifier( sal_Unicode c, sal_uInt16& mod )
 {
-    static const char modifiers[] = "+^%";
-    static const sal_uInt16 KEY_MODS[] = {KEY_SHIFT, KEY_MOD1, KEY_MOD2};
-
-    for ( unsigned int i=0; i<SAL_N_ELEMENTS(KEY_MODS); ++i )
-    {
-        if ( c == modifiers[i] )
-        {
-            mod = mod | KEY_MODS[ i ];
-            return true;
-        }
+    if ( c == '+' ) {
+        mod |= KEY_SHIFT;
+        return true;
+    } else if ( c == '^' ) {
+        mod |= KEY_MOD1;
+        return true;
+    } else if ( c == '%' ) {
+        mod |= KEY_MOD2;
+        return true;
     }
     return false;
 }
 
-typedef std::map< OUString, sal_uInt16 > MSKeyCodeMap;
-
-sal_uInt16 parseChar( char c ) throw ( uno::RuntimeException )
+/// @throws uno::RuntimeException
+sal_uInt16 parseChar( sal_Unicode c )
 {
     sal_uInt16 nVclKey = 0;
-    // do we care about locale here for isupper etc. ? probably not
-    if ( isalpha( c ) )
+    // do we care about locale here for letters/digits? probably not
+    if ( rtl::isAsciiAlpha( c ) )
     {
-        nVclKey |= ( toupper( c ) - 'A' ) + KEY_A;
-        if ( isupper( c ) )
+        nVclKey |= ( rtl::toAsciiUpperCase( c ) - 'A' ) + KEY_A;
+        if ( rtl::isAsciiUpperCase( c ) )
             nVclKey |= KEY_SHIFT;
     }
-    else if ( isdigit( c ) )
+    else if ( rtl::isAsciiDigit( c ) )
         nVclKey |= ( c  - '0' ) + KEY_0;
     else if ( c == '~' ) // special case
         nVclKey = KEY_RETURN;
@@ -653,7 +643,7 @@ struct KeyCodeEntry
    sal_uInt16 nCode;
 };
 
-KeyCodeEntry aMSKeyCodesData[] = {
+KeyCodeEntry const aMSKeyCodesData[] = {
     { "BACKSPACE", KEY_BACKSPACE },
     { "BS", KEY_BACKSPACE },
     { "DELETE", KEY_DELETE },
@@ -690,12 +680,12 @@ KeyCodeEntry aMSKeyCodesData[] = {
     { "F15", KEY_F15 },
 };
 
-awt::KeyEvent parseKeyEvent( const OUString& Key ) throw ( uno::RuntimeException )
+awt::KeyEvent parseKeyEvent( const OUString& Key )
 {
-    static MSKeyCodeMap s_KeyCodes;
+    static std::map< OUString, sal_uInt16 > s_KeyCodes;
     if ( s_KeyCodes.empty() )
     {
-        for (KeyCodeEntry & i : aMSKeyCodesData)
+        for (KeyCodeEntry const & i : aMSKeyCodesData)
         {
             s_KeyCodes[ OUString::createFromAscii( i.sName ) ] = i.nCode;
         }
@@ -717,8 +707,7 @@ awt::KeyEvent parseKeyEvent( const OUString& Key ) throw ( uno::RuntimeException
     // else it should be just one char of ( 'a-z,A-Z,0-9' )
     if ( sKeyCode.getLength() == 1 ) // ( a single char )
     {
-        char c = (char)( sKeyCode[ 0 ] );
-        nVclKey |= parseChar( c );
+        nVclKey |= parseChar( sKeyCode[ 0 ] );
     }
     else // key should be enclosed in '{}'
     {
@@ -728,10 +717,10 @@ awt::KeyEvent parseKeyEvent( const OUString& Key ) throw ( uno::RuntimeException
         sKeyCode = sKeyCode.copy(1, sKeyCode.getLength() - 2 );
 
         if ( sKeyCode.getLength() == 1 )
-            nVclKey |= parseChar( (char)( sKeyCode[ 0 ] ) );
+            nVclKey |= parseChar( sKeyCode[ 0 ] );
         else
         {
-            MSKeyCodeMap::iterator it = s_KeyCodes.find( sKeyCode );
+            auto it = s_KeyCodes.find( sKeyCode );
             if ( it == s_KeyCodes.end() ) // unknown or unsupported
                 throw uno::RuntimeException();
             nVclKey |= it->second;
@@ -742,7 +731,7 @@ awt::KeyEvent parseKeyEvent( const OUString& Key ) throw ( uno::RuntimeException
     return aKeyEvent;
 }
 
-void applyShortCutKeyBinding ( const uno::Reference< frame::XModel >& rxModel, const awt::KeyEvent& rKeyEvent, const OUString& rMacroName ) throw (uno::RuntimeException, std::exception)
+void applyShortCutKeyBinding ( const uno::Reference< frame::XModel >& rxModel, const awt::KeyEvent& rKeyEvent, const OUString& rMacroName )
 {
     OUString MacroName( rMacroName );
     if ( !MacroName.isEmpty() )

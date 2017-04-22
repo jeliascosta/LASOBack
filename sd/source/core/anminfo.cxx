@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svl/smplhint.hxx>
 #include "svx/xtable.hxx"
 #include <svx/svdopath.hxx>
 #include <svl/urihelper.hxx>
@@ -34,7 +33,7 @@
 using namespace ::com::sun::star;
 
 SdAnimationInfo::SdAnimationInfo(SdrObject& rObject)
-               : SdrObjUserData(SdUDInventor, SD_ANIMATIONINFO_ID),
+               : SdrObjUserData(SdrInventor::StarDrawUserData, SD_ANIMATIONINFO_ID),
                  mePresObjKind              (PRESOBJ_NONE),
                  meEffect                   (presentation::AnimationEffect_NONE),
                  meTextEffect               (presentation::AnimationEffect_NONE),
@@ -45,14 +44,12 @@ SdAnimationInfo::SdAnimationInfo(SdrObject& rObject)
                  mbDimHide                  (false),
                  mbSoundOn                  (false),
                  mbPlayFull                 (false),
-                 mpPathObj                  (nullptr),
                  meClickAction              (presentation::ClickAction_NONE),
                  meSecondEffect             (presentation::AnimationEffect_NONE),
                  meSecondSpeed              (presentation::AnimationSpeed_SLOW),
                  mbSecondSoundOn            (false),
                  mbSecondPlayFull           (false),
                  mnVerb                     (0),
-                 mnPresOrder                (TREELIST_APPEND),
                  mrObject                   (rObject)
 {
     maBlueScreen = RGB_Color(COL_LIGHTMAGENTA);
@@ -61,7 +58,7 @@ SdAnimationInfo::SdAnimationInfo(SdrObject& rObject)
 
 SdAnimationInfo::SdAnimationInfo(const SdAnimationInfo& rAnmInfo, SdrObject& rObject)
                : SdrObjUserData             (rAnmInfo),
-                    mePresObjKind               (PRESOBJ_NONE),
+                 mePresObjKind               (PRESOBJ_NONE),
                  meEffect                   (rAnmInfo.meEffect),
                  meTextEffect               (rAnmInfo.meTextEffect),
                  meSpeed                    (rAnmInfo.meSpeed),
@@ -74,7 +71,6 @@ SdAnimationInfo::SdAnimationInfo(const SdAnimationInfo& rAnmInfo, SdrObject& rOb
                  maSoundFile                (rAnmInfo.maSoundFile),
                  mbSoundOn                  (rAnmInfo.mbSoundOn),
                  mbPlayFull                 (rAnmInfo.mbPlayFull),
-                 mpPathObj                  (nullptr),
                  meClickAction              (rAnmInfo.meClickAction),
                  meSecondEffect             (rAnmInfo.meSecondEffect),
                  meSecondSpeed              (rAnmInfo.meSecondSpeed),
@@ -82,7 +78,6 @@ SdAnimationInfo::SdAnimationInfo(const SdAnimationInfo& rAnmInfo, SdrObject& rOb
                  mbSecondSoundOn            (rAnmInfo.mbSecondSoundOn),
                  mbSecondPlayFull           (rAnmInfo.mbSecondPlayFull),
                  mnVerb                     (rAnmInfo.mnVerb),
-                 mnPresOrder                (TREELIST_APPEND),
                  mrObject                   (rObject)
 {
     // can not be copied

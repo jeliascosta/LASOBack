@@ -67,22 +67,22 @@ namespace sdr
 
             switch(static_cast<const SdrMeasureTextHPosItem&>(rItemSet.Get(SDRATTR_MEASURETEXTHPOS)).GetValue())
             {
-                case SDRMEASURE_TEXTLEFTOUTSIDE :
+                case css::drawing::MeasureTextHorzPos::MeasureTextHorzPos_LEFTOUTSIDE:
                 {
                     aMTPHor = drawinglayer::primitive2d::MEASURETEXTPOSITION_NEGATIVE;
                     break;
                 }
-                case SDRMEASURE_TEXTINSIDE :
+                case css::drawing::MeasureTextHorzPos::MeasureTextHorzPos_INSIDE:
                 {
                     aMTPHor = drawinglayer::primitive2d::MEASURETEXTPOSITION_CENTERED;
                     break;
                 }
-                case SDRMEASURE_TEXTRIGHTOUTSIDE :
+                case css::drawing::MeasureTextHorzPos::MeasureTextHorzPos_RIGHTOUTSIDE:
                 {
                     aMTPHor = drawinglayer::primitive2d::MEASURETEXTPOSITION_POSITIVE;
                     break;
                 }
-                default : // SDRMEASURE_TEXTHAUTO
+                default: // css::drawing::MeasureTextHorzPos::MeasureTextHorzPos_AUTO
                 {
                     break;
                 }
@@ -90,23 +90,22 @@ namespace sdr
 
             switch(static_cast<const SdrMeasureTextVPosItem&>(rItemSet.Get(SDRATTR_MEASURETEXTVPOS)).GetValue())
             {
-                case SDRMEASURE_ABOVE :
+                case css::drawing::MeasureTextVertPos_EAST:
                 {
                     aMTPVer = drawinglayer::primitive2d::MEASURETEXTPOSITION_NEGATIVE;
                     break;
                 }
-                case SDRMEASURETEXT_BREAKEDLINE :
-                case SDRMEASURETEXT_VERTICALCENTERED :
+                case css::drawing::MeasureTextVertPos_CENTERED:
                 {
                     aMTPVer = drawinglayer::primitive2d::MEASURETEXTPOSITION_CENTERED;
                     break;
                 }
-                case SDRMEASURE_BELOW :
+                case css::drawing::MeasureTextVertPos_WEST:
                 {
                     aMTPVer = drawinglayer::primitive2d::MEASURETEXTPOSITION_POSITIVE;
                     break;
                 }
-                default : // SDRMEASURE_TEXTVAUTO
+                default : // css::drawing::MeasureTextVertPos_AUTO
                 {
                     break;
                 }

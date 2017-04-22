@@ -25,8 +25,6 @@
 #include <cmdid.h>
 #include <fesh.hxx>
 #include <comphelper/processfactory.hxx>
-#include <com/sun/star/i18n/CollatorOptions.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <doc.hxx>
 #include <editeng/acorrcfg.hxx>
 #include <editeng/autokernitem.hxx>
@@ -151,7 +149,7 @@ sal_uInt16 aTextFormatCollSetRange[] = {
     RES_PARATR_BEGIN, RES_PARATR_END-1,
     RES_UNKNOWNATR_BEGIN, RES_UNKNOWNATR_END-1,
 
-    //UUUU FillAttribute support
+    // FillAttribute support
     XATTR_FILL_FIRST, XATTR_FILL_LAST,
 
     0
@@ -173,7 +171,7 @@ sal_uInt16 aTextNodeSetRange[] = {
     RES_PARATR_LIST_BEGIN, RES_PARATR_LIST_END-1,
     RES_UNKNOWNATR_BEGIN, RES_UNKNOWNATR_END-1,
 
-    //UUUU FillAttribute support (paragraph FillStyle)
+    // FillAttribute support (paragraph FillStyle)
     XATTR_FILL_FIRST, XATTR_FILL_LAST,
 
     0
@@ -233,7 +231,7 @@ sal_uInt16 aFrameFormatSetRange[] = {
     RES_FRMATR_BEGIN, RES_FRMATR_END-1,
     RES_UNKNOWNATR_BEGIN, RES_UNKNOWNATR_END-1,
 
-    //UUUU FillAttribute support (TextFrame, OLE, Writer GraphicObject)
+    // FillAttribute support (TextFrame, OLE, Writer GraphicObject)
     XATTR_FILL_FIRST, XATTR_FILL_LAST,
 
     0
@@ -262,7 +260,7 @@ sal_uInt16 aPgFrameFormatSetRange[] = {
 };
 
 // create table for accessing default format attributes
-SwDfltAttrTab aAttrTab;
+SwDfltAttrTab aAttrTab( POOLATTR_END - POOLATTR_BEGIN, nullptr );
 
 SfxItemInfo aSlotTab[] =
 {
@@ -447,9 +445,9 @@ std::vector<SvGlobalName*> *pGlobalOLEExcludeList = nullptr;
 SwAutoCompleteWord* SwDoc::mpACmpltWords = nullptr;
 
 SwCheckIt* pCheckIt = nullptr;
-CharClass* pAppCharClass = nullptr;
+static CharClass* pAppCharClass = nullptr;
 
-CollatorWrapper* pCollator = nullptr,
+static CollatorWrapper* pCollator = nullptr,
                 *pCaseCollator = nullptr;
 
 salhelper::SingletonRef<SwCalendarWrapper>* s_getCalendarWrapper()
@@ -462,10 +460,7 @@ void InitCore()
 {
     SfxPoolItem* pItem;
 
-    // first initialize all attribute pointers with 0
-    memset( aAttrTab, 0, (POOLATTR_END - POOLATTR_BEGIN) * sizeof( SfxPoolItem* ) );
-
-    aAttrTab[ RES_CHRATR_CASEMAP- POOLATTR_BEGIN ] =        new SvxCaseMapItem( SVX_CASEMAP_NOT_MAPPED, RES_CHRATR_CASEMAP);
+    aAttrTab[ RES_CHRATR_CASEMAP- POOLATTR_BEGIN ] =        new SvxCaseMapItem( SvxCaseMap::NotMapped, RES_CHRATR_CASEMAP);
     aAttrTab[ RES_CHRATR_CHARSETCOLOR- POOLATTR_BEGIN ] =   new SvxCharSetColorItem(RES_CHRATR_CHARSETCOLOR);
     aAttrTab[ RES_CHRATR_COLOR- POOLATTR_BEGIN ] =          new SvxColorItem(RES_CHRATR_COLOR);
     aAttrTab[ RES_CHRATR_CONTOUR- POOLATTR_BEGIN ] =        new SvxContourItem( false, RES_CHRATR_CONTOUR );
@@ -507,7 +502,7 @@ void InitCore()
     aAttrTab[ RES_CHRATR_EMPHASIS_MARK - POOLATTR_BEGIN ] = new SvxEmphasisMarkItem( FontEmphasisMark::NONE, RES_CHRATR_EMPHASIS_MARK );
     aAttrTab[ RES_CHRATR_TWO_LINES - POOLATTR_BEGIN ] =     new SvxTwoLinesItem( false, 0, 0, RES_CHRATR_TWO_LINES );
     aAttrTab[ RES_CHRATR_SCALEW - POOLATTR_BEGIN ] =        new SvxCharScaleWidthItem( 100, RES_CHRATR_SCALEW );
-    aAttrTab[ RES_CHRATR_RELIEF - POOLATTR_BEGIN ] =        new SvxCharReliefItem( RELIEF_NONE, RES_CHRATR_RELIEF );
+    aAttrTab[ RES_CHRATR_RELIEF - POOLATTR_BEGIN ] =        new SvxCharReliefItem( FontRelief::NONE, RES_CHRATR_RELIEF );
     aAttrTab[ RES_CHRATR_HIDDEN - POOLATTR_BEGIN ] =        new SvxCharHiddenItem( false, RES_CHRATR_HIDDEN );
     aAttrTab[ RES_CHRATR_OVERLINE- POOLATTR_BEGIN ] =       new SvxOverlineItem( LINESTYLE_NONE, RES_CHRATR_OVERLINE );
     aAttrTab[ RES_CHRATR_BOX - POOLATTR_BEGIN ] =           new SvxBoxItem( RES_CHRATR_BOX );
@@ -541,11 +536,11 @@ void InitCore()
     aAttrTab[ RES_TXTATR_DUMMY3 - POOLATTR_BEGIN ] =        new SfxBoolItem( RES_TXTATR_DUMMY3 );
 
     aAttrTab[ RES_PARATR_LINESPACING- POOLATTR_BEGIN ] =    new SvxLineSpacingItem( LINE_SPACE_DEFAULT_HEIGHT, RES_PARATR_LINESPACING );
-    aAttrTab[ RES_PARATR_ADJUST- POOLATTR_BEGIN ] =         new SvxAdjustItem( SVX_ADJUST_LEFT, RES_PARATR_ADJUST );
+    aAttrTab[ RES_PARATR_ADJUST- POOLATTR_BEGIN ] =         new SvxAdjustItem( SvxAdjust::Left, RES_PARATR_ADJUST );
     aAttrTab[ RES_PARATR_SPLIT- POOLATTR_BEGIN ] =          new SvxFormatSplitItem( true, RES_PARATR_SPLIT );
     aAttrTab[ RES_PARATR_WIDOWS- POOLATTR_BEGIN ] =         new SvxWidowsItem( 0, RES_PARATR_WIDOWS );
     aAttrTab[ RES_PARATR_ORPHANS- POOLATTR_BEGIN ] =        new SvxOrphansItem( 0, RES_PARATR_ORPHANS );
-    aAttrTab[ RES_PARATR_TABSTOP- POOLATTR_BEGIN ] =        new SvxTabStopItem( 1, SVX_TAB_DEFDIST, SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP );
+    aAttrTab[ RES_PARATR_TABSTOP- POOLATTR_BEGIN ] =        new SvxTabStopItem( 1, SVX_TAB_DEFDIST, SvxTabAdjust::Default, RES_PARATR_TABSTOP );
 
     pItem = new SvxHyphenZoneItem( false, RES_PARATR_HYPHENZONE );
     static_cast<SvxHyphenZoneItem*>(pItem)->GetMaxHyphens() = 0; // Default: 0
@@ -558,7 +553,7 @@ void InitCore()
     aAttrTab[ RES_PARATR_SCRIPTSPACE - POOLATTR_BEGIN ] =   new SvxScriptSpaceItem( true, RES_PARATR_SCRIPTSPACE );
     aAttrTab[ RES_PARATR_HANGINGPUNCTUATION - POOLATTR_BEGIN ] = new SvxHangingPunctuationItem( true, RES_PARATR_HANGINGPUNCTUATION );
     aAttrTab[ RES_PARATR_FORBIDDEN_RULES - POOLATTR_BEGIN ] = new SvxForbiddenRuleItem( true, RES_PARATR_FORBIDDEN_RULES );
-    aAttrTab[ RES_PARATR_VERTALIGN - POOLATTR_BEGIN ] =     new SvxParaVertAlignItem( 0, RES_PARATR_VERTALIGN );
+    aAttrTab[ RES_PARATR_VERTALIGN - POOLATTR_BEGIN ] =     new SvxParaVertAlignItem( SvxParaVertAlignItem::Align::Automatic, RES_PARATR_VERTALIGN );
     aAttrTab[ RES_PARATR_SNAPTOGRID - POOLATTR_BEGIN ] =    new SvxParaGridItem( true, RES_PARATR_SNAPTOGRID );
     aAttrTab[ RES_PARATR_CONNECT_BORDER - POOLATTR_BEGIN ] = new SwParaConnectBorderItem;
 
@@ -578,7 +573,7 @@ void InitCore()
     aAttrTab[ RES_LR_SPACE- POOLATTR_BEGIN ] =              new SvxLRSpaceItem( RES_LR_SPACE );
     aAttrTab[ RES_UL_SPACE- POOLATTR_BEGIN ] =              new SvxULSpaceItem( RES_UL_SPACE );
     aAttrTab[ RES_PAGEDESC- POOLATTR_BEGIN ] =              new SwFormatPageDesc;
-    aAttrTab[ RES_BREAK- POOLATTR_BEGIN ] =                 new SvxFormatBreakItem( SVX_BREAK_NONE, RES_BREAK);
+    aAttrTab[ RES_BREAK- POOLATTR_BEGIN ] =                 new SvxFormatBreakItem( SvxBreak::NONE, RES_BREAK);
     aAttrTab[ RES_CNTNT- POOLATTR_BEGIN ] =                 new SwFormatContent;
     aAttrTab[ RES_HEADER- POOLATTR_BEGIN ] =                new SwFormatHeader;
     aAttrTab[ RES_FOOTER- POOLATTR_BEGIN ] =                new SwFormatFooter;
@@ -605,7 +600,7 @@ void InitCore()
     aAttrTab[ RES_FTN_AT_TXTEND - POOLATTR_BEGIN ] =        new SwFormatFootnoteAtTextEnd;
     aAttrTab[ RES_END_AT_TXTEND - POOLATTR_BEGIN ] =        new SwFormatEndAtTextEnd;
     aAttrTab[ RES_COLUMNBALANCE - POOLATTR_BEGIN ] =        new SwFormatNoBalancedColumns;
-    aAttrTab[ RES_FRAMEDIR - POOLATTR_BEGIN ] =             new SvxFrameDirectionItem( FRMDIR_ENVIRONMENT, RES_FRAMEDIR );
+    aAttrTab[ RES_FRAMEDIR - POOLATTR_BEGIN ] =             new SvxFrameDirectionItem( SvxFrameDirection::Environment, RES_FRAMEDIR );
     aAttrTab[ RES_ROW_SPLIT - POOLATTR_BEGIN ] =            new SwFormatRowSplit;
 
     // #i18732#
@@ -776,47 +771,47 @@ void FinitCore()
 #if OSL_DEBUG_LEVEL > 0
     // free defaults to prevent assertions
     if ( aAttrTab[0]->GetRefCount() )
-        SfxItemPool::ReleaseDefaults( aAttrTab, POOLATTR_END-POOLATTR_BEGIN);
+        SfxItemPool::ReleaseDefaults( &aAttrTab );
 #endif
     delete SwDoc::mpACmpltWords;
 
-    delete SwStyleNameMapper::m_pTextUINameArray;
-    delete SwStyleNameMapper::m_pListsUINameArray;
-    delete SwStyleNameMapper::m_pExtraUINameArray;
-    delete SwStyleNameMapper::m_pRegisterUINameArray;
-    delete SwStyleNameMapper::m_pDocUINameArray;
-    delete SwStyleNameMapper::m_pHTMLUINameArray;
-    delete SwStyleNameMapper::m_pFrameFormatUINameArray;
-    delete SwStyleNameMapper::m_pChrFormatUINameArray;
-    delete SwStyleNameMapper::m_pHTMLChrFormatUINameArray;
-    delete SwStyleNameMapper::m_pPageDescUINameArray;
-    delete SwStyleNameMapper::m_pNumRuleUINameArray;
+    delete SwStyleNameMapper::s_pTextUINameArray;
+    delete SwStyleNameMapper::s_pListsUINameArray;
+    delete SwStyleNameMapper::s_pExtraUINameArray;
+    delete SwStyleNameMapper::s_pRegisterUINameArray;
+    delete SwStyleNameMapper::s_pDocUINameArray;
+    delete SwStyleNameMapper::s_pHTMLUINameArray;
+    delete SwStyleNameMapper::s_pFrameFormatUINameArray;
+    delete SwStyleNameMapper::s_pChrFormatUINameArray;
+    delete SwStyleNameMapper::s_pHTMLChrFormatUINameArray;
+    delete SwStyleNameMapper::s_pPageDescUINameArray;
+    delete SwStyleNameMapper::s_pNumRuleUINameArray;
 
     // Delete programmatic name arrays also
-    delete SwStyleNameMapper::m_pTextProgNameArray;
-    delete SwStyleNameMapper::m_pListsProgNameArray;
-    delete SwStyleNameMapper::m_pExtraProgNameArray;
-    delete SwStyleNameMapper::m_pRegisterProgNameArray;
-    delete SwStyleNameMapper::m_pDocProgNameArray;
-    delete SwStyleNameMapper::m_pHTMLProgNameArray;
-    delete SwStyleNameMapper::m_pFrameFormatProgNameArray;
-    delete SwStyleNameMapper::m_pChrFormatProgNameArray;
-    delete SwStyleNameMapper::m_pHTMLChrFormatProgNameArray;
-    delete SwStyleNameMapper::m_pPageDescProgNameArray;
-    delete SwStyleNameMapper::m_pNumRuleProgNameArray;
+    delete SwStyleNameMapper::s_pTextProgNameArray;
+    delete SwStyleNameMapper::s_pListsProgNameArray;
+    delete SwStyleNameMapper::s_pExtraProgNameArray;
+    delete SwStyleNameMapper::s_pRegisterProgNameArray;
+    delete SwStyleNameMapper::s_pDocProgNameArray;
+    delete SwStyleNameMapper::s_pHTMLProgNameArray;
+    delete SwStyleNameMapper::s_pFrameFormatProgNameArray;
+    delete SwStyleNameMapper::s_pChrFormatProgNameArray;
+    delete SwStyleNameMapper::s_pHTMLChrFormatProgNameArray;
+    delete SwStyleNameMapper::s_pPageDescProgNameArray;
+    delete SwStyleNameMapper::s_pNumRuleProgNameArray;
 
     // And finally, any hash tables that we used
-    delete SwStyleNameMapper::m_pParaUIMap;
-    delete SwStyleNameMapper::m_pCharUIMap;
-    delete SwStyleNameMapper::m_pPageUIMap;
-    delete SwStyleNameMapper::m_pFrameUIMap;
-    delete SwStyleNameMapper::m_pNumRuleUIMap;
+    delete SwStyleNameMapper::s_pParaUIMap;
+    delete SwStyleNameMapper::s_pCharUIMap;
+    delete SwStyleNameMapper::s_pPageUIMap;
+    delete SwStyleNameMapper::s_pFrameUIMap;
+    delete SwStyleNameMapper::s_pNumRuleUIMap;
 
-    delete SwStyleNameMapper::m_pParaProgMap;
-    delete SwStyleNameMapper::m_pCharProgMap;
-    delete SwStyleNameMapper::m_pPageProgMap;
-    delete SwStyleNameMapper::m_pFrameProgMap;
-    delete SwStyleNameMapper::m_pNumRuleProgMap;
+    delete SwStyleNameMapper::s_pParaProgMap;
+    delete SwStyleNameMapper::s_pCharProgMap;
+    delete SwStyleNameMapper::s_pPageProgMap;
+    delete SwStyleNameMapper::s_pFrameProgMap;
+    delete SwStyleNameMapper::s_pNumRuleProgMap;
 
     // delete all default attributes
     for(SfxPoolItem* pHt : aAttrTab)
@@ -907,9 +902,9 @@ namespace
             uno::Reference< uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
 
             xTransWrp.reset(new ::utl::TransliterationWrapper( xContext,
-                    i18n::TransliterationModules_IGNORE_CASE |
-                    i18n::TransliterationModules_IGNORE_KANA |
-                    i18n::TransliterationModules_IGNORE_WIDTH ));
+                    TransliterationFlags::IGNORE_CASE |
+                    TransliterationFlags::IGNORE_KANA |
+                    TransliterationFlags::IGNORE_WIDTH ));
 
             xTransWrp->loadModuleIfNeeded( static_cast<sal_uInt16>(GetAppLanguage()) );
         }

@@ -30,7 +30,7 @@
 #include <svl/intitem.hxx>
 #include "dsitems.hxx"
 #include "dbaccess_helpid.hrc"
-#include "localresaccess.hxx"
+#include "moduledbu.hxx"
 #include <osl/process.h>
 #include <osl/diagnose.h>
 #include <vcl/msgbox.hxx>
@@ -60,14 +60,10 @@
 #include <tools/diagnose_ex.h>
 #include <sfx2/docfilt.hxx>
 
-#if defined(_WIN32)
-#define _ADO_DATALINK_BROWSE_
-#endif
-
-#ifdef _ADO_DATALINK_BROWSE_
+#if defined _WIN32
 #include <vcl/sysdata.hxx>
 #include "adodatalinks.hxx"
-#endif //_ADO_DATALINK_BROWSE_
+#endif
 
 #include <com/sun/star/mozilla/XMozillaBootstrap.hpp>
 #include <comphelper/processfactory.hxx>
@@ -164,7 +160,7 @@ namespace dbaui
             m_pAdminDialog->enableConfirmSettings( !getURLNoPrefix().isEmpty() );
     }
 
-    IMPL_LINK_NOARG_TYPED(OConnectionHelper, OnBrowseConnections, Button*, void)
+    IMPL_LINK_NOARG(OConnectionHelper, OnBrowseConnections, Button*, void)
     {
         OSL_ENSURE(m_pAdminDialog,"No Admin dialog set! ->GPF");
         const ::dbaccess::DATASOURCE_TYPE eType = m_pCollection->determineType(m_eType);
@@ -202,10 +198,10 @@ namespace dbaui
                     while (bDoBrowse);
 
                     OUString sSelectedDirectory = xFolderPicker->getDirectory();
-                    INetURLObject aSelectedDirectory( sSelectedDirectory, INetURLObject::WAS_ENCODED, RTL_TEXTENCODING_UTF8 );
+                    INetURLObject aSelectedDirectory( sSelectedDirectory, INetURLObject::EncodeMechanism::WasEncoded, RTL_TEXTENCODING_UTF8 );
 
                     // for UI purpose, we don't want to have the path encoded
-                    sSelectedDirectory = aSelectedDirectory.GetMainURL( INetURLObject::DECODE_WITH_CHARSET );
+                    sSelectedDirectory = aSelectedDirectory.GetMainURL( INetURLObject::DecodeMechanism::WithCharset );
 
                     setURLNoPrefix( sSelectedDirectory );
                     SetRoadmapStateValue(true);
@@ -266,17 +262,17 @@ namespace dbaui
                     return;
             }
             break;
-#ifdef _ADO_DATALINK_BROWSE_
+#if defined _WIN32
             case  ::dbaccess::DST_ADO:
             {
                 OUString sOldDataSource=getURLNoPrefix();
                 OUString sNewDataSource;
                 HWND hWnd = GetParent()->GetSystemData()->hWnd;
-                sNewDataSource = getAdoDatalink((LONG_PTR)hWnd,sOldDataSource);
+                sNewDataSource = getAdoDatalink(reinterpret_cast<LONG_PTR>(hWnd),sOldDataSource);
                 if ( !sNewDataSource.isEmpty() )
                 {
                     setURLNoPrefix(sNewDataSource);
-                    SetRoadmapStateValue(sal_True);
+                    SetRoadmapStateValue(true);
                     callModifiedHdl();
                 }
                 else
@@ -337,7 +333,7 @@ namespace dbaui
         checkTestConnection();
     }
 
-    IMPL_LINK_NOARG_TYPED(OConnectionHelper, OnCreateDatabase, Button*, void)
+    IMPL_LINK_NOARG(OConnectionHelper, OnCreateDatabase, Button*, void)
     {
         OSL_ENSURE(m_pAdminDialog,"No Admin dialog set! ->GPF");
         const ::dbaccess::DATASOURCE_TYPE eType = m_pCollection->determineType(m_eType);
@@ -432,8 +428,8 @@ namespace dbaui
                 }
 
                 // encode the URL
-                INetURLObject aFileURL( sFileURLDecoded, INetURLObject::ENCODE_ALL, RTL_TEXTENCODING_UTF8 );
-                sFileURLDecoded = aFileURL.GetMainURL( INetURLObject::NO_DECODE );
+                INetURLObject aFileURL( sFileURLDecoded, INetURLObject::EncodeMechanism::All, RTL_TEXTENCODING_UTF8 );
+                sFileURLDecoded = aFileURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
             }
         }
         return sURL;
@@ -579,7 +575,7 @@ namespace dbaui
 
         INetProtocol eProtocol = aParser.GetProtocol();
 
-        ::std::vector< OUString > aToBeCreated;  // the to-be-created levels
+        std::vector< OUString > aToBeCreated;  // the to-be-created levels
 
         // search a level which exists
         IS_PATH_EXIST eParentExists = PATH_NOT_EXIST;
@@ -587,7 +583,7 @@ namespace dbaui
         {
             aToBeCreated.push_back(aParser.getName());  // remember the local name for creation
             aParser.removeSegment();                    // cut the local name
-            eParentExists = pathExists(aParser.GetMainURL(INetURLObject::NO_DECODE), false);
+            eParentExists = pathExists(aParser.GetMainURL(INetURLObject::DecodeMechanism::NONE), false);
         }
 
         if (!aParser.getSegmentCount())
@@ -598,7 +594,7 @@ namespace dbaui
         {
             // the parent content
             Reference< XCommandEnvironment > xEmptyEnv;
-            ::ucbhelper::Content aParent(aParser.GetMainURL(INetURLObject::NO_DECODE), xEmptyEnv, comphelper::getProcessComponentContext());
+            ::ucbhelper::Content aParent(aParser.GetMainURL(INetURLObject::DecodeMechanism::NONE), xEmptyEnv, comphelper::getProcessComponentContext());
 
             OUString sContentType;
             if ( INetProtocol::File == eProtocol )
@@ -619,7 +615,7 @@ namespace dbaui
             Sequence< Any > aNewDirectoryAttributes(1);
 
             // loop
-            for (   ::std::vector< OUString >::const_reverse_iterator aLocalName = aToBeCreated.rbegin();
+            for (   std::vector< OUString >::const_reverse_iterator aLocalName = aToBeCreated.rbegin();
                     aLocalName != aToBeCreated.rend();
                     ++aLocalName
                 )
@@ -638,14 +634,14 @@ namespace dbaui
         return true;
     }
 
-    void OConnectionHelper::fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList)
+    void OConnectionHelper::fillWindows(std::vector< ISaveValueWrapper* >& _rControlList)
     {
         _rControlList.push_back(new ODisableWrapper<FixedText>(m_pFT_Connection));
         _rControlList.push_back(new ODisableWrapper<PushButton>(m_pPB_Connection));
         _rControlList.push_back(new ODisableWrapper<PushButton>(m_pPB_CreateDB));
     }
 
-    void OConnectionHelper::fillControls(::std::vector< ISaveValueWrapper* >& _rControlList)
+    void OConnectionHelper::fillControls(std::vector< ISaveValueWrapper* >& _rControlList)
     {
         _rControlList.push_back( new OSaveValueWrapper<Edit>( m_pConnectionURL ) );
     }

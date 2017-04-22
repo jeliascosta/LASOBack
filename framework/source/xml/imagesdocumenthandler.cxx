@@ -81,7 +81,7 @@ struct ImageXMLEntryProperty
     char                                            aEntryName[20];
 };
 
-ImageXMLEntryProperty ImagesEntries[OReadImagesDocumentHandler::IMG_XML_ENTRY_COUNT] =
+ImageXMLEntryProperty const ImagesEntries[OReadImagesDocumentHandler::IMG_XML_ENTRY_COUNT] =
 {
     { OReadImagesDocumentHandler::IMG_NS_IMAGE, ELEMENT_IMAGECONTAINER          },
     { OReadImagesDocumentHandler::IMG_NS_IMAGE, ELEMENT_IMAGES                  },
@@ -128,10 +128,8 @@ OReadImagesDocumentHandler::OReadImagesDocumentHandler( ImageListsDescriptor& aI
     m_bImageContainerStartFound     = false;
     m_bImageContainerEndFound       = false;
     m_bImagesStartFound             = false;
-    m_bImagesEndFound               = false;
     m_bImageStartFound              = false;
     m_bExternalImagesStartFound     = false;
-    m_bExternalImagesEndFound       = false;
     m_bExternalImageStartFound      = false;
 }
 
@@ -141,12 +139,10 @@ OReadImagesDocumentHandler::~OReadImagesDocumentHandler()
 
 // XDocumentHandler
 void SAL_CALL OReadImagesDocumentHandler::startDocument()
-throw ( SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadImagesDocumentHandler::endDocument()
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -161,9 +157,6 @@ throw(  SAXException, RuntimeException, std::exception )
 
 void SAL_CALL OReadImagesDocumentHandler::startElement(
     const OUString& aName, const Reference< XAttributeList > &xAttribs )
-        throw(SAXException,
-              RuntimeException,
-              std::exception)
 {
     SolarMutexGuard g;
 
@@ -304,7 +297,7 @@ void SAL_CALL OReadImagesDocumentHandler::startElement(
                 }
 
                 if ( !m_pImages->pImageItemList )
-                    m_pImages->pImageItemList = new ImageItemListDescriptor;
+                    m_pImages->pImageItemList.reset( new ImageItemListDescriptor );
 
                 m_bImageStartFound = true;
 
@@ -488,9 +481,6 @@ void SAL_CALL OReadImagesDocumentHandler::startElement(
 }
 
 void SAL_CALL OReadImagesDocumentHandler::endElement(const OUString& aName)
-    throw(SAXException,
-          RuntimeException,
-          std::exception)
 {
     SolarMutexGuard g;
 
@@ -549,24 +539,20 @@ void SAL_CALL OReadImagesDocumentHandler::endElement(const OUString& aName)
 }
 
 void SAL_CALL OReadImagesDocumentHandler::characters(const OUString&)
-throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadImagesDocumentHandler::ignorableWhitespace(const OUString&)
-throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadImagesDocumentHandler::processingInstruction(
     const OUString& /*aTarget*/, const OUString& /*aData*/ )
-throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadImagesDocumentHandler::setDocumentLocator(
     const Reference< XLocator > &xLocator)
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
     m_xLocator = xLocator;
@@ -590,7 +576,7 @@ OUString OReadImagesDocumentHandler::getErrorLineString()
 
 OWriteImagesDocumentHandler::OWriteImagesDocumentHandler(
     const ImageListsDescriptor& aItems,
-    Reference< XDocumentHandler > rWriteDocumentHandler ) :
+    Reference< XDocumentHandler > const & rWriteDocumentHandler ) :
     m_aImageListsItems( aItems ),
     m_xWriteDocumentHandler( rWriteDocumentHandler )
 {
@@ -607,8 +593,7 @@ OWriteImagesDocumentHandler::~OWriteImagesDocumentHandler()
 {
 }
 
-void OWriteImagesDocumentHandler::WriteImagesDocument() throw
-( SAXException, RuntimeException )
+void OWriteImagesDocumentHandler::WriteImagesDocument()
 {
     SolarMutexGuard g;
 
@@ -660,8 +645,7 @@ void OWriteImagesDocumentHandler::WriteImagesDocument() throw
 
 //  protected member functions
 
-void OWriteImagesDocumentHandler::WriteImageList( const ImageListItemDescriptor* pImageList ) throw
-( SAXException, RuntimeException )
+void OWriteImagesDocumentHandler::WriteImageList( const ImageListItemDescriptor* pImageList )
 {
     ::comphelper::AttributeList* pList = new ::comphelper::AttributeList;
     Reference< XAttributeList > xList( static_cast<XAttributeList *>(pList) , UNO_QUERY );
@@ -719,7 +703,7 @@ void OWriteImagesDocumentHandler::WriteImageList( const ImageListItemDescriptor*
     m_xWriteDocumentHandler->startElement( ELEMENT_NS_IMAGES, xList );
     m_xWriteDocumentHandler->ignorableWhitespace( OUString() );
 
-    ImageItemListDescriptor* pImageItemList = pImageList->pImageItemList;
+    ImageItemListDescriptor* pImageItemList = pImageList->pImageItemList.get();
     if ( pImageItemList )
     {
         for (std::unique_ptr<ImageItemDescriptor> & i : *pImageItemList)
@@ -730,8 +714,7 @@ void OWriteImagesDocumentHandler::WriteImageList( const ImageListItemDescriptor*
     m_xWriteDocumentHandler->ignorableWhitespace( OUString() );
 }
 
-void OWriteImagesDocumentHandler::WriteImage( const ImageItemDescriptor* pImage ) throw
-( SAXException, RuntimeException )
+void OWriteImagesDocumentHandler::WriteImage( const ImageItemDescriptor* pImage )
 {
     ::comphelper::AttributeList* pList = new ::comphelper::AttributeList;
     Reference< XAttributeList > xList( static_cast<XAttributeList *>(pList) , UNO_QUERY );
@@ -751,8 +734,7 @@ void OWriteImagesDocumentHandler::WriteImage( const ImageItemDescriptor* pImage 
     m_xWriteDocumentHandler->ignorableWhitespace( OUString() );
 }
 
-void OWriteImagesDocumentHandler::WriteExternalImageList( const ExternalImageItemListDescriptor* pExternalImageList ) throw
-( SAXException, RuntimeException )
+void OWriteImagesDocumentHandler::WriteExternalImageList( const ExternalImageItemListDescriptor* pExternalImageList )
 {
     m_xWriteDocumentHandler->startElement( ELEMENT_NS_EXTERNALIMAGES, m_xEmptyList );
     m_xWriteDocumentHandler->ignorableWhitespace( OUString() );
@@ -768,8 +750,7 @@ void OWriteImagesDocumentHandler::WriteExternalImageList( const ExternalImageIte
     m_xWriteDocumentHandler->ignorableWhitespace( OUString() );
 }
 
-void OWriteImagesDocumentHandler::WriteExternalImage( const ExternalImageItemDescriptor* pExternalImage ) throw
-( SAXException, RuntimeException )
+void OWriteImagesDocumentHandler::WriteExternalImage( const ExternalImageItemDescriptor* pExternalImage )
 {
     ::comphelper::AttributeList* pList = new ::comphelper::AttributeList;
     Reference< XAttributeList > xList( static_cast<XAttributeList *>(pList) , UNO_QUERY );

@@ -24,19 +24,10 @@
 
 //#define erDEBUG
 
-#if ENABLE_LIBLANGTAG
 #if LIBLANGTAG_INLINE_FIX
 #define LT_HAVE_INLINE
 #endif
 #include <liblangtag/langtag.h>
-#else
-/* Replacement code for LGPL phobic and Android systems.
- * For iOS we could probably use NSLocale instead, that should have more or
- * less required functionality. If it is good enough, it could be used for Mac
- * OS X, too.
- */
-#include "simple-langtag.cxx"
-#endif
 
 using namespace com::sun::star;
 
@@ -159,7 +150,7 @@ class LiblangtagDataRef
 public:
     LiblangtagDataRef();
     ~LiblangtagDataRef();
-    inline void init()
+    void init()
     {
         if (!mbInitialized)
             setup();
@@ -267,6 +258,7 @@ private:
     mutable OUString                        maCachedVariants;   ///< cache getVariants()
     mutable lt_tag_t*                       mpImplLangtag;      ///< liblangtag pointer
     mutable LanguageType                    mnLangID;
+    mutable LanguageTag::ScriptType         meScriptType;
     mutable Decision                        meIsValid;
     mutable Decision                        meIsIsoLocale;
     mutable Decision                        meIsIsoODF;
@@ -280,13 +272,16 @@ private:
     mutable bool                            mbCachedCountry     : 1;
     mutable bool                            mbCachedVariants    : 1;
 
-    const OUString &    getBcp47() const;
-    OUString            getLanguage() const;
-    OUString            getScript() const;
-    OUString            getCountry() const;
+    OUString const &    getBcp47() const;
+    OUString const &    getLanguage() const;
+    OUString const &    getScript() const;
+    OUString const &    getCountry() const;
     OUString            getRegion() const;
-    OUString            getVariants() const;
+    OUString const &    getVariants() const;
     bool                hasScript() const;
+
+    void                setScriptType(LanguageTag::ScriptType st);
+    LanguageTag::ScriptType getScriptType() const;
 
     bool                isIsoLocale() const;
     bool                isIsoODF() const;
@@ -364,6 +359,7 @@ private:
     /** Convert Locale to BCP 47 string without resolving system and creating
         temporary LanguageTag instances. */
     static OUString     convertToBcp47( const css::lang::Locale& rLocale );
+
 };
 
 
@@ -373,6 +369,7 @@ LanguageTagImpl::LanguageTagImpl( const LanguageTag & rLanguageTag )
         maBcp47( rLanguageTag.maBcp47),
         mpImplLangtag( nullptr),
         mnLangID( rLanguageTag.mnLangID),
+        meScriptType( LanguageTag::ScriptType::UNKNOWN),
         meIsValid( DECISION_DONTKNOW),
         meIsIsoLocale( DECISION_DONTKNOW),
         meIsIsoODF( DECISION_DONTKNOW),
@@ -400,6 +397,7 @@ LanguageTagImpl::LanguageTagImpl( const LanguageTagImpl & rLanguageTagImpl )
         mpImplLangtag( rLanguageTagImpl.mpImplLangtag ?
                 lt_tag_copy( rLanguageTagImpl.mpImplLangtag) : nullptr),
         mnLangID( rLanguageTagImpl.mnLangID),
+        meScriptType( rLanguageTagImpl.meScriptType),
         meIsValid( rLanguageTagImpl.meIsValid),
         meIsIsoLocale( rLanguageTagImpl.meIsIsoLocale),
         meIsIsoODF( rLanguageTagImpl.meIsIsoODF),
@@ -434,6 +432,7 @@ LanguageTagImpl& LanguageTagImpl::operator=( const LanguageTagImpl & rLanguageTa
                             lt_tag_copy( rLanguageTagImpl.mpImplLangtag) : nullptr;
     lt_tag_unref(oldTag);
     mnLangID            = rLanguageTagImpl.mnLangID;
+    meScriptType        = rLanguageTagImpl.meScriptType;
     meIsValid           = rLanguageTagImpl.meIsValid;
     meIsIsoLocale       = rLanguageTagImpl.meIsIsoLocale;
     meIsIsoODF          = rLanguageTagImpl.meIsIsoODF;
@@ -700,6 +699,18 @@ LanguageTag::ImplPtr LanguageTagImpl::registerOnTheFly( LanguageType nRegisterID
 
     return pImpl;
 }
+
+
+LanguageTag::ScriptType LanguageTag::getOnTheFlyScriptType( LanguageType nRegisterID )
+{
+    const MapLangID& rMapLangID = theMapLangID::get();
+    MapLangID::const_iterator itID( rMapLangID.find( nRegisterID));
+    if (itID != rMapLangID.end())
+        return (*itID).second->getScriptType();
+    else
+        return UNKNOWN;
+}
+
 
 // static
 void LanguageTag::setConfiguredSystemLanguage( LanguageType nLang )
@@ -996,7 +1007,7 @@ LanguageTag::ImplPtr LanguageTag::registerImpl() const
 }
 
 
-LanguageTag::ImplPtr LanguageTag::getImpl() const
+LanguageTag::ImplPtr const & LanguageTag::getImpl() const
 {
     if (!mpImpl)
     {
@@ -1759,8 +1770,8 @@ inline bool isUpperAscii( sal_Unicode c )
 bool LanguageTag::isIsoLanguage( const OUString& rLanguage )
 {
     /* TODO: ignore case? For now let's see where rubbish is used. */
-    bool b2chars;
-    if (((b2chars = (rLanguage.getLength() == 2)) || rLanguage.getLength() == 3) &&
+    bool b2chars = rLanguage.getLength() == 2;
+    if ((b2chars || rLanguage.getLength() == 3) &&
             isLowerAscii( rLanguage[0]) && isLowerAscii( rLanguage[1]) &&
             (b2chars || isLowerAscii( rLanguage[2])))
         return true;
@@ -1802,7 +1813,7 @@ bool LanguageTag::isIsoScript( const OUString& rScript )
 }
 
 
-OUString LanguageTagImpl::getLanguage() const
+OUString const & LanguageTagImpl::getLanguage() const
 {
     if (!mbCachedLanguage)
     {
@@ -1824,7 +1835,7 @@ OUString LanguageTag::getLanguage() const
 }
 
 
-OUString LanguageTagImpl::getScript() const
+OUString const & LanguageTagImpl::getScript() const
 {
     if (!mbCachedScript)
     {
@@ -1858,7 +1869,7 @@ OUString LanguageTag::getLanguageAndScript() const
 }
 
 
-OUString LanguageTagImpl::getCountry() const
+OUString const & LanguageTagImpl::getCountry() const
 {
     if (!mbCachedCountry)
     {
@@ -1888,7 +1899,7 @@ OUString LanguageTagImpl::getRegion() const
 }
 
 
-OUString LanguageTagImpl::getVariants() const
+OUString const & LanguageTagImpl::getVariants() const
 {
     if (!mbCachedVariants)
     {
@@ -1946,6 +1957,31 @@ bool LanguageTag::hasScript() const
     bool bRet = getImpl()->hasScript();
     const_cast<LanguageTag*>(this)->syncFromImpl();
     return bRet;
+}
+
+
+LanguageTag::ScriptType LanguageTagImpl::getScriptType() const
+{
+    return meScriptType;
+}
+
+
+LanguageTag::ScriptType LanguageTag::getScriptType() const
+{
+    return getImpl()->getScriptType();
+}
+
+
+void LanguageTagImpl::setScriptType(LanguageTag::ScriptType st)
+{
+    if (meScriptType == LanguageTag::ScriptType::UNKNOWN)  // poor man's clash resolution
+        meScriptType = st;
+}
+
+
+void LanguageTag::setScriptType(LanguageTag::ScriptType st)
+{
+    getImpl()->setScriptType(st);
 }
 
 
@@ -2079,7 +2115,7 @@ LanguageTag & LanguageTag::makeFallback()
 
 
 /* TODO: maybe this now could take advantage of the mnOverride field in
- * isolang.cxx entries and search for kSAME instead of harcoded special
+ * isolang.cxx entries and search for kSAME instead of hardcoded special
  * fallbacks. Though iterating through those tables would be slower and even
  * then there would be some special cases, but we wouldn't lack entries that
  * were missed out. */

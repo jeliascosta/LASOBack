@@ -74,19 +74,15 @@ void raisePyExceptionWithAny( const css::uno::Any &anyExc )
     }
 }
 
-
+/// @throws RuntimeException
 static PyRef createClass( const OUString & name, const Runtime &runtime )
-    throw ( RuntimeException )
 {
     // assuming that this is never deleted !
     // note I don't have the knowledge how to initialize these type objects correctly !
     TypeDescription desc( name );
     if( ! desc.is() )
     {
-        OUStringBuffer buf;
-        buf.append( "pyuno.getClass: uno exception " );
-        buf.append(name).append( " is unknown" );
-        throw RuntimeException( buf.makeStringAndClear() );
+        throw RuntimeException( "pyuno.getClass: uno exception " + name + " is unknown" );
     }
 
     bool isStruct = desc.get()->eTypeClass == typelib_TypeClass_STRUCT;
@@ -94,12 +90,9 @@ static PyRef createClass( const OUString & name, const Runtime &runtime )
     bool isInterface = desc.get()->eTypeClass == typelib_TypeClass_INTERFACE;
     if( !isStruct  && !isExc && ! isInterface )
     {
-        OUStringBuffer buf;
-        buf.append( "pyuno.getClass: " ).append(name).append( "is a " );
-        buf.appendAscii(
-            typeClassToString( (css::uno::TypeClass) desc.get()->eTypeClass));
-        buf.append( ", expected EXCEPTION, STRUCT or INTERFACE" );
-        throw RuntimeException( buf.makeStringAndClear() );
+        throw RuntimeException( "pyuno.getClass: " + name + "is a " +
+                    OUString::createFromAscii( typeClassToString( (css::uno::TypeClass) desc.get()->eTypeClass) ) +
+                    ", expected EXCEPTION, STRUCT or INTERFACE" );
     }
 
     // retrieve base class

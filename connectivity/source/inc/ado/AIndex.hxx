@@ -35,17 +35,15 @@ namespace connectivity
             OConnection*    m_pConnection;
         protected:
             void fillPropertyValues();
-            virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const ::com::sun::star::uno::Any& rValue)throw (::com::sun::star::uno::Exception);
+            virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const css::uno::Any& rValue) override;
         public:
-            virtual void refreshColumns();
+            virtual void refreshColumns() override;
         public:
-            virtual void SAL_CALL acquire() throw();
-            virtual void SAL_CALL release() throw();
-            OAdoIndex(sal_Bool _bCase,  OConnection* _pConnection,ADOIndex* _pIndex);
-            OAdoIndex(sal_Bool _bCase,  OConnection* _pConnection);
-            // com::sun::star::lang::XUnoTunnel
-            virtual sal_Int64 SAL_CALL getSomething( const ::com::sun::star::uno::Sequence< sal_Int8 >& aIdentifier ) throw(::com::sun::star::uno::RuntimeException);
-            static ::com::sun::star::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
+            OAdoIndex(bool _bCase,  OConnection* _pConnection,ADOIndex* _pIndex);
+            OAdoIndex(bool _bCase,  OConnection* _pConnection);
+            // css::lang::XUnoTunnel
+            virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+            static css::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
 
             WpADOIndex      getImpl() const { return m_aIndex;}
         };

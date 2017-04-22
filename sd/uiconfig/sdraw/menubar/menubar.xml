@@ -58,7 +58,12 @@
       </menu:menu>
       <menu:menuseparator/>
       <menu:menuitem menu:id=".uno:SetDocumentProperties"/>
-      <menu:menuitem menu:id=".uno:Signature"/>
+      <menu:menu menu:id=".uno:SignaturesMenu">
+        <menu:menupopup>
+          <menu:menuitem menu:id=".uno:Signature"/>
+          <menu:menuitem menu:id=".uno:SignPDF"/>
+        </menu:menupopup>
+      </menu:menu>
       <menu:menuseparator/>
       <menu:menuitem menu:id=".uno:WebHtml"/>
       <menu:menuseparator/>
@@ -115,6 +120,7 @@
           <menu:menuitem menu:id=".uno:GridVisible"/>
           <menu:menuitem menu:id=".uno:GridUse"/>
           <menu:menuitem menu:id=".uno:GridFront"/>
+          <menu:menuitem menu:id=".uno:HelplinesMove"/>
         </menu:menupopup>
       </menu:menu>
       <menu:menu menu:id=".uno:SnapLinesMenu">
@@ -272,7 +278,7 @@
         <menu:menupopup>
           <menu:menuitem menu:id=".uno:MacroRecorder"/>
           <menu:menuitem menu:id=".uno:RunMacro"/>
-          <menu:menu menu:id=".uno:ScriptOrganizer"/>
+          <menu:menuitem menu:id=".uno:ScriptOrganizer"/>
           <menu:menuitem menu:id=".uno:MacroSignature"/>
           <menu:menuseparator/>
           <menu:menuitem menu:id=".uno:MacroOrganizer?TabId:short=1"/>
@@ -369,8 +375,12 @@
     <menu:menupopup>
       <menu:menuitem menu:id=".uno:HelpIndex"/>
       <menu:menuitem menu:id=".uno:ExtendedHelp"/>
+      <menu:menuitem menu:id=".uno:Documentation"/>
       <menu:menuseparator/>
+      <menu:menuitem menu:id=".uno:QuestionAnswers"/>
       <menu:menuitem menu:id=".uno:SendFeedback"/>
+      <menu:menuseparator/>
+      <menu:menuitem menu:id=".uno:SafeMode"/>
       <menu:menuseparator/>
       <menu:menuitem menu:id=".uno:ShowLicense"/>
       <menu:menuitem menu:id=".uno:About"/>

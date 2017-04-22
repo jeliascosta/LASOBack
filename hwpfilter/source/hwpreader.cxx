@@ -30,6 +30,7 @@
 #include "fontmap.hxx"
 #include "formula.h"
 #include "cspline.h"
+#include "datecode.h"
 
 #include <iostream>
 #include <locale.h>
@@ -42,7 +43,7 @@
 #define rendEl(x)       do { if (m_rxDocumentHandler.is()) m_rxDocumentHandler->endElement(x); } while(false)
 #define rchars(x)       do { if (m_rxDocumentHandler.is()) m_rxDocumentHandler->characters(x); } while(false)
 #define padd(x,y,z)     mxList->addAttribute(x,y,z)
-#define Double2Str(x)   OUString::number((double)(x))
+#define Double2Str(x)   OUString::number(x)
 #define WTI(x)          ((double)(x) / 1800.)     // unit => inch
 #define WTMM(x)     ((double)(x) / 1800. * 25.4)  // unit => mm
 #define WTSM(x)     ((int)((x) / 1800. * 2540))   // unit ==> 1/100 mm
@@ -107,37 +108,42 @@ struct HwpReaderPrivate
 HwpReader::HwpReader()
 {
     mxList = new AttributeListImpl;
-    d = new HwpReaderPrivate;
+    d.reset( new HwpReaderPrivate );
 }
 
 
 HwpReader::~HwpReader()
 {
-    delete d;
 }
 
-extern "C" SAL_DLLPUBLIC_EXPORT bool SAL_CALL TestImportHWP(const OUString &rURL)
+extern "C" SAL_DLLPUBLIC_EXPORT bool SAL_CALL TestImportHWP(SvStream &rStream)
 {
-    SvFileStream aFileStream(rURL, StreamMode::READ);
-    std::unique_ptr<HStream> stream(new HStream);
-    byte aData[32768];
-    sal_Size nRead, nBlock = 32768;
-
-    while (true)
+    try
     {
-        nRead = aFileStream.Read(aData, nBlock);
-        if (nRead == 0)
-            break;
-        stream->addData(aData, (int)nRead);
-    }
+        std::unique_ptr<HStream> stream(new HStream);
+        byte aData[32768];
+        std::size_t nRead, nBlock = 32768;
 
-    HWPFile hwpfile;
-    if (hwpfile.ReadHwpFile(stream.release()))
-          return false;
+        while (true)
+        {
+            nRead = rStream.ReadBytes(aData, nBlock);
+            if (nRead == 0)
+                break;
+            stream->addData(aData, (int)nRead);
+        }
+
+        HWPFile hwpfile;
+        if (hwpfile.ReadHwpFile(stream.release()))
+            return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
     return true;
 }
 
-sal_Bool HwpReader::filter(const Sequence< PropertyValue >& rDescriptor) throw(RuntimeException, std::exception)
+sal_Bool HwpReader::filter(const Sequence< PropertyValue >& rDescriptor)
 {
     utl::MediaDescriptor aDescriptor(rDescriptor);
     aDescriptor.addInputStream();
@@ -1718,7 +1724,7 @@ void HwpReader::makePageStyle()
              if( hwpinfo.back_info.type == 1 ){
 #ifdef _WIN32
                  padd("xlink:href", sXML_CDATA,
-                      reinterpret_cast<sal_Unicode const *>(hconv(kstr2hstr((uchar*) urltowin(hwpinfo.back_info.filename).c_str()).c_str())));
+                      reinterpret_cast<sal_Unicode const *>(hconv(kstr2hstr(reinterpret_cast<uchar const *>(urltowin(hwpinfo.back_info.filename).c_str())).c_str())));
 #else
                  padd("xlink:href", sXML_CDATA,
                     reinterpret_cast<sal_Unicode const *>(hconv(kstr2hstr( reinterpret_cast<uchar const *>(urltounix(hwpinfo.back_info.filename).c_str())).c_str())));
@@ -1737,7 +1743,7 @@ void HwpReader::makePageStyle()
              if( hwpinfo.back_info.type == 2 ){
                  rstartEl("office:binary-data", mxList.get());
                  mxList->clear();
-                 std::shared_ptr<char> pStr(base64_encode_string(reinterpret_cast<unsigned char *>(hwpinfo.back_info.data), hwpinfo.back_info.size ), Free<char>());
+                 std::shared_ptr<char> pStr(base64_encode_string(reinterpret_cast<unsigned char *>(hwpinfo.back_info.data.data()), hwpinfo.back_info.size ), Free<char>());
                  rchars(ascii(pStr.get()));
                  rendEl("office:binary-data");
              }
@@ -3280,8 +3286,6 @@ void HwpReader::makeBookmark(Bookmark * hbox)
 }
 
 
-#include "datecode.h"
-
 void HwpReader::makeDateFormat(DateCode * hbox)
 {
     padd("style:name", sXML_CDATA,
@@ -3672,7 +3676,6 @@ void HwpReader::makeFormula(TxtBox * hbox)
 {
     char mybuf[3000];
     HWPPara* pPar;
-    CharShape *cshape = nullptr;
 
     int n, c, res;
      hchar dest[3];
@@ -3684,8 +3687,6 @@ void HwpReader::makeFormula(TxtBox * hbox)
         for( n = 0; n < pPar->nch && pPar->hhstr[n]->hh;
             n += pPar->hhstr[n]->WSize() )
         {
-            if (!cshape)
-                cshape = pPar->GetCharShape(n);
             if (l >= sizeof(mybuf)-7)
                 break;
             res = hcharconv(pPar->hhstr[n]->hh, dest, UNICODE);
@@ -3709,12 +3710,10 @@ void HwpReader::makeFormula(TxtBox * hbox)
     }
     mybuf[l] = '\0';
 
-    Formula *form = new Formula(mybuf);
+    std::unique_ptr<Formula> form( new Formula(mybuf) );
     form->setDocumentHandler(m_rxDocumentHandler);
     form->setAttributeListImpl(mxList.get());
     form->parse();
-
-    delete form;
 }
 
 /**
@@ -3731,7 +3730,7 @@ void HwpReader::makeHyperText(TxtBox * hbox)
           ::std::string const tmp = hstr2ksstr(hypert->bookmark);
           ::std::string const tmp2 = hstr2ksstr(kstr2hstr(
 #ifdef _WIN32
-              (uchar *) urltowin((char *)hypert->filename).c_str()).c_str());
+              reinterpret_cast<uchar const *>(urltowin(reinterpret_cast<char *>(hypert->filename)).c_str())).c_str());
 #else
               reinterpret_cast<uchar const *>(urltounix(reinterpret_cast<char *>(hypert->filename)).c_str())).c_str());
 #endif
@@ -3890,7 +3889,7 @@ void HwpReader::makePicture(Picture * hbox)
             if ( hbox->pictype == PICTYPE_FILE ){
 #ifdef _WIN32
                 sprintf(buf, "file:///%s", hbox->picinfo.picun.path );
-                padd("xlink:href", sXML_CDATA, reinterpret_cast<sal_Unicode const *>(hconv(kstr2hstr((uchar *) buf).c_str())));
+                padd("xlink:href", sXML_CDATA, reinterpret_cast<sal_Unicode const *>(hconv(kstr2hstr(reinterpret_cast<uchar *>(buf)).c_str())));
 #else
                 padd("xlink:href", sXML_CDATA,
                     reinterpret_cast<sal_Unicode const *>(hconv(kstr2hstr(reinterpret_cast<uchar const *>(urltounix(hbox->picinfo.picun.path).c_str())).c_str())));
@@ -3925,19 +3924,19 @@ void HwpReader::makePicture(Picture * hbox)
                              wchar_t pathname[200];
 
                              MultiByteToWideChar(CP_ACP, 0, hbox->picinfo.picole.embname, -1, pathname, 200);
-                             int rc = hwpfile.oledata->pis->OpenStorage(pathname, 0,
-                                     STGM_READWRITE | STGM_SHARE_EXCLUSIVE | STGM_TRANSACTED, NULL, 0, &srcsto);
+                             int rc = hwpfile.oledata->pis->OpenStorage(pathname, nullptr,
+                                     STGM_READWRITE | STGM_SHARE_EXCLUSIVE | STGM_TRANSACTED, nullptr, 0, &srcsto);
                              if (rc != S_OK) {
                                  rchars("");
                              }
                              else{
-                                 rc = OleLoad(srcsto, IID_IUnknown, NULL, (LPVOID*)&pObj);
+                                 rc = OleLoad(srcsto, IID_IUnknown, nullptr, reinterpret_cast<LPVOID*>(&pObj));
                                  if( rc != S_OK ){
                                      srcsto->Release();
                                      rchars("");
                                  }
                                  else{
-                                     std::shared_ptr<char> pStr(base64_encode_string( (uchar *)pObj, strlen((char *)pObj)), Free<char>());
+                                     std::shared_ptr<char> pStr(base64_encode_string( reinterpret_cast<uchar *>(pObj), strlen(reinterpret_cast<char *>(pObj))), Free<char>());
                                      rchars(ascii(pStr.get()));
                                      pObj->Release();
                                      srcsto->Release();
@@ -4170,7 +4169,7 @@ void HwpReader::makePictureDRAW(HWPDrawingObject *drawobj, Picture * hbox)
                                 //parsePara(pPara);
                         while(pPara)
                         {
-                            make_text_p1( pPara );
+                            make_text_p1( pPara, false );
                             pPara = pPara->Next();
                         }
                     }
@@ -4218,7 +4217,7 @@ void HwpReader::makePictureDRAW(HWPDrawingObject *drawobj, Picture * hbox)
                                 //parsePara(pPara);
                         while(pPara)
                         {
-                            make_text_p1( pPara );
+                            make_text_p1( pPara, false );
                             pPara = pPara->Next();
                         }
                     }
@@ -4328,7 +4327,7 @@ void HwpReader::makePictureDRAW(HWPDrawingObject *drawobj, Picture * hbox)
                                 //parsePara(pPara);
                         while(pPara)
                         {
-                            make_text_p1( pPara );
+                            make_text_p1( pPara, false );
                             pPara = pPara->Next();
                         }
                     }
@@ -4444,7 +4443,7 @@ void HwpReader::makePictureDRAW(HWPDrawingObject *drawobj, Picture * hbox)
                         HWPPara *pPara = drawobj->property.pPara;
                         while(pPara)
                         {
-                            make_text_p1( pPara );
+                            make_text_p1( pPara, false );
                             pPara = pPara->Next();
                         }
                     }
@@ -4509,7 +4508,7 @@ void HwpReader::makePictureDRAW(HWPDrawingObject *drawobj, Picture * hbox)
                             //  parsePara(pPara);
                             while(pPara)
                             {
-                                make_text_p1( pPara );
+                                make_text_p1( pPara, false );
                                 pPara = pPara->Next();
                             }
                         }
@@ -4527,7 +4526,7 @@ void HwpReader::makePictureDRAW(HWPDrawingObject *drawobj, Picture * hbox)
                                 //parsePara(pPara);
                             while(pPara)
                             {
-                                make_text_p1( pPara );
+                                make_text_p1( pPara, false );
                                 pPara = pPara->Next();
                             }
                         }
@@ -4569,7 +4568,7 @@ void HwpReader::makePictureDRAW(HWPDrawingObject *drawobj, Picture * hbox)
                                 //parsePara(pPara);
                     while(pPara)
                     {
-                        make_text_p1( pPara );
+                        make_text_p1( pPara, false );
                         pPara = pPara->Next();
                     }
 

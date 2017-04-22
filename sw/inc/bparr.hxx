@@ -31,10 +31,10 @@ class BigPtrArray;
 class BigPtrEntry
 {
     friend class BigPtrArray;
-    BlockInfo* pBlock;
-    sal_uInt16 nOffset;
+    BlockInfo* m_pBlock;
+    sal_uInt16 m_nOffset;
 public:
-    BigPtrEntry() : pBlock(nullptr), nOffset(0) {}
+    BigPtrEntry() : m_pBlock(nullptr), m_nOffset(0) {}
     virtual ~BigPtrEntry() {}
 
     inline sal_uLong GetPos() const;
@@ -61,12 +61,12 @@ struct BlockInfo {                  // block info:
 class SW_DLLPUBLIC BigPtrArray
 {
 protected:
-    BlockInfo**     ppInf;              // block info
-    sal_uLong       nSize;              ///< number of elements
-    sal_uInt16      nMaxBlock;          ///< current max. number of blocks
-    sal_uInt16      nBlock;             ///< number of blocks
+    BlockInfo**     m_ppInf;              // block info
+    sal_uLong       m_nSize;              ///< number of elements
+    sal_uInt16      m_nMaxBlock;          ///< current max. number of blocks
+    sal_uInt16      m_nBlock;             ///< number of blocks
     mutable
-        sal_uInt16  nCur;               ///< last used block
+        sal_uInt16  m_nCur;               ///< last used block
 
     sal_uInt16  Index2Block( sal_uLong ) const; ///< block search
     BlockInfo*  InsBlock( sal_uInt16 );         ///< insert block
@@ -80,7 +80,7 @@ public:
     BigPtrArray();
     ~BigPtrArray();
 
-    sal_uLong Count() const { return nSize; }
+    sal_uLong Count() const { return m_nSize; }
 
     void Insert( const ElementPtr& r, sal_uLong pos );
     void Remove( sal_uLong pos, sal_uLong n = 1 );
@@ -92,13 +92,13 @@ public:
 
 inline sal_uLong BigPtrEntry::GetPos() const
 {
-    assert(this == pBlock->pData[ nOffset ]); // element not in the block
-    return pBlock->nStart + nOffset;
+    assert(this == m_pBlock->pData[ m_nOffset ]); // element not in the block
+    return m_pBlock->nStart + m_nOffset;
 }
 
 inline BigPtrArray& BigPtrEntry::GetArray() const
 {
-    return *pBlock->pBigArr;
+    return *m_pBlock->pBigArr;
 }
 
 #endif

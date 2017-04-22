@@ -23,16 +23,15 @@ class ScExcelBiffDetect : public cppu::WeakImplHelper<css::document::XExtendedFi
 {
 public:
     explicit ScExcelBiffDetect( const css::uno::Reference<css::uno::XComponentContext>& xContext );
-    virtual ~ScExcelBiffDetect();
+    virtual ~ScExcelBiffDetect() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& aName ) throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& aName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     // XExtendedFilterDetection
-    virtual OUString SAL_CALL detect( css::uno::Sequence<css::beans::PropertyValue>& lDescriptor )
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL detect( css::uno::Sequence<css::beans::PropertyValue>& lDescriptor ) override;
 };
 
 #endif

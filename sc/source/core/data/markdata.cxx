@@ -437,7 +437,7 @@ void ScMarkData::ExtendRangeListTables( ScRangeList* pList ) const
 ScRangeList ScMarkData::GetMarkedRanges() const
 {
     ScRangeList aRet;
-    FillRangeListWithMarks(&aRet, false, -1);
+    FillRangeListWithMarks(&aRet, false);
     return aRet;
 }
 
@@ -738,7 +738,7 @@ void ScMarkData::GetSelectionCover( ScRange& rRange )
             if ( bCurColUnMarked )
                 pPrevColMarkedRows.reset( nullptr );
             else
-                pPrevColMarkedRows.reset( pCurColMarkedRows.release() );
+                pPrevColMarkedRows = std::move( pCurColMarkedRows );
         }
         for( auto& rKV : aRowToColSegmentsInTopEnvelope )
         {

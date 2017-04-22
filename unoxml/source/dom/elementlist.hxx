@@ -66,25 +66,23 @@ namespace DOM
     public:
         CElementListImpl(::rtl::Reference<CElement> const& pElement,
                 ::osl::Mutex & rMutex,
-                OUString const& rName, OUString const*const pURI = nullptr);
+                OUString const& rName, OUString const*const pURI);
 
         void registerListener(CElement & rElement);
 
-        virtual ~CElementListImpl();
+        virtual ~CElementListImpl() override;
 
         /**
         The number of nodes in the list.
         */
-        virtual sal_Int32 SAL_CALL getLength() throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getLength() override;
         /**
         Returns the indexth item in the collection.
         */
-        virtual css::uno::Reference< css::xml::dom::XNode > SAL_CALL item(sal_Int32 index)
-            throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::xml::dom::XNode > SAL_CALL item(sal_Int32 index) override;
 
         // XEventListener
-        virtual void SAL_CALL handleEvent(const css::uno::Reference< css::xml::dom::events::XEvent >& evt)
-            throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL handleEvent(const css::uno::Reference< css::xml::dom::events::XEvent >& evt) override;
     };
 
     class CElementList
@@ -101,22 +99,20 @@ namespace DOM
         /**
         The number of nodes in the list.
         */
-        virtual sal_Int32 SAL_CALL getLength() throw (css::uno::RuntimeException, std::exception) override
+        virtual sal_Int32 SAL_CALL getLength() override
         {
             return m_xImpl->getLength();
         }
         /**
         Returns the indexth item in the collection.
         */
-        virtual css::uno::Reference< css::xml::dom::XNode > SAL_CALL item(sal_Int32 index)
-            throw (css::uno::RuntimeException, std::exception) override
+        virtual css::uno::Reference< css::xml::dom::XNode > SAL_CALL item(sal_Int32 index) override
         {
             return m_xImpl->item(index);
         }
 
         // XEventListener
-        virtual void SAL_CALL handleEvent(const css::uno::Reference< css::xml::dom::events::XEvent >& evt)
-            throw (css::uno::RuntimeException, std::exception) override
+        virtual void SAL_CALL handleEvent(const css::uno::Reference< css::xml::dom::events::XEvent >& evt) override
         {
             m_xImpl->handleEvent(evt);
         }

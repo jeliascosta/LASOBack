@@ -32,10 +32,9 @@ class SwVbaDialogs : public SwVbaDialogs_BASE
 {
 public:
     SwVbaDialogs( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > &xContext, const css::uno::Reference< css::frame::XModel >& xModel ): SwVbaDialogs_BASE( xParent, xContext, xModel ) {}
-    virtual ~SwVbaDialogs() {}
 
     // XCollection
-    virtual css::uno::Any SAL_CALL Item( const css::uno::Any& Index ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL Item( const css::uno::Any& Index ) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

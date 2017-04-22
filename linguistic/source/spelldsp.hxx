@@ -53,14 +53,14 @@ class SpellCheckerDispatcher :
 {
     typedef std::shared_ptr< LangSvcEntries_Spell >               LangSvcEntries_Spell_Ptr_t;
     typedef std::map< LanguageType, LangSvcEntries_Spell_Ptr_t >    SpellSvcByLangMap_t;
-    SpellSvcByLangMap_t     aSvcMap;
+    SpellSvcByLangMap_t     m_aSvcMap;
 
-    css::uno::Reference< css::linguistic2::XLinguProperties >           xPropSet;
-    css::uno::Reference< css::linguistic2::XSearchableDictionaryList >  xDicList;
+    css::uno::Reference< css::linguistic2::XLinguProperties >           m_xPropSet;
+    css::uno::Reference< css::linguistic2::XSearchableDictionaryList >  m_xDicList;
 
-    LngSvcMgr                   &rMgr;
-    mutable linguistic::SpellCache      *pCache; // Spell Cache (holds known words)
-    CharClass                   * pCharClass;
+    LngSvcMgr                       &m_rMgr;
+    mutable linguistic::SpellCache  *m_pCache; // Spell Cache (holds known words)
+    CharClass                       *m_pCharClass;
 
     SpellCheckerDispatcher(const SpellCheckerDispatcher &) = delete;
     SpellCheckerDispatcher & operator = (const SpellCheckerDispatcher &) = delete;
@@ -74,35 +74,37 @@ class SpellCheckerDispatcher :
 
     void    ClearSvcList();
 
+    /// @throws css::uno::RuntimeException
+    /// @throws css::lang::IllegalArgumentException
     bool    isValid_Impl(const OUString& aWord, LanguageType nLanguage,
-                    const css::beans::PropertyValues& aProperties)
-                throw( css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception );
+                    const css::beans::PropertyValues& aProperties);
 
+    /// @throws css::uno::RuntimeException
+    /// @throws css::lang::IllegalArgumentException
     css::uno::Reference<
         css::linguistic2::XSpellAlternatives >
             spell_Impl(const OUString& aWord, LanguageType nLanguage,
-                    const css::beans::PropertyValues& aProperties)
-                throw( css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception );
+                    const css::beans::PropertyValues& aProperties);
 
 public:
     explicit SpellCheckerDispatcher( LngSvcMgr &rLngSvcMgr );
-    virtual ~SpellCheckerDispatcher();
+    virtual ~SpellCheckerDispatcher() override;
 
     // XSupportedLocales (for XSpellChecker)
-    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales() throw(css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasLocale( const css::lang::Locale& aLocale ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales() override;
+    virtual sal_Bool SAL_CALL hasLocale( const css::lang::Locale& aLocale ) override;
 
     // XSpellChecker
-    virtual sal_Bool SAL_CALL isValid( const OUString& aWord, const css::lang::Locale& aLocale, const css::beans::PropertyValues& aProperties ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::linguistic2::XSpellAlternatives > SAL_CALL spell( const OUString& aWord, const css::lang::Locale& aLocale, const css::beans::PropertyValues& aProperties ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isValid( const OUString& aWord, const css::lang::Locale& aLocale, const css::beans::PropertyValues& aProperties ) override;
+    virtual css::uno::Reference< css::linguistic2::XSpellAlternatives > SAL_CALL spell( const OUString& aWord, const css::lang::Locale& aLocale, const css::beans::PropertyValues& aProperties ) override;
 
     // XSupportedLanguages
-    virtual css::uno::Sequence< ::sal_Int16 > SAL_CALL getLanguages(  ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasLanguage( ::sal_Int16 nLanguage ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< ::sal_Int16 > SAL_CALL getLanguages(  ) override;
+    virtual sal_Bool SAL_CALL hasLanguage( ::sal_Int16 nLanguage ) override;
 
     // XSpellChecker1
-    virtual sal_Bool SAL_CALL isValid( const OUString& aWord, ::sal_Int16 nLanguage, const css::uno::Sequence< css::beans::PropertyValue >& aProperties ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::linguistic2::XSpellAlternatives > SAL_CALL spell( const OUString& aWord, ::sal_Int16 nLanguage, const css::uno::Sequence< css::beans::PropertyValue >& aProperties ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isValid( const OUString& aWord, ::sal_Int16 nLanguage, const css::uno::Sequence< css::beans::PropertyValue >& aProperties ) override;
+    virtual css::uno::Reference< css::linguistic2::XSpellAlternatives > SAL_CALL spell( const OUString& aWord, ::sal_Int16 nLanguage, const css::uno::Sequence< css::beans::PropertyValue >& aProperties ) override;
 
     // LinguDispatcher
     virtual void SetServiceList( const css::lang::Locale &rLocale, const css::uno::Sequence< OUString > &rSvcImplNames ) override;
@@ -118,25 +120,25 @@ private:
 
 inline linguistic::SpellCache & SpellCheckerDispatcher::GetCache() const
 {
-    if (!pCache)
-        pCache = new linguistic::SpellCache();
-    return *pCache;
+    if (!m_pCache)
+        m_pCache = new linguistic::SpellCache();
+    return *m_pCache;
 }
 
 
 inline css::uno::Reference< css::linguistic2::XLinguProperties >
         SpellCheckerDispatcher::GetPropSet()
 {
-    return xPropSet.is() ?
-        xPropSet : xPropSet = linguistic::GetLinguProperties();
+    return m_xPropSet.is() ?
+        m_xPropSet : m_xPropSet = linguistic::GetLinguProperties();
 }
 
 
 inline css::uno::Reference< css::linguistic2::XSearchableDictionaryList >
         SpellCheckerDispatcher::GetDicList()
 {
-    return xDicList.is() ?
-        xDicList : xDicList = linguistic::GetDictionaryList();
+    return m_xDicList.is() ?
+        m_xDicList : m_xDicList = linguistic::GetDictionaryList();
 }
 
 

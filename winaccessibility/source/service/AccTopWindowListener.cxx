@@ -21,7 +21,7 @@
 #include <com/sun/star/bridge/XUnoUrlResolver.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <vcl/window.hxx>
-#include <toolkit/awt/Vclxwindow.hxx>
+#include <toolkit/awt/vclxwindow.hxx>
 
 #include <vcl/sysdata.hxx>
 #include <vcl/svapp.hxx>
@@ -51,17 +51,17 @@ using namespace cppu;
 void AccTopWindowListener::HandleWindowOpened( css::accessibility::XAccessible* pAccessible )
 {
     //get SystemData from window
-    VCLXWindow* pvclwindow = (VCLXWindow*)pAccessible;
-    vcl::Window* window = pvclwindow->GetWindow();
+    VCLXWindow* pvclwindow = static_cast<VCLXWindow*>(pAccessible);
+    auto window = pvclwindow->GetWindow();
     // The SalFrame of window may be destructed at this time
-    const SystemEnvData* systemdata = NULL;
+    const SystemEnvData* systemdata = nullptr;
     try
     {
         systemdata = window->GetSystemData();
     }
     catch(...)
     {
-        systemdata = NULL;
+        systemdata = nullptr;
     }
     Reference<css::accessibility::XAccessibleContext> xContext(pAccessible->getAccessibleContext(),UNO_QUERY);
     if(!xContext.is())
@@ -69,12 +69,12 @@ void AccTopWindowListener::HandleWindowOpened( css::accessibility::XAccessible* 
 
     css::accessibility::XAccessibleContext* pAccessibleContext = xContext.get();
     //Only AccessibleContext exist, add all listeners
-    if(pAccessibleContext != NULL && systemdata != NULL)
+    if(pAccessibleContext != nullptr && systemdata != nullptr)
     {
         accManagerAgent.SaveTopWindowHandle(
                 reinterpret_cast<sal_Int64>(systemdata->hWnd), pAccessible);
 
-        AddAllListeners(pAccessible,NULL,(HWND)systemdata->hWnd);
+        AddAllListeners(pAccessible,nullptr,systemdata->hWnd);
 
         if( window->GetStyle() & WB_MOVEABLE )
             accManagerAgent.IncreaseState( pAccessible, (unsigned short) -1 /* U_MOVEBLE */ );
@@ -109,7 +109,7 @@ AccTopWindowListener::~AccTopWindowListener()
 /**
  *  It is invoked when a new window is opened, the source of this EventObject is the window
  */
-void AccTopWindowListener::windowOpened( const css::lang::EventObject& e ) throw (css::uno::RuntimeException)
+void AccTopWindowListener::windowOpened( const css::lang::EventObject& e )
 {
     SAL_INFO( "iacc2", "windowOpened triggered" );
 
@@ -140,7 +140,7 @@ void AccTopWindowListener::AddAllListeners(css::accessibility::XAccessible* pAcc
         return;
     }
     css::accessibility::XAccessibleContext* pAccessibleContext = xContext.get();
-    if(pAccessibleContext == NULL)
+    if(pAccessibleContext == nullptr)
     {
         return;
     }
@@ -174,18 +174,18 @@ void AccTopWindowListener::AddAllListeners(css::accessibility::XAccessible* pAcc
         = pAccessibleContext->getAccessibleChild(i);
 
         css::accessibility::XAccessible* mpAccessible = mxAccessible.get();
-        if(mpAccessible != NULL)
+        if(mpAccessible != nullptr)
         {
             Reference<css::accessibility::XAccessibleContext> mxAccessibleContext
             = mpAccessible->getAccessibleContext();
             css::accessibility::XAccessibleContext* mpContext = mxAccessibleContext.get();
-            if(mpContext != NULL)
+            if(mpContext != nullptr)
                 AddAllListeners( mpAccessible, pAccessible, pWND);
         }
     }
 }
 
-void AccTopWindowListener::windowClosing( const css::lang::EventObject& ) throw (css::uno::RuntimeException)
+void AccTopWindowListener::windowClosing( const css::lang::EventObject& )
 {
     SAL_INFO( "iacc2", "windowClosing triggered" );
 }
@@ -195,7 +195,7 @@ void AccTopWindowListener::windowClosing( const css::lang::EventObject& ) throw 
  *  from current manager's cache, and remove the COM object and the accessible event listener
  *  assigned to the accessible objects.
  */
-void AccTopWindowListener::windowClosed( const css::lang::EventObject& e ) throw (css::uno::RuntimeException)
+void AccTopWindowListener::windowClosed( const css::lang::EventObject& e )
 {
     SAL_INFO( "iacc2", "windowClosed triggered" );
 
@@ -204,7 +204,7 @@ void AccTopWindowListener::windowClosed( const css::lang::EventObject& e ) throw
 
     Reference< css::accessibility::XAccessible > xAccessible ( e.Source, UNO_QUERY );
     css::accessibility::XAccessible* pAccessible = xAccessible.get();
-    if ( pAccessible == NULL)
+    if ( pAccessible == nullptr)
         return;
 
     Reference<css::accessibility::XAccessibleContext> xContext(pAccessible->getAccessibleContext(),UNO_QUERY);
@@ -215,7 +215,7 @@ void AccTopWindowListener::windowClosed( const css::lang::EventObject& e ) throw
     css::accessibility::XAccessibleContext* pAccessibleContext = xContext.get();
 
     short role = -1;
-    if(pAccessibleContext != NULL)
+    if(pAccessibleContext != nullptr)
     {
         role = pAccessibleContext->getAccessibleRole();
 
@@ -233,23 +233,23 @@ void AccTopWindowListener::windowClosed( const css::lang::EventObject& e ) throw
 
 }
 
-void AccTopWindowListener::windowMinimized( const css::lang::EventObject& ) throw (css::uno::RuntimeException)
+void AccTopWindowListener::windowMinimized( const css::lang::EventObject& )
 {
 }
 
-void AccTopWindowListener::windowNormalized( const css::lang::EventObject& ) throw (css::uno::RuntimeException)
+void AccTopWindowListener::windowNormalized( const css::lang::EventObject& )
 {
 }
 
-void AccTopWindowListener::windowActivated( const css::lang::EventObject& ) throw (css::uno::RuntimeException)
+void AccTopWindowListener::windowActivated( const css::lang::EventObject& )
 {
 }
 
-void AccTopWindowListener::windowDeactivated( const css::lang::EventObject& ) throw (css::uno::RuntimeException)
+void AccTopWindowListener::windowDeactivated( const css::lang::EventObject& )
 {
 }
 
-void AccTopWindowListener::disposing( const css::lang::EventObject&  ) throw (css::uno::RuntimeException)
+void AccTopWindowListener::disposing( const css::lang::EventObject&  )
 {
 }
 

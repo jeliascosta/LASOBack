@@ -35,6 +35,9 @@
 #include <rtl/strbuf.hxx>
 #include <svx/svdview.hxx>
 #include <clonelist.hxx>
+#include <svx/svdogrp.hxx>
+#include <svx/scene3d.hxx>
+
 
 using namespace com::sun::star;
 
@@ -61,8 +64,6 @@ void SdrEditView::ImpResetPossibilityFlags()
     bOneOrMoreMovable       =false;
     bMoreThanOneNoMovRot    =false;
     bContortionPossible     =false;
-    bAllPolys               =false;
-    bOneOrMorePolys         =false;
     bMoveAllowed            =false;
     bResizeFreeAllowed      =false;
     bResizePropAllowed      =false;
@@ -115,9 +116,6 @@ void SdrEditView::InsertNewLayer(const OUString& rName, sal_uInt16 nPos)
 
     mpModel->SetChanged();
 }
-
-#include <svx/svdogrp.hxx>
-#include <svx/scene3d.hxx>
 
 bool SdrEditView::ImpDelLayerCheck(SdrObjList* pOL, SdrLayerID nDelID) const
 {
@@ -664,8 +662,8 @@ void SdrEditView::ForceMarkedObjToAnotherPage()
     for (size_t nm=0; nm<GetMarkedObjectCount(); ++nm) {
         SdrMark* pM=GetSdrMarkByIndex(nm);
         SdrObject* pObj=pM->GetMarkedSdrObj();
-        Rectangle aObjRect(pObj->GetCurrentBoundRect());
-        Rectangle aPgRect(pM->GetPageView()->GetPageRect());
+        tools::Rectangle aObjRect(pObj->GetCurrentBoundRect());
+        tools::Rectangle aPgRect(pM->GetPageView()->GetPageRect());
         if (!aObjRect.IsOver(aPgRect)) {
             bool bFnd=false;
             SdrPageView* pPV = GetSdrPageView();
@@ -678,8 +676,7 @@ void SdrEditView::ForceMarkedObjToAnotherPage()
             if(bFnd)
             {
                 pM->GetPageView()->GetObjList()->RemoveObject(pObj->GetOrdNum());
-                SdrInsertReason aReason(SDRREASON_VIEWCALL);
-                pPV->GetObjList()->InsertObject(pObj, SAL_MAX_SIZE, &aReason);
+                pPV->GetObjList()->InsertObject(pObj, SAL_MAX_SIZE);
                 pM->SetPageView(pPV);
                 InvalidateAllWin(aObjRect);
                 bFlg=true;
@@ -786,7 +783,7 @@ void SdrEditView::DeleteMarkedObj()
 
     // moved breaking action and undo start outside loop
     BrkAction();
-    BegUndo(ImpGetResStr(STR_EditDelete),GetDescriptionOfMarkedObjects(),SDRREPFUNC_OBJ_DELETE);
+    BegUndo(ImpGetResStr(STR_EditDelete),GetDescriptionOfMarkedObjects(),SdrRepeatFunc::Delete);
 
     // remove as long as something is selected. This allows to schedule objects for
     // removal for a next run as needed
@@ -908,8 +905,7 @@ void SdrEditView::CopyMarkedObj()
         SdrMark* pM=aSourceObjectsForCopy.GetMark(nm);
         SdrObject* pO=pM->GetMarkedSdrObj()->Clone();
         if (pO!=nullptr) {
-            SdrInsertReason aReason(SDRREASON_VIEWCALL);
-            pM->GetPageView()->GetObjList()->InsertObject(pO, SAL_MAX_SIZE, &aReason);
+            pM->GetPageView()->GetObjList()->InsertObject(pO, SAL_MAX_SIZE);
 
             if( bUndo )
                 AddUndo(GetModel()->GetSdrUndoFactory().CreateUndoCopyObject(*pO));
@@ -971,11 +967,10 @@ bool SdrEditView::InsertObjectAtView(SdrObject* pObj, SdrPageView& rPV, SdrInser
         pObj->SetMergedItemSet(maDefaultAttr);
     }
     if (!pObj->IsInserted()) {
-        SdrInsertReason aReason(SDRREASON_VIEWCALL);
         if (nOptions & SdrInsertFlags::NOBROADCAST) {
-            rPV.GetObjList()->NbcInsertObject(pObj, SAL_MAX_SIZE, &aReason);
+            rPV.GetObjList()->NbcInsertObject(pObj, SAL_MAX_SIZE);
         } else {
-            rPV.GetObjList()->InsertObject(pObj, SAL_MAX_SIZE, &aReason);
+            rPV.GetObjList()->InsertObject(pObj, SAL_MAX_SIZE);
         }
     }
     if( IsUndoEnabled() )

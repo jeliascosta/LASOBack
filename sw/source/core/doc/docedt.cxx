@@ -94,8 +94,8 @@ void SaveFlyInRange( const SwNodeRange& rRg, SaveFlyArr& rArr )
         SwFormatAnchor const*const pAnchor = &pFormat->GetAnchor();
         SwPosition const*const pAPos = pAnchor->GetContentAnchor();
         if (pAPos &&
-            ((FLY_AT_PARA == pAnchor->GetAnchorId()) ||
-             (FLY_AT_CHAR == pAnchor->GetAnchorId())) &&
+            ((RndStdIds::FLY_AT_PARA == pAnchor->GetAnchorId()) ||
+             (RndStdIds::FLY_AT_CHAR == pAnchor->GetAnchorId())) &&
             rRg.aStart <= pAPos->nNode && pAPos->nNode < rRg.aEnd )
         {
             SaveFly aSave( pAPos->nNode.GetIndex() - rRg.aStart.GetIndex(),
@@ -137,8 +137,8 @@ void SaveFlyInRange( const SwPaM& rPam, const SwNodeIndex& rInsPos,
         const SwPosition* pAPos = pAnchor->GetContentAnchor();
         const SwNodeIndex* pContentIdx;
         if (pAPos &&
-            ((FLY_AT_PARA == pAnchor->GetAnchorId()) ||
-             (FLY_AT_CHAR == pAnchor->GetAnchorId())) &&
+            ((RndStdIds::FLY_AT_PARA == pAnchor->GetAnchorId()) ||
+             (RndStdIds::FLY_AT_CHAR == pAnchor->GetAnchorId())) &&
             // do not move if the InsPos is in the ContentArea of the Fly
             ( nullptr == ( pContentIdx = pFormat->GetContent().GetContentIdx() ) ||
               !( *pContentIdx < rInsPos &&
@@ -194,8 +194,8 @@ void DelFlyInRange( const SwNodeIndex& rMkNdIdx,
         const SwFormatAnchor &rAnch = pFormat->GetAnchor();
         SwPosition const*const pAPos = rAnch.GetContentAnchor();
         if (pAPos &&
-            ((rAnch.GetAnchorId() == FLY_AT_PARA) ||
-             (rAnch.GetAnchorId() == FLY_AT_CHAR)) &&
+            ((rAnch.GetAnchorId() == RndStdIds::FLY_AT_PARA) ||
+             (rAnch.GetAnchorId() == RndStdIds::FLY_AT_CHAR)) &&
             ( bDelFwrd
                 ? rMkNdIdx < pAPos->nNode && pAPos->nNode <= rPtNdIdx
                 : rPtNdIdx <= pAPos->nNode && pAPos->nNode < rMkNdIdx ))
@@ -222,7 +222,7 @@ void DelFlyInRange( const SwNodeIndex& rMkNdIdx,
                     if( i > rTable.size() )
                         i = rTable.size();
                     else if( pFormat != rTable[i] )
-                        i = rTable.GetPos( pFormat );
+                        i = std::distance(rTable.begin(), rTable.find( pFormat ));
                 }
 
                 pDoc->getIDocumentLayoutAccess().DelLayoutFormat( pFormat );
@@ -246,7 +246,7 @@ SaveRedlEndPosForRestore::SaveRedlEndPosForRestore( const SwNodeIndex& rInsIdx, 
     SwDoc* pDest = rNd.GetDoc();
     if( !pDest->getIDocumentRedlineAccess().GetRedlineTable().empty() )
     {
-        sal_uInt16 nFndPos;
+        SwRedlineTable::size_type nFndPos;
         const SwPosition* pEnd;
         SwPosition aSrcPos( rInsIdx, SwIndex( rNd.GetContentNode(), nCnt ));
         pDest->getIDocumentRedlineAccess().GetRedline( aSrcPos, &nFndPos );
@@ -288,7 +288,7 @@ void SaveRedlEndPosForRestore::Restore_()
 /// Convert list of ranges of whichIds to a corresponding list of whichIds
 static std::vector<sal_uInt16> * lcl_RangesToVector(sal_uInt16 * pRanges)
 {
-    std::vector<sal_uInt16> * pResult = new std::vector<sal_uInt16>();
+    std::vector<sal_uInt16> * pResult = new std::vector<sal_uInt16>;
 
     int i = 0;
     while (pRanges[i] != 0)
@@ -520,7 +520,7 @@ uno::Any SwDoc::Spell( SwPaM& rPaM,
             SwNode* pNd = GetNodes()[ nCurrNd ];
             switch( pNd->GetNodeType() )
             {
-            case ND_TEXTNODE:
+            case SwNodeType::Text:
                 if( nullptr != ( pContentFrame = pNd->GetTextNode()->getLayoutFrame( getIDocumentLayoutAccess().GetCurrentLayout() )) )
                 {
                     // skip protected and hidden Cells and Flys
@@ -638,15 +638,16 @@ uno::Any SwDoc::Spell( SwPaM& rPaM,
                     }
                 }
                 break;
-            case ND_SECTIONNODE:
+            case SwNodeType::Section:
                 if( ( static_cast<SwSectionNode*>(pNd)->GetSection().IsProtect() ||
                     static_cast<SwSectionNode*>(pNd)->GetSection().IsHidden() ) )
                     nCurrNd = pNd->EndOfSectionIndex();
                 break;
-            case ND_ENDNODE:
+            case SwNodeType::End:
                 {
                     break;
                 }
+            default: break;
             }
 
             bGoOn = nCurrNd < nEndNd;
@@ -682,11 +683,11 @@ public:
     SwHyphArgs( const SwPaM *pPam, const Point &rPoint,
                 sal_uInt16* pPageCount, sal_uInt16* pPageStart );
     void SetPam( SwPaM *pPam ) const;
-    inline void SetNode( SwNode *pNew ) { pNode = pNew; }
+    void SetNode( SwNode *pNew ) { pNode = pNew; }
     inline void SetRange( const SwNode *pNew );
-    inline void NextNode() { ++nNode; }
-    inline sal_uInt16 *GetPageCnt() { return pPageCnt; }
-    inline sal_uInt16 *GetPageSt() { return pPageSt; }
+    void NextNode() { ++nNode; }
+    sal_uInt16 *GetPageCnt() { return pPageCnt; }
+    sal_uInt16 *GetPageSt() { return pPageSt; }
 };
 
 SwHyphArgs::SwHyphArgs( const SwPaM *pPam, const Point &rCursorPos,

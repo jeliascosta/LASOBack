@@ -107,14 +107,6 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
     if(pArgs)
         pArgs->GetItemState(nSlotId, false, &pItem);
 
-    //Special case align by menu
-    if(pItem && nSlotId == SID_OBJECT_ALIGN)
-    {
-        OSL_ENSURE(dynamic_cast<const SfxEnumItem*>( pItem),"SfxEnumItem expected" );
-        nSlotId = nSlotId + static_cast<const SfxEnumItem*>(pItem)->GetValue();
-        nSlotId++;
-    }
-
     bool bAlignPossible = pSh->IsAlignPossible();
 
     bool bTopParam = true, bBottomParam = true;
@@ -148,7 +140,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                         OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-                        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSwWrapDlg( GetView().GetWindow(), aSet, pSh, RC_DLG_SWWRAPDLG ));
+                        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSwWrapDlg( GetView().GetWindow(), aSet, pSh ));
                         OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                         if (pDlg->Execute() == RET_OK)
@@ -182,16 +174,16 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                     if( rMarkList.GetMark(0) != nullptr )
                     {
                         SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
-                        std::unique_ptr<SfxAbstractTabDialog> pDlg;
+                        ScopedVclPtr<SfxAbstractTabDialog> pDlg;
                         bool bCaption = false;
 
                         // Allowed anchorages:
-                        short nAnchor = pSh->GetAnchorId();
-                        sal_uInt16 nAllowedAnchors = SVX_OBJ_AT_CNTNT | SVX_OBJ_IN_CNTNT | SVX_OBJ_PAGE;
+                        RndStdIds nAnchor = pSh->GetAnchorId();
+                        SvxAnchorIds nAllowedAnchors = SvxAnchorIds::Paragraph | SvxAnchorIds::Character | SvxAnchorIds::Page;
                         sal_uInt16 nHtmlMode = ::GetHtmlMode(pSh->GetView().GetDocShell());
 
                         if ( pSh->IsFlyInFly() )
-                            nAllowedAnchors |= SVX_OBJ_AT_FLY;
+                            nAllowedAnchors |= SvxAnchorIds::Fly;
 
                         if (pObj->GetObjIdentifier() == OBJ_CAPTION )
                             bCaption = true;
@@ -199,18 +191,18 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                         if (bCaption)
                         {
                             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                            AbstractSvxCaptionDialog* pCaptionDlg =
+                            VclPtr<AbstractSvxCaptionDialog> pCaptionDlg =
                                     pFact->CreateCaptionDialog( nullptr, pSdrView, nAllowedAnchors );
+                            pDlg.disposeAndReset(pCaptionDlg);
                             pCaptionDlg->SetValidateFramePosLink( LINK(this, SwDrawBaseShell, ValidatePosition) );
-                            pDlg.reset(pCaptionDlg);
                         }
                         else
                         {
                             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                            AbstractSvxTransformTabDialog* pTransform =
+                            VclPtr<AbstractSvxTransformTabDialog> pTransform =
                                         pFact->CreateSvxTransformTabDialog( nullptr, nullptr, pSdrView, nAllowedAnchors );
+                            pDlg.disposeAndReset(pTransform);
                             pTransform->SetValidateFramePosLink( LINK(this, SwDrawBaseShell, ValidatePosition) );
-                            pDlg.reset(pTransform);
                         }
                         SfxItemSet aNewAttr(pSdrView->GetGeoAttrFromMarked());
 
@@ -224,7 +216,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                         if (bCaption)
                             pSdrView->GetAttributes( aSet );
 
-                        aSet.Put(SfxInt16Item(SID_ATTR_TRANSFORM_ANCHOR, nAnchor));
+                        aSet.Put(SfxInt16Item(SID_ATTR_TRANSFORM_ANCHOR, (sal_Int16)nAnchor));
                         bool bRTL;
                         bool bVertL2R;
                         aSet.Put(SfxBoolItem(SID_ATTR_TRANSFORM_IN_VERTICAL_TEXT, pSh->IsFrameVertical(true, bRTL, bVertL2R)));
@@ -255,7 +247,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                             pSh->StartAllAction();
 
                             // #i30451#
-                            pSh->StartUndo(UNDO_INSFMTATTR);
+                            pSh->StartUndo(SwUndoId::INSFMTATTR);
 
                             pSdrView->SetGeoAttrToMarked(*pOutSet);
 
@@ -277,7 +269,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                                 SID_ATTR_TRANSFORM_ANCHOR, false, &pAnchorItem))
                             {
                                 if(!bSingleSelection)
-                                    pSh->ChgAnchor(static_cast<const SfxInt16Item*>(pAnchorItem)
+                                    pSh->ChgAnchor((RndStdIds)static_cast<const SfxInt16Item*>(pAnchorItem)
                                             ->GetValue(), false, bPosCorr );
                                 else
                                 {
@@ -338,7 +330,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                             rBind.InvalidateAll(false);
 
                             // #i30451#
-                            pSh->EndUndo( UNDO_INSFMTATTR );
+                            pSh->EndUndo( SwUndoId::INSFMTATTR );
 
                             pSh->EndAllAction();
                         }
@@ -360,7 +352,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
 
                 if( GetView().IsDrawRotate() )
                 {
-                    pSh->SetDragMode( SDRDRAG_MOVE );
+                    pSh->SetDragMode( SdrDragMode::Move );
                     GetView().FlipDrawRotate();
                 }
 
@@ -433,8 +425,8 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                 const SdrMarkList& rMarkList = pSdrView->GetMarkedObjectList();
                 if( rMarkList.GetMarkCount() == 1 && bAlignPossible )
                 {   // Do not align objects to each other
-                    sal_uInt16 nAnchor = pSh->GetAnchorId();
-                    if (nAnchor == FLY_AS_CHAR)
+                    RndStdIds nAnchor = pSh->GetAnchorId();
+                    if (nAnchor == RndStdIds::FLY_AS_CHAR)
                     {
                         sal_Int16 nVertOrient = -1;
 
@@ -464,7 +456,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                         }
                         break;
                     }
-                    if (nAnchor == FLY_AT_PARA)
+                    if (nAnchor == RndStdIds::FLY_AT_PARA)
                         break;  // Do not align frames of an anchored paragraph
                 }
 
@@ -472,22 +464,22 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                 switch (nSlotId)
                 {
                     case SID_OBJECT_ALIGN_LEFT:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_LEFT, SDRVALIGN_NONE);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::Left, SdrVertAlign::NONE);
                         break;
                     case SID_OBJECT_ALIGN_CENTER:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_CENTER, SDRVALIGN_NONE);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::Center, SdrVertAlign::NONE);
                         break;
                     case SID_OBJECT_ALIGN_RIGHT:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_RIGHT, SDRVALIGN_NONE);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::Right, SdrVertAlign::NONE);
                         break;
                     case SID_OBJECT_ALIGN_UP:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_NONE, SDRVALIGN_TOP);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::NONE, SdrVertAlign::Top);
                         break;
                     case SID_OBJECT_ALIGN_MIDDLE:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_NONE, SDRVALIGN_CENTER);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::NONE, SdrVertAlign::Center);
                         break;
                     case SID_OBJECT_ALIGN_DOWN:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_NONE, SDRVALIGN_BOTTOM);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::NONE, SdrVertAlign::Bottom);
                         break;
                 }
                 pSh->EndAction();
@@ -522,7 +514,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
 
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "Dialog creation failed!");
-                std::unique_ptr<AbstractSvxObjectNameDialog> pDlg(pFact->CreateSvxObjectNameDialog(aName));
+                ScopedVclPtr<AbstractSvxObjectNameDialog> pDlg(pFact->CreateSvxObjectNameDialog(aName));
                 OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                 pDlg->SetCheckNameHdl(LINK(this, SwDrawBaseShell, CheckGroupShapeNameHdl));
@@ -552,7 +544,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
 
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "Dialog creation failed!");
-                std::unique_ptr<AbstractSvxObjectTitleDescDialog> pDlg(pFact->CreateSvxObjectTitleDescDialog(aTitle, aDescription));
+                ScopedVclPtr<AbstractSvxObjectTitleDescDialog> pDlg(pFact->CreateSvxObjectTitleDescDialog(aTitle, aDescription));
                 OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                 if(RET_OK == pDlg->Execute())
@@ -587,7 +579,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
 
 // Checks whether a given name is allowed for a group shape
 
-IMPL_LINK_TYPED( SwDrawBaseShell, CheckGroupShapeNameHdl, AbstractSvxObjectNameDialog&, rNameDialog, bool )
+IMPL_LINK( SwDrawBaseShell, CheckGroupShapeNameHdl, AbstractSvxObjectNameDialog&, rNameDialog, bool )
 {
     SwWrtShell          &rSh = GetShell();
     SdrView *pSdrView = rSh.GetDrawView();
@@ -604,7 +596,7 @@ IMPL_LINK_TYPED( SwDrawBaseShell, CheckGroupShapeNameHdl, AbstractSvxObjectNameD
     {
         bRet = true;
         SwDrawModel* pModel = rSh.getIDocumentDrawModelAccess().GetDrawModel();
-        SdrObjListIter aIter( *(pModel->GetPage(0)), IM_DEEPWITHGROUPS );
+        SdrObjListIter aIter( *(pModel->GetPage(0)), SdrIterMode::DeepWithGroups );
         while( aIter.IsMore() )
         {
             SdrObject* pTempObj = aIter.Next();
@@ -671,17 +663,15 @@ void SwDrawBaseShell::GetState(SfxItemSet& rSet)
                     rSet.DisableItem( nWhich );
                 else
                 {
-                    SfxAllEnumItem aEnumItem(nWhich, USHRT_MAX);
                     const SdrMarkList& rMarkList = pSdrView->GetMarkedObjectList();
                     //if only one object is selected it can only be vertically
                     // aligned because it is character bound
                     if( rMarkList.GetMarkCount() == 1 )
                     {
-                        aEnumItem.DisableValue(SID_OBJECT_ALIGN_LEFT);
-                        aEnumItem.DisableValue(SID_OBJECT_ALIGN_CENTER);
-                        aEnumItem.DisableValue(SID_OBJECT_ALIGN_RIGHT);
+                        rSet.DisableItem(SID_OBJECT_ALIGN_LEFT);
+                        rSet.DisableItem(SID_OBJECT_ALIGN_CENTER);
+                        rSet.DisableItem(SID_OBJECT_ALIGN_RIGHT);
                     }
-                    rSet.Put(aEnumItem);
                 }
                 break;
 
@@ -745,9 +735,34 @@ bool SwDrawBaseShell::Disable(SfxItemSet& rSet, sal_uInt16 nWhich)
     return bDisable;
 }
 
+void SwDrawBaseShell::DisableState( SfxItemSet& rSet )
+{
+    SwWrtShell *pSh = &GetShell();
+    SdrView*    pSdrView = pSh->GetDrawView();
+    const SdrMarkList& rMarkList = pSdrView->GetMarkedObjectList();
+
+    if ( rMarkList.GetMarkCount() == 1 )
+    {
+        SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
+        sal_uInt16 nObjType = pObj->GetObjIdentifier();
+
+        // If marked object is 2D, disable format area command.
+        if ( nObjType == OBJ_PLIN     ||
+             nObjType == OBJ_LINE     ||
+             nObjType == OBJ_PATHLINE ||
+             nObjType == OBJ_FREELINE ||
+             nObjType == OBJ_EDGE     ||
+             nObjType == OBJ_CARC )
+            rSet.DisableItem( SID_ATTRIBUTES_AREA );
+    }
+
+    Disable(rSet);
+
+}
+
 // Validate of drawing positions
 
-IMPL_LINK_TYPED(SwDrawBaseShell, ValidatePosition, SvxSwFrameValidation&, rValidation, void )
+IMPL_LINK(SwDrawBaseShell, ValidatePosition, SvxSwFrameValidation&, rValidation, void )
 {
     SwWrtShell *pSh = &GetShell();
     rValidation.nMinHeight = MINFLY;
@@ -757,7 +772,7 @@ IMPL_LINK_TYPED(SwDrawBaseShell, ValidatePosition, SvxSwFrameValidation&, rValid
 
     // OD 18.09.2003 #i18732# - adjustment for allowing vertical position
     //      aligned to page for fly frame anchored to paragraph or to character.
-    const RndStdIds eAnchorType = static_cast<RndStdIds >(rValidation.nAnchorType);
+    const RndStdIds eAnchorType = rValidation.nAnchorType;
     const SwPosition* pContentPos = nullptr;
     SdrView*  pSdrView = pSh->GetDrawView();
     const SdrMarkList& rMarkList = pSdrView->GetMarkedObjectList();
@@ -797,7 +812,7 @@ IMPL_LINK_TYPED(SwDrawBaseShell, ValidatePosition, SvxSwFrameValidation&, rValid
         rValidation.nWidth = rValidation.nHeight;
         rValidation.nHeight = nTmp;
     }
-    if ((eAnchorType == FLY_AT_PAGE) || (eAnchorType == FLY_AT_FLY))
+    if ((eAnchorType == RndStdIds::FLY_AT_PAGE) || (eAnchorType == RndStdIds::FLY_AT_FLY))
     {
         // MinimalPosition
         rValidation.nMinHPos = aBoundRect.Left();
@@ -845,7 +860,7 @@ IMPL_LINK_TYPED(SwDrawBaseShell, ValidatePosition, SvxSwFrameValidation&, rValid
         rValidation.nMaxVPos   = aBoundRect.Bottom() - rValidation.nHeight;
         rValidation.nMaxWidth  = aBoundRect.Right()  - nH;
     }
-    else if ((eAnchorType == FLY_AT_PARA) || (eAnchorType == FLY_AT_CHAR))
+    else if ((eAnchorType == RndStdIds::FLY_AT_PARA) || (eAnchorType == RndStdIds::FLY_AT_CHAR))
     {
         if (rValidation.nHPos + rValidation.nWidth > aBoundRect.Right())
         {
@@ -906,7 +921,7 @@ IMPL_LINK_TYPED(SwDrawBaseShell, ValidatePosition, SvxSwFrameValidation&, rValid
         rValidation.nMaxHeight  = rValidation.nMaxVPos + rValidation.nHeight - nV;
         rValidation.nMaxWidth   = rValidation.nMaxHPos + rValidation.nWidth - nH;
     }
-    else if (eAnchorType == FLY_AS_CHAR)
+    else if (eAnchorType == RndStdIds::FLY_AS_CHAR)
     {
         rValidation.nMinHPos = 0;
         rValidation.nMaxHPos = 0;

@@ -39,7 +39,7 @@ class BASIC_DLLPUBLIC SbMethod : public SbxMethod
 
     SbxVariable*  mCaller;                   // caller
     SbModule*     pMod;
-    sal_uInt16    nDebugFlags;
+    BasicDebugFlags nDebugFlags;
     sal_uInt16    nLine1, nLine2;
     sal_uInt32    nStart;
     bool          bInvalid;
@@ -48,21 +48,21 @@ class BASIC_DLLPUBLIC SbMethod : public SbxMethod
     BASIC_DLLPRIVATE SbMethod( const SbMethod& );
     virtual bool LoadData( SvStream&, sal_uInt16 ) override;
     virtual bool StoreData( SvStream& ) const override;
-    virtual ~SbMethod();
+    virtual ~SbMethod() override;
 
 public:
-    SBX_DECL_PERSIST_NODATA(SBXCR_SBX,SBXID_BASICMETHOD,2);
+    SBX_DECL_PERSIST_NODATA(SBXID_BASICMETHOD,2);
     virtual SbxInfo* GetInfo() override;
     SbxArray*  GetStatics();
     void       ClearStatics();
-    SbModule*  GetModule()                { return pMod;        }
-    sal_uInt16 GetDebugFlags()            { return nDebugFlags; }
-    void       SetDebugFlags( sal_uInt16 n )  { nDebugFlags = n;    }
+    SbModule*  GetModule()                         { return pMod;        }
+    BasicDebugFlags GetDebugFlags()                { return nDebugFlags; }
+    void       SetDebugFlags( BasicDebugFlags n )  { nDebugFlags = n;    }
     void       GetLineRange( sal_uInt16&, sal_uInt16& );
 
     // Interface to execute a method from the applications
-    ErrCode         Call( SbxValue* pRet = nullptr,  SbxVariable* pCaller = nullptr );
-    virtual void    Broadcast( sal_uInt32 nHintId ) override;
+    ErrCode         Call( SbxValue* pRet,  SbxVariable* pCaller = nullptr );
+    virtual void    Broadcast( SfxHintId nHintId ) override;
 };
 
 typedef tools::SvRef<SbMethod> SbMethodRef;
@@ -78,9 +78,9 @@ public:
         : SbMethod( rName, pImplMeth->GetType(), nullptr )
         , mxImplMeth( pImplMeth )
     {}
-    virtual ~SbIfaceMapperMethod();
+    virtual ~SbIfaceMapperMethod() override;
     SbMethod* getImplMethod()
-        { return mxImplMeth; }
+        { return mxImplMeth.get(); }
 };
 
 #endif

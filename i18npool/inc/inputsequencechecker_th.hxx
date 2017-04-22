@@ -30,13 +30,13 @@ class InputSequenceChecker_th : public InputSequenceCheckerImpl
 {
 public:
     InputSequenceChecker_th();
-    virtual ~InputSequenceChecker_th();
+    virtual ~InputSequenceChecker_th() override;
 
     sal_Bool SAL_CALL checkInputSequence(const OUString& Text, sal_Int32 nStartPos,
-        sal_Unicode inputChar, sal_Int16 inputCheckMode) throw(css::uno::RuntimeException, std::exception) override;
+        sal_Unicode inputChar, sal_Int16 inputCheckMode) override;
 
     sal_Int32 SAL_CALL correctInputSequence(OUString& Text, sal_Int32 nStartPos,
-        sal_Unicode inputChar, sal_Int16 inputCheckMode) throw(css::uno::RuntimeException, std::exception) override;
+        sal_Unicode inputChar, sal_Int16 inputCheckMode) override;
 };
 
 } } } }

@@ -76,11 +76,12 @@ public:
 private:
     sal_uInt8* m_pContentBuf;           //The content buffer of the object
     sal_uInt8 m_SmallBuffer[100];       //To avoid frequent new
+    std::vector<sal_uInt8> m_BigBuffer; //otherwise use this
     enum
     {
         IO_BUFFERSIZE = 0xFF00      //Refer to LWP, not sure if it is enough
     };
-    sal_uInt16 m_nBufSize;              //The total size of m_pContentBuf
+    sal_uInt16 m_nBufSize;          //The total size of m_pContentBuf
     sal_uInt16 m_nReadPos;          //The position of the quick read
     LwpSvStream* m_pStrm;
     bool m_bCompressed;
@@ -106,7 +107,6 @@ public:
     void ReadComplete();
     LwpSvStream *GetStream();
 private:
-    void ReadStream();
     void Read2Buffer();
     sal_uInt8* AllocBuffer(sal_uInt16 size);
     static sal_uInt16 DecompressBuffer(sal_uInt8* pDst, sal_uInt8* pSrc, sal_uInt16 Size);

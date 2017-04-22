@@ -59,7 +59,6 @@ public:
         const sal_Int32 nRunIndex,
         const sal_Int32 nStartIndex,
         const sal_Int32 nEndIndex);
-    ~PageObjectRun();
 
     void operator () (const double nTime);
 
@@ -316,10 +315,6 @@ PageObjectRun::PageObjectRun (
     maEndOffset.resize(nEndIndex - nStartIndex + 1);
 }
 
-PageObjectRun::~PageObjectRun()
-{
-}
-
 void PageObjectRun::UpdateOffsets(
     const InsertPosition& rInsertPosition,
     const view::Layouter& rLayouter)
@@ -366,7 +361,7 @@ void PageObjectRun::ResetOffsets (const controller::Animator::AnimationMode eMod
                 maStartOffset[nIndex] = pDescriptor->GetVisualState().GetLocationOffset();
             else
             {
-                const Rectangle aOldBoundingBox (pDescriptor->GetBoundingBox());
+                const ::tools::Rectangle aOldBoundingBox (pDescriptor->GetBoundingBox());
                 pDescriptor->GetVisualState().SetLocationOffset(Point(0,0));
                 rView.RequestRepaint(aOldBoundingBox);
                 rView.RequestRepaint(pDescriptor);
@@ -393,7 +388,6 @@ void PageObjectRun::RestartAnimation()
     auto sharedThis(shared_from_this());
     mnAnimationId = mrAnimatorAccess.GetAnimator()->AddAnimation(
         [this] (double const val) { (*this)(val); },
-        300,
         [sharedThis] () { sharedThis->mrAnimatorAccess.RemoveRun(sharedThis); }
         );
 }
@@ -415,7 +409,7 @@ void PageObjectRun::operator () (const double nGlobalTime)
         model::SharedPageDescriptor pDescriptor (rModel.GetPageDescriptor(nIndex));
         if ( ! pDescriptor)
             continue;
-        const Rectangle aOldBoundingBox (pDescriptor->GetBoundingBox());
+        const ::tools::Rectangle aOldBoundingBox (pDescriptor->GetBoundingBox());
         pDescriptor->GetVisualState().SetLocationOffset(
             Blend(
                 maStartOffset[nIndex-mnStartIndex],

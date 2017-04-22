@@ -54,12 +54,13 @@ namespace dlgprov
 
     css::uno::Reference< css::container::XNameContainer > lcl_createControlModel(const css::uno::Reference< css::uno::XComponentContext >& i_xContext);
     css::uno::Reference< css::resource::XStringResourceManager > lcl_getStringResourceManager(const css::uno::Reference< css::uno::XComponentContext >& i_xContext,const OUString& i_sURL);
+    /// @throws css::uno::Exception
     css::uno::Reference< css::container::XNameContainer > lcl_createDialogModel(
                 const css::uno::Reference< css::uno::XComponentContext >& i_xContext,
                 const css::uno::Reference< css::io::XInputStream >& xInput,
                 const css::uno::Reference< css::frame::XModel >& xModel,
                 const css::uno::Reference< css::resource::XStringResourceManager >& xStringResourceManager,
-                const css::uno::Any &aDialogSourceURL) throw ( css::uno::Exception );
+                const css::uno::Any &aDialogSourceURL);
 
     typedef ::cppu::WeakImplHelper<
         css::lang::XServiceInfo,
@@ -94,58 +95,53 @@ namespace dlgprov
         css::uno::Reference< css::beans::XIntrospectionAccess > inspectHandler(
             const css::uno::Reference< css::uno::XInterface >& rxHandler );
     // helper methods
+            /// @throws css::uno::Exception
             css::uno::Reference< css::container::XNameContainer > createDialogModel(
                 const css::uno::Reference< css::io::XInputStream >& xInput,
                 const css::uno::Reference< css::resource::XStringResourceManager >& xStringResourceManager,
-                const css::uno::Any &aDialogSourceURL) throw ( css::uno::Exception );
-            css::uno::Reference< css::awt::XControlModel > createDialogModelForBasic() throw ( css::uno::Exception );
+                const css::uno::Any &aDialogSourceURL);
+            /// @throws css::uno::Exception
+            css::uno::Reference< css::awt::XControlModel > createDialogModelForBasic();
 
         // XDialogProvider / XDialogProvider2 impl method
+        /// @throws css::lang::IllegalArgumentException
+        /// @throws css::uno::RuntimeException
         css::uno::Reference < css::awt::XControl > SAL_CALL createDialogImpl(
             const OUString& URL,
             const css::uno::Reference< css::uno::XInterface >& xHandler,
             const css::uno::Reference< css::awt::XWindowPeer >& xParent,
-            bool bDialogProviderMode )
-                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException);
+            bool bDialogProviderMode );
 
     public:
         explicit DialogProviderImpl(
             const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-        virtual ~DialogProviderImpl();
+        virtual ~DialogProviderImpl() override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  )
-            throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-            throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
-            throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName(  ) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
         // XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
         // XDialogProvider
         virtual css::uno::Reference < css::awt::XDialog > SAL_CALL createDialog(
-            const OUString& URL )
-            throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+            const OUString& URL ) override;
 
         // XDialogProvider2
         virtual css::uno::Reference < css::awt::XDialog > SAL_CALL createDialogWithHandler(
             const OUString& URL,
-            const css::uno::Reference< css::uno::XInterface >& xHandler )
-            throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+            const css::uno::Reference< css::uno::XInterface >& xHandler ) override;
 
         virtual css::uno::Reference < css::awt::XDialog > SAL_CALL createDialogWithArguments(
             const OUString& URL,
-            const css::uno::Sequence< css::beans::NamedValue >& Arguments )
-            throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+            const css::uno::Sequence< css::beans::NamedValue >& Arguments ) override;
 
         virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createContainerWindow(
             const OUString& URL, const OUString& WindowType,
             const css::uno::Reference< css::awt::XWindowPeer >& xParent,
-            const css::uno::Reference< css::uno::XInterface >& xHandler )
-            throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+            const css::uno::Reference< css::uno::XInterface >& xHandler ) override;
      };
 
 

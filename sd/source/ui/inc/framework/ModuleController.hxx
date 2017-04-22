@@ -32,16 +32,12 @@
 #include <memory>
 #include <set>
 
-namespace {
+namespace sd { namespace framework {
 
 typedef ::cppu::WeakComponentImplHelper <
     css::drawing::framework::XModuleController,
     css::lang::XInitialization
     > ModuleControllerInterfaceBase;
-
-} // end of anonymous namespace.
-
-namespace sd { namespace framework {
 
 /** The ModuleController has to tasks:
 
@@ -76,14 +72,12 @@ public:
 
     // XModuleController
 
-    virtual void SAL_CALL requestResource(const OUString& rsResourceURL)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL requestResource(const OUString& rsResourceURL) override;
 
     // XInitialization
 
     virtual void SAL_CALL initialize(
-        const css::uno::Sequence<css::uno::Any>& aArguments)
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        const css::uno::Sequence<css::uno::Any>& aArguments) override;
 
 private:
     css::uno::Reference<
@@ -94,18 +88,11 @@ private:
     class LoadedFactoryContainer;
     std::unique_ptr<LoadedFactoryContainer> mpLoadedFactories;
 
+    /// @throws std::exception
     ModuleController (
-        const css::uno::Reference<css::uno::XComponentContext>& rxContext)
-        throw (std::exception);
+        const css::uno::Reference<css::uno::XComponentContext>& rxContext);
     ModuleController (const ModuleController&) = delete;
-    virtual ~ModuleController() throw();
-
-    /** Load a list of URL to service mappings from the
-        /org.openoffice.Office.Impress/MultiPaneGUI/Framework/ResourceFactories
-        configuration entry.  The mappings are stored in the
-        mpResourceToFactoryMap member.
-    */
-    void LoadFactories (const css::uno::Reference<css::uno::XComponentContext>& rxContext);
+    virtual ~ModuleController() throw() override;
 
     /** Called for every entry in the ResourceFactories configuration entry.
     */

@@ -48,7 +48,7 @@ public:
 
 public:
     SdrMeasureObjGeoData();
-    virtual ~SdrMeasureObjGeoData();
+    virtual ~SdrMeasureObjGeoData() override;
 };
 
 
@@ -87,11 +87,11 @@ protected:
 public:
     SdrMeasureObj();
     SdrMeasureObj(const Point& rPt1, const Point& rPt2);
-    virtual ~SdrMeasureObj();
+    virtual ~SdrMeasureObj() override;
 
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
-    virtual void TakeUnrotatedSnapRect(Rectangle& rRect) const override;
+    virtual void TakeUnrotatedSnapRect(tools::Rectangle& rRect) const override;
     virtual SdrMeasureObj* Clone() const override;
 
     virtual OUString TakeObjNameSingul() const override;
@@ -135,10 +135,10 @@ public:
 
     virtual bool BegTextEdit(SdrOutliner& rOutl) override;
     virtual const Size& GetTextSize() const override;
-    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText = false,
-        Rectangle* pAnchorRect=nullptr, bool bLineWidth = true ) const override;
-    virtual void TakeTextAnchorRect(Rectangle& rAnchorRect) const override;
-    virtual void TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, Rectangle* pViewInit, Rectangle* pViewMin) const override;
+    virtual void TakeTextRect( SdrOutliner& rOutliner, tools::Rectangle& rTextRect, bool bNoEditText,
+        tools::Rectangle* pAnchorRect, bool bLineWidth = true ) const override;
+    virtual void TakeTextAnchorRect(tools::Rectangle& rAnchorRect) const override;
+    virtual void TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, tools::Rectangle* pViewInit, tools::Rectangle* pViewMin) const override;
     virtual sal_uInt16 GetOutlinerViewAnchorMode() const override;
     virtual void NbcSetOutlinerParaObject(OutlinerParaObject* pTextObject) override;
     virtual OutlinerParaObject* GetOutlinerParaObject() const override;
@@ -178,8 +178,8 @@ public:
 //    Default=8mm
 // 3. The distance from the dimension line to the reference edge (= to the dimensioned object)
 // 4. dimension line below the reference edge (default=no))
-// 5. excess lenth of the auxiliary dimension lines beyond the reference edge (2x, default=0)
-// 6. excess lenth of the auxiliary dimension lines past the dimension line (default=2mm)
+// 5. excess length of the auxiliary dimension lines beyond the reference edge (2x, default=0)
+// 6. excess length of the auxiliary dimension lines past the dimension line (default=2mm)
 // 7. distance between the auxiliary dimension line and the reference edge
 //
 // Dragging:                    Handle          Shift

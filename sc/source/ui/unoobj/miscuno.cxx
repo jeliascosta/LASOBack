@@ -17,7 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/supportsservice.hxx>
+#include <o3tl/any.hxx>
 #include <vcl/svapp.hxx>
 
 #include "miscuno.hxx"
@@ -45,14 +49,7 @@ bool ScUnoHelpFunctions::GetBoolProperty( const uno::Reference<beans::XPropertyS
     {
         try
         {
-            uno::Any aAny(xProp->getPropertyValue( rName ));
-            //! type conversion???
-            //  operator >>= shouldn't be used for bool (?)
-            if ( aAny.getValueTypeClass() == uno::TypeClass_BOOLEAN )
-            {
-                //! safe way to get bool value from any???
-                bRet = *static_cast<sal_Bool const *>(aAny.getValue());
-            }
+            xProp->getPropertyValue( rName ) >>= bRet;
         }
         catch(uno::Exception&)
         {
@@ -60,6 +57,24 @@ bool ScUnoHelpFunctions::GetBoolProperty( const uno::Reference<beans::XPropertyS
         }
     }
     return bRet;
+}
+
+sal_Int16 ScUnoHelpFunctions::GetShortProperty( const css::uno::Reference< css::beans::XPropertySet>& xProp,
+                                                const OUString& rName, sal_Int16 nDefault )
+{
+    sal_Int16 nRet = nDefault;
+    if ( xProp.is() )
+    {
+        try
+        {
+            xProp->getPropertyValue( rName ) >>= nRet;
+        }
+        catch(uno::Exception&)
+        {
+            // keep default
+        }
+    }
+    return nRet;
 }
 
 sal_Int32 ScUnoHelpFunctions::GetLongProperty( const uno::Reference<beans::XPropertySet>& xProp,
@@ -81,8 +96,8 @@ sal_Int32 ScUnoHelpFunctions::GetLongProperty( const uno::Reference<beans::XProp
     return nRet;
 }
 
-sal_Int32 ScUnoHelpFunctions::GetEnumProperty( const uno::Reference<beans::XPropertySet>& xProp,
-                                            const OUString& rName, long nDefault )
+sal_Int32 ScUnoHelpFunctions::GetEnumPropertyImpl( const uno::Reference<beans::XPropertySet>& xProp,
+                                            const OUString& rName, sal_Int32 nDefault )
 {
     sal_Int32 nRet = nDefault;
     if ( xProp.is() )
@@ -131,9 +146,8 @@ OUString ScUnoHelpFunctions::GetStringProperty(
 
 bool ScUnoHelpFunctions::GetBoolFromAny( const uno::Any& aAny )
 {
-    if ( aAny.getValueTypeClass() == uno::TypeClass_BOOLEAN )
-        return *static_cast<sal_Bool const *>(aAny.getValue());
-    return false;
+    auto b = o3tl::tryAccess<bool>(aAny);
+    return b && *b;
 }
 
 sal_Int16 ScUnoHelpFunctions::GetInt16FromAny( const uno::Any& aAny )
@@ -189,14 +203,13 @@ ScIndexEnumeration::~ScIndexEnumeration()
 
 // XEnumeration
 
-sal_Bool SAL_CALL ScIndexEnumeration::hasMoreElements() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScIndexEnumeration::hasMoreElements()
 {
     SolarMutexGuard aGuard;
     return ( nPos < xIndex->getCount() );
 }
 
-uno::Any SAL_CALL ScIndexEnumeration::nextElement() throw(container::NoSuchElementException,
-                                        lang::WrappedTargetException, uno::RuntimeException, std::exception)
+uno::Any SAL_CALL ScIndexEnumeration::nextElement()
 {
     SolarMutexGuard aGuard;
     uno::Any aReturn;
@@ -212,20 +225,17 @@ uno::Any SAL_CALL ScIndexEnumeration::nextElement() throw(container::NoSuchEleme
 }
 
 OUString SAL_CALL ScIndexEnumeration::getImplementationName()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return OUString("ScIndexEnumeration");
 }
 
 sal_Bool SAL_CALL ScIndexEnumeration::supportsService( const OUString& ServiceName )
-    throw(css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence< OUString >
     SAL_CALL ScIndexEnumeration::getSupportedServiceNames()
-    throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence<OUString> aRet { sServiceName };
     return aRet;
@@ -247,15 +257,12 @@ ScNameToIndexAccess::~ScNameToIndexAccess()
 
 // XIndexAccess
 
-sal_Int32 SAL_CALL ScNameToIndexAccess::getCount(  ) throw(css::uno::RuntimeException, std::exception)
+sal_Int32 SAL_CALL ScNameToIndexAccess::getCount(  )
 {
     return aNames.getLength();
 }
 
 css::uno::Any SAL_CALL ScNameToIndexAccess::getByIndex( sal_Int32 nIndex )
-                                throw(css::lang::IndexOutOfBoundsException,
-                                        css::lang::WrappedTargetException,
-                                        css::uno::RuntimeException, std::exception)
 {
     if ( xNameAccess.is() && nIndex >= 0 && nIndex < aNames.getLength() )
         return xNameAccess->getByName( aNames.getConstArray()[nIndex] );
@@ -266,7 +273,6 @@ css::uno::Any SAL_CALL ScNameToIndexAccess::getByIndex( sal_Int32 nIndex )
 // XElementAccess
 
 css::uno::Type SAL_CALL ScNameToIndexAccess::getElementType(  )
-                                throw(css::uno::RuntimeException, std::exception)
 {
     if ( xNameAccess.is() )
         return xNameAccess->getElementType();
@@ -274,7 +280,7 @@ css::uno::Type SAL_CALL ScNameToIndexAccess::getElementType(  )
         return uno::Type();
 }
 
-sal_Bool SAL_CALL ScNameToIndexAccess::hasElements(  ) throw(css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScNameToIndexAccess::hasElements(  )
 {
     return getCount() > 0;
 }

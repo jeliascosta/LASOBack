@@ -51,7 +51,7 @@ LegendItemConverter::LegendItemConverter(
 {
     m_aConverters.push_back( new GraphicPropertyItemConverter(
                                  rPropertySet, rItemPool, rDrawModel, xNamedPropertyContainerFactory,
-                                 GraphicPropertyItemConverter::LINE_AND_FILL_PROPERTIES ));
+                                 GraphicObjectType::LineAndFillProperties ));
     m_aConverters.push_back( new CharacterPropertyItemConverter(
                                  rPropertySet, rItemPool, pRefSize,
                                  "ReferencePageSize" ));
@@ -59,7 +59,7 @@ LegendItemConverter::LegendItemConverter(
 
 LegendItemConverter::~LegendItemConverter()
 {
-    ::std::for_each( m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
+    std::for_each( m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
 }
 
 void LegendItemConverter::FillItemSet( SfxItemSet & rOutItemSet ) const
@@ -95,7 +95,6 @@ bool LegendItemConverter::GetItemProperty( tWhichIdType /*nWhichId*/, tPropertyN
 }
 
 bool LegendItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet& rInItemSet )
-    throw( uno::Exception )
 {
     bool bChanged = false;
 
@@ -111,7 +110,7 @@ bool LegendItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSe
                 if( ! (GetPropertySet()->getPropertyValue( "Show" ) >>= bWasShown) ||
                     ( bWasShown != bShow ))
                 {
-                    GetPropertySet()->setPropertyValue( "Show" , uno::makeAny( bShow ));
+                    GetPropertySet()->setPropertyValue( "Show" , uno::Any( bShow ));
                     bChanged = true;
                 }
             }
@@ -146,8 +145,8 @@ bool LegendItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSe
                     if( ! ( GetPropertySet()->getPropertyValue( "AnchorPosition" ) >>= eOldPos ) ||
                         ( eOldPos != eNewPos ))
                     {
-                        GetPropertySet()->setPropertyValue( "AnchorPosition" , uno::makeAny( eNewPos ));
-                        GetPropertySet()->setPropertyValue( "Expansion" , uno::makeAny( eExpansion ));
+                        GetPropertySet()->setPropertyValue( "AnchorPosition" , uno::Any( eNewPos ));
+                        GetPropertySet()->setPropertyValue( "Expansion" , uno::Any( eExpansion ));
                         GetPropertySet()->setPropertyValue( "RelativePosition" , uno::Any());
                         bChanged = true;
                     }
@@ -166,7 +165,6 @@ bool LegendItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSe
 
 void LegendItemConverter::FillSpecialItem(
     sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
-    throw( uno::Exception )
 {
     switch( nWhichId )
     {
@@ -181,7 +179,7 @@ void LegendItemConverter::FillSpecialItem(
         {
             chart2::LegendPosition eLegendPos( chart2::LegendPosition_LINE_END );
             GetPropertySet()->getPropertyValue( "AnchorPosition" ) >>= eLegendPos;
-            rOutItemSet.Put( SfxInt32Item(SCHATTR_LEGEND_POS, eLegendPos ) );
+            rOutItemSet.Put( SfxInt32Item(SCHATTR_LEGEND_POS, (sal_Int32)eLegendPos ) );
         }
         break;
    }

@@ -39,7 +39,12 @@
 #define UNO_NAME_GRAPHIC_FILTER "GraphicFilter"
 #define UNO_NAME_GRAPHIC_SIZE "GraphicSize"
 #define UNO_NAME_GRAPHIC_BITMAP "GraphicBitmap"
+#define UNO_NAME_BULLET_ID "BulletId"
+#define UNO_NAME_BULLET_CHAR "BulletChar"
+#define UNO_NAME_BULLET_REL_SIZE "BulletRelSize"
 #define UNO_NAME_BULLET_FONT "BulletFont"
+#define UNO_NAME_BULLET_FONT_NAME "BulletFontName"
+#define UNO_NAME_BULLET_COLOR "BulletColor"
 #define UNO_NAME_PARA_GRAPHIC_LOCATION "ParaBackGraphicLocation"
 #define UNO_NAME_HEADER_GRAPHIC_LOCATION "HeaderBackGraphicLocation"
 #define UNO_NAME_FOOTER_GRAPHIC_LOCATION "FooterBackGraphicLocation"
@@ -297,6 +302,7 @@
 #define UNO_NAME_ACTUAL_SIZE "ActualSize"
 #define UNO_NAME_SOURCE_NAME "SourceName"
 #define UNO_NAME_START_AT "StartAt"
+#define UNO_NAME_START_WITH "StartWith"
 #define UNO_NAME_STATISTIC_TYPE_ID "StatisticTypeId"
 #define UNO_NAME_SUB_TYPE "SubType"
 #define UNO_NAME_SURROUND "Surround"
@@ -306,6 +312,7 @@
 #define UNO_NAME_SURROUND_CONTOUR "SurroundContour"
 #define UNO_NAME_SURROUND_ANCHORONLY "SurroundAnchorOnly"
 #define UNO_NAME_TABLE_NAME "TableName"
+#define UNO_NAME_TABLE_TEMPLATE_NAME "TableTemplateName"
 #define UNO_NAME_TABSTOPS "ParaTabStops"
 #define UNO_NAME_TITLE "Title"
 #define UNO_NAME_TOP_MARGIN "TopMargin"
@@ -536,6 +543,7 @@
 #define UNO_NAME_REDLINE_AUTHOR "RedlineAuthor"
 #define UNO_NAME_REDLINE_DATE_TIME "RedlineDateTime"
 #define UNO_NAME_REDLINE_COMMENT "RedlineComment"
+#define UNO_NAME_REDLINE_DESCRIPTION "RedlineDescription"
 #define UNO_NAME_REDLINE_TYPE "RedlineType"
 #define UNO_NAME_REDLINE_SUCCESSOR_DATA "RedlineSuccessorData"
 #define UNO_NAME_REDLINE_IDENTIFIER "RedlineIdentifier"
@@ -581,7 +589,7 @@
 #define UNO_NAME_FRAME_WIDTH_ABSOLUTE "FrameWidthAbsolute"
 #define UNO_NAME_FRAME_WIDTH_PERCENT "FrameWidthPercent"
 
-//UUUU names for FillAttributes from SVX
+// names for FillAttributes from SVX
 #define UNO_NAME_SW_FILLBMP_LOGICAL_SIZE UNO_NAME_FILLBMP_LOGICAL_SIZE
 #define UNO_NAME_SW_FILLBMP_OFFSET_X UNO_NAME_FILLBMP_OFFSET_X
 #define UNO_NAME_SW_FILLBMP_OFFSET_Y UNO_NAME_FILLBMP_OFFSET_Y
@@ -842,6 +850,10 @@
 #define UNO_NAME_ROW_INTEROP_GRAB_BAG "RowInteropGrabBag"
 #define UNO_NAME_TABLE_INTEROP_GRAB_BAG "TableInteropGrabBag"
 
+#define UNO_NAME_TABLE_FIRST_ROW_END_COLUMN "FirstRowEndColumn"
+#define UNO_NAME_TABLE_FIRST_ROW_START_COLUMN "FirstRowStartColumn"
+#define UNO_NAME_TABLE_LAST_ROW_END_COLUMN "LastRowEndColumn"
+#define UNO_NAME_TABLE_LAST_ROW_START_COLUMN "LastRowStartColumn"
 #endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

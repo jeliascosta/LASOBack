@@ -39,10 +39,10 @@ private:
     static FILE *output, *output2, *output3, *outacc;//used for debugging
 public:
     AccComponentEventListener(css::accessibility::XAccessible* pAcc, AccObjectManagerAgent* Agent);
-    virtual ~AccComponentEventListener();
+    virtual ~AccComponentEventListener() override;
 
     // XAccessibleEventListener
-    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) throw (css::uno::RuntimeException) override;
+    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) override;
 
     //for value changed event
     virtual void HandleValueChangedEvent(

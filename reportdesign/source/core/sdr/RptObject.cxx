@@ -187,29 +187,30 @@ namespace
             {
                 sal_Int16 nTextAlign = 0;
                 lhs >>= nTextAlign;
+                style::ParagraphAdjust eAdjust;
                 switch(nTextAlign)
                 {
                     case awt::TextAlign::LEFT:
-                        nTextAlign = style::ParagraphAdjust_LEFT;
+                        eAdjust = style::ParagraphAdjust_LEFT;
                         break;
                     case awt::TextAlign::CENTER:
-                        nTextAlign = style::ParagraphAdjust_CENTER;
+                        eAdjust = style::ParagraphAdjust_CENTER;
                         break;
                     case awt::TextAlign::RIGHT:
-                        nTextAlign = style::ParagraphAdjust_RIGHT;
+                        eAdjust = style::ParagraphAdjust_RIGHT;
                         break;
                     default:
                         OSL_FAIL("Illegal text alignment value!");
                         break;
                 }
-                aRet <<= (style::ParagraphAdjust)nTextAlign;
+                aRet <<= eAdjust;
             }
             else
             {
                 sal_Int16 nTextAlign = 0;
                 sal_Int16 eParagraphAdjust = 0;
                 lhs >>= eParagraphAdjust;
-                switch(eParagraphAdjust)
+                switch((style::ParagraphAdjust)eParagraphAdjust)
                 {
                     case style::ParagraphAdjust_LEFT:
                     case style::ParagraphAdjust_BLOCK:
@@ -241,7 +242,7 @@ const TPropertyNamePair& getPropertyNameMap(sal_uInt16 _nObjectId)
                 static TPropertyNamePair s_aNameMap;
                 if ( s_aNameMap.empty() )
                 {
-                    std::shared_ptr<AnyConverter> aNoConverter(new AnyConverter());
+                    std::shared_ptr<AnyConverter> aNoConverter(new AnyConverter);
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLBACKGROUND,TPropertyConverter(PROPERTY_BACKGROUNDCOLOR,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLBORDER,TPropertyConverter(PROPERTY_BORDER,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLBORDERCOLOR,TPropertyConverter(PROPERTY_BORDERCOLOR,aNoConverter)));
@@ -254,7 +255,7 @@ const TPropertyNamePair& getPropertyNameMap(sal_uInt16 _nObjectId)
                 static TPropertyNamePair s_aNameMap;
                 if ( s_aNameMap.empty() )
                 {
-                    std::shared_ptr<AnyConverter> aNoConverter(new AnyConverter());
+                    std::shared_ptr<AnyConverter> aNoConverter(new AnyConverter);
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CHARCOLOR,TPropertyConverter(PROPERTY_TEXTCOLOR,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLBACKGROUND,TPropertyConverter(PROPERTY_BACKGROUNDCOLOR,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CHARUNDERLINECOLOR,TPropertyConverter(PROPERTY_TEXTLINECOLOR,aNoConverter)));
@@ -265,7 +266,7 @@ const TPropertyNamePair& getPropertyNameMap(sal_uInt16 _nObjectId)
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLBORDER,TPropertyConverter(PROPERTY_BORDER,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLBORDERCOLOR,TPropertyConverter(PROPERTY_BORDERCOLOR,aNoConverter)));
 
-                    std::shared_ptr<AnyConverter> aParaAdjust(new ParaAdjust());
+                    std::shared_ptr<AnyConverter> aParaAdjust(new ParaAdjust);
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_PARAADJUST,TPropertyConverter(PROPERTY_ALIGN,aParaAdjust)));
                 }
                 return s_aNameMap;
@@ -275,7 +276,7 @@ const TPropertyNamePair& getPropertyNameMap(sal_uInt16 _nObjectId)
                 static TPropertyNamePair s_aNameMap;
                 if ( s_aNameMap.empty() )
                 {
-                    std::shared_ptr<AnyConverter> aNoConverter(new AnyConverter());
+                    std::shared_ptr<AnyConverter> aNoConverter(new AnyConverter);
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CHARCOLOR,TPropertyConverter(PROPERTY_TEXTCOLOR,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLBACKGROUND,TPropertyConverter(PROPERTY_BACKGROUNDCOLOR,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CHARUNDERLINECOLOR,TPropertyConverter(PROPERTY_TEXTLINECOLOR,aNoConverter)));
@@ -285,7 +286,7 @@ const TPropertyNamePair& getPropertyNameMap(sal_uInt16 _nObjectId)
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLTEXTEMPHASISMARK,TPropertyConverter(PROPERTY_FONTEMPHASISMARK,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLBORDER,TPropertyConverter(PROPERTY_BORDER,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_CONTROLBORDERCOLOR,TPropertyConverter(PROPERTY_BORDERCOLOR,aNoConverter)));
-                    std::shared_ptr<AnyConverter> aParaAdjust(new ParaAdjust());
+                    std::shared_ptr<AnyConverter> aParaAdjust(new ParaAdjust);
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_PARAADJUST,TPropertyConverter(PROPERTY_ALIGN,aParaAdjust)));
                 }
                 return s_aNameMap;
@@ -296,7 +297,7 @@ const TPropertyNamePair& getPropertyNameMap(sal_uInt16 _nObjectId)
                 static TPropertyNamePair s_aNameMap;
                 if ( s_aNameMap.empty() )
                 {
-                    std::shared_ptr<AnyConverter> aNoConverter(new AnyConverter());
+                    std::shared_ptr<AnyConverter> aNoConverter(new AnyConverter);
                     s_aNameMap.insert(TPropertyNamePair::value_type(OUString("FillColor"),TPropertyConverter(PROPERTY_CONTROLBACKGROUND,aNoConverter)));
                     s_aNameMap.insert(TPropertyNamePair::value_type(PROPERTY_PARAADJUST,TPropertyConverter(PROPERTY_ALIGN,aNoConverter)));
                 }
@@ -387,7 +388,7 @@ void OObjectBase::EndListening(bool /*bRemoveListener*/)
     }
 }
 
-void OObjectBase::SetPropsFromRect(const Rectangle& _rRect)
+void OObjectBase::SetPropsFromRect(const tools::Rectangle& _rRect)
 {
     // set properties
     OReportPage* pPage = dynamic_cast<OReportPage*>(GetImplPage());
@@ -404,7 +405,7 @@ void OObjectBase::SetPropsFromRect(const Rectangle& _rRect)
     }
 }
 
-void OObjectBase::_propertyChange( const  beans::PropertyChangeEvent& /*evt*/ ) throw( uno::RuntimeException)
+void OObjectBase::_propertyChange( const  beans::PropertyChangeEvent& /*evt*/ )
 {
 }
 
@@ -485,9 +486,9 @@ sal_uInt16 OCustomShape::GetObjIdentifier() const
     return sal_uInt16(OBJ_CUSTOMSHAPE);
 }
 
-sal_uInt32 OCustomShape::GetObjInventor() const
+SdrInventor OCustomShape::GetObjInventor() const
 {
-    return ReportInventor;
+    return SdrInventor::ReportDesign;
 }
 
 SdrPage* OCustomShape::GetImplPage() const
@@ -505,8 +506,8 @@ void OCustomShape::NbcMove( const Size& rSize )
         {
             OReportModel* pRptModel = static_cast<OReportModel*>(GetModel());
             OXUndoEnvironment::OUndoEnvLock aLock(pRptModel->GetUndoEnv());
-            m_xReportComponent->setPositionX(m_xReportComponent->getPositionX() + rSize.A());
-            m_xReportComponent->setPositionY(m_xReportComponent->getPositionY() + rSize.B());
+            m_xReportComponent->setPositionX(m_xReportComponent->getPositionX() + rSize.Width());
+            m_xReportComponent->setPositionY(m_xReportComponent->getPositionY() + rSize.Height());
         }
 
         // set geometry properties
@@ -525,7 +526,7 @@ void OCustomShape::NbcResize(const Point& rRef, const Fraction& xFract, const Fr
     SetPropsFromRect(GetSnapRect());
 }
 
-void OCustomShape::NbcSetLogicRect(const Rectangle& rRect)
+void OCustomShape::NbcSetLogicRect(const tools::Rectangle& rRect)
 {
     SdrObjCustomShape::NbcSetLogicRect(rRect);
     SetPropsFromRect(rRect);
@@ -645,9 +646,9 @@ sal_uInt16 OUnoObject::GetObjIdentifier() const
     return sal_uInt16(m_nObjectType);
 }
 
-sal_uInt32 OUnoObject::GetObjInventor() const
+SdrInventor OUnoObject::GetObjInventor() const
 {
-    return ReportInventor;
+    return SdrInventor::ReportDesign;
 }
 
 SdrPage* OUnoObject::GetImplPage() const
@@ -677,12 +678,12 @@ void OUnoObject::NbcMove( const Size& rSize )
             OXUndoEnvironment::OUndoEnvLock aLock(pRptModel->GetUndoEnv());
 
             // LLA: why there exists getPositionX and getPositionY and NOT getPosition() which return a Point?
-            int nNewX = m_xReportComponent->getPositionX() + rSize.A();
+            int nNewX = m_xReportComponent->getPositionX() + rSize.Width();
             m_xReportComponent->setPositionX(nNewX);
-            int nNewY = m_xReportComponent->getPositionY() + rSize.B();
+            int nNewY = m_xReportComponent->getPositionY() + rSize.Height();
             if (nNewY < 0 && !bUndoMode)
             {
-                aUndoSize.B() = abs(nNewY);
+                aUndoSize.Height() = abs(nNewY);
                 bPositionFixed = true;
                 nNewY = 0;
             }
@@ -717,7 +718,7 @@ void OUnoObject::NbcResize(const Point& rRef, const Fraction& xFract, const Frac
     OObjectBase::StartListening();
 }
 
-void OUnoObject::NbcSetLogicRect(const Rectangle& rRect)
+void OUnoObject::NbcSetLogicRect(const tools::Rectangle& rRect)
 {
     SdrUnoObj::NbcSetLogicRect(rRect);
     // stop listening
@@ -789,7 +790,7 @@ OUString OUnoObject::GetDefaultName(const OUnoObject* _pObj)
 }
 
 
-void OUnoObject::_propertyChange( const  beans::PropertyChangeEvent& evt ) throw( uno::RuntimeException)
+void OUnoObject::_propertyChange( const  beans::PropertyChangeEvent& evt )
 {
     OObjectBase::_propertyChange(evt);
     if (isListening())
@@ -925,9 +926,9 @@ sal_uInt16 OOle2Obj::GetObjIdentifier() const
     return m_nType;
 }
 
-sal_uInt32 OOle2Obj::GetObjInventor() const
+SdrInventor OOle2Obj::GetObjInventor() const
 {
-    return ReportInventor;
+    return SdrInventor::ReportDesign;
 }
 
 SdrPage* OOle2Obj::GetImplPage() const
@@ -957,17 +958,17 @@ void OOle2Obj::NbcMove( const Size& rSize )
             OXUndoEnvironment::OUndoEnvLock aLock(pRptModel->GetUndoEnv());
 
             // LLA: why there exists getPositionX and getPositionY and NOT getPosition() which return a Point?
-            int nNewX = m_xReportComponent->getPositionX() + rSize.A();
+            int nNewX = m_xReportComponent->getPositionX() + rSize.Width();
             // can this hinder us to set components outside the area?
             // if (nNewX < 0)
             // {
             //     nNewX = 0;
             // }
             m_xReportComponent->setPositionX(nNewX);
-            int nNewY = m_xReportComponent->getPositionY() + rSize.B();
+            int nNewY = m_xReportComponent->getPositionY() + rSize.Height();
             if (nNewY < 0 && !bUndoMode)
             {
-                aUndoSize.B() = abs(nNewY);
+                aUndoSize.Height() = abs(nNewY);
                 bPositionFixed = true;
                 nNewY = 0;
             }
@@ -1002,7 +1003,7 @@ void OOle2Obj::NbcResize(const Point& rRef, const Fraction& xFract, const Fracti
     OObjectBase::StartListening();
 }
 
-void OOle2Obj::NbcSetLogicRect(const Rectangle& rRect)
+void OOle2Obj::NbcSetLogicRect(const tools::Rectangle& rRect)
 {
     SdrOle2Obj::NbcSetLogicRect(rRect);
     // stop listening

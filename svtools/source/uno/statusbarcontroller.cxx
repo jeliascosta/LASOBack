@@ -94,7 +94,6 @@ Reference< XURLTransformer > StatusbarController::getURLTransformer() const
 
 // XInterface
 Any SAL_CALL StatusbarController::queryInterface( const Type& rType )
-throw ( RuntimeException, std::exception )
 {
     Any a = ::cppu::queryInterface(
                 rType ,
@@ -122,7 +121,6 @@ void SAL_CALL StatusbarController::release() throw ()
 }
 
 void SAL_CALL StatusbarController::initialize( const Sequence< Any >& aArguments )
-throw ( Exception, RuntimeException, std::exception )
 {
     bool bInitialized( true );
 
@@ -171,7 +169,6 @@ throw ( Exception, RuntimeException, std::exception )
 }
 
 void SAL_CALL StatusbarController::update()
-throw ( RuntimeException, std::exception )
 {
     {
         SolarMutexGuard aSolarMutexGuard;
@@ -185,7 +182,6 @@ throw ( RuntimeException, std::exception )
 
 // XComponent
 void SAL_CALL StatusbarController::dispose()
-throw (css::uno::RuntimeException, std::exception)
 {
     Reference< XComponent > xThis( static_cast< OWeakObject* >(this), UNO_QUERY );
 
@@ -235,20 +231,17 @@ throw (css::uno::RuntimeException, std::exception)
 }
 
 void SAL_CALL StatusbarController::addEventListener( const Reference< XEventListener >& xListener )
-throw ( RuntimeException, std::exception )
 {
     m_aListenerContainer.addInterface( cppu::UnoType<XEventListener>::get(), xListener );
 }
 
 void SAL_CALL StatusbarController::removeEventListener( const Reference< XEventListener >& aListener )
-throw ( RuntimeException, std::exception )
 {
     m_aListenerContainer.removeInterface( cppu::UnoType<XEventListener>::get(), aListener );
 }
 
 // XEventListener
 void SAL_CALL StatusbarController::disposing( const EventObject& Source )
-throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 
@@ -279,18 +272,17 @@ throw ( RuntimeException, std::exception )
 
 // XStatusListener
 void SAL_CALL StatusbarController::statusChanged( const FeatureStateEvent& Event )
-throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 
     if ( m_bDisposed )
         return;
 
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow( m_xParentWindow );
-    if ( pWindow && pWindow->GetType() == WINDOW_STATUSBAR && m_nID != 0 )
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( m_xParentWindow );
+    if ( pWindow && pWindow->GetType() == WindowType::STATUSBAR && m_nID != 0 )
     {
         OUString   aStrValue;
-        StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow);
+        StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow.get());
 
         if ( Event.State >>= aStrValue )
             pStatusBar->SetItemText( m_nID, aStrValue );
@@ -302,21 +294,18 @@ throw ( RuntimeException, std::exception )
 // XStatusbarController
 sal_Bool SAL_CALL StatusbarController::mouseButtonDown(
     const css::awt::MouseEvent& )
-throw (css::uno::RuntimeException, std::exception)
 {
     return false;
 }
 
 sal_Bool SAL_CALL StatusbarController::mouseMove(
     const css::awt::MouseEvent& )
-throw (css::uno::RuntimeException, std::exception)
 {
     return false;
 }
 
 sal_Bool SAL_CALL StatusbarController::mouseButtonUp(
     const css::awt::MouseEvent& )
-throw (css::uno::RuntimeException, std::exception)
 {
     return false;
 }
@@ -326,7 +315,6 @@ void SAL_CALL StatusbarController::command(
     ::sal_Int32,
     sal_Bool,
     const css::uno::Any& )
-throw (css::uno::RuntimeException, std::exception)
 {
 }
 
@@ -334,16 +322,14 @@ void SAL_CALL StatusbarController::paint(
     const css::uno::Reference< css::awt::XGraphics >&,
     const css::awt::Rectangle&,
     ::sal_Int32 )
-throw (css::uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL StatusbarController::click( const css::awt::Point& )
-throw (css::uno::RuntimeException, std::exception)
 {
 }
 
-void SAL_CALL StatusbarController::doubleClick( const css::awt::Point& ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL StatusbarController::doubleClick( const css::awt::Point& )
 {
     SolarMutexGuard aSolarMutexGuard;
 
@@ -369,7 +355,7 @@ void StatusbarController::addStatusListener( const OUString& aCommandURL )
             return;
 
         // Check if we are already initialized. Implementation starts adding itself as status listener when
-        // intialize is called.
+        // initialize is called.
         if ( !m_bInitialized )
         {
             // Put into the unordered_map of status listener. Will be activated when initialized is called
@@ -378,7 +364,7 @@ void StatusbarController::addStatusListener( const OUString& aCommandURL )
         }
         else
         {
-            // Add status listener directly as intialize has already been called.
+            // Add status listener directly as initialize has already been called.
             Reference< XDispatchProvider > xDispatchProvider( m_xFrame, UNO_QUERY );
             if ( m_xContext.is() && xDispatchProvider.is() )
             {
@@ -504,9 +490,9 @@ void StatusbarController::bindListener()
     }
 }
 
-::Rectangle StatusbarController::getControlRect() const
+::tools::Rectangle StatusbarController::getControlRect() const
 {
-    ::Rectangle aRect;
+    ::tools::Rectangle aRect;
 
     {
         SolarMutexGuard aSolarMutexGuard;
@@ -517,7 +503,7 @@ void StatusbarController::bindListener()
         if ( m_xParentWindow.is() )
         {
             VclPtr< StatusBar > pStatusBar = dynamic_cast< StatusBar* >( VCLUnoHelper::GetWindow( m_xParentWindow ).get() );
-            if ( pStatusBar && pStatusBar->GetType() == WINDOW_STATUSBAR )
+            if ( pStatusBar && pStatusBar->GetType() == WindowType::STATUSBAR )
                 aRect = pStatusBar->GetItemRect( m_nID );
         }
     }

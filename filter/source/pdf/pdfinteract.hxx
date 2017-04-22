@@ -36,38 +36,31 @@ class PDFInteractionHandler : public cppu::WeakImplHelper < task::XInteractionHa
 {
 protected:
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw(RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(RuntimeException, std::exception) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()  throw(RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     // XIniteractionHandler
-    virtual void SAL_CALL handle( const Reference< task::XInteractionRequest >& ) throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL handle( const Reference< task::XInteractionRequest >& ) override;
 
     // XIniteractionHandler2
-    virtual sal_Bool SAL_CALL handleInteractionRequest( const Reference< task::XInteractionRequest >& ) throw(RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL handleInteractionRequest( const Reference< task::XInteractionRequest >& ) override;
 
 public:
 
                 PDFInteractionHandler();
-    virtual     ~PDFInteractionHandler();
+    virtual     ~PDFInteractionHandler() override;
 };
 
+/// @throws RuntimeException
+OUString PDFInteractionHandler_getImplementationName ();
 
-OUString PDFInteractionHandler_getImplementationName ()
-    throw ( RuntimeException );
+/// @throws RuntimeException
+Sequence< OUString > SAL_CALL PDFInteractionHandler_getSupportedServiceNames(  );
 
-
-bool SAL_CALL PDFInteractionHandler_supportsService( const OUString& ServiceName )
-    throw ( RuntimeException );
-
-
-Sequence< OUString > SAL_CALL PDFInteractionHandler_getSupportedServiceNames(  )
-    throw ( RuntimeException );
-
-
+/// @throws Exception
 Reference< XInterface >
-SAL_CALL PDFInteractionHandler_createInstance( const Reference< XMultiServiceFactory > & rSMgr)
-    throw ( Exception );
+SAL_CALL PDFInteractionHandler_createInstance( const Reference< XMultiServiceFactory > & rSMgr);
 
 #endif // INCLUDED_FILTER_SOURCE_PDF_PDFINTERACT_HXX
 

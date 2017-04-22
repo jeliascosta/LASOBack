@@ -113,7 +113,7 @@ void OAppBorderWindow::Resize()
     long nOutputHeight  = aOutputSize.Height();
     long nX = 0;
 
-    Size aFLSize = LogicToPixel( Size( 3, 8 ), MAP_APPFONT );
+    Size aFLSize = LogicToPixel( Size( 3, 8 ), MapUnit::MapAppFont );
     if ( m_pPanel )
     {
         OApplicationSwapWindow* pSwap = getPanel();
@@ -122,7 +122,7 @@ void OAppBorderWindow::Resize()
             if ( pSwap->GetEntryCount() != 0 )
                 nX = pSwap->GetBoundingBox( pSwap->GetEntry(0) ).GetWidth() + aFLSize.Height();
         }
-        nX = ::std::max(m_pPanel->GetWidthPixel() ,nX);
+        nX = std::max(m_pPanel->GetWidthPixel() ,nX);
         m_pPanel->SetPosSizePixel(Point(0,0),Size(nX,nOutputHeight));
     }
 
@@ -240,14 +240,14 @@ void OApplicationView::DataChanged( const DataChangedEvent& rDCEvt )
     }
 }
 
-void OApplicationView::resizeDocumentView(Rectangle& _rPlayground)
+void OApplicationView::resizeDocumentView(tools::Rectangle& _rPlayground)
 {
     if ( m_pWin && !_rPlayground.IsEmpty() )
     {
-        Size aFLSize = LogicToPixel( Size( 3, 3 ), MAP_APPFONT );
-        _rPlayground.Move( aFLSize.A(),aFLSize.B() );
+        Size aFLSize = LogicToPixel( Size( 3, 3 ), MapUnit::MapAppFont );
+        _rPlayground.Move( aFLSize.Width(),aFLSize.Height() );
         Size aOldSize = _rPlayground.GetSize();
-        _rPlayground.SetSize( Size(aOldSize.A() - 2*aFLSize.A(), aOldSize.B() - 2*aFLSize.B()) );
+        _rPlayground.SetSize( Size(aOldSize.Width() - 2*aFLSize.Width(), aOldSize.Height() - 2*aFLSize.Height()) );
 
         m_pWin->SetPosSizePixel(_rPlayground.TopLeft() , _rPlayground.GetSize() );
     }
@@ -401,7 +401,7 @@ sal_Int32 OApplicationView::getElementCount()
     return getDetailView()->getElementCount();
 }
 
-void OApplicationView::getSelectionElementNames( ::std::vector< OUString>& _rNames ) const
+void OApplicationView::getSelectionElementNames( std::vector< OUString>& _rNames ) const
 {
     OSL_ENSURE(m_pWin && getDetailView(),"Detail view is NULL! -> GPF");
     getDetailView()->getSelectionElementNames( _rNames );

@@ -66,7 +66,7 @@ void Test::testCopyPasteSkipEmptyConditionalFormatting()
     // Create undo document.
     ScDocument* pUndoDoc = new ScDocument(SCDOCMODE_UNDO);
     pUndoDoc->InitUndo(m_pDoc, 0, 0);
-    m_pDoc->CopyToDocument(aDestRange, InsertDeleteFlags::CONTENTS, false, pUndoDoc, &aMark);
+    m_pDoc->CopyToDocument(aDestRange, InsertDeleteFlags::CONTENTS, false, *pUndoDoc, &aMark);
 
     // Paste clipboard content onto A1:A5 but skip empty cells.
     bool bSkipEmpty = true;
@@ -317,7 +317,7 @@ void Test::testCondCopyPasteSingleCell()
     copyToClip(m_pDoc, ScRange(0,0,0,0,0,0), &aClipDoc);
 
     ScRange aTargetRange(4,4,0,4,4,0);
-    pasteFromClip(m_pDoc, aTargetRange, &aClipDoc);
+    pasteOneCellFromClip(m_pDoc, aTargetRange, &aClipDoc);
 
     ScConditionalFormat* pPastedFormat = m_pDoc->GetCondFormat(4,4,0);
     CPPUNIT_ASSERT(pPastedFormat);
@@ -349,28 +349,95 @@ void Test::testCondCopyPasteSingleCellToRange()
 
     ScDocument aClipDoc(SCDOCMODE_CLIP);
     copyToClip(m_pDoc, ScRange(0,0,0,0,0,0), &aClipDoc);
-
-    ScRange aTargetRange(4,4,0,4,8,0);
-    pasteFromClip(m_pDoc, aTargetRange, &aClipDoc);
+    ScRange aTargetRange(4,4,0,5,8,0);
+    pasteOneCellFromClip(m_pDoc, aTargetRange, &aClipDoc);
 
     std::set<sal_uLong> aCondFormatIndices;
     for(SCROW nRow = 4; nRow <= 8; ++nRow)
     {
-        ScConditionalFormat* pPastedFormat = m_pDoc->GetCondFormat(4, nRow, 0);
-        CPPUNIT_ASSERT(pPastedFormat);
+        for (SCCOL nCol = 4; nCol <= 5; ++nCol)
+        {
+            ScConditionalFormat* pPastedFormat = m_pDoc->GetCondFormat(nCol, nRow, 0);
+            CPPUNIT_ASSERT(pPastedFormat);
 
-        CPPUNIT_ASSERT_EQUAL(ScRangeList(ScRange(4, nRow, 0)), pPastedFormat->GetRange());
-        sal_uLong nPastedKey = pPastedFormat->GetKey();
-        CPPUNIT_ASSERT( nIndex != nPastedKey);
-        const SfxPoolItem* pItem = m_pDoc->GetAttr( 4, nRow, 0, ATTR_CONDITIONAL );
-        const ScCondFormatItem* pCondFormatItem = static_cast<const ScCondFormatItem*>(pItem);
+            CPPUNIT_ASSERT_EQUAL(ScRangeList(ScRange(nCol, nRow, 0)), pPastedFormat->GetRange());
+            sal_uLong nPastedKey = pPastedFormat->GetKey();
+            CPPUNIT_ASSERT( nIndex != nPastedKey);
+            const SfxPoolItem* pItem = m_pDoc->GetAttr( nCol, nRow, 0, ATTR_CONDITIONAL );
+            const ScCondFormatItem* pCondFormatItem = static_cast<const ScCondFormatItem*>(pItem);
 
-        CPPUNIT_ASSERT(pCondFormatItem);
-        CPPUNIT_ASSERT_EQUAL(size_t(1), pCondFormatItem->GetCondFormatData().size());
-        CPPUNIT_ASSERT( nIndex != pCondFormatItem->GetCondFormatData().at(0) );
-        auto itr = aCondFormatIndices.find(nPastedKey);
-        CPPUNIT_ASSERT(itr == aCondFormatIndices.end());
-        aCondFormatIndices.insert(nPastedKey);
+            CPPUNIT_ASSERT(pCondFormatItem);
+            CPPUNIT_ASSERT_EQUAL(size_t(1), pCondFormatItem->GetCondFormatData().size());
+            CPPUNIT_ASSERT( nIndex != pCondFormatItem->GetCondFormatData().at(0) );
+            auto itr = aCondFormatIndices.find(nPastedKey);
+            CPPUNIT_ASSERT(bool(itr == aCondFormatIndices.end()));
+            aCondFormatIndices.insert(nPastedKey);
+        }
+    }
+
+    m_pDoc->DeleteTab(0);
+}
+
+void Test::testCondCopyPasteSingleRowToRange()
+{
+    m_pDoc->InsertTab(0, "Test");
+
+    ScConditionalFormat* pFormat = new ScConditionalFormat(1, m_pDoc);
+    ScRange aCondFormatRange(0,0,0,0,0,0);
+    ScRangeList aRangeList(aCondFormatRange);
+    pFormat->SetRange(aRangeList);
+
+    ScCondFormatEntry* pEntry = new ScCondFormatEntry(SC_COND_DIRECT,"=B2","",m_pDoc,ScAddress(0,0,0),ScGlobal::GetRscString(STR_STYLENAME_RESULT));
+    pFormat->AddEntry(pEntry);
+    m_pDoc->AddCondFormat(pFormat, 0);
+
+    ScDocument aClipDoc(SCDOCMODE_CLIP);
+    copyToClip(m_pDoc, ScRange(0,0,0,MAXCOL,0,0), &aClipDoc);
+    ScRange aTargetRange(0,4,0,MAXCOL,4,0);
+    pasteOneCellFromClip(m_pDoc, aTargetRange, &aClipDoc);
+
+    std::set<sal_uLong> aCondFormatIndices;
+
+    ScConditionalFormat* pNewFormat = m_pDoc->GetCondFormat(0, 4, 0);
+    CPPUNIT_ASSERT(pNewFormat);
+    CPPUNIT_ASSERT(pNewFormat->GetKey() != pFormat->GetKey());
+
+    for (SCCOL nCol = 1; nCol <= MAXCOL; ++nCol)
+    {
+        ScConditionalFormat* pNewFormat2 = m_pDoc->GetCondFormat(nCol, 4, 0);
+        CPPUNIT_ASSERT(!pNewFormat2);
+    }
+
+    m_pDoc->DeleteTab(0);
+}
+
+void Test::testCondCopyPasteSingleRowToRange2()
+{
+    m_pDoc->InsertTab(0, "Test");
+
+    ScConditionalFormat* pFormat = new ScConditionalFormat(1, m_pDoc);
+    ScRange aCondFormatRange(0,0,0,0,0,0);
+    ScRangeList aRangeList(aCondFormatRange);
+    pFormat->SetRange(aRangeList);
+
+    ScCondFormatEntry* pEntry = new ScCondFormatEntry(SC_COND_DIRECT,"=B2","",m_pDoc,ScAddress(0,0,0),ScGlobal::GetRscString(STR_STYLENAME_RESULT));
+    pFormat->AddEntry(pEntry);
+    m_pDoc->AddCondFormat(pFormat, 0);
+
+    ScDocument aClipDoc(SCDOCMODE_CLIP);
+    copyToClip(m_pDoc, ScRange(0,0,0,3,0,0), &aClipDoc);
+    ScRange aTargetRange(0,4,0,MAXCOL,4,0);
+    pasteOneCellFromClip(m_pDoc, aTargetRange, &aClipDoc);
+
+    std::set<sal_uLong> aCondFormatIndices;
+
+    for (SCCOL nCol = 0; nCol <= MAXCOL; ++nCol)
+    {
+        ScConditionalFormat* pNewFormat = m_pDoc->GetCondFormat(nCol, 4, 0);
+        if (nCol % 4 == 0)
+            CPPUNIT_ASSERT(pNewFormat);
+        else
+            CPPUNIT_ASSERT(!pNewFormat);
     }
 
     m_pDoc->DeleteTab(0);
@@ -870,6 +937,87 @@ void Test::testCondFormatUpdateReference()
     }
 
     m_pDoc->DeleteTab(1);
+    m_pDoc->DeleteTab(0);
+}
+
+void Test::testCondFormatUpdateReferenceDelRow()
+{
+    m_pDoc->InsertTab(0, "test");
+
+    ScConditionEntry* pEntry = new ScConditionEntry(SC_COND_EQUAL, "B6", "", m_pDoc, ScAddress(0, 5, 0), "", "", formula::FormulaGrammar::GRAM_DEFAULT, formula::FormulaGrammar::GRAM_DEFAULT);
+
+    ScConditionalFormat* pFormat = new ScConditionalFormat(0, m_pDoc);
+    pFormat->SetRange(ScRange(0, 5, 0, 0, 5, 0));
+    m_pDoc->AddCondFormat(pFormat, 0);
+
+    pFormat->AddEntry(pEntry);
+
+    m_pDoc->DeleteRow(0, 0, MAXCOL, 0, 4, 1);
+
+    OUString aStr = pEntry->GetExpression(ScAddress(0, 4, 0), 0);
+    CPPUNIT_ASSERT_EQUAL(OUString("B5"), aStr);
+
+    m_pDoc->DeleteTab(0);
+}
+
+void Test::testCondFormatUpdateReferenceInsRow()
+{
+    m_pDoc->InsertTab(0, "test");
+
+    ScConditionEntry* pEntry = new ScConditionEntry(SC_COND_EQUAL, "B6", "", m_pDoc, ScAddress(0, 5, 0), "", "", formula::FormulaGrammar::GRAM_DEFAULT, formula::FormulaGrammar::GRAM_DEFAULT);
+
+    ScConditionalFormat* pFormat = new ScConditionalFormat(0, m_pDoc);
+    pFormat->SetRange(ScRange(0, 5, 0, 0, 5, 0));
+    m_pDoc->AddCondFormat(pFormat, 0);
+
+    pFormat->AddEntry(pEntry);
+
+    m_pDoc->InsertRow(0, 0, MAXCOL, 0, 4, 1);
+
+    OUString aStr = pEntry->GetExpression(ScAddress(0, 6, 0), 0);
+    CPPUNIT_ASSERT_EQUAL(OUString("B7"), aStr);
+
+    m_pDoc->DeleteTab(0);
+}
+
+void Test::testCondFormatUndoList()
+{
+    m_pDoc->InsertTab(0, "test");
+
+    ScConditionEntry* pEntry = new ScConditionEntry(SC_COND_EQUAL, "B6", "", m_pDoc, ScAddress(0, 5, 0), "", "", formula::FormulaGrammar::GRAM_DEFAULT, formula::FormulaGrammar::GRAM_DEFAULT);
+
+    ScConditionalFormat* pFormat = new ScConditionalFormat(0, m_pDoc);
+    pFormat->AddEntry(pEntry);
+    pFormat->SetRange(ScRange(0, 0, 0, 0, 5, 0));
+    m_pDoc->AddCondFormat(pFormat, 0);
+    m_pDoc->AddCondFormatData(pFormat->GetRange(), 0, pFormat->GetKey());
+
+    ScDocFunc& rFunc = getDocShell().GetDocFunc();
+
+    CPPUNIT_ASSERT_EQUAL(size_t(1), m_pDoc->GetCondFormList(0)->size());
+    for (SCROW nRow = 0; nRow <= 5; ++nRow)
+        CPPUNIT_ASSERT(m_pDoc->GetCondFormat(0, nRow, 0));
+
+    ScConditionalFormatList* pNewList = new ScConditionalFormatList();
+
+    rFunc.SetConditionalFormatList(pNewList, 0);
+
+    CPPUNIT_ASSERT_EQUAL(size_t(0), m_pDoc->GetCondFormList(0)->size());
+    for (SCROW nRow = 0; nRow <= 5; ++nRow)
+        CPPUNIT_ASSERT(!m_pDoc->GetCondFormat(0, nRow, 0));
+
+    m_pDoc->GetUndoManager()->Undo();
+
+    CPPUNIT_ASSERT_EQUAL(size_t(1), m_pDoc->GetCondFormList(0)->size());
+    for (SCROW nRow = 0; nRow <= 5; ++nRow)
+        CPPUNIT_ASSERT(m_pDoc->GetCondFormat(0, nRow, 0));
+
+    m_pDoc->GetUndoManager()->Redo();
+
+    CPPUNIT_ASSERT_EQUAL(size_t(0), m_pDoc->GetCondFormList(0)->size());
+    for (SCROW nRow = 0; nRow <= 5; ++nRow)
+        CPPUNIT_ASSERT(!m_pDoc->GetCondFormat(0, nRow, 0));
+
     m_pDoc->DeleteTab(0);
 }
 

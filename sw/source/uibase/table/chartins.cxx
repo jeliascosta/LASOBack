@@ -49,18 +49,14 @@
 #include <cppuhelper/component_context.hxx>
 #include <comphelper/processfactory.hxx>
 #include <com/sun/star/chart2/data/XDataProvider.hpp>
-#include <com/sun/star/chart2/data/XDataReceiver.hpp>
-#include <com/sun/star/chart/ChartDataRowSource.hpp>
-#include <com/sun/star/frame/XComponentLoader.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/ui/dialogs/XExecutableDialog.hpp>
 #include <com/sun/star/ui/dialogs/ExecutableDialogResults.hpp>
-#include <com/sun/star/util/XNumberFormatsSupplier.hpp>
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 
-Point SwGetChartDialogPos( const vcl::Window *pParentWin, const Size& rDialogSize, const Rectangle& rLogicChart )
+Point SwGetChartDialogPos( const vcl::Window *pParentWin, const Size& rDialogSize, const tools::Rectangle& rLogicChart )
 {
     // positioning code according to spec; similar to Calc fuins2.cxx
     Point aRet;
@@ -68,12 +64,12 @@ Point SwGetChartDialogPos( const vcl::Window *pParentWin, const Size& rDialogSiz
     OSL_ENSURE( pParentWin, "Window not found" );
     if (pParentWin)
     {
-        Rectangle aObjPixel = pParentWin->LogicToPixel( rLogicChart, pParentWin->GetMapMode() );
-        Rectangle aObjAbs( pParentWin->OutputToAbsoluteScreenPixel( aObjPixel.TopLeft() ),
+        tools::Rectangle aObjPixel = pParentWin->LogicToPixel( rLogicChart, pParentWin->GetMapMode() );
+        tools::Rectangle aObjAbs( pParentWin->OutputToAbsoluteScreenPixel( aObjPixel.TopLeft() ),
                            pParentWin->OutputToAbsoluteScreenPixel( aObjPixel.BottomRight() ) );
 
-        Rectangle aDesktop = pParentWin->GetDesktopRectPixel();
-        Size aSpace = pParentWin->LogicToPixel( Size( 8, 12 ), MAP_APPFONT );
+        tools::Rectangle aDesktop = pParentWin->GetDesktopRectPixel();
+        Size aSpace = pParentWin->LogicToPixel( Size( 8, 12 ), MapUnit::MapAppFont );
 
         bool bLayoutRTL = ::GetActiveView()->GetWrtShell().IsTableRightToLeft();
         bool bCenterHor = false;
@@ -186,12 +182,12 @@ void SwInsertChart(vcl::Window* pParent, SfxBindings* pBindings )
                 uno::Any* pArray = aSeq.getArray();
                 beans::PropertyValue aParam1;
                 aParam1.Name = "ParentWindow";
-                aParam1.Value <<= uno::makeAny(xDialogParentWindow);
+                aParam1.Value <<= xDialogParentWindow;
                 beans::PropertyValue aParam2;
                 aParam2.Name = "ChartModel";
-                aParam2.Value <<= uno::makeAny(xChartModel);
-                pArray[0] <<= uno::makeAny(aParam1);
-                pArray[1] <<= uno::makeAny(aParam2);
+                aParam2.Value <<= xChartModel;
+                pArray[0] <<= aParam1;
+                pArray[1] <<= aParam2;
                 xInit->initialize( aSeq );
 
                 // try to set the dialog's position so it doesn't hide the chart
@@ -212,7 +208,7 @@ void SwInsertChart(vcl::Window* pParent, SfxBindings* pBindings )
                                 SwRect aSwRect;
                                 if (pFlyFrameFormat)
                                     aSwRect = pFlyFrameFormat->GetAnchoredObj()->GetObjRectWithSpaces();
-                                Rectangle aRect( aSwRect.SVRect() );
+                                tools::Rectangle aRect( aSwRect.SVRect() );
                                 Point aDialogPos = SwGetChartDialogPos( &rWrtShell.GetView().GetEditWin(), aDialogSize, aRect );
                                 xDialogProps->setPropertyValue("Position",
                                     uno::makeAny( awt::Point(aDialogPos.getX(),aDialogPos.getY()) ) );

@@ -44,7 +44,7 @@ SvxHyperlinkMailTp::SvxHyperlinkMailTp ( vcl::Window *pParent, IconChoiceDialog*
     get(m_pCbbReceiver, "receiver");
     m_pCbbReceiver->SetSmartProtocol(INetProtocol::Mailto);
     get(m_pBtAdrBook, "adressbook");
-    BitmapEx aBitmap = Image(CUI_RES(RID_SVXBMP_ADRESSBOOK)).GetBitmapEx();
+    BitmapEx aBitmap(CUI_RES(RID_SVXBMP_ADRESSBOOK));
     aBitmap.Scale(GetDPIScaleFactor(),GetDPIScaleFactor(),BmpScaleFlag::BestQuality );
     m_pBtAdrBook->SetModeImage(Image(aBitmap));
     get(m_pFtSubject, "subject_label");
@@ -155,14 +155,13 @@ OUString SvxHyperlinkMailTp::CreateAbsoluteURL() const
     {
         if ( !m_pEdSubject->GetText().isEmpty() )
         {
-            OUString aQuery("subject=");
-            aQuery += m_pEdSubject->GetText();
+            OUString aQuery = "subject=" + m_pEdSubject->GetText();
             aURL.SetParam(aQuery);
         }
     }
 
     if ( aURL.GetProtocol() != INetProtocol::NotValid )
-        return aURL.GetMainURL( INetURLObject::DECODE_WITH_CHARSET );
+        return aURL.GetMainURL( INetURLObject::DecodeMechanism::WithCharset );
     else //#105788# always create a URL even if it is not valid
         return aStrURL;
 }
@@ -229,7 +228,7 @@ void SvxHyperlinkMailTp::RemoveImproperProtocol(const OUString& aProperScheme)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHyperlinkMailTp, ModifiedReceiverHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxHyperlinkMailTp, ModifiedReceiverHdl_Impl, Edit&, void)
 {
     OUString aScheme = GetSchemeFromURL( m_pCbbReceiver->GetText() );
     if(!aScheme.isEmpty())
@@ -242,7 +241,7 @@ IMPL_LINK_NOARG_TYPED(SvxHyperlinkMailTp, ModifiedReceiverHdl_Impl, Edit&, void)
 |*
 |************************************************************************/
 
-IMPL_STATIC_LINK_NOARG_TYPED(SvxHyperlinkMailTp, ClickAdrBookHdl_Impl, Button*, void)
+IMPL_STATIC_LINK_NOARG(SvxHyperlinkMailTp, ClickAdrBookHdl_Impl, Button*, void)
 {
     SfxViewFrame* pViewFrame = SfxViewFrame::Current();
     if( pViewFrame )

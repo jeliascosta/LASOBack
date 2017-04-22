@@ -25,6 +25,7 @@
 #include <sfx2/sidebar/ControllerItem.hxx>
 #include <sfx2/sidebar/SidebarController.hxx>
 #include <sfx2/sidebar/SidebarToolBox.hxx>
+#include <svx/colorbox.hxx>
 #include <svx/xgrad.hxx>
 #include <svx/itemwin.hxx>
 #include <svx/xfillit0.hxx>
@@ -52,9 +53,6 @@ class XFillHatchItem;
 class XFillBitmapItem;
 
 namespace svx { namespace sidebar {
-
-class PopupContainer;
-class AreaTransparencyGradientControl;
 
 class SVX_DLLPUBLIC AreaPropertyPanelBase
 :   public PanelLayout,
@@ -84,12 +82,12 @@ public:
     void SetGradient (const XGradient& rGradient);
     sal_Int32 GetSelectedTransparencyTypeIndex() const;
 
-    // constructor/destuctor
+    // constructor/destructor
     AreaPropertyPanelBase(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
-    virtual ~AreaPropertyPanelBase();
+    virtual ~AreaPropertyPanelBase() override;
 
     virtual void setFillTransparence(const XFillTransparenceItem& rItem) = 0;
     virtual void setFillFloatTransparence(const XFillFloatTransparenceItem& rItem) = 0;
@@ -99,13 +97,13 @@ public:
     virtual void setFillStyleAndHatch(const XFillStyleItem* pStyleItem, const XFillHatchItem& aHatchItem) = 0;
     virtual void setFillStyleAndBitmap(const XFillStyleItem* pStyleItem, const XFillBitmapItem& aHatchItem) = 0;
 
-    void updateFillTransparence(bool bDisabled, bool bDefaultOrSet, const SfxUInt16Item* pItem);
-    void updateFillFloatTransparence(bool bDisabled, bool bDefaultOrSet, const XFillFloatTransparenceItem* pItem);
-    void updateFillStyle(bool bDisabled, bool bDefaultOrSet, const XFillStyleItem* pItem);
-    void updateFillGradient(bool bDisabled, bool bDefaultOrSet, const XFillGradientItem* pItem);
-    void updateFillHatch(bool bDisabled, bool bDefaultOrSet, const XFillHatchItem* pItem);
-    void updateFillColor(bool bDefaultOrSet, const XFillColorItem* pItem);
-    void updateFillBitmap(bool BDisabled, bool bDefaultOrSet, const XFillBitmapItem* pItem);
+    void updateFillTransparence(bool bDisabled, bool bDefaultOrSet, const SfxPoolItem* pState);
+    void updateFillFloatTransparence(bool bDisabled, bool bDefaultOrSet, const SfxPoolItem* pState);
+    void updateFillStyle(bool bDisabled, bool bDefaultOrSet, const SfxPoolItem* pState);
+    void updateFillGradient(bool bDisabled, bool bDefaultOrSet, const SfxPoolItem* pState);
+    void updateFillHatch(bool bDisabled, bool bDefaultOrSet, const SfxPoolItem* pState);
+    void updateFillColor(bool bDefaultOrSet, const SfxPoolItem* pState);
+    void updateFillBitmap(bool BDisabled, bool bDefaultOrSet, const SfxPoolItem* pState);
 
 protected:
     sal_uInt16                                          meLastXFS;
@@ -113,6 +111,7 @@ protected:
     sal_Int32                                           mnLastPosGradient;
     sal_Int32                                           mnLastPosHatch;
     sal_Int32                                           mnLastPosBitmap;
+    sal_Int32                                           mnLastPosPattern;
     sal_uInt16                                          mnLastTransSolid;
 
     XGradient                                           maGradientLinear;
@@ -126,8 +125,8 @@ protected:
     VclPtr<FixedText>                                          mpColorTextFT;
     VclPtr<SvxFillTypeBox>                                     mpLbFillType;
     VclPtr<SvxFillAttrBox>                                     mpLbFillAttr;
-    VclPtr<ColorLB>                                            mpLbFillGradFrom;
-    VclPtr<ColorLB>                                            mpLbFillGradTo;
+    VclPtr<SvxColorListBox>                                    mpLbFillGradFrom;
+    VclPtr<SvxColorListBox>                                    mpLbFillGradTo;
     VclPtr<sfx2::sidebar::SidebarToolBox>                      mpToolBoxColor; // for new color picker
     VclPtr<FixedText>                                          mpTrspTextFT;
     VclPtr<ListBox>                                            mpLBTransType;
@@ -136,6 +135,7 @@ protected:
     VclPtr<ToolBox>                                            mpBTNGradient;
     VclPtr<MetricField>                                        mpMTRAngle;
     VclPtr<ListBox>                                            mpGradientStyle;
+    VclPtr<PushButton>                                         mpBmpImport;
 
     std::unique_ptr< XFillStyleItem >               mpStyleItem;
     std::unique_ptr< XFillColorItem >               mpColorItem;
@@ -150,27 +150,28 @@ protected:
     Image                                               maImgSquare;
     Image                                               maImgLinear;
 
-    AreaTransparencyGradientPopup maTrGrPopup;
+    VclPtr<AreaTransparencyGradientPopup>           mxTrGrPopup;
 
     std::unique_ptr< XFillFloatTransparenceItem >   mpFloatTransparenceItem;
     std::unique_ptr< SfxUInt16Item >                mpTransparanceItem;
 
-    css::uno::Reference<css::frame::XFrame>                 mxFrame;
-
-    DECL_LINK_TYPED(SelectFillTypeHdl, ListBox&, void );
-    DECL_LINK_TYPED(SelectFillAttrHdl, ListBox&, void );
-    DECL_LINK_TYPED(ChangeTrgrTypeHdl_Impl, ListBox&, void);
-    DECL_LINK_TYPED(ModifyTransparentHdl_Impl, Edit&, void);
-    DECL_LINK_TYPED(ModifyTransSliderHdl, Slider*, void);
+    DECL_LINK(SelectFillTypeHdl, ListBox&, void );
+    DECL_LINK(SelectFillAttrHdl, ListBox&, void );
+    DECL_LINK(SelectFillColorHdl, SvxColorListBox&, void);
+    DECL_LINK(ChangeGradientAngle, Edit&, void);
+    DECL_LINK(ChangeTrgrTypeHdl_Impl, ListBox&, void);
+    DECL_LINK(ModifyTransparentHdl_Impl, Edit&, void);
+    DECL_LINK(ModifyTransSliderHdl, Slider*, void);
+    DECL_LINK(ClickImportBitmapHdl, Button*, void);
 
     // for transparency gradient
-    VclPtr<PopupControl> CreateTransparencyGradientControl (PopupContainer* pParent);
-    DECL_LINK_TYPED( ClickTrGrHdl_Impl, ToolBox*, void );
+    DECL_LINK( ClickTrGrHdl_Impl, ToolBox*, void );
 
     void Initialize();
     void Update();
     void ImpUpdateTransparencies();
     void SetTransparency(sal_uInt16 nVal);
+    void SelectFillAttrHdl_Impl();
 };
 
 } } // end of namespace svx::sidebar

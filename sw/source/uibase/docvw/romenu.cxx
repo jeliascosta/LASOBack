@@ -53,8 +53,14 @@ using namespace ::sfx2;
 
 SwReadOnlyPopup::~SwReadOnlyPopup()
 {
+    disposeOnce();
+}
+
+void SwReadOnlyPopup::dispose()
+{
     delete pImageMap;
     delete pTargetURL;
+    PopupMenu::dispose();
 }
 
 void SwReadOnlyPopup::Check( sal_uInt16 nMID, sal_uInt16 nSID, SfxDispatcher &rDis )
@@ -91,7 +97,7 @@ SwReadOnlyPopup::SwReadOnlyPopup( const Point &rDPos, SwView &rV ) :
     rSh.IsURLGrfAtPos( rDocPos, &sURL, &sTargetFrameName, &sDescription );
     if ( sURL.isEmpty() )
     {
-        SwContentAtPos aContentAtPos( SwContentAtPos::SW_INETATTR );
+        SwContentAtPos aContentAtPos( IsAttrAtPos::InetAttr );
         if( rSh.GetContentAtPos( rDocPos, aContentAtPos))
         {
             const SwFormatINetFormat &rIItem = *static_cast<const SwFormatINetFormat*>(aContentAtPos.aFnd.pAttr);
@@ -180,10 +186,8 @@ SwReadOnlyPopup::SwReadOnlyPopup( const Point &rDPos, SwView &rV ) :
     else
         EnableItem( MN_READONLY_LOADGRAPHIC, false );
 
-    bool bReloadFrame = nullptr != rSh.GetView().GetViewFrame()->GetFrame().GetParentFrame();
-    EnableItem( MN_READONLY_RELOAD_FRAME,
-            bReloadFrame );
-    EnableItem( MN_READONLY_RELOAD, !bReloadFrame);
+    EnableItem( MN_READONLY_RELOAD_FRAME, false );
+    EnableItem( MN_READONLY_RELOAD);
 
     Check( MN_READONLY_EDITDOC,         SID_EDITDOC,        rDis );
     Check( MN_READONLY_SELECTION_MODE,  FN_READONLY_SELECTION_MODE,    rDis );
@@ -261,12 +265,13 @@ void SwReadOnlyPopup::Execute( vcl::Window* pWin, sal_uInt16 nId )
     TransferDataContainer* pClipCntnr = nullptr;
 
     sal_uInt16 nExecId = USHRT_MAX;
-    sal_uInt16 nFilter = USHRT_MAX;
+    bool bFilterSet = false;
+    LoadUrlFlags nFilter = LoadUrlFlags::NONE;
     switch( nId )
     {
         case SID_WIN_FULLSCREEN :           nExecId = SID_WIN_FULLSCREEN; break;
-        case MN_READONLY_OPENURL:           nFilter = URLLOAD_NOFILTER;   break;
-        case MN_READONLY_OPENURLNEW:        nFilter = URLLOAD_NEWVIEW;    break;
+        case MN_READONLY_OPENURL:           nFilter = LoadUrlFlags::NONE; bFilterSet = true; break;
+        case MN_READONLY_OPENURLNEW:        nFilter = LoadUrlFlags::NewView; bFilterSet = true; break;
         case MN_READONLY_COPY:              nExecId = SID_COPY;           break;
 
         case MN_READONLY_EDITDOC:           nExecId = SID_EDITDOC;        break;
@@ -323,7 +328,7 @@ void SwReadOnlyPopup::Execute( vcl::Window* pWin, sal_uInt16 nId )
     }
     if( USHRT_MAX != nExecId )
         rDis.GetBindings()->Execute( nExecId );
-    if( USHRT_MAX != nFilter )
+    if( bFilterSet )
         ::LoadURL(rSh, sURL, nFilter, sTargetFrameName);
 
     if( pClipCntnr )

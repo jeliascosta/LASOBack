@@ -24,23 +24,25 @@
 #include <svx/dlgctrl.hxx>
 #include <vcl/scrbar.hxx>
 
-#include <document.hxx>
-#include <node.hxx>
+#include "format.hxx"
 #include <memory>
+
+class SmDocShell;
+class SmNode;
 
 class SmElement
 {
-    SmNodePointer   mpNode;
+    std::unique_ptr<SmNode> mpNode;
     OUString        maText;
     OUString        maHelpText;
 public:
     Point mBoxLocation;
     Size  mBoxSize;
 
-    SmElement(SmNodePointer pNode, const OUString& aText, const OUString& aHelpText);
+    SmElement(std::unique_ptr<SmNode>&& pNode, const OUString& aText, const OUString& aHelpText);
     virtual ~SmElement();
 
-    const SmNodePointer& getNode();
+    const std::unique_ptr<SmNode>& getNode();
     const OUString& getText()
     {
         return maText;
@@ -70,6 +72,9 @@ public:
 
 class SmElementsControl : public Control
 {
+    friend class ElementSelectorUIObject;
+    friend class ElementUIObject;
+
     static const sal_uInt16 aUnaryBinaryOperatorsList[][2];
     static const sal_uInt16 aRelationsList[][2];
     static const sal_uInt16 aSetOperations[][2];
@@ -80,7 +85,7 @@ class SmElementsControl : public Control
     static const sal_uInt16 aFormats[][2];
     static const sal_uInt16 aOthers[][2];
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
     virtual void MouseButtonDown(const MouseEvent& rMEvt) override;
     virtual void MouseMove(const MouseEvent& rMEvt) override;
     virtual void RequestHelp(const HelpEvent& rHEvt) override;
@@ -100,8 +105,6 @@ class SmElementsControl : public Control
 
     void addElements(const sal_uInt16 aElementsArray[][2], sal_uInt16 size);
 
-    void addSeparator();
-
     void build();
 
     //if pContext is not NULL, then draw, otherwise
@@ -109,8 +112,8 @@ class SmElementsControl : public Control
     void LayoutOrPaintContents(vcl::RenderContext *pContext = nullptr);
 
 public:
-    SmElementsControl(vcl::Window *pParent);
-    virtual ~SmElementsControl();
+    explicit SmElementsControl(vcl::Window *pParent);
+    virtual ~SmElementsControl() override;
     virtual void dispose() override;
 
     void setElementSetId(sal_uInt16 aSetId);
@@ -119,10 +122,12 @@ public:
 
     Size GetOptimalSize() const override;
 
-    DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
+    DECL_LINK( ScrollHdl, ScrollBar*, void );
     void DoScroll(long nDelta);
 
     void SetSelectHdl(const Link<SmElement&,void>& rLink) { maSelectHdlLink = rLink; }
+
+    virtual FactoryFunction GetUITestFactory() const override;
 };
 
 class SmElementsDockingWindow : public SfxDockingWindow
@@ -135,18 +140,18 @@ class SmElementsDockingWindow : public SfxDockingWindow
     virtual void Resize() override;
     SmViewShell* GetView();
 
-    DECL_LINK_TYPED(SelectClickHandler, SmElement&, void);
-    DECL_LINK_TYPED(ElementSelectedHandle, ListBox&, void);
+    DECL_LINK(SelectClickHandler, SmElement&, void);
+    DECL_LINK(ElementSelectedHandle, ListBox&, void);
 
 public:
 
     SmElementsDockingWindow( SfxBindings* pBindings,
                              SfxChildWindow* pChildWindow,
                              vcl::Window* pParent );
-    virtual ~SmElementsDockingWindow();
+    virtual ~SmElementsDockingWindow() override;
     virtual void dispose() override;
 
-    virtual void EndDocking( const Rectangle& rReactangle, bool bFloatMode) override;
+    virtual void EndDocking( const tools::Rectangle& rReactangle, bool bFloatMode) override;
     virtual void ToggleFloatingMode() override;
 };
 
@@ -159,7 +164,7 @@ protected:
                                     sal_uInt16 nId,
                                     SfxBindings* pBindings,
                                     SfxChildWinInfo* pInfo );
-    virtual ~SmElementsDockingWindowWrapper();
+    virtual ~SmElementsDockingWindowWrapper() override;
 };
 
 #endif // INCLUDED_STARMATH_INC_ELEMENTSDOCKINGWINDOW_HXX

@@ -88,8 +88,9 @@ SmEditWindow::SmEditWindow( SmCmdBoxWindow &rMyCmdBoxWin ) :
     aModifyIdle         ("SmEditWindow ModifyIdle"),
     aCursorMoveIdle     ("SmEditWindow CursorMoveIdle")
 {
+    set_id("math_edit");
     SetHelpId(HID_SMA_COMMAND_WIN_EDIT);
-    SetMapMode(MAP_PIXEL);
+    SetMapMode(MapUnit::MapPixel);
 
     // Even RTL languages don't use RTL for math
     EnableRTL( false );
@@ -99,13 +100,13 @@ SmEditWindow::SmEditWindow( SmCmdBoxWindow &rMyCmdBoxWin ) :
     // compare DataChanged
     SetBackground( GetSettings().GetStyleSettings().GetWindowColor() );
 
-    aModifyIdle.SetIdleHdl(LINK(this, SmEditWindow, ModifyTimerHdl));
-    aModifyIdle.SetPriority(SchedulerPriority::LOWEST);
+    aModifyIdle.SetInvokeHandler(LINK(this, SmEditWindow, ModifyTimerHdl));
+    aModifyIdle.SetPriority(TaskPriority::LOWEST);
 
     if (!IsInlineEditEnabled())
     {
-        aCursorMoveIdle.SetIdleHdl(LINK(this, SmEditWindow, CursorMoveTimerHdl));
-        aCursorMoveIdle.SetPriority(SchedulerPriority::LOWEST);
+        aCursorMoveIdle.SetInvokeHandler(LINK(this, SmEditWindow, CursorMoveTimerHdl));
+        aCursorMoveIdle.SetPriority(TaskPriority::LOWEST);
     }
 
     // if not called explicitly the this edit window within the
@@ -130,7 +131,7 @@ void SmEditWindow::dispose()
     // available for those classes.
     if (mxAccessible.is())
     {
-        mxAccessible->ClearWin();    // make Accessible defunctional
+        mxAccessible->ClearWin();    // make Accessible nonfunctional
         mxAccessible.clear();
     }
 
@@ -149,6 +150,7 @@ void SmEditWindow::dispose()
     pVScrollBar.disposeAndClear();
     pScrollBox.disposeAndClear();
 
+    DropTargetHelper::dispose();
     vcl::Window::dispose();
 }
 
@@ -197,13 +199,6 @@ EditEngine * SmEditWindow::GetEditEngine()
     return pEditEng;
 }
 
-
-SfxItemPool * SmEditWindow::GetEditEngineItemPool()
-{
-    SmDocShell *pDoc = GetDoc();
-    return pDoc ? &pDoc->GetEditEngineItemPool() : nullptr;
-}
-
 void SmEditWindow::ApplyColorConfigValues( const svtools::ColorConfig &rColorCfg )
 {
     // Note: SetBackground still done in SmEditWindow::DataChanged
@@ -224,10 +219,10 @@ void SmEditWindow::DataChanged( const DataChangedEvent& )
     // the application font thus we use this one too
     SetPointFont(*this, aSettings.GetFieldFont() /*aSettings.GetAppFont()*/);
 
-    EditEngine  *pEditEngine = GetEditEngine();
-    SfxItemPool *pEditEngineItemPool = GetEditEngineItemPool();
+    EditEngine *pEditEngine = GetEditEngine();
+    SmDocShell *pDoc = GetDoc();
 
-    if (pEditEngine && pEditEngineItemPool)
+    if (pEditEngine && pDoc)
     {
         //!
         //! see also SmDocShell::GetEditEngine() !
@@ -235,7 +230,7 @@ void SmEditWindow::DataChanged( const DataChangedEvent& )
 
         pEditEngine->SetDefTab(sal_uInt16(GetTextWidth("XXXX")));
 
-        SetEditEngineDefaultFonts(*pEditEngineItemPool);
+        SetEditEngineDefaultFonts(pDoc->GetEditEngineItemPool(), pDoc->GetLinguOptions());
 
         // forces new settings to be used
         // unfortunately this resets the whole edit engine
@@ -249,13 +244,13 @@ void SmEditWindow::DataChanged( const DataChangedEvent& )
     Resize();
 }
 
-IMPL_LINK_NOARG_TYPED( SmEditWindow, ModifyTimerHdl, Idle *, void )
+IMPL_LINK_NOARG( SmEditWindow, ModifyTimerHdl, Timer *, void )
 {
-    UpdateStatus();
+    UpdateStatus(false);
     aModifyIdle.Stop();
 }
 
-IMPL_LINK_NOARG_TYPED(SmEditWindow, CursorMoveTimerHdl, Idle *, void)
+IMPL_LINK_NOARG(SmEditWindow, CursorMoveTimerHdl, Timer *, void)
     // every once in a while check cursor position (selection) of edit
     // window and if it has changed (try to) set the formula-cursor
     // according to that.
@@ -298,7 +293,7 @@ void SmEditWindow::Resize()
                                       pEditView->GetOutputArea().GetHeight();
         if (pEditView->GetVisArea().Top() > nMaxVisAreaStart)
         {
-            Rectangle aVisArea(pEditView->GetVisArea() );
+            tools::Rectangle aVisArea(pEditView->GetVisArea() );
             aVisArea.Top() = (nMaxVisAreaStart > 0 ) ? nMaxVisAreaStart : 0;
             aVisArea.SetSize(pEditView->GetOutputArea().GetSize());
             pEditView->SetVisArea(aVisArea);
@@ -333,16 +328,23 @@ void SmEditWindow::MouseButtonDown(const MouseEvent &rEvt)
 
 void SmEditWindow::Command(const CommandEvent& rCEvt)
 {
+    //pass alt press/release to parent impl
+    if (rCEvt.GetCommand() == CommandEventId::ModKeyChange)
+    {
+        Window::Command(rCEvt);
+        return;
+    }
+
     bool bForwardEvt = true;
     if (rCEvt.GetCommand() == CommandEventId::ContextMenu)
     {
         GetParent()->ToTop();
 
         Point aPoint = rCEvt.GetMousePosPixel();
-        std::unique_ptr<PopupMenu> xPopupMenu(new PopupMenu(SmResId(RID_COMMANDMENU)));
+        VclPtr<PopupMenu> xPopupMenu = VclPtr<PopupMenu>::Create(SmResId(RID_COMMANDMENU));
 
         // added for replaceability of context menus
-        Menu* pMenu = nullptr;
+        VclPtr<Menu> pMenu;
         css::ui::ContextMenuExecuteEvent aEvent;
         aEvent.SourceWindow = VCLUnoHelper::GetInterface( this );
         aEvent.ExecutePosition.X = aPoint.X();
@@ -352,13 +354,15 @@ void SmEditWindow::Command(const CommandEvent& rCEvt)
         {
             if ( pMenu )
             {
-                xPopupMenu.reset(static_cast<PopupMenu*>(pMenu));
+                xPopupMenu.disposeAndClear();
+                xPopupMenu = static_cast<PopupMenu*>(pMenu.get());
             }
         }
 
         xPopupMenu->SetSelectHdl(LINK(this, SmEditWindow, MenuSelectHdl));
 
         xPopupMenu->Execute( this, aPoint );
+        xPopupMenu.disposeAndClear();
         bForwardEvt = false;
     }
     else if (rCEvt.GetCommand() == CommandEventId::Wheel)
@@ -393,7 +397,7 @@ bool SmEditWindow::HandleWheelCommands( const CommandEvent &rCEvt )
 }
 
 
-IMPL_LINK_TYPED( SmEditWindow, MenuSelectHdl, Menu *, pMenu, bool )
+IMPL_LINK( SmEditWindow, MenuSelectHdl, Menu *, pMenu, bool )
 {
     SmViewShell *pViewSh = rCmdBox.GetView();
     if (pViewSh)
@@ -524,7 +528,7 @@ void SmEditWindow::KeyInput(const KeyEvent& rKEvt)
     }
 }
 
-void SmEditWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void SmEditWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     if (!pEditView)
         CreateEditView();
@@ -569,29 +573,29 @@ void SmEditWindow::CreateEditView()
 }
 
 
-IMPL_LINK_NOARG_TYPED( SmEditWindow, EditStatusHdl, EditStatus&, void )
+IMPL_LINK_NOARG( SmEditWindow, EditStatusHdl, EditStatus&, void )
 {
     if (pEditView)
         Resize();
 }
 
-IMPL_LINK_TYPED( SmEditWindow, ScrollHdl, ScrollBar *, /*pScrollBar*/, void )
+IMPL_LINK( SmEditWindow, ScrollHdl, ScrollBar *, /*pScrollBar*/, void )
 {
     OSL_ENSURE(pEditView, "EditView missing");
     if (pEditView)
     {
-        pEditView->SetVisArea(Rectangle(Point(pHScrollBar->GetThumbPos(),
+        pEditView->SetVisArea(tools::Rectangle(Point(pHScrollBar->GetThumbPos(),
                                             pVScrollBar->GetThumbPos()),
                                         pEditView->GetVisArea().GetSize()));
         pEditView->Invalidate();
     }
 }
 
-Rectangle SmEditWindow::AdjustScrollBars()
+tools::Rectangle SmEditWindow::AdjustScrollBars()
 {
     const Size aOut( GetOutputSizePixel() );
     Point aPoint;
-    Rectangle aRect( aPoint, aOut );
+    tools::Rectangle aRect( aPoint, aOut );
 
     if (pVScrollBar && pHScrollBar && pScrollBox)
     {
@@ -704,7 +708,7 @@ void SmEditWindow::GetFocus()
 
     //Let SmViewShell know we got focus
     if(GetView() && IsInlineEditEnabled())
-        GetView()->SetInsertIntoEditWindow();
+        GetView()->SetInsertIntoEditWindow(true);
 }
 
 
@@ -944,7 +948,7 @@ void SmEditWindow::UpdateStatus( bool bSetDocModified )
     if (pMod && pMod->GetConfig()->IsAutoRedraw())
         Flush();
     if ( bSetDocModified )
-        GetDoc()->SetModified(true);
+        GetDoc()->SetModified();
 }
 
 void SmEditWindow::Cut()

@@ -410,8 +410,7 @@ DXFLWPolyLineEntity::DXFLWPolyLineEntity() :
     nFlags( 0 ),
     fConstantWidth( 0.0 ),
     fStartWidth( 0.0 ),
-    fEndWidth( 0.0 ),
-    pP( nullptr )
+    fEndWidth( 0.0 )
 {
 }
 
@@ -424,7 +423,7 @@ void DXFLWPolyLineEntity::EvaluateGroup( DXFGroupReader & rDGR )
             nCount = rDGR.GetI();
             // limit alloc to max reasonable size based on remaining data in stream
             if (nCount > 0 && static_cast<sal_uInt32>(nCount) <= rDGR.remainingSize())
-                pP = new DXFVector[ nCount ];
+                pP.reset( new DXFVector[ nCount ] );
             else
                 nCount = 0;
         }
@@ -449,11 +448,6 @@ void DXFLWPolyLineEntity::EvaluateGroup( DXFGroupReader & rDGR )
     }
 }
 
-DXFLWPolyLineEntity::~DXFLWPolyLineEntity()
-{
-    delete[] pP;
-}
-
 //--------------------------DXFHatchEntity-------------------------------------
 
 DXFEdgeTypeLine::DXFEdgeTypeLine() :
@@ -461,10 +455,7 @@ DXFEdgeTypeLine::DXFEdgeTypeLine() :
 {
 
 }
-DXFEdgeTypeLine::~DXFEdgeTypeLine()
-{
 
-}
 bool DXFEdgeTypeLine::EvaluateGroup( DXFGroupReader & rDGR )
 {
     bool bExecutingGroupCode = true;
@@ -487,9 +478,7 @@ DXFEdgeTypeCircularArc::DXFEdgeTypeCircularArc() :
     nIsCounterClockwiseFlag( 0 )
 {
 }
-DXFEdgeTypeCircularArc::~DXFEdgeTypeCircularArc()
-{
-}
+
 bool DXFEdgeTypeCircularArc::EvaluateGroup( DXFGroupReader & rDGR )
 {
     bool bExecutingGroupCode = true;
@@ -514,10 +503,7 @@ DXFEdgeTypeEllipticalArc::DXFEdgeTypeEllipticalArc() :
     nIsCounterClockwiseFlag( 0 )
 {
 }
-DXFEdgeTypeEllipticalArc::~DXFEdgeTypeEllipticalArc()
-{
 
-}
 bool DXFEdgeTypeEllipticalArc::EvaluateGroup( DXFGroupReader & rDGR )
 {
     bool bExecutingGroupCode = true;
@@ -545,10 +531,7 @@ DXFEdgeTypeSpline::DXFEdgeTypeSpline() :
     nControlCount( 0 )
 {
 }
-DXFEdgeTypeSpline::~DXFEdgeTypeSpline()
-{
 
-}
 bool DXFEdgeTypeSpline::EvaluateGroup( DXFGroupReader & rDGR )
 {
     bool bExecutingGroupCode = true;
@@ -573,17 +556,14 @@ DXFBoundaryPathData::DXFBoundaryPathData() :
     nSourceBoundaryObjects( 0 ),
     nEdgeCount( 0 ),
     bIsPolyLine( true ),
-    nPointIndex( 0 ),
-    pP( nullptr )
+    nPointIndex( 0 )
 {
 }
 
 DXFBoundaryPathData::~DXFBoundaryPathData()
 {
-    sal_uInt32 i = 0;
-    for ( i = 0; i < aEdges.size(); i++ )
-        delete aEdges[ i ];
-    delete[] pP;
+    for (auto i: aEdges)
+        delete i;
 }
 
 bool DXFBoundaryPathData::EvaluateGroup( DXFGroupReader & rDGR )
@@ -605,7 +585,7 @@ bool DXFBoundaryPathData::EvaluateGroup( DXFGroupReader & rDGR )
                 nPointCount = rDGR.GetI();
                 // limit alloc to max reasonable size based on remaining data in stream
                 if (nPointCount > 0 && static_cast<sal_uInt32>(nPointCount) <= rDGR.remainingSize())
-                    pP = new DXFVector[ nPointCount ];
+                    pP.reset( new DXFVector[ nPointCount ] );
                 else
                     nPointCount = 0;
             }
@@ -687,7 +667,7 @@ void DXFHatchEntity::EvaluateGroup( DXFGroupReader & rDGR )
             nBoundaryPathCount = rDGR.GetI();
             // limit alloc to max reasonable size based on remaining data in stream
             if (nBoundaryPathCount > 0 && static_cast<sal_uInt32>(nBoundaryPathCount) <= rDGR.remainingSize())
-                pBoundaryPathData = new DXFBoundaryPathData[ nBoundaryPathCount ];
+                pBoundaryPathData.reset( new DXFBoundaryPathData[ nBoundaryPathCount ] );
             else
                 nBoundaryPathCount = 0;
         }
@@ -723,11 +703,6 @@ void DXFHatchEntity::EvaluateGroup( DXFGroupReader & rDGR )
         }
         break;
     }
-}
-
-DXFHatchEntity::~DXFHatchEntity()
-{
-    delete[] pBoundaryPathData;
 }
 
 //--------------------------DXFVertexEntity-------------------------------------

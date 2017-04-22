@@ -18,7 +18,6 @@
  */
 
 #include <sal/types.h>
-#include <osl/thread.h>
 #include <rtl/locale.h>
 #include <rtl/ustring.hxx>
 
@@ -108,13 +107,13 @@ public:
     {
         rtl_Locale* pData = rtl_locale_getDefault();
         rtl::OUString suLanguage = pData->Language;
-        CPPUNIT_ASSERT_MESSAGE( "locale language must be 'de'", suLanguage == "de" );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "locale language must be 'de'", OUString("de"), suLanguage );
     }
     void getLanguage_002()
     {
         rtl_Locale* pData = rtl_locale_getDefault();
         rtl::OUString suLanguage(rtl_locale_getLanguage(pData), SAL_NO_ACQUIRE);
-        CPPUNIT_ASSERT_MESSAGE( "locale language must be 'de'", suLanguage == "de" );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "locale language must be 'de'", OUString("de"), suLanguage );
     }
 
     // Change the following lines only, if you add, remove or rename
@@ -142,13 +141,13 @@ public:
     {
         rtl_Locale* pData = rtl_locale_getDefault();
         rtl::OUString suCountry = pData->Country;
-        CPPUNIT_ASSERT_MESSAGE( "locale country must be 'DE'", suCountry == "DE" );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "locale country must be 'DE'", OUString("DE"), suCountry );
     }
     void getCountry_002()
     {
         rtl_Locale* pData = rtl_locale_getDefault();
         rtl::OUString suCountry(rtl_locale_getCountry(pData), SAL_NO_ACQUIRE);
-        CPPUNIT_ASSERT_MESSAGE( "locale country must be 'DE'", suCountry == "DE" );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "locale country must be 'DE'", OUString("DE"), suCountry );
     }
 
     // Change the following lines only, if you add, remove or rename
@@ -176,13 +175,13 @@ public:
     {
         rtl_Locale* pData = rtl_locale_getDefault();
         rtl::OUString suVariant = pData->Variant;
-        CPPUNIT_ASSERT_MESSAGE( "locale variant must be 'hochdeutsch'", suVariant == "hochdeutsch" );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "locale variant must be 'hochdeutsch'", OUString("hochdeutsch"), suVariant );
     }
     void getVariant_002()
     {
         rtl_Locale* pData = rtl_locale_getDefault();
         rtl::OUString suVariant(rtl_locale_getVariant(pData), SAL_NO_ACQUIRE);
-        CPPUNIT_ASSERT_MESSAGE( "locale variant must be 'hochdeutsch'", suVariant == "hochdeutsch" );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "locale variant must be 'hochdeutsch'", OUString("hochdeutsch"), suVariant );
     }
 
     // Change the following lines only, if you add, remove or rename
@@ -277,10 +276,5 @@ CPPUNIT_TEST_SUITE_REGISTRATION(rtl_locale::getVariant);
 CPPUNIT_TEST_SUITE_REGISTRATION(rtl_locale::hashCode);
 CPPUNIT_TEST_SUITE_REGISTRATION(rtl_locale::equals);
 } // namespace rtl_locale
-
-// this macro creates an empty function, which will called by the RegisterAllFunctions()
-// to let the user the possibility to also register some functions by hand.
-
-CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -52,7 +52,6 @@ private:
 
 public:
     ScActionColorChanger( const ScChangeTrack& rTrack );
-    ~ScActionColorChanger() {}
     void        Update( const ScChangeAction& rAction );
     ColorData   GetColor() const    { return nColor; }
 };
@@ -82,18 +81,23 @@ enum ScChangeActionClipMode
 {
     SC_CACM_NONE,
     SC_CACM_CUT,
-    SC_CACM_COPY,
     SC_CACM_PASTE
 };
 
-//  ScChangeActionLinkEntry
-// Inserts itself as the head of a chain (better: linked list?), or before a LinkEntry
-// on delete: automatically remove of what is linked (German original was strange...)
-// ppPrev == &previous->pNext oder address of pointer to head of linked list,
-// *ppPrev == this
-
 class ScChangeAction;
 
+/** A link/connection/dependency between change actions.
+
+    Upon construction inserts itself as the head of a chain / linked list,
+    respectively between existing link entries.
+
+    Upon destruction removes itself from the list and connects the previous and
+    next entry, if it was the first entry automatically maintaining the head
+    pointer to the list.
+
+    ppPrev == &previous->pNext or address of pointer to head of linked list,
+    *ppPrev == this
+ */
 class ScChangeActionLinkEntry
 {
     ScChangeActionLinkEntry( const ScChangeActionLinkEntry& ) = delete;
@@ -264,18 +268,10 @@ protected:
         pLnk->SetLink( pL );
     }
 
-    void RemoveAllAnyLinks();
-
     virtual ScChangeActionLinkEntry*    GetDeletedIn() const
                                             { return pLinkDeletedIn; }
     virtual ScChangeActionLinkEntry**   GetDeletedInAddress()
                                             { return &pLinkDeletedIn; }
-    ScChangeActionLinkEntry* AddDeletedIn( ScChangeAction* p )
-    {
-        return new ScChangeActionLinkEntry(
-            GetDeletedInAddress(), p );
-    }
-
     bool RemoveDeletedIn( const ScChangeAction* );
     void SetDeletedIn( ScChangeAction* );
 
@@ -283,8 +279,6 @@ protected:
     {
         return new ScChangeActionLinkEntry(&pLinkDeleted, p);
     }
-
-    void RemoveAllDeleted();
 
     ScChangeActionLinkEntry* AddDependent( ScChangeAction* p )
     {
@@ -404,7 +398,7 @@ class ScChangeActionIns : public ScChangeAction
     bool mbEndOfList; /// whether or not a row was auto-inserted at the bottom.
 
     ScChangeActionIns( const ScRange& rRange, bool bEndOfList = false );
-    virtual                     ~ScChangeActionIns();
+    virtual                     ~ScChangeActionIns() override;
 
     virtual void                AddContent( ScChangeActionContent* ) override {}
     virtual void                DeleteCellEntries() override {}
@@ -474,7 +468,7 @@ class ScChangeActionDel : public ScChangeAction
     SCsROW              nDy;
 
     ScChangeActionDel( const ScRange& rRange, SCsCOL nDx, SCsROW nDy, ScChangeTrack* );
-    virtual ~ScChangeActionDel();
+    virtual ~ScChangeActionDel() override;
 
     virtual void                AddContent( ScChangeActionContent* ) override;
     virtual void                DeleteCellEntries() override;
@@ -554,7 +548,7 @@ class ScChangeActionMove : public ScChangeAction
             nStartLastCut(0),
             nEndLastCut(0)
         {}
-    virtual ~ScChangeActionMove();
+    virtual ~ScChangeActionMove() override;
 
     virtual void                AddContent( ScChangeActionContent* ) override;
     virtual void                DeleteCellEntries() override;
@@ -735,7 +729,7 @@ public:
         const ScBigRange& aBigRange, ScDocument* pDoc,
         const OUString& sNewValue ); // to use for XML Import of Generated Actions
 
-    virtual ~ScChangeActionContent();
+    virtual ~ScChangeActionContent() override;
 
     ScChangeActionContent*  GetNextContent() const { return pNextContent; }
     ScChangeActionContent*  GetPrevContent() const { return pPrevContent; }
@@ -897,7 +891,6 @@ class ScChangeTrack : public utl::ConfigurationListener
     sal_uLong               nEndLastCut;
     sal_uLong               nLastMerge;
     ScChangeTrackMergeState eMergeState;
-    bool bLoadSave:1;
     bool bInDelete:1;
     bool bInDeleteUndo:1;
     bool bInDeleteTop:1;
@@ -910,7 +903,7 @@ class ScChangeTrack : public utl::ConfigurationListener
 
     static  SCROW               InitContentRowsPerSlot();
 
-    // true if one is MM_FORMULA and the other is
+    // true if one is ScMatrixMode::Formula and the other is
     // not, or if both are and range differs
     static bool IsMatrixFormulaRangeDifferent(
         const ScCellValue& rOldCell, const ScCellValue& rNewCell );
@@ -983,7 +976,7 @@ class ScChangeTrack : public utl::ConfigurationListener
     bool IsLastAction( sal_uLong nNum ) const;
 
             void                ClearMsgQueue();
-    virtual void                ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
+    virtual void                ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints ) override;
 
 public:
 
@@ -996,7 +989,7 @@ public:
 
     SC_DLLPUBLIC ScChangeTrack( ScDocument* );
     ScChangeTrack(ScDocument* pDocP, const std::set<OUString>& aTempUserCollection); // only to use in the XML import
-    SC_DLLPUBLIC virtual ~ScChangeTrack();
+    SC_DLLPUBLIC virtual ~ScChangeTrack() override;
     void Clear();
 
     ScChangeActionContent*  GetFirstGenerated() const { return pFirstGeneratedDelContent; }
@@ -1012,7 +1005,6 @@ public:
     ScChangeAction* GetLastSaved() const;
     ScChangeActionContent** GetContentSlots() const { return ppContentSlots; }
 
-    bool IsLoadSave() const { return bLoadSave; }
     const ScRange&      GetInDeleteRange() const
                             { return aInDeleteRange; }
     bool IsInDelete() const { return bInDelete; }
@@ -1117,8 +1109,8 @@ public:
                         // adjust references for MergeDocument
                         //! may only be used in a temporary opened document.
                         //! the Track (?) is unclean afterwards
-    void                MergePrepare( ScChangeAction* pFirstMerge, bool bShared = false );
-    void                MergeOwn( ScChangeAction* pAct, sal_uLong nFirstMerge, bool bShared = false );
+    void                MergePrepare( ScChangeAction* pFirstMerge, bool bShared );
+    void                MergeOwn( ScChangeAction* pAct, sal_uLong nFirstMerge, bool bShared );
     static bool MergeIgnore( const ScChangeAction&, sal_uLong nFirstMerge );
 
                                 // This comment was already really strange in German.
@@ -1190,6 +1182,8 @@ public:
     void AppendCloned( ScChangeAction* pAppend );
     SC_DLLPUBLIC ScChangeTrack* Clone( ScDocument* pDocument ) const;
     static void MergeActionState( ScChangeAction* pAct, const ScChangeAction* pOtherAct );
+    /// Get info about all ScChangeAction elements.
+    OUString GetChangeTrackInfo();
 };
 
 #endif

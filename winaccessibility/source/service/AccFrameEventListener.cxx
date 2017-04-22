@@ -33,7 +33,7 @@ using namespace com::sun::star::uno;
 using namespace com::sun::star::accessibility;
 
 #include <vcl/window.hxx>
-#include <toolkit/awt/Vclxwindow.hxx>
+#include <toolkit/awt/vclxwindow.hxx>
 #include <vcl/sysdata.hxx>
 
 AccFrameEventListener::AccFrameEventListener(css::accessibility::XAccessible* pAcc, AccObjectManagerAgent* Agent)
@@ -50,7 +50,6 @@ AccFrameEventListener::~AccFrameEventListener()
  *  @param AccessibleEventObject    the event object which contains information about event
  */
 void  AccFrameEventListener::notifyEvent( const css::accessibility::AccessibleEventObject& aEvent )
-throw (css::uno::RuntimeException)
 {
     SolarMutexGuard g;
 
@@ -88,8 +87,8 @@ void AccFrameEventListener::HandleChildChangedEvent(Any oldValue, Any newValue)
 
             VCLXWindow* pvclwindow =
                 dynamic_cast<VCLXWindow*>(m_xAccessible.get());
-            vcl::Window* window = pvclwindow->GetWindow();
-            const SystemEnvData* systemdata=window->GetSystemData();
+            const SystemEnvData* systemdata
+                = pvclwindow->GetWindow()->GetSystemData();
 
             //add this child
             pAgent->InsertAccObj(pAcc, m_xAccessible.get(),

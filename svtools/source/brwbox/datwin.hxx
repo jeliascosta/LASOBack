@@ -30,15 +30,14 @@
 
 #define MIN_COLUMNWIDTH  2
 
-typedef ::std::vector< Rectangle* > RectangleList;
+typedef ::std::vector< tools::Rectangle* > RectangleList;
 
 
 class ButtonFrame
 {
-    Rectangle   aRect;
-    Rectangle   aInnerRect;
+    tools::Rectangle   aRect;
+    tools::Rectangle   aInnerRect;
     OUString    aText;
-    bool        bPressed;
     bool        m_bDrawDisabled;
 
 public:
@@ -49,7 +48,6 @@ public:
                 ,aInnerRect( Point( aRect.Left()+1, aRect.Top()+1 ),
                             Size( aRect.GetWidth()-2, aRect.GetHeight()-2 ) )
                 ,aText(rText)
-                ,bPressed(false)
                 ,m_bDrawDisabled(_bDrawDisabled)
             {
             }
@@ -58,7 +56,7 @@ public:
 };
 
 
-class BrowserColumn
+class BrowserColumn final
 {
     sal_uInt16          _nId;
     sal_uLong           _nOriginalWidth;
@@ -69,7 +67,7 @@ class BrowserColumn
 public:
                         BrowserColumn( sal_uInt16 nItemId,
                                         const OUString& rTitle, sal_uLong nWidthPixel, const Fraction& rCurrentZoom );
-    virtual            ~BrowserColumn();
+                        ~BrowserColumn();
 
     sal_uInt16          GetId() const { return _nId; }
 
@@ -127,16 +125,16 @@ public:
 
 public:
                     explicit BrowserDataWin( BrowseBox* pParent );
-    virtual         ~BrowserDataWin();
+    virtual         ~BrowserDataWin() override;
     virtual void    dispose() override;
 
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
-    virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void    Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual void    RequestHelp( const HelpEvent& rHEvt ) override;
     virtual void    Command( const CommandEvent& rEvt ) override;
     virtual void    MouseButtonDown( const MouseEvent& rEvt ) override;
     virtual void    MouseMove( const MouseEvent& rEvt ) override;
-                    DECL_LINK_TYPED( RepeatedMouseMove, Timer *, void );
+                    DECL_LINK( RepeatedMouseMove, Timer *, void );
 
     virtual void    MouseButtonUp( const MouseEvent& rEvt ) override;
     virtual void    KeyInput( const KeyEvent& rEvt ) override;
@@ -162,9 +160,8 @@ public:
     void            Update();
     void            DoOutstandingInvalidations();
     void            Invalidate( InvalidateFlags nFlags = InvalidateFlags::NONE ) override;
-    void            Invalidate( const Rectangle& rRect, InvalidateFlags nFlags = InvalidateFlags::NONE ) override;
-    void            Invalidate( const vcl::Region& rRegion, InvalidateFlags nFlags = InvalidateFlags::NONE ) override
-                    { Control::Invalidate( rRegion, nFlags ); }
+    void            Invalidate( const tools::Rectangle& rRect, InvalidateFlags nFlags = InvalidateFlags::NONE ) override;
+    using Control::Invalidate;
 
 protected:
     void            StartRowDividerDrag( const Point& _rStartPos );
@@ -184,7 +181,7 @@ public:
                         _nLastPos( ULONG_MAX ),
                         _pDataWin( pDataWin )
                     {}
-   virtual          ~BrowserScrollBar();
+   virtual          ~BrowserScrollBar() override;
    virtual void     dispose() override;
                     //ScrollBar( vcl::Window* pParent, const ResId& rResId );
 

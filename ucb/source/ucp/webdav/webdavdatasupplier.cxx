@@ -17,6 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <memory>
+#include <utility>
+
+#include <o3tl/make_unique.hxx>
 #include <osl/diagnose.h>
 #include <com/sun/star/ucb/OpenMode.hpp>
 #include <ucbhelper/contentidentifier.hxx>
@@ -26,6 +32,7 @@
 #include "ContentProperties.hxx"
 #include "DAVSession.hxx"
 #include "SerfUri.hxx"
+#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 
 using namespace com::sun::star;
 using namespace http_dav_ucp;
@@ -43,10 +50,9 @@ struct ResultListEntry
     uno::Reference< ucb::XContentIdentifier > xId;
     uno::Reference< ucb::XContent >           xContent;
     uno::Reference< sdbc::XRow >              xRow;
-    const ContentProperties*                  pData;
+    std::unique_ptr<ContentProperties> pData;
 
-    explicit ResultListEntry( const ContentProperties* pEntry ) : pData( pEntry ) {}
-    ~ResultListEntry() { delete pData; }
+    explicit ResultListEntry( std::unique_ptr<ContentProperties> && pEntry ) : pData( std::move(pEntry) ) {}
 };
 
 
@@ -101,16 +107,14 @@ DataSupplier::DataSupplier(
             const uno::Reference< uno::XComponentContext >& rxContext,
             const rtl::Reference< Content >& rContent,
             sal_Int32 nOpenMode )
-: m_pImpl( new DataSupplier_Impl( rxContext, rContent, nOpenMode ) )
+: m_pImpl(o3tl::make_unique<DataSupplier_Impl>(rxContext, rContent, nOpenMode))
 {
 }
 
 
 // virtual
 DataSupplier::~DataSupplier()
-{
-    delete m_pImpl;
-}
+{}
 
 
 // virtual
@@ -317,7 +321,6 @@ void DataSupplier::close()
 
 // virtual
 void DataSupplier::validate()
-    throw( ucb::ResultSetException )
 {
     if ( m_pImpl->m_bThrowException )
         throw ucb::ResultSetException();
@@ -415,8 +418,8 @@ bool DataSupplier::getData()
                         }
                     }
 
-                    ContentProperties* pContentProperties
-                        = new ContentProperties( rRes );
+                    std::unique_ptr<ContentProperties> pContentProperties
+                        = o3tl::make_unique<ContentProperties>( rRes );
 
                     // Check resource against open mode.
                     switch ( m_pImpl->m_nOpenMode )
@@ -426,9 +429,7 @@ bool DataSupplier::getData()
                             bool bFolder = false;
 
                             const uno::Any & rValue
-                                = pContentProperties->getValue(
-                                    OUString(
-                                            "IsFolder" ) );
+                                = pContentProperties->getValue( "IsFolder" );
                             rValue >>= bFolder;
 
                             if ( !bFolder )
@@ -442,9 +443,7 @@ bool DataSupplier::getData()
                             bool bDocument = false;
 
                             const uno::Any & rValue
-                                = pContentProperties->getValue(
-                                    OUString(
-                                            "IsDocument" ) );
+                                = pContentProperties->getValue( "IsDocument" );
                             rValue >>= bDocument;
 
                             if ( !bDocument )
@@ -459,7 +458,7 @@ bool DataSupplier::getData()
                     }
 
                     m_pImpl->m_aResults.push_back(
-                        new ResultListEntry( pContentProperties ) );
+                        new ResultListEntry( std::move(pContentProperties) ) );
                 }
             }
             catch ( DAVException const & )

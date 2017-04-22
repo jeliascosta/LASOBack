@@ -41,7 +41,7 @@ const rtl::OUString SLASH     ("/");
 
 void osl_systemPathEnsureSeparator(/*inout*/ rtl_uString** ppustrPath)
 {
-    OSL_PRECOND(ppustrPath && (NULL != *ppustrPath), \
+    OSL_PRECOND(ppustrPath && (nullptr != *ppustrPath),
                 "osl_systemPathEnsureSeparator: Invalid parameter");
 
      rtl::OUString path(*ppustrPath);
@@ -83,16 +83,16 @@ void SAL_CALL osl_systemPathRemoveSeparator(/*inout*/ rtl_uString** ppustrPath)
  ******************************************************************/
 
 // is [A-Za-z]:[/|\]\0
-const sal_Char* LDP                    = ":";
-const sal_Char* LDP_WITH_BACKSLASH     = ":\\";
-const sal_Char* LDP_WITH_SLASH         = ":/";
+const sal_Char* const LDP                = ":";
+const sal_Char* const LDP_WITH_BACKSLASH = ":\\";
+const sal_Char* const LDP_WITH_SLASH     = ":/";
 
 // degenerated case returned by the Windows FileOpen dialog
 // when someone enters for instance "x:filename", the Win32
 // API accepts this case
-const sal_Char* LDP_WITH_DOT_BACKSLASH = ":.\\";
+const sal_Char* const LDP_WITH_DOT_BACKSLASH = ":.\\";
 
-sal_Int32 osl_systemPathIsLogicalDrivePattern(/*in*/ const rtl_uString* pustrPath)
+bool osl_systemPathIsLogicalDrivePattern(/*in*/ const rtl_uString* pustrPath)
 {
     const sal_Unicode* p = rtl_uString_getStr(const_cast<rtl_uString*>(pustrPath));
     if (iswalpha(*p++))
@@ -102,7 +102,7 @@ sal_Int32 osl_systemPathIsLogicalDrivePattern(/*in*/ const rtl_uString* pustrPat
                 (0 == rtl_ustr_ascii_compare(p, LDP_WITH_SLASH)) ||
                 (0 == rtl_ustr_ascii_compare(p, LDP_WITH_DOT_BACKSLASH)));
     }
-    return 0;
+    return false;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

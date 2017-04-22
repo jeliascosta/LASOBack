@@ -21,6 +21,7 @@
 #include <vcl/outdev.hxx>
 #include <vcl/unowrap.hxx>
 #include <vcl/sysdata.hxx>
+#include <comphelper/lok.hxx>
 
 #include "salgdi.hxx"
 #include "svdata.hxx"
@@ -67,7 +68,7 @@ OutputDevice::OutputDevice() :
     mnOutHeight                     = 0;
     mnDPIX                          = 0;
     mnDPIY                          = 0;
-    mnDPIScaleFactor                = 1;
+    mnDPIScalePercentage            = 100;
     mnTextOffX                      = 0;
     mnTextOffY                      = 0;
     mnOutOffOrigX                   = 0;
@@ -77,15 +78,14 @@ OutputDevice::OutputDevice() :
     mnEmphasisAscent                = 0;
     mnEmphasisDescent               = 0;
     mnDrawMode                      = DrawModeFlags::Default;
-    mnTextLayoutMode                = TEXT_LAYOUT_DEFAULT;
+    mnTextLayoutMode                = ComplexTextLayoutFlags::Default;
 
     if( AllSettings::GetLayoutRTL() ) //#i84553# tip BiDi preference to RTL
-        mnTextLayoutMode            = TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT;
+        mnTextLayoutMode            = ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft;
 
     meOutDevType                    = OUTDEV_DONTKNOW;
-    meOutDevViewType                = OUTDEV_VIEWTYPE_DONTKNOW;
+    meOutDevViewType                = OutDevViewType::DontKnow;
     mbMap                           = false;
-    mbMapIsDefault                  = true;
     mbClipRegion                    = false;
     mbBackground                    = false;
     mbOutput                        = true;
@@ -94,7 +94,7 @@ OutputDevice::OutputDevice() :
     maTextColor                     = Color( COL_BLACK );
     maOverlineColor                 = Color( COL_TRANSPARENT );
     meTextAlign                     = maFont.GetAlignment();
-    meRasterOp                      = ROP_OVERPAINT;
+    meRasterOp                      = RasterOp::OverPaint;
     mnAntialiasing                  = AntialiasingFlags::NONE;
     meTextLanguage                  = 0;  // TODO: get default from configuration?
     mbLineColor                     = true;
@@ -105,7 +105,6 @@ OutputDevice::OutputDevice() :
     mbInitTextColor                 = true;
     mbInitClipRegion                = true;
     mbClipRegionSet                 = false;
-    mbKerning                       = false;
     mbNewFont                       = true;
     mbTextLines                     = false;
     mbTextSpecial                   = false;
@@ -209,7 +208,8 @@ void OutputDevice::dispose()
     }
 
     mpAlphaVDev.disposeAndClear();
-
+    mpPrevGraphics.clear();
+    mpNextGraphics.clear();
     VclReferenceBase::dispose();
 }
 
@@ -221,7 +221,7 @@ SalGraphics* OutputDevice::GetGraphics()
     {
         if ( !AcquireGraphics() )
         {
-            SAL_WARN("vcl", "No mpGraphics set");
+            SAL_WARN("vcl.gdi", "No mpGraphics set");
         }
     }
 
@@ -236,7 +236,7 @@ SalGraphics const *OutputDevice::GetGraphics() const
     {
         if ( !AcquireGraphics() )
         {
-            SAL_WARN("vcl", "No mpGraphics set");
+            SAL_WARN("vcl.gdi", "No mpGraphics set");
         }
     }
 
@@ -366,7 +366,7 @@ sal_uInt16 OutputDevice::GetBitCount() const
             return 0;
     }
 
-    return (sal_uInt16)mpGraphics->GetBitCount();
+    return mpGraphics->GetBitCount();
 }
 
 void OutputDevice::SetOutOffXPixel(long nOutOffX)
@@ -394,7 +394,7 @@ css::uno::Reference< css::awt::XGraphics > OutputDevice::CreateUnoGraphics()
 
 std::vector< VCLXGraphics* > *OutputDevice::CreateUnoGraphicsList()
 {
-    mpUnoGraphicsList = new std::vector< VCLXGraphics* >();
+    mpUnoGraphicsList = new std::vector< VCLXGraphics* >;
     return mpUnoGraphicsList;
 }
 
@@ -417,9 +417,9 @@ void OutputDevice::DrawOutDev( const Point& rDestPt, const Size& rDestSize,
     if( ImplIsRecordLayout() )
         return;
 
-    if ( ROP_INVERT == meRasterOp )
+    if ( RasterOp::Invert == meRasterOp )
     {
-        DrawRect( Rectangle( rDestPt, rDestSize ) );
+        DrawRect( tools::Rectangle( rDestPt, rDestSize ) );
         return;
     }
 
@@ -454,7 +454,7 @@ void OutputDevice::DrawOutDev( const Point& rDestPt, const Size& rDestSize,
                            ImplLogicXToDevicePixel(rDestPt.X()), ImplLogicYToDevicePixel(rDestPt.Y()),
                            nDestWidth, nDestHeight);
 
-        const Rectangle aSrcOutRect( Point( mnOutOffX, mnOutOffY ),
+        const tools::Rectangle aSrcOutRect( Point( mnOutOffX, mnOutOffY ),
                                      Size( mnOutWidth, mnOutHeight ) );
 
         AdjustTwoRect( aPosAry, aSrcOutRect );
@@ -474,9 +474,9 @@ void OutputDevice::DrawOutDev( const Point& rDestPt, const Size& rDestSize,
     if ( ImplIsRecordLayout() )
         return;
 
-    if ( ROP_INVERT == meRasterOp )
+    if ( RasterOp::Invert == meRasterOp )
     {
-        DrawRect( Rectangle( rDestPt, rDestSize ) );
+        DrawRect( tools::Rectangle( rDestPt, rDestSize ) );
         return;
     }
 
@@ -520,7 +520,7 @@ void OutputDevice::DrawOutDev( const Point& rDestPt, const Size& rDestSize,
             drawOutDevDirect( &rOutDev, aPosAry );
 
             // #i32109#: make destination rectangle opaque - source has no alpha
-            mpAlphaVDev->ImplFillOpaqueRectangle( Rectangle(rDestPt, rDestSize) );
+            mpAlphaVDev->ImplFillOpaqueRectangle( tools::Rectangle(rDestPt, rDestSize) );
         }
     }
     else
@@ -546,7 +546,7 @@ void OutputDevice::CopyArea( const Point& rDestPt,
         return;
 
     RasterOp eOldRop = GetRasterOp();
-    SetRasterOp( ROP_OVERPAINT );
+    SetRasterOp( RasterOp::OverPaint );
 
     if ( !IsDeviceOutputNecessary() )
         return;
@@ -570,7 +570,7 @@ void OutputDevice::CopyArea( const Point& rDestPt,
                            ImplLogicXToDevicePixel(rDestPt.X()), ImplLogicYToDevicePixel(rDestPt.Y()),
                            nSrcWidth, nSrcHeight);
 
-        const Rectangle aSrcOutRect( Point( mnOutOffX, mnOutOffY ),
+        const tools::Rectangle aSrcOutRect( Point( mnOutOffX, mnOutOffY ),
                                      Size( mnOutWidth, mnOutHeight ) );
 
         AdjustTwoRect( aPosAry, aSrcOutRect );
@@ -634,14 +634,14 @@ void OutputDevice::drawOutDevDirect( const OutputDevice* pSrcDev, SalTwoRect& rP
                     if ( !AcquireGraphics() )
                         return;
                 }
-                DBG_ASSERT( mpGraphics && pSrcDev->mpGraphics,
+                SAL_WARN_IF( !mpGraphics || !pSrcDev->mpGraphics, "vcl.gdi",
                             "OutputDevice::DrawOutDev(): We need more than one Graphics" );
             }
         }
     }
 
     // #102532# Offset only has to be pseudo window offset
-    const Rectangle aSrcOutRect( Point( pSrcDev->mnOutOffX, pSrcDev->mnOutOffY ),
+    const tools::Rectangle aSrcOutRect( Point( pSrcDev->mnOutOffX, pSrcDev->mnOutOffY ),
                                  Size( pSrcDev->mnOutWidth, pSrcDev->mnOutHeight ) );
 
     AdjustTwoRect( rPosAry, aSrcOutRect );
@@ -693,7 +693,7 @@ void    OutputDevice::ReMirror( Point &rPoint ) const
 {
     rPoint.X() = mnOutOffX + mnOutWidth - 1 - rPoint.X() + mnOutOffX;
 }
-void    OutputDevice::ReMirror( Rectangle &rRect ) const
+void    OutputDevice::ReMirror( tools::Rectangle &rRect ) const
 {
     long nWidth = rRect.Right() - rRect.Left();
 
@@ -754,7 +754,7 @@ bool OutputDevice::DrawEPS( const Point& rPoint, const Size& rSize,
     if( mbOutputClipped )
         return bDrawn;
 
-    Rectangle aRect( ImplLogicToDevicePixel( Rectangle( rPoint, rSize ) ) );
+    tools::Rectangle aRect( ImplLogicToDevicePixel( tools::Rectangle( rPoint, rSize ) ) );
 
     if( !aRect.IsEmpty() )
     {

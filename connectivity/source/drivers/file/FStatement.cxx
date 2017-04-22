@@ -56,11 +56,10 @@ OStatement_Base::OStatement_Base(OConnection* _pConnection )
     ,::comphelper::OPropertyContainer(OStatement_BASE::rBHelper)
     ,m_xDBMetaData(_pConnection->getMetaData())
     ,m_aParser( _pConnection->getDriver()->getComponentContext() )
-    ,m_aSQLIterator( _pConnection, _pConnection->createCatalog()->getTables(), m_aParser, nullptr )
+    ,m_aSQLIterator( _pConnection, _pConnection->createCatalog()->getTables(), m_aParser )
     ,m_pConnection(_pConnection)
     ,m_pParseTree(nullptr)
     ,m_pSQLAnalyzer(nullptr)
-    ,m_pTable(nullptr)
     ,m_nMaxFieldSize(0)
     ,m_nMaxRows(0)
     ,m_nQueryTimeOut(0)
@@ -70,8 +69,6 @@ OStatement_Base::OStatement_Base(OConnection* _pConnection )
     ,m_nResultSetConcurrency(ResultSetConcurrency::UPDATABLE)
     ,m_bEscapeProcessing(true)
 {
-    m_pConnection->acquire();
-
     sal_Int32 nAttrib = 0;
 
     registerProperty(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),      PROPERTY_ID_CURSORNAME,         nAttrib,&m_aCursorName,     ::cppu::UnoType<OUString>::get());
@@ -121,17 +118,9 @@ void OStatement_BASE2::disposing()
 
     m_aSQLIterator.dispose();
 
-    if(m_pTable)
-    {
-        m_pTable->release();
-        m_pTable = nullptr;
-    }
+    m_pTable.clear();
 
-    if (m_pConnection)
-    {
-        m_pConnection->release();
-        m_pConnection = nullptr;
-    }
+    m_pConnection.clear();
 
     dispose_ChildImpl();
 
@@ -151,30 +140,30 @@ void SAL_CALL OStatement_Base::acquire() throw()
 
 void SAL_CALL OStatement_BASE2::release() throw()
 {
-    relase_ChildImpl();
+    release_ChildImpl();
 }
 
-Any SAL_CALL OStatement_Base::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any SAL_CALL OStatement_Base::queryInterface( const Type & rType )
 {
     const Any aRet = OStatement_BASE::queryInterface(rType);
     return aRet.hasValue() ? aRet : OPropertySetHelper::queryInterface(rType);
 }
 
-Sequence< Type > SAL_CALL OStatement_Base::getTypes(  ) throw(RuntimeException, std::exception)
+Sequence< Type > SAL_CALL OStatement_Base::getTypes(  )
 {
-    ::cppu::OTypeCollection aTypes( cppu::UnoType<com::sun::star::beans::XMultiPropertySet>::get(),
-                                                                    cppu::UnoType<com::sun::star::beans::XFastPropertySet>::get(),
-                                                                    cppu::UnoType<com::sun::star::beans::XPropertySet>::get());
+    ::cppu::OTypeCollection aTypes( cppu::UnoType<css::beans::XMultiPropertySet>::get(),
+                                    cppu::UnoType<css::beans::XFastPropertySet>::get(),
+                                    cppu::UnoType<css::beans::XPropertySet>::get());
 
     return ::comphelper::concatSequences(aTypes.getTypes(),OStatement_BASE::getTypes());
 }
 
 
-void SAL_CALL OStatement_Base::cancel(  ) throw(RuntimeException, std::exception)
+void SAL_CALL OStatement_Base::cancel(  )
 {
 }
 
-void SAL_CALL OStatement_Base::close() throw (SQLException, RuntimeException, std::exception)
+void SAL_CALL OStatement_Base::close()
 {
     {
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -183,7 +172,7 @@ void SAL_CALL OStatement_Base::close() throw (SQLException, RuntimeException, st
     dispose();
 }
 
-void OStatement_Base::closeResultSet() throw (SQLException, RuntimeException, std::exception)
+void OStatement_Base::closeResultSet()
 {
     SAL_INFO( "connectivity.drivers", "file Ocke.Janssen@sun.com OStatement_Base::clearMyResultSet " );
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -203,7 +192,7 @@ void OStatement_Base::closeResultSet() throw (SQLException, RuntimeException, st
     m_xResultSet.clear();
 }
 
-Any SAL_CALL OStatement_Base::getWarnings(  ) throw(SQLException, RuntimeException, std::exception)
+Any SAL_CALL OStatement_Base::getWarnings(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
@@ -211,7 +200,7 @@ Any SAL_CALL OStatement_Base::getWarnings(  ) throw(SQLException, RuntimeExcepti
     return makeAny(m_aLastWarning);
 }
 
-void SAL_CALL OStatement_Base::clearWarnings(  ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OStatement_Base::clearWarnings(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
@@ -250,7 +239,7 @@ void SAL_CALL OStatement::release() throw()
 }
 
 
-sal_Bool SAL_CALL OStatement::execute( const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
+sal_Bool SAL_CALL OStatement::execute( const OUString& sql )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -260,7 +249,7 @@ sal_Bool SAL_CALL OStatement::execute( const OUString& sql ) throw(SQLException,
 }
 
 
-Reference< XResultSet > SAL_CALL OStatement::executeQuery( const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
+Reference< XResultSet > SAL_CALL OStatement::executeQuery( const OUString& sql )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
@@ -277,12 +266,12 @@ Reference< XResultSet > SAL_CALL OStatement::executeQuery( const OUString& sql )
     return xRS;
 }
 
-Reference< XConnection > SAL_CALL OStatement::getConnection(  ) throw(SQLException, RuntimeException, std::exception)
+Reference< XConnection > SAL_CALL OStatement::getConnection(  )
 {
-    return Reference< XConnection >(m_pConnection);
+    return Reference< XConnection >(m_pConnection.get());
 }
 
-sal_Int32 SAL_CALL OStatement::executeUpdate( const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
+sal_Int32 SAL_CALL OStatement::executeUpdate( const OUString& sql )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
@@ -308,20 +297,15 @@ void SAL_CALL OStatement_Base::disposing()
     OStatement_BASE::disposing();
 }
 
-Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL OStatement_Base::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
+Reference< css::beans::XPropertySetInfo > SAL_CALL OStatement_Base::getPropertySetInfo(  )
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }
 
-Any SAL_CALL OStatement::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any SAL_CALL OStatement::queryInterface( const Type & rType )
 {
     Any aRet = OStatement_XStatement::queryInterface( rType);
     return aRet.hasValue() ? aRet : OStatement_BASE2::queryInterface( rType);
-}
-
-OSQLAnalyzer* OStatement_Base::createAnalyzer()
-{
-    return new OSQLAnalyzer(m_pConnection);
 }
 
 void OStatement_Base::anylizeSQL()
@@ -335,13 +319,13 @@ void OStatement_Base::anylizeSQL()
     if(pOrderbyClause)
     {
         OSQLParseNode * pOrderingSpecCommalist = pOrderbyClause->getChild(2);
-        OSL_ENSURE(SQL_ISRULE(pOrderingSpecCommalist,ordering_spec_commalist),"OResultSet: Fehler im Parse Tree");
+        OSL_ENSURE(SQL_ISRULE(pOrderingSpecCommalist,ordering_spec_commalist),"OResultSet: Error in Parse Tree");
 
         for (size_t m = 0; m < pOrderingSpecCommalist->count(); m++)
         {
             OSQLParseNode * pOrderingSpec = pOrderingSpecCommalist->getChild(m);
-            OSL_ENSURE(SQL_ISRULE(pOrderingSpec,ordering_spec),"OResultSet: Fehler im Parse Tree");
-            OSL_ENSURE(pOrderingSpec->count() == 2,"OResultSet: Fehler im Parse Tree");
+            OSL_ENSURE(SQL_ISRULE(pOrderingSpec,ordering_spec),"OResultSet: Error in Parse Tree");
+            OSL_ENSURE(pOrderingSpec->count() == 2,"OResultSet: Error in Parse Tree");
 
             OSQLParseNode * pColumnRef = pOrderingSpec->getChild(0);
             if(!SQL_ISRULE(pColumnRef,column_ref))
@@ -385,8 +369,7 @@ void OStatement_Base::setOrderbyColumn( OSQLParseNode* pColumnRef,
     m_aOrderbyAscending.push_back((SQL_ISTOKEN(pAscendingDescending,DESC)) ? TAscendingOrder::DESC : TAscendingOrder::ASC);
 }
 
-
-void OStatement_Base::construct(const OUString& sql)  throw(SQLException, RuntimeException)
+void OStatement_Base::construct(const OUString& sql)
 {
     OUString aErr;
     m_pParseTree = m_aParser.parseTree(aErr,sql);
@@ -421,38 +404,34 @@ void OStatement_Base::construct(const OUString& sql)  throw(SQLException, Runtim
         }
 
         // at this moment we support only one table per select statement
-        Reference< ::com::sun::star::lang::XUnoTunnel> xTunnel(rTabs.begin()->second,UNO_QUERY);
+        Reference< css::lang::XUnoTunnel> xTunnel(rTabs.begin()->second,UNO_QUERY);
         if(xTunnel.is())
         {
-            if(m_pTable)
-                m_pTable->release();
             m_pTable = reinterpret_cast<OFileTable*>(xTunnel->getSomething(OFileTable::getUnoTunnelImplementationId()));
-            if(m_pTable)
-                m_pTable->acquire();
         }
-        OSL_ENSURE(m_pTable,"No table!");
-        if ( m_pTable )
+        OSL_ENSURE(m_pTable.is(),"No table!");
+        if ( m_pTable.is() )
             m_xColNames     = m_pTable->getColumns();
         Reference<XIndexAccess> xNames(m_xColNames,UNO_QUERY);
         // set the binding of the resultrow
         m_aRow          = new OValueRefVector(xNames->getCount());
         (m_aRow->get())[0]->setBound(true);
-        ::std::for_each(m_aRow->get().begin()+1,m_aRow->get().end(),TSetRefBound(false));
+        std::for_each(m_aRow->get().begin()+1,m_aRow->get().end(),TSetRefBound(false));
 
         // set the binding of the resultrow
         m_aEvaluateRow  = new OValueRefVector(xNames->getCount());
 
         (m_aEvaluateRow->get())[0]->setBound(true);
-        ::std::for_each(m_aEvaluateRow->get().begin()+1,m_aEvaluateRow->get().end(),TSetRefBound(false));
+        std::for_each(m_aEvaluateRow->get().begin()+1,m_aEvaluateRow->get().end(),TSetRefBound(false));
 
         // set the select row
         m_aSelectRow = new OValueRefVector(m_aSQLIterator.getSelectColumns()->get().size());
-        ::std::for_each(m_aSelectRow->get().begin(),m_aSelectRow->get().end(),TSetRefBound(true));
+        std::for_each(m_aSelectRow->get().begin(),m_aSelectRow->get().end(),TSetRefBound(true));
 
         // create the column mapping
         createColumnMapping();
 
-        m_pSQLAnalyzer  = createAnalyzer();
+        m_pSQLAnalyzer = new OSQLAnalyzer(m_pConnection.get());
 
         Reference<XIndexesSupplier> xIndexSup(xTunnel,UNO_QUERY);
         if(xIndexSup.is())
@@ -513,18 +492,18 @@ void OStatement_Base::GetAssignValues()
         sal_Int32 nCount = Reference<XIndexAccess>(m_xColNames,UNO_QUERY)->getCount();
         m_aAssignValues = new OAssignValues(nCount);
         // unbound all
-        ::std::for_each(m_aAssignValues->get().begin()+1,m_aAssignValues->get().end(),TSetRefBound(false));
+        std::for_each(m_aAssignValues->get().begin()+1,m_aAssignValues->get().end(),TSetRefBound(false));
 
         m_aParameterIndexes.resize(nCount+1,SQL_NO_PARAMETER);
 
         // List of Column-Names, that exist in the column_commalist (separated by ;):
-        ::std::vector<OUString> aColumnNameList;
+        std::vector<OUString> aColumnNameList;
 
-        OSL_ENSURE(m_pParseTree->count() >= 4,"OResultSet: Fehler im Parse Tree");
+        OSL_ENSURE(m_pParseTree->count() >= 4,"OResultSet: Error in Parse Tree");
 
         OSQLParseNode * pOptColumnCommalist = m_pParseTree->getChild(3);
-        OSL_ENSURE(pOptColumnCommalist != nullptr,"OResultSet: Fehler im Parse Tree");
-        OSL_ENSURE(SQL_ISRULE(pOptColumnCommalist,opt_column_commalist),"OResultSet: Fehler im Parse Tree");
+        OSL_ENSURE(pOptColumnCommalist != nullptr,"OResultSet: Error in Parse Tree");
+        OSL_ENSURE(SQL_ISRULE(pOptColumnCommalist,opt_column_commalist),"OResultSet: Error in Parse Tree");
         if (pOptColumnCommalist->count() == 0)
         {
             const Sequence< OUString>& aNames = m_xColNames->getElementNames();
@@ -535,18 +514,18 @@ void OStatement_Base::GetAssignValues()
         }
         else
         {
-            OSL_ENSURE(pOptColumnCommalist->count() == 3,"OResultSet: Fehler im Parse Tree");
+            OSL_ENSURE(pOptColumnCommalist->count() == 3,"OResultSet: Error in Parse Tree");
 
             OSQLParseNode * pColumnCommalist = pOptColumnCommalist->getChild(1);
-            OSL_ENSURE(pColumnCommalist != nullptr,"OResultSet: Fehler im Parse Tree");
-            OSL_ENSURE(SQL_ISRULE(pColumnCommalist,column_commalist),"OResultSet: Fehler im Parse Tree");
-            OSL_ENSURE(pColumnCommalist->count() > 0,"OResultSet: Fehler im Parse Tree");
+            OSL_ENSURE(pColumnCommalist != nullptr,"OResultSet: Error in Parse Tree");
+            OSL_ENSURE(SQL_ISRULE(pColumnCommalist,column_commalist),"OResultSet: Error in Parse Tree");
+            OSL_ENSURE(pColumnCommalist->count() > 0,"OResultSet: Error in Parse Tree");
 
             // All Columns in the column_commalist ...
             for (size_t i = 0; i < pColumnCommalist->count(); i++)
             {
                 OSQLParseNode * pCol = pColumnCommalist->getChild(i);
-                OSL_ENSURE(pCol != nullptr,"OResultSet: Fehler im Parse Tree");
+                OSL_ENSURE(pCol != nullptr,"OResultSet: Error in Parse Tree");
                 aColumnNameList.push_back(pCol->getTokenValue());
             }
         }
@@ -555,7 +534,7 @@ void OStatement_Base::GetAssignValues()
 
         // Values ...
         OSQLParseNode * pValuesOrQuerySpec = m_pParseTree->getChild(4);
-        OSL_ENSURE(pValuesOrQuerySpec != nullptr,"OResultSet: pValuesOrQuerySpec darf nicht NULL sein!");
+        OSL_ENSURE(pValuesOrQuerySpec != nullptr,"OResultSet: pValuesOrQuerySpec must not be NULL!");
         OSL_ENSURE(SQL_ISRULE(pValuesOrQuerySpec,values_or_query_spec),"OResultSet: ! SQL_ISRULE(pValuesOrQuerySpec,values_or_query_spec)");
         OSL_ENSURE(pValuesOrQuerySpec->count() > 0,"OResultSet: pValuesOrQuerySpec->count() <= 0");
 
@@ -567,14 +546,14 @@ void OStatement_Base::GetAssignValues()
 
         // List of values
         OSQLParseNode * pInsertAtomCommalist = pValuesOrQuerySpec->getChild(2);
-        OSL_ENSURE(pInsertAtomCommalist != nullptr,"OResultSet: pInsertAtomCommalist darf nicht NULL sein!");
+        OSL_ENSURE(pInsertAtomCommalist != nullptr,"OResultSet: pInsertAtomCommalist must not be NULL!");
         OSL_ENSURE(pInsertAtomCommalist->count() > 0,"OResultSet: pInsertAtomCommalist <= 0");
 
         sal_Int32 nIndex=0;
         for (size_t i = 0; i < pInsertAtomCommalist->count(); i++)
         {
             OSQLParseNode * pRow_Value_Const = pInsertAtomCommalist->getChild(i); // row_value_constructor
-            OSL_ENSURE(pRow_Value_Const != nullptr,"OResultSet: pRow_Value_Const darf nicht NULL sein!");
+            OSL_ENSURE(pRow_Value_Const != nullptr,"OResultSet: pRow_Value_Const must not be NULL!");
             if(SQL_ISRULE(pRow_Value_Const,parameter))
             {
                 ParseAssignValues(aColumnNameList,pRow_Value_Const,nIndex++); // only one Columnname allowed per loop
@@ -600,24 +579,24 @@ void OStatement_Base::GetAssignValues()
         sal_Int32 nCount = Reference<XIndexAccess>(m_xColNames,UNO_QUERY)->getCount();
         m_aAssignValues = new OAssignValues(nCount);
         // unbound all
-        ::std::for_each(m_aAssignValues->get().begin()+1,m_aAssignValues->get().end(),TSetRefBound(false));
+        std::for_each(m_aAssignValues->get().begin()+1,m_aAssignValues->get().end(),TSetRefBound(false));
 
         m_aParameterIndexes.resize(nCount+1,SQL_NO_PARAMETER);
 
-        OSL_ENSURE(m_pParseTree->count() >= 4,"OResultSet: Fehler im Parse Tree");
+        OSL_ENSURE(m_pParseTree->count() >= 4,"OResultSet: Error in Parse Tree");
 
         OSQLParseNode * pAssignmentCommalist = m_pParseTree->getChild(3);
         OSL_ENSURE(pAssignmentCommalist != nullptr,"OResultSet: pAssignmentCommalist == NULL");
-        OSL_ENSURE(SQL_ISRULE(pAssignmentCommalist,assignment_commalist),"OResultSet: Fehler im Parse Tree");
+        OSL_ENSURE(SQL_ISRULE(pAssignmentCommalist,assignment_commalist),"OResultSet: Error in Parse Tree");
         OSL_ENSURE(pAssignmentCommalist->count() > 0,"OResultSet: pAssignmentCommalist->count() <= 0");
 
         // work on all assignments (commalist) ...
-        ::std::vector< OUString> aList(1);
+        std::vector< OUString> aList(1);
         for (size_t i = 0; i < pAssignmentCommalist->count(); i++)
         {
             OSQLParseNode * pAssignment = pAssignmentCommalist->getChild(i);
             OSL_ENSURE(pAssignment != nullptr,"OResultSet: pAssignment == NULL");
-            OSL_ENSURE(SQL_ISRULE(pAssignment,assignment),"OResultSet: Fehler im Parse Tree");
+            OSL_ENSURE(SQL_ISRULE(pAssignment,assignment),"OResultSet: Error in Parse Tree");
             OSL_ENSURE(pAssignment->count() == 3,"OResultSet: pAssignment->count() != 3");
 
             OSQLParseNode * pCol = pAssignment->getChild(0);
@@ -640,12 +619,12 @@ void OStatement_Base::GetAssignValues()
     }
 }
 
-void OStatement_Base::ParseAssignValues(const ::std::vector< OUString>& aColumnNameList,OSQLParseNode* pRow_Value_Constructor_Elem, sal_Int32 nIndex)
+void OStatement_Base::ParseAssignValues(const std::vector< OUString>& aColumnNameList,OSQLParseNode* pRow_Value_Constructor_Elem, sal_Int32 nIndex)
 {
     OSL_ENSURE(size_t(nIndex) <= aColumnNameList.size(),"SdbFileCursor::ParseAssignValues: nIndex > aColumnNameList.GetTokenCount()");
     OUString aColumnName(aColumnNameList[nIndex]);
-    OSL_ENSURE(aColumnName.getLength() > 0,"OResultSet: Column-Name nicht gefunden");
-    OSL_ENSURE(pRow_Value_Constructor_Elem != nullptr,"OResultSet: pRow_Value_Constructor_Elem darf nicht NULL sein!");
+    OSL_ENSURE(aColumnName.getLength() > 0,"OResultSet: Column-Name not found");
+    OSL_ENSURE(pRow_Value_Constructor_Elem != nullptr,"OResultSet: pRow_Value_Constructor_Elem must not be NULL!");
 
     if (pRow_Value_Constructor_Elem->getNodeType() == SQLNodeType::String ||
         pRow_Value_Constructor_Elem->getNodeType() == SQLNodeType::IntNum ||

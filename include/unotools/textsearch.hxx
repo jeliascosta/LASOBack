@@ -26,7 +26,6 @@
 #include <com/sun/star/uno/Reference.h>
 #include <com/sun/star/lang/Locale.hpp>
 #include <com/sun/star/util/XTextSearch2.hpp>
-#include <com/sun/star/util/SearchOptions2.hpp>
 
 class CharClass;
 
@@ -39,6 +38,11 @@ namespace com {
         }
     }
 }
+namespace i18nutil {
+    struct SearchOptions;
+    struct SearchOptions2;
+}
+enum class TransliterationFlags;
 
 namespace utl
 {
@@ -47,9 +51,7 @@ namespace utl
 class UNOTOOLS_DLLPUBLIC SearchParam
 {
 public:
-    enum SearchType: int { SRCH_NORMAL, SRCH_REGEXP, SRCH_LEVDIST, SRCH_WILDCARD };
-        // fix underlying type (as int, arbitrarily), so that
-        // ScDocOptions::eSearchTypeUnknown = -1 does not cause -fsanitize=enum
+    enum class SearchType { Normal, Regexp, Wildcard, Unknown = -1 };
 
     /** Convert configuration and document boolean settings to SearchType.
         If bWildcard is true it takes precedence over rbRegExp.
@@ -63,9 +65,9 @@ public:
         {
             if (rbRegExp)
                 rbRegExp = false;
-            return SRCH_WILDCARD;
+            return SearchType::Wildcard;
         }
-        return rbRegExp ? SRCH_REGEXP : SRCH_NORMAL;
+        return rbRegExp ? SearchType::Regexp : SearchType::Normal;
     }
 
     /** Convert SearchType to configuration and document boolean settings.
@@ -74,16 +76,15 @@ public:
     {
         switch (eSearchType)
         {
-            case SRCH_WILDCARD:
+            case SearchType::Wildcard:
                 rbWildcard = true;
                 rbRegExp = false;
                 break;
-            case SRCH_REGEXP:
+            case SearchType::Regexp:
                 rbWildcard = false;
                 rbRegExp = true;
                 break;
             default:
-                // SRCH_LEVDIST is not a persistent setting.
                 rbWildcard = false;
                 rbRegExp = false;
                 break;
@@ -110,11 +111,11 @@ private:
     int nLEV_LongerZ;
 
     // asian flags - used for the transliteration
-    long nTransliterationFlags;
+    TransliterationFlags nTransliterationFlags;
 
 public:
     SearchParam( const OUString &rText,
-                    SearchType eSrchType = SearchParam::SRCH_NORMAL,
+                    SearchType eSrchType,
                     bool bCaseSensitive = true,
                     sal_uInt32 cWildEscChar = '\\',
                     bool bWildMatchSel = false );
@@ -135,12 +136,7 @@ public:
     // signed return for API use
     sal_Int32       GetWildEscChar() const      { return static_cast<sal_Int32>(m_cWildEscChar); }
 
-    bool            IsSrchRelaxed() const       { return bLEV_Relaxed; }
-    int             GetLEVOther() const         { return nLEV_OtherX; }
-    int             GetLEVShorter() const       { return nLEV_ShorterY; }
-    int             GetLEVLonger() const        { return nLEV_LongerZ; }
-
-    long GetTransliterationFlags() const        { return nTransliterationFlags; }
+    TransliterationFlags GetTransliterationFlags() const        { return nTransliterationFlags; }
 };
 
 //  Utility class for searching a substring in a string.
@@ -155,7 +151,7 @@ public:
 class UNOTOOLS_DLLPUBLIC TextSearch
 {
     static css::uno::Reference< css::util::XTextSearch2 >
-        getXTextSearch( const css::util::SearchOptions2& rPara );
+        getXTextSearch( const i18nutil::SearchOptions2& rPara );
 
     css::uno::Reference < css::util::XTextSearch2 >
             xTextSearch;
@@ -169,7 +165,7 @@ public:
     TextSearch( const SearchParam & rPara, LanguageType nLanguage );
     TextSearch( const SearchParam & rPara, const CharClass& rCClass );
 
-    TextSearch( const css::util::SearchOptions2& rPara );
+    TextSearch( const i18nutil::SearchOptions2& rPara );
     ~TextSearch();
 
     /* search in the (selected) text the search string:
@@ -198,7 +194,7 @@ public:
                         sal_Int32* pStart, sal_Int32* pEnd,
                         css::util::SearchResult* pRes = nullptr );
 
-    void SetLocale( const css::util::SearchOptions2& rOpt,
+    void SetLocale( const i18nutil::SearchOptions2& rOpt,
                     const css::lang::Locale& rLocale );
 
     /* replace back references in the replace string by the sub expressions from the search result */
@@ -208,7 +204,7 @@ public:
         SearchOptions2 yet. Better fix your module if you want to support
         wildcard search.
      */
-    static css::util::SearchOptions2 UpgradeToSearchOptions2( const css::util::SearchOptions& rOptions );
+    static i18nutil::SearchOptions2 UpgradeToSearchOptions2( const i18nutil::SearchOptions& rOptions );
 
 };
 

@@ -23,6 +23,7 @@
 #include <svx/sdr/properties/properties.hxx>
 #include <svx/svxdllapi.h>
 
+struct _xmlTextWriter;
 
 namespace sdr
 {
@@ -57,7 +58,9 @@ namespace sdr
             DefaultProperties(const DefaultProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~DefaultProperties();
+            virtual ~DefaultProperties() override;
+
+            void dumpAsXml(struct _xmlTextWriter * pWriter) const;
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;
@@ -76,7 +79,7 @@ namespace sdr
 
             // clear single item direct, do not do any notifies or things like that.
             // Also supports complete deleteion of items when default parameter 0 is used.
-            virtual void ClearObjectItemDirect(const sal_uInt16 nWhich = 0) override;
+            virtual void ClearObjectItemDirect(const sal_uInt16 nWhich) override;
 
             // set complete item set
             virtual void SetObjectItemSet(const SfxItemSet& rSet) override;

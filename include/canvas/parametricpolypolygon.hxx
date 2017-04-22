@@ -23,8 +23,8 @@
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/rendering/XGraphicDevice.hpp>
 #include <com/sun/star/rendering/XParametricPolyPolygon2D.hpp>
-#include <cppuhelper/compbase2.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/compbase.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
 
 #include <canvas/canvastoolsdllapi.h>
@@ -40,10 +40,10 @@ namespace basegfx
 
 namespace canvas
 {
-    typedef ::cppu::WeakComponentImplHelper2< css::rendering::XParametricPolyPolygon2D,
-                                                   css::lang::XServiceInfo > ParametricPolyPolygon_Base;
+    typedef cppu::WeakComponentImplHelper< css::rendering::XParametricPolyPolygon2D,
+                                           css::lang::XServiceInfo > ParametricPolyPolygon_Base;
 
-    class CANVASTOOLS_DLLPUBLIC ParametricPolyPolygon : public ::comphelper::OBaseMutex,
+    class CANVASTOOLS_DLLPUBLIC ParametricPolyPolygon : public ::cppu::BaseMutex,
                                   public ParametricPolyPolygon_Base
     {
     public:
@@ -100,21 +100,21 @@ namespace canvas
         virtual void SAL_CALL disposing() override;
 
         // XParametricPolyPolygon2D
-        virtual css::uno::Reference< css::rendering::XPolyPolygon2D > SAL_CALL getOutline( double t ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< double > SAL_CALL getColor( double t ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< double > SAL_CALL getPointColor( const css::geometry::RealPoint2D& point ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::rendering::XColorSpace > SAL_CALL getColorSpace() throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::rendering::XPolyPolygon2D > SAL_CALL getOutline( double t ) override;
+        virtual css::uno::Sequence< double > SAL_CALL getColor( double t ) override;
+        virtual css::uno::Sequence< double > SAL_CALL getPointColor( const css::geometry::RealPoint2D& point ) override;
+        virtual css::uno::Reference< css::rendering::XColorSpace > SAL_CALL getColorSpace() override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName(  ) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
         /// Query all defining values of this object atomically
         Values getValues() const;
 
     protected:
-        virtual ~ParametricPolyPolygon(); // we're a ref-counted UNO class. _We_ destroy ourselves.
+        virtual ~ParametricPolyPolygon() override; // we're a ref-counted UNO class. _We_ destroy ourselves.
         ParametricPolyPolygon(const ParametricPolyPolygon&) = delete;
         ParametricPolyPolygon& operator=( const ParametricPolyPolygon& ) = delete;
 

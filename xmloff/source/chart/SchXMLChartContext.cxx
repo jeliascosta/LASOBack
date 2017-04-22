@@ -52,10 +52,14 @@
 
 #include <com/sun/star/chart2/XChartDocument.hpp>
 #include <com/sun/star/chart2/data/XDataSink.hpp>
+#include <com/sun/star/chart2/data/XPivotTableDataProvider.hpp>
 #include <com/sun/star/chart2/XDataSeriesContainer.hpp>
 #include <com/sun/star/chart2/XCoordinateSystemContainer.hpp>
 #include <com/sun/star/chart2/XChartTypeContainer.hpp>
 #include <com/sun/star/chart2/XTitled.hpp>
+
+#include <com/sun/star/container/XChild.hpp>
+#include <com/sun/star/chart2/data/XDataReceiver.hpp>
 
 using namespace com::sun::star;
 using namespace ::xmloff::token;
@@ -237,10 +241,67 @@ SchXMLChartContext::SchXMLChartContext( SchXMLImportHelper& rImpHelper,
 SchXMLChartContext::~SchXMLChartContext()
 {}
 
+void lcl_setDataProvider(uno::Reference<chart2::XChartDocument> const & xChartDoc, OUString const & sDataPilotSource)
+{
+    if (!xChartDoc.is())
+        return;
+
+    try
+    {
+        uno::Reference<container::XChild> xChild(xChartDoc, uno::UNO_QUERY);
+        uno::Reference<chart2::data::XDataReceiver> xDataReceiver(xChartDoc, uno::UNO_QUERY);
+        if (xChild.is() && xDataReceiver.is())
+        {
+            bool bHasOwnData = true;
+
+            Reference<lang::XMultiServiceFactory> xFact(xChild->getParent(), uno::UNO_QUERY);
+            if (xFact.is())
+            {
+                if (!xChartDoc->getDataProvider().is())
+                {
+                    bool bHasDataPilotSource = !sDataPilotSource.isEmpty();
+                    OUString aDataProviderServiceName("com.sun.star.chart2.data.DataProvider");
+                    if (bHasDataPilotSource)
+                        aDataProviderServiceName = "com.sun.star.chart2.data.PivotTableDataProvider";
+
+                    const uno::Sequence<OUString> aServiceNames(xFact->getAvailableServiceNames());
+
+                    if (std::find(aServiceNames.begin(), aServiceNames.end(), aDataProviderServiceName) != aServiceNames.end())
+                    {
+                        Reference<chart2::data::XDataProvider> xProvider(xFact->createInstance(aDataProviderServiceName), uno::UNO_QUERY);
+
+                        if (xProvider.is())
+                        {
+                            xDataReceiver->attachDataProvider(xProvider);
+                            if (bHasDataPilotSource)
+                            {
+                                Reference<chart2::data::XPivotTableDataProvider> xPivotTableDataProvider(xProvider, uno::UNO_QUERY);
+                                xPivotTableDataProvider->setPivotTableName(sDataPilotSource);
+                            }
+                            bHasOwnData = false;
+                        }
+                    }
+                }
+                else
+                    bHasOwnData = false;
+            }
+            // else we have no parent => we have our own data
+
+            if (bHasOwnData && ! xChartDoc->hasInternalDataProvider())
+                xChartDoc->createInternalDataProvider(false);
+        }
+    }
+    catch (const uno::Exception & rEx)
+    {
+        OString aBStr(OUStringToOString(rEx.Message, RTL_TEXTENCODING_ASCII_US));
+        SAL_INFO("xmloff.chart", "SchXMLChartContext::StartElement(): Exception caught: " << aBStr);
+    }
+}
+
 void SchXMLChartContext::StartElement( const uno::Reference< xml::sax::XAttributeList >& xAttrList )
 {
     // parse attributes
-    sal_Int16 nAttrCount = xAttrList.is()? xAttrList->getLength(): 0;
+    sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
     const SvXMLTokenMap& rAttrTokenMap = mrImportHelper.GetChartAttrTokenMap();
 
     uno::Reference< embed::XVisualObject > xVisualObject( mrImportHelper.GetChartDocument(), uno::UNO_QUERY);
@@ -264,10 +325,12 @@ void SchXMLChartContext::StartElement( const uno::Reference< xml::sax::XAttribut
 
         switch( rAttrTokenMap.Get( nPrefix, aLocalName ))
         {
+            case XML_TOK_CHART_DATA_PILOT_SOURCE:
+                msDataPilotSource = aValue;
+                break;
             case XML_TOK_CHART_HREF:
                 m_aXLinkHRefAttributeToIndicateDataProvider = aValue;
                 break;
-
             case XML_TOK_CHART_CLASS:
                 {
                     OUString sClassName;
@@ -328,6 +391,11 @@ void SchXMLChartContext::StartElement( const uno::Reference< xml::sax::XAttribut
         }
     }
 
+    uno::Reference<chart::XChartDocument> xDoc = mrImportHelper.GetChartDocument();
+    uno::Reference<chart2::XChartDocument> xNewDoc(xDoc, uno::UNO_QUERY);
+
+    lcl_setDataProvider(xNewDoc, msDataPilotSource);
+
     if( aOldChartTypeName.isEmpty() )
     {
         SAL_WARN("xmloff.chart", "need a charttype to create a diagram" );
@@ -364,19 +432,8 @@ void SchXMLChartContext::StartElement( const uno::Reference< xml::sax::XAttribut
     }
 
     // set auto-styles for Area
-    uno::Reference< beans::XPropertySet > xProp( mrImportHelper.GetChartDocument()->getArea(), uno::UNO_QUERY );
-    if( xProp.is())
-    {
-        const SvXMLStylesContext* pStylesCtxt = mrImportHelper.GetAutoStylesContext();
-        if( pStylesCtxt )
-        {
-            const SvXMLStyleContext* pStyle = pStylesCtxt->FindStyleChildContext(
-                SchXMLImportHelper::GetChartFamilyID(), sAutoStyleName );
-
-            if( pStyle && dynamic_cast< const XMLPropStyleContext*>(pStyle) !=  nullptr)
-                const_cast<XMLPropStyleContext*>( static_cast< const XMLPropStyleContext* >( pStyle ) )->FillPropertySet( xProp );
-        }
-    }
+    uno::Reference<beans::XPropertySet> xProp(mrImportHelper.GetChartDocument()->getArea(), uno::UNO_QUERY);
+    mrImportHelper.FillAutoStyle(sAutoStyleName, xProp);
 }
 
 namespace
@@ -605,15 +662,15 @@ static void lcl_ApplyDataFromRectangularRangeToDiagram(
 
     uno::Sequence< beans::PropertyValue > aArgs( 3 );
     aArgs[0] = beans::PropertyValue(
-        OUString( "CellRangeRepresentation" ),
+        "CellRangeRepresentation",
         -1, uno::makeAny( rRectangularRange ),
         beans::PropertyState_DIRECT_VALUE );
     aArgs[1] = beans::PropertyValue(
-        OUString( "DataRowSource" ),
+        "DataRowSource",
         -1, uno::makeAny( eDataRowSource ),
         beans::PropertyState_DIRECT_VALUE );
     aArgs[2] = beans::PropertyValue(
-        OUString( "FirstCellAsLabel" ),
+        "FirstCellAsLabel",
         -1, uno::makeAny( bFirstCellAsLabel ),
         beans::PropertyState_DIRECT_VALUE );
 
@@ -621,7 +678,7 @@ static void lcl_ApplyDataFromRectangularRangeToDiagram(
     {
         aArgs.realloc( aArgs.getLength() + 1 );
         aArgs[ sal::static_int_cast<sal_uInt32>(aArgs.getLength()) - 1 ] = beans::PropertyValue(
-            OUString( "SequenceMapping" ),
+            "SequenceMapping",
             -1, uno::makeAny( !sColTrans.isEmpty()
                 ? lcl_getNumberSequenceFromString( sColTrans, bHasCateories && !xNewDoc->hasInternalDataProvider() )
                 : lcl_getNumberSequenceFromString( sRowTrans, bHasCateories && !xNewDoc->hasInternalDataProvider() ) ),
@@ -647,7 +704,7 @@ static void lcl_ApplyDataFromRectangularRangeToDiagram(
         {
             aArgs.realloc( aArgs.getLength() + 1 );
             aArgs[ sal::static_int_cast<sal_uInt32>(aArgs.getLength()) - 1 ] = beans::PropertyValue(
-                OUString( "ChartOleObjectName" ),
+                "ChartOleObjectName",
                 -1, uno::makeAny( aChartOleObjectName ),
                 beans::PropertyState_DIRECT_VALUE );
         }
@@ -658,11 +715,11 @@ static void lcl_ApplyDataFromRectangularRangeToDiagram(
 
     aArgs.realloc( aArgs.getLength() + 2 );
     aArgs[ sal::static_int_cast<sal_uInt32>(aArgs.getLength()) - 2 ] = beans::PropertyValue(
-        OUString( "HasCategories" ),
+        "HasCategories",
         -1, uno::makeAny( bHasCateories ),
         beans::PropertyState_DIRECT_VALUE );
     aArgs[ sal::static_int_cast<sal_uInt32>(aArgs.getLength()) - 1 ] = beans::PropertyValue(
-        OUString("UseCategoriesAsX"),
+        "UseCategoriesAsX",
         -1, uno::makeAny( false ),//categories in ODF files are not to be used as x values (independent from what is offered in our ui)
         beans::PropertyState_DIRECT_VALUE );
 
@@ -1183,19 +1240,8 @@ void SchXMLTitleContext::StartElement( const uno::Reference< xml::sax::XAttribut
         if( bHasXPosition && bHasYPosition )
             mxTitleShape->setPosition( aPosition );
 
-        uno::Reference< beans::XPropertySet > xProp( mxTitleShape, uno::UNO_QUERY );
-        if( xProp.is())
-        {
-            const SvXMLStylesContext* pStylesCtxt = mrImportHelper.GetAutoStylesContext();
-            if( pStylesCtxt )
-            {
-                const SvXMLStyleContext* pStyle = pStylesCtxt->FindStyleChildContext(
-                    SchXMLImportHelper::GetChartFamilyID(), msAutoStyleName );
-
-                if( pStyle && dynamic_cast< const XMLPropStyleContext*>(pStyle) !=  nullptr)
-                    const_cast<XMLPropStyleContext*>( static_cast< const XMLPropStyleContext* >( pStyle ) )->FillPropertySet( xProp );
-            }
-        }
+        uno::Reference<beans::XPropertySet> xProp(mxTitleShape, uno::UNO_QUERY);
+        mrImportHelper.FillAutoStyle(msAutoStyleName, xProp);
     }
 }
 

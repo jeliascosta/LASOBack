@@ -21,6 +21,8 @@
 #define INCLUDED_XMLOFF_SOURCE_DRAW_SDPROPLS_HXX
 
 #include <com/sun/star/frame/XModel.hpp>
+#include <com/sun/star/drawing/ConnectorType.hpp>
+#include <com/sun/star/drawing/CircleKind.hpp>
 #include <xmloff/xmlnume.hxx>
 #include <xmloff/maptype.hxx>
 #include <xmloff/xmltypes.hxx>
@@ -41,8 +43,8 @@ extern const XMLPropertyMapEntry aXMLSDPresPageProps_onlyHeadersFooter[];
 
 // enum maps for attributes
 
-extern SvXMLEnumMapEntry const aXML_ConnectionKind_EnumMap[];
-extern SvXMLEnumMapEntry const aXML_CircleKind_EnumMap[];
+extern SvXMLEnumMapEntry<css::drawing::ConnectorType> const aXML_ConnectionKind_EnumMap[];
+extern SvXMLEnumMapEntry<css::drawing::CircleKind> const aXML_CircleKind_EnumMap[];
 
 /** contains the attribute to property mapping for a drawing layer table */
 extern const XMLPropertyMapEntry aXMLTableShapeAttributes[];
@@ -60,9 +62,9 @@ private:
     SvXMLImport* mpImport;
 
 public:
-    XMLSdPropHdlFactory( css::uno::Reference< css::frame::XModel >, SvXMLExport& rExport );
-    XMLSdPropHdlFactory( css::uno::Reference< css::frame::XModel >, SvXMLImport& rImport );
-    virtual ~XMLSdPropHdlFactory();
+    XMLSdPropHdlFactory( css::uno::Reference< css::frame::XModel > const & xModel, SvXMLExport& rExport );
+    XMLSdPropHdlFactory( css::uno::Reference< css::frame::XModel > const & xModel, SvXMLImport& rImport );
+    virtual ~XMLSdPropHdlFactory() override;
     virtual const XMLPropertyHandler* GetPropertyHandler( sal_Int32 nType ) const override;
 };
 
@@ -70,7 +72,7 @@ class XMLShapePropertySetMapper : public XMLPropertySetMapper
 {
 public:
     XMLShapePropertySetMapper(const rtl::Reference< XMLPropertyHandlerFactory >& rFactoryRef, bool bForExport);
-    virtual ~XMLShapePropertySetMapper();
+    virtual ~XMLShapePropertySetMapper() override;
 };
 
 class XMLShapeExportPropertyMapper : public SvXMLExportPropertyMapper
@@ -86,14 +88,14 @@ protected:
         const css::uno::Reference< css::beans::XPropertySet >& rPropSet ) const override;
 public:
     XMLShapeExportPropertyMapper( const rtl::Reference< XMLPropertySetMapper >& rMapper, SvXMLExport& rExport );
-    virtual ~XMLShapeExportPropertyMapper();
+    virtual ~XMLShapeExportPropertyMapper() override;
 
     virtual void        handleElementItem(
                             SvXMLExport& rExport,
                             const XMLPropertyState& rProperty,
                             SvXmlExportFlags nFlags,
-                            const ::std::vector< XMLPropertyState >* pProperties = nullptr,
-                            sal_uInt32 nIdx = 0
+                            const ::std::vector< XMLPropertyState >* pProperties,
+                            sal_uInt32 nIdx
                             ) const override;
 
     void SetAutoStyles( bool bIsInAutoStyles ) { mbIsInAutoStyles = bIsInAutoStyles; }
@@ -103,8 +105,8 @@ public:
             const XMLPropertyState& rProperty,
             const SvXMLUnitConverter& rUnitConverter,
             const SvXMLNamespaceMap& rNamespaceMap,
-            const ::std::vector< XMLPropertyState > *pProperties = nullptr,
-            sal_uInt32 nIdx = 0 ) const override;
+            const ::std::vector< XMLPropertyState > *pProperties,
+            sal_uInt32 nIdx ) const override;
 };
 
 class XMLPageExportPropertyMapper : public SvXMLExportPropertyMapper
@@ -119,14 +121,14 @@ protected:
         const css::uno::Reference< css::beans::XPropertySet >& rPropSet ) const override;
 public:
     XMLPageExportPropertyMapper( const rtl::Reference< XMLPropertySetMapper >& rMapper, SvXMLExport& rExport );
-    virtual ~XMLPageExportPropertyMapper();
+    virtual ~XMLPageExportPropertyMapper() override;
 
     virtual void        handleElementItem(
                             SvXMLExport& rExport,
                             const XMLPropertyState& rProperty,
                             SvXmlExportFlags nFlags,
-                            const ::std::vector< XMLPropertyState >* pProperties = nullptr,
-                            sal_uInt32 nIdx = 0
+                            const ::std::vector< XMLPropertyState >* pProperties,
+                            sal_uInt32 nIdx
                             ) const override;
 };
 

@@ -27,6 +27,8 @@ in this Software without prior written authorization from the X Consortium.
 
 */
 
+#include <ctype.h>
+
 #include "def.h"
 char *hash_lookup( char *symbol, struct symhash *symbols );
 void hash_undefine( char *symbol, struct symhash *symbols );
@@ -38,7 +40,6 @@ int deftype ( char *line, struct filepointer *filep,
 int zero_value(char *exp, struct filepointer *filep,
     struct inclist *file_red, struct symhash *symbols);
 
-extern char *directives[];
 extern struct symhash *maininclist;
 
 int find_includes(struct filepointer *filep, struct inclist *file, struct inclist *file_red, int recursion, boolean failOK, struct IncludesCollection* incCollection, struct symhash *symbols)
@@ -294,7 +295,7 @@ int deftype (char *line, struct filepointer *filep, struct inclist *file_red, st
         /*
          * separate the name of a single symbol.
          */
-        while (isalnum(*p) || *p == '_')
+        while (isalnum((unsigned char)*p) || *p == '_')
             *line++ = *p++;
         *line = '\0';
         break;
@@ -361,7 +362,7 @@ int deftype (char *line, struct filepointer *filep, struct inclist *file_red, st
  * HACK! - so that we do not have to introduce 'symbols' in each cppsetup.c
  * function...  It's safe, functions from cppsetup.c don't return here.
  */
-struct symhash *global_symbols = NULL;
+static struct symhash *global_symbols = NULL;
 
 char * isdefined( char *symbol )
 {
@@ -386,7 +387,7 @@ void define( char *def, struct symhash **symbols )
 
     /* Separate symbol name and its value */
     val = def;
-    while (isalnum(*val) || *val == '_')
+    while (isalnum((unsigned char)*val) || *val == '_')
         val++;
     if (*val)
         *val++ = '\0';

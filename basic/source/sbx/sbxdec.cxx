@@ -92,28 +92,28 @@ void releaseDecimalPtr( SbxDecimal*& rpDecimal )
 
 bool SbxDecimal::operator -= ( const SbxDecimal &r )
 {
-    HRESULT hResult = VarDecSub( &maDec, (LPDECIMAL)&r.maDec, &maDec );
+    HRESULT hResult = VarDecSub( &maDec, const_cast<LPDECIMAL>(&r.maDec), &maDec );
     bool bRet = ( hResult == S_OK );
     return bRet;
 }
 
 bool SbxDecimal::operator += ( const SbxDecimal &r )
 {
-    HRESULT hResult = VarDecAdd( &maDec, (LPDECIMAL)&r.maDec, &maDec );
+    HRESULT hResult = VarDecAdd( &maDec, const_cast<LPDECIMAL>(&r.maDec), &maDec );
     bool bRet = ( hResult == S_OK );
     return bRet;
 }
 
 bool SbxDecimal::operator /= ( const SbxDecimal &r )
 {
-    HRESULT hResult = VarDecDiv( &maDec, (LPDECIMAL)&r.maDec, &maDec );
+    HRESULT hResult = VarDecDiv( &maDec, const_cast<LPDECIMAL>(&r.maDec), &maDec );
     bool bRet = ( hResult == S_OK );
     return bRet;
 }
 
 bool SbxDecimal::operator *= ( const SbxDecimal &r )
 {
-    HRESULT hResult = VarDecMul( &maDec, (LPDECIMAL)&r.maDec, &maDec );
+    HRESULT hResult = VarDecMul( &maDec, const_cast<LPDECIMAL>(&r.maDec), &maDec );
     bool bRet = ( hResult == S_OK );
     return bRet;
 }
@@ -129,13 +129,13 @@ bool SbxDecimal::isZero()
 {
     SbxDecimal aZeroDec;
     aZeroDec.setLong( 0 );
-    bool bZero = ( EQ == compare( *this, aZeroDec ) );
+    bool bZero = CmpResult::EQ == compare( *this, aZeroDec );
     return bZero;
 }
 
 SbxDecimal::CmpResult compare( const SbxDecimal &rLeft, const SbxDecimal &rRight )
 {
-    HRESULT hResult = VarDecCmp( (LPDECIMAL)&rLeft.maDec, (LPDECIMAL)&rRight.maDec );
+    HRESULT hResult = VarDecCmp( const_cast<LPDECIMAL>(&rLeft.maDec), const_cast<LPDECIMAL>(&rRight.maDec) );
     SbxDecimal::CmpResult eRes = (SbxDecimal::CmpResult)hResult;
     return eRes;
 }
@@ -147,7 +147,7 @@ void SbxDecimal::setChar( sal_Unicode val )
 
 void SbxDecimal::setByte( sal_uInt8 val )
 {
-    VarDecFromUI1( (sal_uInt8)val, &maDec );
+    VarDecFromUI1( val, &maDec );
 }
 
 void SbxDecimal::setShort( sal_Int16 val )
@@ -162,7 +162,7 @@ void SbxDecimal::setLong( sal_Int32 val )
 
 void SbxDecimal::setUShort( sal_uInt16 val )
 {
-    VarDecFromUI2( (sal_uInt16)val, &maDec );
+    VarDecFromUI2( val, &maDec );
 }
 
 void SbxDecimal::setULong( sal_uInt32 val )
@@ -226,11 +226,15 @@ bool SbxDecimal::setString( OUString* pOUString )
                 pBuffer[i] = ',';
             i++;
         }
-        hResult = VarDecFromStr( (OLECHAR*)pBuffer.get(), nLANGID, 0, &maDec );
+        hResult = VarDecFromStr(
+            reinterpret_cast<wchar_t const *>(pBuffer.get()), nLANGID, 0,
+            &maDec );
     }
     else
     {
-        hResult = VarDecFromStr( (OLECHAR*)pOUString->getStr(), nLANGID, 0, &maDec );
+        hResult = VarDecFromStr(
+            reinterpret_cast<wchar_t const *>(pOUString->getStr()), nLANGID, 0,
+            &maDec );
     }
     bRet = ( hResult == S_OK );
     return bRet;
@@ -324,7 +328,7 @@ SbxDecimal::CmpResult compare( const SbxDecimal &rLeft, const SbxDecimal &rRight
 {
     (void)rLeft;
     (void)rRight;
-    return (SbxDecimal::CmpResult)0;
+    return SbxDecimal::CmpResult::LT;
 }
 
 void SbxDecimal::setChar( sal_Unicode val )     { (void)val; }
@@ -356,7 +360,7 @@ void SbxDecimal::getString( OUString& rString )
 
     OLECHAR sz[100];
     BSTR aBStr = SysAllocString( sz );
-    if( aBStr != NULL )
+    if( aBStr != nullptr )
     {
         HRESULT hResult = VarBstrFromDec( &maDec, nLANGID, 0, &aBStr );
         if( hResult == S_OK )

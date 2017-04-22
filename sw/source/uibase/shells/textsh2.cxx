@@ -30,17 +30,9 @@
 #include <svl/itemset.hxx>
 #include <sfx2/request.hxx>
 #include <com/sun/star/sdb/CommandType.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
-#include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/sdbc/XDataSource.hpp>
-#include <com/sun/star/sdbcx/XTablesSupplier.hpp>
 #include <com/sun/star/sdbcx/XColumnsSupplier.hpp>
-#include <com/sun/star/sdb/XQueriesSupplier.hpp>
-#include <com/sun/star/sdb/XDatabaseAccess.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/container/XChild.hpp>
 #include <comphelper/processfactory.hxx>
-#include <com/sun/star/sdbc/XRowSet.hpp>
 #include <sfx2/frame.hxx>
 #include <fldmgr.hxx>
 #include <fldbas.hxx>
@@ -172,10 +164,10 @@ void SwTextShell::ExecDB(SfxRequest &rReq)
 
                 ODataAccessDescriptor aDescriptor;
                 aDescriptor.setDataSource(sSourceArg);
-                aDescriptor[daCommand]      <<= sCommandArg;
-                aDescriptor[daCursor]       <<= xCursor;
-                aDescriptor[daSelection]    <<= aSelection;
-                aDescriptor[daCommandType]  <<= nCommandTypeArg;
+                aDescriptor[DataAccessDescriptorProperty::Command]      <<= sCommandArg;
+                aDescriptor[DataAccessDescriptorProperty::Cursor]       <<= xCursor;
+                aDescriptor[DataAccessDescriptorProperty::Selection]    <<= aSelection;
+                aDescriptor[DataAccessDescriptorProperty::CommandType]  <<= nCommandTypeArg;
 
                 SwMergeDescriptor aMergeDesc( DBMGR_MERGE, *GetShellPtr(), aDescriptor );
                 pDBManager->Merge(aMergeDesc);
@@ -196,13 +188,10 @@ void SwTextShell::ExecDB(SfxRequest &rReq)
                 OUString sColumnName;
                 if(pColumnNameItem)
                     static_cast<const SfxUsrAnyItem*>(pColumnNameItem)->GetValue() >>= sColumnName;
-                OUString sDBName = sSourceArg;
-                sDBName += OUString(DB_DELIM);
-                sDBName += sCommandArg;
-                sDBName += OUString(DB_DELIM);
-                sDBName += OUString::number(nCommandTypeArg);
-                sDBName += OUString(DB_DELIM);
-                sDBName += sColumnName;
+                OUString sDBName = sSourceArg + OUStringLiteral1(DB_DELIM)
+                    + sCommandArg + OUStringLiteral1(DB_DELIM)
+                    + OUString::number(nCommandTypeArg)
+                    + OUStringLiteral1(DB_DELIM) + sColumnName;
 
                 SwFieldMgr aFieldMgr(GetShellPtr());
                 SwInsertField_Data aData(TYP_DBFLD, 0, sDBName, OUString(), 0);
@@ -233,7 +222,7 @@ void SwTextShell::ExecDB(SfxRequest &rReq)
     }
 }
 
-IMPL_LINK_TYPED( SwBaseShell, InsertDBTextHdl, void*, p, void )
+IMPL_LINK( SwBaseShell, InsertDBTextHdl, void*, p, void )
 {
     DBTextStruct_Impl* pDBStruct = static_cast<DBTextStruct_Impl*>(p);
     if( pDBStruct )
@@ -263,7 +252,7 @@ IMPL_LINK_TYPED( SwBaseShell, InsertDBTextHdl, void*, p, void )
             SwDBData aDBData = pDBStruct->aDBData;
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
-            std::unique_ptr<AbstractSwInsertDBColAutoPilot>pDlg (pFact->CreateSwInsertDBColAutoPilot(GetView(),
+            ScopedVclPtr<AbstractSwInsertDBColAutoPilot>pDlg (pFact->CreateSwInsertDBColAutoPilot(GetView(),
                                                                                                 xSource,
                                                                                                 xColSupp,
                                                                                                 aDBData));

@@ -23,6 +23,7 @@
 #include <rtl/bootstrap.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 #include <osl/file.hxx>
+#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/xml/dom/DocumentBuilder.hpp>
 #include <com/sun/star/xml/xpath/XPathAPI.hpp>
@@ -63,7 +64,7 @@ void BackendDb::save()
     ucbDb.writeStream(xData, true /*replace existing*/);
 }
 
-css::uno::Reference<css::xml::dom::XDocument> BackendDb::getDocument()
+css::uno::Reference<css::xml::dom::XDocument> const & BackendDb::getDocument()
 {
     if (!m_doc.is())
     {
@@ -106,7 +107,7 @@ css::uno::Reference<css::xml::dom::XDocument> BackendDb::getDocument()
     return m_doc;
 }
 
-Reference<css::xml::xpath::XXPathAPI> BackendDb::getXPathAPI()
+Reference<css::xml::xpath::XXPathAPI> const & BackendDb::getXPathAPI()
 {
     if (!m_xpathApi.is())
     {
@@ -265,7 +266,7 @@ Reference<css::xml::dom::XNode> BackendDb::getKeyElement(
 
 //Only writes the data if there is at least one entry
 void BackendDb::writeVectorOfPair(
-    ::std::vector< ::std::pair< OUString, OUString > > const & vecPairs,
+    std::vector< std::pair< OUString, OUString > > const & vecPairs,
     OUString const & sVectorTagName,
     OUString const & sPairTagName,
     OUString const & sFirstTagName,
@@ -287,7 +288,7 @@ void BackendDb::writeVectorOfPair(
         xParent->appendChild(
             Reference<css::xml::dom::XNode>(
                 vectorNode, css::uno::UNO_QUERY_THROW));
-        typedef ::std::vector< ::std::pair< OUString, OUString > >::const_iterator CIT;
+        typedef std::vector< std::pair< OUString, OUString > >::const_iterator CIT;
         for (CIT i = vecPairs.begin(); i != vecPairs.end(); ++i)
         {
             const Reference<css::xml::dom::XElement> pairNode(
@@ -335,7 +336,7 @@ void BackendDb::writeVectorOfPair(
     }
 }
 
-::std::vector< ::std::pair< OUString, OUString > >
+std::vector< std::pair< OUString, OUString > >
 BackendDb::readVectorOfPair(
     Reference<css::xml::dom::XNode> const & parent,
     OUString const & sListTagName,
@@ -353,7 +354,7 @@ BackendDb::readVectorOfPair(
         const Reference<css::xml::dom::XNodeList> listPairs =
             xpathApi->selectNodeList(parent, sExprPairs);
 
-        ::std::vector< ::std::pair< OUString, OUString > > retVector;
+        std::vector< std::pair< OUString, OUString > > retVector;
         sal_Int32 length = listPairs->getLength();
         for (sal_Int32 i = 0; i < length; i++)
         {
@@ -367,7 +368,7 @@ BackendDb::readVectorOfPair(
                 xpathApi->selectSingleNode(aPair, sExprSecond);
             OSL_ASSERT(first.is() && second.is());
 
-            retVector.push_back(::std::make_pair(
+            retVector.push_back(std::make_pair(
                                     first->getNodeValue(), second->getNodeValue()));
         }
         return retVector;
@@ -383,7 +384,7 @@ BackendDb::readVectorOfPair(
 
 //Only writes the data if there is at least one entry
 void BackendDb::writeSimpleList(
-    ::std::list< OUString> const & list,
+    std::list< OUString> const & list,
     OUString const & sListTagName,
     OUString const & sMemberTagName,
     Reference<css::xml::dom::XNode> const & xParent)
@@ -403,7 +404,7 @@ void BackendDb::writeSimpleList(
             Reference<css::xml::dom::XNode>(
                 listNode, css::uno::UNO_QUERY_THROW));
 
-        typedef ::std::list<OUString>::const_iterator ITC_ITEMS;
+        typedef std::list<OUString>::const_iterator ITC_ITEMS;
         for (ITC_ITEMS i = list.begin(); i != list.end(); ++i)
         {
             const Reference<css::xml::dom::XNode> memberNode(
@@ -458,9 +459,7 @@ void BackendDb::writeSimpleElement(
 
 }
 
-/** The key elements have an url attribute and are always children of the root
-    element.
-*/
+/// The key elements have an url attribute and are always children of the root element.
 Reference<css::xml::dom::XNode> BackendDb::writeKeyElement(
     OUString const & url)
 {
@@ -473,7 +472,7 @@ Reference<css::xml::dom::XNode> BackendDb::writeKeyElement(
         const Reference<css::xml::dom::XNode> root = doc->getFirstChild();
 
         //Check if there are an entry with the same url. This can be the case if the
-        //the status of an XPackage is ambiguous. In this case a call to activateExtension
+        //status of an XPackage is ambiguous. In this case a call to activateExtension
         //(dp_extensionmanager.cxx), will register the package again. See also
         //Package::processPackage_impl in dp_backend.cxx.
         //A package can become
@@ -533,7 +532,7 @@ OUString BackendDb::readSimpleElement(
 }
 
 
-::std::list< OUString> BackendDb::readList(
+std::list< OUString> BackendDb::readList(
     Reference<css::xml::dom::XNode> const & parent,
     OUString const & sListTagName,
     OUString const & sMemberTagName)
@@ -548,7 +547,7 @@ OUString BackendDb::readSimpleElement(
         const Reference<css::xml::dom::XNodeList> list =
             xpathApi->selectNodeList(parent, sExprList);
 
-        ::std::list<OUString > retList;
+        std::list<OUString > retList;
         sal_Int32 length = list->getLength();
         for (sal_Int32 i = 0; i < length; i++)
         {
@@ -566,12 +565,12 @@ OUString BackendDb::readSimpleElement(
     }
 }
 
-::std::list<OUString> BackendDb::getOneChildFromAllEntries(
+std::list<OUString> BackendDb::getOneChildFromAllEntries(
     OUString const & name)
 {
     try
     {
-        ::std::list<OUString> listRet;
+        std::list<OUString> listRet;
         Reference<css::xml::dom::XDocument> doc = getDocument();
         Reference<css::xml::dom::XNode> root = doc->getFirstChild();
 

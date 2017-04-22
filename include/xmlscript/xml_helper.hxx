@@ -21,7 +21,7 @@
 
 #include <vector>
 #include <rtl/byteseq.hxx>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <com/sun/star/xml/sax/XDocumentHandler.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/io/XOutputStream.hpp>
@@ -39,10 +39,10 @@ namespace xmlscript
 
 
 class XMLSCRIPT_DLLPUBLIC XMLElement
-    : public ::cppu::WeakImplHelper1< css::xml::sax::XAttributeList >
+    : public cppu::WeakImplHelper< css::xml::sax::XAttributeList >
 {
 public:
-    inline XMLElement( OUString const & name )
+    XMLElement( OUString const & name )
         : _name( name )
         {}
 
@@ -80,27 +80,21 @@ public:
         css::uno::Reference< css::xml::sax::XDocumentHandler > const & xOut );
 
     // XAttributeList
-    virtual sal_Int16 SAL_CALL getLength()
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getNameByIndex( sal_Int16 nPos )
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getTypeByIndex( sal_Int16 nPos )
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getTypeByName( OUString const & rName )
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getValueByIndex( sal_Int16 nPos )
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getValueByName( OUString const & rName )
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getLength() override;
+    virtual OUString SAL_CALL getNameByIndex( sal_Int16 nPos ) override;
+    virtual OUString SAL_CALL getTypeByIndex( sal_Int16 nPos ) override;
+    virtual OUString SAL_CALL getTypeByName( OUString const & rName ) override;
+    virtual OUString SAL_CALL getValueByIndex( sal_Int16 nPos ) override;
+    virtual OUString SAL_CALL getValueByName( OUString const & rName ) override;
 
 protected:
+    ::std::vector< css::uno::Reference<
+                      css::xml::sax::XAttributeList > > _subElems;
+private:
     OUString _name;
-
     ::std::vector< OUString > _attrNames;
     ::std::vector< OUString > _attrValues;
 
-    ::std::vector< css::uno::Reference<
-                      css::xml::sax::XAttributeList > > _subElems;
 };
 
 

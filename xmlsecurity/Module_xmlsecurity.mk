@@ -9,14 +9,25 @@
 
 $(eval $(call gb_Module_Module,xmlsecurity))
 
+ifeq ($(ENABLE_NSS),TRUE)
+#FIXME: ^^^, get nss&libxmlsec building on ios and android
+#chromium has patches to build statically FWIW
+
 $(eval $(call gb_Module_add_targets,xmlsecurity,\
 	Library_xmlsecurity \
 	Library_xsec_fw \
-	$(if $(filter-out ANDROID IOS,$(OS)),Library_xsec_xmlsec) \
+	Library_xsec_xmlsec \
 ))
+
+ifneq ($(filter-out WNT MACOSX ANDROID IOS,$(OS)),)
+$(eval $(call gb_Module_add_targets,xmlsecurity,\
+	Library_xsec_gpg \
+))
+endif
 
 $(eval $(call gb_Module_add_slowcheck_targets,xmlsecurity,\
     CppunitTest_xmlsecurity_signing \
+    CppunitTest_xmlsecurity_pdfsigning \
 ))
 
 $(eval $(call gb_Module_add_l10n_targets,xmlsecurity,\
@@ -24,11 +35,26 @@ $(eval $(call gb_Module_add_l10n_targets,xmlsecurity,\
 	UIConfig_xmlsec \
 ))
 
-#FIXME: ^^^, get nss&libxmlsec building on ios and android
-
 # failing
 #$(eval $(call gb_Module_add_check_targets,xmlsecurity,\
 	CppunitTest_qa_certext \
 ))
+
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,xmlsecurity,\
+    CppunitTest_xmlsecurity_dialogs_test \
+))
+
+ifneq (,$(filter DESKTOP,$(BUILD_TYPE)))
+ifeq ($(ENABLE_PDFIUM),TRUE)
+
+$(eval $(call gb_Module_add_targets,xmlsecurity,\
+    Executable_pdfverify \
+))
+
+endif
+endif
+
+endif
 
 # vim: set noet sw=4 ts=4:

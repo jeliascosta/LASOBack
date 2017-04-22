@@ -20,8 +20,27 @@
 #ifndef INCLUDED_OOX_PPT_PPTSHAPE_HXX
 #define INCLUDED_OOX_PPT_PPTSHAPE_HXX
 
+#include <vector>
+
+#include <com/sun/star/uno/Reference.hxx>
 #include <oox/drawingml/shape.hxx>
+#include <oox/drawingml/drawingmltypes.hxx>
 #include <oox/ppt/slidepersist.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+
+namespace basegfx { class B2DHomMatrix; }
+
+namespace com { namespace sun { namespace star {
+    namespace awt { struct Rectangle; }
+    namespace drawing { class XShapes; }
+} } }
+
+namespace oox {
+    namespace core { class XmlFilterBase; }
+    namespace drawingml { class Theme; }
+    template <typename Type> class OptValue;
+}
 
 namespace oox { namespace ppt {
 
@@ -35,8 +54,8 @@ class PPTShape : public oox::drawingml::Shape
 public:
 
     PPTShape( const oox::ppt::ShapeLocation eShapeLocation,
-                const sal_Char* pServiceType = nullptr );
-    virtual ~PPTShape();
+                const sal_Char* pServiceType );
+    virtual ~PPTShape() override;
 
     using oox::drawingml::Shape::addShape;
     // addShape is creating and inserting the corresponding XShape.
@@ -46,10 +65,7 @@ public:
             const oox::drawingml::Theme* pTheme,
             const css::uno::Reference< css::drawing::XShapes >& rxShapes,
             basegfx::B2DHomMatrix& aTransformation,
-            const css::awt::Rectangle* pShapeRect = nullptr,
-            ::oox::drawingml::ShapeIdMap* pShapeMap = nullptr );
-
-    virtual void applyShapeReference( const oox::drawingml::Shape& rReferencedShape, bool bUseText = true ) override;
+            ::oox::drawingml::ShapeIdMap* pShapeMap );
 
     ShapeLocation getShapeLocation() const { return meShapeLocation; };
     void setReferenced( bool bReferenced ){ mbReferenced = bReferenced; };

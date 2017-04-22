@@ -97,7 +97,7 @@ void ScViewFunc::PasteRTF( SCCOL nStartCol, SCROW nStartRow,
             pEngine->SetPaperSize(Size(100000,100000));
             ScopedVclPtrInstance< vcl::Window > aWin( pActWin );
             EditView aEditView( pEngine.get(), aWin.get() );
-            aEditView.SetOutputArea(Rectangle(0,0,100000,100000));
+            aEditView.SetOutputArea(tools::Rectangle(0,0,100000,100000));
 
             // same method now for clipboard or drag&drop
             // mba: clipboard always must contain absolute URLs (could be from alien source)
@@ -116,7 +116,7 @@ void ScViewFunc::PasteRTF( SCCOL nStartCol, SCROW nStartRow,
             {
                 pUndoDoc = new ScDocument( SCDOCMODE_UNDO );
                 pUndoDoc->InitUndo( &rDoc, nTab, nTab );
-                rDoc.CopyToDocument( nStartCol,nStartRow,nTab, nStartCol,nEndRow,nTab, InsertDeleteFlags::ALL, false, pUndoDoc );
+                rDoc.CopyToDocument( nStartCol,nStartRow,nTab, nStartCol,nEndRow,nTab, InsertDeleteFlags::ALL, false, *pUndoDoc );
             }
 
             SCROW nRow = nStartRow;
@@ -137,7 +137,7 @@ void ScViewFunc::PasteRTF( SCCOL nStartCol, SCROW nStartRow,
             {
                 ScDocument* pRedoDoc = new ScDocument( SCDOCMODE_UNDO );
                 pRedoDoc->InitUndo( &rDoc, nTab, nTab );
-                rDoc.CopyToDocument( nStartCol,nStartRow,nTab, nStartCol,nEndRow,nTab, InsertDeleteFlags::ALL|InsertDeleteFlags::NOCAPTIONS, false, pRedoDoc );
+                rDoc.CopyToDocument( nStartCol,nStartRow,nTab, nStartCol,nEndRow,nTab, InsertDeleteFlags::ALL|InsertDeleteFlags::NOCAPTIONS, false, *pRedoDoc );
 
                 ScRange aMarkRange(nStartCol, nStartRow, nTab, nStartCol, nEndRow, nTab);
                 ScMarkData aDestMark;
@@ -161,11 +161,15 @@ void ScViewFunc::PasteRTF( SCCOL nStartCol, SCROW nStartRow,
 
         OUString aStr;
         tools::SvRef<SotStorageStream> xStream;
-        if ( aDataHelper.GetSotStorageStream( SotClipboardFormatId::RTF, xStream ) && xStream.Is() )
+        if ( aDataHelper.GetSotStorageStream( SotClipboardFormatId::RTF, xStream ) && xStream.is() )
             // mba: clipboard always must contain absolute URLs (could be from alien source)
             aImpEx.ImportStream( *xStream, OUString(), SotClipboardFormatId::RTF );
         else if ( aDataHelper.GetString( SotClipboardFormatId::RTF, aStr ) )
             aImpEx.ImportString( aStr, SotClipboardFormatId::RTF );
+        else if ( aDataHelper.GetSotStorageStream( SotClipboardFormatId::RICHTEXT, xStream ) && xStream.is() )
+            aImpEx.ImportStream( *xStream, OUString(), SotClipboardFormatId::RICHTEXT );
+        else if ( aDataHelper.GetString( SotClipboardFormatId::RICHTEXT, aStr ) )
+            aImpEx.ImportString( aStr, SotClipboardFormatId::RICHTEXT );
 
         AdjustRowHeight( nStartRow, aImpEx.GetRange().aEnd.Row() );
         pDocSh->UpdateOle(&GetViewData());
@@ -221,7 +225,7 @@ void ScViewFunc::DoRefConversion()
         ScRange aCopyRange = aMarkRange;
         aCopyRange.aStart.SetTab(0);
         aCopyRange.aEnd.SetTab(nTabCount-1);
-        pDoc->CopyToDocument( aCopyRange, InsertDeleteFlags::ALL, bMulti, pUndoDoc, &rMark );
+        pDoc->CopyToDocument( aCopyRange, InsertDeleteFlags::ALL, bMulti, *pUndoDoc, &rMark );
     }
 
     ScRangeListRef xRanges;
@@ -258,7 +262,7 @@ void ScViewFunc::DoRefConversion()
                     std::unique_ptr<ScTokenArray> pArr(aComp.CompileString(aNew));
                     ScFormulaCell* pNewCell =
                         new ScFormulaCell(
-                            pDoc, aPos, *pArr, formula::FormulaGrammar::GRAM_DEFAULT, MM_NONE);
+                            pDoc, aPos, *pArr, formula::FormulaGrammar::GRAM_DEFAULT, ScMatrixMode::NONE);
 
                     pDoc->SetFormulaCell(aPos, pNewCell);
                     bOk = true;
@@ -282,14 +286,14 @@ void ScViewFunc::DoRefConversion()
         ScRange aCopyRange = aMarkRange;
         aCopyRange.aStart.SetTab(0);
         aCopyRange.aEnd.SetTab(nTabCount-1);
-        pDoc->CopyToDocument( aCopyRange, InsertDeleteFlags::ALL, bMulti, pRedoDoc, &rMark );
+        pDoc->CopyToDocument( aCopyRange, InsertDeleteFlags::ALL, bMulti, *pRedoDoc, &rMark );
 
         pDocSh->GetUndoManager()->AddUndoAction(
             new ScUndoRefConversion( pDocSh,
-                                    aMarkRange, rMark, pUndoDoc, pRedoDoc, bMulti, InsertDeleteFlags::ALL) );
+                                    aMarkRange, rMark, pUndoDoc, pRedoDoc, bMulti) );
     }
 
-    pDocSh->PostPaint( aMarkRange, PAINT_GRID );
+    pDocSh->PostPaint( aMarkRange, PaintPartFlags::Grid );
     pDocSh->UpdateOle(&GetViewData());
     pDocSh->SetDocumentModified();
     CellContentChanged();
@@ -378,9 +382,9 @@ void ScViewFunc::DoThesaurus()
     //  language is now in EditEngine attributes -> no longer passed to StartThesaurus
 
     eState = pEditView->StartThesaurus();
-    OSL_ENSURE(eState != EE_SPELL_NOSPELLER, "No SpellChecker");
+    OSL_ENSURE(eState != EESpellState::NoSpeller, "No SpellChecker");
 
-    if (eState == EE_SPELL_ERRORFOUND)              // should happen later through Wrapper!
+    if (eState == EESpellState::ErrorFound)              // should happen later through Wrapper!
     {
         LanguageType eLnge = ScViewUtil::GetEffLanguage( &rDoc, ScAddress( nCol, nRow, nTab ) );
         OUString aErr = SvtLanguageTable::GetLanguageString(eLnge);
@@ -515,7 +519,7 @@ void ScViewFunc::DoSheetConversion( const ScConversionParam& rConvParam )
                                         // simulate dummy cell:
     pEditView = rViewData.GetEditView( rViewData.GetActivePart() );
     rViewData.SetSpellingView( pEditView );
-    Rectangle aRect( Point( 0, 0 ), Point( 0, 0 ) );
+    tools::Rectangle aRect( Point( 0, 0 ), Point( 0, 0 ) );
     pEditView->SetOutputArea( aRect );
     pEngine->SetControlWord( EEControlBits::USECHARATTRIBS );
     pEngine->EnableUndo( false );
@@ -570,7 +574,7 @@ bool ScViewFunc::PasteFile( const Point& rPos, const OUString& rFile, bool bLink
 {
     INetURLObject aURL;
     aURL.SetSmartURL( rFile );
-    OUString aStrURL = aURL.GetMainURL( INetURLObject::NO_DECODE );
+    OUString aStrURL = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
 
     // is it a media URL?
     if( ::avmedia::MediaWindow::isMediaURL( aStrURL, ""/*TODO?*/ ) )
@@ -635,7 +639,7 @@ bool ScViewFunc::PasteFile( const Point& rPos, const OUString& rFile, bool bLink
 
     if (bLink)                      // for bLink everything, which is not graphics, as URL
     {
-        Rectangle aRect( rPos, Size(0,0) );
+        tools::Rectangle aRect( rPos, Size(0,0) );
         ScRange aRange = GetViewData().GetDocument()->
                             GetRange( GetViewData().GetTabNo(), aRect );
         SCCOL nPosX = aRange.aStart.Col();
@@ -660,7 +664,7 @@ bool ScViewFunc::PasteFile( const Point& rPos, const OUString& rFile, bool bLink
         OUString aName;
         uno::Reference < embed::XEmbeddedObject > xObj = aCnt.InsertEmbeddedObject( aMedium, aName );
         if( xObj.is() )
-            return PasteObject( rPos, xObj );
+            return PasteObject( rPos, xObj, nullptr );
 
         // If an OLE object can't be created, insert a URL button
 

@@ -43,7 +43,6 @@ public:
     virtual bool RequestHelp(const HelpEvent& rHEvt) override;
 
     virtual void Activate() override;
-    virtual void Deactivate() override;
 
     virtual void ForcePointer(const MouseEvent* pMEvt = nullptr);
 
@@ -69,7 +68,7 @@ protected:
         SdDrawDocument* pDoc,
         SfxRequest& rReq);
 
-    virtual ~FuDraw();
+    virtual ~FuDraw() override;
 
     Pointer aNewPointer;
     Pointer aOldPointer;

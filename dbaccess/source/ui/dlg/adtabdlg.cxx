@@ -21,7 +21,6 @@
 #include "sqlmessage.hxx"
 #include <tools/debug.hxx>
 #include <tools/diagnose_ex.h>
-#include <svtools/localresaccess.hxx>
 #include "dbaccess_helpid.hrc"
 #include "dbu_resource.hrc"
 #include "dbu_dlg.hrc"
@@ -73,16 +72,16 @@ public:
         ,m_bAllowViews(true)
     {
     }
-    virtual ~TableListFacade();
+    virtual ~TableListFacade() override;
 
 private:
     virtual void    updateTableObjectList( bool _bAllowViews ) override;
     virtual OUString  getSelectedName( OUString& _out_rAliasName ) const override;
     virtual bool    isLeafSelected() const override;
     // OContainerListener
-    virtual void _elementInserted( const css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual void _elementRemoved( const  css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual void _elementReplaced( const css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void _elementInserted( const css::container::ContainerEvent& _rEvent ) override;
+    virtual void _elementRemoved( const  css::container::ContainerEvent& _rEvent ) override;
+    virtual void _elementReplaced( const css::container::ContainerEvent& _rEvent ) override;
 };
 
 TableListFacade::~TableListFacade()
@@ -133,17 +132,17 @@ OUString TableListFacade::getSelectedName( OUString& _out_rAliasName ) const
     return aComposedName;
 }
 
-void TableListFacade::_elementInserted( const container::ContainerEvent& /*_rEvent*/ )  throw(css::uno::RuntimeException, std::exception)
+void TableListFacade::_elementInserted( const container::ContainerEvent& /*_rEvent*/ )
 {
     updateTableObjectList(m_bAllowViews);
 }
 
-void TableListFacade::_elementRemoved( const container::ContainerEvent& /*_rEvent*/ ) throw(css::uno::RuntimeException, std::exception)
+void TableListFacade::_elementRemoved( const container::ContainerEvent& /*_rEvent*/ )
 {
     updateTableObjectList(m_bAllowViews);
 }
 
-void TableListFacade::_elementReplaced( const container::ContainerEvent& /*_rEvent*/ ) throw(css::uno::RuntimeException, std::exception)
+void TableListFacade::_elementReplaced( const container::ContainerEvent& /*_rEvent*/ )
 {
 }
 
@@ -184,13 +183,13 @@ void TableListFacade::updateTableObjectList( bool _bAllowViews )
         {
             const OUString* pTableBegin  = sTables.getConstArray();
             const OUString* pTableEnd    = pTableBegin + sTables.getLength();
-            ::std::vector< OUString > aTables(pTableBegin,pTableEnd);
+            std::vector< OUString > aTables(pTableBegin,pTableEnd);
 
             const OUString* pViewBegin = sViews.getConstArray();
             const OUString* pViewEnd   = pViewBegin + sViews.getLength();
             ::comphelper::UStringMixEqual aEqualFunctor;
             for(;pViewBegin != pViewEnd;++pViewBegin)
-                aTables.erase(::std::remove_if(aTables.begin(),aTables.end(),::std::bind2nd(aEqualFunctor,*pViewBegin)),aTables.end());
+                aTables.erase(std::remove_if(aTables.begin(),aTables.end(),std::bind2nd(aEqualFunctor,*pViewBegin)),aTables.end());
             sTables = Sequence< OUString>(aTables.data(), aTables.size());
             sViews = Sequence< OUString>();
         }
@@ -233,16 +232,16 @@ public:
         ,m_xConnection( _rxConnection )
     {
     }
-    virtual ~QueryListFacade();
+    virtual ~QueryListFacade() override;
 
 private:
     virtual void    updateTableObjectList( bool _bAllowViews ) override;
     virtual OUString  getSelectedName( OUString& _out_rAliasName ) const override;
     virtual bool    isLeafSelected() const override;
     // OContainerListener
-    virtual void _elementInserted( const css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual void _elementRemoved( const  css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual void _elementReplaced( const css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void _elementInserted( const css::container::ContainerEvent& _rEvent ) override;
+    virtual void _elementRemoved( const  css::container::ContainerEvent& _rEvent ) override;
+    virtual void _elementReplaced( const css::container::ContainerEvent& _rEvent ) override;
 };
 
 QueryListFacade::~QueryListFacade()
@@ -251,19 +250,19 @@ QueryListFacade::~QueryListFacade()
         m_pContainerListener->dispose();
 }
 
-void QueryListFacade::_elementInserted( const container::ContainerEvent& _rEvent )  throw(css::uno::RuntimeException, std::exception)
+void QueryListFacade::_elementInserted( const container::ContainerEvent& _rEvent )
 {
     OUString sName;
     if ( _rEvent.Accessor >>= sName )
         m_rQueryList.InsertEntry( sName );
 }
 
-void QueryListFacade::_elementRemoved( const container::ContainerEvent& /*_rEvent*/ ) throw(css::uno::RuntimeException, std::exception)
+void QueryListFacade::_elementRemoved( const container::ContainerEvent& /*_rEvent*/ )
 {
     updateTableObjectList(true);
 }
 
-void QueryListFacade::_elementReplaced( const container::ContainerEvent& /*_rEvent*/ ) throw(css::uno::RuntimeException, std::exception)
+void QueryListFacade::_elementReplaced( const container::ContainerEvent& /*_rEvent*/ )
 {
 }
 
@@ -322,7 +321,7 @@ OAddTableDlg::OAddTableDlg( vcl::Window* pParent, IAddTableDialogContext& _rCont
 
     get(m_pTableList, "tablelist");
     get(m_pQueryList, "querylist");
-    Size aSize(LogicToPixel(Size(106 , 122), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(106 , 122), MapUnit::MapAppFont));
     m_pTableList->set_height_request(aSize.Height());
     m_pTableList->set_width_request(aSize.Width());
     get(m_pQueryList, "querylist");
@@ -344,12 +343,12 @@ OAddTableDlg::OAddTableDlg( vcl::Window* pParent, IAddTableDialogContext& _rCont
     m_pTableList->EnableInplaceEditing( false );
     m_pTableList->SetStyle(m_pTableList->GetStyle() | WB_BORDER | WB_HASLINES |WB_HASBUTTONS | WB_HASBUTTONSATROOT | WB_HASLINESATROOT | WB_SORT | WB_HSCROLL );
     m_pTableList->EnableCheckButton( nullptr ); // do not show any buttons
-    m_pTableList->SetSelectionMode( SINGLE_SELECTION );
+    m_pTableList->SetSelectionMode( SelectionMode::Single );
     m_pTableList->notifyHiContrastChanged();
     m_pTableList->suppressEmptyFolders();
 
     m_pQueryList->EnableInplaceEditing( false );
-    m_pQueryList->SetSelectionMode( SINGLE_SELECTION );
+    m_pQueryList->SetSelectionMode( SelectionMode::Single );
 
     if ( !m_rContext.allowQueries() )
     {
@@ -406,27 +405,22 @@ void OAddTableDlg::Update()
         m_xCurrentList->updateTableObjectList( m_rContext.allowViews() );
 }
 
-void OAddTableDlg::impl_addTable()
-{
-    if ( m_xCurrentList->isLeafSelected() )
-    {
-        OUString sSelectedName, sAliasName;
-        sSelectedName = m_xCurrentList->getSelectedName( sAliasName );
-
-        m_rContext.addTableWindow( sSelectedName, sAliasName );
-    }
-}
-
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, AddClickHdl, Button*, void )
+IMPL_LINK_NOARG( OAddTableDlg, AddClickHdl, Button*, void )
 {
     TableListDoubleClickHdl(nullptr);
 }
 
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, TableListDoubleClickHdl, SvTreeListBox*, bool )
+IMPL_LINK_NOARG( OAddTableDlg, TableListDoubleClickHdl, SvTreeListBox*, bool )
 {
     if ( impl_isAddAllowed() )
     {
-        impl_addTable();
+        if ( m_xCurrentList->isLeafSelected() )
+        {
+            OUString sSelectedName, sAliasName;
+            sSelectedName = m_xCurrentList->getSelectedName( sAliasName );
+
+            m_rContext.addTableWindow( sSelectedName, sAliasName );
+        }
         if ( !impl_isAddAllowed() )
             Close();
         return true;  // handled
@@ -435,17 +429,17 @@ IMPL_LINK_NOARG_TYPED( OAddTableDlg, TableListDoubleClickHdl, SvTreeListBox*, bo
     return false;  // not handled
 }
 
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, TableListSelectHdl, SvTreeListBox*, void )
+IMPL_LINK_NOARG( OAddTableDlg, TableListSelectHdl, SvTreeListBox*, void )
 {
     m_pAddButton->Enable( m_xCurrentList->isLeafSelected() );
 }
 
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, CloseClickHdl, Button*, void )
+IMPL_LINK_NOARG( OAddTableDlg, CloseClickHdl, Button*, void )
 {
     Close();
 }
 
-IMPL_LINK_NOARG_TYPED( OAddTableDlg, OnTypeSelected, Button*, void )
+IMPL_LINK_NOARG( OAddTableDlg, OnTypeSelected, Button*, void )
 {
     if ( m_pCaseTables->IsChecked() )
         impl_switchTo( Tables );

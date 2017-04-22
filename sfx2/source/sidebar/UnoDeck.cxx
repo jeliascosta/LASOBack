@@ -34,7 +34,6 @@ SidebarController* SfxUnoDeck::getSidebarController()
 }
 
 OUString SAL_CALL SfxUnoDeck::getId()
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -42,12 +41,11 @@ OUString SAL_CALL SfxUnoDeck::getId()
 }
 
 OUString SAL_CALL  SfxUnoDeck::getTitle()
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     SidebarController* pSidebarController = getSidebarController();
-    Deck* pDeck = pSidebarController->GetResourceManager()->GetDeckDescriptor(mDeckId)->mpDeck;
+    VclPtr<Deck> pDeck = pSidebarController->GetResourceManager()->GetDeckDescriptor(mDeckId)->mpDeck;
 
     if (!pDeck)
     {
@@ -55,12 +53,11 @@ OUString SAL_CALL  SfxUnoDeck::getTitle()
         pDeck = pSidebarController->GetResourceManager()->GetDeckDescriptor(mDeckId)->mpDeck;
     }
 
-    DeckTitleBar* pTitleBar = pDeck->GetTitleBar();
+    VclPtr<DeckTitleBar> pTitleBar = pDeck->GetTitleBar();
     return pTitleBar->GetTitle();
 }
 
 void SAL_CALL SfxUnoDeck::setTitle( const OUString& newTitle )
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -72,7 +69,7 @@ void SAL_CALL SfxUnoDeck::setTitle( const OUString& newTitle )
     if (xDeckDescriptor)
     {
         Deck* pDeck = xDeckDescriptor->mpDeck;
-        DeckTitleBar* pTitleBar = pDeck->GetTitleBar();
+        VclPtr<DeckTitleBar> pTitleBar = pDeck->GetTitleBar();
         pTitleBar->SetTitle(newTitle);
 
         xDeckDescriptor->msTitle = newTitle;
@@ -83,7 +80,6 @@ void SAL_CALL SfxUnoDeck::setTitle( const OUString& newTitle )
 }
 
 sal_Bool SAL_CALL SfxUnoDeck::isActive()
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -93,7 +89,6 @@ sal_Bool SAL_CALL SfxUnoDeck::isActive()
 
 
 void SAL_CALL SfxUnoDeck::activate( const sal_Bool bActivate )
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -109,7 +104,6 @@ void SAL_CALL SfxUnoDeck::activate( const sal_Bool bActivate )
 }
 
 uno::Reference<ui::XPanels> SAL_CALL SfxUnoDeck::getPanels()
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -118,7 +112,6 @@ uno::Reference<ui::XPanels> SAL_CALL SfxUnoDeck::getPanels()
 }
 
 sal_Int32 SAL_CALL SfxUnoDeck::getOrderIndex()
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SidebarController* pSidebarController = getSidebarController();
@@ -128,7 +121,6 @@ sal_Int32 SAL_CALL SfxUnoDeck::getOrderIndex()
 }
 
 void SAL_CALL SfxUnoDeck::setOrderIndex( const sal_Int32 newOrderIndex )
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SidebarController* pSidebarController = getSidebarController();
@@ -144,7 +136,6 @@ void SAL_CALL SfxUnoDeck::setOrderIndex( const sal_Int32 newOrderIndex )
 }
 
 void SAL_CALL SfxUnoDeck::moveFirst()
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SidebarController* pSidebarController = getSidebarController();
@@ -168,7 +159,6 @@ void SAL_CALL SfxUnoDeck::moveFirst()
 }
 
 void SAL_CALL SfxUnoDeck::moveLast()
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SidebarController* pSidebarController = getSidebarController();
@@ -192,7 +182,6 @@ void SAL_CALL SfxUnoDeck::moveLast()
 }
 
 void SAL_CALL SfxUnoDeck::moveUp()
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SidebarController* pSidebarController = getSidebarController();
@@ -225,7 +214,6 @@ void SAL_CALL SfxUnoDeck::moveUp()
 }
 
 void SAL_CALL SfxUnoDeck::moveDown()
-                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SidebarController* pSidebarController = getSidebarController();

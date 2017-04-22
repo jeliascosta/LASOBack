@@ -78,13 +78,13 @@ struct SdrMediaObj::Impl
 
 SdrMediaObj::SdrMediaObj()
     : SdrRectObj()
-    , m_xImpl( new Impl() )
+    , m_xImpl( new Impl )
 {
 }
 
-SdrMediaObj::SdrMediaObj( const Rectangle& rRect )
+SdrMediaObj::SdrMediaObj( const tools::Rectangle& rRect )
     : SdrRectObj( rRect )
-    , m_xImpl( new Impl() )
+    , m_xImpl( new Impl )
 {
 }
 
@@ -182,9 +182,11 @@ const uno::Reference< graphic::XGraphic > SdrMediaObj::getSnapshot() const
     return m_xImpl->m_xCachedSnapshot;
 }
 
-void SdrMediaObj::AdjustToMaxRect( const Rectangle& rMaxRect, bool bShrinkOnly /* = false */ )
+void SdrMediaObj::AdjustToMaxRect( const tools::Rectangle& rMaxRect, bool bShrinkOnly /* = false */ )
 {
-    Size aSize( Application::GetDefaultDevice()->PixelToLogic( getPreferredSize(), MAP_100TH_MM ) );
+    Size aSize( Application::GetDefaultDevice()->PixelToLogic(
+                    static_cast< sdr::contact::ViewContactOfSdrMediaObj& >( GetViewContact() ).getPreferredSize(),
+                    MapUnit::Map100thMM ) );
     Size aMaxSize( rMaxRect.GetSize() );
 
     if( aSize.Height() != 0 && aSize.Width() != 0 )
@@ -222,7 +224,7 @@ void SdrMediaObj::AdjustToMaxRect( const Rectangle& rMaxRect, bool bShrinkOnly /
 
         aPos.X() -= aSize.Width() / 2;
         aPos.Y() -= aSize.Height() / 2;
-        SetLogicRect( Rectangle( aPos, aSize ) );
+        SetLogicRect( tools::Rectangle( aPos, aSize ) );
     }
 }
 
@@ -249,11 +251,6 @@ void SdrMediaObj::setMediaProperties( const ::avmedia::MediaItem& rState )
 const ::avmedia::MediaItem& SdrMediaObj::getMediaProperties() const
 {
     return m_xImpl->m_MediaProperties;
-}
-
-Size SdrMediaObj::getPreferredSize() const
-{
-    return static_cast< sdr::contact::ViewContactOfSdrMediaObj& >( GetViewContact() ).getPreferredSize();
 }
 
 uno::Reference<io::XInputStream> SdrMediaObj::GetInputStream()
@@ -304,7 +301,7 @@ static bool lcl_HandleJsonPackageURL(
             const OUString& rFilename = aFilenames[nFileIndex];
             INetURLObject aUrlObj(o_rTempDirURL);
             aUrlObj.insertName(rFilename);
-            const OUString sFilepath = aUrlObj.GetMainURL( INetURLObject::NO_DECODE );
+            const OUString sFilepath = aUrlObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
 
             // Media URL will point at json file
             if( rFilename.endsWith(".json") )

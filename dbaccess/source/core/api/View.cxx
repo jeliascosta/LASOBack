@@ -50,14 +50,13 @@ namespace dbaccess
     // View
     View::View( const Reference< XConnection >& _rxConnection, bool _bCaseSensitive,
         const OUString& _rCatalogName,const OUString& _rSchemaName, const OUString& _rName )
-        :View_Base( _bCaseSensitive, _rName, _rxConnection->getMetaData(), 0, OUString(), _rSchemaName, _rCatalogName )
+        :View_Base( _bCaseSensitive, _rName, _rxConnection->getMetaData(), OUString(), _rSchemaName, _rCatalogName )
     {
         m_nCommandHandle = getProperty(PROPERTY_COMMAND).Handle;
         try
         {
             Reference<XMultiServiceFactory> xFac(_rxConnection,UNO_QUERY_THROW);
-            static const char s_sViewAccess[] = "ViewAccessServiceName";
-            m_xViewAccess.set(xFac->createInstance(lcl_getServiceNameForSetting(_rxConnection,s_sViewAccess)),UNO_QUERY);
+            m_xViewAccess.set(xFac->createInstance(lcl_getServiceNameForSetting(_rxConnection,"ViewAccessServiceName")),UNO_QUERY);
         }
         catch(const Exception& )
         {
@@ -72,7 +71,7 @@ namespace dbaccess
     IMPLEMENT_FORWARD_REFCOUNT( View, View_Base )
     IMPLEMENT_GET_IMPLEMENTATION_ID( View )
 
-    Any SAL_CALL View::queryInterface( const Type & _rType ) throw(RuntimeException, std::exception)
+    Any SAL_CALL View::queryInterface( const Type & _rType )
     {
         if(_rType == cppu::UnoType<XAlterView>::get()&& !m_xViewAccess.is() )
             return Any();
@@ -82,12 +81,12 @@ namespace dbaccess
         return aReturn;
     }
 
-    Sequence< Type > SAL_CALL View::getTypes(  ) throw(RuntimeException, std::exception)
+    Sequence< Type > SAL_CALL View::getTypes(  )
     {
         Type aAlterType = cppu::UnoType<XAlterView>::get();
 
         Sequence< Type > aTypes( ::comphelper::concatSequences(View_Base::getTypes(),View_IBASE::getTypes()) );
-        ::std::vector<Type> aOwnTypes;
+        std::vector<Type> aOwnTypes;
         aOwnTypes.reserve(aTypes.getLength());
 
         const Type* pIter = aTypes.getConstArray();
@@ -101,7 +100,7 @@ namespace dbaccess
         return Sequence< Type >(aOwnTypes.data(), aOwnTypes.size());
     }
 
-    void SAL_CALL View::alterCommand( const OUString& _rNewCommand ) throw (SQLException, RuntimeException, std::exception)
+    void SAL_CALL View::alterCommand( const OUString& _rNewCommand )
     {
         OSL_ENSURE(m_xViewAccess.is(),"Illegal call to AlterView!");
         m_xViewAccess->alterCommand(this,_rNewCommand);

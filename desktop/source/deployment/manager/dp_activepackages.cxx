@@ -155,6 +155,7 @@ bool ActivePackages::get(
     (void) data;
     (void) id;
     (void) fileName;
+    (void) this;
     return false;
 #endif
 }
@@ -168,7 +169,7 @@ ActivePackages::Entries ActivePackages::getEntries() const {
     {
         if (!i->first.isEmpty() && i->first[0] == separator) {
             es.push_back(
-                ::std::make_pair(
+                std::make_pair(
                     OUString(
                         i->first.getStr() + 1, i->first.getLength() - 1,
                         RTL_TEXTENCODING_UTF8),
@@ -177,11 +178,13 @@ ActivePackages::Entries ActivePackages::getEntries() const {
             OUString fn(
                 OStringToOUString(i->first, RTL_TEXTENCODING_UTF8));
             es.push_back(
-                ::std::make_pair(
+                std::make_pair(
                     ::dp_misc::generateLegacyIdentifier(fn),
                     decodeOldData(fn, i->second)));
         }
     }
+#else
+    (void) this;
 #endif
     return es;
 }
@@ -203,6 +206,7 @@ void ActivePackages::put(OUString const & id, Data const & data) {
 #else
     (void) id;
     (void) data;
+    (void) this;
 #endif
 }
 
@@ -214,6 +218,7 @@ void ActivePackages::erase(
 #else
     (void) id;
     (void) fileName;
+    (void) this;
 #endif
 }
 

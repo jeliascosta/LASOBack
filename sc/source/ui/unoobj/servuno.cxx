@@ -44,6 +44,7 @@
 #include "addruno.hxx"
 #include "chart2uno.hxx"
 #include "tokenuno.hxx"
+#include "PivotTableDataProvider.hxx"
 
 // Support creation of GraphicObjectResolver and EmbeddedObjectResolver
 #include <svx/xmleohlp.hxx>
@@ -87,12 +88,12 @@ public:
     {
         uno::Sequence< uno::Any > aArgs(2);
         // access the application object ( parent for workbook )
-        aArgs[0] = uno::Any( ooo::vba::createVBAUnoAPIServiceWithArgs( mpDocShell, "ooo.vba.Application", uno::Sequence< uno::Any >() ) );
-        aArgs[1] = uno::Any( mpDocShell->GetModel() );
+        aArgs[0] <<= ooo::vba::createVBAUnoAPIServiceWithArgs( mpDocShell, "ooo.vba.Application", uno::Sequence< uno::Any >() );
+        aArgs[1] <<= mpDocShell->GetModel();
         maWorkbook <<= ooo::vba::createVBAUnoAPIServiceWithArgs( mpDocShell, "ooo.vba.excel.Workbook", aArgs );
     }
 
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception ) override
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override
     {
         SolarMutexGuard aGuard;
         maCachedObject = uno::Any(); // clear cached object
@@ -123,8 +124,8 @@ public:
                         uno::Reference< sheet::XSpreadsheet > xSheet( xIndexAccess->getByIndex( i ), uno::UNO_QUERY_THROW );
                         uno::Sequence< uno::Any > aArgs(3);
                         aArgs[0] = maWorkbook;
-                        aArgs[1] = uno::Any( xModel );
-                        aArgs[2] = uno::Any( OUString( sSheetName ) );
+                        aArgs[1] <<= xModel;
+                        aArgs[2] <<= sSheetName;
                         // use the convience function
                         maCachedObject <<= ooo::vba::createVBAUnoAPIServiceWithArgs( mpDocShell, "ooo.vba.excel.Worksheet", aArgs );
                         break;
@@ -135,16 +136,14 @@ public:
         return maCachedObject.hasValue();
 
     }
-    css::uno::Any SAL_CALL getByName( const OUString& aName ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
+    css::uno::Any SAL_CALL getByName( const OUString& aName ) override
     {
         SolarMutexGuard aGuard;
-        OSL_TRACE("ScVbaObjectForCodeNameProvider::getByName( %s )",
-            OUStringToOString( aName, RTL_TEXTENCODING_UTF8 ).getStr() );
         if ( !hasByName( aName ) )
             throw css::container::NoSuchElementException();
         return maCachedObject;
     }
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override
     {
         SolarMutexGuard aGuard;
         ScDocument& rDoc = mpDocShell->GetDocument();
@@ -161,8 +160,8 @@ public:
         return aNames;
     }
     // XElemenAccess
-    virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override { return uno::Type(); }
-    virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception ) override { return true; }
+    virtual css::uno::Type SAL_CALL getElementType(  ) override { return uno::Type(); }
+    virtual sal_Bool SAL_CALL hasElements(  ) override { return true; }
 
 };
 
@@ -172,7 +171,7 @@ class ScVbaCodeNameProvider : public ::cppu::WeakImplHelper< document::XCodeName
 public:
     explicit ScVbaCodeNameProvider( ScDocShell& rDocShell ) : mrDocShell(rDocShell) {}
     // XCodeNameQuery
-    OUString SAL_CALL getCodeNameForObject( const uno::Reference< uno::XInterface >& xIf ) throw( uno::RuntimeException, std::exception ) override
+    OUString SAL_CALL getCodeNameForObject( const uno::Reference< uno::XInterface >& xIf ) override
     {
         SolarMutexGuard aGuard;
         OUString sCodeName;
@@ -211,8 +210,7 @@ public:
         return sCodeName;
     }
 
-    OUString SAL_CALL getCodeNameForContainer( const uno::Reference<uno::XInterface>& xContainer )
-            throw( uno::RuntimeException, std::exception ) override
+    OUString SAL_CALL getCodeNameForContainer( const uno::Reference<uno::XInterface>& xContainer ) override
     {
         SolarMutexGuard aGuard;
         uno::Reference<drawing::XDrawPagesSupplier> xSupplier(mrDocShell.GetModel(), uno::UNO_QUERY_THROW);
@@ -295,6 +293,7 @@ const ProvNamesId_Type aProvNamesId[] =
     { "com.sun.star.sheet.DocumentSettings",Type::SHEETDOCSET },
 
     { SC_SERVICENAME_CHDATAPROV,            Type::CHDATAPROV },
+    { SC_SERVICENAME_CHART_PIVOTTABLE_DATAPROVIDER, Type::CHART_PIVOTTABLE_DATAPROVIDER },
     { SC_SERVICENAME_FORMULAPARS,           Type::FORMULAPARS },
     { SC_SERVICENAME_OPCODEMAPPER,          Type::OPCODEMAPPER },
     { "ooo.vba.VBAObjectModuleObjectProvider", Type::VBAOBJECTPROVIDER },
@@ -391,10 +390,11 @@ uno::Reference<uno::XInterface> ScServiceProvider::MakeInstance(
                                     Type nType, ScDocShell* pDocShell )
 {
     uno::Reference<uno::XInterface> xRet;
+
     switch (nType)
     {
         case Type::SHEET:
-            //  noch nicht eingefuegt - DocShell=Null
+            //  not inserted yet - DocShell=Null
             xRet.set(static_cast<sheet::XSpreadsheet*>(new ScTableSheetObj(nullptr,0)));
             break;
         case Type::URLFIELD:
@@ -421,8 +421,8 @@ uno::Reference<uno::XInterface> ScServiceProvider::MakeInstance(
             xRet.set(static_cast<container::XIndexAccess*>(new ScAutoFormatObj( SC_AFMTOBJ_INVALID )));
             break;
         case Type::CELLRANGES:
-            //  wird nicht eingefuegt, sondern gefuellt
-            //  -> DocShell muss gesetzt sein, aber leere Ranges
+            //  isn't inserted, rather filled
+            //  -> DocShell must be set, but empty ranges
             if (pDocShell)
                 xRet.set(static_cast<sheet::XSheetCellRanges*>(new ScCellRangesObj( pDocShell, ScRangeList() )));
             break;
@@ -485,18 +485,18 @@ uno::Reference<uno::XInterface> ScServiceProvider::MakeInstance(
 
         // Support creation of GraphicObjectResolver and EmbeddedObjectResolver
         case Type::EXPORT_GOR:
-            xRet.set(static_cast<cppu::OWeakObject *>(new SvXMLGraphicHelper( GRAPHICHELPER_MODE_WRITE )));
+            xRet.set(static_cast<cppu::OWeakObject *>(new SvXMLGraphicHelper( SvXMLGraphicHelperMode::Write )));
             break;
         case Type::IMPORT_GOR:
-            xRet.set(static_cast<cppu::OWeakObject *>(new SvXMLGraphicHelper( GRAPHICHELPER_MODE_READ )));
+            xRet.set(static_cast<cppu::OWeakObject *>(new SvXMLGraphicHelper( SvXMLGraphicHelperMode::Read )));
             break;
         case Type::EXPORT_EOR:
             if (pDocShell)
-                xRet.set(static_cast<cppu::OWeakObject *>(new SvXMLEmbeddedObjectHelper( *pDocShell, EMBEDDEDOBJECTHELPER_MODE_WRITE )));
+                xRet.set(static_cast<cppu::OWeakObject *>(new SvXMLEmbeddedObjectHelper( *pDocShell, SvXMLEmbeddedObjectHelperMode::Write )));
             break;
         case Type::IMPORT_EOR:
             if (pDocShell)
-                xRet.set(static_cast<cppu::OWeakObject *>(new SvXMLEmbeddedObjectHelper( *pDocShell, EMBEDDEDOBJECTHELPER_MODE_READ )));
+                xRet.set(static_cast<cppu::OWeakObject *>(new SvXMLEmbeddedObjectHelper( *pDocShell, SvXMLEmbeddedObjectHelperMode::Read )));
             break;
         case Type::VALBIND:
         case Type::LISTCELLBIND:
@@ -526,6 +526,10 @@ uno::Reference<uno::XInterface> ScServiceProvider::MakeInstance(
             if (pDocShell)
                 xRet = *new ScChart2DataProvider( &pDocShell->GetDocument() );
             break;
+        case Type::CHART_PIVOTTABLE_DATAPROVIDER:
+            if (pDocShell)
+                xRet = *new sc::PivotTableDataProvider(&pDocShell->GetDocument());
+            break;
         case Type::FORMULAPARS:
             if (pDocShell)
                 xRet.set(static_cast<sheet::XFormulaParser*>(new ScFormulaParserObj( pDocShell )));
@@ -545,14 +549,12 @@ uno::Reference<uno::XInterface> ScServiceProvider::MakeInstance(
         case Type::VBAOBJECTPROVIDER:
             if (pDocShell && pDocShell->GetDocument().IsInVBAMode())
             {
-                OSL_TRACE("**** creating VBA Object mapper");
                 xRet.set(static_cast<container::XNameAccess*>(new ScVbaObjectForCodeNameProvider( pDocShell )));
             }
             break;
         case Type::VBACODENAMEPROVIDER:
             if ( pDocShell && isInVBAMode( *pDocShell ) )
             {
-                OSL_TRACE("**** creating VBA Object provider");
                 xRet.set(static_cast<document::XCodeNameQuery*>(new ScVbaCodeNameProvider(*pDocShell)));
             }
             break;

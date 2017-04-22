@@ -13,7 +13,7 @@ $(eval $(call gb_ExternalProject_register_targets,freetype,\
 	build \
 ))
 
-ifeq ($(OS)$(COM),WNTMSC)
+ifeq ($(OS),WNT)
 $(call gb_ExternalProject_get_state_target,freetype,build) :
 	$(call gb_ExternalProject_run,build,\
 		cd ../builds/win32/vc2010/ && \
@@ -26,10 +26,10 @@ $(call gb_ExternalProject_get_state_target,freetype,build) :
 			--disable-shared \
 			--without-zlib \
 			--without-bzip2 \
+			--without-harfbuzz \
 			--prefix=$(call gb_UnpackedTarball_get_dir,freetype/instdir) \
 			--build=$(BUILD_PLATFORM) --host=$(HOST_PLATFORM) \
 			CFLAGS="$(if $(debug),-g) $(gb_VISIBILITY_FLAGS)" \
-		&& chmod +x builds/unix/freetype-config \
 		&& $(MAKE) install \
 		&& touch $@	)
 endif

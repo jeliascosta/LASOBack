@@ -63,7 +63,7 @@ DragMethod_PieSegment::DragMethod_PieSegment( DrawViewWrapper& rDrawViewWrapper
     B2DVector aMaxVector( aMaximumPosition.X, aMaximumPosition.Y );
     m_aDragDirection = aMaxVector - aMinVector;
     m_fDragRange = m_aDragDirection.scalar( m_aDragDirection );
-    if( ::rtl::math::approxEqual( m_fDragRange, 0.0 ) )
+    if( m_fDragRange == 0.0 )
         m_fDragRange = 1.0;
 }
 DragMethod_PieSegment::~DragMethod_PieSegment()
@@ -116,7 +116,7 @@ bool DragMethod_PieSegment::EndSdrDrag(bool /*bCopy*/)
             Reference< beans::XPropertySet > xPointProperties(
                 ObjectIdentifier::getObjectPropertySet( m_aObjectCID, xChartModel ) );
             if( xPointProperties.is() )
-                xPointProperties->setPropertyValue( "Offset", uno::makeAny( m_fAdditionalOffset+m_fInitialOffset ));
+                xPointProperties->setPropertyValue( "Offset", uno::Any( m_fAdditionalOffset+m_fInitialOffset ));
         }
     }
     catch( const uno::Exception & ex )

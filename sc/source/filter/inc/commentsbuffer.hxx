@@ -29,8 +29,7 @@ namespace xls {
 
 struct CommentModel
 {
-    css::table::CellRangeAddress
-                        maRange;            /// Position of the comment in the worksheet.
+    ScRange             maRange;            /// Position of the comment in the worksheet.
     RichStringRef       mxText;             /// Formatted text of the comment (not used in BIFF8).
     sal_Int32           mnAuthorId;         /// Identifier of the comment's author (OOXML and BIFF12 only).
     bool                mbAutoFill;         /// Auto Selection of comment object's fill style
@@ -41,7 +40,6 @@ struct CommentModel
     sal_Int32           mnTHA;              /// Horizontal Alignment
     sal_Int32           mnTVA;              /// Vertical Alignment
     css::awt::Rectangle maAnchor;           /// Anchor parameters
-    bool                mbVisible;          /// True = comment is always shown (BIFF2-BIFF8 only).
 
     explicit            CommentModel();
 };
@@ -59,7 +57,7 @@ public:
     void                importComment( SequenceInputStream& rStrm );
 
     /** Creates and returns a new rich-string object for the comment text. */
-    RichStringRef       createText();
+    RichStringRef const & createText();
 
     /** Finalizes the formatted string of the comment. */
     void                finalizeImport();

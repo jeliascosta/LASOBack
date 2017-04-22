@@ -31,6 +31,7 @@
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
 #include <unotools/pathoptions.hxx>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <comphelper/servicehelper.hxx>
 #include <cppuhelper/supportsservice.hxx>
 
@@ -67,40 +68,22 @@ GalleryTheme::~GalleryTheme()
 }
 
 
-OUString GalleryTheme::getImplementationName_Static()
-    throw()
+OUString SAL_CALL GalleryTheme::getImplementationName()
 {
     return OUString( "com.sun.star.comp.gallery.GalleryTheme" );
 }
 
-
-uno::Sequence< OUString > GalleryTheme::getSupportedServiceNames_Static()
-    throw()
-{
-    uno::Sequence< OUString > aSeq { "com.sun.star.gallery.GalleryTheme" };
-    return aSeq;
-}
-
-OUString SAL_CALL GalleryTheme::getImplementationName()
-    throw( uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
 sal_Bool SAL_CALL GalleryTheme::supportsService( const OUString& ServiceName )
-    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService( this, ServiceName );
 }
 
 uno::Sequence< OUString > SAL_CALL GalleryTheme::getSupportedServiceNames()
-    throw( uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { "com.sun.star.gallery.GalleryTheme" };
 }
 
 uno::Sequence< uno::Type > SAL_CALL GalleryTheme::getTypes()
-    throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence< uno::Type >  aTypes( 5 );
     uno::Type*                  pTypes = aTypes.getArray();
@@ -115,21 +98,18 @@ uno::Sequence< uno::Type > SAL_CALL GalleryTheme::getTypes()
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL GalleryTheme::getImplementationId()
-    throw(uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 
 uno::Type SAL_CALL GalleryTheme::getElementType()
-    throw (uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<gallery::XGalleryItem>::get();
 }
 
 
 sal_Bool SAL_CALL GalleryTheme::hasElements()
-    throw (uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
 
@@ -138,7 +118,6 @@ sal_Bool SAL_CALL GalleryTheme::hasElements()
 
 
 sal_Int32 SAL_CALL GalleryTheme::getCount()
-    throw (uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
 
@@ -147,7 +126,6 @@ sal_Int32 SAL_CALL GalleryTheme::getCount()
 
 
 uno::Any SAL_CALL GalleryTheme::getByIndex( ::sal_Int32 nIndex )
-    throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
     uno::Any            aRet;
@@ -163,7 +141,7 @@ uno::Any SAL_CALL GalleryTheme::getByIndex( ::sal_Int32 nIndex )
             const GalleryObject* pObj = mpTheme->ImplGetGalleryObject( nIndex );
 
             if( pObj )
-                aRet = uno::makeAny( uno::Reference< gallery::XGalleryItem >( new GalleryItem( *this, *pObj ) ) );
+                aRet <<= uno::Reference< gallery::XGalleryItem >( new GalleryItem( *this, *pObj ) );
         }
     }
 
@@ -172,7 +150,6 @@ uno::Any SAL_CALL GalleryTheme::getByIndex( ::sal_Int32 nIndex )
 
 
 OUString SAL_CALL GalleryTheme::getName(  )
-    throw (uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
     OUString     aRet;
@@ -185,7 +162,6 @@ OUString SAL_CALL GalleryTheme::getName(  )
 
 
 void SAL_CALL GalleryTheme::update(  )
-    throw (uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
 
@@ -199,7 +175,6 @@ void SAL_CALL GalleryTheme::update(  )
 
 ::sal_Int32 SAL_CALL GalleryTheme::insertURLByIndex(
     const OUString& rURL, ::sal_Int32 nIndex )
-    throw (lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
     sal_Int32           nRet = -1;
@@ -231,7 +206,6 @@ void SAL_CALL GalleryTheme::update(  )
 
 ::sal_Int32 SAL_CALL GalleryTheme::insertGraphicByIndex(
     const uno::Reference< graphic::XGraphic >& rxGraphic, sal_Int32 nIndex )
-    throw (lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
     sal_Int32           nRet = -1;
@@ -258,7 +232,6 @@ void SAL_CALL GalleryTheme::update(  )
 
 ::sal_Int32 SAL_CALL GalleryTheme::insertDrawingByIndex(
     const uno::Reference< lang::XComponent >& Drawing, sal_Int32 nIndex )
-    throw (lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
     sal_Int32 nRet = -1;
@@ -312,7 +285,6 @@ void SAL_CALL GalleryTheme::update(  )
 
 
 void SAL_CALL GalleryTheme::removeByIndex( sal_Int32 nIndex )
-    throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
 

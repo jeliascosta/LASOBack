@@ -53,13 +53,13 @@ typedef std::vector<SwCacheObj*> SwCacheObjArr;
 class SwCache
 {
     SwCacheObjArr m_aCacheObjects;
-    std::vector<sal_uInt16> aFreePositions; /// Free positions for the Insert if the maximum has not been reached
+    std::vector<sal_uInt16> m_aFreePositions; /// Free positions for the Insert if the maximum has not been reached
                                             /// Every time an object is deregistered, its position is added here
-    SwCacheObj *pRealFirst;                 /// _ALWAYS_ the real first LRU
-    SwCacheObj *pFirst;                     /// The virtual first
-    SwCacheObj *pLast;
+    SwCacheObj *m_pRealFirst;                 /// _ALWAYS_ the real first LRU
+    SwCacheObj *m_pFirst;                     /// The virtual first
+    SwCacheObj *m_pLast;
 
-    sal_uInt16 nCurMax;                     // Maximum of accepted objects
+    sal_uInt16 m_nCurMax;                     // Maximum of accepted objects
 
     void DeleteObj( SwCacheObj *pObj );
 
@@ -105,15 +105,15 @@ public:
     void Delete( const void *pOwner );
 
     void SetLRUOfst( const sal_uInt16 nOfst );  /// nOfst determines how many are not to be touched
-    void ResetLRUOfst() { pFirst = pRealFirst; }
+    void ResetLRUOfst() { m_pFirst = m_pRealFirst; }
 
     inline void IncreaseMax( const sal_uInt16 nAdd );
     inline void DecreaseMax( const sal_uInt16 nSub );
-    sal_uInt16 GetCurMax() const { return nCurMax; }
-    inline SwCacheObj *First() { return pRealFirst; }
+    sal_uInt16 GetCurMax() const { return m_nCurMax; }
+    SwCacheObj *First() { return m_pRealFirst; }
     static inline SwCacheObj *Next( SwCacheObj *pCacheObj);
-    inline SwCacheObj* operator[](sal_uInt16 nIndex) { return m_aCacheObjects[nIndex]; }
-    inline sal_uInt16 size() { return m_aCacheObjects.size(); }
+    SwCacheObj* operator[](sal_uInt16 nIndex) { return m_aCacheObjects[nIndex]; }
+    sal_uInt16 size() { return m_aCacheObjects.size(); }
 };
 
 /// Safely manipulate the cache
@@ -143,12 +143,12 @@ class SwCacheObj
 
     sal_uInt8       m_nLock;
 
-    inline SwCacheObj *GetNext() { return m_pNext; }
-    inline SwCacheObj *GetPrev() { return m_pPrev; }
-    inline void SetNext( SwCacheObj *pNew )  { m_pNext = pNew; }
-    inline void SetPrev( SwCacheObj *pNew )  { m_pPrev = pNew; }
+    SwCacheObj *GetNext() { return m_pNext; }
+    SwCacheObj *GetPrev() { return m_pPrev; }
+    void SetNext( SwCacheObj *pNew )  { m_pNext = pNew; }
+    void SetPrev( SwCacheObj *pNew )  { m_pPrev = pNew; }
 
-    inline void   SetCachePos( const sal_uInt16 nNew ) { m_nCachePos = nNew; }
+    void   SetCachePos( const sal_uInt16 nNew ) { m_nCachePos = nNew; }
 
 protected:
     const void *m_pOwner;
@@ -158,19 +158,19 @@ public:
     SwCacheObj( const void *pOwner );
     virtual ~SwCacheObj();
 
-    inline const void *GetOwner() const { return m_pOwner; }
+    const void *GetOwner() const { return m_pOwner; }
     inline bool IsOwner( const void *pNew ) const;
 
-    inline sal_uInt16 GetCachePos() const { return m_nCachePos; }
+    sal_uInt16 GetCachePos() const { return m_nCachePos; }
 
-    inline bool IsLocked() const { return 0 != m_nLock; }
+    bool IsLocked() const { return 0 != m_nLock; }
 
 #ifdef DBG_UTIL
     void Lock();
     void Unlock();
 #else
-    inline void Lock() { ++m_nLock; }
-    inline void Unlock() { --m_nLock; }
+    void Lock() { ++m_nLock; }
+    void Unlock() { --m_nLock; }
 #endif
 };
 
@@ -187,19 +187,19 @@ public:
  */
 class SwCacheAccess
 {
-    SwCache &rCache;
+    SwCache &m_rCache;
 
     void Get_();
 
 protected:
-    SwCacheObj *pObj;
-    const void *pOwner; /// Can be use in NewObj
+    SwCacheObj *m_pObj;
+    const void *m_pOwner; /// Can be use in NewObj
 
     virtual SwCacheObj *NewObj() = 0;
 
     inline SwCacheObj *Get();
 
-    inline SwCacheAccess( SwCache &rCache, const void *pOwner, bool bSeek = true );
+    inline SwCacheAccess( SwCache &rCache, const void *pOwner, bool bSeek );
     inline SwCacheAccess( SwCache &rCache, const void *pOwner, const sal_uInt16 nIndex );
 
 public:
@@ -209,20 +209,20 @@ public:
 
     /// Shorthand for those who know that they did not override isAvailable()
     /// FIXME: wtf?
-    bool IsAvail() const { return pObj != nullptr; }
+    bool IsAvail() const { return m_pObj != nullptr; }
 };
 
 inline void SwCache::IncreaseMax( const sal_uInt16 nAdd )
 {
-    nCurMax = nCurMax + sal::static_int_cast< sal_uInt16 >(nAdd);
+    m_nCurMax = m_nCurMax + sal::static_int_cast< sal_uInt16 >(nAdd);
 #ifdef DBG_UTIL
     ++m_nIncreaseMax;
 #endif
 }
 inline void SwCache::DecreaseMax( const sal_uInt16 nSub )
 {
-    if ( nCurMax > nSub )
-        nCurMax = nCurMax - sal::static_int_cast< sal_uInt16 >(nSub);
+    if ( m_nCurMax > nSub )
+        m_nCurMax = m_nCurMax - sal::static_int_cast< sal_uInt16 >(nSub);
 #ifdef DBG_UTIL
     ++m_nDecreaseMax;
 #endif
@@ -242,29 +242,29 @@ inline SwCacheObj *SwCache::Next( SwCacheObj *pCacheObj)
 }
 
 inline SwCacheAccess::SwCacheAccess( SwCache &rC, const void *pOwn, bool bSeek ) :
-    rCache( rC ),
-    pObj( nullptr ),
-    pOwner( pOwn )
+    m_rCache( rC ),
+    m_pObj( nullptr ),
+    m_pOwner( pOwn )
 {
-    if ( bSeek && pOwner && nullptr != (pObj = rCache.Get( pOwner )) )
-        pObj->Lock();
+    if ( bSeek && m_pOwner && nullptr != (m_pObj = m_rCache.Get( m_pOwner )) )
+        m_pObj->Lock();
 }
 
 inline SwCacheAccess::SwCacheAccess( SwCache &rC, const void *pOwn,
                               const sal_uInt16 nIndex ) :
-    rCache( rC ),
-    pObj( nullptr ),
-    pOwner( pOwn )
+    m_rCache( rC ),
+    m_pObj( nullptr ),
+    m_pOwner( pOwn )
 {
-    if ( pOwner && nullptr != (pObj = rCache.Get( pOwner, nIndex )) )
-        pObj->Lock();
+    if ( m_pOwner && nullptr != (m_pObj = m_rCache.Get( m_pOwner, nIndex )) )
+        m_pObj->Lock();
 }
 
 inline SwCacheObj *SwCacheAccess::Get()
 {
-    if ( !pObj )
+    if ( !m_pObj )
         Get_();
-    return pObj;
+    return m_pObj;
 }
 
 #endif

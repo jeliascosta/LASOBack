@@ -49,13 +49,13 @@ namespace frm
         static  RichTextEngine* Create();
                 RichTextEngine* Clone();
 
-                virtual ~RichTextEngine( );
+                virtual ~RichTextEngine( ) override;
 
         // for multiplexing the StatusChanged events of the edit engine
         void registerEngineStatusListener( IEngineStatusListener* _pListener );
         void revokeEngineStatusListener( IEngineStatusListener* _pListener );
 
-        inline SfxItemPool* getPool() { return m_pEnginePool; }
+        SfxItemPool* getPool() { return m_pEnginePool; }
 
     protected:
         /** constructs a new RichTextEngine. The instances takes the ownership of the given SfxItemPool
@@ -67,7 +67,7 @@ namespace frm
         RichTextEngine& operator=( const RichTextEngine& ) = delete;
 
     private:
-        DECL_LINK_TYPED( EditEngineStatusChanged, EditStatus&, void );
+        DECL_LINK( EditEngineStatusChanged, EditStatus&, void );
     };
 
 

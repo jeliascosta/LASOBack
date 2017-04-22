@@ -88,7 +88,8 @@ private:
     css::uno::Reference< css::reflection::XIdlMethod> xFunction;
     css::uno::Any       aObject;
     long                nArgCount;
-    ScAddInArgDesc*     pArgDescs;
+    std::unique_ptr<ScAddInArgDesc[]>
+                        pArgDescs;
     long                nCallerPos;
     sal_uInt16          nCategory;
     OString             sHelpId;
@@ -113,7 +114,7 @@ public:
                                                         { return xFunction; }
     const css::uno::Any& GetObject() const   { return aObject; }
     long                    GetArgumentCount() const    { return nArgCount; }
-    const ScAddInArgDesc*   GetArguments() const        { return pArgDescs; }
+    const ScAddInArgDesc*   GetArguments() const        { return pArgDescs.get(); }
     long                    GetCallerPos() const        { return nCallerPos; }
     const OUString&         GetDescription() const      { return aDescription; }
     sal_uInt16              GetCategory() const         { return nCategory; }
@@ -187,7 +188,7 @@ private:
     css::uno::Reference<css::uno::XInterface> xCaller;
     bool                        bValidCount;
     // result:
-    sal_uInt16                  nErrCode;
+    FormulaError                nErrCode;
     bool                        bHasString;
     double                      fValue;
     OUString                    aString;
@@ -214,7 +215,7 @@ public:
 
     void                SetResult( const css::uno::Any& rNewRes );
 
-    sal_uInt16          GetErrCode() const      { return nErrCode; }
+    FormulaError        GetErrCode() const      { return nErrCode; }
     bool                HasString() const       { return bHasString; }
     bool                HasMatrix() const       { return xMatrix.get(); }
     bool                HasVarRes() const       { return ( xVarRes.is() ); }

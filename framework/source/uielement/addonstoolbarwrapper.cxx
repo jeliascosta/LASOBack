@@ -63,7 +63,7 @@ AddonsToolBarWrapper::~AddonsToolBarWrapper()
 }
 
 // XComponent
-void SAL_CALL AddonsToolBarWrapper::dispose() throw ( RuntimeException, std::exception )
+void SAL_CALL AddonsToolBarWrapper::dispose()
 {
     Reference< XComponent > xThis( static_cast< OWeakObject* >(this), UNO_QUERY );
 
@@ -80,7 +80,7 @@ void SAL_CALL AddonsToolBarWrapper::dispose() throw ( RuntimeException, std::exc
 }
 
 // XInitialization
-void SAL_CALL AddonsToolBarWrapper::initialize( const Sequence< Any >& aArguments ) throw ( Exception, RuntimeException, std::exception )
+void SAL_CALL AddonsToolBarWrapper::initialize( const Sequence< Any >& aArguments )
 {
     SolarMutexGuard g;
 
@@ -105,11 +105,11 @@ void SAL_CALL AddonsToolBarWrapper::initialize( const Sequence< Any >& aArgument
         if ( xFrame.is() && m_aConfigData.getLength() > 0 )
         {
             // Create VCL based toolbar which will be filled with settings data
-            ToolBox* pToolBar = nullptr;
+            VclPtr<ToolBox> pToolBar;
             AddonsToolBarManager* pToolBarManager = nullptr;
             {
                 SolarMutexGuard aSolarMutexGuard;
-                vcl::Window* pWindow = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
+                VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
                 if ( pWindow )
                 {
                     sal_uLong nStyles = WB_LINESPACING | WB_BORDER | WB_SCROLL | WB_MOVEABLE | WB_3DLOOK | WB_DOCKABLE | WB_SIZEABLE | WB_CLOSEABLE;
@@ -142,7 +142,7 @@ void SAL_CALL AddonsToolBarWrapper::initialize( const Sequence< Any >& aArgument
 }
 
 // XUIElement interface
-Reference< XInterface > SAL_CALL AddonsToolBarWrapper::getRealInterface() throw (css::uno::RuntimeException, std::exception)
+Reference< XInterface > SAL_CALL AddonsToolBarWrapper::getRealInterface()
 {
     SolarMutexGuard g;
 

@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/SystemDependent.hpp>
 #include <com/sun/star/awt/SystemDependentXWindow.hpp>
 
@@ -55,7 +58,7 @@ VCLXTopWindow_Base::~VCLXTopWindow_Base()
 {
 }
 
-Any VCLXTopWindow_Base::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any VCLXTopWindow_Base::queryInterface( const Type & rType )
 {
     css::uno::Any aRet( VCLXTopWindow_XBase::queryInterface( rType ) );
 
@@ -66,7 +69,7 @@ Any VCLXTopWindow_Base::queryInterface( const Type & rType ) throw(RuntimeExcept
     return aRet;
 }
 
-Sequence< Type > VCLXTopWindow_Base::getTypes() throw(RuntimeException, std::exception)
+Sequence< Type > VCLXTopWindow_Base::getTypes()
 {
     Sequence< Type > aTypes( VCLXTopWindow_XBase::getTypes() );
     if ( m_bWHWND )
@@ -74,7 +77,7 @@ Sequence< Type > VCLXTopWindow_Base::getTypes() throw(RuntimeException, std::exc
     return aTypes;
 }
 
-css::uno::Any VCLXTopWindow_Base::getWindowHandle( const css::uno::Sequence< sal_Int8 >& /*ProcessId*/, sal_Int16 SystemType ) throw(css::uno::RuntimeException, std::exception)
+css::uno::Any VCLXTopWindow_Base::getWindowHandle( const css::uno::Sequence< sal_Int8 >& /*ProcessId*/, sal_Int16 SystemType )
 {
     SolarMutexGuard aGuard;
 
@@ -116,21 +119,21 @@ css::uno::Any VCLXTopWindow_Base::getWindowHandle( const css::uno::Sequence< sal
     return aRet;
 }
 
-void VCLXTopWindow_Base::addTopWindowListener( const css::uno::Reference< css::awt::XTopWindowListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXTopWindow_Base::addTopWindowListener( const css::uno::Reference< css::awt::XTopWindowListener >& rxListener )
 {
     SolarMutexGuard aGuard;
 
     GetTopWindowListenersImpl().addInterface( rxListener );
 }
 
-void VCLXTopWindow_Base::removeTopWindowListener( const css::uno::Reference< css::awt::XTopWindowListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXTopWindow_Base::removeTopWindowListener( const css::uno::Reference< css::awt::XTopWindowListener >& rxListener )
 {
     SolarMutexGuard aGuard;
 
     GetTopWindowListenersImpl().removeInterface( rxListener );
 }
 
-void VCLXTopWindow_Base::toFront(  ) throw(css::uno::RuntimeException, std::exception)
+void VCLXTopWindow_Base::toFront(  )
 {
     SolarMutexGuard aGuard;
 
@@ -139,11 +142,11 @@ void VCLXTopWindow_Base::toFront(  ) throw(css::uno::RuntimeException, std::exce
         static_cast<WorkWindow*>(pWindow)->ToTop( ToTopFlags::RestoreWhenMin );
 }
 
-void VCLXTopWindow_Base::toBack(  ) throw(css::uno::RuntimeException, std::exception)
+void VCLXTopWindow_Base::toBack(  )
 {
 }
 
-void VCLXTopWindow_Base::setMenuBar( const css::uno::Reference< css::awt::XMenuBar >& rxMenu ) throw(css::uno::RuntimeException, std::exception)
+void VCLXTopWindow_Base::setMenuBar( const css::uno::Reference< css::awt::XMenuBar >& rxMenu )
 {
     SolarMutexGuard aGuard;
 
@@ -163,7 +166,7 @@ void VCLXTopWindow_Base::setMenuBar( const css::uno::Reference< css::awt::XMenuB
 }
 
 
-sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMaximized() throw (RuntimeException, std::exception)
+sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMaximized()
 {
     SolarMutexGuard aGuard;
 
@@ -175,7 +178,7 @@ sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMaximized() throw (RuntimeException, 
 }
 
 
-void SAL_CALL VCLXTopWindow_Base::setIsMaximized( sal_Bool _ismaximized ) throw (RuntimeException, std::exception)
+void SAL_CALL VCLXTopWindow_Base::setIsMaximized( sal_Bool _ismaximized )
 {
     SolarMutexGuard aGuard;
 
@@ -187,7 +190,7 @@ void SAL_CALL VCLXTopWindow_Base::setIsMaximized( sal_Bool _ismaximized ) throw 
 }
 
 
-sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMinimized() throw (RuntimeException, std::exception)
+sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMinimized()
 {
     SolarMutexGuard aGuard;
 
@@ -199,7 +202,7 @@ sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMinimized() throw (RuntimeException, 
 }
 
 
-void SAL_CALL VCLXTopWindow_Base::setIsMinimized( sal_Bool _isMinimized ) throw (RuntimeException, std::exception)
+void SAL_CALL VCLXTopWindow_Base::setIsMinimized( sal_Bool _isMinimized )
 {
     SolarMutexGuard aGuard;
 
@@ -211,7 +214,7 @@ void SAL_CALL VCLXTopWindow_Base::setIsMinimized( sal_Bool _isMinimized ) throw 
 }
 
 
-::sal_Int32 SAL_CALL VCLXTopWindow_Base::getDisplay() throw (RuntimeException, std::exception)
+::sal_Int32 SAL_CALL VCLXTopWindow_Base::getDisplay()
 {
     SolarMutexGuard aGuard;
 
@@ -223,7 +226,7 @@ void SAL_CALL VCLXTopWindow_Base::setIsMinimized( sal_Bool _isMinimized ) throw 
 }
 
 
-void SAL_CALL VCLXTopWindow_Base::setDisplay( ::sal_Int32 _display ) throw (RuntimeException, IndexOutOfBoundsException, std::exception)
+void SAL_CALL VCLXTopWindow_Base::setDisplay( ::sal_Int32 _display )
 {
     SolarMutexGuard aGuard;
 
@@ -241,7 +244,7 @@ void SAL_CALL VCLXTopWindow_Base::setDisplay( ::sal_Int32 _display ) throw (Runt
 //  class VCLXTopWindow
 
 
-void VCLXTopWindow::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXTopWindow::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     VCLXContainer::ImplGetPropertyIds( rIds );
 }
@@ -266,7 +269,7 @@ vcl::Window* VCLXTopWindow::GetWindowImpl()
 }
 
 // css::uno::XInterface
-css::uno::Any VCLXTopWindow::queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception)
+css::uno::Any VCLXTopWindow::queryInterface( const css::uno::Type & rType )
 {
     css::uno::Any aRet( VCLXTopWindow_Base::queryInterface( rType ) );
 
@@ -276,12 +279,12 @@ css::uno::Any VCLXTopWindow::queryInterface( const css::uno::Type & rType ) thro
     return aRet;
 }
 
-css::uno::Sequence< sal_Int8 > VCLXTopWindow::getImplementationId() throw(css::uno::RuntimeException, std::exception)
+css::uno::Sequence< sal_Int8 > VCLXTopWindow::getImplementationId()
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-css::uno::Sequence< css::uno::Type > VCLXTopWindow::getTypes() throw(css::uno::RuntimeException, std::exception)
+css::uno::Sequence< css::uno::Type > VCLXTopWindow::getTypes()
 {
     return ::comphelper::concatSequences( VCLXTopWindow_Base::getTypes(), VCLXContainer::getTypes() );
 }

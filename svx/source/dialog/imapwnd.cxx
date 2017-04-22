@@ -65,7 +65,7 @@ IMapWindow::IMapWindow( vcl::Window* pParent, WinBits nBits, const Reference< XF
 
     pItemInfo = new SfxItemInfo[ 1 ];
     memset( pItemInfo, 0, sizeof( SfxItemInfo ) );
-    pIMapPool = new SfxItemPool( OUString("IMapItemPool"),
+    pIMapPool = new SfxItemPool( "IMapItemPool",
                                  SID_ATTR_MACROITEM, SID_ATTR_MACROITEM, pItemInfo );
     pIMapPool->FreezeIdRanges();
 }
@@ -84,7 +84,7 @@ void IMapWindow::dispose()
 
 Size IMapWindow::GetOptimalSize() const
 {
-    return LogicToPixel(Size(270, 170), MAP_APPFONT);
+    return LogicToPixel(Size(270, 170), MapUnit::MapAppFont);
 }
 
 void IMapWindow::SetImageMap( const ImageMap& rImageMap )
@@ -184,7 +184,7 @@ void IMapWindow::SetTargetList( TargetList& rTargetList )
 SdrObject* IMapWindow::CreateObj( const IMapObject* pIMapObj )
 {
     Point       aPoint;
-    Rectangle   aClipRect( aPoint, GetGraphicSize() );
+    tools::Rectangle   aClipRect( aPoint, GetGraphicSize() );
     SdrObject*  pSdrObj = nullptr;
     IMapObjectPtr pCloneIMapObj;
 
@@ -193,7 +193,7 @@ SdrObject* IMapWindow::CreateObj( const IMapObject* pIMapObj )
         case IMAP_OBJ_RECTANGLE:
         {
             const IMapRectangleObject* pIMapRectObj = static_cast<const IMapRectangleObject*>(pIMapObj);
-            Rectangle               aDrawRect( pIMapRectObj->GetRectangle( false ) );
+            tools::Rectangle               aDrawRect( pIMapRectObj->GetRectangle( false ) );
 
             // clipped on CanvasPane
             aDrawRect.Intersection( aClipRect );
@@ -209,7 +209,7 @@ SdrObject* IMapWindow::CreateObj( const IMapObject* pIMapObj )
             const Point         aCenter( pIMapCircleObj->GetCenter( false ) );
             const long          nRadius = pIMapCircleObj->GetRadius( false );
             const Point         aOffset( nRadius, nRadius );
-            Rectangle           aCircle( aCenter - aOffset, aCenter + aOffset );
+            tools::Rectangle           aCircle( aCenter - aOffset, aCenter + aOffset );
 
             // limited to CanvasPane
             aCircle.Intersection( aClipRect );
@@ -226,7 +226,7 @@ SdrObject* IMapWindow::CreateObj( const IMapObject* pIMapObj )
             // If it actually is an ellipse, then another ellipse is created again
             if ( pIMapPolyObj->HasExtraEllipse() )
             {
-                Rectangle aDrawRect( pIMapPolyObj->GetExtraEllipse() );
+                tools::Rectangle aDrawRect( pIMapPolyObj->GetExtraEllipse() );
 
                 // clipped on CanvasPane
                 aDrawRect.Intersection( aClipRect );
@@ -427,7 +427,7 @@ SdrObject* IMapWindow::GetHitSdrObj( const Point& rPosPixel ) const
     SdrObject*  pObj = nullptr;
     Point       aPt = PixelToLogic( rPosPixel );
 
-    if ( Rectangle( Point(), GetGraphicSize() ).IsInside( aPt ) )
+    if ( tools::Rectangle( Point(), GetGraphicSize() ).IsInside( aPt ) )
     {
         SdrPage* pPage = pModel->GetPage( 0 );
         if ( pPage )
@@ -471,23 +471,20 @@ void IMapWindow::Command(const CommandEvent& rCEvt)
 
     if ( rCEvt.GetCommand() == CommandEventId::ContextMenu )
     {
-        PopupMenu           aMenu( SVX_RES( RID_SVXMN_IMAP ) );
+        VclBuilder aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "svx/ui/imapmenu.ui", "");
+        VclPtr<PopupMenu> aMenu(aBuilder.get_menu("menu"));
         const SdrMarkList&  rMarkList = pView->GetMarkedObjectList();
         const size_t nMarked = rMarkList.GetMarkCount();
 
-        aMenu.EnableItem( MN_URL, false );
-        aMenu.EnableItem( MN_ACTIVATE, false );
-        aMenu.EnableItem( MN_MACRO, false );
-        aMenu.EnableItem( MN_MARK_ALL, pModel->GetPage( 0 )->GetObjCount() != pView->GetMarkedObjectCount() );
+        aMenu->EnableItem(aMenu->GetItemId("url"), false);
+        aMenu->EnableItem(aMenu->GetItemId("active"), false);
+        aMenu->EnableItem(aMenu->GetItemId("macro"), false);
+        aMenu->EnableItem(aMenu->GetItemId("selectall"), pModel->GetPage(0)->GetObjCount() != pView->GetMarkedObjectCount());
 
         if ( !nMarked )
         {
-            aMenu.EnableItem( MN_POSITION, false );
-            aMenu.EnableItem( MN_FRAME_TO_TOP, false );
-            aMenu.EnableItem( MN_MOREFRONT, false );
-            aMenu.EnableItem( MN_MOREBACK, false );
-            aMenu.EnableItem( MN_FRAME_TO_BOTTOM, false );
-            aMenu.EnableItem( MN_DELETE1, false );
+            aMenu->EnableItem(aMenu->GetItemId("arrange"), false);
+            aMenu->EnableItem(aMenu->GetItemId("delete"), false);
         }
         else
         {
@@ -495,22 +492,18 @@ void IMapWindow::Command(const CommandEvent& rCEvt)
             {
                 SdrObject*  pSdrObj = GetSelectedSdrObject();
 
-                aMenu.EnableItem( MN_URL );
-                aMenu.EnableItem( MN_ACTIVATE );
-                aMenu.EnableItem( MN_MACRO );
-                aMenu.CheckItem( MN_ACTIVATE, GetIMapObj( pSdrObj )->IsActive() );
+                aMenu->EnableItem(aMenu->GetItemId("url"));
+                aMenu->EnableItem(aMenu->GetItemId("active"));
+                aMenu->EnableItem(aMenu->GetItemId("macro"));
+                aMenu->CheckItem(aMenu->GetItemId("active"), GetIMapObj(pSdrObj)->IsActive());
             }
 
-            aMenu.EnableItem( MN_POSITION );
-            aMenu.EnableItem( MN_FRAME_TO_TOP );
-            aMenu.EnableItem( MN_MOREFRONT );
-            aMenu.EnableItem( MN_MOREBACK );
-            aMenu.EnableItem( MN_FRAME_TO_BOTTOM );
-            aMenu.EnableItem( MN_DELETE1 );
+            aMenu->EnableItem(aMenu->GetItemId("arrange"));
+            aMenu->EnableItem(aMenu->GetItemId("delete"));
         }
 
-        aMenu.SetSelectHdl( LINK( this, IMapWindow, MenuSelectHdl ) );
-        aMenu.Execute( this, rCEvt.GetMousePosPixel() );
+        aMenu->SetSelectHdl( LINK( this, IMapWindow, MenuSelectHdl ) );
+        aMenu->Execute( this, rCEvt.GetMousePosPixel() );
     }
     else
         Window::Command(rCEvt);
@@ -554,17 +547,17 @@ void IMapWindow::RequestHelp( const HelpEvent& rHEvt )
 
     if ( Help::IsBalloonHelpEnabled() || Help::IsQuickHelpEnabled() )
     {
-        SdrObject*          pSdrObj = nullptr;
-        SdrPageView*        pPageView = nullptr;
-        if ( pView->PickObj( aPos, pView->getHitTolLog(), pSdrObj, pPageView ) )
+        SdrPageView* pPageView = nullptr;
+        SdrObject* pSdrObj = pView->PickObj(aPos, pView->getHitTolLog(), pPageView);
+        if (pSdrObj)
         {
             const IMapObject*   pIMapObj = GetIMapObj( pSdrObj );
             OUString            aStr;
 
             if ( pIMapObj && !( aStr = pIMapObj->GetURL() ).isEmpty() )
             {
-                Rectangle   aLogicPix( LogicToPixel( Rectangle( Point(), GetGraphicSize() ) ) );
-                Rectangle   aScreenRect( OutputToScreenPixel( aLogicPix.TopLeft() ),
+                tools::Rectangle   aLogicPix( LogicToPixel( tools::Rectangle( Point(), GetGraphicSize() ) ) );
+                tools::Rectangle   aScreenRect( OutputToScreenPixel( aLogicPix.TopLeft() ),
                                          OutputToScreenPixel( aLogicPix.BottomRight() ) );
 
                 if ( Help::IsBalloonHelpEnabled() )
@@ -652,10 +645,10 @@ void IMapWindow::DoMacroAssign()
         SvxMacroItem    aMacroItem(SID_ATTR_MACROITEM);
         IMapObject*     pIMapObj = GetIMapObj( pSdrObj );
         aMacroItem.SetMacroTable( pIMapObj->GetMacroTable() );
-        aSet.Put( aMacroItem, SID_ATTR_MACROITEM );
+        aSet.Put( aMacroItem );
 
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        std::unique_ptr<SfxAbstractDialog> pMacroDlg(pFact->CreateSfxDialog( this, aSet, mxDocumentFrame, SID_EVENTCONFIG ));
+        ScopedVclPtr<SfxAbstractDialog> pMacroDlg(pFact->CreateSfxDialog( this, aSet, mxDocumentFrame, SID_EVENTCONFIG ));
 
         if ( pMacroDlg && pMacroDlg->Execute() == RET_OK )
         {
@@ -677,7 +670,7 @@ void IMapWindow::DoPropertyDialog()
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         if(pFact)
         {
-            std::unique_ptr<AbstractURLDlg> aDlg(pFact->CreateURLDialog( this, pIMapObj->GetURL(), pIMapObj->GetAltText(), pIMapObj->GetDesc(),
+            ScopedVclPtr<AbstractURLDlg> aDlg(pFact->CreateURLDialog( this, pIMapObj->GetURL(), pIMapObj->GetAltText(), pIMapObj->GetDesc(),
                                             pIMapObj->GetTarget(), pIMapObj->GetName(), aTargetList ));
             DBG_ASSERT(aDlg, "Dialog creation failed!");
             if ( aDlg->Execute() == RET_OK )
@@ -688,7 +681,7 @@ void IMapWindow::DoPropertyDialog()
                 {
                     INetURLObject aObj( aURLText, INetProtocol::File );
                     DBG_ASSERT( aObj.GetProtocol() != INetProtocol::NotValid, "Invalid URL" );
-                    pIMapObj->SetURL( aObj.GetMainURL( INetURLObject::NO_DECODE ) );
+                    pIMapObj->SetURL( aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
                 }
                 else
                     pIMapObj->SetURL( aURLText );
@@ -704,60 +697,37 @@ void IMapWindow::DoPropertyDialog()
     }
 }
 
-IMPL_LINK_TYPED( IMapWindow, MenuSelectHdl, Menu*, pMenu, bool )
+IMPL_LINK( IMapWindow, MenuSelectHdl, Menu*, pMenu, bool )
 {
     if (!pMenu)
         return false;
 
-    sal_uInt16  nId = pMenu->GetCurItemId();
+    OString sId = pMenu->GetCurItemIdent();
 
-    switch(nId)
+    if (sId == "url")
+        DoPropertyDialog();
+    else if (sId == "macro")
+        DoMacroAssign();
+    else if (sId == "active")
     {
-        case MN_URL:
-            DoPropertyDialog();
-        break;
-
-        case MN_MACRO:
-            DoMacroAssign();
-        break;
-
-        case MN_ACTIVATE:
-        {
-            const bool bNewState = !pMenu->IsItemChecked( MN_ACTIVATE );
-
-            pMenu->CheckItem( MN_ACTIVATE, bNewState );
-            SetCurrentObjState( bNewState );
-            UpdateInfo( false );
-        }
-        break;
-
-        case MN_FRAME_TO_TOP:
-            pView->PutMarkedToTop();
-        break;
-
-        case MN_MOREFRONT:
-            pView->MovMarkedToTop();
-        break;
-
-        case MN_MOREBACK:
-            pView->MovMarkedToBtm();
-        break;
-
-        case MN_FRAME_TO_BOTTOM:
-            pView->PutMarkedToBtm();
-        break;
-
-        case MN_MARK_ALL:
-            pView->MarkAll();
-        break;
-
-        case MN_DELETE1:
-            pView->DeleteMarked();
-        break;
-
-        default :
-        break;
+        const sal_uInt16 nActiveId = pMenu->GetItemId(sId);
+        const bool bNewState = !pMenu->IsItemChecked(nActiveId);
+        pMenu->CheckItem(nActiveId, bNewState);
+        SetCurrentObjState(bNewState);
+        UpdateInfo( false );
     }
+    else if (sId == "front")
+        pView->PutMarkedToTop();
+    else if (sId == "forward")
+        pView->MovMarkedToTop();
+    else if (sId == "backward")
+        pView->MovMarkedToBtm();
+    else if (sId == "back")
+        pView->PutMarkedToBtm();
+    else if (sId == "selectall")
+        pView->MarkAll();
+    else if (sId == "delete")
+        pView->DeleteMarked();
 
     return false;
 }
@@ -775,7 +745,7 @@ void IMapWindow::CreateDefaultObject()
         sal_uInt32 nDefaultObjectSizeHeight = aPageSize.Height() / 4;
         aPagePos.X() += (aPageSize.Width() / 2) - (nDefaultObjectSizeWidth / 2);
         aPagePos.Y() += (aPageSize.Height() / 2) - (nDefaultObjectSizeHeight / 2);
-        Rectangle aNewObjectRectangle(aPagePos, Size(nDefaultObjectSizeWidth, nDefaultObjectSizeHeight));
+        tools::Rectangle aNewObjectRectangle(aPagePos, Size(nDefaultObjectSizeWidth, nDefaultObjectSizeHeight));
 
         SdrObject* pObj = SdrObjFactory::MakeNewObject( pView->GetCurrentObjInventor(), pView->GetCurrentObjIdentifier(), nullptr, pModel);
         pObj->SetLogicRect(aNewObjectRectangle);
@@ -813,11 +783,6 @@ void IMapWindow::CreateDefaultObject()
         SetCurrentObjState( true );
         pView->MarkObj( pObj, pPageView );
     }
-}
-
-void IMapWindow::KeyInput( const KeyEvent& rKEvt )
-{
-    GraphCtrl::KeyInput( rKEvt );
 }
 
 void IMapWindow::SelectFirstObject()

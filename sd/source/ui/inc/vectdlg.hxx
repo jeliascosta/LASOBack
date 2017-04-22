@@ -65,22 +65,22 @@ class SdVectorizeDlg : public ModalDialog
     void                SaveSettings() const;
     void                InitPreviewBmp();
 
-    static Rectangle    GetRect( const Size& rDispSize, const Size& rBmpSize );
+    static ::tools::Rectangle    GetRect( const Size& rDispSize, const Size& rBmpSize );
     Bitmap              GetPreparedBitmap( Bitmap& rBmp, Fraction& rScale );
     void                Calculate( Bitmap& rBmp, GDIMetaFile& rMtf );
     void                AddTile( BitmapReadAccess* pRAcc, GDIMetaFile& rMtf,
                                  long nPosX, long nPosY, long nWidth, long nHeight );
 
-                        DECL_LINK_TYPED( ProgressHdl, long, void );
-                        DECL_LINK_TYPED( ClickPreviewHdl, Button*, void );
-                        DECL_LINK_TYPED( ClickOKHdl, Button*, void );
-                        DECL_LINK_TYPED( ToggleHdl, CheckBox&, void );
-                        DECL_LINK_TYPED( ModifyHdl, Edit&, void );
+                        DECL_LINK( ProgressHdl, long, void );
+                        DECL_LINK( ClickPreviewHdl, Button*, void );
+                        DECL_LINK( ClickOKHdl, Button*, void );
+                        DECL_LINK( ToggleHdl, CheckBox&, void );
+                        DECL_LINK( ModifyHdl, Edit&, void );
 
 public:
 
                         SdVectorizeDlg( vcl::Window* pParent, const Bitmap& rBmp, ::sd::DrawDocShell* pDocShell );
-                        virtual ~SdVectorizeDlg();
+                        virtual ~SdVectorizeDlg() override;
     virtual void        dispose() override;
 
     const GDIMetaFile&  GetGDIMetaFile() const { return aMtf; }

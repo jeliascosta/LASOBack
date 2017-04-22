@@ -29,7 +29,7 @@
 #include <com/sun/star/lang/EventObject.hpp>
 #include <com/sun/star/uno/RuntimeException.hpp>
 
-class SfxFilterListener
+class SfxFilterListener final
 {
     private:
         css::uno::Reference< css::util::XRefreshable >  m_xFilterCache;
@@ -37,13 +37,15 @@ class SfxFilterListener
 
     public:
         SfxFilterListener();
-        virtual ~SfxFilterListener();
+        ~SfxFilterListener();
 
     public:
         // XRefreshListener
-        void SAL_CALL refreshed( const css::lang::EventObject& aSource ) throw( css::uno::RuntimeException, std::exception );
+        /// @throws css::uno::RuntimeException
+        void SAL_CALL refreshed( const css::lang::EventObject& aSource );
         // XEventListener
-        void SAL_CALL disposing( const css::lang::EventObject& aSource ) throw( css::uno::RuntimeException );
+        /// @throws css::uno::RuntimeException
+        void SAL_CALL disposing( const css::lang::EventObject& aSource );
 
 };
 

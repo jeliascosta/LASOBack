@@ -40,6 +40,7 @@
 #include <cppuhelper/queryinterface.hxx>
 
 #include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <com/sun/star/sdbc/SQLException.hpp>
 
 #include "pq_xuser.hxx"
 #include "pq_tools.hxx"
@@ -63,7 +64,7 @@ namespace pq_sdbc_driver
 {
 
 User::User( const ::rtl::Reference< RefCountedMutex > & refMutex,
-            const Reference< com::sun::star::sdbc::XConnection > & connection,
+            const Reference< css::sdbc::XConnection > & connection,
             ConnectionSettings *pSettings )
     : ReflectionBase(
         getStatics().refl.user.implName,
@@ -74,7 +75,7 @@ User::User( const ::rtl::Reference< RefCountedMutex > & refMutex,
         * getStatics().refl.user.pProps )
 {}
 
-Reference< XPropertySet > User::createDataDescriptor(  ) throw (RuntimeException, std::exception)
+Reference< XPropertySet > User::createDataDescriptor(  )
 {
     UserDescriptor * pUser = new UserDescriptor( m_refMutex, m_conn, m_pSettings );
     pUser->copyValuesFrom( this );
@@ -83,7 +84,7 @@ Reference< XPropertySet > User::createDataDescriptor(  ) throw (RuntimeException
 }
 
 
-Sequence<Type > User::getTypes() throw( RuntimeException, std::exception )
+Sequence<Type > User::getTypes()
 {
     static cppu::OTypeCollection *pCollection;
     if( ! pCollection )
@@ -92,7 +93,7 @@ Sequence<Type > User::getTypes() throw( RuntimeException, std::exception )
         if( !pCollection )
         {
             static cppu::OTypeCollection collection(
-                cppu::UnoType<com::sun::star::sdbcx::XUser>::get(),
+                cppu::UnoType<css::sdbcx::XUser>::get(),
                 ReflectionBase::getTypes());
             pCollection = &collection;
         }
@@ -100,12 +101,12 @@ Sequence<Type > User::getTypes() throw( RuntimeException, std::exception )
     return pCollection->getTypes();
 }
 
-Sequence< sal_Int8> User::getImplementationId() throw( RuntimeException, std::exception )
+Sequence< sal_Int8> User::getImplementationId()
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-Any User::queryInterface( const Type & reqType ) throw (RuntimeException, std::exception)
+Any User::queryInterface( const Type & reqType )
 {
     Any ret;
 
@@ -113,14 +114,13 @@ Any User::queryInterface( const Type & reqType ) throw (RuntimeException, std::e
     if( ! ret.hasValue() )
         ret = ::cppu::queryInterface(
             reqType,
-            static_cast< com::sun::star::sdbcx::XUser * > ( this ) );
+            static_cast< css::sdbcx::XUser * > ( this ) );
     return ret;
 }
 
 
 void User::changePassword(
     const OUString& oldPassword, const OUString& newPassword )
-    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     (void) oldPassword;
     OUStringBuffer buf(128);
@@ -134,10 +134,9 @@ void User::changePassword(
 }
 
 sal_Int32 User::getPrivileges( const OUString& objName, sal_Int32 objType )
-    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     sal_Int32 ret = 0xffffffff;
-    if( isLog( m_pSettings, LogLevel::INFO ) )
+    if (isLog(m_pSettings, LogLevel::Info))
     {
         Statics & st = getStatics();
 
@@ -145,14 +144,13 @@ sal_Int32 User::getPrivileges( const OUString& objName, sal_Int32 objType )
         buf.append( "User::getPrivileges[" + extractStringProperty( this, st.NAME ) +
                     "] got called for " + objName + "(type=" +
                     OUString::number(objType) + ")");
-        log( m_pSettings, LogLevel::INFO, buf.makeStringAndClear() );
+        log(m_pSettings, LogLevel::Info, buf.makeStringAndClear());
     }
     // all privileges
     return ret;
 }
 
 sal_Int32 User::getGrantablePrivileges( const OUString& objName, sal_Int32 objType )
-    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     (void) objName; (void) objType;
     // all privileges
@@ -160,25 +158,23 @@ sal_Int32 User::getGrantablePrivileges( const OUString& objName, sal_Int32 objTy
 }
 
 void User::grantPrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges )
-    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     (void) objName; (void) objType; (void) objPrivileges;
-    throw com::sun::star::sdbc::SQLException("pq_driver: privilege change not implemented yet",
+    throw css::sdbc::SQLException("pq_driver: privilege change not implemented yet",
                                              *this, OUString(), 1, Any() );
 }
 
 void User::revokePrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges )
-    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     (void) objName; (void) objType; (void) objPrivileges;
-    throw com::sun::star::sdbc::SQLException("pq_driver: privilege change not implemented yet",
+    throw css::sdbc::SQLException("pq_driver: privilege change not implemented yet",
                                              *this, OUString(), 1, Any() );
 }
 
 
 UserDescriptor::UserDescriptor(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const Reference< com::sun::star::sdbc::XConnection > & connection,
+    const Reference< css::sdbc::XConnection > & connection,
     ConnectionSettings *pSettings )
     : ReflectionBase(
         getStatics().refl.userDescriptor.implName,
@@ -189,7 +185,7 @@ UserDescriptor::UserDescriptor(
         * getStatics().refl.userDescriptor.pProps )
 {}
 
-Reference< XPropertySet > UserDescriptor::createDataDescriptor(  ) throw (RuntimeException, std::exception)
+Reference< XPropertySet > UserDescriptor::createDataDescriptor(  )
 {
     UserDescriptor * pUser = new UserDescriptor( m_refMutex, m_conn, m_pSettings );
     pUser->copyValuesFrom( this );

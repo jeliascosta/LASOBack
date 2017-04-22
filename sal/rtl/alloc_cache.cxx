@@ -29,6 +29,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#if defined(SAL_UNX)
+#include <sys/time.h>
+#endif
+
 /* ================================================================= *
  *
  * cache internals.
@@ -126,7 +130,9 @@ rtl_cache_hash_rescale (
 
         cache->m_hash_table = new_table;
         cache->m_hash_size  = new_size;
-        cache->m_hash_shift = highbit(cache->m_hash_size) - 1;
+        const auto bit = highbit(cache->m_hash_size);
+        assert(bit > 0);
+        cache->m_hash_shift = bit - 1;
 
         for (i = 0; i < old_size; i++)
         {
@@ -136,7 +142,6 @@ rtl_cache_hash_rescale (
                 rtl_cache_bufctl_type  * next = curr->m_next;
                 rtl_cache_bufctl_type ** head;
 
-                // coverity[negative_shift]
                 head = &(cache->m_hash_table[RTL_CACHE_HASH_INDEX(cache, curr->m_addr)]);
                 curr->m_next = (*head);
                 (*head) = curr;
@@ -208,8 +213,9 @@ rtl_cache_hash_remove (
             if (!(cache->m_features & RTL_CACHE_FEATURE_RESCALE))
             {
                 sal_Size ave = nbuf >> cache->m_hash_shift;
-                // coverity[negative_shift]
-                sal_Size new_size = cache->m_hash_size << (highbit(ave) - 1);
+                const auto bit = highbit(ave);
+                assert(bit > 0);
+                sal_Size new_size = cache->m_hash_size << (bit - 1);
 
                 cache->m_features |= RTL_CACHE_FEATURE_RESCALE;
                 RTL_MEMORY_LOCK_RELEASE(&(cache->m_slab_lock));
@@ -763,7 +769,7 @@ rtl_cache_destructor (void * obj)
 
     assert(cache->m_hash_table == cache->m_hash_table_0);
     assert(cache->m_hash_size  == RTL_CACHE_HASH_SIZE);
-    assert(cache->m_hash_shift == (sal_Size)(highbit(cache->m_hash_size) - 1));
+    assert(cache->m_hash_shift == highbit(cache->m_hash_size) - 1);
 
     /* depot layer */
     (void)RTL_MEMORY_LOCK_DESTROY(&(cache->m_depot_lock));
@@ -834,7 +840,7 @@ rtl_cache_activate (
         if (flags & RTL_CACHE_FLAG_QUANTUMCACHE)
         {
             /* next power of 2 above 3 * qcache_max */
-            if(slabsize < (((sal_Size)1) << highbit(3 * source->m_qcache_max)))
+            if (slabsize < (((sal_Size)1) << highbit(3 * source->m_qcache_max)))
             {
                 slabsize = (((sal_Size)1) << highbit(3 * source->m_qcache_max));
             }
@@ -1297,8 +1303,6 @@ rtl_secureZeroMemory (void *Ptr, sal_Size Bytes) SAL_THROW_EXTERN_C()
         *p++ = 0;
 }
 
-#include <sys/time.h>
-
 static void *
 rtl_cache_wsupdate_all (void * arg);
 
@@ -1368,10 +1372,10 @@ rtl_cache_wsupdate_init()
 
     RTL_MEMORY_LOCK_ACQUIRE(&(g_cache_list.m_lock));
     g_cache_list.m_update_done = 0;
-    g_cache_list.m_update_cond = CreateEvent (0, TRUE, FALSE, 0);
+    g_cache_list.m_update_cond = CreateEvent (nullptr, TRUE, FALSE, nullptr);
 
     g_cache_list.m_update_thread =
-        CreateThread (NULL, 0, rtl_cache_wsupdate_all, (LPVOID)(10), 0, &dwThreadId);
+        CreateThread (nullptr, 0, rtl_cache_wsupdate_all, reinterpret_cast<LPVOID>(10), 0, &dwThreadId);
     RTL_MEMORY_LOCK_RELEASE(&(g_cache_list.m_lock));
 }
 

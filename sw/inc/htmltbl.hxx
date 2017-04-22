@@ -141,8 +141,6 @@ public:
     SwHTMLTableLayoutColumn( sal_uInt16 nColWidthOpt, bool bRelColWidthOpt,
                              bool bLBorder );
 
-    ~SwHTMLTableLayoutColumn() {}
-
     inline void MergeCellWidthOption( sal_uInt16 nWidth, bool bPrc );
     inline void SetWidthOption( sal_uInt16 nWidth );
 
@@ -199,7 +197,7 @@ class SwHTMLTableLayout
 
     sal_uInt16 m_nRelTabWidth;            ///< Relative width of table.
 
-    sal_uInt16 m_nWidthOption;            ///< Width of table (in Twips oder %).
+    sal_uInt16 m_nWidthOption;            ///< Width of table (in Twips or %).
     sal_uInt16 m_nCellPadding;            ///< Space to contents (in Twips).
     sal_uInt16 m_nCellSpacing;            ///< Cell spacing (in Twips).
     sal_uInt16 m_nBorder;                 /** Line strength of outer border, or rather the
@@ -242,11 +240,9 @@ class SwHTMLTableLayout
     SwFrameFormat *FindFlyFrameFormat() const;
     const SwDoc *GetDoc() const { return GetAnyBoxStartNode()->GetDoc(); }
 
-    void ClearPass1Info() { m_nMin = m_nMax = 0; }
+    void Resize_( sal_uInt16 nAbsAvail, bool bRecalc );
 
-    void Resize_( sal_uInt16 nAbsAvail, bool bRecalc=false );
-
-    DECL_LINK_TYPED( DelayedResize_Impl, Timer*, void );
+    DECL_LINK( DelayedResize_Impl, Timer*, void );
 
     static sal_uInt16 GetBrowseWidthByVisArea( const SwDoc& rDoc );
 public:

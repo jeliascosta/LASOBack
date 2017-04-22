@@ -167,7 +167,7 @@ void DiagramHelper::setVertical(
 
                     double fAngleDegree = 0.0;
                     xTitleProps->getPropertyValue("TextRotation") >>= fAngleDegree;
-                    if (!rtl::math::approxEqual(fAngleDegree, 0.0) &&
+                    if (fAngleDegree != 0.0 &&
                         !rtl::math::approxEqual(fAngleDegree, 90.0))
                         continue;
 
@@ -177,7 +177,7 @@ void DiagramHelper::setVertical(
                     else if( bVertical && nDimIndex == 0 )
                         fNewAngleDegree = 90.0;
 
-                    xTitleProps->setPropertyValue("TextRotation", uno::makeAny(fNewAngleDegree));
+                    xTitleProps->setPropertyValue("TextRotation", uno::Any(fNewAngleDegree));
                 }
             }
         }
@@ -232,9 +232,6 @@ void DiagramHelper::setStackMode(
 {
     try
     {
-        if( eStackMode == StackMode_AMBIGUOUS )
-            return;
-
         bool bValueFound = false;
         bool bIsAmbiguous = false;
         StackMode eOldStackMode = DiagramHelper::getStackMode( xDiagram, bValueFound, bIsAmbiguous );
@@ -243,15 +240,15 @@ void DiagramHelper::setStackMode(
             return;
 
         StackingDirection eNewDirection = StackingDirection_NO_STACKING;
-        if( eStackMode == StackMode_Y_STACKED || eStackMode == StackMode_Y_STACKED_PERCENT )
+        if( eStackMode == StackMode::YStacked || eStackMode == StackMode::YStackedPercent )
             eNewDirection = StackingDirection_Y_STACKING;
-        else if( eStackMode == StackMode_Z_STACKED )
+        else if( eStackMode == StackMode::ZStacked )
             eNewDirection = StackingDirection_Z_STACKING;
 
-        uno::Any aNewDirection( uno::makeAny(eNewDirection) );
+        uno::Any aNewDirection( eNewDirection );
 
         bool bPercent = false;
-        if( eStackMode == StackMode_Y_STACKED_PERCENT )
+        if( eStackMode == StackMode::YStackedPercent )
             bPercent = true;
 
         //iterate through all coordinate systems
@@ -319,7 +316,7 @@ StackMode DiagramHelper::getStackMode( const Reference< XDiagram > & xDiagram, b
     rbFound=false;
     rbAmbiguous=false;
 
-    StackMode eGlobalStackMode = StackMode_NONE;
+    StackMode eGlobalStackMode = StackMode::NONE;
 
     //iterate through all coordinate systems
     uno::Reference< XCoordinateSystemContainer > xCooSysContainer( xDiagram, uno::UNO_QUERY );
@@ -360,7 +357,7 @@ StackMode DiagramHelper::getStackModeFromChartType(
     bool& rbFound, bool& rbAmbiguous,
     const Reference< XCoordinateSystem > & xCorrespondingCoordinateSystem )
 {
-    StackMode eStackMode = StackMode_NONE;
+    StackMode eStackMode = StackMode::NONE;
     rbFound = false;
     rbAmbiguous = false;
 
@@ -403,10 +400,10 @@ StackMode DiagramHelper::getStackModeFromChartType(
         if( rbFound )
         {
             if( eCommonDirection == chart2::StackingDirection_Z_STACKING )
-                eStackMode = StackMode_Z_STACKED;
+                eStackMode = StackMode::ZStacked;
             else if( eCommonDirection == chart2::StackingDirection_Y_STACKING )
             {
-                eStackMode = StackMode_Y_STACKED;
+                eStackMode = StackMode::YStacked;
 
                 // percent stacking
                 if( xCorrespondingCoordinateSystem.is() )
@@ -423,7 +420,7 @@ StackMode DiagramHelper::getStackModeFromChartType(
                         {
                             chart2::ScaleData aScaleData = xAxis->getScaleData();
                             if( aScaleData.AxisType==chart2::AxisType::PERCENT )
-                                eStackMode = StackMode_Y_STACKED_PERCENT;
+                                eStackMode = StackMode::YStackedPercent;
                         }
                     }
                 }
@@ -519,10 +516,10 @@ void DiagramHelper::setDimension(
         }
 
         //correct stack mode if necessary
-        if( nNewDimensionCount==3 && eStackMode != StackMode_Z_STACKED && bIsSupportingOnlyDeepStackingFor3D )
-            DiagramHelper::setStackMode( xDiagram, StackMode_Z_STACKED );
-        else if( nNewDimensionCount==2 && eStackMode == StackMode_Z_STACKED )
-            DiagramHelper::setStackMode( xDiagram, StackMode_NONE );
+        if( nNewDimensionCount==3 && eStackMode != StackMode::ZStacked && bIsSupportingOnlyDeepStackingFor3D )
+            DiagramHelper::setStackMode( xDiagram, StackMode::ZStacked );
+        else if( nNewDimensionCount==2 && eStackMode == StackMode::ZStacked )
+            DiagramHelper::setStackMode( xDiagram, StackMode::NONE );
     }
     catch( const uno::Exception & ex )
     {
@@ -593,7 +590,7 @@ bool DiagramHelper::attachSeriesToAxis( bool bAttachToMainAxis
     {
         try
         {
-            xProp->setPropertyValue( "AttachedAxisIndex", uno::makeAny( nNewAxisIndex ) );
+            xProp->setPropertyValue( "AttachedAxisIndex", uno::Any( nNewAxisIndex ) );
             bChanged = true;
         }
         catch( const uno::Exception & ex )
@@ -673,11 +670,11 @@ uno::Reference< XChartType > DiagramHelper::getChartTypeOfSeries(
     return nullptr;
 }
 
-::std::vector< Reference< XDataSeries > >
+std::vector< Reference< XDataSeries > >
     DiagramHelper::getDataSeriesFromDiagram(
         const Reference< XDiagram > & xDiagram )
 {
-    ::std::vector< Reference< XDataSeries > > aResult;
+    std::vector< Reference< XDataSeries > > aResult;
 
     try
     {
@@ -693,8 +690,8 @@ uno::Reference< XChartType > DiagramHelper::getChartTypeOfSeries(
             {
                 Reference< XDataSeriesContainer > xDSCnt( aChartTypeSeq[j], uno::UNO_QUERY_THROW );
                 Sequence< Reference< XDataSeries > > aSeriesSeq( xDSCnt->getDataSeries() );
-                ::std::copy( aSeriesSeq.begin(), aSeriesSeq.end(),
-                             ::std::back_inserter( aResult ));
+                std::copy( aSeriesSeq.begin(), aSeriesSeq.end(),
+                             std::back_inserter( aResult ));
             }
         }
     }
@@ -915,7 +912,7 @@ Reference< data::XLabeledDataSequence >
                     {
                         try
                         {
-                            xProp->setPropertyValue( "Role", uno::makeAny( OUString("categories") ) );
+                            xProp->setPropertyValue( "Role", uno::Any( OUString("categories") ) );
                         }
                         catch( const uno::Exception & ex )
                         {
@@ -1021,7 +1018,7 @@ void lcl_switchToDateCategories( const Reference< XChartDocument >& xChartDoc, c
                     Any& rAny = rCat[0];
                     if( !(rAny>>=fTest) )
                     {
-                        rAny = uno::makeAny(fNan);
+                        rAny <<= fNan;
                     }
                 }
             }
@@ -1058,7 +1055,7 @@ void lcl_switchToDateCategories( const Reference< XChartDocument >& xChartDoc, c
                     Sequence<sal_Int32> aKeySeq = xNumberFormats->queryKeys( util::NumberFormat::DATE,  rLocaleDataWrapper.getLanguageTag().getLocale(), bCreate );
                     if( aKeySeq.getLength() )
                     {
-                        xAxisProps->setPropertyValue(CHART_UNONAME_NUMFMT, uno::makeAny(aKeySeq[0]));
+                        xAxisProps->setPropertyValue(CHART_UNONAME_NUMFMT, uno::Any(aKeySeq[0]));
                     }
                 }
             }
@@ -1221,7 +1218,7 @@ Sequence< Reference< XChartType > >
     DiagramHelper::getChartTypesFromDiagram(
         const Reference< XDiagram > & xDiagram )
 {
-    ::std::vector< Reference< XChartType > > aResult;
+    std::vector< Reference< XChartType > > aResult;
 
     if(xDiagram.is())
     {
@@ -1235,8 +1232,8 @@ Sequence< Reference< XChartType > >
             {
                 Reference< XChartTypeContainer > xCTCnt( aCooSysSeq[i], uno::UNO_QUERY_THROW );
                 Sequence< Reference< XChartType > > aChartTypeSeq( xCTCnt->getChartTypes());
-                ::std::copy( aChartTypeSeq.begin(), aChartTypeSeq.end(),
-                             ::std::back_inserter( aResult ));
+                std::copy( aChartTypeSeq.begin(), aChartTypeSeq.end(),
+                             std::back_inserter( aResult ));
             }
         }
         catch( const uno::Exception & ex )
@@ -1254,10 +1251,10 @@ bool DiagramHelper::areChartTypesCompatible( const Reference< ::chart2::XChartTy
     if( !xFirstType.is() || !xSecondType.is() )
         return false;
 
-    ::std::vector< OUString > aFirstRoles( ContainerHelper::SequenceToVector( xFirstType->getSupportedMandatoryRoles() ) );
-    ::std::vector< OUString > aSecondRoles( ContainerHelper::SequenceToVector( xSecondType->getSupportedMandatoryRoles() ) );
-    ::std::sort( aFirstRoles.begin(), aFirstRoles.end() );
-    ::std::sort( aSecondRoles.begin(), aSecondRoles.end() );
+    std::vector< OUString > aFirstRoles( ContainerHelper::SequenceToVector( xFirstType->getSupportedMandatoryRoles() ) );
+    std::vector< OUString > aSecondRoles( ContainerHelper::SequenceToVector( xSecondType->getSupportedMandatoryRoles() ) );
+    std::sort( aFirstRoles.begin(), aFirstRoles.end() );
+    std::sort( aSecondRoles.begin(), aSecondRoles.end() );
     return ( aFirstRoles == aSecondRoles );
 }
 
@@ -1508,13 +1505,13 @@ sal_Int32 DiagramHelper::getGeometry3D(
     rbFound = false;
     rbAmbiguous = false;
 
-    ::std::vector< Reference< chart2::XDataSeries > > aSeriesVec(
+    std::vector< Reference< chart2::XDataSeries > > aSeriesVec(
         DiagramHelper::getDataSeriesFromDiagram( xDiagram ));
 
     if( aSeriesVec.empty())
         rbAmbiguous = true;
 
-    for( ::std::vector< Reference< chart2::XDataSeries > >::const_iterator aIt =
+    for( std::vector< Reference< chart2::XDataSeries > >::const_iterator aIt =
              aSeriesVec.begin(); aIt != aSeriesVec.end(); ++aIt )
     {
         try
@@ -1550,14 +1547,14 @@ void DiagramHelper::setGeometry3D(
     const Reference< chart2::XDiagram > & xDiagram,
     sal_Int32 nNewGeometry )
 {
-    ::std::vector< Reference< chart2::XDataSeries > > aSeriesVec(
+    std::vector< Reference< chart2::XDataSeries > > aSeriesVec(
         DiagramHelper::getDataSeriesFromDiagram( xDiagram ));
 
-    for( ::std::vector< Reference< chart2::XDataSeries > >::const_iterator aIt =
+    for( std::vector< Reference< chart2::XDataSeries > >::const_iterator aIt =
              aSeriesVec.begin(); aIt != aSeriesVec.end(); ++aIt )
     {
         DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints(
-            *aIt, "Geometry3D", uno::makeAny( nNewGeometry ));
+            *aIt, "Geometry3D", uno::Any( nNewGeometry ));
     }
 }
 
@@ -1653,8 +1650,8 @@ bool DiagramHelper::setDiagramPositioning( const uno::Reference< frame::XModel >
     if( (aNewPos.Secondary + aNewSize.Secondary) > 1.0 )
         aNewPos.Secondary = 1.0 - aNewSize.Secondary;
 
-    xDiaProps->setPropertyValue( "RelativePosition", uno::makeAny(aNewPos) );
-    xDiaProps->setPropertyValue( "RelativeSize", uno::makeAny(aNewSize) );
+    xDiaProps->setPropertyValue( "RelativePosition", uno::Any(aNewPos) );
+    xDiaProps->setPropertyValue( "RelativeSize", uno::Any(aNewSize) );
 
     bChanged = (aOldPos.Anchor!=aNewPos.Anchor) ||
         (aOldPos.Primary!=aNewPos.Primary) ||

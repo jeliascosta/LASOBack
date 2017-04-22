@@ -47,9 +47,9 @@ public:
     int run();
     int runandwaitforresult();
 
-    inline OUString const & getDisplayDirectory() { return m_sDisplayDirectory; }
+    OUString const & getDisplayDirectory() { return m_sDisplayDirectory; }
 
-    inline ControlHelper* getControlHelper() const {
+    ControlHelper* getControlHelper() const {
         return m_pControlHelper;
     }
 
@@ -72,14 +72,15 @@ protected:
 
     NavigationServices_DialogType m_nDialogType;
 
-    void implsetTitle( const OUString& aTitle )
-        throw( css::uno::RuntimeException );
+    /// @throws css::uno::RuntimeException
+    void implsetTitle( const OUString& aTitle );
 
-    void implsetDisplayDirectory( const OUString& rDirectory )
-        throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
+    /// @throws css::lang::IllegalArgumentException
+    /// @throws css::uno::RuntimeException
+    void implsetDisplayDirectory( const OUString& rDirectory );
 
-    OUString const & implgetDisplayDirectory(  )
-        throw( css::uno::RuntimeException );
+    /// @throws css::uno::RuntimeException
+    OUString const & implgetDisplayDirectory(  );
 
     void implInitialize( );
 

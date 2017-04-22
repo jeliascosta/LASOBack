@@ -55,7 +55,7 @@ namespace frm
 
         pReturn->SetStatusEventHdl( LINK( pReturn, RichTextEngine, EditEngineStatusChanged ) );
 
-        pPool->SetDefaultMetric(  (SfxMapUnit)( aDeviceMapMode.GetMapUnit() ) );
+        pPool->SetDefaultMetric(aDeviceMapMode.GetMapUnit());
 
         // defaults
         vcl::Font aFont = Application::GetSettings().GetStyleSettings().GetAppFont();
@@ -63,7 +63,7 @@ namespace frm
         pPool->SetPoolDefaultItem( SvxFontItem( aFont.GetFamilyType(), aFont.GetFamilyName(), OUString(), aFont.GetPitch(), aFont.GetCharSet(), EE_CHAR_FONTINFO ) );
 
         // 12 pt font size
-        MapMode aPointMapMode( MAP_POINT );
+        MapMode aPointMapMode( MapUnit::MapPoint );
         Size a12PointSize( OutputDevice::LogicToLogic( Size( 12, 0 ), aPointMapMode, aDeviceMapMode ) );
         pPool->SetPoolDefaultItem( SvxFontHeightItem( a12PointSize.Width(), 100, EE_CHAR_FONTHEIGHT ) );
 
@@ -128,7 +128,7 @@ namespace frm
     }
 
 
-    IMPL_LINK_TYPED( RichTextEngine, EditEngineStatusChanged, EditStatus&, _rStatus, void )
+    IMPL_LINK( RichTextEngine, EditEngineStatusChanged, EditStatus&, _rStatus, void )
     {
         for ( ::std::vector< IEngineStatusListener* >::const_iterator aLoop = m_aStatusListeners.begin();
               aLoop != m_aStatusListeners.end();

@@ -91,7 +91,6 @@ namespace vcl
 #define VSHELLFLAG_SHARELAYOUT          ((long)0x2)
 typedef std::shared_ptr<SwRootFrame> SwRootFramePtr;
 
-class SwViewShell;
 class SW_DLLPUBLIC SwViewShell : public sw::Ring<SwViewShell>
 {
     friend void SetOutDev( SwViewShell *pSh, OutputDevice *pOut );
@@ -107,16 +106,16 @@ class SW_DLLPUBLIC SwViewShell : public sw::Ring<SwViewShell>
     // Set SwVisArea in order to enable clean formatting before printing.
     friend void SetSwVisArea( SwViewShell *pSh, const SwRect & );
 
-    BitmapEx* m_pReplaceBmp; ///< replaced display of still loaded images
-    BitmapEx* m_pErrorBmp;   ///< error display of missed images
+    std::unique_ptr<BitmapEx> m_xReplaceBmp; ///< replaced display of still loaded images
+    std::unique_ptr<BitmapEx> m_xErrorBmp;   ///< error display of missed images
 
-    static bool mbLstAct;        // true if EndAction of last Shell
-                                    // i.e. if the EndActions of the other
-                                    // Shells on the document are through.
+    static bool mbLstAct;            // true if EndAction of last Shell
+                                     // i.e. if the EndActions of the other
+                                     // Shells on the document are through.
 
-    Point         maPrtOffst;         // Ofst for Printer,
+    Point         maPrtOffset;       // Offset for Printer,
                                      // non-printable margin.
-     Size         maBrowseBorder;     // Border for frame documents.
+    Size          maBrowseBorder;    // Border for frame documents.
     SwRect        maInvalidRect;
 
     SfxViewShell *mpSfxViewShell;
@@ -190,8 +189,6 @@ protected:
     sal_uInt16 mnLockPaint;   ///< != 0 if Paint is locked.
     bool      mbSelectAll; ///< Special select all mode: whole document selected, even if doc starts with table.
 
-    bool mbInLibreOfficeKitCallback;
-
     /// The virtual device we paint to will end up on the screen.
     bool mbOutputToWindow;
 
@@ -209,7 +206,7 @@ public:
     inline void StartAction();
            void ImplStartAction();
     inline void EndAction( const bool bIdleEnd = false );
-           void ImplEndAction( const bool bIdleEnd = false );
+           void ImplEndAction( const bool bIdleEnd );
     sal_uInt16 ActionCount() const { return mnStartAction; }
     bool ActionPend() const { return mnStartAction != 0; }
     bool IsInEndAction() const { return mbInEndAction; }
@@ -222,7 +219,7 @@ public:
     void    SetRestoreActions(sal_uInt16 nSet);
     sal_uInt16  GetRestoreActions() const;
 
-    inline bool HasInvalidRect() const { return maInvalidRect.HasArea(); }
+    bool HasInvalidRect() const { return maInvalidRect.HasArea(); }
     void ChgHyphenation() { Reformat(); }
     void ChgNumberDigits();
 
@@ -241,7 +238,7 @@ public:
     void DLPostPaint2(bool bPaintFormLayer);
     const MapMode& getPrePostMapMode() const { return maPrePostMapMode; }
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle &rRect);
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle &rRect);
 
     /** Paint tile.
 
@@ -258,7 +255,7 @@ public:
     // The passed rect is situated on pixel borders
     // in order to avoid pixel errors when scrolling.
     virtual void VisPortChgd( const SwRect & );
-    bool SmoothScroll( long lXDiff, long lYDiff, const Rectangle* );//Browser
+    bool SmoothScroll( long lXDiff, long lYDiff, const tools::Rectangle* );//Browser
     void EnableSmooth( bool b ) { mbEnableSmooth = b; }
 
     const SwRect& VisArea() const;
@@ -289,7 +286,7 @@ public:
 
     const Size GetPageSize( sal_uInt16 nPageNum, bool bSkipEmptyPages ) const;
 
-    inline SwDoc *GetDoc()  const { return mpDoc; }  //Never 0.
+    SwDoc *GetDoc()  const { return mpDoc; }  //Never 0.
 
     /** Provides access to the document setting interface
      */
@@ -345,12 +342,12 @@ public:
     // 2. GetWin:      Available if we not printing
     // 3. GetOut:      Printer, Window or Virtual device
     vcl::RenderContext& GetRefDev() const;
-    inline vcl::Window* GetWin()    const { return mpWin; }
-    inline vcl::RenderContext* GetOut()     const { return mpOut; }
+    vcl::Window* GetWin()    const { return mpWin; }
+    vcl::RenderContext* GetOut()     const { return mpOut; }
 
     void SetWin(vcl::Window* win) { mpWin = win; }
     void SetOut(vcl::RenderContext* pOut) { mpOut = pOut; }
-    static inline bool IsLstEndAction() { return SwViewShell::mbLstAct; }
+    static bool IsLstEndAction() { return SwViewShell::mbLstAct; }
 
     // Change of all page descriptors.
     void   ChgAllPageOrientation( Orientation eOri );
@@ -368,7 +365,7 @@ public:
 
     // Printing for OLE 2.0.
     static void PrtOle2( SwDoc *pDoc, const SwViewOption *pOpt, const SwPrintData& rOptions,
-                         vcl::RenderContext& rRenderContext, const Rectangle& rRect );
+                         vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect );
 
     // Fill temporary doc with selected text for Print or PDF export.
     void FillPrtDoc( SwDoc* pPrtDoc, const SfxPrinter* pPrt );
@@ -419,12 +416,14 @@ public:
 
     void SetProtectForm( bool _bProtectForm );
 
+    void SetMsWordCompTrailingBlanks( bool _bMsWordCompTrailingBlanks );
+
     // DOCUMENT COMPATIBILITY FLAGS END
 
     // Calls Idle-formatter of Layout.
     void LayoutIdle();
 
-    inline const SwViewOption *GetViewOptions() const { return mpOpt; }
+    const SwViewOption *GetViewOptions() const { return mpOpt; }
     virtual void  ApplyViewOptions( const SwViewOption &rOpt );
            void  SetUIOptions( const SwViewOption &rOpt );
     virtual void  SetReadonlyOption(bool bSet);          // Set readonly-bit of ViewOptions.
@@ -442,8 +441,8 @@ public:
                           { return (*mpCareWindow.get()) ? mpCareWindow.get()->get() : CareChildWin(rVSh); }
     static vcl::Window*   CareChildWin(SwViewShell& rVSh);
 
-    inline SfxViewShell   *GetSfxViewShell() const { return mpSfxViewShell; }
-    inline void           SetSfxViewShell(SfxViewShell *pNew) { mpSfxViewShell = pNew; }
+    SfxViewShell   *GetSfxViewShell() const { return mpSfxViewShell; }
+    void           SetSfxViewShell(SfxViewShell *pNew) { mpSfxViewShell = pNew; }
 
     // Selection of  Draw Engine has been changed.
     virtual void DrawSelChanged();
@@ -546,16 +545,16 @@ public:
 
     SwAccessibleMap* GetAccessibleMap();
 
-    SwViewShell( SwViewShell&, vcl::Window *pWin = nullptr, OutputDevice *pOut = nullptr,
+    SwViewShell( SwViewShell&, vcl::Window *pWin, OutputDevice *pOut = nullptr,
                 long nFlags = 0 );
     SwViewShell( SwDoc& rDoc, vcl::Window *pWin,
-               const SwViewOption *pOpt = nullptr, OutputDevice *pOut = nullptr,
+               const SwViewOption *pOpt, OutputDevice *pOut = nullptr,
                long nFlags = 0 );
-    virtual ~SwViewShell();
+    virtual ~SwViewShell() override;
 
     sal_Int32 GetPageNumAndSetOffsetForPDF( OutputDevice& rOut, const SwRect& rRect ) const;
 
-    inline bool IsInConstructor() const { return mbInConstructor; }
+    bool IsInConstructor() const { return mbInConstructor; }
 
     const BitmapEx& GetReplacementBitmap(bool bIsErrorState);
     void DeleteReplacementBitmaps();
@@ -570,11 +569,6 @@ public:
     bool IsShowHeaderFooterSeparator( FrameControlType eControl ) { return (eControl == Header)? mbShowHeaderSeparator: mbShowFooterSeparator; }
     virtual void SetShowHeaderFooterSeparator( FrameControlType eControl, bool bShow ) { if ( eControl == Header ) mbShowHeaderSeparator = bShow; else mbShowFooterSeparator = bShow; }
     bool IsSelectAll() { return mbSelectAll; }
-
-    /// The actual implementation of the vcl::ITiledRenderable::registerCallback() API for Writer.
-    void registerLibreOfficeKitCallback(LibreOfficeKitCallback pCallback, void* pLibreOfficeKitData);
-    /// Invokes the registered callback, if there are any.
-    void libreOfficeKitCallback(int nType, const char* pPayload) const;
 
     void setOutputToWindow(bool bOutputToWindow);
     bool isOutputToWindow() const;

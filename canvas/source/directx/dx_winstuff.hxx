@@ -83,7 +83,7 @@ namespace dxcanvas
         typedef T Wrappee;
 
         COMReference() :
-            mp( NULL )
+            mp( nullptr )
         {
         }
 
@@ -109,9 +109,9 @@ namespace dxcanvas
         }
 
         COMReference( const COMReference& rNew ) :
-            mp( NULL )
+            mp( nullptr )
         {
-            if( rNew.mp == NULL )
+            if( rNew.mp == nullptr )
                 return;
 
             rNew.mp->AddRef(); // do that _before_ assigning the
@@ -122,7 +122,7 @@ namespace dxcanvas
         COMReference& operator=( const COMReference& rRHS )
         {
             COMReference aTmp(rRHS);
-            ::std::swap( mp, aTmp.mp );
+            std::swap( mp, aTmp.mp );
 
             return *this;
         }
@@ -138,11 +138,11 @@ namespace dxcanvas
             if( mp )
                 refcount = mp->Release();
 
-            mp = NULL;
+            mp = nullptr;
             return refcount;
         }
 
-        bool        is() const { return mp != NULL; }
+        bool        is() const { return mp != nullptr; }
         T*          get() const { return mp; }
         T*          operator->() const { return mp; }
         T&          operator*() const { return *mp; }

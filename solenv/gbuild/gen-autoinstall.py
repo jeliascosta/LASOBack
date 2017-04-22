@@ -18,11 +18,17 @@ scp2componentcondition = sys.argv[2]
 scp2libtemplate = sys.argv[3]
 scp2exetemplate = sys.argv[4]
 scp2jartemplate = sys.argv[5]
-sdklibs = open(sys.argv[6]).readline().split()
-libs = open(sys.argv[7]).readline().split()
-exes = open(sys.argv[8]).readline().split()
-jars = open(sys.argv[9]).readline().split()
-pkgs = open(sys.argv[10]).readline().split()
+# use 'with open(file) as f:' to avoid 'ResourceWarning: unclosed file'
+with open(sys.argv[6]) as f:
+    sdklibs = f.readline().split()
+with open(sys.argv[7]) as f:
+    libs = f.readline().split()
+with open(sys.argv[8]) as f:
+    exes = f.readline().split()
+with open(sys.argv[9]) as f:
+    jars = f.readline().split()
+with open(sys.argv[10]) as f:
+    pkgs = f.readline().split()
 
 if len(scp2componentcondition) > 0:
     scp2componentcondition = "," + scp2componentcondition
@@ -76,6 +82,6 @@ for (gid, jarfile) in autojars:
     print(scp2jartemplate + "(" + gid + "," + jarfile + scp2componentcondition + ")")
 
 for (gid, pkgfilelist) in autopkgs:
-    print("PACKAGE_FILELIST(" + gid + "," + pkgfilelist + scp2componentcondition + ")")
+    print("PACKAGE_FILELIST(" + gid + "," + pkgfilelist + ")")
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab:

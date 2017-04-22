@@ -20,7 +20,7 @@
 #define INCLUDED_SC_SOURCE_UI_INC_CHARTRANGESELECTIONLISTENER_HXX
 
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/view/XSelectionChangeListener.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 
@@ -32,36 +32,31 @@ typedef ::cppu::WeakComponentImplHelper<
     ScChartRangeSelectionListener_Base;
 
 class ScChartRangeSelectionListener :
-    public comphelper::OBaseMutex,
+    public cppu::BaseMutex,
     public ScChartRangeSelectionListener_Base
 {
 public:
     explicit ScChartRangeSelectionListener( ScTabViewShell * pViewShell );
-    virtual ~ScChartRangeSelectionListener();
+    virtual ~ScChartRangeSelectionListener() override;
 
 protected:
     // ____ XSelectionChangeListener ____
     virtual void SAL_CALL selectionChanged(
-        const css::lang::EventObject& aEvent )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& aEvent ) override;
 
     // ____ XEventListener (base of XSelectionChangeListener) ____
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& Source ) override;
 
     // ____ WeakComponentImplHelperBase ____
     // is called when dispose() is called at this component
     virtual void SAL_CALL disposing() override;
 
     // ____ XServiceInfo ____
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
     virtual sal_Bool SAL_CALL supportsService(
-        const OUString& ServiceName )
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override;
+        const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
 private:
     ScTabViewShell * m_pViewShell;

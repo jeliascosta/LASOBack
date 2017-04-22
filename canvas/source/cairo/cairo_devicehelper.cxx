@@ -104,7 +104,7 @@ namespace cairocanvas
     {
         // Map a one-by-one millimeter box to pixel
         const MapMode aOldMapMode( mpRefDevice->GetMapMode() );
-        mpRefDevice->SetMapMode( MapMode(MAP_MM) );
+        mpRefDevice->SetMapMode( MapMode(MapUnit::MapMM) );
         const Size aPixelSize( mpRefDevice->LogicToPixel(Size(1,1)) );
         mpRefDevice->SetMapMode( aOldMapMode );
 
@@ -118,7 +118,7 @@ namespace cairocanvas
 
         // Map the pixel dimensions of the output window to millimeter
         const MapMode aOldMapMode( mpRefDevice->GetMapMode() );
-        mpRefDevice->SetMapMode( MapMode(MAP_MM) );
+        mpRefDevice->SetMapMode( MapMode(MapUnit::MapMM) );
         const Size aLogSize( mpRefDevice->PixelToLogic(mpRefDevice->GetOutputSizePixel()) );
         mpRefDevice->SetMapMode( aOldMapMode );
 
@@ -199,12 +199,12 @@ namespace cairocanvas
 
     uno::Any DeviceHelper::isAccelerated() const
     {
-        return css::uno::makeAny(false);
+        return css::uno::Any(false);
     }
 
     uno::Any DeviceHelper::getDeviceHandle() const
     {
-        return uno::makeAny( reinterpret_cast< sal_Int64 >(mpRefDevice.get()) );
+        return uno::Any( reinterpret_cast< sal_Int64 >(mpRefDevice.get()) );
     }
 
     uno::Any DeviceHelper::getSurfaceHandle() const
@@ -236,11 +236,9 @@ namespace cairocanvas
 
         if( mpRefDevice )
         {
-            OUString aFilename("dbg_frontbuffer");
-            aFilename += OUString::number(nFilePostfixCount);
-            aFilename += ".bmp";
+            OUString aFilename = "dbg_frontbuffer" + OUString::number(nFilePostfixCount) + ".bmp";
 
-            SvFileStream aStream( aFilename, STREAM_STD_READWRITE );
+            SvFileStream aStream( aFilename, StreamMode::STD_READWRITE );
 
             const ::Point aEmptyPoint;
             bool bOldMap( mpRefDevice->IsMapModeEnabled() );

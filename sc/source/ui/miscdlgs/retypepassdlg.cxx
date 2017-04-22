@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "sc.hrc"
+#include "scres.hrc"
 #include "retypepassdlg.hxx"
 #include "scresid.hxx"
 #include "document.hxx"
@@ -40,7 +40,7 @@ ScRetypePassDlg::ScRetypePassDlg(vcl::Window* pParent) :
     get(mpTextDocStatus, "docStatusLabel");
     get(mpBtnRetypeDoc, "retypeDocButton");
     vcl::Window *pScrolledWindow = get<vcl::Window>("scrolledwindow");
-    Size aSize(LogicToPixel(Size(190, 90), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(190, 90), MapUnit::MapAppFont));
     pScrolledWindow->set_width_request(aSize.Width());
     pScrolledWindow->set_height_request(aSize.Height());
     get(mpSheetsBox, "sheetsBox");
@@ -60,6 +60,7 @@ void ScRetypePassDlg::dispose()
     mpTextDocStatus.clear();
     mpBtnRetypeDoc.clear();
     mpSheetsBox.clear();
+    maSheets.clear();
     ModalDialog::dispose();
 }
 
@@ -112,7 +113,7 @@ void ScRetypePassDlg::SetDataFromDocument(const ScDocument& rDoc)
         VclPtr<FixedText> pFtSheetName = VclPtr<FixedText>::Create(pSheet);
         pFtSheetName->Show();
         pFtSheetName->SetStyle(WB_VCENTER);
-        FixedText* pFtSheetStatus = VclPtr<FixedText>::Create(pSheet);
+        VclPtr<FixedText> pFtSheetStatus = VclPtr<FixedText>::Create(pSheet);
         pFtSheetStatus->Show();
         pFtSheetStatus->SetStyle(WB_VCENTER);
 
@@ -261,12 +262,12 @@ void ScRetypePassDlg::CheckHashStatus()
     mpBtnOk->Disable();
 }
 
-IMPL_LINK_NOARG_TYPED(ScRetypePassDlg, OKHdl, Button*, void)
+IMPL_LINK_NOARG(ScRetypePassDlg, OKHdl, Button*, void)
 {
     EndDialog(RET_OK);
 }
 
-IMPL_LINK_TYPED( ScRetypePassDlg, RetypeBtnHdl, Button*, pBtn, void )
+IMPL_LINK( ScRetypePassDlg, RetypeBtnHdl, Button*, pBtn, void )
 {
     ScPassHashProtectable* pProtected = nullptr;
     if (pBtn == mpBtnRetypeDoc)
@@ -342,11 +343,6 @@ void ScRetypePassInputDlg::dispose()
     ModalDialog::dispose();
 }
 
-short ScRetypePassInputDlg::Execute()
-{
-    return ModalDialog::Execute();
-}
-
 bool ScRetypePassInputDlg::IsRemovePassword() const
 {
     return m_pBtnRemovePassword->IsChecked();
@@ -412,12 +408,12 @@ void ScRetypePassInputDlg::CheckPasswordInput()
     m_pBtnOk->Enable(bPassGood);
 }
 
-IMPL_LINK_NOARG_TYPED(ScRetypePassInputDlg, OKHdl, Button*, void)
+IMPL_LINK_NOARG(ScRetypePassInputDlg, OKHdl, Button*, void)
 {
     EndDialog(RET_OK);
 }
 
-IMPL_LINK_TYPED( ScRetypePassInputDlg, RadioBtnHdl, Button*, pBtn, void )
+IMPL_LINK( ScRetypePassInputDlg, RadioBtnHdl, Button*, pBtn, void )
 {
     if (pBtn == m_pBtnRetypePassword)
     {
@@ -433,12 +429,12 @@ IMPL_LINK_TYPED( ScRetypePassInputDlg, RadioBtnHdl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScRetypePassInputDlg, CheckBoxHdl, Button*, void)
+IMPL_LINK_NOARG(ScRetypePassInputDlg, CheckBoxHdl, Button*, void)
 {
     CheckPasswordInput();
 }
 
-IMPL_LINK_NOARG_TYPED(ScRetypePassInputDlg, PasswordModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(ScRetypePassInputDlg, PasswordModifyHdl, Edit&, void)
 {
     CheckPasswordInput();
 }

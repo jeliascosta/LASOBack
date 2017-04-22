@@ -41,15 +41,15 @@ class SfxHintPoster : public SvRefBase
 private:
     Link<SfxRequest*,void> m_Link;
 
-                    DECL_LINK_TYPED( DoEvent_Impl, void*, void );
+                    DECL_LINK( DoEvent_Impl, void*, void );
 
 protected:
-    virtual         ~SfxHintPoster();
+    virtual         ~SfxHintPoster() override;
 
 public:
                     SfxHintPoster(const Link<SfxRequest*,void>& rLink);
 
-    void            Post( SfxRequest* pHint = nullptr );
+    void            Post( SfxRequest* pHint );
     void            SetEventHdl(const Link<SfxRequest*,void>& rLink);
 };
 

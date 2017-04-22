@@ -36,7 +36,7 @@ void SvxBulletItem::StoreFont( SvStream& rStream, const vcl::Font& rFont )
     WriteColor( rStream, rFont.GetColor() );
     nTemp = (sal_uInt16)rFont.GetFamilyType(); rStream.WriteUInt16( nTemp );
 
-    nTemp = (sal_uInt16)GetSOStoreTextEncoding((rtl_TextEncoding)rFont.GetCharSet());
+    nTemp = (sal_uInt16)GetSOStoreTextEncoding(rFont.GetCharSet());
     rStream.WriteUInt16( nTemp );
 
     nTemp = (sal_uInt16)rFont.GetPitch(); rStream.WriteUInt16( nTemp );
@@ -116,7 +116,7 @@ SvxBulletItem::SvxBulletItem( SvStream& rStrm, sal_uInt16 _nWhich )
     {
         // Safe Load with Test on empty Bitmap
         Bitmap          aBmp;
-        const sal_Size    nOldPos = rStrm.Tell();
+        sal_uInt64 const nOldPos = rStrm.Tell();
         // Ignore Errorcode when reading Bitmap,
         // see comment in SvxBulletItem::Store()
         bool bOldError = rStrm.GetError() != 0;
@@ -133,7 +133,7 @@ SvxBulletItem::SvxBulletItem( SvStream& rStrm, sal_uInt16 _nWhich )
             nStyle = SvxBulletStyle::NONE;
         }
         else
-            pGraphicObject = new GraphicObject( aBmp );
+            pGraphicObject.reset( new GraphicObject( aBmp ) );
     }
 
     sal_Int32 nTmp(0);
@@ -159,7 +159,8 @@ SvxBulletItem::SvxBulletItem( SvStream& rStrm, sal_uInt16 _nWhich )
 SvxBulletItem::SvxBulletItem( const SvxBulletItem& rItem) : SfxPoolItem( rItem )
 {
     aFont           = rItem.aFont;
-    pGraphicObject  = ( rItem.pGraphicObject ? new GraphicObject( *rItem.pGraphicObject ) : nullptr );
+    if (rItem.pGraphicObject)
+        pGraphicObject.reset( new GraphicObject( *rItem.pGraphicObject ) );
     aPrevText       = rItem.aPrevText;
     aFollowText     = rItem.aFollowText;
     nStart          = rItem.nStart;
@@ -172,7 +173,6 @@ SvxBulletItem::SvxBulletItem( const SvxBulletItem& rItem) : SfxPoolItem( rItem )
 
 SvxBulletItem::~SvxBulletItem()
 {
-    delete pGraphicObject;
 }
 
 
@@ -221,13 +221,13 @@ void SvxBulletItem::CopyValidProperties( const SvxBulletItem& rCopyFrom )
     _aFont.SetFamily( aNewFont.GetFamilyType() );
     _aFont.SetStyleName( aNewFont.GetStyleName() );
     _aFont.SetColor( aNewFont.GetColor() );
-    SetSymbol( rCopyFrom.GetSymbol() );
+    SetSymbol( rCopyFrom.cSymbol );
     SetGraphicObject( rCopyFrom.GetGraphicObject() );
-    SetScale( rCopyFrom.GetScale() );
-    SetStart( rCopyFrom.GetStart() );
-    SetStyle( rCopyFrom.GetStyle() );
-    SetPrevText( rCopyFrom.GetPrevText() );
-    SetFollowText( rCopyFrom.GetFollowText() );
+    SetScale( rCopyFrom.nScale );
+    SetStart( rCopyFrom.nStart );
+    SetStyle( rCopyFrom.nStyle );
+    aPrevText = rCopyFrom.aPrevText;
+    aFollowText = rCopyFrom.aFollowText;
     SetFont( _aFont );
 }
 
@@ -271,14 +271,9 @@ SvStream& SvxBulletItem::Store( SvStream& rStrm, sal_uInt16 /*nItemVersion*/ ) c
 {
     // Correction for empty bitmap
     if( ( nStyle == SvxBulletStyle::BMP ) &&
-        ( !pGraphicObject || ( GRAPHIC_NONE == pGraphicObject->GetType() ) || ( GRAPHIC_DEFAULT == pGraphicObject->GetType() ) ) )
+        ( !pGraphicObject || ( GraphicType::NONE == pGraphicObject->GetType() ) || ( GraphicType::Default == pGraphicObject->GetType() ) ) )
     {
-        if( pGraphicObject )
-        {
-            delete( const_cast< SvxBulletItem* >( this )->pGraphicObject );
-            const_cast< SvxBulletItem* >( this )->pGraphicObject = nullptr;
-        }
-
+        const_cast< SvxBulletItem* >( this )->pGraphicObject.reset();
         const_cast< SvxBulletItem* >( this )->nStyle = SvxBulletStyle::NONE;
     }
 
@@ -288,7 +283,7 @@ SvStream& SvxBulletItem::Store( SvStream& rStrm, sal_uInt16 /*nItemVersion*/ ) c
         StoreFont( rStrm, aFont );
     else
     {
-        sal_Size _nStart = rStrm.Tell();
+        sal_uInt64 const _nStart = rStrm.Tell();
 
         // Small preliminary estimate of the size ...
         sal_uInt16 nFac = ( rStrm.GetCompressMode() != SvStreamCompressFlags::NONE ) ? 3 : 1;
@@ -299,7 +294,7 @@ SvStream& SvxBulletItem::Store( SvStream& rStrm, sal_uInt16 /*nItemVersion*/ ) c
             WriteDIB(aBmp, rStrm, false, true);
         }
 
-        sal_Size nEnd = rStrm.Tell();
+        sal_uInt64 const nEnd = rStrm.Tell();
         // Item can not write with an overhead more than 64K or SfxMultiRecord
         // will crash. Then prefer to forego on the bitmap, it is only
         // important for the outliner and only for <= 5.0.
@@ -340,8 +335,8 @@ OUString SvxBulletItem::GetFullText() const
 bool SvxBulletItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -364,18 +359,13 @@ const GraphicObject& SvxBulletItem::GetGraphicObject() const
 
 void SvxBulletItem::SetGraphicObject( const GraphicObject& rGraphicObject )
 {
-    if( ( GRAPHIC_NONE == rGraphicObject.GetType() ) || ( GRAPHIC_DEFAULT == rGraphicObject.GetType() ) )
+    if( ( GraphicType::NONE == rGraphicObject.GetType() ) || ( GraphicType::Default == rGraphicObject.GetType() ) )
     {
-        if( pGraphicObject )
-        {
-            delete pGraphicObject;
-            pGraphicObject = nullptr;
-        }
+         pGraphicObject.reset();
     }
     else
     {
-        delete pGraphicObject;
-        pGraphicObject = new GraphicObject( rGraphicObject );
+        pGraphicObject.reset( new GraphicObject( rGraphicObject ) );
     }
 }
 

@@ -18,8 +18,7 @@
 
 #include <com/sun/star/awt/XWindow2.hpp>
 
-#include <cppuhelper/compbase1.hxx>
-#include <cppuhelper/weakref.hxx>
+#include <cppuhelper/compbase.hxx>
 
 #include <sfx2/sidebar/SidebarController.hxx>
 #include <sfx2/sidebar/SidebarDockingWindow.hxx>
@@ -29,7 +28,7 @@
 
 /** get the sidebar for a given frame
 */
-class SfxUnoSidebar : public ::cppu::WeakImplHelper1< css::ui::XSidebarProvider >
+class SfxUnoSidebar : public cppu::WeakImplHelper<css::ui::XSidebarProvider>
 {
 
 private:
@@ -41,24 +40,18 @@ public:
 
     SfxUnoSidebar(const css::uno::Reference<css::frame::XFrame>&);
 
-    virtual void SAL_CALL showDecks (const sal_Bool bVisible)
-                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL showDecks (const sal_Bool bVisible) override;
 
 
-    virtual void SAL_CALL setVisible (const sal_Bool bVisible)
-                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setVisible (const sal_Bool bVisible) override;
 
-    virtual sal_Bool SAL_CALL isVisible()
-                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isVisible() override;
 
-    virtual css::uno::Reference<css::frame::XFrame> SAL_CALL getFrame()
-                                throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Reference<css::frame::XFrame> SAL_CALL getFrame() override;
 
-    virtual css::uno::Reference<css::ui::XDecks> SAL_CALL getDecks()
-                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference<css::ui::XDecks> SAL_CALL getDecks() override;
 
-    virtual css::uno::Reference<css::ui::XSidebar> SAL_CALL getSidebar()
-                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference<css::ui::XSidebar> SAL_CALL getSidebar() override;
 
 };
 

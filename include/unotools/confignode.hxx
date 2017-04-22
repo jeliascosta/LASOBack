@@ -56,8 +56,6 @@ namespace utl
                     m_xContainerAccess;     /// modifying set nodes  (optional interface of our UNO object)
         bool        m_bEscapeNames;         /// escape names before accessing children ?
 
-        OUString    m_sCompletePath;
-
         OConfigurationNode  insertNode(const OUString& _rName,const css::uno::Reference< css::uno::XInterface >& _xNode) const throw();
 
     protected:
@@ -74,12 +72,12 @@ namespace utl
         OConfigurationNode() :m_bEscapeNames(false) { }
         /// copy ctor
         OConfigurationNode(const OConfigurationNode& _rSource);
+        /// move ctor
+        OConfigurationNode(OConfigurationNode&& _rSource);
 
-        /// assigment
+        /// assignment
         OConfigurationNode& operator=(const OConfigurationNode& _rSource);
-
-        /// dtor
-        virtual ~OConfigurationNode() {}
+        OConfigurationNode& operator=(OConfigurationNode&& _rSource);
 
         /// returns the local name of the node
         OUString     getLocalName() const;
@@ -142,13 +140,6 @@ namespace utl
         css::uno::Sequence< OUString >
                             getNodeNames() const throw();
 
-        /** enables or disables name escaping when accessing direct children<p/>
-            Escaping is disabled by default, usually you enable it for set nodes (e.g. with calling setEscape(isSetNode)).
-            Once escaping is enabled, you should not access indirect children (e.g. openNode("child/grandchild"), 'cause
-            escaping for such names may not be supported by the underlying API objects.
-            @see getEscape
-        */
-        void        setEscape(bool _bEnable = true);
         /** get the flag specifying the current escape behaviour
             @see setEscape
         */
@@ -252,8 +243,8 @@ namespace utl
         static OConfigurationTreeRoot createWithProvider(
                 const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxConfProvider,
                 const OUString& _rPath,
-                sal_Int32 _nDepth = -1,
-                CREATION_MODE _eMode = CM_UPDATABLE,
+                sal_Int32 _nDepth,
+                CREATION_MODE _eMode,
                 bool _bLazyWrite = true
             );
 

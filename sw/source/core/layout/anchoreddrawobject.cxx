@@ -31,6 +31,7 @@
 #include <DocumentSettingManager.hxx>
 #include <IDocumentState.hxx>
 #include <txtfly.hxx>
+#include <viewimp.hxx>
 
 using namespace ::com::sun::star;
 
@@ -113,6 +114,12 @@ SwPosNotify::~SwPosNotify()
             mpAnchoredDrawObj->AnchorFrame()->InvalidatePos();
         }
     }
+    // tdf#101464 notify SwAccessibleMap about new drawing object position
+    if (mpOldPageFrame && mpOldPageFrame->getRootFrame()->IsAnyShellAccessible())
+    {
+        mpOldPageFrame->getRootFrame()->GetCurrShell()->Imp()->MoveAccessible(
+                nullptr, mpAnchoredDrawObj->GetDrawObj(), maOldObjRect);
+    }
 }
 
 // --> #i32795#
@@ -126,8 +133,6 @@ Point SwPosNotify::LastObjPos() const
 class SwObjPosOscillationControl
 {
     private:
-        sal_uInt8 mnPosStackSize;
-
         const SwAnchoredDrawObject* mpAnchoredDrawObj;
 
         std::vector<Point*> maObjPositions;
@@ -141,8 +146,7 @@ class SwObjPosOscillationControl
 
 SwObjPosOscillationControl::SwObjPosOscillationControl(
                                 const SwAnchoredDrawObject& _rAnchoredDrawObj )
-    : mnPosStackSize( 20 ),
-      mpAnchoredDrawObj( &_rAnchoredDrawObj )
+    : mpAnchoredDrawObj( &_rAnchoredDrawObj )
 {
 }
 
@@ -161,7 +165,7 @@ bool SwObjPosOscillationControl::OscillationDetected()
 {
     bool bOscillationDetected = false;
 
-    if ( maObjPositions.size() == mnPosStackSize )
+    if ( maObjPositions.size() == 20 )
     {
         // position stack is full -> oscillation
         bOscillationDetected = true;
@@ -206,8 +210,6 @@ SwAnchoredDrawObject::SwAnchoredDrawObject() :
 
 SwAnchoredDrawObject::~SwAnchoredDrawObject()
 {
-    // #i34748#
-    delete mpLastObjRect;
 }
 
 // --> #i62875#
@@ -300,7 +302,7 @@ void SwAnchoredDrawObject::MakeObjPos()
         // determine relative position of drawing object and set it
         switch ( pDrawContact->GetAnchorId() )
         {
-            case FLY_AS_CHAR:
+            case RndStdIds::FLY_AS_CHAR:
             {
                 // indicate that position will be valid after positioning is performed
                 mbValidPos = true;
@@ -308,16 +310,16 @@ void SwAnchoredDrawObject::MakeObjPos()
                 // during the format of its anchor frame - see <SwFlyCntPortion::SetBase(..)>
             }
             break;
-            case FLY_AT_PARA:
-            case FLY_AT_CHAR:
+            case RndStdIds::FLY_AT_PARA:
+            case RndStdIds::FLY_AT_CHAR:
             {
                 // --> #i32795# - move intrinsic positioning to
                 // helper method <MakeObjPosAnchoredAtPara()>
                 MakeObjPosAnchoredAtPara();
             }
             break;
-            case FLY_AT_PAGE:
-            case FLY_AT_FLY:
+            case RndStdIds::FLY_AT_PAGE:
+            case RndStdIds::FLY_AT_FLY:
             {
                 // --> #i32795# - move intrinsic positioning to
                 // helper method <MakeObjPosAnchoredAtLayout()>
@@ -326,7 +328,7 @@ void SwAnchoredDrawObject::MakeObjPos()
             break;
             default:
             {
-                OSL_FAIL( "<SwAnchoredDrawObject::MakeObjPos()> - unknown anchor type." );
+                assert(!"<SwAnchoredDrawObject::MakeObjPos()> - unknown anchor type.");
             }
         }
 
@@ -400,7 +402,7 @@ void SwAnchoredDrawObject::MakeObjPosAnchoredAtPara()
 
     bool bOscillationDetected = false;
     SwObjPosOscillationControl aObjPosOscCtrl( *this );
-    // --> #i3317# - boolean, to apply temporarly the
+    // --> #i3317# - boolean, to apply temporarily the
     // 'straightforward positioning process' for the frame due to its
     // overlapping with a previous column.
     bool bConsiderWrapInfluenceDueToOverlapPrevCol( false );
@@ -448,7 +450,7 @@ void SwAnchoredDrawObject::MakeObjPosAnchoredAtPara()
 
     // --> #i3317# - consider a detected oscillation and overlapping
     // with previous column.
-    // temporarly consider the anchored objects wrapping style influence
+    // temporarily consider the anchored objects wrapping style influence
     if ( bOscillationDetected || bConsiderWrapInfluenceDueToOverlapPrevCol )
     {
         SetTmpConsiderWrapInfluence( true );
@@ -488,8 +490,8 @@ void SwAnchoredDrawObject::MakeObjPosAnchoredAtLayout()
     }
     SetCurrRelPos( aObjPositioning.GetRelPos() );
     const SwFrame* pAnchorFrame = GetAnchorFrame();
-    SWRECTFN( pAnchorFrame );
-    const Point aAnchPos( (pAnchorFrame->Frame().*fnRect->fnGetPos)() );
+    SwRectFnSet aRectFnSet(pAnchorFrame);
+    const Point aAnchPos( aRectFnSet.GetPos(pAnchorFrame->Frame()) );
     SetObjLeft( aAnchPos.X() + GetCurrRelPos().X() );
     SetObjTop( aAnchPos.Y() + GetCurrRelPos().Y() );
 }
@@ -527,7 +529,7 @@ void SwAnchoredDrawObject::InvalidatePage_( SwPageFrame* _pPageFrame )
         {
             // --> #i35007# - correct invalidation for as-character
             // anchored objects.
-            if ( GetFrameFormat().GetAnchor().GetAnchorId() == FLY_AS_CHAR )
+            if ( GetFrameFormat().GetAnchor().GetAnchorId() == RndStdIds::FLY_AS_CHAR )
             {
                 _pPageFrame->InvalidateFlyInCnt();
             }
@@ -567,7 +569,7 @@ void SwAnchoredDrawObject::InvalidateObjPos()
             // --> #i44559# - assure, that text hint is already
             // existing in the text frame
             if ( dynamic_cast< const SwTextFrame* >(GetAnchorFrame()) !=  nullptr &&
-                 (GetFrameFormat().GetAnchor().GetAnchorId() == FLY_AS_CHAR) )
+                 (GetFrameFormat().GetAnchor().GetAnchorId() == RndStdIds::FLY_AS_CHAR) )
             {
                 SwTextFrame* pAnchorTextFrame( static_cast<SwTextFrame*>(AnchorFrame()) );
                 if ( pAnchorTextFrame->GetTextNode()->GetpSwpHints() &&
@@ -604,14 +606,12 @@ void SwAnchoredDrawObject::InvalidateObjPos()
 
 SwFrameFormat& SwAnchoredDrawObject::GetFrameFormat()
 {
-    OSL_ENSURE( static_cast<SwDrawContact*>(GetUserCall(GetDrawObj()))->GetFormat(),
-            "<SwAnchoredDrawObject::GetFrameFormat()> - missing frame format -> crash." );
+    assert(static_cast<SwDrawContact*>(GetUserCall(GetDrawObj()))->GetFormat());
     return *(static_cast<SwDrawContact*>(GetUserCall(GetDrawObj()))->GetFormat());
 }
 const SwFrameFormat& SwAnchoredDrawObject::GetFrameFormat() const
 {
-    OSL_ENSURE( static_cast<SwDrawContact*>(GetUserCall(GetDrawObj()))->GetFormat(),
-            "<SwAnchoredDrawObject::GetFrameFormat()> - missing frame format -> crash." );
+    assert(static_cast<SwDrawContact*>(GetUserCall(GetDrawObj()))->GetFormat());
     return *(static_cast<SwDrawContact*>(GetUserCall(GetDrawObj()))->GetFormat());
 }
 
@@ -629,12 +629,12 @@ const SwRect SwAnchoredDrawObject::GetObjBoundRect() const
     // Resize objects with relative width or height
     if ( !bGroupShape && GetPageFrame( ) && ( GetDrawObj( )->GetRelativeWidth( ) || GetDrawObj()->GetRelativeHeight( ) ) )
     {
-        Rectangle aCurrObjRect = GetDrawObj()->GetCurrentBoundRect();
+        tools::Rectangle aCurrObjRect = GetDrawObj()->GetCurrentBoundRect();
 
         long nTargetWidth = aCurrObjRect.GetWidth( );
         if ( GetDrawObj( )->GetRelativeWidth( ) )
         {
-            Rectangle aPageRect;
+            tools::Rectangle aPageRect;
             if (GetDrawObj()->GetRelativeWidthRelation() == text::RelOrientation::FRAME)
                 // Exclude margins.
                 aPageRect = GetPageFrame()->Prt().SVRect();
@@ -646,7 +646,7 @@ const SwRect SwAnchoredDrawObject::GetObjBoundRect() const
         long nTargetHeight = aCurrObjRect.GetHeight( );
         if ( GetDrawObj( )->GetRelativeHeight( ) )
         {
-            Rectangle aPageRect;
+            tools::Rectangle aPageRect;
             if (GetDrawObj()->GetRelativeHeightRelation() == text::RelOrientation::FRAME)
                 // Exclude margins.
                 aPageRect = GetPageFrame()->Prt().SVRect();
@@ -722,11 +722,11 @@ void SwAnchoredDrawObject::AdjustPositioningAttr( const SwFrame* _pNewAnchorFram
 
 // --> #i34748# - change return type.
 // If member <mpLastObjRect> is NULL, create one.
-void SwAnchoredDrawObject::SetLastObjRect( const Rectangle& _rNewLastRect )
+void SwAnchoredDrawObject::SetLastObjRect( const tools::Rectangle& _rNewLastRect )
 {
     if ( !mpLastObjRect )
     {
-        mpLastObjRect = new Rectangle;
+        mpLastObjRect.reset( new tools::Rectangle );
     }
     *(mpLastObjRect) = _rNewLastRect;
 }
@@ -788,7 +788,7 @@ void SwAnchoredDrawObject::SetPositioningAttr()
                 break;
                 default:
                 {
-                    OSL_FAIL( "<SwAnchoredDrawObject::SetPositioningAttr()> - unsupported layout direction" );
+                    assert(!"<SwAnchoredDrawObject::SetPositioningAttr()> - unsupported layout direction");
                 }
             }
         }

@@ -21,7 +21,6 @@
 #include "macros.hxx"
 #include "DiagramHelper.hxx"
 #include "servicenames_charttypes.hxx"
-#include "ContainerHelper.hxx"
 #include "DataSeriesHelper.hxx"
 #include "PropertyHelper.hxx"
 #include <com/sun/star/beans/PropertyAttribute.hpp>
@@ -46,7 +45,7 @@ enum
 };
 
 void lcl_AddPropertiesToVector(
-    ::std::vector< Property > & rOutProperties )
+    std::vector< Property > & rOutProperties )
 {
     rOutProperties.push_back(
         Property( "Dimension",
@@ -93,10 +92,10 @@ struct StaticBarChartTypeTemplateInfoHelper_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        ::std::vector< css::beans::Property > aProperties;
+        std::vector< css::beans::Property > aProperties;
         lcl_AddPropertiesToVector( aProperties );
 
-        ::std::sort( aProperties.begin(), aProperties.end(),
+        std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -163,7 +162,6 @@ bool BarChartTypeTemplate::isSwapXAndY() const
 sal_Bool SAL_CALL BarChartTypeTemplate::matchesTemplate(
     const Reference< chart2::XDiagram >& xDiagram,
     sal_Bool bAdaptProperties )
-    throw (uno::RuntimeException, std::exception)
 {
     bool bResult = ChartTypeTemplate::matchesTemplate( xDiagram, bAdaptProperties );
 
@@ -191,7 +189,7 @@ sal_Bool SAL_CALL BarChartTypeTemplate::matchesTemplate(
         if( !bGeomAmbiguous )
         {
             setFastPropertyValue_NoBroadcast(
-                PROP_BAR_TEMPLATE_GEOMETRY3D, uno::makeAny( aCommonGeom ));
+                PROP_BAR_TEMPLATE_GEOMETRY3D, uno::Any( aCommonGeom ));
         }
     }
 
@@ -218,7 +216,6 @@ Reference< chart2::XChartType > BarChartTypeTemplate::getChartTypeForIndex( sal_
 
 Reference< chart2::XChartType > SAL_CALL BarChartTypeTemplate::getChartTypeForNewSeries(
         const uno::Sequence< Reference< chart2::XChartType > >& aFormerlyUsedChartTypes )
-    throw (uno::RuntimeException, std::exception)
 {
     Reference< chart2::XChartType > xResult( getChartTypeForIndex( 0 ) );
     ChartTypeTemplate::copyPropertiesFromOldToNewCoordinateSystem( aFormerlyUsedChartTypes, xResult );
@@ -227,7 +224,6 @@ Reference< chart2::XChartType > SAL_CALL BarChartTypeTemplate::getChartTypeForNe
 
 // ____ OPropertySet ____
 uno::Any BarChartTypeTemplate::GetDefaultValue( sal_Int32 nHandle ) const
-    throw(beans::UnknownPropertyException)
 {
     const tPropertyValueMap& rStaticDefaults = *StaticBarChartTypeTemplateDefaults::get();
     tPropertyValueMap::const_iterator aFound( rStaticDefaults.find( nHandle ) );
@@ -243,7 +239,6 @@ uno::Any BarChartTypeTemplate::GetDefaultValue( sal_Int32 nHandle ) const
 
 // ____ XPropertySet ____
 Reference< beans::XPropertySetInfo > SAL_CALL BarChartTypeTemplate::getPropertySetInfo()
-    throw (uno::RuntimeException, std::exception)
 {
     return *StaticBarChartTypeTemplateInfo::get();
 }
@@ -253,10 +248,9 @@ void SAL_CALL BarChartTypeTemplate::applyStyle(
     ::sal_Int32 nChartTypeIndex,
     ::sal_Int32 nSeriesIndex,
     ::sal_Int32 nSeriesCount )
-    throw (uno::RuntimeException, std::exception)
 {
     ChartTypeTemplate::applyStyle( xSeries, nChartTypeIndex, nSeriesIndex, nSeriesCount );
-    DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "BorderStyle", uno::makeAny( drawing::LineStyle_NONE ) );
+    DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "BorderStyle", uno::Any( drawing::LineStyle_NONE ) );
     if( getDimension() == 3 )
     {
         try
@@ -275,13 +269,12 @@ void SAL_CALL BarChartTypeTemplate::applyStyle(
 
 void SAL_CALL BarChartTypeTemplate::resetStyles(
     const Reference< chart2::XDiagram >& xDiagram )
-    throw (uno::RuntimeException, std::exception)
 {
     ChartTypeTemplate::resetStyles( xDiagram );
-    ::std::vector< Reference< chart2::XDataSeries > > aSeriesVec(
+    std::vector< Reference< chart2::XDataSeries > > aSeriesVec(
         DiagramHelper::getDataSeriesFromDiagram( xDiagram ));
-    uno::Any aLineStyleAny( uno::makeAny( drawing::LineStyle_NONE ));
-    for( ::std::vector< Reference< chart2::XDataSeries > >::iterator aIt( aSeriesVec.begin());
+    uno::Any aLineStyleAny( drawing::LineStyle_NONE );
+    for( std::vector< Reference< chart2::XDataSeries > >::iterator aIt( aSeriesVec.begin());
          aIt != aSeriesVec.end(); ++aIt )
     {
         Reference< beans::XPropertyState > xState( *aIt, uno::UNO_QUERY );

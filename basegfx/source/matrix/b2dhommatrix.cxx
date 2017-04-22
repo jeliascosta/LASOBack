@@ -24,6 +24,7 @@
 #include <basegfx/tuple/b2dtuple.hxx>
 #include <basegfx/vector/b2dvector.hxx>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
+#include <memory>
 
 namespace basegfx
 {
@@ -45,6 +46,11 @@ namespace basegfx
     {
     }
 
+    B2DHomMatrix::B2DHomMatrix(B2DHomMatrix&& rMat) :
+        mpImpl(std::move(rMat.mpImpl))
+    {
+    }
+
     B2DHomMatrix::~B2DHomMatrix()
     {
     }
@@ -63,6 +69,12 @@ namespace basegfx
     B2DHomMatrix& B2DHomMatrix::operator=(const B2DHomMatrix& rMat)
     {
         mpImpl = rMat.mpImpl;
+        return *this;
+    }
+
+    B2DHomMatrix& B2DHomMatrix::operator=(B2DHomMatrix&& rMat)
+    {
+        mpImpl = std::move(rMat.mpImpl);
         return *this;
     }
 
@@ -112,18 +124,15 @@ namespace basegfx
     bool B2DHomMatrix::invert()
     {
         Impl2DHomMatrix aWork(*mpImpl);
-        sal_uInt16* pIndex = new sal_uInt16[Impl2DHomMatrix_Base::getEdgeLength()];
+        std::unique_ptr<sal_uInt16[]> pIndex( new sal_uInt16[Impl2DHomMatrix_Base::getEdgeLength()] );
         sal_Int16 nParity;
 
-        if(aWork.ludcmp(pIndex, nParity))
+        if(aWork.ludcmp(pIndex.get(), nParity))
         {
-            mpImpl->doInvert(aWork, pIndex);
-            delete[] pIndex;
-
+            mpImpl->doInvert(aWork, pIndex.get());
             return true;
         }
 
-        delete[] pIndex;
         return false;
     }
 

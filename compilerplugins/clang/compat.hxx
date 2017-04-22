@@ -32,14 +32,6 @@
 
 #include "config_clang.h"
 
-#if CLANG_VERSION >= 30400
-#define LO_COMPILERPLUGINS_CLANG_COMPAT_HAVE_isAtEndOfImmediateMacroExpansion \
-    true
-#else
-#define LO_COMPILERPLUGINS_CLANG_COMPAT_HAVE_isAtEndOfImmediateMacroExpansion \
-    false
-#endif
-
 // Compatibility wrapper to abstract over (trivial) changes in the Clang API:
 namespace compat {
 
@@ -49,30 +41,6 @@ inline bool isLookupContext(clang::DeclContext const & ctxt) {
 #else
     return !ctxt.isFunctionOrMethod()
         && ctxt.getDeclKind() != clang::Decl::LinkageSpec;
-#endif
-}
-
-inline bool isExternCContext(clang::DeclContext const & ctxt) {
-#if CLANG_VERSION >= 30400
-    return ctxt.isExternCContext();
-#else
-    for (clang::DeclContext const * c = &ctxt;
-         c->getDeclKind() != clang::Decl::TranslationUnit; c = c->getParent())
-    {
-        if (c->getDeclKind() == clang::Decl::LinkageSpec) {
-            return llvm::cast<clang::LinkageSpecDecl>(c)->getLanguage()
-                == clang::LinkageSpecDecl::lang_c;
-        }
-    }
-    return false;
-#endif
-}
-
-inline bool isInExternCContext(clang::FunctionDecl const & decl) {
-#if CLANG_VERSION >= 30400
-    return decl.isInExternCContext();
-#else
-    return isExternCContext(*decl.getCanonicalDecl()->getDeclContext());
 #endif
 }
 
@@ -87,36 +55,6 @@ inline bool forallBases(
     return decl.forallBases(BaseMatches, AllowShortCircuit);
 #else
     return decl.forallBases(BaseMatches, callbackParam, AllowShortCircuit);
-#endif
-}
-
-#if CLANG_VERSION >= 30300
-typedef clang::LinkageInfo LinkageInfo;
-#else
-typedef clang::NamedDecl::LinkageInfo LinkageInfo;
-#endif
-
-inline clang::Linkage getLinkage(LinkageInfo const & info) {
-#if CLANG_VERSION >= 30300
-    return info.getLinkage();
-#else
-    return info.linkage();
-#endif
-}
-
-inline clang::Visibility getVisibility(LinkageInfo const & info) {
-#if CLANG_VERSION >= 30300
-    return info.getVisibility();
-#else
-    return info.visibility();
-#endif
-}
-
-inline bool isFirstDecl(clang::FunctionDecl const & decl) {
-#if CLANG_VERSION >= 30400
-    return decl.isFirstDecl();
-#else
-    return decl.isFirstDeclaration();
 #endif
 }
 
@@ -211,16 +149,6 @@ inline unsigned getBuiltinCallee(clang::CallExpr const & expr) {
 #endif
 }
 
-inline bool isInMainFile(
-    clang::SourceManager const & manager, clang::SourceLocation Loc)
-{
-#if CLANG_VERSION >= 30400
-    return manager.isInMainFile(Loc);
-#else
-    return manager.isFromMainFile(Loc);
-#endif
-}
-
 inline unsigned getCustomDiagID(
     clang::DiagnosticsEngine & engine, clang::DiagnosticsEngine::Level L,
     llvm::StringRef FormatString)
@@ -252,28 +180,10 @@ inline std::unique_ptr<llvm::raw_fd_ostream> create_raw_fd_ostream(
 }
 
 #if CLANG_VERSION >= 30700
-typedef clang::DeclContext::lookup_result DeclContextLookupResult;
-typedef clang::DeclContext::lookup_iterator DeclContextLookupIterator;
+using MacroDefinitionParam = clang::MacroDefinition const &;
 #else
-typedef clang::DeclContext::lookup_const_result DeclContextLookupResult;
-typedef clang::DeclContext::lookup_const_iterator DeclContextLookupIterator;
+using MacroDefinitionParam = clang::MacroDirective const *;
 #endif
-
-inline DeclContextLookupIterator begin(DeclContextLookupResult const & result) {
-#if CLANG_VERSION >= 30300
-    return result.begin();
-#else
-    return result.first;
-#endif
-}
-
-inline DeclContextLookupIterator end(DeclContextLookupResult const & result) {
-#if CLANG_VERSION >= 30300
-    return result.end();
-#else
-    return result.second;
-#endif
-}
 
 inline void addPPCallbacks(
     clang::Preprocessor & preprocessor, clang::PPCallbacks * C)
@@ -300,16 +210,6 @@ inline bool isMacroArgExpansion(
             .getExpansion().getExpansionLocStart();
     }
     return b;
-#endif
-}
-
-inline bool isMacroBodyExpansion(clang::CompilerInstance& compiler, clang::SourceLocation location)
-{
-#if CLANG_VERSION >= 30300
-    return compiler.getSourceManager().isMacroBodyExpansion(location);
-#else
-    return location.isMacroID()
-        && !compiler.getSourceManager().isMacroArgExpansion(location);
 #endif
 }
 

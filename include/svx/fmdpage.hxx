@@ -34,34 +34,29 @@ protected:
 
     // Creating a SdrObject based on a Description. Cann be used by derived classes to
     // support own css::drawing::Shapes (for example Controls)
-    virtual SdrObject *CreateSdrObject_( const css::uno::Reference< css::drawing::XShape > & xShape )
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual SdrObject *CreateSdrObject_( const css::uno::Reference< css::drawing::XShape > & xShape ) override;
 
     // The following method is called when a SvxShape object should be created.
     // Derived classes can create a derivation or an object aggregating SvxShape.
-    virtual css::uno::Reference< css::drawing::XShape >  CreateShape( SdrObject *pObj ) const
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::drawing::XShape >  CreateShape( SdrObject *pObj ) const override;
 
 public:
     SvxFmDrawPage( SdrPage* pPage );
-    virtual ~SvxFmDrawPage() throw ();
+    virtual ~SvxFmDrawPage() throw () override;
 
     // UNO connection
     DECLARE_UNO3_AGG_DEFAULTS(SvxFmDrawPage, SvxDrawPage)
 
-    virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& aType ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& aType ) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
 
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
 
     // XFormsSupplier
-    virtual css::uno::Reference< css::container::XNameContainer > SAL_CALL getForms() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Reference< css::container::XNameContainer > SAL_CALL getForms() override;
 
     // XFormsSupplier2
-    virtual sal_Bool SAL_CALL hasForms() throw( css::uno::RuntimeException, std::exception ) override;
-
-    // css::lang::XServiceInfo
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL hasForms() override;
 };
 
 #endif // INCLUDED_SVX_FMDPAGE_HXX

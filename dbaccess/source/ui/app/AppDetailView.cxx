@@ -39,7 +39,6 @@
 #include "callbacks.hxx"
 #include <dbaccess/IController.hxx>
 #include "moduledbu.hxx"
-#include <svtools/localresaccess.hxx>
 #include "svtools/treelistentry.hxx"
 #include "svtools/viewdataentry.hxx"
 #include <algorithm>
@@ -79,13 +78,13 @@ OCreationList::OCreationList( OTasksWindow& _rParent )
 {
     sal_uInt16 nSize = SPACEBETWEENENTRIES;
     SetSpaceBetweenEntries(nSize);
-    SetSelectionMode( NO_SELECTION );
+    SetSelectionMode( SelectionMode::NONE );
     SetExtendedWinBits( EWB_NO_AUTO_CURENTRY );
     SetNodeDefaultImages( );
     EnableEntryMnemonics();
 }
 
-void OCreationList::Paint(vcl::RenderContext& rRenderContext, const Rectangle& _rRect )
+void OCreationList::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& _rRect )
 {
     SetBackground();
 
@@ -149,13 +148,13 @@ void OCreationList::ExecuteSearchEntry( const void* _pEntry ) const
         onSelected( pEntry );
 }
 
-Rectangle OCreationList::GetFocusRect( SvTreeListEntry* _pEntry, long _nLine )
+tools::Rectangle OCreationList::GetFocusRect( SvTreeListEntry* _pEntry, long _nLine )
 {
-    Rectangle aRect = SvTreeListBox::GetFocusRect( _pEntry, _nLine );
+    tools::Rectangle aRect = SvTreeListBox::GetFocusRect( _pEntry, _nLine );
     aRect.Left() = 0;
 
     // try to let the focus rect start before the bitmap item - this looks better
-    SvLBoxItem* pBitmapItem = _pEntry->GetFirstItem( SV_ITEM_ID_LBOXCONTEXTBMP );
+    SvLBoxItem* pBitmapItem = _pEntry->GetFirstItem(SvLBoxItemType::ContextBmp);
     SvLBoxTab* pTab = pBitmapItem ? GetTab( _pEntry, pBitmapItem ) : nullptr;
     SvViewDataItem* pItemData = pBitmapItem ? GetViewDataItem( _pEntry, pBitmapItem ) : nullptr;
     OSL_ENSURE( pTab && pItemData, "OCreationList::GetFocusRect: could not find the first bitmap item!" );
@@ -163,8 +162,8 @@ Rectangle OCreationList::GetFocusRect( SvTreeListEntry* _pEntry, long _nLine )
         aRect.Left() = pTab->GetPos() - pItemData->maSize.Width() / 2;
 
     // inflate the rectangle a little bit - looks better, too
-    aRect.Left() = ::std::max< long >( 0, aRect.Left() - 2 );
-    aRect.Right() = ::std::min< long >( GetOutputSizePixel().Width() - 1, aRect.Right() + 2 );
+    aRect.Left() = std::max< long >( 0, aRect.Left() - 2 );
+    aRect.Right() = std::min< long >( GetOutputSizePixel().Width() - 1, aRect.Right() + 2 );
 
     return aRect;
 }
@@ -287,7 +286,7 @@ bool OCreationList::setCurrentEntryInvalidate( SvTreeListEntry* _pEntry )
         if ( GetCurEntry() )
         {
             InvalidateEntry( GetCurEntry() );
-            CallEventListeners( VCLEVENT_LISTBOX_TREESELECT, GetCurEntry() );
+            CallEventListeners( VclEventId::ListboxTreeSelect, GetCurEntry() );
         }
         updateHelpText();
         return true;
@@ -335,7 +334,7 @@ void OCreationList::KeyInput( const KeyEvent& rKEvt )
         if ( pNewCurrent )
         {
             InvalidateEntry( pNewCurrent );
-            CallEventListeners( VCLEVENT_LISTBOX_SELECT, pNewCurrent );
+            CallEventListeners( VclEventId::ListboxSelect, pNewCurrent );
         }
         updateHelpText();
     }
@@ -430,7 +429,7 @@ void OTasksWindow::setHelpText(sal_uInt16 _nId)
 
 }
 
-IMPL_LINK_NOARG_TYPED(OTasksWindow, OnEntrySelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(OTasksWindow, OnEntrySelectHdl, SvTreeListBox*, void)
 {
     SvTreeListEntry* pEntry = m_aCreation->GetHdlEntry();
     if ( pEntry )
@@ -444,7 +443,7 @@ void OTasksWindow::Resize()
     long nOutputWidth   = aOutputSize.Width();
     long nOutputHeight  = aOutputSize.Height();
 
-    Size aFLSize = LogicToPixel( Size( 2, 6 ), MAP_APPFONT );
+    Size aFLSize = LogicToPixel( Size( 2, 6 ), MapUnit::MapAppFont );
     sal_Int32 n6PPT = aFLSize.Height();
     long nHalfOutputWidth = static_cast<long>(nOutputWidth * 0.5);
 
@@ -542,7 +541,7 @@ OApplicationDetailView::OApplicationDetailView(OAppBorderWindow& _rParent,Previe
 
     m_aContainer->Show();
 
-    const long  nFrameWidth = LogicToPixel( Size( 3, 0 ), MAP_APPFONT ).Width();
+    const long  nFrameWidth = LogicToPixel( Size( 3, 0 ), MapUnit::MapAppFont ).Width();
     m_aHorzSplitter->SetPosSizePixel( Point(0,50), Size(0,nFrameWidth) );
     // now set the components at the base class
     set(m_aContainer.get(),m_aTasks.get());
@@ -599,11 +598,6 @@ void OApplicationDetailView::DataChanged( const DataChangedEvent& rDCEvt )
         ImplInitSettings();
         Invalidate();
     }
-}
-
-void OApplicationDetailView::GetFocus()
-{
-    OSplitterView::GetFocus();
 }
 
 void OApplicationDetailView::setTaskExternalMnemonics( MnemonicGenerator& _rMnemonics )
@@ -791,7 +785,7 @@ sal_Int32 OApplicationDetailView::getElementCount()
     return m_pControlHelper->getElementCount();
 }
 
-void OApplicationDetailView::getSelectionElementNames( ::std::vector< OUString>& _rNames ) const
+void OApplicationDetailView::getSelectionElementNames( std::vector< OUString>& _rNames ) const
 {
     m_pControlHelper->getSelectionElementNames( _rNames );
 }

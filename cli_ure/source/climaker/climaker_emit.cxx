@@ -339,7 +339,7 @@ Assembly ^ TypeEmitter::type_resolve(
             ::System::Text::StringBuilder ^ sb = gcnew ::System::Text::StringBuilder();
             sb->Append(gcnew ::System::String("\nThe type "));
             sb->Append(cts_name);
-            sb->Append(gcnew ::System::String(" \n could not be found. Did you forget to " \
+            sb->Append(gcnew ::System::String(" \n could not be found. Did you forget to "
                 "specify an additional assembly with the --reference option?\n"));
             if (throw_exc)
                 throw gcnew ::System::Exception(sb->ToString(), exc);
@@ -2266,10 +2266,7 @@ resolveInterfaceTypedef(
         return xIfaceTd;
 
     Reference<reflection::XIndirectTypeDescription> xIndTd(
-        type, UNO_QUERY);
-    if (xIndTd.is() == sal_False)
-        throw css::uno::Exception(
-            "resolveInterfaceTypedef was called with an invalid argument", 0);
+        type, UNO_QUERY_THROW);
 
     return resolveInterfaceTypedef(xIndTd->getReferencedType());
 }

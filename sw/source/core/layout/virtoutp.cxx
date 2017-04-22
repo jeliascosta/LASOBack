@@ -21,32 +21,6 @@
 #include "viewopt.hxx"
 #include "rootfrm.hxx"
 
-#if OSL_DEBUG_LEVEL > 1
-
-class DbgRect
-{
-        OutputDevice *pOut;
-public:
-        DbgRect( OutputDevice *pOut, const Rectangle &rRect,
-                 const ColorData eColor = COL_LIGHTBLUE );
-};
-
-inline DbgRect::DbgRect( OutputDevice *pOutDev, const Rectangle &rRect,
-                         const ColorData eColor )
-   :pOut( pOutDev )
-{
-    if( pOut )
-    {
-        pOut->Push( PushFlags::FILLCOLOR|PushFlags::LINECOLOR );
-        pOut->SetLineColor( eColor );
-        pOut->SetFillColor();
-        pOut->DrawRect( rRect );
-        pOut->Pop();
-    }
-}
-
-#endif
-
 /* The SWLayVout class manages the virtual output devices.
  * RootFrame has a static member of this class which is created in FrameInit
  * and destroyed in FrameFinit.
@@ -174,7 +148,7 @@ void SwLayVout::Enter(  SwViewShell *pShell, SwRect &rRect, bool bOn )
         SwRect aTmp( rRect );
         aTmp.SSize().Width() += aPixSz.Width()/2 + 1;
         aTmp.SSize().Height()+= aPixSz.Height()/2 + 1;
-        Rectangle aTmpRect( pO->LogicToPixel( aTmp.SVRect() ) );
+        tools::Rectangle aTmpRect( pO->LogicToPixel( aTmp.SVRect() ) );
 
         OSL_ENSURE( !pSh->GetWin()->IsReallyVisible() ||
                 aTmpRect.GetWidth() <= pSh->GetWin()->GetOutputSizePixel().Width() + 2,

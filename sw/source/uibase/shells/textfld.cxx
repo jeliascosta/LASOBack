@@ -17,9 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <AnnotationWin.hxx>
+#include <comphelper/lok.hxx>
 #include <chrdlgmodes.hxx>
 #include <hintids.hxx>
-#include <SidebarWin.hxx>
 #include <IDocumentFieldsAccess.hxx>
 #include <editeng/eeitem.hxx>
 #include <editeng/kernitem.hxx>
@@ -69,11 +70,11 @@
 #include <edtwin.hxx>
 #include <PostItMgr.hxx>
 #include <calbck.hxx>
+#include <cstddef>
 #include <memory>
+#include <swmodule.hxx>
 
 using namespace nsSwDocInfoSubType;
-
-extern bool g_bNoInterrupt;       // in swmodule.cxx
 
 static OUString lcl_BuildTitleWithRedline( const SwRangeRedline *pRedline )
 {
@@ -138,7 +139,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         if(rLink.IsVisible())
                         {
                             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                            std::unique_ptr<SfxAbstractLinksDialog> pDlg(pFact->CreateLinksDialog( pMDI, &rSh.GetLinkManager(), false, &rLink ));
+                            ScopedVclPtr<SfxAbstractLinksDialog> pDlg(pFact->CreateLinksDialog( pMDI, &rSh.GetLinkManager(), false, &rLink ));
                             if ( pDlg )
                             {
                                 pDlg->Execute();
@@ -151,7 +152,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                         assert(pFact && "SwAbstractDialogFactory fail!");
 
-                        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSwFieldEditDlg( GetView(),RC_DLG_SWFLDEDITDLG ));
+                        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSwFieldEditDlg( GetView() ));
                         assert(pDlg && "Dialog creation failed!");
                         pDlg->Execute();
                     }
@@ -162,7 +163,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
         case FN_EXECUTE_MACROFIELD:
         {
             SwField* pField = rSh.GetCurField();
-            if(pField && pField->GetTyp()->Which() == RES_MACROFLD)
+            if(pField && pField->GetTyp()->Which() == SwFieldIds::Macro)
             {
 
                 const OUString& rMacro = static_cast<SwMacroField*>(pField)->GetMacro();
@@ -180,13 +181,13 @@ void SwTextShell::ExecField(SfxRequest &rReq)
         case FN_GOTO_PREV_INPUTFLD:
             {
                 bool bRet = false;
-                SwFieldType* pField = rSh.GetFieldType( 0, RES_INPUTFLD );
+                SwFieldType* pField = rSh.GetFieldType( 0, SwFieldIds::Input );
                 const bool bAddSetExpressionFields = !( rSh.GetViewOptions()->IsReadonly() );
                 if ( pField != nullptr
                      && rSh.MoveFieldType(
                             pField,
                             FN_GOTO_NEXT_INPUTFLD == nSlot,
-                            USHRT_MAX,
+                            SwFieldIds::Unknown,
                             bAddSetExpressionFields ) )
                 {
                     rSh.ClearMark();
@@ -231,7 +232,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                     if( SfxItemState::SET == pArgs->GetItemState( FN_PARAM_FIELD_TYPE,
                                                                 false, &pItem ))
                         nType = static_cast<const SfxUInt16Item *>(pItem)->GetValue();
-                    aPar1 += OUString(DB_DELIM);
+                    aPar1 += OUStringLiteral1(DB_DELIM);
                     if( SfxItemState::SET == pArgs->GetItemState(
                                         FN_PARAM_1, false, &pItem ))
                     {
@@ -240,9 +241,9 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                     if( SfxItemState::SET == pArgs->GetItemState(
                                         FN_PARAM_3, false, &pItem ))
                         nCommand = static_cast<const SfxInt32Item*>(pItem)->GetValue();
-                    aPar1 += OUString(DB_DELIM);
-                    aPar1 += OUString::number(nCommand);
-                    aPar1 += OUString(DB_DELIM);
+                    aPar1 += OUStringLiteral1(DB_DELIM)
+                        + OUString::number(nCommand)
+                        + OUStringLiteral1(DB_DELIM);
                     if( SfxItemState::SET == pArgs->GetItemState(
                                         FN_PARAM_2, false, &pItem ))
                     {
@@ -327,11 +328,18 @@ void SwTextShell::ExecField(SfxRequest &rReq)
             }
             break;
             case FN_DELETE_COMMENT:
-                if ( GetView().GetPostItMgr() &&
-                     GetView().GetPostItMgr()->HasActiveSidebarWin() )
+            {
+                const SvxPostItIdItem* pIdItem = rReq.GetArg<SvxPostItIdItem>(SID_ATTR_POSTIT_ID);
+                if (pIdItem && !pIdItem->GetValue().isEmpty() && GetView().GetPostItMgr())
+                {
+                    GetView().GetPostItMgr()->Delete(pIdItem->GetValue().toUInt32());
+                }
+                else if ( GetView().GetPostItMgr() &&
+                          GetView().GetPostItMgr()->HasActiveSidebarWin() )
                 {
                     GetView().GetPostItMgr()->DeleteActiveSidebarWin();
                 }
+            }
             break;
             case FN_DELETE_ALL_NOTES:
                 if ( GetView().GetPostItMgr() )
@@ -369,10 +377,41 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                     GetView().GetPostItMgr()->Hide( pNoteItem->GetValue() );
             }
             break;
+            case FN_REPLY:
+            {
+                const SvxPostItIdItem* pIdItem = rReq.GetArg<SvxPostItIdItem>(SID_ATTR_POSTIT_ID);
+                if (pIdItem && !pIdItem->GetValue().isEmpty())
+                {
+                    SwFieldType* pType = rSh.GetDoc()->getIDocumentFieldsAccess().GetFieldType(SwFieldIds::Postit, OUString(), false);
+                    SwIterator<SwFormatField,SwFieldType> aIter( *pType );
+                    SwFormatField* pSwFormatField = aIter.First();
+                    while( pSwFormatField )
+                    {
+                        if ( static_cast<SwPostItField*>(pSwFormatField->GetField())->GetPostItId() == pIdItem->GetValue().toUInt32() )
+                        {
+                            sw::annotation::SwAnnotationWin* pWin = GetView().GetPostItMgr()->GetAnnotationWin(pIdItem->GetValue().toUInt32());
+                            if (pWin)
+                            {
+                                const SvxPostItTextItem* pTextItem = rReq.GetArg<SvxPostItTextItem>(SID_ATTR_POSTIT_TEXT);
+                                OUString sText;
+                                if ( pTextItem )
+                                    sText = pTextItem->GetValue();
+
+                                GetView().GetPostItMgr()->RegisterAnswerText(sText);
+                                pWin->ExecuteCommand(nSlot);
+                            }
+
+                            break;
+                        }
+                        pSwFormatField = aIter.Next();
+                    }
+                }
+            }
+            break;
             case FN_POSTIT:
             {
                 SwPostItField* pPostIt = dynamic_cast<SwPostItField*>(aFieldMgr.GetCurField());
-                bool bNew = !(pPostIt && pPostIt->GetTyp()->Which() == RES_POSTITFLD);
+                bool bNew = !(pPostIt && pPostIt->GetTyp()->Which() == SwFieldIds::Postit);
                 if (bNew || GetView().GetPostItMgr()->IsAnswer())
                 {
                     const SvxPostItAuthorItem* pAuthorItem = rReq.GetArg<SvxPostItAuthorItem>(SID_ATTR_POSTIT_AUTHOR);
@@ -381,16 +420,21 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         sAuthor = pAuthorItem->GetValue();
                     else
                     {
-                        SvtUserOptions aUserOpt;
-                        if( (sAuthor = aUserOpt.GetFullName()).isEmpty())
-                            if( (sAuthor = aUserOpt.GetID()).isEmpty() )
-                                sAuthor = SW_RES( STR_REDLINE_UNKNOWN_AUTHOR );
+                        std::size_t nAuthor = SW_MOD()->GetRedlineAuthor();
+                        sAuthor = SW_MOD()->GetRedlineAuthor(nAuthor);
                     }
 
                     const SvxPostItTextItem* pTextItem = rReq.GetArg<SvxPostItTextItem>(SID_ATTR_POSTIT_TEXT);
                     OUString sText;
                     if ( pTextItem )
                         sText = pTextItem->GetValue();
+
+                    // If we have a text already registered for answer, use that
+                    if (GetView().GetPostItMgr()->IsAnswer() && !GetView().GetPostItMgr()->GetAnswerText().isEmpty())
+                    {
+                        sText = GetView().GetPostItMgr()->GetAnswerText();
+                        GetView().GetPostItMgr()->RegisterAnswerText(OUString());
+                    }
 
                     if ( rSh.HasSelection() && !rSh.IsTableMode() )
                     {
@@ -410,9 +454,14 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                     rSh.Pop(false); // Restore cursor position
                 }
 
+                // Client has disabled annotations rendering, no need to
+                // focus the postit field
+                if (comphelper::LibreOfficeKit::isActive() && !comphelper::LibreOfficeKit::isTiledAnnotations())
+                    break;
+
                 if (pPostIt)
                 {
-                    SwFieldType* pType = rSh.GetDoc()->getIDocumentFieldsAccess().GetFieldType(RES_POSTITFLD, OUString(), false);
+                    SwFieldType* pType = rSh.GetDoc()->getIDocumentFieldsAccess().GetFieldType(SwFieldIds::Postit, OUString(), false);
                     SwIterator<SwFormatField,SwFieldType> aIter( *pType );
                     SwFormatField* pSwFormatField = aIter.First();
                     while( pSwFormatField )
@@ -424,6 +473,22 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         }
                         pSwFormatField = aIter.Next();
                     }
+                }
+            }
+            break;
+            case SID_EDIT_POSTIT:
+            {
+                const SvxPostItIdItem* pIdItem = rReq.GetArg<SvxPostItIdItem>(SID_ATTR_POSTIT_ID);
+                if (pIdItem && !pIdItem->GetValue().isEmpty())
+                {
+                    const SvxPostItTextItem* pTextItem = rReq.GetArg<SvxPostItTextItem>(SID_ATTR_POSTIT_TEXT);
+                    OUString sText;
+                    if ( pTextItem )
+                        sText = pTextItem->GetValue();
+
+                    sw::annotation::SwAnnotationWin* pAnnotationWin = GetView().GetPostItMgr()->GetAnnotationWin(pIdItem->GetValue().toUInt32());
+                    if (pAnnotationWin)
+                        pAnnotationWin->UpdateText(sText);
                 }
             }
             break;
@@ -444,9 +509,36 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                 */
 
                 const SwRangeRedline *pRedline = rSh.GetCurrRedline();
+                SwDoc *pDoc = rSh.GetDoc();
+                // If index is specified, goto and select the appropriate redline
+                if (pArgs && pArgs->GetItemState(nSlot, false, &pItem) == SfxItemState::SET)
+                {
+                    const sal_uInt32 nChangeId = static_cast<const SfxUInt32Item*>(pItem)->GetValue();
+                    const SwRedlineTable& rRedlineTable = pDoc->getIDocumentRedlineAccess().GetRedlineTable();
+                    for (SwRedlineTable::size_type nRedline = 0; nRedline < rRedlineTable.size(); ++nRedline)
+                    {
+                        if (nChangeId == rRedlineTable[nRedline]->GetId())
+                            pRedline = rSh.GotoRedline(nRedline, true);
+                    }
+                }
+
+                OUString sCommentText;
+                const SfxStringItem* pTextItem = rReq.GetArg<SvxPostItTextItem>(SID_ATTR_POSTIT_TEXT);
+                if (pTextItem)
+                    sCommentText = pTextItem->GetValue();
 
                 if (pRedline)
                 {
+                    // In case of LOK and comment text is already provided, skip
+                    // dialog creation and just change the redline comment directly
+                    if (comphelper::LibreOfficeKit::isActive() && !sCommentText.isEmpty())
+                    {
+                        rSh.SetRedlineComment(sCommentText);
+                        GetView().AttrChangedNotify(GetShellPtr());
+                        const_cast<SwRangeRedline*>(pRedline)->MaybeNotifyModification();
+                        break;
+                    }
+
                     OUString sComment = convertLineEnd(pRedline->GetComment(), GetSystemLineEnd());
 
                     bool bTravel = false;
@@ -498,7 +590,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
 
                     SvxAbstractDialogFactory* pFact2 = SvxAbstractDialogFactory::Create();
                     assert(pFact2 && "Dialog creation failed!");
-                    std::unique_ptr<AbstractSvxPostItDialog> pDlg(pFact2->CreateSvxPostItDialog( pMDI, aSet, bTravel ));
+                    ScopedVclPtr<AbstractSvxPostItDialog> pDlg(pFact2->CreateSvxPostItDialog( pMDI, aSet, bTravel ));
                     assert(pDlg && "Dialog creation failed!");
                     pDlg->HideAuthor();
 
@@ -523,7 +615,7 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         rSh.SetRedlineComment(sMsg);
                     }
 
-                    pDlg.reset();
+                    pDlg.disposeAndClear();
                     SwViewShell::SetCareWin(nullptr);
                     g_bNoInterrupt = false;
                     rSh.ClearMark();
@@ -550,14 +642,14 @@ void SwTextShell::ExecField(SfxRequest &rReq)
                         bIsUrl = pIsUrl->GetValue();
 
                     SwScriptField* pField = static_cast<SwScriptField*>(aMgr.GetCurField());
-                    bNew = !pField || !(pField->GetTyp()->Which() == RES_SCRIPTFLD);
+                    bNew = !pField || !(pField->GetTyp()->Which() == SwFieldIds::Script);
                     bUpdate = pField && ( bIsUrl != (bool)pField->GetFormat() || pField->GetPar2() != aType || pField->GetPar1() != aText );
                 }
                 else
                 {
                     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                     assert(pFact && "Dialog creation failed!");
-                    std::unique_ptr<AbstractJavaEditDialog> pDlg(pFact->CreateJavaEditDialog(pMDI, &rSh));
+                    ScopedVclPtr<AbstractJavaEditDialog> pDlg(pFact->CreateJavaEditDialog(pMDI, &rSh));
                     assert(pDlg && "Dialog creation failed!");
                     if ( pDlg->Execute() )
                     {
@@ -677,13 +769,13 @@ void SwTextShell::StateField( SfxItemSet &rSet )
                     bGetField = true;
                 }
 
-                sal_uInt16 nTempWhich = pField ? pField->GetTyp()->Which() : USHRT_MAX;
-                if( USHRT_MAX == nTempWhich ||
-                    RES_POSTITFLD == nTempWhich ||
-                    RES_SCRIPTFLD == nTempWhich ||
-                    RES_AUTHORITY == nTempWhich )
+                SwFieldIds nTempWhich = pField ? pField->GetTyp()->Which() : SwFieldIds::Unknown;
+                if( SwFieldIds::Unknown == nTempWhich ||
+                    SwFieldIds::Postit == nTempWhich ||
+                    SwFieldIds::Script == nTempWhich ||
+                    SwFieldIds::TableOfAuthorities == nTempWhich )
                     rSet.DisableItem( nWhich );
-                else if( RES_DDEFLD == nTempWhich &&
+                else if( SwFieldIds::Dde == nTempWhich &&
                     !static_cast<SwDDEFieldType*>(pField->GetTyp())->GetBaseLink().IsVisible())
                 {
                     // nested links cannot be edited
@@ -699,7 +791,7 @@ void SwTextShell::StateField( SfxItemSet &rSet )
                     pField = rSh.GetCurField();
                     bGetField = true;
                 }
-                if(!pField || pField->GetTyp()->Which() != RES_MACROFLD)
+                if(!pField || pField->GetTyp()->Which() != SwFieldIds::Macro)
                     rSet.DisableItem(nWhich);
             }
             break;
@@ -746,19 +838,20 @@ void SwTextShell::StateField( SfxItemSet &rSet )
             break;
 
         case FN_REDLINE_COMMENT:
-            if (!rSh.GetCurrRedline())
+            if (!comphelper::LibreOfficeKit::isActive() && !rSh.GetCurrRedline())
                 rSet.DisableItem(nWhich);
             break;
 
+        case FN_REPLY:
         case FN_POSTIT :
         case FN_JAVAEDIT :
             {
                 bool bCurField = false;
                 pField = rSh.GetCurField();
-                if(nWhich == FN_POSTIT)
-                    bCurField = pField && pField->GetTyp()->Which() == RES_POSTITFLD;
+                if(nWhich == FN_POSTIT || nWhich == FN_REPLY)
+                    bCurField = pField && pField->GetTyp()->Which() == SwFieldIds::Postit;
                 else
-                    bCurField = pField && pField->GetTyp()->Which() == RES_SCRIPTFLD;
+                    bCurField = pField && pField->GetTyp()->Which() == SwFieldIds::Script;
 
                 if( !bCurField && rSh.IsReadOnlyAvailable() && rSh.HasReadonlySel() )
                 {
@@ -802,7 +895,7 @@ void SwTextShell::InsertHyperlink(const SvxHyperlinkItem& rHlnkItem)
 
     SwWrtShell& rSh = GetShell();
 
-    if( rSh.GetSelectionType() & nsSelectionType::SEL_TXT )
+    if( rSh.GetSelectionType() & SelectionType::Text )
     {
         rSh.StartAction();
         SfxItemSet aSet(GetPool(), RES_TXTATR_INETFMT, RES_TXTATR_INETFMT);
@@ -851,7 +944,7 @@ void SwTextShell::InsertHyperlink(const SvxHyperlinkItem& rHlnkItem)
     }
 }
 
-IMPL_LINK_TYPED( SwTextShell, RedlineNextHdl, AbstractSvxPostItDialog&, rDlg, void )
+IMPL_LINK( SwTextShell, RedlineNextHdl, AbstractSvxPostItDialog&, rDlg, void )
 {
     SwWrtShell* pSh = GetShellPtr();
 
@@ -898,7 +991,7 @@ IMPL_LINK_TYPED( SwTextShell, RedlineNextHdl, AbstractSvxPostItDialog&, rDlg, vo
     }
 }
 
-IMPL_LINK_TYPED( SwTextShell, RedlinePrevHdl, AbstractSvxPostItDialog&, rDlg, void )
+IMPL_LINK( SwTextShell, RedlinePrevHdl, AbstractSvxPostItDialog&, rDlg, void )
 {
     SwWrtShell* pSh = GetShellPtr();
 

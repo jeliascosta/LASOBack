@@ -1,5 +1,5 @@
 Option VBASupport 1
-Function doUnitTest( TestData as String) as String
+Function doUnitTest(TestData as String, Driver as String) as String
 Rem Ensure object assignment is by reference
 Rem when object member is used ( as lhs )
 Dim origTimeout As Long
@@ -9,7 +9,7 @@ origTimeout = cn.CommandTimeout
 modifiedTimeout = origTimeout * 2
 cn.CommandTimeout = modifiedTimeout
 Dim conStr As String
-conStr = "Provider=MSDASQL;Driver={Microsoft Excel Driver (*.xls)};DBQ="
+conStr = "Provider=MSDASQL;Driver={" & Driver & "};DBQ="
 conStr = conStr & TestData & "; ReadOnly=False;"
 cn.Open conStr
 Set objCmd = New ADODB.Command
@@ -23,7 +23,7 @@ End If
 cn.CommandTimeout = origTimeout ' restore timeout
 Rem Double check objCmd.ActiveConnection is pointing to objCmd.ActiveConnection
 If objCmd.ActiveConnection.CommandTimeout <> origTimeout Then
-    doUnitTest = "FAIL expected orignal timeout " & origTimeout & " but got " &  objCmd.ActiveConnection.CommandTimeout
+    doUnitTest = "FAIL expected original timeout " & origTimeout & " but got " &  objCmd.ActiveConnection.CommandTimeout
     Exit Function
 End If
 doUnitTest = "OK" ' no error

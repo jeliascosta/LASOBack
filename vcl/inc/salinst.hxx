@@ -35,7 +35,7 @@
 namespace comphelper { class SolarMutex; }
 struct SystemParentData;
 struct SalPrinterQueueInfo;
-struct ImplJobSetup;
+class ImplJobSetup;
 class OpenGLContext;
 class SalGraphics;
 class SalFrame;
@@ -81,7 +81,7 @@ public:
     virtual void            DestroyFrame( SalFrame* pFrame ) = 0;
 
     // Object (System Child Window)
-    virtual SalObject*      CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow = true ) = 0;
+    virtual SalObject*      CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow ) = 0;
     virtual void            DestroyObject( SalObject* pObject ) = 0;
 
     // VirtualDevice
@@ -97,7 +97,7 @@ public:
 
     // Printer
     // pSetupData->mpDriverData can be 0
-    // pSetupData must be updatet with the current
+    // pSetupData must be updated with the current
     // JobSetup
     virtual SalInfoPrinter* CreateInfoPrinter( SalPrinterQueueInfo* pQueueInfo,
                                                ImplJobSetup* pSetupData ) = 0;
@@ -114,7 +114,7 @@ public:
     virtual SalTimer*       CreateSalTimer() = 0;
     // SalI18NImeStatus
     virtual SalI18NImeStatus*
-                            CreateI18NImeStatus() = 0;
+                            CreateI18NImeStatus();
     // SalSystem
     virtual SalSystem*      CreateSalSystem() = 0;
     // SalBitmap
@@ -153,11 +153,9 @@ public:
     void                    SetEventCallback( rtl::Reference< vcl::DisplayConnectionDispatch > const & pInstance )
         { m_pEventInst = pInstance; }
 
-    bool                    CallEventCallback( void* pEvent, int nBytes )
-        { return m_pEventInst.is() && m_pEventInst->dispatchEvent( pEvent, nBytes ); }
+    bool                    CallEventCallback( void* pEvent, int nBytes );
 
-    enum ConnectionIdentifierType { AsciiCString, Blob };
-    virtual void*           GetConnectionIdentifier( ConnectionIdentifierType& rReturnedType, int& rReturnedBytes ) = 0;
+    virtual OUString        GetConnectionIdentifier() = 0;
 
     // dtrans implementation
     virtual css::uno::Reference< css::uno::XInterface > CreateClipboard( const css::uno::Sequence< css::uno::Any >& i_rArguments );

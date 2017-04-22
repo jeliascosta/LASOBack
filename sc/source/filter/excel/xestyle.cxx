@@ -51,6 +51,7 @@
 #include "conditio.hxx"
 
 #include <oox/token/tokens.hxx>
+#include <oox/token/namespaces.hxx>
 #include <o3tl/make_unique.hxx>
 
 using namespace ::com::sun::star;
@@ -138,16 +139,16 @@ public:
     explicit            XclListColor( const Color& rColor, sal_uInt32 nColorId );
 
     /** Returns the RGB color value of the color. */
-    inline const Color& GetColor() const { return maColor; }
+    const Color& GetColor() const { return maColor; }
     /** Returns the unique ID of the color. */
-    inline sal_uInt32   GetColorId() const { return mnColorId; }
+    sal_uInt32   GetColorId() const { return mnColorId; }
     /** Returns the current weighting of the color. */
-    inline sal_uInt32   GetWeighting() const { return mnWeight; }
+    sal_uInt32   GetWeighting() const { return mnWeight; }
     /** Returns true, if this color is a base color, i.e. it will not be removed or merged. */
-    inline bool         IsBaseColor() const { return mbBaseColor; }
+    bool         IsBaseColor() const { return mbBaseColor; }
 
     /** Adds the passed weighting to this color. */
-    inline void         AddWeighting( sal_uInt32 nWeight ) { mnWeight += nWeight; }
+    void         AddWeighting( sal_uInt32 nWeight ) { mnWeight += nWeight; }
     /** Merges this color with rColor, regarding weighting settings. */
     void                Merge( const XclListColor& rColor );
 };
@@ -184,7 +185,7 @@ struct XclColorIdData
     Color               maColor;        /// The original inserted color.
     sal_uInt32          mnIndex;        /// Maps current color ID to color list or export color vector.
     /** Sets the contents of this struct. */
-    inline void         Set( const Color& rColor, sal_uInt32 nIndex ) { maColor = rColor; mnIndex = nIndex; }
+    void         Set( const Color& rColor, sal_uInt32 nIndex ) { maColor = rColor; mnIndex = nIndex; }
 };
 
 /** A color that will be written to the Excel file. */
@@ -193,8 +194,8 @@ struct XclPaletteColor
     Color               maColor;        /// Resulting color to export.
     bool                mbUsed;         /// true = Entry is used in the document.
 
-    inline explicit     XclPaletteColor( const Color& rColor ) : maColor( rColor ), mbUsed( false ) {}
-    inline void         SetColor( const Color& rColor ) { maColor = rColor; mbUsed = true; }
+    explicit     XclPaletteColor( const Color& rColor ) : maColor( rColor ), mbUsed( false ) {}
+    void         SetColor( const Color& rColor ) { maColor = rColor; mbUsed = true; }
 };
 
 /** Maps a color list index to a palette index.
@@ -204,8 +205,8 @@ struct XclRemap
     sal_uInt32          mnPalIndex;     /// Index to palette.
     bool                mbProcessed;    /// true = List color already processed.
 
-    inline explicit     XclRemap() : mnPalIndex( 0 ), mbProcessed( false ) {}
-    inline void         SetIndex( sal_uInt32 nPalIndex )
+    explicit     XclRemap() : mnPalIndex( 0 ), mbProcessed( false ) {}
+    void         SetIndex( sal_uInt32 nPalIndex )
                             { mnPalIndex = nPalIndex; mbProcessed = true; }
 };
 
@@ -215,7 +216,7 @@ struct XclNearest
     sal_uInt32          mnPalIndex;     /// Index to nearest palette color.
     sal_Int32           mnDist;         /// Distance to palette color.
 
-    inline explicit     XclNearest() : mnPalIndex( 0 ), mnDist( 0 ) {}
+    explicit     XclNearest() : mnPalIndex( 0 ), mnDist( 0 ) {}
 };
 
 } // namespace
@@ -258,7 +259,7 @@ public:
 
 private:
     /** Returns the Excel index of a 0-based color index. */
-    static inline sal_uInt16 GetXclIndex( sal_uInt32 nIndex )
+    static sal_uInt16 GetXclIndex( sal_uInt32 nIndex )
                             { return static_cast< sal_uInt16 >( nIndex + EXC_COLOR_USEROFFSET ); }
 
     /** Returns the original inserted color represented by the color ID nColorId. */
@@ -791,9 +792,9 @@ void XclExpPalette::GetMixedColors(
     return mxImpl->GetMixedColors( rnXclForeIx, rnXclBackIx, rnXclPattern, nForeColorId, nBackColorId );
 }
 
-ColorData XclExpPalette::GetColorData( sal_uInt16 nXclIndex ) const
+Color XclExpPalette::GetColor( sal_uInt16 nXclIndex ) const
 {
-    return mxImpl->GetColorData( nXclIndex );
+    return Color(mxImpl->GetColorData( nXclIndex ));
 }
 
 void XclExpPalette::Save( XclExpStream& rStrm )
@@ -992,6 +993,8 @@ void XclExpFont::WriteBody( XclExpStream& rStrm )
 {
     sal_uInt16 nAttr = EXC_FONTATTR_NONE;
     ::set_flag( nAttr, EXC_FONTATTR_ITALIC, maData.mbItalic );
+    if( maData.mnUnderline > 0 )
+        ::set_flag( nAttr, EXC_FONTATTR_UNDERLINE, true );
     ::set_flag( nAttr, EXC_FONTATTR_STRIKEOUT, maData.mbStrikeout );
     ::set_flag( nAttr, EXC_FONTATTR_OUTLINE, maData.mbOutline );
     ::set_flag( nAttr, EXC_FONTATTR_SHADOW, maData.mbShadow );
@@ -1234,12 +1237,6 @@ sal_uInt16 XclExpFontBuffer::Insert(
 }
 
 sal_uInt16 XclExpFontBuffer::Insert(
-        const vcl::Font& rFont, XclExpColorType eColorType, bool bAppFont )
-{
-    return Insert( XclFontData( rFont ), eColorType, bAppFont );
-}
-
-sal_uInt16 XclExpFontBuffer::Insert(
         const SvxFont& rFont, XclExpColorType eColorType )
 {
     return Insert( XclFontData( rFont ), eColorType );
@@ -1250,7 +1247,7 @@ sal_uInt16 XclExpFontBuffer::Insert( const SfxItemSet& rItemSet,
 {
     // #i17050# script type now provided by caller
     vcl::Font aFont = XclExpFontHelper::GetFontFromItemSet( GetRoot(), rItemSet, nScript );
-    return Insert( aFont, eColorType, bAppFont );
+    return Insert( XclFontData( aFont ), eColorType, bAppFont );
 }
 
 void XclExpFontBuffer::Save( XclExpStream& rStrm )
@@ -1336,8 +1333,8 @@ size_t XclExpFontBuffer::Find( const XclFontData& rFontData )
 struct XclExpNumFmtPred
 {
     sal_uLong               mnScNumFmt;
-    inline explicit     XclExpNumFmtPred( sal_uLong nScNumFmt ) : mnScNumFmt( nScNumFmt ) {}
-    inline bool         operator()( const XclExpNumFmt& rFormat ) const
+    explicit     XclExpNumFmtPred( sal_uLong nScNumFmt ) : mnScNumFmt( nScNumFmt ) {}
+    bool         operator()( const XclExpNumFmt& rFormat ) const
                             { return rFormat.mnScNumFmt == mnScNumFmt; }
 };
 
@@ -1357,7 +1354,7 @@ XclExpNumFmtBuffer::XclExpNumFmtBuffer( const XclExpRoot& rRoot ) :
         The effective result here is class String (*)[54*1] */
     mxFormatter( new SvNumberFormatter( comphelper::getProcessComponentContext(), LANGUAGE_ENGLISH_US ) ),
     mpKeywordTable( new NfKeywordTable ),
-    mnStdFmt( GetFormatter().GetStandardFormat( ScGlobal::eLnge ) )
+    mnStdFmt( GetFormatter().GetStandardIndex( ScGlobal::eLnge ) )
 {
     switch( GetBiff() )
     {
@@ -1473,15 +1470,15 @@ bool XclExpCellAlign::FillFromItemSet(
         const SfxItemSet& rItemSet, bool bForceLineBreak, XclBiff eBiff, bool bStyle )
 {
     bool bUsed = false;
-    SvxCellHorJustify eHorAlign = GETITEMVALUE( rItemSet, SvxHorJustifyItem, ATTR_HOR_JUSTIFY, SvxCellHorJustify );
-    SvxCellVerJustify eVerAlign = GETITEMVALUE( rItemSet, SvxVerJustifyItem, ATTR_VER_JUSTIFY, SvxCellVerJustify );
+    SvxCellHorJustify eHorAlign = GETITEM( rItemSet, SvxHorJustifyItem, ATTR_HOR_JUSTIFY ).GetValue();
+    SvxCellVerJustify eVerAlign = GETITEM( rItemSet, SvxVerJustifyItem, ATTR_VER_JUSTIFY ).GetValue();
 
     switch( eBiff )
     {
         case EXC_BIFF8: // attributes new in BIFF8
         {
             // text indent
-            long nTmpIndent = GETITEMVALUE( rItemSet, SfxUInt16Item, ATTR_INDENT, sal_Int32 );
+            long nTmpIndent = GETITEM( rItemSet, SfxUInt16Item, ATTR_INDENT ).GetValue();
             (nTmpIndent += 100) /= 200; // 1 Excel unit == 10 pt == 200 twips
             mnIndent = limit_cast< sal_uInt8 >( nTmpIndent, 0, 15 );
             bUsed |= ScfTools::CheckItem( rItemSet, ATTR_INDENT, bStyle );
@@ -1491,7 +1488,7 @@ bool XclExpCellAlign::FillFromItemSet(
             bUsed |= ScfTools::CheckItem( rItemSet, ATTR_SHRINKTOFIT, bStyle );
 
             // CTL text direction
-            SetScFrameDir( GETITEMVALUE( rItemSet, SvxFrameDirectionItem, ATTR_WRITINGDIR, SvxFrameDirection ) );
+            SetScFrameDir( GETITEM( rItemSet, SvxFrameDirectionItem, ATTR_WRITINGDIR ).GetValue() );
             bUsed |= ScfTools::CheckItem( rItemSet, ATTR_WRITINGDIR, bStyle );
 
             SAL_FALLTHROUGH;
@@ -1514,7 +1511,7 @@ bool XclExpCellAlign::FillFromItemSet(
             else
             {
                 // rotation
-                sal_Int32 nScRot = GETITEMVALUE( rItemSet, SfxInt32Item, ATTR_ROTATE_VALUE, sal_Int32 );
+                sal_Int32 nScRot = GETITEM( rItemSet, SfxInt32Item, ATTR_ROTATE_VALUE ).GetValue();
                 mnRotation = XclTools::GetXclRotation( nScRot );
                 bUsed |= ScfTools::CheckItem( rItemSet, ATTR_ROTATE_VALUE, bStyle );
             }
@@ -1546,19 +1543,19 @@ bool XclExpCellAlign::FillFromItemSet(
     if (eBiff == EXC_BIFF8)
     {
         // Adjust for distributed alignments.
-        if (eHorAlign == SVX_HOR_JUSTIFY_BLOCK)
+        if (eHorAlign == SvxCellHorJustify::Block)
         {
-            SvxCellJustifyMethod eHorJustMethod = GETITEMVALUE(
-                rItemSet, SvxJustifyMethodItem, ATTR_HOR_JUSTIFY_METHOD, SvxCellJustifyMethod);
-            if (eHorJustMethod == SVX_JUSTIFY_METHOD_DISTRIBUTE)
+            SvxCellJustifyMethod eHorJustMethod =
+                rItemSet.GetItem<SvxJustifyMethodItem>(ATTR_HOR_JUSTIFY_METHOD)->GetValue();
+            if (eHorJustMethod == SvxCellJustifyMethod::Distribute)
                 mnHorAlign = EXC_XF_HOR_DISTRIB;
         }
 
         if (eVerAlign == SVX_VER_JUSTIFY_BLOCK)
         {
-            SvxCellJustifyMethod eVerJustMethod = GETITEMVALUE(
-                rItemSet, SvxJustifyMethodItem, ATTR_VER_JUSTIFY_METHOD, SvxCellJustifyMethod);
-            if (eVerJustMethod == SVX_JUSTIFY_METHOD_DISTRIBUTE)
+            SvxCellJustifyMethod eVerJustMethod =
+                rItemSet.GetItem<SvxJustifyMethodItem>(ATTR_VER_JUSTIFY_METHOD)->GetValue();
+            if (eVerJustMethod == SvxCellJustifyMethod::Distribute)
                 mnVerAlign = EXC_XF_VER_DISTRIB;
         }
     }
@@ -1662,28 +1659,28 @@ void lclGetBorderLine(
 
         switch (pLine->GetBorderLineStyle())
         {
-            case table::BorderLineStyle::NONE:
+            case SvxBorderLineStyle::NONE:
                 nStyleIndex = Idx_None;
                 break;
-            case table::BorderLineStyle::SOLID:
+            case SvxBorderLineStyle::SOLID:
                 nStyleIndex = Idx_Solid;
                 break;
-            case table::BorderLineStyle::DOTTED:
+            case SvxBorderLineStyle::DOTTED:
                 nStyleIndex = Idx_Dotted;
                 break;
-            case table::BorderLineStyle::DASHED:
+            case SvxBorderLineStyle::DASHED:
                 nStyleIndex = Idx_Dashed;
                 break;
-            case table::BorderLineStyle::FINE_DASHED:
+            case SvxBorderLineStyle::FINE_DASHED:
                 nStyleIndex = Idx_FineDashed;
                 break;
-            case table::BorderLineStyle::DASH_DOT:
+            case SvxBorderLineStyle::DASH_DOT:
                 nStyleIndex = Idx_DashDot;
                 break;
-            case table::BorderLineStyle::DASH_DOT_DOT:
+            case SvxBorderLineStyle::DASH_DOT_DOT:
                 nStyleIndex = Idx_DashDotDot;
                 break;
-            case table::BorderLineStyle::DOUBLE_THIN:
+            case SvxBorderLineStyle::DOUBLE_THIN:
                 // the "nOuterWidth" is not right for this line type
                 // but at the moment width it not important for that
                 // the right function is nOuterWidth = (sal_uInt16) pLine->GetWidth();
@@ -2130,7 +2127,7 @@ void XclExpXF::Init( const SfxItemSet& rItemSet, sal_Int16 nScript,
 
     // number format
     mnScNumFmt = (nForceScNumFmt == NUMBERFORMAT_ENTRY_NOT_FOUND) ?
-        GETITEMVALUE( rItemSet, SfxUInt32Item, ATTR_VALUE_FORMAT, sal_uLong ) : nForceScNumFmt;
+        GETITEM( rItemSet, SfxUInt32Item, ATTR_VALUE_FORMAT ).GetValue() : nForceScNumFmt;
     mnXclNumFmt = GetNumFmtBuffer().Insert( mnScNumFmt );
     mbFmtUsed = ScfTools::CheckItem( rItemSet, ATTR_VALUE_FORMAT, IsStyleXF() );
     // alignment
@@ -2384,7 +2381,7 @@ struct XclExpBorderPred
 {
     const XclExpCellBorder&
                         mrBorder;
-    inline explicit     XclExpBorderPred( const XclExpCellBorder& rBorder ) : mrBorder( rBorder ) {}
+    explicit     XclExpBorderPred( const XclExpCellBorder& rBorder ) : mrBorder( rBorder ) {}
     bool                operator()( const XclExpCellBorder& rBorder ) const;
 };
 
@@ -2414,7 +2411,7 @@ struct XclExpFillPred
 {
     const XclExpCellArea&
                         mrFill;
-    inline explicit     XclExpFillPred( const XclExpCellArea& rFill ) : mrFill( rFill ) {}
+    explicit     XclExpFillPred( const XclExpCellArea& rFill ) : mrFill( rFill ) {}
     bool                operator()( const XclExpCellArea& rFill ) const;
 };
 
@@ -2847,7 +2844,7 @@ void XclExpXFBuffer::InsertUserStyles()
             InsertStyleXF( *pStyleSheet );
 }
 
-sal_uInt32 XclExpXFBuffer::AppendBuiltInXF( XclExpXFRef xXF, sal_uInt8 nStyleId, sal_uInt8 nLevel )
+sal_uInt32 XclExpXFBuffer::AppendBuiltInXF( XclExpXFRef const & xXF, sal_uInt8 nStyleId, sal_uInt8 nLevel )
 {
     sal_uInt32 nXFId = static_cast< sal_uInt32 >( maXFList.GetSize() );
     maXFList.AppendRecord( xXF );
@@ -2858,7 +2855,7 @@ sal_uInt32 XclExpXFBuffer::AppendBuiltInXF( XclExpXFRef xXF, sal_uInt8 nStyleId,
     return nXFId;
 }
 
-sal_uInt32 XclExpXFBuffer::AppendBuiltInXFWithStyle( XclExpXFRef xXF, sal_uInt8 nStyleId, sal_uInt8 nLevel )
+sal_uInt32 XclExpXFBuffer::AppendBuiltInXFWithStyle( XclExpXFRef const & xXF, sal_uInt8 nStyleId, sal_uInt8 nLevel )
 {
     sal_uInt32 nXFId = AppendBuiltInXF( xXF, nStyleId, nLevel );
     maStyleList.AppendNewRecord( new XclExpStyle( nXFId, nStyleId, nLevel ) );
@@ -3037,7 +3034,7 @@ XclExpDxfs::XclExpDxfs( const XclExpRoot& rRoot )
                             pCellProt = nullptr;
                         }
 
-                        XclExpColor* pColor = new XclExpColor();
+                        XclExpColor* pColor = new XclExpColor;
                         if(!pColor->FillFromItemSet( rSet ))
                         {
                             delete pColor;
@@ -3143,7 +3140,7 @@ void XclExpXmlStyleSheet::SaveXml( XclExpXmlStream& rStrm )
     rStrm.PushStream( aStyleSheet );
 
     aStyleSheet->startElement( XML_styleSheet,
-            XML_xmlns, "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+            XML_xmlns, XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(xls))).getStr(),
             FSEND );
 
     CreateRecord( EXC_ID_FORMATLIST )->SaveXml( rStrm );

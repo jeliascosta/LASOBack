@@ -30,7 +30,7 @@
 SvxXMeasurePreview::SvxXMeasurePreview(vcl::Window* pParent, WinBits nStyle)
     : Control(pParent, nStyle)
 {
-    SetMapMode(MAP_100TH_MM);
+    SetMapMode(MapUnit::Map100thMM);
 
     // Scale: 1:2
     MapMode aMapMode = GetMapMode();
@@ -63,14 +63,7 @@ void SvxXMeasurePreview::Resize()
     pMeasureObj->SetPoint(aPt2, 1);
 }
 
-VCL_BUILDER_DECL_FACTORY(SvxXMeasurePreview)
-{
-    WinBits nWinStyle = 0;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SvxXMeasurePreview>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxXMeasurePreview, 0)
 
 Size SvxXMeasurePreview::GetOptimalSize() const
 {
@@ -95,7 +88,7 @@ void SvxXMeasurePreview::dispose()
     Control::dispose();
 }
 
-void SvxXMeasurePreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void SvxXMeasurePreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     pMeasureObj->SingleObjectPainter(rRenderContext);
 }

@@ -47,18 +47,31 @@ ConstRectangle::ConstRectangle( SwWrtShell* pWrtShell, SwEditWin* pEditWin,
 
 bool ConstRectangle::MouseButtonDown(const MouseEvent& rMEvt)
 {
-    bool bReturn;
+    bool bReturn = SwDrawBase::MouseButtonDown(rMEvt);
 
-    if ((bReturn = SwDrawBase::MouseButtonDown(rMEvt))
-                                    && m_pWin->GetSdrDrawMode() == OBJ_CAPTION)
+    if (bReturn)
     {
-        m_pView->NoRotate();
-        if (m_pView->IsDrawSelMode())
+        if (m_pWin->GetSdrDrawMode() == OBJ_CAPTION)
         {
-            m_pView->FlipDrawSelMode();
-            m_pSh->GetDrawView()->SetFrameDragSingles(m_pView->IsDrawSelMode());
+            m_pView->NoRotate();
+            if (m_pView->IsDrawSelMode())
+            {
+                m_pView->FlipDrawSelMode();
+                m_pSh->GetDrawView()->SetFrameDragSingles(m_pView->IsDrawSelMode());
+            }
+        }
+        else
+        {
+            SdrObject* pObj = m_pView->GetDrawView()->GetCreateObj();
+            if (pObj)
+            {
+                SfxItemSet aAttr(pObj->GetModel()->GetItemPool());
+                SwFEShell::SetLineEnds(aAttr, pObj, m_nSlotId);
+                pObj->SetMergedItemSet(aAttr);
+            }
         }
     }
+
     return bReturn;
 }
 
@@ -76,7 +89,7 @@ bool ConstRectangle::MouseButtonUp(const MouseEvent& rMEvt)
         case OBJ_TEXT:
             if( bMarquee )
             {
-                m_pSh->ChgAnchor(FLY_AS_CHAR);
+                m_pSh->ChgAnchor(RndStdIds::FLY_AS_CHAR);
 
                 if( pObj )
                 {
@@ -86,8 +99,8 @@ bool ConstRectangle::MouseButtonUp(const MouseEvent& rMEvt)
 
                     aItemSet.Put( makeSdrTextAutoGrowWidthItem( false ) );
                     aItemSet.Put( makeSdrTextAutoGrowHeightItem( false ) );
-                    aItemSet.Put( SdrTextAniKindItem( SDRTEXTANI_SCROLL ) );
-                    aItemSet.Put( SdrTextAniDirectionItem( SDRTEXTANI_LEFT ) );
+                    aItemSet.Put( SdrTextAniKindItem( SdrTextAniKind::Scroll ) );
+                    aItemSet.Put( SdrTextAniDirectionItem( SdrTextAniDirection::Left ) );
                     aItemSet.Put( SdrTextAniCountItem( 0 ) );
                     aItemSet.Put( SdrTextAniAmountItem(
                             (sal_Int16)m_pWin->PixelToLogic(Size(2,1)).Width()) );
@@ -95,20 +108,23 @@ bool ConstRectangle::MouseButtonUp(const MouseEvent& rMEvt)
                     pObj->SetMergedItemSetAndBroadcast(aItemSet);
                 }
             }
-            else if(mbVertical && pObj && dynamic_cast< const SdrTextObj *>( pObj ) !=  nullptr)
+            else if(mbVertical)
             {
-                SdrTextObj* pText = static_cast<SdrTextObj*>(pObj);
-                SfxItemSet aSet(pSdrView->GetModel()->GetItemPool());
+                if (SdrTextObj* pText = dynamic_cast<SdrTextObj*>(pObj))
+                {
+                    SfxItemSet aSet(pSdrView->GetModel()->GetItemPool());
 
-                pText->SetVerticalWriting(true);
+                    pText->SetVerticalWriting(true);
 
-                aSet.Put(makeSdrTextAutoGrowWidthItem(true));
-                aSet.Put(makeSdrTextAutoGrowHeightItem(false));
-                aSet.Put(SdrTextVertAdjustItem(SDRTEXTVERTADJUST_TOP));
-                aSet.Put(SdrTextHorzAdjustItem(SDRTEXTHORZADJUST_RIGHT));
+                    aSet.Put(makeSdrTextAutoGrowWidthItem(true));
+                    aSet.Put(makeSdrTextAutoGrowHeightItem(false));
+                    aSet.Put(SdrTextVertAdjustItem(SDRTEXTVERTADJUST_TOP));
+                    aSet.Put(SdrTextHorzAdjustItem(SDRTEXTHORZADJUST_RIGHT));
 
-                pText->SetMergedItemSet(aSet);
+                    pText->SetMergedItemSet(aSet);
+                }
             }
+
             if( pObj )
             {
                 SdrPageView* pPV = pSdrView->GetSdrPageView();
@@ -143,8 +159,20 @@ void ConstRectangle::Activate(const sal_uInt16 nSlotId)
 
     switch (nSlotId)
     {
+    case SID_LINE_ARROW_END:
+    case SID_LINE_ARROW_CIRCLE:
+    case SID_LINE_ARROW_SQUARE:
+    case SID_LINE_ARROW_START:
+    case SID_LINE_CIRCLE_ARROW:
+    case SID_LINE_SQUARE_ARROW:
+    case SID_LINE_ARROWS:
     case SID_DRAW_LINE:
+    case SID_DRAW_XLINE:
         m_pWin->SetSdrDrawMode(OBJ_LINE);
+        break;
+
+    case SID_DRAW_MEASURELINE:
+        m_pWin->SetSdrDrawMode(OBJ_MEASURE);
         break;
 
     case SID_DRAW_RECT:

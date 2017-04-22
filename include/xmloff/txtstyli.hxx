@@ -53,7 +53,7 @@ private:
     // Introduce import of empty list style (#i69523#)
     bool        mbListStyleSet : 1;
 
-    XMLEventsImportContext* pEventContext;
+    rtl::Reference<XMLEventsImportContext> mxEventContext;
 
 protected:
 
@@ -69,7 +69,10 @@ public:
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             SvXMLStylesContext& rStyles, sal_uInt16 nFamily,
             bool bDefaultStyle = false );
-    virtual ~XMLTextStyleContext();
+    ~XMLTextStyleContext() override;
+
+    XMLTextStyleContext(const XMLTextStyleContext &) = delete;
+    XMLTextStyleContext operator=(const XMLTextStyleContext &) = delete;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix,
@@ -96,7 +99,7 @@ public:
     virtual void FillPropertySet(
             const css::uno::Reference< css::beans::XPropertySet > & rPropSet ) override;
 
-    inline bool HasCombinedCharactersLetter()
+    bool HasCombinedCharactersLetter()
         { return bHasCombinedCharactersLetter; }
 
     const ::std::vector< XMLPropertyState > & GetProperties_() { return GetProperties(); }

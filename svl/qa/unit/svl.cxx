@@ -31,6 +31,8 @@
 
 #include <i18nlangtag/lang.h>
 
+#include <math.h>
+
 #include <svl/zforlist.hxx>
 #include <svl/zformat.hxx>
 #include <svl/sharedstringpool.hxx>
@@ -48,7 +50,7 @@ namespace {
 class Test : public CppUnit::TestFixture {
 public:
     Test();
-    virtual ~Test();
+    virtual ~Test() override;
 
     virtual void tearDown() override;
 
@@ -58,8 +60,10 @@ public:
     void testSharedStringPoolPurge();
     void testFdo60915();
     void testI116701();
+    void testTdf103060();
     void testDateInput();
     void testIsNumberFormat();
+    void testUserDefinedNumberFormats();
 
     CPPUNIT_TEST_SUITE(Test);
     CPPUNIT_TEST(testNumberFormat);
@@ -68,8 +72,10 @@ public:
     CPPUNIT_TEST(testSharedStringPoolPurge);
     CPPUNIT_TEST(testFdo60915);
     CPPUNIT_TEST(testI116701);
+    CPPUNIT_TEST(testTdf103060);
     CPPUNIT_TEST(testDateInput);
     CPPUNIT_TEST(testIsNumberFormat);
+    CPPUNIT_TEST(testUserDefinedNumberFormats);
     CPPUNIT_TEST_SUITE_END();
 
 private:
@@ -136,29 +142,35 @@ void Test::testNumberFormat()
     const char* pFraction[] = {
         "# \?/\?",
         "# \?\?/\?\?",
-#if 0
-// TODO: Followings aren't in range of NF_FRACTION_START and NF_FRACTION_END
-// see enum NfIndexTableOffset in svl/inc/svl/zforlist.hxx
-        "# \?/4",
-        "# \?\?/100",
-#endif
         nullptr
     };
 
-#if 0 // TODO: Find out why on some systems the last two currency format codes differ.
+// Following aren't in range of NF_FRACTION_START and NF_FRACTION_END
+// see enum NfIndexTableOffset in svl/inc/svl/zforlist.hxx
+    const char* pFractionExt[] = {
+        "# \?\?\?/\?\?\?",
+        "# \?/2",
+        "# \?/4",
+        "# \?/8",
+        "# \?\?/16",
+        "# \?\?/10",
+        "# \?\?/100",
+        nullptr
+    };
+
     const char* pCurrency[] = {
+        "$#,##0;-$#,##0",
+        "$#,##0.00;-$#,##0.00",
         "$#,##0;[RED]-$#,##0",
         "$#,##0.00;[RED]-$#,##0.00",
         "#,##0.00 CCC",
         "$#,##0.--;[RED]-$#,##0.--",
-        "$#,##0;-$#,##0",
-        "$#,##0;-$#,##0",
-        0
+        nullptr
     };
-#endif
 
-#if 0 // TODO: This currently fails
     const char* pDate[] = {
+        "M/D/YY",
+        "NNNNMMMM DD, YYYY",
         "MM/DD/YY",
         "MM/DD/YYYY",
         "MMM D, YY",
@@ -178,11 +190,8 @@ void Test::testNumberFormat()
         "MMMM",
         "QQ YY",
         "WW",
-        "MM/DD/YY",
-        "WW",
-        0
+        nullptr
     };
-#endif
 
     const char* pTime[] = {
         "HH:MM",
@@ -195,13 +204,11 @@ void Test::testNumberFormat()
         nullptr
     };
 
-#if 0 // TODO: This currently fails
     const char* pDateTime[] = {
         "MM/DD/YY HH:MM AM/PM",
-        "MM/DD/YY HH:MM AM/PM",
-        0
+        "MM/DD/YYYY HH:MM:SS",
+        nullptr
     };
-#endif
 
     const char* pBoolean[] = {
         "BOOLEAN",
@@ -223,16 +230,11 @@ void Test::testNumberFormat()
         { NF_SCIENTIFIC_START, NF_SCIENTIFIC_END, 2, pScientific },
         { NF_PERCENT_START, NF_PERCENT_END, 2, pPercent },
         { NF_FRACTION_START, NF_FRACTION_END, 2, pFraction },
-#if 0 // TODO: Find out why on some systems the last two currency format codes differ.
+        { NF_FRACTION_3D, NF_FRACTION_100, 7, pFractionExt },
         { NF_CURRENCY_START, NF_CURRENCY_END, 6, pCurrency },
-#endif
-#if 0 // TODO: This currently fails
         { NF_DATE_START, NF_DATE_END, 21, pDate },
-#endif
         { NF_TIME_START, NF_TIME_END, 7, pTime },
-#if 0 // TODO: This currently fails
         { NF_DATETIME_START, NF_DATETIME_END, 2, pDateTime },
-#endif
         { NF_BOOLEAN, NF_BOOLEAN, 1, pBoolean },
         { NF_TEXT, NF_TEXT, 1, pText }
     };
@@ -244,8 +246,8 @@ void Test::testNumberFormat()
         size_t nStart = aTests[i].eStart;
         size_t nEnd = aTests[i].eEnd;
 
-        CPPUNIT_ASSERT_MESSAGE("Unexpected number of formats for this category.",
-                               (nEnd - nStart + 1) == aTests[i].nSize);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Unexpected number of formats for this category.",
+                               aTests[i].nSize, (nEnd - nStart + 1));
 
         for (size_t j = nStart; j <= nEnd; ++j)
         {
@@ -255,8 +257,7 @@ void Test::testNumberFormat()
 
             CPPUNIT_ASSERT_MESSAGE("Number format entry is expected, but doesn't exist.", p);
             OUString aCode = p->GetFormatstring();
-            bool bEqual = aCode.equalsAscii(aTests[i].pCodes[j-nStart]);
-            CPPUNIT_ASSERT_MESSAGE("Unexpected number format code.", bEqual);
+            CPPUNIT_ASSERT_EQUAL( aCode.toUtf8() , OString( aTests[i].pCodes[j-nStart] ) );
         }
     }
 
@@ -290,7 +291,7 @@ void Test::testSharedString()
 {
     // Use shared string as normal, non-shared string, which is allowed.
     SharedString aSS1("Test"), aSS2("Test");
-    CPPUNIT_ASSERT_MESSAGE("Equality check should return true.", aSS1 == aSS2);
+    CPPUNIT_ASSERT_MESSAGE("Equality check should return true.", bool(aSS1 == aSS2));
     SharedString aSS3("test");
     CPPUNIT_ASSERT_MESSAGE("Equality check is case sensitive.", aSS1 != aSS3);
 }
@@ -321,11 +322,11 @@ void Test::testSharedStringPool()
     p2 = aPool.intern(aAndyLower);
     CPPUNIT_ASSERT_MESSAGE("Failed to intern strings.", p1.getData() && p2.getData());
     CPPUNIT_ASSERT_MESSAGE("These two ID's should differ.", p1.getData() != p2.getData());
-    CPPUNIT_ASSERT_MESSAGE("These two ID's should be equal.", p1.getDataIgnoreCase() == p2.getDataIgnoreCase());
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("These two ID's should be equal.", p2.getDataIgnoreCase(), p1.getDataIgnoreCase());
     p2 = aPool.intern(aAndyUpper);
     CPPUNIT_ASSERT_MESSAGE("Failed to intern string.", p2.getData());
     CPPUNIT_ASSERT_MESSAGE("These two ID's should differ.", p1.getData() != p2.getData());
-    CPPUNIT_ASSERT_MESSAGE("These two ID's should be equal.", p1.getDataIgnoreCase() == p2.getDataIgnoreCase());
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("These two ID's should be equal.", p2.getDataIgnoreCase(), p1.getDataIgnoreCase());
 }
 
 void Test::testSharedStringPoolPurge()
@@ -336,8 +337,8 @@ void Test::testSharedStringPoolPurge()
     aPool.intern("andy");
     aPool.intern("ANDY");
 
-    CPPUNIT_ASSERT_MESSAGE("Wrong string count.", aPool.getCount() == 3);
-    CPPUNIT_ASSERT_MESSAGE("Wrong case insensitive string count.", aPool.getCountIgnoreCase() == 1);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Wrong string count.", static_cast<size_t>(3), aPool.getCount());
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Wrong case insensitive string count.", static_cast<size_t>(1), aPool.getCountIgnoreCase());
 
     // Since no string objects referencing the pooled strings exist, purging
     // the pool should empty it.
@@ -398,7 +399,16 @@ void Test::checkPreviewString(SvNumberFormatter& aFormatter,
     Color* pColor = nullptr;
     Color** ppColor = &pColor;
     if (!aFormatter.GetPreviewString(sCode, fPreviewNumber, sStr, ppColor, eLang))
-        CPPUNIT_FAIL("GetPreviewString() failed");
+    {
+        rtl::OString aMessage = "GetPreviewString( \"";
+        aMessage += rtl::OUStringToOString( sCode, RTL_TEXTENCODING_ASCII_US );
+        aMessage += "\", ";
+        aMessage += rtl::OString::number( fPreviewNumber );
+        aMessage += ", sStr, ppColor, ";
+        aMessage += rtl::OString::number( eLang );
+        aMessage += " ) failed";
+        CPPUNIT_FAIL( aMessage.getStr() );
+    }
     CPPUNIT_ASSERT_EQUAL(sExpected, sStr);
 }
 
@@ -482,6 +492,25 @@ void Test::testI116701()
         0x0022, 0x65E5, 0x0022
     };
     sCode = OUString(CODE2, SAL_N_ELEMENTS(CODE2));
+    checkPreviewString(aFormatter, sCode, fPreviewNumber, eLang, sExpected);
+}
+
+void Test::testTdf103060()
+{
+    LanguageType eLang = LANGUAGE_JAPANESE;
+    OUString sCode, sExpected;
+    double fPreviewNumber = 42655; // equals 2016-10-12
+    SvNumberFormatter aFormatter(m_xContext, eLang);
+    sCode = "G";
+    sExpected = "H"; // Heisei era
+    checkPreviewString(aFormatter, sCode, fPreviewNumber, eLang, sExpected);
+    sCode = "GG";
+    const sal_Unicode EXPECTED_G2[] = {0x5E73};
+    sExpected = OUString(EXPECTED_G2, SAL_N_ELEMENTS(EXPECTED_G2));
+    checkPreviewString(aFormatter, sCode, fPreviewNumber, eLang, sExpected);
+    sCode = "GGG";
+    const sal_Unicode EXPECTED_G3[] = {0x5E73, 0x6210};
+    sExpected = OUString(EXPECTED_G3, SAL_N_ELEMENTS(EXPECTED_G3));
     checkPreviewString(aFormatter, sCode, fPreviewNumber, eLang, sExpected);
 }
 
@@ -1114,6 +1143,156 @@ void Test::testIsNumberFormat()
             aFormatter.GetOutputString( fNumber, nIndex, aString, &pColor);
             CPPUNIT_ASSERT_EQUAL( OUString::createFromAscii( aSpanishTests[i].mpOutput), aString);
         }
+    }
+}
+
+void Test::testUserDefinedNumberFormats()
+{
+    LanguageType eLang = LANGUAGE_ENGLISH_US;
+    OUString sCode, sExpected;
+    SvNumberFormatter aFormatter(m_xContext, eLang);
+    {  // tdf#97835: suppress decimal separator
+        sCode = "0.##\" m\"";
+        sExpected = "12 m";
+        checkPreviewString(aFormatter, sCode, 12.0, eLang, sExpected);
+    }
+    {  // tdf#61996: skip quoted text
+        sCode = "0.00\" ;\"";
+        sExpected = "-12.00 ;";
+        checkPreviewString(aFormatter, sCode, -12.0, eLang, sExpected);
+    }
+    {  // tdf#95339: detect SSMM as second minute
+        sCode =     "SS:MM:HH DD/MM/YY"; // Month not detected by Excel, but we do not follow that.
+        sExpected = "54:23:03 02/01/00";
+        checkPreviewString(aFormatter, sCode, M_PI, eLang, sExpected);
+    }
+    {  // tdf#101147: detect SSMM as second month
+        sCode =     "HH:MM:SS MM/DD";
+        sExpected = "03:23:54 01/02";
+        checkPreviewString(aFormatter, sCode, M_PI, eLang, sExpected);
+    }
+    {  // tdf#101096: different detection of month/minute with Excel
+        sCode =     "HH DD MM"; // month detectected because of previous DD
+        sExpected = "03 02 01";
+        checkPreviewString(aFormatter, sCode, M_PI, eLang, sExpected);
+        sCode =     "HH:MM HH DD/MM"; // month detected because of previous DD
+        sExpected = "03:23 03 02/01";
+        checkPreviewString(aFormatter, sCode, M_PI, eLang, sExpected);
+        sCode =     "SS:DD-MM-YY SS:MM"; // 1st is month, because of previous DD; 2nd is minute as SS has not minute
+        sExpected = "54:02-01-00 54:23";
+        checkPreviewString(aFormatter, sCode, M_PI, eLang, sExpected);
+    }
+    {  // tdf#99996: better algorithm for fraction representation
+        sCode = "# ?/???";
+        sExpected = "-575 540/697";
+        checkPreviewString(aFormatter, sCode, -575.774749601315, eLang, sExpected);
+    }
+    {  // tdf#102507: left alignment of denominator
+        sCode = "# ?/???";
+        sExpected = "3 1/2  ";
+        checkPreviewString(aFormatter, sCode, 3.5, eLang, sExpected);
+    }
+    {  // tdf#100594: forced denominator
+        sCode = "# ?/100";
+        sExpected = " 6/100";
+        checkPreviewString(aFormatter, sCode, 0.06, eLang, sExpected);
+    }
+    {  // tdf#100754: forced denominator with text after fraction
+        sCode = "# ?/16\" inch\"";
+        sExpected = "2 6/16 inch";
+        checkPreviewString(aFormatter, sCode, 2.379, eLang, sExpected);
+    }
+    {  // tdf#100842: text before/after fraction
+        sCode = "\"before \"?/?\" after\"";
+        sExpected = "before 11/9 after";
+        checkPreviewString(aFormatter, sCode, 1.2345667, eLang, sExpected);
+        sCode = "\"before \"# ?/?\" after\"";
+        sExpected = "before 1 2/9 after";
+        checkPreviewString(aFormatter, sCode, 1.2345667, eLang, sExpected);
+        sCode = "\"before \"0.0\"inside\"0E+0\"middle\"0\" after\"";
+        sExpected = "before 1.2inside3E+0middle4 after";
+        checkPreviewString(aFormatter, sCode, 12345.667, eLang, sExpected);
+    }
+    {  // tdf#106190: text after fraction bar
+        sCode = "?/ ?";
+        sExpected = "11/ 9";
+        checkPreviewString(aFormatter, sCode, 1.2345667, eLang, sExpected);
+        sCode = "?/ 12";
+        sExpected = "15/ 12";
+        checkPreviewString(aFormatter, sCode, 1.2345667, eLang, sExpected);
+        sCode = "# ?/\" divisor \"?";
+        sExpected = "1 2/ divisor 9";
+        checkPreviewString(aFormatter, sCode, 1.2345667, eLang, sExpected);
+        sCode = "# ?/\"divided by \"?";
+        sExpected = "1 2/divided by 9";
+        checkPreviewString(aFormatter, sCode, 1.2345667, eLang, sExpected);
+        sCode = "?/\" \"12";
+        sExpected = "15/ 12";
+        checkPreviewString(aFormatter, sCode, 1.2345667, eLang, sExpected);
+        sCode = "?/\\ 12";
+        sExpected = "15/ 12";
+        checkPreviewString(aFormatter, sCode, 1.2345667, eLang, sExpected);
+        sCode = "# ?/ ???";
+        sExpected = "3 1/ 2  ";
+        checkPreviewString(aFormatter, sCode, 3.5, eLang, sExpected);
+    }
+    {  // Display 1.96 as 2 and not 1 1/1
+        sCode = "# ?/?";
+        sExpected = "2    ";
+        checkPreviewString(aFormatter, sCode, 1.96, eLang, sExpected);
+        sCode = "# ?/ ?";
+        sExpected = "2     ";
+        checkPreviewString(aFormatter, sCode, 1.96, eLang, sExpected);
+        sCode = "# #/#";
+        sExpected = "2";
+        checkPreviewString(aFormatter, sCode, 1.96, eLang, sExpected);
+    }
+    {  // tdf#79399 tdf#101462 Native Number Formats
+        sCode = "[NatNum5][$-0404]General\\ ";
+        // Chinese upper case number characters for 120
+        sExpected = OUStringLiteral1(22777) +
+                    OUStringLiteral1(20336) +
+                    OUStringLiteral1(36019) +
+                    OUStringLiteral1(25342) +
+                    " ";
+        checkPreviewString(aFormatter, sCode, 120, eLang, sExpected);
+        sCode = "[DBNum2][$-0404]General\\ ";
+        checkPreviewString(aFormatter, sCode, 120, eLang, sExpected);
+    }
+    {  // tdf#105968 engineering format with value rounded up to next magnitude
+        sCode = "##0.00E+00";
+        sExpected = "100.00E+00";
+        checkPreviewString(aFormatter, sCode, 99.995, eLang, sExpected);
+        // test '1'=='1' assumption
+        checkPreviewString(aFormatter, sCode, 100.0, eLang, sExpected);
+        sExpected = "199.99E+00";
+        checkPreviewString(aFormatter, sCode, 199.99, eLang, sExpected);
+        sExpected = "1.00E+03";
+        checkPreviewString(aFormatter, sCode, 1000.0, eLang, sExpected);
+        // and another just "normally" rounded value
+        sExpected = "894.55E-06";
+        checkPreviewString(aFormatter, sCode, 0.000894549, eLang, sExpected);
+        // not expecting rounding into another magnitude
+        sExpected = "999.99E-06";
+        checkPreviewString(aFormatter, sCode, 0.000999991, eLang, sExpected);
+        // expecting rounding into another magnitude
+        sExpected = "1.00E-03";
+        checkPreviewString(aFormatter, sCode, 0.000999999, eLang, sExpected);
+
+        // Now the same all negative values.
+        sExpected = "-100.00E+00";
+        checkPreviewString(aFormatter, sCode, -99.995, eLang, sExpected);
+        checkPreviewString(aFormatter, sCode, -100.0, eLang, sExpected);
+        sExpected = "-199.99E+00";
+        checkPreviewString(aFormatter, sCode, -199.99, eLang, sExpected);
+        sExpected = "-1.00E+03";
+        checkPreviewString(aFormatter, sCode, -1000.0, eLang, sExpected);
+        sExpected = "-894.55E-06";
+        checkPreviewString(aFormatter, sCode, -0.000894549, eLang, sExpected);
+        sExpected = "-999.99E-06";
+        checkPreviewString(aFormatter, sCode, -0.000999991, eLang, sExpected);
+        sExpected = "-1.00E-03";
+        checkPreviewString(aFormatter, sCode, -0.000999999, eLang, sExpected);
     }
 }
 

@@ -7,8 +7,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include <ctype.h>
-
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/lang/Locale.hpp>
 #include <osl/diagnose.h>
@@ -17,6 +15,7 @@
 #include "miscuno.hxx"
 #include "global.hxx"
 #include "formulagroup.hxx"
+#include "sc.hrc"
 
 using namespace utl;
 using namespace com::sun::star::uno;
@@ -79,7 +78,7 @@ void ScFormulaOptions::GetDefaultFormulaSeparators(
         // the old separator set.
         return;
 
-    const LocaleDataWrapper& rLocaleData = GetLocaleDataWrapper();
+    const LocaleDataWrapper& rLocaleData = *ScGlobal::pLocaleData;
     const OUString& rDecSep  = rLocaleData.getNumDecimalSep();
     const OUString& rListSep = rLocaleData.getListSep();
 
@@ -117,11 +116,6 @@ void ScFormulaOptions::GetDefaultFormulaSeparators(
     rSepArrayRow = ";";
 }
 
-const LocaleDataWrapper& ScFormulaOptions::GetLocaleDataWrapper()
-{
-    return *ScGlobal::pLocaleData;
-}
-
 ScFormulaOptions& ScFormulaOptions::operator=( const ScFormulaOptions& rCpy )
 {
     bUseEnglishFuncName = rCpy.bUseEnglishFuncName;
@@ -154,8 +148,8 @@ bool ScFormulaOptions::operator!=( const ScFormulaOptions& rOpt ) const
     return !(operator==(rOpt));
 }
 
-ScTpFormulaItem::ScTpFormulaItem( sal_uInt16 nWhichP, const ScFormulaOptions& rOpt ) :
-    SfxPoolItem ( nWhichP ),
+ScTpFormulaItem::ScTpFormulaItem( const ScFormulaOptions& rOpt ) :
+    SfxPoolItem ( SID_SCFORMULAOPTIONS ),
     theOptions  ( rOpt )
 {
 }
@@ -200,34 +194,24 @@ SfxPoolItem* ScTpFormulaItem::Clone( SfxItemPool * ) const
 #define SCFORMULAOPT_OPENCL_SUBSET_ONLY  12
 #define SCFORMULAOPT_OPENCL_MIN_SIZE     13
 #define SCFORMULAOPT_OPENCL_SUBSET_OPS   14
-#define SCFORMULAOPT_COUNT               15
 
 Sequence<OUString> ScFormulaCfg::GetPropertyNames()
 {
-    static const char* aPropNames[] =
-    {
-        "Syntax/Grammar",                // SCFORMULAOPT_GRAMMAR
-        "Syntax/EnglishFunctionName",    // SCFORMULAOPT_ENGLISH_FUNCNAME
-        "Syntax/SeparatorArg",           // SCFORMULAOPT_SEP_ARG
-        "Syntax/SeparatorArrayRow",      // SCFORMULAOPT_SEP_ARRAY_ROW
-        "Syntax/SeparatorArrayCol",      // SCFORMULAOPT_SEP_ARRAY_COL
-        "Syntax/StringRefAddressSyntax", // SCFORMULAOPT_STRING_REF_SYNTAX
-        "Syntax/StringConversion",       // SCFORMULAOPT_STRING_CONVERSION
-        "Syntax/EmptyStringAsZero",      // SCFORMULAOPT_EMPTY_OUSTRING_AS_ZERO
-        "Load/OOXMLRecalcMode",          // SCFORMULAOPT_OOXML_RECALC
-        "Load/ODFRecalcMode",            // SCFORMULAOPT_ODF_RECALC
-        "Calculation/OpenCLAutoSelect",  // SCFORMULAOPT_OPENCL_AUTOSELECT
-        "Calculation/OpenCLDevice",      // SCFORMULAOPT_OPENCL_DEVICE
-        "Calculation/OpenCLSubsetOnly",  // SCFORMULAOPT_OPENCL_SUBSET_ONLY
-        "Calculation/OpenCLMinimumDataSize",  // SCFORMULAOPT_OPENCL_MIN_SIZE
-        "Calculation/OpenCLSubsetOpCodes",    // SCFORMULAOPT_OPENCL_SUBSET_OPS
-    };
-    Sequence<OUString> aNames(SCFORMULAOPT_COUNT);
-    OUString* pNames = aNames.getArray();
-    for (int i = 0; i < SCFORMULAOPT_COUNT; ++i)
-        pNames[i] = OUString::createFromAscii(aPropNames[i]);
-
-    return aNames;
+    return {"Syntax/Grammar",                       // SCFORMULAOPT_GRAMMAR
+            "Syntax/EnglishFunctionName",           // SCFORMULAOPT_ENGLISH_FUNCNAME
+            "Syntax/SeparatorArg",                  // SCFORMULAOPT_SEP_ARG
+            "Syntax/SeparatorArrayRow",             // SCFORMULAOPT_SEP_ARRAY_ROW
+            "Syntax/SeparatorArrayCol",             // SCFORMULAOPT_SEP_ARRAY_COL
+            "Syntax/StringRefAddressSyntax",        // SCFORMULAOPT_STRING_REF_SYNTAX
+            "Syntax/StringConversion",              // SCFORMULAOPT_STRING_CONVERSION
+            "Syntax/EmptyStringAsZero",             // SCFORMULAOPT_EMPTY_OUSTRING_AS_ZERO
+            "Load/OOXMLRecalcMode",                 // SCFORMULAOPT_OOXML_RECALC
+            "Load/ODFRecalcMode",                   // SCFORMULAOPT_ODF_RECALC
+            "Calculation/OpenCLAutoSelect",         // SCFORMULAOPT_OPENCL_AUTOSELECT
+            "Calculation/OpenCLDevice",             // SCFORMULAOPT_OPENCL_DEVICE
+            "Calculation/OpenCLSubsetOnly",         // SCFORMULAOPT_OPENCL_SUBSET_ONLY
+            "Calculation/OpenCLMinimumDataSize",    // SCFORMULAOPT_OPENCL_MIN_SIZE
+            "Calculation/OpenCLSubsetOpCodes"};     // SCFORMULAOPT_OPENCL_SUBSET_OPS
 }
 
 ScFormulaCfg::PropsToIds ScFormulaCfg::GetPropNamesToId()
@@ -258,7 +242,7 @@ ScFormulaCfg::PropsToIds ScFormulaCfg::GetPropNamesToId()
 }
 
 ScFormulaCfg::ScFormulaCfg() :
-    ConfigItem( OUString( CFGPATH_FORMULA ) )
+    ConfigItem( CFGPATH_FORMULA )
 {
     Sequence<OUString> aNames = GetPropertyNames();
     UpdateFromProperties( aNames );
@@ -290,7 +274,7 @@ void ScFormulaCfg::UpdateFromProperties( const Sequence<OUString>& aNames )
                     do
                     {
                         if (!(pValues[nProp] >>= nIntVal))
-                            // extractino failed.
+                            // extracting failed.
                             break;
 
                         switch (nIntVal)

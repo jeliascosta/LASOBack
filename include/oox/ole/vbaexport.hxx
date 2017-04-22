@@ -30,7 +30,7 @@ namespace com { namespace sun { namespace star {
 class OOX_DLLPUBLIC VbaExport
 {
 public:
-    VbaExport(css::uno::Reference<css::frame::XModel> xModel);
+    VbaExport(css::uno::Reference<css::frame::XModel> const & xModel);
 
     void exportVBA(SotStorage* pRootStorage);
 
@@ -53,7 +53,7 @@ class VBACompressionChunk
 {
 public:
 
-    VBACompressionChunk(SvStream& rCompressedStream, const sal_uInt8* pData, sal_Size nChunkSize);
+    VBACompressionChunk(SvStream& rCompressedStream, const sal_uInt8* pData, std::size_t nChunkSize);
 
     void write();
 
@@ -63,7 +63,7 @@ private:
     sal_uInt8* mpCompressedChunkStream;
 
     // same as DecompressedChunkEnd in the spec
-    sal_Size mnChunkSize;
+    std::size_t mnChunkSize;
 
     // CompressedCurrent according to the spec
     sal_uInt64 mnCompressedCurrent;
@@ -120,7 +120,6 @@ public:
     VBAEncryption(const sal_uInt8* pData,
                   const sal_uInt16 nLength,
                   SvStream& rEncryptedData,
-                  sal_uInt8* pSeed,
                   sal_uInt8 nProjKey);
 
     void write();
@@ -134,7 +133,6 @@ private:
     sal_uInt8 mnUnencryptedByte1; // the last unencrypted byte read or written
     sal_uInt8 mnEncryptedByte1; // the last encrypted byte read or written
     sal_uInt8 mnEncryptedByte2; // the next-to-last encrypted byte read or written
-    sal_uInt8 mnVersion; // the encrypted version
     sal_Unicode mnProjKey; // a project-specific encryption key
     sal_uInt8 mnIgnoredLength; // the length in bytes of IgnoredEnc
 

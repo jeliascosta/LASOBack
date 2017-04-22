@@ -32,7 +32,7 @@
 /**
  * pBlink points to the instance where blinking portions need to register.
  * If necessary, it needs to be created by SwBlink.
- * They are then triggered rhythimcally for a repaint. They can query
+ * They are then triggered rhythmically for a repaint. They can query
  * for being visible or invisible with IsVisible().
  */
 SwBlink *pBlink = nullptr;
@@ -42,7 +42,7 @@ SwBlink::SwBlink()
     bVisible = true;
     // Prepare the timer
     aTimer.SetTimeout( BLINK_ON_TIME );
-    aTimer.SetTimeoutHdl( LINK(this, SwBlink, Blinker) );
+    aTimer.SetInvokeHandler( LINK(this, SwBlink, Blinker) );
 }
 
 SwBlink::~SwBlink( )
@@ -55,7 +55,7 @@ SwBlink::~SwBlink( )
  * Toggle visibility flag
  * Determine the repaint rectangle and invalidate them in their OleShells.
  */
-IMPL_LINK_NOARG_TYPED(SwBlink, Blinker, Timer *, void)
+IMPL_LINK_NOARG(SwBlink, Blinker, Timer *, void)
 {
     bVisible = !bVisible;
     if( bVisible )
@@ -102,7 +102,7 @@ IMPL_LINK_NOARG_TYPED(SwBlink, Blinker, Timer *, void)
                         nHeight = pTmp->GetPortion()->SvLSize().Height();
                 }
 
-                Rectangle aRefresh( aPos, Size( nWidth, nHeight ) );
+                tools::Rectangle aRefresh( aPos, Size( nWidth, nHeight ) );
                 aRefresh.Right() += ( aRefresh.Bottom()- aRefresh.Top() ) / 8;
                 pTmp->GetRootFrame()
                     ->GetCurrShell()->InvalidateWindows( aRefresh );

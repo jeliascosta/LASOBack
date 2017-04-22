@@ -22,9 +22,11 @@
 
 #include <svx/fmshell.hxx>
 #include <svx/svdobj.hxx>
+#include <svx/svdocapt.hxx>
 #include <svx/svdoutl.hxx>
 #include <sfx2/bindings.hxx>
 #include <sfx2/dispatch.hxx>
+#include <sfx2/lokhelper.hxx>
 #include <sfx2/objsh.hxx>
 
 #include "tabview.hxx"
@@ -35,7 +37,6 @@
 #include "tabsplit.hxx"
 #include "colrowba.hxx"
 #include "tabcont.hxx"
-#include "hintwin.hxx"
 #include "sc.hrc"
 #include "pagedata.hxx"
 #include "hiranges.hxx"
@@ -47,6 +48,7 @@
 #include "AccessibilityHints.hxx"
 #include "docsh.hxx"
 #include "viewuno.hxx"
+#include "postit.hxx"
 
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
@@ -54,7 +56,6 @@
 #include <comphelper/lok.hxx>
 #include <officecfg/Office/Calc.hxx>
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
-
 
 using namespace com::sun::star;
 
@@ -71,7 +72,7 @@ void ScTabView::Init()
     mbInlineWithScrollbar = officecfg::Office::Calc::Layout::Other::TabbarInlineWithScrollbar::get();
 
     aScrollTimer.SetTimeout(10);
-    aScrollTimer.SetTimeoutHdl( LINK( this, ScTabView, TimerHdl ) );
+    aScrollTimer.SetInvokeHandler( LINK( this, ScTabView, TimerHdl ) );
 
     for (i=0; i<4; i++)
         pGridWin[i] = nullptr;
@@ -116,24 +117,24 @@ void ScTabView::Init()
     /*  #i97900# scrollbars remain in correct RTL mode, needed mirroring etc.
         is now handled correctly at the respective places. */
 
-    //  Hier noch nichts anzeigen (Show), weil noch falsch angeordnet ist
-    //  Show kommt dann aus UpdateShow beim ersten Resize
+    //  Don't show anything here, because still in wrong order
+    //  Show is received from UpdateShow during first resize
     //      pTabControl, pGridWin, aHScrollLeft, aVScrollBottom,
     //      aCornerButton, aScrollBarBox, pHSplitter, pVSplitter
 
-    //      Splitter
+    //      fragment
 
     pHSplitter->SetSplitHdl( LINK( this, ScTabView, SplitHdl ) );
     pVSplitter->SetSplitHdl( LINK( this, ScTabView, SplitHdl ) );
 
-    //  UpdateShow kommt beim Resize, oder bei Kopie einer bestehenden View aus dem ctor
+    //  UpdateShow is done during resize or a copy of an existing view from ctor
 
     pDrawActual = nullptr;
     pDrawOld    = nullptr;
 
-            //  DrawView darf nicht im TabView - ctor angelegt werden,
-            //  wenn die ViewShell noch nicht konstruiert ist...
-            //  Das gilt auch fuer ViewOptionsHasChanged()
+    //  DrawView cannot be create in the TabView - ctor
+    //  when the ViewShell isn't constructed yet...
+    //  The also applies to ViewOptionsHasChanged()
 
     TestHintWindow();
 }
@@ -160,6 +161,24 @@ ScTabView::~ScTabView()
     DELETEZ(pDrawOld);
     DELETEZ(pDrawActual);
 
+    if (comphelper::LibreOfficeKit::isActive())
+    {
+        ScTabViewShell* pThisViewShell = GetViewData().GetViewShell();
+
+        auto lRemoveWindows =
+                [pThisViewShell] (ScTabViewShell* pOtherViewShell)
+                {
+                    ScViewData& rOtherViewData = pOtherViewShell->GetViewData();
+                    for (int k = 0; k < 4; ++k)
+                    {
+                        if (rOtherViewData.HasEditView((ScSplitPos)(k)))
+                            pThisViewShell->RemoveWindowFromForeignEditView(pOtherViewShell, (ScSplitPos)(k));
+                    }
+                };
+
+        SfxLokHelper::forEachOtherView(pThisViewShell, lRemoveWindows);
+    }
+
     aViewData.KillEditView();           // solange GridWin's noch existieren
 
     if (pDrawView)
@@ -176,8 +195,7 @@ ScTabView::~ScTabView()
 
     delete pSelEngine;
 
-    // Delete this before the grid windows, since it's a child window of one of them.
-    mpInputHintWindow.disposeAndClear();
+    mxInputHintOO.reset();
     for (i=0; i<4; i++)
         pGridWin[i].disposeAndClear();
 
@@ -209,7 +227,7 @@ void ScTabView::MakeDrawView( TriState nForceDesignMode )
     if (!pDrawView)
     {
         ScDrawLayer* pLayer = aViewData.GetDocument()->GetDrawLayer();
-        OSL_ENSURE(pLayer, "wo ist der Draw Layer ??");
+        OSL_ENSURE(pLayer, "Where is the Draw Layer ??");
 
         sal_uInt16 i;
         pDrawView = new ScDrawView( pGridWin[SC_SPLIT_BOTTOMLEFT], &aViewData );
@@ -225,8 +243,8 @@ void ScTabView::MakeDrawView( TriState nForceDesignMode )
             {
                 pGridWin[i]->SetMapMode(pGridWin[i]->GetDrawMapMode());
 
-                pGridWin[i]->Update();      // wegen Invalidate im DrawView ctor (ShowPage),
-                                            // damit gleich gezeichnet werden kann
+                pGridWin[i]->Update();      // because of Invalidate in DrawView ctor (ShowPage),
+                                            // so that immediately can be drawn
             }
         SfxRequest aSfxRequest(SID_OBJECT_SELECT, SfxCallMode::SLOT, aViewData.GetViewShell()->GetPool());
         SetDrawFuncPtr(new FuSelection( aViewData.GetViewShell(), GetActiveWin(), pDrawView,
@@ -237,13 +255,13 @@ void ScTabView::MakeDrawView( TriState nForceDesignMode )
         if ( nForceDesignMode != TRISTATE_INDET )
             pDrawView->SetDesignMode( nForceDesignMode );
 
-        //  an der FormShell anmelden
+        //  register at FormShell
         FmFormShell* pFormSh = aViewData.GetViewShell()->GetFormShell();
         if (pFormSh)
             pFormSh->SetView(pDrawView);
 
         if (aViewData.GetViewShell()->HasAccessibilityObjects())
-            aViewData.GetViewShell()->BroadcastAccessibility(SfxSimpleHint(SC_HINT_ACC_MAKEDRAWLAYER));
+            aViewData.GetViewShell()->BroadcastAccessibility(SfxHint(SfxHintId::ScAccMakeDrawLayer));
 
     }
 }
@@ -262,7 +280,7 @@ void ScTabView::TabChanged( bool bSameTabButMoved )
 {
     if (pDrawView)
     {
-        DrawDeselectAll();      // beendet auch Text-Edit-Modus
+        DrawDeselectAll();      // end also text edit mode
 
         SCTAB nTab = aViewData.GetTabNo();
         pDrawView->HideSdrPage();
@@ -271,18 +289,18 @@ void ScTabView::TabChanged( bool bSameTabButMoved )
         UpdateLayerLocks();
 
         pDrawView->RecalcScale();
-        pDrawView->UpdateWorkArea();    // PageSize ist pro Page unterschiedlich
+        pDrawView->UpdateWorkArea();    // PageSize is different per page
     }
 
     SfxBindings& rBindings = aViewData.GetBindings();
 
-    //  Es gibt keine einfache Moeglichkeit, alle Slots der FormShell zu invalidieren
-    //  (fuer disablete Slots auf geschuetzten Tabellen), darum hier einfach alles...
+    //  There is no easy way to invalidate all slots of the FormShell
+    //  (for disabled slots on protected tables), therefore simply everything...
     rBindings.InvalidateAll(false);
 
     if (aViewData.GetViewShell()->HasAccessibilityObjects())
     {
-        SfxSimpleHint aAccHint(SC_HINT_ACC_TABLECHANGED);
+        SfxHint aAccHint(SfxHintId::ScAccTableChanged);
         aViewData.GetViewShell()->BroadcastAccessibility(aAccHint);
     }
 
@@ -310,7 +328,8 @@ void ScTabView::TabChanged( bool bSameTabButMoved )
             std::stringstream ss;
             ss << aDocSize.Width() << ", " << aDocSize.Height();
             OString sRect = ss.str().c_str();
-            pDocSh->libreOfficeKitCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sRect.getStr());
+            ScTabViewShell* pViewShell = aViewData.GetViewShell();
+            pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sRect.getStr());
         }
     }
 }
@@ -413,12 +432,12 @@ void ScTabView::SetPagebreakMode( bool bSet )
 void ScTabView::ResetDrawDragMode()
 {
     if (pDrawView)
-        pDrawView->SetDragMode( SDRDRAG_MOVE );
+        pDrawView->SetDragMode( SdrDragMode::Move );
 }
 
 void ScTabView::ViewOptionsHasChanged( bool bHScrollChanged, bool bGraphicsChanged )
 {
-    //  DrawView erzeugen, wenn Gitter angezeigt werden soll
+    //  create DrawView when grid should be displayed
     if ( !pDrawView && aViewData.GetOptions().GetGridOptions().GetGridVisible() )
         MakeDrawLayer();
 
@@ -443,7 +462,7 @@ void ScTabView::ViewOptionsHasChanged( bool bHScrollChanged, bool bGraphicsChang
     }
 }
 
-// Helper-Funktion gegen das Include des Drawing Layers
+// helper function against including the drawing layer
 
 void ScTabView::DrawMarkListHasChanged()
 {
@@ -476,7 +495,7 @@ void ScTabView::DrawEnableAnim(bool bSet)
             {
                 pDrawView->SetAnimationEnabled();
 
-                //  Animierte GIFs muessen wieder gestartet werden:
+                //  animated GIFs must be restarted:
                 ScDocument* pDoc = aViewData.GetDocument();
                 for (i=0; i<4; i++)
                     if ( pGridWin[i] && pGridWin[i]->IsVisible() )
@@ -517,33 +536,33 @@ void ScTabView::ScrollToObject( SdrObject* pDrawObj )
     }
 }
 
-void ScTabView::MakeVisible( const Rectangle& rHMMRect )
+void ScTabView::MakeVisible( const tools::Rectangle& rHMMRect )
 {
     vcl::Window* pWin = GetActiveWin();
     Size aWinSize = pWin->GetOutputSizePixel();
     SCTAB nTab = aViewData.GetTabNo();
 
-    Rectangle aRect = pWin->LogicToPixel( rHMMRect );
+    tools::Rectangle aRect = pWin->LogicToPixel( rHMMRect );
 
-    long nScrollX=0, nScrollY=0;        // Pixel
+    long nScrollX=0, nScrollY=0;        // pixel
 
-    if ( aRect.Right() >= aWinSize.Width() )                // rechts raus
+    if ( aRect.Right() >= aWinSize.Width() )                // right out
     {
-        nScrollX = aRect.Right() - aWinSize.Width() + 1;    // rechter Rand sichtbar
+        nScrollX = aRect.Right() - aWinSize.Width() + 1;    // right border visible
         if ( aRect.Left() < nScrollX )
-            nScrollX = aRect.Left();                        // links sichtbar (falls zu gross)
+            nScrollX = aRect.Left();                        // left visible (if too big)
     }
-    if ( aRect.Bottom() >= aWinSize.Height() )              // unten raus
+    if ( aRect.Bottom() >= aWinSize.Height() )              // bottom out
     {
-        nScrollY = aRect.Bottom() - aWinSize.Height() + 1;  // unterer Rand sichtbar
+        nScrollY = aRect.Bottom() - aWinSize.Height() + 1;  // bottom border visible
         if ( aRect.Top() < nScrollY )
-            nScrollY = aRect.Top();                         // oben sichtbar (falls zu gross)
+            nScrollY = aRect.Top();                         // top visible (if too big)
     }
 
-    if ( aRect.Left() < 0 )             // links raus
-        nScrollX = aRect.Left();        // linker Rand sichtbar
-    if ( aRect.Top() < 0 )              // oben raus
-        nScrollY = aRect.Top();         // oberer Rand sichtbar
+    if ( aRect.Left() < 0 )             // left out
+        nScrollX = aRect.Left();        // left border visible
+    if ( aRect.Top() < 0 )              // top out
+        nScrollY = aRect.Top();         // top border visible
 
     if (nScrollX || nScrollY)
     {
@@ -557,7 +576,7 @@ void ScTabView::MakeVisible( const Rectangle& rHMMRect )
         SCCOL nPosX = aViewData.GetPosX(WhichH(eWhich));
         SCROW nPosY = aViewData.GetPosY(WhichV(eWhich));
 
-        long nLinesX=0, nLinesY=0;      // Spalten/Zeilen - um mindestens nScrollX/Y scrollen
+        long nLinesX=0, nLinesY=0;      // columns/rows - scroll at least nScrollX/Y
 
         if (nScrollX > 0)
             while (nScrollX > 0 && nPosX < MAXCOL)
@@ -589,7 +608,7 @@ void ScTabView::MakeVisible( const Rectangle& rHMMRect )
                 --nLinesY;
             }
 
-        ScrollLines( nLinesX, nLinesY );                    // ausfuehren
+        ScrollLines( nLinesX, nLinesY );                    // execute
     }
 }
 
@@ -625,6 +644,49 @@ void ScTabView::ResetBrushDocument()
     {
         SetBrushDocument( nullptr, false );
         SetActivePointer( Pointer( PointerStyle::Arrow ) );   // switch pointers also when ended with escape key
+    }
+}
+
+void ScTabView::OnLOKNoteStateChanged(const ScPostIt* pNote)
+{
+    if (!comphelper::LibreOfficeKit::isActive())
+        return;
+
+    const SdrCaptionObj* pCaption = pNote->GetCaption();
+    if (!pCaption) return;
+
+    tools::Rectangle aRect = pCaption->GetLogicRect();
+    basegfx::B2DRange aTailRange = pCaption->getTailPolygon().getB2DRange();
+    tools::Rectangle aTailRect(aTailRange.getMinX(), aTailRange.getMinY(),
+                        aTailRange.getMaxX(), aTailRange.getMaxY());
+    aRect.Union( aTailRect );
+
+    // This is a temporary workaround: sometime in tiled rendering mode
+    // the tip of the note arrow is misplaced by a fixed offset.
+    // The value used below is enough to get the tile, where the arrow tip is
+    // placed, invalidated.
+    const int nBorderSize = 200;
+    tools::Rectangle aInvalidRect = aRect;
+    aInvalidRect.Left() -= nBorderSize;
+    aInvalidRect.Right() += nBorderSize;
+    aInvalidRect.Top() -= nBorderSize;
+    aInvalidRect.Bottom() += nBorderSize;
+
+    SfxViewShell* pViewShell = SfxViewShell::GetFirst();
+    while (pViewShell)
+    {
+        ScTabViewShell* pTabViewShell = dynamic_cast<ScTabViewShell*>(pViewShell);
+        if (pTabViewShell)
+        {
+            for (auto& pWin: pTabViewShell->pGridWin)
+            {
+                if (pWin && pWin->IsVisible())
+                {
+                    pWin->Invalidate(aInvalidRect);
+                }
+            }
+        }
+        pViewShell = SfxViewShell::GetNext(*pViewShell);
     }
 }
 

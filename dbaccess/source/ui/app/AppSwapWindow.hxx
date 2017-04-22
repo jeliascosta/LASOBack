@@ -37,13 +37,13 @@ namespace dbaui
 
         void ImplInitSettings();
 
-        DECL_LINK_TYPED( OnContainerSelectHdl, SvtIconChoiceCtrl*, void );
-        DECL_LINK_TYPED( ChangeToLastSelected, void*, void );
+        DECL_LINK( OnContainerSelectHdl, SvtIconChoiceCtrl*, void );
+        DECL_LINK( ChangeToLastSelected, void*, void );
     protected:
         virtual void DataChanged(const DataChangedEvent& rDCEvt) override;
     public:
         OApplicationSwapWindow( vcl::Window* _pParent, OAppBorderWindow& _rBorderWindow );
-        virtual ~OApplicationSwapWindow();
+        virtual ~OApplicationSwapWindow() override;
         // Window overrides
         virtual void dispose() override;
         virtual void Resize() override;
@@ -55,9 +55,9 @@ namespace dbaui
         void cut() override   { }
         void paste() override { }
 
-        inline sal_Int32                GetEntryCount() const { return m_aIconControl->GetEntryCount(); }
-        inline SvxIconChoiceCtrlEntry*  GetEntry( sal_uLong nPos ) const { return m_aIconControl->GetEntry(nPos); }
-        inline Rectangle                GetBoundingBox( SvxIconChoiceCtrlEntry* pEntry ) const { return m_aIconControl->GetBoundingBox(pEntry); }
+        sal_Int32                GetEntryCount() const { return m_aIconControl->GetEntryCount(); }
+        SvxIconChoiceCtrlEntry*  GetEntry( sal_uLong nPos ) const { return m_aIconControl->GetEntry(nPos); }
+        tools::Rectangle                GetBoundingBox( SvxIconChoiceCtrlEntry* pEntry ) const { return m_aIconControl->GetBoundingBox(pEntry); }
 
         /** automatically creates mnemonics for the icon/texts in our left hand side panel
         */

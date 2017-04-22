@@ -60,7 +60,7 @@ namespace rptui
 using namespace ::com::sun::star;
 
 
-IMPL_LINK_NOARG_TYPED( DlgEdFunc, ScrollTimeout, Timer *, void )
+IMPL_LINK_NOARG( DlgEdFunc, ScrollTimeout, Timer *, void )
 {
     ForceScroll( m_pParent->PixelToLogic( m_pParent->GetPointerPosPixel() ) );
 }
@@ -83,25 +83,25 @@ void DlgEdFunc::ForceScroll( const Point& rPos )
     Point aPos = pScrollWindow->getThumbPos();
     aPos.X() *= 0.5;
     aPos.Y() *= 0.5;
-    Rectangle aOutRect( aPos, aOut );
+    tools::Rectangle aOutRect( aPos, aOut );
     aOutRect = m_pParent->PixelToLogic( aOutRect );
-    Rectangle aWorkArea(Point(), pScrollWindow->getTotalSize());
+    tools::Rectangle aWorkArea(Point(), pScrollWindow->getTotalSize());
     aWorkArea.Right() -= (long)aStartWidth;
     aWorkArea = pScrollWindow->PixelToLogic( aWorkArea );
     if( !aOutRect.IsInside( rPos ) && aWorkArea.IsInside( rPos ) )
     {
         ScrollBar& rHScroll = pScrollWindow->GetHScroll();
         ScrollBar& rVScroll = pScrollWindow->GetVScroll();
-        ScrollType eH = SCROLL_LINEDOWN,eV = SCROLL_LINEDOWN;
+        ScrollType eH = ScrollType::LineDown,eV = ScrollType::LineDown;
         if( rPos.X() < aOutRect.Left() )
-            eH = SCROLL_LINEUP;
+            eH = ScrollType::LineUp;
         else if( rPos.X() <= aOutRect.Right() )
-            eH = SCROLL_DONTKNOW;
+            eH = ScrollType::DontKnow;
 
         if( rPos.Y() < aOutRect.Top() )
-            eV = SCROLL_LINEUP;
+            eV = ScrollType::LineUp;
         else if( rPos.Y() <= aOutRect.Bottom() )
-            eV = SCROLL_DONTKNOW;
+            eV = ScrollType::DontKnow;
 
         rHScroll.DoScrollAction(eH);
         rVScroll.DoScrollAction(eV);
@@ -121,7 +121,7 @@ DlgEdFunc::DlgEdFunc( OReportSection* _pParent )
     , m_bUiActive(false)
     , m_bShowPropertyBrowser(false)
 {
-    aScrollTimer.SetTimeoutHdl( LINK( this, DlgEdFunc, ScrollTimeout ) );
+    aScrollTimer.SetInvokeHandler( LINK( this, DlgEdFunc, ScrollTimeout ) );
     m_rView.SetActualWin( m_pParent);
     aScrollTimer.SetTimeout( SELENG_AUTOREPEAT_INTERVAL );
 }
@@ -170,20 +170,17 @@ bool DlgEdFunc::MouseButtonDown( const MouseEvent& rMEvt )
         if ( rMEvt.GetClicks() > 1 )
         {
             // show property browser
-            if ( m_pParent->GetMode() != RPTUI_READONLY )
-            {
-                uno::Sequence<beans::PropertyValue> aArgs(1);
-                aArgs[0].Name = "ShowProperties";
-                aArgs[0].Value <<= true;
-                m_pParent->getSectionWindow()->getViewsWindow()->getView()->getReportView()->getController().executeUnChecked(SID_SHOW_PROPERTYBROWSER,aArgs);
-                m_pParent->getSectionWindow()->getViewsWindow()->getView()->getReportView()->UpdatePropertyBrowserDelayed(m_rView);
-                // TODO character in shapes
-                //    SdrViewEvent aVEvt;
-                // m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt);
-                //    if ( aVEvt.pRootObj && aVEvt.pRootObj->ISA(SdrTextObj) )
-                //        SetInEditMode(static_cast<SdrTextObj *>(aVEvt.pRootObj),rMEvt, sal_False);
-                bHandled = true;
-            }
+            uno::Sequence<beans::PropertyValue> aArgs(1);
+            aArgs[0].Name = "ShowProperties";
+            aArgs[0].Value <<= true;
+            m_pParent->getSectionWindow()->getViewsWindow()->getView()->getReportView()->getController().executeUnChecked(SID_SHOW_PROPERTYBROWSER,aArgs);
+            m_pParent->getSectionWindow()->getViewsWindow()->getView()->getReportView()->UpdatePropertyBrowserDelayed(m_rView);
+            // TODO character in shapes
+            //    SdrViewEvent aVEvt;
+            // m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt);
+            //    if ( aVEvt.pRootObj && aVEvt.pRootObj->ISA(SdrTextObj) )
+            //        SetInEditMode(static_cast<SdrTextObj *>(aVEvt.pRootObj),rMEvt, sal_False);
+            bHandled = true;
         }
         else
         {
@@ -202,7 +199,7 @@ bool DlgEdFunc::MouseButtonDown( const MouseEvent& rMEvt )
     {
         SdrPageView* pPV = m_rView.GetSdrPageView();
         SdrViewEvent aVEvt;
-        if ( m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt) != SDRHIT_MARKEDOBJECT && !rMEvt.IsShift() )
+        if ( m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt) != SdrHitKind::MarkedObject && !rMEvt.IsShift() )
             m_pParent->getSectionWindow()->getViewsWindow()->unmarkAllObjects(nullptr);
         if ( aVEvt.pRootObj )
             m_rView.MarkObj(aVEvt.pRootObj, pPV);
@@ -329,7 +326,7 @@ bool DlgEdFunc::handleKeyEvent(const KeyEvent& _rEvent)
                     if ( pHdl )
                     {
                         Point aHdlPosition( pHdl->GetPos() );
-                        Rectangle aVisRect( aHdlPosition - Point( DEFAUL_MOVE_SIZE, DEFAUL_MOVE_SIZE ), Size( 200, 200 ) );
+                        tools::Rectangle aVisRect( aHdlPosition - Point( DEFAUL_MOVE_SIZE, DEFAUL_MOVE_SIZE ), Size( 200, 200 ) );
                         m_rView.MakeVisible( aVisRect, *m_pParent);
                     }
 
@@ -490,7 +487,7 @@ void DlgEdFunc::unColorizeOverlappedObj()
 bool DlgEdFunc::isOverlapping(const MouseEvent& rMEvt)
 {
     SdrViewEvent aVEvt;
-    bool bOverlapping = m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONUP, aVEvt) != SDRHIT_NONE;
+    bool bOverlapping = m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONUP, aVEvt) != SdrHitKind::NONE;
     if (bOverlapping && aVEvt.pObj)
     {
         colorizeOverlappedObject(aVEvt.pObj);
@@ -570,14 +567,14 @@ bool DlgEdFunc::isRectangleHit(const MouseEvent& rMEvt)
 
     SdrViewEvent aVEvt;
     const SdrHitKind eHit = m_rView.PickAnything(rMEvt, SdrMouseEventKind::MOVE, aVEvt);
-    bool bIsSetPoint = (eHit == SDRHIT_UNMARKEDOBJECT);
+    bool bIsSetPoint = (eHit == SdrHitKind::UnmarkedObject);
     if ( !bIsSetPoint )
     {
         // no drag rect, we have to check every single select rect
         const SdrDragStat& rDragStat = m_rView.GetDragStat();
         if (rDragStat.GetDragMethod() != nullptr)
         {
-            SdrObjListIter aIter(*m_pParent->getPage(),IM_DEEPNOGROUPS);
+            SdrObjListIter aIter(*m_pParent->getPage(),SdrIterMode::DeepNoGroups);
             SdrObject* pObjIter = nullptr;
             // loop through all marked objects and check if there new rect overlapps an old one.
             while( (pObjIter = aIter.Next()) != nullptr && !bIsSetPoint)
@@ -585,7 +582,7 @@ bool DlgEdFunc::isRectangleHit(const MouseEvent& rMEvt)
                 if ( m_rView.IsObjMarked(pObjIter)
                      && (dynamic_cast<OUnoObject*>(pObjIter) != nullptr || dynamic_cast<OOle2Obj*>(pObjIter) != nullptr) )
                 {
-                    Rectangle aNewRect = pObjIter->GetLastBoundRect();
+                    tools::Rectangle aNewRect = pObjIter->GetLastBoundRect();
                     long nDx = rDragStat.IsHorFixed() ? 0 : rDragStat.GetDX();
                     long nDy = rDragStat.IsVerFixed() ? 0 : rDragStat.GetDY();
                     if ( (nDx + aNewRect.Left()) < 0 )
@@ -660,7 +657,7 @@ bool DlgEdFuncInsert::MouseButtonDown( const MouseEvent& rMEvt )
 
     const SdrHitKind eHit = m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt);
 
-    if (eHit == SDRHIT_UNMARKEDOBJECT && nId != OBJ_CUSTOMSHAPE)
+    if (eHit == SdrHitKind::UnmarkedObject && nId != OBJ_CUSTOMSHAPE)
     {
         // there is an object under the mouse cursor, but not a customshape
         m_pParent->getSectionWindow()->getViewsWindow()->BrkAction();
@@ -701,7 +698,7 @@ bool DlgEdFuncInsert::MouseButtonUp( const MouseEvent& rMEvt )
             return true;
         }
 
-        m_rView.EndCreateObj(SDRCREATE_FORCEEND);
+        m_rView.EndCreateObj(SdrCreateCmd::ForceEnd);
 
         if ( !m_rView.AreObjectsMarked() )
         {
@@ -797,7 +794,7 @@ bool DlgEdFuncSelect::MouseButtonDown( const MouseEvent& rMEvt )
 
     SdrViewEvent aVEvt;
     const SdrHitKind eHit = m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt);
-    if( eHit == SDRHIT_UNMARKEDOBJECT )
+    if( eHit == SdrHitKind::UnmarkedObject )
     {
         // if not multi selection, unmark all
         if ( !rMEvt.IsShift() )

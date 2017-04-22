@@ -32,7 +32,7 @@
 #include <uno/mapping.hxx>
 
 #include <cppuhelper/bootstrap.hxx>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <typelib/typedescription.h>
 
 #include <com/sun/star/lang/XComponent.hpp>
@@ -589,21 +589,13 @@ static void SAL_CALL typelib_callback(
                     *ppRet = createCTD( access, xTD );
                 }
             }
-            catch (container::NoSuchElementException & exc)
+            catch (const container::NoSuchElementException & exc)
             {
-                (void) exc; // avoid warning about unused variable
-                OSL_TRACE(
-                    "typelibrary type not available: %s",
-                    OUStringToOString(
-                        exc.Message, RTL_TEXTENCODING_UTF8 ).getStr() );
+                SAL_INFO("cppuhelper", "typelibrary type not available: " << exc.Message );
             }
-            catch (Exception & exc)
+            catch (const Exception & exc)
             {
-                (void) exc; // avoid warning about unused variable
-                OSL_TRACE(
-                    "%s",
-                    OUStringToOString(
-                        exc.Message, RTL_TEXTENCODING_UTF8 ).getStr() );
+                SAL_INFO("cppuhelper", exc.Message );
             }
         }
     }
@@ -612,7 +604,7 @@ static void SAL_CALL typelib_callback(
 
 
 class EventListenerImpl
-    : public WeakImplHelper1< lang::XEventListener >
+    : public WeakImplHelper< lang::XEventListener >
 {
     Reference< container::XHierarchicalNameAccess > m_xTDMgr;
 
@@ -623,12 +615,10 @@ public:
         {}
 
     // XEventListener
-    virtual void SAL_CALL disposing( lang::EventObject const & rEvt )
-        throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( lang::EventObject const & rEvt ) override;
 };
 
 void EventListenerImpl::disposing( lang::EventObject const & rEvt )
-    throw (RuntimeException, std::exception)
 {
     if (rEvt.Source != m_xTDMgr) {
         OSL_ASSERT(false);

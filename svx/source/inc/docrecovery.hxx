@@ -30,6 +30,7 @@
 #include <svtools/svlbitm.hxx>
 #include <svtools/svmedit2.hxx>
 #include <svtools/treelistbox.hxx>
+#include <o3tl/typed_flags_set.hxx>
 
 #include <cppuhelper/implbase.hxx>
 #include <com/sun/star/task/StatusIndicatorFactory.hpp>
@@ -73,36 +74,32 @@
 #define DLG_RET_OK_AUTOLUNCH                            101
 
 
-namespace svx{
-    namespace DocRecovery{
-
-
-enum EDocStates
+enum class EDocStates
 {
     /* TEMP STATES */
 
     /// default state, if a document was new created or loaded
-    E_UNKNOWN = 0,
-    /// modified against the original file
-    E_MODIFIED = 1,
-    /// an active document can be postponed to be saved later.
-    E_POSTPONED = 2,
-    /// was already handled during one AutoSave/Recovery session.
-    E_HANDLED = 4,
+    Unknown           = 0x000,
     /** an action was started (saving/loading) ... Can be interesting later if the process may be was interrupted by an exception. */
-    E_TRY_SAVE = 8,
-    E_TRY_LOAD_BACKUP = 16,
-    E_TRY_LOAD_ORIGINAL = 32,
+    TryLoadBackup     = 0x010,
+    TryLoadOriginal   = 0x020,
 
     /* FINAL STATES */
 
     /// the Auto/Emergency saved document isn't useable any longer
-    E_DAMAGED = 64,
+    Damaged           = 0x040,
     /// the Auto/Emergency saved document is not really up-to-date (some changes can be missing)
-    E_INCOMPLETE = 128,
+    Incomplete        = 0x080,
     /// the Auto/Emergency saved document was processed successfully
-    E_SUCCEDED = 512
+    Succeeded         = 0x200
 };
+namespace o3tl {
+    template<> struct typed_flags<EDocStates> : is_typed_flags<EDocStates, 0x2f0> {};
+}
+
+
+namespace svx{
+    namespace DocRecovery{
 
 
 enum ERecoveryState
@@ -141,7 +138,7 @@ struct TURLInfo
     OUString Module;
 
     /// state info as e.g. VALID, CORRUPTED, NON EXISTING ...
-    sal_Int32 DocState;
+    EDocStates DocState;
 
     /// ui representation for DocState!
     ERecoveryState RecoveryState;
@@ -153,7 +150,7 @@ struct TURLInfo
 
     TURLInfo()
         : ID           (-1                 )
-        , DocState     (E_UNKNOWN          )
+        , DocState     (EDocStates::Unknown)
         , RecoveryState(E_NOT_RECOVERED_YET)
     {}
 };
@@ -228,7 +225,7 @@ class RecoveryCore : public ::cppu::WeakImplHelper< css::frame::XStatusListener 
 
 
         /** @short  TODO */
-        virtual ~RecoveryCore();
+        virtual ~RecoveryCore() override;
 
 
         /** @short  TODO */
@@ -263,19 +260,17 @@ class RecoveryCore : public ::cppu::WeakImplHelper< css::frame::XStatusListener 
 
 
         /** @short  TODO */
-        static ERecoveryState mapDocState2RecoverState(sal_Int32 eDocState);
+        static ERecoveryState mapDocState2RecoverState(EDocStates eDocState);
 
 
     // uno interface
     public:
 
         // css.frame.XStatusListener
-        virtual void SAL_CALL statusChanged(const css::frame::FeatureStateEvent& aEvent)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL statusChanged(const css::frame::FeatureStateEvent& aEvent) override;
 
         // css.lang.XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) override;
 
 
     // helper
@@ -304,7 +299,7 @@ class PluginProgressWindow : public vcl::Window
     public:
         PluginProgressWindow(      vcl::Window*                                       pParent  ,
                              const css::uno::Reference< css::lang::XComponent >& xProgress);
-        virtual ~PluginProgressWindow();
+        virtual ~PluginProgressWindow() override;
         virtual void dispose() override;
 };
 
@@ -329,7 +324,7 @@ class PluginProgress : public ::cppu::WeakImplHelper< css::task::XStatusIndicato
 
 
         /** @short  TODO */
-        virtual ~PluginProgress();
+        virtual ~PluginProgress() override;
 
 
     // uno interface
@@ -338,38 +333,29 @@ class PluginProgress : public ::cppu::WeakImplHelper< css::task::XStatusIndicato
 
         // XStatusIndicator
         virtual void SAL_CALL start(const OUString& sText ,
-                                          sal_Int32        nRange)
-            throw(css::uno::RuntimeException, std::exception) override;
+                                          sal_Int32        nRange) override;
 
-        virtual void SAL_CALL end()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL end() override;
 
-        virtual void SAL_CALL setText(const OUString& sText)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setText(const OUString& sText) override;
 
-        virtual void SAL_CALL setValue(sal_Int32 nValue)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setValue(sal_Int32 nValue) override;
 
-        virtual void SAL_CALL reset()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL reset() override;
 
 
         // XComponent
-        virtual void SAL_CALL dispose()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL dispose() override;
 
-        virtual void SAL_CALL addEventListener(const css::uno::Reference< css::lang::XEventListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addEventListener(const css::uno::Reference< css::lang::XEventListener >& xListener) override;
 
-        virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener) override;
 };
 
 class SaveDialog : public Dialog
 {
     // member
     private:
-        VclPtr<FixedText>      m_pTitleFT;
         VclPtr<ListBox>        m_pFileListLB;
         VclPtr<OKButton>       m_pOkBtn;
         RecoveryCore*   m_pCore;
@@ -392,10 +378,10 @@ class SaveDialog : public Dialog
                     which should be shown inside this dialog.
          */
         SaveDialog(vcl::Window* pParent, RecoveryCore* pCore);
-        virtual ~SaveDialog();
+        virtual ~SaveDialog() override;
         virtual void dispose() override;
 
-        DECL_LINK_TYPED(OKButtonHdl, Button*, void);
+        DECL_LINK(OKButtonHdl, Button*, void);
 };
 
 class SaveProgressDialog : public ModalDialog
@@ -427,7 +413,7 @@ class SaveProgressDialog : public ModalDialog
          */
         SaveProgressDialog(vcl::Window*       pParent,
                            RecoveryCore* pCore  );
-        virtual ~SaveProgressDialog();
+        virtual ~SaveProgressDialog() override;
         virtual void dispose() override;
 
         /** @short  start the emergency save operation. */
@@ -493,7 +479,6 @@ class RecoveryDialog : public Dialog
 {
     // member
     private:
-        VclPtr<FixedText>      m_pTitleFT;
         VclPtr<FixedText>      m_pDescrFT;
         VclPtr<vcl::Window>    m_pProgrParent;
         VclPtr<RecovDocList>   m_pFileListLB;
@@ -526,7 +511,7 @@ class RecoveryDialog : public Dialog
         RecoveryDialog(vcl::Window*       pParent,
                        RecoveryCore* pCore  );
 
-        virtual ~RecoveryDialog();
+        virtual ~RecoveryDialog() override;
         virtual void dispose() override;
 
         // IRecoveryUpdateListener
@@ -540,8 +525,8 @@ class RecoveryDialog : public Dialog
     // helper
     private:
         /** @short TODO */
-        DECL_LINK_TYPED(NextButtonHdl, Button*, void);
-        DECL_LINK_TYPED(CancelButtonHdl, Button*, void);
+        DECL_LINK(NextButtonHdl, Button*, void);
+        DECL_LINK(CancelButtonHdl, Button*, void);
 
 
         /** @short TODO */
@@ -574,7 +559,7 @@ class BrokenRecoveryDialog : public ModalDialog
         BrokenRecoveryDialog(vcl::Window*       pParent        ,
                              RecoveryCore* pCore          ,
                              bool      bBeforeRecovery);
-        virtual ~BrokenRecoveryDialog();
+        virtual ~BrokenRecoveryDialog() override;
         virtual void dispose() override;
 
 
@@ -595,15 +580,15 @@ class BrokenRecoveryDialog : public ModalDialog
 
 
         /** @short TODO */
-        DECL_LINK_TYPED(SaveButtonHdl, Button*, void);
+        DECL_LINK(SaveButtonHdl, Button*, void);
 
 
         /** @short TODO */
-        DECL_LINK_TYPED(OkButtonHdl, Button*, void);
+        DECL_LINK(OkButtonHdl, Button*, void);
 
 
         /** @short TODO */
-        DECL_LINK_TYPED(CancelButtonHdl, Button*, void);
+        DECL_LINK(CancelButtonHdl, Button*, void);
 
 
         /** @short TODO */

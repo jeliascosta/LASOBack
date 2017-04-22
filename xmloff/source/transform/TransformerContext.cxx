@@ -52,10 +52,6 @@ XMLTransformerContext::XMLTransformerContext( XMLTransformerBase& rImp,
 {
 }
 
-XMLTransformerContext::~XMLTransformerContext()
-{
-}
-
 rtl::Reference<XMLTransformerContext> XMLTransformerContext::CreateChildContext( sal_uInt16 nPrefix,
                                             const OUString& rLocalName,
                                             const OUString& rQName,
@@ -71,7 +67,7 @@ void XMLTransformerContext::StartElement( const Reference< XAttributeList >& rAt
 
 void XMLTransformerContext::EndElement()
 {
-    m_rTransformer.GetDocHandler()->endElement( m_aQName );
+    GetTransformer().GetDocHandler()->endElement( m_aQName );
 }
 
 void XMLTransformerContext::Characters( const OUString& rChars )

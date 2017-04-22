@@ -70,42 +70,30 @@ public:
             const css::uno::Reference< css::uno::XComponentContext >& xContext,
             const css::uno::Sequence< css::uno::Any >& lArguments);
 
-    virtual ~DocumentAcceleratorConfiguration();
+    virtual ~DocumentAcceleratorConfiguration() override;
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.framework.DocumentAcceleratorConfiguration");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.DocumentAcceleratorConfiguration" };
-        return aSeq;
+        return {"com.sun.star.ui.DocumentAcceleratorConfiguration"};
     }
 
     // XUIConfigurationStorage
-    virtual void SAL_CALL setStorage(const css::uno::Reference< css::embed::XStorage >& xStorage)
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setStorage(const css::uno::Reference< css::embed::XStorage >& xStorage) override;
 
-    virtual sal_Bool SAL_CALL hasStorage()
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasStorage() override;
 
     /** read all data into the cache. */
     void fillCache();
-
-private:
-
-    /** forget all currently cached data AND(!)
-        forget all currently used storages. */
-    void clearCache();
 };
 
 DocumentAcceleratorConfiguration::DocumentAcceleratorConfiguration(
@@ -136,7 +124,6 @@ DocumentAcceleratorConfiguration::~DocumentAcceleratorConfiguration()
 }
 
 void SAL_CALL DocumentAcceleratorConfiguration::setStorage(const css::uno::Reference< css::embed::XStorage >& xStorage)
-    throw(css::uno::RuntimeException, std::exception)
 {
     // Attention! xStorage must be accepted too, if it's NULL !
 
@@ -148,14 +135,14 @@ void SAL_CALL DocumentAcceleratorConfiguration::setStorage(const css::uno::Refer
     }
 
     if (bForgetOldStorages)
-        clearCache();
+        /* forget all currently cached data AND(!) forget all currently used storages. */
+        m_aPresetHandler.forgetCachedStorages();
 
     if (xStorage.is())
         fillCache();
 }
 
 sal_Bool SAL_CALL DocumentAcceleratorConfiguration::hasStorage()
-    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
     return m_xDocumentRoot.is();
@@ -176,7 +163,7 @@ void DocumentAcceleratorConfiguration::fillCache()
 
     // get current office locale ... but don't cache it.
     // Otherwise we must be listener on the configuration layer
-    // which seems to superflous for this small implementation .-)
+    // which seems to superfluous for this small implementation .-)
     LanguageTag aLanguageTag( impl_ts_getLocale());
 
     // May be the current document does not contain any
@@ -199,11 +186,6 @@ void DocumentAcceleratorConfiguration::fillCache()
     }
     catch(const css::uno::Exception&)
     {}
-}
-
-void DocumentAcceleratorConfiguration::clearCache()
-{
-    m_aPresetHandler.forgetCachedStorages();
 }
 
 } // namespace framework

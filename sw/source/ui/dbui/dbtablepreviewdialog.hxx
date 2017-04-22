@@ -20,8 +20,8 @@
 #define INCLUDED_SW_SOURCE_UI_DBUI_DBTABLEPREVIEWDIALOG_HXX
 
 #include <sfx2/basedlgs.hxx>
-#include <svtools/stdctrl.hxx>
 #include <vcl/button.hxx>
+#include <vcl/fixed.hxx>
 #include <com/sun/star/uno/Sequence.h>
 
 namespace com{ namespace sun{ namespace star{
@@ -38,7 +38,7 @@ class SwDBTablePreviewDialog : public SfxModalDialog
 public:
     SwDBTablePreviewDialog(vcl::Window* pParent,
             css::uno::Sequence< css::beans::PropertyValue>& rValues  );
-    virtual ~SwDBTablePreviewDialog();
+    virtual ~SwDBTablePreviewDialog() override;
     virtual void dispose() override;
 
 };

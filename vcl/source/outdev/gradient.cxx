@@ -31,7 +31,7 @@
 
 #define GRADIENT_DEFAULT_STEPCOUNT  0
 
-void OutputDevice::DrawGradient( const Rectangle& rRect,
+void OutputDevice::DrawGradient( const tools::Rectangle& rRect,
                                  const Gradient& rGradient )
 {
     assert(!is_double_buffered_window());
@@ -84,12 +84,12 @@ void OutputDevice::DrawGradient( const tools::PolyPolygon& rPolyPoly,
             return;
 
         // Clip and then draw the gradient
-        if( !Rectangle( PixelToLogic( Point() ), GetOutputSize() ).IsEmpty() )
+        if( !tools::Rectangle( PixelToLogic( Point() ), GetOutputSize() ).IsEmpty() )
         {
-            const Rectangle aBoundRect( rPolyPoly.GetBoundRect() );
+            const tools::Rectangle aBoundRect( rPolyPoly.GetBoundRect() );
 
             // convert rectangle to pixels
-            Rectangle aRect( ImplLogicToDevicePixel( aBoundRect ) );
+            tools::Rectangle aRect( ImplLogicToDevicePixel( aBoundRect ) );
             aRect.Justify();
 
             // do nothing if the rectangle is empty
@@ -138,7 +138,7 @@ void OutputDevice::DrawGradient( const tools::PolyPolygon& rPolyPoly,
 
                     // if the clipping polypolygon is a rectangle, then it's the same size as the bounding of the
                     // polypolygon, so pass in a NULL for the clipping parameter
-                    if( aGradient.GetStyle() == GradientStyle_LINEAR || rGradient.GetStyle() == GradientStyle_AXIAL )
+                    if( aGradient.GetStyle() == GradientStyle::Linear || rGradient.GetStyle() == GradientStyle::Axial )
                         DrawLinearGradient( aRect, aGradient, aClixPolyPoly.IsRect() ? nullptr : &aClixPolyPoly );
                     else
                         DrawComplexGradient( aRect, aGradient, aClixPolyPoly.IsRect() ? nullptr : &aClixPolyPoly );
@@ -155,17 +155,17 @@ void OutputDevice::DrawGradient( const tools::PolyPolygon& rPolyPoly,
 
 void OutputDevice::ClipAndDrawGradientMetafile ( const Gradient &rGradient, const tools::PolyPolygon &rPolyPoly )
 {
-    const Rectangle aBoundRect( rPolyPoly.GetBoundRect() );
+    const tools::Rectangle aBoundRect( rPolyPoly.GetBoundRect() );
     const bool  bOldOutput = IsOutputEnabled();
 
     EnableOutput( false );
     Push( PushFlags::RASTEROP );
-    SetRasterOp( ROP_XOR );
+    SetRasterOp( RasterOp::Xor );
     DrawGradient( aBoundRect, rGradient );
     SetFillColor( COL_BLACK );
-    SetRasterOp( ROP_0 );
+    SetRasterOp( RasterOp::N0 );
     DrawPolyPolygon( rPolyPoly );
-    SetRasterOp( ROP_XOR );
+    SetRasterOp( RasterOp::Xor );
     DrawGradient( aBoundRect, rGradient );
     Pop();
     EnableOutput( bOldOutput );
@@ -188,7 +188,7 @@ void OutputDevice::DrawGradientToMetafile ( const tools::PolyPolygon& rPolyPoly,
             SetGrayscaleColors( aGradient );
         }
 
-        const Rectangle aBoundRect( rPolyPoly.GetBoundRect() );
+        const tools::Rectangle aBoundRect( rPolyPoly.GetBoundRect() );
 
         if ( rPolyPoly.IsRect() )
         {
@@ -208,10 +208,10 @@ void OutputDevice::DrawGradientToMetafile ( const tools::PolyPolygon& rPolyPoly,
             return;
 
         // Clip and then draw the gradient
-        if( !Rectangle( PixelToLogic( Point() ), GetOutputSize() ).IsEmpty() )
+        if( !tools::Rectangle( PixelToLogic( Point() ), GetOutputSize() ).IsEmpty() )
         {
             // convert rectangle to pixels
-            Rectangle aRect( ImplLogicToDevicePixel( aBoundRect ) );
+            tools::Rectangle aRect( ImplLogicToDevicePixel( aBoundRect ) );
             aRect.Justify();
 
             // do nothing if the rectangle is empty
@@ -235,7 +235,7 @@ void OutputDevice::DrawGradientToMetafile ( const tools::PolyPolygon& rPolyPoly,
 
                     // if the clipping polypolygon is a rectangle, then it's the same size as the bounding of the
                     // polypolygon, so pass in a NULL for the clipping parameter
-                    if( aGradient.GetStyle() == GradientStyle_LINEAR || rGradient.GetStyle() == GradientStyle_AXIAL )
+                    if( aGradient.GetStyle() == GradientStyle::Linear || rGradient.GetStyle() == GradientStyle::Axial )
                         DrawLinearGradientToMetafile( aRect, aGradient );
                     else
                         DrawComplexGradientToMetafile( aRect, aGradient );
@@ -258,26 +258,26 @@ namespace
     }
 }
 
-void OutputDevice::DrawLinearGradient( const Rectangle& rRect,
+void OutputDevice::DrawLinearGradient( const tools::Rectangle& rRect,
                                        const Gradient& rGradient,
                                        const tools::PolyPolygon* pClixPolyPoly )
 {
     assert(!is_double_buffered_window());
 
     // get BoundRect of rotated rectangle
-    Rectangle aRect;
+    tools::Rectangle aRect;
     Point     aCenter;
     sal_uInt16    nAngle = rGradient.GetAngle() % 3600;
 
     rGradient.GetBoundRect( rRect, aRect, aCenter );
 
-    bool bLinear = (rGradient.GetStyle() == GradientStyle_LINEAR);
+    bool bLinear = (rGradient.GetStyle() == GradientStyle::Linear);
     double fBorder = rGradient.GetBorder() * aRect.GetHeight() / 100.0;
     if ( !bLinear )
     {
         fBorder /= 2.0;
     }
-    Rectangle aMirrorRect = aRect; // used in style axial
+    tools::Rectangle aMirrorRect = aRect; // used in style axial
     aMirrorRect.Top() = ( aRect.Top() + aRect.Bottom() ) / 2;
     if ( !bLinear )
     {
@@ -322,7 +322,7 @@ void OutputDevice::DrawLinearGradient( const Rectangle& rRect,
     sal_uInt8   nBlue;
 
     // Create border
-    Rectangle aBorderRect = aRect;
+    tools::Rectangle aBorderRect = aRect;
     tools::Polygon aPoly( 4 );
     if (fBorder > 0.0)
     {
@@ -446,7 +446,7 @@ bool OutputDevice::is_double_buffered_window() const
     return pWindow && pWindow->SupportsDoubleBuffering();
 }
 
-void OutputDevice::DrawComplexGradient( const Rectangle& rRect,
+void OutputDevice::DrawComplexGradient( const tools::Rectangle& rRect,
                                         const Gradient& rGradient,
                                         const tools::PolyPolygon* pClixPolyPoly )
 {
@@ -459,7 +459,7 @@ void OutputDevice::DrawComplexGradient( const Rectangle& rRect,
     // can print polygons on top of each other.
 
     std::unique_ptr<tools::PolyPolygon> xPolyPoly;
-    Rectangle       aRect;
+    tools::Rectangle       aRect;
     Point           aCenter;
     Color           aStartCol( rGradient.GetStartColor() );
     Color           aEndCol( rGradient.GetEndColor() );
@@ -509,7 +509,7 @@ void OutputDevice::DrawComplexGradient( const Rectangle& rRect,
     // all gradients are rendered as nested rectangles which shrink
     // equally in each dimension - except for 'square' gradients
     // which shrink to a central vertex but are not per-se square.
-    if( rGradient.GetStyle() != GradientStyle_SQUARE )
+    if( rGradient.GetStyle() != GradientStyle::Square )
     {
         fScanIncY = std::min( fScanIncY, fScanIncX );
         fScanIncX = fScanIncY;
@@ -527,7 +527,7 @@ void OutputDevice::DrawComplexGradient( const Rectangle& rRect,
     else
     {
         // extend rect, to avoid missing bounding line
-        Rectangle aExtRect( rRect );
+        tools::Rectangle aExtRect( rRect );
 
         aExtRect.Left() -= 1;
         aExtRect.Top() -= 1;
@@ -549,7 +549,7 @@ void OutputDevice::DrawComplexGradient( const Rectangle& rRect,
         if( ( aRect.GetWidth() < 2 ) || ( aRect.GetHeight() < 2 ) )
             break;
 
-        if( rGradient.GetStyle() == GradientStyle_RADIAL || rGradient.GetStyle() == GradientStyle_ELLIPTICAL )
+        if( rGradient.GetStyle() == GradientStyle::Radial || rGradient.GetStyle() == GradientStyle::Elliptical )
             aPoly = tools::Polygon( aRect.Center(), aRect.GetWidth() >> 1, aRect.GetHeight() >> 1 );
         else
             aPoly = tools::Polygon( aRect );
@@ -613,25 +613,25 @@ void OutputDevice::DrawComplexGradient( const Rectangle& rRect,
     }
 }
 
-void OutputDevice::DrawLinearGradientToMetafile( const Rectangle& rRect,
+void OutputDevice::DrawLinearGradientToMetafile( const tools::Rectangle& rRect,
                                                  const Gradient& rGradient )
 {
     assert(!is_double_buffered_window());
 
     // get BoundRect of rotated rectangle
-    Rectangle aRect;
+    tools::Rectangle aRect;
     Point     aCenter;
     sal_uInt16    nAngle = rGradient.GetAngle() % 3600;
 
     rGradient.GetBoundRect( rRect, aRect, aCenter );
 
-    bool bLinear = (rGradient.GetStyle() == GradientStyle_LINEAR);
+    bool bLinear = (rGradient.GetStyle() == GradientStyle::Linear);
     double fBorder = rGradient.GetBorder() * aRect.GetHeight() / 100.0;
     if ( !bLinear )
     {
         fBorder /= 2.0;
     }
-    Rectangle aMirrorRect = aRect; // used in style axial
+    tools::Rectangle aMirrorRect = aRect; // used in style axial
     aMirrorRect.Top() = ( aRect.Top() + aRect.Bottom() ) / 2;
     if ( !bLinear )
     {
@@ -676,7 +676,7 @@ void OutputDevice::DrawLinearGradientToMetafile( const Rectangle& rRect,
     sal_uInt8   nBlue;
 
     // Create border
-    Rectangle aBorderRect = aRect;
+    tools::Rectangle aBorderRect = aRect;
     tools::Polygon aPoly( 4 );
     if (fBorder > 0.0)
     {
@@ -793,7 +793,7 @@ void OutputDevice::DrawLinearGradientToMetafile( const Rectangle& rRect,
     }
 }
 
-void OutputDevice::DrawComplexGradientToMetafile( const Rectangle& rRect,
+void OutputDevice::DrawComplexGradientToMetafile( const tools::Rectangle& rRect,
                                                   const Gradient& rGradient )
 {
     assert(!is_double_buffered_window());
@@ -805,7 +805,7 @@ void OutputDevice::DrawComplexGradientToMetafile( const Rectangle& rRect,
     // can print polygons on top of each other.
 
     std::unique_ptr<tools::PolyPolygon> xPolyPoly;
-    Rectangle       aRect;
+    tools::Rectangle       aRect;
     Point           aCenter;
     Color           aStartCol( rGradient.GetStartColor() );
     Color           aEndCol( rGradient.GetEndColor() );
@@ -853,7 +853,7 @@ void OutputDevice::DrawComplexGradientToMetafile( const Rectangle& rRect,
     // all gradients are rendered as nested rectangles which shrink
     // equally in each dimension - except for 'square' gradients
     // which shrink to a central vertex but are not per-se square.
-    if( rGradient.GetStyle() != GradientStyle_SQUARE )
+    if( rGradient.GetStyle() != GradientStyle::Square )
     {
         fScanIncY = std::min( fScanIncY, fScanIncX );
         fScanIncX = fScanIncY;
@@ -878,7 +878,7 @@ void OutputDevice::DrawComplexGradientToMetafile( const Rectangle& rRect,
         if( ( aRect.GetWidth() < 2 ) || ( aRect.GetHeight() < 2 ) )
             break;
 
-        if( rGradient.GetStyle() == GradientStyle_RADIAL || rGradient.GetStyle() == GradientStyle_ELLIPTICAL )
+        if( rGradient.GetStyle() == GradientStyle::Radial || rGradient.GetStyle() == GradientStyle::Elliptical )
             aPoly = tools::Polygon( aRect.Center(), aRect.GetWidth() >> 1, aRect.GetHeight() >> 1 );
         else
             aPoly = tools::Polygon( aRect );
@@ -934,7 +934,7 @@ long OutputDevice::GetGradientStepCount( long nMinRect )
     return nInc;
 }
 
-long OutputDevice::GetGradientSteps( const Gradient& rGradient, const Rectangle& rRect, bool bMtf, bool bComplex )
+long OutputDevice::GetGradientSteps( const Gradient& rGradient, const tools::Rectangle& rRect, bool bMtf, bool bComplex )
 {
     // calculate step count
     long nStepCount  = rGradient.GetSteps();
@@ -1013,11 +1013,11 @@ void OutputDevice::SetGrayscaleColors( Gradient &rGradient )
     rGradient.SetEndColor( aEndCol );
 }
 
-void OutputDevice::AddGradientActions( const Rectangle& rRect, const Gradient& rGradient,
+void OutputDevice::AddGradientActions( const tools::Rectangle& rRect, const Gradient& rGradient,
                                        GDIMetaFile& rMtf )
 {
 
-    Rectangle aRect( rRect );
+    tools::Rectangle aRect( rRect );
 
     aRect.Justify();
 
@@ -1043,7 +1043,7 @@ void OutputDevice::AddGradientActions( const Rectangle& rRect, const Gradient& r
         if ( !aGradient.GetSteps() )
             aGradient.SetSteps( GRADIENT_DEFAULT_STEPCOUNT );
 
-        if( aGradient.GetStyle() == GradientStyle_LINEAR || aGradient.GetStyle() == GradientStyle_AXIAL )
+        if( aGradient.GetStyle() == GradientStyle::Linear || aGradient.GetStyle() == GradientStyle::Axial )
             DrawLinearGradientToMetafile( aRect, aGradient );
         else
             DrawComplexGradientToMetafile( aRect, aGradient );

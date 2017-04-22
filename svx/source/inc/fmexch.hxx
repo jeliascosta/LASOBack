@@ -28,6 +28,7 @@
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/form/XForms.hpp>
+#include <rtl/ref.hxx>
 #include <tools/link.hxx>
 #include <vcl/window.hxx>
 #include <svx/svxdllapi.h>
@@ -74,17 +75,15 @@ namespace svxform
 
     protected:
         // XClipboardOwner
-        virtual void SAL_CALL lostOwnership( const css::uno::Reference< css::datatransfer::clipboard::XClipboard >& _rxClipboard, const css::uno::Reference< css::datatransfer::XTransferable >& _rxTrans ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL lostOwnership( const css::uno::Reference< css::datatransfer::clipboard::XClipboard >& _rxClipboard, const css::uno::Reference< css::datatransfer::XTransferable >& _rxTrans ) override;
 
         // TransferableHelper
         virtual void        DragFinished( sal_Int8 nDropAction ) override;
         virtual bool GetData( const css::datatransfer::DataFlavor& rFlavor, const OUString& rDestDoc ) override;
 
     private:
-        void StartDrag( vcl::Window* pWindow, sal_Int8 nDragSourceActions, sal_Int32 nDragPointer = DND_POINTER_NONE )
-        {   // don't allow this base class method to be called from outside
-            TransferableHelper::StartDrag(pWindow, nDragSourceActions, nDragPointer);
-        }
+         // don't allow this base class method to be called from outside
+        using TransferableHelper::StartDrag;
     };
 
 
@@ -94,8 +93,8 @@ namespace svxform
     class SVX_DLLPUBLIC OLocalExchangeHelper
     {
     protected:
-        VclPtr<vcl::Window> m_pDragSource;
-        OLocalExchange*     m_pTransferable;
+        VclPtr<vcl::Window>            m_pDragSource;
+        rtl::Reference<OLocalExchange> m_xTransferable;
 
     public:
         OLocalExchangeHelper( vcl::Window* _pDragSource );
@@ -106,12 +105,12 @@ namespace svxform
         void        startDrag( sal_Int8 nDragSourceActions );
         void        copyToClipboard( ) const;
 
-        inline  bool    isDragSource() const { return m_pTransferable && m_pTransferable->isDragging(); }
-        inline  bool    isClipboardOwner() const { return m_pTransferable && m_pTransferable->isClipboardOwner(); }
-        inline  bool    isDataExchangeActive( ) const { return isDragSource() || isClipboardOwner(); }
-        inline  void        clear() { if ( isDataExchangeActive() ) m_pTransferable->clear(); }
+        bool    isDragSource() const { return m_xTransferable.is() && m_xTransferable->isDragging(); }
+        bool    isClipboardOwner() const { return m_xTransferable.is() && m_xTransferable->isClipboardOwner(); }
+        bool    isDataExchangeActive( ) const { return isDragSource() || isClipboardOwner(); }
+        void        clear() { if ( isDataExchangeActive() ) m_xTransferable->clear(); }
 
-        SVX_DLLPRIVATE void     setClipboardListener( const Link<OLocalExchange&,void>& _rListener ) { if ( m_pTransferable ) m_pTransferable->setClipboardListener( _rListener ); }
+        SVX_DLLPRIVATE void     setClipboardListener( const Link<OLocalExchange&,void>& _rListener ) { if ( m_xTransferable.is() ) m_xTransferable->setClipboardListener( _rListener ); }
 
     protected:
         SVX_DLLPRIVATE virtual OLocalExchange* createExchange() const = 0;
@@ -221,8 +220,8 @@ namespace svxform
     public:
         OControlExchangeHelper(vcl::Window* _pDragSource) : OLocalExchangeHelper(_pDragSource) { }
 
-        OControlExchange* operator->() const { return static_cast< OControlExchange* >( m_pTransferable ); }
-        OControlExchange& operator*() const { return *static_cast< OControlExchange* >( m_pTransferable ); }
+        OControlExchange* operator->() const { return static_cast< OControlExchange* >( m_xTransferable.get() ); }
+        OControlExchange& operator*() const { return *static_cast< OControlExchange* >( m_xTransferable.get() ); }
 
     protected:
         virtual OLocalExchange* createExchange() const override;

@@ -22,7 +22,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
-import helper.URLHelper;
 import util.utils;
 
 import org.junit.After;
@@ -31,22 +30,17 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openoffice.test.OfficeConnection;
-import org.openoffice.test.OfficeFileUrl;
-
 import com.sun.star.beans.PropertyValue;
 import com.sun.star.frame.Desktop;
-import com.sun.star.frame.FrameSearchFlag;
 import com.sun.star.frame.XComponentLoader;
 import com.sun.star.frame.XFrame2;
 import com.sun.star.frame.XModel;
 import com.sun.star.frame.XTitle;
 import com.sun.star.frame.XController;
-import com.sun.star.frame.XStorable;
 import com.sun.star.lang.XComponent;
 import com.sun.star.lang.XMultiServiceFactory;
 import com.sun.star.uno.UnoRuntime;
 import com.sun.star.util.URLTransformer;
-import com.sun.star.util.XCloseable;
 import com.sun.star.util.XURLTransformer;
 import com.sun.star.util.URL;
 import com.sun.star.frame.XDispatchProvider;
@@ -66,7 +60,6 @@ public class CheckXTitle
     private static final String UNO_URL_FOR_PRINT_PREVIEW         = ".uno:PrintPreview";
     private static final String UNO_URL_FOR_CLOSING_PRINT_PREVIEW = ".uno:ClosePreview";
     private static final String UNO_URL_FOR_CLOSING_DOC           = ".uno:CloseWin";
-    private static final String UNO_URL_FOR_READ_ONLY             = ".uno:OpenReadOnly";
 
     // members
 
@@ -107,26 +100,62 @@ public class CheckXTitle
         m_xMSF    = null;
     }
 
+    private URL parseURL(String unoURL)
+    {
+        URL[] aParseURL = new URL[] { new URL() };
+        aParseURL[0].Complete = unoURL;
+        m_xParser.parseStrict(aParseURL);
+        return aParseURL[0];
+    }
+
+    private void waitUntilDispatcherAvailable(XModel xModel, String unoURL)
+        throws InterruptedException
+    {
+        utils.waitForEventIdle(m_xMSF);
+
+        // On Windows, some events such as focus changes are handled
+        // asynchronously using PostMessage (Windows message queue)
+        // so the previous UI transition may still not have completed yet
+        // even though we called waitForEventIdle.
+        //
+        // Loop a few times until the desired dispatcher is available, which
+        // is a better indication that the UI transition has completed.
+
+        XDispatchProvider xDisProv;
+        XDispatch xDispatcher = null;
+        URL parsed_url = parseURL(unoURL);
+
+        for (int ntries = 1; ntries < 5; ++ntries) {
+            xDisProv = UnoRuntime.queryInterface(
+                XDispatchProvider.class, xModel.getCurrentController() );
+            xDispatcher = xDisProv.queryDispatch(parsed_url, "", 0);
+            if (xDispatcher != null)
+                break;
+            Thread.sleep(250);
+        }
+        assertNotNull("Can not obtain dispatcher for query: " + unoURL, xDispatcher);
+    }
+
+
     // prepare an uno URL query and dispatch it
     private void prepareQueryAndDispatch(XDispatchProvider xDisProv, String unoURL)
     {
         XDispatch xDispatcher = null;
-        URL[] aParseURL = new URL[1];
-        aParseURL[0] = new URL();
-        aParseURL[0].Complete = unoURL;
-        m_xParser.parseStrict(aParseURL);
+        URL parsed_url = parseURL(unoURL);
 
-        xDispatcher = xDisProv.queryDispatch(aParseURL[0], "", 0);
+        xDispatcher = xDisProv.queryDispatch(parsed_url, "", 0);
         assertNotNull("Can not obtain dispatcher for query: " + unoURL, xDispatcher);
-        xDispatcher.dispatch(aParseURL[0], null);
+        xDispatcher.dispatch(parsed_url, null);
     }
 
     /** @short checks the numbers displayed in the title
 
         @descr cycles through default view and print preview
                and asserts that the title doesn't change.
+
+        disabled until the waitUntilDispatcherAvailable can be replaced
     */
-    @Test public void checkTitleNumbers() throws Exception
+    public void checkTitleNumbers() throws Exception
     {
         PropertyValue[] lArgs = new PropertyValue[1];
 
@@ -149,7 +178,8 @@ public class CheckXTitle
 
         xDisProv = UnoRuntime.queryInterface( XDispatchProvider.class, xModel.getCurrentController() );
         prepareQueryAndDispatch( xDisProv, UNO_URL_FOR_PRINT_PREVIEW );
-        utils.waitForEventIdle(m_xMSF);
+        waitUntilDispatcherAvailable( xModel, UNO_URL_FOR_CLOSING_PRINT_PREVIEW );
+
         // get window title with ui in print preview mode
         String printPreviewTitle = xTitle.getTitle();
         assertEquals("Title mismatch between default view window title and print preview window title",
@@ -157,7 +187,8 @@ public class CheckXTitle
 
         xDisProv = UnoRuntime.queryInterface( XDispatchProvider.class, xModel.getCurrentController() );
         prepareQueryAndDispatch( xDisProv, UNO_URL_FOR_CLOSING_PRINT_PREVIEW );
-        utils.waitForEventIdle(m_xMSF);
+        waitUntilDispatcherAvailable( xModel, UNO_URL_FOR_CLOSING_DOC );
+
         //get window title with ui back in default mode
         String printPreviewClosedTitle = xTitle.getTitle();
         assertEquals("Title mismatch between default view window title and title after switching from print preview to default view window"                     ,defaultTitle, printPreviewClosedTitle);
@@ -169,13 +200,15 @@ public class CheckXTitle
         xDisProv = null;
     }
 
-    /** @short sets frame title and checks for infinite recusion
+    /** @short sets frame title and checks for infinite recursion
 
         @descr sets frame title. then cycles through default and
                print preview. then closes the window and checks
                for infinite recursion.
+
+        disabled until the waitUntilDispatcherAvailable can be replaced
     */
-    @Test public void setTitleAndCheck() throws Exception
+    public void setTitleAndCheck() throws Exception
     {
         PropertyValue[] lArgs = new PropertyValue[1];
 
@@ -196,14 +229,12 @@ public class CheckXTitle
         // switch to print preview mode
         xDisProv = UnoRuntime.queryInterface( XDispatchProvider.class, xModel.getCurrentController() );
         prepareQueryAndDispatch( xDisProv, UNO_URL_FOR_PRINT_PREVIEW );
-        utils.waitForEventIdle(m_xMSF);
+        waitUntilDispatcherAvailable( xModel, UNO_URL_FOR_CLOSING_PRINT_PREVIEW );
 
         // switch back to default mode
         xDisProv = UnoRuntime.queryInterface( XDispatchProvider.class, xModel.getCurrentController() );
         prepareQueryAndDispatch( xDisProv, UNO_URL_FOR_CLOSING_PRINT_PREVIEW );
-        utils.waitForEventIdle(m_xMSF);
-
-        Thread.sleep(250); // FIXME why is this needed?
+        waitUntilDispatcherAvailable( xModel, UNO_URL_FOR_CLOSING_DOC );
 
         // close document
         xDisProv = UnoRuntime.queryInterface( XDispatchProvider.class, xModel.getCurrentController() );

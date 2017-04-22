@@ -13,9 +13,9 @@ $(eval $(call gb_Executable_use_externals,icontest,\
     boost_headers \
 	glm_headers \
 ))
-ifeq ($(ENABLE_OPENGL),TRUE)
+ifeq ($(ENABLE_HEADLESS),)
 $(eval $(call gb_Executable_use_externals,icontest,\
-    glew \
+    epoxy \
 ))
 endif
 
@@ -37,17 +37,6 @@ $(eval $(call gb_Executable_add_libs,icontest,\
 
 $(eval $(call gb_Executable_use_static_libraries,icontest,\
 	glxtest \
-))
-else ifeq ($(OS),WNT)
-
-$(eval $(call gb_Executable_use_system_win32_libs,icontest,\
-    opengl32 \
-))
-
-else ifeq ($(OS),MACOSX)
-
-$(eval $(call gb_Executable_add_libs,icontest,\
-    -framework OpenGL \
 ))
 
 endif

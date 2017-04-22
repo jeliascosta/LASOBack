@@ -42,16 +42,16 @@ namespace dbaui
         VclPtr<PushButton>   m_pColumns_LH;
         VclPtr<ListBox>      m_pNewColumnNames; // right side
 
-        DECL_LINK_TYPED( ButtonClickHdl, Button *, void );
-        DECL_LINK_TYPED( ListDoubleClickHdl, ListBox&, void );
+        DECL_LINK( ButtonClickHdl, Button *, void );
+        DECL_LINK( ListDoubleClickHdl, ListBox&, void );
 
         static void clearListBox(ListBox& _rListBox);
         static void fillColumns( ListBox* pRight,
-                                ::std::vector< OUString> &_rRightColumns);
+                                std::vector< OUString> &_rRightColumns);
 
         void createNewColumn(   ListBox* _pListbox,
                                 OFieldDescription* _pSrcField,
-                                ::std::vector< OUString>& _rRightColumns,
+                                std::vector< OUString>& _rRightColumns,
                                 const OUString&  _sColumnName,
                                 const OUString&  _sExtraChars,
                                 sal_Int32               _nMaxNameLen,
@@ -59,7 +59,7 @@ namespace dbaui
 
         void moveColumn(        ListBox* _pRight,
                                 ListBox* _pLeft,
-                                ::std::vector< OUString>& _rRightColumns,
+                                std::vector< OUString>& _rRightColumns,
                                 const OUString&  _sColumnName,
                                 const OUString&  _sExtraChars,
                                 sal_Int32               _nMaxNameLen,
@@ -79,7 +79,7 @@ namespace dbaui
         virtual OUString        GetTitle() const override ;
 
         OWizColumnSelect(vcl::Window* pParent);
-        virtual ~OWizColumnSelect();
+        virtual ~OWizColumnSelect() override;
         virtual void dispose() override;
     };
 }

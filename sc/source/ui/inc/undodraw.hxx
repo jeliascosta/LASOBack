@@ -26,19 +26,17 @@ class ScDocShell;
 
 class ScUndoDraw: public SfxUndoAction
 {
-    SfxUndoAction*  pDrawUndo;
+    std::unique_ptr<SfxUndoAction>  pDrawUndo;
     ScDocShell*     pDocShell;
+    ViewShellId     mnViewShellId;
 
     void            UpdateSubShell();
 
 public:
                             ScUndoDraw( SfxUndoAction* pUndo, ScDocShell* pDocSh );
-    virtual                 ~ScUndoDraw();
+    virtual                 ~ScUndoDraw() override;
 
-    SfxUndoAction*          GetDrawUndo()       { return pDrawUndo; }
-    void                    ForgetDrawUndo();
-
-    virtual void SetLinkToSfxLinkUndoAction(SfxLinkUndoAction* pSfxLinkUndoAction) override;
+    SfxUndoAction*          ReleaseDrawUndo()   { return pDrawUndo.release(); }
 
     virtual void            Undo() override;
     virtual void            Redo() override;
@@ -47,7 +45,8 @@ public:
     virtual bool            Merge( SfxUndoAction *pNextAction ) override;
     virtual OUString        GetComment() const override;
     virtual OUString        GetRepeatComment(SfxRepeatTarget&) const override;
-    virtual sal_uInt16      GetId() const override;
+    /// See SfxUndoAction::GetViewShellId().
+    ViewShellId GetViewShellId() const override;
 };
 
 #endif

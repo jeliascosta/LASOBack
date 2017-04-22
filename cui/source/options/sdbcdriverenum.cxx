@@ -37,12 +37,12 @@ namespace offapp
     class ODriverEnumerationImpl
     {
     protected:
-        ::std::vector< OUString >    m_aImplNames;
+        std::vector< OUString >    m_aImplNames;
 
     public:
         ODriverEnumerationImpl();
 
-        const ::std::vector< OUString >& getDriverImplNames() const { return m_aImplNames; }
+        const std::vector< OUString >& getDriverImplNames() const { return m_aImplNames; }
     };
 
 
@@ -79,7 +79,6 @@ namespace offapp
 
     ODriverEnumeration::~ODriverEnumeration() throw()
     {
-        delete m_pImpl;
     }
 
 

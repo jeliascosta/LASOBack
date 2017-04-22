@@ -42,29 +42,23 @@ public:
     AttributeList();
     AttributeList(const AttributeList &r);
 
-    virtual ~AttributeList();
+    virtual ~AttributeList() override;
 
     // methods that are not contained in any interface
     void AddAttribute(const OUString &sName , const OUString &sType , const OUString &sValue);
     void Clear();
 
     // css::xml::sax::XAttributeList
-    virtual sal_Int16 SAL_CALL getLength()
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual OUString SAL_CALL getNameByIndex(sal_Int16 i)
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual OUString SAL_CALL getTypeByIndex(sal_Int16 i)
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual OUString SAL_CALL getTypeByName(const OUString& aName)
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual OUString SAL_CALL getValueByIndex(sal_Int16 i)
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual OUString SAL_CALL getValueByName(const OUString& aName)
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Int16 SAL_CALL getLength() override;
+    virtual OUString SAL_CALL getNameByIndex(sal_Int16 i) override;
+    virtual OUString SAL_CALL getTypeByIndex(sal_Int16 i) override;
+    virtual OUString SAL_CALL getTypeByName(const OUString& aName) override;
+    virtual OUString SAL_CALL getValueByIndex(sal_Int16 i) override;
+    virtual OUString SAL_CALL getValueByName(const OUString& aName) override;
 
     // css::util::XCloneable
     virtual css::uno::Reference< XCloneable > SAL_CALL
-        createClone()   throw(css::uno::RuntimeException, std::exception) override;
+        createClone() override;
 };
 
 } // namespace comphelper

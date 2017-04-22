@@ -17,6 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <cstddef>
+
 #include "XMLRedlineImportHelper.hxx"
 #include <unotextcursor.hxx>
 #include <unotextrange.hxx>
@@ -27,6 +31,7 @@
 #include <tools/datetime.hxx>
 #include "poolfmt.hxx"
 #include "unoredline.hxx"
+#include <o3tl/any.hxx>
 #include <xmloff/xmltoken.hxx>
 #include <vcl/svapp.hxx>
 #include <osl/mutex.hxx>
@@ -46,7 +51,7 @@ using ::com::sun::star::beans::XPropertySetInfo;
 // using util::DateTime;
 
 // a few helper functions
-static SwDoc* lcl_GetDocViaTunnel( Reference<XTextCursor> & rCursor )
+static SwDoc* lcl_GetDocViaTunnel( Reference<XTextCursor> const & rCursor )
 {
     Reference<XUnoTunnel> xTunnel( rCursor, UNO_QUERY);
     OSL_ENSURE(xTunnel.is(), "missing XUnoTunnel for XTextCursor");
@@ -56,7 +61,7 @@ static SwDoc* lcl_GetDocViaTunnel( Reference<XTextCursor> & rCursor )
     return (pXCursor) ? pXCursor->GetDoc() : nullptr;
 }
 
-static SwDoc* lcl_GetDocViaTunnel( Reference<XTextRange> & rRange )
+static SwDoc* lcl_GetDocViaTunnel( Reference<XTextRange> const & rRange )
 {
     Reference<XUnoTunnel> xTunnel(rRange, UNO_QUERY);
     OSL_ENSURE(xTunnel.is(), "missing XUnoTunnel for XTextRange");
@@ -78,11 +83,10 @@ static SwDoc* lcl_GetDocViaTunnel( Reference<XTextRange> & rRange )
 class XTextRangeOrNodeIndexPosition
 {
     Reference<XTextRange> xRange;
-    SwNodeIndex* pIndex;    // pIndex will point to the *previous* node
+    std::unique_ptr<SwNodeIndex> pIndex;    // pIndex will point to the *previous* node
 
 public:
     XTextRangeOrNodeIndexPosition();
-    ~XTextRangeOrNodeIndexPosition();
 
     void Set( Reference<XTextRange> & rRange );
     void Set( SwNodeIndex& rIndex );
@@ -100,27 +104,15 @@ XTextRangeOrNodeIndexPosition::XTextRangeOrNodeIndexPosition() :
 {
 }
 
-XTextRangeOrNodeIndexPosition::~XTextRangeOrNodeIndexPosition()
-{
-    delete pIndex;
-}
-
 void XTextRangeOrNodeIndexPosition::Set( Reference<XTextRange> & rRange )
 {
     xRange = rRange->getStart();    // set bookmark
-    if (nullptr != pIndex)
-    {
-        delete pIndex;
-        pIndex = nullptr;
-    }
+    pIndex.reset();
 }
 
 void XTextRangeOrNodeIndexPosition::Set( SwNodeIndex& rIndex )
 {
-    if (nullptr != pIndex)
-        delete pIndex;
-
-    pIndex = new SwNodeIndex(rIndex);
+    pIndex.reset( new SwNodeIndex(rIndex) );
     (*pIndex)-- ;   // previous node!!!
     xRange = nullptr;
 }
@@ -133,7 +125,7 @@ void XTextRangeOrNodeIndexPosition::SetAsNodeIndex(
 
     if (!pDoc)
     {
-        OSL_TRACE("SetAsNodeIndex: no SwDoc");
+        SAL_WARN("sw", "no SwDoc");
         return;
     }
 
@@ -265,12 +257,12 @@ XMLRedlineImportHelper::XMLRedlineImportHelper(
     }
 
     // get redline mode
-    bShowChanges = *static_cast<sal_Bool const *>(
+    bShowChanges = *o3tl::doAccess<bool>(
         ( bHandleShowChanges ? xModelPropertySet : xImportInfoPropertySet )
-        ->getPropertyValue( g_sShowChanges ).getValue());
-    bRecordChanges = *static_cast<sal_Bool const *>(
+        ->getPropertyValue( g_sShowChanges ));
+    bRecordChanges = *o3tl::doAccess<bool>(
         ( bHandleRecordChanges ? xModelPropertySet : xImportInfoPropertySet )
-        ->getPropertyValue( g_sRecordChanges ).getValue());
+        ->getPropertyValue( g_sRecordChanges ));
     {
         Any aAny = (bHandleProtectionKey  ? xModelPropertySet
                                           : xImportInfoPropertySet )
@@ -436,7 +428,7 @@ void XMLRedlineImportHelper::Add(
 }
 
 Reference<XTextCursor> XMLRedlineImportHelper::CreateRedlineTextSection(
-    Reference<XTextCursor> xOldCursor,
+    Reference<XTextCursor> const & xOldCursor,
     const OUString& rId)
 {
     Reference<XTextCursor> xReturn;
@@ -453,8 +445,7 @@ Reference<XTextCursor> XMLRedlineImportHelper::CreateRedlineTextSection(
 
         if (!pDoc)
         {
-            OSL_TRACE("XMLRedlineImportHelper::CreateRedlineTextSection: "
-                "no SwDoc => cannot create section.");
+            SAL_WARN("sw", "no SwDoc => cannot create section.");
             return nullptr;
         }
 
@@ -477,8 +468,8 @@ Reference<XTextCursor> XMLRedlineImportHelper::CreateRedlineTextSection(
         // create (UNO-) cursor
         SwPosition aPos(*pRedlineNode);
         SwXTextCursor *const pXCursor =
-            new SwXTextCursor(*pDoc, pXText, CURSOR_REDLINE, aPos);
-        pXCursor->GetCursor().Move(fnMoveForward, fnGoNode);
+            new SwXTextCursor(*pDoc, pXText, CursorType::Redline, aPos);
+        pXCursor->GetCursor().Move(fnMoveForward, GoInNode);
         // cast to avoid ambiguity
         xReturn = static_cast<text::XWordCursor*>(pXCursor);
     }
@@ -591,8 +582,7 @@ void XMLRedlineImportHelper::InsertIntoDocument(RedlineInfo* pRedlineInfo)
 
     if (!pDoc)
     {
-        OSL_TRACE("XMLRedlineImportHelper::InsertIntoDocument: "
-                "no SwDoc => cannot insert redline.");
+        SAL_WARN("sw", "no SwDoc => cannot insert redline.");
         return;
     }
 
@@ -675,9 +665,9 @@ void XMLRedlineImportHelper::InsertIntoDocument(RedlineInfo* pRedlineInfo)
         }
 
         // set redline mode (without doing the associated book-keeping)
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern(nsRedlineMode_t::REDLINE_ON);
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(RedlineFlags::On);
         pDoc->getIDocumentRedlineAccess().AppendRedline(pRedline, false);
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern(nsRedlineMode_t::REDLINE_NONE);
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(RedlineFlags::NONE);
     }
 }
 
@@ -687,7 +677,7 @@ SwRedlineData* XMLRedlineImportHelper::ConvertRedline(
 {
     // convert info:
     // 1) Author String -> Author ID (default to zero)
-    sal_uInt16 nAuthorId = (nullptr == pDoc) ? 0 :
+    std::size_t nAuthorId = (nullptr == pDoc) ? 0 :
         pDoc->getIDocumentRedlineAccess().InsertRedlineAuthor( pRedlineInfo->sAuthor );
 
     // 2) util::DateTime -> DateTime
@@ -714,8 +704,7 @@ SwRedlineData* XMLRedlineImportHelper::ConvertRedline(
     SwRedlineData* pData = new SwRedlineData(pRedlineInfo->eType,
                                              nAuthorId, aDT,
                                              pRedlineInfo->sComment,
-                                             pNext, // next data (if available)
-                                             nullptr); // no extra data
+                                             pNext); // next data (if available)
 
     return pData;
 }

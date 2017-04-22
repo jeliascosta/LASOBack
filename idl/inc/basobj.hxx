@@ -73,13 +73,12 @@ public:
         p->AddFirstRef();
     }
 
-    T pop_back()
+    void pop_back()
     {
         T p = base_t::back();
         base_t::pop_back();
         if( p )
             p->ReleaseRef();
-        return p;
     }
 };
 
@@ -116,13 +115,13 @@ public:
 
     const OString &     GetName() const override
                         {
-                            return ( !aRef.Is()
+                            return ( !aRef.is()
                                     || !SvMetaObject::GetName().isEmpty() )
                                 ? SvMetaObject::GetName()
                                 : aRef->GetName();
                         }
 
-    SvMetaReference *   GetRef() const { return aRef; }
+    SvMetaReference *   GetRef() const { return aRef.get(); }
     void                SetRef( SvMetaReference * pRef  )
                         { aRef = pRef; }
 };

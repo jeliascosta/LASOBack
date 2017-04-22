@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <idlc/idlc.hxx>
+#include <idlc.hxx>
 #include <rtl/ustring.hxx>
 #include <rtl/strbuf.hxx>
 #include <osl/process.h>
@@ -48,11 +48,6 @@ extern int yyparse();
 extern FILE* yyin;
 extern int yydebug;
 
-sal_Int32 lineNumber = 1;
-
-
-static const char TMP[] = "TMP";
-static const char TEMP[] = "TEMP";
 static sal_Char tmpFilePattern[512];
 
 bool isFileUrl(const OString& fileName)
@@ -123,9 +118,9 @@ OString makeTempName(const OString& prefix)
     OUString uTmpPath;
     OString tmpPath;
 
-    if ( osl_getEnvironment(OUString(TMP).pData, &uTmpPath.pData) != osl_Process_E_None )
+    if ( osl_getEnvironment(OUString("TMP").pData, &uTmpPath.pData) != osl_Process_E_None )
     {
-        if ( osl_getEnvironment(OUString(TEMP).pData, &uTmpPath.pData) != osl_Process_E_None )
+        if ( osl_getEnvironment(OUString("TEMP").pData, &uTmpPath.pData) != osl_Process_E_None )
         {
 #if defined(SAL_W32)
             tmpPath = OString("c:\\temp");

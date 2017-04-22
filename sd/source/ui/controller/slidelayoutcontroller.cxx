@@ -26,6 +26,7 @@
 
 #include <osl/mutex.hxx>
 
+#include <vcl/commandinfoprovider.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/toolbox.hxx>
 
@@ -39,7 +40,7 @@
 #include <toolkit/helper/vclunohelper.hxx>
 #include <comphelper/processfactory.hxx>
 
-#include <sfx2/imagemgr.hxx>
+#include <xmloff/autolayout.hxx>
 
 #include "app.hrc"
 #include "facreg.hxx"
@@ -65,17 +66,16 @@ namespace sd
 class LayoutToolbarMenu : public svtools::ToolbarMenu
 {
 public:
-    LayoutToolbarMenu( SlideLayoutController& rController, const Reference< XFrame >& xFrame, vcl::Window* pParent, const bool bInsertPage );
-    virtual ~LayoutToolbarMenu();
+    LayoutToolbarMenu( SlideLayoutController& rController, vcl::Window* pParent, const bool bInsertPage );
+    virtual ~LayoutToolbarMenu() override;
     virtual void dispose() override;
 
 protected:
-    DECL_LINK_TYPED( SelectToolbarMenuHdl, ToolbarMenu*, void );
-    DECL_LINK_TYPED( SelectValueSetHdl, ValueSet*, void );
+    DECL_LINK( SelectToolbarMenuHdl, ToolbarMenu*, void );
+    DECL_LINK( SelectValueSetHdl, ValueSet*, void );
     void SelectHdl(void*);
 private:
     SlideLayoutController& mrController;
-    Reference< XFrame > mxFrame;
     bool mbInsertPage;
     VclPtr<ValueSet> mpLayoutSet1;
     VclPtr<ValueSet> mpLayoutSet2;
@@ -109,26 +109,26 @@ static const snewfoil_value_info_layout standard[] =
 {
     {BMP_LAYOUT_EMPTY,    STR_AUTOLAYOUT_NONE,                 AUTOLAYOUT_NONE         },
     {BMP_LAYOUT_HEAD03,   STR_AUTOLAYOUT_TITLE,                AUTOLAYOUT_TITLE        },
-    {BMP_LAYOUT_HEAD02,   STR_AUTOLAYOUT_CONTENT,              AUTOLAYOUT_ENUM         },
-    {BMP_LAYOUT_HEAD02A,  STR_AUTOLAYOUT_2CONTENT,             AUTOLAYOUT_2TEXT        },
-    {BMP_LAYOUT_HEAD01,   STR_AUTOLAYOUT_ONLY_TITLE,           AUTOLAYOUT_ONLY_TITLE   },
+    {BMP_LAYOUT_HEAD02,   STR_AUTOLAYOUT_CONTENT,              AUTOLAYOUT_TITLE_CONTENT },
+    {BMP_LAYOUT_HEAD02A,  STR_AUTOLAYOUT_2CONTENT,             AUTOLAYOUT_TITLE_2CONTENT },
+    {BMP_LAYOUT_HEAD01,   STR_AUTOLAYOUT_ONLY_TITLE,           AUTOLAYOUT_TITLE_ONLY   },
     {BMP_LAYOUT_TEXTONLY, STR_AUTOLAYOUT_ONLY_TEXT,            AUTOLAYOUT_ONLY_TEXT    },
-    {BMP_LAYOUT_HEAD03B,  STR_AUTOLAYOUT_2CONTENT_CONTENT,     AUTOLAYOUT_2OBJTEXT     },
-    {BMP_LAYOUT_HEAD03C,  STR_AUTOLAYOUT_CONTENT_2CONTENT,     AUTOLAYOUT_TEXT2OBJ     },
-    {BMP_LAYOUT_HEAD03A,  STR_AUTOLAYOUT_2CONTENT_OVER_CONTENT,AUTOLAYOUT_2OBJOVERTEXT },
-    {BMP_LAYOUT_HEAD02B,  STR_AUTOLAYOUT_CONTENT_OVER_CONTENT, AUTOLAYOUT_OBJOVERTEXT  },
-    {BMP_LAYOUT_HEAD04,   STR_AUTOLAYOUT_4CONTENT,             AUTOLAYOUT_4OBJ         },
-    {BMP_LAYOUT_HEAD06,   STR_AUTOLAYOUT_6CONTENT,             AUTOLAYOUT_6CLIPART     },
+    {BMP_LAYOUT_HEAD03B,  STR_AUTOLAYOUT_2CONTENT_CONTENT,     AUTOLAYOUT_TITLE_2CONTENT_CONTENT },
+    {BMP_LAYOUT_HEAD03C,  STR_AUTOLAYOUT_CONTENT_2CONTENT,     AUTOLAYOUT_TITLE_CONTENT_2CONTENT },
+    {BMP_LAYOUT_HEAD03A,  STR_AUTOLAYOUT_2CONTENT_OVER_CONTENT,AUTOLAYOUT_TITLE_2CONTENT_OVER_CONTENT },
+    {BMP_LAYOUT_HEAD02B,  STR_AUTOLAYOUT_CONTENT_OVER_CONTENT, AUTOLAYOUT_TITLE_CONTENT_OVER_CONTENT },
+    {BMP_LAYOUT_HEAD04,   STR_AUTOLAYOUT_4CONTENT,             AUTOLAYOUT_TITLE_4CONTENT },
+    {BMP_LAYOUT_HEAD06,   STR_AUTOLAYOUT_6CONTENT,             AUTOLAYOUT_TITLE_6CONTENT },
     {0, 0, AUTOLAYOUT_NONE}
 };
 
 static const snewfoil_value_info_layout v_standard[] =
 {
     // vertical
-    {BMP_LAYOUT_VERTICAL02, STR_AL_VERT_TITLE_TEXT_CHART,      AUTOLAYOUT_VERTICAL_TITLE_TEXT_CHART       },
-    {BMP_LAYOUT_VERTICAL01, STR_AL_VERT_TITLE_VERT_OUTLINE,    AUTOLAYOUT_VERTICAL_TITLE_VERTICAL_OUTLINE },
-    {BMP_LAYOUT_HEAD02,     STR_AL_TITLE_VERT_OUTLINE,         AUTOLAYOUT_TITLE_VERTICAL_OUTLINE          },
-    {BMP_LAYOUT_HEAD02A,    STR_AL_TITLE_VERT_OUTLINE_CLIPART, AUTOLAYOUT_TITLE_VERTICAL_OUTLINE_CLIPART  },
+    {BMP_LAYOUT_VERTICAL02, STR_AL_VERT_TITLE_TEXT_CHART,      AUTOLAYOUT_VTITLE_VCONTENT_OVER_VCONTENT   },
+    {BMP_LAYOUT_VERTICAL01, STR_AL_VERT_TITLE_VERT_OUTLINE,    AUTOLAYOUT_VTITLE_VCONTENT                 },
+    {BMP_LAYOUT_HEAD02,     STR_AL_TITLE_VERT_OUTLINE,         AUTOLAYOUT_TITLE_VCONTENT                  },
+    {BMP_LAYOUT_HEAD02A,    STR_AL_TITLE_VERT_OUTLINE_CLIPART, AUTOLAYOUT_TITLE_2VTEXT                    },
     {0, 0, AUTOLAYOUT_NONE}
 };
 
@@ -151,15 +151,15 @@ static void fillLayoutValueSet( ValueSet* pValue, const snewfoil_value_info_layo
     pValue->SetSizePixel( pValue->CalcWindowSizePixel( aLayoutItemSize ) );
 }
 
-LayoutToolbarMenu::LayoutToolbarMenu( SlideLayoutController& rController, const Reference< XFrame >& xFrame, vcl::Window* pParent, const bool bInsertPage )
-: svtools::ToolbarMenu(xFrame, pParent, WB_CLIPCHILDREN )
+LayoutToolbarMenu::LayoutToolbarMenu( SlideLayoutController& rController, vcl::Window* pParent, const bool bInsertPage )
+: svtools::ToolbarMenu( rController.getFrameInterface(), pParent, WB_CLIPCHILDREN )
 , mrController( rController )
-, mxFrame(xFrame)
 , mbInsertPage( bInsertPage )
 , mpLayoutSet1( nullptr )
 , mpLayoutSet2( nullptr )
 {
     DrawViewMode eMode = DrawViewMode_DRAW;
+    Reference< XFrame > xFrame( rController.getFrameInterface() );
 
     // find out which view is running
     if( xFrame.is() ) try
@@ -235,17 +235,17 @@ LayoutToolbarMenu::LayoutToolbarMenu( SlideLayoutController& rController, const 
 
         OUString sSlotStr;
         Image aSlotImage;
-        if( mxFrame.is() )
+        if( xFrame.is() )
         {
             if( bInsertPage )
                 sSlotStr = ".uno:DuplicatePage";
             else
                 sSlotStr = ".uno:Undo";
-            aSlotImage = ::GetImage( mxFrame, sSlotStr, false );
+            aSlotImage = vcl::CommandInfoProvider::GetImageForCommand(sSlotStr, xFrame);
 
             OUString sSlotTitle;
             if( bInsertPage )
-                sSlotTitle = ImplRetrieveLabelFromCommand( mxFrame, sSlotStr );
+                sSlotTitle = vcl::CommandInfoProvider::GetLabelForCommand( sSlotStr, rController.getModuleName() );
             else
                 sSlotTitle = SD_RESSTR( STR_RESET_LAYOUT );
             appendEntry( 2, sSlotTitle, aSlotImage);
@@ -267,11 +267,11 @@ void LayoutToolbarMenu::dispose()
     svtools::ToolbarMenu::dispose();
 }
 
-IMPL_LINK_TYPED( LayoutToolbarMenu, SelectValueSetHdl, ValueSet*, pControl, void )
+IMPL_LINK( LayoutToolbarMenu, SelectValueSetHdl, ValueSet*, pControl, void )
 {
     SelectHdl(pControl);
 }
-IMPL_LINK_TYPED( LayoutToolbarMenu, SelectToolbarMenuHdl, ToolbarMenu *, pControl, void )
+IMPL_LINK( LayoutToolbarMenu, SelectToolbarMenuHdl, ToolbarMenu *, pControl, void )
 {
     SelectHdl(pControl);
 }
@@ -310,23 +310,27 @@ void LayoutToolbarMenu::SelectHdl(void* pControl)
     mrController.dispatchCommand( sCommandURL, aArgs );
 }
 
-OUString SlideLayoutController_getImplementationName() throw (css::uno::RuntimeException)
+/// @throws css::uno::RuntimeException
+OUString SlideLayoutController_getImplementationName()
 {
     return OUString( "com.sun.star.comp.sd.SlideLayoutController" );
 }
 
-Sequence< OUString >  SlideLayoutController_getSupportedServiceNames() throw( RuntimeException )
+/// @throws RuntimeException
+Sequence< OUString >  SlideLayoutController_getSupportedServiceNames()
 {
     Sequence<OUString> aSNS { "com.sun.star.frame.ToolbarController" };
     return aSNS;
 }
 
-OUString InsertSlideController_getImplementationName() throw (css::uno::RuntimeException)
+/// @throws css::uno::RuntimeException
+OUString InsertSlideController_getImplementationName()
 {
     return OUString( "com.sun.star.comp.sd.InsertSlideController" );
 }
 
-Sequence< OUString >  InsertSlideController_getSupportedServiceNames() throw( RuntimeException )
+/// @throws RuntimeException
+Sequence< OUString >  InsertSlideController_getSupportedServiceNames()
 {
     Sequence<OUString> aSNS { "com.sun.star.frame.ToolbarController" };
     return aSNS;
@@ -341,7 +345,6 @@ SlideLayoutController::SlideLayoutController( const Reference< uno::XComponentCo
 }
 
 void SAL_CALL SlideLayoutController::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-        throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     svt::PopupWindowController::initialize( aArguments );
 
@@ -358,12 +361,12 @@ void SAL_CALL SlideLayoutController::initialize( const css::uno::Sequence< css::
 
 VclPtr<vcl::Window> SlideLayoutController::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<sd::LayoutToolbarMenu>::Create( *this, m_xFrame, pParent, mbInsertPage );
+    return VclPtr<sd::LayoutToolbarMenu>::Create( *this, pParent, mbInsertPage );
 }
 
 // XServiceInfo
 
-OUString SAL_CALL SlideLayoutController::getImplementationName() throw( RuntimeException, std::exception )
+OUString SAL_CALL SlideLayoutController::getImplementationName()
 {
     if( mbInsertPage )
         return InsertSlideController_getImplementationName();
@@ -371,7 +374,7 @@ OUString SAL_CALL SlideLayoutController::getImplementationName() throw( RuntimeE
         return SlideLayoutController_getImplementationName();
 }
 
-Sequence< OUString > SAL_CALL SlideLayoutController::getSupportedServiceNames(  ) throw( RuntimeException, std::exception )
+Sequence< OUString > SAL_CALL SlideLayoutController::getSupportedServiceNames(  )
 {
     if( mbInsertPage )
         return InsertSlideController_getSupportedServiceNames();

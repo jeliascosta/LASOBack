@@ -40,6 +40,7 @@
 #include <sfx2/docfile.hxx>
 #include <sfx2/request.hxx>
 #include <sfx2/sidebar/Theme.hxx>
+#include <sfx2/unoctitm.hxx>
 #include "app.hrc"
 #include <sfx2/sfxresid.hxx>
 #include "objshimp.hxx"
@@ -99,12 +100,10 @@ SfxAppData_Impl::SfxAppData_Impl( SfxApplication* )
 #if HAVE_FEATURE_SCRIPTING
     , m_pSbxErrorHdl(nullptr)
 #endif
-    , pAppDispatch(nullptr)
     , pTemplates( nullptr )
     , pPool(nullptr)
     , pProgress(nullptr)
     , nDocModalMode(0)
-    , nAutoTabPageId(0)
     , nRescheduleLocks(0)
     , nInReschedule(0)
     , m_xImeStatusWindow(new sfx2::appl::ImeStatusWindow(comphelper::getProcessComponentContext()))
@@ -118,8 +117,6 @@ SfxAppData_Impl::SfxAppData_Impl( SfxApplication* )
     , pViewFrame( nullptr )
     , pSlotPool( nullptr )
     , pAppDispat( nullptr )
-    , pInterfaces( nullptr )
-    , nInterfaces( 0 )
     , bDowning( true )
     , bInQuit( false )
 

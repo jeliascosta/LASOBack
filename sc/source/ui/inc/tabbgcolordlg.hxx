@@ -31,9 +31,8 @@ public:
     ScTabBgColorDlg( vcl::Window* pParent,
                      const OUString& rTitle,
                      const OUString& rTabBgColorNoColorText,
-                     const Color& rDefaultColor,
-                     const OString& nHelpId );
-    virtual ~ScTabBgColorDlg();
+                     const Color& rDefaultColor );
+    virtual ~ScTabBgColorDlg() override;
     virtual void dispose() override;
 
     void GetSelectedColor( Color& rColor ) const;
@@ -42,7 +41,7 @@ public:
     {
     public:
         ScTabBgColorValueSet(vcl::Window* pParent, WinBits nStyle);
-        virtual ~ScTabBgColorValueSet();
+        virtual ~ScTabBgColorValueSet() override;
         virtual void dispose() override;
 
         void SetDialog(ScTabBgColorDlg* pTabBgColorDlg)
@@ -63,8 +62,8 @@ private:
 
     void            FillColorValueSets_Impl();
 
-    DECL_LINK_TYPED(TabBgColorDblClickHdl_Impl, ValueSet*, void);
-    DECL_LINK_TYPED(TabBgColorOKHdl_Impl, Button*, void);
+    DECL_LINK(TabBgColorDblClickHdl_Impl, ValueSet*, void);
+    DECL_LINK(TabBgColorOKHdl_Impl, Button*, void);
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_TABBGCOLORDLG_HXX

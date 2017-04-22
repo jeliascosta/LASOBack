@@ -65,7 +65,7 @@ namespace frm
     }
 
 
-    void SAL_CALL ORichTextFeatureDispatcher::addStatusListener( const Reference< XStatusListener >& _rxControl, const URL& _rURL ) throw (RuntimeException, std::exception)
+    void SAL_CALL ORichTextFeatureDispatcher::addStatusListener( const Reference< XStatusListener >& _rxControl, const URL& _rURL )
     {
         OSL_ENSURE( !m_bDisposed, "ORichTextFeatureDispatcher::addStatusListener: already disposed!" );
         if ( m_bDisposed )
@@ -76,12 +76,12 @@ namespace frm
             if ( _rxControl.is() )
             {
                 m_aStatusListeners.addInterface( _rxControl );
-                newStatusListener( _rxControl );
+                doNotify( _rxControl, buildStatusEvent() );
             }
     }
 
 
-    void SAL_CALL ORichTextFeatureDispatcher::removeStatusListener( const Reference< XStatusListener >& _rxControl, const URL& /*_rURL*/ ) throw (RuntimeException, std::exception)
+    void SAL_CALL ORichTextFeatureDispatcher::removeStatusListener( const Reference< XStatusListener >& _rxControl, const URL& /*_rURL*/ )
     {
         m_aStatusListeners.removeInterface( _rxControl );
     }
@@ -110,12 +110,6 @@ namespace frm
         ::comphelper::OInterfaceIteratorHelper2 aIter( getStatusListeners() );
         while ( aIter.hasMoreElements() )
             doNotify( static_cast< XStatusListener* >( aIter.next() ), aEvent );
-    }
-
-
-    void ORichTextFeatureDispatcher::newStatusListener( const Reference< XStatusListener >& _rxListener )
-    {
-        doNotify( _rxListener, buildStatusEvent() );
     }
 
 

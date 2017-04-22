@@ -298,7 +298,7 @@ void SbiParser::DefVar( SbiOpcode eOp, bool bStatic )
     SbiSymDef* pDef;
     SbiExprListPtr pDim;
 
-    // #40689, Statics -> Modul-Initialising, skip in Sub
+    // #40689, Statics -> Module-Initialising, skip in Sub
     sal_uInt32 nEndOfStaticLbl = 0;
     if( !bVBASupportOn && bStatic )
     {
@@ -833,7 +833,7 @@ SbiProcDef* SbiParser::ProcDecl( bool bDecl )
     pDef->SetType( eType );
     if( Peek() == CDECL_ )
     {
-        Next(); pDef->SetCdecl();
+        Next(); pDef->SetCdecl(true);
     }
     if( Peek() == LIB )
     {
@@ -939,7 +939,7 @@ SbiProcDef* SbiParser::ProcDecl( bool bDecl )
                 }
                 if( bByVal )
                 {
-                    pPar->SetByVal();
+                    pPar->SetByVal(true);
                 }
                 if( bOptional )
                 {
@@ -1012,6 +1012,9 @@ void SbiParser::Declare()
 void SbiParser::DefDeclare( bool bPrivate )
 {
     Next();
+    if( eCurTok == PTRSAFE )
+        Next();
+
     if( eCurTok != SUB && eCurTok != FUNCTION )
     {
       Error( ERRCODE_BASIC_UNEXPECTED, eCurTok );

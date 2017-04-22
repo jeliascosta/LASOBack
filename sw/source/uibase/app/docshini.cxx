@@ -88,6 +88,7 @@
 #include <swerror.h>
 #include <globals.hrc>
 #include <unochart.hxx>
+#include <drawdoc.hxx>
 
 #include <svx/CommonStyleManager.hxx>
 
@@ -104,7 +105,7 @@ using namespace ::com::sun::star;
 bool SwDocShell::InitNew( const uno::Reference < embed::XStorage >& xStor )
 {
     bool bRet = SfxObjectShell::InitNew( xStor );
-    OSL_ENSURE( GetMapUnit() == MAP_TWIP, "map unit is not twip!" );
+    OSL_ENSURE( GetMapUnit() == MapUnit::MapTwip, "map unit is not twip!" );
     bool bHTMLTemplSet = false;
     if( bRet )
     {
@@ -137,7 +138,7 @@ bool SwDocShell::InitNew( const uno::Reference < embed::XStorage >& xStor )
             }
             m_pDoc->getIDocumentSettingAccess().set(DocumentSettingId::KERN_ASIAN_PUNCTUATION,
                   !aAsian.IsKerningWesternTextOnly());
-            m_pDoc->getIDocumentSettingAccess().setCharacterCompressionType(static_cast<SwCharCompressType>(aAsian.GetCharDistanceCompression()));
+            m_pDoc->getIDocumentSettingAccess().setCharacterCompressionType(aAsian.GetCharDistanceCompression());
             m_pDoc->getIDocumentDeviceAccess().setPrintData(*SW_MOD()->GetPrtOptions(bWeb));
         }
 
@@ -308,9 +309,9 @@ bool SwDocShell::InitNew( const uno::Reference < embed::XStorage >& xStor )
     /* #106748# If the default frame direction of a document is RTL
         the default adjustment is to the right. */
     if( !bHTMLTemplSet &&
-        FRMDIR_HORI_RIGHT_TOP == GetDefaultFrameDirection(GetAppLanguage()) )
+        SvxFrameDirection::Horizontal_RL_TB == GetDefaultFrameDirection(GetAppLanguage()) )
     {
-        m_pDoc->SetDefault( SvxAdjustItem(SVX_ADJUST_RIGHT, RES_PARATR_ADJUST ) );
+        m_pDoc->SetDefault( SvxAdjustItem(SvxAdjust::Right, RES_PARATR_ADJUST ) );
     }
 
 // #i29550#
@@ -412,7 +413,7 @@ void  SwDocShell::Init_Impl()
     SetAutoStyleFilterIndex(3);
 
     // set map unit to twip
-    SetMapUnit( MAP_TWIP );
+    SetMapUnit( MapUnit::MapTwip );
 }
 
 void SwDocShell::AddLink()
@@ -490,7 +491,16 @@ void SwDocShell::ReactivateModel()
 bool  SwDocShell::Load( SfxMedium& rMedium )
 {
     bool bRet = false;
-    if( SfxObjectShell::Load( rMedium ))
+
+    // If this is an ODF file being loaded, then by default, use legacy processing
+    // for tdf#99729 (if required, it will be overridden in *::ReadUserDataSequence())
+    if (IsOwnStorageFormat(rMedium))
+    {
+        if (m_pDoc && m_pDoc->getIDocumentDrawModelAccess().GetDrawModel())
+            m_pDoc->getIDocumentDrawModelAccess().GetDrawModel()->SetAnchoredTextOverflowLegacy(true);
+    }
+
+    if (SfxObjectShell::Load(rMedium))
     {
         comphelper::EmbeddedObjectContainer& rEmbeddedObjectContainer = getEmbeddedObjectContainer();
         rEmbeddedObjectContainer.setUserAllowsLinkUpdate(false);
@@ -537,7 +547,6 @@ bool  SwDocShell::Load( SfxMedium& rMedium )
                 SAL_FALLTHROUGH;
 
             case SfxObjectCreateMode::STANDARD:
-            case SfxObjectCreateMode::PREVIEW:
                 {
                     Reader *pReader = ReadXML;
                     if( pReader )
@@ -572,7 +581,7 @@ bool  SwDocShell::Load( SfxMedium& rMedium )
         UpdateFontList();
         InitDrawModelAndDocShell(this, m_pDoc ? m_pDoc->getIDocumentDrawModelAccess().GetDrawModel() : nullptr);
 
-        SetError( nErr, OSL_LOG_PREFIX );
+        SetError(nErr);
         bRet = !IsError( nErr );
 
         if (bRet && !m_pDoc->IsInLoadAsynchron() &&
@@ -621,7 +630,7 @@ bool  SwDocShell::LoadFrom( SfxMedium& rMedium )
             OSL_FAIL("Code removed!");
         }
 
-        SetError( nErr, OSL_LOG_PREFIX );
+        SetError(nErr);
         bRet = !IsError( nErr );
 
     } while( false );
@@ -682,7 +691,7 @@ void SwDocShell::SubInitNew()
         sal_uInt16 nNewPos = static_cast< sal_uInt16 >(SW_MOD()->GetUsrPref(false)->GetDefTab());
         if( nNewPos )
             aDfltSet.Put( SvxTabStopItem( 1, nNewPos,
-                                          SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP ) );
+                                          SvxTabAdjust::Default, RES_PARATR_TABSTOP ) );
     }
     aDfltSet.Put( SvxColorItem( Color( COL_AUTO ), RES_CHRATR_COLOR ) );
 

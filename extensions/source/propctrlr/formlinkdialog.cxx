@@ -30,7 +30,6 @@
 #include <vcl/tabpage.hxx>
 #include <vcl/layout.hxx>
 #include <vcl/builderfactory.hxx>
-#include <svtools/localresaccess.hxx>
 #include <connectivity/dbtools.hxx>
 #include <connectivity/dbexception.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
@@ -73,10 +72,10 @@ namespace pcr
 
     public:
         explicit FieldLinkRow( vcl::Window* _pParent );
-        virtual ~FieldLinkRow();
+        virtual ~FieldLinkRow() override;
         virtual void dispose() override;
 
-        inline void         SetLinkChangeHandler( const Link<FieldLinkRow&,void>& _rHdl ) { m_aLinkChangeHandler = _rHdl; }
+        void         SetLinkChangeHandler( const Link<FieldLinkRow&,void>& _rHdl ) { m_aLinkChangeHandler = _rHdl; }
 
         enum LinkParticipant
         {
@@ -92,7 +91,7 @@ namespace pcr
         void    fillList( LinkParticipant _eWhich, const Sequence< OUString >& _rFieldNames );
 
     private:
-        DECL_LINK_TYPED( OnFieldNameChanged, Edit&, void );
+        DECL_LINK( OnFieldNameChanged, Edit&, void );
     };
 
 
@@ -123,7 +122,7 @@ namespace pcr
 
     void FieldLinkRow::fillList( LinkParticipant _eWhich, const Sequence< OUString >& _rFieldNames )
     {
-        ComboBox* pBox = ( _eWhich == eDetailField ) ? m_pDetailColumn : m_pMasterColumn;
+        ComboBox* pBox = ( _eWhich == eDetailField ) ? m_pDetailColumn.get() : m_pMasterColumn.get();
 
         const OUString* pFieldName    = _rFieldNames.getConstArray();
         const OUString* pFieldNameEnd = pFieldName + _rFieldNames.getLength();
@@ -142,12 +141,12 @@ namespace pcr
 
     void FieldLinkRow::SetFieldName( LinkParticipant _eWhich, const OUString& _rName )
     {
-        ComboBox* pBox = ( _eWhich == eDetailField ) ? m_pDetailColumn : m_pMasterColumn;
+        ComboBox* pBox = ( _eWhich == eDetailField ) ? m_pDetailColumn.get() : m_pMasterColumn.get();
         pBox->SetText( _rName );
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FieldLinkRow, OnFieldNameChanged, Edit&, void )
+    IMPL_LINK_NOARG( FieldLinkRow, OnFieldNameChanged, Edit&, void )
     {
         m_aLinkChangeHandler.Call( *this );
     }
@@ -222,8 +221,8 @@ namespace pcr
     void FormLinkDialog::commitLinkPairs()
     {
         // collect the field lists from the rows
-        ::std::vector< OUString > aDetailFields; aDetailFields.reserve( 4 );
-        ::std::vector< OUString > aMasterFields; aMasterFields.reserve( 4 );
+        std::vector< OUString > aDetailFields; aDetailFields.reserve( 4 );
+        std::vector< OUString > aMasterFields; aMasterFields.reserve( 4 );
 
         const FieldLinkRow* aRows[] = {
             m_aRow1.get(), m_aRow2.get(), m_aRow3.get(), m_aRow4.get()
@@ -658,19 +657,19 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FormLinkDialog, OnSuggest, Button*, void )
+    IMPL_LINK_NOARG( FormLinkDialog, OnSuggest, Button*, void )
     {
         initializeFieldRowsFrom( m_aRelationDetailColumns, m_aRelationMasterColumns );
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FormLinkDialog, OnFieldChanged, FieldLinkRow&, void )
+    IMPL_LINK_NOARG( FormLinkDialog, OnFieldChanged, FieldLinkRow&, void )
     {
         updateOkButton();
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FormLinkDialog, OnInitialize, void*, void )
+    IMPL_LINK_NOARG( FormLinkDialog, OnInitialize, void*, void )
     {
         initializeColumnLabels();
         initializeFieldLists();

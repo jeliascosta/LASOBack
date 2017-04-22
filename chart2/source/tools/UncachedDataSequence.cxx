@@ -79,7 +79,7 @@ UncachedDataSequence::UncachedDataSequence(
           m_xModifyEventForwarder( ModifyListenerHelper::createModifyEventForwarder())
 {
     registerProperties();
-    setFastPropertyValue_NoBroadcast( PROP_PROPOSED_ROLE, uno::makeAny( rRole ));
+    setFastPropertyValue_NoBroadcast( PROP_PROPOSED_ROLE, uno::Any( rRole ));
 }
 
 UncachedDataSequence::UncachedDataSequence( const UncachedDataSequence & rSource )
@@ -120,22 +120,11 @@ void UncachedDataSequence::registerProperties()
                       cppu::UnoType<decltype(m_aXMLRange)>::get() );
 }
 
-Sequence< OUString > UncachedDataSequence::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 4 );
-    aServices[ 0 ] = lcl_aServiceName;
-    aServices[ 1 ] = "com.sun.star.chart2.data.DataSequence";
-    aServices[ 2 ] = "com.sun.star.chart2.data.NumericalDataSequence";
-    aServices[ 3 ] = "com.sun.star.chart2.data.TextualDataSequence";
-    return aServices;
-}
-
 IMPLEMENT_FORWARD_XINTERFACE2( UncachedDataSequence, UncachedDataSequence_Base, OPropertyContainer )
 IMPLEMENT_FORWARD_XTYPEPROVIDER2( UncachedDataSequence, UncachedDataSequence_Base, OPropertyContainer )
 
 // ____ XPropertySet ____
 Reference< beans::XPropertySetInfo > SAL_CALL UncachedDataSequence::getPropertySetInfo()
-    throw(uno::RuntimeException, std::exception)
 {
     return Reference< beans::XPropertySetInfo >( createPropertySetInfo( getInfoHelper() ) );
 }
@@ -156,33 +145,28 @@ Reference< beans::XPropertySetInfo > SAL_CALL UncachedDataSequence::getPropertyS
     return new ::cppu::OPropertyArrayHelper( aProps );
 }
 
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL UncachedDataSequence::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString UncachedDataSequence::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName);
 }
 
 sal_Bool SAL_CALL UncachedDataSequence::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL UncachedDataSequence::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        lcl_aServiceName,
+        "com.sun.star.chart2.data.DataSequence",
+        "com.sun.star.chart2.data.NumericalDataSequence",
+        "com.sun.star.chart2.data.TextualDataSequence"
+    };
 }
 
 // ________ XNumericalDataSequence ________
 Sequence< double > SAL_CALL UncachedDataSequence::getNumericalData()
-    throw (uno::RuntimeException, std::exception)
 {
     Sequence< double > aResult;
     MutexGuard aGuard( GetMutex() );
@@ -190,7 +174,7 @@ Sequence< double > SAL_CALL UncachedDataSequence::getNumericalData()
     {
         Sequence< uno::Any > aValues( m_xDataProvider->getDataByRangeRepresentation( m_aSourceRepresentation ));
         aResult.realloc( aValues.getLength());
-        ::std::transform( aValues.getConstArray(), aValues.getConstArray() + aValues.getLength(),
+        std::transform( aValues.getConstArray(), aValues.getConstArray() + aValues.getLength(),
                           aResult.getArray(), CommonFunctors::AnyToDouble());
     }
     return aResult;
@@ -198,7 +182,6 @@ Sequence< double > SAL_CALL UncachedDataSequence::getNumericalData()
 
 // ________ XTextualDataSequence ________
 Sequence< OUString > SAL_CALL UncachedDataSequence::getTextualData()
-    throw (uno::RuntimeException, std::exception)
 {
     Sequence< OUString > aResult;
     MutexGuard aGuard( GetMutex() );
@@ -206,7 +189,7 @@ Sequence< OUString > SAL_CALL UncachedDataSequence::getTextualData()
     {
         Sequence< uno::Any > aValues( m_xDataProvider->getDataByRangeRepresentation( m_aSourceRepresentation ));
         aResult.realloc( aValues.getLength());
-        ::std::transform( aValues.getConstArray(), aValues.getConstArray() + aValues.getLength(),
+        std::transform( aValues.getConstArray(), aValues.getConstArray() + aValues.getLength(),
                           aResult.getArray(), CommonFunctors::AnyToString());
     }
     return aResult;
@@ -214,7 +197,6 @@ Sequence< OUString > SAL_CALL UncachedDataSequence::getTextualData()
 
 // ________ XDataSequence  ________
 Sequence< Any > SAL_CALL UncachedDataSequence::getData()
-    throw (uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( GetMutex() );
     if( m_xDataProvider.is())
@@ -223,31 +205,23 @@ Sequence< Any > SAL_CALL UncachedDataSequence::getData()
 }
 
 OUString SAL_CALL UncachedDataSequence::getSourceRangeRepresentation()
-    throw (uno::RuntimeException, std::exception)
 {
     return getName();
 }
 
 Sequence< OUString > SAL_CALL UncachedDataSequence::generateLabel( chart2::data::LabelOrigin )
-    throw (uno::RuntimeException, std::exception)
 {
     // auto-generated label is an empty string
     return Sequence< OUString >(1);
 }
 
 ::sal_Int32 SAL_CALL UncachedDataSequence::getNumberFormatKeyByIndex( ::sal_Int32 )
-    throw (lang::IndexOutOfBoundsException,
-           uno::RuntimeException, std::exception)
 {
     return m_nNumberFormatKey;
 }
 
 // ____ XIndexReplace ____
 void SAL_CALL UncachedDataSequence::replaceByIndex( ::sal_Int32 Index, const uno::Any& Element )
-    throw (lang::IllegalArgumentException,
-           lang::IndexOutOfBoundsException,
-           lang::WrappedTargetException,
-           uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( GetMutex() );
     Sequence< Any > aData( getData());
@@ -262,16 +236,12 @@ void SAL_CALL UncachedDataSequence::replaceByIndex( ::sal_Int32 Index, const uno
 
 // ____ XIndexAccess (base of XIndexReplace) ____
 ::sal_Int32 SAL_CALL UncachedDataSequence::getCount()
-    throw (uno::RuntimeException, std::exception)
 {
     OSL_FAIL( "Implement!" );
     return 0;
 }
 
 uno::Any SAL_CALL UncachedDataSequence::getByIndex( ::sal_Int32 )
-    throw (lang::IndexOutOfBoundsException,
-           lang::WrappedTargetException,
-           uno::RuntimeException, std::exception)
 {
     OSL_FAIL( "Implement!" );
     return uno::Any();
@@ -279,13 +249,11 @@ uno::Any SAL_CALL UncachedDataSequence::getByIndex( ::sal_Int32 )
 
 // ____ XElementAccess (base of XIndexAccess) ____
 uno::Type SAL_CALL UncachedDataSequence::getElementType()
-    throw (uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<uno::Any>::get();
 }
 
 sal_Bool SAL_CALL UncachedDataSequence::hasElements()
-    throw (uno::RuntimeException, std::exception)
 {
     if( ! m_xDataProvider.is())
         return false;
@@ -294,20 +262,17 @@ sal_Bool SAL_CALL UncachedDataSequence::hasElements()
 
 // ____ XNamed ____
 OUString SAL_CALL UncachedDataSequence::getName()
-    throw (uno::RuntimeException, std::exception)
 {
     return m_aSourceRepresentation;
 }
 
 void SAL_CALL UncachedDataSequence::setName( const OUString& aName )
-    throw (uno::RuntimeException, std::exception)
 {
     m_aSourceRepresentation = aName;
     fireModifyEvent();
 }
 
 Reference< util::XCloneable > SAL_CALL UncachedDataSequence::createClone()
-    throw (uno::RuntimeException, std::exception)
 {
     UncachedDataSequence * pNewSeq = new UncachedDataSequence( *this );
     return Reference< util::XCloneable >( pNewSeq );
@@ -315,14 +280,11 @@ Reference< util::XCloneable > SAL_CALL UncachedDataSequence::createClone()
 
 // ____ XModifiable ____
 sal_Bool SAL_CALL UncachedDataSequence::isModified()
-    throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
 void SAL_CALL UncachedDataSequence::setModified( sal_Bool bModified )
-    throw (beans::PropertyVetoException,
-           uno::RuntimeException, std::exception)
 {
     if( bModified )
         fireModifyEvent();
@@ -330,7 +292,6 @@ void SAL_CALL UncachedDataSequence::setModified( sal_Bool bModified )
 
 // ____ XModifyBroadcaster (base of XModifiable) ____
 void SAL_CALL UncachedDataSequence::addModifyListener( const Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -344,7 +305,6 @@ void SAL_CALL UncachedDataSequence::addModifyListener( const Reference< util::XM
 }
 
 void SAL_CALL UncachedDataSequence::removeModifyListener( const Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {

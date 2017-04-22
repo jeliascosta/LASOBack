@@ -17,6 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <algorithm>
+
 #include <osl/nlsupport.h>
 #include <osl/diagnose.h>
 #include <osl/process.h>
@@ -25,10 +29,9 @@
 
 #include "nlsupport.hxx"
 
-#if defined(LINUX) || defined(SOLARIS) || defined(NETBSD) || \
+#if defined(LINUX) || defined(__sun) || defined(NETBSD) || \
     defined(FREEBSD) || defined(MACOSX)  || defined(IOS) || defined(OPENBSD) || \
     defined(DRAGONFLY)
-#include <pthread.h>
 #if !defined(MACOSX) && !defined(IOS)
 #include <locale.h>
 #include <langinfo.h>
@@ -36,7 +39,11 @@
 #include <osl/module.h>
 #include <osl/thread.h>
 #endif  /* !MACOSX && !IOS */
-#endif  /* LINUX || SOLARIS || NETBSD || MACOSX || IOS */
+#endif  /* LINUX || __sun || NETBSD || MACOSX || IOS */
+
+#if defined(MACOSX) || defined(IOS)
+#include "system.hxx"
+#endif
 
 #include <string.h>
 
@@ -168,73 +175,63 @@ static char * compose_locale( rtl_Locale * pLocale, char * buffer, size_t n )
 
 static rtl_Locale * parse_locale( const char * locale )
 {
-    static sal_Unicode c_locale[2] = { (sal_Unicode) 'C', 0 };
+    assert(locale != nullptr);
 
-    /* check if locale contains a valid string */
-    if( locale )
+    if (*locale == '\0' || std::strcmp(locale, "C") == 0
+        || std::strcmp(locale, "POSIX") == 0)
     {
-        size_t len = strlen( locale );
-
-        if( len >= 2 )
-        {
-            rtl_uString * pLanguage = nullptr;
-            rtl_uString * pCountry  = nullptr;
-            rtl_uString * pVariant  = nullptr;
-
-            size_t offset = 2;
-
-            rtl_Locale * ret;
-
-            /* language is a two or three letter code */
-            if( (len > 3 && '_' == locale[3]) || (len == 3 && '_' != locale[2]) )
-                offset = 3;
-
-            /* convert language code to unicode */
-            rtl_string2UString( &pLanguage, locale, offset, RTL_TEXTENCODING_ASCII_US, OSTRING_TO_OUSTRING_CVTFLAGS );
-            OSL_ASSERT(pLanguage != nullptr);
-
-            /* convert country code to unicode */
-            if( len >= offset+3 && '_' == locale[offset] )
-            {
-                rtl_string2UString( &pCountry, locale + offset + 1, 2, RTL_TEXTENCODING_ASCII_US, OSTRING_TO_OUSTRING_CVTFLAGS );
-                OSL_ASSERT(pCountry != nullptr);
-                offset += 3;
-            }
-
-            /* convert variant code to unicode - do not rely on "." as delimiter */
-            if( len > offset ) {
-                rtl_string2UString( &pVariant, locale + offset, len - offset, RTL_TEXTENCODING_ASCII_US, OSTRING_TO_OUSTRING_CVTFLAGS );
-                OSL_ASSERT(pVariant != nullptr);
-            }
-
-            ret =  rtl_locale_register( pLanguage->buffer, pCountry ? pCountry->buffer : c_locale + 1, pVariant ? pVariant->buffer : c_locale + 1 );
-
-            if (pVariant) rtl_uString_release(pVariant);
-            if (pCountry) rtl_uString_release(pCountry);
-            if (pLanguage) rtl_uString_release(pLanguage);
-
-            return ret;
-        }
-        else
-            return rtl_locale_register( c_locale, c_locale + 1, c_locale + 1 );
+        return rtl_locale_register(u"C", u"", u"");
     }
 
-    return nullptr;
+    size_t len = strlen( locale );
+
+    rtl_uString * pLanguage = nullptr;
+    rtl_uString * pCountry  = nullptr;
+    rtl_uString * pVariant  = nullptr;
+
+    size_t offset = std::min<size_t>(len, 2);
+
+    rtl_Locale * ret;
+
+    /* language is a two or three letter code */
+    if( (len > 3 && locale[3] == '_') || (len == 3 && locale[2] != '_') )
+        offset = 3;
+
+    /* convert language code to unicode */
+    rtl_string2UString( &pLanguage, locale, offset, RTL_TEXTENCODING_ASCII_US, OSTRING_TO_OUSTRING_CVTFLAGS );
+    OSL_ASSERT(pLanguage != nullptr);
+
+    /* convert country code to unicode */
+    if( len >= offset+3 && locale[offset] == '_' )
+    {
+        rtl_string2UString( &pCountry, locale + offset + 1, 2, RTL_TEXTENCODING_ASCII_US, OSTRING_TO_OUSTRING_CVTFLAGS );
+        OSL_ASSERT(pCountry != nullptr);
+        offset += 3;
+    }
+
+    /* convert variant code to unicode - do not rely on "." as delimiter */
+    if( len > offset ) {
+        rtl_string2UString( &pVariant, locale + offset, len - offset, RTL_TEXTENCODING_ASCII_US, OSTRING_TO_OUSTRING_CVTFLAGS );
+        OSL_ASSERT(pVariant != nullptr);
+    }
+
+    ret =  rtl_locale_register( pLanguage->buffer, pCountry ? pCountry->buffer : u"", pVariant ? pVariant->buffer : u"" );
+
+    if (pVariant) rtl_uString_release(pVariant);
+    if (pCountry) rtl_uString_release(pCountry);
+    if (pLanguage) rtl_uString_release(pLanguage);
+
+    return ret;
 }
 
-#if defined(LINUX) || defined(SOLARIS) || defined(NETBSD) || \
+#if defined(LINUX) || defined(__sun) || defined(NETBSD) || \
     defined(FREEBSD) || defined(OPENBSD) || defined(DRAGONFLY)
 
 /*
  * This implementation of osl_getTextEncodingFromLocale maps
- * from nl_langinfo(CODESET) to rtl_textencoding defines.
+ * from nl_langinfo_l(CODESET) to rtl_textencoding defines.
  * nl_langinfo() is supported only on Linux, Solaris,
  * >= NetBSD 1.6 and >= FreeBSD 4.4
- *
- * This routine is SLOW because of the setlocale call, so
- * grab the result and cache it.
- *
- * XXX this code has the usual mt problems aligned with setlocale() XXX
  */
 
 #ifdef LINUX
@@ -250,7 +247,7 @@ static rtl_Locale * parse_locale( const char * locale )
  * to be completely upper- , or lowercase.
  */
 
-#if defined(SOLARIS)
+#if defined(__sun)
 
 /* The values in the below list can be obtained with a script like
  *  #!/bin/sh
@@ -558,9 +555,7 @@ static const Pair nl_language_list[] = {
     { "UTF-8",         RTL_TEXTENCODING_UTF8           }  /* ISO-10646/UTF-8 */
 };
 
-#endif /* ifdef SOLARIS LINUX FREEBSD NETBSD OPENBSD */
-
-static pthread_mutex_t aLocalMutex = PTHREAD_MUTEX_INITIALIZER;
+#endif /* ifdef __sun LINUX FREEBSD NETBSD OPENBSD */
 
 /*****************************************************************************
  return the text encoding corresponding to the given locale
@@ -573,7 +568,6 @@ rtl_TextEncoding osl_getTextEncodingFromLocale( rtl_Locale * pLocale )
     char  locale_buf[64] = "";
     char  codeset_buf[64];
 
-    char *ctype_locale = nullptr;
     char *codeset      = nullptr;
 
     /* default to process locale if pLocale == NULL */
@@ -583,16 +577,10 @@ rtl_TextEncoding osl_getTextEncodingFromLocale( rtl_Locale * pLocale )
     /* convert rtl_Locale to locale string */
     compose_locale( pLocale, locale_buf, 64 );
 
-    /* basic thread safeness */
-    pthread_mutex_lock( &aLocalMutex );
-
-    /* remember the charset as indicated by the LC_CTYPE locale */
-    ctype_locale = setlocale( LC_CTYPE, nullptr );
-
-    /* set the desired LC_CTYPE locale */
-    if( nullptr == setlocale( LC_CTYPE, locale_buf ) )
+    locale_t ctype_locale = newlocale(
+        LC_CTYPE_MASK, locale_buf, static_cast<locale_t>(0));
+    if (ctype_locale == static_cast<locale_t>(0))
     {
-        pthread_mutex_unlock(&aLocalMutex);
         return RTL_TEXTENCODING_DONTKNOW;
     }
 
@@ -600,7 +588,11 @@ rtl_TextEncoding osl_getTextEncodingFromLocale( rtl_Locale * pLocale )
 #if defined(NETBSD) && !defined(CODESET)
     codeset = NULL;
 #else
-    codeset = nl_langinfo( CODESET );
+    codeset = nl_langinfo_l(CODESET, ctype_locale);
+        // per SUSv4, the return value of nl_langinfo_l can be invalidated by a
+        // subsequent call to nl_langinfo (not nl_langinfo_l) in any thread, but
+        // we cannot guard against that (at least, no code in LO itself should
+        // call nl_langinfo)
 #endif
 
     if ( codeset != nullptr )
@@ -611,11 +603,7 @@ rtl_TextEncoding osl_getTextEncodingFromLocale( rtl_Locale * pLocale )
         codeset = codeset_buf;
     }
 
-    /* restore the original value of locale */
-    if ( ctype_locale != nullptr )
-        setlocale( LC_CTYPE, ctype_locale );
-
-    pthread_mutex_unlock( &aLocalMutex );
+    freelocale(ctype_locale);
 
     /* search the codeset in our language list */
     if ( codeset != nullptr )
@@ -639,48 +627,20 @@ rtl_TextEncoding osl_getTextEncodingFromLocale( rtl_Locale * pLocale )
 
 void imp_getProcessLocale( rtl_Locale ** ppLocale )
 {
-    char * locale;
-
-    /* basic thread safeness */
-    pthread_mutex_lock( &aLocalMutex );
-
-    /* set the locale defined by the env vars */
-    locale = setlocale( LC_CTYPE, "" );
-
-    /* fallback to the current locale */
-    if( nullptr == locale )
-        locale = setlocale( LC_CTYPE, nullptr );
-
-    /* return the LC_CTYPE locale */
-    *ppLocale = parse_locale( locale );
-
-    pthread_mutex_unlock( &aLocalMutex );
+    char const * locale = getenv("LC_ALL");
+    if (locale == nullptr || *locale == '\0') {
+        locale = getenv("LC_CTYPE");
+        if (locale == nullptr || *locale == '\0') {
+            locale = getenv("LANG");
+            if (locale == nullptr || *locale == '\0') {
+                locale = "C";
+            }
+        }
+    }
+    *ppLocale = parse_locale(locale);
 }
 
-/*****************************************************************************
- set the current process locale
- *****************************************************************************/
-
-int imp_setProcessLocale( rtl_Locale * pLocale )
-{
-    char  locale_buf[64] = "";
-    int   ret = 0;
-
-    /* convert rtl_Locale to locale string */
-    compose_locale( pLocale, locale_buf, 64 );
-
-    /* basic thread safeness */
-    pthread_mutex_lock( &aLocalMutex );
-
-    /* try to set LC_ALL locale */
-    if( nullptr == setlocale( LC_ALL, locale_buf ) )
-        ret = -1;
-
-    pthread_mutex_unlock( &aLocalMutex );
-    return ret;
-}
-
-#else /* ifdef LINUX || SOLARIS || MACOSX || NETBSD */
+#else /* ifdef LINUX || __sun || MACOSX || NETBSD */
 
 /*
  * This implementation of osl_getTextEncodingFromLocale maps
@@ -822,7 +782,7 @@ rtl_TextEncoding osl_getTextEncodingFromLocale( rtl_Locale * pLocale )
         /* use iso language code to determine the charset */
         if( nullptr == language )
         {
-            /* iso lang codes have 2 charaters */
+            /* iso lang codes have 2 characters */
             locale_buf[2] = '\0';
 
             language = pair_search( locale_buf, iso_language_list, SAL_N_ELEMENTS( iso_language_list ) );
@@ -838,7 +798,6 @@ rtl_TextEncoding osl_getTextEncodingFromLocale( rtl_Locale * pLocale )
 }
 
 #if defined(MACOSX) || defined(IOS)
-#include "system.hxx"
 
 /*****************************************************************************
  return the current process locale
@@ -909,37 +868,6 @@ void imp_getProcessLocale( rtl_Locale ** ppLocale )
 }
 #endif
 
-/*****************************************************************************
- set the current process locale
- *****************************************************************************/
-
-static int
-imp_setenv (const char* name, const char* value)
-{
-    return setenv (name, value, 1);
-}
-
-int imp_setProcessLocale( rtl_Locale * pLocale )
-{
-    char locale_buf[64];
-
-    /* convert rtl_Locale to locale string */
-    if( nullptr != compose_locale( pLocale, locale_buf, 64 ) )
-    {
-        /* only change env vars that exist already */
-        if( getenv( "LC_ALL" ) )
-            imp_setenv( "LC_ALL", locale_buf );
-
-        if( getenv( "LC_CTYPE" ) )
-            imp_setenv("LC_CTYPE", locale_buf );
-
-        if( getenv( "LANG" ) )
-            imp_setenv( "LANG", locale_buf );
-    }
-
-    return 0;
-}
-
-#endif /* ifdef LINUX || SOLARIS || MACOSX || NETBSD || AIX */
+#endif /* ifdef LINUX || __sun || MACOSX || NETBSD || AIX */
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

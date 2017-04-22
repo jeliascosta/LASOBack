@@ -40,7 +40,7 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef _MSC_VER     /* Define ssize_t */
 
 #if !defined(_W64)
-#if !defined(__midl) && (defined(_X86_) || defined(_M_IX86)) && _MSC_VER >= 1300
+#if !defined(__midl) && (defined(_X86_) || defined(_M_IX86))
 #define _W64 __w64
 #else
 #define _W64
@@ -120,16 +120,16 @@ void redirect(char * makefile);
 struct  inclist inclist[ MAXFILES ],
                 *inclistp = inclist;
 
-struct symhash *maininclist = NULL;
+static struct symhash *maininclist = NULL;
 
 char    *filelist[ MAXFILES ];
 char    *includedirs[ MAXDIRS + 1 ];
 char    *notdotdot[ MAXDIRS ];
 char    *objprefix = "";
 char    *objsuffix = OBJSUFFIX;
-char    *startat = "# DO NOT DELETE";
-int width = 78;
-boolean append = FALSE;
+static char    *startat = "# DO NOT DELETE";
+static int width = 78;
+static boolean append = FALSE;
 boolean printed = FALSE;
 boolean verbose = FALSE;
 boolean show_where_not = FALSE;
@@ -161,7 +161,7 @@ catch (int sig)
 struct sigaction sig_act;
 #endif /* USGISH */
 
-boolean native_win_slashes = FALSE;
+static boolean native_win_slashes = FALSE;
 
 int main(int argc, char    **argv)
 {

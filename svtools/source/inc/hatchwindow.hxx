@@ -35,36 +35,36 @@ class VCLXHatchWindow : public css::embed::XHatchWindow,
 
 public:
     VCLXHatchWindow();
-    virtual ~VCLXHatchWindow();
+    virtual ~VCLXHatchWindow() override;
 
     void initializeWindow( const css::uno::Reference< css::awt::XWindowPeer >& xParent,
                 const css::awt::Rectangle& aBounds,
                 const css::awt::Size& aSize );
 
-    void QueryObjAreaPixel( Rectangle & );
-    void RequestObjAreaPixel( const Rectangle & );
+    void QueryObjAreaPixel( tools::Rectangle & );
+    void RequestObjAreaPixel( const tools::Rectangle & );
     void InplaceDeactivate();
     void Activated();
     void Deactivated();
 
     // XInterface
-    css::uno::Any SAL_CALL queryInterface( const css::uno::Type& rType ) throw(css::uno::RuntimeException, std::exception) override;
+    css::uno::Any SAL_CALL queryInterface( const css::uno::Type& rType ) override;
     void SAL_CALL acquire() throw() override;
     void SAL_CALL release() throw() override;
 
     // XTypeProvider
-    css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() throw(css::uno::RuntimeException, std::exception) override;
-    css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() throw(css::uno::RuntimeException, std::exception) override;
+    css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
 
     // XHatchWindow
-    virtual void SAL_CALL setController( const css::uno::Reference< css::embed::XHatchWindowController >& xController ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::awt::Size SAL_CALL getHatchBorderSize() throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL setHatchBorderSize( const css::awt::Size& _hatchbordersize ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setController( const css::uno::Reference< css::embed::XHatchWindowController >& xController ) override;
+    virtual css::awt::Size SAL_CALL getHatchBorderSize() override;
+    virtual void SAL_CALL setHatchBorderSize( const css::awt::Size& _hatchbordersize ) override;
 
     // XComponent
-    virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL dispose() override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
 };
 
 #endif // INCLUDED_SVTOOLS_SOURCE_INC_HATCHWINDOW_HXX

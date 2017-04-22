@@ -27,7 +27,7 @@ namespace connectivity
     class OOO_DLLPUBLIC_DBTOOLS OKeyValue
     {
     private:
-        ::std::vector<ORowSetValueDecoratorRef> m_aKeys;
+        std::vector<ORowSetValueDecoratorRef> m_aKeys;
         sal_Int32 m_nValue;
 
     protected:
@@ -36,35 +36,35 @@ namespace connectivity
 
         ~OKeyValue();
 
-        inline static void * SAL_CALL operator new( size_t nSize )
+        static void * SAL_CALL operator new( size_t nSize )
             { return ::rtl_allocateMemory( nSize ); }
-        inline static void * SAL_CALL operator new( size_t,void* _pHint )
+        static void * SAL_CALL operator new( size_t,void* _pHint )
             { return _pHint; }
-        inline static void SAL_CALL operator delete( void * pMem )
+        static void SAL_CALL operator delete( void * pMem )
             { ::rtl_freeMemory( pMem ); }
-        inline static void SAL_CALL operator delete( void *,void* )
+        static void SAL_CALL operator delete( void *,void* )
             {  }
 
         static OKeyValue* createKeyValue(sal_Int32 nVal);
         //  static OKeyValue* createEmptyKeyValue();
 
-        inline void pushKey(const ORowSetValueDecoratorRef& _aValueRef)
+        void pushKey(const ORowSetValueDecoratorRef& _aValueRef)
         {
             m_aKeys.push_back(_aValueRef);
         }
 
-        OUString getKeyString(::std::vector<ORowSetValueDecoratorRef>::size_type i) const
+        OUString getKeyString(std::vector<ORowSetValueDecoratorRef>::size_type i) const
         {
             OSL_ENSURE(m_aKeys.size() > i,"Wrong index for KEyValue");
             return m_aKeys[i]->getValue();
         }
-        double          getKeyDouble(::std::vector<ORowSetValueDecoratorRef>::size_type i) const
+        double          getKeyDouble(std::vector<ORowSetValueDecoratorRef>::size_type i) const
         {
             OSL_ENSURE(m_aKeys.size() > i,"Wrong index for KEyValue");
             return m_aKeys[i]->getValue();
         }
 
-        inline sal_Int32 getValue() const { return m_nValue; }
+        sal_Int32 getValue() const { return m_nValue; }
     };
 }
 

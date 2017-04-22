@@ -130,7 +130,7 @@ ScHFEditPage::ScHFEditPage( vcl::Window*             pParent,
     m_pWndRight->SetFont( aPatAttr );
 
     // Set size request for all 3 widgets
-    Size aSize = LogicToPixel(Size(80, 120), MAP_APPFONT);
+    Size aSize = LogicToPixel(Size(80, 120), MapUnit::MapAppFont);
     VclPtr<ScEditWindow> aEditWindows[] = {m_pWndLeft, m_pWndCenter, m_pWndRight};
 
     for (auto &pEditWindow : aEditWindows)
@@ -154,7 +154,7 @@ ScHFEditPage::ScHFEditPage( vcl::Window*             pParent,
 
 }
 
-IMPL_LINK_NOARG_TYPED( ScHFEditPage, ObjectSelectHdl, ScEditWindow&, void )
+IMPL_LINK_NOARG( ScHFEditPage, ObjectSelectHdl, ScEditWindow&, void )
 {
     m_pBtnText->GrabFocus();
 }
@@ -618,7 +618,7 @@ void ScHFEditPage::ProcessDefinedListSel(ScHFEntryId eSel, bool bTravelling)
             ClearTextAreas();
             OUString aConfidentialEntry(aUserOpt.GetCompany() + " " + m_pFtConfidential->GetText());
             m_pWndLeft->GetEditEngine()->SetText(aConfidentialEntry);
-            m_pWndCenter->InsertField( SvxFieldItem(SvxDateField(Date( Date::SYSTEM ),SVXDATETYPE_VAR), EE_FEATURE_FIELD) );
+            m_pWndCenter->InsertField( SvxFieldItem(SvxDateField(Date( Date::SYSTEM ),SvxDateType::Var), EE_FEATURE_FIELD) );
 
             OUString aPageEntry( m_pFtPage->GetText() + " ");
             m_pWndRight->GetEditEngine()->SetText(aPageEntry);
@@ -717,7 +717,7 @@ void ScHFEditPage::ProcessDefinedListSel(ScHFEntryId eSel, bool bTravelling)
             //aPageEntry += " ";
             m_pWndCenter->GetEditEngine()->SetText(aPageEntry);
             m_pWndCenter->InsertField( SvxFieldItem(SvxPageField(), EE_FEATURE_FIELD) );
-            m_pWndRight->InsertField( SvxFieldItem(SvxDateField(Date( Date::SYSTEM ),SVXDATETYPE_VAR), EE_FEATURE_FIELD) );
+            m_pWndRight->InsertField( SvxFieldItem(SvxDateField(Date( Date::SYSTEM ),SvxDateType::Var), EE_FEATURE_FIELD) );
             if(!bTravelling)
                 m_pWndRight->GrabFocus();
         }
@@ -728,7 +728,7 @@ void ScHFEditPage::ProcessDefinedListSel(ScHFEntryId eSel, bool bTravelling)
             ClearTextAreas();
             OUString aCreatedByEntry( m_pFtCreatedBy->GetText() + " " + aUserOpt.GetFirstName() + " " + aUserOpt.GetLastName());
             m_pWndLeft->GetEditEngine()->SetText(aCreatedByEntry);
-            m_pWndCenter->InsertField( SvxFieldItem(SvxDateField(Date( Date::SYSTEM ),SVXDATETYPE_VAR), EE_FEATURE_FIELD) );
+            m_pWndCenter->InsertField( SvxFieldItem(SvxDateField(Date( Date::SYSTEM ),SvxDateType::Var), EE_FEATURE_FIELD) );
             OUString aPageEntry( m_pFtPage->GetText() );
             aPageEntry += " ";
             m_pWndRight->GetEditEngine()->SetText(aPageEntry);
@@ -755,14 +755,14 @@ void ScHFEditPage::ClearTextAreas()
 
 // Handler:
 
-IMPL_LINK_TYPED( ScHFEditPage, ListHdl_Impl, ListBox&, rList, void )
+IMPL_LINK( ScHFEditPage, ListHdl_Impl, ListBox&, rList, void )
 {
     if ( &rList == m_pLbDefined )
     {
         ScHFEntryId eSel = static_cast<ScHFEntryId>(m_pLbDefined->GetSelectEntryPos());
         if(!m_pLbDefined->IsTravelSelect())
         {
-            ProcessDefinedListSel(eSel);
+            ProcessDefinedListSel(eSel, false);
 
             // check if we need to remove the customized entry.
             if(eSel < eEntryCount)
@@ -775,7 +775,7 @@ IMPL_LINK_TYPED( ScHFEditPage, ListHdl_Impl, ListBox&, rList, void )
     }
 }
 
-IMPL_LINK_TYPED( ScHFEditPage, ClickHdl, Button*, pBtn, void )
+IMPL_LINK( ScHFEditPage, ClickHdl, Button*, pBtn, void )
 {
     if (!m_pEditFocus)
         return;
@@ -791,7 +791,7 @@ IMPL_LINK_TYPED( ScHFEditPage, ClickHdl, Button*, pBtn, void )
         else if ( pBtn == m_pBtnLastPage )
             m_pEditFocus->InsertField(SvxFieldItem(SvxPagesField(), EE_FEATURE_FIELD));
         else if ( pBtn == m_pBtnDate )
-            m_pEditFocus->InsertField(SvxFieldItem(SvxDateField(Date(Date::SYSTEM),SVXDATETYPE_VAR), EE_FEATURE_FIELD));
+            m_pEditFocus->InsertField(SvxFieldItem(SvxDateField(Date(Date::SYSTEM),SvxDateType::Var), EE_FEATURE_FIELD));
         else if ( pBtn == m_pBtnTime )
             m_pEditFocus->InsertField(SvxFieldItem(SvxTimeField(), EE_FEATURE_FIELD));
         else if ( pBtn == m_pBtnFile )
@@ -805,7 +805,7 @@ IMPL_LINK_TYPED( ScHFEditPage, ClickHdl, Button*, pBtn, void )
     m_pEditFocus->GrabFocus();
 }
 
-IMPL_LINK_TYPED( ScHFEditPage, MenuHdl, ScExtIButton&, rBtn, void )
+IMPL_LINK( ScHFEditPage, MenuHdl, ScExtIButton&, rBtn, void )
 {
     if (!m_pEditFocus)
         return;

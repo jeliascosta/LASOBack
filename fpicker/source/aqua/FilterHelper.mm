@@ -237,7 +237,6 @@ void FilterHelper::ensureFilterList( const ::rtl::OUString& _rInitialCurrentFilt
 
         // set the first filter to the current filter
         m_aCurrentFilter = _rInitialCurrentFilter;
-        OSL_TRACE("ensureFilterList filter:%s", OUStringToOString(m_aCurrentFilter, RTL_TEXTENCODING_UTF8).getStr());
     }
 }
 
@@ -250,23 +249,6 @@ void FilterHelper::SetCurFilter( const rtl::OUString& rFilter )
         m_aCurrentFilter = rFilter;
     }
 
-    //only for output purposes
-#if OSL_DEBUG_LEVEL > 0
-    FilterList::iterator aFilter = ::std::find_if(m_pFilterList->begin(), m_pFilterList->end(), FilterTitleMatch(m_aCurrentFilter));
-    if (aFilter != m_pFilterList->end()) {
-        OUStringList suffixes = aFilter->getFilterSuffixList();
-        if (!suffixes.empty()) {
-            SAL_INFO("fpicker.aqua", "Current active suffixes: ");
-            OUStringList::iterator suffIter = suffixes.begin();
-            while(suffIter != suffixes.end()) {
-                SAL_INFO("fpicker.aqua", *suffIter);
-                suffIter++;
-            }
-        }
-    } else {
-        SAL_INFO("fpicker.aqua", "No filter entry was found for that name!");
-    }
-#endif
 }
 
 void FilterHelper::SetFilters()
@@ -274,14 +256,11 @@ void FilterHelper::SetFilters()
     // set the default filter
     if( m_aCurrentFilter.getLength() > 0 )
     {
-        OSL_TRACE( "Setting current filter to %s", OUStringToOString(m_aCurrentFilter, RTL_TEXTENCODING_UTF8).getStr());
-
         SetCurFilter( m_aCurrentFilter );
     }
 }
 
 void FilterHelper::appendFilter(const ::rtl::OUString& aTitle, const ::rtl::OUString& aFilterString)
-throw( css::lang::IllegalArgumentException, css::uno::RuntimeException )
 {
     SolarMutexGuard aGuard;
 
@@ -299,13 +278,11 @@ throw( css::lang::IllegalArgumentException, css::uno::RuntimeException )
 }
 
 void FilterHelper::setCurrentFilter( const ::rtl::OUString& aTitle )
-throw( css::lang::IllegalArgumentException, css::uno::RuntimeException )
 {
     SetCurFilter(aTitle);
 }
 
 ::rtl::OUString SAL_CALL FilterHelper::getCurrentFilter(  )
-throw( css::uno::RuntimeException )
 {
     ::rtl::OUString sReturn = (m_aCurrentFilter);
 
@@ -313,7 +290,6 @@ throw( css::uno::RuntimeException )
 }
 
 void SAL_CALL FilterHelper::appendFilterGroup( const ::rtl::OUString& /* sGroupTitle */, const css::uno::Sequence< css::beans::StringPair >& aFilters )
-throw (css::lang::IllegalArgumentException, css::uno::RuntimeException)
 {
     SolarMutexGuard aGuard;
 
@@ -342,8 +318,8 @@ throw (css::lang::IllegalArgumentException, css::uno::RuntimeException)
 
 bool FilterHelper::filenameMatchesFilter(NSString* sFilename)
 {
-    if (m_aCurrentFilter == nullptr) {
-        OSL_TRACE("filter name is null");
+    if (m_aCurrentFilter.isEmpty()) {
+        SAL_WARN("fpicker", "filter name is empty");
         return true;
     }
 
@@ -363,7 +339,7 @@ bool FilterHelper::filenameMatchesFilter(NSString* sFilename)
 
     FilterList::iterator filter = ::std::find_if(m_pFilterList->begin(), m_pFilterList->end(), FilterTitleMatch(m_aCurrentFilter));
     if (filter == m_pFilterList->end()) {
-        OSL_TRACE("filter not found in list");
+        SAL_WARN("fpicker", "filter not found in list");
         return true;
     }
 

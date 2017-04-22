@@ -55,9 +55,7 @@ using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::document;
 using namespace ::com::sun::star::drawing;
 using namespace ::com::sun::star::script;
-using namespace ::com::sun::star::table;
 using namespace ::com::sun::star::uno;
-using namespace ::com::sun::star::xml::sax;
 using namespace ::oox::core;
 using namespace ::oox::drawingml;
 using namespace ::oox::ole;
@@ -158,7 +156,7 @@ GroupShapeContext::GroupShapeContext( ContextHandler2Helper& rParent,
         {
             ShapePtr xShape( new Shape( rHelper, rAttribs, "com.sun.star.drawing.GraphicObjectShape" ) );
             if( pxShape ) *pxShape = xShape;
-            return new GraphicalObjectFrameContext( rParent, rxParentShape, xShape, rHelper.getSheetType() != SHEETTYPE_CHARTSHEET );
+            return new GraphicalObjectFrameContext( rParent, rxParentShape, xShape, rHelper.getSheetType() != WorksheetType::Chart );
         }
         case XDR_TOKEN( grpSp ):
         {
@@ -274,20 +272,20 @@ void DrawingFragment::onEndElement()
                         getLimitedValue< sal_Int32, sal_Int64 >( aShapeRectEmu.Height, 0, SAL_MAX_INT32 ) );
 
                     // Make sure to set the position and size *before* calling addShape().
-                    mxShape->setPosition(Point(aShapeRectEmu.X, aShapeRectEmu.Y));
-                    mxShape->setSize(Size(aShapeRectEmu.Width, aShapeRectEmu.Height));
+                    mxShape->setPosition(Point(aShapeRectEmu32.X, aShapeRectEmu32.Y));
+                    mxShape->setSize(Size(aShapeRectEmu32.Width, aShapeRectEmu32.Height));
 
                     basegfx::B2DHomMatrix aTransformation;
                     if ( !bIsShapeVisible)
                         mxShape->setHidden(true);
 
-                    mxShape->addShape( getOoxFilter(), &getTheme(), mxDrawPage, aTransformation, mxShape->getFillProperties(), &aShapeRectEmu32 );
+                    mxShape->addShape( getOoxFilter(), &getTheme(), mxDrawPage, aTransformation, mxShape->getFillProperties() );
 
                     /*  Collect all shape positions in the WorksheetHelper base
                         class. But first, scale EMUs to 1/100 mm. */
                     Rectangle aShapeRectHmm(
-                        convertEmuToHmm( aShapeRectEmu.X ), convertEmuToHmm( aShapeRectEmu.Y ),
-                        convertEmuToHmm( aShapeRectEmu.Width ), convertEmuToHmm( aShapeRectEmu.Height ) );
+                        convertEmuToHmm(aShapeRectEmu32.X ), convertEmuToHmm(aShapeRectEmu32.Y ),
+                        convertEmuToHmm(aShapeRectEmu32.Width ), convertEmuToHmm(aShapeRectEmu32.Height ) );
                     extendShapeBoundingBox( aShapeRectHmm );
                     // set cell Anchoring
                     if ( mxAnchor->getEditAs() != ShapeAnchor::ANCHOR_ABSOLUTE )
@@ -295,7 +293,7 @@ void DrawingFragment::onEndElement()
                         SdrObject* pObj = SdrObject::getSdrObjectFromXShape( mxShape->getXShape() );
                         if ( pObj )
                         {
-                             ScDrawLayer::SetCellAnchoredFromPosition( *pObj, getScDocument(), static_cast<SCTAB>( getSheetIndex() ) );
+                             ScDrawLayer::SetCellAnchoredFromPosition( *pObj, getScDocument(), getSheetIndex() );
                         }
                     }
                 }
@@ -313,7 +311,7 @@ namespace {
 class VmlFindNoteFunc
 {
 public:
-    explicit            VmlFindNoteFunc( const CellAddress& rPos );
+    explicit            VmlFindNoteFunc( const ScAddress& rPos );
     bool                operator()( const ::oox::vml::ShapeBase& rShape ) const;
 
 private:
@@ -321,9 +319,9 @@ private:
     sal_Int32           mnRow;
 };
 
-VmlFindNoteFunc::VmlFindNoteFunc( const CellAddress& rPos ) :
-    mnCol( rPos.Column ),
-    mnRow( rPos.Row )
+VmlFindNoteFunc::VmlFindNoteFunc( const ScAddress& rPos ) :
+    mnCol( rPos.Col() ),
+    mnRow( rPos.Row() )
 {
 }
 
@@ -409,7 +407,7 @@ VmlDrawing::VmlDrawing( const WorksheetHelper& rHelper ) :
     maListBoxFont.monSize = 160;
 }
 
-const ::oox::vml::ShapeBase* VmlDrawing::getNoteShape( const CellAddress& rPos ) const
+const ::oox::vml::ShapeBase* VmlDrawing::getNoteShape( const ScAddress& rPos ) const
 {
     return getShapes().findShape( VmlFindNoteFunc( rPos ) );
 }
@@ -713,12 +711,12 @@ void VmlDrawing::convertControlFontData( AxFontData& rAxFontData, sal_uInt32& rn
     rAxFontData.setHeightPoints( static_cast< sal_Int16 >( (rFontModel.monSize.get( 200 ) + 10) / 20 ) );
 
     // font effects
-    rAxFontData.mnFontEffects = 0;
-    setFlag( rAxFontData.mnFontEffects, AX_FONTDATA_BOLD, rFontModel.mobBold.get( false ) );
-    setFlag( rAxFontData.mnFontEffects, AX_FONTDATA_ITALIC, rFontModel.mobItalic.get( false ) );
-    setFlag( rAxFontData.mnFontEffects, AX_FONTDATA_STRIKEOUT, rFontModel.mobStrikeout.get( false ) );
+    rAxFontData.mnFontEffects = AxFontFlags::NONE;
+    setFlag( rAxFontData.mnFontEffects, AxFontFlags::Bold, rFontModel.mobBold.get( false ) );
+    setFlag( rAxFontData.mnFontEffects, AxFontFlags::Italic, rFontModel.mobItalic.get( false ) );
+    setFlag( rAxFontData.mnFontEffects, AxFontFlags::Strikeout, rFontModel.mobStrikeout.get( false ) );
     sal_Int32 nUnderline = rFontModel.monUnderline.get( XML_none );
-    setFlag( rAxFontData.mnFontEffects, AX_FONTDATA_UNDERLINE, nUnderline != XML_none );
+    setFlag( rAxFontData.mnFontEffects, AxFontFlags::Underline, nUnderline != XML_none );
     rAxFontData.mbDblUnderline = nUnderline == XML_double;
 
     // font color
@@ -737,10 +735,10 @@ void VmlDrawing::convertControlText( AxFontData& rAxFontData, sal_uInt32& rnOleT
 
     switch( nTextHAlign )
     {
-        case XML_Left:      rAxFontData.mnHorAlign = AX_FONTDATA_LEFT;      break;
-        case XML_Center:    rAxFontData.mnHorAlign = AX_FONTDATA_CENTER;    break;
-        case XML_Right:     rAxFontData.mnHorAlign = AX_FONTDATA_RIGHT;     break;
-        default:            rAxFontData.mnHorAlign = AX_FONTDATA_LEFT;
+        case XML_Left:      rAxFontData.mnHorAlign = AxHorizontalAlign::Left;      break;
+        case XML_Center:    rAxFontData.mnHorAlign = AxHorizontalAlign::Center;    break;
+        case XML_Right:     rAxFontData.mnHorAlign = AxHorizontalAlign::Right;     break;
+        default:            rAxFontData.mnHorAlign = AxHorizontalAlign::Left;
     }
 }
 

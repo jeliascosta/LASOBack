@@ -37,37 +37,32 @@ class SEInitializer_NssImpl : public cppu::ImplInheritanceHelper
 {
 public:
     explicit SEInitializer_NssImpl(const css::uno::Reference<css::uno::XComponentContext > &rxContext);
-    virtual ~SEInitializer_NssImpl();
+    virtual ~SEInitializer_NssImpl() override;
 
     /* XSEInitializer */
     virtual css::uno::Reference< css::xml::crypto::XXMLSecurityContext >
-        SAL_CALL createSecurityContext( const OUString& )
-        throw (css::uno::RuntimeException, std::exception) override;
+        SAL_CALL createSecurityContext( const OUString& ) override;
 
     virtual void SAL_CALL freeSecurityContext( const css::uno::Reference<
-        css::xml::crypto::XXMLSecurityContext >& securityContext )
-        throw (css::uno::RuntimeException, std::exception) override;
+        css::xml::crypto::XXMLSecurityContext >& securityContext ) override;
 
     /* XServiceInfo */
-    virtual OUString SAL_CALL getImplementationName(  )
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName(  ) override;
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 };
 
-OUString SEInitializer_NssImpl_getImplementationName()
-    throw ( css::uno::RuntimeException );
+/// @throws css::uno::RuntimeException
+OUString SEInitializer_NssImpl_getImplementationName();
 
-css::uno::Sequence< OUString > SAL_CALL SEInitializer_NssImpl_getSupportedServiceNames(  )
-    throw ( css::uno::RuntimeException );
+/// @throws css::uno::RuntimeException
+css::uno::Sequence< OUString > SAL_CALL SEInitializer_NssImpl_getSupportedServiceNames(  );
 
+/// @throws css::uno::Exception
 css::uno::Reference< css::uno::XInterface >
-SAL_CALL SEInitializer_NssImpl_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rxMSF)
-    throw ( css::uno::Exception );
+SAL_CALL SEInitializer_NssImpl_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rxMSF);
 
 #endif
 

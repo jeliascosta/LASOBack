@@ -40,6 +40,7 @@
 #include <comphelper/configuration.hxx>
 #include <comphelper/processfactory.hxx>
 #include "fpdialogbase.hxx"
+#include <o3tl/typed_flags_set.hxx>
 
 #include <set>
 
@@ -50,6 +51,17 @@ class SvtFileDialogFilter_Impl;
 class SvtURLBox;
 class SvtExpFileDlg_Impl;
 class CustomContainer;
+
+enum class AdjustFilterFlags {
+    NONE            = 0x0000,
+    NonEmpty        = 0x0001,
+    Changed         = 0x0002,
+    UserFilter      = 0x0004,
+};
+namespace o3tl {
+    template<> struct typed_flags<AdjustFilterFlags> : is_typed_flags<AdjustFilterFlags, 0x0007> {};
+}
+
 
 class SvtFileDialog : public SvtFileDialog_Base
 {
@@ -65,11 +77,10 @@ private:
     VclPtr<SvtFileView>         _pFileView;
     VclPtr<Splitter>            _pSplitter;
     ::svt::IFilePickerListener* _pFileNotifier;
-    SvtExpFileDlg_Impl*         _pImp;
+    std::unique_ptr<SvtExpFileDlg_Impl>  pImpl;
     PickerFlags                 _nPickerFlags;
     bool                        _bIsInExecute   :   1;
 
-    ImageList                   m_aImages;
     ::svt::SmartContent         m_aContent;
 
     ::std::set< VclPtr<Control> >
@@ -83,21 +94,21 @@ private:
     css::uno::Reference < css::uno::XComponentContext >
                                 m_context;
 
-    DECL_LINK_TYPED(            FilterSelectHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED(            FilterSelectTimerHdl_Impl, Timer*, void );
-    DECL_LINK_TYPED(            NewFolderHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(            OpenUrlHdl_Impl, SvtURLBox*, void );
-    DECL_LINK_TYPED(            OpenClickHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(            CancelHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(            FileNameGetFocusHdl_Impl, Control&, void );
-    DECL_LINK_TYPED(            FileNameModifiedHdl_Impl, Edit&, void );
+    DECL_LINK(            FilterSelectHdl_Impl, ListBox&, void );
+    DECL_LINK(            FilterSelectTimerHdl_Impl, Timer*, void );
+    DECL_LINK(            NewFolderHdl_Impl, Button*, void );
+    DECL_LINK(            OpenUrlHdl_Impl, SvtURLBox*, void );
+    DECL_LINK(            OpenClickHdl_Impl, Button*, void );
+    DECL_LINK(            CancelHdl_Impl, Button*, void );
+    DECL_LINK(            FileNameGetFocusHdl_Impl, Control&, void );
+    DECL_LINK(            FileNameModifiedHdl_Impl, Edit&, void );
 
-    DECL_LINK_TYPED(            URLBoxModifiedHdl_Impl, SvtURLBox*, void );
-    DECL_LINK_TYPED(            ConnectToServerPressed_Hdl, Button*, void );
+    DECL_LINK(            URLBoxModifiedHdl_Impl, SvtURLBox*, void );
+    DECL_LINK(            ConnectToServerPressed_Hdl, Button*, void );
 
-    DECL_LINK_TYPED(            AddPlacePressed_Hdl, Button*, void );
-    DECL_LINK_TYPED(            RemovePlacePressed_Hdl, Button*, void );
-    DECL_LINK_TYPED(            Split_Hdl, Splitter*, void );
+    DECL_LINK(            AddPlacePressed_Hdl, Button*, void );
+    DECL_LINK(            RemovePlacePressed_Hdl, Button*, void );
+    DECL_LINK(            Split_Hdl, Splitter*, void );
 
     void                        OpenHdl_Impl(void* pVoid);
     void                        Init_Impl( PickerFlags nBits );
@@ -119,13 +130,13 @@ private:
     void                        OpenMultiSelection_Impl();
     void                        AddControls_Impl( );
 
-    DECL_LINK_TYPED( SelectHdl_Impl, SvTreeListBox*, void );
-    DECL_LINK_TYPED( DblClickHdl_Impl, SvTreeListBox*, bool);
-    DECL_LINK_TYPED( EntrySelectHdl_Impl, ComboBox&, void);
-    DECL_LINK_TYPED( OpenDoneHdl_Impl, SvtFileView*, void );
-    DECL_LINK_TYPED( AutoExtensionHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( ClickHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( PlayButtonHdl_Impl, Button*, void);
+    DECL_LINK( SelectHdl_Impl, SvTreeListBox*, void );
+    DECL_LINK( DblClickHdl_Impl, SvTreeListBox*, bool);
+    DECL_LINK( EntrySelectHdl_Impl, ComboBox&, void);
+    DECL_LINK( OpenDoneHdl_Impl, SvtFileView*, void );
+    DECL_LINK( AutoExtensionHdl_Impl, Button*, void);
+    DECL_LINK( ClickHdl_Impl, Button*, void );
+    DECL_LINK( PlayButtonHdl_Impl, Button*, void);
 
 
     // removes a filter with wildcards from the path and returns it
@@ -134,7 +145,7 @@ private:
     void    implUpdateImages( );
 
 protected:
-    virtual bool                Notify( NotifyEvent& rNEvt ) override;
+    virtual bool                EventNotify( NotifyEvent& rNEvt ) override;
 
     OUString                    _aPath;
     OUString                    _aDefExt;
@@ -160,7 +171,7 @@ protected:
 
 public:
                                 SvtFileDialog( vcl::Window* _pParent, PickerFlags nBits );
-                                virtual ~SvtFileDialog();
+                                virtual ~SvtFileDialog() override;
     virtual void                dispose() override;
 
     virtual short               Execute() override;
@@ -226,7 +237,7 @@ public:
     inline void                 EraseDefaultExt( sal_Int32 _nIndex = 0 );
     inline const OUString&      GetDefaultExt() const;
 
-    inline Image                GetButtonImage( sal_uInt16 _nButtonId ) const { return m_aImages.GetImage( _nButtonId ); }
+    static Image                GetButtonImage( sal_uInt16 _nButtonId );
 
     bool                        ContentIsFolder( const OUString& rURL ) override { return m_aContent.isFolder( rURL ) && m_aContent.isValid(); }
     bool                        ContentHasParentFolder( const OUString& rURL );
@@ -238,11 +249,10 @@ private:
 
     /** updates _pUserFilter with a new filter
         <p>No checks for necessity are made.</p>
-        @return <TRUE/> if the new filter is "*.*"
     */
-    bool                        createNewUserFilter( const OUString& _rNewFilter );
+    void                        createNewUserFilter( const OUString& _rNewFilter );
 
-    sal_uInt16                  adjustFilter( const OUString& _rFilter );
+    AdjustFilterFlags           adjustFilter( const OUString& _rFilter );
 
     // IFilePickerController, needed by OControlAccess
     virtual Control*            getControl( sal_Int16 _nControlId, bool _bLabelControl = false ) const override;

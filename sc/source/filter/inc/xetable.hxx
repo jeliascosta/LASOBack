@@ -278,11 +278,11 @@ class XclExpCellBase : public XclExpRecord
 {
 public:
     /** Returns the (first) address of the cell(s). */
-    inline const XclAddress& GetXclPos() const { return maXclPos; }
+    const XclAddress& GetXclPos() const { return maXclPos; }
     /** Returns the (first) Excel column index of the cell(s). */
-    inline sal_uInt16   GetXclCol() const { return maXclPos.mnCol; }
+    sal_uInt16   GetXclCol() const { return maXclPos.mnCol; }
     /** Returns the Excel row index of the cell. */
-    inline sal_uInt32   GetXclRow() const { return maXclPos.mnRow; }
+    sal_uInt32   GetXclRow() const { return maXclPos.mnRow; }
 
     /** Derived classes return the column index of the last contained cell. */
     virtual sal_uInt16  GetLastXclCol() const = 0;
@@ -305,10 +305,10 @@ public:
 
 protected:
     explicit            XclExpCellBase(
-                            sal_uInt16 nRecId, sal_Size nContSize, const XclAddress& rXclPos );
+                            sal_uInt16 nRecId, std::size_t nContSize, const XclAddress& rXclPos );
 
     /** Sets this record to a new column position. */
-    inline void         SetXclCol( sal_uInt16 nXclCol ) { maXclPos.mnCol = nXclCol; }
+    void         SetXclCol( sal_uInt16 nXclCol ) { maXclPos.mnCol = nXclCol; }
 
 private:
     XclAddress          maXclPos;       /// Address of the cell.
@@ -334,18 +334,18 @@ public:
     virtual void        Save( XclExpStream& rStrm ) override;
 
 protected:
-    explicit            XclExpSingleCellBase( sal_uInt16 nRecId, sal_Size nContSize,
+    explicit            XclExpSingleCellBase( sal_uInt16 nRecId, std::size_t nContSize,
                             const XclAddress& rXclPos, sal_uInt32 nXFId );
 
     explicit            XclExpSingleCellBase( const XclExpRoot& rRoot,
-                            sal_uInt16 nRecId, sal_Size nContSize, const XclAddress& rXclPos,
+                            sal_uInt16 nRecId, std::size_t nContSize, const XclAddress& rXclPos,
                             const ScPatternAttr* pPattern, sal_Int16 nScript, sal_uInt32 nForcedXFId );
 
-    inline void         SetContSize( sal_Size nContSize ) { mnContSize = nContSize; }
-    inline sal_Size     GetContSize() const { return mnContSize; }
+    void         SetContSize( std::size_t nContSize ) { mnContSize = nContSize; }
+    std::size_t  GetContSize() const { return mnContSize; }
 
-    inline void         SetXFId( sal_uInt32 nXFId ) { maXFId.mnXFId = nXFId; }
-    inline sal_uInt32   GetXFId() const { return maXFId.mnXFId; }
+    void         SetXFId( sal_uInt32 nXFId ) { maXFId.mnXFId = nXFId; }
+    sal_uInt32   GetXFId() const { return maXFId.mnXFId; }
 
 private:
     /** Writes cell address, XF index, and calls WriteContents() for each cell. */
@@ -355,7 +355,7 @@ private:
 
 private:
     XclExpXFId          maXFId;         /// The XF identifier of the cell formatting.
-    sal_Size            mnContSize;     /// The size of the cell contents.
+    std::size_t         mnContSize;     /// The size of the cell contents.
 };
 
 /** Represents a NUMBER record that describes a cell with a double value. */
@@ -425,7 +425,7 @@ public:
 private:
     /** Initializes the record contents. Called from constructors. */
     void                Init( const XclExpRoot& rRoot,
-                            const ScPatternAttr* pPattern, XclExpStringRef xText );
+                            const ScPatternAttr* pPattern, XclExpStringRef const & xText );
 
     virtual void        WriteContents( XclExpStream& rStrm ) override;
 
@@ -470,7 +470,7 @@ struct XclExpMultiXFId : public XclExpXFId
 {
     sal_uInt16          mnCount;        /// Number of XF identifiers.
 
-    inline explicit     XclExpMultiXFId( sal_uInt32 nXFId, sal_uInt16 nCount = 1 ) :
+    explicit     XclExpMultiXFId( sal_uInt32 nXFId, sal_uInt16 nCount = 1 ) :
                             XclExpXFId( nXFId ), mnCount( nCount ) {}
 };
 
@@ -494,7 +494,7 @@ public:
 
 protected:
     explicit            XclExpMultiCellBase( sal_uInt16 nRecId, sal_uInt16 nMulRecId,
-                            sal_Size nContSize, const XclAddress& rXclPos );
+                            std::size_t nContSize, const XclAddress& rXclPos );
 
     /** Returns the number of cells this record represents. */
     sal_uInt16          GetCellCount() const;
@@ -525,7 +525,7 @@ private:
     typedef ::std::vector< XclExpMultiXFId > XclExpMultiXFIdDeq;
 
     sal_uInt16          mnMulRecId;     /// Record ID for multiple record variant.
-    sal_Size            mnContSize;     /// Data size of contents for one cell
+    std::size_t         mnContSize;     /// Data size of contents for one cell
     XclExpMultiXFIdDeq  maXFIds;        /// The XF identifiers of the cell formatting.
 };
 
@@ -585,9 +585,9 @@ class XclExpOutlineBuffer
 {
 public:
     /** Returns true, if a collapsed group ends at the last processed position. */
-    inline bool         IsCollapsed() const { return mbCurrCollapse; }
+    bool         IsCollapsed() const { return mbCurrCollapse; }
     /** Returns the highest level of an open group at the last processed position. */
-    inline sal_uInt8    GetLevel() const { return ::std::min( mnCurrLevel, EXC_OUTLINE_MAX ); }
+    sal_uInt8    GetLevel() const { return ::std::min( mnCurrLevel, EXC_OUTLINE_MAX ); }
 
 protected:
     /** Constructs the outline buffer.
@@ -603,7 +603,7 @@ private:
     {
         SCCOLROW            mnScEndPos;         /// The end position of a group in a level.
         bool                mbHidden;           /// true = Group in this level is hidden.
-        inline explicit     XclExpLevelInfo() : mnScEndPos( 0 ), mbHidden( false ) {}
+        explicit     XclExpLevelInfo() : mnScEndPos( 0 ), mbHidden( false ) {}
     };
     typedef ::std::vector< XclExpLevelInfo > XclExpLevelInfoVec;
 
@@ -617,11 +617,11 @@ private:
 class XclExpColOutlineBuffer : public XclExpOutlineBuffer
 {
 public:
-    inline explicit     XclExpColOutlineBuffer( const XclExpRoot& rRoot ) :
+    explicit     XclExpColOutlineBuffer( const XclExpRoot& rRoot ) :
                             XclExpOutlineBuffer( rRoot, false ) {}
 
     /** Updates the current state by processing the settings of the passed Calc column. */
-    inline void         Update( SCCOL nScCol )
+    void         Update( SCCOL nScCol )
                             { UpdateColRow( static_cast< SCCOLROW >( nScCol ) ); }
 };
 
@@ -629,11 +629,11 @@ public:
 class XclExpRowOutlineBuffer : public XclExpOutlineBuffer
 {
 public:
-    inline explicit     XclExpRowOutlineBuffer( const XclExpRoot& rRoot ) :
+    explicit     XclExpRowOutlineBuffer( const XclExpRoot& rRoot ) :
                             XclExpOutlineBuffer( rRoot, true ) {}
 
     /** Updates the current state by processing the settings of the passed Calc row. */
-    inline void         Update( SCROW nScRow )
+    void         Update( SCROW nScRow )
                             { UpdateColRow( static_cast< SCCOLROW >( nScRow ) ); }
 };
 
@@ -726,11 +726,11 @@ public:
     bool                TryMerge( const XclExpColinfo& rColInfo );
 
     /** Returns the Excel width of the column(s). */
-    inline sal_uInt16   GetColWidth() const { return mnWidth; }
+    sal_uInt16   GetColWidth() const { return mnWidth; }
     /** Returns the final Excel XF index of the column(s). */
-    inline sal_uInt16   GetXFIndex() const { return maXFId.mnXFIndex; }
+    sal_uInt16   GetXFIndex() const { return maXFId.mnXFIndex; }
     /** Returns the number of columns represented by this record. */
-    inline sal_uInt16   GetColCount() const { return mnLastXclCol - mnFirstXclCol + 1; }
+    sal_uInt16   GetColCount() const { return mnLastXclCol - mnFirstXclCol + 1; }
 
     /** Returns true, if the column has default format and width. */
     bool                IsDefault( const XclExpDefcolwidth& rDefColWidth ) const;
@@ -774,7 +774,7 @@ public:
     /** Writes all COLINFO records of this buffer. */
     virtual void        Save( XclExpStream& rStrm ) override;
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
-    sal_uInt8           GetHighestOutlineLevel() { return maHighestOutlineLevel; }
+    sal_uInt8           GetHighestOutlineLevel() { return mnHighestOutlineLevel; }
 
 private:
     typedef XclExpRecordList< XclExpColinfo >   XclExpColinfoList;
@@ -783,7 +783,7 @@ private:
     XclExpColinfoList   maColInfos;         /// List of COLINFO records.
     XclExpDefcolwidth   maDefcolwidth;      /// The DEFCOLWIDTH record.
     XclExpColOutlineBuffer maOutlineBfr;    /// Buffer for column outline groups.
-    sal_uInt8           maHighestOutlineLevel; /// Highest number of outline levels for columns in sheet.
+    sal_uInt8           mnHighestOutlineLevel; /// Highest number of outline levels for columns in sheet.
 };
 
 class XclExpRow;
@@ -798,9 +798,9 @@ struct XclExpDefaultRowData
     explicit            XclExpDefaultRowData( const XclExpRow& rRow );
 
     /** Returns true, if rows are hidden by default. */
-    inline bool         IsHidden() const { return ::get_flag( mnFlags, EXC_DEFROW_HIDDEN ); }
+    bool         IsHidden() const { return ::get_flag( mnFlags, EXC_DEFROW_HIDDEN ); }
     /** Returns true, if the rows have a manually set height by default. */
-    inline bool         IsUnsynced() const { return ::get_flag( mnFlags, EXC_DEFROW_UNSYNCED ); }
+    bool         IsUnsynced() const { return ::get_flag( mnFlags, EXC_DEFROW_UNSYNCED ); }
 };
 
 /** Represents a DEFROWHEIGHT record containing default format for unused rows. */
@@ -838,23 +838,23 @@ public:
         @param bAlwaysEmpty  true = This row will not be filled with blank cells
             in the Finalize() function. */
     explicit            XclExpRow( const XclExpRoot& rRoot, sal_uInt32 nXclRow,
-                            XclExpRowOutlineBuffer& rOutlineBfr, bool bAlwaysEmpty );
+                            XclExpRowOutlineBuffer& rOutlineBfr, bool bAlwaysEmpty, bool bHidden, sal_uInt16 nHeight );
 
     /** Returns the excel row index of this ROW record. */
-    inline sal_uInt32   GetXclRow() const { return mnXclRow; }
+    sal_uInt32   GetXclRow() const { return mnXclRow; }
     /** Returns the height of the row in twips. */
-    inline sal_uInt16   GetHeight() const { return mnHeight; }
+    sal_uInt16   GetHeight() const { return mnHeight; }
     /** Returns true, if this row does not contain at least one valid cell. */
-    inline bool         IsEmpty() const { return maCellList.IsEmpty(); }
+    bool         IsEmpty() const { return maCellList.IsEmpty(); }
     /** Returns true, if this row is hidden. */
-    inline bool         IsHidden() const { return ::get_flag( mnFlags, EXC_ROW_HIDDEN ); }
+    bool         IsHidden() const { return ::get_flag( mnFlags, EXC_ROW_HIDDEN ); }
     /** Returns true, if this row contains a manually set height. */
-    inline bool         IsUnsynced() const { return ::get_flag( mnFlags, EXC_ROW_UNSYNCED ); }
+    bool         IsUnsynced() const { return ::get_flag( mnFlags, EXC_ROW_UNSYNCED ); }
     /** Returns true, if this row is enabled (will be exported). */
-    inline bool         IsEnabled() const { return mbEnabled; }
+    bool         IsEnabled() const { return mbEnabled; }
 
     /** Appends the passed cell object to this row. */
-    void                AppendCell( XclExpCellRef xCell, bool bIsMergedBase );
+    void                AppendCell( XclExpCellRef const & xCell, bool bIsMergedBase );
 
     /** Converts all XF identifiers into the Excel XF indexes. */
     void                Finalize( const ScfUInt16Vec& rColXFIndexes,
@@ -884,8 +884,8 @@ public:
     virtual void        Save( XclExpStream& rStrm ) override;
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
 
-    inline sal_uInt32   GetXclRowRpt() const { return mnXclRowRpt; }
-    inline void         SetXclRowRpt( sal_uInt32 nRpt ){ mnXclRowRpt = nRpt; }
+    sal_uInt32   GetXclRowRpt() const { return mnXclRowRpt; }
+    void         SetXclRowRpt( sal_uInt32 nRpt ){ mnXclRowRpt = nRpt; }
 private:
     /** Inserts a cell at the specified list position, tries to merge with neighbors. */
     void                InsertCell( XclExpCellRef xCell, size_t nPos, bool bIsMergedBase );
@@ -921,7 +921,7 @@ public:
     explicit            XclExpRowBuffer( const XclExpRoot& rRoot );
 
     /** Appends the passed cell object to the row that the cell specifies. */
-    void                AppendCell( XclExpCellRef xCell, bool bIsMergedBase );
+    void                AppendCell( XclExpCellRef const & xCell, bool bIsMergedBase );
     /** Forces insertion of all ROW records before the passed row. */
     void                CreateRows( SCROW nFirstFreeScRow );
 
@@ -935,7 +935,7 @@ public:
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
 
     XclExpDimensions&   GetDimensions() { return maDimensions; }
-    sal_uInt8           GetHighestOutlineLevel() { return maHighestOutlineLevel; }
+    sal_uInt8           GetHighestOutlineLevel() { return mnHighestOutlineLevel; }
 
 private:
     /** Returns access to the specified ROW record. Inserts preceding missing ROW records.
@@ -950,7 +950,7 @@ private:
     RowMap              maRowMap;
     XclExpRowOutlineBuffer maOutlineBfr;    /// Buffer for row outline groups.
     XclExpDimensions    maDimensions;       /// DIMENSIONS record for used area.
-    sal_uInt8           maHighestOutlineLevel; /// Highest number of outline levels for rows in sheet.
+    sal_uInt8           mnHighestOutlineLevel; /// Highest number of outline levels for rows in sheet.
 };
 
 // Cell Table

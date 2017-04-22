@@ -27,7 +27,6 @@
 #include "helpid.h"
 #include "globals.hrc"
 #include "web.hrc"
-#include "popup.hrc"
 #include "shells.hrc"
 #include "wolesh.hxx"
 #include "cmdid.h"
@@ -41,15 +40,13 @@ void SwWebOleShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("oleobject");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_WEBOLE_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_WEBOLE_TOOLBOX);
 }
 
 SwWebOleShell::SwWebOleShell(SwView &_rView) :
     SwOleShell(_rView)
-
 {
     SetName("Object");
-    SetHelpId(SW_OLESHELL);
 }
 
 SwWebOleShell::~SwWebOleShell()

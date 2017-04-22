@@ -1,0 +1,100 @@
+#. extracted from formula/source/ui/dlg
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2015-04-22 23:40+0200\n"
+"PO-Revision-Date: 2015-05-13 13:08+0000\n"
+"Last-Translator: system user <>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: sa_IN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Pootle 2.7\n"
+"X-Accelerator-Marker: ~\n"
+"X-POOTLE-MTIME: 1431522524.000000\n"
+
+#: formdlgs.src
+msgctxt ""
+"formdlgs.src\n"
+"STR_STRUCT_ERR1\n"
+"string.text"
+msgid "=?"
+msgstr ""
+
+#: formdlgs.src
+msgctxt ""
+"formdlgs.src\n"
+"STR_STRUCT_ERR2\n"
+"string.text"
+msgid "Error"
+msgstr ""
+"#-#-#-#-#  dlg.po (PACKAGE VERSION)  #-#-#-#-#\n"
+"त्रुटिः\n"
+"#-#-#-#-#  importwizard.po (PACKAGE VERSION)  #-#-#-#-#\n"
+"दोषः\n"
+"#-#-#-#-#  Localization.po (PACKAGE VERSION)  #-#-#-#-#\n"
+"दोषः \n"
+"#-#-#-#-#  dialogs.po (PACKAGE VERSION)  #-#-#-#-#\n"
+"त्रुटिः\n"
+"#-#-#-#-#  misc.po (PACKAGE VERSION)  #-#-#-#-#\n"
+"दोषः\n"
+"#-#-#-#-#  gui.po (PACKAGE VERSION)  #-#-#-#-#\n"
+"दोषः "
+
+#: formdlgs.src
+msgctxt ""
+"formdlgs.src\n"
+"STR_TITLE1\n"
+"string.text"
+msgid "Function Wizard"
+msgstr "व्यापारविजार्ड"
+
+#: formdlgs.src
+msgctxt ""
+"formdlgs.src\n"
+"STR_TITLE2\n"
+"string.text"
+msgid "Function Wizard  -"
+msgstr "व्यापारविजार्ड"
+
+#: formdlgs.src
+msgctxt ""
+"formdlgs.src\n"
+"STR_END\n"
+"string.text"
+msgid "~End"
+msgstr "समाप्तः"
+
+#: formdlgs.src
+msgctxt ""
+"formdlgs.src\n"
+"RID_STR_SHRINK\n"
+"string.text"
+msgid "Shrink"
+msgstr "सङ्कोचनम्"
+
+#: formdlgs.src
+msgctxt ""
+"formdlgs.src\n"
+"RID_STR_EXPAND\n"
+"string.text"
+msgid "Expand"
+msgstr "विस्तारः"
+
+#: parawin.src
+msgctxt ""
+"parawin.src\n"
+"STR_OPTIONAL\n"
+"string.text"
+msgid "(optional)"
+msgstr "(वैकल्पिकः)"
+
+#: parawin.src
+msgctxt ""
+"parawin.src\n"
+"STR_REQUIRED\n"
+"string.text"
+msgid "(required)"
+msgstr "(अपेक्षते)"

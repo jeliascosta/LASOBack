@@ -49,7 +49,6 @@ using com::sun::star::xml::sax::XDocumentHandler;
 static const sal_Int8 header[] = { 0x57, 0x6f, 0x72, 0x64, 0x50, 0x72, 0x6f };
 
 bool SAL_CALL LotusWordProImportFilter::importImpl( const Sequence< css::beans::PropertyValue >& aDescriptor )
-    throw (RuntimeException, std::exception)
 {
 
     sal_Int32 nLength = aDescriptor.getLength();
@@ -78,33 +77,28 @@ bool SAL_CALL LotusWordProImportFilter::importImpl( const Sequence< css::beans::
 
 }
 
-extern "C" SAL_DLLPUBLIC_EXPORT bool SAL_CALL TestImportLWP(const OUString &rURL)
+extern "C" SAL_DLLPUBLIC_EXPORT bool SAL_CALL TestImportLWP(SvStream &rStream)
 {
-    SvFileStream aFileStream(rURL, StreamMode::READ);
     uno::Reference< XDocumentHandler > xHandler;
-    return ( ReadWordproFile(aFileStream, xHandler) == 0 );
+    return ReadWordproFile(rStream, xHandler) == 0;
 }
 
 sal_Bool SAL_CALL LotusWordProImportFilter::filter( const Sequence< css::beans::PropertyValue >& aDescriptor )
-    throw (RuntimeException, std::exception)
 {
     return importImpl ( aDescriptor );
 }
 void SAL_CALL LotusWordProImportFilter::cancel(  )
-    throw (RuntimeException, std::exception)
 {
 }
 
 // XImporter
 void SAL_CALL LotusWordProImportFilter::setTargetDocument( const uno::Reference< css::lang::XComponent >& xDoc )
-    throw (css::lang::IllegalArgumentException, RuntimeException, std::exception)
 {
     mxDoc = xDoc;
 }
 
 // XExtendedFilterDetection
 OUString SAL_CALL LotusWordProImportFilter::detect( css::uno::Sequence< PropertyValue >& Descriptor )
-    throw( css::uno::RuntimeException, std::exception )
 {
 
     OUString sTypeName( "writer_LotusWordPro_Document" );
@@ -150,7 +144,6 @@ OUString SAL_CALL LotusWordProImportFilter::detect( css::uno::Sequence< Property
 
 // XInitialization
 void SAL_CALL LotusWordProImportFilter::initialize( const Sequence< Any >& aArguments )
-    throw (Exception, RuntimeException, std::exception)
 {
     Sequence < PropertyValue > aAnySeq;
     sal_Int32 nLength = aArguments.getLength();
@@ -171,19 +164,16 @@ void SAL_CALL LotusWordProImportFilter::initialize( const Sequence< Any >& aArgu
 
 // XServiceInfo
 OUString SAL_CALL LotusWordProImportFilter::getImplementationName()
-    throw (RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.Writer.LotusWordProImportFilter");
 }
 
 sal_Bool SAL_CALL LotusWordProImportFilter::supportsService(const OUString& rServiceName)
-    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence<OUString> SAL_CALL LotusWordProImportFilter::getSupportedServiceNames()
-    throw (RuntimeException, std::exception)
 {
     return { "com.sun.star.document.ImportFilter", "com.sun.star.document.ExtendedTypeDetection" };
 }

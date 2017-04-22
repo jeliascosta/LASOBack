@@ -28,7 +28,6 @@
 #endif /* Def _AIX */
 
 #ifdef _MSC_VER
-#define __windows
 #undef CORE_BIG_ENDIAN
 #define CORE_LITTLE_ENDIAN
 #endif /* Def _MSC_VER */
@@ -80,7 +79,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#ifdef __windows
+#ifdef _MSC_VER
 #include <io.h>
 #else
 #include <unistd.h>
@@ -89,7 +88,7 @@
 #include <config_options.h>
 
 /* modes */
-#ifdef __windows
+#ifdef _MSC_VER
 #define FILE_O_RDONLY     _O_RDONLY
 #define FILE_O_BINARY     _O_BINARY
 #define PATHNCMP _strnicmp /* MSVC converts paths to lower-case sometimes? */
@@ -109,7 +108,7 @@
 #define FALSE 0
 #endif
 
-int internal_boost = 0;
+static int internal_boost = 0;
 static char* base_dir;
 static char* work_dir;
 size_t work_dir_len;
@@ -152,7 +151,7 @@ struct pool
     int      primary;    /**< primary allocation in bytes */
     int      secondary;  /**< secondary allocation in bytes */
 };
-#define POOL_ALIGN_INCREMENT 8 /**< Alignement, must be a power of 2 and of size > to sizeof(void*) */
+#define POOL_ALIGN_INCREMENT 8 /**< alignment, must be a power of 2 and of size > to sizeof(void*) */
 
 
 static void* pool_take_extent(struct pool* pool, int allocate)
@@ -264,7 +263,7 @@ void* data;
     }
     else
     {
-        /* re-used old freed element by chopipng the head of the free list */
+        /* re-used old freed element by chopping the head of the free list */
         pool->head_free = *(void**)data;
     }
 
@@ -390,9 +389,9 @@ static unsigned int hash_compute( struct hash* hash, const char* key, int length
      * but we mask the undefined stuff if any, so we are still good, thanks
      * to alignment of memory allocation and tail-memory management overhead
      * we always can read 3 bytes past the official end without triggering
-     * a segfault -- if you find a platform/compiler couple for which that postulat
+     * a segfault -- if you find a platform/compiler couple for which that postulate
      * is false, then you just need to over-allocate by 2 more bytes in file_load()
-     * file_load already over-allocate by 1 to sitck a \0 at the end of the buffer.
+     * file_load already over-allocate by 1 to stick a \0 at the end of the buffer.
      */
     switch(length)
     {
@@ -481,7 +480,7 @@ unsigned int i;
 
     hash->size = (old_size << 1) + 1;
     /* we really should avoid to get there... so print a message to alert of the condition */
-    fprintf(stderr, "resize hash %d -> %d\n", old_size, hash->size);
+    fprintf(stderr, "resize hash %u -> %u\n", old_size, hash->size);
     if(hash->size == old_size)
     {
         hash->flags |= HASH_F_NO_RESIZE;
@@ -796,7 +795,8 @@ static inline void print_fullpaths(char* line)
         end = token;
         /* hard to believe that in this day and age drive letters still exist */
         if (*end && (':' == *(end+1)) &&
-            (('\\' == *(end+2)) || ('/' == *(end+2))) && isalpha(*end))
+            (('\\' == *(end+2)) || ('/' == *(end+2))) &&
+            isalpha((unsigned char)*end))
         {
             end = end + 3; /* only one cross, err drive letter per filename */
         }
@@ -871,7 +871,7 @@ char const * src;
 char* dest;
 char* last_dot = NULL;
     //fprintf(stderr, "generate_phony_line called with phony_target %s and extension %s\n", phony_target, extension);
-    for(dest = phony_content_buffer+work_dir_len, src = phony_target; *src != 0; ++src, ++dest)
+    for(dest = phony_content_buffer+work_dir_len+1, src = phony_target; *src != 0; ++src, ++dest)
     {
         *dest = *src;
         if(*dest == '.')
@@ -1034,47 +1034,52 @@ off_t size;
                 // cases ordered by frequency
                 if(strncmp(src_relative, "CxxObject/", 10) == 0)
                 {
-                    created_line = generate_phony_line(src_relative+10, "o");
+                    created_line = generate_phony_line(src_relative, "o");
                     rc = generate_phony_file(fn, created_line);
                 }
                 else if(strncmp(fn+work_dir_len+5, "SrsPartTarget/", 14) == 0)
                 {
-                    created_line = generate_phony_line(src_relative+14, "");
+                    created_line = generate_phony_line(src_relative, "");
                     rc = generate_phony_file(fn, created_line);
                 }
                 else if(strncmp(src_relative, "GenCxxObject/", 13) == 0)
                 {
-                    created_line = generate_phony_line(src_relative+13, "o");
+                    created_line = generate_phony_line(src_relative, "o");
                     rc = generate_phony_file(fn, created_line);
                 }
                 else if(strncmp(src_relative, "CObject/", 8) == 0)
                 {
-                    created_line = generate_phony_line(src_relative+8, "o");
+                    created_line = generate_phony_line(src_relative, "o");
                     rc = generate_phony_file(fn, created_line);
                 }
                 else if(strncmp(src_relative, "GenCObject/", 11) == 0)
                 {
-                    created_line = generate_phony_line(src_relative+11, "o");
+                    created_line = generate_phony_line(src_relative, "o");
                     rc = generate_phony_file(fn, created_line);
                 }
                 else if(strncmp(src_relative, "SdiObject/", 10) == 0)
                 {
-                    created_line = generate_phony_line(src_relative+10, "o");
+                    created_line = generate_phony_line(src_relative, "o");
                     rc = generate_phony_file(fn, created_line);
                 }
                 else if(strncmp(src_relative, "AsmObject/", 10) == 0)
                 {
-                    created_line = generate_phony_line(src_relative+10, "o");
+                    created_line = generate_phony_line(src_relative, "o");
                     rc = generate_phony_file(fn, created_line);
                 }
                 else if(strncmp(src_relative, "ObjCxxObject/", 13) == 0)
                 {
-                    created_line = generate_phony_line(src_relative+13, "o");
+                    created_line = generate_phony_line(src_relative, "o");
                     rc = generate_phony_file(fn, created_line);
                 }
                 else if(strncmp(src_relative, "ObjCObject/", 11) == 0)
                 {
-                    created_line = generate_phony_line(src_relative+11, "o");
+                    created_line = generate_phony_line(src_relative, "o");
+                    rc = generate_phony_file(fn, created_line);
+                }
+                else if(strncmp(src_relative, "CxxClrObject/", 13) == 0)
+                {
+                    created_line = generate_phony_line(src_relative, "o");
                     rc = generate_phony_file(fn, created_line);
                 }
                 else

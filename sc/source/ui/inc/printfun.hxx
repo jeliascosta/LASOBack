@@ -99,15 +99,14 @@ struct ScPrintState                         //  Save Variables from ScPrintFunc
 class ScPageRowEntry
 {
 private:
-    SCROW   nStartRow;
-    SCROW   nEndRow;
-    size_t  nPagesX;
-    bool*   pHidden;
+    SCROW                    nStartRow;
+    SCROW                    nEndRow;
+    size_t                   nPagesX;
+    std::unique_ptr<bool[]>  pHidden;
     //!     Cache Number of really visible?
 
 public:
-            ScPageRowEntry()    { nStartRow = nEndRow = 0; nPagesX = 0; pHidden = nullptr; }
-            ~ScPageRowEntry()   { delete[] pHidden; }
+            ScPageRowEntry()    { nStartRow = nEndRow = 0; nPagesX = 0; }
 
             ScPageRowEntry(const ScPageRowEntry& r);
     ScPageRowEntry& operator=(const ScPageRowEntry& r);
@@ -162,7 +161,7 @@ private:
     bool                bLandscape;
     bool                bSourceRangeValid;
 
-    sal_uInt16              nPageUsage;
+    SvxPageUsage        nPageUsage;
     Size                aPageSize;          // Printer Twips
     const SvxBoxItem*   pBorderItem;
     const SvxBrushItem* pBackgroundItem;
@@ -182,7 +181,7 @@ private:
     long                nTabPages;
     long                nTotalPages;
 
-    Rectangle           aPageRect;          // Document Twips
+    tools::Rectangle           aPageRect;          // Document Twips
 
     MapMode             aLogicMode;         // Set in DoPrint
     MapMode             aOffsetMode;
@@ -238,7 +237,7 @@ public:
                     ~ScPrintFunc();
 
     static void     DrawToDev( ScDocument* pDoc, OutputDevice* pDev, double nPrintFactor,
-                                const Rectangle& rBound, ScViewData* pViewData, bool bMetaFile );
+                                const tools::Rectangle& rBound, ScViewData* pViewData, bool bMetaFile );
 
     void            SetDrawView( FmFormView* pNew );
 

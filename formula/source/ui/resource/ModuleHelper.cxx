@@ -43,26 +43,18 @@ namespace formula
 */
 class OModuleImpl
 {
-    ResMgr* m_pResources;
+    std::unique_ptr<ResMgr> m_pResources;
 
 public:
     /// ctor
     OModuleImpl();
-    ~OModuleImpl();
 
     /// get the manager for the resources of the module
     ResMgr* getResManager();
 };
 
 OModuleImpl::OModuleImpl()
-    :m_pResources(nullptr)
 {
-}
-
-
-OModuleImpl::~OModuleImpl()
-{
-    delete m_pResources;
 }
 
 
@@ -73,9 +65,9 @@ ResMgr* OModuleImpl::getResManager()
     if (!m_pResources)
     {
         // create a manager with a fixed prefix
-        m_pResources = ResMgr::CreateResMgr("forui");
+        m_pResources.reset( ResMgr::CreateResMgr("forui") );
     }
-    return m_pResources;
+    return m_pResources.get();
 }
 
 

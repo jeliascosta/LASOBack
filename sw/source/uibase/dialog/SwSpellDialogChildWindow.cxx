@@ -75,7 +75,8 @@ struct SpellState
     bool                m_bOtherSpelled; // frames, footnotes, headers and footers spelled
     bool                m_bStartedInOther; // started the spelling inside of the _other_ area
     bool                m_bStartedInSelection; // there was an initial text selection
-    SwPaM*              pOtherCursor; // position where the spelling inside the _other_ area started
+    std::unique_ptr<SwPaM>
+                        pOtherCursor; // position where the spelling inside the _other_ area started
     bool                m_bDrawingsSpelled; // all drawings spelled
     Reference<XTextRange> m_xStartRange; // text range that marks the start of spelling
     const SdrObject*    m_pStartDrawing; // draw text object spelling started in
@@ -83,7 +84,7 @@ struct SpellState
     bool                m_bRestartDrawing; // the first selected drawing object is found again
 
     // lose/get focus information to decide if spelling can be continued
-    ShellModes          m_eSelMode;
+    ShellMode           m_eSelMode;
     const SwNode*       m_pPointNode;
     const SwNode*       m_pMarkNode;
     sal_Int32           m_nPointPos;
@@ -109,7 +110,7 @@ struct SpellState
         m_pStartDrawing(nullptr),
         m_bRestartDrawing(false),
 
-        m_eSelMode(SHELL_MODE_OBJECT), // initially invalid
+        m_eSelMode(ShellMode::Object), // initially invalid
         m_pPointNode(nullptr),
         m_pMarkNode(nullptr),
         m_nPointPos(0),
@@ -117,8 +118,6 @@ struct SpellState
         m_pOutliner(nullptr),
         m_bTextObjectsCollected(false)
         {}
-
-    ~SpellState() {delete pOtherCursor;}
 
     // reset state in ::InvalidateSpellDialog
     void    Reset()
@@ -130,8 +129,7 @@ struct SpellState
                 m_bTextObjectsCollected = false;
                 m_aTextObjects.clear();
                 m_bStartedInOther = false;
-                delete pOtherCursor;
-                pOtherCursor = nullptr;
+                pOtherCursor.reset();
             }
 };
 
@@ -190,13 +188,13 @@ svx::SpellPortions SwSpellDialogChildWindow::GetNextWrongSentence(bool bRecheck)
             SwEditShell::MoveContinuationPosToEndOfCheckedSentence();
         }
 
-        ShellModes  eSelMode = pWrtShell->GetView().GetShellMode();
-        bool bDrawText = SHELL_MODE_DRAWTEXT == eSelMode;
+        ShellMode eSelMode = pWrtShell->GetView().GetShellMode();
+        bool bDrawText = ShellMode::DrawText == eSelMode;
         bool bNormalText =
-            SHELL_MODE_TABLE_TEXT == eSelMode ||
-            SHELL_MODE_LIST_TEXT == eSelMode ||
-            SHELL_MODE_TABLE_LIST_TEXT == eSelMode ||
-            SHELL_MODE_TEXT == eSelMode;
+            ShellMode::TableText == eSelMode ||
+            ShellMode::ListText == eSelMode ||
+            ShellMode::TableListText == eSelMode ||
+            ShellMode::Text == eSelMode;
         // Writer text outside of the body
         bool bOtherText = false;
 
@@ -210,7 +208,7 @@ svx::SpellPortions SwSpellDialogChildWindow::GetNextWrongSentence(bool bRecheck)
                 else
                 {
                     // the selection type has to be checked again - both text types are possible
-                    if(0 != (pWrtShell->GetSelectionType()& nsSelectionType::SEL_DRW_TXT))
+                    if(pWrtShell->GetSelectionType() & SelectionType::DrawObjectEditMode)
                         bDrawText = true;
                     bNormalText = !bDrawText;
                 }
@@ -230,9 +228,9 @@ svx::SpellPortions SwSpellDialogChildWindow::GetNextWrongSentence(bool bRecheck)
                 m_pSpellState->m_SpellStartPosition = bOtherText ? SPELL_START_OTHER : SPELL_START_BODY;
                 if(bOtherText)
                 {
-                    m_pSpellState->pOtherCursor = new SwPaM(*pWrtShell->GetCursor()->GetPoint());
+                    m_pSpellState->pOtherCursor.reset( new SwPaM(*pWrtShell->GetCursor()->GetPoint()) );
                     m_pSpellState->m_bStartedInOther = true;
-                    pWrtShell->SpellStart( DOCPOS_OTHERSTART, DOCPOS_OTHEREND, DOCPOS_CURR );
+                    pWrtShell->SpellStart( SwDocPositions::OtherStart, SwDocPositions::OtherEnd, SwDocPositions::Curr );
                 }
                 else
                 {
@@ -245,7 +243,7 @@ svx::SpellPortions SwSpellDialogChildWindow::GetNextWrongSentence(bool bRecheck)
                                 *pWrtShell->GetDoc(),
                                 *pCursor->Start(), pCursor->End());
                     }
-                    pWrtShell->SpellStart( DOCPOS_START, DOCPOS_END, DOCPOS_CURR );
+                    pWrtShell->SpellStart( SwDocPositions::Start, SwDocPositions::End, SwDocPositions::Curr );
                 }
             }
             else
@@ -290,7 +288,7 @@ The code below would only be part of the solution.
                     // if there's any that has not been spelled yet
                     if(!m_pSpellState->m_bOtherSpelled && pWrtShell->HasOtherCnt())
                     {
-                        pWrtShell->SpellStart(DOCPOS_OTHERSTART, DOCPOS_OTHEREND, DOCPOS_OTHERSTART );
+                        pWrtShell->SpellStart(SwDocPositions::OtherStart, SwDocPositions::OtherEnd, SwDocPositions::OtherStart );
                         if(!pWrtShell->SpellSentence(aRet, m_bIsGrammarCheckingOn))
                         {
                             pWrtShell->SpellEnd();
@@ -302,7 +300,7 @@ The code below would only be part of the solution.
                     // if no result has been found try at the body text - completely
                     if(!m_pSpellState->m_bBodySpelled && aRet.empty())
                     {
-                        pWrtShell->SpellStart(DOCPOS_START, DOCPOS_END, DOCPOS_START );
+                        pWrtShell->SpellStart(SwDocPositions::Start, SwDocPositions::End, SwDocPositions::Start );
                         if(!pWrtShell->SpellSentence(aRet, m_bIsGrammarCheckingOn))
                         {
                             m_pSpellState->m_bBodySpelled = true;
@@ -329,9 +327,8 @@ The code below would only be part of the solution.
                         m_pSpellState->m_bStartedInOther = false;
                         pWrtShell->SetSelection(*m_pSpellState->pOtherCursor);
                         pWrtShell->SpellEnd();
-                        delete m_pSpellState->pOtherCursor;
-                        m_pSpellState->pOtherCursor = nullptr;
-                        pWrtShell->SpellStart(DOCPOS_OTHERSTART, DOCPOS_CURR, DOCPOS_OTHERSTART );
+                        m_pSpellState->pOtherCursor.reset();
+                        pWrtShell->SpellStart(SwDocPositions::OtherStart, SwDocPositions::Curr, SwDocPositions::OtherStart );
                         (void)pWrtShell->SpellSentence(aRet, m_bIsGrammarCheckingOn);
                     }
                     if(aRet.empty())
@@ -344,7 +341,7 @@ The code below would only be part of the solution.
                             // has the body been spelled?
                             if(!m_pSpellState->m_bBodySpelled)
                             {
-                                pWrtShell->SpellStart(DOCPOS_START, DOCPOS_END, DOCPOS_START );
+                                pWrtShell->SpellStart(SwDocPositions::Start, SwDocPositions::End, SwDocPositions::Start );
                                 if(!pWrtShell->SpellSentence(aRet, m_bIsGrammarCheckingOn))
                                 {
                                     m_pSpellState->m_bBodySpelled = true;
@@ -357,7 +354,7 @@ The code below would only be part of the solution.
                              m_pSpellState->m_bBodySpelled = true;
                              if(!m_pSpellState->m_bOtherSpelled && pWrtShell->HasOtherCnt())
                              {
-                                pWrtShell->SpellStart(DOCPOS_OTHERSTART, DOCPOS_OTHEREND, DOCPOS_OTHERSTART );
+                                pWrtShell->SpellStart(SwDocPositions::OtherStart, SwDocPositions::OtherEnd, SwDocPositions::OtherStart );
                                 if(!pWrtShell->SpellSentence(aRet, m_bIsGrammarCheckingOn))
                                 {
                                     pWrtShell->SpellEnd();
@@ -392,7 +389,7 @@ The code below would only be part of the solution.
             {
                 LockFocusNotification( true );
                 sal_uInt16 nRet = ScopedVclPtrInstance<MessageDialog>(GetWindow(), SW_RES(STR_QUERY_SPELL_CONTINUE),
-                                                VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO)->Execute();
+                                                VclMessageType::Question, VclButtonsType::YesNo)->Execute();
                 if(RET_YES == nRet)
                 {
                     SwUnoInternalPaM aPam(*pWrtShell->GetDoc());
@@ -400,7 +397,7 @@ The code below would only be part of the solution.
                                 m_pSpellState->m_xStartRange))
                     {
                         pWrtShell->SetSelection(aPam);
-                        pWrtShell->SpellStart(DOCPOS_START, DOCPOS_CURR, DOCPOS_START);
+                        pWrtShell->SpellStart(SwDocPositions::Start, SwDocPositions::Curr, SwDocPositions::Start);
                         if(!pWrtShell->SpellSentence(aRet, m_bIsGrammarCheckingOn))
                             pWrtShell->SpellEnd();
                     }
@@ -421,7 +418,7 @@ The code below would only be part of the solution.
                 OUString sInfo(SW_RES(STR_SPELLING_COMPLETED));
                 // #i84610#
                 vcl::Window* pTemp = GetWindow();    // temporary needed for g++ 3.3.5
-                ScopedVclPtrInstance<MessageDialog>(pTemp, sInfo, VCL_MESSAGE_INFO)->Execute();
+                ScopedVclPtrInstance<MessageDialog>(pTemp, sInfo, VclMessageType::Info)->Execute();
                 LockFocusNotification( false );
                 // take care that the now valid selection is stored
                 LoseFocus();
@@ -437,13 +434,13 @@ void SwSpellDialogChildWindow::ApplyChangedSentence(const svx::SpellPortions& rC
     OSL_ENSURE(!m_pSpellState->m_bInitialCall, "ApplyChangedSentence in initial call or after resume");
     if(pWrtShell && !m_pSpellState->m_bInitialCall)
     {
-        ShellModes  eSelMode = pWrtShell->GetView().GetShellMode();
-        bool bDrawText = SHELL_MODE_DRAWTEXT == eSelMode;
+        ShellMode eSelMode = pWrtShell->GetView().GetShellMode();
+        bool bDrawText = ShellMode::DrawText == eSelMode;
         bool bNormalText =
-            SHELL_MODE_TABLE_TEXT == eSelMode ||
-            SHELL_MODE_LIST_TEXT == eSelMode ||
-            SHELL_MODE_TABLE_LIST_TEXT == eSelMode ||
-            SHELL_MODE_TEXT == eSelMode;
+            ShellMode::TableText == eSelMode ||
+            ShellMode::ListText == eSelMode ||
+            ShellMode::TableListText == eSelMode ||
+            ShellMode::Text == eSelMode;
 
         // evaluate if the same sentence should be rechecked or not.
         // Sentences that got grammar checked should always be rechecked in order
@@ -495,13 +492,13 @@ void SwSpellDialogChildWindow::SetGrammarChecking(bool bOn)
     SwWrtShell* pWrtShell = GetWrtShell_Impl();
     if(pWrtShell)
     {
-        ShellModes  eSelMode = pWrtShell->GetView().GetShellMode();
-        bool bDrawText = SHELL_MODE_DRAWTEXT == eSelMode;
+        ShellMode eSelMode = pWrtShell->GetView().GetShellMode();
+        bool bDrawText = ShellMode::DrawText == eSelMode;
         bool bNormalText =
-            SHELL_MODE_TABLE_TEXT == eSelMode ||
-            SHELL_MODE_LIST_TEXT == eSelMode ||
-            SHELL_MODE_TABLE_LIST_TEXT == eSelMode ||
-            SHELL_MODE_TEXT == eSelMode;
+            ShellMode::TableText == eSelMode ||
+            ShellMode::ListText == eSelMode ||
+            ShellMode::TableListText == eSelMode ||
+            ShellMode::Text == eSelMode;
         if( bNormalText )
             SwEditShell::PutSpellingToSentenceStart();
         else if( bDrawText )
@@ -525,7 +522,7 @@ void SwSpellDialogChildWindow::GetFocus()
     SwWrtShell* pWrtShell = GetWrtShell_Impl();
     if(pWrtShell && !m_pSpellState->m_bInitialCall)
     {
-        ShellModes  eSelMode = pWrtShell->GetView().GetShellMode();
+        ShellMode eSelMode = pWrtShell->GetView().GetShellMode();
         if(eSelMode != m_pSpellState->m_eSelMode)
         {
             // prevent initial invalidation
@@ -536,10 +533,10 @@ void SwSpellDialogChildWindow::GetFocus()
         {
             switch(m_pSpellState->m_eSelMode)
             {
-                case SHELL_MODE_TEXT:
-                case SHELL_MODE_LIST_TEXT:
-                case SHELL_MODE_TABLE_TEXT:
-                case SHELL_MODE_TABLE_LIST_TEXT:
+                case ShellMode::Text:
+                case ShellMode::ListText:
+                case ShellMode::TableText:
+                case ShellMode::TableListText:
                 {
                     SwPaM* pCursor = pWrtShell->GetCursor();
                     if(m_pSpellState->m_pPointNode != &pCursor->GetNode() ||
@@ -549,7 +546,7 @@ void SwSpellDialogChildWindow::GetFocus()
                             bInvalidate = true;
                 }
                 break;
-                case SHELL_MODE_DRAWTEXT:
+                case ShellMode::DrawText:
                 {
                     SdrView*     pSdrView = pWrtShell->GetDrawView();
                     SdrOutliner* pOutliner = pSdrView ? pSdrView->GetTextEditOutliner() : nullptr;
@@ -592,10 +589,10 @@ void SwSpellDialogChildWindow::LoseFocus()
 
         switch(m_pSpellState->m_eSelMode)
         {
-            case SHELL_MODE_TEXT:
-            case SHELL_MODE_LIST_TEXT:
-            case SHELL_MODE_TABLE_TEXT:
-            case SHELL_MODE_TABLE_LIST_TEXT:
+            case ShellMode::Text:
+            case ShellMode::ListText:
+            case ShellMode::TableText:
+            case ShellMode::TableListText:
             {
                 // store a node pointer and a pam-position to be able to check on next GetFocus();
                 SwPaM* pCursor = pWrtShell->GetCursor();
@@ -606,7 +603,7 @@ void SwSpellDialogChildWindow::LoseFocus()
 
             }
             break;
-            case SHELL_MODE_DRAWTEXT:
+            case ShellMode::DrawText:
             {
                 SdrView*     pSdrView = pWrtShell->GetDrawView();
                 SdrOutliner* pOutliner = pSdrView->GetTextEditOutliner();
@@ -623,7 +620,7 @@ void SwSpellDialogChildWindow::LoseFocus()
         }
     }
     else
-        m_pSpellState->m_eSelMode = SHELL_MODE_OBJECT;
+        m_pSpellState->m_eSelMode = ShellMode::Object;
 }
 
 void SwSpellDialogChildWindow::InvalidateSpellDialog()
@@ -655,20 +652,20 @@ SwWrtShell* SwSpellDialogChildWindow::GetWrtShell_Impl()
 
 // set the cursor into the body text - necessary if any object is selected
 // on start of the spelling dialog
-bool SwSpellDialogChildWindow::MakeTextSelection_Impl(SwWrtShell& rShell, ShellModes  eSelMode)
+bool SwSpellDialogChildWindow::MakeTextSelection_Impl(SwWrtShell& rShell, ShellMode eSelMode)
 {
     SwView& rView = rShell.GetView();
     switch(eSelMode)
     {
-        case SHELL_MODE_TEXT:
-        case SHELL_MODE_LIST_TEXT:
-        case SHELL_MODE_TABLE_TEXT:
-        case SHELL_MODE_TABLE_LIST_TEXT:
-        case SHELL_MODE_DRAWTEXT:
+        case ShellMode::Text:
+        case ShellMode::ListText:
+        case ShellMode::TableText:
+        case ShellMode::TableListText:
+        case ShellMode::DrawText:
             OSL_FAIL("text already active in SwSpellDialogChildWindow::MakeTextSelection_Impl()");
         break;
 
-        case SHELL_MODE_FRAME:
+        case ShellMode::Frame:
         {
             rShell.UnSelectFrame();
             rShell.LeaveSelFrameMode();
@@ -676,18 +673,17 @@ bool SwSpellDialogChildWindow::MakeTextSelection_Impl(SwWrtShell& rShell, ShellM
         }
         break;
 
-        case SHELL_MODE_DRAW:
-        case SHELL_MODE_DRAW_CTRL:
-        case SHELL_MODE_DRAW_FORM:
-        case SHELL_MODE_BEZIER:
+        case ShellMode::Draw:
+        case ShellMode::DrawForm:
+        case ShellMode::Bezier:
             if(FindNextDrawTextError_Impl(rShell))
             {
                 rView.AttrChangedNotify(&rShell);
                 break;
             }
             SAL_FALLTHROUGH; // to deselect the object
-        case SHELL_MODE_GRAPHIC:
-        case SHELL_MODE_OBJECT:
+        case ShellMode::Graphic:
+        case ShellMode::Object:
         {
             if ( rShell.IsDrawCreate() )
             {
@@ -770,23 +766,22 @@ bool SwSpellDialogChildWindow::FindNextDrawTextError_Impl(SwWrtShell& rSh)
                                              GetDrawOutliner().GetEmptyItemSet().GetPool(),
                                                 OutlinerMode::TextObject );
                     aTmpOutliner.SetRefDevice( pDoc->getIDocumentDeviceAccess().getPrinter( false ) );
-                    MapMode aMapMode (MAP_TWIP);
+                    MapMode aMapMode (MapUnit::MapTwip);
                     aTmpOutliner.SetRefMapMode(aMapMode);
                     aTmpOutliner.SetPaperSize( pTextObj->GetLogicRect().GetSize() );
                     aTmpOutliner.SetSpeller( xSpell );
 
-                    OutlinerView* pOutlView = new OutlinerView( &aTmpOutliner, &(rView.GetEditWin()) );
+                    std::unique_ptr<OutlinerView> pOutlView( new OutlinerView( &aTmpOutliner, &(rView.GetEditWin()) ) );
                     pOutlView->GetOutliner()->SetRefDevice( rSh.getIDocumentDeviceAccess().getPrinter( false ) );
-                    aTmpOutliner.InsertView( pOutlView );
+                    aTmpOutliner.InsertView( pOutlView.get() );
                     Point aPt;
                     Size aSize(1,1);
-                    Rectangle aRect( aPt, aSize );
+                    tools::Rectangle aRect( aPt, aSize );
                     pOutlView->SetOutputArea( aRect );
                     aTmpOutliner.SetText( *pParaObj );
                     aTmpOutliner.ClearModifyFlag();
-                    bHasSpellError = EE_SPELL_OK != aTmpOutliner.HasSpellErrors();
-                    aTmpOutliner.RemoveView( pOutlView );
-                    delete pOutlView;
+                    bHasSpellError = EESpellState::Ok != aTmpOutliner.HasSpellErrors();
+                    aTmpOutliner.RemoveView( pOutlView.get() );
                 }
                 if(bHasSpellError)
                 {

@@ -68,27 +68,22 @@ class LpsolveSolver : public SolverComponent
 {
 public:
     LpsolveSolver() {}
-    virtual ~LpsolveSolver() {}
 
 private:
-    virtual void SAL_CALL solve() throw(css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getImplementationName()
-        throw(css::uno::RuntimeException, std::exception) override
+    virtual void SAL_CALL solve() override;
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.Calc.LpsolveSolver");
     }
-    virtual OUString SAL_CALL getComponentDescription()
-        throw (uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getComponentDescription() override
     {
         return SolverComponent::GetResourceString( RID_SOLVER_COMPONENT );
     }
 };
 
-void SAL_CALL LpsolveSolver::solve() throw(uno::RuntimeException, std::exception)
+void SAL_CALL LpsolveSolver::solve()
 {
-    uno::Reference<frame::XModel> xModel( mxDoc, uno::UNO_QUERY );
-    if ( !xModel.is() )
-        throw uno::RuntimeException();
+    uno::Reference<frame::XModel> xModel( mxDoc, uno::UNO_QUERY_THROW );
 
     maStatus.clear();
     mbSuccess = false;
@@ -221,7 +216,7 @@ void SAL_CALL LpsolveSolver::solve() throw(uno::RuntimeException, std::exception
             table::CellAddress aLeftAddr = maConstraints[nConstrPos].Left;
 
             const std::vector<double>& rLeftCoeff = aCellsHash[aLeftAddr];
-            REAL* pValues = new REAL[nVariables+1];
+            std::unique_ptr<REAL[]> pValues(new REAL[nVariables+1] );
             pValues[0] = 0.0;                               // ignored?
             for (nVar=0; nVar<nVariables; nVar++)
                 pValues[nVar+1] = rLeftCoeff[nVar+1];
@@ -250,9 +245,7 @@ void SAL_CALL LpsolveSolver::solve() throw(uno::RuntimeException, std::exception
                 default:
                     OSL_FAIL( "unexpected enum type" );
             }
-            add_constraint( lp, pValues, nConstrType, fRightValue );
-
-            delete[] pValues;
+            add_constraint( lp, pValues.get(), nConstrType, fRightValue );
         }
     }
 

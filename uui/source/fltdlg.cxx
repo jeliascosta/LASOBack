@@ -51,7 +51,7 @@ FilterDialog::FilterDialog( vcl::Window* pParentWindow )
 {
     get(m_pFtURL, "url");
     get(m_pLbFilters, "filters");
-    Size aSize(pParentWindow->LogicToPixel(Size(182, 175), MAP_APPFONT));
+    Size aSize(pParentWindow->LogicToPixel(Size(182, 175), MapUnit::MapAppFont));
     m_pLbFilters->set_height_request(aSize.Height());
     m_pLbFilters->set_width_request(aSize.Width());
     m_pFtURL->SetSizePixel(Size(aSize.Width(), m_pFtURL->GetOptimalSize().Height()));
@@ -173,7 +173,7 @@ class StringCalculator : public ::cppu::WeakImplHelper< css::util::XStringWidth 
         {
         }
 
-        sal_Int32 SAL_CALL queryStringWidth( const OUString& sString ) throw( css::uno::RuntimeException, std::exception ) override
+        sal_Int32 SAL_CALL queryStringWidth( const OUString& sString ) override
         {
             return (sal_Int32)(m_pDevice->GetTextWidth(sString));
         }
@@ -212,7 +212,7 @@ OUString FilterDialog::impl_buildUIFileName( const OUString& sName )
         {
             INetURLObject aBuilder   ( sName );
             Size          aSize      = m_pFtURL->GetOutputSizePixel();
-                          sShortName = aBuilder.getAbbreviated( xStringCalculator, aSize.Width(), INetURLObject::DECODE_UNAMBIGUOUS );
+                          sShortName = aBuilder.getAbbreviated( xStringCalculator, aSize.Width(), INetURLObject::DecodeMechanism::Unambiguous );
         }
     }
 

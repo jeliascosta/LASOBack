@@ -19,8 +19,10 @@
 
 #include <comphelper/docpasswordhelper.hxx>
 #include <sal/log.hxx>
+#include <unotools/configmgr.hxx>
 #include <unotools/mediadescriptor.hxx>
 #include <unotools/securityoptions.hxx>
+#include <unotools/ucbhelper.hxx>
 #include <comphelper/namedvaluecollection.hxx>
 #include <comphelper/stillreadwriteinteraction.hxx>
 
@@ -334,8 +336,6 @@ MediaDescriptor::MediaDescriptor(const css::uno::Sequence< css::beans::PropertyV
 
 bool MediaDescriptor::isStreamReadOnly() const
 {
-    static const char CONTENTSCHEME_FILE[] = "file";
-    static const char CONTENTPROP_ISREADONLY[] = "IsReadOnly";
     static bool READONLY_FALLBACK = false;
 
     bool bReadOnly = READONLY_FALLBACK;
@@ -372,12 +372,14 @@ bool MediaDescriptor::isStreamReadOnly() const
             if (xId.is())
                 aScheme = xId->getContentProviderScheme();
 
-            if (aScheme.equalsIgnoreAsciiCase(CONTENTSCHEME_FILE))
+            if (aScheme.equalsIgnoreAsciiCase("file"))
                 bReadOnly = true;
             else
             {
-                ::ucbhelper::Content aContent(xContent, css::uno::Reference< css::ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext());
-                aContent.getPropertyValue(CONTENTPROP_ISREADONLY) >>= bReadOnly;
+                ::ucbhelper::Content aContent(xContent,
+                                              utl::UCBContentHelper::getDefaultCommandEnvironment(),
+                                              comphelper::getProcessComponentContext());
+                aContent.getPropertyValue("IsReadOnly") >>= bReadOnly;
             }
         }
     }
@@ -482,8 +484,9 @@ bool MediaDescriptor::addInputStream()
 /*-----------------------------------------------*/
 bool MediaDescriptor::addInputStreamOwnLock()
 {
-    return impl_addInputStream(
-        officecfg::Office::Common::Misc::UseDocumentSystemFileLocking::get());
+    const bool bLock = !utl::ConfigManager::IsAvoidConfig()
+        && officecfg::Office::Common::Misc::UseDocumentSystemFileLocking::get();
+    return impl_addInputStream(bLock);
 }
 
 /*-----------------------------------------------*/
@@ -526,7 +529,6 @@ bool MediaDescriptor::impl_addInputStream( bool bLockFile )
 }
 
 bool MediaDescriptor::impl_openStreamWithPostData( const css::uno::Reference< css::io::XInputStream >& _rxPostData )
-    throw(css::uno::RuntimeException)
 {
     if ( !_rxPostData.is() )
         throw css::lang::IllegalArgumentException("Found invalid PostData.",
@@ -596,7 +598,6 @@ bool MediaDescriptor::impl_openStreamWithPostData( const css::uno::Reference< cs
 
 /*-----------------------------------------------*/
 bool MediaDescriptor::impl_openStreamWithURL( const OUString& sURL, bool bLockFile )
-    throw(css::uno::RuntimeException)
 {
     OUString referer(getUnpackedValueOrDefault(PROP_REFERRER(), OUString()));
     if (SvtSecurityOptions().isUntrustedReferer(referer)) {

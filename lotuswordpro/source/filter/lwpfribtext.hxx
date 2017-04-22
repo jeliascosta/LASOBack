@@ -66,8 +66,7 @@
 class LwpFribText : public LwpFrib
 {
 public:
-    LwpFribText( LwpPara* pPara, bool bNoUnicode=false);
-    virtual ~LwpFribText(){}
+    LwpFribText( LwpPara* pPara, bool bNoUnicode);
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
     void XFConvert(XFContentContainer* pXFPara,LwpStory* pStory);
 private:
@@ -81,14 +80,12 @@ class LwpFribHardSpace : public LwpFrib
 {
 public:
     explicit LwpFribHardSpace( LwpPara* pPara ) : LwpFrib(pPara){}
-    virtual ~LwpFribHardSpace(){}
 };
 
 class LwpFribSoftHyphen : public LwpFrib
 {
 public:
     explicit LwpFribSoftHyphen( LwpPara* pPara ) : LwpFrib(pPara){}
-    virtual ~LwpFribSoftHyphen(){}
 };
 
 class LwpFribParaNumber : public LwpFrib
@@ -128,7 +125,7 @@ class LwpFribDocVar : public LwpFrib
 public:
     explicit LwpFribDocVar( LwpPara* pPara );
 
-    virtual ~LwpFribDocVar();
+    virtual ~LwpFribDocVar() override;
 
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
 
@@ -169,7 +166,7 @@ public:
 
 private:
     sal_uInt16 m_nType;
-    LwpAtomHolder* m_pName;
+    LwpAtomHolder m_aName;
     OUString m_TimeStyle;
     void RegisterDefaultTimeStyle();
     void RegisterTotalTimeStyle();
@@ -179,14 +176,12 @@ class LwpFribTab : public LwpFrib
 {
 public:
     explicit LwpFribTab( LwpPara* pPara ) : LwpFrib(pPara){}
-    virtual ~LwpFribTab(){}
 };
 
 class LwpFribUnicode: public LwpFrib
 {
 public:
     explicit LwpFribUnicode( LwpPara* pPara ) : LwpFrib(pPara){}
-    virtual ~LwpFribUnicode(){}
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
     void XFConvert(XFContentContainer* pXFPara,LwpStory* pStory);
 private:
@@ -200,7 +195,6 @@ class LwpFribPageNumber : public LwpFrib
 public:
     explicit LwpFribPageNumber(LwpPara* pPara) : LwpFrib(pPara),
         m_nNumStyle(0), m_nStartNum(1), m_nStartOnPage(1), m_nFlag(0){}
-    virtual ~LwpFribPageNumber(){}
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
     void XFConvert(XFContentContainer* pXFPara);
 private:

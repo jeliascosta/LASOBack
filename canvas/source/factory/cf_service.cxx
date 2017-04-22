@@ -43,6 +43,7 @@
 #if HAVE_FEATURE_OPENGL
 #include <vcl/opengl/OpenGLWrapper.hxx>
 #endif
+#include <unotools/configmgr.hxx>
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -85,35 +86,30 @@ class CanvasFactory
         Reference<XComponentContext> const & xContext ) const;
 
 public:
-    virtual ~CanvasFactory();
+    virtual ~CanvasFactory() override;
     explicit CanvasFactory( Reference<XComponentContext> const & xContext );
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw (RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName )
-        throw (RuntimeException, std::exception) override;
-    virtual Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName ) override;
+    virtual Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
 
     // XMultiComponentFactory
-    virtual Sequence<OUString> SAL_CALL getAvailableServiceNames()
-        throw (RuntimeException, std::exception) override;
+    virtual Sequence<OUString> SAL_CALL getAvailableServiceNames() override;
     virtual Reference<XInterface> SAL_CALL createInstanceWithContext(
         OUString const & name,
-        Reference<XComponentContext> const & xContext ) throw (Exception, std::exception) override;
+        Reference<XComponentContext> const & xContext ) override;
     virtual Reference<XInterface> SAL_CALL
     createInstanceWithArgumentsAndContext(
         OUString const & name,
         Sequence<Any> const & args,
-        Reference<XComponentContext> const & xContext ) throw (Exception, std::exception) override;
+        Reference<XComponentContext> const & xContext ) override;
 
     // XMultiServiceFactory
     virtual Reference<XInterface> SAL_CALL createInstance(
-        OUString const & name )
-        throw (Exception, std::exception) override;
+        OUString const & name ) override;
     virtual Reference<XInterface> SAL_CALL createInstanceWithArguments(
-        OUString const & name, Sequence<Any> const & args )
-        throw (Exception, std::exception) override;
+        OUString const & name, Sequence<Any> const & args ) override;
 };
 
 CanvasFactory::CanvasFactory( Reference<XComponentContext> const & xContext ) :
@@ -128,76 +124,79 @@ CanvasFactory::CanvasFactory( Reference<XComponentContext> const & xContext ) :
     m_bCacheHasUseAcceleratedEntry(),
     m_bCacheHasUseAAEntry()
 {
-    try
+    if (!utl::ConfigManager::IsAvoidConfig())
     {
-        // read out configuration for preferred services:
-        Reference<lang::XMultiServiceFactory> xConfigProvider(
-            configuration::theDefaultProvider::get( m_xContext ) );
-
-        Any propValue(
-            makeAny( beans::PropertyValue(
-                         OUString("nodepath"), -1,
-                         makeAny( OUString("/org.openoffice.Office.Canvas") ),
-                         beans::PropertyState_DIRECT_VALUE ) ) );
-
-        m_xCanvasConfigNameAccess.set(
-            xConfigProvider->createInstanceWithArguments(
-                "com.sun.star.configuration.ConfigurationAccess",
-                Sequence<Any>( &propValue, 1 ) ),
-            UNO_QUERY_THROW );
-
-        propValue = makeAny(
-            beans::PropertyValue(
-                OUString("nodepath"), -1,
-                makeAny( OUString("/org.openoffice.Office.Canvas/CanvasServiceList") ),
-                beans::PropertyState_DIRECT_VALUE ) );
-
-        Reference<container::XNameAccess> xNameAccess(
-            xConfigProvider->createInstanceWithArguments(
-                "com.sun.star.configuration.ConfigurationAccess",
-                Sequence<Any>( &propValue, 1 ) ), UNO_QUERY_THROW );
-        Reference<container::XHierarchicalNameAccess> xHierarchicalNameAccess(
-            xNameAccess, UNO_QUERY_THROW);
-
-        Sequence<OUString> serviceNames = xNameAccess->getElementNames();
-        const OUString* pCurr = serviceNames.getConstArray();
-        const OUString* const pEnd = pCurr + serviceNames.getLength();
-        while( pCurr != pEnd )
+        try
         {
-            Reference<container::XNameAccess> xEntryNameAccess(
-                xHierarchicalNameAccess->getByHierarchicalName(*pCurr),
-                UNO_QUERY );
+            // read out configuration for preferred services:
+            Reference<lang::XMultiServiceFactory> xConfigProvider(
+                configuration::theDefaultProvider::get( m_xContext ) );
 
-            if( xEntryNameAccess.is() )
+            Any propValue(
+                Any( beans::PropertyValue(
+                             "nodepath", -1,
+                             Any( OUString("/org.openoffice.Office.Canvas") ),
+                             beans::PropertyState_DIRECT_VALUE ) ) );
+
+            m_xCanvasConfigNameAccess.set(
+                xConfigProvider->createInstanceWithArguments(
+                    "com.sun.star.configuration.ConfigurationAccess",
+                    Sequence<Any>( &propValue, 1 ) ),
+                UNO_QUERY_THROW );
+
+            propValue <<=
+                beans::PropertyValue(
+                    "nodepath", -1,
+                    Any( OUString("/org.openoffice.Office.Canvas/CanvasServiceList") ),
+                    beans::PropertyState_DIRECT_VALUE );
+
+            Reference<container::XNameAccess> xNameAccess(
+                xConfigProvider->createInstanceWithArguments(
+                    "com.sun.star.configuration.ConfigurationAccess",
+                    Sequence<Any>( &propValue, 1 ) ), UNO_QUERY_THROW );
+            Reference<container::XHierarchicalNameAccess> xHierarchicalNameAccess(
+                xNameAccess, UNO_QUERY_THROW);
+
+            Sequence<OUString> serviceNames = xNameAccess->getElementNames();
+            const OUString* pCurr = serviceNames.getConstArray();
+            const OUString* const pEnd = pCurr + serviceNames.getLength();
+            while( pCurr != pEnd )
             {
-                Sequence<OUString> implementationList;
-                if( (xEntryNameAccess->getByName("PreferredImplementations") >>= implementationList) )
+                Reference<container::XNameAccess> xEntryNameAccess(
+                    xHierarchicalNameAccess->getByHierarchicalName(*pCurr),
+                    UNO_QUERY );
+
+                if( xEntryNameAccess.is() )
                 {
-                    m_aAvailableImplementations.push_back( std::make_pair(*pCurr,implementationList) );
-                }
-                if( (xEntryNameAccess->getByName("AcceleratedImplementations") >>= implementationList) )
-                {
-                    m_aAcceleratedImplementations.push_back( std::make_pair(*pCurr,implementationList) );
-                }
-                if( (xEntryNameAccess->getByName("AntialiasingImplementations") >>= implementationList) )
-                {
-                    m_aAAImplementations.push_back( std::make_pair(*pCurr,implementationList) );
+                    Sequence<OUString> implementationList;
+                    if( (xEntryNameAccess->getByName("PreferredImplementations") >>= implementationList) )
+                    {
+                        m_aAvailableImplementations.push_back( std::make_pair(*pCurr,implementationList) );
+                    }
+                    if( (xEntryNameAccess->getByName("AcceleratedImplementations") >>= implementationList) )
+                    {
+                        m_aAcceleratedImplementations.push_back( std::make_pair(*pCurr,implementationList) );
+                    }
+                    if( (xEntryNameAccess->getByName("AntialiasingImplementations") >>= implementationList) )
+                    {
+                        m_aAAImplementations.push_back( std::make_pair(*pCurr,implementationList) );
+                    }
+
                 }
 
+                ++pCurr;
             }
-
-            ++pCurr;
+        }
+        catch (const RuntimeException &)
+        {
+            throw;
+        }
+        catch (const Exception&)
+        {
         }
     }
-    catch (const RuntimeException &)
-    {
-        throw;
-    }
-    catch (const Exception&)
-    {
-    }
 
-    if( m_aAvailableImplementations.empty() )
+    if (m_aAvailableImplementations.empty())
     {
         // Ugh. Looks like configuration is borked. Fake minimal
         // setup.
@@ -217,27 +216,23 @@ CanvasFactory::~CanvasFactory()
 
 
 // XServiceInfo
-OUString CanvasFactory::getImplementationName() throw (RuntimeException, std::exception)
+OUString CanvasFactory::getImplementationName()
 {
     return OUString("com.sun.star.comp.rendering.CanvasFactory");
 }
 
 sal_Bool CanvasFactory::supportsService( OUString const & serviceName )
-    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
 Sequence<OUString> CanvasFactory::getSupportedServiceNames()
-    throw (RuntimeException, std::exception)
 {
-    OUString name("com.sun.star.rendering.CanvasFactory");
-    return Sequence<OUString>(&name, 1);
+    return { "com.sun.star.rendering.CanvasFactory" };
 }
 
 // XMultiComponentFactory
 Sequence<OUString> CanvasFactory::getAvailableServiceNames()
-    throw (RuntimeException, std::exception)
 {
     Sequence<OUString> aServiceNames(m_aAvailableImplementations.size());
     std::transform(m_aAvailableImplementations.begin(),
@@ -249,7 +244,6 @@ Sequence<OUString> CanvasFactory::getAvailableServiceNames()
 
 Reference<XInterface> CanvasFactory::createInstanceWithContext(
     OUString const & name, Reference<XComponentContext> const & xContext )
-    throw (Exception, std::exception)
 {
     return createInstanceWithArgumentsAndContext(
         name, Sequence<Any>(), xContext );
@@ -454,7 +448,7 @@ Reference<XInterface> CanvasFactory::lookupAndUse(
 
 Reference<XInterface> CanvasFactory::createInstanceWithArgumentsAndContext(
     OUString const & preferredOne, Sequence<Any> const & args,
-    Reference<XComponentContext> const & xContext ) throw (Exception, std::exception)
+    Reference<XComponentContext> const & xContext )
 {
     Reference<XInterface> xCanvas(
         lookupAndUse( preferredOne, args, xContext ) );
@@ -468,7 +462,6 @@ Reference<XInterface> CanvasFactory::createInstanceWithArgumentsAndContext(
 // XMultiServiceFactory
 
 Reference<XInterface> CanvasFactory::createInstance( OUString const & name )
-    throw (Exception, std::exception)
 {
     return createInstanceWithArgumentsAndContext(
         name, Sequence<Any>(), m_xContext );
@@ -476,7 +469,7 @@ Reference<XInterface> CanvasFactory::createInstance( OUString const & name )
 
 
 Reference<XInterface> CanvasFactory::createInstanceWithArguments(
-    OUString const & name, Sequence<Any> const & args ) throw (Exception, std::exception)
+    OUString const & name, Sequence<Any> const & args )
 {
     return createInstanceWithArgumentsAndContext(
         name, args, m_xContext );

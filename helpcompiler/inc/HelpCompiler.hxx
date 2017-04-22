@@ -29,7 +29,6 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <ctype.h>
 
 #include <libxml/xmlmemory.h>
 #include <libxml/debugXML.h>
@@ -39,6 +38,7 @@
 #include <libxml/catalog.h>
 
 #include <rtl/ustring.hxx>
+#include <rtl/character.hxx>
 #include <osl/thread.h>
 #include <osl/process.h>
 #include <osl/file.hxx>
@@ -92,7 +92,7 @@ namespace fs
         {
             OUString ustrSystemPath;
             osl::File::getSystemPathFromFileURL(data, ustrSystemPath);
-            return (wchar_t const *) ustrSystemPath.getStr();
+            return SAL_W(ustrSystemPath.getStr());
         }
 #endif
         std::string toUTF8() const
@@ -169,22 +169,9 @@ public:
     Stringtable *appl_helptexts;
     xmlDocPtr appl_doc;
 
-    HashSet *default_hidlist;
-    Hashtable *default_keywords;
-    Stringtable *default_helptexts;
-    xmlDocPtr default_doc;
-
     StreamTable() :
-        appl_hidlist(nullptr), appl_keywords(nullptr), appl_helptexts(nullptr), appl_doc(nullptr),
-        default_hidlist(nullptr), default_keywords(nullptr), default_helptexts(nullptr), default_doc(nullptr)
+        appl_hidlist(nullptr), appl_keywords(nullptr), appl_helptexts(nullptr), appl_doc(nullptr)
     {}
-    void dropdefault()
-    {
-        delete default_hidlist;
-        delete default_keywords;
-        delete default_helptexts;
-        if (default_doc) xmlFreeDoc(default_doc);
-    }
     void dropappl()
     {
         delete appl_hidlist;
@@ -195,7 +182,6 @@ public:
     ~StreamTable()
     {
         dropappl();
-        dropdefault();
     }
 };
 
@@ -212,7 +198,7 @@ struct HelpProcessingException
         , m_nXMLParsingLine( 0 )
     {}
     HelpProcessingException( const std::string& aErrorMsg, const std::string& aXMLParsingFile, int nXMLParsingLine )
-        : m_eErrorClass( HELPPROCESSING_XMLPARSING_ERROR )
+        : m_eErrorClass( HelpProcessingErrorClass::XmlParsing )
         , m_aErrorMsg( aErrorMsg )
         , m_aXMLParsingFile( aXMLParsingFile )
         , m_nXMLParsingLine( nXMLParsingLine )
@@ -231,7 +217,9 @@ public:
                 const std::string &in_module,
                 const std::string &in_lang,
                 bool in_bExtensionMode);
-    bool compile() throw (HelpProcessingException, BasicCodeTagger::TaggerException, std::exception);
+    /// @throws HelpProcessingException
+    /// @throws BasicCodeTagger::TaggerException
+    bool compile();
 private:
     xmlDocPtr getSourceDocument(const fs::path &filePath);
     static void tagBasicCodeExamples(xmlDocPtr doc);
@@ -249,7 +237,8 @@ private:
 
 inline char tocharlower(char c)
 {
-    return static_cast<char>(tolower(c));
+    return static_cast<char>(
+        rtl::toAsciiLowerCase(static_cast<unsigned char>(c)));
 }
 
 #endif

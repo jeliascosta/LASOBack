@@ -36,34 +36,30 @@ class XFormsEventConcrete : public cppu::WeakImplHelper< XFormsEvent > {
 
         XFormsEventConcrete()
             : m_canceled(false)
-            , m_phase(css::xml::dom::events::PhaseType_CAPTURING_PHASE)
             , m_bubbles(false)
             , m_cancelable(false)
         {
         }
-        virtual ~XFormsEventConcrete() {}
 
-        virtual OUString SAL_CALL getType() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::xml::dom::events::XEventTarget > SAL_CALL getTarget() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Reference< css::xml::dom::events::XEventTarget > SAL_CALL getCurrentTarget() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::xml::dom::events::PhaseType SAL_CALL getEventPhase() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL getBubbles() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL getCancelable() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::util::Time SAL_CALL getTimeStamp() throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL stopPropagation() throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL preventDefault() throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getType() override;
+        virtual css::uno::Reference< css::xml::dom::events::XEventTarget > SAL_CALL getTarget() override;
+        virtual css::uno::Reference< css::xml::dom::events::XEventTarget > SAL_CALL getCurrentTarget() override;
+        virtual css::xml::dom::events::PhaseType SAL_CALL getEventPhase() override;
+        virtual sal_Bool SAL_CALL getBubbles() override;
+        virtual sal_Bool SAL_CALL getCancelable() override;
+        virtual css::util::Time SAL_CALL getTimeStamp() override;
+        virtual void SAL_CALL stopPropagation() override;
+        virtual void SAL_CALL preventDefault() override;
 
         virtual void SAL_CALL initXFormsEvent(
                             const OUString& typeArg,
                             sal_Bool canBubbleArg,
-                            sal_Bool cancelableArg )
-                            throw (css::uno::RuntimeException, std::exception) override;
+                            sal_Bool cancelableArg ) override;
 
         virtual void SAL_CALL initEvent(
             const OUString& eventTypeArg,
             sal_Bool canBubbleArg,
-            sal_Bool cancelableArg)
-            throw (css::uno::RuntimeException, std::exception) override;
+            sal_Bool cancelableArg) override;
 
     private:
 
@@ -74,7 +70,6 @@ class XFormsEventConcrete : public cppu::WeakImplHelper< XFormsEvent > {
         OUString m_eventType;
         css::uno::Reference< css::xml::dom::events::XEventTarget > m_target;
         css::uno::Reference< css::xml::dom::events::XEventTarget > m_currentTarget;
-        css::xml::dom::events::PhaseType m_phase;
         bool m_bubbles;
         bool m_cancelable;
         css::util::Time m_time;

@@ -109,12 +109,12 @@ namespace toolkit
             if ( aURL.GetProtocol() != INetProtocol::PrivSoffice )
             {
                 OSL_VERIFY( aURL.insertName( "hicontrast", false, 0 ) );
-                return aURL.GetMainURL( INetURLObject::NO_DECODE );
+                return aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
             }
             // the private: scheme is not considered to be hierarchical by INetURLObject, so manually insert the
             // segment
             const sal_Int32 separatorPos = i_imageURL.indexOf( '/' );
-            ENSURE_OR_RETURN( separatorPos != -1, "lcl_getHighContrastURL: unsipported URL scheme - cannot automatically determine HC version!", i_imageURL );
+            ENSURE_OR_RETURN( separatorPos != -1, "lcl_getHighContrastURL: unsupported URL scheme - cannot automatically determine HC version!", i_imageURL );
 
             OUStringBuffer composer;
             composer.append( i_imageURL.copy( 0, separatorPos ) );
@@ -304,7 +304,7 @@ namespace toolkit
     }
 
 
-    void SAL_CALL AnimatedImagesPeer::startAnimation() throw (RuntimeException, std::exception)
+    void SAL_CALL AnimatedImagesPeer::startAnimation()
     {
         SolarMutexGuard aGuard;
         VclPtr<Throbber> pThrobber = GetAsDynamic<Throbber>();
@@ -312,7 +312,7 @@ namespace toolkit
             pThrobber->start();
     }
 
-    void SAL_CALL AnimatedImagesPeer::stopAnimation() throw (RuntimeException, std::exception)
+    void SAL_CALL AnimatedImagesPeer::stopAnimation()
     {
         SolarMutexGuard aGuard;
         VclPtr<Throbber> pThrobber = GetAsDynamic<Throbber>();
@@ -320,7 +320,7 @@ namespace toolkit
             pThrobber->stop();
     }
 
-    sal_Bool SAL_CALL AnimatedImagesPeer::isAnimationRunning() throw (RuntimeException, std::exception)
+    sal_Bool SAL_CALL AnimatedImagesPeer::isAnimationRunning()
     {
         SolarMutexGuard aGuard;
         VclPtr<Throbber> pThrobber = GetAsDynamic<Throbber>();
@@ -329,7 +329,7 @@ namespace toolkit
         return false;
     }
 
-    void SAL_CALL AnimatedImagesPeer::setProperty( const OUString& i_propertyName, const Any& i_value ) throw(RuntimeException, std::exception)
+    void SAL_CALL AnimatedImagesPeer::setProperty( const OUString& i_propertyName, const Any& i_value )
     {
         SolarMutexGuard aGuard;
 
@@ -374,7 +374,7 @@ namespace toolkit
     }
 
 
-    Any SAL_CALL AnimatedImagesPeer::getProperty( const OUString& i_propertyName ) throw(RuntimeException, std::exception)
+    Any SAL_CALL AnimatedImagesPeer::getProperty( const OUString& i_propertyName )
     {
         SolarMutexGuard aGuard;
 
@@ -413,11 +413,9 @@ namespace toolkit
 
     void AnimatedImagesPeer::ProcessWindowEvent( const VclWindowEvent& i_windowEvent )
     {
-        switch ( i_windowEvent.GetId() )
+        if ( i_windowEvent.GetId() == VclEventId::WindowResize )
         {
-        case VCLEVENT_WINDOW_RESIZE:
             lcl_updateImageList_nothrow( *m_xData );
-            break;
         }
 
         AnimatedImagesPeer_Base::ProcessWindowEvent( i_windowEvent );
@@ -432,7 +430,7 @@ namespace toolkit
     }
 
 
-    void SAL_CALL AnimatedImagesPeer::elementInserted( const ContainerEvent& i_event ) throw (RuntimeException, std::exception)
+    void SAL_CALL AnimatedImagesPeer::elementInserted( const ContainerEvent& i_event )
     {
         SolarMutexGuard aGuard;
         Reference< XAnimatedImages > xAnimatedImages( i_event.Source, UNO_QUERY_THROW );
@@ -455,7 +453,7 @@ namespace toolkit
     }
 
 
-    void SAL_CALL AnimatedImagesPeer::elementRemoved( const ContainerEvent& i_event ) throw (RuntimeException, std::exception)
+    void SAL_CALL AnimatedImagesPeer::elementRemoved( const ContainerEvent& i_event )
     {
         SolarMutexGuard aGuard;
         Reference< XAnimatedImages > xAnimatedImages( i_event.Source, UNO_QUERY_THROW );
@@ -474,7 +472,7 @@ namespace toolkit
     }
 
 
-    void SAL_CALL AnimatedImagesPeer::elementReplaced( const ContainerEvent& i_event ) throw (RuntimeException, std::exception)
+    void SAL_CALL AnimatedImagesPeer::elementReplaced( const ContainerEvent& i_event )
     {
         SolarMutexGuard aGuard;
         Reference< XAnimatedImages > xAnimatedImages( i_event.Source, UNO_QUERY_THROW );
@@ -497,19 +495,19 @@ namespace toolkit
     }
 
 
-    void SAL_CALL AnimatedImagesPeer::disposing( const EventObject& i_event ) throw (RuntimeException, std::exception)
+    void SAL_CALL AnimatedImagesPeer::disposing( const EventObject& i_event )
     {
         VCLXWindow::disposing( i_event );
     }
 
 
-    void SAL_CALL AnimatedImagesPeer::modified( const EventObject& i_event ) throw (RuntimeException, std::exception)
+    void SAL_CALL AnimatedImagesPeer::modified( const EventObject& i_event )
     {
         impl_updateImages_nolck( i_event.Source );
     }
 
 
-    void SAL_CALL AnimatedImagesPeer::dispose(  ) throw(RuntimeException, std::exception)
+    void SAL_CALL AnimatedImagesPeer::dispose(  )
     {
         AnimatedImagesPeer_Base::dispose();
         SolarMutexGuard aGuard;

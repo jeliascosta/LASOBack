@@ -24,7 +24,7 @@ $(eval $(call gb_ExternalProject_register_targets,python3,\
 	) \
 ))
 
-ifeq ($(OS)$(COM),WNTMSC)
+ifeq ($(OS),WNT)
 
 # TODO: using Debug configuration and related mangling of pyconfig.h
 
@@ -35,10 +35,10 @@ $(call gb_ExternalProject_get_state_target,python3,build) :
 		MAKEFLAGS= MSBuild.exe pcbuild.sln /t:Build \
 			/p:Configuration=$(if $(MSVC_USE_DEBUG_RUNTIME),Debug,Release) \
 			/p:Platform=$(if $(filter INTEL,$(CPUNAME)),Win32,x64) \
-			$(if $(filter 120,$(VCVER)),/p:PlatformToolset=v120 \
-				/p:VisualStudioVersion=12.0 /ToolsVersion:12.0) \
-			$(if $(filter 140,$(VCVER)),/p:PlatformToolset=v140 \
-				/p:VisualStudioVersion=14.0 /ToolsVersion:14.0) \
+			$(if $(filter 120,$(VCVER)),/p:PlatformToolset=v120 /p:VisualStudioVersion=12.0 /ToolsVersion:12.0) \
+			$(if $(filter 140,$(VCVER)),/p:PlatformToolset=v140 /p:VisualStudioVersion=14.0 /ToolsVersion:14.0) \
+			$(if $(filter 150,$(VCVER)),/p:PlatformToolset=v141 /p:VisualStudioVersion=15.0 /ToolsVersion:15.0) \
+			$(if $(filter 150-10,$(VCVER)-$(WINDOWS_SDK_VERSION)),/p:WindowsTargetPlatformVersion=$(UCRTVERSION)) \
 	,PCBuild)
 
 else
@@ -57,6 +57,12 @@ endif
 
 $(call gb_ExternalProject_get_state_target,python3,build) :
 	$(call gb_ExternalProject_run,build,\
+		$(if $(filter MACOSX,$(OS)), \
+			$(if $(filter 10.8 10.9 10.10 10.11,$(MACOSX_DEPLOYMENT_TARGET)), \
+				ac_cv_func_getentropy=no \
+				ac_cv_func_clock_gettime=no \
+			) \
+		) \
 		./configure \
 		$(if $(CROSS_COMPILING),--build=$(BUILD_PLATFORM) --host=$(HOST_PLATFORM)) \
 		$(if $(ENABLE_VALGRIND),--with-valgrind) \
@@ -65,8 +71,7 @@ $(call gb_ExternalProject_get_state_target,python3,build) :
 		$(if $(filter AIX,$(OS)), \
 			--disable-ipv6 --with-threads OPT="-g0 -fwrapv -O3 -Wall", \
 			$(if $(gb_Module_CURRENTMODULE_DEBUG_ENABLED), \
-				OPT="$(gb_COMPILERNOOPTFLAGS) $(gb_DEBUG_CFLAGS)")) \
-		$(if $(filter WNT-GCC,$(OS)-$(COM)),--with-threads ac_cv_printf_zd_format=no) \
+				OPT="$(gb_COMPILERNOOPTFLAGS) $(gb_DEBUGINFO_FLAGS) $(gb_DEBUG_CFLAGS)")) \
 		$(if $(filter MACOSX,$(OS)), \
 			$(if $(filter INTEL,$(CPUNAME)),--enable-universalsdk=$(MACOSX_SDK_PATH) \
                                 --with-universal-archs=intel \
@@ -85,13 +90,13 @@ $(call gb_ExternalProject_get_state_target,python3,build) :
 		LDFLAGS="$(strip $(LDFLAGS) \
 			$(if $(SYSTEM_OPENSSL),,-L$(call gb_UnpackedTarball_get_dir,openssl)) \
 			$(if $(SYSTEM_EXPAT),,-L$(gb_StaticLibrary_WORKDIR)) \
+			$(if $(SYSTEM_ZLIB),,-L$(gb_StaticLibrary_WORKDIR)) \
 			$(if $(SYSBASE), -L$(SYSBASE)/usr/lib) \
-			$(if $(filter WNT-GCC,$(OS)-$(COM)), -shared-libgcc \
-				$(if $(MINGW_SHARED_GCCLIB),-Wl$(COMMA)--enable-runtime-pseudo-reloc-v2 -Wl$(COMMA)--export-all-symbols)) \
 			$(gb_LTOFLAGS) \
 			)" \
 		&& MAKEFLAGS= $(MAKE) \
 			$(if $(filter MACOSX,$(OS)),DESTDIR=$(EXTERNAL_WORKDIR)/python-inst install) \
+			$(if $(SYSTEM_ZLIB),,ZLIB_INCDIR=$(WORKDIR)/UnpackedTarball/zlib) \
 		&& ln -s build/lib.* LO_lib \
 	)
 

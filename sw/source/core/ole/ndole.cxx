@@ -17,16 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/embed/NoVisualAreaSizeException.hpp>
 #include <com/sun/star/container/XChild.hpp>
 #include <com/sun/star/embed/XEmbedPersist.hpp>
 #include <com/sun/star/embed/XLinkageSupport.hpp>
-#include <com/sun/star/embed/Aspects.hpp>
 #include <com/sun/star/embed/EmbedMisc.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
-#include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/util/XModifiable.hpp>
-#include <com/sun/star/document/XEventBroadcaster.hpp>
 #include <com/sun/star/chart2/XChartDocument.hpp>
 #include <cppuhelper/implbase.hxx>
 
@@ -56,7 +52,9 @@
 #include <unotools/ucbstreamhelper.hxx>
 #include <vcl/graphicfilter.hxx>
 #include <comcore.hrc>
-
+#include <svx/charthelper.hxx>
+#include <comphelper/threadpool.hxx>
+#include <atomic>
 #include <deque>
 
 using namespace utl;
@@ -85,7 +83,7 @@ public:
     void RemoveObj( SwOLEObj& rObj );
 };
 
-std::shared_ptr<SwOLELRUCache> g_pOLELRU_Cache;
+static std::shared_ptr<SwOLELRUCache> g_pOLELRU_Cache;
 
 class SwOLEListener_Impl : public ::cppu::WeakImplHelper< embed::XStateChangeListener >
 {
@@ -93,9 +91,9 @@ class SwOLEListener_Impl : public ::cppu::WeakImplHelper< embed::XStateChangeLis
 public:
     explicit SwOLEListener_Impl( SwOLEObj* pObj );
     void Release();
-    virtual void SAL_CALL changingState( const lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) throw (embed::WrongStateException, uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL stateChanged( const lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) throw (uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL disposing( const lang::EventObject& aEvent ) throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL changingState( const lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) override;
+    virtual void SAL_CALL stateChanged( const lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) override;
+    virtual void SAL_CALL disposing( const lang::EventObject& aEvent ) override;
 };
 
 SwOLEListener_Impl::SwOLEListener_Impl( SwOLEObj* pObj )
@@ -107,11 +105,11 @@ SwOLEListener_Impl::SwOLEListener_Impl( SwOLEObj* pObj )
     }
 }
 
-void SAL_CALL SwOLEListener_Impl::changingState( const lang::EventObject&, ::sal_Int32 , ::sal_Int32 ) throw (embed::WrongStateException, uno::RuntimeException, std::exception)
+void SAL_CALL SwOLEListener_Impl::changingState( const lang::EventObject&, ::sal_Int32 , ::sal_Int32 )
 {
 }
 
-void SAL_CALL SwOLEListener_Impl::stateChanged( const lang::EventObject&, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) throw (uno::RuntimeException, std::exception)
+void SAL_CALL SwOLEListener_Impl::stateChanged( const lang::EventObject&, ::sal_Int32 nOldState, ::sal_Int32 nNewState )
 {
     if ( mpObj && nOldState == embed::EmbedStates::LOADED && nNewState == embed::EmbedStates::RUNNING )
     {
@@ -124,6 +122,10 @@ void SAL_CALL SwOLEListener_Impl::stateChanged( const lang::EventObject&, ::sal_
         if (g_pOLELRU_Cache)
             g_pOLELRU_Cache->RemoveObj( *mpObj );
     }
+    else if(mpObj && nNewState == embed::EmbedStates::RUNNING)
+    {
+        mpObj->resetBufferedData();
+    }
 }
 
 void SwOLEListener_Impl::Release()
@@ -134,7 +136,7 @@ void SwOLEListener_Impl::Release()
     release();
 }
 
-void SAL_CALL SwOLEListener_Impl::disposing( const lang::EventObject& ) throw (uno::RuntimeException, std::exception)
+void SAL_CALL SwOLEListener_Impl::disposing( const lang::EventObject& )
 {
     if (mpObj && g_pOLELRU_Cache)
         g_pOLELRU_Cache->RemoveObj( *mpObj );
@@ -149,7 +151,6 @@ class SwEmbedObjectLink : public sfx2::SvBaseLink
 
 public:
     explicit            SwEmbedObjectLink(SwOLENode* pNode);
-    virtual             ~SwEmbedObjectLink();
 
     virtual void        Closed() override;
     virtual ::sfx2::SvBaseLink::UpdateResult DataChanged(
@@ -163,10 +164,6 @@ SwEmbedObjectLink::SwEmbedObjectLink(SwOLENode* pNode):
     pOleNode(pNode)
 {
     SetSynchron( false );
-}
-
-SwEmbedObjectLink::~SwEmbedObjectLink()
-{
 }
 
 ::sfx2::SvBaseLink::UpdateResult SwEmbedObjectLink::DataChanged(
@@ -212,7 +209,7 @@ SwOLENode::SwOLENode( const SwNodeIndex &rWhere,
                     const svt::EmbeddedObjectRef& xObj,
                     SwGrfFormatColl *pGrfColl,
                     SwAttrSet* pAutoAttr ) :
-    SwNoTextNode( rWhere, ND_OLENODE, pGrfColl, pAutoAttr ),
+    SwNoTextNode( rWhere, SwNodeType::Ole, pGrfColl, pAutoAttr ),
     aOLEObj( xObj ),
     bOLESizeInvalid( false ),
     mpObjectLink( nullptr )
@@ -225,7 +222,7 @@ SwOLENode::SwOLENode( const SwNodeIndex &rWhere,
                     sal_Int64 nAspect,
                     SwGrfFormatColl *pGrfColl,
                     SwAttrSet* pAutoAttr ) :
-    SwNoTextNode( rWhere, ND_OLENODE, pGrfColl, pAutoAttr ),
+    SwNoTextNode( rWhere, SwNodeType::Ole, pGrfColl, pAutoAttr ),
     aOLEObj( rString, nAspect ),
     bOLESizeInvalid( false ),
     mpObjectLink( nullptr )
@@ -413,7 +410,7 @@ SwOLENode * SwNodes::MakeOLENode( const SwNodeIndex & rWhere,
 
 Size SwOLENode::GetTwipSize() const
 {
-    MapMode aMapMode( MAP_TWIP );
+    MapMode aMapMode( MapUnit::MapTwip );
     return const_cast<SwOLENode*>(this)->aOLEObj.GetObject().GetSize( &aMapMode );
 }
 
@@ -637,10 +634,111 @@ bool SwOLENode::IsChart() const
     return bIsChart;
 }
 
+namespace { class DeflateThread; }
+
+/// Holder for local data for a parallel-executed task to load a chart model
+class DeflateData
+{
+private:
+    friend DeflateThread;
+    friend class SwOLEObj;
+
+    uno::Reference< frame::XModel >                     maXModel;
+    drawinglayer::primitive2d::Primitive2DContainer     maPrimitive2DSequence;
+    basegfx::B2DRange                                   maRange;
+
+    // evtl.set from the SwOLEObj destructor when a WorkerThread is still active
+    // since it is not possible to kill it - let it terminate and delete the
+    // data working on itself
+    std::atomic< bool>                                  mbKilled;
+
+    std::shared_ptr<comphelper::ThreadTaskTag>          mpTag;
+
+public:
+    explicit DeflateData(const uno::Reference< frame::XModel >& rXModel)
+    :   maXModel(rXModel),
+        maPrimitive2DSequence(),
+        maRange(),
+        mbKilled(false),
+        mpTag( comphelper::ThreadPool::createThreadTaskTag() )
+    {
+    }
+
+    const drawinglayer::primitive2d::Primitive2DContainer& getSequence() const
+    {
+        return maPrimitive2DSequence;
+    }
+
+    const basegfx::B2DRange& getRange() const
+    {
+        return maRange;
+    }
+
+    bool isFinished() const
+    {
+        return comphelper::ThreadPool::isTaskTagDone(mpTag);
+    }
+
+    void waitFinished()
+    {
+        // need to wait until the load in progress is finished.
+        // WorkerThreads need the SolarMutex to be able to continue
+        // and finish the running import.
+        SolarMutexReleaser aReleaser;
+        comphelper::ThreadPool::getSharedOptimalPool().waitUntilDone(mpTag);
+    }
+};
+
+namespace {
+
+/// Task for parallely-executed task to load a chart model
+class DeflateThread : public comphelper::ThreadTask
+{
+    // the data to work on
+    DeflateData&            mrDeflateData;
+
+public:
+    explicit DeflateThread(DeflateData& rDeflateData)
+    :   comphelper::ThreadTask(rDeflateData.mpTag), mrDeflateData(rDeflateData)
+    {
+    }
+
+private:
+    virtual void doWork() override
+    {
+        try
+        {
+            // load the chart data and get the primitives
+            mrDeflateData.maPrimitive2DSequence = ChartHelper::tryToGetChartContentAsPrimitive2DSequence(
+                mrDeflateData.maXModel,
+                mrDeflateData.maRange);
+
+            // model no longer needed and done
+            mrDeflateData.maXModel.clear();
+        }
+        catch (const uno::Exception&)
+        {
+        }
+
+        if(mrDeflateData.mbKilled)
+        {
+            // need to cleanup myself - data will not be used
+            delete &mrDeflateData;
+        }
+    }
+};
+
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
 SwOLEObj::SwOLEObj( const svt::EmbeddedObjectRef& xObj ) :
     pOLENd( nullptr ),
     pListener( nullptr ),
-    xOLERef( xObj )
+    xOLERef( xObj ),
+    m_aPrimitive2DSequence(),
+    m_aRange(),
+    m_pDeflateData(nullptr)
 {
     xOLERef.Lock();
     if ( xObj.is() )
@@ -654,7 +752,10 @@ SwOLEObj::SwOLEObj( const svt::EmbeddedObjectRef& xObj ) :
 SwOLEObj::SwOLEObj( const OUString &rString, sal_Int64 nAspect ) :
     pOLENd( nullptr ),
     pListener( nullptr ),
-    aName( rString )
+    aName( rString ),
+    m_aPrimitive2DSequence(),
+    m_aRange(),
+    m_pDeflateData(nullptr)
 {
     xOLERef.Lock();
     xOLERef.SetViewAspect( nAspect );
@@ -662,6 +763,14 @@ SwOLEObj::SwOLEObj( const OUString &rString, sal_Int64 nAspect ) :
 
 SwOLEObj::~SwOLEObj()
 {
+    if(m_pDeflateData)
+    {
+        // set flag so that the worker thread will delete m_pDeflateData
+        // when finished and forget about it
+        m_pDeflateData->mbKilled = true;
+        m_pDeflateData = nullptr;
+    }
+
     if( pListener )
     {
         if ( xOLERef.is() )
@@ -781,13 +890,13 @@ const uno::Reference < embed::XEmbeddedObject > SwOLEObj::GetOleRef()
         if ( !xObj.is() )
         {
             // We could not load this part (probably broken)
-            Rectangle aArea;
+            tools::Rectangle aArea;
             SwFrame *pFrame = pOLENd->getLayoutFrame(nullptr);
             if ( pFrame )
             {
                 Size aSz( pFrame->Frame().SSize() );
-                const MapMode aSrc ( MAP_TWIP );
-                const MapMode aDest( MAP_100TH_MM );
+                const MapMode aSrc ( MapUnit::MapTwip );
+                const MapMode aDest( MapUnit::Map100thMM );
                 aSz = OutputDevice::LogicToLogic( aSz, aSrc, aDest );
                 aArea.SetSize( aSz );
             }
@@ -838,7 +947,7 @@ bool SwOLEObj::UnloadObject()
     return bRet;
 }
 
-bool SwOLEObj::UnloadObject( uno::Reference< embed::XEmbeddedObject > xObj, const SwDoc* pDoc, sal_Int64 nAspect )
+bool SwOLEObj::UnloadObject( uno::Reference< embed::XEmbeddedObject > const & xObj, const SwDoc* pDoc, sal_Int64 nAspect )
 {
     if ( !pDoc )
         return false;
@@ -899,8 +1008,86 @@ OUString SwOLEObj::GetDescription()
     return SW_RESSTR(STR_OLE);
 }
 
+drawinglayer::primitive2d::Primitive2DContainer const & SwOLEObj::tryToGetChartContentAsPrimitive2DSequence(
+    basegfx::B2DRange& rRange,
+    bool bSynchron)
+{
+    if(m_pDeflateData)
+    {
+        if(bSynchron)
+        {
+            // data in high quality is requested, wait until the data is available
+            // since a WorkerThread was already started to load it
+            m_pDeflateData->waitFinished();
+        }
+
+        if(m_pDeflateData->isFinished())
+        {
+            // copy the result data and cleanup
+            m_aPrimitive2DSequence = m_pDeflateData->getSequence();
+            m_aRange = m_pDeflateData->getRange();
+            delete m_pDeflateData;
+            m_pDeflateData = nullptr;
+        }
+    }
+
+    if(m_aPrimitive2DSequence.empty() && m_aRange.isEmpty() && xOLERef.is() && xOLERef.IsChart())
+    {
+        const uno::Reference< frame::XModel > aXModel(xOLERef->getComponent(), uno::UNO_QUERY);
+
+        if(aXModel.is())
+        {
+            // disabled fro now, need to check deeper
+            static bool bAsynchronousLoadingAllowed = false;
+
+            if(bSynchron ||
+                !bAsynchronousLoadingAllowed)
+            {
+                // load chart synchron in this Thread
+                m_aPrimitive2DSequence = ChartHelper::tryToGetChartContentAsPrimitive2DSequence(
+                    aXModel,
+                    m_aRange);
+            }
+            else
+            {
+                // if not yet setup, initiate and start a WorkerThread to load the chart
+                // and it's primitives asynchron. If it already works, returning nothing
+                // is okay (preview will be reused)
+                if(!m_pDeflateData)
+                {
+                    m_pDeflateData = new DeflateData(aXModel);
+                    DeflateThread* pNew = new DeflateThread(*m_pDeflateData);
+                    comphelper::ThreadPool::getSharedOptimalPool().pushTask(pNew);
+                }
+            }
+        }
+    }
+
+    if(!m_aPrimitive2DSequence.empty() && !m_aRange.isEmpty())
+    {
+        // when we have data, also copy the buffered Range data as output
+        rRange = m_aRange;
+    }
+
+    return m_aPrimitive2DSequence;
+}
+
+void SwOLEObj::resetBufferedData()
+{
+    m_aPrimitive2DSequence = drawinglayer::primitive2d::Primitive2DContainer();
+    m_aRange.reset();
+
+    if(m_pDeflateData)
+    {
+        // load is in progress, wait until finished and cleanup without using it
+        m_pDeflateData->waitFinished();
+        delete m_pDeflateData;
+        m_pDeflateData = nullptr;
+    }
+}
+
 SwOLELRUCache::SwOLELRUCache()
-    : utl::ConfigItem(OUString("Office.Common/Cache"))
+    : utl::ConfigItem("Office.Common/Cache")
     , m_nLRU_InitSize( 20 )
 {
     EnableNotification( GetPropertyNames() );

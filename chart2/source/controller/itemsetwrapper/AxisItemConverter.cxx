@@ -39,6 +39,7 @@
 #include <com/sun/star/chart2/AxisOrientation.hpp>
 #include <com/sun/star/chart2/AxisType.hpp>
 
+#include <o3tl/any.hxx>
 #include <svl/eitem.hxx>
 #include <svx/chrtitem.hxx>
 #include <svl/intitem.hxx>
@@ -94,7 +95,7 @@ AxisItemConverter::AxisItemConverter(
     m_aConverters.push_back( new GraphicPropertyItemConverter(
                                  rPropertySet, rItemPool, rDrawModel,
                                  xNamedPropertyContainerFactory,
-                                 GraphicPropertyItemConverter::LINE_PROPERTIES ));
+                                 GraphicObjectType::LineProperties ));
     m_aConverters.push_back(
         new CharacterPropertyItemConverter(rPropertySet, rItemPool, pRefSize, "ReferencePageSize"));
 
@@ -107,7 +108,7 @@ AxisItemConverter::~AxisItemConverter()
     delete m_pExplicitScale;
     delete m_pExplicitIncrement;
 
-    ::std::for_each(m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
+    std::for_each(m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
 }
 
 void AxisItemConverter::FillItemSet( SfxItemSet & rOutItemSet ) const
@@ -159,7 +160,6 @@ bool lcl_hasTimeIntervalValue( const uno::Any& rAny )
 }
 
 void AxisItemConverter::FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
-    throw( uno::Exception )
 {
     if( !m_xAxis.is() )
         return;
@@ -286,10 +286,9 @@ void AxisItemConverter::FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutI
             {
                 if( rSubIncrements.getLength() > 0 && rSubIncrements[0].IntervalCount.hasValue())
                 {
-                    OSL_ASSERT( rSubIncrements[0].IntervalCount.getValueTypeClass() == uno::TypeClass_LONG );
                     rOutItemSet.Put( SfxInt32Item( nWhichId,
-                            *static_cast< const sal_Int32 * >(
-                                rSubIncrements[0].IntervalCount.getValue()) ));
+                            *o3tl::doAccess<sal_Int32>(
+                                rSubIncrements[0].IntervalCount) ));
                 }
                 else
                 {
@@ -340,7 +339,7 @@ void AxisItemConverter::FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutI
         {
             css::chart::ChartAxisPosition eAxisPos( css::chart::ChartAxisPosition_ZERO );
             GetPropertySet()->getPropertyValue( "CrossoverPosition" ) >>= eAxisPos;
-            rOutItemSet.Put( SfxInt32Item( nWhichId, eAxisPos ) );
+            rOutItemSet.Put( SfxInt32Item( nWhichId, (sal_Int32)eAxisPos ) );
         }
         break;
 
@@ -373,7 +372,7 @@ void AxisItemConverter::FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutI
         {
             css::chart::ChartAxisLabelPosition ePos( css::chart::ChartAxisLabelPosition_NEAR_AXIS );
             GetPropertySet()->getPropertyValue( "LabelPosition" ) >>= ePos;
-            rOutItemSet.Put( SfxInt32Item( nWhichId, ePos ) );
+            rOutItemSet.Put( SfxInt32Item( nWhichId, (sal_Int32)ePos ) );
         }
         break;
 
@@ -381,7 +380,7 @@ void AxisItemConverter::FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutI
         {
             css::chart::ChartAxisMarkPosition ePos( css::chart::ChartAxisMarkPosition_AT_LABELS_AND_AXIS );
             GetPropertySet()->getPropertyValue( "MarkPosition" ) >>= ePos;
-            rOutItemSet.Put( SfxInt32Item( nWhichId, ePos ) );
+            rOutItemSet.Put( SfxInt32Item( nWhichId, (sal_Int32)ePos ) );
         }
         break;
 
@@ -462,7 +461,6 @@ bool lcl_isAutoMinor( const SfxItemSet & rItemSet )
 }
 
 bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
-    throw( uno::Exception )
 {
     if( !m_xAxis.is() )
         return false;
@@ -584,7 +582,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
                     TimeInterval aTimeInterval;
                     aScale.TimeIncrement.MajorTimeInterval >>= aTimeInterval;
                     aValue >>= aTimeInterval.TimeUnit;
-                    aScale.TimeIncrement.MajorTimeInterval = uno::makeAny( aTimeInterval );
+                    aScale.TimeIncrement.MajorTimeInterval <<= aTimeInterval;
                     bSetScale = true;
                 }
             }
@@ -603,7 +601,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
                         TimeInterval aTimeInterval;
                         aScale.TimeIncrement.MajorTimeInterval >>= aTimeInterval;
                         aTimeInterval.Number = static_cast<sal_Int32>(fValue);
-                        aScale.TimeIncrement.MajorTimeInterval = uno::makeAny( aTimeInterval );
+                        aScale.TimeIncrement.MajorTimeInterval <<= aTimeInterval;
                         bSetScale = true;
                     }
                 }
@@ -642,7 +640,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
                     TimeInterval aTimeInterval;
                     aScale.TimeIncrement.MinorTimeInterval >>= aTimeInterval;
                     aValue >>= aTimeInterval.TimeUnit;
-                    aScale.TimeIncrement.MinorTimeInterval = uno::makeAny( aTimeInterval );
+                    aScale.TimeIncrement.MinorTimeInterval <<= aTimeInterval;
                     bSetScale = true;
                 }
             }
@@ -658,7 +656,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
                     TimeInterval aTimeInterval;
                     aScale.TimeIncrement.MinorTimeInterval >>= aTimeInterval;
                     aValue >>= aTimeInterval.Number;
-                    aScale.TimeIncrement.MinorTimeInterval = uno::makeAny(aTimeInterval);
+                    aScale.TimeIncrement.MinorTimeInterval <<= aTimeInterval;
                     bSetScale = true;
                 }
                 else if( aScale.IncrementData.SubIncrements.getLength() > 0 )
@@ -735,11 +733,11 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
                                 double fValue = 0.0;
                                 if( aValue >>= fValue )
                                 {
-                                    xCrossingMainAxis->setPropertyValue( "CrossoverPosition" , uno::makeAny( css::chart::ChartAxisPosition_VALUE ));
-                                    xCrossingMainAxis->setPropertyValue( "CrossoverValue" , uno::makeAny( fValue ));
+                                    xCrossingMainAxis->setPropertyValue( "CrossoverPosition" , uno::Any( css::chart::ChartAxisPosition_VALUE ));
+                                    xCrossingMainAxis->setPropertyValue( "CrossoverValue" , uno::Any( fValue ));
                                 }
                                 else
-                                    xCrossingMainAxis->setPropertyValue( "CrossoverPosition" , uno::makeAny( css::chart::ChartAxisPosition_START ));
+                                    xCrossingMainAxis->setPropertyValue( "CrossoverPosition" , uno::Any( css::chart::ChartAxisPosition_START ));
                             }
                         }
                     }
@@ -759,7 +757,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
 
             if( !bPropExisted || ( eOldAxisPos != eAxisPos ))
             {
-                GetPropertySet()->setPropertyValue( "CrossoverPosition" , uno::makeAny( eAxisPos ));
+                GetPropertySet()->setPropertyValue( "CrossoverPosition" , uno::Any( eAxisPos ));
                 bChangedOtherwise = true;
 
                 //move the parallel axes to the other side if necessary
@@ -777,7 +775,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
                                     (eAxisPos==css::chart::ChartAxisPosition_START)
                                     ? css::chart::ChartAxisPosition_END
                                     : css::chart::ChartAxisPosition_START;
-                                xParallelAxis->setPropertyValue( "CrossoverPosition" , uno::makeAny( eOppositePos ));
+                                xParallelAxis->setPropertyValue( "CrossoverPosition" , uno::Any( eOppositePos ));
                             }
                         }
                     }
@@ -795,7 +793,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
 
             if( !bPropExisted || ( fOldValue != fValue ))
             {
-                GetPropertySet()->setPropertyValue( "CrossoverValue" , uno::makeAny( fValue ));
+                GetPropertySet()->setPropertyValue( "CrossoverValue" , uno::Any( fValue ));
                 bChangedOtherwise = true;
 
                 //keep old and new settings for axis positioning in sync somehow
@@ -811,7 +809,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
                         if( xCrossingMainAxis.is() )
                         {
                             ScaleData aCrossingScale( xCrossingMainAxis->getScaleData() );
-                            aCrossingScale.Origin = uno::makeAny(fValue);
+                            aCrossingScale.Origin <<= fValue;
                             xCrossingMainAxis->setScaleData(aCrossingScale);
                         }
                     }
@@ -831,7 +829,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
 
             if( !bPropExisted || ( eOldPos != ePos ))
             {
-                GetPropertySet()->setPropertyValue( "LabelPosition" , uno::makeAny( ePos ));
+                GetPropertySet()->setPropertyValue( "LabelPosition" , uno::Any( ePos ));
                 bChangedOtherwise = true;
 
                 //move the parallel axes to the other side if necessary
@@ -849,7 +847,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
                                     (ePos==css::chart::ChartAxisLabelPosition_OUTSIDE_START)
                                     ? css::chart::ChartAxisLabelPosition_OUTSIDE_END
                                     : css::chart::ChartAxisLabelPosition_OUTSIDE_START;
-                                xParallelAxis->setPropertyValue( "LabelPosition" , uno::makeAny( eOppositePos ));
+                                xParallelAxis->setPropertyValue( "LabelPosition" , uno::Any( eOppositePos ));
                             }
                         }
                     }
@@ -869,7 +867,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
 
             if( !bPropExisted || ( eOldPos != ePos ))
             {
-                GetPropertySet()->setPropertyValue( "MarkPosition" , uno::makeAny( ePos ));
+                GetPropertySet()->setPropertyValue( "MarkPosition" , uno::Any( ePos ));
                 bChangedOtherwise = true;
             }
         }
@@ -887,7 +885,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
 
             if( ! bPropExisted || fOldVal != fVal )
             {
-                GetPropertySet()->setPropertyValue( "TextRotation" , uno::makeAny( fVal ));
+                GetPropertySet()->setPropertyValue( "TextRotation" , uno::Any( fVal ));
                 bChangedOtherwise = true;
             }
         }
@@ -907,7 +905,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
                         static_cast< const SfxUInt32Item & >(
                             rItemSet.Get( nWhichId )).GetValue());
 
-                    aValue = uno::makeAny(nFmt);
+                    aValue <<= nFmt;
                     if (GetPropertySet()->getPropertyValue(CHART_UNONAME_NUMFMT) != aValue)
                     {
                         GetPropertySet()->setPropertyValue(CHART_UNONAME_NUMFMT , aValue);
@@ -923,7 +921,7 @@ bool AxisItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet 
             bool bUseSourceFormat =
                 (static_cast< const SfxBoolItem & >(
                     rItemSet.Get( nWhichId )).GetValue() );
-            GetPropertySet()->setPropertyValue(CHART_UNONAME_LINK_TO_SRC_NUMFMT, uno::makeAny(bUseSourceFormat));
+            GetPropertySet()->setPropertyValue(CHART_UNONAME_LINK_TO_SRC_NUMFMT, uno::Any(bUseSourceFormat));
 
             bool bNumberFormatIsSet = GetPropertySet()->getPropertyValue(CHART_UNONAME_NUMFMT).hasValue();
 

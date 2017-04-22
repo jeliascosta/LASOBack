@@ -20,8 +20,6 @@
 #ifndef INCLUDED_VCL_SALBTYPE_HXX
 #define INCLUDED_VCL_SALBTYPE_HXX
 
-#include <string.h>
-#include <stdlib.h>
 #include <tools/debug.hxx>
 #include <vcl/checksum.hxx>
 #include <vcl/salgtype.hxx>
@@ -30,6 +28,7 @@
 #include <tools/solar.h>
 #include <vcl/dllapi.h>
 #include <o3tl/typed_flags_set.hxx>
+#include <vector>
 
 typedef sal_uInt8*        Scanline;
 typedef const sal_uInt8*  ConstScanline;
@@ -51,7 +50,6 @@ enum class ScanlineFormat {
 
     N24BitTcBgr       = 0x00000100,
     N24BitTcRgb       = 0x00000200,
-    N24BitTcMask      = 0x00000400,
 
     N32BitTcAbgr      = 0x00000800,
     N32BitTcArgb      = 0x00001000,
@@ -62,7 +60,7 @@ enum class ScanlineFormat {
     TopDown           = 0x00010000 // scanline adjustment
 };
 namespace o3tl {
-    template<> struct typed_flags<ScanlineFormat> : is_typed_flags<ScanlineFormat, 0x0001ffff> {};
+    template<> struct typed_flags<ScanlineFormat> : is_typed_flags<ScanlineFormat, 0x0001fbff> {};
 }
 inline ScanlineFormat RemoveScanline(ScanlineFormat nFormat) { return nFormat & ~ScanlineFormat::TopDown; }
 
@@ -92,9 +90,6 @@ class VCL_DLLPUBLIC BitmapColor
 {
 private:
 
-// ATTENTION:
-//   Because the members of this class are accessed via memcpy,
-//   you MUST NOT CHANGE the order of the members or the size of this class!
     sal_uInt8               mcBlueOrIndex;
     sal_uInt8               mcGreen;
     sal_uInt8               mcRed;
@@ -137,6 +132,13 @@ public:
     inline sal_uInt16   GetColorError( const BitmapColor& rBitmapColor ) const;
 };
 
+template<typename charT, typename traits>
+inline std::basic_ostream<charT, traits>& operator <<(std::basic_ostream<charT, traits>& rStream, const BitmapColor& rColor)
+{
+    return rStream << "mcBlueOrIndex: " << (int)rColor.GetBlueOrIndex() << ", mcGreen: "
+        << (int)rColor.GetGreen() << ", mcRed: " << (int)rColor.GetRed() << ", mbIndex: " << (int)rColor.IsIndex();
+}
+
 class Palette;
 
 class VCL_DLLPUBLIC BitmapPalette
@@ -146,38 +148,103 @@ class VCL_DLLPUBLIC BitmapPalette
 
 private:
 
-    BitmapColor*                mpBitmapColor;
-    sal_uInt16                  mnCount;
+    std::vector<BitmapColor> maBitmapColor;
 
 public:
 
-    SAL_DLLPRIVATE inline BitmapColor* ImplGetColorBuffer() const;
+    SAL_DLLPRIVATE const BitmapColor* ImplGetColorBuffer() const
+    {
+        return maBitmapColor.data();
+    }
+
+    SAL_DLLPRIVATE BitmapColor* ImplGetColorBuffer()
+    {
+        return maBitmapColor.data();
+    }
 
     BitmapChecksum GetChecksum() const
     {
-        return vcl_get_checksum(0, mpBitmapColor, mnCount * sizeof(BitmapColor));
+        return vcl_get_checksum(0, maBitmapColor.data(), maBitmapColor.size() * sizeof(BitmapColor));
     }
 
 public:
 
-    inline                      BitmapPalette();
-    inline                      BitmapPalette( const BitmapPalette& rBitmapPalette );
-    inline                      BitmapPalette( sal_uInt16 nCount );
-    inline                      ~BitmapPalette();
+    BitmapPalette()
+    {
+    }
 
-    inline BitmapPalette&       operator=( const BitmapPalette& rBitmapPalette );
-    inline bool                 operator==( const BitmapPalette& rBitmapPalette ) const;
-    inline bool                 operator!=( const BitmapPalette& rBitmapPalette ) const;
-    inline bool                 operator!();
+    BitmapPalette(sal_uInt16 nCount)
+        : maBitmapColor(nCount)
+    {
+    }
 
-    inline sal_uInt16           GetEntryCount() const;
-    inline void                 SetEntryCount( sal_uInt16 nCount );
+    bool operator==( const BitmapPalette& rBitmapPalette ) const
+    {
+        return maBitmapColor == rBitmapPalette.maBitmapColor;
+    }
 
-    inline const BitmapColor&   operator[]( sal_uInt16 nIndex ) const;
-    inline BitmapColor&         operator[]( sal_uInt16 nIndex );
+    bool operator!=(const BitmapPalette& rBitmapPalette) const
+    {
+        return !( *this == rBitmapPalette );
+    }
 
-    inline sal_uInt16           GetBestIndex( const BitmapColor& rCol ) const;
-    bool                        IsGreyPalette() const;
+    bool operator!()
+    {
+        return maBitmapColor.empty();
+    }
+
+    sal_uInt16 GetEntryCount() const
+    {
+        return maBitmapColor.size();
+    }
+
+    void SetEntryCount(sal_uInt16 nCount)
+    {
+        maBitmapColor.resize(nCount);
+    }
+
+    const BitmapColor& operator[](sal_uInt16 nIndex) const
+    {
+        assert(nIndex < maBitmapColor.size() && "Palette index is out of range");
+        return maBitmapColor[nIndex];
+    }
+
+    BitmapColor& operator[](sal_uInt16 nIndex)
+    {
+        assert(nIndex < maBitmapColor.size() && "Palette index is out of range");
+        return maBitmapColor[nIndex];
+    }
+
+    sal_uInt16 GetBestIndex(const BitmapColor& rCol) const
+    {
+        sal_uInt16 nRetIndex = 0;
+
+        if (!maBitmapColor.empty())
+        {
+            for (size_t j = 0; j < maBitmapColor.size(); ++j)
+            {
+                if (rCol == maBitmapColor[j])
+                {
+                    return j;
+                }
+            }
+
+            sal_uInt16 nLastErr = SAL_MAX_UINT16;
+            for (size_t i = 0; i < maBitmapColor.size(); ++i)
+            {
+                const sal_uInt16 nActErr = rCol.GetColorError(maBitmapColor[i]);
+                if ( nActErr < nLastErr )
+                {
+                    nLastErr = nActErr;
+                    nRetIndex = i;
+                }
+            }
+        }
+
+        return nRetIndex;
+    }
+
+    bool IsGreyPalette() const;
 };
 
 struct VCL_DLLPUBLIC ColorMaskElement
@@ -229,7 +296,6 @@ class VCL_DLLPUBLIC ColorMask
     ColorMaskElement        maR;
     ColorMaskElement        maG;
     ColorMaskElement        maB;
-    sal_uInt32              mnAlphaChannel;
 
 public:
 
@@ -239,7 +305,6 @@ public:
         : maR(rRedMask)
         , maG(rGreenMask)
         , maB(rBlueMask)
-        , mnAlphaChannel(0)
     {
     }
 
@@ -254,9 +319,6 @@ public:
     inline void         SetColorFor16BitMSB( const BitmapColor& rColor, sal_uInt8* pPixel ) const;
     inline void         GetColorFor16BitLSB( BitmapColor& rColor, const sal_uInt8* pPixel ) const;
     inline void         SetColorFor16BitLSB( const BitmapColor& rColor, sal_uInt8* pPixel ) const;
-
-    inline void         GetColorFor24Bit( BitmapColor& rColor, const sal_uInt8* pPixel ) const;
-    inline void         SetColorFor24Bit( const BitmapColor& rColor, sal_uInt8* pPixel ) const;
 
     inline void         GetColorFor32Bit( BitmapColor& rColor, const sal_uInt8* pPixel ) const;
     inline void         GetColorAndAlphaFor32Bit( BitmapColor& rColor, sal_uInt8& rAlpha, const sal_uInt8* pPixel ) const;
@@ -337,55 +399,55 @@ inline bool BitmapColor::IsIndex() const
 
 inline sal_uInt8 BitmapColor::GetRed() const
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
     return mcRed;
 }
 
 inline void BitmapColor::SetRed( sal_uInt8 cRed )
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
     mcRed = cRed;
 }
 
 inline sal_uInt8 BitmapColor::GetGreen() const
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
     return mcGreen;
 }
 
 inline void BitmapColor::SetGreen( sal_uInt8 cGreen )
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
     mcGreen = cGreen;
 }
 
 inline sal_uInt8 BitmapColor::GetBlue() const
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
     return mcBlueOrIndex;
 }
 
 inline void BitmapColor::SetBlue( sal_uInt8 cBlue )
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
     mcBlueOrIndex = cBlue;
 }
 
 inline sal_uInt8 BitmapColor::GetIndex() const
 {
-    DBG_ASSERT( mbIndex, "Pixel represents color values!" );
+    assert( mbIndex && "Pixel represents color values" );
     return mcBlueOrIndex;
 }
 
 inline void BitmapColor::SetIndex( sal_uInt8 cIndex )
 {
-    DBG_ASSERT( mbIndex, "Pixel represents color values!" );
+    assert( mbIndex && "Pixel represents color values" );
     mcBlueOrIndex = cIndex;
 }
 
 inline BitmapColor::operator Color() const
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
     return Color( mcRed, mcGreen, mcBlueOrIndex );
 }
 
@@ -397,7 +459,7 @@ inline sal_uInt8 BitmapColor::GetBlueOrIndex() const
 
 inline BitmapColor& BitmapColor::Invert()
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
     mcBlueOrIndex = ~mcBlueOrIndex;
     mcGreen = ~mcGreen;
     mcRed = ~mcRed;
@@ -407,15 +469,15 @@ inline BitmapColor& BitmapColor::Invert()
 
 inline sal_uInt8 BitmapColor::GetLuminance() const
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
     return (static_cast<unsigned long>(mcBlueOrIndex) * 28UL + static_cast<unsigned long>(mcGreen) * 151UL + static_cast<unsigned long>(mcRed) * 77UL) >> 8;
 }
 
 
 inline BitmapColor& BitmapColor::Merge( const BitmapColor& rBitmapColor, sal_uInt8 cTransparency )
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
-    DBG_ASSERT( !rBitmapColor.mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
+    assert( !rBitmapColor.mbIndex && "Pixel represents index into colortable" );
     mcBlueOrIndex = COLOR_CHANNEL_MERGE( mcBlueOrIndex, rBitmapColor.mcBlueOrIndex, cTransparency );
     mcGreen = COLOR_CHANNEL_MERGE( mcGreen, rBitmapColor.mcGreen, cTransparency );
     mcRed = COLOR_CHANNEL_MERGE( mcRed, rBitmapColor.mcRed, cTransparency );
@@ -426,170 +488,12 @@ inline BitmapColor& BitmapColor::Merge( const BitmapColor& rBitmapColor, sal_uIn
 
 inline sal_uInt16 BitmapColor::GetColorError( const BitmapColor& rBitmapColor ) const
 {
-    DBG_ASSERT( !mbIndex, "Pixel represents index into colortable!" );
-    DBG_ASSERT( !rBitmapColor.mbIndex, "Pixel represents index into colortable!" );
+    assert( !mbIndex && "Pixel represents index into colortable" );
+    assert( !rBitmapColor.mbIndex && "Pixel represents index into colortable" );
     return static_cast<sal_uInt16>(
         abs( static_cast<int>(mcBlueOrIndex) - static_cast<int>(rBitmapColor.mcBlueOrIndex) ) +
         abs( static_cast<int>(mcGreen) - static_cast<int>(rBitmapColor.mcGreen) ) +
         abs( static_cast<int>(mcRed) - static_cast<int>(rBitmapColor.mcRed) ) );
-}
-
-inline BitmapPalette::BitmapPalette() :
-            mpBitmapColor   ( nullptr ),
-            mnCount         ( 0 )
-{
-}
-
-inline BitmapPalette::BitmapPalette( const BitmapPalette& rBitmapPalette ) :
-            mnCount( rBitmapPalette.mnCount )
-{
-    if( mnCount )
-    {
-        const size_t nSize = mnCount * sizeof( BitmapColor );
-        mpBitmapColor = reinterpret_cast<BitmapColor*>(new sal_uInt8[ nSize ]);
-        memcpy( mpBitmapColor, rBitmapPalette.mpBitmapColor, nSize );
-    }
-    else
-        mpBitmapColor = nullptr;
-}
-
-inline BitmapPalette::BitmapPalette( sal_uInt16 nCount ) :
-            mnCount( nCount )
-{
-    if( mnCount )
-    {
-        const size_t nSize = mnCount * sizeof( BitmapColor );
-        mpBitmapColor = reinterpret_cast<BitmapColor*>(new sal_uInt8[ nSize ]);
-        memset( mpBitmapColor, 0, nSize );
-    }
-    else
-        mpBitmapColor = nullptr;
-}
-
-inline BitmapPalette::~BitmapPalette()
-{
-    delete[] reinterpret_cast<sal_uInt8*>(mpBitmapColor);
-}
-
-inline BitmapPalette& BitmapPalette::operator=( const BitmapPalette& rBitmapPalette )
-{
-    delete[] reinterpret_cast<sal_uInt8*>(mpBitmapColor);
-    mnCount = rBitmapPalette.mnCount;
-
-    if( mnCount )
-    {
-        const size_t nSize = mnCount * sizeof( BitmapColor );
-        mpBitmapColor = reinterpret_cast<BitmapColor*>(new sal_uInt8[ nSize ]);
-        memcpy( mpBitmapColor, rBitmapPalette.mpBitmapColor, nSize );
-    }
-    else
-        mpBitmapColor = nullptr;
-
-    return *this;
-}
-
-inline bool BitmapPalette::operator==( const BitmapPalette& rBitmapPalette ) const
-{
-    bool bRet = false;
-
-    if( rBitmapPalette.mnCount == mnCount )
-    {
-        bRet = true;
-
-        for( sal_uInt16 i = 0; i < mnCount; i++ )
-        {
-            if( mpBitmapColor[ i ] != rBitmapPalette.mpBitmapColor[ i ] )
-            {
-                bRet = false;
-                break;
-            }
-        }
-    }
-
-    return bRet;
-}
-
-inline bool BitmapPalette::operator!=( const BitmapPalette& rBitmapPalette ) const
-{
-    return !( *this == rBitmapPalette );
-}
-
-inline bool BitmapPalette::operator!()
-{
-    return( !mnCount || !mpBitmapColor );
-}
-
-inline sal_uInt16 BitmapPalette::GetEntryCount() const
-{
-    return mnCount;
-}
-
-inline void BitmapPalette::SetEntryCount( sal_uInt16 nCount )
-{
-    if( !nCount )
-    {
-        delete[] reinterpret_cast<sal_uInt8*>(mpBitmapColor);
-        mpBitmapColor = nullptr;
-        mnCount = 0;
-    }
-    else if( nCount != mnCount )
-    {
-        const size_t nNewSize = nCount * sizeof( BitmapColor );
-        const size_t nMinSize = std::min( mnCount, nCount ) * sizeof( BitmapColor );
-        sal_uInt8*      pNewColor = new sal_uInt8[ nNewSize ];
-
-        if ( nMinSize && mpBitmapColor )
-            memcpy( pNewColor, mpBitmapColor, nMinSize );
-        delete[] reinterpret_cast<sal_uInt8*>(mpBitmapColor);
-        memset( pNewColor + nMinSize, 0, nNewSize - nMinSize );
-        mpBitmapColor = reinterpret_cast<BitmapColor*>(pNewColor);
-        mnCount = nCount;
-    }
-}
-
-inline const BitmapColor& BitmapPalette::operator[]( sal_uInt16 nIndex ) const
-{
-    DBG_ASSERT( nIndex < mnCount, "Palette index is out of range!" );
-    return mpBitmapColor[ nIndex ];
-}
-
-inline BitmapColor& BitmapPalette::operator[]( sal_uInt16 nIndex )
-{
-    DBG_ASSERT( nIndex < mnCount, "Palette index is out of range!" );
-    return mpBitmapColor[ nIndex ];
-}
-
-inline BitmapColor* BitmapPalette::ImplGetColorBuffer() const
-{
-    DBG_ASSERT( mpBitmapColor, "No color buffer available!" );
-    return mpBitmapColor;
-}
-
-inline sal_uInt16 BitmapPalette::GetBestIndex( const BitmapColor& rCol ) const
-{
-    sal_uInt16 nRetIndex = 0;
-
-    if( mpBitmapColor && mnCount )
-    {
-        for( sal_uInt16 j = 0; j < mnCount; ++j )
-            if( rCol == mpBitmapColor[ j ] )
-            {
-                return j;
-            }
-
-        sal_uInt16 nLastErr = SAL_MAX_UINT16;
-        for( sal_uInt16 i = 0; i < mnCount; ++i )
-        {
-            const sal_uInt16 nActErr = rCol.GetColorError( mpBitmapColor[ i ] );
-            if ( nActErr < nLastErr )
-            {
-                nLastErr = nActErr;
-                nRetIndex = i;
-            }
-        }
-    }
-
-    return nRetIndex;
 }
 
 inline sal_uInt32 ColorMask::GetRedMask() const
@@ -615,7 +519,7 @@ inline void ColorMask::GetColorFor8Bit( BitmapColor& rColor, const sal_uInt8* pP
 
 inline void ColorMask::SetColorFor8Bit( const BitmapColor& rColor, sal_uInt8* pPixel ) const
 {
-    *pPixel = (sal_uInt8) COLOR_TO_MASK( rColor, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, mnAlphaChannel );
+    *pPixel = (sal_uInt8) COLOR_TO_MASK( rColor, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, 0/*nAlphaChannel*/ );
 }
 
 inline void ColorMask::GetColorFor16BitMSB( BitmapColor& rColor, const sal_uInt8* pPixel ) const
@@ -627,7 +531,7 @@ inline void ColorMask::GetColorFor16BitMSB( BitmapColor& rColor, const sal_uInt8
 
 inline void ColorMask::SetColorFor16BitMSB( const BitmapColor& rColor, sal_uInt8* pPixel ) const
 {
-    const sal_uInt16 nVal = (sal_uInt16)COLOR_TO_MASK( rColor, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, mnAlphaChannel );
+    const sal_uInt16 nVal = (sal_uInt16)COLOR_TO_MASK( rColor, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, 0/*nAlphaChannel*/ );
 
     pPixel[ 0 ] = (sal_uInt8)(nVal >> 8U);
     pPixel[ 1 ] = (sal_uInt8) nVal;
@@ -642,24 +546,10 @@ inline void ColorMask::GetColorFor16BitLSB( BitmapColor& rColor, const sal_uInt8
 
 inline void ColorMask::SetColorFor16BitLSB( const BitmapColor& rColor, sal_uInt8* pPixel ) const
 {
-    const sal_uInt16 nVal = (sal_uInt16)COLOR_TO_MASK( rColor, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, mnAlphaChannel );
+    const sal_uInt16 nVal = (sal_uInt16)COLOR_TO_MASK( rColor, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, 0/*nAlphaChannel*/ );
 
     pPixel[ 0 ] = (sal_uInt8) nVal;
     pPixel[ 1 ] = (sal_uInt8)(nVal >> 8U);
-}
-
-inline void ColorMask::GetColorFor24Bit( BitmapColor& rColor, const sal_uInt8* pPixel ) const
-{
-    const sal_uInt32 nVal = pPixel[ 0 ] | ( (sal_uInt32) pPixel[ 1 ] << 8UL ) | ( (sal_uInt32) pPixel[ 2 ] << 16UL );
-    MASK_TO_COLOR( nVal, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, rColor );
-}
-
-inline void ColorMask::SetColorFor24Bit( const BitmapColor& rColor, sal_uInt8* pPixel ) const
-{
-    const sal_uInt32 nVal = COLOR_TO_MASK( rColor, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, mnAlphaChannel );
-    pPixel[ 0 ] = (sal_uInt8) nVal;
-    pPixel[ 1 ] = (sal_uInt8) ( nVal >> 8UL );
-    pPixel[ 2 ] = (sal_uInt8) ( nVal >> 16UL );
 }
 
 inline void ColorMask::GetColorFor32Bit( BitmapColor& rColor, const sal_uInt8* pPixel ) const
@@ -681,7 +571,7 @@ inline void ColorMask::GetColorAndAlphaFor32Bit( BitmapColor& rColor, sal_uInt8&
 
 inline void ColorMask::SetColorFor32Bit( const BitmapColor& rColor, sal_uInt8* pPixel ) const
 {
-    const sal_uInt32 nVal = COLOR_TO_MASK( rColor, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, mnAlphaChannel );
+    const sal_uInt32 nVal = COLOR_TO_MASK( rColor, maR.mnMask, maG.mnMask, maB.mnMask, maR.mnShift, maG.mnShift, maB.mnShift, 0/*nAlphaChannel*/ );
     pPixel[ 0 ] = (sal_uInt8) nVal;
     pPixel[ 1 ] = (sal_uInt8) ( nVal >> 8UL );
     pPixel[ 2 ] = (sal_uInt8) ( nVal >> 16UL );

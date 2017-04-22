@@ -70,7 +70,7 @@ struct OptionsLeaf
         m_nGroupIndex( nGroupIndex ) {}
 };
 
-typedef ::std::vector< OptionsLeaf* > VectorOfLeaves;
+typedef std::vector< OptionsLeaf* > VectorOfLeaves;
 
 // struct OptionsNode ----------------------------------------------------
 
@@ -81,7 +81,7 @@ struct OptionsNode
     OUString                m_sPageURL;
     bool                    m_bAllModules;
     VectorOfLeaves          m_aLeaves;
-    ::std::vector< VectorOfLeaves >
+    std::vector< VectorOfLeaves >
                             m_aGroupedLeaves;
 
     OptionsNode(    const OUString& rId,
@@ -102,7 +102,7 @@ struct OptionsNode
     }
 };
 
-typedef ::std::vector< OptionsNode* > VectorOfNodes;
+typedef std::vector< OptionsNode* > VectorOfNodes;
 
 struct LastPageSaver
 {
@@ -137,10 +137,6 @@ private:
     OUString               sTitle;
     OUString               sNotLoadedError;
 
-    // for the ColorTabPage
-    SfxItemSet*            pColorPageItemSet;
-    VclPtr<SvxColorTabPage> mpColorPage;
-
     bool                   bForgetSelection;
     bool                   bIsFromExtensionManager;
 
@@ -166,13 +162,13 @@ private:
     void            InsertNodes( const VectorOfNodes& rNodeList );
 
 protected:
-    DECL_STATIC_LINK_TYPED(OfaTreeOptionsDialog, ExpandedHdl_Impl, SvTreeListBox*, void );
-    DECL_LINK_TYPED(ShowPageHdl_Impl, SvTreeListBox*, void);
-    DECL_LINK_TYPED(BackHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(OKHdl_Impl, Button*, void);
+    DECL_STATIC_LINK(OfaTreeOptionsDialog, ExpandedHdl_Impl, SvTreeListBox*, void );
+    DECL_LINK(ShowPageHdl_Impl, SvTreeListBox*, void);
+    DECL_LINK(BackHdl_Impl, Button*, void);
+    DECL_LINK(OKHdl_Impl, Button*, void);
     void SelectHdl_Impl();
 
-    virtual bool    Notify( NotifyEvent& rNEvt ) override;
+    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
     virtual short   Execute() override;
 
 public:
@@ -180,7 +176,7 @@ public:
         const css::uno::Reference< css::frame::XFrame >& _xFrame,
         bool bActivateLastSelection = true );
     OfaTreeOptionsDialog( vcl::Window* pParent, const OUString& rExtensionId );
-    virtual ~OfaTreeOptionsDialog();
+    virtual ~OfaTreeOptionsDialog() override;
     virtual void dispose() override;
 
     OptionsPageInfo*    AddTabPage( sal_uInt16 nId, const OUString& rPageName, sal_uInt16 nGroup );
@@ -198,7 +194,7 @@ public:
 
 // class OfaPageResource -------------------------------------------------
 
-class OfaPageResource : public Resource
+class OfaPageResource
 {
     ResStringArray      aGeneralDlgAry;
     ResStringArray      aInetDlgAry;
@@ -246,7 +242,6 @@ private:
                         m_xEventHdl;
     css::uno::Reference< css::awt::XContainerWindowProvider >
                         m_xWinProvider;
-    bool                m_bIsWindowHidden;
 
     void                CreateDialogWithHandler();
     bool                DispatchAction( const OUString& rAction );
@@ -258,7 +253,7 @@ public:
         const css::uno::Reference<
             css::awt::XContainerWindowProvider >& rProvider );
 
-    virtual ~ExtensionsTabPage();
+    virtual ~ExtensionsTabPage() override;
     virtual void dispose() override;
 
     virtual void    ActivatePage() override;

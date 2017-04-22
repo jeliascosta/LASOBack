@@ -43,9 +43,9 @@ namespace {
 
 static const double gnPreviewOffsetScale = 1.0 / 8.0;
 
-Rectangle GrowRectangle (const Rectangle& rBox, const sal_Int32 nOffset)
+::tools::Rectangle GrowRectangle (const ::tools::Rectangle& rBox, const sal_Int32 nOffset)
 {
-    return Rectangle (
+    return ::tools::Rectangle (
         rBox.Left() - nOffset,
         rBox.Top() - nOffset,
         rBox.Right() + nOffset,
@@ -61,11 +61,11 @@ namespace sd { namespace slidesorter { namespace view {
 //=====  InsertionIndicatorOverlay  ===========================================
 
 const static sal_Int32 gnShadowBorder = 3;
+const static sal_Int32 gnLayerIndex = 2;
 
 InsertionIndicatorOverlay::InsertionIndicatorOverlay (SlideSorter& rSlideSorter)
     : mrSlideSorter(rSlideSorter),
       mbIsVisible(false),
-      mnLayerIndex(2),
       mpLayerInvalidator(),
       maLocation(),
       maIcon(),
@@ -94,12 +94,12 @@ void InsertionIndicatorOverlay::Create (const SdTransferable* pTransferable)
         nSelectionCount = pTransferable->GetPageBookmarks().size();
     else
     {
-        DrawDocShell* pDataDocShell = dynamic_cast<DrawDocShell*>(&pTransferable->GetDocShell());
+        DrawDocShell* pDataDocShell = dynamic_cast<DrawDocShell*>(pTransferable->GetDocShell().get());
         if (pDataDocShell != nullptr)
         {
             SdDrawDocument* pDataDocument = pDataDocShell->GetDoc();
             if (pDataDocument != nullptr)
-                nSelectionCount = pDataDocument->GetSdPageCount(PK_STANDARD);
+                nSelectionCount = pDataDocument->GetSdPageCount(PageKind::Standard);
         }
     }
     Create(pData->GetRepresentatives(), nSelectionCount);
@@ -192,7 +192,7 @@ Point InsertionIndicatorOverlay::PaintRepresentatives (
         if (rRepresentatives[nIndex].mbIsExcluded)
         {
             const vcl::Region aSavedClipRegion (rContent.GetClipRegion());
-            rContent.IntersectClipRegion(Rectangle(aPageOffset, rPreviewSize));
+            rContent.IntersectClipRegion(::tools::Rectangle(aPageOffset, rPreviewSize));
             // Paint bitmap tiled over the preview to mark it as excluded.
             const sal_Int32 nIconWidth (aExclusionOverlay.GetSizePixel().Width());
             const sal_Int32 nIconHeight (aExclusionOverlay.GetSizePixel().Height());
@@ -206,7 +206,7 @@ Point InsertionIndicatorOverlay::PaintRepresentatives (
         }
 
         // Tone down the bitmap.  The further back the darker it becomes.
-        Rectangle aBox (
+        ::tools::Rectangle aBox (
             aPageOffset.X(),
             aPageOffset.Y(),
             aPageOffset.X()+rPreviewSize.Width()-1,
@@ -221,7 +221,7 @@ Point InsertionIndicatorOverlay::PaintRepresentatives (
             nTransparency);
 
         // Draw border around preview.
-        Rectangle aBorderBox (GrowRectangle(aBox, 1));
+        ::tools::Rectangle aBorderBox (GrowRectangle(aBox, 1));
         rContent.SetLineColor(COL_GRAY);
         rContent.SetFillColor();
         rContent.DrawRect(aBorderBox);
@@ -249,7 +249,7 @@ void InsertionIndicatorOverlay::PaintPageCount (
         // Determine the size of the (painted) text and create a bounding
         // box that centers the text on the first preview.
         rDevice.SetFont(*pFont);
-        Rectangle aTextBox;
+        ::tools::Rectangle aTextBox;
         rDevice.GetTextBoundRect(aTextBox, sNumber);
         Point aTextOffset (aTextBox.TopLeft());
         Size aTextSize (aTextBox.GetSize());
@@ -259,7 +259,7 @@ void InsertionIndicatorOverlay::PaintPageCount (
         aTextLocation += Point(
             (rPreviewSize.Width()-aTextBox.GetWidth())/2,
             (rPreviewSize.Height()-aTextBox.GetHeight())/2);
-        aTextBox = Rectangle(aTextLocation, aTextSize);
+        aTextBox = ::tools::Rectangle(aTextLocation, aTextSize);
 
         // Paint background, border and text.
         static const sal_Int32 nBorder = 5;
@@ -284,7 +284,7 @@ void InsertionIndicatorOverlay::SetLocation (const Point& rLocation)
             maIcon.GetSizePixel().Height()/2));
     if (maLocation != aTopLeft)
     {
-        const Rectangle aOldBoundingBox (GetBoundingBox());
+        const ::tools::Rectangle aOldBoundingBox (GetBoundingBox());
 
         maLocation = aTopLeft;
 
@@ -298,7 +298,7 @@ void InsertionIndicatorOverlay::SetLocation (const Point& rLocation)
 
 void InsertionIndicatorOverlay::Paint (
     OutputDevice& rDevice,
-    const Rectangle& rRepaintArea)
+    const ::tools::Rectangle& rRepaintArea)
 {
     (void)rRepaintArea;
 
@@ -326,7 +326,7 @@ void InsertionIndicatorOverlay::Show()
             mrSlideSorter.GetView().GetLayeredDevice());
         if (pLayeredDevice)
         {
-            pLayeredDevice->RegisterPainter(shared_from_this(), mnLayerIndex);
+            pLayeredDevice->RegisterPainter(shared_from_this(), gnLayerIndex);
             if (mpLayerInvalidator)
                 mpLayerInvalidator->Invalidate(GetBoundingBox());
         }
@@ -345,14 +345,14 @@ void InsertionIndicatorOverlay::Hide()
         {
             if (mpLayerInvalidator)
                 mpLayerInvalidator->Invalidate(GetBoundingBox());
-            pLayeredDevice->RemovePainter(shared_from_this(), mnLayerIndex);
+            pLayeredDevice->RemovePainter(shared_from_this(), gnLayerIndex);
         }
     }
 }
 
-Rectangle InsertionIndicatorOverlay::GetBoundingBox() const
+::tools::Rectangle InsertionIndicatorOverlay::GetBoundingBox() const
 {
-    return Rectangle(maLocation, maIcon.GetSizePixel());
+    return ::tools::Rectangle(maLocation, maIcon.GetSizePixel());
 }
 
 Size InsertionIndicatorOverlay::GetSize() const

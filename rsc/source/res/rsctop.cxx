@@ -22,7 +22,7 @@
 #include <string.h>
 #include <rsctop.hxx>
 
-RscTop::RscTop( Atom nId, sal_uInt32 nTypIdent, RscTop * pSuperCl )
+RscTop::RscTop( Atom nId, RESOURCE_TYPE nTypIdent, RscTop * pSuperCl )
     : RefNode( nId )
     , pSuperClass( pSuperCl )
     , nTypId( nTypIdent )
@@ -41,7 +41,7 @@ void RscTop::SetCallPar(const OString& rPar1, const OString& rPar2,
     aCallParType = rParType;
 }
 
-RSCINST RscTop::GetDefault()
+RSCINST const & RscTop::GetDefault()
 {
     if( !aDfltInst.IsInst() )
         aDfltInst = this->Create( nullptr, RSCINST() );
@@ -66,7 +66,7 @@ RscTop * RscTop::GetTypeClass() const
         return nullptr;
 }
 
-sal_uInt32 RscTop::Size()
+sal_uInt32 RscTop::Size() const
 {
     if( pSuperClass )
         return pSuperClass->Size();
@@ -93,28 +93,6 @@ bool RscTop::InHierarchy( RscTop * pClass )
 
 ERRTYPE RscTop::SetVariable( Atom nVarName, RscTop * pClass,
                      RSCINST * pDflt, RSCVAR nVarType, sal_uInt32 nMask,
-                     Atom nDataBaseName )
-{
-    if( pSuperClass )
-        return pSuperClass->SetVariable( nVarName, pClass, pDflt,
-                                         nVarType, nMask, nDataBaseName );
-    else
-        return ERR_UNKNOWN_METHOD;
-}
-
-ERRTYPE RscTop::SetVariable( Atom nVarName, RscTop * pClass,
-                     RSCINST * pDflt, RSCVAR nVarType, SfxStyleItem nMask,
-                     Atom nDataBaseName )
-{
-    if( pSuperClass )
-        return pSuperClass->SetVariable( nVarName, pClass, pDflt,
-                                         nVarType, nMask, nDataBaseName );
-    else
-        return ERR_UNKNOWN_METHOD;
-}
-
-ERRTYPE RscTop::SetVariable( Atom nVarName, RscTop * pClass,
-                     RSCINST * pDflt, RSCVAR nVarType, SfxSlotInfo nMask,
                      Atom nDataBaseName )
 {
     if( pSuperClass )
@@ -418,19 +396,19 @@ void RscTop::WriteSrc( const RSCINST & rInst, FILE * fOutput,
 
 ERRTYPE RscTop::WriteRcHeader( const RSCINST & rInst, RscWriteRc & rMem,
                                RscTypCont * pTC, const RscId & rId,
-                               sal_uInt32 nDeep, bool bExtra )
+                               sal_uInt32 nDeep )
 {
     if( pSuperClass )
-        return pSuperClass->WriteRcHeader( rInst, rMem, pTC, rId, nDeep, bExtra );
+        return pSuperClass->WriteRcHeader( rInst, rMem, pTC, rId, nDeep );
     else
-        return rInst.pClass->WriteRc( rInst, rMem, pTC, nDeep, bExtra );
+        return rInst.pClass->WriteRc( rInst, rMem, pTC, nDeep );
 }
 
 ERRTYPE RscTop::WriteRc( const RSCINST & rInst, RscWriteRc & rMem,
-                         RscTypCont * pTC, sal_uInt32 nDeep, bool bExtra )
+                         RscTypCont * pTC, sal_uInt32 nDeep )
 {
     if( pSuperClass )
-        return pSuperClass->WriteRc( rInst, rMem, pTC, nDeep, bExtra );
+        return pSuperClass->WriteRc( rInst, rMem, pTC, nDeep );
     else
         return ERR_OK;
 }

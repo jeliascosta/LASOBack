@@ -125,7 +125,6 @@ PropertyHelper_Thesaurus& Thesaurus::GetPropHelper_Impl()
 }
 
 Sequence< Locale > SAL_CALL Thesaurus::getLocales()
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -164,7 +163,7 @@ Sequence< Locale > SAL_CALL Thesaurus::getLocales()
         {
             // get supported locales from the dictionaries-to-use...
             sal_Int32 k = 0;
-            std::set< OUString, lt_rtl_OUString > aLocaleNamesSet;
+            std::set<OUString> aLocaleNamesSet;
             std::list< SvtLinguConfigDictionaryEntry >::const_iterator aDictIt;
             for (aDictIt = aDics.begin();  aDictIt != aDics.end();  ++aDictIt)
             {
@@ -177,7 +176,7 @@ Sequence< Locale > SAL_CALL Thesaurus::getLocales()
             }
             // ... and add them to the resulting sequence
             aSuppLocales.realloc( aLocaleNamesSet.size() );
-            std::set< OUString, lt_rtl_OUString >::const_iterator aItB;
+            std::set<OUString>::const_iterator aItB;
             k = 0;
             for (aItB = aLocaleNamesSet.begin();  aItB != aLocaleNamesSet.end();  ++aItB)
             {
@@ -251,7 +250,6 @@ Sequence< Locale > SAL_CALL Thesaurus::getLocales()
 }
 
 sal_Bool SAL_CALL Thesaurus::hasLocale(const Locale& rLocale)
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -274,7 +272,6 @@ sal_Bool SAL_CALL Thesaurus::hasLocale(const Locale& rLocale)
 Sequence < Reference < css::linguistic2::XMeaning > > SAL_CALL Thesaurus::queryMeanings(
     const OUString& qTerm, const Locale& rLocale,
     const PropertyValues& rProperties)
-    throw(IllegalArgumentException, RuntimeException, std::exception)
 {
     MutexGuard      aGuard( GetLinguMutex() );
 
@@ -319,7 +316,7 @@ Sequence < Reference < css::linguistic2::XMeaning > > SAL_CALL Thesaurus::queryM
     {
         if (rLocale == aTLocs[i])
         {
-            // open up and intialize this thesaurus if need be
+            // open up and initialize this thesaurus if need be
             if (!aThes[i])
             {
                 OUString datpath = aTNames[i] + ".dat";
@@ -511,23 +508,20 @@ Sequence < Reference < css::linguistic2::XMeaning > > SAL_CALL Thesaurus::queryM
     return noMeanings;
 }
 
+/// @throws Exception
 Reference< XInterface > SAL_CALL Thesaurus_CreateInstance(
             const Reference< XMultiServiceFactory > & /*rSMgr*/ )
-        throw(Exception)
 {
     Reference< XInterface > xService = static_cast<cppu::OWeakObject*>(new Thesaurus);
     return xService;
 }
 
 OUString SAL_CALL Thesaurus::getServiceDisplayName( const Locale& /*rLocale*/ )
-        throw(RuntimeException, std::exception)
 {
-    MutexGuard  aGuard( GetLinguMutex() );
-    return OUString( "OpenOffice.org New Thesaurus" );
+    return OUString( "Mythes Thesaurus" );
 }
 
 void SAL_CALL Thesaurus::initialize( const Sequence< Any >& rArguments )
-        throw(Exception, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -583,7 +577,6 @@ OUString SAL_CALL Thesaurus::makeInitCap(const OUString& aTerm, CharClass * pCC)
 }
 
 void SAL_CALL Thesaurus::dispose()
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -602,7 +595,6 @@ void SAL_CALL Thesaurus::dispose()
 }
 
 void SAL_CALL Thesaurus::addEventListener( const Reference< XEventListener >& rxListener )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -611,7 +603,6 @@ void SAL_CALL Thesaurus::addEventListener( const Reference< XEventListener >& rx
 }
 
 void SAL_CALL Thesaurus::removeEventListener( const Reference< XEventListener >& rxListener )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -621,19 +612,16 @@ void SAL_CALL Thesaurus::removeEventListener( const Reference< XEventListener >&
 
 // Service specific part
 OUString SAL_CALL Thesaurus::getImplementationName()
-        throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
 sal_Bool SAL_CALL Thesaurus::supportsService( const OUString& ServiceName )
-        throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence< OUString > SAL_CALL Thesaurus::getSupportedServiceNames()
-        throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }

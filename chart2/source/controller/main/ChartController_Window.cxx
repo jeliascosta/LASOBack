@@ -45,20 +45,24 @@
 #include "LegendHelper.hxx"
 #include "servicenames_charttypes.hxx"
 #include "DrawCommandDispatch.hxx"
+#include "PopupRequest.hxx"
 
 #include <com/sun/star/chart2/RelativePosition.hpp>
 #include <com/sun/star/chart2/RelativeSize.hpp>
 #include <com/sun/star/chart2/XRegressionCurveContainer.hpp>
+#include <com/sun/star/chart2/data/XPivotTableDataProvider.hpp>
 
 #include <com/sun/star/awt/PopupMenuDirection.hpp>
 #include <com/sun/star/frame/DispatchHelper.hpp>
 #include <com/sun/star/frame/FrameSearchFlag.hpp>
 #include <com/sun/star/frame/XPopupMenuController.hpp>
 #include <com/sun/star/util/XUpdatable.hpp>
+#include <com/sun/star/awt/Rectangle.hpp>
+
 #include <comphelper/propertysequence.hxx>
 #include <comphelper/propertyvalue.hxx>
+#include <comphelper/sequence.hxx>
 
-#include <svtools/contextmenuhelper.hxx>
 #include <toolkit/awt/vclxmenu.hxx>
 
 #include <svx/svxids.hrc>
@@ -223,14 +227,14 @@ void SAL_CALL ChartController::setPosSize(
     sal_Int32 Width,
     sal_Int32 Height,
     sal_Int16 Flags )
-        throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
+    auto pChartWindow(GetChartWindow());
 
-    if(xWindow.is() && m_pChartWindow)
+    if(xWindow.is() && pChartWindow)
     {
-        Size aLogicSize = m_pChartWindow->PixelToLogic( Size( Width, Height ), MapMode( MAP_100TH_MM )  );
+        Size aLogicSize = pChartWindow->PixelToLogic( Size( Width, Height ), MapMode( MapUnit::Map100thMM )  );
 
         //todo: for standalone chart: detect whether we are standalone
         //change map mode to fit new size
@@ -240,38 +244,37 @@ void SAL_CALL ChartController::setPosSize(
         sal_Int32 nScaleYNumerator = aLogicSize.Height();
         sal_Int32 nScaleYDenominator = aModelPageSize.Height;
         MapMode aNewMapMode(
-                    MAP_100TH_MM,
+                    MapUnit::Map100thMM,
                     Point(0,0),
                     Fraction(nScaleXNumerator, nScaleXDenominator),
                     Fraction(nScaleYNumerator, nScaleYDenominator) );
-        m_pChartWindow->SetMapMode(aNewMapMode);
-        m_pChartWindow->setPosSizePixel( X, Y, Width, Height, static_cast<PosSizeFlags>(Flags) );
+        pChartWindow->SetMapMode(aNewMapMode);
+        pChartWindow->setPosSizePixel( X, Y, Width, Height, static_cast<PosSizeFlags>(Flags) );
 
         //#i75867# poor quality of ole's alternative view with 3D scenes and zoomfactors besides 100%
         uno::Reference< beans::XPropertySet > xProp( m_xChartView, uno::UNO_QUERY );
         if( xProp.is() )
         {
             auto aZoomFactors(::comphelper::InitPropertySequence({
-                { "ScaleXNumerator", uno::makeAny( nScaleXNumerator ) },
-                { "ScaleXDenominator", uno::makeAny( nScaleXDenominator ) },
-                { "ScaleYNumerator", uno::makeAny( nScaleYNumerator ) },
-                { "ScaleYDenominator", uno::makeAny( nScaleYDenominator ) }
+                { "ScaleXNumerator", uno::Any( nScaleXNumerator ) },
+                { "ScaleXDenominator", uno::Any( nScaleXDenominator ) },
+                { "ScaleYNumerator", uno::Any( nScaleYNumerator ) },
+                { "ScaleYDenominator", uno::Any( nScaleYDenominator ) }
             }));
-            xProp->setPropertyValue( "ZoomFactors", uno::makeAny( aZoomFactors ));
+            xProp->setPropertyValue( "ZoomFactors", uno::Any( aZoomFactors ));
         }
 
         //a correct work area is at least necessary for correct values in the position and  size dialog and for dragging area
         if(m_pDrawViewWrapper)
         {
-            Rectangle aRect(Point(0,0), m_pChartWindow->GetOutputSize());
+            tools::Rectangle aRect(Point(0,0), pChartWindow->GetOutputSize());
             m_pDrawViewWrapper->SetWorkArea( aRect );
         }
-        m_pChartWindow->Invalidate();
+        pChartWindow->Invalidate();
     }
 }
 
 awt::Rectangle SAL_CALL ChartController::getPosSize()
-    throw (uno::RuntimeException, std::exception)
 {
     //@todo
     awt::Rectangle aRet(0, 0, 0, 0);
@@ -284,7 +287,6 @@ awt::Rectangle SAL_CALL ChartController::getPosSize()
 }
 
 void SAL_CALL ChartController::setVisible( sal_Bool Visible )
-    throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -294,7 +296,6 @@ void SAL_CALL ChartController::setVisible( sal_Bool Visible )
 }
 
 void SAL_CALL ChartController::setEnable( sal_Bool Enable )
-    throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -304,7 +305,6 @@ void SAL_CALL ChartController::setEnable( sal_Bool Enable )
 }
 
 void SAL_CALL ChartController::setFocus()
-    throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -315,7 +315,6 @@ void SAL_CALL ChartController::setFocus()
 
 void SAL_CALL ChartController::addWindowListener(
     const uno::Reference< awt::XWindowListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -326,7 +325,6 @@ void SAL_CALL ChartController::addWindowListener(
 
 void SAL_CALL ChartController::removeWindowListener(
     const uno::Reference< awt::XWindowListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -337,7 +335,6 @@ void SAL_CALL ChartController::removeWindowListener(
 
 void SAL_CALL ChartController::addFocusListener(
     const uno::Reference< awt::XFocusListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -348,7 +345,6 @@ void SAL_CALL ChartController::addFocusListener(
 
 void SAL_CALL ChartController::removeFocusListener(
     const uno::Reference< awt::XFocusListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -359,7 +355,6 @@ void SAL_CALL ChartController::removeFocusListener(
 
 void SAL_CALL ChartController::addKeyListener(
     const uno::Reference< awt::XKeyListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -370,7 +365,6 @@ void SAL_CALL ChartController::addKeyListener(
 
 void SAL_CALL ChartController::removeKeyListener(
     const uno::Reference< awt::XKeyListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -381,7 +375,6 @@ void SAL_CALL ChartController::removeKeyListener(
 
 void SAL_CALL ChartController::addMouseListener(
     const uno::Reference< awt::XMouseListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -392,7 +385,6 @@ void SAL_CALL ChartController::addMouseListener(
 
 void SAL_CALL ChartController::removeMouseListener(
     const uno::Reference< awt::XMouseListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -403,7 +395,6 @@ void SAL_CALL ChartController::removeMouseListener(
 
 void SAL_CALL ChartController::addMouseMotionListener(
     const uno::Reference< awt::XMouseMotionListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -414,7 +405,6 @@ void SAL_CALL ChartController::addMouseMotionListener(
 
 void SAL_CALL ChartController::removeMouseMotionListener(
     const uno::Reference< awt::XMouseMotionListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -425,7 +415,6 @@ void SAL_CALL ChartController::removeMouseMotionListener(
 
 void SAL_CALL ChartController::addPaintListener(
     const uno::Reference< awt::XPaintListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -436,7 +425,6 @@ void SAL_CALL ChartController::addPaintListener(
 
 void SAL_CALL ChartController::removePaintListener(
     const uno::Reference< awt::XPaintListener >& xListener )
-        throw (uno::RuntimeException, std::exception)
 {
     //@todo
     uno::Reference<awt::XWindow> xWindow = m_xViewWindow;
@@ -457,7 +445,7 @@ void ChartController::PrePaint(vcl::RenderContext& /*rRenderContext*/)
     }
 }
 
-void ChartController::execute_Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void ChartController::execute_Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     try
     {
@@ -473,13 +461,14 @@ void ChartController::execute_Paint(vcl::RenderContext& rRenderContext, const Re
             awt::Size aResolution(1000, 1000);
             {
                 SolarMutexGuard aGuard;
-                if (m_pChartWindow)
+                auto pChartWindow(GetChartWindow());
+                if (pChartWindow)
                 {
-                    aResolution.Width = m_pChartWindow->GetSizePixel().Width();
-                    aResolution.Height = m_pChartWindow->GetSizePixel().Height();
+                    aResolution.Width = pChartWindow->GetSizePixel().Width();
+                    aResolution.Height = pChartWindow->GetSizePixel().Height();
                 }
             }
-            xProp->setPropertyValue( "Resolution", uno::makeAny( aResolution ));
+            xProp->setPropertyValue( "Resolution", uno::Any( aResolution ));
         }
 
         uno::Reference< util::XUpdatable > xUpdatable( m_xChartView, uno::UNO_QUERY );
@@ -515,9 +504,10 @@ void ChartController::startDoubleClickWaiting()
     m_bWaitingForDoubleClick = true;
 
     sal_uInt64 nDblClkTime = 500;
-    if( m_pChartWindow )
+    auto pChartWindow(GetChartWindow());
+    if( pChartWindow )
     {
-        const MouseSettings& rMSettings = m_pChartWindow->GetSettings().GetMouseSettings();
+        const MouseSettings& rMSettings = pChartWindow->GetSettings().GetMouseSettings();
         nDblClkTime = rMSettings.GetDoubleClickTime();
     }
     m_aDoubleClickTimer.SetTimeout( nDblClkTime );
@@ -530,7 +520,7 @@ void ChartController::stopDoubleClickWaiting()
     m_bWaitingForDoubleClick = false;
 }
 
-IMPL_LINK_NOARG_TYPED(ChartController, DoubleClickWaitingHdl, Timer *, void)
+IMPL_LINK_NOARG(ChartController, DoubleClickWaitingHdl, Timer *, void)
 {
     m_bWaitingForDoubleClick = false;
 
@@ -538,9 +528,10 @@ IMPL_LINK_NOARG_TYPED(ChartController, DoubleClickWaitingHdl, Timer *, void)
     {
         this->impl_selectObjectAndNotiy();
         SolarMutexGuard aGuard;
-        if( m_pChartWindow )
+        auto pChartWindow(GetChartWindow());
+        if( pChartWindow )
         {
-            vcl::Window::PointerState aPointerState( m_pChartWindow->GetPointerState() );
+            vcl::Window::PointerState aPointerState( pChartWindow->GetPointerState() );
             MouseEvent aMouseEvent(
                             aPointerState.maPos,
                             1/*nClicks*/,
@@ -566,15 +557,25 @@ void ChartController::execute_MouseButtonDown( const MouseEvent& rMEvt )
     m_aSelection.remindSelectionBeforeMouseDown();
 
     DrawViewWrapper* pDrawViewWrapper = m_pDrawViewWrapper;
-    if(!m_pChartWindow || !pDrawViewWrapper )
+    auto pChartWindow(GetChartWindow());
+    if(!pChartWindow || !pDrawViewWrapper )
         return;
 
-    Point   aMPos   = m_pChartWindow->PixelToLogic(rMEvt.GetPosPixel());
+    Point aMPos = pChartWindow->PixelToLogic(rMEvt.GetPosPixel());
+
+    // Check if button was clicked
+    SdrObject* pObject = pDrawViewWrapper->getHitObject(aMPos);
+    if (pObject)
+    {
+        OUString aCID = pObject->GetName();
+        if (aCID.startsWith("FieldButton"))
+            return; // Don't take any action if button was clicked
+    }
 
     if ( MOUSE_LEFT == rMEvt.GetButtons() )
     {
-        m_pChartWindow->GrabFocus();
-        m_pChartWindow->CaptureMouse();
+        pChartWindow->GrabFocus();
+        pChartWindow->CaptureMouse();
     }
 
     if( pDrawViewWrapper->IsTextEdit() )
@@ -582,9 +583,9 @@ void ChartController::execute_MouseButtonDown( const MouseEvent& rMEvt )
         SdrViewEvent aVEvt;
         if ( pDrawViewWrapper->IsTextEditHit( aMPos ) ||
              // #i12587# support for shapes in chart
-             ( rMEvt.IsRight() && pDrawViewWrapper->PickAnything( rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt ) == SDRHIT_MARKEDOBJECT ) )
+             ( rMEvt.IsRight() && pDrawViewWrapper->PickAnything( rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt ) == SdrHitKind::MarkedObject ) )
         {
-            pDrawViewWrapper->MouseButtonDown(rMEvt,m_pChartWindow);
+            pDrawViewWrapper->MouseButtonDown(rMEvt, pChartWindow);
             return;
         }
         else
@@ -652,7 +653,7 @@ void ChartController::execute_MouseButtonDown( const MouseEvent& rMEvt )
 
         if( !m_aSelection.isRotateableObjectSelected( getModel() ) )
         {
-                m_eDragMode = SDRDRAG_MOVE;
+                m_eDragMode = SdrDragMode::Move;
                 pDrawViewWrapper->SetDragMode(m_eDragMode);
         }
 
@@ -662,12 +663,12 @@ void ChartController::execute_MouseButtonDown( const MouseEvent& rMEvt )
         && !rMEvt.IsRight() )
     {
         //start drag
-        sal_uInt16  nDrgLog = (sal_uInt16)m_pChartWindow->PixelToLogic(Size(DRGPIX,0)).Width();
+        sal_uInt16  nDrgLog = (sal_uInt16)pChartWindow->PixelToLogic(Size(DRGPIX,0)).Width();
         SdrDragMethod* pDragMethod = nullptr;
 
         //change selection to 3D scene if rotate mode
         SdrDragMode eDragMode = pDrawViewWrapper->GetDragMode();
-        if( SDRDRAG_ROTATE==eDragMode )
+        if( SdrDragMode::Rotate==eDragMode )
         {
             E3dScene* pScene = SelectionHelper::getSceneToRotate( pDrawViewWrapper->getNamedSdrObject( m_aSelection.getSelectedCID() ) );
             if( pScene )
@@ -676,11 +677,11 @@ void ChartController::execute_MouseButtonDown( const MouseEvent& rMEvt )
                 if(pHitSelectionHdl)
                 {
                     SdrHdlKind eKind = pHitSelectionHdl->GetKind();
-                    if( eKind==HDL_UPPER || eKind==HDL_LOWER )
+                    if( eKind==SdrHdlKind::Upper || eKind==SdrHdlKind::Lower )
                         eRotationDirection = DragMethod_RotateDiagram::ROTATIONDIRECTION_X;
-                    else if( eKind==HDL_LEFT || eKind==HDL_RIGHT )
+                    else if( eKind==SdrHdlKind::Left || eKind==SdrHdlKind::Right )
                         eRotationDirection = DragMethod_RotateDiagram::ROTATIONDIRECTION_Y;
-                    else if( eKind==HDL_UPLFT || eKind==HDL_UPRGT || eKind==HDL_LWLFT || eKind==HDL_LWRGT )
+                    else if( eKind==SdrHdlKind::UpperLeft || eKind==SdrHdlKind::UpperRight || eKind==SdrHdlKind::LowerLeft || eKind==SdrHdlKind::LowerRight )
                         eRotationDirection = DragMethod_RotateDiagram::ROTATIONDIRECTION_Z;
                 }
                 pDragMethod = new DragMethod_RotateDiagram( *pDrawViewWrapper, m_aSelection.getSelectedCID(), getModel(), eRotationDirection );
@@ -703,18 +704,19 @@ void ChartController::execute_MouseMove( const MouseEvent& rMEvt )
     SolarMutexGuard aGuard;
 
     DrawViewWrapper* pDrawViewWrapper = m_pDrawViewWrapper;
-    if(!m_pChartWindow || !pDrawViewWrapper)
+    auto pChartWindow(GetChartWindow());
+    if(!pChartWindow || !pDrawViewWrapper)
         return;
 
     if( m_pDrawViewWrapper->IsTextEdit() )
     {
-        if( m_pDrawViewWrapper->MouseMove(rMEvt,m_pChartWindow) )
+        if( m_pDrawViewWrapper->MouseMove(rMEvt,pChartWindow) )
             return;
     }
 
     if(pDrawViewWrapper->IsAction())
     {
-        pDrawViewWrapper->MovAction( m_pChartWindow->PixelToLogic( rMEvt.GetPosPixel() ) );
+        pDrawViewWrapper->MovAction( pChartWindow->PixelToLogic( rMEvt.GetPosPixel() ) );
     }
 
     impl_SetMousePointer( rMEvt );
@@ -730,21 +732,34 @@ void ChartController::execute_MouseButtonUp( const MouseEvent& rMEvt )
         SolarMutexGuard aGuard;
 
         DrawViewWrapper* pDrawViewWrapper = m_pDrawViewWrapper;
-        if(!m_pChartWindow || !pDrawViewWrapper)
+        auto pChartWindow(GetChartWindow());
+        if(!pChartWindow || !pDrawViewWrapper)
             return;
 
-        Point   aMPos   = m_pChartWindow->PixelToLogic(rMEvt.GetPosPixel());
+        Point aMPos = pChartWindow->PixelToLogic(rMEvt.GetPosPixel());
+
+        // Check if button was clicked
+        SdrObject* pObject = pDrawViewWrapper->getHitObject(aMPos);
+        if (pObject)
+        {
+            OUString aCID = pObject->GetName();
+            if (aCID.startsWith("FieldButton"))
+            {
+                sendPopupRequest(aCID, pObject->GetCurrentBoundRect());
+                return;
+            }
+        }
 
         if(pDrawViewWrapper->IsTextEdit())
         {
-            if( pDrawViewWrapper->MouseButtonUp(rMEvt,m_pChartWindow) )
+            if( pDrawViewWrapper->MouseButtonUp(rMEvt,pChartWindow) )
                 return;
         }
 
         // #i12587# support for shapes in chart
         if ( m_eDrawMode == CHARTDRAW_INSERT && pDrawViewWrapper->IsCreateObj() )
         {
-            pDrawViewWrapper->EndCreateObj( SDRCREATE_FORCEEND );
+            pDrawViewWrapper->EndCreateObj( SdrCreateCmd::ForceEnd );
             {
                 HiddenUndoContext aUndoContext( m_xUndoManager );
                     // don't want the positioning Undo action to appear in the UI
@@ -803,17 +818,17 @@ void ChartController::execute_MouseButtonUp( const MouseEvent& rMEvt )
                     SdrObject* pObj = pDrawViewWrapper->getSelectedObject();
                     if( pObj )
                     {
-                        Rectangle aObjectRect = pObj->GetSnapRect();
+                        tools::Rectangle aObjectRect = pObj->GetSnapRect();
                         awt::Size aPageSize( ChartModelHelper::getPageSize( getModel() ) );
-                        Rectangle aPageRect( 0,0,aPageSize.Width,aPageSize.Height );
+                        tools::Rectangle aPageRect( 0,0,aPageSize.Width,aPageSize.Height );
 
                         const E3dObject* pE3dObject = dynamic_cast< const E3dObject*>( pObj );
                         if( pE3dObject )
                             aObjectRect = pE3dObject->GetScene()->GetSnapRect();
 
-                        ActionDescriptionProvider::ActionType eActionType(ActionDescriptionProvider::MOVE);
+                        ActionDescriptionProvider::ActionType eActionType(ActionDescriptionProvider::ActionType::Move);
                         if( !bIsMoveOnly && m_aSelection.isResizeableObjectSelected() )
-                            eActionType = ActionDescriptionProvider::RESIZE;
+                            eActionType = ActionDescriptionProvider::ActionType::Resize;
 
                         ObjectType eObjectType = ObjectIdentifier::getObjectType( m_aSelection.getSelectedCID() );
 
@@ -852,10 +867,10 @@ void ChartController::execute_MouseButtonUp( const MouseEvent& rMEvt )
                 bool bIsRotateable = m_aSelection.isRotateableObjectSelected( getModel() );
 
                 //toggle between move and rotate
-                if( bIsRotateable && bClickedTwiceOnDragableObject && SDRDRAG_MOVE==m_eDragMode )
-                    m_eDragMode=SDRDRAG_ROTATE;
+                if( bIsRotateable && bClickedTwiceOnDragableObject && SdrDragMode::Move==m_eDragMode )
+                    m_eDragMode=SdrDragMode::Rotate;
                 else
-                    m_eDragMode=SDRDRAG_MOVE;
+                    m_eDragMode=SdrDragMode::Move;
 
                 pDrawViewWrapper->SetDragMode(m_eDragMode);
 
@@ -874,7 +889,7 @@ void ChartController::execute_MouseButtonUp( const MouseEvent& rMEvt )
         }
 
         //@todo ForcePointer(&rMEvt);
-        m_pChartWindow->ReleaseMouse();
+        pChartWindow->ReleaseMouse();
 
         if( m_aSelection.isSelectionDifferentFromBeforeMouseDown() )
             bNotifySelectionChange = true;
@@ -924,17 +939,19 @@ void ChartController::execute_DoubleClick( const Point* pMousePixel )
 void ChartController::execute_Resize()
 {
     SolarMutexGuard aGuard;
-    if(m_pChartWindow)
-        m_pChartWindow->Invalidate();
+    auto pChartWindow(GetChartWindow());
+    if(pChartWindow)
+        pChartWindow->Invalidate();
 }
 
 void ChartController::execute_Command( const CommandEvent& rCEvt )
 {
+    SolarMutexGuard aGuard;
+    auto pChartWindow(GetChartWindow());
     bool bIsAction = false;
     {
-        SolarMutexGuard aGuard;
         DrawViewWrapper* pDrawViewWrapper = m_pDrawViewWrapper;
-        if(!m_pChartWindow || !pDrawViewWrapper)
+        if(!pChartWindow || !pDrawViewWrapper)
             return;
         bIsAction = m_pDrawViewWrapper->IsAction();
     }
@@ -943,9 +960,8 @@ void ChartController::execute_Command( const CommandEvent& rCEvt )
     if(rCEvt.GetCommand() == CommandEventId::ContextMenu && !bIsAction)
     {
         {
-            SolarMutexGuard aGuard;
-            if(m_pChartWindow)
-                m_pChartWindow->ReleaseMouse();
+            if(pChartWindow)
+                pChartWindow->ReleaseMouse();
         }
 
         if( m_aSelection.isSelectionDifferentFromBeforeMouseDown() )
@@ -957,36 +973,14 @@ void ChartController::execute_Command( const CommandEvent& rCEvt )
         Point aPos( rCEvt.GetMousePosPixel() );
         if( !rCEvt.IsMouseEvent() )
         {
-            SolarMutexGuard aGuard;
-            if(m_pChartWindow)
-                aPos = m_pChartWindow->GetPointerState().maPos;
+            if(pChartWindow)
+                aPos = pChartWindow->GetPointerState().maPos;
         }
 
+        OUString aMenuName;
         if ( isShapeContext() )
-        {
             // #i12587# support for shapes in chart
-            OUString aMenuName = m_pDrawViewWrapper->IsTextEdit() ? OUString( "drawtext" ) : OUString( "draw" );
-            css::uno::Sequence< css::uno::Any > aArgs( 3 );
-            aArgs[0] <<= comphelper::makePropertyValue( "Value", aMenuName );
-            aArgs[1] <<= comphelper::makePropertyValue( "Frame", m_xFrame );
-            aArgs[2] <<= comphelper::makePropertyValue( "IsContextMenu", true );
-
-            css::uno::Reference< css::frame::XPopupMenuController > xPopupController(
-                m_xCC->getServiceManager()->createInstanceWithArgumentsAndContext(
-                "com.sun.star.comp.framework.ResourceMenuController", aArgs, m_xCC ), css::uno::UNO_QUERY );
-
-            if ( !xPopupController.is() || !xPopupMenu.is() )
-                return;
-
-            xPopupController->setPopupMenu( xPopupMenu );
-            xPopupMenu->execute( css::uno::Reference< css::awt::XWindowPeer >( m_xFrame->getContainerWindow(), css::uno::UNO_QUERY ),
-                                 css::awt::Rectangle( aPos.X(), aPos.Y(), 0, 0 ),
-                                 css::awt::PopupMenuDirection::EXECUTE_DEFAULT );
-
-            css::uno::Reference< css::lang::XComponent > xComponent( xPopupController, css::uno::UNO_QUERY );
-            if ( xComponent.is() )
-                xComponent->dispose();
-        }
+            aMenuName = m_pDrawViewWrapper->IsTextEdit() ? OUString( "drawtext" ) : OUString( "draw" );
         else
         {
             // todo: the context menu should be specified by an xml file in uiconfig
@@ -1038,8 +1032,8 @@ void ChartController::execute_Command( const CommandEvent& rCEvt )
                             {
                                 if( bIsPoint )
                                 {
-                                    ::std::vector< sal_Int32 > aIndices( ContainerHelper::SequenceToVector( aAttributedDataPointIndexList ) );
-                                    ::std::vector< sal_Int32 >::iterator aIt = ::std::find( aIndices.begin(), aIndices.end(), nPointIndex );
+                                    std::vector< sal_Int32 > aIndices( ContainerHelper::SequenceToVector( aAttributedDataPointIndexList ) );
+                                    std::vector< sal_Int32 >::iterator aIt = std::find( aIndices.begin(), aIndices.end(), nPointIndex );
                                     if( aIt != aIndices.end())
                                         bSelectedPointIsFormatted = true;
                                     else
@@ -1236,11 +1230,29 @@ void ChartController::execute_Command( const CommandEvent& rCEvt )
                 lcl_insertMenuCommand( xPopupMenu, nUniqueId++, ".uno:DataRanges" );
                 lcl_insertMenuCommand( xPopupMenu, nUniqueId++, ".uno:DiagramData" );
                 lcl_insertMenuCommand( xPopupMenu, nUniqueId++, ".uno:View3D" );
-
-                ::svt::ContextMenuHelper aContextMenuHelper( m_xFrame );
-                aContextMenuHelper.completeAndExecute( aPos, xPopupMenu );
             }
         }
+
+        css::uno::Sequence< css::uno::Any > aArgs( 3 );
+        aArgs[0] <<= comphelper::makePropertyValue( "IsContextMenu", true );
+        aArgs[1] <<= comphelper::makePropertyValue( "Frame", m_xFrame );
+        aArgs[2] <<= comphelper::makePropertyValue( "Value", aMenuName );
+
+        css::uno::Reference< css::frame::XPopupMenuController > xPopupController(
+            m_xCC->getServiceManager()->createInstanceWithArgumentsAndContext(
+            "com.sun.star.comp.framework.ResourceMenuController", aArgs, m_xCC ), css::uno::UNO_QUERY );
+
+        if ( !xPopupController.is() || !xPopupMenu.is() )
+            return;
+
+        xPopupController->setPopupMenu( xPopupMenu );
+        xPopupMenu->execute( css::uno::Reference< css::awt::XWindowPeer >( m_xFrame->getContainerWindow(), css::uno::UNO_QUERY ),
+                             css::awt::Rectangle( aPos.X(), aPos.Y(), 0, 0 ),
+                             css::awt::PopupMenuDirection::EXECUTE_DEFAULT );
+
+        css::uno::Reference< css::lang::XComponent > xComponent( xPopupController, css::uno::UNO_QUERY );
+        if ( xComponent.is() )
+            xComponent->dispose();
     }
     else if( ( rCEvt.GetCommand() == CommandEventId::StartExtTextInput ) ||
              ( rCEvt.GetCommand() == CommandEventId::ExtTextInput ) ||
@@ -1248,18 +1260,19 @@ void ChartController::execute_Command( const CommandEvent& rCEvt )
              ( rCEvt.GetCommand() == CommandEventId::InputContextChange ) )
     {
         //#i84417# enable editing with IME
-        SolarMutexGuard aGuard;
         if( m_pDrawViewWrapper )
-            m_pDrawViewWrapper->Command( rCEvt, m_pChartWindow );
+            m_pDrawViewWrapper->Command( rCEvt, pChartWindow );
     }
 }
 
 bool ChartController::execute_KeyInput( const KeyEvent& rKEvt )
 {
+    SolarMutexGuard aGuard;
     bool bReturn=false;
 
     DrawViewWrapper* pDrawViewWrapper = m_pDrawViewWrapper;
-    if(!m_pChartWindow || !pDrawViewWrapper)
+    auto pChartWindow(GetChartWindow());
+    if(!pChartWindow || !pDrawViewWrapper)
         return bReturn;
 
     // handle accelerators
@@ -1282,10 +1295,9 @@ bool ChartController::execute_KeyInput( const KeyEvent& rKEvt )
         return bReturn;
 
     {
-        SolarMutexGuard aGuard;
         if( pDrawViewWrapper->IsTextEdit() )
         {
-            if( pDrawViewWrapper->KeyInput(rKEvt,m_pChartWindow) )
+            if( pDrawViewWrapper->KeyInput(rKEvt, pChartWindow) )
             {
                 bReturn = true;
                 if( nCode == KEY_ESCAPE )
@@ -1300,7 +1312,7 @@ bool ChartController::execute_KeyInput( const KeyEvent& rKEvt )
     ObjectType eObjectType = ObjectIdentifier::getObjectType( m_aSelection.getSelectedCID() );
     if( ! bReturn )
     {
-        // Natvigation (Tab/F3/Home/End)
+        // Navigation (Tab/F3/Home/End)
         uno::Reference< XChartDocument > xChartDoc( getModel(), uno::UNO_QUERY );
         ObjectKeyNavigation aObjNav( m_aSelection.getSelectedOID(), xChartDoc, ExplicitValueProvider::getExplicitValueProvider( m_xChartView ));
         awt::KeyEvent aKeyEvent( ::svt::AcceleratorExecute::st_VCLKey2AWTKey( aKeyCode ));
@@ -1313,9 +1325,9 @@ bool ChartController::execute_KeyInput( const KeyEvent& rKEvt )
             {
                 aNewSelection = aNewOID.getAny();
             }
-            if ( m_eDragMode == SDRDRAG_ROTATE && !SelectionHelper::isRotateableObject( aNewOID.getObjectCID(), getModel() ) )
+            if ( m_eDragMode == SdrDragMode::Rotate && !SelectionHelper::isRotateableObject( aNewOID.getObjectCID(), getModel() ) )
             {
-                m_eDragMode = SDRDRAG_MOVE;
+                m_eDragMode = SdrDragMode::Move;
             }
             bReturn = select( aNewSelection );
         }
@@ -1381,13 +1393,12 @@ bool ChartController::execute_KeyInput( const KeyEvent& rKEvt )
                     // default 1 mm in each direction
                     double fGrowAmountX = 200.0;
                     double fGrowAmountY = 200.0;
-                    if( bAlternate && m_pChartWindow )
+                    if( bAlternate && pChartWindow )
                     {
                         // together with Alt-key: 1 px in each direction
-                        SolarMutexGuard aGuard;
-                        if( m_pChartWindow )
+                        if( pChartWindow )
                         {
-                            Size aPixelSize = m_pChartWindow->PixelToLogic( Size( 2, 2 ));
+                            Size aPixelSize = pChartWindow->PixelToLogic( Size( 2, 2 ));
                             fGrowAmountX = static_cast< double >( aPixelSize.Width());
                             fGrowAmountY = static_cast< double >( aPixelSize.Height());
                         }
@@ -1412,13 +1423,12 @@ bool ChartController::execute_KeyInput( const KeyEvent& rKEvt )
                     // default 1 mm
                     double fShiftAmountX = 100.0;
                     double fShiftAmountY = 100.0;
-                    if( bAlternate && m_pChartWindow )
+                    if( bAlternate && pChartWindow )
                     {
                         // together with Alt-key: 1 px
-                        SolarMutexGuard aGuard;
-                        if(m_pChartWindow)
+                        if(pChartWindow)
                         {
-                            Size aPixelSize = m_pChartWindow->PixelToLogic( Size( 1, 1 ));
+                            Size aPixelSize = pChartWindow->PixelToLogic( Size( 1, 1 ));
                             fShiftAmountX = static_cast< double >( aPixelSize.Width());
                             fShiftAmountY = static_cast< double >( aPixelSize.Height());
                         }
@@ -1518,8 +1528,7 @@ bool ChartController::execute_KeyInput( const KeyEvent& rKEvt )
         bReturn = executeDispatch_Delete();
         if( ! bReturn )
         {
-            SolarMutexGuard aGuard;
-            ScopedVclPtrInstance<InfoBox>(m_pChartWindow, SCH_RESSTR(STR_ACTION_NOTPOSSIBLE))->Execute();
+            ScopedVclPtrInstance<InfoBox>(pChartWindow, SCH_RESSTR(STR_ACTION_NOTPOSSIBLE))->Execute();
         }
     }
 
@@ -1564,7 +1573,6 @@ bool ChartController::requestQuickHelp(
 
 // XSelectionSupplier (optional interface)
 sal_Bool SAL_CALL ChartController::select( const uno::Any& rSelection )
-    throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     bool bSuccess = false;
 
@@ -1605,9 +1613,10 @@ sal_Bool SAL_CALL ChartController::select( const uno::Any& rSelection )
             this->EndTextEdit();
         }
         this->impl_selectObjectAndNotiy();
-        if ( m_pChartWindow )
+        auto pChartWindow(GetChartWindow());
+        if ( pChartWindow )
         {
-            m_pChartWindow->Invalidate();
+            pChartWindow->Invalidate();
         }
         return true;
     }
@@ -1616,7 +1625,6 @@ sal_Bool SAL_CALL ChartController::select( const uno::Any& rSelection )
 }
 
 uno::Any SAL_CALL ChartController::getSelection()
-    throw(uno::RuntimeException, std::exception)
 {
     uno::Any aReturn;
     if ( m_aSelection.hasSelection() )
@@ -1624,19 +1632,18 @@ uno::Any SAL_CALL ChartController::getSelection()
         OUString aCID( m_aSelection.getSelectedCID() );
         if ( !aCID.isEmpty() )
         {
-            aReturn = uno::makeAny( aCID );
+            aReturn <<= aCID;
         }
         else
         {
             // #i12587# support for shapes in chart
-            aReturn = uno::makeAny( m_aSelection.getSelectedAdditionalShape() );
+            aReturn <<= m_aSelection.getSelectedAdditionalShape();
         }
     }
     return aReturn;
 }
 
 void SAL_CALL ChartController::addSelectionChangeListener( const uno::Reference<view::XSelectionChangeListener> & xListener )
-    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if( impl_isDisposedOrSuspended() )//@todo? allow adding of listeners in suspend mode?
@@ -1647,7 +1654,6 @@ void SAL_CALL ChartController::addSelectionChangeListener( const uno::Reference<
 }
 
 void SAL_CALL ChartController::removeSelectionChangeListener( const uno::Reference<view::XSelectionChangeListener> & xListener )
-    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if( impl_isDisposedOrSuspended() ) //@todo? allow removing of listeners in suspend mode?
@@ -1752,18 +1758,18 @@ bool ChartController::impl_moveOrResizeObject(
 
         if( bResult )
         {
-            ActionDescriptionProvider::ActionType eActionType(ActionDescriptionProvider::MOVE);
+            ActionDescriptionProvider::ActionType eActionType(ActionDescriptionProvider::ActionType::Move);
             if( bNeedResize )
-                eActionType = ActionDescriptionProvider::RESIZE;
+                eActionType = ActionDescriptionProvider::ActionType::Resize;
 
             ObjectType eObjectType = ObjectIdentifier::getObjectType( rCID );
             UndoGuard aUndoGuard( ActionDescriptionProvider::createDescription(
                     eActionType, ObjectNameProvider::getName( eObjectType )), m_xUndoManager );
             {
                 ControllerLockGuardUNO aCLGuard( xChartModel );
-                xObjProp->setPropertyValue( "RelativePosition", uno::makeAny( aRelPos ));
+                xObjProp->setPropertyValue( "RelativePosition", uno::Any( aRelPos ));
                 if( bNeedResize || (eObjectType == OBJECTTYPE_DIAGRAM) )//Also set an explicit size at the diagram when an explicit position is set
-                    xObjProp->setPropertyValue( "RelativeSize", uno::makeAny( aRelSize ));
+                    xObjProp->setPropertyValue( "RelativeSize", uno::Any( aRelSize ));
             }
             aUndoGuard.commit();
         }
@@ -1795,7 +1801,7 @@ bool ChartController::impl_DragDataPoint( const OUString & rCID, double fAdditio
                     fOffset = 1.0;
                 else if( fOffset < 0.0 )
                     fOffset = 0.0;
-                xPointProp->setPropertyValue( "Offset", uno::makeAny( fOffset ));
+                xPointProp->setPropertyValue( "Offset", uno::Any( fOffset ));
                 bResult = true;
             }
         }
@@ -1811,11 +1817,12 @@ bool ChartController::impl_DragDataPoint( const OUString & rCID, double fAdditio
 void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
 {
     SolarMutexGuard aGuard;
+    auto pChartWindow(GetChartWindow());
 
-    if (!m_pDrawViewWrapper || !m_pChartWindow)
+    if (!m_pDrawViewWrapper || !pChartWindow)
         return;
 
-    Point aMousePos( m_pChartWindow->PixelToLogic( rEvent.GetPosPixel()));
+    Point aMousePos( pChartWindow->PixelToLogic( rEvent.GetPosPixel()));
     sal_uInt16 nModifier = rEvent.GetModifier();
     bool bLeftDown = rEvent.IsLeft();
 
@@ -1823,8 +1830,8 @@ void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
     {
         if( m_pDrawViewWrapper->IsTextEditHit( aMousePos ) )
         {
-            m_pChartWindow->SetPointer( m_pDrawViewWrapper->GetPreferredPointer(
-                aMousePos, m_pChartWindow, nModifier, bLeftDown ) );
+            pChartWindow->SetPointer( m_pDrawViewWrapper->GetPreferredPointer(
+                aMousePos, pChartWindow, nModifier, bLeftDown ) );
             return;
         }
     }
@@ -1840,7 +1847,7 @@ void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
     if( pHitSelectionHdl )
     {
         Pointer aPointer = m_pDrawViewWrapper->GetPreferredPointer(
-            aMousePos, m_pChartWindow, nModifier, bLeftDown );
+            aMousePos, pChartWindow, nModifier, bLeftDown );
         bool bForceArrowPointer = false;
 
         ObjectIdentifier aOID( m_aSelection.getSelectedOID() );
@@ -1873,9 +1880,9 @@ void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
         }
 
         if( bForceArrowPointer )
-            m_pChartWindow->SetPointer( Pointer( PointerStyle::Arrow ));
+            pChartWindow->SetPointer( Pointer( PointerStyle::Arrow ));
         else
-            m_pChartWindow->SetPointer( aPointer );
+            pChartWindow->SetPointer( aPointer );
 
         return;
     }
@@ -1925,7 +1932,7 @@ void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
                 }
                 break;
         }
-        m_pChartWindow->SetPointer( Pointer( ePointerStyle ) );
+        pChartWindow->SetPointer( Pointer( ePointerStyle ) );
         return;
     }
 
@@ -1937,7 +1944,7 @@ void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
     {
         if( aHitObjectCID.equals(m_aSelection.getSelectedCID()) )
         {
-            m_pChartWindow->SetPointer( Pointer( PointerStyle::Arrow ));
+            pChartWindow->SetPointer( Pointer( PointerStyle::Arrow ));
             return;
         }
     }
@@ -1945,14 +1952,14 @@ void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
     if( aHitObjectCID.isEmpty() )
     {
         //additional shape was hit
-        m_pChartWindow->SetPointer( PointerStyle::Move );
+        pChartWindow->SetPointer( PointerStyle::Move );
     }
     else if( ObjectIdentifier::isDragableObject( aHitObjectCID ) )
     {
-        if( (m_eDragMode == SDRDRAG_ROTATE)
+        if( (m_eDragMode == SdrDragMode::Rotate)
             && SelectionHelper::isRotateableObject( aHitObjectCID
                 , getModel() ) )
-            m_pChartWindow->SetPointer( Pointer( PointerStyle::Rotate ) );
+            pChartWindow->SetPointer( Pointer( PointerStyle::Rotate ) );
         else
         {
             ObjectType eHitObjectType = ObjectIdentifier::getObjectType( aHitObjectCID );
@@ -1961,15 +1968,61 @@ void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
                 if( !ObjectIdentifier::areSiblings(aHitObjectCID,m_aSelection.getSelectedCID())
                     && !ObjectIdentifier::areIdenticalObjects(aHitObjectCID,m_aSelection.getSelectedCID()) )
                 {
-                    m_pChartWindow->SetPointer( Pointer( PointerStyle::Arrow ));
+                    pChartWindow->SetPointer( Pointer( PointerStyle::Arrow ));
                     return;
                 }
             }
-            m_pChartWindow->SetPointer( PointerStyle::Move );
+            pChartWindow->SetPointer( PointerStyle::Move );
         }
     }
     else
-        m_pChartWindow->SetPointer( Pointer( PointerStyle::Arrow ));
+        pChartWindow->SetPointer( Pointer( PointerStyle::Arrow ));
+}
+
+css::uno::Reference<css::uno::XInterface> const & ChartController::getChartView()
+{
+    return m_xChartView;
+}
+
+void ChartController::sendPopupRequest(OUString const & rCID, tools::Rectangle aRectangle)
+{
+    ChartModel* pChartModel = dynamic_cast<ChartModel*>(m_aModel->getModel().get());
+    if (!pChartModel)
+        return;
+
+    uno::Reference<chart2::data::XPivotTableDataProvider> xPivotTableDataProvider;
+    xPivotTableDataProvider.set(pChartModel->getDataProvider(), uno::UNO_QUERY);
+    if (!xPivotTableDataProvider.is())
+        return;
+
+    OUString sPivotTableName = xPivotTableDataProvider->getPivotTableName();
+
+    PopupRequest* pPopupRequest = dynamic_cast<PopupRequest*>(pChartModel->getPopupRequest().get());
+    if (!pPopupRequest)
+        return;
+
+    // Get dimension index from CID
+    sal_Int32 nStartPos = rCID.lastIndexOf('.');
+    nStartPos++;
+    sal_Int32 nEndPos = rCID.getLength();
+    OUString sDimensionIndex = rCID.copy(nStartPos, nEndPos - nStartPos);
+    sal_Int32 nDimensionIndex = sDimensionIndex.toInt32();
+
+    awt::Rectangle xRectangle {
+        sal_Int32(aRectangle.Left()),
+        sal_Int32(aRectangle.Top()),
+        sal_Int32(aRectangle.GetWidth()),
+        sal_Int32(aRectangle.GetHeight())
+    };
+
+    uno::Sequence<beans::PropertyValue> aCallbackData = comphelper::InitPropertySequence(
+    {
+        {"Rectangle",      uno::makeAny<awt::Rectangle>(xRectangle)},
+        {"DimensionIndex", uno::makeAny<sal_Int32>(nDimensionIndex)},
+        {"PivotTableName", uno::makeAny<OUString>(sPivotTableName)},
+    });
+
+    pPopupRequest->getCallback()->notify(uno::makeAny(aCallbackData));
 }
 
 } //namespace chart

@@ -24,17 +24,18 @@
 #include <com/sun/star/beans/PropertyChangeEvent.hpp>
 #include <com/sun/star/ucb/XContentIdentifier.hpp>
 #include "filglob.hxx"
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
 namespace fileaccess {
 
-    class shell;
+    class TaskManager;
 
     class ContentEventNotifier
     {
     private:
-        shell* m_pMyShell;
+        TaskManager* m_pMyShell;
         css::uno::Reference< css::ucb::XContent > m_xCreatorContent;
         css::uno::Reference< css::ucb::XContentIdentifier > m_xCreatorId;
         css::uno::Reference< css::ucb::XContentIdentifier > m_xOldId;
@@ -42,13 +43,13 @@ namespace fileaccess {
     public:
 
         ContentEventNotifier(
-            shell* pMyShell,
+            TaskManager* pMyShell,
             const css::uno::Reference< css::ucb::XContent >& xCreatorContent,
             const css::uno::Reference< css::ucb::XContentIdentifier >& xCreatorId,
             const std::vector< css::uno::Reference< css::uno::XInterface > >& sListeners );
 
         ContentEventNotifier(
-            shell* pMyShell,
+            TaskManager* pMyShell,
             const css::uno::Reference< css::ucb::XContent >& xCreatorContent,
             const css::uno::Reference< css::ucb::XContentIdentifier >& xCreatorId,
             const css::uno::Reference< css::ucb::XContentIdentifier >& xOldId,
@@ -84,7 +85,7 @@ namespace fileaccess {
     {
     private:
         css::uno::Reference< css::ucb::XContent > m_xCreatorContent;
-        ListenerMap* m_pListeners;
+        std::unique_ptr<ListenerMap> m_pListeners;
     public:
         PropertyChangeNotifier(
             const css::uno::Reference< css::ucb::XContent >& xCreatorContent,

@@ -22,13 +22,6 @@
 #include "../clipb/WinClipbImpl.hxx"
 #include "../clipb/WinClipboard.hxx"
 
-#ifdef __MINGW32__
-#if defined __uuidof
-#undef __uuidof
-#endif
-#define __uuidof(I) IID_##I
-#endif
-
 using namespace com::sun::star::datatransfer;
 using namespace com::sun::star::datatransfer::clipboard;
 using com::sun::star::uno::RuntimeException;
@@ -49,17 +42,17 @@ CXNotifyingDataObject::CXNotifyingDataObject(
 
 STDMETHODIMP CXNotifyingDataObject::QueryInterface( REFIID iid, LPVOID* ppvObject )
 {
-    if ( NULL == ppvObject )
+    if ( nullptr == ppvObject )
         return E_INVALIDARG;
 
     HRESULT hr = E_NOINTERFACE;
 
-    *ppvObject = NULL;
+    *ppvObject = nullptr;
     if ( ( __uuidof( IUnknown ) == iid ) ||
          ( __uuidof( IDataObject ) == iid ) )
     {
         *ppvObject = static_cast< IUnknown* >( this );
-        ( (LPUNKNOWN)*ppvObject )->AddRef( );
+        static_cast<LPUNKNOWN>(*ppvObject)->AddRef( );
         hr = S_OK;
     }
 

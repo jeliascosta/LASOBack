@@ -17,17 +17,20 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <com/sun/star/frame/XController.hpp>
+#include <com/sun/star/frame/XModel.hpp>
 #include <dbaccess/dataview.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <comphelper/types.hxx>
 #include <comphelper/namedvaluecollection.hxx>
 #include <sfx2/app.hxx>
-#include <sfx2/imgmgr.hxx>
 #include <dbaccess/IController.hxx>
 #include "UITools.hxx"
 #include <sfx2/sfx.hrc>
+#include <svtools/acceleratorexecute.hxx>
 #include <svtools/imgdef.hxx>
 #include <tools/diagnose_ex.h>
+#include <vcl/fixed.hxx>
 #include <vcl/settings.hxx>
 
 namespace dbaui
@@ -68,11 +71,11 @@ namespace dbaui
         vcl::Window::dispose();
     }
 
-    void ODataView::resizeDocumentView( Rectangle& /*_rPlayground*/ )
+    void ODataView::resizeDocumentView( tools::Rectangle& /*_rPlayground*/ )
     {
     }
 
-    void ODataView::Paint(vcl::RenderContext& rRenderContext, const Rectangle& _rRect)
+    void ODataView::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& _rRect)
     {
         // draw the background
         {
@@ -87,9 +90,9 @@ namespace dbaui
         Window::Paint(rRenderContext, _rRect);
     }
 
-    void ODataView::resizeAll( const Rectangle& _rPlayground )
+    void ODataView::resizeAll( const tools::Rectangle& _rPlayground )
     {
-        Rectangle aPlayground( _rPlayground );
+        tools::Rectangle aPlayground( _rPlayground );
 
         // position the separator
         const Size aSeparatorSize( aPlayground.GetWidth(), 2 );
@@ -103,7 +106,7 @@ namespace dbaui
     void ODataView::Resize()
     {
         Window::Resize();
-        resizeAll( Rectangle( Point( 0, 0), GetSizePixel() ) );
+        resizeAll( tools::Rectangle( Point( 0, 0), GetSizePixel() ) );
     }
     bool ODataView::PreNotify( NotifyEvent& _rNEvt )
     {

@@ -50,13 +50,7 @@ namespace drawinglayer
              */
             basegfx::B3DHomMatrix                   maCombinedTransform;
 
-            /// bitfield
             bool                                    mbAnyHit : 1;
-
-            /*  this flag decides if primitives which are invisible will be taken into account for
-                HitTesting or not.
-             */
-            bool                                    mbUseInvisiblePrimitiveContent : 1;
 
             /*  as tooling, the process() implementation takes over API handling and calls this
                 virtual render method when the primitive implementation is BasePrimitive3D-based.
@@ -71,8 +65,6 @@ namespace drawinglayer
 
             /// data read access
             const ::std::vector< basegfx::B3DPoint >& getCutPoints() const { return maResult; }
-            bool getAnyHit() const { return mbAnyHit; }
-            bool getUseInvisiblePrimitiveContent() const { return mbUseInvisiblePrimitiveContent;}
         };
     } // end of namespace processor3d
 } // end of namespace drawinglayer

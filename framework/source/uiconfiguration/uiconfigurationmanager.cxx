@@ -26,11 +26,16 @@
 #include <framework/toolboxconfiguration.hxx>
 
 #include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/container/ElementExistException.hpp>
 #include <com/sun/star/container/XIndexContainer.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
+#include <com/sun/star/embed/InvalidStorageException.hpp>
+#include <com/sun/star/embed/StorageWrappedTargetException.hpp>
 #include <com/sun/star/embed/XTransactedObject.hpp>
+#include <com/sun/star/lang/IllegalAccessException.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XStream.hpp>
 #include <com/sun/star/ui/UIElementType.hpp>
 #include <com/sun/star/ui/ConfigurationEvent.hpp>
@@ -65,60 +70,55 @@ class UIConfigurationManager :   public ::cppu::WeakImplHelper<
                                         css::ui::XUIConfigurationManager2 >
 {
 public:
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.framework.UIConfigurationManager");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.UIConfigurationManager" };
-        return aSeq;
+        return {"com.sun.star.ui.UIConfigurationManager"};
     }
 
     explicit UIConfigurationManager( const css::uno::Reference< css::uno::XComponentContext > & rxContext );
-    virtual ~UIConfigurationManager();
 
     // XComponent
-    virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL dispose() override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
 
     // XUIConfiguration
-    virtual void SAL_CALL addConfigurationListener( const css::uno::Reference< css::ui::XUIConfigurationListener >& Listener ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL removeConfigurationListener( const css::uno::Reference< css::ui::XUIConfigurationListener >& Listener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addConfigurationListener( const css::uno::Reference< css::ui::XUIConfigurationListener >& Listener ) override;
+    virtual void SAL_CALL removeConfigurationListener( const css::uno::Reference< css::ui::XUIConfigurationListener >& Listener ) override;
 
     // XUIConfigurationManager
-    virtual void SAL_CALL reset() throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Sequence< css::beans::PropertyValue > > SAL_CALL getUIElementsInfo( sal_Int16 ElementType ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::container::XIndexContainer > SAL_CALL createSettings(  ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasSettings( const OUString& ResourceURL ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::container::XIndexAccess > SAL_CALL getSettings( const OUString& ResourceURL, sal_Bool bWriteable ) throw (css::container::NoSuchElementException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL replaceSettings( const OUString& ResourceURL, const css::uno::Reference< css::container::XIndexAccess >& aNewData ) throw (css::container::NoSuchElementException, css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL removeSettings( const OUString& ResourceURL ) throw (css::container::NoSuchElementException, css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL insertSettings( const OUString& NewResourceURL, const css::uno::Reference< css::container::XIndexAccess >& aNewData ) throw (css::container::ElementExistException, css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getImageManager() throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::ui::XAcceleratorConfiguration > SAL_CALL getShortCutManager() throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getEventsManager() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL reset() override;
+    virtual css::uno::Sequence< css::uno::Sequence< css::beans::PropertyValue > > SAL_CALL getUIElementsInfo( sal_Int16 ElementType ) override;
+    virtual css::uno::Reference< css::container::XIndexContainer > SAL_CALL createSettings(  ) override;
+    virtual sal_Bool SAL_CALL hasSettings( const OUString& ResourceURL ) override;
+    virtual css::uno::Reference< css::container::XIndexAccess > SAL_CALL getSettings( const OUString& ResourceURL, sal_Bool bWriteable ) override;
+    virtual void SAL_CALL replaceSettings( const OUString& ResourceURL, const css::uno::Reference< css::container::XIndexAccess >& aNewData ) override;
+    virtual void SAL_CALL removeSettings( const OUString& ResourceURL ) override;
+    virtual void SAL_CALL insertSettings( const OUString& NewResourceURL, const css::uno::Reference< css::container::XIndexAccess >& aNewData ) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getImageManager() override;
+    virtual css::uno::Reference< css::ui::XAcceleratorConfiguration > SAL_CALL getShortCutManager() override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getEventsManager() override;
 
     // XUIConfigurationPersistence
-    virtual void SAL_CALL reload() throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL store() throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL storeToStorage( const css::uno::Reference< css::embed::XStorage >& Storage ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL isModified() throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL isReadOnly() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL reload() override;
+    virtual void SAL_CALL store() override;
+    virtual void SAL_CALL storeToStorage( const css::uno::Reference< css::embed::XStorage >& Storage ) override;
+    virtual sal_Bool SAL_CALL isModified() override;
+    virtual sal_Bool SAL_CALL isReadOnly() override;
 
     // XUIConfigurationStorage
-    virtual void SAL_CALL setStorage( const css::uno::Reference< css::embed::XStorage >& Storage ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasStorage() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setStorage( const css::uno::Reference< css::embed::XStorage >& Storage ) override;
+    virtual sal_Bool SAL_CALL hasStorage() override;
 
 private:
     // private data types
@@ -156,12 +156,10 @@ private:
     {
         UIElementType() : bModified( false ),
                           bLoaded( false ),
-                          bDefaultLayer( false ),
                           nElementType( css::ui::UIElementType::UNKNOWN ) {}
 
         bool                                                              bModified;
         bool                                                              bLoaded;
-        bool                                                              bDefaultLayer;
         sal_Int16                                                         nElementType;
         UIElementDataHashMap                                              aElementsHashMap;
         css::uno::Reference< css::embed::XStorage > xStorage;
@@ -185,7 +183,6 @@ private:
     css::uno::Reference< css::embed::XStorage >               m_xDocConfigStorage;
     bool                                                      m_bReadOnly;
     bool                                                      m_bModified;
-    bool                                                      m_bConfigRead;
     bool                                                      m_bDisposed;
     OUString                                                  m_aXMLPostfix;
     OUString                                                  m_aPropUIName;
@@ -671,7 +668,6 @@ void UIConfigurationManager::impl_Initialize()
             m_aUIElements[i].nElementType = i;
             m_aUIElements[i].bModified = false;
             m_aUIElements[i].xStorage = xElementTypeStorage;
-            m_aUIElements[i].bDefaultLayer = false;
         }
     }
     else
@@ -686,7 +682,6 @@ UIConfigurationManager::UIConfigurationManager( const css::uno::Reference< css::
     m_xDocConfigStorage( nullptr )
     , m_bReadOnly( true )
     , m_bModified( false )
-    , m_bConfigRead( false )
     , m_bDisposed( false )
     , m_aXMLPostfix( ".xml" )
     , m_aPropUIName( "UIName" )
@@ -699,12 +694,8 @@ UIConfigurationManager::UIConfigurationManager( const css::uno::Reference< css::
     m_aUIElements.resize( css::ui::UIElementType::COUNT );
 }
 
-UIConfigurationManager::~UIConfigurationManager()
-{
-}
-
 // XComponent
-void SAL_CALL UIConfigurationManager::dispose() throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::dispose()
 {
     Reference< XComponent > xThis( static_cast< OWeakObject* >(this), UNO_QUERY );
 
@@ -725,13 +716,12 @@ void SAL_CALL UIConfigurationManager::dispose() throw (css::uno::RuntimeExceptio
         m_xImageManager.clear();
         m_aUIElements.clear();
         m_xDocConfigStorage.clear();
-        m_bConfigRead = false;
         m_bModified = false;
         m_bDisposed = true;
     }
 }
 
-void SAL_CALL UIConfigurationManager::addEventListener( const Reference< XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::addEventListener( const Reference< XEventListener >& xListener )
 {
     {
         SolarMutexGuard g;
@@ -744,14 +734,14 @@ void SAL_CALL UIConfigurationManager::addEventListener( const Reference< XEventL
     m_aListenerContainer.addInterface( cppu::UnoType<XEventListener>::get(), xListener );
 }
 
-void SAL_CALL UIConfigurationManager::removeEventListener( const Reference< XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::removeEventListener( const Reference< XEventListener >& xListener )
 {
     /* SAFE AREA ----------------------------------------------------------------------------------------------- */
     m_aListenerContainer.removeInterface( cppu::UnoType<XEventListener>::get(), xListener );
 }
 
 // XUIConfigurationManager
-void SAL_CALL UIConfigurationManager::addConfigurationListener( const Reference< css::ui::XUIConfigurationListener >& xListener ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::addConfigurationListener( const Reference< css::ui::XUIConfigurationListener >& xListener )
 {
     {
         SolarMutexGuard g;
@@ -764,13 +754,13 @@ void SAL_CALL UIConfigurationManager::addConfigurationListener( const Reference<
     m_aListenerContainer.addInterface( cppu::UnoType<XUIConfigurationListener>::get(), xListener );
 }
 
-void SAL_CALL UIConfigurationManager::removeConfigurationListener( const Reference< css::ui::XUIConfigurationListener >& xListener ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::removeConfigurationListener( const Reference< css::ui::XUIConfigurationListener >& xListener )
 {
     /* SAFE AREA ----------------------------------------------------------------------------------------------- */
     m_aListenerContainer.removeInterface( cppu::UnoType<XUIConfigurationListener>::get(), xListener );
 }
 
-void SAL_CALL UIConfigurationManager::reset() throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::reset()
 {
     SolarMutexClearableGuard aGuard;
 
@@ -856,7 +846,6 @@ void SAL_CALL UIConfigurationManager::reset() throw (css::uno::RuntimeException,
 }
 
 Sequence< Sequence< PropertyValue > > SAL_CALL UIConfigurationManager::getUIElementsInfo( sal_Int16 ElementType )
-throw ( IllegalArgumentException, RuntimeException, std::exception )
 {
     if (( ElementType < 0 ) || ( ElementType >= css::ui::UIElementType::COUNT ))
         throw IllegalArgumentException();
@@ -895,7 +884,7 @@ throw ( IllegalArgumentException, RuntimeException, std::exception )
     return comphelper::containerToSequence(aElementInfoSeq);
 }
 
-Reference< XIndexContainer > SAL_CALL UIConfigurationManager::createSettings() throw (css::uno::RuntimeException, std::exception)
+Reference< XIndexContainer > SAL_CALL UIConfigurationManager::createSettings()
 {
     SolarMutexGuard g;
 
@@ -907,7 +896,6 @@ Reference< XIndexContainer > SAL_CALL UIConfigurationManager::createSettings() t
 }
 
 sal_Bool SAL_CALL UIConfigurationManager::hasSettings( const OUString& ResourceURL )
-throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     sal_Int16 nElementType = RetrieveTypeFromResourceURL( ResourceURL );
 
@@ -925,7 +913,6 @@ throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exc
 }
 
 Reference< XIndexAccess > SAL_CALL UIConfigurationManager::getSettings( const OUString& ResourceURL, sal_Bool bWriteable )
-throw (css::container::NoSuchElementException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     sal_Int16 nElementType = RetrieveTypeFromResourceURL( ResourceURL );
 
@@ -954,7 +941,6 @@ throw (css::container::NoSuchElementException, css::lang::IllegalArgumentExcepti
 }
 
 void SAL_CALL UIConfigurationManager::replaceSettings( const OUString& ResourceURL, const Reference< css::container::XIndexAccess >& aNewData )
-throw (css::container::NoSuchElementException, css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception)
 {
     sal_Int16 nElementType = RetrieveTypeFromResourceURL( ResourceURL );
 
@@ -1013,7 +999,6 @@ throw (css::container::NoSuchElementException, css::lang::IllegalArgumentExcepti
 }
 
 void SAL_CALL UIConfigurationManager::removeSettings( const OUString& ResourceURL )
-throw ( NoSuchElementException, IllegalArgumentException, IllegalAccessException, RuntimeException, std::exception)
 {
     sal_Int16 nElementType = RetrieveTypeFromResourceURL( ResourceURL );
 
@@ -1071,7 +1056,6 @@ throw ( NoSuchElementException, IllegalArgumentException, IllegalAccessException
 }
 
 void SAL_CALL UIConfigurationManager::insertSettings( const OUString& NewResourceURL, const Reference< XIndexAccess >& aNewData )
-throw ( ElementExistException, IllegalArgumentException, IllegalAccessException, RuntimeException, std::exception )
 {
     sal_Int16 nElementType = RetrieveTypeFromResourceURL( NewResourceURL );
 
@@ -1144,7 +1128,7 @@ throw ( ElementExistException, IllegalArgumentException, IllegalAccessException,
     }
 }
 
-Reference< XInterface > SAL_CALL UIConfigurationManager::getImageManager() throw (css::uno::RuntimeException, std::exception)
+Reference< XInterface > SAL_CALL UIConfigurationManager::getImageManager()
 {
     if ( m_bDisposed )
         throw DisposedException();
@@ -1158,11 +1142,11 @@ Reference< XInterface > SAL_CALL UIConfigurationManager::getImageManager() throw
         Sequence< Any > aPropSeq( 2 );
         PropertyValue aPropValue;
         aPropValue.Name  = "UserConfigStorage";
-        aPropValue.Value = makeAny( m_xDocConfigStorage );
-        aPropSeq[0] = makeAny( aPropValue );
+        aPropValue.Value <<= m_xDocConfigStorage;
+        aPropSeq[0] <<= aPropValue;
         aPropValue.Name  = "ModuleIdentifier";
-        aPropValue.Value = makeAny( m_aModuleIdentifier );
-        aPropSeq[1] = makeAny( aPropValue );
+        aPropValue.Value <<= m_aModuleIdentifier;
+        aPropSeq[1] <<= aPropValue;
 
         xInit->initialize( aPropSeq );
     }
@@ -1170,7 +1154,7 @@ Reference< XInterface > SAL_CALL UIConfigurationManager::getImageManager() throw
     return Reference< XInterface >( m_xImageManager, UNO_QUERY );
 }
 
-Reference< XAcceleratorConfiguration > SAL_CALL UIConfigurationManager::getShortCutManager() throw (css::uno::RuntimeException, std::exception)
+Reference< XAcceleratorConfiguration > SAL_CALL UIConfigurationManager::getShortCutManager()
 {
     // SAFE ->
     SolarMutexGuard g;
@@ -1189,13 +1173,13 @@ Reference< XAcceleratorConfiguration > SAL_CALL UIConfigurationManager::getShort
     return m_xAccConfig;
 }
 
-Reference< XInterface > SAL_CALL UIConfigurationManager::getEventsManager() throw (css::uno::RuntimeException, std::exception)
+Reference< XInterface > SAL_CALL UIConfigurationManager::getEventsManager()
 {
     return Reference< XInterface >();
 }
 
 // XUIConfigurationStorage
-void SAL_CALL UIConfigurationManager::setStorage( const Reference< XStorage >& Storage ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::setStorage( const Reference< XStorage >& Storage )
 {
     SolarMutexGuard g;
 
@@ -1255,7 +1239,7 @@ void SAL_CALL UIConfigurationManager::setStorage( const Reference< XStorage >& S
     impl_Initialize();
 }
 
-sal_Bool SAL_CALL UIConfigurationManager::hasStorage() throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL UIConfigurationManager::hasStorage()
 {
     SolarMutexGuard g;
 
@@ -1266,7 +1250,7 @@ sal_Bool SAL_CALL UIConfigurationManager::hasStorage() throw (css::uno::RuntimeE
 }
 
 // XUIConfigurationPersistence
-void SAL_CALL UIConfigurationManager::reload() throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::reload()
 {
     SolarMutexClearableGuard aGuard;
 
@@ -1305,7 +1289,7 @@ void SAL_CALL UIConfigurationManager::reload() throw (css::uno::Exception, css::
     }
 }
 
-void SAL_CALL UIConfigurationManager::store() throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::store()
 {
     SolarMutexGuard g;
 
@@ -1338,7 +1322,7 @@ void SAL_CALL UIConfigurationManager::store() throw (css::uno::Exception, css::u
     }
 }
 
-void SAL_CALL UIConfigurationManager::storeToStorage( const Reference< XStorage >& Storage ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
+void SAL_CALL UIConfigurationManager::storeToStorage( const Reference< XStorage >& Storage )
 {
     SolarMutexGuard g;
 
@@ -1371,14 +1355,14 @@ void SAL_CALL UIConfigurationManager::storeToStorage( const Reference< XStorage 
     }
 }
 
-sal_Bool SAL_CALL UIConfigurationManager::isModified() throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL UIConfigurationManager::isModified()
 {
     SolarMutexGuard g;
 
     return m_bModified;
 }
 
-sal_Bool SAL_CALL UIConfigurationManager::isReadOnly() throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL UIConfigurationManager::isReadOnly()
 {
     SolarMutexGuard g;
 

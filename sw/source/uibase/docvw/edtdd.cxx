@@ -30,6 +30,7 @@
 #include <fmturl.hxx>
 #include <frmfmt.hxx>
 #include <wrtsh.hxx>
+#include <edtdd.hxx>
 #include <edtwin.hxx>
 #include <view.hxx>
 #include <viewopt.hxx>
@@ -43,15 +44,11 @@ using namespace ::com::sun::star;
 
 // no include "dbgoutsw.hxx" here!!!!!!
 
-extern bool g_bNoInterrupt;
-extern bool g_bFrameDrag;
-extern bool g_bDDTimerStarted;
-
 bool g_bExecuteDrag = false;
 
 void SwEditWin::StartDDTimer()
 {
-    m_aTimer.SetTimeoutHdl(LINK(this, SwEditWin, DDHandler));
+    m_aTimer.SetInvokeHandler(LINK(this, SwEditWin, DDHandler));
     m_aTimer.SetTimeout(480);
     m_aTimer.Start();
     g_bDDTimerStarted = true;
@@ -63,7 +60,7 @@ void SwEditWin::StopDDTimer(SwWrtShell *pSh, const Point &rPt)
     g_bDDTimerStarted = false;
     if(!pSh->IsSelFrameMode())
         pSh->CallSetCursor(&rPt, false);
-    m_aTimer.SetTimeoutHdl(LINK(this,SwEditWin, TimerHandler));
+    m_aTimer.SetInvokeHandler(LINK(this,SwEditWin, TimerHandler));
 }
 
 void SwEditWin::StartDrag( sal_Int8 /*nAction*/, const Point& rPosPixel )
@@ -106,7 +103,7 @@ void SwEditWin::StartDrag( sal_Int8 /*nAction*/, const Point& rPosPixel )
         }
         else
         {
-            SwContentAtPos aSwContentAtPos( SwContentAtPos::SW_INETATTR );
+            SwContentAtPos aSwContentAtPos( IsAttrAtPos::InetAttr );
             bStart = rSh.GetContentAtPos( aDocPos,
                         aSwContentAtPos );
         }
@@ -147,7 +144,7 @@ void SwEditWin::StartExecuteDrag()
 void SwEditWin::DragFinished()
 {
     DropCleanup();
-    m_aTimer.SetTimeoutHdl( LINK(this,SwEditWin, TimerHandler) );
+    m_aTimer.SetInvokeHandler( LINK(this,SwEditWin, TimerHandler) );
     m_bIsInDrag = false;
 }
 
@@ -201,7 +198,7 @@ sal_Int8 SwEditWin::ExecuteDrop( const ExecuteDropEvent& rEvt )
 
     if( pObj && nullptr != ( pOLV = rSh.GetDrawView()->GetTextEditOutlinerView() ))
     {
-        Rectangle aRect( pOLV->GetOutputArea() );
+        tools::Rectangle aRect( pOLV->GetOutputArea() );
         aRect.Union( pObj->GetLogicRect() );
         const Point aPos = pOLV->GetWindow()->PixelToLogic(rEvt.maPosPixel);
         if ( aRect.IsInside(aPos) )
@@ -261,7 +258,7 @@ SotExchangeDest SwEditWin::GetDropDestination( const Point& rPixPnt, SdrObject *
         OutlinerView* pOLV = rSh.GetDrawView()->GetTextEditOutlinerView();
         if ( pOLV )
         {
-            Rectangle aRect( pOLV->GetOutputArea() );
+            tools::Rectangle aRect( pOLV->GetOutputArea() );
             aRect.Union( pObj->GetLogicRect() );
             const Point aPos = pOLV->GetWindow()->PixelToLogic( rPixPnt );
             if( aRect.IsInside( aPos ) )
@@ -338,7 +335,7 @@ sal_Int8 SwEditWin::AcceptDrop( const AcceptDropEvent& rEvt )
     // If the cursor is near the inner boundary
     // we attempt to scroll towards the desired direction.
     Point aPoint;
-    Rectangle aWin(aPoint,GetOutputSizePixel());
+    tools::Rectangle aWin(aPoint,GetOutputSizePixel());
     const int nMargin = 10;
     aWin.Left() += nMargin;
     aWin.Top() += nMargin;
@@ -449,7 +446,7 @@ sal_Int8 SwEditWin::AcceptDrop( const AcceptDropEvent& rEvt )
             SotExchangeDest::SWDOC_FREE_AREA == m_nDropDestination )
         {
             CleanupDropUserMarker();
-            SwContentAtPos aCont( SwContentAtPos::SW_CONTENT_CHECK );
+            SwContentAtPos aCont( IsAttrAtPos::ContentCheck );
             if(rSh.GetContentAtPos(aDocPt, aCont))
                 rSh.SwCursorShell::SetVisibleCursor( aDocPt );
         }
@@ -476,7 +473,7 @@ sal_Int8 SwEditWin::AcceptDrop( const AcceptDropEvent& rEvt )
     return DND_ACTION_NONE;
 }
 
-IMPL_LINK_NOARG_TYPED(SwEditWin, DDHandler, Timer *, void)
+IMPL_LINK_NOARG(SwEditWin, DDHandler, Timer *, void)
 {
     g_bDDTimerStarted = false;
     m_aTimer.Stop();

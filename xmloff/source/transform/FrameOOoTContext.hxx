@@ -30,8 +30,6 @@ public:
     XMLFrameOOoTransformerContext( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLFrameOOoTransformerContext();
-
     virtual rtl::Reference<XMLTransformerContext> CreateChildContext( sal_uInt16 nPrefix,
                                    const OUString& rLocalName,
                                    const OUString& rQName,

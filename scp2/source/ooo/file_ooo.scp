@@ -27,47 +27,6 @@
 
 #include "macros.inc"
 
-File gid_File_Basic_User
-    Dir = FILELIST_DIR;
-    USER_FILE_BODY;
-    Styles = (FILELIST, WORKSTATION);
-    Name = "wizards_basicusr.filelist";
-End
-
-File gid_File_Basic_Share
-    Dir = FILELIST_DIR;
-    USER_FILE_BODY;
-    Styles = (FILELIST, WORKSTATION);
-    Name = "wizards_basicshare.filelist";
-End
-
-File gid_File_Basic_User_Standard
-    Dir = FILELIST_DIR;
-    USER_FILE_BODY;
-    Styles = (FILELIST, WORKSTATION);
-    Name = "wizards_basicsrvstandard.filelist";
-End
-
-#if defined UNX && !defined MACOSX
-
-File gid_File_Script_Gengal
-    BIN_FILE_BODY;
-    Dir = gid_Brand_Dir_Program;
-    Styles = (PACKED);
-    Name = "gengal";
-End
-
-#endif
-
-#if defined UNX && ! defined ENABLE_MACOSX_SANDBOX
-File gid_File_Bin_Senddoc
-    BIN_FILE_BODY;
-    Dir = FILELIST_DIR;
-    Name = "shell_senddoc.filelist";
-    Styles = (FILELIST, PACKED);
-End
-#endif
-
 STD_RES_FILE( gid_File_Res_Eps, eps )
 
 #if defined WITH_HELP
@@ -212,9 +171,6 @@ UI_FILELIST(swform, "UIConfig/modules/swform.filelist")
 UI_FILELIST(swreport, "UIConfig/modules/swreport.filelist")
 UI_FILELIST(swriter, "UIConfig/modules/swriter.filelist")
 UI_FILELIST(swxform, "UIConfig/modules/swxform.filelist")
-#ifdef ENABLE_TELEPATHY
-UI_FILELIST(tubes, "UIConfig/tubes.filelist")
-#endif
 UI_FILELIST(uui, "UIConfig/uui.filelist")
 UI_FILELIST(vcl, "UIConfig/vcl.filelist")
 UI_FILELIST(writerperfect, "UIConfig/writerperfect.filelist")
@@ -243,23 +199,9 @@ UI_FILELIST_ALL_LANG(smath, modules/smath)
 UI_FILELIST_ALL_LANG(svt, svt)
 UI_FILELIST_ALL_LANG(svx, svx)
 UI_FILELIST_ALL_LANG(swriter, modules/swriter)
-#ifdef ENABLE_TELEPATHY
-UI_FILELIST_ALL_LANG(tubes, tubes)
-#endif
 UI_FILELIST_ALL_LANG(uui, uui)
 UI_FILELIST_ALL_LANG(vcl, vcl)
 UI_FILELIST_ALL_LANG(xmlsec, xmlsec)
-
-#ifdef WNT
-
-File gid_File_extras_newfiles
-    TXT_FILE_BODY;
-    Styles = (FILELIST, PACKED, WORKSTATION, OVERWRITE);
-    Dir = FILELIST_DIR;
-    Name = "extras_newfiles.filelist";
-End
-
-#endif
 
 #if defined UNX && ! defined MACOSX
 
@@ -306,49 +248,6 @@ File gid_Starregistry_Services_Rdb
     Dir = gid_Brand_Dir_Program_Services;
     Styles = (PACKED);
 End
-
-#ifdef MACOSX
-File gid_File_App_InfoPlist
-    TXT_FILE_BODY;
-    Dir = FILELIST_DIR;
-    Name = "infoplist.filelist";
-    Styles = (FILELIST);
-End
-#endif
-
-#ifdef MACOSX
-File gid_File_Icns_Bundle
-    Dir = FILELIST_DIR;
-    TXT_FILE_BODY;
-    Styles = (FILELIST);
-    Name = "sysui_osxicons.filelist";
-End
-#endif
-
-#ifdef MACOSX
-File gid_File_Res_Bundle
-    Dir = FILELIST_DIR;
-    TXT_FILE_BODY;
-    Styles = (FILELIST);
-    Name = "vcl_osxres.filelist";
-End
-#endif
-
-#ifdef MACOSX
-File gid_File_Spotlight_Bundle
-    TXT_FILE_BODY;
-    Dir = FILELIST_DIR;
-    Name = "extensions_mdibundle.filelist";
-    Styles = (FILELIST,USE_INTERNAL_RIGHTS);
-End
-
-File gid_File_Spotlight_Bundle_lib
-    TXT_FILE_BODY;
-    Dir = FILELIST_DIR;
-    Name = "extensions_OOoSpotlightImporter.filelist";
-    Styles = (FILELIST,USE_INTERNAL_RIGHTS);
-End
-#endif
 
 File gid_File_Images
     TXT_FILE_BODY;
@@ -415,6 +314,15 @@ End
 File gid_File_Extension_Dictionary_Bn
 	Dir = FILELIST_DIR;
 	Name = "Dictionary/dict-bn.filelist";
+	Styles = (PACKED, FORCELANGUAGEPACK, FILELIST);
+	TXT_FILE_BODY;
+End
+#endif
+
+#if defined WITH_MYSPELL_DICTS
+File gid_File_Extension_Dictionary_Bo
+	Dir = FILELIST_DIR;
+	Name = "Dictionary/dict-bo.filelist";
 	Styles = (PACKED, FORCELANGUAGEPACK, FILELIST);
 	TXT_FILE_BODY;
 End

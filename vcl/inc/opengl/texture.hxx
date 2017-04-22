@@ -20,7 +20,7 @@
 #ifndef INCLUDED_VCL_INC_OPENGL_TEXTURE_H
 #define INCLUDED_VCL_INC_OPENGL_TEXTURE_H
 
-#include <GL/glew.h>
+#include <epoxy/gl.h>
 #include <vcl/dllapi.h>
 #include <vcl/salgtype.hxx>
 #include <rtl/ustring.hxx>
@@ -32,7 +32,6 @@
 
 class ImplOpenGLTexture
 {
-    int    mnRefCount;
 public:
     GLuint mnTexture;
     int    mnWidth;
@@ -47,19 +46,13 @@ public:
     ImplOpenGLTexture( int nWidth, int nHeight, int nFormat, int nType, void const * pData );
     ImplOpenGLTexture( int nX, int nY, int nWidth, int nHeight );
     ~ImplOpenGLTexture();
-    void Dispose();
 
     bool InsertBuffer(int nX, int nY, int nWidth, int nHeight, int nFormat, int nType, sal_uInt8* pData);
 
     void IncreaseRefCount(int nSlotNumber);
     void DecreaseRefCount(int nSlotNumber);
 
-    bool IsUnique()
-    {
-        return mnRefCount == 1;
-    }
-
-    bool InitializeSlotMechanism(int nInitialSlotSize = 0);
+    bool InitializeSlotMechanism(int nInitialSlotSize);
 
     void SetSlotDeallocateCallback(std::function<void(int)> aCallback)
     {
@@ -74,30 +67,32 @@ public:
     GLuint AddStencil();
 };
 
-class VCL_DLLPUBLIC OpenGLTexture
+class VCL_DLLPUBLIC OpenGLTexture final
 {
 private:
     // if the rect size doesn't match the mpImpl one, this instance
     // is a sub-area from the real OpenGL texture
-    Rectangle maRect;
-    ImplOpenGLTexture* mpImpl;
+    tools::Rectangle maRect;
+    std::shared_ptr<ImplOpenGLTexture> mpImpl;
     int mnSlotNumber;
 
-    inline bool IsValid() const
+    inline bool GetTextureRect(const SalTwoRect& rPosAry, bool bInverted, GLfloat& x1, GLfloat& x2, GLfloat& y1, GLfloat& y2) const;
+
+    bool IsValid() const
     {
         return (mpImpl && mpImpl->mnTexture != 0);
     }
 
 public:
                     OpenGLTexture();
-                    OpenGLTexture(ImplOpenGLTexture* pImpl, Rectangle aRectangle, int nSlotNumber);
+                    OpenGLTexture(const std::shared_ptr<ImplOpenGLTexture>& pImpl, tools::Rectangle aRectangle, int nSlotNumber);
 
                     OpenGLTexture( int nWidth, int nHeight, bool bAllocate = true );
                     OpenGLTexture( int nWidth, int nHeight, int nFormat, int nType, void const * pData );
                     OpenGLTexture( int nX, int nY, int nWidth, int nHeight );
                     OpenGLTexture( const OpenGLTexture& rTexture );
                     OpenGLTexture( const OpenGLTexture& rTexture, int nX, int nY, int nWidth, int nHeight );
-    virtual         ~OpenGLTexture();
+                    ~OpenGLTexture();
 
     bool            IsUnique() const;
 
@@ -107,7 +102,6 @@ public:
 
     void            GetCoord( GLfloat* pCoord, const SalTwoRect& rPosAry, bool bInverted=false ) const;
     void            GetWholeCoord( GLfloat* pCoord ) const;
-    OpenGLTexture   GetWholeTexture();
     void            Bind();
     void            Unbind();
     void            Read( GLenum nFormat, GLenum nType, sal_uInt8* pData );
@@ -131,6 +125,10 @@ public:
 };
 
 template<> void OpenGLTexture::FillCoords<GL_TRIANGLES>(
+    std::vector<GLfloat>& aCoord, const SalTwoRect& rPosAry, bool bInverted)
+    const;
+
+template<> void OpenGLTexture::FillCoords<GL_TRIANGLE_FAN>(
     std::vector<GLfloat>& aCoord, const SalTwoRect& rPosAry, bool bInverted)
     const;
 

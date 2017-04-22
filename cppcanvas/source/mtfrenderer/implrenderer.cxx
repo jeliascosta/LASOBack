@@ -158,7 +158,7 @@ namespace
             }
         }
 
-        if( LINE_DASH == rLineInfo.GetStyle() )
+        if( LineStyle::Dash == rLineInfo.GetStyle() )
         {
             const ::cppcanvas::internal::OutDevState& rState( rParms.mrStates.getState() );
 
@@ -552,7 +552,7 @@ namespace cppcanvas
                     uno::Sequence< uno::Sequence < double > > aColors(2);
                     uno::Sequence< double > aStops(2);
 
-                    if( rGradient.GetStyle() == GradientStyle_AXIAL )
+                    if( rGradient.GetStyle() == GradientStyle::Axial )
                     {
                         aStops.realloc(3);
                         aColors.realloc(3);
@@ -589,7 +589,7 @@ namespace cppcanvas
                     OUString aGradientService;
                     switch( rGradient.GetStyle() )
                     {
-                        case GradientStyle_LINEAR:
+                        case GradientStyle::Linear:
                             aGradInfo = basegfx::tools::createLinearODFGradientInfo(
                                                                         aBounds,
                                                                         nSteps,
@@ -601,7 +601,7 @@ namespace cppcanvas
                             aGradientService = "LinearGradient";
                             break;
 
-                        case GradientStyle_AXIAL:
+                        case GradientStyle::Axial:
                         {
                             // Adapt the border so that it is suitable
                             // for the axial gradient.  An axial
@@ -635,7 +635,7 @@ namespace cppcanvas
                             break;
                         }
 
-                        case GradientStyle_RADIAL:
+                        case GradientStyle::Radial:
                             aGradInfo = basegfx::tools::createRadialODFGradientInfo(
                                                                         aBounds,
                                                                         aOffset,
@@ -644,7 +644,7 @@ namespace cppcanvas
                             aGradientService = "EllipticalGradient";
                             break;
 
-                        case GradientStyle_ELLIPTICAL:
+                        case GradientStyle::Elliptical:
                             aGradInfo = basegfx::tools::createEllipticalODFGradientInfo(
                                                                             aBounds,
                                                                             aOffset,
@@ -654,7 +654,7 @@ namespace cppcanvas
                             aGradientService = "EllipticalGradient";
                             break;
 
-                        case GradientStyle_SQUARE:
+                        case GradientStyle::Square:
                             aGradInfo = basegfx::tools::createSquareODFGradientInfo(
                                                                         aBounds,
                                                                         aOffset,
@@ -664,7 +664,7 @@ namespace cppcanvas
                             aGradientService = "RectangularGradient";
                             break;
 
-                        case GradientStyle_RECT:
+                        case GradientStyle::Rect:
                             aGradInfo = basegfx::tools::createRectangularODFGradientInfo(
                                                                              aBounds,
                                                                              aOffset,
@@ -816,7 +816,7 @@ namespace cppcanvas
                 rFontSizeLog = ::Size(0, 16);
 
                 // convert to target MapUnit if not pixels
-                rFontSizeLog = OutputDevice::LogicToLogic(rFontSizeLog, MAP_PIXEL, rParms.mrVDev.GetMapMode());
+                rFontSizeLog = OutputDevice::LogicToLogic(rFontSizeLog, MapUnit::MapPixel, rParms.mrVDev.GetMapMode());
             }
 
             const sal_Int32 nFontWidthLog = rFontSizeLog.Width();
@@ -905,7 +905,7 @@ namespace cppcanvas
                 aShadowColor.SetTransparency( aTextColor.GetTransparency() );
             }
 
-            if( rState.textReliefStyle )
+            if( rState.textReliefStyle != FontRelief::NONE )
             {
                 // calculate relief offset (similar to outdev3.cxx)
                 sal_Int32 nReliefOffset = rParms.mrVDev.PixelToLogic( Size( 1, 1 ) ).Height();
@@ -913,7 +913,7 @@ namespace cppcanvas
                 if( nReliefOffset < 1 )
                     nReliefOffset = 1;
 
-                if( rState.textReliefStyle == RELIEF_ENGRAVED )
+                if( rState.textReliefStyle == FontRelief::Engraved )
                     nReliefOffset = -nReliefOffset;
 
                 aReliefOffset.setWidth( nReliefOffset );
@@ -986,7 +986,7 @@ namespace cppcanvas
                 long nFullStrikeoutWidth = 0;
                 OUString aStrikeoutText;
                 while( (nFullStrikeoutWidth+=nStrikeoutWidth ) < nMaxWidth+1 )
-                    aStrikeoutText += OUString(pChars[0]);
+                    aStrikeoutText += OUStringLiteral1(pChars[0]);
 
                 sal_Int32 nLen = aStrikeoutText.getLength();
 
@@ -1121,7 +1121,7 @@ namespace cppcanvas
             }
         }
 
-        void ImplRenderer::updateClipping( const ::Rectangle&             rClipRect,
+        void ImplRenderer::updateClipping( const ::tools::Rectangle&             rClipRect,
                                            const ActionFactoryParameters& rParms,
                                            bool                           bIntersect )
         {
@@ -1297,7 +1297,7 @@ namespace cppcanvas
                                                "region encountered, falling back to bounding box!" );
 
                                 // #121806# explicitly kept integer
-                                Rectangle aClipRect(
+                                ::tools::Rectangle aClipRect(
                                     rVDev.LogicToPixel(
                                         pClipAction->GetRegion().GetBoundRect() ) );
 
@@ -1331,7 +1331,7 @@ namespace cppcanvas
                         MetaISectRectClipRegionAction* pClipAction = static_cast<MetaISectRectClipRegionAction*>(pCurrAct);
 
                         // #121806# explicitly kept integer
-                        Rectangle aClipRect(
+                        ::tools::Rectangle aClipRect(
                             rVDev.LogicToPixel( pClipAction->GetRect() ) );
 
                         // intersect current clip with given rect
@@ -1353,7 +1353,7 @@ namespace cppcanvas
                                            "region encountered, falling back to bounding box!" );
 
                             // #121806# explicitly kept integer
-                            Rectangle aClipRect(
+                            ::tools::Rectangle aClipRect(
                                 rVDev.LogicToPixel( pClipAction->GetRegion().GetBoundRect() ) );
 
                             // intersect current clip with given rect
@@ -1491,7 +1491,7 @@ namespace cppcanvas
                                                    rFactoryParms );
 
                         // TODO(Q2): define and use appropriate enumeration types
-                        rState.textReliefStyle          = (sal_Int8)rFont.GetRelief();
+                        rState.textReliefStyle          = rFont.GetRelief();
                         rState.textOverlineStyle        = (sal_Int8)rFont.GetOverline();
                         rState.textUnderlineStyle       = rParms.maFontUnderline.is_initialized() ?
                             (*rParms.maFontUnderline ? (sal_Int8)LINESTYLE_SINGLE : (sal_Int8)LINESTYLE_NONE) :
@@ -1511,22 +1511,22 @@ namespace cppcanvas
                     case MetaActionType::LAYOUTMODE:
                     {
                         // TODO(F2): A lot is missing here
-                        ComplexTextLayoutMode nLayoutMode = static_cast<MetaLayoutModeAction*>(pCurrAct)->GetLayoutMode();
+                        ComplexTextLayoutFlags nLayoutMode = static_cast<MetaLayoutModeAction*>(pCurrAct)->GetLayoutMode();
                         ::cppcanvas::internal::OutDevState& rState = rStates.getState();
 
-                        ComplexTextLayoutMode nBidiLayoutMode = nLayoutMode & (TEXT_LAYOUT_BIDI_RTL|TEXT_LAYOUT_BIDI_STRONG);
-                        if( nBidiLayoutMode == TEXT_LAYOUT_DEFAULT)
+                        ComplexTextLayoutFlags nBidiLayoutMode = nLayoutMode & (ComplexTextLayoutFlags::BiDiRtl|ComplexTextLayoutFlags::BiDiStrong);
+                        if( nBidiLayoutMode == ComplexTextLayoutFlags::Default)
                                 rState.textDirection = rendering::TextDirection::WEAK_LEFT_TO_RIGHT;
-                        else if( nBidiLayoutMode == TEXT_LAYOUT_BIDI_STRONG)
+                        else if( nBidiLayoutMode == ComplexTextLayoutFlags::BiDiStrong)
                                 rState.textDirection = rendering::TextDirection::STRONG_LEFT_TO_RIGHT;
-                        else if( nBidiLayoutMode == TEXT_LAYOUT_BIDI_RTL)
+                        else if( nBidiLayoutMode == ComplexTextLayoutFlags::BiDiRtl)
                                 rState.textDirection = rendering::TextDirection::WEAK_RIGHT_TO_LEFT;
-                        else if( nBidiLayoutMode == (TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_BIDI_STRONG))
+                        else if( nBidiLayoutMode == (ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::BiDiStrong))
                                 rState.textDirection = rendering::TextDirection::STRONG_RIGHT_TO_LEFT;
 
                         rState.textAlignment = 0; // TODO(F2): rendering::TextAlignment::LEFT_ALIGNED;
-                        if( (nLayoutMode & (TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_RIGHT) )
-                            && !(nLayoutMode & TEXT_LAYOUT_TEXTORIGIN_LEFT ) )
+                        if( (nLayoutMode & (ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginRight) )
+                            && !(nLayoutMode & ComplexTextLayoutFlags::TextOriginLeft ) )
                         {
                             rState.textAlignment = 1; // TODO(F2): rendering::TextAlignment::RIGHT_ALIGNED;
                         }
@@ -1577,8 +1577,10 @@ namespace cppcanvas
                         // #i44110# correct null-sized output - there
                         // are metafiles which have zero size in at
                         // least one dimension
-                        const Size aMtfSizePix( ::std::max( aMtfSizePixPre.Width(), 1L ),
-                                                ::std::max( aMtfSizePixPre.Height(), 1L ) );
+                      
+                        // Remark the 1L cannot be replaced, that would cause max to compare long/int
+                        const Size aMtfSizePix( std::max( aMtfSizePixPre.Width(), 1L ),
+                                                std::max( aMtfSizePixPre.Height(), 1L ) );
 
                         // Setup local transform, such that the
                         // metafile renders itself into the given
@@ -1890,7 +1892,7 @@ namespace cppcanvas
                                     io_rCurrActionIndex += pLineAction->getActionCount()-1;
                                 }
                             }
-                            else if( LINE_NONE != rLineInfo.GetStyle() )
+                            else if( LineStyle::NONE != rLineInfo.GetStyle() )
                             {
                                 // 'thick' line
                                 rendering::StrokeAttributes aStrokeAttributes;
@@ -1929,7 +1931,7 @@ namespace cppcanvas
 
                     case MetaActionType::RECT:
                     {
-                        const Rectangle& rRect(
+                        const ::tools::Rectangle& rRect(
                             static_cast<MetaRectAction*>(pCurrAct)->GetRect() );
 
                         if( rRect.IsEmpty() )
@@ -1954,7 +1956,7 @@ namespace cppcanvas
 
                     case MetaActionType::ROUNDRECT:
                     {
-                        const Rectangle& rRect(
+                        const ::tools::Rectangle& rRect(
                             static_cast<MetaRoundRectAction*>(pCurrAct)->GetRect());
 
                         if( rRect.IsEmpty() )
@@ -1977,7 +1979,7 @@ namespace cppcanvas
 
                     case MetaActionType::ELLIPSE:
                     {
-                        const Rectangle& rRect(
+                        const ::tools::Rectangle& rRect(
                             static_cast<MetaEllipseAction*>(pCurrAct)->GetRect() );
 
                         if( rRect.IsEmpty() )
@@ -1991,8 +1993,8 @@ namespace cppcanvas
                         ::basegfx::B2DPolygon aPoly(
                             ::basegfx::tools::createPolygonFromEllipse(
                                 aRange.getCenter(),
-                                aRange.getWidth(),
-                                aRange.getHeight() ));
+                                aRange.getWidth() / 2,       // divide by 2 since createPolygonFromEllipse
+                                aRange.getHeight() / 2 ));   // expects the radius and NOT the diameter!
                         aPoly.transform( rStates.getState().mapModeTransform );
 
                         createFillAndStroke( aPoly,
@@ -2005,7 +2007,7 @@ namespace cppcanvas
                         // TODO(F1): Missing basegfx functionality. Mind empty rects!
                         const ::tools::Polygon aToolsPoly( static_cast<MetaArcAction*>(pCurrAct)->GetRect(),
                                                          static_cast<MetaArcAction*>(pCurrAct)->GetStartPoint(),
-                                                         static_cast<MetaArcAction*>(pCurrAct)->GetEndPoint(), POLY_ARC );
+                                                         static_cast<MetaArcAction*>(pCurrAct)->GetEndPoint(), PolyStyle::Arc );
                         ::basegfx::B2DPolygon aPoly( aToolsPoly.getB2DPolygon() );
                         aPoly.transform( rStates.getState().mapModeTransform );
 
@@ -2019,7 +2021,7 @@ namespace cppcanvas
                         // TODO(F1): Missing basegfx functionality. Mind empty rects!
                         const ::tools::Polygon aToolsPoly( static_cast<MetaPieAction*>(pCurrAct)->GetRect(),
                                                          static_cast<MetaPieAction*>(pCurrAct)->GetStartPoint(),
-                                                         static_cast<MetaPieAction*>(pCurrAct)->GetEndPoint(), POLY_PIE );
+                                                         static_cast<MetaPieAction*>(pCurrAct)->GetEndPoint(), PolyStyle::Pie );
                         ::basegfx::B2DPolygon aPoly( aToolsPoly.getB2DPolygon() );
                         aPoly.transform( rStates.getState().mapModeTransform );
 
@@ -2033,7 +2035,7 @@ namespace cppcanvas
                         // TODO(F1): Missing basegfx functionality. Mind empty rects!
                         const ::tools::Polygon aToolsPoly( static_cast<MetaChordAction*>(pCurrAct)->GetRect(),
                                                          static_cast<MetaChordAction*>(pCurrAct)->GetStartPoint(),
-                                                         static_cast<MetaChordAction*>(pCurrAct)->GetEndPoint(), POLY_CHORD );
+                                                         static_cast<MetaChordAction*>(pCurrAct)->GetEndPoint(), PolyStyle::Chord );
                         ::basegfx::B2DPolygon aPoly( aToolsPoly.getB2DPolygon() );
                         aPoly.transform( rStates.getState().mapModeTransform );
 
@@ -2075,7 +2077,7 @@ namespace cppcanvas
                                     io_rCurrActionIndex += pLineAction->getActionCount()-1;
                                 }
                             }
-                            else if( LINE_NONE != rLineInfo.GetStyle() )
+                            else if( LineStyle::NONE != rLineInfo.GetStyle() )
                             {
                                 // 'thick' line polygon
                                 rendering::StrokeAttributes aStrokeAttributes;
@@ -2182,7 +2184,7 @@ namespace cppcanvas
                         // crop bitmap to given source rectangle (no
                         // need to copy and convert the whole bitmap)
                         ::Bitmap aBmp( pAct->GetBitmap() );
-                        const Rectangle aCropRect( pAct->GetSrcPoint(),
+                        const ::tools::Rectangle aCropRect( pAct->GetSrcPoint(),
                                                     pAct->GetSrcSize() );
                         aBmp.Crop( aCropRect );
 
@@ -2265,7 +2267,7 @@ namespace cppcanvas
                         // crop bitmap to given source rectangle (no
                         // need to copy and convert the whole bitmap)
                         BitmapEx aBmp( pAct->GetBitmapEx() );
-                        const Rectangle aCropRect( pAct->GetSrcPoint(),
+                        const ::tools::Rectangle aCropRect( pAct->GetSrcPoint(),
                                                    pAct->GetSrcSize() );
                         aBmp.Crop( aCropRect );
 
@@ -2365,7 +2367,7 @@ namespace cppcanvas
 
                         // crop bitmap to given source rectangle (no
                         // need to copy and convert the whole bitmap)
-                        const Rectangle aCropRect( pAct->GetSrcPoint(),
+                        const ::tools::Rectangle aCropRect( pAct->GetSrcPoint(),
                                                    pAct->GetSrcSize() );
                         aBmp.Crop( aCropRect );
 
@@ -2586,7 +2588,7 @@ namespace cppcanvas
                         // generating a DX array, and uniformly
                         // distributing the excess/insufficient width
                         // to every logical character.
-                        ::std::unique_ptr< long []> pDXArray( new long[nLen] );
+                        std::unique_ptr< long []> pDXArray( new long[nLen] );
 
                         rVDev.GetTextArray( pAct->GetText(), pDXArray.get(),
                                             pAct->GetIndex(), pAct->GetLen() );
@@ -2747,9 +2749,9 @@ namespace cppcanvas
                 {
                     // only a single action. Setup subset, and call functor
                     Action::Subset aSubset;
-                    aSubset.mnSubsetBegin = ::std::max( sal_Int32( 0 ),
+                    aSubset.mnSubsetBegin = std::max( sal_Int32( 0 ),
                                                         nStartIndex - aRangeBegin->mnOrigIndex );
-                    aSubset.mnSubsetEnd   = ::std::min( aRangeBegin->mpAction->getActionCount(),
+                    aSubset.mnSubsetEnd   = std::min( aRangeBegin->mpAction->getActionCount(),
                                                         nEndIndex - aRangeBegin->mnOrigIndex );
 
                     ENSURE_OR_RETURN_FALSE( aSubset.mnSubsetBegin >= 0 && aSubset.mnSubsetEnd >= 0,
@@ -2764,7 +2766,7 @@ namespace cppcanvas
                     // render partial first, full intermediate, and
                     // partial last action
                     Action::Subset aSubset;
-                    aSubset.mnSubsetBegin = ::std::max( sal_Int32( 0 ),
+                    aSubset.mnSubsetBegin = std::max( sal_Int32( 0 ),
                                                         nStartIndex - aRangeBegin->mnOrigIndex );
                     aSubset.mnSubsetEnd   = aRangeBegin->mpAction->getActionCount();
 
@@ -2824,9 +2826,9 @@ namespace cppcanvas
 
             // clip given range to permissible values (there might be
             // ranges before and behind the valid indices)
-            io_rStartIndex = ::std::max( nMinActionIndex,
+            io_rStartIndex = std::max( nMinActionIndex,
                                          io_rStartIndex );
-            io_rEndIndex = ::std::min( nMaxActionIndex,
+            io_rEndIndex = std::min( nMaxActionIndex,
                                        io_rEndIndex );
 
             if( io_rStartIndex == io_rEndIndex ||
@@ -2845,10 +2847,10 @@ namespace cppcanvas
 
             // find start and end action
             // =========================
-            o_rRangeBegin = ::std::lower_bound( aBegin, aEnd,
+            o_rRangeBegin = std::lower_bound( aBegin, aEnd,
                                                 MtfAction( ActionSharedPtr(), io_rStartIndex ),
                                                 UpperBoundActionIndexComparator() );
-            o_rRangeEnd   = ::std::lower_bound( aBegin, aEnd,
+            o_rRangeEnd   = std::lower_bound( aBegin, aEnd,
                                                 MtfAction( ActionSharedPtr(), io_rEndIndex ),
                                                 UpperBoundActionIndexComparator() );
             return true;
@@ -2914,8 +2916,9 @@ namespace cppcanvas
 
             // #i44110# correct null-sized output - there are shapes
             // which have zero size in at least one dimension
-            const Size aMtfSizePix( ::std::max( aMtfSizePixPre.Width(), 1L ),
-                                    ::std::max( aMtfSizePixPre.Height(), 1L ) );
+            // Remark the 1L cannot be replaced, that would cause max to compare long/int
+            const Size aMtfSizePix( std::max( aMtfSizePixPre.Width(), 1L ),
+                                    std::max( aMtfSizePixPre.Height(), 1L ) );
 
             sal_Int32 nCurrActions(0);
             ActionFactoryParameters aParms(aStateStack,
@@ -3042,10 +3045,7 @@ namespace cppcanvas
             }
             catch( uno::Exception& )
             {
-                SAL_WARN("cppcanvas.emf", "" << OUStringToOString(
-                                comphelper::anyToString( cppu::getCaughtException() ),
-                                RTL_TEXTENCODING_UTF8 ).getStr() );
-
+                SAL_WARN("cppcanvas.emf", "" << comphelper::anyToString( cppu::getCaughtException() ) );
                 // convert error to return value
                 return false;
             }
@@ -3099,14 +3099,11 @@ namespace cppcanvas
 
             try
             {
-                return ::std::for_each( maActions.begin(), maActions.end(), ActionRenderer( aMatrix ) ).result();
+                return std::for_each( maActions.begin(), maActions.end(), ActionRenderer( aMatrix ) ).result();
             }
             catch( uno::Exception& )
             {
-                SAL_WARN( "cppcanvas.emf", "" << OUStringToOString(
-                                comphelper::anyToString( cppu::getCaughtException() ),
-                                RTL_TEXTENCODING_UTF8 ).getStr() );
-
+                SAL_WARN( "cppcanvas.emf", "" << comphelper::anyToString( cppu::getCaughtException() ) );
                 return false;
             }
         }

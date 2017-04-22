@@ -27,9 +27,6 @@
 #if defined(UNX)
 #include <unistd.h>
 #endif
-#ifdef __MINGW32__
-#include <unistd.h>
-#endif
 
 #include <reflread.hxx>
 
@@ -455,27 +452,27 @@ RegError ORegistry::initRegistry(const OUString& regName, RegAccessMode accessMo
 {
     RegError eRet = RegError::INVALID_REGISTRY;
     OStoreFile      rRegFile;
-    storeAccessMode sAccessMode = store_AccessReadWrite;
+    storeAccessMode sAccessMode = storeAccessMode::ReadWrite;
     storeError      errCode;
 
     if (bCreate)
     {
-        sAccessMode = store_AccessCreate;
+        sAccessMode = storeAccessMode::Create;
     }
     else if (accessMode & RegAccessMode::READONLY)
     {
-        sAccessMode = store_AccessReadOnly;
+        sAccessMode = storeAccessMode::ReadOnly;
         m_readOnly = true;
     }
 
     if (regName.isEmpty() &&
-        store_AccessCreate == sAccessMode)
+        storeAccessMode::Create == sAccessMode)
     {
         errCode = rRegFile.createInMemory();
     }
     else
     {
-        errCode = rRegFile.create(regName, sAccessMode, REG_PAGESIZE);
+        errCode = rRegFile.create(regName, sAccessMode);
     }
 
     if (errCode)
@@ -670,7 +667,7 @@ RegError ORegistry::createKey(RegKeyHandle hKey, const OUString& keyName,
         token = sFullKeyName.getToken( 0, '/', nIndex );
         if (!token.isEmpty())
         {
-            if (rStoreDir.create(pKey->getStoreFile(), sFullPath.getStr(), token, store_AccessCreate))
+            if (rStoreDir.create(pKey->getStoreFile(), sFullPath.getStr(), token, storeAccessMode::Create))
             {
                 return RegError::CREATE_KEY_FAILED;
             }
@@ -716,7 +713,7 @@ RegError ORegistry::openKey(RegKeyHandle hKey, const OUString& keyName,
         sal_Int32 n = path.lastIndexOf('/') + 1;
         switch (OStoreDirectory().create(
                     pKey->getStoreFile(), path.copy(0, n), path.copy(n),
-                    isReadOnly() ? store_AccessReadOnly : store_AccessReadWrite))
+                    isReadOnly() ? storeAccessMode::ReadOnly : storeAccessMode::ReadWrite))
         {
         case store_E_NotExists:
             return RegError::KEY_NOT_EXISTS;
@@ -760,7 +757,6 @@ RegError ORegistry::closeKey(RegKeyHandle hKey)
         else
         {
             // closing modified RootKey, flush registry file.
-            OSL_TRACE("registry::ORegistry::closeKey(): flushing modified RootKey");
             (void) m_file.flush();
         }
         pKey->setModified(false);
@@ -953,13 +949,13 @@ RegError ORegistry::loadAndSaveValue(ORegKey* pTargetKey,
     RegValueType    valueType;
     sal_uInt32      valueSize;
     sal_uInt32      nSize;
-    storeAccessMode sourceAccess = store_AccessReadWrite;
+    storeAccessMode sourceAccess = storeAccessMode::ReadWrite;
     OUString        sTargetPath(pTargetKey->getName());
     OUString        sSourcePath(pSourceKey->getName());
 
     if (pSourceKey->isReadOnly())
     {
-        sourceAccess = store_AccessReadOnly;
+        sourceAccess = storeAccessMode::ReadOnly;
     }
 
     if (nCut)
@@ -1019,7 +1015,7 @@ RegError ORegistry::loadAndSaveValue(ORegKey* pTargetKey,
 
     OStoreFile  rTargetFile(pTargetKey->getStoreFile());
 
-    if (!rValue.create(rTargetFile, sTargetPath, valueName, store_AccessReadWrite))
+    if (!rValue.create(rTargetFile, sTargetPath, valueName, storeAccessMode::ReadWrite))
     {
         if (valueType == RegValueType::BINARY)
         {
@@ -1043,7 +1039,7 @@ RegError ORegistry::loadAndSaveValue(ORegKey* pTargetKey,
     }
 
     // write
-    if (rValue.create(rTargetFile, sTargetPath, valueName, store_AccessCreate))
+    if (rValue.create(rTargetFile, sTargetPath, valueName, storeAccessMode::Create))
     {
         rtl_freeMemory(pBuffer);
         return RegError::INVALID_VALUE;
@@ -1178,13 +1174,12 @@ static sal_uInt32 checkTypeReaders(RegistryTypeReader& reader1,
                                    std::set< OUString >& nameSet)
 {
     sal_uInt32 count=0;
-    sal_uInt16 i;
-    for (i=0 ; i < reader1.getFieldCount(); i++)
+    for (sal_uInt32 i=0 ; i < reader1.getFieldCount(); i++)
     {
         nameSet.insert(reader1.getFieldName(i));
         count++;
     }
-    for (i=0 ; i < reader2.getFieldCount(); i++)
+    for (sal_uInt32 i=0 ; i < reader2.getFieldCount(); i++)
     {
         if (nameSet.find(reader2.getFieldName(i)) == nameSet.end())
         {
@@ -1292,7 +1287,7 @@ RegError ORegistry::loadAndSaveKeys(ORegKey* pTargetKey,
     sFullKeyName += keyName;
 
     OStoreDirectory rStoreDir;
-    if (rStoreDir.create(pTargetKey->getStoreFile(), sFullPath, keyName, store_AccessCreate))
+    if (rStoreDir.create(pTargetKey->getStoreFile(), sFullPath, keyName, storeAccessMode::Create))
     {
         return RegError::CREATE_KEY_FAILED;
     }
@@ -1396,11 +1391,11 @@ RegError ORegistry::dumpValue(const OUString& sPath, const OUString& sName, sal_
     RegValueType    valueType;
     OUString        sFullPath(sPath);
     OString         sIndent;
-    storeAccessMode accessMode = store_AccessReadWrite;
+    storeAccessMode accessMode = storeAccessMode::ReadWrite;
 
     if (isReadOnly())
     {
-        accessMode = store_AccessReadOnly;
+        accessMode = storeAccessMode::ReadOnly;
     }
 
     for (int i= 0; i < nSpc; i++) sIndent += " ";
@@ -1484,12 +1479,11 @@ RegError ORegistry::dumpValue(const OUString& sPath, const OUString& sName, sal_
                     sal::static_int_cast< unsigned long >(valueSize));
                 fprintf(stdout, "%s       Data = ", indent);
 
-                sal_Unicode* value = new sal_Unicode[size];
-                readString(pBuffer, value, size);
+                std::unique_ptr<sal_Unicode[]> value(new sal_Unicode[size]);
+                readString(pBuffer, value.get(), size);
 
-                OString uStr = OUStringToOString(value, RTL_TEXTENCODING_UTF8);
+                OString uStr = OUStringToOString(value.get(), RTL_TEXTENCODING_UTF8);
                 fprintf(stdout, "L\"%s\"\n", uStr.getStr());
-                delete[] value;
             }
             break;
         case RegValueType::BINARY:
@@ -1631,12 +1625,12 @@ RegError ORegistry::dumpKey(const OUString& sPath, const OUString& sName, sal_In
     OStoreDirectory     rStoreDir;
     OUString            sFullPath(sPath);
     OString             sIndent;
-    storeAccessMode     accessMode = store_AccessReadWrite;
+    storeAccessMode     accessMode = storeAccessMode::ReadWrite;
     RegError            _ret = RegError::NO_ERROR;
 
     if (isReadOnly())
     {
-        accessMode = store_AccessReadOnly;
+        accessMode = storeAccessMode::ReadOnly;
     }
 
     for (int i= 0; i < nSpace; i++) sIndent += " ";

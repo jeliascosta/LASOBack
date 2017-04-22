@@ -22,7 +22,6 @@
 #include "macros.hxx"
 #include "DataSeriesHelper.hxx"
 #include "CommonConverters.hxx"
-#include "ContainerHelper.hxx"
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/chart2/data/XDataSink.hpp>
 
@@ -36,16 +35,14 @@ using namespace ::std;
 
 using ::com::sun::star::uno::Reference;
 using ::com::sun::star::uno::Sequence;
-using namespace ::chart::ContainerHelper;
 
 namespace chart
 {
 
 // explicit
 StockDataInterpreter::StockDataInterpreter(
-    StockChartTypeTemplate::StockVariant eVariant,
-    const Reference< uno::XComponentContext > & xContext ) :
-        DataInterpreter( xContext ),
+    StockChartTypeTemplate::StockVariant eVariant ) :
+        DataInterpreter(),
         m_eStockVariant( eVariant )
 {}
 
@@ -57,7 +54,6 @@ InterpretedData SAL_CALL StockDataInterpreter::interpretDataSource(
     const Reference< data::XDataSource >& xSource,
     const Sequence< beans::PropertyValue >& rArguments,
     const Sequence< Reference< XDataSeries > >& rSeriesToReUse )
-    throw (uno::RuntimeException, std::exception)
 {
     if( ! xSource.is())
         return InterpretedData();
@@ -241,7 +237,7 @@ InterpretedData SAL_CALL StockDataInterpreter::interpretDataSource(
                 if( nReUsedSeriesIdx < rSeriesToReUse.getLength())
                     xSeries.set( rSeriesToReUse[nReUsedSeriesIdx] );
                 else
-                    xSeries.set( new DataSeries( GetComponentContext() ) );
+                    xSeries.set( new DataSeries );
                 OSL_ASSERT( xSeries.is() );
                 Reference< data::XDataSink > xSink( xSeries, uno::UNO_QUERY_THROW );
                 OSL_ASSERT( xSink.is() );
@@ -265,7 +261,6 @@ InterpretedData SAL_CALL StockDataInterpreter::interpretDataSource(
 // volume to one with volume)
 sal_Bool SAL_CALL StockDataInterpreter::isDataCompatible(
     const InterpretedData& aInterpretedData )
-    throw (uno::RuntimeException, std::exception)
 {
     // high/low/close
     sal_Int32 nNumberOfNecessarySequences = 3;
@@ -322,7 +317,6 @@ sal_Bool SAL_CALL StockDataInterpreter::isDataCompatible(
 
 InterpretedData SAL_CALL StockDataInterpreter::reinterpretDataSeries(
     const InterpretedData& aInterpretedData )
-    throw (uno::RuntimeException, std::exception)
 {
     // prerequisite: StockDataInterpreter::isDataCompatible() returned true
     return aInterpretedData;

@@ -51,10 +51,10 @@ public:
         , nTabStyle(0)
     {
     }
-    virtual ~TabWin_Impl() { disposeOnce(); }
+    virtual ~TabWin_Impl() override { disposeOnce(); }
     virtual void dispose() override { mpPage.clear(); vcl::Window::dispose(); }
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect) override;
 
     void SetTabulatorTabPage(SvxTabulatorTabPage* pPage) { mpPage = pPage; }
     void SetTabStyle(sal_uInt16 nStyle) {nTabStyle = nStyle; }
@@ -74,12 +74,12 @@ void FillUpWithDefTabs_Impl( long nDefDist, SvxTabStopItem& rTabs )
     if( rTabs.Count() )
         return;
     {
-        SvxTabStop aSwTabStop( nDefDist, SVX_TAB_ADJUST_DEFAULT );
+        SvxTabStop aSwTabStop( nDefDist, SvxTabAdjust::Default );
         rTabs.Insert( aSwTabStop );
     }
 }
 
-void TabWin_Impl::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void TabWin_Impl::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle&)
 {
     // Paint tabulators
     Point aPoint;
@@ -92,7 +92,7 @@ void TabWin_Impl::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 SvxTabulatorTabPage::SvxTabulatorTabPage(vcl::Window* pParent, const SfxItemSet& rAttr)
     : SfxTabPage(pParent, "ParagraphTabsPage","cui/ui/paratabspage.ui", &rAttr)
     , aAktTab(0)
-    , aNewTabs(0, 0, SVX_TAB_ADJUST_LEFT, GetWhich(SID_ATTR_TABSTOP))
+    , aNewTabs(0, 0, SvxTabAdjust::Left, GetWhich(SID_ATTR_TABSTOP))
     , nDefDist(0)
     , eDefUnit(FUNIT_100TH_MM)
     , bCheck(false)
@@ -221,10 +221,10 @@ bool SvxTabulatorTabPage::FillItemSet(SfxItemSet* rSet)
 
     FillUpWithDefTabs_Impl(nDefDist, aNewTabs);
     SfxItemPool* pPool = rSet->GetPool();
-    MapUnit eUnit = (MapUnit)pPool->GetMetric(GetWhich(SID_ATTR_TABSTOP));
+    MapUnit eUnit = pPool->GetMetric(GetWhich(SID_ATTR_TABSTOP));
     const SfxPoolItem* pOld = GetOldItem(*rSet, SID_ATTR_TABSTOP);
 
-    if (MAP_100TH_MM != eUnit)
+    if (MapUnit::Map100thMM != eUnit)
     {
         // If the ItemSet contains a LRSpaceItem with negative first line indent,
         // the TabStopItem needs to have a DefTab at position 0.
@@ -235,7 +235,7 @@ bool SvxTabulatorTabPage::FillItemSet(SfxItemSet* rSet)
 
         if (pLRSpace && static_cast<const SvxLRSpaceItem*>(pLRSpace)->GetTextFirstLineOfst() < 0)
         {
-            SvxTabStop aNull(0, SVX_TAB_ADJUST_DEFAULT);
+            SvxTabStop aNull(0, SvxTabAdjust::Default);
             aNewTabs.Insert(aNull);
         }
 
@@ -245,7 +245,7 @@ bool SvxTabulatorTabPage::FillItemSet(SfxItemSet* rSet)
         for (sal_uInt16 i = 0; i < aNewTabs.Count(); ++i)
         {
             SvxTabStop aTmpStop = aNewTabs[i];
-            aTmpStop.GetTabPos() = LogicToLogic(aTmpStop.GetTabPos(), MAP_100TH_MM, eUnit);
+            aTmpStop.GetTabPos() = LogicToLogic(aTmpStop.GetTabPos(), MapUnit::Map100thMM, eUnit);
             aTmp.Insert(aTmpStop);
         }
 
@@ -271,14 +271,14 @@ VclPtr<SfxTabPage> SvxTabulatorTabPage::Create(vcl::Window* pParent, const SfxIt
 void SvxTabulatorTabPage::Reset(const SfxItemSet* rSet)
 {
     SfxItemPool* pPool = rSet->GetPool();
-    MapUnit eUnit = (MapUnit)pPool->GetMetric(GetWhich(SID_ATTR_TABSTOP));
+    MapUnit eUnit = pPool->GetMetric(GetWhich(SID_ATTR_TABSTOP));
 
     // Current tabs
     const SfxPoolItem* pItem = GetItem(*rSet, SID_ATTR_TABSTOP);
 
     if (pItem)
     {
-        if (MAP_100TH_MM != eUnit)
+        if (MapUnit::Map100thMM != eUnit)
         {
             SvxTabStopItem aTmp(*static_cast<const SvxTabStopItem*>(pItem));
             aNewTabs.Remove(0, aNewTabs.Count());
@@ -286,7 +286,7 @@ void SvxTabulatorTabPage::Reset(const SfxItemSet* rSet)
             for (sal_uInt16 i = 0; i < aTmp.Count(); ++i)
             {
                 SvxTabStop aTmpStop = aTmp[i];
-                aTmpStop.GetTabPos() = LogicToLogic(aTmpStop.GetTabPos(), eUnit, MAP_100TH_MM);
+                aTmpStop.GetTabPos() = LogicToLogic(aTmpStop.GetTabPos(), eUnit, MapUnit::Map100thMM);
                 aNewTabs.Insert(aTmpStop);
             }
         }
@@ -301,7 +301,7 @@ void SvxTabulatorTabPage::Reset(const SfxItemSet* rSet)
     pItem = GetItem(*rSet, SID_ATTR_TABSTOP_DEFAULTS);
 
     if (pItem)
-        nDefDist = LogicToLogic(long(static_cast<const SfxUInt16Item*>(pItem)->GetValue()), eUnit, MAP_100TH_MM);
+        nDefDist = LogicToLogic(long(static_cast<const SfxUInt16Item*>(pItem)->GetValue()), eUnit, MapUnit::Map100thMM);
 
     // Tab pos currently selected
     sal_uInt16 nTabPos = 0;
@@ -356,11 +356,11 @@ void SvxTabulatorTabPage::DisableControls(const TabulatorDisableFlags nFlag)
         m_pFillFrame->Disable();
 }
 
-SfxTabPage::sfxpg SvxTabulatorTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxTabulatorTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if ( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void SvxTabulatorTabPage::InitTabPos_Impl( sal_uInt16 nTabPos )
@@ -372,14 +372,14 @@ void SvxTabulatorTabPage::InitTabPos_Impl( sal_uInt16 nTabPos )
     if (GetItemSet().GetItemState(SID_ATTR_TABSTOP_OFFSET, true, &pItem) == SfxItemState::SET)
     {
         nOffset = static_cast<const SfxInt32Item*>(pItem)->GetValue();
-        MapUnit eUnit = (MapUnit)GetItemSet().GetPool()->GetMetric(GetWhich(SID_ATTR_TABSTOP));
-        nOffset = OutputDevice::LogicToLogic(nOffset, eUnit, MAP_100TH_MM);
+        MapUnit eUnit = GetItemSet().GetPool()->GetMetric(GetWhich(SID_ATTR_TABSTOP));
+        nOffset = OutputDevice::LogicToLogic(nOffset, eUnit, MapUnit::Map100thMM);
     }
 
     // Correct current TabPos and default tabs
     for ( sal_uInt16 i = 0; i < aNewTabs.Count(); i++ )
     {
-        if ( aNewTabs[i].GetAdjustment() != SVX_TAB_ADJUST_DEFAULT )
+        if ( aNewTabs[i].GetAdjustment() != SvxTabAdjust::Default )
         {
             m_pTabBox->InsertValue( m_pTabBox->Normalize(
                 aNewTabs[i].GetTabPos() + nOffset ), eDefUnit );
@@ -424,18 +424,18 @@ void SvxTabulatorTabPage::SetFillAndTabType_Impl()
     m_pDezChar->Disable();
     m_pDezCharLabel->Disable();
 
-    if ( aAktTab.GetAdjustment() == SVX_TAB_ADJUST_LEFT )
+    if ( aAktTab.GetAdjustment() == SvxTabAdjust::Left )
         pTypeBtn = m_pLeftTab;
-    else if ( aAktTab.GetAdjustment() == SVX_TAB_ADJUST_RIGHT )
+    else if ( aAktTab.GetAdjustment() == SvxTabAdjust::Right )
         pTypeBtn = m_pRightTab;
-    else if ( aAktTab.GetAdjustment() == SVX_TAB_ADJUST_DECIMAL )
+    else if ( aAktTab.GetAdjustment() == SvxTabAdjust::Decimal )
     {
         pTypeBtn = m_pDezTab;
         m_pDezChar->Enable();
         m_pDezCharLabel->Enable();
-        m_pDezChar->SetText( OUString( (sal_Unicode)aAktTab.GetDecimal() ) );
+        m_pDezChar->SetText( OUString( aAktTab.GetDecimal() ) );
     }
-    else if ( aAktTab.GetAdjustment() == SVX_TAB_ADJUST_CENTER )
+    else if ( aAktTab.GetAdjustment() == SvxTabAdjust::Center )
         pTypeBtn = m_pCenterTab;
 
     if ( pTypeBtn )
@@ -456,12 +456,12 @@ void SvxTabulatorTabPage::SetFillAndTabType_Impl()
     {
         pFillBtn = m_pFillSpecial;
         m_pFillChar->Enable();
-        m_pFillChar->SetText( OUString( (sal_Unicode)aAktTab.GetFill() ) );
+        m_pFillChar->SetText( OUString( aAktTab.GetFill() ) );
     }
     pFillBtn->Check();
 }
 
-IMPL_LINK_TYPED( SvxTabulatorTabPage, NewHdl_Impl, Button *, pBtn, void )
+IMPL_LINK( SvxTabulatorTabPage, NewHdl_Impl, Button *, pBtn, void )
 {
     // Add a new one and select it
     // Get the value from the display
@@ -478,8 +478,8 @@ IMPL_LINK_TYPED( SvxTabulatorTabPage, NewHdl_Impl, Button *, pBtn, void )
          SfxItemState::SET )
     {
         nOffset = static_cast<const SfxInt32Item*>(pItem)->GetValue();
-        MapUnit eUnit = (MapUnit)GetItemSet().GetPool()->GetMetric( GetWhich( SID_ATTR_TABSTOP ) );
-        nOffset = OutputDevice::LogicToLogic( nOffset, eUnit, MAP_100TH_MM  );
+        MapUnit eUnit = GetItemSet().GetPool()->GetMetric( GetWhich( SID_ATTR_TABSTOP ) );
+        nOffset = OutputDevice::LogicToLogic( nOffset, eUnit, MapUnit::Map100thMM  );
     }
     const long nReal = nVal - nOffset;
     sal_Int32 nSize = m_pTabBox->GetEntryCount();
@@ -494,14 +494,14 @@ IMPL_LINK_TYPED( SvxTabulatorTabPage, NewHdl_Impl, Button *, pBtn, void )
     // Make ListBox entry
     m_pTabBox->InsertValue( m_pTabBox->Normalize( nVal ), eDefUnit, i );
     aAktTab.GetTabPos() = nReal;
-    SvxTabAdjust eAdj = SVX_TAB_ADJUST_LEFT;
+    SvxTabAdjust eAdj = SvxTabAdjust::Left;
 
     if ( m_pRightTab->IsChecked() )
-        eAdj = SVX_TAB_ADJUST_RIGHT;
+        eAdj = SvxTabAdjust::Right;
     else if ( m_pCenterTab->IsChecked() )
-        eAdj = SVX_TAB_ADJUST_CENTER;
+        eAdj = SvxTabAdjust::Center;
     else if ( m_pDezTab->IsChecked() )
-        eAdj = SVX_TAB_ADJUST_DECIMAL;
+        eAdj = SvxTabAdjust::Decimal;
 
     aAktTab.GetAdjustment() = eAdj;
     aNewTabs.Insert( aAktTab );
@@ -516,7 +516,7 @@ IMPL_LINK_TYPED( SvxTabulatorTabPage, NewHdl_Impl, Button *, pBtn, void )
     m_pTabBox->SetSelection(Selection(0, m_pTabBox->GetText().getLength()));
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTabulatorTabPage, DelHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxTabulatorTabPage, DelHdl_Impl, Button*, void)
 {
     sal_Int32 nPos = m_pTabBox->GetValuePos( m_pTabBox->GetValue() );
 
@@ -556,7 +556,7 @@ IMPL_LINK_NOARG_TYPED(SvxTabulatorTabPage, DelHdl_Impl, Button*, void)
     bCheck = true;
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTabulatorTabPage, DelAllHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxTabulatorTabPage, DelAllHdl_Impl, Button*, void)
 {
     if ( aNewTabs.Count() )
     {
@@ -568,7 +568,7 @@ IMPL_LINK_NOARG_TYPED(SvxTabulatorTabPage, DelAllHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_TYPED( SvxTabulatorTabPage, TabTypeCheckHdl_Impl, Button *, pBox, void )
+IMPL_LINK( SvxTabulatorTabPage, TabTypeCheckHdl_Impl, Button *, pBox, void )
 {
     bCheck = true;
     SvxTabAdjust eAdj;
@@ -577,17 +577,17 @@ IMPL_LINK_TYPED( SvxTabulatorTabPage, TabTypeCheckHdl_Impl, Button *, pBox, void
     m_pDezChar->SetText( "" );
 
     if ( pBox == m_pLeftTab )
-        eAdj = SVX_TAB_ADJUST_LEFT;
+        eAdj = SvxTabAdjust::Left;
     else if ( pBox == m_pRightTab )
-        eAdj = SVX_TAB_ADJUST_RIGHT;
+        eAdj = SvxTabAdjust::Right;
     else if ( pBox == m_pCenterTab )
-        eAdj = SVX_TAB_ADJUST_CENTER;
+        eAdj = SvxTabAdjust::Center;
     else
     {
-        eAdj = SVX_TAB_ADJUST_DECIMAL;
+        eAdj = SvxTabAdjust::Decimal;
         m_pDezChar->Enable();
         m_pDezCharLabel->Enable();
-        m_pDezChar->SetText( OUString( (sal_Unicode)aAktTab.GetDecimal() ) );
+        m_pDezChar->SetText( OUString( aAktTab.GetDecimal() ) );
     }
 
     aAktTab.GetAdjustment() = eAdj;
@@ -600,7 +600,7 @@ IMPL_LINK_TYPED( SvxTabulatorTabPage, TabTypeCheckHdl_Impl, Button *, pBox, void
     }
 }
 
-IMPL_LINK_TYPED( SvxTabulatorTabPage, FillTypeCheckHdl_Impl, Button *, pBox, void )
+IMPL_LINK( SvxTabulatorTabPage, FillTypeCheckHdl_Impl, Button *, pBox, void )
 {
     bCheck = true;
     sal_uInt8 cFill = ' ';
@@ -628,7 +628,7 @@ IMPL_LINK_TYPED( SvxTabulatorTabPage, FillTypeCheckHdl_Impl, Button *, pBox, voi
     }
 }
 
-IMPL_LINK_TYPED( SvxTabulatorTabPage, GetFillCharHdl_Impl, Control&, rControl, void )
+IMPL_LINK( SvxTabulatorTabPage, GetFillCharHdl_Impl, Control&, rControl, void )
 {
     OUString aChar( static_cast<Edit&>(rControl).GetText() );
 
@@ -643,7 +643,7 @@ IMPL_LINK_TYPED( SvxTabulatorTabPage, GetFillCharHdl_Impl, Control&, rControl, v
     }
 }
 
-IMPL_LINK_TYPED( SvxTabulatorTabPage, GetDezCharHdl_Impl, Control&, rControl, void )
+IMPL_LINK( SvxTabulatorTabPage, GetDezCharHdl_Impl, Control&, rControl, void )
 {
     OUString aChar( static_cast<Edit*>(&rControl)->GetText() );
     if ( !aChar.isEmpty() && ( aChar[0] >= ' '))
@@ -657,7 +657,7 @@ IMPL_LINK_TYPED( SvxTabulatorTabPage, GetDezCharHdl_Impl, Control&, rControl, vo
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTabulatorTabPage, SelectHdl_Impl, ComboBox&, void)
+IMPL_LINK_NOARG(SvxTabulatorTabPage, SelectHdl_Impl, ComboBox&, void)
 {
     sal_Int32 nPos = m_pTabBox->GetValuePos( m_pTabBox->GetValue( eDefUnit ), eDefUnit );
     if ( nPos != COMBOBOX_ENTRY_NOTFOUND )
@@ -668,7 +668,7 @@ IMPL_LINK_NOARG_TYPED(SvxTabulatorTabPage, SelectHdl_Impl, ComboBox&, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTabulatorTabPage, ModifyHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxTabulatorTabPage, ModifyHdl_Impl, Edit&, void)
 {
     sal_Int32 nPos = m_pTabBox->GetValuePos( m_pTabBox->GetValue( eDefUnit ), eDefUnit );
     if ( nPos != COMBOBOX_ENTRY_NOTFOUND )

@@ -417,13 +417,11 @@ sal_Int32 StgDirEntry::Seek( sal_Int32 nNew )
         if( nNew < 0 )
             nNew = nSize;
 
-        // try to enlarge, the readonly streams should not allow this
+        // try to enlarge, readonly streams do not allow this
         if( nNew > nSize )
         {
             if ( !( m_nMode & StreamMode::WRITE ) || !SetSize( nNew ) )
             {
-                SAL_WARN_IF(!(m_nMode & StreamMode::WRITE), "sot",
-                    "Trying to resize readonly stream by seeking, could be a wrong offset: " << nNew);
                 return m_nPos;
             }
             else
@@ -443,9 +441,9 @@ sal_Int32 StgDirEntry::Read( void* p, sal_Int32 nLen )
     if( nLen <= 0 )
         return 0;
     if( m_pTmpStrm )
-        nLen = m_pTmpStrm->Read( p, nLen );
+        nLen = m_pTmpStrm->ReadBytes( p, nLen );
     else if( m_pCurStrm )
-        nLen = m_pCurStrm->Read( p, nLen );
+        nLen = m_pCurStrm->ReadBytes( p, nLen );
     else
     {
         OSL_ENSURE( m_pStgStrm, "The pointer may not be NULL!" );
@@ -479,7 +477,7 @@ sal_Int32 StgDirEntry::Write( const void* p, sal_Int32 nLen )
 
     if( m_pTmpStrm )
     {
-        nLen = m_pTmpStrm->Write( p, nLen );
+        nLen = m_pTmpStrm->WriteBytes( p, nLen );
         m_pStgStrm->GetIo().SetError( m_pTmpStrm->GetError() );
     }
     else
@@ -589,7 +587,7 @@ bool StgDirEntry::Strm2Tmp()
                             nn = 4096;
                         if( (sal_uLong) m_pStgStrm->Read( p, nn ) != nn )
                             break;
-                        if( m_pTmpStrm->Write( p, nn ) != nn )
+                        if (m_pTmpStrm->WriteBytes( p, nn ) != nn)
                             break;
                         n -= nn;
                     }
@@ -647,7 +645,7 @@ bool StgDirEntry::Tmp2Strm()
                 sal_uLong nn = n;
                 if( nn > 4096 )
                     nn = 4096;
-                if( m_pTmpStrm->Read( p, nn ) != nn )
+                if (m_pTmpStrm->ReadBytes( p, nn ) != nn)
                     break;
                 if( (sal_uLong) pNewStrm->Write( p, nn ) != nn )
                     break;
@@ -762,7 +760,7 @@ StgDirStrm::~StgDirStrm()
 
 void StgDirStrm::SetupEntry( sal_Int32 n, StgDirEntry* pUpper )
 {
-    void* p = ( n == STG_FREE ) ? nullptr : GetEntry( n );
+    void* p = ( n == STG_FREE ) ? nullptr : GetEntry( n, false );
     if( p )
     {
         SvStream *pUnderlyingStream = m_rIo.GetStrm();
@@ -802,23 +800,17 @@ void StgDirStrm::SetupEntry( sal_Int32 n, StgDirEntry* pUpper )
 
         if( nLeaf != 0 && nLeft != 0 && nRight != 0 )
         {
-            //fdo#41642 Do we need to check full chain upwards for loops ?
-            if (pUpper)
+            //fdo#41642
+            StgDirEntry *pUp = pUpper;
+            while (pUp)
             {
-                if (pUpper->m_aEntry.GetLeaf(STG_CHILD) == nLeaf)
+                if (pUp->m_aEntry.GetLeaf(STG_CHILD) == nLeaf)
                 {
-                    OSL_FAIL("Leaf node of upper StgDirEntry is same as current StgDirEntry's leaf node. Circular entry chain, discarding link");
+                    SAL_WARN("sot", "Leaf node of upper StgDirEntry is same as current StgDirEntry's leaf node. Circular entry chain, discarding link");
                     delete pCur;
                     return;
                 }
-
-                StgDirEntry *pUpperUpper = pUpper->m_pUp;
-                if (pUpperUpper && pUpperUpper->m_aEntry.GetLeaf(STG_CHILD) == nLeaf)
-                {
-                    OSL_FAIL("Leaf node of upper-upper StgDirEntry is same as current StgDirEntry's leaf node. Circular entry chain, discarding link");
-                    delete pCur;
-                    return;
-                }
+                pUp = pUp->m_pUp;
             }
 
             if( StgAvlNode::Insert

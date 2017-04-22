@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <svtools/svlbitm.hxx>
 #include <svtools/treelistentry.hxx>
 #include <svx/checklbx.hxx>
 #include <svx/dialmgr.hxx>
@@ -31,14 +32,7 @@ SvxCheckListBox::SvxCheckListBox( vcl::Window* pParent, WinBits nWinStyle ) :
     Init_Impl();
 }
 
-VCL_BUILDER_DECL_FACTORY(SvxCheckListBox)
-{
-    WinBits nWinStyle = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SvxCheckListBox>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxCheckListBox, WB_TABSTOP)
 
 void SvxCheckListBox::SetNormalStaticImage(const Image& rNormalStaticImage)
 {
@@ -181,7 +175,7 @@ void SvxCheckListBox::MouseButtonDown( const MouseEvent& rMEvt )
             bool bCheck = GetCheckButtonState( pEntry ) == SvButtonState::Checked;
             SvLBoxItem* pItem = GetItem( pEntry, aPnt.X() );
 
-            if (pItem && pItem->GetType() == SV_ITEM_ID_LBOXBUTTON)
+            if (pItem && pItem->GetType() == SvLBoxItemType::Button)
             {
                 SvTreeListBox::MouseButtonDown( rMEvt );
                 Select( pEntry );

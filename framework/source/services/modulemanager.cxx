@@ -19,6 +19,7 @@
 
 #include <sal/config.h>
 
+#include <com/sun/star/frame/UnknownModuleException.hpp>
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/frame/XController.hpp>
 #include <com/sun/star/frame/XModel.hpp>
@@ -61,61 +62,41 @@ public:
 
     explicit ModuleManager(const css::uno::Reference< css::uno::XComponentContext >& xContext);
 
-    virtual ~ModuleManager();
-
     ModuleManager(const ModuleManager&) = delete;
     ModuleManager& operator=(const ModuleManager&) = delete;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
 
     virtual sal_Bool SAL_CALL supportsService(
-        OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override;
+        OUString const & ServiceName) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
+    getSupportedServiceNames() override;
 
     // XModuleManager
-    virtual OUString SAL_CALL identify(const css::uno::Reference< css::uno::XInterface >& xModule)
-        throw(css::lang::IllegalArgumentException,
-              css::frame::UnknownModuleException,
-              css::uno::RuntimeException, std::exception         ) override;
+    virtual OUString SAL_CALL identify(const css::uno::Reference< css::uno::XInterface >& xModule) override;
 
     // XNameReplace
     virtual void SAL_CALL replaceByName(const OUString& sName ,
-                                        const css::uno::Any&   aValue)
-        throw (css::lang::IllegalArgumentException   ,
-               css::container::NoSuchElementException,
-               css::lang::WrappedTargetException     ,
-               css::uno::RuntimeException, std::exception            ) override;
+                                        const css::uno::Any&   aValue) override;
 
     // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName(const OUString& sName)
-        throw(css::container::NoSuchElementException,
-              css::lang::WrappedTargetException     ,
-              css::uno::RuntimeException, std::exception            ) override;
+    virtual css::uno::Any SAL_CALL getByName(const OUString& sName) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
 
-    virtual sal_Bool SAL_CALL hasByName(const OUString& sName)
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName(const OUString& sName) override;
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType()
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Type SAL_CALL getElementType() override;
 
-    virtual sal_Bool SAL_CALL hasElements()
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() override;
 
     // XContainerQuery
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createSubSetEnumerationByQuery(const OUString& sQuery)
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createSubSetEnumerationByQuery(const OUString& sQuery) override;
 
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createSubSetEnumerationByProperties(const css::uno::Sequence< css::beans::NamedValue >& lProperties)
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createSubSetEnumerationByProperties(const css::uno::Sequence< css::beans::NamedValue >& lProperties) override;
 
 private:
 
@@ -151,32 +132,22 @@ ModuleManager::ModuleManager(const css::uno::Reference< css::uno::XComponentCont
             css::uno::UNO_QUERY_THROW );
 }
 
-ModuleManager::~ModuleManager()
-{
-}
-
 OUString ModuleManager::getImplementationName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.framework.ModuleManager");
 }
 
 sal_Bool ModuleManager::supportsService(OUString const & ServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence< OUString > ModuleManager::getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return { "com.sun.star.frame.ModuleManager" };
 }
 
 OUString SAL_CALL ModuleManager::identify(const css::uno::Reference< css::uno::XInterface >& xModule)
-    throw(css::lang::IllegalArgumentException,
-          css::frame::UnknownModuleException,
-          css::uno::RuntimeException, std::exception         )
 {
     // valid parameter?
     css::uno::Reference< css::frame::XFrame >      xFrame     (xModule, css::uno::UNO_QUERY);
@@ -192,7 +163,7 @@ OUString SAL_CALL ModuleManager::identify(const css::uno::Reference< css::uno::X
        )
     {
         throw css::lang::IllegalArgumentException(
-                OUString("Given module is not a frame nor a window, controller or model."),
+                "Given module is not a frame nor a window, controller or model.",
                 static_cast< ::cppu::OWeakObject* >(this),
                 1);
     }
@@ -220,7 +191,7 @@ OUString SAL_CALL ModuleManager::identify(const css::uno::Reference< css::uno::X
 
     if (sModule.isEmpty())
         throw css::frame::UnknownModuleException(
-                OUString("Can not find suitable module for the given component."),
+                "Can not find suitable module for the given component.",
                 static_cast< ::cppu::OWeakObject* >(this));
 
     return sModule;
@@ -228,16 +199,12 @@ OUString SAL_CALL ModuleManager::identify(const css::uno::Reference< css::uno::X
 
 void SAL_CALL ModuleManager::replaceByName(const OUString& sName ,
                                            const css::uno::Any&   aValue)
-    throw (css::lang::IllegalArgumentException   ,
-           css::container::NoSuchElementException,
-           css::lang::WrappedTargetException     ,
-           css::uno::RuntimeException, std::exception            )
 {
     ::comphelper::SequenceAsHashMap lProps(aValue);
     if (lProps.empty() )
     {
         throw css::lang::IllegalArgumentException(
-                OUString("No properties given to replace part of module."),
+                "No properties given to replace part of module.",
                 static_cast< cppu::OWeakObject * >(this),
                 2);
     }
@@ -258,7 +225,7 @@ void SAL_CALL ModuleManager::replaceByName(const OUString& sName ,
     if (!xModule.is())
     {
         throw css::uno::RuntimeException(
-                OUString("Was not able to get write access to the requested module entry inside configuration."),
+                "Was not able to get write access to the requested module entry inside configuration.",
                 static_cast< cppu::OWeakObject * >(this));
     }
 
@@ -279,9 +246,6 @@ void SAL_CALL ModuleManager::replaceByName(const OUString& sName ,
 }
 
 css::uno::Any SAL_CALL ModuleManager::getByName(const OUString& sName)
-    throw(css::container::NoSuchElementException,
-          css::lang::WrappedTargetException     ,
-          css::uno::RuntimeException, std::exception            )
 {
     // get access to the element
     css::uno::Reference< css::container::XNameAccess > xModule;
@@ -289,7 +253,7 @@ css::uno::Any SAL_CALL ModuleManager::getByName(const OUString& sName)
     if (!xModule.is())
     {
         throw css::uno::RuntimeException(
-                OUString("Was not able to get write access to the requested module entry inside configuration."),
+                "Was not able to get write access to the requested module entry inside configuration.",
                 static_cast< cppu::OWeakObject * >(this));
     }
 
@@ -308,37 +272,31 @@ css::uno::Any SAL_CALL ModuleManager::getByName(const OUString& sName)
 }
 
 css::uno::Sequence< OUString > SAL_CALL ModuleManager::getElementNames()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return m_xCFG->getElementNames();
 }
 
 sal_Bool SAL_CALL ModuleManager::hasByName(const OUString& sName)
-    throw(css::uno::RuntimeException, std::exception)
 {
     return m_xCFG->hasByName(sName);
 }
 
 css::uno::Type SAL_CALL ModuleManager::getElementType()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<css::uno::Sequence< css::beans::PropertyValue >>::get();
 }
 
 sal_Bool SAL_CALL ModuleManager::hasElements()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return m_xCFG->hasElements();
 }
 
 css::uno::Reference< css::container::XEnumeration > SAL_CALL ModuleManager::createSubSetEnumerationByQuery(const OUString&)
-    throw(css::uno::RuntimeException, std::exception)
 {
     return css::uno::Reference< css::container::XEnumeration >();
 }
 
 css::uno::Reference< css::container::XEnumeration > SAL_CALL ModuleManager::createSubSetEnumerationByProperties(const css::uno::Sequence< css::beans::NamedValue >& lProperties)
-    throw(css::uno::RuntimeException, std::exception)
 {
     ::comphelper::SequenceAsHashMap lSearchProps(lProperties);
     const css::uno::Sequence< OUString > lModules = getElementNames();

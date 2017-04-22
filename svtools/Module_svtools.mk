@@ -33,7 +33,7 @@ $(eval $(call gb_Module_add_check_targets,svtools,\
     CppunitTest_svtools_html \
 ))
 
-ifeq ($(CROSS_COMPILING),)
+ifeq ($(CROSS_COMPILING)$(DISABLE_DYNLOADING),)
 
 ifneq ($(OS),WNT)
 $(eval $(call gb_Module_add_targets,svtools,\
@@ -48,6 +48,11 @@ $(eval $(call gb_Module_add_subsequentcheck_targets,svtools,\
     JunitTest_svtools_unoapi \
 ))
 endif
+
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,svtools,\
+    CppunitTest_svtools_dialogs_test \
+))
 
 #todo: javapatchres
 #todo: jpeg on mac in svtools/util/makefile.mk

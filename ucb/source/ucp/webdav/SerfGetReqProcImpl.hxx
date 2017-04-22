@@ -37,11 +37,11 @@ class SerfGetReqProcImpl : public SerfRequestProcessorImpl
 public:
     SerfGetReqProcImpl( const char* inPath,
                         const DAVRequestHeaders& inRequestHeaders,
-                        const css::uno::Reference< SerfInputStream > & xioInStrm );
+                        const rtl::Reference< SerfInputStream > & xioInStrm );
 
     SerfGetReqProcImpl( const char* inPath,
                         const DAVRequestHeaders& inRequestHeaders,
-                        const css::uno::Reference< SerfInputStream > & xioInStrm,
+                        const rtl::Reference< SerfInputStream > & xioInStrm,
                         const std::vector< OUString > & inHeaderNames,
                         DAVResource & ioResource );
 
@@ -55,7 +55,7 @@ public:
                         const std::vector< OUString > & inHeaderNames,
                         DAVResource & ioResource );
 
-    virtual ~SerfGetReqProcImpl();
+    virtual ~SerfGetReqProcImpl() override;
 
     virtual
     serf_bucket_t * createSerfRequestBucket( serf_request_t * inSerfRequest ) override;
@@ -71,7 +71,7 @@ protected:
     void handleEndOfResponseData( serf_bucket_t * inSerfResponseBucket ) override;
 
 private:
-    css::uno::Reference< SerfInputStream > xInputStream;
+    rtl::Reference< SerfInputStream > xInputStream;
     css::uno::Reference< css::io::XOutputStream > xOutputStream;
     const std::vector< OUString > * mpHeaderNames;
     DAVResource* mpResource;

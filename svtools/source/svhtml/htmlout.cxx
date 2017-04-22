@@ -388,6 +388,17 @@ static const sal_Char *lcl_svhtml_GetEntityForChar( sal_uInt32 c,
     return pStr;
 }
 
+static sal_Size lcl_FlushContext(HTMLOutContext& rContext, sal_Char* pBuffer, sal_uInt32 nFlags)
+{
+    sal_uInt32 nInfo = 0;
+    sal_Size nSrcChars;
+    sal_Size nLen = rtl_convertUnicodeToText(rContext.m_hConv, rContext.m_hContext, nullptr, 0,
+                                             pBuffer, TXTCONV_BUFFER_SIZE, nFlags|RTL_UNICODETOTEXT_FLAGS_FLUSH,
+                                             &nInfo, &nSrcChars);
+    DBG_ASSERT((nInfo & (RTL_UNICODETOTEXT_INFO_ERROR|RTL_UNICODETOTEXT_INFO_DESTBUFFERTOSMALL)) == 0, "HTMLOut: error while flushing");
+    return nLen;
+}
+
 static OString lcl_ConvertCharToHTML( sal_uInt32 c,
                             HTMLOutContext& rContext,
                             OUString *pNonConvertableChars )
@@ -420,20 +431,13 @@ static OString lcl_ConvertCharToHTML( sal_uInt32 c,
     }
 
     sal_Char cBuffer[TXTCONV_BUFFER_SIZE];
-    sal_uInt32 nInfo = 0;
-    sal_Size nSrcChars;
     const sal_uInt32 nFlags = RTL_UNICODETOTEXT_FLAGS_NONSPACING_IGNORE|
-                        RTL_UNICODETOTEXT_FLAGS_CONTROL_IGNORE|
-                        RTL_UNICODETOTEXT_FLAGS_UNDEFINED_ERROR|
-                        RTL_UNICODETOTEXT_FLAGS_INVALID_ERROR;
+                              RTL_UNICODETOTEXT_FLAGS_CONTROL_IGNORE|
+                              RTL_UNICODETOTEXT_FLAGS_UNDEFINED_ERROR|
+                              RTL_UNICODETOTEXT_FLAGS_INVALID_ERROR;
     if( pStr )
     {
-        sal_Size nLen = rtl_convertUnicodeToText(
-                            rContext.m_hConv, rContext.m_hContext, nullptr, 0,
-                            cBuffer, TXTCONV_BUFFER_SIZE,
-                            nFlags|RTL_UNICODETOTEXT_FLAGS_FLUSH,
-                            &nInfo, &nSrcChars );
-        DBG_ASSERT( (nInfo & (RTL_UNICODETOTEXT_INFO_ERROR|RTL_UNICODETOTEXT_INFO_DESTBUFFERTOSMALL)) == 0, "HTMLOut: error while flushing" );
+        sal_Size nLen = lcl_FlushContext(rContext, cBuffer, nFlags);
         sal_Char *pBuffer = cBuffer;
         while( nLen-- )
             aDest.append(*pBuffer++);
@@ -441,21 +445,15 @@ static OString lcl_ConvertCharToHTML( sal_uInt32 c,
     }
     else
     {
+        sal_uInt32 nInfo = 0;
+        sal_Size nSrcChars;
+
         sal_Unicode utf16[2];
-        sal_Size n;
-        if (c < 0x10000) {
-            utf16[0] = c;
-            n = 1;
-        } else {
-            utf16[0] = rtl::getHighSurrogate(c);
-            utf16[1] = rtl::getLowSurrogate(c);
-            n = 2;
-        }
-        sal_Size nLen = rtl_convertUnicodeToText( rContext.m_hConv,
-                                                  rContext.m_hContext, utf16, n,
-                                                     cBuffer, TXTCONV_BUFFER_SIZE,
-                                                  nFlags,
-                                                  &nInfo, &nSrcChars );
+        auto n = rtl::splitSurrogates(c, utf16);
+        sal_Size nLen = rtl_convertUnicodeToText(rContext.m_hConv,
+                                                 rContext.m_hContext, utf16, n,
+                                                 cBuffer, TXTCONV_BUFFER_SIZE,
+                                                 nFlags, &nInfo, &nSrcChars);
         if( nLen > 0 && (nInfo & (RTL_UNICODETOTEXT_INFO_ERROR|RTL_UNICODETOTEXT_INFO_DESTBUFFERTOSMALL)) == 0 )
         {
             sal_Char *pBuffer = cBuffer;
@@ -468,12 +466,7 @@ static OString lcl_ConvertCharToHTML( sal_uInt32 c,
             // character set, the UNICODE character is exported as character
             // entity.
             // coverity[callee_ptr_arith]
-            nLen = rtl_convertUnicodeToText(
-                                rContext.m_hConv, rContext.m_hContext, nullptr, 0,
-                                cBuffer, TXTCONV_BUFFER_SIZE,
-                                nFlags|RTL_UNICODETOTEXT_FLAGS_FLUSH,
-                                &nInfo, &nSrcChars );
-            DBG_ASSERT( (nInfo & (RTL_UNICODETOTEXT_INFO_ERROR|RTL_UNICODETOTEXT_INFO_DESTBUFFERTOSMALL)) == 0, "HTMLOut: error while flushing" );
+            nLen = lcl_FlushContext(rContext, cBuffer, nFlags);
             sal_Char *pBuffer = cBuffer;
             while( nLen-- )
                 aDest.append(*pBuffer++);
@@ -496,20 +489,12 @@ static OString lcl_FlushToAscii( HTMLOutContext& rContext )
 {
     OStringBuffer aDest;
 
-    sal_Unicode c = 0;
     sal_Char cBuffer[TXTCONV_BUFFER_SIZE];
-    sal_uInt32 nInfo = 0;
-    sal_Size nSrcChars;
     const sal_uInt32 nFlags = RTL_UNICODETOTEXT_FLAGS_NONSPACING_IGNORE|
-                        RTL_UNICODETOTEXT_FLAGS_CONTROL_IGNORE|
-                        RTL_UNICODETOTEXT_FLAGS_UNDEFINED_ERROR|
-                        RTL_UNICODETOTEXT_FLAGS_FLUSH|
-                        RTL_UNICODETOTEXT_FLAGS_INVALID_ERROR;
-    sal_Size nLen = rtl_convertUnicodeToText(
-                        rContext.m_hConv, rContext.m_hContext, &c, 0,
-                        cBuffer, TXTCONV_BUFFER_SIZE, nFlags,
-                        &nInfo, &nSrcChars );
-    DBG_ASSERT( (nInfo & (RTL_UNICODETOTEXT_INFO_ERROR|RTL_UNICODETOTEXT_INFO_DESTBUFFERTOSMALL)) == 0, "HTMLOut: error while flushing" );
+                              RTL_UNICODETOTEXT_FLAGS_CONTROL_IGNORE|
+                              RTL_UNICODETOTEXT_FLAGS_UNDEFINED_ERROR|
+                              RTL_UNICODETOTEXT_FLAGS_INVALID_ERROR;
+    sal_Size nLen = lcl_FlushContext(rContext, cBuffer, nFlags);
     sal_Char *pBuffer = cBuffer;
     while( nLen-- )
         aDest.append(*pBuffer++);
@@ -648,7 +633,7 @@ SvStream& HTMLOutFuncs::Out_ImageMap( SvStream& rStream,
     for( size_t i=0; i<rIMap.GetIMapObjectCount(); i++ )
     {
         const IMapObject* pObj = rIMap.GetIMapObject( i );
-        DBG_ASSERT( pObj, "Wo ist das ImageMap-Object?" );
+        DBG_ASSERT( pObj, "Where is the ImageMap-Object?" );
 
         if( pObj )
         {
@@ -661,7 +646,7 @@ SvStream& HTMLOutFuncs::Out_ImageMap( SvStream& rStream,
                     const IMapRectangleObject* pRectObj =
                         static_cast<const IMapRectangleObject *>(pObj);
                     pShape = OOO_STRING_SVTOOLS_HTML_SH_rect;
-                    Rectangle aRect( pRectObj->GetRectangle() );
+                    tools::Rectangle aRect( pRectObj->GetRectangle() );
 
                     aCoords = OStringBuffer()
                         .append(static_cast<sal_Int32>(aRect.Left()))
@@ -718,7 +703,7 @@ SvStream& HTMLOutFuncs::Out_ImageMap( SvStream& rStream,
                 }
                 break;
             default:
-                DBG_ASSERT( pShape, "unbekanntes IMapObject" );
+                DBG_ASSERT( pShape, "unknown IMapObject" );
                 break;
             }
 

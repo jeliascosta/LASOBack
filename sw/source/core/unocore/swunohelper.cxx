@@ -28,7 +28,8 @@
 #include <com/sun/star/sdbc/XRow.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <comphelper/processfactory.hxx>
-#include <comphelper/types.hxx>
+#include <comphelper/extract.hxx>
+#include <o3tl/any.hxx>
 #include <tools/urlobj.hxx>
 #include <tools/datetime.hxx>
 #include <rtl/ustring.hxx>
@@ -36,8 +37,6 @@
 #include <ucbhelper/contentidentifier.hxx>
 #include <ucbhelper/content.hxx>
 #include <swunohelper.hxx>
-
-//UUUU
 #include <svx/xfillit0.hxx>
 #include <editeng/memberids.hrc>
 #include <svl/itemset.hxx>
@@ -49,17 +48,10 @@ namespace SWUnoHelper
 
 sal_Int32 GetEnumAsInt32( const css::uno::Any& rVal )
 {
-    sal_Int32 eVal;
-    try
-    {
-        eVal = comphelper::getEnumAsINT32( rVal );
-    }
-    catch( css::uno::Exception & )
-    {
-        eVal = 0;
-        OSL_FAIL( "can't get EnumAsInt32" );
-    }
-    return eVal;
+    sal_Int32 nReturn = 0;
+    if (! ::cppu::enum2int(nReturn,rVal) )
+         OSL_FAIL( "can't get EnumAsInt32" );
+    return nReturn;
 }
 
 // methods for UCB actions
@@ -90,7 +82,7 @@ bool UCB_CopyFile( const OUString& rURL, const OUString& rNewURL, bool bCopyIsMo
         INetURLObject aURL( rNewURL );
         const OUString sName( aURL.GetName() );
         aURL.removeSegment();
-        const OUString sMainURL( aURL.GetMainURL(INetURLObject::NO_DECODE) );
+        const OUString sMainURL( aURL.GetMainURL(INetURLObject::DecodeMechanism::NONE) );
 
         ucbhelper::Content aTempContent( sMainURL,
                                 css::uno::Reference< css::ucb::XCommandEnvironment >(),
@@ -119,11 +111,11 @@ bool UCB_IsCaseSensitiveFileName( const OUString& rURL )
         INetURLObject aTempObj( rURL );
         aTempObj.SetBase( aTempObj.GetBase().toAsciiLowerCase() );
         css::uno::Reference< css::ucb::XContentIdentifier > xRef1 = new
-                ucbhelper::ContentIdentifier( aTempObj.GetMainURL( INetURLObject::NO_DECODE ));
+                ucbhelper::ContentIdentifier( aTempObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ));
 
         aTempObj.SetBase(aTempObj.GetBase().toAsciiUpperCase());
         css::uno::Reference< css::ucb::XContentIdentifier > xRef2 = new
-                ucbhelper::ContentIdentifier( aTempObj.GetMainURL( INetURLObject::NO_DECODE ));
+                ucbhelper::ContentIdentifier( aTempObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ));
 
         css::uno::Reference< css::ucb::XUniversalContentBroker > xUcb =
               css::ucb::UniversalContentBroker::create(comphelper::getProcessComponentContext());
@@ -147,7 +139,7 @@ bool UCB_IsReadOnlyFileName( const OUString& rURL )
         ucbhelper::Content aCnt( rURL, css::uno::Reference< css::ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
         css::uno::Any aAny = aCnt.getPropertyValue("IsReadOnly");
         if(aAny.hasValue())
-            bIsReadOnly = *static_cast<sal_Bool const *>(aAny.getValue());
+            bIsReadOnly = *o3tl::doAccess<bool>(aAny);
     }
     catch( css::uno::Exception& )
     {
@@ -265,11 +257,10 @@ bool UCB_GetFileListOfFolder( const OUString& rURL,
     return bOk;
 }
 
-//UUUU
 bool needToMapFillItemsToSvxBrushItemTypes(const SfxItemSet& rSet,
         sal_uInt16 const nMID)
 {
-    const XFillStyleItem* pXFillStyleItem(static_cast< const XFillStyleItem*  >(rSet.GetItem(XATTR_FILLSTYLE, false)));
+    const XFillStyleItem* pXFillStyleItem(rSet.GetItem<XFillStyleItem>(XATTR_FILLSTYLE, false));
 
     if(!pXFillStyleItem)
     {

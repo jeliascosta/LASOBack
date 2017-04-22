@@ -21,6 +21,17 @@
 #define INCLUDED_UNOTOOLS_READWRITEMUTEXGUARD_HXX
 
 #include <osl/mutex.hxx>
+#include <o3tl/typed_flags_set.hxx>
+
+enum class ReadWriteGuardMode {
+    ReadOnly       = 0x00,
+    Write          = 0x01,
+    CriticalChange = 0x02 | Write,
+    BlockCritical  = 0x04,     // only a block, not a read, exclusive flag!
+};
+namespace o3tl {
+    template<> struct typed_flags<ReadWriteGuardMode> : is_typed_flags<ReadWriteGuardMode, 0x7> {};
+}
 
 namespace utl {
 
@@ -31,28 +42,15 @@ class ReadWriteMutex
 
             sal_uInt32          nReadCount;
             sal_uInt32          nBlockCriticalCount;
-            ::osl::Mutex*       pMutex;
-            ::osl::Mutex*       pWriteMutex;
+            ::osl::Mutex        maMutex;
+            ::osl::Mutex        maWriteMutex;
 
 public:
                                 ReadWriteMutex()
                                     : nReadCount(0)
                                     , nBlockCriticalCount(0)
-                                    , pMutex( new ::osl::Mutex )
-                                    , pWriteMutex( new ::osl::Mutex )
                                     {}
-                                ~ReadWriteMutex()
-                                    {
-                                        delete pMutex;
-                                        delete pWriteMutex;
-                                    }
 };
-
-namespace ReadWriteGuardMode {
-const sal_Int32 nWrite          = 0x01;
-const sal_Int32 nCriticalChange = 0x02 | nWrite;
-const sal_Int32 nBlockCritical  = 0x04;     // only a block, not a read, exclusive flag!
-}
 
 /** Enable multiple threads to read simultaneously, but a write blocks all
     other reads and writes, and a read blocks any write.
@@ -74,11 +72,11 @@ const sal_Int32 nBlockCritical  = 0x04;     // only a block, not a read, exclusi
 class ReadWriteGuard
 {
             ReadWriteMutex&     rMutex;
-            sal_Int32           nMode;
+            ReadWriteGuardMode  nMode;
 public:
                                 ReadWriteGuard(
                                     ReadWriteMutex& rMutex,
-                                    sal_Int32 nRequestMode = 0  // read only
+                                    ReadWriteGuardMode nRequestMode = ReadWriteGuardMode::ReadOnly  // read only
                                     );
                                 ~ReadWriteGuard();
 

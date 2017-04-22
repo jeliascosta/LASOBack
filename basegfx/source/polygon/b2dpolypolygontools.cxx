@@ -54,7 +54,7 @@ namespace basegfx
                     }
                 }
 
-                const bool bShallBeHole(1L == (nDepth & 0x00000001));
+                const bool bShallBeHole(1 == (nDepth & 0x00000001));
                 const bool bIsHole(B2VectorOrientation::Negative == aOrientation);
 
                 if(bShallBeHole != bIsHole && B2VectorOrientation::Neutral != aOrientation)
@@ -72,7 +72,7 @@ namespace basegfx
         {
             const sal_uInt32 nCount(rCandidate.count());
 
-            if(nCount > 1L)
+            if(nCount > 1)
             {
                 for(sal_uInt32 a(0); a < nCount; a++)
                 {
@@ -174,7 +174,7 @@ namespace basegfx
         {
             const sal_uInt32 nPolygonCount(rCandidate.count());
 
-            if(1L == nPolygonCount)
+            if(1 == nPolygonCount)
             {
                 return isInside(rCandidate.getB2DPolygon(0), rPoint, bWithBorder);
             }
@@ -193,7 +193,7 @@ namespace basegfx
                     }
                 }
 
-                return (nInsideCount % 2L);
+                return (nInsideCount % 2);
             }
         }
 
@@ -231,12 +231,12 @@ namespace basegfx
             return fabs(getSignedArea(rCandidate));
         }
 
-        void applyLineDashing(const B2DPolyPolygon& rCandidate, const ::std::vector<double>& rDotDashArray, B2DPolyPolygon* pLineTarget, B2DPolyPolygon* pGapTarget, double fFullDashDotLen)
+        void applyLineDashing(const B2DPolyPolygon& rCandidate, const std::vector<double>& rDotDashArray, B2DPolyPolygon* pLineTarget, B2DPolyPolygon* pGapTarget, double fFullDashDotLen)
         {
-            if(rtl::math::approxEqual(0.0, fFullDashDotLen) && rDotDashArray.size())
+            if(0.0 == fFullDashDotLen && rDotDashArray.size())
             {
                 // calculate fFullDashDotLen from rDotDashArray
-                fFullDashDotLen = ::std::accumulate(rDotDashArray.begin(), rDotDashArray.end(), 0.0);
+                fFullDashDotLen = std::accumulate(rDotDashArray.begin(), rDotDashArray.end(), 0.0);
             }
 
             if(rCandidate.count() && fFullDashDotLen > 0.0)
@@ -378,7 +378,7 @@ namespace basegfx
 
         B2DPolyPolygon growInNormalDirection(const B2DPolyPolygon& rCandidate, double fValue)
         {
-            if(!rtl::math::approxEqual(0.0, fValue))
+            if(0.0 != fValue)
             {
                 B2DPolyPolygon aRetval;
 
@@ -393,11 +393,6 @@ namespace basegfx
             {
                 return rCandidate;
             }
-        }
-
-        void correctGrowShrinkPolygonPair(SAL_UNUSED_PARAMETER B2DPolyPolygon& /*rOriginal*/, SAL_UNUSED_PARAMETER B2DPolyPolygon& /*rGrown*/)
-        {
-            //TODO!
         }
 
         B2DPolyPolygon reSegmentPolyPolygon(const B2DPolyPolygon& rCandidate, sal_uInt32 nSegments)

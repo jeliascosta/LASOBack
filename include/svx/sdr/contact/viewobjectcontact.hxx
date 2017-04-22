@@ -57,7 +57,6 @@ private:
     // the PrimitiveAnimation if Primitive2DContainer contains animations
     sdr::animation::PrimitiveAnimation*             mpPrimitiveAnimation;
 
-    // bitfield
     // This bool gets set when the object gets invalidated by ActionChanged() and
     // can be used from the OC to late-invalidates
     bool                                            mbLazyInvalidate : 1;
@@ -72,7 +71,7 @@ protected:
 
     // This method is responsible for creating the graphical visualisation data which is
     // stored/cached in the local primitive. Default gets view-independent Primitive
-    // from the ViewContact using ViewContact::getViewIndependentPrimitive2DSequence(), takes care of
+    // from the ViewContact using ViewContact::getViewIndependentPrimitive2DContainer(), takes care of
     // visibility, handles glue and ghosted.
     // This method will not handle included hierarchies and not check geometric visibility.
     virtual drawinglayer::primitive2d::Primitive2DContainer createPrimitive2DSequence(const DisplayInfo& rDisplayInfo) const;
@@ -110,7 +109,7 @@ public:
     // access to the local primitive. This will ensure that the local primitive is
     // current in comparing the local one with a fresh created incarnation
     // This method will not handle included hierarchies and not check visibility.
-    drawinglayer::primitive2d::Primitive2DContainer getPrimitive2DSequence(const DisplayInfo& rDisplayInfo) const;
+    drawinglayer::primitive2d::Primitive2DContainer const & getPrimitive2DSequence(const DisplayInfo& rDisplayInfo) const;
 
     // test this VOC for visibility concerning model-view stuff like e.g. Layer
     virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const;

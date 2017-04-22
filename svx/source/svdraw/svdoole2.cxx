@@ -26,6 +26,7 @@
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/embed/EmbedMisc.hpp>
 #include <com/sun/star/embed/Aspects.hpp>
+#include <com/sun/star/embed/ObjectSaveVetoException.hpp>
 #include <com/sun/star/embed/XEmbedPersist2.hpp>
 #include <com/sun/star/embed/XInplaceClient.hpp>
 #include <com/sun/star/embed/XInplaceObject.hpp>
@@ -84,6 +85,7 @@
 #include <basegfx/polygon/b2dpolypolygon.hxx>
 #include <editeng/outlobj.hxx>
 #include <svx/svdpage.hxx>
+#include <rtl/ref.hxx>
 
 using namespace ::com::sun::star;
 
@@ -132,58 +134,56 @@ public:
     void setWindow(const uno::Reference< awt::XWindow >& _xWindow);
 
 private:
-    Rectangle impl_getScaledRect_nothrow() const;
+    tools::Rectangle impl_getScaledRect_nothrow() const;
     // XStateChangeListener
-    virtual void SAL_CALL changingState( const css::lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) throw (css::embed::WrongStateException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL stateChanged( const css::lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL changingState( const css::lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) override;
+    virtual void SAL_CALL stateChanged( const css::lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) override;
 
     // document::XEventListener
-    virtual void SAL_CALL       notifyEvent( const document::EventObject& aEvent ) throw( uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL       notifyEvent( const document::EventObject& aEvent ) override;
 
     // XEmbeddedClient
-    virtual void SAL_CALL saveObject() throw ( embed::ObjectSaveVetoException, uno::Exception, uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL visibilityChanged( sal_Bool bVisible ) throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL saveObject() override;
+    virtual void SAL_CALL visibilityChanged( sal_Bool bVisible ) override;
 
     // XComponentSupplier
-    virtual uno::Reference< util::XCloseable > SAL_CALL getComponent() throw ( uno::RuntimeException, std::exception ) override;
+    virtual uno::Reference< util::XCloseable > SAL_CALL getComponent() override;
 
     // XInplaceClient
-    virtual sal_Bool SAL_CALL canInplaceActivate() throw ( uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL activatingInplace() throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL activatingUI() throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL deactivatedInplace() throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL deactivatedUI() throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual uno::Reference< css::frame::XLayoutManager > SAL_CALL getLayoutManager() throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual uno::Reference< frame::XDispatchProvider > SAL_CALL getInplaceDispatchProvider() throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual awt::Rectangle SAL_CALL getPlacement() throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual awt::Rectangle SAL_CALL getClipRectangle() throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL translateAccelerators( const uno::Sequence< awt::KeyEvent >& aKeys ) throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL scrollObject( const awt::Size& aOffset ) throw ( embed::WrongStateException, uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL changedPlacement( const awt::Rectangle& aPosRect ) throw ( embed::WrongStateException, uno::Exception, uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL canInplaceActivate() override;
+    virtual void SAL_CALL activatingInplace() override;
+    virtual void SAL_CALL activatingUI() override;
+    virtual void SAL_CALL deactivatedInplace() override;
+    virtual void SAL_CALL deactivatedUI() override;
+    virtual uno::Reference< css::frame::XLayoutManager > SAL_CALL getLayoutManager() override;
+    virtual uno::Reference< frame::XDispatchProvider > SAL_CALL getInplaceDispatchProvider() override;
+    virtual awt::Rectangle SAL_CALL getPlacement() override;
+    virtual awt::Rectangle SAL_CALL getClipRectangle() override;
+    virtual void SAL_CALL translateAccelerators( const uno::Sequence< awt::KeyEvent >& aKeys ) override;
+    virtual void SAL_CALL scrollObject( const awt::Size& aOffset ) override;
+    virtual void SAL_CALL changedPlacement( const awt::Rectangle& aPosRect ) override;
 
     // XWindowSupplier
-    virtual uno::Reference< awt::XWindow > SAL_CALL getWindow() throw ( uno::RuntimeException, std::exception ) override;
+    virtual uno::Reference< awt::XWindow > SAL_CALL getWindow() override;
 };
-
 
 SdrLightEmbeddedClient_Impl::SdrLightEmbeddedClient_Impl( SdrOle2Obj* pObj )
 : mpObj( pObj )
 {
 }
-Rectangle SdrLightEmbeddedClient_Impl::impl_getScaledRect_nothrow() const
+tools::Rectangle SdrLightEmbeddedClient_Impl::impl_getScaledRect_nothrow() const
 {
-    Rectangle aLogicRect( mpObj->GetLogicRect() );
+    tools::Rectangle aLogicRect( mpObj->GetLogicRect() );
     // apply scaling to object area and convert to pixels
     aLogicRect.SetSize( Size( Fraction( aLogicRect.GetWidth() ) * m_aScaleWidth,
                                 Fraction( aLogicRect.GetHeight() ) * m_aScaleHeight ) );
     return aLogicRect;
 }
 
-void SAL_CALL SdrLightEmbeddedClient_Impl::changingState( const css::lang::EventObject& /*aEvent*/, ::sal_Int32 /*nOldState*/, ::sal_Int32 /*nNewState*/ ) throw (css::embed::WrongStateException, css::uno::RuntimeException, std::exception)
+void SAL_CALL SdrLightEmbeddedClient_Impl::changingState( const css::lang::EventObject& /*aEvent*/, ::sal_Int32 /*nOldState*/, ::sal_Int32 /*nNewState*/ )
 {
 }
-
 
 void SdrLightEmbeddedClient_Impl::Release()
 {
@@ -195,8 +195,7 @@ void SdrLightEmbeddedClient_Impl::Release()
     release();
 }
 
-
-void SAL_CALL SdrLightEmbeddedClient_Impl::stateChanged( const css::lang::EventObject& /*aEvent*/, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL SdrLightEmbeddedClient_Impl::stateChanged( const css::lang::EventObject& /*aEvent*/, ::sal_Int32 nOldState, ::sal_Int32 nNewState )
 {
     SolarMutexGuard aGuard;
 
@@ -211,16 +210,14 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::stateChanged( const css::lang::EventO
     }
 }
 
-
-void SAL_CALL SdrLightEmbeddedClient_Impl::disposing( const css::lang::EventObject& /*aEvent*/ ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL SdrLightEmbeddedClient_Impl::disposing( const css::lang::EventObject& /*aEvent*/ )
 {
     SolarMutexGuard aGuard;
 
     GetSdrGlobalData().GetOLEObjCache().RemoveObj(mpObj);
 }
 
-
-void SAL_CALL SdrLightEmbeddedClient_Impl::notifyEvent( const document::EventObject& aEvent ) throw( uno::RuntimeException, std::exception )
+void SAL_CALL SdrLightEmbeddedClient_Impl::notifyEvent( const document::EventObject& aEvent )
 {
     // TODO/LATER: when writer uses this implementation the code could be shared with SfxInPlaceClient_Impl
 
@@ -232,14 +229,14 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::notifyEvent( const document::EventObj
     {
         try
         {
-            MapUnit aContainerMapUnit( MAP_100TH_MM );
+            MapUnit aContainerMapUnit( MapUnit::Map100thMM );
             uno::Reference< embed::XVisualObject > xParentVis( mpObj->GetParentXModel(), uno::UNO_QUERY );
             if ( xParentVis.is() )
                 aContainerMapUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xParentVis->getMapUnit( mpObj->GetAspect() ) );
 
             MapUnit aObjMapUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( mpObj->GetObjRef()->getMapUnit( mpObj->GetAspect() ) );
 
-            Rectangle          aVisArea;
+            tools::Rectangle          aVisArea;
             awt::Size aSz;
             try
             {
@@ -262,7 +259,7 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::notifyEvent( const document::EventObj
             aVisArea = OutputDevice::LogicToLogic( aVisArea, aObjMapUnit, aContainerMapUnit );
             Size aScaledSize( static_cast< long >( m_aScaleWidth * Fraction( aVisArea.GetWidth() ) ),
                                 static_cast< long >( m_aScaleHeight * Fraction( aVisArea.GetHeight() ) ) );
-            Rectangle aLogicRect( mpObj->GetLogicRect() );
+            tools::Rectangle aLogicRect( mpObj->GetLogicRect() );
 
             // react to the change if the difference is bigger than one pixel
             Size aPixelDiff =
@@ -272,7 +269,7 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::notifyEvent( const document::EventObj
                     aContainerMapUnit );
             if( aPixelDiff.Width() || aPixelDiff.Height() )
             {
-                mpObj->SetLogicRect( Rectangle( aLogicRect.TopLeft(), aScaledSize ) );
+                mpObj->SetLogicRect( tools::Rectangle( aLogicRect.TopLeft(), aScaledSize ) );
                 mpObj->BroadcastObjectChange();
             }
             else
@@ -285,11 +282,7 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::notifyEvent( const document::EventObj
     }
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::saveObject()
-    throw ( embed::ObjectSaveVetoException,
-            uno::Exception,
-            uno::RuntimeException, std::exception )
 {
     // TODO/LATER: when writer uses this implementation the code could be shared with SfxInPlaceClient_Impl
     uno::Reference< embed::XCommonEmbedPersist > xPersist;
@@ -312,30 +305,25 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::saveObject()
         xModifiable->setModified( true );
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::visibilityChanged( sal_Bool /*bVisible*/ )
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
     // nothing to do currently
     // TODO/LATER: when writer uses this implementation the code could be shared with SfxInPlaceClient_Impl
     if ( mpObj )
     {
-        Rectangle aLogicRect( mpObj->GetLogicRect() );
+        tools::Rectangle aLogicRect( mpObj->GetLogicRect() );
         Size aLogicSize( aLogicRect.GetWidth(), aLogicRect.GetHeight() );
 
         if( mpObj->IsChart() )
         {
             //charts never should be stretched see #i84323# for example
-            mpObj->SetLogicRect( Rectangle( aLogicRect.TopLeft(), aLogicSize ) );
+            mpObj->SetLogicRect( tools::Rectangle( aLogicRect.TopLeft(), aLogicSize ) );
             mpObj->BroadcastObjectChange();
         } // if( mpObj->IsChart() )
     }
 }
 
-
 uno::Reference< util::XCloseable > SAL_CALL SdrLightEmbeddedClient_Impl::getComponent()
-    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< util::XCloseable > xResult;
 
@@ -348,7 +336,6 @@ uno::Reference< util::XCloseable > SAL_CALL SdrLightEmbeddedClient_Impl::getComp
 // XInplaceClient
 
 sal_Bool SAL_CALL SdrLightEmbeddedClient_Impl::canInplaceActivate()
-    throw ( uno::RuntimeException, std::exception )
 {
     bool bRet = false;
     SolarMutexGuard aGuard;
@@ -363,17 +350,11 @@ sal_Bool SAL_CALL SdrLightEmbeddedClient_Impl::canInplaceActivate()
     return bRet;
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::activatingInplace()
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::activatingUI()
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -416,17 +397,11 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::activatingUI()
     } // for(sal_Int32 i = nCount-1 ; i >= 0;--i)
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::deactivatedInplace()
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::deactivatedUI()
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     css::uno::Reference< css::frame::XLayoutManager > xLayoutManager(getLayoutManager());
@@ -438,10 +413,7 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::deactivatedUI()
     }
 }
 
-
 uno::Reference< css::frame::XLayoutManager > SAL_CALL SdrLightEmbeddedClient_Impl::getLayoutManager()
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
     uno::Reference< css::frame::XLayoutManager > xMan;
     SolarMutexGuard aGuard;
@@ -458,26 +430,20 @@ uno::Reference< css::frame::XLayoutManager > SAL_CALL SdrLightEmbeddedClient_Imp
     return xMan;
 }
 
-
 uno::Reference< frame::XDispatchProvider > SAL_CALL SdrLightEmbeddedClient_Impl::getInplaceDispatchProvider()
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     return uno::Reference < frame::XDispatchProvider >( lcl_getFrame_throw(mpObj), uno::UNO_QUERY_THROW );
 }
 
-
 awt::Rectangle SAL_CALL SdrLightEmbeddedClient_Impl::getPlacement()
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if ( !mpObj )
         throw uno::RuntimeException();
 
-    Rectangle aLogicRect = impl_getScaledRect_nothrow();
-    MapUnit aContainerMapUnit( MAP_100TH_MM );
+    tools::Rectangle aLogicRect = impl_getScaledRect_nothrow();
+    MapUnit aContainerMapUnit( MapUnit::Map100thMM );
     uno::Reference< embed::XVisualObject > xParentVis( mpObj->GetParentXModel(), uno::UNO_QUERY );
     if ( xParentVis.is() )
         aContainerMapUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xParentVis->getMapUnit( mpObj->GetAspect() ) );
@@ -486,58 +452,43 @@ awt::Rectangle SAL_CALL SdrLightEmbeddedClient_Impl::getPlacement()
     return AWTRectangle( aLogicRect );
 }
 
-
 awt::Rectangle SAL_CALL SdrLightEmbeddedClient_Impl::getClipRectangle()
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
     return getPlacement();
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::translateAccelerators( const uno::Sequence< awt::KeyEvent >& /*aKeys*/ )
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
 }
-
 
 void SAL_CALL SdrLightEmbeddedClient_Impl::scrollObject( const awt::Size& /*aOffset*/ )
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::changedPlacement( const awt::Rectangle& aPosRect )
-    throw ( embed::WrongStateException,
-            uno::Exception,
-            uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if ( !mpObj )
         throw uno::RuntimeException();
 
-    uno::Reference< embed::XInplaceObject > xInplace( mpObj->GetObjRef(), uno::UNO_QUERY );
-    if ( !xInplace.is() )
-        throw uno::RuntimeException();
+    uno::Reference< embed::XInplaceObject > xInplace( mpObj->GetObjRef(), uno::UNO_QUERY_THROW );
 
     // check if the change is at least one pixel in size
     awt::Rectangle aOldRect = getPlacement();
-    Rectangle aNewPixelRect = VCLRectangle( aPosRect );
-    Rectangle aOldPixelRect = VCLRectangle( aOldRect );
+    tools::Rectangle aNewPixelRect = VCLRectangle( aPosRect );
+    tools::Rectangle aOldPixelRect = VCLRectangle( aOldRect );
     if ( aOldPixelRect == aNewPixelRect )
         // nothing has changed
         return;
 
     // new scaled object area
-    MapUnit aContainerMapUnit( MAP_100TH_MM );
+    MapUnit aContainerMapUnit( MapUnit::Map100thMM );
     uno::Reference< embed::XVisualObject > xParentVis( mpObj->GetParentXModel(), uno::UNO_QUERY );
     if ( xParentVis.is() )
         aContainerMapUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xParentVis->getMapUnit( mpObj->GetAspect() ) );
 
-    Rectangle aNewLogicRect = Application::GetDefaultDevice()->PixelToLogic(aNewPixelRect,aContainerMapUnit);
-    Rectangle aLogicRect = impl_getScaledRect_nothrow();
+    tools::Rectangle aNewLogicRect = Application::GetDefaultDevice()->PixelToLogic(aNewPixelRect,aContainerMapUnit);
+    tools::Rectangle aLogicRect = impl_getScaledRect_nothrow();
 
     if ( aNewLogicRect != aLogicRect )
     {
@@ -559,7 +510,7 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::changedPlacement( const awt::Rectangl
                 aContainerMapUnit );
         if( aPixelDiff.Width() || aPixelDiff.Height() )
         {
-            mpObj->SetLogicRect( Rectangle( aLogicRect.TopLeft(), aNewObjSize ) );
+            mpObj->SetLogicRect( tools::Rectangle( aLogicRect.TopLeft(), aNewObjSize ) );
             mpObj->BroadcastObjectChange();
         }
         else
@@ -569,7 +520,6 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::changedPlacement( const awt::Rectangl
 // XWindowSupplier
 
 uno::Reference< awt::XWindow > SAL_CALL SdrLightEmbeddedClient_Impl::getWindow()
-    throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Reference< awt::XWindow > xCurrent = m_xWindow;
@@ -594,11 +544,9 @@ SdrEmbedObjectLink::SdrEmbedObjectLink(SdrOle2Obj* pObject):
     SetSynchron( false );
 }
 
-
 SdrEmbedObjectLink::~SdrEmbedObjectLink()
 {
 }
-
 
 ::sfx2::SvBaseLink::UpdateResult SdrEmbedObjectLink::DataChanged(
     const OUString& /*rMimeType*/, const css::uno::Any & /*rValue*/ )
@@ -635,13 +583,11 @@ SdrEmbedObjectLink::~SdrEmbedObjectLink()
     return SUCCESS;
 }
 
-
 void SdrEmbedObjectLink::Closed()
 {
     pObj->BreakFileLink_Impl();
     SvBaseLink::Closed();
 }
-
 
 class SdrOle2ObjImpl
 {
@@ -666,7 +612,7 @@ public:
     SdrEmbedObjectLink* mpObjectLink;
     OUString maLinkURL;
 
-    SvxUnoShapeModifyListener* mpModifyListener;
+    rtl::Reference<SvxUnoShapeModifyListener> mxModifyListener;
 
     explicit SdrOle2ObjImpl( bool bFrame ) :
         mpGraphic(nullptr),
@@ -679,8 +625,7 @@ public:
         mbIsChart(false),
         mbLoadingOLEObjectFailed(false),
         mbConnected(false),
-        mpObjectLink(nullptr),
-        mpModifyListener(nullptr)
+        mpObjectLink(nullptr)
     {
         mxObjRef.Lock();
     }
@@ -697,8 +642,7 @@ public:
         mbIsChart(false),
         mbLoadingOLEObjectFailed(false),
         mbConnected(false),
-        mpObjectLink(nullptr),
-        mpModifyListener(nullptr)
+        mpObjectLink(nullptr)
     {
         mxObjRef.Lock();
     }
@@ -708,14 +652,12 @@ public:
         delete mpGraphic;
         delete mpGraphicObject;
 
-        if (mpModifyListener)
+        if (mxModifyListener.is())
         {
-            mpModifyListener->invalidate();
-            mpModifyListener->release();
+            mxModifyListener->invalidate();
         }
     }
 };
-
 
 // Predicate determining whether the given OLE is an internal math
 // object
@@ -739,14 +681,12 @@ static bool ImplIsMathObj( const uno::Reference < embed::XEmbeddedObject >& rObj
     }
 }
 
-
 // BaseProperties section
 
 sdr::properties::BaseProperties* SdrOle2Obj::CreateObjectSpecificProperties()
 {
     return new sdr::properties::OleProperties(*this);
 }
-
 
 // DrawContact section
 
@@ -755,13 +695,12 @@ sdr::contact::ViewContact* SdrOle2Obj::CreateObjectSpecificViewContact()
     return new sdr::contact::ViewContactOfSdrOle2Obj(*this);
 }
 
-
 SdrOle2Obj::SdrOle2Obj( bool bFrame_ ) :
     mpImpl(new SdrOle2ObjImpl(bFrame_))
 {
 }
 
-SdrOle2Obj::SdrOle2Obj( const svt::EmbeddedObjectRef&  rNewObjRef, const OUString& rNewObjName, const Rectangle& rNewRect) :
+SdrOle2Obj::SdrOle2Obj( const svt::EmbeddedObjectRef&  rNewObjRef, const OUString& rNewObjName, const tools::Rectangle& rNewRect) :
     SdrRectObj(rNewRect),
     mpImpl(new SdrOle2ObjImpl(false/*bFrame_*/, rNewObjRef))
 {
@@ -784,7 +723,6 @@ OUString SdrOle2Obj::GetStyleString()
     return strStyle;
 }
 
-
 SdrOle2Obj::~SdrOle2Obj()
 {
     mpImpl->mbInDestruction = true;
@@ -799,10 +737,7 @@ SdrOle2Obj::~SdrOle2Obj()
         mpImpl->pLightClient->Release();
         mpImpl->pLightClient = nullptr;
     }
-
-    delete mpImpl;
 }
-
 
 void SdrOle2Obj::SetAspect( sal_Int64 nAspect )
 {
@@ -870,7 +805,6 @@ bool SdrOle2Obj::IsEmpty() const
     return !mpImpl->mxObjRef.is();
 }
 
-
 void SdrOle2Obj::Connect()
 {
     if( IsEmptyPresObj() )
@@ -887,7 +821,6 @@ void SdrOle2Obj::Connect()
     Connect_Impl();
     AddListeners_Impl();
 }
-
 
 bool SdrOle2Obj::UpdateLinkURL_Impl()
 {
@@ -947,7 +880,6 @@ bool SdrOle2Obj::UpdateLinkURL_Impl()
     return bResult;
 }
 
-
 void SdrOle2Obj::BreakFileLink_Impl()
 {
     uno::Reference<document::XStorageBasedDocument> xDoc;
@@ -979,7 +911,6 @@ void SdrOle2Obj::BreakFileLink_Impl()
     }
 }
 
-
 void SdrOle2Obj::DisconnectFileLink_Impl()
 {
     sfx2::LinkManager* pLinkManager = pModel ? pModel->GetLinkManager() : nullptr;
@@ -989,7 +920,6 @@ void SdrOle2Obj::DisconnectFileLink_Impl()
         mpImpl->mpObjectLink = nullptr;
     }
 }
-
 
 void SdrOle2Obj::CheckFileLink_Impl()
 {
@@ -1015,18 +945,14 @@ void SdrOle2Obj::CheckFileLink_Impl()
                 }
             }
         }
-        catch( css::uno::Exception& )
+        catch (const css::uno::Exception&)
         {
-            OSL_FAIL(
-                OString(OString("SdrOle2Obj::CheckFileLink_Impl(), "
-                        "exception caught: ") +
-                OUStringToOString(
-                    comphelper::anyToString( cppu::getCaughtException() ),
-                    RTL_TEXTENCODING_UTF8 )).getStr() );
+            SAL_WARN( "svx", "SdrOle2Obj::CheckFileLink_Impl(),"
+                        "exception caught: "
+                 << comphelper::anyToString(cppu::getCaughtException() ) );
         }
     }
 }
-
 
 void SdrOle2Obj::Reconnect_Impl()
 {
@@ -1136,21 +1062,19 @@ void SdrOle2Obj::AddListeners_Impl()
     if( mpImpl->mxObjRef.is() && mpImpl->mxObjRef->getCurrentState() != embed::EmbedStates::LOADED )
     {
         // register modify listener
-        if (!mpImpl->mpModifyListener)
+        if (!mpImpl->mxModifyListener.is())
         {
-            mpImpl->mpModifyListener = new SvxUnoShapeModifyListener(this);
-            mpImpl->mpModifyListener->acquire();
+            mpImpl->mxModifyListener = new SvxUnoShapeModifyListener(this);
         }
 
         uno::Reference< util::XModifyBroadcaster > xBC( getXModel(), uno::UNO_QUERY );
-        if (xBC.is() && mpImpl->mpModifyListener)
+        if (xBC.is())
         {
-            uno::Reference<util::XModifyListener> xListener(mpImpl->mpModifyListener);
+            uno::Reference<util::XModifyListener> xListener(mpImpl->mxModifyListener.get());
             xBC->addModifyListener( xListener );
         }
     }
 }
-
 
 void SdrOle2Obj::Disconnect()
 {
@@ -1177,9 +1101,9 @@ void SdrOle2Obj::RemoveListeners_Impl()
             if ( nState != embed::EmbedStates::LOADED )
             {
                 uno::Reference< util::XModifyBroadcaster > xBC( getXModel(), uno::UNO_QUERY );
-                if (xBC.is() && mpImpl->mpModifyListener)
+                if (xBC.is() && mpImpl->mxModifyListener.is())
                 {
-                    uno::Reference<util::XModifyListener> xListener(mpImpl->mpModifyListener);
+                    uno::Reference<util::XModifyListener> xListener(mpImpl->mxModifyListener.get());
                     xBC->removeModifyListener( xListener );
                 }
             }
@@ -1279,7 +1203,6 @@ void SdrOle2Obj::Disconnect_Impl()
     mpImpl->mbConnected = false;
 }
 
-
 SdrObject* SdrOle2Obj::createSdrGrafObjReplacement(bool bAddText, bool /* bUseHCGraphic */) const
 {
     const Graphic* pOLEGraphic = GetGraphic();
@@ -1356,7 +1279,6 @@ SdrObject* SdrOle2Obj::DoConvertToPolyObj(bool bBezier, bool bAddText) const
     return nullptr;
 }
 
-
 void SdrOle2Obj::SetModel(SdrModel* pNewModel)
 {
     ::comphelper::IEmbeddedHelper* pDestPers = pNewModel ? pNewModel->GetPersist() : nullptr;
@@ -1431,7 +1353,6 @@ void SdrOle2Obj::SetModel(SdrModel* pNewModel)
     AddListeners_Impl();
 }
 
-
 void SdrOle2Obj::SetPage(SdrPage* pNewPage)
 {
     bool bRemove=pNewPage==nullptr && pPage!=nullptr;
@@ -1465,7 +1386,6 @@ void SdrOle2Obj::SetPage(SdrPage* pNewPage)
     if (bInsert && !mpImpl->mbConnected )
         Connect();
 }
-
 
 void SdrOle2Obj::SetObjRef( const css::uno::Reference < css::embed::XEmbeddedObject >& rNewObjRef )
 {
@@ -1505,7 +1425,6 @@ void SdrOle2Obj::SetObjRef( const css::uno::Reference < css::embed::XEmbeddedObj
     BroadcastObjectChange();
 }
 
-
 void SdrOle2Obj::SetClosedObj( bool bIsClosed )
 {
     // TODO/LATER: do we still need this hack?
@@ -1513,13 +1432,11 @@ void SdrOle2Obj::SetClosedObj( bool bIsClosed )
     bClosedObj = bIsClosed;
 }
 
-
 SdrObject* SdrOle2Obj::getFullDragClone() const
 {
     // #i118485# use central replacement generator
     return createSdrGrafObjReplacement(false, true);
 }
-
 
 void SdrOle2Obj::SetPersistName( const OUString& rPersistName )
 {
@@ -1539,12 +1456,10 @@ void SdrOle2Obj::AbandonObject()
     SetObjRef(nullptr);
 }
 
-
 const OUString& SdrOle2Obj::GetPersistName() const
 {
     return mpImpl->aPersistName;
 }
-
 
 void SdrOle2Obj::TakeObjInfo(SdrObjTransformInfoRec& rInfo) const
 {
@@ -1566,12 +1481,10 @@ void SdrOle2Obj::TakeObjInfo(SdrObjTransformInfoRec& rInfo) const
     rInfo.bCanConvToContour = true;
 }
 
-
 sal_uInt16 SdrOle2Obj::GetObjIdentifier() const
 {
     return mpImpl->mbFrame ? sal_uInt16(OBJ_FRAME) : sal_uInt16(OBJ_OLE2);
 }
-
 
 OUString SdrOle2Obj::TakeObjNameSingul() const
 {
@@ -1588,7 +1501,6 @@ OUString SdrOle2Obj::TakeObjNameSingul() const
 
     return sName.makeStringAndClear();
 }
-
 
 OUString SdrOle2Obj::TakeObjNamePlural() const
 {
@@ -1732,7 +1644,7 @@ void SdrOle2Obj::ImpSetVisAreaSize()
                 catch( embed::NoVisualAreaSizeException& )
                 {}
 
-                Rectangle aAcceptedVisArea;
+                tools::Rectangle aAcceptedVisArea;
                 aAcceptedVisArea.SetSize( Size( (long)( Fraction( long( aSz.Width ) ) * aScaleWidth ),
                                                 (long)( Fraction( long( aSz.Height ) ) * aScaleHeight ) ) );
                 if (aVisSize != aAcceptedVisArea.GetSize())
@@ -1768,7 +1680,7 @@ void SdrOle2Obj::ImpSetVisAreaSize()
                 {
                     if ( pClient )
                     {
-                        Rectangle aScaleRect(maRect.TopLeft(), aObjAreaSize);
+                        tools::Rectangle aScaleRect(maRect.TopLeft(), aObjAreaSize);
                         pClient->SetObjAreaAndScale( aScaleRect, aScaleWidth, aScaleHeight);
                     }
                     else
@@ -1791,13 +1703,12 @@ void SdrOle2Obj::ImpSetVisAreaSize()
                 Point aBR( maRect.BottomRight() );
                 Point aTL2( OutputDevice::LogicToLogic( aTL, pModel->GetScaleUnit(), aMapUnit) );
                 Point aBR2( OutputDevice::LogicToLogic( aBR, pModel->GetScaleUnit(), aMapUnit) );
-                Rectangle aNewRect( aTL2, aBR2 );
+                tools::Rectangle aNewRect( aTL2, aBR2 );
                 xVisualObject->setVisualAreaSize( GetAspect(), awt::Size( aNewRect.GetWidth(), aNewRect.GetHeight() ) );
             }
         }
     }
 }
-
 
 void SdrOle2Obj::NbcResize(const Point& rRef, const Fraction& xFact, const Fraction& yFact)
 {
@@ -1818,7 +1729,6 @@ void SdrOle2Obj::NbcResize(const Point& rRef, const Fraction& xFact, const Fract
         ImpSetVisAreaSize();
 }
 
-
 void SdrOle2Obj::SetGeoData(const SdrObjGeoData& rGeo)
 {
     SdrRectObj::SetGeoData(rGeo);
@@ -1827,8 +1737,7 @@ void SdrOle2Obj::SetGeoData(const SdrObjGeoData& rGeo)
         ImpSetVisAreaSize();
 }
 
-
-void SdrOle2Obj::NbcSetSnapRect(const Rectangle& rRect)
+void SdrOle2Obj::NbcSetSnapRect(const tools::Rectangle& rRect)
 {
     SdrRectObj::NbcSetSnapRect(rRect);
 
@@ -1844,8 +1753,7 @@ void SdrOle2Obj::NbcSetSnapRect(const Rectangle& rRect)
     }
 }
 
-
-void SdrOle2Obj::NbcSetLogicRect(const Rectangle& rRect)
+void SdrOle2Obj::NbcSetLogicRect(const tools::Rectangle& rRect)
 {
     SdrRectObj::NbcSetLogicRect(rRect);
 
@@ -1866,7 +1774,6 @@ void SdrOle2Obj::GetNewReplacement()
         mpImpl->mxObjRef.UpdateReplacement();
 }
 
-
 Size SdrOle2Obj::GetOrigObjSize( MapMode* pTargetMapMode ) const
 {
     return mpImpl->mxObjRef.GetSize( pTargetMapMode );
@@ -1884,7 +1791,6 @@ void SdrOle2Obj::NbcMove(const Size& rSize)
     if( pModel && !pModel->isLocked() )
         ImpSetVisAreaSize();
 }
-
 
 bool SdrOle2Obj::CanUnloadRunningObj( const uno::Reference< embed::XEmbeddedObject >& xObj, sal_Int64 nAspect )
 {
@@ -1926,7 +1832,6 @@ bool SdrOle2Obj::CanUnloadRunningObj( const uno::Reference< embed::XEmbeddedObje
     return bResult;
 }
 
-
 bool SdrOle2Obj::Unload( const uno::Reference< embed::XEmbeddedObject >& xObj, sal_Int64 nAspect )
 {
     bool bResult = false;
@@ -1952,7 +1857,6 @@ bool SdrOle2Obj::Unload( const uno::Reference< embed::XEmbeddedObject >& xObj, s
     return bResult;
 }
 
-
 bool SdrOle2Obj::Unload()
 {
     if (!mpImpl->mxObjRef.is())
@@ -1967,7 +1871,6 @@ bool SdrOle2Obj::Unload()
 
     return bUnloaded;
 }
-
 
 void SdrOle2Obj::GetObjRef_Impl()
 {
@@ -2059,7 +1962,6 @@ uno::Reference < embed::XEmbeddedObject > SdrOle2Obj::GetObjRef_NoInit() const
     return mpImpl->mxObjRef.GetObject();
 }
 
-
 uno::Reference< frame::XModel > SdrOle2Obj::getXModel() const
 {
     GetObjRef();
@@ -2068,7 +1970,6 @@ uno::Reference< frame::XModel > SdrOle2Obj::getXModel() const
     else
         return uno::Reference< frame::XModel >();
 }
-
 
 bool SdrOle2Obj::IsChart() const
 {
@@ -2099,12 +2000,10 @@ void SdrOle2Obj::SetGraphicToObj( const Graphic& aGraphic, const OUString& aMedi
     mpImpl->mxObjRef.SetGraphic( aGraphic, aMediaType );
 }
 
-
 void SdrOle2Obj::SetGraphicToObj( const uno::Reference< io::XInputStream >& xGrStream, const OUString& aMediaType )
 {
     mpImpl->mxObjRef.SetGraphicStream( xGrStream, aMediaType );
 }
-
 
 bool SdrOle2Obj::IsCalc() const
 {
@@ -2134,7 +2033,6 @@ uno::Reference< frame::XModel > SdrOle2Obj::GetParentXModel() const
     return xDoc;
 }
 
-
 bool SdrOle2Obj::CalculateNewScaling( Fraction& aScaleWidth, Fraction& aScaleHeight, Size& aObjAreaSize )
 {
     // TODO/LEAN: to avoid rounding errors scaling always uses the VisArea.
@@ -2155,7 +2053,6 @@ bool SdrOle2Obj::CalculateNewScaling( Fraction& aScaleWidth, Fraction& aScaleHei
 
     return true;
 }
-
 
 bool SdrOle2Obj::AddOwnLightClient()
 {
@@ -2188,12 +2085,10 @@ bool SdrOle2Obj::AddOwnLightClient()
     return true;
 }
 
-
 Graphic SdrOle2Obj::GetEmptyOLEReplacementGraphic()
 {
     return Graphic(BitmapEx(ResId(BMP_SVXOLEOBJ, *ImpGetResMgr())));
 }
-
 
 void SdrOle2Obj::SetWindow(const css::uno::Reference < css::awt::XWindow >& _xWindow)
 {

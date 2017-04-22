@@ -19,7 +19,6 @@
 
 #include <cppuhelper/factory.hxx>
 #include <cppuhelper/implementationentry.hxx>
-#include <osl/diagnose.h>
 #include "DatabaseDataProvider.hxx"
 #include "dbadllapi.hxx"
 
@@ -30,7 +29,7 @@ using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::registry;
 
 namespace dba{
-    ::cppu::ImplementationEntry entries[] = {
+    ::cppu::ImplementationEntry const entries[] = {
         {
             &::dbaccess::DatabaseDataProvider::Create,
             &::dbaccess::DatabaseDataProvider::getImplementationName_Static,

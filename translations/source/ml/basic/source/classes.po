@@ -1,0 +1,1233 @@
+#. extracted from basic/source/classes
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2015-08-25 12:33+0200\n"
+"PO-Revision-Date: 2016-01-19 05:43+0000\n"
+"Last-Translator: balasankarc <balasankarc@autistici.org>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: ml\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: LibreOffice\n"
+"X-Accelerator-Marker: ~\n"
+"X-POOTLE-MTIME: 1453182203.000000\n"
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_SYNTAX & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Syntax error."
+msgstr "സിന്റാക്സ് പിഴവു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_GOSUB & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Return without Gosub."
+msgstr "Gosub ഇല്ലാതെ തിരികെ നല്‍കുക."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_REDO_FROM_START & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Incorrect entry; please retry."
+msgstr "തെറ്റായ ഉള്ളടക്കം; ദയവായി വീണ്ടും ശ്രമിക്കുക."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_ARGUMENT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid procedure call."
+msgstr "പ്രക്രിയയ്ക്കുള്ള തെറ്റായ വിളി."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_MATH_OVERFLOW & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Overflow."
+msgstr "ഓവര്‍ഫ്ലോ."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_MEMORY & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Not enough memory."
+msgstr "ആവശ്യമായ മെമ്മറി ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_ALREADY_DIM & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Array already dimensioned."
+msgstr "അറെയുടെ വ്യാപ്തി നേരത്തേ നിശ്ചയിച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_OUT_OF_RANGE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Index out of defined range."
+msgstr "സൂചിക നിശ്ചയിച്ചിരിക്കുന്ന പരിധി കടന്നിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DUPLICATE_DEF & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Duplicate definition."
+msgstr "ആവര്‍ത്തിച്ച വ്യാഖ്യാനം."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_ZERODIV & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Division by zero."
+msgstr "പൂജ്യം കൊണ്ടുള്ള ഹരണം."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_VAR_UNDEFINED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Variable not defined."
+msgstr "വേരിയബിള്‍ നിഷ്കര്‍ഷിച്ചിട്ടില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_CONVERSION & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Data type mismatch."
+msgstr "ഡേറ്റാ തരത്തിലുള്ള പൊരുത്തക്കേടു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_PARAMETER & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid parameter."
+msgstr "തെറ്റായ പരാമീറ്റര്‍."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_USER_ABORT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Process interrupted by user."
+msgstr "ഉപയോക്താവു് പ്രക്രിയ തടസ്സപ്പെടുത്തിയിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_RESUME & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Resume without error."
+msgstr "പിശകില്ലാതെ തുടരുക."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_STACK_OVERFLOW & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Not enough stack memory."
+msgstr "ആവശ്യമായ സ്റ്റാക്ക് മെമ്മറി ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_PROC_UNDEFINED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Sub-procedure or function procedure not defined."
+msgstr "ഉപപ്രക്രിയ അല്ലെങ്കില്‍ ഫംഗ്ഷന്‍ പ്രക്രിയ നിഷ്കര്‍ഷിച്ചിട്ടില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_DLL_LOAD & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Error loading DLL file."
+msgstr "DLL ഫയല്‍ ലഭ്യമാക്കുന്നതില്‍ പിശക്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_DLL_CALL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Wrong DLL call convention."
+msgstr "തെറ്റായ DLL വിളി കണ്‍വെന്‍ഷന്‍."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_INTERNAL_ERROR & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Internal error $(ARG1)."
+msgstr "ആന്തരിക പിശക് $(ARG1)."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_CHANNEL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid file name or file number."
+msgstr "തെറ്റായ ഫയല്‍ നാമം അല്ലെങ്കില്‍ ഫയല്‍ സംഖ്യ."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_FILE_NOT_FOUND & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "File not found."
+msgstr "ഫയല്‍ ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_FILE_MODE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Incorrect file mode."
+msgstr "തെറ്റായ ഫയല്‍ തരം."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_FILE_ALREADY_OPEN & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "File already open."
+msgstr "ഫയല്‍ നേരത്തേ തുറന്നിട്ടുണ്ടു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_IO_ERROR & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Device I/O error."
+msgstr "ഉപകരണത്തില്‍ I/O പിശകു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_FILE_EXISTS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "File already exists."
+msgstr "ഫയല്‍ നേരത്തേ നിലവിലുണ്ടു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_RECORD_LENGTH & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Incorrect record length."
+msgstr "റിക്കോര്‍ഡിന്റെ നീളം തെറ്റാണു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DISK_FULL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Disk or hard drive full."
+msgstr "ഡിസ്ക് അല്ലെങ്കില്‍ ഹാര്‍ഡ് ഡ്രൈവില്‍ സ്ഥലം ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_READ_PAST_EOF & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Reading exceeds EOF."
+msgstr "ലഭ്യമാക്കല്‍ EOF കഴിഞ്ഞുപോയിരിക്കുന്നു"
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_RECORD_NUMBER & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Incorrect record number."
+msgstr "തെറ്റായ റിക്കോര്‍ഡ് നമ്പര്‍."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_TOO_MANY_FILES & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Too many files."
+msgstr "വളരെ കൂടുതല്‍ ഫയലുകള്‍."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_DEVICE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Device not available."
+msgstr "ഉപകരണം ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_ACCESS_DENIED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Access denied."
+msgstr "പ്രവേശനം നിഷേധിച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NOT_READY & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Disk not ready."
+msgstr "ഡിസ്ക് തയ്യാറല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NOT_IMPLEMENTED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Not implemented."
+msgstr "ലഭ്യമാക്കിയിട്ടില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DIFFERENT_DRIVE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Renaming on different drives impossible."
+msgstr "അനവധി ഡ്രൈവുകളില്‍ പേരു് മാറ്റുവാന്‍ സാധ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_ACCESS_ERROR & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Path/File access error."
+msgstr "വഴി/ഫയലിലേക്കുള്ള പ്രവേശനത്തില്‍ പിശക്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_PATH_NOT_FOUND & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Path not found."
+msgstr "വഴി ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_OBJECT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Object variable not set."
+msgstr "ഒബ്ജക്ട് വേരിയബിള്‍ സജ്ജമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_PATTERN & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid string pattern."
+msgstr "തെറ്റായ സ്ട്രിങ് മാതൃക."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_IS_NULL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Use of zero not permitted."
+msgstr "പൂജ്യം ഉപയോഗിക്കുവാന്‍ പാടില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_ERROR & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "DDE Error."
+msgstr "DDE പിശക്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_WAITINGACK & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Awaiting response to DDE connection."
+msgstr "DDE കണക്ഷനിലേക്കുള്ള മറുപടി കാത്തിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_OUTOFCHANNELS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "No DDE channels available."
+msgstr "DDE ചാനലുകളൊന്നും ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_NO_RESPONSE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "No application responded to DDE connect initiation."
+msgstr "DDE കണക്ടിന്റെ ആരംഭത്തിനോടു് ഒരു പ്രയോഗവും പ്രതികരിച്ചില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_MULT_RESPONSES & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Too many applications responded to DDE connect initiation."
+msgstr "അനവധി പ്രയോഗങ്ങള്‍ DDE കണക്ടിന്റെ ആരംഭത്തിനോടു് പ്രതികരിച്ചു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_CHANNEL_LOCKED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "DDE channel locked."
+msgstr "DDE ചാനല്‍ പൂട്ടിയിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_NOTPROCESSED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "External application cannot execute DDE operation."
+msgstr "പുറമേനിന്നുള്ള പ്രയോഗത്തിനു് DDE പ്രക്രിയ നടത്തുവാന്‍ സാധ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_TIMEOUT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Timeout while waiting for DDE response."
+msgstr "DDE പ്രതികരണത്തിനുള്ള സമയം കഴിഞ്ഞിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_USER_INTERRUPT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "User pressed ESCAPE during DDE operation."
+msgstr "ഉപഭോക്താവ് DDE പ്രക്രിയയുടെ സമയത്ത് ESCAPE അമര്‍ത്തി."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_BUSY & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "External application busy."
+msgstr "പുറമേനിന്നുള്ള പ്രയോഗം ഉപയോഗത്തിലാണു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_NO_DATA & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "DDE operation without data."
+msgstr "ഡേറ്റ ഇല്ലാതെയുള്ള DDE പ്രക്രിയ."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_WRONG_DATA_FORMAT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Data are in wrong format."
+msgstr "ഡേറ്റ തെറ്റായ മാതൃകയിലാണു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_PARTNER_QUIT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "External application has been terminated."
+msgstr "പുറമേനിന്നുള്ള പ്രയോഗം നിര്‍ത്തിയിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_CONV_CLOSED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "DDE connection interrupted or modified."
+msgstr "DDE കണക്ഷന്‍ തടസ്സപ്പെടുത്തിയിരിക്കുന്നു അല്ലെങ്കില്‍ മാറ്റം വരുത്തിയിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_NO_CHANNEL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "DDE method invoked with no channel open."
+msgstr "ഒരു ചാനലും തുറക്കാതെ DDE രീതിയെ വിളിച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_INVALID_LINK & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid DDE link format."
+msgstr "തെറ്റായ DDE ലിങ്ക് മാതൃക."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_QUEUE_OVERFLOW & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "DDE message has been lost."
+msgstr "DDE സന്ദേശം നഷ്ടമാക്കിയിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_LINK_ALREADY_EST & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Paste link already performed."
+msgstr "കണ്ണി ഒട്ടിക്കുന്ന പ്രക്രിയ നേരത്തെ ചെയ്തിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_LINK_INV_TOPIC & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Link mode cannot be set due to invalid link topic."
+msgstr "കണ്ണിയുടെ വിഷയം തെറ്റായതിനാല്‍ ലിങ്ക് മോഡ് സജ്ജമാക്കുവാന്‍ സാധ്യമായില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DDE_DLL_NOT_FOUND & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "DDE requires the DDEML.DLL file."
+msgstr "DDE - ഇതിനു് DDEML.DLL എന്ന ഫയല്‍ ആവശ്യമുണ്ടു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_CANNOT_LOAD & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Module cannot be loaded; invalid format."
+msgstr "ഘടകം ലഭ്യമാക്കുവാന്‍ സാധ്യമായില്ല; തെറ്റായ മാതൃക."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_INDEX & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid object index."
+msgstr "തെറ്റായ ഒബ്ജക്ട് സൂചിക."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_ACTIVE_OBJECT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Object is not available."
+msgstr "ഒബ്ജക്ട് ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_PROP_VALUE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Incorrect property value."
+msgstr "തെറ്റായ വിശേഷതാമൂല്ല്യം."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_PROP_READONLY & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "This property is read-only."
+msgstr "ഈ വിശേഷത വായിക്കുവാന്‍ മാത്രമേ സാധിക്കൂ."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_PROP_WRITEONLY & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "This property is write only."
+msgstr "ഈ വിശേഷത എഴുതാന്‍ മാത്രമേ സാധിക്കൂ."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_INVALID_OBJECT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid object reference."
+msgstr "തെറ്റായ ഒബ്ജക്ട് പരാമര്‍ശം."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_METHOD & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Property or method not found: $(ARG1)."
+msgstr "വിശേഷത അല്ലെങ്കില്‍ രീതി ലഭ്യമായില്ല: $(ARG1)."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NEEDS_OBJECT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Object required."
+msgstr "ഒബ്ജക്ട് ആവശ്യമുണ്ടു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_INVALID_USAGE_OBJECT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid use of an object."
+msgstr "ഒബ്ജക്ടിന്റെ തെറ്റായ ഉപയോഗം."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_OLE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "OLE Automation is not supported by this object."
+msgstr "ഈ ഒബ്ജക്ട് OLE ഓട്ടോമേഷന്‍ പിന്തുണയ്ക്കുന്നില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_METHOD & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "This property or method is not supported by the object."
+msgstr "ഈ ഒബ്ജക്ട് ഈ വിശേഷത അല്ലെങ്കില്‍ രീതി പിന്തുണയ്ക്കുന്നില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_OLE_ERROR & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "OLE Automation Error."
+msgstr "OLE ഓട്ടോമേഷന്‍ പിശക്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_ACTION & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "This action is not supported by given object."
+msgstr "പറഞ്ഞിരിക്കുന്ന ഒബ്ജക്ട് ഈ പ്രവൃത്തി പിന്തുണയ്ക്കുന്നില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_NAMED_ARGS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Named arguments are not supported by given object."
+msgstr "പറഞ്ഞിരിക്കുന്ന ഒബ്ജക്ട് നെയിമ്ഡ് ആര്‍ഗ്യുമെന്റുകള്‍ പിന്തുണയ്ക്കുന്നില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_LOCALE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "The current locale setting is not supported by the given object."
+msgstr "പറഞ്ഞിരിക്കുന്ന ഒബ്ജക്ട് നിലവിലുള്ള ലൊക്കേല്‍ സജ്ജീകരണം പിന്തുണയ്ക്കുന്നില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NAMED_NOT_FOUND & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Named argument not found."
+msgstr "നെയിമ്ഡ് ആര്‍ഗ്യുമെന്റ് ലഭ്യമായില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NOT_OPTIONAL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Argument is not optional."
+msgstr "ആര്‍ഗ്യുമെന്റ് നിര്‍ബന്ധമാണു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_WRONG_ARGS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid number of arguments."
+msgstr "ആര്‍ഗ്യുമെന്റുകളുടെ എണ്ണം തെറ്റാണു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NOT_A_COLL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Object is not a list."
+msgstr "ഒബ്ജക്ട് ഒരു പട്ടിക അല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_ORDINAL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid ordinal number."
+msgstr "തെറ്റായ ഓര്‍ഡിനല്‍ സംഖ്യ."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_DLLPROC_NOT_FOUND & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Specified DLL function not found."
+msgstr "നിര്‍ദ്ദിഷ്ട DLL ഫംങ്ഷന്‍ ലഭ്യമായില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_CLIPBD_FORMAT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid clipboard format."
+msgstr "തെറ്റായ ക്ലിപ്ബോര്‍ഡ് മാതൃക."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_PROPERTY_NOT_FOUND & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Object does not have this property."
+msgstr "ഒബ്ജക്ടിനു് ഈ വിശേഷത ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_METHOD_NOT_FOUND & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Object does not have this method."
+msgstr "ഒബ്ജക്ടിനു് ഈ രീതി ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_ARG_MISSING & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Required argument lacking."
+msgstr "ആവശ്യമായ ആര്‍ഗ്യുമെന്റ് ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_NUMBER_OF_ARGS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid number of arguments."
+msgstr "ആര്‍ഗ്യുമെന്റുകളുടെ എണ്ണം തെറ്റാണു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_METHOD_FAILED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Error executing a method."
+msgstr "ഒരു രീതി പ്രവര്‍ത്തിപ്പിക്കുന്നതില്‍ പിശക്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_SETPROP_FAILED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Unable to set property."
+msgstr "വിശേഷത സജ്ജമാക്കുവാന്‍ സാധ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_GETPROP_FAILED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Unable to determine property."
+msgstr "വിശേഷത സ്ഥിരീകരിക്കുവാന്‍ സാധ്യമായില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_UNEXPECTED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Unexpected symbol: $(ARG1)."
+msgstr "അപ്രതീക്ഷിതമായ ചിഹ്നം: $(ARG1)."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_EXPECTED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Expected: $(ARG1)."
+msgstr "പ്രതീക്ഷിച്ചു: $(ARG1)."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_SYMBOL_EXPECTED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Symbol expected."
+msgstr "ചിഹ്നം പ്രതീക്ഷിച്ചു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_VAR_EXPECTED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Variable expected."
+msgstr "വേരിയബിള്‍ പ്രതീക്ഷിച്ചു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_LABEL_EXPECTED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Label expected."
+msgstr "ലേബല്‍ പ്രതീക്ഷിച്ചു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_LVALUE_EXPECTED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Value cannot be applied."
+msgstr "മൂല്യം ഉപയോഗിക്കുവാന്‍ സാധ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_VAR_DEFINED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Variable $(ARG1) already defined."
+msgstr "വേരിയബിള്‍ $(ARG1) നേരത്തേ തന്നെ നിര്‍വചിച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_PROC_DEFINED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Sub procedure or function procedure $(ARG1) already defined."
+msgstr "ഉപപ്രക്രിയ അല്ലെങ്കില്‍ ഫംങ്ഷന്‍ പ്രക്രിയ $(ARG1) നേരത്തേ തന്നെ നിഷ്കര്‍ഷിച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_LABEL_DEFINED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Label $(ARG1) already defined."
+msgstr "ലേബല്‍ $(ARG1) നേരത്തേ തന്നെ നിഷ്കര്‍ഷിച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_UNDEF_VAR & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Variable $(ARG1) not found."
+msgstr "വേരിയബിള്‍ $(ARG1) കണ്ടെത്താനായില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_UNDEF_ARRAY & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Array or procedure $(ARG1) not found."
+msgstr "അറെ അല്ലെങ്കില്‍ പ്രക്രിയ $(ARG1) കണ്ടെത്താനായില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_UNDEF_PROC & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Procedure $(ARG1) not found."
+msgstr "പ്രക്രിയ $(ARG1) കണ്ടെത്താനായില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_UNDEF_LABEL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Label $(ARG1) undefined."
+msgstr "ലേബല്‍ $(ARG1) നിഷ്കര്‍ഷിച്ചിട്ടില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_UNDEF_TYPE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Unknown data type $(ARG1)."
+msgstr "അപരിചിതമായ ഡേറ്റ തരം $(ARG1)."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_EXIT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Exit $(ARG1) expected."
+msgstr "Exit $(ARG1) പ്രതീക്ഷിച്ചു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_BLOCK & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Statement block still open: $(ARG1) missing."
+msgstr "സ്റ്റേറ്റ്മെന്റ് ബ്ലോക്ക് ഇപ്പോഴും തുറന്നിരിക്കുന്നു: $(ARG1) കാണാനില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_BRACKETS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Parentheses do not match."
+msgstr "പരാന്തസിസ് പൊരുത്തപ്പെടുന്നില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_DECLARATION & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Symbol $(ARG1) already defined differently."
+msgstr "ചിഹ്നം $(ARG1) നേരത്തേ തന്നെ മറ്റൊരു തരത്തില്‍ നിഷ്കര്‍ച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_PARAMETERS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Parameters do not correspond to procedure."
+msgstr "പരാമീറ്ററുകള്‍ പ്രക്രിയകള്‍ അനുസരിച്ചു് പ്രവര്‍ത്തിക്കുന്നില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_CHAR_IN_NUMBER & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Invalid character in number."
+msgstr "സംഖ്യയില്‍ അസാധുവായ അക്ഷരം."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_MUST_HAVE_DIMS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Array must be dimensioned."
+msgstr "അറെയുടെ വ്യാപ്തി അറിഞ്ഞിരിക്കണം."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_IF & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Else/Endif without If."
+msgstr "If ഇല്ലാതെ Else/Endif ഉപയോഗിച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NOT_IN_SUBR & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "$(ARG1) not allowed within a procedure."
+msgstr "ഒരു പ്രക്രിയയ്ക്കുള്ളില്‍ $(ARG1) അനുവദിക്കുന്നതല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NOT_IN_MAIN & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "$(ARG1) not allowed outside a procedure."
+msgstr "ഒരു പ്രക്രിയയ്ക്കു് പുറത്തു് $(ARG1) അനുവദിക്കുന്നതല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_WRONG_DIMS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Dimension specifications do not match."
+msgstr "വ്യാപ്തി പൊരുത്തപ്പെടുന്നില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_BAD_OPTION & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Unknown option: $(ARG1)."
+msgstr "അപരിചിതമായ ഐച്ഛികം: $(ARG1)."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_CONSTANT_REDECLARED & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Constant $(ARG1) redefined."
+msgstr "കോണ്‍സ്റ്റന്റ് $(ARG1) വീണ്ടും നിഷ്കര്‍ഷിച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_PROG_TOO_LARGE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Program too large."
+msgstr "പ്രോഗ്രാം വളരെ വലുതാണു്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_NO_STRINGS_ARRAYS & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Strings or arrays not permitted."
+msgstr "സ്ട്രിങ് അല്ലെങ്കില്‍ അറെ അനുവദിക്കുന്നതല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_EXCEPTION & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "An exception occurred $(ARG1)."
+msgstr "ഒരു എക്സെപ്ഷന്‍ $(ARG1) സംഭച്ചിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_ARRAY_FIX & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "This array is fixed or temporarily locked."
+msgstr "ഈ അറേ പരിഹരിച്ചിരിയ്ക്കുന്നു അല്ലെങ്കില്‍ താല്‍ക്കാലികമായി പൂട്ടിയിരിയ്ക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_STRING_OVERFLOW & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Out of string space."
+msgstr "സ്പ്രിങിനുള്ള സ്ഥലം ലഭ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_EXPR_TOO_COMPLEX & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Expression Too Complex."
+msgstr "എക്സ്പ്രഷന്‍ വളരെ സങ്കീര്‍ണ്ണം."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_OPER_NOT_PERFORM & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Can't perform requested operation."
+msgstr "ആവശ്യപ്പെട്ട പ്രക്രിയ നടപ്പിലാക്കുവാന്‍ സാധ്യമല്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_TOO_MANY_DLL & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Too many DLL application clients."
+msgstr "അനവധി ഡിഎല്‍എല്‍ പ്രയോഗത്തിനുള്ള ക്ലയന്റുകള്‍."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_LOOP_NOT_INIT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "For loop not initialized."
+msgstr "ആരംഭിച്ചിട്ടില്ലാത്ത ലൂപ്പിനു് വേണ്ടി."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"RID_BASIC_START\n"
+"ERRCODE_BASIC_COMPAT & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "$(ARG1)"
+msgstr "$(ARG1)"
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"IDS_SBERR_TERMINATED\n"
+"string.text"
+msgid "The macro running has been interrupted"
+msgstr "മാക്രോയുടെ പ്രവര്‍ത്തനം തടസ്സപ്പെട്ടിരിക്കുന്നു."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"IDS_SBERR_STOREREF\n"
+"string.text"
+msgid "Reference will not be saved: "
+msgstr "സൂചന സൂക്ഷിക്കുവാന്‍ സാധ്യമല്ല: "
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"ERRCODE_BASMGR_LIBLOAD & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Error loading library '$(ARG1)'."
+msgstr "ലൈബ്രറി '$(ARG1)' ലഭ്യമാക്കുന്നതില്‍ പിശക്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"ERRCODE_BASMGR_LIBSAVE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Error saving library: '$(ARG1)'."
+msgstr "ലൈബ്രറി സൂക്ഷിക്കുന്നതില്‍ പിശക്: '$(ARG1)'."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"ERRCODE_BASMGR_MGROPEN & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "The BASIC from the file '$(ARG1)' could not be initialized."
+msgstr "'$(ARG1)' ഫയലില്‍ നിന്നുള്ള BASIC ആരംഭിക്കുവാന്‍ സാധ്യമായില്ല."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"ERRCODE_BASMGR_MGRSAVE & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Error saving BASIC: '$(ARG1)'."
+msgstr "BASIC: '$(ARG1)' സൂക്ഷിക്കുന്നതില്‍ പിശക്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"ERRCODE_BASMGR_REMOVELIB & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "Error removing library."
+msgstr "ലൈബ്രറി നീക്കം ചെയ്യുന്നതില്‍ പിശക്."
+
+#: sb.src
+msgctxt ""
+"sb.src\n"
+"ERRCODE_BASMGR_UNLOADLIB & ERRCODE_RES_MASK\n"
+"string.text"
+msgid "The library could not be removed from memory."
+msgstr "മെമ്മറിയില്‍ നിന്നും ലൈബ്രറി നീക്കുവാന്‍ സാധ്യമല്ല."

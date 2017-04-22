@@ -39,11 +39,11 @@ public:
 
     virtual bool FillItemSet(SfxItemSet* rCoreSet) override;
     virtual void Reset( const SfxItemSet* rCoreSet ) override;
-    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
+    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet ) override;
 
 private:
     explicit ScTpFormulaOptions(vcl::Window* pParent, const SfxItemSet& rCoreSet);
-    virtual ~ScTpFormulaOptions();
+    virtual ~ScTpFormulaOptions() override;
     virtual void dispose() override;
     void ResetSeparators();
     void OnFocusSeparatorInput(Edit* pEdit);
@@ -53,9 +53,9 @@ private:
     bool IsValidSeparator(const OUString& rSep) const;
     bool IsValidSeparatorSet() const;
 
-    DECL_LINK_TYPED( ButtonHdl, Button*, void );
-    DECL_LINK_TYPED( SepModifyHdl, Edit&, void );
-    DECL_LINK_TYPED( SepEditOnFocusHdl, Control&, void );
+    DECL_LINK( ButtonHdl, Button*, void );
+    DECL_LINK( SepModifyHdl, Edit&, void );
+    DECL_LINK( SepEditOnFocusHdl, Control&, void );
 
 private:
     VclPtr<ListBox>     mpLbFormulaSyntax;

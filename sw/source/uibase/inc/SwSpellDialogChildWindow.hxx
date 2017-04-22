@@ -32,7 +32,7 @@ class SwSpellDialogChildWindow
     SpellState*     m_pSpellState;
 
     SwWrtShell*     GetWrtShell_Impl();
-    bool            MakeTextSelection_Impl(SwWrtShell& rSh, ShellModes eSelMode);
+    bool            MakeTextSelection_Impl(SwWrtShell& rSh, ShellMode eSelMode);
     bool            FindNextDrawTextError_Impl(SwWrtShell& rSh);
     bool            SpellDrawText_Impl(SwWrtShell& rSh, svx::SpellPortions& rPortions);
     void            LockFocusNotification(bool bLock);
@@ -54,7 +54,7 @@ public:
         sal_uInt16 nId,
         SfxBindings* pBindings,
         SfxChildWinInfo* pInfo);
-    virtual ~SwSpellDialogChildWindow();
+    virtual ~SwSpellDialogChildWindow() override;
 
     SFX_DECL_CHILDWINDOW_WITHID(SwSpellDialogChildWindow);
 

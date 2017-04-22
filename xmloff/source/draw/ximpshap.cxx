@@ -41,7 +41,6 @@
 #include <xmloff/XMLShapeStyleContext.hxx>
 #include <xmloff/xmluconv.hxx>
 #include <com/sun/star/container/XNamed.hpp>
-#include <com/sun/star/drawing/CircleKind.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/awt/XControlModel.hpp>
 #include <com/sun/star/drawing/XControlShape.hpp>
@@ -54,11 +53,11 @@
 #include "xexptran.hxx"
 #include <com/sun/star/drawing/PolyPolygonBezierCoords.hpp>
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
-#include <com/sun/star/drawing/ConnectorType.hpp>
 #include <com/sun/star/drawing/HomogenMatrix3.hpp>
 
 #include <sax/tools/converter.hxx>
 #include <comphelper/sequence.hxx>
+#include <tools/diagnose_ex.h>
 
 #include "PropertySetMerger.hxx"
 #include <xmloff/families.hxx>
@@ -96,7 +95,7 @@ using namespace ::com::sun::star::document;
 using namespace ::xmloff::token;
 using namespace ::xmloff::EnhancedCustomShapeToken;
 
-SvXMLEnumMapEntry aXML_GlueAlignment_EnumMap[] =
+SvXMLEnumMapEntry<drawing::Alignment> const aXML_GlueAlignment_EnumMap[] =
 {
     { XML_TOP_LEFT,     drawing::Alignment_TOP_LEFT },
     { XML_TOP,          drawing::Alignment_TOP },
@@ -107,10 +106,10 @@ SvXMLEnumMapEntry aXML_GlueAlignment_EnumMap[] =
     { XML_BOTTOM_LEFT,  drawing::Alignment_BOTTOM_LEFT },
     { XML_BOTTOM,       drawing::Alignment_BOTTOM },
     { XML_BOTTOM_RIGHT, drawing::Alignment_BOTTOM_RIGHT },
-    { XML_TOKEN_INVALID, 0 }
+    { XML_TOKEN_INVALID, (drawing::Alignment)0 }
 };
 
-SvXMLEnumMapEntry aXML_GlueEscapeDirection_EnumMap[] =
+SvXMLEnumMapEntry<drawing::EscapeDirection> const aXML_GlueEscapeDirection_EnumMap[] =
 {
     { XML_AUTO,         drawing::EscapeDirection_SMART },
     { XML_LEFT,         drawing::EscapeDirection_LEFT },
@@ -119,7 +118,7 @@ SvXMLEnumMapEntry aXML_GlueEscapeDirection_EnumMap[] =
     { XML_DOWN,         drawing::EscapeDirection_DOWN },
     { XML_HORIZONTAL,   drawing::EscapeDirection_HORIZONTAL },
     { XML_VERTICAL,     drawing::EscapeDirection_VERTICAL },
-    { XML_TOKEN_INVALID, 0 }
+    { XML_TOKEN_INVALID, (drawing::EscapeDirection)0 }
 };
 
 static bool ImpIsEmptyURL( const OUString& rURL )
@@ -250,7 +249,7 @@ SvXMLImportContext *SdXMLShapeContext::CreateChildContext( sal_uInt16 p_nPrefix,
 
 void SdXMLShapeContext::addGluePoint( const uno::Reference< xml::sax::XAttributeList>& xAttrList )
 {
-    // get the glue points container for this shape if its not already there
+    // get the glue points container for this shape if it's not already there
     if( !mxGluePoints.is() )
     {
         uno::Reference< drawing::XGluePointsSupplier > xSupplier( mxShape, uno::UNO_QUERY );
@@ -303,20 +302,16 @@ void SdXMLShapeContext::addGluePoint( const uno::Reference< xml::sax::XAttribute
             }
             else if( IsXMLToken( aLocalName, XML_ALIGN ) )
             {
-                sal_uInt16 eKind;
+                drawing::Alignment eKind;
                 if( SvXMLUnitConverter::convertEnum( eKind, sValue, aXML_GlueAlignment_EnumMap ) )
                 {
-                    aGluePoint.PositionAlignment = (drawing::Alignment)eKind;
+                    aGluePoint.PositionAlignment = eKind;
                     aGluePoint.IsRelative = false;
                 }
             }
             else if( IsXMLToken( aLocalName, XML_ESCAPE_DIRECTION ) )
             {
-                sal_uInt16 eKind;
-                if( SvXMLUnitConverter::convertEnum( eKind, sValue, aXML_GlueEscapeDirection_EnumMap ) )
-                {
-                    aGluePoint.Escape = (drawing::EscapeDirection)eKind;
-                }
+                SvXMLUnitConverter::convertEnum( aGluePoint.Escape, sValue, aXML_GlueEscapeDirection_EnumMap );
             }
         }
     }
@@ -330,7 +325,7 @@ void SdXMLShapeContext::addGluePoint( const uno::Reference< xml::sax::XAttribute
         }
         catch(const uno::Exception&)
         {
-            OSL_FAIL( "exception during setting of glue points!");
+            DBG_UNHANDLED_EXCEPTION_WHEN( "during setting of glue points");
         }
     }
 }
@@ -345,10 +340,9 @@ void SdXMLShapeContext::EndElement()
     if(mxCursor.is())
     {
         // delete addition newline
-        const OUString aEmpty;
         mxCursor->gotoEnd( false );
         mxCursor->goLeft( 1, true );
-        mxCursor->setString( aEmpty );
+        mxCursor->setString( "" );
 
         // reset cursor
         GetImport().GetTextImport()->ResetCursor();
@@ -402,7 +396,7 @@ void SdXMLShapeContext::EndElement()
     }
     catch(const Exception&)
     {
-        OSL_FAIL("xmloff::SdXMLShapeContext::EndElement(), exception caught while setting hyperlink!");
+        DBG_UNHANDLED_EXCEPTION_WHEN("while setting hyperlink");
     }
 
     if( mxLockable.is() )
@@ -444,7 +438,7 @@ void SdXMLShapeContext::AddShape(uno::Reference< drawing::XShape >& xShape)
         }
         catch(const Exception&)
         {
-            OSL_FAIL( "SdXMLShapeContext::AddShape(), exception caught!" );
+            DBG_UNHANDLED_EXCEPTION_WHEN( "while setting visible or printable" );
         }
 
         if(!mbTemporaryShape && (!GetImport().HasTextImport()
@@ -679,7 +673,7 @@ void SdXMLShapeContext::SetStyle( bool bSupportsStyle /* = true */)
                 }
                 catch(const uno::Exception&)
                 {
-                    OSL_FAIL( "could not find style for shape!" );
+                    DBG_UNHANDLED_EXCEPTION_WHEN( "finding style for shape" );
                 }
             }
 
@@ -692,7 +686,7 @@ void SdXMLShapeContext::SetStyle( bool bSupportsStyle /* = true */)
                 }
                 catch(const uno::Exception&)
                 {
-                    OSL_FAIL( "could not find style for shape!" );
+                    DBG_UNHANDLED_EXCEPTION_WHEN( "setting style for shape" );
                 }
             }
 
@@ -931,74 +925,6 @@ bool SdXMLShapeContext::isPresentationShape() const
     return false;
 }
 
-void SdXMLShapeContext::onDemandRescueUsefulDataFromTemporary( const SvXMLImportContext& rCandidate )
-{
-    const SdXMLShapeContext* pCandidate = dynamic_cast< const SdXMLShapeContext* >(&rCandidate);
-
-    if(!mxGluePoints.is() && pCandidate)
-    {
-        // try to rescue GluePoints from rCandidate to local if we not yet have GluePoints by copying them
-        uno::Reference< drawing::XGluePointsSupplier > xSourceSupplier( pCandidate->getShape(), uno::UNO_QUERY );
-        if( !xSourceSupplier.is() )
-            return;
-
-        uno::Reference< container::XIdentifierAccess > xSourceGluePoints( xSourceSupplier->getGluePoints(), uno::UNO_QUERY );
-        if( !xSourceGluePoints.is() )
-            return;
-
-        uno::Sequence< sal_Int32 > aSourceIdSequence( xSourceGluePoints->getIdentifiers() );
-        const sal_Int32 nSourceCount(aSourceIdSequence.getLength());
-        rtl::Reference< XMLShapeImportHelper > xSourceShapeImportHelper(const_cast< SdXMLShapeContext* >(pCandidate)->GetImport().GetShapeImport());
-
-        if(nSourceCount)
-        {
-            // rCandidate has GluePoints; prepare the GluePoint container for the local shape
-            uno::Reference< drawing::XGluePointsSupplier > xSupplier( mxShape, uno::UNO_QUERY );
-            if( !xSupplier.is() )
-                return;
-
-            mxGluePoints.set( xSupplier->getGluePoints(), UNO_QUERY );
-
-            if( !mxGluePoints.is() )
-                return;
-
-            drawing::GluePoint2 aSourceGluePoint;
-
-            for( sal_Int32 nSourceIndex(0); nSourceIndex < nSourceCount; nSourceIndex++ )
-            {
-                const sal_Int32 nSourceIdentifier = aSourceIdSequence[nSourceIndex];
-
-                // loop over GluePoints which are UserDefined (avoid the auto mapped ones)
-                if((xSourceGluePoints->getByIdentifier( nSourceIdentifier ) >>= aSourceGluePoint)
-                    && aSourceGluePoint.IsUserDefined)
-                {
-                    // get original mappingID back, this is the draw:id imported with a draw:glue-point
-                    const sal_Int32 nDestinnationId = xSourceShapeImportHelper->findGluePointMapping(
-                        pCandidate->getShape(),
-                        nSourceIdentifier );
-
-                    if(-1 != nSourceIdentifier)
-                    {
-                        // if we got that we are able to add a copy of that GluePoint to the local
-                        // context and xShape since we have all information that the source shape
-                        // and context had at import time
-                        try
-                        {
-                            const sal_Int32 nInternalId = mxGluePoints->insert( uno::makeAny( aSourceGluePoint ) );
-                            GetImport().GetShapeImport()->addGluePointMapping( mxShape, nDestinnationId, nInternalId );
-                        }
-                        catch (const uno::Exception& e)
-                        {
-                            SAL_WARN("xmloff", "exception during setting of glue points: " << e.Message);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
 SdXMLRectShapeContext::SdXMLRectShapeContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrfx,
@@ -1007,7 +933,7 @@ SdXMLRectShapeContext::SdXMLRectShapeContext(
     uno::Reference< drawing::XShapes >& rShapes,
     bool bTemporaryShape)
 :   SdXMLShapeContext( rImport, nPrfx, rLocalName, xAttrList, rShapes, bTemporaryShape ),
-    mnRadius( 0L )
+    mnRadius( 0 )
 {
 }
 
@@ -1055,7 +981,7 @@ void SdXMLRectShapeContext::StartElement(const uno::Reference< xml::sax::XAttrib
                 }
                 catch(const uno::Exception&)
                 {
-                    OSL_FAIL( "exception during setting of corner radius!");
+                    DBG_UNHANDLED_EXCEPTION_WHEN( "setting corner radius");
                 }
             }
         }
@@ -1072,10 +998,10 @@ SdXMLLineShapeContext::SdXMLLineShapeContext(
     uno::Reference< drawing::XShapes >& rShapes,
     bool bTemporaryShape)
 :   SdXMLShapeContext( rImport, nPrfx, rLocalName, xAttrList, rShapes, bTemporaryShape ),
-    mnX1( 0L ),
-    mnY1( 0L ),
-    mnX2( 1L ),
-    mnY2( 1L )
+    mnX1( 0 ),
+    mnY1( 0 ),
+    mnX2( 1 ),
+    mnY2( 1 )
 {
 }
 
@@ -1151,9 +1077,9 @@ void SdXMLLineShapeContext::StartElement(const uno::Reference< xml::sax::XAttrib
         uno::Reference< beans::XPropertySet > xPropSet(mxShape, uno::UNO_QUERY);
         if(xPropSet.is())
         {
-            drawing::PointSequenceSequence aPolyPoly(1L);
+            drawing::PointSequenceSequence aPolyPoly(1);
             drawing::PointSequence* pOuterSequence = aPolyPoly.getArray();
-            pOuterSequence->realloc(2L);
+            pOuterSequence->realloc(2);
             awt::Point* pInnerSequence = pOuterSequence->getArray();
 
             *pInnerSequence = awt::Point( mnX1 - aTopLeft.X, mnY1 - aTopLeft.Y);
@@ -1185,10 +1111,10 @@ SdXMLEllipseShapeContext::SdXMLEllipseShapeContext(
     uno::Reference< drawing::XShapes >& rShapes,
     bool bTemporaryShape)
 :   SdXMLShapeContext( rImport, nPrfx, rLocalName, xAttrList, rShapes, bTemporaryShape ),
-    mnCX( 0L ),
-    mnCY( 0L ),
-    mnRX( 1L ),
-    mnRY( 1L ),
+    mnCX( 0 ),
+    mnCY( 0 ),
+    mnRX( 1 ),
+    mnRY( 1 ),
     meKind( drawing::CircleKind_FULL ),
     mnStartAngle( 0 ),
     mnEndAngle( 0 )
@@ -1241,11 +1167,7 @@ void SdXMLEllipseShapeContext::processAttribute( sal_uInt16 nPrefix, const OUStr
     {
         if( IsXMLToken( rLocalName, XML_KIND ) )
         {
-            sal_uInt16 eKind;
-            if( SvXMLUnitConverter::convertEnum( eKind, rValue, aXML_CircleKind_EnumMap ) )
-            {
-                meKind = eKind;
-            }
+            SvXMLUnitConverter::convertEnum( meKind, rValue, aXML_CircleKind_EnumMap );
             return;
         }
         if( IsXMLToken( rLocalName, XML_START_ANGLE ) )
@@ -1721,7 +1643,7 @@ void SdXMLTextBoxShapeContext::StartElement(const uno::Reference< xml::sax::XAtt
                 }
                 catch(const uno::Exception&)
                 {
-                    OSL_FAIL( "exception during setting of corner radius!");
+                    DBG_UNHANDLED_EXCEPTION_WHEN( "setting corner radius");
                 }
             }
         }
@@ -1738,7 +1660,7 @@ void SdXMLTextBoxShapeContext::StartElement(const uno::Reference< xml::sax::XAtt
                 }
                 catch(const uno::Exception&)
                 {
-                    OSL_FAIL( "exception during setting of name of next chain link!");
+                    DBG_UNHANDLED_EXCEPTION_WHEN( "setting name of next chain link");
                 }
             }
         }
@@ -1785,7 +1707,7 @@ void SdXMLControlShapeContext::StartElement(const uno::Reference< xml::sax::XAtt
     AddShape("com.sun.star.drawing.ControlShape");
     if( mxShape.is() )
     {
-        DBG_ASSERT( !maFormId.isEmpty(), "draw:control without a form:id attribute!" );
+        SAL_WARN_IF( !!maFormId.isEmpty(), "xmloff", "draw:control without a form:id attribute!" );
         if( !maFormId.isEmpty() )
         {
             if( GetImport().IsFormsSupported() )
@@ -1822,7 +1744,7 @@ SdXMLConnectorShapeContext::SdXMLConnectorShapeContext(
 :   SdXMLShapeContext( rImport, nPrfx, rLocalName, xAttrList, rShapes, bTemporaryShape ),
     maStart(0,0),
     maEnd(1,1),
-    mnType( (sal_uInt16)drawing::ConnectorType_STANDARD ),
+    mnType( drawing::ConnectorType_STANDARD ),
     mnStartGlueId(-1),
     mnEndGlueId(-1),
     mnDelta1(0),
@@ -2057,6 +1979,56 @@ void SdXMLConnectorShapeContext::StartElement(const uno::Reference< xml::sax::XA
 
                 if ( bApplySVGD )
                 {
+                    // tdf#83360 use path data only when redundant data of start and end point coordinates of
+                    // path start/end and connector start/end is equal. This is to avoid using erraneous
+                    // or inconsistent path data at import of foreign formats. Office itself always
+                    // writes out a consistent data set. Not using it when there is inconsistency
+                    // is okay since the path data is redundant, buffered data just to avoid recalculation
+                    // of the connector's layout at load time, no real information would be lost.
+                    // A 'connected' end has prio to direct coordinate data in Start/EndPosition
+                    // to the path data (which should have the start/end redundant in the path)
+                    const drawing::PolyPolygonBezierCoords* pSource = static_cast< const drawing::PolyPolygonBezierCoords* >(maPath.getValue());
+                    const sal_uInt32 nSequenceCount(pSource->Coordinates.getLength());
+                    bool bStartEqual(false);
+                    bool bEndEqual(false);
+
+                    if(nSequenceCount)
+                    {
+                        const drawing::PointSequence& rStartSeq = pSource->Coordinates[0];
+                        const sal_uInt32 nStartCount = rStartSeq.getLength();
+
+                        if(nStartCount)
+                        {
+                            const awt::Point& rStartPoint = rStartSeq.getConstArray()[0];
+
+                            if(rStartPoint.X == maStart.X && rStartPoint.Y == maStart.Y)
+                            {
+                                bStartEqual = true;
+                            }
+                        }
+
+                        const drawing::PointSequence& rEndSeq = pSource->Coordinates[nSequenceCount - 1];
+                        const sal_uInt32 nEndCount = rEndSeq.getLength();
+
+                        if(nEndCount)
+                        {
+                            const awt::Point& rEndPoint = rEndSeq.getConstArray()[nEndCount - 1];
+
+                            if(rEndPoint.X == maEnd.X && rEndPoint.Y == maEnd.Y)
+                            {
+                                bEndEqual = true;
+                            }
+                        }
+                    }
+
+                    if(!bStartEqual || !bEndEqual)
+                    {
+                        bApplySVGD = false;
+                    }
+                }
+
+                if ( bApplySVGD )
+                {
                     assert(maPath.getValueType() == cppu::UnoType<drawing::PolyPolygonBezierCoords>::get());
                     xProps->setPropertyValue("PolyPolygonBezier", maPath);
                 }
@@ -2164,10 +2136,9 @@ void SdXMLMeasureShapeContext::EndElement()
         if( !xCursor.is() )
             break;
 
-        const OUString aEmpty;
         xCursor->collapseToStart();
         xCursor->goRight( 1, true );
-        xCursor->setString( aEmpty );
+        xCursor->setString( "" );
     }
     while(false);
 
@@ -2271,7 +2242,7 @@ SdXMLCaptionShapeContext::SdXMLCaptionShapeContext(
     bool bTemporaryShape)
 :   SdXMLShapeContext( rImport, nPrfx, rLocalName, xAttrList, rShapes, bTemporaryShape ),
     // #86616# for correct edge rounding import mnRadius needs to be initialized
-    mnRadius( 0L )
+    mnRadius( 0 )
 {
 }
 
@@ -2325,7 +2296,7 @@ void SdXMLCaptionShapeContext::StartElement(const uno::Reference< xml::sax::XAtt
                 }
                 catch(const uno::Exception&)
                 {
-                    OSL_FAIL( "exception during setting of corner radius!");
+                    DBG_UNHANDLED_EXCEPTION_WHEN( "setting corner radius");
                 }
             }
         }
@@ -2533,14 +2504,8 @@ SdXMLChartShapeContext::SdXMLChartShapeContext(
     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
     uno::Reference< drawing::XShapes >& rShapes,
     bool bTemporaryShape)
-:   SdXMLShapeContext( rImport, nPrfx, rLocalName, xAttrList, rShapes, bTemporaryShape ),
-    mpChartContext( nullptr )
+:   SdXMLShapeContext( rImport, nPrfx, rLocalName, xAttrList, rShapes, bTemporaryShape )
 {
-}
-
-SdXMLChartShapeContext::~SdXMLChartShapeContext()
-{
-    delete mpChartContext;
 }
 
 void SdXMLChartShapeContext::StartElement(const uno::Reference< xml::sax::XAttributeList>& xAttrList)
@@ -2576,7 +2541,7 @@ void SdXMLChartShapeContext::StartElement(const uno::Reference< xml::sax::XAttri
                 uno::Reference< frame::XModel > xChartModel;
                 if( aAny >>= xChartModel )
                 {
-                    mpChartContext = GetImport().GetChartImport()->CreateChartContext( GetImport(), XML_NAMESPACE_SVG, GetXMLToken(XML_CHART), xChartModel, xAttrList );
+                    mxChartContext.set( GetImport().GetChartImport()->CreateChartContext( GetImport(), XML_NAMESPACE_SVG, GetXMLToken(XML_CHART), xChartModel, xAttrList ) );
                 }
             }
         }
@@ -2600,30 +2565,30 @@ void SdXMLChartShapeContext::StartElement(const uno::Reference< xml::sax::XAttri
 
         SdXMLShapeContext::StartElement(xAttrList);
 
-        if( mpChartContext )
-            mpChartContext->StartElement( xAttrList );
+        if( mxChartContext.is() )
+            mxChartContext->StartElement( xAttrList );
     }
 }
 
 void SdXMLChartShapeContext::EndElement()
 {
-    if( mpChartContext )
-        mpChartContext->EndElement();
+    if( mxChartContext.is() )
+        mxChartContext->EndElement();
 
     SdXMLShapeContext::EndElement();
 }
 
 void SdXMLChartShapeContext::Characters( const OUString& rChars )
 {
-    if( mpChartContext )
-        mpChartContext->Characters( rChars );
+    if( mxChartContext.is() )
+        mxChartContext->Characters( rChars );
 }
 
 SvXMLImportContext * SdXMLChartShapeContext::CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList )
 {
-    if( mpChartContext )
-        return mpChartContext->CreateChildContext( nPrefix, rLocalName, xAttrList );
+    if( mxChartContext.is() )
+        return mxChartContext->CreateChildContext( nPrefix, rLocalName, xAttrList );
 
     return nullptr;
 }
@@ -2825,7 +2790,7 @@ SvXMLImportContext* SdXMLObjectShapeContext::CreateChildContext(
 
                 uno::Reference< lang::XComponent > xComp;
                 xPropSet->getPropertyValue("Model") >>= xComp;
-                DBG_ASSERT( xComp.is(), "no xModel for own OLE format" );
+                SAL_WARN_IF( !xComp.is(), "xmloff", "no xModel for own OLE format" );
                 pEContext->SetComponent( xComp );
             }
         }
@@ -3401,7 +3366,7 @@ void SdXMLFrameShapeContext::removeGraphicFromImportContext(const SvXMLImportCon
         }
         catch( uno::Exception& )
         {
-            OSL_FAIL( "Error in cleanup of multiple graphic object import (!)" );
+            DBG_UNHANDLED_EXCEPTION_WHEN( "Error in cleanup of multiple graphic object import." );
         }
     }
 }
@@ -3430,7 +3395,7 @@ OUString SdXMLFrameShapeContext::getGraphicURLFromImportContext(const SvXMLImpor
         }
         catch( uno::Exception& )
         {
-            OSL_FAIL( "Error in cleanup of multiple graphic object import (!)" );
+            DBG_UNHANDLED_EXCEPTION_WHEN( "Error in cleanup of multiple graphic object import." );
         }
     }
 
@@ -3443,7 +3408,7 @@ SvXMLImportContext *SdXMLFrameShapeContext::CreateChildContext( sal_uInt16 nPref
 {
     SvXMLImportContext * pContext = nullptr;
 
-    if( !mxImplContext.Is() )
+    if( !mxImplContext.is() )
     {
         SvXMLShapeContext* pShapeContext= GetImport().GetShapeImport()->CreateFrameChildContext(
                         GetImport(), nPrefix, rLocalName, xAttrList, mxShapes, mxAttrList );
@@ -3461,8 +3426,8 @@ SvXMLImportContext *SdXMLFrameShapeContext::CreateChildContext( sal_uInt16 nPref
             SdXMLPluginShapeContext* pPluginContext = dynamic_cast<SdXMLPluginShapeContext*>(pShapeContext);
             if( pPluginContext && pPluginContext->getMimeType() == "model/vnd.gltf+json" )
             {
-                 mxImplContext = 0;
-                 return this;
+                 mxImplContext = nullptr;
+                return new SvXMLImportContext(GetImport(), nPrefix, rLocalName);
             }
         }
 #endif
@@ -3473,7 +3438,7 @@ SvXMLImportContext *SdXMLFrameShapeContext::CreateChildContext( sal_uInt16 nPref
 
         if(getSupportsMultipleContents() && dynamic_cast< SdXMLGraphicObjectShapeContext* >(pContext))
         {
-            addContent(*mxImplContext);
+            addContent(*mxImplContext.get());
         }
     }
     else if(getSupportsMultipleContents() && XML_NAMESPACE_DRAW == nPrefix && IsXMLToken(rLocalName, XML_IMAGE))
@@ -3485,15 +3450,15 @@ SvXMLImportContext *SdXMLFrameShapeContext::CreateChildContext( sal_uInt16 nPref
 
         if(dynamic_cast< SdXMLGraphicObjectShapeContext* >(pContext))
         {
-            addContent(*mxImplContext);
+            addContent(*mxImplContext.get());
         }
     }
-    else if( mbSupportsReplacement && !mxReplImplContext &&
+    else if( mbSupportsReplacement && !mxReplImplContext.is() &&
              XML_NAMESPACE_DRAW == nPrefix &&
              IsXMLToken( rLocalName, XML_IMAGE ) )
     {
         // read replacement image
-        SvXMLImportContext *pImplContext = &mxImplContext;
+        SvXMLImportContext *pImplContext = mxImplContext.get();
         SdXMLShapeContext *pSContext =
             dynamic_cast<SdXMLShapeContext*>( pImplContext  );
         if( pSContext )
@@ -3520,7 +3485,7 @@ SvXMLImportContext *SdXMLFrameShapeContext::CreateChildContext( sal_uInt16 nPref
             // note: no more draw:image can be added once we get here
             mxImplContext = solveMultipleImages();
         }
-        SvXMLImportContext *pImplContext = &mxImplContext;
+        SvXMLImportContext *pImplContext = mxImplContext.get();
         pContext = dynamic_cast<SdXMLShapeContext&>(*pImplContext).CreateChildContext( nPrefix,
                                                                         rLocalName, xAttrList );
     }
@@ -3531,7 +3496,7 @@ SvXMLImportContext *SdXMLFrameShapeContext::CreateChildContext( sal_uInt16 nPref
             // note: no more draw:image can be added once we get here
             mxImplContext = solveMultipleImages();
         }
-        SdXMLShapeContext *pSContext = dynamic_cast< SdXMLShapeContext* >( &mxImplContext );
+        SdXMLShapeContext *pSContext = dynamic_cast< SdXMLShapeContext* >( mxImplContext.get() );
         if( pSContext )
         {
             uno::Reference < beans::XPropertySet > xPropSet( pSContext->getShape(), uno::UNO_QUERY );
@@ -3558,17 +3523,17 @@ void SdXMLFrameShapeContext::EndElement()
     // solve if multiple image child contexts were imported
     SvXMLImportContextRef const pSelectedContext(solveMultipleImages());
     const SdXMLGraphicObjectShapeContext* pShapeContext(
-        dynamic_cast<const SdXMLGraphicObjectShapeContext*>(&pSelectedContext));
+        dynamic_cast<const SdXMLGraphicObjectShapeContext*>(pSelectedContext.get()));
     if ( pShapeContext && !maShapeId.isEmpty() )
     {
         // fdo#64512 and fdo#60075 - make sure *this* shape is
         // registered for given ID
-        assert( mxImplContext.Is() );
+        assert( mxImplContext.is() );
         const uno::Reference< uno::XInterface > xShape( pShapeContext->getShape() );
         GetImport().getInterfaceToIdentifierMapper().registerReferenceAlways( maShapeId, xShape );
     }
 
-    if( !mxImplContext.Is() )
+    if( !mxImplContext.is() )
     {
         // now check if this is an empty presentation object
         sal_Int16 nAttrCount = mxAttrList.is() ? mxAttrList->getLength() : 0;
@@ -3615,7 +3580,7 @@ void SdXMLFrameShapeContext::EndElement()
             mxImplContext = GetImport().GetShapeImport()->CreateFrameChildContext(
                     GetImport(), XML_NAMESPACE_DRAW, GetXMLToken( eToken ), mxAttrList, mxShapes, xEmpty );
 
-            if( mxImplContext.Is() )
+            if( mxImplContext.is() )
             {
                 mxImplContext->StartElement( mxAttrList );
                 mxImplContext->EndElement();
@@ -3735,7 +3700,7 @@ void SdXMLCustomShapeContext::StartElement( const uno::Reference< xml::sax::XAtt
         }
         catch(const uno::Exception&)
         {
-            OSL_FAIL( "could not set enhanced customshape geometry" );
+            DBG_UNHANDLED_EXCEPTION_WHEN( "setting enhanced customshape geometry" );
         }
         SdXMLShapeContext::StartElement(xAttrList);
     }
@@ -3818,7 +3783,7 @@ void SdXMLCustomShapeContext::EndElement()
         }
         catch(const uno::Exception&)
         {
-            OSL_FAIL( "could not set enhanced customshape geometry" );
+            DBG_UNHANDLED_EXCEPTION_WHEN( "setting enhanced customshape geometry" );
         }
 
         sal_Int32 nUPD;
@@ -3843,7 +3808,7 @@ void SdXMLCustomShapeContext::EndElement()
     // implementations held on the SdrObjects of type
     // SdrObjCustomShape - those tend to linger until the entire file
     // is loaded. For large files with a lot of these, 32bit systems
-    // may crash due to being out of ressources after ca. 4200
+    // may crash due to being out of resources after ca. 4200
     // Outliners and VirtualDevices used there as RefDevice
     try
     {
@@ -3857,7 +3822,7 @@ void SdXMLCustomShapeContext::EndElement()
     }
     catch(const uno::Exception&)
     {
-        OSL_FAIL("could not flush after load");
+        DBG_UNHANDLED_EXCEPTION_WHEN("flushing after load");
     }
 }
 
@@ -3945,7 +3910,7 @@ void SdXMLTableShapeContext::StartElement( const css::uno::Reference< css::xml::
             }
             catch(const Exception&)
             {
-                OSL_FAIL("SdXMLTableShapeContext::StartElement(), exception caught!");
+                DBG_UNHANDLED_EXCEPTION();
             }
 
             const XMLPropertyMapEntry* pEntry = &aXMLTableShapeAttributes[0];
@@ -3958,7 +3923,7 @@ void SdXMLTableShapeContext::StartElement( const css::uno::Reference< css::xml::
                 }
                 catch(const Exception&)
                 {
-                    OSL_FAIL("SdXMLTableShapeContext::StartElement(), exception caught!");
+                    DBG_UNHANDLED_EXCEPTION();
                 }
             }
         }
@@ -3974,7 +3939,7 @@ void SdXMLTableShapeContext::StartElement( const css::uno::Reference< css::xml::
             if( xColumnRowRange.is() )
                 mxTableImportContext = xTableImport->CreateTableContext( GetPrefix(), GetLocalName(), xColumnRowRange );
 
-            if( mxTableImportContext.Is() )
+            if( mxTableImportContext.is() )
                 mxTableImportContext->StartElement( xAttrList );
         }
     }
@@ -3982,7 +3947,7 @@ void SdXMLTableShapeContext::StartElement( const css::uno::Reference< css::xml::
 
 void SdXMLTableShapeContext::EndElement()
 {
-    if( mxTableImportContext.Is() )
+    if( mxTableImportContext.is() )
         mxTableImportContext->EndElement();
 
     SdXMLShapeContext::EndElement();
@@ -4025,7 +3990,7 @@ void SdXMLTableShapeContext::processAttribute( sal_uInt16 nPrefix, const OUStrin
 
 SvXMLImportContext* SdXMLTableShapeContext::CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const uno::Reference<xml::sax::XAttributeList>& xAttrList )
 {
-    if( mxTableImportContext.Is() && (nPrefix == XML_NAMESPACE_TABLE) )
+    if( mxTableImportContext.is() && (nPrefix == XML_NAMESPACE_TABLE) )
         return mxTableImportContext->CreateChildContext(nPrefix, rLocalName, xAttrList);
     else
         return SdXMLShapeContext::CreateChildContext(nPrefix, rLocalName, xAttrList);

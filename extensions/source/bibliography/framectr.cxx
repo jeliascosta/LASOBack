@@ -144,23 +144,15 @@ public:
                                             , pController(nullptr)
                                         {}
 
-                                        virtual ~BibFrameCtrl_Impl();
-
-    virtual void                        SAL_CALL frameAction(const FrameActionEvent& aEvent) throw( RuntimeException, std::exception ) override;
-    virtual void                        SAL_CALL disposing( const lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void                        SAL_CALL frameAction(const FrameActionEvent& aEvent) override;
+    virtual void                        SAL_CALL disposing( const lang::EventObject& Source ) override;
 };
 
-
-BibFrameCtrl_Impl::~BibFrameCtrl_Impl()
-{
-}
-
-void BibFrameCtrl_Impl::frameAction(const FrameActionEvent& ) throw( uno::RuntimeException, std::exception )
+void BibFrameCtrl_Impl::frameAction(const FrameActionEvent& )
 {
 }
 
 void BibFrameCtrl_Impl::disposing( const lang::EventObject& /*Source*/ )
-    throw (css::uno::RuntimeException, std::exception)
 {
     ::SolarMutexGuard aGuard;
     if ( pController )
@@ -171,36 +163,33 @@ BibFrameController_Impl::BibFrameController_Impl( const uno::Reference< awt::XWi
                                                 BibDataManager* pDataManager)
     :xWindow( xComponent )
     ,m_xDatMan( pDataManager )
-    ,pDatMan( pDataManager )
     ,pBibMod(nullptr)
 {
     bDisposing=false;
     bHierarchical=true;
-    pImp = new BibFrameCtrl_Impl;
-    pImp->pController = this;
-    pImp->acquire();
+    mxImpl = new BibFrameCtrl_Impl;
+    mxImpl->pController = this;
 }
 
 BibFrameController_Impl::~BibFrameController_Impl()
 {
-    pImp->pController = nullptr;
-    pImp->release();
-    delete pDatMan;
+    mxImpl->pController = nullptr;
+    m_xDatMan.clear();
     if(pBibMod)
         CloseBibModul(pBibMod);
 }
 
-OUString SAL_CALL BibFrameController_Impl::getImplementationName() throw (css::uno::RuntimeException, std::exception)
+OUString SAL_CALL BibFrameController_Impl::getImplementationName()
 {
     return OUString("com.sun.star.comp.extensions.Bibliography");
 }
 
-sal_Bool SAL_CALL BibFrameController_Impl::supportsService( const OUString& sServiceName ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL BibFrameController_Impl::supportsService( const OUString& sServiceName )
 {
     return cppu::supportsService( this, sServiceName );
 }
 
-css::uno::Sequence< OUString > SAL_CALL BibFrameController_Impl::getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception)
+css::uno::Sequence< OUString > SAL_CALL BibFrameController_Impl::getSupportedServiceNames()
 {
     // return only top level services ...
     // base services are included there and should be asked by uno-rtti.
@@ -208,67 +197,66 @@ css::uno::Sequence< OUString > SAL_CALL BibFrameController_Impl::getSupportedSer
     return lNames;
 }
 
-void BibFrameController_Impl::attachFrame( const uno::Reference< XFrame > & xArg ) throw (css::uno::RuntimeException, std::exception)
+void BibFrameController_Impl::attachFrame( const uno::Reference< XFrame > & xArg )
 {
     xFrame = xArg;
-    xFrame->addFrameActionListener( pImp );
+    xFrame->addFrameActionListener( mxImpl.get() );
 }
 
-sal_Bool BibFrameController_Impl::attachModel( const uno::Reference< XModel > & /*xModel*/ ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool BibFrameController_Impl::attachModel( const uno::Reference< XModel > & /*xModel*/ )
 {
     return false;
 }
 
-sal_Bool BibFrameController_Impl::suspend( sal_Bool bSuspend ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool BibFrameController_Impl::suspend( sal_Bool bSuspend )
 {
     if ( bSuspend )
-        getFrame()->removeFrameActionListener( pImp );
+        getFrame()->removeFrameActionListener( mxImpl.get() );
     else
-        getFrame()->addFrameActionListener( pImp );
+        getFrame()->addFrameActionListener( mxImpl.get() );
     return true;
 }
 
-uno::Any BibFrameController_Impl::getViewData() throw (css::uno::RuntimeException, std::exception)
+uno::Any BibFrameController_Impl::getViewData()
 {
     return uno::Any();
 }
 
-void BibFrameController_Impl::restoreViewData( const uno::Any& /*Value*/ ) throw (css::uno::RuntimeException, std::exception)
+void BibFrameController_Impl::restoreViewData( const uno::Any& /*Value*/ )
 {
 }
 
-uno::Reference< XFrame >  BibFrameController_Impl::getFrame() throw (css::uno::RuntimeException, std::exception)
+uno::Reference< XFrame >  BibFrameController_Impl::getFrame()
 {
     return xFrame;
 }
 
-uno::Reference< XModel >  BibFrameController_Impl::getModel() throw (css::uno::RuntimeException, std::exception)
+uno::Reference< XModel >  BibFrameController_Impl::getModel()
 {
     return uno::Reference< XModel > ();
 }
 
-void BibFrameController_Impl::dispose() throw (css::uno::RuntimeException, std::exception)
+void BibFrameController_Impl::dispose()
 {
     bDisposing = true;
     lang::EventObject aObject;
     aObject.Source = static_cast<XController*>(this);
-    pImp->aLC.disposeAndClear(aObject);
-    m_xDatMan = nullptr;
-    pDatMan = nullptr;
+    mxImpl->aLC.disposeAndClear(aObject);
+    m_xDatMan.clear();
     aStatusListeners.clear();
  }
 
-void BibFrameController_Impl::addEventListener( const uno::Reference< lang::XEventListener > & aListener ) throw (css::uno::RuntimeException, std::exception)
+void BibFrameController_Impl::addEventListener( const uno::Reference< lang::XEventListener > & aListener )
 {
-    pImp->aLC.addInterface( cppu::UnoType<lang::XEventListener>::get(), aListener );
+    mxImpl->aLC.addInterface( cppu::UnoType<lang::XEventListener>::get(), aListener );
 }
 
-void BibFrameController_Impl::removeEventListener( const uno::Reference< lang::XEventListener > & aListener ) throw (css::uno::RuntimeException, std::exception)
+void BibFrameController_Impl::removeEventListener( const uno::Reference< lang::XEventListener > & aListener )
 {
-    pImp->aLC.removeInterface( cppu::UnoType<lang::XEventListener>::get(), aListener );
+    mxImpl->aLC.removeInterface( cppu::UnoType<lang::XEventListener>::get(), aListener );
 }
 
-uno::Reference< frame::XDispatch >  BibFrameController_Impl::queryDispatch( const util::URL& aURL, const OUString& /*aTarget*/, sal_Int32 /*nSearchFlags*/ ) throw (css::uno::RuntimeException, std::exception)
+uno::Reference< frame::XDispatch >  BibFrameController_Impl::queryDispatch( const util::URL& aURL, const OUString& /*aTarget*/, sal_Int32 /*nSearchFlags*/ )
 {
     if ( !bDisposing )
     {
@@ -276,7 +264,7 @@ uno::Reference< frame::XDispatch >  BibFrameController_Impl::queryDispatch( cons
         CmdToInfoCache::const_iterator pIter = rCmdCache.find( aURL.Complete );
         if ( pIter != rCmdCache.end() )
         {
-            if (( pDatMan->HasActiveConnection() ) ||
+            if (( m_xDatMan->HasActiveConnection() ) ||
                 ( !pIter->second.bActiveConnection ))
                 return static_cast<frame::XDispatch*>(this);
         }
@@ -285,7 +273,7 @@ uno::Reference< frame::XDispatch >  BibFrameController_Impl::queryDispatch( cons
     return uno::Reference< frame::XDispatch > ();
 }
 
-uno::Sequence<uno::Reference< XDispatch > > BibFrameController_Impl::queryDispatches( const uno::Sequence<DispatchDescriptor>& aDescripts ) throw (css::uno::RuntimeException, std::exception)
+uno::Sequence<uno::Reference< XDispatch > > BibFrameController_Impl::queryDispatches( const uno::Sequence<DispatchDescriptor>& aDescripts )
 {
     uno::Sequence< uno::Reference< XDispatch > > aDispatches( aDescripts.getLength() );
     for ( sal_Int32 i=0; i<aDescripts.getLength(); ++i )
@@ -294,7 +282,6 @@ uno::Sequence<uno::Reference< XDispatch > > BibFrameController_Impl::queryDispat
 }
 
 uno::Sequence< ::sal_Int16 > SAL_CALL BibFrameController_Impl::getSupportedCommandGroups()
-throw (css::uno::RuntimeException, std::exception)
 {
     uno::Sequence< ::sal_Int16 > aDispatchInfo( 4 );
 
@@ -307,7 +294,6 @@ throw (css::uno::RuntimeException, std::exception)
 }
 
 uno::Sequence< frame::DispatchInformation > SAL_CALL BibFrameController_Impl::getConfigurableDispatchInformation( ::sal_Int16 nCommandGroup )
-throw (css::uno::RuntimeException, std::exception)
 {
     const CmdToInfoCache& rCmdCache = GetCommandToInfoCache();
 
@@ -337,10 +323,7 @@ throw (css::uno::RuntimeException, std::exception)
         }
     }
 
-    css::uno::Sequence< css::frame::DispatchInformation > aSeq =
-        comphelper::containerToSequence< css::frame::DispatchInformation, std::list< css::frame::DispatchInformation > >( aDispatchInfoList );
-
-    return aSeq;
+    return comphelper::containerToSequence( aDispatchInfoList );
 }
 
 bool canInsertRecords(const Reference< beans::XPropertySet>& _rxCursorSet)
@@ -403,19 +386,17 @@ static vcl::Window* lcl_GetFocusChild( vcl::Window* pParent )
 
 //class XDispatch
 void BibFrameController_Impl::dispatch(const util::URL& _rURL, const uno::Sequence< beans::PropertyValue >& aArgs)
-    throw (css::uno::RuntimeException,
-           std::exception)
 {
     if ( !bDisposing )
     {
         ::SolarMutexGuard aGuard;
-        vcl::Window* pParent = VCLUnoHelper::GetWindow( xWindow );
+        VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( xWindow );
         WaitObject aWaitObject( pParent );
 
         OUString aCommand( _rURL.Path);
         if(aCommand == "Bib/Mapping")
         {
-            pDatMan->CreateMappingDialog(pParent);
+            m_xDatMan->CreateMappingDialog(pParent);
         }
         else if(aCommand == "Bib/source")
         {
@@ -423,7 +404,7 @@ void BibFrameController_Impl::dispatch(const util::URL& _rURL, const uno::Sequen
         }
         else if(aCommand == "Bib/sdbsource")
         {
-            OUString aURL = pDatMan->CreateDBChangeDialog(pParent);
+            OUString aURL = m_xDatMan->CreateDBChangeDialog(pParent);
             if(!aURL.isEmpty())
             {
                 try
@@ -468,7 +449,7 @@ void BibFrameController_Impl::dispatch(const util::URL& _rURL, const uno::Sequen
             aValue >>= aQueryField;
             BibConfig* pConfig = BibModul::GetConfig();
             pConfig->setQueryField(aQueryField);
-            pDatMan->startQueryWith(aQuery);
+            m_xDatMan->startQueryWith(aQuery);
         }
         else if(aCommand == "Bib/standardFilter")
         {
@@ -477,15 +458,15 @@ void BibFrameController_Impl::dispatch(const util::URL& _rURL, const uno::Sequen
                 uno::Reference< uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
 
                 // create the dialog object
-                uno::Reference< ui::dialogs::XExecutableDialog > xDialog = sdb::FilterDialog::createWithQuery(xContext, pDatMan->getParser(),
-                           Reference<sdbc::XRowSet>(pDatMan->getForm(), uno::UNO_QUERY_THROW), xWindow);
+                uno::Reference< ui::dialogs::XExecutableDialog > xDialog = sdb::FilterDialog::createWithQuery(xContext, m_xDatMan->getParser(),
+                           Reference<sdbc::XRowSet>(m_xDatMan->getForm(), uno::UNO_QUERY_THROW), xWindow);
                 // execute it
                 if ( xDialog->execute( ) )
                 {
                     // the dialog has been executed successfully, and the filter on the query composer
                     // has been changed
-                    OUString sNewFilter = pDatMan->getParser()->getFilter();
-                    pDatMan->setFilter( sNewFilter );
+                    OUString sNewFilter = m_xDatMan->getParser()->getFilter();
+                    m_xDatMan->setFilter( sNewFilter );
                 }
             }
             catch( const uno::Exception& )
@@ -497,11 +478,11 @@ void BibFrameController_Impl::dispatch(const util::URL& _rURL, const uno::Sequen
             for ( sal_uInt16 n=0; n<nCount; n++ )
             {
                 BibStatusDispatch *pObj = aStatusListeners[n].get();
-                if ( pObj->aURL.Path == "Bib/removeFilter" && pDatMan->getParser().is())
+                if ( pObj->aURL.Path == "Bib/removeFilter" && m_xDatMan->getParser().is())
                 {
                     FeatureStateEvent  aEvent;
                     aEvent.FeatureURL = pObj->aURL;
-                    aEvent.IsEnabled  = !pDatMan->getParser()->getFilter().isEmpty();
+                    aEvent.IsEnabled  = !m_xDatMan->getParser()->getFilter().isEmpty();
                     aEvent.Requery    = false;
                     aEvent.Source     = static_cast<XDispatch *>(this);
                     pObj->xListener->statusChanged( aEvent );
@@ -520,15 +501,15 @@ void BibFrameController_Impl::dispatch(const util::URL& _rURL, const uno::Sequen
         }
         else if(aCommand == "Bib/InsertRecord")
         {
-            Reference<form::runtime::XFormController > xFormCtrl = pDatMan->GetFormController();
+            Reference<form::runtime::XFormController > xFormCtrl = m_xDatMan->GetFormController();
             if(SaveModified(xFormCtrl))
             {
                 try
                 {
-                    Reference< sdbc::XResultSet >  xCursor( pDatMan->getForm(), UNO_QUERY );
+                    Reference< sdbc::XResultSet >  xCursor( m_xDatMan->getForm(), UNO_QUERY );
                     xCursor->last();
 
-                    Reference< XResultSetUpdate >  xUpdateCursor( pDatMan->getForm(), UNO_QUERY );
+                    Reference< XResultSetUpdate >  xUpdateCursor( m_xDatMan->getForm(), UNO_QUERY );
                     xUpdateCursor->moveToInsertRow();
                 }
                 catch(const Exception&)
@@ -539,9 +520,9 @@ void BibFrameController_Impl::dispatch(const util::URL& _rURL, const uno::Sequen
         }
         else if(aCommand == "Bib/DeleteRecord")
         {
-            Reference< css::sdbc::XResultSet >  xCursor(pDatMan->getForm(), UNO_QUERY);
+            Reference< css::sdbc::XResultSet >  xCursor(m_xDatMan->getForm(), UNO_QUERY);
             Reference< XResultSetUpdate >       xUpdateCursor(xCursor, UNO_QUERY);
-            Reference< beans::XPropertySet >    xSet(pDatMan->getForm(), UNO_QUERY);
+            Reference< beans::XPropertySet >    xSet(m_xDatMan->getForm(), UNO_QUERY);
             bool  bIsNew  = ::comphelper::getBOOL(xSet->getPropertyValue("IsNew"));
             if(!bIsNew)
             {
@@ -556,8 +537,8 @@ void BibFrameController_Impl::dispatch(const util::URL& _rURL, const uno::Sequen
                     bLeft = xCursor->isLast() && nCount > 1;
                     bRight= !xCursor->isLast();
                     // ask for confirmation
-                    Reference< frame::XController > xCtrl = pImp->pController;
-                    Reference< form::XConfirmDeleteListener >  xConfirm(pDatMan->GetFormController(),UNO_QUERY);
+                    Reference< frame::XController > xCtrl = mxImpl->pController;
+                    Reference< form::XConfirmDeleteListener >  xConfirm(m_xDatMan->GetFormController(),UNO_QUERY);
                     if (xConfirm.is())
                     {
                         sdb::RowChangeEvent aEvent;
@@ -628,7 +609,7 @@ void BibFrameController_Impl::dispatch(const util::URL& _rURL, const uno::Sequen
         }
     }
 }
-IMPL_LINK_NOARG_TYPED( BibFrameController_Impl, DisposeHdl, void*, void )
+IMPL_LINK_NOARG( BibFrameController_Impl, DisposeHdl, void*, void )
 {
     xFrame->dispose();
 };
@@ -636,8 +617,6 @@ IMPL_LINK_NOARG_TYPED( BibFrameController_Impl, DisposeHdl, void*, void )
 void BibFrameController_Impl::addStatusListener(
     const uno::Reference< frame::XStatusListener > & aListener,
     const util::URL& aURL)
-    throw (css::uno::RuntimeException,
-           std::exception)
 {
     BibConfig* pConfig = BibModul::GetConfig();
     // create a new Reference and insert into listener array
@@ -662,19 +641,17 @@ void BibFrameController_Impl::addStatusListener(
     else if(aURL.Path == "Bib/MenuFilter")
     {
         aEvent.IsEnabled  = true;
-        aEvent.FeatureDescriptor=pDatMan->getQueryField();
+        aEvent.FeatureDescriptor=m_xDatMan->getQueryField();
 
-        uno::Sequence<OUString> aStringSeq=pDatMan->getQueryFields();
-        aEvent.State.setValue(&aStringSeq,cppu::UnoType<uno::Sequence<OUString>>::get());
+        aEvent.State <<= m_xDatMan->getQueryFields();
 
     }
     else if ( aURL.Path == "Bib/source")
     {
         aEvent.IsEnabled  = true;
-        aEvent.FeatureDescriptor=pDatMan->getActiveDataTable();
+        aEvent.FeatureDescriptor=m_xDatMan->getActiveDataTable();
 
-        uno::Sequence<OUString> aStringSeq=pDatMan->getDataSources();
-        aEvent.State.setValue(&aStringSeq,cppu::UnoType<uno::Sequence<OUString>>::get());
+        aEvent.State <<= m_xDatMan->getDataSources();
     }
     else if( aURL.Path == "Bib/sdbsource" ||
              aURL.Path == "Bib/Mapping" ||
@@ -690,7 +667,7 @@ void BibFrameController_Impl::addStatusListener(
     }
     else if (aURL.Path == "Bib/removeFilter" )
     {
-        OUString aFilterStr=pDatMan->getFilter();
+        OUString aFilterStr=m_xDatMan->getFilter();
         aEvent.IsEnabled  = !aFilterStr.isEmpty();
     }
     else if(aURL.Path == "Cut")
@@ -748,9 +725,9 @@ void BibFrameController_Impl::addStatusListener(
     }
     else if(aURL.Path == "Bib/DeleteRecord")
     {
-        Reference< css::sdbc::XResultSet >  xCursor(pDatMan->getForm(), UNO_QUERY);
+        Reference< css::sdbc::XResultSet >  xCursor(m_xDatMan->getForm(), UNO_QUERY);
         Reference< XResultSetUpdate >       xUpdateCursor(xCursor, UNO_QUERY);
-        Reference< beans::XPropertySet >    xSet(pDatMan->getForm(), UNO_QUERY);
+        Reference< beans::XPropertySet >    xSet(m_xDatMan->getForm(), UNO_QUERY);
         bool  bIsNew  = ::comphelper::getBOOL(xSet->getPropertyValue("IsNew"));
         if(!bIsNew)
         {
@@ -761,7 +738,7 @@ void BibFrameController_Impl::addStatusListener(
     }
     else if (aURL.Path == "Bib/InsertRecord")
     {
-        Reference< beans::XPropertySet >  xSet(pDatMan->getForm(), UNO_QUERY);
+        Reference< beans::XPropertySet >  xSet(m_xDatMan->getForm(), UNO_QUERY);
         aEvent.IsEnabled = canInsertRecords(xSet);
     }
     aListener->statusChanged( aEvent );
@@ -769,7 +746,6 @@ void BibFrameController_Impl::addStatusListener(
 
 void BibFrameController_Impl::removeStatusListener(
     const uno::Reference< frame::XStatusListener > & aObject, const util::URL& aURL)
-    throw (css::uno::RuntimeException, std::exception)
 {
     // search listener array for given listener
     // for checking equality always "cast" to XInterface
@@ -793,7 +769,7 @@ void BibFrameController_Impl::removeStatusListener(
 void BibFrameController_Impl::RemoveFilter()
 {
     OUString aQuery;
-    pDatMan->startQueryWith(aQuery);
+    m_xDatMan->startQueryWith(aQuery);
 
     sal_uInt16 nCount = aStatusListeners.size();
 
@@ -844,15 +820,16 @@ void BibFrameController_Impl::ChangeDataSource(const uno::Sequence< beans::Prope
         uno::Any aDB = pPropertyValue[1].Value;
         OUString aURL;
         aDB >>= aURL;
-        pDatMan->setActiveDataSource(aURL);
-        aDBTableName = pDatMan->getActiveDataTable();
+        m_xDatMan->setActiveDataSource(aURL);
+        aDBTableName = m_xDatMan->getActiveDataTable();
     }
     else
     {
-        m_xDatMan->unload();
-        pDatMan->setActiveDataTable(aDBTableName);
-        pDatMan->updateGridModel();
-        m_xDatMan->load();
+        Reference<css::form::XLoadable> xLoadable(m_xDatMan.get());
+        xLoadable->unload();
+        m_xDatMan->setActiveDataTable(aDBTableName);
+        m_xDatMan->updateGridModel();
+        xLoadable->load();
     }
 
 
@@ -870,10 +847,10 @@ void BibFrameController_Impl::ChangeDataSource(const uno::Sequence< beans::Prope
             aEvent.IsEnabled  = true;
             aEvent.Requery    = false;
             aEvent.Source     = static_cast<XDispatch *>(this);
-            aEvent.FeatureDescriptor=pDatMan->getQueryField();
+            aEvent.FeatureDescriptor=m_xDatMan->getQueryField();
 
-            uno::Sequence<OUString> aStringSeq=pDatMan->getQueryFields();
-            aEvent.State  = makeAny( aStringSeq );
+            uno::Sequence<OUString> aStringSeq=m_xDatMan->getQueryFields();
+            aEvent.State <<= aStringSeq;
 
             pObj->xListener->statusChanged( aEvent );
             bMenuFilter=true;

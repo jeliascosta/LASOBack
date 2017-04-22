@@ -21,7 +21,7 @@
 
 #include "crdlg.hxx"
 #include "scresid.hxx"
-#include "miscdlgs.hrc"
+#include "scres.hrc"
 
 ScColOrRowDlg::ScColOrRowDlg(vcl::Window* pParent, const OUString& rStrTitle,
     const OUString& rStrLabel)
@@ -56,7 +56,7 @@ void ScColOrRowDlg::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(ScColOrRowDlg, OkHdl, Button*, void)
+IMPL_LINK_NOARG(ScColOrRowDlg, OkHdl, Button*, void)
 {
     EndDialog( m_pBtnCols->IsChecked() ? SCRET_COLS : SCRET_ROWS );
 }

@@ -31,12 +31,12 @@ namespace connectivity
     //************ Class: java.sql.SQLWarning
 
     class java_sql_Clob :   public java_lang_Object,
-                            public ::cppu::WeakImplHelper< ::com::sun::star::sdbc::XClob>
+                            public ::cppu::WeakImplHelper< css::sdbc::XClob>
     {
     protected:
     // Static data for the class
         static jclass theClass;
-        virtual ~java_sql_Clob();
+        virtual ~java_sql_Clob() override;
     public:
         virtual jclass getMyClass() const override;
 
@@ -44,11 +44,11 @@ namespace connectivity
         java_sql_Clob( JNIEnv * pEnv, jobject myObj );
 
         // XClob
-        virtual sal_Int64 SAL_CALL length(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getSubString( sal_Int64 pos, sal_Int32 length ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-        virtual ::com::sun::star::uno::Reference< ::com::sun::star::io::XInputStream > SAL_CALL getCharacterStream(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-        virtual sal_Int64 SAL_CALL position( const OUString& searchstr, sal_Int32 start ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-        virtual sal_Int64 SAL_CALL positionOfClob( const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XClob >& pattern, sal_Int64 start ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Int64 SAL_CALL length(  ) override;
+        virtual OUString SAL_CALL getSubString( sal_Int64 pos, sal_Int32 length ) override;
+        virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getCharacterStream(  ) override;
+        virtual sal_Int64 SAL_CALL position( const OUString& searchstr, sal_Int32 start ) override;
+        virtual sal_Int64 SAL_CALL positionOfClob( const css::uno::Reference< css::sdbc::XClob >& pattern, sal_Int64 start ) override;
     };
 }
 #endif // INCLUDED_CONNECTIVITY_SOURCE_INC_JAVA_SQL_CLOB_HXX

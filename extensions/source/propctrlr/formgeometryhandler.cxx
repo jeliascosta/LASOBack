@@ -33,6 +33,7 @@
 #include <com/sun/star/inspection/XNumericControl.hpp>
 #include <com/sun/star/util/MeasureUnit.hpp>
 #include <com/sun/star/text/TextContentAnchorType.hpp>
+#include <com/sun/star/lang/NullPointerException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/sheet/XSpreadsheet.hpp>
 #include <com/sun/star/table/XColumnRowRange.hpp>
@@ -167,13 +168,13 @@ namespace pcr
         }
 
         // XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const PropertyChangeEvent& _event ) throw (RuntimeException, std::exception) override;
+        virtual void SAL_CALL propertyChange( const PropertyChangeEvent& _event ) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const EventObject& _event ) throw (RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const EventObject& _event ) override;
 
     protected:
-        virtual ~ShapeGeometryChangeNotifier()
+        virtual ~ShapeGeometryChangeNotifier() override
         {
             if ( !getBroadcastHelper().bDisposed )
             {
@@ -209,21 +210,23 @@ namespace pcr
             const Reference< XComponentContext >& _rxContext
         );
 
-        static OUString SAL_CALL getImplementationName_static(  ) throw (RuntimeException);
-        static Sequence< OUString > SAL_CALL getSupportedServiceNames_static(  ) throw (RuntimeException);
+        /// @throws RuntimeException
+        static OUString SAL_CALL getImplementationName_static(  );
+        /// @throws RuntimeException
+        static Sequence< OUString > SAL_CALL getSupportedServiceNames_static(  );
 
     protected:
-        virtual ~FormGeometryHandler();
+        virtual ~FormGeometryHandler() override;
 
     protected:
         // XPropertyHandler overriables
-        virtual Any                         SAL_CALL getPropertyValue( const OUString& _rPropertyName ) throw (UnknownPropertyException, RuntimeException, std::exception) override;
-        virtual void                        SAL_CALL setPropertyValue( const OUString& _rPropertyName, const Any& _rValue ) throw (UnknownPropertyException, RuntimeException, std::exception) override;
-        virtual LineDescriptor              SAL_CALL describePropertyLine( const OUString& _rPropertyName, const css::uno::Reference< css::inspection::XPropertyControlFactory >& _rxControlFactory ) throw (css::beans::UnknownPropertyException, css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
-        virtual void                        SAL_CALL addPropertyChangeListener( const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void                        SAL_CALL removePropertyChangeListener( const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual Sequence< OUString >        SAL_CALL getActuatingProperties( ) throw (RuntimeException, std::exception) override;
-        virtual void                        SAL_CALL actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& _rOldValue, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit ) throw (NullPointerException, RuntimeException, std::exception) override;
+        virtual Any                         SAL_CALL getPropertyValue( const OUString& _rPropertyName ) override;
+        virtual void                        SAL_CALL setPropertyValue( const OUString& _rPropertyName, const Any& _rValue ) override;
+        virtual LineDescriptor              SAL_CALL describePropertyLine( const OUString& _rPropertyName, const css::uno::Reference< css::inspection::XPropertyControlFactory >& _rxControlFactory ) override;
+        virtual void                        SAL_CALL addPropertyChangeListener( const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener ) override;
+        virtual void                        SAL_CALL removePropertyChangeListener( const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener ) override;
+        virtual Sequence< OUString >        SAL_CALL getActuatingProperties( ) override;
+        virtual void                        SAL_CALL actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& _rOldValue, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit ) override;
 
         // OComponentHandler overridables
         virtual void SAL_CALL disposing() override;
@@ -306,20 +309,20 @@ namespace pcr
     }
 
 
-    OUString SAL_CALL FormGeometryHandler::getImplementationName_static(  ) throw (RuntimeException)
+    OUString SAL_CALL FormGeometryHandler::getImplementationName_static(  )
     {
         return OUString( "com.sun.star.comp.extensions.FormGeometryHandler" );
     }
 
 
-    Sequence< OUString > SAL_CALL FormGeometryHandler::getSupportedServiceNames_static(  ) throw (RuntimeException)
+    Sequence< OUString > SAL_CALL FormGeometryHandler::getSupportedServiceNames_static(  )
     {
         Sequence<OUString> aSupported { "com.sun.star.form.inspection.FormGeometryHandler" };
         return aSupported;
     }
 
 
-    Any SAL_CALL FormGeometryHandler::getPropertyValue( const OUString& _rPropertyName ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    Any SAL_CALL FormGeometryHandler::getPropertyValue( const OUString& _rPropertyName )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         PropertyId nPropId( impl_getPropertyId_throwUnknownProperty( _rPropertyName ) );
@@ -368,7 +371,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL FormGeometryHandler::setPropertyValue( const OUString& _rPropertyName, const Any& _rValue ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    void SAL_CALL FormGeometryHandler::setPropertyValue( const OUString& _rPropertyName, const Any& _rValue )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         PropertyId nPropId( impl_getPropertyId_throwUnknownProperty( _rPropertyName ) );
@@ -436,7 +439,6 @@ namespace pcr
 
     LineDescriptor SAL_CALL FormGeometryHandler::describePropertyLine( const OUString& _rPropertyName,
             const Reference< XPropertyControlFactory >& _rxControlFactory )
-        throw (UnknownPropertyException, NullPointerException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         PropertyId nPropId( impl_getPropertyId_throwUnknownProperty( _rPropertyName ) );
@@ -483,7 +485,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL FormGeometryHandler::addPropertyChangeListener( const Reference< XPropertyChangeListener >& _listener ) throw (RuntimeException, std::exception)
+    void SAL_CALL FormGeometryHandler::addPropertyChangeListener( const Reference< XPropertyChangeListener >& _listener )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         OSL_PRECOND( m_xChangeNotifier.is(), "FormGeometryHandler::addPropertyChangeListener: no notified, implies no shape!?" );
@@ -492,7 +494,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL FormGeometryHandler::removePropertyChangeListener( const Reference< XPropertyChangeListener >& _listener ) throw (RuntimeException, std::exception)
+    void SAL_CALL FormGeometryHandler::removePropertyChangeListener( const Reference< XPropertyChangeListener >& _listener )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         OSL_PRECOND( m_xChangeNotifier.is(), "FormGeometryHandler::removePropertyChangeListener: no notified, implies no shape!?" );
@@ -501,14 +503,14 @@ namespace pcr
     }
 
 
-    Sequence< OUString > SAL_CALL FormGeometryHandler::getActuatingProperties( ) throw (RuntimeException, std::exception)
+    Sequence< OUString > SAL_CALL FormGeometryHandler::getActuatingProperties( )
     {
         Sequence< OUString > aInterestedIn { PROPERTY_TEXT_ANCHOR_TYPE };
         return aInterestedIn;
     }
 
 
-    void SAL_CALL FormGeometryHandler::actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& /*_rOldValue*/, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool /*_bFirstTimeInit*/ ) throw (NullPointerException, RuntimeException, std::exception)
+    void SAL_CALL FormGeometryHandler::actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& /*_rOldValue*/, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool /*_bFirstTimeInit*/ )
     {
         if ( !_rxInspectorUI.is() )
             throw NullPointerException();
@@ -540,7 +542,7 @@ namespace pcr
         if ( !m_xAssociatedShape.is() )
             return Sequence< Property >();
 
-        ::std::vector< Property > aProperties;
+        std::vector< Property > aProperties;
 
         addInt32PropertyDescription( aProperties, PROPERTY_POSITIONX );
         addInt32PropertyDescription( aProperties, PROPERTY_POSITIONY );
@@ -716,11 +718,11 @@ namespace pcr
     }
 
 
-    void SAL_CALL ShapeGeometryChangeNotifier::propertyChange( const PropertyChangeEvent& _event ) throw (RuntimeException, std::exception)
+    void SAL_CALL ShapeGeometryChangeNotifier::propertyChange( const PropertyChangeEvent& _event )
     {
         ::comphelper::ComponentMethodGuard aGuard( *this );
 
-        ::std::vector< EventTranslation > aEventTranslations;
+        std::vector< EventTranslation > aEventTranslations;
         aEventTranslations.reserve(2);
 
         if ( _event.PropertyName == "Position" )
@@ -748,7 +750,7 @@ namespace pcr
         aTranslatedEvent.Source = m_rParent;
 
         aGuard.clear();
-        for ( ::std::vector< EventTranslation >::const_iterator t = aEventTranslations.begin();
+        for ( std::vector< EventTranslation >::const_iterator t = aEventTranslations.begin();
               t != aEventTranslations.end();
               ++t
             )
@@ -760,7 +762,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL ShapeGeometryChangeNotifier::disposing( const EventObject& /*_event*/ ) throw (RuntimeException, std::exception)
+    void SAL_CALL ShapeGeometryChangeNotifier::disposing( const EventObject& /*_event*/ )
     {
         ::comphelper::ComponentMethodGuard aGuard( *this );
         impl_dispose_nothrow();

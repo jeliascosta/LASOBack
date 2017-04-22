@@ -34,9 +34,9 @@ UnoPropertyArrayHelper::UnoPropertyArrayHelper( const css::uno::Sequence<sal_Int
         maIDs.insert( pIDs[n] );
 }
 
-UnoPropertyArrayHelper::UnoPropertyArrayHelper( const std::list< sal_uInt16 > &rIDs )
+UnoPropertyArrayHelper::UnoPropertyArrayHelper( const std::vector< sal_uInt16 > &rIDs )
 {
-    std::list< sal_uInt16 >::const_iterator iter;
+    std::vector< sal_uInt16 >::const_iterator iter;
     for( iter = rIDs.begin(); iter != rIDs.end(); ++iter)
       maIDs.insert( *iter );
 }
@@ -99,7 +99,7 @@ css::uno::Sequence< css::beans::Property > UnoPropertyArrayHelper::getProperties
     return aProps;
 }
 
-css::beans::Property UnoPropertyArrayHelper::getPropertyByName(const OUString& rPropertyName) throw (css::beans::UnknownPropertyException)
+css::beans::Property UnoPropertyArrayHelper::getPropertyByName(const OUString& rPropertyName)
 {
     css::beans::Property aProp;
     sal_uInt16 nId = GetPropertyId( rPropertyName );

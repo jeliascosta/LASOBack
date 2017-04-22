@@ -596,11 +596,6 @@ XclImpPivotCache::~XclImpPivotCache()
 
 // data access ----------------------------------------------------------------
 
-sal_uInt16 XclImpPivotCache::GetFieldCount() const
-{
-    return static_cast< sal_uInt16 >( maFields.size() );
-}
-
 const XclImpPCField* XclImpPivotCache::GetField( sal_uInt16 nFieldIdx ) const
 {
     return (nFieldIdx < maFields.size()) ? maFields[ nFieldIdx ].get() : nullptr;
@@ -716,7 +711,7 @@ void XclImpPivotCache::ReadPivotCacheStream( XclImpStream& rStrm )
     // open pivot cache storage stream
     tools::SvRef<SotStorage> xSvStrg = OpenStorage( EXC_STORAGE_PTCACHE );
     tools::SvRef<SotStorageStream> xSvStrm = OpenStream( xSvStrg, ScfTools::GetHexStr( mnStrmId ) );
-    if( !xSvStrm.Is() )
+    if( !xSvStrm.is() )
         return;
 
     // create Excel record stream object
@@ -744,7 +739,7 @@ void XclImpPivotCache::ReadPivotCacheStream( XclImpStream& rStrm )
             case EXC_ID_SXFIELD:
             {
                 xCurrField.reset();
-                sal_uInt16 nNewFieldIdx = GetFieldCount();
+                sal_uInt16 nNewFieldIdx = static_cast< sal_uInt16 >( maFields.size() );
                 if( nNewFieldIdx < EXC_PC_MAXFIELDCOUNT )
                 {
                     xCurrField.reset( new XclImpPCField( GetRoot(), *this, nNewFieldIdx ) );
@@ -834,14 +829,14 @@ void XclImpPivotCache::ReadPivotCacheStream( XclImpStream& rStrm )
             break;
 
             default:
-                OSL_TRACE( "XclImpPivotCache::ReadPivotCacheStream - unknown record 0x%04hX", aPCStrm.GetRecId() );
+                SAL_WARN("sc.filter",  "XclImpPivotCache::ReadPivotCacheStream - unknown record 0x" << std::hex << aPCStrm.GetRecId() );
         }
     }
 
     OSL_ENSURE( maPCInfo.mnTotalFields == maFields.size(),
         "XclImpPivotCache::ReadPivotCacheStream - field count mismatch" );
 
-    if (HasCacheRecords())
+    if (static_cast<bool>(maPCInfo.mnFlags & EXC_SXDB_SAVEDATA))
     {
         SCROW nNewEnd = maSrcRange.aStart.Row() + maPCInfo.mnSrcRecs;
         maSrcRange.aEnd.SetRow(nNewEnd);
@@ -857,11 +852,6 @@ void XclImpPivotCache::ReadPivotCacheStream( XclImpStream& rStrm )
         // nItemScRow points to last used row
         maSrcRange.aEnd.SetRow( nItemScRow );
     }
-}
-
-bool XclImpPivotCache::HasCacheRecords() const
-{
-    return static_cast<bool>(maPCInfo.mnFlags & EXC_SXDB_SAVEDATA);
 }
 
 bool XclImpPivotCache::IsRefreshOnLoad() const
@@ -973,7 +963,7 @@ void XclImpPTField::ConvertRowColField( ScDPSaveData& rSaveData ) const
     OSL_ENSURE( maFieldInfo.mnAxes & EXC_SXVD_AXIS_ROWCOL, "XclImpPTField::ConvertRowColField - no row/column field" );
     // special data orientation field?
     if( maFieldInfo.mnCacheIdx == EXC_SXIVD_DATA )
-        rSaveData.GetDataLayoutDimension()->SetOrientation( static_cast< sal_uInt16 >( maFieldInfo.GetApiOrient( EXC_SXVD_AXIS_ROWCOL ) ) );
+        rSaveData.GetDataLayoutDimension()->SetOrientation( maFieldInfo.GetApiOrient( EXC_SXVD_AXIS_ROWCOL ) );
     else
         ConvertRCPField( rSaveData );
 }
@@ -1088,7 +1078,7 @@ ScDPSaveDimension* XclImpPTField::ConvertRCPField( ScDPSaveData& rSaveData ) con
     ScDPSaveDimension& rSaveDim = *pTest;
 
     // orientation
-    rSaveDim.SetOrientation( static_cast< sal_uInt16 >( maFieldInfo.GetApiOrient( EXC_SXVD_AXIS_ROWCOLPAGE ) ) );
+    rSaveDim.SetOrientation( maFieldInfo.GetApiOrient( EXC_SXVD_AXIS_ROWCOLPAGE ) );
 
     // general field info
     ConvertFieldInfo( rSaveDim );
@@ -1102,7 +1092,7 @@ ScDPSaveDimension* XclImpPTField::ConvertRCPField( ScDPSaveData& rSaveData ) con
     XclPTSubtotalVec aSubtotalVec;
     maFieldInfo.GetSubtotals( aSubtotalVec );
     if( !aSubtotalVec.empty() )
-        rSaveDim.SetSubTotals( static_cast< long >( aSubtotalVec.size() ), &aSubtotalVec[ 0 ] );
+        rSaveDim.SetSubTotals( aSubtotalVec );
 
     // sorting
     DataPilotFieldSortInfo aSortInfo;
@@ -1141,7 +1131,8 @@ ScDPSaveDimension* XclImpPTField::ConvertRCPField( ScDPSaveData& rSaveData ) con
 void XclImpPTField::ConvertFieldInfo( ScDPSaveDimension& rSaveDim ) const
 {
     rSaveDim.SetShowEmpty( ::get_flag( maFieldExtInfo.mnFlags, EXC_SXVDEX_SHOWALL ) );
-    ConvertItems( rSaveDim );
+    for( XclImpPTItemVec::const_iterator aIt = maItems.begin(), aEnd = maItems.end(); aIt != aEnd; ++aIt )
+        (*aIt)->ConvertItem( rSaveDim );
 }
 
 void XclImpPTField::ConvertDataField( ScDPSaveDimension& rSaveDim, const XclPTDataFieldInfo& rDataInfo ) const
@@ -1162,7 +1153,7 @@ void XclImpPTField::ConvertDataFieldInfo( ScDPSaveDimension& rSaveDim, const Xcl
         rSaveDim.SetLayoutName(*pVisName);
 
     // aggregation function
-    rSaveDim.SetFunction( static_cast< sal_uInt16 >( rDataInfo.GetApiAggFunc() ) );
+    rSaveDim.SetFunction( rDataInfo.GetApiAggFunc() );
 
     // result field reference
     sal_Int32 nRefType = rDataInfo.GetApiRefType();
@@ -1182,12 +1173,6 @@ void XclImpPTField::ConvertDataFieldInfo( ScDPSaveDimension& rSaveDim, const Xcl
     }
 
     rSaveDim.SetReferenceValue(&aFieldRef);
-}
-
-void XclImpPTField::ConvertItems( ScDPSaveDimension& rSaveDim ) const
-{
-    for( XclImpPTItemVec::const_iterator aIt = maItems.begin(), aEnd = maItems.end(); aIt != aEnd; ++aIt )
-        (*aIt)->ConvertItem( rSaveDim );
 }
 
 XclImpPivotTable::XclImpPivotTable( const XclImpRoot& rRoot ) :

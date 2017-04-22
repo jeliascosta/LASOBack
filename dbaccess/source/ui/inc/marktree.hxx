@@ -39,7 +39,7 @@ class OMarkableTreeListBox : public DBTreeListBox
 
 public:
     OMarkableTreeListBox( vcl::Window* pParent, WinBits nWinStyle=0 );
-    virtual ~OMarkableTreeListBox();
+    virtual ~OMarkableTreeListBox() override;
     virtual void dispose() override;
 
     virtual void    KeyInput( const KeyEvent& rKEvt ) override;
@@ -50,7 +50,7 @@ public:
     void SetCheckHandler(const Link<void*,void>& _rHdl) { m_aCheckButtonHandler = _rHdl; }
 
 protected:
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& _rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& _rRect) override;
     virtual void checkedButton_noBroadcast(SvTreeListEntry* _pEntry);
 
     SvButtonState   implDetermineState(SvTreeListEntry* _pEntry);

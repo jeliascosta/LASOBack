@@ -25,6 +25,7 @@
 #include <com/sun/star/uno/Reference.h>
 #include <com/sun/star/embed/Aspects.hpp>
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
+#include <rtl/ref.hxx>
 
 #include <tools/gen.hxx>
 
@@ -41,7 +42,7 @@ class SFX2_DLLPUBLIC SfxInPlaceClient
 {
 friend class SfxInPlaceClient_Impl;
 
-    SfxInPlaceClient_Impl*  m_pImp;
+    rtl::Reference<SfxInPlaceClient_Impl>  m_xImp;
     SfxViewShell*           m_pViewSh;
     VclPtr<vcl::Window>     m_pEditWin;
 
@@ -49,28 +50,31 @@ friend class SfxInPlaceClient_Impl;
     SAL_DLLPRIVATE virtual void ObjectAreaChanged();
 
     // an active object was resized by the user and now asks for the new space
-    SAL_DLLPRIVATE virtual void RequestNewObjectArea( Rectangle& );
+    SAL_DLLPRIVATE virtual void RequestNewObjectArea( tools::Rectangle& );
 
     // notify the client that an active object has changed its VisualAreaSize
     SAL_DLLPRIVATE virtual void ViewChanged();
 
 public:
-                        SfxInPlaceClient( SfxViewShell* pViewShell, vcl::Window* pDraw, sal_Int64 nAspect = css::embed::Aspects::MSOLE_CONTENT );
+                        SfxInPlaceClient( SfxViewShell* pViewShell, vcl::Window* pDraw, sal_Int64 nAspect );
     virtual             ~SfxInPlaceClient();
 
+    SfxInPlaceClient(const SfxInPlaceClient &) = delete;
+    SfxInPlaceClient& operator=(const SfxInPlaceClient &) = delete;
+
     SfxViewShell*       GetViewShell() const { return m_pViewSh; }
-    vcl::Window*             GetEditWin() const { return m_pEditWin; }
+    vcl::Window*        GetEditWin() const { return m_pEditWin; }
     const css::uno::Reference < css::embed::XEmbeddedObject >& GetObject() const;
     void                SetObject( const css::uno::Reference < css::embed::XEmbeddedObject >& rObject );
     void                SetObjectState( sal_Int32 );
     bool                IsObjectUIActive() const;
     bool                IsObjectInPlaceActive() const;
     void                DeactivateObject();
-    bool                SetObjArea( const Rectangle & );
-    const Rectangle&    GetObjArea() const;
-    Rectangle           GetScaledObjArea() const;
+    bool                SetObjArea( const tools::Rectangle & );
+    const tools::Rectangle&    GetObjArea() const;
+    tools::Rectangle           GetScaledObjArea() const;
     void                SetSizeScale( const Fraction & rScaleWidth, const Fraction & rScaleHeight );
-    void                SetObjAreaAndScale( const Rectangle&, const Fraction&, const Fraction& );
+    void                SetObjAreaAndScale( const tools::Rectangle&, const Fraction&, const Fraction& );
     const Fraction&     GetScaleWidth() const;
     const Fraction&     GetScaleHeight() const;
     void                Invalidate();

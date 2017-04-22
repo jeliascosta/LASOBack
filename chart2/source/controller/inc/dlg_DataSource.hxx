@@ -47,7 +47,7 @@ public:
         vcl::Window * pParent,
         const css::uno::Reference< css::chart2::XChartDocument > & xChartDocument,
         const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~DataSourceDialog();
+    virtual ~DataSourceDialog() override;
     virtual void dispose() override;
 
     // from Dialog (base of TabDialog)
@@ -58,8 +58,8 @@ public:
     virtual void setValidPage( TabPage * pTabPage ) override;
 
 protected:
-    ::std::unique_ptr< ChartTypeTemplateProvider >  m_apDocTemplateProvider;
-    ::std::unique_ptr< DialogModel >                m_apDialogModel;
+    std::unique_ptr< ChartTypeTemplateProvider >  m_apDocTemplateProvider;
+    std::unique_ptr< DialogModel >                m_apDialogModel;
 
 private:
     VclPtr<DataSourceTabControl> m_pTabControl;

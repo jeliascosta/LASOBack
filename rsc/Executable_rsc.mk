@@ -23,11 +23,17 @@ $(eval $(call gb_Executable_add_defs,rsc,\
 ))
 
 $(eval $(call gb_Executable_use_libraries,rsc,\
-	i18nlangtag \
 	comphelper \
-	sal \
+	$(if $(filter TRUE,$(DISABLE_DYNLOADING)),cppu) \
+	i18nlangtag \
 	tl \
+	sal \
 	$(gb_UWINAPI) \
+))
+
+$(eval $(call gb_Executable_use_externals,rsc,\
+    $(if $(filter TRUE,$(DISABLE_DYNLOADING)),liblangtag) \
+    $(if $(filter TRUE,$(DISABLE_DYNLOADING)),libxml2) \
 ))
 
 $(eval $(call gb_Executable_add_grammars,rsc,\

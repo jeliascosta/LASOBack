@@ -79,7 +79,7 @@ public:
         is used (simply casting between list position and values). If the map
         exists, it *MUST* be terminated by an entry containing the special
         "not found" list position. */
-    inline explicit     PosValueMapper( PosT nNFPos, const MapEntryType* pMap = nullptr ) :
+    explicit     PosValueMapper( PosT nNFPos, const MapEntryType* pMap = nullptr ) :
                             mpMap( pMap ), mnNFPos( nNFPos ) {}
 
     /** Returns the value at the specified list position.
@@ -90,7 +90,7 @@ public:
     PosT                GetPosFromValue( ValueT nValue ) const;
 
     /** Returns the special "not found" list position. */
-    inline PosT         GetNotFoundPos() const { return mnNFPos; }
+    PosT         GetNotFoundPos() const { return mnNFPos; }
 
 private:
     const MapEntryType* mpMap;      /// The list position/value map.
@@ -115,11 +115,7 @@ private:
      |   +- DummyWindowWrapper   [1]
      |   +- CheckBoxWrapper   [1]
      |   +- EditWrapper   [1]
-     |   +- ColorListBoxWrapper   [1]
-     |   |
-     |   +- NumericFieldWrapper< ValueT >   [1]
-     |   |   |
-     |   |   +- [ValueType]NumericFieldWrapper   [1] [2]
+     |   +- SvxColorListBoxWrapper   [1]
      |   |
      |   +- MetricFieldWrapper< ValueT >   [1]
      |   |   |
@@ -147,12 +143,12 @@ private:
 class SFX2_DLLPUBLIC ControlWrapperBase
 {
 public:
-    inline explicit     ControlWrapperBase() {}
+    explicit     ControlWrapperBase() {}
     virtual             ~ControlWrapperBase();
 
     /** Derived classes enable, disable, show, or hide control(s).
         @descr  Will do nothing, if the corresponding parameter is TRISTATE_INDET. */
-    virtual void        ModifyControl( TriState eEnable, TriState eShow ) = 0;
+    virtual void        ModifyControl( TriState eShow ) = 0;
 
     /** Derived classes return true if the control is in "don't know" state. */
     virtual bool        IsControlDontKnow() const = 0;
@@ -189,16 +185,16 @@ public:
     typedef ValueT                                   ControlValueType;
     typedef SingleControlWrapper< ControlT, ValueT > SingleControlWrapperType;
 
-    inline explicit     SingleControlWrapper( ControlT& rControl ) : mrControl( rControl ) {}
+    explicit     SingleControlWrapper( ControlT& rControl ) : mrControl( rControl ) {}
 
     /** Returns a reference to the control this connection works on. */
-    inline const ControlT& GetControl() const { return mrControl; }
+    const ControlT& GetControl() const { return mrControl; }
     /** Returns a reference to the control this connection works on. */
-    inline ControlT&    GetControl() { return mrControl; }
+    ControlT&    GetControl() { return mrControl; }
 
     /** Enables, disables, shows, or hides the control.
         @descr  Does nothing, if the corresponding parameter is TRISTATE_INDET. */
-    virtual void        ModifyControl( TriState eEnable, TriState eShow ) override;
+    virtual void        ModifyControl( TriState eShow ) override;
 
     /** Derived classes return the value the control contains. */
     virtual ValueT      GetControlValue() const = 0;
@@ -245,42 +241,6 @@ public:
 };
 
 
-/** A wrapper for the SVTOOLS ColorListBox. */
-class SFX2_DLLPUBLIC ColorListBoxWrapper:
-    public SingleControlWrapper< ColorListBox, Color >
-{
-    /*  Note: cannot use 'const Color&' as template argument, because the
-        SVTOOLS ColorListBox returns the color by value and not by reference,
-        therefore GetControlValue() must return a temporary object too. */
-public:
-    explicit ColorListBoxWrapper(ColorListBox & rListBox);
-
-    virtual ~ColorListBoxWrapper();
-
-    virtual bool        IsControlDontKnow() const override;
-    virtual void        SetControlDontKnow( bool bSet ) override;
-
-    virtual Color       GetControlValue() const override;
-    virtual void        SetControlValue( Color aColor ) override;
-};
-
-
-/** A wrapper for the VCL NumericField. */
-template< typename ValueT >
-class NumericFieldWrapper : public SingleControlWrapper< NumericField, ValueT >
-{
-public:
-    inline explicit     NumericFieldWrapper( NumericField& rField ) :
-                            SingleControlWrapper< NumericField, ValueT >( rField ) {}
-
-    virtual bool        IsControlDontKnow() const SAL_OVERRIDE;
-    virtual void        SetControlDontKnow( bool bSet ) SAL_OVERRIDE;
-
-    virtual ValueT      GetControlValue() const SAL_OVERRIDE;
-    virtual void        SetControlValue( ValueT nValue ) SAL_OVERRIDE;
-};
-
-
 /** A wrapper for the VCL MetricField.
 
     Adds support for field units during accessing the control value. The
@@ -291,7 +251,7 @@ template< typename ValueT >
 class MetricFieldWrapper : public SingleControlWrapper< MetricField, ValueT >
 {
 public:
-    inline explicit     MetricFieldWrapper( MetricField& rField, FieldUnit eUnit = FUNIT_NONE ) :
+    explicit     MetricFieldWrapper( MetricField& rField, FieldUnit eUnit = FUNIT_NONE ) :
                             SingleControlWrapper< MetricField, ValueT >( rField ), meUnit( eUnit ) {}
 
     virtual bool        IsControlDontKnow() const SAL_OVERRIDE;
@@ -325,7 +285,7 @@ public:
 
     /** @param pMap  Optional list position <-> value map.
         See PosValueMapper documentation for details. */
-    inline explicit     ListBoxWrapper( ListBox& rListBox, const MapEntryType* pMap = nullptr ) :
+    explicit     ListBoxWrapper( ListBox& rListBox, const MapEntryType* pMap = nullptr ) :
                             SingleControlWrapper< ListBox, ValueT >( rListBox ), MapperType( WRAPPER_LISTBOX_ENTRY_NOTFOUND, pMap ) {}
 
     virtual bool        IsControlDontKnow() const SAL_OVERRIDE
@@ -358,7 +318,7 @@ public:
 
     /** @param pMap  Optional position <-> value map.
         See PosValueMapper documentation for details. */
-    inline explicit     ValueSetWrapper( ValueSet& rValueSet, const MapEntryType* pMap = nullptr ) :
+    explicit     ValueSetWrapper( ValueSet& rValueSet, const MapEntryType* pMap = nullptr ) :
                             SingleControlWrapper< ValueSet, ValueT >( rValueSet ), MapperType( WRAPPER_VALUESET_ITEM_NOTFOUND, pMap ) {}
 
     virtual bool        IsControlDontKnow() const SAL_OVERRIDE
@@ -388,13 +348,13 @@ class SFX2_DLLPUBLIC MultiControlWrapperHelper : public ControlWrapperBase
 {
 public:
     explicit            MultiControlWrapperHelper();
-    virtual             ~MultiControlWrapperHelper();
+    virtual             ~MultiControlWrapperHelper() override;
 
     /** Registers a control wrapper (should be a member of a derived class). */
     void                RegisterControlWrapper( ControlWrapperBase& rWrapper );
 
     /** Enables, disables, shows, or hides the registered controls. */
-    virtual void        ModifyControl( TriState eEnable, TriState eShow ) override;
+    virtual void        ModifyControl( TriState eShow ) override;
 
     /** Returns true if all registered controls are in "don't know" state. */
     virtual bool        IsControlDontKnow() const override;
@@ -428,9 +388,9 @@ public:
     MultiControlWrapper() : maDefValue( 0 ){}
 
     /** Returns the default value that can be used in GetControlValue(). */
-    inline const ValueT& GetDefaultValue() const { return maDefValue; }
+    const ValueT& GetDefaultValue() const { return maDefValue; }
     /** Sets a default value that can be used in GetControlValue(). */
-    inline void         SetDefaultValue( const ValueT& rDefValue ) { maDefValue = rDefValue; }
+    void         SetDefaultValue( const ValueT& rDefValue ) { maDefValue = rDefValue; }
 
     /** Derived classes return the value the control contains. */
     virtual ValueT      GetControlValue() const = 0;
@@ -479,7 +439,7 @@ PosT PosValueMapper< PosT, ValueT >::GetPosFromValue( ValueT nValue ) const
             ++pEntry;
         nPos = pEntry->mnPos;
     }
-    else if( nValue >= 0 )
+    else if( nValue >= static_cast< ValueT >(0) )
         nPos = static_cast< PosT >( nValue );
     return nPos;
 }
@@ -489,38 +449,10 @@ PosT PosValueMapper< PosT, ValueT >::GetPosFromValue( ValueT nValue ) const
 
 
 template< typename ControlT, typename ValueT >
-inline void SingleControlWrapper< ControlT, ValueT >::ModifyControl( TriState eEnable, TriState eShow )
+inline void SingleControlWrapper< ControlT, ValueT >::ModifyControl( TriState eShow )
 {
-    if( eEnable != TRISTATE_INDET )
-        mrControl.Enable( eEnable == TRISTATE_TRUE );
     if( eShow != TRISTATE_INDET )
         mrControl.Show( eShow == TRISTATE_TRUE );
-}
-
-
-template< typename ValueT >
-bool NumericFieldWrapper< ValueT >::IsControlDontKnow() const
-{
-    return this->GetControl().GetText().Len() == 0;
-}
-
-template< typename ValueT >
-void NumericFieldWrapper< ValueT >::SetControlDontKnow( bool bSet )
-{
-    if( bSet )
-        this->GetControl().SetText( OUString() );
-}
-
-template< typename ValueT >
-ValueT NumericFieldWrapper< ValueT >::GetControlValue() const
-{
-    return static_cast< ValueT >( this->GetControl().Denormalize( this->GetControl().GetValue() ) );
-}
-
-template< typename ValueT >
-void NumericFieldWrapper< ValueT >::SetControlValue( ValueT nValue )
-{
-    this->GetControl().SetValue( this->GetControl().Normalize( static_cast< sal_Int64 >( nValue ) ) );
 }
 
 

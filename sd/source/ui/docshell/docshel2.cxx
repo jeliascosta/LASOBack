@@ -52,7 +52,7 @@ void DrawDocShell::Draw(OutputDevice* pOut, const JobSetup&, sal_uInt16 nAspect)
       // THUMBNAIL: here we may can set the draft mode
     }
 
-    ClientView* pView = new ClientView(this, pOut, nullptr);
+    std::unique_ptr<ClientView> pView( new ClientView(this, pOut) );
 
     pView->SetHlplVisible(false);
     pView->SetGridVisible(false);
@@ -66,31 +66,31 @@ void DrawDocShell::Draw(OutputDevice* pOut, const JobSetup&, sal_uInt16 nAspect)
     if( !rViews.empty() )
     {
         sd::FrameView* pFrameView = rViews[0];
-        if( pFrameView->GetPageKind() == PK_STANDARD )
+        if( pFrameView->GetPageKind() == PageKind::Standard )
         {
             sal_uInt16 nSelectedPage = pFrameView->GetSelectedPage();
-            pSelectedPage = mpDoc->GetSdPage(nSelectedPage, PK_STANDARD);
+            pSelectedPage = mpDoc->GetSdPage(nSelectedPage, PageKind::Standard);
         }
     }
 
     if( nullptr == pSelectedPage )
     {
         SdPage* pPage = nullptr;
-        sal_uInt16 nPageCnt = (sal_uInt16) mpDoc->GetSdPageCount(PK_STANDARD);
+        sal_uInt16 nPageCnt = mpDoc->GetSdPageCount(PageKind::Standard);
 
         for (sal_uInt16 i = 0; i < nPageCnt; i++)
         {
-            pPage = mpDoc->GetSdPage(i, PK_STANDARD);
+            pPage = mpDoc->GetSdPage(i, PageKind::Standard);
 
             if ( pPage->IsSelected() )
                 pSelectedPage = pPage;
         }
 
         if( nullptr == pSelectedPage )
-            pSelectedPage = mpDoc->GetSdPage(0, PK_STANDARD);
+            pSelectedPage = mpDoc->GetSdPage(0, PageKind::Standard);
     }
 
-    Rectangle aVisArea = GetVisArea(nAspect);
+    ::tools::Rectangle aVisArea = GetVisArea(nAspect);
     pOut->IntersectClipRegion(aVisArea);
     pView->ShowSdrPage(pSelectedPage);
 
@@ -116,22 +116,19 @@ void DrawDocShell::Draw(OutputDevice* pOut, const JobSetup&, sal_uInt16 nAspect)
             pOut->SetMapMode(aOldMapMode);
         }
     }
-
-    delete pView;
-
 }
 
-Rectangle DrawDocShell::GetVisArea(sal_uInt16 nAspect) const
+::tools::Rectangle DrawDocShell::GetVisArea(sal_uInt16 nAspect) const
 {
-    Rectangle aVisArea;
+    ::tools::Rectangle aVisArea;
 
     if( ( ASPECT_THUMBNAIL == nAspect ) || ( ASPECT_DOCPRINT == nAspect ) )
     {
         // provide size of first page
-        MapMode aSrcMapMode(MAP_PIXEL);
-        MapMode aDstMapMode(MAP_100TH_MM);
-        Size aSize = mpDoc->GetSdPage(0, PK_STANDARD)->GetSize();
-        aSrcMapMode.SetMapUnit(MAP_100TH_MM);
+        MapMode aSrcMapMode(MapUnit::MapPixel);
+        MapMode aDstMapMode(MapUnit::Map100thMM);
+        Size aSize = mpDoc->GetSdPage(0, PageKind::Standard)->GetSize();
+        aSrcMapMode.SetMapUnit(MapUnit::Map100thMM);
 
         aSize = Application::GetDefaultDevice()->LogicToLogic(aSize, &aSrcMapMode, &aDstMapMode);
         aVisArea.SetSize(aSize);
@@ -147,7 +144,7 @@ Rectangle DrawDocShell::GetVisArea(sal_uInt16 nAspect) const
 
         if (pWin)
         {
-            aVisArea = pWin->PixelToLogic(Rectangle(Point(0,0), pWin->GetOutputSizePixel()));
+            aVisArea = pWin->PixelToLogic(::tools::Rectangle(Point(0,0), pWin->GetOutputSizePixel()));
         }
     }
 
@@ -179,17 +176,13 @@ FrameView* DrawDocShell::GetFrameView()
     return pFrameView;
 }
 
-Size DrawDocShell::GetFirstPageSize()
-{
-    return SfxObjectShell::GetFirstPageSize();
-}
-
 /**
  * Creates a bitmap of an arbitrary page
  */
-Bitmap DrawDocShell::GetPagePreviewBitmap(SdPage* pPage, sal_uInt16 nMaxEdgePixel)
+Bitmap DrawDocShell::GetPagePreviewBitmap(SdPage* pPage)
 {
-    MapMode         aMapMode( MAP_100TH_MM );
+    const sal_uInt16 nMaxEdgePixel = 90;
+    MapMode         aMapMode( MapUnit::Map100thMM );
     const Size      aSize( pPage->GetSize() );
     const Point     aNullPt;
     ScopedVclPtrInstance< VirtualDevice > pVDev( *Application::GetDefaultDevice() );
@@ -211,7 +204,7 @@ Bitmap DrawDocShell::GetPagePreviewBitmap(SdPage* pPage, sal_uInt16 nMaxEdgePixe
     aMapMode.SetScaleY( aFrac );
     pVDev->SetMapMode( aMapMode );
 
-    ClientView* pView = new ClientView( this, pVDev, nullptr );
+    ClientView* pView = new ClientView( this, pVDev );
     FrameView*      pFrameView = GetFrameView();
     pView->ShowSdrPage( pPage );
 
@@ -262,7 +255,7 @@ Bitmap DrawDocShell::GetPagePreviewBitmap(SdPage* pPage, sal_uInt16 nMaxEdgePixe
             pView->SetActiveLayer( pFrameView->GetActiveLayer() );
     }
 
-    pView->CompleteRedraw( pVDev, vcl::Region(Rectangle(aNullPt, aSize)) );
+    pView->CompleteRedraw( pVDev, vcl::Region(::tools::Rectangle(aNullPt, aSize)) );
 
     // IsRedrawReady() always gives sal_True while ( !pView->IsRedrawReady() ) {}
     delete pView;
@@ -290,7 +283,7 @@ bool DrawDocShell::CheckPageName (vcl::Window* pWin, OUString& rName )
     {
         OUString aDesc( SD_RESSTR( STR_WARN_PAGE_EXISTS ) );
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        AbstractSvxNameDialog* aNameDlg = pFact ? pFact->CreateSvxNameDialog( pWin, aStrForDlg, aDesc ) : nullptr;
+        VclPtr<AbstractSvxNameDialog> aNameDlg = pFact ? pFact->CreateSvxNameDialog( pWin, aStrForDlg, aDesc ) : nullptr;
         if( aNameDlg )
         {
             aNameDlg->SetEditHelpId( HID_SD_NAMEDIALOG_PAGE );
@@ -306,7 +299,7 @@ bool DrawDocShell::CheckPageName (vcl::Window* pWin, OUString& rName )
                 aNameDlg->GetName( rName );
                 bIsNameValid = IsNewPageNameValid( rName );
             }
-            delete aNameDlg;
+            aNameDlg.disposeAndClear();
         }
     }
 
@@ -410,7 +403,12 @@ bool DrawDocShell::IsNewPageNameValid( OUString & rInOutPageName, bool bResetStr
     return bCanUseNewName;
 }
 
-IMPL_LINK_TYPED( DrawDocShell, RenameSlideHdl, AbstractSvxNameDialog&, rDialog, bool )
+bool DrawDocShell::IsPageNameUnique( const OUString & rPageName ) const
+{
+    return mpDoc->IsPageNameUnique(rPageName);
+}
+
+IMPL_LINK( DrawDocShell, RenameSlideHdl, AbstractSvxNameDialog&, rDialog, bool )
 {
     OUString aNewName;
     rDialog.GetName( aNewName );

@@ -39,17 +39,12 @@ class SwLayoutFrame: public SwFrame
 
     // Releases the Lower while restructuring columns
     friend SwFrame* SaveContent( SwLayoutFrame *, SwFrame * );
-    friend void   RestoreContent( SwFrame *, SwLayoutFrame *, SwFrame *pSibling, bool bGrow );
-
-#ifdef DBG_UTIL
-    //removes empty SwSectionFrames from a chain
-    friend SwFrame* SwClearDummies( SwFrame* pFrame );
-#endif
+    friend void   RestoreContent( SwFrame *, SwLayoutFrame *, SwFrame *pSibling );
 
 protected:
 
     virtual void DestroyImpl() override;
-    virtual ~SwLayoutFrame();
+    virtual ~SwLayoutFrame() override;
 
     virtual void Format( vcl::RenderContext* pRenderContext, const SwBorderAttrs *pAttrs = nullptr ) override;
     virtual void MakeAll(vcl::RenderContext* pRenderContext) override;

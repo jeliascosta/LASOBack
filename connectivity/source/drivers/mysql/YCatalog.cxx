@@ -53,14 +53,11 @@ void OMySQLCatalog::refreshObjects(const Sequence< OUString >& _sKindOfObject,TS
 void OMySQLCatalog::refreshTables()
 {
     TStringVector aVector;
-    static const char s_sTableTypeView[] = "VIEW";
-    static const char s_sTableTypeTable[] = "TABLE";
-    static const char s_sAll[] = "%";
 
     Sequence< OUString > sTableTypes(3);
-    sTableTypes[0] = s_sTableTypeView;
-    sTableTypes[1] = s_sTableTypeTable;
-    sTableTypes[2] = s_sAll;    // just to be sure to include anything else ....
+    sTableTypes[0] = "VIEW";
+    sTableTypes[1] = "TABLE";
+    sTableTypes[2] = "%";    // just to be sure to include anything else ....
 
     refreshObjects(sTableTypes,aVector);
 
@@ -115,7 +112,7 @@ void OMySQLCatalog::refreshUsers()
         m_pUsers = new OUsers(*this,m_aMutex,aVector,m_xConnection,this);
 }
 
-Any SAL_CALL OMySQLCatalog::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any SAL_CALL OMySQLCatalog::queryInterface( const Type & rType )
 {
     if ( rType == cppu::UnoType<XGroupsSupplier>::get())
         return Any();
@@ -124,10 +121,10 @@ Any SAL_CALL OMySQLCatalog::queryInterface( const Type & rType ) throw(RuntimeEx
     return OCatalog::queryInterface(rType);
 }
 
-Sequence< Type > SAL_CALL OMySQLCatalog::getTypes(  ) throw(RuntimeException, std::exception)
+Sequence< Type > SAL_CALL OMySQLCatalog::getTypes(  )
 {
     Sequence< Type > aTypes = OCatalog::getTypes();
-    ::std::vector<Type> aOwnTypes;
+    std::vector<Type> aOwnTypes;
     aOwnTypes.reserve(aTypes.getLength());
     const Type* pBegin = aTypes.getConstArray();
     const Type* pEnd = pBegin + aTypes.getLength();

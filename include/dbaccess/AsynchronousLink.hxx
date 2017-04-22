@@ -20,8 +20,8 @@
 #ifndef INCLUDED_DBACCESS_ASYNCRONOUSLINK_HXX
 #define INCLUDED_DBACCESS_ASYNCRONOUSLINK_HXX
 
-#include <tools/link.hxx>
 #include <osl/mutex.hxx>
+#include <tools/link.hxx>
 
 struct ImplSVEvent;
 
@@ -36,29 +36,25 @@ namespace dbaui
         event while another thread tries to delete this event in the _destructor_ of the
         class).
     */
-    class OAsynchronousLink
+    class OAsynchronousLink final
     {
         Link<void*,void>    m_aHandler;
-
-    protected:
         ::osl::Mutex        m_aEventSafety;
         ::osl::Mutex        m_aDestructionSafety;
         ImplSVEvent *       m_nEventId;
+        DECL_LINK(OnAsyncCall, void*, void);
 
     public:
         /** constructs the object
             @param      _rHandler           The link to be called asynchronously
         */
         OAsynchronousLink( const Link<void*,void>& _rHandler );
-        virtual ~OAsynchronousLink();
+        ~OAsynchronousLink();
 
         bool    IsRunning() const { return m_nEventId != nullptr; }
 
         void Call( void* _pArgument = nullptr );
         void CancelCall();
-
-    protected:
-        DECL_LINK_TYPED(OnAsyncCall, void*, void);
     };
 }
 #endif // INCLUDED_DBACCESS_ASYNCRONOUSLINK_HXX

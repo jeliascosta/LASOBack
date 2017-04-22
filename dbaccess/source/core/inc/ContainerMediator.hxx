@@ -24,7 +24,7 @@
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/implbase.hxx>
 #include <rtl/ref.hxx>
 
@@ -35,18 +35,18 @@ namespace dbaccess
 
     class OPropertyForward;
 
-    class OContainerMediator :   public ::comphelper::OBaseMutex
+    class OContainerMediator :   public ::cppu::BaseMutex
                                 ,public ::cppu::WeakImplHelper< css::container::XContainerListener >
     {
     private:
         typedef ::rtl::Reference< OPropertyForward >          TPropertyForward;
-        typedef ::std::map< OUString, TPropertyForward >      PropertyForwardList;
+        typedef std::map< OUString, TPropertyForward >      PropertyForwardList;
         PropertyForwardList                                   m_aForwardList;
         css::uno::Reference< css::container::XNameAccess >    m_xSettings;    // can not be weak
         css::uno::Reference< css::container::XContainer >     m_xContainer;   // can not be weak
 
     protected:
-        virtual ~OContainerMediator();
+        virtual ~OContainerMediator() override;
 
     public:
         OContainerMediator(
@@ -54,10 +54,10 @@ namespace dbaccess
             const css::uno::Reference< css::container::XNameAccess >& _xSettings
        );
 
-        virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& _rEvent ) override;
+        virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& _rEvent ) override;
+        virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& _rEvent ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
         void notifyElementCreated(const OUString& _sElementName
                                 ,const css::uno::Reference< css::beans::XPropertySet>& _xElement);

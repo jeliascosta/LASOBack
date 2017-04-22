@@ -29,6 +29,7 @@
 #include <com/sun/star/style/XAutoStylesSupplier.hpp>
 #include <com/sun/star/style/XAutoStyleFamily.hpp>
 #include "PageMasterPropMapper.hxx"
+#include <o3tl/make_unique.hxx>
 #include <tools/debug.hxx>
 #include <svl/itemset.hxx>
 #include <xmloff/nmspmap.hxx>
@@ -53,6 +54,7 @@
 #include "PageMasterImportContext.hxx"
 #include "PageMasterImportPropMapper.hxx"
 
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -85,8 +87,8 @@ static SvXMLTokenMapEntry aStyleStylesElemTokenMap[] =
 const SvXMLTokenMap& SvXMLStylesContext::GetStyleStylesElemTokenMap()
 {
     if( !mpStyleStylesElemTokenMap )
-        mpStyleStylesElemTokenMap =
-            new SvXMLTokenMap( aStyleStylesElemTokenMap );
+        mpStyleStylesElemTokenMap.reset(
+            new SvXMLTokenMap( aStyleStylesElemTokenMap ) );
 
     return *mpStyleStylesElemTokenMap;
 }
@@ -121,17 +123,6 @@ void SvXMLStyleContext::SetAttribute( sal_uInt16 nPrefixKey,
         {
             maFollow = rValue;
         }
-        else if( IsXMLToken( rLocalName, XML_HELP_FILE_NAME ) )
-        {
-            maHelpFile = rValue;
-        }
-        else if( IsXMLToken( rLocalName, XML_HELP_ID ) )
-        {
-            sal_Int32 nTmp = rValue.toInt32();
-            mnHelpId =
-                (nTmp < 0L) ? 0U : ( (nTmp > USHRT_MAX) ? USHRT_MAX
-                                                        : (sal_uInt16)nTmp );
-        }
         else if( IsXMLToken( rLocalName, XML_HIDDEN ) )
         {
             mbHidden = rValue.toBoolean();
@@ -147,7 +138,6 @@ SvXMLStyleContext::SvXMLStyleContext(
         sal_uInt16 nFam, bool bDefault ) :
     SvXMLImportContext( rImp, nPrfx, rLName ),
     mbHidden( false ),
-    mnHelpId( UCHAR_MAX ),
     mnFamily( nFam ),
     mbValid( true ),
     mbNew( true ),
@@ -205,27 +195,26 @@ class SvXMLStyleIndex_Impl
 {
     OUString              sName;
     sal_uInt16            nFamily;
-    const SvXMLStyleContext *pStyle;
+    const rtl::Reference<SvXMLStyleContext> mxStyle;
 
 public:
 
     SvXMLStyleIndex_Impl( sal_uInt16 nFam, const OUString& rName ) :
         sName( rName ),
-        nFamily( nFam ),
-        pStyle ( nullptr )
+        nFamily( nFam )
     {
     }
 
-    SvXMLStyleIndex_Impl( const SvXMLStyleContext *pStl ) :
-        sName( pStl->GetName() ),
-        nFamily( pStl->GetFamily() ),
-        pStyle ( pStl )
+    SvXMLStyleIndex_Impl( const rtl::Reference<SvXMLStyleContext> &rStl ) :
+        sName( rStl->GetName() ),
+        nFamily( rStl->GetFamily() ),
+        mxStyle ( rStl )
     {
     }
 
     const OUString& GetName() const { return sName; }
     sal_uInt16 GetFamily() const { return nFamily; }
-    const SvXMLStyleContext *GetStyle() const { return pStyle; }
+    const SvXMLStyleContext *GetStyle() const { return mxStyle.get(); }
 };
 
 struct SvXMLStyleIndexCmp_Impl
@@ -234,9 +223,9 @@ struct SvXMLStyleIndexCmp_Impl
     {
         sal_Int32 nRet;
 
-        if( (sal_uInt16)r1.GetFamily() < (sal_uInt16)r2.GetFamily() )
+        if( r1.GetFamily() < r2.GetFamily() )
             nRet = -1;
-        else if( (sal_uInt16)r1.GetFamily() > (sal_uInt16)r2.GetFamily() )
+        else if( r1.GetFamily() > r2.GetFamily() )
             nRet = 1;
         else
             nRet = r1.GetName().compareTo( r2.GetName() );
@@ -247,28 +236,27 @@ struct SvXMLStyleIndexCmp_Impl
 
 class SvXMLStylesContext_Impl
 {
-    typedef std::vector<SvXMLStyleContext*> StylesType;
+    typedef std::vector<rtl::Reference<SvXMLStyleContext>> StylesType;
     typedef std::set<SvXMLStyleIndex_Impl, SvXMLStyleIndexCmp_Impl> IndicesType;
 
     StylesType aStyles;
-    mutable IndicesType* pIndices;
+    mutable std::unique_ptr<IndicesType> pIndices;
     bool bAutomaticStyle;
 
 #if OSL_DEBUG_LEVEL > 0
     mutable sal_uInt32 m_nIndexCreated;
 #endif
 
-    void FlushIndex() { delete pIndices; pIndices = nullptr; }
+    void FlushIndex() { pIndices.reset(); }
 
 public:
     explicit SvXMLStylesContext_Impl( bool bAuto );
-    ~SvXMLStylesContext_Impl();
 
     size_t GetStyleCount() const { return aStyles.size(); }
 
     SvXMLStyleContext *GetStyle( size_t i )
     {
-        return i < aStyles.size() ? aStyles[ i ] : nullptr;
+        return i < aStyles.size() ? aStyles[ i ].get() : nullptr;
     }
 
     inline void AddStyle( SvXMLStyleContext *pStyle );
@@ -281,28 +269,15 @@ public:
 };
 
 SvXMLStylesContext_Impl::SvXMLStylesContext_Impl( bool bAuto ) :
-    pIndices( nullptr ),
     bAutomaticStyle( bAuto )
 #if OSL_DEBUG_LEVEL > 0
     , m_nIndexCreated( 0 )
 #endif
 {}
 
-SvXMLStylesContext_Impl::~SvXMLStylesContext_Impl()
-{
-    delete pIndices;
-
-    for (SvXMLStyleContext* pStyle : aStyles)
-    {
-        pStyle->ReleaseRef();
-    }
-    aStyles.clear();
-}
-
 inline void SvXMLStylesContext_Impl::AddStyle( SvXMLStyleContext *pStyle )
 {
     aStyles.push_back( pStyle );
-    pStyle->AddFirstRef();
 
     FlushIndex();
 }
@@ -310,11 +285,6 @@ inline void SvXMLStylesContext_Impl::AddStyle( SvXMLStyleContext *pStyle )
 void SvXMLStylesContext_Impl::Clear()
 {
     FlushIndex();
-
-    for (SvXMLStyleContext* pStyle : aStyles)
-    {
-        pStyle->ReleaseRef();
-    }
     aStyles.clear();
 }
 
@@ -326,8 +296,8 @@ const SvXMLStyleContext *SvXMLStylesContext_Impl::FindStyleChildContext( sal_uIn
 
     if( !pIndices && bCreateIndex && !aStyles.empty() )
     {
-        pIndices = new IndicesType(aStyles.begin(), aStyles.end());
-        SAL_WARN_IF(pIndices->size() != aStyles.size(), "xmloff", "Here is a duplicate Style");
+        pIndices = o3tl::make_unique<IndicesType>(aStyles.begin(), aStyles.end());
+        SAL_WARN_IF(pIndices->size() != aStyles.size(), "xmloff.style", "Here is a duplicate Style");
 #if OSL_DEBUG_LEVEL > 0
         SAL_WARN_IF(0 != m_nIndexCreated, "xmloff.style",
                     "Performance warning: sdbcx::Index created multiple times");
@@ -341,12 +311,12 @@ const SvXMLStyleContext *SvXMLStylesContext_Impl::FindStyleChildContext( sal_uIn
         IndicesType::iterator aFind = pIndices->find(aIndex);
         if( aFind != pIndices->end() )
             pStyle = aFind->GetStyle();
-    }
+   }
     else
     {
         for( size_t i = 0; !pStyle && i < aStyles.size(); i++ )
         {
-            const SvXMLStyleContext *pS = aStyles[ i ];
+            const SvXMLStyleContext *pS = aStyles[ i ].get();
             if( pS->GetFamily() == nFamily &&
                 pS->GetName() == rName )
                 pStyle = pS;
@@ -695,7 +665,7 @@ Reference < XAutoStyleFamily > SvXMLStylesContext::GetAutoStyles( sal_uInt16 nFa
             if (xAutoStyleFamilies->hasByName(sName))
             {
                 Any aAny = xAutoStyleFamilies->getByName( sName );
-                xAutoStyles = *static_cast<Reference<XAutoStyleFamily> const *>(aAny.getValue());
+                aAny >>= xAutoStyles;
                 if( bPara )
                     const_cast<SvXMLStylesContext *>(this)->mxParaAutoStyles = xAutoStyles;
                 else
@@ -784,7 +754,6 @@ SvXMLStylesContext::SvXMLStylesContext( SvXMLImport& rImport, sal_uInt16 nPrfx,
 
 SvXMLStylesContext::~SvXMLStylesContext()
 {
-    delete mpStyleStylesElemTokenMap;
 }
 
 SvXMLImportContext *SvXMLStylesContext::CreateChildContext( sal_uInt16 nPrefix,

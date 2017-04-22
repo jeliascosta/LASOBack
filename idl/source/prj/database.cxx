@@ -20,7 +20,6 @@
 #include <sal/config.h>
 
 #include <algorithm>
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <tools/debug.hxx>
@@ -125,18 +124,13 @@ bool SvIdlDataBase::FindId( const OString& rIdName, sal_uLong * pVal )
     return false;
 }
 
-bool SvIdlDataBase::InsertId( const OString& rIdName, sal_uLong nVal )
+void SvIdlDataBase::InsertId( const OString& rIdName, sal_uLong nVal )
 {
     if( !pIdTable )
-        pIdTable = new SvStringHashTable( 20003 );
+        pIdTable = new SvStringHashTable;
 
     sal_uInt32 nHash;
-    if( pIdTable->Insert( rIdName, &nHash ) )
-    {
-        pIdTable->Get( nHash )->SetValue( nVal );
-        return true;
-    }
-    return false;
+    pIdTable->Insert( rIdName, &nHash )->SetValue( nVal );
 }
 
 bool SvIdlDataBase::ReadIdFile( const OString& rOFileName )
@@ -211,25 +205,22 @@ bool SvIdlDataBase::ReadIdFile( const OString& rOFileName )
                     }
                     if( bOk )
                     {
-                        if( !InsertId( aDefName, nVal ) )
-                        {
-                            throw SvParseException( "hash table overflow: ", rTok );
-                        }
+                        InsertId( aDefName, nVal );
                     }
                 }
                 else if( rTok.Is( SvHash_include() ) )
                 {
                     rTok = aTokStm.GetToken_Next();
-                    OStringBuffer aName;
+                    OStringBuffer aNameBuf;
                     if( rTok.IsString() )
-                        aName.append(rTok.GetString());
+                        aNameBuf.append(rTok.GetString());
                     else if( rTok.IsChar() && rTok.GetChar() == '<' )
                     {
                         rTok = aTokStm.GetToken_Next();
                         while( !rTok.IsEof()
                           && !(rTok.IsChar() && rTok.GetChar() == '>') )
                         {
-                            aName.append(rTok.GetTokenAsString());
+                            aNameBuf.append(rTok.GetTokenAsString());
                             rTok = aTokStm.GetToken_Next();
                         }
                         if( rTok.IsEof() )
@@ -237,7 +228,8 @@ bool SvIdlDataBase::ReadIdFile( const OString& rOFileName )
                             throw SvParseException("unexpected eof in #include", rTok);
                         }
                     }
-                    if (!ReadIdFile(aName.toString()))
+                    OString aName(aNameBuf.makeStringAndClear());
+                    if (!ReadIdFile(aName))
                     {
                         throw SvParseException("cannot read file: " + aName, rTok);
                     }

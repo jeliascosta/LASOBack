@@ -23,6 +23,8 @@
 #include <svl/itemset.hxx>
 #include "fuconstr.hxx"
 
+enum class SdrInventor : sal_uInt32;
+
 namespace sd {
 
 /**
@@ -37,15 +39,13 @@ public:
     virtual void DoExecute( SfxRequest& rReq ) override;
 
     // Mouse- & Key-Events
-    virtual bool KeyInput(const KeyEvent& rKEvt) override;
-    virtual bool MouseMove(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonDown(const MouseEvent& rMEvt) override;
 
     virtual void Activate() override;
     virtual void Deactivate() override;
 
-    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle) override;
+    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const ::tools::Rectangle& rRectangle) override;
 
 protected:
     FuConstructUnoControl(
@@ -58,8 +58,8 @@ protected:
     OUString aOldLayer;
 
 private:
-    sal_uInt32 nInventor;
-    sal_uInt16 nIdentifier;
+    SdrInventor nInventor;
+    sal_uInt16  nIdentifier;
 };
 
 } // end of namespace sd

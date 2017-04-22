@@ -87,15 +87,15 @@ namespace cairocanvas
         DECLARE_UNO3_XCOMPONENT_AGG_DEFAULTS( CanvasBitmap, CanvasBitmapBase_Base, ::cppu::WeakComponentImplHelperBase )
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName(  ) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
         // SurfaceProvider
         virtual ::cairo::SurfaceSharedPtr getSurface() override;
-        virtual ::cairo::SurfaceSharedPtr createSurface( const ::basegfx::B2ISize& rSize, int aContent = CAIRO_CONTENT_COLOR_ALPHA ) override;
+        virtual ::cairo::SurfaceSharedPtr createSurface( const ::basegfx::B2ISize& rSize, int aContent ) override;
         virtual ::cairo::SurfaceSharedPtr createSurface( ::Bitmap& rBitmap ) override;
-        virtual ::cairo::SurfaceSharedPtr changeSurface( bool bHasAlpha, bool bCopyContent ) override;
+        virtual ::cairo::SurfaceSharedPtr changeSurface() override;
         virtual OutputDevice* getOutputDevice() override;
 
         // RepaintTarget
@@ -108,13 +108,13 @@ namespace cairocanvas
         // handle values have these meanings:
         // 0 ... get pointer to BitmapEx
         // 1 ... get X pixmap handle to rgb content
-        // 2 ... get X pitmap handle to alpha mask
+        // 2 ... FIXME: leftover? ever called with this? always returns nothing (empty Any)
         // returned any contains either BitmapEx pointer or array of three Any value
         //     1st a bool value: true - free the pixmap after used by XFreePixmap, false do nothing, the pixmap is used internally in the canvas
         //     2nd the pixmap handle
         //     3rd the pixmap depth
-        virtual css::uno::Any SAL_CALL getFastPropertyValue(sal_Int32 nHandle)  throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL setFastPropertyValue(sal_Int32, const css::uno::Any&)  throw (css::uno::RuntimeException, std::exception) override {}
+        virtual css::uno::Any SAL_CALL getFastPropertyValue(sal_Int32 nHandle) override;
+        virtual void SAL_CALL setFastPropertyValue(sal_Int32, const css::uno::Any&) override {}
 
     private:
         SurfaceProviderRef        mpSurfaceProvider;

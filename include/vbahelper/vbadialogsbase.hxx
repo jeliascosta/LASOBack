@@ -19,10 +19,26 @@
 #ifndef INCLUDED_VBAHELPER_VBADIALOGSBASE_HXX
 #define INCLUDED_VBAHELPER_VBADIALOGSBASE_HXX
 
-#include <ooo/vba/XHelperInterface.hpp>
+#include <exception>
+
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
 #include <ooo/vba/XDialogsBase.hpp>
+#include <sal/types.h>
+#include <vbahelper/vbadllapi.h>
+#include <vbahelper/vbahelper.hxx>
 #include <vbahelper/vbahelperinterface.hxx>
-#include <com/sun/star/frame/XModel.hpp>
+
+namespace com { namespace sun { namespace star {
+    namespace frame { class XModel; }
+    namespace uno { class XComponentContext; }
+} } }
+
+namespace ooo { namespace vba {
+    class XDialogsBase;
+    class XHelperInterface;
+} }
 
 typedef InheritedHelperInterfaceWeakImpl< ov::XDialogsBase > VbaDialogsBase_BASE;
 
@@ -32,11 +48,10 @@ protected:
         css::uno::Reference< css::frame::XModel > m_xModel;
 public:
     VbaDialogsBase( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > &xContext, const css::uno::Reference< css::frame::XModel >& xModel ): VbaDialogsBase_BASE( xParent, xContext ), m_xModel( xModel ) {}
-    virtual ~VbaDialogsBase() {}
 
     // XCollection
-    virtual ::sal_Int32 SAL_CALL getCount() throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL Item( const css::uno::Any& Index ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getCount() override;
+    virtual css::uno::Any SAL_CALL Item( const css::uno::Any& Index ) override;
 };
 
 #endif // INCLUDED_VBAHELPER_VBADIALOGSBASE_HXX

@@ -14,6 +14,8 @@
 #include "conditio.hxx"
 #include "document.hxx"
 #include "formulacell.hxx"
+#include "qahelper.hxx"
+#include <formula/errorcodes.hxx>
 
 struct FindCondFormatByEnclosingRange
 {
@@ -259,8 +261,8 @@ void testFunctionsExcel2010_Impl( ScDocument& rDoc )
                 OString::number( rDoc.GetValue( ScAddress( 2, nRow, 0)) );
 
             ScFormulaCell* pFC = rDoc.GetFormulaCell( ScAddress( 1, nRow, 0) );
-            if ( pFC && pFC->GetErrCode() != 0 )
-                aStr += ", error code =" + OString::number( pFC->GetErrCode() );
+            if ( pFC && pFC->GetErrCode() != FormulaError::NONE )
+                aStr += ", error code =" + OString::number( (int)pFC->GetErrCode() );
 
             CPPUNIT_ASSERT_MESSAGE( OString( "Expected a formula cell without error at row " +
                     aStr ).getStr(), isFormulaWithoutError( rDoc, ScAddress( 1, nRow, 0)));
@@ -275,12 +277,11 @@ void testCeilingFloor_Impl( ScDocument& rDoc )
 {
     // Original test case document is ceiling-floor.xlsx
     // Sheet1.K1 has =AND(K3:K81) to evaluate all results.
-    const char* pORef = "Sheet1.K1";
-    OUString aRef( OUString::createFromAscii( pORef));
+    const char pORef[] = "Sheet1.K1";
+    OUString aRef(pORef);
     ScAddress aPos;
     aPos.Parse(aRef);
-    if (!checkFormula( rDoc, aPos, "AND(K3:K81)"))
-        CPPUNIT_FAIL("Wrong formula.");
+    ASSERT_FORMULA_EQUAL(rDoc, aPos, "AND(K3:K81)", "Wrong formula.");
     CPPUNIT_ASSERT_MESSAGE( OString( OString(pORef) + " result is error.").getStr(),
             isFormulaWithoutError( rDoc, aPos));
     CPPUNIT_ASSERT_EQUAL(1.0, rDoc.GetValue(aPos));

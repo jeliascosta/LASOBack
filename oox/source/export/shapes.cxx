@@ -25,6 +25,7 @@
 #include "oox/core/xmlfilterbase.hxx"
 #include "oox/export/shapes.hxx"
 #include "oox/export/utils.hxx"
+#include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
 
 #include <cstdio>
@@ -52,6 +53,8 @@
 #include <com/sun/star/drawing/LineStyle.hpp>
 #include <com/sun/star/drawing/TextHorizontalAdjust.hpp>
 #include <com/sun/star/drawing/TextVerticalAdjust.hpp>
+#include <com/sun/star/drawing/EnhancedCustomShapeParameterPair.hpp>
+#include <com/sun/star/drawing/EnhancedCustomShapeParameterType.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
 #include <com/sun/star/embed/XEmbedPersist.hpp>
@@ -256,7 +259,7 @@ static uno::Reference<io::XInputStream> lcl_StoreOwnAsOOXML(
 
     if (!pFilterName)
     {
-        SAL_WARN("oox", "oox::GetOLEObjectStream: unknown ClassId " << classId.GetHexName());
+        SAL_WARN("oox.shape", "oox::GetOLEObjectStream: unknown ClassId " << classId.GetHexName());
         return nullptr;
     }
 
@@ -282,7 +285,7 @@ static uno::Reference<io::XInputStream> lcl_StoreOwnAsOOXML(
     }
     catch (uno::Exception const& e)
     {
-        SAL_WARN("oox", "oox::GetOLEObjectStream: exception: \"" << e.Message << "\"");
+        SAL_WARN("oox.shape", "oox::GetOLEObjectStream: exception: \"" << e.Message << "\"");
         return nullptr;
     }
     xTempStream->getOutputStream()->closeOutput();
@@ -322,7 +325,7 @@ uno::Reference<io::XInputStream> GetOLEObjectStream(
     }
     catch (uno::Exception const& e)
     {
-        SAL_WARN("oox", "oox::GetOLEObjectStream: exception: " << e.Message);
+        SAL_WARN("oox.shape", "oox::GetOLEObjectStream: exception: " << e.Message);
     }
     return xInStream;
 }
@@ -362,8 +365,8 @@ ShapeExport::ShapeExport( sal_Int32 nXmlNamespace, FSHelperPtr pFS, ShapeHashMap
     , mnPictureIdMax( 1 )
     , mnXmlNamespace( nXmlNamespace )
     , maFraction( 1, 576 )
-    , maMapModeSrc( MAP_100TH_MM )
-    , maMapModeDest( MAP_INCH, Point(), maFraction, maFraction )
+    , maMapModeSrc( MapUnit::Map100thMM )
+    , maMapModeDest( MapUnit::MapInch, Point(), maFraction, maFraction )
     , mpShapeMap( pShapeMap ? pShapeMap : &maShapeMap )
 {
     mpURLTransformer.reset(new URLTransformer);
@@ -426,15 +429,15 @@ bool ShapeExport::NonEmptyText( const Reference< XInterface >& xIface )
     return false;
 }
 
-ShapeExport& ShapeExport::WriteBezierShape( const Reference< XShape >& xShape, bool bClosed )
+ShapeExport& ShapeExport::WritePolyPolygonShape( const Reference< XShape >& xShape, bool bClosed )
 {
-    SAL_INFO("oox.shape", "write open bezier shape");
+    SAL_INFO("oox.shape", "write polypolygon shape");
 
     FSHelperPtr pFS = GetFS();
     pFS->startElementNS( mnXmlNamespace, (GetDocumentType() != DOCUMENT_DOCX ? XML_sp : XML_wsp), FSEND );
 
     tools::PolyPolygon aPolyPolygon = EscherPropertyContainer::GetPolyPolygon( xShape );
-    Rectangle aRect( aPolyPolygon.GetBoundRect() );
+    tools::Rectangle aRect( aPolyPolygon.GetBoundRect() );
 
 #if OSL_DEBUG_LEVEL > 0
     awt::Size size = MapSize( awt::Size( aRect.GetWidth(), aRect.GetHeight() ) );
@@ -447,7 +450,7 @@ ShapeExport& ShapeExport::WriteBezierShape( const Reference< XShape >& xShape, b
     {
         pFS->startElementNS( mnXmlNamespace, XML_nvSpPr, FSEND );
         pFS->singleElementNS( mnXmlNamespace, XML_cNvPr,
-                              XML_id, I32S( GetNewShapeID( xShape ) ),
+                              XML_id, IS( GetNewShapeID( xShape ) ),
                               XML_name, IDS( Freeform ),
                               FSEND );
     }
@@ -479,14 +482,14 @@ ShapeExport& ShapeExport::WriteBezierShape( const Reference< XShape >& xShape, b
     return *this;
 }
 
-ShapeExport& ShapeExport::WriteClosedBezierShape( const Reference< XShape >& xShape )
+ShapeExport& ShapeExport::WriteClosedPolyPolygonShape( const Reference< XShape >& xShape )
 {
-    return WriteBezierShape( xShape, true );
+    return WritePolyPolygonShape( xShape, true );
 }
 
-ShapeExport& ShapeExport::WriteOpenBezierShape( const Reference< XShape >& xShape )
+ShapeExport& ShapeExport::WriteOpenPolyPolygonShape( const Reference< XShape >& xShape )
 {
-    return WriteBezierShape( xShape, false );
+    return WritePolyPolygonShape( xShape, false );
 }
 
 ShapeExport& ShapeExport::WriteGroupShape(const uno::Reference<drawing::XShape>& xShape)
@@ -530,65 +533,65 @@ ShapeExport& ShapeExport::WriteGroupShape(const uno::Reference<drawing::XShape>&
 
 static bool lcl_IsOnBlacklist(OUString& rShapeType)
 {
-#if !HAVE_BROKEN_STATIC_INITIALIZER_LIST
-    static
-#endif
-    const std::initializer_list<OUStringLiteral> vBlacklist = {
-        OUStringLiteral("rectangle"),
-        OUStringLiteral("ellipse"),
-        OUStringLiteral("ring"),
-        OUStringLiteral("can"),
-        OUStringLiteral("cube"),
-        OUStringLiteral("paper"),
-        OUStringLiteral("frame"),
-        OUStringLiteral("smiley"),
-        OUStringLiteral("sun"),
-        OUStringLiteral("flower"),
-        OUStringLiteral("forbidden"),
-        OUStringLiteral("bracket-pair"),
-        OUStringLiteral("brace-pair"),
-        OUStringLiteral("col-60da8460"),
-        OUStringLiteral("col-502ad400"),
-        OUStringLiteral("quad-bevel"),
-        OUStringLiteral("cloud-callout"),
-        OUStringLiteral("line-callout-1"),
-        OUStringLiteral("line-callout-2"),
-        OUStringLiteral("line-callout-3"),
-        OUStringLiteral("paper"),
-        OUStringLiteral("vertical-scroll"),
-        OUStringLiteral("horizontal-scroll"),
-        OUStringLiteral("mso-spt34"),
-        OUStringLiteral("mso-spt75"),
-        OUStringLiteral("mso-spt164"),
-        OUStringLiteral("mso-spt180"),
-        OUStringLiteral("flowchart-process"),
-        OUStringLiteral("flowchart-alternate-process"),
-        OUStringLiteral("flowchart-decision"),
-        OUStringLiteral("flowchart-data"),
-        OUStringLiteral("flowchart-predefined-process"),
-        OUStringLiteral("flowchart-internal-storage"),
-        OUStringLiteral("flowchart-document"),
-        OUStringLiteral("flowchart-multidocument"),
-        OUStringLiteral("flowchart-terminator"),
-        OUStringLiteral("flowchart-preparation"),
-        OUStringLiteral("flowchart-manual-input"),
-        OUStringLiteral("flowchart-manual-operation"),
-        OUStringLiteral("flowchart-connector"),
-        OUStringLiteral("flowchart-off-page-connector"),
-        OUStringLiteral("flowchart-card"),
-        OUStringLiteral("flowchart-punched-tape"),
-        OUStringLiteral("flowchart-summing-junction"),
-        OUStringLiteral("flowchart-or"),
-        OUStringLiteral("flowchart-collate"),
-        OUStringLiteral("flowchart-sort"),
-        OUStringLiteral("flowchart-extract"),
-        OUStringLiteral("flowchart-merge"),
-        OUStringLiteral("flowchart-stored-data"),
-        OUStringLiteral("flowchart-delay"),
-        OUStringLiteral("flowchart-sequential-access"),
-        OUStringLiteral("flowchart-magnetic-disk"),
-        OUStringLiteral("flowchart-direct-access-storage"),
-        OUStringLiteral("flowchart-display")
+    static const std::initializer_list<OUStringLiteral> vBlacklist = {
+        "block-arc",
+        "rectangle",
+        "ellipse",
+        "ring",
+        "can",
+        "cube",
+        "paper",
+        "frame",
+        "smiley",
+        "sun",
+        "flower",
+        "bracket-pair",
+        "brace-pair",
+        "col-60da8460",
+        "col-502ad400",
+        "quad-bevel",
+        "round-rectangular-callout",
+        "rectangular-callout",
+        "round-callout",
+        "cloud-callout",
+        "line-callout-1",
+        "line-callout-2",
+        "line-callout-3",
+        "paper",
+        "vertical-scroll",
+        "horizontal-scroll",
+        "mso-spt34",
+        "mso-spt75",
+        "mso-spt164",
+        "mso-spt180",
+        "flowchart-process",
+        "flowchart-alternate-process",
+        "flowchart-decision",
+        "flowchart-data",
+        "flowchart-predefined-process",
+        "flowchart-internal-storage",
+        "flowchart-document",
+        "flowchart-multidocument",
+        "flowchart-terminator",
+        "flowchart-preparation",
+        "flowchart-manual-input",
+        "flowchart-manual-operation",
+        "flowchart-connector",
+        "flowchart-off-page-connector",
+        "flowchart-card",
+        "flowchart-punched-tape",
+        "flowchart-summing-junction",
+        "flowchart-or",
+        "flowchart-collate",
+        "flowchart-sort",
+        "flowchart-extract",
+        "flowchart-merge",
+        "flowchart-stored-data",
+        "flowchart-delay",
+        "flowchart-sequential-access",
+        "flowchart-magnetic-disk",
+        "flowchart-direct-access-storage",
+        "flowchart-display"
     };
 
     return std::find(vBlacklist.begin(), vBlacklist.end(), rShapeType) != vBlacklist.end();
@@ -596,17 +599,98 @@ static bool lcl_IsOnBlacklist(OUString& rShapeType)
 
 static bool lcl_IsOnWhitelist(OUString& rShapeType)
 {
-#if !HAVE_BROKEN_STATIC_INITIALIZER_LIST
-    static
-#endif
-    const std::initializer_list<OUStringLiteral> vWhitelist = {
-        OUStringLiteral("heart"),
-        OUStringLiteral("puzzle")
+    static const std::initializer_list<OUStringLiteral> vWhitelist = {
+        "forbidden",
+        "heart",
+        "puzzle"
     };
 
     return std::find(vWhitelist.begin(), vWhitelist.end(), rShapeType) != vWhitelist.end();
 }
 
+bool lcl_GetHandlePosition( sal_Int32 &nValue, const EnhancedCustomShapeParameter &rParam, Sequence< EnhancedCustomShapeAdjustmentValue > &rSeq)
+{
+    bool bAdj = false;
+    if ( rParam.Value.getValueTypeClass() == TypeClass_DOUBLE )
+    {
+        double fValue(0.0);
+        if ( rParam.Value >>= fValue )
+            nValue = (sal_Int32)fValue;
+    }
+    else
+        rParam.Value >>= nValue;
+
+    if ( rParam.Type == EnhancedCustomShapeParameterType::ADJUSTMENT)
+    {
+        bAdj = true;
+        sal_Int32 nIdx = nValue;
+        if ( nIdx < rSeq.getLength() )
+        {
+            if ( rSeq[ nIdx ] .Value.getValueTypeClass() == TypeClass_DOUBLE )
+            {
+                double fValue(0.0);
+                rSeq[ nIdx ].Value >>= fValue;
+                nValue = fValue;
+
+            }
+            else
+            {
+                rSeq[ nIdx ].Value >>= nValue;
+            }
+        }
+    }
+    return bAdj;
+}
+
+void lcl_AnalyzeHandles( const uno::Sequence<beans::PropertyValues> & rHandles,
+        std::vector< std::pair< sal_Int32, sal_Int32> > &rHandlePositionList,
+        Sequence< EnhancedCustomShapeAdjustmentValue > &rSeq)
+{
+    sal_uInt16 k;
+    sal_uInt16 nHandles = rHandles.getLength();
+    for ( k = 0; k < nHandles ; k++ )
+    {
+        const OUString sSwitched( "Switched"  );
+        const OUString sPosition( "Position"  );
+        bool bSwitched = false;
+        bool bPosition = false;
+        EnhancedCustomShapeParameterPair aPosition;
+        EnhancedCustomShapeParameterPair aPolar;
+        const Sequence< PropertyValue >& rPropSeq = rHandles[ k ];
+        for ( const PropertyValue& rPropVal: rPropSeq )
+        {
+            if ( rPropVal.Name.equals( sPosition ) )
+            {
+                if ( rPropVal.Value >>= aPosition )
+                    bPosition = true;
+            }
+            else if ( rPropVal.Name.equals( sSwitched ) )
+            {
+                rPropVal.Value >>= bSwitched ;
+            }
+        }
+        if ( bPosition )
+        {
+            sal_Int32 nXPosition = 0;
+            sal_Int32 nYPosition = 0;
+            // For polar handles, nXPosition is radius and nYPosition is angle
+            lcl_GetHandlePosition( nXPosition, aPosition.First , rSeq );
+            lcl_GetHandlePosition( nYPosition, aPosition.Second, rSeq );
+            rHandlePositionList.push_back( std::pair<sal_Int32, sal_Int32> ( nXPosition, nYPosition ) );
+        }
+    }
+}
+
+void lcl_AppendAdjustmentValue( std::vector< std::pair< sal_Int32, sal_Int32> > &rAvList, sal_Int32 nAdjIdx, sal_Int32 nValue )
+{
+    rAvList.push_back( std::pair<sal_Int32, sal_Int32> ( nAdjIdx , nValue ) );
+}
+
+sal_Int32 lcl_NormalizeAngle( sal_Int32 nAngle )
+{
+    nAngle = nAngle % 360;
+    return nAngle < 0 ? ( nAngle + 360 ) : nAngle ;
+}
 
 ShapeExport& ShapeExport::WriteCustomShape( const Reference< XShape >& xShape )
 {
@@ -615,6 +699,7 @@ ShapeExport& ShapeExport::WriteCustomShape( const Reference< XShape >& xShape )
     Reference< XPropertySet > rXPropSet( xShape, UNO_QUERY );
     bool bPredefinedHandlesUsed = true;
     bool bHasHandles = false;
+
     OUString sShapeType;
     sal_uInt32 nMirrorFlags = 0;
     MSO_SPT eShapeType = EscherPropertyContainer::GetCustomShapeType( xShape, nMirrorFlags, sShapeType );
@@ -624,6 +709,8 @@ ShapeExport& ShapeExport::WriteCustomShape( const Reference< XShape >& xShape )
     SAL_INFO("oox.shape", "custom shape type: " << sShapeType << " ==> " << sPresetShape);
     Sequence< PropertyValue > aGeometrySeq;
     sal_Int32 nAdjustmentValuesIndex = -1;
+    awt::Rectangle aViewBox;
+    uno::Sequence<beans::PropertyValues> aHandles;
 
     bool bFlipH = false;
     bool bFlipV = false;
@@ -646,7 +733,6 @@ ShapeExport& ShapeExport::WriteCustomShape( const Reference< XShape >& xShape )
                     nAdjustmentValuesIndex = i;
                 else if ( rProp.Name == "Handles" )
                 {
-                    uno::Sequence<beans::PropertyValues> aHandles;
                     rProp.Value >>= aHandles;
                     if ( aHandles.getLength() )
                         bHasHandles = true;
@@ -658,6 +744,8 @@ ShapeExport& ShapeExport::WriteCustomShape( const Reference< XShape >& xShape )
                 {
                     rProp.Value >>= m_presetWarp;
                 }
+                else if ( rProp.Name == "ViewBox" )
+                    rProp.Value >>= aViewBox;
             }
         }
     }
@@ -675,7 +763,7 @@ ShapeExport& ShapeExport::WriteCustomShape( const Reference< XShape >& xShape )
         }
         pFS->startElementNS( mnXmlNamespace, XML_nvSpPr, FSEND );
         pFS->startElementNS( mnXmlNamespace, XML_cNvPr,
-                XML_id, I32S( GetNewShapeID( xShape ) ),
+                XML_id, IS( GetNewShapeID( xShape ) ),
                 XML_name, IDS( CustomShape ),
                 XML_hidden, isVisible ? nullptr : "1",
                 FSEND );
@@ -716,6 +804,7 @@ ShapeExport& ShapeExport::WriteCustomShape( const Reference< XShape >& xShape )
     // but our WritePolyPolygon()/WriteCustomGeometry() functions are incomplete, therefore we use a blacklist
     // we use a whitelist for shapes where mapping to MSO preset shape is not optimal
     bool bCustGeom = true;
+    bool bOnBlacklist = false;
     if( sShapeType == "ooxml-non-primitive" )
         bCustGeom = true;
     else if( sShapeType.startsWith("ooxml") )
@@ -723,7 +812,10 @@ ShapeExport& ShapeExport::WriteCustomShape( const Reference< XShape >& xShape )
     else if( lcl_IsOnWhitelist(sShapeType) )
         bCustGeom = true;
     else if( lcl_IsOnBlacklist(sShapeType) )
+    {
         bCustGeom = false;
+        bOnBlacklist = true;
+    }
     else if( bHasHandles )
         bCustGeom = true;
 
@@ -747,6 +839,129 @@ ShapeExport& ShapeExport::WriteCustomShape( const Reference< XShape >& xShape )
         bool bSuccess = WriteCustomGeometry( xShape );
         if (!bSuccess)
             WritePresetShape( sPresetShape );
+    }
+    else if (bOnBlacklist && bHasHandles && nAdjustmentValuesIndex !=-1 && !sShapeType.startsWith("mso-spt"))
+    {
+        WriteShapeTransformation( xShape, XML_a, bFlipH, bFlipV );
+        Sequence< EnhancedCustomShapeAdjustmentValue > aAdjustmentSeq;
+        std::vector< std::pair< sal_Int32, sal_Int32> > aHandlePositionList;
+        std::vector< std::pair< sal_Int32, sal_Int32> > aAvList;
+        aGeometrySeq[ nAdjustmentValuesIndex ].Value >>= aAdjustmentSeq ;
+
+        lcl_AnalyzeHandles( aHandles, aHandlePositionList, aAdjustmentSeq );
+
+        sal_Int32 nXPosition = 0;
+        sal_Int32 nYPosition = 0;
+        if ( !aHandlePositionList.empty() )
+        {
+            nXPosition = aHandlePositionList[0].first ;
+            nYPosition = aHandlePositionList[0].second ;
+        }
+        switch( eShapeType )
+        {
+            case mso_sptBorderCallout1:
+            {
+                sal_Int32 adj3 =  double(nYPosition)/aViewBox.Height *100000;
+                sal_Int32 adj4 =  double(nXPosition)/aViewBox.Width *100000;
+                lcl_AppendAdjustmentValue( aAvList, 1, 18750 );
+                lcl_AppendAdjustmentValue( aAvList, 2, -8333 );
+                lcl_AppendAdjustmentValue( aAvList, 3, adj3 );
+                lcl_AppendAdjustmentValue( aAvList, 4, adj4 );
+                break;
+            }
+            case mso_sptBorderCallout2:
+            {
+                sal_Int32 adj5 =  double(nYPosition)/aViewBox.Height *100000;
+                sal_Int32 adj6 =  double(nXPosition)/aViewBox.Width *100000;
+                sal_Int32 adj3 =  18750;
+                sal_Int32 adj4 =  -16667;
+                lcl_AppendAdjustmentValue( aAvList, 1, 18750 );
+                lcl_AppendAdjustmentValue( aAvList, 2, -8333 );
+                if ( aHandlePositionList.size() > 1 )
+                {
+                    nXPosition = aHandlePositionList[1].first ;
+                    nYPosition = aHandlePositionList[1].second ;
+                    adj3 =  double(nYPosition)/aViewBox.Height *100000;
+                    adj4 =  double(nXPosition)/aViewBox.Width *100000;
+                }
+                lcl_AppendAdjustmentValue( aAvList, 3, adj3 );
+                lcl_AppendAdjustmentValue( aAvList, 4, adj4 );
+                lcl_AppendAdjustmentValue( aAvList, 5, adj5 );
+                lcl_AppendAdjustmentValue( aAvList, 6, adj6 );
+                break;
+            }
+            case mso_sptWedgeRectCallout:
+            case mso_sptWedgeRRectCallout:
+            case mso_sptWedgeEllipseCallout:
+            case mso_sptCloudCallout:
+            {
+                sal_Int32 adj1 =  (double(nXPosition)/aViewBox.Width -0.5) *100000;
+                sal_Int32 adj2 =  (double(nYPosition)/aViewBox.Height -0.5) *100000;
+                lcl_AppendAdjustmentValue( aAvList, 1, adj1 );
+                lcl_AppendAdjustmentValue( aAvList, 2, adj2 );
+                if ( eShapeType == mso_sptWedgeRRectCallout)
+                {
+                    lcl_AppendAdjustmentValue( aAvList, 3, 16667);
+                }
+
+                break;
+            }
+            case mso_sptFoldedCorner:
+            {
+                sal_Int32 adj =  double( aViewBox.Width - nXPosition) / std::min( aViewBox.Width,aViewBox.Height ) * 100000;
+                lcl_AppendAdjustmentValue( aAvList, 0, adj );
+                break;
+            }
+            case mso_sptDonut:
+            case mso_sptSun:
+            case mso_sptMoon:
+            case mso_sptHorizontalScroll:
+            case mso_sptBevel:
+            case mso_sptBracketPair:
+            {
+                sal_Int32 adj =  double( nXPosition )/aViewBox.Width*100000 ;
+                lcl_AppendAdjustmentValue( aAvList, 0, adj );
+                break;
+            }
+            case mso_sptCan:
+            case mso_sptCube:
+            case mso_sptBracePair:
+            case mso_sptVerticalScroll:
+            {
+                sal_Int32 adj =  double( nYPosition )/aViewBox.Height *100000 ;
+                lcl_AppendAdjustmentValue( aAvList, 0, adj );
+                break;
+            }
+            case mso_sptSmileyFace:
+            {
+                sal_Int32 adj =  double( nYPosition )/aViewBox.Height *100000 - 76458.0;
+                lcl_AppendAdjustmentValue( aAvList, 0, adj );
+                break;
+            }
+            case mso_sptBlockArc:
+            {
+                sal_Int32 nRadius = 50000 * ( 1 - double(nXPosition) / 10800);
+                sal_Int32 nAngleStart = lcl_NormalizeAngle( nYPosition );
+                sal_Int32 nAngleEnd = lcl_NormalizeAngle( 180 - nAngleStart );
+                lcl_AppendAdjustmentValue( aAvList, 1, 21600000 / 360 * nAngleStart );
+                lcl_AppendAdjustmentValue( aAvList, 2, 21600000 / 360 * nAngleEnd );
+                lcl_AppendAdjustmentValue( aAvList, 3, nRadius );
+                break;
+            }
+            // case mso_sptNil:
+            // case mso_sptBentConnector3:
+            // case mso_sptBorderCallout3:
+            default:
+            {
+                if (!strcmp( sPresetShape, "frame" ))
+                {
+                    sal_Int32 adj1 =  double( nYPosition )/aViewBox.Height *100000 ;
+                    lcl_AppendAdjustmentValue( aAvList, 1, adj1 );
+                }
+                break;
+            }
+        }
+        WritePresetShape( sPresetShape  , aAvList );
     }
     else // preset geometry
     {
@@ -797,7 +1012,7 @@ ShapeExport& ShapeExport::WriteEllipseShape( const Reference< XShape >& xShape )
     {
         pFS->startElementNS( mnXmlNamespace, XML_nvSpPr, FSEND );
         pFS->singleElementNS( mnXmlNamespace, XML_cNvPr,
-                XML_id, I32S( GetNewShapeID( xShape ) ),
+                XML_id, IS( GetNewShapeID( xShape ) ),
                 XML_name, IDS( Ellipse ),
                 FSEND );
         pFS->singleElementNS( mnXmlNamespace, XML_cNvSpPr, FSEND );
@@ -843,7 +1058,7 @@ void ShapeExport::WriteGraphicObjectShapePart( const Reference< XShape >& xShape
         // avoid treating all 'IsPresentationObject' objects as having text.
         Reference< XSimpleText > xText( xShape, UNO_QUERY );
 
-        if( xText.is() && xText->getString().getLength() )
+        if( xText.is() && !xText->getString().isEmpty() )
         {
             SAL_INFO("oox.shape", "graphicObject: wrote only text");
 
@@ -864,12 +1079,13 @@ void ShapeExport::WriteGraphicObjectShapePart( const Reference< XShape >& xShape
     }
 
     FSHelperPtr pFS = GetFS();
+    XmlFilterBase* pFB = GetFB();
 
     if (GetDocumentType() != DOCUMENT_DOCX)
         pFS->startElementNS( mnXmlNamespace, XML_pic, FSEND );
     else
         pFS->startElementNS( mnXmlNamespace, XML_pic,
-                             FSNS(XML_xmlns, XML_pic), "http://schemas.openxmlformats.org/drawingml/2006/picture",
+                             FSNS(XML_xmlns, XML_pic), OUStringToOString(pFB->getNamespaceURL(OOX_NS(dmlPicture)), RTL_TEXTENCODING_UTF8).getStr(),
                              FSEND );
 
     pFS->startElementNS( mnXmlNamespace, XML_nvPicPr, FSEND );
@@ -883,7 +1099,7 @@ void ShapeExport::WriteGraphicObjectShapePart( const Reference< XShape >& xShape
         mAny >>= sDescr;
 
     pFS->singleElementNS( mnXmlNamespace, XML_cNvPr,
-                          XML_id,     I32S( GetNewShapeID( xShape ) ),
+                          XML_id,     IS( GetNewShapeID( xShape ) ),
                           XML_name,   bHaveName ? USS( sName ) : OString( "Picture " + OString::number( mnPictureIdMax++ )).getStr(),
                           XML_descr,  bHaveDesc ? USS( sDescr ) : nullptr,
                           FSEND );
@@ -974,7 +1190,7 @@ ShapeExport& ShapeExport::WriteConnectorShape( const Reference< XShape >& xShape
     }
     EscherConnectorListEntry aConnectorEntry( xShape, aStartPoint, rXShapeA, aEndPoint, rXShapeB );
 
-    Rectangle aRect( Point( aStartPoint.X, aStartPoint.Y ), Point( aEndPoint.X, aEndPoint.Y ) );
+    tools::Rectangle aRect( Point( aStartPoint.X, aStartPoint.Y ), Point( aEndPoint.X, aEndPoint.Y ) );
     if( aRect.getWidth() < 0 ) {
         bFlipH = true;
         aRect.setX( aEndPoint.X );
@@ -992,7 +1208,7 @@ ShapeExport& ShapeExport::WriteConnectorShape( const Reference< XShape >& xShape
     // non visual shape properties
     pFS->startElementNS( mnXmlNamespace, XML_nvCxnSpPr, FSEND );
     pFS->singleElementNS( mnXmlNamespace, XML_cNvPr,
-                          XML_id, I32S( GetNewShapeID( xShape ) ),
+                          XML_id, IS( GetNewShapeID( xShape ) ),
                           XML_name, IDS( Line ),
                           FSEND );
     // non visual connector shape drawing properties
@@ -1045,7 +1261,7 @@ ShapeExport& ShapeExport::WriteLineShape( const Reference< XShape >& xShape )
     {
         pFS->startElementNS( mnXmlNamespace, XML_nvSpPr, FSEND );
         pFS->singleElementNS( mnXmlNamespace, XML_cNvPr,
-                              XML_id, I32S( GetNewShapeID( xShape ) ),
+                              XML_id, IS( GetNewShapeID( xShape ) ),
                               XML_name, IDS( Line ),
                               FSEND );
     }
@@ -1081,7 +1297,7 @@ ShapeExport& ShapeExport::WriteLineShape( const Reference< XShape >& xShape )
 ShapeExport& ShapeExport::WriteNonVisualDrawingProperties( const Reference< XShape >& xShape, const char* pName )
 {
     GetFS()->singleElementNS( mnXmlNamespace, XML_cNvPr,
-                              XML_id, I32S( GetNewShapeID( xShape ) ),
+                              XML_id, IS( GetNewShapeID( xShape ) ),
                               XML_name, pName,
                               FSEND );
 
@@ -1122,7 +1338,7 @@ ShapeExport& ShapeExport::WriteRectangleShape( const Reference< XShape >& xShape
         pFS->singleElementNS( mnXmlNamespace, XML_cNvSpPr, FSEND );
     pFS->startElementNS( mnXmlNamespace, XML_nvSpPr, FSEND );
     pFS->singleElementNS( mnXmlNamespace, XML_cNvPr,
-                          XML_id, I32S( GetNewShapeID( xShape ) ),
+                          XML_id, IS( GetNewShapeID( xShape ) ),
                           XML_name, IDS( Rectangle ),
                           FSEND );
     pFS->singleElementNS( mnXmlNamespace, XML_cNvSpPr, FSEND );
@@ -1161,13 +1377,15 @@ static const NameToConvertMapType& lcl_GetConverters(DocumentType eDocumentType)
         return shape_converters;
     }
 
-    shape_converters[ "com.sun.star.drawing.ClosedBezierShape" ]        = &ShapeExport::WriteClosedBezierShape;
+    shape_converters[ "com.sun.star.drawing.ClosedBezierShape" ]        = &ShapeExport::WriteClosedPolyPolygonShape;
     shape_converters[ "com.sun.star.drawing.ConnectorShape" ]           = &ShapeExport::WriteConnectorShape;
     shape_converters[ "com.sun.star.drawing.CustomShape" ]              = &ShapeExport::WriteCustomShape;
     shape_converters[ "com.sun.star.drawing.EllipseShape" ]             = &ShapeExport::WriteEllipseShape;
     shape_converters[ "com.sun.star.drawing.GraphicObjectShape" ]       = &ShapeExport::WriteGraphicObjectShape;
     shape_converters[ "com.sun.star.drawing.LineShape" ]                = &ShapeExport::WriteLineShape;
-    shape_converters[ "com.sun.star.drawing.OpenBezierShape" ]          = &ShapeExport::WriteOpenBezierShape;
+    shape_converters[ "com.sun.star.drawing.OpenBezierShape" ]          = &ShapeExport::WriteOpenPolyPolygonShape;
+    shape_converters[ "com.sun.star.drawing.PolyPolygonShape" ]          = &ShapeExport::WriteClosedPolyPolygonShape;
+    shape_converters[ "com.sun.star.drawing.PolyLineShape" ]          = &ShapeExport::WriteClosedPolyPolygonShape;
     shape_converters[ "com.sun.star.drawing.RectangleShape" ]           = &ShapeExport::WriteRectangleShape;
     shape_converters[ "com.sun.star.drawing.OLE2Shape" ]                = &ShapeExport::WriteOLE2Shape;
     shape_converters[ "com.sun.star.drawing.TableShape" ]               = &ShapeExport::WriteTableShape;
@@ -1243,8 +1461,6 @@ ShapeExport& ShapeExport::WriteTextBox( const Reference< XInterface >& xIface, s
 
 void ShapeExport::WriteTable( const Reference< XShape >& rXShape  )
 {
-    OSL_TRACE("write table");
-
     Reference< XTable > xTable;
     Reference< XPropertySet > xPropSet( rXShape, UNO_QUERY );
 
@@ -1269,7 +1485,7 @@ void ShapeExport::WriteTable( const Reference< XShape >& rXShape  )
             sal_Int32 nWidth(0);
             xColPropSet->getPropertyValue( "Width" ) >>= nWidth;
 
-            mpFS->singleElementNS( XML_a, XML_gridCol, XML_w, I64S(oox::drawingml::convertHmmToEmu(nWidth)), FSEND );
+            mpFS->singleElementNS( XML_a, XML_gridCol, XML_w, IS(oox::drawingml::convertHmmToEmu(nWidth)), FSEND );
         }
 
         mpFS->endElementNS( XML_a, XML_tblGrid );
@@ -1285,7 +1501,7 @@ void ShapeExport::WriteTable( const Reference< XShape >& rXShape  )
 
             xRowPropSet->getPropertyValue( "Height" ) >>= nRowHeight;
 
-            mpFS->startElementNS( XML_a, XML_tr, XML_h, I64S( oox::drawingml::convertHmmToEmu( nRowHeight ) ), FSEND );
+            mpFS->startElementNS( XML_a, XML_tr, XML_h, IS( oox::drawingml::convertHmmToEmu( nRowHeight ) ), FSEND );
             for( sal_Int32 nColumn = 0; nColumn < nColumnCount; nColumn++ )
             {
                 Reference< XMergeableCell > xCell( xTable->getCellByPosition( nColumn, nRow ),
@@ -1299,8 +1515,8 @@ void ShapeExport::WriteTable( const Reference< XShape >& rXShape  )
                 {
                     // having both : horizontal and vertical merge
                     mpFS->startElementNS(XML_a, XML_tc, XML_gridSpan,
-                                         I32S(xCell->getColumnSpan()),
-                                         XML_rowSpan, I32S(xCell->getRowSpan()),
+                                         IS(xCell->getColumnSpan()),
+                                         XML_rowSpan, IS(xCell->getRowSpan()),
                                          FSEND);
                     // since, XMergeableCell doesn't have the information about
                     // cell having hMerge or vMerge.
@@ -1322,8 +1538,8 @@ void ShapeExport::WriteTable( const Reference< XShape >& rXShape  )
                 {
                     // having : horizontal merge
                     mpFS->startElementNS(XML_a, XML_tc, XML_gridSpan,
-                                         I32S(xCell->getColumnSpan()), FSEND);
-                    for(sal_Int32 columnIndex = nColumn; columnIndex < xCell->getColumnSpan(); ++columnIndex) {
+                                         IS(xCell->getColumnSpan()), FSEND);
+                    for(sal_Int32 columnIndex = nColumn; columnIndex < nColumn + xCell->getColumnSpan(); ++columnIndex) {
                         sal_Int32 transposeIndexForMergeCell = (nRow*nColumnCount) + columnIndex;
                         mergedCellMap[transposeIndexForMergeCell] =
                             std::make_pair(transposedIndexofCell, xCell);
@@ -1333,9 +1549,9 @@ void ShapeExport::WriteTable( const Reference< XShape >& rXShape  )
                 {
                     // having : vertical merge
                     mpFS->startElementNS(XML_a, XML_tc, XML_rowSpan,
-                                         I32S(xCell->getRowSpan()), FSEND);
+                                         IS(xCell->getRowSpan()), FSEND);
 
-                    for(sal_Int32 rowIndex = nRow; rowIndex < xCell->getRowSpan(); ++rowIndex) {
+                    for(sal_Int32 rowIndex = nRow; rowIndex < nRow + xCell->getRowSpan(); ++rowIndex) {
                         sal_Int32 transposeIndexForMergeCell = (rowIndex*nColumnCount) + nColumn;
                         mergedCellMap[transposeIndexForMergeCell] =
                             std::make_pair(transposedIndexofCell, xCell);
@@ -1369,15 +1585,15 @@ void ShapeExport::WriteTable( const Reference< XShape >& rXShape  )
                                 {
                                     // vMerge and has gridSpan
                                     mpFS->startElementNS( XML_a, XML_tc,
-                                                          XML_vMerge, I32S(1),
-                                                          XML_gridSpan, I32S(xCell->getColumnSpan()),
+                                                          XML_vMerge, IS(1),
+                                                          XML_gridSpan, IS(xCell->getColumnSpan()),
                                                           FSEND );
                                 }
                                 else
                                 {
                                     // only vMerge
                                     mpFS->startElementNS( XML_a, XML_tc,
-                                                          XML_vMerge, I32S(1), FSEND );
+                                                          XML_vMerge, IS(1), FSEND );
                                 }
                             }
                             else if(nRow == parentRowIndex)
@@ -1387,23 +1603,23 @@ void ShapeExport::WriteTable( const Reference< XShape >& rXShape  )
                                 {
                                     // hMerge and has rowspan
                                     mpFS->startElementNS( XML_a, XML_tc,
-                                                          XML_hMerge, I32S(1),
-                                                          XML_rowSpan, I32S(xCell->getRowSpan()),
+                                                          XML_hMerge, IS(1),
+                                                          XML_rowSpan, IS(xCell->getRowSpan()),
                                                           FSEND );
                                 }
                                 else
                                 {
                                     // only hMerge
                                     mpFS->startElementNS( XML_a, XML_tc,
-                                                          XML_hMerge, I32S(1), FSEND );
+                                                          XML_hMerge, IS(1), FSEND );
                                 }
                             }
                             else
                             {
                                 // has hMerge and vMerge
                                 mpFS->startElementNS( XML_a, XML_tc,
-                                                      XML_vMerge, I32S(1),
-                                                      XML_hMerge, I32S(1),
+                                                      XML_vMerge, IS(1),
+                                                      XML_hMerge, IS(1),
                                                       FSEND );
                             }
                         }
@@ -1444,8 +1660,8 @@ void ShapeExport::WriteTableCellProperties(const Reference< XPropertySet>& xCell
     aRightMargin >>= nRightMargin;
 
     mpFS->startElementNS( XML_a, XML_tcPr,
-    XML_marL, nLeftMargin > 0 ? I32S( oox::drawingml::convertHmmToEmu( nLeftMargin ) ) : nullptr,
-    XML_marR, nRightMargin > 0 ? I32S( oox::drawingml::convertHmmToEmu( nRightMargin ) ): nullptr,
+    XML_marL, nLeftMargin > 0 ? IS( oox::drawingml::convertHmmToEmu( nLeftMargin ) ) : nullptr,
+    XML_marR, nRightMargin > 0 ? IS( oox::drawingml::convertHmmToEmu( nRightMargin ) ): nullptr,
     FSEND );
 
     // Write background fill for table cell.
@@ -1472,7 +1688,7 @@ void ShapeExport::WriteTableCellBorders(const Reference< XPropertySet>& xCellPro
 
     if(nLeftBorder > 0)
     {
-        mpFS->startElementNS( XML_a, XML_lnL, XML_w, I32S(nLeftBorder), FSEND );
+        mpFS->startElementNS( XML_a, XML_lnL, XML_w, IS(nLeftBorder), FSEND );
         DrawingML::WriteSolidFill(aLeftBorderColor);
         mpFS->endElementNS( XML_a, XML_lnL );
     }
@@ -1486,7 +1702,7 @@ void ShapeExport::WriteTableCellBorders(const Reference< XPropertySet>& xCellPro
 
     if(nRightBorder > 0)
     {
-        mpFS->startElementNS( XML_a, XML_lnR, XML_w, I32S(nRightBorder), FSEND);
+        mpFS->startElementNS( XML_a, XML_lnR, XML_w, IS(nRightBorder), FSEND);
         DrawingML::WriteSolidFill(aRightBorderColor);
         mpFS->endElementNS( XML_a, XML_lnR);
     }
@@ -1500,7 +1716,7 @@ void ShapeExport::WriteTableCellBorders(const Reference< XPropertySet>& xCellPro
 
     if(nTopBorder > 0)
     {
-        mpFS->startElementNS( XML_a, XML_lnT, XML_w, I32S(nTopBorder), FSEND);
+        mpFS->startElementNS( XML_a, XML_lnT, XML_w, IS(nTopBorder), FSEND);
         DrawingML::WriteSolidFill(aTopBorderColor);
         mpFS->endElementNS( XML_a, XML_lnT);
     }
@@ -1514,7 +1730,7 @@ void ShapeExport::WriteTableCellBorders(const Reference< XPropertySet>& xCellPro
 
     if(nBottomBorder > 0)
     {
-        mpFS->startElementNS( XML_a, XML_lnB, XML_w, I32S(nBottomBorder), FSEND);
+        mpFS->startElementNS( XML_a, XML_lnB, XML_w, IS(nBottomBorder), FSEND);
         DrawingML::WriteSolidFill(aBottomBorderColor);
         mpFS->endElementNS( XML_a, XML_lnB);
     }
@@ -1524,14 +1740,12 @@ ShapeExport& ShapeExport::WriteTableShape( const Reference< XShape >& xShape )
 {
     FSHelperPtr pFS = GetFS();
 
-    OSL_TRACE("write table shape");
-
     pFS->startElementNS( mnXmlNamespace, XML_graphicFrame, FSEND );
 
     pFS->startElementNS( mnXmlNamespace, XML_nvGraphicFramePr, FSEND );
 
     pFS->singleElementNS( mnXmlNamespace, XML_cNvPr,
-                          XML_id,     I32S( GetNewShapeID( xShape ) ),
+                          XML_id,     IS( GetNewShapeID( xShape ) ),
                           XML_name,   IDS(Table),
                           FSEND );
 
@@ -1594,13 +1808,13 @@ void ShapeExport::WriteMathShape(Reference<XShape> const& xShape)
     xPropSet->getPropertyValue("Model") >>= xMathModel;
     assert(xMathModel.is());
     assert(GetDocumentType() != DOCUMENT_DOCX); // should be written in DocxAttributeOutput
-    SAL_WARN_IF(GetDocumentType() == DOCUMENT_XLSX, "oox", "Math export to XLSX isn't tested, should it happen here?");
+    SAL_WARN_IF(GetDocumentType() == DOCUMENT_XLSX, "oox.shape", "Math export to XLSX isn't tested, should it happen here?");
 
     // ECMA standard does not actually allow oMath outside of
     // WordProcessingML so write a MCE like PPT 2010 does
     mpFS->startElementNS(XML_mc, XML_AlternateContent, FSEND);
     mpFS->startElementNS(XML_mc, XML_Choice,
-        FSNS(XML_xmlns, XML_a14), "http://schemas.microsoft.com/office/drawing/2010/main",
+        FSNS(XML_xmlns, XML_a14), OUStringToOString(mpFB->getNamespaceURL(OOX_NS(a14)), RTL_TEXTENCODING_UTF8).getStr(),
         XML_Requires, "a14",
         FSEND);
     mpFS->startElementNS(mnXmlNamespace, XML_sp, FSEND);
@@ -1681,7 +1895,7 @@ ShapeExport& ShapeExport::WriteOLE2Shape( const Reference< XShape >& xShape )
 
     if (!xObj.is())
     {
-        SAL_WARN("oox", "ShapeExport::WriteOLE2Shape: no object");
+        SAL_WARN("oox.shape", "ShapeExport::WriteOLE2Shape: no object");
         return *this;
     }
 
@@ -1699,7 +1913,7 @@ ShapeExport& ShapeExport::WriteOLE2Shape( const Reference< XShape >& xShape )
     }
     catch (uno::Exception const& e)
     {
-        SAL_WARN("oox", "ShapeExport::WriteOLE2Shape: exception: " << e.Message);
+        SAL_WARN("oox.shape", "ShapeExport::WriteOLE2Shape: exception: " << e.Message);
         return *this;
     }
 
@@ -1768,7 +1982,7 @@ ShapeExport& ShapeExport::WriteOLE2Shape( const Reference< XShape >& xShape )
     try {
         ::comphelper::OStorageHelper::CopyInputToOutput(xInStream, xOutStream);
     } catch (uno::Exception const& e) {
-        SAL_WARN("oox", "ShapeExport::WriteOLEObject: exception: " << e.Message);
+        SAL_WARN("oox.shape", "ShapeExport::WriteOLEObject: exception: " << e.Message);
     }
 
     OUString const sRelId = mpFB->addRelation(
@@ -1780,7 +1994,7 @@ ShapeExport& ShapeExport::WriteOLE2Shape( const Reference< XShape >& xShape )
     mpFS->startElementNS( mnXmlNamespace, XML_nvGraphicFramePr, FSEND );
 
     mpFS->singleElementNS( mnXmlNamespace, XML_cNvPr,
-                           XML_id,     I32S( GetNewShapeID( xShape ) ),
+                           XML_id,     IS( GetNewShapeID( xShape ) ),
                            XML_name,   IDS(Object),
                            FSEND );
 

@@ -53,12 +53,12 @@ OScrollWindowHelper::OScrollWindowHelper( ODesignView* _pDesignView)
     ,m_aReportWindow(VclPtr<rptui::OReportWindow>::Create(this,m_pParent))
     ,m_pReportDefinitionMultiPlexer(nullptr)
 {
-    SetMapMode( MapMode( MAP_100TH_MM ) );
+    SetMapMode( MapMode( MapUnit::Map100thMM ) );
 
     impl_initScrollBar( *m_aHScroll.get() );
     impl_initScrollBar( *m_aVScroll.get() );
 
-    m_aReportWindow->SetMapMode( MapMode( MAP_100TH_MM ) );
+    m_aReportWindow->SetMapMode( MapMode( MapUnit::Map100thMM ) );
     m_aReportWindow->Show();
 
     // normally we should be SCROLL_PANE
@@ -170,7 +170,7 @@ Size OScrollWindowHelper::ResizeScrollBars()
     else
         m_aCornerWin->Hide();
 
-    const Point aOffset = LogicToPixel( Point( SECTION_OFFSET, SECTION_OFFSET ), MAP_APPFONT );
+    const Point aOffset = LogicToPixel( Point( SECTION_OFFSET, SECTION_OFFSET ), MapUnit::MapAppFont );
     // resize scrollbars and set their ranges
     {
         Fraction aStartWidth(long(REPORT_STARTMARKER_WIDTH*m_pParent->getController().getZoomValue()),100);
@@ -193,7 +193,7 @@ void OScrollWindowHelper::Resize()
     m_aReportWindow->SetPosSizePixel(Point( 0, 0 ),aTotalOutputSize);
 }
 
-IMPL_LINK_TYPED( OScrollWindowHelper, ScrollHdl, ScrollBar*, /*pScroll*/, void )
+IMPL_LINK( OScrollWindowHelper, ScrollHdl, ScrollBar*, /*pScroll*/, void )
 {
     m_aReportWindow->ScrollChildren( getThumbPos() );
 }
@@ -265,9 +265,9 @@ void OScrollWindowHelper::SelectAll(const sal_uInt16 _nObjectType)
     m_aReportWindow->SelectAll(_nObjectType);
 }
 
-void OScrollWindowHelper::unmarkAllObjects(OSectionView* _pSectionView)
+void OScrollWindowHelper::unmarkAllObjects()
 {
-    m_aReportWindow->unmarkAllObjects(_pSectionView);
+    m_aReportWindow->unmarkAllObjects();
 }
 
 sal_Int32 OScrollWindowHelper::getMaxMarkerWidth() const
@@ -325,7 +325,7 @@ void OScrollWindowHelper::collapseSections(const uno::Sequence< css::beans::Prop
     m_aReportWindow->collapseSections(_aCollpasedSections);
 }
 
-bool OScrollWindowHelper::Notify( NotifyEvent& rNEvt )
+bool OScrollWindowHelper::EventNotify( NotifyEvent& rNEvt )
 {
     const CommandEvent* pCommandEvent = rNEvt.GetCommandEvent();
     if ( pCommandEvent &&
@@ -344,10 +344,10 @@ bool OScrollWindowHelper::Notify( NotifyEvent& rNEvt )
         if ( HandleScrollCommand( *pCommandEvent, pHScrBar, pVScrBar ) )
             return true;
     }
-    return OScrollWindowHelper_BASE::Notify(rNEvt);
+    return OScrollWindowHelper_BASE::EventNotify(rNEvt);
 }
 
-void OScrollWindowHelper::alignMarkedObjects(sal_Int32 _nControlModification,bool _bAlignAtSection)
+void OScrollWindowHelper::alignMarkedObjects(ControlModification _nControlModification, bool _bAlignAtSection)
 {
     m_aReportWindow->alignMarkedObjects(_nControlModification, _bAlignAtSection);
 }
@@ -372,7 +372,6 @@ void OScrollWindowHelper::DataChanged( const DataChangedEvent& rDCEvt )
 }
 
 void OScrollWindowHelper::_propertyChanged(const beans::PropertyChangeEvent& /*_rEvent*/)
-    throw (uno::RuntimeException, std::exception)
 {
     m_aReportWindow->notifySizeChanged();
 }

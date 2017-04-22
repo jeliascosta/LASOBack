@@ -22,14 +22,19 @@
 #include "fmscriptingenv.hxx"
 #include "svx/fmmodel.hxx"
 
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/script/XScriptListener.hpp>
+#include <com/sun/star/awt/XControl.hpp>
+#include <com/sun/star/frame/Desktop.hpp>
+#include <com/sun/star/frame/TerminationVetoException.hpp>
+#include <com/sun/star/frame/XTerminateListener.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <com/sun/star/lang/EventObject.hpp>
-#include <com/sun/star/awt/XControl.hpp>
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
+#include <com/sun/star/lang/XServiceInfo.hpp>
+#include <com/sun/star/script/XScriptListener.hpp>
 
 #include <tools/diagnose_ex.h>
 #include <cppuhelper/implbase.hxx>
+#include <cppuhelper/compbase.hxx>
 #include <comphelper/processfactory.hxx>
 #include <vcl/svapp.hxx>
 #include <osl/mutex.hxx>
@@ -84,16 +89,16 @@ namespace svxform
         explicit FormScriptListener( FormScriptingEnvironment * pScriptExecutor );
 
         // XScriptListener
-        virtual void SAL_CALL firing( const ScriptEvent& aEvent ) throw (RuntimeException, std::exception) override;
-        virtual Any SAL_CALL approveFiring( const ScriptEvent& aEvent ) throw (InvocationTargetException, RuntimeException, std::exception) override;
+        virtual void SAL_CALL firing( const ScriptEvent& aEvent ) override;
+        virtual Any SAL_CALL approveFiring( const ScriptEvent& aEvent ) override;
         // XEventListener
-        virtual void SAL_CALL disposing( const EventObject& Source ) throw (RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const EventObject& Source ) override;
 
         // lifetime control
         void SAL_CALL dispose();
 
     protected:
-        virtual ~FormScriptListener();
+        virtual ~FormScriptListener() override;
 
     private:
         /** determines whether calling a given method at a given listener interface can be done asynchronously
@@ -130,7 +135,7 @@ namespace svxform
         void    impl_doFireScriptEvent_nothrow( ::osl::ClearableMutexGuard& _rGuard, const ScriptEvent& _rEvent, Any* _pSynchronousResult );
 
     private:
-        DECL_LINK_TYPED( OnAsyncScriptEvent, void*, void );
+        DECL_LINK( OnAsyncScriptEvent, void*, void );
     };
 
     class FormScriptingEnvironment:
@@ -147,7 +152,6 @@ namespace svxform
 
     public:
         explicit FormScriptingEnvironment( FmFormModel& _rModel );
-        virtual ~FormScriptingEnvironment();
         FormScriptingEnvironment(const FormScriptingEnvironment&) = delete;
         FormScriptingEnvironment& operator=(const FormScriptingEnvironment&) = delete;
 
@@ -719,12 +723,12 @@ namespace svxform
     }
 
 
-    void SAL_CALL FormScriptListener::firing( const ScriptEvent& _rEvent ) throw (RuntimeException, std::exception)
+    void SAL_CALL FormScriptListener::firing( const ScriptEvent& _rEvent )
     {
-        ::osl::ClearableMutexGuard aGuard( m_aMutex );
-       static const char vbaInterOp[] = "VBAInterop";
-       if ( _rEvent.ScriptType == vbaInterOp )
+       if ( _rEvent.ScriptType == "VBAInterop" )
            return; // not handled here
+
+        ::osl::ClearableMutexGuard aGuard( m_aMutex );
 
         if ( impl_isDisposed_nothrow() )
             return;
@@ -740,7 +744,7 @@ namespace svxform
     }
 
 
-    Any SAL_CALL FormScriptListener::approveFiring( const ScriptEvent& _rEvent ) throw (InvocationTargetException, RuntimeException, std::exception)
+    Any SAL_CALL FormScriptListener::approveFiring( const ScriptEvent& _rEvent )
     {
         Any aResult;
 
@@ -752,7 +756,7 @@ namespace svxform
     }
 
 
-    void SAL_CALL FormScriptListener::disposing( const EventObject& /*Source*/ ) throw (RuntimeException, std::exception)
+    void SAL_CALL FormScriptListener::disposing( const EventObject& /*Source*/ )
     {
         // not interested in
     }
@@ -764,8 +768,106 @@ namespace svxform
         m_pScriptExecutor = nullptr;
     }
 
+    // tdf#88985 If LibreOffice tries to exit during the execution of a macro
+    // then: detect the effort, stop basic execution, block until the macro
+    // returns due to that stop, then restart the quit. This avoids the app
+    // exiting and destroying itself until the macro is parked at a safe place
+    // to do that.
+    class QuitGuard
+    {
+    private:
 
-    IMPL_LINK_TYPED( FormScriptListener, OnAsyncScriptEvent, void*, p, void )
+        class TerminateListener : public cppu::WeakComponentImplHelper<css::frame::XTerminateListener,
+                                                                       css::lang::XServiceInfo>
+        {
+        private:
+            css::uno::Reference<css::frame::XDesktop2> m_xDesktop;
+            osl::Mutex maMutex;
+            bool mbQuitBlocked;
+        public:
+            // XTerminateListener
+            virtual void SAL_CALL queryTermination(const css::lang::EventObject& /*rEvent*/) override
+            {
+                mbQuitBlocked = true;
+#if HAVE_FEATURE_SCRIPTING
+                StarBASIC::Stop();
+#endif
+                throw css::frame::TerminationVetoException();
+            }
+
+            virtual void SAL_CALL notifyTermination(const css::lang::EventObject& /*rEvent*/) override
+            {
+                mbQuitBlocked = false;
+            }
+
+            using cppu::WeakComponentImplHelperBase::disposing;
+
+            virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent) override
+            {
+                const bool bShutDown = (rEvent.Source == m_xDesktop);
+                if (bShutDown && m_xDesktop.is())
+                {
+                    m_xDesktop->removeTerminateListener(this);
+                    m_xDesktop.clear();
+                }
+            }
+
+            // XServiceInfo
+            virtual OUString SAL_CALL getImplementationName() override
+            {
+                return OUString("com.sun.star.comp.svx.StarBasicQuitGuard");
+            }
+
+            virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+            {
+                return cppu::supportsService(this, ServiceName);
+            }
+
+            virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+            {
+                return { "com.sun.star.svx.StarBasicQuitGuard" };
+            }
+
+        public:
+            TerminateListener()
+                : cppu::WeakComponentImplHelper<css::frame::XTerminateListener,
+                                                css::lang::XServiceInfo>(maMutex)
+                , mbQuitBlocked(false)
+            {
+            }
+
+            void start()
+            {
+                css::uno::Reference<css::uno::XComponentContext> xContext(comphelper::getProcessComponentContext());
+                m_xDesktop = css::frame::Desktop::create(xContext);
+                m_xDesktop->addTerminateListener(this);
+            }
+
+            void stop()
+            {
+                if (!m_xDesktop.is())
+                    return;
+                m_xDesktop->removeTerminateListener(this);
+                if (mbQuitBlocked)
+                    m_xDesktop->terminate();
+            }
+        };
+
+        rtl::Reference<TerminateListener> mxListener;
+    public:
+        QuitGuard()
+            : mxListener(new TerminateListener)
+        {
+            mxListener->start();
+        }
+
+        ~QuitGuard()
+        {
+            mxListener->stop();
+        }
+    };
+
+    IMPL_LINK( FormScriptListener, OnAsyncScriptEvent, void*, p, void )
     {
         ScriptEvent* _pEvent = static_cast<ScriptEvent*>(p);
         OSL_PRECOND( _pEvent != nullptr, "FormScriptListener::OnAsyncScriptEvent: invalid event!" );
@@ -776,7 +878,10 @@ namespace svxform
             ::osl::ClearableMutexGuard aGuard( m_aMutex );
 
             if ( !impl_isDisposed_nothrow() )
+            {
+                QuitGuard aQuitGuard;
                 impl_doFireScriptEvent_nothrow( aGuard, *_pEvent, nullptr );
+            }
         }
 
         delete _pEvent;
@@ -793,12 +898,6 @@ namespace svxform
         // note that this is a cyclic reference between the FormScriptListener and the FormScriptingEnvironment
         // This cycle is broken up when our instance is disposed.
     }
-
-
-    FormScriptingEnvironment::~FormScriptingEnvironment()
-    {
-    }
-
 
     void FormScriptingEnvironment::impl_registerOrRevoke_throw( const Reference< XEventAttacherManager >& _rxManager, bool _bRegister )
     {
@@ -843,19 +942,7 @@ namespace svxform
 
     namespace
     {
-
-        //. NewStyleUNOScript
-
-        class SAL_NO_VTABLE IScript
-        {
-        public:
-            virtual void invoke( const Sequence< Any >& _rArguments, Any& _rSynchronousResult ) = 0;
-
-            virtual ~IScript() { }
-        };
-        typedef std::shared_ptr< IScript >  PScript;
-
-        class NewStyleUNOScript : public IScript
+        class NewStyleUNOScript
         {
             SfxObjectShell&         m_rObjectShell;
             const OUString   m_sScriptCode;
@@ -867,8 +954,7 @@ namespace svxform
             {
             }
 
-            // IScript
-            virtual void invoke( const Sequence< Any >& _rArguments, Any& _rSynchronousResult ) override;
+            void invoke( const Sequence< Any >& _rArguments, Any& _rSynchronousResult );
         };
 
 
@@ -908,11 +994,11 @@ namespace svxform
 
         // SfxObjectShellRef is good here since the model controls the lifetime of the object
         SfxObjectShellRef xObjectShell = m_rFormModel.GetObjectShell();
-        if( !xObjectShell.Is() )
+        if( !xObjectShell.is() )
             return;
 
         // the script to execute
-        PScript pScript;
+        std::shared_ptr< NewStyleUNOScript > pScript;
 
         if ( _rEvent.ScriptType != "StarBasic" )
         {

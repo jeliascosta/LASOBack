@@ -59,10 +59,7 @@ $(eval $(call gb_CppunitTest_set_include,sc_modelobj,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sc_modelobj,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sc_modelobj))
 
 $(eval $(call gb_CppunitTest_use_ure,sc_modelobj))
 $(eval $(call gb_CppunitTest_use_vcl,sc_modelobj))
@@ -98,6 +95,7 @@ $(eval $(call gb_CppunitTest_use_components,sc_modelobj,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
+    uui/util/uui \
     xmloff/util/xo \
 	svtools/util/svt \
 ))

@@ -18,7 +18,6 @@
  */
 
 
-#include <tchar.h>
 #include "previewadapter.hxx"
 
 #include <com/sun/star/ui/dialogs/FilePreviewImageFormats.hpp>
@@ -51,12 +50,13 @@ public:
 
     virtual sal_Int32 SAL_CALL getAvailableHeight();
 
-    virtual void SAL_CALL setImage( sal_Int16 aImageFormat, const Any& aImage )
-        throw (IllegalArgumentException,RuntimeException);
+    /// @throws IllegalArgumentException
+    /// @throws RuntimeException
+    virtual void SAL_CALL setImage( sal_Int16 aImageFormat, const Any& aImage );
 
-    virtual sal_Bool SAL_CALL setShowState(sal_Bool bShowState);
+    virtual bool SAL_CALL setShowState(bool bShowState);
 
-    virtual sal_Bool SAL_CALL getShowState();
+    virtual bool SAL_CALL getShowState();
 
     virtual void SAL_CALL setParent(HWND parent);
 
@@ -66,7 +66,7 @@ public:
     // parent notification handler
 
 
-    virtual void SAL_CALL notifyParentShow(sal_Bool bShow);
+    virtual void SAL_CALL notifyParentShow(bool bShow);
 
     virtual void SAL_CALL notifyParentSizeChanged();
 
@@ -77,7 +77,8 @@ protected:
 
     virtual void SAL_CALL rearrangeLayout();
 
-    void SAL_CALL initializeActivePreview() throw(std::runtime_error);
+    /// @throws std::runtime_error
+    void SAL_CALL initializeActivePreview();
 
     HWND SAL_CALL findFileListbox() const;
 
@@ -90,15 +91,15 @@ protected:
 
 //prevent copy/assignment
 private:
-    CPreviewAdapterImpl(const CPreviewAdapterImpl&);
-    CPreviewAdapterImpl& operator=(const CPreviewAdapterImpl&);
+    CPreviewAdapterImpl(const CPreviewAdapterImpl&) = delete;
+    CPreviewAdapterImpl& operator=(const CPreviewAdapterImpl&) = delete;
 };
 
 
 CPreviewAdapterImpl::CPreviewAdapterImpl(HINSTANCE instance) :
     m_Instance(instance),
     m_Preview(new PreviewBase()), // create dummy preview (NULL-Object pattern)
-    m_FileDialog(0),
+    m_FileDialog(nullptr),
     m_RightMargin(0)
 {
 }
@@ -128,21 +129,20 @@ sal_Int32 SAL_CALL CPreviewAdapterImpl::getAvailableHeight()
 
 
 void SAL_CALL CPreviewAdapterImpl::setImage( sal_Int16 aImageFormat, const Any& aImage )
-    throw (IllegalArgumentException,RuntimeException)
 {
     m_Preview->setImage(aImageFormat,aImage);
 }
 
 
-sal_Bool SAL_CALL CPreviewAdapterImpl::setShowState( sal_Bool bShowState )
+bool SAL_CALL CPreviewAdapterImpl::setShowState( bool bShowState )
 {
-    sal_Bool bRet = m_Preview->setShowState(bShowState);
+    bool bRet = m_Preview->setShowState(bShowState);
     rearrangeLayout();
     return bRet;
 }
 
 
-sal_Bool SAL_CALL CPreviewAdapterImpl::getShowState()
+bool SAL_CALL CPreviewAdapterImpl::getShowState()
 {
     return m_Preview->getShowState();
 }
@@ -192,7 +192,7 @@ void SAL_CALL CPreviewAdapterImpl::calcRightMargin()
 }
 
 
-void SAL_CALL CPreviewAdapterImpl::notifyParentShow(sal_Bool)
+void SAL_CALL CPreviewAdapterImpl::notifyParentShow(bool)
 {
 }
 
@@ -260,11 +260,11 @@ void SAL_CALL CPreviewAdapterImpl::rearrangeLayout()
         // resize the filelistbox to the half of the
         // available space
         SetWindowPos(flb_new,
-            NULL, 0, 0, cx, height,
+            nullptr, 0, 0, cx, height,
             SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 
         SetWindowPos(flb_old,
-            NULL, 0, 0, cx, height,
+            nullptr, 0, 0, cx, height,
             SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 
         // get the new dimensions of the filelistbox after
@@ -289,20 +289,20 @@ void SAL_CALL CPreviewAdapterImpl::rearrangeLayout()
 
         // resize the old filelistbox
         SetWindowPos(flb_old,
-            NULL, 0, 0, cx, height,
+            nullptr, 0, 0, cx, height,
             SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 
         // resize the new filelistbox
         SetWindowPos(flb_new,
-            NULL, 0, 0, cx, height,
+            nullptr, 0, 0, cx, height,
             SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE );
     }
 }
 
 
-void SAL_CALL CPreviewAdapterImpl::initializeActivePreview() throw(std::runtime_error)
+void SAL_CALL CPreviewAdapterImpl::initializeActivePreview()
 {
-    sal_Bool bShowState = m_Preview->getImaginaryShowState();
+    bool bShowState = m_Preview->getImaginaryShowState();
 
     sal_Int16 aImgFrmt;
     Any aImg;
@@ -345,7 +345,7 @@ class CWin95NTPreviewAdapterImpl : public CPreviewAdapterImpl
 public:
     explicit CWin95NTPreviewAdapterImpl(HINSTANCE instance);
 
-    virtual void SAL_CALL notifyParentShow(sal_Bool bShow);
+    virtual void SAL_CALL notifyParentShow(bool bShow) override;
 };
 
 
@@ -355,7 +355,7 @@ CWin95NTPreviewAdapterImpl::CWin95NTPreviewAdapterImpl(HINSTANCE instance) :
 }
 
 
-void SAL_CALL CWin95NTPreviewAdapterImpl::notifyParentShow(sal_Bool bShow)
+void SAL_CALL CWin95NTPreviewAdapterImpl::notifyParentShow(bool bShow)
 {
     try
     {
@@ -412,19 +412,18 @@ sal_Int32 SAL_CALL CPreviewAdapter::getAvailableHeight()
 
 
 void SAL_CALL CPreviewAdapter::setImage( sal_Int16 aImageFormat, const Any& aImage )
-    throw (IllegalArgumentException, RuntimeException)
 {
     m_pImpl->setImage(aImageFormat,aImage);
 }
 
 
-sal_Bool SAL_CALL CPreviewAdapter::setShowState( sal_Bool bShowState )
+bool SAL_CALL CPreviewAdapter::setShowState( bool bShowState )
 {
     return m_pImpl->setShowState(bShowState);
 }
 
 
-sal_Bool SAL_CALL CPreviewAdapter::getShowState()
+bool SAL_CALL CPreviewAdapter::getShowState()
 {
     return m_pImpl->getShowState();
 }

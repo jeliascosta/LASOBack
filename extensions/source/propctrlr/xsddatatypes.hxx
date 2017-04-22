@@ -54,7 +54,7 @@ namespace pcr
         );
 
         /// retrieves the underlying UNO component
-        inline const css::uno::Reference< css::xsd::XDataType >&
+        const css::uno::Reference< css::xsd::XDataType >&
                 getUnoDataType() const { return m_xDataType; }
 
         /// classifies the data typ
@@ -76,7 +76,7 @@ namespace pcr
         void                copyFacetsFrom( const ::rtl::Reference< XSDDataType >& _pSourceType );
 
     protected:
-        virtual ~XSDDataType();
+        virtual ~XSDDataType() override;
 
     private:
         XSDDataType( const XSDDataType& ) = delete;

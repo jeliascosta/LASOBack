@@ -30,10 +30,6 @@
 #include <connectivity/dbexception.hxx>
 #include "resource/ado_res.hrc"
 
-#if defined __MINGW32__
-#pragma GCC diagnostic warning "-Wwrite-strings"
-#endif
-
 using namespace ::comphelper;
 using namespace connectivity;
 using namespace connectivity::ado;
@@ -49,7 +45,7 @@ sdbcx::ObjectType OKeys::createObject(const OUString& _rName)
     return new OAdoKey(isCaseSensitive(),m_pConnection,m_aCollection.GetItem(_rName));
 }
 
-void OKeys::impl_refresh() throw(RuntimeException)
+void OKeys::impl_refresh()
 {
     m_aCollection.Refresh();
 }
@@ -62,8 +58,8 @@ Reference< XPropertySet > OKeys::createDescriptor()
 // XAppend
 sdbcx::ObjectType OKeys::appendObject( const OUString&, const Reference< XPropertySet >& descriptor )
 {
-    OAdoKey* pKey = NULL;
-    if ( !getImplementation( pKey, descriptor ) || pKey == NULL)
+    OAdoKey* pKey = nullptr;
+    if ( !getImplementation( pKey, descriptor ) || pKey == nullptr)
         m_pConnection->throwGenericSQLException( STR_INVALID_KEY_DESCRIPTOR_ERROR,static_cast<XTypeProvider*>(this) );
 
     // To pass as column parameter to Key's Append method
@@ -81,10 +77,10 @@ sdbcx::ObjectType OKeys::appendObject( const OUString&, const Reference< XProper
     WpADOKey aKey = pKey->getImpl();
     OUString sName = aKey.get_Name();
     if(!sName.getLength())
-        aKey.put_Name(OUString("PrimaryKey") );
+        aKey.put_Name("PrimaryKey");
 
     ADOKeys* pKeys = m_aCollection;
-    if ( FAILED(pKeys->Append(OLEVariant((ADOKey*)aKey),
+    if ( FAILED(pKeys->Append(OLEVariant(static_cast<ADOKey*>(aKey)),
                             adKeyPrimary, // must be every time adKeyPrimary
                             vOptional)) )
     {
@@ -99,7 +95,7 @@ sdbcx::ObjectType OKeys::appendObject( const OUString&, const Reference< XProper
 // XDrop
 void OKeys::dropObject(sal_Int32 /*_nPos*/,const OUString& _sElementName)
 {
-    if(!m_aCollection.Delete(OLEVariant(_sElementName)))
+    if(!m_aCollection.Delete(OLEVariant(_sElementName).getString()))
         ADOS::ThrowException(*m_pConnection->getConnection(),static_cast<XTypeProvider*>(this));
 }
 

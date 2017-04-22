@@ -29,6 +29,7 @@
 #include <com/sun/star/view/XViewSettingsSupplier.hpp>
 #include <com/sun/star/text/RubyAdjust.hpp>
 #include <com/sun/star/text/XTextColumns.hpp>
+#include <com/sun/star/text/HoriOrientation.hpp>
 
 #include <vcl/svapp.hxx>
 
@@ -891,6 +892,13 @@ DECLARE_RTFEXPORT_TEST(testFdo82006, "fdo82006.rtf")
     CPPUNIT_ASSERT_EQUAL(sal_Int32(convertTwipToMm100(280)), getProperty<sal_Int32>(getParagraph(1), "ParaBottomMargin"));
 }
 
+DECLARE_RTFEXPORT_TEST(testTdf104081, "tdf104081.rtf")
+{
+    // These were 494 (280 twips), as \htmautsp was ignored.
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(convertTwipToMm100(100)), getProperty<sal_Int32>(getParagraph(1), "ParaTopMargin"));
+    CPPUNIT_ASSERT_EQUAL(sal_Int32(convertTwipToMm100(100)), getProperty<sal_Int32>(getParagraph(1), "ParaBottomMargin"));
+}
+
 DECLARE_RTFEXPORT_TEST(testTdf88583, "tdf88583.odt")
 {
     // This was FillStyle_NONE, as background color was missing from the color table during export.
@@ -1008,38 +1016,94 @@ DECLARE_RTFEXPORT_TEST(testCustomDocProps, "custom-doc-props.rtf")
     uno::Reference<beans::XPropertyContainer> xUserDefinedProperties = xDocumentProperties->getUserDefinedProperties();
     CPPUNIT_ASSERT_EQUAL(OUString("2016-03-08T10:55:18,531376147"), getProperty<OUString>(xUserDefinedProperties, "urn:bails:IntellectualProperty:Authorization:StartValidity"));
     CPPUNIT_ASSERT_EQUAL(OUString("None"), getProperty<OUString>(xUserDefinedProperties, "urn:bails:IntellectualProperty:Authorization:StopValidity"));
+    // Test roundtrip of numbers. This failed as getProperty() did not find "n".
+    CPPUNIT_ASSERT_EQUAL(42.0, getProperty<double>(xUserDefinedProperties, "n"));
+    // Test boolean "yes".
+    CPPUNIT_ASSERT(getProperty<bool>(xUserDefinedProperties, "by"));
+    // Test boolean "no".
+    CPPUNIT_ASSERT(!getProperty<bool>(xUserDefinedProperties, "bn"));
+
+    // Test roundtrip of date in general, and year/month/day in particular.
+    util::DateTime aDate = getProperty<util::DateTime>(xUserDefinedProperties, "d");
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int16>(2016), aDate.Year);
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(1), aDate.Month);
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(30), aDate.Day);
+
+    // Test real number.
+    CPPUNIT_ASSERT_EQUAL(3.14, getProperty<double>(xUserDefinedProperties, "pi"));
 }
 
 DECLARE_RTFEXPORT_TEST(testTdf65642, "tdf65642.rtf")
 {
+
+    uno::Reference<container::XNameAccess> xPageStyles = getStyles("PageStyles");
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(
+        xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(
+        xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+    xCursor->jumpToLastPage();
+    OUString pageStyleName = getProperty<OUString>(xCursor, "PageStyleName");
     // The second page's numbering type: this was style::NumberingType::ARABIC.
-    CPPUNIT_ASSERT_EQUAL(style::NumberingType::CHARS_UPPER_LETTER_N, getProperty<sal_Int16>(getStyles("PageStyles")->getByName("Converted1"), "NumberingType"));
+    CPPUNIT_ASSERT_EQUAL(style::NumberingType::CHARS_UPPER_LETTER_N, getProperty<sal_Int16>(xPageStyles->getByName(pageStyleName), "NumberingType"));
     // The second page's restart value: this was 0.
     CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(1), getProperty<sal_Int32>(getParagraph(2), "PageNumberOffset"));
 }
 
 DECLARE_RTFEXPORT_TEST(testPgnlcltr, "pgnlcltr.rtf")
 {
+    uno::Reference<container::XNameAccess> xPageStyles = getStyles("PageStyles");
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(
+        xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(
+        xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+    xCursor->jumpToLastPage();
+    OUString pageStyleName = getProperty<OUString>(xCursor, "PageStyleName");
     // The second page's numbering type: this was style::NumberingType::ARABIC.
-    CPPUNIT_ASSERT_EQUAL(style::NumberingType::CHARS_LOWER_LETTER_N, getProperty<sal_Int16>(getStyles("PageStyles")->getByName("Converted1"), "NumberingType"));
+    CPPUNIT_ASSERT_EQUAL(style::NumberingType::CHARS_LOWER_LETTER_N, getProperty<sal_Int16>(xPageStyles->getByName(pageStyleName), "NumberingType"));
 }
 
 DECLARE_RTFEXPORT_TEST(testPgnucrm, "pgnucrm.rtf")
 {
+    uno::Reference<container::XNameAccess> xPageStyles = getStyles("PageStyles");
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(
+        xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(
+        xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+    xCursor->jumpToLastPage();
+    OUString pageStyleName = getProperty<OUString>(xCursor, "PageStyleName");
     // The second page's numbering type: this was style::NumberingType::ARABIC.
-    CPPUNIT_ASSERT_EQUAL(style::NumberingType::ROMAN_UPPER, getProperty<sal_Int16>(getStyles("PageStyles")->getByName("Converted1"), "NumberingType"));
+    CPPUNIT_ASSERT_EQUAL(style::NumberingType::ROMAN_UPPER, getProperty<sal_Int16>(xPageStyles->getByName(pageStyleName), "NumberingType"));
 }
 
 DECLARE_RTFEXPORT_TEST(testPgnlcrm, "pgnlcrm.rtf")
 {
+    uno::Reference<container::XNameAccess> xPageStyles = getStyles("PageStyles");
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(
+        xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(
+        xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+    xCursor->jumpToLastPage();
+    OUString pageStyleName = getProperty<OUString>(xCursor, "PageStyleName");
     // The second page's numbering type: this was style::NumberingType::ARABIC.
-    CPPUNIT_ASSERT_EQUAL(style::NumberingType::ROMAN_LOWER, getProperty<sal_Int16>(getStyles("PageStyles")->getByName("Converted1"), "NumberingType"));
+    CPPUNIT_ASSERT_EQUAL(style::NumberingType::ROMAN_LOWER, getProperty<sal_Int16>(xPageStyles->getByName(pageStyleName), "NumberingType"));
 }
 
 DECLARE_RTFEXPORT_TEST(testPgndec, "pgndec.rtf")
 {
+    uno::Reference<container::XNameAccess> xPageStyles = getStyles("PageStyles");
+    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
+    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(
+        xModel->getCurrentController(), uno::UNO_QUERY);
+    uno::Reference<text::XPageCursor> xCursor(
+        xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
+    xCursor->jumpToLastPage();
+    OUString pageStyleName = getProperty<OUString>(xCursor, "PageStyleName");
     // The second page's numbering type: this was style::NumberingType::ROMAN_LOWER.
-    CPPUNIT_ASSERT_EQUAL(style::NumberingType::ARABIC, getProperty<sal_Int16>(getStyles("PageStyles")->getByName("Converted1"), "NumberingType"));
+    CPPUNIT_ASSERT_EQUAL(style::NumberingType::ARABIC, getProperty<sal_Int16>(xPageStyles->getByName(pageStyleName), "NumberingType"));
 }
 
 DECLARE_RTFEXPORT_TEST(testTdf98806, "tdf98806.rtf")
@@ -1068,6 +1132,65 @@ DECLARE_RTFEXPORT_TEST(testTdf61901, "tdf61901.rtf")
             }
         }
     }
+}
+
+DECLARE_RTFEXPORT_TEST(testTdf103925, "tdf103925.rtf")
+{
+    // This was true, \animtext0 resulted in setting the blinking font effect.
+    CPPUNIT_ASSERT_EQUAL(false, getProperty<bool>(getRun(getParagraph(1), 1), "CharFlash"));
+}
+
+DECLARE_RTFEXPORT_TEST(testTdf104228, "tdf104228.rtf")
+{
+    uno::Reference<text::XTextTable> xTable(getParagraphOrTable(2), uno::UNO_QUERY);
+    uno::Reference<text::XTextRange> xCell(xTable->getCellByName("C1"), uno::UNO_QUERY);
+    uno::Reference<text::XTextRange> xParagraph = getParagraphOfText(1, xCell->getText());
+    // This was 2103, implicit 0 as direct formatting was ignored on the
+    // paragraph (and the style had this larger value).
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(0), getProperty<sal_Int32>(xParagraph, "ParaLeftMargin"));
+}
+
+
+DECLARE_RTFEXPORT_TEST(testTdf104085, "tdf104085.rtf")
+{
+    uno::Reference<text::XTextRange> xPara(getParagraph(1));
+    uno::Reference<beans::XPropertySet> properties(xPara, uno::UNO_QUERY);
+    uno::Reference<container::XIndexAccess> xLevels(properties->getPropertyValue("NumberingRules"), uno::UNO_QUERY);
+    uno::Sequence<beans::PropertyValue> aProps;
+    xLevels->getByIndex(0) >>= aProps;
+    for (int i = 0; i < aProps.getLength(); ++i)
+    {
+        if (aProps[i].Name == "BulletChar")
+            return;
+    }
+    CPPUNIT_FAIL("no BulletChar property");
+}
+
+DECLARE_RTFEXPORT_TEST(testLeveljcCenter, "leveljc-center.rtf")
+{
+    // Tests that \leveljc1 is mapped to Adjust=Center for a numbering rule.
+    uno::Reference<text::XTextRange> xPara(getParagraph(1));
+    uno::Reference<beans::XPropertySet> properties(xPara, uno::UNO_QUERY);
+    uno::Reference<container::XIndexAccess> xLevels(properties->getPropertyValue("NumberingRules"), uno::UNO_QUERY);
+    uno::Sequence<beans::PropertyValue> aProps;
+    xLevels->getByIndex(0) >>= aProps;
+    for (int i = 0; i < aProps.getLength(); ++i)
+    {
+        if (aProps[i].Name == "Adjust")
+        {
+            sal_Int16 nValue = 0;
+            CPPUNIT_ASSERT(aProps[i].Value >>= nValue);
+            CPPUNIT_ASSERT_EQUAL(text::HoriOrientation::CENTER, nValue);
+            return;
+        }
+    }
+    CPPUNIT_FAIL("no Adjust property");
+}
+
+DECLARE_RTFEXPORT_TEST(testHyperlinkTarget, "hyperlink-target.rtf")
+{
+    // This was empty, hyperlink target was lost on import.
+    CPPUNIT_ASSERT_EQUAL(OUString("_blank"), getProperty<OUString>(getRun(getParagraph(1), 1), "HyperLinkTarget"));
 }
 
 CPPUNIT_PLUGIN_IMPLEMENT();

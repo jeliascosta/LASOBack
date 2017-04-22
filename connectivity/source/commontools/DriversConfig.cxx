@@ -45,13 +45,12 @@ namespace
         if ( aPropertiesNode.isValid() )
         {
             uno::Sequence< OUString > aStringSeq;
-            static const char s_sValue[] = "/Value";
             const uno::Sequence< OUString > aProperties = aPropertiesNode.getNodeNames();
             const OUString* pPropertiesIter = aProperties.getConstArray();
             const OUString* pPropertiesEnd  = pPropertiesIter + aProperties.getLength();
             for (;pPropertiesIter != pPropertiesEnd ; ++pPropertiesIter)
             {
-                uno::Any aValue = aPropertiesNode.getNodeValue(*pPropertiesIter + s_sValue);
+                uno::Any aValue = aPropertiesNode.getNodeValue(*pPropertiesIter + "/Value");
                 if ( aValue >>= aStringSeq )
                 {
                     lcl_convert(aStringSeq,aValue);
@@ -92,14 +91,14 @@ DriversConfigImpl::DriversConfigImpl()
 {
 }
 
-void DriversConfigImpl::Load(const uno::Reference< uno::XComponentContext >& _rxORB) const
+const TInstalledDrivers& DriversConfigImpl::getInstalledDrivers(const uno::Reference< uno::XComponentContext >& _rxORB) const
 {
     if ( m_aDrivers.empty() )
     {
         if ( !m_aInstalled.isValid() )
         {
-            static const char s_sNodeName[] = "org.openoffice.Office.DataAccess.Drivers/Installed"; ///Installed
-            m_aInstalled = ::utl::OConfigurationTreeRoot::createWithComponentContext(_rxORB, s_sNodeName, -1, ::utl::OConfigurationTreeRoot::CM_READONLY);
+            m_aInstalled = ::utl::OConfigurationTreeRoot::createWithComponentContext(_rxORB,
+                             "org.openoffice.Office.DataAccess.Drivers/Installed", -1, ::utl::OConfigurationTreeRoot::CM_READONLY);
         }
 
         if ( m_aInstalled.isValid() )
@@ -120,6 +119,7 @@ void DriversConfigImpl::Load(const uno::Reference< uno::XComponentContext >& _rx
             }
         } // if ( m_aInstalled.isValid() )
     }
+    return m_aDrivers;
 }
 
 DriversConfig::DriversConfig(const uno::Reference< uno::XComponentContext >& _rxORB)

@@ -22,8 +22,9 @@
 #include "scuiimoptdlg.hxx"
 #include "tabvwsh.hxx"
 #include "scresid.hxx"
-#include "sc.hrc"
+#include "scres.hrc"
 #include <comphelper/string.hxx>
+#include <officecfg/Office/Calc.hxx>
 #include <osl/thread.h>
 #include <rtl/tencinfo.h>
 
@@ -34,7 +35,6 @@ class ScDelimiterTable
 public:
     explicit ScDelimiterTable( const OUString& rDelTab )
             :   theDelTab ( rDelTab ),
-                cSep      ( '\t' ),
                 nCount    ( comphelper::string::getTokenCount(rDelTab, '\t') ),
                 nIter     ( 0 )
             {}
@@ -47,7 +47,7 @@ public:
 
 private:
     const OUString      theDelTab;
-    const sal_Unicode   cSep;
+    static const sal_Unicode   cSep = '\t';
     const sal_Int32    nCount;
     sal_Int32          nIter;
 };
@@ -107,7 +107,8 @@ ScImportOptionsDlg::ScImportOptionsDlg(
         bool                    bOnlyDbtoolsEncodings,
         bool                    bImport )
     :   ModalDialog ( pParent, "ImOptDialog",
-            "modules/scalc/ui/imoptdialog.ui" )
+            "modules/scalc/ui/imoptdialog.ui" ),
+        m_bIsAsciiImport( bAscii )
 {
     get(m_pFieldFrame, "fieldframe");
     get(m_pFtCharset, "charsetft");
@@ -136,7 +137,7 @@ ScImportOptionsDlg::ScImportOptionsDlg(
     sFieldSep = sFieldSep.replaceFirst( "%TAB",   SC_RESSTR(SCSTR_FIELDSEP_TAB) );
     sFieldSep = sFieldSep.replaceFirst( "%SPACE", SC_RESSTR(SCSTR_FIELDSEP_SPACE) );
 
-    // im Ctor-Initializer nicht moeglich (MSC kann das nicht):
+    // not possible in the Ctor initializer (MSC cannot do that):
     pFieldSepTab = new ScDelimiterTable( sFieldSep );
     pTextSepTab  = new ScDelimiterTable( OUString(ScResId(SCSTR_TEXTSEP)) );
 
@@ -184,7 +185,7 @@ ScImportOptionsDlg::ScImportOptionsDlg(
             aStr  = pFieldSepTab->GetDelimiter( nCode );
 
             if ( aStr.isEmpty() )
-                m_pEdFieldSep->SetText( OUString((sal_Unicode)nCode) );
+                m_pEdFieldSep->SetText( OUString(nCode) );
             else
                 m_pEdFieldSep->SetText( aStr );
 
@@ -192,7 +193,7 @@ ScImportOptionsDlg::ScImportOptionsDlg(
             aStr  = pTextSepTab->GetDelimiter( nCode );
 
             if ( aStr.isEmpty() )
-                m_pEdTextSep->SetText( OUString((sal_Unicode)nCode) );
+                m_pEdTextSep->SetText( OUString(nCode) );
             else
                 m_pEdTextSep->SetText( aStr );
         }
@@ -202,18 +203,34 @@ ScImportOptionsDlg::ScImportOptionsDlg(
 
     if( bAscii )
     {
+        sal_Int32 nCharSet = officecfg::Office::Calc::Dialogs::CSVExport::CharSet::get();
+        OUString strFieldSeparator = officecfg::Office::Calc::Dialogs::CSVExport::FieldSeparator::get();
+        OUString strTextSeparator = officecfg::Office::Calc::Dialogs::CSVExport::TextSeparator::get();
+        bool bSaveTrueCellContent = officecfg::Office::Calc::Dialogs::CSVExport::SaveTrueCellContent::get();
+        bool bSaveCellFormulas = officecfg::Office::Calc::Dialogs::CSVExport::SaveCellFormulas::get();
+        bool bQuoteAllTextCells = officecfg::Office::Calc::Dialogs::CSVExport::QuoteAllTextCells::get();
+        bool bFixedWidth = officecfg::Office::Calc::Dialogs::CSVExport::FixedWidth::get();
+
         m_pCbFixed->Show();
         m_pCbFixed->SetClickHdl( LINK( this, ScImportOptionsDlg, FixedWidthHdl ) );
-        m_pCbFixed->Check( false );
+        m_pCbFixed->Check( bFixedWidth );
+        FixedWidthHdl(m_pCbFixed);
         m_pCbShown->Show();
-        m_pCbShown->Check();
+        m_pCbShown->Check( bSaveTrueCellContent );
         m_pCbQuoteAll->Show();
-        m_pCbQuoteAll->Check( false );
+        m_pCbQuoteAll->Check( bQuoteAllTextCells );
         m_pCbFormulas->Show();
-        ScTabViewShell* pViewSh = dynamic_cast<ScTabViewShell*>( SfxViewShell::Current() );
-        bool bFormulas = pViewSh &&
-                pViewSh->GetViewData().GetOptions().GetOption( VOPT_FORMULAS);
-        m_pCbFormulas->Check( bFormulas );
+        // default option for "save formulas" no longer taken from view shell but from persisted dialog settings
+        m_pCbFormulas->Check( bSaveCellFormulas );
+        // if no charset, text separator or field separator exist, keep the values from dialog initialization
+        if (strFieldSeparator.getLength() > 0)
+            m_pEdFieldSep->SetText( strFieldSeparator );
+        if (strTextSeparator.getLength() > 0)
+            m_pEdTextSep->SetText( strTextSeparator );
+        if (nCharSet < 0 || nCharSet == RTL_TEXTENCODING_DONTKNOW )
+            m_pLbCharset->SelectTextEncoding(pOptions ? pOptions->eCharSet : osl_getThreadTextEncoding());
+        else
+            m_pLbCharset->SelectTextEncoding(nCharSet);
     }
     else
     {
@@ -229,12 +246,13 @@ ScImportOptionsDlg::ScImportOptionsDlg(
         m_pCbFormulas->Hide();
         m_pLbCharset->GrabFocus();
         m_pLbCharset->SetDoubleClickHdl( LINK( this, ScImportOptionsDlg, DoubleClickHdl ) );
+
+        m_pLbCharset->SelectTextEncoding(pOptions ? pOptions->eCharSet :
+            osl_getThreadTextEncoding());
     }
 
-    m_pLbCharset->SelectTextEncoding( pOptions ? pOptions->eCharSet :
-        osl_getThreadTextEncoding() );
 
-    // optionaler Titel:
+    // optional title:
     if ( pStrTitle )
         SetText( *pStrTitle );
 }
@@ -248,6 +266,7 @@ void ScImportOptionsDlg::dispose()
 {
     delete pFieldSepTab;
     delete pTextSepTab;
+    m_pEncGrid.clear();
     m_pFieldFrame.clear();
     m_pFtCharset.clear();
     m_pLbCharset.clear();
@@ -291,7 +310,7 @@ sal_uInt16 ScImportOptionsDlg::GetCodeFromCombo( const ComboBox& rEd ) const
 
     if ( aStr.isEmpty() )
     {
-        nCode = 0;          // kein Trennzeichen
+        nCode = 0;          // no separator
     }
     else
     {
@@ -304,7 +323,12 @@ sal_uInt16 ScImportOptionsDlg::GetCodeFromCombo( const ComboBox& rEd ) const
     return nCode;
 }
 
-IMPL_LINK_TYPED( ScImportOptionsDlg, FixedWidthHdl, Button*, pCheckBox, void )
+OString ScImportOptionsDlg::GetScreenshotId() const
+{
+    return (m_bIsAsciiImport) ? GetHelpId() : GetHelpId() + "?config=NonTextImport";
+}
+
+IMPL_LINK( ScImportOptionsDlg, FixedWidthHdl, Button*, pCheckBox, void )
 {
     if (pCheckBox == m_pCbFixed)
     {
@@ -318,12 +342,25 @@ IMPL_LINK_TYPED( ScImportOptionsDlg, FixedWidthHdl, Button*, pCheckBox, void )
     }
 }
 
-IMPL_LINK_TYPED( ScImportOptionsDlg, DoubleClickHdl, ListBox&, rLb, void )
+IMPL_LINK( ScImportOptionsDlg, DoubleClickHdl, ListBox&, rLb, void )
 {
     if (&rLb == m_pLbCharset)
     {
         m_pBtnOk->Click();
     }
+}
+
+void ScImportOptionsDlg::SaveImportOptions() const
+{
+    std::shared_ptr < comphelper::ConfigurationChanges > batch(comphelper::ConfigurationChanges::create());
+    officecfg::Office::Calc::Dialogs::CSVExport::CharSet::set(this->m_pLbCharset->GetSelectTextEncoding(), batch);
+    officecfg::Office::Calc::Dialogs::CSVExport::FieldSeparator::set(m_pEdFieldSep->GetText(), batch);
+    officecfg::Office::Calc::Dialogs::CSVExport::TextSeparator::set(m_pEdTextSep->GetText(), batch);
+    officecfg::Office::Calc::Dialogs::CSVExport::FixedWidth::set(m_pCbFixed->IsChecked(), batch);
+    officecfg::Office::Calc::Dialogs::CSVExport::SaveCellFormulas::set(m_pCbFormulas->IsChecked(), batch);
+    officecfg::Office::Calc::Dialogs::CSVExport::SaveTrueCellContent::set(m_pCbShown->IsChecked(), batch);
+    officecfg::Office::Calc::Dialogs::CSVExport::QuoteAllTextCells::set(m_pCbQuoteAll->IsChecked(), batch);
+    batch->commit();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

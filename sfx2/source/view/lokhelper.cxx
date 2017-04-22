@@ -8,75 +8,150 @@
  */
 
 #include <sfx2/lokhelper.hxx>
+
+#include <com/sun/star/frame/Desktop.hpp>
+
+#include <comphelper/processfactory.hxx>
 #include <sfx2/viewsh.hxx>
 #include <sfx2/request.hxx>
 #include <sfx2/viewfrm.hxx>
+#include <LibreOfficeKit/LibreOfficeKitEnums.h>
+#include <comphelper/lok.hxx>
 
 #include <shellimpl.hxx>
 
+using namespace com::sun::star;
+
 int SfxLokHelper::createView()
 {
-    SfxViewFrame* pViewFrame = SfxViewFrame::Current();
+    SfxViewFrame* pViewFrame = SfxViewFrame::GetFirst();
+    if (!pViewFrame)
+        return -1;
     SfxRequest aRequest(pViewFrame, SID_NEWWINDOW);
     pViewFrame->ExecView_Impl(aRequest);
-
-    // The SfxViewShell ctor always puts the view shell to the end of the vector.
-    SfxViewShellArr_Impl& rViewArr = SfxGetpApp()->GetViewShells_Impl();
-    return rViewArr.size() - 1;
+    SfxViewShell* pViewShell = SfxViewShell::Current();
+    if (!pViewShell)
+        return -1;
+    return (sal_Int32)pViewShell->GetViewShellId();
 }
 
-void SfxLokHelper::destroyView(std::size_t nId)
+void SfxLokHelper::destroyView(int nId)
 {
-    SfxViewShellArr_Impl& rViewArr = SfxGetpApp()->GetViewShells_Impl();
-    if (nId > rViewArr.size() - 1)
+    SfxApplication* pApp = SfxApplication::Get();
+    if (!pApp)
         return;
 
-    SfxViewShell* pViewShell = rViewArr[nId];
-    SfxViewFrame* pViewFrame = pViewShell->GetViewFrame();
-    SfxRequest aRequest(pViewFrame, SID_CLOSEWIN);
-    pViewFrame->Exec_Impl(aRequest);
+    int nViewShellId = nId;
+    SfxViewShellArr_Impl& rViewArr = pApp->GetViewShells_Impl();
+
+    for (SfxViewShell* pViewShell : rViewArr)
+    {
+        if ((sal_Int32)pViewShell->GetViewShellId() == nViewShellId)
+        {
+            SfxViewFrame* pViewFrame = pViewShell->GetViewFrame();
+            SfxRequest aRequest(pViewFrame, SID_CLOSEWIN);
+            pViewFrame->Exec_Impl(aRequest);
+            break;
+        }
+    }
 }
 
-void SfxLokHelper::setView(std::size_t nId)
+void SfxLokHelper::setView(int nId)
 {
-    SfxViewShellArr_Impl& rViewArr = SfxGetpApp()->GetViewShells_Impl();
-    if (nId > rViewArr.size() - 1)
+    SfxApplication* pApp = SfxApplication::Get();
+    if (!pApp)
         return;
 
-    SfxViewShell* pViewShell = rViewArr[nId];
-    if (pViewShell->GetViewFrame() == SfxViewFrame::Current())
-        return;
+    int nViewShellId = nId;
+    SfxViewShellArr_Impl& rViewArr = pApp->GetViewShells_Impl();
 
-    if (SfxViewFrame* pViewFrame = pViewShell->GetViewFrame())
-        pViewFrame->MakeActive_Impl(false);
+    for (SfxViewShell* pViewShell : rViewArr)
+    {
+        if ((sal_Int32)pViewShell->GetViewShellId() == nViewShellId)
+        {
+            if (pViewShell == SfxViewShell::Current())
+                return;
+
+            SfxViewFrame* pViewFrame = pViewShell->GetViewFrame();
+            pViewFrame->MakeActive_Impl(false);
+
+            // Make comphelper::dispatchCommand() find the correct frame.
+            uno::Reference<frame::XFrame> xFrame = pViewFrame->GetFrame().GetFrameInterface();
+            uno::Reference<frame::XDesktop2> xDesktop = frame::Desktop::create(comphelper::getProcessComponentContext());
+            xDesktop->setActiveFrame(xFrame);
+            return;
+        }
+    }
+
 }
 
-std::size_t SfxLokHelper::getView()
+int SfxLokHelper::getView(SfxViewShell* pViewShell)
 {
-    SfxViewShellArr_Impl& rViewArr = SfxGetpApp()->GetViewShells_Impl();
-    SfxViewFrame* pViewFrame = SfxViewFrame::Current();
+    if (!pViewShell)
+        pViewShell = SfxViewShell::Current();
+    // Still no valid view shell? Then no idea.
+    if (!pViewShell)
+        return -1;
+
+    return (sal_Int32)pViewShell->GetViewShellId();
+}
+
+std::size_t SfxLokHelper::getViewsCount()
+{
+    SfxApplication* pApp = SfxApplication::Get();
+    return !pApp ? 0 : pApp->GetViewShells_Impl().size();
+}
+
+bool SfxLokHelper::getViewIds(int* pArray, size_t nSize)
+{
+    SfxApplication* pApp = SfxApplication::Get();
+    if (!pApp)
+        return false;
+
+    SfxViewShellArr_Impl& rViewArr = pApp->GetViewShells_Impl();
+    if (rViewArr.size() > nSize)
+        return false;
+
     for (std::size_t i = 0; i < rViewArr.size(); ++i)
     {
-        if (rViewArr[i]->GetViewFrame() == pViewFrame)
-            return i;
+        SfxViewShell* pViewShell = rViewArr[i];
+        pArray[i] = (sal_Int32)pViewShell->GetViewShellId();
     }
-    assert(false);
-    return 0;
+    return true;
 }
 
-std::size_t SfxLokHelper::getViews()
+void SfxLokHelper::notifyOtherView(SfxViewShell* pThisView, SfxViewShell* pOtherView, int nType, const OString& rKey, const OString& rPayload)
 {
-    std::size_t nRet = 0;
+    OString aPayload = OString("{ \"viewId\": \"") + OString::number(SfxLokHelper::getView(pThisView)) +
+                       "\", \"part\": \"" + OString::number(pThisView->getPart()) +
+                       "\", \"" + rKey + "\": \"" + rPayload + "\" }";
 
-    SfxObjectShell* pObjectShell = SfxViewFrame::Current()->GetObjectShell();
-    SfxViewShellArr_Impl& rViewArr = SfxGetpApp()->GetViewShells_Impl();
-    for (SfxViewShell* i : rViewArr)
+    pOtherView->libreOfficeKitViewCallback(nType, aPayload.getStr());
+}
+
+void SfxLokHelper::notifyOtherViews(SfxViewShell* pThisView, int nType, const OString& rKey, const OString& rPayload)
+{
+    if (SfxLokHelper::getViewsCount() <= 1)
+        return;
+
+    SfxViewShell* pViewShell = SfxViewShell::GetFirst();
+    while (pViewShell)
     {
-        if (i->GetObjectShell() == pObjectShell)
-            ++nRet;
-    }
+        if (pViewShell != pThisView)
+            notifyOtherView(pThisView, pViewShell, nType, rKey, rPayload);
 
-    return nRet;
+        pViewShell = SfxViewShell::GetNext(*pViewShell);
+    }
+}
+
+void SfxLokHelper::notifyInvalidation(SfxViewShell* pThisView, const OString& rPayload)
+{
+    std::stringstream ss;
+    ss << rPayload.getStr();
+    if (comphelper::LibreOfficeKit::isPartInInvalidation())
+        ss << ", " << pThisView->getPart();
+    OString aPayload = ss.str().c_str();
+    pThisView->libreOfficeKitViewCallback(LOK_CALLBACK_INVALIDATE_TILES, aPayload.getStr());
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

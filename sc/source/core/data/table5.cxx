@@ -51,8 +51,6 @@ using ::com::sun::star::uno::Sequence;
 using ::com::sun::star::sheet::TablePageBreakData;
 using ::std::set;
 
-#define GET_SCALEVALUE(set,id)  static_cast<const SfxUInt16Item&>(set.Get( id )).GetValue()
-
 void ScTable::UpdatePageBreaks( const ScRange* pUserArea )
 {
     if ( pDocument->IsImportingXML() )
@@ -942,17 +940,17 @@ SCROW ScTable::CountNonFilteredRows(SCROW nStartRow, SCROW nEndRow) const
 
 bool ScTable::IsManualRowHeight(SCROW nRow) const
 {
-    return (pRowFlags->GetValue(nRow) & CR_MANUALSIZE) != 0;
+    return bool(pRowFlags->GetValue(nRow) & CRFlags::ManualSize);
 }
 
 namespace {
 
 void lcl_syncFlags(ScFlatBoolColSegments& rColSegments, ScFlatBoolRowSegments& rRowSegments,
-    sal_uInt8* pColFlags, ScBitMaskCompressedArray< SCROW, sal_uInt8>* pRowFlags, const sal_uInt8 nFlagMask)
+    CRFlags* pColFlags, ScBitMaskCompressedArray< SCROW, CRFlags>* pRowFlags, const CRFlags nFlagMask)
 {
     using ::sal::static_int_cast;
 
-    sal_uInt8 nFlagMaskComplement = static_int_cast<sal_uInt8>(~nFlagMask);
+    CRFlags nFlagMaskComplement = ~nFlagMask;
 
     pRowFlags->AndValue(0, MAXROW, nFlagMaskComplement);
     for (SCCOL i = 0; i <= MAXCOL; ++i)
@@ -1002,7 +1000,7 @@ void ScTable::SyncColRowFlags()
 {
     using ::sal::static_int_cast;
 
-    sal_uInt8 nManualBreakComplement = static_int_cast<sal_uInt8>(~CR_MANUALBREAK);
+    CRFlags nManualBreakComplement = ~CRFlags::ManualBreak;
 
     // Manual breaks.
     pRowFlags->AndValue(0, MAXROW, nManualBreakComplement);
@@ -1013,19 +1011,19 @@ void ScTable::SyncColRowFlags()
     {
         for (set<SCROW>::const_iterator itr = maRowManualBreaks.begin(), itrEnd = maRowManualBreaks.end();
               itr != itrEnd; ++itr)
-            pRowFlags->OrValue(*itr, CR_MANUALBREAK);
+            pRowFlags->OrValue(*itr, CRFlags::ManualBreak);
     }
 
     if (!maColManualBreaks.empty())
     {
         for (set<SCCOL>::const_iterator itr = maColManualBreaks.begin(), itrEnd = maColManualBreaks.end();
               itr != itrEnd; ++itr)
-            pColFlags[*itr] |= CR_MANUALBREAK;
+            pColFlags[*itr] |= CRFlags::ManualBreak;
     }
 
     // Hidden flags.
-    lcl_syncFlags(*mpHiddenCols, *mpHiddenRows, pColFlags, pRowFlags, CR_HIDDEN);
-    lcl_syncFlags(*mpFilteredCols, *mpFilteredRows, pColFlags, pRowFlags, CR_FILTERED);
+    lcl_syncFlags(*mpHiddenCols, *mpHiddenRows, pColFlags, pRowFlags, CRFlags::Hidden);
+    lcl_syncFlags(*mpFilteredCols, *mpFilteredRows, pColFlags, pRowFlags, CRFlags::Filtered);
 }
 
 void ScTable::SetPageSize( const Size& rSize )
@@ -1132,15 +1130,17 @@ void ScTable::SetPageStyle( const OUString& rName )
         if ( aPageStyle != aStrNew )
         {
             SfxStyleSheetBase* pOldStyle = pStylePool->Find( aPageStyle, SfxStyleFamily::Page );
-
             if ( pOldStyle && pNewStyle )
             {
                 SfxItemSet&  rOldSet          = pOldStyle->GetItemSet();
                 SfxItemSet&  rNewSet          = pNewStyle->GetItemSet();
-                const sal_uInt16 nOldScale        = GET_SCALEVALUE(rOldSet,ATTR_PAGE_SCALE);
-                const sal_uInt16 nOldScaleToPages = GET_SCALEVALUE(rOldSet,ATTR_PAGE_SCALETOPAGES);
-                const sal_uInt16 nNewScale        = GET_SCALEVALUE(rNewSet,ATTR_PAGE_SCALE);
-                const sal_uInt16 nNewScaleToPages = GET_SCALEVALUE(rNewSet,ATTR_PAGE_SCALETOPAGES);
+                auto getScaleValue = [](const SfxItemSet& rSet, sal_uInt16 nId)
+                    { return static_cast<const SfxUInt16Item&>(rSet.Get(nId)).GetValue(); };
+
+                const sal_uInt16 nOldScale        = getScaleValue(rOldSet,ATTR_PAGE_SCALE);
+                const sal_uInt16 nOldScaleToPages = getScaleValue(rOldSet,ATTR_PAGE_SCALETOPAGES);
+                const sal_uInt16 nNewScale        = getScaleValue(rNewSet,ATTR_PAGE_SCALE);
+                const sal_uInt16 nNewScaleToPages = getScaleValue(rNewSet,ATTR_PAGE_SCALETOPAGES);
 
                 if ( (nOldScale != nNewScale) || (nOldScaleToPages != nNewScaleToPages) )
                     InvalidateTextWidth(nullptr, nullptr, false, false);
@@ -1169,6 +1169,8 @@ void ScTable::InvalidateTextWidth( const ScAddress* pAdrFrom, const ScAddress* p
         // Special case: only process the "from" cell.
         SCCOL nCol = pAdrFrom->Col();
         SCROW nRow = pAdrFrom->Row();
+        if ( nCol >= aCol.size() )
+            return;
         ScColumn& rCol = aCol[nCol];
         ScRefCellValue aCell = rCol.GetCellValue(nRow);
         if (aCell.isEmpty())
@@ -1201,7 +1203,7 @@ void ScTable::InvalidateTextWidth( const ScAddress* pAdrFrom, const ScAddress* p
 
     const SCCOL nCol1 = pAdrFrom ? pAdrFrom->Col() : 0;
     const SCROW nRow1 = pAdrFrom ? pAdrFrom->Row() : 0;
-    const SCCOL nCol2 = pAdrTo   ? pAdrTo->Col()   : MAXCOL;
+    const SCCOL nCol2 = pAdrTo   ? pAdrTo->Col()   : aCol.size() - 1;
     const SCROW nRow2 = pAdrTo   ? pAdrTo->Row()   : MAXROW;
 
     for (SCCOL nCol = nCol1; nCol <= nCol2; ++nCol)

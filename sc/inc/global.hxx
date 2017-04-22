@@ -23,26 +23,24 @@
 #include "address.hxx"
 #include <i18nlangtag/lang.h>
 #include <tools/stream.hxx>
-#include <osl/endian.h>
 #include <com/sun/star/uno/Reference.hxx>
 #include "scdllapi.h"
 #include <rtl/ustring.hxx>
 
 #include <vector>
 
-class ImageList;
 class Bitmap;
 class SfxItemSet;
+class SfxViewShell;
 class Color;
 struct ScCalcConfig;
 enum class SvtScriptType;
+enum class FormulaError : sal_uInt16;
 
-#define SC_COLLATOR_IGNORES ( \
-    css::i18n::CollatorOptions::CollatorOptions_IGNORE_CASE )
+#define SC_COLLATOR_IGNORES css::i18n::CollatorOptions::CollatorOptions_IGNORE_CASE
 
-#define SC_TRANSLITERATION_IGNORECASE ( \
-    css::i18n::TransliterationModules_IGNORE_CASE )
-#define SC_TRANSLITERATION_CASESENSE 0
+#define SC_TRANSLITERATION_IGNORECASE TransliterationFlags::IGNORE_CASE
+#define SC_TRANSLITERATION_CASESENSE  TransliterationFlags::NONE
 
 //  Calc has lots of names...
 //  Clipboard names are in so3/soapp.hxx now
@@ -53,9 +51,6 @@ enum class SvtScriptType;
 #define STRING_STANDARD "Standard"
 
 // characters
-
-//  '\r' does not work on a Mac...
-#define CHAR_CR     char(13)
 
 const sal_Unicode CHAR_NBSP     = 0x00A0;
 const sal_Unicode CHAR_SHY      = 0x00AD;
@@ -112,28 +107,44 @@ namespace sc
 
 
                                     // repaint flags (for messages)
-#define PAINT_GRID          1
-#define PAINT_TOP           2
-#define PAINT_LEFT          4
-#define PAINT_EXTRAS        8
-#define PAINT_MARKS         16
-#define PAINT_OBJECTS       32
-#define PAINT_SIZE          64
-#define PAINT_ALL           ( PAINT_GRID | PAINT_TOP | PAINT_LEFT | PAINT_EXTRAS | PAINT_OBJECTS | PAINT_SIZE )
+enum class PaintPartFlags {
+    NONE          = 0x00,
+    Grid          = 0x01,
+    Top           = 0x02,
+    Left          = 0x04,
+    Extras        = 0x08,
+    Marks         = 0x10,
+    Objects       = 0x20,
+    Size          = 0x40,
+    All           = Grid | Top | Left | Extras | Objects | Size,
+};
+namespace o3tl {
+    template<> struct typed_flags<PaintPartFlags> : is_typed_flags<PaintPartFlags, 0x07f> {};
+}
 
                                     // flags for columns / rows
-                                    // FILTERED always together with HIDDEN
-                                    // FILTERED and MANUALSIZE only valid for rows
-const sal_uInt8   CR_HIDDEN      = 1;
-const sal_uInt8   CR_MANUALBREAK = 8;
-const sal_uInt8   CR_FILTERED    = 16;
-const sal_uInt8   CR_MANUALSIZE  = 32;
-const sal_uInt8   CR_ALL         = (CR_HIDDEN | CR_MANUALBREAK | CR_FILTERED | CR_MANUALSIZE);
+enum class CRFlags : sal_uInt8 {
+    // Filtered always together with Hidden
+    // Filtered and ManualSize only valid for rows
+    NONE        = 0x00,
+    Hidden      = 0x01,
+    ManualBreak = 0x02,
+    Filtered    = 0x04,
+    ManualSize  = 0x08,
+    All         = Hidden | ManualBreak | Filtered | ManualSize
+};
+namespace o3tl {
+    template<> struct typed_flags<CRFlags> : is_typed_flags<CRFlags, 0x0f> {};
+}
 
-typedef sal_uInt8 ScBreakType;
-const ScBreakType BREAK_NONE   = 0;
-const ScBreakType BREAK_PAGE   = 1;
-const ScBreakType BREAK_MANUAL = 2;
+enum class ScBreakType {
+    NONE   = 0x00,
+    Page   = 0x01,
+    Manual = 0x02
+};
+namespace o3tl {
+    template<> struct typed_flags<ScBreakType> : is_typed_flags<ScBreakType, 0x03> {};
+}
 
 enum class InsertDeleteFlags : sal_uInt16
 {
@@ -155,7 +166,6 @@ enum class InsertDeleteFlags : sal_uInt16
     ATTRIB           = HARDATTR | STYLES,
     CONTENTS         = VALUE | DATETIME | STRING | NOTE | FORMULA | OUTLINE,
     ALL              = CONTENTS | ATTRIB | OBJECTS,
-    ALL_USED_BITS    = ALL | EDITATTR | NOCAPTIONS | ADDNOTES | SPECIAL_BOOLEAN | FORGETCAPTIONS,
     /// Copy flags for auto/series fill functions: do not touch notes and drawing objects.
     AUTOFILL         = ALL & ~(NOTE | OBJECTS)
 };
@@ -171,22 +181,26 @@ enum class ScPasteFunc {
     NONE, ADD, SUB, MUL, DIV
 };
                                         // bits for HasAttr
-#define HASATTR_LINES           1
-#define HASATTR_MERGED          2
-#define HASATTR_OVERLAPPED      4
-#define HASATTR_PROTECTED       8
-#define HASATTR_SHADOW          16
-#define HASATTR_NEEDHEIGHT      32
-#define HASATTR_SHADOW_RIGHT    64
-#define HASATTR_SHADOW_DOWN     128
-#define HASATTR_AUTOFILTER      256
-#define HASATTR_CONDITIONAL     512
-#define HASATTR_ROTATE          1024
-#define HASATTR_NOTOVERLAPPED   2048
-#define HASATTR_RTL             4096
-#define HASATTR_RIGHTORCENTER   8192    // right or centered logical alignment
+enum class HasAttrFlags {
+    NONE            = 0x0000,
+    Lines           = 0x0001,
+    Merged          = 0x0002,
+    Overlapped      = 0x0004,
+    Protected       = 0x0008,
+    Shadow          = 0x0010,
+    NeedHeight      = 0x0020,
+    ShadowRight     = 0x0040,
+    ShadowDown      = 0x0080,
+    AutoFilter      = 0x0100,
+    Conditional     = 0x0200,
+    Rotate          = 0x0400,
+    NotOverlapped   = 0x0800,
+    RightOrCenter   = 0x1000,   // right or centered logical alignment
+};
+namespace o3tl {
+    template<> struct typed_flags<HasAttrFlags> : is_typed_flags<HasAttrFlags, 0x1fff> {};
+}
 
-#define HASATTR_PAINTEXT        ( HASATTR_LINES | HASATTR_SHADOW | HASATTR_CONDITIONAL )
 
 #define EMPTY_OUSTRING ScGlobal::GetEmptyOUString()
 
@@ -209,41 +223,50 @@ enum class ScEnterMode {
                                         //  step = 10pt, max. indention = 100 steps
 #define SC_INDENT_STEP      200
 
-                                        //  scenario flags
-#define SC_SCENARIO_COPYALL     1
-#define SC_SCENARIO_SHOWFRAME   2
-#define SC_SCENARIO_PRINTFRAME  4
-#define SC_SCENARIO_TWOWAY      8
-#define SC_SCENARIO_ATTRIB      16
-#define SC_SCENARIO_VALUE       32
-#define SC_SCENARIO_PROTECT     64
+enum class ScScenarioFlags{             //  scenario flags
+    NONE       = 0,
+    CopyAll    = 1,
+    ShowFrame  = 2,
+    PrintFrame = 4,
+    TwoWay     = 8,
+    Attrib     = 16,
+    Value      = 32,
+    Protected  = 64
+};
+namespace o3tl {
+    template<> struct typed_flags<ScScenarioFlags> : is_typed_flags<ScScenarioFlags, 127> {};
+}
 
-#define SUBTOTAL_IGN_NESTED_ST_AG  0x08
-#define SUBTOTAL_IGN_ERR_VAL       0x04
-#define SUBTOTAL_IGN_HIDDEN        0x02
-#define SUBTOTAL_IGN_FILTERED      0x01
+enum class SubtotalFlags {
+    NONE              = 0x00,
+    IgnoreNestedStAg  = 0x08,
+    IgnoreErrVal      = 0x04,
+    IgnoreHidden      = 0x02,
+    IgnoreFiltered    = 0x01
+};
+namespace o3tl {
+    template<> struct typed_flags<SubtotalFlags> : is_typed_flags<SubtotalFlags, 0x0f> {};
+}
 
+enum class ScCloneFlags{
 /** Default cell clone flags: do not start listening, do not adjust 3D refs to
     old position, clone note captions of cell notes. */
-const int SC_CLONECELL_DEFAULT          = 0x0000;
+    Default          = 0x0000,
 
 /** If set, cloned formula cells will start to listen to the document. */
-const int SC_CLONECELL_STARTLISTENING   = 0x0001;
-
-/** If set, relative 3D references of cloned formula cells will be adjusted to
-    old position (used while swapping cells for sorting a cell range). */
-const int SC_CLONECELL_ADJUST3DREL      = 0x0002;
-
-/** If set, the caption object of a cell note will not be cloned (used while
-    copying cells to undo document, where captions are handled in drawing undo). */
-const int SC_CLONECELL_NOCAPTION        = 0x0004;
+    StartListening   = 0x0001,
 
 /** If set, absolute refs will not transformed to external references */
-const int SC_CLONECELL_NOMAKEABS_EXTERNAL = 0x0008;
+    NoMakeAbsExternal = 0x0002,
 
 /** If set, global named expressions will be converted to sheet-local named
     expressions. */
-const int SC_CLONECELL_NAMES_TO_LOCAL   = 0x0010;
+    NamesToLocal   = 0x0004
+};
+namespace o3tl
+{
+    template<> struct typed_flags<ScCloneFlags> : is_typed_flags<ScCloneFlags, 0x0007> {};
+}
 
 #ifndef DELETEZ
 #define DELETEZ(pPtr) { delete pPtr; pPtr = 0; }
@@ -369,26 +392,23 @@ enum ScGetDBMode
 };
 
 /// For ScDBFunc::GetDBData()
-enum ScGetDBSelection
+enum class ScGetDBSelection
 {
     /** Keep selection as is, expand to used data area if no selection. */
-    SC_DBSEL_KEEP,
-
-    /** Shrink selection to sheet's data area. */
-    SC_DBSEL_SHRINK_TO_SHEET_DATA,
+    Keep,
 
     /** Shrink selection to actually used data area within the selection. */
-    SC_DBSEL_SHRINK_TO_USED_DATA,
+    ShrinkToUsedData,
 
     /** If only one row or portion thereof is selected, shrink row to used data
         columns and select further rows down until end of data. If an area is
         selected, shrink rows to actually used columns. Else, no selection,
         expand to used data area. */
-    SC_DBSEL_ROW_DOWN,
+    RowDown,
 
     /** Behave as if the range corresponding to a ScDBData area was selected,
         for API use. */
-    SC_DBSEL_FORCE_MARK
+    ForceMark
 };
 
 enum ScLkUpdMode    // modes for updating links
@@ -480,8 +500,6 @@ class ScGlobal
     static SvxBrushItem*    pEmbeddedBrushItem;
     static SvxBrushItem*    pProtectedBrushItem;
 
-    static ImageList*       pOutlineBitmaps;
-
     static ScFunctionList*  pStarCalcFunctionList;
     static ScFunctionMgr*   pStarCalcFunctionMgr;
 
@@ -499,6 +517,8 @@ class ScGlobal
     static css::lang::Locale*   pLocale;
 
     static ScFieldEditEngine*   pFieldEditEngine;
+
+    static void                 InitPPT();
 
 public:
     static SvtSysLocale*        pSysLocale;
@@ -533,8 +553,7 @@ public:
     static void                 SetUserList( const ScUserList* pNewList );
     SC_DLLPUBLIC static const OUString&       GetRscString( sal_uInt16 nIndex );
     /// Open the specified URL.
-    /// If pDrawLayer is specified, check if tiled-rendering, and leave clients to handle the openURL action if that's the case.
-    static void                 OpenURL(const OUString& rURL, const OUString& rTarget, const SdrModel* pDrawLayer = nullptr);
+    static void                 OpenURL(const OUString& rURL, const OUString& rTarget);
     SC_DLLPUBLIC static OUString            GetAbsDocName( const OUString& rFileName,
                                                 SfxObjectShell* pShell );
     SC_DLLPUBLIC static OUString            GetDocTabName( const OUString& rFileName,
@@ -557,24 +576,19 @@ public:
     static void             InitAddIns();
     static void             Clear();                    // at the end of the program
 
-    static void             UpdatePPT(OutputDevice* pDev);
-
     static void             InitTextHeight(SfxItemPool* pPool);
     static SvxBrushItem*    GetEmptyBrushItem() { return pEmptyBrushItem; }
     static SvxBrushItem*    GetButtonBrushItem();
     static SvxBrushItem*    GetProtectedBrushItem() { return pProtectedBrushItem; }
     SC_DLLPUBLIC    static const OUString&    GetEmptyOUString();
 
-    /** Returns the specified image list with outline symbols. */
-    static ImageList*       GetOutlineSymbols();
-
     static bool             HasStarCalcFunctionList();
     static ScFunctionList*  GetStarCalcFunctionList();
     static ScFunctionMgr*   GetStarCalcFunctionMgr();
     static void             ResetFunctionList();
 
-    static OUString         GetErrorString(sal_uInt16 nErrNumber);
-    static OUString         GetLongErrorString(sal_uInt16 nErrNumber);
+    static OUString         GetErrorString(FormulaError nErrNumber);
+    static OUString         GetLongErrorString(FormulaError nErrNumber);
     static bool             EETextObjEqual( const EditTextObject* pObj1,
                                             const EditTextObject* pObj2 );
     static bool             CheckWidthInvalidate( bool& bNumFormatChanged,
@@ -589,7 +603,7 @@ public:
     /// strchr() functionality on unicode, as long as we need it for FormulaToken etc.
     static const sal_Unicode* UnicodeStrChr( const sal_Unicode* pStr, sal_Unicode c );
 
-    static inline sal_Unicode ToUpperAlpha( sal_Unicode c )
+    static sal_Unicode ToUpperAlpha( sal_Unicode c )
         { return ( c >= 'a' && c <= 'z' ) ? ( c-'a'+'A' ) : c; }
 
     /** Adds the string rToken to rTokenList, using a list separator character.
@@ -604,20 +618,20 @@ public:
                                 bool bForceSep = false );
 
     /** Returns true, if the first and last character of the string is cQuote. */
-    SC_DLLPUBLIC static bool             IsQuoted( const OUString& rString, sal_Unicode cQuote = '\'' );
+    SC_DLLPUBLIC static bool             IsQuoted( const OUString& rString, sal_Unicode cQuote );
 
     /** Inserts the character cQuote at beginning and end of rString.
         @param bEscapeEmbedded      If <TRUE/>, embedded quote characters are
                                     escaped by doubling them.
      */
-SC_DLLPUBLIC    static void             AddQuotes( OUString& rString, sal_Unicode cQuote = '\'', bool bEscapeEmbedded = true );
+    SC_DLLPUBLIC static void             AddQuotes( OUString& rString, sal_Unicode cQuote, bool bEscapeEmbedded = true );
 
     /** Erases the character cQuote from rString, if it exists at beginning AND end.
         @param bUnescapeEmbedded    If <TRUE/>, embedded doubled quote characters
                                     are unescaped by replacing them with a
                                     single instance.
      */
-SC_DLLPUBLIC    static void             EraseQuotes( OUString& rString, sal_Unicode cQuote = '\'', bool bUnescapeEmbedded = true );
+    SC_DLLPUBLIC static void             EraseQuotes( OUString& rString, sal_Unicode cQuote, bool bUnescapeEmbedded = true );
 
     /** Finds an unquoted instance of cChar in rString, starting at
         offset nStart. Unquoted instances may occur when concatenating two
@@ -627,13 +641,13 @@ SC_DLLPUBLIC    static void             EraseQuotes( OUString& rString, sal_Unic
         if cChar==cQuote the first cQuote character from nStart on is found.
         @returns offset if found, else -1
      */
-SC_DLLPUBLIC    static sal_Int32       FindUnquoted( const OUString& rString, sal_Unicode cChar);
+    SC_DLLPUBLIC static sal_Int32       FindUnquoted( const OUString& rString, sal_Unicode cChar);
 
     /** Finds an unquoted instance of cChar in null-terminated pString. Same
         semantics as FindUnquoted( const String&, ...)
         @returns: pointer to cChar if found, else NULL
      */
-SC_DLLPUBLIC    static const sal_Unicode* FindUnquoted( const sal_Unicode* pString, sal_Unicode cChar );
+    SC_DLLPUBLIC static const sal_Unicode* FindUnquoted( const sal_Unicode* pString, sal_Unicode cChar );
 
     static  rtl_TextEncoding GetCharsetValue( const OUString& rCharSet );
     static  OUString        GetCharsetString( rtl_TextEncoding eVal );
@@ -678,11 +692,11 @@ SC_DLLPUBLIC    static const sal_Unicode* FindUnquoted( const sal_Unicode* pStri
 
         In any case, if rError is set 0.0 is returned.
 
-        If nStringNoValueError is errCellNoValue, that is unconditionally
+        If nStringNoValueError is FormulaError::CellNoValue, that is unconditionally
         assigned to rError and 0.0 is returned. The caller is expected to
         handle this situation. Used by the interpreter.
 
-        Usually errNoValue is passed as nStringNoValueError.
+        Usually FormulaError::NoValue is passed as nStringNoValueError.
 
         Otherwise, depending on the string conversion configuration different
         approaches are taken:
@@ -780,7 +794,7 @@ SC_DLLPUBLIC    static const sal_Unicode* FindUnquoted( const sal_Unicode* pStri
 
      */
     static double ConvertStringToValue( const OUString& rStr, const ScCalcConfig& rConfig,
-            sal_uInt16 & rError, sal_uInt16 nStringNoValueError,
+            FormulaError & rError, FormulaError nStringNoValueError,
             SvNumberFormatter* pFormatter, short & rCurFmtType );
 
 };
@@ -827,11 +841,23 @@ enum ScSubTotalFunc
         SUBTOTAL_FUNC_SUM   = 9,
         SUBTOTAL_FUNC_VAR   = 10,
         SUBTOTAL_FUNC_VARP  = 11,
-        SUBTOTAL_FUNC_SELECTION_COUNT = 12
+        SUBTOTAL_FUNC_MED   = 12,
+        SUBTOTAL_FUNC_SELECTION_COUNT = 13
     };
 
 enum ScAggregateFunc
     {
+        AGGREGATE_FUNC_AVE     = 1,
+        AGGREGATE_FUNC_CNT     = 2,
+        AGGREGATE_FUNC_CNT2    = 3,
+        AGGREGATE_FUNC_MAX     = 4,
+        AGGREGATE_FUNC_MIN     = 5,
+        AGGREGATE_FUNC_PROD    = 6,
+        AGGREGATE_FUNC_STD     = 7,
+        AGGREGATE_FUNC_STDP    = 8,
+        AGGREGATE_FUNC_SUM     = 9,
+        AGGREGATE_FUNC_VAR     = 10,
+        AGGREGATE_FUNC_VARP    = 11,
         AGGREGATE_FUNC_MEDIAN  = 12,
         AGGREGATE_FUNC_MODSNGL = 13,
         AGGREGATE_FUNC_LARGE   = 14,
@@ -866,6 +892,10 @@ struct ScConsolidateParam
     void                ClearDataAreas  ();
     void                SetAreas        ( ScArea* const* ppAreas, sal_uInt16 nCount );
 };
+
+extern SfxViewShell* pScActiveViewShell;
+extern sal_uInt16 nScClickMouseModifier;
+extern sal_uInt16 nScFillModeMouseModifier;
 
 #endif
 

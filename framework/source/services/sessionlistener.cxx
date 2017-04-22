@@ -108,49 +108,39 @@ private:
 public:
     explicit SessionListener(const css::uno::Reference< css::uno::XComponentContext >& xContext);
 
-    virtual ~SessionListener();
+    virtual ~SessionListener() override;
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.frame.SessionListener");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.SessionListener" };
-        return aSeq;
+        return {"com.sun.star.frame.SessionListener"};
     }
 
-    virtual void SAL_CALL disposing(const css::lang::EventObject&) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject&) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any  >& args) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any  >& args) override;
 
     // XSessionManagerListener
-    virtual void SAL_CALL doSave( sal_Bool bShutdown, sal_Bool bCancelable )
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL approveInteraction( sal_Bool bInteractionGranted )
-        throw (css::uno::RuntimeException, std::exception) override;
-   virtual void SAL_CALL shutdownCanceled()
-        throw (css::uno::RuntimeException, std::exception) override;
-   virtual sal_Bool SAL_CALL doRestore()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL doSave( sal_Bool bShutdown, sal_Bool bCancelable ) override;
+    virtual void SAL_CALL approveInteraction( sal_Bool bInteractionGranted ) override;
+   virtual void SAL_CALL shutdownCanceled() override;
+   virtual sal_Bool SAL_CALL doRestore() override;
 
     // XSessionManagerListener2
-    virtual void SAL_CALL doQuit()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL doQuit() override;
 
     // XStatusListener
-    virtual void SAL_CALL statusChanged(const css::frame::FeatureStateEvent& event)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL statusChanged(const css::frame::FeatureStateEvent& event) override;
 };
 
 SessionListener::SessionListener(const css::uno::Reference< css::uno::XComponentContext >& rxContext )
@@ -195,7 +185,7 @@ void SessionListener::StoreSession( bool bAsync )
             xDispatch->addStatusListener(this, aURL);
 
         Sequence< PropertyValue > args(1);
-        args[0] = PropertyValue(OUString("DispatchAsynchron"),-1,makeAny(bAsync),PropertyState_DIRECT_VALUE);
+        args[0] = PropertyValue("DispatchAsynchron",-1,makeAny(bAsync),PropertyState_DIRECT_VALUE);
         xDispatch->dispatch(aURL, args);
     } catch (const css::uno::Exception& e) {
         SAL_WARN("fwk.session",e.Message);
@@ -223,14 +213,14 @@ void SessionListener::QuitSessionQuietly()
         xURLTransformer->parseStrict(aURL);
 
         Sequence< PropertyValue > args(1);
-        args[0] = PropertyValue(OUString("DispatchAsynchron"),-1,makeAny(false),PropertyState_DIRECT_VALUE);
+        args[0] = PropertyValue("DispatchAsynchron",-1,makeAny(false),PropertyState_DIRECT_VALUE);
         xDispatch->dispatch(aURL, args);
     } catch (const css::uno::Exception& e) {
         SAL_WARN("fwk.session",e.Message);
     }
 }
 
-void SAL_CALL SessionListener::disposing(const css::lang::EventObject& Source) throw (RuntimeException, std::exception)
+void SAL_CALL SessionListener::disposing(const css::lang::EventObject& Source)
 {
     SAL_INFO("fwk.session", "SessionListener::disposing");
     if (Source.Source == m_rSessionManager) {
@@ -239,7 +229,6 @@ void SAL_CALL SessionListener::disposing(const css::lang::EventObject& Source) t
 }
 
 void SAL_CALL SessionListener::initialize(const Sequence< Any  >& args)
-    throw (RuntimeException, std::exception)
 {
     SAL_INFO("fwk.session", "SessionListener::initialize");
 
@@ -262,6 +251,8 @@ void SAL_CALL SessionListener::initialize(const Sequence< Any  >& args)
             }
         }
     }
+
+    SAL_INFO("fwk.session.debug", "  m_bAllowUserInteractionOnQuit = " << (m_bAllowUserInteractionOnQuit ? "true" : "false"));
     if (!m_rSessionManager.is())
         m_rSessionManager = css::uno::Reference< frame::XSessionManagerClient >
             (m_xContext->getServiceManager()->createInstanceWithContext(aSMgr, m_xContext), UNO_QUERY);
@@ -273,18 +264,21 @@ void SAL_CALL SessionListener::initialize(const Sequence< Any  >& args)
 }
 
 void SAL_CALL SessionListener::statusChanged(const frame::FeatureStateEvent& event)
-    throw (css::uno::RuntimeException, std::exception)
 {
    SAL_INFO("fwk.session", "SessionListener::statusChanged");
+
+   SAL_INFO("fwk.session.debug", "  ev.Feature = " << event.FeatureURL.Complete <<
+                                 ", ev.Descript = " << event.FeatureDescriptor);
    if ( event.FeatureURL.Complete == "vnd.sun.star.autorecovery:/doSessionRestore" )
     {
         if (event.FeatureDescriptor == "update")
             m_bRestored = true; // a document was restored
 
     }
-    else if ( event.FeatureURL.Complete == "vnd.sun.star.autorecovery:/doSessionSave" )
-    {
-        if (event.FeatureDescriptor == "stop")
+    else if ( event.FeatureURL.Complete == "vnd.sun.star.autorecovery:/doAutoSave" )
+    {   // the "doSessionSave" was never set, look to framework/source/services/autorecovery.cxx
+        //   it always testing but never setting (enum AutoRecovery::E_SESSION_SAVE)
+        if (event.FeatureDescriptor == "update")
         {
             if (m_rSessionManager.is())
                 m_rSessionManager->saveDone(this); // done with save
@@ -293,7 +287,6 @@ void SAL_CALL SessionListener::statusChanged(const frame::FeatureStateEvent& eve
 }
 
 sal_Bool SAL_CALL SessionListener::doRestore()
-    throw (RuntimeException, std::exception)
 {
     SAL_INFO("fwk.session", "SessionListener::doRestore");
     osl::MutexGuard g(m_aMutex);
@@ -318,9 +311,11 @@ sal_Bool SAL_CALL SessionListener::doRestore()
 }
 
 void SAL_CALL SessionListener::doSave( sal_Bool bShutdown, sal_Bool /*bCancelable*/ )
-    throw (RuntimeException, std::exception)
 {
     SAL_INFO("fwk.session", "SessionListener::doSave");
+
+    SAL_INFO("fwk.session.debug", "  m_bAllowUserInteractionOnQuit = " << (m_bAllowUserInteractionOnQuit ? "true" : "false") <<
+                                  ", bShutdown = " << (bShutdown ? "true" : "false"));
     if (bShutdown)
     {
         m_bSessionStoreRequested = true; // there is no need to protect it with mutex
@@ -335,7 +330,6 @@ void SAL_CALL SessionListener::doSave( sal_Bool bShutdown, sal_Bool /*bCancelabl
 }
 
 void SAL_CALL SessionListener::approveInteraction( sal_Bool bInteractionGranted )
-    throw (RuntimeException, std::exception)
 {
     SAL_INFO("fwk.session", "SessionListener::approveInteraction");
     // do AutoSave as the first step
@@ -355,12 +349,12 @@ void SAL_CALL SessionListener::approveInteraction( sal_Bool bInteractionGranted 
             Desktop* pDesktop(dynamic_cast<Desktop*>(xDesktop.get()));
             if(pDesktop)
             {
-                SAL_INFO("fwk.session", "XDesktop is a framework::Desktop -- good.");
+                SAL_INFO("fwk.session", " XDesktop is a framework::Desktop -- good.");
                 m_bTerminated = pDesktop->terminateQuickstarterToo();
             }
             else
             {
-                SAL_WARN("fwk.session", "XDesktop is not a framework::Desktop -- this should never happen.");
+                SAL_WARN("fwk.session", " XDesktop is not a framework::Desktop -- this should never happen.");
                 m_bTerminated = xDesktop->terminate();
             }
 
@@ -379,7 +373,7 @@ void SAL_CALL SessionListener::approveInteraction( sal_Bool bInteractionGranted 
             m_rSessionManager->interactionDone( this );
         }
 
-        if ( m_rSessionManager.is() )
+        if ( m_rSessionManager.is() && m_bTerminated )
             m_rSessionManager->saveDone(this);
     }
     else
@@ -389,15 +383,16 @@ void SAL_CALL SessionListener::approveInteraction( sal_Bool bInteractionGranted 
 }
 
 void SessionListener::shutdownCanceled()
-    throw (RuntimeException, std::exception)
 {
     SAL_INFO("fwk.session", "SessionListener::shutdownCanceled");
     // set the state back
     m_bSessionStoreRequested = false; // there is no need to protect it with mutex
+
+    if ( m_rSessionManager.is() )
+        m_rSessionManager->saveDone(this);
 }
 
 void SessionListener::doQuit()
-    throw (RuntimeException, std::exception)
 {
     SAL_INFO("fwk.session", "SessionListener::doQuit");
     if ( m_bSessionStoreRequested && !m_bTerminated )
@@ -414,6 +409,8 @@ com_sun_star_comp_frame_SessionListener_get_implementation(
     css::uno::XComponentContext *context,
     css::uno::Sequence<css::uno::Any> const &)
 {
+    SAL_INFO("fwk.session", "com_sun_star_comp_frame_SessionListener_get_implementation");
+
     return cppu::acquire(new SessionListener(context));
 }
 

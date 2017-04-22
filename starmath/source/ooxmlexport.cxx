@@ -74,7 +74,7 @@ void SmOoxmlExport::HandleText( const SmNode* pNode, int /*nLevel*/)
     }
     m_pSerializer->startElementNS( XML_m, XML_t, FSNS( XML_xml, XML_space ), "preserve", FSEND );
     const SmTextNode* pTemp = static_cast<const SmTextNode* >(pNode);
-    SAL_INFO( "starmath.ooxml", "Text:" << OUStringToOString( pTemp->GetText(), RTL_TEXTENCODING_UTF8 ).getStr());
+    SAL_INFO( "starmath.ooxml", "Text:" << pTemp->GetText());
     OUStringBuffer buf(pTemp->GetText());
     for(sal_Int32 i=0;i<pTemp->GetText().getLength();i++)
     {
@@ -140,7 +140,7 @@ void SmOoxmlExport::HandleFractions( const SmNode* pNode, int nLevel, const char
         m_pSerializer->singleElementNS( XML_m, XML_type, FSNS( XML_m, XML_val ), type, FSEND );
         m_pSerializer->endElementNS( XML_m, XML_fPr );
     }
-    OSL_ASSERT( pNode->GetNumSubNodes() == 3 );
+    assert( pNode->GetNumSubNodes() == 3 );
     m_pSerializer->startElementNS( XML_m, XML_num, FSEND );
     HandleNode( pNode->GetSubNode( 0 ), nLevel + 1 );
     m_pSerializer->endElementNS( XML_m, XML_num );
@@ -458,7 +458,7 @@ void SmOoxmlExport::HandleBrace( const SmBraceNode* pNode, int nLevel )
     m_pSerializer->startElementNS( XML_m, XML_dPr, FSEND );
 
     //check if the node has an opening brace
-    if( TNONE == pNode->GetSubNode(0)->GetToken().eType )
+    if( TNONE == pNode->OpeningBrace()->GetToken().eType )
         m_pSerializer->singleElementNS( XML_m, XML_begChr,
             FSNS( XML_m, XML_val ), "", FSEND );
     else
@@ -490,7 +490,7 @@ void SmOoxmlExport::HandleBrace( const SmBraceNode* pNode, int nLevel )
     else
         subnodes.push_back( pNode->Body());
 
-    if( TNONE == pNode->GetSubNode(2)->GetToken().eType )
+    if( TNONE == pNode->ClosingBrace()->GetToken().eType )
         m_pSerializer->singleElementNS( XML_m, XML_endChr,
             FSNS( XML_m, XML_val ), "", FSEND );
     else

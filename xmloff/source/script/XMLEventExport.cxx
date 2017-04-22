@@ -41,13 +41,11 @@ using ::com::sun::star::container::XNameAccess;
 using ::xmloff::token::XML_EVENT_LISTENERS;
 
 
-XMLEventExport::XMLEventExport(SvXMLExport& rExp,
-                         const XMLEventNameTranslation* pTranslationTable) :
+XMLEventExport::XMLEventExport(SvXMLExport& rExp) :
     sEventType("EventType"),
     rExport(rExp),
     bExtNamespace(false)
 {
-    AddTranslationTable(pTranslationTable);
 }
 
 XMLEventExport::~XMLEventExport()
@@ -167,7 +165,7 @@ void XMLEventExport::ExportExt( Reference<XNameAccess> & rAccess )
     bExtNamespace = false;          // reset for future Export calls
 }
 
-/// export a singular event and wirte <office:events> container
+/// export a singular event and write <office:events> container
 void XMLEventExport::ExportSingleEvent(
     Sequence<PropertyValue>& rEventValues,
     const OUString& rApiEventName,

@@ -32,7 +32,7 @@ VCLStatusIndicator::VCLStatusIndicator(const css::uno::Reference< css::awt::XWin
 {
     if (!m_xParentWindow.is())
         throw css::uno::RuntimeException(
-                OUString("Can't work without a parent window!"),
+                "Can't work without a parent window!",
                 static_cast< css::task::XStatusIndicator* >(this));
 }
 
@@ -42,11 +42,10 @@ VCLStatusIndicator::~VCLStatusIndicator()
 
 void SAL_CALL VCLStatusIndicator::start(const OUString& sText ,
                                               sal_Int32        nRange)
-    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
 
-    vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(m_xParentWindow);
+    VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(m_xParentWindow);
     if (!m_pStatusBar)
         m_pStatusBar = VclPtr<StatusBar>::Create(pParentWindow, WB_3DLOOK|WB_BORDER);
 
@@ -67,7 +66,6 @@ void SAL_CALL VCLStatusIndicator::start(const OUString& sText ,
 }
 
 void SAL_CALL VCLStatusIndicator::reset()
-    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     if (m_pStatusBar)
@@ -78,7 +76,6 @@ void SAL_CALL VCLStatusIndicator::reset()
 }
 
 void SAL_CALL VCLStatusIndicator::end()
-    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
 
@@ -96,7 +93,6 @@ void SAL_CALL VCLStatusIndicator::end()
 }
 
 void SAL_CALL VCLStatusIndicator::setText(const OUString& sText)
-    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     m_sText = sText;
@@ -105,7 +101,6 @@ void SAL_CALL VCLStatusIndicator::setText(const OUString& sText)
 }
 
 void SAL_CALL VCLStatusIndicator::setValue(sal_Int32 nValue)
-    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
 

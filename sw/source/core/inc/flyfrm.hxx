@@ -23,6 +23,7 @@
 #include "layfrm.hxx"
 #include <list>
 #include "frmfmt.hxx"
+#include <anchoredobject.hxx>
 
 class SwPageFrame;
 class SwFormatFrameSize;
@@ -34,8 +35,8 @@ class SwAttrSetChg;
 namespace tools { class PolyPolygon; }
 class SwFlyDrawContact;
 class SwFormat;
+class SwViewShell;
 
-#include <anchoredobject.hxx>
 
 /** search an anchor for paragraph bound frames starting from pOldAnch
 
@@ -68,9 +69,6 @@ class SwFlyFrame : public SwLayoutFrame, public SwAnchoredObject
                       SwAttrSetChg *pa = nullptr, SwAttrSetChg *pb = nullptr );
 
     using SwLayoutFrame::CalcRel;
-
-    sal_uInt32 GetOrdNumForNewRef( const SwFlyDrawContact* );
-    SwVirtFlyDrawObj* CreateNewRef( SwFlyDrawContact* );
 
 protected:
     // Predecessor/Successor for chaining with text flow
@@ -106,15 +104,10 @@ protected:
     // but the width will not be re-evaluated based on the attributes.
     bool m_bFormatHeightOnly :1;
 
-    bool m_bInCnt :1;        ///< FLY_AS_CHAR, anchored as character
-    bool m_bAtCnt :1;        ///< FLY_AT_PARA, anchored at paragraph
-    bool m_bLayout :1;       ///< FLY_AT_PAGE, FLY_AT_FLY, at page or at frame
-    bool m_bAutoPosition :1; ///< FLY_AT_CHAR, anchored at character
-
-    bool m_bNoShrink :1;     ///< temporary forbid shrinking to avoid loops
-    // If true, the content of the fly frame will not be deleted when it
-    // is moved to an invisible layer.
-    bool m_bLockDeleteContent :1;
+    bool m_bInCnt :1;        ///< RndStdIds::FLY_AS_CHAR, anchored as character
+    bool m_bAtCnt :1;        ///< RndStdIds::FLY_AT_PARA, anchored at paragraph
+    bool m_bLayout :1;       ///< RndStdIds::FLY_AT_PAGE, RndStdIds::FLY_AT_FLY, at page or at frame
+    bool m_bAutoPosition :1; ///< RndStdIds::FLY_AT_CHAR, anchored at character
 
     friend class SwNoTextFrame; // is allowed to call NotifyBackground
 
@@ -129,12 +122,11 @@ protected:
     void Unlock()       { m_bLocked = false; }
 
     Size CalcRel( const SwFormatFrameSize &rSz ) const;
-    SwTwips CalcAutoWidth() const;
 
     SwFlyFrame( SwFlyFrameFormat*, SwFrame*, SwFrame *pAnchor );
 
     virtual void DestroyImpl() override;
-    virtual ~SwFlyFrame();
+    virtual ~SwFlyFrame() override;
 
     /** method to assure that anchored object is registered at the correct
         page frame
@@ -146,6 +138,7 @@ protected:
 
     virtual const SwRect GetObjBoundRect() const override;
     virtual void Modify( const SfxPoolItem*, const SfxPoolItem* ) override;
+    virtual void SwClientNotify(const SwModify& rMod, const SfxHint& rHint) override;
 
     virtual const IDocumentDrawModelAccess& getIDocumentDrawModelAccess( ) override;
 
@@ -203,14 +196,12 @@ public:
     bool IsNotifyBack() const { return m_bNotifyBack; }
     void SetNotifyBack()      { m_bNotifyBack = true; }
     void ResetNotifyBack()    { m_bNotifyBack = false; }
-    bool IsNoShrink()   const { return m_bNoShrink; }
-    bool IsLockDeleteContent()  const { return m_bLockDeleteContent; }
 
     bool IsClipped()        const   { return m_bHeightClipped || m_bWidthClipped; }
     bool IsHeightClipped()  const   { return m_bHeightClipped; }
 
     bool IsLowerOf( const SwLayoutFrame* pUpper ) const;
-    inline bool IsUpperOf( const SwFlyFrame& _rLower ) const
+    bool IsUpperOf( const SwFlyFrame& _rLower ) const
     {
         return _rLower.IsLowerOf( this );
     }

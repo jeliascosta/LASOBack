@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <tchar.h>
 #include <osl/diagnose.h>
 #include "../misc/WinImplHelper.hxx"
 #include "FileOpenDlg.hxx"
@@ -42,7 +41,7 @@ namespace /* private */
     const sal_Int32 MAX_FILETITLE_BUFF_SIZE = 32000;
     const sal_Int32 MAX_FILTER_BUFF_SIZE    = 4096;
 
-    const LPCTSTR CURRENT_INSTANCE = TEXT("CurrInst");
+    const PCWSTR CURRENT_INSTANCE = L"CurrInst";
 
 
     // find an appropriate parent window
@@ -71,14 +70,14 @@ CFileOpenDialog::CFileOpenDialog(
     sal_uInt32 dwFlags,
     sal_uInt32 dwTemplateId,
     HINSTANCE hInstance) :
-    m_hwndFileOpenDlg(0),
-    m_hwndFileOpenDlgChild(0),
+    m_hwndFileOpenDlg(nullptr),
+    m_hwndFileOpenDlgChild(nullptr),
     m_bFileOpenDialog(bFileOpenDialog),
     m_filterBuffer(MAX_FILTER_BUFF_SIZE),
     m_fileTitleBuffer(MAX_FILETITLE_BUFF_SIZE),
     m_helperBuffer(MAX_FILENAME_BUFF_SIZE),
     m_fileNameBuffer(MAX_FILENAME_BUFF_SIZE),
-    m_pfnBaseDlgProc(0)
+    m_pfnBaseDlgProc(nullptr)
 {
     // initialize the OPENFILENAME struct
     ZeroMemory(&m_ofn, sizeof(m_ofn));
@@ -100,10 +99,10 @@ CFileOpenDialog::CFileOpenDialog(
     // we get a parent window (using a vcl window?)
     m_ofn.hwndOwner = choose_parent_window();
 
-    m_ofn.lpstrFile = reinterpret_cast<LPTSTR>(const_cast<sal_Unicode*>(m_fileNameBuffer.getStr()));
+    m_ofn.lpstrFile = reinterpret_cast<PWSTR>(const_cast<sal_Unicode*>(m_fileNameBuffer.getStr()));
     m_ofn.nMaxFile  = m_fileNameBuffer.getCapacity();
 
-    m_ofn.lpstrFileTitle = reinterpret_cast<LPTSTR>(const_cast<sal_Unicode*>(m_fileTitleBuffer.getStr()));
+    m_ofn.lpstrFileTitle = reinterpret_cast<PWSTR>(const_cast<sal_Unicode*>(m_fileTitleBuffer.getStr()));
     m_ofn.nMaxFileTitle  = m_fileTitleBuffer.getCapacity();
 
     m_ofn.lpfnHook = CFileOpenDialog::ofnHookProc;
@@ -132,7 +131,7 @@ CFileOpenDialog::~CFileOpenDialog()
 void SAL_CALL CFileOpenDialog::setTitle(const OUString& aTitle)
 {
     m_dialogTitle = aTitle;
-    m_ofn.lpstrTitle = reinterpret_cast<LPCTSTR>(m_dialogTitle.getStr());
+    m_ofn.lpstrTitle = reinterpret_cast<PCWSTR>(m_dialogTitle.getStr());
 }
 
 
@@ -144,7 +143,7 @@ void CFileOpenDialog::setFilter(const OUString& aFilter)
     m_filterBuffer.ensureCapacity(aFilter.getLength());
     m_filterBuffer.setLength(0);
     m_filterBuffer.append(aFilter);
-    m_ofn.lpstrFilter = reinterpret_cast<LPCTSTR>(m_filterBuffer.getStr());
+    m_ofn.lpstrFilter = reinterpret_cast<PCWSTR>(m_filterBuffer.getStr());
 }
 
 
@@ -152,7 +151,7 @@ bool CFileOpenDialog::setFilterIndex(sal_uInt32 aIndex)
 {
     OSL_ASSERT(aIndex > 0);
     m_ofn.nFilterIndex = aIndex;
-    return sal_True;
+    return true;
 }
 
 
@@ -166,14 +165,14 @@ void SAL_CALL CFileOpenDialog::setDefaultName(const OUString& aName)
 {
     m_fileNameBuffer.setLength(0);
     m_fileNameBuffer.append(aName);
-    m_ofn.lpstrFile = reinterpret_cast<LPTSTR>(const_cast<sal_Unicode*>(m_fileNameBuffer.getStr()));
+    m_ofn.lpstrFile = reinterpret_cast<PWSTR>(const_cast<sal_Unicode*>(m_fileNameBuffer.getStr()));
 }
 
 
 void SAL_CALL CFileOpenDialog::setDisplayDirectory(const OUString& aDirectory)
 {
     m_displayDirectory = aDirectory;
-    m_ofn.lpstrInitialDir = reinterpret_cast<LPCTSTR>(m_displayDirectory.getStr());
+    m_ofn.lpstrInitialDir = reinterpret_cast<PCWSTR>(m_displayDirectory.getStr());
 }
 
 
@@ -186,7 +185,7 @@ OUString SAL_CALL CFileOpenDialog::getLastDisplayDirectory() const
 OUString SAL_CALL CFileOpenDialog::getFullFileName() const
 {
     return OUString(m_fileNameBuffer.getStr(),
-        _wcslenex(m_fileNameBuffer.getStr()));
+        wcslenex(m_fileNameBuffer.getStr()));
 }
 
 
@@ -209,7 +208,7 @@ OUString CFileOpenDialog::getFileExtension()
 void CFileOpenDialog::setDefaultFileExtension(const OUString& aExtension)
 {
     m_defaultExtension = aExtension;
-    m_ofn.lpstrDefExt  = reinterpret_cast<LPCTSTR>(m_defaultExtension.getStr());
+    m_ofn.lpstrDefExt  = reinterpret_cast<PCWSTR>(m_defaultExtension.getStr());
 }
 
 
@@ -257,7 +256,7 @@ sal_Int16 SAL_CALL CFileOpenDialog::doModal()
 }
 
 
-sal_uInt32 SAL_CALL CFileOpenDialog::getLastDialogError() const
+sal_uInt32 SAL_CALL CFileOpenDialog::getLastDialogError()
 {
     return CommDlgExtendedError();
 }
@@ -265,7 +264,7 @@ sal_uInt32 SAL_CALL CFileOpenDialog::getLastDialogError() const
 
 bool SAL_CALL CFileOpenDialog::preModal()
 {
-    return sal_True;
+    return true;
 }
 
 
@@ -287,7 +286,7 @@ OUString SAL_CALL CFileOpenDialog::getCurrentFilePath() const
 {
     OSL_ASSERT(IsWindow(m_hwndFileOpenDlg));
 
-    LPARAM nLen = SendMessage(
+    LPARAM nLen = SendMessageW(
         m_hwndFileOpenDlg,
         CDM_GETFILEPATH,
         m_helperBuffer.getCapacity(),
@@ -306,7 +305,7 @@ OUString SAL_CALL CFileOpenDialog::getCurrentFolderPath() const
 {
     OSL_ASSERT(IsWindow(m_hwndFileOpenDlg));
 
-    LPARAM nLen = SendMessage(
+    LPARAM nLen = SendMessageW(
         m_hwndFileOpenDlg,
         CDM_GETFOLDERPATH,
         m_helperBuffer.getCapacity(),
@@ -325,7 +324,7 @@ OUString SAL_CALL CFileOpenDialog::getCurrentFileName() const
 {
     OSL_ASSERT(IsWindow(m_hwndFileOpenDlg));
 
-    LPARAM nLen = SendMessage(
+    LPARAM nLen = SendMessageW(
         m_hwndFileOpenDlg,
         CDM_GETSPEC,
         m_helperBuffer.getCapacity(),
@@ -436,13 +435,13 @@ UINT_PTR CALLBACK CFileOpenDialog::ofnHookProc(
     HWND hChildDlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {
     HWND hwndDlg = GetParent(hChildDlg);
-    CFileOpenDialog* pImpl = NULL;
+    CFileOpenDialog* pImpl = nullptr;
 
     switch( uiMsg )
     {
     case WM_INITDIALOG:
         {
-            _LPOPENFILENAME lpofn = reinterpret_cast<_LPOPENFILENAME>(lParam);
+            LPOPENFILENAME_ lpofn = reinterpret_cast<LPOPENFILENAME_>(lParam);
             pImpl = reinterpret_cast<CFileOpenDialog*>(lpofn->lCustData);
             OSL_ASSERT(pImpl);
 
@@ -454,7 +453,7 @@ UINT_PTR CALLBACK CFileOpenDialog::ofnHookProc(
                         GWLP_WNDPROC,
                         reinterpret_cast<LONG_PTR>(CFileOpenDialog::BaseDlgProc)));
             // connect the instance handle to the window
-            SetProp(hwndDlg, CURRENT_INSTANCE, pImpl);
+            SetPropW(hwndDlg, CURRENT_INSTANCE, pImpl);
             pImpl->handleInitDialog(hwndDlg, hChildDlg);
         }
         return 0;
@@ -483,12 +482,12 @@ UINT_PTR CALLBACK CFileOpenDialog::ofnHookProc(
 LRESULT CALLBACK CFileOpenDialog::BaseDlgProc(
     HWND hWnd, UINT wMessage, WPARAM wParam, LPARAM lParam)
 {
-    CFileOpenDialog* pImpl = 0;
+    CFileOpenDialog* pImpl = nullptr;
 
     if (WM_NCDESTROY == wMessage)
     {
-        pImpl = reinterpret_cast<CFileOpenDialog*>(
-            RemoveProp(hWnd,CURRENT_INSTANCE));
+        pImpl = static_cast<CFileOpenDialog*>(
+            RemovePropW(hWnd,CURRENT_INSTANCE));
 
         SetWindowLongPtr(hWnd, GWLP_WNDPROC,
             reinterpret_cast<LONG_PTR>(pImpl->m_pfnBaseDlgProc));
@@ -509,8 +508,8 @@ LRESULT CALLBACK CFileOpenDialog::BaseDlgProc(
 CFileOpenDialog* SAL_CALL CFileOpenDialog::getCurrentInstance(HWND hwnd)
 {
     OSL_ASSERT(IsWindow( hwnd));
-    return reinterpret_cast<CFileOpenDialog*>(
-        GetProp(hwnd, CURRENT_INSTANCE));
+    return static_cast<CFileOpenDialog*>(
+        GetPropW(hwnd, CURRENT_INSTANCE));
 }
 
 
@@ -556,7 +555,7 @@ void SAL_CALL CFileOpenDialog::centerPositionToParent() const
 
     SetWindowPos(
         m_hwndFileOpenDlg,
-        NULL, x, y, 0, 0,
+        nullptr, x, y, 0, 0,
         SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE );
 }
 

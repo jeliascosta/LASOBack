@@ -43,7 +43,7 @@
 #include <comphelper/processfactory.hxx>
 #include <tools/mapunit.hxx>
 #include <unotools/configmgr.hxx>
-
+#include <libxml/xmlwriter.h>
 #include <editeng/unonrule.hxx>
 
 #define DEF_WRITER_LSPACE   500     //Standard Indentation
@@ -78,7 +78,7 @@ static void lcl_getFormatter(css::uno::Reference<css::text::XNumberingFormatter>
     }
 }
 
-SvxNumberType::SvxNumberType(sal_Int16 nType) :
+SvxNumberType::SvxNumberType(SvxNumType nType) :
     nNumType(nType),
     bShowSymbol(true)
 {
@@ -129,7 +129,7 @@ OUString SvxNumberType::GetNumStr( sal_uLong nNo, const css::lang::Locale& rLoca
                         Sequence< PropertyValue > aProperties(2);
                         PropertyValue* pValues = aProperties.getArray();
                         pValues[0].Name = "NumberingType";
-                        pValues[0].Value <<= nNumType;
+                        pValues[0].Value <<= (sal_uInt16)nNumType;
                         pValues[1].Name = "Value";
                         pValues[1].Value <<= (sal_Int32)nNo;
 
@@ -147,16 +147,15 @@ OUString SvxNumberType::GetNumStr( sal_uLong nNo, const css::lang::Locale& rLoca
     return OUString();
 }
 
-SvxNumberFormat::SvxNumberFormat( sal_Int16 eType,
-                                  SvxNumPositionAndSpaceMode ePositionAndSpaceMode )
+SvxNumberFormat::SvxNumberFormat( SvxNumType eType )
     : SvxNumberType(eType),
-      eNumAdjust(SVX_ADJUST_LEFT),
+      eNumAdjust(SvxAdjust::Left),
       nInclUpperLevels(0),
       nStart(1),
       cBullet(SVX_DEF_BULLET),
       nBulletRelSize(100),
       nBulletColor(COL_BLACK),
-      mePositionAndSpaceMode( ePositionAndSpaceMode ),
+      mePositionAndSpaceMode( LABEL_WIDTH_AND_POSITION ),
       nFirstLineOffset(0),
       nAbsLSpace(0),
       nCharTextDistance(0),
@@ -190,7 +189,7 @@ SvxNumberFormat::SvxNumberFormat( SvStream &rStream )
     sal_Int32  nTmp32(0);
     rStream.ReadUInt16( nTmp16 ); // Version number
 
-    rStream.ReadUInt16( nTmp16 ); SetNumberingType( nTmp16 );
+    rStream.ReadUInt16( nTmp16 ); SetNumberingType( (SvxNumType)nTmp16 );
     rStream.ReadUInt16( nTmp16 ); eNumAdjust = ( SvxAdjust )nTmp16;
     rStream.ReadUInt16( nTmp16 ); nInclUpperLevels = nTmp16;
     rStream.ReadUInt16( nStart );
@@ -255,7 +254,7 @@ void SvxNumberFormat::Store(SvStream &rStream, FontToSubsFontConverter pConverte
     rStream.WriteUInt16( NUMITEM_VERSION_04 );
 
     rStream.WriteUInt16( GetNumberingType() );
-    rStream.WriteUInt16( eNumAdjust );
+    rStream.WriteUInt16( (sal_uInt16)eNumAdjust );
     rStream.WriteUInt16( nInclUpperLevels );
     rStream.WriteUInt16( nStart );
     rStream.WriteUInt16( cBullet );
@@ -427,11 +426,6 @@ void SvxNumberFormat::SetGraphic( const OUString& rName )
     aGraphicSize.Width() = aGraphicSize.Height() = 0;
 }
 
-void SvxNumberFormat::SetVertOrient(sal_Int16 eSet)
-{
-    eVertOrient = eSet;
-}
-
 sal_Int16    SvxNumberFormat::GetVertOrient() const
 {
     return eVertOrient;
@@ -484,10 +478,10 @@ void SvxNumberFormat::SetIndentAt( const long nIndentAt )
 
 Size SvxNumberFormat::GetGraphicSizeMM100(const Graphic* pGraphic)
 {
-    const MapMode aMapMM100( MAP_100TH_MM );
+    const MapMode aMapMM100( MapUnit::Map100thMM );
     const Size& rSize = pGraphic->GetPrefSize();
     Size aRetSize;
-    if ( pGraphic->GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
+    if ( pGraphic->GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
     {
         OutputDevice* pOutDev = Application::GetDefaultDevice();
         MapMode aOldMap( pOutDev->GetMapMode() );
@@ -687,9 +681,28 @@ void SvxNumRule::Store( SvStream &rStream )
     }
     //second save of nFeatureFlags for new versions
     rStream.WriteUInt16( static_cast<sal_uInt16>(nFeatureFlags) );
-    if(pConverter)
-        DestroyFontToSubsFontConverter(pConverter);
 }
+
+void SvxNumRule::dumpAsXml(struct _xmlTextWriter* pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SvxNumRule"));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("levelCount"), BAD_CAST(OUString::number(nLevelCount).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("continuousNumbering"), BAD_CAST(OUString::boolean(bContinuousNumbering).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("numberingType"), BAD_CAST(OUString::number((int)eNumberingType).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("featureFlags"), BAD_CAST(OUString::number((int)nFeatureFlags).getStr()));
+    for(sal_uInt16 i = 0; i < SVX_MAX_NUM; i++)
+    {
+        if(aFmts[i])
+        {
+            xmlTextWriterStartElement(pWriter, BAD_CAST("aFmts"));
+            xmlTextWriterWriteAttribute(pWriter, BAD_CAST("i"), BAD_CAST(OUString::number(i).getStr()));
+            xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", aFmts[i]);
+            xmlTextWriterEndElement(pWriter);
+        }
+    }
+    xmlTextWriterEndElement(pWriter);
+}
+
 
 SvxNumRule::~SvxNumRule()
 {
@@ -877,7 +890,7 @@ void SvxNumRule::UnLinkGraphics()
                 aFmt.SetGraphicBrush( &aTempItem, &aFmt.GetGraphicSize(), &eOrient );
             }
         }
-        else if((SVX_NUM_BITMAP|LINK_TOKEN) == aFmt.GetNumberingType())
+        else if((SVX_NUM_BITMAP|LINK_TOKEN) == (int)aFmt.GetNumberingType())
             aFmt.SetNumberingType(SVX_NUM_BITMAP);
         SetLevel(i, aFmt);
     }
@@ -904,12 +917,11 @@ SfxPoolItem* SvxNumBulletItem::Create(SvStream &rStream, sal_uInt16 /*nItemVersi
 SvxNumBulletItem::SvxNumBulletItem(const SvxNumBulletItem& rCopy) :
     SfxPoolItem(rCopy.Which())
 {
-    pNumRule = new SvxNumRule(*rCopy.pNumRule);
+    pNumRule.reset( new SvxNumRule(*rCopy.pNumRule) );
 }
 
 SvxNumBulletItem::~SvxNumBulletItem()
 {
-    delete pNumRule;
 }
 
 bool SvxNumBulletItem::operator==( const SfxPoolItem& rCopy) const
@@ -935,7 +947,7 @@ SvStream&   SvxNumBulletItem::Store(SvStream &rStream, sal_uInt16 /*nItemVersion
 
 bool SvxNumBulletItem::QueryValue( css::uno::Any& rVal, sal_uInt8 /*nMemberId*/ ) const
 {
-    rVal <<= SvxCreateNumRule( pNumRule );
+    rVal <<= SvxCreateNumRule( pNumRule.get() );
     return true;
 }
 
@@ -954,8 +966,7 @@ bool SvxNumBulletItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberI
                 delete pNewRule;
                 pNewRule = pConverted;
             }
-            delete pNumRule;
-            pNumRule = pNewRule;
+            pNumRule.reset( pNewRule );
             return true;
         }
         catch(const lang::IllegalArgumentException&)
@@ -963,6 +974,14 @@ bool SvxNumBulletItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberI
         }
     }
     return false;
+}
+
+void SvxNumBulletItem::dumpAsXml(struct _xmlTextWriter* pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SvxNumBulletItem"));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
+    pNumRule->dumpAsXml(pWriter);
+    xmlTextWriterEndElement(pWriter);
 }
 
 SvxNumRule* SvxConvertNumRule( const SvxNumRule* pRule, sal_uInt16 nLevels, SvxNumRuleType eType )

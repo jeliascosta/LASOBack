@@ -23,6 +23,7 @@
 #include <sal/types.h>
 #include <svx/xdef.hxx>
 #include "swdllapi.h"
+#include <vector>
 
 // For SwTextHints without end index the following char is added:
 
@@ -298,10 +299,6 @@ RES_MSG_BEGIN = RES_FMT_END,
     RES_OBJECTDYING = RES_MSG_BEGIN,                // 158
     RES_FMT_CHG,
     RES_ATTRSET_CHG,
-    RES_FRM_SIZECHG,
-    RES_TXTATR_FLDCHG,
-    RES_TXTATR_EMPTYCHG,
-    RES_INS_CHR,
     RES_INS_TXT,
     RES_DEL_CHR,
     RES_DEL_TXT,
@@ -312,8 +309,6 @@ RES_MSG_BEGIN = RES_FMT_END,
     RES_UPDATEDDETBL,
     RES_TBLHEADLINECHG,
     RES_AUTOFMT_DOCNODE,
-    RES_REPAINT,
-    RES_DOC_DTOR,
     RES_SECTION_HIDDEN,
     RES_SECTION_NOT_HIDDEN,
     RES_GRAPHIC_ARRIVED,
@@ -321,7 +316,6 @@ RES_MSG_BEGIN = RES_FMT_END,
     RES_HIDDENPARA_PRINT,
     RES_CONDCOLL_CONDCHG,
     RES_VIRTPAGENUM_INFO,
-    RES_GETLOWERNUMLEVEL,
     RES_RESET_FMTWRITTEN,
     RES_REMOVE_UNO_OBJECT,
     RES_GRF_REREAD_AND_INCACHE,
@@ -332,7 +326,6 @@ RES_MSG_BEGIN = RES_FMT_END,
     RES_NAME_CHANGED,
     RES_TITLE_CHANGED,
     RES_DESCRIPTION_CHANGED,
-    RES_UNOCURSOR_LEAVES_SECTION,
     RES_LINKED_GRAPHIC_STREAM_ARRIVED,
 RES_MSG_END
 };
@@ -396,7 +389,7 @@ inline bool isFRMATR(const sal_uInt16 nWhich)
 {
     return (RES_FRMATR_BEGIN <= nWhich) && (RES_FRMATR_END > nWhich);
 }
-inline bool isDrawingLayerAttribute(const sal_uInt16 nWhich) //UUUU
+inline bool isDrawingLayerAttribute(const sal_uInt16 nWhich)
 {
     return (XATTR_START <= nWhich) && (XATTR_END > nWhich);
 }
@@ -421,7 +414,7 @@ inline bool isUNKNOWNATR(const sal_uInt16 nWhich)
 // Inline in PRODUCT.
 class SfxPoolItem;
 struct SfxItemInfo;
-typedef SfxPoolItem* SwDfltAttrTab[ POOLATTR_END - POOLATTR_BEGIN  ];
+typedef std::vector<SfxPoolItem*> SwDfltAttrTab;
 
 extern SwDfltAttrTab aAttrTab;
 extern SfxItemInfo   aSlotTab[];

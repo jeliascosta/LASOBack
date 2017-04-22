@@ -51,14 +51,9 @@ namespace svt { namespace table
         Window::dispose();
     }
 
-    void TableDataWindow::Paint( vcl::RenderContext& rRenderContext, const Rectangle& rUpdateRect )
+    void TableDataWindow::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rUpdateRect )
     {
         m_rTableControl.doPaintContent(rRenderContext, rUpdateRect);
-    }
-
-    void TableDataWindow::SetBackground( const Wallpaper& rColor )
-    {
-        Window::SetBackground( rColor );
     }
 
     void TableDataWindow::RequestHelp( const HelpEvent& rHEvt )
@@ -96,9 +91,9 @@ namespace svt { namespace table
                     pTableModel->getCellContent( hitCol, hitRow, aCellToolTip );
 
                     // use the cell content as tool tip only if it doesn't fit into the cell.
-                    Rectangle const aWindowRect( Point( 0, 0 ), GetOutputSizePixel() );
+                    tools::Rectangle const aWindowRect( Point( 0, 0 ), GetOutputSizePixel() );
                     TableCellGeometry const aCell( m_rTableControl, aWindowRect, hitCol, hitRow );
-                    Rectangle const aCellRect( aCell.getRect() );
+                    tools::Rectangle const aCellRect( aCell.getRect() );
 
                     PTableRenderer const pRenderer = pTableModel->getRenderer();
                     if ( pRenderer->FitsIntoCell( aCellToolTip, *this, aCellRect ) )
@@ -117,7 +112,7 @@ namespace svt { namespace table
             // hide the standard (singleton) help window, so we do not have two help windows open at the same time
             Help::HideBalloonAndQuickHelp();
 
-            Rectangle const aControlScreenRect(
+            tools::Rectangle const aControlScreenRect(
                 OutputToScreenPixel( Point( 0, 0 ) ),
                 GetOutputSizePixel()
             );
@@ -180,7 +175,7 @@ namespace svt { namespace table
     }
 
 
-    bool TableDataWindow::Notify(NotifyEvent& rNEvt )
+    bool TableDataWindow::EventNotify(NotifyEvent& rNEvt )
     {
         bool bDone = false;
         if ( rNEvt.GetType() == MouseNotifyEvent::COMMAND )
@@ -195,7 +190,7 @@ namespace svt { namespace table
                 }
             }
         }
-        return bDone || Window::Notify( rNEvt );
+        return bDone || Window::EventNotify( rNEvt );
     }
 
 }} // namespace svt::table

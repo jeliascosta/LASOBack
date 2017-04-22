@@ -54,16 +54,16 @@ class SVX_DLLPUBLIC GraphCtrl : public Control
     bool                bAnim;
     bool                mbInIdleUpdate;
 
-                        DECL_LINK_TYPED( UpdateHdl, Idle*, void );
+                        DECL_LINK( UpdateHdl, Timer*, void );
 
-    SvxGraphCtrlAccessibleContext* mpAccContext;
+    rtl::Reference<SvxGraphCtrlAccessibleContext> mpAccContext;
 
 protected:
 
     SdrModel*           pModel;
     SdrView*            pView;
 
-    virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void        Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void        Resize() override;
     virtual void        KeyInput(const KeyEvent& rKEvt) override;
     virtual void        MouseButtonDown(const MouseEvent& rMEvt) override;
@@ -81,7 +81,7 @@ protected:
 public:
 
     GraphCtrl( vcl::Window* pParent, WinBits nStyle );
-    virtual ~GraphCtrl();
+    virtual ~GraphCtrl() override;
     virtual void dispose() override;
 
     void                SetWinStyle( WinBits nWinBits );
@@ -125,10 +125,7 @@ public:
         : rWin(rGraphWin)
     {}
 
-    virtual ~GraphCtrlUserCall()
-    {}
-
-    virtual void Changed(const SdrObject& rObj, SdrUserCallType eType, const Rectangle& rOldBoundRect) override;
+    virtual void Changed(const SdrObject& rObj, SdrUserCallType eType, const tools::Rectangle& rOldBoundRect) override;
 };
 
 SdrObjUserCall* GraphCtrl::GetSdrUserCall()
@@ -152,9 +149,6 @@ public:
     GraphCtrlView(SdrModel* pModel, GraphCtrl* pWindow)
         : SdrView(pModel, pWindow)
         , rGraphCtrl(*pWindow)
-    {}
-
-    virtual ~GraphCtrlView()
     {}
 };
 

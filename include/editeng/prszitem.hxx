@@ -32,8 +32,6 @@
 class EDITENG_DLLPUBLIC SvxPropSizeItem : public SfxUInt16Item
 {
 public:
-    static SfxPoolItem* CreateDefault();
-
     SvxPropSizeItem( const sal_uInt16 nPercent /*= 100*/,
                  const sal_uInt16 nID  );
 
@@ -43,11 +41,11 @@ public:
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    inline SvxPropSizeItem& operator=(const SvxPropSizeItem& rPropSize)
+    SvxPropSizeItem& operator=(const SvxPropSizeItem& rPropSize)
     {
         SetValue( rPropSize.GetValue() );
         return *this;

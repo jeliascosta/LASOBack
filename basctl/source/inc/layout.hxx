@@ -51,7 +51,7 @@ public:
     virtual void GetState (SfxItemSet&, unsigned nWhich) = 0;
     virtual void UpdateDebug (bool bBasicStopped ) = 0;
 
-    virtual ~Layout();
+    virtual ~Layout() override;
     virtual void dispose() override;
 
 protected:
@@ -79,13 +79,13 @@ private:
     class SplittedSide
     {
     public:
-        enum Side {Right, Top, Left, Bottom};
+        enum class Side {Left, Bottom};
         SplittedSide (Layout*, Side);
         void Add (DockingWindow*, Size const&);
         void Remove (DockingWindow*);
         bool IsEmpty () const;
         long GetSize () const;
-        void ArrangeIn (Rectangle const&);
+        void ArrangeIn (tools::Rectangle const&);
         void dispose();
 
     private:
@@ -96,7 +96,7 @@ private:
         // lower (top or left) or higher (bottom or right) strip?
         bool bLower;
         // rectangle to move in
-        Rectangle aRect;
+        tools::Rectangle aRect;
         // size (width or height)
         long nSize;
         // the main splitting line
@@ -121,7 +121,7 @@ private:
         Point MakePoint (long, long) const;
         Size MakeSize (long, long) const;
         static bool IsDocking (DockingWindow const&);
-        DECL_LINK_TYPED(SplitHdl, Splitter*, void);
+        DECL_LINK(SplitHdl, Splitter*, void);
         void CheckMarginsFor (Splitter*);
         void InitSplitter (Splitter&);
     } aLeftSide, aBottomSide;

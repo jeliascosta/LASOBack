@@ -19,9 +19,26 @@
 #ifndef INCLUDED_VBAHELPER_VBADIALOGBASE_HXX
 #define INCLUDED_VBAHELPER_VBADIALOGBASE_HXX
 
+#include <exception>
+
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
 #include <ooo/vba/XDialogBase.hpp>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbadllapi.h>
+#include <vbahelper/vbahelper.hxx>
 #include <vbahelper/vbahelperinterface.hxx>
-#include <com/sun/star/frame/XModel.hpp>
+
+namespace com { namespace sun { namespace star {
+    namespace frame { class XModel; }
+    namespace uno { class XComponentContext; }
+} } }
+
+namespace ooo { namespace vba {
+    class XDialogBase;
+    class XHelperInterface;
+} }
 
 typedef InheritedHelperInterfaceWeakImpl< ov::XDialogBase > VbaDialogBase_BASE;
 
@@ -32,10 +49,9 @@ protected:
         css::uno::Reference< css::frame::XModel > m_xModel;
 public:
     VbaDialogBase( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext, const css::uno::Reference< css::frame::XModel >& xModel, sal_Int32 nIndex ):VbaDialogBase_BASE( xParent, xContext ), mnIndex( nIndex ), m_xModel( xModel ) {}
-    virtual ~VbaDialogBase() {}
 
     // Methods
-    virtual void SAL_CALL Show() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL Show() override;
     virtual OUString mapIndexToName( sal_Int32 nIndex ) = 0;
 };
 

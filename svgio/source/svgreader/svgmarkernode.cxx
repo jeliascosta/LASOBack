@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svgmarkernode.hxx>
+#include <svgmarkernode.hxx>
 
 namespace svgio
 {
@@ -43,7 +43,6 @@ namespace svgio
 
         SvgMarkerNode::~SvgMarkerNode()
         {
-            delete mpViewBox;
         }
 
         const SvgStyleAttributes* SvgMarkerNode::getSvgStyleAttributes() const
@@ -79,7 +78,7 @@ namespace svgio
                 }
                 case SVGTokenPreserveAspectRatio:
                 {
-                    setSvgAspectRatio(readSvgAspectRatio(aContent));
+                    maSvgAspectRatio = readSvgAspectRatio(aContent);
                     break;
                 }
                 case SVGTokenRefX:
@@ -88,7 +87,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setRefX(aNum);
+                        maRefX = aNum;
                     }
                     break;
                 }
@@ -98,7 +97,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setRefY(aNum);
+                        maRefY = aNum;
                     }
                     break;
                 }
@@ -125,7 +124,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setMarkerWidth(aNum);
+                            maMarkerWidth = aNum;
                         }
                     }
                     break;
@@ -138,7 +137,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setMarkerHeight(aNum);
+                            maMarkerHeight = aNum;
                         }
                     }
                     break;
@@ -151,7 +150,7 @@ namespace svgio
                     {
                         if(aContent.startsWith("auto"))
                         {
-                            setOrientAuto();
+                            mbOrientAuto = true;
                         }
                         else
                         {

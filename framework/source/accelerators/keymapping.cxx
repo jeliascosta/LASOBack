@@ -164,13 +164,12 @@ KeyMapping & KeyMapping::get() {
 }
 
 sal_uInt16 KeyMapping::mapIdentifierToCode(const OUString& sIdentifier)
-    throw(css::lang::IllegalArgumentException)
 {
     Identifier2CodeHash::const_iterator pIt = m_lIdentifierHash.find(sIdentifier);
     if (pIt != m_lIdentifierHash.end())
         return pIt->second;
 
-    // Its not well known identifier - but may be a pure key code formatted as string ...
+    // It's not well known identifier - but may be a pure key code formatted as string...
     // Check and convert it!
     sal_uInt16 nCode = 0;
     if (!KeyMapping::impl_st_interpretIdentifierAsPureKeyCode(sIdentifier, nCode))
@@ -179,7 +178,7 @@ sal_uInt16 KeyMapping::mapIdentifierToCode(const OUString& sIdentifier)
                 css::uno::Reference< css::uno::XInterface >(),
                 0);
 
-    return (sal_uInt16)nCode;
+    return nCode;
 }
 
 OUString KeyMapping::mapCodeToIdentifier(sal_uInt16 nCode)

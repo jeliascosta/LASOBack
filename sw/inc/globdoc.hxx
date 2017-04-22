@@ -27,8 +27,8 @@ public:
 
     SFX_DECL_OBJECTFACTORY();
 
-    SwGlobalDocShell(SfxObjectCreateMode eMode = SfxObjectCreateMode::EMBEDDED);
-    virtual ~SwGlobalDocShell();
+    SwGlobalDocShell(SfxObjectCreateMode eMode);
+    virtual ~SwGlobalDocShell() override;
 
     virtual void    FillClass( SvGlobalName * pClassName,
                                    SotClipboardFormatId * pClipFormat,

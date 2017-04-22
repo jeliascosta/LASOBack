@@ -18,18 +18,19 @@
  */
 
 
-#include "signatureengine.hxx"
-#include <com/sun/star/xml/crypto/XMLSignatureTemplate.hpp>
+#include "framework/signatureengine.hxx"
+#include "xmlsignaturetemplateimpl.hxx"
 #include <com/sun/star/xml/wrapper/XXMLElementWrapper.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
+#include <rtl/ref.hxx>
 
 using namespace com::sun::star::uno;
 namespace cssu = com::sun::star::uno;
 namespace cssxc = com::sun::star::xml::crypto;
 namespace cssxw = com::sun::star::xml::wrapper;
 
-SignatureEngine::SignatureEngine( const Reference<XComponentContext> & xContext)
-    : m_xContext(xContext), m_nTotalReferenceNumber(-1)
+SignatureEngine::SignatureEngine()
+    : m_nTotalReferenceNumber(-1)
 {
 }
 
@@ -74,7 +75,6 @@ bool SignatureEngine::checkReady() const
 }
 
 void SignatureEngine::tryToPerform( )
-        throw (cssu::Exception, cssu::RuntimeException)
 /****** SignatureEngine/tryToPerform *****************************************
  *
  *   NAME
@@ -91,8 +91,7 @@ void SignatureEngine::tryToPerform( )
 {
     if (checkReady())
     {
-        cssu::Reference < cssxc::XXMLSignatureTemplate >
-            xSignatureTemplate = cssxc::XMLSignatureTemplate::create( m_xContext );
+        rtl::Reference<XMLSignatureTemplateImpl> xSignatureTemplate = new XMLSignatureTemplateImpl();
 
         cssu::Reference< cssxw::XXMLElementWrapper >
             xXMLElement = m_xSAXEventKeeper->getElement( m_nIdOfTemplateEC );
@@ -112,7 +111,7 @@ void SignatureEngine::tryToPerform( )
          */
         xSignatureTemplate->setBinding( this );
 
-        startEngine( xSignatureTemplate );
+        startEngine(css::uno::Reference<css::xml::crypto::XXMLSignatureTemplate>(xSignatureTemplate.get()));
 
         /*
          * done
@@ -164,14 +163,12 @@ void SignatureEngine::clearUp( ) const
 
 /* XReferenceCollector */
 void SAL_CALL SignatureEngine::setReferenceCount( sal_Int32 count )
-    throw (cssu::Exception, cssu::RuntimeException, std::exception)
 {
     m_nTotalReferenceNumber = count;
     tryToPerform();
 }
 
 void SAL_CALL SignatureEngine::setReferenceId( sal_Int32 id )
-    throw (cssu::Exception, cssu::RuntimeException, std::exception)
 {
     m_vReferenceIds.push_back( id );
 }
@@ -180,14 +177,12 @@ void SAL_CALL SignatureEngine::setReferenceId( sal_Int32 id )
 void SAL_CALL SignatureEngine::setUriBinding(
     const OUString& uri,
     const cssu::Reference< css::io::XInputStream >& aInputStream )
-    throw (cssu::Exception, cssu::RuntimeException, std::exception)
 {
     m_vUris.push_back(uri);
     m_vXInputStreams.push_back(aInputStream);
 }
 
 cssu::Reference< css::io::XInputStream > SAL_CALL SignatureEngine::getUriBinding( const OUString& uri )
-    throw (cssu::Exception, cssu::RuntimeException, std::exception)
 {
     cssu::Reference< css::io::XInputStream > xInputStream;
 

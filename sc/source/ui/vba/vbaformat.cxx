@@ -30,6 +30,7 @@
 #include <com/sun/star/text/WritingMode.hpp>
 #include <com/sun/star/util/CellProtection.hpp>
 
+#include <basic/sberrors.hxx>
 #include <rtl/math.hxx>
 
 #include "excelvbahelper.hxx"
@@ -54,9 +55,9 @@ ScVbaFormat< Ifc... >::ScVbaFormat( const uno::Reference< XHelperInterface >& xP
                                     const uno::Reference< uno::XComponentContext > & xContext,
                                     const uno::Reference< beans::XPropertySet >& _xPropertySet,
                                     const uno::Reference< frame::XModel >& xModel,
-                                    bool bCheckAmbiguoity ) throw ( script::BasicErrorException )
+                                    bool bCheckAmbiguoity )
     : ScVbaFormat_BASE( xParent, xContext ),
-      m_aDefaultLocale( OUString("en"), OUString( "US"), OUString() ),
+      m_aDefaultLocale( "en", "US", OUString() ),
       mxPropertySet( _xPropertySet ),
       mxModel( xModel ),
       mbCheckAmbiguoity( bCheckAmbiguoity ),
@@ -77,7 +78,7 @@ ScVbaFormat< Ifc... >::ScVbaFormat( const uno::Reference< XHelperInterface >& xP
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setVerticalAlignment( const uno::Any& _oAlignment)   throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setVerticalAlignment( const uno::Any& _oAlignment)
 {
     try
     {
@@ -88,21 +89,21 @@ ScVbaFormat< Ifc... >::setVerticalAlignment( const uno::Any& _oAlignment)   thro
         switch (nAlignment)
         {
             case excel::XlVAlign::xlVAlignBottom :
-                aVal =  uno::makeAny( table::CellVertJustify2::BOTTOM );
+                aVal <<= table::CellVertJustify2::BOTTOM;
                 break;
             case excel::XlVAlign::xlVAlignCenter :
-                aVal = uno::makeAny( table::CellVertJustify2::CENTER );
+                aVal <<= table::CellVertJustify2::CENTER;
                 break;
             case excel::XlVAlign::xlVAlignDistributed:
             case excel::XlVAlign::xlVAlignJustify:
-                aVal = uno::makeAny( table::CellVertJustify2::STANDARD );
+                aVal <<= table::CellVertJustify2::STANDARD;
                 break;
 
             case excel::XlVAlign::xlVAlignTop:
-                aVal = uno::makeAny( table::CellVertJustify2::TOP);
+                aVal <<= table::CellVertJustify2::TOP;
                 break;
             default:
-                aVal = uno::makeAny( table::CellVertJustify2::STANDARD );
+                aVal <<= table::CellVertJustify2::STANDARD;
                 break;
         }
         mxPropertySet->setPropertyValue( SC_UNONAME_CELLVJUS, aVal );
@@ -115,7 +116,7 @@ ScVbaFormat< Ifc... >::setVerticalAlignment( const uno::Any& _oAlignment)   thro
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getVerticalAlignment(  ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::getVerticalAlignment(  )
 {
     uno::Any aResult = aNULL();
     try
@@ -127,16 +128,16 @@ ScVbaFormat< Ifc... >::getVerticalAlignment(  ) throw (script::BasicErrorExcepti
             switch( aAPIAlignment )
             {
                 case table::CellVertJustify2::BOTTOM:
-                    aResult = uno::makeAny( excel::XlVAlign::xlVAlignBottom );
+                    aResult <<= excel::XlVAlign::xlVAlignBottom;
                     break;
                 case table::CellVertJustify2::CENTER:
-                    aResult = uno::makeAny( excel::XlVAlign::xlVAlignCenter );
+                    aResult <<= excel::XlVAlign::xlVAlignCenter;
                     break;
                 case table::CellVertJustify2::STANDARD:
-                    aResult = uno::makeAny( excel::XlVAlign::xlVAlignBottom );
+                    aResult <<= excel::XlVAlign::xlVAlignBottom;
                     break;
                 case table::CellVertJustify2::TOP:
-                    aResult = uno::makeAny( excel::XlVAlign::xlVAlignTop );
+                    aResult <<= excel::XlVAlign::xlVAlignTop;
                     break;
                 default:
                     break;
@@ -152,7 +153,7 @@ ScVbaFormat< Ifc... >::getVerticalAlignment(  ) throw (script::BasicErrorExcepti
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setHorizontalAlignment( const uno::Any& HorizontalAlignment ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setHorizontalAlignment( const uno::Any& HorizontalAlignment )
 {
     try
     {
@@ -163,19 +164,19 @@ ScVbaFormat< Ifc... >::setHorizontalAlignment( const uno::Any& HorizontalAlignme
         switch ( nAlignment )
         {
             case excel::XlHAlign::xlHAlignJustify:
-                aVal = uno::makeAny( table::CellHoriJustify_BLOCK);
+                aVal <<= table::CellHoriJustify_BLOCK;
                 break;
             case excel::XlHAlign::xlHAlignCenter:
-                aVal = uno::makeAny( table::CellHoriJustify_CENTER );
+                aVal <<= table::CellHoriJustify_CENTER;
                 break;
             case excel::XlHAlign::xlHAlignDistributed:
-                aVal = uno::makeAny( table::CellHoriJustify_BLOCK);
+                aVal <<= table::CellHoriJustify_BLOCK;
                 break;
             case excel::XlHAlign::xlHAlignLeft:
-                aVal = uno::makeAny( table::CellHoriJustify_LEFT);
+                aVal <<= table::CellHoriJustify_LEFT;
                 break;
             case excel::XlHAlign::xlHAlignRight:
-                aVal = uno::makeAny( table::CellHoriJustify_RIGHT);
+                aVal <<= table::CellHoriJustify_RIGHT;
                 break;
         }
         // #FIXME what about the default case above?
@@ -192,7 +193,7 @@ ScVbaFormat< Ifc... >::setHorizontalAlignment( const uno::Any& HorizontalAlignme
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getHorizontalAlignment(  ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::getHorizontalAlignment(  )
 {
     uno::Any NRetAlignment = aNULL();
     try
@@ -207,16 +208,16 @@ ScVbaFormat< Ifc... >::getHorizontalAlignment(  ) throw (script::BasicErrorExcep
                 switch( aAPIAlignment )
                 {
                     case table::CellHoriJustify_BLOCK:
-                        NRetAlignment = uno::makeAny( excel::XlHAlign::xlHAlignJustify );
+                        NRetAlignment <<= excel::XlHAlign::xlHAlignJustify;
                         break;
                     case table::CellHoriJustify_CENTER:
-                        NRetAlignment = uno::makeAny( excel::XlHAlign::xlHAlignCenter );
+                        NRetAlignment <<= excel::XlHAlign::xlHAlignCenter;
                         break;
                     case table::CellHoriJustify_LEFT:
-                        NRetAlignment = uno::makeAny( excel::XlHAlign::xlHAlignLeft );
+                        NRetAlignment <<= excel::XlHAlign::xlHAlignLeft;
                         break;
                     case table::CellHoriJustify_RIGHT:
-                        NRetAlignment =  uno::makeAny( excel::XlHAlign::xlHAlignRight );
+                        NRetAlignment <<= excel::XlHAlign::xlHAlignRight;
                         break;
                      default: // handle those other cases with a NULL return
                         break;
@@ -233,7 +234,7 @@ ScVbaFormat< Ifc... >::getHorizontalAlignment(  ) throw (script::BasicErrorExcep
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setOrientation( const uno::Any& _aOrientation ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setOrientation( const uno::Any& _aOrientation )
 {
     try
     {
@@ -244,17 +245,17 @@ ScVbaFormat< Ifc... >::setOrientation( const uno::Any& _aOrientation ) throw (sc
         switch( nOrientation )
         {
             case excel::XlOrientation::xlDownward:
-                aVal = uno::makeAny( table::CellOrientation_TOPBOTTOM);
+                aVal <<= table::CellOrientation_TOPBOTTOM;
                 break;
             case excel::XlOrientation::xlHorizontal:
-                aVal = uno::makeAny( table::CellOrientation_STANDARD );
+                aVal <<= table::CellOrientation_STANDARD;
                 mxPropertySet->setPropertyValue( SC_UNONAME_ROTANG, uno::makeAny( sal_Int32(0) ) );
                 break;
             case excel::XlOrientation::xlUpward:
-                aVal = uno::makeAny( table::CellOrientation_BOTTOMTOP);
+                aVal <<= table::CellOrientation_BOTTOMTOP;
                 break;
             case excel::XlOrientation::xlVertical:
-                aVal = uno::makeAny( table::CellOrientation_STACKED);
+                aVal <<= table::CellOrientation_STACKED;
                 break;
         }
         // #FIXME what about the default case above?
@@ -270,7 +271,7 @@ ScVbaFormat< Ifc... >::setOrientation( const uno::Any& _aOrientation ) throw (sc
 }
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getOrientation(  ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::getOrientation(  )
 {
     uno::Any NRetOrientation = aNULL();
     try
@@ -284,19 +285,19 @@ ScVbaFormat< Ifc... >::getOrientation(  ) throw (script::BasicErrorException, un
             switch(aOrientation)
             {
                 case table::CellOrientation_STANDARD:
-                    NRetOrientation = uno::makeAny( excel::XlOrientation::xlHorizontal );
+                    NRetOrientation <<= excel::XlOrientation::xlHorizontal;
                     break;
                 case table::CellOrientation_BOTTOMTOP:
-                    NRetOrientation = uno::makeAny( excel::XlOrientation::xlUpward );
+                    NRetOrientation <<= excel::XlOrientation::xlUpward;
                     break;
                 case table::CellOrientation_TOPBOTTOM:
-                    NRetOrientation = uno::makeAny( excel::XlOrientation::xlDownward );
+                    NRetOrientation <<= excel::XlOrientation::xlDownward;
                     break;
                 case table::CellOrientation_STACKED:
-                    NRetOrientation = uno::makeAny( excel::XlOrientation::xlVertical );
+                    NRetOrientation <<= excel::XlOrientation::xlVertical;
                     break;
                 default:
-                    NRetOrientation = uno::makeAny( excel::XlOrientation::xlHorizontal );
+                    NRetOrientation <<= excel::XlOrientation::xlHorizontal;
             }
         }
     }
@@ -309,7 +310,7 @@ ScVbaFormat< Ifc... >::getOrientation(  ) throw (script::BasicErrorException, un
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setWrapText( const uno::Any& _aWrapText ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setWrapText( const uno::Any& _aWrapText )
 {
     try
     {
@@ -323,7 +324,7 @@ ScVbaFormat< Ifc... >::setWrapText( const uno::Any& _aWrapText ) throw (script::
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getWrapText(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
+ScVbaFormat< Ifc... >::getWrapText(  )
 {
     uno::Any aWrap = aNULL();
     try
@@ -343,7 +344,7 @@ ScVbaFormat< Ifc... >::getWrapText(  ) throw (script::BasicErrorException, uno::
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::Borders( const uno::Any& Index ) throw (script::BasicErrorException, uno::RuntimeException )
+ScVbaFormat< Ifc... >::Borders( const uno::Any& Index )
 {
     ScVbaPalette aPalette( excel::getDocShell( mxModel ) );
     uno::Reference< XCollection > xColl =  new ScVbaBorders( thisHelperIface(), ScVbaFormat_BASE::mxContext, uno::Reference< table::XCellRange >( mxPropertySet, uno::UNO_QUERY_THROW ), aPalette );
@@ -357,7 +358,7 @@ ScVbaFormat< Ifc... >::Borders( const uno::Any& Index ) throw (script::BasicErro
 
 template< typename... Ifc >
 uno::Reference< excel::XFont > SAL_CALL
-ScVbaFormat< Ifc... >::Font(  ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::Font(  )
 {
     ScVbaPalette aPalette( excel::getDocShell( mxModel ) );
     return new ScVbaFont( thisHelperIface(), ScVbaFormat_BASE::mxContext, aPalette, mxPropertySet );
@@ -365,14 +366,14 @@ ScVbaFormat< Ifc... >::Font(  ) throw (script::BasicErrorException, uno::Runtime
 
 template< typename... Ifc >
 uno::Reference< excel::XInterior > SAL_CALL
-ScVbaFormat< Ifc... >::Interior(  ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::Interior(  )
 {
     return new ScVbaInterior( thisHelperIface(), ScVbaFormat_BASE::mxContext, mxPropertySet );
 }
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getNumberFormatLocal(  ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::getNumberFormatLocal(  )
 {
     uno::Any aRet = uno::makeAny( OUString() );
     try
@@ -389,7 +390,7 @@ ScVbaFormat< Ifc... >::getNumberFormatLocal(  ) throw (script::BasicErrorExcepti
 
             OUString sFormat;
             xNumberFormats->getByKey(nFormat)->getPropertyValue( FORMATSTRING ) >>= sFormat;
-            aRet = uno::makeAny( sFormat.toAsciiLowerCase() );
+            aRet <<= sFormat.toAsciiLowerCase();
 
         }
     }
@@ -403,7 +404,7 @@ ScVbaFormat< Ifc... >::getNumberFormatLocal(  ) throw (script::BasicErrorExcepti
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setNumberFormatLocal( const uno::Any& _oLocalFormatString ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setNumberFormatLocal( const uno::Any& _oLocalFormatString )
 {
     try
     {
@@ -432,7 +433,7 @@ ScVbaFormat< Ifc... >::setNumberFormatLocal( const uno::Any& _oLocalFormatString
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setNumberFormat( const uno::Any& _oFormatString ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setNumberFormat( const uno::Any& _oFormatString )
 {
     try
     {
@@ -463,7 +464,7 @@ ScVbaFormat< Ifc... >::setNumberFormat( const uno::Any& _oFormatString ) throw (
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setIndentLevel( const uno::Any& _aLevel ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setIndentLevel( const uno::Any& _aLevel )
 {
     try
     {
@@ -487,7 +488,7 @@ ScVbaFormat< Ifc... >::setIndentLevel( const uno::Any& _aLevel ) throw (script::
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getIndentLevel(  ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::getIndentLevel(  )
 {
     uno::Any NRetIndentLevel = aNULL();
     try
@@ -497,9 +498,9 @@ ScVbaFormat< Ifc... >::getIndentLevel(  ) throw (script::BasicErrorException, un
         {
             sal_Int16 IndentLevel = 0;
             if ( ( mxPropertySet->getPropertyValue(sParaIndent) >>= IndentLevel  ) )
-                NRetIndentLevel = uno::makeAny( sal_Int32( rtl::math::round(static_cast<double>( IndentLevel ) / 352.8)) );
+                NRetIndentLevel <<= sal_Int32( rtl::math::round(static_cast<double>( IndentLevel ) / 352.8));
             else
-                NRetIndentLevel = uno::makeAny( sal_Int32(0) );
+                NRetIndentLevel <<= sal_Int32(0);
         }
     }
     catch (const uno::Exception&)
@@ -511,7 +512,7 @@ ScVbaFormat< Ifc... >::getIndentLevel(  ) throw (script::BasicErrorException, un
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setLocked( const uno::Any& _aLocked ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setLocked( const uno::Any& _aLocked )
 {
     try
     {
@@ -532,7 +533,7 @@ ScVbaFormat< Ifc... >::setLocked( const uno::Any& _aLocked ) throw (script::Basi
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setFormulaHidden( const uno::Any& FormulaHidden ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setFormulaHidden( const uno::Any& FormulaHidden )
 {
     try
     {
@@ -552,7 +553,7 @@ ScVbaFormat< Ifc... >::setFormulaHidden( const uno::Any& FormulaHidden ) throw (
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getLocked(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
+ScVbaFormat< Ifc... >::getLocked(  )
 {
     uno::Any aCellProtection = aNULL();
     try
@@ -567,13 +568,13 @@ ScVbaFormat< Ifc... >::getLocked(  ) throw (script::BasicErrorException, uno::Ru
                 const ScProtectionAttr& rProtAttr = static_cast<const ScProtectionAttr &>( pDataSet->Get(ATTR_PROTECTION) );
                 SfxItemState eState = pDataSet->GetItemState(ATTR_PROTECTION);
                 if(eState != SfxItemState::DONTCARE)
-                    aCellProtection =  uno::makeAny(rProtAttr.GetProtection());
+                    aCellProtection <<= rProtAttr.GetProtection();
             }
             else // fallback to propertyset
             {
                 util::CellProtection cellProtection;
-                mxPropertySet->getPropertyValue(sCellProt) >>= aCellProtection;
-                aCellProtection = uno::makeAny( cellProtection.IsLocked );
+                mxPropertySet->getPropertyValue(sCellProt) >>= cellProtection;
+                aCellProtection <<= cellProtection.IsLocked;
             }
         }
     }
@@ -586,7 +587,7 @@ ScVbaFormat< Ifc... >::getLocked(  ) throw (script::BasicErrorException, uno::Ru
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getFormulaHidden(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
+ScVbaFormat< Ifc... >::getFormulaHidden(  )
 {
     uno::Any aBoolRet = aNULL();
     try
@@ -600,13 +601,13 @@ ScVbaFormat< Ifc... >::getFormulaHidden(  ) throw (script::BasicErrorException, 
                 const ScProtectionAttr& rProtAttr = static_cast<const ScProtectionAttr &>( pDataSet->Get(ATTR_PROTECTION) );
                 SfxItemState eState = pDataSet->GetItemState(ATTR_PROTECTION);
                 if(eState != SfxItemState::DONTCARE)
-                    aBoolRet = uno::makeAny(rProtAttr.GetHideFormula());
+                    aBoolRet <<= rProtAttr.GetHideFormula();
             }
             else
             {
                 util::CellProtection aCellProtection;
                 mxPropertySet->getPropertyValue(sCellProt) >>= aCellProtection;
-                aBoolRet = uno::makeAny( aCellProtection.IsFormulaHidden );
+                aBoolRet <<= aCellProtection.IsFormulaHidden;
             }
         }
     }
@@ -619,7 +620,7 @@ ScVbaFormat< Ifc... >::getFormulaHidden(  ) throw (script::BasicErrorException, 
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setShrinkToFit( const uno::Any& ShrinkToFit ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setShrinkToFit( const uno::Any& ShrinkToFit )
 {
     try
     {
@@ -634,7 +635,7 @@ ScVbaFormat< Ifc... >::setShrinkToFit( const uno::Any& ShrinkToFit ) throw (scri
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getShrinkToFit(  ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::getShrinkToFit(  )
 {
     uno::Any aRet = aNULL();
     try
@@ -652,7 +653,7 @@ ScVbaFormat< Ifc... >::getShrinkToFit(  ) throw (script::BasicErrorException, un
 
 template< typename... Ifc >
 void SAL_CALL
-ScVbaFormat< Ifc... >::setReadingOrder( const uno::Any& ReadingOrder ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::setReadingOrder( const uno::Any& ReadingOrder )
 {
     try
     {
@@ -663,10 +664,10 @@ ScVbaFormat< Ifc... >::setReadingOrder( const uno::Any& ReadingOrder ) throw (sc
         switch(nReadingOrder)
         {
             case excel::Constants::xlLTR:
-                aVal = uno::makeAny( text::WritingMode_LR_TB );
+                aVal <<= text::WritingMode_LR_TB;
                 break;
             case excel::Constants::xlRTL:
-                aVal = uno::makeAny( text::WritingMode_RL_TB );
+                aVal <<= text::WritingMode_RL_TB;
                 break;
             case excel::Constants::xlContext:
                 DebugHelper::basicexception(ERRCODE_BASIC_NOT_IMPLEMENTED, OUString());
@@ -685,7 +686,7 @@ ScVbaFormat< Ifc... >::setReadingOrder( const uno::Any& ReadingOrder ) throw (sc
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getReadingOrder(  ) throw (script::BasicErrorException, uno::RuntimeException)
+ScVbaFormat< Ifc... >::getReadingOrder(  )
 {
     uno::Any NRetReadingOrder = aNULL();
     try
@@ -697,13 +698,13 @@ ScVbaFormat< Ifc... >::getReadingOrder(  ) throw (script::BasicErrorException, u
             if ( ( mxPropertySet->getPropertyValue(sWritingMode) ) >>= aWritingMode )
             switch (aWritingMode){
                 case text::WritingMode_LR_TB:
-                    NRetReadingOrder = uno::makeAny(excel::Constants::xlLTR);
+                    NRetReadingOrder <<= excel::Constants::xlLTR;
                     break;
                 case text::WritingMode_RL_TB:
-                    NRetReadingOrder = uno::makeAny(excel::Constants::xlRTL);
+                    NRetReadingOrder <<= excel::Constants::xlRTL;
                     break;
                 default:
-                    NRetReadingOrder = uno::makeAny(excel::Constants::xlRTL);
+                    NRetReadingOrder <<= excel::Constants::xlRTL;
             }
         }
     }
@@ -717,7 +718,7 @@ ScVbaFormat< Ifc... >::getReadingOrder(  ) throw (script::BasicErrorException, u
 
 template< typename... Ifc >
 uno::Any SAL_CALL
-ScVbaFormat< Ifc... >::getNumberFormat(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
+ScVbaFormat< Ifc... >::getNumberFormat(  )
 {
     uno::Any aFormat = aNULL();
     try
@@ -729,10 +730,10 @@ ScVbaFormat< Ifc... >::getNumberFormat(  ) throw (script::BasicErrorException, u
         {
             initializeNumberFormats();
 
-            sal_Int32 nNewFormat = xNumberFormatTypes->getFormatForLocale(nFormat, getDefaultLocale() );
+            sal_Int32 nNewFormat = xNumberFormatTypes->getFormatForLocale(nFormat, m_aDefaultLocale );
             OUString sFormat;
             xNumberFormats->getByKey(nNewFormat)->getPropertyValue( FORMATSTRING ) >>= sFormat;
-            aFormat = uno::makeAny( sFormat );
+            aFormat <<= sFormat;
         }
     }
     catch (const uno::Exception& )
@@ -744,7 +745,7 @@ ScVbaFormat< Ifc... >::getNumberFormat(  ) throw (script::BasicErrorException, u
 
 template< typename... Ifc >
 bool
-ScVbaFormat< Ifc... >::isAmbiguous(const OUString& _sPropertyName) throw ( script::BasicErrorException )
+ScVbaFormat< Ifc... >::isAmbiguous(const OUString& _sPropertyName)
 {
     bool bResult = false;
     try
@@ -761,7 +762,7 @@ ScVbaFormat< Ifc... >::isAmbiguous(const OUString& _sPropertyName) throw ( scrip
 
 template< typename... Ifc >
 void
-ScVbaFormat< Ifc... >::initializeNumberFormats() throw ( script::BasicErrorException, uno::RuntimeException )
+ScVbaFormat< Ifc... >::initializeNumberFormats()
 {
     if ( !xNumberFormats.is() )
     {
@@ -772,8 +773,8 @@ ScVbaFormat< Ifc... >::initializeNumberFormats() throw ( script::BasicErrorExcep
 }
 
 template< typename... Ifc >
-uno::Reference< beans::XPropertyState >
-ScVbaFormat< Ifc... >::getXPropertyState() throw ( uno::RuntimeException )
+uno::Reference< beans::XPropertyState > const &
+ScVbaFormat< Ifc... >::getXPropertyState()
 {
     if ( !xPropertyState.is() )
         xPropertyState.set( mxPropertySet, uno::UNO_QUERY_THROW );
@@ -782,14 +783,14 @@ ScVbaFormat< Ifc... >::getXPropertyState() throw ( uno::RuntimeException )
 
 template< typename... Ifc >
 ScCellRangesBase*
-ScVbaFormat< Ifc... >::getCellRangesBase() throw ( ::uno::RuntimeException )
+ScVbaFormat< Ifc... >::getCellRangesBase()
 {
     return ScCellRangesBase::getImplementation( mxPropertySet );
 }
 
 template< typename... Ifc >
 SfxItemSet*
-ScVbaFormat< Ifc... >::getCurrentDataSet() throw (uno::RuntimeException, std::exception)
+ScVbaFormat< Ifc... >::getCurrentDataSet()
 {
     SfxItemSet* pDataSet = excel::ScVbaCellRangeAccess::GetDataSet( getCellRangesBase() );
     if ( !pDataSet )

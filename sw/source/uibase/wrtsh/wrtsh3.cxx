@@ -28,6 +28,7 @@
 #include <com/sun/star/form/FormButtonType.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <sfx2/htmlmode.hxx>
+#include "swmodule.hxx"
 #include "wrtsh.hxx"
 #include "view.hxx"
 #include "IMark.hxx"
@@ -37,8 +38,6 @@
 #include <unomid.h>
 
 using namespace ::com::sun::star;
-
-extern bool g_bNoInterrupt;       // in swmodule.cxx
 
 bool SwWrtShell::MoveBookMark( BookMarkMove eFuncId, const ::sw::mark::IMark* const pMark)
 {
@@ -160,13 +159,13 @@ void SwWrtShell::ExecMacro( const SvxMacro& rMacro, OUString* pRet, SbxArray* pA
 }
 
 sal_uInt16 SwWrtShell::CallEvent( sal_uInt16 nEvent, const SwCallMouseEvent& rCallEvent,
-                                bool bChkPtr, SbxArray* pArgs)
+                                bool bChkPtr)
 {
-    return GetDoc()->CallEvent( nEvent, rCallEvent, bChkPtr, pArgs );
+    return GetDoc()->CallEvent( nEvent, rCallEvent, bChkPtr );
 }
 
     // If a util::URL-Button is selected, return its util::URL
-    // otherwise an emtpy string.
+    // otherwise an empty string.
 bool SwWrtShell::GetURLFromButton( OUString& rURL, OUString& rDescr ) const
 {
     bool bRet = false;
@@ -179,7 +178,7 @@ bool SwWrtShell::GetURLFromButton( OUString& rURL, OUString& rDescr ) const
         if (rMarkList.GetMark(0))
         {
             SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( rMarkList.GetMark(0)->GetMarkedSdrObj() );
-            if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
+            if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
             {
                 uno::Reference< awt::XControlModel >  xControlModel = pUnoCtrl->GetUnoControlModel();
 

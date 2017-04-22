@@ -25,11 +25,6 @@ String STR_QUERY_BRW_DELETE_ROWS
     Text[ en-US ] = "Do you want to delete the selected data?" ;
 };
 
-String RID_STR_DATABROWSER_FILTERED
-{
-    Text [ en-US ] = "(filtered)" ;
-};
-
 String SBA_BROWSER_SETTING_ORDER
 {
     Text [ en-US ] = "Error setting the sort criteria";
@@ -53,44 +48,6 @@ String RID_STR_QUERIES_CONTAINER
 String RID_STR_TABLES_CONTAINER
 {
     Text [ en-US ] = "Tables";
-};
-
-Menu MENU_BROWSER_DEFAULTCONTEXT
-{
-    ItemList =
-    {
-        MenuItem
-        {
-            Identifier = ID_TREE_EDIT_DATABASE ;
-            HelpId = HID_BROWSER_EDIT_DATABASE ;
-            Text [ en-US ] = "Edit ~Database File..." ;
-        };
-        MenuItem
-        {
-            Identifier = ID_TREE_CLOSE_CONN ;
-            HelpId = HID_BROWSER_CLOSECONN ;
-            Text [ en-US ] = "Disco~nnect" ;
-        };
-        MenuItem
-        {
-            Separator = TRUE;
-        };
-        MenuItem {
-            Identifier = SID_COPY ;
-            Command = ".uno:Copy" ;
-            Text [ en-US ] = "~Copy" ;
-        };
-        MenuItem
-        {
-            Separator = TRUE;
-        };
-        MenuItem
-        {
-            Identifier = ID_TREE_ADMINISTRATE ;
-            HelpId = HID_BROWSER_ADMINISTRATE;
-            Text [ en-US ] = "Registered databases ..." ;
-        };
-    };
 };
 
 String STR_TITLE_CONFIRM_DELETION
@@ -141,25 +98,6 @@ String STR_NO_TABLE_FORMAT_INSIDE
 String STR_COULDNOTCONNECT_DATASOURCE
 {
     Text [ en-US ] = "The connection to the data source \"$name$\" could not be established.";
-};
-
-Menu RID_MENU_REFRESH_DATA
-{
-    ItemList =
-    {
-        MenuItem
-        {
-            Identifier = ID_BROWSER_REFRESH ;
-            Text [ en-US ] = "Refresh";
-            Command = ".uno:Refresh";
-        };
-        MenuItem
-        {
-            Identifier = ID_BROWSER_REFRESH_REBUILD;
-            Command = ".uno:DBRebuildData";
-            Text [ en-US ] = "Rebuild";
-        };
-    };
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

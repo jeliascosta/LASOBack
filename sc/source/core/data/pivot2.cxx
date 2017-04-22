@@ -62,7 +62,7 @@ ScDPLabelData::Member::Member() :
     mbShowDetails(true)
 {}
 
-OUString ScDPLabelData::Member::getDisplayName() const
+OUString const & ScDPLabelData::Member::getDisplayName() const
 {
     if (!maLayoutName.isEmpty())
         return maLayoutName;
@@ -83,7 +83,7 @@ ScDPLabelData::ScDPLabelData() :
     mbRepeatItemLabels(false)
 {}
 
-OUString ScDPLabelData::getDisplayName() const
+OUString const & ScDPLabelData::getDisplayName() const
 {
     if (!maLayoutName.isEmpty())
         return maLayoutName;
@@ -182,7 +182,7 @@ ScPivotFuncData::ScPivotFuncData( SCCOL nCol, PivotFunc nFuncMask ) :
 void ScPivotFuncData::Dump() const
 {
     cout << "ScPivotFuncData: (col=" << mnCol << ", original dim=" << mnOriginalDim
-        << ", func mask=" << mnFuncMask << ", duplicate count=" << static_cast<int>(mnDupCount)
+        << ", func mask=" << static_cast<int>(mnFuncMask) << ", duplicate count=" << static_cast<int>(mnDupCount)
         << ")" << endl;
 }
 #endif

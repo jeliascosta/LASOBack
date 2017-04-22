@@ -35,7 +35,7 @@
 #include <vcl/msgbox.hxx>
 #include <comphelper/processfactory.hxx>
 #include <sfx2/sfxresid.hxx>
-#include "sc.hrc"
+#include "scres.hrc"
 #include "scmod.hxx"
 #include "attrib.hxx"
 #include "zforauto.hxx"
@@ -43,7 +43,6 @@
 #include "globstr.hrc"
 #include "autoform.hxx"
 #include "strindlg.hxx"
-#include "miscdlgs.hrc"
 #include "scuiautofmt.hxx"
 #include "scresid.hxx"
 #include "document.hxx"
@@ -162,7 +161,7 @@ void ScAutoFormatDlg::UpdateChecks()
 
 // Handler:
 
-IMPL_LINK_TYPED( ScAutoFormatDlg, CloseHdl, Button *, pBtn, void )
+IMPL_LINK( ScAutoFormatDlg, CloseHdl, Button *, pBtn, void )
 {
     if (pBtn == m_pBtnOk || pBtn == m_pBtnCancel)
     {
@@ -173,7 +172,7 @@ IMPL_LINK_TYPED( ScAutoFormatDlg, CloseHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, DblClkHdl, ListBox&, void)
+IMPL_LINK_NOARG(ScAutoFormatDlg, DblClkHdl, ListBox&, void)
 {
     if ( bCoreDataChanged )
         ScGlobal::GetOrCreateAutoFormat()->Save();
@@ -181,7 +180,7 @@ IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, DblClkHdl, ListBox&, void)
     EndDialog( RET_OK );
 }
 
-IMPL_LINK_TYPED( ScAutoFormatDlg, CheckHdl, Button *, pBtn, void )
+IMPL_LINK( ScAutoFormatDlg, CheckHdl, Button *, pBtn, void )
 {
     ScAutoFormatData* pData = pFormat->findByIndex(nIndex);
     bool bCheck = static_cast<CheckBox*>(pBtn)->IsChecked();
@@ -208,7 +207,7 @@ IMPL_LINK_TYPED( ScAutoFormatDlg, CheckHdl, Button *, pBtn, void )
     m_pWndPreview->NotifyChange( pData );
 }
 
-IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, AddHdl, Button*, void)
+IMPL_LINK_NOARG(ScAutoFormatDlg, AddHdl, Button*, void)
 {
     if ( !bFmtInserted && pSelFmtData )
     {
@@ -263,8 +262,8 @@ IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, AddHdl, Button*, void)
                 {
                     sal_uInt16 nRet = ScopedVclPtrInstance<MessageDialog>(this,
                                             ScGlobal::GetRscString(STR_INVALID_AFNAME),
-                                            VCL_MESSAGE_ERROR,
-                                            VCL_BUTTONS_OK_CANCEL
+                                            VclMessageType::Error,
+                                            VclButtonsType::OkCancel
                                           )->Execute();
 
                     bOk = ( nRet == RET_CANCEL );
@@ -276,14 +275,13 @@ IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, AddHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, RemoveHdl, Button*, void)
+IMPL_LINK_NOARG(ScAutoFormatDlg, RemoveHdl, Button*, void)
 {
     if ( (nIndex > 0) && (m_pLbFormat->GetEntryCount() > 0) )
     {
-        OUString aMsg( aStrDelMsg.getToken( 0, '#' ) );
-
-        aMsg += m_pLbFormat->GetSelectEntry();
-        aMsg += aStrDelMsg.getToken( 1, '#' );
+        OUString aMsg = aStrDelMsg.getToken( 0, '#' )
+                      + m_pLbFormat->GetSelectEntry()
+                      + aStrDelMsg.getToken( 1, '#' );
 
         if ( RET_YES ==
              ScopedVclPtrInstance<QueryBox>( this, WinBits( WB_YES_NO | WB_DEF_YES ), aMsg )->Execute() )
@@ -312,7 +310,7 @@ IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, RemoveHdl, Button*, void)
     SelFmtHdl( *m_pLbFormat.get() );
 }
 
-IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, RenameHdl, Button*, void)
+IMPL_LINK_NOARG(ScAutoFormatDlg, RenameHdl, Button*, void)
 {
     bool bOk = false;
     while( !bOk )
@@ -383,8 +381,8 @@ IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, RenameHdl, Button*, void)
             {
                 bOk = RET_CANCEL == ScopedVclPtrInstance<MessageDialog>( this,
                                       ScGlobal::GetRscString(STR_INVALID_AFNAME),
-                                      VCL_MESSAGE_ERROR,
-                                      VCL_BUTTONS_OK_CANCEL
+                                      VclMessageType::Error,
+                                      VclButtonsType::OkCancel
                                       )->Execute();
             }
         }
@@ -393,7 +391,7 @@ IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, RenameHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScAutoFormatDlg, SelFmtHdl, ListBox&, void)
+IMPL_LINK_NOARG(ScAutoFormatDlg, SelFmtHdl, ListBox&, void)
 {
     nIndex = m_pLbFormat->GetSelectEntryPos();
     UpdateChecks();

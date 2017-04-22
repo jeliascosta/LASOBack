@@ -34,7 +34,7 @@ TemplateViewItem::TemplateViewItem (ThumbnailView &rView, sal_uInt16 nId)
     : ThumbnailViewItem(rView, nId),
       mnRegionId(USHRT_MAX),
       mnDocId(USHRT_MAX),
-      maDefaultBitmap(SfxResId(IMG_DEFAULT)),
+      maDefaultBitmap(SfxResId(BMP_DEFAULT)),
       mbIsDefaultTemplate(false)
 {
 }
@@ -43,12 +43,12 @@ TemplateViewItem::~TemplateViewItem ()
 {
 }
 
-Rectangle TemplateViewItem::getDefaultIconArea() const
+::tools::Rectangle TemplateViewItem::getDefaultIconArea() const
 {
-    Rectangle aArea(getDrawArea());
+    ::tools::Rectangle aArea(getDrawArea());
     Size aSize(maDefaultBitmap.GetSizePixel());
 
-    return Rectangle(
+    return ::tools::Rectangle(
             Point(aArea.Left() + THUMBNAILVIEW_ITEM_CORNER, aArea.Top() + THUMBNAILVIEW_ITEM_CORNER),
             aSize);
 }

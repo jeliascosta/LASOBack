@@ -32,6 +32,7 @@
 
 #include <comphelper/stl_types.hxx>
 #include <o3tl/make_unique.hxx>
+#include <formula/errorcodes.hxx>
 
 #include <vector>
 
@@ -122,7 +123,7 @@ double getCellValue( ScDocument& rDoc, const ScAddress& rPos, double fDefault, b
         case CELLTYPE_FORMULA:
         {
             ScFormulaCell* pFCell = aCell.mpFormula;
-            if (pFCell && !pFCell->GetErrCode() && pFCell->IsValue())
+            if (pFCell && pFCell->GetErrCode() == FormulaError::NONE && pFCell->IsValue())
                 fRet = pFCell->GetValue();
         }
         break;
@@ -281,7 +282,6 @@ ScMemChart* ScChartArray::CreateMemChartSingle()
         OUString aString;
         if (HasRowHeaders())
         {
-            ScAddress aAddr( nStrCol, aRows[nRow], nTab1 );
             aString = pDocument->GetString(nStrCol, aRows[nRow], nTab1);
         }
         if (aString.isEmpty())

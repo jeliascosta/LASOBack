@@ -36,6 +36,7 @@
 #include <cppuhelper/factory.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <cppuhelper/weak.hxx>
+#include <i18nutil/transliteration.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <sal/log.hxx>
 
@@ -54,56 +55,56 @@ using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::i18n;
 using namespace ::com::sun::star;
 
-const sal_Int32 COMPLEX_TRANS_MASK =
-    TransliterationModules_ignoreBaFa_ja_JP |
-    TransliterationModules_ignoreIterationMark_ja_JP |
-    TransliterationModules_ignoreTiJi_ja_JP |
-    TransliterationModules_ignoreHyuByu_ja_JP |
-    TransliterationModules_ignoreSeZe_ja_JP |
-    TransliterationModules_ignoreIandEfollowedByYa_ja_JP |
-    TransliterationModules_ignoreKiKuFollowedBySa_ja_JP |
-    TransliterationModules_ignoreProlongedSoundMark_ja_JP;
+const TransliterationFlags COMPLEX_TRANS_MASK =
+    TransliterationFlags::ignoreBaFa_ja_JP |
+    TransliterationFlags::ignoreIterationMark_ja_JP |
+    TransliterationFlags::ignoreTiJi_ja_JP |
+    TransliterationFlags::ignoreHyuByu_ja_JP |
+    TransliterationFlags::ignoreSeZe_ja_JP |
+    TransliterationFlags::ignoreIandEfollowedByYa_ja_JP |
+    TransliterationFlags::ignoreKiKuFollowedBySa_ja_JP |
+    TransliterationFlags::ignoreProlongedSoundMark_ja_JP;
 
 namespace
 {
-sal_Int32 maskComplexTrans( sal_Int32 n )
+TransliterationFlags maskComplexTrans( TransliterationFlags n )
 {
     // IGNORE_KANA and FULLWIDTH_HALFWIDTH are simple but need to take effect
     // in complex transliteration.
     return
         n & (COMPLEX_TRANS_MASK |                       // all set ignore bits
-        TransliterationModules_IGNORE_KANA |            // plus IGNORE_KANA bit
-        TransliterationModules_FULLWIDTH_HALFWIDTH);    // and the FULLWIDTH_HALFWIDTH value
+        TransliterationFlags::IGNORE_KANA |            // plus IGNORE_KANA bit
+        TransliterationFlags::FULLWIDTH_HALFWIDTH);    // and the FULLWIDTH_HALFWIDTH value
 }
 
-bool isComplexTrans( sal_Int32 n )
+bool isComplexTrans( TransliterationFlags n )
 {
-    return n & COMPLEX_TRANS_MASK;
+    return bool(n & COMPLEX_TRANS_MASK);
 }
 
-sal_Int32 maskSimpleTrans( sal_Int32 n )
+TransliterationFlags maskSimpleTrans( TransliterationFlags n )
 {
     return n & ~COMPLEX_TRANS_MASK;
 }
 
-bool isSimpleTrans( sal_Int32 n )
+bool isSimpleTrans( TransliterationFlags n )
 {
-    return maskSimpleTrans(n) != 0;
+    return bool(maskSimpleTrans(n));
 }
 
 // Regex patterns are case sensitive.
-sal_Int32 maskSimpleRegexTrans( sal_Int32 n )
+TransliterationFlags maskSimpleRegexTrans( TransliterationFlags n )
 {
-    sal_Int32 m = (n & TransliterationModules_IGNORE_MASK) & ~TransliterationModules_IGNORE_CASE;
-    sal_Int32 v = n & TransliterationModules_NON_IGNORE_MASK;
-    if (v == TransliterationModules_UPPERCASE_LOWERCASE || v == TransliterationModules_LOWERCASE_UPPERCASE)
-        v = 0;
+    TransliterationFlags m = (n & TransliterationFlags::IGNORE_MASK) & ~TransliterationFlags::IGNORE_CASE;
+    TransliterationFlags v = n & TransliterationFlags::NON_IGNORE_MASK;
+    if (v == TransliterationFlags::UPPERCASE_LOWERCASE || v == TransliterationFlags::LOWERCASE_UPPERCASE)
+        v = TransliterationFlags::NONE;
     return (m | v) & ~COMPLEX_TRANS_MASK;
 }
 
-bool isSimpleRegexTrans( sal_Int32 n )
+bool isSimpleRegexTrans( TransliterationFlags n )
 {
-    return maskSimpleRegexTrans(n) != 0;
+    return bool(maskSimpleRegexTrans(n));
 }
 };
 
@@ -130,7 +131,7 @@ TextSearch::~TextSearch()
     delete pJumpTable2;
 }
 
-void TextSearch::setOptions2( const SearchOptions2& rOptions ) throw( RuntimeException, std::exception )
+void TextSearch::setOptions2( const SearchOptions2& rOptions )
 {
     aSrchPara = rOptions;
 
@@ -144,27 +145,28 @@ void TextSearch::setOptions2( const SearchOptions2& rOptions ) throw( RuntimeExc
     pJumpTable2 = nullptr;
     maWildcardReversePattern.clear();
     maWildcardReversePattern2.clear();
+    TransliterationFlags transliterateFlags = (TransliterationFlags) aSrchPara.transliterateFlags;
 
     // Create Transliteration class
-    if( isSimpleTrans( aSrchPara.transliterateFlags) )
+    if( isSimpleTrans( transliterateFlags) )
     {
         if( !xTranslit.is() )
             xTranslit.set( Transliteration::create( m_xContext ) );
         xTranslit->loadModule(
-             (TransliterationModules) maskSimpleTrans( aSrchPara.transliterateFlags),
+             (TransliterationModules)maskSimpleTrans(transliterateFlags),
              aSrchPara.Locale);
     }
     else if( xTranslit.is() )
         xTranslit = nullptr;
 
     // Create Transliteration for 2<->1, 2<->2 transliteration
-    if ( isComplexTrans( aSrchPara.transliterateFlags) )
+    if ( isComplexTrans( transliterateFlags) )
     {
         if( !xTranslit2.is() )
             xTranslit2.set( Transliteration::create( m_xContext ) );
         // Load transliteration module
         xTranslit2->loadModule(
-             (TransliterationModules) maskComplexTrans( aSrchPara.transliterateFlags),
+             (TransliterationModules) maskComplexTrans(transliterateFlags),
              aSrchPara.Locale);
     }
 
@@ -176,17 +178,17 @@ void TextSearch::setOptions2( const SearchOptions2& rOptions ) throw( RuntimeExc
     // Transliterate search string.
     if (aSrchPara.AlgorithmType2 == SearchAlgorithms2::REGEXP)
     {
-        if (isSimpleRegexTrans( aSrchPara.transliterateFlags))
+        if (isSimpleRegexTrans(transliterateFlags))
         {
-            if (maskSimpleRegexTrans( aSrchPara.transliterateFlags) !=
-                    maskSimpleTrans( aSrchPara.transliterateFlags))
+            if (maskSimpleRegexTrans(transliterateFlags) !=
+                    maskSimpleTrans(transliterateFlags))
             {
                 css::uno::Reference< XExtendedTransliteration > xTranslitPattern(
                          Transliteration::create( m_xContext ));
                 if (xTranslitPattern.is())
                 {
                     xTranslitPattern->loadModule(
-                            (TransliterationModules) maskSimpleRegexTrans( aSrchPara.transliterateFlags),
+                            (TransliterationModules) maskSimpleRegexTrans(transliterateFlags),
                             aSrchPara.Locale);
                     sSrchStr = xTranslitPattern->transliterateString2String(
                             aSrchPara.searchString, 0, aSrchPara.searchString.getLength());
@@ -205,11 +207,11 @@ void TextSearch::setOptions2( const SearchOptions2& rOptions ) throw( RuntimeExc
     }
     else
     {
-        if ( xTranslit.is() && isSimpleTrans( aSrchPara.transliterateFlags) )
+        if ( xTranslit.is() && isSimpleTrans(transliterateFlags) )
             sSrchStr = xTranslit->transliterateString2String(
                     aSrchPara.searchString, 0, aSrchPara.searchString.getLength());
 
-        if ( xTranslit2.is() && isComplexTrans( aSrchPara.transliterateFlags) )
+        if ( xTranslit2.is() && isComplexTrans(transliterateFlags) )
             sSrchStr2 = xTranslit2->transliterateString2String(
                     aSrchPara.searchString, 0, aSrchPara.searchString.getLength());
     }
@@ -259,7 +261,7 @@ void TextSearch::setOptions2( const SearchOptions2& rOptions ) throw( RuntimeExc
     }
 }
 
-void TextSearch::setOptions( const SearchOptions& rOptions ) throw( RuntimeException, std::exception )
+void TextSearch::setOptions( const SearchOptions& rOptions )
 {
     sal_Int16 nAlgorithmType2;
     switch (rOptions.algorithmType)
@@ -303,7 +305,6 @@ sal_Int32 FindPosInSeq_Impl( const Sequence <sal_Int32>& rOff, sal_Int32 nPos )
 }
 
 bool TextSearch::isCellStart(const OUString& searchStr, sal_Int32 nPos)
-        throw( RuntimeException )
 {
     sal_Int32 nDone;
     return nPos == xBreak->previousCharacters(searchStr, nPos+1,
@@ -311,7 +312,6 @@ bool TextSearch::isCellStart(const OUString& searchStr, sal_Int32 nPos)
 }
 
 SearchResult TextSearch::searchForward( const OUString& searchStr, sal_Int32 startPos, sal_Int32 endPos )
-        throw( RuntimeException, std::exception )
 {
     SearchResult sres;
 
@@ -427,7 +427,6 @@ SearchResult TextSearch::searchForward( const OUString& searchStr, sal_Int32 sta
 }
 
 SearchResult TextSearch::searchBackward( const OUString& searchStr, sal_Int32 startPos, sal_Int32 endPos )
-        throw(RuntimeException, std::exception)
 {
     SearchResult sres;
 
@@ -678,7 +677,6 @@ sal_Int32 TextSearch::GetDiff( const sal_Unicode cChr ) const
 
 
 SearchResult TextSearch::NSrchFrwrd( const OUString& searchStr, sal_Int32 startPos, sal_Int32 endPos )
-        throw(RuntimeException)
 {
     SearchResult aRet;
     aRet.subRegExpressions = 0;
@@ -749,7 +747,6 @@ SearchResult TextSearch::NSrchFrwrd( const OUString& searchStr, sal_Int32 startP
 }
 
 SearchResult TextSearch::NSrchBkwrd( const OUString& searchStr, sal_Int32 startPos, sal_Int32 endPos )
-        throw(RuntimeException)
 {
     SearchResult aRet;
     aRet.subRegExpressions = 0;
@@ -832,10 +829,11 @@ SearchResult TextSearch::NSrchBkwrd( const OUString& searchStr, sal_Int32 startP
 
 void TextSearch::RESrchPrepare( const css::util::SearchOptions2& rOptions)
 {
+    TransliterationFlags transliterateFlags = (TransliterationFlags)rOptions.transliterateFlags;
     // select the transliterated pattern string
     const OUString& rPatternStr =
-        (isSimpleTrans( rOptions.transliterateFlags) ? sSrchStr
-        : (isComplexTrans( rOptions.transliterateFlags) ? sSrchStr2 : rOptions.searchString));
+        (isSimpleTrans(transliterateFlags) ? sSrchStr
+        : (isComplexTrans(transliterateFlags) ? sSrchStr2 : rOptions.searchString));
 
     sal_uInt32 nIcuSearchFlags = UREGEX_UWORD; // request UAX#29 unicode capability
     // map css::util::SearchFlags to ICU uregex.h flags
@@ -847,7 +845,7 @@ void TextSearch::RESrchPrepare( const css::util::SearchOptions2& rOptions)
     // Note that the search flag ALL_IGNORE_CASE is deprecated in UNO
     // probably because the transliteration flag IGNORE_CASE handles it as well.
     if( (rOptions.searchFlag & css::util::SearchFlags::ALL_IGNORE_CASE) != 0
-    ||  (rOptions.transliterateFlags & TransliterationModules_IGNORE_CASE) != 0)
+    ||  (transliterateFlags & TransliterationFlags::IGNORE_CASE))
         nIcuSearchFlags |= UREGEX_CASE_INSENSITIVE;
     UErrorCode nIcuErr = U_ZERO_ERROR;
     // assumption: transliteration didn't mangle regexp control chars
@@ -915,7 +913,6 @@ static bool lcl_findRegex( RegexMatcher * pRegexMatcher, sal_Int32 nStartPos, UE
 
 SearchResult TextSearch::RESrchFrwrd( const OUString& searchStr,
                                       sal_Int32 startPos, sal_Int32 endPos )
-            throw(RuntimeException)
 {
     SearchResult aRet;
     aRet.subRegExpressions = 0;
@@ -967,7 +964,6 @@ SearchResult TextSearch::RESrchFrwrd( const OUString& searchStr,
 
 SearchResult TextSearch::RESrchBkwrd( const OUString& searchStr,
                                       sal_Int32 startPos, sal_Int32 endPos )
-            throw(RuntimeException)
 {
     // NOTE: for backwards search callers provide startPos/endPos inverted!
     SearchResult aRet;
@@ -1040,7 +1036,6 @@ SearchResult TextSearch::RESrchBkwrd( const OUString& searchStr,
 // search for words phonetically
 SearchResult TextSearch::ApproxSrchFrwrd( const OUString& searchStr,
                                           sal_Int32 startPos, sal_Int32 endPos )
-            throw(RuntimeException)
 {
     SearchResult aRet;
     aRet.subRegExpressions = 0;
@@ -1085,7 +1080,6 @@ SearchResult TextSearch::ApproxSrchFrwrd( const OUString& searchStr,
 
 SearchResult TextSearch::ApproxSrchBkwrd( const OUString& searchStr,
                                           sal_Int32 startPos, sal_Int32 endPos )
-            throw(RuntimeException)
 {
     SearchResult aRet;
     aRet.subRegExpressions = 0;
@@ -1138,7 +1132,6 @@ void setWildcardMatch( css::util::SearchResult& rRes, sal_Int32 nStartOffset, sa
 }
 
 SearchResult TextSearch::WildcardSrchFrwrd( const OUString& searchStr, sal_Int32 nStartPos, sal_Int32 nEndPos )
-        throw(RuntimeException)
 {
     SearchResult aRes;
     aRes.subRegExpressions = 0;     // no match
@@ -1310,7 +1303,6 @@ SearchResult TextSearch::WildcardSrchFrwrd( const OUString& searchStr, sal_Int32
 }
 
 SearchResult TextSearch::WildcardSrchBkwrd( const OUString& searchStr, sal_Int32 nStartPos, sal_Int32 nEndPos )
-        throw(RuntimeException)
 {
     SearchResult aRes;
     aRes.subRegExpressions = 0;     // no match
@@ -1557,19 +1549,17 @@ static OUString getImplementationName_Static()
 
 OUString SAL_CALL
 TextSearch::getImplementationName()
-                throw( RuntimeException, std::exception )
 {
     return getImplementationName_Static();
 }
 
 sal_Bool SAL_CALL TextSearch::supportsService(const OUString& rServiceName)
-                throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SAL_CALL
-TextSearch::getSupportedServiceNames() throw( RuntimeException, std::exception )
+TextSearch::getSupportedServiceNames()
 {
     Sequence< OUString > aRet { getServiceName_Static() };
     return aRet;

@@ -91,31 +91,29 @@ SwCondCollPage::SwCondCollPage(vcl::Window *pParent, const SfxItemSet &rSet)
     m_pFilterLB->SetSelectHdl(     LINK(this, SwCondCollPage, SelectListBoxHdl));
 
     m_pTbLinks->SetStyle(m_pTbLinks->GetStyle()|WB_HSCROLL|WB_CLIPCHILDREN);
-    m_pTbLinks->SetSelectionMode( SINGLE_SELECTION );
+    m_pTbLinks->SetSelectionMode( SelectionMode::Single );
     m_pTbLinks->SetTabs( &nTabs[0] );
     m_pTbLinks->Resize();  // OS: Hack for the right selection
     m_pTbLinks->SetSpaceBetweenEntries( 0 );
 
-    SfxStyleFamilies aFamilies(SW_RES(DLG_STYLE_DESIGNER));
-    const SfxStyleFamilyItem* pFamilyItem = nullptr;
-
-    size_t nCount = aFamilies.size();
-    for( size_t i = 0; i < nCount; ++i )
+    std::unique_ptr<SfxStyleFamilies> xFamilies(SW_MOD()->CreateStyleFamilies());
+    size_t nCount = xFamilies->size();
+    for (size_t j = 0; j < nCount; ++j)
     {
-        if(SfxStyleFamily::Para == (pFamilyItem = aFamilies.at( i ))->GetFamily())
-            break;
-    }
-
-    if (pFamilyItem)
-    {
-        const SfxStyleFilter& rFilterList = pFamilyItem->GetFilterList();
-        for( size_t i = 0; i < rFilterList.size(); ++i )
+        const SfxStyleFamilyItem &rFamilyItem = xFamilies->at(j);
+        if (SfxStyleFamily::Para == rFamilyItem.GetFamily())
         {
-            m_pFilterLB->InsertEntry( rFilterList[ i ]->aName);
-            sal_uInt16* pFilter = new sal_uInt16(rFilterList[i]->nFlags);
-            m_pFilterLB->SetEntryData(i, pFilter);
+            const SfxStyleFilter& rFilterList = rFamilyItem.GetFilterList();
+            for (size_t i = 0; i < rFilterList.size(); ++i)
+            {
+                m_pFilterLB->InsertEntry(rFilterList[i].aName);
+                sal_uInt16* pFilter = new sal_uInt16(rFilterList[i].nFlags);
+                m_pFilterLB->SetEntryData(i, pFilter);
+            }
+            break;
         }
     }
+
     m_pFilterLB->SelectEntryPos(1);
 
     m_pTbLinks->Show();
@@ -145,12 +143,12 @@ void SwCondCollPage::dispose()
     SfxTabPage::dispose();
 }
 
-SfxTabPage::sfxpg SwCondCollPage::DeactivatePage(SfxItemSet * _pSet)
+DeactivateRC SwCondCollPage::DeactivatePage(SfxItemSet * _pSet)
 {
     if( _pSet )
         FillItemSet(_pSet);
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 VclPtr<SfxTabPage> SwCondCollPage::Create(vcl::Window *pParent, const SfxItemSet *rSet)
@@ -213,7 +211,7 @@ void SwCondCollPage::Reset(const SfxItemSet *)
 
 }
 
-IMPL_LINK_TYPED( SwCondCollPage, OnOffHdl, Button*, pBox, void )
+IMPL_LINK( SwCondCollPage, OnOffHdl, Button*, pBox, void )
 {
     const bool bEnable = static_cast<CheckBox*>(pBox)->IsChecked();
     m_pContextFT->Enable( bEnable );
@@ -228,27 +226,30 @@ IMPL_LINK_TYPED( SwCondCollPage, OnOffHdl, Button*, pBox, void )
         SelectHdl(nullptr);
 }
 
-IMPL_LINK_TYPED( SwCondCollPage, AssignRemoveClickHdl, Button*, pBtn, void)
+IMPL_LINK( SwCondCollPage, AssignRemoveClickHdl, Button*, pBtn, void)
 {
     AssignRemove(pBtn);
 }
-IMPL_LINK_TYPED( SwCondCollPage, AssignRemoveTreeListBoxHdl, SvTreeListBox*, pBtn, bool)
+IMPL_LINK( SwCondCollPage, AssignRemoveTreeListBoxHdl, SvTreeListBox*, pBtn, bool)
 {
     AssignRemove(pBtn);
     return false;
 }
-IMPL_LINK_TYPED( SwCondCollPage, AssignRemoveHdl, ListBox&, rBox, void)
+IMPL_LINK( SwCondCollPage, AssignRemoveHdl, ListBox&, rBox, void)
 {
     AssignRemove(&rBox);
 }
 void SwCondCollPage::AssignRemove(void* pBtn)
 {
     SvTreeListEntry* pE = m_pTbLinks->FirstSelected();
-    sal_uLong nPos;
-    if( !pE || LISTBOX_ENTRY_NOTFOUND ==
-        ( nPos = m_pTbLinks->GetModel()->GetAbsPos( pE ) ) )
+    if (!pE)
     {
-        OSL_ENSURE( pE, "where's the empty entry from?" );
+        OSL_ENSURE(false, "where's the empty entry from?");
+        return;
+    }
+    sal_uLong const nPos(m_pTbLinks->GetModel()->GetAbsPos(pE));
+    if (LISTBOX_ENTRY_NOTFOUND == nPos)
+    {
         return;
     }
 
@@ -268,11 +269,11 @@ void SwCondCollPage::AssignRemove(void* pBtn)
     m_pTbLinks->SetUpdateMode(true);
 }
 
-IMPL_LINK_TYPED( SwCondCollPage, SelectTreeListBoxHdl, SvTreeListBox*, pBox, void)
+IMPL_LINK( SwCondCollPage, SelectTreeListBoxHdl, SvTreeListBox*, pBox, void)
 {
     SelectHdl(pBox);
 }
-IMPL_LINK_TYPED( SwCondCollPage, SelectListBoxHdl, ListBox&, rBox, void)
+IMPL_LINK( SwCondCollPage, SelectListBoxHdl, ListBox&, rBox, void)
 {
     SelectHdl(&rBox);
 }

@@ -18,6 +18,7 @@
  */
 
 #include "VLegend.hxx"
+#include "VButton.hxx"
 #include "macros.hxx"
 #include "PropertyMapper.hxx"
 #include "CommonConverters.hxx"
@@ -36,8 +37,11 @@
 #include <com/sun/star/chart/ChartLegendExpansion.hpp>
 #include <com/sun/star/chart2/LegendPosition.hpp>
 #include <com/sun/star/chart2/RelativePosition.hpp>
+#include <com/sun/star/chart2/data/XPivotTableDataProvider.hpp>
+#include <com/sun/star/chart2/data/PivotTableFieldEntry.hpp>
 #include <rtl/ustrbuf.hxx>
 #include <svl/languageoptions.hxx>
+
 
 #include <vector>
 #include <algorithm>
@@ -54,9 +58,7 @@ namespace chart
 namespace
 {
 
-typedef ::std::pair< ::chart::tNameSequence, ::chart::tAnySequence > tPropertyValues;
-
-typedef ::std::vector< ViewLegendEntry > tViewLegendEntryContainer;
+typedef std::pair< ::chart::tNameSequence, ::chart::tAnySequence > tPropertyValues;
 
 double lcl_CalcViewFontSize(
     const Reference< beans::XPropertySet > & xProp,
@@ -100,7 +102,7 @@ void lcl_getProperties(
         ::chart::tPropertyNameValueMap aLineFillValueMap;
         ::chart::PropertyMapper::getValueMap( aLineFillValueMap, ::chart::PropertyMapper::getPropertyNameMapForFillAndLineProperties(), xLegendProp );
 
-        aLineFillValueMap[ "LineJoint" ] = uno::makeAny( drawing::LineJoint_ROUND );
+        aLineFillValueMap[ "LineJoint" ] <<= drawing::LineJoint_ROUND;
 
         ::chart::PropertyMapper::getMultiPropertyListsFromValueMap(
             rOutLineFillProperties.first, rOutLineFillProperties.second, aLineFillValueMap );
@@ -110,10 +112,10 @@ void lcl_getProperties(
         ::chart::PropertyMapper::getValueMap( aTextValueMap, ::chart::PropertyMapper::getPropertyNameMapForCharacterProperties(), xLegendProp );
 
         drawing::TextHorizontalAdjust eHorizAdjust( drawing::TextHorizontalAdjust_LEFT );
-        aTextValueMap[ "TextAutoGrowHeight" ] = uno::makeAny( true );
-        aTextValueMap[ "TextAutoGrowWidth" ] = uno::makeAny( true );
-        aTextValueMap[ "TextHorizontalAdjust" ] = uno::makeAny( eHorizAdjust );
-        aTextValueMap[ "TextMaximumFrameWidth" ] = uno::makeAny( rReferenceSize.Width ); //needs to be overwritten by actual available space in the legend
+        aTextValueMap[ "TextAutoGrowHeight" ] <<= true;
+        aTextValueMap[ "TextAutoGrowWidth" ] <<= true;
+        aTextValueMap[ "TextHorizontalAdjust" ] <<= eHorizAdjust;
+        aTextValueMap[ "TextMaximumFrameWidth" ] <<= rReferenceSize.Width; //needs to be overwritten by actual available space in the legend
 
         // recalculate font size
         awt::Size aPropRefSize;
@@ -122,21 +124,21 @@ void lcl_getProperties(
             (aPropRefSize.Height > 0) &&
             (aTextValueMap[ "CharHeight" ] >>= fFontHeight) )
         {
-            aTextValueMap[ "CharHeight" ] = uno::makeAny(
+            aTextValueMap[ "CharHeight" ] <<=
                 static_cast< float >(
-                    ::chart::RelativeSizeHelper::calculate( fFontHeight, aPropRefSize, rReferenceSize )));
+                    ::chart::RelativeSizeHelper::calculate( fFontHeight, aPropRefSize, rReferenceSize ));
 
             if( aTextValueMap[ "CharHeightAsian" ] >>= fFontHeight )
             {
-                aTextValueMap[ "CharHeightAsian" ] = uno::makeAny(
+                aTextValueMap[ "CharHeightAsian" ] <<=
                     static_cast< float >(
-                        ::chart::RelativeSizeHelper::calculate( fFontHeight, aPropRefSize, rReferenceSize )));
+                        ::chart::RelativeSizeHelper::calculate( fFontHeight, aPropRefSize, rReferenceSize ));
             }
             if( aTextValueMap[ "CharHeightComplex" ] >>= fFontHeight )
             {
-                aTextValueMap[ "CharHeightComplex" ] = uno::makeAny(
+                aTextValueMap[ "CharHeightComplex" ] <<=
                     static_cast< float >(
-                        ::chart::RelativeSizeHelper::calculate( fFontHeight, aPropRefSize, rReferenceSize )));
+                        ::chart::RelativeSizeHelper::calculate( fFontHeight, aPropRefSize, rReferenceSize ));
             }
         }
 
@@ -146,22 +148,21 @@ void lcl_getProperties(
 }
 
 awt::Size lcl_createTextShapes(
-    const tViewLegendEntryContainer & rEntries,
+    const std::vector<ViewLegendEntry> & rEntries,
     const Reference< lang::XMultiServiceFactory > & xShapeFactory,
     const Reference< drawing::XShapes > & xTarget,
-    ::std::vector< Reference< drawing::XShape > > & rOutTextShapes,
+    std::vector< Reference< drawing::XShape > > & rOutTextShapes,
     const tPropertyValues & rTextProperties )
 {
     awt::Size aResult;
     AbstractShapeFactory* pShapeFactory = AbstractShapeFactory::getOrCreateShapeFactory(xShapeFactory);
 
-    for( tViewLegendEntryContainer::const_iterator aIt( rEntries.begin());
-         aIt != rEntries.end(); ++aIt )
+    for (ViewLegendEntry const & rEntry : rEntries)
     {
         try
         {
             OUString aLabelString;
-            Sequence< Reference< XFormattedString2 > > aLabelSeq = (*aIt).aLabel;
+            Sequence< Reference< XFormattedString2 > > aLabelSeq = rEntry.aLabel;
             for( sal_Int32 i = 0; i < aLabelSeq.getLength(); ++i )
             {
                 // todo: support more than one text range
@@ -180,8 +181,8 @@ awt::Size lcl_createTextShapes(
 
             // adapt max-extent
             awt::Size aCurrSize( xEntry->getSize());
-            aResult.Width  = ::std::max( aResult.Width,  aCurrSize.Width  );
-            aResult.Height = ::std::max( aResult.Height, aCurrSize.Height );
+            aResult.Width  = std::max( aResult.Width,  aCurrSize.Width  );
+            aResult.Height = std::max( aResult.Height, aCurrSize.Height );
 
             rOutTextShapes.push_back( xEntry );
         }
@@ -195,15 +196,13 @@ awt::Size lcl_createTextShapes(
 }
 
 void lcl_collectColumnWidths( std::vector< sal_Int32 >& rColumnWidths, const sal_Int32 nNumberOfRows, const sal_Int32 nNumberOfColumns,
-                              const ::std::vector< Reference< drawing::XShape > >& rTextShapes, sal_Int32 nSymbolPlusDistanceWidth )
+                              const std::vector< Reference< drawing::XShape > >& rTextShapes, sal_Int32 nSymbolPlusDistanceWidth )
 {
     rColumnWidths.clear();
-    sal_Int32 nRow = 0;
-    sal_Int32 nColumn = 0;
     sal_Int32 nNumberOfEntries = rTextShapes.size();
-    for( ; nRow < nNumberOfRows; ++nRow )
+    for (sal_Int32 nRow = 0; nRow < nNumberOfRows; ++nRow )
     {
-        for( nColumn = 0; nColumn < nNumberOfColumns; ++nColumn )
+        for (sal_Int32 nColumn = 0; nColumn < nNumberOfColumns; ++nColumn )
         {
             sal_Int32 nEntry = (nColumn + nRow * nNumberOfColumns);
             if( nEntry < nNumberOfEntries )
@@ -213,31 +212,29 @@ void lcl_collectColumnWidths( std::vector< sal_Int32 >& rColumnWidths, const sal
                 if( nRow==0 )
                     rColumnWidths.push_back( nWidth );
                 else
-                    rColumnWidths[nColumn] = ::std::max( nWidth, rColumnWidths[nColumn] );
+                    rColumnWidths[nColumn] = std::max( nWidth, rColumnWidths[nColumn] );
             }
         }
     }
 }
 
 void lcl_collectRowHeighs( std::vector< sal_Int32 >& rRowHeights, const sal_Int32 nNumberOfRows, const sal_Int32 nNumberOfColumns,
-                           const ::std::vector< Reference< drawing::XShape > >& rTextShapes )
+                           const std::vector< Reference< drawing::XShape > >& rTextShapes )
 {
     // calculate maximum height for each row
     // and collect column widths
     rRowHeights.clear();
-    sal_Int32 nRow = 0;
-    sal_Int32 nColumn = 0;
     sal_Int32 nNumberOfEntries = rTextShapes.size();
-    for( ; nRow < nNumberOfRows; ++nRow )
+    for (sal_Int32 nRow = 0; nRow < nNumberOfRows; ++nRow)
     {
         sal_Int32 nCurrentRowHeight = 0;
-        for( nColumn = 0; nColumn < nNumberOfColumns; ++nColumn )
+        for (sal_Int32 nColumn = 0; nColumn < nNumberOfColumns; ++nColumn)
         {
             sal_Int32 nEntry = (nColumn + nRow * nNumberOfColumns);
             if( nEntry < nNumberOfEntries )
             {
                 awt::Size aTextSize( rTextShapes[ nEntry ]->getSize() );
-                nCurrentRowHeight = ::std::max( nCurrentRowHeight, aTextSize.Height );
+                nCurrentRowHeight = std::max( nCurrentRowHeight, aTextSize.Height );
             }
         }
         rRowHeights.push_back( nCurrentRowHeight );
@@ -248,9 +245,9 @@ sal_Int32 lcl_getTextLineHeight( const std::vector< sal_Int32 >& aRowHeights, co
 {
     const sal_Int32 nFontHeight = static_cast< sal_Int32 >( fViewFontSize );
     sal_Int32 nTextLineHeight = nFontHeight;
-    for( sal_Int32 nR=0; nR<nNumberOfRows; nR++ )
+    for (sal_Int32 nRow = 0; nRow < nNumberOfRows; ++nRow)
     {
-        sal_Int32 nFullTextHeight = aRowHeights[ nR ];
+        sal_Int32 nFullTextHeight = aRowHeights[nRow];
         if( ( nFullTextHeight / nFontHeight ) <= 1 )
         {
             nTextLineHeight = nFullTextHeight;//found an entry with one line-> have real text height
@@ -262,7 +259,7 @@ sal_Int32 lcl_getTextLineHeight( const std::vector< sal_Int32 >& aRowHeights, co
 
 //returns resulting legend size
 awt::Size lcl_placeLegendEntries(
-    tViewLegendEntryContainer & rEntries,
+    std::vector<ViewLegendEntry> & rEntries,
     css::chart::ChartLegendExpansion eExpansion,
     bool bSymbolsLeftSide,
     double fViewFontSize,
@@ -270,24 +267,22 @@ awt::Size lcl_placeLegendEntries(
     tPropertyValues & rTextProperties,
     const Reference< drawing::XShapes > & xTarget,
     const Reference< lang::XMultiServiceFactory > & xShapeFactory,
-    const awt::Size & rAvailableSpace )
+    const awt::Rectangle& rRemainingSpace)
 {
     bool bIsCustomSize = (eExpansion == css::chart::ChartLegendExpansion_CUSTOM);
     awt::Size aResultingLegendSize(0,0);
     if( bIsCustomSize )
-        aResultingLegendSize = rAvailableSpace;
+        aResultingLegendSize = awt::Size(rRemainingSpace.Width, rRemainingSpace.Height);
 
     // #i109336# Improve auto positioning in chart
     sal_Int32 nXPadding = static_cast< sal_Int32 >( std::max( 100.0, fViewFontSize * 0.33 ) );
-    //sal_Int32 nXPadding = static_cast< sal_Int32 >( std::max( 200.0, fViewFontSize * 0.33 ) );
     sal_Int32 nXOffset  = static_cast< sal_Int32 >( std::max( 100.0, fViewFontSize * 0.66 ) );
     sal_Int32 nYPadding = static_cast< sal_Int32 >( std::max( 100.0, fViewFontSize * 0.2 ) );
     sal_Int32 nYOffset  = static_cast< sal_Int32 >( std::max( 100.0, fViewFontSize * 0.2 ) );
-    //sal_Int32 nYOffset  = static_cast< sal_Int32 >( std::max( 230.0, fViewFontSize * 0.45 ) );
 
     const sal_Int32 nSymbolToTextDistance = static_cast< sal_Int32 >( std::max( 100.0, fViewFontSize * 0.22 ) );//minimum 1mm
     const sal_Int32 nSymbolPlusDistanceWidth = rMaxSymbolExtent.Width + nSymbolToTextDistance;
-    sal_Int32 nMaxTextWidth = rAvailableSpace.Width - (2 * nXPadding) - nSymbolPlusDistanceWidth;
+    sal_Int32 nMaxTextWidth = rRemainingSpace.Width - (2 * nXPadding) - nSymbolPlusDistanceWidth;
     uno::Any* pFrameWidthAny = PropertyMapper::getValuePointer( rTextProperties.second, rTextProperties.first, "TextMaximumFrameWidth");
     if(pFrameWidthAny)
     {
@@ -295,12 +290,12 @@ awt::Size lcl_placeLegendEntries(
         {
             // limit the width of texts to 30% of the total available width
             // #i109336# Improve auto positioning in chart
-            nMaxTextWidth = rAvailableSpace.Width * 3 / 10;
+            nMaxTextWidth = rRemainingSpace.Width * 3 / 10;
         }
-        *pFrameWidthAny = uno::makeAny(nMaxTextWidth);
+        *pFrameWidthAny <<= nMaxTextWidth;
     }
 
-    ::std::vector< Reference< drawing::XShape > > aTextShapes;
+    std::vector< Reference< drawing::XShape > > aTextShapes;
     awt::Size aMaxEntryExtent = lcl_createTextShapes( rEntries, xShapeFactory, xTarget, aTextShapes, rTextProperties );
     OSL_ASSERT( aTextShapes.size() == rEntries.size());
 
@@ -351,10 +346,10 @@ awt::Size lcl_placeLegendEntries(
                 //do the columns still fit into the given size?
                 nCurrentColumnCount = aColumnWidths.size();//update count
                 sal_Int32 nSumWidth = 0;
-                for( sal_Int32 nC=0; nC<nCurrentColumnCount; nC++ )
-                    nSumWidth += aColumnWidths[nC];
+                for (sal_Int32 nColumn = 0; nColumn < nCurrentColumnCount; nColumn++)
+                    nSumWidth += aColumnWidths[nColumn];
 
-                if( nSumWidth <= rAvailableSpace.Width || nCurrentColumnCount==1 )
+                if( nSumWidth <= rRemainingSpace.Width || nCurrentColumnCount==1 )
                 {
                     //all good proceed with next entry
                     continue;
@@ -385,18 +380,18 @@ awt::Size lcl_placeLegendEntries(
         lcl_collectRowHeighs( aRowHeights, nNumberOfRows, nNumberOfColumns, aTextShapes );
         nTextLineHeight = lcl_getTextLineHeight( aRowHeights, nNumberOfRows, fViewFontSize );
         sal_Int32 nSumHeight = 0;
-        for( sal_Int32 nR=0; nR<nNumberOfRows; nR++ )
-            nSumHeight += aRowHeights[nR];
-        sal_Int32 nRemainingSpace = rAvailableSpace.Height - nSumHeight;
+        for (sal_Int32 nRow=0; nRow < nNumberOfRows; nRow++)
+            nSumHeight += aRowHeights[nRow];
+        sal_Int32 nRemainingSpace = rRemainingSpace.Height - nSumHeight;
 
         if( nRemainingSpace < -100 ) // 1mm tolerance for OOXML interop tdf#90404
         {
             //remove entries that are too big
-            for( sal_Int32 nR=nNumberOfRows; nR--; )
+            for (sal_Int32 nRow = nNumberOfRows; nRow--; )
             {
-                for( sal_Int32 nC=nNumberOfColumns; nC--; )
+                for (sal_Int32 nColumn = nNumberOfColumns; nColumn--; )
                 {
-                    sal_Int32 nEntry = (nC + nR * nNumberOfColumns);
+                    sal_Int32 nEntry = (nColumn + nRow * nNumberOfColumns);
                     if( nEntry < static_cast<sal_Int32>(aTextShapes.size()) )
                     {
                         DrawModelWrapper::removeShape( aTextShapes[nEntry] );
@@ -409,9 +404,9 @@ awt::Size lcl_placeLegendEntries(
                         nNumberOfEntries--;
                     }
                 }
-                nSumHeight -= aRowHeights[nR];
+                nSumHeight -= aRowHeights[nRow];
                 aRowHeights.pop_back();
-                nRemainingSpace = rAvailableSpace.Height - nSumHeight;
+                nRemainingSpace = rRemainingSpace.Height - nSumHeight;
                 if( nRemainingSpace>=0 )
                     break;
             }
@@ -436,9 +431,9 @@ awt::Size lcl_placeLegendEntries(
 
         //check spacing between columns
         sal_Int32 nSumWidth = 0;
-        for( sal_Int32 nC=0; nC<nNumberOfColumns; nC++ )
-            nSumWidth += aColumnWidths[nC];
-        nRemainingSpace = rAvailableSpace.Width - nSumWidth;
+        for (sal_Int32 nColumn = 0; nColumn < nNumberOfColumns; nColumn++)
+            nSumWidth += aColumnWidths[nColumn];
+        nRemainingSpace = rRemainingSpace.Width - nSumWidth;
         if( nRemainingSpace>=0 )
         {
             sal_Int32 nNormalSpacingWidth = 2*nXPadding+(nNumberOfColumns-1)*nXOffset;
@@ -459,7 +454,7 @@ awt::Size lcl_placeLegendEntries(
     else if( eExpansion == css::chart::ChartLegendExpansion_HIGH )
     {
         sal_Int32 nMaxNumberOfRows = nMaxEntryHeight
-            ? (rAvailableSpace.Height - 2*nYPadding ) / nMaxEntryHeight
+            ? (rRemainingSpace.Height - 2*nYPadding ) / nMaxEntryHeight
             : 0;
 
         nNumberOfColumns = nMaxNumberOfRows
@@ -476,7 +471,7 @@ awt::Size lcl_placeLegendEntries(
     else if( eExpansion == css::chart::ChartLegendExpansion_WIDE )
     {
         sal_Int32 nMaxNumberOfColumns = nMaxEntryWidth
-            ? (rAvailableSpace.Width - 2*nXPadding ) / nMaxEntryWidth
+            ? (rRemainingSpace.Width - 2*nXPadding ) / nMaxEntryWidth
             : 0;
 
         nNumberOfRows = nMaxNumberOfColumns
@@ -519,12 +514,11 @@ awt::Size lcl_placeLegendEntries(
 
     // place entries into column and rows
     sal_Int32 nMaxYPos = 0;
-    sal_Int32 nRow = 0;
-    sal_Int32 nColumn = 0;
-    for( nColumn = 0; nColumn < nNumberOfColumns; ++nColumn )
+
+    for (sal_Int32 nColumn = 0; nColumn < nNumberOfColumns; ++nColumn)
     {
-        sal_Int32 nCurrentYPos = nYPadding;
-        for( nRow = 0; nRow < nNumberOfRows; ++nRow )
+        sal_Int32 nCurrentYPos = nYPadding + rRemainingSpace.Y;
+        for (sal_Int32 nRow = 0; nRow < nNumberOfRows; ++nRow)
         {
             sal_Int32 nEntry = (nColumn + nRow * nNumberOfColumns);
             if( nEntry >= nNumberOfEntries )
@@ -556,7 +550,7 @@ awt::Size lcl_placeLegendEntries(
             nCurrentYPos += aRowHeights[ nRow ];
             if( nRow+1 < nNumberOfRows )
                 nCurrentYPos += nYOffset;
-            nMaxYPos = ::std::max( nMaxYPos, nCurrentYPos );
+            nMaxYPos = std::max( nMaxYPos, nCurrentYPos );
         }
         if( bSymbolsLeftSide )
         {
@@ -662,7 +656,7 @@ chart2::RelativePosition lcl_getDefaultPosition( LegendPosition ePos, const awt:
 
         case LegendPosition_CUSTOM:
             // to avoid warning
-        case LegendPosition_MAKE_FIXED_SIZE:
+        case LegendPosition::LegendPosition_MAKE_FIXED_SIZE:
             // nothing to be set
             break;
     }
@@ -770,6 +764,40 @@ bool lcl_shouldSymbolsBePlacedOnTheLeftSide( const Reference< beans::XPropertySe
     return bSymbolsLeftSide;
 }
 
+std::vector<std::shared_ptr<VButton>> lcl_createButtons(
+                       const uno::Reference< drawing::XShapes>& xLegendContainer,
+                       const uno::Reference< lang::XMultiServiceFactory>& xShapeFactory,
+                       ChartModel& rModel, long& nUsedHeight)
+{
+    std::vector<std::shared_ptr<VButton>> aButtons;
+
+    uno::Reference<chart2::data::XPivotTableDataProvider> xPivotTableDataProvider(rModel.getDataProvider(), uno::UNO_QUERY);
+    if (!xPivotTableDataProvider.is())
+        return aButtons;
+
+    if (!xPivotTableDataProvider->getColumnFields().hasElements())
+        return aButtons;
+
+    uno::Reference<beans::XPropertySet> xModelPage(rModel.getPageBackground());
+
+    awt::Size aSize(2000, 700);
+    int y = 100;
+    for (chart2::data::PivotTableFieldEntry const & sColumnFieldEntry : xPivotTableDataProvider->getColumnFields())
+    {
+        std::shared_ptr<VButton> pButton(new VButton);
+        aButtons.push_back(pButton);
+        pButton->init(xLegendContainer, xShapeFactory);
+        awt::Point aNewPosition = awt::Point(100, y);
+        pButton->setLabel(sColumnFieldEntry.Name);
+        pButton->setCID("FieldButton.Column." + OUString::number(sColumnFieldEntry.DimensionIndex));
+        pButton->createShapes(aNewPosition, aSize, xModelPage);
+        y += aSize.Height + 100;;
+    }
+    nUsedHeight += y + 100;
+
+    return aButtons;
+}
+
 } // anonymous namespace
 
 VLegend::VLegend(
@@ -835,6 +863,10 @@ void VLegend::createShapes(
         Reference< drawing::XShapes > xLegendContainer( m_xShape, uno::UNO_QUERY );
         if( xLegendContainer.is())
         {
+            long nUsedHeight = 0;
+            std::vector<std::shared_ptr<VButton>> aButtons;
+            aButtons = lcl_createButtons(xLegendContainer, m_xShapeFactory, mrModel, nUsedHeight);
+
             // for quickly setting properties
             tPropertyValues aLineFillProperties;
             tPropertyValues aTextProperties;
@@ -865,14 +897,11 @@ void VLegend::createShapes(
             double fViewFontSize = lcl_CalcViewFontSize( xLegendProp, rPageSize );//todo
             // #i109336# Improve auto positioning in chart
             sal_Int32 nSymbolHeight = static_cast< sal_Int32 >( fViewFontSize * 0.6  );
-            sal_Int32 nSymbolWidth = static_cast< sal_Int32 >( nSymbolHeight );
+            sal_Int32 nSymbolWidth = nSymbolHeight;
 
-            ::std::vector< LegendEntryProvider* >::const_iterator       aIter = m_aLegendEntryProviderList.begin();
-            const ::std::vector< LegendEntryProvider* >::const_iterator aEnd  = m_aLegendEntryProviderList.end();
-            for( aIter = m_aLegendEntryProviderList.begin(); aIter != aEnd; ++aIter )
+            for (LegendEntryProvider* pLegendEntryProvider : m_aLegendEntryProviderList)
             {
-                LegendEntryProvider* pLegendEntryProvider( *aIter );
-                if( pLegendEntryProvider )
+                if (pLegendEntryProvider)
                 {
                     awt::Size aCurrentRatio = pLegendEntryProvider->getPreferredLegendKeyAspectRatio();
                     sal_Int32 nCurrentWidth = aCurrentRatio.Width;
@@ -885,24 +914,32 @@ void VLegend::createShapes(
             }
             awt::Size aMaxSymbolExtent( nSymbolWidth, nSymbolHeight );
 
-            tViewLegendEntryContainer aViewEntries;
-            for( aIter = m_aLegendEntryProviderList.begin(); aIter != aEnd; ++aIter )
+            std::vector<ViewLegendEntry> aViewEntries;
+            for(LegendEntryProvider* pLegendEntryProvider : m_aLegendEntryProviderList)
             {
-                LegendEntryProvider* pLegendEntryProvider( *aIter );
-                if( pLegendEntryProvider )
+                if (pLegendEntryProvider)
                 {
-                    std::vector< ViewLegendEntry > aNewEntries = pLegendEntryProvider->createLegendEntries( aMaxSymbolExtent, eExpansion, xLegendProp, xLegendContainer, m_xShapeFactory, m_xContext );
+                    std::vector<ViewLegendEntry> aNewEntries = pLegendEntryProvider->createLegendEntries(
+                                                                    aMaxSymbolExtent, eExpansion, xLegendProp,
+                                                                    xLegendContainer, m_xShapeFactory, m_xContext);
                     aViewEntries.insert( aViewEntries.end(), aNewEntries.begin(), aNewEntries.end() );
                 }
             }
 
             bool bSymbolsLeftSide = lcl_shouldSymbolsBePlacedOnTheLeftSide( xLegendProp, m_nDefaultWritingMode );
 
-            if( !aViewEntries.empty() ) {
-                // place entries
-                aLegendSize = lcl_placeLegendEntries( aViewEntries, eExpansion, bSymbolsLeftSide, fViewFontSize, aMaxSymbolExtent,
-                                                      aTextProperties, xLegendContainer, m_xShapeFactory, aLegendSize );
+            if (!aViewEntries.empty())
+            {
+                awt::Rectangle aRectangle(0, nUsedHeight, aLegendSize.Width, aLegendSize.Height - nUsedHeight);
 
+                // place entries
+                aLegendSize = lcl_placeLegendEntries(aViewEntries, eExpansion, bSymbolsLeftSide, fViewFontSize, aMaxSymbolExtent,
+                                                     aTextProperties, xLegendContainer, m_xShapeFactory, aRectangle);
+
+                for (std::shared_ptr<VButton> const & pButton : aButtons)
+                {
+                    pButton->setWidth(aLegendSize.Width - 200);
+                }
             }
 
             Reference< drawing::XShape > xBorder =

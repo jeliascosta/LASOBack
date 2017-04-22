@@ -20,7 +20,6 @@
 #include "ChartTypeManager.hxx"
 #include "macros.hxx"
 #include "StackMode.hxx"
-#include "ContainerHelper.hxx"
 
 #include "CartesianCoordinateSystem.hxx"
 
@@ -48,6 +47,7 @@
 #include <iterator>
 #include <functional>
 #include <o3tl/functional.hxx>
+#include <map>
 
 using namespace ::com::sun::star;
 
@@ -129,7 +129,7 @@ enum TemplateId
     TEMPLATE_NOT_FOUND = 0xffff
 };
 
-typedef ::std::map< OUString, TemplateId > tTemplateMapType;
+typedef std::map< OUString, TemplateId > tTemplateMapType;
 
 const tTemplateMapType & lcl_DefaultChartTypeMap()
 {
@@ -235,8 +235,6 @@ ChartTypeManager::~ChartTypeManager()
 // ____ XMultiServiceFactory ____
 uno::Reference< uno::XInterface > SAL_CALL ChartTypeManager::createInstance(
     const OUString& aServiceSpecifier )
-    throw (uno::Exception,
-           uno::RuntimeException, std::exception)
 {
     uno::Reference< uno::XInterface > xResult;
     TemplateId nId = lcl_GetTemplateIdForService( aServiceSpecifier );
@@ -269,114 +267,114 @@ uno::Reference< uno::XInterface > SAL_CALL ChartTypeManager::createInstance(
             // Point (category x axis)
             case TEMPLATE_SYMBOL:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, true, false ));
+                    StackMode::NONE, true, false ));
                 break;
             case TEMPLATE_STACKEDSYMBOL:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, true, false ));
+                    StackMode::YStacked, true, false ));
                 break;
             case TEMPLATE_PERCENTSTACKEDSYMBOL:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, true, false ));
+                    StackMode::YStackedPercent, true, false ));
                 break;
             // Line (category x axis)
             case TEMPLATE_LINE:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, false ));
+                    StackMode::NONE, false ));
                 break;
             case TEMPLATE_STACKEDLINE:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, false ));
+                    StackMode::YStacked, false ));
                 break;
             case TEMPLATE_PERCENTSTACKEDLINE:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, false ));
+                    StackMode::YStackedPercent, false ));
                 break;
             case TEMPLATE_LINESYMBOL:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, true ));
+                    StackMode::NONE, true ));
                 break;
             case TEMPLATE_STACKEDLINESYMBOL:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, true ));
+                    StackMode::YStacked, true ));
                 break;
             case TEMPLATE_PERCENTSTACKEDLINESYMBOL:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, true ));
+                    StackMode::YStackedPercent, true ));
                 break;
             case TEMPLATE_THREEDLINE:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, false, true, 3 ));
+                    StackMode::NONE, false, true, 3 ));
                 break;
             case TEMPLATE_STACKEDTHREEDLINE:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, false, true, 3 ));
+                    StackMode::YStacked, false, true, 3 ));
                 break;
             case TEMPLATE_PERCENTSTACKEDTHREEDLINE:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, false, true, 3 ));
+                    StackMode::YStackedPercent, false, true, 3 ));
                 break;
             case TEMPLATE_THREEDLINEDEEP:
                 xTemplate.set( new LineChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Z_STACKED, false, true, 3 ));
+                    StackMode::ZStacked, false, true, 3 ));
                 break;
 
             // Bar/Column
             case TEMPLATE_COLUMN:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, BarChartTypeTemplate::VERTICAL ));
+                    StackMode::NONE, BarChartTypeTemplate::VERTICAL ));
                 break;
             case TEMPLATE_STACKEDCOLUMN:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, BarChartTypeTemplate::VERTICAL ));
+                    StackMode::YStacked, BarChartTypeTemplate::VERTICAL ));
                 break;
             case TEMPLATE_PERCENTSTACKEDCOLUMN:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, BarChartTypeTemplate::VERTICAL ));
+                    StackMode::YStackedPercent, BarChartTypeTemplate::VERTICAL ));
                 break;
             case TEMPLATE_BAR:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, BarChartTypeTemplate::HORIZONTAL ));
+                    StackMode::NONE, BarChartTypeTemplate::HORIZONTAL ));
                 break;
             case TEMPLATE_STACKEDBAR:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, BarChartTypeTemplate::HORIZONTAL ));
+                    StackMode::YStacked, BarChartTypeTemplate::HORIZONTAL ));
                 break;
             case TEMPLATE_PERCENTSTACKEDBAR:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, BarChartTypeTemplate::HORIZONTAL ));
+                    StackMode::YStackedPercent, BarChartTypeTemplate::HORIZONTAL ));
                 break;
             case TEMPLATE_THREEDCOLUMNDEEP:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Z_STACKED, BarChartTypeTemplate::VERTICAL, 3 ));
+                    StackMode::ZStacked, BarChartTypeTemplate::VERTICAL, 3 ));
                 break;
             case TEMPLATE_THREEDCOLUMNFLAT:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, BarChartTypeTemplate::VERTICAL, 3 ));
+                    StackMode::NONE, BarChartTypeTemplate::VERTICAL, 3 ));
                 break;
             case TEMPLATE_STACKEDTHREEDCOLUMNFLAT:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, BarChartTypeTemplate::VERTICAL, 3 ));
+                    StackMode::YStacked, BarChartTypeTemplate::VERTICAL, 3 ));
                 break;
             case TEMPLATE_PERCENTSTACKEDTHREEDCOLUMNFLAT:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, BarChartTypeTemplate::VERTICAL, 3 ));
+                    StackMode::YStackedPercent, BarChartTypeTemplate::VERTICAL, 3 ));
                 break;
             case TEMPLATE_THREEDBARDEEP:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Z_STACKED, BarChartTypeTemplate::HORIZONTAL, 3 ));
+                    StackMode::ZStacked, BarChartTypeTemplate::HORIZONTAL, 3 ));
                 break;
             case TEMPLATE_THREEDBARFLAT:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, BarChartTypeTemplate::HORIZONTAL, 3 ));
+                    StackMode::NONE, BarChartTypeTemplate::HORIZONTAL, 3 ));
                 break;
             case TEMPLATE_STACKEDTHREEDBARFLAT:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, BarChartTypeTemplate::HORIZONTAL, 3 ));
+                    StackMode::YStacked, BarChartTypeTemplate::HORIZONTAL, 3 ));
                 break;
             case TEMPLATE_PERCENTSTACKEDTHREEDBARFLAT:
                 xTemplate.set( new BarChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, BarChartTypeTemplate::HORIZONTAL, 3 ));
+                    StackMode::YStackedPercent, BarChartTypeTemplate::HORIZONTAL, 3 ));
                 break;
 
             // Combi-Chart Line/Column
@@ -384,8 +382,8 @@ uno::Reference< uno::XInterface > SAL_CALL ChartTypeManager::createInstance(
             case TEMPLATE_STACKEDCOLUMNWITHLINE:
             {
                 StackMode eMode = ( nId == TEMPLATE_COLUMNWITHLINE )
-                    ? StackMode_NONE
-                    : StackMode_Y_STACKED;
+                    ? StackMode::NONE
+                    : StackMode::YStacked;
 
                 xTemplate.set( new ColumnLineChartTypeTemplate( m_xContext, aServiceSpecifier, eMode, 1 ));
             }
@@ -393,22 +391,22 @@ uno::Reference< uno::XInterface > SAL_CALL ChartTypeManager::createInstance(
 
             // Area
             case TEMPLATE_AREA:
-                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode_NONE ));
+                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode::NONE ));
                 break;
             case TEMPLATE_STACKEDAREA:
-                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode_Y_STACKED ));
+                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode::YStacked ));
                 break;
             case TEMPLATE_PERCENTSTACKEDAREA:
-                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode_Y_STACKED_PERCENT ));
+                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode::YStackedPercent ));
                 break;
             case TEMPLATE_THREEDAREA:
-                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode_Z_STACKED, 3 ));
+                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode::ZStacked, 3 ));
                 break;
             case TEMPLATE_STACKEDTHREEDAREA:
-                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode_Y_STACKED, 3 ));
+                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode::YStacked, 3 ));
                 break;
             case TEMPLATE_PERCENTSTACKEDTHREEDAREA:
-                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode_Y_STACKED_PERCENT, 3 ));
+                xTemplate.set( new AreaChartTypeTemplate( m_xContext, aServiceSpecifier, StackMode::YStackedPercent, 3 ));
                 break;
 
             case TEMPLATE_PIE:
@@ -460,54 +458,54 @@ uno::Reference< uno::XInterface > SAL_CALL ChartTypeManager::createInstance(
             // NetChart
             case TEMPLATE_NET:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, true ));
+                    StackMode::NONE, true ));
                 break;
             case TEMPLATE_NETSYMBOL:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, true, false ));
+                    StackMode::NONE, true, false ));
                 break;
             case TEMPLATE_NETLINE:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, false ));
+                    StackMode::NONE, false ));
                 break;
 
             case TEMPLATE_STACKEDNET:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, true ));
+                    StackMode::YStacked, true ));
                 break;
             case TEMPLATE_STACKEDNETSYMBOL:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, true, false ));
+                    StackMode::YStacked, true, false ));
                 break;
             case TEMPLATE_STACKEDNETLINE:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, false, true ));
+                    StackMode::YStacked, false, true ));
                 break;
 
             case TEMPLATE_PERCENTSTACKEDNET:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, true ));
+                    StackMode::YStackedPercent, true ));
                 break;
             case TEMPLATE_PERCENTSTACKEDNETSYMBOL:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, true, false ));
+                    StackMode::YStackedPercent, true, false ));
                 break;
             case TEMPLATE_PERCENTSTACKEDNETLINE:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, false, true ));
+                    StackMode::YStackedPercent, false, true ));
                 break;
 
             case TEMPLATE_FILLEDNET:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_NONE, false, false, true ));
+                    StackMode::NONE, false, false, true ));
                 break;
             case TEMPLATE_STACKEDFILLEDNET:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED, false, false, true ));
+                    StackMode::YStacked, false, false, true ));
                 break;
             case TEMPLATE_PERCENTSTACKEDFILLEDNET:
                 xTemplate.set( new NetChartTypeTemplate( m_xContext, aServiceSpecifier,
-                    StackMode_Y_STACKED_PERCENT, false, false, true ));
+                    StackMode::YStackedPercent, false, false, true ));
                 break;
 
             case TEMPLATE_STOCKLOWHIGHCLOSE:
@@ -558,22 +556,19 @@ uno::Reference< uno::XInterface > SAL_CALL ChartTypeManager::createInstance(
 uno::Reference< uno::XInterface > SAL_CALL ChartTypeManager::createInstanceWithArguments(
     const OUString& ServiceSpecifier,
     const uno::Sequence< uno::Any >& /* Arguments */ )
-    throw (uno::Exception,
-           uno::RuntimeException, std::exception)
 {
     OSL_FAIL( "createInstanceWithArguments: No arguments supported" );
     return createInstance( ServiceSpecifier );
 }
 
 uno::Sequence< OUString > SAL_CALL ChartTypeManager::getAvailableServiceNames()
-    throw (uno::RuntimeException, std::exception)
 {
-    ::std::vector< OUString > aServices;
+    std::vector< OUString > aServices;
     const tTemplateMapType & rMap = lcl_DefaultChartTypeMap();
     aServices.reserve( rMap.size());
 
     // get own default templates
-    ::std::transform( rMap.begin(), rMap.end(), ::std::back_inserter( aServices ),
+    std::transform( rMap.begin(), rMap.end(), std::back_inserter( aServices ),
             ::o3tl::select1st< tTemplateMapType::value_type >() );
 
     // add components that were registered in the context's factory
@@ -603,36 +598,21 @@ uno::Sequence< OUString > SAL_CALL ChartTypeManager::getAvailableServiceNames()
 }
 
 // ____ XServiceInfo ____
-Sequence< OUString > ChartTypeManager::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 2 );
-    aServices[ 0 ] = "com.sun.star.chart2.ChartTypeManager";
-    aServices[ 1 ] = "com.sun.star.lang.MultiServiceFactory";
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL ChartTypeManager::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString ChartTypeManager::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart.ChartTypeManager");
 }
 
 sal_Bool SAL_CALL ChartTypeManager::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL ChartTypeManager::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart2.ChartTypeManager",
+        "com.sun.star.lang.MultiServiceFactory" };
 }
 
 } //  namespace chart

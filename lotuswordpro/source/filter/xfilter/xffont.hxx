@@ -154,7 +154,7 @@ public:
     /**
      * @descr   Set whether font is italic.
      */
-    void    SetItalic(bool italic = true);
+    void    SetItalic(bool italic);
 
     /**
      * @descr   Set whether font is italic for asia locale.
@@ -169,7 +169,7 @@ public:
     /**
      * @descr   Set font bold.
      */
-    void    SetBold(bool bold = true);
+    void    SetBold(bool bold);
 
     /**
      * @descr   Set font bold for asia locale.
@@ -224,7 +224,7 @@ public:
     friend bool operator!=(XFFont& f1, XFFont& f2);
     friend class    XFFontFactory;
 private:
-    virtual ~XFFont() {}
+    virtual ~XFFont() override {}
 
     OUString   m_strFontName;
     OUString   m_strFontNameAsia;
@@ -256,7 +256,7 @@ private:
     sal_Int16   m_nWidthScale;
     XFColor     m_aColor;
     XFColor     m_aBackColor;
-    //The flag defines which variable will be funtional.
+    //The flag defines which variable will be functional
     sal_uInt32  m_nFlag;
     bool    m_bTransparent;
 };

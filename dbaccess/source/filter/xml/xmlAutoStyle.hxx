@@ -33,7 +33,7 @@ namespace dbaxml
         virtual void exportStyleAttributes(
                 SvXMLAttributeList& rAttrList,
                 sal_Int32 nFamily,
-                const ::std::vector< XMLPropertyState >& rProperties,
+                const std::vector< XMLPropertyState >& rProperties,
                 const SvXMLExportPropertyMapper& rPropExp,
                 const SvXMLUnitConverter& rUnitConverter,
                 const SvXMLNamespaceMap& rNamespaceMap
@@ -41,7 +41,7 @@ namespace dbaxml
 
     public:
         explicit OXMLAutoStylePoolP(ODBExport& rXMLExport);
-        virtual ~OXMLAutoStylePoolP();
+        virtual ~OXMLAutoStylePoolP() override;
     };
 } // dbaxml
 #endif // INCLUDED_DBACCESS_SOURCE_FILTER_XML_XMLAUTOSTYLE_HXX

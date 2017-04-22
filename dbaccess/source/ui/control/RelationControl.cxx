@@ -100,7 +100,7 @@ namespace dbaui
         void lateInit();
 
     protected:
-        virtual ~ORelationControl() { disposeOnce(); }
+        virtual ~ORelationControl() override { disposeOnce(); }
         virtual void dispose() override { m_pListCell.disposeAndClear(); ORelationControl_Base::dispose(); }
         virtual void Resize() override;
         virtual Size GetOptimalSize() const override;
@@ -109,20 +109,20 @@ namespace dbaui
         virtual bool IsTabAllowed(bool bForward) const override;
 
         void Init(const TTableConnectionData::value_type& _pConnData);
-        virtual void Init() override { ORelationControl_Base::Init(); }
+        using ORelationControl_Base::Init;
         virtual void InitController( ::svt::CellControllerRef& rController, long nRow, sal_uInt16 nCol ) override;
         virtual ::svt::CellController* GetController( long nRow, sal_uInt16 nCol ) override;
-        virtual void PaintCell( OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColId ) const override;
+        virtual void PaintCell( OutputDevice& rDev, const tools::Rectangle& rRect, sal_uInt16 nColId ) const override;
         virtual bool SeekRow( long nRow ) override;
         virtual bool SaveModified() override;
         virtual OUString GetCellText( long nRow, sal_uInt16 nColId ) const override;
 
         virtual void CellModified() override;
 
-        DECL_LINK_TYPED( AsynchDeactivate, void*, void );
+        DECL_LINK( AsynchDeactivate, void*, void );
     private:
 
-        DECL_LINK_TYPED( AsynchActivate, void*, void );
+        DECL_LINK( AsynchActivate, void*, void );
 
     };
 
@@ -199,12 +199,12 @@ namespace dbaui
         return EditBrowseBox::PreNotify(rNEvt);
     }
 
-    IMPL_LINK_NOARG_TYPED(ORelationControl, AsynchActivate, void*, void)
+    IMPL_LINK_NOARG(ORelationControl, AsynchActivate, void*, void)
     {
         ActivateCell();
     }
 
-    IMPL_LINK_NOARG_TYPED(ORelationControl, AsynchDeactivate, void*, void)
+    IMPL_LINK_NOARG(ORelationControl, AsynchDeactivate, void*, void)
     {
         DeactivateCell();
     }
@@ -335,7 +335,7 @@ namespace dbaui
         return true;
     }
 
-    void ORelationControl::PaintCell( OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColumnId ) const
+    void ORelationControl::PaintCell( OutputDevice& rDev, const tools::Rectangle& rRect, sal_uInt16 nColumnId ) const
     {
         OUString aText = GetCellText( m_nDataPos, nColumnId );
 
@@ -435,7 +435,7 @@ namespace dbaui
 
     Size ORelationControl::GetOptimalSize() const
     {
-        return LogicToPixel(Size(140, 80), MAP_APPFONT);
+        return LogicToPixel(Size(140, 80), MapUnit::MapAppFont);
     }
 
     // class OTableListBoxControl
@@ -514,7 +514,7 @@ namespace dbaui
         m_pLeftTable->GrabFocus();
     }
 
-    IMPL_LINK_TYPED( OTableListBoxControl, OnTableChanged, ListBox&, rListBox, void )
+    IMPL_LINK( OTableListBoxControl, OnTableChanged, ListBox&, rListBox, void )
     {
         OUString strSelected(rListBox.GetSelectEntry());
         OTableWindow* pLeft     = nullptr;

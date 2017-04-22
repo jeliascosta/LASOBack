@@ -31,7 +31,7 @@ class  SfxConfigItem;
 class  SfxModule;
 class  SvStream;
 
-class SFX2_DLLPUBLIC SfxInterface
+class SFX2_DLLPUBLIC SfxInterface final
 {
 friend class SfxSlotPool;
 
@@ -41,9 +41,7 @@ friend class SfxSlotPool;
     sal_uInt16              nCount;         // number of slots in SlotMap
     SfxInterfaceId          nClassId;       // Id of interface
     bool                    bSuperClass;    // Whether children inherit its toolbars etc
-    SfxInterface_Impl*      pImpData;
-
-    SfxSlot*                operator[]( sal_uInt16 nPos ) const;
+    std::unique_ptr<SfxInterface_Impl>      pImplData;
 
 public:
                             SfxInterface( const char *pClass,
@@ -51,7 +49,7 @@ public:
                                           SfxInterfaceId nClassId,
                                           const SfxInterface* pGeno,
                                           SfxSlot &rMessages, sal_uInt16 nMsgCount );
-    virtual                 ~SfxInterface();
+                            ~SfxInterface();
 
     void                    SetSlotMap( SfxSlot& rMessages, sal_uInt16 nMsgCount );
     inline sal_uInt16           Count() const;
@@ -66,17 +64,18 @@ public:
 
     const SfxInterface*     GetGenoType() const { return pGenoType; }
 
-    void                    RegisterObjectBar(sal_uInt16, sal_uInt32 nResId);
-    void                    RegisterObjectBar(sal_uInt16, sal_uInt32 nResId, sal_uInt32 nFeature);
+    void                    RegisterObjectBar(sal_uInt16, SfxVisibilityFlags nFlags, sal_uInt32 nResId);
+    void                    RegisterObjectBar(sal_uInt16, SfxVisibilityFlags nFlags, sal_uInt32 nResId, SfxShellFeature nFeature);
     void                    RegisterChildWindow(sal_uInt16, bool bContext = false);
-    void                    RegisterChildWindow(sal_uInt16, bool bContext, sal_uInt32 nFeature);
+    void                    RegisterChildWindow(sal_uInt16, bool bContext, SfxShellFeature nFeature);
     void                    RegisterStatusBar(sal_uInt32 nResId);
     sal_uInt32              GetObjectBarId(sal_uInt16 nNo) const;
     sal_uInt16              GetObjectBarPos( sal_uInt16 nNo ) const;
-    sal_uInt32              GetObjectBarFeature( sal_uInt16 nNo ) const;
+    SfxVisibilityFlags      GetObjectBarFlags( sal_uInt16 nNo ) const;
+    SfxShellFeature         GetObjectBarFeature(sal_uInt16 nNo) const;
     sal_uInt16              GetObjectBarCount() const;
     bool                    IsObjectBarVisible( sal_uInt16 nNo) const;
-    sal_uInt32              GetChildWindowFeature( sal_uInt16 nNo ) const;
+    SfxShellFeature         GetChildWindowFeature(sal_uInt16 nNo) const;
     sal_uInt32              GetChildWindowId( sal_uInt16 nNo ) const;
     sal_uInt16              GetChildWindowCount() const;
     void                    RegisterPopupMenu( const OUString& );
@@ -95,14 +94,6 @@ public:
 inline sal_uInt16 SfxInterface::Count() const
 {
     return nCount;
-}
-
-
-// returns a function by position in the array
-
-inline SfxSlot* SfxInterface::operator[]( sal_uInt16 nPos ) const
-{
-    return nPos < nCount? pSlots+nPos: nullptr;
 }
 
 #endif

@@ -21,6 +21,9 @@
 #ifndef INCLUDED_STOC_SOURCE_COREREFLECTION_BASE_HXX
 #define INCLUDED_STOC_SOURCE_COREREFLECTION_BASE_HXX
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <osl/mutex.hxx>
 #include <uno/mapping.hxx>
@@ -31,6 +34,7 @@
 #include <cppuhelper/component.hxx>
 #include <cppuhelper/typeprovider.hxx>
 #include <rtl/ustring.hxx>
+#include <rtl/ref.hxx>
 
 #include "lrucache.hxx"
 
@@ -39,6 +43,7 @@
 #include <algorithm>
 #endif
 #include <unordered_map>
+#include <memory>
 
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
@@ -93,48 +98,54 @@ class IdlReflectionServiceImpl
     inline css::uno::Reference< css::reflection::XIdlClass > constructClass( typelib_TypeDescription * pTypeDescr );
 
 public:
-    const css::uno::Mapping & getCpp2Uno() throw(css::uno::RuntimeException);
-    const css::uno::Mapping & getUno2Cpp() throw(css::uno::RuntimeException);
-    uno_Interface * mapToUno( const css::uno::Any & rObj, typelib_InterfaceTypeDescription * pTo ) throw(css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    const css::uno::Mapping & getCpp2Uno();
+    /// @throws css::uno::RuntimeException
+    const css::uno::Mapping & getUno2Cpp();
+    /// @throws css::uno::RuntimeException
+    uno_Interface * mapToUno( const css::uno::Any & rObj, typelib_InterfaceTypeDescription * pTo );
 
     // ctor/ dtor
     explicit IdlReflectionServiceImpl( const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~IdlReflectionServiceImpl();
+    virtual ~IdlReflectionServiceImpl() override;
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
     virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     // some XComponent part from OComponentHelper
-    virtual void SAL_CALL dispose() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL dispose() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString & rServiceName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString & rServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
 
     // XIdlReflection
-    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL forName( const OUString & rTypeName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getType( const css::uno::Any & rObj ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL forName( const OUString & rTypeName ) override;
+    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getType( const css::uno::Any & rObj ) override;
 
     // XHierarchicalNameAccess
-    virtual css::uno::Any SAL_CALL getByHierarchicalName( const OUString & rName ) throw(css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasByHierarchicalName( const OUString & rName ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByHierarchicalName( const OUString & rName ) override;
+    virtual sal_Bool SAL_CALL hasByHierarchicalName( const OUString & rName ) override;
 
-    css::uno::Reference< css::reflection::XIdlClass > forType( typelib_TypeDescription * pTypeDescr ) throw(css::uno::RuntimeException);
-    css::uno::Reference< css::reflection::XIdlClass > forType( typelib_TypeDescriptionReference * pRef ) throw(css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    css::uno::Reference< css::reflection::XIdlClass > forType( typelib_TypeDescription * pTypeDescr );
+    /// @throws css::uno::RuntimeException
+    css::uno::Reference< css::reflection::XIdlClass > forType( typelib_TypeDescriptionReference * pRef );
 };
 
 
 class IdlClassImpl
     : public ::cppu::WeakImplHelper< css::reflection::XIdlClass >
 {
-    IdlReflectionServiceImpl *  _pReflection;
+    rtl::Reference<IdlReflectionServiceImpl>
+                                 m_xReflection;
 
     OUString                    _aName;
     css::uno::TypeClass         _eTypeClass;
@@ -145,39 +156,39 @@ public:
     typelib_TypeDescription *   getTypeDescr() const
         { return _pTypeDescr; }
     IdlReflectionServiceImpl *  getReflection() const
-        { return _pReflection; }
+        { return m_xReflection.get(); }
 
     // Ctor
     IdlClassImpl( IdlReflectionServiceImpl * pReflection,
                   const OUString & rName, typelib_TypeClass eTypeClass,
                   typelib_TypeDescription * pTypeDescr );
-    virtual ~IdlClassImpl();
+    virtual ~IdlClassImpl() override;
 
     // XIdlClassImpl default implementation
-    virtual css::uno::TypeClass SAL_CALL getTypeClass() throw(css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL equals( const css::uno::Reference< css::reflection::XIdlClass >& xType ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::TypeClass SAL_CALL getTypeClass() override;
+    virtual OUString SAL_CALL getName() override;
+    virtual sal_Bool SAL_CALL equals( const css::uno::Reference< css::reflection::XIdlClass >& xType ) override;
 
-    virtual sal_Bool SAL_CALL isAssignableFrom( const css::uno::Reference< css::reflection::XIdlClass > & xType ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL createObject( css::uno::Any & rObj ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isAssignableFrom( const css::uno::Reference< css::reflection::XIdlClass > & xType ) override;
+    virtual void SAL_CALL createObject( css::uno::Any & rObj ) override;
 
     // def impl ????
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getClasses() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getClass( const OUString & rName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getInterfaces() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getClasses() override;
+    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getClass( const OUString & rName ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getInterfaces() override;
 
     // structs, interfaces
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getSuperclasses() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getSuperclasses() override;
     // structs
-    virtual css::uno::Reference< css::reflection::XIdlField > SAL_CALL getField( const OUString & rName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > SAL_CALL getFields() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::reflection::XIdlField > SAL_CALL getField( const OUString & rName ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > SAL_CALL getFields() override;
     // interfaces
-    virtual css::uno::Uik SAL_CALL getUik() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::reflection::XIdlMethod > SAL_CALL getMethod( const OUString & rName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlMethod > > SAL_CALL getMethods() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Uik SAL_CALL getUik() override;
+    virtual css::uno::Reference< css::reflection::XIdlMethod > SAL_CALL getMethod( const OUString & rName ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlMethod > > SAL_CALL getMethods() override;
     // array
-    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getComponentType() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::reflection::XIdlArray > SAL_CALL getArray() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getComponentType() override;
+    virtual css::uno::Reference< css::reflection::XIdlArray > SAL_CALL getArray() override;
 };
 
 
@@ -209,26 +220,27 @@ public:
         , _nMethods( 0 )
         , _nAttributes( 0 )
         {}
-    virtual ~InterfaceIdlClassImpl();
+    virtual ~InterfaceIdlClassImpl() override;
 
     // IdlClassImpl modifications
-    virtual sal_Bool SAL_CALL isAssignableFrom( const css::uno::Reference< css::reflection::XIdlClass > & xType ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getSuperclasses() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Uik SAL_CALL getUik() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::reflection::XIdlMethod > SAL_CALL getMethod( const OUString & rName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlMethod > > SAL_CALL getMethods() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::reflection::XIdlField > SAL_CALL getField( const OUString & rName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > SAL_CALL getFields() throw(css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL createObject( css::uno::Any & rObj ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isAssignableFrom( const css::uno::Reference< css::reflection::XIdlClass > & xType ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getSuperclasses() override;
+    virtual css::uno::Uik SAL_CALL getUik() override;
+    virtual css::uno::Reference< css::reflection::XIdlMethod > SAL_CALL getMethod( const OUString & rName ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlMethod > > SAL_CALL getMethods() override;
+    virtual css::uno::Reference< css::reflection::XIdlField > SAL_CALL getField( const OUString & rName ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > SAL_CALL getFields() override;
+    virtual void SAL_CALL createObject( css::uno::Any & rObj ) override;
 };
 
 
 class CompoundIdlClassImpl
     : public IdlClassImpl
 {
-    css::uno::Reference< css::reflection::XIdlClass >                  _xSuperClass;
-
-    css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > *    _pFields;
+    css::uno::Reference< css::reflection::XIdlClass >
+                                             _xSuperClass;
+    std::unique_ptr< css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > >
+                                            _pFields;
     OUString2Field                          _aName2Field;
 
 public:
@@ -242,13 +254,13 @@ public:
         : IdlClassImpl( pReflection, rName, eTypeClass, pTypeDescr )
         , _pFields( nullptr )
         {}
-    virtual ~CompoundIdlClassImpl();
+    virtual ~CompoundIdlClassImpl() override;
 
     // IdlClassImpl modifications
-    virtual sal_Bool SAL_CALL isAssignableFrom( const css::uno::Reference< css::reflection::XIdlClass > & xType ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getSuperclasses() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::reflection::XIdlField > SAL_CALL getField( const OUString & rName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > SAL_CALL getFields() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isAssignableFrom( const css::uno::Reference< css::reflection::XIdlClass > & xType ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > > SAL_CALL getSuperclasses() override;
+    virtual css::uno::Reference< css::reflection::XIdlField > SAL_CALL getField( const OUString & rName ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > SAL_CALL getFields() override;
 };
 
 
@@ -267,31 +279,31 @@ public:
         : IdlClassImpl( pReflection, rName, eTypeClass, pTypeDescr )
         {}
 
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
     virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
 
     // IdlClassImpl modifications
-    virtual sal_Bool SAL_CALL isAssignableFrom( const css::uno::Reference< css::reflection::XIdlClass > & xType ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getComponentType() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::reflection::XIdlArray > SAL_CALL getArray() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isAssignableFrom( const css::uno::Reference< css::reflection::XIdlClass > & xType ) override;
+    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getComponentType() override;
+    virtual css::uno::Reference< css::reflection::XIdlArray > SAL_CALL getArray() override;
 
     // XIdlArray
-    virtual void SAL_CALL realloc( css::uno::Any & rArray, sal_Int32 nLen ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL getLen( const css::uno::Any & rArray ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL get( const css::uno::Any & rArray, sal_Int32 nIndex ) throw(css::lang::IllegalArgumentException, css::lang::ArrayIndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL set( css::uno::Any & rArray, sal_Int32 nIndex, const css::uno::Any & rNewValue ) throw(css::lang::IllegalArgumentException, css::lang::ArrayIndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL realloc( css::uno::Any & rArray, sal_Int32 nLen ) override;
+    virtual sal_Int32 SAL_CALL getLen( const css::uno::Any & rArray ) override;
+    virtual css::uno::Any SAL_CALL get( const css::uno::Any & rArray, sal_Int32 nIndex ) override;
+    virtual void SAL_CALL set( css::uno::Any & rArray, sal_Int32 nIndex, const css::uno::Any & rNewValue ) override;
 };
 
 
 class EnumIdlClassImpl
     : public IdlClassImpl
 {
-    css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > * _pFields;
+    std::unique_ptr< css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > > _pFields;
     OUString2Field                       _aName2Field;
 
 public:
@@ -305,19 +317,20 @@ public:
         : IdlClassImpl( pReflection, rName, eTypeClass, pTypeDescr )
         , _pFields( nullptr )
         {}
-    virtual ~EnumIdlClassImpl();
+    virtual ~EnumIdlClassImpl() override;
 
     // IdlClassImpl modifications
-    virtual css::uno::Reference< css::reflection::XIdlField > SAL_CALL getField( const OUString & rName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > SAL_CALL getFields() throw(css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL createObject( css::uno::Any & rObj ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::reflection::XIdlField > SAL_CALL getField( const OUString & rName ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlField > > SAL_CALL getFields() override;
+    virtual void SAL_CALL createObject( css::uno::Any & rObj ) override;
 };
 
 
 class IdlMemberImpl
     : public ::cppu::WeakImplHelper< css::reflection::XIdlMember >
 {
-    IdlReflectionServiceImpl *  _pReflection;
+    rtl::Reference<IdlReflectionServiceImpl>
+                                m_xReflection;
     OUString                    _aName;
 
     typelib_TypeDescription *   _pTypeDescr;
@@ -328,7 +341,7 @@ protected:
 
 public:
     IdlReflectionServiceImpl *  getReflection() const
-        { return _pReflection; }
+        { return m_xReflection.get(); }
     typelib_TypeDescription *   getTypeDescr() const
         { return _pTypeDescr; }
     typelib_TypeDescription *   getDeclTypeDescr() const
@@ -337,11 +350,11 @@ public:
     // ctor/ dtor
     IdlMemberImpl( IdlReflectionServiceImpl * pReflection, const OUString & rName,
                    typelib_TypeDescription * pTypeDescr, typelib_TypeDescription * pDeclTypeDescr );
-    virtual ~IdlMemberImpl();
+    virtual ~IdlMemberImpl() override;
 
     // XIdlMember
-    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getDeclaringClass() throw(css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::reflection::XIdlClass > SAL_CALL getDeclaringClass() override;
+    virtual OUString SAL_CALL getName() override;
 };
 
 
@@ -366,9 +379,9 @@ inline bool extract(
                 reinterpret_cast< uno_AcquireFunc >(css::uno::cpp_acquire),
                 reinterpret_cast< uno_ReleaseFunc >(css::uno::cpp_release) );
         }
-        else if (rObj.getValueTypeClass() == css::uno::TypeClass_TYPE)
+        else if (auto t = o3tl::tryAccess<css::uno::Type>(rObj))
         {
-            rDest = pRefl->forType( static_cast< const css::uno::Type * >( rObj.getValue() )->getTypeLibType() );
+            rDest = pRefl->forType( t->getTypeLibType() );
             return rDest.is();
         }
     }

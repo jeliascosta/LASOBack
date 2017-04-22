@@ -44,35 +44,35 @@ using namespace com::sun::star::sdbcx;
 
 IMPLEMENT_SERVICE_INFO(OConnection,"com.sun.star.sdbcx.AConnection","com.sun.star.sdbc.Connection");
 
-OConnection::OConnection(ODriver*   _pDriver) throw(SQLException, RuntimeException)
-                         : OSubComponent<OConnection, OConnection_BASE>((::cppu::OWeakObject*)_pDriver, this),
-                         m_xCatalog(NULL),
+OConnection::OConnection(ODriver*   _pDriver)
+                         : OSubComponent<OConnection, OConnection_BASE>(static_cast<cppu::OWeakObject*>(_pDriver), this),
+                         m_xCatalog(nullptr),
                          m_pDriver(_pDriver),
-                         m_pAdoConnection(NULL),
-                         m_pCatalog(NULL),
+                         m_pAdoConnection(nullptr),
+                         m_pCatalog(nullptr),
                          m_nEngineType(0),
-                         m_bClosed(sal_False),
-                         m_bAutocommit(sal_True)
+                         m_bClosed(false),
+                         m_bAutocommit(true)
 {
     osl_atomic_increment( &m_refCount );
 
-    IClassFactory2* pIUnknown   = NULL;
+    IClassFactory2* pIUnknown   = nullptr;
     HRESULT         hr;
     hr = CoGetClassObject( ADOS::CLSID_ADOCONNECTION_21,
                           CLSCTX_INPROC_SERVER,
-                          NULL,
+                          nullptr,
                           IID_IClassFactory2,
-                          (void**)&pIUnknown );
+                          reinterpret_cast<void**>(&pIUnknown) );
 
     if( !FAILED( hr ) )
     {
-        ADOConnection *pCon         = NULL;
-        IUnknown *pOuter     = NULL;
+        ADOConnection *pCon         = nullptr;
+        IUnknown *pOuter     = nullptr;
         hr = pIUnknown->CreateInstanceLic(  pOuter,
-                                            NULL,
+                                            nullptr,
                                             ADOS::IID_ADOCONNECTION_21,
-                                            ADOS::GetKeyStr(),
-                                            (void**) &pCon);
+                                            ADOS::GetKeyStr().asBSTR(),
+                                            reinterpret_cast<void**>(&pCon));
 
         if( !FAILED( hr ) )
         {
@@ -108,18 +108,15 @@ void OConnection::construct(const OUString& url,const Sequence< PropertyValue >&
         aDSN = aDSN.copy(7);
 
     sal_Int32 nTimeout = 20;
-    sal_Bool bSilent = sal_True;
     const PropertyValue *pIter  = info.getConstArray();
     const PropertyValue *pEnd   = pIter + info.getLength();
     for(;pIter != pEnd;++pIter)
     {
-        if(pIter->Name.equalsAscii("Timeout"))
+        if(pIter->Name == "Timeout")
             pIter->Value >>= nTimeout;
-        else if(pIter->Name.equalsAscii("Silent"))
-            pIter->Value >>= bSilent;
-        else if(pIter->Name.equalsAscii("user"))
+        else if(pIter->Name == "user")
             pIter->Value >>= aUID;
-        else if(pIter->Name.equalsAscii("password"))
+        else if(pIter->Name == "password")
             pIter->Value >>= aPWD;
     }
     try
@@ -139,7 +136,7 @@ void OConnection::construct(const OUString& url,const Sequence< PropertyValue >&
                 OTools::putValue(aProps,OUString("Jet OLEDB:ODBC Parsing"),true);
                 OLEVariant aVar(OTools::getValue(aProps,OUString("Jet OLEDB:Engine Type")));
                 if(!aVar.isNull() && !aVar.isEmpty())
-                    m_nEngineType = aVar;
+                    m_nEngineType = aVar.getInt32();
             }
             buildTypeInfo();
             //bErg = TRUE;
@@ -158,10 +155,10 @@ void OConnection::construct(const OUString& url,const Sequence< PropertyValue >&
 
 void SAL_CALL OConnection::release() throw()
 {
-    relase_ChildImpl();
+    release_ChildImpl();
 }
 
-Reference< XStatement > SAL_CALL OConnection::createStatement(  ) throw(SQLException, RuntimeException)
+Reference< XStatement > SAL_CALL OConnection::createStatement(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -172,31 +169,31 @@ Reference< XStatement > SAL_CALL OConnection::createStatement(  ) throw(SQLExcep
     return pStmt;
 }
 
-Reference< XPreparedStatement > SAL_CALL OConnection::prepareStatement( const OUString& sql ) throw(SQLException, RuntimeException)
+Reference< XPreparedStatement > SAL_CALL OConnection::prepareStatement( const OUString& sql )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
 
-    OPreparedStatement* pStmt = new OPreparedStatement(this,m_aTypeInfo,sql);
+    OPreparedStatement* pStmt = new OPreparedStatement(this, sql);
     Reference< XPreparedStatement > xPStmt = pStmt;
     m_aStatements.push_back(WeakReferenceHelper(*pStmt));
     return xPStmt;
 }
 
-Reference< XPreparedStatement > SAL_CALL OConnection::prepareCall( const OUString& sql ) throw(SQLException, RuntimeException)
+Reference< XPreparedStatement > SAL_CALL OConnection::prepareCall( const OUString& sql )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
 
-    OCallableStatement* pStmt = new OCallableStatement(this,m_aTypeInfo,sql);
+    OCallableStatement* pStmt = new OCallableStatement(this, sql);
     Reference< XPreparedStatement > xPStmt = pStmt;
     m_aStatements.push_back(WeakReferenceHelper(*pStmt));
     return xPStmt;
 }
 
-OUString SAL_CALL OConnection::nativeSQL( const OUString& _sql ) throw(SQLException, RuntimeException)
+OUString SAL_CALL OConnection::nativeSQL( const OUString& _sql )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -209,7 +206,7 @@ OUString SAL_CALL OConnection::nativeSQL( const OUString& _sql ) throw(SQLExcept
         OTools::putValue(aProps,OUString("Jet OLEDB:ODBC Parsing"),true);
         WpADOCommand aCommand;
         aCommand.Create();
-        aCommand.put_ActiveConnection((IDispatch*)*m_pAdoConnection);
+        aCommand.put_ActiveConnection(static_cast<IDispatch*>(*m_pAdoConnection));
         aCommand.put_CommandText(sql);
         sql = aCommand.get_CommandText();
     }
@@ -217,7 +214,7 @@ OUString SAL_CALL OConnection::nativeSQL( const OUString& _sql ) throw(SQLExcept
     return sql;
 }
 
-void SAL_CALL OConnection::setAutoCommit( sal_Bool autoCommit ) throw(SQLException, RuntimeException)
+void SAL_CALL OConnection::setAutoCommit( sal_Bool autoCommit )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -230,7 +227,7 @@ void SAL_CALL OConnection::setAutoCommit( sal_Bool autoCommit ) throw(SQLExcepti
         m_pAdoConnection->RollbackTrans();
 }
 
-sal_Bool SAL_CALL OConnection::getAutoCommit(  ) throw(SQLException, RuntimeException)
+sal_Bool SAL_CALL OConnection::getAutoCommit(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -239,7 +236,7 @@ sal_Bool SAL_CALL OConnection::getAutoCommit(  ) throw(SQLException, RuntimeExce
     return m_bAutocommit;
 }
 
-void SAL_CALL OConnection::commit(  ) throw(SQLException, RuntimeException)
+void SAL_CALL OConnection::commit(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -248,7 +245,7 @@ void SAL_CALL OConnection::commit(  ) throw(SQLException, RuntimeException)
     m_pAdoConnection->CommitTrans();
 }
 
-void SAL_CALL OConnection::rollback(  ) throw(SQLException, RuntimeException)
+void SAL_CALL OConnection::rollback(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -257,14 +254,14 @@ void SAL_CALL OConnection::rollback(  ) throw(SQLException, RuntimeException)
     m_pAdoConnection->RollbackTrans();
 }
 
-sal_Bool SAL_CALL OConnection::isClosed(  ) throw(SQLException, RuntimeException)
+sal_Bool SAL_CALL OConnection::isClosed(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
     return OConnection_BASE::rBHelper.bDisposed && !m_pAdoConnection->get_State();
 }
 
-Reference< XDatabaseMetaData > SAL_CALL OConnection::getMetaData(  ) throw(SQLException, RuntimeException)
+Reference< XDatabaseMetaData > SAL_CALL OConnection::getMetaData(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -280,7 +277,7 @@ Reference< XDatabaseMetaData > SAL_CALL OConnection::getMetaData(  ) throw(SQLEx
     return xMetaData;
 }
 
-void SAL_CALL OConnection::setReadOnly( sal_Bool readOnly ) throw(SQLException, RuntimeException)
+void SAL_CALL OConnection::setReadOnly( sal_Bool readOnly )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -290,7 +287,7 @@ void SAL_CALL OConnection::setReadOnly( sal_Bool readOnly ) throw(SQLException, 
     ADOS::ThrowException(*m_pAdoConnection,*this);
 }
 
-sal_Bool SAL_CALL OConnection::isReadOnly(  ) throw(SQLException, RuntimeException)
+sal_Bool SAL_CALL OConnection::isReadOnly(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -299,7 +296,7 @@ sal_Bool SAL_CALL OConnection::isReadOnly(  ) throw(SQLException, RuntimeExcepti
     return m_pAdoConnection->get_Mode() == adModeRead;
 }
 
-void SAL_CALL OConnection::setCatalog( const OUString& catalog ) throw(SQLException, RuntimeException)
+void SAL_CALL OConnection::setCatalog( const OUString& catalog )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -308,7 +305,7 @@ void SAL_CALL OConnection::setCatalog( const OUString& catalog ) throw(SQLExcept
     ADOS::ThrowException(*m_pAdoConnection,*this);
 }
 
-OUString SAL_CALL OConnection::getCatalog(  ) throw(SQLException, RuntimeException)
+OUString SAL_CALL OConnection::getCatalog(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -316,7 +313,7 @@ OUString SAL_CALL OConnection::getCatalog(  ) throw(SQLException, RuntimeExcepti
     return m_pAdoConnection->GetDefaultDatabase();
 }
 
-void SAL_CALL OConnection::setTransactionIsolation( sal_Int32 level ) throw(SQLException, RuntimeException)
+void SAL_CALL OConnection::setTransactionIsolation( sal_Int32 level )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -348,7 +345,7 @@ void SAL_CALL OConnection::setTransactionIsolation( sal_Int32 level ) throw(SQLE
     ADOS::ThrowException(*m_pAdoConnection,*this);
 }
 
-sal_Int32 SAL_CALL OConnection::getTransactionIsolation(  ) throw(SQLException, RuntimeException)
+sal_Int32 SAL_CALL OConnection::getTransactionIsolation(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -379,22 +376,22 @@ sal_Int32 SAL_CALL OConnection::getTransactionIsolation(  ) throw(SQLException, 
     return nRet;
 }
 
-Reference< ::com::sun::star::container::XNameAccess > SAL_CALL OConnection::getTypeMap(  ) throw(SQLException, RuntimeException)
+Reference< css::container::XNameAccess > SAL_CALL OConnection::getTypeMap(  )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
 
-    return NULL;
+    return nullptr;
 }
 
-void SAL_CALL OConnection::setTypeMap( const Reference< ::com::sun::star::container::XNameAccess >& /*typeMap*/ ) throw(SQLException, RuntimeException)
+void SAL_CALL OConnection::setTypeMap( const Reference< css::container::XNameAccess >& /*typeMap*/ )
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XConnection::setTypeMap", *this );
 }
 
 // XCloseable
-void SAL_CALL OConnection::close(  ) throw(SQLException, RuntimeException)
+void SAL_CALL OConnection::close(  )
 {
     {
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -405,16 +402,16 @@ void SAL_CALL OConnection::close(  ) throw(SQLException, RuntimeException)
 }
 
 // XWarningsSupplier
-Any SAL_CALL OConnection::getWarnings(  ) throw(SQLException, RuntimeException)
+Any SAL_CALL OConnection::getWarnings(  )
 {
     return Any();
 }
 
-void SAL_CALL OConnection::clearWarnings(  ) throw(SQLException, RuntimeException)
+void SAL_CALL OConnection::clearWarnings(  )
 {
 }
 
-void OConnection::buildTypeInfo() throw( SQLException)
+void OConnection::buildTypeInfo()
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -425,7 +422,7 @@ void OConnection::buildTypeInfo() throw( SQLException)
         VARIANT_BOOL bIsAtBOF;
         pRecordset->get_BOF(&bIsAtBOF);
 
-        sal_Bool bOk = sal_True;
+        bool bOk = true;
         if ( bIsAtBOF == VARIANT_TRUE )
             bOk = SUCCEEDED(pRecordset->MoveNext());
 
@@ -436,31 +433,31 @@ void OConnection::buildTypeInfo() throw( SQLException)
             do
             {
                 sal_Int32 nPos = 1;
-                OExtendedTypeInfo* aInfo            = new OExtendedTypeInfo();
-                aInfo->aSimpleType.aTypeName        = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->eType                        = (DataTypeEnum)(sal_Int32)ADOS::getField(pRecordset,nPos++).get_Value();
+                OExtendedTypeInfo* aInfo            = new OExtendedTypeInfo;
+                aInfo->aSimpleType.aTypeName        = ADOS::getField(pRecordset,nPos++).get_Value().getString();
+                aInfo->eType                        = (DataTypeEnum)ADOS::getField(pRecordset,nPos++).get_Value().getInt32();
                 if ( aInfo->eType == adWChar && aInfo->aSimpleType.aTypeName == s_sVarChar )
                     aInfo->eType = adVarWChar;
                 aInfo->aSimpleType.nType            = (sal_Int16)ADOS::MapADOType2Jdbc(static_cast<DataTypeEnum>(aInfo->eType));
-                aInfo->aSimpleType.nPrecision       = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.aLiteralPrefix   = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.aLiteralSuffix   = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.aCreateParams    = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.bNullable        = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.bCaseSensitive   = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.nSearchType      = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.bUnsigned        = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.bCurrency        = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.bAutoIncrement   = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.aLocalTypeName   = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.nMinimumScale    = ADOS::getField(pRecordset,nPos++).get_Value();
-                aInfo->aSimpleType.nMaximumScale    = ADOS::getField(pRecordset,nPos++).get_Value();
+                aInfo->aSimpleType.nPrecision       = ADOS::getField(pRecordset,nPos++).get_Value().getInt32();
+                aInfo->aSimpleType.aLiteralPrefix   = ADOS::getField(pRecordset,nPos++).get_Value().getString();
+                aInfo->aSimpleType.aLiteralSuffix   = ADOS::getField(pRecordset,nPos++).get_Value().getString();
+                aInfo->aSimpleType.aCreateParams    = ADOS::getField(pRecordset,nPos++).get_Value().getString();
+                aInfo->aSimpleType.bNullable        = ADOS::getField(pRecordset,nPos++).get_Value().getBool();
+                aInfo->aSimpleType.bCaseSensitive   = ADOS::getField(pRecordset,nPos++).get_Value().getBool();
+                aInfo->aSimpleType.nSearchType      = ADOS::getField(pRecordset,nPos++).get_Value().getInt16();
+                aInfo->aSimpleType.bUnsigned        = ADOS::getField(pRecordset,nPos++).get_Value().getBool();
+                aInfo->aSimpleType.bCurrency        = ADOS::getField(pRecordset,nPos++).get_Value().getBool();
+                aInfo->aSimpleType.bAutoIncrement   = ADOS::getField(pRecordset,nPos++).get_Value().getBool();
+                aInfo->aSimpleType.aLocalTypeName   = ADOS::getField(pRecordset,nPos++).get_Value().getString();
+                aInfo->aSimpleType.nMinimumScale    = ADOS::getField(pRecordset,nPos++).get_Value().getInt16();
+                aInfo->aSimpleType.nMaximumScale    = ADOS::getField(pRecordset,nPos++).get_Value().getInt16();
                 if ( adCurrency == aInfo->eType && !aInfo->aSimpleType.nMaximumScale)
                 {
                     aInfo->aSimpleType.nMinimumScale = 4;
                     aInfo->aSimpleType.nMaximumScale = 4;
                 }
-                aInfo->aSimpleType.nNumPrecRadix    = ADOS::getField(pRecordset,nPos++).get_Value();
+                aInfo->aSimpleType.nNumPrecRadix    = ADOS::getField(pRecordset,nPos++).get_Value().getInt16();
                 // Now that we have the type info, save it
                 // in the Hashtable if we don't already have an
                 // entry for this SQL type.
@@ -479,10 +476,10 @@ void OConnection::disposing()
 
     OConnection_BASE::disposing();
 
-    m_bClosed   = sal_True;
-    m_xMetaData = ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbc::XDatabaseMetaData>();
-    m_xCatalog  = ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbcx::XTablesSupplier>();
-    m_pDriver   = NULL;
+    m_bClosed   = true;
+    m_xMetaData = css::uno::WeakReference< css::sdbc::XDatabaseMetaData>();
+    m_xCatalog  = css::uno::WeakReference< css::sdbcx::XTablesSupplier>();
+    m_pDriver   = nullptr;
 
     m_pAdoConnection->Close();
 
@@ -493,12 +490,12 @@ void OConnection::disposing()
     m_aTypeInfo.clear();
 
     delete m_pAdoConnection;
-    m_pAdoConnection = NULL;
+    m_pAdoConnection = nullptr;
 
     dispose_ChildImpl();
 }
 
-sal_Int64 SAL_CALL OConnection::getSomething( const ::com::sun::star::uno::Sequence< sal_Int8 >& rId ) throw (::com::sun::star::uno::RuntimeException)
+sal_Int64 SAL_CALL OConnection::getSomething( const css::uno::Sequence< sal_Int8 >& rId )
 {
     return (rId.getLength() == 16 && 0 == memcmp(getUnoTunnelImplementationId().getConstArray(),  rId.getConstArray(), 16 ) )
                 ?
@@ -509,7 +506,7 @@ sal_Int64 SAL_CALL OConnection::getSomething( const ::com::sun::star::uno::Seque
 
 Sequence< sal_Int8 > OConnection::getUnoTunnelImplementationId()
 {
-    static ::cppu::OImplementationId * pId = 0;
+    static ::cppu::OImplementationId * pId = nullptr;
     if (! pId)
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
@@ -527,12 +524,12 @@ const OExtendedTypeInfo* OConnection::getTypeInfoFromType(const OTypeInfoMap& _r
                            const OUString& _sTypeName,
                            sal_Int32 _nPrecision,
                            sal_Int32 _nScale,
-                           sal_Bool& _brForceToType)
+                           bool& _brForceToType)
 {
-    const OExtendedTypeInfo* pTypeInfo = NULL;
-    _brForceToType = sal_False;
+    const OExtendedTypeInfo* pTypeInfo = nullptr;
+    _brForceToType = false;
     // search for type
-    ::std::pair<OTypeInfoMap::const_iterator, OTypeInfoMap::const_iterator> aPair = _rTypeInfo.equal_range(_nType);
+    std::pair<OTypeInfoMap::const_iterator, OTypeInfoMap::const_iterator> aPair = _rTypeInfo.equal_range(_nType);
     OTypeInfoMap::const_iterator aIter = aPair.first;
     if(aIter != _rTypeInfo.end()) // compare with end is correct here
     {
@@ -580,16 +577,16 @@ const OExtendedTypeInfo* OConnection::getTypeInfoFromType(const OTypeInfoMap& _r
 
             // we can not assert here because we could be in d&d
             pTypeInfo = aPair.first->second;
-            _brForceToType = sal_True;
+            _brForceToType = true;
         }
         else
             pTypeInfo = aIter->second;
     }
     else if ( _sTypeName.getLength() )
     {
-        ::comphelper::UStringMixEqual aCase(sal_False);
+        ::comphelper::UStringMixEqual aCase(false);
         // search for typeinfo where the typename is equal _sTypeName
-        OTypeInfoMap::const_iterator aFind = ::std::find_if(_rTypeInfo.begin(), _rTypeInfo.end(),
+        OTypeInfoMap::const_iterator aFind = std::find_if(_rTypeInfo.begin(), _rTypeInfo.end(),
             [&aCase, &_sTypeName] (const OTypeInfoMap::value_type& typeInfo) {
                 return aCase(typeInfo.second->getDBName(), _sTypeName);
             });

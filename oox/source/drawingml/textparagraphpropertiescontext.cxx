@@ -26,7 +26,7 @@
 
 #include "drawingml/colorchoicecontext.hxx"
 #include "drawingml/textcharacterpropertiescontext.hxx"
-#include "oox/drawingml/fillproperties.hxx"
+#include "drawingml/fillproperties.hxx"
 #include "oox/helper/attributelist.hxx"
 #include "textspacingcontext.hxx"
 #include "texttabstoplistcontext.hxx"
@@ -220,7 +220,7 @@ ContextHandlerRef TextParagraphPropertiesContext::onCreateContext( sal_Int32 aEl
             }
             catch(SAXException& /* e */ )
             {
-                OSL_TRACE("OOX: SAXException in XML_buAutoNum");
+                SAL_WARN("oox", "OOX: SAXException in XML_buAutoNum");
             }
             break;
         }
@@ -232,7 +232,7 @@ ContextHandlerRef TextParagraphPropertiesContext::onCreateContext( sal_Int32 aEl
             }
             catch(SAXException& /* e */)
             {
-                OSL_TRACE("OOX: SAXException in XML_buChar");
+                SAL_WARN("oox", "OOX: SAXException in XML_buChar");
             }
             break;
         case A_TOKEN( buBlip ):         // CT_TextBlipBullet
@@ -270,7 +270,7 @@ ContextHandlerRef TextParagraphPropertiesContext::onCreateContext( sal_Int32 aEl
                     if (oBefore.has())
                     {
                         TextSpacing& rSpacing = mrTextParagraphProperties.getParaTopMargin();
-                        rSpacing.nUnit = TextSpacing::POINTS;
+                        rSpacing.nUnit = TextSpacing::Unit::Points;
                         rSpacing.nValue = TWIPS_TO_MM(oBefore.get());
                         rSpacing.bHasValue = true;
                     }
@@ -280,7 +280,7 @@ ContextHandlerRef TextParagraphPropertiesContext::onCreateContext( sal_Int32 aEl
                         if (oBeforeLines.has())
                         {
                             TextSpacing& rSpacing = mrTextParagraphProperties.getParaTopMargin();
-                            rSpacing.nUnit = TextSpacing::PERCENT;
+                            rSpacing.nUnit = TextSpacing::Unit::Percent;
                             rSpacing.nValue = oBeforeLines.get() * MAX_PERCENT / 100;
                             rSpacing.bHasValue = true;
                         }
@@ -294,7 +294,7 @@ ContextHandlerRef TextParagraphPropertiesContext::onCreateContext( sal_Int32 aEl
                     if (oAfter.has())
                     {
                         TextSpacing& rSpacing = mrTextParagraphProperties.getParaBottomMargin();
-                        rSpacing.nUnit = TextSpacing::POINTS;
+                        rSpacing.nUnit = TextSpacing::Unit::Points;
                         rSpacing.nValue = TWIPS_TO_MM(oAfter.get());
                         rSpacing.bHasValue = true;
                     }
@@ -304,7 +304,7 @@ ContextHandlerRef TextParagraphPropertiesContext::onCreateContext( sal_Int32 aEl
                         if (oAfterLines.has())
                         {
                             TextSpacing& rSpacing = mrTextParagraphProperties.getParaBottomMargin();
-                            rSpacing.nUnit = TextSpacing::PERCENT;
+                            rSpacing.nUnit = TextSpacing::Unit::Percent;
                             rSpacing.nValue = oAfterLines.get() * MAX_PERCENT / 100;
                             rSpacing.bHasValue = true;
                         }
@@ -318,12 +318,12 @@ ContextHandlerRef TextParagraphPropertiesContext::onCreateContext( sal_Int32 aEl
                 {
                     if( !oLineRule.has() || oLineRule.get() == "auto" )
                     {
-                        maLineSpacing.nUnit = TextSpacing::PERCENT;
+                        maLineSpacing.nUnit = TextSpacing::Unit::Percent;
                         maLineSpacing.nValue = oLineSpacing.get() * MAX_PERCENT / 240;
                     }
                     else
                     {
-                        maLineSpacing.nUnit = TextSpacing::POINTS;
+                        maLineSpacing.nUnit = TextSpacing::Unit::Points;
                         maLineSpacing.nValue = TWIPS_TO_MM(oLineSpacing.get());
                     }
                     maLineSpacing.bHasValue = true;

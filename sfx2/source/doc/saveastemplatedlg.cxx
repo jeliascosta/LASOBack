@@ -33,12 +33,11 @@ using namespace ::com::sun::star::frame;
 
 // Class SfxSaveAsTemplateDialog --------------------------------------------------
 
-SfxSaveAsTemplateDialog::SfxSaveAsTemplateDialog( vcl::Window* pParent):
-        ModalDialog(pParent, "SaveAsTemplateDialog", "sfx/ui/saveastemplatedlg.ui"),
+SfxSaveAsTemplateDialog::SfxSaveAsTemplateDialog():
+        ModalDialog(nullptr, "SaveAsTemplateDialog", "sfx/ui/saveastemplatedlg.ui"),
         msSelectedCategory(OUString()),
         msTemplateName(OUString()),
-        mnRegionPos(0),
-        mpDocTemplates(new SfxDocumentTemplates)
+        mnRegionPos(0)
 {
     get(mpLBCategory, "categorylb");
     get(mpCBXDefault, "defaultcb");
@@ -66,6 +65,7 @@ void SfxSaveAsTemplateDialog::dispose()
     mpLBCategory.clear();
     mpTemplateNameEdit.clear();
     mpOKButton.clear();
+    mpCBXDefault.clear();
 
     ModalDialog::dispose();
 }
@@ -75,9 +75,9 @@ void SfxSaveAsTemplateDialog::setDocumentModel(const uno::Reference<frame::XMode
     m_xModel = rModel;
 }
 
-IMPL_LINK_NOARG_TYPED(SfxSaveAsTemplateDialog, OkClickHdl, Button*, void)
+IMPL_LINK_NOARG(SfxSaveAsTemplateDialog, OkClickHdl, Button*, void)
 {
-    ScopedVclPtrInstance< MessageDialog > aQueryDlg(this, OUString(), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+    ScopedVclPtrInstance< MessageDialog > aQueryDlg(this, OUString(), VclMessageType::Question, VclButtonsType::YesNo);
 
     if(!IsTemplateNameUnique())
     {
@@ -98,13 +98,13 @@ IMPL_LINK_NOARG_TYPED(SfxSaveAsTemplateDialog, OkClickHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SfxSaveAsTemplateDialog, TemplateNameEditHdl, Edit&, void)
+IMPL_LINK_NOARG(SfxSaveAsTemplateDialog, TemplateNameEditHdl, Edit&, void)
 {
     msTemplateName = comphelper::string::strip(mpTemplateNameEdit->GetText(), ' ');
     SelectCategoryHdl(*mpLBCategory);
 }
 
-IMPL_LINK_NOARG_TYPED(SfxSaveAsTemplateDialog, SelectCategoryHdl, ListBox&, void)
+IMPL_LINK_NOARG(SfxSaveAsTemplateDialog, SelectCategoryHdl, ListBox&, void)
 {
     if(mpLBCategory->GetSelectEntryPos() == 0)
     {
@@ -120,10 +120,10 @@ IMPL_LINK_NOARG_TYPED(SfxSaveAsTemplateDialog, SelectCategoryHdl, ListBox&, void
 
 void SfxSaveAsTemplateDialog::initialize()
 {
-    sal_uInt16 nCount = mpDocTemplates->GetRegionCount();
+    sal_uInt16 nCount = maDocTemplates.GetRegionCount();
     for (sal_uInt16 i = 0; i < nCount; ++i)
     {
-        OUString sCategoryName(mpDocTemplates->GetFullRegionName(i));
+        OUString sCategoryName(maDocTemplates.GetFullRegionName(i));
         msCategories.push_back(sCategoryName);
     }
 }
@@ -144,10 +144,10 @@ bool SfxSaveAsTemplateDialog::IsTemplateNameUnique()
     it=find(msCategories.begin(), msCategories.end(), msSelectedCategory);
     mnRegionPos = std::distance(msCategories.begin(), it);
 
-    sal_uInt16 nEntries = mpDocTemplates->GetCount(mnRegionPos);
+    sal_uInt16 nEntries = maDocTemplates.GetCount(mnRegionPos);
     for(sal_uInt16 i = 0; i < nEntries; i++)
     {
-        OUString aName = mpDocTemplates->GetName(mnRegionPos, i);
+        OUString aName = maDocTemplates.GetName(mnRegionPos, i);
         if(aName == msTemplateName)
             return false;
     }
@@ -164,9 +164,9 @@ bool SfxSaveAsTemplateDialog::SaveTemplate()
     if (!xTemplates->storeTemplate( msSelectedCategory, msTemplateName, xStorable ))
         return false;
 
-    sal_uInt16 nDocId = mpDocTemplates->GetCount(mnRegionPos);
-    OUString     sURL = mpDocTemplates->GetTemplateTargetURLFromComponent(msSelectedCategory, msTemplateName);
-    bool bIsSaved = mpDocTemplates->InsertTemplate( mnRegionPos, nDocId, msTemplateName, sURL);
+    sal_uInt16 nDocId = maDocTemplates.GetCount(mnRegionPos);
+    OUString     sURL = maDocTemplates.GetTemplateTargetURLFromComponent(msSelectedCategory, msTemplateName);
+    bool bIsSaved = maDocTemplates.InsertTemplate( mnRegionPos, nDocId, msTemplateName, sURL);
 
     if (!bIsSaved)
         return false;
@@ -193,7 +193,7 @@ bool SfxSaveAsTemplateDialog::SaveTemplate()
             SfxObjectFactory::SetStandardTemplate(aServiceName, sURL);
     }
 
-    mpDocTemplates->Update();
+    maDocTemplates.Update();
     return true;
 }
 

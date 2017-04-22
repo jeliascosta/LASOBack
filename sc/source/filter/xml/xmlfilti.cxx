@@ -45,7 +45,7 @@ ScXMLFilterContext::ScXMLFilterContext( ScXMLImport& rImport,
                                         const Reference<XAttributeList>& xAttrList,
                                         ScQueryParam& rParam,
                                         ScXMLDatabaseRangeContext* pTempDatabaseRangeContext) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     mrQueryParam(rParam),
     pDatabaseRangeContext(pTempDatabaseRangeContext),
     bSkipDuplicates(false),
@@ -72,7 +72,7 @@ ScXMLFilterContext::ScXMLFilterContext( ScXMLImport& rImport,
                 sal_Int32 nOffset(0);
                 if (ScRangeStringConverter::GetRangeFromString( aScRange, sValue, pDoc, ::formula::FormulaGrammar::CONV_OOO, nOffset ))
                 {
-                    ScUnoConversion::FillApiAddress( aOutputPosition, aScRange.aStart );
+                    aOutputPosition = aScRange.aStart;
                     bCopyOutputData = true;
                 }
             }
@@ -80,7 +80,7 @@ ScXMLFilterContext::ScXMLFilterContext( ScXMLImport& rImport,
             case XML_TOK_FILTER_ATTR_CONDITION_SOURCE_RANGE_ADDRESS :
             {
                 sal_Int32 nOffset(0);
-                if (ScRangeStringConverter::GetRangeFromString( aConditionSourceRangeAddress, sValue, pDoc, ::formula::FormulaGrammar::CONV_OOO, nOffset ))
+                if (ScRangeStringConverter::GetRangeFromString( aConditionSourceRangeAddress, sValue, pDoc, ::formula::FormulaGrammar::CONV_OOO, nOffset ) )
                     bConditionSourceRange = true;
             }
             break;
@@ -144,9 +144,9 @@ void ScXMLFilterContext::EndElement()
 
     if (bCopyOutputData)
     {
-        mrQueryParam.nDestCol = aOutputPosition.Column;
-        mrQueryParam.nDestRow = aOutputPosition.Row;
-        mrQueryParam.nDestTab = aOutputPosition.Sheet;
+        mrQueryParam.nDestCol = aOutputPosition.Col();
+        mrQueryParam.nDestRow = aOutputPosition.Row();
+        mrQueryParam.nDestTab = aOutputPosition.Tab();
     }
 
     if (bConditionSourceRange)
@@ -201,7 +201,7 @@ ScXMLAndContext::ScXMLAndContext( ScXMLImport& rImport,
                                   const Reference<XAttributeList>& /* xAttrList */,
                                   ScQueryParam& rParam,
                                   ScXMLFilterContext* pTempFilterContext) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     mrQueryParam(rParam),
     pFilterContext(pTempFilterContext)
 {
@@ -251,7 +251,7 @@ ScXMLOrContext::ScXMLOrContext( ScXMLImport& rImport,
                                 const Reference<css::xml::sax::XAttributeList>& /* xAttrList */,
                                 ScQueryParam& rParam,
                                 ScXMLFilterContext* pTempFilterContext) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     mrQueryParam(rParam),
     pFilterContext(pTempFilterContext)
 {
@@ -301,7 +301,7 @@ ScXMLConditionContext::ScXMLConditionContext(
     const Reference<XAttributeList>& xAttrList,
     ScQueryParam& rParam,
     ScXMLFilterContext* pTempFilterContext) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     mrQueryParam(rParam),
     pFilterContext(pTempFilterContext),
     nField(0),
@@ -380,15 +380,15 @@ SvXMLImportContext *ScXMLConditionContext::CreateChildContext( sal_uInt16 nPrefi
 void ScXMLConditionContext::GetOperator(
     const OUString& aOpStr, ScQueryParam& rParam, ScQueryEntry& rEntry)
 {
-    rParam.eSearchType = utl::SearchParam::SRCH_NORMAL;
+    rParam.eSearchType = utl::SearchParam::SearchType::Normal;
     if (IsXMLToken(aOpStr, XML_MATCH))
     {
-        rParam.eSearchType = utl::SearchParam::SRCH_REGEXP;
+        rParam.eSearchType = utl::SearchParam::SearchType::Regexp;
         rEntry.eOp = SC_EQUAL;
     }
     else if (IsXMLToken(aOpStr, XML_NOMATCH))
     {
-        rParam.eSearchType = utl::SearchParam::SRCH_REGEXP;
+        rParam.eSearchType = utl::SearchParam::SearchType::Regexp;
         rEntry.eOp = SC_NOT_EQUAL;
     }
     else if (aOpStr == "=")
@@ -467,20 +467,10 @@ void ScXMLConditionContext::EndElement()
         rEntry.GetQueryItems().swap(maQueryItems);
 }
 
-const ScXMLImport& ScXMLSetItemContext::GetScImport() const
-{
-    return static_cast<const ScXMLImport&>(GetImport());
-}
-
-ScXMLImport& ScXMLSetItemContext::GetScImport()
-{
-    return static_cast<ScXMLImport&>(GetImport());
-}
-
 ScXMLSetItemContext::ScXMLSetItemContext(
     ScXMLImport& rImport, sal_uInt16 nPrfx, const OUString& rLName,
     const Reference<XAttributeList>& xAttrList, ScXMLConditionContext& rParent) :
-    SvXMLImportContext(rImport, nPrfx, rLName)
+    ScXMLImportContext(rImport, nPrfx, rLName)
 {
     sal_Int32 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
     const SvXMLTokenMap& rAttrTokenMap = GetScImport().GetFilterSetItemAttrTokenMap();
@@ -529,10 +519,10 @@ ScXMLDPFilterContext::ScXMLDPFilterContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotTableContext* pTempDataPilotTableContext) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotTable(pTempDataPilotTableContext),
     aFilterFields(),
-    eSearchType(utl::SearchParam::SRCH_NORMAL),
+    eSearchType(utl::SearchParam::SearchType::Normal),
     nFilterFieldCount(0),
     bSkipDuplicates(false),
     bCopyOutputData(false),
@@ -653,7 +643,7 @@ ScXMLDPAndContext::ScXMLDPAndContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& /* xAttrList */,
                                       ScXMLDPFilterContext* pTempFilterContext) :
-    SvXMLImportContext( rImport, nPrfx, rLName )
+    ScXMLImportContext( rImport, nPrfx, rLName )
 {
     pFilterContext = pTempFilterContext;
     pFilterContext->OpenConnection(false);
@@ -701,7 +691,7 @@ ScXMLDPOrContext::ScXMLDPOrContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& /* xAttrList */,
                                       ScXMLDPFilterContext* pTempFilterContext) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pFilterContext(pTempFilterContext)
 {
     pFilterContext->OpenConnection(true);
@@ -750,7 +740,7 @@ ScXMLDPConditionContext::ScXMLDPConditionContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDPFilterContext* pTempFilterContext) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pFilterContext(pTempFilterContext),
     sDataType(GetXMLToken(XML_TEXT)),
     nField(0),
@@ -812,15 +802,15 @@ SvXMLImportContext *ScXMLDPConditionContext::CreateChildContext( sal_uInt16 nPre
 void ScXMLDPConditionContext::getOperatorXML(
     const OUString& sTempOperator, ScQueryOp& aFilterOperator, utl::SearchParam::SearchType& rSearchType)
 {
-    rSearchType = utl::SearchParam::SRCH_NORMAL;
+    rSearchType = utl::SearchParam::SearchType::Normal;
     if (IsXMLToken(sTempOperator, XML_MATCH))
     {
-        rSearchType = utl::SearchParam::SRCH_REGEXP;
+        rSearchType = utl::SearchParam::SearchType::Regexp;
         aFilterOperator = SC_EQUAL;
     }
     else if (IsXMLToken(sTempOperator, XML_NOMATCH))
     {
-        rSearchType = utl::SearchParam::SRCH_REGEXP;
+        rSearchType = utl::SearchParam::SearchType::Regexp;
         aFilterOperator = SC_NOT_EQUAL;
     }
     else if (sTempOperator == "=")
@@ -859,7 +849,7 @@ void ScXMLDPConditionContext::EndElement()
         aFilterField.SetQueryByNonEmpty();
     else
     {
-        utl::SearchParam::SearchType eSearchType = utl::SearchParam::SRCH_NORMAL;
+        utl::SearchParam::SearchType eSearchType = utl::SearchParam::SearchType::Normal;
         getOperatorXML(sOperator, aFilterField.eOp, eSearchType);
         pFilterContext->SetSearchType(eSearchType);
         aFilterField.nField = nField;

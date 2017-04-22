@@ -127,11 +127,10 @@ namespace svt
 
     //= EnumerationResult
 
-    enum EnumerationResult
+    enum class EnumerationResult
     {
         SUCCESS,    /// the enumeration was successful
         ERROR,      /// the enumeration was unsuccessful
-        RUNNING     /// the enumeration is still running, and the maximum wait time has passed
     };
 
 
@@ -235,7 +234,7 @@ namespace svt
         */
         EnumerationResult   enumerateFolderContentSync(
                     const FolderDescriptor& _rFolder,
-                    const css::uno::Sequence< OUString >& rBlackList = css::uno::Sequence< OUString >()
+                    const css::uno::Sequence< OUString >& rBlackList
                 );
 
         /** cancels the running operation.
@@ -246,7 +245,7 @@ namespace svt
         void    cancel();
 
     protected:
-        virtual ~FileViewContentEnumerator();
+        virtual ~FileViewContentEnumerator() override;
 
     private:
         EnumerationResult enumerateFolderContent();

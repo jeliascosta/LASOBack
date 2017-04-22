@@ -42,7 +42,6 @@ LotAttrCache::ENTRY::ENTRY (ScPatternAttr* p)
 
 LotAttrCache::ENTRY::~ENTRY ()
 {
-    delete pPattAttr;
 }
 
 LotAttrCache::LotAttrCache (LOTUS_ROOT* pLotRoot)
@@ -102,7 +101,7 @@ const ScPatternAttr& LotAttrCache::GetPattAttr( const LotAttrWK3& rAttr )
 
     pAkt->nHash0 = nRefHash;
 
-    mpLotusRoot->pFontBuff->Fill( rAttr.nFont, rItemSet );
+    mpLotusRoot->maFontBuff.Fill( rAttr.nFont, rItemSet );
 
     sal_uInt8 nLine = rAttr.nLineStyle;
     if( nLine )
@@ -142,7 +141,7 @@ const ScPatternAttr& LotAttrCache::GetPattAttr( const LotAttrWK3& rAttr )
 
     if( rAttr.nBack & 0x80 )
     {
-        SvxHorJustifyItem   aHorJustify(SVX_HOR_JUSTIFY_CENTER, ATTR_HOR_JUSTIFY );
+        SvxHorJustifyItem   aHorJustify(SvxCellHorJustify::Center, ATTR_HOR_JUSTIFY );
         rItemSet.Put( aHorJustify );
     }
 
@@ -157,12 +156,12 @@ void LotAttrCache::LotusToScBorderLine( sal_uInt8 nLine, ::editeng::SvxBorderLin
 
     switch ( nLine )
     {
-        case 0: aBL.SetBorderLineStyle(table::BorderLineStyle::NONE); break;
+        case 0: aBL.SetBorderLineStyle(SvxBorderLineStyle::NONE); break;
         case 1: aBL.SetWidth( DEF_LINE_WIDTH_1 ); break;
         case 2: aBL.SetWidth( DEF_LINE_WIDTH_2 ); break;
         case 3:
         {
-            aBL.SetBorderLineStyle(table::BorderLineStyle::DOUBLE_THIN);
+            aBL.SetBorderLineStyle(SvxBorderLineStyle::DOUBLE_THIN);
             aBL.SetWidth( DEF_LINE_WIDTH_1 );
         }
         break;
@@ -189,7 +188,7 @@ void LotAttrCol::SetAttr( const SCROW nRow, const ScPatternAttr& rAttr )
 {
     // Actually with the current implementation of MAXROWCOUNT>=64k and nRow
     // being read as sal_uInt16 there's no chance that nRow would be invalid..
-    OSL_ENSURE( ValidRow(nRow), "*LotAttrCol::SetAttr(): ... und rums?!" );
+    OSL_ENSURE( ValidRow(nRow), "*LotAttrCol::SetAttr(): ... and failed?!" );
 
     std::vector<std::unique_ptr<ENTRY> >::reverse_iterator iterLast = aEntries.rbegin();
 

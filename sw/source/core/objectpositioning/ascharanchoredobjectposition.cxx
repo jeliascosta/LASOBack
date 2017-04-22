@@ -29,7 +29,6 @@
 #include <editeng/ulspitem.hxx>
 #include <fmtornt.hxx>
 
-#include <com/sun/star/text/HoriOrientation.hpp>
 
 using namespace ::com::sun::star;
 using namespace objectpositioning;
@@ -53,7 +52,7 @@ SwAsCharAnchoredObjectPosition::SwAsCharAnchoredObjectPosition(
       maAnchorPos ( Point() ),
       mnRelPos ( 0 ),
       maObjBoundRect ( SwRect() ),
-      mnLineAlignment ( 0 )
+      mnLineAlignment ( sw::LineAlign::NONE )
 {}
 
 /** destructor */
@@ -82,14 +81,14 @@ void SwAsCharAnchoredObjectPosition::CalcPosition()
     // swap anchor frame, if swapped. Note: destructor takes care of the 'undo'
     SwFrameSwapper aFrameSwapper( &rAnchorFrame, false );
 
-    SWRECTFN( ( &rAnchorFrame ) )
+    SwRectFnSet aRectFnSet(&rAnchorFrame);
 
     Point aAnchorPos( mrProposedAnchorPos );
 
     const SwFrameFormat& rFrameFormat = GetFrameFormat();
 
     SwRect aObjBoundRect( GetAnchoredObj().GetObjRect() );
-    SwTwips nObjWidth = (aObjBoundRect.*fnRect->fnGetWidth)();
+    SwTwips nObjWidth = aRectFnSet.GetWidth(aObjBoundRect);
 
     // determine spacing values considering layout-/text-direction
     const SvxLRSpaceItem& rLRSpace = rFrameFormat.GetLRSpace();
@@ -304,7 +303,7 @@ void SwAsCharAnchoredObjectPosition::CalcPosition()
             // set new anchor position and relative position
             SwFlyInContentFrame* pFlyInContentFrame = &(const_cast<SwFlyInContentFrame&>(rFlyInContentFrame));
             pFlyInContentFrame->SetRefPoint( aAnchorPos, aRelAttr, aRelPos );
-            if( nObjWidth != (pFlyInContentFrame->Frame().*fnRect->fnGetWidth)() )
+            if( nObjWidth != aRectFnSet.GetWidth(pFlyInContentFrame->Frame()) )
             {
                 // recalculate object bound rectangle, if object width has changed.
                 aObjBoundRect = GetAnchoredObj().GetObjRect();
@@ -314,7 +313,7 @@ void SwAsCharAnchoredObjectPosition::CalcPosition()
                 aObjBoundRect.Height( aObjBoundRect.Height() + rULSpace.GetLower() );
             }
         }
-        OSL_ENSURE( (rFlyInContentFrame.Frame().*fnRect->fnGetHeight)(),
+        OSL_ENSURE( aRectFnSet.GetHeight(rFlyInContentFrame.Frame()),
             "SwAnchoredObjectPosition::CalcPosition(..) - fly frame has an invalid height" );
     }
 
@@ -338,7 +337,7 @@ SwTwips SwAsCharAnchoredObjectPosition::GetRelPosToBase(
 {
     SwTwips nRelPosToBase = 0;
 
-    mnLineAlignment = 0;
+    mnLineAlignment = sw::LineAlign::NONE;
 
     const sal_Int16 eVertOrient = _rVert.GetVertOrient();
 
@@ -366,26 +365,26 @@ SwTwips SwAsCharAnchoredObjectPosition::GetRelPosToBase(
                 // positioning necessary. Also, the max. ascent isn't changed.
                 nRelPosToBase -= mnLineAscentInclObjs;
                 if ( eVertOrient == text::VertOrientation::LINE_CENTER )
-                    mnLineAlignment = 2;
+                    mnLineAlignment = sw::LineAlign::CENTER;
                 else if ( eVertOrient == text::VertOrientation::LINE_TOP )
-                    mnLineAlignment = 1;
+                    mnLineAlignment = sw::LineAlign::TOP;
                 else if ( eVertOrient == text::VertOrientation::LINE_BOTTOM )
-                    mnLineAlignment = 3;
+                    mnLineAlignment = sw::LineAlign::BOTTOM;
             }
             else if ( eVertOrient == text::VertOrientation::LINE_CENTER )
             {
                 nRelPosToBase -= ( _nObjBoundHeight + mnLineAscentInclObjs - mnLineDescentInclObjs ) / 2;
-                mnLineAlignment = 2;
+                mnLineAlignment = sw::LineAlign::CENTER;
             }
             else if ( eVertOrient == text::VertOrientation::LINE_TOP )
             {
                 nRelPosToBase -= mnLineAscentInclObjs;
-                mnLineAlignment = 1;
+                mnLineAlignment = sw::LineAlign::TOP;
             }
             else if ( eVertOrient == text::VertOrientation::LINE_BOTTOM )
             {
                 nRelPosToBase += mnLineDescentInclObjs - _nObjBoundHeight;
-                mnLineAlignment = 3;
+                mnLineAlignment = sw::LineAlign::BOTTOM;
             }
         }
     }

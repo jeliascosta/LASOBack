@@ -32,21 +32,17 @@
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/basemutex.hxx>
 
-namespace {
+namespace sd {
+class ViewShellBase;
+}
+
+namespace sd { namespace framework {
 
 typedef ::cppu::WeakComponentImplHelper <
     css::drawing::framework::XResourceFactory,
     css::lang::XInitialization,
     css::lang::XEventListener
     > BasicToolBarFactoryInterfaceBase;
-
-} // end of anonymous namespace.
-
-namespace sd {
-class ViewShellBase;
-}
-
-namespace sd { namespace framework {
 
 /** This factory provides some of the frequently used tool bars:
         private:resource/toolbar/ViewTabBar
@@ -58,7 +54,7 @@ class BasicToolBarFactory
 public:
     explicit BasicToolBarFactory (
         const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~BasicToolBarFactory();
+    virtual ~BasicToolBarFactory() override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -67,26 +63,22 @@ public:
     virtual css::uno::Reference<css::drawing::framework::XResource> SAL_CALL
         createResource (
             const css::uno::Reference<
-                css::drawing::framework::XResourceId>& rxToolBarId)
-        throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, std::exception) override;
+                css::drawing::framework::XResourceId>& rxToolBarId) override;
 
     virtual void SAL_CALL
         releaseResource (
             const css::uno::Reference<css::drawing::framework::XResource>&
-                rxToolBar)
-        throw (css::uno::RuntimeException, std::exception) override;
+                rxToolBar) override;
 
     // XInitialization
 
     virtual void SAL_CALL initialize(
-        const css::uno::Sequence<css::uno::Any>& aArguments)
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        const css::uno::Sequence<css::uno::Any>& aArguments) override;
 
     // lang::XEventListener
 
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEventObject)
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& rEventObject) override;
 
 private:
     css::uno::Reference<css::drawing::framework::XConfigurationController> mxConfigurationController;
@@ -95,8 +87,8 @@ private:
 
     void Shutdown();
 
-    void ThrowIfDisposed() const
-        throw (css::lang::DisposedException);
+    /// @throws css::lang::DisposedException
+    void ThrowIfDisposed() const;
 };
 
 } } // end of namespace sd::framework

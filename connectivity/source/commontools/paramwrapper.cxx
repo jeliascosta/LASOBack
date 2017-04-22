@@ -20,6 +20,8 @@
 
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/sdbc/DataType.hpp>
+#include <com/sun/star/sdbc/SQLException.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/WrappedTargetException.hpp>
 #include <com/sun/star/sdb/XParametersSupplier.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
@@ -74,7 +76,7 @@ namespace param
 
 
     ParameterWrapper::ParameterWrapper( const Reference< XPropertySet >& _rxColumn,
-            const Reference< XParameters >& _rxAllParameters, const ::std::vector< sal_Int32 >& _rIndexes )
+            const Reference< XParameters >& _rxAllParameters, const std::vector< sal_Int32 >& _rIndexes )
         :PropertyBase( m_aBHelper )
         ,m_aIndexes( _rIndexes )
         ,m_xDelegator( _rxColumn )
@@ -97,7 +99,6 @@ namespace param
     IMPLEMENT_FORWARD_REFCOUNT( ParameterWrapper, UnoBase )
 
     css::uno::Any ParameterWrapper::queryInterface(css::uno::Type const & aType)
-        throw (css::uno::RuntimeException, std::exception)
     {
         css::uno::Any a(UnoBase::queryInterface(aType));
         if (!a.hasValue()) {
@@ -112,7 +113,7 @@ namespace param
     }
 
 
-    Sequence< Type > SAL_CALL ParameterWrapper::getTypes(   ) throw(RuntimeException, std::exception)
+    Sequence< Type > SAL_CALL ParameterWrapper::getTypes(   )
     {
         Sequence< Type > aTypes( 5 );
         aTypes[ 0 ] = cppu::UnoType<XWeak>::get();
@@ -143,7 +144,7 @@ namespace param
     }
 
 
-    Reference< XPropertySetInfo > ParameterWrapper::getPropertySetInfo() throw( RuntimeException, std::exception )
+    Reference< XPropertySetInfo > ParameterWrapper::getPropertySetInfo()
     {
         return createPropertySetInfo( getInfoHelper() );
     }
@@ -160,7 +161,7 @@ namespace param
                 sal_Int32 nProperties( aProperties.getLength() );
                 aProperties.realloc( nProperties + 1 );
                 aProperties[ nProperties ] = Property(
-                    OUString( "Value" ),
+                    "Value",
                     PROPERTY_ID_VALUE,
                     ::cppu::UnoType< Any >::get(),
                     PropertyAttribute::TRANSIENT | PropertyAttribute::MAYBEVOID
@@ -177,7 +178,7 @@ namespace param
     }
 
 
-    sal_Bool ParameterWrapper::convertFastPropertyValue(Any& rConvertedValue, Any& rOldValue, sal_Int32 nHandle, const Any& rValue) throw( IllegalArgumentException )
+    sal_Bool ParameterWrapper::convertFastPropertyValue(Any& rConvertedValue, Any& rOldValue, sal_Int32 nHandle, const Any& rValue)
     {
         OSL_ENSURE( PROPERTY_ID_VALUE == nHandle, "ParameterWrapper::convertFastPropertyValue: the only non-readonly prop should be our PROPERTY_VALUE!" );
         (void)nHandle;
@@ -189,7 +190,7 @@ namespace param
     }
 
 
-    void ParameterWrapper::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue ) throw( Exception, std::exception )
+    void ParameterWrapper::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue )
     {
         if ( nHandle == PROPERTY_ID_VALUE )
         {
@@ -205,7 +206,7 @@ namespace param
 
                 if ( m_xValueDestination.is() )
                 {
-                    for ( ::std::vector< sal_Int32 >::const_iterator aIter = m_aIndexes.begin(); aIter != m_aIndexes.end(); ++aIter )
+                    for ( std::vector< sal_Int32 >::const_iterator aIter = m_aIndexes.begin(); aIter != m_aIndexes.end(); ++aIter )
                     {
                         m_xValueDestination->setObjectWithInfo( *aIter + 1, rValue, nParamType, nScale );
                             // (the index of the parameters is one-based)
@@ -283,7 +284,7 @@ namespace param
     }
 
 
-    Type SAL_CALL ParameterWrapperContainer::getElementType() throw( RuntimeException, std::exception )
+    Type SAL_CALL ParameterWrapperContainer::getElementType()
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         impl_checkDisposed_throw();
@@ -291,7 +292,7 @@ namespace param
     }
 
 
-    sal_Bool SAL_CALL ParameterWrapperContainer::hasElements() throw( RuntimeException, std::exception )
+    sal_Bool SAL_CALL ParameterWrapperContainer::hasElements()
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         impl_checkDisposed_throw();
@@ -299,7 +300,7 @@ namespace param
     }
 
 
-    sal_Int32 SAL_CALL ParameterWrapperContainer::getCount() throw( RuntimeException, std::exception )
+    sal_Int32 SAL_CALL ParameterWrapperContainer::getCount()
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         impl_checkDisposed_throw();
@@ -307,7 +308,7 @@ namespace param
     }
 
 
-    Any SAL_CALL ParameterWrapperContainer::getByIndex( sal_Int32 _nIndex ) throw( IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception )
+    Any SAL_CALL ParameterWrapperContainer::getByIndex( sal_Int32 _nIndex )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         impl_checkDisposed_throw();
@@ -319,7 +320,7 @@ namespace param
     }
 
 
-    Reference< XEnumeration > ParameterWrapperContainer::createEnumeration() throw( RuntimeException, std::exception )
+    Reference< XEnumeration > ParameterWrapperContainer::createEnumeration()
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         impl_checkDisposed_throw();

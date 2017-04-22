@@ -112,7 +112,7 @@ void PrepareBoxInfo(SfxItemSet& rSet, const SwWrtShell& rSh)
         // Always show the distance field
     aBoxInfo.SetDist           (true);
         // Set minimal size in tables and paragraphs
-    aBoxInfo.SetMinDist        (rSh.IsTableMode() || rSh.GetSelectionType() & (nsSelectionType::SEL_TXT | nsSelectionType::SEL_TBL));
+    aBoxInfo.SetMinDist        (rSh.IsTableMode() || rSh.GetSelectionType() & (SelectionType::Text | SelectionType::Table));
         // Set always the default distance
     aBoxInfo.SetDefDist        (MIN_BORDER_DIST);
         // Single lines can have only in tables DontCare-Status
@@ -182,7 +182,7 @@ void ConvertAttrGenToChar(SfxItemSet& rSet, const SfxItemSet& rOrigSet, const sa
                 auto aIterator = rMap.find("CharShadingMarker");
                 if( aIterator != rMap.end() )
                 {
-                    aIterator->second = uno::makeAny(false);
+                    aIterator->second <<= false;
                 }
                 rSet.Put( aGrabBag );
             }
@@ -232,32 +232,32 @@ void FillHdFt(SwFrameFormat* pFormat, const  SfxItemSet& rSet)
 }
 
 /// Convert from UseOnPage to SvxPageUsage.
-UseOnPage lcl_convertUseToSvx(UseOnPage nUse)
+SvxPageUsage lcl_convertUseToSvx(UseOnPage nUse)
 {
-    UseOnPage nRet = nsUseOnPage::PD_NONE;
-    if ((nUse & nsUseOnPage::PD_LEFT) == nsUseOnPage::PD_LEFT)
-        nRet |= SVX_PAGE_LEFT;
-    if ((nUse & nsUseOnPage::PD_RIGHT) == nsUseOnPage::PD_RIGHT)
-        nRet |= SVX_PAGE_RIGHT;
-    if ((nUse & nsUseOnPage::PD_ALL) == nsUseOnPage::PD_ALL)
-        nRet |= SVX_PAGE_ALL;
-    if ((nUse & nsUseOnPage::PD_MIRROR) == nsUseOnPage::PD_MIRROR)
-        nRet |= SVX_PAGE_MIRROR;
+    SvxPageUsage nRet = SvxPageUsage::NONE;
+    if (nUse & UseOnPage::Left)
+        nRet = SvxPageUsage::Left;
+    if (nUse & UseOnPage::Right)
+        nRet = SvxPageUsage::Right;
+    if ((nUse & UseOnPage::All) == UseOnPage::All)
+        nRet = SvxPageUsage::All;
+    if ((nUse & UseOnPage::Mirror) == UseOnPage::Mirror)
+        nRet = SvxPageUsage::Mirror;
     return nRet;
 }
 
 /// Convert from SvxPageUsage to UseOnPage.
-UseOnPage lcl_convertUseFromSvx(UseOnPage nUse)
+UseOnPage lcl_convertUseFromSvx(SvxPageUsage nUse)
 {
-    UseOnPage nRet = nsUseOnPage::PD_NONE;
-    if ((nUse & SVX_PAGE_LEFT) == SVX_PAGE_LEFT)
-        nRet |= nsUseOnPage::PD_LEFT;
-    if ((nUse & SVX_PAGE_RIGHT) == SVX_PAGE_RIGHT)
-        nRet |= nsUseOnPage::PD_RIGHT;
-    if ((nUse & SVX_PAGE_ALL) == SVX_PAGE_ALL)
-        nRet |= nsUseOnPage::PD_ALL;
-    if ((nUse & SVX_PAGE_MIRROR) == SVX_PAGE_MIRROR)
-        nRet |= nsUseOnPage::PD_MIRROR;
+    UseOnPage nRet = UseOnPage::NONE;
+    if (nUse == SvxPageUsage::Left)
+        nRet = UseOnPage::Left;
+    else if (nUse == SvxPageUsage::Right)
+        nRet = UseOnPage::Right;
+    else if (nUse == SvxPageUsage::All)
+        nRet = UseOnPage::All;
+    else if (nUse == SvxPageUsage::Mirror)
+        nRet = UseOnPage::Mirror;
     return nRet;
 }
 
@@ -276,12 +276,12 @@ void ItemSetToPageDesc( const SfxItemSet& rSet, SwPageDesc& rPageDesc )
     {
         const SvxPageItem& rPageItem = static_cast<const SvxPageItem&>(rSet.Get(SID_ATTR_PAGE));
 
-        const sal_uInt16 nUse = rPageItem.GetPageUsage();
-        if(nUse)
-            rPageDesc.SetUseOn( lcl_convertUseFromSvx((UseOnPage) nUse) );
+        const SvxPageUsage nUse = rPageItem.GetPageUsage();
+        if(nUse != SvxPageUsage::NONE)
+            rPageDesc.SetUseOn( lcl_convertUseFromSvx(nUse) );
         rPageDesc.SetLandscape(rPageItem.IsLandscape());
         SvxNumberType aNumType;
-        aNumType.SetNumberingType( static_cast< sal_Int16 >(rPageItem.GetNumType()) );
+        aNumType.SetNumberingType( rPageItem.GetNumType() );
         rPageDesc.SetNumType(aNumType);
     }
     // Size
@@ -397,7 +397,7 @@ void ItemSetToPageDesc( const SfxItemSet& rSet, SwPageDesc& rPageDesc )
             if( !pColl )
             {
                 const sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName(
-                    rColl, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL );
+                    rColl, SwGetPoolIdFromName::TxtColl );
                 if( USHRT_MAX != nId )
                     pColl = rDoc.getIDocumentStylePoolAccess().GetTextCollFromPool( nId );
                 else
@@ -420,7 +420,7 @@ void PageDescToItemSet( const SwPageDesc& rPageDesc, SfxItemSet& rSet)
     aPageItem.SetDescName(rPageDesc.GetName());
     aPageItem.SetPageUsage(lcl_convertUseToSvx(rPageDesc.GetUseOn()));
     aPageItem.SetLandscape(rPageDesc.GetLandscape());
-    aPageItem.SetNumType((SvxNumType)rPageDesc.GetNumType().GetNumberingType());
+    aPageItem.SetNumType(rPageDesc.GetNumType().GetNumberingType());
     rSet.Put(aPageItem);
 
     // Size
@@ -467,7 +467,7 @@ void PageDescToItemSet( const SwPageDesc& rPageDesc, SfxItemSet& rSet)
         SfxItemSet aHeaderSet(*rSet.GetPool(),
             RES_FRMATR_BEGIN,RES_FRMATR_END - 1,            // [82
 
-            //UUUU FillAttribute support
+            // FillAttribute support
             XATTR_FILL_FIRST, XATTR_FILL_LAST,              // [1014
 
             SID_ATTR_BORDER_INNER,SID_ATTR_BORDER_INNER,    // [10023
@@ -476,7 +476,7 @@ void PageDescToItemSet( const SwPageDesc& rPageDesc, SfxItemSet& rSet)
             SID_ATTR_PAGE_SHARED_FIRST,SID_ATTR_PAGE_SHARED_FIRST,
             0, 0);
 
-        //UUUU set correct parent to get the XFILL_NONE FillStyle as needed
+        // set correct parent to get the XFILL_NONE FillStyle as needed
         aHeaderSet.SetParent(&rMaster.GetDoc()->GetDfltFrameFormat()->GetAttrSet());
 
         // Dynamic or fixed height
@@ -518,7 +518,7 @@ void PageDescToItemSet( const SwPageDesc& rPageDesc, SfxItemSet& rSet)
         SfxItemSet aFooterSet(*rSet.GetPool(),
             RES_FRMATR_BEGIN,RES_FRMATR_END - 1,            // [82
 
-            //UUUU FillAttribute support
+            // FillAttribute support
             XATTR_FILL_FIRST, XATTR_FILL_LAST,              // [1014
 
             SID_ATTR_BORDER_INNER,SID_ATTR_BORDER_INNER,    // [10023
@@ -527,7 +527,7 @@ void PageDescToItemSet( const SwPageDesc& rPageDesc, SfxItemSet& rSet)
             SID_ATTR_PAGE_SHARED_FIRST,SID_ATTR_PAGE_SHARED_FIRST,
             0, 0);
 
-        //UUUU set correct parent to get the XFILL_NONE FillStyle as needed
+        // set correct parent to get the XFILL_NONE FillStyle as needed
         aFooterSet.SetParent(&rMaster.GetDoc()->GetDfltFrameFormat()->GetAttrSet());
 
         // Dynamic or fixed height
@@ -560,7 +560,7 @@ void PageDescToItemSet( const SwPageDesc& rPageDesc, SfxItemSet& rSet)
 
     // Integrate footnotes
     SwPageFootnoteInfo& rInfo = (SwPageFootnoteInfo&)rPageDesc.GetFootnoteInfo();
-    SwPageFootnoteInfoItem aFootnoteItem(FN_PARAM_FTN_INFO, rInfo);
+    SwPageFootnoteInfoItem aFootnoteItem(rInfo);
     rSet.Put(aFootnoteItem);
 
     // Register compliant
@@ -580,7 +580,7 @@ void MakeDefTabs(SwTwips nDefDist, SvxTabStopItem& rTabs)
     if( rTabs.Count() )
         return;
     {
-        SvxTabStop aSwTabStop( nDefDist, SVX_TAB_ADJUST_DEFAULT );
+        SvxTabStop aSwTabStop( nDefDist, SvxTabAdjust::Default );
         rTabs.Insert( aSwTabStop );
     }
 }
@@ -733,7 +733,7 @@ void FillCharStyleListBox(ListBox& rToFill, SwDocShell* pDocSh, bool bSorted, bo
             const sal_Int32 nPos = bSorted
                 ? InsertStringSorted(pBase->GetName(), rToFill, nOffset )
                 : rToFill.InsertEntry(pBase->GetName());
-            sal_IntPtr nPoolId = SwStyleNameMapper::GetPoolIdFromUIName( pBase->GetName(), nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+            sal_IntPtr nPoolId = SwStyleNameMapper::GetPoolIdFromUIName( pBase->GetName(), SwGetPoolIdFromName::ChrFmt );
             rToFill.SetEntryData( nPos, reinterpret_cast<void*>(nPoolId));
         }
         pBase = pPool->Next();
@@ -778,11 +778,11 @@ SwTwips GetTableWidth( SwFrameFormat* pFormat, SwTabCols& rCols, sal_uInt16 *pPe
             {
                 if ( nullptr == pSh->GetFlyFrameFormat() )
                 {
-                    nWidth = pSh->GetAnyCurRect(RECT_PAGE_PRT).Width();
+                    nWidth = pSh->GetAnyCurRect(CurRectType::PagePrt).Width();
                 }
                 else
                 {
-                    nWidth = pSh->GetAnyCurRect(RECT_FLY_PRT_EMBEDDED).Width();
+                    nWidth = pSh->GetAnyCurRect(CurRectType::FlyEmbeddedPrt).Width();
                 }
             }
             else
@@ -802,7 +802,7 @@ OUString GetAppLangDateTimeString( const DateTime& rDT )
 {
     const SvtSysLocale aSysLocale;
     const LocaleDataWrapper& rAppLclData = aSysLocale.GetLocaleData();
-    OUString sRet = rAppLclData.getDate( rDT ) + " " + rAppLclData.getTime( rDT, false );
+    OUString sRet = rAppLclData.getDate( rDT ) + " " + rAppLclData.getTime( rDT );
     return sRet;
 }
 

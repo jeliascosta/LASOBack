@@ -41,7 +41,7 @@ using namespace ::com::sun::star;
 using namespace ::com::sun::star::accessibility;
 using namespace ::com::sun::star::uno;
 
-const static sal_Int64 CaretBlinkIntervall = 500 * 1000 * 1000;
+const static sal_Int64 CaretBlinkInterval = 500 * 1000 * 1000;
 
 //#define SHOW_CHARACTER_BOXES
 
@@ -66,7 +66,6 @@ PresenterTextView::PresenterTextView (
     const Reference<rendering::XCanvas>& rxCanvas,
     const ::std::function<void (const css::awt::Rectangle&)>& rInvalidator)
     : mxCanvas(rxCanvas),
-      mbDoOuput(true),
       mxBreakIterator(),
       mxScriptTypeDetector(),
       maLocation(0,0),
@@ -80,7 +79,6 @@ PresenterTextView::PresenterTextView (
       mnLeftOffset(0),
       mnTopOffset(0),
       mbIsFormatPending(false),
-      mnCharacterCount(-1),
       maTextChangeBroadcaster()
 {
     Reference<lang::XMultiComponentFactory> xFactory (
@@ -103,7 +101,6 @@ PresenterTextView::PresenterTextView (
 void PresenterTextView::SetText (const Reference<text::XText>& rxText)
 {
     maParagraphs.clear();
-    mnCharacterCount = -1;
 
     Reference<container::XEnumerationAccess> xParagraphAccess (rxText, UNO_QUERY);
     if ( ! xParagraphAccess.is())
@@ -291,8 +288,6 @@ void PresenterTextView::MoveCaret (
 void PresenterTextView::Paint (
     const css::awt::Rectangle& rUpdateBox)
 {
-    if ( ! mbDoOuput)
-        return;
     if ( ! mxCanvas.is())
         return;
     if ( ! mpFont->PrepareFont(mxCanvas))
@@ -1106,8 +1101,8 @@ void PresenterTextCaret::ShowCaret()
     {
         mnCaretBlinkTaskId = PresenterTimer::ScheduleRepeatedTask (
             [this] (TimeValue const&) { return this->InvertCaret(); },
-            CaretBlinkIntervall,
-            CaretBlinkIntervall);
+            CaretBlinkInterval,
+            CaretBlinkInterval);
     }
     mbIsCaretVisible = true;
 }
@@ -1206,7 +1201,7 @@ PresenterTextParagraph::Line::Line (
 
 void PresenterTextParagraph::Line::ProvideCellBoxes()
 {
-    if ( ! IsEmpty() && maCellBoxes.getLength()==0)
+    if ( mnLineStartCharacterIndex < mnLineEndCharacterIndex && maCellBoxes.getLength()==0 )
     {
         if (mxLayoutedLine.is())
             maCellBoxes = mxLayoutedLine->queryInkMeasures();
@@ -1234,11 +1229,6 @@ void PresenterTextParagraph::Line::ProvideLayoutedLine (
             nTextDirection,
             0);
     }
-}
-
-bool PresenterTextParagraph::Line::IsEmpty() const
-{
-    return mnLineStartCharacterIndex >= mnLineEndCharacterIndex;
 }
 
 } } // end of namespace ::sdext::presenter

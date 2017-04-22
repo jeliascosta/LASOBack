@@ -28,6 +28,7 @@
 
 #include <typelib/typedescription.hxx>
 
+#include <com/sun/star/beans/UnknownPropertyException.hpp>
 #include <com/sun/star/beans/XMaterialHolder.hpp>
 
 #include "pyuno_impl.hxx"
@@ -367,10 +368,7 @@ PyRef PyUNOStruct_new (
     {
         PyThreadDetach antiguard;
         xInvocation.set(
-            ssf->createInstanceWithArguments( Sequence<Any>( &targetInterface, 1 ) ), UNO_QUERY );
-        OSL_ASSERT( xInvocation.is() );
-        if( !xInvocation.is() )
-            throw RuntimeException("XInvocation2 not implemented, cannot interact with object");
+            ssf->createInstanceWithArguments( Sequence<Any>( &targetInterface, 1 ) ), css::uno::UNO_QUERY_THROW );
     }
     if( !Py_IsInitialized() )
         throw RuntimeException();
@@ -378,7 +376,7 @@ PyRef PyUNOStruct_new (
     PyUNO* self = PyObject_New (PyUNO, &PyUNOStructType);
     if (self == nullptr)
         return PyRef(); // == error
-    self->members = new PyUNOInternals();
+    self->members = new PyUNOInternals;
     self->members->xInvocation = xInvocation;
     self->members->wrappedObject = targetInterface;
     return PyRef( reinterpret_cast<PyObject*>(self), SAL_NO_ACQUIRE );

@@ -17,8 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-
-#include <ctype.h>
 #include <comphelper/string.hxx>
 #include <svtools/parhtml.hxx>
 #include <svtools/htmltokn.h>
@@ -26,13 +24,13 @@
 #include <tools/urlobj.hxx>
 
 // Table for converting option values into strings
-static HTMLOptionEnum const aScriptLangOptEnums[] =
+static HTMLOptionEnum<HTMLScriptLanguage> const aScriptLangOptEnums[] =
 {
-    { OOO_STRING_SVTOOLS_HTML_LG_starbasic, HTML_SL_STARBASIC   },
-    { OOO_STRING_SVTOOLS_HTML_LG_javascript,    HTML_SL_JAVASCRIPT  },
-    { OOO_STRING_SVTOOLS_HTML_LG_javascript11,HTML_SL_JAVASCRIPT    },
-    { OOO_STRING_SVTOOLS_HTML_LG_livescript,    HTML_SL_JAVASCRIPT  },
-    { nullptr,                    0                   }
+    { OOO_STRING_SVTOOLS_HTML_LG_starbasic,    HTMLScriptLanguage::StarBasic     },
+    { OOO_STRING_SVTOOLS_HTML_LG_javascript,   HTMLScriptLanguage::JavaScript    },
+    { OOO_STRING_SVTOOLS_HTML_LG_javascript11, HTMLScriptLanguage::JavaScript    },
+    { OOO_STRING_SVTOOLS_HTML_LG_livescript,   HTMLScriptLanguage::JavaScript    },
+    { nullptr,                                 (HTMLScriptLanguage)0 }
 };
 
 void HTMLParser::ParseScriptOptions( OUString& rLangString, const OUString& rBaseURL,
@@ -44,7 +42,7 @@ void HTMLParser::ParseScriptOptions( OUString& rLangString, const OUString& rBas
     const HTMLOptions& aScriptOptions = GetOptions();
 
     rLangString.clear();
-    rLang = HTML_SL_JAVASCRIPT;
+    rLang = HTMLScriptLanguage::JavaScript;
     rSrc.clear();
     rLibrary.clear();
     rModule.clear();
@@ -57,11 +55,11 @@ void HTMLParser::ParseScriptOptions( OUString& rLangString, const OUString& rBas
         case HTML_O_LANGUAGE:
             {
                 rLangString = aOption.GetString();
-                sal_uInt16 nLang;
+                HTMLScriptLanguage nLang;
                 if( aOption.GetEnum( nLang, aScriptLangOptEnums ) )
-                    rLang = (HTMLScriptLanguage)nLang;
+                    rLang = nLang;
                 else
-                    rLang = HTML_SL_UNKNOWN;
+                    rLang = HTMLScriptLanguage::Unknown;
             }
             break;
 

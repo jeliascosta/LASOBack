@@ -33,13 +33,15 @@ class SdrObject;
 class SdrPage;
 class SvxNumBulletItem;
 class SfxItemPool;
+enum class SdrInventor : sal_uInt32;
 
 /**
  * Creates a StarOffice API wrapper with the given type and inventor
  * Deprecated: This will be replaced with a function returning XShape.
+ *
+ * @throws css::uno::RuntimeException
  */
-SVX_DLLPUBLIC SvxShape* CreateSvxShapeByTypeAndInventor(sal_uInt16 nType, sal_uInt32 nInventor, OUString const & referer)
-    throw (css::uno::RuntimeException, std::exception);
+SVX_DLLPUBLIC SvxShape* CreateSvxShapeByTypeAndInventor(sal_uInt16 nType, SdrInventor nInventor, OUString const & referer);
 
 /** Returns a StarOffice API wrapper for the given SdrObject */
 SVX_DLLPUBLIC css::uno::Reference< css::drawing::XShape > GetXShapeForSdrObject( SdrObject* pObj ) throw ();
@@ -74,16 +76,20 @@ SVX_DLLPUBLIC bool SvxFieldUnitToMeasureUnit( const FieldUnit nVcl, short& eApi 
 /**
  * If the given name is a predefined name for the current language it is replaced by
  * the corresponding API name.
+ *
+ * @throws std::exception
 */
 SVX_DLLPUBLIC SAL_WARN_UNUSED_RESULT OUString
-    SvxUnogetApiNameForItem(const sal_Int16 nWhich, const OUString& rInternalName) throw(std::exception);
+    SvxUnogetApiNameForItem(const sal_Int16 nWhich, const OUString& rInternalName);
 
 /**
  * If the given name is a predefined API name it is replaced by the predefined name
  * for the current language.
+ *
+ * @throws std::exception
 */
 SVX_DLLPUBLIC SAL_WARN_UNUSED_RESULT OUString
-    SvxUnogetInternalNameForItem(const sal_Int16 nWhich, const OUString& rApiName) throw(std::exception);
+    SvxUnogetInternalNameForItem(const sal_Int16 nWhich, const OUString& rApiName);
 
 #endif // INCLUDED_SVX_UNOAPI_HXX
 

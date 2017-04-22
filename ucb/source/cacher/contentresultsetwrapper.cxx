@@ -41,7 +41,7 @@ using namespace cppu;
 
 
 ContentResultSetWrapper::ContentResultSetWrapper(
-                                Reference< XResultSet > xOrigin )
+                                Reference< XResultSet > const & xOrigin )
                 : m_xResultSetOrigin( xOrigin )
                 , m_xRowOrigin( nullptr )
                 , m_xContentAccessOrigin( nullptr )
@@ -55,8 +55,7 @@ ContentResultSetWrapper::ContentResultSetWrapper(
                 , m_pPropertyChangeListeners( nullptr )
                 , m_pVetoableChangeListeners( nullptr )
 {
-    m_pMyListenerImpl = new ContentResultSetWrapperListener( this );
-    m_xMyListenerImpl.set( m_pMyListenerImpl );
+    m_xMyListenerImpl = new ContentResultSetWrapperListener( this );
 
     OSL_ENSURE( m_xResultSetOrigin.is(), "XResultSet is required" );
 
@@ -127,7 +126,7 @@ void SAL_CALL ContentResultSetWrapper::impl_init()
     //listen to disposing from Origin:
     Reference< XComponent > xComponentOrigin( m_xResultSetOrigin, UNO_QUERY );
     OSL_ENSURE( xComponentOrigin.is(), "interface XComponent is required" );
-    xComponentOrigin->addEventListener( static_cast< XPropertyChangeListener * >( m_pMyListenerImpl ) );
+    xComponentOrigin->addEventListener( static_cast< XPropertyChangeListener * >( m_xMyListenerImpl.get() ) );
 }
 
 ContentResultSetWrapper::~ContentResultSetWrapper()
@@ -143,7 +142,7 @@ void SAL_CALL ContentResultSetWrapper::impl_deinit()
 {
     //call this at start of destructor of derived class
 
-    m_pMyListenerImpl->impl_OwnerDies();
+    m_xMyListenerImpl->impl_OwnerDies();
 }
 
 //virtual
@@ -169,7 +168,6 @@ void SAL_CALL ContentResultSetWrapper::impl_initPropertySetInfo()
 }
 
 void SAL_CALL ContentResultSetWrapper::impl_EnsureNotDisposed()
-    throw( DisposedException, RuntimeException )
 {
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
     if( m_bDisposed )
@@ -231,8 +229,6 @@ void SAL_CALL ContentResultSetWrapper::impl_notifyPropertyChangeListeners( const
 }
 
 void SAL_CALL ContentResultSetWrapper::impl_notifyVetoableChangeListeners( const PropertyChangeEvent& rEvt )
-    throw( PropertyVetoException,
-           RuntimeException )
 {
     {
         osl::Guard< osl::Mutex > aGuard( m_aMutex );
@@ -325,7 +321,6 @@ bool SAL_CALL ContentResultSetWrapper::impl_isForwardOnly()
 // XInterface methods.
 
 css::uno::Any SAL_CALL ContentResultSetWrapper::queryInterface( const css::uno::Type & rType )
-    throw( css::uno::RuntimeException, std::exception )
 {
     //list all interfaces inclusive baseclasses of interfaces
     css::uno::Any aRet = cppu::queryInterface( rType,
@@ -344,11 +339,11 @@ css::uno::Any SAL_CALL ContentResultSetWrapper::queryInterface( const css::uno::
 
 // virtual
 void SAL_CALL ContentResultSetWrapper::dispose()
-    throw( RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    bool isCleared = false;
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     if( m_bInDispose || m_bDisposed )
         return;
     m_bInDispose = true;
@@ -356,10 +351,11 @@ void SAL_CALL ContentResultSetWrapper::dispose()
     if( m_xPropertySetOrigin.is() )
     {
         aGuard.clear();
+        isCleared = true;
         try
         {
             m_xPropertySetOrigin->removePropertyChangeListener(
-                OUString(), static_cast< XPropertyChangeListener * >( m_pMyListenerImpl ) );
+                OUString(), static_cast< XPropertyChangeListener * >( m_xMyListenerImpl.get() ) );
         }
         catch( Exception& )
         {
@@ -368,7 +364,7 @@ void SAL_CALL ContentResultSetWrapper::dispose()
         try
         {
             m_xPropertySetOrigin->removeVetoableChangeListener(
-                OUString(), static_cast< XVetoableChangeListener * >( m_pMyListenerImpl ) );
+                OUString(), static_cast< XVetoableChangeListener * >( m_xMyListenerImpl.get() ) );
         }
         catch( Exception& )
         {
@@ -377,40 +373,58 @@ void SAL_CALL ContentResultSetWrapper::dispose()
 
         Reference< XComponent > xComponentOrigin( m_xResultSetOrigin, UNO_QUERY );
         OSL_ENSURE( xComponentOrigin.is(), "interface XComponent is required" );
-        xComponentOrigin->removeEventListener( static_cast< XPropertyChangeListener * >( m_pMyListenerImpl ) );
+        xComponentOrigin->removeEventListener( static_cast< XPropertyChangeListener * >( m_xMyListenerImpl.get() ) );
     }
 
-    aGuard.reacquire();
+    if (isCleared)
+    {
+        aGuard.reset();
+        isCleared = false;
+    }
     if( m_pDisposeEventListeners && m_pDisposeEventListeners->getLength() )
     {
         EventObject aEvt;
         aEvt.Source = static_cast< XComponent * >( this );
 
         aGuard.clear();
+        isCleared = true;
         m_pDisposeEventListeners->disposeAndClear( aEvt );
     }
 
-    aGuard.reacquire();
+    if (isCleared)
+    {
+        aGuard.reset();
+        isCleared = false;
+    }
     if( m_pPropertyChangeListeners )
     {
         EventObject aEvt;
         aEvt.Source = static_cast< XPropertySet * >( this );
 
         aGuard.clear();
+        isCleared = true;
         m_pPropertyChangeListeners->disposeAndClear( aEvt );
     }
 
-    aGuard.reacquire();
+    if (isCleared)
+    {
+        aGuard.reset();
+        isCleared = false;
+    }
     if( m_pVetoableChangeListeners )
     {
         EventObject aEvt;
         aEvt.Source = static_cast< XPropertySet * >( this );
 
         aGuard.clear();
+        isCleared = true;
         m_pVetoableChangeListeners->disposeAndClear( aEvt );
     }
 
-    aGuard.reacquire();
+    if (isCleared)
+    {
+        aGuard.reset();
+    }
     m_bDisposed = true;
     m_bInDispose = false;
 }
@@ -418,7 +432,6 @@ void SAL_CALL ContentResultSetWrapper::dispose()
 
 // virtual
 void SAL_CALL ContentResultSetWrapper::addEventListener( const Reference< XEventListener >& Listener )
-    throw( RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
@@ -433,7 +446,6 @@ void SAL_CALL ContentResultSetWrapper::addEventListener( const Reference< XEvent
 
 // virtual
 void SAL_CALL ContentResultSetWrapper::removeEventListener( const Reference< XEventListener >& Listener )
-    throw( RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
@@ -447,8 +459,6 @@ void SAL_CALL ContentResultSetWrapper::removeEventListener( const Reference< XEv
 
 //virtual
 void SAL_CALL ContentResultSetWrapper::close()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     dispose();
@@ -459,12 +469,10 @@ void SAL_CALL ContentResultSetWrapper::close()
 
 //virtual
 Reference< XResultSetMetaData > SAL_CALL ContentResultSetWrapper::getMetaData()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     if( !m_xMetaDataFromOrigin.is() && m_xResultSetOrigin.is() )
     {
         Reference< XResultSetMetaDataSupplier > xMetaDataSupplier(
@@ -477,7 +485,7 @@ Reference< XResultSetMetaData > SAL_CALL ContentResultSetWrapper::getMetaData()
             Reference< XResultSetMetaData > xMetaData
                 = xMetaDataSupplier->getMetaData();
 
-            aGuard.reacquire();
+            aGuard.reset();
             m_xMetaDataFromOrigin = xMetaData;
         }
     }
@@ -489,7 +497,6 @@ Reference< XResultSetMetaData > SAL_CALL ContentResultSetWrapper::getMetaData()
 
 // virtual
 Reference< XPropertySetInfo > SAL_CALL ContentResultSetWrapper::getPropertySetInfo()
-    throw( RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     {
@@ -503,11 +510,6 @@ Reference< XPropertySetInfo > SAL_CALL ContentResultSetWrapper::getPropertySetIn
 
 // virtual
 void SAL_CALL ContentResultSetWrapper::setPropertyValue( const OUString& rPropertyName, const Any& rValue )
-    throw( UnknownPropertyException,
-           PropertyVetoException,
-           IllegalArgumentException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     impl_init_xPropertySetOrigin();
@@ -522,9 +524,6 @@ void SAL_CALL ContentResultSetWrapper::setPropertyValue( const OUString& rProper
 
 // virtual
 Any SAL_CALL ContentResultSetWrapper::getPropertyValue( const OUString& rPropertyName )
-    throw( UnknownPropertyException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     impl_init_xPropertySetOrigin();
@@ -539,9 +538,6 @@ Any SAL_CALL ContentResultSetWrapper::getPropertyValue( const OUString& rPropert
 
 // virtual
 void SAL_CALL ContentResultSetWrapper::addPropertyChangeListener( const OUString& aPropertyName, const Reference< XPropertyChangeListener >& xListener )
-    throw( UnknownPropertyException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -575,7 +571,7 @@ void SAL_CALL ContentResultSetWrapper::addPropertyChangeListener( const OUString
         try
         {
             m_xPropertySetOrigin->addPropertyChangeListener(
-                OUString(), static_cast< XPropertyChangeListener * >( m_pMyListenerImpl ) );
+                OUString(), static_cast< XPropertyChangeListener * >( m_xMyListenerImpl.get() ) );
         }
         catch( Exception& )
         {
@@ -588,9 +584,6 @@ void SAL_CALL ContentResultSetWrapper::addPropertyChangeListener( const OUString
 
 // virtual
 void SAL_CALL ContentResultSetWrapper::addVetoableChangeListener( const OUString& rPropertyName, const Reference< XVetoableChangeListener >& xListener )
-    throw( UnknownPropertyException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -623,7 +616,7 @@ void SAL_CALL ContentResultSetWrapper::addVetoableChangeListener( const OUString
         try
         {
             m_xPropertySetOrigin->addVetoableChangeListener(
-                OUString(), static_cast< XVetoableChangeListener * >( m_pMyListenerImpl ) );
+                OUString(), static_cast< XVetoableChangeListener * >( m_xMyListenerImpl.get() ) );
         }
         catch( Exception& )
         {
@@ -636,9 +629,6 @@ void SAL_CALL ContentResultSetWrapper::addVetoableChangeListener( const OUString
 
 // virtual
 void SAL_CALL ContentResultSetWrapper::removePropertyChangeListener( const OUString& rPropertyName, const Reference< XPropertyChangeListener >& xListener )
-    throw( UnknownPropertyException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -680,7 +670,7 @@ void SAL_CALL ContentResultSetWrapper::removePropertyChangeListener( const OUStr
         try
         {
             m_xPropertySetOrigin->removePropertyChangeListener(
-                OUString(), static_cast< XPropertyChangeListener * >( m_pMyListenerImpl ) );
+                OUString(), static_cast< XPropertyChangeListener * >( m_xMyListenerImpl.get() ) );
         }
         catch( Exception& )
         {
@@ -692,9 +682,6 @@ void SAL_CALL ContentResultSetWrapper::removePropertyChangeListener( const OUStr
 
 // virtual
 void SAL_CALL ContentResultSetWrapper::removeVetoableChangeListener( const OUString& rPropertyName, const Reference< XVetoableChangeListener >& xListener )
-    throw( UnknownPropertyException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -736,7 +723,7 @@ void SAL_CALL ContentResultSetWrapper::removeVetoableChangeListener( const OUStr
         try
         {
             m_xPropertySetOrigin->removeVetoableChangeListener(
-                OUString(), static_cast< XVetoableChangeListener * >( m_pMyListenerImpl ) );
+                OUString(), static_cast< XVetoableChangeListener * >( m_xMyListenerImpl.get() ) );
         }
         catch( Exception& )
         {
@@ -751,7 +738,6 @@ void SAL_CALL ContentResultSetWrapper::removeVetoableChangeListener( const OUStr
 
 //virtual
 void SAL_CALL ContentResultSetWrapper::impl_disposing( const EventObject& )
-    throw( RuntimeException )
 {
     impl_EnsureNotDisposed();
 
@@ -775,7 +761,6 @@ void SAL_CALL ContentResultSetWrapper::impl_disposing( const EventObject& )
 
 //virtual
 void SAL_CALL ContentResultSetWrapper::impl_propertyChange( const PropertyChangeEvent& rEvt )
-    throw( RuntimeException )
 {
     impl_EnsureNotDisposed();
 
@@ -787,8 +772,6 @@ void SAL_CALL ContentResultSetWrapper::impl_propertyChange( const PropertyChange
 
 //virtual
 void SAL_CALL ContentResultSetWrapper::impl_vetoableChange( const PropertyChangeEvent& rEvt )
-    throw( PropertyVetoException,
-           RuntimeException )
 {
     impl_EnsureNotDisposed();
 
@@ -805,7 +788,6 @@ void SAL_CALL ContentResultSetWrapper::impl_vetoableChange( const PropertyChange
 
 // virtual
 OUString SAL_CALL ContentResultSetWrapper::queryContentIdentifierString()
-    throw( RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     impl_init_xContentAccessOrigin();
@@ -820,7 +802,6 @@ OUString SAL_CALL ContentResultSetWrapper::queryContentIdentifierString()
 
 // virtual
 Reference< XContentIdentifier > SAL_CALL ContentResultSetWrapper::queryContentIdentifier()
-    throw( RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     impl_init_xContentAccessOrigin();
@@ -835,7 +816,6 @@ Reference< XContentIdentifier > SAL_CALL ContentResultSetWrapper::queryContentId
 
 // virtual
 Reference< XContent > SAL_CALL ContentResultSetWrapper::queryContent()
-    throw( RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     impl_init_xContentAccessOrigin();
@@ -853,8 +833,6 @@ Reference< XContent > SAL_CALL ContentResultSetWrapper::queryContent()
 //virtual
 
 sal_Bool SAL_CALL ContentResultSetWrapper::next()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -868,8 +846,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::next()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::previous()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -883,8 +859,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::previous()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::absolute( sal_Int32 row )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -898,8 +872,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::absolute( sal_Int32 row )
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::relative( sal_Int32 rows )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -914,8 +886,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::relative( sal_Int32 rows )
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::first()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -929,8 +899,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::first()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::last()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -944,8 +912,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::last()
 
 //virtual
 void SAL_CALL ContentResultSetWrapper::beforeFirst()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -959,8 +925,6 @@ void SAL_CALL ContentResultSetWrapper::beforeFirst()
 
 //virtual
 void SAL_CALL ContentResultSetWrapper::afterLast()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -974,8 +938,6 @@ void SAL_CALL ContentResultSetWrapper::afterLast()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::isAfterLast()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -989,8 +951,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::isAfterLast()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::isBeforeFirst()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1004,8 +964,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::isBeforeFirst()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::isFirst()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1019,8 +977,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::isFirst()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::isLast()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1035,8 +991,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::isLast()
 
 //virtual
 sal_Int32 SAL_CALL ContentResultSetWrapper::getRow()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1050,8 +1004,6 @@ sal_Int32 SAL_CALL ContentResultSetWrapper::getRow()
 
 //virtual
 void SAL_CALL ContentResultSetWrapper::refreshRow()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1065,8 +1017,6 @@ void SAL_CALL ContentResultSetWrapper::refreshRow()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::rowUpdated()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1080,8 +1030,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::rowUpdated()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::rowInserted()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1095,8 +1043,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::rowInserted()
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::rowDeleted()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1110,8 +1056,6 @@ sal_Bool SAL_CALL ContentResultSetWrapper::rowDeleted()
 
 //virtual
 Reference< XInterface > SAL_CALL ContentResultSetWrapper::getStatement()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     //@todo ?return anything
@@ -1134,8 +1078,6 @@ return m_xRowOrigin->getXXX( columnIndex );
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::wasNull()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     impl_init_xRowOrigin();
@@ -1149,120 +1091,90 @@ sal_Bool SAL_CALL ContentResultSetWrapper::wasNull()
 
 //virtual
 OUString SAL_CALL ContentResultSetWrapper::getString( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getString );
 }
 
 //virtual
 sal_Bool SAL_CALL ContentResultSetWrapper::getBoolean( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getBoolean );
 }
 
 //virtual
 sal_Int8 SAL_CALL ContentResultSetWrapper::getByte( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getByte );
 }
 
 //virtual
 sal_Int16 SAL_CALL ContentResultSetWrapper::getShort( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getShort );
 }
 
 //virtual
 sal_Int32 SAL_CALL ContentResultSetWrapper::getInt( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getInt );
 }
 
 //virtual
 sal_Int64 SAL_CALL ContentResultSetWrapper::getLong( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getLong );
 }
 
 //virtual
 float SAL_CALL ContentResultSetWrapper::getFloat( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getFloat );
 }
 
 //virtual
 double SAL_CALL ContentResultSetWrapper::getDouble( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getDouble );
 }
 
 //virtual
 Sequence< sal_Int8 > SAL_CALL ContentResultSetWrapper::getBytes( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getBytes );
 }
 
 //virtual
 Date SAL_CALL ContentResultSetWrapper::getDate( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getDate );
 }
 
 //virtual
 Time SAL_CALL ContentResultSetWrapper::getTime( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getTime );
 }
 
 //virtual
 DateTime SAL_CALL ContentResultSetWrapper::getTimestamp( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getTimestamp );
 }
 
 //virtual
 Reference< css::io::XInputStream > SAL_CALL ContentResultSetWrapper::getBinaryStream( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getBinaryStream );
 }
 
 //virtual
 Reference< css::io::XInputStream > SAL_CALL ContentResultSetWrapper::getCharacterStream( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getCharacterStream );
 }
 
 //virtual
 Any SAL_CALL ContentResultSetWrapper::getObject( sal_Int32 columnIndex, const Reference< css::container::XNameAccess >& typeMap )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     //if you change this macro please pay attention to
     //define XROW_GETXXX, where this is similar implemented
@@ -1279,32 +1191,24 @@ Any SAL_CALL ContentResultSetWrapper::getObject( sal_Int32 columnIndex, const Re
 
 //virtual
 Reference< XRef > SAL_CALL ContentResultSetWrapper::getRef( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getRef );
 }
 
 //virtual
 Reference< XBlob > SAL_CALL ContentResultSetWrapper::getBlob( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getBlob );
 }
 
 //virtual
 Reference< XClob > SAL_CALL ContentResultSetWrapper::getClob( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getClob );
 }
 
 //virtual
 Reference< XArray > SAL_CALL ContentResultSetWrapper::getArray( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     XROW_GETXXX( getArray );
 }
@@ -1338,7 +1242,6 @@ void SAL_CALL ContentResultSetWrapperListener::release()
 }
 
 css::uno::Any SAL_CALL ContentResultSetWrapperListener::queryInterface( const css::uno::Type & rType )
-    throw( css::uno::RuntimeException, std::exception )
 {
     //list all interfaces inclusive baseclasses of interfaces
     css::uno::Any aRet = cppu::queryInterface( rType,
@@ -1355,7 +1258,6 @@ css::uno::Any SAL_CALL ContentResultSetWrapperListener::queryInterface( const cs
 
 //virtual
 void SAL_CALL ContentResultSetWrapperListener::disposing( const EventObject& rEventObject )
-    throw( RuntimeException, std::exception )
 {
     if( m_pOwner )
         m_pOwner->impl_disposing( rEventObject );
@@ -1367,7 +1269,6 @@ void SAL_CALL ContentResultSetWrapperListener::disposing( const EventObject& rEv
 
 //virtual
 void SAL_CALL ContentResultSetWrapperListener::propertyChange( const PropertyChangeEvent& rEvt )
-    throw( RuntimeException, std::exception )
 {
     if( m_pOwner )
         m_pOwner->impl_propertyChange( rEvt );
@@ -1378,8 +1279,6 @@ void SAL_CALL ContentResultSetWrapperListener::propertyChange( const PropertyCha
 
 //virtual
 void SAL_CALL ContentResultSetWrapperListener::vetoableChange( const PropertyChangeEvent& rEvt )
-    throw( PropertyVetoException,
-           RuntimeException, std::exception )
 {
     if( m_pOwner )
         m_pOwner->impl_vetoableChange( rEvt );

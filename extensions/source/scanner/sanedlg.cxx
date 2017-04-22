@@ -52,14 +52,14 @@ void DrawRectangles(vcl::RenderContext& rRenderContext, Point& rUL, Point& rBR)
     rRenderContext.DrawLine(aBL, rBR);
     rRenderContext.DrawLine(rBR, aUR);
     rRenderContext.DrawLine(aUR, rUL);
-    rRenderContext.DrawRect(Rectangle(rUL, Size(RECT_SIZE_PIX,RECT_SIZE_PIX)));
-    rRenderContext.DrawRect(Rectangle(aBL, Size(RECT_SIZE_PIX, -RECT_SIZE_PIX)));
-    rRenderContext.DrawRect(Rectangle(rBR, Size(-RECT_SIZE_PIX, -RECT_SIZE_PIX)));
-    rRenderContext.DrawRect(Rectangle(aUR, Size(-RECT_SIZE_PIX, RECT_SIZE_PIX )));
-    rRenderContext.DrawRect(Rectangle(Point(nMiddleX - RECT_SIZE_PIX / 2, rUL.Y()), Size(RECT_SIZE_PIX, RECT_SIZE_PIX)));
-    rRenderContext.DrawRect(Rectangle(Point(nMiddleX - RECT_SIZE_PIX / 2, rBR.Y()), Size(RECT_SIZE_PIX, -RECT_SIZE_PIX)));
-    rRenderContext.DrawRect(Rectangle(Point(rUL.X(), nMiddleY - RECT_SIZE_PIX / 2), Size(RECT_SIZE_PIX, RECT_SIZE_PIX)));
-    rRenderContext.DrawRect(Rectangle(Point(rBR.X(), nMiddleY - RECT_SIZE_PIX / 2), Size(-RECT_SIZE_PIX, RECT_SIZE_PIX)));
+    rRenderContext.DrawRect(tools::Rectangle(rUL, Size(RECT_SIZE_PIX,RECT_SIZE_PIX)));
+    rRenderContext.DrawRect(tools::Rectangle(aBL, Size(RECT_SIZE_PIX, -RECT_SIZE_PIX)));
+    rRenderContext.DrawRect(tools::Rectangle(rBR, Size(-RECT_SIZE_PIX, -RECT_SIZE_PIX)));
+    rRenderContext.DrawRect(tools::Rectangle(aUR, Size(-RECT_SIZE_PIX, RECT_SIZE_PIX )));
+    rRenderContext.DrawRect(tools::Rectangle(Point(nMiddleX - RECT_SIZE_PIX / 2, rUL.Y()), Size(RECT_SIZE_PIX, RECT_SIZE_PIX)));
+    rRenderContext.DrawRect(tools::Rectangle(Point(nMiddleX - RECT_SIZE_PIX / 2, rBR.Y()), Size(RECT_SIZE_PIX, -RECT_SIZE_PIX)));
+    rRenderContext.DrawRect(tools::Rectangle(Point(rUL.X(), nMiddleY - RECT_SIZE_PIX / 2), Size(RECT_SIZE_PIX, RECT_SIZE_PIX)));
+    rRenderContext.DrawRect(tools::Rectangle(Point(rBR.X(), nMiddleY - RECT_SIZE_PIX / 2), Size(-RECT_SIZE_PIX, RECT_SIZE_PIX)));
 }
 
 }
@@ -71,7 +71,7 @@ private:
                          BottomLeft, Left };
 
     Bitmap    maPreviewBitmap;
-    Rectangle maPreviewRect;
+    tools::Rectangle maPreviewRect;
     Point     maTopLeft, maBottomRight;
     Point     maMinTopLeft, maMaxBottomRight;
     VclPtr<SaneDlg>  mpParentDialog;
@@ -92,7 +92,7 @@ public:
     {
     }
 
-    virtual ~ScanPreview()
+    virtual ~ScanPreview() override
     {
         disposeOnce();
     }
@@ -129,7 +129,7 @@ public:
         return mbDragEnable;
     }
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual void MouseButtonDown(const MouseEvent& rMEvt) override;
     virtual void MouseMove(const MouseEvent& rMEvt) override;
     virtual void MouseButtonUp(const MouseEvent& rMEvt) override;
@@ -175,7 +175,7 @@ public:
     {
         maTopLeft = GetPixelPos(rTopLeft);
         maBottomRight = GetPixelPos(rBottomRight);
-        maPreviewRect = Rectangle(maTopLeft,
+        maPreviewRect = tools::Rectangle(maTopLeft,
                                   Size(maBottomRight.X() - maTopLeft.X(),
                                        maBottomRight.Y() - maTopLeft.Y()));
     }
@@ -192,21 +192,14 @@ public:
     }
     virtual Size GetOptimalSize() const override
     {
-        Size aSize(LogicToPixel(Size(PREVIEW_WIDTH, PREVIEW_HEIGHT), MAP_APPFONT));
+        Size aSize(LogicToPixel(Size(PREVIEW_WIDTH, PREVIEW_HEIGHT), MapUnit::MapAppFont));
         aSize.setWidth(aSize.getWidth()+1);
         aSize.setHeight(aSize.getHeight()+1);
         return aSize;
     }
 };
 
-VCL_BUILDER_DECL_FACTORY(ScanPreview)
-{
-    WinBits nWinStyle = 0;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<ScanPreview>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(ScanPreview, 0)
 
 SaneDlg::SaneDlg( vcl::Window* pParent, Sane& rSane, bool bScanEnabled ) :
         ModalDialog(pParent, "SaneDialog", "modules/scanner/ui/sanedialog.ui"),
@@ -226,7 +219,7 @@ SaneDlg::SaneDlg( vcl::Window* pParent, Sane& rSane, bool bScanEnabled ) :
     get(mpScanButton, "scanButton");
     get(mpButtonOption, "optionsButton");
     get(mpOptionTitle, "optionTitleLabel");
-    Size aSize(LogicToPixel(Size(130, 102), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(130, 102), MapUnit::MapAppFont));
     mpOptionTitle->set_width_request(aSize.Width());
     mpOptionTitle->set_height_request(aSize.Height() / 2);
     get(mpOptionDescTxt, "optionsDescLabel");
@@ -403,6 +396,7 @@ void SaneDlg::InitFields()
             nValue = mrSane.GetRange( nOption, pDouble );
             if( nValue > -1 )
             {
+                assert(pDouble);
                 if( nValue )
                 {
                     mpReslBox->SetMin( (long)pDouble[0] );
@@ -603,7 +597,7 @@ void SaneDlg::InitFields()
     }
 }
 
-IMPL_LINK_TYPED( SaneDlg, ClickBtnHdl, Button*, pButton, void )
+IMPL_LINK( SaneDlg, ClickBtnHdl, Button*, pButton, void )
 {
     if( mrSane.IsOpen() )
     {
@@ -614,7 +608,7 @@ IMPL_LINK_TYPED( SaneDlg, ClickBtnHdl, Button*, pButton, void )
             aString = aString.replaceFirst( "%s", Sane::GetVendor( mrSane.GetDeviceNumber() ) );
             aString = aString.replaceFirst( "%s", Sane::GetModel( mrSane.GetDeviceNumber() ) );
             aString = aString.replaceFirst( "%s", Sane::GetType( mrSane.GetDeviceNumber() ) );
-            ScopedVclPtrInstance< MessageDialog > aInfoBox(this, aString, VCL_MESSAGE_INFO);
+            ScopedVclPtrInstance< MessageDialog > aInfoBox(this, aString, VclMessageType::Info);
             aInfoBox->Execute();
         }
         else if( pButton == mpPreviewButton )
@@ -677,7 +671,7 @@ IMPL_LINK_TYPED( SaneDlg, ClickBtnHdl, Button*, pButton, void )
     }
 }
 
-IMPL_LINK_TYPED( SaneDlg, SelectHdl, ListBox&, rListBox, void )
+IMPL_LINK( SaneDlg, SelectHdl, ListBox&, rListBox, void )
 {
     if( &rListBox == mpDeviceBox && Sane::IsSane() && Sane::CountDevices() )
     {
@@ -707,7 +701,7 @@ IMPL_LINK_TYPED( SaneDlg, SelectHdl, ListBox&, rListBox, void )
     }
 }
 
-IMPL_LINK_TYPED( SaneDlg, OptionsBoxSelectHdl, SvTreeListBox*, pBox, void )
+IMPL_LINK( SaneDlg, OptionsBoxSelectHdl, SvTreeListBox*, pBox, void )
 {
     if( pBox == mpOptionBox && Sane::IsSane() )
     {
@@ -775,7 +769,7 @@ IMPL_LINK_TYPED( SaneDlg, OptionsBoxSelectHdl, SvTreeListBox*, pBox, void )
     }
 }
 
-IMPL_LINK_TYPED( SaneDlg, ModifyHdl, Edit&, rEdit, void )
+IMPL_LINK( SaneDlg, ModifyHdl, Edit&, rEdit, void )
 {
     if( mrSane.IsOpen() )
     {
@@ -867,7 +861,7 @@ IMPL_LINK_TYPED( SaneDlg, ModifyHdl, Edit&, rEdit, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SaneDlg, ReloadSaneOptionsHdl, Sane&, void )
+IMPL_LINK_NOARG( SaneDlg, ReloadSaneOptionsHdl, Sane&, void )
 {
     mnCurrentOption = -1;
     mnCurrentElement = 0;
@@ -890,14 +884,14 @@ void SaneDlg::AcquirePreview()
     if( nOption == -1 )
     {
         OUString aString(SaneResId(STR_SLOW_PREVIEW));
-        ScopedVclPtrInstance< MessageDialog > aBox(this, aString, VCL_MESSAGE_WARNING, VCL_BUTTONS_OK_CANCEL);
+        ScopedVclPtrInstance< MessageDialog > aBox(this, aString, VclMessageType::Warning, VclButtonsType::OkCancel);
         if (aBox->Execute() == RET_CANCEL)
             return;
     }
     else
         mrSane.SetOptionValue( nOption, true );
 
-    Reference<BitmapTransporter> xTransporter(new BitmapTransporter);
+    rtl::Reference<BitmapTransporter> xTransporter(new BitmapTransporter);
     if( ! mrSane.Start( *xTransporter.get() ) )
     {
         ScopedVclPtrInstance< MessageDialog > aErrorBox(this, SaneResId(STR_ERROR_SCAN));
@@ -924,7 +918,7 @@ void ScanPreview::UpdatePreviewBounds()
 {
     if( mbDragEnable )
     {
-        maPreviewRect = Rectangle( maTopLeft,
+        maPreviewRect = tools::Rectangle( maTopLeft,
                                    Size( maBottomRight.X() - maTopLeft.X(),
                                          maBottomRight.Y() - maTopLeft.Y() )
                                    );
@@ -935,29 +929,29 @@ void ScanPreview::UpdatePreviewBounds()
         if( aBMSize.Width() > aBMSize.Height() && aBMSize.Width() )
         {
             int nVHeight = (maBottomRight.X() - maTopLeft.X()) * aBMSize.Height() / aBMSize.Width();
-            maPreviewRect = Rectangle( Point( maTopLeft.X(), ( maTopLeft.Y() + maBottomRight.Y() )/2 - nVHeight/2 ),
+            maPreviewRect = tools::Rectangle( Point( maTopLeft.X(), ( maTopLeft.Y() + maBottomRight.Y() )/2 - nVHeight/2 ),
                                        Size( maBottomRight.X() - maTopLeft.X(),
                                              nVHeight ) );
         }
         else if (aBMSize.Height())
         {
             int nVWidth = (maBottomRight.Y() - maTopLeft.Y()) * aBMSize.Width() / aBMSize.Height();
-            maPreviewRect = Rectangle( Point( ( maTopLeft.X() + maBottomRight.X() )/2 - nVWidth/2, maTopLeft.Y() ),
+            maPreviewRect = tools::Rectangle( Point( ( maTopLeft.X() + maBottomRight.X() )/2 - nVWidth/2, maTopLeft.Y() ),
                                        Size( nVWidth,
                                              maBottomRight.Y() - maTopLeft.Y() ) );
         }
     }
 }
 
-void ScanPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void ScanPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     Window::Paint(rRenderContext, rRect);
-    rRenderContext.SetMapMode(MAP_APPFONT);
+    rRenderContext.SetMapMode(MapUnit::MapAppFont);
     rRenderContext.SetFillColor(Color(COL_WHITE));
     rRenderContext.SetLineColor(Color(COL_WHITE));
-    rRenderContext.DrawRect(Rectangle(Point(0, 0),
+    rRenderContext.DrawRect(tools::Rectangle(Point(0, 0),
                                       Size(PREVIEW_WIDTH, PREVIEW_HEIGHT)));
-    rRenderContext.SetMapMode(MapMode(MAP_PIXEL));
+    rRenderContext.SetMapMode(MapMode(MapUnit::MapPixel));
     // check for sane values
     rRenderContext.DrawBitmap(maPreviewRect.TopLeft(), maPreviewRect.GetSize(), maPreviewBitmap);
 
@@ -1243,8 +1237,8 @@ void ScanPreview::DrawDrag(vcl::RenderContext& rRenderContext)
         return;
 
     RasterOp eROP = rRenderContext.GetRasterOp();
-    rRenderContext.SetRasterOp(ROP_INVERT);
-    rRenderContext.SetMapMode(MapMode(MAP_PIXEL));
+    rRenderContext.SetRasterOp(RasterOp::Invert);
+    rRenderContext.SetMapMode(MapMode(MapUnit::MapPixel));
 
     if (mbDragDrawn)
         DrawRectangles(rRenderContext, aLastUL, aLastBR);
@@ -1255,7 +1249,7 @@ void ScanPreview::DrawDrag(vcl::RenderContext& rRenderContext)
 
     mbDragDrawn = true;
     rRenderContext.SetRasterOp(eROP);
-    rRenderContext.SetMapMode(MAP_APPFONT);
+    rRenderContext.SetMapMode(MapUnit::MapAppFont);
 }
 
 Point ScanPreview::GetPixelPos( const Point& rIn) const
@@ -1268,12 +1262,12 @@ Point ScanPreview::GetPixelPos( const Point& rIn) const
           / ( maMaxBottomRight.Y() - maMinTopLeft.Y() ) )
         );
 
-    return LogicToPixel(aConvert, MAP_APPFONT);
+    return LogicToPixel(aConvert, MapUnit::MapAppFont);
 }
 
 Point ScanPreview::GetLogicPos(const Point& rIn) const
 {
-    Point aConvert = PixelToLogic(rIn, MAP_APPFONT);
+    Point aConvert = PixelToLogic(rIn, MapUnit::MapAppFont);
     if( aConvert.X() < 0 )
         aConvert.X() = 0;
     if( aConvert.X() >= PREVIEW_WIDTH )
@@ -1477,8 +1471,10 @@ bool SaneDlg::SetAdjustedNumericalValue(
     double fValue,
     int nElement )
 {
-    int nOption;
-    if( ! Sane::IsSane() || ! mrSane.IsOpen() || ( nOption = mrSane.GetOptionByName( pOption ) ) == -1 )
+    if (! Sane::IsSane() || ! mrSane.IsOpen())
+        return false;
+    int const nOption(mrSane.GetOptionByName(pOption));
+    if (nOption == -1)
         return false;
 
     if( nElement < 0 || nElement >= mrSane.GetOptionElements( nOption ) )

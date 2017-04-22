@@ -10,7 +10,7 @@
 #define INCLUDED_SW_SOURCE_UIBASE_INC_HEADERFOOTERWIN_HXX
 
 #include <FrameControl.hxx>
-
+#include <vcl/builder.hxx>
 #include <vcl/menubtn.hxx>
 
 /** Class for the header and footer separator control window.
@@ -20,9 +20,10 @@
   */
 class SwHeaderFooterWin : public SwFrameMenuButtonBase
 {
+    VclBuilder            m_aBuilder;
     OUString              m_sLabel;
     bool                  m_bIsHeader;
-    PopupMenu*            m_pPopupMenu;
+    VclPtr<PopupMenu>     m_pPopupMenu;
     VclPtr<vcl::Window>   m_pLine;
     bool                  m_bIsAppearing;
     int                   m_nFadeRate;
@@ -30,12 +31,12 @@ class SwHeaderFooterWin : public SwFrameMenuButtonBase
 
 public:
     SwHeaderFooterWin( SwEditWin *pEditWin, const SwFrame *pFrame, bool bHeader );
-    virtual ~SwHeaderFooterWin( );
+    virtual ~SwHeaderFooterWin( ) override;
     virtual void dispose() override;
 
     void SetOffset( Point aOffset, long nXLineStart, long nXLineEnd );
 
-    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void Select( ) override;
 
@@ -45,12 +46,12 @@ public:
     bool IsHeader() { return m_bIsHeader; };
     bool IsEmptyHeaderFooter( );
 
-    void ExecuteCommand(sal_uInt16 nSlot);
+    void ExecuteCommand(const OString &rIdent);
 
     void SetReadonly( bool bReadonly ) override;
 
 private:
-    DECL_LINK_TYPED( FadeHandler, Timer *, void );
+    DECL_LINK( FadeHandler, Timer *, void );
 };
 
 #endif

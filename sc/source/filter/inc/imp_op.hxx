@@ -25,7 +25,6 @@
 #include "xistream.hxx"
 #include "xistyle.hxx"
 #include "flttypes.hxx"
-#include "namebuff.hxx"
 #include "root.hxx"
 #include "otlnbuff.hxx"
 #include "colrowst.hxx"
@@ -60,11 +59,11 @@ class XclImpOutlineDataBuffer : protected XclImpRoot
 {
 public:
     explicit            XclImpOutlineDataBuffer( const XclImpRoot& rRoot, SCTAB nScTab );
-    virtual             ~XclImpOutlineDataBuffer();
+    virtual             ~XclImpOutlineDataBuffer() override;
 
-    inline XclImpColRowSettings* GetColRowBuff() const { return mxColRowBuff.get(); }
-    inline XclImpOutlineBuffer* GetColOutline()  const { return mxColOutlineBuff.get(); }
-    inline XclImpOutlineBuffer* GetRowOutline()  const { return mxRowOutlineBuff.get(); }
+    XclImpColRowSettings* GetColRowBuff() const { return mxColRowBuff.get(); }
+    XclImpOutlineBuffer* GetColOutline()  const { return mxColOutlineBuff.get(); }
+    XclImpOutlineBuffer* GetRowOutline()  const { return mxRowOutlineBuff.get(); }
     void                Convert();
 
 private:
@@ -100,7 +99,6 @@ protected:
     ScfUInt32Vec            maSheetOffsets;
     ScRange                 maScOleSize;        /// Visible range if embedded.
 
-    NameBuffer*             pExtNameBuff;       // ... external names (Ind.-Basis=1)
     ExcelToSc*              pFormConv;          // formula-converter
 
     XclImpOutlineBuffer*    pColOutlineBuff;
@@ -201,7 +199,7 @@ protected:
 public:
                             ImportExcel( XclImpRootData& rImpData, SvStream& rStrm );
 
-    virtual                 ~ImportExcel();
+    virtual                 ~ImportExcel() override;
 
     virtual FltError        Read() override;
 };

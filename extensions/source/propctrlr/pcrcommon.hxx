@@ -21,7 +21,6 @@
 #define INCLUDED_EXTENSIONS_SOURCE_PROPCTRLR_PCRCOMMON_HXX
 
 #define EDITOR_LIST_APPEND              (SAL_MAX_UINT16)
-#define EDITOR_LIST_REPLACE_EXISTING    (SAL_MAX_UINT16)
 #define EDITOR_LIST_ENTRY_NOTFOUND      (SAL_MAX_UINT16)
 
 #include <com/sun/star/uno/Sequence.hxx>
@@ -81,41 +80,41 @@ namespace pcr
         typedef css::uno::Sequence< ELEMENT >  UnoBase;
 
     public:
-        inline StlSyntaxSequence() : UnoBase() { }
-        explicit inline StlSyntaxSequence( const UnoBase& rSeq ) : UnoBase( rSeq ) { }
-        explicit inline StlSyntaxSequence( sal_Int32 len ) : UnoBase( len ) { }
+        StlSyntaxSequence() : UnoBase() { }
+        explicit StlSyntaxSequence( const UnoBase& rSeq ) : UnoBase( rSeq ) { }
+        explicit StlSyntaxSequence( sal_Int32 len ) : UnoBase( len ) { }
 
         typedef const ELEMENT* const_iterator;
         typedef       ELEMENT* iterator;
 
-        inline const_iterator begin() const { return UnoBase::getConstArray(); }
-        inline const_iterator end() const { return UnoBase::getConstArray() + UnoBase::getLength(); }
+        const_iterator begin() const { return UnoBase::getConstArray(); }
+        const_iterator end() const { return UnoBase::getConstArray() + UnoBase::getLength(); }
 
-        inline iterator begin() { return UnoBase::getArray(); }
-        inline iterator end() { return UnoBase::getArray() + UnoBase::getLength(); }
+        iterator begin() { return UnoBase::getArray(); }
+        iterator end() { return UnoBase::getArray() + UnoBase::getLength(); }
 
-        inline sal_Int32 size() const { return UnoBase::getLength(); }
-        inline bool empty() const { return UnoBase::getLength() == 0; }
+        sal_Int32 size() const { return UnoBase::getLength(); }
+        bool empty() const { return UnoBase::getLength() == 0; }
     };
 
 
     //= UNO helpers
 
 #define DECLARE_XCOMPONENT() \
-    virtual void SAL_CALL dispose(  ) throw (css::uno::RuntimeException, std::exception) override; \
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override; \
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL dispose(  ) override; \
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override; \
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
 
 #define IMPLEMENT_FORWARD_XCOMPONENT( classname, baseclass ) \
-    void SAL_CALL classname::dispose(  ) throw (css::uno::RuntimeException, std::exception) \
+    void SAL_CALL classname::dispose(  ) \
     { \
     baseclass::WeakComponentImplHelperBase::dispose(); \
     } \
-    void SAL_CALL classname::addEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener ) throw (css::uno::RuntimeException, std::exception) \
+    void SAL_CALL classname::addEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener ) \
     { \
         baseclass::WeakComponentImplHelperBase::addEventListener( Listener ); \
     } \
-    void SAL_CALL classname::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener ) throw (css::uno::RuntimeException, std::exception) \
+    void SAL_CALL classname::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener ) \
     { \
         baseclass::WeakComponentImplHelperBase::removeEventListener( Listener ); \
     } \

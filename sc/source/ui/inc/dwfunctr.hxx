@@ -22,37 +22,26 @@
 #include <sfx2/childwin.hxx>
 #include <sfx2/dockwin.hxx>
 #include <svl/lstner.hxx>
-#include <svtools/stdctrl.hxx>
 
 #include <vcl/lstbox.hxx>
 #include <vcl/button.hxx>
 #include <vcl/combobox.hxx>
+#include <svx/sidebar/PanelLayout.hxx>
 #include "anyrefdg.hxx"
 #include "global.hxx"
-#include "privsplt.hxx"
 #include "funcdesc.hxx"
 
-class ScFunctionWin : public vcl::Window, public SfxListener
+class ScFunctionWin : public PanelLayout
 {
 
 private:
-    SfxBindings&        rBindings;
-    Idle                aIdle;
-    VclPtr<ScPrivatSplit> aPrivatSplit;
     VclPtr<ListBox>     aCatBox;
     VclPtr<ListBox>     aFuncList;
-    VclPtr<ListBox>     aDDFuncList;
-    VclPtr<ListBox>            pAllFuncList;
 
-    VclPtr<ImageButton> aInsertButton;
+    VclPtr<PushButton>  aInsertButton;
     VclPtr<FixedText>   aFiFuncDesc;
-    sal_uLong           nMinWidth;
-    sal_uLong           nMinHeight;
-    Size                aOldSize;
-    bool                bSizeFlag;
-    Point               aSplitterInitPos;
     const ScFuncDesc*   pFuncDesc;
-    sal_uInt16              nArgs;
+    sal_uInt16          nArgs;
 
     ::std::vector< const formula::IFunctionDescription*> aLRUList;
 
@@ -60,33 +49,16 @@ private:
     void            UpdateLRUList();
     void            DoEnter();
     void            SetDescription();
-    void            SetLeftRightSize();
-    void            SetMyWidthLeRi(Size &aNewSize);
-    void            SetMyHeightLeRi(Size &aNewSize);
-    void            UseSplitterInitPos();
 
-                    DECL_LINK_TYPED( SetSelectionHdl, ListBox&, void );
-                    DECL_LINK_TYPED( SetSelectionClickHdl, Button*, void );
-                    DECL_LINK_TYPED( SelHdl, ListBox&, void );
-                    DECL_LINK_TYPED( SetSplitHdl, ScPrivatSplit&, void );
-                    DECL_LINK_TYPED( TimerHdl, Idle*, void );
-
-protected:
-
-    virtual void    Resize() override;
-    void            SetSize();
-    virtual void    StateChanged( StateChangedType nStateChange ) override;
+                    DECL_LINK( SetSelectionHdl, ListBox&, void );
+                    DECL_LINK( SetSelectionClickHdl, Button*, void );
+                    DECL_LINK( SelHdl, ListBox&, void );
 
 public:
-                    ScFunctionWin(  SfxBindings* pBindings,
-                                        vcl::Window* pParent,
-                                        const ResId& rResId );
+    ScFunctionWin(vcl::Window* pParent, const css::uno::Reference<css::frame::XFrame> &rFrame);
 
-                    virtual ~ScFunctionWin();
+    virtual ~ScFunctionWin() override;
     virtual void    dispose() override;
-
-    using ::vcl::Window::Notify;
-    virtual void    Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
     void            InitLRUList();
 };

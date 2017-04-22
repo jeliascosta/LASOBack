@@ -17,6 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
+
 #include <calbck.hxx>
 #include <cntfrm.hxx>
 #include <doc.hxx>
@@ -31,7 +35,7 @@
 using namespace ::com::sun::star;
 
 SwTableFieldType::SwTableFieldType(SwDoc* pDocPtr)
-    : SwValueFieldType( pDocPtr, RES_TABLEFLD )
+    : SwValueFieldType( pDocPtr, SwFieldIds::Table )
 {}
 
 SwFieldType* SwTableFieldType::Copy() const
@@ -113,7 +117,7 @@ OUString SwTableField::Expand() const
 
     if(nSubType & nsSwGetSetExpType::GSE_STRING)
     {
-        // es ist ein String
+        // it is a string
         return sExpand.copy(1, sExpand.getLength()-2);
     }
 
@@ -164,7 +168,7 @@ bool SwTableField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= 0 != (nsSwExtendedSubType::SUB_CMD & nSubType);
         break;
     case FIELD_PROP_PAR1:
-        rAny <<= GetExpStr();
+        rAny <<= sExpand;
         break;
     case FIELD_PROP_FORMAT:
         rAny <<= (sal_Int32)GetFormat();
@@ -188,7 +192,7 @@ bool SwTableField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         }
         break;
     case FIELD_PROP_BOOL1:
-        if(*static_cast<sal_Bool const *>(rAny.getValue()))
+        if(*o3tl::doAccess<bool>(rAny))
             nSubType = nsSwGetSetExpType::GSE_FORMULA|nsSwExtendedSubType::SUB_CMD;
         else
             nSubType = nsSwGetSetExpType::GSE_FORMULA;

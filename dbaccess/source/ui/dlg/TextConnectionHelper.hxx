@@ -44,7 +44,7 @@ namespace dbaui
     {
     public:
         OTextConnectionHelper( vcl::Window* pParent, const short _nAvailableSections );
-        virtual ~OTextConnectionHelper();
+        virtual ~OTextConnectionHelper() override;
         virtual void dispose() override;
 
     private:
@@ -76,8 +76,8 @@ namespace dbaui
         short       m_nAvailableSections;
 
     protected:
-        DECL_LINK_TYPED(OnSetExtensionHdl,RadioButton&,void);
-        DECL_LINK_TYPED(OnEditModified, Edit&, void);
+        DECL_LINK(OnSetExtensionHdl,RadioButton&,void);
+        DECL_LINK(OnEditModified, Edit&, void);
 
     private:
         OUString    GetSeparator( const ComboBox& rBox, const OUString& rList );
@@ -86,8 +86,8 @@ namespace dbaui
 
     public:
         void        implInitControls(const SfxItemSet& _rSet, bool _bValid);
-        void        fillControls(::std::vector< ISaveValueWrapper* >& _rControlList);
-        void        fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList);
+        void        fillControls(std::vector< ISaveValueWrapper* >& _rControlList);
+        void        fillWindows(std::vector< ISaveValueWrapper* >& _rControlList);
         void        SetClickHandler(const Link<OTextConnectionHelper*, void>& _rHandler) { m_aGetExtensionHandler = _rHandler; }
         OUString    GetExtension();
         bool        FillItemSet( SfxItemSet& rSet, const bool bChangedSomething );

@@ -26,9 +26,8 @@
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 #include "navipi.hxx"
-#include "popmenu.hxx"
 #include "scresid.hxx"
-#include "sc.hrc"
+#include "scres.hrc"
 #include "globstr.hrc"
 
 // class ScScenarioWindow ------------------------------------------------
@@ -67,7 +66,7 @@ void ScScenarioListBox::UpdateEntries( const std::vector<OUString> &aNewEntryLis
         default:
         {
             // sheet contains scenarios
-            OSL_ENSURE( aNewEntryList.size() % 3 == 0, "ScScenarioListBox::UpdateEntries - wrong list size" );
+            assert(aNewEntryList.size() % 3 == 0 && "ScScenarioListBox::UpdateEntries - wrong list size");
             SetUpdateMode( false );
 
             std::vector<OUString>::const_iterator iter;
@@ -107,7 +106,7 @@ void ScScenarioListBox::DoubleClick()
     SelectScenario();
 }
 
-bool ScScenarioListBox::Notify( NotifyEvent& rNEvt )
+bool ScScenarioListBox::EventNotify( NotifyEvent& rNEvt )
 {
     bool bHandled = false;
 
@@ -135,27 +134,21 @@ bool ScScenarioListBox::Notify( NotifyEvent& rNEvt )
             {
                 if( !pEntry->mbProtected )
                 {
-                    ScPopupMenu aPopup( ScResId( RID_POPUP_NAVIPI_SCENARIO ) );
-                    aPopup.Execute( this, pCEvt->GetMousePosPixel() );
-                    if (aPopup.WasHit())
-                    {
-                        switch( aPopup.GetSelected() )
-                        {
-                            case RID_NAVIPI_SCENARIO_DELETE:
-                                DeleteScenario();
-                            break;
-                            case RID_NAVIPI_SCENARIO_EDIT:
-                                EditScenario();
-                            break;
-                        }
-                    }
+                    VclBuilder aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/scalc/ui/scenariomenu.ui", "");
+                    VclPtr<PopupMenu> aPopup(aBuilder.get_menu("menu"));
+                    sal_uInt16 nId = aPopup->Execute(this, pCEvt->GetMousePosPixel());
+                    OString sIdent(aPopup->GetItemIdent(nId));
+                    if (sIdent == "delete")
+                        DeleteScenario();
+                    else if (sIdent == "edit")
+                        EditScenario();
                 }
             }
             bHandled = true;
         }
     }
 
-    return bHandled || ListBox::Notify( rNEvt );
+    return bHandled || ListBox::EventNotify(rNEvt);
 }
 
 const ScScenarioListBox::ScenarioEntry* ScScenarioListBox::GetSelectedEntry() const
@@ -237,7 +230,7 @@ void ScScenarioWindow::dispose()
     vcl::Window::dispose();
 }
 
-void ScScenarioWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void ScScenarioWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
     Color aBgColor = rStyleSettings.GetFaceColor();
@@ -274,18 +267,18 @@ void ScScenarioWindow::NotifyState( const SfxPoolItem* pState )
     }
 }
 
-void ScScenarioWindow::SetSizePixel( const Size& rNewSize )
+void ScScenarioWindow::Resize()
 {
-    Size aSize( rNewSize );
+    Window::Resize();
+
+    Size aSize(GetSizePixel());
     long nHeight = aSize.Height() / 2;
 
-    Window::SetSizePixel( aSize );
-
     aSize.Height() = nHeight;
-    aLbScenario->SetSizePixel( aSize );
+    aLbScenario->SetSizePixel(aSize);
 
     aSize.Height() -= 4;
-    aEdComment->SetPosSizePixel( Point( 0, nHeight+4 ), aSize );
+    aEdComment->SetPosSizePixel(Point(0, nHeight + 4), aSize);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -34,7 +34,7 @@ class SvtPathOptions_Impl;
 class SAL_WARN_UNUSED UNOTOOLS_DLLPUBLIC SvtPathOptions : public utl::detail::Options
 {
 private:
-    SvtPathOptions_Impl*    pImp;
+    std::shared_ptr<SvtPathOptions_Impl>    pImpl;
 
 public:
     enum Paths
@@ -68,7 +68,7 @@ public:
     };
 
     SvtPathOptions();
-    virtual ~SvtPathOptions();
+    virtual ~SvtPathOptions() override;
 
     // get the paths, not const because of using a mutex
     const OUString& GetAddinPath() const;
@@ -93,7 +93,6 @@ public:
     const OUString& GetTemplatePath() const;
     const OUString& GetUserConfigPath() const;
     const OUString& GetWorkPath() const;
-    const OUString& GetUIConfigPath() const;
     const OUString& GetFingerprintPath() const;
     const OUString& GetClassificationPath() const;
 

@@ -68,7 +68,7 @@ public:
     SwKeepConversionDirectionStateContext()
     {
         //!! hack to transport the current conversion direction state settings
-        //!! into the next incarnation that iterates over the drawing objets
+        //!! into the next incarnation that iterates over the drawing objects
         //!! ( see SwHHCWrapper::~SwHHCWrapper() )
         editeng::HangulHanjaConversion::SetUseSavedConversionDirectionState( true );
     }
@@ -120,7 +120,7 @@ SwHHCWrapper::~SwHHCWrapper()
     // check for existence of a draw view which means that there are
     // (or previously were) draw objects present in the document.
     // I.e. we like to check those too.
-    if ( IsDrawObj() /*&& bLastRet*/ && m_pView->GetWrtShell().HasDrawView() )
+    if ( m_bIsDrawObj /*&& bLastRet*/ && m_pView->GetWrtShell().HasDrawView() )
     {
         vcl::Cursor *pSave = m_pView->GetWindow()->GetCursor();
         {
@@ -423,7 +423,7 @@ void SwHHCWrapper::ReplaceUnit(
 
     if (pRuby)
     {
-        m_rWrtShell.StartUndo( UNDO_SETRUBYATTR );
+        m_rWrtShell.StartUndo( SwUndoId::SETRUBYATTR );
         if (!aNewOrigText.isEmpty())
         {
             // according to FT we currently should not bother about keeping
@@ -451,11 +451,11 @@ void SwHHCWrapper::ReplaceUnit(
 #endif
         m_rWrtShell.SetAttrItem(*pRuby);
         delete pRuby;
-        m_rWrtShell.EndUndo( UNDO_SETRUBYATTR );
+        m_rWrtShell.EndUndo( SwUndoId::SETRUBYATTR );
     }
     else
     {
-        m_rWrtShell.StartUndo( UNDO_OVERWRITE );
+        m_rWrtShell.StartUndo( SwUndoId::OVERWRITE );
 
         // according to FT we should currently not bother about keeping
         // attributes in Hangul/Hanja conversion and leave that untouched.
@@ -504,7 +504,7 @@ void SwHHCWrapper::ReplaceUnit(
             m_rWrtShell.ClearMark();
         }
 
-        m_rWrtShell.EndUndo( UNDO_OVERWRITE );
+        m_rWrtShell.EndUndo( SwUndoId::OVERWRITE );
     }
 
     m_rWrtShell.EndAllAction();
@@ -535,7 +535,7 @@ void SwHHCWrapper::Convert()
             // get PaM that points to the start of the document
             SwNode& rNode = m_pView->GetDocShell()->GetDoc()->GetNodes().GetEndOfContent();
             SwPaM aPam(rNode);
-            aPam.Move( fnMoveBackward, fnGoDoc ); // move to start of document
+            aPam.Move( fnMoveBackward, GoInDoc ); // move to start of document
 
             pSttPos = aPam.GetPoint();  //! using a PaM here makes sure we will get only text nodes
             SwTextNode *pTextNode = pSttPos->nNode.GetNode().GetTextNode();
@@ -600,11 +600,11 @@ void SwHHCWrapper::Convert()
     }
 
     if ( m_bIsOtherContent )
-        ConvStart_impl( m_pConvArgs, SVX_SPELL_OTHER );
+        ConvStart_impl( m_pConvArgs, SvxSpellArea::Other );
     else
     {
         m_bStartChk = false;
-        ConvStart_impl( m_pConvArgs, SVX_SPELL_BODY_END );
+        ConvStart_impl( m_pConvArgs, SvxSpellArea::BodyEnd );
     }
 
     ConvertDocument();
@@ -632,22 +632,22 @@ bool SwHHCWrapper::ConvNext_impl( )
     if ( m_bIsOtherContent )
     {
         m_bStartChk = false;
-        ConvStart_impl( m_pConvArgs, SVX_SPELL_BODY );
+        ConvStart_impl( m_pConvArgs, SvxSpellArea::Body );
         bGoOn = true;
     }
     else if ( m_bStartDone && m_bEndDone )
     {
         // body region done, ask about special region
-        if( HasOtherCnt_impl() )
+        if( !m_bIsSelection && m_rWrtShell.HasOtherCnt() )
         {
-            ConvStart_impl( m_pConvArgs, SVX_SPELL_OTHER );
+            ConvStart_impl( m_pConvArgs, SvxSpellArea::Other );
             m_bIsOtherContent = bGoOn = true;
         }
     }
     else
     {
             m_bStartChk = !m_bStartDone;
-            ConvStart_impl( m_pConvArgs, m_bStartChk ? SVX_SPELL_BODY_START : SVX_SPELL_BODY_END );
+            ConvStart_impl( m_pConvArgs, m_bStartChk ? SvxSpellArea::BodyStart : SvxSpellArea::BodyEnd );
             bGoOn = true;
     }
     return bGoOn;
@@ -679,14 +679,9 @@ bool SwHHCWrapper::FindConvText_impl()
     return bFound;
 }
 
-bool SwHHCWrapper::HasOtherCnt_impl()
-{
-    return !m_bIsSelection && m_rWrtShell.HasOtherCnt();
-}
-
 void SwHHCWrapper::ConvStart_impl( SwConversionArgs /* [out] */ *pConversionArgs, SvxSpellArea eArea )
 {
-    SetDrawObj( SVX_SPELL_OTHER == eArea );
+    m_bIsDrawObj = SvxSpellArea::Other == eArea;
     m_pView->SpellStart( eArea, m_bStartDone, m_bEndDone, /* [out] */ pConversionArgs );
 }
 

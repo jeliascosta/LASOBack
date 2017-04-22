@@ -79,9 +79,7 @@ class LwpBookMark;
 class LwpVersionManager
 {
 public:
-    LwpVersionManager(){}
-    ~LwpVersionManager(){}
-public:
+    LwpVersionManager() = delete;
     static void Read(LwpObjectStream *pStrm);
     static void Skip(LwpObjectStream *pStrm);
 };
@@ -90,7 +88,6 @@ class LwpObjectManager
 {
 public:
     LwpObjectManager(){}
-    ~LwpObjectManager(){}
 private:
     LwpObjectID m_Division;
 public:
@@ -101,7 +98,6 @@ class LwpNumberManager
 {
 public:
     LwpNumberManager(){}
-    ~LwpNumberManager(){}
 private:
     LwpObjectID m_TableRange;
 public:
@@ -113,7 +109,6 @@ class LwpBulletManager
 {
 public:
     LwpBulletManager(){}
-    ~LwpBulletManager(){}
 private:
     LwpObjectID m_Head;
 public:
@@ -126,7 +121,6 @@ class LwpContentManager
 {
 public:
     LwpContentManager(){}
-    ~LwpContentManager(){}
 private:
     LwpObjectID m_ContentList;
     LwpObjectID m_EnumHead;
@@ -138,8 +132,8 @@ private:
     LwpObjectID m_OleHead;
     LwpObjectID m_OleTail;
 public:
-    inline LwpObjectID& GetContentList() { return m_ContentList; }
-    inline LwpObjectID& GetGraphicListHead() { return m_GrapHead; }
+    LwpObjectID& GetContentList() { return m_ContentList; }
+    LwpObjectID& GetGraphicListHead() { return m_GrapHead; }
     LwpContent* EnumContents(LwpContent* pContent);
 
 public:
@@ -150,7 +144,6 @@ class LwpPieceManager
 {
 public:
     LwpPieceManager(){}
-    ~LwpPieceManager(){}
 private:
     LwpObjectID m_GeometryPieceList;
     LwpObjectID m_ScalePieceList;
@@ -187,7 +180,6 @@ class LwpOrderedObjectManager
 {
 public:
     LwpOrderedObjectManager(){}
-    ~LwpOrderedObjectManager(){}
 protected:
     LwpObjectID m_Head;
 public:
@@ -248,7 +240,7 @@ private: //file members
 
     LwpContentManager m_ContentMgr;
     LwpFontManager m_FontMgr;
-    LwpPieceManager* m_pPieceMgr;
+    std::unique_ptr<LwpPieceManager> m_xPieceMgr;
 
     LwpObjectID m_DftDropCapStyle;
     LwpObjectID m_DftHeaderStyle;
@@ -257,26 +249,26 @@ private: //file members
 private:
     void ReadStyles(LwpObjectStream *pStrm);
 public:
-    inline LwpContentManager& GetContentManager() { return m_ContentMgr; }
-    inline LwpObjectID& GetGraphicListHead() { return m_ContentMgr.GetGraphicListHead(); }
-    inline LwpFontManager& GetFontManger() { return m_FontMgr;}
-    inline LwpObjectID& GetTextStyleHead()  { return m_TextStyle;}
-    inline LwpObjectID& GetLayout() {return m_Layout;}
-    inline LwpObjectID& GetBulletManagerID() { return m_BulMgr.GetHeadID();}
-    inline LwpDocument* GetDocument(){ return m_pDoc;}
-    inline LwpNumberManager& GetNumberManager() { return m_NumMgr;}
+    LwpContentManager& GetContentManager() { return m_ContentMgr; }
+    LwpObjectID& GetGraphicListHead() { return m_ContentMgr.GetGraphicListHead(); }
+    LwpFontManager& GetFontManger() { return m_FontMgr;}
+    LwpObjectID& GetTextStyleHead()  { return m_TextStyle;}
+    LwpObjectID& GetLayout() {return m_Layout;}
+    LwpObjectID& GetBulletManagerID() { return m_BulMgr.GetHeadID();}
+    LwpDocument* GetDocument(){ return m_pDoc;}
+    LwpNumberManager& GetNumberManager() { return m_NumMgr;}
     LwpObjectID * GetDefaultTextStyle() ;
 private:
-    LwpStyleManager* m_pStyleMgr;
-    LwpDropcapMgr* m_pDropcapMgr;
-    LwpBulletStyleMgr* m_pBulletStyleMgr;
+    std::unique_ptr<LwpStyleManager> m_xStyleMgr;
+    std::unique_ptr<LwpDropcapMgr> m_xDropcapMgr;
+    std::unique_ptr<LwpBulletStyleMgr> m_xBulletStyleMgr;
 public:
-    inline LwpStyleManager* GetStyleManager() { return m_pStyleMgr;}
+    LwpStyleManager* GetStyleManager() { return m_xStyleMgr.get(); }
     LwpBookMark* GetBookMark(LwpObjectID objMarker);
-    LwpDropcapMgr* GetDropcapMgr(){return m_pDropcapMgr;}
+    LwpDropcapMgr* GetDropcapMgr() { return m_xDropcapMgr.get(); }
     LwpContent* EnumContents(LwpContent* pContent);
     LwpSection* EnumSections(LwpSection* pSection);
-    LwpBulletStyleMgr* GetBulletStyleMgr(){return m_pBulletStyleMgr;}
+    LwpBulletStyleMgr* GetBulletStyleMgr() { return m_xBulletStyleMgr.get(); }
 
     LwpObjectID* FindParaStyleByName(const OUString& name);
     OUString FindActuralStyleName(const OUString& name);

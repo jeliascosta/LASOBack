@@ -50,7 +50,7 @@ namespace drawinglayer
             if(!rSeq.empty() && nDiscreteWidth && nDiscreteHeight)
             {
                 // get destination size in pixels
-                const MapMode aMapModePixel(MAP_PIXEL);
+                const MapMode aMapModePixel(MapUnit::MapPixel);
                 const sal_uInt32 nViewVisibleArea(nDiscreteWidth * nDiscreteHeight);
                 drawinglayer::primitive2d::Primitive2DContainer aSequence(rSeq);
 
@@ -100,7 +100,7 @@ namespace drawinglayer
 #ifdef DBG_UTIL
                     if(bDoSaveForVisualControl)
                     {
-                        SvFileStream aNew(OUString("c:\\test_content.png"), StreamMode::WRITE|StreamMode::TRUNC);
+                        SvFileStream aNew("c:\\test_content.png", StreamMode::WRITE|StreamMode::TRUNC);
                         vcl::PNGWriter aPNGWriter(aContent);
                         aPNGWriter.Write(aNew);
                     }
@@ -130,7 +130,7 @@ namespace drawinglayer
 #ifdef DBG_UTIL
                     if(bDoSaveForVisualControl)
                     {
-                        SvFileStream aNew(OUString("c:\\test_alpha.png"), StreamMode::WRITE|StreamMode::TRUNC);
+                        SvFileStream aNew("c:\\test_alpha.png", StreamMode::WRITE|StreamMode::TRUNC);
                         vcl::PNGWriter aPNGWriter(aAlpha);
                         aPNGWriter.Write(aNew);
                     }
@@ -141,7 +141,7 @@ namespace drawinglayer
 #ifdef DBG_UTIL
                     if(bDoSaveForVisualControl)
                     {
-                        SvFileStream aNew(OUString("c:\\test_combined.png"), StreamMode::WRITE|StreamMode::TRUNC);
+                        SvFileStream aNew("c:\\test_combined.png", StreamMode::WRITE|StreamMode::TRUNC);
                         vcl::PNGWriter aPNGWriter(aRetval);
                         aPNGWriter.Write(aNew);
                     }

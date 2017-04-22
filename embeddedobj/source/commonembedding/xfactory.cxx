@@ -23,7 +23,7 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
-
+#include <com/sun/star/io/IOException.hpp>
 #include <comphelper/processfactory.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <comphelper/documentconstants.hxx>
@@ -60,11 +60,6 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
                                                                     const OUString& sEntName,
                                                                     const uno::Sequence< beans::PropertyValue >& aMediaDescr,
                                                                     const uno::Sequence< beans::PropertyValue >& lObjArgs )
-    throw ( lang::IllegalArgumentException,
-            container::NoSuchElementException,
-            io::IOException,
-            uno::Exception,
-            uno::RuntimeException, std::exception)
 {
     if ( !xStorage.is() )
         throw lang::IllegalArgumentException( "No parent storage is provided!",
@@ -76,9 +71,7 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
                                             static_cast< ::cppu::OWeakObject* >(this),
                                             2 );
 
-    uno::Reference< container::XNameAccess > xNameAccess( xStorage, uno::UNO_QUERY );
-    if ( !xNameAccess.is() )
-        throw uno::RuntimeException(); //TODO
+    uno::Reference< container::XNameAccess > xNameAccess( xStorage, uno::UNO_QUERY_THROW );
 
     // detect entry existence
     if ( !xNameAccess->hasByName( sEntName ) )
@@ -91,9 +84,7 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
         uno::Reference< embed::XStorage > xSubStorage =
                 xStorage->openStorageElement( sEntName, embed::ElementModes::READ );
 
-        uno::Reference< beans::XPropertySet > xPropSet( xSubStorage, uno::UNO_QUERY );
-        if ( !xPropSet.is() )
-            throw uno::RuntimeException();
+        uno::Reference< beans::XPropertySet > xPropSet( xSubStorage, uno::UNO_QUERY_THROW );
 
         OUString aMediaType;
         try {
@@ -134,10 +125,7 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
         throw io::IOException(); // TODO:
     }
 
-    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY );
-
-    if ( !xPersist.is() )
-        throw uno::RuntimeException(); // TODO: the interface must be supported by own document objects
+    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY_THROW );
 
     xPersist->setPersistentEntry( xStorage,
                                     sEntName,
@@ -153,10 +141,6 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
         const OUString& sEntName,
         const uno::Sequence< beans::PropertyValue >& aMediaDescr,
         const uno::Sequence< beans::PropertyValue >& lObjArgs )
-    throw ( lang::IllegalArgumentException,
-            io::IOException,
-            uno::Exception,
-            uno::RuntimeException, std::exception)
 {
     if ( !xStorage.is() )
         throw lang::IllegalArgumentException( "No parent storage is provided!",
@@ -194,10 +178,7 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
         throw io::IOException(); // TODO:
     }
 
-    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY );
-
-    if ( !xPersist.is() )
-        throw uno::RuntimeException(); // TODO: the interface must be supported ( what about applets? )
+    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY_THROW );
 
     xPersist->setPersistentEntry( xStorage,
                                     sEntName,
@@ -214,10 +195,6 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
                                             const uno::Reference< embed::XStorage >& xStorage,
                                             const OUString& sEntName,
                                             const uno::Sequence< beans::PropertyValue >& lObjArgs )
-    throw ( lang::IllegalArgumentException,
-            io::IOException,
-            uno::Exception,
-            uno::RuntimeException, std::exception)
 {
     uno::Reference< uno::XInterface > xResult;
 
@@ -241,10 +218,7 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
                  uno::UNO_QUERY );
 
 
-    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY );
-
-    if ( !xPersist.is() )
-        throw uno::RuntimeException(); // TODO: the interface must be supported by own document objects
+    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY_THROW );
 
     xPersist->setPersistentEntry( xStorage,
                                     sEntName,
@@ -263,12 +237,8 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
             sal_Int32 nEntryConnectionMode,
             const uno::Sequence< beans::PropertyValue >& lArguments,
             const uno::Sequence< beans::PropertyValue >& lObjArgs )
-    throw ( lang::IllegalArgumentException,
-            io::IOException,
-            uno::Exception,
-            uno::RuntimeException, std::exception )
 {
-    // the initialization is completelly controlled by user
+    // the initialization is completely controlled by user
     if ( !xStorage.is() )
         throw lang::IllegalArgumentException( "No parent storage is provided!",
                                             uno::Reference< uno::XInterface >( static_cast< ::cppu::OWeakObject* >(this) ),
@@ -298,18 +268,12 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
                                                 aObject ) ),
                     uno::UNO_QUERY );
 
-    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY );
-    if ( xPersist.is() )
-    {
-        xPersist->setPersistentEntry( xStorage,
-                                    sEntName,
-                                    nEntryConnectionMode,
-                                    aTempMedDescr,
-                                    lObjArgs );
-
-    }
-    else
-        throw uno::RuntimeException(); // TODO:
+    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY_THROW );
+    xPersist->setPersistentEntry( xStorage,
+                                  sEntName,
+                                  nEntryConnectionMode,
+                                  aTempMedDescr,
+                                  lObjArgs );
 
     return xResult;
 }
@@ -319,10 +283,6 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
                                             const OUString& /*sEntName*/,
                                             const uno::Sequence< beans::PropertyValue >& aMediaDescr,
                                             const uno::Sequence< beans::PropertyValue >& lObjArgs )
-        throw ( lang::IllegalArgumentException,
-                io::IOException,
-                uno::Exception,
-                uno::RuntimeException, std::exception )
 {
     uno::Reference< uno::XInterface > xResult;
 
@@ -371,15 +331,10 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
                                                 const OUString& sEntName,
                                                 const uno::Sequence< beans::PropertyValue >& lArguments,
                                                 const uno::Sequence< beans::PropertyValue >& lObjArgs )
-        throw ( lang::IllegalArgumentException,
-                io::IOException,
-                uno::Exception,
-                uno::RuntimeException,
-                std::exception )
 {
     uno::Reference< uno::XInterface > xResult;
 
-    // the initialization is completelly controlled by user
+    // the initialization is completely controlled by user
     if ( !xStorage.is() )
         throw lang::IllegalArgumentException( "No parent storage is provided!",
                                             uno::Reference< uno::XInterface >( static_cast< ::cppu::OWeakObject* >(this) ),
@@ -428,19 +383,16 @@ uno::Reference< uno::XInterface > SAL_CALL OOoEmbeddedObjectFactory::createInsta
 }
 
 OUString SAL_CALL OOoEmbeddedObjectFactory::getImplementationName()
-    throw ( uno::RuntimeException, std::exception )
 {
     return impl_staticGetImplementationName();
 }
 
 sal_Bool SAL_CALL OOoEmbeddedObjectFactory::supportsService( const OUString& ServiceName )
-    throw ( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL OOoEmbeddedObjectFactory::getSupportedServiceNames()
-    throw ( uno::RuntimeException, std::exception )
 {
     return impl_staticGetSupportedServiceNames();
 }
@@ -472,10 +424,6 @@ uno::Reference< uno::XInterface > SAL_CALL OOoSpecialEmbeddedObjectFactory::crea
             sal_Int32 /*nEntryConnectionMode*/,
             const uno::Sequence< beans::PropertyValue >& /*lArguments*/,
             const uno::Sequence< beans::PropertyValue >& /*lObjArgs*/ )
-    throw ( lang::IllegalArgumentException,
-            io::IOException,
-            uno::Exception,
-            uno::RuntimeException, std::exception )
 {
     uno::Sequence< beans::NamedValue > aObject = m_aConfigHelper.GetObjectPropsByClassID( aClassID );
     if ( !aObject.getLength() )
@@ -490,19 +438,16 @@ uno::Reference< uno::XInterface > SAL_CALL OOoSpecialEmbeddedObjectFactory::crea
 }
 
 OUString SAL_CALL OOoSpecialEmbeddedObjectFactory::getImplementationName()
-    throw ( uno::RuntimeException, std::exception )
 {
     return impl_staticGetImplementationName();
 }
 
 sal_Bool SAL_CALL OOoSpecialEmbeddedObjectFactory::supportsService( const OUString& ServiceName )
-    throw ( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL OOoSpecialEmbeddedObjectFactory::getSupportedServiceNames()
-    throw ( uno::RuntimeException, std::exception )
 {
     return impl_staticGetSupportedServiceNames();
 }

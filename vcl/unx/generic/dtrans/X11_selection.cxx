@@ -22,7 +22,6 @@
 #include <cstdlib>
 
 #include "unx/saldisp.hxx"
-#include "unx/saldata.hxx"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -316,7 +315,7 @@ Cursor SelectionManager::createCursor( const unsigned char* pPointerData, const 
     return aCursor;
 }
 
-void SelectionManager::initialize( const Sequence< Any >& arguments ) throw (css::uno::Exception, std::exception)
+void SelectionManager::initialize( const Sequence< Any >& arguments )
 {
     osl::MutexGuard aGuard(m_aMutex);
 
@@ -578,7 +577,7 @@ OString SelectionManager::convertToCompound( const OUString& rText )
     {
         aRet = reinterpret_cast<char*>(aProp.value);
         XFree( aProp.value );
-#ifdef SOLARIS
+#ifdef __sun
         /*
          *  for currently unknown reasons XmbTextListToTextProperty on Solaris returns
          *  no data in ISO8859-n encodings (at least for n = 1, 15)
@@ -770,6 +769,7 @@ void SelectionManager::convertTypeToNative( const OUString& rType, Atom selectio
     int nTabEntries = selection == m_nXdndSelection ? SAL_N_ELEMENTS(aXdndConversionTab) : SAL_N_ELEMENTS(aNativeConversionTab);
 
     OString aType( OUStringToOString( rType, RTL_TEXTENCODING_ISO_8859_1 ) );
+    SAL_INFO( "vcl.unx.dtrans", "convertTypeToNative " << aType );
     rFormat = 0;
     for( int i = 0; i < nTabEntries; i++ )
     {
@@ -1184,9 +1184,13 @@ bool SelectionManager::getPasteData( Atom selection, const OUString& rType, Sequ
         Atom nSelectedType = None;
         for( type_it = aTypes.begin(); type_it != aTypes.end() && nSelectedType == None; ++type_it )
         {
-            for( unsigned int i = 0; i < rNativeTypes.size() && nSelectedType == None; i++ )
-                if( rNativeTypes[i] == *type_it )
+            for( auto const & i: rNativeTypes )
+                if( i == *type_it )
+                {
                     nSelectedType = *type_it;
+                    if (nSelectedType != None)
+                        break;
+                }
         }
         if( nSelectedType != None )
             bSuccess = getPasteData( selection, nSelectedType, rData );
@@ -1413,7 +1417,7 @@ PixmapHolder* SelectionManager::getPixmapHolder( Atom selection )
     return it->second->m_pPixmap;
 }
 
-static sal_Size GetTrueFormatSize(int nFormat)
+static std::size_t GetTrueFormatSize(int nFormat)
 {
     // http://mail.gnome.org/archives/wm-spec-list/2003-March/msg00067.html
     return nFormat == 32 ? sizeof(long) : nFormat/8;
@@ -1458,7 +1462,7 @@ bool SelectionManager::sendData( SelectionAdaptor* pAdaptor,
                     // conversion succeeded, so aData contains image/bmp now
                     if( pPixmap->needsConversion( reinterpret_cast<const sal_uInt8*>(aData.getConstArray()) ) )
                     {
-                        SAL_INFO( "vcl", "trying bitmap conversion" );
+                        SAL_INFO( "vcl.unx.dtrans", "trying bitmap conversion" );
                         int depth = pPixmap->getDepth();
                         aGuard.clear();
                         aData = convertBitmapDepth(aData, depth);
@@ -1542,7 +1546,7 @@ bool SelectionManager::sendData( SelectionAdaptor* pAdaptor,
         }
         else
         {
-            sal_Size nUnitSize = GetTrueFormatSize(nFormat);
+            std::size_t nUnitSize = GetTrueFormatSize(nFormat);
             XChangeProperty( m_pDisplay,
                              requestor,
                              property,
@@ -1847,7 +1851,7 @@ bool SelectionManager::handleReceivePropertyNotify( XPropertyEvent& rNotify )
                      nFormat, nBytes );
 #endif
 
-            sal_Size nUnitSize = GetTrueFormatSize(nFormat);
+            std::size_t nUnitSize = GetTrueFormatSize(nFormat);
 
             if( it->second->m_eState == Selection::WaitingForData ||
                 it->second->m_eState == Selection::WaitingForResponse )
@@ -1949,7 +1953,7 @@ bool SelectionManager::handleSendPropertyNotify( XPropertyEvent& rNotify )
                          (const unsigned char*)rInc.m_aData.getConstArray()+rInc.m_nBufferPos );
 #endif
 
-                sal_Size nUnitSize = GetTrueFormatSize(rInc.m_nFormat);
+                std::size_t nUnitSize = GetTrueFormatSize(rInc.m_nFormat);
 
                 XChangeProperty( m_pDisplay,
                                  rInc.m_aRequestor,
@@ -2047,7 +2051,7 @@ bool SelectionManager::handleSelectionNotify( XSelectionEvent& rNotify )
                                     &pData );
             }
             it->second->m_eState        = Selection::Inactive;
-            sal_Size nUnitSize = GetTrueFormatSize(nFormat);
+            std::size_t nUnitSize = GetTrueFormatSize(nFormat);
             it->second->m_aData         = Sequence< sal_Int8 >(reinterpret_cast<sal_Int8*>(pData), nItems * nUnitSize);
             it->second->m_aDataArrived.set();
             if( pData )
@@ -2869,12 +2873,12 @@ void SelectionManager::reject( ::Window aDropWindow, Time )
  *  XDragSource
  */
 
-sal_Bool SelectionManager::isDragImageSupported() throw(std::exception)
+sal_Bool SelectionManager::isDragImageSupported()
 {
     return false;
 }
 
-sal_Int32 SelectionManager::getDefaultCursor( sal_Int8 dragAction ) throw(std::exception)
+sal_Int32 SelectionManager::getDefaultCursor( sal_Int8 dragAction )
 {
     Cursor aCursor = m_aNoneCursor;
     if( dragAction & DNDConstants::ACTION_MOVE )
@@ -3118,7 +3122,7 @@ void SelectionManager::startDrag(
                                  sal_Int32,
                                  const css::uno::Reference< XTransferable >& transferable,
                                  const css::uno::Reference< XDragSourceListener >& listener
-                                 ) throw(std::exception)
+                                 )
 {
 #if OSL_DEBUG_LEVEL > 1
     fprintf( stderr, "startDrag( sourceActions = %x )\n", (int)sourceActions );
@@ -3767,7 +3771,6 @@ void SelectionManager::shutdown() throw()
 }
 
 sal_Bool SelectionManager::handleEvent(const Any& event)
-    throw (css::uno::RuntimeException, std::exception)
 {
     Sequence< sal_Int8 > aSeq;
     if( (event >>= aSeq) )
@@ -3803,14 +3806,12 @@ sal_Bool SelectionManager::handleEvent(const Any& event)
 }
 
 void SAL_CALL SelectionManager::disposing( const css::lang::EventObject& rEvt )
-    throw( css::uno::RuntimeException, std::exception )
 {
     if (rEvt.Source == m_xDesktop || rEvt.Source == m_xDisplayConnection)
         shutdown();
 }
 
 void SAL_CALL SelectionManager::queryTermination( const css::lang::EventObject& )
-    throw( css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception )
 {
 }
 
@@ -3820,7 +3821,6 @@ void SAL_CALL SelectionManager::queryTermination( const css::lang::EventObject& 
  * has been called before vcl is shutdown
  */
 void SAL_CALL SelectionManager::notifyTermination( const css::lang::EventObject& rEvent )
-    throw( css::uno::RuntimeException, std::exception )
 {
     disposing(rEvent);
 }
@@ -3987,7 +3987,7 @@ SelectionManagerHolder::~SelectionManagerHolder()
 {
 }
 
-void SelectionManagerHolder::initialize( const Sequence< Any >& arguments ) throw( css::uno::Exception, std::exception )
+void SelectionManagerHolder::initialize( const Sequence< Any >& arguments )
 {
     OUString aDisplayName;
 
@@ -4011,12 +4011,12 @@ void SelectionManagerHolder::initialize( const Sequence< Any >& arguments ) thro
  *  XDragSource
  */
 
-sal_Bool SelectionManagerHolder::isDragImageSupported() throw(std::exception)
+sal_Bool SelectionManagerHolder::isDragImageSupported()
 {
     return m_xRealDragSource.is() && m_xRealDragSource->isDragImageSupported();
 }
 
-sal_Int32 SelectionManagerHolder::getDefaultCursor( sal_Int8 dragAction ) throw(std::exception)
+sal_Int32 SelectionManagerHolder::getDefaultCursor( sal_Int8 dragAction )
 {
     return m_xRealDragSource.is() ? m_xRealDragSource->getDefaultCursor( dragAction ) : 0;
 }
@@ -4026,7 +4026,7 @@ void SelectionManagerHolder::startDrag(
                                        sal_Int8 sourceActions, sal_Int32 cursor, sal_Int32 image,
                                        const css::uno::Reference< css::datatransfer::XTransferable >& transferable,
                                        const css::uno::Reference< css::datatransfer::dnd::XDragSourceListener >& listener
-                                       ) throw(std::exception)
+                                       )
 {
     if( m_xRealDragSource.is() )
         m_xRealDragSource->startDrag( trigger, sourceActions, cursor, image, transferable, listener );
@@ -4036,17 +4036,17 @@ void SelectionManagerHolder::startDrag(
  *  XServiceInfo
  */
 
-OUString SelectionManagerHolder::getImplementationName() throw(std::exception)
+OUString SelectionManagerHolder::getImplementationName()
 {
     return OUString(XDND_IMPLEMENTATION_NAME);
 }
 
-sal_Bool SelectionManagerHolder::supportsService( const OUString& ServiceName ) throw(std::exception)
+sal_Bool SelectionManagerHolder::supportsService( const OUString& ServiceName )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-Sequence< OUString > SelectionManagerHolder::getSupportedServiceNames() throw(std::exception)
+Sequence< OUString > SelectionManagerHolder::getSupportedServiceNames()
 {
     return Xdnd_getSupportedServiceNames();
 }

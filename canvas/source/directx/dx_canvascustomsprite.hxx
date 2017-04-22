@@ -99,7 +99,7 @@ namespace dxcanvas
         CanvasCustomSprite( const css::geometry::RealSize2D&   rSpriteSize,
                             const SpriteCanvasRef&                          rRefDevice,
                             const IDXRenderModuleSharedPtr&                 rRenderModule,
-                            const ::canvas::ISurfaceProxyManagerSharedPtr&  rSurfaceProxy,
+                            const std::shared_ptr<canvas::ISurfaceProxyManager>&  rSurfaceProxy,
                             bool                                            bShowSpriteBounds );
 
         virtual void disposeThis() override;
@@ -112,9 +112,9 @@ namespace dxcanvas
         DECLARE_UNO3_XCOMPONENT_AGG_DEFAULTS( CanvasCustomSprite, CanvasCustomSpriteBase_Base, ::cppu::WeakComponentImplHelperBase )
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw( css::uno::RuntimeException ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()  throw( css::uno::RuntimeException ) override;
+        virtual OUString SAL_CALL getImplementationName() override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
         // Sprite
         virtual void redraw() const override;

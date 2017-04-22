@@ -10,36 +10,38 @@
 #include <SidebarScrollBar.hxx>
 
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
+#include <comphelper/lok.hxx>
+#include <sfx2/lokhelper.hxx>
 
-#include <SidebarWin.hxx>
 #include <view.hxx>
 #include <wrtsh.hxx>
 #include <edtwin.hxx>
+#include <AnnotationWin.hxx>
 
 namespace sw
 {
 namespace sidebarwindows
 {
 
-SidebarScrollBar::SidebarScrollBar(SwSidebarWin& rSidebarWin, WinBits nStyle, SwView& rView)
+SidebarScrollBar::SidebarScrollBar(sw::annotation::SwAnnotationWin& rSidebarWin, WinBits nStyle, SwView& rView)
     : ScrollBar(&rSidebarWin, nStyle),
       m_rSidebarWin(rSidebarWin),
       m_rView(rView)
 {
 }
 
-void SidebarScrollBar::LogicInvalidate(const Rectangle* pRectangle)
+void SidebarScrollBar::LogicInvalidate(const tools::Rectangle* pRectangle)
 {
-    Rectangle aRectangle;
+    tools::Rectangle aRectangle;
 
     if (!pRectangle)
     {
         Push(PushFlags::MAPMODE);
         EnableMapMode();
         MapMode aMapMode = GetMapMode();
-        aMapMode.SetMapUnit(MAP_TWIP);
+        aMapMode.SetMapUnit(MapUnit::MapTwip);
         SetMapMode(aMapMode);
-        aRectangle = Rectangle(Point(0, 0), PixelToLogic(GetSizePixel()));
+        aRectangle = tools::Rectangle(Point(0, 0), PixelToLogic(GetSizePixel()));
         Pop();
     }
     else
@@ -56,7 +58,7 @@ void SidebarScrollBar::LogicInvalidate(const Rectangle* pRectangle)
 
     OString sRectangle = aRectangle.toString();
     SwWrtShell& rWrtShell = m_rView.GetWrtShell();
-    rWrtShell.libreOfficeKitCallback(LOK_CALLBACK_INVALIDATE_TILES, sRectangle.getStr());
+    SfxLokHelper::notifyInvalidation(rWrtShell.GetSfxViewShell(), sRectangle);
 }
 
 void SidebarScrollBar::MouseButtonUp(const MouseEvent& /*rMouseEvent*/)

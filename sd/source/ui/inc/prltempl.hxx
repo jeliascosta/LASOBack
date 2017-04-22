@@ -42,12 +42,9 @@ private:
     XGradientListRef      pGradientList;
     XHatchListRef         pHatchingList;
     XBitmapListRef        pBitmapList;
+    XPatternListRef       pPatternList;
     XDashListRef          pDashList;
     XLineEndListRef       pLineEndList;
-
-    sal_uInt16              nPageType;
-    sal_uInt16              nDlgType;
-    sal_uInt16              nPos;
 
     sal_uInt16            mnLine;
     sal_uInt16            mnArea;
@@ -64,11 +61,7 @@ private:
     sal_uInt16            mnTab;
     sal_uInt16            mnAsian;
     sal_uInt16            mnAlign;
-
-    ChangeType          nColorTableState;
-    ChangeType          nBitmapListState;
-    ChangeType          nGradientListState;
-    ChangeType          nHatchingListState;
+    sal_uInt16            mnBackground;
 
     PresentationObjects ePO;
 
@@ -85,7 +78,7 @@ private:
 
 public:
     SdPresLayoutTemplateDlg( SfxObjectShell* pDocSh, vcl::Window* pParent, SdResId DlgId, SfxStyleSheetBase& rStyleBase, PresentationObjects ePO, SfxStyleSheetBasePool* pSSPool );
-    virtual ~SdPresLayoutTemplateDlg();
+    virtual ~SdPresLayoutTemplateDlg() override;
     virtual void dispose() override;
 
     const SfxItemSet* GetOutputItemSet() const;

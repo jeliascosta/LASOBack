@@ -24,12 +24,11 @@
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <tools/gen.hxx>
 
-// for SOLARIS compiler include of algorithm part of _STL is necessary to
-// get access to basic algos like ::std::find
-#include <algorithm>
-
 #include <drawinglayer/processor2d/hittestprocessor2d.hxx>
 #include <comphelper/lok.hxx>
+
+#define DEFAULT_VALUE_FOR_HITTEST_PIXEL         (2)
+#define DEFAULT_VALUE_FOR_HITTEST_TWIP          (30)
 
 namespace sdr
 {
@@ -42,30 +41,27 @@ namespace sdr
 
         void OverlayObjectList::clear()
         {
-            OverlayObjectVector::iterator aStart(maVector.begin());
-
-            for(; aStart != maVector.end(); ++aStart)
+            for(OverlayObject* pCandidate : maVector)
             {
-                sdr::overlay::OverlayObject* pCandidate = *aStart;
-
                 if(pCandidate->getOverlayManager())
-                {
                     pCandidate->getOverlayManager()->remove(*pCandidate);
-                }
 
                 delete pCandidate;
             }
-
             maVector.clear();
+        }
+
+        void OverlayObjectList::append(OverlayObject* pOverlayObject)
+        {
+            assert(pOverlayObject && "tried to add invalid OverlayObject to OverlayObjectList");
+            maVector.push_back(pOverlayObject);
         }
 
         bool OverlayObjectList::isHitLogic(const basegfx::B2DPoint& rLogicPosition, double fLogicTolerance) const
         {
             if(!maVector.empty())
             {
-                OverlayObjectVector::const_iterator aStart(maVector.begin());
-                sdr::overlay::OverlayObject* pFirst = *aStart;
-                OSL_ENSURE(pFirst, "Corrupt OverlayObjectList (!)");
+                OverlayObject* pFirst = maVector.front();
                 OverlayManager* pManager = pFirst->getOverlayManager();
 
                 if(pManager)
@@ -79,8 +75,8 @@ namespace sdr
                         if (comphelper::LibreOfficeKit::isActive())
                         {
                             aSizeLogic = Size(DEFAULT_VALUE_FOR_HITTEST_TWIP, DEFAULT_VALUE_FOR_HITTEST_TWIP);
-                            if (pManager->getOutputDevice().GetMapMode().GetMapUnit() == MAP_100TH_MM)
-                                aSizeLogic = OutputDevice::LogicToLogic(aSizeLogic, MAP_TWIP, MAP_100TH_MM);
+                            if (pManager->getOutputDevice().GetMapMode().GetMapUnit() == MapUnit::Map100thMM)
+                                aSizeLogic = OutputDevice::LogicToLogic(aSizeLogic, MapUnit::MapTwip, MapUnit::Map100thMM);
                         }
 
                         fLogicTolerance = aSizeLogic.Width();
@@ -93,11 +89,8 @@ namespace sdr
                         fLogicTolerance,
                         false);
 
-                    for(; aStart != maVector.end(); ++aStart)
+                    for(OverlayObject* pCandidate : maVector)
                     {
-                        sdr::overlay::OverlayObject* pCandidate = *aStart;
-                        OSL_ENSURE(pCandidate, "Corrupt OverlayObjectList (!)");
-
                         if(pCandidate->isHittable())
                         {
                             const drawinglayer::primitive2d::Primitive2DContainer& rSequence = pCandidate->getOverlayObjectPrimitive2DSequence();
@@ -124,8 +117,7 @@ namespace sdr
             sal_uInt32 nDiscreteTolerance = DEFAULT_VALUE_FOR_HITTEST_PIXEL;
             if(!maVector.empty())
             {
-                OverlayObjectVector::const_iterator aStart(maVector.begin());
-                sdr::overlay::OverlayObject* pCandidate = *aStart;
+                OverlayObject* pCandidate = maVector.front();
                 OverlayManager* pManager = pCandidate->getOverlayManager();
 
                 if(pManager)
@@ -145,15 +137,9 @@ namespace sdr
         {
             basegfx::B2DRange aRetval;
 
-            if(!maVector.empty())
+            for(OverlayObject* pCandidate : maVector)
             {
-                OverlayObjectVector::const_iterator aStart(maVector.begin());
-
-                for(; aStart != maVector.end(); ++aStart)
-                {
-                    sdr::overlay::OverlayObject* pCandidate = *aStart;
-                    aRetval.expand(pCandidate->getBaseRange());
-                }
+                aRetval.expand(pCandidate->getBaseRange());
             }
 
             return aRetval;

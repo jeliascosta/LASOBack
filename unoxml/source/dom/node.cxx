@@ -82,9 +82,6 @@ namespace DOM
                 strlen(reinterpret_cast<const char*>(pHref)),
                 RTL_TEXTENCODING_UTF8);
 
-            OSL_TRACE("Trying to add namespace %s (prefix %s)",
-                      reinterpret_cast<const char*>(pHref), reinterpret_cast<const char*>(pPrefix));
-
             Context::NamespaceMapType::iterator aIter=
                 io_rContext.maNamespaceMap.find(val);
             if( aIter != io_rContext.maNamespaceMap.end() )
@@ -113,8 +110,7 @@ namespace DOM
         OString prefix(pPrefix,
                        strlen(reinterpret_cast<const char*>(pPrefix)));
 
-        OSL_TRACE("getTokenWithPrefix(): prefix %s, name %s",
-                  pPrefix, pName);
+        SAL_INFO("unoxml", "getTokenWithPrefix(): prefix " << pPrefix << ", name " << pName);
 
         Context::NamespaceVectorType::value_type::const_iterator aIter;
         if( (aIter=std::find_if(rContext.maNamespaces.back().begin(),
@@ -124,7 +120,9 @@ namespace DOM
         {
             nNamespaceToken = aIter->mnToken;
             sal_Int32 nNameToken = getToken( rContext, pName );
-            if( nNameToken != FastToken::DONTKNOW )
+            if( nNameToken == FastToken::DONTKNOW )
+                nNamespaceToken = FastToken::DONTKNOW;
+            else
                 nNamespaceToken |= nNameToken;
         }
 
@@ -287,7 +285,6 @@ namespace DOM
     */
     Reference< XNode > SAL_CALL CNode::appendChild(
             Reference< XNode > const& xNewChild)
-        throw (RuntimeException, DOMException, std::exception)
     {
         ::osl::ClearableMutexGuard guard(m_rMutex);
 
@@ -389,7 +386,6 @@ namespace DOM
     constructor for nodes.
     */
     Reference< XNode > SAL_CALL CNode::cloneNode(sal_Bool bDeep)
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -408,7 +404,6 @@ namespace DOM
     or null otherwise.
     */
     Reference< XNamedNodeMap > SAL_CALL CNode::getAttributes()
-        throw (RuntimeException, std::exception)
     {
         // return empty reference; only element node may override this impl
         return Reference< XNamedNodeMap>();
@@ -418,7 +413,6 @@ namespace DOM
     A NodeList that contains all children of this node.
     */
     Reference< XNodeList > SAL_CALL CNode::getChildNodes()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -433,7 +427,6 @@ namespace DOM
     The first child of this node.
     */
     Reference< XNode > SAL_CALL CNode::getFirstChild()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -449,7 +442,6 @@ namespace DOM
     The last child of this node.
     */
     Reference< XNode > SAL_CALL CNode::getLastChild()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -465,7 +457,6 @@ namespace DOM
     Returns the local part of the qualified name of this node.
     */
     OUString SAL_CALL CNode::getLocalName()
-        throw (RuntimeException, std::exception)
     {
         // see CElement/CAttr
         return OUString();
@@ -476,7 +467,6 @@ namespace DOM
     The namespace URI of this node, or null if it is unspecified.
     */
     OUString SAL_CALL CNode::getNamespaceURI()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -495,7 +485,6 @@ namespace DOM
     The node immediately following this node.
     */
     Reference< XNode > SAL_CALL CNode::getNextSibling()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -511,7 +500,6 @@ namespace DOM
     The name of this node, depending on its type; see the table above.
     */
     OUString SAL_CALL CNode::getNodeName()
-        throw (RuntimeException, std::exception)
     {
         /*
         Interface        nodeName               nodeValue                       attributes
@@ -539,7 +527,6 @@ namespace DOM
     A code representing the type of the underlying object, as defined above.
     */
     NodeType SAL_CALL CNode::getNodeType()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -550,7 +537,6 @@ namespace DOM
     The value of this node, depending on its type; see the table above.
     */
     OUString SAL_CALL CNode::getNodeValue()
-        throw (RuntimeException, std::exception)
     {
         OUString aValue;
         return aValue;
@@ -560,7 +546,6 @@ namespace DOM
     The Document object associated with this node.
     */
     Reference< XDocument > SAL_CALL CNode::getOwnerDocument()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -575,7 +560,6 @@ namespace DOM
     The parent of this node.
     */
     Reference< XNode > SAL_CALL CNode::getParentNode()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -591,7 +575,6 @@ namespace DOM
     The namespace prefix of this node, or null if it is unspecified.
     */
     OUString SAL_CALL CNode::getPrefix()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -612,7 +595,6 @@ namespace DOM
     The node immediately preceding this node.
     */
     Reference< XNode > SAL_CALL CNode::getPreviousSibling()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -628,7 +610,6 @@ namespace DOM
     Returns whether this node (if it is an element) has any attributes.
     */
     sal_Bool SAL_CALL CNode::hasAttributes()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -639,7 +620,6 @@ namespace DOM
     Returns whether this node has any children.
     */
     sal_Bool SAL_CALL CNode::hasChildNodes()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -651,7 +631,6 @@ namespace DOM
     */
     Reference< XNode > SAL_CALL CNode::insertBefore(
             const Reference< XNode >& newChild, const Reference< XNode >& refChild)
-        throw (RuntimeException, DOMException, std::exception)
     {
         if (!newChild.is() || !refChild.is()) { throw RuntimeException(); }
 
@@ -730,7 +709,6 @@ namespace DOM
     that feature is supported by this node.
     */
   sal_Bool SAL_CALL CNode::isSupported(const OUString& /*feature*/, const OUString& /*ver*/)
-        throw (RuntimeException, std::exception)
     {
         OSL_ENSURE(false, "CNode::isSupported: not implemented (#i113683#)");
         return false;
@@ -744,7 +722,6 @@ namespace DOM
     Text nodes nor empty Text nodes.
     */
     void SAL_CALL CNode::normalize()
-        throw (RuntimeException, std::exception)
     {
         //XXX combine adjacent text nodes and remove empty ones
         OSL_ENSURE(false, "CNode::normalize: not implemented (#i113683#)");
@@ -756,7 +733,6 @@ namespace DOM
     */
     Reference< XNode > SAL_CALL
     CNode::removeChild(const Reference< XNode >& xOldChild)
-        throw (RuntimeException, DOMException, std::exception)
     {
         if (!xOldChild.is()) {
             throw RuntimeException();
@@ -832,7 +808,6 @@ namespace DOM
     Reference< XNode > SAL_CALL CNode::replaceChild(
             Reference< XNode > const& xNewChild,
             Reference< XNode > const& xOldChild)
-        throw (RuntimeException, DOMException, std::exception)
     {
         if (!xOldChild.is() || !xNewChild.is()) {
             throw RuntimeException();
@@ -909,7 +884,7 @@ namespace DOM
                 if (pNew->next != nullptr)
                     pNew->next->prev = pNew;
                 pNew->parent = pOld->parent;
-                // coverity[var_deref_op] pNew->parent cannot be NULL here
+                assert(pNew->parent && "coverity[var_deref_op] pNew->parent cannot be NULL here");
                 if(pNew->parent->children == pOld)
                     pNew->parent->children = pNew;
                 if(pNew->parent->last == pOld)
@@ -950,7 +925,6 @@ namespace DOM
     The value of this node, depending on its type; see the table above.
     */
     void SAL_CALL CNode::setNodeValue(const OUString& /*nodeValue*/)
-        throw (RuntimeException, DOMException, std::exception)
     {
         // use specific node implementation
         // if we end up down here, something went wrong
@@ -963,7 +937,6 @@ namespace DOM
     The namespace prefix of this node, or null if it is unspecified.
     */
     void SAL_CALL CNode::setPrefix(const OUString& prefix)
-        throw (RuntimeException, DOMException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -989,7 +962,6 @@ namespace DOM
     void SAL_CALL CNode::addEventListener(const OUString& eventType,
         const Reference< css::xml::dom::events::XEventListener >& listener,
         sal_Bool useCapture)
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -1001,7 +973,6 @@ namespace DOM
     void SAL_CALL CNode::removeEventListener(const OUString& eventType,
         const Reference< css::xml::dom::events::XEventListener >& listener,
         sal_Bool useCapture)
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -1011,7 +982,6 @@ namespace DOM
     }
 
     sal_Bool SAL_CALL CNode::dispatchEvent(const Reference< XEvent >& evt)
-        throw(RuntimeException, EventException, std::exception)
     {
         CDocument * pDocument;
         events::CEventDispatcher * pDispatcher;
@@ -1030,7 +1000,6 @@ namespace DOM
 
     ::sal_Int64 SAL_CALL
     CNode::getSomething(Sequence< ::sal_Int8 > const& rId)
-        throw (RuntimeException, std::exception)
     {
         if ((rId.getLength() == 16) &&
             (0 == memcmp(theCNodeUnoTunnelId::get().getSeq().getConstArray(),

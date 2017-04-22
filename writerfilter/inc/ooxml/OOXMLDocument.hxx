@@ -75,7 +75,7 @@ class OOXMLStream
 {
 public:
     enum StreamType_t { UNKNOWN, DOCUMENT, STYLES, WEBSETTINGS, FONTTABLE, NUMBERING,
-        FOOTNOTES, ENDNOTES, COMMENTS, THEME, CUSTOMXML, CUSTOMXMLPROPS, ACTIVEX, ACTIVEXBIN, GLOSSARY, CHARTS, EMBEDDINGS, SETTINGS, VBAPROJECT, FOOTER, HEADER, SIGNATURE };
+        FOOTNOTES, ENDNOTES, COMMENTS, THEME, CUSTOMXML, CUSTOMXMLPROPS, ACTIVEX, ACTIVEXBIN, GLOSSARY, CHARTS, EMBEDDINGS, SETTINGS, VBAPROJECT, FOOTER, HEADER };
     typedef std::shared_ptr<OOXMLStream> Pointer_t;
 
     virtual ~OOXMLStream() {}
@@ -86,8 +86,6 @@ public:
     virtual css::uno::Reference<css::xml::sax::XFastParser> getFastParser() = 0;
 
     virtual css::uno::Reference<css::io::XInputStream> getDocumentStream() = 0;
-
-    virtual css::uno::Reference<css::io::XInputStream> getStorageStream() = 0;
 
     /**
        Returns component context for this stream.
@@ -244,7 +242,7 @@ public:
 
     static OOXMLStream::Pointer_t
     createStream(const OOXMLStream::Pointer_t& pStream,
-                 OOXMLStream::StreamType_t nStreamType = OOXMLStream::DOCUMENT);
+                 OOXMLStream::StreamType_t nStreamType);
 
     static OOXMLStream::Pointer_t
     createStream(const OOXMLStream::Pointer_t& pStream, const OUString & rId);

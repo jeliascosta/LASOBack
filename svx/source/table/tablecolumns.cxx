@@ -19,6 +19,7 @@
 
 
 #include <com/sun/star/lang/DisposedException.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 
 #include "tablecolumns.hxx"
 #include "tablecolumn.hxx"
@@ -50,7 +51,7 @@ void TableColumns::dispose()
 }
 
 
-void TableColumns::throwIfDisposed() const throw (css::uno::RuntimeException)
+void TableColumns::throwIfDisposed() const
 {
     if( !mxTableModel.is() )
         throw DisposedException();
@@ -60,14 +61,14 @@ void TableColumns::throwIfDisposed() const throw (css::uno::RuntimeException)
 // XTableRows
 
 
-void SAL_CALL TableColumns::insertByIndex( sal_Int32 nIndex, sal_Int32 nCount ) throw (RuntimeException, std::exception)
+void SAL_CALL TableColumns::insertByIndex( sal_Int32 nIndex, sal_Int32 nCount )
 {
     throwIfDisposed();
     mxTableModel->insertColumns( nIndex, nCount );
 }
 
 
-void SAL_CALL TableColumns::removeByIndex( sal_Int32 nIndex, sal_Int32 nCount ) throw (RuntimeException, std::exception)
+void SAL_CALL TableColumns::removeByIndex( sal_Int32 nIndex, sal_Int32 nCount )
 {
     throwIfDisposed();
     mxTableModel->removeColumns( nIndex, nCount );
@@ -77,14 +78,14 @@ void SAL_CALL TableColumns::removeByIndex( sal_Int32 nIndex, sal_Int32 nCount ) 
 // XIndexAccess
 
 
-sal_Int32 SAL_CALL TableColumns::getCount() throw (RuntimeException, std::exception)
+sal_Int32 SAL_CALL TableColumns::getCount()
 {
     throwIfDisposed();
     return mxTableModel->getColumnCount();
 }
 
 
-Any SAL_CALL TableColumns::getByIndex( sal_Int32 Index ) throw (IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception)
+Any SAL_CALL TableColumns::getByIndex( sal_Int32 Index )
 {
     throwIfDisposed();
 
@@ -98,7 +99,7 @@ Any SAL_CALL TableColumns::getByIndex( sal_Int32 Index ) throw (IndexOutOfBounds
 // XElementAccess
 
 
-Type SAL_CALL TableColumns::getElementType() throw (RuntimeException, std::exception)
+Type SAL_CALL TableColumns::getElementType()
 {
     throwIfDisposed();
 
@@ -106,7 +107,7 @@ Type SAL_CALL TableColumns::getElementType() throw (RuntimeException, std::excep
 }
 
 
-sal_Bool SAL_CALL TableColumns::hasElements() throw (RuntimeException, std::exception)
+sal_Bool SAL_CALL TableColumns::hasElements()
 {
     throwIfDisposed();
 

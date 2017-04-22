@@ -22,26 +22,24 @@
 #include "iodlg.hrc"
 #include "OfficeFilePicker.hrc"
 
-#define MASKCOLOR MaskColor = Color { Red = 0xFFFF; Green = 0x0000; Blue = 0xFFFF; };
-
- // image lists ***************************************************************
-
-ImageList RID_FILEPICKER_IMAGES
+Bitmap BMP_FILEDLG_BTN_UP
 {
-    Prefix = "fp";
-    MASKCOLOR
-    IdList =
-    {
-        IMG_FILEDLG_BTN_UP;
-        IMG_FILEDLG_BTN_STD;
-        IMG_FILEDLG_CREATEFOLDER;
-        IMG_FILEDLG_PLACE_LOCAL;
-        IMG_FILEDLG_PLACE_REMOTE;
-    };
-    IdCount =
-    {
-        5;
-    };
+    File = "fp010.png";
+};
+
+Bitmap BMP_FILEDLG_CREATEFOLDER
+{
+    File = "fp014.png";
+};
+
+Bitmap BMP_FILEDLG_PLACE_LOCAL
+{
+    File = "fp015.png";
+};
+
+Bitmap BMP_FILEDLG_PLACE_REMOTE
+{
+    File = "fp016.png";
 };
 
 // strings *******************************************************************
@@ -69,10 +67,6 @@ String STR_PATHSELECT
 String STR_BUTTONSELECT
 {
     Text [ en-US ] = "~Select";
-};
-String STR_ACTUALVERSION
-{
-    Text [ en-US ] = "Current version";
 };
 String STR_PREVIEW
 {

@@ -69,8 +69,6 @@ void test::oustring::StringConcat::checkConcat()
     const char d1[] = "xyz";
     CPPUNIT_ASSERT_EQUAL( OUString( "fooxyz" ), OUString( OUString( "foo" ) + d1 ));
     CPPUNIT_ASSERT_EQUAL(( typeid( OUStringConcat< OUString, const char[ 4 ] > )), typeid( OUString( "foo" ) + d1 ));
-    CPPUNIT_ASSERT_EQUAL( OUString( "foobar" ), OUString( OUStringBuffer( "foo" ) + OUString( "bar" )));
-    CPPUNIT_ASSERT_EQUAL(( typeid( OUStringConcat< OUStringBuffer, OUString > )), typeid( OUStringBuffer( "foo" ) + OUString( "bar" )));
 }
 
 void test::oustring::StringConcat::checkConcatAsciiL()
@@ -96,7 +94,7 @@ void test::oustring::StringConcat::checkEnsureCapacity()
     rtl_uString_ensureCapacity( &str, 4 ); // should be no-op
     CPPUNIT_ASSERT_EQUAL( sal_Int32( 4 ), str->length );
     CPPUNIT_ASSERT_EQUAL( 1, int( str->refCount ));
-    CPPUNIT_ASSERT( oldStr == str );
+    CPPUNIT_ASSERT_EQUAL( str, oldStr );
 
     rtl_uString_acquire( oldStr );
     CPPUNIT_ASSERT_EQUAL( 2, int( str->refCount ));
@@ -105,7 +103,7 @@ void test::oustring::StringConcat::checkEnsureCapacity()
     CPPUNIT_ASSERT_EQUAL( 1, int( str->refCount ));
     // a copy was forced because of refcount
     CPPUNIT_ASSERT( oldStr != str );
-    CPPUNIT_ASSERT( rtl_ustr_compare( oldStr->buffer, str->buffer ) == 0 );
+    CPPUNIT_ASSERT_EQUAL( static_cast<sal_Int32>(0), rtl_ustr_compare( oldStr->buffer, str->buffer ) );
     CPPUNIT_ASSERT_EQUAL( 1, int( oldStr->refCount ));
     rtl_uString_release( str );
     str = oldStr;
@@ -115,7 +113,7 @@ void test::oustring::StringConcat::checkEnsureCapacity()
     CPPUNIT_ASSERT_EQUAL( sal_Int32( 4 ), str->length ); // size is still 4
     CPPUNIT_ASSERT_EQUAL( 1, int( str->refCount ));
     CPPUNIT_ASSERT( oldStr != str );
-    CPPUNIT_ASSERT( rtl_ustr_compare( oldStr->buffer, str->buffer ) == 0 );
+    CPPUNIT_ASSERT_EQUAL( static_cast<sal_Int32>(0), rtl_ustr_compare( oldStr->buffer, str->buffer ) );
     CPPUNIT_ASSERT_EQUAL( 1, int( oldStr->refCount ));
     // but there should be extra capacity
     for( int i = 0;
@@ -146,6 +144,7 @@ void test::oustring::StringConcat::checkAppend()
 void test::oustring::StringConcat::checkInvalid()
 {
     CPPUNIT_ASSERT( !INVALID_CONCAT( OUString() + OUString()));
+    CPPUNIT_ASSERT( INVALID_CONCAT( OUString( "a" ) + OUStringBuffer( "b" )));
     CPPUNIT_ASSERT( INVALID_CONCAT( OUString( "a" ) + OString( "b" )));
     CPPUNIT_ASSERT( INVALID_CONCAT( OUString( "a" ) + OStringBuffer( "b" )));
     CPPUNIT_ASSERT( INVALID_CONCAT( OUString( "a" ) + static_cast<const char*>("b") ));

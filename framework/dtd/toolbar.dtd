@@ -31,7 +31,6 @@
 	toolbar:visible %boolean; "true"
 	toolbar:text CDATA #IMPLIED
 	toolbar:style CDATA #IMPLIED
-	toolbar:helpid CDATA #IMPLIED
 >
 <!ELEMENT toolbar:toolbarspace EMPTY>
 <!ELEMENT toolbar:toolbarbreak EMPTY>

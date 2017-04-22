@@ -26,10 +26,6 @@ $(eval $(call gb_CppunitTest_use_library_objects,sc_ucalc, \
 	scqahelper \
 ))
 
-ifeq ($(ENABLE_TELEPATHY),TRUE)
-$(eval $(call gb_CppunitTest_use_libraries,sc_ucalc,tubes))
-endif
-
 $(eval $(call gb_CppunitTest_use_externals,sc_ucalc,\
 	boost_headers \
     $(call gb_Helper_optional,OPENCL, \
@@ -86,10 +82,7 @@ $(eval $(call gb_CppunitTest_set_include,sc_ucalc,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sc_ucalc,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sc_ucalc))
 
 $(eval $(call gb_CppunitTest_use_custom_headers,sc_ucalc,\
 	officecfg/registry \

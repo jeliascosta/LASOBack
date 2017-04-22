@@ -35,7 +35,7 @@ class SvxCropExample : public vcl::Window
 public:
     SvxCropExample( vcl::Window* pPar, WinBits nStyle );
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect) override;
     virtual void Resize() override;
     virtual Size GetOptimalSize() const override;
 
@@ -92,16 +92,16 @@ class SvxGrfCropPage : public SfxTabPage
 
 
     SvxGrfCropPage( vcl::Window *pParent, const SfxItemSet &rSet );
-    virtual ~SvxGrfCropPage();
+    virtual ~SvxGrfCropPage() override;
     virtual void dispose() override;
 
-    DECL_LINK_TYPED( ZoomHdl, Edit&, void );
-    DECL_LINK_TYPED( SizeHdl, Edit&, void );
-    DECL_LINK_TYPED( CropHdl, SpinField&, void );
-    DECL_LINK_TYPED( CropLoseFocusHdl, Control&, void );
-    DECL_LINK_TYPED( CropModifyHdl, Edit&, void );
-    DECL_LINK_TYPED( OrigSizeHdl, Button*, void );
-    DECL_LINK_TYPED( Timeout, Timer *, void );
+    DECL_LINK( ZoomHdl, Edit&, void );
+    DECL_LINK( SizeHdl, Edit&, void );
+    DECL_LINK( CropHdl, SpinField&, void );
+    DECL_LINK( CropLoseFocusHdl, Control&, void );
+    DECL_LINK( CropModifyHdl, Edit&, void );
+    DECL_LINK( OrigSizeHdl, Button*, void );
+    DECL_LINK( Timeout, Timer *, void );
 
     void            CalcZoom();
     void            CalcMinMaxBorder();
@@ -114,7 +114,7 @@ public:
 
     virtual bool FillItemSet( SfxItemSet *rSet ) override;
     virtual void Reset( const SfxItemSet *rSet ) override;
-    virtual sfxpg DeactivatePage( SfxItemSet *pSet ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet *pSet ) override;
 };
 
 

@@ -22,9 +22,47 @@
 
 #include <vcl/dllapi.h>
 
+class Task;
+
+class VCL_DLLPUBLIC Scheduler
+{
+    friend class Task;
+    Scheduler() = delete;
+
+protected:
+    static void ImplStartTimer ( sal_uInt64 nMS, bool bForce = false );
+
+public:
+    static constexpr sal_uInt64 ImmediateTimeoutMs = 1;
+    static constexpr sal_uInt64 InfiniteTimeoutMs = 1000 * 60 * 60 * 24; // 1 day
+
+    static void       ImplDeInitScheduler();
+
+    /// Process one pending Timer with highhest priority
+    static void       CallbackTaskScheduling( bool ignore );
+    /// Calculate minimum timeout - and return its value.
+    static sal_uInt64 CalculateMinimumTimeout( bool &bHasActiveIdles );
+    /// Process one pending task ahead of time with highest priority.
+    static bool       ProcessTaskScheduling( bool bIdle );
+    /**
+     * Process events until the parameter turns true,
+     * allows processing until a specific event has been processed
+     */
+    static void       ProcessEventsToIdle();
+    static void       ProcessEventsToSignal(bool& bSignal);
+
+    /// Control the deterministic mode.  In this mode, two subsequent runs of
+    /// LibreOffice fire about the same amount idles.
+    static void       SetDeterministicMode(bool bDeterministic);
+    /// Return the current state of deterministic mode.
+    static bool       GetDeterministicMode();
+};
+
+
 struct ImplSchedulerData;
 
-enum class SchedulerPriority {
+enum class TaskPriority
+{
     HIGHEST      = 0,
     HIGH         = 1,
     RESIZE       = 2,
@@ -37,24 +75,24 @@ enum class SchedulerPriority {
     LOWEST       = 8
 };
 
-class VCL_DLLPUBLIC Scheduler
+class VCL_DLLPUBLIC Task
 {
-protected:
-    ImplSchedulerData*  mpSchedulerData;    /// Pointer to element in scheduler list
-    const sal_Char     *mpDebugName;        /// Useful for debugging
-    SchedulerPriority   mePriority;         /// Scheduler priority
-    bool                mbActive;           /// Currently in the scheduler
-
-    // These should be constexpr static, when supported.
-    static const sal_uInt64 ImmediateTimeoutMs = 1;
-    static const sal_uInt64 InfiniteTimeoutMs = 1000 * 60 * 60 * 24; // 1 day
-
-    static void ImplStartTimer(sal_uInt64 nMS, bool bForce = false);
-
+    friend class Scheduler;
     friend struct ImplSchedulerData;
+
+    ImplSchedulerData *mpSchedulerData; /// Pointer to the element in scheduler list
+    const sal_Char    *mpDebugName;     /// Useful for debugging
+    TaskPriority       mePriority;      /// Task priority
+    bool               mbActive;        /// Currently in the scheduler
+
+protected:
+    static void StartTimer( sal_uInt64 nMS );
+
+    const ImplSchedulerData* GetSchedulerData() const { return mpSchedulerData; }
+
     virtual void SetDeletionFlags();
     /// Is this item ready to be dispatched at nTimeNow
-    virtual bool ReadyForSchedule( bool bTimerOnly, sal_uInt64 nTimeNow ) const = 0;
+    virtual bool ReadyForSchedule( bool bIdle, sal_uInt64 nTimeNow ) const = 0;
     /// Schedule only when other timers and events are processed
     virtual bool IsIdle() const = 0;
     /**
@@ -64,15 +102,16 @@ protected:
     virtual sal_uInt64 UpdateMinPeriod( sal_uInt64 nMinPeriod, sal_uInt64 nTimeNow ) const = 0;
 
 public:
-    Scheduler( const sal_Char *pDebugName = nullptr );
-    Scheduler( const Scheduler& rScheduler );
-    virtual ~Scheduler();
+    Task( const sal_Char *pDebugName );
+    Task( const Task& rTask );
+    virtual ~Task();
+    Task& operator=( const Task& rTask );
 
-    void SetPriority(SchedulerPriority ePriority) { mePriority = ePriority; }
-    SchedulerPriority GetPriority() const { return mePriority; }
+    void            SetPriority(TaskPriority ePriority) { mePriority = ePriority; }
+    TaskPriority    GetPriority() const { return mePriority; }
 
     void            SetDebugName( const sal_Char *pDebugName ) { mpDebugName = pDebugName; }
-    const char     *GetDebugName() { return mpDebugName; }
+    const char     *GetDebugName() const { return mpDebugName; }
 
     // Call handler
     virtual void    Invoke() = 0;
@@ -81,24 +120,6 @@ public:
     void            Stop();
 
     bool            IsActive() const { return mbActive; }
-
-    Scheduler&      operator=( const Scheduler& rScheduler );
-    static void ImplDeInitScheduler();
-
-    /// Process one pending Timer with highhest priority
-    static void CallbackTaskScheduling( bool ignore );
-    /// Calculate minimum timeout - and return its value.
-    static sal_uInt64 CalculateMinimumTimeout( bool &bHasActiveIdles );
-    /// Process one pending task ahead of time with highest priority.
-    static bool       ProcessTaskScheduling( bool bTimerOnly );
-    /// Process all events until we are idle
-    static void       ProcessEventsToIdle();
-
-    /// Control the deterministic mode.  In this mode, two subsequent runs of
-    /// LibreOffice fire about the same amount idles.
-    static void SetDeterministicMode(bool bDeterministic);
-    /// Return the current state of deterministic mode.
-    static bool GetDeterministicMode();
 };
 
 #endif // INCLUDED_VCL_SCHEDULER_HXX

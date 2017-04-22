@@ -35,9 +35,13 @@
 #include <cppuhelper/exc_hlp.hxx>
 #include <comphelper/anytostring.hxx>
 #include <comphelper/sequence.hxx>
+#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/deployment/ExtensionManager.hpp>
 
 #include <com/sun/star/deployment/ui/PackageManagerDialog.hpp>
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
+#include <com/sun/star/ucb/CommandAbortedException.hpp>
+#include <com/sun/star/ucb/CommandFailedException.hpp>
 #include <com/sun/star/ui/dialogs/XExecutableDialog.hpp>
 #include <com/sun/star/ui/dialogs/XDialogClosedListener.hpp>
 #include <com/sun/star/bridge/BridgeFactory.hpp>
@@ -131,18 +135,15 @@ public:
         : m_rDialogClosedCondition( rDialogClosedCondition ) {}
 
     // XEventListener (base of XDialogClosedListener)
-    virtual void SAL_CALL disposing( lang::EventObject const & Source )
-        throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( lang::EventObject const & Source ) override;
 
     // XDialogClosedListener
     virtual void SAL_CALL dialogClosed(
-        ui::dialogs::DialogClosedEvent const & aEvent )
-        throw (RuntimeException, std::exception) override;
+        ui::dialogs::DialogClosedEvent const & aEvent ) override;
 };
 
 // XEventListener (base of XDialogClosedListener)
 void DialogClosedListenerImpl::disposing( lang::EventObject const & )
-    throw (RuntimeException, std::exception)
 {
     // nothing to do
 }
@@ -150,7 +151,6 @@ void DialogClosedListenerImpl::disposing( lang::EventObject const & )
 // XDialogClosedListener
 void DialogClosedListenerImpl::dialogClosed(
     ui::dialogs::DialogClosedEvent const & )
-    throw (RuntimeException, std::exception)
 {
     m_rDialogClosedCondition.set();
 }
@@ -194,7 +194,7 @@ extern "C" int unopkg_main()
     OUString logFile;
     OUString repository;
     OUString cmdArg;
-    ::std::vector<OUString> cmdPackages;
+    std::vector<OUString> cmdPackages;
 
     OptionInfo const * info_shared = getOptionInfo(
         s_option_infos, "shared" );
@@ -231,7 +231,7 @@ extern "C" int unopkg_main()
             dp_misc::writeConsole("\n" APP_NAME " Version 3.3\n");
             return 0;
         }
-        //consume all bootstrap variables which may occur before the subcommannd
+        //consume all bootstrap variables which may occur before the subcommand
         while(isBootstrapVariable(&nPos))
             ;
 
@@ -369,7 +369,7 @@ extern "C" int unopkg_main()
                 if (subcmd_add)
                 {
                     beans::NamedValue nvSuppress(
-                        OUString("SUPPRESS_LICENSE"), option_suppressLicense ?
+                        "SUPPRESS_LICENSE", option_suppressLicense ?
                         makeAny(OUString("1")):makeAny(OUString("0")));
                         xExtensionManager->addExtension(
                             cmdPackage, Sequence<beans::NamedValue>(&nvSuppress, 1),
@@ -406,7 +406,7 @@ extern "C" int unopkg_main()
         }
         else if ( subCommand == "list" )
         {
-            ::std::vector<Reference<deployment::XPackage> > vecExtUnaccepted;
+            std::vector<Reference<deployment::XPackage> > vecExtUnaccepted;
             ::comphelper::sequenceToContainer(vecExtUnaccepted,
                     xExtensionManager->getExtensionsWithUnacceptedLicenses(
                         repository, xCmdEnv));
@@ -421,24 +421,24 @@ extern "C" int unopkg_main()
                     packages = xExtensionManager->getDeployedExtensions(
                         repository, Reference<task::XAbortChannel>(), xCmdEnv );
 
-                ::std::vector<Reference<deployment::XPackage> > vec_packages;
+                std::vector<Reference<deployment::XPackage> > vec_packages;
                 ::comphelper::sequenceToContainer(vec_packages, packages);
 
                 //First copy the extensions with the unaccepted license
                 //to vector allExtensions.
                 allExtensions.resize(vecExtUnaccepted.size() + vec_packages.size());
 
-                ::std::vector<Reference<deployment::XPackage> >::iterator i_all_ext =
-                      ::std::copy(vecExtUnaccepted.begin(), vecExtUnaccepted.end(),
+                std::vector<Reference<deployment::XPackage> >::iterator i_all_ext =
+                      std::copy(vecExtUnaccepted.begin(), vecExtUnaccepted.end(),
                                   allExtensions.begin());
                 //Now copy those we got from getDeployedExtensions
-                ::std::copy(vec_packages.begin(), vec_packages.end(), i_all_ext);
+                std::copy(vec_packages.begin(), vec_packages.end(), i_all_ext);
 
                 //Now prepare the vector which tells what extension has an
                 //unaccepted license
                 vecUnaccepted.resize(vecExtUnaccepted.size() + vec_packages.size());
-                ::std::fill_n(vecUnaccepted.begin(), vecExtUnaccepted.size(), true);
-                ::std::fill_n(vecUnaccepted.begin() + vecExtUnaccepted.size(),
+                std::fill_n(vecUnaccepted.begin(), vecExtUnaccepted.size(), true);
+                std::fill_n(vecUnaccepted.begin() + vecExtUnaccepted.size(),
                       vec_packages.size(), false);
 
                 dp_misc::writeConsole(
@@ -466,8 +466,8 @@ extern "C" int unopkg_main()
                     bool bUnacceptedLic = false;
                     if (!extension.is())
                     {
-                        ::std::vector<Reference<deployment::XPackage> >::const_iterator
-                            i = ::std::find_if(
+                        std::vector<Reference<deployment::XPackage> >::const_iterator
+                            i = std::find_if(
                                 vecExtUnaccepted.begin(),
                                 vecExtUnaccepted.end(), ExtensionName(cmdPackage));
                         if (i != vecExtUnaccepted.end())
@@ -495,7 +495,7 @@ extern "C" int unopkg_main()
         }
         else if ( subCommand == "validate" )
         {
-            ::std::vector<Reference<deployment::XPackage> > vecExtUnaccepted;
+            std::vector<Reference<deployment::XPackage> > vecExtUnaccepted;
             ::comphelper::sequenceToContainer(
                 vecExtUnaccepted, xExtensionManager->getExtensionsWithUnacceptedLicenses(
                     repository, xCmdEnv));
@@ -516,8 +516,8 @@ extern "C" int unopkg_main()
 
                 if (!extension.is())
                 {
-                    ::std::vector<Reference<deployment::XPackage> >::const_iterator
-                        i = ::std::find_if(
+                    std::vector<Reference<deployment::XPackage> >::const_iterator
+                        i = std::find_if(
                             vecExtUnaccepted.begin(),
                             vecExtUnaccepted.end(), ExtensionName(cmdPackage));
                     if (i != vecExtUnaccepted.end())

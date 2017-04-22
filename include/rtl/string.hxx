@@ -39,6 +39,11 @@
 
 #include <sal/log.hxx>
 
+#ifdef RTL_STRING_UNITTEST
+extern bool rtl_string_unittest_const_literal;
+extern bool rtl_string_unittest_const_literal_function;
+#endif
+
 // The unittest uses slightly different code to help check that the proper
 // calls are made. The class is put into a different namespace to make
 // sure the compiler generates a different (if generating also non-inline)
@@ -149,7 +154,7 @@ public:
 
       @param    str         a OString data.
     */
-    inline OString( rtl_String * str, __sal_NoAcquire )
+    OString( rtl_String * str, __sal_NoAcquire )
     {
         pData = str;
     }
@@ -1892,9 +1897,9 @@ struct CStringHash
  */
 template< typename charT, typename traits > std::basic_ostream<charT, traits> &
 operator <<(
-    std::basic_ostream<charT, traits> & stream, OString const & string)
+    std::basic_ostream<charT, traits> & stream, OString const & rString)
 {
-    return stream << string.getStr();
+    return stream << rString.getStr();
         // best effort; potentially loses data due to embedded null characters
 }
 

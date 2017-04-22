@@ -48,8 +48,6 @@ PersistentWindowState::~PersistentWindowState()
 }
 
 void SAL_CALL PersistentWindowState::initialize(const css::uno::Sequence< css::uno::Any >& lArguments)
-    throw(css::uno::Exception       ,
-          css::uno::RuntimeException, std::exception)
 {
     // check arguments
     css::uno::Reference< css::frame::XFrame > xFrame;
@@ -76,7 +74,6 @@ void SAL_CALL PersistentWindowState::initialize(const css::uno::Sequence< css::u
 }
 
 void SAL_CALL PersistentWindowState::frameAction(const css::frame::FrameActionEvent& aEvent)
-    throw(css::uno::RuntimeException, std::exception)
 {
     // We don't want to do this stuff when being used through LibreOfficeKit
     if( comphelper::LibreOfficeKit::isActive() )
@@ -122,7 +119,7 @@ void SAL_CALL PersistentWindowState::frameAction(const css::frame::FrameActionEv
 
         case css::frame::FrameAction_COMPONENT_REATTACHED :
             {
-                // nothing todo here, because its not allowed to change position and size
+                // nothing todo here, because it's not allowed to change position and size
                 // of an already existing frame!
             }
             break;
@@ -139,7 +136,6 @@ void SAL_CALL PersistentWindowState::frameAction(const css::frame::FrameActionEv
 }
 
 void SAL_CALL PersistentWindowState::disposing(const css::lang::EventObject&)
-    throw(css::uno::RuntimeException, std::exception)
 {
     // nothing todo here - because we hold the frame as weak reference only
 }
@@ -213,7 +209,7 @@ OUString PersistentWindowState::implst_getWindowStateFromWindow(const css::uno::
         // SOLAR SAFE -> ------------------------
         SolarMutexGuard aSolarGuard;
 
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow(xWindow);
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xWindow);
         // check for system window is necessary to guarantee correct pointer cast!
         if (
             (pWindow                  ) &&
@@ -222,7 +218,7 @@ OUString PersistentWindowState::implst_getWindowStateFromWindow(const css::uno::
         {
             WindowStateMask nMask = WindowStateMask::All & ~(WindowStateMask::Minimized);
             sWindowState = OStringToOUString(
-                            static_cast<SystemWindow*>(pWindow)->GetWindowState(nMask),
+                            static_cast<SystemWindow*>(pWindow.get())->GetWindowState(nMask),
                             RTL_TEXTENCODING_UTF8);
         }
         // <- SOLAR SAFE ------------------------
@@ -243,19 +239,19 @@ void PersistentWindowState::implst_setWindowStateOnWindow(const css::uno::Refere
     // SOLAR SAFE -> ------------------------
     SolarMutexGuard aSolarGuard;
 
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow(xWindow);
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xWindow);
     if (!pWindow)
         return;
 
     // check for system and work window - its necessary to guarantee correct pointer cast!
     bool bSystemWindow = pWindow->IsSystemWindow();
-    bool bWorkWindow   = (pWindow->GetType() == WINDOW_WORKWINDOW);
+    bool bWorkWindow   = (pWindow->GetType() == WindowType::WORKWINDOW);
 
     if (!bSystemWindow && !bWorkWindow)
         return;
 
-    SystemWindow* pSystemWindow = static_cast<SystemWindow*>(pWindow);
-    WorkWindow*   pWorkWindow   = static_cast<WorkWindow*  >(pWindow);
+    SystemWindow* pSystemWindow = static_cast<SystemWindow*>(pWindow.get());
+    WorkWindow*   pWorkWindow   = static_cast<WorkWindow*  >(pWindow.get());
 
     // don't save this special state!
     if (pWorkWindow->IsMinimized())

@@ -42,13 +42,13 @@ class ShellMoveCursor
     SwWrtShell* pSh;
     bool bAct;
 public:
-    inline ShellMoveCursor( SwWrtShell* pWrtSh, bool bSel )
+    ShellMoveCursor( SwWrtShell* pWrtSh, bool bSel )
     {
         bAct = !pWrtSh->ActionPend() && (pWrtSh->GetFrameType(nullptr,false) & FrameTypeFlags::FLY_ANY);
         ( pSh = pWrtSh )->MoveCursor( bSel );
         pWrtSh->GetView().GetViewFrame()->GetBindings().Invalidate(SID_HYPERLINK_GETLINK);
     }
-    inline ~ShellMoveCursor()
+    ~ShellMoveCursor()
     {
         if( bAct )
         {
@@ -87,8 +87,12 @@ bool SwWrtShell::SimpleMove( FNSimpleMove FnSimpleMove, bool bSelect )
         bRet = (this->*FnSimpleMove)();
         EndCursorMove();
     }
-    else if( ( bRet = (this->*FnSimpleMove)() ) )
-        MoveCursor();
+    else
+    {
+        bRet = (this->*FnSimpleMove)();
+        if( bRet )
+            MoveCursor();
+    }
     return bRet;
 }
 
@@ -204,14 +208,14 @@ bool SwWrtShell::GoStart( bool bKeepArea, bool *pMoveTable,
                 SttSelect();
         }
             // Table cell ?
-        if ( !bBoxSelection && (MoveSection( fnSectionCurr, fnSectionStart)
+        if ( !bBoxSelection && (MoveSection( GoCurrSection, fnSectionStart)
                 || bDontMoveRegion))
         {
             if ( pMoveTable )
                 *pMoveTable = false;
             return true;
         }
-        if( MoveTable( fnTableCurr, fnTableStart ) || bDontMoveRegion )
+        if( MoveTable( GotoCurrTable, fnTableStart ) || bDontMoveRegion )
         {
             if ( pMoveTable )
                 *pMoveTable = true;
@@ -239,32 +243,32 @@ bool SwWrtShell::GoStart( bool bKeepArea, bool *pMoveTable,
     const FrameTypeFlags nFrameType = GetFrameType(nullptr,false);
     if ( FrameTypeFlags::FLY_ANY & nFrameType )
     {
-        if( MoveSection( fnSectionCurr, fnSectionStart ) )
+        if( MoveSection( GoCurrSection, fnSectionStart ) )
             return true;
         else if ( FrameTypeFlags::FLY_FREE & nFrameType || bDontMoveRegion )
             return false;
     }
     if(( FrameTypeFlags::HEADER | FrameTypeFlags::FOOTER | FrameTypeFlags::FOOTNOTE ) & nFrameType )
     {
-        if ( MoveSection( fnSectionCurr, fnSectionStart ) )
+        if ( MoveSection( GoCurrSection, fnSectionStart ) )
             return true;
         else if ( bKeepArea )
             return true;
     }
     // Regions ???
-    return SwCursorShell::MoveRegion( fnRegionCurrAndSkip, fnRegionStart ) ||
+    return SwCursorShell::MoveRegion( GotoCurrRegionAndSkip, fnRegionStart ) ||
            SwCursorShell::SttEndDoc(true);
 }
 
 bool SwWrtShell::GoEnd(bool bKeepArea, bool *pMoveTable)
 {
     if ( pMoveTable && *pMoveTable )
-        return MoveTable( fnTableCurr, fnTableEnd );
+        return MoveTable( GotoCurrTable, fnTableEnd );
 
     if ( IsCursorInTable() )
     {
-        if ( MoveSection( fnSectionCurr, fnSectionEnd ) ||
-             MoveTable( fnTableCurr, fnTableEnd ) )
+        if ( MoveSection( GoCurrSection, fnSectionEnd ) ||
+             MoveTable( GotoCurrTable, fnTableEnd ) )
             return true;
     }
     else
@@ -272,21 +276,21 @@ bool SwWrtShell::GoEnd(bool bKeepArea, bool *pMoveTable)
         const FrameTypeFlags nFrameType = GetFrameType(nullptr,false);
         if ( FrameTypeFlags::FLY_ANY & nFrameType )
         {
-            if ( MoveSection( fnSectionCurr, fnSectionEnd ) )
+            if ( MoveSection( GoCurrSection, fnSectionEnd ) )
                 return true;
             else if ( FrameTypeFlags::FLY_FREE & nFrameType )
                 return false;
         }
         if(( FrameTypeFlags::HEADER | FrameTypeFlags::FOOTER | FrameTypeFlags::FOOTNOTE ) & nFrameType )
         {
-            if ( MoveSection( fnSectionCurr, fnSectionEnd) )
+            if ( MoveSection( GoCurrSection, fnSectionEnd) )
                 return true;
             else if ( bKeepArea )
                 return true;
         }
     }
     // Regions ???
-    return SwCursorShell::MoveRegion( fnRegionCurrAndSkip, fnRegionEnd ) ||
+    return SwCursorShell::MoveRegion( GotoCurrRegionAndSkip, fnRegionEnd ) ||
            SwCursorShell::SttEndDoc(false);
 }
 
@@ -305,49 +309,49 @@ bool SwWrtShell::EndDoc( bool bSelect)
 bool SwWrtShell::SttNxtPg( bool bSelect )
 {
     ShellMoveCursor aTmp( this, bSelect );
-    return MovePage( fnPageNext, fnPageStart );
+    return MovePage( GetNextFrame, GetFirstSub );
 }
 
 void SwWrtShell::SttPrvPg( bool bSelect )
 {
     ShellMoveCursor aTmp( this, bSelect );
-    MovePage( fnPagePrev, fnPageStart );
+    MovePage( GetPrevFrame, GetFirstSub );
 }
 
 void SwWrtShell::EndNxtPg( bool bSelect )
 {
     ShellMoveCursor aTmp( this, bSelect );
-    MovePage( fnPageNext, fnPageEnd );
+    MovePage( GetNextFrame, GetLastSub );
 }
 
 bool SwWrtShell::EndPrvPg( bool bSelect )
 {
     ShellMoveCursor aTmp( this, bSelect );
-    return MovePage( fnPagePrev, fnPageEnd );
+    return MovePage( GetPrevFrame, GetLastSub );
 }
 
 bool SwWrtShell::SttPg( bool bSelect )
 {
     ShellMoveCursor aTmp( this, bSelect );
-    return MovePage( fnPageCurr, fnPageStart );
+    return MovePage( GetThisFrame, GetFirstSub );
 }
 
 bool SwWrtShell::EndPg( bool bSelect )
 {
     ShellMoveCursor aTmp( this, bSelect );
-    return MovePage( fnPageCurr, fnPageEnd );
+    return MovePage( GetThisFrame, GetLastSub );
 }
 
 bool SwWrtShell::SttPara( bool bSelect )
 {
     ShellMoveCursor aTmp( this, bSelect );
-    return MovePara( fnParaCurr, fnParaStart );
+    return MovePara( GoCurrPara, fnParaStart );
 }
 
 void SwWrtShell::EndPara( bool bSelect )
 {
     ShellMoveCursor aTmp( this, bSelect );
-    MovePara(fnParaCurr,fnParaEnd);
+    MovePara(GoCurrPara,fnParaEnd);
 }
 
 // Column-by-jumping.
@@ -357,37 +361,37 @@ void SwWrtShell::EndPara( bool bSelect )
 void SwWrtShell::StartOfColumn()
 {
     ShellMoveCursor aTmp( this, false/*bSelect*/);
-    MoveColumn(fnColumnCurr, fnColumnStart);
+    MoveColumn(GetCurrColumn, GetColumnStt);
 }
 
 void SwWrtShell::EndOfColumn()
 {
     ShellMoveCursor aTmp( this, false/*bSelect*/);
-    MoveColumn(fnColumnCurr, fnColumnEnd);
+    MoveColumn(GetCurrColumn, GetColumnEnd);
 }
 
 void SwWrtShell::StartOfNextColumn()
 {
     ShellMoveCursor aTmp( this, false/*bSelect*/);
-    MoveColumn( fnColumnNext, fnColumnStart);
+    MoveColumn( GetNextColumn, GetColumnStt);
 }
 
 void SwWrtShell::EndOfNextColumn()
 {
     ShellMoveCursor aTmp( this, false/*bSelect*/);
-    MoveColumn(fnColumnNext, fnColumnEnd);
+    MoveColumn(GetNextColumn, GetColumnEnd);
 }
 
 void SwWrtShell::StartOfPrevColumn()
 {
     ShellMoveCursor aTmp( this, false/*bSelect*/);
-    MoveColumn(fnColumnPrev, fnColumnStart);
+    MoveColumn(GetPrevColumn, GetColumnStt);
 }
 
 void SwWrtShell::EndOfPrevColumn()
 {
     ShellMoveCursor aTmp( this, false/*bSelect*/);
-    MoveColumn(fnColumnPrev, fnColumnEnd);
+    MoveColumn(GetPrevColumn, GetColumnEnd);
 }
 
 bool SwWrtShell::PushCursor(SwTwips lOffset, bool bSelect)
@@ -604,7 +608,7 @@ bool SwWrtShell::GotoINetAttr( const SwTextINetFormat& rAttr )
     return bRet;
 }
 
-void SwWrtShell::GotoOutline( sal_uInt16 nIdx )
+void SwWrtShell::GotoOutline( SwOutlineNodes::size_type nIdx )
 {
     addCurrentPosition();
     SwCursorShell::GotoOutline (nIdx);
@@ -648,7 +652,7 @@ bool SwWrtShell::GotoNextTOXBase( const OUString* pName )
 
 bool SwWrtShell::GotoTable( const OUString& rName )
 {
-   SwPosition aPos = *GetCursor()->GetPoint();
+    SwPosition aPos = *GetCursor()->GetPoint();
     bool bRet = SwCursorShell::GotoTable(rName);
     if (bRet)
         m_aNavigationMgr.addEntry(aPos);
@@ -663,7 +667,7 @@ bool SwWrtShell::GotoFormatField( const SwFormatField& rField ) {
     return bRet;
 }
 
-const SwRangeRedline* SwWrtShell::GotoRedline( sal_uInt16 nArrPos, bool bSelect ) {
+const SwRangeRedline* SwWrtShell::GotoRedline( SwRedlineTable::size_type nArrPos, bool bSelect ) {
     SwPosition aPos = *GetCursor()->GetPoint();
     const SwRangeRedline *pRedline = SwCursorShell::GotoRedline(nArrPos, bSelect);
     if (pRedline)

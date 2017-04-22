@@ -20,7 +20,6 @@
 #define INCLUDED_CUI_SOURCE_INC_BACKGRND_HXX
 
 #include <vcl/group.hxx>
-#include <svtools/stdctrl.hxx>
 #include <vcl/graph.hxx>
 #include <svx/SvxColorValueSet.hxx>
 #include <svx/dlgctrl.hxx>
@@ -55,7 +54,7 @@ public:
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
     virtual void        Reset( const SfxItemSet* rSet ) override;
     virtual void        FillUserData() override;
-    virtual void        PointChanged( vcl::Window* pWindow, RECT_POINT eRP ) override;
+    virtual void        PointChanged( vcl::Window* pWindow, RectPoint eRP ) override;
 
     /// Shift-ListBox activation
     void                ShowSelector();
@@ -64,11 +63,11 @@ public:
 
     virtual void        PageCreated(const SfxAllItemSet& aSet) override;
 protected:
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
 private:
     SvxBackgroundTabPage( vcl::Window* pParent, const SfxItemSet& rCoreSet );
-    virtual ~SvxBackgroundTabPage();
+    virtual ~SvxBackgroundTabPage() override;
     virtual void dispose() override;
 
     VclPtr<VclContainer>           m_pAsGrid;
@@ -132,13 +131,13 @@ private:
     bool                FillItemSetWithWallpaperItem( SfxItemSet& rCoreSet, sal_uInt16 nSlot);
     void                ResetFromWallpaperItem( const SfxItemSet& rSet );
 
-    DECL_LINK_TYPED( LoadIdleHdl_Impl, Idle*, void );
-    DECL_LINK_TYPED(SelectHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED(BrowseHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( RadioClickHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( FileClickHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(BackgroundColorHdl_Impl, ValueSet*, void);
-    DECL_LINK_TYPED( TblDestinationHdl_Impl, ListBox&, void );
+    DECL_LINK( LoadIdleHdl_Impl, Timer*, void );
+    DECL_LINK(SelectHdl_Impl, ListBox&, void );
+    DECL_LINK(BrowseHdl_Impl, Button*, void);
+    DECL_LINK( RadioClickHdl_Impl, Button*, void );
+    DECL_LINK( FileClickHdl_Impl, Button*, void );
+    DECL_LINK(BackgroundColorHdl_Impl, ValueSet*, void);
+    DECL_LINK( TblDestinationHdl_Impl, ListBox&, void );
 };
 
 #endif // INCLUDED_CUI_SOURCE_INC_BACKGRND_HXX

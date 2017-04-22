@@ -20,13 +20,10 @@
 #define INCLUDED_SC_INC_CHGVISET_HXX
 
 #include <tools/datetime.hxx>
+#include <unotools/textsearch.hxx>
 #include <svx/ctredlin.hxx>
 #include "rangelst.hxx"
 #include "scdllapi.h"
-
-namespace utl {
-    class TextSearch;
-}
 
 class ScDocument;
 
@@ -34,7 +31,8 @@ class SC_DLLPUBLIC ScChangeViewSettings
 {
 private:
 
-    utl::TextSearch*    pCommentSearcher;
+    std::unique_ptr<utl::TextSearch>
+                        pCommentSearcher;
     DateTime            aFirstDateTime;
     DateTime            aLastDateTime;
     OUString            aAuthorToShow;

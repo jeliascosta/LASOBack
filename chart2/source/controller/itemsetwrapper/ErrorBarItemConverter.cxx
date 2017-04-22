@@ -100,7 +100,7 @@ ErrorBarItemConverter::ErrorBarItemConverter(
         m_spGraphicConverter( new GraphicPropertyItemConverter(
                                   rPropertySet, rItemPool, rDrawModel,
                                   xNamedPropertyContainerFactory,
-                                  GraphicPropertyItemConverter::LINE_PROPERTIES )),
+                                  GraphicObjectType::LineProperties )),
         m_xModel( xModel )
 {}
 
@@ -138,7 +138,6 @@ bool ErrorBarItemConverter::GetItemProperty(
 
 bool ErrorBarItemConverter::ApplySpecialItem(
     sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
-    throw( uno::Exception )
 {
     bool bChanged = false;
 
@@ -155,7 +154,7 @@ bool ErrorBarItemConverter::ApplySpecialItem(
                 static_cast< const SvxChartKindErrorItem & >(
                     rItemSet.Get( nWhichId )).GetValue();
 
-            if( !xErrorBarProp.is() && eErrorKind == CHERROR_NONE)
+            if( !xErrorBarProp.is() && eErrorKind == SvxChartKindError::NONE)
             {
                 //nothing to do
             }
@@ -165,25 +164,25 @@ bool ErrorBarItemConverter::ApplySpecialItem(
 
                 switch( eErrorKind )
                 {
-                    case CHERROR_NONE:
+                    case SvxChartKindError::NONE:
                         nStyle = css::chart::ErrorBarStyle::NONE; break;
-                    case CHERROR_VARIANT:
+                    case SvxChartKindError::Variant:
                         nStyle = css::chart::ErrorBarStyle::VARIANCE; break;
-                    case CHERROR_SIGMA:
+                    case SvxChartKindError::Sigma:
                         nStyle = css::chart::ErrorBarStyle::STANDARD_DEVIATION; break;
-                    case CHERROR_PERCENT:
+                    case SvxChartKindError::Percent:
                         nStyle = css::chart::ErrorBarStyle::RELATIVE; break;
-                    case CHERROR_BIGERROR:
+                    case SvxChartKindError::BigError:
                         nStyle = css::chart::ErrorBarStyle::ERROR_MARGIN; break;
-                    case CHERROR_CONST:
+                    case SvxChartKindError::Const:
                         nStyle = css::chart::ErrorBarStyle::ABSOLUTE; break;
-                    case CHERROR_STDERROR:
+                    case SvxChartKindError::StdError:
                         nStyle = css::chart::ErrorBarStyle::STANDARD_ERROR; break;
-                    case CHERROR_RANGE:
+                    case SvxChartKindError::Range:
                         nStyle = css::chart::ErrorBarStyle::FROM_DATA; break;
                 }
 
-                xErrorBarProp->setPropertyValue( "ErrorBarStyle" , uno::makeAny( nStyle ));
+                xErrorBarProp->setPropertyValue( "ErrorBarStyle" , uno::Any( nStyle ));
                 bChanged = true;
             }
         }
@@ -204,8 +203,8 @@ bool ErrorBarItemConverter::ApplySpecialItem(
             if( ! ( ::rtl::math::approxEqual( fPos, fValue ) &&
                     ::rtl::math::approxEqual( fNeg, fValue )))
             {
-                xErrorBarProp->setPropertyValue( "PositiveError" , uno::makeAny( fValue ));
-                xErrorBarProp->setPropertyValue( "NegativeError" , uno::makeAny( fValue ));
+                xErrorBarProp->setPropertyValue( "PositiveError" , uno::Any( fValue ));
+                xErrorBarProp->setPropertyValue( "NegativeError" , uno::Any( fValue ));
                 bChanged = true;
             }
         }
@@ -221,7 +220,7 @@ bool ErrorBarItemConverter::ApplySpecialItem(
 
             if( ! ::rtl::math::approxEqual( fPos, fValue ))
             {
-                GetPropertySet()->setPropertyValue( "PositiveError" , uno::makeAny( fValue ));
+                GetPropertySet()->setPropertyValue( "PositiveError" , uno::Any( fValue ));
                 bChanged = true;
             }
         }
@@ -239,7 +238,7 @@ bool ErrorBarItemConverter::ApplySpecialItem(
 
             if( ! ::rtl::math::approxEqual( fNeg, fValue ))
             {
-                xErrorBarProp->setPropertyValue( "NegativeError" , uno::makeAny( fValue ));
+                xErrorBarProp->setPropertyValue( "NegativeError" , uno::Any( fValue ));
                 bChanged = true;
             }
         }
@@ -253,8 +252,8 @@ bool ErrorBarItemConverter::ApplySpecialItem(
                 static_cast< const SvxChartIndicateItem & >(
                     rItemSet.Get( nWhichId )).GetValue();
 
-            bool bNewIndPos = (eIndicate == CHINDICATE_BOTH || eIndicate == CHINDICATE_UP );
-            bool bNewIndNeg = (eIndicate == CHINDICATE_BOTH || eIndicate == CHINDICATE_DOWN );
+            bool bNewIndPos = (eIndicate == SvxChartIndicate::Both || eIndicate == SvxChartIndicate::Up );
+            bool bNewIndNeg = (eIndicate == SvxChartIndicate::Both || eIndicate == SvxChartIndicate::Down );
 
             bool bShowPos(false), bShowNeg(false);
             lcl_getErrorIndicatorValues( xErrorBarProp, bShowPos, bShowNeg );
@@ -262,8 +261,8 @@ bool ErrorBarItemConverter::ApplySpecialItem(
             if( ( bShowPos != bNewIndPos ||
                   bShowNeg != bNewIndNeg ))
             {
-                xErrorBarProp->setPropertyValue( "ShowPositiveError" , uno::makeAny( bNewIndPos ));
-                xErrorBarProp->setPropertyValue( "ShowNegativeError" , uno::makeAny( bNewIndNeg ));
+                xErrorBarProp->setPropertyValue( "ShowPositiveError" , uno::Any( bNewIndPos ));
+                xErrorBarProp->setPropertyValue( "ShowNegativeError" , uno::Any( bNewIndNeg ));
                 bChanged = true;
             }
         }
@@ -331,13 +330,12 @@ bool ErrorBarItemConverter::ApplySpecialItem(
 
 void ErrorBarItemConverter::FillSpecialItem(
     sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
-    throw( uno::Exception )
 {
     switch( nWhichId )
     {
         case SCHATTR_STAT_KIND_ERROR:
         {
-            SvxChartKindError eErrorKind = CHERROR_NONE;
+            SvxChartKindError eErrorKind = SvxChartKindError::NONE;
             uno::Reference< beans::XPropertySet > xErrorBarProp( GetPropertySet());
 
             sal_Int32 nStyle = 0;
@@ -348,19 +346,19 @@ void ErrorBarItemConverter::FillSpecialItem(
                     case css::chart::ErrorBarStyle::NONE:
                         break;
                     case css::chart::ErrorBarStyle::VARIANCE:
-                        eErrorKind = CHERROR_VARIANT; break;
+                        eErrorKind = SvxChartKindError::Variant; break;
                     case css::chart::ErrorBarStyle::STANDARD_DEVIATION:
-                        eErrorKind = CHERROR_SIGMA; break;
+                        eErrorKind = SvxChartKindError::Sigma; break;
                     case css::chart::ErrorBarStyle::ABSOLUTE:
-                        eErrorKind = CHERROR_CONST; break;
+                        eErrorKind = SvxChartKindError::Const; break;
                     case css::chart::ErrorBarStyle::RELATIVE:
-                        eErrorKind = CHERROR_PERCENT; break;
+                        eErrorKind = SvxChartKindError::Percent; break;
                     case css::chart::ErrorBarStyle::ERROR_MARGIN:
-                        eErrorKind = CHERROR_BIGERROR; break;
+                        eErrorKind = SvxChartKindError::BigError; break;
                     case css::chart::ErrorBarStyle::STANDARD_ERROR:
-                        eErrorKind = CHERROR_STDERROR; break;
+                        eErrorKind = SvxChartKindError::StdError; break;
                     case css::chart::ErrorBarStyle::FROM_DATA:
-                        eErrorKind = CHERROR_RANGE; break;
+                        eErrorKind = SvxChartKindError::Range; break;
                 }
             }
             rOutItemSet.Put( SvxChartKindErrorItem( eErrorKind, SCHATTR_STAT_KIND_ERROR ));
@@ -401,23 +399,23 @@ void ErrorBarItemConverter::FillSpecialItem(
 
         case SCHATTR_STAT_INDICATE:
         {
-            SvxChartIndicate eIndicate = CHINDICATE_BOTH;
+            SvxChartIndicate eIndicate = SvxChartIndicate::Both;
             bool bShowPos(false), bShowNeg(false);
             lcl_getErrorIndicatorValues( GetPropertySet(), bShowPos, bShowNeg );
 
             if( bShowPos )
             {
                 if( bShowNeg )
-                    eIndicate = CHINDICATE_BOTH;
+                    eIndicate = SvxChartIndicate::Both;
                 else
-                    eIndicate = CHINDICATE_UP;
+                    eIndicate = SvxChartIndicate::Up;
             }
             else
             {
                 if( bShowNeg )
-                    eIndicate = CHINDICATE_DOWN;
+                    eIndicate = SvxChartIndicate::Down;
                 else
-                    eIndicate = CHINDICATE_NONE;
+                    eIndicate = SvxChartIndicate::NONE;
             }
             rOutItemSet.Put( SvxChartIndicateItem( eIndicate, SCHATTR_STAT_INDICATE ));
         }

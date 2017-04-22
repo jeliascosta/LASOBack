@@ -23,18 +23,8 @@
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <osl/mutex.hxx>
 #include <o3tl/typed_flags_set.hxx>
+#include <memory>
 
-
-enum class CVCFlags
-{
-    LAZY_UPDATE         = 0x0000,
-    UPDATE_ACCESS       = 0x0001,
-    IMMEDIATE_UPDATE    = 0x0002,
-};
-namespace o3tl
-{
-    template<> struct typed_flags<CVCFlags> : is_typed_flags<CVCFlags, 0x03> {};
-}
 
 namespace utl
 {
@@ -65,8 +55,7 @@ namespace utl
     class UNOTOOLS_DLLPUBLIC OConfigurationValueContainer
     {
     private:
-        OConfigurationValueContainerImpl*
-                    m_pImpl;
+        std::unique_ptr<OConfigurationValueContainerImpl> m_pImpl;
 
     protected:
 
@@ -78,7 +67,7 @@ namespace utl
                 specifies the service factory which should be used to access the configuration
             @param _rAccessSafety
                 As this class is intended to manipulate objects it does not hold itself (see the various
-                registerXXX methods), it needs to guard these access for muti threading safety.<br/>
+                registerXXX methods), it needs to guard these access for multi threading safety.<br/>
                 The mutex given here is locked whenever such an access occurs.
             @param _pConfigLocation
                 is an ASCII string describing the configurations node path
@@ -92,7 +81,7 @@ namespace utl
             const css::uno::Reference< css::uno::XComponentContext >& _rxORB,
             ::osl::Mutex& _rAccessSafety,
             const sal_Char* _pConfigLocation,
-            const sal_Int32 _nLevels = -1
+            const sal_Int32 _nLevels
         );
 
         /// dtor
@@ -131,37 +120,17 @@ namespace utl
         */
         void    read( );
 
-        /** updates the configuration data
-
-            <p>The current values in memory (your exchange locations registered using the registerXXX methods) is
-            forwarded to their respective configuration nodes.</p>
-
-            <p>Note that calling <method>write</method>(<sal_True/) is the same as calling <method>commit</method>(<TRUE/>).</p>
-
-            @precond
-                The access must have been created for update access
-
-            You must explicitly call <method>commit</method> to make your changes persistent.
-
-            @see read
-            @see commit
-        */
-        void    write();
-
         /** commits any changes done
 
             <p>Note that calling <method>write</method>(<sal_True/) is the same as calling <method>commit</method>(<TRUE/>).</p>
 
+            The current values in the exchange locations are written to the configuration nodes
+            before the changes are committed.<br/>
+
             @precond
                 The access must have been created for update access
-
-            @param _bWrite
-                If <TRUE/>, the current values in the exchange locations are written to the configuration nodes
-                before the changes are committed.<br/>
-                If <FALSE/>, only the current values in the config nodes (as present since the last call to
-                <method>write</method>) are committed.
         */
-        void    commit( bool _bWrite = true );
+        void    commit();
 
     private:
         /// implements the ctors

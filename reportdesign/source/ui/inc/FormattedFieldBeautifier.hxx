@@ -37,7 +37,8 @@ namespace rptui
         const OReportController& m_rReportController;
         sal_Int32 m_nTextColor;
 
-        css::uno::Reference< css::awt::XVclWindowPeer > getVclWindowPeer(const css::uno::Reference< css::report::XReportComponent >& _xComponent) throw(css::uno::RuntimeException);
+        /// @throws css::uno::RuntimeException
+        css::uno::Reference< css::awt::XVclWindowPeer > getVclWindowPeer(const css::uno::Reference< css::report::XReportComponent >& _xComponent);
 
         void setPlaceholderText( const css::uno::Reference< css::uno::XInterface >& _rxComponent );
         void setPlaceholderText( const css::uno::Reference< css::awt::XVclWindowPeer >& _xVclWindowPeer, const OUString& _rText );
@@ -46,7 +47,7 @@ namespace rptui
 
     public:
         FormattedFieldBeautifier(const OReportController & _aObserver);
-        virtual ~FormattedFieldBeautifier();
+        virtual ~FormattedFieldBeautifier() override;
 
         void    notifyPropertyChange( const css::beans::PropertyChangeEvent& _rEvent ) override;
         void    notifyElementInserted( const css::uno::Reference< css::uno::XInterface >& _rxElement ) override;

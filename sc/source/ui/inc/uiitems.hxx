@@ -48,7 +48,7 @@ class ScInputStatusItem : public SfxPoolItem
     ScAddress           aStartPos;
     ScAddress           aEndPos;
     OUString            aString;
-    EditTextObject*     pEditData;
+    std::unique_ptr<EditTextObject>             pEditData;
     const std::vector<editeng::MisspellRanges>* mpMisspellRanges;
 
 public:
@@ -60,7 +60,7 @@ public:
                                                const OUString& rString,
                                                const EditTextObject* pData );
                             ScInputStatusItem( const ScInputStatusItem& rItem );
-                            virtual ~ScInputStatusItem();
+                            virtual ~ScInputStatusItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -68,7 +68,7 @@ public:
     const ScAddress&        GetPos() const      { return aCursorPos; }
 
     const OUString&         GetString() const   { return aString; }
-    const EditTextObject*   GetEditData() const { return pEditData; }
+    const EditTextObject*   GetEditData() const { return pEditData.get(); }
 
     void SetMisspellRanges( const std::vector<editeng::MisspellRanges>* pRanges );
     const std::vector<editeng::MisspellRanges>* GetMisspellRanges() const { return mpMisspellRanges;}
@@ -90,9 +90,9 @@ class ScTablesHint : public SfxHint
 
 public:
                     ScTablesHint(sal_uInt16 nNewId, SCTAB nTable1, SCTAB nTable2=0);
-                    virtual ~ScTablesHint();
+                    virtual ~ScTablesHint() override;
 
-    sal_uInt16      GetId() const           { return nId; }
+    sal_uInt16      GetTablesHintId() const { return nId; }
     SCTAB           GetTab1() const         { return nTab1; }
     SCTAB           GetTab2() const         { return nTab2; }
 };
@@ -105,7 +105,7 @@ class ScEditViewHint : public SfxHint
 public:
                     ScEditViewHint() = delete;
                     ScEditViewHint( ScEditEngineDefaulter* pEngine, const ScAddress& rCurPos );
-                    virtual ~ScEditViewHint();
+                    virtual ~ScEditViewHint() override;
 
     SCCOL           GetCol() const      { return aCursorPos.Col(); }
     SCROW           GetRow() const      { return aCursorPos.Row(); }
@@ -115,14 +115,12 @@ public:
 
 class ScIndexHint : public SfxHint
 {
-    sal_uInt16 nId;
     sal_uInt16 nIndex;
 
 public:
-                    ScIndexHint(sal_uInt16 nNewId, sal_uInt16 nIdx);
-                    virtual ~ScIndexHint();
+                    ScIndexHint(SfxHintId nNewId, sal_uInt16 nIdx);
+                    virtual ~ScIndexHint() override;
 
-    sal_uInt16      GetId() const           { return nId; }
     sal_uInt16      GetIndex() const        { return nIndex; }
 };
 
@@ -137,11 +135,11 @@ public:
                             ScSortItem( sal_uInt16              nWhich,
                                         const ScSortParam*  pSortData );
                             ScSortItem( const ScSortItem& rItem );
-                            virtual ~ScSortItem();
+                            virtual ~ScSortItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
-    virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberUd ) const override;
+    virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
 
     ScViewData*         GetViewData () const { return pViewData; }
     const ScSortParam&  GetSortData () const { return theSortData; }
@@ -160,7 +158,7 @@ public:
                             ScQueryItem( sal_uInt16                 nWhich,
                                          const ScQueryParam*    pQueryData );
                             ScQueryItem( const ScQueryItem& rItem );
-                            virtual ~ScQueryItem();
+                            virtual ~ScQueryItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -187,11 +185,11 @@ public:
                 ScSubTotalItem( sal_uInt16                  nWhich,
                                 const ScSubTotalParam*  pSubTotalData );
                 ScSubTotalItem( const ScSubTotalItem&   rItem );
-                virtual ~ScSubTotalItem();
+                virtual ~ScSubTotalItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
-    virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberUd ) const override;
+    virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
 
     ScViewData*             GetViewData () const { return pViewData; }
     const ScSubTotalParam&  GetSubTotalData() const { return theSubTotalData; }
@@ -206,16 +204,16 @@ class SC_DLLPUBLIC ScUserListItem : public SfxPoolItem
 public:
                 ScUserListItem( sal_uInt16 nWhich );
                 ScUserListItem( const ScUserListItem& rItem );
-                virtual ~ScUserListItem();
+                virtual ~ScUserListItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
 
     void        SetUserList ( const ScUserList& rUserList );
-    ScUserList* GetUserList () const { return pUserList; }
+    ScUserList* GetUserList () const { return pUserList.get(); }
 
 private:
-    ScUserList* pUserList;
+    std::unique_ptr<ScUserList> pUserList;
 };
 
 class ScConsolidateItem : public SfxPoolItem
@@ -224,7 +222,7 @@ public:
                 ScConsolidateItem( sal_uInt16                    nWhich,
                                    const ScConsolidateParam* pParam );
                 ScConsolidateItem( const ScConsolidateItem& rItem );
-                virtual ~ScConsolidateItem();
+                virtual ~ScConsolidateItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -241,7 +239,7 @@ public:
                 ScPivotItem( sal_uInt16 nWhich, const ScDPSaveData* pData,
                              const ScRange* pRange, bool bNew );
                 ScPivotItem( const ScPivotItem& rItem );
-                virtual ~ScPivotItem();
+                virtual ~ScPivotItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -251,9 +249,9 @@ public:
     bool                IsNewSheet() const      { return bNewSheet; }
 
 private:
-    ScDPSaveData*   pSaveData;
-    ScRange         aDestRange;
-    bool            bNewSheet;
+    std::unique_ptr<ScDPSaveData>  pSaveData;
+    ScRange                        aDestRange;
+    bool                           bNewSheet;
 };
 
 class ScSolveItem : public SfxPoolItem
@@ -262,7 +260,7 @@ public:
                 ScSolveItem( sal_uInt16              nWhich,
                              const ScSolveParam* pParam );
                 ScSolveItem( const ScSolveItem& rItem );
-                virtual ~ScSolveItem();
+                virtual ~ScSolveItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -279,7 +277,7 @@ public:
                 ScTabOpItem( sal_uInt16              nWhich,
                              const ScTabOpParam* pParam );
                 ScTabOpItem( const ScTabOpItem& rItem );
-                virtual ~ScTabOpItem();
+                virtual ~ScTabOpItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;

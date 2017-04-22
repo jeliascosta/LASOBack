@@ -133,11 +133,9 @@ class RecentFilesStringLength : public ::cppu::WeakImplHelper< css::util::XStrin
 {
     public:
         RecentFilesStringLength() {}
-        virtual ~RecentFilesStringLength() {}
 
         // XStringWidth
-        sal_Int32 SAL_CALL queryStringWidth( const ::rtl::OUString& aString )
-            throw ( css::uno::RuntimeException ) override
+        sal_Int32 SAL_CALL queryStringWidth( const ::rtl::OUString& aString ) override
         {
             return aString.getLength();
         }
@@ -217,7 +215,7 @@ class RecentFilesStringLength : public ::cppu::WeakImplHelper< css::util::XStrin
         {
             // Do handle file URL differently => convert it to a system
             // path and abbreviate it with a special function:
-            ::rtl::OUString aSystemPath( aURL.getFSysPath( INetURLObject::FSYS_DETECT ) );
+            ::rtl::OUString aSystemPath( aURL.getFSysPath( FSysStyle::Detect ) );
             ::rtl::OUString aCompactedSystemPath;
 
             oslFileError nError = osl_abbreviateSystemPath( aSystemPath.pData, &aCompactedSystemPath.pData, 46, nullptr );
@@ -230,7 +228,7 @@ class RecentFilesStringLength : public ::cppu::WeakImplHelper< css::util::XStrin
         {
             // Use INetURLObject to abbreviate all other URLs
             css::uno::Reference< css::util::XStringWidth > xStringLength( new RecentFilesStringLength() );
-            aMenuTitle = aURL.getAbbreviated( xStringLength, 46, INetURLObject::DECODE_UNAMBIGUOUS );
+            aMenuTitle = aURL.getAbbreviated( xStringLength, 46, INetURLObject::DecodeMechanism::Unambiguous );
         }
 
         NSMenuItem* pNewItem = [[NSMenuItem alloc] initWithTitle: getAutoreleasedString( aMenuTitle )
@@ -254,11 +252,11 @@ class RecentFilesStringLength : public ::cppu::WeakImplHelper< css::util::XStrin
         css::uno::Sequence< css::beans::PropertyValue > aArgsList( NUM_OF_PICKLIST_ARGS );
 
         aArgsList[0].Name = "Referer";
-        aArgsList[0].Value = css::uno::makeAny( OUString( "private:user" ) );
+        aArgsList[0].Value <<= OUString( "private:user" );
 
         // documents in the picklist will never be opened as templates
         aArgsList[1].Name = "AsTemplate";
-        aArgsList[1].Value = css::uno::makeAny( false );
+        aArgsList[1].Value <<= false;
 
         ::rtl::OUString  aFilter( rRecentFile.aFilter );
         sal_Int32 nPos = aFilter.indexOf( '|' );
@@ -270,14 +268,14 @@ class RecentFilesStringLength : public ::cppu::WeakImplHelper< css::util::XStrin
                 aFilterOptions = aFilter.copy( nPos+1 );
 
             aArgsList[2].Name = "FilterOptions";
-            aArgsList[2].Value = css::uno::makeAny( aFilterOptions );
+            aArgsList[2].Value <<= aFilterOptions;
 
             aFilter = aFilter.copy( 0, nPos-1 );
             aArgsList.realloc( ++NUM_OF_PICKLIST_ARGS );
         }
 
         aArgsList[NUM_OF_PICKLIST_ARGS-1].Name = "FilterName";
-        aArgsList[NUM_OF_PICKLIST_ARGS-1].Value = css::uno::makeAny( aFilter );
+        aArgsList[NUM_OF_PICKLIST_ARGS-1].Value <<= aFilter;
 
         ShutdownIcon::OpenURL( rRecentFile.aURL, "_default", aArgsList );
     }

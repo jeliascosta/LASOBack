@@ -23,10 +23,12 @@
 #include <com/sun/star/ucb/FetchError.hpp>
 #include <com/sun/star/ucb/ResultSetException.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <com/sun/star/script/CannotConvertException.hpp>
 #include <com/sun/star/script/Converter.hpp>
 #include <com/sun/star/sdbc/ResultSetType.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <rtl/ustring.hxx>
+#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <comphelper/processfactory.hxx>
 #include <cppuhelper/exc_hlp.hxx>
@@ -52,12 +54,13 @@ template<typename T> T CachedContentResultSet::rowOriginGet(
     T (SAL_CALL css::sdbc::XRow::* f)(sal_Int32), sal_Int32 columnIndex)
 {
     impl_EnsureNotDisposed();
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     sal_Int32 nRow = m_nRow;
     sal_Int32 nFetchSize = m_nFetchSize;
     sal_Int32 nFetchDirection = m_nFetchDirection;
     if( !m_aCache.hasRow( nRow ) )
     {
+        bool isCleared = false;
         if( !m_aCache.hasCausedException( nRow ) )
         {
             if( !m_xFetchProvider.is() )
@@ -66,12 +69,16 @@ template<typename T> T CachedContentResultSet::rowOriginGet(
                 throw SQLException();
             }
             aGuard.clear();
+            isCleared = true;
             if( impl_isForwardOnly() )
                 applyPositionToOrigin( nRow );
 
             impl_fetchData( nRow, nFetchSize, nFetchDirection );
         }
-        aGuard.reacquire();
+        if (isCleared)
+        {
+            aGuard.reset();
+        }
         if( !m_aCache.hasRow( nRow ) )
         {
             m_bLastReadWasFromCache = false;
@@ -123,17 +130,12 @@ CachedContentResultSet::CCRS_Cache::CCRS_Cache(
 
 CachedContentResultSet::CCRS_Cache::~CCRS_Cache()
 {
-    delete m_pResult;
 }
 
 void SAL_CALL CachedContentResultSet::CCRS_Cache
     ::clear()
 {
-    if( m_pResult )
-    {
-        delete m_pResult;
-        m_pResult = nullptr;
-    }
+    m_pResult.reset();
     clearMappedReminder();
 }
 
@@ -141,7 +143,7 @@ void SAL_CALL CachedContentResultSet::CCRS_Cache
     ::loadData( const FetchResult& rResult )
 {
     clear();
-    m_pResult = new FetchResult( rResult );
+    m_pResult.reset( new FetchResult( rResult ) );
 }
 
 bool SAL_CALL CachedContentResultSet::CCRS_Cache
@@ -202,8 +204,6 @@ bool SAL_CALL CachedContentResultSet::CCRS_Cache
 
 Any& SAL_CALL CachedContentResultSet::CCRS_Cache
     ::getRowAny( sal_Int32 nRow )
-    throw( SQLException,
-    RuntimeException )
 {
     if( !nRow )
         throw SQLException();
@@ -268,8 +268,6 @@ Sequence< sal_Bool >* SAL_CALL CachedContentResultSet::CCRS_Cache
 
 const Any& SAL_CALL CachedContentResultSet::CCRS_Cache
     ::getAny( sal_Int32 nRow, sal_Int32 nColumnIndex )
-    throw( SQLException,
-    RuntimeException )
 {
     if( !nColumnIndex )
         throw SQLException();
@@ -286,18 +284,16 @@ const Any& SAL_CALL CachedContentResultSet::CCRS_Cache
         else
             m_xContentIdentifierMapping.clear();
     }
-    const Sequence< Any >& rRow =
-        (* static_cast< const Sequence< Any > * >
-        (getRowAny( nRow ).getValue() ));
+    auto & rowAny = getRowAny(nRow);
+    auto rRow = o3tl::doAccess<Sequence<Any>>(rowAny);
 
-    if( nColumnIndex > rRow.getLength() )
+    if( nColumnIndex > rRow->getLength() )
         throw SQLException();
-    return rRow[nColumnIndex-1];
+    return (*rRow)[nColumnIndex-1];
 }
 
-const OUString& SAL_CALL CachedContentResultSet::CCRS_Cache
+OUString SAL_CALL CachedContentResultSet::CCRS_Cache
     ::getContentIdentifierString( sal_Int32 nRow )
-    throw( css::uno::RuntimeException )
 {
     try
     {
@@ -309,8 +305,7 @@ const OUString& SAL_CALL CachedContentResultSet::CCRS_Cache
             rRow <<= m_xContentIdentifierMapping->mapContentIdentifierString( aValue );
             remindMapped( nRow );
         }
-        return (* static_cast< const OUString * >
-                (getRowAny( nRow ).getValue() ));
+        return *o3tl::doAccess<OUString>(getRowAny(nRow));
     }
     catch(const SQLException&)
     {
@@ -318,9 +313,8 @@ const OUString& SAL_CALL CachedContentResultSet::CCRS_Cache
     }
 }
 
-const Reference< XContentIdentifier >& SAL_CALL CachedContentResultSet::CCRS_Cache
+Reference< XContentIdentifier > SAL_CALL CachedContentResultSet::CCRS_Cache
     ::getContentIdentifier( sal_Int32 nRow )
-    throw( css::uno::RuntimeException )
 {
     try
     {
@@ -332,8 +326,7 @@ const Reference< XContentIdentifier >& SAL_CALL CachedContentResultSet::CCRS_Cac
             rRow <<= m_xContentIdentifierMapping->mapContentIdentifier( aValue );
             remindMapped( nRow );
         }
-        return (* static_cast< const Reference< XContentIdentifier > * >
-                (getRowAny( nRow ).getValue() ));
+        return *o3tl::doAccess<Reference<XContentIdentifier>>(getRowAny(nRow));
     }
     catch(const SQLException&)
     {
@@ -341,9 +334,8 @@ const Reference< XContentIdentifier >& SAL_CALL CachedContentResultSet::CCRS_Cac
     }
 }
 
-const Reference< XContent >& SAL_CALL CachedContentResultSet::CCRS_Cache
+Reference< XContent > SAL_CALL CachedContentResultSet::CCRS_Cache
     ::getContent( sal_Int32 nRow )
-    throw( css::uno::RuntimeException )
 {
     try
     {
@@ -355,8 +347,7 @@ const Reference< XContent >& SAL_CALL CachedContentResultSet::CCRS_Cache
             rRow <<= m_xContentIdentifierMapping->mapContent( aValue );
             remindMapped( nRow );
         }
-        return (* static_cast< const Reference< XContent > * >
-                (getRowAny( nRow ).getValue() ));
+        return *o3tl::doAccess<Reference<XContent>>(getRowAny(nRow));
     }
     catch (const SQLException&)
     {
@@ -376,14 +367,8 @@ class CCRS_PropertySetInfo :
     friend class CachedContentResultSet;
 
     //my Properties
-    Sequence< css::beans::Property >*
+    std::unique_ptr<Sequence< css::beans::Property >>
                             m_pProperties;
-
-    //some helping variables ( names for my special properties )
-    static OUString m_aPropertyNameForCount;
-    static OUString m_aPropertyNameForFinalCount;
-    static OUString m_aPropertyNameForFetchSize;
-    static OUString m_aPropertyNameForFetchDirection;
 
     long                    m_nFetchSizePropertyHandle;
     long                    m_nFetchDirectionPropertyHandle;
@@ -404,45 +389,38 @@ private:
 
 public:
     explicit CCRS_PropertySetInfo(   Reference<
-            XPropertySetInfo > xPropertySetInfoOrigin );
-
-    virtual ~CCRS_PropertySetInfo();
+            XPropertySetInfo > const & xPropertySetInfoOrigin );
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
         throw() override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
 
     // XPropertySetInfo
     virtual Sequence< css::beans::Property > SAL_CALL
-    getProperties()
-        throw( RuntimeException, std::exception ) override;
+    getProperties() override;
 
     virtual css::beans::Property SAL_CALL
-    getPropertyByName( const OUString& aName )
-        throw( css::beans::UnknownPropertyException, RuntimeException, std::exception ) override;
+    getPropertyByName( const OUString& aName ) override;
 
     virtual sal_Bool SAL_CALL
-    hasPropertyByName( const OUString& Name )
-        throw( RuntimeException, std::exception ) override;
+    hasPropertyByName( const OUString& Name ) override;
 };
 
-OUString    CCRS_PropertySetInfo::m_aPropertyNameForCount( "RowCount" );
-OUString    CCRS_PropertySetInfo::m_aPropertyNameForFinalCount( "IsRowCountFinal" );
-OUString    CCRS_PropertySetInfo::m_aPropertyNameForFetchSize( "FetchSize" );
-OUString    CCRS_PropertySetInfo::m_aPropertyNameForFetchDirection( "FetchDirection" );
+//some helping variables ( names for my special properties )
+static const char g_sPropertyNameForCount[] = "RowCount";
+static const char g_sPropertyNameForFinalCount[] = "IsRowCountFinal";
+static const char g_sPropertyNameForFetchSize[] = "FetchSize";
+static const char g_sPropertyNameForFetchDirection[] = "FetchDirection";
 
 CCRS_PropertySetInfo::CCRS_PropertySetInfo(
-        Reference< XPropertySetInfo > xInfo )
+        Reference< XPropertySetInfo > const & xInfo )
         : m_pProperties( nullptr )
         , m_nFetchSizePropertyHandle( -1 )
         , m_nFetchDirectionPropertyHandle( -1 )
@@ -450,23 +428,23 @@ CCRS_PropertySetInfo::CCRS_PropertySetInfo(
     //initialize list of properties:
 
     // it is required, that the received xInfo contains the two
-    // properties with names 'm_aPropertyNameForCount' and
-    // 'm_aPropertyNameForFinalCount'
+    // properties with names 'g_sPropertyNameForCount' and
+    // 'g_sPropertyNameForFinalCount'
 
     if( xInfo.is() )
     {
         Sequence<Property> aProps = xInfo->getProperties();
-        m_pProperties = new Sequence<Property> ( aProps );
+        m_pProperties.reset( new Sequence<Property> ( aProps ) );
     }
     else
     {
         OSL_FAIL( "The received XPropertySetInfo doesn't contain required properties" );
-        m_pProperties = new Sequence<Property>;
+        m_pProperties.reset( new Sequence<Property> );
     }
 
     //ensure, that we haven't got the Properties 'FetchSize' and 'Direction' twice:
-    sal_Int32 nFetchSize = impl_getPos( m_aPropertyNameForFetchSize );
-    sal_Int32 nFetchDirection = impl_getPos( m_aPropertyNameForFetchDirection );
+    sal_Int32 nFetchSize = impl_getPos( g_sPropertyNameForFetchSize );
+    sal_Int32 nFetchDirection = impl_getPos( g_sPropertyNameForFetchDirection );
     sal_Int32 nDeleted = 0;
     if( nFetchSize != -1 )
         nDeleted++;
@@ -486,7 +464,7 @@ CCRS_PropertySetInfo::CCRS_PropertySetInfo(
     }
     {
         Property& rMyProp = (*m_pProperties)[ nOrigProps - nDeleted ];
-        rMyProp.Name = m_aPropertyNameForFetchSize;
+        rMyProp.Name = g_sPropertyNameForFetchSize;
         rMyProp.Type = cppu::UnoType<sal_Int32>::get();
         rMyProp.Attributes = PropertyAttribute::BOUND | PropertyAttribute::MAYBEDEFAULT;
 
@@ -500,7 +478,7 @@ CCRS_PropertySetInfo::CCRS_PropertySetInfo(
     }
     {
         Property& rMyProp = (*m_pProperties)[ nOrigProps - nDeleted + 1 ];
-        rMyProp.Name = m_aPropertyNameForFetchDirection;
+        rMyProp.Name = g_sPropertyNameForFetchDirection;
         rMyProp.Type = cppu::UnoType<sal_Bool>::get();
         rMyProp.Attributes = PropertyAttribute::BOUND | PropertyAttribute::MAYBEDEFAULT;
 
@@ -512,12 +490,6 @@ CCRS_PropertySetInfo::CCRS_PropertySetInfo(
         m_nFetchDirectionPropertyHandle = rMyProp.Handle;
     }
 }
-
-CCRS_PropertySetInfo::~CCRS_PropertySetInfo()
-{
-    delete m_pProperties;
-}
-
 
 // XInterface methods.
 
@@ -534,7 +506,6 @@ void SAL_CALL CCRS_PropertySetInfo::release()
 }
 
 css::uno::Any SAL_CALL CCRS_PropertySetInfo::queryInterface( const css::uno::Type & rType )
-    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< XTypeProvider* >(this)),
@@ -555,7 +526,7 @@ XTYPEPROVIDER_IMPL_2( CCRS_PropertySetInfo
 
 //virtual
 Sequence< Property > SAL_CALL CCRS_PropertySetInfo
-    ::getProperties() throw( RuntimeException, std::exception )
+    ::getProperties()
 {
     return *m_pProperties;
 }
@@ -563,7 +534,6 @@ Sequence< Property > SAL_CALL CCRS_PropertySetInfo
 //virtual
 Property SAL_CALL CCRS_PropertySetInfo
     ::getPropertyByName( const OUString& aName )
-        throw( UnknownPropertyException, RuntimeException, std::exception )
 {
     if ( aName.isEmpty() )
         throw UnknownPropertyException();
@@ -578,7 +548,6 @@ Property SAL_CALL CCRS_PropertySetInfo
 //virtual
 sal_Bool SAL_CALL CCRS_PropertySetInfo
     ::hasPropertyByName( const OUString& Name )
-        throw( RuntimeException, std::exception )
 {
     return ( impl_getPos( Name ) != -1 );
 }
@@ -622,10 +591,10 @@ bool SAL_CALL CCRS_PropertySetInfo
 bool SAL_CALL CCRS_PropertySetInfo
         ::impl_isMyPropertyName( const OUString& rPropertyName )
 {
-    return ( rPropertyName == m_aPropertyNameForCount
-    || rPropertyName == m_aPropertyNameForFinalCount
-    || rPropertyName == m_aPropertyNameForFetchSize
-    || rPropertyName == m_aPropertyNameForFetchDirection );
+    return ( rPropertyName == g_sPropertyNameForCount
+    || rPropertyName == g_sPropertyNameForFinalCount
+    || rPropertyName == g_sPropertyNameForFetchSize
+    || rPropertyName == g_sPropertyNameForFetchDirection );
 }
 
 sal_Int32 SAL_CALL CCRS_PropertySetInfo
@@ -670,9 +639,6 @@ CachedContentResultSet::CachedContentResultSet(
                 , m_xFetchProvider( nullptr )
                 , m_xFetchProviderForContentAccess( nullptr )
 
-                , m_xMyPropertySetInfo( nullptr )
-                , m_pMyPropSetInfo( nullptr )
-
                 , m_xContentIdentifierMapping( xContentIdentifierMapping )
                 , m_nRow( 0 ) // Position is one-based. Zero means: before first element.
                 , m_bAfterLast( false )
@@ -715,8 +681,6 @@ CachedContentResultSet::~CachedContentResultSet()
 
 bool SAL_CALL CachedContentResultSet
     ::applyPositionToOrigin( sal_Int32 nRow )
-    throw( SQLException,
-           RuntimeException )
 {
     impl_EnsureNotDisposed();
 
@@ -726,7 +690,7 @@ bool SAL_CALL CachedContentResultSet
         the result set.
     */
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     OSL_ENSURE( nRow >= 0, "only positive values supported" );
     if( !m_xResultSetOrigin.is() )
     {
@@ -757,7 +721,7 @@ bool SAL_CALL CachedContentResultSet
                     break;
             }
 
-            aGuard.reacquire();
+            aGuard.reset();
             m_nLastAppliedPos += nM;
             m_bAfterLastApplied = nRow != m_nLastAppliedPos;
             return nRow == m_nLastAppliedPos;
@@ -767,7 +731,7 @@ bool SAL_CALL CachedContentResultSet
         {
             m_xResultSetOrigin->beforeFirst();
 
-            aGuard.reacquire();
+            aGuard.reset();
             m_nLastAppliedPos = 0;
             m_bAfterLastApplied = false;
             return false;
@@ -780,7 +744,7 @@ bool SAL_CALL CachedContentResultSet
             {
                 bool bValid = m_xResultSetOrigin->absolute( nRow );
 
-                aGuard.reacquire();
+                aGuard.reset();
                 m_nLastAppliedPos = nRow;
                 m_bAfterLastApplied = !bValid;
                 return bValid;
@@ -789,7 +753,7 @@ bool SAL_CALL CachedContentResultSet
             {
                 bool bValid = m_xResultSetOrigin->relative( nRow - nLastAppliedPos );
 
-                aGuard.reacquire();
+                aGuard.reset();
                 m_nLastAppliedPos += ( nRow - nLastAppliedPos );
                 m_bAfterLastApplied = !bValid;
                 return bValid;
@@ -807,7 +771,7 @@ bool SAL_CALL CachedContentResultSet
                         break;
                 }
 
-                aGuard.reacquire();
+                aGuard.reset();
                 m_nLastAppliedPos += nM;
                 m_bAfterLastApplied = nRow != m_nLastAppliedPos;
             }
@@ -844,7 +808,6 @@ if( bIsFinalCount && !bCurIsFinalCount )                            \
 void SAL_CALL CachedContentResultSet
     ::impl_fetchData( sal_Int32 nRow
         , sal_Int32 nFetchSize, sal_Int32 nFetchDirection )
-        throw( css::uno::RuntimeException )
 {
     FETCH_XXX( m_aCache, m_xFetchProvider, fetch );
 }
@@ -920,11 +883,10 @@ void SAL_CALL CachedContentResultSet
     ContentResultSetWrapper::impl_initPropertySetInfo();
 
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
-    if( m_pMyPropSetInfo )
+    if( m_xMyPropertySetInfo.is() )
         return;
-    m_pMyPropSetInfo = new CCRS_PropertySetInfo( m_xPropertySetInfo );
-    m_xMyPropertySetInfo = m_pMyPropSetInfo;
-    m_xPropertySetInfo = m_xMyPropertySetInfo;
+    m_xMyPropertySetInfo = new CCRS_PropertySetInfo( m_xPropertySetInfo );
+    m_xPropertySetInfo = m_xMyPropertySetInfo.get();
 }
 
 
@@ -943,7 +905,6 @@ void SAL_CALL CachedContentResultSet::release()
 
 Any SAL_CALL CachedContentResultSet
     ::queryInterface( const Type&  rType )
-    throw ( RuntimeException, std::exception )
 {
     //list all interfaces inclusive baseclasses of interfaces
 
@@ -981,11 +942,21 @@ XTYPEPROVIDER_IMPL_11( CachedContentResultSet
 
 // XServiceInfo methods.
 
+OUString SAL_CALL CachedContentResultSet::getImplementationName()
+{
+    return OUString( "com.sun.star.comp.ucb.CachedContentResultSet" );
+}
 
-XSERVICEINFO_NOFACTORY_IMPL_1( CachedContentResultSet,
-                               OUString(
-                            "com.sun.star.comp.ucb.CachedContentResultSet" ),
-                            CACHED_CONTENT_RESULTSET_SERVICE_NAME );
+sal_Bool SAL_CALL CachedContentResultSet::supportsService( const OUString& ServiceName )
+{
+    return cppu::supportsService( this, ServiceName );
+}
+
+css::uno::Sequence< OUString > SAL_CALL CachedContentResultSet::getSupportedServiceNames()
+{
+    return { CACHED_CONTENT_RESULTSET_SERVICE_NAME };
+}
+
 
 
 // XPropertySet methods. ( inherited )
@@ -994,11 +965,6 @@ XSERVICEINFO_NOFACTORY_IMPL_1( CachedContentResultSet,
 // virtual
 void SAL_CALL CachedContentResultSet
     ::setPropertyValue( const OUString& aPropertyName, const Any& aValue )
-    throw( UnknownPropertyException,
-           PropertyVetoException,
-           IllegalArgumentException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1008,7 +974,7 @@ void SAL_CALL CachedContentResultSet
         throw UnknownPropertyException();
     }
 
-    Property aProp = m_pMyPropSetInfo->getPropertyByName( aPropertyName );
+    Property aProp = m_xMyPropertySetInfo->getPropertyByName( aPropertyName );
         //throws UnknownPropertyException, if so
 
     if( aProp.Attributes & PropertyAttribute::READONLY )
@@ -1017,8 +983,7 @@ void SAL_CALL CachedContentResultSet
         //'RowCount' and 'IsRowCountFinal' are readonly!
         throw IllegalArgumentException();
     }
-    if( aProp.Name == CCRS_PropertySetInfo
-                        ::m_aPropertyNameForFetchDirection )
+    if( aProp.Name == g_sPropertyNameForFetchDirection )
     {
         //check value
         sal_Int32 nNew;
@@ -1044,7 +1009,7 @@ void SAL_CALL CachedContentResultSet
             aEvt.Source =  static_cast< XPropertySet * >( this );
             aEvt.PropertyName = aPropertyName;
             aEvt.Further = false;
-            aEvt.PropertyHandle = m_pMyPropSetInfo->
+            aEvt.PropertyHandle = m_xMyPropertySetInfo->
                                     m_nFetchDirectionPropertyHandle;
             aEvt.OldValue <<= m_nFetchDirection;
             aEvt.NewValue <<= nNew;
@@ -1055,8 +1020,7 @@ void SAL_CALL CachedContentResultSet
         //send PropertyChangeEvent to listeners
         impl_notifyPropertyChangeListeners( aEvt );
     }
-    else if( aProp.Name == CCRS_PropertySetInfo
-                        ::m_aPropertyNameForFetchSize )
+    else if( aProp.Name == g_sPropertyNameForFetchSize )
     {
         //check value
         sal_Int32 nNew;
@@ -1077,7 +1041,7 @@ void SAL_CALL CachedContentResultSet
             aEvt.Source =  static_cast< XPropertySet * >( this );
             aEvt.PropertyName = aPropertyName;
             aEvt.Further = false;
-            aEvt.PropertyHandle = m_pMyPropSetInfo->
+            aEvt.PropertyHandle = m_xMyPropertySetInfo->
                                     m_nFetchSizePropertyHandle;
             aEvt.OldValue <<= m_nFetchSize;
             aEvt.NewValue <<= nNew;
@@ -1107,9 +1071,6 @@ void SAL_CALL CachedContentResultSet
 // virtual
 Any SAL_CALL CachedContentResultSet
     ::getPropertyValue( const OUString& rPropertyName )
-    throw( UnknownPropertyException,
-           WrappedTargetException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1119,26 +1080,26 @@ Any SAL_CALL CachedContentResultSet
         throw UnknownPropertyException();
     }
 
-    m_pMyPropSetInfo->getPropertyByName( rPropertyName );
+    m_xMyPropertySetInfo->getPropertyByName( rPropertyName );
         //throws UnknownPropertyException, if so
 
     Any aValue;
-    if( rPropertyName == CCRS_PropertySetInfo::m_aPropertyNameForCount )
+    if( rPropertyName == g_sPropertyNameForCount )
     {
         osl::Guard< osl::Mutex > aGuard( m_aMutex );
         aValue <<= m_nKnownCount;
     }
-    else if( rPropertyName == CCRS_PropertySetInfo::m_aPropertyNameForFinalCount )
+    else if( rPropertyName == g_sPropertyNameForFinalCount )
     {
         osl::Guard< osl::Mutex > aGuard( m_aMutex );
         aValue <<= m_bFinalCount;
     }
-    else if( rPropertyName == CCRS_PropertySetInfo::m_aPropertyNameForFetchSize )
+    else if( rPropertyName == g_sPropertyNameForFetchSize )
     {
         osl::Guard< osl::Mutex > aGuard( m_aMutex );
         aValue <<= m_nFetchSize;
     }
-    else if( rPropertyName == CCRS_PropertySetInfo::m_aPropertyNameForFetchDirection )
+    else if( rPropertyName == g_sPropertyNameForFetchDirection )
     {
         osl::Guard< osl::Mutex > aGuard( m_aMutex );
         aValue <<= m_nFetchDirection;
@@ -1166,7 +1127,6 @@ Any SAL_CALL CachedContentResultSet
 //virtual
 void SAL_CALL CachedContentResultSet
     ::impl_disposing( const EventObject& rEventObject )
-    throw( RuntimeException )
 {
     {
         impl_EnsureNotDisposed();
@@ -1181,7 +1141,6 @@ void SAL_CALL CachedContentResultSet
 //virtual
 void SAL_CALL CachedContentResultSet
     ::impl_propertyChange( const PropertyChangeEvent& rEvt )
-    throw( RuntimeException )
 {
     impl_EnsureNotDisposed();
 
@@ -1194,15 +1153,12 @@ void SAL_CALL CachedContentResultSet
             ::impl_isMyPropertyName( rEvt.PropertyName ) )
     {
         //don't notify foreign events on fetchsize and fetchdirection
-        if( aEvt.PropertyName == CCRS_PropertySetInfo
-                                ::m_aPropertyNameForFetchSize
-        || aEvt.PropertyName == CCRS_PropertySetInfo
-                                ::m_aPropertyNameForFetchDirection )
+        if( aEvt.PropertyName == g_sPropertyNameForFetchSize
+        || aEvt.PropertyName == g_sPropertyNameForFetchDirection )
             return;
 
         //adjust my props 'RowCount' and 'IsRowCountFinal'
-        if( aEvt.PropertyName == CCRS_PropertySetInfo
-                            ::m_aPropertyNameForCount )
+        if( aEvt.PropertyName == g_sPropertyNameForCount )
         {//RowCount changed
 
             //check value
@@ -1215,8 +1171,7 @@ void SAL_CALL CachedContentResultSet
 
             impl_changeRowCount( m_nKnownCount, nNew );
         }
-        else if( aEvt.PropertyName == CCRS_PropertySetInfo
-                                ::m_aPropertyNameForFinalCount )
+        else if( aEvt.PropertyName == g_sPropertyNameForFinalCount )
         {//IsRowCountFinal changed
 
             //check value
@@ -1239,8 +1194,6 @@ void SAL_CALL CachedContentResultSet
 //virtual
 void SAL_CALL CachedContentResultSet
     ::impl_vetoableChange( const PropertyChangeEvent& rEvt )
-    throw( PropertyVetoException,
-           RuntimeException )
 {
     impl_EnsureNotDisposed();
 
@@ -1265,7 +1218,7 @@ void SAL_CALL CachedContentResultSet
 
 #define XCONTENTACCESS_queryXXX( queryXXX, XXX, TYPE )      \
 impl_EnsureNotDisposed();                                   \
-ReacquireableGuard aGuard( m_aMutex );                      \
+osl::ResettableMutexGuard aGuard(m_aMutex);                 \
 sal_Int32 nRow = m_nRow;                                    \
 sal_Int32 nFetchSize = m_nFetchSize;                        \
 sal_Int32 nFetchDirection = m_nFetchDirection;              \
@@ -1273,6 +1226,7 @@ if( !m_aCache##XXX.hasRow( nRow ) )                         \
 {                                                           \
     try                                                     \
     {                                                       \
+        bool isCleared = false;                             \
         if( !m_aCache##XXX.hasCausedException( nRow ) )     \
         {                                                   \
             if( !m_xFetchProviderForContentAccess.is() )    \
@@ -1281,12 +1235,16 @@ if( !m_aCache##XXX.hasRow( nRow ) )                         \
                 throw RuntimeException();                   \
             }                                               \
             aGuard.clear();                                 \
+            isCleared = true;                               \
             if( impl_isForwardOnly() )                      \
                 applyPositionToOrigin( nRow );              \
                                                             \
             FETCH_XXX( m_aCache##XXX, m_xFetchProviderForContentAccess, fetch##XXX##s ); \
         }                                                   \
-        aGuard.reacquire();                                 \
+        if (isCleared)                                      \
+        {                                                   \
+            aGuard.reset();                                 \
+        }                                                   \
         if( !m_aCache##XXX.hasRow( nRow ) )                 \
         {                                                   \
             aGuard.clear();                                 \
@@ -1314,7 +1272,6 @@ return m_aCache##XXX.get##XXX( nRow );
 // virtual
 OUString SAL_CALL CachedContentResultSet
     ::queryContentIdentifierString()
-    throw( RuntimeException, std::exception )
 {
     XCONTENTACCESS_queryXXX( queryContentIdentifierString, ContentIdentifierString, OUString )
 }
@@ -1323,7 +1280,6 @@ OUString SAL_CALL CachedContentResultSet
 // virtual
 Reference< XContentIdentifier > SAL_CALL CachedContentResultSet
     ::queryContentIdentifier()
-    throw( RuntimeException, std::exception )
 {
     XCONTENTACCESS_queryXXX( queryContentIdentifier, ContentIdentifier, Reference< XContentIdentifier > )
 }
@@ -1332,7 +1288,6 @@ Reference< XContentIdentifier > SAL_CALL CachedContentResultSet
 // virtual
 Reference< XContent > SAL_CALL CachedContentResultSet
     ::queryContent()
-    throw( RuntimeException, std::exception )
 {
     XCONTENTACCESS_queryXXX( queryContent, Content, Reference< XContent > )
 }
@@ -1344,12 +1299,10 @@ Reference< XContent > SAL_CALL CachedContentResultSet
 
 sal_Bool SAL_CALL CachedContentResultSet
     ::next()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     //after last
     if( m_bAfterLast )
         return false;
@@ -1357,12 +1310,12 @@ sal_Bool SAL_CALL CachedContentResultSet
     aGuard.clear();
     if( isLast() )
     {
-        aGuard.reacquire();
+        aGuard.reset();
         m_nRow++;
         m_bAfterLast = true;
         return false;
     }
-    aGuard.reacquire();
+    aGuard.reset();
     //known valid position
     if( impl_isKnownValidPosition( m_nRow + 1 ) )
     {
@@ -1376,7 +1329,7 @@ sal_Bool SAL_CALL CachedContentResultSet
 
     bool bValid = applyPositionToOrigin( nRow + 1 );
 
-    aGuard.reacquire();
+    aGuard.reset();
     m_nRow = nRow + 1;
     m_bAfterLast = !bValid;
     return bValid;
@@ -1385,15 +1338,13 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::previous()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
     if( impl_isForwardOnly() )
         throw SQLException();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     //before first ?:
     if( !m_bAfterLast && !m_nRow )
         return false;
@@ -1417,7 +1368,7 @@ sal_Bool SAL_CALL CachedContentResultSet
 
     bool bValid = applyPositionToOrigin( nRow - 1  );
 
-    aGuard.reacquire();
+    aGuard.reset();
     m_nRow = nRow - 1;
     m_bAfterLast = false;
     return bValid;
@@ -1426,8 +1377,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::absolute( sal_Int32 row )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1437,7 +1386,7 @@ sal_Bool SAL_CALL CachedContentResultSet
     if( impl_isForwardOnly() )
         throw SQLException();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
 
     if( !m_xResultSetOrigin.is() )
     {
@@ -1475,7 +1424,7 @@ sal_Bool SAL_CALL CachedContentResultSet
             throw;
         }
 
-        aGuard.reacquire();
+        aGuard.reset();
         if( m_bFinalCount )
         {
             sal_Int32 nNewRow = m_nKnownCount + 1 + row;
@@ -1490,7 +1439,7 @@ sal_Bool SAL_CALL CachedContentResultSet
 
         sal_Int32 nCurRow = m_xResultSetOrigin->getRow();
 
-        aGuard.reacquire();
+        aGuard.reset();
         m_nLastAppliedPos = nCurRow;
         m_nRow = nCurRow;
         m_bAfterLast = false;
@@ -1514,7 +1463,7 @@ sal_Bool SAL_CALL CachedContentResultSet
 
     bool bValid = m_xResultSetOrigin->absolute( row );
 
-    aGuard.reacquire();
+    aGuard.reset();
     if( m_bFinalCount )
     {
         sal_Int32 nNewRow = row;
@@ -1535,7 +1484,7 @@ sal_Bool SAL_CALL CachedContentResultSet
     sal_Int32 nCurRow = m_xResultSetOrigin->getRow();
     bool bIsAfterLast = m_xResultSetOrigin->isAfterLast();
 
-    aGuard.reacquire();
+    aGuard.reset();
     m_nLastAppliedPos = nCurRow;
     m_nRow = nCurRow;
     m_bAfterLastApplied = m_bAfterLast = bIsAfterLast;
@@ -1545,15 +1494,13 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::relative( sal_Int32 rows )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
     if( impl_isForwardOnly() )
         throw SQLException();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     if( m_bAfterLast || impl_isKnownInvalidPosition( m_nRow ) )
         throw SQLException();
 
@@ -1589,7 +1536,7 @@ sal_Bool SAL_CALL CachedContentResultSet
         aGuard.clear();
         bool bValid = applyPositionToOrigin( nNewRow );
 
-        aGuard.reacquire();
+        aGuard.reset();
         m_nRow = nNewRow;
         m_bAfterLast = !bValid && nNewRow > 0;
         return bValid;
@@ -1600,15 +1547,13 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::first()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
     if( impl_isForwardOnly() )
         throw SQLException();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     if( impl_isKnownValidPosition( 1 ) )
     {
         m_nRow = 1;
@@ -1626,7 +1571,7 @@ sal_Bool SAL_CALL CachedContentResultSet
 
     bool bValid = applyPositionToOrigin( 1 );
 
-    aGuard.reacquire();
+    aGuard.reset();
     m_nRow = 1;
     m_bAfterLast = false;
     return bValid;
@@ -1635,15 +1580,13 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::last()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
     if( impl_isForwardOnly() )
         throw SQLException();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     if( m_bFinalCount )
     {
         m_nRow = m_nKnownCount;
@@ -1660,7 +1603,7 @@ sal_Bool SAL_CALL CachedContentResultSet
 
     bool bValid = m_xResultSetOrigin->last();
 
-    aGuard.reacquire();
+    aGuard.reset();
     m_bAfterLastApplied = m_bAfterLast = false;
     if( m_bFinalCount )
     {
@@ -1672,7 +1615,7 @@ sal_Bool SAL_CALL CachedContentResultSet
 
     sal_Int32 nCurRow = m_xResultSetOrigin->getRow();
 
-    aGuard.reacquire();
+    aGuard.reset();
     m_nLastAppliedPos = nCurRow;
     m_nRow = nCurRow;
     OSL_ENSURE( nCurRow >= m_nKnownCount, "position of last row < known Count, that could not be" );
@@ -1684,8 +1627,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 void SAL_CALL CachedContentResultSet
     ::beforeFirst()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1700,8 +1641,6 @@ void SAL_CALL CachedContentResultSet
 //virtual
 void SAL_CALL CachedContentResultSet
     ::afterLast()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1716,12 +1655,10 @@ void SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::isAfterLast()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     if( !m_bAfterLast )
         return false;
     if( m_nKnownCount )
@@ -1739,7 +1676,7 @@ sal_Bool SAL_CALL CachedContentResultSet
     //find out whethter the original resultset contains rows or not
     m_xResultSetOrigin->afterLast();
 
-    aGuard.reacquire();
+    aGuard.reset();
     m_bAfterLastApplied = true;
     aGuard.clear();
 
@@ -1749,12 +1686,10 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::isBeforeFirst()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     if( m_bAfterLast )
         return false;
     if( m_nRow )
@@ -1774,7 +1709,7 @@ sal_Bool SAL_CALL CachedContentResultSet
     //find out whethter the original resultset contains rows or not
     m_xResultSetOrigin->beforeFirst();
 
-    aGuard.reacquire();
+    aGuard.reset();
     m_bAfterLastApplied = false;
     m_nLastAppliedPos = 0;
     aGuard.clear();
@@ -1785,8 +1720,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::isFirst()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1820,8 +1753,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::isLast()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1853,8 +1784,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Int32 SAL_CALL CachedContentResultSet
     ::getRow()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1867,8 +1796,6 @@ sal_Int32 SAL_CALL CachedContentResultSet
 //virtual
 void SAL_CALL CachedContentResultSet
     ::refreshRow()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1879,8 +1806,6 @@ void SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::rowUpdated()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1890,8 +1815,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::rowInserted()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1902,8 +1825,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::rowDeleted()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
 
@@ -1914,8 +1835,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 Reference< XInterface > SAL_CALL CachedContentResultSet
     ::getStatement()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     //@todo ?return anything
@@ -1929,8 +1848,6 @@ Reference< XInterface > SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::wasNull()
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     impl_EnsureNotDisposed();
     impl_init_xRowOrigin();
@@ -1950,8 +1867,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 OUString SAL_CALL CachedContentResultSet
     ::getString( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<OUString>(&css::sdbc::XRow::getString, columnIndex);
 }
@@ -1959,8 +1874,6 @@ OUString SAL_CALL CachedContentResultSet
 //virtual
 sal_Bool SAL_CALL CachedContentResultSet
     ::getBoolean( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<sal_Bool>(&css::sdbc::XRow::getBoolean, columnIndex);
 }
@@ -1968,8 +1881,6 @@ sal_Bool SAL_CALL CachedContentResultSet
 //virtual
 sal_Int8 SAL_CALL CachedContentResultSet
     ::getByte( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<sal_Int8>(&css::sdbc::XRow::getByte, columnIndex);
 }
@@ -1977,8 +1888,6 @@ sal_Int8 SAL_CALL CachedContentResultSet
 //virtual
 sal_Int16 SAL_CALL CachedContentResultSet
     ::getShort( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<sal_Int16>(&css::sdbc::XRow::getShort, columnIndex);
 }
@@ -1986,8 +1895,6 @@ sal_Int16 SAL_CALL CachedContentResultSet
 //virtual
 sal_Int32 SAL_CALL CachedContentResultSet
     ::getInt( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<sal_Int32>(&css::sdbc::XRow::getInt, columnIndex);
 }
@@ -1995,8 +1902,6 @@ sal_Int32 SAL_CALL CachedContentResultSet
 //virtual
 sal_Int64 SAL_CALL CachedContentResultSet
     ::getLong( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<sal_Int64>(&css::sdbc::XRow::getLong, columnIndex);
 }
@@ -2004,8 +1909,6 @@ sal_Int64 SAL_CALL CachedContentResultSet
 //virtual
 float SAL_CALL CachedContentResultSet
     ::getFloat( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<float>(&css::sdbc::XRow::getFloat, columnIndex);
 }
@@ -2013,8 +1916,6 @@ float SAL_CALL CachedContentResultSet
 //virtual
 double SAL_CALL CachedContentResultSet
     ::getDouble( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<double>(&css::sdbc::XRow::getDouble, columnIndex);
 }
@@ -2022,8 +1923,6 @@ double SAL_CALL CachedContentResultSet
 //virtual
 Sequence< sal_Int8 > SAL_CALL CachedContentResultSet
     ::getBytes( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet< css::uno::Sequence<sal_Int8> >(
         &css::sdbc::XRow::getBytes, columnIndex);
@@ -2032,8 +1931,6 @@ Sequence< sal_Int8 > SAL_CALL CachedContentResultSet
 //virtual
 Date SAL_CALL CachedContentResultSet
     ::getDate( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<css::util::Date>(
         &css::sdbc::XRow::getDate, columnIndex);
@@ -2042,8 +1939,6 @@ Date SAL_CALL CachedContentResultSet
 //virtual
 Time SAL_CALL CachedContentResultSet
     ::getTime( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<css::util::Time>(
         &css::sdbc::XRow::getTime, columnIndex);
@@ -2052,8 +1947,6 @@ Time SAL_CALL CachedContentResultSet
 //virtual
 DateTime SAL_CALL CachedContentResultSet
     ::getTimestamp( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet<css::util::DateTime>(
         &css::sdbc::XRow::getTimestamp, columnIndex);
@@ -2063,8 +1956,6 @@ DateTime SAL_CALL CachedContentResultSet
 Reference< css::io::XInputStream >
     SAL_CALL CachedContentResultSet
     ::getBinaryStream( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet< css::uno::Reference<css::io::XInputStream> >(
         &css::sdbc::XRow::getBinaryStream, columnIndex);
@@ -2074,8 +1965,6 @@ Reference< css::io::XInputStream >
 Reference< css::io::XInputStream >
     SAL_CALL CachedContentResultSet
     ::getCharacterStream( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet< css::uno::Reference<css::io::XInputStream> >(
         &css::sdbc::XRow::getCharacterStream, columnIndex);
@@ -2086,18 +1975,17 @@ Any SAL_CALL CachedContentResultSet
     ::getObject( sal_Int32 columnIndex,
            const Reference<
             css::container::XNameAccess >& typeMap )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     //if you change this function please pay attention to
     //function template rowOriginGet, where this is similar implemented
 
-    ReacquireableGuard aGuard( m_aMutex );
+    osl::ResettableMutexGuard aGuard(m_aMutex);
     sal_Int32 nRow = m_nRow;
     sal_Int32 nFetchSize = m_nFetchSize;
     sal_Int32 nFetchDirection = m_nFetchDirection;
     if( !m_aCache.hasRow( nRow ) )
     {
+        bool isCleared = false;
         if( !m_aCache.hasCausedException( nRow ) )
         {
             if( !m_xFetchProvider.is() )
@@ -2105,11 +1993,15 @@ Any SAL_CALL CachedContentResultSet
                 OSL_FAIL( "broadcaster was disposed already" );
                 return Any();
             }
+            isCleared = true;
             aGuard.clear();
 
             impl_fetchData( nRow, nFetchSize, nFetchDirection );
         }
-        aGuard.reacquire();
+        if (isCleared)
+        {
+            aGuard.reset();
+        }
         if( !m_aCache.hasRow( nRow ) )
         {
             m_bLastReadWasFromCache = false;
@@ -2121,17 +2013,14 @@ Any SAL_CALL CachedContentResultSet
     }
     //@todo: pay attention to typeMap
     const Any& rValue = m_aCache.getAny( nRow, columnIndex );
-    Any aRet;
     m_bLastReadWasFromCache = true;
-    m_bLastCachedReadWasNull = !( rValue >>= aRet );
-    return aRet;
+    m_bLastCachedReadWasNull = !rValue.hasValue();
+    return rValue;
 }
 
 //virtual
 Reference< XRef > SAL_CALL CachedContentResultSet
     ::getRef( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet< css::uno::Reference<css::sdbc::XRef> >(
         &css::sdbc::XRow::getRef, columnIndex);
@@ -2140,8 +2029,6 @@ Reference< XRef > SAL_CALL CachedContentResultSet
 //virtual
 Reference< XBlob > SAL_CALL CachedContentResultSet
     ::getBlob( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet< css::uno::Reference<css::sdbc::XBlob> >(
         &css::sdbc::XRow::getBlob, columnIndex);
@@ -2150,8 +2037,6 @@ Reference< XBlob > SAL_CALL CachedContentResultSet
 //virtual
 Reference< XClob > SAL_CALL CachedContentResultSet
     ::getClob( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet< css::uno::Reference<css::sdbc::XClob> >(
         &css::sdbc::XRow::getClob, columnIndex);
@@ -2160,8 +2045,6 @@ Reference< XClob > SAL_CALL CachedContentResultSet
 //virtual
 Reference< XArray > SAL_CALL CachedContentResultSet
     ::getArray( sal_Int32 columnIndex )
-    throw( SQLException,
-           RuntimeException, std::exception )
 {
     return rowOriginGet< css::uno::Reference<css::sdbc::XArray> >(
         &css::sdbc::XRow::getArray, columnIndex);
@@ -2216,7 +2099,6 @@ void SAL_CALL CachedContentResultSetFactory::release()
 }
 
 css::uno::Any SAL_CALL CachedContentResultSetFactory::queryInterface( const css::uno::Type & rType )
-    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< XTypeProvider* >(this)),
@@ -2237,11 +2119,23 @@ XTYPEPROVIDER_IMPL_3( CachedContentResultSetFactory,
 
 // CachedContentResultSetFactory XServiceInfo methods.
 
+XSERVICEINFO_COMMOM_IMPL( CachedContentResultSetFactory,
+                          OUString( "com.sun.star.comp.ucb.CachedContentResultSetFactory" ) )
+/// @throws css::uno::Exception
+static css::uno::Reference< css::uno::XInterface > SAL_CALL
+CachedContentResultSetFactory_CreateInstance( const css::uno::Reference< css::lang::XMultiServiceFactory> & rSMgr )
+{
+    css::lang::XServiceInfo* pX =
+        static_cast<css::lang::XServiceInfo*>(new CachedContentResultSetFactory( ucbhelper::getComponentContext(rSMgr) ));
+    return css::uno::Reference< css::uno::XInterface >::query( pX );
+}
 
-XSERVICEINFO_IMPL_1_CTX( CachedContentResultSetFactory,
-                     OUString( "com.sun.star.comp.ucb.CachedContentResultSetFactory" ),
-                     CACHED_CONTENT_RESULTSET_FACTORY_NAME );
-
+css::uno::Sequence< OUString >
+CachedContentResultSetFactory::getSupportedServiceNames_Static()
+{
+    css::uno::Sequence< OUString > aSNS { CACHED_CONTENT_RESULTSET_FACTORY_NAME };
+    return aSNS;
+}
 
 // Service factory implementation.
 
@@ -2257,7 +2151,6 @@ Reference< XResultSet > SAL_CALL CachedContentResultSetFactory
     ::createCachedContentResultSet(
             const Reference< XResultSet > & xSource,
             const Reference< XContentIdentifierMapping > & xMapping )
-            throw( css::uno::RuntimeException, std::exception )
 {
     Reference< XResultSet > xRet;
     xRet = new CachedContentResultSet( m_xContext, xSource, xMapping );

@@ -71,7 +71,6 @@ $(eval $(call gb_Library_add_exception_objects,tl,\
     tools/source/misc/cpuid \
     tools/source/misc/extendapplicationenvironment \
     tools/source/misc/getprocessworkingdir \
-    tools/source/misc/toolsdll \
     tools/source/rc/rc \
     tools/source/rc/resary \
     tools/source/rc/resmgr \
@@ -80,11 +79,19 @@ $(eval $(call gb_Library_add_exception_objects,tl,\
     tools/source/ref/pstm \
     tools/source/ref/ref \
     tools/source/stream/stream \
-    tools/source/stream/strmsys \
     tools/source/stream/vcompat \
     tools/source/string/tenccvt \
     tools/source/zcodec/zcodec \
 ))
+ifeq ($(OS),WNT)
+$(eval $(call gb_Library_add_exception_objects,tl, \
+    tools/source/stream/strmwnt \
+))
+else
+$(eval $(call gb_Library_add_exception_objects,tl, \
+    tools/source/stream/strmunx \
+))
+endif
 
 $(eval $(call gb_Library_add_generated_exception_objects,tl,\
     CustomTarget/tools/string/reversemap \

@@ -31,12 +31,10 @@ class OOO_DLLPUBLIC_CHARTTOOLS WrappedDirectStateProperty :
 public:
     explicit WrappedDirectStateProperty(
         const OUString& rOuterName, const OUString& rInnerName );
-    virtual ~WrappedDirectStateProperty();
+    virtual ~WrappedDirectStateProperty() override;
 
     virtual css::beans::PropertyState getPropertyState(
-        const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
-        throw (css::beans::UnknownPropertyException,
-               css::uno::RuntimeException) override;
+        const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
 };
 
 } //  namespace chart

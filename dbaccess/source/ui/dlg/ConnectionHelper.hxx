@@ -41,7 +41,7 @@ namespace dbaui
 
     public:
         OConnectionHelper( vcl::Window* pParent, const OString& _rId, const OUString& _rUIXMLDescription, const SfxItemSet& _rCoreAttrs);
-        virtual ~OConnectionHelper();
+        virtual ~OConnectionHelper() override;
         virtual void dispose() override;
         VclPtr<FixedText>           m_pFT_Connection;
         VclPtr<OConnectionURLEdit>  m_pConnectionURL;
@@ -57,9 +57,9 @@ namespace dbaui
         virtual bool    PreNotify( NotifyEvent& _rNEvt ) override;
 
         // <method>OGenericAdministrationPage::fillControls</method>
-        virtual void    fillControls(::std::vector< ISaveValueWrapper* >& _rControlList) override;
+        virtual void    fillControls(std::vector< ISaveValueWrapper* >& _rControlList) override;
         // <method>OGenericAdministrationPage::fillWindows</method>
-        virtual void    fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList) override;
+        virtual void    fillWindows(std::vector< ISaveValueWrapper* >& _rControlList) override;
         virtual void    implInitControls(const SfxItemSet& _rSet, bool _bSaveValue) override;
 
         // setting/retrieving the current connection URL
@@ -91,8 +91,8 @@ namespace dbaui
         virtual bool    checkTestConnection();
 
     private:
-        DECL_LINK_TYPED(OnBrowseConnections, Button*, void);
-        DECL_LINK_TYPED(OnCreateDatabase, Button*, void);
+        DECL_LINK(OnBrowseConnections, Button*, void);
+        DECL_LINK(OnCreateDatabase, Button*, void);
         OUString    impl_getURL() const;
         void        impl_setURL( const OUString& _rURL, bool _bPrefix );
         void        implUpdateURLDependentStates() const;

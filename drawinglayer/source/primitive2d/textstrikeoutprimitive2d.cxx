@@ -64,7 +64,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer TextCharacterStrikeoutPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void TextCharacterStrikeoutPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             // strikeout with character
             const OUString aSingleCharString(getStrikeoutChar());
@@ -95,7 +95,7 @@ namespace drawinglayer
                 aDXArray[a] = (a + 1) * fStrikeCharWidth;
             }
 
-            Primitive2DReference xReference(
+            rContainer.push_back(
                 new TextSimplePortionPrimitive2D(
                     getObjectTransformation(),
                     aStrikeoutString,
@@ -105,8 +105,6 @@ namespace drawinglayer
                     getFontAttribute(),
                     getLocale(),
                     getFontColor()));
-
-            return Primitive2DContainer { xReference };
         }
 
         TextCharacterStrikeoutPrimitive2D::TextCharacterStrikeoutPrimitive2D(
@@ -148,7 +146,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer TextGeometryStrikeoutPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void TextGeometryStrikeoutPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             OSL_ENSURE(TEXT_STRIKEOUT_SLASH != getTextStrikeout() && TEXT_STRIKEOUT_X != getTextStrikeout(),
                 "Wrong TEXT_STRIKEOUT type; a TextCharacterStrikeoutPrimitive2D should be used (!)");
@@ -203,7 +201,7 @@ namespace drawinglayer
             // add primitive
             const attribute::LineAttribute aLineAttribute(getFontColor(), fStrikeoutHeight, basegfx::B2DLineJoin::NONE);
             Primitive2DContainer xRetval(1);
-            xRetval[0] = Primitive2DReference(new PolygonStrokePrimitive2D(aStrikeoutLine, aLineAttribute));
+            xRetval[0] = new PolygonStrokePrimitive2D(aStrikeoutLine, aLineAttribute);
 
             if(bDoubleLine)
             {
@@ -225,13 +223,12 @@ namespace drawinglayer
 
                 // add transform primitive
                 xRetval.push_back(
-                    Primitive2DReference(
                         new TransformPrimitive2D(
                             aTransform,
-                            xRetval)));
+                            xRetval));
             }
 
-            return xRetval;
+            rContainer.insert(rContainer.end(), xRetval.begin(), xRetval.end());
         }
 
         TextGeometryStrikeoutPrimitive2D::TextGeometryStrikeoutPrimitive2D(

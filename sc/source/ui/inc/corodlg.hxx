@@ -27,8 +27,8 @@ class ScColRowLabelDlg : public ModalDialog
 {
 public:
     ScColRowLabelDlg(vcl::Window* pParent,
-                     bool bCol = false,
-                     bool bRow = false)
+                     bool bCol,
+                     bool bRow)
         : ModalDialog(pParent, "ChangeSourceDialog",
         "modules/scalc/ui/changesourcedialog.ui")
     {
@@ -37,7 +37,7 @@ public:
         m_pBtnCol->Check(bCol);
         m_pBtnRow->Check(bRow);
     }
-    virtual ~ScColRowLabelDlg() { disposeOnce(); }
+    virtual ~ScColRowLabelDlg() override { disposeOnce(); }
     virtual void dispose() override
     {
         m_pBtnRow.clear();

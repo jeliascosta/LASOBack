@@ -75,8 +75,24 @@
 #include <comphelper/sequenceashashmap.hxx>
 #include <vcl/pngread.hxx>
 #include <vcl/bitmapaccess.hxx>
+#include <vcl/dibtools.hxx>
+#include <sfx2/frame.hxx>
+#include <com/sun/star/frame/XModel2.hpp>
+#include <com/sun/star/frame/XController2.hpp>
 
 using namespace ::com::sun::star;
+
+namespace com { namespace sun { namespace star { namespace uno {
+
+template<class T>
+std::ostream& operator<<(std::ostream& rStrm, const uno::Reference<T>& xRef)
+{
+    rStrm << xRef.get();
+    return rStrm;
+}
+
+} } } }
+
 
 /// Impress import filters tests.
 class SdImportTest : public SdModelTestBase
@@ -124,6 +140,7 @@ public:
     void testTdf93097();
     void testTdf62255();
     void testTdf93124();
+    void testTdf99729();
     void testTdf89927();
     void testTdf93868();
     void testTdf95932();
@@ -136,7 +153,13 @@ public:
     void testTdf103876();
     void testTdf104015();
     void testTdf104201();
+    void testTdf103477();
     void testTdf104445();
+    void testTdf105150();
+    void testTdf105150PPT();
+
+    bool checkPattern(sd::DrawDocShellRef& rDocRef, int nShapeNumber, std::vector<sal_uInt8>& rExpected);
+    void testPatternImport();
 
     CPPUNIT_TEST_SUITE(SdImportTest);
 
@@ -182,6 +205,7 @@ public:
     CPPUNIT_TEST(testTdf93097);
     CPPUNIT_TEST(testTdf62255);
     CPPUNIT_TEST(testTdf93124);
+    CPPUNIT_TEST(testTdf99729);
     CPPUNIT_TEST(testTdf89927);
     CPPUNIT_TEST(testTdf93868);
     CPPUNIT_TEST(testTdf95932);
@@ -194,7 +218,11 @@ public:
     CPPUNIT_TEST(testTdf103876);
     CPPUNIT_TEST(testTdf104015);
     CPPUNIT_TEST(testTdf104201);
+    CPPUNIT_TEST(testTdf103477);
     CPPUNIT_TEST(testTdf104445);
+    CPPUNIT_TEST(testTdf105150);
+    CPPUNIT_TEST(testTdf105150PPT);
+    CPPUNIT_TEST(testPatternImport);
 
     CPPUNIT_TEST_SUITE_END();
 };
@@ -255,7 +283,7 @@ void SdImportTest::testDocumentLayout()
 
         sd::DrawDocShellRef xDocShRef = loadURL( m_directories.getURLFromSrc( "/sd/qa/unit/data/" ) + OUString::createFromAscii( aFilesToCompare[i].pInput ), aFilesToCompare[i].nFormat );
         if( aFilesToCompare[i].nExportType >= 0 )
-            xDocShRef = saveAndReload( xDocShRef, aFilesToCompare[i].nExportType );
+            xDocShRef = saveAndReload( xDocShRef.get(), aFilesToCompare[i].nExportType );
         compareWithShapesDump( xDocShRef,
                 m_directories.getPathFromSrc( "/sd/qa/unit/data/" ) + OUString::createFromAscii( aFilesToCompare[i].pDump ),
                 i == nUpdateMe );
@@ -271,7 +299,7 @@ void SdImportTest::testSmoketest()
 
     // cf. SdrModel svx/svdmodel.hxx ...
 
-    CPPUNIT_ASSERT_MESSAGE( "wrong page count", pDoc->GetPageCount() == 3);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "wrong page count", static_cast<sal_uInt16>(3), pDoc->GetPageCount());
 
     const SdrPage *pPage = pDoc->GetPage (1);
     CPPUNIT_ASSERT_MESSAGE( "no page", pPage != nullptr );
@@ -307,7 +335,7 @@ void SdImportTest::testN759180()
         const EditTextObject& aEdit = pTxtObj->GetOutlinerParaObject()->GetTextObject();
         const SvxULSpaceItem *pULSpace = dynamic_cast<const SvxULSpaceItem *>(aEdit.GetParaAttribs(0).GetItem(EE_PARA_ULSPACE));
         CPPUNIT_ASSERT(pULSpace);
-        CPPUNIT_ASSERT_MESSAGE( "Para bottom spacing is wrong!", pULSpace->GetLower() == 0 );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "Para bottom spacing is wrong!", static_cast<sal_uInt16>(0), pULSpace->GetLower());
         aEdit.GetCharAttribs(1, rLst);
         for( std::vector<EECharAttrib>::reverse_iterator it = rLst.rbegin(); it!=rLst.rend(); ++it)
         {
@@ -316,7 +344,7 @@ void SdImportTest::testN759180()
             {
                 // nStart == 9
                 // font height = 5 => 5*2540/72
-                CPPUNIT_ASSERT_MESSAGE( "Font height is wrong", pFontHeight->GetHeight() == 176 );
+                CPPUNIT_ASSERT_EQUAL_MESSAGE( "Font height is wrong", static_cast<sal_uInt32>(176), pFontHeight->GetHeight() );
                 break;
             }
         }
@@ -357,7 +385,7 @@ void SdImportTest::testN862510_2()
         CPPUNIT_ASSERT( pGrpObj );
         SdrObjCustomShape *pObj = dynamic_cast<SdrObjCustomShape *>( pGrpObj->GetSubList()->GetObj( 0 ) );
         CPPUNIT_ASSERT( pObj );
-        CPPUNIT_ASSERT_MESSAGE( "Wrong Text Rotation!", pObj->GetExtraTextRotation( true ) == 90 );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "Wrong Text Rotation!", 90.0, pObj->GetExtraTextRotation( true ) );
     }
 
     xDocShRef->DoClose();
@@ -394,8 +422,8 @@ void SdImportTest::testN828390_2()
     SdrTextObj *pTxtObj = dynamic_cast<SdrTextObj *>( pObj );
     CPPUNIT_ASSERT( pTxtObj );
     const EditTextObject& aEdit = pTxtObj->GetOutlinerParaObject()->GetTextObject();
-    CPPUNIT_ASSERT(aEdit.GetText(0) == "Linux  ");
-    CPPUNIT_ASSERT(aEdit.GetText(1) == "Standard Platform");
+    CPPUNIT_ASSERT_EQUAL(OUString("Linux  "), aEdit.GetText(0));
+    CPPUNIT_ASSERT_EQUAL(OUString("Standard Platform"), aEdit.GetText(1));
 
     xDocShRef->DoClose();
 }
@@ -550,7 +578,7 @@ void SdImportTest::testFdo68594()
     const SvxColorItem *pC = dynamic_cast<const SvxColorItem *>(&pTxtObj->GetMergedItem(EE_CHAR_COLOR));
     CPPUNIT_ASSERT_MESSAGE( "no color item", pC != nullptr);
     // Color should be black
-    CPPUNIT_ASSERT_MESSAGE( "Placeholder color mismatch", pC->GetValue().GetColor() == 0);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Placeholder color mismatch", static_cast<ColorData>(0), pC->GetValue().GetColor());
 
     xDocShRef->DoClose();
 }
@@ -575,13 +603,6 @@ void SdImportTest::testFdo72998()
     xDocShRef->DoClose();
 }
 
-// FIXME copypasta
-std::ostream& operator<<(std::ostream& rStrm, const Color& rColor)
-{
-    rStrm << "Color: R:" << rColor.GetRed() << " G:" << rColor.GetGreen() << " B: " << rColor.GetBlue();
-    return rStrm;
-}
-
 void SdImportTest::testFdo77027()
 {
     sd::DrawDocShellRef xDocShRef = loadURL(m_directories.getURLFromSrc("/sd/qa/unit/data/odp/fdo77027.odp"), ODP);
@@ -602,17 +623,6 @@ void SdImportTest::testFdo77027()
 
     xDocShRef->DoClose();
 }
-
-namespace com { namespace sun { namespace star { namespace uno {
-
-template<class T>
-std::ostream& operator<<(std::ostream& rStrm, const uno::Reference<T>& xRef)
-{
-    rStrm << xRef.get();
-    return rStrm;
-}
-
-} } } }
 
 void SdImportTest::testTdf97808()
 {
@@ -650,11 +660,11 @@ void SdImportTest::testFdo64512()
 
     uno::Reference< drawing::XDrawPagesSupplier > xDoc(
         xDocShRef->GetDoc()->getUnoModel(), uno::UNO_QUERY_THROW );
-    CPPUNIT_ASSERT_MESSAGE( "not exactly one page", xDoc->getDrawPages()->getCount() == 1 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "not exactly one page", static_cast<sal_Int32>(1), xDoc->getDrawPages()->getCount() );
 
     uno::Reference< drawing::XDrawPage > xPage(
         xDoc->getDrawPages()->getByIndex(0), uno::UNO_QUERY_THROW );
-    CPPUNIT_ASSERT_MESSAGE( "no exactly three shapes", xPage->getCount() == 3 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "no exactly three shapes", static_cast<sal_Int32>(3), xPage->getCount() );
 
     uno::Reference< beans::XPropertySet > xConnectorShape(
         xPage->getByIndex(2), uno::UNO_QUERY );
@@ -674,7 +684,7 @@ void SdImportTest::testFdo64512()
         xAnimNodeSupplier->getAnimationNode() );
     std::vector< uno::Reference< animations::XAnimationNode > > aAnimVector;
     anim::create_deep_vector(xRootNode, aAnimVector);
-    CPPUNIT_ASSERT_MESSAGE( "not 8 animation nodes", aAnimVector.size() == 8 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "not 8 animation nodes", static_cast<std::size_t>(8), aAnimVector.size() );
 
     uno::Reference< animations::XAnimate > xNode(
         aAnimVector[7], uno::UNO_QUERY_THROW );
@@ -710,16 +720,16 @@ void SdImportTest::testFdo71075()
     uno::Reference< chart2::XDataSeriesContainer > xDSCnt( xCTCnt->getChartTypes()[0], uno::UNO_QUERY );
     CPPUNIT_ASSERT_MESSAGE( "failed to load data series", xDSCnt.is() );
     uno::Sequence< uno::Reference< chart2::XDataSeries > > aSeriesSeq( xDSCnt->getDataSeries());
-    CPPUNIT_ASSERT_MESSAGE( "Invalid Series count", aSeriesSeq.getLength() == 1);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Invalid Series count", static_cast<sal_Int32>(1), aSeriesSeq.getLength() );
     uno::Reference< chart2::data::XDataSource > xSource( aSeriesSeq[0], uno::UNO_QUERY );
     uno::Sequence< uno::Reference< chart2::data::XLabeledDataSequence > > aSeqCnt(xSource->getDataSequences());
-    CPPUNIT_ASSERT_MESSAGE( "Invalid Series count", aSeqCnt.getLength() == 1);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Invalid Series count", static_cast<sal_Int32>(1), aSeqCnt.getLength());
     uno::Reference< chart2::data::XDataSequence > xValueSeq( aSeqCnt[0]->getValues() );
-    CPPUNIT_ASSERT_MESSAGE( "Invalid Data count", xValueSeq->getData().getLength() == sizeof(values)/(sizeof(double)));
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Invalid Data count", static_cast<sal_Int32>(sizeof(values)/(sizeof(double))), xValueSeq->getData().getLength());
     uno::Reference< chart2::data::XNumericalDataSequence > xNumSeq( xValueSeq, uno::UNO_QUERY );
     uno::Sequence< double > aValues( xNumSeq->getNumericalData());
     for(sal_Int32 i=0;i<xValueSeq->getData().getLength();i++)
-        CPPUNIT_ASSERT_MESSAGE( "Invalid Series count", aValues.getConstArray()[i] == values[i]);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE( "Invalid Series count", values[i], aValues.getConstArray()[i]);
 
     xDocShRef->DoClose();
 }
@@ -907,8 +917,8 @@ void SdImportTest::testBnc591147()
     //uno::Reference< drawing::XShape > xShape(xPage->getByIndex(0), uno::UNO_QUERY_THROW );
     uno::Reference< beans::XPropertySet > xPropSet( getShape( 0, xPage ) );
     OUString sVideoURL("emptyURL");
-    bool bSucess = xPropSet->getPropertyValue("MediaURL") >>= sVideoURL;
-    CPPUNIT_ASSERT_MESSAGE( "MediaURL property is not set", bSucess );
+    bool bSuccess = xPropSet->getPropertyValue("MediaURL") >>= sVideoURL;
+    CPPUNIT_ASSERT_MESSAGE( "MediaURL property is not set", bSuccess );
     CPPUNIT_ASSERT_MESSAGE("MediaURL is empty", !sVideoURL.isEmpty());
 
     // Second page has audio file inserted
@@ -917,8 +927,8 @@ void SdImportTest::testBnc591147()
 
     xPropSet.set( getShape( 0, xPage ) );
     OUString sAudioURL("emptyURL");
-    bSucess = xPropSet->getPropertyValue("MediaURL") >>= sAudioURL;
-    CPPUNIT_ASSERT_MESSAGE( "MediaURL property is not set", bSucess );
+    bSuccess = xPropSet->getPropertyValue("MediaURL") >>= sAudioURL;
+    CPPUNIT_ASSERT_MESSAGE( "MediaURL property is not set", bSuccess );
     CPPUNIT_ASSERT_MESSAGE("MediaURL is empty", !sAudioURL.isEmpty());
 
     CPPUNIT_ASSERT_MESSAGE( "sAudioURL and sVideoURL should not be equal", sAudioURL != sVideoURL );
@@ -1153,7 +1163,7 @@ void SdImportTest::testPDFImport()
     CPPUNIT_ASSERT_MESSAGE( "no document", pDoc != nullptr );
     uno::Reference< drawing::XDrawPagesSupplier > xDoc(xDocShRef->GetDoc()->getUnoModel(), uno::UNO_QUERY_THROW );
     uno::Reference< drawing::XDrawPage > xPage(xDoc->getDrawPages()->getByIndex(0), uno::UNO_QUERY_THROW );
-    CPPUNIT_ASSERT_MESSAGE( "no exactly two shapes", xPage->getCount() == 2 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "no exactly two shapes", static_cast<sal_Int32>(2), xPage->getCount() );
 
     uno::Reference< beans::XPropertySet > xShape( getShape( 0, xPage ) );
     uno::Reference<text::XText> xText = uno::Reference<text::XTextRange>(xShape, uno::UNO_QUERY)->getText();
@@ -1172,7 +1182,7 @@ void SdImportTest::testPDFImportSkipImages()
     CPPUNIT_ASSERT_MESSAGE( "no document", pDoc != nullptr );
     uno::Reference< drawing::XDrawPagesSupplier > xDoc(xDocShRef->GetDoc()->getUnoModel(), uno::UNO_QUERY_THROW );
     uno::Reference< drawing::XDrawPage > xPage(xDoc->getDrawPages()->getByIndex(0), uno::UNO_QUERY_THROW );
-    CPPUNIT_ASSERT_MESSAGE( "no exactly one shape", xPage->getCount() == 1 );
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "no exactly one shape", static_cast<sal_Int32>(1), xPage->getCount() );
 
     uno::Reference< drawing::XShape > xShape(xPage->getByIndex(0), uno::UNO_QUERY_THROW );
     CPPUNIT_ASSERT_MESSAGE( "failed to load shape", xShape.is() );
@@ -1342,6 +1352,81 @@ void SdImportTest::testTdf93124()
     xDocShRef->DoClose();
 }
 
+void SdImportTest::testTdf99729()
+{
+    const char* filenames[] = { "/sd/qa/unit/data/odp/tdf99729-new.odp", "/sd/qa/unit/data/odp/tdf99729-legacy.odp" };
+    int nonwhitecounts[] = { 0, 0 };
+    for (unsigned int i = 0; i < sizeof(filenames)/sizeof(filenames[0]); ++i)
+    {
+        // 1st check for new behaviour - having AnchoredTextOverflowLegacy compatibility flag set to false in settings.xml
+        sd::DrawDocShellRef xDocShRef = loadURL(m_directories.getURLFromSrc(filenames[i]), ODP);
+
+        const css::uno::Reference< css::frame::XFrame > xFrame = SfxFrame::CreateBlankFrame();
+        CPPUNIT_ASSERT(xFrame.is());
+        const css::uno::Reference< css::frame::XModel2 > xModel(xDocShRef->GetModel(), css::uno::UNO_QUERY);
+        CPPUNIT_ASSERT(xModel.is());
+        const css::uno::Reference< css::frame::XController2 > xController(xModel->createViewController(
+            "Default",
+            css::uno::Sequence< css::beans::PropertyValue >(),
+            xFrame
+            ), css::uno::UNO_QUERY);
+        CPPUNIT_ASSERT(xController.is());
+        xController->attachModel(xModel.get());
+        xModel->connectController(xController.get());
+        xFrame->setComponent(xController->getComponentWindow(), xController.get());
+        xController->attachFrame(xFrame);
+        xModel->setCurrentController(xController.get());
+
+        uno::Reference < uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
+        CPPUNIT_ASSERT(xContext.is());
+        uno::Reference< drawing::XGraphicExportFilter > xGraphicExporter = drawing::GraphicExportFilter::create(xContext);
+        CPPUNIT_ASSERT(xGraphicExporter.is());
+
+        uno::Sequence< beans::PropertyValue > aFilterData(2);
+        aFilterData[0].Name = "PixelWidth";
+        aFilterData[0].Value <<= (sal_Int32)(320);
+        aFilterData[1].Name = "PixelHeight";
+        aFilterData[1].Value <<= (sal_Int32)(240);
+
+        utl::TempFile aTempFile;
+        aTempFile.EnableKillingFile();
+
+        uno::Sequence< beans::PropertyValue > aDescriptor(3);
+        aDescriptor[0].Name = "URL";
+        aDescriptor[0].Value <<= aTempFile.GetURL();
+        aDescriptor[1].Name = "FilterName";
+        aDescriptor[1].Value <<= OUString("PNG");
+        aDescriptor[2].Name = "FilterData";
+        aDescriptor[2].Value <<= aFilterData;
+
+        uno::Reference< lang::XComponent > xPage(getPage(0, xDocShRef), uno::UNO_QUERY);
+        xGraphicExporter->setSourceDocument(xPage);
+        xGraphicExporter->filter(aDescriptor);
+
+        SvFileStream aFileStream(aTempFile.GetURL(), StreamMode::READ);
+        vcl::PNGReader aPNGReader(aFileStream);
+        BitmapEx aBMPEx = aPNGReader.Read();
+        Bitmap aBMP = aBMPEx.GetBitmap();
+        Bitmap::ScopedReadAccess pRead(aBMP);
+        for (long nX = 154; nX < (154 + 12); ++nX)
+        {
+            for (long nY = 16; nY < (16 + 96); ++nY)
+            {
+                const Color aColor = pRead->GetColor(nY, nX);
+                if ((aColor.GetRed() != 0xff) || (aColor.GetGreen() != 0xff) || (aColor.GetBlue() != 0xff))
+                    ++nonwhitecounts[i];
+            }
+        }
+        xController->dispose();
+        xFrame->dispose();
+    }
+    // The numbers 1-9 should be above the Text Box in rectangle 154,16 - 170,112.
+    // If text alignment is wrong, the rectangle will be white.
+    CPPUNIT_ASSERT_MESSAGE("Tdf99729: vertical alignment of text is incorrect!", nonwhitecounts[0]>100); // it is 134 with cleartype disabled
+    // The numbers 1-9 should be below the Text Box -> rectangle 154,16 - 170,112 should be white.
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Tdf99729: legacy vertical alignment of text is incorrect!", 0, nonwhitecounts[1]);
+}
+
 void SdImportTest::testTdf89927()
 {
     sd::DrawDocShellRef xDocShRef = loadURL(m_directories.getURLFromSrc("/sd/qa/unit/data/pptx/tdf89927.pptx"), PPTX);
@@ -1443,7 +1528,7 @@ void SdImportTest::testTdf103473()
     const SdrPage *pPage = GetPage(1, xDocShRef);
     SdrTextObj *const pObj = dynamic_cast<SdrTextObj *const>(pPage->GetObj(0));
     CPPUNIT_ASSERT(pObj);
-    Rectangle aRect = pObj->GetGeoRect();
+    ::tools::Rectangle aRect = pObj->GetGeoRect();
     CPPUNIT_ASSERT_EQUAL(3629L, aRect.Left());
     CPPUNIT_ASSERT_EQUAL(4431L, aRect.Top());
     CPPUNIT_ASSERT_EQUAL(8353L, aRect.Right());
@@ -1632,7 +1717,7 @@ void SdImportTest::testTdf104201()
             pObj->GetMergedItem(XATTR_FILLCOLOR));
         CPPUNIT_ASSERT_EQUAL(ColorData(0x00FF00), rColorItem.GetColorValue().GetColor());
     }
-    // Scond shape has blue fill, but this should be overwritten by green group fill
+    // Second shape has blue fill, but this should be overwritten by green group fill
     {
         SdrObject *const pObj = pPage->GetObj(0);
         CPPUNIT_ASSERT_MESSAGE("Wrong object", pObj != nullptr);
@@ -1643,7 +1728,46 @@ void SdImportTest::testTdf104201()
             pObj->GetMergedItem(XATTR_FILLCOLOR));
         CPPUNIT_ASSERT_EQUAL(ColorData(0x00FF00), rColorItem.GetColorValue().GetColor());
     }
+}
 
+void SdImportTest::testTdf103477()
+{
+    sd::DrawDocShellRef xDocShRef = loadURL(m_directories.getURLFromSrc("/sd/qa/unit/data/pptx/tdf103477.pptx"), PPTX);
+
+    const SdrPage *pPage = GetPage( 1, xDocShRef );
+
+    SdrTextObj *pTxtObj = dynamic_cast<SdrTextObj *>( pPage->GetObj(6) );
+    CPPUNIT_ASSERT_MESSAGE( "no text object", pTxtObj != nullptr );
+
+    const EditTextObject& aEdit = pTxtObj->GetOutlinerParaObject()->GetTextObject();
+    const SvxNumBulletItem *pNumFmt = dynamic_cast<const SvxNumBulletItem *>( aEdit.GetParaAttribs(0).GetItem(EE_PARA_NUMBULLET) );
+    CPPUNIT_ASSERT(pNumFmt);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Bullet's color is wrong!", sal_uInt32(0x000000), pNumFmt->GetNumRule()->GetLevel(1).GetBulletColor().GetColor());
+
+    xDocShRef->DoClose();
+}
+
+void SdImportTest::testTdf105150()
+{
+    sd::DrawDocShellRef xDocShRef = loadURL(m_directories.getURLFromSrc("sd/qa/unit/data/pptx/tdf105150.pptx"), PPTX);
+    const SdrPage* pPage = GetPage(1, xDocShRef);
+    const SdrObject* pObj = pPage->GetObj(1);
+    auto& rFillStyleItem = dynamic_cast<const XFillStyleItem&>(pObj->GetMergedItem(XATTR_FILLSTYLE));
+    // This was drawing::FillStyle_NONE, <p:sp useBgFill="1"> was ignored when
+    // the slide didn't have an explicit background fill.
+    CPPUNIT_ASSERT_EQUAL(drawing::FillStyle_SOLID, rFillStyleItem.GetValue());
+    xDocShRef->DoClose();
+}
+
+void SdImportTest::testTdf105150PPT()
+{
+    sd::DrawDocShellRef xDocShRef = loadURL(m_directories.getURLFromSrc("sd/qa/unit/data/ppt/tdf105150.ppt"), PPT);
+    const SdrPage* pPage = GetPage(1, xDocShRef);
+    const SdrObject* pObj = pPage->GetObj(1);
+    // This was drawing::FillStyle_NONE, the shape's mso_fillBackground was
+    // ignored when the slide didn't have an explicit background fill.
+    auto& rFillStyleItem = dynamic_cast<const XFillStyleItem&>(pObj->GetMergedItem(XATTR_FILLSTYLE));
+    CPPUNIT_ASSERT_EQUAL(drawing::FillStyle_SOLID, rFillStyleItem.GetValue());
     xDocShRef->DoClose();
 }
 
@@ -1695,6 +1819,340 @@ void SdImportTest::testTdf104445()
         }
     }
     xDocShRef->DoClose();
+}
+
+namespace
+{
+
+bool checkPatternValues(std::vector<sal_uInt8>& rExpected, Bitmap& rBitmap)
+{
+    bool bResult = true;
+
+    Color aFGColor(0xFF0000);
+    Color aBGColor(0xFFFFFF);
+
+    Bitmap::ScopedReadAccess pAccess(rBitmap);
+    for (long y = 0; y < pAccess->Height(); ++y)
+    {
+        for (long x = 0; x < pAccess->Width(); ++x)
+        {
+            Color aColor = pAccess->GetPixel(y, x);
+            sal_uInt8 aValue = rExpected[y*8+x];
+
+            if (aValue == 1 && aColor != aFGColor)
+                bResult = false;
+            else if (aValue == 0 && aColor != aBGColor)
+                bResult = false;
+        }
+    }
+
+    return bResult;
+}
+
+} // end anonymous namespace
+
+bool SdImportTest::checkPattern(sd::DrawDocShellRef& rDocRef, int nShapeNumber, std::vector<sal_uInt8>& rExpected)
+{
+    uno::Reference<beans::XPropertySet> xShape(getShapeFromPage(nShapeNumber, 0, rDocRef));
+    CPPUNIT_ASSERT_MESSAGE("Not a shape", xShape.is());
+
+    Bitmap aBitmap;
+    if (xShape.is())
+    {
+        uno::Any aBitmapAny = xShape->getPropertyValue("FillBitmap");
+        uno::Reference<awt::XBitmap> xBitmap;
+        if (aBitmapAny >>= xBitmap)
+        {
+            uno::Sequence<sal_Int8> aBitmapSequence(xBitmap->getDIB());
+            SvMemoryStream aBitmapStream(aBitmapSequence.getArray(),
+                                         aBitmapSequence.getLength(),
+                                         StreamMode::READ);
+            ReadDIB(aBitmap, aBitmapStream, true);
+        }
+    }
+    CPPUNIT_ASSERT_EQUAL(8L, aBitmap.GetSizePixel().Width());
+    CPPUNIT_ASSERT_EQUAL(8L, aBitmap.GetSizePixel().Height());
+    return checkPatternValues(rExpected, aBitmap);
+}
+
+/* Test checks that importing a PPT file with all supported fill patterns is
+ * correctly imported as a tiled fill bitmap with the expected pattern.
+ */
+void SdImportTest::testPatternImport()
+{
+    sd::DrawDocShellRef xDocRef = loadURL(m_directories.getURLFromSrc("sd/qa/unit/data/ppt/FillPatterns.ppt"), PPT);
+
+    std::vector<sal_uInt8> aExpectedPattern1 = {
+        1,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,1,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+    };
+    std::vector<sal_uInt8> aExpectedPattern2 = {
+        1,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,1,0,0,0,
+        0,0,0,0,0,0,0,0,
+        1,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,1,0,0,0,
+        0,0,0,0,0,0,0,0,
+    };
+    std::vector<sal_uInt8> aExpectedPattern3 = {
+        1,0,0,0,1,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,1,0,0,0,1,0,
+        0,0,0,0,0,0,0,0,
+        1,0,0,0,1,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,1,0,0,0,1,0,
+        0,0,0,0,0,0,0,0,
+    };
+    std::vector<sal_uInt8> aExpectedPattern4 = {
+        1,0,0,0,1,0,0,0,
+        0,0,1,0,0,0,1,0,
+        1,0,0,0,1,0,0,0,
+        0,0,1,0,0,0,1,0,
+        1,0,0,0,1,0,0,0,
+        0,0,1,0,0,0,1,0,
+        1,0,0,0,1,0,0,0,
+        0,0,1,0,0,0,1,0,
+    };
+    std::vector<sal_uInt8> aExpectedPattern5 = {
+        1,0,1,0,1,0,1,0,
+        0,1,0,0,0,1,0,0,
+        1,0,1,0,1,0,1,0,
+        0,0,0,1,0,0,0,1,
+        1,0,1,0,1,0,1,0,
+        0,1,0,0,0,1,0,0,
+        1,0,1,0,1,0,1,0,
+        0,0,0,1,0,0,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPattern6 = {
+        1,0,1,0,1,0,1,0,
+        0,1,0,1,0,1,0,1,
+        1,0,1,0,1,0,1,0,
+        0,1,0,1,0,0,0,1,
+        1,0,1,0,1,0,1,0,
+        0,1,0,1,0,1,0,1,
+        1,0,1,0,1,0,1,0,
+        0,0,0,1,0,1,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPattern7 = {
+        1,0,1,0,1,0,1,0,
+        0,1,0,1,0,1,0,1,
+        1,0,1,0,1,0,1,0,
+        0,1,0,1,0,1,0,1,
+        1,0,1,0,1,0,1,0,
+        0,1,0,1,0,1,0,1,
+        1,0,1,0,1,0,1,0,
+        0,1,0,1,0,1,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPattern8 = {
+        1,1,1,0,1,1,1,0,
+        0,1,0,1,0,1,0,1,
+        1,0,1,1,1,0,1,1,
+        0,1,0,1,0,1,0,1,
+        1,1,1,0,1,1,1,0,
+        0,1,0,1,0,1,0,1,
+        1,0,1,1,1,0,1,1,
+        0,1,0,1,0,1,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPattern9 = {
+        0,1,1,1,0,1,1,1,
+        1,1,0,1,1,1,0,1,
+        0,1,1,1,0,1,1,1,
+        1,1,0,1,1,1,0,1,
+        0,1,1,1,0,1,1,1,
+        1,1,0,1,1,1,0,1,
+        0,1,1,1,0,1,1,1,
+        1,1,0,1,1,1,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPattern10 = {
+        0,1,1,1,0,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,0,1,1,1,0,1,
+        1,1,1,1,1,1,1,1,
+        0,1,1,1,0,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,0,1,1,1,0,1,
+        1,1,1,1,1,1,1,1,
+    };
+    std::vector<sal_uInt8> aExpectedPattern11 = {
+        1,1,1,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,
+        1,1,1,0,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,1,
+    };
+    std::vector<sal_uInt8> aExpectedPattern12 = {
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,0,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        0,1,1,1,1,1,1,1,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine1 = {
+        1,0,0,0,1,0,0,0,
+        0,1,0,0,0,1,0,0,
+        0,0,1,0,0,0,1,0,
+        0,0,0,1,0,0,0,1,
+        1,0,0,0,1,0,0,0,
+        0,1,0,0,0,1,0,0,
+        0,0,1,0,0,0,1,0,
+        0,0,0,1,0,0,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine2 = {
+        0,0,0,1,0,0,0,1,
+        0,0,1,0,0,0,1,0,
+        0,1,0,0,0,1,0,0,
+        1,0,0,0,1,0,0,0,
+        0,0,0,1,0,0,0,1,
+        0,0,1,0,0,0,1,0,
+        0,1,0,0,0,1,0,0,
+        1,0,0,0,1,0,0,0,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine3 = {
+        1,1,0,0,1,1,0,0,
+        0,1,1,0,0,1,1,0,
+        0,0,1,1,0,0,1,1,
+        1,0,0,1,1,0,0,1,
+        1,1,0,0,1,1,0,0,
+        0,1,1,0,0,1,1,0,
+        0,0,1,1,0,0,1,1,
+        1,0,0,1,1,0,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine4 = {
+        0,0,1,1,0,0,1,1,
+        0,1,1,0,0,1,1,0,
+        1,1,0,0,1,1,0,0,
+        1,0,0,1,1,0,0,1,
+        0,0,1,1,0,0,1,1,
+        0,1,1,0,0,1,1,0,
+        1,1,0,0,1,1,0,0,
+        1,0,0,1,1,0,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine5 = {
+        1,1,0,0,0,0,0,1,
+        1,1,1,0,0,0,0,0,
+        0,1,1,1,0,0,0,0,
+        0,0,1,1,1,0,0,0,
+        0,0,0,1,1,1,0,0,
+        0,0,0,0,1,1,1,0,
+        0,0,0,0,0,1,1,1,
+        1,0,0,0,0,0,1,1,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine6 = {
+        1,0,0,0,0,0,1,1,
+        0,0,0,0,0,1,1,1,
+        0,0,0,0,1,1,1,0,
+        0,0,0,1,1,1,0,0,
+        0,0,1,1,1,0,0,0,
+        0,1,1,1,0,0,0,0,
+        1,1,1,0,0,0,0,0,
+        1,1,0,0,0,0,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine7 = {
+        1,0,0,0,1,0,0,0,
+        1,0,0,0,1,0,0,0,
+        1,0,0,0,1,0,0,0,
+        1,0,0,0,1,0,0,0,
+        1,0,0,0,1,0,0,0,
+        1,0,0,0,1,0,0,0,
+        1,0,0,0,1,0,0,0,
+        1,0,0,0,1,0,0,0,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine8 = {
+        1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine9 = {
+        0,1,0,1,0,1,0,1,
+        0,1,0,1,0,1,0,1,
+        0,1,0,1,0,1,0,1,
+        0,1,0,1,0,1,0,1,
+        0,1,0,1,0,1,0,1,
+        0,1,0,1,0,1,0,1,
+        0,1,0,1,0,1,0,1,
+        0,1,0,1,0,1,0,1,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine10 = {
+        1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine11 = {
+        1,1,0,0,1,1,0,0,
+        1,1,0,0,1,1,0,0,
+        1,1,0,0,1,1,0,0,
+        1,1,0,0,1,1,0,0,
+        1,1,0,0,1,1,0,0,
+        1,1,0,0,1,1,0,0,
+        1,1,0,0,1,1,0,0,
+        1,1,0,0,1,1,0,0,
+    };
+    std::vector<sal_uInt8> aExpectedPatternLine12 = {
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,
+        1,1,1,1,1,1,1,1,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+    };
+
+    CPPUNIT_ASSERT_MESSAGE("Pattern1 - 5%" ,  checkPattern(xDocRef, 0,  aExpectedPattern1));
+    CPPUNIT_ASSERT_MESSAGE("Pattern2 - 10%",  checkPattern(xDocRef, 1,  aExpectedPattern2));
+    CPPUNIT_ASSERT_MESSAGE("Pattern3 - 20%",  checkPattern(xDocRef, 2,  aExpectedPattern3));
+    CPPUNIT_ASSERT_MESSAGE("Pattern4 - 25%",  checkPattern(xDocRef, 3,  aExpectedPattern4));
+    CPPUNIT_ASSERT_MESSAGE("Pattern5 - 30%",  checkPattern(xDocRef, 4,  aExpectedPattern5));
+    CPPUNIT_ASSERT_MESSAGE("Pattern6 - 40%",  checkPattern(xDocRef, 5,  aExpectedPattern6));
+    CPPUNIT_ASSERT_MESSAGE("Pattern7 - 50%",  checkPattern(xDocRef, 6,  aExpectedPattern7));
+    CPPUNIT_ASSERT_MESSAGE("Pattern8 - 60%",  checkPattern(xDocRef, 7,  aExpectedPattern8));
+    CPPUNIT_ASSERT_MESSAGE("Pattern9 - 70%",  checkPattern(xDocRef, 8,  aExpectedPattern9));
+    CPPUNIT_ASSERT_MESSAGE("Pattern10 - 75%", checkPattern(xDocRef, 9,  aExpectedPattern10));
+    CPPUNIT_ASSERT_MESSAGE("Pattern11 - 80%", checkPattern(xDocRef, 10, aExpectedPattern11));
+    CPPUNIT_ASSERT_MESSAGE("Pattern12 - 90%", checkPattern(xDocRef, 11, aExpectedPattern12));
+
+    CPPUNIT_ASSERT_MESSAGE("Pattern13 - Light downward diagonal", checkPattern(xDocRef, 12, aExpectedPatternLine1));
+    CPPUNIT_ASSERT_MESSAGE("Pattern14 - Light upward diagonal",   checkPattern(xDocRef, 13, aExpectedPatternLine2));
+    CPPUNIT_ASSERT_MESSAGE("Pattern15 - Dark downward diagonal",  checkPattern(xDocRef, 14, aExpectedPatternLine3));
+    CPPUNIT_ASSERT_MESSAGE("Pattern16 - Dark upward diagonal",    checkPattern(xDocRef, 15, aExpectedPatternLine4));
+    CPPUNIT_ASSERT_MESSAGE("Pattern17 - Wide downward diagonal",  checkPattern(xDocRef, 16, aExpectedPatternLine5));
+    CPPUNIT_ASSERT_MESSAGE("Pattern18 - Wide upward diagonal",    checkPattern(xDocRef, 17, aExpectedPatternLine6));
+
+    CPPUNIT_ASSERT_MESSAGE("Pattern19 - Light vertical",    checkPattern(xDocRef, 18, aExpectedPatternLine7));
+    CPPUNIT_ASSERT_MESSAGE("Pattern20 - Light horizontal",  checkPattern(xDocRef, 19, aExpectedPatternLine8));
+    CPPUNIT_ASSERT_MESSAGE("Pattern21 - Narrow vertical",   checkPattern(xDocRef, 20, aExpectedPatternLine9));
+    CPPUNIT_ASSERT_MESSAGE("Pattern22 - Narrow horizontal", checkPattern(xDocRef, 21, aExpectedPatternLine10));
+    CPPUNIT_ASSERT_MESSAGE("Pattern23 - Dark vertical",     checkPattern(xDocRef, 22, aExpectedPatternLine11));
+    CPPUNIT_ASSERT_MESSAGE("Pattern24 - Dark horizontal",   checkPattern(xDocRef, 23, aExpectedPatternLine12));
+
+    // TODO: other patterns in the test document
+
+    xDocRef->DoClose();
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(SdImportTest);

@@ -24,9 +24,9 @@
 #include <cppuhelper/servicefactory.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
 #include <cppuhelper/compbase.hxx>
+#include <cppuhelper/basemutex.hxx>
 
 #include <comphelper/processfactory.hxx>
-#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/anytostring.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 
@@ -66,7 +66,7 @@ using namespace ::com::sun::star;
 namespace {
 
 typedef ::cppu::WeakComponentImplHelper< presentation::XSlideShowView > ViewBase;
-class View : public ::comphelper::OBaseMutex,
+class View : public ::cppu::BaseMutex,
              public ViewBase
 {
 public:
@@ -202,7 +202,7 @@ private:
 
 typedef ::cppu::WeakComponentImplHelper< drawing::XDrawPage,
                                           beans::XPropertySet > SlideBase;
-class DummySlide : public ::comphelper::OBaseMutex,
+class DummySlide : public ::cppu::BaseMutex,
                    public SlideBase
 {
 public:
@@ -355,8 +355,7 @@ void ChildWindow::init()
     }
     catch (const uno::Exception &e)
     {
-        OSL_TRACE( "Exception '%s' thrown\n" ,
-                   OUStringToOString( e.Message, RTL_TEXTENCODING_UTF8 ).getStr() );
+        SAL_INFO("slideshow", "Exception " << e.Message );
     }
 }
 
@@ -369,9 +368,7 @@ void ChildWindow::Paint( const Rectangle& /*rRect*/ )
     }
     catch (const uno::Exception &e)
     {
-        OSL_TRACE( "Exception '%s' thrown\n" ,
-                   OUStringToOString( e.Message,
-                                             RTL_TEXTENCODING_UTF8 ).getStr() );
+        SAL_INFO("slideshow", "Exception " << e.Message );
     }
 }
 
@@ -390,7 +387,7 @@ public:
 
 private:
     void init();
-    DECL_LINK_TYPED( updateHdl, Timer*, void );
+    DECL_LINK( updateHdl, Timer*, void );
 
     ChildWindow                                maLeftChild;
     ChildWindow                                maRightTopChild;
@@ -418,7 +415,7 @@ DemoWindow::DemoWindow() :
     maRightBottomChild.SetPosSizePixel( Point(320,240), Size(320,240) );
     Show();
 
-    maUpdateTimer.SetTimeoutHdl(LINK(this, DemoWindow, updateHdl));
+    maUpdateTimer.SetInvokeHandler(LINK(this, DemoWindow, updateHdl));
     maUpdateTimer.SetTimeout( (sal_uLong)30 );
     maUpdateTimer.Start();
 }
@@ -457,13 +454,11 @@ void DemoWindow::init()
     }
     catch (const uno::Exception &e)
     {
-        OSL_TRACE( "Exception '%s' thrown\n" ,
-                   OUStringToOString( e.Message,
-                                             RTL_TEXTENCODING_UTF8 ).getStr() );
+        SAL_INFO("slideshow", "Exception " << e.Message );
     }
 }
 
-IMPL_LINK_NOARG_TYPED(DemoWindow, updateHdl, Timer*, void)
+IMPL_LINK_NOARG(DemoWindow, updateHdl, Timer*, void)
 {
     init();
 
@@ -531,7 +526,7 @@ void DemoApp::Main()
 
     if( !xFactory.is() )
     {
-        OSL_TRACE( "Could not bootstrap UNO, installation must be in disorder. Exiting." );
+        SAL_INFO("slideshow",( "Could not bootstrap UNO, installation must be in disorder. Exiting." );
         exit( 1 );
     }
 

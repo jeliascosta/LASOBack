@@ -68,28 +68,28 @@ namespace oox { namespace ppt {
                 {
                     switch(rString[nIndex + 4])
                     {
-                    case (sal_Unicode)'h': // we found ppt_h
+                    case 'h': // we found ppt_h
                         // if it was #ppt_h we already copied the #
                         // which we do not want in the target, so remove it
-                        if(nIndex && (rString[nIndex - 1] == (sal_Unicode)'#'))
+                        if(nIndex && (rString[nIndex - 1] == '#'))
                         {
                             sRes.remove(sRes.getLength() - 1, 1);
                         }
                         sRes.append("height");
                         bRet = true;
                         break;
-                    case (sal_Unicode)'w':
-                        if(nIndex && (rString[nIndex - 1] == (sal_Unicode)'#'))
+                    case 'w':
+                        if(nIndex && (rString[nIndex - 1] == '#'))
                         {
                             sRes.remove(sRes.getLength() - 1, 1);
                         }
                         sRes.append("width");
                         bRet = true;
                         break;
-                    case (sal_Unicode)'x':
-                        if(nIndex && (rString[nIndex - 1] == (sal_Unicode)'#'))
+                    case 'x':
+                        if(nIndex && (rString[nIndex - 1] == '#'))
                         {
-                            sRes[sRes.getLength() - 1] = (sal_Unicode)'x';
+                            sRes[sRes.getLength() - 1] = 'x';
                         }
                         else
                         {
@@ -97,10 +97,10 @@ namespace oox { namespace ppt {
                         }
                         bRet = true;
                         break;
-                    case (sal_Unicode)'y':
-                        if(nIndex && (rString[nIndex - 1] == (sal_Unicode)'#'))
+                    case 'y':
+                        if(nIndex && (rString[nIndex - 1] == '#'))
                         {
-                            sRes[sRes.getLength() - 1] = (sal_Unicode)'y';
+                            sRes[sRes.getLength() - 1] = 'y';
                         }
                         else
                         {
@@ -155,7 +155,7 @@ namespace oox { namespace ppt {
     {
         if( isCurrentElement( mnElement ) && maColor.isUsed() )
         {
-            maValue = makeAny( maColor.getColor( getFilter().getGraphicHelper() ) );
+            maValue <<= maColor.getColor( getFilter().getGraphicHelper() );
         }
     }
 
@@ -166,7 +166,7 @@ namespace oox { namespace ppt {
         case PPT_TOKEN( boolVal ):
         {
             bool val = rAttribs.getBool( XML_val, false );
-            maValue = makeAny( val );
+            maValue <<= val;
             return this;
         }
         case PPT_TOKEN( clrVal ):
@@ -175,20 +175,20 @@ namespace oox { namespace ppt {
         case PPT_TOKEN( fltVal ):
         {
             double val = rAttribs.getDouble( XML_val, 0.0 );
-            maValue = makeAny( val );
+            maValue <<= val;
             return this;
         }
         case PPT_TOKEN( intVal ):
         {
             sal_Int32 val = rAttribs.getInteger( XML_val, 0 );
-            maValue = makeAny( val );
+            maValue <<= val;
             return this;
         }
         case PPT_TOKEN( strVal ):
         {
             OUString val = rAttribs.getString( XML_val, OUString() );
             convertMeasure( val ); // ignore success or failure if it fails, use as is
-            maValue = makeAny( val );
+            maValue <<= val;
             return this;
         }
         default:

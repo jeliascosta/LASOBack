@@ -52,7 +52,7 @@ OUString removeControlChars(const OUString& sIn)
 }
 
 SwChapterFieldType::SwChapterFieldType()
-    : SwFieldType( RES_CHAPTERFLD )
+    : SwFieldType( SwFieldIds::Chapter )
 {
 }
 
@@ -221,7 +221,7 @@ bool SwChapterField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         break;
 
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -263,8 +263,7 @@ bool SwChapterField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         break;
 
     default:
-        OSL_FAIL("illegal property");
-                bRet = false;
+        assert(false);
     }
     return bRet;
 }

@@ -61,21 +61,21 @@ namespace connectivity
 {
 
     using namespace hsqldb;
-    using namespace ::com::sun::star::uno;
-    using namespace ::com::sun::star::sdbc;
-    using namespace ::com::sun::star::sdbcx;
-    using namespace ::com::sun::star::beans;
-    using namespace ::com::sun::star::frame;
-    using namespace ::com::sun::star::lang;
-    using namespace ::com::sun::star::embed;
-    using namespace ::com::sun::star::io;
-    using namespace ::com::sun::star::task;
-    using namespace ::com::sun::star::util;
-    using namespace ::com::sun::star::reflection;
+    using namespace css::uno;
+    using namespace css::sdbc;
+    using namespace css::sdbcx;
+    using namespace css::beans;
+    using namespace css::frame;
+    using namespace css::lang;
+    using namespace css::embed;
+    using namespace css::io;
+    using namespace css::task;
+    using namespace css::util;
+    using namespace css::reflection;
 
     namespace hsqldb
     {
-        Reference< XInterface >  SAL_CALL ODriverDelegator_CreateInstance(const Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFac) throw( Exception )
+        Reference< XInterface >  SAL_CALL ODriverDelegator_CreateInstance(const Reference< css::lang::XMultiServiceFactory >& _rxFac)
         {
             return *(new ODriverDelegator(comphelper::getComponentContext(_rxFac)));
         }
@@ -124,7 +124,7 @@ namespace connectivity
         cppu::WeakComponentImplHelperBase::disposing();
     }
 
-    Reference< XDriver > ODriverDelegator::loadDriver( )
+    Reference< XDriver > const & ODriverDelegator::loadDriver( )
     {
         if ( !m_xDriver.is() )
         {
@@ -168,7 +168,7 @@ namespace connectivity
     }
 
 
-    Reference< XConnection > SAL_CALL ODriverDelegator::connect( const OUString& url, const Sequence< PropertyValue >& info ) throw (SQLException, RuntimeException, std::exception)
+    Reference< XConnection > SAL_CALL ODriverDelegator::connect( const OUString& url, const Sequence< PropertyValue >& info )
     {
         Reference< XConnection > xConnection;
         if ( acceptsURL(url) )
@@ -246,7 +246,7 @@ namespace connectivity
 
                 // security: permitted Java classes
                 NamedValue aPermittedClasses(
-                    OUString(  "hsqldb.method_class_names"  ),
+                    "hsqldb.method_class_names",
                     makeAny( lcl_getPermittedJavaMethods_nothrow( m_xContext ) )
                 );
                 aProperties.put( "SystemProperties", Sequence< NamedValue >( &aPermittedClasses, 1 ) );
@@ -323,10 +323,7 @@ namespace connectivity
 
                 Sequence< PropertyValue > aConnectionArgs;
                 aProperties >>= aConnectionArgs;
-
-                OUString sConnectURL("jdbc:hsqldb:");
-
-                sConnectURL += sSystemPath;
+                OUString sConnectURL = "jdbc:hsqldb:" + sSystemPath;
                 Reference<XConnection> xOrig;
                 try
                 {
@@ -385,9 +382,9 @@ namespace connectivity
     }
 
 
-    sal_Bool SAL_CALL ODriverDelegator::acceptsURL( const OUString& url ) throw (SQLException, RuntimeException, std::exception)
+    sal_Bool SAL_CALL ODriverDelegator::acceptsURL( const OUString& url )
     {
-        sal_Bool bEnabled = false;
+        bool bEnabled = false;
         javaFrameworkError e = jfw_getEnabled(&bEnabled);
         switch (e) {
         case JFW_E_NONE:
@@ -407,49 +404,49 @@ namespace connectivity
     }
 
 
-    Sequence< DriverPropertyInfo > SAL_CALL ODriverDelegator::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ ) throw (SQLException, RuntimeException, std::exception)
+    Sequence< DriverPropertyInfo > SAL_CALL ODriverDelegator::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ )
     {
         if ( !acceptsURL(url) )
             return Sequence< DriverPropertyInfo >();
-        ::std::vector< DriverPropertyInfo > aDriverInfo;
+        std::vector< DriverPropertyInfo > aDriverInfo;
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("Storage")
-                ,OUString("Defines the storage where the database will be stored.")
+                "Storage"
+                ,"Defines the storage where the database will be stored."
                 ,true
                 ,OUString()
                 ,Sequence< OUString >())
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("URL")
-                ,OUString("Defines the url of the data source.")
+                "URL"
+                ,"Defines the url of the data source."
                 ,true
                 ,OUString()
                 ,Sequence< OUString >())
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                OUString("AutoRetrievingStatement")
-                ,OUString("Defines the statement which will be executed to retrieve auto increment values.")
+                "AutoRetrievingStatement"
+                ,"Defines the statement which will be executed to retrieve auto increment values."
                 ,false
-                ,OUString("CALL IDENTITY()")
+                ,"CALL IDENTITY()"
                 ,Sequence< OUString >())
                 );
         return Sequence< DriverPropertyInfo >(&aDriverInfo[0],aDriverInfo.size());
     }
 
 
-    sal_Int32 SAL_CALL ODriverDelegator::getMajorVersion(  ) throw (RuntimeException, std::exception)
+    sal_Int32 SAL_CALL ODriverDelegator::getMajorVersion(  )
     {
         return 1;
     }
 
 
-    sal_Int32 SAL_CALL ODriverDelegator::getMinorVersion(  ) throw (RuntimeException, std::exception)
+    sal_Int32 SAL_CALL ODriverDelegator::getMinorVersion(  )
     {
         return 0;
     }
 
 
-    Reference< XTablesSupplier > SAL_CALL ODriverDelegator::getDataDefinitionByConnection( const Reference< XConnection >& connection ) throw (SQLException, RuntimeException, std::exception)
+    Reference< XTablesSupplier > SAL_CALL ODriverDelegator::getDataDefinitionByConnection( const Reference< XConnection >& connection )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         checkDisposed(ODriverDelegator_BASE::rBHelper.bDisposed);
@@ -475,7 +472,7 @@ namespace connectivity
     }
 
 
-    Reference< XTablesSupplier > SAL_CALL ODriverDelegator::getDataDefinitionByURL( const OUString& url, const Sequence< PropertyValue >& info ) throw (SQLException, RuntimeException, std::exception)
+    Reference< XTablesSupplier > SAL_CALL ODriverDelegator::getDataDefinitionByURL( const OUString& url, const Sequence< PropertyValue >& info )
     {
         if ( ! acceptsURL(url) )
         {
@@ -490,12 +487,12 @@ namespace connectivity
     // XServiceInfo
 
 
-    OUString ODriverDelegator::getImplementationName_Static(  ) throw(RuntimeException)
+    OUString ODriverDelegator::getImplementationName_Static(  )
     {
         return OUString("com.sun.star.sdbcx.comp.hsqldb.Driver");
     }
 
-    Sequence< OUString > ODriverDelegator::getSupportedServiceNames_Static(  ) throw (RuntimeException)
+    Sequence< OUString > ODriverDelegator::getSupportedServiceNames_Static(  )
     {
         Sequence< OUString > aSNS( 2 );
         aSNS[0] = "com.sun.star.sdbc.Driver";
@@ -503,22 +500,22 @@ namespace connectivity
         return aSNS;
     }
 
-    OUString SAL_CALL ODriverDelegator::getImplementationName(  ) throw(RuntimeException, std::exception)
+    OUString SAL_CALL ODriverDelegator::getImplementationName(  )
     {
         return getImplementationName_Static();
     }
 
-    sal_Bool SAL_CALL ODriverDelegator::supportsService( const OUString& _rServiceName ) throw(RuntimeException, std::exception)
+    sal_Bool SAL_CALL ODriverDelegator::supportsService( const OUString& _rServiceName )
     {
         return cppu::supportsService(this, _rServiceName);
     }
 
-    Sequence< OUString > SAL_CALL ODriverDelegator::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
+    Sequence< OUString > SAL_CALL ODriverDelegator::getSupportedServiceNames(  )
     {
         return getSupportedServiceNames_Static();
     }
 
-    void SAL_CALL ODriverDelegator::createCatalog( const Sequence< PropertyValue >& /*info*/ ) throw (SQLException, ::com::sun::star::container::ElementExistException, RuntimeException, std::exception)
+    void SAL_CALL ODriverDelegator::createCatalog( const Sequence< PropertyValue >& /*info*/ )
     {
         ::dbtools::throwFeatureNotImplementedSQLException( "XCreateCatalog::createCatalog", *this );
     }
@@ -558,7 +555,7 @@ namespace connectivity
             m_aConnections.erase(_aIter);
     }
 
-    void SAL_CALL ODriverDelegator::disposing( const ::com::sun::star::lang::EventObject& Source ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+    void SAL_CALL ODriverDelegator::disposing( const css::lang::EventObject& Source )
     {
         ::osl::MutexGuard aGuard(m_aMutex);
         Reference<XConnection> xCon(Source.Source,UNO_QUERY);
@@ -580,7 +577,7 @@ namespace connectivity
             if ( xStorage.is() )
             {
                 OUString sKey = StorageContainer::getRegisteredKey(xStorage);
-                TWeakPairVector::iterator i = ::std::find_if(m_aConnections.begin(),m_aConnections.end(),
+                TWeakPairVector::iterator i = std::find_if(m_aConnections.begin(),m_aConnections.end(),
                     [&sKey] (const TWeakPairVector::value_type& conn) {
                         return conn.second.first == sKey;
                     });
@@ -628,7 +625,7 @@ namespace connectivity
         }
     }
 
-    void SAL_CALL ODriverDelegator::preCommit( const ::com::sun::star::lang::EventObject& aEvent ) throw (::com::sun::star::uno::Exception, ::com::sun::star::uno::RuntimeException, std::exception)
+    void SAL_CALL ODriverDelegator::preCommit( const css::lang::EventObject& aEvent )
     {
         ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -636,7 +633,7 @@ namespace connectivity
         OUString sKey = StorageContainer::getRegisteredKey(xStorage);
         if ( !sKey.isEmpty() )
         {
-            TWeakPairVector::const_iterator i = ::std::find_if(m_aConnections.begin(), m_aConnections.end(),
+            TWeakPairVector::const_iterator i = std::find_if(m_aConnections.begin(), m_aConnections.end(),
                 [&sKey] (const TWeakPairVector::value_type& conn) {
                     return conn.second.first == sKey;
                 });
@@ -671,15 +668,15 @@ namespace connectivity
         }
     }
 
-    void SAL_CALL ODriverDelegator::commited( const ::com::sun::star::lang::EventObject& /*aEvent*/ ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+    void SAL_CALL ODriverDelegator::commited( const css::lang::EventObject& /*aEvent*/ )
     {
     }
 
-    void SAL_CALL ODriverDelegator::preRevert( const ::com::sun::star::lang::EventObject& /*aEvent*/ ) throw (::com::sun::star::uno::Exception, ::com::sun::star::uno::RuntimeException, std::exception)
+    void SAL_CALL ODriverDelegator::preRevert( const css::lang::EventObject& /*aEvent*/ )
     {
     }
 
-    void SAL_CALL ODriverDelegator::reverted( const ::com::sun::star::lang::EventObject& /*aEvent*/ ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+    void SAL_CALL ODriverDelegator::reverted( const css::lang::EventObject& /*aEvent*/ )
     {
     }
 
@@ -828,20 +825,20 @@ namespace connectivity
             {
 
                 Reference< XMultiServiceFactory > xConfigProvider(
-                    com::sun::star::configuration::theDefaultProvider::get( _rxContext ) );
+                    css::configuration::theDefaultProvider::get( _rxContext ) );
 
 
                 // arguments for creating the config access
                 Sequence< Any > aArguments(2);
                 // the path to the node to open
                 aArguments[0] <<= PropertyValue(
-                    OUString("nodepath"), 0,
+                    "nodepath", 0,
                     makeAny( OUString("/org.openoffice.Setup/L10N" ) ),
                     PropertyState_DIRECT_VALUE
                 );
                 // the depth: -1 means unlimited
                 aArguments[1] <<= PropertyValue(
-                    OUString("depth"), 0,
+                    "depth", 0,
                     makeAny( (sal_Int32)-1 ), PropertyState_DIRECT_VALUE
                 );
 

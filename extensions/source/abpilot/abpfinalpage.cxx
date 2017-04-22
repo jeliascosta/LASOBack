@@ -121,7 +121,7 @@ namespace abp
             aURL.SetURL(sPath);
         }
         OSL_ENSURE( aURL.GetProtocol() != INetProtocol::NotValid ,"No valid file name!");
-        rSettings.sDataSourceName = aURL.GetMainURL( INetURLObject::NO_DECODE );
+        rSettings.sDataSourceName = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
         m_pLocationController->setURL( rSettings.sDataSourceName );
         OUString sName = aURL.getName( );
         sal_Int32 nPos = sName.indexOf(aURL.GetExtension());
@@ -211,13 +211,13 @@ namespace abp
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FinalPage, OnNameModified, Edit&, void )
+    IMPL_LINK_NOARG( FinalPage, OnNameModified, Edit&, void )
     {
         implCheckName();
     }
 
 
-    IMPL_LINK_NOARG_TYPED(FinalPage, OnRegister, Button*, void)
+    IMPL_LINK_NOARG(FinalPage, OnRegister, Button*, void)
     {
         bool bEnable = m_pRegisterName->IsChecked();
         m_pNameLabel->Enable(bEnable);
@@ -225,7 +225,7 @@ namespace abp
         implCheckName();
     }
 
-    IMPL_LINK_NOARG_TYPED(FinalPage, OnEmbed, Button*, void)
+    IMPL_LINK_NOARG(FinalPage, OnEmbed, Button*, void)
     {
         bool bEmbed = m_pEmbed->IsChecked();
         m_pLocationLabel->Enable(!bEmbed);

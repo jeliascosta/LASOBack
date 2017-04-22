@@ -18,23 +18,27 @@
  */
 #include "vbatabstops.hxx"
 #include "vbatabstop.hxx"
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/style/TabAlign.hpp>
 #include <com/sun/star/style/TabStop.hpp>
 #include <ooo/vba/word/WdTabLeader.hpp>
 #include <ooo/vba/word/WdTabAlignment.hpp>
+#include <basic/sberrors.hxx>
 #include <cppuhelper/implbase.hxx>
 
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
-static uno::Sequence< style::TabStop > lcl_getTabStops( const uno::Reference< beans::XPropertySet >& xParaProps ) throw (uno::RuntimeException)
+/// @throws uno::RuntimeException
+static uno::Sequence< style::TabStop > lcl_getTabStops( const uno::Reference< beans::XPropertySet >& xParaProps )
 {
     uno::Sequence< style::TabStop > aSeq;
     xParaProps->getPropertyValue("ParaTabStops") >>= aSeq;
     return aSeq;
 }
 
-static void lcl_setTabStops( const uno::Reference< beans::XPropertySet >& xParaProps, const uno::Sequence< style::TabStop >& aSeq ) throw (uno::RuntimeException)
+/// @throws uno::RuntimeException
+static void lcl_setTabStops( const uno::Reference< beans::XPropertySet >& xParaProps, const uno::Sequence< style::TabStop >& aSeq )
 {
     xParaProps->setPropertyValue("ParaTabStops", uno::makeAny( aSeq ) );
 }
@@ -48,12 +52,12 @@ public:
     explicit TabStopsEnumWrapper( const uno::Reference< container::XIndexAccess >& xIndexAccess ) : mxIndexAccess( xIndexAccess ), nIndex( 0 )
     {
     }
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) throw (uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL hasMoreElements(  ) override
     {
         return ( nIndex < mxIndexAccess->getCount() );
     }
 
-    virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
+    virtual uno::Any SAL_CALL nextElement(  ) override
     {
         if( nIndex < mxIndexAccess->getCount() )
         {
@@ -72,44 +76,43 @@ private:
     sal_Int32 mnTabStops;
 
 public:
-    TabStopCollectionHelper( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::beans::XPropertySet >& xParaProps ) throw ( css::uno::RuntimeException ): mxParent( xParent ), mxContext( xContext )
+    /// @throws css::uno::RuntimeException
+    TabStopCollectionHelper( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::beans::XPropertySet >& xParaProps ): mxParent( xParent ), mxContext( xContext )
     {
         mnTabStops = lcl_getTabStops( xParaProps ).getLength();
     }
 
-    virtual ~TabStopCollectionHelper() {}
-
-    virtual sal_Int32 SAL_CALL getCount(  ) throw (uno::RuntimeException, std::exception) override
+    virtual sal_Int32 SAL_CALL getCount(  ) override
     {
         return mnTabStops;
     }
-    virtual uno::Any SAL_CALL getByIndex( sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
+    virtual uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override
     {
         if ( Index < 0 || Index >= getCount() )
             throw css::lang::IndexOutOfBoundsException();
 
         return uno::makeAny( uno::Reference< word::XTabStop >( new SwVbaTabStop( mxParent, mxContext ) ) );
     }
-    virtual uno::Type SAL_CALL getElementType(  ) throw (uno::RuntimeException, std::exception) override
+    virtual uno::Type SAL_CALL getElementType(  ) override
     {
         return cppu::UnoType<word::XTabStop>::get();
     }
-    virtual sal_Bool SAL_CALL hasElements(  ) throw (uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL hasElements(  ) override
     {
         return true;
     }
     // XEnumerationAccess
-    virtual uno::Reference< container::XEnumeration > SAL_CALL createEnumeration(  ) throw (uno::RuntimeException, std::exception) override
+    virtual uno::Reference< container::XEnumeration > SAL_CALL createEnumeration(  ) override
     {
         return new TabStopsEnumWrapper( this );
     }
 };
 
-SwVbaTabStops::SwVbaTabStops( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext > & xContext, const uno::Reference< beans::XPropertySet >& xParaProps ) throw (uno::RuntimeException) : SwVbaTabStops_BASE( xParent, xContext, uno::Reference< container::XIndexAccess >( new TabStopCollectionHelper( xParent, xContext, xParaProps ) ) ), mxParaProps( xParaProps )
+SwVbaTabStops::SwVbaTabStops( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext > & xContext, const uno::Reference< beans::XPropertySet >& xParaProps ) : SwVbaTabStops_BASE( xParent, xContext, uno::Reference< container::XIndexAccess >( new TabStopCollectionHelper( xParent, xContext, xParaProps ) ) ), mxParaProps( xParaProps )
 {
 }
 
-uno::Reference< word::XTabStop > SAL_CALL SwVbaTabStops::Add( float Position, const uno::Any& Alignment, const uno::Any& Leader ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
+uno::Reference< word::XTabStop > SAL_CALL SwVbaTabStops::Add( float Position, const uno::Any& Alignment, const uno::Any& Leader )
 {
     sal_Int32 nPosition = Millimeter::getInHundredthsOfOneMillimeter( Position );
 
@@ -224,7 +227,7 @@ uno::Reference< word::XTabStop > SAL_CALL SwVbaTabStops::Add( float Position, co
     return uno::Reference< word::XTabStop >( new SwVbaTabStop( this, mxContext ) );
 }
 
-void SAL_CALL SwVbaTabStops::ClearAll() throw (uno::RuntimeException, std::exception)
+void SAL_CALL SwVbaTabStops::ClearAll()
 {
     uno::Sequence< style::TabStop > aSeq;
     lcl_setTabStops( mxParaProps, aSeq );
@@ -232,12 +235,12 @@ void SAL_CALL SwVbaTabStops::ClearAll() throw (uno::RuntimeException, std::excep
 
 // XEnumerationAccess
 uno::Type
-SwVbaTabStops::getElementType() throw (uno::RuntimeException)
+SwVbaTabStops::getElementType()
 {
     return cppu::UnoType<word::XTabStop>::get();
 }
 uno::Reference< container::XEnumeration >
-SwVbaTabStops::createEnumeration() throw (uno::RuntimeException)
+SwVbaTabStops::createEnumeration()
 {
     return new TabStopsEnumWrapper( m_xIndexAccess );
 }

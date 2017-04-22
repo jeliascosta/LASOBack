@@ -19,6 +19,7 @@
 
 #include <xmlbahdl.hxx>
 
+#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <sax/tools/converter.hxx>
 #include <xmloff/xmluconv.hxx>
@@ -101,12 +102,10 @@ bool XMLNumberPropHdl::exportXML( OUString& rStrExpValue, const Any& rValue, con
 {
     bool bRet = false;
     sal_Int32 nValue;
-      OUStringBuffer aOut;
 
     if( lcl_xmloff_getAny( rValue, nValue, nBytes ) )
     {
-        ::sax::Converter::convertNumber( aOut, nValue );
-        rStrExpValue = aOut.makeStringAndClear();
+        rStrExpValue = OUString::number( nValue );
 
         bRet = true;
     }
@@ -158,18 +157,14 @@ bool XMLNumberNonePropHdl::exportXML( OUString& rStrExpValue, const Any& rValue,
 
     if( lcl_xmloff_getAny( rValue, nValue, nBytes ) )
     {
-          OUStringBuffer aOut;
-
         if( nValue == 0 )
         {
-            aOut.append( sZeroStr );
+            rStrExpValue = sZeroStr;
         }
         else
         {
-            ::sax::Converter::convertNumber( aOut, nValue );
+            rStrExpValue = OUString::number( nValue );
         }
-
-        rStrExpValue = aOut.makeStringAndClear();
 
         bRet = true;
     }
@@ -333,7 +328,7 @@ bool XMLDoublePercentPropHdl::importXML( const OUString& rStrImpValue, Any& rVal
 
     double fValue = 1.0;
 
-    if( rStrImpValue.indexOf( (sal_Unicode)'%' ) == -1 )
+    if( rStrImpValue.indexOf( '%' ) == -1 )
     {
         fValue = rStrImpValue.toDouble();
     }
@@ -680,7 +675,7 @@ XMLIsTransparentPropHdl::~XMLIsTransparentPropHdl()
 
 bool XMLIsTransparentPropHdl::importXML( const OUString& rStrImpValue, Any& rValue, const SvXMLUnitConverter& ) const
 {
-    bool bValue = ( (bool) (rStrImpValue == sTransparent) == bTransPropValue);
+    bool bValue = ( (rStrImpValue == sTransparent) == bTransPropValue);
     rValue <<= bValue;
 
     return true;
@@ -693,7 +688,7 @@ bool XMLIsTransparentPropHdl::exportXML( OUString& rStrExpValue, const Any& rVal
     // MIB: This looks a bit strange, because bTransPropValue == bValue should
     // do the same, but this only applies if 'true' is represented by the same
     // 8 bit value in bValue and bTransPropValue. Who will ensure this?
-    bool bValue = *static_cast<sal_Bool const *>(rValue.getValue());
+    bool bValue = *o3tl::doAccess<bool>(rValue);
     bool bIsTrans = bTransPropValue ? bValue : !bValue;
 
     if( bIsTrans )
@@ -799,13 +794,13 @@ XMLCompareOnlyPropHdl::~XMLCompareOnlyPropHdl()
 
 bool XMLCompareOnlyPropHdl::importXML( const OUString&, Any&, const SvXMLUnitConverter& ) const
 {
-    DBG_ASSERT( false, "importXML called for compare-only-property" );
+    SAL_WARN( "xmloff", "importXML called for compare-only-property" );
     return false;
 }
 
 bool XMLCompareOnlyPropHdl::exportXML( OUString&, const Any&, const SvXMLUnitConverter& ) const
 {
-    DBG_ASSERT( false, "exportXML called for compare-only-property" );
+    SAL_WARN( "xmloff", "exportXML called for compare-only-property" );
     return false;
 }
 
@@ -841,9 +836,7 @@ bool XMLNumberWithoutZeroPropHdl::exportXML( OUString& rStrExpValue, const Any& 
 
     if( bRet )
     {
-          OUStringBuffer aBuffer;
-        ::sax::Converter::convertNumber( aBuffer, nValue );
-        rStrExpValue = aBuffer.makeStringAndClear();
+        rStrExpValue = OUString::number(nValue);
     }
 
     return bRet;
@@ -884,9 +877,7 @@ bool XMLNumberWithAutoInsteadZeroPropHdl::exportXML( OUString& rStrExpValue, con
         rStrExpValue = GetXMLToken( XML_AUTO );
     else
     {
-        OUStringBuffer aBuffer;
-        ::sax::Converter::convertNumber( aBuffer, nValue );
-        rStrExpValue = aBuffer.makeStringAndClear();
+        rStrExpValue = OUString::number(nValue);
     }
 
     return true;

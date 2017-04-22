@@ -101,7 +101,7 @@ public:
                bool                                              bIntrinsicAnimationsAllowed,
                bool                                              bDisableAnimationZOrder );
 
-    virtual ~SlideImpl();
+    virtual ~SlideImpl() override;
 
 
     // Slide interface
@@ -174,15 +174,6 @@ private:
 
     /// Prefetch show, but don't call applyInitialShapeAttributes()
     bool implPrefetchShow();
-
-    /// Query the rectangle covered by the slide
-    ::basegfx::B2DRectangle getSlideRect() const;
-
-    /// Start GIF and other intrinsic shape animations
-    void endIntrinsicAnimations();
-
-    /// End GIF and other intrinsic shape animations
-    void startIntrinsicAnimations();
 
     /// Add Polygons to the member maPolygons
     void addPolygons(const PolyPolygonVector& rPolygons);
@@ -273,7 +264,7 @@ private:
     */
     bool                                                mbMainSequenceFound;
 
-    /// When true, show() was called. Slide hidden oherwise.
+    /// When true, show() was called. Slide hidden otherwise.
     bool                                                mbActive;
 
     /// When true, enablePaintOverlay was called and mbUserPaintOverlay = true
@@ -334,7 +325,6 @@ SlideImpl::SlideImpl( const uno::Reference< drawing::XDrawPage >&           xDra
     mxRootNode( xRootNode ),
     mpLayerManager( new LayerManager(
                         rViewContainer,
-                        getSlideRect(),
                         bDisableAnimationZOrder) ),
     mpShapeManager( new ShapeManagerImpl(
                         rEventMultiplexer,
@@ -469,7 +459,7 @@ void SlideImpl::show( bool bSlideBackgoundPainted )
     // enable shape-intrinsic animations (drawing layer animations or
     // GIF animations)
     if( mbIntrinsicAnimationsAllowed )
-        startIntrinsicAnimations();
+        mpSubsettableShapeManager->notifyIntrinsicAnimationsEnabled();
 
     // enable paint overlay, if maUserPaintColor is valid
     activatePaintOverlay();
@@ -495,7 +485,7 @@ void SlideImpl::hide()
 
 
     // switch off all shape-intrinsic animations.
-    endIntrinsicAnimations();
+    mpSubsettableShapeManager->notifyIntrinsicAnimationsDisabled();
 
     // force-end all SMIL animations, too
     maAnimations.end();
@@ -859,24 +849,6 @@ void SlideImpl::deactivatePaintOverlay()
     mbPaintOverlayActive = false;
 }
 
-::basegfx::B2DRectangle SlideImpl::getSlideRect() const
-{
-    const basegfx::B2ISize slideSize( getSlideSizeImpl() );
-    return ::basegfx::B2DRectangle(0.0,0.0,
-                                   slideSize.getX(),
-                                   slideSize.getY());
-}
-
-void SlideImpl::endIntrinsicAnimations()
-{
-    mpSubsettableShapeManager->notifyIntrinsicAnimationsDisabled();
-}
-
-void SlideImpl::startIntrinsicAnimations()
-{
-    mpSubsettableShapeManager->notifyIntrinsicAnimationsEnabled();
-}
-
 void SlideImpl::applyShapeAttributes(
     const css::uno::Reference< css::animations::XAnimationNode >& xRootAnimationNode,
     bool bInitial) const
@@ -933,7 +905,7 @@ void SlideImpl::applyShapeAttributes(
                 const DocTreeNodeSupplier& rNodeSupplier( pAttrShape->getTreeNodeSupplier() );
 
                 if( rNodeSupplier.getNumberOfTreeNodes(
-                        DocTreeNode::NODETYPE_LOGICAL_PARAGRAPH ) <= nParaIndex )
+                        DocTreeNode::NodeType::LogicalParagraph ) <= nParaIndex )
                 {
                     OSL_FAIL( "SlideImpl::applyInitialShapeAttributes(): shape found does not "
                                 "provide a subset for requested paragraph index" );
@@ -943,7 +915,7 @@ void SlideImpl::applyShapeAttributes(
                 pAttrShape = pAttrShape->getSubset(
                     rNodeSupplier.getTreeNode(
                         nParaIndex,
-                        DocTreeNode::NODETYPE_LOGICAL_PARAGRAPH ) );
+                        DocTreeNode::NodeType::LogicalParagraph ) );
 
                 if( !pAttrShape )
                 {

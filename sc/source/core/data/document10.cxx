@@ -123,15 +123,25 @@ bool ScDocument::CopyOneCellFromClip(
     for (SCTAB i = rCxt.getTabStart(); i <= nTabEnd && i < static_cast<SCTAB>(maTabs.size()); ++i)
     {
         maTabs[i]->CopyOneCellFromClip(rCxt, nCol1, nRow1, nCol2, nRow2,  aClipRange.aStart.Row(), pSrcTab);
-        if (rCxt.getInsertFlag() & InsertDeleteFlags::ATTRIB)
-            for (SCROW nRow = nRow1; nRow <= nRow2; ++nRow)
-            {
-                for (SCCOL nCol = nCol1; nCol <= nCol2; ++nCol)
-                {
-                    maTabs[i]->CopyConditionalFormat(nCol, nRow, nCol, nRow, nCol - aClipRange.aStart.Col(),
-                            nRow - aClipRange.aStart.Row(), pSrcTab);
-                }
-            }
+    }
+
+    sc::RefUpdateContext aRefCxt(*this);
+    aRefCxt.maRange = ScRange(nCol1, nRow1, rCxt.getTabStart(), nCol2, nRow2, nTabEnd);
+    aRefCxt.mnColDelta = nCol1 - aSrcPos.Col();
+    aRefCxt.mnRowDelta = nRow1 - aSrcPos.Row();
+    aRefCxt.mnTabDelta = rCxt.getTabStart() - aSrcPos.Tab();
+    if (rCxt.getClipDoc()->GetClipParam().mbCutMode)
+    {
+        if (rCxt.getClipDoc()->GetPool() == GetPool())
+        {
+            aRefCxt.meMode = URM_MOVE;
+            UpdateReference(aRefCxt, rCxt.getUndoDoc(), false);
+        }
+    }
+    else
+    {
+        aRefCxt.meMode = URM_COPY;
+        UpdateReference(aRefCxt, rCxt.getUndoDoc(), false);
     }
 
     return true;
@@ -228,6 +238,54 @@ void ScDocument::SwapNonEmpty( sc::TableValues& rValues )
     }
 
     aEndCxt.purgeEmptyBroadcasters();
+}
+
+void ScDocument::PreprocessAllRangeNamesUpdate( const std::map<OUString, std::unique_ptr<ScRangeName>>& rRangeMap )
+{
+    // Update all existing names with new names.
+    // The prerequisites are that the name dialog preserves ScRangeData index
+    // for changes and does not reuse free index slots for new names.
+    // ScDocument::SetAllRangeNames() hereafter then will replace the
+    // ScRangeName containers of ScRangeData instances with empty
+    // ScRangeData::maNewName.
+    std::map<OUString, ScRangeName*> aRangeNameMap;
+    GetRangeNameMap( aRangeNameMap);
+    for (const auto& itTab : aRangeNameMap)
+    {
+        ScRangeName* pOldRangeNames = itTab.second;
+        if (!pOldRangeNames)
+            continue;
+
+        const auto& itNewTab( rRangeMap.find( itTab.first));
+        if (itNewTab == rRangeMap.end())
+            continue;
+
+        const ScRangeName* pNewRangeNames = itNewTab->second.get();
+        if (!pNewRangeNames)
+            continue;
+
+        for (ScRangeName::iterator it( pOldRangeNames->begin()), itEnd( pOldRangeNames->end());
+                it != itEnd; ++it)
+        {
+            ScRangeData* pOldData = it->second.get();
+            if (!pOldData)
+                continue;
+
+            const ScRangeData* pNewData = pNewRangeNames->findByIndex( pOldData->GetIndex());
+            if (pNewData)
+                pOldData->SetNewName( pNewData->GetName());
+        }
+    }
+
+    sc::EndListeningContext aEndListenCxt(*this);
+    sc::CompileFormulaContext aCompileCxt(this);
+
+    TableContainer::iterator it = maTabs.begin(), itEnd = maTabs.end();
+    for (; it != itEnd; ++it)
+    {
+        ScTable* p = *it;
+        p->PreprocessRangeNameUpdate(aEndListenCxt, aCompileCxt);
+    }
 }
 
 void ScDocument::PreprocessRangeNameUpdate()
@@ -430,6 +488,9 @@ void ScDocument::StartNeededListeners( const std::shared_ptr<const sc::ColumnSet
 
 void ScDocument::StartAllListeners( const ScRange& rRange )
 {
+    if (IsClipOrUndo() || GetNoListening())
+        return;
+
     std::shared_ptr<sc::ColumnBlockPositionSet> pPosSet(new sc::ColumnBlockPositionSet(*this));
     sc::StartListeningContext aStartCxt(*this, pPosSet);
     sc::EndListeningContext aEndCxt(*this, pPosSet);

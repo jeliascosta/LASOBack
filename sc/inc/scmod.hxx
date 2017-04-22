@@ -28,7 +28,6 @@
 #include "global.hxx"
 #include "shellids.hxx"
 #include <unotools/options.hxx>
-#include <tools/shl.hxx>
 
 #include <map>
 #include <list>
@@ -74,11 +73,6 @@ class ScMarkData;
 struct ScDragData;
 struct ScClipData;
 
-//      for internal Drag&Drop:
-
-#define SC_DROP_NAVIGATOR       1
-#define SC_DROP_TABLE           2
-
 class ScModule: public SfxModule, public SfxListener, public utl::ConfigurationListener
 {
     Timer               aIdleTimer;
@@ -121,17 +115,17 @@ private:
 
 public:
                         ScModule( SfxObjectFactory* pFact );
-    virtual            ~ScModule();
+    virtual            ~ScModule() override;
 
     virtual void        Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
-    virtual void        ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
+    virtual void        ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints ) override;
     void                DeleteCfg();
 
                         // moved by the application
 
-    DECL_LINK_TYPED( IdleHandler, Timer*, void ); // Timer instead of idle
-    DECL_LINK_TYPED( SpellTimerHdl, Idle*, void );
-    DECL_LINK_TYPED( CalcFieldValueHdl, EditFieldInfo*, void );
+    DECL_LINK( IdleHandler, Timer*, void ); // Timer instead of idle
+    DECL_LINK( SpellTimerHdl, Timer*, void );
+    DECL_LINK( CalcFieldValueHdl, EditFieldInfo*, void );
 
     void                Execute( SfxRequest& rReq );
     void                GetState( SfxItemSet& rSet );
@@ -214,7 +208,7 @@ public:
     ScInputHandler*     GetRefInputHdl() { return pRefInputHandler;}
 
     void                ViewShellGone(ScTabViewShell* pViewSh);
-    void                ViewShellChanged();
+    void                ViewShellChanged(bool bStopEditing = true);
     // communication with function-autopilot
     void                InputGetSelection( sal_Int32& rStart, sal_Int32& rEnd );
     void                InputSetSelection( sal_Int32 nStart, sal_Int32 nEnd );
@@ -244,6 +238,7 @@ public:
     virtual SfxItemSet*  CreateItemSet( sal_uInt16 nId ) override;
     virtual void         ApplyItemSet( sal_uInt16 nId, const SfxItemSet& rSet ) override;
     virtual VclPtr<SfxTabPage> CreateTabPage( sal_uInt16 nId, vcl::Window* pParent, const SfxItemSet& rSet ) override;
+    virtual SfxStyleFamilies* CreateStyleFamilies() override;
 
     void                SetInSharedDocLoading( bool bNew )  { mbIsInSharedDocLoading = bNew; }
     bool                IsInSharedDocLoading() const        { return mbIsInSharedDocLoading; }
@@ -255,7 +250,7 @@ public:
     SC_DLLPUBLIC vcl::Window * Find1RefWindow( sal_uInt16 nSlotId, vcl::Window *pWndAncestor );
 };
 
-#define SC_MOD() ( *reinterpret_cast<ScModule**>(GetAppData(SHL_CALC)) )
+#define SC_MOD() ( static_cast<ScModule*>(SfxApplication::GetModule(SfxToolsModule::Calc)) )
 
 void global_InitAppOptions();
 

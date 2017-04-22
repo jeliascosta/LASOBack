@@ -56,13 +56,13 @@ public:
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         ChartController* pController);
 
-    // constructor/destuctor
+    // constructor/destructor
     ChartLinePanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         ChartController* pController);
 
-    virtual ~ChartLinePanel();
+    virtual ~ChartLinePanel() override;
 
     virtual void updateData() override;
     virtual void modelInvalid() override;

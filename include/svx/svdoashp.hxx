@@ -30,32 +30,22 @@
 #include <svx/svxdllapi.h>
 #include <o3tl/typed_flags_set.hxx>
 
-
-//   Initial Declarations
-
-
-class SdrObjList;
-class SdrObjListIter;
-class SfxItemSet;
-
 namespace sdr
 {
     namespace properties
     {
         class CustomShapeProperties;
-    } // end of namespace properties
-} // end of namespace sdr
+    }
+}
 
 class SdrAShapeObjGeoData : public SdrTextObjGeoData
 {
-    public:
-
+public:
     bool        bMirroredX;
     bool        bMirroredY;
     double      fObjectRotation;
 
-    css::uno::Sequence< css::drawing::EnhancedCustomShapeAdjustmentValue >
-                aAdjustmentSeq;
+    css::uno::Sequence< css::drawing::EnhancedCustomShapeAdjustmentValue > aAdjustmentSeq;
 };
 
 enum class CustomShapeHandleModes
@@ -68,6 +58,7 @@ enum class CustomShapeHandleModes
     MOVE_SHAPE           = 16,
     ORTHO4               = 32,
 };
+
 namespace o3tl
 {
     template<> struct typed_flags<CustomShapeHandleModes> : is_typed_flags<CustomShapeHandleModes, 63> {};
@@ -75,20 +66,17 @@ namespace o3tl
 
 struct SdrCustomShapeInteraction
 {
-    css::uno::Reference< css::drawing::XCustomShapeHandle >   xInteraction;
-    css::awt::Point                                                      aPosition;
-    CustomShapeHandleModes                                                          nMode;
+    css::uno::Reference< css::drawing::XCustomShapeHandle > xInteraction;
+    css::awt::Point                                         aPosition;
+    CustomShapeHandleModes                                  nMode;
 };
-
-
-//   SdrObjCustomShape
-
 
 class SVX_DLLPUBLIC SdrObjCustomShape : public SdrTextObj
 {
 private:
     // fObjectRotation is containing the object rotation in degrees.
     double fObjectRotation;
+    bool mbAdjustingTextFrameWidthAndHeight;
 
 protected:
     virtual sdr::contact::ViewContact* CreateObjectSpecificViewContact() override;
@@ -105,9 +93,9 @@ public:
     mutable css::uno::Reference< css::drawing::XCustomShapeEngine > mxCustomShapeEngine;
 
     // #i37011# render geometry shadow
-    SdrObject*                                          mpLastShadowGeometry;
+    SdrObject* mpLastShadowGeometry;
 
-    css::uno::Reference< css::drawing::XCustomShapeEngine > GetCustomShapeEngine() const;
+    css::uno::Reference< css::drawing::XCustomShapeEngine > const & GetCustomShapeEngine() const;
 
 //  SVX_DLLPRIVATE css::uno::Sequence< css::uno::Reference< css::drawing::XCustomShapeHandle > >
 //      SdrObjCustomShape::GetInteraction( const SdrObjCustomShape* pCustomShape ) const;
@@ -118,7 +106,7 @@ public:
 
     SVX_DLLPRIVATE void DragCreateObject( SdrDragStat& rDrag );
 
-    SVX_DLLPRIVATE void DragResizeCustomShape( const Rectangle& rNewRect );
+    SVX_DLLPRIVATE void DragResizeCustomShape( const tools::Rectangle& rNewRect );
     SVX_DLLPRIVATE void DragMoveCustomShapeHdl( const Point& rDestination,
             const sal_uInt16 nCustomShapeHdlNum, bool bMoveCalloutRectangle );
 
@@ -129,13 +117,13 @@ public:
     void ImpCheckCustomGluePointsAreAdded();
 
     // returns the new text rect that corresponds to the current logic rect, the return value can be empty if nothing changed.
-    Rectangle ImpCalculateTextFrame( const bool bHgt, const bool bWdt );
+    tools::Rectangle ImpCalculateTextFrame( const bool bHgt, const bool bWdt );
 
 public:
     // #i37011#
     const SdrObject* GetSdrObjectFromCustomShape() const;
     const SdrObject* GetSdrObjectShadowFromCustomShape() const;
-    bool GetTextBounds( Rectangle& rTextBound ) const;
+    bool GetTextBounds( tools::Rectangle& rTextBound ) const;
     bool IsTextPath() const;
     basegfx::B2DPolyPolygon GetLineGeometry( const bool bBezierAllowed ) const;
 
@@ -145,11 +133,9 @@ protected:
     // and object sizes
     virtual void AdaptTextMinSize() override;
 
-    OUString      aName;
-    Size          m_aSuggestedTextFrameSize;
+    Size m_aSuggestedTextFrameSize;
 
 public:
-
     bool UseNoFillStyle() const;
 
     bool IsMirroredX() const;
@@ -162,7 +148,7 @@ public:
     double GetExtraTextRotation( const bool bPreRotation = false ) const;
 
     SdrObjCustomShape();
-    virtual ~SdrObjCustomShape();
+    virtual ~SdrObjCustomShape() override;
 
     /* is merging default attributes from type-shape into the SdrCustomShapeGeometryItem. If pType
     is NULL then the type is being taken from the "Type" property of the SdrCustomShapeGeometryItem.
@@ -170,17 +156,16 @@ public:
     void MergeDefaultAttributes( const OUString* pType = nullptr );
 
     /* the method is checking if the geometry data is unchanged/default, in this case the data might not be stored */
-    enum DefaultType
+    enum class DefaultType
     {
-        DEFAULT_PATH,
-        DEFAULT_VIEWBOX,
-        DEFAULT_SEGMENTS,
-        DEFAULT_GLUEPOINTS,
-        DEFAULT_STRETCHX,
-        DEFAULT_STRETCHY,
-        DEFAULT_EQUATIONS,
-        DEFAULT_HANDLES,
-        DEFAULT_TEXTFRAMES
+        Path,
+        Viewbox,
+        Segments,
+        Gluepoints,
+        StretchX,
+        StretchY,
+        Equations,
+        TextFrames
     };
     bool IsDefaultGeometry( const DefaultType eDefaultType ) const;
 
@@ -189,25 +174,18 @@ public:
 
     virtual void SetModel(SdrModel* pNewModel) override;
 
-    virtual void RecalcSnapRect() override;
-
-    virtual const Rectangle& GetSnapRect()  const override;
-    virtual const Rectangle& GetCurrentBoundRect() const override;
-    virtual const Rectangle& GetLogicRect() const override;
-
     virtual void Move(const Size& rSiz) override;
-    virtual void Resize(const Point& rRef, const Fraction& xFact, const Fraction& yFact, bool bUnsetRelative = true) override;
     virtual void Shear(const Point& rRef, long nAngle, double tn, bool bVShear) override;
-    virtual void SetSnapRect(const Rectangle& rRect) override;
-    virtual void SetLogicRect(const Rectangle& rRect) override;
+    virtual void SetSnapRect(const tools::Rectangle& rRect) override;
+    virtual void SetLogicRect(const tools::Rectangle& rRect) override;
 
     virtual void NbcMove(const Size& rSiz) override;
     virtual void NbcResize(const Point& rRef, const Fraction& xFact, const Fraction& yFact) override;
     virtual void NbcRotate(const Point& rRef, long nAngle, double sn, double cs) override;
     virtual void NbcMirror(const Point& rRef1, const Point& rRef2) override;
     virtual void NbcShear(const Point& rRef, long nAngle, double tn, bool bVShear) override;
-    virtual void NbcSetSnapRect(const Rectangle& rRect) override;
-    virtual void NbcSetLogicRect(const Rectangle& rRect) override;
+    virtual void NbcSetSnapRect(const tools::Rectangle& rRect) override;
+    virtual void NbcSetLogicRect(const tools::Rectangle& rRect) override;
 
     virtual SdrGluePoint GetVertexGluePoint(sal_uInt16 nNum) const override;
 
@@ -218,7 +196,6 @@ public:
     virtual bool beginSpecialDrag(SdrDragStat& rDrag) const override;
     virtual bool applySpecialDrag(SdrDragStat& rDrag) override;
 
-    virtual bool BegCreate( SdrDragStat& rStat ) override;
     virtual bool MovCreate(SdrDragStat& rStat) override; // #i37448#
     virtual bool EndCreate(SdrDragStat& rStat, SdrCreateCmd eCmd) override;
 
@@ -228,18 +205,17 @@ public:
      * text.
      */
     void SuggestTextFrameSize(Size aSuggestedTextFrameSize);
-    virtual bool AdjustTextFrameWidthAndHeight(Rectangle& rR, bool bHgt = true, bool bWdt = true) const override;
+    virtual bool AdjustTextFrameWidthAndHeight(tools::Rectangle& rR, bool bHgt = true, bool bWdt = true) const override;
     virtual bool NbcAdjustTextFrameWidthAndHeight(bool bHgt = true, bool bWdt = true) override;
     virtual bool AdjustTextFrameWidthAndHeight() override;
     virtual bool IsAutoGrowHeight() const override;
     virtual bool IsAutoGrowWidth() const override;
     virtual void SetVerticalWriting( bool bVertical ) override;
-    virtual bool BegTextEdit( SdrOutliner& rOutl ) override;
-    virtual void TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, Rectangle* pViewInit, Rectangle* pViewMin) const override;
+    virtual void TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, tools::Rectangle* pViewInit, tools::Rectangle* pViewMin) const override;
     virtual void EndTextEdit( SdrOutliner& rOutl ) override;
-    virtual void TakeTextAnchorRect( Rectangle& rAnchorRect ) const override;
-    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText = false,
-        Rectangle* pAnchorRect=nullptr, bool bLineWidth = true ) const override;
+    virtual void TakeTextAnchorRect( tools::Rectangle& rAnchorRect ) const override;
+    virtual void TakeTextRect( SdrOutliner& rOutliner, tools::Rectangle& rTextRect, bool bNoEditText,
+        tools::Rectangle* pAnchorRect, bool bLineWidth = true ) const override;
     virtual SdrObjCustomShape* Clone() const override;
     SdrObjCustomShape& operator=(const SdrObjCustomShape& rObj);
 
@@ -258,8 +234,8 @@ public:
     virtual void SetPage( SdrPage* pNewPage ) override;
 
     virtual SdrObjGeoData *NewGeoData() const override;
-    virtual void          SaveGeoData(SdrObjGeoData &rGeo) const override;
-    virtual void          RestGeoData(const SdrObjGeoData &rGeo) override;
+    virtual void SaveGeoData(SdrObjGeoData &rGeo) const override;
+    virtual void RestGeoData(const SdrObjGeoData &rGeo) override;
 
     // need to take fObjectRotation instead of aGeo.nAngle, replace it temporary
     virtual bool TRGetBaseGeometry(basegfx::B2DHomMatrix& rMatrix, basegfx::B2DPolyPolygon& rPolyPolygon) const override;

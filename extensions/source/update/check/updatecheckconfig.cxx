@@ -229,22 +229,22 @@ UpdateCheckConfig::get(
 
     beans::PropertyValue aProperty;
     aProperty.Name  = "nodepath";
-    aProperty.Value = uno::makeAny( OUString("org.openoffice.Office.Jobs/Jobs/UpdateCheck/Arguments") );
+    aProperty.Value <<= OUString("org.openoffice.Office.Jobs/Jobs/UpdateCheck/Arguments");
 
     uno::Sequence< uno::Any > aArgumentList( 1 );
-    aArgumentList[0] = uno::makeAny( aProperty );
+    aArgumentList[0] <<= aProperty;
 
     uno::Reference< container::XNameContainer > xContainer(
         xConfigProvider->createInstanceWithArguments(
             "com.sun.star.configuration.ConfigurationUpdateAccess", aArgumentList ),
         uno::UNO_QUERY_THROW );
 
-    aProperty.Value = uno::makeAny( OUString("/org.openoffice.Office.ExtensionManager/ExtensionUpdateData/IgnoredUpdates") );
-    aArgumentList[0] = uno::makeAny( aProperty );
+    aProperty.Value <<= OUString("/org.openoffice.Office.ExtensionManager/ExtensionUpdateData/IgnoredUpdates");
+    aArgumentList[0] <<= aProperty;
     uno::Reference< container::XNameContainer > xIgnoredExt( xConfigProvider->createInstanceWithArguments( "com.sun.star.configuration.ConfigurationUpdateAccess", aArgumentList ), uno::UNO_QUERY_THROW );
 
-    aProperty.Value = uno::makeAny( OUString("/org.openoffice.Office.ExtensionManager/ExtensionUpdateData/AvailableUpdates") );
-    aArgumentList[0] = uno::makeAny( aProperty );
+    aProperty.Value <<= OUString("/org.openoffice.Office.ExtensionManager/ExtensionUpdateData/AvailableUpdates");
+    aArgumentList[0] <<= aProperty;
     uno::Reference< container::XNameContainer > xUpdateAvail( xConfigProvider->createInstanceWithArguments( "com.sun.star.configuration.ConfigurationUpdateAccess", aArgumentList ), uno::UNO_QUERY_THROW );
 
     return new UpdateCheckConfig( xContainer, xUpdateAvail, xIgnoredExt, rListener );
@@ -449,20 +449,19 @@ UpdateCheckConfig::getImplName()
 }
 
 uno::Type SAL_CALL
-UpdateCheckConfig::getElementType() throw (uno::RuntimeException, std::exception)
+UpdateCheckConfig::getElementType()
 {
     return m_xContainer->getElementType();
 }
 
 sal_Bool SAL_CALL
-UpdateCheckConfig::hasElements() throw (uno::RuntimeException, std::exception)
+UpdateCheckConfig::hasElements()
 {
     return m_xContainer->hasElements();
 }
 
 uno::Any SAL_CALL
 UpdateCheckConfig::getByName( const OUString& aName )
-    throw (container::NoSuchElementException, lang::WrappedTargetException,  uno::RuntimeException, std::exception)
 {
     uno::Any aValue = m_xContainer->getByName( aName );
 
@@ -473,27 +472,25 @@ UpdateCheckConfig::getByName( const OUString& aName )
         aValue >>= aStr;
 
         if( aStr.isEmpty() )
-            aValue = uno::makeAny(getDesktopDirectory());
+            aValue <<= getDesktopDirectory();
     }
     return aValue;
 }
 
 uno::Sequence< OUString > SAL_CALL
-UpdateCheckConfig::getElementNames() throw (uno::RuntimeException, std::exception)
+UpdateCheckConfig::getElementNames()
 {
     return m_xContainer->getElementNames();
 }
 
 sal_Bool SAL_CALL
-UpdateCheckConfig::hasByName( const OUString& aName ) throw (uno::RuntimeException, std::exception)
+UpdateCheckConfig::hasByName( const OUString& aName )
 {
     return m_xContainer->hasByName( aName );
 }
 
 void SAL_CALL
 UpdateCheckConfig::replaceByName( const OUString& aName, const uno::Any& aElement )
-    throw (lang::IllegalArgumentException, container::NoSuchElementException,
-           lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     return m_xContainer->replaceByName( aName, aElement );
 }
@@ -502,7 +499,6 @@ UpdateCheckConfig::replaceByName( const OUString& aName, const uno::Any& aElemen
 
 void SAL_CALL
 UpdateCheckConfig::commitChanges()
-    throw (lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     uno::Reference< util::XChangesBatch > xChangesBatch(m_xContainer, uno::UNO_QUERY);
     if( xChangesBatch.is() && xChangesBatch->hasPendingChanges() )
@@ -545,7 +541,7 @@ UpdateCheckConfig::commitChanges()
 }
 
 sal_Bool SAL_CALL
-UpdateCheckConfig::hasPendingChanges(  ) throw (uno::RuntimeException, std::exception)
+UpdateCheckConfig::hasPendingChanges(  )
 {
     uno::Reference< util::XChangesBatch > xChangesBatch(m_xContainer, uno::UNO_QUERY);
     if( xChangesBatch.is() )
@@ -555,7 +551,7 @@ UpdateCheckConfig::hasPendingChanges(  ) throw (uno::RuntimeException, std::exce
 }
 
 uno::Sequence< util::ElementChange > SAL_CALL
-UpdateCheckConfig::getPendingChanges(  ) throw (uno::RuntimeException, std::exception)
+UpdateCheckConfig::getPendingChanges(  )
 {
     uno::Reference< util::XChangesBatch > xChangesBatch(m_xContainer, uno::UNO_QUERY);
     if( xChangesBatch.is() )
@@ -660,20 +656,19 @@ bool UpdateCheckConfig::isVersionGreater( const OUString& rVersion1,
 }
 
 OUString SAL_CALL
-UpdateCheckConfig::getImplementationName()  throw (uno::RuntimeException, std::exception)
+UpdateCheckConfig::getImplementationName()
 {
     return getImplName();
 }
 
 sal_Bool SAL_CALL
 UpdateCheckConfig::supportsService(OUString const & serviceName)
-    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
 uno::Sequence< OUString > SAL_CALL
-UpdateCheckConfig::getSupportedServiceNames()  throw (uno::RuntimeException, std::exception)
+UpdateCheckConfig::getSupportedServiceNames()
 {
     return getServiceNames();
 }

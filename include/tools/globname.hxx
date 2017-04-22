@@ -25,7 +25,7 @@
 #include <com/sun/star/uno/Sequence.hxx>
 #include <o3tl/cow_wrapper.hxx>
 
-struct SvGUID
+struct SAL_WARN_UNUSED SvGUID
 {
     sal_uInt32 Data1;
     sal_uInt16 Data2;
@@ -33,7 +33,7 @@ struct SvGUID
     sal_uInt8  Data4[8];
 };
 
-struct ImpSvGlobalName
+struct SAL_WARN_UNUSED ImpSvGlobalName
 {
     struct SvGUID   szData;
 
@@ -52,7 +52,7 @@ struct ImpSvGlobalName
 
 class SvStream;
 
-class TOOLS_DLLPUBLIC SvGlobalName
+class SAL_WARN_UNUSED TOOLS_DLLPUBLIC SvGlobalName
 {
     ::o3tl::cow_wrapper< ImpSvGlobalName > pImp;
 
@@ -60,6 +60,10 @@ public:
     SvGlobalName();
     SvGlobalName( const SvGlobalName & rObj ) :
         pImp( rObj.pImp )
+    {
+    }
+    SvGlobalName( SvGlobalName && rObj ) :
+        pImp( std::move(rObj.pImp) )
     {
     }
 
@@ -73,6 +77,7 @@ public:
     SvGlobalName( const SvGUID & rId );
 
     SvGlobalName & operator = ( const SvGlobalName & rObj );
+    SvGlobalName & operator = ( SvGlobalName && rObj );
     ~SvGlobalName();
 
     TOOLS_DLLPUBLIC friend SvStream & operator >> ( SvStream &, SvGlobalName & );
@@ -85,7 +90,7 @@ public:
     bool          operator != ( const SvGlobalName & rObj ) const
                       { return !(*this == rObj); }
 
-    void          MakeFromMemory( void * pData );
+    void          MakeFromMemory( void const * pData );
     bool          MakeId( const OUString & rId );
     OUString      GetHexName() const;
 

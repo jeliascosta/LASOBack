@@ -22,6 +22,7 @@
 
 #include "pyuno_impl.hxx"
 
+#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <osl/thread.h>
 #include <osl/module.h>
@@ -41,6 +42,7 @@
 #include <com/sun/star/reflection/theCoreReflection.hpp>
 #include <comphelper/sequence.hxx>
 
+#include <vector>
 
 using com::sun::star::uno::Reference;
 using com::sun::star::uno::XInterface;
@@ -62,8 +64,6 @@ using com::sun::star::script::XTypeConverter;
 using com::sun::star::script::XInvocation;
 using com::sun::star::beans::XMaterialHolder;
 using com::sun::star::beans::theIntrospection;
-
-#include <vector>
 
 namespace pyuno
 {
@@ -127,8 +127,8 @@ static PyTypeObject RuntimeImpl_Type =
 /*----------------------------------------------------------------------
   Runtime implementation
  -----------------------------------------------------------------------*/
+/// @throws css::uno::RuntimeException
 static void getRuntimeImpl( PyRef & globalDict, PyRef &runtimeImpl )
-    throw ( css::uno::RuntimeException )
 {
     PyThreadState * state = PyThreadState_Get();
     if( ! state )
@@ -152,7 +152,8 @@ static void getRuntimeImpl( PyRef & globalDict, PyRef &runtimeImpl )
     runtimeImpl = PyDict_GetItemString( globalDict.get() , "pyuno_runtime" );
 }
 
-static PyRef importUnoModule( ) throw ( RuntimeException )
+/// @throws RuntimeException
+static PyRef importUnoModule( )
 {
     // import the uno module
     PyRef module( PyImport_ImportModule( "uno" ), SAL_NO_ACQUIRE, NOT_NULL );
@@ -248,7 +249,6 @@ static void readLoggingConfig( sal_Int32 *pLevel, FILE **ppFile )
  RuntimeImpl implementations
  *-------------------------------------------------------------------*/
 PyRef stRuntimeImpl::create( const Reference< XComponentContext > &ctx )
-    throw( css::uno::RuntimeException, std::exception )
 {
     RuntimeImpl *me = PyObject_New (RuntimeImpl, &RuntimeImpl_Type);
     if( ! me )
@@ -256,7 +256,7 @@ PyRef stRuntimeImpl::create( const Reference< XComponentContext > &ctx )
     me->cargo = nullptr;
     // must use a different struct here, as the PyObject_New
     // makes C++ unusable
-    RuntimeCargo *c = new RuntimeCargo();
+    RuntimeCargo *c = new RuntimeCargo;
     readLoggingConfig( &(c->logLevel) , &(c->logFile) );
     log( c, LogLevel::CALL, "Instantiating pyuno bridge" );
 
@@ -266,9 +266,7 @@ PyRef stRuntimeImpl::create( const Reference< XComponentContext > &ctx )
         ctx->getServiceManager()->createInstanceWithContext(
             "com.sun.star.script.Invocation",
             ctx ),
-        UNO_QUERY );
-    if( ! c->xInvocation.is() )
-        throw RuntimeException( "pyuno: couldn't instantiate invocation service" );
+        css::uno::UNO_QUERY_THROW );
 
     c->xTypeConverter = Converter::create(ctx);
     if( ! c->xTypeConverter.is() )
@@ -300,7 +298,6 @@ void  stRuntimeImpl::del(PyObject* self)
 
 
 void Runtime::initialize( const Reference< XComponentContext > & ctx )
-    throw ( RuntimeException, std::exception )
 {
     PyRef globalDict, runtime;
     getRuntimeImpl( globalDict , runtime );
@@ -316,7 +313,7 @@ void Runtime::initialize( const Reference< XComponentContext > & ctx )
 }
 
 
-bool Runtime::isInitialized() throw ( RuntimeException )
+bool Runtime::isInitialized()
 {
     PyRef globalDict, runtime;
     getRuntimeImpl( globalDict , runtime );
@@ -324,7 +321,7 @@ bool Runtime::isInitialized() throw ( RuntimeException )
     return runtime.is() && impl->cargo->valid;
 }
 
-Runtime::Runtime() throw(  RuntimeException )
+Runtime::Runtime()
     : impl( nullptr )
 {
     PyRef globalDict, runtime;
@@ -360,9 +357,6 @@ Runtime & Runtime::operator = ( const Runtime & r )
 }
 
 PyRef Runtime::any2PyObject (const Any &a ) const
-    throw ( css::script::CannotConvertException,
-            css::lang::IllegalArgumentException,
-            RuntimeException)
 {
     if( ! impl->cargo->valid )
     {
@@ -371,17 +365,17 @@ PyRef Runtime::any2PyObject (const Any &a ) const
 
     switch (a.getValueTypeClass ())
     {
-    case typelib_TypeClass_VOID:
+    case css::uno::TypeClass_VOID:
     {
         Py_INCREF (Py_None);
         return PyRef(Py_None);
     }
-    case typelib_TypeClass_CHAR:
+    case css::uno::TypeClass_CHAR:
     {
-        sal_Unicode c = *static_cast<sal_Unicode const *>(a.getValue());
+        sal_Unicode c = *o3tl::forceAccess<sal_Unicode>(a);
         return PyRef( PyUNO_char_new( c , *this ), SAL_NO_ACQUIRE );
     }
-    case typelib_TypeClass_BOOLEAN:
+    case css::uno::TypeClass_BOOLEAN:
     {
         bool b;
         if ((a >>= b) && b)
@@ -389,52 +383,52 @@ PyRef Runtime::any2PyObject (const Any &a ) const
         else
             return Py_False;
     }
-    case typelib_TypeClass_BYTE:
-    case typelib_TypeClass_SHORT:
-    case typelib_TypeClass_UNSIGNED_SHORT:
-    case typelib_TypeClass_LONG:
+    case css::uno::TypeClass_BYTE:
+    case css::uno::TypeClass_SHORT:
+    case css::uno::TypeClass_UNSIGNED_SHORT:
+    case css::uno::TypeClass_LONG:
     {
         sal_Int32 l = 0;
         a >>= l;
         return PyRef( PyLong_FromLong (l), SAL_NO_ACQUIRE );
     }
-    case typelib_TypeClass_UNSIGNED_LONG:
+    case css::uno::TypeClass_UNSIGNED_LONG:
     {
         sal_uInt32 l = 0;
         a >>= l;
         return PyRef( PyLong_FromUnsignedLong (l), SAL_NO_ACQUIRE );
     }
-    case typelib_TypeClass_HYPER:
+    case css::uno::TypeClass_HYPER:
     {
         sal_Int64 l = 0;
         a >>= l;
         return PyRef( PyLong_FromLongLong (l), SAL_NO_ACQUIRE);
     }
-    case typelib_TypeClass_UNSIGNED_HYPER:
+    case css::uno::TypeClass_UNSIGNED_HYPER:
     {
         sal_uInt64 l = 0;
         a >>= l;
         return PyRef( PyLong_FromUnsignedLongLong (l), SAL_NO_ACQUIRE);
     }
-    case typelib_TypeClass_FLOAT:
+    case css::uno::TypeClass_FLOAT:
     {
         float f = 0.0;
         a >>= f;
         return PyRef(PyFloat_FromDouble (f), SAL_NO_ACQUIRE);
     }
-    case typelib_TypeClass_DOUBLE:
+    case css::uno::TypeClass_DOUBLE:
     {
         double d = 0.0;
         a >>= d;
         return PyRef( PyFloat_FromDouble (d), SAL_NO_ACQUIRE);
     }
-    case typelib_TypeClass_STRING:
+    case css::uno::TypeClass_STRING:
     {
         OUString tmp_ostr;
         a >>= tmp_ostr;
         return ustring2PyUnicode( tmp_ostr );
     }
-    case typelib_TypeClass_TYPE:
+    case css::uno::TypeClass_TYPE:
     {
         Type t;
         a >>= t;
@@ -444,13 +438,13 @@ PyRef Runtime::any2PyObject (const Any &a ) const
                 o.getStr(),  (css::uno::TypeClass)t.getTypeClass(), *this),
             SAL_NO_ACQUIRE);
     }
-    case typelib_TypeClass_ANY:
+    case css::uno::TypeClass_ANY:
     {
         //I don't think this can happen.
         Py_INCREF (Py_None);
         return Py_None;
     }
-    case typelib_TypeClass_ENUM:
+    case css::uno::TypeClass_ENUM:
     {
         sal_Int32 l = *static_cast<sal_Int32 const *>(a.getValue());
         TypeDescription desc( a.getValueType() );
@@ -469,14 +463,11 @@ PyRef Runtime::any2PyObject (const Any &a ) const
                 }
             }
         }
-        OUStringBuffer buf;
-        buf.append( "Any carries enum " );
-        buf.append( a.getValueType().getTypeName());
-        buf.append( " with invalid value " ).append( l );
-        throw RuntimeException( buf.makeStringAndClear() );
+        throw RuntimeException( "Any carries enum " + a.getValueType().getTypeName() +
+                " with invalid value " + OUString::number(l) );
     }
-    case typelib_TypeClass_EXCEPTION:
-    case typelib_TypeClass_STRUCT:
+    case css::uno::TypeClass_EXCEPTION:
+    case css::uno::TypeClass_STRUCT:
     {
         PyRef excClass = getClass( a.getValueType().getTypeName(), *this );
         PyRef value = PyUNOStruct_new( a, getImpl()->cargo->xInvocation );
@@ -485,21 +476,16 @@ PyRef Runtime::any2PyObject (const Any &a ) const
         PyRef ret( PyObject_CallObject( excClass.get() , argsTuple.get() ), SAL_NO_ACQUIRE );
         if( ! ret.is() )
         {
-            OUStringBuffer buf;
-            buf.append( "Couldn't instantiate python representation of structured UNO type " );
-            buf.append( a.getValueType().getTypeName() );
-            throw RuntimeException( buf.makeStringAndClear() );
+            throw RuntimeException( "Couldn't instantiate python representation of structured UNO type " +
+                        a.getValueType().getTypeName() );
         }
 
-        if( css::uno::TypeClass_EXCEPTION == a.getValueTypeClass() )
+        if( auto e = o3tl::tryAccess<css::uno::Exception>(a) )
         {
             // add the message in a standard python way !
             PyRef args( PyTuple_New( 1 ), SAL_NO_ACQUIRE, NOT_NULL );
 
-            // assuming that the Message is always the first member, wuuuu
-            void const *pData = a.getValue();
-            OUString message = *static_cast<OUString const *>(pData);
-            PyRef pymsg = ustring2PyString( message );
+            PyRef pymsg = ustring2PyString( e->Message );
             PyTuple_SetItem( args.get(), 0 , pymsg.getAcquired() );
             // the exception base functions want to have an "args" tuple,
             // which contains the message
@@ -507,14 +493,14 @@ PyRef Runtime::any2PyObject (const Any &a ) const
         }
         return ret;
     }
-    case typelib_TypeClass_SEQUENCE:
+    case css::uno::TypeClass_SEQUENCE:
     {
         Sequence<Any> s;
 
         Sequence< sal_Int8 > byteSequence;
         if( a >>= byteSequence )
         {
-            // byte sequence is treated in a special way because of peformance reasons
+            // byte sequence is treated in a special way because of performance reasons
             // @since 0.9.2
             return PyRef( PyUNO_ByteSequence_new( byteSequence, *this ), SAL_NO_ACQUIRE );
         }
@@ -547,7 +533,7 @@ PyRef Runtime::any2PyObject (const Any &a ) const
             return tuple;
         }
     }
-    case typelib_TypeClass_INTERFACE:
+    case css::uno::TypeClass_INTERFACE:
     {
         Reference<XInterface> tmp_interface;
         a >>= tmp_interface;
@@ -558,10 +544,7 @@ PyRef Runtime::any2PyObject (const Any &a ) const
     }
     default:
     {
-        OUStringBuffer buf;
-        buf.append( "Unknown UNO type class " );
-        buf.append( (sal_Int32 ) a.getValueTypeClass() );
-        throw RuntimeException(buf.makeStringAndClear( ) );
+        throw RuntimeException( "Unknown UNO type class " + OUString::number((int)a.getValueTypeClass()) );
     }
     }
 }
@@ -632,14 +615,14 @@ bool Runtime::pyIterUnpack( PyObject *const pObj, Any &a ) const
     {
         PyRef rItem( pItem, SAL_NO_ACQUIRE );
         items.push_back( pyObject2Any( rItem.get() ) );
+        pItem = PyIter_Next( pObj );
     }
-    while( (pItem = PyIter_Next( pObj )) );
-    a <<= comphelper::containerToSequence<Any>(items);
+    while( pItem );
+    a <<= comphelper::containerToSequence(items);
     return true;
 }
 
 Any Runtime::pyObject2Any ( const PyRef & source, enum ConversionMode mode ) const
-    throw ( css::uno::RuntimeException )
 {
     if( ! impl->cargo->valid )
     {
@@ -798,20 +781,12 @@ Any Runtime::pyObject2Any ( const PyRef & source, enum ConversionMode mode ) con
         else if( PyObject_IsInstance( o, getPyUnoStructClass().get() ) )
         {
             PyUNO* o_pi = reinterpret_cast<PyUNO*>(o);
-            Reference<XMaterialHolder> my_mh (o_pi->members->xInvocation, UNO_QUERY);
-
-            if (!my_mh.is())
-            {
-                throw RuntimeException(
-                    "struct wrapper does not support XMaterialHolder" );
-            }
-            else
-                a = my_mh->getMaterial();
+            Reference<XMaterialHolder> my_mh (o_pi->members->xInvocation, css::uno::UNO_QUERY_THROW);
+            a = my_mh->getMaterial();
         }
         else if( PyObject_IsInstance( o, getCharClass( runtime ).get() ) )
         {
-            sal_Unicode c = PyChar2Unicode( o );
-            a.setValue( &c, cppu::UnoType<cppu::UnoCharType>::get());
+            a <<= PyChar2Unicode( o );
         }
         else if( PyObject_IsInstance( o, getAnyClass( runtime ).get() ) )
         {
@@ -885,7 +860,7 @@ Any Runtime::pyObject2Any ( const PyRef & source, enum ConversionMode mode ) con
             }
             if( mappedObject.is() )
             {
-                a = css::uno::makeAny( mappedObject );
+                a <<= mappedObject;
             }
             else
             {
@@ -991,14 +966,13 @@ Any Runtime::extractUnoException( const PyRef & excType, const PyRef &excValue, 
         fprintf( stderr, "Python exception: %s\n",
                  OUStringToOString(e.Message, RTL_TEXTENCODING_UTF8).getStr() );
 #endif
-        ret = css::uno::makeAny( e );
+        ret <<= e;
     }
     return ret;
 }
 
 
 PyThreadAttach::PyThreadAttach( PyInterpreterState *interp)
-    throw ( css::uno::RuntimeException )
 {
     tstate = PyThreadState_New( interp );
     if( !tstate  )
@@ -1013,7 +987,7 @@ PyThreadAttach::~PyThreadAttach()
     PyThreadState_Delete( tstate );
 }
 
-PyThreadDetach::PyThreadDetach() throw ( css::uno::RuntimeException )
+PyThreadDetach::PyThreadDetach()
 {
     tstate = PyThreadState_Get();
     PyEval_ReleaseThread( tstate );
@@ -1028,7 +1002,7 @@ PyThreadDetach::~PyThreadDetach()
 }
 
 
-PyRef RuntimeCargo::getUnoModule()
+PyRef const & RuntimeCargo::getUnoModule()
 {
     if( ! dictUnoModule.is() )
     {

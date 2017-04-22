@@ -26,7 +26,7 @@
 #include "docsh.hxx"
 #include "formulacell.hxx"
 #include "scresid.hxx"
-#include "sc.hrc"
+#include "scres.hrc"
 #include "unonames.hxx"
 #include "detfunc.hxx"
 #include "chgtrack.hxx"
@@ -38,6 +38,8 @@
 #include <com/sun/star/sheet/XSheetAnnotation.hpp>
 #include <com/sun/star/sheet/XSheetAnnotationAnchor.hpp>
 #include <com/sun/star/text/XSimpleText.hpp>
+#include <com/sun/star/table/BorderLine.hpp>
+#include <com/sun/star/table/ShadowFormat.hpp>
 #include <editeng/brushitem.hxx>
 #include <comphelper/sequence.hxx>
 #include <comphelper/servicehelper.hxx>
@@ -73,7 +75,6 @@ ScAccessibleCellBase::~ScAccessibleCellBase()
     //=====  XAccessibleComponent  ============================================
 
 bool SAL_CALL ScAccessibleCellBase::isVisible()
-    throw (uno::RuntimeException, std::exception)
 {
      SolarMutexGuard aGuard;
     IsObjectValid();
@@ -93,7 +94,6 @@ bool SAL_CALL ScAccessibleCellBase::isVisible()
 }
 
 sal_Int32 SAL_CALL ScAccessibleCellBase::getForeground()
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -133,7 +133,6 @@ sal_Int32 SAL_CALL ScAccessibleCellBase::getForeground()
 }
 
 sal_Int32 SAL_CALL ScAccessibleCellBase::getBackground()
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -177,7 +176,6 @@ sal_Int32 SAL_CALL ScAccessibleCellBase::getBackground()
     //=====  XInterface  =====================================================
 
 uno::Any SAL_CALL ScAccessibleCellBase::queryInterface( uno::Type const & rType )
-    throw (uno::RuntimeException, std::exception)
 {
     uno::Any aAny (ScAccessibleCellBaseImpl::queryInterface(rType));
     return aAny.hasValue() ? aAny : ScAccessibleContextBase::queryInterface(rType);
@@ -199,7 +197,6 @@ void SAL_CALL ScAccessibleCellBase::release()
 
 sal_Int32
     ScAccessibleCellBase::getAccessibleIndexInParent()
-        throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -208,7 +205,6 @@ sal_Int32
 
 OUString SAL_CALL
     ScAccessibleCellBase::createAccessibleDescription()
-    throw (uno::RuntimeException, std::exception)
 {
     OUString sDescription = OUString(ScResId(STR_ACC_CELL_DESCR));
 
@@ -217,7 +213,6 @@ OUString SAL_CALL
 
 OUString SAL_CALL
     ScAccessibleCellBase::createAccessibleName()
-    throw (uno::RuntimeException, std::exception)
 {
     // Document not needed, because only the cell address, but not the tablename is needed
     // always us OOO notation
@@ -228,7 +223,6 @@ OUString SAL_CALL
 
 uno::Any SAL_CALL
     ScAccessibleCellBase::getCurrentValue()
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -242,7 +236,6 @@ uno::Any SAL_CALL
 
 sal_Bool SAL_CALL
     ScAccessibleCellBase::setCurrentValue( const uno::Any& aNumber )
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -267,14 +260,12 @@ sal_Bool SAL_CALL
 
 uno::Any SAL_CALL
     ScAccessibleCellBase::getMaximumValue(  )
-    throw (uno::RuntimeException, std::exception)
 {
     return uno::Any(DBL_MAX);
 }
 
 uno::Any SAL_CALL
     ScAccessibleCellBase::getMinimumValue(  )
-    throw (uno::RuntimeException, std::exception)
 {
     return uno::Any(-DBL_MAX);
 }
@@ -282,7 +273,6 @@ uno::Any SAL_CALL
     //=====  XServiceInfo  ====================================================
 
 OUString SAL_CALL ScAccessibleCellBase::getImplementationName()
-        throw (uno::RuntimeException, std::exception)
 {
     return OUString("ScAccessibleCellBase");
 }
@@ -290,14 +280,12 @@ OUString SAL_CALL ScAccessibleCellBase::getImplementationName()
     //=====  XTypeProvider  ===================================================
 
 uno::Sequence< uno::Type > SAL_CALL ScAccessibleCellBase::getTypes()
-        throw (uno::RuntimeException, std::exception)
 {
     return comphelper::concatSequences(ScAccessibleCellBaseImpl::getTypes(), ScAccessibleContextBase::getTypes());
 }
 
 uno::Sequence<sal_Int8> SAL_CALL
     ScAccessibleCellBase::getImplementationId()
-    throw (uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -312,7 +300,6 @@ bool ScAccessibleCellBase::IsEditable(
 }
 
 OUString SAL_CALL ScAccessibleCellBase::GetNote()
-                                throw (css::uno::RuntimeException)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -358,10 +345,7 @@ OUString SAL_CALL ScAccessibleCellBase::GetNote()
     return sNote;
 }
 
-#include <com/sun/star/table/ShadowFormat.hpp>
-
 OUString SAL_CALL ScAccessibleCellBase::getShadowAttrs()
-                                        throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -427,7 +411,7 @@ OUString SAL_CALL ScAccessibleCellBase::getShadowAttrs()
     }
     //else return all the shadow properties
     sShadowAttrs += "Location=";
-    sShadowAttrs += OUString::number( (sal_Int32)nLocationVal );
+    sShadowAttrs += OUString::number( nLocationVal );
     sShadowAttrs += sInnerSplit;
     sShadowAttrs += "ShadowWidth=";
     sShadowAttrs += OUString::number( (sal_Int32)aShadowFmt.ShadowWidth ) ;
@@ -441,10 +425,7 @@ OUString SAL_CALL ScAccessibleCellBase::getShadowAttrs()
     return sShadowAttrs;
 }
 
-#include <com/sun/star/table/BorderLine.hpp>
-
 OUString SAL_CALL ScAccessibleCellBase::getBorderAttrs()
-                                        throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -594,7 +575,6 @@ OUString SAL_CALL ScAccessibleCellBase::getBorderAttrs()
 //end of cell attributes
 
 OUString SAL_CALL ScAccessibleCellBase::GetAllDisplayNote()
-    throw (css::uno::RuntimeException, std::exception)
 {
     OUString strNote;
     OUString strTrackText;

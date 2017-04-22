@@ -21,7 +21,7 @@
 #include "formstrings.hxx"
 #include "formresid.hrc"
 #include "propctrlr.hrc"
-#include <svtools/localresaccess.hxx>
+#include <tools/resary.hxx>
 #include <comphelper/extract.hxx>
 #include <sal/macros.h>
 #include <algorithm>
@@ -66,7 +66,7 @@ namespace pcr
 
 
     // Compare PropertyInfo
-    struct PropertyInfoLessByName : public ::std::binary_function< OPropertyInfoImpl, OPropertyInfoImpl, bool >
+    struct PropertyInfoLessByName : public std::binary_function< OPropertyInfoImpl, OPropertyInfoImpl, bool >
     {
         bool operator()( const OPropertyInfoImpl& _rLHS, const OPropertyInfoImpl& _rRHS )
         {
@@ -107,7 +107,7 @@ namespace pcr
         static OPropertyInfoImpl aPropertyInfos[] =
         {
         /*
-        DEF_INFO_?( propname and id,   resoure id,         pos, help id,           flags ),
+        DEF_INFO_?( propname and id,   resource id,         pos, help id,           flags ),
         */
         DEF_INFO_3( NAME,              NAME,                 0, NAME,              FORM_VISIBLE, DIALOG_VISIBLE, COMPOSEABLE ),
         DEF_INFO_2( TITLE,             TITLE,                1, TITLE,             FORM_VISIBLE, DIALOG_VISIBLE ),
@@ -125,7 +125,7 @@ namespace pcr
         DEF_INFO_3( READONLY,          READONLY,            13, READONLY,          FORM_VISIBLE, DIALOG_VISIBLE, COMPOSEABLE ),
         DEF_INFO_3( PRINTABLE,         PRINTABLE,           14, PRINTABLE,         FORM_VISIBLE, DIALOG_VISIBLE, COMPOSEABLE ),
         DEF_INFO_3( STEP,              STEP,                15, STEP,              FORM_VISIBLE, DIALOG_VISIBLE, COMPOSEABLE ),
-        DEF_INFO_3( WHEEL_BEHAVIOR,    WHEEL_BEHAVIOR,      16, WHEEL_BEHAVIOR,    FORM_VISIBLE, ENUM, COMPOSEABLE ),
+        DEF_INFO_3( WHEEL_BEHAVIOR,    WHEEL_BEHAVIOR,      16, WHEEL_BEHAVIOR,    FORM_VISIBLE | PROP_FLAG_REPORT_INVISIBLE, ENUM, COMPOSEABLE ),
         DEF_INFO_3( TABSTOP,           TABSTOP,             17, TABSTOP,           FORM_VISIBLE, DIALOG_VISIBLE, COMPOSEABLE ),
         DEF_INFO_2( TABINDEX,          TABINDEX,            18, TABINDEX,          FORM_VISIBLE, DIALOG_VISIBLE ),
 
@@ -346,7 +346,7 @@ namespace pcr
         s_nCount = SAL_N_ELEMENTS(aPropertyInfos);
 
         // sort
-        ::std::sort( s_pPropertyInfos, s_pPropertyInfos + s_nCount, PropertyInfoLessByName() );
+        std::sort( s_pPropertyInfos, s_pPropertyInfos + s_nCount, PropertyInfoLessByName() );
 
 #if OSL_DEBUG_LEVEL > 0
         for ( const OPropertyInfoImpl* pCheck = s_pPropertyInfos; pCheck != s_pPropertyInfos + s_nCount - 1; ++pCheck )
@@ -394,7 +394,7 @@ namespace pcr
     }
 
 
-    ::std::vector< OUString > OPropertyInfoService::getPropertyEnumRepresentations(sal_Int32 _nId) const
+    std::vector< OUString > OPropertyInfoService::getPropertyEnumRepresentations(sal_Int32 _nId) const
     {
         OSL_ENSURE( ( ( getPropertyUIFlags( _nId ) & PROP_FLAG_ENUM ) != 0 ) || ( _nId == PROPERTY_ID_TARGET_FRAME ),
             "OPropertyInfoService::getPropertyEnumRepresentations: this is no enum property!" );
@@ -498,20 +498,14 @@ namespace pcr
                 break;
         }
 
-        ::std::vector< OUString > aReturn;
+        std::vector< OUString > aReturn;
 
-        if ( nStringItemsResId )
+        if (nStringItemsResId)
         {
-            PcrRes aResId( nStringItemsResId );
-            ::svt::OLocalResourceAccess aEnumStrings( aResId, RSC_RESOURCE );
-
-            sal_Int16 i = 1;
-            PcrRes aLocalId( i );
-            while ( aEnumStrings.IsAvailableRes( aLocalId.SetRT( RSC_STRING ) ) )
-            {
-                aReturn.push_back( aLocalId.toString() );
-                aLocalId = PcrRes( ++i );
-            }
+            PcrRes aResId(nStringItemsResId);
+            ResStringArray aResList(aResId);
+            for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
+                aReturn.push_back(aResList.GetString(i));
         }
 
         return aReturn;
@@ -536,7 +530,7 @@ namespace pcr
             getPropertyInfo();
         OPropertyInfoImpl  aSearch(_rName, 0L, OUString(), 0, "", 0);
 
-        const OPropertyInfoImpl* pInfo = ::std::lower_bound(
+        const OPropertyInfoImpl* pInfo = std::lower_bound(
             s_pPropertyInfos, s_pPropertyInfos + s_nCount, aSearch, PropertyInfoLessByName() );
 
         if ( pInfo == s_pPropertyInfos + s_nCount )
@@ -580,7 +574,7 @@ namespace pcr
     }
 
 
-    ::std::vector< OUString > SAL_CALL DefaultEnumRepresentation::getDescriptions() const
+    std::vector< OUString > SAL_CALL DefaultEnumRepresentation::getDescriptions() const
     {
         return m_rMetaData.getPropertyEnumRepresentations( m_nPropertyId );
     }
@@ -589,8 +583,8 @@ namespace pcr
     void SAL_CALL DefaultEnumRepresentation::getValueFromDescription( const OUString& _rDescription, Any& _out_rValue ) const
     {
         sal_uInt32  nPropertyUIFlags = m_rMetaData.getPropertyUIFlags( m_nPropertyId );
-        ::std::vector< OUString > aEnumStrings = m_rMetaData.getPropertyEnumRepresentations( m_nPropertyId );
-        ::std::vector< OUString >::const_iterator pos = ::std::find( aEnumStrings.begin(), aEnumStrings.end(), _rDescription );
+        std::vector< OUString > aEnumStrings = m_rMetaData.getPropertyEnumRepresentations( m_nPropertyId );
+        std::vector< OUString >::const_iterator pos = std::find( aEnumStrings.begin(), aEnumStrings.end(), _rDescription );
         if ( pos != aEnumStrings.end() )
         {
             sal_Int32 nPos = pos - aEnumStrings.begin();
@@ -617,7 +611,7 @@ namespace pcr
                     break;
 
                 default:
-                    _out_rValue <<= (sal_Int32)nPos;
+                    _out_rValue <<=  nPos;
                     break;
             }
         }
@@ -640,7 +634,7 @@ namespace pcr
             // enum value starting with 1
             --nIntValue;
 
-        ::std::vector< OUString > aEnumStrings = m_rMetaData.getPropertyEnumRepresentations( m_nPropertyId );
+        std::vector< OUString > aEnumStrings = m_rMetaData.getPropertyEnumRepresentations( m_nPropertyId );
         if ( ( nIntValue >= 0 ) && ( nIntValue < (sal_Int32)aEnumStrings.size() ) )
         {
             sReturn = aEnumStrings[ nIntValue ];

@@ -36,11 +36,11 @@ public:
         , const css::uno::Sequence<
             css::uno::Reference< css::beans::XPropertySet > >& rGridPropertiesList //main grid, subgrid, subsubgrid etc
         );
-    virtual ~VCartesianGrid();
+    virtual ~VCartesianGrid() override;
 
     virtual void createShapes() override;
 
-    static void fillLinePropertiesFromGridModel( ::std::vector<VLineProperties>& rLinePropertiesList
+    static void fillLinePropertiesFromGridModel( std::vector<VLineProperties>& rLinePropertiesList
                     , const css::uno::Sequence<
                         css::uno::Reference< css::beans::XPropertySet > >& rGridPropertiesList );
 

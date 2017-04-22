@@ -32,23 +32,22 @@ IndexEntrySupplier_Unicode::IndexEntrySupplier_Unicode(
     IndexEntrySupplier_Common(rxContext)
 {
     implementationName = "com.sun.star.i18n.IndexEntrySupplier_Unicode";
-    index = new Index(rxContext);
+    index.reset( new Index(rxContext) );
 }
 
 IndexEntrySupplier_Unicode::~IndexEntrySupplier_Unicode()
 {
-    delete index;
 }
 
 sal_Bool SAL_CALL IndexEntrySupplier_Unicode::loadAlgorithm( const lang::Locale& rLocale,
-    const OUString& rAlgorithm, sal_Int32 collatorOptions ) throw (RuntimeException, std::exception)
+    const OUString& rAlgorithm, sal_Int32 collatorOptions )
 {
     index->init(rLocale, rAlgorithm);
     return IndexEntrySupplier_Common::loadAlgorithm(rLocale, rAlgorithm, collatorOptions);
 }
 
 OUString SAL_CALL IndexEntrySupplier_Unicode::getIndexKey( const OUString& rIndexEntry,
-    const OUString& rPhoneticEntry, const lang::Locale& rLocale ) throw (RuntimeException, std::exception)
+    const OUString& rPhoneticEntry, const lang::Locale& rLocale )
 {
     return index->getIndexDescription(getEntry(rIndexEntry, rPhoneticEntry, rLocale));
 }
@@ -56,7 +55,6 @@ OUString SAL_CALL IndexEntrySupplier_Unicode::getIndexKey( const OUString& rInde
 sal_Int16 SAL_CALL IndexEntrySupplier_Unicode::compareIndexEntry(
     const OUString& rIndexEntry1, const OUString& rPhoneticEntry1, const lang::Locale& rLocale1,
     const OUString& rIndexEntry2, const OUString& rPhoneticEntry2, const lang::Locale& rLocale2 )
-    throw (RuntimeException, std::exception)
 {
     sal_Int16 result =
             index->getIndexWeight(getEntry(rIndexEntry1, rPhoneticEntry1, rLocale1)) -
@@ -69,7 +67,7 @@ sal_Int16 SAL_CALL IndexEntrySupplier_Unicode::compareIndexEntry(
 }
 
 OUString SAL_CALL IndexEntrySupplier_Unicode::getIndexCharacter( const OUString& rIndexEntry,
-    const lang::Locale& rLocale, const OUString& rAlgorithm ) throw (RuntimeException, std::exception) {
+    const lang::Locale& rLocale, const OUString& rAlgorithm ) {
 
     if (loadAlgorithm( rLocale, rAlgorithm, CollatorOptions::CollatorOptions_IGNORE_CASE_ACCENT))
         return index->getIndexDescription(rIndexEntry);
@@ -111,13 +109,12 @@ Index::Index(const css::uno::Reference < css::uno::XComponentContext >& rxContex
     : table_count(0)
     , key_count(0)
     , mkey_count(0)
+    , collator( new CollatorImpl(rxContext) )
 {
-    collator = new CollatorImpl(rxContext);
 }
 
 Index::~Index()
 {
-    delete collator;
 }
 
 sal_Int16 Index::compare(sal_Unicode c1, sal_Unicode c2)
@@ -163,15 +160,15 @@ OUString Index::getIndexDescription(const OUString& rIndexEntry)
     return OUString(&indexChar, 1);
 }
 
-#define LOCALE_EN lang::Locale(OUString("en"), OUString(), OUString())
+#define LOCALE_EN lang::Locale("en", OUString(), OUString())
 
-void Index::makeIndexKeys(const lang::Locale &rLocale, const OUString &algorithm) throw (RuntimeException)
+void Index::makeIndexKeys(const lang::Locale &rLocale, const OUString &algorithm)
 {
-    OUString keyStr = LocaleDataImpl().getIndexKeysByAlgorithm(rLocale, algorithm);
+    OUString keyStr = LocaleDataImpl::get()->getIndexKeysByAlgorithm(rLocale, algorithm);
 
     if (keyStr.isEmpty()) {
-        keyStr = LocaleDataImpl().getIndexKeysByAlgorithm(LOCALE_EN,
-                    LocaleDataImpl().getDefaultIndexAlgorithm(LOCALE_EN));
+        keyStr = LocaleDataImpl::get()->getIndexKeysByAlgorithm(LOCALE_EN,
+                    LocaleDataImpl::get()->getDefaultIndexAlgorithm(LOCALE_EN));
         if (keyStr.isEmpty())
             throw RuntimeException();
     }
@@ -205,10 +202,10 @@ void Index::makeIndexKeys(const lang::Locale &rLocale, const OUString &algorithm
                         continue;
                     } else if (keyStr[i] == '_') {
                         for (curr=keyStr[i-1]+1;  curr <= keyStr[i+1]; curr++)
-                            skipping_chars+=OUString(curr);
+                            skipping_chars+=OUStringLiteral1(curr);
                         i+=2;
                     } else {
-                        skipping_chars+=OUString(keyStr[i]);
+                        skipping_chars+=OUStringLiteral1(keyStr[i]);
                     }
                 }
                 break;
@@ -251,14 +248,14 @@ void Index::makeIndexKeys(const lang::Locale &rLocale, const OUString &algorithm
     }
 }
 
-void Index::init(const lang::Locale &rLocale, const OUString& algorithm) throw (RuntimeException)
+void Index::init(const lang::Locale &rLocale, const OUString& algorithm)
 {
     makeIndexKeys(rLocale, algorithm);
 
-    Sequence< UnicodeScript > scriptList = LocaleDataImpl().getUnicodeScripts( rLocale );
+    Sequence< UnicodeScript > scriptList = LocaleDataImpl::get()->getUnicodeScripts( rLocale );
 
     if (scriptList.getLength() == 0) {
-        scriptList = LocaleDataImpl().getUnicodeScripts(LOCALE_EN);
+        scriptList = LocaleDataImpl::get()->getUnicodeScripts(LOCALE_EN);
         if (scriptList.getLength() == 0)
             throw RuntimeException();
     }

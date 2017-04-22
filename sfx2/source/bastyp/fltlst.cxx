@@ -47,20 +47,14 @@ class SfxRefreshListener : public ::cppu::WeakImplHelper<css::util::XRefreshList
         {
         }
 
-        virtual ~SfxRefreshListener()
-        {
-        }
-
         // util.XRefreshListener
-        virtual void SAL_CALL refreshed( const css::lang::EventObject& rEvent )
-            throw(css::uno::RuntimeException, std::exception) override
+        virtual void SAL_CALL refreshed( const css::lang::EventObject& rEvent ) override
         {
             m_pOwner->refreshed(rEvent);
         }
 
         // lang.XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent)
-            throw(css::uno::RuntimeException, std::exception) override
+        virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent) override
         {
             m_pOwner->disposing(rEvent);
         }
@@ -96,7 +90,7 @@ SfxFilterListener::~SfxFilterListener()
 {
 }
 
-void SAL_CALL SfxFilterListener::refreshed( const lang::EventObject& aSource ) throw( uno::RuntimeException, std::exception )
+void SAL_CALL SfxFilterListener::refreshed( const lang::EventObject& aSource )
 {
     SolarMutexGuard aGuard;
     uno::Reference< util::XRefreshable > xContainer( aSource.Source, uno::UNO_QUERY );
@@ -109,7 +103,7 @@ void SAL_CALL SfxFilterListener::refreshed( const lang::EventObject& aSource ) t
     }
 }
 
-void SAL_CALL SfxFilterListener::disposing( const lang::EventObject& aSource ) throw( uno::RuntimeException )
+void SAL_CALL SfxFilterListener::disposing( const lang::EventObject& aSource )
 {
     SolarMutexGuard aGuard;
     uno::Reference< util::XRefreshable > xNotifier( aSource.Source, uno::UNO_QUERY );

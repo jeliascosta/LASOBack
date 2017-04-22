@@ -40,6 +40,7 @@
 #include <svx/svxerr.hxx>
 
 #include <svx/xmlsecctrl.hxx>
+#include <svtools/colorcfg.hxx>
 
 #include "sderror.hxx"
 #include "sdmod.hxx"
@@ -52,7 +53,6 @@
 #include "strings.hrc"
 #include "res_bmp.hrc"
 #include "cfgids.hxx"
-#include "tools/SdGlobalResourceContainer.hxx"
 
 
 #define SdModule
@@ -67,8 +67,7 @@ void SdModule::InitInterface_Impl()
 
 // Ctor
 SdModule::SdModule(SfxObjectFactory* pFact1, SfxObjectFactory* pFact2 )
-:   SfxModule( ResMgr::CreateResMgr("sd"), false,
-                  pFact1, pFact2, nullptr ),
+:   SfxModule( ResMgr::CreateResMgr("sd"), {pFact1, pFact2} ),
     pTransferClip(nullptr),
     pTransferDrag(nullptr),
     pTransferSelection(nullptr),
@@ -77,8 +76,8 @@ SdModule::SdModule(SfxObjectFactory* pFact1, SfxObjectFactory* pFact2 )
     pSearchItem(nullptr),
     pNumberFormatter( nullptr ),
     bWaterCan(false),
-    mpResourceContainer(new ::sd::SdGlobalResourceContainer()),
-    mbEventListenerAdded(false)
+    mbEventListenerAdded(false),
+    mpColorConfig(new svtools::ColorConfig)
 {
     SetName( "StarDraw" );  // Do not translate!
     pSearchItem = new SvxSearchItem(SID_SEARCH_ITEM);
@@ -94,8 +93,8 @@ SdModule::SdModule(SfxObjectFactory* pFact1, SfxObjectFactory* pFact2 )
     // set its resolution to 600 DPI.  This leads to a visually better
     // formatting of text in small sizes (6 point and below.)
     mpVirtualRefDevice.reset(VclPtr<VirtualDevice>::Create());
-    mpVirtualRefDevice->SetMapMode( MAP_100TH_MM );
-    mpVirtualRefDevice->SetReferenceDevice ( VirtualDevice::REFDEV_MODE06 );
+    mpVirtualRefDevice->SetMapMode( MapUnit::Map100thMM );
+    mpVirtualRefDevice->SetReferenceDevice ( VirtualDevice::RefDevMode::Dpi600 );
 }
 
 // Dtor
@@ -109,13 +108,6 @@ SdModule::~SdModule()
         Application::RemoveEventListener( LINK( this, SdModule, EventListenerHdl ) );
     }
 
-    mpResourceContainer.reset();
-
-    // Mark the module in the global AppData structure as deleted.
-    SdModule** ppShellPointer = reinterpret_cast<SdModule**>(GetAppData(SHL_DRAW));
-    if (ppShellPointer != nullptr)
-        (*ppShellPointer) = nullptr;
-
     delete mpErrorHdl;
     mpVirtualRefDevice.disposeAndClear();
 }
@@ -123,8 +115,7 @@ SdModule::~SdModule()
 /// get notifications
 void SdModule::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DEINITIALIZING )
+    if( rHint.GetId() == SfxHintId::Deinitializing )
     {
         delete pImpressOptions;
         pImpressOptions = nullptr;
@@ -138,14 +129,14 @@ SdOptions* SdModule::GetSdOptions(DocumentType eDocType)
 {
     SdOptions* pOptions = nullptr;
 
-    if (eDocType == DOCUMENT_TYPE_DRAW)
+    if (eDocType == DocumentType::Draw)
     {
         if (!pDrawOptions)
             pDrawOptions = new SdOptions( SDCFG_DRAW );
 
         pOptions = pDrawOptions;
     }
-    else if (eDocType == DOCUMENT_TYPE_IMPRESS)
+    else if (eDocType == DocumentType::Impress)
     {
         if (!pImpressOptions)
             pImpressOptions = new SdOptions( SDCFG_IMPRESS );
@@ -183,13 +174,13 @@ tools::SvRef<SotStorageStream> SdModule::GetOptionStream( const OUString& rOptio
     {
         DocumentType    eType = pDocSh->GetDoc()->GetDocumentType();
 
-        if( !xOptionStorage.Is() )
+        if( !xOptionStorage.is() )
         {
             INetURLObject aURL( SvtPathOptions().GetUserConfigPath() );
 
             aURL.Append( "drawing.cfg" );
 
-            SvStream* pStm = ::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::NO_DECODE ), STREAM_READWRITE );
+            SvStream* pStm = ::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READWRITE );
 
             if( pStm )
                 xOptionStorage = new SotStorage( pStm, true );
@@ -197,7 +188,7 @@ tools::SvRef<SotStorageStream> SdModule::GetOptionStream( const OUString& rOptio
 
         OUString        aStmName;
 
-        if( DOCUMENT_TYPE_DRAW == eType )
+        if( DocumentType::Draw == eType )
             aStmName = "Draw_";
         else
             aStmName = "Impress_";
@@ -225,6 +216,11 @@ SvNumberFormatter* SdModule::GetNumberFormatter()
 OutputDevice* SdModule::GetRefDevice (::sd::DrawDocShell& )
 {
     return GetVirtualRefDevice();
+}
+
+svtools::ColorConfig& SdModule::GetColorConfig()
+{
+    return *mpColorConfig;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -27,8 +27,8 @@
 #include <sfx2/progress.hxx>
 #include <svl/itemset.hxx>
 
-#include "../ui/inc/DrawDocShell.hxx"
-#include "../ui/inc/strings.hrc"
+#include "DrawDocShell.hxx"
+#include "strings.hrc"
 
 #include "sdresid.hxx"
 #include "pres.hxx"
@@ -46,7 +46,7 @@ SdFilter::SdFilter( SfxMedium& rMedium, ::sd::DrawDocShell& rDocShell )
 ,   mrMedium( rMedium )
 ,   mrDocShell( rDocShell )
 ,   mrDocument( *rDocShell.GetDoc() )
-,   mbIsDraw( rDocShell.GetDocumentType() == DOCUMENT_TYPE_DRAW )
+,   mbIsDraw( rDocShell.GetDocumentType() == DocumentType::Draw )
 {
 }
 

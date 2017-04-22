@@ -22,14 +22,10 @@
 
 #include "rcid.hrc"
 
-#define RID_SW_SHELLRES             (RC_UTLUI_BEGIN + 1)
 #define RID_STR_SYSTEM              (RC_UTLUI_BEGIN + 2)
 
 // Strings in NumberFormatter-Listbox
 #define STR_DEFINE_NUMBERFORMAT                 (RC_UTLUI_BEGIN + 4)
-// hyperlink status bar control
-#define STR_HYPERCTRL_SEL                       (RC_UTLUI_BEGIN + 5)
-#define STR_HYPERCTRL_HYP                       (RC_UTLUI_BEGIN + 6)
 
 // names of content types                       (RC_UTLUI_BEGIN + 7)
 #define STR_CONTENT_TYPE_FIRST                  (RC_UTLUI_BEGIN + 8)
@@ -70,7 +66,7 @@
 #define STR_CONTENT_TYPE_SINGLE_DRAWOBJECT      (STR_CONTENT_TYPE_SINGLE_FIRST + 11)
 #define STR_CONTENT_SINGLE_END                  STR_CONTENT_TYPE_SINGLE_DRAWOBJECT
 
-#define FLD_DOCINFO_BEGIN   STR_CONTENT_SINGLE_END
+#define FLD_DOCINFO_BEGIN   (STR_CONTENT_SINGLE_END + 1)
 #define FLD_DOCINFO_TITEL   FLD_DOCINFO_BEGIN
 #define FLD_DOCINFO_THEMA   (FLD_DOCINFO_BEGIN + 1)
 #define FLD_DOCINFO_KEYS    (FLD_DOCINFO_BEGIN + 2)
@@ -145,25 +141,33 @@
 
 #define RES_FRMEX_MENU                  (STR_AUTH_FIELD_END + 1)
 
-#define DLG_NAVIGATION_PI           (RC_UTLUI_BEGIN + 1)
-
-#define IMG_NAVI_ENTRYBMP           (RC_UTLUI_BEGIN + 4)
-#define ILIST_DB_DLG                (RC_UTLUI_BEGIN + 6)
-
-#define IMG_VIEWLAYOUT_AUTOMATIC                 (RC_UTLUI_BEGIN + 12)
-#define IMG_VIEWLAYOUT_AUTOMATIC_ACTIVE          (RC_UTLUI_BEGIN + 13)
-#define IMG_VIEWLAYOUT_BOOKMODE                  (RC_UTLUI_BEGIN + 14)
-#define IMG_VIEWLAYOUT_BOOKMODE_ACTIVE           (RC_UTLUI_BEGIN + 15)
-#define IMG_VIEWLAYOUT_SINGLECOLUMN              (RC_UTLUI_BEGIN + 16)
-#define IMG_VIEWLAYOUT_SINGLECOLUMN_ACTIVE       (RC_UTLUI_BEGIN + 17)
-#define IMG_PAGE_BREAK                           (RC_UTLUI_BEGIN + 18)
-
-//local ids of the Database ImageLists
-#define IMG_COLLAPSE        18002  /*RID_SVXIMG_COLLAPSEDNODE*/
-#define IMG_EXPAND          18003  /*RID_SVXIMG_EXPANDEDNODE*/
-#define IMG_DB                  1
-#define IMG_DBTABLE             2
-#define IMG_DBQUERY             3
+#define RID_BMP_VIEWLAYOUT_AUTOMATIC             (RC_UTLUI_BEGIN + 12)
+#define RID_BMP_VIEWLAYOUT_AUTOMATIC_ACTIVE      (RC_UTLUI_BEGIN + 13)
+#define RID_BMP_VIEWLAYOUT_BOOKMODE              (RC_UTLUI_BEGIN + 14)
+#define RID_BMP_VIEWLAYOUT_BOOKMODE_ACTIVE       (RC_UTLUI_BEGIN + 15)
+#define RID_BMP_VIEWLAYOUT_SINGLECOLUMN          (RC_UTLUI_BEGIN + 16)
+#define RID_BMP_VIEWLAYOUT_SINGLECOLUMN_ACTIVE   (RC_UTLUI_BEGIN + 17)
+#define RID_BMP_PAGE_BREAK                       (RC_UTLUI_BEGIN + 18)
+#define RID_BMP_NAVI_OUTLINE                     (RC_UTLUI_BEGIN + 19)
+#define RID_BMP_NAVI_TABLE                       (RC_UTLUI_BEGIN + 20)
+#define RID_BMP_NAVI_FRAME                       (RC_UTLUI_BEGIN + 21)
+#define RID_BMP_NAVI_GRAPHIC                     (RC_UTLUI_BEGIN + 22)
+#define RID_BMP_NAVI_OLE                         (RC_UTLUI_BEGIN + 23)
+#define RID_BMP_NAVI_BOOKMARK                    (RC_UTLUI_BEGIN + 24)
+#define RID_BMP_NAVI_REGION                      (RC_UTLUI_BEGIN + 25)
+#define RID_BMP_NAVI_URLFIELD                    (RC_UTLUI_BEGIN + 26)
+#define RID_BMP_NAVI_REFERENCE                   (RC_UTLUI_BEGIN + 27)
+#define RID_BMP_NAVI_INDEX                       (RC_UTLUI_BEGIN + 28)
+#define RID_BMP_NAVI_POSTIT                      (RC_UTLUI_BEGIN + 29)
+#define RID_BMP_NAVI_DRAWOBJECT                  (RC_UTLUI_BEGIN + 30)
+#define RID_BMP_DROP_REGION                      (RC_UTLUI_BEGIN + 31)
+#define RID_BMP_DROP_LINK                        (RC_UTLUI_BEGIN + 32)
+#define RID_BMP_DROP_COPY                        (RC_UTLUI_BEGIN + 33)
+#define RID_BMP_COLLAPSE                         (RC_UTLUI_BEGIN + 34)
+#define RID_BMP_EXPAND                           (RC_UTLUI_BEGIN + 35)
+#define RID_BMP_DB                               (RC_UTLUI_BEGIN + 36)
+#define RID_BMP_DBTABLE                          (RC_UTLUI_BEGIN + 37)
+#define RID_BMP_DBQUERY                          (RC_UTLUI_BEGIN + 38)
 
 #define UTLUI_ACT_END               RES_FRMEX_MENU
 
@@ -182,7 +186,40 @@
 #define STR_IDXEXAMPLE_IDXTXT_IMAGE1            (STR_IDXEXAMPLE_IDXTXT_BEGIN + 8)
 #define STR_IDXEXAMPLE_IDXTXT_END               STR_IDXEXAMPLE_IDXTXT_IMAGE1
 
-#if STR_IDXEXAMPLE_IDXTXT_END > RC_IDXTXT_END
+#define RID_SW_SHELLRES_BEGIN                   (STR_IDXEXAMPLE_IDXTXT_IMAGE1 + 1)
+#define STR_POSTIT_PAGE                         (RID_SW_SHELLRES_BEGIN + 1)
+#define STR_POSTIT_AUTHOR                       (RID_SW_SHELLRES_BEGIN + 2)
+#define STR_CALC_SYNTAX                         (RID_SW_SHELLRES_BEGIN + 3)
+#define STR_CALC_ZERODIV                        (RID_SW_SHELLRES_BEGIN + 4)
+#define STR_CALC_BRACK                          (RID_SW_SHELLRES_BEGIN + 5)
+#define STR_CALC_POW                            (RID_SW_SHELLRES_BEGIN + 6)
+// empty
+#define STR_CALC_OVERFLOW                       (RID_SW_SHELLRES_BEGIN + 8)
+// empty
+#define STR_CALC_DEFAULT                        (RID_SW_SHELLRES_BEGIN + 10)
+#define STR_CALC_ERROR                          (RID_SW_SHELLRES_BEGIN + 11)
+// empty
+#define STR_TEMPLATE_NONE                       (RID_SW_SHELLRES_BEGIN + 15)
+#define STR_POSTIT_LINE                         (RID_SW_SHELLRES_BEGIN + 16)
+#define STR_FIELD_FIXED                         (RID_SW_SHELLRES_BEGIN + 17)
+#define STR_TOI                                 (RID_SW_SHELLRES_BEGIN + 18)
+#define STR_TOU                                 (RID_SW_SHELLRES_BEGIN + 19)
+#define STR_TOC                                 (RID_SW_SHELLRES_BEGIN + 20)
+#define STR_TOX_ILL                             (RID_SW_SHELLRES_BEGIN + 21)
+#define STR_TOX_OBJ                             (RID_SW_SHELLRES_BEGIN + 22)
+#define STR_TOX_TBL                             (RID_SW_SHELLRES_BEGIN + 23)
+#define STR_TOX_AUTH                            (RID_SW_SHELLRES_BEGIN + 24)
+#define STR_PAGEDESC_NAME                       (RID_SW_SHELLRES_BEGIN + 25)
+#define STR_PAGEDESC_FIRSTNAME                  (RID_SW_SHELLRES_BEGIN + 26)
+#define STR_PAGEDESC_FOLLOWNAME                 (RID_SW_SHELLRES_BEGIN + 27)
+#define STR_LINK_CTRL_CLICK                     (RID_SW_SHELLRES_BEGIN + 28)
+#define STR_LINK_CLICK                          (RID_SW_SHELLRES_BEGIN + 29)
+#define STR_GETREFFLD_REFITEMNOTFOUND           (RID_SW_SHELLRES_BEGIN + 30)
+#define STR_DURATION_FORMAT                     (RID_SW_SHELLRES_BEGIN + 31)
+#define STR_TOX_CITATION                        (RID_SW_SHELLRES_BEGIN + 32)
+#define RID_SW_SHELLRES_END                     STR_TOX_CITATION
+
+#if STR_IDXEXAMPLE_IDXTXT_END > RID_SW_SHELLRES_END
 #error Resource-Id Ueberlauf in #file, #line
 #endif
 

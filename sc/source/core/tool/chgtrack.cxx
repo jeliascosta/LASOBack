@@ -41,8 +41,10 @@
 #include <svl/itempool.hxx>
 #include <sfx2/app.hxx>
 #include <unotools/useroptions.hxx>
+#include <unotools/datetime.hxx>
 #include <sfx2/sfxsids.hrc>
 #include <memory>
+#include <boost/property_tree/json_parser.hpp>
 
 IMPL_FIXEDMEMPOOL_NEWDEL( ScChangeActionCellListEntry )
 IMPL_FIXEDMEMPOOL_NEWDEL( ScChangeActionLinkEntry )
@@ -282,16 +284,21 @@ bool ScChangeAction::IsMasterDelete() const
 
 void ScChangeAction::RemoveAllLinks()
 {
-    RemoveAllAnyLinks();
-    RemoveAllDeletedIn();
-    RemoveAllDeleted();
-    RemoveAllDependent();
-}
+    while (pLinkAny)
+    {
+        // coverity[use_after_free] - Moves up by itself
+        delete pLinkAny;
+    }
 
-void ScChangeAction::RemoveAllAnyLinks()
-{
-    while ( pLinkAny )
-        delete pLinkAny; // Moves up by itself
+    RemoveAllDeletedIn();
+
+    while (pLinkDeleted)
+    {
+        // coverity[use_after_free] - Moves up by itself
+        delete pLinkDeleted;
+    }
+
+    RemoveAllDependent();
 }
 
 bool ScChangeAction::RemoveDeletedIn( const ScChangeAction* p )
@@ -380,19 +387,13 @@ bool ScChangeAction::HasDeleted() const
 
 void ScChangeAction::SetDeletedIn( ScChangeAction* p )
 {
-    ScChangeActionLinkEntry* pLink1 = AddDeletedIn( p );
+    ScChangeActionLinkEntry* pLink1 = new ScChangeActionLinkEntry( GetDeletedInAddress(), p );
     ScChangeActionLinkEntry* pLink2;
     if ( GetType() == SC_CAT_CONTENT )
         pLink2 = p->AddDeleted( static_cast<ScChangeActionContent*>(this)->GetTopContent() );
     else
         pLink2 = p->AddDeleted( this );
     pLink1->SetLink( pLink2 );
-}
-
-void ScChangeAction::RemoveAllDeleted()
-{
-    while ( pLinkDeleted )
-        delete pLinkDeleted; // Moves up by itself
 }
 
 void ScChangeAction::RemoveAllDependent()
@@ -1012,21 +1013,18 @@ bool ScChangeActionDel::Reject( ScDocument* pDoc )
                 case SC_CAT_DELETE_COLS :
                     if ( !(aRange.aStart.Col() == 0 && aRange.aEnd.Col() == MAXCOL) )
                     {   // Only if not TabDelete
-                        if ( ( bOk = pDoc->CanInsertCol( aRange ) ) )
-                            bOk = pDoc->InsertCol( aRange );
+                        bOk = pDoc->CanInsertCol( aRange ) && pDoc->InsertCol( aRange );
                     }
                 break;
                 case SC_CAT_DELETE_ROWS :
-                    if ( ( bOk = pDoc->CanInsertRow( aRange ) ) )
-                        bOk = pDoc->InsertRow( aRange );
+                    bOk = pDoc->CanInsertRow( aRange ) && pDoc->InsertRow( aRange );
                 break;
                 case SC_CAT_DELETE_TABS :
                 {
                     //TODO: Remember table names?
                     OUString aName;
                     pDoc->CreateValidTabName( aName );
-                    if ( ( bOk = pDoc->ValidNewTabName( aName ) ) )
-                        bOk = pDoc->InsertTab( aRange.aStart.Tab(), aName );
+                    bOk = pDoc->ValidNewTabName( aName ) && pDoc->InsertTab( aRange.aStart.Tab(), aName );
                 }
                 break;
                 default:
@@ -1424,7 +1422,7 @@ void ScChangeActionContent::SetValueString(
         rCell.meType = CELLTYPE_FORMULA;
         rCell.mpFormula = new ScFormulaCell(
             pDoc, aBigRange.aStart.MakeAddress(), rStr,
-            formula::FormulaGrammar::GRAM_DEFAULT, pDoc->GetGrammar() );
+            pDoc->GetGrammar() );
         rCell.mpFormula->SetInChangeTrack(true);
     }
     else
@@ -1654,11 +1652,11 @@ ScChangeActionContentCellType ScChangeActionContent::GetContentCellType( const S
         case CELLTYPE_FORMULA :
             switch (rCell.mpFormula->GetMatrixFlag())
             {
-                case MM_NONE :
+                case ScMatrixMode::NONE :
                     return SC_CACCT_NORMAL;
-                case MM_FORMULA :
+                case ScMatrixMode::Formula :
                     return SC_CACCT_MATORG;
-                case MM_REFERENCE :
+                case ScMatrixMode::Reference :
                     return SC_CACCT_MATREF;
             }
             return SC_CACCT_NORMAL;
@@ -1680,11 +1678,11 @@ ScChangeActionContentCellType ScChangeActionContent::GetContentCellType( const S
             const ScFormulaCell* pCell = rCell.mpFormula;
             switch (pCell->GetMatrixFlag())
             {
-                case MM_NONE :
+                case ScMatrixMode::NONE :
                     return SC_CACCT_NORMAL;
-                case MM_FORMULA :
+                case ScMatrixMode::Formula :
                     return SC_CACCT_MATORG;
-                case MM_REFERENCE :
+                case ScMatrixMode::Reference :
                     return SC_CACCT_MATREF;
             }
             return SC_CACCT_NORMAL;
@@ -2120,7 +2118,6 @@ void ScChangeTrack::Init()
     nEndLastCut = 0;
     nLastMerge = 0;
     eMergeState = SC_CTMS_NONE;
-    bLoadSave = false;
     bInDelete = false;
     bInDeleteTop = false;
     bInDeleteUndo = false;
@@ -2244,7 +2241,7 @@ ScChangeAction* ScChangeTrack::GetLastSaved() const
         return nullptr;
 }
 
-void ScChangeTrack::ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 )
+void ScChangeTrack::ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints )
 {
     if ( !pDoc->IsInDtorClear() )
     {
@@ -2266,16 +2263,13 @@ void ScChangeTrack::ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uI
 
             SfxObjectShell* pDocSh = pDoc->GetDocumentShell();
             if (pDocSh)
-                pDocSh->Broadcast( ScPaintHint( ScRange(0,0,0,MAXCOL,MAXROW,MAXTAB), PAINT_GRID ) );
+                pDocSh->Broadcast( ScPaintHint( ScRange(0,0,0,MAXCOL,MAXROW,MAXTAB), PaintPartFlags::Grid ) );
         }
     }
 }
 
 void ScChangeTrack::SetUser( const OUString& rUser )
 {
-    if ( IsLoadSave() )
-        return ; // Do not destroy the Collection
-
     maUser = rUser;
     maUserCollection.insert(maUser);
 }
@@ -2635,10 +2629,10 @@ bool ScChangeTrack::IsMatrixFormulaRangeDifferent(
     nC1 = nC2 = 0;
     nR1 = nR2 = 0;
 
-    if (rOldCell.meType == CELLTYPE_FORMULA && rOldCell.mpFormula->GetMatrixFlag() == MM_FORMULA)
+    if (rOldCell.meType == CELLTYPE_FORMULA && rOldCell.mpFormula->GetMatrixFlag() == ScMatrixMode::Formula)
         rOldCell.mpFormula->GetMatColsRows(nC1, nR1);
 
-    if (rNewCell.meType == CELLTYPE_FORMULA && rNewCell.mpFormula->GetMatrixFlag() == MM_FORMULA)
+    if (rNewCell.meType == CELLTYPE_FORMULA && rNewCell.mpFormula->GetMatrixFlag() == ScMatrixMode::Formula)
         rNewCell.mpFormula->GetMatColsRows(nC1, nR1);
 
     return nC1 != nC2 || nR1 != nR2;
@@ -4242,11 +4236,15 @@ bool ScChangeTrack::Reject(
                     bOk = Reject( itChangeAction->second, nullptr, true ); // Recursion!
             }
         }
-        if ( bOk && (bRejected = pAct->Reject( pDoc )) )
+        if ( bOk )
         {
-            // pRefDoc NULL := Do not save deleted Cells
-            AppendDeleteRange( pAct->GetBigRange().MakeRange(), nullptr, (short) 0,
-                pAct->GetActionNumber() );
+            bRejected = pAct->Reject( pDoc );
+            if ( bRejected )
+            {
+                // pRefDoc NULL := Do not save deleted Cells
+                AppendDeleteRange( pAct->GetBigRange().MakeRange(), nullptr, (short) 0,
+                    pAct->GetActionNumber() );
+            }
         }
     }
     else if ( pAct->IsDeleteType() )
@@ -4355,14 +4353,18 @@ bool ScChangeTrack::Reject(
                 bOk = Reject( itChangeAction->second, nullptr, true ); // Recursion!
             }
         }
-        if ( bOk && (bRejected = pAct->Reject( pDoc )) )
+        if ( bOk )
         {
-            ScChangeActionMove* pReject = new ScChangeActionMove(
-                pAct->GetBigRange().MakeRange(),
-                static_cast<ScChangeActionMove*>(pAct)->GetFromRange().MakeRange(), this );
-            pReject->SetRejectAction( pAct->GetActionNumber() );
-            pReject->SetState( SC_CAS_ACCEPTED );
-            Append( pReject );
+            bRejected = pAct->Reject( pDoc );
+            if ( bRejected )
+            {
+                ScChangeActionMove* pReject = new ScChangeActionMove(
+                    pAct->GetBigRange().MakeRange(),
+                    static_cast<ScChangeActionMove*>(pAct)->GetFromRange().MakeRange(), this );
+                pReject->SetRejectAction( pAct->GetActionNumber() );
+                pReject->SetState( SC_CAS_ACCEPTED );
+                Append( pReject );
+            }
         }
     }
     else if ( pAct->GetType() == SC_CAT_CONTENT )
@@ -4379,7 +4381,8 @@ bool ScChangeTrack::Reject(
             aCell.assign(*pDoc, aRange.aStart);
             pReject->SetOldValue(aCell, pDoc, pDoc);
         }
-        if ( (bRejected = pAct->Reject( pDoc )) && !bRecursion )
+        bRejected = pAct->Reject( pDoc );
+        if ( bRejected && !bRecursion )
         {
             ScCellValue aCell;
             aCell.assign(*pDoc, aRange.aStart);
@@ -4708,6 +4711,56 @@ void ScChangeTrack::MergeActionState( ScChangeAction* pAct, const ScChangeAction
             pAct->SetRejected();
         }
     }
+}
+
+/// Get info about a single ScChangeAction element.
+static void lcl_getTrackedChange(ScDocument* pDoc, int nIndex, ScChangeAction* pAction, boost::property_tree::ptree& rRedlines)
+{
+    if (pAction->GetType() == SC_CAT_CONTENT)
+    {
+        boost::property_tree::ptree aRedline;
+        aRedline.put("index", nIndex);
+
+        const OUString& sAuthor = pAction->GetUser();
+        aRedline.put("author", sAuthor.toUtf8().getStr());
+
+        aRedline.put("type", "Modify");
+
+        aRedline.put("comment", pAction->GetComment().toUtf8().getStr());
+
+        OUString aDescription;
+        pAction->GetDescription(aDescription, pDoc, true);
+        aRedline.put("description", aDescription);
+
+        OUString sDateTime = utl::toISO8601(pAction->GetDateTimeUTC().GetUNODateTime());
+        aRedline.put("dateTime", sDateTime.toUtf8().getStr());
+
+        rRedlines.push_back(std::make_pair("", aRedline));
+    }
+}
+
+OUString ScChangeTrack::GetChangeTrackInfo()
+{
+    boost::property_tree::ptree aRedlines;
+
+    ScChangeAction* pAction = GetFirst();
+    if (pAction)
+    {
+        int i = 0;
+        lcl_getTrackedChange(pDoc, i++, pAction, aRedlines);
+        ScChangeAction* pLastAction = GetLast();
+        while (pAction != pLastAction)
+        {
+            pAction = pAction->GetNext();
+            lcl_getTrackedChange(pDoc, i++, pAction, aRedlines);
+        }
+    }
+
+    boost::property_tree::ptree aTree;
+    aTree.add_child("redlines", aRedlines);
+    std::stringstream aStream;
+    boost::property_tree::write_json(aStream, aTree);
+    return OUString::fromUtf8(aStream.str().c_str());
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

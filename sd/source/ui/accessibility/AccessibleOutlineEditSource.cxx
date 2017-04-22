@@ -49,7 +49,7 @@ namespace accessibility
     {
         if( mpOutliner )
             mpOutliner->SetNotifyHdl( Link<EENotify&,void>() );
-        Broadcast( TextHint( SFX_HINT_DYING ) );
+        Broadcast( TextHint( SfxHintId::Dying ) );
     }
 
     SvxEditSource* AccessibleOutlineEditSource::Clone() const
@@ -120,12 +120,12 @@ namespace accessibility
         return false;
     }
 
-    Rectangle AccessibleOutlineEditSource::GetVisArea() const
+    ::tools::Rectangle AccessibleOutlineEditSource::GetVisArea() const
     {
         if( IsValid() )
         {
             SdrPaintWindow* pPaintWindow = mrView.FindPaintWindow(mrWindow);
-            Rectangle aVisArea;
+            ::tools::Rectangle aVisArea;
 
             if(pPaintWindow)
             {
@@ -137,7 +137,7 @@ namespace accessibility
             return mrWindow.LogicToPixel( aVisArea, aMapMode );
         }
 
-        return Rectangle();
+        return ::tools::Rectangle();
     }
 
     Point AccessibleOutlineEditSource::LogicToPixel( const Point& rPoint, const MapMode& rMapMode ) const
@@ -175,8 +175,7 @@ namespace accessibility
 
         if( &rBroadcaster == mpOutliner )
         {
-            const SfxSimpleHint* pHint = dynamic_cast< const SfxSimpleHint * >( &rHint );
-            if( pHint && (pHint->GetId() == SFX_HINT_DYING) )
+            if( rHint.GetId() == SfxHintId::Dying )
             {
                 bDispose = true;
                 mpOutliner = nullptr;
@@ -186,7 +185,7 @@ namespace accessibility
         {
             const SdrHint* pSdrHint = dynamic_cast< const SdrHint* >( &rHint );
 
-            if( pSdrHint && ( pSdrHint->GetKind() == HINT_MODELCLEARED ) )
+            if( pSdrHint && ( pSdrHint->GetKind() == SdrHintKind::ModelCleared ) )
             {
                 // model is dying under us, going defunc
                 bDispose = true;
@@ -199,11 +198,11 @@ namespace accessibility
                 mpOutliner->SetNotifyHdl( Link<EENotify&,void>() );
             mpOutliner = nullptr;
             mpOutlinerView = nullptr;
-            Broadcast( TextHint( SFX_HINT_DYING ) );
+            Broadcast( TextHint( SfxHintId::Dying ) );
         }
     }
 
-    IMPL_LINK_TYPED(AccessibleOutlineEditSource, NotifyHdl, EENotify&, rNotify, void)
+    IMPL_LINK(AccessibleOutlineEditSource, NotifyHdl, EENotify&, rNotify, void)
     {
         ::std::unique_ptr< SfxHint > aHint( SvxEditSourceHelper::EENotification2Hint( &rNotify) );
 

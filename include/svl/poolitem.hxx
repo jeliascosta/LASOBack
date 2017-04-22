@@ -28,16 +28,18 @@
 #include <svl/hint.hxx>
 #include <svl/svldllapi.h>
 #include <tools/debug.hxx>
+#include <tools/mapunit.hxx>
 #include <tools/solar.h>
 
 class IntlWrapper;
 class SvStream;
 
-enum SfxItemKind {
-   SFX_ITEMS_NONE,
-   SFX_ITEMS_DELETEONIDLE,
-   SFX_ITEMS_STATICDEFAULT,
-   SFX_ITEMS_POOLDEFAULT
+enum class SfxItemKind : sal_Int8
+{
+   NONE,
+   DeleteOnIdle,
+   StaticDefault,
+   PoolDefault
 };
 
 #define SFX_ITEMS_OLD_MAXREF                0xffef
@@ -50,51 +52,25 @@ enum SfxItemKind {
 inline bool Any2Bool( const css::uno::Any&rValue )
 {
     bool bValue = false;
-    if( rValue.hasValue() )
+    if( !(rValue >>= bValue) )
     {
-        if( rValue.getValueType() == cppu::UnoType<bool>::get() )
-        {
-            bValue = *static_cast<sal_Bool const *>(rValue.getValue());
-        }
-        else
-        {
-            sal_Int32 nNum = 0;
-            if( rValue >>= nNum )
-                bValue = nNum != 0;
-        }
+        sal_Int32 nNum = 0;
+        if( rValue >>= nNum )
+            bValue = nNum != 0;
     }
 
     return bValue;
 }
-
-enum SfxMapUnit
-{
-    SFX_MAPUNIT_100TH_MM,
-    SFX_MAPUNIT_10TH_MM,
-    SFX_MAPUNIT_MM,
-    SFX_MAPUNIT_CM,
-    SFX_MAPUNIT_1000TH_INCH,
-    SFX_MAPUNIT_100TH_INCH,
-    SFX_MAPUNIT_10TH_INCH,
-    SFX_MAPUNIT_INCH,
-    SFX_MAPUNIT_POINT,
-    SFX_MAPUNIT_TWIP,
-    SFX_MAPUNIT_PIXEL,
-    SFX_MAPUNIT_SYSFONT,
-    SFX_MAPUNIT_APPFONT,
-    SFX_MAPUNIT_RELATIVE,
-    SFX_MAPUNIT_ABSOLUTE
-};
 
 /*
  * The values of this enum describe the degree of textual
  * representation of an item after calling the virtual
  * method <SfxPoolItem::GetPresentation()const>.
  */
-enum SfxItemPresentation
+enum class SfxItemPresentation
 {
-    SFX_ITEM_PRESENTATION_NAMELESS,
-    SFX_ITEM_PRESENTATION_COMPLETE
+    Nameless,
+    Complete
 };
 
 /**
@@ -132,6 +108,8 @@ enum class SfxItemState {
     SET      = 0x0030
 };
 
+#define INVALID_POOL_ITEM reinterpret_cast<SfxPoolItem*>(-1)
+
 class SvXMLUnitConverter;
 class SfxItemPool;
 class SfxItemSet;
@@ -144,17 +122,17 @@ friend class SfxItemPoolCache;
 friend class SfxItemSet;
 friend class SfxVoidItem;
 
-    mutable sal_uLong   m_nRefCount;
+    mutable sal_uInt32 m_nRefCount;
     sal_uInt16  m_nWhich;
     SfxItemKind  m_nKind;
 
 private:
-    inline void              SetRefCount( sal_uLong n );
+    inline void              SetRefCount(sal_uInt32 n);
     inline void              SetKind( SfxItemKind n );
 public:
-    inline void              AddRef( sal_uLong n = 1 ) const;
+    inline void              AddRef(sal_uInt32 n = 1) const;
 private:
-    inline sal_uLong         ReleaseRef( sal_uLong n = 1 ) const;
+    inline sal_uInt32        ReleaseRef(sal_uInt32 n = 1) const;
 
 protected:
                              explicit SfxPoolItem( sal_uInt16 nWhich = 0 );
@@ -163,7 +141,12 @@ protected:
 public:
     virtual                  ~SfxPoolItem();
 
-    void                     SetWhich( sal_uInt16 nId ) { m_nWhich = nId; }
+    void                     SetWhich( sal_uInt16 nId )
+                             {
+                                 // can only change the Which before we are in a set
+                                 assert(m_nRefCount==0);
+                                 m_nWhich = nId;
+                             }
     sal_uInt16               Which() const { return m_nWhich; }
     virtual bool             operator==( const SfxPoolItem& ) const = 0;
     bool                     operator!=( const SfxPoolItem& rItem ) const
@@ -171,8 +154,8 @@ public:
 
     /**  @return true if it has a valid string representation */
     virtual bool             GetPresentation( SfxItemPresentation ePresentation,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresentationMetric,
+                                    MapUnit eCoreMetric,
+                                    MapUnit ePresentationMetric,
                                     OUString &rText,
                                     const IntlWrapper * pIntlWrapper = nullptr ) const;
 
@@ -186,19 +169,21 @@ public:
     virtual SfxPoolItem*     Create( SvStream &, sal_uInt16 nItemVersion ) const;
     virtual SvStream&        Store( SvStream &, sal_uInt16 nItemVersion ) const;
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const = 0;
+    // clone and call SetWhich
+    SfxPoolItem*             CloneSetWhich( sal_uInt16 nNewWhich ) const;
 
-    sal_uLong                GetRefCount() const { return m_nRefCount; }
-    inline SfxItemKind       GetKind() const { return m_nKind; }
+    sal_uInt32               GetRefCount() const { return m_nRefCount; }
+    SfxItemKind       GetKind() const { return m_nKind; }
     virtual void dumpAsXml(struct _xmlTextWriter* pWriter) const;
 
 private:
     SfxPoolItem&             operator=( const SfxPoolItem& ) = delete;
 };
 
-inline void SfxPoolItem::SetRefCount( sal_uLong n )
+inline void SfxPoolItem::SetRefCount(sal_uInt32 n)
 {
     m_nRefCount = n;
-    m_nKind = SFX_ITEMS_NONE;
+    m_nKind = SfxItemKind::NONE;
 }
 
 inline void SfxPoolItem::SetKind( SfxItemKind n )
@@ -207,34 +192,34 @@ inline void SfxPoolItem::SetKind( SfxItemKind n )
     m_nKind = n;
 }
 
-inline void SfxPoolItem::AddRef( sal_uLong n ) const
+inline void SfxPoolItem::AddRef(sal_uInt32 n) const
 {
-    DBG_ASSERT(m_nRefCount <= SFX_ITEMS_MAXREF, "AddRef with non-Pool-Item");
-    DBG_ASSERT(ULONG_MAX - m_nRefCount > n, "AddRef: refcount overflow");
+    assert(m_nRefCount <= SFX_ITEMS_MAXREF && "AddRef with non-Pool-Item");
+    assert(n <= SFX_ITEMS_MAXREF - m_nRefCount && "AddRef: refcount overflow");
     m_nRefCount += n;
 }
 
-inline sal_uLong SfxPoolItem::ReleaseRef( sal_uLong n ) const
+inline sal_uInt32 SfxPoolItem::ReleaseRef(sal_uInt32 n) const
 {
-    DBG_ASSERT(m_nRefCount <= SFX_ITEMS_MAXREF, "AddRef with non-Pool-Item");
-    DBG_ASSERT(m_nRefCount >= n, "AddRef: refcount underflow");
+    assert(m_nRefCount <= SFX_ITEMS_MAXREF && "ReleaseRef with non-Pool-Item");
+    assert(n <= m_nRefCount);
     m_nRefCount -= n;
     return m_nRefCount;
 }
 
 inline bool IsPoolDefaultItem(const SfxPoolItem *pItem )
 {
-    return pItem && pItem->GetKind() == SFX_ITEMS_POOLDEFAULT;
+    return pItem && pItem->GetKind() == SfxItemKind::PoolDefault;
 }
 
 inline bool IsStaticDefaultItem(const SfxPoolItem *pItem )
 {
-    return pItem && pItem->GetKind() == SFX_ITEMS_STATICDEFAULT;
+    return pItem && pItem->GetKind() == SfxItemKind::StaticDefault;
 }
 
 inline bool IsDefaultItem( const SfxPoolItem *pItem )
 {
-    return pItem && (pItem->GetKind() == SFX_ITEMS_STATICDEFAULT || pItem->GetKind() == SFX_ITEMS_POOLDEFAULT);
+    return pItem && (pItem->GetKind() == SfxItemKind::StaticDefault || pItem->GetKind() == SfxItemKind::PoolDefault);
 }
 
 inline bool IsPooledItem( const SfxPoolItem *pItem )
@@ -244,7 +229,7 @@ inline bool IsPooledItem( const SfxPoolItem *pItem )
 
 inline bool IsInvalidItem(const SfxPoolItem *pItem)
 {
-    return pItem == reinterpret_cast<SfxPoolItem *>(-1);
+    return pItem == INVALID_POOL_ITEM;
 }
 
 class SVL_DLLPUBLIC SfxVoidItem final: public SfxPoolItem
@@ -254,15 +239,16 @@ public:
                             static SfxPoolItem* CreateDefault();
                             explicit SfxVoidItem( sal_uInt16 nWhich );
                             SfxVoidItem( const SfxVoidItem& );
-                            virtual ~SfxVoidItem();
+                            virtual ~SfxVoidItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
+                                    MapUnit eCoreMetric,
+                                    MapUnit ePresMetric,
                                     OUString &rText,
                                     const IntlWrapper * = nullptr ) const override;
+    virtual void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
 
     // create a copy of itself
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -278,13 +264,13 @@ public:
                             SfxSetItem( sal_uInt16 nWhich, SfxItemSet *pSet );
                             SfxSetItem( sal_uInt16 nWhich, const SfxItemSet &rSet );
                             SfxSetItem( const SfxSetItem&, SfxItemPool *pPool = nullptr );
-                            virtual ~SfxSetItem();
+                            virtual ~SfxSetItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
+                                    MapUnit eCoreMetric,
+                                    MapUnit ePresMetric,
                                     OUString &rText,
                                     const IntlWrapper * = nullptr ) const override;
 
@@ -304,7 +290,6 @@ class SVL_DLLPUBLIC SfxPoolItemHint: public SfxHint
     SfxPoolItem* pObj;
 public:
     explicit SfxPoolItemHint( SfxPoolItem* Object ) : pObj(Object) {}
-    virtual ~SfxPoolItemHint() {}
     SfxPoolItem* GetObject() const { return pObj; }
 };
 

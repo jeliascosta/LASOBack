@@ -27,11 +27,6 @@
 #define STR_FURTHER_OBJECT                      32026
 #define STR_UNKNOWN_SOURCE                      32027
 
-#ifdef BMP_PLUGIN
-#undef BMP_PLUGIN
-#endif
-#define BMP_PLUGIN                      32000
-
 // Sot Format Strings
 #define STR_FORMAT_START                        32100
 #define STR_FORMAT_STRING                       (STR_FORMAT_START + 1)
@@ -100,7 +95,9 @@
 #define STR_FORMAT_ID_DBACCESS_COMMAND          (STR_FORMAT_START + 115)
 #define STR_FORMAT_ID_DIALOG_60                 (STR_FORMAT_START + 116)
 #define STR_FORMAT_ID_HTML_NO_COMMENT           (STR_FORMAT_START + 119)
-#define STR_FORMAT_END                          (STR_FORMAT_ID_HTML_NO_COMMENT)
+#define STR_FORMAT_ID_RICHTEXT                  (STR_FORMAT_START + 120)
+
+#define STR_FORMAT_END                          (STR_FORMAT_ID_RICHTEXT)
 
 #endif // INCLUDED_SVTOOLS_SORES_HXX
 

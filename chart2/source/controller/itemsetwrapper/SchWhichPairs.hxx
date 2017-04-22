@@ -26,9 +26,6 @@
 
 #include "chartview/ChartSfxItemIds.hxx"
 
-namespace
-{
-
 #define CHARACTER_WHICHPAIRS \
     EE_ITEMS_START, EE_ITEMS_END,  \
     SID_CHAR_DLG_PREVIEW_STRING, SID_CHAR_DLG_PREVIEW_STRING
@@ -82,8 +79,8 @@ const sal_uInt16 nLegendWhichPairs[] =
 const sal_uInt16 nDataLabelWhichPairs[] =
 {
     SCHATTR_DATADESCR_START, SCHATTR_DATADESCR_END,
-    SID_ATTR_NUMBERFORMAT_VALUE, SID_ATTR_NUMBERFORMAT_INFO,    /* 10585 - 10585  svx/svxids.hrc */ \
-    SID_ATTR_NUMBERFORMAT_SOURCE, SID_ATTR_NUMBERFORMAT_SOURCE, /* 11432          svx/svxids.hrc */ \
+    SID_ATTR_NUMBERFORMAT_VALUE, SID_ATTR_NUMBERFORMAT_INFO,    /* 10585 - 10585  svx/svxids.hrc */
+    SID_ATTR_NUMBERFORMAT_SOURCE, SID_ATTR_NUMBERFORMAT_SOURCE, /* 11432          svx/svxids.hrc */
     SCHATTR_TEXT_DEGREES,SCHATTR_TEXT_DEGREES,
     EE_PARA_WRITINGDIR,EE_PARA_WRITINGDIR,
     0
@@ -215,7 +212,6 @@ const sal_uInt16 nLineAndFillPropertyWhichPairs[] =
 
 const sal_uInt16 nChartStyleWhichPairs[] =
 {
-    SCHATTR_DIAGRAM_STYLE,                SCHATTR_DIAGRAM_STYLE,
     SCHATTR_STYLE_SHAPE,                  SCHATTR_STYLE_SHAPE,
     SCHATTR_NUM_OF_LINES_FOR_BAR,         SCHATTR_NUM_OF_LINES_FOR_BAR,
     SCHATTR_SPLINE_ORDER,                 SCHATTR_SPLINE_ORDER,
@@ -239,8 +235,6 @@ const sal_uInt16 nRegEquationWhichPairs[] =
     SID_ATTR_NUMBERFORMAT_VALUE, SID_ATTR_NUMBERFORMAT_VALUE,   // 10585 - 10585  svx/svxids.hrc
     0
 };
-
-} //  anonymous namespace
 
 // INCLUDED_CHART2_SOURCE_CONTROLLER_ITEMSETWRAPPER_SCHWHICHPAIRS_HXX
 #endif

@@ -23,7 +23,7 @@
 #include <sal/types.h>
 #include <o3tl/typed_flags_set.hxx>
 
-enum class TimeFieldFormat : sal_Int32 { F_NONE, F_SEC, F_100TH_SEC, F_SEC_CS };
+enum class TimeFieldFormat : sal_Int32 { F_NONE, F_SEC, F_SEC_CS };
 
 enum class KeyFuncType : sal_Int32 { DONTKNOW, NEW, OPEN, SAVE,
                    SAVEAS, PRINT, CLOSE, QUIT,
@@ -64,8 +64,7 @@ enum class ToolBoxItemBits
     REPEAT              = 0x0040,
     DROPDOWNONLY        = 0x00a0, // 0x0080 | DROPDOWN
     TEXT_ONLY           = 0x0100,
-    ICON_ONLY           = 0x0200,
-    TEXTICON            = 0x0300 // TEXT_ONLY | ICON_ONLY
+    ICON_ONLY           = 0x0200
 };
 namespace o3tl
 {
@@ -95,20 +94,12 @@ enum class SymbolType : sal_uInt16
     PAGEUP           = 14,
     PAGEDOWN         = 15,
     PLAY             = 16,
-    REVERSEPLAY      = 17,
-    RECORD           = 18,
     STOP             = 19,
-    PAUSE            = 20,
-    WINDSTART        = 21,
-    WINDEND          = 22,
-    WINDBACKWARD     = 23,
-    WINDFORWARD      = 24,
     CLOSE            = 25,
     ROLLUP           = 26,
     ROLLDOWN         = 27,
     CHECKMARK        = 28,
     RADIOCHECKMARK   = 29,
-    SPIN_UPDOWN      = 30,
     FLOAT            = 31,
     DOCK             = 32,
     HIDE             = 33,

@@ -20,12 +20,14 @@
 #include <com/sun/star/container/XChild.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/embed/EmbeddedObjectCreator.hpp>
+#include <com/sun/star/embed/WrongStateException.hpp>
 #include <com/sun/star/embed/XLinkCreator.hpp>
 #include <com/sun/star/embed/XEmbedPersist.hpp>
 #include <com/sun/star/embed/XLinkageSupport.hpp>
 #include <com/sun/star/embed/XTransactedObject.hpp>
 #include <com/sun/star/embed/XOptimizedStorage.hpp>
 #include <com/sun/star/embed/EntryInitModes.hpp>
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/util/XModifiable.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
@@ -66,7 +68,6 @@ struct EmbedImpl
     //EmbeddedObjectContainerNameMap maTempObjectContainer;
     //uno::Reference < embed::XStorage > mxTempStorage;
 
-    /// bitfield
     bool mbOwnsStorage : 1;
     bool mbUserAllowsLinkUpdate : 1;
 
@@ -96,8 +97,8 @@ const uno::Reference < embed::XStorage >& EmbedImpl::GetReplacements()
 }
 
 EmbeddedObjectContainer::EmbeddedObjectContainer()
+    :     pImpl(new EmbedImpl)
 {
-    pImpl = new EmbedImpl;
     pImpl->mxStorage = ::comphelper::OStorageHelper::GetTemporaryStorage();
     pImpl->mbOwnsStorage = true;
     pImpl->mbUserAllowsLinkUpdate = true;
@@ -105,8 +106,8 @@ EmbeddedObjectContainer::EmbeddedObjectContainer()
 }
 
 EmbeddedObjectContainer::EmbeddedObjectContainer( const uno::Reference < embed::XStorage >& rStor )
+    :     pImpl(new EmbedImpl)
 {
-    pImpl = new EmbedImpl;
     pImpl->mxStorage = rStor;
     pImpl->mbOwnsStorage = false;
     pImpl->mbUserAllowsLinkUpdate = true;
@@ -114,8 +115,8 @@ EmbeddedObjectContainer::EmbeddedObjectContainer( const uno::Reference < embed::
 }
 
 EmbeddedObjectContainer::EmbeddedObjectContainer( const uno::Reference < embed::XStorage >& rStor, const uno::Reference < uno::XInterface >& xModel )
+    :     pImpl(new EmbedImpl)
 {
-    pImpl = new EmbedImpl;
     pImpl->mxStorage = rStor;
     pImpl->mbOwnsStorage = false;
     pImpl->mbUserAllowsLinkUpdate = true;
@@ -191,7 +192,6 @@ EmbeddedObjectContainer::~EmbeddedObjectContainer()
         pImpl->mxStorage->dispose();
 
     delete pImpl->mpTempObjectContainer;
-    delete pImpl;
 }
 
 void EmbeddedObjectContainer::CloseEmbeddedObjects()
@@ -219,8 +219,7 @@ OUString EmbeddedObjectContainer::CreateUniqueObjectName()
     sal_Int32 i=1;
     do
     {
-        aStr = aPersistName;
-        aStr += OUString::number( i++ );
+        aStr = aPersistName + OUString::number( i++ );
     }
     while( HasEmbeddedObject( aStr ) );
     // TODO/LATER: should we consider deleted objects?
@@ -241,13 +240,12 @@ bool EmbeddedObjectContainer::HasEmbeddedObjects()
 bool EmbeddedObjectContainer::HasEmbeddedObject( const OUString& rName )
 {
     EmbeddedObjectContainerNameMap::iterator aIt = pImpl->maObjectContainer.find( rName );
-    if ( aIt == pImpl->maObjectContainer.end() )
-    {
-        uno::Reference < container::XNameAccess > xAccess( pImpl->mxStorage, uno::UNO_QUERY );
-        return xAccess->hasByName(rName);
-    }
-    else
+    if (aIt != pImpl->maObjectContainer.end())
         return true;
+    uno::Reference <container::XNameAccess> xAccess(pImpl->mxStorage, uno::UNO_QUERY);
+    if (!xAccess.is())
+        return false;
+    return xAccess->hasByName(rName);
 }
 
 bool EmbeddedObjectContainer::HasEmbeddedObject( const uno::Reference < embed::XEmbeddedObject >& xObj )
@@ -390,7 +388,7 @@ uno::Reference < embed::XEmbeddedObject > EmbeddedObjectContainer::CreateEmbedde
             aObjDescr[1].Name = "DefaultParentBaseURL";
             aObjDescr[1].Value <<= *pBaseURL;
         }
-        ::std::copy( rArgs.begin(), rArgs.end(), aObjDescr.getArray() + nExtraArgs );
+        std::copy( rArgs.begin(), rArgs.end(), aObjDescr.getArray() + nExtraArgs );
         xObj.set( xFactory->createInstanceInitNew(
                     rClassId, OUString(), pImpl->mxStorage, rNewName,
                     aObjDescr ), uno::UNO_QUERY );
@@ -498,8 +496,8 @@ bool EmbeddedObjectContainer::StoreEmbeddedObject(
             if ( bCopy )
             {
                 auto aObjArgs(::comphelper::InitPropertySequence({
-                    { "SourceShellID", uno::makeAny(rSrcShellID) },
-                    { "DestinationShellID", uno::makeAny(rDestShellID) }
+                    { "SourceShellID", uno::Any(rSrcShellID) },
+                    { "DestinationShellID", uno::Any(rDestShellID) }
                 }));
                 xPersist->storeToEntry(pImpl->mxStorage, rName, aSeq, aObjArgs);
             }
@@ -570,7 +568,7 @@ uno::Reference < embed::XEmbeddedObject > EmbeddedObjectContainer::InsertEmbedde
             // Probably introducing of such an object must be restricted ( a storage must be used! ).
             uno::Reference< beans::XPropertySet > xProps( xNewStream, uno::UNO_QUERY_THROW );
             xProps->setPropertyValue("MediaType",
-                    uno::makeAny( OUString( "application/vnd.sun.star.oleobject" ) ) );
+                    uno::Any( OUString( "application/vnd.sun.star.oleobject" ) ) );
         }
         catch (uno::Exception const& e)
         {
@@ -659,7 +657,7 @@ uno::Reference < embed::XEmbeddedObject > EmbeddedObjectContainer::InsertEmbedde
     }
     catch (uno::Exception const& e)
     {
-        SAL_WARN("comphelper", "EmbeddedObjectContainer::InsertEmbeddedLink: "
+        SAL_WARN("comphelper.container", "EmbeddedObjectContainer::InsertEmbeddedLink: "
                 "exception caught: " << e.Message);
     }
 
@@ -991,7 +989,7 @@ bool EmbeddedObjectContainer::RemoveEmbeddedObject( const uno::Reference < embed
                     //             the media type will be provided with object insertion
                     OUString aOrigStorMediaType;
                     uno::Reference< beans::XPropertySet > xStorProps( pImpl->mxStorage, uno::UNO_QUERY_THROW );
-                    static const OUString s_sMediaType("MediaType");
+                    static const OUStringLiteral s_sMediaType("MediaType");
                     xStorProps->getPropertyValue( s_sMediaType ) >>= aOrigStorMediaType;
 
                     SAL_WARN_IF( aOrigStorMediaType.isEmpty(), "comphelper.container", "No valuable media type in the storage!\n" );
@@ -999,7 +997,7 @@ bool EmbeddedObjectContainer::RemoveEmbeddedObject( const uno::Reference < embed
                     uno::Reference< beans::XPropertySet > xTargetStorProps(
                                                                 pImpl->mpTempObjectContainer->pImpl->mxStorage,
                                                                 uno::UNO_QUERY_THROW );
-                    xTargetStorProps->setPropertyValue( s_sMediaType,uno::makeAny( aOrigStorMediaType ) );
+                    xTargetStorProps->setPropertyValue( s_sMediaType,uno::Any( aOrigStorMediaType ) );
                 }
                 catch (const uno::Exception&)
                 {
@@ -1143,35 +1141,6 @@ uno::Reference < io::XInputStream > EmbeddedObjectContainer::GetGraphicStream( c
     return GetGraphicStream( GetEmbeddedObjectName( xObj ), pMediaType );
 }
 
-uno::Reference < io::XInputStream > EmbeddedObjectContainer::GetObjectStream( const OUString& aName, OUString* pMediaType )
-{
-    uno::Reference < io::XInputStream > xInputStream;
-
-    SAL_WARN_IF( aName.isEmpty(), "comphelper.container", "Retrieving stream for unknown object!" );
-    if ( !aName.isEmpty() )
-    {
-        try
-        {
-            uno::Reference < io::XStream > xStream = pImpl->mxStorage->cloneStreamElement( aName );  //get a readonly clone
-            xInputStream = xStream->getInputStream();
-            if ( pMediaType )
-            {
-                uno::Reference < beans::XPropertySet > xSet( xInputStream, uno::UNO_QUERY );
-                if ( xSet.is() )
-                {
-                    uno::Any aAny = xSet->getPropertyValue("MediaType");
-                    aAny >>= *pMediaType;
-                }
-            }
-        }
-        catch (const uno::Exception&)
-        {
-        }
-    }
-
-    return xInputStream;
-}
-
 bool EmbeddedObjectContainer::InsertGraphicStream( const css::uno::Reference < css::io::XInputStream >& rStream, const OUString& rObjectName, const OUString& rMediaType )
 {
     try
@@ -1186,16 +1155,14 @@ bool EmbeddedObjectContainer::InsertGraphicStream( const css::uno::Reference < c
         ::comphelper::OStorageHelper::CopyInputToOutput( rStream, xOutStream );
         xOutStream->flush();
 
-        uno::Reference< beans::XPropertySet > xPropSet( xGraphicStream, uno::UNO_QUERY );
-        if ( !xPropSet.is() )
-            throw uno::RuntimeException();
+        uno::Reference< beans::XPropertySet > xPropSet( xGraphicStream, uno::UNO_QUERY_THROW );
 
         xPropSet->setPropertyValue("UseCommonStoragePasswordEncryption",
-                                    uno::makeAny( true ) );
+                                    uno::Any( true ) );
         xPropSet->setPropertyValue("MediaType", uno::Any(rMediaType) );
 
         xPropSet->setPropertyValue("Compressed",
-                                    uno::makeAny( true ) );
+                                    uno::Any( true ) );
     }
     catch (const uno::Exception&)
     {
@@ -1276,7 +1243,7 @@ namespace {
         }
         catch (const uno::Exception&)
         {
-            SAL_WARN( "comphelper.container", "The pictures storage is not available!\n" );
+            SAL_WARN( "comphelper.container", "The images storage is not available!\n" );
         }
     }
 

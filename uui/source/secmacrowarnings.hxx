@@ -21,9 +21,9 @@
 #define INCLUDED_UUI_SOURCE_SECMACROWARNINGS_HXX
 
 #include <vcl/dialog.hxx>
-#include <svtools/stdctrl.hxx>
 #include <unotools/securityoptions.hxx>
 #include <vcl/button.hxx>
+#include <com/sun/star/uno/Sequence.hxx>
 
 namespace com {
 namespace sun {
@@ -31,9 +31,6 @@ namespace star {
 namespace security {
     class XCertificate; }
 }}}
-
-#include <com/sun/star/uno/Sequence.hxx>
-
 
 class MacroWarning : public ModalDialog
 {
@@ -59,16 +56,16 @@ private:
     const bool          mbShowSignatures;
     sal_Int32           mnActSecLevel;
 
-    DECL_LINK_TYPED(    ViewSignsBtnHdl, Button*, void );
-    DECL_LINK_TYPED(    EnableBtnHdl, Button*, void );
-    DECL_LINK_TYPED(    DisableBtnHdl, Button*, void );
-    DECL_LINK_TYPED(    AlwaysTrustCheckHdl, Button*, void );
+    DECL_LINK(    ViewSignsBtnHdl, Button*, void );
+    DECL_LINK(    EnableBtnHdl, Button*, void );
+    DECL_LINK(    DisableBtnHdl, Button*, void );
+    DECL_LINK(    AlwaysTrustCheckHdl, Button*, void );
 
     void                InitControls();
 
 public:
     MacroWarning( vcl::Window* pParent, bool _bShowSignatures, ResMgr& rResMgr );
-    virtual ~MacroWarning();
+    virtual ~MacroWarning() override;
     virtual void dispose() override;
 
     void    SetDocumentURL( const OUString& rDocURL );

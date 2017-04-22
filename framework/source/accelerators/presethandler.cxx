@@ -54,10 +54,8 @@ namespace {
     @descr  This struct is allegedly shared and must be used within a
             synchronized section. But it isn't.
  */
-struct TSharedStorages
+struct TSharedStorages final
 {
-    public:
-
         StorageHolder m_lStoragesShare;
         StorageHolder m_lStoragesUser;
 
@@ -65,8 +63,6 @@ struct TSharedStorages
             : m_lStoragesShare()
             , m_lStoragesUser ()
         {};
-
-        virtual ~TSharedStorages() {};
 };
 
 /** @short  provides access to the:

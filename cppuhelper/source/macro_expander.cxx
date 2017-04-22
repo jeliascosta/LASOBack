@@ -24,7 +24,7 @@
 #include <uno/mapping.hxx>
 
 #include <cppuhelper/factory.hxx>
-#include <cppuhelper/compbase2.hxx>
+#include <cppuhelper/compbase.hxx>
 #include <cppuhelper/component_context.hxx>
 #include <cppuhelper/supportsservice.hxx>
 
@@ -112,7 +112,7 @@ inline Sequence< OUString > const & s_get_service_names()
     return theImplNames::get().getNames();
 }
 
-typedef ::cppu::WeakComponentImplHelper2<
+typedef cppu::WeakComponentImplHelper<
     util::XMacroExpander, lang::XServiceInfo > t_uno_impl;
 
 struct mutex_holder
@@ -126,46 +126,35 @@ protected:
     virtual void SAL_CALL disposing() override;
 
 public:
-    inline Bootstrap_MacroExpander()
+    Bootstrap_MacroExpander()
         : t_uno_impl( m_mutex )
         {}
-    virtual ~Bootstrap_MacroExpander();
 
     // XMacroExpander impl
-    virtual OUString SAL_CALL expandMacros( OUString const & exp )
-        throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL expandMacros( OUString const & exp ) override;
     // XServiceInfo impl
-    virtual OUString SAL_CALL getImplementationName()
-        throw (RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName )
-        throw (RuntimeException, std::exception) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()
-        throw (RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName ) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 };
 
 
 void Bootstrap_MacroExpander::disposing()
 {}
 
-Bootstrap_MacroExpander::~Bootstrap_MacroExpander()
-{}
-
 // XServiceInfo impl
 
 OUString Bootstrap_MacroExpander::getImplementationName()
-    throw (RuntimeException, std::exception)
 {
     return s_impl_name();
 }
 
 sal_Bool Bootstrap_MacroExpander::supportsService( OUString const & serviceName )
-    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
 Sequence< OUString > Bootstrap_MacroExpander::getSupportedServiceNames()
-    throw (RuntimeException, std::exception)
 {
     return s_get_service_names();
 }
@@ -173,7 +162,6 @@ Sequence< OUString > Bootstrap_MacroExpander::getSupportedServiceNames()
 // XMacroExpander impl
 
 OUString Bootstrap_MacroExpander::expandMacros( OUString const & exp )
-    throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     return cppuhelper::detail::expandMacros( exp );
 }

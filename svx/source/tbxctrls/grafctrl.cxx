@@ -74,7 +74,7 @@ private:
     OUString            maCommand;
     Reference< XFrame > mxFrame;
 
-                    DECL_LINK_TYPED(ImplModifyHdl, Idle *, void);
+                    DECL_LINK(ImplModifyHdl, Timer *, void);
 
 protected:
 
@@ -121,8 +121,8 @@ ImplGrafMetricField::ImplGrafMetricField( vcl::Window* pParent, const OUString& 
         SetSpinSize( 1 );
     }
 
-    maIdle.SetPriority( SchedulerPriority::LOW );
-    maIdle.SetIdleHdl( LINK( this, ImplGrafMetricField, ImplModifyHdl ) );
+    maIdle.SetPriority( TaskPriority::LOW );
+    maIdle.SetInvokeHandler( LINK( this, ImplGrafMetricField, ImplModifyHdl ) );
 }
 
 void ImplGrafMetricField::Modify()
@@ -130,7 +130,7 @@ void ImplGrafMetricField::Modify()
     maIdle.Start();
 }
 
-IMPL_LINK_NOARG_TYPED(ImplGrafMetricField, ImplModifyHdl, Idle *, void)
+IMPL_LINK_NOARG(ImplGrafMetricField, ImplModifyHdl, Timer *, void)
 {
     const sal_Int64 nVal = GetValue();
 
@@ -141,10 +141,10 @@ IMPL_LINK_NOARG_TYPED(ImplGrafMetricField, ImplModifyHdl, Idle *, void)
          maCommand == ".uno:GrafBlue" ||
          maCommand == ".uno:GrafLuminance" ||
          maCommand == ".uno:GrafContrast" )
-        a = makeAny( sal_Int16( nVal ));
+        a <<= sal_Int16( nVal );
     else if ( maCommand == ".uno:GrafGamma" ||
               maCommand == ".uno:GrafTransparence" )
-        a = makeAny( sal_Int32( nVal ));
+        a <<= sal_Int32( nVal );
 
     if ( a.hasValue() )
     {
@@ -190,13 +190,13 @@ static sal_uInt16 ImplGetRID( const OUString& aCommand )
 {
     static const CommandToRID aImplCommandToResMap[] =
     {
-        { ".uno:GrafRed",           RID_SVXIMG_GRAF_RED             },
-        { ".uno:GrafGreen",         RID_SVXIMG_GRAF_GREEN           },
-        { ".uno:GrafBlue",          RID_SVXIMG_GRAF_BLUE            },
-        { ".uno:GrafLuminance",     RID_SVXIMG_GRAF_LUMINANCE       },
-        { ".uno:GrafContrast",      RID_SVXIMG_GRAF_CONTRAST        },
-        { ".uno:GrafGamma",         RID_SVXIMG_GRAF_GAMMA           },
-        { ".uno:GrafTransparence",  RID_SVXIMG_GRAF_TRANSPARENCE    },
+        { ".uno:GrafRed",           RID_SVXBMP_GRAF_RED             },
+        { ".uno:GrafGreen",         RID_SVXBMP_GRAF_GREEN           },
+        { ".uno:GrafBlue",          RID_SVXBMP_GRAF_BLUE            },
+        { ".uno:GrafLuminance",     RID_SVXBMP_GRAF_LUMINANCE       },
+        { ".uno:GrafContrast",      RID_SVXBMP_GRAF_CONTRAST        },
+        { ".uno:GrafGamma",         RID_SVXBMP_GRAF_GAMMA           },
+        { ".uno:GrafTransparence",  RID_SVXBMP_GRAF_TRANSPARENCE    },
         { nullptr, 0 }
     };
 
@@ -230,11 +230,12 @@ protected:
 public:
 
                             ImplGrafControl( vcl::Window* pParent, const OUString& rCmd, const Reference< XFrame >& rFrame );
-                            virtual ~ImplGrafControl();
+                            virtual ~ImplGrafControl() override;
     virtual void            dispose() override;
 
     void                    Update( const SfxPoolItem* pItem ) { maField->Update( pItem ); }
     void                    SetText( const OUString& rStr ) override { maField->SetText( rStr ); }
+    virtual void            Resize() override;
 };
 
 ImplGrafControl::ImplGrafControl(
@@ -246,13 +247,13 @@ ImplGrafControl::ImplGrafControl(
     , maField( VclPtr<ImplGrafMetricField>::Create(this, rCmd, rFrame) )
 {
     ResId   aResId( ImplGetRID( rCmd ), DIALOG_MGR() ) ;
-    Image   aImage( aResId );
+    BitmapEx aBitmapEx(aResId);
 
-    Size    aImgSize( aImage.GetSizePixel() );
-    Size    aFldSize( maField->GetSizePixel() );
+    Size    aImgSize(aBitmapEx.GetSizePixel());
+    Size    aFldSize(maField->GetSizePixel());
     long    nFldY, nImgY;
 
-    maImage->SetImage( aImage );
+    maImage->SetImage(Image(aBitmapEx));
     maImage->SetSizePixel( aImgSize );
     // we want to see the background of the toolbox, not of the FixedImage or Control
     maImage->SetBackground( Wallpaper( COL_TRANSPARENT ) );
@@ -301,6 +302,15 @@ void ImplGrafControl::GetFocus()
         maField->GrabFocus();
 }
 
+void ImplGrafControl::Resize()
+{
+    Size aFldSize(maField->GetSizePixel());
+    aFldSize.Width() = GetSizePixel().Width() - SYMBOL_TO_FIELD_OFFSET - maImage->GetSizePixel().Width();
+    maField->SetSizePixel(aFldSize);
+
+    Control::Resize();
+}
+
 class ImplGrafModeControl : public ListBox
 {
     using Window::Update;
@@ -310,7 +320,7 @@ private:
 
     virtual void    Select() override;
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    virtual bool    Notify( NotifyEvent& rNEvt ) override;
+    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
     static void     ImplReleaseFocus();
 
 public:
@@ -340,7 +350,7 @@ void ImplGrafModeControl::Select()
     {
         Sequence< PropertyValue > aArgs( 1 );
         aArgs[0].Name = "GrafMode";
-        aArgs[0].Value = makeAny( sal_Int16( GetSelectEntryPos() ));
+        aArgs[0].Value <<= sal_Int16( GetSelectEntryPos() );
 
         /*  #i33380# DR 2004-09-03 Moved the following line above the Dispatch() call.
             This instance may be deleted in the meantime (i.e. when a dialog is opened
@@ -364,9 +374,9 @@ bool ImplGrafModeControl::PreNotify( NotifyEvent& rNEvt )
     return ListBox::PreNotify( rNEvt );
 }
 
-bool ImplGrafModeControl::Notify( NotifyEvent& rNEvt )
+bool ImplGrafModeControl::EventNotify( NotifyEvent& rNEvt )
 {
-    bool bHandled = ListBox::Notify( rNEvt );
+    bool bHandled = ListBox::EventNotify( rNEvt );
 
     if( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
     {
@@ -657,16 +667,16 @@ void SvxGrafAttrHelper::ExecuteGrafAttr( SfxRequest& rReq, SdrView& rView )
                 SdrGrafObj* pObj = static_cast<SdrGrafObj*>( rMarkList.GetMark( 0 )->GetMarkedSdrObj() );
 
                 if( pObj && dynamic_cast<const SdrGrafObj*>( pObj) !=  nullptr &&
-                    ( pObj->GetGraphicType() != GRAPHIC_NONE ) &&
-                    ( pObj->GetGraphicType() != GRAPHIC_DEFAULT ) )
+                    ( pObj->GetGraphicType() != GraphicType::NONE ) &&
+                    ( pObj->GetGraphicType() != GraphicType::Default ) )
                 {
                     SfxItemSet          aGrfAttr( rPool, SDRATTR_GRAFCROP, SDRATTR_GRAFCROP, 0 );
-                    const SfxMapUnit    eOldMetric = rPool.GetMetric( 0 );
-                    const MapMode       aMap100( MAP_100TH_MM );
-                    const MapMode       aMapTwip( MAP_TWIP );
+                    const MapUnit       eOldMetric = rPool.GetMetric( 0 );
+                    const MapMode       aMap100( MapUnit::Map100thMM );
+                    const MapMode       aMapTwip( MapUnit::MapTwip );
 
                     aGrfAttr.Put(pObj->GetMergedItemSet());
-                    rPool.SetDefaultMetric( SFX_MAPUNIT_TWIP );
+                    rPool.SetDefaultMetric( MapUnit::MapTwip );
 
                     SfxItemSet  aCropDlgAttr( rPool,
                                             SDRATTR_GRAFCROP, SDRATTR_GRAFCROP,
@@ -700,7 +710,7 @@ void SvxGrafAttrHelper::ExecuteGrafAttr( SfxRequest& rReq, SdrView& rView )
                     assert(pFact && "Dialog creation failed!");
                     ::CreateTabPage fnCreatePage = pFact->GetTabPageCreatorFunc( RID_SVXPAGE_GRFCROP );
                     assert(fnCreatePage && "Dialog creation failed!");
-                    SfxTabPage* pTabPage = (*fnCreatePage)( aCropDialog->get_content_area(), &aCropDlgAttr );
+                    VclPtr<SfxTabPage> pTabPage = (*fnCreatePage)( aCropDialog->get_content_area(), &aCropDlgAttr );
 
                     pTabPage->SetText( aCropStr );
                     aCropDialog->SetTabPage( pTabPage );
@@ -731,7 +741,7 @@ void SvxGrafAttrHelper::ExecuteGrafAttr( SfxRequest& rReq, SdrView& rView )
                                 Size        aNewGrfSize( OutputDevice::LogicToLogic( rGrfSize, aMapTwip, aMap100 ) );
                                 Size        aOldGrfSize( pObj->GetLogicRect().GetSize() );
 
-                                Rectangle aNewRect( aNewOrigin, aNewGrfSize );
+                                tools::Rectangle aNewRect( aNewOrigin, aNewGrfSize );
                                 Point aOffset( (aNewGrfSize.Width() - aOldGrfSize.Width()) >> 1,
                                             (aNewGrfSize.Height() - aOldGrfSize.Height()) >> 1 );
 
@@ -833,8 +843,8 @@ void SvxGrafAttrHelper::GetGrafAttrState( SfxItemSet& rSet, SdrView& rView )
         SdrGrafObj* pGrafObj = dynamic_cast< SdrGrafObj* >( rMarkList.GetMark( i )->GetMarkedSdrObj() );
 
         if( !pGrafObj ||
-            ( pGrafObj->GetGraphicType() == GRAPHIC_NONE ) ||
-            ( pGrafObj->GetGraphicType() == GRAPHIC_DEFAULT  ))
+            ( pGrafObj->GetGraphicType() == GraphicType::NONE ) ||
+            ( pGrafObj->GetGraphicType() == GraphicType::Default  ))
         {
             bEnableColors = bEnableTransparency = bEnableCrop = false;
             break;

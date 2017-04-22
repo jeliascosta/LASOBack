@@ -72,7 +72,7 @@ protected:
             if the Control instance has been destroyed in any of the call
     */
     bool        ImplCallEventListenersAndHandler(
-                    sal_uLong nEvent, std::function<void()> callHandler
+                    VclEventId nEvent, std::function<void()> const & callHandler
                 );
 
     /** draws the given text onto the given device
@@ -84,12 +84,12 @@ protected:
         at the target device, or taking the reference device into account) when
         returning.
     */
-    Rectangle DrawControlText( OutputDevice& _rTargetDevice, const Rectangle& _rRect,
+    tools::Rectangle DrawControlText( OutputDevice& _rTargetDevice, const tools::Rectangle& _rRect,
                                const OUString& _rStr, DrawTextFlags _nStyle,
                                MetricVector* _pVector, OUString* _pDisplayText,
                                const Size* i_pDeviceSize = nullptr ) const;
 
-    Rectangle GetControlTextRect( OutputDevice& _rTargetDevice, const Rectangle & rRect,
+    tools::Rectangle GetControlTextRect( OutputDevice& _rTargetDevice, const tools::Rectangle & rRect,
                                   const OUString& _rStr, DrawTextFlags _nStyle,
                                   Size* o_pDeviceSize = nullptr ) const;
 
@@ -122,19 +122,16 @@ public:
             the rect for drawing the frame. Upon returning from the call, the rect will be inflated
             by the space occupied by the drawn pixels.
     */
-    SAL_DLLPRIVATE void ImplDrawFrame( OutputDevice* pDev, Rectangle& rRect );
+    SAL_DLLPRIVATE void ImplDrawFrame( OutputDevice* pDev, tools::Rectangle& rRect );
 
 public:
     explicit        Control( vcl::Window* pParent, WinBits nWinStyle = 0 );
-    explicit        Control( vcl::Window* pParent, const ResId& );
-    virtual         ~Control();
+    virtual         ~Control() override;
     virtual void    dispose() override;
 
     virtual void    EnableRTL ( bool bEnable = true ) override;
 
-    virtual void    GetFocus() override;
-    virtual void    LoseFocus() override;
-    virtual bool    Notify( NotifyEvent& rNEvt ) override;
+    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
     virtual void    StateChanged( StateChangedType nStateChange ) override;
     virtual void    Resize() override;
 
@@ -143,7 +140,7 @@ public:
     // gets the displayed text
     virtual OUString GetDisplayText() const override;
     // returns the bounding box for the character at index nIndex (in control coordinates)
-    Rectangle GetCharacterBounds( long nIndex ) const;
+    tools::Rectangle GetCharacterBounds( long nIndex ) const;
     // returns the character index for corresponding to rPoint (in control coordinates)
     // -1 is returned if no character is at that point
     long GetIndexForPoint( const Point& rPoint ) const;

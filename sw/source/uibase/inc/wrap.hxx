@@ -77,18 +77,17 @@ class SwWrapTabPage: public SfxTabPage
     bool m_bDrawMode;
     bool m_bContourImage;
 
-    virtual ~SwWrapTabPage();
+    virtual ~SwWrapTabPage() override;
     virtual void dispose() override;
 
-    void            ApplyImageList();
+    void            SetImages();
     virtual void    ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg   DeactivatePage(SfxItemSet *pSet) override;
-    virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
+    virtual DeactivateRC   DeactivatePage(SfxItemSet *pSet) override;
 
-    DECL_LINK_TYPED( RangeModifyHdl, SpinField&, void );
-    DECL_LINK_TYPED( RangeLoseFocusHdl, Control&, void );
-    DECL_LINK_TYPED( WrapTypeHdl, Button *, void );
-    DECL_LINK_TYPED( ContourHdl, Button *, void);
+    DECL_LINK( RangeModifyHdl, SpinField&, void );
+    DECL_LINK( RangeLoseFocusHdl, Control&, void );
+    DECL_LINK( WrapTypeHdl, Button *, void );
+    DECL_LINK( ContourHdl, Button *, void);
 
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
@@ -104,9 +103,9 @@ public:
     virtual void    Reset(const SfxItemSet *rSet) override;
 
     static const sal_uInt16* GetRanges() { return m_aWrapPageRg; }
-    inline void     SetNewFrame(bool bNewFrame) { m_bNew = bNewFrame; }
-    inline void     SetFormatUsed(bool bFormat, bool bDrawMode) { m_bFormat = bFormat; m_bDrawMode = bDrawMode; }
-    inline void     SetShell(SwWrtShell* pSh) { m_pWrtSh = pSh; }
+    void     SetNewFrame(bool bNewFrame) { m_bNew = bNewFrame; }
+    void     SetFormatUsed(bool bFormat, bool bDrawMode) { m_bFormat = bFormat; m_bDrawMode = bDrawMode; }
+    void     SetShell(SwWrtShell* pSh) { m_pWrtSh = pSh; }
 };
 
 #endif

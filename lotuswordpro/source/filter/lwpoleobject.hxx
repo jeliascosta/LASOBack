@@ -116,7 +116,6 @@ class LwpOleObject : public LwpGraphicOleObject
 {
 public:
     LwpOleObject(LwpObjectHeader& objHdr, LwpSvStream* pStrm);
-    virtual ~LwpOleObject(){}
     virtual void Read() override;
     virtual void Parse(IXFStream* pOutputStream) override;
     virtual void XFConvert(XFContentContainer * pCont) override;
@@ -125,7 +124,7 @@ public:
 private:
     sal_uInt16 cPersistentFlags;
 
-    Rectangle m_SizeRect;
+    tools::Rectangle m_SizeRect;
 };
 
 #endif

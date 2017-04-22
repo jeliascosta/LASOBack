@@ -30,13 +30,12 @@ class EDITENG_DLLPUBLIC SvxTwoLinesItem : public SfxPoolItem
     sal_Unicode cStartBracket, cEndBracket;
     bool bOn;
 public:
-    static SfxPoolItem* CreateDefault();
     SvxTwoLinesItem( bool bOn /*= true*/,
                      sal_Unicode nStartBracket /*= 0*/,
                      sal_Unicode nEndBracket /*= 0*/,
                      sal_uInt16 nId  );
     SvxTwoLinesItem( const SvxTwoLinesItem& rAttr );
-    virtual ~SvxTwoLinesItem();
+    virtual ~SvxTwoLinesItem() override;
 
     // "pure virtual Methods" from SfxPoolItem
     virtual bool            operator==( const SfxPoolItem& ) const override;
@@ -44,10 +43,10 @@ public:
     virtual SfxPoolItem*    Create(SvStream &, sal_uInt16 nVer) const override;
     virtual SvStream&       Store(SvStream &, sal_uInt16 nIVer) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
 
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;

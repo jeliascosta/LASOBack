@@ -145,8 +145,7 @@ rtl::Reference<XMLTransformerContext> XMLFrameOASISTransformerContext::CreateChi
                     GetTransformer().ProcessAttrList( m_xAttrList,
                                                       OASIS_SHAPE_ACTIONS,
                                                       false );
-                    GetTransformer().GetDocHandler()->startElement( m_aElemQName,
-                                                                    m_xAttrList );
+                    GetTransformer().GetDocHandler()->startElement( m_aElemQName, m_xAttrList );
                 }
                 else
                 {

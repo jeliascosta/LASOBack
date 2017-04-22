@@ -42,6 +42,7 @@
 #include <flyfrm.hxx>
 #include <sortedobjs.hxx>
 
+#include <limits>
 #include <set>
 
 using namespace ::com::sun::star;
@@ -320,7 +321,7 @@ bool SwLayoutCache::CompareLayout( const SwDoc& rDoc ) const
     const SwRootFrame *pRootFrame = rDoc.getIDocumentLayoutAccess().GetCurrentLayout();
     if( pRootFrame )
     {
-        sal_uInt16 nIndex = 0;
+        size_t nIndex = 0;
         sal_uLong nStartOfContent = rDoc.GetNodes().GetEndOfContent().
                                 StartOfSectionNode()->GetIndex();
         const SwPageFrame* pPage = static_cast<const SwPageFrame*>(pRootFrame->Lower());
@@ -454,6 +455,51 @@ SwActualSection::SwActualSection( SwActualSection *pUp,
     }
 }
 
+namespace {
+
+bool sanityCheckLayoutCache(SwLayCacheImpl const& rCache,
+        SwNodes const& rNodes, sal_uLong nNodeIndex)
+{
+    auto const nStartOfContent(rNodes.GetEndOfContent().StartOfSectionNode()->GetIndex());
+    nNodeIndex -= nStartOfContent;
+    auto const nMaxIndex(rNodes.GetEndOfContent().GetIndex() - nStartOfContent);
+    for (size_t nIndex = 0; nIndex < rCache.size(); ++nIndex)
+    {
+        auto const nBreakIndex(rCache.GetBreakIndex(nIndex));
+        if (nBreakIndex < nNodeIndex || nMaxIndex <= nBreakIndex)
+        {
+            SAL_WARN("sw.layout",
+                "invalid node index in layout-cache: " << nBreakIndex);
+            return false;
+        }
+        auto const nBreakType(rCache.GetBreakType(nIndex));
+        switch (nBreakType)
+        {
+            case SW_LAYCACHE_IO_REC_PARA:
+                if (!rNodes[nBreakIndex + nStartOfContent]->IsTextNode())
+                {
+                    SAL_WARN("sw.layout",
+                        "invalid node of type 'P' in layout-cache");
+                    return false;
+                }
+                break;
+            case SW_LAYCACHE_IO_REC_TABLE:
+                if (!rNodes[nBreakIndex + nStartOfContent]->IsTableNode())
+                {
+                    SAL_WARN("sw.layout",
+                        "invalid node of type 'T' in layout-cache");
+                    return false;
+                }
+                break;
+            default:
+                assert(false); // Read shouldn't have inserted that
+        }
+    }
+    return true;
+}
+
+} // namespace
+
 /** helper class, which utilizes the layout cache information
  *  to distribute the document content to the right pages.
  * It's used by the InsertCnt_(..)-function.
@@ -461,14 +507,14 @@ SwActualSection::SwActualSection( SwActualSection *pUp,
  * a guess, but a guess with statistical background.
  */
 SwLayHelper::SwLayHelper( SwDoc *pD, SwFrame* &rpF, SwFrame* &rpP, SwPageFrame* &rpPg,
-                          SwLayoutFrame* &rpL, SwActualSection* &rpA, bool &rB,
+                          SwLayoutFrame* &rpL, SwActualSection* &rpA,
                           sal_uLong nNodeIndex, bool bCache )
     : rpFrame( rpF )
     , rpPrv( rpP )
     , rpPage( rpPg )
     , rpLay( rpL )
     , rpActualSection( rpA )
-    , rbBreakAfter(rB)
+    , mbBreakAfter(false)
     , pDoc(pD)
     , nMaxParaPerPage( 25 )
     , nParagraphCnt( bCache ? 0 : USHRT_MAX )
@@ -478,24 +524,24 @@ SwLayHelper::SwLayHelper( SwDoc *pD, SwFrame* &rpF, SwFrame* &rpP, SwPageFrame* 
     pImpl = pDoc->GetLayoutCache() ? pDoc->GetLayoutCache()->LockImpl() : nullptr;
     if( pImpl )
     {
-        nMaxParaPerPage = 1000;
-        nStartOfContent = pDoc->GetNodes().GetEndOfContent().StartOfSectionNode()
-                          ->GetIndex();
-        nNodeIndex -= nStartOfContent;
-        nIndex = 0;
-        while( nIndex < pImpl->size() && pImpl->GetBreakIndex( nIndex ) < nNodeIndex )
+        SwNodes const& rNodes(pDoc->GetNodes());
+        if (sanityCheckLayoutCache(*pImpl, rNodes, nNodeIndex))
         {
-            ++nIndex;
+            nIndex = 0;
+            nStartOfContent = rNodes.GetEndOfContent().StartOfSectionNode()->GetIndex();
+            nMaxParaPerPage = 1000;
         }
-        if( nIndex >= pImpl->size() )
+        else
         {
             pDoc->GetLayoutCache()->UnlockImpl();
             pImpl = nullptr;
+            nIndex = std::numeric_limits<size_t>::max();
+            nStartOfContent = USHRT_MAX;
         }
     }
     else
     {
-        nIndex = USHRT_MAX;
+        nIndex = std::numeric_limits<size_t>::max();
         nStartOfContent = ULONG_MAX;
     }
 }
@@ -588,12 +634,12 @@ bool SwLayHelper::CheckInsertPage()
                               nullptr :
                               rDesc.GetPageDesc();
 
-    bool bBrk = nParagraphCnt > nMaxParaPerPage || rbBreakAfter;
-    rbBreakAfter = rBrk.GetBreak() == SVX_BREAK_PAGE_AFTER ||
-                   rBrk.GetBreak() == SVX_BREAK_PAGE_BOTH;
+    bool bBrk = nParagraphCnt > nMaxParaPerPage || mbBreakAfter;
+    mbBreakAfter = rBrk.GetBreak() == SvxBreak::PageAfter ||
+                   rBrk.GetBreak() == SvxBreak::PageBoth;
     if ( !bBrk )
-        bBrk = rBrk.GetBreak() == SVX_BREAK_PAGE_BEFORE ||
-               rBrk.GetBreak() == SVX_BREAK_PAGE_BOTH;
+        bBrk = rBrk.GetBreak() == SvxBreak::PageBefore ||
+               rBrk.GetBreak() == SvxBreak::PageBoth;
 
     if ( bBrk || pDesc )
     {
@@ -734,7 +780,7 @@ bool SwLayHelper::CheckInsert( sal_uLong nNodeIndex )
                 sal_uInt16 nType = SW_LAYCACHE_IO_REC_PAGES;
                 if( bLongTab )
                 {
-                    rbBreakAfter = true;
+                    mbBreakAfter = true;
                     nOfst = static_cast<sal_Int32>(nRowCount + nMaxRowPerPage);
                 }
                 else
@@ -747,7 +793,7 @@ bool SwLayHelper::CheckInsert( sal_uLong nNodeIndex )
                     {
                         nType = pImpl->GetBreakType( nIndex );
                         nOfst = pImpl->GetBreakOfst( nIndex++ );
-                        rbBreakAfter = true;
+                        mbBreakAfter = true;
                     }
                 }
 
@@ -791,7 +837,7 @@ bool SwLayHelper::CheckInsert( sal_uLong nNodeIndex )
                                 SwRowFrame* pHeadline = nullptr;
                                 while( nRowIdx < nRepeat )
                                 {
-                                    OSL_ENSURE( pTab->GetTable()->GetTabLines()[ nRowIdx ], "Table ohne Zeilen?" );
+                                    OSL_ENSURE( pTab->GetTable()->GetTabLines()[ nRowIdx ], "Table without rows?" );
                                     pHeadline =
                                         new SwRowFrame( *pTab->GetTable()->GetTabLines()[ nRowIdx ], pTab );
                                     pHeadline->SetRepeatedHeadline( true );

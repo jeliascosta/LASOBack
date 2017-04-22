@@ -35,18 +35,17 @@ DropTarget::DropTarget() :
         >( m_aMutex ),
     m_bActive( false ),
     m_nDefaultActions( 0 ),
-    m_aTargetWindow( None ),
-    m_pSelectionManager( nullptr )
+    m_aTargetWindow( None )
 {
 }
 
 DropTarget::~DropTarget()
 {
-    if( m_pSelectionManager )
-        m_pSelectionManager->deregisterDropTarget( m_aTargetWindow );
+    if( m_xSelectionManager.is() )
+        m_xSelectionManager->deregisterDropTarget( m_aTargetWindow );
 }
 
-void DropTarget::initialize( const Sequence< Any >& arguments ) throw( css::uno::Exception, std::exception )
+void DropTarget::initialize( const Sequence< Any >& arguments )
 {
     if( arguments.getLength() > 1 )
     {
@@ -59,53 +58,52 @@ void DropTarget::initialize( const Sequence< Any >& arguments ) throw( css::uno:
             aIdentifier >>= aDisplayName;
         }
 
-        m_pSelectionManager = &SelectionManager::get( aDisplayName );
-        m_xSelectionManager = static_cast< XDragSource* >(m_pSelectionManager);
-        m_pSelectionManager->initialize( arguments );
+        m_xSelectionManager = &SelectionManager::get( aDisplayName );
+        m_xSelectionManager->initialize( arguments );
 
-        if( m_pSelectionManager->getDisplay() ) // #136582# sanity check
+        if( m_xSelectionManager->getDisplay() ) // #136582# sanity check
         {
-            sal_Size aWindow = None;
+            sal_IntPtr aWindow = None;
             arguments.getConstArray()[1] >>= aWindow;
-            m_pSelectionManager->registerDropTarget( aWindow, this );
+            m_xSelectionManager->registerDropTarget( aWindow, this );
             m_aTargetWindow = aWindow;
             m_bActive = true;
         }
     }
 }
 
-void DropTarget::addDropTargetListener( const Reference< XDropTargetListener >& xListener ) throw(std::exception)
+void DropTarget::addDropTargetListener( const Reference< XDropTargetListener >& xListener )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( m_aMutex );
 
     m_aListeners.push_back( xListener );
 }
 
-void DropTarget::removeDropTargetListener( const Reference< XDropTargetListener >& xListener ) throw(std::exception)
+void DropTarget::removeDropTargetListener( const Reference< XDropTargetListener >& xListener )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( m_aMutex );
 
     m_aListeners.remove( xListener );
 }
 
-sal_Bool DropTarget::isActive() throw(std::exception)
+sal_Bool DropTarget::isActive()
 {
     return m_bActive;
 }
 
-void DropTarget::setActive( sal_Bool active ) throw(std::exception)
+void DropTarget::setActive( sal_Bool active )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( m_aMutex );
 
     m_bActive = active;
 }
 
-sal_Int8 DropTarget::getDefaultActions() throw(std::exception)
+sal_Int8 DropTarget::getDefaultActions()
 {
     return m_nDefaultActions;
 }
 
-void DropTarget::setDefaultActions( sal_Int8 actions ) throw(std::exception)
+void DropTarget::setDefaultActions( sal_Int8 actions )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( m_aMutex );
 
@@ -161,17 +159,17 @@ void DropTarget::dragOver( const DropTargetDragEvent& dtde ) throw()
 }
 
 // XServiceInfo
-OUString DropTarget::getImplementationName() throw(std::exception)
+OUString DropTarget::getImplementationName()
 {
     return OUString(XDND_DROPTARGET_IMPLEMENTATION_NAME);
 }
 
-sal_Bool DropTarget::supportsService( const OUString& ServiceName ) throw(std::exception)
+sal_Bool DropTarget::supportsService( const OUString& ServiceName )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-Sequence< OUString > DropTarget::getSupportedServiceNames() throw(std::exception)
+Sequence< OUString > DropTarget::getSupportedServiceNames()
 {
     return Xdnd_dropTarget_getSupportedServiceNames();
 }

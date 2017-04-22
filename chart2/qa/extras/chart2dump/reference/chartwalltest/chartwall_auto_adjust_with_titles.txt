@@ -1,0 +1,20 @@
+// aChartWallPosition.X
+4940
+// aChartWallPosition.Y
+1427
+// aChartWallSize.Height
+5584
+// aChartWallSize.Width
+7336
+// aChartWallTransformation
+7337;0;4940;0;5585;1427;0;0;1
+// static_cast<sal_Int32>(aChartWallFillStyle)
+2
+// static_cast<sal_Int32>(aChartWallFillColor)
+15132390
+// sChartWallLineDash
+0;1;200710;0;152
+// static_cast<sal_Int32>(aChartWallLineColor)
+11010131
+// nChartWallLineWidth
+100

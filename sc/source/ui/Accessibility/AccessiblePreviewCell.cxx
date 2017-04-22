@@ -19,9 +19,6 @@
 
 #include <sal/config.h>
 
-#include <memory>
-#include <utility>
-
 #include "scitems.hxx"
 #include <editeng/eeitem.hxx>
 #include <tools/gen.hxx>
@@ -86,8 +83,7 @@ void SAL_CALL ScAccessiblePreviewCell::disposing()
 
 void ScAccessiblePreviewCell::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint && pSimpleHint->GetId() == SC_HINT_ACC_VISAREACHANGED)
+    if (rHint.GetId() == SfxHintId::ScAccVisAreaChanged)
     {
         if (mpTextHelper)
             mpTextHelper->UpdateChildren();
@@ -99,7 +95,6 @@ void ScAccessiblePreviewCell::Notify( SfxBroadcaster& rBC, const SfxHint& rHint 
 //=====  XAccessibleComponent  ============================================
 
 uno::Reference< XAccessible > SAL_CALL ScAccessiblePreviewCell::getAccessibleAtPoint( const awt::Point& rPoint )
-                                throw (uno::RuntimeException, std::exception)
 {
     uno::Reference<XAccessible> xRet;
     if (containsPoint(rPoint))
@@ -116,7 +111,7 @@ uno::Reference< XAccessible > SAL_CALL ScAccessiblePreviewCell::getAccessibleAtP
     return xRet;
 }
 
-void SAL_CALL ScAccessiblePreviewCell::grabFocus() throw (uno::RuntimeException, std::exception)
+void SAL_CALL ScAccessiblePreviewCell::grabFocus()
 {
      SolarMutexGuard aGuard;
     IsObjectValid();
@@ -130,7 +125,7 @@ void SAL_CALL ScAccessiblePreviewCell::grabFocus() throw (uno::RuntimeException,
 
 //=====  XAccessibleContext  ==============================================
 
-sal_Int32 SAL_CALL ScAccessiblePreviewCell::getAccessibleChildCount() throw(uno::RuntimeException, std::exception)
+sal_Int32 SAL_CALL ScAccessiblePreviewCell::getAccessibleChildCount()
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -140,7 +135,6 @@ sal_Int32 SAL_CALL ScAccessiblePreviewCell::getAccessibleChildCount() throw(uno:
 }
 
 uno::Reference< XAccessible > SAL_CALL ScAccessiblePreviewCell::getAccessibleChild(sal_Int32 nIndex)
-                            throw (uno::RuntimeException, lang::IndexOutOfBoundsException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
@@ -150,7 +144,6 @@ uno::Reference< XAccessible > SAL_CALL ScAccessiblePreviewCell::getAccessibleChi
 }
 
 uno::Reference<XAccessibleStateSet> SAL_CALL ScAccessiblePreviewCell::getAccessibleStateSet()
-                            throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -182,13 +175,12 @@ uno::Reference<XAccessibleStateSet> SAL_CALL ScAccessiblePreviewCell::getAccessi
 
 //=====  XServiceInfo  ====================================================
 
-OUString SAL_CALL ScAccessiblePreviewCell::getImplementationName() throw(uno::RuntimeException, std::exception)
+OUString SAL_CALL ScAccessiblePreviewCell::getImplementationName()
 {
     return OUString("ScAccessiblePreviewCell");
 }
 
 uno::Sequence<OUString> SAL_CALL ScAccessiblePreviewCell::getSupportedServiceNames()
-                                                    throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString > aSequence = ScAccessibleContextBase::getSupportedServiceNames();
     sal_Int32 nOldSize(aSequence.getLength());
@@ -203,23 +195,22 @@ uno::Sequence<OUString> SAL_CALL ScAccessiblePreviewCell::getSupportedServiceNam
 
 uno::Sequence<sal_Int8> SAL_CALL
     ScAccessiblePreviewCell::getImplementationId()
-    throw (uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 //====  internal  =========================================================
 
-Rectangle ScAccessiblePreviewCell::GetBoundingBoxOnScreen() const throw (uno::RuntimeException, std::exception)
+tools::Rectangle ScAccessiblePreviewCell::GetBoundingBoxOnScreen() const
 {
-    Rectangle aCellRect;
+    tools::Rectangle aCellRect;
     if (mpViewShell)
     {
         mpViewShell->GetLocationData().GetCellPosition( maCellAddress, aCellRect );
         vcl::Window* pWindow = mpViewShell->GetWindow();
         if (pWindow)
         {
-            Rectangle aRect = pWindow->GetWindowExtentsRelative(nullptr);
+            tools::Rectangle aRect = pWindow->GetWindowExtentsRelative(nullptr);
             aCellRect.setX(aCellRect.getX() + aRect.getX());
             aCellRect.setY(aCellRect.getY() + aRect.getY());
         }
@@ -227,9 +218,9 @@ Rectangle ScAccessiblePreviewCell::GetBoundingBoxOnScreen() const throw (uno::Ru
     return aCellRect;
 }
 
-Rectangle ScAccessiblePreviewCell::GetBoundingBox() const throw (uno::RuntimeException, std::exception)
+tools::Rectangle ScAccessiblePreviewCell::GetBoundingBox() const
 {
-    Rectangle aCellRect;
+    tools::Rectangle aCellRect;
     if (mpViewShell)
     {
         mpViewShell->GetLocationData().GetCellPosition( maCellAddress, aCellRect );
@@ -240,7 +231,7 @@ Rectangle ScAccessiblePreviewCell::GetBoundingBox() const throw (uno::RuntimeExc
             uno::Reference<XAccessibleComponent> xAccParentComp (xAccParentContext, uno::UNO_QUERY);
             if (xAccParentComp.is())
             {
-                Rectangle aParentRect (VCLRectangle(xAccParentComp->getBounds()));
+                tools::Rectangle aParentRect (VCLRectangle(xAccParentComp->getBounds()));
                 aCellRect.setX(aCellRect.getX() - aParentRect.getX());
                 aCellRect.setY(aCellRect.getY() - aParentRect.getY());
             }
@@ -283,9 +274,10 @@ void ScAccessiblePreviewCell::CreateTextHelper()
 {
     if (!mpTextHelper)
     {
-        ::std::unique_ptr< SvxEditSource > pEditSource (new ScAccessibilityEditSource(o3tl::make_unique<ScAccessiblePreviewCellTextData>(mpViewShell, maCellAddress)));
-
-        mpTextHelper = new ::accessibility::AccessibleTextHelper( std::move(pEditSource) );
+        mpTextHelper = new ::accessibility::AccessibleTextHelper(
+            o3tl::make_unique<ScAccessibilityEditSource>(
+                o3tl::make_unique<ScAccessiblePreviewCellTextData>(
+                    mpViewShell, maCellAddress)));
         mpTextHelper->SetEventSource( this );
 
         // paragraphs in preview are transient

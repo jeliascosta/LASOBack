@@ -84,7 +84,7 @@ namespace
 }
 
 Any PropertyConversion::convertString( const css::uno::Type& _rExpectedType,
-    const OUString& _rReadCharacters, const SvXMLEnumMapEntry* _pEnumMap, const bool _bInvertBoolean )
+    const OUString& _rReadCharacters, const SvXMLEnumMapEntry<sal_uInt16>* _pEnumMap, const bool _bInvertBoolean )
 {
     Any aReturn;
     bool bEnumAsInt = false;
@@ -116,7 +116,7 @@ Any PropertyConversion::convertString( const css::uno::Type& _rExpectedType,
                 if (TypeClass_SHORT == _rExpectedType.getTypeClass())
                     aReturn <<= (sal_Int16)nValue;
                 else
-                    aReturn <<= (sal_Int32)nValue;
+                    aReturn <<= nValue;
                 break;
             }
             bEnumAsInt = true;
@@ -151,7 +151,7 @@ Any PropertyConversion::convertString( const css::uno::Type& _rExpectedType,
                     OStringBuffer("PropertyConversion::convertString: could not convert \"").
                 append(OUStringToOString(_rReadCharacters, RTL_TEXTENCODING_ASCII_US)).
                 append("\" into a double!").getStr());
-            aReturn <<= (double)nValue;
+            aReturn <<= nValue;
         }
         break;
         case TypeClass_STRING:
@@ -388,7 +388,7 @@ SvXMLImportContext* OPropertyElementsContext::CreateChildContext(sal_uInt16 _nPr
 
     void OPropertyElementsContext::Characters(const OUString& _rChars)
     {
-        OSL_ENSURE(nullptr == _rChars.trim(), "OPropertyElementsContext::Characters: non-whitespace characters detected!");
+        OSL_ENSURE(_rChars.trim().isEmpty(), "OPropertyElementsContext::Characters: non-whitespace characters detected!");
         SvXMLImportContext::Characters(_rChars);
     }
 

@@ -35,7 +35,7 @@ namespace dbaui
         mutable css::uno::Reference< css::util::XNumberFormatter >    m_xFormatter;   // a number formatter working with the connection's NumberFormatsSupplier
 
         OTypeInfoMap                m_aDestTypeInfo;
-        ::std::vector<OTypeInfoMap::iterator> m_aDestTypeInfoIndex;
+        std::vector<OTypeInfoMap::iterator> m_aDestTypeInfoIndex;
 
         mutable TOTypeInfoSP        m_pTypeInfo; // default type
         OUString                    m_sTypeNames;       // these type names are the ones out of the resource file
@@ -61,7 +61,7 @@ namespace dbaui
         virtual css::uno::Reference< css::sdbc::XDatabaseMetaData> getMetaData() override;
         virtual css::uno::Reference< css::sdbc::XConnection> getConnection() override;
         virtual const OTypeInfoMap* getTypeInfo() const override;
-        TOTypeInfoSP getDefaultTyp() const;
+        TOTypeInfoSP const & getDefaultTyp() const;
     };
 }   // namespace dbaui
 #endif // INCLUDED_DBACCESS_SOURCE_UI_INC_COLUMNCONTROLWINDOW_HXX

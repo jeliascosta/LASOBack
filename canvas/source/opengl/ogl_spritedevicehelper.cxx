@@ -53,7 +53,7 @@ static void initContext()
     glShadeModel(GL_FLAT);
 }
 
-static void initTransformation(const ::Size& rSize, bool bMirror=false)
+static void initTransformation(const ::Size& rSize, bool bMirror)
 {
     // use whole window
     glViewport( 0,0,
@@ -160,7 +160,7 @@ namespace oglcanvas
         // Map a one-by-one millimeter box to pixel
         SystemChildWindow* pChildWindow = mxContext->getChildWindow();
         const MapMode aOldMapMode( pChildWindow->GetMapMode() );
-        pChildWindow->SetMapMode( MapMode(MAP_MM) );
+        pChildWindow->SetMapMode( MapMode(MapUnit::MapMM) );
         const Size aPixelSize( pChildWindow->LogicToPixel(Size(1,1)) );
         pChildWindow->SetMapMode( aOldMapMode );
 
@@ -175,7 +175,7 @@ namespace oglcanvas
         // Map the pixel dimensions of the output window to millimeter
         SystemChildWindow* pChildWindow = mxContext->getChildWindow();
         const MapMode aOldMapMode( pChildWindow->GetMapMode() );
-        pChildWindow->SetMapMode( MapMode(MAP_MM) );
+        pChildWindow->SetMapMode( MapMode(MapUnit::MapMM) );
         const Size aLogSize( pChildWindow->PixelToLogic(pChildWindow->GetOutputSizePixel()) );
         pChildWindow->SetMapMode( aOldMapMode );
 
@@ -282,7 +282,7 @@ namespace oglcanvas
 
         SystemChildWindow* pChildWindow = mxContext->getChildWindow();
         const ::Size& rOutputSize = pChildWindow->GetSizePixel();
-        initTransformation(rOutputSize);
+        initTransformation(rOutputSize, false);
 
         // render the actual spritecanvas content
         mpSpriteCanvas->renderRecordedActions();
@@ -348,13 +348,13 @@ namespace oglcanvas
 
     uno::Any SpriteDeviceHelper::isAccelerated() const
     {
-        return css::uno::makeAny(false);
+        return css::uno::Any(false);
     }
 
     uno::Any SpriteDeviceHelper::getDeviceHandle() const
     {
         const SystemChildWindow* pChildWindow = mxContext->getChildWindow();
-        return uno::makeAny( reinterpret_cast< sal_Int64 >(pChildWindow) );
+        return uno::Any( reinterpret_cast< sal_Int64 >(pChildWindow) );
     }
 
     uno::Any SpriteDeviceHelper::getSurfaceHandle() const
@@ -551,7 +551,7 @@ namespace oglcanvas
                         mnDepthId, mnTextureId, false);
             }
 
-            virtual ~BufferContextImpl()
+            virtual ~BufferContextImpl() override
             {
                 glDeleteTextures(1, &mnTextureId);
                 glDeleteRenderbuffers(1, &mnDepthId);

@@ -91,7 +91,7 @@ void OutputDevice::DrawPolyLine( const tools::Polygon& rPoly )
     // #100127# Forward beziers to sal, if any
     if( aPoly.HasFlags() )
     {
-        const sal_uInt8* pFlgAry = aPoly.GetConstFlagAry();
+        const PolyFlags* pFlgAry = aPoly.GetConstFlagAry();
         if( !mpGraphics->DrawPolyLineBezier( nPoints, pPtAry, pFlgAry, this ) )
         {
             aPoly = tools::Polygon::SubdivideBezier(aPoly);
@@ -121,7 +121,7 @@ void OutputDevice::DrawPolyLine( const tools::Polygon& rPoly, const LineInfo& rL
     // #i101491#
     // Try direct Fallback to B2D-Version of DrawPolyLine
     if((mnAntialiasing & AntialiasingFlags::EnableB2dDraw) &&
-       LINE_SOLID == rLineInfo.GetStyle())
+       LineStyle::Solid == rLineInfo.GetStyle())
     {
         DrawPolyLine(
             rPoly.getB2DPolygon(),
@@ -213,15 +213,15 @@ void OutputDevice::DrawPolyLine( const basegfx::B2DPolygon& rB2DPolygon,
         InitFillColor();
 
         const bool bTryAA((mnAntialiasing & AntialiasingFlags::EnableB2dDraw) &&
-                          mpGraphics->supportsOperation(OutDevSupport_B2DDraw) &&
-                          ROP_OVERPAINT == GetRasterOp() &&
+                          mpGraphics->supportsOperation(OutDevSupportType::B2DDraw) &&
+                          RasterOp::OverPaint == GetRasterOp() &&
                           IsLineColor());
 
         // when AA it is necessary to also paint the filled polygon's outline
         // to avoid optical gaps
         for(sal_uInt32 a(0); a < aAreaPolyPolygon.count(); a++)
         {
-            DrawPolyLineDirect( aAreaPolyPolygon.getB2DPolygon(a), 0.0, 0.0, basegfx::B2DLineJoin::NONE, css::drawing::LineCap_BUTT, 15.0 * F_PI180 /*default, not used*/, bTryAA);
+            (void)DrawPolyLineDirect( aAreaPolyPolygon.getB2DPolygon(a), 0.0, 0.0, basegfx::B2DLineJoin::NONE, css::drawing::LineCap_BUTT, 15.0 * F_PI180 /*default, not used*/, bTryAA);
         }
     }
     else
@@ -240,7 +240,7 @@ void OutputDevice::drawPolyLine(const tools::Polygon& rPoly, const LineInfo& rLi
 {
     sal_uInt16 nPoints(rPoly.GetSize());
 
-    if ( !IsDeviceOutputNecessary() || !mbLineColor || ( nPoints < 2 ) || ( LINE_NONE == rLineInfo.GetStyle() ) || ImplIsRecordLayout() )
+    if ( !IsDeviceOutputNecessary() || !mbLineColor || ( nPoints < 2 ) || ( LineStyle::NONE == rLineInfo.GetStyle() ) || ImplIsRecordLayout() )
         return;
 
     tools::Polygon aPoly = ImplLogicToDevicePixel( rPoly );
@@ -259,7 +259,7 @@ void OutputDevice::drawPolyLine(const tools::Polygon& rPoly, const LineInfo& rLi
         InitLineColor();
 
     const LineInfo aInfo( ImplLogicToDevicePixel( rLineInfo ) );
-    const bool bDashUsed(LINE_DASH == aInfo.GetStyle());
+    const bool bDashUsed(LineStyle::Dash == aInfo.GetStyle());
     const bool bLineWidthUsed(aInfo.GetWidth() > 1);
 
     if(bDashUsed || bLineWidthUsed)
@@ -313,8 +313,8 @@ bool OutputDevice::DrawPolyLineDirect( const basegfx::B2DPolygon& rB2DPolygon,
 
     const bool bTryAA( bBypassAACheck ||
                       ((mnAntialiasing & AntialiasingFlags::EnableB2dDraw) &&
-                      mpGraphics->supportsOperation(OutDevSupport_B2DDraw) &&
-                      ROP_OVERPAINT == GetRasterOp() &&
+                      mpGraphics->supportsOperation(OutDevSupportType::B2DDraw) &&
+                      RasterOp::OverPaint == GetRasterOp() &&
                       IsLineColor()));
 
     if(bTryAA)
@@ -359,7 +359,7 @@ bool OutputDevice::DrawPolyLineDirect( const basegfx::B2DPolygon& rB2DPolygon,
                 LineInfo aLineInfo;
                 if( fLineWidth != 0.0 )
                     aLineInfo.SetWidth( static_cast<long>(fLineWidth+0.5) );
-                // Transport known informations, might be needed
+                // Transport known information, might be needed
                 aLineInfo.SetLineJoin(eLineJoin);
                 aLineInfo.SetLineCap(eLineCap);
                 // MiterMinimumAngle does not exist yet in LineInfo

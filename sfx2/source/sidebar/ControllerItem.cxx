@@ -56,17 +56,14 @@ namespace
             if (mxFrame.is())
                 mxFrame->addFrameActionListener(this);
         }
-        virtual ~FrameActionListener()
-        {
-        }
+
         virtual void SAL_CALL disposing() override
         {
             SolarMutexGuard g;
             if (mxFrame.is())
                 mxFrame->removeFrameActionListener(this);
         }
-        virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
-            throw (css::uno::RuntimeException, std::exception) override
+        virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override
         {
             (void)rEvent;
 
@@ -74,8 +71,7 @@ namespace
             mrControllerItem.ResetFrame();
             mxFrame = nullptr;
         }
-        virtual void SAL_CALL frameAction (const css::frame::FrameActionEvent& rEvent)
-            throw (css::uno::RuntimeException, std::exception) override
+        virtual void SAL_CALL frameAction (const css::frame::FrameActionEvent& rEvent) override
         {
             SolarMutexGuard g;
             if (rEvent.Action == frame::FrameAction_CONTEXT_CHANGED)
@@ -177,11 +173,6 @@ void ControllerItem::NotifyFrameContextChange()
 void ControllerItem::ResetFrame()
 {
     mxFrame = nullptr;
-}
-
-Image ControllerItem::GetIcon() const
-{
-    return GetImage(mxFrame, ".uno:" + msCommandName, false);
 }
 
 ControllerItem::ItemUpdateReceiverInterface::~ItemUpdateReceiverInterface()

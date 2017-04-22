@@ -44,7 +44,10 @@ public:
         const OUString& rLName,
         const css::uno::Reference< css::document::XDocumentProperties>& xDocProps);
 
-    virtual ~SvXMLMetaDocumentContext();
+    SvXMLMetaDocumentContext(SvXMLImport& rImport, sal_Int32 nElement,
+        const css::uno::Reference< css::document::XDocumentProperties>& xDocProps);
+
+    virtual ~SvXMLMetaDocumentContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
         const OUString& rLocalName,

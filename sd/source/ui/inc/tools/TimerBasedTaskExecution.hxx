@@ -30,7 +30,7 @@ class AsynchronousTask;
 
 /** Execute an AsynchronousTask timer based, i.e. every
     nMillisecondsBetweenSteps milliseconds as much steps are executed as fit
-    into a nMaxTimePerStep millisecond intervall.
+    into a nMaxTimePerStep millisecond interval.
 
     When a task is executed completely, i.e. HasNextStep() returns <FALSE/>,
     the TimerBasedTaskExecution destroys itself.  This, of course, works
@@ -78,12 +78,11 @@ private:
         sal_uInt32 nMillisecondsBetweenSteps,
         sal_uInt32 nMaxTimePerStep);
     ~TimerBasedTaskExecution();
-    void SetSelf (const std::shared_ptr<TimerBasedTaskExecution>& rpSelf);
 
     class Deleter;
     friend class Deleter;
 
-    DECL_LINK_TYPED(TimerCallback, Timer *, void);
+    DECL_LINK(TimerCallback, Timer *, void);
 };
 
 } } // end of namespace ::sd::tools

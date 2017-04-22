@@ -19,9 +19,7 @@
 #include "document.hxx"
 #include "uiitems.hxx"
 #include "reffact.hxx"
-#include "strload.hxx"
 #include "docfunc.hxx"
-#include "StatisticsDialogs.hrc"
 
 #include <random>
 
@@ -283,13 +281,13 @@ void ScRandomNumberGeneratorDialog::SelectGeneratorAndGenerateNumbers()
 template<class RNG>
 void ScRandomNumberGeneratorDialog::GenerateNumbers(RNG& randomGenerator, const sal_Int16 aDistributionStringId, boost::optional<sal_Int8> aDecimalPlaces)
 {
-    OUString aUndo = SC_STRLOAD(RID_STATISTICS_DLGS, STR_UNDO_DISTRIBUTION_TEMPLATE);
-    OUString aDistributionName = SC_STRLOAD(RID_STATISTICS_DLGS, aDistributionStringId);
+    OUString aUndo = SC_RESSTR(STR_UNDO_DISTRIBUTION_TEMPLATE);
+    OUString aDistributionName = SC_RESSTR(aDistributionStringId);
     aUndo = aUndo.replaceAll("$(DISTRIBUTION)",  aDistributionName);
 
     ScDocShell* pDocShell = mpViewData->GetDocShell();
     svl::IUndoManager* pUndoManager = pDocShell->GetUndoManager();
-    pUndoManager->EnterListAction( aUndo, aUndo );
+    pUndoManager->EnterListAction( aUndo, aUndo, 0, mpViewData->GetViewShell()->GetViewShellId() );
 
     SCROW nRowStart = maInputRange.aStart.Row();
     SCROW nRowEnd   = maInputRange.aEnd.Row();
@@ -323,26 +321,26 @@ void ScRandomNumberGeneratorDialog::GenerateNumbers(RNG& randomGenerator, const 
 
     pUndoManager->LeaveListAction();
 
-    pDocShell->PostPaint( maInputRange, PAINT_GRID );
+    pDocShell->PostPaint( maInputRange, PaintPartFlags::Grid );
 }
 
-IMPL_LINK_NOARG_TYPED( ScRandomNumberGeneratorDialog, OkClicked, Button*, void )
+IMPL_LINK_NOARG( ScRandomNumberGeneratorDialog, OkClicked, Button*, void )
 {
     ApplyClicked(nullptr);
     CloseClicked(nullptr);
 }
 
-IMPL_LINK_NOARG_TYPED( ScRandomNumberGeneratorDialog, ApplyClicked, Button*, void )
+IMPL_LINK_NOARG( ScRandomNumberGeneratorDialog, ApplyClicked, Button*, void )
 {
     SelectGeneratorAndGenerateNumbers();
 }
 
-IMPL_LINK_NOARG_TYPED( ScRandomNumberGeneratorDialog, CloseClicked, Button*, void )
+IMPL_LINK_NOARG( ScRandomNumberGeneratorDialog, CloseClicked, Button*, void )
 {
     Close();
 }
 
-IMPL_LINK_TYPED( ScRandomNumberGeneratorDialog, GetFocusHandler, Control&, rCtrl, void )
+IMPL_LINK( ScRandomNumberGeneratorDialog, GetFocusHandler, Control&, rCtrl, void )
 {
     Edit* pEdit = nullptr;
 
@@ -353,12 +351,12 @@ IMPL_LINK_TYPED( ScRandomNumberGeneratorDialog, GetFocusHandler, Control&, rCtrl
         pEdit->SetSelection( Selection( 0, SELECTION_MAX ) );
 }
 
-IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, LoseFocusHandler, Control&, void)
+IMPL_LINK_NOARG(ScRandomNumberGeneratorDialog, LoseFocusHandler, Control&, void)
 {
     mbDialogLostFocus = !IsActive();
 }
 
-IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, InputRangeModified, Edit&, void)
+IMPL_LINK_NOARG(ScRandomNumberGeneratorDialog, InputRangeModified, Edit&, void)
 {
     ScRangeList aRangeList;
     bool bValid = ParseWithNames( aRangeList, mpInputRangeEdit->GetText(), mpDoc);
@@ -379,7 +377,7 @@ IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, InputRangeModified, Edit&, 
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, Parameter1ValueModified, Edit&, void)
+IMPL_LINK_NOARG(ScRandomNumberGeneratorDialog, Parameter1ValueModified, Edit&, void)
 {
     sal_Int16 aSelectedIndex = mpDistributionCombo-> GetSelectEntryPos();
     sal_Int64 aSelectedId = reinterpret_cast<sal_Int64>( mpDistributionCombo->GetEntryData(aSelectedIndex) );
@@ -395,7 +393,7 @@ IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, Parameter1ValueModified, Ed
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, Parameter2ValueModified, Edit&, void)
+IMPL_LINK_NOARG(ScRandomNumberGeneratorDialog, Parameter2ValueModified, Edit&, void)
 {
     sal_Int16 aSelectedIndex = mpDistributionCombo-> GetSelectEntryPos();
     sal_Int64 aSelectedId = reinterpret_cast<sal_Int64>( mpDistributionCombo->GetEntryData(aSelectedIndex) );
@@ -411,13 +409,13 @@ IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, Parameter2ValueModified, Ed
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, CheckChanged, CheckBox&, void)
+IMPL_LINK_NOARG(ScRandomNumberGeneratorDialog, CheckChanged, CheckBox&, void)
 {
     mpSeed->Enable(mpEnableSeed->IsChecked());
     mpDecimalPlaces->Enable(mpEnableRounding->IsChecked());
 }
 
-IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, DistributionChanged, ListBox&, void)
+IMPL_LINK_NOARG(ScRandomNumberGeneratorDialog, DistributionChanged, ListBox&, void)
 {
     sal_Int16 aSelectedIndex = mpDistributionCombo-> GetSelectEntryPos();
     sal_Int64 aSelectedId = reinterpret_cast<sal_Int64>( mpDistributionCombo->GetEntryData(aSelectedIndex) );
@@ -437,19 +435,19 @@ IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, DistributionChanged, ListBo
     {
         case DIST_UNIFORM:
         {
-            mpParameter1Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_MINIMUM));
-            mpParameter2Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_MAXIMUM));
+            mpParameter1Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_MINIMUM));
+            mpParameter2Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_MAXIMUM));
             mpParameter2Text->Show();
             mpParameter2Value->Show();
             break;
         }
         case DIST_UNIFORM_INTEGER:
         {
-            mpParameter1Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_MINIMUM));
+            mpParameter1Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_MINIMUM));
             mpParameter1Value->SetDecimalDigits(0);
             mpParameter1Value->SetSpinSize(1);
 
-            mpParameter2Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_MAXIMUM));
+            mpParameter2Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_MAXIMUM));
             mpParameter2Value->SetDecimalDigits(0);
             mpParameter2Value->SetSpinSize(1);
 
@@ -459,16 +457,16 @@ IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, DistributionChanged, ListBo
         }
         case DIST_NORMAL:
         {
-            mpParameter1Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_MEAN));
-            mpParameter2Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_STANDARD_DEVIATION));
+            mpParameter1Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_MEAN));
+            mpParameter2Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_STANDARD_DEVIATION));
             mpParameter2Text->Show();
             mpParameter2Value->Show();
             break;
         }
         case DIST_CAUCHY:
         {
-            mpParameter1Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_STANDARD_MEDIAN));
-            mpParameter2Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_STANDARD_SIGMA));
+            mpParameter1Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_STANDARD_MEDIAN));
+            mpParameter2Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_STANDARD_SIGMA));
             mpParameter2Text->Show();
             mpParameter2Value->Show();
             break;
@@ -476,7 +474,7 @@ IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, DistributionChanged, ListBo
         case DIST_BERNOULLI:
         case DIST_GEOMETRIC:
         {
-            mpParameter1Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_STANDARD_PROBABILITY));
+            mpParameter1Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_STANDARD_PROBABILITY));
             mpParameter1Value->SetMin(         0 );
             mpParameter1Value->SetMax( PERCISION );
             mpParameter1Value->SetSpinSize(1000);
@@ -488,12 +486,12 @@ IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, DistributionChanged, ListBo
         case DIST_BINOMIAL:
         case DIST_NEGATIVE_BINOMIAL:
         {
-            mpParameter1Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_STANDARD_PROBABILITY));
+            mpParameter1Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_STANDARD_PROBABILITY));
             mpParameter1Value->SetMin(         0 );
             mpParameter1Value->SetMax( PERCISION );
             mpParameter1Value->SetSpinSize(1000);
 
-            mpParameter2Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_STANDARD_NUMBER_OF_TRIALS));
+            mpParameter2Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_STANDARD_NUMBER_OF_TRIALS));
             mpParameter2Value->SetDecimalDigits(0);
             mpParameter2Value->SetSpinSize(1);
             mpParameter2Value->SetMin(0);
@@ -504,7 +502,7 @@ IMPL_LINK_NOARG_TYPED(ScRandomNumberGeneratorDialog, DistributionChanged, ListBo
         }
         case DIST_CHI_SQUARED:
         {
-            mpParameter1Text->SetText( SC_STRLOAD( RID_STATISTICS_DLGS, STR_RNG_PARAMETER_STANDARD_NU_VALUE));
+            mpParameter1Text->SetText(SC_RESSTR(STR_RNG_PARAMETER_STANDARD_NU_VALUE));
 
             mpParameter2Text->Hide();
             mpParameter2Value->Hide();

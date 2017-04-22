@@ -81,8 +81,8 @@ class SVL_DLLPUBLIC SvxMacroTableDtor
 private:
     SvxMacroTable aSvxMacroTable;
 public:
-    inline SvxMacroTableDtor() {}
-    inline SvxMacroTableDtor( const SvxMacroTableDtor &rCpy ) : aSvxMacroTable(rCpy.aSvxMacroTable) { }
+    SvxMacroTableDtor() {}
+    SvxMacroTableDtor( const SvxMacroTableDtor &rCpy ) : aSvxMacroTable(rCpy.aSvxMacroTable) { }
 
     SvxMacroTableDtor& operator=( const SvxMacroTableDtor &rCpy );
     bool operator==( const SvxMacroTableDtor& rOther ) const;
@@ -119,24 +119,22 @@ This item describes a Macro table.
 class SVL_DLLPUBLIC SvxMacroItem: public SfxPoolItem
 {
 public:
-    static SfxPoolItem* CreateDefault();
-
     explicit inline SvxMacroItem ( const sal_uInt16 nId );
 
     // "pure virtual methods" of SfxPoolItem
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper * = nullptr ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create(SvStream &, sal_uInt16) const override;
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion ) const override;
     virtual sal_uInt16          GetVersion( sal_uInt16 nFileFormatVersion ) const override;
 
-    inline const SvxMacroTableDtor& GetMacroTable() const { return aMacroTable;}
-    inline void SetMacroTable( const SvxMacroTableDtor& rTbl ) { aMacroTable = rTbl; }
+    const SvxMacroTableDtor& GetMacroTable() const { return aMacroTable;}
+    void SetMacroTable( const SvxMacroTableDtor& rTbl ) { aMacroTable = rTbl; }
 
     inline const SvxMacro& GetMacro( sal_uInt16 nEvent ) const;
     inline bool HasMacro( sal_uInt16 nEvent ) const;

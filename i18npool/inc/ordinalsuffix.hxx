@@ -36,15 +36,15 @@ class OrdinalSuffixService : public cppu::WeakImplHelper
 {
     public:
         OrdinalSuffixService();
-        virtual ~OrdinalSuffixService();
+        virtual ~OrdinalSuffixService() override;
 
         // XOrdinalSuffix
-        virtual css::uno::Sequence< OUString > SAL_CALL getOrdinalSuffix( sal_Int32 nNumber, const css::lang::Locale &rLocale ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getOrdinalSuffix( sal_Int32 nNumber, const css::lang::Locale &rLocale ) override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw(css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence < OUString > SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName() override;
+        virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+        virtual css::uno::Sequence < OUString > SAL_CALL getSupportedServiceNames() override;
 
 };
 } } } }

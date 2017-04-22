@@ -43,8 +43,8 @@ using namespace ::com::sun::star::util;
 using namespace ::com::sun::star::sdbc;
 
 // OWizTypeSelectControl
-OWizTypeSelectControl::OWizTypeSelectControl(vcl::Window* pParent, vcl::Window* pParentTabPage, OTableDesignHelpBar* pHelpBar)
-    : OFieldDescControl(pParent, pHelpBar)
+OWizTypeSelectControl::OWizTypeSelectControl(vcl::Window* pParent, vcl::Window* pParentTabPage)
+    : OFieldDescControl(pParent, nullptr)
 {
     m_pParentTabPage = pParentTabPage;
 }
@@ -216,7 +216,6 @@ OUString OWizTypeSelectControl::getAutoIncrementValue() const
     return static_cast<OWizTypeSelect*>(m_pParentTabPage.get())->m_sAutoIncrementValue;
 }
 
-#define IMG_PRIMARY_KEY 1
 OWizTypeSelect::OWizTypeSelect( vcl::Window* pParent, SvStream* _pStream )
                :OWizardPage( pParent, "TypeSelect", "dbaccess/ui/typeselectpage.ui")
                ,m_pTypeControl(VclPtr<OWizTypeSelectControl>::Create(get<VclVBox>("control_container"), this) )
@@ -235,10 +234,7 @@ OWizTypeSelect::OWizTypeSelect( vcl::Window* pParent, SvStream* _pStream )
 
     m_pColumnNames->SetSelectHdl(LINK(this,OWizTypeSelect,ColumnSelectHdl));
 
-    ModuleRes aModuleRes(IMG_JOINS);
-    ImageList aImageList(aModuleRes);
-    m_imgPKey = aImageList.GetImage(IMG_PRIMARY_KEY);
-
+    m_imgPKey = Image(BitmapEx(ModuleRes(BMP_PRIMARY_KEY)));
 
     m_pTypeControl->Show();
     m_pTypeControl->Init();
@@ -281,7 +277,7 @@ OUString OWizTypeSelect::GetTitle() const
     return ModuleRes(STR_WIZ_TYPE_SELECT_TITEL);
 }
 
-IMPL_LINK_NOARG_TYPED( OWizTypeSelect, ColumnSelectHdl, ListBox&, void )
+IMPL_LINK_NOARG( OWizTypeSelect, ColumnSelectHdl, ListBox&, void )
 {
     OUString aColumnName( m_pColumnNames->GetSelectEntry() );
 
@@ -348,11 +344,26 @@ void OWizTypeSelect::EnableAuto(bool bEnable)
     m_pAutoType->Show(bEnable);
 }
 
-IMPL_LINK_NOARG_TYPED( OWizTypeSelect, ButtonClickHdl, Button *, void )
+IMPL_LINK_NOARG( OWizTypeSelect, ButtonClickHdl, Button *, void )
 {
     sal_Int32 nBreakPos;
     m_pParent->CheckColumns(nBreakPos);
-    fillColumnList(m_pAutoEt->GetText().toInt32());
+
+    // fill column list
+    sal_uInt32 nRows = m_pAutoEt->GetText().toInt32();
+    if(m_pParserStream)
+    {
+        sal_uInt64 const nTell = m_pParserStream->Tell(); // might change seek position of stream
+
+        SvParser *pReader = createReader(nRows);
+        if(pReader)
+        {
+            pReader->AddFirstRef();
+            pReader->CallParser();
+            pReader->ReleaseRef();
+        }
+        m_pParserStream->Seek(nTell);
+    }
 
     ActivatePage();
 }
@@ -423,7 +434,7 @@ bool OWizTypeSelectList::PreNotify( NotifyEvent& rEvt )
             if (pComEvt->IsMouseEvent())
                 ptWhere = pComEvt->GetMousePosPixel();
 
-            PopupMenu aContextMenu(ModuleRes(RID_SBA_RTF_PKEYPOPUP));
+            ScopedVclPtrInstance<PopupMenu> aContextMenu(ModuleRes(RID_SBA_RTF_PKEYPOPUP));
             // Should primary key checkbox be checked?
             const sal_Int32 nCount = GetEntryCount();
             bool bCheckOk = false;
@@ -443,9 +454,9 @@ bool OWizTypeSelectList::PreNotify( NotifyEvent& rEvt )
             }
 
             if (bCheckOk)
-                aContextMenu.CheckItem( SID_TABLEDESIGN_TABED_PRIMARYKEY );
+                aContextMenu->CheckItem( SID_TABLEDESIGN_TABED_PRIMARYKEY );
 
-            switch( aContextMenu.Execute( this, ptWhere ) )
+            switch( aContextMenu->Execute( this, ptWhere ) )
             {
                 case SID_TABLEDESIGN_TABED_PRIMARYKEY:
                 {
@@ -476,23 +487,6 @@ bool OWizTypeSelectList::PreNotify( NotifyEvent& rEvt )
         break;
     }
     return bDone || MultiListBox::PreNotify(rEvt);
-}
-
-void OWizTypeSelect::fillColumnList(sal_uInt32 nRows)
-{
-    if(m_pParserStream)
-    {
-        sal_Size nTell = m_pParserStream->Tell(); // might change seek position of stream
-
-        SvParser *pReader = createReader(nRows);
-        if(pReader)
-        {
-            pReader->AddFirstRef();
-            pReader->CallParser();
-            pReader->ReleaseRef();
-        }
-        m_pParserStream->Seek(nTell);
-    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

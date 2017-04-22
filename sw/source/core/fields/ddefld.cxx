@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <osl/thread.h>
 #include <sfx2/linkmgr.hxx>
 #include <doc.hxx>
@@ -229,7 +232,7 @@ bool SwIntrnlRefLink::IsInRange( sal_uLong nSttNd, sal_uLong nEndNd,
 
 SwDDEFieldType::SwDDEFieldType(const OUString& rName,
                                const OUString& rCmd, SfxLinkUpdateMode nUpdateType )
-    : SwFieldType( RES_DDEFLD ),
+    : SwFieldType( SwFieldIds::Dde ),
     aName( rName ), pDoc( nullptr ), nRefCnt( 0 )
 {
     bCRLFFlag = bDeleted = false;
@@ -240,7 +243,7 @@ SwDDEFieldType::SwDDEFieldType(const OUString& rName,
 SwDDEFieldType::~SwDDEFieldType()
 {
     if( pDoc && !pDoc->IsInDtor() )
-        pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink );
+        pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink.get() );
     refLink->Disconnect();
 }
 
@@ -280,17 +283,17 @@ void SwDDEFieldType::SetDoc( SwDoc* pNewDoc )
     if( pNewDoc == pDoc )
         return;
 
-    if( pDoc && refLink.Is() )
+    if( pDoc && refLink.is() )
     {
         OSL_ENSURE( !nRefCnt, "How do we get the references?" );
-        pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink );
+        pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink.get() );
     }
 
     pDoc = pNewDoc;
     if( pDoc && nRefCnt )
     {
         refLink->SetVisible( pDoc->getIDocumentLinksAdministration().IsVisibleLinks() );
-        pDoc->getIDocumentLinksAdministration().GetLinkManager().InsertDDELink( refLink );
+        pDoc->getIDocumentLinksAdministration().GetLinkManager().InsertDDELink( refLink.get() );
     }
 }
 
@@ -299,14 +302,14 @@ void SwDDEFieldType::RefCntChgd()
     if( nRefCnt )
     {
         refLink->SetVisible( pDoc->getIDocumentLinksAdministration().IsVisibleLinks() );
-        pDoc->getIDocumentLinksAdministration().GetLinkManager().InsertDDELink( refLink );
+        pDoc->getIDocumentLinksAdministration().GetLinkManager().InsertDDELink( refLink.get() );
         if( pDoc->getIDocumentLayoutAccess().GetCurrentViewShell() )
-            UpdateNow();
+            refLink->Update();
     }
     else
     {
         Disconnect();
-        pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink );
+        pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( refLink.get() );
     }
 }
 
@@ -325,7 +328,7 @@ bool SwDDEFieldType::QueryValue( uno::Any& rVal, sal_uInt16 nWhichId ) const
         rVal <<= aExpansion;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     if ( nPart>=0 )
         rVal <<= GetCmd().getToken(nPart, sfx2::cTokenSeparator);
@@ -341,7 +344,7 @@ bool SwDDEFieldType::PutValue( const uno::Any& rVal, sal_uInt16 nWhichId )
     case FIELD_PROP_PAR4:      nPart = 1; break;
     case FIELD_PROP_SUBTYPE:   nPart = 0; break;
     case FIELD_PROP_BOOL1:
-        SetType( *static_cast<sal_Bool const *>(rVal.getValue()) ?
+        SetType( *o3tl::doAccess<bool>(rVal) ?
                  SfxLinkUpdateMode::ALWAYS :
                  SfxLinkUpdateMode::ONCALL );
         break;
@@ -349,7 +352,7 @@ bool SwDDEFieldType::PutValue( const uno::Any& rVal, sal_uInt16 nWhichId )
         rVal >>= aExpansion;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     if( nPart>=0 )
     {
@@ -364,7 +367,7 @@ bool SwDDEFieldType::PutValue( const uno::Any& rVal, sal_uInt16 nWhichId )
                 rVal >>= sToken;
             }
             sNewCmd += (i < 2)
-                ? sToken + OUString(sfx2::cTokenSeparator) : sToken;
+                ? sToken + OUStringLiteral1(sfx2::cTokenSeparator) : sToken;
         }
         SetCmd( sNewCmd );
     }

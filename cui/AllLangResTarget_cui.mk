@@ -23,7 +23,6 @@ $(eval $(call gb_SrsTarget_set_include,cui/res,\
 ))
 
 $(eval $(call gb_SrsTarget_add_files,cui/res,\
-    cui/source/customize/acccfg.src \
     cui/source/customize/cfg.src \
     cui/source/customize/macropg.src \
     cui/source/dialogs/cuires.src \
@@ -32,6 +31,7 @@ $(eval $(call gb_SrsTarget_add_files,cui/res,\
     cui/source/dialogs/hyperdlg.src \
     cui/source/dialogs/multipat.src \
     cui/source/dialogs/passwdomdlg.src \
+    cui/source/dialogs/screenshotannotationdlg.src \
     cui/source/dialogs/scriptdlg.src \
     cui/source/dialogs/svuidlg.src \
     cui/source/options/connpooloptions.src \
@@ -49,8 +49,6 @@ $(eval $(call gb_SrsTarget_add_files,cui/res,\
     cui/source/options/treeopt.src \
     cui/source/tabpages/border.src \
     cui/source/tabpages/frmdirlbox.src \
-    cui/source/tabpages/page.src \
-    cui/source/tabpages/paragrph.src \
     cui/source/tabpages/strings.src \
 ))
 

@@ -92,7 +92,7 @@ void ObjectContactOfObjListPainter::ProcessDisplay(DisplayInfo& rDisplayInfo)
                 aViewRange.transform(pTargetDevice->GetInverseViewTransformation());
             }
 
-            // upate local ViewInformation2D
+            // update local ViewInformation2D
             const drawinglayer::geometry::ViewInformation2D aNewViewInformation2D(
                 basegfx::B2DHomMatrix(),
                 pTargetDevice->GetViewTransformation(),
@@ -164,11 +164,10 @@ ViewContact& ObjectContactOfPagePainter::GetPaintObjectViewContact(sal_uInt32 /*
 }
 
 ObjectContactOfPagePainter::ObjectContactOfPagePainter(
-    const SdrPage* pPage,
     ObjectContact& rOriginalObjectContact)
 :   ObjectContactPainter(),
     mrOriginalObjectContact(rOriginalObjectContact),
-    mxStartPage(const_cast< SdrPage* >(pPage)) // no SdrPageWeakRef available to hold a const SdrPage*
+    mxStartPage()
 {
 }
 

@@ -39,7 +39,7 @@ namespace accessibility
     AccessibleHyperlink::AccessibleHyperlink( SvxAccessibleTextAdapter& r, SvxFieldItem* p, sal_Int32 nP, sal_uInt16 nR, sal_Int32 nStt, sal_Int32 nEnd, const OUString& rD )
     : rTA( r )
     {
-        pFld = p;
+        pFld.reset( p );
         nPara = nP;
         nRealIdx = nR;
         nStartIdx = nStt;
@@ -49,16 +49,15 @@ namespace accessibility
 
     AccessibleHyperlink::~AccessibleHyperlink()
     {
-        delete pFld;
     }
 
     // XAccessibleAction
-    sal_Int32 SAL_CALL AccessibleHyperlink::getAccessibleActionCount() throw (uno::RuntimeException, std::exception)
+    sal_Int32 SAL_CALL AccessibleHyperlink::getAccessibleActionCount()
     {
          return isValid() ? 1 : 0;
     }
 
-    sal_Bool SAL_CALL AccessibleHyperlink::doAccessibleAction( sal_Int32 nIndex  ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
+    sal_Bool SAL_CALL AccessibleHyperlink::doAccessibleAction( sal_Int32 nIndex  )
     {
         bool bRet = false;
         if ( isValid() && ( nIndex == 0 ) )
@@ -69,7 +68,7 @@ namespace accessibility
         return bRet;
     }
 
-    OUString  SAL_CALL AccessibleHyperlink::getAccessibleActionDescription( sal_Int32 nIndex ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
+    OUString  SAL_CALL AccessibleHyperlink::getAccessibleActionDescription( sal_Int32 nIndex )
     {
         OUString aDesc;
 
@@ -79,7 +78,7 @@ namespace accessibility
         return aDesc;
     }
 
-    uno::Reference< css::accessibility::XAccessibleKeyBinding > SAL_CALL AccessibleHyperlink::getAccessibleActionKeyBinding( sal_Int32 nIndex ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
+    uno::Reference< css::accessibility::XAccessibleKeyBinding > SAL_CALL AccessibleHyperlink::getAccessibleActionKeyBinding( sal_Int32 nIndex )
     {
         uno::Reference< css::accessibility::XAccessibleKeyBinding > xKeyBinding;
 
@@ -100,27 +99,27 @@ namespace accessibility
     }
 
     // XAccessibleHyperlink
-    uno::Any SAL_CALL AccessibleHyperlink::getAccessibleActionAnchor( sal_Int32 /*nIndex*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
+    uno::Any SAL_CALL AccessibleHyperlink::getAccessibleActionAnchor( sal_Int32 /*nIndex*/ )
     {
         return uno::Any();
     }
 
-    uno::Any SAL_CALL AccessibleHyperlink::getAccessibleActionObject( sal_Int32 /*nIndex*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
+    uno::Any SAL_CALL AccessibleHyperlink::getAccessibleActionObject( sal_Int32 /*nIndex*/ )
     {
         return uno::Any();
     }
 
-    sal_Int32 SAL_CALL AccessibleHyperlink::getStartIndex() throw (uno::RuntimeException, std::exception)
+    sal_Int32 SAL_CALL AccessibleHyperlink::getStartIndex()
     {
         return nStartIdx;
     }
 
-    sal_Int32 SAL_CALL AccessibleHyperlink::getEndIndex() throw (uno::RuntimeException, std::exception)
+    sal_Int32 SAL_CALL AccessibleHyperlink::getEndIndex()
     {
         return nEndIdx;
     }
 
-    sal_Bool SAL_CALL AccessibleHyperlink::isValid(  ) throw (uno::RuntimeException, std::exception)
+    sal_Bool SAL_CALL AccessibleHyperlink::isValid(  )
     {
         return rTA.IsValid();
     }

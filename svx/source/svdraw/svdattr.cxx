@@ -107,7 +107,7 @@ using namespace ::com::sun::star;
 SdrItemPool::SdrItemPool(
     SfxItemPool* _pMaster,
     bool bLoadRefCounts)
-:   XOutdevItemPool(_pMaster, SDRATTR_START, SDRATTR_END, bLoadRefCounts)
+:   XOutdevItemPool(_pMaster, bLoadRefCounts)
 {
     // prepare some constants
     const Color aNullCol(RGB_Color(COL_BLACK));
@@ -120,196 +120,196 @@ SdrItemPool::SdrItemPool(
     }
 
     // init own PoolDefaults
-    mppLocalPoolDefaults[SDRATTR_SHADOW            -SDRATTR_START]=new SdrOnOffItem(SDRATTR_SHADOW, false);
-    mppLocalPoolDefaults[SDRATTR_SHADOWCOLOR       -SDRATTR_START]=new XColorItem(SDRATTR_SHADOWCOLOR, aNullCol);
-    mppLocalPoolDefaults[SDRATTR_SHADOWXDIST       -SDRATTR_START]=new SdrMetricItem(SDRATTR_SHADOWXDIST, 0);
-    mppLocalPoolDefaults[SDRATTR_SHADOWYDIST       -SDRATTR_START]=new SdrMetricItem(SDRATTR_SHADOWYDIST, 0);
-    mppLocalPoolDefaults[SDRATTR_SHADOWTRANSPARENCE-SDRATTR_START]=new SdrPercentItem(SDRATTR_SHADOWTRANSPARENCE, 0);
-    mppLocalPoolDefaults[SDRATTR_SHADOW3D          -SDRATTR_START]=new SfxVoidItem(SDRATTR_SHADOW3D    );
-    mppLocalPoolDefaults[SDRATTR_SHADOWPERSP       -SDRATTR_START]=new SfxVoidItem(SDRATTR_SHADOWPERSP );
-    mppLocalPoolDefaults[SDRATTR_CAPTIONTYPE      -SDRATTR_START]=new SdrCaptionTypeItem      ;
-    mppLocalPoolDefaults[SDRATTR_CAPTIONFIXEDANGLE-SDRATTR_START]=new SdrOnOffItem(SDRATTR_CAPTIONFIXEDANGLE, true);
-    mppLocalPoolDefaults[SDRATTR_CAPTIONANGLE     -SDRATTR_START]=new SdrCaptionAngleItem     ;
-    mppLocalPoolDefaults[SDRATTR_CAPTIONGAP       -SDRATTR_START]=new SdrCaptionGapItem       ;
-    mppLocalPoolDefaults[SDRATTR_CAPTIONESCDIR    -SDRATTR_START]=new SdrCaptionEscDirItem    ;
-    mppLocalPoolDefaults[SDRATTR_CAPTIONESCISREL  -SDRATTR_START]=new SdrCaptionEscIsRelItem  ;
-    mppLocalPoolDefaults[SDRATTR_CAPTIONESCREL    -SDRATTR_START]=new SdrCaptionEscRelItem    ;
-    mppLocalPoolDefaults[SDRATTR_CAPTIONESCABS    -SDRATTR_START]=new SdrCaptionEscAbsItem    ;
-    mppLocalPoolDefaults[SDRATTR_CAPTIONLINELEN   -SDRATTR_START]=new SdrCaptionLineLenItem   ;
-    mppLocalPoolDefaults[SDRATTR_CAPTIONFITLINELEN-SDRATTR_START]=new SdrCaptionFitLineLenItem;
-    mppLocalPoolDefaults[SDRATTR_ECKENRADIUS            -SDRATTR_START]=new SdrMetricItem(SDRATTR_ECKENRADIUS, 0);
-    mppLocalPoolDefaults[SDRATTR_TEXT_MINFRAMEHEIGHT    -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_MINFRAMEHEIGHT, 0);
-    mppLocalPoolDefaults[SDRATTR_TEXT_AUTOGROWHEIGHT    -SDRATTR_START]=new SdrOnOffItem(SDRATTR_TEXT_AUTOGROWHEIGHT, true);
-    mppLocalPoolDefaults[SDRATTR_TEXT_FITTOSIZE     -SDRATTR_START]=new SdrTextFitToSizeTypeItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_LEFTDIST      -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_LEFTDIST, 0);
-    mppLocalPoolDefaults[SDRATTR_TEXT_RIGHTDIST     -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_RIGHTDIST, 0);
-    mppLocalPoolDefaults[SDRATTR_TEXT_UPPERDIST     -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_UPPERDIST, 0);
-    mppLocalPoolDefaults[SDRATTR_TEXT_LOWERDIST     -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_LOWERDIST, 0);
-    mppLocalPoolDefaults[SDRATTR_TEXT_VERTADJUST        -SDRATTR_START]=new SdrTextVertAdjustItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_MAXFRAMEHEIGHT    -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_MAXFRAMEHEIGHT, 0);
-    mppLocalPoolDefaults[SDRATTR_TEXT_MINFRAMEWIDTH -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_MINFRAMEWIDTH, 0);
-    mppLocalPoolDefaults[SDRATTR_TEXT_MAXFRAMEWIDTH -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_MAXFRAMEWIDTH, 0);
-    mppLocalPoolDefaults[SDRATTR_TEXT_AUTOGROWWIDTH -SDRATTR_START]=new SdrOnOffItem(SDRATTR_TEXT_AUTOGROWWIDTH, false);
-    mppLocalPoolDefaults[SDRATTR_TEXT_HORZADJUST        -SDRATTR_START]=new SdrTextHorzAdjustItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_ANIKIND           -SDRATTR_START]=new SdrTextAniKindItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_ANIDIRECTION  -SDRATTR_START]=new SdrTextAniDirectionItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_ANISTARTINSIDE    -SDRATTR_START]=new SdrTextAniStartInsideItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_ANISTOPINSIDE -SDRATTR_START]=new SdrTextAniStopInsideItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_ANICOUNT      -SDRATTR_START]=new SdrTextAniCountItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_ANIDELAY      -SDRATTR_START]=new SdrTextAniDelayItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_ANIAMOUNT     -SDRATTR_START]=new SdrTextAniAmountItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_CONTOURFRAME  -SDRATTR_START]=new SdrOnOffItem(SDRATTR_TEXT_CONTOURFRAME, false);
-    mppLocalPoolDefaults[SDRATTR_CUSTOMSHAPE_ADJUSTMENT -SDRATTR_START]=new SdrCustomShapeAdjustmentItem;
-    mppLocalPoolDefaults[SDRATTR_XMLATTRIBUTES -SDRATTR_START]=new SvXMLAttrContainerItem( SDRATTR_XMLATTRIBUTES );
-    mppLocalPoolDefaults[SDRATTR_TEXT_CHAINNEXTNAME    -SDRATTR_START]=new SfxStringItem(SDRATTR_TEXT_CHAINNEXTNAME, "");
-    mppLocalPoolDefaults[SDRATTR_TEXT_USEFIXEDCELLHEIGHT -SDRATTR_START]=new SdrTextFixedCellHeightItem;
-    mppLocalPoolDefaults[SDRATTR_TEXT_WORDWRAP         -SDRATTR_START]=new SdrOnOffItem(SDRATTR_TEXT_WORDWRAP, true);
-    mppLocalPoolDefaults[SDRATTR_TEXT_AUTOGROWSIZE     -SDRATTR_START]=new SdrOnOffItem(SDRATTR_TEXT_AUTOGROWSIZE, false);
-    mppLocalPoolDefaults[SDRATTR_EDGEKIND         -SDRATTR_START]=new SdrEdgeKindItem;
-    mppLocalPoolDefaults[SDRATTR_EDGENODE1HORZDIST-SDRATTR_START]=new SdrEdgeNode1HorzDistItem(nDefEdgeDist);
-    mppLocalPoolDefaults[SDRATTR_EDGENODE1VERTDIST-SDRATTR_START]=new SdrEdgeNode1VertDistItem(nDefEdgeDist);
-    mppLocalPoolDefaults[SDRATTR_EDGENODE2HORZDIST-SDRATTR_START]=new SdrEdgeNode2HorzDistItem(nDefEdgeDist);
-    mppLocalPoolDefaults[SDRATTR_EDGENODE2VERTDIST-SDRATTR_START]=new SdrEdgeNode2VertDistItem(nDefEdgeDist);
-    mppLocalPoolDefaults[SDRATTR_EDGENODE1GLUEDIST-SDRATTR_START]=new SdrEdgeNode1GlueDistItem;
-    mppLocalPoolDefaults[SDRATTR_EDGENODE2GLUEDIST-SDRATTR_START]=new SdrEdgeNode2GlueDistItem;
-    mppLocalPoolDefaults[SDRATTR_EDGELINEDELTAANZ -SDRATTR_START]=new SdrEdgeLineDeltaCountItem;
-    mppLocalPoolDefaults[SDRATTR_EDGELINE1DELTA   -SDRATTR_START]=new SdrMetricItem(SDRATTR_EDGELINE1DELTA, 0);
-    mppLocalPoolDefaults[SDRATTR_EDGELINE2DELTA   -SDRATTR_START]=new SdrMetricItem(SDRATTR_EDGELINE2DELTA, 0);
-    mppLocalPoolDefaults[SDRATTR_EDGELINE3DELTA   -SDRATTR_START]=new SdrMetricItem(SDRATTR_EDGELINE3DELTA, 0);
-    mppLocalPoolDefaults[SDRATTR_MEASUREKIND             -SDRATTR_START]=new SdrMeasureKindItem;
-    mppLocalPoolDefaults[SDRATTR_MEASURETEXTHPOS         -SDRATTR_START]=new SdrMeasureTextHPosItem;
-    mppLocalPoolDefaults[SDRATTR_MEASURETEXTVPOS         -SDRATTR_START]=new SdrMeasureTextVPosItem;
-    mppLocalPoolDefaults[SDRATTR_MEASURELINEDIST         -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASURELINEDIST, 800);
-    mppLocalPoolDefaults[SDRATTR_MEASUREHELPLINEOVERHANG -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASUREHELPLINEOVERHANG, 200);
-    mppLocalPoolDefaults[SDRATTR_MEASUREHELPLINEDIST     -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASUREHELPLINEDIST, 100);
-    mppLocalPoolDefaults[SDRATTR_MEASUREHELPLINE1LEN     -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASUREHELPLINE1LEN, 0);
-    mppLocalPoolDefaults[SDRATTR_MEASUREHELPLINE2LEN     -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASUREHELPLINE2LEN, 0);
-    mppLocalPoolDefaults[SDRATTR_MEASUREBELOWREFEDGE     -SDRATTR_START]=new SdrMeasureBelowRefEdgeItem;
-    mppLocalPoolDefaults[SDRATTR_MEASURETEXTROTA90       -SDRATTR_START]=new SdrMeasureTextRota90Item;
-    mppLocalPoolDefaults[SDRATTR_MEASURETEXTUPSIDEDOWN   -SDRATTR_START]=new SdrMeasureTextUpsideDownItem;
-    mppLocalPoolDefaults[SDRATTR_MEASUREOVERHANG         -SDRATTR_START]=new SdrMeasureOverhangItem(600);
-    mppLocalPoolDefaults[SDRATTR_MEASUREUNIT             -SDRATTR_START]=new SdrMeasureUnitItem;
-    mppLocalPoolDefaults[SDRATTR_MEASURESCALE            -SDRATTR_START]=new SdrMeasureScaleItem;
-    mppLocalPoolDefaults[SDRATTR_MEASURESHOWUNIT         -SDRATTR_START]=new SdrYesNoItem(SDRATTR_MEASURESHOWUNIT, false);
-    mppLocalPoolDefaults[SDRATTR_MEASUREFORMATSTRING     -SDRATTR_START]=new SdrMeasureFormatStringItem();
-    mppLocalPoolDefaults[SDRATTR_MEASURETEXTAUTOANGLE    -SDRATTR_START]=new SdrMeasureTextAutoAngleItem();
-    mppLocalPoolDefaults[SDRATTR_MEASURETEXTAUTOANGLEVIEW-SDRATTR_START]=new SdrMeasureTextAutoAngleViewItem();
-    mppLocalPoolDefaults[SDRATTR_MEASURETEXTISFIXEDANGLE -SDRATTR_START]=new SdrMeasureTextIsFixedAngleItem();
-    mppLocalPoolDefaults[SDRATTR_MEASURETEXTFIXEDANGLE   -SDRATTR_START]=new SdrMeasureTextFixedAngleItem();
-    mppLocalPoolDefaults[SDRATTR_MEASUREDECIMALPLACES    -SDRATTR_START]=new SdrMeasureDecimalPlacesItem();
-    mppLocalPoolDefaults[SDRATTR_CIRCKIND      -SDRATTR_START]=new SdrCircKindItem;
-    mppLocalPoolDefaults[SDRATTR_CIRCSTARTANGLE-SDRATTR_START]=new SdrAngleItem(SDRATTR_CIRCSTARTANGLE, 0);
-    mppLocalPoolDefaults[SDRATTR_CIRCENDANGLE  -SDRATTR_START]=new SdrAngleItem(SDRATTR_CIRCENDANGLE, 36000);
-    mppLocalPoolDefaults[SDRATTR_OBJMOVEPROTECT -SDRATTR_START]=new SdrYesNoItem(SDRATTR_OBJMOVEPROTECT, false);
-    mppLocalPoolDefaults[SDRATTR_OBJSIZEPROTECT -SDRATTR_START]=new SdrYesNoItem(SDRATTR_OBJSIZEPROTECT, false);
-    mppLocalPoolDefaults[SDRATTR_OBJPRINTABLE   -SDRATTR_START]=new SdrObjPrintableItem;
-    mppLocalPoolDefaults[SDRATTR_OBJVISIBLE     -SDRATTR_START]=new SdrObjVisibleItem;
-    mppLocalPoolDefaults[SDRATTR_LAYERID        -SDRATTR_START]=new SdrLayerIdItem;
-    mppLocalPoolDefaults[SDRATTR_LAYERNAME      -SDRATTR_START]=new SdrLayerNameItem;
-    mppLocalPoolDefaults[SDRATTR_OBJECTNAME     -SDRATTR_START]=new SfxStringItem(SDRATTR_OBJECTNAME);
-    mppLocalPoolDefaults[SDRATTR_ALLPOSITIONX   -SDRATTR_START]=new SdrAllPositionXItem;
-    mppLocalPoolDefaults[SDRATTR_ALLPOSITIONY   -SDRATTR_START]=new SdrAllPositionYItem;
-    mppLocalPoolDefaults[SDRATTR_ALLSIZEWIDTH   -SDRATTR_START]=new SdrAllSizeWidthItem;
-    mppLocalPoolDefaults[SDRATTR_ALLSIZEHEIGHT  -SDRATTR_START]=new SdrAllSizeHeightItem;
-    mppLocalPoolDefaults[SDRATTR_ONEPOSITIONX   -SDRATTR_START]=new SdrOnePositionXItem;
-    mppLocalPoolDefaults[SDRATTR_ONEPOSITIONY   -SDRATTR_START]=new SdrOnePositionYItem;
-    mppLocalPoolDefaults[SDRATTR_ONESIZEWIDTH   -SDRATTR_START]=new SdrOneSizeWidthItem;
-    mppLocalPoolDefaults[SDRATTR_ONESIZEHEIGHT  -SDRATTR_START]=new SdrOneSizeHeightItem;
-    mppLocalPoolDefaults[SDRATTR_LOGICSIZEWIDTH -SDRATTR_START]=new SdrLogicSizeWidthItem;
-    mppLocalPoolDefaults[SDRATTR_LOGICSIZEHEIGHT-SDRATTR_START]=new SdrLogicSizeHeightItem;
-    mppLocalPoolDefaults[SDRATTR_ROTATEANGLE    -SDRATTR_START]=new SdrAngleItem(SDRATTR_ROTATEANGLE, 0);
-    mppLocalPoolDefaults[SDRATTR_SHEARANGLE     -SDRATTR_START]=new SdrShearAngleItem;
-    mppLocalPoolDefaults[SDRATTR_MOVEX          -SDRATTR_START]=new SdrMoveXItem;
-    mppLocalPoolDefaults[SDRATTR_MOVEY          -SDRATTR_START]=new SdrMoveYItem;
-    mppLocalPoolDefaults[SDRATTR_RESIZEXONE     -SDRATTR_START]=new SdrResizeXOneItem;
-    mppLocalPoolDefaults[SDRATTR_RESIZEYONE     -SDRATTR_START]=new SdrResizeYOneItem;
-    mppLocalPoolDefaults[SDRATTR_ROTATEONE      -SDRATTR_START]=new SdrRotateOneItem;
-    mppLocalPoolDefaults[SDRATTR_HORZSHEARONE   -SDRATTR_START]=new SdrHorzShearOneItem;
-    mppLocalPoolDefaults[SDRATTR_VERTSHEARONE   -SDRATTR_START]=new SdrVertShearOneItem;
-    mppLocalPoolDefaults[SDRATTR_RESIZEXALL     -SDRATTR_START]=new SdrResizeXAllItem;
-    mppLocalPoolDefaults[SDRATTR_RESIZEYALL     -SDRATTR_START]=new SdrResizeYAllItem;
-    mppLocalPoolDefaults[SDRATTR_ROTATEALL      -SDRATTR_START]=new SdrRotateAllItem;
-    mppLocalPoolDefaults[SDRATTR_HORZSHEARALL   -SDRATTR_START]=new SdrHorzShearAllItem;
-    mppLocalPoolDefaults[SDRATTR_VERTSHEARALL   -SDRATTR_START]=new SdrVertShearAllItem;
-    mppLocalPoolDefaults[SDRATTR_TRANSFORMREF1X -SDRATTR_START]=new SdrTransformRef1XItem;
-    mppLocalPoolDefaults[SDRATTR_TRANSFORMREF1Y -SDRATTR_START]=new SdrTransformRef1YItem;
-    mppLocalPoolDefaults[SDRATTR_TRANSFORMREF2X -SDRATTR_START]=new SdrTransformRef2XItem;
-    mppLocalPoolDefaults[SDRATTR_TRANSFORMREF2Y -SDRATTR_START]=new SdrTransformRef2YItem;
-    mppLocalPoolDefaults[SDRATTR_TEXTDIRECTION  -SDRATTR_START]=new SvxWritingModeItem(css::text::WritingMode_LR_TB, SDRATTR_TEXTDIRECTION);
-    mppLocalPoolDefaults[ SDRATTR_GRAFRED               - SDRATTR_START] = new SdrGrafRedItem;
-    mppLocalPoolDefaults[ SDRATTR_GRAFGREEN         - SDRATTR_START] = new SdrGrafGreenItem;
-    mppLocalPoolDefaults[ SDRATTR_GRAFBLUE          - SDRATTR_START] = new SdrGrafBlueItem;
-    mppLocalPoolDefaults[ SDRATTR_GRAFLUMINANCE     - SDRATTR_START] = new SdrGrafLuminanceItem;
-    mppLocalPoolDefaults[ SDRATTR_GRAFCONTRAST      - SDRATTR_START] = new SdrGrafContrastItem;
-    mppLocalPoolDefaults[ SDRATTR_GRAFGAMMA         - SDRATTR_START] = new SdrGrafGamma100Item;
-    mppLocalPoolDefaults[ SDRATTR_GRAFTRANSPARENCE  - SDRATTR_START] = new SdrGrafTransparenceItem;
-    mppLocalPoolDefaults[ SDRATTR_GRAFINVERT            - SDRATTR_START] = new SdrGrafInvertItem;
-    mppLocalPoolDefaults[ SDRATTR_GRAFMODE          - SDRATTR_START] = new SdrGrafModeItem;
-    mppLocalPoolDefaults[ SDRATTR_GRAFCROP          - SDRATTR_START] = new SdrGrafCropItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_PERCENT_DIAGONAL - SDRATTR_START ] = new SfxUInt16Item(SDRATTR_3DOBJ_PERCENT_DIAGONAL, 10);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_BACKSCALE - SDRATTR_START ] = new SfxUInt16Item(SDRATTR_3DOBJ_BACKSCALE, 100);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_DEPTH - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DOBJ_DEPTH, 1000);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_HORZ_SEGS - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DOBJ_HORZ_SEGS, 24);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_VERT_SEGS - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DOBJ_VERT_SEGS, 24);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_END_ANGLE - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DOBJ_END_ANGLE, 3600);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_DOUBLE_SIDED - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DOBJ_DOUBLE_SIDED, false);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_NORMALS_KIND - SDRATTR_START ] = new Svx3DNormalsKindItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_NORMALS_INVERT - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DOBJ_NORMALS_INVERT, false);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_PROJ_X - SDRATTR_START ] = new Svx3DTextureProjectionXItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_PROJ_Y - SDRATTR_START ] = new Svx3DTextureProjectionYItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_SHADOW_3D - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DOBJ_SHADOW_3D, false);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_MAT_COLOR - SDRATTR_START ] = new SvxColorItem(Color(0x0000b8ff), SDRATTR_3DOBJ_MAT_COLOR);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_MAT_EMISSION - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DOBJ_MAT_EMISSION);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_MAT_SPECULAR - SDRATTR_START ] = new SvxColorItem(Color(0x00ffffff), SDRATTR_3DOBJ_MAT_SPECULAR);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_MAT_SPECULAR_INTENSITY - SDRATTR_START ] = new SfxUInt16Item(SDRATTR_3DOBJ_MAT_SPECULAR_INTENSITY, 15);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_KIND - SDRATTR_START ] = new Svx3DTextureKindItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_MODE - SDRATTR_START ] = new Svx3DTextureModeItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_FILTER - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DOBJ_TEXTURE_FILTER, false);
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_SMOOTH_NORMALS - SDRATTR_START ] = new Svx3DSmoothNormalsItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_SMOOTH_LIDS - SDRATTR_START ] = new Svx3DSmoothLidsItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_CHARACTER_MODE - SDRATTR_START ] = new Svx3DCharacterModeItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_CLOSE_FRONT - SDRATTR_START ] = new Svx3DCloseFrontItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_CLOSE_BACK - SDRATTR_START ] = new Svx3DCloseBackItem;
-    mppLocalPoolDefaults[ SDRATTR_3DOBJ_REDUCED_LINE_GEOMETRY - SDRATTR_START ] = new Svx3DReducedLineGeometryItem;
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_PERSPECTIVE - SDRATTR_START ] = new Svx3DPerspectiveItem;
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_DISTANCE - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DSCENE_DISTANCE, 100);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_FOCAL_LENGTH - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DSCENE_FOCAL_LENGTH, 100);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_TWO_SIDED_LIGHTING - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_TWO_SIDED_LIGHTING, false);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_1 - SDRATTR_START ] = new SvxColorItem(Color(0xffcccccc), SDRATTR_3DSCENE_LIGHTCOLOR_1);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_2 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_2);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_3 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_3);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_4 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_4);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_5 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_5);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_6 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_6);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_7 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_7);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_8 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_8);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_AMBIENTCOLOR - SDRATTR_START ] = new SvxColorItem(Color(0x00666666), SDRATTR_3DSCENE_AMBIENTCOLOR);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_1 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_1, true);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_2 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_2, false);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_3 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_3, false);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_4 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_4, false);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_5 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_5, false);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_6 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_6, false);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_7 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_7, false);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_8 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_8, false);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_1 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_1, basegfx::B3DVector(0.57735026918963, 0.57735026918963, 0.57735026918963));
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_2 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_2, basegfx::B3DVector(0.0,0.0,1.0));
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_3 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_3, basegfx::B3DVector(0.0,0.0,1.0));
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_4 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_4, basegfx::B3DVector(0.0,0.0,1.0));
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_5 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_5, basegfx::B3DVector(0.0,0.0,1.0));
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_6 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_6, basegfx::B3DVector(0.0,0.0,1.0));
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_7 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_7, basegfx::B3DVector(0.0,0.0,1.0));
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_8 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_8, basegfx::B3DVector(0.0,0.0,1.0));
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_SHADOW_SLANT - SDRATTR_START ] = new SfxUInt16Item(SDRATTR_3DSCENE_SHADOW_SLANT, 0);
-    mppLocalPoolDefaults[ SDRATTR_3DSCENE_SHADE_MODE - SDRATTR_START ] = new Svx3DShadeModeItem;
-    mppLocalPoolDefaults[ SDRATTR_CUSTOMSHAPE_ENGINE - SDRATTR_START ] = new SfxStringItem(SDRATTR_CUSTOMSHAPE_ENGINE, "");
-    mppLocalPoolDefaults[ SDRATTR_CUSTOMSHAPE_DATA - SDRATTR_START ] = new SfxStringItem(SDRATTR_CUSTOMSHAPE_DATA, "");
-    mppLocalPoolDefaults[ SDRATTR_CUSTOMSHAPE_GEOMETRY - SDRATTR_START ] = new SdrCustomShapeGeometryItem;
-    mppLocalPoolDefaults[ SDRATTR_CUSTOMSHAPE_REPLACEMENT_URL - SDRATTR_START ] = new SdrCustomShapeReplacementURLItem;
+    std::vector<SfxPoolItem*>& rPoolDefaults = *mpLocalPoolDefaults;
+    rPoolDefaults[SDRATTR_SHADOW            -SDRATTR_START]=new SdrOnOffItem(SDRATTR_SHADOW, false);
+    rPoolDefaults[SDRATTR_SHADOWCOLOR       -SDRATTR_START]=new XColorItem(SDRATTR_SHADOWCOLOR, aNullCol);
+    rPoolDefaults[SDRATTR_SHADOWXDIST       -SDRATTR_START]=new SdrMetricItem(SDRATTR_SHADOWXDIST, 0);
+    rPoolDefaults[SDRATTR_SHADOWYDIST       -SDRATTR_START]=new SdrMetricItem(SDRATTR_SHADOWYDIST, 0);
+    rPoolDefaults[SDRATTR_SHADOWTRANSPARENCE-SDRATTR_START]=new SdrPercentItem(SDRATTR_SHADOWTRANSPARENCE, 0);
+    rPoolDefaults[SDRATTR_SHADOW3D          -SDRATTR_START]=new SfxVoidItem(SDRATTR_SHADOW3D    );
+    rPoolDefaults[SDRATTR_SHADOWPERSP       -SDRATTR_START]=new SfxVoidItem(SDRATTR_SHADOWPERSP );
+    rPoolDefaults[SDRATTR_CAPTIONTYPE      -SDRATTR_START]=new SdrCaptionTypeItem      ;
+    rPoolDefaults[SDRATTR_CAPTIONFIXEDANGLE-SDRATTR_START]=new SdrOnOffItem(SDRATTR_CAPTIONFIXEDANGLE, true);
+    rPoolDefaults[SDRATTR_CAPTIONANGLE     -SDRATTR_START]=new SdrCaptionAngleItem     ;
+    rPoolDefaults[SDRATTR_CAPTIONGAP       -SDRATTR_START]=new SdrCaptionGapItem       ;
+    rPoolDefaults[SDRATTR_CAPTIONESCDIR    -SDRATTR_START]=new SdrCaptionEscDirItem    ;
+    rPoolDefaults[SDRATTR_CAPTIONESCISREL  -SDRATTR_START]=new SdrCaptionEscIsRelItem  ;
+    rPoolDefaults[SDRATTR_CAPTIONESCREL    -SDRATTR_START]=new SdrCaptionEscRelItem    ;
+    rPoolDefaults[SDRATTR_CAPTIONESCABS    -SDRATTR_START]=new SdrCaptionEscAbsItem    ;
+    rPoolDefaults[SDRATTR_CAPTIONLINELEN   -SDRATTR_START]=new SdrCaptionLineLenItem   ;
+    rPoolDefaults[SDRATTR_CAPTIONFITLINELEN-SDRATTR_START]=new SdrCaptionFitLineLenItem;
+    rPoolDefaults[SDRATTR_ECKENRADIUS            -SDRATTR_START]=new SdrMetricItem(SDRATTR_ECKENRADIUS, 0);
+    rPoolDefaults[SDRATTR_TEXT_MINFRAMEHEIGHT    -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_MINFRAMEHEIGHT, 0);
+    rPoolDefaults[SDRATTR_TEXT_AUTOGROWHEIGHT    -SDRATTR_START]=new SdrOnOffItem(SDRATTR_TEXT_AUTOGROWHEIGHT, true);
+    rPoolDefaults[SDRATTR_TEXT_FITTOSIZE     -SDRATTR_START]=new SdrTextFitToSizeTypeItem;
+    rPoolDefaults[SDRATTR_TEXT_LEFTDIST      -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_LEFTDIST, 0);
+    rPoolDefaults[SDRATTR_TEXT_RIGHTDIST     -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_RIGHTDIST, 0);
+    rPoolDefaults[SDRATTR_TEXT_UPPERDIST     -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_UPPERDIST, 0);
+    rPoolDefaults[SDRATTR_TEXT_LOWERDIST     -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_LOWERDIST, 0);
+    rPoolDefaults[SDRATTR_TEXT_VERTADJUST        -SDRATTR_START]=new SdrTextVertAdjustItem;
+    rPoolDefaults[SDRATTR_TEXT_MAXFRAMEHEIGHT    -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_MAXFRAMEHEIGHT, 0);
+    rPoolDefaults[SDRATTR_TEXT_MINFRAMEWIDTH -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_MINFRAMEWIDTH, 0);
+    rPoolDefaults[SDRATTR_TEXT_MAXFRAMEWIDTH -SDRATTR_START]=new SdrMetricItem(SDRATTR_TEXT_MAXFRAMEWIDTH, 0);
+    rPoolDefaults[SDRATTR_TEXT_AUTOGROWWIDTH -SDRATTR_START]=new SdrOnOffItem(SDRATTR_TEXT_AUTOGROWWIDTH, false);
+    rPoolDefaults[SDRATTR_TEXT_HORZADJUST        -SDRATTR_START]=new SdrTextHorzAdjustItem;
+    rPoolDefaults[SDRATTR_TEXT_ANIKIND           -SDRATTR_START]=new SdrTextAniKindItem;
+    rPoolDefaults[SDRATTR_TEXT_ANIDIRECTION  -SDRATTR_START]=new SdrTextAniDirectionItem;
+    rPoolDefaults[SDRATTR_TEXT_ANISTARTINSIDE    -SDRATTR_START]=new SdrTextAniStartInsideItem;
+    rPoolDefaults[SDRATTR_TEXT_ANISTOPINSIDE -SDRATTR_START]=new SdrTextAniStopInsideItem;
+    rPoolDefaults[SDRATTR_TEXT_ANICOUNT      -SDRATTR_START]=new SdrTextAniCountItem;
+    rPoolDefaults[SDRATTR_TEXT_ANIDELAY      -SDRATTR_START]=new SdrTextAniDelayItem;
+    rPoolDefaults[SDRATTR_TEXT_ANIAMOUNT     -SDRATTR_START]=new SdrTextAniAmountItem;
+    rPoolDefaults[SDRATTR_TEXT_CONTOURFRAME  -SDRATTR_START]=new SdrOnOffItem(SDRATTR_TEXT_CONTOURFRAME, false);
+    rPoolDefaults[SDRATTR_CUSTOMSHAPE_ADJUSTMENT -SDRATTR_START]=new SdrCustomShapeAdjustmentItem;
+    rPoolDefaults[SDRATTR_XMLATTRIBUTES -SDRATTR_START]=new SvXMLAttrContainerItem( SDRATTR_XMLATTRIBUTES );
+    rPoolDefaults[SDRATTR_TEXT_CHAINNEXTNAME    -SDRATTR_START]=new SfxStringItem(SDRATTR_TEXT_CHAINNEXTNAME, "");
+    rPoolDefaults[SDRATTR_TEXT_USEFIXEDCELLHEIGHT -SDRATTR_START]=new SdrTextFixedCellHeightItem;
+    rPoolDefaults[SDRATTR_TEXT_WORDWRAP         -SDRATTR_START]=new SdrOnOffItem(SDRATTR_TEXT_WORDWRAP, true);
+    rPoolDefaults[SDRATTR_EDGEKIND         -SDRATTR_START]=new SdrEdgeKindItem;
+    rPoolDefaults[SDRATTR_EDGENODE1HORZDIST-SDRATTR_START]=new SdrEdgeNode1HorzDistItem(nDefEdgeDist);
+    rPoolDefaults[SDRATTR_EDGENODE1VERTDIST-SDRATTR_START]=new SdrEdgeNode1VertDistItem(nDefEdgeDist);
+    rPoolDefaults[SDRATTR_EDGENODE2HORZDIST-SDRATTR_START]=new SdrEdgeNode2HorzDistItem(nDefEdgeDist);
+    rPoolDefaults[SDRATTR_EDGENODE2VERTDIST-SDRATTR_START]=new SdrEdgeNode2VertDistItem(nDefEdgeDist);
+    rPoolDefaults[SDRATTR_EDGENODE1GLUEDIST-SDRATTR_START]=new SdrEdgeNode1GlueDistItem;
+    rPoolDefaults[SDRATTR_EDGENODE2GLUEDIST-SDRATTR_START]=new SdrEdgeNode2GlueDistItem;
+    rPoolDefaults[SDRATTR_EDGELINEDELTAANZ -SDRATTR_START]=new SdrEdgeLineDeltaCountItem;
+    rPoolDefaults[SDRATTR_EDGELINE1DELTA   -SDRATTR_START]=new SdrMetricItem(SDRATTR_EDGELINE1DELTA, 0);
+    rPoolDefaults[SDRATTR_EDGELINE2DELTA   -SDRATTR_START]=new SdrMetricItem(SDRATTR_EDGELINE2DELTA, 0);
+    rPoolDefaults[SDRATTR_EDGELINE3DELTA   -SDRATTR_START]=new SdrMetricItem(SDRATTR_EDGELINE3DELTA, 0);
+    rPoolDefaults[SDRATTR_MEASUREKIND             -SDRATTR_START]=new SdrMeasureKindItem;
+    rPoolDefaults[SDRATTR_MEASURETEXTHPOS         -SDRATTR_START]=new SdrMeasureTextHPosItem;
+    rPoolDefaults[SDRATTR_MEASURETEXTVPOS         -SDRATTR_START]=new SdrMeasureTextVPosItem;
+    rPoolDefaults[SDRATTR_MEASURELINEDIST         -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASURELINEDIST, 800);
+    rPoolDefaults[SDRATTR_MEASUREHELPLINEOVERHANG -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASUREHELPLINEOVERHANG, 200);
+    rPoolDefaults[SDRATTR_MEASUREHELPLINEDIST     -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASUREHELPLINEDIST, 100);
+    rPoolDefaults[SDRATTR_MEASUREHELPLINE1LEN     -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASUREHELPLINE1LEN, 0);
+    rPoolDefaults[SDRATTR_MEASUREHELPLINE2LEN     -SDRATTR_START]=new SdrMetricItem(SDRATTR_MEASUREHELPLINE2LEN, 0);
+    rPoolDefaults[SDRATTR_MEASUREBELOWREFEDGE     -SDRATTR_START]=new SdrMeasureBelowRefEdgeItem;
+    rPoolDefaults[SDRATTR_MEASURETEXTROTA90       -SDRATTR_START]=new SdrMeasureTextRota90Item;
+    rPoolDefaults[SDRATTR_MEASURETEXTUPSIDEDOWN   -SDRATTR_START]=new SdrMeasureTextUpsideDownItem;
+    rPoolDefaults[SDRATTR_MEASUREOVERHANG         -SDRATTR_START]=new SdrMeasureOverhangItem(600);
+    rPoolDefaults[SDRATTR_MEASUREUNIT             -SDRATTR_START]=new SdrMeasureUnitItem;
+    rPoolDefaults[SDRATTR_MEASURESCALE            -SDRATTR_START]=new SdrMeasureScaleItem;
+    rPoolDefaults[SDRATTR_MEASURESHOWUNIT         -SDRATTR_START]=new SdrYesNoItem(SDRATTR_MEASURESHOWUNIT, false);
+    rPoolDefaults[SDRATTR_MEASUREFORMATSTRING     -SDRATTR_START]=new SdrMeasureFormatStringItem();
+    rPoolDefaults[SDRATTR_MEASURETEXTAUTOANGLE    -SDRATTR_START]=new SdrMeasureTextAutoAngleItem();
+    rPoolDefaults[SDRATTR_MEASURETEXTAUTOANGLEVIEW-SDRATTR_START]=new SdrMeasureTextAutoAngleViewItem();
+    rPoolDefaults[SDRATTR_MEASURETEXTISFIXEDANGLE -SDRATTR_START]=new SdrMeasureTextIsFixedAngleItem();
+    rPoolDefaults[SDRATTR_MEASURETEXTFIXEDANGLE   -SDRATTR_START]=new SdrMeasureTextFixedAngleItem();
+    rPoolDefaults[SDRATTR_MEASUREDECIMALPLACES    -SDRATTR_START]=new SdrMeasureDecimalPlacesItem();
+    rPoolDefaults[SDRATTR_CIRCKIND      -SDRATTR_START]=new SdrCircKindItem;
+    rPoolDefaults[SDRATTR_CIRCSTARTANGLE-SDRATTR_START]=new SdrAngleItem(SDRATTR_CIRCSTARTANGLE, 0);
+    rPoolDefaults[SDRATTR_CIRCENDANGLE  -SDRATTR_START]=new SdrAngleItem(SDRATTR_CIRCENDANGLE, 36000);
+    rPoolDefaults[SDRATTR_OBJMOVEPROTECT -SDRATTR_START]=new SdrYesNoItem(SDRATTR_OBJMOVEPROTECT, false);
+    rPoolDefaults[SDRATTR_OBJSIZEPROTECT -SDRATTR_START]=new SdrYesNoItem(SDRATTR_OBJSIZEPROTECT, false);
+    rPoolDefaults[SDRATTR_OBJPRINTABLE   -SDRATTR_START]=new SdrObjPrintableItem;
+    rPoolDefaults[SDRATTR_OBJVISIBLE     -SDRATTR_START]=new SdrObjVisibleItem;
+    rPoolDefaults[SDRATTR_LAYERID        -SDRATTR_START]=new SdrLayerIdItem;
+    rPoolDefaults[SDRATTR_LAYERNAME      -SDRATTR_START]=new SdrLayerNameItem;
+    rPoolDefaults[SDRATTR_OBJECTNAME     -SDRATTR_START]=new SfxStringItem(SDRATTR_OBJECTNAME);
+    rPoolDefaults[SDRATTR_ALLPOSITIONX   -SDRATTR_START]=new SdrAllPositionXItem;
+    rPoolDefaults[SDRATTR_ALLPOSITIONY   -SDRATTR_START]=new SdrAllPositionYItem;
+    rPoolDefaults[SDRATTR_ALLSIZEWIDTH   -SDRATTR_START]=new SdrAllSizeWidthItem;
+    rPoolDefaults[SDRATTR_ALLSIZEHEIGHT  -SDRATTR_START]=new SdrAllSizeHeightItem;
+    rPoolDefaults[SDRATTR_ONEPOSITIONX   -SDRATTR_START]=new SdrOnePositionXItem;
+    rPoolDefaults[SDRATTR_ONEPOSITIONY   -SDRATTR_START]=new SdrOnePositionYItem;
+    rPoolDefaults[SDRATTR_ONESIZEWIDTH   -SDRATTR_START]=new SdrOneSizeWidthItem;
+    rPoolDefaults[SDRATTR_ONESIZEHEIGHT  -SDRATTR_START]=new SdrOneSizeHeightItem;
+    rPoolDefaults[SDRATTR_LOGICSIZEWIDTH -SDRATTR_START]=new SdrLogicSizeWidthItem;
+    rPoolDefaults[SDRATTR_LOGICSIZEHEIGHT-SDRATTR_START]=new SdrLogicSizeHeightItem;
+    rPoolDefaults[SDRATTR_ROTATEANGLE    -SDRATTR_START]=new SdrAngleItem(SDRATTR_ROTATEANGLE, 0);
+    rPoolDefaults[SDRATTR_SHEARANGLE     -SDRATTR_START]=new SdrShearAngleItem;
+    rPoolDefaults[SDRATTR_MOVEX          -SDRATTR_START]=new SdrMoveXItem;
+    rPoolDefaults[SDRATTR_MOVEY          -SDRATTR_START]=new SdrMoveYItem;
+    rPoolDefaults[SDRATTR_RESIZEXONE     -SDRATTR_START]=new SdrResizeXOneItem;
+    rPoolDefaults[SDRATTR_RESIZEYONE     -SDRATTR_START]=new SdrResizeYOneItem;
+    rPoolDefaults[SDRATTR_ROTATEONE      -SDRATTR_START]=new SdrRotateOneItem;
+    rPoolDefaults[SDRATTR_HORZSHEARONE   -SDRATTR_START]=new SdrHorzShearOneItem;
+    rPoolDefaults[SDRATTR_VERTSHEARONE   -SDRATTR_START]=new SdrVertShearOneItem;
+    rPoolDefaults[SDRATTR_RESIZEXALL     -SDRATTR_START]=new SdrResizeXAllItem;
+    rPoolDefaults[SDRATTR_RESIZEYALL     -SDRATTR_START]=new SdrResizeYAllItem;
+    rPoolDefaults[SDRATTR_ROTATEALL      -SDRATTR_START]=new SdrRotateAllItem;
+    rPoolDefaults[SDRATTR_HORZSHEARALL   -SDRATTR_START]=new SdrHorzShearAllItem;
+    rPoolDefaults[SDRATTR_VERTSHEARALL   -SDRATTR_START]=new SdrVertShearAllItem;
+    rPoolDefaults[SDRATTR_TRANSFORMREF1X -SDRATTR_START]=new SdrTransformRef1XItem;
+    rPoolDefaults[SDRATTR_TRANSFORMREF1Y -SDRATTR_START]=new SdrTransformRef1YItem;
+    rPoolDefaults[SDRATTR_TRANSFORMREF2X -SDRATTR_START]=new SdrTransformRef2XItem;
+    rPoolDefaults[SDRATTR_TRANSFORMREF2Y -SDRATTR_START]=new SdrTransformRef2YItem;
+    rPoolDefaults[SDRATTR_TEXTDIRECTION  -SDRATTR_START]=new SvxWritingModeItem(css::text::WritingMode_LR_TB, SDRATTR_TEXTDIRECTION);
+    rPoolDefaults[ SDRATTR_GRAFRED               - SDRATTR_START] = new SdrGrafRedItem;
+    rPoolDefaults[ SDRATTR_GRAFGREEN         - SDRATTR_START] = new SdrGrafGreenItem;
+    rPoolDefaults[ SDRATTR_GRAFBLUE          - SDRATTR_START] = new SdrGrafBlueItem;
+    rPoolDefaults[ SDRATTR_GRAFLUMINANCE     - SDRATTR_START] = new SdrGrafLuminanceItem;
+    rPoolDefaults[ SDRATTR_GRAFCONTRAST      - SDRATTR_START] = new SdrGrafContrastItem;
+    rPoolDefaults[ SDRATTR_GRAFGAMMA         - SDRATTR_START] = new SdrGrafGamma100Item;
+    rPoolDefaults[ SDRATTR_GRAFTRANSPARENCE  - SDRATTR_START] = new SdrGrafTransparenceItem;
+    rPoolDefaults[ SDRATTR_GRAFINVERT            - SDRATTR_START] = new SdrGrafInvertItem;
+    rPoolDefaults[ SDRATTR_GRAFMODE          - SDRATTR_START] = new SdrGrafModeItem;
+    rPoolDefaults[ SDRATTR_GRAFCROP          - SDRATTR_START] = new SdrGrafCropItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_PERCENT_DIAGONAL - SDRATTR_START ] = new SfxUInt16Item(SDRATTR_3DOBJ_PERCENT_DIAGONAL, 10);
+    rPoolDefaults[ SDRATTR_3DOBJ_BACKSCALE - SDRATTR_START ] = new SfxUInt16Item(SDRATTR_3DOBJ_BACKSCALE, 100);
+    rPoolDefaults[ SDRATTR_3DOBJ_DEPTH - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DOBJ_DEPTH, 1000);
+    rPoolDefaults[ SDRATTR_3DOBJ_HORZ_SEGS - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DOBJ_HORZ_SEGS, 24);
+    rPoolDefaults[ SDRATTR_3DOBJ_VERT_SEGS - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DOBJ_VERT_SEGS, 24);
+    rPoolDefaults[ SDRATTR_3DOBJ_END_ANGLE - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DOBJ_END_ANGLE, 3600);
+    rPoolDefaults[ SDRATTR_3DOBJ_DOUBLE_SIDED - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DOBJ_DOUBLE_SIDED, false);
+    rPoolDefaults[ SDRATTR_3DOBJ_NORMALS_KIND - SDRATTR_START ] = new Svx3DNormalsKindItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_NORMALS_INVERT - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DOBJ_NORMALS_INVERT, false);
+    rPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_PROJ_X - SDRATTR_START ] = new Svx3DTextureProjectionXItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_PROJ_Y - SDRATTR_START ] = new Svx3DTextureProjectionYItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_SHADOW_3D - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DOBJ_SHADOW_3D, false);
+    rPoolDefaults[ SDRATTR_3DOBJ_MAT_COLOR - SDRATTR_START ] = new SvxColorItem(Color(0x0000b8ff), SDRATTR_3DOBJ_MAT_COLOR);
+    rPoolDefaults[ SDRATTR_3DOBJ_MAT_EMISSION - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DOBJ_MAT_EMISSION);
+    rPoolDefaults[ SDRATTR_3DOBJ_MAT_SPECULAR - SDRATTR_START ] = new SvxColorItem(Color(0x00ffffff), SDRATTR_3DOBJ_MAT_SPECULAR);
+    rPoolDefaults[ SDRATTR_3DOBJ_MAT_SPECULAR_INTENSITY - SDRATTR_START ] = new SfxUInt16Item(SDRATTR_3DOBJ_MAT_SPECULAR_INTENSITY, 15);
+    rPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_KIND - SDRATTR_START ] = new Svx3DTextureKindItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_MODE - SDRATTR_START ] = new Svx3DTextureModeItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_TEXTURE_FILTER - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DOBJ_TEXTURE_FILTER, false);
+    rPoolDefaults[ SDRATTR_3DOBJ_SMOOTH_NORMALS - SDRATTR_START ] = new Svx3DSmoothNormalsItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_SMOOTH_LIDS - SDRATTR_START ] = new Svx3DSmoothLidsItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_CHARACTER_MODE - SDRATTR_START ] = new Svx3DCharacterModeItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_CLOSE_FRONT - SDRATTR_START ] = new Svx3DCloseFrontItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_CLOSE_BACK - SDRATTR_START ] = new Svx3DCloseBackItem;
+    rPoolDefaults[ SDRATTR_3DOBJ_REDUCED_LINE_GEOMETRY - SDRATTR_START ] = new Svx3DReducedLineGeometryItem;
+    rPoolDefaults[ SDRATTR_3DSCENE_PERSPECTIVE - SDRATTR_START ] = new Svx3DPerspectiveItem;
+    rPoolDefaults[ SDRATTR_3DSCENE_DISTANCE - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DSCENE_DISTANCE, 100);
+    rPoolDefaults[ SDRATTR_3DSCENE_FOCAL_LENGTH - SDRATTR_START ] = new SfxUInt32Item(SDRATTR_3DSCENE_FOCAL_LENGTH, 100);
+    rPoolDefaults[ SDRATTR_3DSCENE_TWO_SIDED_LIGHTING - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_TWO_SIDED_LIGHTING, false);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_1 - SDRATTR_START ] = new SvxColorItem(Color(0xffcccccc), SDRATTR_3DSCENE_LIGHTCOLOR_1);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_2 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_2);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_3 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_3);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_4 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_4);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_5 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_5);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_6 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_6);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_7 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_7);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTCOLOR_8 - SDRATTR_START ] = new SvxColorItem(Color(0x00000000), SDRATTR_3DSCENE_LIGHTCOLOR_8);
+    rPoolDefaults[ SDRATTR_3DSCENE_AMBIENTCOLOR - SDRATTR_START ] = new SvxColorItem(Color(0x00666666), SDRATTR_3DSCENE_AMBIENTCOLOR);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_1 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_1, true);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_2 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_2, false);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_3 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_3, false);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_4 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_4, false);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_5 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_5, false);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_6 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_6, false);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_7 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_7, false);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTON_8 - SDRATTR_START ] = new SfxBoolItem(SDRATTR_3DSCENE_LIGHTON_8, false);
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_1 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_1, basegfx::B3DVector(0.57735026918963, 0.57735026918963, 0.57735026918963));
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_2 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_2, basegfx::B3DVector(0.0,0.0,1.0));
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_3 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_3, basegfx::B3DVector(0.0,0.0,1.0));
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_4 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_4, basegfx::B3DVector(0.0,0.0,1.0));
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_5 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_5, basegfx::B3DVector(0.0,0.0,1.0));
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_6 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_6, basegfx::B3DVector(0.0,0.0,1.0));
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_7 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_7, basegfx::B3DVector(0.0,0.0,1.0));
+    rPoolDefaults[ SDRATTR_3DSCENE_LIGHTDIRECTION_8 - SDRATTR_START ] = new SvxB3DVectorItem(SDRATTR_3DSCENE_LIGHTDIRECTION_8, basegfx::B3DVector(0.0,0.0,1.0));
+    rPoolDefaults[ SDRATTR_3DSCENE_SHADOW_SLANT - SDRATTR_START ] = new SfxUInt16Item(SDRATTR_3DSCENE_SHADOW_SLANT, 0);
+    rPoolDefaults[ SDRATTR_3DSCENE_SHADE_MODE - SDRATTR_START ] = new Svx3DShadeModeItem;
+    rPoolDefaults[ SDRATTR_CUSTOMSHAPE_ENGINE - SDRATTR_START ] = new SfxStringItem(SDRATTR_CUSTOMSHAPE_ENGINE, "");
+    rPoolDefaults[ SDRATTR_CUSTOMSHAPE_DATA - SDRATTR_START ] = new SfxStringItem(SDRATTR_CUSTOMSHAPE_DATA, "");
+    rPoolDefaults[ SDRATTR_CUSTOMSHAPE_GEOMETRY - SDRATTR_START ] = new SdrCustomShapeGeometryItem;
+    rPoolDefaults[ SDRATTR_CUSTOMSHAPE_REPLACEMENT_URL - SDRATTR_START ] = new SdrCustomShapeReplacementURLItem;
 
     SvxBoxItem* pboxItem = new SvxBoxItem( SDRATTR_TABLE_BORDER );
-    pboxItem->SetDistance( 100 );
-    mppLocalPoolDefaults[ SDRATTR_TABLE_BORDER - SDRATTR_START ] = pboxItem;
+    pboxItem->SetAllDistances( 100 );
+    rPoolDefaults[ SDRATTR_TABLE_BORDER - SDRATTR_START ] = pboxItem;
 
     SvxBoxInfoItem* pBoxInfoItem = new SvxBoxInfoItem( SDRATTR_TABLE_BORDER_INNER );
 
@@ -317,9 +317,9 @@ SdrItemPool::SdrItemPool(
     pBoxInfoItem->SetDist( true);        // always show margin field
     pBoxInfoItem->SetValid( SvxBoxInfoItemValidFlags::DISABLE ); // some lines may have DontCare state only in tables
 
-    mppLocalPoolDefaults[ SDRATTR_TABLE_BORDER_INNER - SDRATTR_START ] =  pBoxInfoItem;
-    mppLocalPoolDefaults[ SDRATTR_TABLE_BORDER_TLBR - SDRATTR_START ] = new SvxLineItem( SDRATTR_TABLE_BORDER_TLBR );
-    mppLocalPoolDefaults[ SDRATTR_TABLE_BORDER_BLTR - SDRATTR_START ] = new SvxLineItem( SDRATTR_TABLE_BORDER_BLTR );
+    rPoolDefaults[ SDRATTR_TABLE_BORDER_INNER - SDRATTR_START ] =  pBoxInfoItem;
+    rPoolDefaults[ SDRATTR_TABLE_BORDER_TLBR - SDRATTR_START ] = new SvxLineItem( SDRATTR_TABLE_BORDER_TLBR );
+    rPoolDefaults[ SDRATTR_TABLE_BORDER_BLTR - SDRATTR_START ] = new SvxLineItem( SDRATTR_TABLE_BORDER_BLTR );
 
     // set own ItemInfos
     mpLocalItemInfos[SDRATTR_SHADOW-SDRATTR_START]._nSID=SID_ATTR_FILL_SHADOW;
@@ -336,7 +336,7 @@ SdrItemPool::SdrItemPool(
     mpLocalItemInfos[SDRATTR_TABLE_BORDER_BLTR - SDRATTR_START ]._nSID = SID_ATTR_BORDER_DIAG_BLTR;
 
     // it's my own creation level, set Defaults and ItemInfos
-    SetDefaults(mppLocalPoolDefaults);
+    SetDefaults(mpLocalPoolDefaults);
     SetItemInfos(mpLocalItemInfos);
 }
 
@@ -354,36 +354,19 @@ SfxItemPool* SdrItemPool::Clone() const
 
 SdrItemPool::~SdrItemPool()
 {
-    // dtor of SfxItemPool
-    Delete();
-
-    // clear own static Defaults
-    if(mppLocalPoolDefaults)
-    {
-        const sal_uInt16 nBeg(SDRATTR_SHADOW_FIRST - SDRATTR_START);
-        const sal_uInt16 nEnd2(SDRATTR_END - SDRATTR_START);
-
-        for(sal_uInt16 i(nBeg); i <= nEnd2; i++)
-        {
-            SetRefCount(*mppLocalPoolDefaults[i],0);
-            delete mppLocalPoolDefaults[i];
-            mppLocalPoolDefaults[i] = nullptr;
-        }
-    }
-
     // split pools before destroying
     SetSecondaryPool(nullptr);
 }
 
 bool SdrItemPool::GetPresentation(
               const SfxPoolItem& rItem,
-              SfxMapUnit ePresentationMetric, OUString& rText,
+              MapUnit ePresentationMetric, OUString& rText,
               const IntlWrapper * pIntlWrapper) const
 {
     if (!IsInvalidItem(&rItem)) {
         sal_uInt16 nWhich=rItem.Which();
         if (nWhich>=SDRATTR_SHADOW_FIRST && nWhich<=SDRATTR_END) {
-            rItem.GetPresentation(SFX_ITEM_PRESENTATION_NAMELESS,
+            rItem.GetPresentation(SfxItemPresentation::Nameless,
                         GetMetric(nWhich),ePresentationMetric,rText,
                         pIntlWrapper);
             OUString aStr;
@@ -500,7 +483,6 @@ void SdrItemPool::TakeItemName(sal_uInt16 nWhich, OUString& rItemName)
         case SDRATTR_TEXT_USEFIXEDCELLHEIGHT: nResId = SIP_SA_TEXT_USEFIXEDCELLHEIGHT;break;
         case SDRATTR_TEXT_WORDWRAP          : nResId = SIP_SA_WORDWRAP;break;
         case SDRATTR_TEXT_CHAINNEXTNAME     : nResId = SIP_SA_CHAINNEXTNAME;break;
-        case SDRATTR_TEXT_AUTOGROWSIZE      : nResId = SIP_SA_AUTOGROWSIZE;break;
 
         case SDRATTR_EDGEKIND           : nResId = SIP_SA_EDGEKIND;break;
         case SDRATTR_EDGENODE1HORZDIST  : nResId = SIP_SA_EDGENODE1HORZDIST;break;
@@ -642,8 +624,8 @@ bool SdrFractionItem::operator==(const SfxPoolItem& rCmp) const
 }
 
 bool SdrFractionItem::GetPresentation(
-    SfxItemPresentation ePresentation, SfxMapUnit /*eCoreMetric*/,
-    SfxMapUnit /*ePresentationMetric*/, OUString &rText, const IntlWrapper *) const
+    SfxItemPresentation ePresentation, MapUnit /*eCoreMetric*/,
+    MapUnit /*ePresentationMetric*/, OUString &rText, const IntlWrapper *) const
 {
     if(nValue.IsValid())
     {
@@ -660,7 +642,7 @@ bool SdrFractionItem::GetPresentation(
         rText = "?";
     }
 
-    if(ePresentation == SFX_ITEM_PRESENTATION_COMPLETE)
+    if(ePresentation == SfxItemPresentation::Complete)
     {
         OUString aStr;
 
@@ -668,7 +650,7 @@ bool SdrFractionItem::GetPresentation(
         rText = aStr + " " + rText;
         return true;
     }
-    else if(ePresentation == SFX_ITEM_PRESENTATION_NAMELESS)
+    else if(ePresentation == SfxItemPresentation::Nameless)
         return true;
 
     return false;
@@ -696,8 +678,8 @@ SfxPoolItem* SdrFractionItem::Clone(SfxItemPool * /*pPool*/) const
 
 
 bool SdrScaleItem::GetPresentation(
-    SfxItemPresentation ePresentation, SfxMapUnit /*eCoreMetric*/,
-    SfxMapUnit /*ePresentationMetric*/, OUString &rText, const IntlWrapper *) const
+    SfxItemPresentation ePresentation, MapUnit /*eCoreMetric*/,
+    MapUnit /*ePresentationMetric*/, OUString &rText, const IntlWrapper *) const
 {
     if(GetValue().IsValid())
     {
@@ -710,7 +692,7 @@ bool SdrScaleItem::GetPresentation(
         rText = "?";
     }
 
-    if(ePresentation == SFX_ITEM_PRESENTATION_COMPLETE)
+    if(ePresentation == SfxItemPresentation::Complete)
     {
         OUString aStr;
 
@@ -753,10 +735,10 @@ OUString SdrOnOffItem::GetValueTextByVal(bool bVal) const
 }
 
 bool SdrOnOffItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByVal(GetValue());
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -784,10 +766,10 @@ OUString SdrYesNoItem::GetValueTextByVal(bool bVal) const
 }
 
 bool SdrYesNoItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByVal(GetValue());
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -811,13 +793,13 @@ SfxPoolItem* SdrPercentItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
 }
 
 bool SdrPercentItem::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreMetric*/,
-    SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+    SfxItemPresentation ePres, MapUnit /*eCoreMetric*/,
+    MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText = unicode::formatPercent(GetValue(),
         Application::GetSettings().GetUILanguageTag());
 
-    if(ePres == SFX_ITEM_PRESENTATION_COMPLETE)
+    if(ePres == SfxItemPresentation::Complete)
     {
         OUString aStr;
 
@@ -843,7 +825,7 @@ SfxPoolItem* SdrAngleItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
 }
 
 bool SdrAngleItem::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/,
     OUString& rText, const IntlWrapper * pIntlWrapper) const
 {
     sal_Int32 nValue(GetValue());
@@ -902,7 +884,7 @@ bool SdrAngleItem::GetPresentation(
 
     aText.insert(aText.getLength(), sal_Unicode(DEGREE_CHAR));
 
-    if(ePres == SFX_ITEM_PRESENTATION_COMPLETE)
+    if(ePres == SfxItemPresentation::Complete)
     {
         OUString aStr;
 
@@ -946,15 +928,15 @@ void SdrMetricItem::ScaleMetrics(long nMul, long nDiv)
 }
 
 bool SdrMetricItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString& rText, const IntlWrapper *) const
+                      MapUnit eCoreMetric, MapUnit ePresMetric, OUString& rText, const IntlWrapper *) const
 {
     long nValue=GetValue();
-    SdrFormatter aFmt((MapUnit)eCoreMetric,(MapUnit)ePresMetric);
+    SdrFormatter aFmt(eCoreMetric,ePresMetric);
     aFmt.TakeStr(nValue,rText);
     OUString aStr;
-    SdrFormatter::TakeUnitStr((MapUnit)ePresMetric,aStr);
+    SdrFormatter::TakeUnitStr(ePresMetric,aStr);
     rText += " " + aStr;
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr2;
 
         SdrItemPool::TakeItemName(Which(), aStr2);
@@ -979,10 +961,10 @@ OUString SdrCaptionTypeItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrCaptionTypeItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1004,10 +986,10 @@ OUString SdrCaptionEscDirItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrCaptionEscDirItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1036,10 +1018,10 @@ OUString SdrTextFitToSizeTypeItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrTextFitToSizeTypeItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1050,11 +1032,11 @@ bool SdrTextFitToSizeTypeItem::GetPresentation(SfxItemPresentation ePres,
 
 bool SdrTextFitToSizeTypeItem::HasBoolValue() const { return true; }
 
-bool SdrTextFitToSizeTypeItem::GetBoolValue() const { return GetValue()!=SDRTEXTFIT_NONE; }
+bool SdrTextFitToSizeTypeItem::GetBoolValue() const { return GetValue()!=SdrFitToSizeType::NONE; }
 
 void SdrTextFitToSizeTypeItem::SetBoolValue(bool bVal)
 {
-    SetValue(sal::static_int_cast< sal_uInt16 >(bVal ? SDRTEXTFIT_PROPORTIONAL : SDRTEXTFIT_NONE));
+    SetValue(bVal ? SdrFitToSizeType::Proportional : SdrFitToSizeType::NONE);
 }
 
 bool SdrTextFitToSizeTypeItem::QueryValue( uno::Any& rVal, sal_uInt8 /*nMemberId*/) const
@@ -1077,7 +1059,7 @@ bool SdrTextFitToSizeTypeItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemb
         eFS = (drawing::TextFitToSizeType) nEnum;
     }
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (SdrFitToSizeType)eFS ) );
+    SetValue( (SdrFitToSizeType)eFS );
 
     return true;
 }
@@ -1095,10 +1077,10 @@ OUString SdrTextVertAdjustItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrTextVertAdjustItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1125,7 +1107,7 @@ bool SdrTextVertAdjustItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberI
         eAdj = (drawing::TextVerticalAdjust)nEnum;
     }
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (SdrTextVertAdjust)eAdj ) );
+    SetValue( (SdrTextVertAdjust)eAdj );
 
     return true;
 }
@@ -1150,10 +1132,10 @@ OUString SdrTextHorzAdjustItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrTextHorzAdjustItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1180,7 +1162,7 @@ bool SdrTextHorzAdjustItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberI
         eAdj = (drawing::TextHorizontalAdjust)nEnum;
     }
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (SdrTextHorzAdjust)eAdj ) );
+    SetValue( (SdrTextHorzAdjust)eAdj );
 
     return true;
 }
@@ -1198,10 +1180,10 @@ OUString SdrTextAniKindItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrTextAniKindItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1227,7 +1209,7 @@ bool SdrTextAniKindItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/
         eKind = (drawing::TextAnimationKind)nEnum;
     }
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (SdrTextAniKind)eKind ) );
+    SetValue( (SdrTextAniKind)eKind );
 
     return true;
 }
@@ -1245,10 +1227,10 @@ OUString SdrTextAniDirectionItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrTextAniDirectionItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1275,7 +1257,7 @@ bool SdrTextAniDirectionItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMembe
         eDir = (drawing::TextAnimationDirection)nEnum;
     }
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (SdrTextAniDirection)eDir ) );
+    SetValue( (SdrTextAniDirection)eDir );
 
     return true;
 }
@@ -1286,12 +1268,12 @@ SfxPoolItem* SdrTextAniDelayItem::Clone(SfxItemPool* /*pPool*/) const           
 SfxPoolItem* SdrTextAniDelayItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const   { return new SdrTextAniDelayItem(rIn); }
 
 bool SdrTextAniDelayItem::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/,
     OUString& rText, const IntlWrapper *) const
 {
     rText = OUString::number(GetValue()) + "ms";
 
-    if(ePres == SFX_ITEM_PRESENTATION_COMPLETE)
+    if(ePres == SfxItemPresentation::Complete)
     {
         OUString aStr;
 
@@ -1324,7 +1306,7 @@ void SdrTextAniAmountItem::ScaleMetrics(long nMul, long nDiv)
 }
 
 bool SdrTextAniAmountItem::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric,
+    SfxItemPresentation ePres, MapUnit eCoreMetric, MapUnit ePresMetric,
     OUString& rText, const IntlWrapper *) const
 {
     sal_Int32 nValue(GetValue());
@@ -1338,15 +1320,15 @@ bool SdrTextAniAmountItem::GetPresentation(
     }
     else
     {
-        SdrFormatter aFmt((MapUnit)eCoreMetric, (MapUnit)ePresMetric);
+        SdrFormatter aFmt(eCoreMetric, ePresMetric);
         OUString aStr;
 
         aFmt.TakeStr(nValue, rText);
-        SdrFormatter::TakeUnitStr((MapUnit)ePresMetric, aStr);
+        SdrFormatter::TakeUnitStr(ePresMetric, aStr);
         rText += aStr;
     }
 
-    if(ePres == SFX_ITEM_PRESENTATION_COMPLETE)
+    if(ePres == SfxItemPresentation::Complete)
     {
         OUString aStr;
 
@@ -1373,11 +1355,11 @@ SdrTextFixedCellHeightItem::SdrTextFixedCellHeightItem( SvStream & rStream, sal_
     }
 }
 bool SdrTextFixedCellHeightItem::GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresentationMetric*/,
+                                    MapUnit /*eCoreMetric*/, MapUnit /*ePresentationMetric*/,
                                     OUString &rText, const IntlWrapper * ) const
 {
     rText = GetValueTextByVal( GetValue() );
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE)
+    if (ePres==SfxItemPresentation::Complete)
     {
         OUString aStr;
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1464,8 +1446,8 @@ bool SdrCustomShapeAdjustmentItem::operator==( const SfxPoolItem& rCmp ) const
 }
 
 bool SdrCustomShapeAdjustmentItem::GetPresentation(
-    SfxItemPresentation ePresentation, SfxMapUnit /*eCoreMetric*/,
-    SfxMapUnit /*ePresentationMetric*/, OUString &rText, const IntlWrapper *) const
+    SfxItemPresentation ePresentation, MapUnit /*eCoreMetric*/,
+    MapUnit /*ePresentationMetric*/, OUString &rText, const IntlWrapper *) const
 {
     sal_uInt32 i, nCount = GetCount();
     rText += OUString::number( nCount );
@@ -1473,7 +1455,7 @@ bool SdrCustomShapeAdjustmentItem::GetPresentation(
     {
         rText = rText + " " + OUString::number( GetValue( i ).nValue );
     }
-    if ( ePresentation == SFX_ITEM_PRESENTATION_COMPLETE )
+    if ( ePresentation == SfxItemPresentation::Complete )
     {
         OUString aStr;
 
@@ -1579,10 +1561,10 @@ OUString SdrEdgeKindItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrEdgeKindItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1597,11 +1579,11 @@ bool SdrEdgeKindItem::QueryValue( uno::Any& rVal, sal_uInt8 /*nMemberId*/) const
 
     switch( GetValue() )
     {
-        case SDREDGE_ORTHOLINES :   eCT = drawing::ConnectorType_STANDARD; break;
-        case SDREDGE_THREELINES :   eCT = drawing::ConnectorType_LINES; break;
-        case SDREDGE_ONELINE :      eCT = drawing::ConnectorType_LINE;  break;
-        case SDREDGE_BEZIER :       eCT = drawing::ConnectorType_CURVE; break;
-        case SDREDGE_ARC :          eCT = drawing::ConnectorType_CURVE; break;
+        case SdrEdgeKind::OrthoLines :   eCT = drawing::ConnectorType_STANDARD; break;
+        case SdrEdgeKind::ThreeLines :   eCT = drawing::ConnectorType_LINES; break;
+        case SdrEdgeKind::OneLine :      eCT = drawing::ConnectorType_LINE;  break;
+        case SdrEdgeKind::Bezier :       eCT = drawing::ConnectorType_CURVE; break;
+        case SdrEdgeKind::Arc :          eCT = drawing::ConnectorType_CURVE; break;
         default:
             OSL_FAIL( "SdrEdgeKindItem::QueryValue : unknown enum" );
     }
@@ -1623,24 +1605,24 @@ bool SdrEdgeKindItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/)
         eCT = (drawing::ConnectorType)nEnum;
     }
 
-    SdrEdgeKind eEK = SDREDGE_ORTHOLINES;
+    SdrEdgeKind eEK = SdrEdgeKind::OrthoLines;
     switch( eCT )
     {
-        case drawing::ConnectorType_STANDARD :  eEK = SDREDGE_ORTHOLINES;   break;
-        case drawing::ConnectorType_CURVE :     eEK = SDREDGE_BEZIER;       break;
-        case drawing::ConnectorType_LINE :       eEK = SDREDGE_ONELINE;     break;
-        case drawing::ConnectorType_LINES :      eEK = SDREDGE_THREELINES;   break;
+        case drawing::ConnectorType_STANDARD :  eEK = SdrEdgeKind::OrthoLines;   break;
+        case drawing::ConnectorType_CURVE :     eEK = SdrEdgeKind::Bezier;       break;
+        case drawing::ConnectorType_LINE :       eEK = SdrEdgeKind::OneLine;     break;
+        case drawing::ConnectorType_LINES :      eEK = SdrEdgeKind::ThreeLines;   break;
         default:
             OSL_FAIL( "SdrEdgeKindItem::PuValue : unknown enum" );
     }
-    SetValue( sal::static_int_cast< sal_uInt16 >( eEK ) );
+    SetValue( eEK );
 
     return true;
 }
 
 bool SdrEdgeNode1HorzDistItem::QueryValue( uno::Any& rVal, sal_uInt8 /*nMemberId*/) const
 {
-    rVal <<= (sal_Int32)GetValue();
+    rVal <<= GetValue();
     return true;
 }
 
@@ -1661,7 +1643,7 @@ SfxPoolItem* SdrEdgeNode1HorzDistItem::Clone(SfxItemPool* /*pPool*/) const
 
 bool SdrEdgeNode1VertDistItem::QueryValue( uno::Any& rVal, sal_uInt8 /*nMemberId*/) const
 {
-    rVal <<= (sal_Int32)GetValue();
+    rVal <<= GetValue();
     return true;
 }
 
@@ -1682,7 +1664,7 @@ SfxPoolItem* SdrEdgeNode1VertDistItem::Clone(SfxItemPool* /*pPool*/) const
 
 bool SdrEdgeNode2HorzDistItem::QueryValue( uno::Any& rVal, sal_uInt8 /*nMemberId*/) const
 {
-    rVal <<= (sal_Int32)GetValue();
+    rVal <<= GetValue();
     return true;
 }
 
@@ -1703,7 +1685,7 @@ SfxPoolItem* SdrEdgeNode2HorzDistItem::Clone(SfxItemPool* /*pPool*/) const
 
 bool SdrEdgeNode2VertDistItem::QueryValue( uno::Any& rVal, sal_uInt8 /*nMemberId*/) const
 {
-    rVal <<= (sal_Int32)GetValue();
+    rVal <<= GetValue();
     return true;
 }
 
@@ -1744,10 +1726,10 @@ OUString SdrMeasureKindItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrMeasureKindItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1774,7 +1756,7 @@ bool SdrMeasureKindItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/
         eKind = (drawing::MeasureKind)nEnum;
     }
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (SdrMeasureKind)eKind ) );
+    SetValue( (SdrMeasureKind)eKind );
     return true;
 }
 
@@ -1791,10 +1773,10 @@ OUString SdrMeasureTextHPosItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrMeasureTextHPosItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1821,7 +1803,7 @@ bool SdrMeasureTextHPosItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMember
         ePos = (drawing::MeasureTextHorzPos)nEnum;
     }
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (SdrMeasureTextHPos)ePos ) );
+    SetValue(ePos);
     return true;
 }
 
@@ -1838,10 +1820,10 @@ OUString SdrMeasureTextVPosItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrMeasureTextVPosItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1868,10 +1850,9 @@ bool SdrMeasureTextVPosItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMember
         ePos = (drawing::MeasureTextVertPos)nEnum;
     }
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (SdrMeasureTextHPos)ePos ) );
+    SetValue(ePos);
     return true;
 }
-
 
 SfxPoolItem* SdrMeasureUnitItem::Clone(SfxItemPool* /*pPool*/) const            { return new SdrMeasureUnitItem(*this); }
 
@@ -1892,10 +1873,10 @@ OUString SdrMeasureUnitItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrMeasureUnitItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1916,7 +1897,7 @@ bool SdrMeasureUnitItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/
     if(!(rVal >>= nMeasure))
         return false;
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (FieldUnit)nMeasure ) );
+    SetValue( (FieldUnit)nMeasure );
     return true;
 }
 
@@ -1933,10 +1914,10 @@ OUString SdrCircKindItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrCircKindItem::GetPresentation(SfxItemPresentation ePres,
-                      SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
+                      MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/, OUString& rText, const IntlWrapper *) const
 {
     rText=GetValueTextByPos(sal::static_int_cast< sal_uInt16 >(GetValue()));
-    if (ePres==SFX_ITEM_PRESENTATION_COMPLETE) {
+    if (ePres==SfxItemPresentation::Complete) {
         OUString aStr;
 
         SdrItemPool::TakeItemName(Which(), aStr);
@@ -1963,7 +1944,7 @@ bool SdrCircKindItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/)
         eKind = (drawing::CircleKind)nEnum;
     }
 
-    SetValue( sal::static_int_cast< sal_uInt16 >( (SdrCircKind)eKind ) );
+    SetValue( (SdrCircKind)eKind );
     return true;
 }
 
@@ -1982,13 +1963,13 @@ SfxPoolItem* SdrSignedPercentItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/) c
 }
 
 bool SdrSignedPercentItem::GetPresentation(
-    SfxItemPresentation ePres, SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/,
+    SfxItemPresentation ePres, MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/,
     OUString& rText, const IntlWrapper *) const
 {
     rText = unicode::formatPercent(GetValue(),
         Application::GetSettings().GetUILanguageTag());
 
-    if(ePres == SFX_ITEM_PRESENTATION_COMPLETE)
+    if(ePres == SfxItemPresentation::Complete)
     {
         OUString aStr;
 
@@ -2151,12 +2132,12 @@ OUString SdrGrafModeItem::GetValueTextByPos(sal_uInt16 nPos) const
 }
 
 bool SdrGrafModeItem::GetPresentation( SfxItemPresentation ePres,
-                                                               SfxMapUnit /*eCoreMetric*/, SfxMapUnit /*ePresMetric*/,
+                                                               MapUnit /*eCoreMetric*/, MapUnit /*ePresMetric*/,
                                                                OUString& rText, const IntlWrapper *) const
 {
     rText = GetValueTextByPos( sal::static_int_cast< sal_uInt16 >( GetValue() ) );
 
-    if( ePres == SFX_ITEM_PRESENTATION_COMPLETE )
+    if( ePres == SfxItemPresentation::Complete )
     {
         OUString aStr;
 

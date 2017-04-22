@@ -45,9 +45,6 @@ using namespace ::com::sun::star::xml::sax;
 using namespace ::xmloff::token;
 
 
-const sal_Char sAPI_service_footnote[] = "com.sun.star.text.Footnote";
-const sal_Char sAPI_service_endnote[] = "com.sun.star.text.Endnote";
-
 enum XMLFootnoteChildToken {
     XML_TOK_FTN_NOTE_CITATION,
     XML_TOK_FTN_NOTE_BODY
@@ -68,7 +65,6 @@ XMLFootnoteImportContext::XMLFootnoteImportContext(
     sal_uInt16 nPrfx,
     const OUString& rLocalName )
 :   SvXMLImportContext(rImport, nPrfx, rLocalName)
-,   sPropertyReferenceId("ReferenceId")
 ,   mbListContextPushed(false)
 ,   rHelper(rHlp)
 {
@@ -103,8 +99,8 @@ void XMLFootnoteImportContext::StartElement(
 
         Reference<XInterface> xIfc = xFactory->createInstance(
             bIsEndnote ?
-            OUString(sAPI_service_endnote) :
-            OUString(sAPI_service_footnote) );
+            OUString("com.sun.star.text.Endnote") :
+            OUString("com.sun.star.text.Footnote") );
 
         // attach footnote to document
         Reference<XTextContent> xTextContent(xIfc, UNO_QUERY);
@@ -123,7 +119,7 @@ void XMLFootnoteImportContext::StartElement(
             {
                 // get ID ...
                 Reference<XPropertySet> xPropertySet(xTextContent, UNO_QUERY);
-                Any aAny =xPropertySet->getPropertyValue(sPropertyReferenceId);
+                Any aAny =xPropertySet->getPropertyValue("ReferenceId");
                 sal_Int16 nID = 0;
                 aAny >>= nID;
 

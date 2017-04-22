@@ -24,7 +24,6 @@
 #include <vcl/fixed.hxx>
 #include <vcl/field.hxx>
 #include <vcl/group.hxx>
-#include <svtools/stdctrl.hxx>
 #include "editfield.hxx"
 
 class ScDocOptions;
@@ -38,12 +37,12 @@ public:
     virtual bool        FillItemSet     ( SfxItemSet* rCoreSet ) override;
     virtual void        Reset           ( const SfxItemSet* rCoreSet ) override;
     using SfxTabPage::DeactivatePage;
-    virtual sfxpg       DeactivatePage  ( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC   DeactivatePage  ( SfxItemSet* pSet ) override;
 
 private:
                 ScTpCalcOptions( vcl::Window*            pParent,
                                  const SfxItemSet&  rCoreSet );
-                virtual ~ScTpCalcOptions();
+                virtual ~ScTpCalcOptions() override;
     virtual void dispose() override;
 
 private:
@@ -77,8 +76,8 @@ private:
     void            Init();
 
     // Handler:
-    DECL_LINK_TYPED( RadioClickHdl, Button*, void );
-    DECL_LINK_TYPED( CheckClickHdl, Button*, void );
+    DECL_LINK( RadioClickHdl, Button*, void );
+    DECL_LINK( CheckClickHdl, Button*, void );
 };
 
 #endif

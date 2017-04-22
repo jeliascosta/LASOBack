@@ -49,6 +49,8 @@ public class Document {
     public static final int ALIGN_CENTER = 5;
     public static final int ALIGN_RIGHT= 6;
     public static final int ALIGN_JUSTIFY= 7;
+    public static final int NUMBERED_LIST= 8;
+    public static final int BULLET_LIST= 9;
 
     /**
      * Callback message types
@@ -62,9 +64,9 @@ public class Document {
     public static final int CALLBACK_GRAPHIC_SELECTION = 6;
     public static final int CALLBACK_HYPERLINK_CLICKED = 7;
     public static final int CALLBACK_STATE_CHANGED = 8;
-    public static final int CALLBACK_STATUS_INTICATOR_START = 9;
-    public static final int CALLBACK_STATUS_INTICATOR_SET_VALUE = 10;
-    public static final int CALLBACK_STATUS_INTICATOR_FINISH = 11;
+    public static final int CALLBACK_STATUS_INDICATOR_START = 9;
+    public static final int CALLBACK_STATUS_INDICATOR_SET_VALUE = 10;
+    public static final int CALLBACK_STATUS_INDICATOR_FINISH = 11;
     public static final int CALLBACK_SEARCH_NOT_FOUND = 12;
     public static final int CALLBACK_DOCUMENT_SIZE_CHANGED = 13;
     public static final int CALLBACK_SET_PART = 14;
@@ -145,7 +147,7 @@ public class Document {
 
     public native void setClientZoom(int nTilePixelWidth, int nTilePixelHeight, int nTileTwipWidth, int nTileTwipHeight);
 
-    private native void saveAs(String url, String format, String options);
+    public native void saveAs(String url, String format, String options);
 
     private native void paintTileNative(ByteBuffer buffer, int canvasWidth, int canvasHeight, int tilePositionX, int tilePositionY, int tileWidth, int tileHeight);
 

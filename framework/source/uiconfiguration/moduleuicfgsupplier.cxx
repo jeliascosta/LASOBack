@@ -63,33 +63,28 @@ class ModuleUIConfigurationManagerSupplier : private cppu::BaseMutex,
 {
 public:
     explicit ModuleUIConfigurationManagerSupplier( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~ModuleUIConfigurationManagerSupplier();
+    virtual ~ModuleUIConfigurationManagerSupplier() override;
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.framework.ModuleUIConfigurationManagerSupplier");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.ModuleUIConfigurationManagerSupplier" };
-        return aSeq;
+        return {"com.sun.star.ui.ModuleUIConfigurationManagerSupplier"};
     }
 
     // XModuleUIConfigurationManagerSupplier
-    virtual css::uno::Reference< css::ui::XUIConfigurationManager > SAL_CALL getUIConfigurationManager( const OUString& ModuleIdentifier )
-        throw (css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::ui::XUIConfigurationManager > SAL_CALL getUIConfigurationManager( const OUString& ModuleIdentifier ) override;
 
 private:
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing() final override;
 
     typedef std::unordered_map< OUString, css::uno::Reference< css::ui::XModuleUIConfigurationManager2 >, OUStringHash > ModuleToModuleCfgMgr;
 
@@ -143,7 +138,6 @@ void SAL_CALL ModuleUIConfigurationManagerSupplier::disposing()
 
 // XModuleUIConfigurationManagerSupplier
 Reference< XUIConfigurationManager > SAL_CALL ModuleUIConfigurationManagerSupplier::getUIConfigurationManager( const OUString& sModuleIdentifier )
-throw ( NoSuchElementException, RuntimeException, std::exception)
 {
     osl::MutexGuard g(rBHelper.rMutex);
     /* SAFE AREA ----------------------------------------------------------------------------------------------- */

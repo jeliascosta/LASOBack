@@ -38,7 +38,7 @@ namespace drawinglayer
             formats. It even includes animated GIFs, Croppings and other changes
             defined in GraphicAttr.
 
-            This makes the decomposition contain a wide variety of possibilites,
+            This makes the decomposition contain a wide variety of possibilities,
             too. From a simple BitmapPrimitive over AnimatedSwitchPrimitive2D,
             MetafilePrimitive2D (with and without embedding in a masking when e.g.
             the Metafile is bigger than the geometry) and embeddings in
@@ -60,7 +60,7 @@ namespace drawinglayer
 
         protected:
             /// local decomposition
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor(s)

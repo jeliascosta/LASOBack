@@ -43,19 +43,18 @@ typedef void (*SfxVoidFunc)();
 class SFX2_DLLPUBLIC SfxObjectFactory
 {
 private:
-    const char*             pShortName;
+    const OUString          m_sFactoryName;
     std::unique_ptr<SfxObjectFactory_Impl> pImpl;      // Additional Data
     SfxObjectShellFlags     nFlags;
 
 public:
-    SfxObjectFactory( const SvGlobalName &rName, SfxObjectShellFlags nFlags, const char* pShortName );
+    SfxObjectFactory( const SvGlobalName &rName, SfxObjectShellFlags nFlags, const OUString& sFactoryName );
     ~SfxObjectFactory();
 
     const SvGlobalName& GetClassId() const;
     SfxObjectShellFlags GetFlags() { return nFlags; }
-    const char*     GetShortName() const { return pShortName; }
     OUString        GetFactoryURL() const;  // shortcut for "private:factory/GetShortName()"
-    OUString        GetFactoryName() const { return OUString::createFromAscii(pShortName); }
+    const OUString& GetFactoryName() const { return m_sFactoryName; }
     OUString        GetModuleName() const;
     SfxFilterContainer *GetFilterContainer() const;
 
@@ -79,7 +78,7 @@ public:
     SfxModule*      GetModule() const;
 
     SAL_DLLPRIVATE void SetModule_Impl( SfxModule* );
-    SAL_DLLPRIVATE sal_uInt16 GetViewNo_Impl( const sal_uInt16 i_nViewId, const sal_uInt16 i_nFallback ) const;
+    SAL_DLLPRIVATE sal_uInt16 GetViewNo_Impl( const SfxInterfaceId i_nViewId, const sal_uInt16 i_nFallback ) const;
 
 private:
     SfxObjectFactory(const SfxObjectFactory&) = delete;

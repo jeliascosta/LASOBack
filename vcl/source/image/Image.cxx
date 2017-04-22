@@ -30,140 +30,48 @@
 #include <vcl/svapp.hxx>
 #include <vcl/image.hxx>
 #include <vcl/imagerepository.hxx>
-#include <vcl/implimagetree.hxx>
+#include <vcl/ImageTree.hxx>
 #include <sal/types.h>
 #include <image.h>
 
-#include <vcl/BitmapProcessor.hxx>
+#include "BitmapProcessor.hxx"
 
 #if OSL_DEBUG_LEVEL > 0
 #include <rtl/strbuf.hxx>
 #endif
 
-Image::Image() :
-    mpImplData( nullptr )
+Image::Image()
 {
 }
 
-Image::Image( const ResId& rResId ) :
-    mpImplData( nullptr )
+Image::Image(const BitmapEx& rBitmapEx)
 {
-
-    rResId.SetRT( RSC_IMAGE );
-
-    ResMgr* pResMgr = rResId.GetResMgr();
-    if( pResMgr && pResMgr->GetResource( rResId ) )
-    {
-        pResMgr->Increment( sizeof( RSHEADER_TYPE ) );
-
-        BitmapEx    aBmpEx;
-        sal_uLong       nObjMask = pResMgr->ReadLong();
-
-        if( nObjMask & RSC_IMAGE_IMAGEBITMAP )
-        {
-            aBmpEx = BitmapEx( ResId( static_cast<RSHEADER_TYPE*>(pResMgr->GetClass()), *pResMgr ) );
-            pResMgr->Increment( ResMgr::GetObjSize( static_cast<RSHEADER_TYPE*>(pResMgr->GetClass()) ) );
-        }
-
-        if( nObjMask & RSC_IMAGE_MASKBITMAP )
-        {
-            if( !aBmpEx.IsEmpty() && aBmpEx.GetTransparentType() == TRANSPARENT_NONE )
-            {
-                const Bitmap aMaskBitmap( ResId( static_cast<RSHEADER_TYPE*>(pResMgr->GetClass()), *pResMgr ) );
-                aBmpEx = BitmapEx( aBmpEx.GetBitmap(), aMaskBitmap );
-            }
-
-            pResMgr->Increment( ResMgr::GetObjSize( static_cast<RSHEADER_TYPE*>(pResMgr->GetClass()) ) );
-        }
-
-        if( nObjMask & RSC_IMAGE_MASKCOLOR )
-        {
-            if( !aBmpEx.IsEmpty() && aBmpEx.GetTransparentType() == TRANSPARENT_NONE )
-            {
-                const Color aMaskColor( ResId( static_cast<RSHEADER_TYPE*>(pResMgr->GetClass()), *pResMgr ) );
-                aBmpEx = BitmapEx( aBmpEx.GetBitmap(), aMaskColor );
-            }
-
-            pResMgr->Increment( ResMgr::GetObjSize( static_cast<RSHEADER_TYPE*>(pResMgr->GetClass()) ) );
-        }
-        if( ! aBmpEx.IsEmpty() )
-            ImplInit( aBmpEx );
-    }
+    ImplInit(rBitmapEx);
 }
 
-Image::Image( const Image& rImage ) :
-    mpImplData( rImage.mpImplData )
+Image::Image(const css::uno::Reference< css::graphic::XGraphic >& rxGraphic)
 {
-
-    if( mpImplData )
-        ++mpImplData->mnRefCount;
+    const Graphic aGraphic(rxGraphic);
+    ImplInit(aGraphic.GetBitmapEx());
 }
 
-Image::Image( const BitmapEx& rBitmapEx ) :
-    mpImplData( nullptr )
+Image::Image(const OUString & rFileUrl)
 {
-
-    ImplInit( rBitmapEx );
-}
-
-Image::Image( const Bitmap& rBitmap ) :
-    mpImplData( nullptr )
-{
-
-    ImplInit( rBitmap );
-}
-
-Image::Image( const Bitmap& rBitmap, const Bitmap& rMaskBitmap ) :
-    mpImplData( nullptr )
-{
-
-    const BitmapEx aBmpEx( rBitmap, rMaskBitmap );
-
-    ImplInit( aBmpEx );
-}
-
-Image::Image( const Bitmap& rBitmap, const Color& rColor ) :
-    mpImplData( nullptr )
-{
-
-    const BitmapEx aBmpEx( rBitmap, rColor );
-
-    ImplInit( aBmpEx );
-}
-
-Image::Image( const css::uno::Reference< css::graphic::XGraphic >& rxGraphic ) :
-    mpImplData( nullptr )
-{
-
-    const Graphic aGraphic( rxGraphic );
-    ImplInit( aGraphic.GetBitmapEx() );
-}
-
-Image::Image( const OUString &rFileUrl ) :
-    mpImplData( nullptr )
-{
-    OUString aTmp;
-    osl::FileBase::getSystemPathFromFileURL( rFileUrl, aTmp );
+    OUString aPath;
+    osl::FileBase::getSystemPathFromFileURL(rFileUrl, aPath);
     Graphic aGraphic;
-    const OUString aFilterName( IMP_PNG );
-    if( GRFILTER_OK == GraphicFilter::LoadGraphic( aTmp, aFilterName, aGraphic ) )
+    const OUString aFilterName(IMP_PNG);
+    if (GRFILTER_OK == GraphicFilter::LoadGraphic(aPath, aFilterName, aGraphic))
     {
-        ImplInit( aGraphic.GetBitmapEx() );
+        ImplInit(aGraphic.GetBitmapEx());
     }
-}
-
-Image::~Image()
-{
-    if( mpImplData && ( 0 == --mpImplData->mnRefCount ) )
-        delete mpImplData;
 }
 
 void Image::ImplInit(const BitmapEx& rBitmapEx)
 {
     if (!rBitmapEx.IsEmpty())
     {
-        mpImplData = new ImplImage;
-        mpImplData->mpBitmapEx.reset(new BitmapEx(rBitmapEx));
+        mpImplData.reset(new ImplImage(rBitmapEx));
     }
 }
 
@@ -171,9 +79,9 @@ Size Image::GetSizePixel() const
 {
     Size aRet;
 
-    if (mpImplData && mpImplData->mpBitmapEx)
+    if (mpImplData)
     {
-        aRet = mpImplData->mpBitmapEx->GetSizePixel();
+        aRet = mpImplData->maBitmapEx.GetSizePixel();
     }
 
     return aRet;
@@ -183,33 +91,12 @@ BitmapEx Image::GetBitmapEx() const
 {
     BitmapEx aRet;
 
-    if (mpImplData && mpImplData->mpBitmapEx)
+    if (mpImplData)
     {
-        aRet = BitmapEx(*mpImplData->mpBitmapEx);
+        aRet = mpImplData->maBitmapEx;
     }
 
     return aRet;
-}
-
-css::uno::Reference< css::graphic::XGraphic > Image::GetXGraphic() const
-{
-    const Graphic aGraphic( GetBitmapEx() );
-
-    return aGraphic.GetXGraphic();
-}
-
-Image& Image::operator=( const Image& rImage )
-{
-
-    if( rImage.mpImplData )
-        ++rImage.mpImplData->mnRefCount;
-
-    if( mpImplData && ( 0 == --mpImplData->mnRefCount ) )
-        delete mpImplData;
-
-    mpImplData = rImage.mpImplData;
-
-    return *this;
 }
 
 bool Image::operator==(const Image& rImage) const
@@ -221,29 +108,28 @@ bool Image::operator==(const Image& rImage) const
     else if (!rImage.mpImplData || !mpImplData)
         bRet = false;
     else
-        bRet = *rImage.mpImplData->mpBitmapEx == *mpImplData->mpBitmapEx;
+        bRet = rImage.mpImplData->maBitmapEx == mpImplData->maBitmapEx;
 
     return bRet;
 }
 
 void Image::Draw(OutputDevice* pOutDev, const Point& rPos, DrawImageFlags nStyle, const Size* pSize)
 {
-    if (mpImplData == nullptr || !mpImplData->mpBitmapEx ||
-        (!pOutDev->IsDeviceOutputNecessary() && pOutDev->GetConnectMetaFile() == nullptr))
+    if (!mpImplData || (!pOutDev->IsDeviceOutputNecessary() && pOutDev->GetConnectMetaFile() == nullptr))
         return;
 
     const Point aSrcPos(0, 0);
-    Size aBitmapSizePixel = mpImplData->mpBitmapEx->GetSizePixel();
+    Size aBitmapSizePixel = mpImplData->maBitmapEx.GetSizePixel();
 
     Size aOutSize = pSize ? *pSize : pOutDev->PixelToLogic(aBitmapSizePixel);
 
     if (nStyle & DrawImageFlags::Disable)
     {
-        BitmapChecksum aChecksum = mpImplData->mpBitmapEx->GetChecksum();
+        BitmapChecksum aChecksum = mpImplData->maBitmapEx.GetChecksum();
         if (mpImplData->maBitmapChecksum != aChecksum)
         {
             mpImplData->maBitmapChecksum = aChecksum;
-            mpImplData->maDisabledBitmapEx = BitmapProcessor::createDisabledImage(*mpImplData->mpBitmapEx);
+            mpImplData->maDisabledBitmapEx = BitmapProcessor::createDisabledImage(mpImplData->maBitmapEx);
         }
         pOutDev->DrawBitmapEx(rPos, aOutSize, aSrcPos, aBitmapSizePixel, mpImplData->maDisabledBitmapEx);
     }
@@ -252,7 +138,7 @@ void Image::Draw(OutputDevice* pOutDev, const Point& rPos, DrawImageFlags nStyle
         if (nStyle & (DrawImageFlags::ColorTransform | DrawImageFlags::Highlight |
                       DrawImageFlags::Deactive | DrawImageFlags::SemiTransparent))
         {
-            BitmapEx aTempBitmapEx(*mpImplData->mpBitmapEx);
+            BitmapEx aTempBitmapEx(mpImplData->maBitmapEx);
 
             if (nStyle & (DrawImageFlags::Highlight | DrawImageFlags::Deactive))
             {
@@ -284,7 +170,7 @@ void Image::Draw(OutputDevice* pOutDev, const Point& rPos, DrawImageFlags nStyle
         }
         else
         {
-            pOutDev->DrawBitmapEx(rPos, aOutSize, aSrcPos, mpImplData->mpBitmapEx->GetSizePixel(), *mpImplData->mpBitmapEx);
+            pOutDev->DrawBitmapEx(rPos, aOutSize, aSrcPos, mpImplData->maBitmapEx.GetSizePixel(), mpImplData->maBitmapEx);
         }
     }
 }

@@ -37,23 +37,22 @@ class SvxAccessibleTextPropertySet : public SvxUnoTextRangeBase,
 {
 public:
     SvxAccessibleTextPropertySet( const SvxEditSource*, const SvxItemPropertySet* );
-    virtual ~SvxAccessibleTextPropertySet() throw();
+    virtual ~SvxAccessibleTextPropertySet() throw() override;
 
     // XTextRange
-    virtual css::uno::Reference< css::text::XText > SAL_CALL getText() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::text::XText > SAL_CALL getText() override;
 
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
     virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     // lang::XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ) override;
 
     // lang::XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
 };
 
 #endif

@@ -17,12 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svgtextnode.hxx>
-#include <svgio/svgreader/svgcharacternode.hxx>
-#include <svgio/svgreader/svgstyleattributes.hxx>
-#include <svgio/svgreader/svgtrefnode.hxx>
-#include <svgio/svgreader/svgtextpathnode.hxx>
-#include <svgio/svgreader/svgtspannode.hxx>
+#include <svgtextnode.hxx>
+#include <svgcharacternode.hxx>
+#include <svgstyleattributes.hxx>
+#include <svgtrefnode.hxx>
+#include <svgtextpathnode.hxx>
+#include <svgtspannode.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
 #include <drawinglayer/primitive2d/unifiedtransparenceprimitive2d.hxx>
 
@@ -42,7 +42,6 @@ namespace svgio
 
         SvgTextNode::~SvgTextNode()
         {
-            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgTextNode::getSvgStyleAttributes() const
@@ -233,7 +232,7 @@ namespace svgio
 
                 if(fOpacity > 0.0)
                 {
-                    SvgTextPosition aSvgTextPosition(nullptr, *this, getSvgTextPositions());
+                    SvgTextPosition aSvgTextPosition(nullptr, *this, maSvgTextPositions);
                     drawinglayer::primitive2d::Primitive2DContainer aNewTarget;
                     const SvgNodeVector& rChildren = getChildren();
                     const sal_uInt32 nCount(rChildren.size());

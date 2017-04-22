@@ -49,15 +49,15 @@ namespace dxcanvas
                         if( rBIH.biClrUsed )
                             return rBIH.biClrUsed;
                         else
-                            return 1L << rBIH.biBitCount;
+                            return 1 << rBIH.biBitCount;
                     }
                 }
                 else
                 {
-                    BITMAPCOREHEADER* pCoreHeader = (BITMAPCOREHEADER*)&rBIH;
+                    BITMAPCOREHEADER const * pCoreHeader = reinterpret_cast<BITMAPCOREHEADER const *>(&rBIH);
 
                     if( pCoreHeader->bcBitCount <= 8 )
-                        return 1L << pCoreHeader->bcBitCount;
+                        return 1 << pCoreHeader->bcBitCount;
                 }
 
                 return 0; // nothing known
@@ -70,19 +70,18 @@ namespace dxcanvas
                 bool            bRet( false );
                 BitmapSharedPtr pBitmap;
 
-                const BITMAPINFO* pBI = (BITMAPINFO*)GlobalLock( (HGLOBAL)hDIB );
+                const BITMAPINFO* pBI = static_cast<BITMAPINFO*>(GlobalLock( const_cast<void *>(hDIB) ));
 
                 if( pBI )
                 {
-                    const BITMAPINFOHEADER* pBIH = (BITMAPINFOHEADER*)pBI;
-                    const BYTE*             pBits = (BYTE*) pBI + *(DWORD*)pBI +
-                        calcDIBColorCount( *pBIH ) * sizeof( RGBQUAD );
+                    const BYTE*             pBits = reinterpret_cast<BYTE const *>(pBI) + pBI->bmiHeader.biSize +
+                        calcDIBColorCount( pBI->bmiHeader ) * sizeof( RGBQUAD );
 
                     // forward to outsourced GDI+ rendering method
                     // (header clashes)
-                    bRet = tools::drawDIBits( rGraphics, *pBI, (void*)pBits );
+                    bRet = tools::drawDIBits( rGraphics, *pBI, pBits );
 
-                    GlobalUnlock( (HGLOBAL)hDIB );
+                    GlobalUnlock( const_cast<void *>(hDIB) );
                 }
 
                 return bRet;
@@ -121,7 +120,7 @@ namespace dxcanvas
                                                aBmpSysData.pDIB );
                         }
 
-                        rBmp.ReleaseAccess( pReadAcc );
+                        Bitmap::ReleaseAccess( pReadAcc );
                     }
                 }
                 else
@@ -165,7 +164,7 @@ namespace dxcanvas
                 const sal_Int32 nWidth( aBmpSize.Width() );
                 const sal_Int32 nHeight( aBmpSize.Height() );
 
-                ENSURE_OR_THROW( pReadAccess.get() != NULL,
+                ENSURE_OR_THROW( pReadAccess.get() != nullptr,
                                   "::dxcanvas::tools::bitmapFromVCLBitmapEx(): "
                                   "Unable to acquire read access to bitmap" );
 
@@ -191,7 +190,7 @@ namespace dxcanvas
                     // WinSalBitmap::AcquireBuffer() sets up the
                     // buffer
 
-                    ENSURE_OR_THROW( pAlphaReadAccess.get() != NULL,
+                    ENSURE_OR_THROW( pAlphaReadAccess.get() != nullptr,
                                       "::dxcanvas::tools::bitmapFromVCLBitmapEx(): "
                                       "Unable to acquire read access to alpha" );
 
@@ -289,8 +288,6 @@ namespace dxcanvas
                                 // FALLTHROUGH intended
                             case ScanlineFormat::N24BitTcRgb:
                                 // FALLTHROUGH intended
-                            case ScanlineFormat::N24BitTcMask:
-                                // FALLTHROUGH intended
                             case ScanlineFormat::N16BitTcMsbMask:
                                 // FALLTHROUGH intended
                             case ScanlineFormat::N32BitTcAbgr:
@@ -331,7 +328,7 @@ namespace dxcanvas
                     // WinSalBitmap::AcquireBuffer() sets up the
                     // buffer
 
-                    ENSURE_OR_THROW( pMaskReadAccess.get() != NULL,
+                    ENSURE_OR_THROW( pMaskReadAccess.get() != nullptr,
                                       "::dxcanvas::tools::bitmapFromVCLBitmapEx(): "
                                       "Unable to acquire read access to mask" );
 
@@ -341,7 +338,7 @@ namespace dxcanvas
 
                     BitmapColor     aCol;
                     int             nCurrBit;
-                    const int       nMask( 1L );
+                    const int       nMask( 1 );
                     const int       nInitialBit(7);
                     sal_uInt8*      pCurrOutput( aBmpData.mpBitmapData.get() );
                     int             x, y;
@@ -378,8 +375,8 @@ namespace dxcanvas
                                     *pCurrOutput++ = aCol.GetGreen();
                                     *pCurrOutput++ = aCol.GetRed();
 
-                                    *pCurrOutput++ = aColorMap[ (pMScan[ (x & ~7L) >> 3L ] >> nCurrBit ) & nMask ];
-                                    nCurrBit = ((nCurrBit - 1) % 8L) & 7L;
+                                    *pCurrOutput++ = aColorMap[ (pMScan[ (x & ~7) >> 3 ] >> nCurrBit ) & nMask ];
+                                    nCurrBit = ((nCurrBit - 1) % 8) & 7;
                                 }
                             }
                             break;
@@ -396,8 +393,8 @@ namespace dxcanvas
                                     *pCurrOutput++ = *pScan++;
                                     *pCurrOutput++ = *pScan++;
 
-                                    *pCurrOutput++ = aColorMap[ (pMScan[ (x & ~7L) >> 3L ] >> nCurrBit ) & nMask ];
-                                    nCurrBit = ((nCurrBit - 1) % 8L) & 7L;
+                                    *pCurrOutput++ = aColorMap[ (pMScan[ (x & ~7) >> 3 ] >> nCurrBit ) & nMask ];
+                                    nCurrBit = ((nCurrBit - 1) % 8) & 7;
                                 }
                             }
                             break;
@@ -427,8 +424,8 @@ namespace dxcanvas
                                     *pCurrOutput++ = aCol.GetGreen();
                                     *pCurrOutput++ = aCol.GetRed();
 
-                                    *pCurrOutput++ = aColorMap[ (pMScan[ (x & ~7L) >> 3L ] >> nCurrBit ) & nMask ];
-                                    nCurrBit = ((nCurrBit - 1) % 8L) & 7L;
+                                    *pCurrOutput++ = aColorMap[ (pMScan[ (x & ~7) >> 3 ] >> nCurrBit ) & nMask ];
+                                    nCurrBit = ((nCurrBit - 1) % 8) & 7;
                                 }
                             }
                             break;
@@ -440,8 +437,6 @@ namespace dxcanvas
                             case ScanlineFormat::N8BitTcMask:
                                 // FALLTHROUGH intended
                             case ScanlineFormat::N24BitTcRgb:
-                                // FALLTHROUGH intended
-                            case ScanlineFormat::N24BitTcMask:
                                 // FALLTHROUGH intended
                             case ScanlineFormat::N16BitTcMsbMask:
                                 // FALLTHROUGH intended

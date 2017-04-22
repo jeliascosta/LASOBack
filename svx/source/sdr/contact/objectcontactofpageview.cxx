@@ -36,6 +36,7 @@
 #include <drawinglayer/processor2d/processor2dtools.hxx>
 #include <svx/unoapi.hxx>
 #include <unotools/configmgr.hxx>
+#include <comphelper/lok.hxx>
 
 #include "eventhandler.hxx"
 #include <memory>
@@ -60,7 +61,7 @@ namespace sdr
             setPreviewRenderer(((SdrPaintView&)rPageWindow.GetPageView().GetView()).IsPreviewRenderer());
 
             // init timer
-            SetPriority(SchedulerPriority::HIGH);
+            SetPriority(TaskPriority::HIGH);
             Stop();
         }
 
@@ -168,7 +169,7 @@ namespace sdr
             bool bClipRegionPushed(false);
             const vcl::Region& rRedrawArea(rDisplayInfo.GetRedrawArea());
 
-            if(!rRedrawArea.IsEmpty())
+            if(!rRedrawArea.IsEmpty() && !comphelper::LibreOfficeKit::isActive())
             {
                 bClipRegionPushed = true;
                 pOutDev->Push(PushFlags::CLIPREGION);
@@ -193,7 +194,7 @@ namespace sdr
                     // OD 2009-03-05 #i99876# perform the same also for SW on printing.
                     // fdo#78149 same thing also needed for plain MetaFile
                     //           export, so why not do it always
-                    const Rectangle aLogicClipRectangle(rDisplayInfo.GetRedrawArea().GetBoundRect());
+                    const tools::Rectangle aLogicClipRectangle(rDisplayInfo.GetRedrawArea().GetBoundRect());
 
                     aViewRange = basegfx::B2DRange(
                         aLogicClipRectangle.Left(), aLogicClipRectangle.Top(),
@@ -204,12 +205,11 @@ namespace sdr
             {
                 // use visible pixels, but transform to world coordinates
                 aViewRange = basegfx::B2DRange(0.0, 0.0, aOutputSizePixel.getWidth(), aOutputSizePixel.getHeight());
-
                 // if a clip region is set, use it
                 if(!rDisplayInfo.GetRedrawArea().IsEmpty())
                 {
                     // get logic clip range and create discrete one
-                    const Rectangle aLogicClipRectangle(rDisplayInfo.GetRedrawArea().GetBoundRect());
+                    const tools::Rectangle aLogicClipRectangle(rDisplayInfo.GetRedrawArea().GetBoundRect());
                     basegfx::B2DRange aLogicClipRange(
                         aLogicClipRectangle.Left(), aLogicClipRectangle.Top(),
                         aLogicClipRectangle.Right(), aLogicClipRectangle.Bottom());
@@ -229,8 +229,23 @@ namespace sdr
                     aViewRange.intersect(aDiscreteClipRange);
                 }
 
+                const MapMode aOrigMapMode = rTargetOutDev.GetMapMode();
+                if (comphelper::LibreOfficeKit::isActive() &&
+                    comphelper::LibreOfficeKit::isLocalRendering())
+                {
+                    MapMode aMapMode = aOrigMapMode;
+                    aMapMode.SetOrigin(Point());
+                    rTargetOutDev.SetMapMode(aMapMode);
+                }
+
                 // transform to world coordinates
                 aViewRange.transform(rTargetOutDev.GetInverseViewTransformation());
+
+                if (comphelper::LibreOfficeKit::isActive() &&
+                    comphelper::LibreOfficeKit::isLocalRendering())
+                {
+                    rTargetOutDev.SetMapMode(aOrigMapMode);
+                }
             }
 
             // update local ViewInformation2D
@@ -249,6 +264,11 @@ namespace sdr
             // and may use the MapMode from the Target OutDev in the DisplayInfo
             xPrimitiveSequence = rDrawPageVOContact.getPrimitive2DSequenceHierarchy(rDisplayInfo);
 #else
+            // Hmm, !HAVE_FEATURE_DESKTOP && !ANDROID means iOS,
+            // right? But does it make sense to use a different code
+            // path for iOS than for Android; both use tiled rendering
+            // etc now.
+
             // HACK: this only works when we are drawing sdr shapes via
             // drawinglayer; but it can happen that the hierarchy contains
             // more than just the shapes, and then it fails.
@@ -290,7 +310,10 @@ namespace sdr
             {
                 // prepare OutputDevice (historical stuff, maybe soon removed)
                 rDisplayInfo.ClearGhostedDrawMode(); // reset, else the VCL-paint with the processor will not do the right thing
-                pOutDev->SetLayoutMode(TEXT_LAYOUT_DEFAULT); // reset, default is no BiDi/RTL
+                pOutDev->SetLayoutMode(ComplexTextLayoutFlags::Default); // reset, default is no BiDi/RTL
+
+                // Save the map-mode since creating the 2D processor will replace it.
+                const MapMode aOrigMapMode = pOutDev->GetMapMode();
 
                 // create renderer
                 std::unique_ptr<drawinglayer::processor2d::BaseProcessor2D> pProcessor2D(
@@ -319,8 +342,7 @@ namespace sdr
         // test if visualizing of entered groups is switched on at all
         bool ObjectContactOfPageView::DoVisualizeEnteredGroup() const
         {
-            SdrView& rView = GetPageWindow().GetPageView().GetView();
-            return rView.DoVisualizeEnteredGroup();
+            return true;
         }
 
         // get active group's (the entered group) ViewContact

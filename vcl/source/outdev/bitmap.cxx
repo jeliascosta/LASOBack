@@ -38,6 +38,7 @@
 
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 #include <memory>
+#include <comphelper/lok.hxx>
 
 void OutputDevice::DrawBitmap( const Point& rDestPt, const Bitmap& rBitmap )
 {
@@ -68,9 +69,9 @@ void OutputDevice::DrawBitmap( const Point& rDestPt, const Size& rDestSize,
     {
         return;
     }
-    if ( ROP_INVERT == meRasterOp )
+    if ( RasterOp::Invert == meRasterOp )
     {
-        DrawRect( Rectangle( rDestPt, rDestSize ) );
+        DrawRect( tools::Rectangle( rDestPt, rDestSize ) );
         return;
     }
 
@@ -92,17 +93,17 @@ void OutputDevice::DrawBitmap( const Point& rDestPt, const Size& rDestSize,
             Push( PushFlags::LINECOLOR | PushFlags::FILLCOLOR );
             SetLineColor( aCol );
             SetFillColor( aCol );
-            DrawRect( Rectangle( rDestPt, rDestSize ) );
+            DrawRect( tools::Rectangle( rDestPt, rDestSize ) );
             Pop();
             return;
         }
         else if( !!aBmp )
         {
             if ( mnDrawMode & DrawModeFlags::GrayBitmap )
-                aBmp.Convert( BMP_CONVERSION_8BIT_GREYS );
+                aBmp.Convert( BmpConversion::N8BitGreys );
 
             if ( mnDrawMode & DrawModeFlags::GhostedBitmap )
-                aBmp.Convert( BMP_CONVERSION_GHOSTED );
+                aBmp.Convert( BmpConversion::Ghosted );
         }
     }
 
@@ -167,7 +168,7 @@ void OutputDevice::DrawBitmap( const Point& rDestPt, const Size& rDestSize,
     if( mpAlphaVDev )
     {
         // #i32109#: Make bitmap area opaque
-        mpAlphaVDev->ImplFillOpaqueRectangle( Rectangle(rDestPt, rDestSize) );
+        mpAlphaVDev->ImplFillOpaqueRectangle( tools::Rectangle(rDestPt, rDestSize) );
     }
 }
 
@@ -180,8 +181,8 @@ Bitmap OutputDevice::GetDownsampledBitmap( const Size& rDstSz,
     if( !aBmp.IsEmpty() )
     {
         Point           aPoint;
-        const Rectangle aBmpRect( aPoint, aBmp.GetSizePixel() );
-        Rectangle       aSrcRect( rSrcPt, rSrcSz );
+        const tools::Rectangle aBmpRect( aPoint, aBmp.GetSizePixel() );
+        tools::Rectangle       aSrcRect( rSrcPt, rSrcSz );
 
         // do cropping if necessary
         if( aSrcRect.Intersection( aBmpRect ) != aBmpRect )
@@ -195,7 +196,7 @@ Bitmap OutputDevice::GetDownsampledBitmap( const Size& rDstSz,
         if( !aBmp.IsEmpty() )
         {
             // do downsampling if necessary
-            Size aDstSizeTwip( PixelToLogic( LogicToPixel( rDstSz ), MAP_TWIP ) );
+            Size aDstSizeTwip( PixelToLogic( LogicToPixel( rDstSz ), MapUnit::MapTwip ) );
 
             // #103209# Normalize size (mirroring has to happen outside of this method)
             aDstSizeTwip = Size( labs(aDstSizeTwip.Width()), labs(aDstSizeTwip.Height()) );
@@ -246,7 +247,7 @@ void OutputDevice::DrawBitmapEx( const Point& rDestPt,
     if( ImplIsRecordLayout() )
         return;
 
-    if( TRANSPARENT_NONE == rBitmapEx.GetTransparentType() )
+    if( TransparentType::NONE == rBitmapEx.GetTransparentType() )
     {
         DrawBitmap( rDestPt, rBitmapEx.GetBitmap() );
     }
@@ -265,7 +266,7 @@ void OutputDevice::DrawBitmapEx( const Point& rDestPt, const Size& rDestSize,
     if( ImplIsRecordLayout() )
         return;
 
-    if ( TRANSPARENT_NONE == rBitmapEx.GetTransparentType() )
+    if ( TransparentType::NONE == rBitmapEx.GetTransparentType() )
     {
         DrawBitmap( rDestPt, rDestSize, rBitmapEx.GetBitmap() );
     }
@@ -285,7 +286,7 @@ void OutputDevice::DrawBitmapEx( const Point& rDestPt, const Size& rDestSize,
     if( ImplIsRecordLayout() )
         return;
 
-    if( TRANSPARENT_NONE == rBitmapEx.GetTransparentType() )
+    if( TransparentType::NONE == rBitmapEx.GetTransparentType() )
     {
         DrawBitmap( rDestPt, rDestSize, rSrcPtPixel, rSrcSizePixel, rBitmapEx.GetBitmap() );
     }
@@ -294,9 +295,9 @@ void OutputDevice::DrawBitmapEx( const Point& rDestPt, const Size& rDestSize,
         if ( mnDrawMode & DrawModeFlags::NoBitmap )
             return;
 
-        if ( ROP_INVERT == meRasterOp )
+        if ( RasterOp::Invert == meRasterOp )
         {
-            DrawRect( Rectangle( rDestPt, rDestSize ) );
+            DrawRect( tools::Rectangle( rDestPt, rDestSize ) );
             return;
         }
 
@@ -336,10 +337,10 @@ void OutputDevice::DrawBitmapEx( const Point& rDestPt, const Size& rDestSize,
             else if( !!aBmpEx )
             {
                 if ( mnDrawMode & DrawModeFlags::GrayBitmap )
-                    aBmpEx.Convert( BMP_CONVERSION_8BIT_GREYS );
+                    aBmpEx.Convert( BmpConversion::N8BitGreys );
 
                 if ( mnDrawMode & DrawModeFlags::GhostedBitmap )
-                    aBmpEx.Convert( BMP_CONVERSION_GHOSTED );
+                    aBmpEx.Convert( BmpConversion::Ghosted );
             }
         }
 
@@ -393,7 +394,7 @@ Bitmap OutputDevice::GetBitmap( const Point& rSrcPt, const Size& rSize ) const
     {
         if ( nWidth > 0 && nHeight  > 0 && nX <= (mnOutWidth + mnOutOffX) && nY <= (mnOutHeight + mnOutOffY))
         {
-            Rectangle   aRect( Point( nX, nY ), Size( nWidth, nHeight ) );
+            tools::Rectangle   aRect( Point( nX, nY ), Size( nWidth, nHeight ) );
             bool        bClipped = false;
 
             // X-Coordinate outside of draw area?
@@ -435,7 +436,7 @@ Bitmap OutputDevice::GetBitmap( const Point& rSrcPt, const Size& rSize ) const
 
                 if ( aVDev->SetOutputSizePixel( aRect.GetSize() ) )
                 {
-                    if ( static_cast<OutputDevice*>(aVDev.get())->mpGraphics || static_cast<OutputDevice*>(aVDev.get())->AcquireGraphics() )
+                    if ( aVDev.get()->mpGraphics || aVDev.get()->AcquireGraphics() )
                     {
                         if ( (nWidth > 0) && (nHeight > 0) )
                         {
@@ -443,7 +444,7 @@ Bitmap OutputDevice::GetBitmap( const Point& rSrcPt, const Size& rSize ) const
                                               (aRect.Left() < mnOutOffX) ? (mnOutOffX - aRect.Left()) : 0L,
                                               (aRect.Top() < mnOutOffY) ? (mnOutOffY - aRect.Top()) : 0L,
                                               nWidth, nHeight);
-                            (static_cast<OutputDevice*>(aVDev.get())->mpGraphics)->CopyBits( aPosAry, mpGraphics, this, this );
+                            aVDev.get()->mpGraphics->CopyBits( aPosAry, mpGraphics, this, this );
                         }
                         else
                         {
@@ -485,7 +486,7 @@ BitmapEx OutputDevice::GetBitmapEx( const Point& rSrcPt, const Size& rSize ) con
 
         // ensure 8 bit alpha
         if( aAlphaBitmap.GetBitCount() > 8 )
-            aAlphaBitmap.Convert( BMP_CONVERSION_8BIT_GREYS );
+            aAlphaBitmap.Convert( BmpConversion::N8BitGreys );
 
         return BitmapEx(GetBitmap( rSrcPt, rSize ), AlphaMask( aAlphaBitmap ) );
     }
@@ -551,7 +552,7 @@ void OutputDevice::DrawDeviceBitmap( const Point& rDestPt, const Size& rDestSize
                     // Note the call to ImplPixelToDevicePixel(), since
                     // aPosAry already contains the mnOutOff-offsets, they
                     // also have to be applied to the region
-                    Rectangle aClipRegionBounds( ImplPixelToDevicePixel(maRegion).GetBoundRect() );
+                    tools::Rectangle aClipRegionBounds( ImplPixelToDevicePixel(maRegion).GetBoundRect() );
 
                     // TODO: Also respect scaling (that's a bit tricky,
                     // since the source points have to move fractional
@@ -566,7 +567,7 @@ void OutputDevice::DrawDeviceBitmap( const Point& rDestPt, const Size& rDestSize
                         aPosAry.mnDestHeight == aPosAry.mnSrcHeight)
                     {
                         // now intersect dest rect with clip region
-                        aClipRegionBounds.Intersection(Rectangle(aPosAry.mnDestX,
+                        aClipRegionBounds.Intersection(tools::Rectangle(aPosAry.mnDestX,
                                                                  aPosAry.mnDestY,
                                                                  aPosAry.mnDestX + aPosAry.mnDestWidth - 1,
                                                                  aPosAry.mnDestY + aPosAry.mnDestHeight - 1));
@@ -616,7 +617,7 @@ void OutputDevice::DrawDeviceBitmap( const Point& rDestPt, const Size& rDestSize
                 if (mpAlphaVDev)
                 {
                     // #i32109#: Make bitmap area opaque
-                    mpAlphaVDev->ImplFillOpaqueRectangle( Rectangle(rDestPt, rDestSize) );
+                    mpAlphaVDev->ImplFillOpaqueRectangle( tools::Rectangle(rDestPt, rDestSize) );
                 }
             }
         }
@@ -631,7 +632,7 @@ void OutputDevice::DrawDeviceAlphaBitmap( const Bitmap& rBmp, const AlphaMask& r
 
     Point     aOutPt(LogicToPixel(rDestPt));
     Size      aOutSz(LogicToPixel(rDestSize));
-    Rectangle aDstRect(Point(), GetOutputSizePixel());
+    tools::Rectangle aDstRect(Point(), GetOutputSizePixel());
 
     const bool bHMirr = aOutSz.Width() < 0;
     const bool bVMirr = aOutSz.Height() < 0;
@@ -650,7 +651,7 @@ void OutputDevice::DrawDeviceAlphaBitmap( const Bitmap& rBmp, const AlphaMask& r
         aOutPt.Y() -= aOutSz.Height() - 1L;
     }
 
-    if (!aDstRect.Intersection(Rectangle(aOutPt, aOutSz)).IsEmpty())
+    if (!aDstRect.Intersection(tools::Rectangle(aOutPt, aOutSz)).IsEmpty())
     {
         static const char* pDisableNative = getenv( "SAL_DISABLE_NATIVE_ALPHA");
         // #i83087# Naturally, system alpha blending cannot work with
@@ -695,8 +696,8 @@ void OutputDevice::DrawDeviceAlphaBitmap( const Bitmap& rBmp, const AlphaMask& r
 #if HAVE_FEATURE_OPENGL
         assert(!OpenGLHelper::isVCLOpenGLEnabled());
 #endif
-        Rectangle aBmpRect(Point(), rBmp.GetSizePixel());
-        if (!aBmpRect.Intersection(Rectangle(rSrcPtPixel, rSrcSizePixel)).IsEmpty())
+        tools::Rectangle aBmpRect(Point(), rBmp.GetSizePixel());
+        if (!aBmpRect.Intersection(tools::Rectangle(rSrcPtPixel, rSrcSizePixel)).IsEmpty())
         {
             Point     auxOutPt(LogicToPixel(rDestPt));
             Size      auxOutSz(LogicToPixel(rDestSize));
@@ -717,7 +718,7 @@ struct LinearScaleContext
     std::unique_ptr<long[]> mpMapXOffset;
     std::unique_ptr<long[]> mpMapYOffset;
 
-    LinearScaleContext(Rectangle& aDstRect, Rectangle& aBitmapRect,
+    LinearScaleContext(tools::Rectangle& aDstRect, tools::Rectangle& aBitmapRect,
                  Size& aOutSize, long nOffX, long nOffY)
 
         : mpMapX(new long[aDstRect.GetWidth()])
@@ -881,7 +882,7 @@ struct TradScaleContext
     std::unique_ptr<long[]> mpMapX;
     std::unique_ptr<long[]> mpMapY;
 
-    TradScaleContext(Rectangle& aDstRect, Rectangle& aBitmapRect,
+    TradScaleContext(tools::Rectangle& aDstRect, tools::Rectangle& aBitmapRect,
                  Size& aOutSize, long nOffX, long nOffY)
 
         : mpMapX(new long[aDstRect.GetWidth()])
@@ -924,7 +925,7 @@ private:
 
 } // end anonymous namespace
 
-void OutputDevice::DrawDeviceAlphaBitmapSlowPath(const Bitmap& rBitmap, const AlphaMask& rAlpha, Rectangle aDstRect, Rectangle aBmpRect, Size& aOutSize, Point& aOutPoint)
+void OutputDevice::DrawDeviceAlphaBitmapSlowPath(const Bitmap& rBitmap, const AlphaMask& rAlpha, tools::Rectangle aDstRect, tools::Rectangle aBmpRect, Size& aOutSize, Point& aOutPoint)
 {
     assert(!is_double_buffered_window());
 
@@ -1106,7 +1107,7 @@ bool OutputDevice::TransformAndReduceBitmapExToTargetRange(
 
     if(IsClipRegion())
     {
-        const Rectangle aRegionRectangle(GetActiveClipRegion().GetBoundRect());
+        const tools::Rectangle aRegionRectangle(GetActiveClipRegion().GetBoundRect());
 
         aOutPixel.intersect( // caution! Range from rectangle, one too much (!)
             basegfx::B2DRange(
@@ -1177,7 +1178,6 @@ void OutputDevice::DrawTransformedBitmapEx(
     if ( mnDrawMode & DrawModeFlags::NoBitmap )
         return;
 
-
     // decompose matrix to check rotation and shear
     basegfx::B2DVector aScale, aTranslate;
     double fRotate, fShearX;
@@ -1188,26 +1188,37 @@ void OutputDevice::DrawTransformedBitmapEx(
     const bool bMirroredY(basegfx::fTools::less(aScale.getY(), 0.0));
 
     static bool bForceToOwnTransformer(false);
+    const bool bMetafile = mpMetaFile != nullptr;
 
     if(!bForceToOwnTransformer && !bRotated && !bSheared && !bMirroredX && !bMirroredY)
     {
         // with no rotation, shear or mirroring it can be mapped to DrawBitmapEx
         // do *not* execute the mirroring here, it's done in the fallback
         // #i124580# the correct DestSize needs to be calculated based on MaxXY values
-        const Point aDestPt(basegfx::fround(aTranslate.getX()), basegfx::fround(aTranslate.getY()));
+        Point aDestPt(basegfx::fround(aTranslate.getX()), basegfx::fround(aTranslate.getY()));
         const Size aDestSize(
             basegfx::fround(aScale.getX() + aTranslate.getX()) - aDestPt.X(),
             basegfx::fround(aScale.getY() + aTranslate.getY()) - aDestPt.Y());
+        const Point aOrigin = GetMapMode().GetOrigin();
+        if (!bMetafile && comphelper::LibreOfficeKit::isActive() && GetMapMode().GetMapUnit() != MapUnit::MapPixel)
+        {
+            aDestPt.Move(aOrigin.getX(), aOrigin.getY());
+            EnableMapMode(false);
+        }
 
         DrawBitmapEx(aDestPt, aDestSize, rBitmapEx);
+        if (!bMetafile && comphelper::LibreOfficeKit::isActive() && GetMapMode().GetMapUnit() != MapUnit::MapPixel)
+        {
+            EnableMapMode();
+            aDestPt.Move(-aOrigin.getX(), -aOrigin.getY());
+        }
         return;
     }
 
     // we have rotation,shear or mirror, check if some crazy mode needs the
     // created transformed bitmap
-    const bool bInvert(ROP_INVERT == meRasterOp);
+    const bool bInvert(RasterOp::Invert == meRasterOp);
     const bool bBitmapChangedColor(mnDrawMode & (DrawModeFlags::BlackBitmap | DrawModeFlags::WhiteBitmap | DrawModeFlags::GrayBitmap | DrawModeFlags::GhostedBitmap));
-    const bool bMetafile(mpMetaFile);
     bool bDone(false);
     const basegfx::B2DHomMatrix aFullTransform(GetViewTransformation() * rTransformation);
     const bool bTryDirectPaint(!bInvert && !bBitmapChangedColor && !bMetafile );
@@ -1241,7 +1252,7 @@ void OutputDevice::DrawTransformedBitmapEx(
         // limit maximum area to something looking good for non-pixel-based targets (metafile, printer)
         // by using a fixed minimum (allow at least, but no need to utilize) for good smoothing and an area
         // dependent of original size for good quality when e.g. rotated/sheared. Still, limit to a maximum
-        // to avoid crashes/ressource problems (ca. 1500x3000 here)
+        // to avoid crashes/resource problems (ca. 1500x3000 here)
         const Size& rOriginalSizePixel(rBitmapEx.GetSizePixel());
         const double fOrigArea(rOriginalSizePixel.Width() * rOriginalSizePixel.Height() * 0.5);
         const double fOrigAreaScaled(bSheared || bRotated ? fOrigArea * 1.44 : fOrigArea);
@@ -1378,7 +1389,7 @@ Bitmap OutputDevice::BlendBitmapWithAlpha(
             Bitmap&             aBmp,
             BitmapReadAccess*   pP,
             BitmapReadAccess*   pA,
-            const Rectangle&    aDstRect,
+            const tools::Rectangle&    aDstRect,
             const sal_Int32     nOffY,
             const sal_Int32     nDstHeight,
             const sal_Int32     nOffX,
@@ -1398,14 +1409,14 @@ Bitmap OutputDevice::BlendBitmapWithAlpha(
     mpAlphaVDev->EnableMapMode(false);
 
     Bitmap aAlphaBitmap( mpAlphaVDev->GetBitmap( aDstRect.TopLeft(), aDstRect.GetSize() ) );
-    BitmapWriteAccess*  pAlphaW = aAlphaBitmap.AcquireWriteAccess();
+    Bitmap::ScopedWriteAccess pAlphaW(aAlphaBitmap);
 
     if( GetBitCount() <= 8 )
     {
         Bitmap              aDither( aBmp.GetSizePixel(), 8 );
         BitmapColor         aIndex( 0 );
-        BitmapReadAccess*   pB = aBmp.AcquireReadAccess();
-        BitmapWriteAccess*  pW = aDither.AcquireWriteAccess();
+        Bitmap::ScopedReadAccess pB(aBmp);
+        Bitmap::ScopedWriteAccess pW(aDither);
 
         if (pB && pP && pA && pW && pAlphaW)
         {
@@ -1422,7 +1433,7 @@ Bitmap OutputDevice::BlendBitmapWithAlpha(
                     const long  nMapX = pMapX[ nX ];
                     const sal_uLong nD = nVCLDitherLut[ nModY | ( nOutX & 0x0FL ) ];
 
-                    aDstCol = AlphaBlend( nX, nY, nMapX, nMapY, pP, pA, pB, pAlphaW, nResAlpha );
+                    aDstCol = AlphaBlend( nX, nY, nMapX, nMapY, pP, pA, pB.get(), pAlphaW.get(), nResAlpha );
 
                     aIndex.SetIndex( (sal_uInt8) ( nVCLRLut[ ( nVCLLut[ aDstCol.GetRed() ] + nD ) >> 16UL ] +
                                               nVCLGLut[ ( nVCLLut[ aDstCol.GetGreen() ] + nD ) >> 16UL ] +
@@ -1436,14 +1447,13 @@ Bitmap OutputDevice::BlendBitmapWithAlpha(
                 }
             }
         }
-
-        Bitmap::ReleaseAccess( pB );
-        Bitmap::ReleaseAccess( pW );
+        pB.reset();
+        pW.reset();
         res = aDither;
     }
     else
     {
-        BitmapWriteAccess*  pB = aBmp.AcquireWriteAccess();
+        Bitmap::ScopedWriteAccess pB(aBmp);
         if (pB && pP && pA && pAlphaW)
         {
             for( nY = 0; nY < nDstHeight; nY++ )
@@ -1453,19 +1463,18 @@ Bitmap OutputDevice::BlendBitmapWithAlpha(
                 for( nX = 0; nX < nDstWidth; nX++ )
                 {
                     const long nMapX = pMapX[ nX ];
-                    aDstCol = AlphaBlend( nX, nY, nMapX, nMapY, pP, pA, pB, pAlphaW, nResAlpha );
+                    aDstCol = AlphaBlend( nX, nY, nMapX, nMapY, pP, pA, pB.get(), pAlphaW.get(), nResAlpha );
 
                     pB->SetPixel( nY, nX, aDstCol );
                     pAlphaW->SetPixel( nY, nX, Color(255L-nResAlpha, 255L-nResAlpha, 255L-nResAlpha) );
                 }
             }
         }
-
-        Bitmap::ReleaseAccess( pB );
+        pB.reset();
         res = aBmp;
     }
 
-    Bitmap::ReleaseAccess( pAlphaW );
+    pAlphaW.reset();
     mpAlphaVDev->DrawBitmap( aDstRect.TopLeft(), aAlphaBitmap );
     mpAlphaVDev->EnableMapMode( bOldMapMode );
 
@@ -1480,7 +1489,7 @@ Bitmap OutputDevice::BlendBitmap(
             const sal_Int32     nDstHeight,
             const sal_Int32     nOffX,
             const sal_Int32     nDstWidth,
-            const Rectangle&    aBmpRect,
+            const tools::Rectangle&    aBmpRect,
             const Size&         aOutSz,
             const bool          bHMirr,
             const bool          bVMirr,
@@ -1495,8 +1504,8 @@ Bitmap OutputDevice::BlendBitmap(
     {
         Bitmap              aDither( aBmp.GetSizePixel(), 8 );
         BitmapColor         aIndex( 0 );
-        BitmapReadAccess*   pB = aBmp.AcquireReadAccess();
-        BitmapWriteAccess*  pW = aDither.AcquireWriteAccess();
+        Bitmap::ScopedReadAccess pB(aBmp);
+        Bitmap::ScopedWriteAccess pW(aDither);
 
         if( pB && pP && pA && pW )
         {
@@ -1531,13 +1540,13 @@ Bitmap OutputDevice::BlendBitmap(
             }
         }
 
-        Bitmap::ReleaseAccess( pB );
-        Bitmap::ReleaseAccess( pW );
+        pB.reset();
+        pW.reset();
         res = aDither;
     }
     else
     {
-        BitmapWriteAccess*  pB = aBmp.AcquireWriteAccess();
+        Bitmap::ScopedWriteAccess pB(aBmp);
 
         bool bFastBlend = false;
         if( pP && pA && pB )
@@ -1614,7 +1623,7 @@ Bitmap OutputDevice::BlendBitmap(
             }
         }
 
-        Bitmap::ReleaseAccess( pB );
+        pB.reset();
         res = aBmp;
     }
 

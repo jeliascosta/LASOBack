@@ -30,7 +30,7 @@ namespace chart
 AccessibleViewForwarder::AccessibleViewForwarder( AccessibleChartView* pAccChartView, vcl::Window* pWindow )
     :m_pAccChartView( pAccChartView )
     ,m_pWindow( pWindow )
-    ,m_aMapMode( MAP_100TH_MM )
+    ,m_aMapMode( MapUnit::Map100thMM )
 {
 }
 
@@ -40,9 +40,9 @@ AccessibleViewForwarder::~AccessibleViewForwarder()
 
 // ________ IAccessibleViewforwarder ________
 
-Rectangle AccessibleViewForwarder::GetVisibleArea() const
+tools::Rectangle AccessibleViewForwarder::GetVisibleArea() const
 {
-    Rectangle aVisibleArea;
+    tools::Rectangle aVisibleArea;
     if ( m_pWindow )
     {
         aVisibleArea.SetPos( Point( 0, 0 ) );

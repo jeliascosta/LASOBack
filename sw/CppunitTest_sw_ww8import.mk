@@ -22,6 +22,7 @@ $(eval $(call gb_CppunitTest_use_libraries,sw_ww8import, \
     sal \
     test \
     unotest \
+    sfx \
     sw \
 	utl \
 	$(gb_UWINAPI) \
@@ -35,14 +36,12 @@ $(eval $(call gb_CppunitTest_use_externals,sw_ww8import,\
 $(eval $(call gb_CppunitTest_set_include,sw_ww8import,\
     -I$(SRCDIR)/sw/inc \
     -I$(SRCDIR)/sw/source/core/inc \
+    -I$(SRCDIR)/sw/source/uibase/inc \
     -I$(SRCDIR)/sw/qa/extras/inc \
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sw_ww8import,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sw_ww8import))
 
 $(eval $(call gb_CppunitTest_use_ure,sw_ww8import))
 $(eval $(call gb_CppunitTest_use_vcl,sw_ww8import))
@@ -72,6 +71,7 @@ $(eval $(call gb_CppunitTest_use_components,sw_ww8import,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
+    uui/util/uui \
     $(if $(filter DESKTOP,$(BUILD_TYPE)),xmlhelp/util/ucpchelp1) \
 ))
 

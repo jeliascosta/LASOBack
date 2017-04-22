@@ -54,7 +54,7 @@ namespace vclcanvas
         // Map a one-by-one millimeter box to pixel
         OutputDevice& rOutDev = mpOutDev->getOutDev();
         const MapMode aOldMapMode( rOutDev.GetMapMode() );
-        rOutDev.SetMapMode( MapMode(MAP_MM) );
+        rOutDev.SetMapMode( MapMode(MapUnit::MapMM) );
         const Size aPixelSize( rOutDev.LogicToPixel(Size(1,1)) );
         rOutDev.SetMapMode( aOldMapMode );
 
@@ -69,7 +69,7 @@ namespace vclcanvas
         // Map the pixel dimensions of the output window to millimeter
         OutputDevice& rOutDev = mpOutDev->getOutDev();
         const MapMode aOldMapMode( rOutDev.GetMapMode() );
-        rOutDev.SetMapMode( MapMode(MAP_MM) );
+        rOutDev.SetMapMode( MapMode(MapUnit::MapMM) );
         const Size aLogSize( rOutDev.PixelToLogic(rOutDev.GetOutputSizePixel()) );
         rOutDev.SetMapMode( aOldMapMode );
 
@@ -158,7 +158,7 @@ namespace vclcanvas
 
     uno::Any DeviceHelper::isAccelerated() const
     {
-        return css::uno::makeAny(false);
+        return css::uno::Any(false);
     }
 
     uno::Any DeviceHelper::getDeviceHandle() const
@@ -166,7 +166,7 @@ namespace vclcanvas
         if( !mpOutDev )
             return uno::Any();
 
-        return uno::makeAny(
+        return uno::Any(
             reinterpret_cast< sal_Int64 >(&mpOutDev->getOutDev()) );
     }
 
@@ -203,7 +203,7 @@ namespace vclcanvas
         {
             OUString aFilename = "dbg_frontbuffer" + OUString::number(nFilePostfixCount) + ".bmp";
 
-            SvFileStream aStream( aFilename, STREAM_STD_READWRITE );
+            SvFileStream aStream( aFilename, StreamMode::STD_READWRITE );
 
             const ::Point aEmptyPoint;
             OutputDevice& rOutDev = mpOutDev->getOutDev();

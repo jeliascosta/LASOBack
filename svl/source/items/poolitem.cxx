@@ -24,97 +24,26 @@
 #include <libxml/xmlwriter.h>
 #include <typeinfo>
 
-
-#if OSL_DEBUG_LEVEL > 0
-static sal_uLong nItemCount = 0;
-
-const char* pw1 = "Wow! 10.000 items!";
-const char* pw2 = "Wow! 100.000 items!";
-const char* pw3 = "Wow! 1.000.000 items!";
-const char* pw4 = "Wow! 50.000.000 items!";
-const char* pw5 = "Wow! 10.000.000 items!";
-#endif
-
 SfxPoolItem::SfxPoolItem(sal_uInt16 const nWhich)
     : m_nRefCount(0)
     , m_nWhich(nWhich)
-    , m_nKind(SFX_ITEMS_NONE)
+    , m_nKind(SfxItemKind::NONE)
 {
-    DBG_ASSERT(nWhich <= SHRT_MAX, "invalid WhichId");
-#if OSL_DEBUG_LEVEL > 0
-    ++nItemCount;
-    if ( pw1 && nItemCount>=10000 )
-    {
-        SAL_INFO( "svl", pw1 );
-        pw1 = nullptr;
-    }
-    if ( pw2 && nItemCount>=100000 )
-    {
-        SAL_INFO( "svl", pw2 );
-        pw2 = nullptr;
-    }
-    if ( pw3 && nItemCount>=1000000 )
-    {
-        SAL_INFO( "svl", pw3 );
-        pw3 = nullptr;
-    }
-    if ( pw4 && nItemCount>=5000000 )
-    {
-        SAL_INFO( "svl", pw4 );
-        pw4 = nullptr;
-    }
-    if ( pw5 && nItemCount>=10000000 )
-    {
-        SAL_INFO( "svl", pw5 );
-        pw5 = nullptr;
-    }
-#endif
+    assert(nWhich <= SHRT_MAX);
 }
 
 
 SfxPoolItem::SfxPoolItem( const SfxPoolItem& rCpy )
     : m_nRefCount(0) // don't copy that
-    , m_nWhich(rCpy.Which()) // call function because of ChkThis() (WTF does that mean?)
-    , m_nKind( SFX_ITEMS_NONE )
-{
-#if OSL_DEBUG_LEVEL > 0
-    ++nItemCount;
-    if ( pw1 && nItemCount>=10000 )
-    {
-        SAL_INFO( "svl", pw1 );
-        pw1 = nullptr;
-    }
-    if ( pw2 && nItemCount>=100000 )
-    {
-        SAL_INFO( "svl", pw2 );
-        pw2 = nullptr;
-    }
-    if ( pw3 && nItemCount>=1000000 )
-    {
-        SAL_INFO( "svl", pw3 );
-        pw3 = nullptr;
-    }
-    if ( pw4 && nItemCount>=5000000 )
-    {
-        SAL_INFO( "svl", pw4 );
-        pw4 = nullptr;
-    }
-    if ( pw5 && nItemCount>=10000000 )
-    {
-        SAL_INFO( "svl", pw5 );
-        pw5 = nullptr;
-    }
-#endif
-}
+    , m_nWhich(rCpy.m_nWhich)
+    , m_nKind(SfxItemKind::NONE)
+{}
 
 
 SfxPoolItem::~SfxPoolItem()
 {
-    DBG_ASSERT(m_nRefCount == 0 || m_nRefCount > SFX_ITEMS_MAXREF,
-            "destroying item in use");
-#if OSL_DEBUG_LEVEL > 0
-    --nItemCount;
-#endif
+    assert((m_nRefCount == 0 || m_nRefCount > SFX_ITEMS_MAXREF)
+            && "destroying item in use");
 }
 
 
@@ -154,12 +83,12 @@ SvStream& SfxPoolItem::Store(SvStream &rStream, sal_uInt16 ) const
  * The corresponding unit of measure is passed as 'ePresentationMetric'.
  *
  *
- * @return SfxItemPresentation     SFX_ITEM_PRESENTATION_NAMELESS
+ * @return SfxItemPresentation     SfxItemPresentation::Nameless
  *                                 A textual representation (if applicable
  *                                 with a unit of measure) could be created,
  *                                 but it doesn't contain any semantic meaning
  *
- *                                 SFX_ITEM_PRESENTATION_COMPLETE
+ *                                 SfxItemPresentation::Complete
  *                                 A complete textual representation could be
  *                                 created with semantic meaning (if applicable
  *                                 with unit of measure)
@@ -167,10 +96,10 @@ SvStream& SfxPoolItem::Store(SvStream &rStream, sal_uInt16 ) const
  * Example:
  *
  *    pSvxFontItem->GetPresentation( SFX_PRESENTATION_NAMELESS, ... )
- *      "12pt" with return SFX_ITEM_PRESENTATION_NAMELESS
+ *      "12pt" with return SfxItemPresentation::Nameless
  *
  *    pSvxColorItem->GetPresentation( SFX_PRESENTATION_COMPLETE, ... )
- *        "red" with return SFX_ITEM_PRESENTATION_NAMELESS
+ *        "red" with return SfxItemPresentation::Nameless
  *        Because the SvxColorItem does not know which color it represents
  *        it cannot provide a name, which is communicated by the return value
  *
@@ -180,8 +109,8 @@ SvStream& SfxPoolItem::Store(SvStream &rStream, sal_uInt16 ) const
 bool SfxPoolItem::GetPresentation
 (
     SfxItemPresentation /*ePresentation*/,       // IN:  how we should format
-    SfxMapUnit          /*eCoreMetric*/,         // IN:  current metric of the SfxPoolItems
-    SfxMapUnit          /*ePresentationMetric*/, // IN:  target metric of the presentation
+    MapUnit             /*eCoreMetric*/,         // IN:  current metric of the SfxPoolItems
+    MapUnit             /*ePresentationMetric*/, // IN:  target metric of the presentation
     OUString&           /*rText*/,               // OUT: textual representation
     const IntlWrapper *
 )   const
@@ -191,10 +120,23 @@ bool SfxPoolItem::GetPresentation
 
 void SfxPoolItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("sfxPoolItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SfxPoolItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("typeName"), BAD_CAST(typeid(*this).name()));
+    OUString rText;
+    if (GetPresentation( SfxItemPresentation::Complete, MapUnit::Map100thMM, MapUnit::Map100thMM, rText))
+        xmlTextWriterWriteAttribute(pWriter, BAD_CAST("presentation"), BAD_CAST(rText.getStr()));
     xmlTextWriterEndElement(pWriter);
 }
+
+SfxPoolItem* SfxPoolItem::CloneSetWhich( sal_uInt16 nNewWhich ) const
+{
+    SfxPoolItem* pItem = Clone();
+    pItem->SetWhich(nNewWhich);
+    return pItem;
+}
+
+
 SfxPoolItem* SfxVoidItem::CreateDefault()
 {
     return new SfxVoidItem(0);
@@ -213,7 +155,8 @@ SfxVoidItem::SfxVoidItem( const SfxVoidItem& rCopy):
 
 bool SfxVoidItem::operator==( const SfxPoolItem& rCmp ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==( rCmp ), "unequal type" );
+    assert(SfxPoolItem::operator==(rCmp));
+    (void) rCmp;
     return true;
 }
 
@@ -221,8 +164,8 @@ bool SfxVoidItem::operator==( const SfxPoolItem& rCmp ) const
 bool SfxVoidItem::GetPresentation
 (
     SfxItemPresentation     /*ePresentation*/,
-    SfxMapUnit              /*eCoreMetric*/,
-    SfxMapUnit              /*ePresentationMetric*/,
+    MapUnit                 /*eCoreMetric*/,
+    MapUnit                 /*ePresentationMetric*/,
     OUString&               rText,
     const IntlWrapper *
 )   const
@@ -231,6 +174,12 @@ bool SfxVoidItem::GetPresentation
     return true;
 }
 
+void SfxVoidItem::dumpAsXml(xmlTextWriterPtr pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SfxVoidItem"));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
+    xmlTextWriterEndElement(pWriter);
+}
 
 SfxPoolItem* SfxVoidItem::Clone(SfxItemPool *) const
 {

@@ -22,10 +22,6 @@
 #include <win/saltimer.h>
 #include <win/salinst.h>
 
-#if defined ( __MINGW32__ )
-#include <sehandler.hxx>
-#endif
-
 // maximum period
 #define MAX_SYSPERIOD     65533
 
@@ -44,13 +40,13 @@ void ImplSalStopTimer()
     HANDLE hTimer = pSalData->mnTimerId;
     if (hTimer)
     {
-        pSalData->mnTimerId = 0; // reset so it doesn't restart
-        DeleteTimerQueueTimer(NULL, hTimer, INVALID_HANDLE_VALUE);
+        pSalData->mnTimerId = nullptr; // reset so it doesn't restart
+        DeleteTimerQueueTimer(nullptr, hTimer, INVALID_HANDLE_VALUE);
         pSalData->mnNextTimerTime = 0;
     }
     MSG aMsg;
     // this needs to run on the main thread
-    while (PeekMessageW(&aMsg, 0, SAL_MSG_TIMER_CALLBACK, SAL_MSG_TIMER_CALLBACK, PM_REMOVE))
+    while (PeekMessageW(&aMsg, nullptr, SAL_MSG_TIMER_CALLBACK, SAL_MSG_TIMER_CALLBACK, PM_REMOVE))
     {
         // just remove all the SAL_MSG_TIMER_CALLBACKs
         // when the application end, this SAL_MSG_TIMER_CALLBACK start the timer again
@@ -74,10 +70,10 @@ void ImplSalStartTimer( sal_uLong nMS, bool bMutex )
     // cannot change a one-shot timer, so delete it and create new one
     if (pSalData->mnTimerId)
     {
-        DeleteTimerQueueTimer(NULL, pSalData->mnTimerId, INVALID_HANDLE_VALUE);
-        pSalData->mnTimerId = 0;
+        DeleteTimerQueueTimer(nullptr, pSalData->mnTimerId, INVALID_HANDLE_VALUE);
+        pSalData->mnTimerId = nullptr;
     }
-    CreateTimerQueueTimer(&pSalData->mnTimerId, NULL, SalTimerProc, NULL, nMS, 0, WT_EXECUTEINTIMERTHREAD);
+    CreateTimerQueueTimer(&pSalData->mnTimerId, nullptr, SalTimerProc, nullptr, nMS, 0, WT_EXECUTEINTIMERTHREAD);
 
     pSalData->mnNextTimerTime = pSalData->mnLastEventTime + nMS;
 }
@@ -101,7 +97,7 @@ void WinSalTimer::Start( sal_uLong nMS )
             SendMessageW( pSalData->mpFirstInstance->mhComWnd, SAL_MSG_STARTTIMER, 0, (LPARAM)nMS );
     }
     else
-        ImplSalStartTimer( nMS, FALSE );
+        ImplSalStartTimer( nMS );
 }
 
 void WinSalTimer::Stop()
@@ -119,17 +115,8 @@ at better resolution than 10ms.
 */
 void CALLBACK SalTimerProc(PVOID, BOOLEAN)
 {
-#if defined ( __MINGW32__ ) && !defined ( _WIN64 )
-    jmp_buf jmpbuf;
-    __SEHandler han;
-    if (__builtin_setjmp(jmpbuf) == 0)
-    {
-        han.Set(jmpbuf, NULL, (__SEHandler::PF)EXCEPTION_EXECUTE_HANDLER);
-#else
     __try
     {
-#endif
-
         SalData* pSalData = GetSalData();
 
         // always post message when the timer fires, we will remove the ones
@@ -140,16 +127,10 @@ void CALLBACK SalTimerProc(PVOID, BOOLEAN)
         if (0 == ret) // SEH prevents using SAL_WARN here?
             fputs("ERROR: PostMessage() failed!", stderr);
 #endif
-
-#if defined ( __MINGW32__ ) && !defined ( _WIN64 )
-    }
-    han.Reset();
-#else
     }
     __except(WinSalInstance::WorkaroundExceptionHandlingInUSER32Lib(GetExceptionCode(), GetExceptionInformation()))
     {
     }
-#endif
 }
 
 /** Called in the main thread.
@@ -178,7 +159,7 @@ void EmitTimerCallback()
         // with a small timeout, because we didn't get the mutex
         // - but not if mnTimerId is 0, which is set by ImplSalStopTimer()
         if (pSalData->mnTimerId)
-            ImplSalStartTimer(pSalData->mnTimerOrgMS, false);
+            ImplSalStartTimer(pSalData->mnTimerOrgMS);
     }
     else
     {

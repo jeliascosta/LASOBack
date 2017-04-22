@@ -33,7 +33,6 @@ class CGMBitmapDescriptor
         BitmapWriteAccess*      mpAcc;
         bool                mbStatus;
         bool                mbVMirror;
-        bool                mbHMirror;
         sal_uInt32              mnDstBitsPerPixel;
         sal_uInt32              mnScanSize;         // bytes per line
         FloatPoint              mnP, mnQ, mnR;
@@ -52,7 +51,6 @@ class CGMBitmapDescriptor
             , mpAcc(nullptr)
             , mbStatus(false)
             , mbVMirror(false)
-            , mbHMirror(false)
             , mnDstBitsPerPixel(0)
             , mnScanSize(0)
             , mndx(0.0)
@@ -74,15 +72,16 @@ class CGMBitmapDescriptor
 class CGMBitmap
 {
     CGM*                    mpCGM;
-    CGMBitmapDescriptor*    pCGMBitmapDescriptor;
-    bool                ImplGetDimensions( CGMBitmapDescriptor& );
+    std::unique_ptr<CGMBitmapDescriptor>
+                            pCGMBitmapDescriptor;
+    bool                    ImplGetDimensions( CGMBitmapDescriptor& );
     void                    ImplSetCurrentPalette( CGMBitmapDescriptor& );
     void                    ImplGetBitmap( CGMBitmapDescriptor& );
     void                    ImplInsert( CGMBitmapDescriptor& rSource, CGMBitmapDescriptor& rDest );
 public:
     explicit CGMBitmap( CGM& rCGM );
     ~CGMBitmap();
-    CGMBitmapDescriptor*    GetBitmap() { return pCGMBitmapDescriptor;}
+    CGMBitmapDescriptor*    GetBitmap() { return pCGMBitmapDescriptor.get();}
     CGMBitmap*              GetNext();
 };
 #endif

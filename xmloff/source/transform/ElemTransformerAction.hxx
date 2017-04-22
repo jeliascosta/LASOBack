@@ -52,11 +52,6 @@ enum XMLElemTransformerAction
                                         //           token of local name
                                         // - param3: attr value (low)
                                         //           attr action map (high)
-    XML_ETACTION_RENAME_ELEM_COND,      // rename element if child of another:
-                                        // - param1: namespace +
-                                        //           token of new local name
-                                        // - param2: namespace +
-                                        //           token of parent element
     XML_ETACTION_RENAME_ELEM_PROC_ATTRS_COND,// rename element and proc attr
                                         // if child of another:
                                         // - param1: elem namespace +
@@ -87,8 +82,7 @@ enum XMLElemTransformerAction
     XML_ETACTION_MOVE_TO_ATTR_RNG2ISO_DATETIME, // turn elem into an attr and convert . to , in datetimes
                                         // - param1: namespace +
                                         //           token of local name
-    XML_ETACTION_USER_DEFINED=0x40000000,// user defined actions start here
-    XML_ETACTION_END=XML_TACTION_END
+    XML_ETACTION_USER_DEFINED=0x40000000// user defined actions start here
 };
 
 #endif // INCLUDED_XMLOFF_SOURCE_TRANSFORM_ELEMTRANSFORMERACTION_HXX

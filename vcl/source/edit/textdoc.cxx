@@ -29,21 +29,20 @@ static bool CompareStart( const std::unique_ptr<TextCharAttrib>& pFirst, const s
 
 TextCharAttrib::TextCharAttrib( const TextAttrib& rAttr, sal_Int32 nStart, sal_Int32 nEnd )
 {
-    mpAttr = rAttr.Clone();
+    mpAttr.reset( rAttr.Clone() );
     mnStart = nStart;
     mnEnd = nEnd;
 }
 
 TextCharAttrib::TextCharAttrib( const TextCharAttrib& rTextCharAttrib )
 {
-    mpAttr = rTextCharAttrib.GetAttr().Clone();
+    mpAttr.reset( rTextCharAttrib.GetAttr().Clone() );
     mnStart = rTextCharAttrib.mnStart;
     mnEnd = rTextCharAttrib.mnEnd;
 }
 
 TextCharAttrib::~TextCharAttrib()
 {
-    delete mpAttr;
 }
 
 TextCharAttribList::TextCharAttribList()
@@ -68,7 +67,7 @@ void TextCharAttribList::InsertAttrib( TextCharAttrib* pAttrib )
 
     const sal_Int32 nStart = pAttrib->GetStart(); // maybe better for Comp.Opt.
     bool bInserted = false;
-    for (TextCharAttribs::iterator it = maAttribs.begin(); it != maAttribs.end(); ++it)
+    for (std::vector<std::unique_ptr<TextCharAttrib> >::iterator it = maAttribs.begin(); it != maAttribs.end(); ++it)
     {
         if ( (*it)->GetStart() > nStart )
         {
@@ -88,7 +87,7 @@ void TextCharAttribList::ResortAttribs()
 
 TextCharAttrib* TextCharAttribList::FindAttrib( sal_uInt16 nWhich, sal_Int32 nPos )
 {
-    for (TextCharAttribs::reverse_iterator it = maAttribs.rbegin(); it != maAttribs.rend(); ++it)
+    for (std::vector<std::unique_ptr<TextCharAttrib> >::reverse_iterator it = maAttribs.rbegin(); it != maAttribs.rend(); ++it)
     {
         if ( (*it)->GetEnd() < nPos )
             return nullptr;
@@ -101,8 +100,8 @@ TextCharAttrib* TextCharAttribList::FindAttrib( sal_uInt16 nWhich, sal_Int32 nPo
 
 const TextCharAttrib* TextCharAttribList::FindNextAttrib( sal_uInt16 nWhich, sal_Int32 nFromPos, sal_Int32 nMaxPos ) const
 {
-    DBG_ASSERT( nWhich, "FindNextAttrib: Which?" );
-    for (TextCharAttribs::const_iterator it = maAttribs.begin(); it != maAttribs.end(); ++it)
+    SAL_WARN_IF( !nWhich, "vcl", "FindNextAttrib: Which?" );
+    for (std::vector<std::unique_ptr<TextCharAttrib> >::const_iterator it = maAttribs.begin(); it != maAttribs.end(); ++it)
     {
         if ( ( (*it)->GetStart() >= nFromPos ) &&
              ( (*it)->GetEnd() <= nMaxPos ) &&
@@ -114,7 +113,7 @@ const TextCharAttrib* TextCharAttribList::FindNextAttrib( sal_uInt16 nWhich, sal
 
 bool TextCharAttribList::HasAttrib( sal_uInt16 nWhich ) const
 {
-    for (TextCharAttribs::const_reverse_iterator it = maAttribs.rbegin(); it != maAttribs.rend(); ++it)
+    for (std::vector<std::unique_ptr<TextCharAttrib> >::const_reverse_iterator it = maAttribs.rbegin(); it != maAttribs.rend(); ++it)
     {
         if ( (*it)->Which() == nWhich )
             return true;
@@ -124,7 +123,7 @@ bool TextCharAttribList::HasAttrib( sal_uInt16 nWhich ) const
 
 bool TextCharAttribList::HasBoundingAttrib( sal_Int32 nBound )
 {
-    for (TextCharAttribs::reverse_iterator it = maAttribs.rbegin(); it != maAttribs.rend(); ++it)
+    for (std::vector<std::unique_ptr<TextCharAttrib> >::reverse_iterator it = maAttribs.rbegin(); it != maAttribs.rend(); ++it)
     {
         if ( (*it)->GetEnd() < nBound )
             return false;
@@ -140,7 +139,7 @@ TextCharAttrib* TextCharAttribList::FindEmptyAttrib( sal_uInt16 nWhich, sal_Int3
     if ( !mbHasEmptyAttribs )
         return nullptr;
 
-    for (TextCharAttribs::iterator it = maAttribs.begin(); it != maAttribs.end(); ++it)
+    for (std::vector<std::unique_ptr<TextCharAttrib> >::iterator it = maAttribs.begin(); it != maAttribs.end(); ++it)
     {
         if ( (*it)->GetStart() > nPos )
             return nullptr;
@@ -220,16 +219,16 @@ void TextNode::ExpandAttribs( sal_Int32 nIndex, sal_Int32 nNew )
             }
         }
 
-        DBG_ASSERT( rAttrib.GetStart() <= rAttrib.GetEnd(), "Expand: Attribut verdreht!" );
-        DBG_ASSERT( ( rAttrib.GetEnd() <= maText.getLength() ), "Expand: Attrib groesser als Absatz!" );
-        DBG_ASSERT( !rAttrib.IsEmpty(), "Leeres Attribut nach ExpandAttribs?" );
+        SAL_WARN_IF( rAttrib.GetStart() > rAttrib.GetEnd(), "vcl", "Expand: Attribut verdreht!" );
+        SAL_WARN_IF( ( rAttrib.GetEnd() > maText.getLength() ), "vcl", "Expand: Attrib groesser als Absatz!" );
+        SAL_WARN_IF( rAttrib.IsEmpty(), "vcl", "Leeres Attribut nach ExpandAttribs?" );
     }
 
     if ( bResort )
         maCharAttribs.ResortAttribs();
 }
 
-void TextNode::CollapsAttribs( sal_Int32 nIndex, sal_Int32 nDeleted )
+void TextNode::CollapseAttribs( sal_Int32 nIndex, sal_Int32 nDeleted )
 {
     if ( !nDeleted )
         return;
@@ -275,8 +274,8 @@ void TextNode::CollapsAttribs( sal_Int32 nIndex, sal_Int32 nDeleted )
             }
         }
 
-        DBG_ASSERT( rAttrib.GetStart() <= rAttrib.GetEnd(), "Collaps: Attribut verdreht!" );
-        DBG_ASSERT( ( rAttrib.GetEnd() <= maText.getLength()) || bDelAttr, "Collaps: Attrib groesser als Absatz!" );
+        SAL_WARN_IF( rAttrib.GetStart() > rAttrib.GetEnd(), "vcl", "Collaps: Attribut verdreht!" );
+        SAL_WARN_IF( ( rAttrib.GetEnd() > maText.getLength()) && !bDelAttr, "vcl", "Collaps: Attrib groesser als Absatz!" );
         if ( bDelAttr /* || rAttrib.IsEmpty() */ )
         {
             bResort = true;
@@ -306,7 +305,7 @@ void TextNode::InsertText( sal_Int32 nPos, sal_Unicode c )
 void TextNode::RemoveText( sal_Int32 nPos, sal_Int32 nChars )
 {
     maText = maText.replaceAt( nPos, nChars, "" );
-    CollapsAttribs( nPos, nChars );
+    CollapseAttribs( nPos, nChars );
 }
 
 TextNode* TextNode::Split( sal_Int32 nPos )
@@ -352,8 +351,8 @@ TextNode* TextNode::Split( sal_Int32 nPos )
         }
         else
         {
-            DBG_ASSERT( rAttrib.GetStart() >= nPos, "Start < nPos!" );
-            DBG_ASSERT( rAttrib.GetEnd() >= nPos, "End < nPos!" );
+            SAL_WARN_IF( rAttrib.GetStart() < nPos, "vcl", "Start < nPos!" );
+            SAL_WARN_IF( rAttrib.GetEnd() < nPos, "vcl", "End < nPos!" );
             // move all into the new node (this)
             maCharAttribs.RemoveAttrib( nAttr );
             pNew->maCharAttribs.InsertAttrib( &rAttrib );
@@ -492,8 +491,8 @@ sal_Int32 TextDoc::GetTextLen( const sal_Unicode* pSep, const TextSelection* pSe
 
 TextPaM TextDoc::InsertText( const TextPaM& rPaM, sal_Unicode c )
 {
-    DBG_ASSERT( c != 0x0A, "TextDoc::InsertText: Zeilentrenner in Absatz nicht erlaubt!" );
-    DBG_ASSERT( c != 0x0D, "TextDoc::InsertText: Zeilentrenner in Absatz nicht erlaubt!" );
+    SAL_WARN_IF( c == 0x0A, "vcl", "TextDoc::InsertText: Zeilentrenner in Absatz nicht erlaubt!" );
+    SAL_WARN_IF( c == 0x0D, "vcl", "TextDoc::InsertText: Zeilentrenner in Absatz nicht erlaubt!" );
 
     TextNode* pNode = maTextNodes[ rPaM.GetPara() ];
     pNode->InsertText( rPaM.GetIndex(), c );
@@ -504,8 +503,8 @@ TextPaM TextDoc::InsertText( const TextPaM& rPaM, sal_Unicode c )
 
 TextPaM TextDoc::InsertText( const TextPaM& rPaM, const OUString& rStr )
 {
-    DBG_ASSERT( rStr.indexOf( 0x0A ) == -1, "TextDoc::InsertText: Zeilentrenner in Absatz nicht erlaubt!" );
-    DBG_ASSERT( rStr.indexOf( 0x0D ) == -1, "TextDoc::InsertText: Zeilentrenner in Absatz nicht erlaubt!" );
+    SAL_WARN_IF( rStr.indexOf( 0x0A ) != -1, "vcl", "TextDoc::InsertText: Zeilentrenner in Absatz nicht erlaubt!" );
+    SAL_WARN_IF( rStr.indexOf( 0x0D ) != -1, "vcl", "TextDoc::InsertText: Zeilentrenner in Absatz nicht erlaubt!" );
 
     TextNode* pNode = maTextNodes[ rPaM.GetPara() ];
     pNode->InsertText( rPaM.GetIndex(), rStr );
@@ -519,7 +518,7 @@ TextPaM TextDoc::InsertParaBreak( const TextPaM& rPaM )
     TextNode* pNode = maTextNodes[ rPaM.GetPara() ];
     TextNode* pNew = pNode->Split( rPaM.GetIndex() );
 
-    DBG_ASSERT( maTextNodes.size()<SAL_MAX_UINT32, "InsertParaBreak: more than 4Gi paragraphs!" );
+    SAL_WARN_IF( maTextNodes.size()>=SAL_MAX_UINT32, "vcl", "InsertParaBreak: more than 4Gi paragraphs!" );
     maTextNodes.insert( maTextNodes.begin() + rPaM.GetPara() + 1, pNew );
 
     TextPaM aPaM( rPaM.GetPara()+1, 0 );

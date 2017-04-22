@@ -32,84 +32,92 @@
 
 DdeData::DdeData()
 {
-    pImp = new DdeDataImp;
-    pImp->hData = NULL;
-    pImp->nData = 0;
-    pImp->pData = NULL;
-    pImp->nFmt = SotClipboardFormatId::STRING;
+    xImp.reset(new DdeDataImp);
+    xImp->hData = nullptr;
+    xImp->nData = 0;
+    xImp->pData = nullptr;
+    xImp->nFmt = SotClipboardFormatId::STRING;
 }
 
 DdeData::DdeData(const void* p, long n, SotClipboardFormatId f)
 {
-    pImp = new DdeDataImp;
-    pImp->hData = NULL;
-    pImp->pData = (LPBYTE)p;
-    pImp->nData = n;
-    pImp->nFmt  = f;
+    xImp.reset(new DdeDataImp);
+    xImp->hData = nullptr;
+    xImp->pData = p;
+    xImp->nData = n;
+    xImp->nFmt  = f;
 }
 
 DdeData::DdeData( const OUString& s )
 {
-    pImp = new DdeDataImp;
-    pImp->hData = NULL;
-    pImp->pData = (LPBYTE)s.getStr();
-    pImp->nData = s.getLength()+1;
-    pImp->nFmt = SotClipboardFormatId::STRING;
+    xImp.reset(new DdeDataImp);
+    xImp->hData = nullptr;
+    xImp->pData = s.getStr();
+    xImp->nData = s.getLength()+1;
+    xImp->nFmt = SotClipboardFormatId::STRING;
 }
 
-DdeData::DdeData( const DdeData& rData )
+DdeData::DdeData(const DdeData& rData)
 {
-    pImp = new DdeDataImp;
-    pImp->hData = rData.pImp->hData;
-    pImp->nData = rData.pImp->nData;
-    pImp->pData = rData.pImp->pData;
-    pImp->nFmt  = rData.pImp->nFmt;
+    xImp.reset(new DdeDataImp);
+    xImp->hData = rData.xImp->hData;
+    xImp->nData = rData.xImp->nData;
+    xImp->pData = rData.xImp->pData;
+    xImp->nFmt  = rData.xImp->nFmt;
     Lock();
+}
+
+DdeData::DdeData(DdeData&& rData)
+    : xImp(std::move(rData.xImp))
+{
 }
 
 DdeData::~DdeData()
 {
-    if ( pImp && pImp->hData )
-        DdeUnaccessData( pImp->hData );
-    delete pImp;
+    if (xImp && xImp->hData)
+        DdeUnaccessData(xImp->hData);
 }
 
 void DdeData::Lock()
 {
-    if ( pImp->hData )
-        pImp->pData = DdeAccessData( pImp->hData, (LPDWORD) &pImp->nData );
+    if (xImp->hData)
+        xImp->pData = DdeAccessData(xImp->hData, &xImp->nData);
 }
 
 SotClipboardFormatId DdeData::GetFormat() const
 {
-    return pImp->nFmt;
+    return xImp->nFmt;
 }
 
 void DdeData::SetFormat(SotClipboardFormatId nFmt)
 {
-    pImp->nFmt = nFmt;
+    xImp->nFmt = nFmt;
 }
 
-DdeData::operator const void*() const
+void const * DdeData::getData() const
 {
-    return pImp->pData;
+    return xImp->pData;
 }
 
-DdeData::operator long() const
+long DdeData::getSize() const
 {
-    return pImp->nData;
+    return xImp->nData;
 }
 
-DdeData& DdeData::operator = ( const DdeData& rData )
+DdeData& DdeData::operator=(const DdeData& rData)
 {
     if ( &rData != this )
     {
-        DdeData tmp( rData );
-        delete pImp;
-        pImp = tmp.pImp;
-        tmp.pImp = NULL;
+        DdeData tmp(rData);
+        xImp = std::move(tmp.xImp);
     }
 
+    return *this;
+}
+
+DdeData& DdeData::operator=(DdeData&& rData)
+{
+    xImp = std::move(rData.xImp);
     return *this;
 }
 

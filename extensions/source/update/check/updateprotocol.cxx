@@ -20,6 +20,7 @@
 #include <config_folders.h>
 
 #include <com/sun/star/xml/xpath/XPathAPI.hpp>
+#include <com/sun/star/xml/xpath/XPathException.hpp>
 
 #include "updateprotocol.hxx"
 #include "updatecheckconfig.hxx"
@@ -80,8 +81,6 @@ checkForUpdates(
     uno::Reference< task::XInteractionHandler > const & rxInteractionHandler,
     const uno::Reference< deployment::XUpdateInformationProvider >& rUpdateInfoProvider)
 {
-    OSL_TRACE("checking for updates ..");
-
     OUString myArch;
     OUString myOS;
 

@@ -30,20 +30,19 @@ OOXMLSecParser::~OOXMLSecParser()
 {
 }
 
-void SAL_CALL OOXMLSecParser::startDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL OOXMLSecParser::startDocument()
 {
     if (m_xNextHandler.is())
         m_xNextHandler->startDocument();
 }
 
-void SAL_CALL OOXMLSecParser::endDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL OOXMLSecParser::endDocument()
 {
     if (m_xNextHandler.is())
         m_xNextHandler->endDocument();
 }
 
 void SAL_CALL OOXMLSecParser::startElement(const OUString& rName, const uno::Reference<xml::sax::XAttributeList>& xAttribs)
-throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     OUString aId = xAttribs->getValueByName("Id");
     if (!aId.isEmpty())
@@ -59,7 +58,7 @@ throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
     {
         OUString aURI = xAttribs->getValueByName("URI");
         if (aURI.startsWith("#"))
-            m_pXSecController->addReference(aURI.copy(1));
+            m_pXSecController->addReference(aURI.copy(1), xml::crypto::DigestID::SHA1);
         else
         {
             m_aReferenceURI = aURI;
@@ -73,7 +72,7 @@ throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
             OUString aAlgorithm = xAttribs->getValueByName("Algorithm");
             if (aAlgorithm == ALGO_RELATIONSHIP)
             {
-                m_pXSecController->addStreamReference(m_aReferenceURI, /*isBinary=*/false);
+                m_pXSecController->addStreamReference(m_aReferenceURI, /*isBinary=*/false, /*nDigestID=*/xml::crypto::DigestID::SHA256);
                 m_bReferenceUnresolved = false;
             }
         }
@@ -123,7 +122,7 @@ throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
         m_xNextHandler->startElement(rName, xAttribs);
 }
 
-void SAL_CALL OOXMLSecParser::endElement(const OUString& rName) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL OOXMLSecParser::endElement(const OUString& rName)
 {
     if (rName == "SignedInfo")
         m_pXSecController->setReferenceCount();
@@ -132,10 +131,10 @@ void SAL_CALL OOXMLSecParser::endElement(const OUString& rName) throw (xml::sax:
         if (m_bReferenceUnresolved)
         {
             // No transform algorithm found, assume binary.
-            m_pXSecController->addStreamReference(m_aReferenceURI, /*isBinary=*/true);
+            m_pXSecController->addStreamReference(m_aReferenceURI, /*isBinary=*/true, /*nDigestID=*/xml::crypto::DigestID::SHA256);
             m_bReferenceUnresolved = false;
         }
-        m_pXSecController->setDigestValue(m_aDigestValue);
+        m_pXSecController->setDigestValue(xml::crypto::DigestID::SHA256, m_aDigestValue);
     }
     else if (rName == "DigestValue" && !m_bInCertDigest)
         m_bInDigestValue = false;
@@ -179,7 +178,7 @@ void SAL_CALL OOXMLSecParser::endElement(const OUString& rName) throw (xml::sax:
         m_xNextHandler->endElement(rName);
 }
 
-void SAL_CALL OOXMLSecParser::characters(const OUString& rChars) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL OOXMLSecParser::characters(const OUString& rChars)
 {
     if (m_bInDigestValue && !m_bInCertDigest)
         m_aDigestValue += rChars;
@@ -202,25 +201,25 @@ void SAL_CALL OOXMLSecParser::characters(const OUString& rChars) throw (xml::sax
         m_xNextHandler->characters(rChars);
 }
 
-void SAL_CALL OOXMLSecParser::ignorableWhitespace(const OUString& rWhitespace) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL OOXMLSecParser::ignorableWhitespace(const OUString& rWhitespace)
 {
     if (m_xNextHandler.is())
         m_xNextHandler->ignorableWhitespace(rWhitespace);
 }
 
-void SAL_CALL OOXMLSecParser::processingInstruction(const OUString& rTarget, const OUString& rData) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL OOXMLSecParser::processingInstruction(const OUString& rTarget, const OUString& rData)
 {
     if (m_xNextHandler.is())
         m_xNextHandler->processingInstruction(rTarget, rData);
 }
 
-void SAL_CALL OOXMLSecParser::setDocumentLocator(const uno::Reference<xml::sax::XLocator>& xLocator) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL OOXMLSecParser::setDocumentLocator(const uno::Reference<xml::sax::XLocator>& xLocator)
 {
     if (m_xNextHandler.is())
         m_xNextHandler->setDocumentLocator(xLocator);
 }
 
-void SAL_CALL OOXMLSecParser::initialize(const uno::Sequence<uno::Any>& rArguments) throw (uno::Exception, uno::RuntimeException, std::exception)
+void SAL_CALL OOXMLSecParser::initialize(const uno::Sequence<uno::Any>& rArguments)
 {
     rArguments[0] >>= m_xNextHandler;
 }

@@ -18,7 +18,6 @@
  */
 
 #include <hintids.hxx>
-#include <rtl/random.h>
 #include <tools/resid.hxx>
 #include <editeng/lrspitem.hxx>
 #include <ftninfo.hxx>
@@ -55,10 +54,13 @@
 #include <list.hxx>
 #include <calbck.hxx>
 #include <comphelper/string.hxx>
+#include <comphelper/random.hxx>
 #include <tools/datetimeutils.hxx>
 
 #include <cstdlib>
 #include <map>
+#include <stdlib.h>
+
 
 namespace {
     void lcl_ResetIndentAttrs(SwDoc *pDoc, const SwPaM &rPam, sal_uInt16 marker )
@@ -83,8 +85,6 @@ namespace {
         }
     }
 }
-
-#include <stdlib.h>
 
 inline sal_uInt8 GetUpperLvlChg( sal_uInt8 nCurLvl, sal_uInt8 nLevel, sal_uInt16 nMask )
 {
@@ -183,7 +183,7 @@ bool SwDoc::OutlineUpDown( const SwPaM& rPam, short nOffset )
     const SwOutlineNodes& rOutlNds = GetNodes().GetOutLineNds();
     const SwNodePtr pSttNd = &rPam.Start()->nNode.GetNode();
     const SwNodePtr pEndNd = &rPam.End()->nNode.GetNode();
-    sal_uInt16 nSttPos, nEndPos;
+    SwOutlineNodes::size_type nSttPos, nEndPos;
 
     if( !rOutlNds.Seek_Entry( pSttNd, &nSttPos ) &&
         !nSttPos-- )
@@ -363,7 +363,7 @@ bool SwDoc::OutlineUpDown( const SwPaM& rPam, short nOffset )
 
     if (GetIDocumentUndoRedo().DoesUndo())
     {
-        GetIDocumentUndoRedo().StartUndo(UNDO_OUTLINE_LR, nullptr);
+        GetIDocumentUndoRedo().StartUndo(SwUndoId::OUTLINE_LR, nullptr);
         SwUndo *const pUndoOLR( new SwUndoOutlineLeftRight( rPam, nOffset ) );
         GetIDocumentUndoRedo().AppendUndo(pUndoOLR);
     }
@@ -401,7 +401,7 @@ bool SwDoc::OutlineUpDown( const SwPaM& rPam, short nOffset )
     }
     if (GetIDocumentUndoRedo().DoesUndo())
     {
-        GetIDocumentUndoRedo().EndUndo(UNDO_OUTLINE_LR, nullptr);
+        GetIDocumentUndoRedo().EndUndo(SwUndoId::OUTLINE_LR, nullptr);
     }
 
     ChkCondColls();
@@ -411,7 +411,7 @@ bool SwDoc::OutlineUpDown( const SwPaM& rPam, short nOffset )
 }
 
 // Move up/down
-bool SwDoc::MoveOutlinePara( const SwPaM& rPam, short nOffset )
+bool SwDoc::MoveOutlinePara( const SwPaM& rPam, SwOutlineNodes::difference_type nOffset )
 {
     // Do not move to special sections in the nodes array
     const SwPosition& rStt = *rPam.Start(),
@@ -424,7 +424,7 @@ bool SwDoc::MoveOutlinePara( const SwPaM& rPam, short nOffset )
         return false;
     }
 
-    sal_uInt16 nAktPos = 0;
+    SwOutlineNodes::size_type nAktPos = 0;
     SwNodeIndex aSttRg( rStt.nNode ), aEndRg( rEnd.nNode );
 
     int nOutLineLevel = MAXLEVEL;
@@ -444,7 +444,7 @@ bool SwDoc::MoveOutlinePara( const SwPaM& rPam, short nOffset )
         else
             aSttRg = *GetNodes().GetEndOfContent().StartOfSectionNode();
     }
-    sal_uInt16 nTmpPos = 0;
+    SwOutlineNodes::size_type nTmpPos = 0;
     // If the given range ends at an outlined text node we have to decide if it has to be a part of
     // the moving range or not. Normally it will be a sub outline of our chapter
     // and has to be moved, too. But if the chapter ends with a table(or a section end),
@@ -498,9 +498,9 @@ bool SwDoc::MoveOutlinePara( const SwPaM& rPam, short nOffset )
     ++aEndRg;
 
     // calculation of the new position
-    if( nOffset < 0 && nAktPos < sal_uInt16(-nOffset) )
+    if( nOffset < 0 && nAktPos < SwOutlineNodes::size_type(-nOffset) )
         pNd = GetNodes().GetEndOfContent().StartOfSectionNode();
-    else if( nAktPos + nOffset >= (sal_uInt16)GetNodes().GetOutLineNds().size() )
+    else if( nAktPos + nOffset >= GetNodes().GetOutLineNds().size() )
         pNd = &GetNodes().GetEndOfContent();
     else
         pNd = GetNodes().GetOutLineNds()[ nAktPos + nOffset ];
@@ -833,7 +833,7 @@ OUString SwDoc::SetNumRule( const SwPaM& rPam,
     if (GetIDocumentUndoRedo().DoesUndo())
     {
         // Start/End for attributes!
-        GetIDocumentUndoRedo().StartUndo( UNDO_INSNUM, nullptr );
+        GetIDocumentUndoRedo().StartUndo( SwUndoId::INSNUM, nullptr );
         pUndo = new SwUndoInsNum( rPam, rRule );
         GetIDocumentUndoRedo().AppendUndo(pUndo);
     }
@@ -936,7 +936,7 @@ OUString SwDoc::SetNumRule( const SwPaM& rPam,
 
     if (GetIDocumentUndoRedo().DoesUndo())
     {
-        GetIDocumentUndoRedo().EndUndo( UNDO_INSNUM, nullptr );
+        GetIDocumentUndoRedo().EndUndo( SwUndoId::INSNUM, nullptr );
     }
 
     getIDocumentState().SetModified();
@@ -1024,7 +1024,7 @@ bool SwDoc::DelNumRule( const OUString& rName, bool bBroadcast )
 
         if (bBroadcast)
             BroadcastStyleOperation(rName, SfxStyleFamily::Pseudo,
-                                    SfxStyleSheetHintId::ERASED);
+                                    SfxHintId::StyleSheetErased);
 
         getIDocumentListsAccess().deleteListForListStyle( rName );
         getIDocumentListsAccess().deleteListsByDefaultListStyle( rName );
@@ -1049,7 +1049,7 @@ void SwDoc::ChgNumRuleFormats( const SwNumRule& rRule )
         SwUndoInsNum* pUndo = nullptr;
         if (GetIDocumentUndoRedo().DoesUndo())
         {
-            pUndo = new SwUndoInsNum( *pRule, rRule );
+            pUndo = new SwUndoInsNum( *pRule, rRule, this );
             pUndo->GetHistory();
             GetIDocumentUndoRedo().AppendUndo( pUndo );
         }
@@ -1097,7 +1097,7 @@ bool SwDoc::RenameNumRule(const OUString & rOldName, const OUString & rNewName,
 
         if (bBroadcast)
             BroadcastStyleOperation(rOldName, SfxStyleFamily::Pseudo,
-                                    SfxStyleSheetHintId::MODIFIED);
+                                    SfxHintId::StyleSheetModified);
     }
 
     return bResult;
@@ -1133,7 +1133,7 @@ bool SwDoc::ReplaceNumRule( const SwPosition& rPos,
         if (GetIDocumentUndoRedo().DoesUndo())
         {
             // Start/End for attributes!
-            GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
+            GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
             pUndo = new SwUndoInsNum( rPos, *pNewRule, rOldRule );
             GetIDocumentUndoRedo().AppendUndo(pUndo);
         }
@@ -1170,7 +1170,7 @@ bool SwDoc::ReplaceNumRule( const SwPosition& rPos,
                     pTextNd->NumRuleChgd();
                 }
             }
-            GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
+            GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
             getIDocumentState().SetModified();
 
             bRet = true;
@@ -1200,7 +1200,7 @@ void SwDoc::MakeUniqueNumRules(const SwPaM & rPaM)
 {
     OSL_ENSURE( rPaM.GetDoc() == this, "need same doc" );
 
-    ::std::map<SwNumRule *, ListStyleData> aMyNumRuleMap;
+    std::map<SwNumRule *, ListStyleData> aMyNumRuleMap;
 
     bool bFirst = true;
 
@@ -1266,7 +1266,7 @@ bool SwDoc::NoNum( const SwPaM& rPam )
     // Do we actually use Numbering at all?
     if( bRet )
     {
-        // Set NoNum and Upate
+        // Set NoNum and Update
         const SwNodeIndex& rIdx = rPam.GetPoint()->nNode;
         SwTextNode* pNd = rIdx.GetNode().GetTextNode();
         const SwNumRule* pRule = pNd->GetNumRule();
@@ -1381,18 +1381,20 @@ static bool lcl_IsValidPrevNextNumNode( const SwNodeIndex& rIdx )
     const SwNode& rNd = rIdx.GetNode();
     switch( rNd.GetNodeType() )
     {
-    case ND_ENDNODE:
+    case SwNodeType::End:
         bRet = SwTableBoxStartNode == rNd.StartOfSectionNode()->GetStartNodeType() ||
                 rNd.StartOfSectionNode()->IsSectionNode();
         break;
 
-    case ND_STARTNODE:
+    case SwNodeType::Start:
         bRet = SwTableBoxStartNode == static_cast<const SwStartNode&>(rNd).GetStartNodeType();
         break;
 
-    case ND_SECTIONNODE:            // that one's valid, so proceed
+    case SwNodeType::Section:            // that one's valid, so proceed
         bRet = true;
         break;
+
+    default: break;
     }
     return bRet;
 }
@@ -1794,8 +1796,8 @@ bool SwDoc::MoveParagraph( const SwPaM& rPam, long nOffset, bool bIsOutlMv )
     // Test for Redlining - Can the Selection be moved at all, actually?
     if( !getIDocumentRedlineAccess().IsIgnoreRedline() )
     {
-        sal_uInt16 nRedlPos = getIDocumentRedlineAccess().GetRedlinePos( pStt->nNode.GetNode(), nsRedlineType_t::REDLINE_DELETE );
-        if( USHRT_MAX != nRedlPos )
+        SwRedlineTable::size_type nRedlPos = getIDocumentRedlineAccess().GetRedlinePos( pStt->nNode.GetNode(), nsRedlineType_t::REDLINE_DELETE );
+        if( SwRedlineTable::npos != nRedlPos )
         {
             SwPosition aStPos( *pStt ), aEndPos( *pEnd );
             aStPos.nContent = 0;
@@ -1812,23 +1814,23 @@ bool SwDoc::MoveParagraph( const SwPaM& rPam, long nOffset, bool bIsOutlMv )
                     const SwPosition *pRStt = pTmp->Start(), *pREnd = pTmp->End();
                     switch( ComparePosition( *pRStt, *pREnd, aStPos, aEndPos ))
                     {
-                    case POS_COLLIDE_START:
-                    case POS_BEHIND:            // Pos1 comes after Pos2
+                    case SwComparePosition::CollideStart:
+                    case SwComparePosition::Behind:            // Pos1 comes after Pos2
                         nRedlPos = getIDocumentRedlineAccess().GetRedlineTable().size();
                         break;
 
-                    case POS_COLLIDE_END:
-                    case POS_BEFORE:            // Pos1 comes before Pos2
+                    case SwComparePosition::CollideEnd:
+                    case SwComparePosition::Before:            // Pos1 comes before Pos2
                         break;
-                    case POS_INSIDE:            // Pos1 is completely inside Pos2
+                    case SwComparePosition::Inside:            // Pos1 is completely inside Pos2
                         // that's valid, but check all following for overlapping
                         bCheckDel = false;
                         break;
 
-                    case POS_OUTSIDE:           // Pos2 is completely inside Pos1
-                    case POS_EQUAL:             // Pos1 is equal to Pos2
-                    case POS_OVERLAP_BEFORE:    // Pos1 overlaps Pos2 in the beginning
-                    case POS_OVERLAP_BEHIND:    // Pos1 overlaps Pos2 at the end
+                    case SwComparePosition::Outside:           // Pos2 is completely inside Pos1
+                    case SwComparePosition::Equal:             // Pos1 is equal to Pos2
+                    case SwComparePosition::OverlapBefore:    // Pos1 overlaps Pos2 in the beginning
+                    case SwComparePosition::OverlapBehind:    // Pos1 overlaps Pos2 at the end
                         return false;
                     }
                 }
@@ -1851,8 +1853,8 @@ bool SwDoc::MoveParagraph( const SwPaM& rPam, long nOffset, bool bIsOutlMv )
     if( getIDocumentRedlineAccess().IsRedlineOn() )
     {
         // If the range is completely in the own Redline, we can move it!
-        sal_uInt16 nRedlPos = getIDocumentRedlineAccess().GetRedlinePos( pStt->nNode.GetNode(), nsRedlineType_t::REDLINE_INSERT );
-        if( USHRT_MAX != nRedlPos )
+        SwRedlineTable::size_type nRedlPos = getIDocumentRedlineAccess().GetRedlinePos( pStt->nNode.GetNode(), nsRedlineType_t::REDLINE_INSERT );
+        if( SwRedlineTable::npos != nRedlPos )
         {
             SwRangeRedline* pTmp = getIDocumentRedlineAccess().GetRedlineTable()[ nRedlPos ];
             const SwPosition *pRStt = pTmp->Start(), *pREnd = pTmp->End();
@@ -1868,7 +1870,7 @@ bool SwDoc::MoveParagraph( const SwPaM& rPam, long nOffset, bool bIsOutlMv )
                          : !pREnd->nContent.GetIndex() )) )
             {
                 pOwnRedl = pTmp;
-                if( nRedlPos + 1 < (sal_uInt16)getIDocumentRedlineAccess().GetRedlineTable().size() )
+                if( nRedlPos + 1 < getIDocumentRedlineAccess().GetRedlineTable().size() )
                 {
                     pTmp = getIDocumentRedlineAccess().GetRedlineTable()[ nRedlPos+1 ];
                     if( *pTmp->Start() == *pREnd )
@@ -1887,7 +1889,7 @@ bool SwDoc::MoveParagraph( const SwPaM& rPam, long nOffset, bool bIsOutlMv )
 
         if( !pOwnRedl )
         {
-            GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
+            GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
 
             // First the Insert, then the Delete
             SwPosition aInsPos( aIdx );
@@ -1959,14 +1961,14 @@ bool SwDoc::MoveParagraph( const SwPaM& rPam, long nOffset, bool bIsOutlMv )
             ++rOrigPam.GetPoint()->nNode;
             rOrigPam.GetPoint()->nContent.Assign( rOrigPam.GetContentNode(), 0 );
 
-            RedlineMode_t eOld = getIDocumentRedlineAccess().GetRedlineMode();
+            RedlineFlags eOld = getIDocumentRedlineAccess().GetRedlineFlags();
             GetDocumentRedlineManager().checkRedlining(eOld);
             if (GetIDocumentUndoRedo().DoesUndo())
             {
                 // Still NEEDS to be optimized (even after 14 years)
-                getIDocumentRedlineAccess().SetRedlineMode(
-                   (RedlineMode_t)(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE));
-                SwUndo *const pUndo(new SwUndoRedlineDelete(aPam, UNDO_DELETE));
+                getIDocumentRedlineAccess().SetRedlineFlags(
+                   RedlineFlags::On | RedlineFlags::ShowInsert | RedlineFlags::ShowDelete );
+                SwUndo *const pUndo(new SwUndoRedlineDelete(aPam, SwUndoId::DELETE));
                 GetIDocumentUndoRedo().AppendUndo(pUndo);
             }
 
@@ -1981,8 +1983,8 @@ bool SwDoc::MoveParagraph( const SwPaM& rPam, long nOffset, bool bIsOutlMv )
             getIDocumentRedlineAccess().AppendRedline( pNewRedline, true );
 
             // Still NEEDS to be optimized!
-            getIDocumentRedlineAccess().SetRedlineMode( eOld );
-            GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
+            getIDocumentRedlineAccess().SetRedlineFlags( eOld );
+            GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
             getIDocumentState().SetModified();
 
             return true;
@@ -2181,7 +2183,7 @@ sal_uInt16 SwDoc::MakeNumRule( const OUString &rName,
 
     if (bBroadcast)
         BroadcastStyleOperation(pNew->GetName(), SfxStyleFamily::Pseudo,
-                                SfxStyleSheetHintId::CREATED);
+                                SfxHintId::StyleSheetCreated);
 
     return nRet;
 }
@@ -2210,10 +2212,9 @@ OUString SwDoc::GetUniqueNumRuleName( const OUString* pChkStr, bool bAutoNum ) c
         }
         else
         {
-            static rtlRandomPool s_RandomPool( rtl_random_createPool() );
-            sal_Int64 n;
-            rtl_random_getBytes( s_RandomPool, &n, sizeof(n) );
-            aName = OUString::number( (n < 0 ? -n : n) );
+            unsigned int const n(comphelper::rng::uniform_uint_distribution(0,
+                                    std::numeric_limits<unsigned int>::max()));
+            aName = OUString::number(n);
         }
         if( pChkStr && pChkStr->isEmpty() )
             pChkStr = nullptr;
@@ -2243,11 +2244,8 @@ OUString SwDoc::GetUniqueNumRuleName( const OUString* pChkStr, bool bAutoNum ) c
         }
     }
 
-    const SwNumRule* pNumRule;
-    sal_uInt16 n;
-
-    for( n = 0; n < mpNumRuleTable->size(); ++n )
-        if( nullptr != ( pNumRule = (*mpNumRuleTable)[ n ] ) )
+    for( auto const & pNumRule: *mpNumRuleTable )
+        if( nullptr != pNumRule )
         {
             const OUString sNm = pNumRule->GetName();
             if( sNm.startsWith( aName ) )
@@ -2265,7 +2263,7 @@ OUString SwDoc::GetUniqueNumRuleName( const OUString* pChkStr, bool bAutoNum ) c
     {
         // All Numbers have been flagged accordingly, so identify the right Number
         nNum = mpNumRuleTable->size();
-        for( n = 0; n < nFlagSize; ++n )
+        for( sal_uInt16 n = 0; n < nFlagSize; ++n )
             if( 0xff != ( nTmp = pSetFlags[ n ] ))
             {
                 // identify the Number
@@ -2300,16 +2298,9 @@ void SwDoc::MarkListLevel( const OUString& sListId,
 
     if ( pList )
     {
-        MarkListLevel( *pList, nListLevel, bValue );
+        // Set new marked list level and notify all affected nodes of the changed mark.
+        pList->MarkListLevel( nListLevel, bValue );
     }
-}
-
-void SwDoc::MarkListLevel( SwList& rList,
-                           const int nListLevel,
-                           const bool bValue )
-{
-    // Set new marked list level and notify all affected nodes of the changed mark.
-    rList.MarkListLevel( nListLevel, bValue );
 }
 
 bool SwDoc::IsFirstOfNumRuleAtPos( const SwPosition & rPos )

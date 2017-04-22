@@ -39,10 +39,9 @@ SvRTFParser::SvRTFParser( SvStream& rIn, sal_uInt8 nStackSize )
     : SvParser( rIn, nStackSize )
     , nOpenBrakets(0)
     , eCodeSet(RTL_TEXTENCODING_MS_1252)
-    , eUNICodeSet(RTL_TEXTENCODING_MS_1252)    // default ist ANSI-CodeSet
     , nUCharOverread(1)
 {
-    // default ist ANSI-CodeSet
+    // default is ANSI-CodeSet
     SetSrcEncoding( RTL_TEXTENCODING_MS_1252 );
     bRTF_InTextRead = false;
 }
@@ -61,7 +60,7 @@ int SvRTFParser::GetNextToken_()
         {
         case '\\':
             {
-                // control charaters
+                // control characters
                 nNextCh = GetNextChar();
                 switch( nNextCh )
                 {
@@ -209,10 +208,10 @@ int SvRTFParser::GetNextToken_()
                             break;
                         }
                     }
-                    else if( SVPAR_PENDING != eState )
+                    else if( SvParserState::Pending != eState )
                     {
                         // Bug 34631 - "\ " read on - Blank as character
-                        // eState = SVPAR_ERROR;
+                        // eState = SvParserState::Error;
                         bNextCh = false;
                     }
                     break;
@@ -221,7 +220,7 @@ int SvRTFParser::GetNextToken_()
             break;
 
         case sal_Unicode(EOF):
-            eState = SVPAR_ACCEPTED;
+            eState = SvParserState::Accepted;
             nRet = nNextCh;
             break;
 
@@ -279,7 +278,7 @@ int SvRTFParser::GetNextToken_()
         if( bNextCh )
             nNextCh = GetNextChar();
 
-    } while( !nRet && SVPAR_WORKING == eState );
+    } while( !nRet && SvParserState::Working == eState );
     return nRet;
 }
 
@@ -468,7 +467,7 @@ void SvRTFParser::ScanText()
             break;
 
         case sal_Unicode(EOF):
-            eState = SVPAR_ERROR;
+            eState = SvParserState::Error;
             SAL_FALLTHROUGH;
         case '{':
         case '}':
@@ -548,14 +547,13 @@ _inSkipGroup++;
         }
     } while (sal_Unicode(EOF) != nNextCh && IsParserWorking());
 
-    if( SVPAR_PENDING != eState && '}' != nNextCh )
-        eState = SVPAR_ERROR;
+    if( SvParserState::Pending != eState && '}' != nNextCh )
+        eState = SvParserState::Error;
     _inSkipGroup--;
 }
 
 void SvRTFParser::ReadUnknownData() { SkipGroup(); }
 void SvRTFParser::ReadBitmapData()  { SkipGroup(); }
-void SvRTFParser::ReadOLEData()     { SkipGroup(); }
 
 
 SvParserState SvRTFParser::CallParser()
@@ -563,21 +561,20 @@ SvParserState SvRTFParser::CallParser()
     sal_Char cFirstCh;
     nNextChPos = rInput.Tell();
     rInput.ReadChar( cFirstCh ); nNextCh = cFirstCh;
-    eState = SVPAR_WORKING;
+    eState = SvParserState::Working;
     nOpenBrakets = 0;
     SetSrcEncoding( eCodeSet = RTL_TEXTENCODING_MS_1252 );
-    eUNICodeSet = RTL_TEXTENCODING_MS_1252;     // default is ANSI-CodeSet
 
     // the first two tokens should be '{' and \\rtf !!
     if( '{' == GetNextToken() && RTF_RTF == GetNextToken() )
     {
         AddFirstRef();
         Continue( 0 );
-        if( SVPAR_PENDING != eState )
+        if( SvParserState::Pending != eState )
             ReleaseRef();       // now parser is not needed anymore
     }
     else
-        eState = SVPAR_ERROR;
+        eState = SvParserState::Error;
 
     return eState;
 }
@@ -598,7 +595,7 @@ void SvRTFParser::Continue( int nToken )
         case '}':
             if( nOpenBrakets )
                 goto NEXTTOKEN;
-            eState = SVPAR_ACCEPTED;
+            eState = SvParserState::Accepted;
             break;
 
         case '{':
@@ -614,7 +611,7 @@ void SvRTFParser::Continue( int nToken )
                     ReadUnknownData();
                     nToken = GetNextToken();
                     if( '}' != nToken )
-                        eState = SVPAR_ERROR;
+                        eState = SvParserState::Error;
                     break;      // move to next token!!
                 }
             }
@@ -649,8 +646,8 @@ NEXTTOKEN:
                                     // continue with new token!
         nToken = GetNextToken();
     }
-    if( SVPAR_ACCEPTED == eState && 0 < nOpenBrakets )
-        eState = SVPAR_ERROR;
+    if( SvParserState::Accepted == eState && 0 < nOpenBrakets )
+        eState = SvParserState::Error;
 }
 
 void SvRTFParser::SetEncoding( rtl_TextEncoding eEnc )

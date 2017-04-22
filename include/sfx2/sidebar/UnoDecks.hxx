@@ -18,50 +18,37 @@
 #include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/frame/XFrame.hpp>
 
-#include <cppuhelper/compbase1.hxx>
-#include <cppuhelper/weakref.hxx>
+#include <cppuhelper/compbase.hxx>
 
 #include <sfx2/sidebar/SidebarController.hxx>
 #include <sfx2/sidebar/ResourceManager.hxx>
 
 /** get the decks
 */
-class SfxUnoDecks : public ::cppu::WeakImplHelper1< css::ui::XDecks >
+class SfxUnoDecks : public cppu::WeakImplHelper<css::ui::XDecks>
 {
 
 public:
 
     SfxUnoDecks(const css::uno::Reference<css::frame::XFrame>&);
-    virtual ~SfxUnoDecks() {};
 
 // XNameAccess
 
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
-                                throw(css::container::NoSuchElementException,
-                                    css::lang::WrappedTargetException,
-                                    css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
-                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
 
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
-                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
 
 // XIndexAccess
 
-    virtual sal_Int32 SAL_CALL getCount()
-                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getCount() override;
 
-    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index )
-                                throw(css::lang::IndexOutOfBoundsException,
-                                      css::lang::WrappedTargetException,
-                                      css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override;
 
 // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType()
-                                throw(css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasElements()
-                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Type SAL_CALL getElementType() override;
+    virtual sal_Bool SAL_CALL hasElements() override;
 
 private:
 

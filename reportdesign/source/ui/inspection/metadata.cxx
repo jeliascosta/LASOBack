@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 #include "metadata.hxx"
-#include <svtools/localresaccess.hxx>
 #include <com/sun/star/inspection/XPropertyHandler.hpp>
 #include <comphelper/extract.hxx>
 #include "helpids.hrc"
@@ -102,7 +101,7 @@ namespace rptui
         static OPropertyInfoImpl aPropertyInfos[] =
         {
         /*
-        DEF_INFO_?( propname and id,   resoure id,         help id,           flags ),
+        DEF_INFO_?( propname and id,   resource id,         help id,           flags ),
         */
              DEF_INFO_1( FORCENEWPAGE,                  FORCENEWPAGE,               FORCENEWPAGE,               Composeable )
             ,DEF_INFO_1( NEWROWORCOL,                   NEWROWORCOL,                NEWROWORCOL,                Composeable )
@@ -232,61 +231,61 @@ namespace rptui
     void OPropertyInfoService::getExcludeProperties(::std::vector< beans::Property >& _rExcludeProperties,const css::uno::Reference< css::inspection::XPropertyHandler >& _xFormComponentHandler)
     {
         uno::Sequence< beans::Property > aProps = _xFormComponentHandler->getSupportedProperties();
-        static const OUString pExcludeProperties[] =
+        static const OUStringLiteral pExcludeProperties[] =
         {
-                OUString("Enabled"),
-                OUString("Printable"),
-                OUString("WordBreak"),
-                OUString("MultiLine"),
-                OUString("Tag"),
-                OUString("HelpText"),
-                OUString("HelpURL"),
-                OUString("MaxTextLen"),
-                OUString("ReadOnly"),
-                OUString("Tabstop"),
-                OUString("TabIndex"),
-                OUString("ValueMin"),
-                OUString("ValueMax"),
-                OUString("Spin"),
-                OUString("SpinValue"),
-                OUString("SpinValueMin"),
-                OUString("SpinValueMax"),
-                OUString("DefaultSpinValue"),
-                OUString("SpinIncrement"),
-                OUString("Repeat"),
-                OUString("RepeatDelay"),
-                OUString("ControlLabel"), /// TODO: has to be checked
-                OUString("LabelControl"),
-                OUString("Title"), // comment this out if you want to have title feature for charts
-                OUString(PROPERTY_MAXTEXTLEN),
-                OUString(PROPERTY_EFFECTIVEDEFAULT),
-                OUString(PROPERTY_EFFECTIVEMAX),
-                OUString(PROPERTY_EFFECTIVEMIN),
-                OUString("HideInactiveSelection"),
-                OUString("SubmitAction"),
-                OUString("InputRequired"),
-                OUString("VerticalAlign"),
-                OUString(PROPERTY_ALIGN),
-                OUString(PROPERTY_EMPTY_IS_NULL),
-                OUString(PROPERTY_FILTERPROPOSAL)
-                ,OUString(PROPERTY_POSITIONX)
-                ,OUString(PROPERTY_POSITIONY)
-                ,OUString(PROPERTY_WIDTH)
-                ,OUString(PROPERTY_HEIGHT)
-                ,OUString(PROPERTY_FONT)
-                ,OUString(PROPERTY_LABEL)
-                ,OUString(PROPERTY_LINECOLOR)
-                ,OUString(PROPERTY_BORDER)
-                ,OUString(PROPERTY_BORDERCOLOR)
-                ,OUString(PROPERTY_BACKTRANSPARENT)
-                ,OUString(PROPERTY_CONTROLBACKGROUND)
-                ,OUString(PROPERTY_BACKGROUNDCOLOR)
-                ,OUString(PROPERTY_CONTROLBACKGROUNDTRANSPARENT)
-                ,OUString(PROPERTY_FORMULALIST)
-                ,OUString(PROPERTY_SCOPE)
-                ,OUString(PROPERTY_TYPE)
-                ,OUString(PROPERTY_DATASOURCENAME)
-                ,OUString(PROPERTY_VERTICALALIGN)
+                "Enabled",
+                "Printable",
+                "WordBreak",
+                "MultiLine",
+                "Tag",
+                "HelpText",
+                "HelpURL",
+                "MaxTextLen",
+                "ReadOnly",
+                "Tabstop",
+                "TabIndex",
+                "ValueMin",
+                "ValueMax",
+                "Spin",
+                "SpinValue",
+                "SpinValueMin",
+                "SpinValueMax",
+                "DefaultSpinValue",
+                "SpinIncrement",
+                "Repeat",
+                "RepeatDelay",
+                "ControlLabel", /// TODO: has to be checked
+                "LabelControl",
+                "Title", // comment this out if you want to have title feature for charts
+                PROPERTY_MAXTEXTLEN,
+                PROPERTY_EFFECTIVEDEFAULT,
+                PROPERTY_EFFECTIVEMAX,
+                PROPERTY_EFFECTIVEMIN,
+                "HideInactiveSelection",
+                "SubmitAction",
+                "InputRequired",
+                "VerticalAlign",
+                PROPERTY_ALIGN,
+                PROPERTY_EMPTY_IS_NULL,
+                PROPERTY_FILTERPROPOSAL
+                ,PROPERTY_POSITIONX
+                ,PROPERTY_POSITIONY
+                ,PROPERTY_WIDTH
+                ,PROPERTY_HEIGHT
+                ,PROPERTY_FONT
+                ,PROPERTY_LABEL
+                ,PROPERTY_LINECOLOR
+                ,PROPERTY_BORDER
+                ,PROPERTY_BORDERCOLOR
+                ,PROPERTY_BACKTRANSPARENT
+                ,PROPERTY_CONTROLBACKGROUND
+                ,PROPERTY_BACKGROUNDCOLOR
+                ,PROPERTY_CONTROLBACKGROUNDTRANSPARENT
+                ,PROPERTY_FORMULALIST
+                ,PROPERTY_SCOPE
+                ,PROPERTY_TYPE
+                ,PROPERTY_DATASOURCENAME
+                ,PROPERTY_VERTICALALIGN
         };
 
         beans::Property* pPropsIter = aProps.getArray();

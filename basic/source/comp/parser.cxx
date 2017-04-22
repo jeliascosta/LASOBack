@@ -118,7 +118,6 @@ SbiParser::SbiParser( StarBASIC* pb, SbModule* pm )
           aRtlSyms( aGblStrings, SbRTL, this ),
           aGen( *pm, this, 1024 )
 {
-    eCurExpr = SbSYMBOL;
     eEndTok  = NIL;
     pProc    = nullptr;
     pStack   = nullptr;
@@ -131,7 +130,6 @@ SbiParser::SbiParser( StarBASIC* pb, SbModule* pm )
     bCodeCompleting =
     bExplicit = false;
     bClassModule = ( pm->GetModuleType() == css::script::ModuleType::CLASS );
-    OSL_TRACE("Parser - %s, bClassModule %d", OUStringToOString( pm->GetName(), RTL_TEXTENCODING_UTF8 ).getStr(), bClassModule );
     pPool    = &aPublics;
     for(SbxDataType & eDefType : eDefTypes)
         eDefType = SbxVARIANT;    // no explicit default type
@@ -149,6 +147,8 @@ SbiParser::SbiParser( StarBASIC* pb, SbModule* pm )
         EnableCompatibility();
 
 }
+
+SbiParser::~SbiParser() { }
 
 // part of the runtime-library?
 SbiSymDef* SbiParser::CheckRTLForSym(const OUString& rSym, SbxDataType eType)
@@ -401,7 +401,7 @@ bool SbiParser::Parse()
             Next();
             Push( eCurTok );
             aGen.Statement();
-                Symbol();
+                Symbol(nullptr);
         }
     }
     else
@@ -605,7 +605,7 @@ void SbiParser::Set()
         SbiExpression aExpr( this );
         aLvalue.Gen();
         aExpr.Gen();
-        // Its a good idea to distinguish between
+        // It's a good idea to distinguish between
         // set something = another &
         // something = another
         // ( its necessary for vba objects where set is object
@@ -835,17 +835,12 @@ void SbiParser::Option()
     }
 }
 
-void addStringConst( SbiSymPool& rPool, const char* pSym, const OUString& rStr )
+void addStringConst( SbiSymPool& rPool, const OUString& pSym, const OUString& rStr )
 {
-    SbiConstDef* pConst = new SbiConstDef( OUString::createFromAscii( pSym ) );
+    SbiConstDef* pConst = new SbiConstDef( pSym );
     pConst->SetType( SbxSTRING );
     pConst->Set( rStr );
     rPool.Add( pConst );
-}
-
-inline void addStringConst( SbiSymPool& rPool, const char* pSym, const char* pStr )
-{
-    addStringConst( rPool, pSym, OUString::createFromAscii( pStr ) );
 }
 
 void SbiParser::AddConstants()

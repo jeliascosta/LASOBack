@@ -42,13 +42,12 @@ CandleStickChart::CandleStickChart( const uno::Reference<XChartType>& xChartType
         : VSeriesPlotter( xChartTypeModel, nDimensionCount )
         , m_pMainPosHelper( new BarPositionHelper() )
 {
-    PlotterBase::m_pPosHelper = m_pMainPosHelper;
-    VSeriesPlotter::m_pMainPosHelper = m_pMainPosHelper;
+    PlotterBase::m_pPosHelper = m_pMainPosHelper.get();
+    VSeriesPlotter::m_pMainPosHelper = m_pMainPosHelper.get();
 }
 
 CandleStickChart::~CandleStickChart()
 {
-    delete m_pMainPosHelper;
 }
 
 // MinimumAndMaximumSupplier
@@ -140,22 +139,22 @@ void CandleStickChart::createShapes()
     //iterate through all x values per indices
     for( sal_Int32 nIndex = nStartIndex; nIndex < nEndIndex; nIndex++ )
     {
-        ::std::vector< ::std::vector< VDataSeriesGroup > >::iterator             aZSlotIter = m_aZSlots.begin();
-        const ::std::vector< ::std::vector< VDataSeriesGroup > >::const_iterator  aZSlotEnd = m_aZSlots.end();
+        std::vector< std::vector< VDataSeriesGroup > >::iterator             aZSlotIter = m_aZSlots.begin();
+        const std::vector< std::vector< VDataSeriesGroup > >::const_iterator  aZSlotEnd = m_aZSlots.end();
         for( sal_Int32 nZ=0; aZSlotIter != aZSlotEnd; ++aZSlotIter, nZ++ )
         {
-            ::std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
-            const ::std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
+            std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
+            const std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
 
             sal_Int32 nAttachedAxisIndex = 0;
-            BarPositionHelper* pPosHelper = m_pMainPosHelper;
+            BarPositionHelper* pPosHelper = m_pMainPosHelper.get();
             if( aXSlotIter != aXSlotEnd )
             {
                 nAttachedAxisIndex = aXSlotIter->getAttachedAxisIndexForFirstSeries();
                 //2ND_AXIS_IN_BARS so far one can assume to have the same plotter for each z slot
                 pPosHelper = dynamic_cast<BarPositionHelper*>(&( this->getPlottingPositionHelper( nAttachedAxisIndex ) ) );
                 if(!pPosHelper)
-                    pPosHelper = m_pMainPosHelper;
+                    pPosHelper = m_pMainPosHelper.get();
             }
             PlotterBase::m_pPosHelper = pPosHelper;
 
@@ -164,10 +163,10 @@ void CandleStickChart::createShapes()
             //iterate through all x slots in this category
             for( double fSlotX=0; aXSlotIter != aXSlotEnd; ++aXSlotIter, fSlotX+=1.0 )
             {
-                ::std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
+                std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
 
-                ::std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
-                const ::std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
+                std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
+                const std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
                 //iterate through all series in this x slot
                 for( ; aSeriesIter != aSeriesEnd; ++aSeriesIter )
                 {

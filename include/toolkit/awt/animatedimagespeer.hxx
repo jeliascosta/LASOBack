@@ -25,7 +25,7 @@
 #include <com/sun/star/awt/XAnimation.hpp>
 #include <com/sun/star/util/XModifyListener.hpp>
 
-#include <cppuhelper/implbase3.hxx>
+#include <cppuhelper/implbase.hxx>
 
 #include <memory>
 
@@ -36,11 +36,11 @@ namespace toolkit
     //= AnimatedImagesPeer
 
     struct AnimatedImagesPeer_Data;
-    typedef ::cppu::ImplInheritanceHelper3  <   VCLXWindow
-                                            ,   css::awt::XAnimation
-                                            ,   css::container::XContainerListener
-                                            ,   css::util::XModifyListener
-                                            >   AnimatedImagesPeer_Base;
+    typedef cppu::ImplInheritanceHelper< VCLXWindow,
+                                         css::awt::XAnimation,
+                                         css::container::XContainerListener,
+                                         css::util::XModifyListener
+                                       > AnimatedImagesPeer_Base;
 
     class AnimatedImagesPeer    :public AnimatedImagesPeer_Base
     {
@@ -48,31 +48,31 @@ namespace toolkit
         AnimatedImagesPeer();
 
     protected:
-        virtual ~AnimatedImagesPeer();
+        virtual ~AnimatedImagesPeer() override;
 
     public:
         // XAnimation
-        virtual void SAL_CALL startAnimation(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL stopAnimation(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL isAnimationRunning(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL startAnimation(  ) override;
+        virtual void SAL_CALL stopAnimation(  ) override;
+        virtual sal_Bool SAL_CALL isAnimationRunning(  ) override;
 
         // VclWindowPeer
-        virtual void SAL_CALL setProperty( const OUString& PropertyName, const css::uno::Any& Value ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Any SAL_CALL getProperty( const OUString& PropertyName ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setProperty( const OUString& PropertyName, const css::uno::Any& Value ) override;
+        virtual css::uno::Any SAL_CALL getProperty( const OUString& PropertyName ) override;
 
         // XContainerListener
-        virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) override;
+        virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) override;
+        virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& i_event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& i_event ) override;
 
         // XModifyListener
-        virtual void SAL_CALL modified( const css::lang::EventObject& i_event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL modified( const css::lang::EventObject& i_event ) override;
 
         // XComponent
-        void SAL_CALL dispose(  ) throw(css::uno::RuntimeException, std::exception) override;
+        void SAL_CALL dispose(  ) override;
 
     protected:
         void ProcessWindowEvent( const VclWindowEvent& i_windowEvent ) override;

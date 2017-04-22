@@ -69,7 +69,7 @@ namespace frm
             const std::shared_ptr< const ICommandImageProvider >& _pImageProvider,
             const OUString & sModuleId
         );
-        virtual ~NavigationToolBar( );
+        virtual ~NavigationToolBar( ) override;
         virtual void dispose() override;
 
         /** sets the dispatcher which is to be used for the features
@@ -95,7 +95,7 @@ namespace frm
 
         /** retrieves the current image size
         */
-        inline ImageSize    GetImageSize( ) const { return m_eImageSize; }
+        ImageSize    GetImageSize( ) const { return m_eImageSize; }
 
         /** sets the size of the images
         */
@@ -132,13 +132,9 @@ namespace frm
         /// enables or disables an item, plus possible dependent items
         void implEnableItem( sal_uInt16 _nItemId, bool _bEnabled );
 
-        /** update the states of all features, using the callback
-        */
-        void updateFeatureStates( );
-
         // iterating through item windows
-        typedef void (NavigationToolBar::*ItemWindowHandler) (sal_uInt16, vcl::Window*, const void*) const;
-        void    forEachItemWindow( ItemWindowHandler _handler, const void* _pParam );
+        typedef void (NavigationToolBar::*ItemWindowHandler) (sal_uInt16, vcl::Window*) const;
+        void    forEachItemWindow( ItemWindowHandler _handler );
         typedef void (*ItemWindowHandler2) (sal_uInt16, vcl::Window*, const void*);
         void    forEachItemWindow( ItemWindowHandler2 _handler, const void* _pParam );
 
@@ -147,9 +143,9 @@ namespace frm
 #if 0
         void setItemWindowZoom( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const;
 #endif
-        void setItemControlFont( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const;
-        void setItemControlForeground( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const;
-        void adjustItemWindowWidth( sal_uInt16 _nItemId, vcl::Window* _pItemWindow, const void* /* _pParam */ ) const;
+        void setItemControlFont( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow ) const;
+        void setItemControlForeground( sal_uInt16 /* _nItemId */, vcl::Window* _pItemWindow ) const;
+        void adjustItemWindowWidth( sal_uInt16 _nItemId, vcl::Window* _pItemWindow ) const;
         static void enableItemRTL( sal_uInt16 /*_nItemId*/, vcl::Window* _pItemWindow, const void* _pIsRTLEnabled );
     };
 

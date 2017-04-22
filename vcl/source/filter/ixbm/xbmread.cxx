@@ -17,8 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <ctype.h>
+#include <sal/config.h>
+
 #include <comphelper/string.hxx>
+#include <rtl/character.hxx>
+
 #include "xbmread.hxx"
 
 enum XBMFormat
@@ -38,8 +41,9 @@ class XBMReader : public GraphicReader
 {
     SvStream&           rIStm;
     Bitmap              aBmp1;
-    BitmapWriteAccess*  pAcc1;
-    short*              pHexTable;
+    Bitmap::ScopedWriteAccess pAcc1;
+    std::unique_ptr<short[]>
+                        pHexTable;
     BitmapColor         aWhite;
     BitmapColor         aBlack;
     long                nLastPos;
@@ -48,43 +52,32 @@ class XBMReader : public GraphicReader
     bool                bStatus;
 
     void            InitTable();
-    OString         FindTokenLine( SvStream* pInStm, const char* pTok1,
-                                       const char* pTok2 = nullptr, const char* pTok3 = nullptr );
-    long            ParseDefine( const sal_Char* pDefine );
+    OString         FindTokenLine( SvStream* pInStm, const char* pTok1, const char* pTok2 );
+    int             ParseDefine( const sal_Char* pDefine );
     bool            ParseData( SvStream* pInStm, const OString& aLastLine, XBMFormat eFormat );
 
 public:
 
     explicit        XBMReader( SvStream& rStm );
-    virtual         ~XBMReader();
 
     ReadState       ReadXBM( Graphic& rGraphic );
 };
 
 XBMReader::XBMReader( SvStream& rStm ) :
             rIStm           ( rStm ),
-            pAcc1           ( nullptr ),
             nLastPos        ( rStm.Tell() ),
             nWidth          ( 0 ),
             nHeight         ( 0 ),
             bStatus         ( true )
 {
-    pHexTable = new short[ 256 ];
+    pHexTable.reset( new short[ 256 ] );
     maUpperName = "SVIXBM";
     InitTable();
 }
 
-XBMReader::~XBMReader()
-{
-    delete[] pHexTable;
-
-    if( pAcc1 )
-        Bitmap::ReleaseAccess( pAcc1 );
-}
-
 void XBMReader::InitTable()
 {
-    memset( pHexTable, 0, sizeof( short ) * 256 );
+    memset( pHexTable.get(), 0, sizeof( short ) * 256 );
 
     pHexTable[(int)'0'] = 0;
     pHexTable[(int)'1'] = 1;
@@ -119,10 +112,10 @@ void XBMReader::InitTable()
 }
 
 OString XBMReader::FindTokenLine( SvStream* pInStm, const char* pTok1,
-                                 const char* pTok2, const char* pTok3 )
+                                 const char* pTok2 )
 {
     OString aRet;
-    sal_Int32 nPos1, nPos2, nPos3;
+    sal_Int32 nPos1, nPos2;
 
     bStatus = false;
 
@@ -145,14 +138,6 @@ OString XBMReader::FindTokenLine( SvStream* pInStm, const char* pTok1,
                          ( nPos2 > nPos1 ) )
                     {
                         bStatus = true;
-
-                        if( pTok3 )
-                        {
-                            bStatus = false;
-
-                            if( ( ( nPos3 = aRet.indexOf( pTok3 ) ) != -1 ) && ( nPos3 > nPos2 ) )
-                                bStatus = true;
-                        }
                     }
                 }
             }
@@ -163,10 +148,10 @@ OString XBMReader::FindTokenLine( SvStream* pInStm, const char* pTok1,
     return aRet;
 }
 
-long XBMReader::ParseDefine( const sal_Char* pDefine )
+int XBMReader::ParseDefine( const sal_Char* pDefine )
 {
-    long    nRet = 0;
-    char*   pTmp = const_cast<char*>(pDefine);
+    sal_Int32 nRet = 0;
+    const char* pTmp = pDefine;
     unsigned char   cTmp;
 
     // move to end
@@ -188,23 +173,11 @@ long XBMReader::ParseDefine( const sal_Char* pDefine )
     if( ( pTmp[0] == '0' ) && ( ( pTmp[1] == 'X' ) || ( pTmp[1] == 'x' ) ) )
     {
         pTmp += 2;
-        cTmp = *pTmp++;
-
-        while ( pHexTable[ cTmp ] != -1 )
-        {
-            nRet = ( nRet << 4 ) + pHexTable[ cTmp ];
-            cTmp = *pTmp++;
-        }
+        nRet = OString(pTmp, strlen(pTmp)).toInt32(16);
     }
-    // read decimal
-    else
+    else // read decimal
     {
-        cTmp = *pTmp++;
-        while( ( cTmp >= '0' ) && ( cTmp <= '9' ) )
-        {
-            nRet = nRet * 10 + ( cTmp - '0' );
-            cTmp = *pTmp++;
-        }
+        nRet = OString(pTmp, strlen(pTmp)).toInt32();
     }
 
     return nRet;
@@ -253,7 +226,7 @@ bool XBMReader::ParseData( SvStream* pInStm, const OString& aLastLine, XBMFormat
                     const unsigned char cChar = aToken[n];
                     const short         nTable = pHexTable[ cChar ];
 
-                    if( isxdigit( cChar ) || !nTable )
+                    if( rtl::isAsciiHexDigit( cChar ) || !nTable )
                     {
                         nValue = ( nValue << 4 ) + nTable;
                         nDigits++;
@@ -304,7 +277,7 @@ ReadState XBMReader::ReadXBM( Graphic& rGraphic )
         if ( bStatus )
         {
             int nValue;
-            if ( ( nValue = (int) ParseDefine( aLine.getStr() ) ) > 0 )
+            if ( ( nValue = ParseDefine( aLine.getStr() ) ) > 0 )
             {
                 nWidth = nValue;
                 aLine = FindTokenLine( &rIStm, "#define", "_height" );
@@ -322,7 +295,7 @@ ReadState XBMReader::ReadXBM( Graphic& rGraphic )
 
             if ( bStatus )
             {
-                if ( ( nValue = (int) ParseDefine( aLine.getStr() ) ) > 0 )
+                if ( ( nValue = ParseDefine( aLine.getStr() ) ) > 0 )
                 {
                     nHeight = nValue;
                     aLine = FindTokenLine( &rIStm, "static", "_bits" );
@@ -338,10 +311,15 @@ ReadState XBMReader::ReadXBM( Graphic& rGraphic )
                         else
                             bStatus = false;
 
+                        //xbms are a minimum of one character per 8 pixels, so if the file isn't
+                        //even that long, its not all there
+                        if (rIStm.remainingSize() < (static_cast<sal_uInt64>(nWidth) * nHeight) / 8)
+                            bStatus = false;
+
                         if ( bStatus && nWidth && nHeight )
                         {
                             aBmp1 = Bitmap( Size( nWidth, nHeight ), 1 );
-                            pAcc1 = aBmp1.AcquireWriteAccess();
+                            pAcc1 = Bitmap::ScopedWriteAccess(aBmp1);
 
                             if( pAcc1 )
                             {
@@ -361,8 +339,7 @@ ReadState XBMReader::ReadXBM( Graphic& rGraphic )
         {
             Bitmap aBlackBmp( Size( pAcc1->Width(), pAcc1->Height() ), 1 );
 
-            Bitmap::ReleaseAccess( pAcc1 );
-            pAcc1 = nullptr;
+            pAcc1.reset();
             aBlackBmp.Erase( Color( COL_BLACK ) );
             rGraphic = BitmapEx( aBlackBmp, aBmp1 );
             eReadState = XBMREAD_OK;
@@ -381,25 +358,25 @@ ReadState XBMReader::ReadXBM( Graphic& rGraphic )
 
 VCL_DLLPUBLIC bool ImportXBM( SvStream& rStm, Graphic& rGraphic )
 {
-    XBMReader*  pXBMReader = static_cast<XBMReader*>( rGraphic.GetContext() );
-    ReadState   eReadState;
-    bool        bRet = true;
+    std::shared_ptr<GraphicReader> pContext = rGraphic.GetContext();
+    rGraphic.SetContext(nullptr);
+    XBMReader* pXBMReader = dynamic_cast<XBMReader*>( pContext.get() );
+    if (!pXBMReader)
+    {
+        pContext = std::make_shared<XBMReader>( rStm );
+        pXBMReader = static_cast<XBMReader*>( pContext.get() );
+    }
 
-    if( !pXBMReader )
-        pXBMReader = new XBMReader( rStm );
+    bool bRet = true;
 
-    rGraphic.SetContext( nullptr );
-    eReadState = pXBMReader->ReadXBM( rGraphic );
+    ReadState eReadState = pXBMReader->ReadXBM( rGraphic );
 
     if( eReadState == XBMREAD_ERROR )
     {
         bRet = false;
-        delete pXBMReader;
     }
-    else if( eReadState == XBMREAD_OK )
-        delete pXBMReader;
-    else
-        rGraphic.SetContext( pXBMReader );
+    else if( eReadState == XBMREAD_NEED_MORE )
+        rGraphic.SetContext( pContext );
 
     return bRet;
 }

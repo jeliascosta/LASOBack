@@ -38,7 +38,7 @@
 
 #include <rtl/ustrbuf.hxx>
 #include <rtl/strbuf.hxx>
-
+#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/sdbc/XRow.hpp>
 #include <com/sun/star/sdbc/DataType.hpp>
 #include <com/sun/star/sdbc/ColumnValue.hpp>
@@ -73,12 +73,12 @@ namespace pq_sdbc_driver
 
 IndexColumns::IndexColumns(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
+        const css::uno::Reference< css::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings,
         const OUString &schemaName,
         const OUString &tableName,
         const OUString &indexName,
-        const com::sun::star::uno::Sequence< OUString > &columns )
+        const css::uno::Sequence< OUString > &columns )
     : Container( refMutex, origin, pSettings,  "INDEX_COLUMN" ),
       m_schemaName( schemaName ),
       m_tableName( tableName ),
@@ -101,16 +101,15 @@ static sal_Int32 findInSequence( const Sequence< OUString > & seq , const OUStri
 }
 
 void IndexColumns::refresh()
-    throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     try
     {
-        if( isLog( m_pSettings, LogLevel::INFO ) )
+        if (isLog(m_pSettings, LogLevel::Info))
         {
             OStringBuffer buf;
             buf.append( "sdbcx.IndexColumns get refreshed for index " );
-            buf.append( OUStringToOString( m_indexName, m_pSettings->encoding ) );
-            log( m_pSettings, LogLevel::INFO, buf.makeStringAndClear().getStr() );
+            buf.append( OUStringToOString( m_indexName, ConnectionSettings::encoding ) );
+            log( m_pSettings, LogLevel::Info, buf.makeStringAndClear().getStr() );
         }
 
         osl::MutexGuard guard( m_refMutex->mutex );
@@ -136,17 +135,17 @@ void IndexColumns::refresh()
 
             IndexColumn * pIndexColumn =
                 new IndexColumn( m_refMutex, m_origin, m_pSettings );
-            Reference< com::sun::star::beans::XPropertySet > prop = pIndexColumn;
+            Reference< css::beans::XPropertySet > prop = pIndexColumn;
 
             columnMetaData2SDBCX( pIndexColumn, xRow );
             pIndexColumn->setPropertyValue_NoBroadcast_public(
                 st.IS_ASCENDING , makeAny( false ) );
 
-            m_values[ index ] = makeAny( prop );
+            m_values[ index ] <<= prop;
             m_name2index[ columnName ] = index;
         }
     }
-    catch ( com::sun::star::sdbc::SQLException & e )
+    catch ( css::sdbc::SQLException & e )
     {
         throw RuntimeException( e.Message , e.Context );
     }
@@ -156,30 +155,24 @@ void IndexColumns::refresh()
 
 
 void IndexColumns::appendByDescriptor(
-    const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >& /*future*/ )
-    throw (::com::sun::star::sdbc::SQLException,
-           ::com::sun::star::container::ElementExistException,
-           ::com::sun::star::uno::RuntimeException, std::exception)
+    const css::uno::Reference< css::beans::XPropertySet >& /*future*/ )
 {
-    throw com::sun::star::sdbc::SQLException(
+    throw css::sdbc::SQLException(
         "SDBC-POSTGRESQL: IndexesColumns.appendByDescriptor not yet implemented",
         *this, OUString(), 1, Any() );
 //     osl::MutexGuard guard( m_refMutex->mutex );
 //     Statics & st = getStatics();
 //     Reference< XPropertySet > past = createDataDescriptor();
-//     past->setPropertyValue( st.IS_NULLABLE, makeAny( com::sun::star::sdbc::ColumnValue::NULLABLE ) );
+//     past->setPropertyValue( st.IS_NULLABLE, makeAny( css::sdbc::ColumnValue::NULLABLE ) );
 //     alterColumnByDescriptor(
 //         m_schemaName, m_tableName, m_pSettings->encoding, m_origin->createStatement() , past, future  );
 
 }
 
 void IndexColumns::dropByName( const OUString& elementName )
-    throw (::com::sun::star::sdbc::SQLException,
-           ::com::sun::star::container::NoSuchElementException,
-           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     (void) elementName;
-    throw com::sun::star::sdbc::SQLException(
+    throw css::sdbc::SQLException(
         "SDBC-POSTGRESQL: IndexesColumns.dropByName not yet implemented",
         *this, OUString(), 1, Any() );
 //     String2IntMap::const_iterator ii = m_name2index.find( elementName );
@@ -193,19 +186,16 @@ void IndexColumns::dropByName( const OUString& elementName )
 //         buf.appendAscii( "." );
 //         buf.append( m_tableName );
 //         buf.appendAscii( ", so it can't be dropped" );
-//         throw com::sun::star::container::NoSuchElementException(
+//         throw css::container::NoSuchElementException(
 //             buf.makeStringAndClear(), *this );
 //     }
 //     dropByIndex( ii->second );
 }
 
 void IndexColumns::dropByIndex( sal_Int32 index )
-    throw (::com::sun::star::sdbc::SQLException,
-           ::com::sun::star::lang::IndexOutOfBoundsException,
-           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     (void) index;
-    throw com::sun::star::sdbc::SQLException(
+    throw css::sdbc::SQLException(
         "SDBC-POSTGRESQL: IndexesColumns.dropByIndex not yet implemented",
         *this, OUString(), 1, Any() );
 //     osl::MutexGuard guard( m_refMutex->mutex );
@@ -217,7 +207,7 @@ void IndexColumns::dropByIndex( sal_Int32 index )
 //         buf.appendAscii( ", got " );
 //         buf.append( index );
 //         buf.appendAscii( ")" );
-//         throw com::sun::star::lang::IndexOutOfBoundsException(
+//         throw css::lang::IndexOutOfBoundsException(
 //             buf.makeStringAndClear(), *this );
 //     }
 
@@ -239,15 +229,14 @@ void IndexColumns::dropByIndex( sal_Int32 index )
 }
 
 
-Reference< ::com::sun::star::beans::XPropertySet > IndexColumns::createDataDescriptor()
-        throw (::com::sun::star::uno::RuntimeException, std::exception)
+Reference< css::beans::XPropertySet > IndexColumns::createDataDescriptor()
 {
     return new IndexColumnDescriptor( m_refMutex, m_origin, m_pSettings );
 }
 
-Reference< com::sun::star::container::XNameAccess > IndexColumns::create(
+Reference< css::container::XNameAccess > IndexColumns::create(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
+    const css::uno::Reference< css::sdbc::XConnection >  & origin,
     ConnectionSettings *pSettings,
     const OUString &schemaName,
     const OUString &tableName,
@@ -256,7 +245,7 @@ Reference< com::sun::star::container::XNameAccess > IndexColumns::create(
 {
     IndexColumns *pIndexColumns = new IndexColumns(
         refMutex, origin, pSettings, schemaName, tableName, indexName, columns );
-    Reference< com::sun::star::container::XNameAccess > ret = pIndexColumns;
+    Reference< css::container::XNameAccess > ret = pIndexColumns;
     pIndexColumns->refresh();
 
     return ret;
@@ -265,21 +254,20 @@ Reference< com::sun::star::container::XNameAccess > IndexColumns::create(
 
 IndexColumnDescriptors::IndexColumnDescriptors(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
+        const css::uno::Reference< css::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings)
     : Container( refMutex, origin, pSettings,  getStatics().INDEX_COLUMN )
 {}
 
-Reference< com::sun::star::container::XNameAccess > IndexColumnDescriptors::create(
+Reference< css::container::XNameAccess > IndexColumnDescriptors::create(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
+    const css::uno::Reference< css::sdbc::XConnection >  & origin,
     ConnectionSettings *pSettings)
 {
     return new IndexColumnDescriptors( refMutex, origin, pSettings );
 }
 
-::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet > IndexColumnDescriptors::createDataDescriptor()
-        throw (::com::sun::star::uno::RuntimeException, std::exception)
+css::uno::Reference< css::beans::XPropertySet > IndexColumnDescriptors::createDataDescriptor()
 {
     return new IndexColumnDescriptor( m_refMutex, m_origin, m_pSettings );
 }

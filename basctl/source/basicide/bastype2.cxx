@@ -20,7 +20,7 @@
 
 #include <bastypes.hxx>
 #include <bastype2.hxx>
-#include <baside2.hrc>
+#include <basidesh.hrc>
 #include <iderid.hxx>
 #include <o3tl/make_unique.hxx>
 #include <tools/urlobj.hxx>
@@ -103,10 +103,9 @@ DocumentEntry::~DocumentEntry()
 LibEntry::LibEntry (
     ScriptDocument const& rDocument,
     LibraryLocation eLocation,
-    OUString const& rLibName,
-    EntryType eType
+    OUString const& rLibName
 ) :
-    DocumentEntry(rDocument, eLocation, eType),
+    DocumentEntry(rDocument, eLocation, OBJ_TYPE_LIBRARY),
     m_aLibName(rLibName)
 { }
 
@@ -157,41 +156,16 @@ EntryDescriptor::EntryDescriptor (
     OSL_ENSURE( m_aDocument.isValid(), "EntryDescriptor::EntryDescriptor: invalid document!" );
 }
 
-EntryDescriptor::~EntryDescriptor()
-{ }
-
-// TreeListBox
-
-
-TreeListBox::TreeListBox (vcl::Window* pParent, ResId const& rRes)
-    : SvTreeListBox( pParent, IDEResId( sal::static_int_cast<sal_uInt16>( rRes.GetId() ) ) )
-    , m_aNotifier( *this )
-{
-    Init();
-}
-
 TreeListBox::TreeListBox (vcl::Window* pParent, WinBits nStyle)
     : SvTreeListBox(pParent, nStyle)
     , m_aNotifier( *this )
 {
-    Init();
-}
-
-void TreeListBox::Init()
-{
     SetNodeDefaultImages();
-    SetSelectionMode( SINGLE_SELECTION );
-    nMode = 0xFF;   // everything
+    SetSelectionMode( SelectionMode::Single );
+    nMode = BrowseMode::All;   // everything
 }
 
-VCL_BUILDER_DECL_FACTORY(TreeListBox)
-{
-    WinBits nWinBits = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-    rRet = VclPtr<TreeListBox>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(TreeListBox, WB_TABSTOP)
 
 TreeListBox::~TreeListBox ()
 {
@@ -281,22 +255,22 @@ void TreeListBox::ImpCreateLibEntries( SvTreeListEntry* pDocumentRootEntry, cons
 
             // create tree list box entry
             sal_uInt16 nId;
-            if ( ( nMode & BROWSEMODE_DIALOGS ) && !( nMode & BROWSEMODE_MODULES ) )
-                nId = bLoaded ? RID_IMG_DLGLIB : RID_IMG_DLGLIBNOTLOADED;
+            if ( ( nMode & BrowseMode::Dialogs ) && !( nMode & BrowseMode::Modules ) )
+                nId = bLoaded ? RID_BMP_DLGLIB : RID_BMP_DLGLIBNOTLOADED;
             else
-                nId = bLoaded ? RID_IMG_MODLIB : RID_IMG_MODLIBNOTLOADED;
+                nId = bLoaded ? RID_BMP_MODLIB : RID_BMP_MODLIBNOTLOADED;
             SvTreeListEntry* pLibRootEntry = FindEntry( pDocumentRootEntry, aLibName, OBJ_TYPE_LIBRARY );
             if ( pLibRootEntry )
             {
-                SetEntryBitmaps( pLibRootEntry, Image( IDEResId( nId ) ) );
-                if ( IsExpanded( pLibRootEntry ) )
+                SetEntryBitmaps(pLibRootEntry, Image(BitmapEx(IDEResId(nId))));
+                if ( IsExpanded(pLibRootEntry))
                     ImpCreateLibSubEntries( pLibRootEntry, rDocument, aLibName );
             }
             else
             {
                 AddEntry(
                     aLibName,
-                    Image( IDEResId( nId ) ),
+                    Image(BitmapEx(IDEResId(nId))),
                     pDocumentRootEntry, true,
                     o3tl::make_unique<Entry>(OBJ_TYPE_LIBRARY));
             }
@@ -307,7 +281,7 @@ void TreeListBox::ImpCreateLibEntries( SvTreeListEntry* pDocumentRootEntry, cons
 void TreeListBox::ImpCreateLibSubEntries( SvTreeListEntry* pLibRootEntry, const ScriptDocument& rDocument, const OUString& rLibName )
 {
     // modules
-    if ( nMode & BROWSEMODE_MODULES )
+    if ( nMode & BrowseMode::Modules )
     {
         Reference< script::XLibraryContainer > xModLibContainer( rDocument.getLibraryContainer( E_SCRIPTS ) );
 
@@ -332,13 +306,13 @@ void TreeListBox::ImpCreateLibSubEntries( SvTreeListEntry* pLibRootEntry, const 
                         {
                             pModuleEntry = AddEntry(
                                 aModName,
-                                Image( IDEResId( RID_IMG_MODULE ) ),
+                                Image(BitmapEx(IDEResId(RID_BMP_MODULE))),
                                 pLibRootEntry, false,
                                 o3tl::make_unique<Entry>(OBJ_TYPE_MODULE));
                         }
 
                         // methods
-                        if ( nMode & BROWSEMODE_SUBS )
+                        if ( nMode & BrowseMode::Subs )
                         {
                             Sequence< OUString > aNames = GetMethodNames( rDocument, rLibName, aModName );
                             sal_Int32 nCount = aNames.getLength();
@@ -352,7 +326,7 @@ void TreeListBox::ImpCreateLibSubEntries( SvTreeListEntry* pLibRootEntry, const 
                                 {
                                     AddEntry(
                                         aName,
-                                        Image( IDEResId( RID_IMG_MACRO ) ),
+                                        Image(BitmapEx(IDEResId(RID_BMP_MACRO))),
                                         pModuleEntry, false,
                                         o3tl::make_unique<Entry>(
                                             OBJ_TYPE_METHOD));
@@ -370,7 +344,7 @@ void TreeListBox::ImpCreateLibSubEntries( SvTreeListEntry* pLibRootEntry, const 
     }
 
     // dialogs
-    if ( nMode & BROWSEMODE_DIALOGS )
+    if ( nMode & BrowseMode::Dialogs )
     {
          Reference< script::XLibraryContainer > xDlgLibContainer( rDocument.getLibraryContainer( E_DIALOGS ) );
 
@@ -391,7 +365,7 @@ void TreeListBox::ImpCreateLibSubEntries( SvTreeListEntry* pLibRootEntry, const 
                     {
                         AddEntry(
                             aDlgName,
-                            Image( IDEResId( RID_IMG_DIALOG ) ),
+                            Image(BitmapEx(IDEResId(RID_BMP_DIALOG))),
                             pLibRootEntry, false,
                             o3tl::make_unique<Entry>(OBJ_TYPE_DIALOG));
                     }
@@ -419,7 +393,7 @@ void TreeListBox::ImpCreateLibSubEntriesInVBAMode( SvTreeListEntry* pLibRootEntr
         SvTreeListEntry* pLibSubRootEntry = FindEntry( pLibRootEntry, aEntryName, eType );
         if( pLibSubRootEntry )
         {
-            SetEntryBitmaps( pLibSubRootEntry, Image( IDEResId( RID_IMG_MODLIB ) ) );
+            SetEntryBitmaps(pLibSubRootEntry, Image(BitmapEx(IDEResId(RID_BMP_MODLIB))));
             if ( IsExpanded( pLibSubRootEntry ) )
                 ImpCreateLibSubSubEntriesInVBAMode( pLibSubRootEntry, rDocument, rLibName );
         }
@@ -427,7 +401,7 @@ void TreeListBox::ImpCreateLibSubEntriesInVBAMode( SvTreeListEntry* pLibRootEntr
         {
             AddEntry(
                 aEntryName,
-                Image( IDEResId( RID_IMG_MODLIB ) ),
+                Image(BitmapEx(IDEResId(RID_BMP_MODLIB))),
                 pLibRootEntry, true, o3tl::make_unique<Entry>(eType));
         }
     }
@@ -488,13 +462,13 @@ void TreeListBox::ImpCreateLibSubSubEntriesInVBAMode( SvTreeListEntry* pLibSubRo
             {
                 pModuleEntry = AddEntry(
                     aEntryName,
-                    Image( IDEResId( RID_IMG_MODULE ) ),
+                    Image(BitmapEx(IDEResId(RID_BMP_MODULE))),
                     pLibSubRootEntry, false,
                     o3tl::make_unique<Entry>(OBJ_TYPE_MODULE));
             }
 
             // methods
-            if ( nMode & BROWSEMODE_SUBS )
+            if ( nMode & BrowseMode::Subs )
             {
                 Sequence< OUString > aNames = GetMethodNames( rDocument, rLibName, aModName );
                 sal_Int32 nCount = aNames.getLength();
@@ -508,7 +482,7 @@ void TreeListBox::ImpCreateLibSubSubEntriesInVBAMode( SvTreeListEntry* pLibSubRo
                     {
                         AddEntry(
                             aName,
-                            Image( IDEResId( RID_IMG_MACRO ) ),
+                            Image(BitmapEx(IDEResId(RID_BMP_MACRO))),
                             pModuleEntry, false,
                             o3tl::make_unique<Entry>(OBJ_TYPE_METHOD));
                     }
@@ -740,11 +714,11 @@ void TreeListBox::SetEntryBitmaps( SvTreeListEntry * pEntry, const Image& rImage
 
 LibraryType TreeListBox::GetLibraryType() const
 {
-    LibraryType eType = LIBRARY_TYPE_ALL;
-    if ( ( nMode & BROWSEMODE_MODULES ) && !( nMode & BROWSEMODE_DIALOGS ) )
-        eType = LIBRARY_TYPE_MODULE;
-    else if ( !( nMode & BROWSEMODE_MODULES ) && ( nMode & BROWSEMODE_DIALOGS ) )
-        eType = LIBRARY_TYPE_DIALOG;
+    LibraryType eType = LibraryType::All;
+    if ( ( nMode & BrowseMode::Modules ) && !( nMode & BrowseMode::Dialogs ) )
+        eType = LibraryType::Module;
+    else if ( !( nMode & BrowseMode::Modules ) && ( nMode & BrowseMode::Dialogs ) )
+        eType = LibraryType::Dialog;
     return eType;
 }
 
@@ -796,12 +770,12 @@ void TreeListBox::GetRootEntryBitmaps( const ScriptDocument& rDocument, Image& r
         else
         {
             // default icon
-            rImage = Image( IDEResId( RID_IMG_DOCUMENT ) );
+            rImage = Image(BitmapEx(IDEResId(RID_BMP_DOCUMENT)));
         }
     }
     else
     {
-        rImage = Image( IDEResId( RID_IMG_INSTALLATION ) );
+        rImage = Image(BitmapEx(IDEResId(RID_BMP_INSTALLATION)));
     }
 }
 

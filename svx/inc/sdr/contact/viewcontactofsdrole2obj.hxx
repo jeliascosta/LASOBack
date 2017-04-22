@@ -33,6 +33,8 @@ class ViewContactOfSdrOle2Obj : public ViewContactOfSdrRectObj
 private:
     // #i123539# allow local buffering of chart data (if chart)
     drawinglayer::primitive2d::Primitive2DReference mxChartContent;
+    // used to check if we need to re-calc the transformation
+    Point maGridOffset;
 
 protected:
     // Create a Object-Specific ViewObjectContact, set ViewContact and
@@ -51,7 +53,7 @@ public:
 
     // basic constructor, used from SdrObject.
     explicit ViewContactOfSdrOle2Obj(SdrOle2Obj& rOle2Obj);
-    virtual ~ViewContactOfSdrOle2Obj();
+    virtual ~ViewContactOfSdrOle2Obj() override;
 
     // helper for creating a OLE sequence for this object. It takes care od attributes, needed
     // scaling (e.g. for EmptyPresObj's), the correct graphic and other stuff. It is used from

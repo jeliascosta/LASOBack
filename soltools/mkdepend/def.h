@@ -44,7 +44,6 @@ in this Software without prior written authorization from the X Consortium.
 #include <unistd.h>
 #endif
 
-#include <ctype.h>
 #ifndef X_NOT_POSIX
 #ifndef _POSIX_SOURCE
 #define _POSIX_SOURCE
@@ -190,5 +189,21 @@ void warning1(char *, ...);
 
 void convert_slashes(char *);
 char *append_slash(char *);
+
+extern char * directives[];
+
+extern struct inclist * inclistp;
+
+extern char * objprefix;
+
+extern char * objsuffix;
+
+extern boolean printed;
+
+extern boolean verbose;
+
+extern boolean show_where_not;
+
+extern boolean warn_multiple;
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

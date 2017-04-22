@@ -50,16 +50,15 @@ namespace basctl
         LIBRARY_LOCATION_DOCUMENT
     };
 
-    enum LibraryType
+    enum class LibraryType
     {
-        LIBRARY_TYPE_UNKNOWN,
-        LIBRARY_TYPE_MODULE,
-        LIBRARY_TYPE_DIALOG,
-        LIBRARY_TYPE_ALL
+        Module,
+        Dialog,
+        All
     };
 
     class ScriptDocument;
-    typedef ::std::vector< ScriptDocument >  ScriptDocuments;
+    typedef std::vector< ScriptDocument >  ScriptDocuments;
 
     /** encapsulates a document which contains Basic scripts and dialogs
     */
@@ -139,9 +138,6 @@ namespace basctl
                 the application-wide scripts/dialogs.
             */
             AllWithApplication,
-            /** real documents only
-            */
-            DocumentsOnly,
             /** real documents only, sorted lexicographically by their title (using the sys locale's default
                 collator)
             */
@@ -163,7 +159,7 @@ namespace basctl
 
         // comparison
                 bool operator==( const ScriptDocument& _rhs ) const;
-        inline  bool operator!=( const ScriptDocument& _rhs ) const { return !( *this == _rhs ); }
+        bool operator!=( const ScriptDocument& _rhs ) const { return !( *this == _rhs ); }
 
         /// retrieves a (pretty simple) hash code for the document
         sal_Int32   hashCode() const;
@@ -466,19 +462,13 @@ namespace basctl
                     getLibraryLocation( const OUString& _rLibName ) const;
 
         /// returns the title for the document
-        OUString    getTitle( LibraryLocation _eLocation, LibraryType _eType = LIBRARY_TYPE_ALL ) const;
+        OUString    getTitle( LibraryLocation _eLocation, LibraryType _eType = LibraryType::All ) const;
 
         /** returns the title of the document
 
             to be used for valid documents only
         */
         OUString    getTitle() const;
-
-        /** returns the URL of the document
-
-            to be used for valid documents only
-        */
-        OUString    getURL() const;
 
         /** determines whether the document is currently the one-and-only application-wide active document
         */

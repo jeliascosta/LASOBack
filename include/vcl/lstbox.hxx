@@ -85,30 +85,28 @@ private:
     Link<ListBox&,void>         maDoubleClickHdl;
     sal_uInt16                  mnLineCount;
 
-    /// bitfield
     bool            mbDDAutoSize : 1;
     bool            mbEdgeBlending : 1;
 
 private:
     SAL_DLLPRIVATE void    ImplInitListBoxData();
 
-    DECL_DLLPRIVATE_LINK_TYPED( ImplSelectHdl, LinkParamNone*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplScrollHdl, ImplListBox*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplCancelHdl, LinkParamNone*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplDoubleClickHdl, ImplListBoxWindow*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplPopupModeEndHdl, FloatingWindow*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplSelectionChangedHdl, sal_Int32, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplUserDrawHdl, UserDrawEvent*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplFocusHdl, sal_Int32, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplListItemSelectHdl, LinkParamNone*, void );
+    DECL_DLLPRIVATE_LINK( ImplSelectHdl, LinkParamNone*, void );
+    DECL_DLLPRIVATE_LINK( ImplScrollHdl, ImplListBox*, void );
+    DECL_DLLPRIVATE_LINK( ImplCancelHdl, LinkParamNone*, void );
+    DECL_DLLPRIVATE_LINK( ImplDoubleClickHdl, ImplListBoxWindow*, void );
+    DECL_DLLPRIVATE_LINK( ImplPopupModeEndHdl, FloatingWindow*, void );
+    DECL_DLLPRIVATE_LINK( ImplSelectionChangedHdl, sal_Int32, void );
+    DECL_DLLPRIVATE_LINK( ImplUserDrawHdl, UserDrawEvent*, void );
+    DECL_DLLPRIVATE_LINK( ImplFocusHdl, sal_Int32, void );
+    DECL_DLLPRIVATE_LINK( ImplListItemSelectHdl, LinkParamNone*, void );
 
-    DECL_DLLPRIVATE_LINK_TYPED( ImplClickBtnHdl, void*, void );
+    DECL_DLLPRIVATE_LINK( ImplClickBtnHdl, void*, void );
 
 protected:
     using Window::ImplInit;
     SAL_DLLPRIVATE void    ImplInit( vcl::Window* pParent, WinBits nStyle );
-    SAL_DLLPRIVATE WinBits ImplInitStyle( WinBits nStyle );
-    SAL_DLLPRIVATE void    ImplLoadRes( const ResId& rResId );
+    SAL_DLLPRIVATE static WinBits ImplInitStyle( WinBits nStyle );
     bool               IsDropDownBox() const { return mpFloatWin != nullptr; }
 
 protected:
@@ -118,8 +116,7 @@ protected:
 
 public:
     explicit            ListBox( vcl::Window* pParent, WinBits nStyle = WB_BORDER );
-    explicit            ListBox( vcl::Window* pParent, const ResId& );
-    virtual             ~ListBox();
+    virtual             ~ListBox() override;
     virtual void        dispose() override;
 
     virtual void        ApplySettings(vcl::RenderContext& rRenderContext) override;
@@ -139,10 +136,8 @@ public:
 
     virtual void        setPosSizePixel( long nX, long nY,
                                          long nWidth, long nHeight, PosSizeFlags nFlags = PosSizeFlags::All ) override;
-    void                SetPosSizePixel( const Point& rNewPos, const Size& rNewSize ) override
-                        { Control::SetPosSizePixel( rNewPos, rNewSize ); }
 
-    Rectangle           GetDropDownPosSizePixel() const;
+    tools::Rectangle           GetDropDownPosSizePixel() const;
 
     void                AdaptDropDownLineCountToMaximum();
     void                SetDropDownLineCount( sal_uInt16 nLines );
@@ -205,7 +200,7 @@ public:
     sal_Int32           GetSavedValue() const { return mnSaveValue; }
     bool                IsValueChangedFromSaved() const { return mnSaveValue != GetSelectEntryPos(); }
 
-    void                SetSeparatorPos( sal_Int32  n = LISTBOX_ENTRY_NOTFOUND );
+    void                SetSeparatorPos( sal_Int32 n );
     sal_Int32           GetSeparatorPos() const;
 
     bool                IsTravelSelect() const;
@@ -219,13 +214,11 @@ public:
     void                SetReadOnly( bool bReadOnly = true );
     bool                IsReadOnly() const;
 
-    Rectangle           GetBoundingRectangle( sal_Int32  nItem ) const;
-
-    void                SetUserItemSize( const Size& rSz );
+    tools::Rectangle           GetBoundingRectangle( sal_Int32  nItem ) const;
 
     void                EnableUserDraw( bool bUserDraw );
 
-    void                DrawEntry( const UserDrawEvent& rEvt, bool bDrawImage, bool bDrawTextAtImagePos );
+    void                DrawEntry( const UserDrawEvent& rEvt );
 
     void                SetSelectHdl( const Link<ListBox&,void>& rLink )     { maSelectHdl = rLink; }
     const Link<ListBox&,void>& GetSelectHdl() const                    { return maSelectHdl; }
@@ -274,16 +267,14 @@ public:
     void EnableQuickSelection( bool b );
 
     static sal_Int32 NaturalSortCompare(const OUString &rA, const OUString &rB);
+
+    virtual FactoryFunction GetUITestFactory() const override;
 };
 
 class VCL_DLLPUBLIC MultiListBox : public ListBox
 {
 public:
-    using ListBox::SaveValue;
-    using ListBox::GetSavedValue;
-    using ListBox::IsValueChangedFromSaved;
-
-    explicit        MultiListBox( vcl::Window* pParent, WinBits nStyle = 0 );
+    explicit        MultiListBox( vcl::Window* pParent, WinBits nStyle );
 
 };
 

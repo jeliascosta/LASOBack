@@ -26,6 +26,7 @@
 #include <vcl/decoview.hxx>
 #include <vcl/salnativewidgets.hxx>
 #include <vcl/settings.hxx>
+#include <vcl/uitest/logger.hxx>
 
 #include <textlayout.hxx>
 #include <svdata.hxx>
@@ -47,23 +48,10 @@ Control::Control( WindowType nType ) :
 }
 
 Control::Control( vcl::Window* pParent, WinBits nStyle ) :
-    Window( WINDOW_CONTROL )
+    Window( WindowType::CONTROL )
 {
     ImplInitControlData();
     ImplInit( pParent, nStyle, nullptr );
-}
-
-Control::Control( vcl::Window* pParent, const ResId& rResId ) :
-    Window( WINDOW_CONTROL )
-{
-    ImplInitControlData();
-    rResId.SetRT( RSC_CONTROL );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle, nullptr );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
 }
 
 Control::~Control()
@@ -81,20 +69,10 @@ void Control::dispose()
 void Control::EnableRTL( bool bEnable )
 {
     // convenience: for controls also switch layout mode
-    SetLayoutMode( bEnable ? TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT :
-                                TEXT_LAYOUT_TEXTORIGIN_LEFT );
+    SetLayoutMode( bEnable ? ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft :
+                                ComplexTextLayoutFlags::TextOriginLeft );
     CompatStateChanged( StateChangedType::Mirroring );
     OutputDevice::EnableRTL(bEnable);
-}
-
-void Control::GetFocus()
-{
-    Window::GetFocus();
-}
-
-void Control::LoseFocus()
-{
-    Window::LoseFocus();
 }
 
 void Control::Resize()
@@ -109,8 +87,8 @@ void Control::FillLayoutData() const
 
 void Control::CreateLayoutData() const
 {
-    DBG_ASSERT( !mpControlData->mpLayoutData, "Control::CreateLayoutData: should be called with non-existent layout data only!" );
-    mpControlData->mpLayoutData = new vcl::ControlLayoutData();
+    SAL_WARN_IF( mpControlData->mpLayoutData, "vcl", "Control::CreateLayoutData: should be called with non-existent layout data only!" );
+    mpControlData->mpLayoutData.reset( new vcl::ControlLayoutData );
 }
 
 bool Control::HasLayoutData() const
@@ -128,16 +106,16 @@ ControlLayoutData::ControlLayoutData() : m_pParent( nullptr )
 {
 }
 
-Rectangle ControlLayoutData::GetCharacterBounds( long nIndex ) const
+tools::Rectangle ControlLayoutData::GetCharacterBounds( long nIndex ) const
 {
-    return (nIndex >= 0 && nIndex < (long) m_aUnicodeBoundRects.size()) ? m_aUnicodeBoundRects[ nIndex ] : Rectangle();
+    return (nIndex >= 0 && nIndex < (long) m_aUnicodeBoundRects.size()) ? m_aUnicodeBoundRects[ nIndex ] : tools::Rectangle();
 }
 
-Rectangle Control::GetCharacterBounds( long nIndex ) const
+tools::Rectangle Control::GetCharacterBounds( long nIndex ) const
 {
     if( !HasLayoutData() )
         FillLayoutData();
-    return mpControlData->mpLayoutData ? mpControlData->mpLayoutData->GetCharacterBounds( nIndex ) : Rectangle();
+    return mpControlData->mpLayoutData ? mpControlData->mpLayoutData->GetCharacterBounds( nIndex ) : tools::Rectangle();
 }
 
 long ControlLayoutData::GetIndexForPoint( const Point& rPoint ) const
@@ -223,7 +201,7 @@ long ControlLayoutData::ToRelativeLineIndex( long nIndex ) const
             }
             if( nLine < 0 )
             {
-                DBG_ASSERT( nLine >= 0, "ToRelativeLineIndex failed" );
+                SAL_WARN_IF( nLine < 0, "vcl", "ToRelativeLineIndex failed" );
                 nIndex = -1;
             }
         }
@@ -248,7 +226,7 @@ OUString Control::GetDisplayText() const
     return mpControlData->mpLayoutData ? OUString(mpControlData->mpLayoutData->m_aDisplayText) : GetText();
 }
 
-bool Control::Notify( NotifyEvent& rNEvt )
+bool Control::EventNotify( NotifyEvent& rNEvt )
 {
     // tdf#91081 if control is not valid, skip the emission - chaining to the parent
     if (mpControlData)
@@ -259,7 +237,7 @@ bool Control::Notify( NotifyEvent& rNEvt )
             {
                 mbHasControlFocus = true;
                 CompatStateChanged( StateChangedType::ControlFocus );
-                if ( ImplCallEventListenersAndHandler( VCLEVENT_CONTROL_GETFOCUS, [this] () { maGetFocusHdl.Call(*this); } ) )
+                if ( ImplCallEventListenersAndHandler( VclEventId::ControlGetFocus, [this] () { maGetFocusHdl.Call(*this); } ) )
                     // been destroyed within the handler
                     return true;
             }
@@ -273,14 +251,14 @@ bool Control::Notify( NotifyEvent& rNEvt )
                 {
                     mbHasControlFocus = false;
                     CompatStateChanged( StateChangedType::ControlFocus );
-                    if ( ImplCallEventListenersAndHandler( VCLEVENT_CONTROL_LOSEFOCUS, [this] () { maLoseFocusHdl.Call(*this); } ) )
+                    if ( ImplCallEventListenersAndHandler( VclEventId::ControlLoseFocus, [this] () { maLoseFocusHdl.Call(*this); } ) )
                         // been destroyed within the handler
                         return true;
                 }
             }
         }
     }
-    return Window::Notify( rNEvt );
+    return Window::EventNotify( rNEvt );
 }
 
 void Control::StateChanged( StateChangedType nStateChange )
@@ -288,7 +266,6 @@ void Control::StateChanged( StateChangedType nStateChange )
     if( nStateChange == StateChangedType::InitShow   ||
         nStateChange == StateChangedType::Visible    ||
         nStateChange == StateChangedType::Zoom       ||
-        nStateChange == StateChangedType::Border     ||
         nStateChange == StateChangedType::ControlFont
         )
     {
@@ -312,18 +289,19 @@ void Control::AppendLayoutData( const Control& rSubControl ) const
     for( n = 1; n < nLines; n++ )
         mpControlData->mpLayoutData->m_aLineIndices.push_back( rSubControl.mpControlData->mpLayoutData->m_aLineIndices[n] + nCurrentIndex );
     int nRectangles = rSubControl.mpControlData->mpLayoutData->m_aUnicodeBoundRects.size();
-        Rectangle aRel = const_cast<Control&>(rSubControl).GetWindowExtentsRelative( const_cast<Control*>(this) );
+        tools::Rectangle aRel = const_cast<Control&>(rSubControl).GetWindowExtentsRelative( const_cast<Control*>(this) );
     for( n = 0; n < nRectangles; n++ )
     {
-        Rectangle aRect = rSubControl.mpControlData->mpLayoutData->m_aUnicodeBoundRects[n];
+        tools::Rectangle aRect = rSubControl.mpControlData->mpLayoutData->m_aUnicodeBoundRects[n];
         aRect.Move( aRel.Left(), aRel.Top() );
         mpControlData->mpLayoutData->m_aUnicodeBoundRects.push_back( aRect );
     }
 }
 
-bool Control::ImplCallEventListenersAndHandler( sal_uLong nEvent, std::function<void()> callHandler )
+bool Control::ImplCallEventListenersAndHandler( VclEventId nEvent, std::function<void()> const & callHandler )
 {
     VclPtr<Control> xThis(this);
+    UITestLogger::getInstance().logAction(xThis, nEvent);
 
     CallEventListeners( nEvent );
 
@@ -348,14 +326,10 @@ void Control::SetLayoutDataParent( const Control* pParent ) const
 
 void Control::ImplClearLayoutData() const
 {
-    if (mpControlData)
-    {
-        delete mpControlData->mpLayoutData;
-        mpControlData->mpLayoutData = nullptr;
-    }
+    mpControlData->mpLayoutData.reset();
 }
 
-void Control::ImplDrawFrame( OutputDevice* pDev, Rectangle& rRect )
+void Control::ImplDrawFrame( OutputDevice* pDev, tools::Rectangle& rRect )
 {
     // use a deco view to draw the frame
     // However, since there happens a lot of magic there, we need to fake some (style) settings
@@ -439,7 +413,7 @@ void Control::ImplInitSettings(const bool, const bool)
     ApplySettings(*this);
 }
 
-Rectangle Control::DrawControlText( OutputDevice& _rTargetDevice, const Rectangle& rRect, const OUString& _rStr,
+tools::Rectangle Control::DrawControlText( OutputDevice& _rTargetDevice, const tools::Rectangle& rRect, const OUString& _rStr,
     DrawTextFlags _nStyle, MetricVector* _pVector, OUString* _pDisplayText, const Size* i_pDeviceSize ) const
 {
     OUString rPStr = _rStr;
@@ -456,7 +430,7 @@ Rectangle Control::DrawControlText( OutputDevice& _rTargetDevice, const Rectangl
 
     if ( !mpControlData->mpReferenceDevice || ( mpControlData->mpReferenceDevice == &_rTargetDevice ) )
     {
-        const Rectangle aRet = _rTargetDevice.GetTextRect(rRect, rPStr, nPStyle);
+        const tools::Rectangle aRet = _rTargetDevice.GetTextRect(rRect, rPStr, nPStyle);
         _rTargetDevice.DrawText(aRet, rPStr, nPStyle, _pVector, _pDisplayText);
         return aRet;
     }
@@ -465,7 +439,7 @@ Rectangle Control::DrawControlText( OutputDevice& _rTargetDevice, const Rectangl
     return aRenderer.DrawText(rRect, rPStr, nPStyle, _pVector, _pDisplayText, i_pDeviceSize);
 }
 
-Rectangle Control::GetControlTextRect( OutputDevice& _rTargetDevice, const Rectangle & rRect,
+tools::Rectangle Control::GetControlTextRect( OutputDevice& _rTargetDevice, const tools::Rectangle & rRect,
                                        const OUString& _rStr, DrawTextFlags _nStyle, Size* o_pDeviceSize ) const
 {
     OUString rPStr = _rStr;
@@ -482,7 +456,7 @@ Rectangle Control::GetControlTextRect( OutputDevice& _rTargetDevice, const Recta
 
     if ( !mpControlData->mpReferenceDevice || ( mpControlData->mpReferenceDevice == &_rTargetDevice ) )
     {
-        Rectangle aRet = _rTargetDevice.GetTextRect( rRect, rPStr, nPStyle );
+        tools::Rectangle aRet = _rTargetDevice.GetTextRect( rRect, rPStr, nPStyle );
         if (o_pDeviceSize)
         {
             *o_pDeviceSize = aRet.GetSize();

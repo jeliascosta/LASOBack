@@ -65,6 +65,10 @@ namespace comphelper
         *this = _rCopySource;
     }
 
+    NamedValueCollection::NamedValueCollection( NamedValueCollection&& _rCopySource )
+        :m_pImpl( std::move(_rCopySource.m_pImpl) )
+    {
+    }
 
     NamedValueCollection& NamedValueCollection::operator=( const NamedValueCollection& i_rCopySource )
     {
@@ -72,6 +76,11 @@ namespace comphelper
         return *this;
     }
 
+    NamedValueCollection& NamedValueCollection::operator=( NamedValueCollection&& i_rCopySource )
+    {
+        m_pImpl = std::move(i_rCopySource.m_pImpl);
+        return *this;
+    }
 
     NamedValueCollection::NamedValueCollection( const Any& _rElements )
         :m_pImpl( new NamedValueCollection_Impl )
@@ -146,9 +155,9 @@ namespace comphelper
     }
 
 
-    ::std::vector< OUString > NamedValueCollection::getNames() const
+    std::vector< OUString > NamedValueCollection::getNames() const
     {
-        ::std::vector< OUString > aNames;
+        std::vector< OUString > aNames;
         for ( NamedValueRepository::const_iterator it = m_pImpl->aValues.begin(), end = m_pImpl->aValues.end(); it != end; ++it )
         {
             aNames.push_back( it->first );
@@ -251,14 +260,11 @@ namespace comphelper
                 return true;
 
             // argument exists, but is of wrong type
-            OUStringBuffer aBuffer;
-            aBuffer.append( "Invalid value type for '" );
-            aBuffer.append     ( _rValueName );
-            aBuffer.append( "'.\nExpected: " );
-            aBuffer.append     ( _rExpectedValueType.getTypeName() );
-            aBuffer.append( "\nFound: " );
-            aBuffer.append     ( pos->second.getValueType().getTypeName() );
-            throw IllegalArgumentException( aBuffer.makeStringAndClear(), nullptr, 0 );
+            throw IllegalArgumentException(
+                "Invalid value type for '" + _rValueName
+                + "'.\nExpected: " + _rExpectedValueType.getTypeName()
+                + "\nFound: " + pos->second.getValueType().getTypeName(),
+                nullptr, 0 );
         }
 
         // argument does not exist
@@ -308,7 +314,7 @@ namespace comphelper
 
     namespace
     {
-        struct Value2PropertyValue : public ::std::unary_function< NamedValueRepository::value_type, PropertyValue >
+        struct Value2PropertyValue : public std::unary_function< NamedValueRepository::value_type, PropertyValue >
         {
             PropertyValue operator()( const NamedValueRepository::value_type& _rValue )
             {
@@ -317,7 +323,7 @@ namespace comphelper
             }
         };
 
-        struct Value2NamedValue : public ::std::unary_function< NamedValueRepository::value_type, NamedValue >
+        struct Value2NamedValue : public std::unary_function< NamedValueRepository::value_type, NamedValue >
         {
             NamedValue operator()( const NamedValueRepository::value_type& _rValue )
             {
@@ -330,7 +336,7 @@ namespace comphelper
     sal_Int32 NamedValueCollection::operator >>= ( Sequence< PropertyValue >& _out_rValues ) const
     {
         _out_rValues.realloc( m_pImpl->aValues.size() );
-        ::std::transform( m_pImpl->aValues.begin(), m_pImpl->aValues.end(), _out_rValues.getArray(), Value2PropertyValue() );
+        std::transform( m_pImpl->aValues.begin(), m_pImpl->aValues.end(), _out_rValues.getArray(), Value2PropertyValue() );
         return _out_rValues.getLength();
     }
 
@@ -338,7 +344,7 @@ namespace comphelper
     sal_Int32 NamedValueCollection::operator >>= ( Sequence< NamedValue >& _out_rValues ) const
     {
         _out_rValues.realloc( m_pImpl->aValues.size() );
-        ::std::transform( m_pImpl->aValues.begin(), m_pImpl->aValues.end(), _out_rValues.getArray(), Value2NamedValue() );
+        std::transform( m_pImpl->aValues.begin(), m_pImpl->aValues.end(), _out_rValues.getArray(), Value2NamedValue() );
         return _out_rValues.getLength();
     }
 

@@ -31,6 +31,7 @@
 struct FrmMap;
 class SdrView;
 struct SvxSwFrameValidation;
+enum class SvxAnchorIds;
 
 class SvxSwPosSizeTabPage : public SfxTabPage
 {
@@ -75,8 +76,8 @@ class SvxSwPosSizeTabPage : public SfxTabPage
     //'string provider'
     SvxSwFramePosString m_aFramePosString;
 
-    Rectangle           m_aRect; //size of all selected objects
-    Rectangle           m_aWorkArea;
+    ::tools::Rectangle           m_aRect; //size of all selected objects
+    ::tools::Rectangle           m_aWorkArea;
     Point               m_aAnchorPos;
 
     FrmMap* m_pVMap;
@@ -99,22 +100,22 @@ class SvxSwPosSizeTabPage : public SfxTabPage
     bool    m_bIsInRightToLeft;
 
 
-    DECL_LINK_TYPED(RangeModifyHdl, Control&, void);
-    DECL_LINK_TYPED(RangeModifyClickHdl, Button*, void);
-    DECL_LINK_TYPED(AnchorTypeHdl, Button*, void);
-    DECL_LINK_TYPED( PosHdl, ListBox&, void );
-    DECL_LINK_TYPED( RelHdl, ListBox&, void );
-    DECL_LINK_TYPED(MirrorHdl, Button*, void);
-    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
-    DECL_LINK_TYPED(ProtectHdl, Button*, void);
+    DECL_LINK(RangeModifyHdl, Control&, void);
+    DECL_LINK(RangeModifyClickHdl, Button*, void);
+    DECL_LINK(AnchorTypeHdl, Button*, void);
+    DECL_LINK( PosHdl, ListBox&, void );
+    DECL_LINK( RelHdl, ListBox&, void );
+    DECL_LINK(MirrorHdl, Button*, void);
+    DECL_LINK( ModifyHdl, Edit&, void );
+    DECL_LINK(ProtectHdl, Button*, void);
 
-    void            InitPos(short nAnchorType, sal_uInt16 nH, sal_uInt16 nHRel,
+    void            InitPos(RndStdIds nAnchorType, sal_uInt16 nH, sal_uInt16 nHRel,
                             sal_uInt16 nV,  sal_uInt16 nVRel,
                             long   nX,  long   nY);
     sal_uInt16          GetMapPos(FrmMap *pMap, ListBox &rAlignLB);
     static short        GetAlignment(FrmMap *pMap, sal_uInt16 nMapPos, ListBox &rAlignLB, ListBox &rRelationLB);
     static short        GetRelation(FrmMap *pMap, ListBox &rRelationLB);
-    short               GetAnchorType(bool* pbHasChanged = nullptr);
+    RndStdIds           GetAnchorType(bool* pbHasChanged = nullptr);
     void                FillRelLB(FrmMap *pMap, sal_uInt16 nLBSelPos, sal_uInt16 nAlign, sal_uInt16 nRel, ListBox &rLB, FixedText &rFT);
     sal_uInt16          FillPosLB(FrmMap *pMap, sal_uInt16 nAlign, const sal_uInt16 _nRel, ListBox &rLB);
 
@@ -125,7 +126,7 @@ class SvxSwPosSizeTabPage : public SfxTabPage
 
 public:
     SvxSwPosSizeTabPage( vcl::Window* pParent, const SfxItemSet& rInAttrs  );
-    virtual ~SvxSwPosSizeTabPage();
+    virtual ~SvxSwPosSizeTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window*, const SfxItemSet* );
@@ -134,9 +135,9 @@ public:
     virtual bool FillItemSet( SfxItemSet* ) override;
     virtual void Reset( const SfxItemSet * ) override;
 
-    virtual sfxpg DeactivatePage( SfxItemSet* pSet ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
-    void    EnableAnchorTypes(sal_uInt16 nAnchorEnable);
+    void    EnableAnchorTypes(SvxAnchorIds nAnchorEnable);
 
     void SetValidateFramePosLink( const Link<SvxSwFrameValidation&,void>& rLink )
             {m_aValidateLink = rLink;}

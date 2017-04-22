@@ -70,7 +70,7 @@ void FocusManager::ClearPanels()
     for (auto iPanel(aPanels.begin()),iEnd(aPanels.end()); iPanel != iEnd; ++iPanel)
     {
         UnregisterWindow(**iPanel);
-        if ((*iPanel)->GetTitleBar() != nullptr)
+        if ((*iPanel)->GetTitleBar())
         {
             UnregisterWindow(*(*iPanel)->GetTitleBar());
             UnregisterWindow((*iPanel)->GetTitleBar()->GetToolBox());
@@ -112,7 +112,7 @@ void FocusManager::SetPanels (const SharedPanelContainer& rPanels)
     for (auto iPanel = rPanels.begin(); iPanel != rPanels.end(); ++iPanel)
     {
         RegisterWindow(**iPanel);
-        if ((*iPanel)->GetTitleBar() != nullptr)
+        if ((*iPanel)->GetTitleBar())
         {
             RegisterWindow(*(*iPanel)->GetTitleBar());
             RegisterWindow((*iPanel)->GetTitleBar()->GetToolBox());
@@ -161,7 +161,7 @@ FocusManager::FocusLocation FocusManager::GetFocusLocation (const vcl::Window& r
     {
         if (maPanels[nIndex] == &rWindow)
             return FocusLocation(PC_PanelContent, nIndex);
-        TitleBar* pTitleBar = maPanels[nIndex]->GetTitleBar();
+        VclPtr<TitleBar> pTitleBar = maPanels[nIndex]->GetTitleBar();
         if (pTitleBar == &rWindow)
             return FocusLocation(PC_PanelTitle, nIndex);
         if (pTitleBar!=nullptr && &pTitleBar->GetToolBox()==&rWindow)
@@ -208,8 +208,8 @@ bool FocusManager::IsPanelTitleVisible (const sal_Int32 nPanelIndex) const
     if (nPanelIndex<0 || nPanelIndex>=static_cast<sal_Int32>(maPanels.size()))
         return false;
 
-    TitleBar* pTitleBar = maPanels[nPanelIndex]->GetTitleBar();
-    if (pTitleBar==nullptr)
+    VclPtr<TitleBar> pTitleBar = maPanels[nPanelIndex]->GetTitleBar();
+    if (!pTitleBar)
         return false;
     return pTitleBar->IsVisible();
 }
@@ -226,8 +226,8 @@ void FocusManager::FocusPanel (
     }
 
     Panel& rPanel (*maPanels[nPanelIndex]);
-    TitleBar* pTitleBar = rPanel.GetTitleBar();
-    if (pTitleBar!=nullptr && pTitleBar->IsVisible())
+    VclPtr<TitleBar> pTitleBar = rPanel.GetTitleBar();
+    if (pTitleBar && pTitleBar->IsVisible())
     {
         rPanel.SetExpanded(true);
         pTitleBar->GrabFocus();
@@ -253,8 +253,8 @@ void FocusManager::FocusPanel (
 
 void FocusManager::FocusPanelContent (const sal_Int32 nPanelIndex)
 {
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow(maPanels[nPanelIndex]->GetElementWindow());
-    if (pWindow != nullptr)
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(maPanels[nPanelIndex]->GetElementWindow());
+    if (pWindow)
     {
         mbObservingContentControlFocus = true;
         pWindow->GrabFocus();
@@ -506,7 +506,7 @@ void FocusManager::HandleKeyEvent (
     }
 }
 
-IMPL_LINK_TYPED(FocusManager, WindowEventListener, VclWindowEvent&, rWindowEvent, void)
+IMPL_LINK(FocusManager, WindowEventListener, VclWindowEvent&, rWindowEvent, void)
 {
     vcl::Window* pSource = rWindowEvent.GetWindow();
     if (pSource == nullptr)
@@ -514,19 +514,19 @@ IMPL_LINK_TYPED(FocusManager, WindowEventListener, VclWindowEvent&, rWindowEvent
 
     switch (rWindowEvent.GetId())
     {
-        case VCLEVENT_WINDOW_KEYINPUT:
+        case VclEventId::WindowKeyInput:
         {
             KeyEvent* pKeyEvent = static_cast<KeyEvent*>(rWindowEvent.GetData());
             HandleKeyEvent(pKeyEvent->GetKeyCode(), *pSource);
             break;
         }
 
-        case VCLEVENT_OBJECT_DYING:
+        case VclEventId::ObjectDying:
             RemoveWindow(*pSource);
             break;
 
-        case VCLEVENT_WINDOW_GETFOCUS:
-        case VCLEVENT_WINDOW_LOSEFOCUS:
+        case VclEventId::WindowGetFocus:
+        case VclEventId::WindowLoseFocus:
             pSource->Invalidate();
             break;
 
@@ -535,7 +535,7 @@ IMPL_LINK_TYPED(FocusManager, WindowEventListener, VclWindowEvent&, rWindowEvent
     }
 }
 
-IMPL_LINK_TYPED(FocusManager, ChildEventListener, VclWindowEvent&, rEvent, void)
+IMPL_LINK(FocusManager, ChildEventListener, VclWindowEvent&, rEvent, void)
 {
     vcl::Window* pSource = rEvent.GetWindow();
     if (pSource == nullptr)
@@ -543,7 +543,7 @@ IMPL_LINK_TYPED(FocusManager, ChildEventListener, VclWindowEvent&, rEvent, void)
 
     switch (rEvent.GetId())
     {
-        case VCLEVENT_WINDOW_KEYINPUT:
+        case VclEventId::WindowKeyInput:
         {
             KeyEvent* pKeyEvent = static_cast<KeyEvent*>(rEvent.GetData());
 
@@ -587,7 +587,7 @@ IMPL_LINK_TYPED(FocusManager, ChildEventListener, VclWindowEvent&, rEvent, void)
             return;
         }
 
-        case VCLEVENT_WINDOW_GETFOCUS:
+        case VclEventId::WindowGetFocus:
             // Keep track of focused controls in panel content.
             // Remember the first focused control.  When it is later
             // focused again due to pressing the TAB key then the

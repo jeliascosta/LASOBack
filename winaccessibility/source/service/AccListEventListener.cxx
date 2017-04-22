@@ -45,7 +45,7 @@ AccListEventListener::~AccListEventListener()
  *  Uno's event notifier when event is captured
  *  @param AccessibleEventObject    the event object which contains information about event
  */
-void  AccListEventListener::notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) throw (css::uno::RuntimeException)
+void  AccListEventListener::notifyEvent( const css::accessibility::AccessibleEventObject& aEvent )
 {
     SolarMutexGuard g;
 
@@ -56,7 +56,7 @@ void  AccListEventListener::notifyEvent( const css::accessibility::AccessibleEve
         break;
     case AccessibleEventId::INVALIDATE_ALL_CHILDREN:
         // Since List items a transient a child events are mostly used
-        // to attach/detach listeners, it is save to ignore it here
+        // to attach/detach listeners, it is safe to ignore it here
         //TODO: investigate again
         break;
     case AccessibleEventId::VALUE_CHANGED:

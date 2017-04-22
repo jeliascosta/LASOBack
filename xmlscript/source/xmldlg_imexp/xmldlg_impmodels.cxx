@@ -29,6 +29,7 @@
 #include <com/sun/star/document/XStorageBasedDocument.hpp>
 #include <com/sun/star/document/XGraphicObjectResolver.hpp>
 #include <com/sun/star/script/vba/XVBACompatibility.hpp>
+#include <com/sun/star/xml/sax/SAXException.hpp>
 
 #include <osl/diagnose.h>
 #include <sal/log.hxx>
@@ -44,27 +45,26 @@ namespace xmlscript
 Reference< xml::input::XElement > Frame::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-        throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     if ( !m_xContainer.is() )
-        m_xContainer.set( _pImport->_xDialogModelFactory->createInstance( "com.sun.star.awt.UnoFrameModel" ), UNO_QUERY );
+        m_xContainer.set( m_xImport->_xDialogModelFactory->createInstance( "com.sun.star.awt.UnoFrameModel" ), UNO_QUERY );
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-       return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+       return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else if ( rLocalName == "bulletinboard" )
     {
         // Create new DialogImport for this container
-        DialogImport* pFrameImport = new DialogImport( *_pImport );
+        DialogImport* pFrameImport = new DialogImport( *m_xImport );
         pFrameImport->_xDialogModel = m_xContainer;
         return new BulletinBoardElement( rLocalName, xAttributes, this,  pFrameImport );
     }
     else if ( rLocalName == "title" )
     {
-        getStringAttr( &_label, "value", xAttributes, _pImport->XMLNS_DIALOGS_UID );
+        getStringAttr( &_label, "value", xAttributes, m_xImport->XMLNS_DIALOGS_UID );
 
-        return new ElementBase( _pImport->XMLNS_DIALOGS_UID, rLocalName, xAttributes, this, _pImport );
+        return new ElementBase( m_xImport->XMLNS_DIALOGS_UID, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -74,13 +74,12 @@ Reference< xml::input::XElement > Frame::startChildElement(
 }
 
 void Frame::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
         if ( !m_xContainer.is() )
-            m_xContainer.set( _pImport->_xDialogModelFactory->createInstance( "com.sun.star.awt.UnoFrameModel" ), UNO_QUERY );
+            m_xContainer.set( m_xImport->_xDialogModelFactory->createInstance( "com.sun.star.awt.UnoFrameModel" ), UNO_QUERY );
         Reference< beans::XPropertySet > xProps( m_xContainer, UNO_QUERY_THROW );
-        // _pImport is what we need to add to ( e.g. the dialog in this case )
-    ControlImportContext ctx( _pImport, xProps,   getControlId( _xAttributes ) );
+        // m_xImport is what we need to add to ( e.g. the dialog in this case )
+    ControlImportContext ctx( m_xImport.get(), xProps,   getControlId( _xAttributes ) );
 
     Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
@@ -110,19 +109,18 @@ void Frame::endElement()
 Reference< xml::input::XElement > MultiPage::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
         return new EventElement(
-            nUid, rLocalName, xAttributes, this, _pImport );
+            nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else if ( rLocalName == "bulletinboard" )
     {
         // Create new DialogImport for this container
 
-        DialogImport* pMultiPageImport = new DialogImport( *_pImport );
+        DialogImport* pMultiPageImport = new DialogImport( *m_xImport );
                 pMultiPageImport->_xDialogModel = m_xContainer;
         return new BulletinBoardElement( rLocalName, xAttributes, this,  pMultiPageImport );
     }
@@ -134,11 +132,10 @@ Reference< xml::input::XElement > MultiPage::startChildElement(
 }
 
 void MultiPage::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
         Reference< beans::XPropertySet > xProps( m_xContainer, UNO_QUERY_THROW );
-        // _pImport is what we need to add to ( e.g. the dialog in this case )
-    ControlImportContext ctx( _pImport, xProps, getControlId( _xAttributes ));
+        // m_xImport is what we need to add to ( e.g. the dialog in this case )
+    ControlImportContext ctx( m_xImport.get(), xProps, getControlId( _xAttributes ));
 
     Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
@@ -166,18 +163,17 @@ void MultiPage::endElement()
 Reference< xml::input::XElement > Page::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
         return new EventElement(
-            nUid, rLocalName, xAttributes, this, _pImport );
+            nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else if ( rLocalName == "bulletinboard" )
     {
 
-        DialogImport* pPageImport = new DialogImport( *_pImport );
+        DialogImport* pPageImport = new DialogImport( *m_xImport );
                 pPageImport->_xDialogModel = m_xContainer;
         return new BulletinBoardElement( rLocalName, xAttributes, this,  pPageImport );
     }
@@ -189,11 +185,10 @@ Reference< xml::input::XElement > Page::startChildElement(
 }
 
 void Page::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
         Reference< beans::XPropertySet > xProps( m_xContainer, UNO_QUERY_THROW );
 
-    ControlImportContext ctx( _pImport, xProps, getControlId( _xAttributes ));
+    ControlImportContext ctx( m_xImport.get(), xProps, getControlId( _xAttributes ));
 
     Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
@@ -217,29 +212,25 @@ void Page::endElement()
     ctx.finish();
 }
 
-// progessmeter
+// progressmeter
 Reference< xml::input::XElement > ProgressBarElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
         return new EventElement(
-            nUid, rLocalName, xAttributes, this, _pImport );
+            nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
-        throw xml::sax::SAXException(
-            OUString( "expected event element!" ),
-            Reference< XInterface >(), Any() );
+        throw xml::sax::SAXException( "expected event element!", Reference< XInterface >(), Any() );
     }
 }
 void ProgressBarElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlProgressBarModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlProgressBarModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -267,12 +258,11 @@ void ProgressBarElement::endElement()
 Reference< xml::input::XElement > ScrollBarElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -280,9 +270,8 @@ Reference< xml::input::XElement > ScrollBarElement::startChildElement(
     }
 }
 void ScrollBarElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlScrollBarModel" , _xAttributes ) );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlScrollBarModel" , _xAttributes ) );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -319,12 +308,11 @@ void ScrollBarElement::endElement()
 Reference< xml::input::XElement > SpinButtonElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -333,9 +321,8 @@ Reference< xml::input::XElement > SpinButtonElement::startChildElement(
 }
 
 void SpinButtonElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlSpinButtonModel", _xAttributes ) );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlSpinButtonModel", _xAttributes ) );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -369,12 +356,11 @@ void SpinButtonElement::endElement()
 Reference< xml::input::XElement > FixedLineElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -382,9 +368,8 @@ Reference< xml::input::XElement > FixedLineElement::startChildElement(
     }
 }
 void FixedLineElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx(_pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFixedLineModel" );
+    ControlImportContext ctx(m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFixedLineModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -411,12 +396,11 @@ void FixedLineElement::endElement()
 Reference< xml::input::XElement > PatternFieldElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -424,9 +408,8 @@ Reference< xml::input::XElement > PatternFieldElement::startChildElement(
     }
 }
 void PatternFieldElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlPatternFieldModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlPatternFieldModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -461,12 +444,11 @@ void PatternFieldElement::endElement()
 Reference< xml::input::XElement > FormattedFieldElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -475,9 +457,8 @@ Reference< xml::input::XElement > FormattedFieldElement::startChildElement(
 }
 
 void FormattedFieldElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFormattedFieldModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFormattedFieldModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -506,7 +487,7 @@ void FormattedFieldElement::endElement()
     if (ctx.importLongProperty( "RepeatDelay", "repeat", _xAttributes ))
         ctx.getControlModel()->setPropertyValue( "Repeat" , makeAny(true) );
 
-    OUString sDefault(_xAttributes->getValueByUidName(_pImport->XMLNS_DIALOGS_UID, "value-default") );
+    OUString sDefault(_xAttributes->getValueByUidName(m_xImport->XMLNS_DIALOGS_UID, "value-default") );
     if (!sDefault.isEmpty())
     {
         double d = sDefault.toDouble();
@@ -521,14 +502,14 @@ void FormattedFieldElement::endElement()
     }
 
     // format spec
-    ctx.getControlModel()->setPropertyValue("FormatsSupplier", makeAny( _pImport->getNumberFormatsSupplier() ) );
+    ctx.getControlModel()->setPropertyValue("FormatsSupplier", makeAny( m_xImport->getNumberFormatsSupplier() ) );
 
-    OUString sFormat( _xAttributes->getValueByUidName(_pImport->XMLNS_DIALOGS_UID, "format-code" ) );
+    OUString sFormat( _xAttributes->getValueByUidName(m_xImport->XMLNS_DIALOGS_UID, "format-code" ) );
     if (!sFormat.isEmpty())
     {
         lang::Locale locale;
 
-        OUString sLocale( _xAttributes->getValueByUidName( _pImport->XMLNS_DIALOGS_UID, "format-locale" ) );
+        OUString sLocale( _xAttributes->getValueByUidName( m_xImport->XMLNS_DIALOGS_UID, "format-locale" ) );
         if (!sLocale.isEmpty())
         {
             // split locale
@@ -560,7 +541,7 @@ void FormattedFieldElement::endElement()
         try
         {
             Reference< util::XNumberFormats > xFormats(
-                _pImport->getNumberFormatsSupplier()->getNumberFormats() );
+                m_xImport->getNumberFormatsSupplier()->getNumberFormats() );
             sal_Int32 nKey = xFormats->queryKey( sFormat, locale, true );
             if (-1 == nKey)
             {
@@ -591,12 +572,11 @@ void FormattedFieldElement::endElement()
 Reference< xml::input::XElement > TimeFieldElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -604,9 +584,8 @@ Reference< xml::input::XElement > TimeFieldElement::startChildElement(
     }
 }
 void TimeFieldElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlTimeFieldModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlTimeFieldModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -647,12 +626,11 @@ void TimeFieldElement::endElement()
 Reference< xml::input::XElement > NumericFieldElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -660,9 +638,8 @@ Reference< xml::input::XElement > NumericFieldElement::startChildElement(
     }
 }
 void NumericFieldElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlNumericFieldModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlNumericFieldModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -705,12 +682,11 @@ void NumericFieldElement::endElement()
 Reference< xml::input::XElement > DateFieldElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -718,9 +694,8 @@ Reference< xml::input::XElement > DateFieldElement::startChildElement(
     }
 }
 void DateFieldElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlDateFieldModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlDateFieldModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -762,12 +737,11 @@ void DateFieldElement::endElement()
 Reference< xml::input::XElement > CurrencyFieldElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -775,9 +749,8 @@ Reference< xml::input::XElement > CurrencyFieldElement::startChildElement(
     }
 }
 void CurrencyFieldElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlCurrencyFieldModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlCurrencyFieldModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -820,12 +793,11 @@ void CurrencyFieldElement::endElement()
 Reference< xml::input::XElement > FileControlElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -833,9 +805,8 @@ Reference< xml::input::XElement > FileControlElement::startChildElement(
     }
 }
 void FileControlElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFileControlModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFileControlModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -866,12 +837,11 @@ void FileControlElement::endElement()
 Reference< xml::input::XElement > TreeControlElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -879,9 +849,8 @@ Reference< xml::input::XElement > TreeControlElement::startChildElement(
     }
 }
 void TreeControlElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.tree.TreeControlModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.tree.TreeControlModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -914,12 +883,11 @@ void TreeControlElement::endElement()
 Reference< xml::input::XElement > ImageControlElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -928,9 +896,8 @@ Reference< xml::input::XElement > ImageControlElement::startChildElement(
 }
 
 void ImageControlElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlImageControlModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlImageControlModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -958,12 +925,11 @@ void ImageControlElement::endElement()
 Reference< xml::input::XElement > TextElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -972,9 +938,8 @@ Reference< xml::input::XElement > TextElement::startChildElement(
 }
 
 void TextElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFixedTextModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFixedTextModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -1007,12 +972,11 @@ void TextElement::endElement()
 Reference< xml::input::XElement > FixedHyperLinkElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -1020,9 +984,8 @@ Reference< xml::input::XElement > FixedHyperLinkElement::startChildElement(
     }
 }
 void FixedHyperLinkElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFixedHyperlinkModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlFixedHyperlinkModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -1058,12 +1021,11 @@ void FixedHyperLinkElement::endElement()
 Reference< xml::input::XElement > TextFieldElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -1071,9 +1033,8 @@ Reference< xml::input::XElement > TextFieldElement::startChildElement(
     }
 }
 void TextFieldElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlEditModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlEditModel" );
     Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
@@ -1101,7 +1062,7 @@ void TextFieldElement::endElement()
     ctx.importStringProperty( "Text", "value", _xAttributes );
     ctx.importLineEndFormatProperty( "LineEndFormat", "lineend-format", _xAttributes );
     OUString aValue;
-    if (getStringAttr( &aValue, "echochar", _xAttributes, _pImport->XMLNS_DIALOGS_UID ) && !aValue.isEmpty() )
+    if (getStringAttr( &aValue, "echochar", _xAttributes, m_xImport->XMLNS_DIALOGS_UID ) && !aValue.isEmpty() )
     {
         SAL_WARN_IF( aValue.getLength() != 1, "xmlscript.xmldlg", "### more than one character given for echochar!" );
         sal_Int16 nChar = 0;
@@ -1124,23 +1085,22 @@ void TextFieldElement::endElement()
 Reference< xml::input::XElement > TitledBoxElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
-    else if (_pImport->XMLNS_DIALOGS_UID != nUid)
+    else if (m_xImport->XMLNS_DIALOGS_UID != nUid)
     {
         throw xml::sax::SAXException( "illegal namespace!", Reference< XInterface >(), Any() );
     }
     // title
     else if ( rLocalName == "title" )
     {
-        getStringAttr( &_label, "value", xAttributes, _pImport->XMLNS_DIALOGS_UID );
+        getStringAttr( &_label, "value", xAttributes, m_xImport->XMLNS_DIALOGS_UID );
 
-        return new ElementBase( _pImport->XMLNS_DIALOGS_UID, rLocalName, xAttributes, this, _pImport );
+        return new ElementBase( m_xImport->XMLNS_DIALOGS_UID, rLocalName, xAttributes, this, m_xImport.get() );
     }
     // radio
     else if ( rLocalName == "radio" )
@@ -1148,14 +1108,9 @@ Reference< xml::input::XElement > TitledBoxElement::startChildElement(
         // don't create radios here, => titledbox must be inserted first due to radio grouping,
         // possible predecessors!
         Reference< xml::input::XElement > xRet(
-            new RadioElement( rLocalName, xAttributes, this, _pImport ) );
+            new RadioElement( rLocalName, xAttributes, this, m_xImport.get() ) );
         _radios.push_back( xRet );
         return xRet;
-    }
-    // event
-    else if (_pImport->isEventElement( nUid, rLocalName ))
-    {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
     }
     else
     {
@@ -1164,10 +1119,9 @@ Reference< xml::input::XElement > TitledBoxElement::startChildElement(
 }
 
 void TitledBoxElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     {
-        ControlImportContext ctx(_pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlGroupBoxModel" );
+        ControlImportContext ctx(m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlGroupBoxModel" );
         Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
         Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
@@ -1199,7 +1153,7 @@ void TitledBoxElement::endElement()
     {
         Reference< xml::input::XAttributes > xAttributes( xRadio->getAttributes() );
 
-        ControlImportContext ctx( _pImport, getControlId( xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlRadioButtonModel", xAttributes ) );
+        ControlImportContext ctx( m_xImport.get(), getControlId( xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlRadioButtonModel", xAttributes ) );
         Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
         Reference< xml::input::XElement > xStyle( getStyle( xAttributes ) );
@@ -1225,7 +1179,7 @@ void TitledBoxElement::endElement()
 
         sal_Int16 nVal = 0;
         sal_Bool bChecked = false;
-        if (getBoolAttr( &bChecked, "checked", xAttributes, _pImport->XMLNS_DIALOGS_UID ) && bChecked)
+        if (getBoolAttr( &bChecked, "checked", xAttributes, m_xImport->XMLNS_DIALOGS_UID ) && bChecked)
         {
             nVal = 1;
         }
@@ -1249,12 +1203,11 @@ void TitledBoxElement::endElement()
 Reference< xml::input::XElement > RadioElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -1266,9 +1219,8 @@ Reference< xml::input::XElement > RadioElement::startChildElement(
 Reference< xml::input::XElement > RadioGroupElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    if (_pImport->XMLNS_DIALOGS_UID != nUid)
+    if (m_xImport->XMLNS_DIALOGS_UID != nUid)
     {
         throw xml::sax::SAXException( "illegal namespace!", Reference< XInterface >(), Any() );
     }
@@ -1278,7 +1230,7 @@ Reference< xml::input::XElement > RadioGroupElement::startChildElement(
         // don't create radios here, => titledbox must be inserted first due to radio grouping,
         // possible predecessors!
         Reference< xml::input::XElement > xRet(
-            new RadioElement( rLocalName, xAttributes, this, _pImport ) );
+            new RadioElement( rLocalName, xAttributes, this, m_xImport.get() ) );
         _radios.push_back( xRet );
         return xRet;
     }
@@ -1288,14 +1240,13 @@ Reference< xml::input::XElement > RadioGroupElement::startChildElement(
     }
 }
 void RadioGroupElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     for (Reference<XElement>& xRadio : _radios)
     {
         Reference< xml::input::XAttributes > xAttributes(
             xRadio->getAttributes() );
 
-        ControlImportContext ctx( _pImport, getControlId( xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlRadioButtonModel", xAttributes ) );
+        ControlImportContext ctx( m_xImport.get(), getControlId( xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlRadioButtonModel", xAttributes ) );
         Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
         Reference< xml::input::XElement > xStyle( getStyle( xAttributes ) );
@@ -1320,7 +1271,7 @@ void RadioGroupElement::endElement()
         ctx.importStringProperty( "GroupName", "group-name", xAttributes );
         sal_Int16 nVal = 0;
         sal_Bool bChecked = false;
-        if (getBoolAttr( &bChecked, "checked", xAttributes, _pImport->XMLNS_DIALOGS_UID ) && bChecked)
+        if (getBoolAttr( &bChecked, "checked", xAttributes, m_xImport->XMLNS_DIALOGS_UID ) && bChecked)
         {
             nVal = 1;
         }
@@ -1346,28 +1297,27 @@ void RadioGroupElement::endElement()
 Reference< xml::input::XElement > MenuPopupElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    if (_pImport->XMLNS_DIALOGS_UID != nUid)
+    if (m_xImport->XMLNS_DIALOGS_UID != nUid)
     {
         throw xml::sax::SAXException( "illegal namespace!", Reference< XInterface >(), Any() );
     }
     // menuitem
     else if ( rLocalName == "menuitem" )
     {
-        OUString aValue( xAttributes->getValueByUidName( _pImport->XMLNS_DIALOGS_UID,"value" ) );
+        OUString aValue( xAttributes->getValueByUidName( m_xImport->XMLNS_DIALOGS_UID,"value" ) );
         SAL_WARN_IF( aValue.isEmpty(), "xmlscript.xmldlg", "### menuitem has no value?" );
         if (!aValue.isEmpty())
         {
             _itemValues.push_back( aValue );
 
-            OUString aSel( xAttributes->getValueByUidName( _pImport->XMLNS_DIALOGS_UID, "selected" ) );
+            OUString aSel( xAttributes->getValueByUidName( m_xImport->XMLNS_DIALOGS_UID, "selected" ) );
             if (!aSel.isEmpty() && aSel == "true")
             {
                 _itemSelected.push_back( static_cast<sal_Int16>(_itemValues.size()) -1 );
             }
         }
-        return new ElementBase( _pImport->XMLNS_DIALOGS_UID, rLocalName, xAttributes, this, _pImport );
+        return new ElementBase( m_xImport->XMLNS_DIALOGS_UID, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -1399,21 +1349,20 @@ Sequence< sal_Int16 > MenuPopupElement::getSelectedItems()
 Reference< xml::input::XElement > MenuListElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
-    else if (_pImport->XMLNS_DIALOGS_UID != nUid)
+    else if (m_xImport->XMLNS_DIALOGS_UID != nUid)
     {
         throw xml::sax::SAXException( "illegal namespace!", Reference< XInterface >(), Any() );
     }
     // menupopup
     else if ( rLocalName == "menupopup" )
     {
-        _popup = new MenuPopupElement( rLocalName, xAttributes, this, _pImport );
+        _popup = new MenuPopupElement( rLocalName, xAttributes, this, m_xImport.get() );
         return _popup;
     }
     else
@@ -1423,9 +1372,8 @@ Reference< xml::input::XElement > MenuListElement::startChildElement(
 }
 
 void MenuListElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlListBoxModel", _xAttributes  ) );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlListBoxModel", _xAttributes  ) );
     Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
@@ -1469,21 +1417,20 @@ void MenuListElement::endElement()
 Reference< xml::input::XElement > ComboBoxElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
-    else if (_pImport->XMLNS_DIALOGS_UID != nUid)
+    else if (m_xImport->XMLNS_DIALOGS_UID != nUid)
     {
         throw xml::sax::SAXException( "illegal namespace!", Reference< XInterface >(), Any() );
     }
     // menupopup
     else if ( rLocalName == "menupopup" )
     {
-        _popup = new MenuPopupElement( rLocalName, xAttributes, this, _pImport );
+        _popup = new MenuPopupElement( rLocalName, xAttributes, this, m_xImport.get() );
         return _popup;
     }
     else
@@ -1492,9 +1439,8 @@ Reference< xml::input::XElement > ComboBoxElement::startChildElement(
     }
 }
 void ComboBoxElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlComboBoxModel", _xAttributes ) );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), getControlModelName( "com.sun.star.awt.UnoControlComboBoxModel", _xAttributes ) );
     Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
@@ -1538,12 +1484,11 @@ void ComboBoxElement::endElement()
 Reference< xml::input::XElement > CheckBoxElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -1551,9 +1496,8 @@ Reference< xml::input::XElement > CheckBoxElement::startChildElement(
     }
 }
 void CheckBoxElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlCheckBoxModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlCheckBoxModel" );
     Reference< beans::XPropertySet > xControlModel( ctx.getControlModel() );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
@@ -1577,12 +1521,12 @@ void CheckBoxElement::endElement()
     ctx.importBooleanProperty( "MultiLine", "multiline", _xAttributes );
 
     sal_Bool bTriState = false;
-    if (getBoolAttr( &bTriState, "tristate", _xAttributes, _pImport->XMLNS_DIALOGS_UID ))
+    if (getBoolAttr( &bTriState, "tristate", _xAttributes, m_xImport->XMLNS_DIALOGS_UID ))
     {
         xControlModel->setPropertyValue( "TriState", makeAny( bTriState ) );
     }
     sal_Bool bChecked = false;
-    if (getBoolAttr( &bChecked, "checked", _xAttributes, _pImport->XMLNS_DIALOGS_UID ))
+    if (getBoolAttr( &bChecked, "checked", _xAttributes, m_xImport->XMLNS_DIALOGS_UID ))
     {
         // has "checked" attribute
         sal_Int16 nVal = (bChecked ? 1 : 0);
@@ -1606,12 +1550,11 @@ void CheckBoxElement::endElement()
 Reference< xml::input::XElement > ButtonElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -1620,9 +1563,8 @@ Reference< xml::input::XElement > ButtonElement::startChildElement(
 }
 
 void ButtonElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    ControlImportContext ctx( _pImport, getControlId( _xAttributes ), "com.sun.star.awt.UnoControlButtonModel" );
+    ControlImportContext ctx( m_xImport.get(), getControlId( _xAttributes ), "com.sun.star.awt.UnoControlButtonModel" );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())
@@ -1648,13 +1590,13 @@ void ButtonElement::endElement()
     if (ctx.importLongProperty( "RepeatDelay", "repeat", _xAttributes ))
         ctx.getControlModel()->setPropertyValue( "Repeat", makeAny(true) );
     sal_Int32 toggled = 0;
-    if (getLongAttr( &toggled, "toggled", _xAttributes, _pImport->XMLNS_DIALOGS_UID ) && toggled == 1)
+    if (getLongAttr( &toggled, "toggled", _xAttributes, m_xImport->XMLNS_DIALOGS_UID ) && toggled == 1)
         ctx.getControlModel()->setPropertyValue( "Toggle" , makeAny(true));
     ctx.importBooleanProperty( "FocusOnClick", "grab-focus", _xAttributes );
     ctx.importBooleanProperty( "MultiLine", "multiline", _xAttributes );
     // State
     sal_Bool bChecked = false;
-    if (getBoolAttr( &bChecked, "checked", _xAttributes, _pImport->XMLNS_DIALOGS_UID ) && bChecked)
+    if (getBoolAttr( &bChecked, "checked", _xAttributes, m_xImport->XMLNS_DIALOGS_UID ) && bChecked)
     {
         sal_Int16 nVal = 1;
         ctx.getControlModel()->setPropertyValue( "State" , makeAny( nVal ) );
@@ -1672,137 +1614,136 @@ void ButtonElement::endElement()
 Reference< xml::input::XElement > BulletinBoardElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    if (_pImport->XMLNS_DIALOGS_UID != nUid)
+    if (m_xImport->XMLNS_DIALOGS_UID != nUid)
     {
         throw xml::sax::SAXException("illegal namespace!", Reference< XInterface >(), Any() );
     }
     // button
     else if ( rLocalName == "button" )
     {
-        return new ButtonElement( rLocalName, xAttributes, this, _pImport );
+        return new ButtonElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // checkbox
     else if ( rLocalName == "checkbox" )
     {
-        return new CheckBoxElement( rLocalName, xAttributes, this, _pImport );
+        return new CheckBoxElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // combobox
     else if ( rLocalName == "combobox" )
     {
-        return new ComboBoxElement( rLocalName, xAttributes, this, _pImport );
+        return new ComboBoxElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // listbox
     else if ( rLocalName == "menulist" )
     {
-        return new MenuListElement( rLocalName, xAttributes, this, _pImport );
+        return new MenuListElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // radiogroup
     else if ( rLocalName == "radiogroup" )
     {
-        return new RadioGroupElement( rLocalName, xAttributes, this, _pImport );
+        return new RadioGroupElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // titledbox
     else if ( rLocalName == "titledbox" )
     {
-        return new TitledBoxElement( rLocalName, xAttributes, this, _pImport );
+        return new TitledBoxElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // text
     else if ( rLocalName == "text" )
     {
-        return new TextElement( rLocalName, xAttributes, this, _pImport );
+        return new TextElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     else if ( rLocalName == "linklabel" )
     {
-        return new FixedHyperLinkElement( rLocalName, xAttributes, this, _pImport );
+        return new FixedHyperLinkElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // textfield
     else if ( rLocalName == "textfield" )
     {
-        return new TextFieldElement( rLocalName, xAttributes, this, _pImport );
+        return new TextFieldElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // img
     else if ( rLocalName == "img" )
     {
-        return new ImageControlElement( rLocalName, xAttributes, this, _pImport );
+        return new ImageControlElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // filecontrol
     else if ( rLocalName == "filecontrol" )
     {
-        return new FileControlElement( rLocalName, xAttributes, this, _pImport );
+        return new FileControlElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // treecontrol
     else if ( rLocalName == "treecontrol" )
     {
-        return new TreeControlElement( rLocalName, xAttributes, this, _pImport );
+        return new TreeControlElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // currencyfield
     else if ( rLocalName == "currencyfield" )
     {
-        return new CurrencyFieldElement( rLocalName, xAttributes, this, _pImport );
+        return new CurrencyFieldElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // datefield
     else if ( rLocalName == "datefield" )
     {
-        return new DateFieldElement( rLocalName, xAttributes, this, _pImport );
+        return new DateFieldElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // datefield
     else if ( rLocalName == "numericfield" )
     {
-        return new NumericFieldElement( rLocalName, xAttributes, this, _pImport );
+        return new NumericFieldElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // timefield
     else if ( rLocalName == "timefield" )
     {
-        return new TimeFieldElement( rLocalName, xAttributes, this, _pImport );
+        return new TimeFieldElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // patternfield
     else if ( rLocalName == "patternfield" )
     {
-        return new PatternFieldElement( rLocalName, xAttributes, this, _pImport );
+        return new PatternFieldElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // formattedfield
     else if ( rLocalName == "formattedfield" )
     {
-        return new FormattedFieldElement( rLocalName, xAttributes, this, _pImport );
+        return new FormattedFieldElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // fixedline
     else if ( rLocalName == "fixedline" )
     {
-        return new FixedLineElement( rLocalName, xAttributes, this, _pImport );
+        return new FixedLineElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // scrollbar
     else if ( rLocalName == "scrollbar" )
     {
-        return new ScrollBarElement( rLocalName, xAttributes, this, _pImport );
+        return new ScrollBarElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // spinbutton
     else if ( rLocalName == "spinbutton" )
     {
-        return new SpinButtonElement( rLocalName, xAttributes, this, _pImport );
+        return new SpinButtonElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // progressmeter
     else if ( rLocalName == "progressmeter" )
     {
-        return new ProgressBarElement( rLocalName, xAttributes, this, _pImport );
+        return new ProgressBarElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     else if ( rLocalName == "multipage" )
     {
-        return new MultiPage( rLocalName, xAttributes, this, _pImport );
+        return new MultiPage( rLocalName, xAttributes, this, m_xImport.get() );
     }
     else if ( rLocalName == "frame" )
     {
-        return new Frame( rLocalName, xAttributes, this, _pImport );
+        return new Frame( rLocalName, xAttributes, this, m_xImport.get() );
     }
     else if ( rLocalName == "page" )
     {
-        return new Page( rLocalName, xAttributes, this, _pImport );
+        return new Page( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // bulletinboard
     else if ( rLocalName == "bulletinboard" )
     {
-        return new BulletinBoardElement( rLocalName, xAttributes, this, _pImport );
+        return new BulletinBoardElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -1816,12 +1757,12 @@ BulletinBoardElement::BulletinBoardElement(
     ElementBase * pParent, DialogImport * pImport )
     : ControlElement( rLocalName, xAttributes, pParent, pImport )
 {
-    OUString aValue( _xAttributes->getValueByUidName( _pImport->XMLNS_DIALOGS_UID, "left" ) );
+    OUString aValue( _xAttributes->getValueByUidName( m_xImport->XMLNS_DIALOGS_UID, "left" ) );
     if (!aValue.isEmpty())
     {
         _nBasePosX += toInt32( aValue );
     }
-    aValue = _xAttributes->getValueByUidName( _pImport->XMLNS_DIALOGS_UID, "top" );
+    aValue = _xAttributes->getValueByUidName( m_xImport->XMLNS_DIALOGS_UID, "top" );
     if (!aValue.isEmpty())
     {
         _nBasePosY += toInt32( aValue );
@@ -1832,19 +1773,17 @@ BulletinBoardElement::BulletinBoardElement(
 Reference< xml::input::XElement > StyleElement::startChildElement(
     sal_Int32 /*nUid*/, OUString const & /*rLocalName*/,
     Reference< xml::input::XAttributes > const & /*xAttributes*/ )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     throw xml::sax::SAXException( "unexpected sub elements of style!", Reference< XInterface >(), Any() );
 }
 
 void StyleElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     Reference< xml::input::XAttributes > xStyle;
-    OUString aStyleId( _xAttributes->getValueByUidName( _pImport->XMLNS_DIALOGS_UID, "style-id" ) );
+    OUString aStyleId( _xAttributes->getValueByUidName( m_xImport->XMLNS_DIALOGS_UID, "style-id" ) );
     if (!aStyleId.isEmpty())
     {
-        _pImport->addStyle( aStyleId, this );
+        m_xImport->addStyle( aStyleId, this );
     }
     else
     {
@@ -1856,16 +1795,15 @@ void StyleElement::endElement()
 Reference< xml::input::XElement > StylesElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    if (_pImport->XMLNS_DIALOGS_UID != nUid)
+    if (m_xImport->XMLNS_DIALOGS_UID != nUid)
     {
         throw xml::sax::SAXException( "illegal namespace!", Reference< XInterface >(), Any() );
     }
     // style
     else if ( rLocalName == "style" )
     {
-        return new StyleElement( rLocalName, xAttributes, this, _pImport );
+        return new StyleElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -1877,26 +1815,25 @@ Reference< xml::input::XElement > StylesElement::startChildElement(
 Reference< xml::input::XElement > WindowElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // event
-    if (_pImport->isEventElement( nUid, rLocalName ))
+    if (m_xImport->isEventElement( nUid, rLocalName ))
     {
-        return new EventElement( nUid, rLocalName, xAttributes, this, _pImport );
+        return new EventElement( nUid, rLocalName, xAttributes, this, m_xImport.get() );
     }
-    else if (_pImport->XMLNS_DIALOGS_UID != nUid)
+    else if (m_xImport->XMLNS_DIALOGS_UID != nUid)
     {
         throw xml::sax::SAXException( "illegal namespace!", Reference< XInterface >(), Any() );
     }
     // styles
     else if ( rLocalName == "styles" )
     {
-        return new StylesElement( rLocalName, xAttributes, this, _pImport );
+        return new StylesElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     // bulletinboard
     else if ( rLocalName == "bulletinboard" )
     {
-        return new BulletinBoardElement( rLocalName, xAttributes, this, _pImport );
+        return new BulletinBoardElement( rLocalName, xAttributes, this, m_xImport.get() );
     }
     else
     {
@@ -1905,11 +1842,10 @@ Reference< xml::input::XElement > WindowElement::startChildElement(
 }
 
 void WindowElement::endElement()
-    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     Reference< beans::XPropertySet > xProps(
-        _pImport->_xDialogModel, UNO_QUERY_THROW );
-    ImportContext ctx( _pImport, xProps, getControlId( _xAttributes ) );
+        m_xImport->_xDialogModel, UNO_QUERY_THROW );
+    ImportContext ctx( m_xImport.get(), xProps, getControlId( _xAttributes ) );
 
     Reference< xml::input::XElement > xStyle( getStyle( _xAttributes ) );
     if (xStyle.is())

@@ -118,6 +118,7 @@ SdPresLayoutTemplateDlg::SdPresLayoutTemplateDlg( SfxObjectShell* pDocSh,
     SvxColorListItem aColorListItem(*static_cast<const SvxColorListItem*>( mpDocShell->GetItem( SID_COLOR_TABLE ) ) );
     SvxGradientListItem aGradientListItem(*static_cast<const SvxGradientListItem*>( mpDocShell->GetItem( SID_GRADIENT_LIST ) ) );
     SvxBitmapListItem aBitmapListItem(*static_cast<const SvxBitmapListItem*>( mpDocShell->GetItem( SID_BITMAP_LIST ) ) );
+    SvxPatternListItem aPatternListItem(*static_cast<const SvxPatternListItem*>( mpDocShell->GetItem( SID_PATTERN_LIST ) ) );
     SvxHatchListItem aHatchListItem(*static_cast<const SvxHatchListItem*>( mpDocShell->GetItem( SID_HATCH_LIST ) ) );
     SvxDashListItem aDashListItem(*static_cast<const SvxDashListItem*>( mpDocShell->GetItem( SID_DASH_LIST ) ) );
     SvxLineEndListItem aLineEndListItem(*static_cast<const SvxLineEndListItem*>( mpDocShell->GetItem( SID_LINEEND_LIST ) ) );
@@ -128,6 +129,7 @@ SdPresLayoutTemplateDlg::SdPresLayoutTemplateDlg( SfxObjectShell* pDocSh,
     pGradientList = aGradientListItem.GetGradientList();
     pHatchingList = aHatchListItem.GetHatchList();
     pBitmapList = aBitmapListItem.GetBitmapList();
+    pPatternList = aPatternListItem.GetPatternList();
 
     SfxAbstractDialogFactory* pFact = SfxAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "Dialog creation failed!");
@@ -147,6 +149,7 @@ SdPresLayoutTemplateDlg::SdPresLayoutTemplateDlg( SfxObjectShell* pDocSh,
     mnTab =  AddTabPage( "RID_SVXPAGE_TABULATOR", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_TABULATOR ), nullptr );
     mnAsian = AddTabPage( "RID_SVXPAGE_PARA_ASIAN", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_PARA_ASIAN ), nullptr );
     mnAlign = AddTabPage( "RID_SVXPAGE_ALIGN_PARAGRAPH", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_ALIGN_PARAGRAPH ), nullptr );
+    mnBackground = AddTabPage( "RID_SVXPAGE_BACKGROUND", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_BACKGROUND ), nullptr);
 
     SvtCJKOptions aCJKOptions;
     if( !aCJKOptions.IsAsianTypographyEnabled() )
@@ -210,15 +213,6 @@ SdPresLayoutTemplateDlg::SdPresLayoutTemplateDlg( SfxObjectShell* pDocSh,
         break;
     }
     SetText( aTitle );
-
-    nDlgType = 1; // template dialog
-    nPageType = 0;
-    nPos = 0;
-
-    nColorTableState = ChangeType::NONE;
-    nBitmapListState = ChangeType::NONE;
-    nGradientListState = ChangeType::NONE;
-    nHatchingListState = ChangeType::NONE;
 }
 
 SdPresLayoutTemplateDlg::~SdPresLayoutTemplateDlg()
@@ -237,52 +231,52 @@ void SdPresLayoutTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
     SfxAllItemSet aSet(*(aInputSet.GetPool()));
 
     if (nId == mnLine)
-        {
-            aSet.Put (SvxColorListItem(pColorTab,SID_COLOR_TABLE));
-            aSet.Put (SvxDashListItem(pDashList,SID_DASH_LIST));
-            aSet.Put (SvxLineEndListItem(pLineEndList,SID_LINEEND_LIST));
-            aSet.Put (SfxUInt16Item(SID_DLG_TYPE,nDlgType));
+    {
+        aSet.Put (SvxColorListItem(pColorTab,SID_COLOR_TABLE));
+        aSet.Put (SvxDashListItem(pDashList,SID_DASH_LIST));
+        aSet.Put (SvxLineEndListItem(pLineEndList,SID_LINEEND_LIST));
+        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,1));
         rPage.PageCreated(aSet);
-        }
-
+    }
     else if (nId == mnArea)
-        {
-            aSet.Put (SvxColorListItem(pColorTab,SID_COLOR_TABLE));
-            aSet.Put (SvxGradientListItem(pGradientList,SID_GRADIENT_LIST));
-            aSet.Put (SvxHatchListItem(pHatchingList,SID_HATCH_LIST));
-            aSet.Put (SvxBitmapListItem(pBitmapList,SID_BITMAP_LIST));
-            aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,nPageType));
-            aSet.Put (SfxUInt16Item(SID_DLG_TYPE,nDlgType));
-            aSet.Put (SfxUInt16Item(SID_TABPAGE_POS,nPos));
-            rPage.PageCreated(aSet);
-        }
-
+    {
+        aSet.Put (SvxColorListItem(pColorTab,SID_COLOR_TABLE));
+        aSet.Put (SvxGradientListItem(pGradientList,SID_GRADIENT_LIST));
+        aSet.Put (SvxHatchListItem(pHatchingList,SID_HATCH_LIST));
+        aSet.Put (SvxBitmapListItem(pBitmapList,SID_BITMAP_LIST));
+        aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,0));
+        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,1));
+        aSet.Put (SfxUInt16Item(SID_TABPAGE_POS,0));
+        rPage.PageCreated(aSet);
+    }
     else if (nId == mnShadow)
-        {
-            aSet.Put (SvxColorListItem(pColorTab,SID_COLOR_TABLE));
-            aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,nPageType));
-            aSet.Put (SfxUInt16Item(SID_DLG_TYPE,nDlgType));
-            rPage.PageCreated(aSet);
-        }
-
+    {
+        aSet.Put (SvxColorListItem(pColorTab,SID_COLOR_TABLE));
+        aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,0));
+        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,1));
+        rPage.PageCreated(aSet);
+    }
     else if (nId == mnTransparency)
-        {
-            aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,nPageType));
-            aSet.Put (SfxUInt16Item(SID_DLG_TYPE,nDlgType));
-            rPage.PageCreated(aSet);
-        }
-
+    {
+        aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,0));
+        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,1));
+        rPage.PageCreated(aSet);
+    }
     else if (nId == mnFont)
-        {
-            SvxFontListItem aItem(*static_cast<const SvxFontListItem*>(mpDocShell->GetItem( SID_ATTR_CHAR_FONTLIST) ) );
-            aSet.Put (SvxFontListItem( aItem.GetFontList(), SID_ATTR_CHAR_FONTLIST));
-            rPage.PageCreated(aSet);
-        }
-
+    {
+        SvxFontListItem aItem(*static_cast<const SvxFontListItem*>(mpDocShell->GetItem( SID_ATTR_CHAR_FONTLIST) ) );
+        aSet.Put (SvxFontListItem( aItem.GetFontList(), SID_ATTR_CHAR_FONTLIST));
+        rPage.PageCreated(aSet);
+    }
     else if (nId == mnEffects)
-        {
-            rPage.PageCreated(aSet);
-        }
+    {
+        rPage.PageCreated(aSet);
+    }
+    else if (nId == mnTextAtt)
+    {
+        aSet.Put(CntUInt16Item(SID_SVXTEXTATTRPAGE_OBJKIND, OBJ_TEXT));
+        rPage.PageCreated(aSet);
+    }
 }
 
 const SfxItemSet* SdPresLayoutTemplateDlg::GetOutputItemSet() const
@@ -314,7 +308,7 @@ sal_uInt16 SdPresLayoutTemplateDlg::GetOutlineLevel() const
     case PO_OUTLINE_8: return 7;
     case PO_OUTLINE_9: return 8;
     default:
-        DBG_ASSERT( false, "Wrong Po! [CL]");
+        SAL_WARN( "sd", "Wrong Po! [CL]");
     }
     return 0;
 }

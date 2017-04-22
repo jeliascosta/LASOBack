@@ -7,13 +7,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-$(eval $(call gb_Package_Package,libreofficekit_selectionhandles,$(SRCDIR)/android/source/res/drawable))
+$(eval $(call gb_Package_Package,libreofficekit_selectionhandles,$(SRCDIR)/android/source/res/drawable-xhdpi))
 
 $(eval $(call gb_Package_add_files,libreofficekit_selectionhandles,$(LIBO_SHARE_FOLDER)/libreofficekit,\
 	handle_image_start.png \
 	handle_image_middle.png \
 	handle_image_end.png \
-	handle_graphic.png \
 ))
 
 # vim: set noet sw=4 ts=4:

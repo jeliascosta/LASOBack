@@ -58,7 +58,7 @@ public:
 
     explicit ActiveMSPList(  const css::uno::Reference<
         css::uno::XComponentContext > & xContext  );
-    virtual ~ActiveMSPList();
+    virtual ~ActiveMSPList() override;
 
     css::uno::Reference< css::script::provider::XScriptProvider >
         getMSPFromStringContext( const OUString& context );
@@ -72,8 +72,7 @@ public:
     //XEventListener
 
 
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
-        throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
 private:
     void addActiveMSP( const css::uno::Reference< css::uno::XInterface >& xComponent,

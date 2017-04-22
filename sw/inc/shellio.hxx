@@ -32,6 +32,7 @@
 #include <tools/time.hxx>
 #include <tools/datetime.hxx>
 #include <tools/ref.hxx>
+#include <rtl/ref.hxx>
 #include <swdllapi.h>
 #include <swtypes.hxx>
 #include <docfac.hxx>
@@ -167,8 +168,6 @@ public:
     bool HasGlossaries( const Reader& );
     bool ReadGlossaries( const Reader&, SwTextBlocks&, bool bSaveRelFiles );
 
-    const OUString&     GetBaseURL() const { return sBaseURL;}
-
 protected:
     void                SetBaseURL( const OUString& rURL ) { sBaseURL = rURL; }
     void                SetSkipImages( bool bSkipImages ) { mbSkipImages = bSkipImages; }
@@ -178,13 +177,16 @@ protected:
 #define SW_STREAM_READER    1
 #define SW_STORAGE_READER   2
 
-extern "C" SAL_DLLPUBLIC_EXPORT bool SAL_CALL TestImportDOC(const OUString &rUrl, const OUString &rFltName);
+extern "C" SAL_DLLPUBLIC_EXPORT bool SAL_CALL TestImportDOC(SvStream &rStream, const OUString &rFltName);
+extern "C" SAL_DLLPUBLIC_EXPORT bool SAL_CALL TestImportRTF(SvStream &rStream);
+SAL_DLLPUBLIC_EXPORT void FlushFontCache();
 
 class SW_DLLPUBLIC Reader
 {
     friend class SwReader;
-    friend bool TestImportDOC(const OUString &rUrl, const OUString &rFltName);
-    SwDoc* pTemplate;
+    friend bool TestImportDOC(SvStream &rStream, const OUString &rFltName);
+    friend bool TestImportRTF(SvStream &rStream);
+    rtl::Reference<SwDoc> mxTemplate;
     OUString aTemplateNm;
 
     Date aDStamp;
@@ -287,7 +289,7 @@ class SwImpBlocks;
 
 class SW_DLLPUBLIC SwTextBlocks
 {
-    SwImpBlocks* pImp;
+    std::unique_ptr<SwImpBlocks> pImp;
     sal_uLong        nErr;
 
 public:
@@ -361,7 +363,7 @@ class SW_DLLPUBLIC Writer
     void AddFontItem( SfxItemPool& rPool, const SvxFontItem& rFont );
     void AddFontItems_( SfxItemPool& rPool, sal_uInt16 nWhichId );
 
-    ::std::unique_ptr<Writer_Impl> m_pImpl;
+    std::unique_ptr<Writer_Impl> m_pImpl;
 
     Writer(Writer const&) = delete;
     Writer& operator=(Writer const&) = delete;
@@ -375,7 +377,7 @@ protected:
     bool CopyNextPam( SwPaM ** );
 
     void PutNumFormatFontsInAttrPool();
-    void PutEditEngFontsInAttrPool( bool bIncl_CJK_CTL = true );
+    void PutEditEngFontsInAttrPool();
 
     virtual sal_uLong WriteStream() = 0;
     void                SetBaseURL( const OUString& rURL ) { sBaseURL = rURL; }
@@ -403,12 +405,12 @@ public:
     bool bOrganizerMode : 1;
 
     Writer();
-    virtual ~Writer();
+    virtual ~Writer() override;
 
-    virtual sal_uLong Write( SwPaM&, SfxMedium&, const OUString* = nullptr );
-            sal_uLong Write( SwPaM&, SvStream&,  const OUString* = nullptr );
-    virtual sal_uLong Write( SwPaM&, const css::uno::Reference < css::embed::XStorage >&, const OUString* = nullptr, SfxMedium* = nullptr );
-    virtual sal_uLong Write( SwPaM&, SotStorage&, const OUString* = nullptr );
+    virtual sal_uLong Write( SwPaM&, SfxMedium&, const OUString* );
+            sal_uLong Write( SwPaM&, SvStream&,  const OUString* );
+    virtual sal_uLong Write( SwPaM&, const css::uno::Reference < css::embed::XStorage >&, const OUString*, SfxMedium* = nullptr );
+    virtual sal_uLong Write( SwPaM&, SotStorage&, const OUString* );
 
     virtual void SetupFilterOptions(SfxMedium& rMedium);
 
@@ -428,7 +430,7 @@ public:
     // Build a bookmark table, which is sort by the node position. The
     // OtherPos of the bookmarks also inserted.
     void CreateBookmarkTable();
-    // Search alle Bookmarks in the range and return it in the Array.
+    // Search all Bookmarks in the range and return it in the Array.
     bool GetBookmarks( const SwContentNode& rNd,
                         sal_Int32 nStt, sal_Int32 nEnd,
                         std::vector< const ::sw::mark::IMark* >& rArr );
@@ -473,8 +475,8 @@ public:
 
     virtual bool IsStgWriter() const override;
 
-    virtual sal_uLong Write( SwPaM&, const css::uno::Reference < css::embed::XStorage >&, const OUString* = nullptr, SfxMedium* = nullptr ) override;
-    virtual sal_uLong Write( SwPaM&, SotStorage&, const OUString* = nullptr ) override;
+    virtual sal_uLong Write( SwPaM&, const css::uno::Reference < css::embed::XStorage >&, const OUString*, SfxMedium* = nullptr ) override;
+    virtual sal_uLong Write( SwPaM&, SotStorage&, const OUString* ) override;
 
     SotStorage& GetStorage() const       { return *pStg; }
 };
@@ -503,7 +505,7 @@ public:
 
     SwWriter( const css::uno::Reference < css::embed::XStorage >&, SwDoc& );
 
-    SwWriter( SfxMedium&, SwCursorShell &, bool bWriteAll = false );
+    SwWriter( SfxMedium&, SwCursorShell &, bool bWriteAll );
     SwWriter( SfxMedium&, SwDoc & );
 };
 

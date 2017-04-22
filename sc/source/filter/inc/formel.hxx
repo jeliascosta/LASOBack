@@ -41,13 +41,11 @@ class ScTokenArray;
 struct ScSingleRefData;
 struct ScComplexRefData;
 
-enum ConvErr
+enum class ConvErr
 {
-    ConvOK = 0,
-    ConvErrNi,      // unimplemented/unknown opcode occurred
-    ConvErrNoMem,   // alloc error
-    ConvErrExternal,// excel add-ins are not converted
-    ConvErrCount    // did not get all bytes of formula
+    OK = 0,
+    Ni,      // unimplemented/unknown opcode occurred
+    Count    // did not get all bytes of formula
 };
 
 enum FORMULA_TYPE
@@ -73,7 +71,7 @@ public:
     void Append( const ScAddress& aSRD, SCTAB nTab );
     void Append( const ScRange& aCRD, SCTAB nTab );
 
-    const ScRange* First ( SCTAB nTab = 0 );
+    const ScRange* First ( SCTAB nTab );
     const ScRange* Next ();
 
     bool HasRanges () const { return !m_TabRanges.empty(); }
@@ -86,7 +84,8 @@ protected:
     TokenStack          aStack;
     ScAddress           aEingPos;
     ConvErr             eStatus;
-    sal_Char*           pBuffer;        // universal buffer
+    std::unique_ptr<sal_Char[]>
+                        pBuffer;        // universal buffer
 
     ConverterBase( svl::SharedStringPool& rSPool, sal_uInt16 nNewBuffer );
     virtual             ~ConverterBase();
@@ -97,16 +96,16 @@ protected:
 class ExcelConverterBase : public ConverterBase
 {
 protected:
-    ExcelConverterBase( svl::SharedStringPool& rSPool, sal_uInt16 nNewBuffer );
-    virtual             ~ExcelConverterBase();
+    ExcelConverterBase( svl::SharedStringPool& rSPool );
+    virtual             ~ExcelConverterBase() override;
 
 public:
     void                Reset();
     void                Reset( const ScAddress& rEingPos );
 
-    virtual ConvErr     Convert( const ScTokenArray*& rpErg, XclImpStream& rStrm, sal_Size nFormulaLen,
+    virtual ConvErr     Convert( const ScTokenArray*& rpErg, XclImpStream& rStrm, std::size_t nFormulaLen,
                                  bool bAllowArrays, const FORMULA_TYPE eFT = FT_CellFormula ) = 0;
-    virtual ConvErr     Convert( ScRangeListTabs&, XclImpStream& rStrm, sal_Size nFormulaLen, SCsTAB nTab,
+    virtual ConvErr     Convert( ScRangeListTabs&, XclImpStream& rStrm, std::size_t nFormulaLen, SCsTAB nTab,
                                     const FORMULA_TYPE eFT = FT_CellFormula ) = 0;
 };
 
@@ -123,8 +122,8 @@ protected:
     inline void         Read( double& fDouble );
     inline void         Read( sal_uInt32& nUINT32 );
 
-    LotusConverterBase( SvStream& rStr, svl::SharedStringPool& rSPool, sal_uInt16 nNewBuffer );
-    virtual             ~LotusConverterBase();
+    LotusConverterBase( SvStream& rStr, svl::SharedStringPool& rSPool );
+    virtual             ~LotusConverterBase() override;
 
 public:
     void                Reset( const ScAddress& rEingPos );

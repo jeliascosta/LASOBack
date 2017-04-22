@@ -61,9 +61,8 @@
 #define INCLUDED_LOTUSWORDPRO_SOURCE_FILTER_XFILTER_XFSAXSTREAM_HXX
 
 #include "ixfstream.hxx"
+#include <memory>
 
-#include <cppuhelper/implbase1.hxx>
-#include <cppuhelper/implbase3.hxx>
 #include <cppuhelper/factory.hxx>
 #include <com/sun/star/document/XFilter.hpp>
 #include <com/sun/star/document/XImporter.hpp>
@@ -83,7 +82,7 @@ class XFSaxStream : public IXFStream
 public:
     explicit XFSaxStream(css::uno::Reference<css::xml::sax::XDocumentHandler>& xHandler);
 
-    virtual ~XFSaxStream();
+    virtual ~XFSaxStream() override;
 
 public:
     /**
@@ -118,7 +117,7 @@ public:
 
 public:
     css::uno::Reference<css::xml::sax::XDocumentHandler> m_aHandler;
-    XFSaxAttrList               *m_pAttrList;
+    std::unique_ptr<XFSaxAttrList>                       m_pAttrList;
 };
 
 #endif //XFSAXSTREAM_INC

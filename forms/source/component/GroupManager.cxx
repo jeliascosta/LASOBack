@@ -62,7 +62,7 @@ OGroupCompAcc::OGroupCompAcc(const Reference<XPropertySet>& rxElement, const OGr
 
 bool OGroupCompAcc::operator==( const OGroupCompAcc& rCompAcc ) const
 {
-    return (m_xComponent == rCompAcc.GetComponent());
+    return m_xComponent == rCompAcc.m_xComponent;
 }
 
 class OGroupCompAccLess : public ::std::binary_function<OGroupCompAcc, OGroupCompAcc, sal_Bool>
@@ -83,8 +83,7 @@ OGroupComp::OGroupComp()
 }
 
 OGroupComp::OGroupComp(const OGroupComp& _rSource)
-    :m_aName( _rSource.m_aName )
-    ,m_xComponent( _rSource.m_xComponent )
+    :m_xComponent( _rSource.m_xComponent )
     ,m_xControlModel(_rSource.m_xControlModel)
     ,m_nPos( _rSource.m_nPos )
     ,m_nTabIndex( _rSource.m_nTabIndex )
@@ -92,8 +91,7 @@ OGroupComp::OGroupComp(const OGroupComp& _rSource)
 }
 
 OGroupComp::OGroupComp(const Reference<XPropertySet>& rxSet, sal_Int32 nInsertPos )
-    : m_aName( OGroupManager::GetGroupName( rxSet ) )
-    , m_xComponent( rxSet )
+    : m_xComponent( rxSet )
     , m_xControlModel(rxSet,UNO_QUERY)
     , m_nPos( nInsertPos )
     , m_nTabIndex(0)
@@ -195,7 +193,7 @@ Sequence< Reference<XControlModel>  > OGroup::GetControlModels() const
 }
 
 OGroupManager::OGroupManager(const Reference< XContainer >& _rxContainer)
-    :m_pCompGroup( new OGroup( OUString("AllComponentGroup") ) )
+    :m_pCompGroup( new OGroup( "AllComponentGroup" ) )
     ,m_xContainer(_rxContainer)
 {
     osl_atomic_increment(&m_refCount);
@@ -207,17 +205,15 @@ OGroupManager::OGroupManager(const Reference< XContainer >& _rxContainer)
 
 OGroupManager::~OGroupManager()
 {
-    // delete all Components and CompGroup
-    delete m_pCompGroup;
 }
 
 // XPropertyChangeListener
-void OGroupManager::disposing(const EventObject& evt) throw( RuntimeException, std::exception )
+void OGroupManager::disposing(const EventObject& evt)
 {
     Reference<XContainer>  xContainer(evt.Source, UNO_QUERY);
     if (xContainer.get() == m_xContainer.get())
     {
-        DELETEZ(m_pCompGroup);
+        m_pCompGroup.reset();
 
         // delete group
         m_aGroupArr.clear();
@@ -265,7 +261,7 @@ void OGroupManager::removeFromGroupMap(const OUString& _sGroupName,const Referen
         _xSet->removePropertyChangeListener( PROPERTY_TABINDEX, this );
 }
 
-void SAL_CALL OGroupManager::propertyChange(const PropertyChangeEvent& evt) throw ( css::uno::RuntimeException, std::exception)
+void SAL_CALL OGroupManager::propertyChange(const PropertyChangeEvent& evt)
 {
     Reference<XPropertySet>  xSet(evt.Source, UNO_QUERY);
 
@@ -296,7 +292,7 @@ void SAL_CALL OGroupManager::propertyChange(const PropertyChangeEvent& evt) thro
 }
 
 // XContainerListener
-void SAL_CALL OGroupManager::elementInserted(const ContainerEvent& Event) throw ( css::uno::RuntimeException, std::exception)
+void SAL_CALL OGroupManager::elementInserted(const ContainerEvent& Event)
 {
     Reference< XPropertySet > xProps;
     Event.Element >>= xProps;
@@ -304,7 +300,7 @@ void SAL_CALL OGroupManager::elementInserted(const ContainerEvent& Event) throw 
         InsertElement( xProps );
 }
 
-void SAL_CALL OGroupManager::elementRemoved(const ContainerEvent& Event) throw ( css::uno::RuntimeException, std::exception)
+void SAL_CALL OGroupManager::elementRemoved(const ContainerEvent& Event)
 {
     Reference<XPropertySet> xProps;
     Event.Element >>= xProps;
@@ -312,7 +308,7 @@ void SAL_CALL OGroupManager::elementRemoved(const ContainerEvent& Event) throw (
         RemoveElement( xProps );
 }
 
-void SAL_CALL OGroupManager::elementReplaced(const ContainerEvent& Event) throw ( css::uno::RuntimeException, std::exception)
+void SAL_CALL OGroupManager::elementReplaced(const ContainerEvent& Event)
 {
     Reference<XPropertySet> xProps;
     Event.ReplacedElement >>= xProps;

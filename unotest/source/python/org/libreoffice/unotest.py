@@ -1,4 +1,4 @@
-# -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+# -*- tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
 #
 # This file is part of the LibreOffice project.
 #
@@ -306,7 +306,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Help utilities for testing LibreOffice")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
-    #parser.add_argument("p", type=str, help="programm name")
+    #parser.add_argument("p", type=str, help="program name")
     args = parser.parse_args()
     if args.verbose:
         verbose = True
@@ -319,4 +319,4 @@ if __name__ == "__main__":
     con.tearDown()
     print("done")
 
-# vim:set shiftwidth=4 softtabstop=4 expandtab:
+# vim: set shiftwidth=4 softtabstop=4 expandtab:

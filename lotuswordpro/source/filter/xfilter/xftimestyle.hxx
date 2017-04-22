@@ -72,8 +72,6 @@ public:
         , m_bLongFmt(false)
     {}
 
-    virtual ~XFDateTimePart(){}
-public:
     void    SetPartType(enumXFDatePart ePart);
 
     void    SetLongFmt(bool bLongFmt);
@@ -91,8 +89,6 @@ class XFTimePart : public XFDateTimePart
 public:
     XFTimePart();
 
-    virtual ~XFTimePart(){}
-public:
     void    SetDecimalPos(sal_Int32 pos);
 
     virtual void    ToXml(IXFStream *pStrm) override;
@@ -106,7 +102,7 @@ class XFTimeStyle : public XFStyle
 public:
     XFTimeStyle();
 
-    virtual ~XFTimeStyle();
+    virtual ~XFTimeStyle() override;
 
 public:
 
@@ -127,7 +123,6 @@ public:
     void    SetTruncate(bool bTrunc);
 
 private:
-    bool    m_bFixed;
     bool    m_bAmPm;
     std::vector<XFTimePart> m_aParts;
     bool    m_bTruncate;

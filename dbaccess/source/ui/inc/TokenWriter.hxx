@@ -52,9 +52,6 @@ namespace dbaui
     typedef ::cppu::WeakImplHelper< css::lang::XEventListener> ODatabaseImportExport_BASE;
     class ODatabaseImportExport : public ODatabaseImportExport_BASE
     {
-    private:
-        void impl_initializeRowMember_throw();
-
     protected:
         css::lang::Locale                                     m_aLocale;
         css::uno::Sequence< css::uno::Any>                    m_aSelection;
@@ -97,7 +94,7 @@ namespace dbaui
                                 const css::uno::Reference< css::util::XNumberFormatter >& _rxNumberF,
                                 const css::uno::Reference< css::uno::XComponentContext >& _rM);
 
-        virtual ~ODatabaseImportExport();
+        virtual ~ODatabaseImportExport() override;
 
         virtual void initialize();
     public:
@@ -116,7 +113,7 @@ namespace dbaui
         bool isCheckEnabled() const { return m_bCheckOnly; }
 
     private:
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
         void impl_initFromDescriptor( const svx::ODataAccessDescriptor& _aDataDescriptor, bool _bPlusDefaultInit );
     };
 
@@ -192,8 +189,8 @@ namespace dbaui
     class ORowSetImportExport : public ODatabaseImportExport
     {
         OModuleClient               m_aModuleClient;
-        ::std::vector<sal_Int32>    m_aColumnMapping;
-        ::std::vector<sal_Int32>    m_aColumnTypes;
+        std::vector<sal_Int32>    m_aColumnMapping;
+        std::vector<sal_Int32>    m_aColumnTypes;
         css::uno::Reference< css::sdbc::XResultSetUpdate >    m_xTargetResultSetUpdate;
         css::uno::Reference< css::sdbc::XRowUpdate >          m_xTargetRowUpdate;
         css::uno::Reference< css::sdbc::XResultSetMetaData >  m_xTargetResultSetMetaData;

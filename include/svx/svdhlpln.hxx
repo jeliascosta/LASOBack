@@ -30,16 +30,16 @@
 class OutputDevice;
 
 
-enum SdrHelpLineKind {SDRHELPLINE_POINT,SDRHELPLINE_VERTICAL,SDRHELPLINE_HORIZONTAL};
+enum class SdrHelpLineKind { Point, Vertical, Horizontal };
 
-#define SDRHELPLINE_POINT_PIXELSIZE 15 /* Tatsaechliche Groesse= PIXELSIZE*2+1 */
+#define SDRHELPLINE_POINT_PIXELSIZE 15 /* actual size = PIXELSIZE*2+1 */
 
 class SdrHelpLine {
-    Point            aPos; // je nach Wert von eKind ist X oder Y evtl. belanglos
+    Point            aPos; // X or Y may be unimportant, depending on the value of eKind
     SdrHelpLineKind  eKind;
 
 public:
-    explicit SdrHelpLine(SdrHelpLineKind eNewKind=SDRHELPLINE_POINT): eKind(eNewKind) {}
+    explicit SdrHelpLine(SdrHelpLineKind eNewKind=SdrHelpLineKind::Point): eKind(eNewKind) {}
     SdrHelpLine(SdrHelpLineKind eNewKind, const Point& rNewPos): aPos(rNewPos), eKind(eNewKind) {}
     bool operator==(const SdrHelpLine& rCmp) const { return aPos==rCmp.aPos && eKind==rCmp.eKind; }
     bool operator!=(const SdrHelpLine& rCmp) const { return !operator==(rCmp); }
@@ -51,8 +51,8 @@ public:
 
     Pointer         GetPointer() const;
     bool            IsHit(const Point& rPnt, sal_uInt16 nTolLog, const OutputDevice& rOut) const;
-    // OutputDevice wird benoetigt, da Fangpunkte eine feste Pixelgroesse haben
-    Rectangle       GetBoundRect(const OutputDevice& rOut) const;
+    // OutputDevice is required because capture points have a fixed pixel size
+    tools::Rectangle       GetBoundRect(const OutputDevice& rOut) const;
 };
 
 #define SDRHELPLINE_NOTFOUND 0xFFFF

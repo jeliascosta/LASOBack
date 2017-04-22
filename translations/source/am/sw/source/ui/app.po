@@ -1,0 +1,1540 @@
+#. extracted from sw/source/ui/app
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2017-01-30 22:58+0000\n"
+"Last-Translator: Samson B <sambelet@yahoo.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: am\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Accelerator-Marker: ~\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1485817136.000000\n"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PRINT_MERGE_MACRO\n"
+"string.text"
+msgid "Print form letters"
+msgstr "የ ፎርም ደብዳቤዎች ማተሚያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGE_COUNT_MACRO\n"
+"string.text"
+msgid "Changing the page count"
+msgstr "የ ገጽ መቁጠሪያ በ መቀየር ላይ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PARAGRAPHSTYLEFAMILY\n"
+"string.text"
+msgid "Paragraph Styles"
+msgstr "የ አንቀጽ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CHARACTERSTYLEFAMILY\n"
+"string.text"
+msgid "Character Styles"
+msgstr "የ ባህሪ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FRAMESTYLEFAMILY\n"
+"string.text"
+msgid "Frame Styles"
+msgstr "የ ክፈፍ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGESTYLEFAMILY\n"
+"string.text"
+msgid "Page Styles"
+msgstr "የ ገጽ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LISTSTYLEFAMILY\n"
+"string.text"
+msgid "List Styles"
+msgstr "የ ዝርዝር ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_TABLESTYLEFAMILY\n"
+"string.text"
+msgid "Table Styles"
+msgstr "የ ሰንጠረዥ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"All Styles\n"
+"itemlist.text"
+msgid "All Styles"
+msgstr "ሁሉንም ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "የ ተደበቁ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "የ ተፈጸሙ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "ዘዴዎች ማስተካከያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Automatic\n"
+"itemlist.text"
+msgid "Automatic"
+msgstr "ራሱ በራሱ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Text Styles\n"
+"itemlist.text"
+msgid "Text Styles"
+msgstr "የ ጽሁፍ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Chapter Styles\n"
+"itemlist.text"
+msgid "Chapter Styles"
+msgstr "የ ምእራፍ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"List Styles\n"
+"itemlist.text"
+msgid "List Styles"
+msgstr "የ ዝርዝር ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Index Styles\n"
+"itemlist.text"
+msgid "Index Styles"
+msgstr "የ ማውጫ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Special Styles\n"
+"itemlist.text"
+msgid "Special Styles"
+msgstr "የተለዩ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"HTML Styles\n"
+"itemlist.text"
+msgid "HTML Styles"
+msgstr "የ HTML ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Conditional Styles\n"
+"itemlist.text"
+msgid "Conditional Styles"
+msgstr "እንደ ሁኔታው ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "ሁሉንም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "የ ተደበቁ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "የ ተፈጸሙ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "ዘዴዎች ማስተካከያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "ሁሉንም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "የ ተደበቁ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "የ ተፈጸሙ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "ዘዴዎች ማስተካከያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "ሁሉንም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "የ ተደበቁ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "የ ተፈጸሙ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "ዘዴዎች ማስተካከያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "ሁሉንም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "የ ተደበቁ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "የ ተፈጸሙ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "ዘዴዎች ማስተካከያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr "ሁሉንም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr "የ ተደበቁ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr "የ ተፈጸሙ ዘዴዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr "ዘዴዎች ማስተካከያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ENV_TITLE\n"
+"string.text"
+msgid "Envelope"
+msgstr "ፖስታ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LAB_TITLE\n"
+"string.text"
+msgid "Labels"
+msgstr "ምልክቶች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_HUMAN_SWDOC_NAME\n"
+"string.text"
+msgid "Text"
+msgstr "ጽሁፍ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WRITER_DOCUMENT_FULLTYPE\n"
+"string.text"
+msgid "%PRODUCTNAME %PRODUCTVERSION Text Document"
+msgstr "%PRODUCTNAME %PRODUCTVERSION የጽሁፍ ሰነድ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CANTOPEN\n"
+"string.text"
+msgid "Cannot open document."
+msgstr "ሰነዱን መክፈት አልተቻለም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CANTCREATE\n"
+"string.text"
+msgid "Can't create document."
+msgstr "ሰነዱን መፍጠር አልተቻለም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DLLNOTFOUND\n"
+"string.text"
+msgid "Filter not found."
+msgstr "ማጣሪያው አልተገኘም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_UNBENANNT\n"
+"string.text"
+msgid "Untitled"
+msgstr "ያልተሰየመ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LOAD_GLOBAL_DOC\n"
+"string.text"
+msgid "Name and Path of Master Document"
+msgstr "ስም እና መንገዱ የዋናው ሰነድ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LOAD_HTML_DOC\n"
+"string.text"
+msgid "Name and Path of the HTML Document"
+msgstr "ስም እና መንገዱ የ HTML ሰነድ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_JAVA_EDIT\n"
+"string.text"
+msgid "Edit Script"
+msgstr "ጽሁፍ ማረሚያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REMOVE_WARNING\n"
+"string.text"
+msgid "The following characters are not valid and have been removed: "
+msgstr "የሚከተሉት ባህሪዎች ዋጋ የላቸውም እና ተወግደዋል : "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BOOKMARK_NAME\n"
+"string.text"
+msgid "Name"
+msgstr "ስም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BOOKMARK_TEXT\n"
+"string.text"
+msgid "Text"
+msgstr "ጽሁፍ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"SW_STR_NONE\n"
+"string.text"
+msgid "[None]"
+msgstr "[ምንም]"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_BEGINNING\n"
+"string.text"
+msgid "Start"
+msgstr "መጀመሪያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_END\n"
+"string.text"
+msgid "End"
+msgstr "መጨረሻ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_ABOVE\n"
+"string.text"
+msgid "Above"
+msgstr "ከ ላይ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_BELOW\n"
+"string.text"
+msgid "Below"
+msgstr "ከ ታች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"SW_STR_READONLY\n"
+"string.text"
+msgid "read-only"
+msgstr "ለማንበብ-ብቻ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_READONLY_PATH\n"
+"string.text"
+msgid "The 'AutoText' directories are read-only. Do you want to call the path settings dialog?"
+msgstr "ይህ 'በራሱ ጽሁፍ' ዳይሬክቶሪስ ለንባብ-ብቻ ነው: የማሰናጃ ንግግር መንገድን መጥራት ይፈልጋሉ?"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ERROR_PASSWD\n"
+"string.text"
+msgid "Invalid password"
+msgstr "ዋጋ የሌለው የመግቢያ ቃል"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FMT_STD\n"
+"string.text"
+msgid "(none)"
+msgstr "(ምንም)"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DOC_STAT\n"
+"string.text"
+msgid "Statistics"
+msgstr "የቁጥር መረጃ ጥናት"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_W4WREAD\n"
+"string.text"
+msgid "Importing document..."
+msgstr "ሰነዶችን በማምጣት ላይ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_W4WWRITE\n"
+"string.text"
+msgid "Exporting document..."
+msgstr "ሰነዶችን በመላክ ላይ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGREAD\n"
+"string.text"
+msgid "Loading document..."
+msgstr "ሰነዶችን በመጫን ላይ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGWRITE\n"
+"string.text"
+msgid "Saving document..."
+msgstr "ሰነዶችን በማስቀመጥ ላይ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_REFORMAT\n"
+"string.text"
+msgid "Repagination..."
+msgstr "የ ገጽ መጨረሻ ማስያ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_AUTOFORMAT\n"
+"string.text"
+msgid "Formatting document automatically..."
+msgstr "ሰነዶችን ራሱ በራሱ አቀራረብ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_IMPGRF\n"
+"string.text"
+msgid "Importing images..."
+msgstr "ምስሎች በማምጣት ላይ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SEARCH\n"
+"string.text"
+msgid "Search..."
+msgstr "መፈለጊያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_FORMAT\n"
+"string.text"
+msgid "Formatting..."
+msgstr "አቀራረብ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_PRINT\n"
+"string.text"
+msgid "Printing..."
+msgstr "በማተም ላይ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_LAYOUTINIT\n"
+"string.text"
+msgid "Converting..."
+msgstr "በ መቀየር ላይ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_LETTER\n"
+"string.text"
+msgid "Letter"
+msgstr "ደብዳቤ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SPELL\n"
+"string.text"
+msgid "Spellcheck..."
+msgstr "ፊደል ማረሚያ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_HYPHEN\n"
+"string.text"
+msgid "Hyphenation..."
+msgstr "ጭረት..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_TOX_INSERT\n"
+"string.text"
+msgid "Inserting Index..."
+msgstr "ማውጫ በማስገባት ላይ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_TOX_UPDATE\n"
+"string.text"
+msgid "Updating Index..."
+msgstr "ማውጫውን በማሻሻል ላይ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SUMMARY\n"
+"string.text"
+msgid "Creating abstract..."
+msgstr "ግልጽ ያልሆነ መፍጠሪያ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGPRTOLENOTIFY\n"
+"string.text"
+msgid "Adapt Objects..."
+msgstr "Adapt Objects..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_TABLE_DEFNAME\n"
+"string.text"
+msgid "Table"
+msgstr "ሰንጠረዥ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_GRAPHIC_DEFNAME\n"
+"string.text"
+msgid "Image"
+msgstr "ምስል"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_OBJECT_DEFNAME\n"
+"string.text"
+msgid "Object"
+msgstr "እቃ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FRAME_DEFNAME\n"
+"string.text"
+msgid "Frame"
+msgstr "ክፈፍ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SHAPE_DEFNAME\n"
+"string.text"
+msgid "Shape"
+msgstr "ቅርጽ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REGION_DEFNAME\n"
+"string.text"
+msgid "Section"
+msgstr "ክፍል"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NUMRULE_DEFNAME\n"
+"string.text"
+msgid "Numbering"
+msgstr "ቁጥር በመስጠት ላይ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_EMPTYPAGE\n"
+"string.text"
+msgid "blank page"
+msgstr "ባዶ ገጽ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ABSTRACT_TITLE\n"
+"string.text"
+msgid "Abstract: "
+msgstr "ግልጽ ያልሆነ : "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_TEMPLATE_BUTTON\n"
+"string.text"
+msgid "Style"
+msgstr "ዘዴ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_TEMPLATE_NAME\n"
+"string.text"
+msgid "separated by: "
+msgstr "የተለየው በ : "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_OUTLINE_LEVEL\n"
+"string.text"
+msgid "Outline: Level "
+msgstr "የ ረቂቅ: ደረጃ "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_STYLE\n"
+"string.text"
+msgid "Style: "
+msgstr "ዘዴ: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGEOFFSET\n"
+"string.text"
+msgid "Page number: "
+msgstr "የ ገጽ ቁጥር: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGEBREAK\n"
+"string.text"
+msgid "Break before new page"
+msgstr "ከ አዲስ ገጽ በፊት መጨረሻ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WESTERN_FONT\n"
+"string.text"
+msgid "Western text: "
+msgstr "Western text: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CJK_FONT\n"
+"string.text"
+msgid "Asian text: "
+msgstr "Asian text: "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REDLINE_UNKNOWN_AUTHOR\n"
+"string.text"
+msgid "Unknown Author"
+msgstr "ያልታወቀ ደራሲ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DELETE_NOTE_AUTHOR\n"
+"string.text"
+msgid "Delete ~All Comments by $1"
+msgstr "~ሁሉንም አስተያየቶች ማጥፊያ በ $1"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_HIDE_NOTE_AUTHOR\n"
+"string.text"
+msgid "H~ide All Comments by $1"
+msgstr "ሁ~ሉንም አስተያየቶች መደበቂያ በ $1"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DONT_ASK_AGAIN\n"
+"string.text"
+msgid "~Do not show warning again"
+msgstr "~ይህን ማስጠንቀቂያ በድጋሚ አታሳየኝ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_OUTLINE_NUMBERING\n"
+"string.text"
+msgid "Outline Numbering"
+msgstr "የ ቁጥር መስጫ ረቂቅ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATUSBAR_WORDCOUNT_NO_SELECTION\n"
+"string.text"
+msgid "%1 words, %2 characters"
+msgstr "%1 ቃላቶች, %2 ባህሪዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATUSBAR_WORDCOUNT\n"
+"string.text"
+msgid "%1 words, %2 characters selected"
+msgstr "%1 ቃላቶች, %2 የተመረጡት ባህሪዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CONVERT_TEXT_TABLE\n"
+"string.text"
+msgid "Convert Text to Table"
+msgstr "ጽሁፉን ወደ ሰንጠረዥ መቀየሪያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ADD_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Add AutoFormat"
+msgstr "በራሱ አቀራረብ መጨመሪያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ADD_AUTOFORMAT_LABEL\n"
+"string.text"
+msgid "Name"
+msgstr "ስም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DEL_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Delete AutoFormat"
+msgstr "በራሱ አቀራረብ ማጥፊያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DEL_AUTOFORMAT_MSG\n"
+"string.text"
+msgid "The following AutoFormat entry will be deleted:"
+msgstr "የሚቀጥለው በራሱ አቀራረብ ማስገቢያ ይጠፋል"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_RENAME_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Rename AutoFormat"
+msgstr "በራሱ አቀራረብ እንደገና መሰየሚያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BTN_AUTOFORMAT_CLOSE\n"
+"string.text"
+msgid "~Close"
+msgstr "~መዝጊያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_JAN\n"
+"string.text"
+msgid "Jan"
+msgstr "ጥር"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FEB\n"
+"string.text"
+msgid "Feb"
+msgstr "የካ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_MAR\n"
+"string.text"
+msgid "Mar"
+msgstr "መጋ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NORTH\n"
+"string.text"
+msgid "North"
+msgstr "ሰሜን"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_MID\n"
+"string.text"
+msgid "Mid"
+msgstr "Mid"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SOUTH\n"
+"string.text"
+msgid "South"
+msgstr "ደቡብ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SUM\n"
+"string.text"
+msgid "Sum"
+msgstr "ድምር"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_INVALID_AUTOFORMAT_NAME\n"
+"string.text"
+msgid ""
+"You have entered an invalid name.\n"
+"The desired AutoFormat could not be created. \n"
+"Try again using a different name."
+msgstr ""
+"ያስገቡት ስም ዋጋ የሌለው ነው \n"
+"የሚፈለገውን በራሱ አቀራረብ መፍጠር አልተቻለም \n"
+"ሌላ ስም በመጠቀም እንደገና ይሞክሩ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NUMERIC\n"
+"string.text"
+msgid "Numeric"
+msgstr "Numerical"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ROW\n"
+"string.text"
+msgid "Rows"
+msgstr "ረድፎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_COL\n"
+"string.text"
+msgid "Column"
+msgstr "አምድ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SIMPLE\n"
+"string.text"
+msgid "Plain"
+msgstr "ባዶ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_AUTHMRK_EDIT\n"
+"string.text"
+msgid "Edit Bibliography Entry"
+msgstr "የ ጽሁፎች ዝርዝር ማስገቢያ ማረሚያ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_AUTHMRK_INSERT\n"
+"string.text"
+msgid "Insert Bibliography Entry"
+msgstr "የ ጽሁፎች ዝርዝር ማስገቢያ ያስገቡ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ACCESS_PAGESETUP_SPACING\n"
+"string.text"
+msgid "Spacing between %1 and %2"
+msgstr "በመካከል ክፍተት %1 እና %2"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ACCESS_COLUMN_WIDTH\n"
+"string.text"
+msgid "Column %1 Width"
+msgstr "አምድ %1 ስፋት"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_TABLE\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Table"
+msgstr "%PRODUCTNAME መጻፊያ ሰንጠረዥ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_FRAME\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Frame"
+msgstr "%PRODUCTNAME መጻፊያ ክፈፍ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_GRAPHIC\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Image"
+msgstr "%PRODUCTNAME መጻፊያ ምስል"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_OLE\n"
+"string.text"
+msgid "Other OLE Objects"
+msgstr "ሌሎች የ OLE እቃዎች"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WRONG_TABLENAME\n"
+"string.text"
+msgid "The name of the table must not contain spaces."
+msgstr "በሰንጠረዥ ስም መካከል ባዶ ቦታ ማስገባት አይፈቀድም"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ERR_TABLE_MERGE\n"
+"string.text"
+msgid "Selected table cells are too complex to merge."
+msgstr "የ ተመረጠውን የ ሰንጠርዥ ክፍል ለማዋሀድ በጣም ውስብስብ ነው"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SRTERR\n"
+"string.text"
+msgid "Cannot sort selection"
+msgstr "ምርጫውን መለየት አልተቻለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_COMCORE_READERROR\n"
+"string.text"
+msgid "Read Error"
+msgstr "የ ማንበብ ስህተት"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_COMCORE_CANT_SHOW\n"
+"string.text"
+msgid "Image cannot be displayed."
+msgstr "ምስሉን ማሳየት አልተቻለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_ERROR_CLPBRD_READ\n"
+"string.text"
+msgid "Error reading from the clipboard."
+msgstr "ስህተት ከቁራጭ ሰሌዳው በማንበብ ላይ"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_FILE_FORMAT_ERROR )\n"
+"string.text"
+msgid "File format error found."
+msgstr "የፋይል አቀራረብ ስህተት ተገኝቷል"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_READ_ERROR )\n"
+"string.text"
+msgid "Error reading file."
+msgstr "ስህተት ፋይሉን በማንበብ ላይ"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_INPUT_FILE )\n"
+"string.text"
+msgid "Input file error."
+msgstr "ፋይል የማስገባት ስህተት"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_NOWRITER_FILE )\n"
+"string.text"
+msgid "This is not a %PRODUCTNAME Writer file."
+msgstr "ይህ %PRODUCTNAME የመጻፊያ ፋይል አይደለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_UNEXPECTED_EOF )\n"
+"string.text"
+msgid "Unexpected end of file."
+msgstr "ያልተጠበቀ የ ፋይል መጨረሻ"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_PASSWD )\n"
+"string.text"
+msgid "Password-protected files cannot be opened."
+msgstr "በመግቢያ ቃል-የሚጠበቁ ፋይሎችን መክፈት አይቻልም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW6_NO_WW6_FILE_ERR )\n"
+"string.text"
+msgid "This is not a valid WinWord6 file."
+msgstr "ይህ የ WinWord6 ፋይል አይደለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW6_FASTSAVE_ERR )\n"
+"string.text"
+msgid "This file was saved with WinWord in 'Fast Save' mode. Please unmark the WinWord option 'Allow Fast Saves' and save the file again."
+msgstr "ይህ ፋይል የተቀመጠው በ WinWord በ 'ፈጣን ማስቀመጫ' ዘዴ ነው ፡ እባክዎን ምልክቱን ያጥፉ ከ WinWord option 'ፈጣን ማስቀመጫ መፍቀጃ' የሚለውን እና ፋይሉን እንደገና ያስቀምጡ"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_ROWCOL )\n"
+"string.text"
+msgid "File format error found at $(ARG1)(row,col)."
+msgstr "የፋይል አቀራረብ ስህተት ተገኝቷል በ $(ARG1)(ረድፍ,አምድ)"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_NEW_VERSION )\n"
+"string.text"
+msgid "File has been written in a newer version."
+msgstr "ፋይሉ በአዲስ እትም ተጽፏል"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW8_NO_WW8_FILE_ERR )\n"
+"string.text"
+msgid "This is not a valid WinWord97 file."
+msgstr "ይህ የ WinWord97 ፋይል አይደለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_FILE_ROWCOL )\n"
+"string.text"
+msgid "Format error discovered in the file in sub-document $(ARG1) at $(ARG2)(row,col)."
+msgstr "የ አቀራረብ ስህተት ተገኝቷል በፋይሉ ንዑስ-ሰነድ ውስጥ በ $(ARG1) ቦታ ላይ $(ARG2)(ረድፍ,አምድ)"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_WRITE_ERROR )\n"
+"string.text"
+msgid "Error writing file."
+msgstr "ስህተት ፋይሉን በመጻፍ ላይ"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_OLD_GLOSSARY )\n"
+"string.text"
+msgid "Wrong AutoText document version."
+msgstr "የተሳሳተ በራሱ ጽሁፍ ሰነድ እትም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_WRITE_ERROR_FILE )\n"
+"string.text"
+msgid "Error in writing sub-document $(ARG1)."
+msgstr "ስህተት ንዑስ-ሰነድ በመጻፍ ላይ $(ARG1)."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_INTERNAL_ERROR )\n"
+"string.text"
+msgid "Internal error in %PRODUCTNAME Writer file format."
+msgstr "የውስጥ ስህተት %PRODUCTNAME በመጻፊያ ፋይል አቀራረብ ውስጥ"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_INTERNAL_ERROR )\n"
+"string.text"
+msgid "Internal error in %PRODUCTNAME Writer file format."
+msgstr "የውስጥ ስህተት %PRODUCTNAME በመጻፊያ ፋይል አቀራረብ ውስጥ"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_LOCKING , ERR_TXTBLOCK_NEWFILE_ERROR )\n"
+"string.text"
+msgid "$(ARG1) has changed."
+msgstr "$(ARG1) ተቀይሯል"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_PATH , ERR_AUTOPATH_ERROR )\n"
+"string.text"
+msgid "$(ARG1) does not exist."
+msgstr "$(ARG1) አልነበረም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLSPLIT_ERROR )\n"
+"string.text"
+msgid "Cells cannot be further split."
+msgstr "ክፍሎቹን በበለጠ መክፈል አልተቻለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLINSCOL_ERROR )\n"
+"string.text"
+msgid "Additional columns cannot be inserted."
+msgstr "ተጨማሪ አምዶች ማስገባት አይቻልም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLDDECHG_ERROR )\n"
+"string.text"
+msgid "The structure of a linked table cannot be modified."
+msgstr "የተገናኘውን የሰንጠረዥ አካል ማሻሻል አይቻልም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_NO_DRAWINGS )\n"
+"string.text"
+msgid "No drawings could be read."
+msgstr "ምንም ስእሎችን ማንበብ አልተቻለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_WW6_FASTSAVE_ERR )\n"
+"string.text"
+msgid "This file was saved with WinWord in 'Fast Save' mode. Please unmark the WinWord option 'Allow Fast Saves' and save the file again."
+msgstr "ይህ ፋይል የተቀመጠው በ WinWord በ 'ፈጣን ማስቀመጫ' ዘዴ ነው ፡ እባክዎን ምልክቱን ያጥፉ ከ WinWord option 'ፈጣን ማስቀመጫ መፍቀጃ' የሚለውን እና ፋይሉን እንደገና ያስቀምጡ"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_FEATURES_LOST )\n"
+"string.text"
+msgid "Not all attributes could be read."
+msgstr "ሁሉንም ባህሪዎች ማንበብ አልተቻለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_FEATURES_LOST )\n"
+"string.text"
+msgid "Not all attributes could be recorded."
+msgstr "ሁሉንም ባህሪዎች መመዝገብ አልተቻለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_OLE )\n"
+"string.text"
+msgid "Some OLE objects could only be loaded as images."
+msgstr "አንዳንድ የ OLE እቃዎችን እንደ ምስሎች መጫን አልተቻለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_OLE )\n"
+"string.text"
+msgid "Some OLE objects could only be saved as images."
+msgstr "አንዳንድ የ OLE እቃዎችን ማስቀመጥ የሚቻለው እንደ ምስሎች ብቻ ነው"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_POOR_LOAD )\n"
+"string.text"
+msgid "Document could not be completely loaded."
+msgstr "ሰነዱን ሙሉ በሙሉ መጫን አልተቻለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_POOR_LOAD )\n"
+"string.text"
+msgid "Document could not be completely saved."
+msgstr "ሰነዱን ሙሉ በሙሉ ማስቀመጥ አልተቻለም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_HTML_NO_MACROS)\n"
+"string.text"
+msgid ""
+"This HTML document contains %PRODUCTNAME Basic macros.\n"
+"They were not saved with the current export settings."
+msgstr ""
+"ይህ የ HTML ሰነድ %PRODUCTNAME Basic macros ይዟል \n"
+"በአሁኑ መላኪያ ማሰናጃዎች ውስጥ አልተቀመጡም"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , WARN_WRITE_ERROR_FILE )\n"
+"string.text"
+msgid "Error in writing sub-document $(ARG1)."
+msgstr "ስህተት ንዑስ-ሰነድ በመጻፍ ላይ $(ARG1)."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , WARN_FORMAT_FILE_ROWCOL )\n"
+"string.text"
+msgid "Format error discovered in the file in sub-document $(ARG1) at $(ARG2)(row,col)."
+msgstr "የ አቀራረብ ስህተት ተገኝቷል በፋይሉ ንዑስ-ሰነድ ውስጥ በ $(ARG1) ቦታ ላይ $(ARG2)(ረድፍ,አምድ)"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_REPLY\n"
+"menuitem.text"
+msgid "Reply"
+msgstr "መመለሻ"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_COMMENT\n"
+"menuitem.text"
+msgid "Delete ~Comment"
+msgstr "~አስተያየት ማጥፊያ"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_NOTE_AUTHOR\n"
+"menuitem.text"
+msgid "Delete ~All Comments by $1"
+msgstr "~ሁሉንም አስተያየቶች ማጥፊያ በ $1"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_ALL_NOTES\n"
+"menuitem.text"
+msgid "~Delete All Comments"
+msgstr "ሁሉንም አስተያየቶች ~ማጥፊያ"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_FORMAT_ALL_NOTES\n"
+"menuitem.text"
+msgid "~Format All Comments..."
+msgstr "የ ሁሉም አስተያየቶች ~አቀራረብ..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_HEADERFOOTER_BUTTON\n"
+"FN_HEADERFOOTER_BORDERBACK\n"
+"menuitem.text"
+msgid "Border and Background..."
+msgstr "ድንበር እና መደብ..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_PAGEBREAK_BUTTON\n"
+"FN_PAGEBREAK_EDIT\n"
+"menuitem.text"
+msgid "Edit Page Break..."
+msgstr "የ ገጽ መጨረሻ ማረሚያ..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_PAGEBREAK_BUTTON\n"
+"FN_PAGEBREAK_DELETE\n"
+"menuitem.text"
+msgid "Delete Page Break"
+msgstr "የ ገጽ መጨረሻ ማጥፊያ..."

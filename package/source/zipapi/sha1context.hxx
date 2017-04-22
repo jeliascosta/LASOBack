@@ -35,12 +35,12 @@ class SHA1DigestContext : public cppu::WeakImplHelper< css::xml::crypto::XDigest
 
 public:
 
-    virtual ~SHA1DigestContext();
+    virtual ~SHA1DigestContext() override;
 
     static css::uno::Reference< css::xml::crypto::XDigestContext > Create();
 
-    virtual void SAL_CALL updateDigest( const css::uno::Sequence< ::sal_Int8 >& aData ) throw (css::lang::DisposedException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL finalizeDigestAndDispose() throw (css::lang::DisposedException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL updateDigest( const css::uno::Sequence< ::sal_Int8 >& aData ) override;
+    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL finalizeDigestAndDispose() override;
 
 };
 

@@ -89,13 +89,13 @@ namespace sdr
             double getDiscreteOne() const;
 
             OverlayManager(OutputDevice& rOutputDevice);
-            virtual ~OverlayManager();
+            virtual ~OverlayManager() override;
 
         public:
             static rtl::Reference<OverlayManager> create(OutputDevice& rOutputDevice);
 
             // access to current ViewInformation2D; this call checks and evtl. updates ViewInformation2D
-            const drawinglayer::geometry::ViewInformation2D getCurrentViewInformation2D() const;
+            drawinglayer::geometry::ViewInformation2D const & getCurrentViewInformation2D() const;
 
             // complete redraw
             virtual void completeRedraw(const vcl::Region& rRegion, OutputDevice* pPreRenderDevice = nullptr) const;
@@ -118,15 +118,15 @@ namespace sdr
 
             // stripe support ColA
             const Color& getStripeColorA() const { return maStripeColorA; }
-            void setStripeColorA(Color aNew= Color(COL_BLACK));
+            void setStripeColorA(Color aNew);
 
             // stripe support ColB
             const Color& getStripeColorB() const { return maStripeColorB; }
-            void setStripeColorB(Color aNew = Color(COL_WHITE));
+            void setStripeColorB(Color aNew);
 
             // stripe support StripeLengthPixel
             sal_uInt32 getStripeLengthPixel() const { return mnStripeLengthPixel; }
-            void setStripeLengthPixel(sal_uInt32 nNew = 5L);
+            void setStripeLengthPixel(sal_uInt32 nNew);
 
             // access to maDrawinglayerOpt
             const SvtOptionsDrawinglayer& getDrawinglayerOpt() const { return maDrawinglayerOpt; }

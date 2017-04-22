@@ -37,7 +37,6 @@
 #include <com/sun/star/frame/XToolbarController.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/ui/XImageManager.hpp>
-#include <com/sun/star/ui/XUIConfigurationManager.hpp>
 #include <com/sun/star/ui/ItemStyle.hpp>
 #include <com/sun/star/ui/XAcceleratorConfiguration.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
@@ -72,29 +71,30 @@ class ToolBarManager : public ToolbarManager_Base
                         const css::uno::Reference< css::frame::XFrame >& rFrame,
                         const OUString& rResourceName,
                         ToolBox* pToolBar );
-        virtual ~ToolBarManager();
+        virtual ~ToolBarManager() override;
 
         ToolBox* GetToolBar() const;
 
         // XFrameActionListener
-        virtual void SAL_CALL frameAction( const css::frame::FrameActionEvent& Action ) throw ( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL frameAction( const css::frame::FrameActionEvent& Action ) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw ( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
         // XUIConfigurationListener
-        virtual void SAL_CALL elementInserted( const css::ui::ConfigurationEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL elementRemoved( const css::ui::ConfigurationEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL elementReplaced( const css::ui::ConfigurationEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL elementInserted( const css::ui::ConfigurationEvent& Event ) override;
+        virtual void SAL_CALL elementRemoved( const css::ui::ConfigurationEvent& Event ) override;
+        virtual void SAL_CALL elementReplaced( const css::ui::ConfigurationEvent& Event ) override;
 
         // XComponent
-        void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
-        void SAL_CALL addEventListener( const css::uno::Reference< XEventListener >& xListener ) throw( css::uno::RuntimeException, std::exception ) override;
-        void SAL_CALL removeEventListener( const css::uno::Reference< XEventListener >& xListener ) throw( css::uno::RuntimeException, std::exception ) override;
+        void SAL_CALL dispose() override;
+        void SAL_CALL addEventListener( const css::uno::Reference< XEventListener >& xListener ) override;
+        void SAL_CALL removeEventListener( const css::uno::Reference< XEventListener >& xListener ) override;
 
         void CheckAndUpdateImages();
         virtual void RefreshImages();
         void FillToolbar( const css::uno::Reference< css::container::XIndexAccess >& rToolBarData );
+        void FillOverflowToolbar( ToolBox* pParent );
         void notifyRegisteredControllers( const OUString& aUIElementName, const OUString& aCommand );
         void Destroy();
 
@@ -102,9 +102,7 @@ class ToolBarManager : public ToolbarManager_Base
         {
             EXEC_CMD_CLOSETOOLBAR,
             EXEC_CMD_DOCKTOOLBAR,
-            EXEC_CMD_DOCKALLTOOLBARS,
-            EXEC_CMD_NONE,
-            EXEC_CMD_COUNT
+            EXEC_CMD_DOCKALLTOOLBARS
         };
 
         struct ExecuteInfo
@@ -116,24 +114,25 @@ class ToolBarManager : public ToolbarManager_Base
         };
 
     protected:
-        DECL_LINK_TYPED( Command, CommandEvent const *, void );
-        PopupMenu * GetToolBarCustomMenu(ToolBox* pToolBar);
-        DECL_LINK_TYPED(Click, ToolBox *, void);
-        DECL_LINK_TYPED(DropdownClick, ToolBox *, void);
-        DECL_LINK_TYPED(DoubleClick, ToolBox *, void);
-        DECL_LINK_TYPED(Select, ToolBox *, void);
-        DECL_LINK_TYPED( StateChanged, StateChangedType const *, void );
-        DECL_LINK_TYPED( DataChanged, DataChangedEvent const *, void );
-        DECL_LINK_TYPED( MiscOptionsChanged, LinkParamNone*, void );
+        DECL_LINK(Click, ToolBox *, void);
+        DECL_LINK(DropdownClick, ToolBox *, void);
+        DECL_LINK(DoubleClick, ToolBox *, void);
+        DECL_LINK(Select, ToolBox *, void);
+        DECL_LINK( StateChanged, StateChangedType const *, void );
+        DECL_LINK( DataChanged, DataChangedEvent const *, void );
+        DECL_LINK( MiscOptionsChanged, LinkParamNone*, void );
 
-        DECL_LINK_TYPED( MenuButton, ToolBox *, void );
-        DECL_LINK_TYPED( MenuSelect, Menu *, bool );
-        void MenuDeactivated();
-        DECL_LINK_TYPED(AsyncUpdateControllersHdl, Timer *, void);
-        DECL_STATIC_LINK_TYPED( ToolBarManager, ExecuteHdl_Impl, void*, void );
+        DECL_LINK( MenuButton, ToolBox *, void );
+        DECL_LINK( MenuPreExecute, ToolBox *, void );
+        DECL_LINK( MenuSelect, Menu *, bool );
+        DECL_LINK(AsyncUpdateControllersHdl, Timer *, void);
+        DECL_LINK( OverflowEventListener, VclWindowEvent&, void );
+        DECL_STATIC_LINK( ToolBarManager, ExecuteHdl_Impl, void*, void );
 
         virtual bool MenuItemAllowed( sal_uInt16 ) const;
 
+        void AddCustomizeMenuItems(ToolBox* pToolBar);
+        void InitImageManager();
         void RemoveControllers();
         void CreateControllers();
         void UpdateControllers();
@@ -141,7 +140,6 @@ class ToolBarManager : public ToolbarManager_Base
         void UpdateController( const css::uno::Reference< css::frame::XToolbarController >& xController);
         //end
         void AddFrameActionListener();
-        void ImplClearPopupMenu( ToolBox *pToolBar );
         void RequestImages();
         ToolBoxItemBits ConvertStyleToToolboxItemBits( sal_Int32 nStyle );
         css::uno::Reference< css::frame::XModel > GetModelFromFrame() const;
@@ -155,13 +153,12 @@ class ToolBarManager : public ToolbarManager_Base
         typedef ::std::vector< css::uno::Reference< css::frame::XSubToolbarController > >             SubToolBarControllerVector;
         typedef std::unordered_map<OUString, SubToolBarControllerVector, OUStringHash>                                                SubToolBarToSubToolBarControllerMap;
 
-        typedef std::unordered_map< sal_uInt16, css::uno::Reference< css::container::XIndexAccess > > MenuDescriptionMap;
-
         bool m_bDisposed : 1,
-             m_bSmallSymbols : 1,
              m_bAddedToTaskPaneList : 1,
              m_bFrameActionRegistered : 1,
              m_bUpdateControllers : 1;
+
+        sal_Int16 m_eSymbolSize;
 
         VclPtr<ToolBox>                                              m_pToolBar;
 
@@ -177,14 +174,13 @@ class ToolBarManager : public ToolbarManager_Base
         css::uno::Reference< css::frame::XUIControllerFactory >      m_xToolbarControllerFactory;
         css::uno::Reference< css::ui::XImageManager >                m_xModuleImageManager;
         css::uno::Reference< css::ui::XImageManager >                m_xDocImageManager;
-        css::uno::Reference< css::ui::XUIConfigurationManager >      m_xUICfgMgr;
-        css::uno::Reference< css::ui::XUIConfigurationManager >      m_xDocUICfgMgr;
 
         CommandToInfoMap                                             m_aCommandMap;
         SubToolBarToSubToolBarControllerMap                          m_aSubToolBarControllerMap;
         Timer                                                        m_aAsyncUpdateControllersTimer;
         OUString                                                     m_sIconTheme;
-        MenuDescriptionMap                                           m_aMenuMap;
+
+        rtl::Reference< ToolBarManager >                             m_aOverflowManager;
 };
 
 }

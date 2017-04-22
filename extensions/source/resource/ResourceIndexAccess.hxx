@@ -32,16 +32,15 @@ namespace extensions { namespace resource
             /** The ctor takes a sequence with one element: the name of the resource, e.g. svt */
             ResourceIndexAccess(css::uno::Sequence< css::uno::Any> const& rArgs, css::uno::Reference< css::uno::XComponentContext> const&);
             // XNameAccess
-            // The XNameAccess provides access to two named elements:
+            // The XNameAccess provides access to one named elements:
             //    "String" returns a XIndexAccess to String resources
-            //    "StringList" returns a XIndexAccess to StringList/StringArray resources
-            virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
-            virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (css::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
+            virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override;
+            virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
             // XElementAccess
-            virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override
+            virtual css::uno::Type SAL_CALL getElementType(  ) override
                 { return cppu::UnoType<css::uno::XInterface>::get(); };
-            virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception) override
+            virtual sal_Bool SAL_CALL hasElements(  ) override
                 { return static_cast<bool>(m_pResMgr.get()); };
 
         private:

@@ -96,8 +96,7 @@ class ImplDirectFontSubstitution
 :   public ImplFontSubstitution
 {
 private:
-    typedef std::list<ImplFontSubstEntry> FontSubstList;
-    FontSubstList maFontSubstList;
+    std::list<ImplFontSubstEntry> maFontSubstList;
 public:
     void    AddFontSubstitute( const OUString& rFontName, const OUString& rSubstName, AddFontSubstituteFlags nFlags );
     void    RemoveFontSubstitute( int nIndex );
@@ -133,7 +132,7 @@ struct ImplOutDevData
 {
     VclPtr<VirtualDevice>       mpRotateDev;
     vcl::ControlLayoutData*     mpRecordLayout;
-    Rectangle                   maRecordRect;
+    tools::Rectangle                   maRecordRect;
 
     // #i75163#
     basegfx::B2DHomMatrix*      mpViewTransform;

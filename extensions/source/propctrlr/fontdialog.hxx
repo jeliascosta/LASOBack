@@ -35,13 +35,13 @@ namespace pcr
     {
     public:
         ControlCharacterDialog(vcl::Window* _pParent, const SfxItemSet& _rCoreSet);
-        virtual ~ControlCharacterDialog();
+        virtual ~ControlCharacterDialog() override;
 
         /// creates an item set to be used with this dialog
-        static SfxItemSet*  createItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, SfxPoolItem**& _rppDefaults);
+        static SfxItemSet*  createItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, std::vector<SfxPoolItem*>*& _rpDefaults);
 
         /// destroys an item previously created with <method>createItemSet</method>
-        static void         destroyItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, SfxPoolItem**& _rppDefaults);
+        static void         destroyItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, std::vector<SfxPoolItem*>*& _rpDefaults);
 
         /// fills the given item set with values obtained from the given property set
         static void         translatePropertiesToItems(

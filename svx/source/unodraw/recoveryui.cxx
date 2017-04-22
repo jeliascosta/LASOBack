@@ -78,26 +78,17 @@ class RecoveryUI : public ::cppu::WeakImplHelper< css::lang::XServiceInfo       
         /** @short  TODO */
         explicit RecoveryUI(const css::uno::Reference< css::uno::XComponentContext >& xContext);
 
-
-        /** @short  TODO */
-        virtual ~RecoveryUI();
-
-
         // css.lang.XServiceInfo
 
-        virtual OUString SAL_CALL getImplementationName()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName() override;
 
-        virtual sal_Bool SAL_CALL supportsService(const OUString& sServiceName)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService(const OUString& sServiceName) override;
 
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
 
         virtual css::uno::Any SAL_CALL dispatchWithReturnValue(const css::util::URL& aURL,
-                                            const css::uno::Sequence< css::beans::PropertyValue >& lArguments )
-            throw(css::uno::RuntimeException, std::exception) override;
+                                            const css::uno::Sequence< css::beans::PropertyValue >& lArguments ) override;
 
 
     // helper
@@ -107,7 +98,7 @@ class RecoveryUI : public ::cppu::WeakImplHelper< css::lang::XServiceInfo       
 
         bool impl_doEmergencySave();
 
-        void impl_doRecovery();
+        bool impl_doRecovery();
 
         void impl_showAllRecoveredDocs();
 
@@ -120,32 +111,23 @@ RecoveryUI::RecoveryUI(const css::uno::Reference< css::uno::XComponentContext >&
 {
 }
 
-RecoveryUI::~RecoveryUI()
-{
-}
-
 OUString SAL_CALL RecoveryUI::getImplementationName()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.svx.RecoveryUI");
 }
 
 sal_Bool SAL_CALL RecoveryUI::supportsService(const OUString& sServiceName)
-    throw(css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, sServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL RecoveryUI::getSupportedServiceNames()
-    throw(css::uno::RuntimeException, std::exception)
 {
-    css::uno::Sequence< OUString > lServiceNames { "com.sun.star.dialog.RecoveryUI" };
-    return lServiceNames;
+    return { "com.sun.star.dialog.RecoveryUI" };
 }
 
 css::uno::Any SAL_CALL RecoveryUI::dispatchWithReturnValue(const css::util::URL& aURL,
                                                    const css::uno::Sequence< css::beans::PropertyValue >& )
-    throw(css::uno::RuntimeException, std::exception)
 {
     // Internally we use VCL ... every call into vcl based code must
     // be guarded by locking the global solar mutex.
@@ -157,19 +139,25 @@ css::uno::Any SAL_CALL RecoveryUI::dispatchWithReturnValue(const css::util::URL&
 
     switch(eJob)
     {
-        case RecoveryUI::E_DO_EMERGENCY_SAVE :
+        case RecoveryUI::E_DO_EMERGENCY_SAVE:
         {
             bool bRet = impl_doEmergencySave();
             aRet <<= bRet;
             break;
         }
 
-        case RecoveryUI::E_DO_RECOVERY :
-            impl_doRecovery();
+        case RecoveryUI::E_DO_RECOVERY:
+        {
+            bool bRet = impl_doRecovery();
+            aRet <<= bRet;
             break;
+        }
 
-        default :
+        default:
+        {
+            aRet <<= false;
             break;
+        }
     }
 
     return aRet;
@@ -243,7 +231,7 @@ bool RecoveryUI::impl_doEmergencySave()
     return (nRet==DLG_RET_OK_AUTOLUNCH);
 }
 
-void RecoveryUI::impl_doRecovery()
+bool RecoveryUI::impl_doRecovery()
 {
     // create core service, which implements the real "emergency save" algorithm.
     svxdr::RecoveryCore* pCore = new svxdr::RecoveryCore(m_xContext, false);
@@ -254,11 +242,13 @@ void RecoveryUI::impl_doRecovery()
     ScopedVclPtrInstance<svxdr::RecoveryDialog> xDialog(m_pParentWindow, pCore);
 
     // start the dialog
-    xDialog->Execute();
+    short nRet = xDialog->Execute();
 
     impl_showAllRecoveredDocs();
 
     delete_pending_crash();
+
+    return nRet != RET_CANCEL;
 }
 
 void RecoveryUI::impl_showAllRecoveredDocs()

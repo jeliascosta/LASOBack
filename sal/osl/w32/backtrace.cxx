@@ -7,7 +7,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include "misc.hxx"
+#include <sal/config.h>
+
+#include <limits>
+#include <memory>
 
 #include <windows.h>
 #include <process.h>
@@ -17,25 +20,37 @@
 
 #include <rtl/ustrbuf.hxx>
 
-// No-op for now; it needs implementing.
-rtl_uString *osl_backtraceAsString()
+#include "backtraceasstring.hxx"
+
+OUString osl::detail::backtraceAsString(sal_uInt32 maxDepth)
 {
+    assert(maxDepth != 0);
+    auto const maxUlong = std::numeric_limits<ULONG>::max();
+    if (maxDepth > maxUlong) {
+        maxDepth = static_cast<sal_uInt32>(maxUlong);
+    }
+
     OUStringBuffer aBuf;
 
     HANDLE hProcess = GetCurrentProcess();
-    SymInitialize( hProcess, NULL, true );
+    SymInitialize( hProcess, nullptr, true );
 
-    void * aStack[ 512 ];
-    sal_uInt32 nFrames = CaptureStackBackTrace( 0, 512, aStack, NULL );
+    std::unique_ptr<void*[]> aStack(new void*[ maxDepth ]);
+    // <https://msdn.microsoft.com/en-us/library/windows/desktop/
+    // bb204633(v=vs.85).aspx> "CaptureStackBackTrace function" claims that you
+    // "can capture up to MAXUSHORT frames", and on Windows Server 2003 and
+    // Windows XP it even "must be less than 63", but assume that a too large
+    // input value is clamped internally, instead of resulting in an error:
+    sal_uInt32 nFrames = CaptureStackBackTrace( 0, static_cast<ULONG>(maxDepth), aStack.get(), nullptr );
 
     SYMBOL_INFO  * pSymbol;
-    pSymbol = ( SYMBOL_INFO * )calloc( sizeof( SYMBOL_INFO ) + 1024 * sizeof( char ), 1 );
+    pSymbol = static_cast<SYMBOL_INFO *>(calloc( sizeof( SYMBOL_INFO ) + 1024 * sizeof( char ), 1 ));
     pSymbol->MaxNameLen = 1024 - 1;
     pSymbol->SizeOfStruct = sizeof( SYMBOL_INFO );
 
     for( sal_uInt32 i = 0; i < nFrames; i++ )
     {
-        SymFromAddr( hProcess, ( DWORD64 )aStack[ i ], 0, pSymbol );
+        SymFromAddr( hProcess, reinterpret_cast<DWORD64>(aStack[ i ]), nullptr, pSymbol );
         aBuf.append( (sal_Int32)(nFrames - i - 1) );
         aBuf.append( ": " );
         aBuf.appendAscii( pSymbol->Name );
@@ -46,9 +61,7 @@ rtl_uString *osl_backtraceAsString()
 
     free( pSymbol );
 
-    OUString aStr = aBuf.makeStringAndClear();
-    rtl_uString_acquire( aStr.pData );
-    return aStr.pData;
+    return aBuf.makeStringAndClear();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

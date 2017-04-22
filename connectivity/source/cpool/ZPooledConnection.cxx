@@ -34,7 +34,7 @@ using namespace connectivity;
 using namespace ::osl;
 
 OPooledConnection::OPooledConnection(const Reference< XConnection >& _xConnection,
-                                    const Reference< ::com::sun::star::reflection::XProxyFactory >& _rxProxyFactory)
+                                    const Reference< css::reflection::XProxyFactory >& _rxProxyFactory)
     : OPooledConnection_Base(m_aMutex)
     ,m_xRealConnection(_xConnection)
     ,m_xProxyFactory(_rxProxyFactory)
@@ -53,13 +53,13 @@ m_xComponent.clear();
 }
 
 // XEventListener
-void SAL_CALL OPooledConnection::disposing( const EventObject& /*Source*/ ) throw (RuntimeException, std::exception)
+void SAL_CALL OPooledConnection::disposing( const EventObject& /*Source*/ )
 {
 m_xComponent.clear();
 }
 
 //XPooledConnection
-Reference< XConnection > OPooledConnection::getConnection()  throw(SQLException, RuntimeException, std::exception)
+Reference< XConnection > OPooledConnection::getConnection()
 {
     if(!m_xComponent.is() && m_xRealConnection.is())
     {

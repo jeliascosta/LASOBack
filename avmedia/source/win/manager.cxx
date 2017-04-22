@@ -42,13 +42,12 @@ Manager::~Manager()
 
 
 uno::Reference< media::XPlayer > SAL_CALL Manager::createPlayer( const OUString& rURL )
-    throw (uno::RuntimeException)
 {
     Player*                             pPlayer( new Player( mxMgr ) );
     uno::Reference< media::XPlayer >    xRet( pPlayer );
     const INetURLObject                 aURL( rURL );
 
-    if( !pPlayer->create( aURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS ) )  )
+    if( !pPlayer->create( aURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous ) )  )
         xRet.clear();
 
     return xRet;
@@ -56,25 +55,20 @@ uno::Reference< media::XPlayer > SAL_CALL Manager::createPlayer( const OUString&
 
 
 OUString SAL_CALL Manager::getImplementationName(  )
-    throw (uno::RuntimeException)
 {
     return OUString( AVMEDIA_WIN_MANAGER_IMPLEMENTATIONNAME );
 }
 
 
 sal_Bool SAL_CALL Manager::supportsService( const OUString& ServiceName )
-    throw (uno::RuntimeException)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 
 uno::Sequence< OUString > SAL_CALL Manager::getSupportedServiceNames(  )
-    throw (uno::RuntimeException)
 {
-    uno::Sequence<OUString> aRet { AVMEDIA_WIN_MANAGER_SERVICENAME };
-
-    return aRet;
+    return { AVMEDIA_WIN_MANAGER_SERVICENAME };
 }
 
 } // namespace win

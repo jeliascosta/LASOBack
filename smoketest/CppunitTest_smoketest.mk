@@ -16,10 +16,7 @@ $(eval $(call gb_CppunitTest_add_exception_objects,smoketest,\
 
 $(eval $(call gb_CppunitTest_use_external,smoketest,boost_headers))
 
-$(eval $(call gb_CppunitTest_use_api,smoketest,\
-	offapi \
-	udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,smoketest))
 
 $(eval $(call gb_CppunitTest_use_libraries,smoketest,\
 	cppu \
@@ -49,7 +46,8 @@ $(call gb_CppunitTest_get_target,smoketest): \
 
 clean_CustomTarget_smoketest:
 	rm -rf $(WORKDIR)/CustomTarget/smoketest
-	mkdir -p $(WORKDIR)/CustomTarget/smoketest
+	mkdir -p $(WORKDIR)/CustomTarget/smoketest/user
+	cp $(SRCDIR)/qadevOOo/qa/registrymodifications.xcu $(WORKDIR)/CustomTarget/smoketest/user
 
 $(WORKDIR)/Zip/smoketestdoc.sxw: $(call gb_Zip_get_target,smoketestdoc)
 	cp $< $@

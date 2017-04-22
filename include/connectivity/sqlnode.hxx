@@ -21,6 +21,7 @@
 
 #include <connectivity/dbtoolsdllapi.hxx>
 #include <connectivity/dbmetadata.hxx>
+#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/util/XNumberFormatTypes.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -65,10 +66,10 @@ namespace connectivity
     typedef ::std::vector< OSQLParseNode* >                  OSQLParseNodes;
 
     enum class SQLNodeType { Rule, ListRule, CommaListRule,
-                         Keyword, Comparison, Name,
+                         Keyword, Name,
                          String, IntNum, ApproxNum,
                          Equal, Less, Great, LessEq, GreatEq, NotEqual,
-                         Punctuation, AMMSC, AccessDate, Date, Concat};
+                         Punctuation, AccessDate, Concat};
 
     typedef ::std::set< OUString >   QueryNameSet;
 
@@ -417,8 +418,7 @@ namespace connectivity
                             bool _bIntl,
                             bool _bQuote,
                             sal_Char _cDecSep,
-                            bool _bPredicate,
-                            bool _bSubstitute) const;
+                            bool _bPredicate) const;
 
     private:
         void impl_parseNodeToString_throw( OUStringBuffer& rString, const SQLParseNodeParameter& rParam, bool bSimple=true ) const;

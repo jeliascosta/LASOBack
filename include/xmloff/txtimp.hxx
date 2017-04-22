@@ -95,8 +95,7 @@ enum SwXMLTextElemTokens
     XML_TOK_TEXT_FORMS,
     XML_TOK_TEXT_CALCULATION_SETTINGS,
     XML_TOK_TEXT_AUTOMARK,
-    XML_TOK_TEXT_NUMBERED_PARAGRAPH,
-    XML_TOK_TEXT_ELEM_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_NUMBERED_PARAGRAPH
 };
 
 enum XMLTextPElemTokens
@@ -235,9 +234,7 @@ enum XMLTextPElemTokens
 
     XML_TOK_TEXT_FIELDMARK,
     XML_TOK_TEXT_FIELDMARK_START,
-    XML_TOK_TEXT_FIELDMARK_END,
-
-    XML_TOK_TEXT_P_ELEM_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_FIELDMARK_END
 };
 
 enum XMLTextPAttrTokens
@@ -251,11 +248,9 @@ enum XMLTextPAttrTokens
     XML_TOK_TEXT_P_STYLE_NAME,
     XML_TOK_TEXT_P_COND_STYLE_NAME,
     XML_TOK_TEXT_P_LEVEL,
-    XML_TOK_TEXT_P_CLASS_NAMES,
     XML_TOK_TEXT_P_IS_LIST_HEADER,
     XML_TOK_TEXT_P_RESTART_NUMBERING,
-    XML_TOK_TEXT_P_START_VALUE,
-    XML_TOK_TEXT_P_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_P_START_VALUE
 };
 
 enum XMLTextNumberedParagraphAttrTokens
@@ -265,8 +260,7 @@ enum XMLTextNumberedParagraphAttrTokens
     XML_TOK_TEXT_NUMBERED_PARAGRAPH_LEVEL,
     XML_TOK_TEXT_NUMBERED_PARAGRAPH_STYLE_NAME,
     XML_TOK_TEXT_NUMBERED_PARAGRAPH_CONTINUE_NUMBERING,
-    XML_TOK_TEXT_NUMBERED_PARAGRAPH_START_VALUE,
-    XML_TOK_TEXT_NUMBERED_PARAGRAPH_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_NUMBERED_PARAGRAPH_START_VALUE
 };
 
 enum XMLTextListBlockAttrTokens
@@ -274,16 +268,13 @@ enum XMLTextListBlockAttrTokens
     XML_TOK_TEXT_LIST_BLOCK_XMLID,
     XML_TOK_TEXT_LIST_BLOCK_STYLE_NAME,
     XML_TOK_TEXT_LIST_BLOCK_CONTINUE_NUMBERING,
-    XML_TOK_TEXT_LIST_BLOCK_ID,
-    XML_TOK_TEXT_LIST_BLOCK_CONTINUE_LIST,
-    XML_TOK_TEXT_LIST_BLOCK_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_LIST_BLOCK_CONTINUE_LIST
 };
 
 enum XMLTextListBlockElemTokens
 {
     XML_TOK_TEXT_LIST_HEADER,
-    XML_TOK_TEXT_LIST_ITEM,
-    XML_TOK_TEXT_LIST_BLOCK_ELEM_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_LIST_ITEM
 };
 
 enum XMLTextFrameAttrTokens
@@ -313,8 +304,7 @@ enum XMLTextFrameAttrTokens
     XML_TOK_TEXT_FRAME_APPLET_NAME,
     XML_TOK_TEXT_FRAME_FRAME_NAME,
     XML_TOK_TEXT_FRAME_NOTIFY_ON_UPDATE,
-    XML_TOK_TEXT_FRAME_MIN_WIDTH,
-    XML_TOK_TEXT_FRAME_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_FRAME_MIN_WIDTH
 };
 
 enum XMLTextHyperlinkAttrTokens
@@ -325,8 +315,7 @@ enum XMLTextHyperlinkAttrTokens
     XML_TOK_TEXT_HYPERLINK_SHOW,
     XML_TOK_TEXT_HYPERLINK_STYLE_NAME,
     XML_TOK_TEXT_HYPERLINK_VIS_STYLE_NAME,
-    XML_TOK_TEXT_HYPERLINK_SERVER_MAP,
-    XML_TOK_TEXT_HYPERLINK_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_HYPERLINK_SERVER_MAP
 };
 
 enum XMLTextPageMasterElemTokens
@@ -336,8 +325,7 @@ enum XMLTextPageMasterElemTokens
     XML_TOK_TEXT_MP_HEADER_LEFT,
     XML_TOK_TEXT_MP_FOOTER_LEFT,
     XML_TOK_TEXT_MP_HEADER_FIRST,
-    XML_TOK_TEXT_MP_FOOTER_FIRST,
-    XML_TOK_TEXT_MP_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_MP_FOOTER_FIRST
 };
 
 enum XMLTextContourAttrTokens
@@ -347,8 +335,7 @@ enum XMLTextContourAttrTokens
     XML_TOK_TEXT_CONTOUR_VIEWBOX,
     XML_TOK_TEXT_CONTOUR_POINTS,
     XML_TOK_TEXT_CONTOUR_D,
-    XML_TOK_TEXT_CONTOUR_AUTO,
-    XML_TOK_TEXT_CONTOUR_END=XML_TOK_UNKNOWN
+    XML_TOK_TEXT_CONTOUR_AUTO
 };
 enum XMLTextType
 {
@@ -410,7 +397,7 @@ public:
             bool const bProgress = false, bool const bBlockMode = false,
             bool const bOrganizerMode = false);
 
-    virtual ~XMLTextImportHelper();
+    virtual ~XMLTextImportHelper() override;
 
     void SetCursor(
             const css::uno::Reference< css::text::XTextCursor >& rCursor );
@@ -496,7 +483,7 @@ public:
             const OUString& rTargetFrameName,
             const OUString& rStyleName,
             const OUString& rVisitedStyleName,
-            XMLEventsImportContext* pEvents = nullptr);
+            XMLEventsImportContext* pEvents);
     void SetRuby(
             SvXMLImport& rImport,
             const css::uno::Reference< css::text::XTextCursor >& rCursor,
@@ -530,6 +517,8 @@ public:
 
     const css::uno::Reference< css::container::XNameContainer> & GetPageStyles() const;
 
+    const css::uno::Reference< css::container::XNameContainer> & GetCellStyles() const;
+
     const css::uno::Reference< css::container::XIndexReplace > &
         GetChapterNumbering() const;
 
@@ -552,6 +541,7 @@ public:
     static SvXMLImportPropertyMapper* CreateParaDefaultExtPropMapper(SvXMLImport&);
     static SvXMLImportPropertyMapper* CreateTableDefaultExtPropMapper(SvXMLImport&);
     static SvXMLImportPropertyMapper* CreateTableRowDefaultExtPropMapper(SvXMLImport&);
+    static SvXMLImportPropertyMapper* CreateTableCellExtPropMapper(SvXMLImport&);
 
     SvI18NMap& GetRenameMap();
 

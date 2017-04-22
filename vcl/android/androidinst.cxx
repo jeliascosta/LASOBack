@@ -19,6 +19,7 @@
 #include <osl/detail/android-bootstrap.h>
 #include <rtl/strbuf.hxx>
 #include <vcl/settings.hxx>
+#include <vcl/layout.hxx>
 
 #define LOGTAG "LibreOffice/androidinst"
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, LOGTAG, __VA_ARGS__))
@@ -35,9 +36,9 @@ public:
     virtual bool ErrorTrapPop( bool ) { return false; }
 };
 
-void AndroidSalInstance::GetWorkArea( Rectangle& rRect )
+void AndroidSalInstance::GetWorkArea(tools::Rectangle& rRect)
 {
-    rRect = Rectangle( Point( 0, 0 ),
+    rRect = tools::Rectangle( Point( 0, 0 ),
                        Size( viewWidth, viewHeight ) );
 }
 
@@ -104,7 +105,7 @@ public:
             SetPosSize(0, 0, viewWidth, viewHeight, SAL_FRAME_POSSIZE_WIDTH | SAL_FRAME_POSSIZE_HEIGHT);
     }
 
-    virtual void GetWorkArea( Rectangle& rRect )
+    virtual void GetWorkArea(tools::Rectangle& rRect)
     {
         AndroidSalInstance::getInstance()->GetWorkArea( rRect );
     }
@@ -130,7 +131,6 @@ public:
         aStyleSet.SetMenuFont( aFont );
         aStyleSet.SetToolFont( aFont );
         aStyleSet.SetLabelFont( aFont );
-        aStyleSet.SetInfoFont( aFont );
         aStyleSet.SetRadioCheckFont( aFont );
         aStyleSet.SetPushButtonFont( aFont );
         aStyleSet.SetFieldFont( aFont );
@@ -204,8 +204,6 @@ void DestroySalInstance( SalInstance *pInst )
     pInst->ReleaseYieldMutex();
     delete pInst;
 }
-
-#include <vcl/layout.hxx>
 
 int AndroidSalSystem::ShowNativeDialog( const OUString& rTitle,
                                         const OUString& rMessage,

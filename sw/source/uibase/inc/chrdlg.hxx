@@ -46,9 +46,9 @@ class SwCharDlg: public SfxTabDialog
 
 public:
     SwCharDlg(vcl::Window* pParent, SwView& pVw, const SfxItemSet& rCoreSet,
-              SwCharDlgMode nDialogMode, const OUString* pFormatStr = nullptr);
+              SwCharDlgMode nDialogMode, const OUString* pFormatStr);
 
-    virtual ~SwCharDlg();
+    virtual ~SwCharDlg() override;
 
     virtual void PageCreated( sal_uInt16 nId, SfxTabPage &rPage ) override;
 };
@@ -70,14 +70,14 @@ class SwCharURLPage : public SfxTabPage
     SvxMacroItem*       pINetItem;
     bool                bModified;
 
-    DECL_LINK_TYPED(InsertFileHdl, Button*, void);
-    DECL_LINK_TYPED(EventHdl, Button*, void);
+    DECL_LINK(InsertFileHdl, Button*, void);
+    DECL_LINK(EventHdl, Button*, void);
 
 public:
                         SwCharURLPage( vcl::Window* pParent,
                                            const SfxItemSet& rSet );
 
-                        virtual ~SwCharURLPage();
+                        virtual ~SwCharURLPage() override;
     virtual void        dispose() override;
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent,
                                       const SfxItemSet* rAttrSet);

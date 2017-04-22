@@ -107,7 +107,7 @@ SwTwips SwTextFrameInfo::GetLineStart() const
 // Calculates the character's position and returns the middle position
 SwTwips SwTextFrameInfo::GetCharPos( sal_Int32 nChar, bool bCenter ) const
 {
-    SWRECTFN( pFrame )
+    SwRectFnSet aRectFnSet(pFrame);
     SwFrameSwapper aSwapper( pFrame, true );
 
     SwTextSizeInfo aInf( const_cast<SwTextFrame*>(pFrame) );
@@ -117,28 +117,28 @@ SwTwips SwTextFrameInfo::GetCharPos( sal_Int32 nChar, bool bCenter ) const
     SwRect aRect;
     if( static_cast<SwTextCursor&>(aLine).GetCharRect( &aRect, nChar ) )
     {
-        if ( bVert )
+        if ( aRectFnSet.IsVert() )
             pFrame->SwitchHorizontalToVertical( aRect );
 
-        nStt = (aRect.*fnRect->fnGetLeft)();
+        nStt = aRectFnSet.GetLeft(aRect);
     }
     else
         nStt = aLine.GetLineStart();
 
     if( !bCenter )
-        return nStt - (pFrame->Frame().*fnRect->fnGetLeft)();
+        return nStt - aRectFnSet.GetLeft(pFrame->Frame());
 
     if( static_cast<SwTextCursor&>(aLine).GetCharRect( &aRect, nChar+1 ) )
     {
-        if ( bVert )
+        if ( aRectFnSet.IsVert() )
             pFrame->SwitchHorizontalToVertical( aRect );
 
-        nNext = (aRect.*fnRect->fnGetLeft)();
+        nNext = aRectFnSet.GetLeft(aRect);
     }
     else
         nNext = aLine.GetLineStart();
 
-    return (( nNext + nStt ) / 2 ) - (pFrame->Frame().*fnRect->fnGetLeft)();
+    return (( nNext + nStt ) / 2 ) - aRectFnSet.GetLeft(pFrame->Frame());
 }
 
 SwPaM *AddPam( SwPaM *pPam, const SwTextFrame* pTextFrame,
@@ -206,7 +206,7 @@ void SwTextFrameInfo::GetSpaces( SwPaM &rPam, bool bWithLineBreak ) const
 }
 
 // Is there a bullet/symbol etc. at the text position?
-// Fonts: CharSet, SYMBOL und DONTKNOW
+// Fonts: CharSet, SYMBOL and DONTKNOW
 bool SwTextFrameInfo::IsBullet( sal_Int32 nTextStart ) const
 {
     SwTextSizeInfo aInf( const_cast<SwTextFrame*>(pFrame) );

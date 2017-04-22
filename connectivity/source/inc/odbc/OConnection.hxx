@@ -42,7 +42,7 @@ namespace connectivity
         class ODBCDriver;
 
         typedef connectivity::OMetaConnection OConnection_BASE;
-        typedef ::std::vector< ::connectivity::OTypeInfo>   TTypeInfoVector;
+        typedef std::vector< ::connectivity::OTypeInfo>   TTypeInfoVector;
 
         class OOO_DLLPUBLIC_ODBCBASE OConnection :
                             public OConnection_BASE,
@@ -55,7 +55,7 @@ namespace connectivity
 
             // Data attributes
 
-            ::std::map< SQLHANDLE,OConnection*> m_aConnections; // holds all connections which are need for serveral statements
+            std::map< SQLHANDLE,OConnection*> m_aConnections; // holds all connections which are need for several statements
 
 
             OUString        m_sUser;        //  the user name
@@ -76,15 +76,14 @@ namespace connectivity
 
             SQLRETURN       OpenConnection(const OUString& aConnectStr,sal_Int32 nTimeOut, bool bSilent);
 
-            OConnection*    cloneConnection(); // creates a new connection
-
         public:
             oslGenericFunction  getOdbcFunction(ODBC3SQLFunctionId _nIndex)  const;
-            SQLRETURN       Construct( const OUString& url,const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info) throw(::com::sun::star::sdbc::SQLException, std::exception);
+            /// @throws css::sdbc::SQLException
+            SQLRETURN       Construct( const OUString& url,const css::uno::Sequence< css::beans::PropertyValue >& info);
 
             OConnection(const SQLHANDLE _pDriverHandle,ODBCDriver*  _pDriver);
             //  OConnection(const SQLHANDLE _pConnectionHandle);
-            virtual ~OConnection();
+            virtual ~OConnection() override;
 
             // OComponentHelper
             virtual void SAL_CALL disposing() override;
@@ -94,39 +93,39 @@ namespace connectivity
             // XServiceInfo
             DECLARE_SERVICE_INFO();
             // XConnection
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XStatement > SAL_CALL createStatement(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareCall( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual OUString SAL_CALL nativeSQL( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setAutoCommit( sal_Bool autoCommit ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL getAutoCommit(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL commit(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL rollback(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL isClosed(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setReadOnly( sal_Bool readOnly ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL isReadOnly(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setCatalog( const OUString& catalog ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual OUString SAL_CALL getCatalog(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setTransactionIsolation( sal_Int32 level ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Int32 SAL_CALL getTransactionIsolation(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess > SAL_CALL getTypeMap(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setTypeMap( const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::sdbc::XStatement > SAL_CALL createStatement(  ) override;
+            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const OUString& sql ) override;
+            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareCall( const OUString& sql ) override;
+            virtual OUString SAL_CALL nativeSQL( const OUString& sql ) override;
+            virtual void SAL_CALL setAutoCommit( sal_Bool autoCommit ) override;
+            virtual sal_Bool SAL_CALL getAutoCommit(  ) override;
+            virtual void SAL_CALL commit(  ) override;
+            virtual void SAL_CALL rollback(  ) override;
+            virtual sal_Bool SAL_CALL isClosed(  ) override;
+            virtual css::uno::Reference< css::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) override;
+            virtual void SAL_CALL setReadOnly( sal_Bool readOnly ) override;
+            virtual sal_Bool SAL_CALL isReadOnly(  ) override;
+            virtual void SAL_CALL setCatalog( const OUString& catalog ) override;
+            virtual OUString SAL_CALL getCatalog(  ) override;
+            virtual void SAL_CALL setTransactionIsolation( sal_Int32 level ) override;
+            virtual sal_Int32 SAL_CALL getTransactionIsolation(  ) override;
+            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getTypeMap(  ) override;
+            virtual void SAL_CALL setTypeMap( const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
             // XCloseable
-            virtual void SAL_CALL close(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL close(  ) override;
             // XWarningsSupplier
-            virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL clearWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL getWarnings(  ) override;
+            virtual void SAL_CALL clearWarnings(  ) override;
 
             SQLHANDLE       getConnection() { return m_aConnectionHandle; }
 
             // should we use the catalog on filebased databases
-            inline bool     isCatalogUsed()                     const { return m_bUseCatalog; }
-            inline bool     isParameterSubstitutionEnabled()    const { return m_bParameterSubstitution; }
-            inline bool     isIgnoreDriverPrivilegesEnabled()   const { return m_bIgnoreDriverPrivileges; }
-            inline bool     preventGetVersionColumns()          const { return m_bPreventGetVersionColumns; }
-            inline bool     useOldDateFormat()                  const { return m_bUseOldDateFormat; }
-            inline ODBCDriver*      getDriver()                     const { return m_pDriver;}
+            bool     isCatalogUsed()                     const { return m_bUseCatalog; }
+            bool     isParameterSubstitutionEnabled()    const { return m_bParameterSubstitution; }
+            bool     isIgnoreDriverPrivilegesEnabled()   const { return m_bIgnoreDriverPrivileges; }
+            bool     preventGetVersionColumns()          const { return m_bPreventGetVersionColumns; }
+            bool     useOldDateFormat()                  const { return m_bUseOldDateFormat; }
+            ODBCDriver*      getDriver()                     const { return m_pDriver;}
 
             SQLHANDLE       createStatementHandle();
             // close and free the handle and set it to SQL_NULLHANDLE

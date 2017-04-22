@@ -18,9 +18,6 @@
  */
 
 #include <com/sun/star/util/CellProtection.hpp>
-#include <com/sun/star/util/XProtectable.hpp>
-#include <com/sun/star/text/XText.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
 
 #include "scitems.hxx"
 #include <editeng/eeitem.hxx>
@@ -31,19 +28,33 @@
 #include <editeng/editobj.hxx>
 #include <editeng/flditem.hxx>
 
+#include <libxml/xmlwriter.h>
+
 #include "attrib.hxx"
 #include "global.hxx"
 #include "editutil.hxx"
 #include "sc.hrc"
+#include "mid.hrc"
 #include "globstr.hrc"
 
 #include "textuno.hxx"
 
 using namespace com::sun::star;
 
+#ifdef ANDROID
+namespace std
+{
+template <typename T> std::string to_string(const T& rNumber)
+{
+    std::ostringstream aStream;
+    aStream << rNumber;
+    return aStream.str();
+}
+}
+#endif
 
 SfxPoolItem* ScProtectionAttr::CreateDefault() { return new ScProtectionAttr; }
-SfxPoolItem* ScDoubleItem::CreateDefault() { DBG_ASSERT(false, "No ScDoubleItem factory available"); return nullptr; }
+SfxPoolItem* ScDoubleItem::CreateDefault() { SAL_WARN( "sc", "No ScDoubleItem factory available"); return nullptr; }
 
 /**
  * General Help Function
@@ -126,6 +137,15 @@ SfxPoolItem* ScMergeAttr::Create( SvStream& rStream, sal_uInt16 /* nVer */ ) con
     return new ScMergeAttr(static_cast<SCCOL>(nCol),static_cast<SCROW>(nRow));
 }
 
+void ScMergeAttr::dumpAsXml(xmlTextWriterPtr pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("ScMergeAttr"));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("col-merge"), BAD_CAST(OString::number(GetColMerge()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("row-merge"), BAD_CAST(OString::number(GetRowMerge()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("merged"), BAD_CAST(OString::boolean(IsMerged()).getStr()));
+    xmlTextWriterEndElement(pWriter);
+}
+
 /**
  * MergeFlag
  */
@@ -150,12 +170,25 @@ SfxPoolItem * ScMergeFlagAttr::Clone(SfxItemPool *) const
 
 bool ScMergeFlagAttr::HasPivotButton() const
 {
-    return bool(static_cast<ScMF>(GetValue()) & ScMF::Button);
+    return bool(GetValue() & ScMF::Button);
 }
 
 bool ScMergeFlagAttr::HasPivotPopupButton() const
 {
-    return bool(static_cast<ScMF>(GetValue()) & ScMF::ButtonPopup);
+    return bool(GetValue() & ScMF::ButtonPopup);
+}
+
+void ScMergeFlagAttr::dumpAsXml(xmlTextWriterPtr pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("ScMergeFlagAttr"));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("overlapped"), BAD_CAST(OString::boolean(IsOverlapped()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("hor_overlapped"), BAD_CAST(OString::boolean(IsHorOverlapped()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("ver_overlapped"), BAD_CAST(OString::boolean(IsVerOverlapped()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("autofilter"), BAD_CAST(OString::boolean(HasAutoFilter()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("scenario"), BAD_CAST(OString::boolean(IsScenario()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("pivot-button"), BAD_CAST(OString::boolean(HasPivotButton()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("pivot-popup-button"), BAD_CAST(OString::boolean(HasPivotPopupButton()).getStr()));
+    xmlTextWriterEndElement(pWriter);
 }
 
 /**
@@ -284,8 +317,8 @@ OUString ScProtectionAttr::GetValueText() const
 bool ScProtectionAttr::GetPresentation
     (
         SfxItemPresentation ePres,
-        SfxMapUnit /* eCoreMetric */,
-        SfxMapUnit /* ePresMetric */,
+        MapUnit /* eCoreMetric */,
+        MapUnit /* ePresMetric */,
         OUString& rText,
         const IntlWrapper* /* pIntl */
     ) const
@@ -295,11 +328,11 @@ bool ScProtectionAttr::GetPresentation
 
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             rText = GetValueText();
             break;
 
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText  = ScGlobal::GetRscString(STR_PROTECTION)
                 + ": "
                 + (bProtection ? aStrYes : aStrNo)
@@ -391,8 +424,8 @@ SfxPoolItem* ScRangeItem::Clone( SfxItemPool* ) const
 bool ScRangeItem::GetPresentation
     (
         SfxItemPresentation ePres,
-        SfxMapUnit          /* eCoreUnit */,
-        SfxMapUnit          /* ePresUnit */,
+        MapUnit             /* eCoreUnit */,
+        MapUnit             /* ePresUnit */,
         OUString&           rText,
         const IntlWrapper*  /* pIntl */
     ) const
@@ -401,11 +434,11 @@ bool ScRangeItem::GetPresentation
 
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
         rText = ScGlobal::GetRscString(STR_AREA) + ": ";
         SAL_FALLTHROUGH;
 
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
         {
             /* Always use OOo:A1 format */
             rText += aRange.Format();
@@ -430,32 +463,27 @@ ScTableListItem::ScTableListItem( const ScTableListItem& rCpy )
 {
     if ( nCount > 0 )
     {
-        pTabArr = new SCTAB [nCount];
+        pTabArr.reset( new SCTAB [nCount] );
 
         for ( sal_uInt16 i=0; i<nCount; i++ )
             pTabArr[i] = rCpy.pTabArr[i];
     }
-    else
-        pTabArr = nullptr;
 }
 
 ScTableListItem::~ScTableListItem()
 {
-    delete [] pTabArr;
 }
 
 ScTableListItem& ScTableListItem::operator=( const ScTableListItem& rCpy )
 {
-    delete [] pTabArr;
-
     if ( rCpy.nCount > 0 )
     {
-        pTabArr = new SCTAB [rCpy.nCount];
+        pTabArr.reset( new SCTAB [rCpy.nCount] );
         for ( sal_uInt16 i=0; i<rCpy.nCount; i++ )
             pTabArr[i] = rCpy.pTabArr[i];
     }
     else
-        pTabArr = nullptr;
+        pTabArr.reset();
 
     nCount = rCpy.nCount;
 
@@ -492,15 +520,15 @@ SfxPoolItem* ScTableListItem::Clone( SfxItemPool* ) const
 bool ScTableListItem::GetPresentation
     (
         SfxItemPresentation ePres,
-        SfxMapUnit          /* eCoreUnit */,
-        SfxMapUnit          /* ePresUnit */,
+        MapUnit             /* eCoreUnit */,
+        MapUnit             /* ePresUnit */,
         OUString&           rText,
         const IntlWrapper* /* pIntl */
     ) const
 {
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             {
             rText  = "(";
             if ( nCount>0 && pTabArr )
@@ -514,7 +542,7 @@ bool ScTableListItem::GetPresentation
             }
             return true;
 
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText.clear();
             return false;
 
@@ -667,7 +695,7 @@ static bool lcl_ConvertFields(EditEngine& rEng, const OUString* pCommands)
         while ((nPos = aStr.indexOf(pCommands[2])) != -1)
         {
             ESelection aSel( nPar,nPos, nPar,nPos+pCommands[2].getLength() );
-            rEng.QuickInsertField( SvxFieldItem(SvxDateField(Date( Date::SYSTEM ),SVXDATETYPE_VAR), EE_FEATURE_FIELD), aSel );
+            rEng.QuickInsertField( SvxFieldItem(SvxDateField(Date( Date::SYSTEM ),SvxDateType::Var), EE_FEATURE_FIELD), aSel );
             lcl_SetSpace(aStr, aSel ); bChange = true;
         }
         while ((nPos = aStr.indexOf(pCommands[3])) != -1)
@@ -812,7 +840,7 @@ ScViewObjectModeItem::ScViewObjectModeItem( sal_uInt16 nWhichP )
 }
 
 ScViewObjectModeItem::ScViewObjectModeItem( sal_uInt16 nWhichP, ScVObjMode eMode )
-    : SfxEnumItem( nWhichP, sal::static_int_cast<sal_uInt16>(eMode) )
+    : SfxEnumItem( nWhichP, eMode )
 {
 }
 
@@ -823,8 +851,8 @@ ScViewObjectModeItem::~ScViewObjectModeItem()
 bool ScViewObjectModeItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    SfxMapUnit          /* eCoreUnit */,
-    SfxMapUnit          /* ePresUnit */,
+    MapUnit             /* eCoreUnit */,
+    MapUnit             /* ePresUnit */,
     OUString&           rText,
     const IntlWrapper* /* pIntl */
 )   const
@@ -834,7 +862,7 @@ bool ScViewObjectModeItem::GetPresentation
 
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             switch( Which() )
             {
                 case SID_SCATTR_PAGE_CHARTS:
@@ -852,7 +880,7 @@ bool ScViewObjectModeItem::GetPresentation
                 default: break;
             }
             SAL_FALLTHROUGH;
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             rText += ScGlobal::GetRscString(STR_VOBJ_MODE_SHOW+GetValue());
             return true;
             break;
@@ -986,7 +1014,7 @@ void lclAppendScalePageCount( OUString& rText, sal_uInt16 nPages )
 } // namespace
 
 bool ScPageScaleToItem::GetPresentation(
-        SfxItemPresentation ePres, SfxMapUnit, SfxMapUnit, OUString& rText, const IntlWrapper* ) const
+        SfxItemPresentation ePres, MapUnit, MapUnit, OUString& rText, const IntlWrapper* ) const
 {
     rText.clear();
     if( !IsValid())
@@ -1000,12 +1028,12 @@ bool ScPageScaleToItem::GetPresentation(
 
     switch( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             rText = aValue;
             return true;
         break;
 
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText = aName + " (" + aValue + ")";
             return true;
         break;
@@ -1076,6 +1104,18 @@ void ScCondFormatItem::AddCondFormatData( sal_uInt32 nIndex )
 void ScCondFormatItem::SetCondFormatData( const std::vector<sal_uInt32>& rIndex )
 {
     maIndex = rIndex;
+}
+
+void ScCondFormatItem::dumpAsXml(xmlTextWriterPtr pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("ScCondFormatItem"));
+    for (const auto& nItem : maIndex)
+    {
+        std::string aStrVal = std::to_string(nItem);
+        xmlTextWriterStartElement(pWriter, BAD_CAST(aStrVal.c_str()));
+        xmlTextWriterEndElement(pWriter);
+    }
+    xmlTextWriterEndElement(pWriter);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

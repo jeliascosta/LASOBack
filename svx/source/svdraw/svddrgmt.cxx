@@ -245,11 +245,10 @@ drawinglayer::primitive2d::Primitive2DContainer SdrDragEntryPointGlueDrag::creat
     if(!maPositions.empty())
     {
         basegfx::B2DPolygon aPolygon;
-        sal_uInt32 a(0);
 
-        for(a = 0; a < maPositions.size(); a++)
+        for(auto const & a: maPositions)
         {
-            aPolygon.append(maPositions[a]);
+            aPolygon.append(a);
         }
 
         basegfx::B2DPolyPolygon aPolyPolygon(aPolygon);
@@ -261,7 +260,7 @@ drawinglayer::primitive2d::Primitive2DContainer SdrDragEntryPointGlueDrag::creat
 
         aTransformedPositions.reserve(aTransformed.count());
 
-        for(a = 0; a < aTransformed.count(); a++)
+        for(sal_uInt32 a = 0; a < aTransformed.count(); a++)
         {
             aTransformedPositions.push_back(aTransformed.getB2DPoint(a));
         }
@@ -303,7 +302,7 @@ void SdrDragMethod::resetSdrDragEntries()
 
 basegfx::B2DRange SdrDragMethod::getCurrentRange() const
 {
-    return getB2DRangeFromOverlayObjectList();
+    return maOverlayObjectList.getBaseRange();
 }
 
 void SdrDragMethod::clearSdrDragEntries()
@@ -451,7 +450,7 @@ void SdrDragMethod::createSdrDragEntries_PolygonDrag()
 
     if(bNoPolygons)
     {
-        const Rectangle aR(getSdrDragView().GetSdrPageView()->MarkSnap());
+        const tools::Rectangle aR(getSdrDragView().GetSdrPageView()->MarkSnap());
         const basegfx::B2DRange aNewRectangle(aR.Left(), aR.Top(), aR.Right(), aR.Bottom());
         basegfx::B2DPolygon aNewPolygon(basegfx::tools::createPolygonFromRect(aNewRectangle));
 
@@ -475,9 +474,9 @@ void SdrDragMethod::createSdrDragEntries_PointDrag()
 
         if(pM->GetPageView() == getSdrDragView().GetSdrPageView())
         {
-            const SdrUShortCont* pPts = pM->GetMarkedPoints();
+            const SdrUShortCont& rPts = pM->GetMarkedPoints();
 
-            if(pPts && !pPts->empty())
+            if (!rPts.empty())
             {
                 const SdrObject* pObj = pM->GetMarkedSdrObj();
                 const SdrPathObj* pPath = dynamic_cast< const SdrPathObj* >(pObj);
@@ -488,7 +487,7 @@ void SdrDragMethod::createSdrDragEntries_PointDrag()
 
                     if(aPathXPP.count())
                     {
-                        for(SdrUShortCont::const_iterator it = pPts->begin(); it != pPts->end(); ++it)
+                        for(SdrUShortCont::const_iterator it = rPts.begin(); it != rPts.end(); ++it)
                         {
                             sal_uInt32 nPolyNum, nPointNum;
                             const sal_uInt16 nObjPt = *it;
@@ -521,16 +520,16 @@ void SdrDragMethod::createSdrDragEntries_GlueDrag()
 
         if(pM->GetPageView() == getSdrDragView().GetSdrPageView())
         {
-            const SdrUShortCont* pPts = pM->GetMarkedGluePoints();
+            const SdrUShortCont& rPts = pM->GetMarkedGluePoints();
 
-            if(pPts && !pPts->empty())
+            if (!rPts.empty())
             {
                 const SdrObject* pObj = pM->GetMarkedSdrObj();
                 const SdrGluePointList* pGPL = pObj->GetGluePointList();
 
-                if(pGPL)
+                if (pGPL)
                 {
-                    for(SdrUShortCont::const_iterator it = pPts->begin(); it != pPts->end(); ++it)
+                    for(SdrUShortCont::const_iterator it = rPts.begin(); it != rPts.end(); ++it)
                     {
                         const sal_uInt16 nObjPt = *it;
                         const sal_uInt16 nGlueNum(pGPL->FindGluePoint(nObjPt));
@@ -667,15 +666,7 @@ void SdrDragMethod::CancelSdrDrag()
     Hide();
 }
 
-struct compareConstSdrObjectRefs
-{
-    bool operator()(const SdrObject* p1, const SdrObject* p2) const
-    {
-        return (p1 < p2);
-    }
-};
-
-typedef std::map< const SdrObject*, SdrObject*, compareConstSdrObjectRefs> SdrObjectAndCloneMap;
+typedef std::map< const SdrObject*, SdrObject* > SdrObjectAndCloneMap;
 
 void SdrDragMethod::CreateOverlayGeometry(sdr::overlay::OverlayManager& rOverlayManager)
 {
@@ -697,13 +688,12 @@ void SdrDragMethod::CreateOverlayGeometry(sdr::overlay::OverlayManager& rOverlay
         // and evtl. remember if it was an edge
         SdrObjectAndCloneMap aOriginalAndClones;
         std::vector< SdrEdgeObj* > aEdges;
-        sal_uInt32 a;
 
         // #i54102# execute prepareCurrentState for all SdrDragEntrySdrObject, register pair of original and
         // clone, remember edges
-        for(a = 0; a < maSdrDragEntries.size(); a++)
+        for(auto const & a: maSdrDragEntries)
         {
-            SdrDragEntrySdrObject* pSdrDragEntrySdrObject = dynamic_cast< SdrDragEntrySdrObject*>(maSdrDragEntries[a]);
+            SdrDragEntrySdrObject* pSdrDragEntrySdrObject = dynamic_cast< SdrDragEntrySdrObject*>(a);
 
             if(pSdrDragEntrySdrObject)
             {
@@ -726,9 +716,8 @@ void SdrDragMethod::CreateOverlayGeometry(sdr::overlay::OverlayManager& rOverlay
         // #i54102# if there are edges, reconnect their ends to the corresponding clones (if found)
         if(aEdges.size())
         {
-            for(a = 0; a < aEdges.size(); a++)
+            for(SdrEdgeObj* pSdrEdgeObj: aEdges)
             {
-                SdrEdgeObj* pSdrEdgeObj = aEdges[a];
                 SdrObject* pConnectedTo = pSdrEdgeObj->GetConnectedNode(true);
 
                 if(pConnectedTo)
@@ -759,10 +748,8 @@ void SdrDragMethod::CreateOverlayGeometry(sdr::overlay::OverlayManager& rOverlay
         drawinglayer::primitive2d::Primitive2DContainer aResult;
         drawinglayer::primitive2d::Primitive2DContainer aResultTransparent;
 
-        for(a = 0; a < maSdrDragEntries.size(); a++)
+        for(SdrDragEntry* pCandidate: maSdrDragEntries)
         {
-            SdrDragEntry* pCandidate = maSdrDragEntries[a];
-
             if(pCandidate)
             {
                 const drawinglayer::primitive2d::Primitive2DContainer aCandidateResult(pCandidate->createPrimitive2DSequenceInCurrentState(*this));
@@ -796,7 +783,7 @@ void SdrDragMethod::CreateOverlayGeometry(sdr::overlay::OverlayManager& rOverlay
         {
             sdr::overlay::OverlayObject* pNewOverlayObject = new sdr::overlay::OverlayPrimitive2DSequenceObject(aResult);
             rOverlayManager.add(*pNewOverlayObject);
-            addToOverlayObjectList(*pNewOverlayObject);
+            addToOverlayObjectList(pNewOverlayObject);
         }
 
         if(!aResultTransparent.empty())
@@ -806,14 +793,14 @@ void SdrDragMethod::CreateOverlayGeometry(sdr::overlay::OverlayManager& rOverlay
 
             sdr::overlay::OverlayObject* pNewOverlayObject = new sdr::overlay::OverlayPrimitive2DSequenceObject(aResultTransparent);
             rOverlayManager.add(*pNewOverlayObject);
-            addToOverlayObjectList(*pNewOverlayObject);
+            addToOverlayObjectList(pNewOverlayObject);
         }
     }
 
     // add DragStripes if necessary (help lines cross the page when dragging)
     if(getSdrDragView().IsDragStripes())
     {
-        Rectangle aActionRectangle;
+        tools::Rectangle aActionRectangle;
         getSdrDragView().TakeActionRect(aActionRectangle);
 
         const basegfx::B2DPoint aTopLeft(aActionRectangle.Left(), aActionRectangle.Top());
@@ -822,13 +809,13 @@ void SdrDragMethod::CreateOverlayGeometry(sdr::overlay::OverlayManager& rOverlay
             aTopLeft, aBottomRight, true, false);
 
         rOverlayManager.add(*pNew);
-        addToOverlayObjectList(*pNew);
+        addToOverlayObjectList(pNew);
     }
 }
 
 void SdrDragMethod::destroyOverlayGeometry()
 {
-    clearOverlayObjectList();
+    maOverlayObjectList.clear();
 }
 
 bool SdrDragMethod::DoAddConnectorOverlays()
@@ -837,11 +824,6 @@ bool SdrDragMethod::DoAddConnectorOverlays()
     const SdrMarkList& rMarkedNodes = getSdrDragView().GetEdgesOfMarkedNodes();
 
     if(!rMarkedNodes.GetMarkCount())
-    {
-        return false;
-    }
-
-    if(!getSdrDragView().IsRubberEdgeDragging() && !getSdrDragView().IsDetailedEdgeDragging())
     {
         return false;
     }
@@ -858,13 +840,6 @@ bool SdrDragMethod::DoAddConnectorOverlays()
         return false;
     }
 
-    const bool bDetail(getSdrDragView().IsDetailedEdgeDragging() && getMoveOnly());
-
-    if(!bDetail && !getSdrDragView().IsRubberEdgeDragging())
-    {
-        return false;
-    }
-
     // one more migrated from SdrEdgeObj::NspToggleEdgeXor
     if( dynamic_cast< const SdrDragObjOwn* >(this) != nullptr || dynamic_cast< const SdrDragMovHdl* >(this) != nullptr )
     {
@@ -877,7 +852,7 @@ bool SdrDragMethod::DoAddConnectorOverlays()
 drawinglayer::primitive2d::Primitive2DContainer SdrDragMethod::AddConnectorOverlays()
 {
     drawinglayer::primitive2d::Primitive2DContainer aRetval;
-    const bool bDetail(getSdrDragView().IsDetailedEdgeDragging() && getMoveOnly());
+    const bool bDetail(getMoveOnly());
     const SdrMarkList& rMarkedNodes = getSdrDragView().GetEdgesOfMarkedNodes();
 
     for(size_t a = 0; a < rMarkedNodes.GetMarkCount(); ++a)
@@ -979,10 +954,10 @@ bool SdrDragMovHdl::BeginSdrDrag()
     DragStat().Ref1()=GetDragHdl()->GetPos();
     DragStat().SetShown(!DragStat().IsShown());
     SdrHdlKind eKind=GetDragHdl()->GetKind();
-    SdrHdl* pH1=GetHdlList().GetHdl(HDL_REF1);
-    SdrHdl* pH2=GetHdlList().GetHdl(HDL_REF2);
+    SdrHdl* pH1=GetHdlList().GetHdl(SdrHdlKind::Ref1);
+    SdrHdl* pH2=GetHdlList().GetHdl(SdrHdlKind::Ref2);
 
-    if (eKind==HDL_MIRX)
+    if (eKind==SdrHdlKind::MirrorAxis)
     {
         if (pH1==nullptr || pH2==nullptr)
         {
@@ -990,12 +965,12 @@ bool SdrDragMovHdl::BeginSdrDrag()
             return false;
         }
 
-        DragStat().SetActionRect(Rectangle(pH1->GetPos(),pH2->GetPos()));
+        DragStat().SetActionRect(tools::Rectangle(pH1->GetPos(),pH2->GetPos()));
     }
     else
     {
         Point aPt(GetDragHdl()->GetPos());
-        DragStat().SetActionRect(Rectangle(aPt,aPt));
+        DragStat().SetActionRect(tools::Rectangle(aPt,aPt));
     }
 
     return true;
@@ -1007,10 +982,10 @@ void SdrDragMovHdl::MoveSdrDrag(const Point& rNoSnapPnt)
 
     if ( GetDragHdl() && DragStat().CheckMinMoved(rNoSnapPnt))
     {
-        if (GetDragHdl()->GetKind()==HDL_MIRX)
+        if (GetDragHdl()->GetKind()==SdrHdlKind::MirrorAxis)
         {
-            SdrHdl* pH1=GetHdlList().GetHdl(HDL_REF1);
-            SdrHdl* pH2=GetHdlList().GetHdl(HDL_REF2);
+            SdrHdl* pH1=GetHdlList().GetHdl(SdrHdlKind::Ref1);
+            SdrHdl* pH2=GetHdlList().GetHdl(SdrHdlKind::Ref2);
 
             if (pH1==nullptr || pH2==nullptr)
                 return;
@@ -1022,8 +997,8 @@ void SdrDragMovHdl::MoveSdrDrag(const Point& rNoSnapPnt)
                 bool bXSnapped=false;
                 bool bYSnapped=false;
                 Point aDif(aPnt-DragStat().GetStart());
-                getSdrDragView().CheckSnap(Ref1()+aDif,nullptr,nBestXSnap,nBestYSnap,bXSnapped,bYSnapped);
-                getSdrDragView().CheckSnap(Ref2()+aDif,nullptr,nBestXSnap,nBestYSnap,bXSnapped,bYSnapped);
+                getSdrDragView().CheckSnap(Ref1()+aDif,nBestXSnap,nBestYSnap,bXSnapped,bYSnapped);
+                getSdrDragView().CheckSnap(Ref2()+aDif,nBestXSnap,nBestYSnap,bXSnapped,bYSnapped);
                 aPnt.X()+=nBestXSnap;
                 aPnt.Y()+=nBestYSnap;
             }
@@ -1036,13 +1011,13 @@ void SdrDragMovHdl::MoveSdrDrag(const Point& rNoSnapPnt)
                 pH1->SetPos(Ref1()+aDif);
                 pH2->SetPos(Ref2()+aDif);
 
-                SdrHdl* pHM = GetHdlList().GetHdl(HDL_MIRX);
+                SdrHdl* pHM = GetHdlList().GetHdl(SdrHdlKind::MirrorAxis);
 
                 if(pHM)
                     pHM->Touch();
 
                 Show();
-                DragStat().SetActionRect(Rectangle(pH1->GetPos(),pH2->GetPos()));
+                DragStat().SetActionRect(tools::Rectangle(pH1->GetPos(),pH2->GetPos()));
             }
         }
         else
@@ -1064,10 +1039,10 @@ void SdrDragMovHdl::MoveSdrDrag(const Point& rNoSnapPnt)
 
             if (nSA!=0)
             { // angle snapping
-                SdrHdlKind eRef=HDL_REF1;
+                SdrHdlKind eRef=SdrHdlKind::Ref1;
 
-                if (GetDragHdl()->GetKind()==HDL_REF1)
-                    eRef=HDL_REF2;
+                if (GetDragHdl()->GetKind()==SdrHdlKind::Ref1)
+                    eRef=SdrHdlKind::Ref2;
 
                 SdrHdl* pH=GetHdlList().GetHdl(eRef);
 
@@ -1102,13 +1077,13 @@ void SdrDragMovHdl::MoveSdrDrag(const Point& rNoSnapPnt)
                 Hide();
                 DragStat().NextMove(aPnt);
                 GetDragHdl()->SetPos(DragStat().GetNow());
-                SdrHdl* pHM = GetHdlList().GetHdl(HDL_MIRX);
+                SdrHdl* pHM = GetHdlList().GetHdl(SdrHdlKind::MirrorAxis);
 
                 if(pHM)
                     pHM->Touch();
 
                 Show();
-                DragStat().SetActionRect(Rectangle(aPnt,aPnt));
+                DragStat().SetActionRect(tools::Rectangle(aPnt,aPnt));
             }
         }
     }
@@ -1120,15 +1095,15 @@ bool SdrDragMovHdl::EndSdrDrag(bool /*bCopy*/)
     {
         switch (GetDragHdl()->GetKind())
         {
-            case HDL_REF1:
+            case SdrHdlKind::Ref1:
                 Ref1()=DragStat().GetNow();
                 break;
 
-            case HDL_REF2:
+            case SdrHdlKind::Ref2:
                 Ref2()=DragStat().GetNow();
                 break;
 
-            case HDL_MIRX:
+            case SdrHdlKind::MirrorAxis:
                 Ref1()+=DragStat().GetNow()-DragStat().GetStart();
                 Ref2()+=DragStat().GetNow()-DragStat().GetStart();
                 break;
@@ -1148,7 +1123,7 @@ void SdrDragMovHdl::CancelSdrDrag()
     if( pHdl )
         pHdl->SetPos(DragStat().GetRef1());
 
-    SdrHdl* pHM = GetHdlList().GetHdl(HDL_MIRX);
+    SdrHdl* pHM = GetHdlList().GetHdl(SdrHdlKind::MirrorAxis);
 
     if(pHM)
         pHM->Touch();
@@ -1313,7 +1288,7 @@ void SdrDragObjOwn::MoveSdrDrag(const Point& rNoSnapPnt)
     }
 
     if (!DragStat().CheckMinMoved(rNoSnapPnt))
-        // Not moved by the minimum threshold.  Nothing to do.
+        // Not moved by the minimum threshold. Nothing to do.
         return;
 
     Hide();
@@ -1336,7 +1311,7 @@ void SdrDragObjOwn::MoveSdrDrag(const Point& rNoSnapPnt)
     mpClone = pObj->getFullDragClone();
     mpClone->applySpecialDrag(DragStat());
 
-    // #120999# AutoGrowWidth may change for SdrTextObj due to the automatism used
+    // AutoGrowWidth may change for SdrTextObj due to the automatism used
     // with bDisableAutoWidthOnDragging, so not only geometry changes but
     // also this (pretty indirect) property change is possible. If it gets
     // changed, it needs to be copied to the original since nothing will
@@ -1402,7 +1377,7 @@ bool SdrDragObjOwn::EndSdrDrag(bool /*bCopy*/)
         // in its SdrTableObj::endSpecialDrag, so currently not possible. OTOH it uses
         // a CreateUndoGeoObject(), so maybe setting SetEndDragChangesAttributes is okay. I
         // will test this now
-        Rectangle aBoundRect0;
+        tools::Rectangle aBoundRect0;
 
         if(pObj->GetUserCall())
         {
@@ -1421,7 +1396,7 @@ bool SdrDragObjOwn::EndSdrDrag(bool /*bCopy*/)
         {
             pObj->SetChanged();
             pObj->BroadcastObjectChange();
-            pObj->SendUserCall( SDRUSERCALL_RESIZE, aBoundRect0 );
+            pObj->SendUserCall( SdrUserCallType::Resize, aBoundRect0 );
         }
 
         if(bRet)
@@ -1586,7 +1561,7 @@ void SdrDragMove::MoveSdrDrag(const Point& rNoSnapPnt_)
     bXSnapped=false;
     bYSnapped=false;
     Point aNoSnapPnt(rNoSnapPnt_);
-    const Rectangle& aSR=GetMarkedRect();
+    const tools::Rectangle& aSR=GetMarkedRect();
     long nMovedx=aNoSnapPnt.X()-DragStat().GetStart().X();
     long nMovedy=aNoSnapPnt.Y()-DragStat().GetStart().Y();
     Point aLO(aSR.TopLeft());      aLO.X()+=nMovedx; aLO.Y()+=nMovedy;
@@ -1611,18 +1586,18 @@ void SdrDragMove::MoveSdrDrag(const Point& rNoSnapPnt_)
     if (DragStat().CheckMinMoved(aNoSnapPnt))
     {
         Point aPt1(aPnt);
-        Rectangle aLR(getSdrDragView().GetWorkArea());
+        tools::Rectangle aLR(getSdrDragView().GetWorkArea());
         bool bWorkArea=!aLR.IsEmpty();
         bool bDragLimit=IsDragLimit();
 
         if (bDragLimit || bWorkArea)
         {
-            Rectangle aSR2(GetMarkedRect());
+            tools::Rectangle aSR2(GetMarkedRect());
             Point aD(aPt1-DragStat().GetStart());
 
             if (bDragLimit)
             {
-                Rectangle aR2(GetDragLimitRect());
+                tools::Rectangle aR2(GetDragLimitRect());
 
                 if (bWorkArea)
                     aLR.Intersection(aR2);
@@ -1672,16 +1647,15 @@ void SdrDragMove::MoveSdrDrag(const Point& rNoSnapPnt_)
             for (size_t nMarkNum=0; nMarkNum<nMarkCount; ++nMarkNum)
             {
                 const SdrMark* pM=rML.GetMark(nMarkNum);
-                const SdrUShortCont* pPts=pM->GetMarkedGluePoints();
-                const size_t nPointCount=pPts==nullptr ? 0 : pPts->size();
+                const SdrUShortCont& rPts = pM->GetMarkedGluePoints();
 
-                if (nPointCount!=0)
+                if (!rPts.empty())
                 {
                     const SdrObject* pObj=pM->GetMarkedSdrObj();
                     const SdrGluePointList* pGPL=pObj->GetGluePointList();
-                    Rectangle aBound(pObj->GetCurrentBoundRect());
+                    tools::Rectangle aBound(pObj->GetCurrentBoundRect());
 
-                    for (SdrUShortCont::const_iterator it = pPts->begin(); it != pPts->end(); ++it)
+                    for (SdrUShortCont::const_iterator it = rPts.begin(); it != rPts.end(); ++it)
                     {
                         sal_uInt16 nId = *it;
                         sal_uInt16 nGlueNum=pGPL->FindGluePoint(nId);
@@ -1709,7 +1683,7 @@ void SdrDragMove::MoveSdrDrag(const Point& rNoSnapPnt_)
         {
             Hide();
             DragStat().NextMove(aPt1);
-            Rectangle aAction(GetMarkedRect());
+            tools::Rectangle aAction(GetMarkedRect());
             aAction.Move(DragStat().GetDX(),DragStat().GetDY());
             DragStat().SetActionRect(aAction);
             Show();
@@ -1814,23 +1788,23 @@ void SdrDragResize::TakeSdrDragComment(OUString& rStr) const
 
 bool SdrDragResize::BeginSdrDrag()
 {
-    SdrHdlKind eRefHdl=HDL_MOVE;
+    SdrHdlKind eRefHdl=SdrHdlKind::Move;
     SdrHdl* pRefHdl=nullptr;
 
     switch (GetDragHdlKind())
     {
-        case HDL_UPLFT: eRefHdl=HDL_LWRGT; break;
-        case HDL_UPPER: eRefHdl=HDL_LOWER; DragStat().SetHorFixed(true); break;
-        case HDL_UPRGT: eRefHdl=HDL_LWLFT; break;
-        case HDL_LEFT : eRefHdl=HDL_RIGHT; DragStat().SetVerFixed(true); break;
-        case HDL_RIGHT: eRefHdl=HDL_LEFT ; DragStat().SetVerFixed(true); break;
-        case HDL_LWLFT: eRefHdl=HDL_UPRGT; break;
-        case HDL_LOWER: eRefHdl=HDL_UPPER; DragStat().SetHorFixed(true); break;
-        case HDL_LWRGT: eRefHdl=HDL_UPLFT; break;
+        case SdrHdlKind::UpperLeft: eRefHdl=SdrHdlKind::LowerRight; break;
+        case SdrHdlKind::Upper: eRefHdl=SdrHdlKind::Lower; DragStat().SetHorFixed(true); break;
+        case SdrHdlKind::UpperRight: eRefHdl=SdrHdlKind::LowerLeft; break;
+        case SdrHdlKind::Left : eRefHdl=SdrHdlKind::Right; DragStat().SetVerFixed(true); break;
+        case SdrHdlKind::Right: eRefHdl=SdrHdlKind::Left ; DragStat().SetVerFixed(true); break;
+        case SdrHdlKind::LowerLeft: eRefHdl=SdrHdlKind::UpperRight; break;
+        case SdrHdlKind::Lower: eRefHdl=SdrHdlKind::Upper; DragStat().SetHorFixed(true); break;
+        case SdrHdlKind::LowerRight: eRefHdl=SdrHdlKind::UpperLeft; break;
         default: break;
     }
 
-    if (eRefHdl!=HDL_MOVE)
+    if (eRefHdl!=SdrHdlKind::Move)
         pRefHdl=GetHdlList().GetHdl(eRefHdl);
 
     if (pRefHdl!=nullptr && !getSdrDragView().IsResizeAtCenter())
@@ -1840,12 +1814,12 @@ bool SdrDragResize::BeginSdrDrag()
     }
     else
     {
-        SdrHdl* pRef1=GetHdlList().GetHdl(HDL_UPLFT);
-        SdrHdl* pRef2=GetHdlList().GetHdl(HDL_LWRGT);
+        SdrHdl* pRef1=GetHdlList().GetHdl(SdrHdlKind::UpperLeft);
+        SdrHdl* pRef2=GetHdlList().GetHdl(SdrHdlKind::LowerRight);
 
         if (pRef1!=nullptr && pRef2!=nullptr)
         {
-            DragStat().Ref1()=Rectangle(pRef1->GetPos(),pRef2->GetPos()).Center();
+            DragStat().Ref1()=tools::Rectangle(pRef1->GetPos(),pRef2->GetPos()).Center();
         }
         else
         {
@@ -1874,17 +1848,17 @@ void SdrDragResize::MoveSdrDrag(const Point& rNoSnapPnt)
     Point aStart(DragStat().GetStart());
     Point aRef(DragStat().GetRef1());
     Fraction aMaxFact(0x7FFFFFFF,1);
-    Rectangle aLR(getSdrDragView().GetWorkArea());
+    tools::Rectangle aLR(getSdrDragView().GetWorkArea());
     bool bWorkArea=!aLR.IsEmpty();
     bool bDragLimit=IsDragLimit();
 
     if (bDragLimit || bWorkArea)
     {
-        Rectangle aSR(GetMarkedRect());
+        tools::Rectangle aSR(GetMarkedRect());
 
         if (bDragLimit)
         {
-            Rectangle aR2(GetDragLimitRect());
+            tools::Rectangle aR2(GetDragLimitRect());
 
             if (bWorkArea)
                 aLR.Intersection(aR2);
@@ -2123,7 +2097,7 @@ void SdrDragRotate::TakeSdrDragComment(OUString& rStr) const
 
 bool SdrDragRotate::BeginSdrDrag()
 {
-    SdrHdl* pH=GetHdlList().GetHdl(HDL_REF1);
+    SdrHdl* pH=GetHdlList().GetHdl(SdrHdlKind::Ref1);
 
     if (pH!=nullptr)
     {
@@ -2256,19 +2230,19 @@ void SdrDragShear::TakeSdrDragComment(OUString& rStr) const
 
 bool SdrDragShear::BeginSdrDrag()
 {
-    SdrHdlKind eRefHdl=HDL_MOVE;
+    SdrHdlKind eRefHdl=SdrHdlKind::Move;
     SdrHdl* pRefHdl=nullptr;
 
     switch (GetDragHdlKind())
     {
-        case HDL_UPPER: eRefHdl=HDL_LOWER; break;
-        case HDL_LOWER: eRefHdl=HDL_UPPER; break;
-        case HDL_LEFT : eRefHdl=HDL_RIGHT; bVertical=true; break;
-        case HDL_RIGHT: eRefHdl=HDL_LEFT ; bVertical=true; break;
+        case SdrHdlKind::Upper: eRefHdl=SdrHdlKind::Lower; break;
+        case SdrHdlKind::Lower: eRefHdl=SdrHdlKind::Upper; break;
+        case SdrHdlKind::Left : eRefHdl=SdrHdlKind::Right; bVertical=true; break;
+        case SdrHdlKind::Right: eRefHdl=SdrHdlKind::Left ; bVertical=true; break;
         default: break;
     }
 
-    if (eRefHdl!=HDL_MOVE)
+    if (eRefHdl!=SdrHdlKind::Move)
         pRefHdl=GetHdlList().GetHdl(eRefHdl);
 
     if (pRefHdl!=nullptr)
@@ -2542,8 +2516,8 @@ void SdrDragMirror::TakeSdrDragComment(OUString& rStr) const
 
 bool SdrDragMirror::BeginSdrDrag()
 {
-    SdrHdl* pH1=GetHdlList().GetHdl(HDL_REF1);
-    SdrHdl* pH2=GetHdlList().GetHdl(HDL_REF2);
+    SdrHdl* pH1=GetHdlList().GetHdl(SdrHdlKind::Ref1);
+    SdrHdl* pH2=GetHdlList().GetHdl(SdrHdlKind::Ref2);
 
     if (pH1!=nullptr && pH2!=nullptr)
     {
@@ -2647,7 +2621,7 @@ bool SdrDragGradient::BeginSdrDrag()
 {
     bool bRetval(false);
 
-    pIAOHandle = static_cast<SdrHdlGradient*>(GetHdlList().GetHdl(IsGradient() ? HDL_GRAD : HDL_TRNS));
+    pIAOHandle = static_cast<SdrHdlGradient*>(GetHdlList().GetHdl(IsGradient() ? SdrHdlKind::Gradient : SdrHdlKind::Transparence));
 
     if(pIAOHandle)
     {
@@ -2805,7 +2779,7 @@ SdrDragCrook::SdrDragCrook(SdrDragView& rNewView)
     bAtCenter(false),
     nAngle(0),
     nMarkSize(0),
-    eMode(SDRCROOK_ROTATE)
+    eMode(SdrCrookMode::Rotate)
 {
 }
 
@@ -2838,14 +2812,14 @@ void SdrDragCrook::TakeSdrDragComment(OUString& rStr) const
 #define DRAG_CROOK_RASTER_MAXIMUM   (15)
 #define DRAG_CROOK_RASTER_DISTANCE  (30)
 
-basegfx::B2DPolyPolygon impCreateDragRaster(SdrPageView& rPageView, const Rectangle& rMarkRect)
+basegfx::B2DPolyPolygon impCreateDragRaster(SdrPageView& rPageView, const tools::Rectangle& rMarkRect)
 {
     basegfx::B2DPolyPolygon aRetval;
 
     if(rPageView.PageWindowCount())
     {
         OutputDevice& rOut = (rPageView.GetPageWindow(0)->GetPaintWindow().GetOutputDevice());
-        Rectangle aPixelSize = rOut.LogicToPixel(rMarkRect);
+        tools::Rectangle aPixelSize = rOut.LogicToPixel(rMarkRect);
         sal_uInt32 nHorDiv(aPixelSize.GetWidth() / DRAG_CROOK_RASTER_DISTANCE);
         sal_uInt32 nVerDiv(aPixelSize.GetHeight() / DRAG_CROOK_RASTER_DISTANCE);
 
@@ -2936,7 +2910,7 @@ bool SdrDragCrook::BeginSdrDrag()
 
     if (bContortionAllowed || bNoContortionAllowed)
     {
-        bVertical=(GetDragHdlKind()==HDL_LOWER || GetDragHdlKind()==HDL_UPPER);
+        bVertical=(GetDragHdlKind()==SdrHdlKind::Lower || GetDragHdlKind()==SdrHdlKind::Upper);
         aMarkRect=GetMarkedRect();
         aMarkCenter=aMarkRect.Center();
         nMarkSize=bVertical ? (aMarkRect.GetHeight()-1) : (aMarkRect.GetWidth()-1);
@@ -2972,7 +2946,7 @@ void SdrDragCrook::MovAllPoints(basegfx::B2DPolyPolygon& rTarget)
                 {
                     nLast=n1st;
                     while (nLast<nPolyCount && aTempPolyPoly[nLast].GetPointCount()!=0) nLast++;
-                    Rectangle aBound(aTempPolyPoly[n1st].GetBoundRect());
+                    tools::Rectangle aBound(aTempPolyPoly[n1st].GetBoundRect());
                     sal_uInt16 i;
 
                     for (i=n1st+1; i<nLast; i++)
@@ -3006,9 +2980,9 @@ void SdrDragCrook::MovAllPoints(basegfx::B2DPolyPolygon& rTarget)
 
                         switch (eMode)
                         {
-                            case SDRCROOK_ROTATE : CrookRotateXPoint (aCtr1,nullptr,nullptr,aC,aRad,nSin,nCos,bVertical);           break;
-                            case SDRCROOK_SLANT  : CrookSlantXPoint  (aCtr1,nullptr,nullptr,aC,aRad,nSin,nCos,bVertical);           break;
-                            case SDRCROOK_STRETCH: CrookStretchXPoint(aCtr1,nullptr,nullptr,aC,aRad,nSin,nCos,bVertical,aMarkRect); break;
+                            case SdrCrookMode::Rotate : CrookRotateXPoint (aCtr1,nullptr,nullptr,aC,aRad,nSin,nCos,bVertical);           break;
+                            case SdrCrookMode::Slant  : CrookSlantXPoint  (aCtr1,nullptr,nullptr,aC,aRad,nSin,nCos,bVertical);           break;
+                            case SdrCrookMode::Stretch: CrookStretchXPoint(aCtr1,nullptr,nullptr,aC,aRad,nSin,nCos,bVertical,aMarkRect); break;
                         } // switch
                     }
 
@@ -3107,9 +3081,9 @@ void SdrDragCrook::MovCrookPoint(Point& rPnt, Point* pC1, Point* pC2)
 
         switch (eMode)
         {
-            case SDRCROOK_ROTATE : CrookRotateXPoint (rPnt,pC1,pC2,aC,aRad,nSin,nCos,bVert);           break;
-            case SDRCROOK_SLANT  : CrookSlantXPoint  (rPnt,pC1,pC2,aC,aRad,nSin,nCos,bVert);           break;
-            case SDRCROOK_STRETCH: CrookStretchXPoint(rPnt,pC1,pC2,aC,aRad,nSin,nCos,bVert,aMarkRect); break;
+            case SdrCrookMode::Rotate : CrookRotateXPoint (rPnt,pC1,pC2,aC,aRad,nSin,nCos,bVert);           break;
+            case SdrCrookMode::Slant  : CrookSlantXPoint  (rPnt,pC1,pC2,aC,aRad,nSin,nCos,bVert);           break;
+            case SdrCrookMode::Stretch: CrookStretchXPoint(rPnt,pC1,pC2,aC,aRad,nSin,nCos,bVert,aMarkRect); break;
         } // switch
     }
 }
@@ -3123,7 +3097,7 @@ void SdrDragCrook::MoveSdrDrag(const Point& rPnt)
         SdrCrookMode eNeuMode=getSdrDragView().GetCrookMode();
         bool bNeuContortion=!bNeuMoveOnly && ((bContortionAllowed && !getSdrDragView().IsCrookNoContortion()) || !bNoContortionAllowed);
         bResize=!getSdrDragView().IsOrtho() && bResizeAllowed && !bNeuMoveOnly;
-        bool bNeuRotate=bRotateAllowed && !bNeuContortion && !bNeuMoveOnly && eNeuMode==SDRCROOK_ROTATE;
+        bool bNeuRotate=bRotateAllowed && !bNeuContortion && !bNeuMoveOnly && eNeuMode==SdrCrookMode::Rotate;
 
         Point aPnt(GetSnapPos(rPnt));
 
@@ -3139,14 +3113,14 @@ void SdrDragCrook::MoveSdrDrag(const Point& rPnt)
         {
             switch (GetDragHdlKind())
             {
-                case HDL_UPLFT: aNeuCenter.X()=aMarkRect.Right();  bLft=true; break;
-                case HDL_UPPER: aNeuCenter.Y()=aMarkRect.Bottom(); bUpr=true; break;
-                case HDL_UPRGT: aNeuCenter.X()=aMarkRect.Left();   bRgt=true; break;
-                case HDL_LEFT : aNeuCenter.X()=aMarkRect.Right();  bLft=true; break;
-                case HDL_RIGHT: aNeuCenter.X()=aMarkRect.Left();   bRgt=true; break;
-                case HDL_LWLFT: aNeuCenter.X()=aMarkRect.Right();  bLft=true; break;
-                case HDL_LOWER: aNeuCenter.Y()=aMarkRect.Top();    bLwr=true; break;
-                case HDL_LWRGT: aNeuCenter.X()=aMarkRect.Left();   bRgt=true; break;
+                case SdrHdlKind::UpperLeft: aNeuCenter.X()=aMarkRect.Right();  bLft=true; break;
+                case SdrHdlKind::Upper: aNeuCenter.Y()=aMarkRect.Bottom(); bUpr=true; break;
+                case SdrHdlKind::UpperRight: aNeuCenter.X()=aMarkRect.Left();   bRgt=true; break;
+                case SdrHdlKind::Left : aNeuCenter.X()=aMarkRect.Right();  bLft=true; break;
+                case SdrHdlKind::Right: aNeuCenter.X()=aMarkRect.Left();   bRgt=true; break;
+                case SdrHdlKind::LowerLeft: aNeuCenter.X()=aMarkRect.Right();  bLft=true; break;
+                case SdrHdlKind::Lower: aNeuCenter.Y()=aMarkRect.Top();    bLwr=true; break;
+                case SdrHdlKind::LowerRight: aNeuCenter.X()=aMarkRect.Left();   bRgt=true; break;
                 default: bAtCenter=true;
             }
         }
@@ -3321,8 +3295,8 @@ void SdrDragCrook::applyCurrentTransformationToSdrObject(SdrObject& rTarget)
 
         if (bDoCrook)
         {
-            const Rectangle aLocalMarkRect(getSdrDragView().GetMarkedObjRect());
-            const bool bLocalRotate(!bContortion && eMode == SDRCROOK_ROTATE && getSdrDragView().IsRotateAllowed());
+            const tools::Rectangle aLocalMarkRect(getSdrDragView().GetMarkedObjRect());
+            const bool bLocalRotate(!bContortion && eMode == SdrCrookMode::Rotate && getSdrDragView().IsRotateAllowed());
 
             SdrEditView::ImpCrookObj(&rTarget,aCenter,aRad,eMode,bVertical,!bContortion,bLocalRotate,aLocalMarkRect);
         }
@@ -3472,10 +3446,10 @@ bool SdrDragDistort::BeginSdrDrag()
         SdrHdlKind eKind=GetDragHdlKind();
         nPolyPt=0xFFFF;
 
-        if (eKind==HDL_UPLFT) nPolyPt=0;
-        if (eKind==HDL_UPRGT) nPolyPt=1;
-        if (eKind==HDL_LWRGT) nPolyPt=2;
-        if (eKind==HDL_LWLFT) nPolyPt=3;
+        if (eKind==SdrHdlKind::UpperLeft) nPolyPt=0;
+        if (eKind==SdrHdlKind::UpperRight) nPolyPt=1;
+        if (eKind==SdrHdlKind::LowerRight) nPolyPt=2;
+        if (eKind==SdrHdlKind::LowerLeft) nPolyPt=3;
         if (nPolyPt>3) return false;
 
         aMarkRect=GetMarkedRect();
@@ -3623,7 +3597,7 @@ bool SdrDragCrop::EndSdrDrag(bool /*bCopy*/)
 
     SdrObject* pSdrObject = rMarkList.GetMark( 0 )->GetMarkedSdrObj();
 
-    // tdf 34555: in order to implement visual crop in Writer, we need to handle two
+    // tdf#34555: in order to implement visual crop in Writer, we need to handle two
     // cases:
     // EndSdrDrag when called in Impress/Draw/...: pSdrObject is a SdrGrafObj
     // EndSdrDrag when called in Writer: pSdrObject is a SwVirtFlyDrawObj
@@ -3644,13 +3618,13 @@ bool SdrDragCrop::EndSdrDrag(bool /*bCopy*/)
         }
 
         // We need to produce a reference point and two (X & Y) scales
-        SdrHdl* pRef1=GetHdlList().GetHdl(HDL_UPLFT);
-        SdrHdl* pRef2=GetHdlList().GetHdl(HDL_LWRGT);
+        SdrHdl* pRef1=GetHdlList().GetHdl(SdrHdlKind::UpperLeft);
+        SdrHdl* pRef2=GetHdlList().GetHdl(SdrHdlKind::LowerRight);
 
         if (pRef1==nullptr || pRef2==nullptr)
             return false;
 
-        Rectangle rect(pRef1->GetPos(),pRef2->GetPos());
+        tools::Rectangle rect(pRef1->GetPos(),pRef2->GetPos());
 
         Point aEnd(DragStat().GetNow());
         Point aStart(DragStat().GetStart());
@@ -3659,14 +3633,14 @@ bool SdrDragCrop::EndSdrDrag(bool /*bCopy*/)
         // Reference point is the point opposed to the dragged handle
         switch(GetDragHdlKind())
         {
-            case HDL_UPLFT: aRef = rect.BottomRight();                                  break;
-            case HDL_UPPER: aRef = rect.BottomCenter(); DragStat().SetHorFixed(true);   break;
-            case HDL_UPRGT: aRef = rect.BottomLeft();                                   break;
-            case HDL_LEFT : aRef = rect.RightCenter();  DragStat().SetVerFixed(true);   break;
-            case HDL_RIGHT: aRef = rect.LeftCenter();   DragStat().SetVerFixed(true);   break;
-            case HDL_LWLFT: aRef = rect.TopRight();                                     break;
-            case HDL_LOWER: aRef = rect.TopCenter();    DragStat().SetHorFixed(true);   break;
-            case HDL_LWRGT: aRef = rect.TopLeft();                                      break;
+            case SdrHdlKind::UpperLeft: aRef = rect.BottomRight();                                  break;
+            case SdrHdlKind::Upper: aRef = rect.BottomCenter(); DragStat().SetHorFixed(true);   break;
+            case SdrHdlKind::UpperRight: aRef = rect.BottomLeft();                                   break;
+            case SdrHdlKind::Left : aRef = rect.RightCenter();  DragStat().SetVerFixed(true);   break;
+            case SdrHdlKind::Right: aRef = rect.LeftCenter();   DragStat().SetVerFixed(true);   break;
+            case SdrHdlKind::LowerLeft: aRef = rect.TopRight();                                     break;
+            case SdrHdlKind::Lower: aRef = rect.TopCenter();    DragStat().SetHorFixed(true);   break;
+            case SdrHdlKind::LowerRight: aRef = rect.TopLeft();                                      break;
             default: break;
         }
 
@@ -3787,19 +3761,19 @@ bool SdrDragCrop::EndSdrDrag(bool /*bCopy*/)
     // This part of code handles the case where pSdrObject is SdrGrafObj
 
     SdrGrafObj* pObj = dynamic_cast<SdrGrafObj*>( pSdrObject );
-    if( !pObj || (pObj->GetGraphicType() == GRAPHIC_NONE) || (pObj->GetGraphicType() == GRAPHIC_DEFAULT) )
+    if( !pObj || (pObj->GetGraphicType() == GraphicType::NONE) || (pObj->GetGraphicType() == GraphicType::Default) )
         return false;
 
     const GraphicObject& rGraphicObject = pObj->GetGraphicObject();
-    const MapMode aMapMode100thmm(MAP_100TH_MM);
+    const MapMode aMapMode100thmm(MapUnit::Map100thMM);
     Size aGraphicSize(rGraphicObject.GetPrefSize());
 
-    if( MAP_PIXEL == rGraphicObject.GetPrefMapMode().GetMapUnit() )
+    if( MapUnit::MapPixel == rGraphicObject.GetPrefMapMode().GetMapUnit() )
         aGraphicSize = Application::GetDefaultDevice()->PixelToLogic( aGraphicSize, aMapMode100thmm );
     else
         aGraphicSize = OutputDevice::LogicToLogic( aGraphicSize, rGraphicObject.GetPrefMapMode(), aMapMode100thmm);
 
-    if( aGraphicSize.A() == 0 || aGraphicSize.B() == 0 )
+    if( aGraphicSize.Width() == 0 || aGraphicSize.Height() == 0 )
         return false;
 
     const SdrGrafCropItem& rOldCrop = static_cast<const SdrGrafCropItem&>(pObj->GetMergedItem(SDRATTR_GRAFCROP));
@@ -3826,7 +3800,7 @@ bool SdrDragCrop::EndSdrDrag(bool /*bCopy*/)
     // get transformation from object
     pObj->TRGetBaseGeometry(aOriginalMatrix, aPolyPolygon);
 
-    {   // TTTT correct shear, it comes currently mirrored from TRGetBaseGeometry, can be removed with aw080
+    {   // correct shear, it comes currently mirrored from TRGetBaseGeometry, can be removed with aw080
         basegfx::B2DTuple aScale;
         basegfx::B2DTuple aTranslate;
         double fRotate(0.0), fShearX(0.0);
@@ -3856,14 +3830,14 @@ bool SdrDragCrop::EndSdrDrag(bool /*bCopy*/)
 
     switch(GetDragHdlKind())
     {
-        case HDL_UPLFT: aLocalStart.setX(1.0); aLocalStart.setY(1.0); break;
-        case HDL_UPPER: aLocalStart.setX(0.5); aLocalStart.setY(1.0); bOnAxis = true; break;
-        case HDL_UPRGT: aLocalStart.setX(0.0); aLocalStart.setY(1.0); break;
-        case HDL_LEFT : aLocalStart.setX(1.0); aLocalStart.setY(0.5); bOnAxis = true; break;
-        case HDL_RIGHT: aLocalStart.setX(0.0); aLocalStart.setY(0.5); bOnAxis = true; break;
-        case HDL_LWLFT: aLocalStart.setX(1.0); aLocalStart.setY(0.0); break;
-        case HDL_LOWER: aLocalStart.setX(0.5); aLocalStart.setY(0.0); bOnAxis = true; break;
-        case HDL_LWRGT: aLocalStart.setX(0.0); aLocalStart.setY(0.0); break;
+        case SdrHdlKind::UpperLeft: aLocalStart.setX(1.0); aLocalStart.setY(1.0); break;
+        case SdrHdlKind::Upper: aLocalStart.setX(0.5); aLocalStart.setY(1.0); bOnAxis = true; break;
+        case SdrHdlKind::UpperRight: aLocalStart.setX(0.0); aLocalStart.setY(1.0); break;
+        case SdrHdlKind::Left : aLocalStart.setX(1.0); aLocalStart.setY(0.5); bOnAxis = true; break;
+        case SdrHdlKind::Right: aLocalStart.setX(0.0); aLocalStart.setY(0.5); bOnAxis = true; break;
+        case SdrHdlKind::LowerLeft: aLocalStart.setX(1.0); aLocalStart.setY(0.0); break;
+        case SdrHdlKind::Lower: aLocalStart.setX(0.5); aLocalStart.setY(0.0); bOnAxis = true; break;
+        case SdrHdlKind::LowerRight: aLocalStart.setX(0.0); aLocalStart.setY(0.0); break;
         default: break;
     }
 
@@ -3917,7 +3891,7 @@ bool SdrDragCrop::EndSdrDrag(bool /*bCopy*/)
 
     if(bShearCorrected)
     {
-        // TTTT back-correct shear
+        // back-correct shear
         basegfx::B2DTuple aScale;
         basegfx::B2DTuple aTranslate;
         double fRotate(0.0), fShearX(0.0);
@@ -3966,12 +3940,12 @@ bool SdrDragCrop::EndSdrDrag(bool /*bCopy*/)
     aRangeNewNoShearNoRotate.transform(aMatrixOriginalNoShearNoRotate * aDiscreteChangeMatrix);
 
     // extract the old Rectangle structures
-    Rectangle aOldRect(
+    tools::Rectangle aOldRect(
         basegfx::fround(aRangeOriginalNoShearNoRotate.getMinX()),
         basegfx::fround(aRangeOriginalNoShearNoRotate.getMinY()),
         basegfx::fround(aRangeOriginalNoShearNoRotate.getMaxX()),
         basegfx::fround(aRangeOriginalNoShearNoRotate.getMaxY()));
-    Rectangle aNewRect(
+    tools::Rectangle aNewRect(
         basegfx::fround(aRangeNewNoShearNoRotate.getMinX()),
         basegfx::fround(aRangeNewNoShearNoRotate.getMinY()),
         basegfx::fround(aRangeNewNoShearNoRotate.getMaxX()),
@@ -3992,7 +3966,7 @@ bool SdrDragCrop::EndSdrDrag(bool /*bCopy*/)
     if(pObj->IsMirrored())
     {
         // mirrored X or Y, for old stuff, exchange X
-        // TTTT: check for aw080
+        // check for aw080
         sal_Int32 nTmp(nDiffLeft);
         nDiffLeft = -nDiffRight;
         nDiffRight = -nTmp;

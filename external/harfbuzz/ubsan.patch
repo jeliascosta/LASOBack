@@ -1,3 +1,25 @@
+--- src/hb-ot-font.cc
++++ src/hb-ot-font.cc
+@@ -125,7 +125,7 @@
+     if (glyph >= this->num_advances)
+       glyph = this->num_advances - 1;
+ 
+-    return this->table->longMetric[glyph].advance;
++    return static_cast<OT::LongMetric const *>(this->table->longMetric)[glyph].advance;
+   }
+ };
+ 
+@@ -394,8 +394,9 @@
+ }
+ 
+ static void
+-_hb_ot_font_destroy (hb_ot_font_t *ot_font)
++_hb_ot_font_destroy (void *ot_font_)
+ {
++  hb_ot_font_t *ot_font = static_cast<hb_ot_font_t *>(ot_font_);
+   ot_font->cmap.fini ();
+   ot_font->h_metrics.fini ();
+   ot_font->v_metrics.fini ();
 --- src/hb-ot-map-private.hh
 +++ src/hb-ot-map-private.hh
 @@ -52,8 +52,11 @@
@@ -29,4 +51,14 @@
 +  char const * b = static_cast<char const *>(b_);
    unsigned int da, db;
    const char *p;
+ 
+--- src/hb-private.hh
++++ src/hb-private.hh
+@@ -466,6 +466,7 @@
+   template <typename T>
+   inline const Type *bsearch (T *key) const
+   {
++    if (len == 0) return NULL;
+     return (const Type *) ::bsearch (key, array, len, sizeof (Type), (hb_compare_func_t) Type::cmp);
+   }
  

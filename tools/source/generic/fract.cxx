@@ -21,6 +21,7 @@
 #include <tools/debug.hxx>
 #include <tools/lineend.hxx>
 #include <tools/stream.hxx>
+#include <o3tl/safeint.hxx>
 #include <rtl/ustring.hxx>
 #include <sal/log.hxx>
 #include <osl/diagnose.h>
@@ -60,6 +61,10 @@ Fraction::Fraction( const Fraction& rFrac ) : mpImpl(new Impl)
     mpImpl->valid = rFrac.mpImpl->valid;
     if (mpImpl->valid)
         mpImpl->value.assign( rFrac.mpImpl->value.numerator(), rFrac.mpImpl->value.denominator() );
+}
+
+Fraction::Fraction( Fraction&& rFrac ) : mpImpl(std::move(rFrac.mpImpl))
+{
 }
 
 // Initialized by setting nNum as nominator and nDen as denominator
@@ -166,6 +171,27 @@ Fraction& Fraction::operator -= ( const Fraction& rVal )
     return *this;
 }
 
+namespace
+{
+    template<typename T> bool checked_multiply_by(boost::rational<T>& i, const boost::rational<T>& r)
+    {
+        // Protect against self-modification
+        T num = r.numerator();
+        T den = r.denominator();
+
+        // Avoid overflow and preserve normalization
+        T gcd1 = boost::integer::gcd(i.numerator(), den);
+        T gcd2 = boost::integer::gcd(num, i.denominator());
+
+        bool fail = false;
+        fail |= o3tl::checked_multiply(i.numerator() / gcd1, num / gcd2, num);
+        fail |= o3tl::checked_multiply(i.denominator() / gcd2, den / gcd1, den);
+        i.assign(num, den);
+
+        return fail;
+    }
+}
+
 Fraction& Fraction::operator *= ( const Fraction& rVal )
 {
     if ( !rVal.mpImpl->valid )
@@ -177,12 +203,11 @@ Fraction& Fraction::operator *= ( const Fraction& rVal )
         return *this;
     }
 
-    mpImpl->value *= rVal.mpImpl->value;
+    bool bFail = checked_multiply_by(mpImpl->value, rVal.mpImpl->value);
 
-    if ( HasOverflowValue() )
+    if (bFail || HasOverflowValue())
     {
         mpImpl->valid = false;
-        SAL_WARN( "tools.fraction", "'operator *=' detected overflow" );
     }
 
     return *this;
@@ -269,6 +294,12 @@ Fraction& Fraction::operator=( const Fraction& rFrac )
 
     Fraction tmp(rFrac);
     std::swap(mpImpl, tmp.mpImpl);
+    return *this;
+}
+
+Fraction& Fraction::operator=( Fraction&& rFrac )
+{
+    mpImpl = std::move(rFrac.mpImpl);
     return *this;
 }
 
@@ -363,7 +394,7 @@ bool operator > ( const Fraction& rVal1, const Fraction& rVal2 )
     return rVal1.mpImpl->value > rVal2.mpImpl->value;
 }
 
-SvStream& ReadFraction( SvStream& rIStream, Fraction& rFract )
+SvStream& ReadFraction( SvStream& rIStream, Fraction const & rFract )
 {
     sal_Int32 num(0), den(0);
     rIStream.ReadInt32( num );

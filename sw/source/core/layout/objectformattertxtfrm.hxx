@@ -105,7 +105,7 @@ class SwObjectFormatterTextFrame : public SwObjectFormatter
         void FormatAnchorFrameForCheckMoveFwd();
 
         /** method to determine if at least one anchored object has state
-            <temporarly consider wrapping style influence> set.
+            <temporarily consider wrapping style influence> set.
         */
         bool AtLeastOneObjIsTmpConsiderWrapInfluence();
 
@@ -114,7 +114,7 @@ class SwObjectFormatterTextFrame : public SwObjectFormatter
         virtual SwFrame& GetAnchorFrame() override;
 
     public:
-        virtual ~SwObjectFormatterTextFrame();
+        virtual ~SwObjectFormatterTextFrame() override;
 
         // #i40147# - add parameter <_bCheckForMovedFwd>.
         virtual bool DoFormatObj( SwAnchoredObject& _rAnchoredObj,

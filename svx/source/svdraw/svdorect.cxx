@@ -68,7 +68,7 @@ SdrRectObj::SdrRectObj()
     bClosedObj=true;
 }
 
-SdrRectObj::SdrRectObj(const Rectangle& rRect)
+SdrRectObj::SdrRectObj(const tools::Rectangle& rRect)
 :   SdrTextObj(rRect),
     mpXPoly(nullptr)
 {
@@ -85,7 +85,7 @@ SdrRectObj::SdrRectObj(SdrObjKind eNewTextKind)
     bClosedObj=true;
 }
 
-SdrRectObj::SdrRectObj(SdrObjKind eNewTextKind, const Rectangle& rRect)
+SdrRectObj::SdrRectObj(SdrObjKind eNewTextKind, const tools::Rectangle& rRect)
 :   SdrTextObj(eNewTextKind,rRect),
     mpXPoly(nullptr)
 {
@@ -97,7 +97,6 @@ SdrRectObj::SdrRectObj(SdrObjKind eNewTextKind, const Rectangle& rRect)
 
 SdrRectObj::~SdrRectObj()
 {
-    delete mpXPoly;
 }
 
 SdrRectObj& SdrRectObj::operator=(const SdrRectObj& rCopy)
@@ -107,23 +106,20 @@ SdrRectObj& SdrRectObj::operator=(const SdrRectObj& rCopy)
 
     SdrTextObj::operator=( rCopy );
 
-    delete mpXPoly;
-
     if ( rCopy.mpXPoly )
-        mpXPoly = new XPolygon( *rCopy.mpXPoly );
+        mpXPoly.reset( new XPolygon( *rCopy.mpXPoly ) );
     else
-        mpXPoly = nullptr;
+        mpXPoly.reset();
 
     return *this;
 }
 
 void SdrRectObj::SetXPolyDirty()
 {
-    delete mpXPoly;
-    mpXPoly = nullptr;
+    mpXPoly.reset();
 }
 
-XPolygon SdrRectObj::ImpCalcXPoly(const Rectangle& rRect1, long nRad1) const
+XPolygon SdrRectObj::ImpCalcXPoly(const tools::Rectangle& rRect1, long nRad1) const
 {
     XPolygon aXPoly(rRect1,nRad1,nRad1);
     const sal_uInt16 nPointAnz(aXPoly.GetPointCount());
@@ -149,8 +145,7 @@ XPolygon SdrRectObj::ImpCalcXPoly(const Rectangle& rRect1, long nRad1) const
 
 void SdrRectObj::RecalcXPoly()
 {
-    delete mpXPoly;
-    mpXPoly = new XPolygon(ImpCalcXPoly(maRect,GetEckenradius()));
+    mpXPoly.reset( new XPolygon(ImpCalcXPoly(maRect,GetEckenradius())) );
 }
 
 const XPolygon& SdrRectObj::GetXPoly() const
@@ -199,7 +194,7 @@ sal_uInt16 SdrRectObj::GetObjIdentifier() const
     else return sal_uInt16(OBJ_RECT);
 }
 
-void SdrRectObj::TakeUnrotatedSnapRect(Rectangle& rRect) const
+void SdrRectObj::TakeUnrotatedSnapRect(tools::Rectangle& rRect) const
 {
     rRect = maRect;
     if (aGeo.nShearAngle!=0)
@@ -298,13 +293,13 @@ void SdrRectObj::RecalcSnapRect()
     }
 }
 
-void SdrRectObj::NbcSetSnapRect(const Rectangle& rRect)
+void SdrRectObj::NbcSetSnapRect(const tools::Rectangle& rRect)
 {
     SdrTextObj::NbcSetSnapRect(rRect);
     SetXPolyDirty();
 }
 
-void SdrRectObj::NbcSetLogicRect(const Rectangle& rRect)
+void SdrRectObj::NbcSetLogicRect(const tools::Rectangle& rRect)
 {
     SdrTextObj::NbcSetLogicRect(rRect);
     SetXPolyDirty();
@@ -319,7 +314,7 @@ SdrHdl* SdrRectObj::GetHdl(sal_uInt32 nHdlNum) const
 {
     SdrHdl* pH = nullptr;
     Point aPnt;
-    SdrHdlKind eKind = HDL_MOVE;
+    SdrHdlKind eKind = SdrHdlKind::Move;
 
     if(!IsTextFrame())
     {
@@ -346,17 +341,17 @@ SdrHdl* SdrRectObj::GetHdl(sal_uInt32 nHdlNum) const
             if (a<0) a=0;
             aPnt=maRect.TopLeft();
             aPnt.X()+=a;
-            eKind = HDL_CIRC;
+            eKind = SdrHdlKind::Circle;
             break;
         }
-        case 2: aPnt=maRect.TopLeft();      eKind = HDL_UPLFT; break;
-        case 3: aPnt=maRect.TopCenter();    eKind = HDL_UPPER; break;
-        case 4: aPnt=maRect.TopRight();     eKind = HDL_UPRGT; break;
-        case 5: aPnt=maRect.LeftCenter();   eKind = HDL_LEFT ; break;
-        case 6: aPnt=maRect.RightCenter();  eKind = HDL_RIGHT; break;
-        case 7: aPnt=maRect.BottomLeft();   eKind = HDL_LWLFT; break;
-        case 8: aPnt=maRect.BottomCenter(); eKind = HDL_LOWER; break;
-        case 9: aPnt=maRect.BottomRight();  eKind = HDL_LWRGT; break;
+        case 2: aPnt=maRect.TopLeft();      eKind = SdrHdlKind::UpperLeft; break;
+        case 3: aPnt=maRect.TopCenter();    eKind = SdrHdlKind::Upper; break;
+        case 4: aPnt=maRect.TopRight();     eKind = SdrHdlKind::UpperRight; break;
+        case 5: aPnt=maRect.LeftCenter();   eKind = SdrHdlKind::Left ; break;
+        case 6: aPnt=maRect.RightCenter();  eKind = SdrHdlKind::Right; break;
+        case 7: aPnt=maRect.BottomLeft();   eKind = SdrHdlKind::LowerLeft; break;
+        case 8: aPnt=maRect.BottomCenter(); eKind = SdrHdlKind::Lower; break;
+        case 9: aPnt=maRect.BottomRight();  eKind = SdrHdlKind::LowerRight; break;
     }
 
     if(!pH)
@@ -387,7 +382,7 @@ bool SdrRectObj::hasSpecialDrag() const
 
 bool SdrRectObj::beginSpecialDrag(SdrDragStat& rDrag) const
 {
-    const bool bRad(rDrag.GetHdl() && HDL_CIRC == rDrag.GetHdl()->GetKind());
+    const bool bRad(rDrag.GetHdl() && SdrHdlKind::Circle == rDrag.GetHdl()->GetKind());
 
     if(bRad)
     {
@@ -401,7 +396,7 @@ bool SdrRectObj::beginSpecialDrag(SdrDragStat& rDrag) const
 
 bool SdrRectObj::applySpecialDrag(SdrDragStat& rDrag)
 {
-    const bool bRad(rDrag.GetHdl() && HDL_CIRC == rDrag.GetHdl()->GetKind());
+    const bool bRad(rDrag.GetHdl() && SdrHdlKind::Circle == rDrag.GetHdl()->GetKind());
 
     if (bRad)
     {
@@ -438,7 +433,7 @@ OUString SdrRectObj::getSpecialDragComment(const SdrDragStat& rDrag) const
     }
     else
     {
-        const bool bRad(rDrag.GetHdl() && HDL_CIRC == rDrag.GetHdl()->GetKind());
+        const bool bRad(rDrag.GetHdl() && SdrHdlKind::Circle == rDrag.GetHdl()->GetKind());
 
         if(bRad)
         {
@@ -472,7 +467,7 @@ OUString SdrRectObj::getSpecialDragComment(const SdrDragStat& rDrag) const
 
 basegfx::B2DPolyPolygon SdrRectObj::TakeCreatePoly(const SdrDragStat& rDrag) const
 {
-    Rectangle aRect1;
+    tools::Rectangle aRect1;
     rDrag.TakeCreateRect(aRect1);
     aRect1.Justify();
 
@@ -515,16 +510,6 @@ void SdrRectObj::NbcMirror(const Point& rRef1, const Point& rRef2)
 {
     SdrTextObj::NbcMirror(rRef1,rRef2);
     SetXPolyDirty();
-}
-
-bool SdrRectObj::DoMacro(const SdrObjMacroHitRec& rRec)
-{
-    return SdrTextObj::DoMacro(rRec);
-}
-
-OUString SdrRectObj::GetMacroPopupComment(const SdrObjMacroHitRec& rRec) const
-{
-    return SdrTextObj::GetMacroPopupComment(rRec);
 }
 
 SdrGluePoint SdrRectObj::GetVertexGluePoint(sal_uInt16 nPosNum) const

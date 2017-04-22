@@ -19,17 +19,30 @@
 #ifndef INCLUDED_SVX_COMPRESSGRAPHICDIALOG_HXX
 #define INCLUDED_SVX_COMPRESSGRAPHICDIALOG_HXX
 
-#include <vcl/dialog.hxx>
-#include <vcl/button.hxx>
-#include <vcl/fixed.hxx>
-#include <vcl/graph.hxx>
-#include <vcl/lstbox.hxx>
-#include <vcl/field.hxx>
-#include <vcl/slider.hxx>
-#include <sfx2/bindings.hxx>
+#include <sal/types.h>
 #include <svx/svxdllapi.h>
+#include <tools/gen.hxx>
+#include <tools/link.hxx>
+#include <vcl/bitmap.hxx>
+#include <vcl/dialog.hxx>
+#include <vcl/graph.hxx>
+#include <vcl/vclptr.hxx>
 
+namespace vcl { class Window; }
+
+class Button;
+class CheckBox;
+class ComboBox;
+class Edit;
+class FixedText;
+class ListBox;
+class NumericField;
+class PushButton;
+class RadioButton;
 class SdrGrafObj;
+class SfxBindings;
+class Slider;
+class SvStream;
 
 class SAL_WARN_UNUSED SVX_DLLPUBLIC CompressGraphicsDialog : public ModalDialog
 {
@@ -56,20 +69,24 @@ private:
     SdrGrafObj*     m_pGraphicObj;
     Graphic         m_aGraphic;
     Size            m_aViewSize100mm;
-    Rectangle       m_aCropRectangle;
+    tools::Rectangle       m_aCropRectangle;
     SfxBindings&    m_rBindings;
 
     double          m_dResolution;
 
     void Initialize();
 
-    DECL_LINK_TYPED( NewWidthModifiedHdl, Edit&, void );
-    DECL_LINK_TYPED( NewHeightModifiedHdl, Edit&, void );
-    DECL_LINK_TYPED( ResolutionModifiedHdl, Edit&, void );
-    DECL_LINK_TYPED( ToggleCompressionRB, RadioButton&, void );
-    DECL_LINK_TYPED( ToggleReduceResolutionRB, CheckBox&, void );
+    DECL_LINK( EndSlideHdl, Slider*, void );
+    DECL_LINK( NewInterpolationModifiedHdl, ListBox&, void );
+    DECL_LINK( NewQualityModifiedHdl, Edit&, void );
+    DECL_LINK( NewCompressionModifiedHdl, Edit&, void );
+    DECL_LINK( NewWidthModifiedHdl, Edit&, void );
+    DECL_LINK( NewHeightModifiedHdl, Edit&, void );
+    DECL_LINK( ResolutionModifiedHdl, Edit&, void );
+    DECL_LINK( ToggleCompressionRB, RadioButton&, void );
+    DECL_LINK( ToggleReduceResolutionRB, CheckBox&, void );
 
-    DECL_LINK_TYPED( CalculateClickHdl, Button*, void );
+    DECL_LINK( CalculateClickHdl, Button*, void );
 
     void Update();
     void UpdateNewWidthMF();
@@ -85,14 +102,14 @@ private:
 
 public:
     CompressGraphicsDialog( vcl::Window* pParent, SdrGrafObj* pGraphicObj, SfxBindings& rBindings );
-    CompressGraphicsDialog( vcl::Window* pParent, Graphic& rGraphic, Size rViewSize100mm, Rectangle& rCropRectangle, SfxBindings& rBindings );
-    virtual ~CompressGraphicsDialog();
+    CompressGraphicsDialog( vcl::Window* pParent, Graphic& rGraphic, Size rViewSize100mm, tools::Rectangle& rCropRectangle, SfxBindings& rBindings );
+    virtual ~CompressGraphicsDialog() override;
     virtual void dispose() override;
 
     SdrGrafObj* GetCompressedSdrGrafObj();
     Graphic GetCompressedGraphic();
 
-    Rectangle GetScaledCropRectangle();
+    tools::Rectangle GetScaledCropRectangle();
 };
 
 #endif

@@ -45,7 +45,7 @@ sdbcx::ObjectType KabTables::createObject(const OUString& _rName)
 
     Reference< XResultSet > xResult = m_xMetaData->getTables(Any(), aSchema, aName, aTypes);
 
-    sdbcx::ObjectType xRet = NULL;
+    sdbcx::ObjectType xRet = nullptr;
     if (xResult.is())
     {
         Reference< XRow > xRow(xResult, UNO_QUERY);
@@ -66,7 +66,7 @@ sdbcx::ObjectType KabTables::createObject(const OUString& _rName)
     return xRet;
 }
 
-void KabTables::impl_refresh(  ) throw(RuntimeException)
+void KabTables::impl_refresh(  )
 {
     static_cast<KabCatalog&>(m_rParent).refreshTables();
 }

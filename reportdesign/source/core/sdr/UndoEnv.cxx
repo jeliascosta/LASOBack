@@ -39,7 +39,7 @@
 #include <com/sun/star/beans/XIntrospection.hpp>
 
 #include <connectivity/dbtools.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <tools/diagnose_ex.h>
 #include <comphelper/stl_types.hxx>
 #include <vcl/svapp.hxx>
@@ -191,14 +191,13 @@ void OXUndoEnvironment::ModeChanged()
 
 void OXUndoEnvironment::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint && pSimpleHint->GetId() == SFX_HINT_MODECHANGED )
+    if (rHint.GetId() == SfxHintId::ModeChanged )
         ModeChanged();
 }
 
 //  XEventListener
 
-void SAL_CALL OXUndoEnvironment::disposing(const EventObject& e) throw( RuntimeException, std::exception )
+void SAL_CALL OXUndoEnvironment::disposing(const EventObject& e)
 {
     // check if it's an object we have cached information about
     Reference< XPropertySet > xSourceSet(e.Source, UNO_QUERY);
@@ -214,7 +213,7 @@ void SAL_CALL OXUndoEnvironment::disposing(const EventObject& e) throw( RuntimeE
 
 // XPropertyChangeListener
 
-void SAL_CALL OXUndoEnvironment::propertyChange( const PropertyChangeEvent& _rEvent ) throw(uno::RuntimeException, std::exception)
+void SAL_CALL OXUndoEnvironment::propertyChange( const PropertyChangeEvent& _rEvent )
 {
 
     ::osl::ClearableMutexGuard aGuard( m_pImpl->m_aMutex );
@@ -357,7 +356,7 @@ void SAL_CALL OXUndoEnvironment::propertyChange( const PropertyChangeEvent& _rEv
 }
 // XContainerListener
 
-void SAL_CALL OXUndoEnvironment::elementInserted(const ContainerEvent& evt) throw(uno::RuntimeException, std::exception)
+void SAL_CALL OXUndoEnvironment::elementInserted(const ContainerEvent& evt)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_pImpl->m_aMutex );
@@ -414,7 +413,7 @@ void OXUndoEnvironment::implSetModified()
 }
 
 
-void SAL_CALL OXUndoEnvironment::elementReplaced(const ContainerEvent& evt) throw(uno::RuntimeException, std::exception)
+void SAL_CALL OXUndoEnvironment::elementReplaced(const ContainerEvent& evt)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_pImpl->m_aMutex );
@@ -430,7 +429,7 @@ void SAL_CALL OXUndoEnvironment::elementReplaced(const ContainerEvent& evt) thro
 }
 
 
-void SAL_CALL OXUndoEnvironment::elementRemoved(const ContainerEvent& evt) throw(uno::RuntimeException, std::exception)
+void SAL_CALL OXUndoEnvironment::elementRemoved(const ContainerEvent& evt)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_pImpl->m_aMutex );
@@ -475,7 +474,7 @@ void SAL_CALL OXUndoEnvironment::elementRemoved(const ContainerEvent& evt) throw
 }
 
 
-void SAL_CALL OXUndoEnvironment::modified( const EventObject& /*aEvent*/ ) throw (RuntimeException, std::exception)
+void SAL_CALL OXUndoEnvironment::modified( const EventObject& /*aEvent*/ )
 {
     implSetModified();
 }

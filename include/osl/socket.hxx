@@ -34,6 +34,11 @@ namespace osl
     {
     }
 
+#if defined LIBO_INTERNAL_ONLY
+    SocketAddr::SocketAddr(SocketAddr && other): m_handle(other.m_handle) {
+        other.m_handle = nullptr;
+    }
+#endif
 
     inline SocketAddr::SocketAddr(oslSocketAddr Addr)
         : m_handle( osl_copySocketAddr( Addr ) )
@@ -135,6 +140,17 @@ namespace osl
         return *this;
     }
 
+#if defined LIBO_INTERNAL_ONLY
+    SocketAddr & SocketAddr::operator =(SocketAddr && other) {
+        if (m_handle != nullptr) {
+            osl_destroySocketAddr(m_handle);
+        }
+        m_handle = other.m_handle;
+        other.m_handle = nullptr;
+        return *this;
+    }
+#endif
+
     inline SocketAddr & SAL_CALL SocketAddr::assign( oslSocketAddr Addr, __osl_socket_NoCopy )
     {
         if( m_handle )
@@ -160,7 +176,6 @@ namespace osl
         return m_handle != NULL;
     }
 
-    // (static method)______________________________________________________________
     inline ::rtl::OUString SAL_CALL SocketAddr::getLocalHostname( oslSocketResult *pResult )
     {
         ::rtl::OUString hostname;
@@ -170,14 +185,12 @@ namespace osl
         return hostname;
     }
 
-    // (static method)______________________________________________________________
     inline void SAL_CALL SocketAddr::resolveHostname(
         const ::rtl::OUString & strHostName, SocketAddr &Addr)
     {
         Addr = SocketAddr( osl_resolveHostname( strHostName.pData ) , SAL_NO_COPY );
     }
 
-    // (static method)______________________________________________________________
     inline sal_Int32 SAL_CALL SocketAddr::getServicePort(
             const ::rtl::OUString& strServiceName,
             const ::rtl::OUString & strProtocolName )
@@ -533,10 +546,8 @@ namespace osl
         if( pSenderAddr )
         {
             // TODO : correct the out-parameter pSenderAddr outparameter
-              nByteRead = osl_receiveFromSocket( m_handle, pSenderAddr->getHandle() , pBuffer,
+            nByteRead = osl_receiveFromSocket( m_handle, pSenderAddr->getHandle() , pBuffer,
                                                  BufferSize, Flag);
-//              nByteRead = osl_receiveFromSocket( m_handle, *(oslSocketAddr**) &pSenderAddr , pBuffer,
-//                                                 BufferSize, Flag);
         }
         else
         {

@@ -39,7 +39,8 @@ namespace pcr
     class SAL_NO_VTABLE IPropertyExistenceCheck
     {
     public:
-        virtual bool SAL_CALL hasPropertyByName( const OUString& _rName ) throw (css::uno::RuntimeException) = 0;
+        /// @throws css::uno::RuntimeException
+        virtual bool SAL_CALL hasPropertyByName( const OUString& _rName ) = 0;
 
     protected:
         ~IPropertyExistenceCheck() {}
@@ -61,7 +62,7 @@ namespace pcr
     class ComposedPropertyUIUpdate
     {
     private:
-        ::std::unique_ptr< MapHandlerToUI >     m_pCollectedUIs;
+        std::unique_ptr< MapHandlerToUI >     m_pCollectedUIs;
         css::uno::Reference< css::inspection::XObjectInspectorUI >
                                                 m_xDelegatorUI;
         oslInterlockedCount                     m_nSuspendCounter;
@@ -89,7 +90,7 @@ namespace pcr
         /** returns the delegator UI
             @throw css::lang::DisposedException
         */
-        css::uno::Reference< css::inspection::XObjectInspectorUI > getDelegatorUI() const;
+        css::uno::Reference< css::inspection::XObjectInspectorUI > const & getDelegatorUI() const;
 
         /** returns a ->XObjectInspectorUI instance belonging to a given property handler
 
@@ -139,7 +140,7 @@ namespace pcr
 
     private:
         /// determines whether the instance is already disposed
-        inline  bool impl_isDisposed() const { return m_pCollectedUIs.get() == nullptr; }
+        bool impl_isDisposed() const { return m_pCollectedUIs.get() == nullptr; }
 
         /// throws an exception if the component is already disposed
                 void impl_checkDisposed() const;

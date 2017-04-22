@@ -47,17 +47,17 @@ class DataStreamDlg : public ModalDialog
     VclPtr<VclFrame>       m_pVclFrameLimit;
     VclPtr<VclFrame>       m_pVclFrameMove;
 
-    DECL_LINK_TYPED(UpdateClickHdl, Button*, void);
-    DECL_LINK_TYPED(UpdateHdl, Edit&, void);
-    DECL_LINK_TYPED(UpdateComboBoxHdl, ComboBox&, void);
-    DECL_LINK_TYPED(BrowseHdl, Button*, void);
+    DECL_LINK(UpdateClickHdl, Button*, void);
+    DECL_LINK(UpdateHdl, Edit&, void);
+    DECL_LINK(UpdateComboBoxHdl, ComboBox&, void);
+    DECL_LINK(BrowseHdl, Button*, void);
 
     void UpdateEnable();
     ScRange GetStartRange();
 
 public:
     DataStreamDlg(ScDocShell *pDocShell, vcl::Window* pParent);
-    virtual ~DataStreamDlg();
+    virtual ~DataStreamDlg() override;
     virtual void dispose() override;
 
     void Init( const DataStream& rStrm );

@@ -36,7 +36,7 @@
 
 #include "drawsh.hxx"
 #include "drwlayer.hxx"
-#include "sc.hrc"
+#include "scres.hrc"
 #include "viewdata.hxx"
 #include "document.hxx"
 #include "docpool.hxx"
@@ -65,7 +65,8 @@ SFX_IMPL_INTERFACE(ScDrawShell, SfxShell)
 
 void ScDrawShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT|SFX_VISIBILITY_STANDARD|SFX_VISIBILITY_SERVER,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT,
+                                            SfxVisibilityFlags::Standard | SfxVisibilityFlags::Server,
                                             RID_DRAW_OBJECTBAR);
 
     GetStaticInterface()->RegisterPopupMenu("draw");
@@ -73,7 +74,7 @@ void ScDrawShell::InitInterface_Impl()
     GetStaticInterface()->RegisterChildWindow(SvxFontWorkChildWindow::GetChildWindowId());
 }
 
-// abschalten der nicht erwuenschten Acceleratoren:
+// disable the unwanted Accelerators
 
 void ScDrawShell::StateDisableItems( SfxItemSet &rSet )
 {
@@ -228,8 +229,8 @@ void ScDrawShell::ExecDrawAttr( SfxRequest& rReq )
                 if ( pObj->IsGroupObject() )
                 {
                     SdrPageView* pPV = nullptr;
-                    SdrObject* pHit = nullptr;
-                    if ( pView->PickObj( pWin->PixelToLogic( pViewData->GetMousePosPixel() ), pView->getHitTolLog(), pHit, pPV, SdrSearchOptions::DEEP ) )
+                    SdrObject* pHit = pView->PickObj(pWin->PixelToLogic(pViewData->GetMousePosPixel()), pView->getHitTolLog(), pPV, SdrSearchOptions::DEEP);
+                    if (pHit)
                         pObj = pHit;
                 }
 
@@ -253,16 +254,16 @@ void ScDrawShell::ExecDrawAttr( SfxRequest& rReq )
                             SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
                             if( pObj->GetObjIdentifier() == OBJ_CAPTION )
                             {
-                                // --------- Itemset fuer Caption --------
+                                // Caption Itemset
                                 SfxItemSet aNewAttr(pDoc->GetItemPool());
                                 pView->GetAttributes(aNewAttr);
-                                // --------- Itemset fuer Groesse und Position --------
+                                // Size and Position Itemset
                                 SfxItemSet aNewGeoAttr(pView->GetGeoAttrFromMarked());
 
                                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                                 if ( pFact )
                                 {
-                                    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateCaptionDialog( pWin, pView ));
+                                    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateCaptionDialog( pWin, pView ));
 
                                     const sal_uInt16* pRange = pDlg->GetInputRanges( *aNewAttr.GetPool() );
                                     SfxItemSet aCombSet( *aNewAttr.GetPool(), pRange );
@@ -284,7 +285,7 @@ void ScDrawShell::ExecDrawAttr( SfxRequest& rReq )
                                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                                 if(pFact)
                                 {
-                                    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSvxTransformTabDialog( pWin, &aNewAttr,pView ));
+                                    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSvxTransformTabDialog( pWin, &aNewAttr,pView ));
                                     OSL_ENSURE(pDlg, "Dialog creation failed!");
                                     if (pDlg->Execute() == RET_OK)
                                     {
@@ -334,18 +335,18 @@ void ScDrawShell::ExecuteMacroAssign( SdrObject* pObj, vcl::Window* pWin )
 
     // create empty itemset for macro-dlg
     std::unique_ptr<SfxItemSet> pItemSet(new SfxItemSet(SfxGetpApp()->GetPool(), SID_ATTR_MACROITEM, SID_ATTR_MACROITEM, SID_EVENTCONFIG, SID_EVENTCONFIG, 0 ));
-    pItemSet->Put ( aItem, SID_ATTR_MACROITEM );
+    pItemSet->Put ( aItem );
 
     SfxEventNamesItem aNamesItem(SID_EVENTCONFIG);
     aNamesItem.AddEvent( ScResId(RID_SCSTR_ONCLICK), OUString(), SFX_EVENT_MOUSECLICK_OBJECT );
-    pItemSet->Put( aNamesItem, SID_EVENTCONFIG );
+    pItemSet->Put( aNamesItem );
 
     css::uno::Reference < css::frame::XFrame > xFrame;
     if (GetViewShell())
         xFrame = GetViewShell()->GetViewFrame()->GetFrame().GetFrameInterface();
 
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-    std::unique_ptr<SfxAbstractDialog> pMacroDlg(pFact->CreateSfxDialog( pWin, *pItemSet, xFrame, SID_EVENTCONFIG ));
+    ScopedVclPtr<SfxAbstractDialog> pMacroDlg(pFact->CreateSfxDialog( pWin, *pItemSet, xFrame, SID_EVENTCONFIG ));
     if ( pMacroDlg && pMacroDlg->Execute() == RET_OK )
     {
         const SfxItemSet* pOutSet = pMacroDlg->GetOutputItemSet();
@@ -390,7 +391,7 @@ void ScDrawShell::ExecuteLineDlg( SfxRequest& rReq )
 
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "Dialog creation failed!");
-    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSvxLineTabDialog( pViewData->GetDialogParent(),
+    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSvxLineTabDialog( pViewData->GetDialogParent(),
                 &aNewAttr,
             pViewData->GetDocument()->GetDrawLayer(),
             pObj,
@@ -419,7 +420,7 @@ void ScDrawShell::ExecuteAreaDlg( SfxRequest& rReq )
         pView->MergeAttrFromMarked( aNewAttr, false );
 
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-    std::unique_ptr<AbstractSvxAreaTabDialog> pDlg(pFact->CreateSvxAreaTabDialog(
+    ScopedVclPtr<AbstractSvxAreaTabDialog> pDlg(pFact->CreateSvxAreaTabDialog(
         pViewData->GetDialogParent(), &aNewAttr,
         pViewData->GetDocument()->GetDrawLayer(), true));
 
@@ -445,7 +446,7 @@ void ScDrawShell::ExecuteTextAttrDlg( SfxRequest& rReq )
         pView->MergeAttrFromMarked( aNewAttr, false );
 
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateTextTabDialog( pViewData->GetDialogParent(), &aNewAttr, pView ));
+    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateTextTabDialog( pViewData->GetDialogParent(), &aNewAttr, pView ));
 
     sal_uInt16 nResult = pDlg->Execute();
 

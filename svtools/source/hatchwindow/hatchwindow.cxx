@@ -18,6 +18,7 @@
  */
 
 #include <com/sun/star/embed/XHatchWindowController.hpp>
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 
 #include "hatchwindow.hxx"
 #include "ipwin.hxx"
@@ -45,7 +46,7 @@ void VCLXHatchWindow::initializeWindow( const uno::Reference< awt::XWindowPeer >
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pParent = nullptr;
+    VclPtr<vcl::Window> pParent;
     VCLXWindow* pParentComponent = VCLXWindow::GetImplementation( xParent );
 
     if ( pParentComponent )
@@ -66,7 +67,7 @@ void VCLXHatchWindow::initializeWindow( const uno::Reference< awt::XWindowPeer >
     //pHatchWindow->Show();
 }
 
-void VCLXHatchWindow::QueryObjAreaPixel( Rectangle & aRect )
+void VCLXHatchWindow::QueryObjAreaPixel( tools::Rectangle & aRect )
 {
     if ( m_xController.is() )
     {
@@ -83,7 +84,7 @@ void VCLXHatchWindow::QueryObjAreaPixel( Rectangle & aRect )
     }
 }
 
-void VCLXHatchWindow::RequestObjAreaPixel( const Rectangle & aRect )
+void VCLXHatchWindow::RequestObjAreaPixel( const tools::Rectangle & aRect )
 {
     if ( m_xController.is() )
     {
@@ -109,7 +110,6 @@ void VCLXHatchWindow::InplaceDeactivate()
 
 
 uno::Any SAL_CALL VCLXHatchWindow::queryInterface( const uno::Type & rType )
-    throw( uno::RuntimeException, std::exception )
 {
     // Attention:
     //    Don't use mutex or guard in this method!!! Is a method of XInterface.
@@ -138,7 +138,6 @@ void SAL_CALL VCLXHatchWindow::release()
 }
 
 uno::Sequence< uno::Type > SAL_CALL VCLXHatchWindow::getTypes()
-    throw( uno::RuntimeException, std::exception )
 {
     static ::cppu::OTypeCollection* pTypeCollection = nullptr ;
 
@@ -160,17 +159,16 @@ uno::Sequence< uno::Type > SAL_CALL VCLXHatchWindow::getTypes()
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL VCLXHatchWindow::getImplementationId()
-    throw( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-css::awt::Size SAL_CALL VCLXHatchWindow::getHatchBorderSize() throw (css::uno::RuntimeException, std::exception)
+css::awt::Size SAL_CALL VCLXHatchWindow::getHatchBorderSize()
 {
     return aHatchBorderSize;
 }
 
-void SAL_CALL VCLXHatchWindow::setHatchBorderSize( const css::awt::Size& _hatchbordersize ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL VCLXHatchWindow::setHatchBorderSize( const css::awt::Size& _hatchbordersize )
 {
     if ( pHatchWindow )
     {
@@ -180,26 +178,22 @@ void SAL_CALL VCLXHatchWindow::setHatchBorderSize( const css::awt::Size& _hatchb
 }
 
 void SAL_CALL VCLXHatchWindow::setController( const uno::Reference< embed::XHatchWindowController >& xController )
-    throw (uno::RuntimeException, std::exception)
 {
     m_xController = xController;
 }
 
 void SAL_CALL VCLXHatchWindow::dispose()
-    throw (uno::RuntimeException, std::exception)
 {
     pHatchWindow.clear();
     VCLXWindow::dispose();
 }
 
 void SAL_CALL VCLXHatchWindow::addEventListener( const uno::Reference< lang::XEventListener >& xListener )
-    throw (uno::RuntimeException, std::exception)
 {
     VCLXWindow::addEventListener( xListener );
 }
 
 void SAL_CALL VCLXHatchWindow::removeEventListener( const uno::Reference< lang::XEventListener >& xListener )
-    throw (uno::RuntimeException, std::exception)
 {
     VCLXWindow::removeEventListener( xListener );
 }

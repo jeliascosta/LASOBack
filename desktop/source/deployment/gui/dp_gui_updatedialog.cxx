@@ -54,8 +54,6 @@
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XMultiComponentFactory.hpp>
 #include <com/sun/star/lang/XSingleServiceFactory.hpp>
-#include <com/sun/star/system/SystemShellExecuteFlags.hpp>
-#include <com/sun/star/system/SystemShellExecute.hpp>
 #include <com/sun/star/task/InteractionHandler.hpp>
 #include <com/sun/star/task/XAbortChannel.hpp>
 #include <com/sun/star/task/XJob.hpp>
@@ -202,7 +200,7 @@ public:
     void stop();
 
 private:
-    virtual ~Thread();
+    virtual ~Thread() override;
 
     virtual void execute() override;
 
@@ -510,7 +508,7 @@ UpdateDialog::UpdateDialog(
     get(m_pUpdate, "UPDATE_LABEL");
     get(m_pContainer, "UPDATES_CONTAINER");
     m_pUpdates = VclPtr<UpdateDialog::CheckListBox>::Create(m_pContainer, *this);
-    Size aSize(LogicToPixel(Size(240, 51), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(240, 51), MapUnit::MapAppFont));
     m_pUpdates->set_width_request(aSize.Width());
     m_pUpdates->set_height_request(aSize.Height());
     m_pUpdates->Show();
@@ -521,7 +519,7 @@ UpdateDialog::UpdateDialog(
     get(m_pReleaseNotesLabel, "RELEASE_NOTES_LABEL");
     get(m_pReleaseNotesLink, "RELEASE_NOTES_LINK");
     get(m_pDescriptions, "DESCRIPTIONS");
-    aSize = LogicToPixel(Size(240, 59), MAP_APPFONT);
+    aSize = LogicToPixel(Size(240, 59), MapUnit::MapAppFont);
     m_pDescriptions->set_width_request(aSize.Width());
     m_pDescriptions->set_height_request(aSize.Height());
     get(m_pOk, "INSTALL");
@@ -605,7 +603,7 @@ UpdateDialog::CheckListBox::CheckListBox( vcl::Window* pParent, UpdateDialog & d
     m_enableUpdate( DPGUI_RESSTR( RID_DLG_UPDATE_ENABLE ) ),
     m_dialog(dialog)
 {
-    SetNormalStaticImage(Image(DpGuiResId(RID_DLG_UPDATE_NORMALALERT)));
+    SetNormalStaticImage(Image(BitmapEx(DpGuiResId(RID_DLG_UPDATE_NORMALALERT))));
 }
 
 sal_uInt16 UpdateDialog::CheckListBox::getItemCount() const {
@@ -654,17 +652,17 @@ void UpdateDialog::CheckListBox::handlePopupMenu( const Point &rPos )
 
         if ( ( p->m_eKind == ENABLED_UPDATE ) || ( p->m_eKind == DISABLED_UPDATE ) )
         {
-            PopupMenu aPopup;
+            ScopedVclPtrInstance<PopupMenu> aPopup;
 
             if ( p->m_bIgnored )
-                aPopup.InsertItem( CMD_ENABLE_UPDATE, m_enableUpdate );
+                aPopup->InsertItem( CMD_ENABLE_UPDATE, m_enableUpdate );
             else
             {
-                aPopup.InsertItem( CMD_IGNORE_UPDATE, m_ignoreUpdate );
-                aPopup.InsertItem( CMD_IGNORE_ALL_UPDATES, m_ignoreAllUpdates );
+                aPopup->InsertItem( CMD_IGNORE_UPDATE, m_ignoreUpdate );
+                aPopup->InsertItem( CMD_IGNORE_ALL_UPDATES, m_ignoreAllUpdates );
             }
 
-            sal_uInt16 aCmd = aPopup.Execute( this, rPos );
+            sal_uInt16 aCmd = aPopup->Execute( this, rPos );
             if ( ( aCmd == CMD_IGNORE_UPDATE ) || ( aCmd == CMD_IGNORE_ALL_UPDATES ) )
             {
                 p->m_bIgnored = true;
@@ -822,10 +820,10 @@ void UpdateDialog::createNotifyJob( bool bPrepareOnly,
 
         beans::PropertyValue aProperty;
         aProperty.Name  = "nodepath";
-        aProperty.Value = uno::makeAny( OUString("org.openoffice.Office.Addons/AddonUI/OfficeHelp/UpdateCheckJob") );
+        aProperty.Value <<= OUString("org.openoffice.Office.Addons/AddonUI/OfficeHelp/UpdateCheckJob");
 
         uno::Sequence< uno::Any > aArgumentList( 1 );
-        aArgumentList[0] = uno::makeAny( aProperty );
+        aArgumentList[0] <<= aProperty;
 
         uno::Reference< container::XNameAccess > xNameAccess(
             xConfigProvider->createInstanceWithArguments(
@@ -849,10 +847,10 @@ void UpdateDialog::createNotifyJob( bool bPrepareOnly,
         {
             uno::Sequence< beans::PropertyValue > aPropList(2);
             aProperty.Name  = "updateList";
-            aProperty.Value = uno::makeAny( rItemList );
+            aProperty.Value <<= rItemList;
             aPropList[0] = aProperty;
             aProperty.Name  = "prepareOnly";
-            aProperty.Value = uno::makeAny( bPrepareOnly );
+            aProperty.Value <<= bPrepareOnly;
             aPropList[1] = aProperty;
 
             xDispatch->dispatch(aURL, aPropList );
@@ -911,10 +909,6 @@ void UpdateDialog::initDescription()
     m_pPublisherLink->Hide();
     m_pReleaseNotesLabel->Hide();
     m_pReleaseNotesLink->Hide();
-
-    Link<FixedHyperlink&,void> aLink = LINK( this, UpdateDialog, hyperlink_clicked );
-    m_pPublisherLink->SetClickHdl( aLink );
-    m_pReleaseNotesLink->SetClickHdl( aLink );
 }
 
 void UpdateDialog::clearDescription()
@@ -1137,7 +1131,7 @@ void UpdateDialog::setIgnoredUpdate( UpdateDialog::Index *pIndex, bool bIgnore, 
 }
 
 
-IMPL_LINK_NOARG_TYPED(UpdateDialog, selectionHandler, SvTreeListBox*, void)
+IMPL_LINK_NOARG(UpdateDialog, selectionHandler, SvTreeListBox*, void)
 {
     OUStringBuffer b;
     UpdateDialog::Index const * p = static_cast< UpdateDialog::Index const * >(
@@ -1235,7 +1229,7 @@ IMPL_LINK_NOARG_TYPED(UpdateDialog, selectionHandler, SvTreeListBox*, void)
     showDescription( b.makeStringAndClear() );
 }
 
-IMPL_LINK_NOARG_TYPED(UpdateDialog, allHandler, CheckBox&, void)
+IMPL_LINK_NOARG(UpdateDialog, allHandler, CheckBox&, void)
 {
     if (m_pAll->IsChecked())
     {
@@ -1277,11 +1271,11 @@ IMPL_LINK_NOARG_TYPED(UpdateDialog, allHandler, CheckBox&, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(UpdateDialog, okHandler, Button*, void)
+IMPL_LINK_NOARG(UpdateDialog, okHandler, Button*, void)
 {
     //If users are going to update a shared extension then we need
     //to warn them
-    typedef ::std::vector<UpdateData>::const_iterator CIT;
+    typedef std::vector<UpdateData>::const_iterator CIT;
     for (CIT i = m_enabledUpdates.begin(); i < m_enabledUpdates.end(); ++i)
     {
         OSL_ASSERT(i->aInstalledPackage.is());
@@ -1302,28 +1296,10 @@ IMPL_LINK_NOARG_TYPED(UpdateDialog, okHandler, Button*, void)
     EndDialog(RET_OK);
 }
 
-IMPL_LINK_NOARG_TYPED(UpdateDialog, closeHandler, Button*, void)
+IMPL_LINK_NOARG(UpdateDialog, closeHandler, Button*, void)
 {
     m_thread->stop();
     EndDialog();
-}
-
-IMPL_LINK_TYPED( UpdateDialog, hyperlink_clicked, FixedHyperlink&, rHyperlink, void )
-{
-    OUString sURL = rHyperlink.GetURL();
-    if ( sURL.isEmpty() )
-        return;
-
-    try
-    {
-        uno::Reference< css::system::XSystemShellExecute > xSystemShellExecute(
-            css::system::SystemShellExecute::create(m_context) );
-        //throws lang::IllegalArgumentException, system::SystemShellExecuteException
-        xSystemShellExecute->execute( sURL, OUString(), css::system::SystemShellExecuteFlags::URIS_ONLY);
-    }
-    catch ( const uno::Exception& )
-    {
-    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

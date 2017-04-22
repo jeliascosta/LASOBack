@@ -23,7 +23,6 @@ class ScSimpleFormulaCalculator
 {
 private:
     short mnFormatType;
-    sal_uLong mnFormatIndex;
 
     bool mbCalculated;
     std::unique_ptr<ScTokenArray> mpCode;
@@ -45,7 +44,7 @@ public:
     void Calculate();
     bool IsValue();
     bool IsMatrix();
-    sal_uInt16 GetErrCode();
+    FormulaError GetErrCode();
     double GetValue();
     svl::SharedString GetString();
     short GetFormatType() const { return mnFormatType; }

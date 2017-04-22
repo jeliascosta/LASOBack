@@ -105,9 +105,8 @@ extern "C" void getFactory(va_list * args) {
     component_getFactoryFunc fn = va_arg(*args, component_getFactoryFunc);
     rtl::OString const * implementation = va_arg(*args, rtl::OString const *);
     void * smgr = va_arg(*args, void *);
-    void * key = va_arg(*args, void *);
     void ** factory = va_arg(*args, void **);
-    *factory = (*fn)(implementation->getStr(), smgr, key);
+    *factory = (*fn)(implementation->getStr(), smgr, nullptr);
 }
 
 css::uno::Reference<css::uno::XInterface> invokeComponentFactory(
@@ -128,38 +127,104 @@ css::uno::Reference<css::uno::XInterface> invokeComponentFactory(
             static_cast<css::uno::XInterface *>(
                 (*function)(impl.getStr(), serviceManager.get(), nullptr)),
             SAL_NO_ACQUIRE);
-    } else {
-        css::uno::Mapping mapTo(source, target);
-        css::uno::Mapping mapFrom(target, source);
-        if (!(mapTo.is() && mapFrom.is())) {
-            throw css::loader::CannotActivateFactoryException(
-                "cannot get mappings",
-                css::uno::Reference<css::uno::XInterface>());
-        }
-        void * smgr = mapTo.mapInterface(
-            serviceManager.get(),
-            cppu::UnoType<css::lang::XMultiServiceFactory>::get());
-        void * factory = nullptr;
-        target.invoke(getFactory, function, &impl, smgr, 0, &factory);
-        if (smgr != nullptr) {
-            (*target.get()->pExtEnv->releaseInterface)(
-                target.get()->pExtEnv, smgr);
-        }
-        if (factory == nullptr) {
-            throw css::loader::CannotActivateFactoryException(
-                ("calling factory function for \"" + implementation + "\" in <"
-                 + uri + "> returned null"),
-                css::uno::Reference<css::uno::XInterface>());
-        }
-        css::uno::Reference<css::uno::XInterface> res;
-        mapFrom.mapInterface(
-            reinterpret_cast<void **>(&res), factory,
-            cppu::UnoType<css::uno::XInterface>::get());
-        (*target.get()->pExtEnv->releaseInterface)(
-            target.get()->pExtEnv, factory);
-        return res;
     }
+    css::uno::Mapping mapTo(source, target);
+    css::uno::Mapping mapFrom(target, source);
+    if (!(mapTo.is() && mapFrom.is())) {
+        throw css::loader::CannotActivateFactoryException(
+            "cannot get mappings",
+            css::uno::Reference<css::uno::XInterface>());
+    }
+    void * smgr = mapTo.mapInterface(
+        serviceManager.get(),
+        cppu::UnoType<css::lang::XMultiServiceFactory>::get());
+    void * factory = nullptr;
+    target.invoke(getFactory, function, &impl, smgr, &factory);
+    if (smgr != nullptr) {
+        (*target.get()->pExtEnv->releaseInterface)(
+            target.get()->pExtEnv, smgr);
+    }
+    if (factory == nullptr) {
+        throw css::loader::CannotActivateFactoryException(
+            ("calling factory function for \"" + implementation + "\" in <"
+             + uri + "> returned null"),
+            css::uno::Reference<css::uno::XInterface>());
+    }
+    css::uno::Reference<css::uno::XInterface> res;
+    mapFrom.mapInterface(
+        reinterpret_cast<void **>(&res), factory,
+        cppu::UnoType<css::uno::XInterface>::get());
+    (*target.get()->pExtEnv->releaseInterface)(
+        target.get()->pExtEnv, factory);
+    return res;
 }
+
+#if !defined DISABLE_DYNLOADING
+
+extern "C" void getInstance(va_list * args) {
+    cppuhelper::ImplementationConstructorFn * fn = va_arg(*args, cppuhelper::ImplementationConstructorFn *);
+    void * ctxt = va_arg(*args, void *);
+    assert(ctxt);
+    void * argseq = va_arg(*args, void *);
+    assert(argseq);
+    void ** instance = va_arg(*args, void **);
+    assert(instance);
+    assert(*instance == nullptr);
+    *instance = (*fn)(static_cast<css::uno::XComponentContext*>(ctxt),
+            *static_cast<css::uno::Sequence<css::uno::Any> const*>(argseq));
+}
+
+cppuhelper::WrapperConstructorFn mapConstructorFn(
+    css::uno::Environment const & source, css::uno::Environment const & target,
+    cppuhelper::ImplementationConstructorFn *const constructorFunction)
+{
+    if (!(source.is() && target.is())) {
+        throw css::loader::CannotActivateFactoryException(
+            "cannot get environments",
+            css::uno::Reference<css::uno::XInterface>());
+    }
+    if (source.get() == target.get()) {
+        return cppuhelper::WrapperConstructorFn(constructorFunction);
+    }
+    // note: it should be valid to capture these mappings because they are
+    // ref-counted, and the returned closure will always be invoked in the
+    // "source" environment
+    css::uno::Mapping mapTo(source, target);
+    css::uno::Mapping mapFrom(target, source);
+    if (!(mapTo.is() && mapFrom.is())) {
+        throw css::loader::CannotActivateFactoryException(
+            "cannot get mappings",
+            css::uno::Reference<css::uno::XInterface>());
+    }
+    return [mapFrom, mapTo, target, constructorFunction]
+        (css::uno::XComponentContext *const context, css::uno::Sequence<css::uno::Any> const& args)
+        {
+            void *const ctxt = mapTo.mapInterface(
+                context,
+                cppu::UnoType<css::uno::XComponentContext>::get());
+            if (args.getLength() > 0) {
+                std::abort(); // TODO map args
+            }
+            void * instance = nullptr;
+            target.invoke(getInstance, constructorFunction, ctxt, &args, &instance);
+            if (ctxt != nullptr) {
+                (*target.get()->pExtEnv->releaseInterface)(
+                    target.get()->pExtEnv, ctxt);
+            }
+            css::uno::XInterface * res = nullptr;
+            if (instance == nullptr) {
+                return res;
+            }
+            mapFrom.mapInterface(
+                reinterpret_cast<void **>(&res), instance,
+                cppu::UnoType<css::uno::XInterface>::get());
+            (*target.get()->pExtEnv->releaseInterface)(
+                target.get()->pExtEnv, instance);
+            return res;
+        };
+}
+
+#endif
 
 }
 
@@ -168,13 +233,13 @@ void cppuhelper::detail::loadSharedLibComponentFactory(
     rtl::OUString const & prefix, rtl::OUString const & implementation,
     rtl::OUString const & constructor,
     css::uno::Reference<css::lang::XMultiServiceFactory> const & serviceManager,
-    ImplementationConstructorFn ** constructorFunction,
+    WrapperConstructorFn * constructorFunction,
     css::uno::Reference<css::uno::XInterface> * factory)
 {
     assert(constructor.isEmpty() || !environment.isEmpty());
     assert(
         (constructorFunction == nullptr && constructor.isEmpty())
-        || *constructorFunction == nullptr);
+        || !*constructorFunction);
     assert(factory != nullptr && !factory->is());
 #if defined DISABLE_DYNLOADING
     assert(!environment.isEmpty());
@@ -274,8 +339,13 @@ void cppuhelper::detail::loadSharedLibComponentFactory(
                  + "\" in component library <" + uri + ">"),
                 css::uno::Reference<css::uno::XInterface>());
         }
-        *constructorFunction = reinterpret_cast<ImplementationConstructorFn *>(
-            fp);
+        css::uno::Environment curEnv(css::uno::Environment::getCurrent());
+        *constructorFunction = mapConstructorFn(
+            curEnv,
+            (environment.isEmpty()
+             ? getEnvironmentFromModule(mod, curEnv, implementation, prefix)
+             : getEnvironment(environment, implementation)),
+            reinterpret_cast<ImplementationConstructorFn *>(fp));
     }
     mod.release();
 #endif

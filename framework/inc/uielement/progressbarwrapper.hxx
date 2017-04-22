@@ -39,31 +39,36 @@ class ProgressBarWrapper : public UIElementWrapperBase
         //  constructor / destructor
 
         ProgressBarWrapper();
-        virtual ~ProgressBarWrapper();
+        virtual ~ProgressBarWrapper() override;
 
         // public interfaces
         void setStatusBar( const css::uno::Reference< css::awt::XWindow >& rStatusBar, bool bOwnsInstance = false );
         css::uno::Reference< css::awt::XWindow > getStatusBar() const;
 
         // wrapped methods of css::task::XStatusIndicator
-        void start( const OUString& Text, ::sal_Int32 Range ) throw (css::uno::RuntimeException, std::exception);
-        void end() throw (css::uno::RuntimeException, std::exception);
-        void setText( const OUString& Text ) throw (css::uno::RuntimeException, std::exception);
-        void setValue( ::sal_Int32 Value ) throw (css::uno::RuntimeException, std::exception);
-        void reset() throw (css::uno::RuntimeException, std::exception);
+        /// @throws css::uno::RuntimeException
+        void start( const OUString& Text, ::sal_Int32 Range );
+        /// @throws css::uno::RuntimeException
+        void end();
+        /// @throws css::uno::RuntimeException
+        void setText( const OUString& Text );
+        /// @throws css::uno::RuntimeException
+        void setValue( ::sal_Int32 Value );
+        /// @throws css::uno::RuntimeException
+        void reset();
 
         // UNO interfaces
         // XComponent
-        virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL dispose() override;
 
         // XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
         // XUpdatable
-        virtual void SAL_CALL update() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL update() override;
 
         // XUIElement
-        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getRealInterface() throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getRealInterface() override;
 
     //  variables
     //  (should be private everyway!)

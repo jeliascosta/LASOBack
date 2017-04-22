@@ -41,21 +41,18 @@ class EnhancedCustomShapeHandle : public cppu::WeakImplHelper
 public:
 
             EnhancedCustomShapeHandle( css::uno::Reference< css::drawing::XShape >& xCustomShape, sal_uInt32 nIndex );
-    virtual ~EnhancedCustomShapeHandle();
+    virtual ~EnhancedCustomShapeHandle() override;
 
     // XInterface
     virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     // XCustomShapeHandle
-    virtual css::awt::Point SAL_CALL getPosition()
-        throw ( css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL setControllerPosition( const css::awt::Point& )
-        throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual css::awt::Point SAL_CALL getPosition() override;
+    virtual void SAL_CALL setControllerPosition( const css::awt::Point& ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-        throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 };
 
 #endif

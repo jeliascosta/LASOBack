@@ -38,9 +38,9 @@ public:
 
     ExcScenarioCell( const sal_uInt16 nC, const sal_uInt16 nR );
 
-    inline void SetValue( const OUString& rVal ) { aValue = rVal; }
+    void SetValue( const OUString& rVal ) { aValue = rVal; }
 
-    inline const OUString& GetValue() const { return aValue; }
+    const OUString& GetValue() const { return aValue; }
 };
 
 class ExcScenario
@@ -49,7 +49,7 @@ public:
 
     ExcScenario( XclImpStream& rIn, const RootData& rRoot );
 
-    void Apply( const XclImpRoot& rRoot, const bool bLast = false );
+    void Apply( const XclImpRoot& rRoot, const bool bLast );
 
 protected:
 

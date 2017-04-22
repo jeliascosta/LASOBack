@@ -47,7 +47,7 @@ class ConfigurationAccess_ControllerFactory : // interfaces
 {
 public:
                     ConfigurationAccess_ControllerFactory( const css::uno::Reference< css::uno::XComponentContext >& rxContext, const OUString& _sRoot );
-    virtual       ~ConfigurationAccess_ControllerFactory();
+    virtual       ~ConfigurationAccess_ControllerFactory() override;
 
     void          readConfigurationData();
     void          updateConfigurationData();
@@ -58,12 +58,12 @@ public:
     void          removeServiceFromCommandModule( const OUString& rCommandURL, const OUString& rModule );
 
     // container.XContainerListener
-    virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) override;
+    virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) override;
+    virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) override;
 
     // lang.XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
 private:
     struct ControllerInfo

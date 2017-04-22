@@ -40,7 +40,7 @@ class UndoTextAPIChanged : public SdrUndoAction
 {
 public:
     UndoTextAPIChanged( SdrModel& rModel, TextApiObject* pTextObj );
-    virtual ~UndoTextAPIChanged();
+    virtual ~UndoTextAPIChanged() override;
 
     virtual void Undo() override;
     virtual void Redo() override;
@@ -144,7 +144,7 @@ rtl::Reference< TextApiObject > TextApiObject::create( SdDrawDocument* pDoc )
     return xRet;
 }
 
-void SAL_CALL TextApiObject::dispose() throw(RuntimeException)
+void SAL_CALL TextApiObject::dispose()
 {
     if( mpSource )
     {
@@ -227,8 +227,8 @@ SvxTextForwarder* TextAPIEditSource::GetTextForwarder()
     if (!m_xImpl->mpOutliner)
     {
         //init draw model first
-        m_xImpl->mpOutliner = new Outliner(m_xImpl->mpDoc, OutlinerMode::TextObject);
-        m_xImpl->mpDoc->SetCalcFieldValueHdl(m_xImpl->mpOutliner);
+        m_xImpl->mpOutliner = new SdOutliner(m_xImpl->mpDoc, OutlinerMode::TextObject);
+        SdDrawDocument::SetCalcFieldValueHdl(m_xImpl->mpOutliner);
     }
 
     if (!m_xImpl->mpTextForwarder)
@@ -244,8 +244,8 @@ void TextAPIEditSource::SetText( OutlinerParaObject& rText )
         if (!m_xImpl->mpOutliner)
         {
             //init draw model first
-            m_xImpl->mpOutliner = new Outliner(m_xImpl->mpDoc, OutlinerMode::TextObject);
-            m_xImpl->mpDoc->SetCalcFieldValueHdl(m_xImpl->mpOutliner);
+            m_xImpl->mpOutliner = new SdOutliner(m_xImpl->mpDoc, OutlinerMode::TextObject);
+            SdDrawDocument::SetCalcFieldValueHdl(m_xImpl->mpOutliner);
         }
 
         m_xImpl->mpOutliner->SetText( rText );

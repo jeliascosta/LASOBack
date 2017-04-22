@@ -48,7 +48,6 @@ class INetURLHistory_Impl
         */
         sal_uInt32 m_nMagic;
         sal_uInt16 m_nNext;
-        sal_uInt16 m_nMBZ;
 
         /** Initialization.
         */
@@ -56,7 +55,6 @@ class INetURLHistory_Impl
         {
             m_nMagic = INETHIST_MAGIC_HEAD;
             m_nNext  = 0;
-            m_nMBZ   = 0;
         }
     };
 
@@ -66,7 +64,6 @@ class INetURLHistory_Impl
         */
         sal_uInt32 m_nHash;
         sal_uInt16 m_nLru;
-        sal_uInt16 m_nMBZ;
 
         /** Initialization.
         */
@@ -74,7 +71,6 @@ class INetURLHistory_Impl
         {
             m_nHash = 0;
             m_nLru  = nLru;
-            m_nMBZ  = 0;
         }
 
         /** Comparison.
@@ -154,7 +150,6 @@ class INetURLHistory_Impl
 
 public:
     INetURLHistory_Impl();
-    ~INetURLHistory_Impl();
     INetURLHistory_Impl(const INetURLHistory_Impl&) = delete;
     INetURLHistory_Impl& operator=(const INetURLHistory_Impl&) = delete;
 
@@ -167,10 +162,6 @@ public:
 INetURLHistory_Impl::INetURLHistory_Impl()
 {
     initialize();
-}
-
-INetURLHistory_Impl::~INetURLHistory_Impl()
-{
 }
 
 void INetURLHistory_Impl::initialize()
@@ -333,8 +324,8 @@ void INetURLHistory::NormalizeUrl_Impl (INetURLObject &rUrl)
         case INetProtocol::File:
             if (!INetURLObject::IsCaseSensitive())
             {
-                OUString aPath (rUrl.GetURLPath(INetURLObject::NO_DECODE).toAsciiLowerCase());
-                rUrl.SetURLPath (aPath, INetURLObject::NOT_CANONIC);
+                OUString aPath (rUrl.GetURLPath(INetURLObject::DecodeMechanism::NONE).toAsciiLowerCase());
+                rUrl.SetURLPath (aPath, INetURLObject::EncodeMechanism::NotCanonical);
             }
             break;
 
@@ -370,15 +361,15 @@ void INetURLHistory::PutUrl_Impl (const INetURLObject &rUrl)
         INetURLObject aHistUrl (rUrl);
         NormalizeUrl_Impl (aHistUrl);
 
-        m_pImpl->putUrl (aHistUrl.GetMainURL(INetURLObject::NO_DECODE));
+        m_pImpl->putUrl (aHistUrl.GetMainURL(INetURLObject::DecodeMechanism::NONE));
         Broadcast (INetURLHistoryHint (&rUrl));
 
         if (aHistUrl.HasMark())
         {
-            aHistUrl.SetURL (aHistUrl.GetURLNoMark(INetURLObject::NO_DECODE),
-                             INetURLObject::NOT_CANONIC);
+            aHistUrl.SetURL (aHistUrl.GetURLNoMark(INetURLObject::DecodeMechanism::NONE),
+                             INetURLObject::EncodeMechanism::NotCanonical);
 
-            m_pImpl->putUrl (aHistUrl.GetMainURL(INetURLObject::NO_DECODE));
+            m_pImpl->putUrl (aHistUrl.GetMainURL(INetURLObject::DecodeMechanism::NONE));
             Broadcast (INetURLHistoryHint (&aHistUrl));
         }
     }
@@ -392,7 +383,7 @@ bool INetURLHistory::QueryUrl_Impl (const INetURLObject &rUrl)
         INetURLObject aHistUrl (rUrl);
         NormalizeUrl_Impl (aHistUrl);
 
-        return m_pImpl->queryUrl (aHistUrl.GetMainURL(INetURLObject::NO_DECODE));
+        return m_pImpl->queryUrl (aHistUrl.GetMainURL(INetURLObject::DecodeMechanism::NONE));
     }
     return false;
 }

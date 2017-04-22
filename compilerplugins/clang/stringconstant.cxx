@@ -16,7 +16,6 @@
 #include <iostream>
 
 #include "check.hxx"
-#include "compat.hxx"
 #include "plugin.hxx"
 
 // Define a "string constant" to be a constant expression either of type "array
@@ -62,11 +61,15 @@ bool hasOverloads(FunctionDecl const * decl, unsigned arguments) {
         ctx = ctx->getParent();
     }
     auto res = ctx->lookup(decl->getDeclName());
-    for (auto d = compat::begin(res); d != compat::end(res); ++d) {
+    for (auto d = res.begin(); d != res.end(); ++d) {
         FunctionDecl const * f = dyn_cast<FunctionDecl>(*d);
         if (f != nullptr && f->getMinRequiredArguments() <= arguments
             && f->getNumParams() >= arguments)
         {
+            auto consDecl = dyn_cast<CXXConstructorDecl>(f);
+            if (consDecl && consDecl->isCopyOrMoveConstructor()) {
+                continue;
+            }
             ++n;
             if (n == 2) {
                 return true;
@@ -74,6 +77,24 @@ bool hasOverloads(FunctionDecl const * decl, unsigned arguments) {
         }
     }
     return false;
+}
+
+CXXConstructExpr const * lookForCXXConstructExpr(Expr const * expr) {
+    if (auto e = dyn_cast<MaterializeTemporaryExpr>(expr)) {
+        expr = e->GetTemporaryExpr();
+    }
+    if (auto e = dyn_cast<CXXFunctionalCastExpr>(expr)) {
+        expr = e->getSubExpr();
+    }
+    if (auto e = dyn_cast<CXXBindTemporaryExpr>(expr)) {
+        expr = e->getSubExpr();
+    }
+    return dyn_cast<CXXConstructExpr>(expr);
+}
+
+char const * adviseNonArray(bool nonArray) {
+    return nonArray
+        ? ", and turn the non-array string constant into an array" : "";
 }
 
 class StringConstant:
@@ -100,40 +121,47 @@ public:
 private:
     enum class TreatEmpty { DefaultCtor, CheckEmpty, Error };
 
-    enum class ChangeKind { Char, CharLen, SingleChar };
+    enum class ChangeKind { Char, CharLen, SingleChar, OUStringLiteral1 };
 
     enum class PassThrough { No, EmptyConstantString, NonEmptyConstantString };
 
     std::string describeChangeKind(ChangeKind kind);
 
     bool isStringConstant(
-        Expr const * expr, unsigned * size, bool * nonAscii,
+        Expr const * expr, unsigned * size, bool * nonArray, bool * nonAscii,
         bool * embeddedNuls, bool * terminatingNul);
 
     bool isZero(Expr const * expr);
 
     void reportChange(
         Expr const * expr, ChangeKind kind, std::string const & original,
-        std::string const & replacement, PassThrough pass,
+        std::string const & replacement, PassThrough pass, bool nonArray,
         char const * rewriteFrom, char const * rewriteTo);
 
     void checkEmpty(
-        CallExpr const * expr, std::string const & qname, TreatEmpty treatEmpty,
-        unsigned size, std::string * replacement);
+        CallExpr const * expr, FunctionDecl const * callee,
+        TreatEmpty treatEmpty, unsigned size, std::string * replacement);
 
     void handleChar(
-        CallExpr const * expr, unsigned arg, std::string const & qname,
+        CallExpr const * expr, unsigned arg, FunctionDecl const * callee,
         std::string const & replacement, TreatEmpty treatEmpty, bool literal,
     char const * rewriteFrom = nullptr, char const * rewriteTo = nullptr);
 
     void handleCharLen(
         CallExpr const * expr, unsigned arg1, unsigned arg2,
-        std::string const & qname, std::string const & replacement,
+        FunctionDecl const * callee, std::string const & replacement,
         TreatEmpty treatEmpty);
 
     void handleOUStringCtor(
-        CallExpr const * expr, unsigned arg, std::string const & qname,
+        CallExpr const * expr, unsigned arg, FunctionDecl const * callee,
         bool explicitFunctionalCastNotation);
+
+    void handleOUStringCtor(
+        Expr const * expr, Expr const * argExpr, FunctionDecl const * callee,
+        bool explicitFunctionalCastNotation);
+
+    void handleFunArgOstring(
+        CallExpr const * expr, unsigned arg, FunctionDecl const * callee);
 
     std::stack<Expr const *> calls_;
 };
@@ -221,7 +249,6 @@ bool StringConstant::VisitCallExpr(CallExpr const * expr) {
     if (fdecl == nullptr) {
         return true;
     }
-    std::string qname(fdecl->getQualifiedNameAsString());
     for (unsigned i = 0; i != fdecl->getNumParams(); ++i) {
         auto t = fdecl->getParamDecl(i)->getType();
         if (loplugin::TypeCheck(t).NotSubstTemplateTypeParmType()
@@ -231,362 +258,483 @@ bool StringConstant::VisitCallExpr(CallExpr const * expr) {
             if (!(isLhsOfAssignment(fdecl, i)
                   || hasOverloads(fdecl, expr->getNumArgs())))
             {
-                handleOUStringCtor(expr, i, qname, true);
+                handleOUStringCtor(expr, i, fdecl, true);
             }
         }
     }
+    loplugin::DeclCheck dc(fdecl);
     //TODO: u.compareToAscii("foo") -> u.???("foo")
     //TODO: u.compareToIgnoreAsciiCaseAscii("foo") -> u.???("foo")
-    if (qname == "rtl::OUString::createFromAscii" && fdecl->getNumParams() == 1)
+    if ((dc.Function("createFromAscii").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 1)
     {
         // OUString::createFromAscii("foo") -> OUString("foo")
         handleChar(
-            expr, 0, qname, "rtl::OUString constructor",
+            expr, 0, fdecl, "rtl::OUString constructor",
             TreatEmpty::DefaultCtor, true);
         return true;
     }
-    if (qname == "rtl::OUString::endsWithAsciiL" && fdecl->getNumParams() == 2)
+    if ((dc.Function("endsWithAsciiL").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 2)
     {
         // u.endsWithAsciiL("foo", 3) -> u.endsWith("foo"):
         handleCharLen(
-            expr, 0, 1, qname, "rtl::OUString::endsWith", TreatEmpty::Error);
+            expr, 0, 1, fdecl, "rtl::OUString::endsWith", TreatEmpty::Error);
         return true;
     }
-    if (qname == "rtl::OUString::endsWithIgnoreAsciiCaseAsciiL"
+    if ((dc.Function("endsWithIgnoreAsciiCaseAsciiL").Class("OUString")
+         .Namespace("rtl").GlobalNamespace())
         && fdecl->getNumParams() == 2)
     {
         // u.endsWithIgnoreAsciiCaseAsciiL("foo", 3) ->
         // u.endsWithIgnoreAsciiCase("foo"):
         handleCharLen(
-            expr, 0, 1, qname, "rtl::OUString::endsWithIgnoreAsciiCase",
+            expr, 0, 1, fdecl, "rtl::OUString::endsWithIgnoreAsciiCase",
             TreatEmpty::Error);
         return true;
     }
-    if (qname == "rtl::OUString::equalsAscii" && fdecl->getNumParams() == 1) {
+    if ((dc.Function("equalsAscii").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 1)
+    {
         // u.equalsAscii("foo") -> u == "foo":
         handleChar(
-            expr, 0, qname, "operator ==", TreatEmpty::CheckEmpty, false);
+            expr, 0, fdecl, "operator ==", TreatEmpty::CheckEmpty, false);
         return true;
     }
-    if (qname == "rtl::OUString::equalsAsciiL" && fdecl->getNumParams() == 2) {
+    if ((dc.Function("equalsAsciiL").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 2)
+    {
         // u.equalsAsciiL("foo", 3) -> u == "foo":
-        handleCharLen(expr, 0, 1, qname, "operator ==", TreatEmpty::CheckEmpty);
+        handleCharLen(expr, 0, 1, fdecl, "operator ==", TreatEmpty::CheckEmpty);
         return true;
     }
-    if (qname == "rtl::OUString::equalsIgnoreAsciiCaseAscii"
+    if ((dc.Function("equalsIgnoreAsciiCaseAscii").Class("OUString")
+         .Namespace("rtl").GlobalNamespace())
         && fdecl->getNumParams() == 1)
     {
         // u.equalsIgnoreAsciiCaseAscii("foo") ->
         // u.equalsIngoreAsciiCase("foo"):
+        auto file = compiler.getSourceManager().getFilename(
+            compiler.getSourceManager().getSpellingLoc(expr->getLocStart()));
+        if (file == SRCDIR "/sal/qa/rtl/strings/test_oustring_compare.cxx") {
+            return true;
+        }
         handleChar(
-            expr, 0, qname, "rtl::OUString::equalsIgnoreAsciiCase",
+            expr, 0, fdecl, "rtl::OUString::equalsIgnoreAsciiCase",
             TreatEmpty::CheckEmpty, false);
         return true;
     }
-    if (qname == "rtl::OUString::equalsIgnoreAsciiCaseAsciiL"
+    if ((dc.Function("equalsIgnoreAsciiCaseAsciiL").Class("OUString")
+         .Namespace("rtl").GlobalNamespace())
         && fdecl->getNumParams() == 2)
     {
         // u.equalsIgnoreAsciiCaseAsciiL("foo", 3) ->
         // u.equalsIngoreAsciiCase("foo"):
+        auto file = compiler.getSourceManager().getFilename(
+            compiler.getSourceManager().getSpellingLoc(expr->getLocStart()));
+        if (file == SRCDIR "/sal/qa/rtl/strings/test_oustring_compare.cxx") {
+            return true;
+        }
         handleCharLen(
-            expr, 0, 1, qname, "rtl::OUString::equalsIgnoreAsciiCase",
+            expr, 0, 1, fdecl, "rtl::OUString::equalsIgnoreAsciiCase",
             TreatEmpty::CheckEmpty);
         return true;
     }
-    if (qname == "rtl::OUString::indexOfAsciiL" && fdecl->getNumParams() == 3) {
+    if ((dc.Function("indexOfAsciiL").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 3)
+    {
         assert(expr->getNumArgs() == 3);
         // u.indexOfAsciiL("foo", 3, i) -> u.indexOf("foo", i):
         handleCharLen(
-            expr, 0, 1, qname, "rtl::OUString::indexOf", TreatEmpty::Error);
+            expr, 0, 1, fdecl, "rtl::OUString::indexOf", TreatEmpty::Error);
         return true;
     }
-    if (qname == "rtl::OUString::lastIndexOfAsciiL"
+    if ((dc.Function("lastIndexOfAsciiL").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
         && fdecl->getNumParams() == 2)
     {
         // u.lastIndexOfAsciiL("foo", 3) -> u.lastIndexOf("foo"):
         handleCharLen(
-            expr, 0, 1, qname, "rtl::OUString::lastIndexOf", TreatEmpty::Error);
+            expr, 0, 1, fdecl, "rtl::OUString::lastIndexOf", TreatEmpty::Error);
         return true;
     }
-    if (qname == "rtl::OUString::matchAsciiL" && fdecl->getNumParams() == 3) {
+    if ((dc.Function("matchAsciiL").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 3)
+    {
         assert(expr->getNumArgs() == 3);
         // u.matchAsciiL("foo", 3, i) -> u.match("foo", i):
         handleCharLen(
-            expr, 0, 1, qname,
+            expr, 0, 1, fdecl,
             (isZero(expr->getArg(2))
              ? std::string("rtl::OUString::startsWith")
              : std::string("rtl::OUString::match")),
             TreatEmpty::Error);
         return true;
     }
-    if (qname == "rtl::OUString::matchIgnoreAsciiCaseAsciiL"
+    if ((dc.Function("matchIgnoreAsciiCaseAsciiL").Class("OUString")
+         .Namespace("rtl").GlobalNamespace())
         && fdecl->getNumParams() == 3)
     {
         assert(expr->getNumArgs() == 3);
         // u.matchIgnoreAsciiCaseAsciiL("foo", 3, i) ->
         // u.matchIgnoreAsciiCase("foo", i):
         handleCharLen(
-            expr, 0, 1, qname,
+            expr, 0, 1, fdecl,
             (isZero(expr->getArg(2))
              ? std::string("rtl::OUString::startsWithIgnoreAsciiCase")
              : std::string("rtl::OUString::matchIgnoreAsciiCase")),
             TreatEmpty::Error);
         return true;
     }
-    if (qname == "rtl::OUString::reverseCompareToAsciiL"
+    if ((dc.Function("reverseCompareToAsciiL").Class("OUString")
+         .Namespace("rtl").GlobalNamespace())
         && fdecl->getNumParams() == 2)
     {
         // u.reverseCompareToAsciiL("foo", 3) -> u.reverseCompareTo("foo"):
         handleCharLen(
-            expr, 0, 1, qname, "rtl::OUString::reverseCompareTo",
+            expr, 0, 1, fdecl, "rtl::OUString::reverseCompareTo",
             TreatEmpty::Error);
         return true;
     }
-    if (qname == "rtl::OUString::reverseCompareTo"
+    if ((dc.Function("reverseCompareTo").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
         && fdecl->getNumParams() == 1)
     {
-        handleOUStringCtor(expr, 0, qname, false);
+        handleOUStringCtor(expr, 0, fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::equalsIgnoreAsciiCase"
+    if ((dc.Function("equalsIgnoreAsciiCase").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
         && fdecl->getNumParams() == 1)
     {
-        handleOUStringCtor(expr, 0, qname, false);
+        handleOUStringCtor(expr, 0, fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::match" && fdecl->getNumParams() == 2) {
-        handleOUStringCtor(expr, 0, qname, false);
-        return true;
-    }
-    if (qname == "rtl::OUString::matchIgnoreAsciiCase"
+    if ((dc.Function("match").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
         && fdecl->getNumParams() == 2)
     {
-        handleOUStringCtor(expr, 0, qname, false);
+        handleOUStringCtor(expr, 0, fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::startsWith" && fdecl->getNumParams() == 2) {
-        handleOUStringCtor(expr, 0, qname, false);
-        return true;
-    }
-    if (qname == "rtl::OUString::startsWithIgnoreAsciiCase"
+    if ((dc.Function("matchIgnoreAsciiCase").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
         && fdecl->getNumParams() == 2)
     {
-        handleOUStringCtor(expr, 0, qname, false);
+        handleOUStringCtor(expr, 0, fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::endsWith" && fdecl->getNumParams() == 2) {
-        handleOUStringCtor(expr, 0, qname, false);
-        return true;
-    }
-    if (qname == "rtl::OUString::endsWithIgnoreAsciiCase"
+    if ((dc.Function("startsWith").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
         && fdecl->getNumParams() == 2)
     {
-        handleOUStringCtor(expr, 0, qname, false);
+        handleOUStringCtor(expr, 0, fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::indexOf" && fdecl->getNumParams() == 2) {
-        handleOUStringCtor(expr, 0, qname, false);
+    if ((dc.Function("startsWithIgnoreAsciiCase").Class("OUString")
+         .Namespace("rtl").GlobalNamespace())
+        && fdecl->getNumParams() == 2)
+    {
+        handleOUStringCtor(expr, 0, fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::lastIndexOf" && fdecl->getNumParams() == 1) {
-        handleOUStringCtor(expr, 0, qname, false);
+    if ((dc.Function("endsWith").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 2)
+    {
+        handleOUStringCtor(expr, 0, fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::replaceFirst" && fdecl->getNumParams() == 3) {
-        handleOUStringCtor(expr, 0, qname, false);
-        handleOUStringCtor(expr, 1, qname, false);
+    if ((dc.Function("endsWithIgnoreAsciiCase").Class("OUString")
+         .Namespace("rtl").GlobalNamespace())
+        && fdecl->getNumParams() == 2)
+    {
+        handleOUStringCtor(expr, 0, fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::replaceAll"
+    if ((dc.Function("indexOf").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 2)
+    {
+        handleOUStringCtor(expr, 0, fdecl, false);
+        return true;
+    }
+    if ((dc.Function("lastIndexOf").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 1)
+    {
+        handleOUStringCtor(expr, 0, fdecl, false);
+        return true;
+    }
+    if ((dc.Function("replaceFirst").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 3)
+    {
+        handleOUStringCtor(expr, 0, fdecl, false);
+        handleOUStringCtor(expr, 1, fdecl, false);
+        return true;
+    }
+    if ((dc.Function("replaceAll").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
         && (fdecl->getNumParams() == 2 || fdecl->getNumParams() == 3))
     {
-        handleOUStringCtor(expr, 0, qname, false);
-        handleOUStringCtor(expr, 1, qname, false);
+        handleOUStringCtor(expr, 0, fdecl, false);
+        handleOUStringCtor(expr, 1, fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::operator+=" && fdecl->getNumParams() == 1) {
+    if ((dc.Operator(OO_PlusEqual).Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 1)
+    {
         handleOUStringCtor(
             expr, dyn_cast<CXXOperatorCallExpr>(expr) == nullptr ? 0 : 1,
-            qname, false);
+            fdecl, false);
         return true;
     }
-    if (qname == "rtl::OUString::equals" && fdecl->getNumParams() == 1) {
+    if ((dc.Function("equals").Class("OUString").Namespace("rtl")
+         .GlobalNamespace())
+        && fdecl->getNumParams() == 1)
+    {
         unsigned n;
+        bool nonArray;
         bool non;
         bool emb;
         bool trm;
         if (!isStringConstant(
-                expr->getArg(0)->IgnoreParenImpCasts(), &n, &non, &emb, &trm))
+                expr->getArg(0)->IgnoreParenImpCasts(), &n, &nonArray, &non,
+                &emb, &trm))
         {
             return true;
         }
         if (non) {
             report(
                 DiagnosticsEngine::Warning,
-                ("call of " + qname
-                 + (" with string constant argument containging non-ASCII"
-                    " characters")),
+                ("call of '%0' with string constant argument containing"
+                 " non-ASCII characters"),
                 expr->getExprLoc())
-                << expr->getSourceRange();
+                << fdecl->getQualifiedNameAsString() << expr->getSourceRange();
         }
         if (emb) {
             report(
                 DiagnosticsEngine::Warning,
-                ("call of " + qname
-                 + " with string constant argument containging embedded NULs"),
+                ("call of '%0' with string constant argument containing"
+                 " embedded NULs"),
                 expr->getExprLoc())
-                << expr->getSourceRange();
+                << fdecl->getQualifiedNameAsString() << expr->getSourceRange();
         }
         if (n == 0) {
             report(
                 DiagnosticsEngine::Warning,
-                ("rewrite call of " + qname
-                 + (" with empty string constant argument as call of"
-                    " rtl::OUString::isEmpty")),
+                ("rewrite call of '%0' with empty string constant argument as"
+                 " call of 'rtl::OUString::isEmpty'"),
                 expr->getExprLoc())
-                << expr->getSourceRange();
+                << fdecl->getQualifiedNameAsString() << expr->getSourceRange();
             return true;
         }
     }
-    if (qname == "rtl::operator==" && fdecl->getNumParams() == 2) {
+    if (dc.Operator(OO_EqualEqual).Namespace("rtl").GlobalNamespace()
+        && fdecl->getNumParams() == 2)
+    {
         for (unsigned i = 0; i != 2; ++i) {
             unsigned n;
+            bool nonArray;
             bool non;
             bool emb;
             bool trm;
             if (!isStringConstant(
-                    expr->getArg(i)->IgnoreParenImpCasts(), &n, &non, &emb,
-                    &trm))
+                    expr->getArg(i)->IgnoreParenImpCasts(), &n, &nonArray, &non,
+                    &emb, &trm))
             {
                 continue;
             }
             if (non) {
                 report(
                     DiagnosticsEngine::Warning,
-                    ("call of " + qname
-                     + (" with string constant argument containging non-ASCII"
-                        " characters")),
+                    ("call of '%0' with string constant argument containing"
+                     " non-ASCII characters"),
                     expr->getExprLoc())
+                    << fdecl->getQualifiedNameAsString()
                     << expr->getSourceRange();
             }
             if (emb) {
                 report(
                     DiagnosticsEngine::Warning,
-                    ("call of " + qname
-                     + (" with string constant argument containging embedded"
-                        " NULs")),
+                    ("call of '%0' with string constant argument containing"
+                     " embedded NULs"),
                     expr->getExprLoc())
+                    << fdecl->getQualifiedNameAsString()
                     << expr->getSourceRange();
             }
             if (n == 0) {
                 report(
                     DiagnosticsEngine::Warning,
-                    ("rewrite call of " + qname
-                     + (" with empty string constant argument as call of"
-                        " rtl::OUString::isEmpty")),
+                    ("rewrite call of '%0' with empty string constant argument"
+                     " as call of 'rtl::OUString::isEmpty'"),
                     expr->getExprLoc())
+                    << fdecl->getQualifiedNameAsString()
                     << expr->getSourceRange();
             }
         }
         return true;
     }
-    if (qname == "rtl::operator!=" && fdecl->getNumParams() == 2) {
+    if (dc.Operator(OO_ExclaimEqual).Namespace("rtl").GlobalNamespace()
+        && fdecl->getNumParams() == 2)
+    {
         for (unsigned i = 0; i != 2; ++i) {
             unsigned n;
+            bool nonArray;
             bool non;
             bool emb;
             bool trm;
             if (!isStringConstant(
-                    expr->getArg(i)->IgnoreParenImpCasts(), &n, &non, &emb,
-                    &trm))
+                    expr->getArg(i)->IgnoreParenImpCasts(), &n, &nonArray, &non,
+                    &emb, &trm))
             {
                 continue;
             }
             if (non) {
                 report(
                     DiagnosticsEngine::Warning,
-                    ("call of " + qname
-                     + (" with string constant argument containging non-ASCII"
-                        " characters")),
+                    ("call of '%0' with string constant argument containing"
+                     " non-ASCII characters"),
                     expr->getExprLoc())
+                    << fdecl->getQualifiedNameAsString()
                     << expr->getSourceRange();
             }
             if (emb) {
                 report(
                     DiagnosticsEngine::Warning,
-                    ("call of " + qname
-                     + (" with string constant argument containging embedded"
-                        " NULs")),
+                    ("call of '%0' with string constant argument containing"
+                     " embedded NULs"),
                     expr->getExprLoc())
+                    << fdecl->getQualifiedNameAsString()
                     << expr->getSourceRange();
             }
             if (n == 0) {
                 report(
                     DiagnosticsEngine::Warning,
-                    ("rewrite call of " + qname
-                     + (" with empty string constant argument as call of"
-                        " !rtl::OUString::isEmpty")),
+                    ("rewrite call of '%0' with empty string constant argument"
+                     " as call of '!rtl::OUString::isEmpty'"),
                     expr->getExprLoc())
+                    << fdecl->getQualifiedNameAsString()
                     << expr->getSourceRange();
             }
         }
         return true;
     }
-    if (qname == "rtl::OUString::operator=" && fdecl->getNumParams() == 1) {
+    if (dc.Operator(OO_Equal).Namespace("rtl").GlobalNamespace()
+        && fdecl->getNumParams() == 1)
+    {
         unsigned n;
+        bool nonArray;
         bool non;
         bool emb;
         bool trm;
         if (!isStringConstant(
-                expr->getArg(1)->IgnoreParenImpCasts(), &n, &non, &emb, &trm))
+                expr->getArg(1)->IgnoreParenImpCasts(), &n, &nonArray, &non,
+                &emb, &trm))
         {
             return true;
         }
         if (non) {
             report(
                 DiagnosticsEngine::Warning,
-                ("call of " + qname
-                 + (" with string constant argument containging non-ASCII"
-                    " characters")),
+                ("call of '%0' with string constant argument containing"
+                 " non-ASCII characters"),
                 expr->getExprLoc())
-                << expr->getSourceRange();
+                << fdecl->getQualifiedNameAsString() << expr->getSourceRange();
         }
         if (emb) {
             report(
                 DiagnosticsEngine::Warning,
-                ("call of " + qname
-                 + " with string constant argument containging embedded NULs"),
+                ("call of '%0' with string constant argument containing"
+                 " embedded NULs"),
                 expr->getExprLoc())
-                << expr->getSourceRange();
+                << fdecl->getQualifiedNameAsString() << expr->getSourceRange();
         }
         if (n == 0) {
             report(
                 DiagnosticsEngine::Warning,
-                ("rewrite call of " + qname
-                 + (" with empty string constant argument as call of"
-                    " rtl::OUString::clear")),
+                ("rewrite call of '%0' with empty string constant argument as"
+                 " call of 'rtl::OUString::clear'"),
                 expr->getExprLoc())
-                << expr->getSourceRange();
+                << fdecl->getQualifiedNameAsString() << expr->getSourceRange();
             return true;
         }
         return true;
     }
-    if (qname == "rtl::OUStringBuffer::appendAscii"
+    if ((dc.Function("appendAscii").Class("OUStringBuffer").Namespace("rtl")
+         .GlobalNamespace())
         && fdecl->getNumParams() == 1)
     {
         // u.appendAscii("foo") -> u.append("foo")
         handleChar(
-            expr, 0, qname, "rtl::OUStringBuffer::append", TreatEmpty::Error,
+            expr, 0, fdecl, "rtl::OUStringBuffer::append", TreatEmpty::Error,
             true, "appendAscii", "append");
         return true;
     }
-    if (qname == "rtl::OUStringBuffer::appendAscii"
+    if ((dc.Function("appendAscii").Class("OUStringBuffer").Namespace("rtl")
+         .GlobalNamespace())
         && fdecl->getNumParams() == 2)
     {
         // u.appendAscii("foo", 3) -> u.append("foo"):
         handleCharLen(
-            expr, 0, 1, qname, "rtl::OUStringBuffer::append",
+            expr, 0, 1, fdecl, "rtl::OUStringBuffer::append",
             TreatEmpty::Error);
+        return true;
+    }
+    if (dc.Function("append").Class("OStringBuffer").Namespace("rtl")
+        .GlobalNamespace())
+    {
+        switch (fdecl->getNumParams()) {
+        case 1:
+            handleFunArgOstring(expr, 0, fdecl);
+            break;
+        case 2:
+            {
+                // b.append("foo", 3) -> b.append("foo"):
+                auto file = compiler.getSourceManager().getFilename(
+                    compiler.getSourceManager().getSpellingLoc(
+                        expr->getLocStart()));
+                if (file
+                    == SRCDIR "/sal/qa/OStringBuffer/rtl_OStringBuffer.cxx")
+                {
+                    return true;
+                }
+                handleCharLen(
+                    expr, 0, 1, fdecl, "rtl::OStringBuffer::append",
+                    TreatEmpty::Error);
+            }
+            break;
+        default:
+            break;
+        }
+        return true;
+    }
+    if (dc.Function("insert").Class("OStringBuffer").Namespace("rtl")
+        .GlobalNamespace())
+    {
+        switch (fdecl->getNumParams()) {
+        case 2:
+            handleFunArgOstring(expr, 1, fdecl);
+            break;
+        case 3:
+            {
+                // b.insert(i, "foo", 3) -> b.insert(i, "foo"):
+                handleCharLen(
+                    expr, 1, 2, fdecl, "rtl::OStringBuffer::insert",
+                    TreatEmpty::Error);
+                break;
+            }
+        default:
+            break;
+        }
         return true;
     }
     return true;
@@ -596,61 +744,123 @@ bool StringConstant::VisitCXXConstructExpr(CXXConstructExpr const * expr) {
     if (ignoreLocation(expr)) {
         return true;
     }
-    std::string qname(
-        expr->getConstructor()->getParent()->getQualifiedNameAsString());
-    if (qname == "rtl::OUString") {
+    auto classdecl = expr->getConstructor()->getParent();
+    if (loplugin::DeclCheck(classdecl)
+        .Class("OUString").Namespace("rtl").GlobalNamespace())
+    {
         ChangeKind kind;
         PassThrough pass;
+        bool simplify;
         switch (expr->getConstructor()->getNumParams()) {
         case 1:
+            if (!loplugin::TypeCheck(
+                    expr->getConstructor()->getParamDecl(0)->getType())
+                .Typedef("sal_Unicode").GlobalNamespace())
             {
-                APSInt v;
-                if (!expr->getArg(0)->isIntegerConstantExpr(
-                        v, compiler.getASTContext()))
-                {
-                    return true;
-                }
-                if (v == 0 || v.uge(0x80)) {
-                    return true;
-                }
-                kind = ChangeKind::SingleChar;
-                pass = PassThrough::NonEmptyConstantString;
-                break;
+                return true;
             }
+            kind = ChangeKind::SingleChar;
+            pass = PassThrough::NonEmptyConstantString;
+            simplify = false;
+            break;
         case 2:
             {
+                auto arg = expr->getArg(0);
+                if (loplugin::TypeCheck(arg->getType())
+                    .Class("OUStringLiteral1_").Namespace("rtl")
+                    .GlobalNamespace())
+                {
+                    kind = ChangeKind::OUStringLiteral1;
+                    pass = PassThrough::NonEmptyConstantString;
+                    simplify = false;
+                } else {
+                    unsigned n;
+                    bool nonArray;
+                    bool non;
+                    bool emb;
+                    bool trm;
+                    if (!isStringConstant(
+                            arg->IgnoreParenImpCasts(), &n, &nonArray, &non,
+                            &emb, &trm))
+                    {
+                        return true;
+                    }
+                    // OSL_THIS_FUNC may be defined as "" or as something other
+                    // than a string literal in include/osl/diagnose.h:
+                    auto loc = arg->getLocStart();
+                    if (compiler.getSourceManager().isMacroBodyExpansion(loc)
+                        && (Lexer::getImmediateMacroName(
+                                loc, compiler.getSourceManager(),
+                                compiler.getLangOpts())
+                            == "OSL_THIS_FUNC"))
+                    {
+                        return true;
+                    }
+                    if (non) {
+                        report(
+                            DiagnosticsEngine::Warning,
+                            ("construction of %0 with string constant argument"
+                             " containing non-ASCII characters"),
+                            expr->getExprLoc())
+                            << classdecl << expr->getSourceRange();
+                    }
+                    if (emb) {
+                        report(
+                            DiagnosticsEngine::Warning,
+                            ("construction of %0 with string constant argument"
+                             " containing embedded NULs"),
+                            expr->getExprLoc())
+                            << classdecl << expr->getSourceRange();
+                    }
+                    kind = ChangeKind::Char;
+                    pass = n == 0
+                        ? PassThrough::EmptyConstantString
+                        : PassThrough::NonEmptyConstantString;
+                    simplify = false;
+                }
+                break;
+            }
+        case 4:
+            {
                 unsigned n;
+                bool nonArray;
                 bool non;
                 bool emb;
                 bool trm;
                 if (!isStringConstant(
-                        expr->getArg(0)->IgnoreParenImpCasts(), &n, &non, &emb,
-                        &trm))
+                        expr->getArg(0)->IgnoreParenImpCasts(), &n, &nonArray,
+                        &non, &emb, &trm))
                 {
                     return true;
                 }
-                if (non) {
-                    report(
-                        DiagnosticsEngine::Warning,
-                        ("construction of " + qname
-                         + (" with string constant argument containging"
-                            " non-ASCII characters")),
-                        expr->getExprLoc())
-                        << expr->getSourceRange();
+                APSInt res;
+                if (!expr->getArg(1)->EvaluateAsInt(
+                        res, compiler.getASTContext())
+                    || res != n)
+                {
+                    return true;
                 }
-                if (emb) {
-                    report(
-                        DiagnosticsEngine::Warning,
-                        ("construction of " + qname
-                         + (" with string constant argument containging"
-                            " embedded NULs")),
-                        expr->getExprLoc())
-                        << expr->getSourceRange();
+                if (!expr->getArg(2)->EvaluateAsInt(
+                        res, compiler.getASTContext())
+                    || res != 11) // RTL_TEXTENCODING_ASCII_US
+                {
+                    return true;
+                }
+                if (!expr->getArg(3)->EvaluateAsInt(
+                        res, compiler.getASTContext())
+                    || res != 0x333) // OSTRING_TO_OUSTRING_CVTFLAGS
+                {
+                    return true;
+                }
+                if (non || emb) {
+                    // cf. remaining uses of RTL_CONSTASCII_USTRINGPARAM
+                    return true;
                 }
                 kind = ChangeKind::Char;
                 pass = n == 0
                     ? PassThrough::EmptyConstantString
                     : PassThrough::NonEmptyConstantString;
+                simplify = true;
                 break;
             }
         default:
@@ -690,81 +900,96 @@ bool StringConstant::VisitCXXConstructExpr(CXXConstructExpr const * expr) {
                         if (fdecl == nullptr) {
                             break;
                         }
-                        std::string callQname(
-                            fdecl->getQualifiedNameAsString());
+                        loplugin::DeclCheck dc(fdecl);
                         if (pass == PassThrough::EmptyConstantString) {
-                            if (callQname == "rtl::OUString::equals"
-                                || callQname == "rtl::operator==")
+                            if ((dc.Function("equals").Class("OUString")
+                                 .Namespace("rtl").GlobalNamespace())
+                                || (dc.Operator(OO_EqualEqual).Namespace("rtl")
+                                    .GlobalNamespace()))
                             {
                                 report(
                                     DiagnosticsEngine::Warning,
-                                    ("rewrite call of " + callQname
-                                     + " with construction of " + qname
-                                     + (" with empty string constant argument"
-                                        " as call of rtl::OUString::isEmpty")),
+                                    ("rewrite call of '%0' with construction of"
+                                     " %1 with empty string constant argument"
+                                     " as call of 'rtl::OUString::isEmpty'"),
                                     getMemberLocation(call))
-                                    << call->getSourceRange();
+                                    << fdecl->getQualifiedNameAsString()
+                                    << classdecl << call->getSourceRange();
                                 return true;
                             }
-                            if (callQname == "rtl::operator!=") {
-                                report(
-                                    DiagnosticsEngine::Warning,
-                                    ("rewrite call of " + callQname
-                                     + " with construction of " + qname
-                                     + (" with empty string constant argument"
-                                        " as call of !rtl::OUString::isEmpty")),
-                                    getMemberLocation(call))
-                                    << call->getSourceRange();
-                                return true;
-                            }
-                            if (callQname == "rtl::operator+"
-                                || callQname == "rtl::OUString::operator+=")
+                            if (dc.Operator(OO_ExclaimEqual).Namespace("rtl")
+                                    .GlobalNamespace())
                             {
                                 report(
                                     DiagnosticsEngine::Warning,
-                                    ("call of " + callQname
-                                     + " with suspicous construction of "
-                                     + qname
-                                     + " with empty string constant argument"),
+                                    ("rewrite call of '%0' with construction of"
+                                     " %1 with empty string constant argument"
+                                     " as call of '!rtl::OUString::isEmpty'"),
                                     getMemberLocation(call))
-                                    << call->getSourceRange();
+                                    << fdecl->getQualifiedNameAsString()
+                                    << classdecl << call->getSourceRange();
                                 return true;
                             }
-                            if (callQname == "rtl::OUString::operator=") {
+                            if ((dc.Operator(OO_Plus).Namespace("rtl")
+                                    .GlobalNamespace())
+                                || (dc.Operator(OO_Plus).Class("OUString")
+                                    .Namespace("rtl").GlobalNamespace()))
+                            {
                                 report(
                                     DiagnosticsEngine::Warning,
-                                    ("rewrite call of " + callQname
-                                     + " with construction of " + qname
-                                     + (" with empty string constant argument"
-                                        " as call of rtl::OUString::clear")),
+                                    ("call of '%0' with suspicous construction"
+                                     " of %1 with empty string constant"
+                                     " argument"),
                                     getMemberLocation(call))
-                                    << call->getSourceRange();
+                                    << fdecl->getQualifiedNameAsString()
+                                    << classdecl << call->getSourceRange();
+                                return true;
+                            }
+                            if (dc.Operator(OO_Equal).Class("OUString")
+                                .Namespace("rtl").GlobalNamespace())
+                            {
+                                report(
+                                    DiagnosticsEngine::Warning,
+                                    ("rewrite call of '%0' with construction of"
+                                     " %1 with empty string constant argument"
+                                     " as call of 'rtl::OUString::clear'"),
+                                    getMemberLocation(call))
+                                    << fdecl->getQualifiedNameAsString()
+                                    << classdecl << call->getSourceRange();
                                 return true;
                             }
                         } else {
                             assert(pass == PassThrough::NonEmptyConstantString);
-                            if (callQname == "rtl::OUString::equals") {
+                            if (dc.Function("equals").Class("OUString")
+                                .Namespace("rtl").GlobalNamespace())
+                            {
                                 report(
                                     DiagnosticsEngine::Warning,
-                                    ("rewrite call of " + callQname
-                                     + " with construction of " + qname
-                                     + " with " + describeChangeKind(kind)
-                                     + " as operator =="),
+                                    ("rewrite call of '%0' with construction of"
+                                     " %1 with %2 as 'operator =='"),
                                     getMemberLocation(call))
+                                    << fdecl->getQualifiedNameAsString()
+                                    << classdecl << describeChangeKind(kind)
                                     << call->getSourceRange();
                                 return true;
                             }
-                            if (callQname == "rtl::operator+"
-                                || callQname == "rtl::OUString::operator="
-                                || callQname == "rtl::operator=="
-                                || callQname == "rtl::operator!=")
+                            if ((dc.Operator(OO_Plus).Namespace("rtl")
+                                    .GlobalNamespace())
+                                || (dc.Operator(OO_Plus).Class("OUString")
+                                    .Namespace("rtl").GlobalNamespace())
+                                || (dc.Operator(OO_EqualEqual).Namespace("rtl")
+                                    .GlobalNamespace())
+                                || (dc.Operator(OO_ExclaimEqual)
+                                    .Namespace("rtl").GlobalNamespace()))
                             {
-                                if (callQname == "rtl::operator+") {
-                                    std::string file(
+                                if (dc.Operator(OO_Plus).Namespace("rtl")
+                                    .GlobalNamespace())
+                                {
+                                    auto file =
                                         compiler.getSourceManager().getFilename(
                                             compiler.getSourceManager()
                                             .getSpellingLoc(
-                                                expr->getLocStart())));
+                                                expr->getLocStart()));
                                     if (file
                                         == (SRCDIR
                                             "/sal/qa/rtl/strings/test_ostring_concat.cxx")
@@ -775,17 +1000,45 @@ bool StringConstant::VisitCXXConstructExpr(CXXConstructExpr const * expr) {
                                         return true;
                                     }
                                 }
-                                report(
-                                    DiagnosticsEngine::Warning,
-                                    ("elide construction of " + qname + " with "
-                                     + describeChangeKind(kind) + " in call of "
-                                     + callQname),
-                                    getMemberLocation(expr))
-                                    << expr->getSourceRange();
+                                auto loc = expr->getArg(0)->getLocStart();
+                                while (compiler.getSourceManager()
+                                       .isMacroArgExpansion(loc))
+                                {
+                                    loc = compiler.getSourceManager()
+                                        .getImmediateMacroCallerLoc(loc);
+                                }
+                                if ((compiler.getSourceManager()
+                                     .isMacroBodyExpansion(loc))
+                                    && (Lexer::getImmediateMacroName(
+                                            loc, compiler.getSourceManager(),
+                                            compiler.getLangOpts())
+                                        == "OSL_THIS_FUNC"))
+                                {
+                                    return true;
+                                }
+                                if (kind == ChangeKind::SingleChar) {
+                                    report(
+                                        DiagnosticsEngine::Warning,
+                                        ("rewrite construction of %0 with %1 in"
+                                         " call of '%2' as construction of"
+                                         " 'OUStringLiteral1'"),
+                                        getMemberLocation(expr))
+                                        << classdecl << describeChangeKind(kind)
+                                        << fdecl->getQualifiedNameAsString()
+                                        << expr->getSourceRange();
+                                } else {
+                                    report(
+                                        DiagnosticsEngine::Warning,
+                                        ("elide construction of %0 with %1 in"
+                                         " call of '%2'"),
+                                        getMemberLocation(expr))
+                                        << classdecl << describeChangeKind(kind)
+                                        << fdecl->getQualifiedNameAsString()
+                                        << expr->getSourceRange();
+                                }
                                 return true;
                             }
                         }
-                        return true;
                     } else if (isa<CXXConstructExpr>(call)) {
                     } else {
                         assert(false);
@@ -793,8 +1046,35 @@ bool StringConstant::VisitCXXConstructExpr(CXXConstructExpr const * expr) {
                 }
             }
         }
+        if (simplify) {
+            report(
+                DiagnosticsEngine::Warning,
+                "simplify construction of %0 with %1",
+                expr->getExprLoc())
+                << classdecl << describeChangeKind(kind)
+                << expr->getSourceRange();
+        }
         return true;
     }
+
+    auto consDecl = expr->getConstructor();
+    for (unsigned i = 0; i != consDecl->getNumParams(); ++i) {
+        auto t = consDecl->getParamDecl(i)->getType();
+        if (loplugin::TypeCheck(t).NotSubstTemplateTypeParmType()
+            .LvalueReference().Const().NotSubstTemplateTypeParmType()
+            .Class("OUString").Namespace("rtl").GlobalNamespace())
+        {
+            auto argExpr = expr->getArg(i);
+            if (argExpr && i <= consDecl->getNumParams())
+            {
+                if (!hasOverloads(consDecl, expr->getNumArgs()))
+                {
+                    handleOUStringCtor(expr, argExpr, consDecl, true);
+                }
+            }
+        }
+    }
+
     return true;
 }
 
@@ -805,26 +1085,39 @@ std::string StringConstant::describeChangeKind(ChangeKind kind) {
     case ChangeKind::CharLen:
         return "string constant and matching length arguments";
     case ChangeKind::SingleChar:
-        return "ASCII sal_Unicode argument";
+        return "sal_Unicode argument";
+    case ChangeKind::OUStringLiteral1:
+        return "OUStringLiteral1 argument";
     default:
         std::abort();
     }
 }
 
 bool StringConstant::isStringConstant(
-    Expr const * expr, unsigned * size, bool * nonAscii, bool * embeddedNuls,
-    bool * terminatingNul)
+    Expr const * expr, unsigned * size, bool * nonArray, bool * nonAscii,
+    bool * embeddedNuls, bool * terminatingNul)
 {
     assert(expr != nullptr);
     assert(size != nullptr);
+    assert(nonArray != nullptr);
     assert(nonAscii != nullptr);
     assert(embeddedNuls != nullptr);
     assert(terminatingNul != nullptr);
     QualType t = expr->getType();
-    if (!(t->isConstantArrayType() && t.isConstQualified()
-          && (loplugin::TypeCheck(t->getAsArrayTypeUnsafe()->getElementType())
-              .Char())))
-    {
+    // Look inside RTL_CONSTASCII_STRINGPARAM:
+    if (loplugin::TypeCheck(t).Pointer().Const().Char()) {
+        auto e2 = dyn_cast<UnaryOperator>(expr);
+        if (e2 != nullptr && e2->getOpcode() == UO_AddrOf) {
+            auto e3 = dyn_cast<ArraySubscriptExpr>(
+                e2->getSubExpr()->IgnoreParenImpCasts());
+            if (e3 == nullptr || !isZero(e3->getIdx()->IgnoreParenImpCasts())) {
+                return false;
+            }
+            expr = e3->getBase()->IgnoreParenImpCasts();
+            t = expr->getType();
+        }
+    }
+    if (!t.isConstQualified()) {
         return false;
     }
     DeclRefExpr const * dre = dyn_cast<DeclRefExpr>(expr);
@@ -837,7 +1130,19 @@ bool StringConstant::isStringConstant(
             }
         }
     }
-    StringLiteral const * lit = dyn_cast<StringLiteral>(expr);
+    bool isPtr;
+    if (loplugin::TypeCheck(t).Pointer().Const().Char()) {
+        isPtr = true;
+    } else if (t->isConstantArrayType()
+               && (loplugin::TypeCheck(
+                       t->getAsArrayTypeUnsafe()->getElementType())
+                   .Char()))
+    {
+        isPtr = false;
+    } else {
+        return false;
+    }
+    clang::StringLiteral const * lit = dyn_cast<clang::StringLiteral>(expr);
     if (lit != nullptr) {
         if (!lit->isAscii()) {
             return false;
@@ -854,6 +1159,7 @@ bool StringConstant::isStringConstant(
             }
         }
         *size = n;
+        *nonArray = isPtr;
         *nonAscii = non;
         *embeddedNuls = emb;
         *terminatingNul = true;
@@ -867,14 +1173,16 @@ bool StringConstant::isStringConstant(
     case APValue::LValue:
         {
             Expr const * e = v.getLValueBase().dyn_cast<Expr const *>();
-            assert(e != nullptr); //TODO???
+            if (e == nullptr) {
+                return false;
+            }
             if (!v.getLValueOffset().isZero()) {
                 return false; //TODO
             }
             Expr const * e2 = e->IgnoreParenImpCasts();
             if (e2 != e) {
                 return isStringConstant(
-                    e2, size, nonAscii, embeddedNuls, terminatingNul);
+                    e2, size, nonArray, nonAscii, embeddedNuls, terminatingNul);
             }
             //TODO: string literals are represented as recursive LValues???
             llvm::APInt n
@@ -883,6 +1191,7 @@ bool StringConstant::isStringConstant(
             --n;
             assert(n.ule(std::numeric_limits<unsigned>::max()));
             *size = static_cast<unsigned>(n.getLimitedValue());
+            *nonArray = isPtr || *nonArray;
             *nonAscii = false; //TODO
             *embeddedNuls = false; //TODO
             *terminatingNul = true;
@@ -915,6 +1224,7 @@ bool StringConstant::isStringConstant(
             }
             bool trm = e.getInt() == 0;
             *size = trm ? n - 1 : n;
+            *nonArray = isPtr;
             *nonAscii = non;
             *embeddedNuls = emb;
             *terminatingNul = trm;
@@ -928,14 +1238,13 @@ bool StringConstant::isStringConstant(
 
 bool StringConstant::isZero(Expr const * expr) {
     APSInt res;
-    return expr->isIntegerConstantExpr(res, compiler.getASTContext())
-        && res == 0;
+    return expr->EvaluateAsInt(res, compiler.getASTContext()) && res == 0;
 }
 
 void StringConstant::reportChange(
     Expr const * expr, ChangeKind kind, std::string const & original,
-    std::string const & replacement, PassThrough pass, char const * rewriteFrom,
-    char const * rewriteTo)
+    std::string const & replacement, PassThrough pass, bool nonArray,
+    char const * rewriteFrom, char const * rewriteTo)
 {
     assert((rewriteFrom == nullptr) == (rewriteTo == nullptr));
     if (pass != PassThrough::No && !calls_.empty()) {
@@ -964,118 +1273,126 @@ void StringConstant::reportChange(
                     if (fdecl == nullptr) {
                         break;
                     }
-                    std::string qname(fdecl->getQualifiedNameAsString());
+                    loplugin::DeclCheck dc(fdecl);
                     if (pass == PassThrough::EmptyConstantString) {
-                        if (qname == "rtl::OUString::equals"
-                            || qname == "rtl::operator==")
+                        if ((dc.Function("equals").Class("OUString")
+                             .Namespace("rtl").GlobalNamespace())
+                            || (dc.Operator(OO_EqualEqual).Namespace("rtl")
+                                .GlobalNamespace()))
                         {
                             report(
                                 DiagnosticsEngine::Warning,
-                                ("rewrite call of " + qname + " with call of "
-                                 + original
-                                 + (" with empty string constant argument as"
-                                    " call of rtl::OUString::isEmpty")),
+                                ("rewrite call of '%0' with call of %1 with"
+                                 " empty string constant argument as call of"
+                                 " 'rtl::OUString::isEmpty'"),
                                 getMemberLocation(call))
+                                << fdecl->getQualifiedNameAsString() << original
                                 << call->getSourceRange();
                             return;
                         }
-                        if (qname == "rtl::operator!=") {
-                            report(
-                                DiagnosticsEngine::Warning,
-                                ("rewrite call of " + qname + " with call of "
-                                 + original
-                                 + (" with empty string constant argument as"
-                                    " call of !rtl::OUString::isEmpty")),
-                                getMemberLocation(call))
-                                << call->getSourceRange();
-                            return;
-                        }
-                        if (qname == "rtl::operator+"
-                            || qname == "rtl::OUString::operator+=")
+                        if (dc.Operator(OO_ExclaimEqual).Namespace("rtl")
+                            .GlobalNamespace())
                         {
                             report(
                                 DiagnosticsEngine::Warning,
-                                ("call of " + qname + " with suspicous call of "
-                                 + original
-                                 + " with empty string constant argument"),
+                                ("rewrite call of '%0' with call of %1 with"
+                                 " empty string constant argument as call of"
+                                 " '!rtl::OUString::isEmpty'"),
                                 getMemberLocation(call))
+                                << fdecl->getQualifiedNameAsString() << original
                                 << call->getSourceRange();
                             return;
                         }
-                        if (qname == "rtl::OUString::operator=") {
+                        if ((dc.Operator(OO_Plus).Namespace("rtl")
+                             .GlobalNamespace())
+                            || (dc.Operator(OO_Plus).Class("OUString")
+                                .Namespace("rtl").GlobalNamespace()))
+                        {
                             report(
                                 DiagnosticsEngine::Warning,
-                                ("rewrite call of " + qname + " with call of "
-                                 + original
-                                 + (" with empty string constant argument as"
-                                    " call of rtl::OUString::call")),
+                                ("call of '%0' with suspicous call of %1 with"
+                                 " empty string constant argument"),
                                 getMemberLocation(call))
+                                << fdecl->getQualifiedNameAsString() << original
                                 << call->getSourceRange();
                             return;
                         }
+                        if (dc.Operator(OO_Equal).Class("OUString")
+                            .Namespace("rtl").GlobalNamespace())
+                        {
+                            report(
+                                DiagnosticsEngine::Warning,
+                                ("rewrite call of '%0' with call of %1 with"
+                                 " empty string constant argument as call of"
+                                 " rtl::OUString::call"),
+                                getMemberLocation(call))
+                                << fdecl->getQualifiedNameAsString() << original
+                                << call->getSourceRange();
+                            return;
+                        }
+                        report(
+                            DiagnosticsEngine::Warning,
+                            "TODO call inside %0", getMemberLocation(expr))
+                            << fdecl->getQualifiedNameAsString()
+                            << expr->getSourceRange();
+                        return;
                     } else {
                         assert(pass == PassThrough::NonEmptyConstantString);
-                        if (qname == "rtl::OUString::equals"
-                            || qname == "rtl::OUString::operator="
-                            || qname == "rtl::operator=="
-                            || qname == "rtl::operator!=")
+                        if ((dc.Function("equals").Class("OUString")
+                             .Namespace("rtl").GlobalNamespace())
+                            || (dc.Operator(OO_Equal).Class("OUString")
+                                .Namespace("rtl").GlobalNamespace())
+                            || (dc.Operator(OO_EqualEqual).Namespace("rtl")
+                                .GlobalNamespace())
+                            || (dc.Operator(OO_ExclaimEqual).Namespace("rtl")
+                                .GlobalNamespace()))
                         {
                             report(
                                 DiagnosticsEngine::Warning,
-                                ("elide call of " + original + " with "
-                                 + describeChangeKind(kind) + " in call of "
-                                 + qname),
+                                "elide call of %0 with %1 in call of '%2'",
                                 getMemberLocation(expr))
+                                << original << describeChangeKind(kind)
+                                << fdecl->getQualifiedNameAsString()
                                 << expr->getSourceRange();
                             return;
                         }
-                        if (qname == "rtl::operator+"
-                            || qname == "rtl::OUString::operator+=")
-                        {
-                            report(
-                                DiagnosticsEngine::Warning,
-                                ("rewrite call of " + original + " with "
-                                 + describeChangeKind(kind) + " in call of "
-                                 + qname
-                                 + (" as (implicit) construction of"
-                                    " rtl::OUString")),
-                                getMemberLocation(expr))
-                                << expr->getSourceRange();
-                            return;
-                        }
+                        report(
+                            DiagnosticsEngine::Warning,
+                            ("rewrite call of %0 with %1 in call of '%2' as"
+                             " (implicit) construction of 'OUString'"),
+                            getMemberLocation(expr))
+                            << original << describeChangeKind(kind)
+                            << fdecl->getQualifiedNameAsString()
+                            << expr->getSourceRange();
+                        return;
                     }
-                    report(
-                        DiagnosticsEngine::Warning,
-                        "TODO call inside " + qname, getMemberLocation(expr))
-                        << expr->getSourceRange();
-                    return;
                 } else if (isa<CXXConstructExpr>(call)) {
-                    std::string qname(
-                        cast<CXXConstructExpr>(call)->getConstructor()
-                        ->getParent()->getQualifiedNameAsString());
-                    if (qname == "rtl::OUString"
-                        || qname == "rtl::OUStringBuffer")
+                    auto classdecl = cast<CXXConstructExpr>(call)
+                        ->getConstructor()->getParent();
+                    loplugin::DeclCheck dc(classdecl);
+                    if (dc.Class("OUString").Namespace("rtl").GlobalNamespace()
+                        || (dc.Class("OUStringBuffer").Namespace("rtl")
+                            .GlobalNamespace()))
                     {
                         //TODO: propagate further out?
                         if (pass == PassThrough::EmptyConstantString) {
                             report(
                                 DiagnosticsEngine::Warning,
-                                ("rewrite construction of " + qname
-                                 + " with call of " + original
-                                 + (" with empty string constant argument as"
-                                    " default construction of ")
-                                 + qname),
+                                ("rewrite construction of %0 with call of %1"
+                                 " with empty string constant argument as"
+                                 " default construction of %0"),
                                 getMemberLocation(call))
+                                << classdecl << original
                                 << call->getSourceRange();
                         } else {
                             assert(pass == PassThrough::NonEmptyConstantString);
                             report(
                                 DiagnosticsEngine::Warning,
-                                ("elide call of " + original + " with "
-                                 + describeChangeKind(kind)
-                                 + " in construction of " + qname),
+                                ("elide call of %0 with %1 in construction of"
+                                 " %2"),
                                 getMemberLocation(expr))
-                                << expr->getSourceRange();
+                                << original << describeChangeKind(kind)
+                                << classdecl << expr->getSourceRange();
                         }
                         return;
                     }
@@ -1085,12 +1402,12 @@ void StringConstant::reportChange(
             }
         }
     }
-    if (rewriter != nullptr && rewriteFrom != nullptr) {
+    if (rewriter != nullptr && !nonArray && rewriteFrom != nullptr) {
         SourceLocation loc = getMemberLocation(expr);
         while (compiler.getSourceManager().isMacroArgExpansion(loc)) {
             loc = compiler.getSourceManager().getImmediateMacroCallerLoc(loc);
         }
-        if (compat::isMacroBodyExpansion(compiler, loc)) {
+        if (compiler.getSourceManager().isMacroBodyExpansion(loc)) {
             loc = compiler.getSourceManager().getSpellingLoc(loc);
         }
         unsigned n = Lexer::MeasureTokenLength(
@@ -1104,14 +1421,14 @@ void StringConstant::reportChange(
     }
     report(
         DiagnosticsEngine::Warning,
-        ("rewrite call of " + original + " with " + describeChangeKind(kind)
-         + " as call of " + replacement),
+        "rewrite call of '%0' with %1 as call of '%2'%3",
         getMemberLocation(expr))
-        << expr->getSourceRange();
+        << original << describeChangeKind(kind) << replacement
+        << adviseNonArray(nonArray) << expr->getSourceRange();
 }
 
 void StringConstant::checkEmpty(
-    CallExpr const * expr, std::string const & qname, TreatEmpty treatEmpty,
+    CallExpr const * expr, FunctionDecl const * callee, TreatEmpty treatEmpty,
     unsigned size, std::string * replacement)
 {
     assert(replacement != nullptr);
@@ -1126,72 +1443,72 @@ void StringConstant::checkEmpty(
         case TreatEmpty::Error:
             report(
                 DiagnosticsEngine::Warning,
-                ("call of " + qname
-                 + " with suspicous empty string constant argument"),
+                "call of '%0' with suspicous empty string constant argument",
                 getMemberLocation(expr))
-                << expr->getSourceRange();
+                << callee->getQualifiedNameAsString() << expr->getSourceRange();
             break;
         }
     }
 }
 
 void StringConstant::handleChar(
-    CallExpr const * expr, unsigned arg, std::string const & qname,
+    CallExpr const * expr, unsigned arg, FunctionDecl const * callee,
     std::string const & replacement, TreatEmpty treatEmpty, bool literal,
     char const * rewriteFrom, char const * rewriteTo)
 {
     unsigned n;
+    bool nonArray;
     bool non;
     bool emb;
     bool trm;
     if (!isStringConstant(
-            expr->getArg(arg)->IgnoreParenImpCasts(), &n, &non, &emb, &trm))
+            expr->getArg(arg)->IgnoreParenImpCasts(), &n, &nonArray, &non, &emb,
+            &trm))
     {
         return;
     }
     if (non) {
         report(
             DiagnosticsEngine::Warning,
-            ("call of " + qname
-             + (" with string constant argument containging non-ASCII"
-                " characters")),
+            ("call of '%0' with string constant argument containing non-ASCII"
+             " characters"),
             getMemberLocation(expr))
-            << expr->getSourceRange();
+            << callee->getQualifiedNameAsString() << expr->getSourceRange();
         return;
     }
     if (emb) {
         report(
             DiagnosticsEngine::Warning,
-            ("call of " + qname
-             + " with string constant argument containging embedded NULs"),
+            ("call of '%0' with string constant argument containing embedded"
+             " NULs"),
             getMemberLocation(expr))
-            << expr->getSourceRange();
+            << callee->getQualifiedNameAsString() << expr->getSourceRange();
         return;
     }
     if (!trm) {
         report(
             DiagnosticsEngine::Warning,
-            ("call of " + qname
-             + " with string constant argument lacking a terminating NUL"),
+            ("call of '%0' with string constant argument lacking a terminating"
+             " NUL"),
             getMemberLocation(expr))
-            << expr->getSourceRange();
+            << callee->getQualifiedNameAsString() << expr->getSourceRange();
         return;
     }
     std::string repl(replacement);
-    checkEmpty(expr, qname, treatEmpty, n, &repl);
+    checkEmpty(expr, callee, treatEmpty, n, &repl);
     reportChange(
-        expr, ChangeKind::Char, qname, repl,
+        expr, ChangeKind::Char, callee->getQualifiedNameAsString(), repl,
         (literal
          ? (n == 0
             ? PassThrough::EmptyConstantString
             : PassThrough::NonEmptyConstantString)
          : PassThrough::No),
-        rewriteFrom, rewriteTo);
+        nonArray, rewriteFrom, rewriteTo);
 }
 
 void StringConstant::handleCharLen(
     CallExpr const * expr, unsigned arg1, unsigned arg2,
-    std::string const & qname, std::string const & replacement,
+    FunctionDecl const * callee, std::string const & replacement,
     TreatEmpty treatEmpty)
 {
     // Especially for f(RTL_CONSTASCII_STRINGPARAM("foo")), where
@@ -1200,19 +1517,19 @@ void StringConstant::handleCharLen(
     // that at the level of non-expanded macros instead, but I have not found
     // out how to do that yet anyway):
     unsigned n;
+    bool nonArray;
     bool non;
     bool emb;
     bool trm;
     if (!(isStringConstant(
-              expr->getArg(arg1)->IgnoreParenImpCasts(), &n, &non, &emb, &trm)
+              expr->getArg(arg1)->IgnoreParenImpCasts(), &n, &nonArray, &non,
+              &emb, &trm)
           && trm))
     {
         return;
     }
     APSInt res;
-    if (expr->getArg(arg2)->isIntegerConstantExpr(
-            res, compiler.getASTContext()))
-    {
+    if (expr->getArg(arg2)->EvaluateAsInt(res, compiler.getASTContext())) {
         if (res != n) {
             return;
         }
@@ -1228,16 +1545,16 @@ void StringConstant::handleCharLen(
             return;
         }
         unsigned n2;
+        bool nonArray2;
         bool non2;
         bool emb2;
         bool trm2;
         if (!(isStringConstant(
-                  subs->getBase()->IgnoreParenImpCasts(), &n2, &non2, &emb2,
-                  &trm2)
+                  subs->getBase()->IgnoreParenImpCasts(), &n2, &nonArray2,
+                  &non2, &emb2, &trm2)
               && n2 == n && non2 == non && emb2 == emb && trm2 == trm
                   //TODO: same strings
-              && subs->getIdx()->isIntegerConstantExpr(
-                  res, compiler.getASTContext())
+              && subs->getIdx()->EvaluateAsInt(res, compiler.getASTContext())
               && res == 0))
         {
             return;
@@ -1246,27 +1563,33 @@ void StringConstant::handleCharLen(
     if (non) {
         report(
             DiagnosticsEngine::Warning,
-            ("call of " + qname
-             + (" with string constant argument containging non-ASCII"
-                " characters")),
+            ("call of '%0' with string constant argument containing non-ASCII"
+             " characters"),
             getMemberLocation(expr))
-            << expr->getSourceRange();
+            << callee->getQualifiedNameAsString() << expr->getSourceRange();
     }
     if (emb) {
         return;
     }
     std::string repl(replacement);
-    checkEmpty(expr, qname, treatEmpty, n, &repl);
+    checkEmpty(expr, callee, treatEmpty, n, &repl);
     reportChange(
-        expr, ChangeKind::CharLen, qname, repl, PassThrough::No, nullptr,
-        nullptr);
+        expr, ChangeKind::CharLen, callee->getQualifiedNameAsString(), repl,
+        PassThrough::No, nonArray, nullptr, nullptr);
 }
 
 void StringConstant::handleOUStringCtor(
-    CallExpr const * expr, unsigned arg, std::string const & qname,
+    CallExpr const * expr, unsigned arg, FunctionDecl const * callee,
     bool explicitFunctionalCastNotation)
 {
-    auto e0 = expr->getArg(arg)->IgnoreParenImpCasts();
+    handleOUStringCtor(expr, expr->getArg(arg), callee, explicitFunctionalCastNotation);
+}
+
+void StringConstant::handleOUStringCtor(
+    Expr const * expr, Expr const * argExpr, FunctionDecl const * callee,
+    bool explicitFunctionalCastNotation)
+{
+    auto e0 = argExpr->IgnoreParenImpCasts();
     auto e1 = dyn_cast<CXXFunctionalCastExpr>(e0);
     if (e1 == nullptr) {
         if (explicitFunctionalCastNotation) {
@@ -1284,37 +1607,35 @@ void StringConstant::handleOUStringCtor(
     if (e3 == nullptr) {
         return;
     }
-    if (e3->getConstructor()->getQualifiedNameAsString()
-         != "rtl::OUString::OUString")
+    if (!loplugin::DeclCheck(e3->getConstructor()).MemberFunction()
+        .Class("OUString").Namespace("rtl").GlobalNamespace())
     {
         return;
     }
     if (e3->getNumArgs() == 0) {
         report(
             DiagnosticsEngine::Warning,
-            ("in call of %0, replace default-constructed OUString with an empty"
-             " string literal"),
+            ("in call of '%0', replace default-constructed 'OUString' with an"
+             " empty string literal"),
             e3->getExprLoc())
-            << qname << expr->getSourceRange();
+            << callee->getQualifiedNameAsString() << expr->getSourceRange();
         return;
     }
-    APSInt res;
     if (e3->getNumArgs() == 1
-        && e3->getArg(0)->IgnoreParenImpCasts()->isIntegerConstantExpr(
-            res, compiler.getASTContext()))
+        && e3->getConstructor()->getNumParams() == 1
+        && (loplugin::TypeCheck(
+                e3->getConstructor()->getParamDecl(0)->getType())
+            .Typedef("sal_Unicode").GlobalNamespace()))
     {
         // It may not be easy to rewrite OUString(c), esp. given there is no
         // OUString ctor taking an OUStringLiteral1 arg, so don't warn there:
         if (!explicitFunctionalCastNotation) {
-            uint64_t n = res.getZExtValue();
-            if (n != 0 && n <= 127) {
-                report(
-                    DiagnosticsEngine::Warning,
-                    ("in call of %0, replace OUString constructed from an ASCII"
-                     " char constant with a string literal"),
-                    e3->getExprLoc())
-                    << qname << expr->getSourceRange();
-            }
+            report(
+                DiagnosticsEngine::Warning,
+                ("in call of '%0', replace 'OUString' constructed from a"
+                 " 'sal_Unicode' with an 'OUStringLiteral1'"),
+                e3->getExprLoc())
+                << callee->getQualifiedNameAsString() << expr->getSourceRange();
         }
         return;
     }
@@ -1322,11 +1643,13 @@ void StringConstant::handleOUStringCtor(
         return;
     }
     unsigned n;
+    bool nonArray;
     bool non;
     bool emb;
     bool trm;
     if (!isStringConstant(
-            e3->getArg(0)->IgnoreParenImpCasts(), &n, &non, &emb, &trm))
+            e3->getArg(0)->IgnoreParenImpCasts(), &n, &nonArray, &non, &emb,
+            &trm))
     {
         return;
     }
@@ -1399,10 +1722,112 @@ void StringConstant::handleOUStringCtor(
     }
     report(
         DiagnosticsEngine::Warning,
-        ("in call of %0, replace OUString constructed from a string literal"
+        ("in call of '%0', replace 'OUString' constructed from a string literal"
          " directly with the string literal"),
         e3->getExprLoc())
-        << qname << expr->getSourceRange();
+        << callee->getQualifiedNameAsString() << expr->getSourceRange();
+}
+
+void StringConstant::handleFunArgOstring(
+    CallExpr const * expr, unsigned arg, FunctionDecl const * callee)
+{
+    auto argExpr = expr->getArg(arg)->IgnoreParenImpCasts();
+    unsigned n;
+    bool nonArray;
+    bool non;
+    bool emb;
+    bool trm;
+    if (isStringConstant(argExpr, &n, &nonArray, &non, &emb, &trm)) {
+        if (non || emb) {
+            return;
+        }
+        if (!trm) {
+            report(
+                DiagnosticsEngine::Warning,
+                ("call of '%0' with string constant argument lacking a"
+                 " terminating NUL"),
+                getMemberLocation(expr))
+                << callee->getQualifiedNameAsString() << expr->getSourceRange();
+            return;
+        }
+        std::string repl;
+        checkEmpty(expr, callee, TreatEmpty::Error, n, &repl);
+        if (nonArray) {
+            report(
+                DiagnosticsEngine::Warning,
+                ("in call of '%0' with non-array string constant argument,"
+                 " turn the non-array string constant into an array"),
+                getMemberLocation(expr))
+                << callee->getQualifiedNameAsString() << expr->getSourceRange();
+        }
+    } else if (auto cexpr = lookForCXXConstructExpr(argExpr)) {
+        auto classdecl = cexpr->getConstructor()->getParent();
+        if (loplugin::DeclCheck(classdecl).Class("OString").Namespace("rtl")
+            .GlobalNamespace())
+        {
+            switch (cexpr->getConstructor()->getNumParams()) {
+            case 0:
+                report(
+                    DiagnosticsEngine::Warning,
+                    ("in call of '%0', replace empty %1 constructor with empty"
+                     " string literal"),
+                    cexpr->getLocation())
+                    << callee->getQualifiedNameAsString() << classdecl
+                    << expr->getSourceRange();
+                break;
+            case 2:
+                if (isStringConstant(
+                        cexpr->getArg(0)->IgnoreParenImpCasts(), &n, &nonArray,
+                        &non, &emb, &trm))
+                {
+                    APSInt res;
+                    if (cexpr->getArg(1)->EvaluateAsInt(
+                            res, compiler.getASTContext()))
+                    {
+                        if (res == n && !emb && trm) {
+                            report(
+                                DiagnosticsEngine::Warning,
+                                ("in call of '%0', elide explicit %1"
+                                 " constructor%2"),
+                                cexpr->getLocation())
+                                << callee->getQualifiedNameAsString()
+                                << classdecl << adviseNonArray(nonArray)
+                                << expr->getSourceRange();
+                        }
+                    } else {
+                        if (emb) {
+                            report(
+                                DiagnosticsEngine::Warning,
+                                ("call of %0 constructor with string constant"
+                                 " argument containing embedded NULs"),
+                                cexpr->getLocation())
+                                << classdecl << cexpr->getSourceRange();
+                            return;
+                        }
+                        if (!trm) {
+                            report(
+                                DiagnosticsEngine::Warning,
+                                ("call of %0 constructor with string constant"
+                                 " argument lacking a terminating NUL"),
+                                cexpr->getLocation())
+                                << classdecl << cexpr->getSourceRange();
+                            return;
+                        }
+                        report(
+                            DiagnosticsEngine::Warning,
+                            "in call of '%0', elide explicit %1 constructor%2",
+                            cexpr->getLocation())
+                            << callee->getQualifiedNameAsString() << classdecl
+                            << adviseNonArray(nonArray)
+                            << expr->getSourceRange();
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
 }
 
 loplugin::Plugin::Registration< StringConstant > X("stringconstant", true);

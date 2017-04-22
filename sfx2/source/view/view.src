@@ -34,17 +34,9 @@ String STR_ERROR_PRINTER_BUSY
 {
     Text [ en-US ] = "Printer busy" ;
 };
-String STR_ERROR_PRINT
-{
-    Text [ en-US ] = "Error while printing" ;
-};
 String STR_PAGE
 {
     Text [ en-US ] = "Page " ;
-};
-String STR_ERROR_SAVE_TEMPLATE
-{
-    Text [ en-US ] = "Error saving template " ;
 };
 String STR_READONLY
 {
@@ -90,6 +82,10 @@ String STR_READONLY_DOCUMENT
 {
     Text [ en-US ] = "This document is open in read-only mode." ;
 };
+String STR_READONLY_PDF
+{
+    Text [ en-US ] = "This PDF is open in read-only mode to allow signing the existing file." ;
+};
 
 String STR_CLASSIFIED_DOCUMENT
 {
@@ -121,17 +117,44 @@ String STR_CLASSIFIED_EXPORT_CONTROL
     Text [ en-US ] = "Export Control:" ;
 };
 
-PushButton BT_CHECKOUT
+String STR_CHECKOUT
 {
-    Pos = MAP_APPFONT( 0 , 0 );
-    Size = MAP_APPFONT( 30 , 0 );
     Text[ en-US ] = "Check Out";
 };
-PushButton BT_READONLY_EDIT
+
+String STR_READONLY_EDIT
 {
-    Pos = MAP_APPFONT( 0 , 0 );
-    Size = MAP_APPFONT( 70 , 0 );
     Text[ en-US ] = "Edit Document";
+};
+
+String STR_READONLY_SIGN
+{
+    Text[ en-US ] = "Sign Document";
+};
+
+String STR_SIGNATURE_BROKEN
+{
+    Text[ en-US ] = "This document has an invalid signature.";
+};
+
+String STR_SIGNATURE_NOTVALIDATED
+{
+    Text[ en-US ] = "The signature is OK, but the certificate could not be validated.";
+};
+
+String STR_SIGNATURE_PARTIAL_OK
+{
+    Text[ en-US ] = "The signature is OK, but the document is only partially signed.";
+};
+
+String STR_SIGNATURE_OK
+{
+    Text[ en-US ] = "This document is digitally signed and the signature is valid.";
+};
+
+String STR_SIGNATURE_SHOW
+{
+    Text[ en-US ] = "Show Signatures";
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

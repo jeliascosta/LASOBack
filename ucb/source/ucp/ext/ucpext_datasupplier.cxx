@@ -23,7 +23,7 @@
 #include "ucpext_provider.hxx"
 
 #include <com/sun/star/deployment/PackageInformationProvider.hpp>
-
+#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 #include <ucbhelper/contentidentifier.hxx>
 #include <comphelper/processfactory.hxx>
 #include <ucbhelper/providerhelper.hxx>
@@ -83,13 +83,7 @@ namespace ucb { namespace ucp { namespace ext
             ,m_xContext( rxContext )
         {
         }
-        ~DataSupplier_Impl();
     };
-
-
-    DataSupplier_Impl::~DataSupplier_Impl()
-    {
-    }
 
 
     //= helper
@@ -343,7 +337,7 @@ namespace ucb { namespace ucp { namespace ext
     }
 
 
-    void DataSupplier::validate() throw( ResultSetException )
+    void DataSupplier::validate()
     {
     }
 

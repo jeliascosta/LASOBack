@@ -25,23 +25,22 @@
 #include <svx/sdmetitm.hxx>
 #include <svx/svxdllapi.h>
 
-enum SdrCaptionEscDir {SDRCAPT_ESCHORIZONTAL,SDRCAPT_ESCVERTICAL,SDRCAPT_ESCBESTFIT};
+enum class SdrCaptionEscDir { Horizontal, Vertical, BestFit };
 
 
 // class SdrCaptionEscDirItem
 
-class SVX_DLLPUBLIC SdrCaptionEscDirItem: public SfxEnumItem {
+class SVX_DLLPUBLIC SdrCaptionEscDirItem: public SfxEnumItem<SdrCaptionEscDir> {
 public:
-    SdrCaptionEscDirItem(SdrCaptionEscDir eDir=SDRCAPT_ESCHORIZONTAL): SfxEnumItem(SDRATTR_CAPTIONESCDIR,sal::static_int_cast< sal_uInt16 >(eDir)) {}
+    SdrCaptionEscDirItem(SdrCaptionEscDir eDir=SdrCaptionEscDir::Horizontal): SfxEnumItem(SDRATTR_CAPTIONESCDIR, eDir) {}
     SdrCaptionEscDirItem(SvStream& rIn)                              : SfxEnumItem(SDRATTR_CAPTIONESCDIR,rIn)  {}
     virtual SfxPoolItem*     Clone(SfxItemPool* pPool=nullptr) const override;
     virtual SfxPoolItem*     Create(SvStream& rIn, sal_uInt16 nVer) const override;
-    virtual sal_uInt16           GetValueCount() const override; // { return 3; }
-    SdrCaptionEscDir GetValue() const      { return (SdrCaptionEscDir)SfxEnumItem::GetValue(); }
+    virtual sal_uInt16       GetValueCount() const override; // { return 3; }
 
     virtual OUString GetValueTextByPos(sal_uInt16 nPos) const override;
 
-    virtual bool GetPresentation(SfxItemPresentation ePres, SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
+    virtual bool GetPresentation(SfxItemPresentation ePres, MapUnit eCoreMetric, MapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
 };
 
 
@@ -52,30 +51,30 @@ public:
 class SVX_DLLPUBLIC SdrCaptionEscIsRelItem: public SdrYesNoItem {
 public:
     SdrCaptionEscIsRelItem(bool bRel=true): SdrYesNoItem(SDRATTR_CAPTIONESCISREL,bRel) {}
-    virtual ~SdrCaptionEscIsRelItem();
+    virtual ~SdrCaptionEscIsRelItem() override;
     virtual SfxPoolItem* Clone(SfxItemPool* pPool=nullptr) const override;
 };
 
 
 // class SdrCaptionEscRelItem
 // Relativer Linienaustritt
-//     0 =   0.00% = oben bzw. links,
-// 10000 = 100.00% = rechts bzw. unten
-// nur wenn SdrCaptionEscIsRelItem=TRUE
+//     0 =   0.00% = up resp. left,
+// 10000 = 100.00% = right resp. down
+// only when SdrCaptionEscIsRelItem=TRUE
 
 class SVX_DLLPUBLIC SdrCaptionEscRelItem: public SfxInt32Item {
 public:
     SdrCaptionEscRelItem(long nEscRel=5000): SfxInt32Item(SDRATTR_CAPTIONESCREL,nEscRel) {}
-    virtual ~SdrCaptionEscRelItem();
+    virtual ~SdrCaptionEscRelItem() override;
     virtual SfxPoolItem* Clone(SfxItemPool* pPool=nullptr) const override;
 };
 
 
 // class SdrCaptionEscAbsItem
 // Absoluter Linienaustritt
-// 0  = oben bzw. links,
-// >0 = in Richtung rechts bzw. unten
-// nur wenn SdrCaptionEscIsRelItem=FALSE
+// 0  = up resp. left,
+// >0 = in direction right resp. down
+// only when SdrCaptionEscIsRelItem=FALSE
 
 class SdrCaptionEscAbsItem: public SdrMetricItem {
 public:

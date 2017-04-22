@@ -46,38 +46,33 @@
 
 namespace framework
 {
-    struct NewDocument
-    {
-        css::util::URL                                    aTargetURL;
-        css::uno::Sequence< css::beans::PropertyValue >   aArgSeq;
-        css::uno::Reference< css::frame::XDispatch >      xDispatch;
-    };
-
     class NewMenuController :  public svt::PopupMenuControllerBase
     {
         using svt::PopupMenuControllerBase::disposing;
 
         public:
             NewMenuController( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-            virtual ~NewMenuController();
+            virtual ~NewMenuController() override;
 
             // XServiceInfo
-            DECLARE_XSERVICEINFO
+            DECLARE_XSERVICEINFO_NOFACTORY
+            /* Helper for registry */
+            /// @throws css::uno::Exception
+            static css::uno::Reference< css::uno::XInterface >             SAL_CALL impl_createInstance                ( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager );
+            static css::uno::Reference< css::lang::XSingleServiceFactory > SAL_CALL impl_createFactory                 ( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager );
 
             // XInitialization
-            virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
             // XStatusListener
-            virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
+            virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override;
 
             // XMenuListener
-            virtual void SAL_CALL itemSelected( const css::awt::MenuEvent& rEvent ) throw (css::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL itemActivated( const css::awt::MenuEvent& rEvent ) throw (css::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL itemSelected( const css::awt::MenuEvent& rEvent ) override;
+            virtual void SAL_CALL itemActivated( const css::awt::MenuEvent& rEvent ) override;
 
             // XEventListener
-            virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw ( css::uno::RuntimeException, std::exception ) override;
-
-            DECL_STATIC_LINK_TYPED( NewMenuController, ExecuteHdl_Impl, void*, void );
+            virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
         private:
             virtual void impl_setPopupMenu() override;

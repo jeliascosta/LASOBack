@@ -39,11 +39,11 @@ namespace svx
 class ExtrusionDirectionWindow : public svtools::ToolbarMenu
 {
 public:
-    ExtrusionDirectionWindow( svt::ToolboxController& rController, const css::uno::Reference< css::frame::XFrame >& rFrame, vcl::Window* pParentWindow );
-    virtual ~ExtrusionDirectionWindow();
+    ExtrusionDirectionWindow( svt::ToolboxController& rController, vcl::Window* pParentWindow );
+    virtual ~ExtrusionDirectionWindow() override;
     virtual void dispose() override;
 
-    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException ) override;
+    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) override;
     virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
 
 private:
@@ -54,12 +54,12 @@ private:
     Image       maImgPerspective;
     Image       maImgParallel;
 
-    DECL_LINK_TYPED( SelectToolbarMenuHdl, ToolbarMenu*, void );
-    DECL_LINK_TYPED( SelectValueSetHdl, ValueSet*, void );
+    DECL_LINK( SelectToolbarMenuHdl, ToolbarMenu*, void );
+    DECL_LINK( SelectValueSetHdl, ValueSet*, void );
     void SelectHdl(void*);
 
-    void implSetDirection( sal_Int32 nSkew, bool bEnabled = true );
-    void implSetProjection( sal_Int32 nProjection, bool bEnabled = true );
+    void implSetDirection( sal_Int32 nSkew, bool bEnabled );
+    void implSetProjection( sal_Int32 nProjection, bool bEnabled );
 
 };
 
@@ -72,12 +72,11 @@ public:
     virtual VclPtr<vcl::Window> createPopupWindow( vcl::Window* pParent ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-        throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     using svt::PopupWindowController::createPopupWindow;
 };
@@ -100,15 +99,15 @@ private:
     const OUString msExtrusionDepth;
     const OUString msMetricUnit;
 
-    DECL_LINK_TYPED( SelectHdl, ToolbarMenu*, void );
+    DECL_LINK( SelectHdl, ToolbarMenu*, void );
 
     void    implFillStrings( FieldUnit eUnit );
     void    implSetDepth( double fDepth );
 
 public:
-    ExtrusionDepthWindow( svt::ToolboxController& rController, const css::uno::Reference< css::frame::XFrame >& rFrame, vcl::Window* pParentWindow );
+    ExtrusionDepthWindow( svt::ToolboxController& rController, vcl::Window* pParentWindow );
 
-    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) override;
 };
 
 class ExtrusionDepthController : public svt::PopupWindowController
@@ -119,12 +118,11 @@ public:
     virtual VclPtr<vcl::Window> createPopupWindow( vcl::Window* pParent ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-        throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     using svt::PopupWindowController::createPopupWindow;
 };
@@ -152,15 +150,15 @@ private:
     void    implSetIntensity( int nLevel, bool bEnabled );
     void    implSetDirection( int nDirection, bool bEnabled );
 
-    DECL_LINK_TYPED( SelectToolbarMenuHdl, ToolbarMenu*, void );
-    DECL_LINK_TYPED( SelectValueSetHdl, ValueSet*, void );
+    DECL_LINK( SelectToolbarMenuHdl, ToolbarMenu*, void );
+    DECL_LINK( SelectValueSetHdl, ValueSet*, void );
     void SelectHdl(void*);
 public:
-    ExtrusionLightingWindow( svt::ToolboxController& rController, const css::uno::Reference< css::frame::XFrame >& rFrame, vcl::Window* pParentWindow );
-    virtual ~ExtrusionLightingWindow();
+    ExtrusionLightingWindow( svt::ToolboxController& rController, vcl::Window* pParentWindow );
+    virtual ~ExtrusionLightingWindow() override;
     virtual void dispose() override;
 
-    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException ) override;
+    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) override;
     virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
 };
 
@@ -173,12 +171,11 @@ public:
     virtual VclPtr<vcl::Window> createPopupWindow( vcl::Window* pParent ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-        throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     using svt::PopupWindowController::createPopupWindow;
 };
@@ -194,14 +191,14 @@ private:
     Image maImgSurface3;
     Image maImgSurface4;
 
-    DECL_LINK_TYPED( SelectHdl, ToolbarMenu*, void );
+    DECL_LINK( SelectHdl, ToolbarMenu*, void );
 
     void    implSetSurface( int nSurface, bool bEnabled );
 
 public:
-    ExtrusionSurfaceWindow( svt::ToolboxController& rController, const css::uno::Reference< css::frame::XFrame >& rFrame, vcl::Window* pParentWindow );
+    ExtrusionSurfaceWindow( svt::ToolboxController& rController, vcl::Window* pParentWindow );
 
-    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException ) override;
+    virtual void statusChanged( const css::frame::FeatureStateEvent& Event ) override;
 };
 
 
@@ -213,12 +210,11 @@ public:
     virtual VclPtr<vcl::Window> createPopupWindow( vcl::Window* pParent ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-        throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     using svt::PopupWindowController::createPopupWindow;
 };

@@ -57,22 +57,23 @@ class  OAddFieldWindow  :public FloatingWindow
     VclPtr<ToolBox>                                                             m_aActions;
 
     VclPtr<OAddFieldWindowListBox>                                              m_pListBox;
-    VclPtr<FixedLine>                                                           m_aFixedLine;
     VclPtr<FixedText>                                                           m_aHelpText;
 
-    VclPtr<PushButton>                                                          m_aInsertButton;
     Link<OAddFieldWindow&,void>                                                 m_aCreateLink;
     OUString                                                                    m_aCommandName;
     OUString                                                                    m_sFilter;
+    sal_uInt16                                                                  m_nSortUpId;
+    sal_uInt16                                                                  m_nSortDownId;
+    sal_uInt16                                                                  m_nRemoveSortId;
+    sal_uInt16                                                                  m_nInsertId;
     sal_Int32                                                                   m_nCommandType;
     bool                                                                        m_bEscapeProcessing;
     ::rtl::Reference< comphelper::OPropertyChangeMultiplexer>                   m_pChangeListener;
     ::rtl::Reference< comphelper::OContainerListenerAdapter>                    m_pContainerListener;
 
-    DECL_LINK_TYPED( OnClickHdl, Button*, void );
-    DECL_LINK_TYPED( OnDoubleClickHdl, SvTreeListBox*, bool );
-    DECL_LINK_TYPED( OnSelectHdl, SvTreeListBox*, void );
-    DECL_LINK_TYPED( OnSortAction, ToolBox*, void );
+    DECL_LINK( OnDoubleClickHdl, SvTreeListBox*, bool );
+    DECL_LINK( OnSelectHdl, SvTreeListBox*, void );
+    DECL_LINK( OnSortAction, ToolBox*, void );
 
     OAddFieldWindow(const OAddFieldWindow&) = delete;
     void operator =(const OAddFieldWindow&) = delete;
@@ -80,16 +81,15 @@ public:
     OAddFieldWindow(vcl::Window* pParent
                     , const css::uno::Reference< css::beans::XPropertySet >& _xRowSet);
 
-    virtual ~OAddFieldWindow();
+    virtual ~OAddFieldWindow() override;
     virtual void dispose() override;
-    virtual void Resize() override;
     virtual void GetFocus() override;
     virtual bool PreNotify( NotifyEvent& _rNEvt ) override;
 
-    inline const OUString&       GetCommand()            const { return m_aCommandName; }
-    inline sal_Int32                    GetCommandType()        const { return m_nCommandType; }
-    inline bool                     GetEscapeProcessing()   const { return m_bEscapeProcessing; }
-    inline void SetCreateHdl(const Link<OAddFieldWindow&,void>& _aCreateLink) { m_aCreateLink = _aCreateLink; }
+    const OUString&       GetCommand()            const { return m_aCommandName; }
+    sal_Int32                    GetCommandType()        const { return m_nCommandType; }
+    bool                     GetEscapeProcessing()   const { return m_bEscapeProcessing; }
+    void SetCreateHdl(const Link<OAddFieldWindow&,void>& _aCreateLink) { m_aCreateLink = _aCreateLink; }
 
     css::uno::Reference< css::sdbc::XConnection>              getConnection() const;
 
@@ -99,7 +99,10 @@ public:
         @param  _eBitmapSet
             <svtools/imgdef.hxx>
     */
-    virtual void setImageList(sal_Int16 _eBitmapSet) override;
+    virtual void setImageList(sal_Int16) override
+    {
+        //to-do, remove
+    }
 
     /** will be called when the controls need to be resized.
     */
@@ -117,11 +120,11 @@ public:
 
 private:
     // FmXChangeListener
-    virtual void _propertyChanged(const css::beans::PropertyChangeEvent& evt) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void _propertyChanged(const css::beans::PropertyChangeEvent& evt) override;
     // OContainerListener
-    virtual void _elementInserted( const css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual void _elementRemoved( const  css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual void _elementReplaced( const css::container::ContainerEvent& _rEvent ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void _elementInserted( const css::container::ContainerEvent& _rEvent ) override;
+    virtual void _elementRemoved( const  css::container::ContainerEvent& _rEvent ) override;
+    virtual void _elementReplaced( const css::container::ContainerEvent& _rEvent ) override;
 };
 
 } // rptui

@@ -23,7 +23,7 @@
 
 #include "lbseldlg.hxx"
 #include "scresid.hxx"
-#include "miscdlgs.hrc"
+#include "scres.hrc"
 
 ScSelEntryDlg::ScSelEntryDlg(vcl::Window*  pParent, const std::vector<OUString> &rEntryList)
     : ModalDialog(pParent, "SelectRangeDialog", "modules/scalc/ui/selectrange.ui")
@@ -58,7 +58,7 @@ OUString ScSelEntryDlg::GetSelectEntry() const
     return m_pLb->GetSelectEntry();
 }
 
-IMPL_LINK_NOARG_TYPED(ScSelEntryDlg, DblClkHdl, ListBox&, void)
+IMPL_LINK_NOARG(ScSelEntryDlg, DblClkHdl, ListBox&, void)
 {
     EndDialog( RET_OK );
 }

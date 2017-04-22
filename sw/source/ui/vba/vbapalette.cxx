@@ -20,6 +20,7 @@
 #include "vbapalette.hxx"
 #include <cppuhelper/implbase.hxx>
 #include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <ooo/vba/word/WdColor.hpp>
 #include <ooo/vba/word/WdColorIndex.hpp>
 #include <sal/macros.h>
@@ -57,24 +58,24 @@ public:
    DefaultPalette(){}
 
     // Methods XIndexAccess
-    virtual ::sal_Int32 SAL_CALL getCount() throw (uno::RuntimeException, std::exception) override
+    virtual ::sal_Int32 SAL_CALL getCount() override
     {
         return SAL_N_ELEMENTS(ColorTable);
     }
 
-    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
+    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) override
     {
         if ( Index < 0 || Index >= getCount() )
             throw lang::IndexOutOfBoundsException();
         return uno::makeAny( sal_Int32( ColorTable[ Index ] ) );
     }
 
-    // Methods XElementAcess
-    virtual uno::Type SAL_CALL getElementType() throw (uno::RuntimeException, std::exception) override
+    // Methods XElementAccess
+    virtual uno::Type SAL_CALL getElementType() override
     {
         return ::cppu::UnoType<sal_Int32>::get();
     }
-    virtual sal_Bool SAL_CALL hasElements() throw (uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL hasElements() override
     {
         return true;
     }

@@ -19,7 +19,6 @@
 
 #include <svx/svdpage.hxx>
 #include "svx/globl3d.hxx"
-#include <svx/polysc3d.hxx>
 #include <svx/cube3d.hxx>
 #include <svx/sphere3d.hxx>
 #include <svx/extrud3d.hxx>
@@ -27,6 +26,7 @@
 #include <svx/polygn3d.hxx>
 #include "svx/objfac3d.hxx"
 #include <svx/svdobj.hxx>
+#include <svx/scene3d.hxx>
 
 static bool bInit = false;
 
@@ -45,40 +45,34 @@ E3dObjFactory::~E3dObjFactory()
 
 // Generate chart internal objects
 
-IMPL_STATIC_LINK_TYPED( E3dObjFactory, MakeObject, SdrObjFactory*, pObjFactory, void )
+IMPL_STATIC_LINK( E3dObjFactory, MakeObject, SdrObjCreatorParams, aParams, SdrObject* )
 {
-    if ( pObjFactory->nInventor == E3dInventor )
+    if ( aParams.nInventor == SdrInventor::E3d )
     {
-        switch ( pObjFactory->nIdentifier )
+        switch ( aParams.nObjIdentifier )
         {
-            case E3D_POLYSCENE_ID:
-                pObjFactory->pNewObj = new E3dPolyScene();
-                break;
+            case E3D_SCENE_ID:
+                return new E3dScene();
             case E3D_POLYGONOBJ_ID  :
-                pObjFactory->pNewObj = new E3dPolygonObj();
-                break;
+                return new E3dPolygonObj();
             case E3D_CUBEOBJ_ID :
-                pObjFactory->pNewObj = new E3dCubeObj();
-                break;
+                return new E3dCubeObj();
             case E3D_SPHEREOBJ_ID:
                 // Gets the dummy constructor, as this is only called when
                 // loading documents. The actual number of segments is however
                 // determined only after loading the members. This will result
                 // in that the first sphere will be immediately destroyed,
                 // although it was never used.
-                pObjFactory->pNewObj = new E3dSphereObj(123);
-                break;
+                return new E3dSphereObj(123);
             case E3D_EXTRUDEOBJ_ID:
-                pObjFactory->pNewObj = new E3dExtrudeObj();
-                break;
+                return new E3dExtrudeObj();
             case E3D_LATHEOBJ_ID:
-                pObjFactory->pNewObj = new E3dLatheObj();
-                break;
+                return new E3dLatheObj();
             case E3D_COMPOUNDOBJ_ID:
-                pObjFactory->pNewObj = new E3dCompoundObject();
-                break;
+                return new E3dCompoundObject();
         }
     }
+    return nullptr;
 }
 
 

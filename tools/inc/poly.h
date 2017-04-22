@@ -20,6 +20,7 @@
 #define INCLUDED_TOOLS_INC_POLY_H
 
 #include <sal/types.h>
+#include <tools/poly.hxx>
 
 class Point;
 
@@ -27,8 +28,8 @@ class SAL_WARN_UNUSED ImplPolygonData
 {
 public:
     Point*          mpPointAry;
-    sal_uInt8*           mpFlagAry;
-    sal_uInt16          mnPoints;
+    PolyFlags*      mpFlagAry;
+    sal_uInt16      mnPoints;
     sal_uInt32      mnRefCount;
 };
 
@@ -36,13 +37,13 @@ class SAL_WARN_UNUSED ImplPolygon  : public ImplPolygonData
 {
 public:
                     ImplPolygon( sal_uInt16 nInitSize, bool bFlags = false );
-                    ImplPolygon( sal_uInt16 nPoints, const Point* pPtAry, const sal_uInt8* pInitFlags = NULL );
+                    ImplPolygon( sal_uInt16 nPoints, const Point* pPtAry, const PolyFlags* pInitFlags );
                     ImplPolygon( const ImplPolygon& rImplPoly );
                     ~ImplPolygon();
 
     void            ImplSetSize( sal_uInt16 nSize, bool bResize = true );
     void            ImplCreateFlagArray();
-    bool            ImplSplit( sal_uInt16 nPos, sal_uInt16 nSpace, ImplPolygon* pInitPoly = NULL );
+    bool            ImplSplit( sal_uInt16 nPos, sal_uInt16 nSpace, ImplPolygon const * pInitPoly = nullptr );
 };
 
 #define MAX_POLYGONS        ((sal_uInt16)0x3FF0)
@@ -61,7 +62,7 @@ public:
     sal_uInt16          mnResize;
 
                     ImplPolyPolygon( sal_uInt16 nInitSize, sal_uInt16 nResize )
-                        { mpPolyAry = NULL; mnCount = 0; mnRefCount = 1;
+                        { mpPolyAry = nullptr; mnCount = 0; mnRefCount = 1;
                           mnSize = nInitSize; mnResize = nResize; }
                     ImplPolyPolygon( sal_uInt16 nInitSize );
                     ImplPolyPolygon( const ImplPolyPolygon& rImplPolyPoly );

@@ -24,12 +24,13 @@
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/rendering/XColorSpace.hpp>
 #include <basegfx/numeric/ftools.hxx>
+#include <basegfx/range/b2irectangle.hxx>
 
 #include <vcl/dllapi.h>
 
 class Point;
 class Size;
-class Rectangle;
+namespace tools { class Rectangle; }
 namespace tools {
     class Polygon;
     class PolyPolygon;
@@ -43,22 +44,16 @@ namespace basegfx
     class B2DVector;
     class B2DPoint;
     class B2DRange;
-    class B2IVector;
     class B2IPoint;
     class B2IRange;
-    class B2DPolygon;
-    class B2DPolyPolygon;
 }
 
 namespace com { namespace sun { namespace star { namespace geometry
 {
-    struct RealPoint2D;
     struct RealSize2D;
-    struct RealRectangle2D;
     struct IntegerPoint2D;
     struct IntegerSize2D;
     struct IntegerRectangle2D;
-    struct RealBezierSegment2D;
 } } } }
 
 namespace com { namespace sun { namespace star { namespace rendering
@@ -67,7 +62,6 @@ namespace com { namespace sun { namespace star { namespace rendering
     class  XBitmap;
     class  XIntegerBitmap;
     class  XIntegerReadOnlyBitmap;
-    class  XPolyPolygon2D;
 } } } }
 
 namespace vcl
@@ -158,20 +152,22 @@ namespace vcl
 
         Size                               VCL_DLLPUBLIC sizeFromIntegerSize2D( const css::geometry::IntegerSize2D& );
         Point                              VCL_DLLPUBLIC pointFromIntegerPoint2D( const css::geometry::IntegerPoint2D& );
-        Rectangle                          VCL_DLLPUBLIC rectangleFromIntegerRectangle2D( const css::geometry::IntegerRectangle2D& );
+        tools::Rectangle                          VCL_DLLPUBLIC rectangleFromIntegerRectangle2D( const css::geometry::IntegerRectangle2D& );
 
         // basegfx::B2D
         Size                        VCL_DLLPUBLIC sizeFromB2DSize( const basegfx::B2DVector& );
         Point                       VCL_DLLPUBLIC pointFromB2DPoint( const basegfx::B2DPoint& );
-        Rectangle                   VCL_DLLPUBLIC rectangleFromB2DRectangle( const basegfx::B2DRange& );
+        tools::Rectangle                   VCL_DLLPUBLIC rectangleFromB2DRectangle( const basegfx::B2DRange& );
 
         basegfx::B2DVector          VCL_DLLPUBLIC b2DSizeFromSize( const Size& );
         basegfx::B2DPoint           VCL_DLLPUBLIC b2DPointFromPoint( const Point& );
-        basegfx::B2DRange           VCL_DLLPUBLIC b2DRectangleFromRectangle( const Rectangle& );
+        basegfx::B2DRange           VCL_DLLPUBLIC b2DRectangleFromRectangle( const tools::Rectangle& );
 
         // basegfx::B2I
         Point                       VCL_DLLPUBLIC pointFromB2IPoint( const basegfx::B2IPoint& );
-        Rectangle                   VCL_DLLPUBLIC rectangleFromB2IRectangle( const basegfx::B2IRange& );
+        tools::Rectangle                   VCL_DLLPUBLIC rectangleFromB2IRectangle( const basegfx::B2IRange& );
+        basegfx::B2IPoint           VCL_DLLPUBLIC b2IPointFromPoint(const Point&);
+        basegfx::B2IRectangle       VCL_DLLPUBLIC b2IRectangleFromRectangle(const tools::Rectangle&);
     }
 }
 

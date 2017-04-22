@@ -36,14 +36,14 @@ class AbortContinuation:
     public cppu::WeakImplHelper<css::task::XInteractionAbort>
 {
 public:
-    inline AbortContinuation() {}
+    AbortContinuation() {}
     AbortContinuation(const AbortContinuation&) = delete;
     AbortContinuation& operator=(const AbortContinuation&)= delete;
 
-    virtual void SAL_CALL select() throw (css::uno::RuntimeException, std::exception) override {}
+    virtual void SAL_CALL select() override {}
 
 private:
-    virtual inline ~AbortContinuation() {}
+    virtual ~AbortContinuation() override {}
 };
 
 }
@@ -52,23 +52,22 @@ class InteractionRequest::RetryContinuation:
     public cppu::WeakImplHelper<css::task::XInteractionRetry>
 {
 public:
-    inline RetryContinuation(): m_bSelected(false) {}
+    RetryContinuation(): m_bSelected(false) {}
     RetryContinuation(const RetryContinuation&) = delete;
     RetryContinuation& operator=(const RetryContinuation&) = delete;
 
-    virtual void SAL_CALL select() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL select() override;
 
     bool isSelected() const;
 
 private:
-    virtual inline ~RetryContinuation() {}
+    virtual ~RetryContinuation() override {}
 
     mutable osl::Mutex m_aMutex;
     bool m_bSelected;
 };
 
 void SAL_CALL InteractionRequest::RetryContinuation::select()
-    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard(m_aMutex);
     m_bSelected = true;
@@ -90,14 +89,12 @@ InteractionRequest::InteractionRequest(css::uno::Any const & rRequest):
 }
 
 css::uno::Any SAL_CALL InteractionRequest::getRequest()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return m_aRequest;
 }
 
 css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > >
 SAL_CALL InteractionRequest::getContinuations()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return m_aContinuations;
 }

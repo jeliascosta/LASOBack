@@ -28,7 +28,10 @@
 #include "cppuhelper/unourl.hxx"
 #include "rtl/malformeduriexception.hxx"
 
+#include <com/sun/star/connection/AlreadyAcceptingException.hpp>
+#include <com/sun/star/connection/ConnectionSetupException.hpp>
 #include <com/sun/star/connection/XAcceptor.hpp>
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 
 #include "services.hxx"
@@ -50,20 +53,16 @@ namespace io_acceptor
     {
     public:
         explicit OAcceptor(const Reference< XComponentContext > & xCtx);
-        virtual ~OAcceptor();
+        virtual ~OAcceptor() override;
     public:
         // Methods
-        virtual Reference< XConnection > SAL_CALL accept( const OUString& sConnectionDescription )
-            throw( AlreadyAcceptingException,
-                   ConnectionSetupException,
-                   IllegalArgumentException,
-                   RuntimeException, std::exception) override;
-        virtual void SAL_CALL stopAccepting(  ) throw( RuntimeException, std::exception) override;
+        virtual Reference< XConnection > SAL_CALL accept( const OUString& sConnectionDescription ) override;
+        virtual void SAL_CALL stopAccepting(  ) override;
 
     public: // XServiceInfo
-                virtual OUString              SAL_CALL getImplementationName() throw(std::exception) override;
-                virtual Sequence< OUString >  SAL_CALL getSupportedServiceNames() throw(std::exception) override;
-                virtual sal_Bool              SAL_CALL supportsService(const OUString& ServiceName) throw(std::exception) override;
+                virtual OUString              SAL_CALL getImplementationName() override;
+                virtual Sequence< OUString >  SAL_CALL getSupportedServiceNames() override;
+                virtual sal_Bool              SAL_CALL supportsService(const OUString& ServiceName) override;
 
     private:
         PipeAcceptor *m_pPipe;
@@ -100,7 +99,8 @@ namespace io_acceptor
 
     struct BeingInAccept
     {
-        BeingInAccept( bool *pFlag,const OUString & sConnectionDescription  ) throw( AlreadyAcceptingException)
+        /// @throws AlreadyAcceptingException
+        BeingInAccept( bool *pFlag,const OUString & sConnectionDescription  )
             : m_pFlag( pFlag )
             {
                   if( *m_pFlag )
@@ -119,16 +119,8 @@ namespace io_acceptor
     };
 
     Reference< XConnection > OAcceptor::accept( const OUString &sConnectionDescription )
-        throw( AlreadyAcceptingException,
-               ConnectionSetupException,
-               IllegalArgumentException,
-               RuntimeException, std::exception)
     {
-        OSL_TRACE(
-            "acceptor %s\n",
-            OUStringToOString(
-                sConnectionDescription, RTL_TEXTENCODING_ASCII_US).getStr());
-        // if there is a thread alread accepting in this object, throw an exception.
+        // if there is a thread already accepting in this object, throw an exception.
         struct BeingInAccept guard( &m_bInAccept, sConnectionDescription );
 
         Reference< XConnection > r;
@@ -205,11 +197,6 @@ namespace io_acceptor
                 else
                 {
                     OUString delegatee = "com.sun.star.connection.Acceptor." + aDesc.getName();
-
-                    OSL_TRACE(
-                        "trying to get service %s\n",
-                        OUStringToOString(
-                            delegatee, RTL_TEXTENCODING_ASCII_US).getStr());
                     _xAcceptor.set(_xSMgr->createInstanceWithContext(delegatee, _xCtx), UNO_QUERY);
 
                     if(!_xAcceptor.is())
@@ -247,7 +234,7 @@ namespace io_acceptor
         return r;
     }
 
-    void SAL_CALL OAcceptor::stopAccepting(  ) throw( RuntimeException, std::exception)
+    void SAL_CALL OAcceptor::stopAccepting(  )
     {
         MutexGuard guard( m_mutex );
 
@@ -282,17 +269,17 @@ namespace io_acceptor
         return seqNames;
     }
 
-        OUString OAcceptor::getImplementationName() throw(std::exception)
+        OUString OAcceptor::getImplementationName()
     {
         return acceptor_getImplementationName();
     }
 
-        sal_Bool OAcceptor::supportsService(const OUString& ServiceName) throw(std::exception)
+        sal_Bool OAcceptor::supportsService(const OUString& ServiceName)
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-        Sequence< OUString > OAcceptor::getSupportedServiceNames() throw(std::exception)
+        Sequence< OUString > OAcceptor::getSupportedServiceNames()
     {
         return acceptor_getSupportedServiceNames();
     }

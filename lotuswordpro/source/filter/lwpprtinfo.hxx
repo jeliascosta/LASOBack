@@ -71,10 +71,8 @@ class LwpPrinterInfo
 {
 public:
     explicit LwpPrinterInfo(LwpObjectStream* pStrm);
-    ~LwpPrinterInfo(){}
 
 public:
-    static void Read(LwpObjectStream* pStrm);
     static void Skip(LwpObjectStream *pStrm);
 };
 #endif

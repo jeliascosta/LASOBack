@@ -99,11 +99,6 @@ bool RscId::operator > ( const RscId& rRscId ) const
     return GetNumber() > rRscId.GetNumber();
 }
 
-RscId::operator sal_Int32() const
-{
-    return GetNumber();
-}
-
 OString RscId::GetName() const
 {
     OStringBuffer aStr;
@@ -119,8 +114,8 @@ OString RscId::GetName() const
     return aStr.makeStringAndClear();
 }
 
-RscDefine::RscDefine( sal_uLong lKey, const OString& rDefName, sal_Int32 lDefId )
-    : StringNode( rDefName )
+RscDefine::RscDefine( RscFileTab::Index lKey, const OString& rDefName, sal_Int32 lDefId )
+    : m_aName( rDefName )
 {
     nRefCount = 0;
     lFileKey  = lKey;
@@ -128,10 +123,9 @@ RscDefine::RscDefine( sal_uLong lKey, const OString& rDefName, sal_Int32 lDefId 
     pExp      = nullptr;
 }
 
-RscDefine::RscDefine( sal_uLong lKey, const OString& rDefName,
+RscDefine::RscDefine( RscFileTab::Index lKey, const OString& rDefName,
                       RscExpression * pExpression  )
-    : StringNode( rDefName )
-    , lId(0)
+    : lId(0), m_aName( rDefName )
 {
     nRefCount = 0;
     lFileKey  = lKey;
@@ -159,7 +153,7 @@ void RscDefine::DefineToNumber()
 {
     delete pExp;
     pExp = nullptr;
-    SetName(OString::number(lId));
+    m_aName = OString::number(lId);
 }
 
 void RscDefine::Evaluate()
@@ -168,19 +162,37 @@ void RscDefine::Evaluate()
         pExp->Evaluate( &lId );
 }
 
-RscDefine * RscDefine::Search( const char * pStr )
+RscDefine * RscDefine::Search( const char * pSearch ) const
 {
-    return static_cast<RscDefine *>(StringNode::Search( pStr ));
+    return static_cast<RscDefine *>(NameNode::Search( static_cast<const void *>(pSearch) ));
 }
 
-OString RscDefine::GetMacro()
+COMPARE RscDefine::Compare( const NameNode * pSearch ) const
 {
-    if( pExp )
-        return pExp->GetMacro();
-    return OString::number(lId);
+    int nCmp = strcmp( m_aName.getStr(),
+                       static_cast<const RscDefine *>(pSearch)->m_aName.getStr() );
+    if( nCmp < 0 )
+        return LESS;
+    else if( nCmp > 0 )
+        return GREATER;
+    else
+        return EQUAL;
 }
 
-RscDefine * RscDefineList::New( sal_uLong lFileKey, const OString& rDefName,
+// pSearch is a pointer to const char *
+COMPARE RscDefine::Compare( const void * pSearch ) const
+{
+    int nCmp = strcmp( m_aName.getStr(), static_cast<const char *>(pSearch) );
+
+    if( nCmp < 0 )
+        return LESS;
+    else if( nCmp > 0 )
+        return GREATER;
+    else
+        return EQUAL;
+}
+
+RscDefine * RscDefineList::New( RscFileTab::Index lFileKey, const OString& rDefName,
                                 sal_Int32 lDefId, size_t lPos )
 {
     RscDefine * pDef;
@@ -200,7 +212,7 @@ RscDefine * RscDefineList::New( sal_uLong lFileKey, const OString& rDefName,
     return pDef;
 }
 
-RscDefine * RscDefineList::New( sal_uLong lFileKey, const OString& rDefName,
+RscDefine * RscDefineList::New( RscFileTab::Index lFileKey, const OString& rDefName,
                                 RscExpression * pExpression, size_t lPos )
 {
     RscDefine * pDef;
@@ -308,7 +320,7 @@ bool RscExpression::Evaluate( sal_Int32 * plValue )
             *plValue = lLeft << lRight;
         else
         {
-            if( 0L == lRight )
+            if( 0 == lRight )
                 return false;
             *plValue = lLeft / lRight;
         }
@@ -360,7 +372,6 @@ RscFile::RscFile()
 {
     bLoaded  = false;
     bIncFile = false;
-    bDirty   = false;
     bScanned = false;
 }
 
@@ -375,7 +386,7 @@ RscFile::~RscFile()
     while( aDefLst.Remove() ) ;
 }
 
-bool RscFile::Depend( sal_uLong lDepend, sal_uLong lFree )
+bool RscFile::Depend( RscFileTab::Index lDepend, RscFileTab::Index lFree )
 {
     for ( size_t i = aDepLst.size(); i > 0; )
     {
@@ -394,7 +405,7 @@ bool RscFile::Depend( sal_uLong lDepend, sal_uLong lFree )
     return true;
 }
 
-void RscFile::InsertDependFile( sal_uLong lIncFile, size_t lPos )
+void RscFile::InsertDependFile( RscFileTab::Index lIncFile )
 {
     for ( size_t i = 0, n = aDepLst.size(); i < n; ++i )
     {
@@ -403,18 +414,7 @@ void RscFile::InsertDependFile( sal_uLong lIncFile, size_t lPos )
             return;
     }
 
-    // current pointer points to last element
-    if( lPos >= aDepLst.size() )
-    { // the last element must always stay the last one
-        // put dependency before the last position
-        aDepLst.push_back( new RscDepend( lIncFile ) );
-    }
-    else
-    {
-        RscDependList::iterator it = aDepLst.begin();
-        ::std::advance( it, lPos );
-        aDepLst.insert( it, new RscDepend( lIncFile ) );
-    }
+    aDepLst.push_back( new RscDepend( lIncFile ) );
 }
 
 RscDefTree::~RscDefTree()
@@ -567,7 +567,7 @@ bool RscFileTab::TestDef( Index lFileKey, size_t lPos,
 }
 
 RscDefine * RscFileTab::NewDef( Index lFileKey, const OString& rDefName,
-                                sal_Int32 lId, sal_uLong lPos )
+                                sal_Int32 lId )
 {
     RscDefine * pDef = FindDef( rDefName );
 
@@ -577,7 +577,7 @@ RscDefine * RscFileTab::NewDef( Index lFileKey, const OString& rDefName,
 
         if( pFile )
         {
-            pDef = pFile->aDefLst.New( lFileKey, rDefName, lId, lPos );
+            pDef = pFile->aDefLst.New( lFileKey, rDefName, lId, ULONG_MAX );
             aDefTree.Insert( pDef );
         }
     }
@@ -588,20 +588,20 @@ RscDefine * RscFileTab::NewDef( Index lFileKey, const OString& rDefName,
 }
 
 RscDefine * RscFileTab::NewDef( Index lFileKey, const OString& rDefName,
-                                RscExpression * pExp, sal_uLong lPos )
+                                RscExpression * pExp )
 {
     RscDefine * pDef = FindDef( rDefName );
 
     if( !pDef )
     {
         // are macros in expressions defined?
-        if( TestDef( lFileKey, lPos, pExp ) )
+        if( TestDef( lFileKey, ULONG_MAX, pExp ) )
         {
             RscFile * pFile = GetFile( lFileKey );
 
             if( pFile )
             {
-                pDef = pFile->aDefLst.New( lFileKey, rDefName, pExp, lPos );
+                pDef = pFile->aDefLst.New( lFileKey, rDefName, pExp, ULONG_MAX );
                 aDefTree.Insert( pDef );
             }
         }
@@ -641,7 +641,7 @@ RscFileTab::Index RscFileTab::NewCodeFile( const OString& rName )
         pFName->aFileName = rName;
         pFName->aPathName = rName;
         lKey = Insert( pFName );
-        pFName->InsertDependFile( lKey, ULONG_MAX );
+        pFName->InsertDependFile( lKey );
     }
     return lKey;
 }
@@ -657,7 +657,7 @@ RscFileTab::Index RscFileTab::NewIncFile(const OString& rName,
         pFName->aPathName = rPath;
         pFName->SetIncFlag();
         lKey = Insert( pFName );
-        pFName->InsertDependFile( lKey, ULONG_MAX );
+        pFName->InsertDependFile( lKey );
     }
     return lKey;
 }

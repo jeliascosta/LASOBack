@@ -99,9 +99,9 @@ public:
     {
         Py_DECREF(used);
     }
-    int setUsed(PyObject *key)
+    void setUsed(PyObject *key)
     {
-        return PyDict_SetItem(used, key, Py_True);
+        PyDict_SetItem(used, key, Py_True);
     }
     void setInitialised(const OUString& key, sal_Int32 pos = -1)
     {
@@ -137,13 +137,14 @@ public:
     }
 };
 
+/// @throws RuntimeException
 void fillStruct(
     const Reference< XInvocation2 > &inv,
     typelib_CompoundTypeDescription *pCompType,
     PyObject *initializer,
     PyObject *kwinitializer,
     fillStructState &state,
-    const Runtime &runtime) throw ( RuntimeException )
+    const Runtime &runtime)
 {
     if( pCompType->pBaseTypeDescription )
         fillStruct( inv, pCompType->pBaseTypeDescription, initializer, kwinitializer, state, runtime );
@@ -268,7 +269,7 @@ static PyObject* getComponentContext(
             iniFileName.append( SAL_CONFIGFILE( "pyuno" ) );
             iniFile = iniFileName.makeStringAndClear();
             osl::DirectoryItem item;
-            if( osl::DirectoryItem::get( iniFile, item ) == item.E_None )
+            if( osl::DirectoryItem::get( iniFile, item ) == osl::FileBase::E_None )
             {
                 // in case pyuno.ini exists, use this file for bootstrapping
                 PyThreadDetach antiguard;
@@ -415,13 +416,10 @@ static PyObject *createUnoStructHelper(
                             fillStruct( me->members->xInvocation, pCompType, initializer, keywordArgs, state, runtime );
                         if( state.getCntConsumed() != PyTuple_Size(initializer) )
                         {
-                            OUStringBuffer buf;
-                            buf.append( "pyuno._createUnoStructHelper: too many ");
-                            buf.append( "elements in the initializer list, expected " );
-                            buf.append( state.getCntConsumed() );
-                            buf.append( ", got " );
-                            buf.append( (sal_Int32) PyTuple_Size(initializer) );
-                            throw RuntimeException( buf.makeStringAndClear());
+                            throw RuntimeException( "pyuno._createUnoStructHelper: too many "
+                                "elements in the initializer list, expected " +
+                                OUString::number(state.getCntConsumed()) + ", got " +
+                                OUString::number( PyTuple_Size(initializer) ) );
                         }
                         ret = PyRef( PyTuple_Pack(2, returnCandidate.get(), state.getUsed()), SAL_NO_ACQUIRE);
                     }
@@ -517,10 +515,7 @@ static PyObject *getConstantByName(
                       typeName)
                   >>= td))
             {
-                OUStringBuffer buf;
-                buf.append( "pyuno.getConstantByName: " ).append( typeName );
-                buf.append( "is not a constant" );
-                throw RuntimeException(buf.makeStringAndClear() );
+                throw RuntimeException( "pyuno.getConstantByName: " + typeName + "is not a constant" );
             }
             PyRef constant = runtime.any2PyObject( td->getConstantValue() );
             ret = constant.getAcquired();

@@ -97,62 +97,12 @@ enum class EmfPlusRecordType
 {
     Header                     = 0x4001,
     EndOfFile                  = 0x4002,
-    Comment                    = 0x4003,
     GetDC                      = 0x4004,
-    MultiFormatStart           = 0x4005,
-    MultiFormatSection         = 0x4006,
-    MultiFormatEnd             = 0x4007,
-    Object                     = 0x4008,
-    Clear                      = 0x4009,
-    FillRects                  = 0x400A,
-    DrawRects                  = 0x400B,
     FillPolygon                = 0x400C,
-    DrawLines                  = 0x400D,
-    FillEllipse                = 0x400E,
-    DrawEllipse                = 0x400F,
-    FillPie                    = 0x4010,
-    DrawPie                    = 0x4011,
-    DrawArc                    = 0x4012,
-    FillRegion                 = 0x4013,
-    FillPath                   = 0x4014,
-    DrawPath                   = 0x4015,
-    FillClosedCurve            = 0x4016,
-    DrawClosedCurve            = 0x4017,
-    DrawCurve                  = 0x4018,
-    DrawBeziers                = 0x4019,
-    DrawImage                  = 0x401A,
-    DrawImagePoints            = 0x401B,
-    Drawstring                 = 0x401C,
-    SetRenderingOrigin         = 0x401D,
     SetAntiAliasMode           = 0x401E,
-    SetTextRenderingHint       = 0x401F,
-    SetTextContrast            = 0x4020,
     SetInterpolationMode       = 0x4021,
     SetPixelOffsetMode         = 0x4022,
-    SetCompositingMode         = 0x4023,
-    SetCompositingQuality      = 0x4024,
-    Save                       = 0x4025,
-    Restore                    = 0x4026,
-    BeginContainer             = 0x4027,
-    BeginContainerNoParams     = 0x4028,
-    EndContainer               = 0x4029,
-    SetWorldTransform          = 0x402A,
-    ResetWorldTransform        = 0x402B,
-    MultiplyWorldTransform     = 0x402C,
-    TranslateWorldTransform    = 0x402D,
-    ScaleWorldTransform        = 0x402E,
-    RotateWorldTransform       = 0x402F,
-    SetPageTransform           = 0x4030,
-    ResetClip                  = 0x4031,
-    SetClipRect                = 0x4032,
-    SetClipPath                = 0x4033,
-    SetClipRegion              = 0x4034,
-    OffsetClip                 = 0x4035,
-    DrawDriverstring           = 0x4036,
-    StrokeFillPath             = 0x4037,
-    SerializableObject         = 0x4038,
-    SetTSGraphics              = 0x4039,
-    SetTSClip                  = 0x403A
+    SetCompositingQuality      = 0x4024
 };
 
 void EMFWriter::ImplBeginCommentRecord( sal_Int32 nCommentType )
@@ -176,7 +126,7 @@ void EMFWriter::ImplEndCommentRecord()
 
 void EMFWriter::ImplBeginPlusRecord( EmfPlusRecordType nType, sal_uInt16 nFlags )
 {
-    DBG_ASSERT( !mbRecordPlusOpen, "Another EMF+ record is already opened!" );
+    SAL_WARN_IF( mbRecordPlusOpen, "vcl", "Another EMF+ record is already opened!" );
 
     if( !mbRecordPlusOpen )
     {
@@ -190,7 +140,7 @@ void EMFWriter::ImplBeginPlusRecord( EmfPlusRecordType nType, sal_uInt16 nFlags 
 
 void EMFWriter::ImplEndPlusRecord()
 {
-    DBG_ASSERT( mbRecordPlusOpen, "EMF+ Record was not opened!" );
+    SAL_WARN_IF( !mbRecordPlusOpen, "vcl", "EMF+ Record was not opened!" );
 
     if( mbRecordPlusOpen )
     {
@@ -291,7 +241,7 @@ bool EMFWriter::WriteEMF(const GDIMetaFile& rMtf)
     maVDev->EnableOutput( false );
     maVDev->SetMapMode( rMtf.GetPrefMapMode() );
     // don't work with pixel as destination map mode -> higher resolution preferable
-    maDestMapMode.SetMapUnit( MAP_100TH_MM );
+    maDestMapMode.SetMapUnit( MapUnit::Map100thMM );
     mHandlesUsed = std::vector<bool>(MAXHANDLES, false);
     mnHandleCount = mnRecordCount = mnRecordPos = mnRecordPlusPos = 0;
     mbRecordOpen = mbRecordPlusOpen = false;
@@ -300,7 +250,7 @@ bool EMFWriter::WriteEMF(const GDIMetaFile& rMtf)
     mnHorTextAlign = 0;
 
     const Size aMtfSizePix( maVDev->LogicToPixel( rMtf.GetPrefSize(), rMtf.GetPrefMapMode() ) );
-    const Size aMtfSizeLog( OutputDevice::LogicToLogic( rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MAP_100TH_MM ) );
+    const Size aMtfSizeLog( OutputDevice::LogicToLogic( rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MapUnit::Map100thMM ) );
 
     // seek over header
     // use [MS-EMF 2.2.11] HeaderExtension2 Object, otherwise resulting EMF cannot be converted with GetWinMetaFileBits()
@@ -332,7 +282,7 @@ bool EMFWriter::WriteEMF(const GDIMetaFile& rMtf)
     m_rStm.WriteInt32( 0 ).WriteInt32( 0 );
     ImplEndRecord();
 
-    ImplWriteRasterOp( ROP_OVERPAINT );
+    ImplWriteRasterOp( RasterOp::OverPaint );
 
     ImplBeginRecord( WIN_EMR_SETBKMODE );
     m_rStm.WriteUInt32( 1 ); // TRANSPARENT
@@ -383,19 +333,19 @@ sal_uLong EMFWriter::ImplAcquireHandle()
         }
     }
 
-    DBG_ASSERT( nHandle != HANDLE_INVALID, "No more handles available" );
+    SAL_WARN_IF( nHandle == HANDLE_INVALID, "vcl", "No more handles available" );
     return( nHandle != HANDLE_INVALID ? nHandle + 1 : HANDLE_INVALID );
 }
 
 void EMFWriter::ImplReleaseHandle( sal_uLong nHandle )
 {
-    DBG_ASSERT( nHandle && ( nHandle < mHandlesUsed.size() ), "Handle out of range" );
+    SAL_WARN_IF( !nHandle || ( nHandle >= mHandlesUsed.size() ), "vcl", "Handle out of range" );
     mHandlesUsed[ nHandle - 1 ] = false;
 }
 
 void EMFWriter::ImplBeginRecord( sal_uInt32 nType )
 {
-    DBG_ASSERT( !mbRecordOpen, "Another record is already opened!" );
+    SAL_WARN_IF( mbRecordOpen, "vcl", "Another record is already opened!" );
 
     if( !mbRecordOpen )
     {
@@ -409,7 +359,7 @@ void EMFWriter::ImplBeginRecord( sal_uInt32 nType )
 
 void EMFWriter::ImplEndRecord()
 {
-    DBG_ASSERT( mbRecordOpen, "Record was not opened!" );
+    SAL_WARN_IF( !mbRecordOpen, "vcl", "Record was not opened!" );
 
     if( mbRecordOpen )
     {
@@ -624,9 +574,9 @@ void EMFWriter::ImplWriteRasterOp( RasterOp eRop )
 
     switch( eRop )
     {
-        case ROP_INVERT: nROP2 = 6; break;
-        case ROP_XOR:    nROP2 = 7; break;
-        default:         nROP2 = 13;break;
+        case RasterOp::Invert: nROP2 = 6; break;
+        case RasterOp::Xor:    nROP2 = 7; break;
+        default:               nROP2 = 13;break;
     }
 
     ImplBeginRecord( WIN_EMR_SETROP2 );
@@ -652,9 +602,9 @@ void EMFWriter::ImplWriteSize( const Size& rSize)
      m_rStm.WriteInt32( aSize.Width() ).WriteInt32( aSize.Height() );
 }
 
-void EMFWriter::ImplWriteRect( const Rectangle& rRect )
+void EMFWriter::ImplWriteRect( const tools::Rectangle& rRect )
 {
-    const Rectangle aRect( OutputDevice::LogicToLogic ( rRect, maVDev->GetMapMode(), maDestMapMode ));
+    const tools::Rectangle aRect( OutputDevice::LogicToLogic ( rRect, maVDev->GetMapMode(), maDestMapMode ));
     m_rStm
        .WriteInt32( aRect.Left() )
        .WriteInt32( aRect.Top() )
@@ -763,7 +713,7 @@ void EMFWriter::ImplWritePath( const tools::PolyPolygon& rPolyPoly, bool bClosed
 
             sal_uInt16 nBezPoints = 0;
 
-            while ( ( ( nBezPoints + n + 2 ) < rPoly.GetSize() ) && ( rPoly.GetFlags( nBezPoints + n ) == POLY_CONTROL ) )
+            while ( ( ( nBezPoints + n + 2 ) < rPoly.GetSize() ) && ( rPoly.GetFlags( nBezPoints + n ) == PolyFlags::Control ) )
                 nBezPoints += 3;
 
             if ( nBezPoints )
@@ -783,7 +733,7 @@ void EMFWriter::ImplWritePath( const tools::PolyPolygon& rPolyPoly, bool bClosed
             else
             {
                 sal_uInt16 nPoints = 1;
-                while( ( nPoints + n ) < rPoly.GetSize() && ( rPoly.GetFlags( nPoints + n ) != POLY_CONTROL ) )
+                while( ( nPoints + n ) < rPoly.GetSize() && ( rPoly.GetFlags( nPoints + n ) != PolyFlags::Control ) )
                     nPoints++;
 
                 if ( nPoints > 1 )
@@ -830,7 +780,7 @@ void EMFWriter::ImplWriteBmpRecord( const Bitmap& rBmp, const Point& rPt,
         const Size      aBmpSizePixel( rBmp.GetSizePixel() );
 
         ImplBeginRecord( WIN_EMR_STRETCHDIBITS );
-        ImplWriteRect( Rectangle( rPt, rSz ) );
+        ImplWriteRect( tools::Rectangle( rPt, rSz ) );
         ImplWritePoint( rPt );
         m_rStm.WriteInt32( 0 ).WriteInt32( 0 ).WriteInt32( aBmpSizePixel.Width() ).WriteInt32( aBmpSizePixel.Height() );
 
@@ -838,7 +788,7 @@ void EMFWriter::ImplWriteBmpRecord( const Bitmap& rBmp, const Point& rPt,
         const sal_uLong nOffPos = m_rStm.Tell();
         m_rStm.SeekRel( 16 );
 
-        m_rStm.WriteUInt32( 0 ).WriteInt32( ( ROP_XOR == maVDev->GetRasterOp() && WIN_SRCCOPY == nROP ) ? WIN_SRCINVERT : nROP );
+        m_rStm.WriteUInt32( 0 ).WriteInt32( ( RasterOp::Xor == maVDev->GetRasterOp() && WIN_SRCCOPY == nROP ) ? WIN_SRCINVERT : nROP );
         ImplWriteSize( rSz );
 
         WriteDIB(rBmp, aMemStm, true, false);
@@ -871,7 +821,7 @@ void EMFWriter::ImplWriteBmpRecord( const Bitmap& rBmp, const Point& rPt,
 
         sal_uInt32 nPalSize = nPalCount * 4;
 
-        m_rStm.Write( aMemStm.GetData(), nDIBSize );
+        m_rStm.WriteBytes( aMemStm.GetData(), nDIBSize );
 
         const sal_uLong nEndPos = m_rStm.Tell();
         m_rStm.Seek( nOffPos );
@@ -922,7 +872,7 @@ void EMFWriter::ImplWriteTextRecord( const Point& rPos, const OUString& rText, c
         // write text record
         ImplBeginRecord( WIN_EMR_EXTTEXTOUTW );
 
-        ImplWriteRect( Rectangle( rPos, Size( nNormWidth, maVDev->GetTextHeight() ) ) );
+        ImplWriteRect( tools::Rectangle( rPos, Size( nNormWidth, maVDev->GetTextHeight() ) ) );
         m_rStm.WriteUInt32( 1 );
         m_rStm.WriteInt32( 0 ).WriteInt32( 0 );
         ImplWritePoint( rPos );
@@ -1125,21 +1075,21 @@ void EMFWriter::ImplWrite( const GDIMetaFile& rMtf )
                         case( MetaActionType::ARC ):
                         {
                             const MetaArcAction* pA = static_cast<const MetaArcAction*>(pAction);
-                            aPoly = tools::Polygon( pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), POLY_ARC );
+                            aPoly = tools::Polygon( pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), PolyStyle::Arc );
                         }
                         break;
 
                         case( MetaActionType::PIE ):
                         {
                             const MetaPieAction* pA = static_cast<const MetaPieAction*>(pAction);
-                            aPoly = tools::Polygon( pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), POLY_PIE );
+                            aPoly = tools::Polygon( pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), PolyStyle::Pie );
                         }
                         break;
 
                         case( MetaActionType::CHORD ):
                         {
                             const MetaChordAction* pA = static_cast<const MetaChordAction*>(pAction);
-                            aPoly = tools::Polygon( pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), POLY_CHORD );
+                            aPoly = tools::Polygon( pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), PolyStyle::Chord );
                         }
                         break;
 
@@ -1303,7 +1253,7 @@ void EMFWriter::ImplWrite( const GDIMetaFile& rMtf )
                 const MetaBmpScalePartAction*   pA = static_cast<const MetaBmpScalePartAction*>(pAction);
                 Bitmap                          aTmp( pA->GetBitmap() );
 
-                if( aTmp.Crop( Rectangle( pA->GetSrcPoint(), pA->GetSrcSize() ) ) )
+                if( aTmp.Crop( tools::Rectangle( pA->GetSrcPoint(), pA->GetSrcSize() ) ) )
                     ImplWriteBmpRecord( aTmp, pA->GetDestPoint(), pA->GetDestSize(), WIN_SRCCOPY );
             }
             break;
@@ -1348,7 +1298,7 @@ void EMFWriter::ImplWrite( const GDIMetaFile& rMtf )
             {
                 const MetaBmpExScalePartAction* pA = static_cast<const MetaBmpExScalePartAction*>(pAction);
                 BitmapEx                        aBmpEx( pA->GetBitmapEx() );
-                aBmpEx.Crop( Rectangle( pA->GetSrcPoint(), pA->GetSrcSize() ) );
+                aBmpEx.Crop( tools::Rectangle( pA->GetSrcPoint(), pA->GetSrcSize() ) );
                 Bitmap                          aBmp( aBmpEx.GetBitmap() );
                 Bitmap                          aMsk( aBmpEx.GetMask() );
 
@@ -1483,15 +1433,15 @@ void EMFWriter::ImplWrite( const GDIMetaFile& rMtf )
 
             case( MetaActionType::LAYOUTMODE ):
             {
-                ComplexTextLayoutMode nLayoutMode = static_cast<const MetaLayoutModeAction*>(pAction)->GetLayoutMode();
+                ComplexTextLayoutFlags nLayoutMode = static_cast<const MetaLayoutModeAction*>(pAction)->GetLayoutMode();
                 mnHorTextAlign = 0;
-                if ((nLayoutMode & TEXT_LAYOUT_BIDI_RTL) != TEXT_LAYOUT_DEFAULT)
+                if ((nLayoutMode & ComplexTextLayoutFlags::BiDiRtl) != ComplexTextLayoutFlags::Default)
                 {
                     mnHorTextAlign = TA_RIGHT | TA_RTLREADING;
                 }
-                if ((nLayoutMode & TEXT_LAYOUT_TEXTORIGIN_RIGHT) != TEXT_LAYOUT_DEFAULT)
+                if ((nLayoutMode & ComplexTextLayoutFlags::TextOriginRight) != ComplexTextLayoutFlags::Default)
                     mnHorTextAlign |= TA_RIGHT;
-                else if ((nLayoutMode & TEXT_LAYOUT_TEXTORIGIN_LEFT) != TEXT_LAYOUT_DEFAULT)
+                else if ((nLayoutMode & ComplexTextLayoutFlags::TextOriginLeft) != ComplexTextLayoutFlags::Default)
                     mnHorTextAlign &= ~TA_RIGHT;
                 break;
             }
@@ -1503,7 +1453,7 @@ void EMFWriter::ImplWrite( const GDIMetaFile& rMtf )
                 if (pCommentAction->GetComment() == "EMF_PLUS")
                 {
                     ImplBeginCommentRecord(WIN_EMR_COMMENT_EMFPLUS);
-                    m_rStm.Write(pCommentAction->GetData(),
+                    m_rStm.WriteBytes(pCommentAction->GetData(),
                                  pCommentAction->GetDataSize());
                     ImplEndCommentRecord();
                 }
@@ -1516,15 +1466,11 @@ void EMFWriter::ImplWrite( const GDIMetaFile& rMtf )
             case( MetaActionType::WALLPAPER ):
             case( MetaActionType::TEXTLINE ):
             case( MetaActionType::GRADIENTEX ):
-            {
-                // !!! >>> we don't want to support these actions
-            }
+                // Explicitly ignored cases
             break;
 
             default:
-                OSL_FAIL(OStringBuffer(
-                    "EMFWriter::ImplWriteActions: unsupported MetaAction #" ).
-                     append(static_cast<sal_Int32>(nType)).getStr());
+                // TODO: Implement more cases as necessary. Let's not bother with a warning.
             break;
         }
     }

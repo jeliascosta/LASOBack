@@ -59,11 +59,12 @@ public:
 private:
     ImplType  mpImplWallpaper;
 
-    SAL_DLLPRIVATE Gradient       ImplGetApplicationGradient() const;
+    SAL_DLLPRIVATE static Gradient  ImplGetApplicationGradient();
 
 public:
                     Wallpaper();
                     Wallpaper( const Wallpaper& rWallpaper );
+                    Wallpaper( Wallpaper&& rWallpaper );
                     Wallpaper( const Color& rColor );
                     explicit Wallpaper( const BitmapEx& rBmpEx );
                     Wallpaper( const Gradient& rGradient );
@@ -83,14 +84,16 @@ public:
     Gradient        GetGradient() const;
     bool            IsGradient() const;
 
-    void            SetRect( const Rectangle& rRect );
-    Rectangle       GetRect() const;
+    void            SetRect( const tools::Rectangle& rRect );
+    tools::Rectangle       GetRect() const;
     bool            IsRect() const;
 
     bool            IsFixed() const;
     bool            IsScrollable() const;
 
     Wallpaper&      operator=( const Wallpaper& rWallpaper );
+    Wallpaper&      operator=( Wallpaper&& rWallpaper );
+
     bool            operator==( const Wallpaper& rWallpaper ) const;
     bool            operator!=( const Wallpaper& rWallpaper ) const
                         { return !(Wallpaper::operator==( rWallpaper )); }

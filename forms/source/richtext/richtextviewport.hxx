@@ -37,13 +37,13 @@ namespace frm
 
         void    setView( EditView& _rView );
 
-        inline void    setAttributeInvalidationHandler( const Link<LinkParamNone*,void>& _rHandler ) { m_aInvalidationHandler = _rHandler; }
+        void    setAttributeInvalidationHandler( const Link<LinkParamNone*,void>& _rHandler ) { m_aInvalidationHandler = _rHandler; }
 
         void    SetHideInactiveSelection( bool _bHide );
         bool    GetHideInactiveSelection() const { return m_bHideInactiveSelection; }
 
     protected:
-        virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+        virtual void        Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
         virtual void        GetFocus() override;
         virtual void        LoseFocus() override;
         virtual void        KeyInput( const KeyEvent& _rKEvt ) override;
@@ -52,7 +52,7 @@ namespace frm
         virtual void        MouseButtonUp( const MouseEvent& _rMEvt ) override;
 
     private:
-        inline void implInvalidateAttributes() const
+        void implInvalidateAttributes() const
         {
             m_aInvalidationHandler.Call( nullptr );
         }

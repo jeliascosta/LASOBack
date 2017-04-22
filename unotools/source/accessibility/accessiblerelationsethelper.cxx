@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <unotools/accessiblerelationsethelper.hxx>
 #include <vector>
 #include <comphelper/sequence.hxx>
@@ -31,19 +34,18 @@ class AccessibleRelationSetHelperImpl
 public:
     AccessibleRelationSetHelperImpl();
     AccessibleRelationSetHelperImpl(const AccessibleRelationSetHelperImpl& rImpl);
-    ~AccessibleRelationSetHelperImpl();
 
-    sal_Int32 getRelationCount(  )
-        throw (uno::RuntimeException);
-    AccessibleRelation getRelation( sal_Int32 nIndex )
-            throw (lang::IndexOutOfBoundsException,
-                    uno::RuntimeException);
-    bool containsRelation( sal_Int16 aRelationType )
-        throw (uno::RuntimeException);
-    AccessibleRelation getRelationByType( sal_Int16 aRelationType )
-            throw (uno::RuntimeException);
-    void AddRelation(const AccessibleRelation& rRelation)
-            throw (uno::RuntimeException);
+    /// @throws uno::RuntimeException
+    sal_Int32 getRelationCount(  );
+    /// @throws lang::IndexOutOfBoundsException
+    /// @throws uno::RuntimeException
+    AccessibleRelation getRelation( sal_Int32 nIndex );
+    /// @throws uno::RuntimeException
+    bool containsRelation( sal_Int16 aRelationType );
+    /// @throws uno::RuntimeException
+    AccessibleRelation getRelationByType( sal_Int16 aRelationType );
+    /// @throws uno::RuntimeException
+    void AddRelation(const AccessibleRelation& rRelation);
 
 private:
     std::vector<AccessibleRelation> maRelations;
@@ -58,19 +60,12 @@ AccessibleRelationSetHelperImpl::AccessibleRelationSetHelperImpl(const Accessibl
 {
 }
 
-AccessibleRelationSetHelperImpl::~AccessibleRelationSetHelperImpl()
-{
-}
-
 sal_Int32 AccessibleRelationSetHelperImpl::getRelationCount(  )
-    throw (uno::RuntimeException)
 {
     return maRelations.size();
 }
 
 AccessibleRelation AccessibleRelationSetHelperImpl::getRelation( sal_Int32 nIndex )
-    throw (lang::IndexOutOfBoundsException,
-            uno::RuntimeException)
 {
     if ((nIndex < 0) || (static_cast<sal_uInt32>(nIndex) >= maRelations.size()))
         throw lang::IndexOutOfBoundsException();
@@ -78,7 +73,6 @@ AccessibleRelation AccessibleRelationSetHelperImpl::getRelation( sal_Int32 nInde
 }
 
 bool AccessibleRelationSetHelperImpl::containsRelation( sal_Int16 aRelationType )
-    throw (uno::RuntimeException)
 {
     AccessibleRelation defaultRelation; // default is INVALID
     AccessibleRelation relationByType = getRelationByType(aRelationType);
@@ -86,7 +80,6 @@ bool AccessibleRelationSetHelperImpl::containsRelation( sal_Int16 aRelationType 
 }
 
 AccessibleRelation AccessibleRelationSetHelperImpl::getRelationByType( sal_Int16 aRelationType )
-    throw (uno::RuntimeException)
 {
     sal_Int32 nCount(getRelationCount());
     sal_Int32 i(0);
@@ -102,7 +95,6 @@ AccessibleRelation AccessibleRelationSetHelperImpl::getRelationByType( sal_Int16
 }
 
 void AccessibleRelationSetHelperImpl::AddRelation(const AccessibleRelation& rRelation)
-    throw (uno::RuntimeException)
 {
     sal_Int32 nCount(getRelationCount());
     sal_Int32 i(0);
@@ -123,24 +115,21 @@ void AccessibleRelationSetHelperImpl::AddRelation(const AccessibleRelation& rRel
 //=====  internal  ============================================================
 
 AccessibleRelationSetHelper::AccessibleRelationSetHelper ()
-    : mpHelperImpl(nullptr)
+    : mpHelperImpl(new AccessibleRelationSetHelperImpl)
 {
-    mpHelperImpl = new AccessibleRelationSetHelperImpl();
 }
 
 AccessibleRelationSetHelper::AccessibleRelationSetHelper (const AccessibleRelationSetHelper& rHelper)
-    : cppu::WeakImplHelper1<XAccessibleRelationSet>()
-    , mpHelperImpl(nullptr)
+    : cppu::WeakImplHelper<XAccessibleRelationSet>()
 {
     if (rHelper.mpHelperImpl)
-        mpHelperImpl = new AccessibleRelationSetHelperImpl(*rHelper.mpHelperImpl);
+        mpHelperImpl.reset(new AccessibleRelationSetHelperImpl(*rHelper.mpHelperImpl));
     else
-        mpHelperImpl = new AccessibleRelationSetHelperImpl();
+        mpHelperImpl.reset(new AccessibleRelationSetHelperImpl());
 }
 
 AccessibleRelationSetHelper::~AccessibleRelationSetHelper()
 {
-    delete mpHelperImpl;
 }
 
 //=====  XAccessibleRelationSet  ==============================================
@@ -152,7 +141,6 @@ AccessibleRelationSetHelper::~AccessibleRelationSetHelper()
     */
 sal_Int32 SAL_CALL
     AccessibleRelationSetHelper::getRelationCount(  )
-        throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard (maMutex);
     return mpHelperImpl->getRelationCount();
@@ -173,8 +161,6 @@ sal_Int32 SAL_CALL
     */
  AccessibleRelation SAL_CALL
         AccessibleRelationSetHelper::getRelation( sal_Int32 nIndex )
-            throw (lang::IndexOutOfBoundsException,
-                    uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard (maMutex);
     return mpHelperImpl->getRelation(nIndex);
@@ -194,7 +180,6 @@ sal_Int32 SAL_CALL
     */
 sal_Bool SAL_CALL
     AccessibleRelationSetHelper::containsRelation( sal_Int16 aRelationType )
-        throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard (maMutex);
     return mpHelperImpl->containsRelation(aRelationType);
@@ -213,14 +198,12 @@ sal_Bool SAL_CALL
     */
 AccessibleRelation SAL_CALL
         AccessibleRelationSetHelper::getRelationByType( sal_Int16 aRelationType )
-            throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard (maMutex);
     return mpHelperImpl->getRelationByType(aRelationType);
 }
 
 void AccessibleRelationSetHelper::AddRelation(const AccessibleRelation& rRelation)
-            throw (uno::RuntimeException)
 {
     osl::MutexGuard aGuard (maMutex);
     mpHelperImpl->AddRelation(rRelation);
@@ -229,7 +212,6 @@ void AccessibleRelationSetHelper::AddRelation(const AccessibleRelation& rRelatio
 //=====  XTypeProvider  =======================================================
 
 uno::Sequence< css::uno::Type> AccessibleRelationSetHelper::getTypes()
-    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard (maMutex);
     css::uno::Sequence< css::uno::Type> aTypeSequence {
@@ -240,7 +222,6 @@ uno::Sequence< css::uno::Type> AccessibleRelationSetHelper::getTypes()
 }
 
 uno::Sequence<sal_Int8> SAL_CALL AccessibleRelationSetHelper::getImplementationId()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }

@@ -30,8 +30,7 @@ using namespace ::com::sun::star;
 - (void)observeValueForKeyPath:(NSString*)pKeyPath ofObject:(id)pObject change:(NSDictionary*)pChangeDict context:(void*)pContext
 {
     (void) pObject;
-    NSString* pDictStr = [NSString stringWithFormat:@"%@", pChangeDict];
-    OSL_TRACE( "MacAVObserver::onKeyChange k=\"%s\" c=%s", [pKeyPath UTF8String], [pDictStr UTF8String]);
+    (void) pChangeDict;
     avmedia::macavf::MacAVObserverHandler* pHandler = static_cast<avmedia::macavf::MacAVObserverHandler*>(pContext);
     pHandler->handleObservation( pKeyPath );
 }
@@ -39,7 +38,6 @@ using namespace ::com::sun::star;
 - (void)onNotification:(NSNotification*)pNotification
 {
     NSString* pNoteName = (NSString*)[pNotification name];
-    OSL_TRACE( "MacAVObserver::onNotification key=\"%s\"", [pNoteName UTF8String]);
     HandlersForObject::iterator it = maHandlersForObject.find( [pNotification object]);
     if( it != maHandlersForObject.end() )
         (*it).second->handleObservation( pNoteName );
@@ -101,10 +99,8 @@ Player::~Player()
 
 bool Player::handleObservation( NSString* pKeyPath )
 {
-    OSL_TRACE( "AVPlayer::handleObservation key=\"%s\"", [pKeyPath UTF8String]);
     if( [pKeyPath isEqualToString:AVPlayerItemDidPlayToEndTimeNotification])
     {
-        OSL_TRACE( "AVPlayer replay=%d", mbLooping);
         if( mbLooping )
             setMediaTime( 0.0);
     }
@@ -158,36 +154,26 @@ bool Player::create( const ::rtl::OUString& rURL )
 
 
 void SAL_CALL Player::start()
-    throw (uno::RuntimeException)
 {
     if( !mpPlayer )
         return;
-#if 0
-    const AVPlayerStatus eStatus = [mpPlayer status];
-    OSL_TRACE ("Player::start status=%d", (int)eStatus);
-    if( eStatus == AVPlayerStatusReadyToPlay)
-#endif
-    {
-        [mpPlayer play];
-    }
+
+    [mpPlayer play];
     // else // TODO: delay until it becomes ready
 }
 
 
 void SAL_CALL Player::stop()
-    throw (uno::RuntimeException)
 {
     if( !mpPlayer )
         return;
     const bool bPlaying = isPlaying();
-    OSL_TRACE ("Player::stop() playing=%d", bPlaying);
     if( bPlaying )
         [mpPlayer pause];
 }
 
 
 sal_Bool SAL_CALL Player::isPlaying()
-    throw (uno::RuntimeException)
 {
     if( !mpPlayer )
         return false;
@@ -197,7 +183,6 @@ sal_Bool SAL_CALL Player::isPlaying()
 
 
 double SAL_CALL Player::getDuration()
-    throw (uno::RuntimeException)
 {
     // slideshow checks for non-zero duration, so cheat here
     double duration = 0.01;
@@ -216,22 +201,18 @@ double SAL_CALL Player::getDuration()
 
 
 void SAL_CALL Player::setMediaTime( double fTime )
-    throw (uno::RuntimeException)
 {
-    OSL_TRACE ("Player::setMediaTime( %.3fsec)", fTime);
     if( mpPlayer )
         [mpPlayer seekToTime: CMTimeMakeWithSeconds(fTime,1000) ];
 }
 
 
 double SAL_CALL Player::getMediaTime()
-    throw (uno::RuntimeException)
 {
     if( !mpPlayer )
         return 0.0;
 
     const double position = CMTimeGetSeconds( [mpPlayer currentTime] );
-    OSL_TRACE( "Player::getMediaTime() = %.3fsec", position);
     if( position >= mfStopTime )
         if( isPlaying() )
             stop();
@@ -241,42 +222,31 @@ double SAL_CALL Player::getMediaTime()
 
 
 void SAL_CALL Player::setStopTime( double fTime )
-    throw (uno::RuntimeException)
 {
-    OSL_TRACE ("Player::setStopTime( %.3fsec)", fTime);
     mfStopTime = fTime;
 }
 
 
 double SAL_CALL Player::getStopTime()
-    throw (uno::RuntimeException)
 {
     return mfStopTime;
 }
 
 
 void SAL_CALL Player::setPlaybackLoop( sal_Bool bSet )
-    throw (uno::RuntimeException)
 {
-    OSL_TRACE ("Player::setPlaybackLoop( %d)", bSet );
     mbLooping = bSet;
 }
 
 
 sal_Bool SAL_CALL Player::isPlaybackLoop()
-    throw (uno::RuntimeException)
 {
-    const bool bRet = mbLooping;
-    OSL_TRACE ("Player::isPlaybackLoop() = %d", bRet );
-    return bRet;
+    return mbLooping;
 }
 
 
 void SAL_CALL Player::setMute( sal_Bool bSet )
-    throw (uno::RuntimeException)
 {
-    OSL_TRACE( "Player::setMute(%d), was-muted: %d unmuted-volume: %.3f", bSet, mbMuted, mfUnmutedVolume );
-
     if( !mpPlayer )
         return;
 
@@ -286,20 +256,16 @@ void SAL_CALL Player::setMute( sal_Bool bSet )
 
 
 sal_Bool SAL_CALL Player::isMute()
-    throw (uno::RuntimeException)
 {
-    OSL_TRACE ("Player::isMuted() = %d", mbMuted);
     return mbMuted;
 }
 
 
 void SAL_CALL Player::setVolumeDB( sal_Int16 nVolumeDB )
-    throw (uno::RuntimeException)
 {
     // -40dB <-> AVPlayer volume 0.0
     //   0dB <-> AVPlayer volume 1.0
     mfUnmutedVolume = (nVolumeDB <= -40) ? 0.0 : pow( 10.0, nVolumeDB / 20.0 );
-    OSL_TRACE( "Player::setVolume(%ddB), muted=%d, unmuted-volume: %.3f", nVolumeDB, mbMuted, mfUnmutedVolume );
 
     // change volume
     if( !mbMuted && mpPlayer )
@@ -308,7 +274,6 @@ void SAL_CALL Player::setVolumeDB( sal_Int16 nVolumeDB )
 
 
 sal_Int16 SAL_CALL Player::getVolumeDB()
-    throw (uno::RuntimeException)
 {
     if( !mpPlayer )
         return 0;
@@ -326,7 +291,6 @@ sal_Int16 SAL_CALL Player::getVolumeDB()
 
 
 awt::Size SAL_CALL Player::getPreferredPlayerWindowSize()
-    throw (uno::RuntimeException)
 {
     awt::Size aSize( 0, 0 ); // default size
 
@@ -344,11 +308,9 @@ awt::Size SAL_CALL Player::getPreferredPlayerWindowSize()
 
 
 uno::Reference< ::media::XPlayerWindow > SAL_CALL Player::createPlayerWindow( const uno::Sequence< uno::Any >& aArguments )
-    throw (uno::RuntimeException)
 {
     // get the preferred window size
     const awt::Size aSize( getPreferredPlayerWindowSize() );
-    OSL_TRACE( "Player::createPlayerWindow %dx%d argsLength: %d", aSize.Width, aSize.Height, aArguments.getLength() );
 
     // get the parent view
     sal_IntPtr nNSViewPtr = 0;
@@ -368,10 +330,8 @@ uno::Reference< ::media::XPlayerWindow > SAL_CALL Player::createPlayerWindow( co
 
 
 uno::Reference< media::XFrameGrabber > SAL_CALL Player::createFrameGrabber()
-    throw (uno::RuntimeException)
 {
     uno::Reference< media::XFrameGrabber > xRet;
-    OSL_TRACE ("Player::createFrameGrabber");
 
     FrameGrabber* pGrabber = new FrameGrabber( mxMgr );
     AVAsset* pMovie = [[mpPlayer currentItem] asset];
@@ -383,25 +343,20 @@ uno::Reference< media::XFrameGrabber > SAL_CALL Player::createFrameGrabber()
 
 
 ::rtl::OUString SAL_CALL Player::getImplementationName(  )
-    throw (uno::RuntimeException)
 {
-    return ::rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( AVMEDIA_MACAVF_PLAYER_IMPLEMENTATIONNAME ) );
+    return ::rtl::OUString( AVMEDIA_MACAVF_PLAYER_IMPLEMENTATIONNAME );
 }
 
 
 sal_Bool SAL_CALL Player::supportsService( const ::rtl::OUString& ServiceName )
-    throw (uno::RuntimeException)
 {
-    return ServiceName.equalsAsciiL( RTL_CONSTASCII_STRINGPARAM ( AVMEDIA_MACAVF_PLAYER_SERVICENAME ) );
+    return ServiceName == AVMEDIA_MACAVF_PLAYER_SERVICENAME;
 }
 
 
 uno::Sequence< ::rtl::OUString > SAL_CALL Player::getSupportedServiceNames(  )
-    throw (uno::RuntimeException)
 {
-    uno::Sequence< ::rtl::OUString > aRet { AVMEDIA_MACAVF_PLAYER_SERVICENAME };
-
-    return aRet;
+    return { AVMEDIA_MACAVF_PLAYER_SERVICENAME };
 }
 
 } // namespace macavf

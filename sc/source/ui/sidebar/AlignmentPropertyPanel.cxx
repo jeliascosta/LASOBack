@@ -105,7 +105,6 @@ void AlignmentPropertyPanel::Initialize()
 {
     mpFTLeftIndent->Disable();
     mpMFLeftIndent->Disable();
-    mpMFLeftIndent->SetAccessibleName("Left Indent");    //wj acc
     Link<Edit&,void> aLink = LINK(this, AlignmentPropertyPanel, MFLeftIndentMdyHdl);
     mpMFLeftIndent->SetModifyHdl ( aLink );
 
@@ -114,7 +113,6 @@ void AlignmentPropertyPanel::Initialize()
     mpCBXWrapText->SetClickHdl ( LINK(this, AlignmentPropertyPanel, CBOXWrapTextClkHdl) );
 
     //rotation
-    mpMtrAngle->SetAccessibleName("Text Orientation");   //wj acc
     mpMtrAngle->SetModifyHdl(LINK( this, AlignmentPropertyPanel, AngleModifiedHdl));
     mpMtrAngle->EnableAutocomplete( false );
     mpCBStacked->SetClickHdl(LINK(this, AlignmentPropertyPanel, ClickStackHdl));
@@ -133,12 +131,9 @@ void AlignmentPropertyPanel::Initialize()
     mpMtrAngle->InsertValue(270, FUNIT_CUSTOM);
     mpMtrAngle->InsertValue(315, FUNIT_CUSTOM);
     mpMtrAngle->SetDropDownLineCount(mpMtrAngle->GetEntryCount());
-
-    mpMFLeftIndent->SetAccessibleRelationLabeledBy(mpFTLeftIndent);
-    mpMtrAngle->SetAccessibleRelationLabeledBy(mpFtRotate);
 }
 
-IMPL_LINK_TYPED( AlignmentPropertyPanel, ReferenceEdgeHdl, Button*, pControl, void )
+IMPL_LINK( AlignmentPropertyPanel, ReferenceEdgeHdl, Button*, pControl, void )
 {
     SvxRotateMode eMode;
     if(pControl == mpRefEdgeBottom)
@@ -152,7 +147,7 @@ IMPL_LINK_TYPED( AlignmentPropertyPanel, ReferenceEdgeHdl, Button*, pControl, vo
             SfxCallMode::RECORD, { &aItem });
 }
 
-IMPL_LINK_NOARG_TYPED( AlignmentPropertyPanel, AngleModifiedHdl, Edit&, void )
+IMPL_LINK_NOARG( AlignmentPropertyPanel, AngleModifiedHdl, Edit&, void )
 {
     OUString sTmp = mpMtrAngle->GetText();
     if (sTmp.isEmpty())
@@ -189,24 +184,24 @@ IMPL_LINK_NOARG_TYPED( AlignmentPropertyPanel, AngleModifiedHdl, Edit&, void )
     GetBindings()->GetDispatcher()->ExecuteList(
         SID_ATTR_ALIGN_DEGREES, SfxCallMode::RECORD, { &aAngleItem });
 }
-IMPL_LINK_NOARG_TYPED( AlignmentPropertyPanel, ClickStackHdl, Button*, void )
+IMPL_LINK_NOARG( AlignmentPropertyPanel, ClickStackHdl, Button*, void )
 {
     bool bVertical = mpCBStacked->IsChecked();
     SfxBoolItem  aStackItem( SID_ATTR_ALIGN_STACKED, bVertical );
     GetBindings()->GetDispatcher()->ExecuteList(
         SID_ATTR_ALIGN_STACKED, SfxCallMode::RECORD, { &aStackItem });
 }
-IMPL_LINK_NOARG_TYPED(AlignmentPropertyPanel, MFLeftIndentMdyHdl, Edit&, void)
+IMPL_LINK_NOARG(AlignmentPropertyPanel, MFLeftIndentMdyHdl, Edit&, void)
 {
     mpCBXWrapText->EnableTriState(false);
     sal_uInt16 nVal = (sal_uInt16)mpMFLeftIndent->GetValue();
-    SfxUInt16Item aItem( SID_ATTR_ALIGN_INDENT,  (sal_uInt16)CalcToUnit( nVal,  SFX_MAPUNIT_TWIP ) );
+    SfxUInt16Item aItem( SID_ATTR_ALIGN_INDENT,  (sal_uInt16)CalcToUnit( nVal,  MapUnit::MapTwip ) );
 
     GetBindings()->GetDispatcher()->ExecuteList(SID_ATTR_ALIGN_INDENT,
             SfxCallMode::RECORD, { &aItem });
 }
 
-IMPL_LINK_NOARG_TYPED(AlignmentPropertyPanel, CBOXMergnCellClkHdl, Button*, void)
+IMPL_LINK_NOARG(AlignmentPropertyPanel, CBOXMergnCellClkHdl, Button*, void)
 {
     bool bState = mpCBXMergeCell->IsChecked();
 
@@ -221,7 +216,7 @@ IMPL_LINK_NOARG_TYPED(AlignmentPropertyPanel, CBOXMergnCellClkHdl, Button*, void
     //modified end
 }
 
-IMPL_LINK_NOARG_TYPED(AlignmentPropertyPanel, CBOXWrapTextClkHdl, Button*, void)
+IMPL_LINK_NOARG(AlignmentPropertyPanel, CBOXWrapTextClkHdl, Button*, void)
 {
     bool bState = mpCBXWrapText->IsChecked();
     SfxBoolItem aItem( SID_ATTR_ALIGN_LINEBREAK , bState);
@@ -252,7 +247,7 @@ void AlignmentPropertyPanel::DataChanged(
 }
 
 void AlignmentPropertyPanel::HandleContextChange(
-    const ::sfx2::sidebar::EnumContext& rContext)
+    const vcl::EnumContext& rContext)
 {
     if (maContext == rContext)
     {
@@ -275,14 +270,14 @@ void AlignmentPropertyPanel::NotifyItemUpdate(
     {
     case SID_H_ALIGNCELL:
         {
-            SvxCellHorJustify meHorAlignState = SVX_HOR_JUSTIFY_STANDARD;
+            SvxCellHorJustify meHorAlignState = SvxCellHorJustify::Standard;
             if(eState >= SfxItemState::DEFAULT && pState && dynamic_cast<const SvxHorJustifyItem*>( pState) !=  nullptr )
             {
                 const SvxHorJustifyItem* pItem = static_cast<const SvxHorJustifyItem*>(pState);
                 meHorAlignState = (SvxCellHorJustify)pItem->GetValue();
             }
 
-            if( meHorAlignState == SVX_HOR_JUSTIFY_REPEAT )
+            if( meHorAlignState == SvxCellHorJustify::Repeat )
             {
                 mpFtRotate->Disable();
                 mpMtrAngle->Disable();
@@ -293,8 +288,8 @@ void AlignmentPropertyPanel::NotifyItemUpdate(
                 mpMtrAngle->Enable(!mbMultiDisable);
             }
 
-            mpFTLeftIndent->Enable( meHorAlignState == SVX_HOR_JUSTIFY_LEFT );
-            mpMFLeftIndent->Enable( meHorAlignState == SVX_HOR_JUSTIFY_LEFT );
+            mpFTLeftIndent->Enable( meHorAlignState == SvxCellHorJustify::Left );
+            mpMFLeftIndent->Enable( meHorAlignState == SvxCellHorJustify::Left );
         }
         break;
     case SID_ATTR_ALIGN_INDENT:
@@ -302,7 +297,7 @@ void AlignmentPropertyPanel::NotifyItemUpdate(
         {
                 const SfxUInt16Item* pItem = static_cast<const SfxUInt16Item*>(pState);
                 sal_uInt16 nVal = pItem->GetValue();
-                mpMFLeftIndent->SetValue( CalcToPoint(nVal, SFX_MAPUNIT_TWIP, 1) );
+                mpMFLeftIndent->SetValue( CalcToPoint(nVal, MapUnit::MapTwip, 1) );
         }
         else
         {

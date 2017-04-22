@@ -91,7 +91,7 @@ class LwpSilverBullet : public LwpDLNFVList
 public:
     LwpSilverBullet(LwpObjectHeader& objHdr, LwpSvStream* pStrm);
 
-    virtual ~LwpSilverBullet();
+    virtual ~LwpSilverBullet() override;
 
     virtual void RegisterStyle() override;
 
@@ -132,7 +132,7 @@ private:
     LwpObjectID     m_aStory;
     sal_uInt8       m_pResetPositionFlags[MAXNUMBERPOSITIONS];
     sal_uInt32      m_nUseCount;
-    LwpAtomHolder*  m_pAtomHolder;
+    std::unique_ptr<LwpAtomHolder> m_pAtomHolder;
 
     rtl::Reference<LwpPara> m_xBulletPara;
     OUString m_strStyleName;

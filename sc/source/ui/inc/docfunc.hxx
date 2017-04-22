@@ -46,11 +46,10 @@ struct ScCellMergeOption;
 class ScConditionalFormat;
 class ScConditionalFormatList;
 class ScUndoRemoveMerge;
-
+enum class TransliterationFlags;
+enum class CreateNameFlags;
 namespace sc {
-
-struct ColRowSpan;
-
+    struct ColRowSpan;
 }
 
 class ScDocFunc
@@ -69,7 +68,7 @@ protected:
 public:
     virtual         ~ScDocFunc() {}
 
-    DECL_LINK_TYPED( NotifyDrawUndo, SdrUndoAction*, void );
+    DECL_LINK( NotifyDrawUndo, SdrUndoAction*, void );
 
     // for grouping multiple operations into one with a new name
     void            EnterListAction( sal_uInt16 nNameResId );
@@ -92,7 +91,7 @@ public:
     bool DeleteCell(
         const ScAddress& rPos, const ScMarkData& rMark, InsertDeleteFlags nFlags, bool bRecord );
 
-    bool            TransliterateText( const ScMarkData& rMark, sal_Int32 nType,
+    bool            TransliterateText( const ScMarkData& rMark, TransliterationFlags nType,
                                                bool bApi );
 
     bool            SetNormalString( bool& o_rbNumFmtSet, const ScAddress& rPos, const OUString& rText, bool bApi );
@@ -113,7 +112,7 @@ public:
         const ScAddress& rPos, const OUString& rText, bool bInterpret, bool bEnglish, bool bApi,
         const formula::FormulaGrammar::Grammar eGrammar );
 
-    bool            ShowNote( const ScAddress& rPos, bool bShow = true );
+    bool            ShowNote( const ScAddress& rPos, bool bShow );
 
     void            SetNoteText( const ScAddress& rPos, const OUString& rNoteText, bool bApi );
     void            ReplaceNote( const ScAddress& rPos, const OUString& rNoteText, const OUString* pAuthor, const OUString* pDate, bool bApi );
@@ -179,7 +178,7 @@ public:
                                         double fStart, double fStep, double fMax,
                                         bool bApi );
 
-    // FillAuto: rRange wird von Source-Range auf Dest-Range angepasst
+    // FillAuto: rRange is change from Source-Range to Dest-Range
     SC_DLLPUBLIC bool
                     FillAuto( ScRange& rRange, const ScMarkData* pTabMark, FillDir eDir, FillCmd eCmd, FillDateCmd  eDateCmd, sal_uLong nCount, double fStep, double fMax, bool bRecord, bool bApi );
 
@@ -189,11 +188,11 @@ public:
     void            ResizeMatrix( const ScRange& rOldRange, const ScAddress& rNewEnd );
 
     bool            MergeCells( const ScCellMergeOption& rOption, bool bContents,
-                                        bool bRecord, bool bApi );
+                                        bool bRecord, bool bApi, bool bEmptyMergedCells = false );
     bool            UnmergeCells( const ScRange& rRange, bool bRecord, ScUndoRemoveMerge* pUndoRemoveMerge );
     bool            UnmergeCells( const ScCellMergeOption& rOption, bool bRecord, ScUndoRemoveMerge* pUndoRemoveMerge );
 
-    void            SetNewRangeNames( ScRangeName* pNewRanges, bool bModifyDoc = true, SCTAB nTab = -1 );     // takes ownership of pNewRanges //nTab = -1 for local range names
+    void            SetNewRangeNames( ScRangeName* pNewRanges, bool bModifyDoc, SCTAB nTab = -1 );     // takes ownership of pNewRanges //nTab = -1 for local range names
     void            ModifyRangeNames( const ScRangeName& rNewRanges, SCTAB nTab = -1 );
     /**
      * Modify all range names, global scope names as well as sheet local ones,
@@ -203,7 +202,7 @@ public:
      */
     void            ModifyAllRangeNames(const std::map<OUString, std::unique_ptr<ScRangeName>>& rRangeMap);
 
-    bool            CreateNames( const ScRange& rRange, sal_uInt16 nFlags, bool bApi, SCTAB nTab = -1 ); // -1 for global range names
+    bool            CreateNames( const ScRange& rRange, CreateNameFlags nFlags, bool bApi, SCTAB nTab = -1 ); // -1 for global range names
     bool            InsertNameList( const ScAddress& rStartPos, bool bApi );
 
     void            InsertAreaLink( const OUString& rFile, const OUString& rFilter,
@@ -232,7 +231,6 @@ class ScDocFuncDirect : public ScDocFunc
 {
 public:
             ScDocFuncDirect( ScDocShell& rDocSh ) : ScDocFunc( rDocSh ) {}
-    virtual ~ScDocFuncDirect() {}
 };
 
 void VBA_DeleteModule( ScDocShell& rDocSh, const OUString& sModuleName );

@@ -71,12 +71,11 @@ DXFLineInfo DXF2GDIMetaFile::LTypeToDXFLineInfo(OString const& rLineType)
 
     pLT = pDXF->aTables.SearchLType(rLineType);
     if (pLT==nullptr || pLT->nDashCount == 0) {
-        aDXFLineInfo.eStyle = LINE_SOLID;
+        aDXFLineInfo.eStyle = LineStyle::Solid;
     }
     else {
-        sal_Int32 i;
-        aDXFLineInfo.eStyle = LINE_DASH;
-        for (i=0; i < (pLT->nDashCount); i++) {
+        aDXFLineInfo.eStyle = LineStyle::Dash;
+        for (long i=0; i < (pLT->nDashCount); i++) {
             const double x = pLT->fDash[i] * pDXF->getGlobalLineTypeScale();
             if ( x >= 0.0 ) {
                 if ( aDXFLineInfo.nDotCount == 0 ) {
@@ -116,7 +115,7 @@ DXFLineInfo DXF2GDIMetaFile::GetEntityDXFLineInfo(const DXFBasicEntity & rE)
 {
     DXFLineInfo aDXFLineInfo;
 
-    aDXFLineInfo.eStyle = LINE_SOLID;
+    aDXFLineInfo.eStyle = LineStyle::Solid;
     aDXFLineInfo.fWidth = 0;
     aDXFLineInfo.nDashCount = 0;
     aDXFLineInfo.fDashLen = 0;
@@ -265,7 +264,7 @@ void DXF2GDIMetaFile::DrawCircleEntity(const DXFCircleEntity & rE, const DXFTran
     rTransform.Transform(rE.aP0,aC);
     if (rE.fThickness==0 && rTransform.TransCircleToEllipse(rE.fRadius,frx,fry)) {
         pVirDev->DrawEllipse(
-            Rectangle((long)(aC.fx-frx+0.5),(long)(aC.fy-fry+0.5),
+            tools::Rectangle((long)(aC.fx-frx+0.5),(long)(aC.fy-fry+0.5),
                       (long)(aC.fx+frx+0.5),(long)(aC.fy+fry+0.5)));
     }
     else {
@@ -296,19 +295,18 @@ void DXF2GDIMetaFile::DrawCircleEntity(const DXFCircleEntity & rE, const DXFTran
     }
 }
 
-
 void DXF2GDIMetaFile::DrawArcEntity(const DXFArcEntity & rE, const DXFTransform & rTransform)
 {
-    double frx,fry,fA1,fdA;
+    double frx,fry;
     sal_uInt16 nPoints,i;
     DXFVector aC;
     Point aPS,aPE;
 
     if (!SetLineAttribute(rE)) return;
-    fA1=rE.fStart;
-    fdA=rE.fEnd-fA1;
-    while (fdA>=360.0) fdA-=360.0;
-    while (fdA<=0) fdA+=360.0;
+    double fA1=rE.fStart;
+    double fdA=rE.fEnd-fA1;
+    fdA = fmod(fdA, 360.0);
+    if (fdA<=0) fdA+=360.0;
     rTransform.Transform(rE.aP0,aC);
     if (rE.fThickness==0 && fdA>5.0 && rTransform.TransCircleToEllipse(rE.fRadius,frx,fry)) {
         DXFVector aVS(cos(fA1/180.0*3.14159265359),sin(fA1/180.0*3.14159265359),0.0);
@@ -326,7 +324,7 @@ void DXF2GDIMetaFile::DrawArcEntity(const DXFArcEntity & rE, const DXFTransform 
             rTransform.Transform(aVE,aPS);
         }
         pVirDev->DrawArc(
-            Rectangle((long)(aC.fx-frx+0.5),(long)(aC.fy-fry+0.5),
+            tools::Rectangle((long)(aC.fx-frx+0.5),(long)(aC.fy-fry+0.5),
                       (long)(aC.fx+frx+0.5),(long)(aC.fy+fry+0.5)),
             aPS,aPE
         );
@@ -358,7 +356,6 @@ void DXF2GDIMetaFile::DrawArcEntity(const DXFArcEntity & rE, const DXFTransform 
         }
     }
 }
-
 
 void DXF2GDIMetaFile::DrawTraceEntity(const DXFTraceEntity & rE, const DXFTransform & rTransform)
 {
@@ -586,8 +583,7 @@ void DXF2GDIMetaFile::DrawHatchEntity(const DXFHatchEntity & rE, const DXFTransf
             }
             else
             {
-                sal_uInt32 i;
-                for ( i = 0; i < rPathData.aEdges.size(); i++ )
+                for ( std::deque<DXFEdgeType*>::size_type i = 0; i < rPathData.aEdges.size(); i++ )
                 {
                     const DXFEdgeType* pEdge = rPathData.aEdges[ i ];
                     switch( pEdge->nEdgeType )
@@ -794,7 +790,7 @@ bool DXF2GDIMetaFile::Convert(const DXFRepresentation & rDXF, GDIMetaFile & rMTF
     nMainEntitiesCount=CountEntities(pDXF->aEntities);
 
     nBlockColor=7;
-    aBlockDXFLineInfo.eStyle = LINE_SOLID;
+    aBlockDXFLineInfo.eStyle = LineStyle::Solid;
     aBlockDXFLineInfo.fWidth = 0;
     aBlockDXFLineInfo.nDashCount = 0;
     aBlockDXFLineInfo.fDashLen = 0;
@@ -809,7 +805,7 @@ bool DXF2GDIMetaFile::Convert(const DXFRepresentation & rDXF, GDIMetaFile & rMTF
     }
     else {
         nParentLayerColor=7;
-        aParentLayerDXFLineInfo.eStyle = LINE_SOLID;
+        aParentLayerDXFLineInfo.eStyle = LineStyle::Solid;
         aParentLayerDXFLineInfo.fWidth = 0;
         aParentLayerDXFLineInfo.nDashCount = 0;
         aParentLayerDXFLineInfo.fDashLen = 0;
@@ -884,9 +880,9 @@ bool DXF2GDIMetaFile::Convert(const DXFRepresentation & rDXF, GDIMetaFile & rMTF
         // simply set map mode to 1/100-mm (1/10-mm) if the graphic
         // does not get not too small (<0.5cm)
         if( ( aPrefSize.Width() < 500 ) && ( aPrefSize.Height() < 500 ) )
-            rMTF.SetPrefMapMode( MapMode( MAP_10TH_MM ) );
+            rMTF.SetPrefMapMode( MapMode( MapUnit::Map10thMM ) );
         else
-            rMTF.SetPrefMapMode( MapMode( MAP_100TH_MM ) );
+            rMTF.SetPrefMapMode( MapMode( MapUnit::Map100thMM ) );
     }
 
     pVirDev.disposeAndClear();

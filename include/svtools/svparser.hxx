@@ -32,19 +32,18 @@
 struct SvParser_Impl;
 class SvStream;
 
-enum SvParserState
+enum class SvParserState
 {
-    SVPAR_ACCEPTED = 0,
-    SVPAR_NOTSTARTED,
-    SVPAR_WORKING,
-    SVPAR_PENDING,
-    SVPAR_WAITFORDATA,
-    SVPAR_ERROR
+    Accepted = 0,
+    NotStarted,
+    Working,
+    Pending,
+    Error
 };
 
 class SVT_DLLPUBLIC SvParser : public SvRefBase
 {
-    DECL_LINK_TYPED( NewDataRead, LinkParamNone*, void );
+    DECL_LINK( NewDataRead, LinkParamNone*, void );
 
 protected:
     SvStream&           rInput;
@@ -63,14 +62,6 @@ protected:
     sal_uInt32 nNextCh;                // current character codepoint in UTF32 for the "lex"
 
 
-    bool                bDownloadingFile : 1; // true: An external file is
-                                        // currently being loaded, i.e.
-                                        // all DataAvailable Links must
-                                        // be ignored.
-                                        // If none of the following
-                                        // flags is set, the stream
-                                        // is read as ANSI, but returned
-                                        // as CharSet DONTKNOW.
     bool                bUCS2BSrcEnc : 1;   // or as big-endian UCS2
     bool                bSwitchToUCS2 : 1;  // switching is allowed
 
@@ -89,7 +80,6 @@ protected:
             , nTokenId(0)
         {
         }
-        ~TokenStackType() { }
     };
 
     // methods for Token stack
@@ -106,7 +96,7 @@ protected:
     virtual void NextToken( int nToken );
 
     // at times of SvRefBase derivation, not everybody may delete
-    virtual ~SvParser();
+    virtual ~SvParser() override;
 
     void ClearTxtConvContext();
 
@@ -120,19 +110,19 @@ public:
 
     virtual  SvParserState CallParser() = 0; // calling of the parser
 
-    inline SvParserState GetStatus() const  { return eState; }  // StatusInfo
+    SvParserState GetStatus() const  { return eState; }  // StatusInfo
 
-    inline sal_uLong    GetLineNr() const       { return nlLineNr; }
-    inline sal_uLong    GetLinePos() const      { return nlLinePos; }
-    inline void         IncLineNr()             { ++nlLineNr; }
-    inline sal_uLong    IncLinePos()            { return ++nlLinePos; }
+    sal_uLong    GetLineNr() const       { return nlLineNr; }
+    sal_uLong    GetLinePos() const      { return nlLinePos; }
+    void         IncLineNr()             { ++nlLineNr; }
+    sal_uLong    IncLinePos()            { return ++nlLinePos; }
     inline void         SetLineNr( sal_uLong nlNum );           // inline bottom
     inline void         SetLinePos( sal_uLong nlPos );          // inline bottom
 
     sal_uInt32 GetNextChar();   // Return next Unicode codepoint in UTF32.
     void RereadLookahead();
 
-    inline bool IsParserWorking() const { return SVPAR_WORKING == eState; }
+    bool IsParserWorking() const { return SvParserState::Working == eState; }
 
     Link<LinkParamNone*,void> GetAsynchCallLink() const
         { return LINK( const_cast<SvParser*>(this), SvParser, NewDataRead ); }
@@ -141,8 +131,6 @@ public:
     void SaveState( int nToken );
     void RestoreState();
     virtual void Continue( int nToken );
-
-    inline bool IsDownloadingFile() const { return bDownloadingFile; }
 
     // Set/get source encoding. The UCS2BEncoding flag is valid if source
     // encoding is UCS2. It specifies a big endian encoding.
@@ -237,7 +225,7 @@ public:
     /** Construction/Destruction.
     */
     SvKeyValueIterator();
-    virtual ~SvKeyValueIterator();
+    virtual ~SvKeyValueIterator() override;
     SvKeyValueIterator(const SvKeyValueIterator&) = delete;
     SvKeyValueIterator& operator=( const SvKeyValueIterator& ) = delete;
 

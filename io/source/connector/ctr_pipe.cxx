@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/io/IOException.hpp>
 
 #include "connector.hxx"
 
@@ -44,8 +47,6 @@ namespace stoc_connector {
     }
 
     sal_Int32 PipeConnection::read( Sequence < sal_Int8 > & aReadBytes , sal_Int32 nBytesToRead )
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception)
     {
         if( ! m_nStatus )
         {
@@ -61,8 +62,6 @@ namespace stoc_connector {
     }
 
     void PipeConnection::write( const Sequence < sal_Int8 > &seq )
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception)
     {
         if( ! m_nStatus )
         {
@@ -77,15 +76,11 @@ namespace stoc_connector {
     }
 
     void PipeConnection::flush( )
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception)
     {
 
     }
 
     void PipeConnection::close()
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception)
     {
         // ensure that close is called only once
         if(1 == osl_atomic_increment( (&m_nStatus) ) )
@@ -95,7 +90,6 @@ namespace stoc_connector {
     }
 
     OUString PipeConnection::getDescription()
-            throw( css::uno::RuntimeException, std::exception)
     {
         return m_sDescription;
     }

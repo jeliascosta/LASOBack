@@ -54,7 +54,7 @@ class ComboBoxControl : public ComboBox
 {
     public:
         ComboBoxControl( vcl::Window* pParent, WinBits nStyle, ComboboxToolbarController* pComboboxToolbarController );
-        virtual ~ComboBoxControl();
+        virtual ~ComboBoxControl() override;
         virtual void dispose() override;
 
         virtual void Select() override;
@@ -139,7 +139,7 @@ ComboboxToolbarController::ComboboxToolbarController(
 
     // default dropdown size
     ::Size aLogicalSize( 8, 160 );
-    ::Size aPixelSize = m_pComboBox->LogicToPixel( aLogicalSize, MAP_APPFONT );
+    ::Size aPixelSize = m_pComboBox->LogicToPixel( aLogicalSize, MapUnit::MapAppFont );
 
     m_pComboBox->SetSizePixel( ::Size( nWidth, aPixelSize.Height() ));
     m_pToolbar->SetItemWindow( m_nID, m_pComboBox );
@@ -150,7 +150,6 @@ ComboboxToolbarController::~ComboboxToolbarController()
 }
 
 void SAL_CALL ComboboxToolbarController::dispose()
-throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 

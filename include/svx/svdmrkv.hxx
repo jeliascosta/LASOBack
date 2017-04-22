@@ -27,6 +27,8 @@
 #include <svx/svxdllapi.h>
 #include <o3tl/typed_flags_set.hxx>
 
+class SfxViewShell;
+
 // The following is not yet implemented, or just partially:
 enum class SdrSearchOptions
 {
@@ -34,7 +36,7 @@ enum class SdrSearchOptions
     DEEP         = 0x0001, /* recursive into group objects */
     ALSOONMASTER = 0x0002, /* MasterPages are also scanned */
     WHOLEPAGE    = 0x0004, /* Not just the ObjList of PageView */
-    TESTMARKABLE = 0x0008, /* just markable Objekte/Punkte/Handles/... */
+    TESTMARKABLE = 0x0008, /* just markable objects/points/handles/... */
     TESTMACRO    = 0x0010, /* Just objects with macro */
     TESTTEXTEDIT = 0x0020, /* Just TextEdit-enabled objects */
     WITHTEXT     = 0x0040, /* Just objects with text */
@@ -56,32 +58,27 @@ namespace o3tl
     template<> struct typed_flags<SdrSearchOptions> : is_typed_flags<SdrSearchOptions, 0xbfff> {};
 }
 
-enum SdrHitKind {SDRHIT_NONE,      // No hit
-                 SDRHIT_OBJECT,    // Hit
-                 SDRHIT_BOUNDRECT, // Hit at BoundRect
-                 SDRHIT_BOUNDTL,   // Hit at BoundRect TopLeft
-                 SDRHIT_BOUNDTC,   // Hit at BoundRect TopCenter
-                 SDRHIT_BOUNDTR,   // Hit at BoundRect TopRight
-                 SDRHIT_BOUNDCL,   // Hit at BoundRect CenterLeft
-                 SDRHIT_BOUNDCR,   // Hit at BoundRect CenterRight
-                 SDRHIT_BOUNDBL,   // Hit at BoundRect BottomLeft
-                 SDRHIT_BOUNDBC,   // Hit at BoundRect BottomCenter
-                 SDRHIT_BOUNDBR,/*,*/ // Hit at BoundRect BottomRight
-                 /*SDRHIT_REFPOINT*/ // Reference point (Rotation axis, axis of reflextion) hit
-                 SDRHIT_HANDLE,          // Marking handle
-                 SDRHIT_HELPLINE,        // Reference line
-                 SDRHIT_GLUEPOINT,       // Glue point
-                 SDRHIT_TEXTEDIT,        // Open OutlinerView was hit
-                 SDRHIT_TEXTEDITOBJ,     // Object for SdrBeginTextEdit (Textbereich)
-                 SDRHIT_URLFIELD,        // Field in TextObj was hit (while it is currently not edited)
-                 SDRHIT_MACRO,           // Object for BegMacroObj
-                 SDRHIT_MARKEDOBJECT,    // Marked object (e.g. for dragging)
-                 SDRHIT_UNMARKEDOBJECT, // non-marked Object (e.g. for marking)
-                 SDRHIT_CELL};          // hit on a cell inside a table shape (outside of the cells text area)
+enum class SdrHitKind
+{
+    NONE,            // No hit
+    Object,          // Hit
+    Handle,          // Marking handle
+    HelpLine,        // Reference line
+    Gluepoint,       // Glue point
+    TextEdit,        // Open OutlinerView was hit
+    TextEditObj,     // Object for SdrBeginTextEdit (Textbereich)
+    UrlField,        // Field in TextObj was hit (while it is currently not edited)
+    Macro,           // Object for BegMacroObj
+    MarkedObject,    // Marked object (e.g. for dragging)
+    UnmarkedObject,  // non-marked Object (e.g. for marking)
+    Cell             // hit on a cell inside a table shape (outside of the cells text area)
+};
 
-enum SdrViewEditMode {SDREDITMODE_EDIT,           // Also known as arrow or pointer mode
-                      SDREDITMODE_CREATE,         // Tool for object creation
-                      SDREDITMODE_GLUEPOINTEDIT}; // Glue point editing mode
+enum class SdrViewEditMode {
+    Edit,           // Also known as arrow or pointer mode
+    Create,         // Tool for object creation
+    GluePointEdit   // Glue point editing mode
+};
 
 /** options for ImpTakeDescriptionStr() */
 enum class ImpTakeDescriptionOptions
@@ -110,23 +107,20 @@ protected:
     Point                       maRef2;            // Persistent
     Point                       maLastCrookCenter; // Persistent
     SdrHdlList                  maHdlList;
-    sdr::ViewSelection*         mpSdrViewSelection;
+    sdr::ViewSelection          maSdrViewSelection;
 
-    Rectangle                   maMarkedObjRect;
-    Rectangle                   maMarkedObjRectNoOffset;
-    Rectangle                   maMarkedPointsRect;
-    Rectangle                   maMarkedGluePointsRect;
+    tools::Rectangle            maMarkedObjRect;
+    tools::Rectangle            maMarkedObjRectNoOffset;
+    tools::Rectangle            maMarkedPointsRect;
+    tools::Rectangle            maMarkedGluePointsRect;
 
-    sal_uInt16                      mnFrameHandlesLimit;
+    sal_uInt16                  mnFrameHandlesLimit;
     sal_uIntPtr                 mnInsPointNum;      // Number of the InsPoint
-    sal_uIntPtr                     mnMarkableObjCount;
 
     SdrDragMode                 meDragMode;      // Persistent
     SdrViewEditMode             meEditMode;      // Persistent
     SdrViewEditMode             meEditMode0;     // Persistent
 
-    //HMHbool                       bHdlShown : 1;
-    bool                        mbRefHdlShownOnly : 1;     // Axis of reflextion during dragging (ni)
     bool                        mbDesignMode : 1;          // DesignMode for SdrUnoObj
     bool                        mbForceFrameHandles : 1;   // Persistent - FrameDrag also for single objects
     bool                        mbPlusHdlAlways : 1;       // Persistent
@@ -135,7 +129,6 @@ protected:
     bool                        mbMarkedObjRectDirty : 1;
     bool                        mbMrkPntDirty : 1;
     bool                        mbMarkedPointsRectsDirty : 1;
-    bool                        mbMarkableObjCountDirty : 1;
 
     // flag to completely disable handles at the view
     bool                        mbMarkHandlesHidden : 1;
@@ -148,7 +141,7 @@ private:
 protected:
     virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override;
     virtual void ModelHasChanged() override; // Is called by the PaintView
-    virtual void SetMarkHandles();                                           // maHdlList - fill (List of handles)
+    virtual void SetMarkHandles(SfxViewShell* pOtherShell); // maHdlList - fill (List of handles)
     void         SetMarkRects();                                             // Rects at the PageViews
     void         CheckMarked();                                              // Scan MarkList after Del and Lock Layer ...
     void         AddDragModeHdl(SdrDragMode eMode);
@@ -168,15 +161,15 @@ protected:
 
     // Generates a string including degrees symbol, from an angel specification in 1/100deg
     bool ImpMarkPoint(SdrHdl* pHdl, SdrMark* pMark, bool bUnmark);
-    virtual bool MarkPoints(const Rectangle* pRect, bool bUnmark);
-    bool MarkGluePoints(const Rectangle* pRect, bool bUnmark);
+    virtual bool MarkPoints(const tools::Rectangle* pRect, bool bUnmark);
+    bool MarkGluePoints(const tools::Rectangle* pRect, bool bUnmark);
 
     void SetMoveOutside(bool bOn);
 
 protected:
     // #i71538# make constructors of SdrView sub-components protected to avoid incomplete incarnations which may get casted to SdrView
-    SdrMarkView(SdrModel* pModel1, OutputDevice* pOut = nullptr);
-    virtual ~SdrMarkView();
+    SdrMarkView(SdrModel* pModel1, OutputDevice* pOut);
+    virtual ~SdrMarkView() override;
 
 public:
     virtual bool IsAction() const override;
@@ -184,11 +177,11 @@ public:
     virtual void EndAction() override;
     virtual void BckAction() override;
     virtual void BrkAction() override;
-    virtual void TakeActionRect(Rectangle& rRect) const override;
+    virtual void TakeActionRect(tools::Rectangle& rRect) const override;
 
     virtual void ClearPageView() override;
     virtual void HideSdrPage() override;
-    virtual bool IsObjMarkable(SdrObject* pObj, SdrPageView* pPV) const;
+    bool IsObjMarkable(SdrObject* pObj, SdrPageView* pPV) const;
 
     // Returns sal_True if objects, points or glue points are selected by drawing a frame
     // (as long as the frame is drawn).
@@ -201,7 +194,7 @@ public:
     void BrkMarkObj();
     bool IsMarkObj() const { return (nullptr != mpMarkObjOverlay); }
 
-    // DragModes: SDRDRAG_CREATE,SDRDRAG_MOVE,SDRDRAG_RESIZE,SDRDRAG_ROTATE,SDRDRAG_MIRROR,SDRDRAG_SHEAR,SDRDRAG_CROOK
+    // DragModes: SDRDRAG_CREATE,SdrDragMode::Move,SdrDragMode::Resize,SdrDragMode::Rotate,SdrDragMode::Mirror,SdrDragMode::Shear,SdrDragMode::Crook
     // Move==Resize
     // The interface might maybe be changed in the future because of Ortho-Drag
     void SetDragMode(SdrDragMode eMode);
@@ -214,12 +207,12 @@ public:
     void SetEditMode(SdrViewEditMode eMode);
     SdrViewEditMode GetEditMode() const { return meEditMode; }
 
-    void SetEditMode(bool bOn=true) { SetEditMode(bOn?SDREDITMODE_EDIT:SDREDITMODE_CREATE); }
-    bool IsEditMode() const { return meEditMode==SDREDITMODE_EDIT; }
-    void SetCreateMode(bool bOn=true) { SetEditMode(bOn?SDREDITMODE_CREATE:SDREDITMODE_EDIT); }
-    bool IsCreateMode() const { return meEditMode==SDREDITMODE_CREATE; }
-    void SetGluePointEditMode(bool bOn=true) { SetEditMode(bOn?SDREDITMODE_GLUEPOINTEDIT:meEditMode0); }
-    bool IsGluePointEditMode() const { return meEditMode==SDREDITMODE_GLUEPOINTEDIT; }
+    void SetEditMode(bool bOn) { SetEditMode(bOn?SdrViewEditMode::Edit:SdrViewEditMode::Create); }
+    bool IsEditMode() const { return meEditMode==SdrViewEditMode::Edit; }
+    void SetCreateMode(bool bOn) { SetEditMode(bOn?SdrViewEditMode::Create:SdrViewEditMode::Edit); }
+    bool IsCreateMode() const { return meEditMode==SdrViewEditMode::Create; }
+    void SetGluePointEditMode(bool bOn) { SetEditMode(bOn?SdrViewEditMode::GluePointEdit:meEditMode0); }
+    bool IsGluePointEditMode() const { return meEditMode==SdrViewEditMode::GluePointEdit; }
 
     void SetDesignMode(bool bOn = true);
     bool IsDesignMode() const { return mbDesignMode; }
@@ -234,12 +227,11 @@ public:
 
 protected:
     // all available changing methods
-    SdrMarkList& GetMarkedObjectListWriteAccess() { return mpSdrViewSelection->GetMarkedObjectListWriteAccess(); }
-    void SetEdgesOfMarkedNodesDirty() { mpSdrViewSelection->SetEdgesOfMarkedNodesDirty(); }
+    SdrMarkList& GetMarkedObjectListWriteAccess() { return maSdrViewSelection.GetMarkedObjectListWriteAccess(); }
 
 public:
     // all available const methods for read access to selection
-    const SdrMarkList& GetMarkedObjectList() const { return mpSdrViewSelection->GetMarkedObjectList(); }
+    const SdrMarkList& GetMarkedObjectList() const { return maSdrViewSelection.GetMarkedObjectList(); }
     // returns SAL_MAX_SIZE if not found
     size_t TryToFindMarkedObject(const SdrObject* pObj) const { return GetMarkedObjectList().FindObject(pObj); }
     SdrPageView* GetSdrPageViewOfMarkedByIndex(size_t nNum) const { return GetMarkedObjectList().GetMark(nNum)->GetPageView(); }
@@ -251,14 +243,12 @@ public:
     OUString GetDescriptionOfMarkedObjects() const { return GetMarkedObjectList().GetMarkDescription(); }
     OUString GetDescriptionOfMarkedPoints() const { return GetMarkedObjectList().GetPointMarkDescription(); }
     OUString GetDescriptionOfMarkedGluePoints() const { return GetMarkedObjectList().GetGluePointMarkDescription(); }
-    void GetBoundRectFromMarkedObjects(SdrPageView* pPageView, Rectangle& rRect) const { GetMarkedObjectList().TakeBoundRect(pPageView, rRect); }
-    bool GetSnapRectFromMarkedObjects(SdrPageView* pPageView, Rectangle& rRect) const { return GetMarkedObjectList().TakeSnapRect(pPageView, rRect); }
 
     // Get a list of all those links which are connected to marked nodes,
     // but which are not marked themselves.
-    const SdrMarkList& GetEdgesOfMarkedNodes() const { return mpSdrViewSelection->GetEdgesOfMarkedNodes(); }
-    const SdrMarkList& GetMarkedEdgesOfMarkedNodes() const { return mpSdrViewSelection->GetMarkedEdgesOfMarkedNodes(); }
-    const std::vector<SdrObject*>& GetTransitiveHullOfMarkedObjects() const { return mpSdrViewSelection->GetAllMarkedObjects(); }
+    const SdrMarkList& GetEdgesOfMarkedNodes() const { return maSdrViewSelection.GetEdgesOfMarkedNodes(); }
+    const SdrMarkList& GetMarkedEdgesOfMarkedNodes() const { return maSdrViewSelection.GetMarkedEdgesOfMarkedNodes(); }
+    const std::vector<SdrObject*>& GetTransitiveHullOfMarkedObjects() const { return maSdrViewSelection.GetAllMarkedObjects(); }
 
 
     // mechanism to complete disable handles at the view. Handles will be hidden and deleted
@@ -277,12 +267,12 @@ public:
     // SdrSearchOptions::DEEP SdrSearchOptions::ALSOONMASTER SdrSearchOptions::TESTMARKABLE SdrSearchOptions::TESTTEXTEDIT
     // SdrSearchOptions::WITHTEXT SdrSearchOptions::TESTTEXTAREA SdrSearchOptions::BACKWARD SdrSearchOptions::MARKED
     // SdrSearchOptions::WHOLEPAGE
-    bool PickObj(const Point& rPnt, short nTol, SdrObject*& rpObj, SdrPageView*& rpPV, SdrSearchOptions nOptions, SdrObject** ppRootObj, bool* pbHitPassDirect=nullptr) const;
-    bool PickObj(const Point& rPnt, short nTol, SdrObject*& rpObj, SdrPageView*& rpPV, SdrSearchOptions nOptions=SdrSearchOptions::NONE) const;
+    SdrObject* PickObj(const Point& rPnt, short nTol, SdrPageView*& rpPV, SdrSearchOptions nOptions, SdrObject** ppRootObj, bool* pbHitPassDirect=nullptr) const;
+    SdrObject* PickObj(const Point& rPnt, short nTol, SdrPageView*& rpPV, SdrSearchOptions nOptions=SdrSearchOptions::NONE) const;
     bool MarkObj(const Point& rPnt, short nTol=-2, bool bToggle=false, bool bDeep=false);
 
-    // Pick: Supported options for nOptions are SdrSearchOptions::PASS2BOUND und SdrSearchOptions::PASS3NEAREST
-    bool PickMarkedObj(const Point& rPnt, SdrObject*& rpObj, SdrPageView*& rpPV, SdrSearchOptions nOptions=SdrSearchOptions::NONE) const;
+    // Pick: Supported options for nOptions are SdrSearchOptions::PASS2BOUND and SdrSearchOptions::PASS3NEAREST
+    bool PickMarkedObj(const Point& rPnt, SdrObject*& rpObj, SdrPageView*& rpPV, SdrSearchOptions nOptions) const;
 
     // Selects the most upper of the marked objects (O1) and scans from there
     // towards bottom direction, selecting the first non-marked object (O2).
@@ -296,11 +286,11 @@ public:
     // object (O2). In case of success the marking of O1 is deleted, a marking
     // is created at O2 and sal_True is returned. With the parameter
     // bPrev=sal_True the scan direction is turned to the other direction.
-    bool MarkNextObj(const Point& rPnt, short nTol=-2, bool bPrev=false);
+    bool MarkNextObj(const Point& rPnt, short nTol, bool bPrev);
 
     // Mark all objects within a rectangular area
     // Just objects are marked which are inclosed completely
-    void MarkObj(const Rectangle& rRect, bool bUnmark=false);
+    void MarkObj(const tools::Rectangle& rRect, bool bUnmark);
     void MarkObj(SdrObject* pObj, SdrPageView* pPV, bool bUnmark=false, bool bImpNoSetMarkHdl=false);
     void MarkAllObj(SdrPageView* pPV=nullptr); // pPage=NULL => all displayed pages
     void UnmarkAllObj(SdrPageView* pPV=nullptr); // pPage=NULL => all displayed pages
@@ -329,8 +319,6 @@ public:
     /** should only be used from outside svx for special ui elements */
     bool MarkPointHelper(SdrHdl* pHdl, SdrMark* pMark, bool bUnmark);
 
-    // Mark all points within this rectangular alle Punkte (View coordinates)
-    void MarkPoints(const Rectangle& rRect, bool bUnmark=false) { MarkPoints(&rRect,bUnmark); }
     bool UnmarkPoint(SdrHdl& rHdl) { return MarkPoint(rHdl,true); }
     bool IsPointMarked(const SdrHdl& rHdl) const { ForceUndirtyMrkPnt(); return rHdl.IsSelected(); }
     bool MarkAllPoints() { return MarkPoints(nullptr,false); }
@@ -341,7 +329,7 @@ public:
     // In case of success the marking of
     // P1 is deleted, a mark is set at P2 and sal_True is returned.
     // With the parameter bPrev=sal_True the scan direction is turned to the other direction.
-    bool MarkNextPoint(const Point& rPnt, bool bPrev=false);
+    bool MarkNextPoint(const Point& rPnt, bool bPrev);
 
     // Search for the number of the suitable handle. In case of empty search result,
     // SAL_MAX_SIZE is returned.
@@ -396,7 +384,7 @@ public:
     // In case of success the marking of
     // P1 is deleted, a mark is set at P2 and sal_True is returned.
     // With the parameter bPrev=sal_True the scan direction is turned to the other direction.
-    bool MarkNextGluePoint(const Point& rPnt, bool bPrev=false);
+    bool MarkNextGluePoint(const Point& rPnt, bool bPrev);
 
     // Draw a selection frame for glue point marking.
     // This routine will just be started in case that HasMarkablePoints() returns sal_True.
@@ -412,14 +400,14 @@ public:
     // AdjustMarkHdl is just called in case of changes; usually this causes an Invalidate
     // At the end of a redraw the handles are drawn automatically.
     // The purpose is to avoid unnecessary flickering. -> This does not yet work, that's why sal_True!
-    void AdjustMarkHdl(); //HMHBOOL bRestraintPaint=sal_True);
+    void AdjustMarkHdl(SfxViewShell* pOtherShell = nullptr); //HMHBOOL bRestraintPaint=sal_True);
 
-    const Rectangle& GetMarkedObjRect() const; // SnapRects of Objects, without line width
-    Rectangle GetMarkedObjBoundRect() const;   // incl. line width, overlapping rags, ...
-    const Rectangle& GetMarkedPointsRect() const;     // Enclosing rectangle of all marked points
-    const Rectangle& GetMarkedGluePointsRect() const; // Enclosing rectangle of all marked glue points
-    const Rectangle& GetAllMarkedRect() const { return GetMarkedObjRect(); }
-    Rectangle GetAllMarkedBoundRect() const { return GetMarkedObjBoundRect(); }
+    const tools::Rectangle& GetMarkedObjRect() const; // SnapRects of Objects, without line width
+    tools::Rectangle GetMarkedObjBoundRect() const;   // incl. line width, overlapping rags, ...
+    const tools::Rectangle& GetMarkedPointsRect() const;     // Enclosing rectangle of all marked points
+    const tools::Rectangle& GetMarkedGluePointsRect() const; // Enclosing rectangle of all marked glue points
+    const tools::Rectangle& GetAllMarkedRect() const { return GetMarkedObjRect(); }
+    tools::Rectangle GetAllMarkedBoundRect() const { return GetMarkedObjBoundRect(); }
     Point GetGridOffset() const;
 
     // Will be always called, if the list of marked objects might be changed.
@@ -438,13 +426,15 @@ public:
     // Is set by DragView automatically when finishing a Crook-Drag.
     void SetLastCrookCenter(const Point& rPt) { maLastCrookCenter=rPt; }
 
-    // Rotation center point and start point of the axis of reflextion, respecively
+    // Rotation center point and start point of the axis of reflextion, respectively
     const Point& GetRef1() const { return maRef1; }
     void SetRef1(const Point& rPt);
 
     // End point of the axis of reflextion
     const Point& GetRef2() const { return maRef1; }
     void SetRef2(const Point& rPt);
+    /// Get access to the view shell owning this draw view, if any.
+    virtual SfxViewShell* GetSfxViewShell() const;
 };
 
 

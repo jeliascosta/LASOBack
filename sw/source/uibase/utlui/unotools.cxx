@@ -57,7 +57,6 @@
 
 using namespace ::com::sun::star;
 
-const sal_Char cFrameControl[] = "com.sun.star.frame.FrameControl";
 const sal_Char cFactory[] = "private:factory/swriter";
 
 bool SwOneExampleFrame::bShowServiceNotAvailableMessage = true;
@@ -83,8 +82,8 @@ SwOneExampleFrame::SwOneExampleFrame( vcl::Window& rWin,
         aInitializedLink = *pInitializedLink;
 
     // the controller is asynchronously set
-    aLoadedIdle.SetIdleHdl(LINK(this, SwOneExampleFrame, TimeoutHdl));
-    aLoadedIdle.SetPriority(SchedulerPriority::HIGH);
+    aLoadedIdle.SetInvokeHandler(LINK(this, SwOneExampleFrame, TimeoutHdl));
+    aLoadedIdle.SetPriority(TaskPriority::HIGH);
 
     CreateControl();
 
@@ -96,7 +95,7 @@ void SwOneExampleFrame::CreateErrorMessage()
     if(SwOneExampleFrame::bShowServiceNotAvailableMessage)
     {
         OUString sInfo(SW_RES(STR_SERVICE_UNAVAILABLE));
-        sInfo += cFrameControl;
+        sInfo += "com.sun.star.frame.FrameControl";
         ScopedVclPtrInstance<InfoBox>(nullptr, sInfo)->Execute();
         SwOneExampleFrame::bShowServiceNotAvailableMessage = false;
     }
@@ -139,15 +138,13 @@ void SwOneExampleFrame::CreateControl()
 
         uno::Sequence<beans::PropertyValue> aSeq(3);
         beans::PropertyValue* pValues = aSeq.getArray();
-
         pValues[0].Name = "OpenFlags";
         pValues[0].Value <<= OUString("-RB");
         pValues[1].Name = "Referer";
         pValues[1].Value <<= OUString("private:user");
         pValues[2].Name = "ReadOnly";
         pValues[2].Value <<= (sTempURL != cFactory);
-        uno::Any aArgs;
-        aArgs.setValue(&aSeq, cppu::UnoType<uno::Sequence<beans::PropertyValue>>::get());
+        uno::Any aArgs(aSeq);
 
         xPrSet->setPropertyValue( "LoaderArguments", aArgs );
         //save and set readonly???
@@ -171,7 +168,7 @@ void    SwOneExampleFrame::DisposeControl()
     _xController = nullptr;
 }
 
-static void disableScrollBars(uno::Reference< beans::XPropertySet > xViewProps,
+static void disableScrollBars(uno::Reference< beans::XPropertySet > const & xViewProps,
     bool bEnableOnlineMode)
 {
     //the scrollbar logic is kind of busted looking in writer, when the hori scrollbar
@@ -196,7 +193,7 @@ static void disableScrollBars(uno::Reference< beans::XPropertySet > xViewProps,
     }
 }
 
-IMPL_LINK_TYPED( SwOneExampleFrame, TimeoutHdl, Idle*, pTimer, void )
+IMPL_LINK( SwOneExampleFrame, TimeoutHdl, Timer*, pTimer, void )
 {
     if(!_xControl.is())
         return;
@@ -329,7 +326,7 @@ IMPL_LINK_TYPED( SwOneExampleFrame, TimeoutHdl, Idle*, pTimer, void )
                     pSh->Overwrite(SW_RESSTR(STR_IDXEXAMPLE_IDXTXT_IMAGE1));
                   }
                   else
-                  {;}
+                  {}
                 }
                 while(pSh->Right(sal_uInt16(1), sal_uInt16(1), true));
             }
@@ -357,7 +354,7 @@ IMPL_LINK_TYPED( SwOneExampleFrame, TimeoutHdl, Idle*, pTimer, void )
             aSize >>= aPSize;
             //TODO: set page width to card width
             aPSize.Width = 10000;
-            aSize.setValue(&aPSize, ::cppu::UnoType<awt::Size>::get());
+            aSize <<= aPSize;
             xPProp->setPropertyValue(UNO_NAME_SIZE, aSize);
 
             uno::Any aZero; aZero <<= (sal_Int32)0;
@@ -452,18 +449,16 @@ static const sal_Int16 nZoomValues[] =
 
 void SwOneExampleFrame::CreatePopup(const Point& rPt)
 {
-    PopupMenu aPop;
-    PopupMenu aSubPop1;
-    ResStringArray& rArr = aMenuRes.GetMenuArray();
+    ScopedVclPtrInstance<PopupMenu> aPop;
 
-    aPop.InsertItem(ITEM_UP,   rArr.GetString(rArr.FindIndex(ST_MENU_UP )));
-    aPop.InsertItem(ITEM_DOWN, rArr.GetString(rArr.FindIndex(ST_MENU_DOWN )));
+    aPop->InsertItem(ITEM_UP,   aMenuRes.GetString(aMenuRes.FindIndex(ST_MENU_UP)));
+    aPop->InsertItem(ITEM_DOWN, aMenuRes.GetString(aMenuRes.FindIndex(ST_MENU_DOWN)));
 
     Link<Menu*,bool> aSelLk = LINK(this, SwOneExampleFrame, PopupHdl );
-    aPop.SetSelectHdl(aSelLk);
+    aPop->SetSelectHdl(aSelLk);
     if(EX_SHOW_ONLINE_LAYOUT == nStyleFlags)
     {
-        aPop.InsertItem(ITEM_ZOOM, rArr.GetString(rArr.FindIndex(ST_MENU_ZOOM   )));
+        aPop->InsertItem(ITEM_ZOOM, aMenuRes.GetString(aMenuRes.FindIndex(ST_MENU_ZOOM)));
 
         uno::Reference< view::XViewSettingsSupplier >  xSettings(_xController, uno::UNO_QUERY);
         uno::Reference< beans::XPropertySet >  xViewProps = xSettings->getViewSettings();
@@ -472,22 +467,22 @@ void SwOneExampleFrame::CreatePopup(const Point& rPt)
         sal_Int16 nZoom = 0;
         aZoom >>= nZoom;
 
+        VclPtrInstance<PopupMenu> aSubPop1;
         for (sal_uInt16 i = 0; i < SAL_N_ELEMENTS(nZoomValues); ++i)
         {
             OUString sTemp = unicode::formatPercent(nZoomValues[i],
                 Application::GetSettings().GetUILanguageTag());
-            aSubPop1.InsertItem( ITEM_ZOOM + i + 1, sTemp);
+            aSubPop1->InsertItem( ITEM_ZOOM + i + 1, sTemp);
             if(nZoom == nZoomValues[i])
-                aSubPop1.CheckItem(ITEM_ZOOM + i + 1);
+                aSubPop1->CheckItem(ITEM_ZOOM + i + 1);
         }
-        aPop.SetPopupMenu( ITEM_ZOOM, &aSubPop1 );
-        aSubPop1.SetSelectHdl(aSelLk);
+        aPop->SetPopupMenu( ITEM_ZOOM, aSubPop1.get() );
+        aSubPop1->SetSelectHdl(aSelLk);
     }
-    aPop.Execute( aTopWindow.get(), rPt );
-
+    aPop->Execute( aTopWindow.get(), rPt );
 }
 
-IMPL_LINK_TYPED(SwOneExampleFrame, PopupHdl, Menu*, pMenu, bool )
+IMPL_LINK(SwOneExampleFrame, PopupHdl, Menu*, pMenu, bool )
 {
     sal_uInt16 nId = pMenu->GetCurItemId();
     if ((nId > ITEM_ZOOM) &&
@@ -544,20 +539,13 @@ void SwFrameCtrlWindow::Command( const CommandEvent& rCEvt )
 
 Size SwFrameCtrlWindow::GetOptimalSize() const
 {
-    return LogicToPixel(Size(82, 124), MapMode(MAP_APPFONT));
+    return LogicToPixel(Size(82, 124), MapMode(MapUnit::MapAppFont));
 }
 
 void SwFrameCtrlWindow::Resize()
 {
     VclEventBox::Resize();
     pExampleFrame->ClearDocument();
-}
-
-MenuResource::MenuResource(const ResId& rResId) :
-    Resource(rResId),
-    aMenuArray(ResId(1,*rResId.GetResMgr()))
-{
-    FreeResource();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

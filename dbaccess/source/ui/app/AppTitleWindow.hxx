@@ -35,7 +35,7 @@ namespace dbaui
         virtual void DataChanged(const DataChangedEvent& rDCEvt) override;
     public:
         OTitleWindow(vcl::Window* _pParent,sal_uInt16 _nTitleId,WinBits _nBits,bool _bShift = true);
-        virtual ~OTitleWindow();
+        virtual ~OTitleWindow() override;
         virtual void dispose() override;
 
         // Window overrides
@@ -55,7 +55,7 @@ namespace dbaui
             @return
                 The child window.
         */
-        inline vcl::Window* getChildWindow() const { return m_pChild; }
+        vcl::Window* getChildWindow() const { return m_pChild; }
 
         /** sets the title text out of the resource
             @param  _nTitleId

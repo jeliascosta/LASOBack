@@ -55,7 +55,6 @@ private:
 
     SAL_DLLPRIVATE void SetDialogData_Impl();
     SAL_DLLPRIVATE void GetDialogData_Impl();
-    SAL_DLLPRIVATE void init();
 
 protected:
     SfxModalDialog(vcl::Window *pParent, const OUString& rID, const OUString& rUIXMLDescription);
@@ -70,7 +69,7 @@ protected:
     SfxItemSet*         GetOutputSetImpl() { return pOutputSet; }
 
 public:
-    virtual ~SfxModalDialog();
+    virtual ~SfxModalDialog() override;
     virtual void dispose() override;
     const SfxItemSet*   GetOutputItemSet() const { return pOutputSet; }
     const SfxItemSet*   GetInputItemSet() const { return pInputSet; }
@@ -92,7 +91,7 @@ class SFX2_DLLPUBLIC SfxModelessDialog: public ModelessDialog
 protected:
     SfxModelessDialog( SfxBindings*, SfxChildWindow*,
         vcl::Window*, const OUString& rID, const OUString& rUIXMLDescription );
-    virtual ~SfxModelessDialog();
+    virtual ~SfxModelessDialog() override;
     virtual void dispose() override;
     virtual bool            Close() override;
     virtual void            Resize() override;
@@ -102,11 +101,11 @@ protected:
 public:
     virtual void            FillInfo(SfxChildWinInfo&) const;
     void                    Initialize (SfxChildWinInfo* pInfo);
-    virtual bool            Notify( NotifyEvent& rNEvt ) override;
+    virtual bool            EventNotify( NotifyEvent& rNEvt ) override;
     SfxBindings&            GetBindings()
                             { return *pBindings; }
 
-    DECL_LINK_TYPED(TimerHdl, Idle *, void);
+    DECL_LINK(TimerHdl, Timer *, void);
 
 };
 
@@ -125,20 +124,20 @@ protected:
                             SfxFloatingWindow( SfxBindings *pBindings,
                                               SfxChildWindow *pCW,
                                               vcl::Window* pParent,
-                                              WinBits nWinBits=WB_STDMODELESS);
+                                              WinBits nWinBits);
                             SfxFloatingWindow( SfxBindings *pBindings,
                                               SfxChildWindow *pCW,
                                               vcl::Window* pParent,
                                               const OString& rID, const OUString& rUIXMLDescription,
                                               const css::uno::Reference<css::frame::XFrame> &rFrame = css::uno::Reference<css::frame::XFrame>());
-                            virtual ~SfxFloatingWindow();
+                            virtual ~SfxFloatingWindow() override;
     virtual void            dispose() override;
 
     virtual void            StateChanged( StateChangedType nStateChange ) override;
     virtual bool            Close() override;
     virtual void            Resize() override;
     virtual void            Move() override;
-    virtual bool            Notify( NotifyEvent& rNEvt ) override;
+    virtual bool            EventNotify( NotifyEvent& rNEvt ) override;
     SfxBindings&            GetBindings()
                             { return *pBindings; }
 
@@ -146,7 +145,7 @@ public:
     virtual void            FillInfo(SfxChildWinInfo&) const;
     void                    Initialize (SfxChildWinInfo* pInfo);
 
-    DECL_LINK_TYPED(TimerHdl, Idle *, void);
+    DECL_LINK(TimerHdl, Timer *, void);
 
 };
 
@@ -169,26 +168,24 @@ public:
         const OUString& rID = OUString("SingleTabDialog"),
         const OUString& rUIXMLDescription = OUString("sfx/ui/singletabdialog.ui"));
 
-    SfxSingleTabDialog(vcl::Window *pParent, const SfxItemSet* pInSet = nullptr,
+    SfxSingleTabDialog(vcl::Window *pParent, const SfxItemSet* pInSet,
         const OUString& rID = OUString("SingleTabDialog"),
         const OUString& rUIXMLDescription = OUString("sfx/ui/singletabdialog.ui"));
 
-    virtual             ~SfxSingleTabDialog();
+    virtual             ~SfxSingleTabDialog() override;
     virtual void        dispose() override;
 
-    void                SetTabPage(SfxTabPage* pTabPage, GetTabPageRanges pRangesFunc = nullptr, sal_uInt32 nSettingsId = 0);
+    void                SetTabPage(SfxTabPage* pTabPage, sal_uInt32 nSettingsId = 0);
     SfxTabPage*         GetTabPage() const { return pImpl->m_pSfxPage; }
 
     OKButton*           GetOKButton() const { return pOKBtn; }
 
 protected:
-    GetTabPageRanges    fnGetRanges;
-
     VclPtr<OKButton>      pOKBtn;
     VclPtr<CancelButton>  pCancelBtn;
     VclPtr<HelpButton>    pHelpBtn;
 
-    DECL_DLLPRIVATE_LINK_TYPED(OKHdl_Impl, Button*, void);
+    DECL_DLLPRIVATE_LINK(OKHdl_Impl, Button*, void);
 
 private:
     std::unique_ptr<SingleTabDlgImpl>   pImpl;

@@ -56,7 +56,7 @@ public:
 
     /** @short  standard dtor.
      */
-    virtual ~TypeDetection();
+    virtual ~TypeDetection() override;
 
 
 // private helper
@@ -86,7 +86,7 @@ private:
                     The specified MediaDescriptor will be patched, so it contain
                     the right values every time. Using of any deep detection service
                     can be enabled/disabled. And last but not least: If the results
-                    wont be really clear (because a flat detected type has no deep
+                    won't be really clear (because a flat detected type has no deep
                     detection service), a "suggested" type name will be returned as "rLastChance".
                     It can be used after e.g. all well known deep detection services
                     was used without getting any result. Then this "last-chance-type"
@@ -213,8 +213,7 @@ private:
                     Note: If an interactionHandler is part of the given descriptor too, it was already used.
                     Means: let the exception pass through the top most interface method!
      */
-    void impl_openStream(utl::MediaDescriptor& rDescriptor)
-        throw (css::uno::Exception);
+    void impl_openStream(utl::MediaDescriptor& rDescriptor);
 
 
     /** @short      validate the specified type and its relationships
@@ -315,12 +314,10 @@ public:
 
     // XTypeDetection
 
-    virtual OUString SAL_CALL queryTypeByURL(const OUString& sURL)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL queryTypeByURL(const OUString& sURL) override;
 
     virtual OUString SAL_CALL queryTypeByDescriptor(css::uno::Sequence< css::beans::PropertyValue >& lDescriptor,
-                                                           sal_Bool                                         bAllowDeep )
-        throw (css::uno::RuntimeException, std::exception) override;
+                                                           sal_Bool                                         bAllowDeep ) override;
 
 
 // static uno helper!

@@ -57,7 +57,7 @@ class SwDrawModel;
 
 // initialize DrawModel (in form of a SwDrawModel) and DocShell (in form of a SwDocShell)
 // as needed, one or both parameters may be zero
-void SAL_DLLPRIVATE InitDrawModelAndDocShell(SwDocShell* pSwDocShell, SwDrawModel* pSwDrawModel);
+void InitDrawModelAndDocShell(SwDocShell* pSwDocShell, SwDrawModel* pSwDrawModel);
 
 class SW_DLLPUBLIC SwDocShell
     : public SfxObjectShell
@@ -111,7 +111,7 @@ class SW_DLLPUBLIC SwDocShell
     /// Make DocInfo known to the Doc.
     SAL_DLLPRIVATE virtual VclPtr<SfxDocumentInfoDialog> CreateDocumentInfoDialog(const SfxItemSet &) override;
     /// OLE-stuff
-    SAL_DLLPRIVATE virtual void          Draw( OutputDevice*, const JobSetup&, sal_uInt16) override;
+    SAL_DLLPRIVATE virtual void          Draw( OutputDevice*, const JobSetup&, sal_uInt16 = ASPECT_CONTENT) override;
 
     /// Methods for StyleSheets
 
@@ -124,7 +124,7 @@ class SW_DLLPUBLIC SwDocShell
         const SfxStyleFamily nFamily,
         sal_uInt16 nMask,
         const bool bNew,
-        const OString& sPageId = OString(),
+        const OString& sPageId,
         SwWrtShell* pActShell = nullptr,
         const bool bBasic = false );
 
@@ -132,12 +132,12 @@ class SW_DLLPUBLIC SwDocShell
     SAL_DLLPRIVATE bool                  Hide(const OUString &rName, SfxStyleFamily nFamily, bool bHidden);
     SAL_DLLPRIVATE SfxStyleFamily        ApplyStyles(const OUString &rName,
         const SfxStyleFamily nFamily,
-        SwWrtShell* pShell = nullptr,
+        SwWrtShell* pShell,
         sal_uInt16 nMode = 0);
     SAL_DLLPRIVATE SfxStyleFamily        DoWaterCan( const OUString &rName, SfxStyleFamily nFamily);
-    SAL_DLLPRIVATE SfxStyleFamily        UpdateStyle(const OUString &rName, SfxStyleFamily nFamily, SwWrtShell* pShell = nullptr);
+    SAL_DLLPRIVATE SfxStyleFamily        UpdateStyle(const OUString &rName, SfxStyleFamily nFamily, SwWrtShell* pShell);
     SAL_DLLPRIVATE SfxStyleFamily        MakeByExample(const OUString &rName,
-                                               SfxStyleFamily nFamily, sal_uInt16 nMask, SwWrtShell* pShell = nullptr);
+                                               SfxStyleFamily nFamily, sal_uInt16 nMask, SwWrtShell* pShell);
 
     SAL_DLLPRIVATE void                  SubInitNew();   ///< for InitNew and HtmlSourceMode.
 
@@ -168,14 +168,14 @@ public:
     SwDocShell( SfxObjectCreateMode eMode = SfxObjectCreateMode::EMBEDDED );
     SwDocShell( SfxModelFlags i_nSfxCreationFlags );
     SwDocShell( SwDoc *pDoc, SfxObjectCreateMode eMode = SfxObjectCreateMode::STANDARD );
-    virtual ~SwDocShell();
+    virtual ~SwDocShell() override;
 
     /// OLE 2.0-notification.
-    DECL_LINK_TYPED( Ole2ModifiedHdl, bool, void );
+    DECL_LINK( Ole2ModifiedHdl, bool, void );
 
     /// OLE-stuff.
-    virtual void      SetVisArea( const Rectangle &rRect ) override;
-    virtual Rectangle GetVisArea( sal_uInt16 nAspect ) const override;
+    virtual void      SetVisArea( const tools::Rectangle &rRect ) override;
+    virtual tools::Rectangle GetVisArea( sal_uInt16 nAspect ) const override;
     virtual Printer  *GetDocumentPrinter() override;
     virtual OutputDevice* GetDocumentRefDev() override;
     virtual void      OnDocumentPrinterChanged( Printer * pNewPrinter ) override;
@@ -192,8 +192,8 @@ public:
     void                    StateStyleSheet(SfxItemSet&, SwWrtShell* pSh = nullptr );
 
     /// returns Doc. But be careful!
-    inline SwDoc*                   GetDoc() { return m_pDoc; }
-    inline const SwDoc*             GetDoc() const { return m_pDoc; }
+    SwDoc*                   GetDoc() { return m_pDoc; }
+    const SwDoc*             GetDoc() const { return m_pDoc; }
     IDocumentDeviceAccess&          getIDocumentDeviceAccess();
     IDocumentChartDataProviderAccess& getIDocumentChartDataProviderAccess();
 
@@ -265,6 +265,7 @@ public:
      the load of document being finished. */
 
     void LoadingFinished();
+    virtual void SetFormatSpecificCompatibilityOptions( const OUString& rFilterTypeName ) override;
 
     /// Cancel transfer (called from SFX).
     virtual void CancelTransfers() override;
@@ -307,8 +308,6 @@ public:
     virtual void    SetChangeRecording( bool bActivate ) override;
     virtual void    SetProtectionPassword( const OUString &rPassword ) override;
     virtual bool    GetProtectionHash( /*out*/ css::uno::Sequence< sal_Int8 > &rPasswordHash ) override;
-
-    virtual void libreOfficeKitCallback(int nType, const char* pPayload) const override;
 };
 
 /** Find the right DocShell and create a new one:

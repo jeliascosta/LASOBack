@@ -42,7 +42,7 @@ class OConnectionURLEdit : public Edit
 
 public:
     OConnectionURLEdit(vcl::Window* pParent, WinBits _nBits,bool _bShowPrefix = false);
-    virtual ~OConnectionURLEdit();
+    virtual ~OConnectionURLEdit() override;
     virtual void dispose() override;
 
 public:
@@ -62,9 +62,9 @@ public:
     /// set a new text, leave the current prefix unchanged
     void     SetTextNoPrefix(const OUString& _rText);
 
-    inline void      SaveValueNoPrefix()             { m_sSaveValueNoPrefix = GetTextNoPrefix(); }
+    void      SaveValueNoPrefix()             { m_sSaveValueNoPrefix = GetTextNoPrefix(); }
     const OUString&  GetSavedValueNoPrefix() const   { return m_sSaveValueNoPrefix; }
-    inline void      SetTypeCollection(::dbaccess::ODsnTypeCollection* _pTypeCollection) { m_pTypeCollection = _pTypeCollection; }
+    void      SetTypeCollection(::dbaccess::ODsnTypeCollection* _pTypeCollection) { m_pTypeCollection = _pTypeCollection; }
 };
 
 }   // namespace dbaui

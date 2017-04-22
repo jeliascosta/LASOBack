@@ -201,8 +201,8 @@ private:
     ValueItemList   mItemList;
     std::unique_ptr<ValueSetItem> mpNoneItem;
     VclPtr<ScrollBar> mxScrollBar;
-    Rectangle       maNoneItemRect;
-    Rectangle       maItemListRect;
+    tools::Rectangle       maNoneItemRect;
+    tools::Rectangle       maItemListRect;
     long            mnItemWidth;
     long            mnItemHeight;
     long            mnTextOffset;
@@ -225,7 +225,6 @@ private:
     Link<ValueSet*,void>  maSelectHdl;
     Link<ValueSet*,void>  maHighlightHdl;
 
-    // bitfield
     bool            mbFormat : 1;
     bool            mbHighlight : 1;
     bool            mbSelection : 1;
@@ -236,22 +235,19 @@ private:
     bool            mbScroll : 1;
     bool            mbFullMode : 1;
     bool            mbEdgeBlending : 1;
-    bool            mbIsTransientChildrenDisabled : 1;
     bool            mbHasVisibleItems : 1;
 
     friend class ValueSetAcc;
     friend class ValueItemAcc;
 
     using Control::ImplInitSettings;
-    using Window::ImplInit;
-    SVT_DLLPRIVATE void         ImplInit();
     SVT_DLLPRIVATE void         ImplInitSettings( bool bFont, bool bForeground, bool bBackground );
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
 
     SVT_DLLPRIVATE void         ImplInitScrollBar();
     SVT_DLLPRIVATE void         ImplDeleteItems();
-    SVT_DLLPRIVATE void         ImplFormatItem(vcl::RenderContext& rRenderContext, ValueSetItem* pItem, Rectangle aRect);
+    SVT_DLLPRIVATE void         ImplFormatItem(vcl::RenderContext& rRenderContext, ValueSetItem* pItem, tools::Rectangle aRect);
     SVT_DLLPRIVATE void         ImplDrawItemText(vcl::RenderContext& rRenderContext, const OUString& rStr);
     SVT_DLLPRIVATE void         ImplDrawSelect(vcl::RenderContext& rRenderContext, sal_uInt16 nItemId, const bool bFocus, const bool bDrawSel);
     SVT_DLLPRIVATE void         ImplDrawSelect(vcl::RenderContext& rRenderContext);
@@ -265,13 +261,13 @@ private:
     SVT_DLLPRIVATE ValueSetItem*    ImplGetFirstItem();
     SVT_DLLPRIVATE sal_uInt16          ImplGetVisibleItemCount() const;
     SVT_DLLPRIVATE void         ImplInsertItem( ValueSetItem *const pItem, const size_t nPos );
-    SVT_DLLPRIVATE Rectangle    ImplGetItemRect( size_t nPos ) const;
+    SVT_DLLPRIVATE tools::Rectangle    ImplGetItemRect( size_t nPos ) const;
     SVT_DLLPRIVATE void         ImplFireAccessibleEvent( short nEventId, const css::uno::Any& rOldValue, const css::uno::Any& rNewValue );
     SVT_DLLPRIVATE bool         ImplHasAccessibleListeners();
     SVT_DLLPRIVATE void         ImplTracking( const Point& rPos, bool bRepeat );
     SVT_DLLPRIVATE void         ImplEndTracking( const Point& rPos, bool bCancel );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplScrollHdl, ScrollBar*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplTimerHdl, Timer*, void );
+    DECL_DLLPRIVATE_LINK( ImplScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK( ImplTimerHdl, Timer*, void );
 
     ValueSet (const ValueSet &) = delete;
     ValueSet & operator= (const ValueSet &) = delete;
@@ -283,8 +279,7 @@ protected:
 
 public:
                     ValueSet( vcl::Window* pParent, WinBits nWinStyle );
-                    ValueSet( vcl::Window* pParent, const ResId& rResId );
-    virtual         ~ValueSet();
+    virtual         ~ValueSet() override;
     virtual void    dispose() override;
 
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -293,7 +288,7 @@ public:
     virtual void    Tracking( const TrackingEvent& rMEvt ) override;
     virtual void    KeyInput( const KeyEvent& rKEvt ) override;
     virtual void    Command( const CommandEvent& rCEvt ) override;
-    virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void    Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual void    GetFocus() override;
     virtual void    LoseFocus() override;
     virtual void    Resize() override;
@@ -303,7 +298,6 @@ public:
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
     virtual void    Select();
-    void            DoubleClick();
     virtual void    UserDraw( const UserDrawEvent& rUDEvt );
 
     /// Insert @rImage item.
@@ -317,7 +311,7 @@ public:
     /// Insert an User Drawn item.
     void            InsertItem(sal_uInt16 nItemId, size_t nPos = VALUESET_APPEND);
     /// Insert an User Drawn item with @rStr tooltip.
-    void            InsertItem(sal_uInt16 nItemId, const OUString& rStr, size_t nPos = VALUESET_APPEND);
+    void            InsertItem(sal_uInt16 nItemId, const OUString& rStr, size_t nPos);
     void            RemoveItem(sal_uInt16 nItemId);
 
     void            Clear();
@@ -326,8 +320,8 @@ public:
     size_t          GetItemPos( sal_uInt16 nItemId ) const;
     sal_uInt16      GetItemId( size_t nPos ) const;
     sal_uInt16      GetItemId( const Point& rPos ) const;
-    Rectangle       GetItemRect( sal_uInt16 nItemId ) const;
-    void            EnableFullItemMode( bool bFullMode = true );
+    tools::Rectangle       GetItemRect( sal_uInt16 nItemId ) const;
+    void            EnableFullItemMode( bool bFullMode );
 
     void            SetColCount( sal_uInt16 nNewCols = 1 );
     sal_uInt16      GetColCount() const
@@ -339,8 +333,8 @@ public:
     {
         return mnUserVisLines;
     }
-    void           SetItemWidth( long nItemWidth = 0 );
-    void           SetItemHeight( long nLineHeight = 0 );
+    void           SetItemWidth( long nItemWidth );
+    void           SetItemHeight( long nLineHeight );
     Size           GetLargestItemSize();
     void           RecalculateItemSizes();
 
@@ -349,8 +343,11 @@ public:
     {
         return mnSelItemId;
     }
+    size_t         GetSelectItemPos() const
+    {
+        return GetItemPos( mnSelItemId );
+    }
     void                SaveValue() { mnSavedItemId = GetSelectItemId(); }
-    sal_Int32           GetSavedValue() const { return mnSavedItemId; }
     bool IsItemSelected( sal_uInt16 nItemId ) const
     {
         return !mbNoSelection && (nItemId == mnSelItemId);

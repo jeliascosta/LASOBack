@@ -47,16 +47,16 @@ class ScMessagePool: public SfxItemPool
     SfxBoolItem         aPrintWarnItem;
     ScCondFormatDlgItem aCondFormatDlgItem;
 
-    SfxPoolItem**   ppPoolDefaults;
-    ScDocumentPool* pDocPool;
+    std::vector<SfxPoolItem*>*   mpPoolDefaults;
+    ScDocumentPool*              pDocPool;
 
 public:
     ScMessagePool();
 protected:
-    virtual ~ScMessagePool();
+    virtual ~ScMessagePool() override;
 public:
 
-    virtual SfxMapUnit              GetMetric( sal_uInt16 nWhich ) const override;
+    virtual MapUnit GetMetric( sal_uInt16 nWhich ) const override;
 };
 
 #endif

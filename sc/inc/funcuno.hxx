@@ -36,14 +36,13 @@ css::uno::Reference< css::uno::XInterface > SAL_CALL
 class ScTempDocCache
 {
 private:
-    ScDocument*     pDoc;
+    std::unique_ptr<ScDocument> xDoc;
     bool            bInUse;
 
 public:
-                ScTempDocCache();
-                ~ScTempDocCache();
+    ScTempDocCache();
 
-    ScDocument* GetDocument() const     { return pDoc; }
+    ScDocument* GetDocument() const     { return xDoc.get(); }
     bool        IsInUse() const         { return bInUse; }
     void        SetInUse( bool bSet )   { bInUse = bSet; }
 
@@ -66,62 +65,34 @@ private:
 
 public:
                             ScFunctionAccess();
-    virtual                 ~ScFunctionAccess();
+    virtual                 ~ScFunctionAccess() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
                             // XFunctionAccess
     virtual css::uno::Any SAL_CALL callFunction(
                                     const OUString& aName,
-                                    const css::uno::Sequence< css::uno::Any >& aArguments )
-                                throw (css::container::NoSuchElementException,
-                                       css::lang::IllegalArgumentException,
-                                       css::uno::RuntimeException,
-                                       std::exception) override;
+                                    const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
                             // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo()
-                                throw(css::uno::RuntimeException, std::exception) override;
+                            SAL_CALL getPropertySetInfo() override;
     virtual void SAL_CALL   setPropertyValue( const OUString& aPropertyName,
-                                    const css::uno::Any& aValue )
-                                throw(css::beans::UnknownPropertyException,
-                                    css::beans::PropertyVetoException,
-                                    css::lang::IllegalArgumentException,
-                                    css::lang::WrappedTargetException,
-                                    css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName )
-                                throw(css::beans::UnknownPropertyException,
-                                    css::lang::WrappedTargetException,
-                                    css::uno::RuntimeException, std::exception) override;
+                                    const css::uno::Any& aValue ) override;
+    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
     virtual void SAL_CALL   addPropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
-                                throw(css::beans::UnknownPropertyException,
-                                    css::lang::WrappedTargetException,
-                                    css::uno::RuntimeException, std::exception) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
     virtual void SAL_CALL   removePropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
-                                throw(css::beans::UnknownPropertyException,
-                                    css::lang::WrappedTargetException,
-                                    css::uno::RuntimeException, std::exception) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
     virtual void SAL_CALL   addVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
-                                throw(css::beans::UnknownPropertyException,
-                                    css::lang::WrappedTargetException,
-                                    css::uno::RuntimeException, std::exception) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
     virtual void SAL_CALL   removeVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
-                                throw(css::beans::UnknownPropertyException,
-                                    css::lang::WrappedTargetException,
-                                    css::uno::RuntimeException, std::exception) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-                                throw(css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-                                throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 };
 
 #endif

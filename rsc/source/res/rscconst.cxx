@@ -26,11 +26,10 @@
 #include <rschash.hxx>
 #include <tools/resid.hxx>
 
-RscConst::RscConst( Atom nId, sal_uInt32 nTypeId )
+RscConst::RscConst( Atom nId, RESOURCE_TYPE nTypeId )
     : RscTop( nId, nTypeId )
+    , pVarArray(nullptr), nEntries(0)
 {
-    pVarArray = nullptr;
-    nEntries = 0;
 }
 
 RscConst::~RscConst()
@@ -99,10 +98,9 @@ sal_uInt32 RscConst::GetConstPos( Atom nConst )
     return nEntries;
 }
 
-RscEnum::RscEnum( Atom nId, sal_uInt32 nTypeId )
+RscEnum::RscEnum( Atom nId, RESOURCE_TYPE nTypeId )
     : RscConst( nId, nTypeId )
 {
-    nSize = ALIGNED_SIZE( sizeof( RscEnumInst ) );
 }
 
 ERRTYPE RscEnum::SetConst( const RSCINST & rInst, Atom nConst, sal_Int32 /*nVal*/ )
@@ -125,7 +123,7 @@ ERRTYPE RscEnum::SetNumber( const RSCINST & rInst, sal_Int32 lValue )
 
     for( i = 0; i < nEntries; i++ )
     {
-        if( (sal_Int32)pVarArray[ i ].lValue == lValue )
+        if( pVarArray[ i ].lValue == lValue )
             return SetConst( rInst, pVarArray[ i ].nId, lValue );
     }
 
@@ -183,9 +181,9 @@ void RscEnum::WriteSrc( const RSCINST & rInst, FILE * fOutput,
 }
 
 ERRTYPE RscEnum::WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                          RscTypCont *, sal_uInt32, bool )
+                          RscTypCont *, sal_uInt32 )
 {
-    aMem.Put( (sal_Int32)pVarArray[ reinterpret_cast<RscEnumInst *>(rInst.pData)->nValue ].lValue );
+    aMem.Put( pVarArray[ reinterpret_cast<RscEnumInst *>(rInst.pData)->nValue ].lValue );
     return ERR_OK;
 }
 

@@ -72,7 +72,7 @@ namespace svt
         // i.e., when it's already decided which page is the next.
         // We may have situations where the next page depends on the state of the current, which needs
         // to be committed for this.
-        // So initializePage and commitPage are designated to initialitzing/committing data on the page.
+        // So initializePage and commitPage are designated to initializing/committing data on the page.
         virtual void        initializePage() = 0;
         virtual bool        commitPage( WizardTypes::CommitPageReason _eReason ) = 0;
 
@@ -103,8 +103,7 @@ namespace svt
                 must be the OWizardMachine (which is derived from Window)
          */
         OWizardPage(vcl::Window *pParent, const OString& rID, const OUString& rUIXMLDescription);
-        virtual ~OWizardPage();
-        virtual void dispose() override;
+        virtual ~OWizardPage() override;
 
         // IWizardPageController overridables
         virtual void        initializePage() override;
@@ -147,8 +146,8 @@ namespace svt
     {
     private:
         // restrict access to some aspects of our base class
-        SVT_DLLPRIVATE void             AddPage( TabPage* pPage ) { WizardDialog::AddPage(pPage); }
-        SVT_DLLPRIVATE void             SetPage( sal_uInt16 nLevel, TabPage* pPage ) { WizardDialog::SetPage(nLevel, pPage); }
+        using WizardDialog::AddPage;
+        using WizardDialog::SetPage;
         //  TabPage*            GetPage( sal_uInt16 nLevel ) const { return WizardDialog::GetPage(nLevel); }
         // TODO: probably the complete page handling (next, previous etc.) should be prohibited ...
 
@@ -166,12 +165,12 @@ namespace svt
 
     private:
         // hold members in this structure to allow keeping compatible when members are added
-        WizardMachineImplData*  m_pImpl;
+        std::unique_ptr<WizardMachineImplData>  m_pImpl;
 
     public:
         OWizardMachine(vcl::Window* _pParent, const WinBits i_nStyle, WizardButtonFlags _nButtonFlags );
         OWizardMachine(vcl::Window* _pParent, WizardButtonFlags _nButtonFlags );
-        virtual ~OWizardMachine();
+        virtual ~OWizardMachine() override;
         virtual void dispose() override;
 
         /// enable (or disable) buttons
@@ -344,9 +343,9 @@ namespace svt
         TabPage* GetOrCreatePage( const WizardState i_nState );
 
     private:
-        DECL_DLLPRIVATE_LINK_TYPED(OnNextPage, Button*, void);
-        DECL_DLLPRIVATE_LINK_TYPED(OnPrevPage, Button*, void);
-        DECL_DLLPRIVATE_LINK_TYPED(OnFinish, Button*, void);
+        DECL_DLLPRIVATE_LINK(OnNextPage, Button*, void);
+        DECL_DLLPRIVATE_LINK(OnPrevPage, Button*, void);
+        DECL_DLLPRIVATE_LINK(OnFinish, Button*, void);
 
         SVT_DLLPRIVATE void     implResetDefault(vcl::Window* _pWindow);
         SVT_DLLPRIVATE void     implUpdateTitle();

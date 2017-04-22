@@ -46,35 +46,12 @@ using ::xmloff::token::IsXMLToken;
 using ::xmloff::token::XML_ALPHABETICAL_INDEX_ENTRY_TEMPLATE;
 using ::xmloff::token::XML_OUTLINE_LEVEL;
 
-const sal_Char sAPI_MainEntryCharacterStyleName[] = "MainEntryCharacterStyleName";
-const sal_Char sAPI_UseAlphabeticalSeparators[] = "UseAlphabeticalSeparators";
-const sal_Char sAPI_UseCombinedEntries[] = "UseCombinedEntries";
-const sal_Char sAPI_IsCaseSensitive[] = "IsCaseSensitive";
-const sal_Char sAPI_UseKeyAsEntry[] = "UseKeyAsEntry";
-const sal_Char sAPI_UseUpperCase[] = "UseUpperCase";
-const sal_Char sAPI_UseDash[] = "UseDash";
-const sal_Char sAPI_UsePP[] = "UsePP";
-const sal_Char sAPI_SortAlgorithm[] = "SortAlgorithm";
-const sal_Char sAPI_Locale[] = "Locale";
-
-
 XMLIndexAlphabeticalSourceContext::XMLIndexAlphabeticalSourceContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrfx,
     const OUString& rLocalName,
     Reference<XPropertySet> & rPropSet)
 :   XMLIndexSourceBaseContext(rImport, nPrfx, rLocalName, rPropSet, false)
-,   sMainEntryCharacterStyleName(sAPI_MainEntryCharacterStyleName)
-,   sUseAlphabeticalSeparators(sAPI_UseAlphabeticalSeparators)
-,   sUseCombinedEntries(sAPI_UseCombinedEntries)
-,   sIsCaseSensitive(sAPI_IsCaseSensitive)
-,   sUseKeyAsEntry(sAPI_UseKeyAsEntry)
-,   sUseUpperCase(sAPI_UseUpperCase)
-,   sUseDash(sAPI_UseDash)
-,   sUsePP(sAPI_UsePP)
-,   sIsCommaSeparated("IsCommaSeparated")
-,   sSortAlgorithm(sAPI_SortAlgorithm)
-,   sLocale(sAPI_Locale)
 ,   bMainEntryStyleNameOK(false)
 ,   bSeparators(false)
 ,   bCombineEntries(true)
@@ -196,28 +173,28 @@ void XMLIndexAlphabeticalSourceContext::EndElement()
     {
         aAny <<= GetImport().GetStyleDisplayName(
                             XML_STYLE_FAMILY_TEXT_TEXT, sMainEntryStyleName );
-        rIndexPropertySet->setPropertyValue(sMainEntryCharacterStyleName,aAny);
+        rIndexPropertySet->setPropertyValue("MainEntryCharacterStyleName",aAny);
     }
 
-    rIndexPropertySet->setPropertyValue(sUseAlphabeticalSeparators, css::uno::Any(bSeparators));
-    rIndexPropertySet->setPropertyValue(sUseCombinedEntries, css::uno::Any(bCombineEntries));
-    rIndexPropertySet->setPropertyValue(sIsCaseSensitive, css::uno::Any(bCaseSensitive));
-    rIndexPropertySet->setPropertyValue(sUseKeyAsEntry, css::uno::Any(bEntry));
-    rIndexPropertySet->setPropertyValue(sUseUpperCase, css::uno::Any(bUpperCase));
-    rIndexPropertySet->setPropertyValue(sUseDash, css::uno::Any(bCombineDash));
-    rIndexPropertySet->setPropertyValue(sUsePP, css::uno::Any(bCombinePP));
-    rIndexPropertySet->setPropertyValue(sIsCommaSeparated, css::uno::Any(bCommaSeparated));
+    rIndexPropertySet->setPropertyValue("UseAlphabeticalSeparators", css::uno::Any(bSeparators));
+    rIndexPropertySet->setPropertyValue("UseCombinedEntries", css::uno::Any(bCombineEntries));
+    rIndexPropertySet->setPropertyValue("IsCaseSensitive", css::uno::Any(bCaseSensitive));
+    rIndexPropertySet->setPropertyValue("UseKeyAsEntry", css::uno::Any(bEntry));
+    rIndexPropertySet->setPropertyValue("UseUpperCase", css::uno::Any(bUpperCase));
+    rIndexPropertySet->setPropertyValue("UseDash", css::uno::Any(bCombineDash));
+    rIndexPropertySet->setPropertyValue("UsePP", css::uno::Any(bCombinePP));
+    rIndexPropertySet->setPropertyValue("IsCommaSeparated", css::uno::Any(bCommaSeparated));
 
 
     if (!sAlgorithm.isEmpty())
     {
-        rIndexPropertySet->setPropertyValue(sSortAlgorithm, css::uno::Any(sAlgorithm));
+        rIndexPropertySet->setPropertyValue("SortAlgorithm", css::uno::Any(sAlgorithm));
     }
 
     if ( !maLanguageTagODF.isEmpty() )
     {
         aAny <<= maLanguageTagODF.getLanguageTag().getLocale( false);
-        rIndexPropertySet->setPropertyValue(sLocale, aAny);
+        rIndexPropertySet->setPropertyValue("Locale", aAny);
     }
 
     XMLIndexSourceBaseContext::EndElement();

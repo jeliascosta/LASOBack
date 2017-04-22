@@ -27,6 +27,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include <rtl/character.hxx>
 
 /* Converts ISO 8601 conform date/time
    represenation to the representation
@@ -49,13 +50,13 @@ std::wstring iso8601_date_to_local_date(const std::wstring& isoDate )
     {
         std::string asDateTime = WStringToString( ws8601DateTime );
         SYSTEMTIME DateTime;
-        DateTime.wYear         = ( unsigned short )strtol( asDateTime.substr( 0, 4 ).c_str(), NULL, 10 );
-        DateTime.wMonth        = ( unsigned short )strtol( asDateTime.substr( 5, 2 ).c_str(), NULL, 10 );
+        DateTime.wYear         = ( unsigned short )strtol( asDateTime.substr( 0, 4 ).c_str(), nullptr, 10 );
+        DateTime.wMonth        = ( unsigned short )strtol( asDateTime.substr( 5, 2 ).c_str(), nullptr, 10 );
         DateTime.wDayOfWeek    =  0;
-        DateTime.wDay          = ( unsigned short )strtol( asDateTime.substr( 8, 2 ).c_str(), NULL, 10 );
-        DateTime.wHour         = ( unsigned short )strtol( asDateTime.substr( 11,2 ).c_str(), NULL, 10 );
-        DateTime.wMinute       = ( unsigned short )strtol( asDateTime.substr( 14,2 ).c_str(), NULL, 10 );
-        DateTime.wSecond       = ( unsigned short )strtol( asDateTime.substr( 17,2 ).c_str(), NULL, 10 );
+        DateTime.wDay          = ( unsigned short )strtol( asDateTime.substr( 8, 2 ).c_str(), nullptr, 10 );
+        DateTime.wHour         = ( unsigned short )strtol( asDateTime.substr( 11,2 ).c_str(), nullptr, 10 );
+        DateTime.wMinute       = ( unsigned short )strtol( asDateTime.substr( 14,2 ).c_str(), nullptr, 10 );
+        DateTime.wSecond       = ( unsigned short )strtol( asDateTime.substr( 17,2 ).c_str(), nullptr, 10 );
         DateTime.wMilliseconds =  0;
 
         //get Date info from structure
@@ -64,7 +65,7 @@ std::wstring iso8601_date_to_local_date(const std::wstring& isoDate )
             LOCALE_SYSTEM_DEFAULT,
             0,
             &DateTime,
-            NULL,
+            nullptr,
             DateBuffer,
             MAX_PATH );
 
@@ -80,7 +81,7 @@ std::wstring iso8601_date_to_local_date(const std::wstring& isoDate )
             LOCALE_SYSTEM_DEFAULT,
             0,
             &DateTime,
-            NULL,
+            nullptr,
             TimeBuffer,
             MAX_PATH );
 
@@ -120,7 +121,7 @@ std::wstring iso8601_duration_to_local_duration(const std::wstring& iso8601durat
 
     for (/**/; iter != iter_end; ++iter)
     {
-        if (isdigit(*iter))
+        if (rtl::isAsciiDigit(*iter)) // wchar_t is unsigned under MSVC
         {
             num += *iter;
         }
@@ -147,30 +148,11 @@ std::wstring iso8601_duration_to_local_duration(const std::wstring& iso8601durat
         hours = buff;
     }
 
-#if defined(_MSC_VER) //&& defined(_M_X64)
     std::wostringstream oss;
     oss << std::setw(2) << std::setfill(wchar_t('0')) << hours   << L":" <<
            std::setw(2) << std::setfill(wchar_t('0')) << minutes << L":" <<
            std::setw(2) << std::setfill(wchar_t('0')) << seconds;
     return oss.str();
-#elif defined( __MINGW32__ )
-#define ADD_AS_PREFILLED( st, out ) \
-    if ( st.length() == 0 ) \
-        out += L"00"; \
-    else if ( st.length() == 1 ) \
-        out += L"0"; \
-    out += st;
-
-    std::wstring result;
-    ADD_AS_PREFILLED( hours, result )
-    result += L":";
-    ADD_AS_PREFILLED( minutes, result )
-    result += L":";
-    ADD_AS_PREFILLED( seconds, result )
-
-    return result;
-#undef ADD_AS_PREFILLED
-#endif
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

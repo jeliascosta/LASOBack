@@ -82,7 +82,7 @@ Sequence<Type> OComboBoxModel::_getTypes()
 
 // XServiceInfo
 
-css::uno::Sequence<OUString> SAL_CALL OComboBoxModel::getSupportedServiceNames() throw(RuntimeException, std::exception)
+css::uno::Sequence<OUString> SAL_CALL OComboBoxModel::getSupportedServiceNames()
 {
     css::uno::Sequence<OUString> aSupported = OBoundControlModel::getSupportedServiceNames();
 
@@ -107,7 +107,7 @@ css::uno::Sequence<OUString> SAL_CALL OComboBoxModel::getSupportedServiceNames()
 }
 
 
-Any SAL_CALL OComboBoxModel::queryAggregation(const Type& _rType) throw (RuntimeException, std::exception)
+Any SAL_CALL OComboBoxModel::queryAggregation(const Type& _rType)
 {
     Any aReturn = OBoundControlModel::queryAggregation( _rType );
     if ( !aReturn.hasValue() )
@@ -193,6 +193,10 @@ void OComboBoxModel::getFastPropertyValue(Any& _rValue, sal_Int32 _nHandle) cons
             _rValue <<= comphelper::containerToSequence(getStringItemList());
             break;
 
+        case PROPERTY_ID_TYPEDITEMLIST:
+            _rValue <<= getTypedItemList();
+            break;
+
         default:
             OBoundControlModel::getFastPropertyValue(_rValue, _nHandle);
     }
@@ -200,7 +204,6 @@ void OComboBoxModel::getFastPropertyValue(Any& _rValue, sal_Int32 _nHandle) cons
 
 
 void OComboBoxModel::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const Any& _rValue)
-                        throw (Exception, std::exception)
 {
     switch (_nHandle)
     {
@@ -248,15 +251,18 @@ void OComboBoxModel::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const 
         }
         break;
 
+        // XXX NOTE: PROPERTY_ID_TYPEDITEMLIST not handled here because only
+        // set for external sources in which case not even
+        // setNewStringItemList() for PROPERTY_ID_STRINGITEMLIST above should
+        // had been called ...
+
         default:
             OBoundControlModel::setFastPropertyValue_NoBroadcast(_nHandle, _rValue);
     }
 }
 
-
 sal_Bool OComboBoxModel::convertFastPropertyValue(
                         Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue)
-                        throw (IllegalArgumentException)
 {
     bool bModified(false);
     switch (_nHandle)
@@ -288,7 +294,6 @@ sal_Bool OComboBoxModel::convertFastPropertyValue(
     return bModified;
 }
 
-
 void OComboBoxModel::describeFixedProperties( Sequence< Property >& _rProps ) const
 {
     BEGIN_DESCRIBE_PROPERTIES( 6, OBoundControlModel )
@@ -308,17 +313,17 @@ void OComboBoxModel::describeAggregateProperties( Sequence< Property >& _rAggreg
 
     // superseded properties:
     RemoveProperty( _rAggregateProps, PROPERTY_STRINGITEMLIST );
+    RemoveProperty( _rAggregateProps, PROPERTY_TYPEDITEMLIST );
 }
 
 
-OUString SAL_CALL OComboBoxModel::getServiceName() throw(RuntimeException, std::exception)
+OUString SAL_CALL OComboBoxModel::getServiceName()
 {
     return OUString(FRM_COMPONENT_COMBOBOX);  // old (non-sun) name for compatibility !
 }
 
 
 void SAL_CALL OComboBoxModel::write(const Reference<css::io::XObjectOutputStream>& _rxOutStream)
-        throw(css::io::IOException, RuntimeException, std::exception)
 {
     OBoundControlModel::write(_rxOutStream);
 
@@ -355,7 +360,7 @@ void SAL_CALL OComboBoxModel::write(const Reference<css::io::XObjectOutputStream
 }
 
 
-void SAL_CALL OComboBoxModel::read(const Reference<css::io::XObjectInputStream>& _rxInStream) throw(css::io::IOException, RuntimeException, std::exception)
+void SAL_CALL OComboBoxModel::read(const Reference<css::io::XObjectInputStream>& _rxInStream)
 {
     OBoundControlModel::read(_rxInStream);
     ControlModelLock aLock( *this );
@@ -437,6 +442,7 @@ void SAL_CALL OComboBoxModel::read(const Reference<css::io::XObjectInputStream>&
         )
     {
         setFastPropertyValue( PROPERTY_ID_STRINGITEMLIST, makeAny( css::uno::Sequence<OUString>() ) );
+        setFastPropertyValue( PROPERTY_ID_TYPEDITEMLIST, makeAny( css::uno::Sequence<css::uno::Any>() ) );
     }
 
     if (nVersion > 0x0004)
@@ -660,6 +666,8 @@ void OComboBoxModel::loadData( bool _bForce )
 
     // Set String-Sequence at ListBox
     setFastPropertyValue( PROPERTY_ID_STRINGITEMLIST, makeAny( comphelper::containerToSequence(aStringList) ) );
+    // Reset TypedItemList, no matching data.
+    setFastPropertyValue( PROPERTY_ID_TYPEDITEMLIST, makeAny( css::uno::Sequence<css::uno::Any>() ) );
 }
 
 
@@ -688,7 +696,7 @@ void OComboBoxModel::onDisconnectedDbColumn()
 }
 
 
-void SAL_CALL OComboBoxModel::reloaded( const EventObject& aEvent ) throw(RuntimeException, std::exception)
+void SAL_CALL OComboBoxModel::reloaded( const EventObject& aEvent )
 {
     OBoundControlModel::reloaded(aEvent);
 
@@ -770,6 +778,7 @@ bool OComboBoxModel::commitControlValueToDbColumn( bool _bPostReset )
                 aStringItemList.getArray()[ nOldLen ] = sNewValue;
 
                 setFastPropertyValue( PROPERTY_ID_STRINGITEMLIST, makeAny( aStringItemList ) );
+                setFastPropertyValue( PROPERTY_ID_TYPEDITEMLIST, makeAny( css::uno::Sequence<css::uno::Any>() ) );
             }
         }
     }
@@ -815,7 +824,10 @@ Any OComboBoxModel::getDefaultForReset() const
 void OComboBoxModel::stringItemListChanged( ControlModelLock& /*_rInstanceLock*/ )
 {
     if ( m_xAggregateSet.is() )
+    {
         m_xAggregateSet->setPropertyValue( PROPERTY_STRINGITEMLIST, makeAny( comphelper::containerToSequence(getStringItemList()) ) );
+        m_xAggregateSet->setPropertyValue( PROPERTY_TYPEDITEMLIST, makeAny( getTypedItemList()) ) ;
+    }
 }
 
 
@@ -845,7 +857,7 @@ void OComboBoxModel::refreshInternalEntryList()
 }
 
 
-void SAL_CALL OComboBoxModel::disposing( const EventObject& _rSource ) throw ( RuntimeException, std::exception )
+void SAL_CALL OComboBoxModel::disposing( const EventObject& _rSource )
 {
     if ( !OEntryListHelper::handleDisposing( _rSource ) )
         OBoundControlModel::disposing( _rSource );
@@ -860,7 +872,7 @@ OComboBoxControl::OComboBoxControl(const Reference<XComponentContext>& _rxContex
 }
 
 
-css::uno::Sequence<OUString> SAL_CALL OComboBoxControl::getSupportedServiceNames() throw(RuntimeException, std::exception)
+css::uno::Sequence<OUString> SAL_CALL OComboBoxControl::getSupportedServiceNames()
 {
     css::uno::Sequence<OUString> aSupported = OBoundControl::getSupportedServiceNames();
     aSupported.realloc(aSupported.getLength() + 2);

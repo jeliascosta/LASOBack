@@ -58,10 +58,6 @@ SvxOptionsGrid::SvxOptionsGrid() :
 {
 }
 
-SvxOptionsGrid::~SvxOptionsGrid()
-{
-}
-
 SvxGridItem::SvxGridItem( const SvxGridItem& rItem )
 :   SvxOptionsGrid()
 ,   SfxPoolItem(rItem)
@@ -86,7 +82,7 @@ SfxPoolItem*  SvxGridItem::Clone( SfxItemPool* ) const
 
 bool SvxGridItem::operator==( const SfxPoolItem& rAttr ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==(rAttr), "different types ");
+    assert(SfxPoolItem::operator==(rAttr));
 
     const SvxGridItem& rItem = static_cast<const SvxGridItem&>(rAttr);
 
@@ -105,8 +101,8 @@ bool SvxGridItem::operator==( const SfxPoolItem& rAttr ) const
 bool  SvxGridItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -216,7 +212,7 @@ bool SvxGridTabPage::FillItemSet( SfxItemSet* rCoreSet )
         aGridItem.bSynchronize  = pCbxSynchronize->IsChecked();
         aGridItem.bGridVisible  = pCbxGridVisible->IsChecked();
 
-        SfxMapUnit eUnit =
+        MapUnit eUnit =
             rCoreSet->GetPool()->GetMetric( GetWhich( SID_ATTR_GRID_OPTIONS ) );
         long nX =GetCoreValue(  *pMtrFldDrawX, eUnit );
         long nY = GetCoreValue( *pMtrFldDrawY, eUnit );
@@ -244,7 +240,7 @@ void SvxGridTabPage::Reset( const SfxItemSet* rSet )
         pCbxSynchronize->Check( pGridAttr->bSynchronize );
         pCbxGridVisible->Check( pGridAttr->bGridVisible );
 
-        SfxMapUnit eUnit =
+        MapUnit eUnit =
             rSet->GetPool()->GetMetric( GetWhich( SID_ATTR_GRID_OPTIONS ) );
         SetMetricValue( *pMtrFldDrawX , pGridAttr->nFldDrawX, eUnit );
         SetMetricValue( *pMtrFldDrawY , pGridAttr->nFldDrawY, eUnit );
@@ -302,14 +298,14 @@ void SvxGridTabPage::ActivatePage( const SfxItemSet& rSet )
 }
 
 
-SfxTabPage::sfxpg SvxGridTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxGridTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if ( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
-IMPL_LINK_TYPED( SvxGridTabPage, ChangeDrawHdl_Impl, Edit&, rField, void )
+IMPL_LINK( SvxGridTabPage, ChangeDrawHdl_Impl, Edit&, rField, void )
 {
     bAttrModified = true;
     if( pCbxSynchronize->IsChecked() )
@@ -322,7 +318,7 @@ IMPL_LINK_TYPED( SvxGridTabPage, ChangeDrawHdl_Impl, Edit&, rField, void )
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxGridTabPage, ClickRotateHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxGridTabPage, ClickRotateHdl_Impl, Button*, void)
 {
     if( pCbxRotate->IsChecked() )
         pMtrFldAngle->Enable();
@@ -331,7 +327,7 @@ IMPL_LINK_NOARG_TYPED(SvxGridTabPage, ClickRotateHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_TYPED( SvxGridTabPage, ChangeDivisionHdl_Impl, Edit&, rField, void )
+IMPL_LINK( SvxGridTabPage, ChangeDivisionHdl_Impl, Edit&, rField, void )
 {
     bAttrModified = true;
     if( pCbxSynchronize->IsChecked() )
@@ -344,7 +340,7 @@ IMPL_LINK_TYPED( SvxGridTabPage, ChangeDivisionHdl_Impl, Edit&, rField, void )
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxGridTabPage, ChangeGridsnapHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxGridTabPage, ChangeGridsnapHdl_Impl, Button*, void)
 {
     bAttrModified = true;
 }

@@ -42,45 +42,9 @@ using namespace ::com::sun::star::uno;
 // useful caption height for title bar buttons
 #define MIN_CAPTION_HEIGHT 18
 
-static void ImplGetPinImage( DrawButtonFlags nStyle, bool bPinIn, Image& rImage )
-{
-    // load ImageList if not available yet
-    ImplSVData* pSVData = ImplGetSVData();
-    if ( !pSVData->maCtrlData.mpPinImgList )
-    {
-        ResMgr* pResMgr = ImplGetResMgr();
-        pSVData->maCtrlData.mpPinImgList = new ImageList();
-        if( pResMgr )
-        {
-            Color aMaskColor( 0x00, 0x00, 0xFF );
-            pSVData->maCtrlData.mpPinImgList->InsertFromHorizontalBitmap
-                ( ResId( SV_RESID_BITMAP_PIN, *pResMgr ), 4,
-                  &aMaskColor );
-        }
-    }
-
-    // get and return Image
-    sal_uInt16 nId;
-    if ( nStyle & DrawButtonFlags::Pressed )
-    {
-        if ( bPinIn )
-            nId = 4;
-        else
-            nId = 3;
-    }
-    else
-    {
-        if ( bPinIn )
-            nId = 2;
-        else
-            nId = 1;
-    }
-    rImage = pSVData->maCtrlData.mpPinImgList->GetImage( nId );
-}
-
 namespace vcl {
 
-void Window::ImplCalcSymbolRect( Rectangle& rRect )
+void Window::ImplCalcSymbolRect( tools::Rectangle& rRect )
 {
     // Add border, not shown in the non-default representation,
     // as we want to use it for small buttons
@@ -101,24 +65,24 @@ void Window::ImplCalcSymbolRect( Rectangle& rRect )
 } /* namespace vcl */
 
 static void ImplDrawBrdWinSymbol( vcl::RenderContext* pDev,
-                                  const Rectangle& rRect, SymbolType eSymbol )
+                                  const tools::Rectangle& rRect, SymbolType eSymbol )
 {
     // we leave 5% room between the symbol and the button border
     DecorationView  aDecoView( pDev );
-    Rectangle       aTempRect = rRect;
+    tools::Rectangle       aTempRect = rRect;
     vcl::Window::ImplCalcSymbolRect( aTempRect );
     aDecoView.DrawSymbol( aTempRect, eSymbol,
                           pDev->GetSettings().GetStyleSettings().GetButtonTextColor() );
 }
 
 static void ImplDrawBrdWinSymbolButton( vcl::RenderContext* pDev,
-                                        const Rectangle& rRect,
+                                        const tools::Rectangle& rRect,
                                         SymbolType eSymbol, DrawButtonFlags nState )
 {
     bool bMouseOver(nState & DrawButtonFlags::Highlight);
     nState &= ~DrawButtonFlags::Highlight;
 
-    Rectangle aTempRect;
+    tools::Rectangle aTempRect;
     vcl::Window *pWin = dynamic_cast< vcl::Window* >(pDev);
     if( pWin )
     {
@@ -165,14 +129,14 @@ bool ImplBorderWindowView::Tracking( const TrackingEvent& )
     return false;
 }
 
-OUString ImplBorderWindowView::RequestHelp( const Point&, Rectangle& )
+OUString ImplBorderWindowView::RequestHelp( const Point&, tools::Rectangle& )
 {
     return OUString();
 }
 
-Rectangle ImplBorderWindowView::GetMenuRect() const
+tools::Rectangle ImplBorderWindowView::GetMenuRect() const
 {
-    return Rectangle();
+    return tools::Rectangle();
 }
 
 void ImplBorderWindowView::ImplInitTitle(ImplBorderFrameData* pData)
@@ -228,8 +192,6 @@ BorderWindowHitTest ImplBorderWindowView::ImplHitTest( ImplBorderFrameData* pDat
             return BorderWindowHitTest::Hide;
         else if ( pData->maHelpRect.IsInside( rPos ) )
             return BorderWindowHitTest::Help;
-        else if ( pData->maPinRect.IsInside( rPos ) )
-            return BorderWindowHitTest::Pin;
         else
             return BorderWindowHitTest::Title;
     }
@@ -329,7 +291,7 @@ bool ImplBorderWindowView::ImplMouseMove( ImplBorderFrameData* pData, const Mous
 
 OUString ImplBorderWindowView::ImplRequestHelp( ImplBorderFrameData* pData,
                                               const Point& rPos,
-                                              Rectangle& rHelpRect )
+                                              tools::Rectangle& rHelpRect )
 {
     sal_uInt16 nHelpId = 0;
     OUString aHelpStr;
@@ -364,11 +326,6 @@ OUString ImplBorderWindowView::ImplRequestHelp( ImplBorderFrameData* pData,
             nHelpId     = SV_HELPTEXT_HELP;
             rHelpRect   = pData->maHelpRect;
         }
-        else if ( nHitTest & BorderWindowHitTest::Pin )
-        {
-            nHelpId     = SV_HELPTEXT_ALWAYSVISIBLE;
-            rHelpRect   = pData->maPinRect;
-        }
         else if ( nHitTest & BorderWindowHitTest::Title )
         {
             if( !pData->maTitleRect.IsEmpty() )
@@ -398,7 +355,6 @@ long ImplBorderWindowView::ImplCalcTitleWidth( const ImplBorderFrameData* pData 
 
     ImplBorderWindow* pBorderWindow = pData->mpBorderWindow;
     long nTitleWidth = pBorderWindow->GetTextWidth( pBorderWindow->GetText() )+6;
-    nTitleWidth += pData->maPinRect.GetWidth();
     nTitleWidth += pData->maCloseRect.GetWidth();
     nTitleWidth += pData->maRollRect.GetWidth();
     nTitleWidth += pData->maDockRect.GetWidth();
@@ -432,7 +388,7 @@ long ImplNoBorderWindowView::CalcTitleWidth() const
     return 0;
 }
 
-void ImplNoBorderWindowView::DrawWindow(vcl::RenderContext&, BorderWindowDraw, const Point*)
+void ImplNoBorderWindowView::DrawWindow(vcl::RenderContext&, const Point*)
 {
 }
 
@@ -489,34 +445,34 @@ void ImplSmallBorderWindowView::Init( OutputDevice* pDev, long nWidth, long nHei
             {
                 switch( pCtrl->GetType() )
                 {
-                    case WINDOW_LISTBOX:
+                    case WindowType::LISTBOX:
                         if( pCtrl->GetStyle() & WB_DROPDOWN )
                         {
                             aCtrlType = ControlType::Listbox;
                             mbNWFBorder = true;
                         }
                         break;
-                    case WINDOW_COMBOBOX:
+                    case WindowType::COMBOBOX:
                         if( pCtrl->GetStyle() & WB_DROPDOWN )
                         {
                             aCtrlType = ControlType::Combobox;
                             mbNWFBorder = true;
                         }
                         break;
-                    case WINDOW_MULTILINEEDIT:
+                    case WindowType::MULTILINEEDIT:
                         aCtrlType = ControlType::MultilineEditbox;
                         mbNWFBorder = true;
                         break;
-                    case WINDOW_EDIT:
-                    case WINDOW_PATTERNFIELD:
-                    case WINDOW_METRICFIELD:
-                    case WINDOW_CURRENCYFIELD:
-                    case WINDOW_DATEFIELD:
-                    case WINDOW_TIMEFIELD:
-                    case WINDOW_LONGCURRENCYFIELD:
-                    case WINDOW_NUMERICFIELD:
-                    case WINDOW_SPINFIELD:
-                    case WINDOW_CALCINPUTLINE:
+                    case WindowType::EDIT:
+                    case WindowType::PATTERNFIELD:
+                    case WindowType::METRICFIELD:
+                    case WindowType::CURRENCYFIELD:
+                    case WindowType::DATEFIELD:
+                    case WindowType::TIMEFIELD:
+                    case WindowType::LONGCURRENCYFIELD:
+                    case WindowType::NUMERICFIELD:
+                    case WindowType::SPINFIELD:
+                    case WindowType::CALCINPUTLINE:
                         mbNWFBorder = true;
                         if (pCtrl->GetStyle() & WB_SPIN)
                             aCtrlType = ControlType::Spinbox;
@@ -530,9 +486,11 @@ void ImplSmallBorderWindowView::Init( OutputDevice* pDev, long nWidth, long nHei
             if( mbNWFBorder )
             {
                 ImplControlValue aControlValue;
-                Rectangle aCtrlRegion( (const Point&)Point(), Size( mnWidth < 10 ? 10 : mnWidth, mnHeight < 10 ? 10 : mnHeight ) );
-                Rectangle aBounds( aCtrlRegion );
-                Rectangle aContent( aCtrlRegion );
+                Size aMinSize( mnWidth - mnLeftBorder - mnRightBorder, mnHeight - mnTopBorder - mnBottomBorder );
+                if( aMinSize.Width() < 10 ) aMinSize.setWidth( 10 );
+                if( aMinSize.Height() < 10 ) aMinSize.setHeight( 10 );
+                tools::Rectangle aCtrlRegion( Point(mnLeftBorder, mnTopBorder), aMinSize );
+                tools::Rectangle aBounds, aContent;
                 if( pWin->GetNativeControlRegion( aCtrlType, ControlPart::Entire, aCtrlRegion,
                                                   ControlState::ENABLED, aControlValue, OUString(),
                                                   aBounds, aContent ) )
@@ -589,8 +547,8 @@ void ImplSmallBorderWindowView::Init( OutputDevice* pDev, long nWidth, long nHei
                 nFlags |= DrawFrameFlags::Mono;
 
             DecorationView  aDecoView( mpOutDev );
-            Rectangle       aRect( 0, 0, 10, 10 );
-            Rectangle       aCalcRect = aDecoView.DrawFrame( aRect, nStyle, nFlags );
+            tools::Rectangle       aRect( 0, 0, 10, 10 );
+            tools::Rectangle       aCalcRect = aDecoView.DrawFrame( aRect, nStyle, nFlags );
             mnLeftBorder    = aCalcRect.Left();
             mnTopBorder     = aCalcRect.Top();
             mnRightBorder   = aRect.Right()-aCalcRect.Right();
@@ -626,7 +584,7 @@ long ImplSmallBorderWindowView::CalcTitleWidth() const
     return 0;
 }
 
-void ImplSmallBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, BorderWindowDraw nDrawFlags, const Point*)
+void ImplSmallBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, const Point*)
 {
     WindowBorderStyle nBorderStyle = mpBorderWindow->GetBorderStyle();
     if (nBorderStyle & WindowBorderStyle::NOBORDER)
@@ -643,28 +601,28 @@ void ImplSmallBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, B
     {
         switch (pCtrl->GetType())
         {
-            case WINDOW_MULTILINEEDIT:
+            case WindowType::MULTILINEEDIT:
                 aCtrlType = ControlType::MultilineEditbox;
                 break;
-            case WINDOW_EDIT:
-            case WINDOW_PATTERNFIELD:
-            case WINDOW_METRICFIELD:
-            case WINDOW_CURRENCYFIELD:
-            case WINDOW_DATEFIELD:
-            case WINDOW_TIMEFIELD:
-            case WINDOW_LONGCURRENCYFIELD:
-            case WINDOW_NUMERICFIELD:
-            case WINDOW_SPINFIELD:
-            case WINDOW_CALCINPUTLINE:
+            case WindowType::EDIT:
+            case WindowType::PATTERNFIELD:
+            case WindowType::METRICFIELD:
+            case WindowType::CURRENCYFIELD:
+            case WindowType::DATEFIELD:
+            case WindowType::TIMEFIELD:
+            case WindowType::LONGCURRENCYFIELD:
+            case WindowType::NUMERICFIELD:
+            case WindowType::SPINFIELD:
+            case WindowType::CALCINPUTLINE:
                 if (pCtrl->GetStyle() & WB_SPIN)
                     aCtrlType = ControlType::Spinbox;
                 else
                     aCtrlType = ControlType::Editbox;
                 break;
 
-            case WINDOW_LISTBOX:
-            case WINDOW_MULTILISTBOX:
-            case WINDOW_TREELISTBOX:
+            case WindowType::LISTBOX:
+            case WindowType::MULTILISTBOX:
+            case WindowType::TREELISTBOX:
                 aCtrlType = ControlType::Listbox;
                 if (pCtrl->GetStyle() & WB_DROPDOWN)
                     aCtrlPart = ControlPart::Entire;
@@ -672,19 +630,19 @@ void ImplSmallBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, B
                     aCtrlPart = ControlPart::ListboxWindow;
                 break;
 
-            case WINDOW_LISTBOXWINDOW:
+            case WindowType::LISTBOXWINDOW:
                 aCtrlType = ControlType::Listbox;
                 aCtrlPart = ControlPart::ListboxWindow;
                 break;
 
-            case WINDOW_COMBOBOX:
-            case WINDOW_PATTERNBOX:
-            case WINDOW_NUMERICBOX:
-            case WINDOW_METRICBOX:
-            case WINDOW_CURRENCYBOX:
-            case WINDOW_DATEBOX:
-            case WINDOW_TIMEBOX:
-            case WINDOW_LONGCURRENCYBOX:
+            case WindowType::COMBOBOX:
+            case WindowType::PATTERNBOX:
+            case WindowType::NUMERICBOX:
+            case WindowType::METRICBOX:
+            case WindowType::CURRENCYBOX:
+            case WindowType::DATEBOX:
+            case WindowType::TIMEBOX:
+            case WindowType::LONGCURRENCYBOX:
                 if (pCtrl->GetStyle() & WB_DROPDOWN)
                 {
                     aCtrlType = ControlType::Combobox;
@@ -732,10 +690,10 @@ void ImplSmallBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, B
             nState |= ControlState::ROLLOVER;
 
         Point aPoint;
-        Rectangle aCtrlRegion(aPoint, Size(mnWidth, mnHeight));
+        tools::Rectangle aCtrlRegion(aPoint, Size(mnWidth, mnHeight));
 
-        Rectangle aBoundingRgn(aPoint, Size(mnWidth, mnHeight));
-        Rectangle aContentRgn(aCtrlRegion);
+        tools::Rectangle aBoundingRgn(aPoint, Size(mnWidth, mnHeight));
+        tools::Rectangle aContentRgn(aCtrlRegion);
         if (!ImplGetSVData()->maNWFData.mbCanDrawWidgetAnySize &&
             rRenderContext.GetNativeControlRegion(aCtrlType, aCtrlPart, aCtrlRegion,
                                          nState, aControlValue, OUString(),
@@ -752,37 +710,34 @@ void ImplSmallBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, B
         {
             Edit* pEdit = static_cast<Edit*>(pCtrl)->GetSubEdit();
             if (pEdit && !pEdit->SupportsDoubleBuffering())
-                pCtrl->Paint(*pCtrl, Rectangle());  // make sure the buttons are also drawn as they might overwrite the border
+                pCtrl->Paint(*pCtrl, tools::Rectangle());  // make sure the buttons are also drawn as they might overwrite the border
         }
     }
 
     if (bNativeOK)
         return;
 
-    if (nDrawFlags & BorderWindowDraw::Frame)
-    {
-        DrawFrameStyle nStyle = DrawFrameStyle::NONE;
-        DrawFrameFlags nFlags = DrawFrameFlags::NONE;
-        // move border outside if border was converted or if the border window is a frame window,
-        if (mpBorderWindow->mbSmallOutBorder)
-            nStyle = DrawFrameStyle::DoubleOut;
-        else if (nBorderStyle & WindowBorderStyle::NWF)
-            nStyle = DrawFrameStyle::NWF;
-        else
-            nStyle = DrawFrameStyle::DoubleIn;
-        if (nBorderStyle & WindowBorderStyle::MONO)
-            nFlags |= DrawFrameFlags::Mono;
-        if (nBorderStyle & WindowBorderStyle::MENU)
-            nFlags |= DrawFrameFlags::Menu;
-        // tell DrawFrame that we're drawing a window border of a frame window to avoid round corners
-        if (mpBorderWindow == mpBorderWindow->ImplGetFrameWindow())
-            nFlags |= DrawFrameFlags::WindowBorder;
+    DrawFrameStyle nStyle = DrawFrameStyle::NONE;
+    DrawFrameFlags nFlags = DrawFrameFlags::NONE;
+    // move border outside if border was converted or if the border window is a frame window,
+    if (mpBorderWindow->mbSmallOutBorder)
+        nStyle = DrawFrameStyle::DoubleOut;
+    else if (nBorderStyle & WindowBorderStyle::NWF)
+        nStyle = DrawFrameStyle::NWF;
+    else
+        nStyle = DrawFrameStyle::DoubleIn;
+    if (nBorderStyle & WindowBorderStyle::MONO)
+        nFlags |= DrawFrameFlags::Mono;
+    if (nBorderStyle & WindowBorderStyle::MENU)
+        nFlags |= DrawFrameFlags::Menu;
+    // tell DrawFrame that we're drawing a window border of a frame window to avoid round corners
+    if (mpBorderWindow == mpBorderWindow->ImplGetFrameWindow())
+        nFlags |= DrawFrameFlags::WindowBorder;
 
-        DecorationView aDecoView(&rRenderContext);
-        Point aTmpPoint;
-        Rectangle aInRect(aTmpPoint, Size(mnWidth, mnHeight));
-        aDecoView.DrawFrame(aInRect, nStyle, nFlags);
-    }
+    DecorationView aDecoView(&rRenderContext);
+    Point aTmpPoint;
+    tools::Rectangle aInRect(aTmpPoint, Size(mnWidth, mnHeight));
+    aDecoView.DrawFrame(aInRect, nStyle, nFlags);
 }
 
 
@@ -791,7 +746,6 @@ ImplStdBorderWindowView::ImplStdBorderWindowView( ImplBorderWindow* pBorderWindo
     maFrameData.mpBorderWindow  = pBorderWindow;
     maFrameData.mbDragFull      = false;
     maFrameData.mnHitTest       = BorderWindowHitTest::NONE;
-    maFrameData.mnPinState      = DrawButtonFlags::NONE;
     maFrameData.mnCloseState    = DrawButtonFlags::NONE;
     maFrameData.mnRollState     = DrawButtonFlags::NONE;
     maFrameData.mnDockState     = DrawButtonFlags::NONE;
@@ -866,11 +820,6 @@ bool ImplStdBorderWindowView::MouseButtonDown( const MouseEvent& rMEvt )
                 maFrameData.mnHelpState |= DrawButtonFlags::Pressed;
                 pBorderWindow->InvalidateBorder();
             }
-            else if ( maFrameData.mnHitTest & BorderWindowHitTest::Pin )
-            {
-                maFrameData.mnPinState |= DrawButtonFlags::Pressed;
-                pBorderWindow->InvalidateBorder();
-            }
             else
             {
                 if ( rMEvt.GetClicks() == 1 )
@@ -903,16 +852,8 @@ bool ImplStdBorderWindowView::MouseButtonDown( const MouseEvent& rMEvt )
                         if ( pBorderWindow->ImplGetClientWindow()->IsSystemWindow() )
                         {
                             SystemWindow* pClientWindow = static_cast<SystemWindow*>(pBorderWindow->ImplGetClientWindow());
-                            if ( true /*pBorderWindow->mbDockBtn*/ )   // always perform docking on double click, no button required
-                                pClientWindow->TitleButtonClick( TitleButton::Docking );
-                            else if ( pBorderWindow->GetStyle() & WB_ROLLABLE )
-                            {
-                                if ( pClientWindow->IsRollUp() )
-                                    pClientWindow->RollDown();
-                                else
-                                    pClientWindow->RollUp();
-                                pClientWindow->Roll();
-                            }
+                            // always perform docking on double click, no button required
+                            pClientWindow->TitleButtonClick( TitleButton::Docking );
                         }
                     }
                 }
@@ -923,10 +864,7 @@ bool ImplStdBorderWindowView::MouseButtonDown( const MouseEvent& rMEvt )
                 maFrameData.mbDragFull = false;
                 if ( nDragFullTest != DragFullOptions::NONE )
                     maFrameData.mbDragFull = true;   // always fulldrag for proper docking, ignore system settings
-                StartTrackingFlags eFlags = maFrameData.mbDragFull ?
-                    StartTrackingFlags::UseToolKitDrag :
-                    StartTrackingFlags::NONE;
-                pBorderWindow->StartTracking(eFlags);
+                pBorderWindow->StartTracking();
             }
             else if ( bHitTest )
                 maFrameData.mnHitTest = BorderWindowHitTest::NONE;
@@ -984,7 +922,6 @@ bool ImplStdBorderWindowView::Tracking( const TrackingEvent& rTEvt )
                             pClientWindow->RollDown();
                         else
                             pClientWindow->RollUp();
-                        pClientWindow->Roll();
                     }
                 }
             }
@@ -1045,25 +982,6 @@ bool ImplStdBorderWindowView::Tracking( const TrackingEvent& rTEvt )
                 // do not call a Click-Handler when aborting
                 if ( !rTEvt.IsTrackingCanceled() )
                 {
-                }
-            }
-        }
-        else if ( nHitTest & BorderWindowHitTest::Pin )
-        {
-            if ( maFrameData.mnPinState & DrawButtonFlags::Pressed )
-            {
-                maFrameData.mnPinState &= ~DrawButtonFlags::Pressed;
-                pBorderWindow->InvalidateBorder();
-
-                // do not call a Click-Handler when aborting
-                if ( !rTEvt.IsTrackingCanceled() )
-                {
-                    if ( pBorderWindow->ImplGetClientWindow()->IsSystemWindow() )
-                    {
-                        SystemWindow* pClientWindow = static_cast<SystemWindow*>(pBorderWindow->ImplGetClientWindow());
-                        pClientWindow->SetPin( !pClientWindow->IsPinned() );
-                        pClientWindow->Pin();
-                    }
                 }
             }
         }
@@ -1210,25 +1128,6 @@ bool ImplStdBorderWindowView::Tracking( const TrackingEvent& rTEvt )
                 }
             }
         }
-        else if ( maFrameData.mnHitTest & BorderWindowHitTest::Pin )
-        {
-            if ( maFrameData.maPinRect.IsInside( aMousePos ) )
-            {
-                if ( !(maFrameData.mnPinState & DrawButtonFlags::Pressed) )
-                {
-                    maFrameData.mnPinState |= DrawButtonFlags::Pressed;
-                    pBorderWindow->InvalidateBorder();
-                }
-            }
-            else
-            {
-                if ( maFrameData.mnPinState & DrawButtonFlags::Pressed )
-                {
-                    maFrameData.mnPinState &= ~DrawButtonFlags::Pressed;
-                    pBorderWindow->InvalidateBorder();
-                }
-            }
-        }
         else
         {
             aMousePos.X()    -= maFrameData.maMouseOff.X();
@@ -1251,14 +1150,14 @@ bool ImplStdBorderWindowView::Tracking( const TrackingEvent& rTEvt )
                 {
                     maFrameData.mnTrackX = aPos.X();
                     maFrameData.mnTrackY = aPos.Y();
-                    pBorderWindow->ShowTracking( Rectangle( pBorderWindow->ScreenToOutputPixel( aPos ), pBorderWindow->GetOutputSizePixel() ), ShowTrackFlags::Big );
+                    pBorderWindow->ShowTracking( tools::Rectangle( pBorderWindow->ScreenToOutputPixel( aPos ), pBorderWindow->GetOutputSizePixel() ), ShowTrackFlags::Big );
                 }
             }
             else
             {
                 Point       aOldPos         = pBorderWindow->GetPosPixel();
                 Size        aSize           = pBorderWindow->GetSizePixel();
-                Rectangle   aNewRect( aOldPos, aSize );
+                tools::Rectangle   aNewRect( aOldPos, aSize );
                 long        nOldWidth       = aSize.Width();
                 long        nOldHeight      = aSize.Height();
                 long        nBorderWidth    = maFrameData.mnLeftBorder+maFrameData.mnRightBorder;
@@ -1362,7 +1261,7 @@ bool ImplStdBorderWindowView::Tracking( const TrackingEvent& rTEvt )
                     maFrameData.mnTrackY        = aNewRect.Top();
                     maFrameData.mnTrackWidth    = aNewRect.GetWidth();
                     maFrameData.mnTrackHeight   = aNewRect.GetHeight();
-                    pBorderWindow->ShowTracking( Rectangle( pBorderWindow->ScreenToOutputPixel( aNewRect.TopLeft() ), aNewRect.GetSize() ), ShowTrackFlags::Big );
+                    pBorderWindow->ShowTracking( tools::Rectangle( pBorderWindow->ScreenToOutputPixel( aNewRect.TopLeft() ), aNewRect.GetSize() ), ShowTrackFlags::Big );
                 }
             }
         }
@@ -1371,12 +1270,12 @@ bool ImplStdBorderWindowView::Tracking( const TrackingEvent& rTEvt )
     return true;
 }
 
-OUString ImplStdBorderWindowView::RequestHelp( const Point& rPos, Rectangle& rHelpRect )
+OUString ImplStdBorderWindowView::RequestHelp( const Point& rPos, tools::Rectangle& rHelpRect )
 {
     return ImplRequestHelp( &maFrameData, rPos, rHelpRect );
 }
 
-Rectangle ImplStdBorderWindowView::GetMenuRect() const
+tools::Rectangle ImplStdBorderWindowView::GetMenuRect() const
 {
     return maFrameData.maMenuRect;
 }
@@ -1387,8 +1286,8 @@ void ImplStdBorderWindowView::Init( OutputDevice* pDev, long nWidth, long nHeigh
     ImplBorderWindow*       pBorderWindow = maFrameData.mpBorderWindow;
     const StyleSettings&    rStyleSettings = pDev->GetSettings().GetStyleSettings();
     DecorationView          aDecoView( pDev );
-    Rectangle               aRect( 0, 0, 10, 10 );
-    Rectangle               aCalcRect = aDecoView.DrawFrame( aRect, DrawFrameStyle::DoubleOut, DrawFrameFlags::NoDraw );
+    tools::Rectangle               aRect( 0, 0, 10, 10 );
+    tools::Rectangle               aCalcRect = aDecoView.DrawFrame( aRect, DrawFrameStyle::DoubleOut, DrawFrameFlags::NoDraw );
 
     pData->mpOutDev         = pDev;
     pData->mnWidth          = nWidth;
@@ -1431,22 +1330,12 @@ void ImplStdBorderWindowView::Init( OutputDevice* pDev, long nWidth, long nHeigh
 
         if ( pData->mnTitleType & (BorderWindowTitleType::Normal | BorderWindowTitleType::Small) )
         {
-            long nLeft          = pData->maTitleRect.Left() + 1;
             long nRight         = pData->maTitleRect.Right() - 3;
             long const nItemTop = pData->maTitleRect.Top() + 2;
             long const nItemBottom = pData->maTitleRect.Bottom() - 2;
 
-            auto addOnLeft = [&nLeft, nItemTop, nItemBottom](
-                Rectangle & rect, long width, long gap)
-            {
-                rect.Top() = nItemTop;
-                rect.Bottom() = nItemBottom;
-                rect.Left() = nLeft;
-                rect.Right() = rect.Left() + width;
-                nLeft += rect.GetWidth() + gap;
-            };
             auto addSquareOnRight = [&nRight, nItemTop, nItemBottom](
-                Rectangle & rect, long gap)
+                tools::Rectangle & rect, long gap)
             {
                 rect.Top() = nItemTop;
                 rect.Bottom() = nItemBottom;
@@ -1454,13 +1343,6 @@ void ImplStdBorderWindowView::Init( OutputDevice* pDev, long nWidth, long nHeigh
                 rect.Left() = rect.Right() - rect.GetHeight() + 1;
                 nRight -= rect.GetWidth() + gap;
             };
-
-            if ( pBorderWindow->GetStyle() & WB_PINABLE )
-            {
-                Image aImage;
-                ImplGetPinImage( DrawButtonFlags::NONE, false, aImage );
-                addOnLeft(pData->maPinRect, aImage.GetSizePixel().Width(), 3);
-            }
 
             if ( pBorderWindow->GetStyle() & WB_CLOSEABLE )
             {
@@ -1489,7 +1371,6 @@ void ImplStdBorderWindowView::Init( OutputDevice* pDev, long nWidth, long nHeigh
         }
         else
         {
-            pData->maPinRect.SetEmpty();
             pData->maCloseRect.SetEmpty();
             pData->maDockRect.SetEmpty();
             pData->maMenuRect.SetEmpty();
@@ -1503,7 +1384,6 @@ void ImplStdBorderWindowView::Init( OutputDevice* pDev, long nWidth, long nHeigh
     else
     {
         pData->maTitleRect.SetEmpty();
-        pData->maPinRect.SetEmpty();
         pData->maCloseRect.SetEmpty();
         pData->maDockRect.SetEmpty();
         pData->maMenuRect.SetEmpty();
@@ -1527,12 +1407,12 @@ long ImplStdBorderWindowView::CalcTitleWidth() const
     return ImplCalcTitleWidth( &maFrameData );
 }
 
-void ImplStdBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, BorderWindowDraw nDrawFlags, const Point* pOffset)
+void ImplStdBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, const Point* pOffset)
 {
     ImplBorderFrameData* pData = &maFrameData;
     ImplBorderWindow* pBorderWindow = pData->mpBorderWindow;
     Point aTmpPoint = pOffset ? Point(*pOffset) : Point();
-    Rectangle aInRect( aTmpPoint, Size( pData->mnWidth, pData->mnHeight ) );
+    tools::Rectangle aInRect( aTmpPoint, Size( pData->mnWidth, pData->mnHeight ) );
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
     DecorationView aDecoView(&rRenderContext);
     Color aFaceColor(rStyleSettings.GetFaceColor());
@@ -1541,61 +1421,56 @@ void ImplStdBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, Bor
     aFrameColor.DecreaseContrast(sal_uInt8(0.5 * 255));
 
     // Draw Frame
-    if (nDrawFlags & BorderWindowDraw::Frame)
-    {
-        vcl::Region oldClipRgn(rRenderContext.GetClipRegion());
+    vcl::Region oldClipRgn(rRenderContext.GetClipRegion());
 
-        // for popups, don't draw part of the frame
-        if (pData->mnTitleType == BorderWindowTitleType::Popup)
+    // for popups, don't draw part of the frame
+    if (pData->mnTitleType == BorderWindowTitleType::Popup)
+    {
+        FloatingWindow* pWin = dynamic_cast<FloatingWindow*>(pData->mpBorderWindow->GetWindow(GetWindowType::Client));
+        if (pWin)
         {
-            FloatingWindow* pWin = dynamic_cast<FloatingWindow*>(pData->mpBorderWindow->GetWindow(GetWindowType::Client));
-            if (pWin)
+            vcl::Region aClipRgn(aInRect);
+            tools::Rectangle aItemClipRect(pWin->ImplGetItemEdgeClipRect());
+            if (!aItemClipRect.IsEmpty())
             {
-                vcl::Region aClipRgn(aInRect);
-                Rectangle aItemClipRect(pWin->ImplGetItemEdgeClipRect());
-                if (!aItemClipRect.IsEmpty())
-                {
-                    aItemClipRect.SetPos(pData->mpBorderWindow->AbsoluteScreenToOutputPixel(aItemClipRect.TopLeft()));
-                    aClipRgn.Exclude(aItemClipRect);
-                    rRenderContext.SetClipRegion(aClipRgn);
-                }
+                aItemClipRect.SetPos(pData->mpBorderWindow->AbsoluteScreenToOutputPixel(aItemClipRect.TopLeft()));
+                aClipRgn.Exclude(aItemClipRect);
+                rRenderContext.SetClipRegion(aClipRgn);
             }
         }
-
-        // single line frame
-        rRenderContext.SetLineColor(aFrameColor);
-        rRenderContext.SetFillColor();
-        rRenderContext.DrawRect(aInRect);
-        ++aInRect.Left();
-        --aInRect.Right();
-        ++aInRect.Top();
-        --aInRect.Bottom();
-
-        // restore
-        if (pData->mnTitleType == BorderWindowTitleType::Popup)
-            rRenderContext.SetClipRegion(oldClipRgn);
     }
-    else
-        aInRect = aDecoView.DrawFrame(aInRect, DrawFrameStyle::DoubleOut, DrawFrameFlags::NoDraw);
+
+    // single line frame
+    rRenderContext.SetLineColor(aFrameColor);
+    rRenderContext.SetFillColor();
+    rRenderContext.DrawRect(aInRect);
+    ++aInRect.Left();
+    --aInRect.Right();
+    ++aInRect.Top();
+    --aInRect.Bottom();
+
+    // restore
+    if (pData->mnTitleType == BorderWindowTitleType::Popup)
+        rRenderContext.SetClipRegion(oldClipRgn);
 
     // Draw Border
     rRenderContext.SetLineColor();
     long nBorderSize = pData->mnBorderSize;
-    if ((nDrawFlags & BorderWindowDraw::Border) && nBorderSize)
+    if (nBorderSize)
     {
         rRenderContext.SetFillColor(rStyleSettings.GetFaceColor());
-        rRenderContext.DrawRect(Rectangle(Point(aInRect.Left(), aInRect.Top()),
+        rRenderContext.DrawRect(tools::Rectangle(Point(aInRect.Left(), aInRect.Top()),
                                  Size(aInRect.GetWidth(), nBorderSize)));
-        rRenderContext.DrawRect(Rectangle(Point(aInRect.Left(), aInRect.Top() + nBorderSize),
+        rRenderContext.DrawRect(tools::Rectangle(Point(aInRect.Left(), aInRect.Top() + nBorderSize),
                                  Size(nBorderSize, aInRect.GetHeight() - nBorderSize)));
-        rRenderContext.DrawRect(Rectangle(Point(aInRect.Left(), aInRect.Bottom() - nBorderSize + 1),
+        rRenderContext.DrawRect(tools::Rectangle(Point(aInRect.Left(), aInRect.Bottom() - nBorderSize + 1),
                                  Size(aInRect.GetWidth(), nBorderSize)));
-        rRenderContext.DrawRect(Rectangle(Point(aInRect.Right()-nBorderSize + 1, aInRect.Top() + nBorderSize),
+        rRenderContext.DrawRect(tools::Rectangle(Point(aInRect.Right()-nBorderSize + 1, aInRect.Top() + nBorderSize),
                                  Size(nBorderSize, aInRect.GetHeight() - nBorderSize)));
     }
 
     // Draw Title
-    if ((nDrawFlags & BorderWindowDraw::Title) && !pData->maTitleRect.IsEmpty())
+    if (!pData->maTitleRect.IsEmpty())
     {
         aInRect = pData->maTitleRect;
 
@@ -1606,7 +1481,7 @@ void ImplStdBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, Bor
             rRenderContext.SetFillColor(aFaceColor);
 
         rRenderContext.SetTextColor(rStyleSettings.GetButtonTextColor());
-        Rectangle aTitleRect(pData->maTitleRect);
+        tools::Rectangle aTitleRect(pData->maTitleRect);
         if(pOffset)
             aTitleRect.Move(pOffset->X(), pOffset->Y());
         rRenderContext.DrawRect(aTitleRect);
@@ -1615,9 +1490,6 @@ void ImplStdBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, Bor
         {
             aInRect.Left()  += 2;
             aInRect.Right() -= 2;
-
-            if (!pData->maPinRect.IsEmpty())
-                aInRect.Left() = pData->maPinRect.Right() + 2;
 
             if (!pData->maHelpRect.IsEmpty())
                 aInRect.Right() = pData->maHelpRect.Left() - 2;
@@ -1646,87 +1518,54 @@ void ImplStdBorderWindowView::DrawWindow(vcl::RenderContext& rRenderContext, Bor
         }
     }
 
-    if (((nDrawFlags & BorderWindowDraw::Close) || (nDrawFlags & BorderWindowDraw::Title))
-       && !pData->maCloseRect.IsEmpty())
+    if (!pData->maCloseRect.IsEmpty())
     {
-        Rectangle aSymbolRect(pData->maCloseRect);
+        tools::Rectangle aSymbolRect(pData->maCloseRect);
         if (pOffset)
             aSymbolRect.Move(pOffset->X(), pOffset->Y());
         ImplDrawBrdWinSymbolButton(&rRenderContext, aSymbolRect, SymbolType::CLOSE, pData->mnCloseState);
     }
-    if (((nDrawFlags & BorderWindowDraw::Dock) || (nDrawFlags & BorderWindowDraw::Title))
-       && !pData->maDockRect.IsEmpty())
+    if (!pData->maDockRect.IsEmpty())
     {
-        Rectangle aSymbolRect(pData->maDockRect);
+        tools::Rectangle aSymbolRect(pData->maDockRect);
         if (pOffset)
             aSymbolRect.Move(pOffset->X(), pOffset->Y());
         ImplDrawBrdWinSymbolButton(&rRenderContext, aSymbolRect, SymbolType::DOCK, pData->mnDockState);
     }
-    if (((nDrawFlags & BorderWindowDraw::Menu) || (nDrawFlags & BorderWindowDraw::Title))
-       && !pData->maMenuRect.IsEmpty())
+    if (!pData->maMenuRect.IsEmpty())
     {
-        Rectangle aSymbolRect(pData->maMenuRect);
+        tools::Rectangle aSymbolRect(pData->maMenuRect);
         if (pOffset)
             aSymbolRect.Move(pOffset->X(), pOffset->Y());
         ImplDrawBrdWinSymbolButton(&rRenderContext, aSymbolRect, SymbolType::MENU, pData->mnMenuState);
     }
-    if (((nDrawFlags & BorderWindowDraw::Hide) || (nDrawFlags & BorderWindowDraw::Title))
-       && !pData->maHideRect.IsEmpty())
+    if (!pData->maHideRect.IsEmpty())
     {
-        Rectangle aSymbolRect(pData->maHideRect);
+        tools::Rectangle aSymbolRect(pData->maHideRect);
         if (pOffset)
             aSymbolRect.Move(pOffset->X(), pOffset->Y());
         ImplDrawBrdWinSymbolButton(&rRenderContext, aSymbolRect, SymbolType::HIDE, pData->mnHideState);
     }
-    if (((nDrawFlags & BorderWindowDraw::Roll) || (nDrawFlags & BorderWindowDraw::Title))
-       && !pData->maRollRect.IsEmpty())
+    if (!pData->maRollRect.IsEmpty())
     {
         SymbolType eType;
         if (pBorderWindow->mbRollUp)
             eType = SymbolType::ROLLDOWN;
         else
             eType = SymbolType::ROLLUP;
-        Rectangle aSymbolRect(pData->maRollRect);
+        tools::Rectangle aSymbolRect(pData->maRollRect);
         if (pOffset)
             aSymbolRect.Move(pOffset->X(), pOffset->Y());
         ImplDrawBrdWinSymbolButton(&rRenderContext, aSymbolRect, eType, pData->mnRollState);
     }
 
-    if (((nDrawFlags & BorderWindowDraw::Help) || (nDrawFlags & BorderWindowDraw::Title))
-       && !pData->maHelpRect.IsEmpty())
+    if (!pData->maHelpRect.IsEmpty())
     {
-        Rectangle aSymbolRect(pData->maHelpRect);
+        tools::Rectangle aSymbolRect(pData->maHelpRect);
         if (pOffset)
             aSymbolRect.Move(pOffset->X(), pOffset->Y());
         ImplDrawBrdWinSymbolButton(&rRenderContext, aSymbolRect, SymbolType::HELP, pData->mnHelpState);
     }
-    if (((nDrawFlags & BorderWindowDraw::Pin) || (nDrawFlags & BorderWindowDraw::Title))
-       && !pData->maPinRect.IsEmpty())
-    {
-        Image aImage;
-        ImplGetPinImage(pData->mnPinState, pBorderWindow->mbPinned, aImage);
-        Size  aImageSize = aImage.GetSizePixel();
-        long  nRectHeight = pData->maPinRect.GetHeight();
-        Point aPos(pData->maPinRect.TopLeft());
-        if (pOffset)
-            aPos.Move(pOffset->X(), pOffset->Y());
-        if (nRectHeight < aImageSize.Height())
-        {
-            rRenderContext.DrawImage(aPos, Size( aImageSize.Width(), nRectHeight ), aImage);
-        }
-        else
-        {
-            aPos.Y() += (nRectHeight-aImageSize.Height()) / 2;
-            rRenderContext.DrawImage(aPos, aImage);
-        }
-    }
-}
-
-void ImplBorderWindow::ImplInit( vcl::Window* pParent,
-                                 WinBits nStyle, BorderWindowStyle nTypeStyle,
-                                 const css::uno::Any& )
-{
-    ImplInit( pParent, nStyle, nTypeStyle, nullptr );
 }
 
 void ImplBorderWindow::ImplInit( vcl::Window* pParent,
@@ -1736,7 +1575,7 @@ void ImplBorderWindow::ImplInit( vcl::Window* pParent,
 {
     // remove all unwanted WindowBits
     WinBits nOrgStyle = nStyle;
-    WinBits nTestStyle = (WB_MOVEABLE | WB_SIZEABLE | WB_ROLLABLE | WB_PINABLE | WB_CLOSEABLE | WB_STANDALONE | WB_DIALOGCONTROL | WB_NODIALOGCONTROL | WB_SYSTEMFLOATWIN | WB_INTROWIN | WB_DEFAULTWIN | WB_TOOLTIPWIN | WB_NOSHADOW | WB_OWNERDRAWDECORATION | WB_SYSTEMCHILDWINDOW  | WB_POPUP);
+    WinBits nTestStyle = (WB_MOVEABLE | WB_SIZEABLE | WB_ROLLABLE | WB_CLOSEABLE | WB_STANDALONE | WB_DIALOGCONTROL | WB_NODIALOGCONTROL | WB_SYSTEMFLOATWIN | WB_INTROWIN | WB_DEFAULTWIN | WB_TOOLTIPWIN | WB_NOSHADOW | WB_OWNERDRAWDECORATION | WB_SYSTEMCHILDWINDOW  | WB_POPUP);
     if ( nTypeStyle & BorderWindowStyle::App )
         nTestStyle |= WB_APP;
     nStyle &= nTestStyle;
@@ -1791,7 +1630,6 @@ void ImplBorderWindow::ImplInit( vcl::Window* pParent,
     mnMaxHeight     = SHRT_MAX;
     mnRollHeight    = 0;
     mnOrgMenuHeight = 0;
-    mbPinned        = false;
     mbRollUp        = false;
     mbMenuHide      = false;
     mbDockBtn       = false;
@@ -1810,16 +1648,16 @@ void ImplBorderWindow::ImplInit( vcl::Window* pParent,
 ImplBorderWindow::ImplBorderWindow( vcl::Window* pParent,
                                     SystemParentData* pSystemParentData,
                                     WinBits nStyle, BorderWindowStyle nTypeStyle
-                                    ) : Window( WINDOW_BORDERWINDOW )
+                                    ) : Window( WindowType::BORDERWINDOW )
 {
     ImplInit( pParent, nStyle, nTypeStyle, pSystemParentData );
 }
 
 ImplBorderWindow::ImplBorderWindow( vcl::Window* pParent, WinBits nStyle ,
                                     BorderWindowStyle nTypeStyle ) :
-    Window( WINDOW_BORDERWINDOW )
+    Window( WindowType::BORDERWINDOW )
 {
-    ImplInit( pParent, nStyle, nTypeStyle, css::uno::Any() );
+    ImplInit( pParent, nStyle, nTypeStyle, nullptr );
 }
 
 ImplBorderWindow::~ImplBorderWindow()
@@ -1854,16 +1692,16 @@ void ImplBorderWindow::Tracking( const TrackingEvent& rTEvt )
         mpBorderView->Tracking( rTEvt );
 }
 
-void ImplBorderWindow::Paint( vcl::RenderContext& rRenderContext, const Rectangle& )
+void ImplBorderWindow::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& )
 {
     if (mpBorderView)
-        mpBorderView->DrawWindow(rRenderContext, BorderWindowDraw::All);
+        mpBorderView->DrawWindow(rRenderContext);
 }
 
-void ImplBorderWindow::Draw( const Rectangle&, OutputDevice* pOutDev, const Point& rPos )
+void ImplBorderWindow::Draw( const tools::Rectangle&, OutputDevice* pOutDev, const Point& rPos )
 {
     if (mpBorderView)
-        mpBorderView->DrawWindow(*pOutDev, BorderWindowDraw::All, &rPos);
+        mpBorderView->DrawWindow(*pOutDev, &rPos);
 }
 
 void ImplBorderWindow::Activate()
@@ -1887,7 +1725,7 @@ void ImplBorderWindow::RequestHelp( const HelpEvent& rHEvt )
     if ( rHEvt.GetMode() & (HelpEventMode::BALLOON | HelpEventMode::QUICK) && !rHEvt.KeyboardActivated() )
     {
         Point       aMousePosPixel = ScreenToOutputPixel( rHEvt.GetMousePosPixel() );
-        Rectangle   aHelpRect;
+        tools::Rectangle   aHelpRect;
         OUString    aHelpStr( mpBorderView->RequestHelp( aMousePosPixel, aHelpRect ) );
 
         // retrieve rectangle
@@ -1971,7 +1809,6 @@ void ImplBorderWindow::Resize()
 void ImplBorderWindow::StateChanged( StateChangedType nType )
 {
     if ( (nType == StateChangedType::Text) ||
-         (nType == StateChangedType::Image) ||
          (nType == StateChangedType::Data) )
     {
         if (IsReallyVisible() && mbFrameBorder)
@@ -2067,7 +1904,7 @@ void ImplBorderWindow::InvalidateBorder()
         mpBorderView->GetBorder( nLeftBorder, nTopBorder, nRightBorder, nBottomBorder );
         if ( nLeftBorder || nTopBorder || nRightBorder || nBottomBorder )
         {
-            Rectangle   aWinRect( Point( 0, 0 ), GetOutputSizePixel() );
+            tools::Rectangle   aWinRect( Point( 0, 0 ), GetOutputSizePixel() );
             vcl::Region      aRegion( aWinRect );
             aWinRect.Left()   += nLeftBorder;
             aWinRect.Top()    += nTopBorder;
@@ -2109,12 +1946,6 @@ void ImplBorderWindow::SetBorderStyle( WindowBorderStyle nStyle )
         mnBorderStyle = nStyle;
         UpdateView( false, ImplGetWindow()->GetOutputSizePixel() );
     }
-}
-
-void ImplBorderWindow::SetPin( bool bPin )
-{
-    mbPinned = bPin;
-    InvalidateBorder();
 }
 
 void ImplBorderWindow::SetRollUp( bool bRollUp, const Size& rSize )
@@ -2183,6 +2014,14 @@ void ImplBorderWindow::SetNotebookBar(const OUString& rUIXMLDescription, const c
     Resize();
 }
 
+void ImplBorderWindow::CloseNotebookBar()
+{
+    if (mpNotebookBar)
+        mpNotebookBar.disposeAndClear();
+    mpNotebookBar = nullptr;
+    Resize();
+}
+
 void ImplBorderWindow::GetBorder( sal_Int32& rLeftBorder, sal_Int32& rTopBorder,
                                   sal_Int32& rRightBorder, sal_Int32& rBottomBorder ) const
 {
@@ -2200,7 +2039,7 @@ long ImplBorderWindow::CalcTitleWidth() const
     return mpBorderView->CalcTitleWidth();
 }
 
-Rectangle ImplBorderWindow::GetMenuRect() const
+tools::Rectangle ImplBorderWindow::GetMenuRect() const
 {
     return mpBorderView->GetMenuRect();
 }
@@ -2211,6 +2050,17 @@ Size ImplBorderWindow::GetOptimalSize() const
     if (pClientWindow)
         return pClientWindow->GetOptimalSize();
     return Size(mnMinWidth, mnMinHeight);
+}
+
+void ImplBorderWindow::queue_resize(StateChangedType eReason)
+{
+    //if we are floating, then we don't want to inform our parent that it needs
+    //to calculate a new layout allocation. Because while we are a child
+    //of our parent we are not embedded into the parent so it doesn't care
+    //about us.
+    if (mbFloatWindow)
+        return;
+    vcl::Window::queue_resize(eReason);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

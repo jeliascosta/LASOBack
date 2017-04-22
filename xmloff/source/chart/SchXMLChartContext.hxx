@@ -78,7 +78,7 @@ class SchXMLChartContext : public SvXMLImportContext
 public:
     SchXMLChartContext( SchXMLImportHelper& rImpHelper,
                         SvXMLImport& rImport, const OUString& rLocalName );
-    virtual ~SchXMLChartContext();
+    virtual ~SchXMLChartContext() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
@@ -103,6 +103,8 @@ private:
 
     OUString msCategoriesAddress;
     OUString msChartAddress;
+
+    OUString msDataPilotSource;
 
     SeriesDefaultsAndStyles maSeriesDefaultsAndStyles;
     tSchXMLLSequencesPerIndex maLSequencesPerIndex;
@@ -139,7 +141,7 @@ public:
                         SvXMLImport& rImport, const OUString& rLocalName,
                         OUString& rTitle,
                         css::uno::Reference< css::drawing::XShape >& xTitleShape );
-    virtual ~SchXMLTitleContext();
+    virtual ~SchXMLTitleContext() override;
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual SvXMLImportContext *CreateChildContext(

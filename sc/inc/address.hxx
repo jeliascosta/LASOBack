@@ -22,7 +22,6 @@
 
 #include <rtl/ustrbuf.hxx>
 #include <rtl/strbuf.hxx>
-#include <osl/endian.h>
 
 #include <limits>
 #include "scdllapi.h"
@@ -71,6 +70,8 @@ const SCROW       MAXROW         = MAXROWCOUNT - 1;
 const SCCOL       MAXCOL         = MAXCOLCOUNT - 1;
 const SCTAB       MAXTAB         = MAXTABCOUNT - 1;
 const SCCOLROW    MAXCOLROW      = MAXROW;
+// Maximun tiled rendering values
+const SCROW       MAXTILEDROW    = 10000;
 // Limit the initial tab count to prevent users to set the count too high,
 // which could cause the memory usage of blank documents to exceed the
 // available system memory.
@@ -88,22 +89,22 @@ const SCROW SCROW_REPEAT_NONE = SCROW_MAX;
 
 SAL_WARN_UNUSED_RESULT inline bool ValidCol( SCCOL nCol )
 {
-    return nCol >= static_cast<SCCOL>(0) && nCol <= MAXCOL;
+    return nCol >= 0 && nCol <= MAXCOL;
 }
 
 SAL_WARN_UNUSED_RESULT inline bool ValidRow( SCROW nRow )
 {
-    return nRow >= static_cast<SCROW>(0) && nRow <= MAXROW;
+    return nRow >= 0 && nRow <= MAXROW;
 }
 
 SAL_WARN_UNUSED_RESULT inline bool ValidTab( SCTAB nTab )
 {
-    return nTab >= static_cast<SCTAB>(0) && nTab <= MAXTAB;
+    return nTab >= 0 && nTab <= MAXTAB;
 }
 
 SAL_WARN_UNUSED_RESULT inline bool ValidTab( SCTAB nTab, SCTAB nMaxTab )
 {
-    return nTab >= static_cast<SCTAB>(0) && nTab <= nMaxTab;
+    return nTab >= 0 && nTab <= nMaxTab;
 }
 
 SAL_WARN_UNUSED_RESULT inline bool ValidColRow( SCCOL nCol, SCROW nRow )
@@ -131,15 +132,6 @@ SAL_WARN_UNUSED_RESULT inline SCTAB SanitizeTab( SCTAB nTab )
     return nTab < 0 ? 0 : (nTab > MAXTAB ? MAXTAB : nTab);
 }
 
-//  ScAddress
-// The old cell address is combined in one UINT32:
-// +---+---+-------+
-// |Tab|Col|  Row  |
-// +---+---+-------+
-// For speed reasons access isn't done by shifting bits but by using platform
-// dependent casts, which unfortunately also leads to aliasing problems when
-// not using gcc -fno-strict-aliasing
-
 // The result of ConvertRef() is a bit group of the following:
 enum class ScRefFlags : sal_uInt16
 {
@@ -156,7 +148,7 @@ enum class ScRefFlags : sal_uInt16
     COL_VALID     = 0x0200,
     TAB_VALID     = 0x0400,
     // BITS for convience
-    BITS          = COL_ABS | ROW_ABS | TAB_ABS | TAB_3D \
+    BITS          = COL_ABS | ROW_ABS | TAB_ABS | TAB_3D
                     | ROW_VALID | COL_VALID | TAB_VALID,
     // somewhat cheesy kludge to force the display of the document name even for
     // local references.  Requires TAB_3D to be valid
@@ -188,7 +180,7 @@ inline void applyStartToEndFlags(ScRefFlags &target)
 }
 
 //  ScAddress
-class ScAddress
+class SAL_WARN_UNUSED ScAddress
 {
 private:
     SCROW   nRow;
@@ -206,13 +198,13 @@ public:
         SCROW       nRow;
         SCCOL       nCol;
 
-        inline Details( formula::FormulaGrammar::AddressConvention eConvP, SCROW nRowP, SCCOL nColP ) :
+        Details( formula::FormulaGrammar::AddressConvention eConvP, SCROW nRowP, SCCOL nColP ) :
             eConv(eConvP), nRow(nRowP), nCol(nColP)
         {}
-        inline Details( formula::FormulaGrammar::AddressConvention eConvP, ScAddress const & rAddr ) :
+        Details( formula::FormulaGrammar::AddressConvention eConvP, ScAddress const & rAddr ) :
             eConv(eConvP), nRow(rAddr.Row()),  nCol(rAddr.Col())
         {}
-        inline Details( formula::FormulaGrammar::AddressConvention eConvP) :
+        Details( formula::FormulaGrammar::AddressConvention eConvP) :
             eConv(eConvP), nRow(0), nCol(0)
         {}
         /* Use the formula::FormulaGrammar::AddressConvention associated with rAddr::Tab() */
@@ -226,82 +218,82 @@ public:
         sal_uInt16  mnFileId;
         bool        mbExternal;
 
-        inline ExternalInfo() :
+        ExternalInfo() :
             mnFileId(0), mbExternal(false)
         {}
     };
 
-    inline ScAddress() :
+    ScAddress() :
         nRow(0), nCol(0), nTab(0)
     {}
-    inline ScAddress( SCCOL nColP, SCROW nRowP, SCTAB nTabP ) :
+    ScAddress( SCCOL nColP, SCROW nRowP, SCTAB nTabP ) :
         nRow(nRowP), nCol(nColP), nTab(nTabP)
     {}
     /** Yes, it is what it seems to be: Uninitialized. May be used for
         performance reasons if it is initialized by other means. */
-    inline ScAddress( Uninitialized )
+    ScAddress( Uninitialized )
     {}
-    inline ScAddress( InitializeInvalid ) :
+    ScAddress( InitializeInvalid ) :
         nRow(-1), nCol(-1), nTab(-1)
     {}
-    inline ScAddress( const ScAddress& rAddress ) :
+    ScAddress( const ScAddress& rAddress ) :
         nRow(rAddress.nRow), nCol(rAddress.nCol), nTab(rAddress.nTab)
     {}
     inline ScAddress& operator=( const ScAddress& rAddress );
 
     inline void Set( SCCOL nCol, SCROW nRow, SCTAB nTab );
 
-    inline SCROW Row() const
+    SCROW Row() const
     {
         return nRow;
     }
 
-    inline SCCOL Col() const
+    SCCOL Col() const
     {
         return nCol;
     }
-    inline SCTAB Tab() const
+    SCTAB Tab() const
     {
         return nTab;
     }
-    inline void SetRow( SCROW nRowP )
+    void SetRow( SCROW nRowP )
     {
         nRow = nRowP;
     }
-    inline void SetCol( SCCOL nColP )
+    void SetCol( SCCOL nColP )
     {
         nCol = nColP;
     }
-    inline void SetTab( SCTAB nTabP )
+    void SetTab( SCTAB nTabP )
     {
         nTab = nTabP;
     }
-    inline void SetInvalid()
+    void SetInvalid()
     {
         nRow = -1;
         nCol = -1;
         nTab = -1;
     }
-    inline bool IsValid() const
+    bool IsValid() const
     {
         return (nRow >= 0) && (nCol >= 0) && (nTab >= 0);
     }
 
     inline void PutInOrder( ScAddress& rAddress );
 
-    inline void IncRow( SCsROW nDelta = 1 )
+    void IncRow( SCsROW nDelta = 1 )
     {
         nRow = sal::static_int_cast<SCROW>(nRow + nDelta);
     }
-    inline void IncCol( SCsCOL nDelta = 1 )
+    void IncCol( SCsCOL nDelta = 1 )
     {
         nCol = sal::static_int_cast<SCCOL>(nCol + nDelta);
     }
-    inline void IncTab( SCsTAB nDelta = 1 )
+    void IncTab( SCsTAB nDelta = 1 )
     {
         nTab = sal::static_int_cast<SCTAB>(nTab + nDelta);
     }
-    inline void GetVars( SCCOL& nColP, SCROW& nRowP, SCTAB& nTabP ) const
+    void GetVars( SCCOL& nColP, SCROW& nRowP, SCTAB& nTabP ) const
     {
         nColP = nCol;
         nRowP = nRow;
@@ -310,7 +302,7 @@ public:
 
     /**
         @param  pSheetEndPos
-                If given and Parse() sucessfully parsed a sheet name it returns
+                If given and Parse() successfully parsed a sheet name it returns
                 the end position (exclusive) behind the sheet name AND a
                 following sheet name separator. This independent of whether the
                 resulting reference is fully valid or not.
@@ -323,11 +315,11 @@ public:
                     sal_Int32* pSheetEndPos = nullptr,
                     const OUString* pErrRef = nullptr );
 
-    SC_DLLPUBLIC void Format( OStringBuffer& r, ScRefFlags nFlags = ScRefFlags::ZERO,
+    SC_DLLPUBLIC void Format( OStringBuffer& r, ScRefFlags nFlags,
                                   const ScDocument* pDocument = nullptr,
                                   const Details& rDetails = detailsOOOa1) const;
 
-    SC_DLLPUBLIC OUString Format( ScRefFlags nFlags = ScRefFlags::ZERO,
+    SC_DLLPUBLIC OUString Format( ScRefFlags nFlags,
                                   const ScDocument* pDocument = nullptr,
                                   const Details& rDetails = detailsOOOa1) const;
 
@@ -345,10 +337,19 @@ public:
     inline bool operator!=( const ScAddress& rAddress ) const;
     inline bool operator<( const ScAddress& rAddress ) const;
     inline bool operator<=( const ScAddress& rAddress ) const;
+    inline bool lessThanByRow( const ScAddress& rAddress ) const;
 
     inline size_t hash() const;
 
-    /// "A1" or "$A$1" or R1C1 or R[1]C[1]
+    /**
+     * Create a human-readable string representation of the cell address.  You
+     * cannot specify precise formatting with this method; use Format() if you
+     * need to specify how the address needs to be formatted.
+     *
+     * The address string does not display sheet name.
+     *
+     * @return human-readable string representation of the cell address.
+     */
     OUString GetColRowString() const;
 };
 
@@ -399,8 +400,7 @@ inline bool ScAddress::operator!=( const ScAddress& rAddress ) const
     return !operator==( rAddress );
 }
 
-/** Same behavior as the old sal_uInt32 nAddress < r.nAddress with encoded
-    tab|col|row bit fields. */
+/** Less than ordered by tab,col,row. */
 inline bool ScAddress::operator<( const ScAddress& rAddress ) const
 {
     if (nTab == rAddress.nTab)
@@ -417,6 +417,20 @@ inline bool ScAddress::operator<( const ScAddress& rAddress ) const
 inline bool ScAddress::operator<=( const ScAddress& rAddress ) const
 {
     return operator<( rAddress ) || operator==( rAddress );
+}
+
+/** Less than ordered by tab,row,col as needed by row-wise import/export */
+inline bool ScAddress::lessThanByRow( const ScAddress& rAddress ) const
+{
+    if (nTab == rAddress.nTab)
+    {
+        if (nRow == rAddress.nRow)
+            return nCol < rAddress.nCol;
+        else
+            return nRow < rAddress.nRow;
+    }
+    else
+        return nTab < rAddress.nTab;
 }
 
 inline size_t ScAddress::hash() const
@@ -445,57 +459,57 @@ inline bool ValidAddress( const ScAddress& rAddress )
 }
 
 //  ScRange
-class ScRange
+class SAL_WARN_UNUSED ScRange
 {
 public:
     ScAddress aStart;
     ScAddress aEnd;
 
-    inline ScRange() :
+    ScRange() :
         aStart(), aEnd()
     {}
 
-    inline ScRange( ScAddress::Uninitialized eUninitialized ) :
+    ScRange( ScAddress::Uninitialized eUninitialized ) :
         aStart( eUninitialized ), aEnd( eUninitialized )
     {}
-    inline ScRange( ScAddress::InitializeInvalid eInvalid ) :
+    ScRange( ScAddress::InitializeInvalid eInvalid ) :
         aStart( eInvalid ), aEnd( eInvalid )
     {}
-    inline ScRange( const ScAddress& aInputStart, const ScAddress& aInputEnd ) :
+    ScRange( const ScAddress& aInputStart, const ScAddress& aInputEnd ) :
         aStart( aInputStart ), aEnd( aInputEnd )
     {
         aStart.PutInOrder( aEnd );
     }
-    inline ScRange( const ScRange& rRange ) :
+    ScRange( const ScRange& rRange ) :
         aStart( rRange.aStart ), aEnd( rRange.aEnd )
     {}
-    inline ScRange( const ScAddress& rRange ) :
+    ScRange( const ScAddress& rRange ) :
         aStart( rRange ), aEnd( rRange )
     {}
-    inline ScRange( SCCOL nCol, SCROW nRow, SCTAB nTab ) :
+    ScRange( SCCOL nCol, SCROW nRow, SCTAB nTab ) :
         aStart( nCol, nRow, nTab ), aEnd( aStart )
     {}
-    inline ScRange( SCCOL nCol1, SCROW nRow1, SCTAB nTab1, SCCOL nCol2, SCROW nRow2, SCTAB nTab2 ) :
+    ScRange( SCCOL nCol1, SCROW nRow1, SCTAB nTab1, SCCOL nCol2, SCROW nRow2, SCTAB nTab2 ) :
         aStart( nCol1, nRow1, nTab1 ), aEnd( nCol2, nRow2, nTab2 )
     {}
 
-    inline ScRange& operator=( const ScRange& rRange )
+    ScRange& operator=( const ScRange& rRange )
     {
         aStart = rRange.aStart;
         aEnd = rRange.aEnd;
         return *this;
     }
-    inline ScRange& operator=( const ScAddress& rPos )
+    ScRange& operator=( const ScAddress& rPos )
     {
         aStart = aEnd = rPos;
         return *this;
     }
-    inline void SetInvalid()
+    void SetInvalid()
     {
         aStart.SetInvalid();
         aEnd.SetInvalid();
     }
-    inline bool IsValid() const
+    bool IsValid() const
     {
         return aStart.IsValid() && aEnd.IsValid();
     }
@@ -508,11 +522,11 @@ public:
                                    const css::uno::Sequence<css::sheet::ExternalLinkInfo>* pExternalLinks = nullptr,
                                    const OUString* pErrRef = nullptr );
 
-    SC_DLLPUBLIC ScRefFlags ParseAny( const OUString&, ScDocument* = nullptr,
+    SC_DLLPUBLIC ScRefFlags ParseAny( const OUString&, ScDocument*,
                                       const ScAddress::Details& rDetails = ScAddress::detailsOOOa1 );
-    SC_DLLPUBLIC ScRefFlags ParseCols( const OUString&, ScDocument* = nullptr,
+    SC_DLLPUBLIC ScRefFlags ParseCols( const OUString&, ScDocument*,
                                        const ScAddress::Details& rDetails = ScAddress::detailsOOOa1 );
-    SC_DLLPUBLIC void ParseRows( const OUString&, ScDocument* = nullptr,
+    SC_DLLPUBLIC void ParseRows( const OUString&, ScDocument*,
                                        const ScAddress::Details& rDetails = ScAddress::detailsOOOa1 );
 
     /** Parse an Excel style reference up to and including the sheet name
@@ -646,7 +660,7 @@ inline bool ScRange::operator!=( const ScRange& rRange ) const
     return !operator==( rRange );
 }
 
-/// Sort on upper left corner, if equal then use lower right too.
+/// Sort on upper left corner tab,col,row, if equal then use lower right too.
 inline bool ScRange::operator<( const ScRange& r ) const
 {
     return aStart < r.aStart || (aStart == r.aStart && aEnd < r.aEnd) ;
@@ -706,7 +720,7 @@ inline bool ValidRange( const ScRange& rRange )
 }
 
 //  ScRangePair
-class ScRangePair
+class SAL_WARN_UNUSED ScRangePair
 {
 private:
     ScRange aRange[2];
@@ -742,7 +756,7 @@ inline ScRangePair& ScRangePair::operator= ( const ScRangePair& rRange )
 }
 
 //  ScRefAddress
-class ScRefAddress
+class SAL_WARN_UNUSED ScRefAddress
 {
 private:
     ScAddress           aAdr;
@@ -750,43 +764,42 @@ private:
     bool                bRelRow;
     bool                bRelTab;
 public:
-    inline ScRefAddress() :
+    ScRefAddress() :
         bRelCol(false), bRelRow(false), bRelTab(false)
     {}
-    inline ScRefAddress( SCCOL nCol, SCROW nRow, SCTAB nTab,
-                         bool bRelColP, bool bRelRowP, bool bRelTabP ) :
+    ScRefAddress( SCCOL nCol, SCROW nRow, SCTAB nTab ) :
         aAdr(nCol, nRow, nTab),
-        bRelCol(bRelColP), bRelRow(bRelRowP), bRelTab(bRelTabP)
+        bRelCol(false), bRelRow(false), bRelTab(false)
     {}
-    inline ScRefAddress( const ScRefAddress& rRef ) :
+    ScRefAddress( const ScRefAddress& rRef ) :
         aAdr(rRef.aAdr), bRelCol(rRef.bRelCol), bRelRow(rRef.bRelRow),
         bRelTab(rRef.bRelTab)
     {}
 
     inline ScRefAddress& operator=( const ScRefAddress& );
 
-    inline bool IsRelCol() const
+    bool IsRelCol() const
     {
         return bRelCol;
     }
-    inline bool IsRelRow() const
+    bool IsRelRow() const
     {
         return bRelRow;
     }
-    inline bool IsRelTab() const
+    bool IsRelTab() const
     {
         return bRelTab;
     }
 
-    inline void SetRelCol(bool bNewRelCol)
+    void SetRelCol(bool bNewRelCol)
     {
         bRelCol = bNewRelCol;
     }
-    inline void SetRelRow(bool bNewRelRow)
+    void SetRelRow(bool bNewRelRow)
     {
         bRelRow = bNewRelRow;
     }
-    inline void SetRelTab(bool bNewRelTab)
+    void SetRelTab(bool bNewRelTab)
     {
         bRelTab = bNewRelTab;
     }
@@ -796,20 +809,20 @@ public:
     inline void Set( SCCOL nNewCol, SCROW nNewRow, SCTAB nNewTab,
                      bool bNewRelCol, bool bNewRelRow, bool bNewRelTab );
 
-    inline const ScAddress& GetAddress() const
+    const ScAddress& GetAddress() const
     {
         return aAdr;
     }
 
-    inline SCCOL Col() const
+    SCCOL Col() const
     {
         return aAdr.Col();
     }
-    inline SCROW Row() const
+    SCROW Row() const
     {
         return aAdr.Row();
     }
-    inline SCTAB Tab() const
+    SCTAB Tab() const
     {
         return aAdr.Tab();
     }
@@ -875,13 +888,13 @@ template< typename T > void PutInOrder( T& nStart, T& nEnd )
 
 bool ConvertSingleRef( ScDocument* pDocument, const OUString& rRefString,
                        SCTAB nDefTab, ScRefAddress& rRefAddress,
-                       const ScAddress::Details& rDetails = ScAddress::detailsOOOa1,
+                       const ScAddress::Details& rDetails,
                        ScAddress::ExternalInfo* pExtInfo = nullptr );
 
 bool ConvertDoubleRef( ScDocument* pDocument, const OUString& rRefString,
                        SCTAB nDefTab, ScRefAddress& rStartRefAddress,
                        ScRefAddress& rEndRefAddress,
-                       const ScAddress::Details& rDetails = ScAddress::detailsOOOa1,
+                       const ScAddress::Details& rDetails,
                        ScAddress::ExternalInfo* pExtInfo = nullptr );
 
 /// append alpha representation of column to buffer

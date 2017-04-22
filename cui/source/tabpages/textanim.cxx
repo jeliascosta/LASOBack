@@ -27,6 +27,8 @@
 #include "textattr.hxx"
 #include <dialmgr.hxx>
 #include "svx/dlgutil.hxx"
+#include "svx/svdmark.hxx"
+#include "svx/svdview.hxx"
 
 const sal_uInt16 SvxTextAnimationPage::pRanges[] =
 {
@@ -63,10 +65,21 @@ SvxTextTabDialog::SvxTextTabDialog( vcl::Window* pParent,
 void SvxTextTabDialog::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
 {
     if (nId == m_nTextId)
+    {
+        const SdrMarkList& rMarkList = pView->GetMarkedObjectList();
+        bool bHasMarked = rMarkList.GetMarkCount() > 0;
+        SdrObjKind eKind = OBJ_NONE;
+        if (bHasMarked)
         {
-            static_cast<SvxTextAttrPage&>(rPage).SetView( pView );
-            static_cast<SvxTextAttrPage&>(rPage).Construct();
+            if (rMarkList.GetMarkCount() == 1)
+            {
+                const SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
+                eKind = (SdrObjKind)pObj->GetObjIdentifier();
+            }
         }
+        static_cast<SvxTextAttrPage&>(rPage).SetObjKind(eKind);
+        static_cast<SvxTextAttrPage&>(rPage).Construct();
+    }
 }
 
 
@@ -82,7 +95,7 @@ SvxTextAnimationPage::SvxTextAnimationPage( vcl::Window* pWindow, const SfxItemS
                                   ,"cui/ui/textanimtabpage.ui"
                                   ,&rInAttrs ),
                 rOutAttrs       ( rInAttrs ),
-                eAniKind        ( SDRTEXTANI_NONE )
+                eAniKind        ( SdrTextAniKind::NONE )
 {
     get(m_pLbEffect, "LB_EFFECT");
     get(m_pBoxDirection,"boxDIRECTION");
@@ -107,7 +120,7 @@ SvxTextAnimationPage::SvxTextAnimationPage( vcl::Window* pWindow, const SfxItemS
 
     eFUnit = GetModuleFieldUnit( rInAttrs );
     SfxItemPool* pPool = rOutAttrs.GetPool();
-    DBG_ASSERT( pPool, "Wo ist der Pool" );
+    DBG_ASSERT( pPool, "Where is the pool?" );
     eUnit = pPool->GetMetric( SDRATTR_TEXT_LEFTDIST );
 
     m_pLbEffect->SetSelectHdl( LINK( this, SvxTextAnimationPage, SelectEffectHdl_Impl ) );
@@ -238,7 +251,7 @@ void SvxTextAnimationPage::Reset( const SfxItemSet* rAttrs )
         m_pNumFldCount->SetValue( nValue );
         if( nValue == 0 )
         {
-            if( eAniKind == SDRTEXTANI_SLIDE )
+            if( eAniKind == SdrTextAniKind::Slide )
             {
                 m_pTsbEndless->SetState( TRISTATE_FALSE );
                 m_pTsbEndless->Enable( false );
@@ -467,7 +480,7 @@ VclPtr<SfxTabPage> SvxTextAnimationPage::Create( vcl::Window* pWindow,
     return VclPtr<SvxTextAnimationPage>::Create( pWindow, *rAttrs );
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, SelectEffectHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxTextAnimationPage, SelectEffectHdl_Impl, ListBox&, void)
 {
     sal_Int32 nPos = m_pLbEffect->GetSelectEntryPos();
     if( nPos != LISTBOX_ENTRY_NOTFOUND )
@@ -475,20 +488,20 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, SelectEffectHdl_Impl, ListBox&, void
         eAniKind = (SdrTextAniKind) nPos;
         switch( eAniKind )
         {
-            case SDRTEXTANI_NONE:
+            case SdrTextAniKind::NONE:
             {
                 m_pBoxDirection->Disable();
                 m_pFlProperties->Disable();
             }
             break;
 
-            case SDRTEXTANI_BLINK:
-            case SDRTEXTANI_SCROLL:
-            case SDRTEXTANI_ALTERNATE:
-            case SDRTEXTANI_SLIDE:
+            case SdrTextAniKind::Blink:
+            case SdrTextAniKind::Scroll:
+            case SdrTextAniKind::Alternate:
+            case SdrTextAniKind::Slide:
             {
                 m_pFlProperties->Enable();
-                if( eAniKind == SDRTEXTANI_SLIDE )
+                if( eAniKind == SdrTextAniKind::Slide )
                 {
                     m_pTsbStartInside->Disable();
                     m_pTsbStopInside->Disable();
@@ -507,7 +520,7 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, SelectEffectHdl_Impl, ListBox&, void
                 m_pTsbAuto->Enable();
                 ClickAutoHdl_Impl( nullptr );
 
-                if( eAniKind == SDRTEXTANI_BLINK )
+                if( eAniKind == SdrTextAniKind::Blink )
                 {
                     m_pBoxDirection->Disable();
                     m_pBoxCount->Disable();
@@ -524,10 +537,10 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, SelectEffectHdl_Impl, ListBox&, void
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickEndlessHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxTextAnimationPage, ClickEndlessHdl_Impl, Button*, void)
 {
 
-    if( eAniKind != SDRTEXTANI_SLIDE )
+    if( eAniKind != SdrTextAniKind::Slide )
     {
         TriState eState = m_pTsbEndless->GetState();
         if( eState != TRISTATE_FALSE )
@@ -543,7 +556,7 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickEndlessHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickAutoHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxTextAnimationPage, ClickAutoHdl_Impl, Button*, void)
 {
     TriState eState = m_pTsbAuto->GetState();
     if( eState != TRISTATE_FALSE )
@@ -558,7 +571,7 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickAutoHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickPixelHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxTextAnimationPage, ClickPixelHdl_Impl, Button*, void)
 {
     TriState eState = m_pTsbPixel->GetState();
     if( eState == TRISTATE_TRUE )
@@ -595,7 +608,7 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickPixelHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_TYPED( SvxTextAnimationPage, ClickDirectionHdl_Impl, Button *, pBtn, void )
+IMPL_LINK( SvxTextAnimationPage, ClickDirectionHdl_Impl, Button *, pBtn, void )
 {
     m_pBtnUp->Check( pBtn == m_pBtnUp );
     m_pBtnLeft->Check( pBtn == m_pBtnLeft );
@@ -605,26 +618,26 @@ IMPL_LINK_TYPED( SvxTextAnimationPage, ClickDirectionHdl_Impl, Button *, pBtn, v
 
 void SvxTextAnimationPage::SelectDirection( SdrTextAniDirection nValue )
 {
-    m_pBtnUp->Check( nValue == SDRTEXTANI_UP );
-    m_pBtnLeft->Check( nValue == SDRTEXTANI_LEFT );
-    m_pBtnRight->Check( nValue == SDRTEXTANI_RIGHT );
-    m_pBtnDown->Check( nValue == SDRTEXTANI_DOWN );
+    m_pBtnUp->Check( nValue == SdrTextAniDirection::Up );
+    m_pBtnLeft->Check( nValue == SdrTextAniDirection::Left );
+    m_pBtnRight->Check( nValue == SdrTextAniDirection::Right );
+    m_pBtnDown->Check( nValue == SdrTextAniDirection::Down );
 }
 
 sal_uInt16 SvxTextAnimationPage::GetSelectedDirection()
 {
-    sal_uInt16 nValue = 0;
+    SdrTextAniDirection nValue = SdrTextAniDirection::Left;
 
     if( m_pBtnUp->IsChecked() )
-        nValue = SDRTEXTANI_UP;
+        nValue = SdrTextAniDirection::Up;
     else if( m_pBtnLeft->IsChecked() )
-        nValue = SDRTEXTANI_LEFT;
+        nValue = SdrTextAniDirection::Left;
     else if( m_pBtnRight->IsChecked() )
-        nValue = SDRTEXTANI_RIGHT;
+        nValue = SdrTextAniDirection::Right;
     else if( m_pBtnDown->IsChecked() )
-        nValue = SDRTEXTANI_DOWN;
+        nValue = SdrTextAniDirection::Down;
 
-    return nValue;
+    return (sal_uInt16)nValue;
 }
 
 

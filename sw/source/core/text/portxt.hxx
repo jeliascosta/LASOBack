@@ -33,7 +33,7 @@ class SwTextPortion : public SwLinePortion
     bool Format_( SwTextFormatInfo &rInf );
 
 public:
-    inline SwTextPortion(){ SetWhichPor( POR_TXT ); }
+    SwTextPortion(){ SetWhichPor( POR_TXT ); }
     static SwTextPortion * CopyLinePortion(const SwLinePortion &rPortion);
     virtual void Paint( const SwTextPaintInfo &rInf ) const override;
     virtual bool Format( SwTextFormatInfo &rInf ) override;
@@ -62,14 +62,8 @@ public:
 
     virtual bool Format( SwTextFormatInfo &rInf ) override;
     virtual void Paint( const SwTextPaintInfo &rInf ) const override;
-    virtual sal_uInt16 GetViewWidth( const SwTextSizeInfo &rInf ) const override;
     virtual bool GetExpText( const SwTextSizeInfo &rInf, OUString &rText ) const override;
     virtual SwPosSize GetTextSize( const SwTextSizeInfo &rInfo ) const override;
-
-private:
-    bool mbContainsInputFieldStart;
-    bool mbContainsInputFieldEnd;
-    bool ContainsOnlyDummyChars() const;
 };
 
 class SwHolePortion : public SwLinePortion
@@ -93,7 +87,7 @@ public:
 class SwFieldMarkPortion : public SwTextPortion
 {
     public:
-        inline SwFieldMarkPortion() : SwTextPortion()
+        SwFieldMarkPortion() : SwTextPortion()
             { }
         virtual void Paint( const SwTextPaintInfo &rInf ) const override;
         virtual bool Format( SwTextFormatInfo &rInf ) override;

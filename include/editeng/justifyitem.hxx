@@ -25,7 +25,7 @@
 #include <svl/eitem.hxx>
 #include <sal/types.h>
 
-class EDITENG_DLLPUBLIC SvxHorJustifyItem: public SfxEnumItem
+class EDITENG_DLLPUBLIC SvxHorJustifyItem: public SfxEnumItem<SvxCellHorJustify>
 {
 public:
     static SfxPoolItem* CreateDefault();
@@ -33,13 +33,13 @@ public:
     explicit SvxHorJustifyItem( const sal_uInt16 nId );
 
     SvxHorJustifyItem(
-        const SvxCellHorJustify eJustify /*= SVX_HOR_JUSTIFY_STANDARD*/,
+        const SvxCellHorJustify eJustify /*= SvxCellHorJustify::Standard*/,
         const sal_uInt16 nId );
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
@@ -49,7 +49,7 @@ public:
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*     Create( SvStream& rStream, sal_uInt16 nVer ) const override;
 
-    inline  SvxHorJustifyItem& operator=(const SvxHorJustifyItem& rHorJustify)
+    SvxHorJustifyItem& operator=(const SvxHorJustifyItem& rHorJustify)
             {
                 SetValue( rHorJustify.GetValue() );
                 return *this;
@@ -57,7 +57,7 @@ public:
 };
 
 
-class EDITENG_DLLPUBLIC SvxVerJustifyItem: public SfxEnumItem
+class EDITENG_DLLPUBLIC SvxVerJustifyItem: public SfxEnumItem<SvxCellVerJustify>
 {
 public:
     static SfxPoolItem* CreateDefault();
@@ -69,9 +69,9 @@ public:
         const sal_uInt16 nId  );
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
@@ -81,7 +81,7 @@ public:
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*     Create( SvStream& rStream, sal_uInt16 nVer ) const override;
 
-    inline  SvxVerJustifyItem& operator=(const SvxVerJustifyItem& rVerJustify)
+    SvxVerJustifyItem& operator=(const SvxVerJustifyItem& rVerJustify)
             {
                 SetValue( rVerJustify.GetValue() );
                 return *this;
@@ -89,7 +89,7 @@ public:
 };
 
 
-class EDITENG_DLLPUBLIC SvxJustifyMethodItem: public SfxEnumItem
+class EDITENG_DLLPUBLIC SvxJustifyMethodItem: public SfxEnumItem<SvxCellJustifyMethod>
 {
 public:
     SvxJustifyMethodItem(
@@ -97,9 +97,9 @@ public:
         const sal_uInt16 nId );
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;

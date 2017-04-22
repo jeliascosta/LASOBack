@@ -47,7 +47,7 @@ namespace dbaccess
         ::rtl::Reference< ::connectivity::OSQLColumns>  m_aColumns;
     protected:
         virtual connectivity::sdbcx::ObjectType createObject(const OUString& _rName) override;
-        virtual void impl_refresh() throw(RuntimeException) override {}
+        virtual void impl_refresh() override {}
         virtual Reference< XPropertySet > createDescriptor() override
         {
             return nullptr;
@@ -57,7 +57,7 @@ namespace dbaccess
                         bool _bCase,
                         ::cppu::OWeakObject& _rParent,
                         ::osl::Mutex& _rMutex,
-                        const ::std::vector< OUString> &_rVector,
+                        const std::vector< OUString> &_rVector,
                         bool _bUseAsIndex = false
                     );
 
@@ -80,7 +80,7 @@ namespace dbaccess
         OSQLTables  m_aTables;
     protected:
         virtual connectivity::sdbcx::ObjectType createObject(const OUString& _rName) override;
-        virtual void impl_refresh() throw(RuntimeException) override {}
+        virtual void impl_refresh() override {}
         virtual Reference< XPropertySet > createDescriptor() override
         {
             return nullptr;
@@ -90,7 +90,7 @@ namespace dbaccess
                         bool _bCase,
                         ::cppu::OWeakObject& _rParent,
                         ::osl::Mutex& _rMutex,
-                        const ::std::vector< OUString> &_rVector
+                        const std::vector< OUString> &_rVector
                     ) : sdbcx::OCollection(_rParent,_bCase,_rMutex,_rVector)
                         ,m_aTables(_rTables)
         {

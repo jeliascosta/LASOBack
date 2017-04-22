@@ -119,9 +119,9 @@ void PageObjectPainter::PaintBackground (
     {
         rDevice.SetFillColor(pPage->GetPageBackgroundColor(nullptr));
         rDevice.SetLineColor(pPage->GetPageBackgroundColor(nullptr));
-        const Rectangle aPreviewBox (pPageObjectLayouter->GetBoundingBox(
+        const ::tools::Rectangle aPreviewBox (pPageObjectLayouter->GetBoundingBox(
             rpDescriptor,
-            PageObjectLayouter::Preview,
+            PageObjectLayouter::Part::Preview,
             PageObjectLayouter::ModelCoordinateSystem));
         rDevice.DrawRect(aPreviewBox);
     }
@@ -132,9 +132,9 @@ void PageObjectPainter::PaintPreview (
     OutputDevice& rDevice,
     const model::SharedPageDescriptor& rpDescriptor) const
 {
-    const Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
+    const ::tools::Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
         rpDescriptor,
-        PageObjectLayouter::Preview,
+        PageObjectLayouter::Part::Preview,
         PageObjectLayouter::ModelCoordinateSystem));
 
     if (mpCache != nullptr)
@@ -192,9 +192,9 @@ Bitmap PageObjectPainter::GetPreviewBitmap (
         PageObjectLayouter *pPageObjectLayouter = mrLayouter.GetPageObjectLayouter().get();
 
         Bitmap aMarkedPreview (mpCache->GetMarkedPreviewBitmap(pPage));
-        const Rectangle aPreviewBox (pPageObjectLayouter->GetBoundingBox(
+        const ::tools::Rectangle aPreviewBox (pPageObjectLayouter->GetBoundingBox(
             rpDescriptor,
-            PageObjectLayouter::Preview,
+            PageObjectLayouter::Part::Preview,
             PageObjectLayouter::ModelCoordinateSystem));
         if (aMarkedPreview.IsEmpty() || aMarkedPreview.GetSizePixel()!=aPreviewBox.GetSize())
         {
@@ -218,9 +218,9 @@ void PageObjectPainter::PaintPageNumber (
     OutputDevice& rDevice,
     const model::SharedPageDescriptor& rpDescriptor) const
 {
-    const Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
+    const ::tools::Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
         rpDescriptor,
-        PageObjectLayouter::PageNumber,
+        PageObjectLayouter::Part::PageNumber,
         PageObjectLayouter::ModelCoordinateSystem));
 
     // Determine the color of the page number.
@@ -274,9 +274,9 @@ void PageObjectPainter::PaintTransitionEffect (
     const SdPage* pPage = rpDescriptor->GetPage();
     if (pPage!=nullptr && pPage->getTransitionType() > 0)
     {
-        const Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
+        const ::tools::Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
             rpDescriptor,
-            PageObjectLayouter::TransitionEffectIndicator,
+            PageObjectLayouter::Part::TransitionEffectIndicator,
             PageObjectLayouter::ModelCoordinateSystem));
 
         rDevice.DrawBitmapEx(
@@ -296,9 +296,9 @@ void PageObjectPainter::PaintCustomAnimationEffect (
     EffectSequence::iterator aEnd = aMainSequence->getEnd();
     if ( aIter != aEnd )
     {
-        const Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
+        const ::tools::Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
             rpDescriptor,
-            PageObjectLayouter::CustomAnimationEffectIndicator,
+            PageObjectLayouter::Part::CustomAnimationEffectIndicator,
             PageObjectLayouter::ModelCoordinateSystem));
         rDevice.DrawBitmapEx(
             aBox.TopCenter(),
@@ -364,14 +364,14 @@ void PageObjectPainter::PaintBackgroundDetail (
             break;
     }
 
-    const Rectangle aFocusSize (pPageObjectLayouter->GetBoundingBox(
+    const ::tools::Rectangle aFocusSize (pPageObjectLayouter->GetBoundingBox(
                                         rpDescriptor,
-                                        PageObjectLayouter::FocusIndicator,
+                                        PageObjectLayouter::Part::FocusIndicator,
                                         PageObjectLayouter::ModelCoordinateSystem));
 
-    const Rectangle aPageObjectBox (pPageObjectLayouter->GetBoundingBox(
+    const ::tools::Rectangle aPageObjectBox (pPageObjectLayouter->GetBoundingBox(
                                         rpDescriptor,
-                                        PageObjectLayouter::PageObject,
+                                        PageObjectLayouter::Part::PageObject,
                                         PageObjectLayouter::ModelCoordinateSystem));
 
     // Fill the background with the background color of the slide sorter.
@@ -382,8 +382,8 @@ void PageObjectPainter::PaintBackgroundDetail (
 
     // Paint the slide area with a linear gradient that starts some pixels
     // below the top and ends some pixels above the bottom.
-    const Color aTopColor(mpTheme->GetGradientColor(eColorType, Theme::Fill1));
-    const Color aBottomColor(mpTheme->GetGradientColor(eColorType, Theme::Fill2));
+    const Color aTopColor(mpTheme->GetGradientColor(eColorType, Theme::GradientColorClass::Fill1));
+    const Color aBottomColor(mpTheme->GetGradientColor(eColorType, Theme::GradientColorClass::Fill2));
     if (aTopColor != aBottomColor)
     {
         const sal_Int32 nHeight (aPageObjectBox.GetHeight());
@@ -428,25 +428,25 @@ void PageObjectPainter::PaintBackgroundDetail (
 
     // Get bounding box of the preview around which a shadow is painted.
     // Compensate for the border around the preview.
-    const Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
+    const ::tools::Rectangle aBox (pPageObjectLayouter->GetBoundingBox(
                                 rpDescriptor,
-                                PageObjectLayouter::Preview,
+                                PageObjectLayouter::Part::Preview,
                                 PageObjectLayouter::ModelCoordinateSystem));
-    Rectangle aFrameBox (aBox.Left()-1,aBox.Top()-1,aBox.Right()+1,aBox.Bottom()+1);
+    ::tools::Rectangle aFrameBox (aBox.Left()-1,aBox.Top()-1,aBox.Right()+1,aBox.Bottom()+1);
     mpShadowPainter->PaintFrame(rDevice, aFrameBox);
 }
 
 void PageObjectPainter::PaintBorder (
     OutputDevice& rDevice,
     const Theme::GradientColorType eColorType,
-    const Rectangle& rBox) const
+    const ::tools::Rectangle& rBox) const
 {
     rDevice.SetFillColor();
     const sal_Int32 nBorderWidth (1);
     for (int nIndex=0; nIndex<nBorderWidth; ++nIndex)
     {
         const int nDelta (nIndex);
-        rDevice.SetLineColor(mpTheme->GetGradientColor(eColorType, Theme::Border2));
+        rDevice.SetLineColor(mpTheme->GetGradientColor(eColorType, Theme::GradientColorClass::Border2));
         rDevice.DrawLine(
             Point(rBox.Left()-nDelta, rBox.Top()-nDelta),
             Point(rBox.Left()-nDelta, rBox.Bottom()+nDelta));
@@ -457,7 +457,7 @@ void PageObjectPainter::PaintBorder (
             Point(rBox.Right()+nDelta, rBox.Bottom()+nDelta),
             Point(rBox.Right()+nDelta, rBox.Top()-nDelta));
 
-        rDevice.SetLineColor(mpTheme->GetGradientColor(eColorType, Theme::Border1));
+        rDevice.SetLineColor(mpTheme->GetGradientColor(eColorType, Theme::GradientColorClass::Border1));
         rDevice.DrawLine(
             Point(rBox.Left()-nDelta, rBox.Top()-nDelta),
             Point(rBox.Right()+nDelta, rBox.Top()-nDelta));

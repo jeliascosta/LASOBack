@@ -19,11 +19,13 @@
 
 #include <com/sun/star/embed/Aspects.hpp>
 #include <com/sun/star/frame/TaskCreator.hpp>
+#include <com/sun/star/frame/TerminationVetoException.hpp>
 #include <com/sun/star/frame/XComponentLoader.hpp>
 #include <com/sun/star/frame/XSynchronousFrameLoader.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XSingleServiceFactory.hpp>
 #include <com/sun/star/lang/XSingleComponentFactory.hpp>
+#include <com/sun/star/util/CloseVetoException.hpp>
 #include <com/sun/star/util/XCloseBroadcaster.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
@@ -149,7 +151,6 @@ static void InsertMenu_Impl( const uno::Reference< container::XIndexContainer >&
 DocumentHolder::DocumentHolder( const uno::Reference< uno::XComponentContext >& xContext,
                                 OCommonEmbeddedObject* pEmbObj )
 : m_pEmbedObj( pEmbObj ),
-  m_pInterceptor( nullptr ),
   m_xContext( xContext ),
   m_bReadOnly( false ),
   m_bWaitForClose( false ),
@@ -200,10 +201,10 @@ DocumentHolder::~DocumentHolder()
         } catch( const uno::Exception& ) {}
     }
 
-    if ( m_pInterceptor )
+    if ( m_xInterceptor.is() )
     {
-        m_pInterceptor->DisconnectDocHolder();
-        m_pInterceptor->release();
+        m_xInterceptor->DisconnectDocHolder();
+        m_xInterceptor.clear();
     }
 
     if ( !m_bDesktopTerminated )
@@ -415,9 +416,7 @@ bool DocumentHolder::ShowInplace( const uno::Reference< awt::XWindowPeer >& xPar
                                                                       awt::Size( HATCH_BORDER_WIDTH, HATCH_BORDER_WIDTH ) );
 
             uno::Reference< awt::XWindowPeer > xHatchWinPeer( xHatchWindow, uno::UNO_QUERY );
-            xHWindow.set( xHatchWinPeer, uno::UNO_QUERY );
-            if ( !xHWindow.is() )
-                throw uno::RuntimeException(); // TODO: can not create own window
+            xHWindow.set( xHatchWinPeer, uno::UNO_QUERY_THROW );
 
             xHatchWindow->setController( uno::Reference< embed::XHatchWindowController >(
                                                 static_cast< embed::XHatchWindowController* >( this ) ) );
@@ -431,7 +430,7 @@ bool DocumentHolder::ShowInplace( const uno::Reference< awt::XWindowPeer >& xPar
         }
 
         awt::WindowDescriptor aOwnWinDescriptor( awt::WindowClass_TOP,
-                                                OUString("dockingwindow"),
+                                                "dockingwindow",
                                                 xMyParent,
                                                 0,
                                                 awt::Rectangle(),//aOwnRectangle,
@@ -440,9 +439,7 @@ bool DocumentHolder::ShowInplace( const uno::Reference< awt::XWindowPeer >& xPar
         uno::Reference< awt::XToolkit2 > xToolkit = awt::Toolkit::create(m_xContext);
 
         uno::Reference< awt::XWindowPeer > xNewWinPeer = xToolkit->createWindow( aOwnWinDescriptor );
-        uno::Reference< awt::XWindow > xOwnWindow( xNewWinPeer, uno::UNO_QUERY );
-        if ( !xOwnWindow.is() )
-            throw uno::RuntimeException(); // TODO: can not create own window
+        uno::Reference< awt::XWindow > xOwnWindow( xNewWinPeer, uno::UNO_QUERY_THROW );
 
         // create a frame based on the specified window
         uno::Reference< lang::XSingleServiceFactory > xFrameFact = frame::TaskCreator::create(m_xContext);
@@ -569,7 +566,6 @@ uno::Reference< container::XIndexAccess > DocumentHolder::RetrieveOwnMenu_Impl()
 void DocumentHolder::FindConnectPoints(
         const uno::Reference< container::XIndexAccess >& xMenu,
         sal_Int32 nConnectPoints[2] )
-    throw ( uno::Exception )
 {
     nConnectPoints[0] = -1;
     nConnectPoints[1] = -1;
@@ -602,7 +598,6 @@ uno::Reference< container::XIndexAccess > DocumentHolder::MergeMenusForInplace(
         const OUString& aContModuleName,
         const uno::Reference< container::XIndexAccess >& xOwnMenu,
         const uno::Reference< frame::XDispatchProvider >& xOwnDisp )
-    throw ( uno::Exception )
 {
     // TODO/LATER: use dispatch providers on merge
 
@@ -825,7 +820,7 @@ bool DocumentHolder::HideUI( const uno::Reference< css::frame::XLayoutManager >&
 }
 
 
-uno::Reference< frame::XFrame > DocumentHolder::GetDocFrame()
+uno::Reference< frame::XFrame > const & DocumentHolder::GetDocFrame()
 {
     // the frame for outplace activation
     if ( !m_xFrame.is() )
@@ -837,17 +832,15 @@ uno::Reference< frame::XFrame > DocumentHolder::GetDocFrame()
         uno::Reference< frame::XDispatchProviderInterception > xInterception( m_xFrame, uno::UNO_QUERY );
         if ( xInterception.is() )
         {
-            if ( m_pInterceptor )
+            if ( m_xInterceptor.is() )
             {
-                m_pInterceptor->DisconnectDocHolder();
-                m_pInterceptor->release();
-                m_pInterceptor = nullptr;
+                m_xInterceptor->DisconnectDocHolder();
+                m_xInterceptor.clear();
             }
 
-            m_pInterceptor = new Interceptor( this );
-            m_pInterceptor->acquire();
+            m_xInterceptor = new Interceptor( this );
 
-            xInterception->registerDispatchProviderInterceptor( m_pInterceptor );
+            xInterception->registerDispatchProviderInterceptor( m_xInterceptor.get() );
 
             // register interceptor from outside
             if ( m_xOutplaceInterceptor.is() )
@@ -896,7 +889,7 @@ uno::Reference< frame::XFrame > DocumentHolder::GetDocFrame()
         {
             sal_Int32 nDisplay = Application::GetDisplayBuiltInScreen();
 
-            Rectangle aWorkRect = Application::GetScreenPosSizePixel( nDisplay );
+            tools::Rectangle aWorkRect = Application::GetScreenPosSizePixel( nDisplay );
             awt::Rectangle aWindowRect = xHWindow->getPosSize();
 
             if (( aWindowRect.Width < aWorkRect.GetWidth()) && ( aWindowRect.Height < aWorkRect.GetHeight() ))
@@ -1099,7 +1092,6 @@ awt::Rectangle DocumentHolder::AddBorderToArea( const awt::Rectangle& aRect )
 
 
 void SAL_CALL DocumentHolder::disposing( const css::lang::EventObject& aSource )
-        throw (uno::RuntimeException, std::exception)
 {
     if ( m_xComponent.is() && m_xComponent == aSource.Source )
     {
@@ -1121,7 +1113,6 @@ void SAL_CALL DocumentHolder::disposing( const css::lang::EventObject& aSource )
 
 
 void SAL_CALL DocumentHolder::queryClosing( const lang::EventObject& aSource, sal_Bool /*bGetsOwnership*/ )
-        throw (util::CloseVetoException, uno::RuntimeException, std::exception)
 {
     if ( m_xComponent.is() && m_xComponent == aSource.Source && !m_bAllowClosing )
         throw util::CloseVetoException("To close an embedded document, close the document holder (document definition), not the document itself.", static_cast< ::cppu::OWeakObject*>(this));
@@ -1129,7 +1120,6 @@ void SAL_CALL DocumentHolder::queryClosing( const lang::EventObject& aSource, sa
 
 
 void SAL_CALL DocumentHolder::notifyClosing( const lang::EventObject& aSource )
-        throw (uno::RuntimeException, std::exception)
 {
     if ( m_xComponent.is() && m_xComponent == aSource.Source )
     {
@@ -1151,7 +1141,6 @@ void SAL_CALL DocumentHolder::notifyClosing( const lang::EventObject& aSource )
 
 
 void SAL_CALL DocumentHolder::queryTermination( const lang::EventObject& )
-        throw (frame::TerminationVetoException, uno::RuntimeException, std::exception)
 {
     if ( m_bWaitForClose )
         throw frame::TerminationVetoException();
@@ -1159,7 +1148,6 @@ void SAL_CALL DocumentHolder::queryTermination( const lang::EventObject& )
 
 
 void SAL_CALL DocumentHolder::notifyTermination( const lang::EventObject& aSource )
-        throw (uno::RuntimeException, std::exception)
 {
     OSL_ENSURE( !m_xComponent.is(), "Just a disaster..." );
 
@@ -1171,7 +1159,6 @@ void SAL_CALL DocumentHolder::notifyTermination( const lang::EventObject& aSourc
 
 
 void SAL_CALL DocumentHolder::modified( const lang::EventObject& aEvent )
-    throw ( uno::RuntimeException, std::exception )
 {
     // if the component does not support document::XEventBroadcaster
     // the modify notifications are used as workaround, but only for running state
@@ -1181,7 +1168,6 @@ void SAL_CALL DocumentHolder::modified( const lang::EventObject& aEvent )
 
 
 void SAL_CALL DocumentHolder::notifyEvent( const document::EventObject& Event )
-    throw ( uno::RuntimeException, std::exception )
 {
     if( m_pEmbedObj && Event.Source == m_xComponent )
     {
@@ -1198,7 +1184,6 @@ void SAL_CALL DocumentHolder::notifyEvent( const document::EventObject& Event )
 
 void SAL_CALL DocumentHolder::borderWidthsChanged( const uno::Reference< uno::XInterface >& aObject,
                                                     const frame::BorderWidths& aNewSize )
-    throw ( uno::RuntimeException, std::exception )
 {
     // TODO: may require mutex introduction ???
     if ( m_pEmbedObj && m_xFrame.is() && aObject == m_xFrame->getController() )
@@ -1217,7 +1202,6 @@ void SAL_CALL DocumentHolder::borderWidthsChanged( const uno::Reference< uno::XI
 
 
 void SAL_CALL DocumentHolder::requestPositioning( const awt::Rectangle& aRect )
-    throw (uno::RuntimeException, std::exception)
 {
     // TODO: may require mutex introduction ???
     if ( m_pEmbedObj )
@@ -1231,7 +1215,6 @@ void SAL_CALL DocumentHolder::requestPositioning( const awt::Rectangle& aRect )
 
 
 awt::Rectangle SAL_CALL DocumentHolder::calcAdjustedRectangle( const awt::Rectangle& aRect )
-    throw (uno::RuntimeException, std::exception)
 {
     // Solar mutex should be locked already since this is a call from HatchWindow with focus
     awt::Rectangle aResult( aRect );
@@ -1257,7 +1240,7 @@ awt::Rectangle SAL_CALL DocumentHolder::calcAdjustedRectangle( const awt::Rectan
     return aResult;
 }
 
-void SAL_CALL DocumentHolder::activated(  ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL DocumentHolder::activated(  )
 {
     if ( (m_pEmbedObj->getStatus(embed::Aspects::MSOLE_CONTENT)&embed::EmbedMisc::MS_EMBED_ACTIVATEWHENVISIBLE) ||
         svt::EmbeddedObjectRef::IsGLChart(m_pEmbedObj) )
@@ -1295,7 +1278,7 @@ void DocumentHolder::ResizeHatchWindow()
     xHatchWindow->setHatchBorderSize( awt::Size( HATCH_BORDER_WIDTH, HATCH_BORDER_WIDTH ) );
 }
 
-void SAL_CALL DocumentHolder::deactivated(  ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL DocumentHolder::deactivated(  )
 {
     // deactivation is too unspecific to be useful; usually we only trigger code from activation
     // so UIDeactivation is actively triggered by the container

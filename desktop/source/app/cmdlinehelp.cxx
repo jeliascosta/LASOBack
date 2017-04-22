@@ -19,194 +19,274 @@
 
 
 #include <stdlib.h>
-#ifdef UNX
 #include <stdio.h>
-#endif
 #include <comphelper/string.hxx>
 #include <sal/types.h>
-#include <vcl/msgbox.hxx>
-#include <rtl/bootstrap.hxx>
 #include <app.hxx>
 
-#include "desktopresid.hxx"
-#include "desktop.hrc"
 #include "cmdlinehelp.hxx"
+
+#ifdef _WIN32
+#include "windows.h"
+#include "io.h"
+#include "fcntl.h"
+#endif
 
 namespace desktop
 {
-    // to be able to display the help nicely in a dialog box with proportional font,
-    // we need to split it in chunks...
-    //  ___HEAD___
-    //  LEFT RIGHT
-    //  LEFT RIGHT
-    //  LEFT RIGHT
-    //  __BOTTOM__
-    //     [OK]
-
     const char aCmdLineHelp_version[] =
-        "%PRODUCTNAME %PRODUCTVERSION%PRODUCTEXTENSION %BUILDID\n"\
+        "%PRODUCTNAME %PRODUCTVERSION%PRODUCTEXTENSION %BUILDID\n"
         "\n";
-    const char aCmdLineHelp_head[] =
-        "Usage: %CMDNAME [options] [documents...]\n"\
-        "\n"\
-        "Options:\n";
-    const char aCmdLineHelp_left[] =
-        "--minimized    \n"\
-        "--invisible    \n"\
-        "--norestore    \n"\
-        "--quickstart   \n"\
-        "--nologo       \n"\
-        "--nolockcheck  \n"\
-        "--nodefault    \n"\
-        "--headless     \n"\
-        "--help/-h/-?   \n"\
-        "--version      \n"\
-        "--writer       \n"\
-        "--calc         \n"\
-        "--draw         \n"\
-        "--impress      \n"\
-        "--base         \n"\
-        "--math         \n"\
-        "--global       \n"\
-        "--web          \n"\
-        "-o             \n"\
-        "-n             \n";
-    const char aCmdLineHelp_right[] =
-        "keep startup bitmap minimized.\n"\
-        "no startup screen, no default document and no UI.\n"\
-        "suppress restart/restore after fatal errors.\n"\
-        "starts the quickstart service\n"\
-        "don't show startup screen.\n"\
-        "don't check for remote instances using the installation\n"\
-        "don't start with an empty document\n"\
-        "like invisible but no user interaction at all.\n"\
-        "show this message and exit.\n"\
-        "display the version information.\n"\
-        "create new text document.\n"\
-        "create new spreadsheet document.\n"\
-        "create new drawing.\n"\
-        "create new presentation.\n"\
-        "create new database.\n"\
-        "create new formula.\n"\
-        "create new global document.\n"\
-        "create new HTML document.\n"\
-        "open documents regardless whether they are templates or not.\n"\
-        "always open documents as new files (use as template).\n";
-    const char aCmdLineHelp_bottom[] =
-        "--display <display>\n"\
-        "      Specify X-Display to use in Unix/X11 versions.\n"
-        "-p <documents...>\n"\
-        "      print the specified documents on the default printer.\n"\
-        "--pt <printer> <documents...>\n"\
-        "      print the specified documents on the specified printer.\n"\
-        "--view <documents...>\n"\
-        "      open the specified documents in viewer-(readonly-)mode.\n"\
-        "--show <presentation>\n"\
-        "      open the specified presentation and start it immediately\n"\
-        "--accept=<accept-string>\n"\
-        "      Specify an UNO connect-string to create an UNO acceptor through which\n"\
-        "      other programs can connect to access the API\n"\
-        "--unaccept=<accept-string>\n"\
-        "      Close an acceptor that was created with --accept=<accept-string>\n"\
-        "      Use --unnaccept=all to close all open acceptors\n"\
-        "--infilter=<filter>[:filter_options]\n"\
-        "      Force an input filter type if possible\n"\
-        "      Eg. --infilter=\"Calc Office Open XML\"\n"\
-        "          --infilter=\"Text (encoded):UTF8,LF,,,\"\n"\
-        "--convert-to output_file_extension[:output_filter_name[:output_filter_options]] [--outdir output_dir] files\n"\
-        "      Batch convert files (implies --headless).\n"\
-        "      If --outdir is not specified then current working dir is used as output_dir.\n"\
-        "      Eg. --convert-to pdf *.doc\n"\
-        "          --convert-to pdf:writer_pdf_Export --outdir /home/user *.doc\n"\
-        "          --convert-to \"html:XHTML Writer File:UTF8\" *.doc\n"\
-        "          --convert-to \"txt:Text (encoded):UTF8\" *.doc\n"\
-        "--print-to-file [-printer-name printer_name] [--outdir output_dir] files\n"\
-        "      Batch print files to file.\n"\
-        "      If --outdir is not specified then current working dir is used as output_dir.\n"\
-        "      Eg. --print-to-file *.doc\n"\
-        "          --print-to-file --printer-name nasty_lowres_printer --outdir /home/user *.doc\n" \
-        "--cat files\n"\
-        "      Dump text content of the files to console\n"\
-        "      Eg. --cat *.odt\n"\
-        "--pidfile=file\n"\
-        "      Store soffice.bin pid to file.\n"\
-        "-env:<VAR>[=<VALUE>]\n"\
-        "      Set a bootstrap variable.\n"\
-        "      Eg. -env:UserInstallation=file:///tmp/test to set a non-default user profile path.\n"\
-        "\nRemaining arguments will be treated as filenames or URLs of documents to open.\n\n";
+    const char aCmdLineHelp[] =
+        "Usage: %CMDNAME [argument...]\n"
+        "       argument - switches, switch parameters and document URIs (filenames).\n\n"
+        "Using without special arguments:\n"
+        "Opens the start center, if it is used without any arguments.\n"
+        "   {file}              Tries to open the file (files) in the components\n"
+        "                       suitable for them.\n"
+        "   {file} {macro:///Library.Module.MacroName}\n"
+        "                       Opens the file and runs specified macros from\n"
+        "                       the file.\n\n"
+        "Getting help and information:\n"
+        "   --help | -h | -?    Shows this help and quits.\n"
+        "   --helpwriter        Opens built-in or online Help on Writer.\n"
+        "   --helpcalc          Opens built-in or online Help on Calc.\n"
+        "   --helpdraw          Opens built-in or online Help on Draw.\n"
+        "   --helpimpress       Opens built-in or online Help on Impress.\n"
+        "   --helpbase          Opens built-in or online Help on Base.\n"
+        "   --helpbasic         Opens built-in or online Help on Basic scripting\n"
+        "                       language.\n"
+        "   --helpmath          Opens built-in or online Help on Math.\n"
+        "   --version           Shows the version and quits.\n"
+        "   --nstemporarydirectory\n"
+        "                       (MacOS X sandbox only) Returns path of the temporary\n"
+        "                       directory for the current user and exits. Overrides\n"
+        "                       all other arguments.\n\n"
+        "General arguments:\n"
+        "   --quickstart[=no]   Activates[Deactivates] the Quickstarter service.\n"
+        "   --nolockcheck       Disables check for remote instances using one\n"
+        "                       installation.\n"
+        "   --infilter={filter} Force an input filter type if possible. For example:\n"
+        "                       --infilter=\"Calc Office Open XML\"\n"
+        "                       --infilter=\"Text (encoded):UTF8,LF,,,\"\n"
+        "   --pidfile={file}    Store soffice.bin pid to {file}.\n"
+        "   --display {display} Sets the DISPLAY environment variable on UNIX-like\n"
+        "                       platforms to the value {display} (only supported by a\n"
+        "                       start script).\n\n"
+        "User/programmatic interface control:\n"
+        "   --nologo            Disables the splash screen at program start.\n"
+        "   --minimized         Starts minimized. The splash screen is not displayed.\n"
+        "   --nodefault         Starts without displaying anything except the splash\n"
+        "                       screen (do not display initial window).\n"
+        "   --invisible         Starts in invisible mode. Neither the start-up logo nor\n"
+        "                       the initial program window will be visible. Application\n"
+        "                       can be controlled, and documents and dialogs can be\n"
+        "                       controlled and opened via the API. Using the parameter,\n"
+        "                       the process can only be ended using the taskmanager\n"
+        "                       (Windows) or the kill command (UNIX-like systems). It\n"
+        "                       cannot be used in conjunction with --quickstart.\n"
+        "   --headless          Starts in \"headless mode\" which allows using the\n"
+        "                       application without GUI. This special mode can be used\n"
+        "                       when the application is controlled by external clients\n"
+        "                       via the API.\n"
+        "   --norestore         Disables restart and file recovery after a system crash.\n"
+        "   --safe-mode         Starts in a safe mode, i.e. starts temporarily with a\n"
+        "                       fresh user profile and helps to restore a broken\n"
+        "                       configuration.\n"
+        "   --accept={UNO-URL}  Specifies an UNO-URL connect-string to create an UNO\n"
+        "                       acceptor through which other programs can connect to\n"
+        "                       access the API. UNO-URL is string the such kind\n"
+        "                   uno:connection-type,params;protocol-name,params;ObjectName.\n"
+        "   --unaccept={UNO-URL} Closes an acceptor that was created with --accept. Use\n"
+        "                       --unaccept=all to close all open acceptors.\n"
+        "   --language={lang}   Uses specified language, if language is not selected\n"
+        "                       yet for UI. The lang is a tag of the language in IETF\n"
+        "                       language tag.\n\n"
+        "Developer arguments:\n"
+        "   --terminate_after_init\n"
+        "                       Exit after initialization complete (no documents loaded).\n"
+        "   --eventtesting      Exit after loading documents.\n\n"
+        "New document creation arguments:\n"
+        "The arguments create an empty document of specified kind. Only one of them may\n"
+        "be used in one command line. If filenames are specified after an argument,\n"
+        "then it tries to open those files in the specified component.\n"
+        "   --writer            Creates an empty Writer document.\n"
+        "   --calc              Creates an empty Calc document.\n"
+        "   --draw              Creates an empty Draw document.\n"
+        "   --impress           Creates an empty Impress document.\n"
+        "   --base              Creates a new database.\n"
+        "   --global            Creates an empty Writer master (global) document.\n"
+        "   --math              Creates an empty Math document (formula).\n"
+        "   --web               Creates an empty HTML document.\n\n"
+        "File open arguments:\n"
+        "The arguments define how following filenames are treated. New treatment begins\n"
+        "after the argument and ends at the next argument. The default treatment is to\n"
+        "open documents for editing, and create new documents from document templates.\n"
+        "   -n                  Treats following files as templates for creation of new\n"
+        "                       documents.\n"
+        "   -o                  Opens following files for editing, regardless whether\n"
+        "                       they are templates or not.\n"
+        "   --pt {Printername}  Prints following files to the printer {Printername},\n"
+        "                       after which those files are closed. The splash screen\n"
+        "                       does not appear. If used multiple times, only last\n"
+        "                       {Printername} is effective for all documents of all\n"
+        "                       --pt runs. Also, --printer-name argument of\n"
+        "                       --print-to-file switch interferes with {Printername}.\n"
+        "   -p                  Prints following files to the default printer, after\n"
+        "                       which those files are closed. The splash screen does\n"
+        "                       not appear. If the file name contains spaces, then it\n"
+        "                       must be enclosed in quotation marks.\n"
+        "   --view              Opens following files in viewer mode (read-only).\n"
+        "   --show              Opens and starts the following presentation documents \n"
+        "                       of each immediately. Files are closed after the showing.\n"
+        "                       Files other than Impress documents are opened in\n"
+        "                       default mode , regardless of previous mode.\n"
+        "   --convert-to OutputFileExtension[:OutputFilterName] [--outdir output_dir]\n"
+        "                       Batch convert files (implies --headless). If --outdir\n"
+        "                       isn't specified, then current working directory is used\n"
+        "                       as output_dir. If --convert-to is used more than once,\n"
+        "                       last value of OutputFileExtension[:OutputFilterName] is\n"
+        "                       effective. If --outdir is used more than once, only its\n"
+        "                       last value is effective. For example:\n"
+        "                   --convert-to pdf *.doc\n"
+        "                   --convert-to pdf:writer_pdf_Export --outdir /home/user *.doc\n"
+        "                   --convert-to \"html:XHTML Writer File:UTF8\" *.doc\n"
+        "                   --convert-to \"txt:Text (encoded):UTF8\" *.doc\n"
+        "   --print-to-file [--printer-name printer_name] [--outdir output_dir]\n"
+        "                       Batch print files to file. If --outdir is not specified,\n"
+        "                       then current working directory is used as output_dir.\n"
+        "                       If --printer-name or --outdir used multiple times, only\n"
+        "                       last value of each is effective. Also, {Printername} of\n"
+        "                       --pt switch interferes with --printer-name.\n"
+        "   --cat               Dump text content of the following files to console\n"
+        "                       (implies --headless). Cannot be used with --convert-to.\n"
+        "   -env:<VAR>[=<VALUE>] Set a bootstrap variable. For example: to set\n"
+        "                       a non-default user profile path:\n"
+        "                       -env:UserInstallation=file:///tmp/test\n\n"
+        "Ignored switches:\n"
+        "   -psn                Ignored (MacOS X only).\n"
+        "   -Embedding          Ignored (COM+ related; Windows only).\n"
+        "   --nofirststartwizard Does nothing, accepted only for backward compatibility.\n"
+        "   --protector {arg1} {arg2}\n"
+        "                       Used only in unit tests and should have two arguments.\n\n";
+#ifdef _WIN32
+    namespace{
+        class lcl_Console {
+            enum eConsoleMode { unknown, attached, allocated };
+        public:
+            explicit lcl_Console(short nBufHeight)
+                : mConsoleMode(unknown)
+            {
+                if (GetStdHandle(STD_OUTPUT_HANDLE) == nullptr) // application does not have associated standard handles
+                {
+                    STARTUPINFOA aStartupInfo;
+                    aStartupInfo.cb = sizeof(aStartupInfo);
+                    GetStartupInfoA(&aStartupInfo);
+                    if ((aStartupInfo.dwFlags & STARTF_USESTDHANDLES) == STARTF_USESTDHANDLES)
+                    {
+                        // If standard handles had been passed to this process, use them
+                        SetStdHandle(STD_INPUT_HANDLE, aStartupInfo.hStdInput);
+                        SetStdHandle(STD_OUTPUT_HANDLE, aStartupInfo.hStdOutput);
+                        SetStdHandle(STD_ERROR_HANDLE, aStartupInfo.hStdError);
+                    }
+                    else
+                    {
+                        // Try to attach parent console; on error try to create new.
+                        // If this process already has its console, these will simply fail.
+                        if (AttachConsole(ATTACH_PARENT_PROCESS) != FALSE)
+                            mConsoleMode = attached;
+                        else if (AllocConsole() != FALSE)
+                            mConsoleMode = allocated;
+
+                        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+                        // Ensure that console buffer is enough to hold required data
+                        CONSOLE_SCREEN_BUFFER_INFO cinfo;
+                        GetConsoleScreenBufferInfo(hOut, &cinfo);
+                        if (cinfo.dwSize.Y < nBufHeight)
+                        {
+                            cinfo.dwSize.Y = nBufHeight;
+                            SetConsoleScreenBufferSize(hOut, cinfo.dwSize);
+                        }
+                    }
+                }
+
+                freopen("CON", "r", stdin);
+                freopen("CON", "w", stdout);
+                freopen("CON", "w", stderr);
+
+                std::ios::sync_with_stdio(true);
+
+                // In case we use parent's console, emit an empty string
+                // to avoid output on a line with command prompt
+                if (mConsoleMode == attached)
+                    fprintf(stdout, "\n");
+            }
+
+            ~lcl_Console()
+            {
+                fflush(stdout);
+                switch (mConsoleMode) {
+                case unknown:
+                    // Don't free the console
+                    return;
+                case attached:
+                {
+                    // Put Enter keypress to console input buffer to emit next command prompt after the command
+                    INPUT_RECORD ir;
+                    ir.EventType = KEY_EVENT;
+                    KEY_EVENT_RECORD& ke = ir.Event.KeyEvent;
+                    ke.bKeyDown = TRUE;
+                    ke.wRepeatCount = 1;
+                    ke.wVirtualKeyCode = VK_RETURN;
+                    ke.wVirtualScanCode = MapVirtualKeyA(VK_RETURN, MAPVK_VK_TO_VSC);
+                    ke.uChar.AsciiChar = '\r';
+                    ke.dwControlKeyState = 0;
+                    DWORD nEvents;
+                    WriteConsoleInputA(GetStdHandle(STD_INPUT_HANDLE), &ir, 1, &nEvents);
+                    break;
+                }
+                case allocated:
+                    fprintf(stdout, "Press Enter to continue...");
+                    fgetc(stdin);
+                    break;
+                }
+
+                FreeConsole();
+            }
+        private:
+            eConsoleMode mConsoleMode;
+        };
+    }
+#endif
 
     void displayCmdlineHelp(OUString const & unknown)
     {
-        // if you put variables in other chunks don't forget to call the replace routines
-        // for those chunks...
-        OUString aHelpMessage_version(aCmdLineHelp_version);
-        OUString aHelpMessage_head(aCmdLineHelp_head);
-        OUString aHelpMessage_left(aCmdLineHelp_left);
-        OUString aHelpMessage_right(aCmdLineHelp_right);
-        OUString aHelpMessage_bottom(aCmdLineHelp_bottom);
-        aHelpMessage_version = ReplaceStringHookProc(aHelpMessage_version);
-        aHelpMessage_head = aHelpMessage_head.replaceFirst( "%CMDNAME", "soffice" );
+        OUString aHelpMessage_version = ReplaceStringHookProc(aCmdLineHelp_version);
+        OUString aHelpMessage(OUString(aCmdLineHelp).replaceFirst("%CMDNAME", "soffice"));
         if (!unknown.isEmpty())
         {
-            aHelpMessage_head = "Unknown option: " + unknown + "\n\n"
-                + aHelpMessage_head;
+            aHelpMessage = "Error in option: " + unknown + "\n\n"
+                + aHelpMessage;
         }
-#ifdef UNX
-        // on unix use console for output
+#ifdef _WIN32
+        sal_Int32 n = comphelper::string::getTokenCount(aHelpMessage, '\n');
+        lcl_Console aConsole(short(n*2));
+#endif
         fprintf(stdout, "%s%s",
                 OUStringToOString(aHelpMessage_version, RTL_TEXTENCODING_ASCII_US).getStr(),
-                OUStringToOString(aHelpMessage_head, RTL_TEXTENCODING_ASCII_US).getStr());
-        // merge left and right column
-        sal_Int32 n = comphelper::string::getTokenCount(aHelpMessage_left, '\n');
-        OString bsLeft(OUStringToOString(aHelpMessage_left,
-            RTL_TEXTENCODING_ASCII_US));
-        OString bsRight(OUStringToOString(aHelpMessage_right,
-            RTL_TEXTENCODING_ASCII_US));
-        for ( sal_Int32 i = 0; i < n; ++i )
-        {
-            fprintf(stdout, "%s", bsLeft.getToken(i, '\n').getStr());
-            fprintf(stdout, "%s\n", bsRight.getToken(i, '\n').getStr());
-        }
-        fprintf(stdout, "%s", OUStringToOString(aHelpMessage_bottom,
-                    RTL_TEXTENCODING_ASCII_US).getStr());
-#else
-        // rest gets a dialog box
-        CmdlineHelpDialog aDlg;
-        aDlg.m_pftHead->SetText(aHelpMessage_version + aHelpMessage_head);
-        aDlg.m_pftLeft->SetText(aHelpMessage_left);
-        aDlg.m_pftRight->SetText(aHelpMessage_right);
-        aDlg.m_pftBottom->SetText(aHelpMessage_bottom);
-        aDlg.Execute();
-#endif
+                OUStringToOString(aHelpMessage, RTL_TEXTENCODING_ASCII_US).getStr());
     }
 
     void displayVersion()
     {
         OUString aVersionMsg(aCmdLineHelp_version);
         aVersionMsg = ReplaceStringHookProc(aVersionMsg);
-#ifdef UNX
+#ifdef _WIN32
+        lcl_Console aConsole(short(10));
+#endif
         fprintf(stdout, "%s", OUStringToOString(aVersionMsg, RTL_TEXTENCODING_ASCII_US).getStr());
-#else
-        // Just re-use the help dialog for now.
-        CmdlineHelpDialog aDlg;
-        aDlg.m_pftHead->SetText(aVersionMsg);
-        aDlg.m_pftLeft->SetText("");
-        aDlg.m_pftRight->SetText("");
-        aDlg.m_pftBottom->SetText("");
-        aDlg.Execute();
-#endif
     }
-
-#ifndef UNX
-    CmdlineHelpDialog::CmdlineHelpDialog()
-    : ModalDialog( NULL, "CmdLineHelp", "desktop/ui/cmdlinehelp.ui" )
-    {
-        get(m_pftHead, "header");
-        get(m_pftLeft, "left");
-        get(m_pftRight, "right");
-        get(m_pftBottom, "bottom");
-    }
-#endif
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

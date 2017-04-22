@@ -89,7 +89,6 @@ namespace sdr
             // base color of this OverlayObject
             Color                                           maBaseColor;
 
-            // bitfield
             // Flag for visibility
             bool                                            mbIsVisible : 1;
 
@@ -101,7 +100,7 @@ namespace sdr
             // to implement the animation effect and to re-initiate the event.
             bool                                            mbAllowsAnimation : 1;
 
-            // Flag tocontrol if this OverlayObject allows AntiAliased visualisation.
+            // Flag to control if this OverlayObject allows AntiAliased visualisation.
             // Default is true, but e.g. for selection visualisation in SC and SW,
             // it is switched to false
             bool                                            mbAllowsAntiAliase : 1;
@@ -118,7 +117,7 @@ namespace sdr
 
         public:
             explicit OverlayObject(Color aBaseColor);
-            virtual ~OverlayObject();
+            virtual ~OverlayObject() override;
 
             // get OverlayManager
             OverlayManager* getOverlayManager() const { return mpOverlayManager; }
@@ -179,7 +178,7 @@ namespace sdr
 
         public:
             OverlayObjectWithBasePosition(const basegfx::B2DPoint& rBasePos, Color aBaseColor);
-            virtual ~OverlayObjectWithBasePosition();
+            virtual ~OverlayObjectWithBasePosition() override;
 
             // access to basePosition
             const basegfx::B2DPoint& getBasePosition() const { return maBasePosition; }

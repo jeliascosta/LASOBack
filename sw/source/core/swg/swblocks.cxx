@@ -86,7 +86,7 @@ SwImpBlocks::FileType SwImpBlocks::GetFileType( const OUString& rFile )
     return FileType::None;
 }
 
-SwImpBlocks::SwImpBlocks( const OUString& rFile, bool )
+SwImpBlocks::SwImpBlocks( const OUString& rFile )
     : aFile( rFile ),
     aDateModified( Date::EMPTY ),
     aTimeModified( tools::Time::EMPTY ),
@@ -120,9 +120,9 @@ void SwImpBlocks::ClearDoc()
 SwPaM* SwImpBlocks::MakePaM()
 {
     SwPaM* pPam = new SwPaM( pDoc->GetNodes().GetEndOfContent() );
-    pPam->Move( fnMoveBackward, fnGoDoc );
+    pPam->Move( fnMoveBackward, GoInDoc );
     pPam->SetMark();
-    pPam->Move( fnMoveForward, fnGoDoc );
+    pPam->Move( fnMoveForward, GoInDoc );
     pPam->Exchange();
     return pPam;
 }
@@ -236,11 +236,11 @@ SwTextBlocks::SwTextBlocks( const OUString& rFile )
     : pImp( nullptr ), nErr( 0 )
 {
     INetURLObject aObj(rFile);
-    const OUString sFileName = aObj.GetMainURL( INetURLObject::NO_DECODE );
+    const OUString sFileName = aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
     switch( SwImpBlocks::GetFileType( rFile ) )
     {
-    case SwImpBlocks::FileType::XML:    pImp = new SwXMLTextBlocks( sFileName ); break;
-    case SwImpBlocks::FileType::NoFile: pImp = new SwXMLTextBlocks( sFileName ); break;
+    case SwImpBlocks::FileType::XML:    pImp.reset( new SwXMLTextBlocks( sFileName ) ); break;
+    case SwImpBlocks::FileType::NoFile: pImp.reset( new SwXMLTextBlocks( sFileName ) ); break;
     default: break;
     }
     if( !pImp )
@@ -249,7 +249,6 @@ SwTextBlocks::SwTextBlocks( const OUString& rFile )
 
 SwTextBlocks::~SwTextBlocks()
 {
-    delete pImp;
 }
 
 OUString SwTextBlocks::GetName()
@@ -268,7 +267,7 @@ bool SwTextBlocks::IsOld() const
     if (pImp)
     {
         SwImpBlocks::FileType nType = pImp->GetFileType();
-        if (SwImpBlocks::FileType::SW3 == nType || SwImpBlocks::FileType::SW2 == nType )
+        if (SwImpBlocks::FileType::SW3 == nType)
             return true;
     }
     return false;
@@ -376,7 +375,7 @@ sal_uLong SwTextBlocks::CopyBlock( SwTextBlocks& rSource, OUString& rSrcShort,
     if (rSource.pImp)
     {
         SwImpBlocks::FileType nType = rSource.pImp->GetFileType();
-        if (SwImpBlocks::FileType::SW2 == nType || SwImpBlocks::FileType::SW3 == nType )
+        if (SwImpBlocks::FileType::SW3 == nType)
             bIsOld = true;
     }
     if( bIsOld ) //rSource.IsOld() )

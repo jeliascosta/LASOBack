@@ -28,7 +28,7 @@ public:
         const std::map<OUString, ScRangeName*>& rOldNames,
         const std::map<OUString, std::unique_ptr<ScRangeName>>& rNewNames);
 
-    virtual ~ScUndoAllRangeNames();
+    virtual ~ScUndoAllRangeNames() override;
 
     virtual void Undo() override;
     virtual void Redo() override;
@@ -50,7 +50,7 @@ public:
     // nTab = -1 for global range names
     ScUndoAddRangeData(ScDocShell* pDocSh, ScRangeData* pRangeData, SCTAB nTab);
 
-    virtual ~ScUndoAddRangeData();
+    virtual ~ScUndoAddRangeData() override;
 
     virtual void Undo() override;
     virtual void Redo() override;
@@ -59,7 +59,7 @@ public:
     virtual OUString GetComment() const override;
 
 private:
-    ScRangeData* mpRangeData;
+    std::unique_ptr<ScRangeData> mpRangeData;
     SCTAB mnTab;
 };
 

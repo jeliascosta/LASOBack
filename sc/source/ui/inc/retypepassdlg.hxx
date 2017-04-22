@@ -27,7 +27,6 @@
 #include <vcl/layout.hxx>
 #include <vcl/scrbar.hxx>
 #include <svx/checklbx.hxx>
-#include <svtools/stdctrl.hxx>
 
 #include "tabprotection.hxx"
 
@@ -46,7 +45,7 @@ public:
 
     ScRetypePassDlg() = delete;
     explicit ScRetypePassDlg(vcl::Window* pParent);
-    virtual ~ScRetypePassDlg();
+    virtual ~ScRetypePassDlg() override;
     virtual void dispose() override;
 
     virtual short Execute() override;
@@ -83,8 +82,8 @@ private:
     OUString        maTextHashBad;
     OUString        maTextHashGood;
 
-    DECL_LINK_TYPED( OKHdl, Button*, void );
-    DECL_LINK_TYPED( RetypeBtnHdl, Button*, void );
+    DECL_LINK( OKHdl, Button*, void );
+    DECL_LINK( RetypeBtnHdl, Button*, void );
 
     struct TableItem
     {
@@ -102,10 +101,8 @@ class ScRetypePassInputDlg : public ModalDialog
 public:
     ScRetypePassInputDlg() = delete;
     explicit ScRetypePassInputDlg(vcl::Window* pParent, ScPassHashProtectable* pProtected);
-    virtual ~ScRetypePassInputDlg();
+    virtual ~ScRetypePassInputDlg() override;
     virtual void dispose() override;
-
-    virtual short Execute() override;
 
     bool IsRemovePassword() const;
     OUString GetNewPassword() const;
@@ -127,10 +124,10 @@ private:
 
     VclPtr<RadioButton>    m_pBtnRemovePassword;
 
-    DECL_LINK_TYPED( OKHdl, Button*, void );
-    DECL_LINK_TYPED( RadioBtnHdl, Button*, void );
-    DECL_LINK_TYPED( CheckBoxHdl, Button*, void );
-    DECL_LINK_TYPED( PasswordModifyHdl, Edit&, void );
+    DECL_LINK( OKHdl, Button*, void );
+    DECL_LINK( RadioBtnHdl, Button*, void );
+    DECL_LINK( CheckBoxHdl, Button*, void );
+    DECL_LINK( PasswordModifyHdl, Edit&, void );
 
     ScPassHashProtectable* mpProtected;
 };

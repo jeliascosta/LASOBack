@@ -32,7 +32,6 @@
 #include <unx/i18n_status.hxx>
 
 #include <unx/salframe.h>
-#include <unx/saldata.hxx>
 #include <unx/saldisp.hxx>
 
 using namespace vcl;
@@ -42,12 +41,10 @@ static void sendEmptyCommit( SalFrame* pFrame )
     vcl::DeletionListener aDel( pFrame );
 
     SalExtTextInputEvent aEmptyEv;
-    aEmptyEv.mnTime             = 0;
     aEmptyEv.mpTextAttr         = nullptr;
     aEmptyEv.maText.clear();
     aEmptyEv.mnCursorPos        = 0;
     aEmptyEv.mnCursorFlags      = 0;
-    aEmptyEv.mbOnlyCursor       = False;
     pFrame->CallCallback( SalEvent::ExtTextInput, static_cast<void*>(&aEmptyEv) );
     if( ! aDel.isDeleted() )
         pFrame->CallCallback( SalEvent::EndExtTextInput, nullptr );
@@ -122,16 +119,17 @@ get_font_set( Display *p_display )
     return p_font_set;
 }
 
+static const XIMStyle g_nSupportedStatusStyle(
+                               XIMStatusCallbacks   |
+                               XIMStatusNothing     |
+                               XIMStatusNone
+                               );
+
 // Constructor for a InputContext (IC)
 
 SalI18N_InputContext::SalI18N_InputContext ( SalFrame *pFrame ) :
         mbUseable( True ),
         maContext( nullptr ),
-        mnSupportedStatusStyle(
-                               XIMStatusCallbacks   |
-                               XIMStatusNothing     |
-                               XIMStatusNone
-                               ),
         mnSupportedPreeditStyle(
                                 XIMPreeditCallbacks |
                                 XIMPreeditNothing   |
@@ -143,7 +141,7 @@ SalI18N_InputContext::SalI18N_InputContext ( SalFrame *pFrame ) :
         mpStatusAttributes( nullptr ),
         mpPreeditAttributes( nullptr )
 {
-#ifdef SOLARIS
+#ifdef __sun
     static const char* pIIIMPEnable = getenv( "SAL_DISABLE_OWN_IM_STATUS" );
     if( pIIIMPEnable && *pIIIMPEnable )
         mnSupportedStatusStyle &= ~XIMStatusCallbacks;
@@ -159,11 +157,9 @@ SalI18N_InputContext::SalI18N_InputContext ( SalFrame *pFrame ) :
 
     maClientData.aText.pUnicodeBuffer       = nullptr;
     maClientData.aText.pCharStyle           = nullptr;
-    maClientData.aInputEv.mnTime            = 0;
     maClientData.aInputEv.mpTextAttr        = nullptr;
     maClientData.aInputEv.mnCursorPos       = 0;
     maClientData.aInputEv.mnCursorFlags     = 0;
-    maClientData.aInputEv.mbOnlyCursor      = false;
 
     SalI18N_InputMethod *pInputMethod;
     pInputMethod = vcl_sal::getSalDisplay(GetGenericData())->GetInputMethod();
@@ -474,7 +470,7 @@ Bool
 SalI18N_InputContext::IsSupportedIMStyle( XIMStyle nStyle ) const
 {
     if (   (nStyle & mnSupportedPreeditStyle)
-           && (nStyle & mnSupportedStatusStyle) )
+           && (nStyle & g_nSupportedStatusStyle) )
     {
         return True;
     }
@@ -505,17 +501,11 @@ SalI18N_InputContext::SupportInputMethodStyle( XIMStyles *pIMStyles )
                 {
                     nBestScore = nActualScore;
                     mnPreeditStyle = nProvidedStyle & mnSupportedPreeditStyle;
-                    mnStatusStyle  = nProvidedStyle & mnSupportedStatusStyle;
+                    mnStatusStyle  = nProvidedStyle & g_nSupportedStatusStyle;
                 }
             }
         }
     }
-
-#if OSL_DEBUG_LEVEL > 1
-    char pBuf[ 128 ];
-    fprintf( stderr, "selected inputmethod style = %s\n",
-             GetMethodName(mnPreeditStyle | mnStatusStyle, pBuf, sizeof(pBuf)) );
-#endif
 
     return (mnPreeditStyle != 0) && (mnStatusStyle != 0) ;
 }
@@ -523,7 +513,7 @@ SalI18N_InputContext::SupportInputMethodStyle( XIMStyles *pIMStyles )
 // handle extended and normal key input
 
 void
-SalI18N_InputContext::CommitKeyEvent(sal_Unicode* pText, sal_Size nLength)
+SalI18N_InputContext::CommitKeyEvent(sal_Unicode* pText, std::size_t nLength)
 {
     if (nLength == 1 && IsControlCode(pText[0]))
         return;
@@ -532,12 +522,10 @@ SalI18N_InputContext::CommitKeyEvent(sal_Unicode* pText, sal_Size nLength)
     {
         SalExtTextInputEvent aTextEvent;
 
-        aTextEvent.mnTime        = 0;
         aTextEvent.mpTextAttr    = nullptr;
         aTextEvent.mnCursorPos   = nLength;
         aTextEvent.maText        = OUString(pText, nLength);
         aTextEvent.mnCursorFlags = 0;
-        aTextEvent.mbOnlyCursor  = False;
 
         maClientData.pFrame->CallCallback(SalEvent::ExtTextInput,    static_cast<void*>(&aTextEvent));
         maClientData.pFrame->CallCallback(SalEvent::EndExtTextInput, nullptr);

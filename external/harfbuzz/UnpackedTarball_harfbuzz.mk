@@ -15,6 +15,7 @@ $(eval $(call gb_UnpackedTarball_set_patchlevel,harfbuzz,0))
 
 $(eval $(call gb_UnpackedTarball_add_patches,harfbuzz, \
     external/harfbuzz/ubsan.patch \
+    external/harfbuzz/clang-cl.patch \
 ))
 
 ifneq ($(ENABLE_RUNTIME_OPTIMIZATIONS),TRUE)
@@ -22,5 +23,9 @@ $(eval $(call gb_UnpackedTarball_add_patches,harfbuzz, \
     external/harfbuzz/harfbuzz-rtti.patch \
 ))
 endif
+
+$(eval $(call gb_UnpackedTarball_add_patches,harfbuzz, \
+    external/harfbuzz/harfbuzz-ios.patch \
+))
 
 # vim: set noet sw=4 ts=4:

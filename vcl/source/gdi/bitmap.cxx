@@ -55,7 +55,7 @@ Bitmap::Bitmap(const Bitmap& rBitmap)
 
 Bitmap::Bitmap(SalBitmap* pSalBitmap)
     : mxImpBmp(new ImpBitmap(pSalBitmap))
-    , maPrefMapMode(MapMode(MAP_PIXEL))
+    , maPrefMapMode(MapMode(MapUnit::MapPixel))
     , maPrefSize(mxImpBmp->ImplGetSize())
 {
 }
@@ -210,8 +210,8 @@ bool BitmapPalette::IsGreyPalette() const
     // TODO: is it worth to compare the entries for the general case?
     if (nEntryCount == 2)
     {
-       const BitmapColor& rCol0(mpBitmapColor[0]);
-       const BitmapColor& rCol1(mpBitmapColor[1]);
+       const BitmapColor& rCol0(maBitmapColor[0]);
+       const BitmapColor& rCol1(maBitmapColor[1]);
        bRet = rCol0.GetRed() == rCol0.GetGreen() && rCol0.GetRed() == rCol0.GetBlue() &&
               rCol1.GetRed() == rCol1.GetGreen() && rCol1.GetRed() == rCol1.GetBlue();
     }
@@ -230,10 +230,19 @@ Bitmap& Bitmap::operator=( const Bitmap& rBitmap )
     return *this;
 }
 
+Bitmap& Bitmap::operator=( Bitmap&& rBitmap )
+{
+    maPrefSize = std::move(rBitmap.maPrefSize);
+    maPrefMapMode = std::move(rBitmap.maPrefMapMode);
+    mxImpBmp = std::move(rBitmap.mxImpBmp);
+
+    return *this;
+}
+
 bool Bitmap::IsEqual( const Bitmap& rBmp ) const
 {
-    return(IsSameInstance(rBmp) || // Includes both are nullptr
-        (rBmp.mxImpBmp && mxImpBmp && mxImpBmp->ImplIsEqual(*rBmp.mxImpBmp)));
+    return rBmp.mxImpBmp == mxImpBmp || // Includes both are nullptr
+           (rBmp.mxImpBmp && mxImpBmp && mxImpBmp->ImplIsEqual(*rBmp.mxImpBmp));
 }
 
 void Bitmap::SetEmpty()
@@ -258,12 +267,11 @@ bool Bitmap::HasGreyPalette() const
     const sal_uInt16    nBitCount = GetBitCount();
     bool            bRet = nBitCount == 1;
 
-    BitmapInfoAccess* pIAcc = const_cast<Bitmap*>(this)->AcquireInfoAccess();
+    ScopedInfoAccess pIAcc(const_cast<Bitmap&>(*this));
 
     if( pIAcc )
     {
         bRet = pIAcc->HasPalette() && pIAcc->GetPalette().IsGreyPalette();
-        ReleaseAccess( pIAcc );
     }
 
     return bRet;
@@ -430,7 +438,7 @@ bool Bitmap::Erase(const Color& rFillColor)
         else
         {
             Point aTmpPoint;
-            const Rectangle aRect( aTmpPoint, Size( pWriteAcc->Width(), pWriteAcc->Height() ) );
+            const tools::Rectangle aRect( aTmpPoint, Size( pWriteAcc->Width(), pWriteAcc->Height() ) );
             pWriteAcc->SetFillColor( rFillColor );
             pWriteAcc->FillRect( aRect );
         }
@@ -443,7 +451,7 @@ bool Bitmap::Erase(const Color& rFillColor)
 
 bool Bitmap::Invert()
 {
-    BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+    ScopedWriteAccess   pAcc(*this);
     bool                bRet = false;
 
     if( pAcc )
@@ -469,7 +477,7 @@ bool Bitmap::Invert()
         }
 
         mxImpBmp->ImplInvalidateChecksum();
-        ReleaseAccess( pAcc );
+        pAcc.reset();
         bRet = true;
     }
 
@@ -484,7 +492,7 @@ bool Bitmap::Mirror( BmpMirrorFlags nMirrorFlags )
 
     if( bHorz && !bVert )
     {
-        BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+        ScopedWriteAccess   pAcc(*this);
 
         if( pAcc )
         {
@@ -504,13 +512,13 @@ bool Bitmap::Mirror( BmpMirrorFlags nMirrorFlags )
                 }
             }
 
-            ReleaseAccess( pAcc );
+            pAcc.reset();
             bRet = true;
         }
     }
     else if( bVert && !bHorz )
     {
-        BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+        ScopedWriteAccess   pAcc(*this);
 
         if( pAcc )
         {
@@ -527,13 +535,13 @@ bool Bitmap::Mirror( BmpMirrorFlags nMirrorFlags )
                 memcpy( pAcc->GetScanline( nOther ), pBuffer.get(), nScanSize );
             }
 
-            ReleaseAccess( pAcc );
+            pAcc.reset();
             bRet = true;
         }
     }
     else if( bHorz && bVert )
     {
-        BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+        ScopedWriteAccess   pAcc(*this);
 
         if( pAcc )
         {
@@ -564,7 +572,7 @@ bool Bitmap::Mirror( BmpMirrorFlags nMirrorFlags )
                 }
             }
 
-            ReleaseAccess( pAcc );
+            pAcc.reset();
             bRet = true;
         }
     }
@@ -587,7 +595,7 @@ bool Bitmap::Rotate( long nAngle10, const Color& rFillColor )
         bRet = Mirror( BmpMirrorFlags::Horizontal | BmpMirrorFlags::Vertical );
     else
     {
-        BitmapReadAccess*   pReadAcc = AcquireReadAccess();
+        ScopedReadAccess    pReadAcc(*this);
         Bitmap              aRotatedBmp;
 
         if( pReadAcc )
@@ -598,7 +606,7 @@ bool Bitmap::Rotate( long nAngle10, const Color& rFillColor )
             {
                 const Size          aNewSizePix( aSizePix.Height(), aSizePix.Width() );
                 Bitmap              aNewBmp( aNewSizePix, GetBitCount(), &pReadAcc->GetPalette() );
-                BitmapWriteAccess*  pWriteAcc = aNewBmp.AcquireWriteAccess();
+                ScopedWriteAccess   pWriteAcc(aNewBmp);
 
                 if( pWriteAcc )
                 {
@@ -622,7 +630,7 @@ bool Bitmap::Rotate( long nAngle10, const Color& rFillColor )
                                 pWriteAcc->SetPixel( nY, nX, pReadAcc->GetPixel( nOtherY--, nOtherX ) );
                     }
 
-                    ReleaseAccess( pWriteAcc );
+                    pWriteAcc.reset();
                 }
 
                 aRotatedBmp = aNewBmp;
@@ -630,14 +638,14 @@ bool Bitmap::Rotate( long nAngle10, const Color& rFillColor )
             else
             {
                 Point       aTmpPoint;
-                Rectangle   aTmpRectangle( aTmpPoint, aSizePix );
+                tools::Rectangle   aTmpRectangle( aTmpPoint, aSizePix );
                 tools::Polygon aPoly( aTmpRectangle );
                 aPoly.Rotate( aTmpPoint, (sal_uInt16) nAngle10 );
 
-                Rectangle           aNewBound( aPoly.GetBoundRect() );
+                tools::Rectangle           aNewBound( aPoly.GetBoundRect() );
                 const Size          aNewSizePix( aNewBound.GetSize() );
                 Bitmap              aNewBmp( aNewSizePix, GetBitCount(), &pReadAcc->GetPalette() );
-                BitmapWriteAccess*  pWriteAcc = aNewBmp.AcquireWriteAccess();
+                ScopedWriteAccess   pWriteAcc(aNewBmp);
 
                 if( pWriteAcc )
                 {
@@ -692,40 +700,41 @@ bool Bitmap::Rotate( long nAngle10, const Color& rFillColor )
                         }
                     }
 
-                    ReleaseAccess( pWriteAcc );
+                    pWriteAcc.reset();
                 }
 
                 aRotatedBmp = aNewBmp;
             }
 
-            ReleaseAccess( pReadAcc );
+            pReadAcc.reset();
         }
 
-        if( ( bRet = !!aRotatedBmp ) )
+        bRet = !!aRotatedBmp;
+        if( bRet )
             ImplAssignWithSize( aRotatedBmp );
     }
 
     return bRet;
 };
 
-bool Bitmap::Crop( const Rectangle& rRectPixel )
+bool Bitmap::Crop( const tools::Rectangle& rRectPixel )
 {
     const Size          aSizePix( GetSizePixel() );
-    Rectangle           aRect( rRectPixel );
+    tools::Rectangle           aRect( rRectPixel );
     bool                bRet = false;
 
-    aRect.Intersection( Rectangle( Point(), aSizePix ) );
+    aRect.Intersection( tools::Rectangle( Point(), aSizePix ) );
 
     if( !aRect.IsEmpty() && aSizePix != aRect.GetSize())
     {
-        BitmapReadAccess* pReadAcc = AcquireReadAccess();
+        ScopedReadAccess pReadAcc(*this);
 
         if( pReadAcc )
         {
             Point               aTmpPoint;
-            const Rectangle     aNewRect( aTmpPoint, aRect.GetSize() );
+            const tools::Rectangle     aNewRect( aTmpPoint, aRect.GetSize() );
             Bitmap              aNewBmp( aNewRect.GetSize(), GetBitCount(), &pReadAcc->GetPalette() );
-            BitmapWriteAccess*  pWriteAcc = aNewBmp.AcquireWriteAccess();
+            ScopedWriteAccess   pWriteAcc(aNewBmp);
 
             if( pWriteAcc )
             {
@@ -738,11 +747,11 @@ bool Bitmap::Crop( const Rectangle& rRectPixel )
                     for( long nX = 0, nX2 = nOldX; nX < nNewWidth; nX++, nX2++ )
                         pWriteAcc->SetPixel( nY, nX, pReadAcc->GetPixel( nY2, nX2 ) );
 
-                ReleaseAccess( pWriteAcc );
+                pWriteAcc.reset();
                 bRet = true;
             }
 
-            ReleaseAccess( pReadAcc );
+            pReadAcc.reset();
 
             if( bRet )
                 ImplAssignWithSize( aNewBmp );
@@ -752,14 +761,14 @@ bool Bitmap::Crop( const Rectangle& rRectPixel )
     return bRet;
 };
 
-bool Bitmap::CopyPixel( const Rectangle& rRectDst,
-                        const Rectangle& rRectSrc, const Bitmap* pBmpSrc )
+bool Bitmap::CopyPixel( const tools::Rectangle& rRectDst,
+                        const tools::Rectangle& rRectSrc, const Bitmap* pBmpSrc )
 {
     const Size  aSizePix( GetSizePixel() );
-    Rectangle   aRectDst( rRectDst );
+    tools::Rectangle   aRectDst( rRectDst );
     bool        bRet = false;
 
-    aRectDst.Intersection( Rectangle( Point(), aSizePix ) );
+    aRectDst.Intersection( tools::Rectangle( Point(), aSizePix ) );
 
     if( !aRectDst.IsEmpty() )
     {
@@ -767,7 +776,7 @@ bool Bitmap::CopyPixel( const Rectangle& rRectDst,
         {
             Bitmap*         pSrc = const_cast<Bitmap*>(pBmpSrc);
             const Size      aCopySizePix( pSrc->GetSizePixel() );
-            Rectangle       aRectSrc( rRectSrc );
+            tools::Rectangle       aRectSrc( rRectSrc );
             const sal_uInt16    nSrcBitCount = pBmpSrc->GetBitCount();
             const sal_uInt16    nDstBitCount = GetBitCount();
 
@@ -776,22 +785,22 @@ bool Bitmap::CopyPixel( const Rectangle& rRectDst,
                 int nNextIndex = 0;
 
                 if( ( nSrcBitCount == 24 ) && ( nDstBitCount < 24 ) )
-                    Convert( BMP_CONVERSION_24BIT );
+                    Convert( BmpConversion::N24Bit );
                 else if( ( nSrcBitCount == 8 ) && ( nDstBitCount < 8 ) )
                 {
-                    Convert( BMP_CONVERSION_8BIT_COLORS );
+                    Convert( BmpConversion::N8BitColors );
                     nNextIndex = 16;
                 }
                 else if( ( nSrcBitCount == 4 ) && ( nDstBitCount < 4 ) )
                 {
-                    Convert( BMP_CONVERSION_4BIT_COLORS );
+                    Convert( BmpConversion::N4BitColors );
                     nNextIndex = 2;
                 }
 
                 if( nNextIndex )
                 {
-                    BitmapReadAccess*   pSrcAcc = pSrc->AcquireReadAccess();
-                    BitmapWriteAccess*  pDstAcc = AcquireWriteAccess();
+                    ScopedReadAccess    pSrcAcc(*pSrc);
+                    ScopedWriteAccess   pDstAcc(*this);
 
                     if( pSrcAcc && pDstAcc )
                     {
@@ -817,24 +826,18 @@ bool Bitmap::CopyPixel( const Rectangle& rRectDst,
                                 pDstAcc->SetPaletteColor( (sal_uInt16) nNextIndex++, rSrcCol );
                         }
                     }
-
-                    if( pSrcAcc )
-                        ReleaseAccess( pSrcAcc );
-
-                    if( pDstAcc )
-                        ReleaseAccess( pDstAcc );
                 }
             }
 
-            aRectSrc.Intersection( Rectangle( Point(), aCopySizePix ) );
+            aRectSrc.Intersection( tools::Rectangle( Point(), aCopySizePix ) );
 
             if( !aRectSrc.IsEmpty() )
             {
-                BitmapReadAccess* pReadAcc = pSrc->AcquireReadAccess();
+                ScopedReadAccess pReadAcc(*pSrc);
 
                 if( pReadAcc )
                 {
-                    BitmapWriteAccess* pWriteAcc = AcquireWriteAccess();
+                    ScopedWriteAccess pWriteAcc(*this);
 
                     if( pWriteAcc )
                     {
@@ -869,23 +872,23 @@ bool Bitmap::CopyPixel( const Rectangle& rRectDst,
                                 for( long nSrcX = aRectSrc.Left(), nDstX = aRectDst.Left(); nSrcX < nSrcEndX; nSrcX++, nDstX++ )
                                     pWriteAcc->SetPixel( nDstY, nDstX, pReadAcc->GetPixel( nSrcY, nSrcX ) );
 
-                        ReleaseAccess( pWriteAcc );
+                        pWriteAcc.reset();
                         bRet = ( nWidth > 0L ) && ( nHeight > 0L );
                     }
 
-                    ReleaseAccess( pReadAcc );
+                    pReadAcc.reset();
                 }
             }
         }
         else
         {
-            Rectangle aRectSrc( rRectSrc );
+            tools::Rectangle aRectSrc( rRectSrc );
 
-            aRectSrc.Intersection( Rectangle( Point(), aSizePix ) );
+            aRectSrc.Intersection( tools::Rectangle( Point(), aSizePix ) );
 
             if( !aRectSrc.IsEmpty() && ( aRectSrc != aRectDst ) )
             {
-                BitmapWriteAccess*  pWriteAcc = AcquireWriteAccess();
+                ScopedWriteAccess   pWriteAcc(*this);
 
                 if( pWriteAcc )
                 {
@@ -925,7 +928,7 @@ bool Bitmap::CopyPixel( const Rectangle& rRectDst,
                                 pWriteAcc->SetPixel( nYN, nXN, pWriteAcc->GetPixel( nY, nX ) );
                     }
 
-                    ReleaseAccess( pWriteAcc );
+                    pWriteAcc.reset();
                     bRet = true;
                 }
             }
@@ -935,16 +938,16 @@ bool Bitmap::CopyPixel( const Rectangle& rRectDst,
     return bRet;
 }
 
-bool Bitmap::CopyPixel_AlphaOptimized( const Rectangle& rRectDst, const Rectangle& rRectSrc,
+bool Bitmap::CopyPixel_AlphaOptimized( const tools::Rectangle& rRectDst, const tools::Rectangle& rRectSrc,
                            const Bitmap* pBmpSrc )
 {
     // Note: this code is copied from Bitmap::CopyPixel but avoids any palette lookups
     // This optimization is possible because the palettes of AlphaMasks are always identical (8bit GreyPalette, see ctor)
     const Size  aSizePix( GetSizePixel() );
-    Rectangle   aRectDst( rRectDst );
+    tools::Rectangle   aRectDst( rRectDst );
     bool        bRet = false;
 
-    aRectDst.Intersection( Rectangle( Point(), aSizePix ) );
+    aRectDst.Intersection( tools::Rectangle( Point(), aSizePix ) );
 
     if( !aRectDst.IsEmpty() )
     {
@@ -952,17 +955,17 @@ bool Bitmap::CopyPixel_AlphaOptimized( const Rectangle& rRectDst, const Rectangl
         {
             Bitmap*         pSrc = const_cast<Bitmap*>(pBmpSrc);
             const Size      aCopySizePix( pSrc->GetSizePixel() );
-            Rectangle       aRectSrc( rRectSrc );
+            tools::Rectangle       aRectSrc( rRectSrc );
 
-            aRectSrc.Intersection( Rectangle( Point(), aCopySizePix ) );
+            aRectSrc.Intersection( tools::Rectangle( Point(), aCopySizePix ) );
 
             if( !aRectSrc.IsEmpty() )
             {
-                BitmapReadAccess* pReadAcc = pSrc->AcquireReadAccess();
+                ScopedReadAccess pReadAcc(*pSrc);
 
                 if( pReadAcc )
                 {
-                    BitmapWriteAccess* pWriteAcc = AcquireWriteAccess();
+                    ScopedWriteAccess pWriteAcc(*this);
 
                     if( pWriteAcc )
                     {
@@ -976,23 +979,23 @@ bool Bitmap::CopyPixel_AlphaOptimized( const Rectangle& rRectDst, const Rectangl
                             for( long nSrcX = aRectSrc.Left(), nDstX = aRectDst.Left(); nSrcX < nSrcEndX; nSrcX++, nDstX++ )
                                 pWriteAcc->SetPixel( nDstY, nDstX, pReadAcc->GetPixel( nSrcY, nSrcX ) );
 
-                        ReleaseAccess( pWriteAcc );
+                        pWriteAcc.reset();
                         bRet = ( nWidth > 0L ) && ( nHeight > 0L );
                     }
 
-                    ReleaseAccess( pReadAcc );
+                    pReadAcc.reset();
                 }
             }
         }
         else
         {
-            Rectangle aRectSrc( rRectSrc );
+            tools::Rectangle aRectSrc( rRectSrc );
 
-            aRectSrc.Intersection( Rectangle( Point(), aSizePix ) );
+            aRectSrc.Intersection( tools::Rectangle( Point(), aSizePix ) );
 
             if( !aRectSrc.IsEmpty() && ( aRectSrc != aRectDst ) )
             {
-                BitmapWriteAccess*  pWriteAcc = AcquireWriteAccess();
+                ScopedWriteAccess   pWriteAcc(*this);
 
                 if( pWriteAcc )
                 {
@@ -1032,7 +1035,7 @@ bool Bitmap::CopyPixel_AlphaOptimized( const Rectangle& rRectDst, const Rectangl
                                 pWriteAcc->SetPixel( nYN, nXN, pWriteAcc->GetPixel( nY, nX ) );
                     }
 
-                    ReleaseAccess( pWriteAcc );
+                    pWriteAcc.reset();
                     bRet = true;
                 }
             }
@@ -1053,13 +1056,13 @@ bool Bitmap::Expand( sal_uLong nDX, sal_uLong nDY, const Color* pInitColor )
         const long          nWidth = aSizePixel.Width();
         const long          nHeight = aSizePixel.Height();
         const Size          aNewSize( nWidth + nDX, nHeight + nDY );
-        BitmapReadAccess*   pReadAcc = AcquireReadAccess();
+        ScopedReadAccess    pReadAcc(*this);
 
         if( pReadAcc )
         {
             BitmapPalette       aBmpPal( pReadAcc->GetPalette() );
             Bitmap              aNewBmp( aNewSize, GetBitCount(), &aBmpPal );
-            BitmapWriteAccess*  pWriteAcc = aNewBmp.AcquireWriteAccess();
+            ScopedWriteAccess   pWriteAcc(aNewBmp);
 
             if( pWriteAcc )
             {
@@ -1088,11 +1091,11 @@ bool Bitmap::Expand( sal_uLong nDX, sal_uLong nDY, const Color* pInitColor )
                         for( nX = 0; nX < nNewWidth; nX++ )
                             pWriteAcc->SetPixel( nY, nX, aColor );
 
-                ReleaseAccess( pWriteAcc );
+                pWriteAcc.reset();
                 bRet = true;
             }
 
-            ReleaseAccess( pReadAcc );
+            pReadAcc.reset();
 
             if( bRet )
                 ImplAssignWithSize( aNewBmp );
@@ -1104,112 +1107,102 @@ bool Bitmap::Expand( sal_uLong nDX, sal_uLong nDY, const Color* pInitColor )
 
 Bitmap Bitmap::CreateMask( const Color& rTransColor, sal_uLong nTol ) const
 {
-    Bitmap              aNewBmp( GetSizePixel(), 1 );
-    BitmapWriteAccess*  pWriteAcc = aNewBmp.AcquireWriteAccess();
+    ScopedReadAccess pReadAcc(const_cast<Bitmap&>(*this));
+
+    if (!nTol && pReadAcc && (pReadAcc->GetScanlineFormat() == ScanlineFormat::N1BitLsbPal || pReadAcc->GetScanlineFormat() == ScanlineFormat::N1BitMsbPal)
+        && pReadAcc->GetBestMatchingColor(Color(COL_WHITE)) == pReadAcc->GetBestMatchingColor(rTransColor))
+    {
+        //if we're a 1 bit pixel already, and the transcolor matches the color that would replace it already already, then just return a copy
+        return *this;
+    }
+
+    Bitmap              aNewBmp(GetSizePixel(), 1);
+    ScopedWriteAccess   pWriteAcc(aNewBmp);
     bool                bRet = false;
 
-    if( pWriteAcc )
+    if (pWriteAcc && pReadAcc)
     {
-        BitmapReadAccess* pReadAcc = const_cast<Bitmap*>(this)->AcquireReadAccess();
+        const long          nWidth = pReadAcc->Width();
+        const long          nHeight = pReadAcc->Height();
+        const BitmapColor   aBlack( pWriteAcc->GetBestMatchingColor( Color( COL_BLACK ) ) );
+        const BitmapColor   aWhite( pWriteAcc->GetBestMatchingColor( Color( COL_WHITE ) ) );
 
-        if( pReadAcc )
+        if( !nTol )
         {
-            const long          nWidth = pReadAcc->Width();
-            const long          nHeight = pReadAcc->Height();
-            const BitmapColor   aBlack( pWriteAcc->GetBestMatchingColor( Color( COL_BLACK ) ) );
-            const BitmapColor   aWhite( pWriteAcc->GetBestMatchingColor( Color( COL_WHITE ) ) );
+            const BitmapColor   aTest( pReadAcc->GetBestMatchingColor( rTransColor ) );
+            long nX, nY;
 
-            if( !nTol )
+            if( pReadAcc->GetScanlineFormat() == ScanlineFormat::N4BitMsnPal ||
+                pReadAcc->GetScanlineFormat() == ScanlineFormat::N4BitLsnPal )
             {
-                const BitmapColor   aTest( pReadAcc->GetBestMatchingColor( rTransColor ) );
-                long nX, nY;
+                // optimized for 4Bit-MSN/LSN source palette
+                const sal_uInt8 cTest = aTest.GetIndex();
+                const long nShiftInit = ( ( pReadAcc->GetScanlineFormat() == ScanlineFormat::N4BitMsnPal ) ? 4 : 0 );
 
-                if( pReadAcc->GetScanlineFormat() == ScanlineFormat::N4BitMsnPal ||
-                    pReadAcc->GetScanlineFormat() == ScanlineFormat::N4BitLsnPal )
+                if( pWriteAcc->GetScanlineFormat() == ScanlineFormat::N1BitMsbPal &&
+                    aWhite.GetIndex() == 1 )
                 {
-                    // optimized for 4Bit-MSN/LSN source palette
-                    const sal_uInt8 cTest = aTest.GetIndex();
-                    const long nShiftInit = ( ( pReadAcc->GetScanlineFormat() == ScanlineFormat::N4BitMsnPal ) ? 4 : 0 );
-
-                    if( pWriteAcc->GetScanlineFormat() == ScanlineFormat::N1BitMsbPal &&
-                        aWhite.GetIndex() == 1 )
+                    // optimized for 1Bit-MSB destination palette
+                    for( nY = 0L; nY < nHeight; nY++ )
                     {
-                        // optimized for 1Bit-MSB destination palette
-                        for( nY = 0L; nY < nHeight; nY++ )
+                        Scanline pSrc = pReadAcc->GetScanline( nY );
+                        Scanline pDst = pWriteAcc->GetScanline( nY );
+                        long nShift = 0;
+                        for( nX = 0L, nShift = nShiftInit; nX < nWidth; nX++, nShift ^= 4 )
                         {
-                            Scanline pSrc = pReadAcc->GetScanline( nY );
-                            Scanline pDst = pWriteAcc->GetScanline( nY );
-                            long nShift = 0;
-                            for( nX = 0L, nShift = nShiftInit; nX < nWidth; nX++, nShift ^= 4 )
-                            {
-                                if( cTest == ( ( pSrc[ nX >> 1 ] >> nShift ) & 0x0f ) )
-                                    pDst[ nX >> 3 ] |= 1 << ( 7 - ( nX & 7 ) );
-                                else
-                                    pDst[ nX >> 3 ] &= ~( 1 << ( 7 - ( nX & 7 ) ) );
-                            }
-                        }
-                    }
-                    else
-                    {
-                        for( nY = 0L; nY < nHeight; nY++ )
-                        {
-                            Scanline pSrc = pReadAcc->GetScanline( nY );
-                            long nShift = 0;
-                            for( nX = 0L, nShift = nShiftInit; nX < nWidth; nX++, nShift ^= 4 )
-                            {
-                                if( cTest == ( ( pSrc[ nX >> 1 ] >> nShift ) & 0x0f ) )
-                                    pWriteAcc->SetPixel( nY, nX, aWhite );
-                                else
-                                    pWriteAcc->SetPixel( nY, nX, aBlack );
-                            }
-                        }
-                    }
-                }
-                else if( pReadAcc->GetScanlineFormat() == ScanlineFormat::N8BitPal )
-                {
-                    // optimized for 8Bit source palette
-                    const sal_uInt8 cTest = aTest.GetIndex();
-
-                    if( pWriteAcc->GetScanlineFormat() == ScanlineFormat::N1BitMsbPal &&
-                        aWhite.GetIndex() == 1 )
-                    {
-                        // optimized for 1Bit-MSB destination palette
-                        for( nY = 0L; nY < nHeight; nY++ )
-                        {
-                            Scanline pSrc = pReadAcc->GetScanline( nY );
-                            Scanline pDst = pWriteAcc->GetScanline( nY );
-                            for( nX = 0L; nX < nWidth; nX++ )
-                            {
-                                if( cTest == pSrc[ nX ] )
-                                    pDst[ nX >> 3 ] |= 1 << ( 7 - ( nX & 7 ) );
-                                else
-                                    pDst[ nX >> 3 ] &= ~( 1 << ( 7 - ( nX & 7 ) ) );
-                            }
-                        }
-                    }
-                    else
-                    {
-                        for( nY = 0L; nY < nHeight; nY++ )
-                        {
-                            Scanline pSrc = pReadAcc->GetScanline( nY );
-                            for( nX = 0L; nX < nWidth; nX++ )
-                            {
-                                if( cTest == pSrc[ nX ] )
-                                    pWriteAcc->SetPixel( nY, nX, aWhite );
-                                else
-                                    pWriteAcc->SetPixel( nY, nX, aBlack );
-                            }
+                            if( cTest == ( ( pSrc[ nX >> 1 ] >> nShift ) & 0x0f ) )
+                                pDst[ nX >> 3 ] |= 1 << ( 7 - ( nX & 7 ) );
+                            else
+                                pDst[ nX >> 3 ] &= ~( 1 << ( 7 - ( nX & 7 ) ) );
                         }
                     }
                 }
                 else
                 {
-                    // not optimized
                     for( nY = 0L; nY < nHeight; nY++ )
                     {
+                        Scanline pSrc = pReadAcc->GetScanline( nY );
+                        long nShift = 0;
+                        for( nX = 0L, nShift = nShiftInit; nX < nWidth; nX++, nShift ^= 4 )
+                        {
+                            if( cTest == ( ( pSrc[ nX >> 1 ] >> nShift ) & 0x0f ) )
+                                pWriteAcc->SetPixel( nY, nX, aWhite );
+                            else
+                                pWriteAcc->SetPixel( nY, nX, aBlack );
+                        }
+                    }
+                }
+            }
+            else if( pReadAcc->GetScanlineFormat() == ScanlineFormat::N8BitPal )
+            {
+                // optimized for 8Bit source palette
+                const sal_uInt8 cTest = aTest.GetIndex();
+
+                if( pWriteAcc->GetScanlineFormat() == ScanlineFormat::N1BitMsbPal &&
+                    aWhite.GetIndex() == 1 )
+                {
+                    // optimized for 1Bit-MSB destination palette
+                    for( nY = 0L; nY < nHeight; nY++ )
+                    {
+                        Scanline pSrc = pReadAcc->GetScanline( nY );
+                        Scanline pDst = pWriteAcc->GetScanline( nY );
                         for( nX = 0L; nX < nWidth; nX++ )
                         {
-                            if( aTest == pReadAcc->GetPixel( nY, nX ) )
+                            if( cTest == pSrc[ nX ] )
+                                pDst[ nX >> 3 ] |= 1 << ( 7 - ( nX & 7 ) );
+                            else
+                                pDst[ nX >> 3 ] &= ~( 1 << ( 7 - ( nX & 7 ) ) );
+                        }
+                    }
+                }
+                else
+                {
+                    for( nY = 0L; nY < nHeight; nY++ )
+                    {
+                        Scanline pSrc = pReadAcc->GetScanline( nY );
+                        for( nX = 0L; nX < nWidth; nX++ )
+                        {
+                            if( cTest == pSrc[ nX ] )
                                 pWriteAcc->SetPixel( nY, nX, aWhite );
                             else
                                 pWriteAcc->SetPixel( nY, nX, aBlack );
@@ -1219,67 +1212,81 @@ Bitmap Bitmap::CreateMask( const Color& rTransColor, sal_uLong nTol ) const
             }
             else
             {
-                BitmapColor aCol;
-                long        nR, nG, nB;
-                const long  nMinR = MinMax<long>(rTransColor.GetRed() - nTol, 0, 255);
-                const long  nMaxR = MinMax<long>(rTransColor.GetRed() + nTol, 0, 255);
-                const long  nMinG = MinMax<long>(rTransColor.GetGreen() - nTol, 0, 255);
-                const long  nMaxG = MinMax<long>(rTransColor.GetGreen() + nTol, 0, 255);
-                const long  nMinB = MinMax<long>(rTransColor.GetBlue() - nTol, 0, 255);
-                const long  nMaxB = MinMax<long>(rTransColor.GetBlue() + nTol, 0, 255);
-
-                if( pReadAcc->HasPalette() )
+                // not optimized
+                for( nY = 0L; nY < nHeight; nY++ )
                 {
-                    for( long nY = 0L; nY < nHeight; nY++ )
+                    for( nX = 0L; nX < nWidth; nX++ )
                     {
-                        for( long nX = 0L; nX < nWidth; nX++ )
-                        {
-                            aCol = pReadAcc->GetPaletteColor( pReadAcc->GetPixelIndex( nY, nX ) );
-                            nR = aCol.GetRed();
-                            nG = aCol.GetGreen();
-                            nB = aCol.GetBlue();
-
-                            if( nMinR <= nR && nMaxR >= nR &&
-                                nMinG <= nG && nMaxG >= nG &&
-                                nMinB <= nB && nMaxB >= nB )
-                            {
-                                pWriteAcc->SetPixel( nY, nX, aWhite );
-                            }
-                            else
-                                pWriteAcc->SetPixel( nY, nX, aBlack );
-                        }
-                    }
-                }
-                else
-                {
-                    for( long nY = 0L; nY < nHeight; nY++ )
-                    {
-                        for( long nX = 0L; nX < nWidth; nX++ )
-                        {
-                            aCol = pReadAcc->GetPixel( nY, nX );
-                            nR = aCol.GetRed();
-                            nG = aCol.GetGreen();
-                            nB = aCol.GetBlue();
-
-                            if( nMinR <= nR && nMaxR >= nR &&
-                                nMinG <= nG && nMaxG >= nG &&
-                                nMinB <= nB && nMaxB >= nB )
-                            {
-                                pWriteAcc->SetPixel( nY, nX, aWhite );
-                            }
-                            else
-                                pWriteAcc->SetPixel( nY, nX, aBlack );
-                        }
+                        if( aTest == pReadAcc->GetPixel( nY, nX ) )
+                            pWriteAcc->SetPixel( nY, nX, aWhite );
+                        else
+                            pWriteAcc->SetPixel( nY, nX, aBlack );
                     }
                 }
             }
+        }
+        else
+        {
+            BitmapColor aCol;
+            long        nR, nG, nB;
+            const long  nMinR = MinMax<long>(rTransColor.GetRed() - nTol, 0, 255);
+            const long  nMaxR = MinMax<long>(rTransColor.GetRed() + nTol, 0, 255);
+            const long  nMinG = MinMax<long>(rTransColor.GetGreen() - nTol, 0, 255);
+            const long  nMaxG = MinMax<long>(rTransColor.GetGreen() + nTol, 0, 255);
+            const long  nMinB = MinMax<long>(rTransColor.GetBlue() - nTol, 0, 255);
+            const long  nMaxB = MinMax<long>(rTransColor.GetBlue() + nTol, 0, 255);
 
-            ReleaseAccess( pReadAcc );
-            bRet = true;
+            if( pReadAcc->HasPalette() )
+            {
+                for( long nY = 0L; nY < nHeight; nY++ )
+                {
+                    for( long nX = 0L; nX < nWidth; nX++ )
+                    {
+                        aCol = pReadAcc->GetPaletteColor( pReadAcc->GetPixelIndex( nY, nX ) );
+                        nR = aCol.GetRed();
+                        nG = aCol.GetGreen();
+                        nB = aCol.GetBlue();
+
+                        if( nMinR <= nR && nMaxR >= nR &&
+                            nMinG <= nG && nMaxG >= nG &&
+                            nMinB <= nB && nMaxB >= nB )
+                        {
+                            pWriteAcc->SetPixel( nY, nX, aWhite );
+                        }
+                        else
+                            pWriteAcc->SetPixel( nY, nX, aBlack );
+                    }
+                }
+            }
+            else
+            {
+                for( long nY = 0L; nY < nHeight; nY++ )
+                {
+                    for( long nX = 0L; nX < nWidth; nX++ )
+                    {
+                        aCol = pReadAcc->GetPixel( nY, nX );
+                        nR = aCol.GetRed();
+                        nG = aCol.GetGreen();
+                        nB = aCol.GetBlue();
+
+                        if( nMinR <= nR && nMaxR >= nR &&
+                            nMinG <= nG && nMaxG >= nG &&
+                            nMinB <= nB && nMaxB >= nB )
+                        {
+                            pWriteAcc->SetPixel( nY, nX, aWhite );
+                        }
+                        else
+                            pWriteAcc->SetPixel( nY, nX, aBlack );
+                    }
+                }
+            }
         }
 
-        ReleaseAccess( pWriteAcc );
+        bRet = true;
     }
+
+    pWriteAcc.reset();
+    pReadAcc.reset();
 
     if( bRet )
     {
@@ -1292,13 +1299,13 @@ Bitmap Bitmap::CreateMask( const Color& rTransColor, sal_uLong nTol ) const
     return aNewBmp;
 }
 
-vcl::Region Bitmap::CreateRegion( const Color& rColor, const Rectangle& rRect ) const
+vcl::Region Bitmap::CreateRegion( const Color& rColor, const tools::Rectangle& rRect ) const
 {
-    vcl::Region              aRegion;
-    Rectangle           aRect( rRect );
-    BitmapReadAccess*   pReadAcc = const_cast<Bitmap*>(this)->AcquireReadAccess();
+    vcl::Region         aRegion;
+    tools::Rectangle           aRect( rRect );
+    ScopedReadAccess    pReadAcc(const_cast<Bitmap&>(*this));
 
-    aRect.Intersection( Rectangle( Point(), GetSizePixel() ) );
+    aRect.Intersection( tools::Rectangle( Point(), GetSizePixel() ) );
     aRect.Justify();
 
     if( pReadAcc )
@@ -1349,7 +1356,7 @@ vcl::Region Bitmap::CreateRegion( const Color& rColor, const Rectangle& rRect ) 
                 // need to write aLine, it's different from the next line
                 if(aLine.size())
                 {
-                    Rectangle aSubRect;
+                    tools::Rectangle aSubRect;
 
                     // enter y values and proceed ystart
                     aSubRect.Top() = nYStart;
@@ -1372,7 +1379,7 @@ vcl::Region Bitmap::CreateRegion( const Color& rColor, const Rectangle& rRect ) 
         // write last line if used
         if(aLine.size())
         {
-            Rectangle aSubRect;
+            tools::Rectangle aSubRect;
 
             // enter y values
             aSubRect.Top() = nYStart;
@@ -1389,7 +1396,7 @@ vcl::Region Bitmap::CreateRegion( const Color& rColor, const Rectangle& rRect ) 
         //aRegion.ImplEndAddRect();
         //aRegion.SetRegionRectangles(aRectangles);
 
-        ReleaseAccess( pReadAcc );
+        pReadAcc.reset();
     }
     else
         aRegion = aRect;
@@ -1399,8 +1406,8 @@ vcl::Region Bitmap::CreateRegion( const Color& rColor, const Rectangle& rRect ) 
 
 bool Bitmap::Replace( const Bitmap& rMask, const Color& rReplaceColor )
 {
-    BitmapReadAccess*   pMaskAcc = ( (Bitmap&) rMask ).AcquireReadAccess();
-    BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+    ScopedReadAccess    pMaskAcc( const_cast<Bitmap&>(rMask) );
+    ScopedWriteAccess   pAcc(*this);
     bool                bRet = false;
 
     if( pMaskAcc && pAcc )
@@ -1445,7 +1452,7 @@ bool Bitmap::Replace( const Bitmap& rMask, const Color& rReplaceColor )
                         // Hurray, we do have an unused entry
                         if( !pFlags[ i ] )
                         {
-                            pAcc->SetPaletteColor( (sal_uInt16) i, rReplaceColor );
+                            pAcc->SetPaletteColor( i, rReplaceColor );
                             aReplace = BitmapColor( (sal_uInt8) i );
                         }
                     }
@@ -1463,18 +1470,15 @@ bool Bitmap::Replace( const Bitmap& rMask, const Color& rReplaceColor )
         bRet = true;
     }
 
-    ReleaseAccess( pMaskAcc );
-    ReleaseAccess( pAcc );
-
     return bRet;
 }
 
 bool Bitmap::Replace( const AlphaMask& rAlpha, const Color& rMergeColor )
 {
     Bitmap              aNewBmp( GetSizePixel(), 24 );
-    BitmapReadAccess*   pAcc = AcquireReadAccess();
-    BitmapReadAccess*   pAlphaAcc = ( (AlphaMask&) rAlpha ).AcquireReadAccess();
-    BitmapWriteAccess*  pNewAcc = aNewBmp.AcquireWriteAccess();
+    ScopedReadAccess    pAcc(*this);
+    AlphaMask::ScopedReadAccess pAlphaAcc(const_cast<AlphaMask&>(rAlpha));
+    ScopedWriteAccess   pNewAcc(aNewBmp);
     bool                bRet = false;
 
     if( pAcc && pAlphaAcc && pNewAcc )
@@ -1495,9 +1499,9 @@ bool Bitmap::Replace( const AlphaMask& rAlpha, const Color& rMergeColor )
         bRet = true;
     }
 
-    ReleaseAccess( pAcc );
-    ReleaseAccess( pAlphaAcc );
-    ReleaseAccess( pNewAcc );
+    pAcc.reset();
+    pAlphaAcc.reset();
+    pNewAcc.reset();
 
     if( bRet )
     {
@@ -1522,7 +1526,7 @@ bool Bitmap::Replace( const Color& rSearchColor, const Color& rReplaceColor, sal
         if (xImpBmp->ImplCreate(*mxImpBmp) && xImpBmp->ImplReplace(rSearchColor, rReplaceColor, nTol))
         {
             ImplSetImpBitmap(xImpBmp);
-            maPrefMapMode = MapMode( MAP_PIXEL );
+            maPrefMapMode = MapMode( MapUnit::MapPixel );
             maPrefSize = xImpBmp->ImplGetSize();
             return true;
         }
@@ -1531,9 +1535,9 @@ bool Bitmap::Replace( const Color& rSearchColor, const Color& rReplaceColor, sal
     // Bitmaps with 1 bit color depth can cause problems
     // if they have other entries than black/white in their palette
     if( 1 == GetBitCount() )
-        Convert( BMP_CONVERSION_4BIT_COLORS );
+        Convert( BmpConversion::N4BitColors );
 
-    BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+    ScopedWriteAccess   pAcc(*this);
     bool                bRet = false;
 
     if( pAcc )
@@ -1580,7 +1584,7 @@ bool Bitmap::Replace( const Color& rSearchColor, const Color& rReplaceColor, sal
             }
         }
 
-        ReleaseAccess( pAcc );
+        pAcc.reset();
         bRet = true;
     }
 
@@ -1593,9 +1597,9 @@ bool Bitmap::Replace( const Color* pSearchColors, const Color* pReplaceColors,
     // Bitmaps with 1 bit color depth can cause problems
     // if they have other entries than black/white in their palette
     if( 1 == GetBitCount() )
-        Convert( BMP_CONVERSION_4BIT_COLORS );
+        Convert( BmpConversion::N4BitColors );
 
-    BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+    ScopedWriteAccess   pAcc(*this);
     bool                bRet = false;
 
     if( pAcc )
@@ -1642,7 +1646,7 @@ bool Bitmap::Replace( const Color* pSearchColors, const Color* pReplaceColors,
                         pMinG[ i ] <= rCol.GetGreen() && pMaxG[ i ] >= rCol.GetGreen() &&
                         pMinB[ i ] <= rCol.GetBlue() && pMaxB[ i ] >= rCol.GetBlue() )
                     {
-                        pAcc->SetPaletteColor( (sal_uInt16)nEntry, pReplaceColors[ i ] );
+                        pAcc->SetPaletteColor( nEntry, pReplaceColors[ i ] );
                         break;
                     }
                 }
@@ -1679,7 +1683,7 @@ bool Bitmap::Replace( const Color* pSearchColors, const Color* pReplaceColors,
         if( !_pTols )
             delete[] pTols;
 
-        ReleaseAccess( pAcc );
+        pAcc.reset();
         bRet = true;
     }
 
@@ -1704,8 +1708,8 @@ Bitmap Bitmap::CreateDisplayBitmap( OutputDevice* pDisplay )
 
 bool Bitmap::CombineSimple( const Bitmap& rMask, BmpCombine eCombine )
 {
-    BitmapReadAccess*   pMaskAcc = ( (Bitmap&) rMask ).AcquireReadAccess();
-    BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+    ScopedReadAccess    pMaskAcc(const_cast<Bitmap&>(rMask));
+    ScopedWriteAccess   pAcc(*this);
     bool                bRet = false;
 
     if( pMaskAcc && pAcc )
@@ -1721,31 +1725,7 @@ bool Bitmap::CombineSimple( const Bitmap& rMask, BmpCombine eCombine )
 
         switch( eCombine )
         {
-            case BMP_COMBINE_COPY:
-            {
-                for( long nY = 0L; nY < nHeight; nY++ ) for( long nX = 0L; nX < nWidth; nX++ )
-                {
-                    if( pMaskAcc->GetPixel( nY, nX ) == aMaskBlack )
-                        pAcc->SetPixel( nY, nX, aBlack );
-                    else
-                        pAcc->SetPixel( nY, nX, aWhite );
-                }
-            }
-            break;
-
-            case BMP_COMBINE_INVERT:
-            {
-                for( long nY = 0L; nY < nHeight; nY++ ) for( long nX = 0L; nX < nWidth; nX++ )
-                {
-                    if( pAcc->GetPixel( nY, nX ) == aBlack )
-                        pAcc->SetPixel( nY, nX, aWhite );
-                    else
-                        pAcc->SetPixel( nY, nX, aBlack );
-                }
-            }
-            break;
-
-            case BMP_COMBINE_AND:
+            case BmpCombine::And:
             {
                 for( long nY = 0L; nY < nHeight; nY++ ) for( long nX = 0L; nX < nWidth; nX++ )
                 {
@@ -1757,19 +1737,7 @@ bool Bitmap::CombineSimple( const Bitmap& rMask, BmpCombine eCombine )
             }
             break;
 
-            case BMP_COMBINE_NAND:
-            {
-                for( long nY = 0L; nY < nHeight; nY++ ) for( long nX = 0L; nX < nWidth; nX++ )
-                {
-                    if( pMaskAcc->GetPixel( nY, nX ) != aMaskBlack && pAcc->GetPixel( nY, nX ) != aBlack )
-                        pAcc->SetPixel( nY, nX, aBlack );
-                    else
-                        pAcc->SetPixel( nY, nX, aWhite );
-                }
-            }
-            break;
-
-            case BMP_COMBINE_OR:
+            case BmpCombine::Or:
             {
                 for( long nY = 0L; nY < nHeight; nY++ ) for( long nX = 0L; nX < nWidth; nX++ )
                 {
@@ -1781,60 +1749,10 @@ bool Bitmap::CombineSimple( const Bitmap& rMask, BmpCombine eCombine )
             }
             break;
 
-            case BMP_COMBINE_NOR:
-            {
-                for( long nY = 0L; nY < nHeight; nY++ ) for( long nX = 0L; nX < nWidth; nX++ )
-                {
-                    if( pMaskAcc->GetPixel( nY, nX ) != aMaskBlack || pAcc->GetPixel( nY, nX ) != aBlack )
-                        pAcc->SetPixel( nY, nX, aBlack );
-                    else
-                        pAcc->SetPixel( nY, nX, aWhite );
-                }
-            }
-            break;
-
-            case BMP_COMBINE_XOR:
-            {
-                for( long nY = 0L; nY < nHeight; nY++ ) for( long nX = 0L; nX < nWidth; nX++ )
-                {
-                    aPixel = pAcc->GetPixel( nY, nX );
-                    aMaskPixel = pMaskAcc->GetPixel( nY, nX );
-
-                    if( ( aMaskPixel != aMaskBlack && aPixel == aBlack ) ||
-                        ( aMaskPixel == aMaskBlack && aPixel != aBlack ) )
-                    {
-                        pAcc->SetPixel( nY, nX, aWhite );
-                    }
-                    else
-                        pAcc->SetPixel( nY, nX, aBlack );
-                }
-            }
-            break;
-
-            case BMP_COMBINE_NXOR:
-            {
-                for( long nY = 0L; nY < nHeight; nY++ ) for( long nX = 0L; nX < nWidth; nX++ )
-                {
-                    aPixel = pAcc->GetPixel( nY, nX );
-                    aMaskPixel = pMaskAcc->GetPixel( nY, nX );
-
-                    if( ( aMaskPixel != aMaskBlack && aPixel == aBlack ) ||
-                        ( aMaskPixel == aMaskBlack && aPixel != aBlack ) )
-                    {
-                        pAcc->SetPixel( nY, nX, aBlack );
-                    }
-                    else
-                        pAcc->SetPixel( nY, nX, aWhite );
-                }
-            }
-            break;
         }
 
         bRet = true;
     }
-
-    ReleaseAccess( pMaskAcc );
-    ReleaseAccess( pAcc );
 
     return bRet;
 }
@@ -1846,10 +1764,11 @@ bool Bitmap::Blend( const AlphaMask& rAlpha, const Color& rBackgroundColor )
     // Convert to a truecolor bitmap, if we're a paletted one. There's
     // room for tradeoff decision here, maybe later for an overload (or a flag)
     if( GetBitCount() <= 8 )
-        Convert( BMP_CONVERSION_24BIT );
+        Convert( BmpConversion::N24Bit );
 
-    BitmapReadAccess*   pAlphaAcc = const_cast<AlphaMask&>(rAlpha).AcquireReadAccess();
-    BitmapWriteAccess*  pAcc = AcquireWriteAccess();
+    AlphaMask::ScopedReadAccess pAlphaAcc(const_cast<AlphaMask&>(rAlpha));
+
+    ScopedWriteAccess   pAcc(*this);
     bool                bRet = false;
 
     if( pAlphaAcc && pAcc )
@@ -1865,9 +1784,6 @@ bool Bitmap::Blend( const AlphaMask& rAlpha, const Color& rBackgroundColor )
 
         bRet = true;
     }
-
-    ReleaseAccess( pAlphaAcc );
-    ReleaseAccess( pAcc );
 
     return bRet;
 }

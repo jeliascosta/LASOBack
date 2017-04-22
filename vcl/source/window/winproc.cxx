@@ -38,6 +38,7 @@
 #include <vcl/virdev.hxx>
 #include <vcl/lazydelete.hxx>
 #include <touch/touch.h>
+#include <vcl/uitest/logger.hxx>
 
 #include <svdata.hxx>
 #include <salwtype.hxx>
@@ -105,8 +106,7 @@ static bool ImplHandleMouseFloatMode( vcl::Window* pChild, const Point& rMousePo
                     }
                     else if ( nHitTest == HITTEST_RECT )
                     {
-                        if ( !(pFloat->GetPopupModeFlags() & FloatWinPopupFlags::NoMouseRectClose) )
-                            pFloat->ImplSetMouseDown();
+                        pFloat->ImplSetMouseDown();
                         return true;
                     }
                 }
@@ -332,7 +332,7 @@ bool ImplHandleMouseEvent( const VclPtr<vcl::Window>& xWindow, MouseNotifyEvent 
     {
         pChild = pSVData->maWinData.mpCaptureWin;
 
-        DBG_ASSERT( xWindow == pChild->ImplGetFrameWindow(),
+        SAL_WARN_IF( xWindow != pChild->ImplGetFrameWindow(), "vcl",
                     "ImplHandleMouseEvent: mouse event is not sent to capture window" );
 
         // java client cannot capture mouse correctly
@@ -364,10 +364,6 @@ bool ImplHandleMouseEvent( const VclPtr<vcl::Window>& xWindow, MouseNotifyEvent 
             const OutputDevice *pChildWinOutDev = pChild->GetOutDev();
             pChildWinOutDev->ReMirror( aMousePos );
         }
-        // no mouse messages to system object windows ?
-        // !!!KA: Is it OK to comment this out? !!!
-//        if ( pChild->ImplGetWindowImpl()->mpSysObj )
-//            return false;
 
         // no mouse messages to disabled windows
         // #106845# if the window was disabled during capturing we have to pass the mouse events to release capturing
@@ -601,7 +597,7 @@ bool ImplHandleMouseEvent( const VclPtr<vcl::Window>& xWindow, MouseNotifyEvent 
         pSVData->maAppData.mnLastInputTime = tools::Time::GetSystemTicks();
     }
 
-    DBG_ASSERT( pChild, "ImplHandleMouseEvent: pChild == NULL" );
+    SAL_WARN_IF( !pChild, "vcl", "ImplHandleMouseEvent: pChild == NULL" );
 
     if (!pChild)
         return false;
@@ -631,7 +627,7 @@ bool ImplHandleMouseEvent( const VclPtr<vcl::Window>& xWindow, MouseNotifyEvent 
     // call handler
     bool bDrag = false;
     bool bCallHelpRequest = true;
-    DBG_ASSERT( pChild, "ImplHandleMouseEvent: pChild is NULL" );
+    SAL_WARN_IF( !pChild, "vcl", "ImplHandleMouseEvent: pChild is NULL" );
 
     if (!pChild)
         return false;
@@ -766,8 +762,6 @@ bool ImplHandleMouseEvent( const VclPtr<vcl::Window>& xWindow, MouseNotifyEvent 
                 MouseMiddleButtonAction nMiddleAction = pChild->GetSettings().GetMouseSettings().GetMiddleButtonAction();
                 if ( nMiddleAction == MouseMiddleButtonAction::AutoScroll )
                     bRet = !ImplCallCommand( pChild, CommandEventId::StartAutoScroll, nullptr, true, &aChildPos );
-                else if ( nMiddleAction == MouseMiddleButtonAction::PasteSelection )
-                    bRet = !ImplCallCommand( pChild, CommandEventId::PasteSelection, nullptr, true, &aChildPos );
             }
             else
             {
@@ -818,12 +812,23 @@ static vcl::Window* ImplGetKeyInputWindow( vcl::Window* pWindow )
 
     // find window - is every time the window which has currently the
     // focus or the last time the focus.
-    // the first floating window always has the focus
+
+    // the first floating window always has the focus, try it, or any parent floating windows, first
     vcl::Window* pChild = pSVData->maWinData.mpFirstFloat;
-    if( !pChild || ( pChild->ImplGetWindowImpl()->mbFloatWin && !static_cast<FloatingWindow *>(pChild)->GrabsFocus() ) )
-        pChild = pWindow->ImplGetWindowImpl()->mpFrameData->mpFocusWin;
-    else
-        pChild = pChild->ImplGetWindowImpl()->mpFrameData->mpFocusWin;
+    while (pChild)
+    {
+        if (pChild->ImplGetWindowImpl()->mbFloatWin)
+        {
+            if (static_cast<FloatingWindow *>(pChild)->GrabsFocus())
+                break;
+        }
+        pChild = pChild->GetParent();
+    }
+
+    if (!pChild)
+        pChild = pWindow;
+
+    pChild = pChild->ImplGetWindowImpl()->mpFrameData->mpFocusWin;
 
     // no child - than no input
     if ( !pChild )
@@ -853,23 +858,23 @@ static bool ImplHandleKey( vcl::Window* pWindow, MouseNotifyEvent nSVEvent,
     // allow application key listeners to remove the key event
     // but make sure we're not forwarding external KeyEvents, (ie where bForward is false)
     // because those are coming back from the listener itself and MUST be processed
-    KeyEvent aKeyEvent( (sal_Unicode)nCharCode, aKeyCode, nRepeat );
     if( bForward )
     {
-        sal_uInt16 nVCLEvent;
+        VclEventId nVCLEvent;
         switch( nSVEvent )
         {
             case MouseNotifyEvent::KEYINPUT:
-                nVCLEvent = VCLEVENT_WINDOW_KEYINPUT;
+                nVCLEvent = VclEventId::WindowKeyInput;
                 break;
             case MouseNotifyEvent::KEYUP:
-                nVCLEvent = VCLEVENT_WINDOW_KEYUP;
+                nVCLEvent = VclEventId::WindowKeyUp;
                 break;
             default:
-                nVCLEvent = 0;
+                nVCLEvent = VclEventId::NONE;
                 break;
         }
-        if( nVCLEvent && Application::HandleKey( nVCLEvent, pWindow, &aKeyEvent ) )
+        KeyEvent aKeyEvent((sal_Unicode)nCharCode, aKeyCode, nRepeat);
+        if (nVCLEvent != VclEventId::NONE && Application::HandleKey(nVCLEvent, pWindow, &aKeyEvent))
             return true;
     }
 
@@ -982,6 +987,7 @@ static bool ImplHandleKey( vcl::Window* pWindow, MouseNotifyEvent nSVEvent,
     {
         if ( nSVEvent == MouseNotifyEvent::KEYINPUT )
         {
+            UITestLogger::getInstance().logKeyInput(pChild, aKeyEvt);
             pChild->ImplGetWindowImpl()->mbKeyInput = false;
             pChild->KeyInput( aKeyEvt );
         }
@@ -1082,8 +1088,7 @@ static bool ImplHandleKey( vcl::Window* pWindow, MouseNotifyEvent nSVEvent,
         pChild = pWindow->GetParent();
 
         // call handler
-        KeyEvent    aKEvt( (sal_Unicode)nCharCode, aKeyCode, nRepeat );
-        NotifyEvent aNEvt( nSVEvent, pChild, &aKEvt );
+        NotifyEvent aNEvt( nSVEvent, pChild, &aKeyEvt );
         bool bPreNotify = ImplCallPreNotify( aNEvt );
         if ( pChild->IsDisposed() )
             return true;
@@ -1093,12 +1098,12 @@ static bool ImplHandleKey( vcl::Window* pWindow, MouseNotifyEvent nSVEvent,
             if ( nSVEvent == MouseNotifyEvent::KEYINPUT )
             {
                 pChild->ImplGetWindowImpl()->mbKeyInput = false;
-                pChild->KeyInput( aKEvt );
+                pChild->KeyInput( aKeyEvt );
             }
             else
             {
                 pChild->ImplGetWindowImpl()->mbKeyUp = false;
-                pChild->KeyUp( aKEvt );
+                pChild->KeyUp( aKeyEvt );
             }
 
             if( !pChild->IsDisposed() )
@@ -1235,7 +1240,7 @@ static bool ImplHandleEndExtTextInput( vcl::Window* /* pWindow */ )
 }
 
 static void ImplHandleExtTextInputPos( vcl::Window* pWindow,
-                                       Rectangle& rRect, long& rInputWidth,
+                                       tools::Rectangle& rRect, long& rInputWidth,
                                        bool * pVertical )
 {
     ImplSVData* pSVData = ImplGetSVData();
@@ -1254,7 +1259,7 @@ static void ImplHandleExtTextInputPos( vcl::Window* pWindow,
     {
         const OutputDevice *pChildOutDev = pChild->GetOutDev();
         ImplCallCommand( pChild, CommandEventId::CursorPos );
-        const Rectangle* pRect = pChild->GetCursorRect();
+        const tools::Rectangle* pRect = pChild->GetCursorRect();
         if ( pRect )
             rRect = pChildOutDev->ImplLogicToDevicePixel( *pRect );
         else
@@ -1266,10 +1271,10 @@ static void ImplHandleExtTextInputPos( vcl::Window* pWindow,
                 Size aSize = pChild->LogicToPixel( pCursor->GetSize() );
                 if ( !aSize.Width() )
                     aSize.Width() = pChild->GetSettings().GetStyleSettings().GetCursorSize();
-                rRect = Rectangle( aPos, aSize );
+                rRect = tools::Rectangle( aPos, aSize );
             }
             else
-                rRect = Rectangle( Point( pChild->GetOutOffXPixel(), pChild->GetOutOffYPixel() ), Size() );
+                rRect = tools::Rectangle( Point( pChild->GetOutOffXPixel(), pChild->GetOutOffYPixel() ), Size() );
         }
         rInputWidth = pChild->ImplLogicWidthToDevicePixel( pChild->GetCursorExtTextInputWidth() );
         if ( !rInputWidth )
@@ -1474,8 +1479,6 @@ public:
 
 bool HandleWheelEvent::HandleEvent(const SalWheelMouseEvent& rEvt)
 {
-    static SalWheelMouseEvent aPreviousEvent;
-
     if (!Setup())
         return false;
 
@@ -1486,12 +1489,13 @@ bool HandleWheelEvent::HandleEvent(const SalWheelMouseEvent& rEvt)
     // avoid the problem that scrolling via wheel to this point brings a widget
     // under the mouse that also accepts wheel commands, so stick with the old
     // widget if the time gap is very small
-    if (shouldReusePreviousMouseWindow(aPreviousEvent, rEvt) && acceptableWheelScrollTarget(pSVData->maWinData.mpLastWheelWindow))
+    if (shouldReusePreviousMouseWindow(pSVData->maWinData.maLastWheelEvent, rEvt) &&
+        acceptableWheelScrollTarget(pSVData->maWinData.mpLastWheelWindow))
     {
         xMouseWindow = pSVData->maWinData.mpLastWheelWindow;
     }
 
-    aPreviousEvent = rEvt;
+    pSVData->maWinData.maLastWheelEvent = rEvt;
 
     pSVData->maWinData.mpLastWheelWindow = Dispatch(xMouseWindow);
 
@@ -1569,12 +1573,10 @@ static bool ImplHandleLongPress(vcl::Window *pWindow, const SalLongPressEvent& r
     return aHandler.HandleEvent();
 }
 
-#define IMPL_PAINT_CHECKRTL         ((sal_uInt16)0x0020)
-
-static void ImplHandlePaint( vcl::Window* pWindow, const Rectangle& rBoundRect, bool bImmediateUpdate )
+static void ImplHandlePaint( vcl::Window* pWindow, const tools::Rectangle& rBoundRect, bool bImmediateUpdate )
 {
     // system paint events must be checked for re-mirroring
-    pWindow->ImplGetWindowImpl()->mnPaintFlags |= IMPL_PAINT_CHECKRTL;
+    pWindow->ImplGetWindowImpl()->mnPaintFlags |= ImplPaintFlags::CheckRtl;
 
     // trigger paint for all windows that live in the new paint region
     vcl::Region aRegion( rBoundRect );
@@ -1713,8 +1715,8 @@ static void ImplActivateFloatingWindows( vcl::Window* pWindow, bool bActive )
     {
         if ( pTempWindow->GetActivateMode() == ActivateModeFlags::NONE )
         {
-            if ( (pTempWindow->GetType() == WINDOW_BORDERWINDOW) &&
-                 (pTempWindow->ImplGetWindow()->GetType() == WINDOW_FLOATINGWINDOW) )
+            if ( (pTempWindow->GetType() == WindowType::BORDERWINDOW) &&
+                 (pTempWindow->ImplGetWindow()->GetType() == WindowType::FLOATINGWINDOW) )
                 static_cast<ImplBorderWindow*>(pTempWindow)->SetDisplayActive( bActive );
         }
 
@@ -1723,7 +1725,7 @@ static void ImplActivateFloatingWindows( vcl::Window* pWindow, bool bActive )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(vcl::Window, ImplAsyncFocusHdl, void*, void)
+IMPL_LINK_NOARG(vcl::Window, ImplAsyncFocusHdl, void*, void)
 {
     ImplGetWindowImpl()->mpFrameData->mnFocusId = nullptr;
 
@@ -1810,17 +1812,10 @@ IMPL_LINK_NOARG_TYPED(vcl::Window, ImplAsyncFocusHdl, void*, void)
                 pFocusWin->EndExtTextInput();
 #endif
 
-                // XXX #102010# hack for accessibility: do not close the menu,
-                // even after focus lost
-                static const char* pEnv = getenv("SAL_FLOATWIN_NOAPPFOCUSCLOSE");
-                if( !(pEnv && *pEnv) )
-                {
-                    NotifyEvent aNEvt( MouseNotifyEvent::LOSEFOCUS, pFocusWin );
-                    if ( !ImplCallPreNotify( aNEvt ) )
-                        pFocusWin->CompatLoseFocus();
-                    pFocusWin->ImplCallDeactivateListeners( nullptr );
-                }
-                // XXX
+                NotifyEvent aNEvt(MouseNotifyEvent::LOSEFOCUS, pFocusWin);
+                if (!ImplCallPreNotify(aNEvt))
+                    pFocusWin->CompatLoseFocus();
+                pFocusWin->ImplCallDeactivateListeners(nullptr);
             }
         }
 
@@ -2099,28 +2094,10 @@ static void ImplHandleSalKeyMod( vcl::Window* pWindow, SalKeyModEvent* pEvent )
     // #105224# send commandevent to allow special treatment of Ctrl-LeftShift/Ctrl-RightShift etc.
     // + auto-accelerator feature, tdf#92630
 
-    vcl::Window *pChild = nullptr;
-
-    // Alt pressed or released => give SystemWindow a chance to handle auto-accelerator
-    if ( pEvent->mnCode == KEY_MOD2 || (pEvent->mnModKeyCode & MODKEY_MOD2) != 0 )
-    {
-        // find window - first look to see if the system window is available
-        pChild = pWindow->ImplGetWindowImpl()->mpFirstChild;
-
-        while ( pChild )
-        {
-            if ( pChild->ImplGetWindowImpl()->mbSysWin )
-                break;
-            pChild = pChild->ImplGetWindowImpl()->mpNext;
-        }
-    }
-
-    //...if not, try to find a key input window...
-    if (!pChild)
-        pChild = ImplGetKeyInputWindow( pWindow );
-    //...otherwise fail safe...
-    if (!pChild)
-        pChild = pWindow;
+    // find window
+    vcl::Window* pChild = ImplGetKeyInputWindow( pWindow );
+    if ( !pChild )
+        return;
 
     CommandModKeyData data( pEvent->mnModKeyCode );
     ImplCallCommand( pChild, CommandEventId::ModKeyChange, &data );
@@ -2180,7 +2157,7 @@ static void ImplHandleSalSettings( SalEvent nEvent )
 
 static void ImplHandleSalExtTextInputPos( vcl::Window* pWindow, SalExtTextInputPosEvent* pEvt )
 {
-    Rectangle aCursorRect;
+    tools::Rectangle aCursorRect;
     ImplHandleExtTextInputPos( pWindow, aCursorRect, pEvt->mnExtWidth, &pEvt->mbVertical );
     if ( aCursorRect.IsEmpty() )
     {
@@ -2203,7 +2180,7 @@ static bool ImplHandleShowDialog( vcl::Window* pWindow, ShowDialogId nDialogId )
     if( ! pWindow )
         return false;
 
-    if( pWindow->GetType() == WINDOW_BORDERWINDOW )
+    if( pWindow->GetType() == WindowType::BORDERWINDOW )
     {
         vcl::Window* pWrkWin = pWindow->GetWindow( GetWindowType::Client );
         if( pWrkWin )
@@ -2306,8 +2283,8 @@ static void ImplHandleSalQueryCharPosition( vcl::Window *pWindow,
         if ( pWinData->mpCompositionCharRects && pEvt->mnCharPos < static_cast<sal_uLong>( pWinData->mnCompositionCharRects ) )
         {
             const OutputDevice *pChildOutDev = pChild->GetOutDev();
-            const Rectangle& aRect = pWinData->mpCompositionCharRects[ pEvt->mnCharPos ];
-            Rectangle aDeviceRect = pChildOutDev->ImplLogicToDevicePixel( aRect );
+            const tools::Rectangle& aRect = pWinData->mpCompositionCharRects[ pEvt->mnCharPos ];
+            tools::Rectangle aDeviceRect = pChildOutDev->ImplLogicToDevicePixel( aRect );
             Point aAbsScreenPos = pChild->OutputToAbsoluteScreenPixel( pChild->ScreenToOutputPixel(aDeviceRect.TopLeft()) );
             pEvt->mnCursorBoundX = aAbsScreenPos.X();
             pEvt->mnCursorBoundY = aAbsScreenPos.Y();
@@ -2452,7 +2429,7 @@ bool ImplWindowFrameProc( vcl::Window* _pWindow, SalEvent nEvent, const void* pE
                 const_cast<SalPaintEvent *>(pPaintEvt)->mnBoundX = pSalFrame->maGeometry.nWidth-pPaintEvt->mnBoundWidth-pPaintEvt->mnBoundX;
             }
 
-            Rectangle aBoundRect( Point( pPaintEvt->mnBoundX, pPaintEvt->mnBoundY ),
+            tools::Rectangle aBoundRect( Point( pPaintEvt->mnBoundX, pPaintEvt->mnBoundY ),
                                   Size( pPaintEvt->mnBoundWidth, pPaintEvt->mnBoundHeight ) );
             ImplHandlePaint( pWindow, aBoundRect, pPaintEvt->mbImmediateUpdate );
             }
@@ -2567,14 +2544,13 @@ bool ImplWindowFrameProc( vcl::Window* _pWindow, SalEvent nEvent, const void* pE
             break;
         case SalEvent::ExternalZoom:
             {
-            ZoomEvent const * pZoomEvent = static_cast<ZoomEvent const *>(pEvent);
             SalWheelMouseEvent aSalWheelMouseEvent;
             aSalWheelMouseEvent.mnTime = tools::Time::GetSystemTicks();
-            aSalWheelMouseEvent.mnX = pZoomEvent->GetCenter().getX();
-            aSalWheelMouseEvent.mnY = pZoomEvent->GetCenter().getY();
+            aSalWheelMouseEvent.mnX = 0;
+            aSalWheelMouseEvent.mnY = 0;
             // Pass on the scale as a percentage * 100 of current zoom factor
             // so to assure zoom granularity
-            aSalWheelMouseEvent.mnDelta = long(double(pZoomEvent->GetScale()) * double(MOBILE_ZOOM_SCALE_MULTIPLIER));
+            aSalWheelMouseEvent.mnDelta = long(MOBILE_ZOOM_SCALE_MULTIPLIER);
             // Other SalWheelMouseEvent fields ignored when the
             // scaleDirectly parameter to ImplHandleWheelEvent() is
             // true.
@@ -2583,13 +2559,12 @@ bool ImplWindowFrameProc( vcl::Window* _pWindow, SalEvent nEvent, const void* pE
             break;
         case SalEvent::ExternalScroll:
             {
-            ScrollEvent const * pScrollEvent = static_cast<ScrollEvent const *>(pEvent);
             SalWheelMouseEvent aSalWheelMouseEvent;
             aSalWheelMouseEvent.mnTime = tools::Time::GetSystemTicks();
             aSalWheelMouseEvent.mbDeltaIsPixel = true;
             // event location holds delta values instead
-            aSalWheelMouseEvent.mnX = long(pScrollEvent->GetXOffset());
-            aSalWheelMouseEvent.mnY = long(pScrollEvent->GetYOffset());
+            aSalWheelMouseEvent.mnX = 0;
+            aSalWheelMouseEvent.mnY = 0;
             aSalWheelMouseEvent.mnScrollLines = 0;
             if (aSalWheelMouseEvent.mnX != 0 || aSalWheelMouseEvent.mnY != 0)
             {

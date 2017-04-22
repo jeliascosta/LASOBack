@@ -63,21 +63,18 @@ public:
     SetGetExpField( const SwNodeIndex& rNdIdx, const SwTextField* pField = nullptr,
                     const SwIndex* pIdx = nullptr );
 
-    SetGetExpField( const SwNodeIndex& rNdIdx, const SwTextINetFormat& rINet,
-                    const SwIndex* pIdx = nullptr );
+    SetGetExpField( const SwNodeIndex& rNdIdx, const SwTextINetFormat& rINet );
 
     SetGetExpField( const SwSectionNode& rSectNode,
                     const SwPosition* pPos = nullptr  );
 
-    SetGetExpField( const SwTableBox& rTableBox,
-                    const SwPosition* pPos = nullptr  );
+    SetGetExpField( const SwTableBox& rTableBox  );
 
-    SetGetExpField( const SwNodeIndex& rNdIdx, const SwTextTOXMark& rTOX,
-                    const SwIndex* pIdx );
+    SetGetExpField( const SwNodeIndex& rNdIdx, const SwTextTOXMark& rTOX );
 
     SetGetExpField( const SwPosition& rPos );
 
-    SetGetExpField( const SwFlyFrameFormat& rFlyFormat, const SwPosition* pPos = nullptr );
+    SetGetExpField( const SwFlyFrameFormat& rFlyFormat, const SwPosition* pPos );
 
     bool operator==( const SetGetExpField& rField ) const;
     bool operator<( const SetGetExpField& rField ) const;
@@ -113,7 +110,7 @@ public:
 struct HashStr : public SwHash
 {
     OUString aSetStr;
-    HashStr( const OUString& rName, const OUString& rText, HashStr* = nullptr );
+    HashStr( const OUString& rName, const OUString& rText, HashStr* );
 };
 
 struct SwCalcFieldType : public SwHash
@@ -145,7 +142,7 @@ class SwDocUpdateField
     bool bFieldsDirty : 1;        // some fields are invalid
 
     void MakeFieldList_( SwDoc& pDoc, int eGetMode );
-    void GetBodyNode( const SwTextField& , sal_uInt16 nFieldWhich );
+    void GetBodyNode( const SwTextField& , SwFieldIds nFieldWhich );
     void GetBodyNode( const SwSectionNode&);
 
 public:

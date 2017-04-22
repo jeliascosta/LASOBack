@@ -23,7 +23,8 @@
 #include "SysShExec.hxx"
 #include <osl/file.hxx>
 #include <sal/macros.h>
-
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
+#include <com/sun/star/system/SystemShellExecuteException.hpp>
 #include <com/sun/star/system/SystemShellExecuteFlags.hpp>
 #include <com/sun/star/uri/UriReferenceFactory.hpp>
 #include <cppuhelper/supportsservice.hxx>
@@ -39,10 +40,6 @@
 #pragma warning(pop)
 #endif
 
-
-// namespace directives
-
-
 using com::sun::star::uno::Reference;
 using com::sun::star::uno::RuntimeException;
 using com::sun::star::uno::Sequence;
@@ -56,11 +53,7 @@ using namespace cppu;
 
 #define SYSSHEXEC_IMPL_NAME  "com.sun.star.sys.shell.SystemShellExecute"
 
-
-// helper functions
-
-
-namespace // private
+namespace
 {
     Sequence< OUString > SAL_CALL SysShExec_getSupportedServiceNames()
     {
@@ -182,9 +175,9 @@ namespace // private
 
     const OUString    JUMP_MARK_HTM(".htm#");
     const OUString    JUMP_MARK_HTML(".html#");
-    const sal_Unicode HASH_MARK      = (sal_Unicode)'#';
+    const sal_Unicode HASH_MARK      = '#';
 
-    bool has_jump_mark(const OUString& system_path, sal_Int32* jmp_mark_start = NULL)
+    bool has_jump_mark(const OUString& system_path, sal_Int32* jmp_mark_start = nullptr)
     {
         sal_Int32 jmp_mark = std::max<int>(
             system_path.lastIndexOf(JUMP_MARK_HTM),
@@ -234,8 +227,7 @@ namespace // private
         }
     }
 
-} // end namespace
-
+}
 
 CSysShExec::CSysShExec( const Reference< css::uno::XComponentContext >& xContext ) :
     WeakComponentImplHelper< XSystemShellExecute, XServiceInfo >( m_aMutex ),
@@ -249,12 +241,10 @@ CSysShExec::CSysShExec( const Reference< css::uno::XComponentContext >& xContext
      * Once this changed, we can remove the uninitialize call.
      */
     CoUninitialize();
-    CoInitialize( NULL );
+    CoInitialize( nullptr );
 }
 
-
 void SAL_CALL CSysShExec::execute( const OUString& aCommand, const OUString& aParameter, sal_Int32 nFlags )
-        throw (IllegalArgumentException, SystemShellExecuteException, RuntimeException)
 {
     // parameter checking
     if (0 == aCommand.getLength())
@@ -276,8 +266,8 @@ void SAL_CALL CSysShExec::execute( const OUString& aCommand, const OUString& aPa
         if (!(uri.is() && uri->isAbsolute()))
         {
             throw css::lang::IllegalArgumentException(
-                OUString("XSystemShellExecute.execute URIS_ONLY with"
-                         " non-absolute URI reference ")
+                "XSystemShellExecute.execute URIS_ONLY with"
+                         " non-absolute URI reference "
                  + aCommand,
                 static_cast< cppu::OWeakObject * >(this), 0);
         }
@@ -316,7 +306,7 @@ void SAL_CALL CSysShExec::execute( const OUString& aCommand, const OUString& aPa
 
     SetLastError( 0 );
 
-    sal_Bool bRet = ShellExecuteExW(&sei) ? sal_True : sal_False;
+    bool bRet = ShellExecuteExW(&sei);
 
     if (!bRet && (nFlags & NO_SYSTEM_ERROR_MESSAGE))
     {
@@ -336,22 +326,18 @@ void SAL_CALL CSysShExec::execute( const OUString& aCommand, const OUString& aPa
 }
 
 // XServiceInfo
+
 OUString SAL_CALL CSysShExec::getImplementationName(  )
-    throw( RuntimeException )
 {
     return OUString(SYSSHEXEC_IMPL_NAME );
 }
 
-//  XServiceInfo
 sal_Bool SAL_CALL CSysShExec::supportsService( const OUString& ServiceName )
-    throw( RuntimeException )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-//  XServiceInfo
 Sequence< OUString > SAL_CALL CSysShExec::getSupportedServiceNames(  )
-    throw( RuntimeException )
 {
     return SysShExec_getSupportedServiceNames();
 }

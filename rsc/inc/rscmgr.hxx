@@ -31,21 +31,21 @@ class RscMgr : public RscClass
     struct RscMgrInst
     {
         RscId   aRefId; // nRefId = Referenz Identifier
-        bool    bDflt;  // Ist Default
+        bool    bDflt;  // default
         void Create(){ aRefId.Create(); bDflt = true; }
         void Destroy(){ aRefId.Destroy(); }
     };
     ERRTYPE         IsToDeep( const RSCINST & rInst );
 public:
-                    RscMgr( Atom nId, sal_uInt32 nTypId, RscTop * pSuperCl );
+                    RscMgr( Atom nId, RESOURCE_TYPE nTypId, RscTop * pSuperCl );
 
     void            SetToDefault( const RSCINST & rInst ) override;
     bool            IsDefault( const RSCINST & rInst ) override;
     bool            IsValueDefault( const RSCINST & rInst, CLASS_DATA pDef ) override;
 
-    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool ) override;
+    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool bOwnClass = false ) override;
     void            Destroy( const RSCINST & rInst ) override;
-    sal_uInt32      Size() override;
+    sal_uInt32      Size() const override;
     void            WriteSrcHeader( const RSCINST & aInst, FILE * fOutput,
                                     RscTypCont * pTC, sal_uInt32 nTab,
                                     const RscId & rId, const char * ) override;
@@ -54,9 +54,9 @@ public:
                               RscTypCont * pTC, sal_uInt32 nTab, const char * ) override;
     ERRTYPE         WriteRcHeader( const RSCINST & rInst, RscWriteRc & aMem,
                                    RscTypCont * pTC, const RscId & rId,
-                                   sal_uInt32, bool bExtra ) override;
+                                   sal_uInt32 ) override;
     ERRTYPE         WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32, bool bExtra ) override;
+                             RscTypCont * pTC, sal_uInt32 ) override;
     bool            IsConsistent( const RSCINST & rInst ) override;
     ERRTYPE         GetRef( const RSCINST & rInst, RscId * ) override;
     ERRTYPE         SetRef( const RSCINST & rInst, const RscId & rRefId ) override;

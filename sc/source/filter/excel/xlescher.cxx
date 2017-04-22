@@ -45,13 +45,13 @@ double lclGetTwipsScale( MapUnit eMapUnit )
         Calc's strange definition of a point (1 inch == 72.27 points, instead
         of 72 points).
         NOTE: Calc's definition changed from TeX points (72.27) to PS points
-        (72), so the MAP_TWIP case now actually also delivers a scale of 1.0
+        (72), so the MapUnit::MapTwip case now actually also delivers a scale of 1.0
     */
     double fScale = 1.0;
     switch( eMapUnit )
     {
-        case MAP_TWIP:      fScale = 1;               break;  // Calc twips <-> real twips
-        case MAP_100TH_MM:  fScale = HMM_PER_TWIPS;   break;  // Calc twips <-> 1/100mm
+        case MapUnit::MapTwip:      fScale = 1;               break;  // Calc twips <-> real twips
+        case MapUnit::Map100thMM:  fScale = HMM_PER_TWIPS;   break;  // Calc twips <-> 1/100mm
         default:            OSL_FAIL( "lclGetTwipsScale - map unit not implemented" );
     }
     return fScale;
@@ -119,7 +119,7 @@ void lclGetRowFromY(
 }
 
 /** Mirrors a rectangle (from LTR to RTL layout or vice versa). */
-void lclMirrorRectangle( Rectangle& rRect )
+void lclMirrorRectangle( tools::Rectangle& rRect )
 {
     long nLeft = rRect.Left();
     rRect.Left() = -rRect.Right();
@@ -141,11 +141,11 @@ XclObjAnchor::XclObjAnchor() :
 {
 }
 
-Rectangle XclObjAnchor::GetRect( const XclRoot& rRoot, SCTAB nScTab, MapUnit eMapUnit ) const
+tools::Rectangle XclObjAnchor::GetRect( const XclRoot& rRoot, SCTAB nScTab, MapUnit eMapUnit ) const
 {
     ScDocument& rDoc = rRoot.GetDoc();
     double fScale = lclGetTwipsScale( eMapUnit );
-    Rectangle aRect(
+    tools::Rectangle aRect(
         lclGetXFromCol( rDoc, nScTab, maFirst.mnCol, mnLX, fScale ),
         lclGetYFromRow( rDoc, nScTab, maFirst.mnRow, mnTY, fScale ),
         lclGetXFromCol( rDoc, nScTab, maLast.mnCol,  mnRX + 1, fScale ),
@@ -157,14 +157,14 @@ Rectangle XclObjAnchor::GetRect( const XclRoot& rRoot, SCTAB nScTab, MapUnit eMa
     return aRect;
 }
 
-void XclObjAnchor::SetRect( const XclRoot& rRoot, SCTAB nScTab, const Rectangle& rRect, MapUnit eMapUnit )
+void XclObjAnchor::SetRect( const XclRoot& rRoot, SCTAB nScTab, const tools::Rectangle& rRect, MapUnit eMapUnit )
 {
     ScDocument& rDoc = rRoot.GetDoc();
     sal_uInt16 nXclMaxCol = rRoot.GetXclMaxPos().Col();
     sal_uInt16 nXclMaxRow = static_cast<sal_uInt16>( rRoot.GetXclMaxPos().Row());
 
     // adjust coordinates in mirrored sheets
-    Rectangle aRect( rRect );
+    tools::Rectangle aRect( rRect );
     if( rDoc.IsLayoutRTL( nScTab ) )
         lclMirrorRectangle( aRect );
 
@@ -178,13 +178,13 @@ void XclObjAnchor::SetRect( const XclRoot& rRoot, SCTAB nScTab, const Rectangle&
 }
 
 void XclObjAnchor::SetRect( const Size& rPageSize, sal_Int32 nScaleX, sal_Int32 nScaleY,
-        const Rectangle& rRect, MapUnit eMapUnit )
+        const tools::Rectangle& rRect, MapUnit eMapUnit )
 {
     double fScale = 1.0;
     switch( eMapUnit )
     {
-        case MAP_TWIP:      fScale = HMM_PER_TWIPS; break;  // Calc twips -> 1/100mm
-        case MAP_100TH_MM:  fScale = 1.0;           break;  // Calc 1/100mm -> 1/100mm
+        case MapUnit::MapTwip:      fScale = HMM_PER_TWIPS; break;  // Calc twips -> 1/100mm
+        case MapUnit::Map100thMM:  fScale = 1.0;           break;  // Calc 1/100mm -> 1/100mm
         default:            OSL_FAIL( "XclObjAnchor::SetRect - map unit not implemented" );
     }
 
@@ -287,7 +287,7 @@ void XclObjTextData::ReadTxo8( XclImpStream& rStrm )
     mnFormatSize = rStrm.ReaduInt16();
 }
 
-Reference< XControlModel > XclControlHelper::GetControlModel( Reference< XShape > xShape )
+Reference< XControlModel > XclControlHelper::GetControlModel( Reference< XShape > const & xShape )
 {
     Reference< XControlModel > xCtrlModel;
     Reference< XControlShape > xCtrlShape( xShape, UNO_QUERY );

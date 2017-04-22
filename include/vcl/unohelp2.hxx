@@ -24,11 +24,11 @@
 #include <cppuhelper/weak.hxx>
 #include <rtl/ustring.hxx>
 #include <osl/mutex.hxx>
+#include <vcl/dllapi.h>
 
 namespace com { namespace sun { namespace star { namespace datatransfer { namespace clipboard {
     class XClipboard;
 } } } } }
-#include <vcl/dllapi.h>
 
 namespace vcl { namespace unohelper {
 
@@ -41,19 +41,17 @@ namespace vcl { namespace unohelper {
 
     public:
                         TextDataObject( const OUString& rText );
-                        virtual ~TextDataObject();
-
-        OUString&       GetString() { return maText; }
+                        virtual ~TextDataObject() override;
 
         // css::uno::XInterface
-        css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+        css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
         void          SAL_CALL acquire() throw() override  { OWeakObject::acquire(); }
         void          SAL_CALL release() throw() override  { OWeakObject::release(); }
 
         // css::datatransfer::XTransferable
-        css::uno::Any SAL_CALL getTransferData( const css::datatransfer::DataFlavor& aFlavor ) throw(css::datatransfer::UnsupportedFlavorException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-        css::uno::Sequence< css::datatransfer::DataFlavor > SAL_CALL getTransferDataFlavors(  ) throw(css::uno::RuntimeException, std::exception) override;
-        sal_Bool SAL_CALL isDataFlavorSupported( const css::datatransfer::DataFlavor& aFlavor ) throw(css::uno::RuntimeException, std::exception) override;
+        css::uno::Any SAL_CALL getTransferData( const css::datatransfer::DataFlavor& aFlavor ) override;
+        css::uno::Sequence< css::datatransfer::DataFlavor > SAL_CALL getTransferDataFlavors(  ) override;
+        sal_Bool SAL_CALL isDataFlavorSupported( const css::datatransfer::DataFlavor& aFlavor ) override;
 
         /// copies a given string to a given clipboard
         static  void    CopyStringTo(

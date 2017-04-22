@@ -107,7 +107,7 @@ namespace canvas
                 {
                     // aClipBoundsB = maCurrClipBounds, i.e. last
                     // clip, intersected with sprite area
-                    typedef ::std::vector< ::basegfx::B2DRectangle > VectorOfRects;
+                    typedef std::vector< ::basegfx::B2DRectangle > VectorOfRects;
                     VectorOfRects aClipDifferences;
 
                     // get all rectangles covered by exactly one
@@ -171,11 +171,11 @@ namespace canvas
                           "CanvasCustomSpriteHelper::init(): Invalid owning sprite canvas" );
 
         mpSpriteCanvas = rOwningSpriteCanvas;
-        maSize.setX( ::std::max( 1.0,
+        maSize.setX( std::max( 1.0,
                                  ceil( rSpriteSize.Width ) ) ); // round up to nearest int,
                                                                  // enforce sprite to have at
                                                                  // least (1,1) pixel size
-        maSize.setY( ::std::max( 1.0,
+        maSize.setY( std::max( 1.0,
                                  ceil( rSpriteSize.Height ) ) );
     }
 
@@ -264,7 +264,10 @@ namespace canvas
 
         if( aPoint != maPosition )
         {
-            const ::basegfx::B2DRectangle&  rBounds( getFullSpriteRect() );
+            const ::basegfx::B2DRectangle&  rBounds
+                = getUpdateArea( ::basegfx::B2DRectangle( 0.0, 0.0,
+                                                          maSize.getX(),
+                                                          maSize.getY() ) );
 
             if( mbActive )
             {
@@ -452,14 +455,6 @@ namespace canvas
             return ::basegfx::B2DRectangle(
                 maPosition + maCurrClipBounds.getMinimum(),
                 maPosition + maCurrClipBounds.getMaximum() );
-    }
-
-    ::basegfx::B2DRange CanvasCustomSpriteHelper::getFullSpriteRect() const
-    {
-        // Internal! Only call with locked object mutex!
-        return getUpdateArea( ::basegfx::B2DRectangle( 0.0, 0.0,
-                                                       maSize.getX(),
-                                                       maSize.getY() ) );
     }
 }
 

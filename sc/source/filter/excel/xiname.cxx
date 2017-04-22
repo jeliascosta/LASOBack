@@ -109,7 +109,7 @@ XclImpName::XclImpName( XclImpStream& rStrm, sal_uInt16 nXclNameIdx ) :
     if( (GetBiff() == EXC_BIFF5) && (maXclName == XclTools::GetXclBuiltInDefName(EXC_BUILTIN_FILTERDATABASE)) )
     {
         bBuiltIn = true;
-        maXclName = OUStringLiteral1<EXC_BUILTIN_FILTERDATABASE>();
+        maXclName = OUStringLiteral1(EXC_BUILTIN_FILTERDATABASE);
     }
 
     // convert Excel name to Calc name
@@ -160,11 +160,11 @@ XclImpName::XclImpName( XclImpStream& rStrm, sal_uInt16 nXclNameIdx ) :
         switch( mcBuiltIn )
         {
             case EXC_BUILTIN_PRINTAREA:
-                if( rFmlaConv.Convert( GetPrintAreaBuffer(), rStrm, nFmlaSize, nLocalTab, FT_RangeName ) == ConvOK )
+                if( rFmlaConv.Convert( GetPrintAreaBuffer(), rStrm, nFmlaSize, nLocalTab, FT_RangeName ) == ConvErr::OK )
                     meNameType |= ScRangeData::Type::PrintArea;
             break;
             case EXC_BUILTIN_PRINTTITLES:
-                if( rFmlaConv.Convert( GetTitleAreaBuffer(), rStrm, nFmlaSize, nLocalTab, FT_RangeName ) == ConvOK )
+                if( rFmlaConv.Convert( GetTitleAreaBuffer(), rStrm, nFmlaSize, nLocalTab, FT_RangeName ) == ConvErr::OK )
                     meNameType |= ScRangeData::Type::ColHeader | ScRangeData::Type::RowHeader;
             break;
         }

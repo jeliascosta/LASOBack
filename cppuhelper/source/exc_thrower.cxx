@@ -47,20 +47,19 @@ struct ExceptionThrower : public uno_Interface, XExceptionThrower
 
     virtual ~ExceptionThrower() {}
 
-    static inline Type const & getCppuType()
+    static Type const & getCppuType()
     {
         return cppu::UnoType<XExceptionThrower>::get();
     }
 
     // XInterface
-    virtual Any SAL_CALL queryInterface( Type const & type )
-        throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL queryInterface( Type const & type ) override;
     virtual void SAL_CALL acquire() throw () override;
     virtual void SAL_CALL release() throw () override;
 
     // XExceptionThrower
-    virtual void SAL_CALL throwException( Any const & exc ) throw (Exception, std::exception) override;
-    virtual void SAL_CALL rethrowException() throw (Exception, std::exception) override;
+    virtual void SAL_CALL throwException( Any const & exc ) override;
+    virtual void SAL_CALL rethrowException() override;
 };
 
 extern "C"
@@ -82,7 +81,7 @@ void SAL_CALL ExceptionThrower_dispatch(
                 const_cast< typelib_TypeDescription * >( pMemberType ) )->
             nPosition)
     {
-    case 0: // queryInterace()
+    case 0: // queryInterface()
     {
         Type const & rType_demanded =
             *static_cast< Type const * >( pArgs[ 0 ] );
@@ -129,7 +128,6 @@ void SAL_CALL ExceptionThrower_dispatch(
 
 
 Any ExceptionThrower::queryInterface( Type const & type )
-    throw (RuntimeException, std::exception)
 {
     if (type.equals( cppu::UnoType<XInterface>::get() ) ||
         type.equals( ExceptionThrower::getCppuType() ))
@@ -150,14 +148,14 @@ void ExceptionThrower::release() throw ()
 }
 
 
-void ExceptionThrower::throwException( Any const & exc ) throw (Exception, std::exception)
+void ExceptionThrower::throwException( Any const & exc )
 {
     OSL_FAIL( "unexpected!" );
     cppu::throwException( exc );
 }
 
 
-void ExceptionThrower::rethrowException() throw (Exception, std::exception)
+void ExceptionThrower::rethrowException()
 {
     throw;
 }

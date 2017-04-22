@@ -44,7 +44,7 @@ class ClassificationPropertyListener : public ClassificationPropertyListenerBase
 
 public:
     ClassificationPropertyListener(const rtl::Reference<comphelper::ConfigurationListener>& xListener, ClassificationCategoriesController& rController);
-    virtual void setProperty(const uno::Any& rProperty) override;
+    void setProperty(const uno::Any& rProperty) override;
 };
 
 using ClassificationCategoriesControllerBase = cppu::ImplInheritanceHelper<svt::ToolboxController, lang::XServiceInfo>;
@@ -58,25 +58,24 @@ class ClassificationCategoriesController : public ClassificationCategoriesContro
     rtl::Reference<comphelper::ConfigurationListener> m_xListener;
     ClassificationPropertyListener m_aPropertyListener;
 
-    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
+    DECL_LINK(SelectHdl, ListBox&, void);
 
 public:
     explicit ClassificationCategoriesController(const uno::Reference<uno::XComponentContext>& rContext);
-    virtual ~ClassificationCategoriesController();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw (uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& rServiceName) throw (uno::RuntimeException, std::exception) override;
-    virtual uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw (uno::RuntimeException, std::exception) override;
+    OUString SAL_CALL getImplementationName() override;
+    sal_Bool SAL_CALL supportsService(const OUString& rServiceName) override;
+    uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
 
     // XComponent
-    virtual void SAL_CALL dispose() throw (uno::RuntimeException, std::exception) override;
+    void SAL_CALL dispose() override;
 
     // XToolbarController
-    virtual uno::Reference<awt::XWindow> SAL_CALL createItemWindow(const uno::Reference<awt::XWindow>& rParent) throw (uno::RuntimeException, std::exception) override;
+    uno::Reference<awt::XWindow> SAL_CALL createItemWindow(const uno::Reference<awt::XWindow>& rParent) override;
 
     // XStatusListener
-    virtual void SAL_CALL statusChanged(const frame::FeatureStateEvent& rEvent) throw (uno::RuntimeException, std::exception) override;
+    void SAL_CALL statusChanged(const frame::FeatureStateEvent& rEvent) override;
 
     void removeEntries();
 };
@@ -87,13 +86,13 @@ class SAL_WARN_UNUSED ClassificationControl : public vcl::Window
     std::map<SfxClassificationPolicyType, VclPtr<FixedText>> m_pLabels;
     std::map<SfxClassificationPolicyType, VclPtr<ListBox>> m_pCategories;
     void SetOptimalSize();
-    virtual void DataChanged(const DataChangedEvent& rEvent) override;
+    void DataChanged(const DataChangedEvent& rEvent) override;
 
 public:
-    ClassificationControl(vcl::Window* pParent);
-    virtual ~ClassificationControl();
-    virtual void dispose() override;
-    virtual void Resize() override;
+    explicit ClassificationControl(vcl::Window* pParent);
+    ~ClassificationControl() override;
+    void dispose() override;
+    void Resize() override;
     const VclPtr<ListBox>& getCategories(SfxClassificationPolicyType eType);
     std::size_t getLabelsSize();
     OUString getCategoryType(ListBox& rCategory);
@@ -120,21 +119,17 @@ ClassificationCategoriesController::ClassificationCategoriesController(const uno
 
 }
 
-ClassificationCategoriesController::~ClassificationCategoriesController()
-{
-}
-
-OUString ClassificationCategoriesController::getImplementationName() throw (uno::RuntimeException, std::exception)
+OUString ClassificationCategoriesController::getImplementationName()
 {
     return OUString("com.sun.star.comp.sfx2.ClassificationCategoriesController");
 }
 
-sal_Bool ClassificationCategoriesController::supportsService(const OUString& rServiceName) throw (uno::RuntimeException, std::exception)
+sal_Bool ClassificationCategoriesController::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-uno::Sequence<OUString> ClassificationCategoriesController::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
+uno::Sequence<OUString> ClassificationCategoriesController::getSupportedServiceNames()
 {
     uno::Sequence<OUString> aServices
     {
@@ -143,7 +138,7 @@ uno::Sequence<OUString> ClassificationCategoriesController::getSupportedServiceN
     return aServices;
 }
 
-void ClassificationCategoriesController::dispose() throw (uno::RuntimeException, std::exception)
+void ClassificationCategoriesController::dispose()
 {
     SolarMutexGuard aSolarMutexGuard;
 
@@ -153,10 +148,10 @@ void ClassificationCategoriesController::dispose() throw (uno::RuntimeException,
     m_xListener->dispose();
 }
 
-uno::Reference<awt::XWindow> ClassificationCategoriesController::createItemWindow(const uno::Reference<awt::XWindow>& rParent) throw (uno::RuntimeException, std::exception)
+uno::Reference<awt::XWindow> ClassificationCategoriesController::createItemWindow(const uno::Reference<awt::XWindow>& rParent)
 {
-    vcl::Window* pParent = VCLUnoHelper::GetWindow(rParent);
-    ToolBox* pToolbar = dynamic_cast<ToolBox*>(pParent);
+    VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow(rParent);
+    auto pToolbar = dynamic_cast<ToolBox*>(pParent.get());
     if (pToolbar)
     {
         m_pClassification = VclPtr<ClassificationControl>::Create(pToolbar);
@@ -170,7 +165,7 @@ uno::Reference<awt::XWindow> ClassificationCategoriesController::createItemWindo
     return uno::Reference<awt::XWindow>(VCLUnoHelper::GetInterface(m_pClassification));
 }
 
-IMPL_LINK_TYPED(ClassificationCategoriesController, SelectHdl, ListBox&, rCategory, void)
+IMPL_LINK(ClassificationCategoriesController, SelectHdl, ListBox&, rCategory, void)
 {
     OUString aEntry = rCategory.GetSelectEntry();
 
@@ -183,7 +178,7 @@ IMPL_LINK_TYPED(ClassificationCategoriesController, SelectHdl, ListBox&, rCatego
     comphelper::dispatchCommand(".uno:ClassificationApply", aPropertyValues);
 }
 
-void ClassificationCategoriesController::statusChanged(const frame::FeatureStateEvent& /*rEvent*/) throw (uno::RuntimeException, std::exception)
+void ClassificationCategoriesController::statusChanged(const frame::FeatureStateEvent& /*rEvent*/)
 {
     if (!m_pClassification)
         return;
@@ -233,9 +228,9 @@ void ClassificationCategoriesController::removeEntries()
     }
 }
 
+// WB_NOLABEL means here that the control won't be replaced with a label
+// when it wouldn't fit the available space.
 ClassificationControl::ClassificationControl(vcl::Window* pParent)
-    // WB_NOLABEL means here that the control won't be replaced with a label
-    // when it wouldn't fit the available space.
     : Window(pParent, WB_DIALOGCONTROL | WB_NOLABEL)
 {
     m_pLabels[SfxClassificationPolicyType::IntellectualProperty] = VclPtr<FixedText>::Create(this, WB_CENTER);
@@ -341,7 +336,7 @@ void ClassificationControl::SetOptimalSize()
 {
     // Same as SvxColorDockingWindow.
     const Size aLogicalAttrSize(150 * m_pLabels.size(), 0);
-    Size aSize(LogicToPixel(aLogicalAttrSize,MAP_APPFONT));
+    Size aSize(LogicToPixel(aLogicalAttrSize,MapUnit::MapAppFont));
 
     auto& pLabel = m_pLabels[SfxClassificationPolicyType::IntellectualProperty];
     auto& pCategories = m_pCategories[SfxClassificationPolicyType::IntellectualProperty];

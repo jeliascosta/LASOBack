@@ -25,10 +25,6 @@
 #include <svx/svxdllapi.h>
 
 
-#define DEFAULT_VALUE_FOR_HITTEST_PIXEL         (2L)
-#define DEFAULT_VALUE_FOR_HITTEST_TWIP          (30L)
-
-
 class Point;
 
 namespace sdr
@@ -43,13 +39,15 @@ namespace sdr
 
         public:
             OverlayObjectList() {}
+            OverlayObjectList(const OverlayObjectList&) = delete;
+            OverlayObjectList& operator=(const OverlayObjectList&) = delete;
             ~OverlayObjectList();
 
             // clear list, this includes deletion of all contained objects
             void clear();
 
-            // append objects
-            void append(OverlayObject& rOverlayObject) { maVector.push_back(&rOverlayObject); }
+            // append objects (takes ownership)
+            void append(OverlayObject* pOverlayObject);
 
             // access to objects
             sal_uInt32 count() const { return maVector.size(); }

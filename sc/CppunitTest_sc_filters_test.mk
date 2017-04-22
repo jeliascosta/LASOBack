@@ -64,10 +64,7 @@ $(eval $(call gb_CppunitTest_set_include,sc_filters_test,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sc_filters_test,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sc_filters_test))
 
 $(eval $(call gb_CppunitTest_use_ure,sc_filters_test))
 $(eval $(call gb_CppunitTest_use_vcl,sc_filters_test))
@@ -83,6 +80,8 @@ $(eval $(call gb_CppunitTest_use_components,sc_filters_test,\
     embeddedobj/util/embobj \
     eventattacher/source/evtatt \
     filter/source/config/cache/filterconfig1 \
+    filter/source/xmlfilteradaptor/xmlfa \
+    filter/source/xsltfilter/xsltfilter \
     forms/util/frm \
     framework/util/fwk \
     i18npool/util/i18npool \
@@ -108,9 +107,14 @@ $(eval $(call gb_CppunitTest_use_components,sc_filters_test,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
+    uui/util/uui \
     xmloff/util/xo \
 ))
 
 $(eval $(call gb_CppunitTest_use_configuration,sc_filters_test))
+
+$(eval $(call gb_CppunitTest_use_packages,sc_filters_test,\
+	filter_xslt \
+))
 
 # vim: set noet sw=4 ts=4:

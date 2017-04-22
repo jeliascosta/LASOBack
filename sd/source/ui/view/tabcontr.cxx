@@ -78,6 +78,14 @@ TabControl::TabControl(DrawViewShell* pViewSh, vcl::Window* pParent) :
 
 TabControl::~TabControl()
 {
+    disposeOnce();
+}
+
+void TabControl::dispose()
+{
+    DragSourceHelper::dispose();
+    DropTargetHelper::dispose();
+    TabBar::dispose();
 }
 
 void TabControl::Select()
@@ -174,7 +182,7 @@ sal_Int8 TabControl::AcceptDrop( const AcceptDropEvent& rEvt )
 
         if( bInternalMove )
         {
-            if( rEvt.mbLeaving || ( pDrViewSh->GetEditMode() == EM_MASTERPAGE ) )
+            if( rEvt.mbLeaving || ( pDrViewSh->GetEditMode() == EditMode::MasterPage ) )
                 HideDropPos();
             else
             {
@@ -288,7 +296,7 @@ bool TabControl::StartRenaming()
 {
     bool bOK = false;
 
-    if (pDrViewSh->GetPageKind() == PK_STANDARD)
+    if (pDrViewSh->GetPageKind() == PageKind::Standard)
     {
         bOK = true;
 
@@ -347,13 +355,13 @@ bool TabControl::DeactivatePage()
 
 void TabControl::SendActivatePageEvent()
 {
-    CallEventListeners (VCLEVENT_TABBAR_PAGEACTIVATED,
+    CallEventListeners (VclEventId::TabbarPageActivated,
         reinterpret_cast<void*>(GetCurPageId()));
 }
 
 void TabControl::SendDeactivatePageEvent()
 {
-    CallEventListeners (VCLEVENT_TABBAR_PAGEDEACTIVATED,
+    CallEventListeners (VclEventId::TabbarPageDeactivated,
         reinterpret_cast<void*>(GetCurPageId()));
 }
 

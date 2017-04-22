@@ -55,7 +55,6 @@
 #include "swcss1.hxx"
 #include "unoframe.hxx"
 #include <com/sun/star/embed/XClassifiedObject.hpp>
-#include <com/sun/star/embed/EmbedStates.hpp>
 #include <com/sun/star/embed/Aspects.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
@@ -71,57 +70,52 @@ using namespace com::sun::star;
 #define HTML_DFLT_APPLET_WIDTH ((MM50*5)/2)
 #define HTML_DFLT_APPLET_HEIGHT ((MM50*5)/2)
 
-namespace {
 
-static char const sHTML_O_Hidden_False[] = "FALSE";
-
-}
-
-const sal_uLong HTML_FRMOPTS_EMBED_ALL      =
-    HTML_FRMOPT_ALT |
-    HTML_FRMOPT_SIZE |
-    HTML_FRMOPT_NAME;
-const sal_uLong HTML_FRMOPTS_EMBED_CNTNR    =
+const HtmlFrmOpts HTML_FRMOPTS_EMBED_ALL      =
+    HtmlFrmOpts::Alt |
+    HtmlFrmOpts::Size |
+    HtmlFrmOpts::Name;
+const HtmlFrmOpts HTML_FRMOPTS_EMBED_CNTNR    =
     HTML_FRMOPTS_EMBED_ALL |
-    HTML_FRMOPT_ABSSIZE;
-const sal_uLong HTML_FRMOPTS_EMBED          =
+    HtmlFrmOpts::AbsSize;
+const HtmlFrmOpts HTML_FRMOPTS_EMBED          =
     HTML_FRMOPTS_EMBED_ALL |
-    HTML_FRMOPT_ALIGN |
-    HTML_FRMOPT_SPACE |
-    HTML_FRMOPT_BRCLEAR |
-    HTML_FRMOPT_NAME;
-const sal_uLong HTML_FRMOPTS_HIDDEN_EMBED   =
-    HTML_FRMOPT_ALT |
-    HTML_FRMOPT_NAME;
+    HtmlFrmOpts::Align |
+    HtmlFrmOpts::Space |
+    HtmlFrmOpts::BrClear |
+    HtmlFrmOpts::Name;
+const HtmlFrmOpts HTML_FRMOPTS_HIDDEN_EMBED   =
+    HtmlFrmOpts::Alt |
+    HtmlFrmOpts::Name;
 
-const sal_uLong HTML_FRMOPTS_APPLET_ALL     =
-    HTML_FRMOPT_ALT |
-    HTML_FRMOPT_SIZE;
-const sal_uLong HTML_FRMOPTS_APPLET_CNTNR   =
+const HtmlFrmOpts HTML_FRMOPTS_APPLET_ALL     =
+    HtmlFrmOpts::Alt |
+    HtmlFrmOpts::Size;
+const HtmlFrmOpts HTML_FRMOPTS_APPLET_CNTNR   =
     HTML_FRMOPTS_APPLET_ALL |
-    HTML_FRMOPT_ABSSIZE;
-const sal_uLong HTML_FRMOPTS_APPLET         =
+    HtmlFrmOpts::AbsSize;
+const HtmlFrmOpts HTML_FRMOPTS_APPLET         =
     HTML_FRMOPTS_APPLET_ALL |
-    HTML_FRMOPT_ALIGN |
-    HTML_FRMOPT_SPACE |
-    HTML_FRMOPT_BRCLEAR;
+    HtmlFrmOpts::Align |
+    HtmlFrmOpts::Space |
+    HtmlFrmOpts::BrClear;
 
-const sal_uLong HTML_FRMOPTS_IFRAME_ALL     =
-    HTML_FRMOPT_ALT |
-    HTML_FRMOPT_SIZE;
-const sal_uLong HTML_FRMOPTS_IFRAME_CNTNR   =
+const HtmlFrmOpts HTML_FRMOPTS_IFRAME_ALL     =
+    HtmlFrmOpts::Alt |
+    HtmlFrmOpts::Size;
+const HtmlFrmOpts HTML_FRMOPTS_IFRAME_CNTNR   =
     HTML_FRMOPTS_IFRAME_ALL |
-    HTML_FRMOPT_ABSSIZE;
-const sal_uLong HTML_FRMOPTS_IFRAME         =
+    HtmlFrmOpts::AbsSize;
+const HtmlFrmOpts HTML_FRMOPTS_IFRAME         =
     HTML_FRMOPTS_IFRAME_ALL |
-    HTML_FRMOPT_ALIGN |
-    HTML_FRMOPT_SPACE |
-    HTML_FRMOPT_BORDER |
-    HTML_FRMOPT_BRCLEAR;
+    HtmlFrmOpts::Align |
+    HtmlFrmOpts::Space |
+    HtmlFrmOpts::Border |
+    HtmlFrmOpts::BrClear;
 
-const sal_uLong HTML_FRMOPTS_OLE_CSS1       =
-    HTML_FRMOPT_S_ALIGN |
-    HTML_FRMOPT_S_SPACE;
+const HtmlFrmOpts HTML_FRMOPTS_OLE_CSS1       =
+    HtmlFrmOpts::SAlign |
+    HtmlFrmOpts::SSpace;
 
 void SwHTMLParser::SetFixSize( const Size& rPixSize,
                                const Size& rTwipDfltSize,
@@ -138,18 +132,18 @@ void SwHTMLParser::SetFixSize( const Size& rPixSize,
     {
         aTwipSz =
             Application::GetDefaultDevice()->PixelToLogic( aTwipSz,
-                                                MapMode(MAP_TWIP) );
+                                                MapMode(MapUnit::MapTwip) );
     }
 
     // die Breite bearbeiten
-    if( SVX_CSS1_LTYPE_PERCENTAGE == rCSS1PropInfo.eWidthType )
+    if( SVX_CSS1_LTYPE_PERCENTAGE == rCSS1PropInfo.m_eWidthType )
     {
-        nPrcWidth = (sal_uInt8)rCSS1PropInfo.nWidth;
+        nPrcWidth = (sal_uInt8)rCSS1PropInfo.m_nWidth;
         aTwipSz.Width() = rTwipDfltSize.Width();
     }
-    else if( SVX_CSS1_LTYPE_TWIP== rCSS1PropInfo.eWidthType )
+    else if( SVX_CSS1_LTYPE_TWIP== rCSS1PropInfo.m_eWidthType )
     {
-        aTwipSz.Width() = rCSS1PropInfo.nWidth;
+        aTwipSz.Width() = rCSS1PropInfo.m_nWidth;
     }
     else if( bPrcWidth && rPixSize.Width() )
     {
@@ -169,14 +163,14 @@ void SwHTMLParser::SetFixSize( const Size& rPixSize,
     }
 
     // Hoehe bearbeiten
-    if( SVX_CSS1_LTYPE_PERCENTAGE == rCSS1PropInfo.eHeightType )
+    if( SVX_CSS1_LTYPE_PERCENTAGE == rCSS1PropInfo.m_eHeightType )
     {
-        nPrcHeight = (sal_uInt8)rCSS1PropInfo.nHeight;
+        nPrcHeight = (sal_uInt8)rCSS1PropInfo.m_nHeight;
         aTwipSz.Height() = rTwipDfltSize.Height();
     }
-    else if( SVX_CSS1_LTYPE_TWIP== rCSS1PropInfo.eHeightType )
+    else if( SVX_CSS1_LTYPE_TWIP== rCSS1PropInfo.m_eHeightType )
     {
-        aTwipSz.Height() = rCSS1PropInfo.nHeight;
+        aTwipSz.Height() = rCSS1PropInfo.m_nHeight;
     }
     else if( bPrcHeight && rPixSize.Height() )
     {
@@ -214,7 +208,7 @@ void SwHTMLParser::SetSpace( const Size& rPixSpace,
         Size aTwipSpc( rPixSpace.Width(), rPixSpace.Height() );
         aTwipSpc =
             Application::GetDefaultDevice()->PixelToLogic( aTwipSpc,
-                                                MapMode(MAP_TWIP) );
+                                                MapMode(MapUnit::MapTwip) );
         nLeftSpace = nRightSpace = aTwipSpc.Width();
         nUpperSpace = nLowerSpace = (sal_uInt16)aTwipSpc.Height();
     }
@@ -227,15 +221,15 @@ void SwHTMLParser::SetSpace( const Size& rPixSpace,
         const SvxLRSpaceItem *pLRItem = static_cast<const SvxLRSpaceItem *>(pItem);
         SvxLRSpaceItem aLRItem( *pLRItem );
         aLRItem.SetTextFirstLineOfst( 0 );
-        if( rCSS1PropInfo.bLeftMargin )
+        if( rCSS1PropInfo.m_bLeftMargin )
         {
             nLeftSpace = aLRItem.GetLeft();
-            rCSS1PropInfo.bLeftMargin = false;
+            rCSS1PropInfo.m_bLeftMargin = false;
         }
-        if( rCSS1PropInfo.bRightMargin )
+        if( rCSS1PropInfo.m_bRightMargin )
         {
             nRightSpace = aLRItem.GetRight();
-            rCSS1PropInfo.bRightMargin = false;
+            rCSS1PropInfo.m_bRightMargin = false;
         }
         rCSS1ItemSet.ClearItem( RES_LR_SPACE );
     }
@@ -263,15 +257,15 @@ void SwHTMLParser::SetSpace( const Size& rPixSpace,
     {
         // Ggf. den Erstzeilen-Einzug noch plaetten
         const SvxULSpaceItem *pULItem = static_cast<const SvxULSpaceItem *>(pItem);
-        if( rCSS1PropInfo.bTopMargin )
+        if( rCSS1PropInfo.m_bTopMargin )
         {
             nUpperSpace = pULItem->GetUpper();
-            rCSS1PropInfo.bTopMargin = false;
+            rCSS1PropInfo.m_bTopMargin = false;
         }
-        if( rCSS1PropInfo.bBottomMargin )
+        if( rCSS1PropInfo.m_bBottomMargin )
         {
             nLowerSpace = pULItem->GetLower();
-            rCSS1PropInfo.bBottomMargin = false;
+            rCSS1PropInfo.m_bBottomMargin = false;
         }
         rCSS1ItemSet.ClearItem( RES_UL_SPACE );
     }
@@ -370,7 +364,7 @@ void SwHTMLParser::InsertEmbed()
                         OOO_STRING_SW_HTML_O_Hidden))
             {
                 bHidden = !rOption.GetString().equalsIgnoreAsciiCase(
-                                sHTML_O_Hidden_False);
+                                "FALSE");
             }
             break;
         }
@@ -379,7 +373,7 @@ void SwHTMLParser::InsertEmbed()
         aCmdLst.Append( rOption.GetTokenString(), rOption.GetString() );
     }
 
-    SfxItemSet aItemSet( m_pDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
+    SfxItemSet aItemSet( m_xDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
     SvxCSS1PropertyInfo aPropInfo;
     if( HasStyleOptions( aStyle, aId, aClass ) )
         ParseStyleOptions( aStyle, aId, aClass, aItemSet, aPropInfo );
@@ -436,7 +430,7 @@ void SwHTMLParser::InsertEmbed()
         }
     }
 
-    SfxItemSet aFrameSet( m_pDoc->GetAttrPool(),
+    SfxItemSet aFrameSet( m_xDoc->GetAttrPool(),
                         RES_FRMATR_BEGIN, RES_FRMATR_END-1 );
     if( !IsNewDoc() )
         Reader::ResetFrameFormatAttrs( aFrameSet );
@@ -448,11 +442,11 @@ void SwHTMLParser::InsertEmbed()
     }
     else
     {
-        SwFormatAnchor aAnchor( FLY_AT_PARA );
+        SwFormatAnchor aAnchor( RndStdIds::FLY_AT_PARA );
         aAnchor.SetAnchor( m_pPam->GetPoint() );
         aFrameSet.Put( aAnchor );
         aFrameSet.Put( SwFormatHoriOrient( 0, text::HoriOrientation::LEFT, text::RelOrientation::FRAME) );
-        aFrameSet.Put( SwFormatSurround( SURROUND_THROUGHT ) );
+        aFrameSet.Put( SwFormatSurround( css::text::WrapTextMode_THROUGH ) );
         aFrameSet.Put( SwFormatVertOrient( 0, text::VertOrientation::TOP, text::RelOrientation::PRINT_AREA ) );
     }
 
@@ -464,7 +458,7 @@ void SwHTMLParser::InsertEmbed()
 
     // und in das Dok einfuegen
     SwFrameFormat* pFlyFormat =
-        m_pDoc->getIDocumentContentOperations().Insert( *m_pPam, ::svt::EmbeddedObjectRef( xObj, embed::Aspects::MSOLE_CONTENT ), &aFrameSet, nullptr, nullptr );
+        m_xDoc->getIDocumentContentOperations().Insert( *m_pPam, ::svt::EmbeddedObjectRef( xObj, embed::Aspects::MSOLE_CONTENT ), &aFrameSet );
 
     // Namen am FrameFormat setzen
     if( !aName.isEmpty() )
@@ -472,7 +466,7 @@ void SwHTMLParser::InsertEmbed()
 
     // den alternativen Text setzen
     SwNoTextNode *pNoTextNd =
-        m_pDoc->GetNodes()[ pFlyFormat->GetContent().GetContentIdx()
+        m_xDoc->GetNodes()[ pFlyFormat->GetContent().GetContentIdx()
                           ->GetIndex()+1 ]->GetNoTextNode();
     pNoTextNd->SetTitle( aAlt );
 
@@ -500,8 +494,7 @@ void SwHTMLParser::NewObject()
              bDeclare = false;
     // Eine neue Command-List anlegen
     delete m_pAppletImpl;
-    m_pAppletImpl = new SwApplet_Impl( m_pDoc->GetAttrPool(),
-                                     RES_FRMATR_BEGIN, RES_FRMATR_END-1 );
+    m_pAppletImpl = new SwApplet_Impl( m_xDoc->GetAttrPool() );
 
     const HTMLOptions& rHTMLOptions = GetOptions();
     for (size_t i = rHTMLOptions.size(); i; )
@@ -605,7 +598,7 @@ void SwHTMLParser::NewObject()
 
     m_pAppletImpl->SetAltText( aStandBy );
 
-    SfxItemSet aItemSet( m_pDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
+    SfxItemSet aItemSet( m_xDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
     SvxCSS1PropertyInfo aPropInfo;
     if( HasStyleOptions( aStyle, aId, aClass ) )
         ParseStyleOptions( aStyle, aId, aClass, aItemSet, aPropInfo );
@@ -636,15 +629,13 @@ void SwHTMLParser::EndObject()
 
         // und in das Dok einfuegen
         SwFrameFormat* pFlyFormat =
-            m_pDoc->getIDocumentContentOperations().Insert( *m_pPam,
+            m_xDoc->getIDocumentContentOperations().Insert( *m_pPam,
                     ::svt::EmbeddedObjectRef( m_pAppletImpl->GetApplet(), embed::Aspects::MSOLE_CONTENT ),
-                    &m_pAppletImpl->GetItemSet(),
-                    nullptr,
-                    nullptr );
+                    &m_pAppletImpl->GetItemSet() );
 
         // den alternativen Namen setzen
         SwNoTextNode *pNoTextNd =
-            m_pDoc->GetNodes()[ pFlyFormat->GetContent().GetContentIdx()
+            m_xDoc->GetNodes()[ pFlyFormat->GetContent().GetContentIdx()
                               ->GetIndex()+1 ]->GetNoTextNode();
         pNoTextNd->SetTitle( m_pAppletImpl->GetAltText() );
 
@@ -671,7 +662,7 @@ void SwHTMLParser::InsertApplet()
 
     // Eine neue Command-List anlegen
     delete m_pAppletImpl;
-    m_pAppletImpl = new SwApplet_Impl( m_pDoc->GetAttrPool(), RES_FRMATR_BEGIN, RES_FRMATR_END-1 );
+    m_pAppletImpl = new SwApplet_Impl( m_xDoc->GetAttrPool() );
 
     const HTMLOptions& rHTMLOptions = GetOptions();
     for (size_t i = rHTMLOptions.size(); i; )
@@ -740,7 +731,7 @@ void SwHTMLParser::InsertApplet()
     m_pAppletImpl->CreateApplet( aCode, aName, bMayScript, aCodeBase, m_sBaseURL );//, aAlt );
     m_pAppletImpl->SetAltText( aAlt );
 
-    SfxItemSet aItemSet( m_pDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
+    SfxItemSet aItemSet( m_xDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
     SvxCSS1PropertyInfo aPropInfo;
     if( HasStyleOptions( aStyle, aId, aClass ) )
         ParseStyleOptions( aStyle, aId, aClass, aItemSet, aPropInfo );
@@ -770,15 +761,13 @@ void SwHTMLParser::EndApplet()
 
     // und in das Dok einfuegen
     SwFrameFormat* pFlyFormat =
-        m_pDoc->getIDocumentContentOperations().Insert( *m_pPam,
+        m_xDoc->getIDocumentContentOperations().Insert( *m_pPam,
                     ::svt::EmbeddedObjectRef( m_pAppletImpl->GetApplet(), embed::Aspects::MSOLE_CONTENT ),
-                    &m_pAppletImpl->GetItemSet(),
-                    nullptr,
-                    nullptr );
+                    &m_pAppletImpl->GetItemSet());
 
     // den alternativen Namen setzen
     SwNoTextNode *pNoTextNd =
-        m_pDoc->GetNodes()[ pFlyFormat->GetContent().GetContentIdx()
+        m_xDoc->GetNodes()[ pFlyFormat->GetContent().GetContentIdx()
                           ->GetIndex()+1 ]->GetNoTextNode();
     pNoTextNd->SetTitle( m_pAppletImpl->GetAltText() );
 
@@ -896,15 +885,15 @@ void SwHTMLParser::InsertFloatingFrame()
                 bool bHasBorder = aFrameDesc.HasFrameBorder();
                 Size aMargin = aFrameDesc.GetMargin();
 
-                xSet->setPropertyValue("FrameURL", uno::makeAny( OUString( aFrameDesc.GetURL().GetMainURL( INetURLObject::NO_DECODE ) ) ) );
+                xSet->setPropertyValue("FrameURL", uno::makeAny( OUString( aFrameDesc.GetURL().GetMainURL( INetURLObject::DecodeMechanism::NONE ) ) ) );
                 xSet->setPropertyValue("FrameName", uno::makeAny( aName ) );
 
-                if ( eScroll == ScrollingAuto )
+                if ( eScroll == ScrollingMode::Auto )
                     xSet->setPropertyValue("FrameIsAutoScroll",
                         uno::makeAny( true ) );
                 else
                     xSet->setPropertyValue("FrameIsScrollingMode",
-                        uno::makeAny( eScroll == ScrollingYes ) );
+                        uno::makeAny( eScroll == ScrollingMode::Yes ) );
 
                 xSet->setPropertyValue("FrameIsBorder",
                         uno::makeAny( bHasBorder ) );
@@ -921,13 +910,13 @@ void SwHTMLParser::InsertFloatingFrame()
     {
     }
 
-    SfxItemSet aItemSet( m_pDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
+    SfxItemSet aItemSet( m_xDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
     SvxCSS1PropertyInfo aPropInfo;
     if( HasStyleOptions( aStyle, aId, aClass ) )
         ParseStyleOptions( aStyle, aId, aClass, aItemSet, aPropInfo );
 
     // den Itemset holen
-    SfxItemSet aFrameSet( m_pDoc->GetAttrPool(),
+    SfxItemSet aFrameSet( m_xDoc->GetAttrPool(),
                         RES_FRMATR_BEGIN, RES_FRMATR_END-1 );
     if( !IsNewDoc() )
         Reader::ResetFrameFormatAttrs( aFrameSet );
@@ -943,11 +932,11 @@ void SwHTMLParser::InsertFloatingFrame()
 
     // und in das Dok einfuegen
     SwFrameFormat* pFlyFormat =
-        m_pDoc->getIDocumentContentOperations().Insert( *m_pPam, ::svt::EmbeddedObjectRef( xObj, embed::Aspects::MSOLE_CONTENT ), &aFrameSet, nullptr, nullptr );
+        m_xDoc->getIDocumentContentOperations().Insert( *m_pPam, ::svt::EmbeddedObjectRef( xObj, embed::Aspects::MSOLE_CONTENT ), &aFrameSet );
 
     // den alternativen Namen setzen
     SwNoTextNode *pNoTextNd =
-        m_pDoc->GetNodes()[ pFlyFormat->GetContent().GetContentIdx()
+        m_xDoc->GetNodes()[ pFlyFormat->GetContent().GetContentIdx()
                           ->GetIndex()+1 ]->GetNoTextNode();
     pNoTextNd->SetTitle( aAlt );
 
@@ -1011,7 +1000,7 @@ Writer& OutHTML_FrameFormatOLENode( Writer& rWrt, const SwFrameFormat& rFrameFor
         return rWrt;
     }
 
-    sal_uLong nFrameOpts;
+    HtmlFrmOpts nFrameOpts;
 
     // wenn meoglich vor dem "Objekt" einen Zeilen-Umbruch ausgeben
     if( rHTMLWrt.m_bLFPossible )
@@ -1058,8 +1047,8 @@ Writer& OutHTML_FrameFormatOLENode( Writer& rWrt, const SwFrameFormat& rFrameFor
             sOut.append('\"');
         }
 
-        if ((FLY_AT_PARA == rFrameFormat.GetAnchor().GetAnchorId()) &&
-            SURROUND_THROUGHT == rFrameFormat.GetSurround().GetSurround() )
+        if ((RndStdIds::FLY_AT_PARA == rFrameFormat.GetAnchor().GetAnchorId()) &&
+            css::text::WrapTextMode_THROUGH == rFrameFormat.GetSurround().GetSurround() )
         {
             // Das Plugin ist HIDDEN
             sOut.append(' ').append(OOO_STRING_SW_HTML_O_Hidden);
@@ -1334,8 +1323,8 @@ Writer& OutHTML_FrameFormatOLENodeGrf( Writer& rWrt, const SwFrameFormat& rFrame
             URIHelper::GetMaybeFileHdl() );
 
     }
-    sal_uLong nFlags = bInCntnr ? HTML_FRMOPTS_GENIMG_CNTNR
-        : HTML_FRMOPTS_GENIMG;
+    HtmlFrmOpts nFlags = bInCntnr ? HtmlFrmOpts::GenImgAllMask
+        : HtmlFrmOpts::GenImgMask;
     OutHTML_Image( rWrt, rFrameFormat, aGraphicURL, aGraphic,
             pOLENd->GetTitle(), pOLENd->GetTwipSize(),
             nFlags, "ole" );

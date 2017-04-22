@@ -39,25 +39,24 @@ class SwTextMarkupHelper
                             const SwTextNode& rTextNode );
         SwTextMarkupHelper( const SwAccessiblePortionData& rPortionData,
                             const SwWrongList& rTextMarkupList ); // #i108125#
-        ~SwTextMarkupHelper() {}
 
-        sal_Int32 getTextMarkupCount( const sal_Int32 nTextMarkupType )
-                throw (css::lang::IllegalArgumentException,
-                       css::uno::RuntimeException);
+        /// @throws css::lang::IllegalArgumentException
+        /// @throws css::uno::RuntimeException
+        sal_Int32 getTextMarkupCount( const sal_Int32 nTextMarkupType );
 
+        /// @throws css::lang::IndexOutOfBoundsException
+        /// @throws css::lang::IllegalArgumentException
+        /// @throws css::uno::RuntimeException
         css::accessibility::TextSegment getTextMarkup(
                                             const sal_Int32 nTextMarkupIndex,
-                                            const sal_Int32 nTextMarkupType )
-                throw (css::lang::IndexOutOfBoundsException,
-                       css::lang::IllegalArgumentException,
-                       css::uno::RuntimeException);
+                                            const sal_Int32 nTextMarkupType );
 
+        /// @throws css::lang::IndexOutOfBoundsException
+        /// @throws css::lang::IllegalArgumentException
+        /// @throws css::uno::RuntimeException
         css::uno::Sequence< css::accessibility::TextSegment >
                 getTextMarkupAtIndex( const sal_Int32 nCharIndex,
-                                      const sal_Int32 nTextMarkupType )
-                throw (css::lang::IndexOutOfBoundsException,
-                       css::lang::IllegalArgumentException,
-                       css::uno::RuntimeException);
+                                      const sal_Int32 nTextMarkupType );
 
     private:
         SwTextMarkupHelper( const SwTextMarkupHelper& ) = delete;

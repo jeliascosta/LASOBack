@@ -42,6 +42,7 @@
 #include <com/sun/star/xml/sax/InputSource.hpp>
 #include <com/sun/star/xml/sax/XDocumentHandler.hpp>
 #include <com/sun/star/xml/sax/XExtendedDocumentHandler.hpp>
+#include <com/sun/star/xml/sax/XFastParser.hpp>
 #include <com/sun/star/xml/sax/SAXException.hpp>
 #include <com/sun/star/xml/sax/Writer.hpp>
 #include <com/sun/star/xml/XImportFilter.hpp>
@@ -130,32 +131,32 @@ namespace XSLT
 
         // XStreamListener
         virtual void SAL_CALL
-        error(const Any& a) throw (RuntimeException, std::exception) override;
+        error(const Any& a) override;
         virtual void SAL_CALL
-        closed() throw (RuntimeException, std::exception) override;
+        closed() override;
         virtual void SAL_CALL
-        terminated() throw (RuntimeException, std::exception) override;
+        terminated() override;
         virtual void SAL_CALL
-        started() throw (RuntimeException, std::exception) override;
+        started() override;
         virtual void SAL_CALL
-        disposing(const EventObject& e) throw (RuntimeException, std::exception) override;
+        disposing(const EventObject& e) override;
 
         // XImportFilter
         virtual sal_Bool SAL_CALL
         importer(const Sequence<PropertyValue>& aSourceData, const css::uno::Reference<
                 XDocumentHandler>& xHandler,
-                const Sequence<OUString>& msUserData) throw (RuntimeException, std::exception) override;
+                const Sequence<OUString>& msUserData) override;
 
         // XExportFilter
         virtual sal_Bool SAL_CALL
         exporter(const Sequence<PropertyValue>& aSourceData, const Sequence<
-                OUString>& msUserData) throw (RuntimeException, std::exception) override;
+                OUString>& msUserData) override;
 
         // XDocumentHandler
         virtual void SAL_CALL
-        startDocument() throw (SAXException, RuntimeException, std::exception) override;
+        startDocument() override;
         virtual void SAL_CALL
-        endDocument() throw (SAXException, RuntimeException, std::exception) override;
+        endDocument() override;
     };
 
     XSLTFilter::XSLTFilter(const css::uno::Reference<XComponentContext> &r):
@@ -163,7 +164,7 @@ namespace XSLT
     {}
 
     void
-    XSLTFilter::disposing(const EventObject&) throw (RuntimeException, std::exception)
+    XSLTFilter::disposing(const EventObject&)
     {
     }
 
@@ -222,12 +223,12 @@ namespace XSLT
     }
 
     void
-    XSLTFilter::started() throw (RuntimeException, std::exception)
+    XSLTFilter::started()
     {
         m_cTransformed.reset();
     }
     void
-    XSLTFilter::error(const Any& a) throw (RuntimeException, std::exception)
+    XSLTFilter::error(const Any& a)
     {
         Exception e;
         if (a >>= e)
@@ -238,12 +239,12 @@ namespace XSLT
         m_cTransformed.set();
     }
     void
-    XSLTFilter::closed() throw (RuntimeException, std::exception)
+    XSLTFilter::closed()
     {
         m_cTransformed.set();
     }
     void
-    XSLTFilter::terminated() throw (RuntimeException, std::exception)
+    XSLTFilter::terminated()
     {
         m_bTerminated = true;
         m_cTransformed.set();
@@ -260,14 +261,14 @@ namespace XSLT
         aObj.setFinalSlash();
         bool bWasAbsolute;
         INetURLObject aURL = aObj.smartRel2Abs(s, bWasAbsolute, false,
-                INetURLObject::WAS_ENCODED, RTL_TEXTENCODING_UTF8, true);
-        return aURL.GetMainURL(INetURLObject::NO_DECODE);
+                INetURLObject::EncodeMechanism::WasEncoded, RTL_TEXTENCODING_UTF8, true);
+        return aURL.GetMainURL(INetURLObject::DecodeMechanism::NONE);
     }
 
     sal_Bool
     XSLTFilter::importer(const Sequence<PropertyValue>& aSourceData,
             const css::uno::Reference<XDocumentHandler>& xHandler, const Sequence<
-                    OUString>& msUserData) throw (RuntimeException, std::exception)
+                    OUString>& msUserData)
     {
         if (msUserData.getLength() < 5)
             return false;
@@ -314,7 +315,7 @@ namespace XSLT
         nv.Value <<= aURL;
         args[1] <<= nv;
         nv.Name = "SourceBaseURL";
-        nv.Value <<= OUString(INetURLObject(aURL).getBase());
+        nv.Value <<= INetURLObject(aURL).getBase();
         args[2] <<= nv;
 
         m_tcontrol = impl_createTransformer(msUserData[1], args);
@@ -357,6 +358,8 @@ namespace XSLT
 
                         // set doc handler
                         xSaxParser->setDocumentHandler(xHandler);
+                        css::uno::Reference< css::xml::sax::XFastParser > xFastParser = dynamic_cast<
+                            css::xml::sax::XFastParser* >( xHandler.get() );
 
                         // transform
                         m_tcontrol->start();
@@ -366,7 +369,7 @@ namespace XSLT
                                 if (xInterActionHandler.is()) {
                                         Sequence<Any> excArgs(0);
                                         css::ucb::InteractiveAugmentedIOException exc(
-                                                OUString("Timeout!"),
+                                                "Timeout!",
                                                 static_cast< OWeakObject * >( this ),
                                                 InteractionClassification_ERROR,
                                                 css::ucb::IOErrorCode_GENERAL,
@@ -388,7 +391,10 @@ namespace XSLT
                                 result = m_cTransformed.wait(&timeout);
                         };
                         if (!m_bError) {
-                                xSaxParser->parseStream(aInput);
+                                if( xFastParser.is() )
+                                    xFastParser->parseStream( aInput );
+                                else
+                                    xSaxParser->parseStream( aInput );
                         }
                         m_tcontrol->terminate();
                         return !m_bError;
@@ -408,7 +414,7 @@ namespace XSLT
 
     sal_Bool
     XSLTFilter::exporter(const Sequence<PropertyValue>& aSourceData,
-            const Sequence<OUString>& msUserData) throw (RuntimeException, std::exception)
+            const Sequence<OUString>& msUserData)
     {
         if (msUserData.getLength() < 6)
             return false;
@@ -461,7 +467,7 @@ namespace XSLT
         nv.Name = "TargetBaseURL";
         INetURLObject ineturl(sURL);
         ineturl.removeSegment();
-        m_aExportBaseUrl = ineturl.GetMainURL(INetURLObject::NO_DECODE);
+        m_aExportBaseUrl = ineturl.GetMainURL(INetURLObject::DecodeMechanism::NONE);
         nv.Value <<= m_aExportBaseUrl;
         args[3] <<= nv;
 
@@ -508,14 +514,14 @@ namespace XSLT
     // events to the XML writer that we created upon the output stream
     // that was provided by the XMLFilterAdapter
     void
-    XSLTFilter::startDocument() throw (SAXException, RuntimeException, std::exception)
+    XSLTFilter::startDocument()
     {
         ExtendedDocumentHandlerAdapter::startDocument();
         m_tcontrol->start();
     }
 
     void
-    XSLTFilter::endDocument() throw (SAXException, RuntimeException, std::exception)
+    XSLTFilter::endDocument()
     {
         ExtendedDocumentHandlerAdapter::endDocument();
         // wait for the transformer to finish

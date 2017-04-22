@@ -47,7 +47,7 @@ OXMLImage::OXMLImage( ORptFilter& rImport,
     OXMLReportElementBase( rImport, nPrfx, rLName,_xComponent.get(),_pContainer)
 {
 
-    OSL_ENSURE(m_xComponent.is(),"Component is NULL!");
+    OSL_ENSURE(m_xReportComponent.is(),"Component is NULL!");
     const SvXMLNamespaceMap& rMap = m_rImport.GetNamespaceMap();
     const SvXMLTokenMap& rTokenMap = m_rImport.GetControlElemTokenMap();
     static const OUString s_sTRUE = ::xmloff::token::GetXMLToken(XML_TRUE);
@@ -65,31 +65,31 @@ OXMLImage::OXMLImage( ORptFilter& rImport,
             switch( rTokenMap.Get( nPrefix, sLocalName ) )
             {
                 case XML_TOK_IMAGE_DATA:
-                    {
+                {
                         SvtPathOptions aPathOptions;
                         sValue = aPathOptions.SubstituteVariable(sValue);
                         _xComponent->setImageURL(rImport.GetAbsoluteReference( sValue ));
-                    }
-
                     break;
+                }
                 case XML_TOK_PRESERVE_IRI:
                     _xComponent->setPreserveIRI(s_sTRUE == sValue);
                     break;
                 case XML_TOK_SCALE:
+                {
+                    sal_Int16 nRet = awt::ImageScaleMode::NONE;
+                    if ( s_sTRUE == sValue )
                     {
-                        sal_uInt16 nRet = awt::ImageScaleMode::NONE;
-                        if ( s_sTRUE == sValue )
-                        {
-                            nRet = awt::ImageScaleMode::ANISOTROPIC;
-                        }
-                        else
-                        {
-                                   const SvXMLEnumMapEntry* aXML_EnumMap = OXMLHelper::GetImageScaleOptions();
-                                   SvXMLUnitConverter::convertEnum( nRet, sValue, aXML_EnumMap );
-                        }
-                        _xComponent->setScaleMode( nRet );
+                        nRet = awt::ImageScaleMode::ANISOTROPIC;
                     }
+                    else
+                    {
+                        const SvXMLEnumMapEntry<sal_Int16>* aXML_EnumMap = OXMLHelper::GetImageScaleOptions();
+                        bool bConvertOk = SvXMLUnitConverter::convertEnum( nRet, sValue, aXML_EnumMap );
+                        SAL_WARN_IF(!bConvertOk, "reportdesign", "convertEnum failed");
+                    }
+                    _xComponent->setScaleMode( nRet );
                     break;
+                }
                 case XML_TOK_DATA_FORMULA:
                     _xComponent->setDataField(ORptFilter::convertFormula(sValue));
                     break;

@@ -49,8 +49,7 @@ friend class InputEdit;
 
     VclPtr<Edit>        aPos;
     VclPtr<InputEdit>   aEdit;
-    PopupMenu       aPopMenu;
-    SwFieldMgr*       pMgr;
+    SwFieldMgr*     pMgr;
     SwWrtShell*     pWrtShell;
     SwView*         pView;
     OUString        aAktTableName, sOldFormula;
@@ -66,28 +65,26 @@ friend class InputEdit;
     void CleanupUglyHackWithUndo();
 
     void DelBoxContent();
-    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
+    DECL_LINK( ModifyHdl, Edit&, void );
 
     using Window::IsActive;
 
 protected:
     virtual void    Resize() override;
     virtual void    Click() override;
-    DECL_LINK_TYPED( MenuHdl, Menu *, bool );
-    DECL_LINK_TYPED( DropdownClickHdl, ToolBox*, void );
+    DECL_LINK( MenuHdl, Menu *, bool );
+    DECL_LINK( DropdownClickHdl, ToolBox*, void );
     void            ApplyFormula();
     void            CancelFormula();
 
 public:
     SwInputWindow(vcl::Window* pParent, SfxDispatcher* pDispatcher);
-    virtual         ~SwInputWindow();
+    virtual         ~SwInputWindow() override;
     virtual void    dispose() override;
-
-    virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
     void            ShowWin();
 
-    DECL_LINK_TYPED( SelTableCellsNotify, SwWrtShell&, void );
+    DECL_LINK( SelTableCellsNotify, SwWrtShell&, void );
 
     void            SetFormula( const OUString& rFormula );
     const SwView*   GetView() const{return pView;}
@@ -101,7 +98,7 @@ public:
                         sal_uInt16 nId,
                         SfxBindings*,
                         SfxChildWinInfo*  );
-    virtual ~SwInputChild();
+    virtual ~SwInputChild() override;
     SFX_DECL_CHILDWINDOW_WITHID( SwInputChild );
     void            SetFormula( const OUString& rFormula )
                     { static_cast<SwInputWindow*>(GetWindow())->SetFormula( rFormula ); }

@@ -31,6 +31,7 @@
 #include "cellvalue.hxx"
 #include <rtl/strbuf.hxx>
 #include <osl/diagnose.h>
+#include <formula/errorcodes.hxx>
 
 void ScFormatFilterPluginImpl::ScExportDif( SvStream& rStream, ScDocument* pDoc,
     const ScAddress& rOutPos, const rtl_TextEncoding eNach )
@@ -46,7 +47,7 @@ void ScFormatFilterPluginImpl::ScExportDif( SvStream& rStream, ScDocument* pDoc,
     ScExportDif( rStream, pDoc, ScRange( aStart, aEnd ), eNach );
 }
 
-FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc,
+void ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc,
     const ScRange&rRange, const rtl_TextEncoding eCharSet )
 {
     OSL_ENSURE( rRange.aStart <= rRange.aEnd, "*ScExportDif(): Range not sorted!" );
@@ -83,14 +84,13 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
             bContextOrNotAsciiEncoding = false;
     }
 
-    const sal_Char*     p2DoubleQuotes_LF = "\"\"\n";
-    const sal_Char*     pSpecDataType_LF = "-1,0\n";
-    const sal_Char*     pEmptyData = "1,0\n\"\"\n";
-    const sal_Char*     pStringData = "1,0\n";
-    const sal_Char*     pNumData = "0,";
-    const sal_Char*     pNumDataERROR = "0,0\nERROR\n";
+    const sal_Char p2DoubleQuotes_LF[] = "\"\"\n";
+    const sal_Char pSpecDataType_LF[] = "-1,0\n";
+    const sal_Char pEmptyData[] = "1,0\n\"\"\n";
+    const sal_Char pStringData[] = "1,0\n";
+    const sal_Char pNumData[] = "0,";
+    const sal_Char pNumDataERROR[] = "0,0\nERROR\n";
 
-    FltError            eRet = eERR_OK;
     OUStringBuffer aOS;
     OUString       aString;
     SCCOL               nEndCol = rRange.aEnd.Col();
@@ -119,7 +119,7 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
     aOS.append("\n0,");
     aOS.append(static_cast<sal_Int32>(nNumCols));
     aOS.append('\n');
-    aOS.appendAscii(p2DoubleQuotes_LF);
+    aOS.append(p2DoubleQuotes_LF);
     rOut.WriteUnicodeOrByteText(aOS.makeStringAndClear());
 
     // TUPLES
@@ -127,13 +127,13 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
     aOS.append("\n0,");
     aOS.append(static_cast<sal_Int32>(nNumRows));
     aOS.append('\n');
-    aOS.appendAscii(p2DoubleQuotes_LF);
+    aOS.append(p2DoubleQuotes_LF);
     rOut.WriteUnicodeOrByteText(aOS.makeStringAndClear());
 
     // DATA
     aOS.append(pKeyDATA);
     aOS.append("\n0,0\n");
-    aOS.appendAscii(p2DoubleQuotes_LF);
+    aOS.append(p2DoubleQuotes_LF);
     rOut.WriteUnicodeOrByteText(aOS.makeStringAndClear());
 
     SCCOL               nColCnt;
@@ -142,7 +142,7 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
     for( nRowCnt = rRange.aStart.Row() ; nRowCnt <= nEndRow ; nRowCnt++ )
     {
         OSL_ASSERT(aOS.getLength() == 0);
-        aOS.appendAscii(pSpecDataType_LF);
+        aOS.append(pSpecDataType_LF);
         aOS.append(pKeyBOT);
         aOS.append('\n');
         rOut.WriteUnicodeOrByteText(aOS.makeStringAndClear());
@@ -155,10 +155,10 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
             switch (aCell.meType)
             {
                 case CELLTYPE_NONE:
-                    aOS.appendAscii(pEmptyData);
+                    aOS.append(pEmptyData);
                 break;
                 case CELLTYPE_VALUE:
-                    aOS.appendAscii(pNumData);
+                    aOS.append(pNumData);
                     pDoc->GetInputString( nColCnt, nRowCnt, nTab, aString );
                     aOS.append(aString);
                     aOS.append("\nV\n");
@@ -169,11 +169,11 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
                     bWriteStringData = true;
                 break;
                 case CELLTYPE_FORMULA:
-                    if (aCell.mpFormula->GetErrCode())
-                        aOS.appendAscii(pNumDataERROR);
+                    if (aCell.mpFormula->GetErrCode() != FormulaError::NONE)
+                        aOS.append(pNumDataERROR);
                     else if (aCell.mpFormula->IsValue())
                     {
-                        aOS.appendAscii(pNumData);
+                        aOS.append(pNumData);
                         pDoc->GetInputString( nColCnt, nRowCnt, nTab, aString );
                         aOS.append(aString);
                         aOS.append("\nV\n");
@@ -198,7 +198,7 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
                 // needed just one more time..
                 OSL_ASSERT(aOS.getLength() == 0);
                 OUString aTmpStr = aString;
-                aOS.appendAscii(pStringData);
+                aOS.append(pStringData);
                 rOut.WriteUnicodeOrByteText(aOS.makeStringAndClear(), eCharSet);
                 if ( eCharSet == RTL_TEXTENCODING_UNICODE )
                 {
@@ -247,9 +247,9 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
                             aStrDelimEncoded, nPos+1+aStrDelimEncoded.getLength());
                     }
                     // write byte encoded
-                    rOut.Write(aStrDelimEncoded.getStr(), aStrDelimEncoded.getLength());
-                    rOut.Write(aStrEnc.getStr(), aStrEnc.getLength());
-                    rOut.Write(aStrDelimEncoded.getStr(), aStrDelimEncoded.getLength());
+                    rOut.WriteBytes(aStrDelimEncoded.getStr(), aStrDelimEncoded.getLength());
+                    rOut.WriteBytes(aStrEnc.getStr(), aStrEnc.getLength());
+                    rOut.WriteBytes(aStrDelimEncoded.getStr(), aStrDelimEncoded.getLength());
                 }
                 rOut.WriteUniOrByteChar( '\n', eCharSet );
             }
@@ -258,15 +258,13 @@ FltError ScFormatFilterPluginImpl::ScExportDif( SvStream& rOut, ScDocument* pDoc
     }
 
     OSL_ASSERT(aOS.getLength() == 0);
-    aOS.appendAscii(pSpecDataType_LF);
+    aOS.append(pSpecDataType_LF);
     aOS.append(pKeyEOD);
     aOS.append('\n');
     rOut.WriteUnicodeOrByteText(aOS.makeStringAndClear());
 
     // restore original value
     rOut.SetStreamCharSet( eStreamCharSet );
-
-    return eRet;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

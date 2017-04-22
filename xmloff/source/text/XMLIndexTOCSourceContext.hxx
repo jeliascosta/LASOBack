@@ -35,11 +35,6 @@ namespace com { namespace sun { namespace star {
  */
 class XMLIndexTOCSourceContext : public XMLIndexSourceBaseContext
 {
-    const OUString sCreateFromMarks;
-    const OUString sLevel;
-    const OUString sCreateFromOutline;
-    const OUString sCreateFromLevelParagraphStyles;
-
     sal_Int32 nOutlineLevel;
     bool bUseOutline;
     bool bUseMarks;
@@ -54,7 +49,7 @@ public:
         const OUString& rLocalName,
         css::uno::Reference<css::beans::XPropertySet> & rPropSet);
 
-    virtual ~XMLIndexTOCSourceContext();
+    virtual ~XMLIndexTOCSourceContext() override;
 
 protected:
 

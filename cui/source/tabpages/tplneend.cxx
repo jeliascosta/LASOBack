@@ -34,6 +34,7 @@
 #include <svx/xpool.hxx>
 #include <svx/xtable.hxx>
 #include "cuitabline.hxx"
+#include "cuitabarea.hxx"
 #include <svx/svxdlg.hxx>
 #include <dialmgr.hxx>
 #include "svx/dlgutil.hxx"
@@ -44,6 +45,8 @@
 #include <basegfx/polygon/b2dpolypolygontools.hxx>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 #include <svx/dialogs.hrc>
+
+#include <o3tl/make_unique.hxx>
 
 #define XOUT_WIDTH    150
 
@@ -172,21 +175,21 @@ void SvxLineEndDefTabPage::ActivatePage( const SfxItemSet& )
 
             aURL.Append( pLineEndList->GetName() );
             DBG_ASSERT( aURL.GetProtocol() != INetProtocol::NotValid, "invalid URL" );
-            *pPageType = 0; // 3
+            *pPageType = PageType::Area; // 3
             *pPosLineEndLb = LISTBOX_ENTRY_NOTFOUND;
         }
     }
 }
 
 
-SfxTabPage::sfxpg SvxLineEndDefTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxLineEndDefTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     CheckChanges_Impl();
 
     if( _pSet )
         FillItemSet( _pSet );
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 
@@ -218,12 +221,12 @@ bool SvxLineEndDefTabPage::FillItemSet( SfxItemSet* rSet )
 {
     if( nDlgType == 0 ) // line dialog
     {
-        if( *pPageType == 3 )
+        if( *pPageType == PageType::Bitmap )
         {
             CheckChanges_Impl();
 
             long nPos = m_pLbLineEnds->GetSelectEntryPos();
-            XLineEndEntry* pEntry = pLineEndList->GetLineEnd( nPos );
+            const XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nPos);
 
             rSet->Put( XLineStartItem( pEntry->GetName(), pEntry->GetLineEnd() ) );
             rSet->Put( XLineEndItem( pEntry->GetName(), pEntry->GetLineEnd() ) );
@@ -242,7 +245,7 @@ void SvxLineEndDefTabPage::Reset( const SfxItemSet* )
     {
         int nPos = m_pLbLineEnds->GetSelectEntryPos();
 
-        XLineEndEntry* pEntry = pLineEndList->GetLineEnd( nPos );
+        const XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nPos);
 
         m_pEdtName->SetText( m_pLbLineEnds->GetSelectEntry() );
 
@@ -277,13 +280,13 @@ VclPtr<SfxTabPage> SvxLineEndDefTabPage::Create( vcl::Window* pWindow, const Sfx
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, SelectLineEndHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxLineEndDefTabPage, SelectLineEndHdl_Impl, ListBox&, void)
 {
     if( pLineEndList->Count() > 0 )
     {
         int nPos = m_pLbLineEnds->GetSelectEntryPos();
 
-        XLineEndEntry* pEntry = pLineEndList->GetLineEnd( nPos );
+        const XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nPos);
 
         m_pEdtName->SetText( m_pLbLineEnds->GetSelectEntry() );
 
@@ -297,18 +300,12 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, SelectLineEndHdl_Impl, ListBox&, voi
 
         // Is not set before, in order to only take the new style,
         // if there is an entry selected in the ListBox
-        *pPageType = 3;
+        *pPageType = PageType::Bitmap;
     }
 }
 
 
-void SvxLineEndDefTabPage::ChangePreviewHdl_Impl()
-{
-    m_pCtlPreview->Invalidate();
-}
-
-
-IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickModifyHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineEndDefTabPage, ClickModifyHdl_Impl, Button*, void)
 {
     sal_Int32 nPos = m_pLbLineEnds->GetSelectEntryPos();
 
@@ -335,7 +332,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickModifyHdl_Impl, Button*, void)
 
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
             DBG_ASSERT(pFact, "Dialog creation failed!");
-            std::unique_ptr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( GetParentDialog(), aName, aDesc ));
+            ScopedVclPtr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( GetParentDialog(), aName, aDesc ));
             DBG_ASSERT(pDlg, "Dialog creation failed!");
             bool bLoop = true;
 
@@ -360,23 +357,22 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickModifyHdl_Impl, Button*, void)
         // if not existing, enter the entry
         if( bDifferent )
         {
-            const XLineEndEntry* pOldEntry = pLineEndList->GetLineEnd( nPos );
+            const XLineEndEntry* pOldEntry = pLineEndList->GetLineEnd(nPos);
 
             if(pOldEntry)
             {
-                // #123497# Need to replace the existing entry with a new one (old returned needs to be deleted)
-                XLineEndEntry* pEntry = new XLineEndEntry(pOldEntry->GetLineEnd(), aName);
-                delete pLineEndList->Replace(pEntry, nPos);
+                // #123497# Need to replace the existing entry with a new one
+                pLineEndList->Replace(o3tl::make_unique<XLineEndEntry>(pOldEntry->GetLineEnd(), aName), nPos);
 
                 m_pEdtName->SetText( aName );
 
-                m_pLbLineEnds->Modify( *pEntry, nPos, pLineEndList->GetUiBitmap( nPos ) );
+                m_pLbLineEnds->Modify(*pLineEndList->GetLineEnd(nPos), nPos, pLineEndList->GetUiBitmap(nPos));
                 m_pLbLineEnds->SelectEntryPos( nPos );
 
                 // Flag fuer modifiziert setzen
                 *pnLineEndListState |= ChangeType::MODIFIED;
 
-                *pPageType = 3;
+                *pPageType = PageType::Bitmap;
             }
             else
             {
@@ -387,7 +383,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickModifyHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickAddHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineEndDefTabPage, ClickAddHdl_Impl, Button*, void)
 {
     if( pPolyObj )
     {
@@ -422,8 +418,6 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickAddHdl_Impl, Button*, void)
 
         SdrObject::Free( pConvPolyObj );
 
-        XLineEndEntry* pEntry;
-
         ResMgr& rMgr = CUI_MGR();
         OUString aNewName( SVX_RES( RID_SVXSTR_LINEEND ) );
         OUString aDesc( ResId( RID_SVXSTR_DESC_LINEEND, rMgr ) );
@@ -435,9 +429,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickAddHdl_Impl, Button*, void)
 
         while ( !bDifferent )
         {
-            aName = aNewName;
-            aName += " ";
-            aName += OUString::number( j++ );
+            aName = aNewName + " " + OUString::number( j++ );
             bDifferent = true;
 
             for( long i = 0; i < nCount && bDifferent; i++ )
@@ -447,7 +439,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickAddHdl_Impl, Button*, void)
 
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         DBG_ASSERT(pFact, "Dialog creation failed!");
-        std::unique_ptr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( GetParentDialog(), aName, aDesc ));
+        ScopedVclPtr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( GetParentDialog(), aName, aDesc ));
         DBG_ASSERT(pDlg, "Dialog creation failed!");
         bool bLoop = true;
 
@@ -465,13 +457,12 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickAddHdl_Impl, Button*, void)
             if( bDifferent )
             {
                 bLoop = false;
-                pEntry = new XLineEndEntry( aNewPolyPolygon, aName );
 
                 long nLineEndCount = pLineEndList->Count();
-                pLineEndList->Insert( pEntry, nLineEndCount );
+                pLineEndList->Insert(o3tl::make_unique<XLineEndEntry>(aNewPolyPolygon, aName), nLineEndCount);
 
                 // add to the ListBox
-                m_pLbLineEnds->Append( *pEntry, pLineEndList->GetUiBitmap( nLineEndCount ) );
+                m_pLbLineEnds->Append(*pLineEndList->GetLineEnd(nLineEndCount), pLineEndList->GetUiBitmap(nLineEndCount));
                 m_pLbLineEnds->SelectEntryPos( m_pLbLineEnds->GetEntryCount() - 1 );
 
                 *pnLineEndListState |= ChangeType::MODIFIED;
@@ -500,7 +491,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickAddHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickDeleteHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineEndDefTabPage, ClickDeleteHdl_Impl, Button*, void)
 {
     sal_Int32 nPos = m_pLbLineEnds->GetSelectEntryPos();
 
@@ -512,16 +503,16 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickDeleteHdl_Impl, Button*, void)
 
         if ( aQueryBox->Execute() == RET_YES )
         {
-            delete pLineEndList->Remove( nPos );
+            pLineEndList->Remove(nPos);
             m_pLbLineEnds->RemoveEntry( nPos );
             m_pLbLineEnds->SelectEntryPos( 0 );
 
             SelectLineEndHdl_Impl( *m_pLbLineEnds );
-            *pPageType = 0; // LineEnd shall not be taken over
+            *pPageType = PageType::Area; // LineEnd shall not be taken over
 
             *pnLineEndListState |= ChangeType::MODIFIED;
 
-            ChangePreviewHdl_Impl();
+            m_pCtlPreview->Invalidate();
         }
     }
     // determine button state
@@ -534,7 +525,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickDeleteHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickLoadHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineEndDefTabPage, ClickLoadHdl_Impl, Button*, void)
 {
     sal_uInt16 nReturn = RET_YES;
 
@@ -564,7 +555,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickLoadHdl_Impl, Button*, void)
         while (nIndex >= 0);
 
         INetURLObject aFile(aLastDir);
-        aDlg.SetDisplayDirectory( aFile.GetMainURL( INetURLObject::NO_DECODE ) );
+        aDlg.SetDisplayDirectory( aFile.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
 
         if( aDlg.Execute() == ERRCODE_NONE )
         {
@@ -576,8 +567,8 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickLoadHdl_Impl, Button*, void)
 
             XLineEndListRef pLeList = XPropertyList::AsLineEndList(
                 XPropertyList::CreatePropertyList(
-                    XLINE_END_LIST,
-                    aPathURL.GetMainURL(INetURLObject::NO_DECODE), ""));
+                    XPropertyListType::LineEnd,
+                    aPathURL.GetMainURL(INetURLObject::DecodeMechanism::NONE), ""));
             pLeList->SetName( aURL.getName() );
             if( pLeList->Load() )
             {
@@ -615,7 +606,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickLoadHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickSaveHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineEndDefTabPage, ClickSaveHdl_Impl, Button*, void)
 {
     ::sfx2::FileDialogHelper aDlg( css::ui::dialogs::TemplateDescription::FILESAVE_SIMPLE );
     OUString aStrFilterType( "*.soe" );
@@ -641,7 +632,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickSaveHdl_Impl, Button*, void)
             aFile.SetExtension( "soe" );
     }
 
-    aDlg.SetDisplayDirectory( aFile.GetMainURL( INetURLObject::NO_DECODE ) );
+    aDlg.SetDisplayDirectory( aFile.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
     if ( aDlg.Execute() == ERRCODE_NONE )
     {
         INetURLObject   aURL( aDlg.GetPath() );
@@ -651,7 +642,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineEndDefTabPage, ClickSaveHdl_Impl, Button*, void)
         aPathURL.removeFinalSlash();
 
         pLineEndList->SetName( aURL.getName() );
-        pLineEndList->SetPath( aPathURL.GetMainURL( INetURLObject::NO_DECODE ) );
+        pLineEndList->SetPath( aPathURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
 
         if( pLineEndList->Save() )
         {

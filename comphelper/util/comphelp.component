@@ -31,7 +31,8 @@
       constructor="NamedPropertyValuesContainer_get_implementation">
     <service name="com.sun.star.document.NamedPropertyValues"/>
   </implementation>
-  <implementation name="com.sun.star.comp.MemoryStream">
+  <implementation name="com.sun.star.comp.MemoryStream"
+      constructor="com_sun_star_comp_MemoryStream">
     <service name="com.sun.star.comp.MemoryStream"/>
   </implementation>
   <implementation name="com.sun.star.comp.SequenceInputStreamService"
@@ -42,17 +43,13 @@
       constructor="com_sun_star_comp_SequenceOutputStreamService">
     <service name="com.sun.star.io.SequenceOutputStream"/>
   </implementation>
-  <implementation name="com.sun.star.comp.comphelper.OPropertyBag">
+  <implementation name="com.sun.star.comp.comphelper.OPropertyBag"
+      constructor="com_sun_star_comp_comphelper_OPropertyBag">
     <service name="com.sun.star.beans.PropertyBag"/>
   </implementation>
   <implementation name="com.sun.star.comp.embed.InstanceLocker"
       constructor="com_sun_star_comp_embed_InstanceLocker">
     <service name="com.sun.star.embed.InstanceLocker"/>
-  </implementation>
-  <implementation name="com.sun.star.comp.logging.SimpleLogRing"
-      constructor="com_sun_star_comp_logging_SimpleLogRing">
-    <service name="com.sun.star.logging.SimpleLogRing"/>
-    <singleton name="com.sun.star.logging.DocumentIOLogRing"/>
   </implementation>
   <implementation name="com.sun.star.comp.task.OfficeRestartManager"
       constructor="com_sun_star_comp_task_OfficeRestartManager">

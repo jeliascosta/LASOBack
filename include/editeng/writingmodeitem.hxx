@@ -28,25 +28,24 @@
 class EDITENG_DLLPUBLIC SvxWritingModeItem : public SfxUInt16Item
 {
 public:
-    static SfxPoolItem* CreateDefault();
-
     SvxWritingModeItem( css::text::WritingMode eValue /*= css::text::WritingMode_LR_TB*/,
                 sal_uInt16 nWhich /*= SDRATTR_TEXTDIRECTION*/ );
-    virtual ~SvxWritingModeItem();
+    virtual ~SvxWritingModeItem() override;
 
     SvxWritingModeItem& operator=( const SvxWritingModeItem& rItem );
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create(SvStream &, sal_uInt16) const override;
     virtual SvStream&       Store(SvStream & rStrm, sal_uInt16 nIVer) const override;
-    virtual sal_uInt16          GetVersion( sal_uInt16 nFileVersion ) const override;
+    virtual sal_uInt16      GetVersion( sal_uInt16 nFileVersion ) const override;
     virtual bool            operator==( const SfxPoolItem& ) const override;
+    css::text::WritingMode  GetValue() const { return (css::text::WritingMode)SfxUInt16Item::GetValue(); }
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper * = nullptr ) const override;
 
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;

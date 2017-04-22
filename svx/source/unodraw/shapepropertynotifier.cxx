@@ -54,7 +54,7 @@ namespace svx
     using ::com::sun::star::lang::EventObject;
     using ::com::sun::star::beans::XPropertySet;
 
-    typedef std::unordered_map< ShapeProperty, PPropertyValueProvider, ShapePropertyHash  >    PropertyProviders;
+    typedef std::unordered_map< ShapeProperty, std::shared_ptr<IPropertyValueProvider>, ShapePropertyHash  >    PropertyProviders;
 
     typedef cppu::OMultiTypeInterfaceContainerHelperVar<OUString>
         PropertyChangeListenerContainer;
@@ -100,9 +100,8 @@ namespace svx
     {
     }
 
-    void PropertyChangeNotifier::registerProvider(const ShapeProperty _eProperty, const PPropertyValueProvider& _rProvider)
+    void PropertyChangeNotifier::registerProvider(const ShapeProperty _eProperty, const std::shared_ptr<IPropertyValueProvider>& _rProvider)
     {
-        ENSURE_OR_THROW( _eProperty != eInvalidShapeProperty, "Illegal ShapeProperty value!" );
         ENSURE_OR_THROW( !!_rProvider, "NULL factory not allowed." );
 
         OSL_ENSURE( m_xData->m_aProviders.find( _eProperty ) == m_xData->m_aProviders.end(),
@@ -113,8 +112,6 @@ namespace svx
 
     void PropertyChangeNotifier::notifyPropertyChange( const ShapeProperty _eProperty ) const
     {
-        ENSURE_OR_THROW( _eProperty != eInvalidShapeProperty, "Illegal ShapeProperty value!" );
-
         PropertyProviders::const_iterator provPos = m_xData->m_aProviders.find( _eProperty );
         OSL_ENSURE( provPos != m_xData->m_aProviders.end(), "PropertyChangeNotifier::notifyPropertyChange: no factory!" );
         if ( provPos == m_xData->m_aProviders.end() )

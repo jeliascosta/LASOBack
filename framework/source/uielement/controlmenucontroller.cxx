@@ -44,54 +44,12 @@
 #include <osl/mutex.hxx>
 #include <memory>
 
+#include "svx/svxids.hrc"
+#include "svx/fmresids.hrc"
+
 // Copied from svx
 // Function-Id's
 #define RID_FMSHELL_CONVERSIONMENU (RID_FORMS_START + 4)
-#define RID_SVXIMGLIST_FMEXPL      (RID_FORMS_START + 0)
-
-// Forms - Ids, used to address images from image list
-#define SID_FMSLOTS_START                   (SID_SVX_START + 592)
-#define SID_MORE_FMSLOTS_START              (SID_SVX_START + 702)
-
-#define SID_FM_CONVERTTO_EDIT               (SID_MORE_FMSLOTS_START +  32)
-#define SID_FM_CONVERTTO_BUTTON             (SID_MORE_FMSLOTS_START +  33)
-#define SID_FM_CONVERTTO_FIXEDTEXT          (SID_MORE_FMSLOTS_START +  34)
-#define SID_FM_CONVERTTO_LISTBOX            (SID_MORE_FMSLOTS_START +  35)
-#define SID_FM_CONVERTTO_CHECKBOX           (SID_MORE_FMSLOTS_START +  36)
-#define SID_FM_CONVERTTO_RADIOBUTTON        (SID_MORE_FMSLOTS_START +  37)
-#define SID_FM_CONVERTTO_GROUPBOX           (SID_MORE_FMSLOTS_START +  38)
-#define SID_FM_CONVERTTO_COMBOBOX           (SID_MORE_FMSLOTS_START +  39)
-#define SID_FM_CONVERTTO_IMAGEBUTTON        (SID_MORE_FMSLOTS_START +  41)
-#define SID_FM_CONVERTTO_FILECONTROL        (SID_MORE_FMSLOTS_START +  42)
-#define SID_FM_CONVERTTO_DATE               (SID_MORE_FMSLOTS_START +  43)
-#define SID_FM_CONVERTTO_TIME               (SID_MORE_FMSLOTS_START +  44)
-#define SID_FM_CONVERTTO_NUMERIC            (SID_MORE_FMSLOTS_START +  45)
-#define SID_FM_CONVERTTO_CURRENCY           (SID_MORE_FMSLOTS_START +  46)
-#define SID_FM_CONVERTTO_PATTERN            (SID_MORE_FMSLOTS_START +  47)
-#define SID_FM_CONVERTTO_IMAGECONTROL       (SID_MORE_FMSLOTS_START +  48)
-#define SID_FM_CONVERTTO_FORMATTED          (SID_MORE_FMSLOTS_START +  49)
-#define SID_FM_CONVERTTO_SCROLLBAR          (SID_MORE_FMSLOTS_START +  68)
-#define SID_FM_CONVERTTO_SPINBUTTON         (SID_MORE_FMSLOTS_START +  69)
-
-#define SID_FM_DATEFIELD                    (SID_MORE_FMSLOTS_START +   2)
-#define SID_FM_TIMEFIELD                    (SID_MORE_FMSLOTS_START +   3)
-#define SID_FM_NUMERICFIELD                 (SID_MORE_FMSLOTS_START +   4)
-#define SID_FM_CURRENCYFIELD                (SID_MORE_FMSLOTS_START +   5)
-#define SID_FM_PATTERNFIELD                 (SID_MORE_FMSLOTS_START +   6)
-#define SID_FM_IMAGECONTROL                 (SID_MORE_FMSLOTS_START +   8)
-#define SID_FM_FORMATTEDFIELD               (SID_MORE_FMSLOTS_START +  26)
-#define SID_FM_SCROLLBAR                    (SID_MORE_FMSLOTS_START +  66)
-#define SID_FM_SPINBUTTON                   (SID_MORE_FMSLOTS_START +  67)
-#define SID_FM_PUSHBUTTON                   (SID_FMSLOTS_START + 2)
-#define SID_FM_RADIOBUTTON                  (SID_FMSLOTS_START + 3)
-#define SID_FM_CHECKBOX                     (SID_FMSLOTS_START + 4)
-#define SID_FM_FIXEDTEXT                    (SID_FMSLOTS_START + 5)
-#define SID_FM_GROUPBOX                     (SID_FMSLOTS_START + 6)
-#define SID_FM_EDIT                         (SID_FMSLOTS_START + 7)
-#define SID_FM_LISTBOX                      (SID_FMSLOTS_START + 8)
-#define SID_FM_COMBOBOX                     (SID_FMSLOTS_START + 9)
-#define SID_FM_IMAGEBUTTON                  (SID_FMSLOTS_START + 12)
-#define SID_FM_FILECONTROL                  (SID_FMSLOTS_START + 13)
 
 static const sal_Int16 nConvertSlots[] =
 {
@@ -103,7 +61,6 @@ static const sal_Int16 nConvertSlots[] =
     SID_FM_CONVERTTO_RADIOBUTTON,
     SID_FM_CONVERTTO_GROUPBOX,
     SID_FM_CONVERTTO_COMBOBOX,
-//  SID_FM_CONVERTTO_GRID,
     SID_FM_CONVERTTO_IMAGEBUTTON,
     SID_FM_CONVERTTO_FILECONTROL,
     SID_FM_CONVERTTO_DATE,
@@ -117,30 +74,6 @@ static const sal_Int16 nConvertSlots[] =
     SID_FM_CONVERTTO_SPINBUTTON
 };
 
-static const sal_Int16 nCreateSlots[] =
-{
-    SID_FM_EDIT,
-    SID_FM_PUSHBUTTON,
-    SID_FM_FIXEDTEXT,
-    SID_FM_LISTBOX,
-    SID_FM_CHECKBOX,
-    SID_FM_RADIOBUTTON,
-    SID_FM_GROUPBOX,
-    SID_FM_COMBOBOX,
-//  SID_FM_DBGRID,
-    SID_FM_IMAGEBUTTON,
-    SID_FM_FILECONTROL,
-    SID_FM_DATEFIELD,
-    SID_FM_TIMEFIELD,
-    SID_FM_NUMERICFIELD,
-    SID_FM_CURRENCYFIELD,
-    SID_FM_PATTERNFIELD,
-    SID_FM_IMAGECONTROL,
-    SID_FM_FORMATTEDFIELD,
-    SID_FM_SCROLLBAR,
-    SID_FM_SPINBUTTON
-};
-
 static const char* aCommands[] =
 {
     ".uno:ConvertToEdit",
@@ -151,7 +84,6 @@ static const char* aCommands[] =
     ".uno:ConvertToRadio",
     ".uno:ConvertToGroup",
     ".uno:ConvertToCombo",
-//    ".uno:ConvertToGrid",
     ".uno:ConvertToImageBtn",
     ".uno:ConvertToFileControl",
     ".uno:ConvertToDate",
@@ -163,6 +95,30 @@ static const char* aCommands[] =
     ".uno:ConvertToFormatted",
     ".uno:ConvertToScrollBar",
     ".uno:ConvertToSpinButton"
+};
+
+static const sal_Int16 nImgIds[] =
+{
+    RID_SVXBMP_EDITBOX,
+    RID_SVXBMP_BUTTON,
+    RID_SVXBMP_FIXEDTEXT,
+    RID_SVXBMP_LISTBOX,
+    RID_SVXBMP_CHECKBOX,
+    RID_SVXBMP_RADIOBUTTON,
+    RID_SVXBMP_GROUPBOX,
+    RID_SVXBMP_COMBOBOX,
+    RID_SVXBMP_IMAGEBUTTON,
+    RID_SVXBMP_FILECONTROL,
+    RID_SVXBMP_DATEFIELD,
+    RID_SVXBMP_TIMEFIELD,
+    RID_SVXBMP_NUMERICFIELD,
+    RID_SVXBMP_CURRENCYFIELD,
+    RID_SVXBMP_PATTERNFIELD,
+    RID_SVXBMP_IMAGECONTROL,
+    RID_SVXBMP_FORMATTEDFIELD,
+    RID_SVXBMP_SCROLLBAR,
+    RID_SVXBMP_SPINBUTTON,
+    RID_SVXBMP_NAVIGATIONBAR
 };
 
 using namespace css;
@@ -179,42 +135,37 @@ class ControlMenuController :  public svt::PopupMenuControllerBase
 
 public:
     explicit ControlMenuController( const uno::Reference< uno::XComponentContext >& xContext );
-    virtual ~ControlMenuController();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.framework.ControlMenuController");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.PopupMenuController" };
-        return aSeq;
+        return {"com.sun.star.frame.PopupMenuController"};
     }
 
     // XPopupMenuController
-    virtual void SAL_CALL updatePopupMenu() throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL updatePopupMenu() override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const uno::Sequence< uno::Any >& aArguments ) throw (uno::Exception, uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL initialize( const uno::Sequence< uno::Any >& aArguments ) override;
 
     // XStatusListener
-    virtual void SAL_CALL statusChanged( const frame::FeatureStateEvent& Event ) throw ( uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL statusChanged( const frame::FeatureStateEvent& Event ) override;
 
     // XMenuListener
-    virtual void SAL_CALL itemActivated( const awt::MenuEvent& rEvent ) throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL itemActivated( const awt::MenuEvent& rEvent ) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const lang::EventObject& Source ) throw ( uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL disposing( const lang::EventObject& Source ) override;
 
 private:
     virtual void impl_setPopupMenu() override;
@@ -224,7 +175,7 @@ private:
                                                         OUStringHash >
     {
         public:
-            inline void free()
+            void free()
             {
                 UrlToDispatchMap().swap( *this );// get rid of reserved capacity
             }
@@ -233,8 +184,8 @@ private:
     void updateImagesPopupMenu( PopupMenu* pPopupMenu );
     void fillPopupMenu( uno::Reference< awt::XPopupMenu >& rPopupMenu );
 
-    bool            m_bShowMenuImages : 1;
-    PopupMenu*          m_pResPopupMenu;
+    bool                m_bShowMenuImages : 1;
+    VclPtr<PopupMenu>   m_pResPopupMenu;
     UrlToDispatchMap    m_aURLToDispatchMap;
 };
 
@@ -247,28 +198,17 @@ ControlMenuController::ControlMenuController( const css::uno::Reference< css::un
 
 }
 
-ControlMenuController::~ControlMenuController()
-{
-}
-
 // private function
 void ControlMenuController::updateImagesPopupMenu( PopupMenu* pPopupMenu )
 {
-    std::unique_ptr<ResMgr> pResMgr(ResMgr::CreateResMgr("svx", Application::GetSettings().GetUILanguageTag()));
-    ResId aResId( RID_SVXIMGLIST_FMEXPL, *pResMgr );
-    aResId.SetRT( RSC_IMAGELIST );
-
-    if ( pResMgr->IsAvailable( aResId ))
+    std::unique_ptr<ResMgr> xResMgr(ResMgr::CreateResMgr("svx", Application::GetSettings().GetUILanguageTag()));
+    for (sal_uInt32 i=0; i < SAL_N_ELEMENTS(nConvertSlots); ++i)
     {
-        ImageList aImageList( aResId );
-        for ( sal_uInt32 i=0; i < SAL_N_ELEMENTS(nConvertSlots); ++i )
-        {
-            // das entsprechende Image dran
-            if ( m_bShowMenuImages )
-                pPopupMenu->SetItemImage( nConvertSlots[i], aImageList.GetImage(nCreateSlots[i]));
-            else
-                pPopupMenu->SetItemImage( nConvertSlots[i], Image() );
-        }
+        ResId aResId(nImgIds[i], *xResMgr);
+        if (m_bShowMenuImages && xResMgr->IsAvailable(aResId))
+            pPopupMenu->SetItemImage(nConvertSlots[i], Image(BitmapEx(aResId)));
+        else
+            pPopupMenu->SetItemImage(nConvertSlots[i], Image());
     }
 }
 
@@ -289,7 +229,7 @@ void ControlMenuController::fillPopupMenu( Reference< css::awt::XPopupMenu >& rP
 }
 
 // XEventListener
-void SAL_CALL ControlMenuController::disposing( const EventObject& ) throw ( RuntimeException, std::exception )
+void SAL_CALL ControlMenuController::disposing( const EventObject& )
 {
     Reference< css::awt::XMenuListener > xHolder(static_cast<OWeakObject *>(this), UNO_QUERY );
 
@@ -300,11 +240,11 @@ void SAL_CALL ControlMenuController::disposing( const EventObject& ) throw ( Run
     if ( m_xPopupMenu.is() )
         m_xPopupMenu->removeMenuListener( Reference< css::awt::XMenuListener >(static_cast<OWeakObject *>(this), UNO_QUERY ));
     m_xPopupMenu.clear();
-    delete m_pResPopupMenu;
+    m_pResPopupMenu.disposeAndClear();
 }
 
 // XStatusListener
-void SAL_CALL ControlMenuController::statusChanged( const FeatureStateEvent& Event ) throw ( RuntimeException, std::exception )
+void SAL_CALL ControlMenuController::statusChanged( const FeatureStateEvent& Event )
 {
     osl::ResettableMutexGuard aLock( m_aMutex );
 
@@ -358,7 +298,7 @@ void SAL_CALL ControlMenuController::statusChanged( const FeatureStateEvent& Eve
 }
 
 // XMenuListener
-void SAL_CALL ControlMenuController::itemActivated( const css::awt::MenuEvent& ) throw (RuntimeException, std::exception)
+void SAL_CALL ControlMenuController::itemActivated( const css::awt::MenuEvent& )
 {
     osl::ResettableMutexGuard aLock( m_aMutex );
 
@@ -398,14 +338,14 @@ void ControlMenuController::impl_setPopupMenu()
             aResId.SetRT( RSC_MENU );
             if ( pResMgr->IsAvailable( aResId ))
             {
-                m_pResPopupMenu = new PopupMenu( aResId );
+                m_pResPopupMenu = VclPtr<PopupMenu>::Create( aResId );
                 updateImagesPopupMenu( m_pResPopupMenu );
             }
         }
     } // if ( m_pResPopupMenu == 0 )
 }
 
-void SAL_CALL ControlMenuController::updatePopupMenu() throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL ControlMenuController::updatePopupMenu()
 {
     osl::ResettableMutexGuard aLock( m_aMutex );
 
@@ -435,7 +375,7 @@ void SAL_CALL ControlMenuController::updatePopupMenu() throw (css::uno::RuntimeE
 }
 
 // XInitialization
-void SAL_CALL ControlMenuController::initialize( const Sequence< Any >& aArguments ) throw ( Exception, RuntimeException, std::exception )
+void SAL_CALL ControlMenuController::initialize( const Sequence< Any >& aArguments )
 {
     osl::ResettableMutexGuard aLock( m_aMutex );
     svt::PopupMenuControllerBase::initialize(aArguments);

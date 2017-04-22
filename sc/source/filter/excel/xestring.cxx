@@ -63,12 +63,12 @@ struct XclHasher : public ::std::unary_function< Type, sal_uInt32 > {};
 template< typename Type >
 struct XclDirectHasher : public XclHasher< Type >
 {
-    inline sal_uInt32   operator()( Type nVal ) const { return nVal; }
+    sal_uInt32   operator()( Type nVal ) const { return nVal; }
 };
 
 struct XclFormatRunHasher : public XclHasher< const XclFormatRun& >
 {
-    inline sal_uInt32   operator()( const XclFormatRun& rRun ) const
+    sal_uInt32   operator()( const XclFormatRun& rRun ) const
                             { return (rRun.mnChar << 8) ^ rRun.mnFontIdx; }
 };
 
@@ -240,12 +240,12 @@ sal_uInt16 XclExpString::GetHeaderSize() const
         (IsWriteFormats() ? 2 : 0);     // richtext formattting count
 }
 
-sal_Size XclExpString::GetBufferSize() const
+std::size_t XclExpString::GetBufferSize() const
 {
-    return static_cast<sal_Size>(mnLen) * (mbIsUnicode ? 2 : 1);
+    return static_cast<std::size_t>(mnLen) * (mbIsUnicode ? 2 : 1);
 }
 
-sal_Size XclExpString::GetSize() const
+std::size_t XclExpString::GetSize() const
 {
     return
         GetHeaderSize() +                                   // header

@@ -27,7 +27,7 @@
 #include <svtools/ehdl.hxx>
 #include <vcl/timer.hxx>
 #include <sfx2/app.hxx>
-
+#include <o3tl/enumarray.hxx>
 #include <com/sun/star/frame/XModel.hpp>
 
 #include "bitset.hxx"
@@ -48,7 +48,6 @@ class SfxFrame;
 class SfxFrameArr_Impl;
 class SvtSaveOptions;
 class SvtHelpOptions;
-class ResMgr;
 class ResMgr;
 class SfxViewFrame;
 class SfxSlotPool;
@@ -93,7 +92,7 @@ public:
 #if HAVE_FEATURE_SCRIPTING
     SfxErrorHandler *m_pSbxErrorHdl;
 #endif
-    SfxStatusDispatcher*                pAppDispatch;
+    rtl::Reference<SfxStatusDispatcher> mxAppDispatch;
     SfxDocumentTemplates*               pTemplates;
 
     // global pointers
@@ -103,7 +102,6 @@ public:
     SfxProgress*                        pProgress;
 
     sal_uInt16                              nDocModalMode;              // counts documents in modal mode
-    sal_uInt16                              nAutoTabPageId;
     sal_uInt16                              nRescheduleLocks;
     sal_uInt16                              nInReschedule;
 
@@ -120,10 +118,7 @@ public:
     SfxViewFrame*               pViewFrame;
     SfxSlotPool*                pSlotPool;
     SfxDispatcher*              pAppDispat;     // Dispatcher if no document
-    SfxInterface**              pInterfaces;
     ::rtl::Reference<sfx2::sidebar::Theme> m_pSidebarTheme;
-
-    sal_uInt16                  nInterfaces;
 
     bool                        bDowning:1;   // sal_True on Exit and afterwards
     bool                        bInQuit : 1;
@@ -133,6 +128,8 @@ public:
 
     SfxDocumentTemplates*       GetDocumentTemplates();
     void                        DeInitDDE();
+
+    o3tl::enumarray<SfxToolsModule, std::unique_ptr<SfxModule>> aModules;
 
     /** called when the Application's BasicManager has been created. This can happen
         explicitly in SfxApplication::GetBasicManager, or implicitly if a document's

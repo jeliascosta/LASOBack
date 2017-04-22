@@ -28,8 +28,6 @@
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
-#include <cppuhelper/implbase1.hxx>
-#include <cppuhelper/implbase5.hxx>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/io/XActiveDataSource.hpp>
 #include <osl/diagnose.h>
@@ -63,9 +61,9 @@ using namespace ::com::sun::star::xml::sax;
 
 class ODBExport : public SvXMLExport
 {
-    typedef ::std::map< ::xmloff::token::XMLTokenEnum, OUString> TSettingsMap;
+    typedef std::map< ::xmloff::token::XMLTokenEnum, OUString> TSettingsMap;
 
-    typedef ::std::pair< OUString ,OUString> TStringPair;
+    typedef std::pair< OUString ,OUString> TStringPair;
     struct TDelimiter
     {
         OUString sText;
@@ -76,8 +74,8 @@ class ODBExport : public SvXMLExport
 
         TDelimiter() : bUsed( false ) { }
     };
-    typedef ::std::map< Reference<XPropertySet> ,OUString >          TPropertyStyleMap;
-    typedef ::std::map< Reference<XPropertySet> ,Reference<XPropertySet> >  TTableColumnMap;
+    typedef std::map< Reference<XPropertySet> ,OUString >          TPropertyStyleMap;
+    typedef std::map< Reference<XPropertySet> ,Reference<XPropertySet> >  TTableColumnMap;
 
     struct TypedPropertyValue
     {
@@ -93,10 +91,10 @@ class ODBExport : public SvXMLExport
         }
     };
 
-    ::std::unique_ptr< TStringPair >                  m_aAutoIncrement;
-    ::std::unique_ptr< TDelimiter >                   m_aDelimiter;
-    ::std::vector< TypedPropertyValue >             m_aDataSourceSettings;
-    ::std::vector< XMLPropertyState >               m_aCurrentPropertyStates;
+    std::unique_ptr< TStringPair >                  m_aAutoIncrement;
+    std::unique_ptr< TDelimiter >                   m_aDelimiter;
+    std::vector< TypedPropertyValue >             m_aDataSourceSettings;
+    std::vector< XMLPropertyState >               m_aCurrentPropertyStates;
     TPropertyStyleMap                               m_aAutoStyleNames;
     TPropertyStyleMap                               m_aCellAutoStyleNames;
     TPropertyStyleMap                               m_aRowAutoStyleNames;
@@ -127,7 +125,7 @@ class ODBExport : public SvXMLExport
     void                    exportAutoIncrement();
     void                    exportCharSet();
     template< typename T > void exportDataSourceSettingsSequence(
-        ::std::vector< TypedPropertyValue >::iterator const & in);
+        std::vector< TypedPropertyValue >::iterator const & in);
     void                    exportDataSourceSettings();
     void                    exportForms();
     void                    exportReports();
@@ -154,41 +152,40 @@ class ODBExport : public SvXMLExport
 
     static OUString         implConvertAny(const Any& _rValue);
 
-    rtl::Reference < XMLPropertySetMapper > GetTableStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetTableStylesPropertySetMapper() const;
 
                             ODBExport() = delete;
 protected:
 
-    virtual void                    ExportStyles_( bool bUsed ) override;
     virtual void                    ExportAutoStyles_() override;
     virtual void                    ExportContent_() override;
     virtual void                    ExportMasterStyles_() override;
     virtual void                    ExportFontDecls_() override;
-    virtual sal_uInt32              exportDoc( enum ::xmloff::token::XMLTokenEnum eClass ) override;
     virtual SvXMLAutoStylePoolP*    CreateAutoStylePool() override;
 
     virtual void GetViewSettings(css::uno::Sequence<css::beans::PropertyValue>& aProps) override;
     virtual void GetConfigurationSettings(css::uno::Sequence<css::beans::PropertyValue>& aProps) override;
 
-    virtual                 ~ODBExport(){};
+    virtual                 ~ODBExport() override {};
 public:
 
     ODBExport(const Reference< XComponentContext >& _rxContext, OUString const & implementationName, SvXMLExportFlags nExportFlag = SvXMLExportFlags::CONTENT | SvXMLExportFlags::AUTOSTYLES | SvXMLExportFlags::PRETTY | SvXMLExportFlags::FONTDECLS | SvXMLExportFlags::SCRIPTS );
 
-    static OUString SAL_CALL getImplementationName_Static()
-        throw (css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    static OUString SAL_CALL getImplementationName_Static();
 
+    /// @throws css::uno::RuntimeException
     static css::uno::Sequence<OUString> SAL_CALL
-    getSupportedServiceNames_Static() throw (css::uno::RuntimeException);
+    getSupportedServiceNames_Static();
 
     static css::uno::Reference<css::uno::XInterface> SAL_CALL Create(
         css::uno::Reference<css::lang::XMultiServiceFactory> const & _rxORB);
 
-    rtl::Reference < XMLPropertySetMapper > GetColumnStylesPropertySetMapper() const;
-    rtl::Reference < XMLPropertySetMapper > GetCellStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetColumnStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetCellStylesPropertySetMapper() const;
 
     // XExporter
-    virtual void SAL_CALL setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
 
     const Reference<XPropertySet>& getDataSource() const { return m_xDataSource; }
 };

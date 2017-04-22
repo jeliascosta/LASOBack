@@ -19,8 +19,6 @@
 
 #include "eventhandler.hxx"
 
-// for SOLARIS compiler include of algorithm part of _STL is necessary to
-// get access to basic algos like ::std::find
 #include <algorithm>
 #include <tools/debug.hxx>
 
@@ -28,7 +26,7 @@ namespace sdr
 {
     namespace event
     {
-        BaseEvent::BaseEvent(EventHandler& rEventHandler)
+        BaseEvent::BaseEvent(TimerEventHandler& rEventHandler)
         :   mrEventHandler(rEventHandler)
         {
             mrEventHandler.AddEvent(*this);
@@ -46,12 +44,12 @@ namespace sdr
 {
     namespace event
     {
-        void EventHandler::AddEvent(BaseEvent& rBaseEvent)
+        void TimerEventHandler::AddEvent(BaseEvent& rBaseEvent)
         {
             maVector.push_back(&rBaseEvent);
         }
 
-        void EventHandler::RemoveEvent(BaseEvent& rBaseEvent)
+        void TimerEventHandler::RemoveEvent(BaseEvent& rBaseEvent)
         {
             if(maVector.back() == &rBaseEvent)
             {
@@ -60,7 +58,7 @@ namespace sdr
             }
             else
             {
-                const BaseEventVector::iterator aFindResult = ::std::find(
+                const auto aFindResult = ::std::find(
                     maVector.begin(), maVector.end(), &rBaseEvent);
                 DBG_ASSERT(aFindResult != maVector.end(),
                     "EventHandler::RemoveEvent: Event to be removed not found (!)");
@@ -68,7 +66,7 @@ namespace sdr
             }
         }
 
-        BaseEvent* EventHandler::GetEvent()
+        BaseEvent* TimerEventHandler::GetEvent()
         {
             if(!maVector.empty())
             {
@@ -81,21 +79,31 @@ namespace sdr
             }
         }
 
-        EventHandler::EventHandler()
+        TimerEventHandler::TimerEventHandler()
         {
+            SetPriority(TaskPriority::HIGH);
+            Stop();
         }
 
-        EventHandler::~EventHandler()
+        TimerEventHandler::~TimerEventHandler()
         {
+            Stop();
             while(!maVector.empty())
             {
                 delete GetEvent();
             }
         }
 
-        // Trigger and consume the events
-        void EventHandler::ExecuteEvents()
+        // for control
+        bool TimerEventHandler::IsEmpty() const
         {
+            return (0L == maVector.size());
+        }
+
+        // The timer when it is triggered; from class Timer
+        void TimerEventHandler::Invoke()
+        {
+            // Trigger and consume the events
             for(;;)
             {
                 BaseEvent* pEvent = GetEvent();
@@ -104,36 +112,6 @@ namespace sdr
                 pEvent->ExecuteEvent();
                 delete pEvent;
             }
-        }
-
-        // for control
-        bool EventHandler::IsEmpty() const
-        {
-            return (0L == maVector.size());
-        }
-    } // end of namespace mixer
-} // end of namespace sdr
-
-
-namespace sdr
-{
-    namespace event
-    {
-        TimerEventHandler::TimerEventHandler()
-        {
-            SetPriority(SchedulerPriority::HIGH);
-            Stop();
-        }
-
-        TimerEventHandler::~TimerEventHandler()
-        {
-            Stop();
-        }
-
-        // The timer when it is triggered; from class Timer
-        void TimerEventHandler::Invoke()
-        {
-            ExecuteEvents();
         }
 
         // reset the timer

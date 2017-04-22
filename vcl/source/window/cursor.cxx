@@ -37,8 +37,8 @@ struct ImplCursorData
     short           mnOrientation;      // Pixel-Orientation
     CursorDirection mnDirection;        // indicates writing direction
     sal_uInt16      mnStyle;            // Cursor-Style
-    bool            mbCurVisible;       // Ist Cursor aktuell sichtbar
-    VclPtr<vcl::Window> mpWindow;           // Zugeordnetes Windows
+    bool            mbCurVisible;       // Is cursor currently visible
+    VclPtr<vcl::Window> mpWindow;           // assigned window
 };
 
 static void ImplCursorInvert( ImplCursorData* pData )
@@ -49,7 +49,7 @@ static void ImplCursorInvert( ImplCursorData* pData )
     if (bDoubleBuffering)
         pGuard.reset(new PaintBufferGuard(pWindow->ImplGetWindowImpl()->mpFrameData, pWindow));
     vcl::RenderContext* pRenderContext = bDoubleBuffering ? pGuard->GetRenderContext() : pWindow;
-    Rectangle aPaintRect;
+    tools::Rectangle aPaintRect;
     bool    bMapMode = pRenderContext->IsMapModeEnabled();
     pRenderContext->EnableMapMode( false );
     InvertFlags nInvertStyle;
@@ -58,7 +58,7 @@ static void ImplCursorInvert( ImplCursorData* pData )
     else
         nInvertStyle = InvertFlags::NONE;
 
-    Rectangle aRect( pData->maPixPos, pData->maPixSize );
+    tools::Rectangle aRect( pData->maPixPos, pData->maPixSize );
     if ( pData->mnDirection != CursorDirection::NONE || pData->mnOrientation || pData->mnPixSlant )
     {
         tools::Polygon aPoly( aRect );
@@ -184,7 +184,8 @@ void vcl::Cursor::ImplDoShow( bool bDrawDirect, bool bRestore )
             {
                 mpData = new ImplCursorData;
                 mpData->mbCurVisible = false;
-                mpData->maTimer.SetTimeoutHdl( LINK( this, Cursor, ImplTimerHdl ) );
+                mpData->maTimer.SetInvokeHandler( LINK( this, Cursor, ImplTimerHdl ) );
+                mpData->maTimer.SetDebugName( "vcl ImplCursorData maTimer" );
             }
 
             mpData->mpWindow    = pWindow;
@@ -258,7 +259,7 @@ void vcl::Cursor::ImplNew()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(vcl::Cursor, ImplTimerHdl, Timer *, void)
+IMPL_LINK_NOARG(vcl::Cursor, ImplTimerHdl, Timer *, void)
 {
     if ( mpData->mbCurVisible )
         ImplRestore();

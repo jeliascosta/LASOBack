@@ -47,6 +47,7 @@
 #include <comphelper/sequence.hxx>
 #include <comphelper/extract.hxx>
 #include <vcl/svapp.hxx>
+#include <vcl/unohelp.hxx>
 #include <uno/data.h>
 
 #include <memory>
@@ -309,6 +310,13 @@ css::uno::Any UnoControlModel::ImplGetDefaultValue( sal_uInt16 nPropId ) const
 
             }
             break;
+            case BASEPROPERTY_TYPEDITEMLIST:
+            {
+                css::uno::Sequence< css::uno::Any > aAnySeq;
+                aDefault <<= aAnySeq;
+
+            }
+            break;
             case BASEPROPERTY_SELECTEDITEMS:
             {
                 css::uno::Sequence<sal_Int16> aINT16Seq;
@@ -400,9 +408,9 @@ void UnoControlModel::ImplRegisterProperty( sal_uInt16 nPropId )
     }
 }
 
-void UnoControlModel::ImplRegisterProperties( const std::list< sal_uInt16 > &rIds )
+void UnoControlModel::ImplRegisterProperties( const std::vector< sal_uInt16 > &rIds )
 {
-    std::list< sal_uInt16 >::const_iterator iter;
+    std::vector< sal_uInt16 >::const_iterator iter;
     for( iter = rIds.begin(); iter != rIds.end(); ++iter)
     {
         if( !ImplHasProperty( *iter ) )
@@ -411,7 +419,7 @@ void UnoControlModel::ImplRegisterProperties( const std::list< sal_uInt16 > &rId
 }
 
 // css::uno::XInterface
-css::uno::Any UnoControlModel::queryAggregation( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception)
+css::uno::Any UnoControlModel::queryAggregation( const css::uno::Type & rType )
 {
     Any aRet = UnoControlModel_Base::queryAggregation( rType );
     if ( !aRet.hasValue() )
@@ -429,7 +437,7 @@ IMPLEMENT_FORWARD_REFCOUNT( UnoControlModel, UnoControlModel_Base )
 IMPLEMENT_FORWARD_XTYPEPROVIDER2( UnoControlModel, UnoControlModel_Base, ::cppu::OPropertySetHelper )
 
 
-uno::Reference< util::XCloneable > UnoControlModel::createClone() throw(css::uno::RuntimeException, std::exception)
+uno::Reference< util::XCloneable > UnoControlModel::createClone()
 {
     UnoControlModel* pClone = Clone();
     uno::Reference< util::XCloneable > xClone( static_cast<cppu::OWeakObject*>(pClone), uno::UNO_QUERY );
@@ -437,7 +445,7 @@ uno::Reference< util::XCloneable > UnoControlModel::createClone() throw(css::uno
 }
 
 // css::lang::XComponent
-void UnoControlModel::dispose(  ) throw(css::uno::RuntimeException, std::exception)
+void UnoControlModel::dispose(  )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -451,14 +459,14 @@ void UnoControlModel::dispose(  ) throw(css::uno::RuntimeException, std::excepti
     OPropertySetHelper::disposing();
 }
 
-void UnoControlModel::addEventListener( const css::uno::Reference< css::lang::XEventListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void UnoControlModel::addEventListener( const css::uno::Reference< css::lang::XEventListener >& rxListener )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
     maDisposeListeners.addInterface( rxListener );
 }
 
-void UnoControlModel::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void UnoControlModel::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& rxListener )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -467,7 +475,7 @@ void UnoControlModel::removeEventListener( const css::uno::Reference< css::lang:
 
 
 // css::beans::XPropertyState
-css::beans::PropertyState UnoControlModel::getPropertyState( const OUString& PropertyName ) throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception)
+css::beans::PropertyState UnoControlModel::getPropertyState( const OUString& PropertyName )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -479,7 +487,7 @@ css::beans::PropertyState UnoControlModel::getPropertyState( const OUString& Pro
     return CompareProperties( aValue, aDefault ) ? css::beans::PropertyState_DEFAULT_VALUE : css::beans::PropertyState_DIRECT_VALUE;
 }
 
-css::uno::Sequence< css::beans::PropertyState > UnoControlModel::getPropertyStates( const css::uno::Sequence< OUString >& PropertyNames ) throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception)
+css::uno::Sequence< css::beans::PropertyState > UnoControlModel::getPropertyStates( const css::uno::Sequence< OUString >& PropertyNames )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -495,7 +503,7 @@ css::uno::Sequence< css::beans::PropertyState > UnoControlModel::getPropertyStat
     return aStates;
 }
 
-void UnoControlModel::setPropertyToDefault( const OUString& PropertyName ) throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception)
+void UnoControlModel::setPropertyToDefault( const OUString& PropertyName )
 {
     Any aDefaultValue;
     {
@@ -505,7 +513,7 @@ void UnoControlModel::setPropertyToDefault( const OUString& PropertyName ) throw
     setPropertyValue( PropertyName, aDefaultValue );
 }
 
-css::uno::Any UnoControlModel::getPropertyDefault( const OUString& rPropertyName ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
+css::uno::Any UnoControlModel::getPropertyDefault( const OUString& rPropertyName )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -514,7 +522,7 @@ css::uno::Any UnoControlModel::getPropertyDefault( const OUString& rPropertyName
 
 
 // css::io::XPersistObjec
-OUString UnoControlModel::getServiceName(  ) throw(css::uno::RuntimeException, std::exception)
+OUString UnoControlModel::getServiceName(  )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -522,7 +530,7 @@ OUString UnoControlModel::getServiceName(  ) throw(css::uno::RuntimeException, s
     return OUString();
 }
 
-void UnoControlModel::write( const css::uno::Reference< css::io::XObjectOutputStream >& OutStream ) throw(css::io::IOException, css::uno::RuntimeException, std::exception)
+void UnoControlModel::write( const css::uno::Reference< css::io::XObjectOutputStream >& OutStream )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -726,13 +734,13 @@ void UnoControlModel::write( const css::uno::Reference< css::io::XObjectOutputSt
                 OutStream->writeLong( aFD.Height );
                 OutStream->writeShort(
                     sal::static_int_cast< sal_Int16 >(
-                        VCLUnoHelper::ConvertFontWidth( aFD.CharacterWidth )) );
+                        vcl::unohelper::ConvertFontWidth(aFD.CharacterWidth)) );
             }
             else if ( n == BASEPROPERTY_FONT_ATTRIBS )
             {
                 OutStream->writeShort(
                     sal::static_int_cast< sal_Int16 >(
-                        VCLUnoHelper::ConvertFontWeight( aFD.Weight )) );
+                        vcl::unohelper::ConvertFontWeight(aFD.Weight)) );
                 OutStream->writeShort(
                     sal::static_int_cast< sal_Int16 >(aFD.Slant) );
                 OutStream->writeShort( aFD.Underline );
@@ -755,7 +763,7 @@ void UnoControlModel::write( const css::uno::Reference< css::io::XObjectOutputSt
     }
 }
 
-void UnoControlModel::read( const css::uno::Reference< css::io::XObjectInputStream >& InStream ) throw(css::io::IOException, css::uno::RuntimeException, std::exception)
+void UnoControlModel::read( const css::uno::Reference< css::io::XObjectInputStream >& InStream )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -840,8 +848,8 @@ void UnoControlModel::read( const css::uno::Reference< css::io::XObjectInputStre
                     aFD.Underline = InStream->readShort();
                     aFD.Strikeout = InStream->readShort();
                     aFD.Orientation = (float)InStream->readDouble();
-                    aFD.Kerning = InStream->readBoolean();
-                    aFD.WordLineMode = InStream->readBoolean();
+                    aFD.Kerning = InStream->readBoolean() != 0;
+                    aFD.WordLineMode = InStream->readBoolean() != 0;
                     aFD.Type = InStream->readShort();
                     aValue <<= aFD;
                 }
@@ -913,7 +921,7 @@ void UnoControlModel::read( const css::uno::Reference< css::io::XObjectInputStre
                         if ( !pFD )
                         {
                             pFD = new css::awt::FontDescriptor;
-                            if ( maData.find( BASEPROPERTY_FONTDESCRIPTOR ) != maData.end() ) // wegen den Defaults...
+                            if ( maData.find( BASEPROPERTY_FONTDESCRIPTOR ) != maData.end() ) // due to defaults...
                                 maData[ BASEPROPERTY_FONTDESCRIPTOR ] >>= *pFD;
                         }
                         pFD->Name = InStream->readUTF();
@@ -950,13 +958,13 @@ void UnoControlModel::read( const css::uno::Reference< css::io::XObjectInputStre
                             if ( maData.find(BASEPROPERTY_FONTDESCRIPTOR) != maData.end() ) // due to defaults...
                                 maData[BASEPROPERTY_FONTDESCRIPTOR] >>= *pFD;
                         }
-                        pFD->Weight = VCLUnoHelper::ConvertFontWeight( (FontWeight) InStream->readShort() );
+                        pFD->Weight = vcl::unohelper::ConvertFontWeight((FontWeight) InStream->readShort());
                         pFD->Slant =  (css::awt::FontSlant)InStream->readShort();
                         pFD->Underline = InStream->readShort();
                         pFD->Strikeout = InStream->readShort();
                         pFD->Orientation = ( (float)(double)InStream->readShort() ) / 10;
-                        pFD->Kerning = InStream->readBoolean();
-                        pFD->WordLineMode = InStream->readBoolean();
+                        pFD->Kerning = InStream->readBoolean() != 0;
+                        pFD->WordLineMode = InStream->readBoolean() != 0;
                     }
                 }
                 else
@@ -1022,25 +1030,25 @@ void UnoControlModel::read( const css::uno::Reference< css::io::XObjectInputStre
 
 
 // css::lang::XServiceInfo
-OUString UnoControlModel::getImplementationName(  ) throw(css::uno::RuntimeException, std::exception)
+OUString UnoControlModel::getImplementationName(  )
 {
     OSL_FAIL( "This method should be overridden!" );
     return OUString();
 
 }
 
-sal_Bool UnoControlModel::supportsService( const OUString& rServiceName ) throw(css::uno::RuntimeException, std::exception)
+sal_Bool UnoControlModel::supportsService( const OUString& rServiceName )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-css::uno::Sequence< OUString > UnoControlModel::getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception)
+css::uno::Sequence< OUString > UnoControlModel::getSupportedServiceNames(  )
 {
     OUString sName( "com.sun.star.awt.UnoControlModel" );
     return Sequence< OUString >( &sName, 1 );
 }
 
-sal_Bool UnoControlModel::convertFastPropertyValue( Any & rConvertedValue, Any & rOldValue, sal_Int32 nPropId, const Any& rValue ) throw (IllegalArgumentException, std::exception)
+sal_Bool UnoControlModel::convertFastPropertyValue( Any & rConvertedValue, Any & rOldValue, sal_Int32 nPropId, const Any& rValue )
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -1143,17 +1151,11 @@ sal_Bool UnoControlModel::convertFastPropertyValue( Any & rConvertedValue, Any &
 
                 if (!bConverted)
                 {
-                    OUStringBuffer aErrorMessage;
-                    aErrorMessage.append( "Unable to convert the given value for the property " );
-                    aErrorMessage.append     ( GetPropertyName( (sal_uInt16)nPropId ) );
-                    aErrorMessage.append( ".\n" );
-                    aErrorMessage.append( "Expected type: " );
-                    aErrorMessage.append     ( pDestType->getTypeName() );
-                    aErrorMessage.append( "\n" );
-                    aErrorMessage.append( "Found type: " );
-                    aErrorMessage.append     ( rValue.getValueType().getTypeName() );
                     throw css::lang::IllegalArgumentException(
-                        aErrorMessage.makeStringAndClear(),
+                        "Unable to convert the given value for the property "
+                        + GetPropertyName( (sal_uInt16)nPropId )
+                        + ".\nExpected type: " + pDestType->getTypeName()
+                        + "\nFound type: " + rValue.getValueType().getTypeName(),
                         static_cast< css::beans::XPropertySet* >(this),
                         1);
                 }
@@ -1166,7 +1168,7 @@ sal_Bool UnoControlModel::convertFastPropertyValue( Any & rConvertedValue, Any &
     return !CompareProperties( rConvertedValue, rOldValue );
 }
 
-void UnoControlModel::setFastPropertyValue_NoBroadcast( sal_Int32 nPropId, const css::uno::Any& rValue ) throw (css::uno::Exception, std::exception)
+void UnoControlModel::setFastPropertyValue_NoBroadcast( sal_Int32 nPropId, const css::uno::Any& rValue )
 {
     // Missing: the fake solo properties of the FontDescriptor
 
@@ -1174,7 +1176,7 @@ void UnoControlModel::setFastPropertyValue_NoBroadcast( sal_Int32 nPropId, const
     const css::uno::Any* pProp = it == maData.end() ? nullptr : &(it->second);
     ENSURE_OR_RETURN_VOID( pProp, "UnoControlModel::setFastPropertyValue_NoBroadcast: invalid property id!" );
 
-    DBG_ASSERT( ( rValue.getValueType().getTypeClass() != css::uno::TypeClass_VOID ) || ( GetPropertyAttribs( (sal_uInt16)nPropId ) & css::beans::PropertyAttribute::MAYBEVOID ), "Property darf nicht VOID sein!" );
+    DBG_ASSERT( ( rValue.getValueType().getTypeClass() != css::uno::TypeClass_VOID ) || ( GetPropertyAttribs( (sal_uInt16)nPropId ) & css::beans::PropertyAttribute::MAYBEVOID ), "Property should not be VOID!" );
     maData[ nPropId ] = rValue;
 }
 
@@ -1236,7 +1238,7 @@ void UnoControlModel::getFastPropertyValue( css::uno::Any& rValue, sal_Int32 nPr
 }
 
 // css::beans::XPropertySet
-void UnoControlModel::setPropertyValue( const OUString& rPropertyName, const css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
+void UnoControlModel::setPropertyValue( const OUString& rPropertyName, const css::uno::Any& rValue )
 {
     sal_Int32 nPropId = 0;
     {
@@ -1251,7 +1253,7 @@ void UnoControlModel::setPropertyValue( const OUString& rPropertyName, const css
 }
 
 // css::beans::XFastPropertySet
-void UnoControlModel::setFastPropertyValue( sal_Int32 nPropId, const css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
+void UnoControlModel::setFastPropertyValue( sal_Int32 nPropId, const css::uno::Any& rValue )
 {
     if ( ( nPropId >= BASEPROPERTY_FONTDESCRIPTORPART_START ) && ( nPropId <= BASEPROPERTY_FONTDESCRIPTORPART_END ) )
     {
@@ -1286,13 +1288,13 @@ void UnoControlModel::setFastPropertyValue( sal_Int32 nPropId, const css::uno::A
 }
 
 // css::beans::XMultiPropertySet
-css::uno::Reference< css::beans::XPropertySetInfo > UnoControlModel::getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception)
+css::uno::Reference< css::beans::XPropertySetInfo > UnoControlModel::getPropertySetInfo(  )
 {
     OSL_FAIL( "UnoControlModel::getPropertySetInfo() not possible!" );
     return css::uno::Reference< css::beans::XPropertySetInfo >();
 }
 
-void UnoControlModel::setPropertyValues( const css::uno::Sequence< OUString >& rPropertyNames, const css::uno::Sequence< css::uno::Any >& Values ) throw(css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
+void UnoControlModel::setPropertyValues( const css::uno::Sequence< OUString >& rPropertyNames, const css::uno::Sequence< css::uno::Any >& Values )
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
 

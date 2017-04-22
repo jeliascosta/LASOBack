@@ -31,19 +31,16 @@ public:
         const css::uno::Reference< css::accessibility::XAccessible>& rxParent,
         ScCheckListMenuWindow* pWin,
         const OUString& rName);
-    virtual ~ScAccessibleFilterTopWindow();
+    virtual ~ScAccessibleFilterTopWindow() override;
 
     // XAccessibleContext
 
-    virtual sal_Int32 SAL_CALL getAccessibleChildCount()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getAccessibleChildCount() override;
 
     virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL
-        getAccessibleChild(sal_Int32 nIndex)
-            throw (css::uno::RuntimeException, css::lang::IndexOutOfBoundsException, std::exception) override;
+        getAccessibleChild(sal_Int32 nIndex) override;
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
 
     // Non-UNO Methods
 

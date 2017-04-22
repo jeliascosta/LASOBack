@@ -10,6 +10,7 @@
  */
 
 #include "sallogareas.hxx"
+#include "check.hxx"
 
 #include <clang/Lex/Lexer.h>
 
@@ -50,12 +51,11 @@ bool SalLogAreas::VisitCallExpr( const CallExpr* call )
         return true;
     if( const FunctionDecl* func = call->getDirectCallee())
         {
-        // Optimize, getQualifiedNameAsString() is reportedly expensive.
-        if( func->getNumParams() == 4 && func->getIdentifier() != NULL
+        if( func->getNumParams() == 5 && func->getIdentifier() != NULL
             && ( func->getName() == "sal_detail_log" || func->getName() == "log" ))
             {
-            string qualifiedName = func->getQualifiedNameAsString();
-            if( qualifiedName == "sal_detail_log" || qualifiedName == "sal::detail::log" )
+            auto tc = loplugin::DeclCheck(func);
+            if( tc.Function("sal_detail_log") || tc.Function("log").Namespace("detail").Namespace("sal").GlobalNamespace() )
                 {
                 // The SAL_DETAIL_LOG_STREAM macro expands to two calls to sal::detail::log(),
                 // so do not warn repeatedly about the same macro (the area->getLocStart() of all the calls
@@ -64,17 +64,18 @@ bool SalLogAreas::VisitCallExpr( const CallExpr* call )
                 if( expansionLocation == lastSalDetailLogStreamMacro )
                     return true;
                 lastSalDetailLogStreamMacro = expansionLocation;
-                if( const StringLiteral* area = dyn_cast< StringLiteral >( call->getArg( 1 )->IgnoreParenImpCasts()))
+                if( const clang::StringLiteral* area = dyn_cast< clang::StringLiteral >( call->getArg( 1 )->IgnoreParenImpCasts()))
                     {
-                    if( area->getKind() == StringLiteral::Ascii )
+                    if( area->getKind() == clang::StringLiteral::Ascii )
                         checkArea( area->getBytes(), area->getExprLoc());
                     else
                         report( DiagnosticsEngine::Warning, "unsupported string literal kind (plugin needs fixing?)",
                             area->getLocStart());
                     return true;
                     }
-                if( inFunction->getQualifiedNameAsString() == "sal::detail::log" )
-                    return true; // This function only forwards to sal_detail_log, so ok.
+                if( loplugin::DeclCheck(inFunction).Function("log").Namespace("detail").Namespace("sal").GlobalNamespace()
+                    || loplugin::DeclCheck(inFunction).Function("sal_detail_logFormat").GlobalNamespace() )
+                    return true; // These functions only forward to sal_detail_log, so ok.
                 if( call->getArg( 1 )->isNullPointerConstant( compiler.getASTContext(),
                     Expr::NPC_ValueDependentIsNotNull ) != Expr::NPCK_NotNull )
                     { // If the area argument is a null pointer, that is allowed only for SAL_DEBUG.
@@ -84,7 +85,7 @@ bool SalLogAreas::VisitCallExpr( const CallExpr* call )
                          loc = source.getImmediateExpansionRange( loc ).first )
                         {
                         StringRef inMacro = Lexer::getImmediateMacroName( loc, source, compiler.getLangOpts());
-                        if( inMacro == "SAL_DEBUG" )
+                        if( inMacro == "SAL_DEBUG" || inMacro == "SAL_DEBUG_BACKTRACE" )
                             return true; // ok
                         }
                     report( DiagnosticsEngine::Warning, "missing log area",
@@ -108,7 +109,67 @@ void SalLogAreas::checkArea( StringRef area, SourceLocation location )
         report( DiagnosticsEngine::Warning, "unknown log area '%0' (check or extend include/sal/log-areas.dox)",
             location ) << area;
         checkAreaSyntax(area, location);
+        return;
         }
+// don't leave this alive by default, generates too many false+
+#if 0
+    if (compiler.getSourceManager().isInMainFile(location))
+        {
+        auto matchpair = [this,area](StringRef p1, StringRef p2) {
+            return (area == p1 && firstSeenLogArea == p2) || (area == p2 && firstSeenLogArea == p1);
+        };
+        // these are "cross-module" log areas
+        if (area == "i18n" || area == "lok" || area == "lok.tiledrendering")
+            ;
+        // these appear to be cross-file log areas
+        else if (  area == "chart2"
+                || area == "oox.cscode" || area == "oox.csdata"
+                || area == "slideshow.verbose"
+                || area == "sc.opencl"
+                || area == "sc.core.formulagroup"
+                || area == "sw.pageframe" || area == "sw.idle" || area == "sw.level2"
+                || area == "sw.docappend" || area == "sw.mailmerge"
+                || area == "sw.uno"
+                || area == "vcl.layout" || area == "vcl.a11y"
+                || area == "vcl.gdi.fontmetric" || area == "vcl.opengl"
+                || area == "vcl.harfbuzz" || area == "vcl.eventtesting"
+                || area == "vcl.schedule" || area == "vcl.unity"
+                || area == "xmlsecurity.comp"
+                )
+            ;
+        else if (firstSeenLogArea == "")
+            {
+                firstSeenLogArea = area;
+                firstSeenLocation = location;
+            }
+        // some modules do this deliberately
+        else if (firstSeenLogArea.compare(0, 3, "jfw") == 0
+                || firstSeenLogArea.compare(0, 6, "opencl") == 0)
+            ;
+        // mixing these in the same file seems legitimate
+        else if (
+                   matchpair("chart2.pie.label.bestfit", "chart2.pie.label.bestfit.inside")
+                || matchpair("editeng", "editeng.chaining")
+                || matchpair("oox.drawingml", "oox.cscode")
+                || matchpair("oox.drawingml", "oox.drawingml.gradient")
+                || matchpair("sc.core", "sc.core.grouparealistener")
+                || matchpair("sc.orcus", "sc.orcus.condformat")
+                || matchpair("sc.orcus", "sc.orcus.style")
+                || matchpair("sc.orcus", "sc.orcus.autofilter")
+                || matchpair("svx", "svx.chaining")
+                || matchpair("sw.ww8", "sw.ww8.level2")
+                || matchpair("writerfilter", "writerfilter.profile")
+                )
+            ;
+        else if (firstSeenLogArea != area)
+            {
+            report( DiagnosticsEngine::Warning, "two different log areas '%0' and '%1' in the same file?",
+                location ) << firstSeenLogArea << area;
+            report( DiagnosticsEngine::Note, "first area was seen here",
+                firstSeenLocation );
+            }
+        }
+#endif
     }
 
 void SalLogAreas::checkAreaSyntax(StringRef area, SourceLocation location) {

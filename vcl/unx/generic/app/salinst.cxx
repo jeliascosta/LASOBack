@@ -31,9 +31,10 @@
 #include <unx/salframe.h>
 #include <unx/genprn.h>
 #include <unx/sm.hxx>
+#include <unx/i18n_im.hxx>
+#include <unx/helper.hxx>
 
 #include <vcl/inputtypes.hxx>
-#include <vcl/helper.hxx>
 
 #include "salwtype.hxx"
 #include <sal/macros.h>
@@ -83,6 +84,11 @@ X11SalInstance::~X11SalInstance()
     // would be done in a static destructor else which is
     // a little late
     GetGenericData()->Dispose();
+}
+
+SalX11Display* X11SalInstance::CreateDisplay() const
+{
+    return new SalX11Display( mpXLib->GetDisplay() );
 }
 
 // AnyInput from sv/mow/source/app/svapp.cxx
@@ -167,13 +173,10 @@ SalYieldResult X11SalInstance::DoYield(bool bWait, bool bHandleAllCurrentEvents,
     return mpXLib->Yield( bWait, bHandleAllCurrentEvents );
 }
 
-void* X11SalInstance::GetConnectionIdentifier( ConnectionIdentifierType& rReturnedType,
-                                               int& rReturnedBytes )
+OUString X11SalInstance::GetConnectionIdentifier()
 {
     static const char* pDisplay = getenv( "DISPLAY" );
-    rReturnedType   = AsciiCString;
-    rReturnedBytes  = pDisplay ? strlen( pDisplay )+1 : 1;
-    return pDisplay ? const_cast<char *>(pDisplay) : const_cast<char *>("");
+    return pDisplay ? OUString::createFromAscii(pDisplay) : OUString("");
 }
 
 SalFrame *X11SalInstance::CreateFrame( SalFrame *pParent, SalFrameStyleFlags nSalFrameStyle )
@@ -193,6 +196,16 @@ SalFrame* X11SalInstance::CreateChildFrame( SystemParentData* pParentData, SalFr
 void X11SalInstance::DestroyFrame( SalFrame* pFrame )
 {
     delete pFrame;
+}
+
+void X11SalInstance::AfterAppInit()
+{
+    assert( mpXLib->GetDisplay() );
+    assert( mpXLib->GetInputMethod() );
+
+    SalX11Display *pSalDisplay = CreateDisplay();
+    mpXLib->GetInputMethod()->CreateMethod( mpXLib->GetDisplay() );
+    pSalDisplay->SetupInput();
 }
 
 extern "C" { static void SAL_CALL thisModule() {} }

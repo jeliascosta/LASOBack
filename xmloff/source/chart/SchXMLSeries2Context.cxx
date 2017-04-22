@@ -30,6 +30,7 @@
 #include <com/sun/star/chart2/XRegressionCurveContainer.hpp>
 #include <com/sun/star/chart2/data/XDataSink.hpp>
 #include <com/sun/star/chart2/data/XDataReceiver.hpp>
+#include <com/sun/star/chart2/data/XPivotTableDataProvider.hpp>
 
 #include <com/sun/star/chart/ChartAxisAssign.hpp>
 #include <com/sun/star/chart/ChartSymbolType.hpp>
@@ -73,7 +74,6 @@ public:
                           sal_uInt16 nPrefix,
                           const OUString& rLocalName,
                           ::std::vector< OUString > & rAddresses );
-    virtual ~SchXMLDomain2Context();
     virtual void StartElement( const Reference< xml::sax::XAttributeList >& xAttrList ) override;
 };
 
@@ -84,10 +84,6 @@ SchXMLDomain2Context::SchXMLDomain2Context(
     ::std::vector< OUString > & rAddresses ) :
         SvXMLImportContext( rImport, nPrefix, rLocalName ),
         mrAddresses( rAddresses )
-{
-}
-
-SchXMLDomain2Context::~SchXMLDomain2Context()
 {
 }
 
@@ -412,20 +408,31 @@ void SchXMLSeries2Context::StartElement( const uno::Reference< xml::sax::XAttrib
                                                uno::makeAny( true ));
         }
 
-        // values
-        Reference< chart2::data::XDataSequence > xSeq;
-        if( bHasRange && !m_aSeriesRange.isEmpty() )
-            xSeq = SchXMLTools::CreateDataSequence( m_aSeriesRange, mxNewDoc );
+        Reference<chart2::data::XDataProvider> xDataProvider(mxNewDoc->getDataProvider());
+        Reference<chart2::data::XPivotTableDataProvider> xPivotTableDataProvider(xDataProvider, uno::UNO_QUERY);
 
-        Reference< beans::XPropertySet > xSeqProp( xSeq, uno::UNO_QUERY );
-        if( xSeqProp.is())
+        Reference<chart2::data::XDataSequence> xSequenceValues;
+
+        // values
+        if (xPivotTableDataProvider.is()) // is pivot chart
+        {
+            xSequenceValues.set(xPivotTableDataProvider->createDataSequenceOfValuesByIndex(mnSeriesIndex));
+        }
+        else
+        {
+            if (bHasRange && !m_aSeriesRange.isEmpty())
+                xSequenceValues = SchXMLTools::CreateDataSequence(m_aSeriesRange, mxNewDoc);
+        }
+
+        Reference<beans::XPropertySet> xSeqProp(xSequenceValues, uno::UNO_QUERY);
+        if (xSeqProp.is())
         {
             OUString aMainRole("values-y");
-            if ( maSeriesChartTypeName == "com.sun.star.chart2.BubbleChartType" )
+            if (maSeriesChartTypeName == "com.sun.star.chart2.BubbleChartType")
                 aMainRole = "values-size";
-            xSeqProp->setPropertyValue("Role", uno::makeAny( aMainRole ));
+            xSeqProp->setPropertyValue("Role", uno::makeAny(aMainRole));
         }
-        xLabeledSeq->setValues( xSeq );
+        xLabeledSeq->setValues(xSequenceValues);
 
         // register for setting local data if external data provider is not present
         maPostponedSequences.insert(
@@ -433,18 +440,24 @@ void SchXMLSeries2Context::StartElement( const uno::Reference< xml::sax::XAttrib
                 tSchXMLIndexWithPart( m_rGlobalSeriesImportInfo.nCurrentDataIndex, SCH_XML_PART_VALUES ), xLabeledSeq ));
 
         // label
-        if( !aSeriesLabelRange.isEmpty() )
+        Reference<chart2::data::XDataSequence> xSequenceLabel;
+
+        if (xPivotTableDataProvider.is())
         {
-            Reference< chart2::data::XDataSequence > xLabelSequence =
-                SchXMLTools::CreateDataSequence( aSeriesLabelRange, mxNewDoc );
-            xLabeledSeq->setLabel( xLabelSequence );
+            xSequenceLabel.set(xPivotTableDataProvider->createDataSequenceOfLabelsByIndex(mnSeriesIndex));
         }
-        else if( !aSeriesLabelString.isEmpty() )
+        else
         {
-            Reference< chart2::data::XDataSequence > xLabelSequence =
-                SchXMLTools::CreateDataSequenceWithoutConvert( aSeriesLabelString, mxNewDoc );
-            xLabeledSeq->setLabel( xLabelSequence );
+            if (!aSeriesLabelRange.isEmpty())
+            {
+                xSequenceLabel.set(SchXMLTools::CreateDataSequence(aSeriesLabelRange, mxNewDoc));
+            }
+            else if (!aSeriesLabelString.isEmpty())
+            {
+                xSequenceLabel.set(SchXMLTools::CreateDataSequenceWithoutConvert(aSeriesLabelString, mxNewDoc));
+            }
         }
+        xLabeledSeq->setLabel(xSequenceLabel);
 
         // Note: Even if we have no label, we have to register the label
         // for creation, because internal data always has labels. If
@@ -511,7 +524,7 @@ void SchXMLSeries2Context::EndElement()
     //different handling for different chart types necessary
     if( bIsScatterChart || ( nDomainCount==1 && !bIsBubbleChart ) )
     {
-        DomainInfo aDomainInfo( OUString( "values-x" ), m_rGlobalSeriesImportInfo.aFirstFirstDomainAddress, m_rGlobalSeriesImportInfo.nFirstFirstDomainIndex ) ;
+        DomainInfo aDomainInfo( "values-x", m_rGlobalSeriesImportInfo.aFirstFirstDomainAddress, m_rGlobalSeriesImportInfo.nFirstFirstDomainIndex ) ;
         bool bCreateXValues = true;
         if( !maDomainAddresses.empty() )
         {
@@ -544,7 +557,7 @@ void SchXMLSeries2Context::EndElement()
     {
         if( nDomainCount>1 )
         {
-            DomainInfo aDomainInfo( OUString( "values-x" ), maDomainAddresses[1], m_rGlobalSeriesImportInfo.nCurrentDataIndex ) ;
+            DomainInfo aDomainInfo( "values-x", maDomainAddresses[1], m_rGlobalSeriesImportInfo.nCurrentDataIndex ) ;
             if( m_rGlobalSeriesImportInfo.aFirstSecondDomainAddress.isEmpty() )
             {
                 //for bubble chart the second domain contains the x values which should become an index smaller than y values for own data table
@@ -557,12 +570,12 @@ void SchXMLSeries2Context::EndElement()
         }
         else if( !m_rGlobalSeriesImportInfo.aFirstSecondDomainAddress.isEmpty() )
         {
-            DomainInfo aDomainInfo( OUString( "values-x" ), m_rGlobalSeriesImportInfo.aFirstSecondDomainAddress, m_rGlobalSeriesImportInfo.nFirstSecondDomainIndex ) ;
+            DomainInfo aDomainInfo( "values-x", m_rGlobalSeriesImportInfo.aFirstSecondDomainAddress, m_rGlobalSeriesImportInfo.nFirstSecondDomainIndex ) ;
             aDomainInfos.push_back( aDomainInfo );
         }
         if( nDomainCount>0)
         {
-            DomainInfo aDomainInfo( OUString( "values-y" ), maDomainAddresses.front(), m_rGlobalSeriesImportInfo.nCurrentDataIndex ) ;
+            DomainInfo aDomainInfo( "values-y", maDomainAddresses.front(), m_rGlobalSeriesImportInfo.nCurrentDataIndex ) ;
             if( m_rGlobalSeriesImportInfo.aFirstFirstDomainAddress.isEmpty() )
             {
                 m_rGlobalSeriesImportInfo.aFirstFirstDomainAddress = maDomainAddresses.front();
@@ -573,7 +586,7 @@ void SchXMLSeries2Context::EndElement()
         }
         else if( !m_rGlobalSeriesImportInfo.aFirstFirstDomainAddress.isEmpty() )
         {
-            DomainInfo aDomainInfo( OUString("values-y"), m_rGlobalSeriesImportInfo.aFirstFirstDomainAddress, m_rGlobalSeriesImportInfo.nFirstFirstDomainIndex ) ;
+            DomainInfo aDomainInfo( "values-y", m_rGlobalSeriesImportInfo.aFirstFirstDomainAddress, m_rGlobalSeriesImportInfo.nFirstFirstDomainIndex ) ;
             aDomainInfos.push_back( aDomainInfo );
         }
     }

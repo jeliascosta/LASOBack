@@ -25,6 +25,7 @@
 #include <unotools/streamwrap.hxx>
 #include <comphelper/processfactory.hxx>
 #include <com/sun/star/xml/sax/InputSource.hpp>
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XActiveDataSource.hpp>
 #include <com/sun/star/xml/sax/Parser.hpp>
 #include <com/sun/star/xml/sax/FastParser.hpp>
@@ -214,7 +215,7 @@ sal_uLong SwXMLTextBlocks::GetMacroTable( sal_uInt16 nIdx,
                         sFilterComponent, aFilterArguments, xContext),
                     UNO_QUERY );
                 OSL_ENSURE( xFilter.is(),
-                            "can't instantiate atevents filter");
+                            "can't instantiate atevent filter");
                 if ( xFilter.is() )
                 {
                     // connect parser and filter
@@ -369,7 +370,7 @@ sal_uLong SwXMLTextBlocks::PutBlockText( const OUString& rShort, const OUString&
        uno::Reference<xml::sax::XDocumentHandler> xHandler(xWriter,
         uno::UNO_QUERY);
 
-    uno::Reference<SwXMLTextBlockExport> xExp( new SwXMLTextBlockExport( xContext, *this, GetXMLToken ( XML_UNFORMATTED_TEXT ), xHandler) );
+    rtl::Reference<SwXMLTextBlockExport> xExp( new SwXMLTextBlockExport( xContext, *this, GetXMLToken ( XML_UNFORMATTED_TEXT ), xHandler) );
 
     xExp->exportDoc( rText );
 
@@ -377,7 +378,7 @@ sal_uLong SwXMLTextBlocks::PutBlockText( const OUString& rShort, const OUString&
     if ( xTrans.is() )
         xTrans->commit();
 
-    if (! (nFlags & SWXML_NOROOTCOMMIT) )
+    if (! (nFlags & SwXmlFlags::NoRootCommit) )
     {
         uno::Reference < embed::XTransactedObject > xTmpTrans( xBlkRoot, uno::UNO_QUERY );
         if ( xTmpTrans.is() )
@@ -488,7 +489,7 @@ void SwXMLTextBlocks::WriteInfo()
 
         uno::Reference<xml::sax::XDocumentHandler> xHandler(xWriter, uno::UNO_QUERY);
 
-        uno::Reference<SwXMLBlockListExport> xExp(new SwXMLBlockListExport( xContext, *this, OUString(XMLN_BLOCKLIST), xHandler) );
+        rtl::Reference<SwXMLBlockListExport> xExp(new SwXMLBlockListExport( xContext, *this, XMLN_BLOCKLIST, xHandler) );
 
         xExp->exportDoc( XML_BLOCK_LIST );
 

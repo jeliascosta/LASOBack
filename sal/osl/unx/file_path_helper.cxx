@@ -24,9 +24,9 @@
 #include <rtl/ustring.hxx>
 #include <sal/log.hxx>
 
-const sal_Unicode FPH_CHAR_PATH_SEPARATOR = (sal_Unicode)'/';
-const sal_Unicode FPH_CHAR_DOT            = (sal_Unicode)'.';
-const sal_Unicode FPH_CHAR_COLON          = (sal_Unicode)':';
+const sal_Unicode FPH_CHAR_PATH_SEPARATOR = '/';
+const sal_Unicode FPH_CHAR_DOT            = '.';
+const sal_Unicode FPH_CHAR_COLON          = ':';
 
 inline const rtl::OUString FPH_PATH_SEPARATOR()
 { return rtl::OUString(FPH_CHAR_PATH_SEPARATOR); }
@@ -44,10 +44,10 @@ void SAL_CALL osl_systemPathRemoveSeparator(rtl_uString* pustrPath)
     {
         // maybe there are more than one separator at end
         // so we run in a loop
-        while ((pustrPath->length > 1) && (FPH_CHAR_PATH_SEPARATOR == pustrPath->buffer[pustrPath->length - 1]))
+        while ((pustrPath->length > 1) && (pustrPath->buffer[pustrPath->length - 1] == FPH_CHAR_PATH_SEPARATOR))
         {
             pustrPath->length--;
-            pustrPath->buffer[pustrPath->length] = (sal_Unicode)'\0';
+            pustrPath->buffer[pustrPath->length] = '\0';
         }
 
         SAL_WARN_IF( !((0 == pustrPath->length) || (1 == pustrPath->length) ||
@@ -81,7 +81,7 @@ void SAL_CALL osl_systemPathEnsureSeparator(rtl_uString** ppustrPath)
 bool SAL_CALL osl_systemPathIsRelativePath(const rtl_uString* pustrPath)
 {
     OSL_PRECOND(nullptr != pustrPath, "osl_systemPathIsRelativePath: Invalid parameter");
-    return ((nullptr == pustrPath) || (0 == pustrPath->length) || (pustrPath->buffer[0] != FPH_CHAR_PATH_SEPARATOR));
+    return ((nullptr == pustrPath) || (pustrPath->length == 0) || (pustrPath->buffer[0] != FPH_CHAR_PATH_SEPARATOR));
 }
 
 void SAL_CALL osl_systemPathMakeAbsolutePath(
@@ -105,7 +105,7 @@ void SAL_CALL osl_systemPathGetFileNameOrLastDirectoryPart(
     const rtl_uString*     pustrPath,
     rtl_uString**       ppustrFileNameOrLastDirPart)
 {
-    OSL_PRECOND(pustrPath && ppustrFileNameOrLastDirPart, \
+    OSL_PRECOND(pustrPath && ppustrFileNameOrLastDirPart,
                 "osl_systemPathGetFileNameOrLastDirectoryPart: Invalid parameter");
 
     rtl::OUString path(const_cast<rtl_uString*>(pustrPath));
@@ -114,7 +114,7 @@ void SAL_CALL osl_systemPathGetFileNameOrLastDirectoryPart(
 
     rtl::OUString last_part;
 
-    if (path.getLength() > 1 || (1 == path.getLength() && *path.getStr() != FPH_CHAR_PATH_SEPARATOR))
+    if (path.getLength() > 1 || (path.getLength() == 1 && *path.getStr() != FPH_CHAR_PATH_SEPARATOR))
     {
         sal_Int32 idx_ps = path.lastIndexOf(FPH_CHAR_PATH_SEPARATOR);
         idx_ps++; // always right to increment by one even if idx_ps == -1!
@@ -127,7 +127,7 @@ bool SAL_CALL osl_systemPathIsHiddenFileOrDirectoryEntry(
     const rtl_uString* pustrPath)
 {
     OSL_PRECOND(nullptr != pustrPath, "osl_systemPathIsHiddenFileOrDirectoryEntry: Invalid parameter");
-    if ((nullptr == pustrPath) || (0 == pustrPath->length))
+    if ((nullptr == pustrPath) || (pustrPath->length == 0))
         return false;
 
     rtl::OUString fdp;

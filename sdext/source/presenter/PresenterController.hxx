@@ -57,16 +57,14 @@ class PresenterPaneBorderPainter;
 class PresenterTheme;
 class PresenterWindowManager;
 
-namespace {
-    typedef ::cppu::WeakComponentImplHelper <
-        css::drawing::framework::XConfigurationChangeListener,
-        css::frame::XFrameActionListener,
-        css::awt::XKeyListener,
-        css::awt::XFocusListener,
-        css::awt::XMouseListener,
-        css::awt::XMouseMotionListener
-    > PresenterControllerInterfaceBase;
-}
+typedef ::cppu::WeakComponentImplHelper <
+    css::drawing::framework::XConfigurationChangeListener,
+    css::frame::XFrameActionListener,
+    css::awt::XKeyListener,
+    css::awt::XFocusListener,
+    css::awt::XMouseListener,
+    css::awt::XMouseMotionListener
+> PresenterControllerInterfaceBase;
 
 /// Represents an element in the toolbar that shows the time elapsed since the presentation started.
 class IPresentationTime
@@ -95,7 +93,7 @@ public:
         const css::uno::Reference<css::presentation::XSlideShowController>& rxSlideShowController,
         const rtl::Reference<PresenterPaneContainer>& rpPaneContainer,
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxMainPaneId);
-    virtual ~PresenterController();
+    virtual ~PresenterController() override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -147,56 +145,43 @@ public:
     // XConfigurationChangeListener
 
     virtual void SAL_CALL notifyConfigurationChange (
-        const css::drawing::framework::ConfigurationChangeEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
 
     // XEventListener
 
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& rEvent) override;
 
     // XFrameActionListener
 
     virtual void SAL_CALL frameAction (
-        const css::frame::FrameActionEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::frame::FrameActionEvent& rEvent) override;
 
     // XKeyListener
 
-    virtual void SAL_CALL keyPressed (const css::awt::KeyEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL keyReleased (const css::awt::KeyEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL keyPressed (const css::awt::KeyEvent& rEvent) override;
+    virtual void SAL_CALL keyReleased (const css::awt::KeyEvent& rEvent) override;
 
     // XFocusListener
 
-    virtual void SAL_CALL focusGained (const css::awt::FocusEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL focusLost (const css::awt::FocusEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL focusGained (const css::awt::FocusEvent& rEvent) override;
+    virtual void SAL_CALL focusLost (const css::awt::FocusEvent& rEvent) override;
 
     // XMouseListener
 
-    virtual void SAL_CALL mousePressed (const css::awt::MouseEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL mousePressed (const css::awt::MouseEvent& rEvent) override;
 
-    virtual void SAL_CALL mouseReleased (const css::awt::MouseEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL mouseReleased (const css::awt::MouseEvent& rEvent) override;
 
-    virtual void SAL_CALL mouseEntered (const css::awt::MouseEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL mouseEntered (const css::awt::MouseEvent& rEvent) override;
 
-    virtual void SAL_CALL mouseExited (const css::awt::MouseEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL mouseExited (const css::awt::MouseEvent& rEvent) override;
 
     // XMouseMotionListener
 
-    virtual void SAL_CALL mouseMoved (const css::awt::MouseEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL mouseMoved (const css::awt::MouseEvent& rEvent) override;
 
-    virtual void SAL_CALL mouseDragged (const css::awt::MouseEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL mouseDragged (const css::awt::MouseEvent& rEvent) override;
 
 private:
     typedef ::std::map<css::uno::Reference<css::frame::XFrame>,rtl::Reference<PresenterController> > InstanceContainer;
@@ -244,8 +229,6 @@ private:
             The modifier bit field as provided by the key up event.
     */
     void HandleNumericKeyPress (const sal_Int32 nKey, const sal_Int32 nModifiers);
-
-    void ThrowIfDisposed() const throw (css::lang::DisposedException);
 };
 
 } } // end of namespace ::sdext::presenter

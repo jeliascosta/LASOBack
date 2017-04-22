@@ -27,6 +27,7 @@
 class SwRewriter;
 class SwNodes;
 class SwUndo;
+class SwView;
 
 namespace sw {
     class RepeatContext;
@@ -62,6 +63,11 @@ public:
         for Draw-Undo: writer wants to handle actions on Flys on its own.
      */
     virtual bool DoesDrawUndo() const = 0;
+
+    /// Enable repair mode.
+    virtual void DoRepair(bool bRepair) = 0;
+    /// Is repair mode active?
+    virtual bool DoesRepair() const = 0;
 
     /** Set the position at which the document is in the "unmodified" state
         to the current position in the Undo stack.
@@ -100,7 +106,7 @@ public:
         @param pRewriter      rewriter for comments @see SwUndo::GetComment
 
         If the given nUndoId is equal to zero an undo object with ID
-        UNDO_START will be generated.
+        SwUndoId::START will be generated.
 
         @return the undo ID of the created object
     */
@@ -115,11 +121,11 @@ public:
        @param nUndoId         undo ID for the list action
        @param pRewriter       rewriter for comments @see SwUndo::GetComment
 
-       If the given nUndoId is not UNDO_EMPTY or UNDO_END, the comment of
+       If the given nUndoId is not SwUndoId::EMPTY or SwUndoId::END, the comment of
        the resulting list action will be set via the nUndoId, applying the
        given pRewriter (if not 0).  Otherwise the comment of the resulting
-       list action is unchanged if it has an UndoId that is not UNDO_START
-       set by StartUndo, and in case the UndoId is UNDO_START the comment
+       list action is unchanged if it has an UndoId that is not SwUndoId::START
+       set by StartUndo, and in case the UndoId is SwUndoId::START the comment
        of the list action defaults to the comment of the last action
        contained in the list action.
     */
@@ -135,10 +141,12 @@ public:
     /** Get Id and comment of last Undo action.
         @param o_pStr       if not 0, receives comment of last Undo action.
         @param o_pId        if not 0, receives Id of last Undo action.
+        @param pView        if not nullptr, get the info for this view
         @return     true if there is a Undo action, false if none
     */
     virtual bool GetLastUndoInfo(OUString *const o_pStr,
-                SwUndoId *const o_pId) const = 0;
+                SwUndoId *const o_pId,
+                const SwView* pView = nullptr) const = 0;
 
     /** Get comments of Undo actions.
         @return     comments of all top-level Undo actions.
@@ -154,10 +162,12 @@ public:
     /** Get Id and comment of first Redo action.
         @param o_pStr       if not 0, receives comment of first Redo action.
         @param o_pId        if not 0, receives Id of first Redo action.
+        @param pView        if not nullptr, get the info for this view
         @return     true if there is a Redo action, false if none
     */
     virtual bool GetFirstRedoInfo(OUString *const o_pStr,
-                                  SwUndoId *const o_pId = nullptr) const = 0;
+                                  SwUndoId *const o_pId,
+                                  const SwView* pView = nullptr) const = 0;
 
     /** Get comments of Redo actions.
         @return     comments of all top-level Redo actions.
@@ -174,13 +184,13 @@ public:
         @param o_pStr       if not 0, receives comment of last Undo action
                             if it is Repeat capable.
         @return     Id of last Undo action if it is Repeat capable,
-                    or UNDO_EMPTY if there is none or it is not Repeat capable.
+                    or SwUndoId::EMPTY if there is none or it is not Repeat capable.
     */
     virtual SwUndoId GetRepeatInfo(OUString *const o_pStr) const = 0;
 
     /** Add new Undo action.
         Takes over ownership of pUndo.
-        @remark     calls ClearRedo(), except for UNDO_START/UNDO_END.
+        @remark     calls ClearRedo(), except for SwUndoId::START/SwUndoId::END.
         @remark     does nothing if !DoesUndo().
     */
     virtual void AppendUndo(SwUndo *const pUndo) = 0;
@@ -196,6 +206,10 @@ public:
     /** Get the number of Undo actions.
     */
     virtual size_t GetUndoActionCount(const bool bCurrentLevel = true) const = 0;
+
+    /** Return undo/redo info for this view.
+     */
+    virtual void SetView(SwView* pView) = 0;
 
 protected:
     virtual ~IDocumentUndoRedo() {};

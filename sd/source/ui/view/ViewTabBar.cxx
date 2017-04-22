@@ -65,7 +65,7 @@ class TabBarControl : public ::TabControl
 {
 public:
     TabBarControl (vcl::Window* pParentWindow, const ::rtl::Reference<ViewTabBar>& rpViewTabBar);
-    virtual void Paint (vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint (vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect) override;
     virtual void ActivatePage() override;
 private:
     ::rtl::Reference<ViewTabBar> mpViewTabBar;
@@ -235,7 +235,6 @@ vcl::Window* ViewTabBar::GetAnchorWindow(
 
 void SAL_CALL  ViewTabBar::notifyConfigurationChange (
     const ConfigurationChangeEvent& rEvent)
-    throw (RuntimeException, std::exception)
 {
     if (rEvent.Type.equals(FrameworkHelper::msResourceActivationEvent)
         && rEvent.ResourceId->getResourceURL().match(FrameworkHelper::msViewURLPrefix)
@@ -249,7 +248,6 @@ void SAL_CALL  ViewTabBar::notifyConfigurationChange (
 
 void SAL_CALL ViewTabBar::disposing(
     const lang::EventObject& rEvent)
-    throw (RuntimeException, std::exception)
 {
     if (rEvent.Source == mxConfigurationController)
     {
@@ -263,35 +261,30 @@ void SAL_CALL ViewTabBar::disposing(
 void SAL_CALL ViewTabBar::addTabBarButtonAfter (
     const TabBarButton& rButton,
     const TabBarButton& rAnchor)
-    throw (css::uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aSolarGuard;
     AddTabBarButton(rButton, rAnchor);
 }
 
 void SAL_CALL ViewTabBar::appendTabBarButton (const TabBarButton& rButton)
-    throw (css::uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aSolarGuard;
     AddTabBarButton(rButton);
 }
 
 void SAL_CALL ViewTabBar::removeTabBarButton (const TabBarButton& rButton)
-    throw (css::uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aSolarGuard;
     RemoveTabBarButton(rButton);
 }
 
 sal_Bool SAL_CALL ViewTabBar::hasTabBarButton (const TabBarButton& rButton)
-    throw (css::uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aSolarGuard;
     return HasTabBarButton(rButton);
 }
 
 Sequence<TabBarButton> SAL_CALL ViewTabBar::getTabBarButtons()
-    throw (css::uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aSolarGuard;
     return GetTabBarButtons();
@@ -300,13 +293,11 @@ Sequence<TabBarButton> SAL_CALL ViewTabBar::getTabBarButtons()
 //----- XResource -------------------------------------------------------------
 
 Reference<XResourceId> SAL_CALL ViewTabBar::getResourceId()
-    throw (RuntimeException, std::exception)
 {
     return mxViewTabBarId;
 }
 
 sal_Bool SAL_CALL ViewTabBar::isAnchorOnly()
-    throw (RuntimeException, std::exception)
 {
     return false;
 }
@@ -324,7 +315,6 @@ const Sequence<sal_Int8>& ViewTabBar::getUnoTunnelId()
 }
 
 sal_Int64 SAL_CALL ViewTabBar::getSomething (const Sequence<sal_Int8>& rId)
-    throw (RuntimeException, std::exception)
 {
     sal_Int64 nResult = 0;
 
@@ -415,7 +405,7 @@ void ViewTabBar::AddTabBarButton (
     const css::drawing::framework::TabBarButton& rButton,
     const css::drawing::framework::TabBarButton& rAnchor)
 {
-    sal_uInt32 nIndex;
+    TabBarButtonList::size_type nIndex;
 
     if ( ! rAnchor.ResourceId.is()
         || (rAnchor.ResourceId->getResourceURL().isEmpty()
@@ -463,8 +453,7 @@ void ViewTabBar::AddTabBarButton (
 void ViewTabBar::RemoveTabBarButton (
     const css::drawing::framework::TabBarButton& rButton)
 {
-    sal_uInt16 nIndex;
-    for (nIndex=0; nIndex<maTabBarButtons.size(); ++nIndex)
+    for (TabBarButtonList::size_type nIndex=0; nIndex<maTabBarButtons.size(); ++nIndex)
     {
         if (IsEqual(maTabBarButtons[nIndex], rButton))
         {
@@ -561,7 +550,7 @@ TabBarControl::TabBarControl (
 {
 }
 
-void TabBarControl::Paint (vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void TabBarControl::Paint (vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect)
 {
     Color aOriginalFillColor(rRenderContext.GetFillColor());
     Color aOriginalLineColor(rRenderContext.GetLineColor());

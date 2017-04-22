@@ -33,18 +33,18 @@ class FrameGrabber : public ::cppu::WeakImplHelper< css::media::XFrameGrabber,
 public:
 
     explicit FrameGrabber( const css::uno::Reference< css::lang::XMultiServiceFactory >& );
-    virtual  ~FrameGrabber();
+    virtual  ~FrameGrabber() override;
 
     bool    create( const ::rtl::OUString& rURL );
     bool    create( AVAsset* pMovie );
 
     // XFrameGrabber
-    virtual css::uno::Reference< css::graphic::XGraphic > SAL_CALL grabFrame( double fMediaTime ) throw (css::uno::RuntimeException) override;
+    virtual css::uno::Reference< css::graphic::XGraphic > SAL_CALL grabFrame( double fMediaTime ) override;
 
     // XServiceInfo
-    virtual ::rtl::OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException) override;
-    virtual sal_Bool SAL_CALL supportsService( const ::rtl::OUString& ServiceName ) throw (css::uno::RuntimeException) override;
-    virtual css::uno::Sequence< ::rtl::OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException) override;
+    virtual ::rtl::OUString SAL_CALL getImplementationName(  ) override;
+    virtual sal_Bool SAL_CALL supportsService( const ::rtl::OUString& ServiceName ) override;
+    virtual css::uno::Sequence< ::rtl::OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
 private:
 

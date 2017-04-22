@@ -73,7 +73,7 @@ const long ChgWordLstLoad   = 0x20000000;   // Replacement list loaded
 const long CplSttLstLoad    = 0x40000000;   // Exception list for Capital letters Start loaded
 const long WrdSttLstLoad    = 0x80000000;   // Exception list for Word Start loaded
 
-// TODO: handle unicodes > U+FFFF and check users of this class
+// TODO: handle code points > U+FFFF and check users of this class
 
 // only a mapping class
 class EDITENG_DLLPUBLIC SvxAutoCorrDoc
@@ -232,9 +232,9 @@ class EDITENG_DLLPUBLIC SvxAutoCorrect
     SvxSwAutoFormatFlags aSwFlags;     // StarWriter AutoFormat Flags
 
     // all languages in a table
-    std::map<LanguageTag, std::unique_ptr<SvxAutoCorrectLanguageLists>>* m_pLangTable;
+    std::map<LanguageTag, std::unique_ptr<SvxAutoCorrectLanguageLists>> m_aLangTable;
     std::map<LanguageTag, long> aLastFileTable;
-    CharClass* pCharClass;
+    std::unique_ptr<CharClass> pCharClass;
 
     bool bRunNext;
 
@@ -323,55 +323,48 @@ public:
 
     // Query/Set the current settings of AutoCorrect
     long GetFlags() const                       { return nFlags; }
-    inline SvxSwAutoFormatFlags&   GetSwFlags()    { return aSwFlags;}
+    SvxSwAutoFormatFlags&   GetSwFlags()    { return aSwFlags;}
     bool IsAutoCorrFlag( long nFlag ) const
                                 { return (nFlags & nFlag) != 0; }
     void SetAutoCorrFlag( long nFlag, bool bOn = true );
 
     // Load, Set, Get - the replacement list
-    SvxAutocorrWordList* LoadAutocorrWordList(
-                                    LanguageType eLang = LANGUAGE_SYSTEM )
+    SvxAutocorrWordList* LoadAutocorrWordList( LanguageType eLang )
         { return GetLanguageList_( eLang ).LoadAutocorrWordList(); }
 
     // Save word substitutions:
     //      Save these directly in the storage. The word list is updated
     //      accordingly!
     //  - pure Text
-    bool PutText( const OUString& rShort, const OUString& rLong, LanguageType eLang = LANGUAGE_SYSTEM );
+    bool PutText( const OUString& rShort, const OUString& rLong, LanguageType eLang );
     //  - Text with attribution (only in the SWG - SWG format!)
-    void PutText( const OUString& rShort, SfxObjectShell& rShell,
-                 LanguageType eLang = LANGUAGE_SYSTEM )
+    void PutText( const OUString& rShort, SfxObjectShell& rShell, LanguageType eLang )
         { GetLanguageList_( eLang ).PutText(rShort, rShell ); }
 
     void MakeCombinedChanges( std::vector<SvxAutocorrWord>& aNewEntries,
                                   std::vector<SvxAutocorrWord>& aDeleteEntries,
-                                  LanguageType eLang = LANGUAGE_SYSTEM );
+                                  LanguageType eLang );
 
     // Load, Set, Get - the exception list for capital letters at the
     // beginning of a sentence
-    void SaveCplSttExceptList( LanguageType eLang = LANGUAGE_SYSTEM );
-    SvStringsISortDtor* LoadCplSttExceptList(
-                                    LanguageType eLang = LANGUAGE_SYSTEM)
+    void SaveCplSttExceptList( LanguageType eLang );
+    SvStringsISortDtor* LoadCplSttExceptList(LanguageType eLang)
         {   return GetLanguageList_( eLang ).LoadCplSttExceptList(); }
-    const SvStringsISortDtor* GetCplSttExceptList(
-                                    LanguageType eLang = LANGUAGE_SYSTEM )
+    const SvStringsISortDtor* GetCplSttExceptList( LanguageType eLang )
         {   return GetLanguageList_( eLang ).GetCplSttExceptList(); }
 
     // Adds a single word. The list will be immediately written to the file!
-    bool AddCplSttException( const OUString& rNew,
-                                LanguageType eLang = LANGUAGE_SYSTEM );
+    bool AddCplSttException( const OUString& rNew, LanguageType eLang );
 
     // Load, Set, Get the exception list for 2 Capital letters at the
     // beginning of a word.
-    void SaveWrdSttExceptList( LanguageType eLang = LANGUAGE_SYSTEM );
-    SvStringsISortDtor* LoadWrdSttExceptList(
-                                    LanguageType eLang = LANGUAGE_SYSTEM )
+    void SaveWrdSttExceptList( LanguageType eLang );
+    SvStringsISortDtor* LoadWrdSttExceptList( LanguageType eLang )
         {   return GetLanguageList_( eLang ).LoadWrdSttExceptList(); }
-    const SvStringsISortDtor* GetWrdSttExceptList(
-                                    LanguageType eLang = LANGUAGE_SYSTEM )
+    const SvStringsISortDtor* GetWrdSttExceptList( LanguageType eLang )
         {   return GetLanguageList_( eLang ).GetWrdSttExceptList(); }
     // Adds a single word. The list will be immediately written to the file!
-    bool AddWrtSttException( const OUString& rNew, LanguageType eLang = LANGUAGE_SYSTEM);
+    bool AddWrtSttException( const OUString& rNew, LanguageType eLang);
 
     // Search through the Languages for the entry
     bool FindInWrdSttExceptList( LanguageType eLang, const OUString& sWord );
@@ -381,27 +374,27 @@ public:
     // Methods for the auto-correction
     bool FnCapitalStartWord( SvxAutoCorrDoc&, const OUString&,
                                 sal_Int32 nSttPos, sal_Int32 nEndPos,
-                                LanguageType eLang = LANGUAGE_SYSTEM );
+                                LanguageType eLang );
     bool FnChgOrdinalNumber( SvxAutoCorrDoc&, const OUString&,
                                 sal_Int32 nSttPos, sal_Int32 nEndPos,
-                                LanguageType eLang = LANGUAGE_SYSTEM );
+                                LanguageType eLang );
     bool FnChgToEnEmDash( SvxAutoCorrDoc&, const OUString&,
                                 sal_Int32 nSttPos, sal_Int32 nEndPos,
-                                LanguageType eLang = LANGUAGE_SYSTEM );
+                                LanguageType eLang );
     bool FnAddNonBrkSpace( SvxAutoCorrDoc&, const OUString&,
                                 sal_Int32 nSttPos, sal_Int32 nEndPos,
-                                LanguageType eLang = LANGUAGE_SYSTEM );
+                                LanguageType eLang );
     bool FnSetINetAttr( SvxAutoCorrDoc&, const OUString&,
                                 sal_Int32 nSttPos, sal_Int32 nEndPos,
-                                LanguageType eLang = LANGUAGE_SYSTEM );
+                                LanguageType eLang );
     bool FnChgWeightUnderl( SvxAutoCorrDoc&, const OUString&,
                                 sal_Int32 nSttPos, sal_Int32 nEndPos );
     bool FnCapitalStartSentence( SvxAutoCorrDoc&, const OUString&, bool bNormalPos,
                                 sal_Int32 nSttPos, sal_Int32 nEndPos,
-                                LanguageType eLang  = LANGUAGE_SYSTEM);
+                                LanguageType eLang);
     bool FnCorrectCapsLock( SvxAutoCorrDoc&, const OUString&,
                             sal_Int32 nSttPos, sal_Int32 nEndPos,
-                            LanguageType eLang  = LANGUAGE_SYSTEM );
+                            LanguageType eLang );
 
     bool                HasRunNext() { return bRunNext; }
 

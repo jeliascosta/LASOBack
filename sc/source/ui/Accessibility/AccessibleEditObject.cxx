@@ -103,8 +103,7 @@ ScAccessibleEditObject::~ScAccessibleEditObject()
 void SAL_CALL ScAccessibleEditObject::disposing()
 {
     SolarMutexGuard aGuard;
-    if (mpTextHelper)
-        DELETEZ(mpTextHelper);
+    mpTextHelper.reset();
 
     ScAccessibleContextBase::disposing();
 }
@@ -129,7 +128,6 @@ void ScAccessibleEditObject::GotFocus()
 
 css::uno::Any SAL_CALL
     ScAccessibleEditObject::queryInterface (const css::uno::Type & rType)
-    throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Any aReturn = ScAccessibleContextBase::queryInterface (rType);
     if ( ! aReturn.hasValue())
@@ -154,7 +152,6 @@ void SAL_CALL
 
 uno::Reference< XAccessible > SAL_CALL ScAccessibleEditObject::getAccessibleAtPoint(
         const awt::Point& rPoint )
-        throw (uno::RuntimeException, std::exception)
 {
     uno::Reference<XAccessible> xRet;
     if (containsPoint(rPoint))
@@ -162,8 +159,7 @@ uno::Reference< XAccessible > SAL_CALL ScAccessibleEditObject::getAccessibleAtPo
          SolarMutexGuard aGuard;
         IsObjectValid();
 
-        if(!mpTextHelper)
-            CreateTextHelper();
+        CreateTextHelper();
 
         xRet = mpTextHelper->GetAt(rPoint);
     }
@@ -171,10 +167,9 @@ uno::Reference< XAccessible > SAL_CALL ScAccessibleEditObject::getAccessibleAtPo
     return xRet;
 }
 
-Rectangle ScAccessibleEditObject::GetBoundingBoxOnScreen() const
-        throw (uno::RuntimeException, std::exception)
+tools::Rectangle ScAccessibleEditObject::GetBoundingBoxOnScreen() const
 {
-    Rectangle aScreenBounds;
+    tools::Rectangle aScreenBounds;
 
     if ( mpWindow )
     {
@@ -185,7 +180,7 @@ Rectangle ScAccessibleEditObject::GetBoundingBoxOnScreen() const
                 MapMode aMapMode( mpEditView->GetEditEngine()->GetRefMapMode() );
                 aScreenBounds = mpWindow->LogicToPixel( mpEditView->GetOutputArea(), aMapMode );
                 Point aCellLoc = aScreenBounds.TopLeft();
-                Rectangle aWindowRect = mpWindow->GetWindowExtentsRelative( nullptr );
+                tools::Rectangle aWindowRect = mpWindow->GetWindowExtentsRelative( nullptr );
                 Point aWindowLoc = aWindowRect.TopLeft();
                 Point aPos( aCellLoc.getX() + aWindowLoc.getX(), aCellLoc.getY() + aWindowLoc.getY() );
                 aScreenBounds.SetPos( aPos );
@@ -200,10 +195,9 @@ Rectangle ScAccessibleEditObject::GetBoundingBoxOnScreen() const
     return aScreenBounds;
 }
 
-Rectangle ScAccessibleEditObject::GetBoundingBox() const
-        throw (uno::RuntimeException, std::exception)
+tools::Rectangle ScAccessibleEditObject::GetBoundingBox() const
 {
-    Rectangle aBounds( GetBoundingBoxOnScreen() );
+    tools::Rectangle aBounds( GetBoundingBoxOnScreen() );
 
     if ( mpWindow )
     {
@@ -236,30 +230,24 @@ Rectangle ScAccessibleEditObject::GetBoundingBox() const
 
 sal_Int32 SAL_CALL
     ScAccessibleEditObject::getAccessibleChildCount()
-                    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
-    if (!mpTextHelper)
-        CreateTextHelper();
+    CreateTextHelper();
     return mpTextHelper->GetChildCount();
 }
 
 uno::Reference< XAccessible > SAL_CALL
     ScAccessibleEditObject::getAccessibleChild(sal_Int32 nIndex)
-        throw (uno::RuntimeException,
-        lang::IndexOutOfBoundsException, std::exception)
 {
     SolarMutexGuard aGuard;
     IsObjectValid();
-    if (!mpTextHelper)
-        CreateTextHelper();
+    CreateTextHelper();
     return mpTextHelper->GetChild(nIndex);
 }
 
 uno::Reference<XAccessibleStateSet> SAL_CALL
     ScAccessibleEditObject::getAccessibleStateSet()
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<XAccessibleStateSet> xParentStates;
@@ -287,7 +275,6 @@ uno::Reference<XAccessibleStateSet> SAL_CALL
 
 OUString SAL_CALL
     ScAccessibleEditObject::createAccessibleDescription()
-    throw (uno::RuntimeException)
 {
 //    OSL_FAIL("Should never be called, because is set in the constructor.")
     return OUString();
@@ -295,7 +282,6 @@ OUString SAL_CALL
 
 OUString SAL_CALL
     ScAccessibleEditObject::createAccessibleName()
-    throw (uno::RuntimeException, std::exception)
 {
     OSL_FAIL("Should never be called, because is set in the constructor.");
     return OUString();
@@ -305,10 +291,8 @@ OUString SAL_CALL
 
 void SAL_CALL
     ScAccessibleEditObject::addAccessibleEventListener(const uno::Reference<XAccessibleEventListener>& xListener)
-        throw (uno::RuntimeException, std::exception)
 {
-    if (!mpTextHelper)
-        CreateTextHelper();
+    CreateTextHelper();
 
     mpTextHelper->AddEventListener(xListener);
 
@@ -317,10 +301,8 @@ void SAL_CALL
 
 void SAL_CALL
     ScAccessibleEditObject::removeAccessibleEventListener(const uno::Reference<XAccessibleEventListener>& xListener)
-        throw (uno::RuntimeException, std::exception)
 {
-    if (!mpTextHelper)
-        CreateTextHelper();
+    CreateTextHelper();
 
     mpTextHelper->RemoveEventListener(xListener);
 
@@ -330,7 +312,6 @@ void SAL_CALL
     //=====  XServiceInfo  ====================================================
 
 OUString SAL_CALL ScAccessibleEditObject::getImplementationName()
-        throw (uno::RuntimeException, std::exception)
 {
     return OUString("ScAccessibleEditObject");
 }
@@ -339,7 +320,6 @@ OUString SAL_CALL ScAccessibleEditObject::getImplementationName()
 
 uno::Sequence<sal_Int8> SAL_CALL
     ScAccessibleEditObject::getImplementationId()
-    throw (uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -368,7 +348,11 @@ void ScAccessibleEditObject::CreateTextHelper()
             pAccessibleTextData.reset
                 (new ScAccessibleEditLineTextData(nullptr, mpWindow));
         }
-        mpTextHelper = new ::accessibility::AccessibleTextHelper(o3tl::make_unique<ScAccessibilityEditSource>(std::move(pAccessibleTextData)));
+
+        std::unique_ptr<ScAccessibilityEditSource> pEditSrc =
+            o3tl::make_unique<ScAccessibilityEditSource>(std::move(pAccessibleTextData));
+
+        mpTextHelper = o3tl::make_unique<::accessibility::AccessibleTextHelper>(std::move(pEditSrc));
         mpTextHelper->SetEventSource(this);
 
         const ScInputHandler* pInputHdl = SC_MOD()->GetInputHdl();
@@ -387,7 +371,7 @@ void ScAccessibleEditObject::CreateTextHelper()
             // do not activate cell object, if top edit line is active
             if( pInputHdl && !pInputHdl->IsTopMode() )
             {
-                SdrHint aHint( HINT_BEGEDIT );
+                SdrHint aHint( SdrHintKind::BeginEdit );
                 mpTextHelper->GetEditSource().GetBroadcaster().Broadcast( aHint );
             }
         }
@@ -395,13 +379,11 @@ void ScAccessibleEditObject::CreateTextHelper()
 }
 
 sal_Int32 SAL_CALL ScAccessibleEditObject::getForeground(  )
-        throw (css::uno::RuntimeException, std::exception)
 {
     return GetFgBgColor(SC_UNONAME_CCOLOR);
 }
 
 sal_Int32 SAL_CALL ScAccessibleEditObject::getBackground(  )
-        throw (css::uno::RuntimeException, std::exception)
 {
     return GetFgBgColor(SC_UNONAME_CELLBACK);
 }
@@ -446,13 +428,10 @@ sal_Int32 ScAccessibleEditObject::GetFgBgColor( const OUString &strPropColor)
 //=====  XAccessibleSelection  ============================================
 
 void SAL_CALL ScAccessibleEditObject::selectAccessibleChild( sal_Int32 )
-throw ( IndexOutOfBoundsException, RuntimeException, std::exception )
 {
 }
 
 sal_Bool SAL_CALL ScAccessibleEditObject::isAccessibleChildSelected( sal_Int32 nChildIndex )
-throw ( IndexOutOfBoundsException,
-       RuntimeException, std::exception )
 {
     uno::Reference<XAccessible> xAcc = getAccessibleChild( nChildIndex );
     uno::Reference<XAccessibleContext> xContext;
@@ -474,17 +453,14 @@ throw ( IndexOutOfBoundsException,
 }
 
 void SAL_CALL ScAccessibleEditObject::clearAccessibleSelection(  )
-throw ( RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL ScAccessibleEditObject::selectAllAccessibleChildren(  )
-throw ( RuntimeException, std::exception )
 {
 }
 
 sal_Int32 SAL_CALL ScAccessibleEditObject::getSelectedAccessibleChildCount()
-throw ( RuntimeException, std::exception )
 {
     sal_Int32 nCount = 0;
     sal_Int32 TotalCount = getAccessibleChildCount();
@@ -494,7 +470,6 @@ throw ( RuntimeException, std::exception )
 }
 
 uno::Reference<XAccessible> SAL_CALL ScAccessibleEditObject::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex )
-throw ( IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     if ( nSelectedChildIndex > getSelectedAccessibleChildCount() )
         throw IndexOutOfBoundsException();
@@ -511,13 +486,10 @@ throw ( IndexOutOfBoundsException, RuntimeException, std::exception)
 
 void SAL_CALL ScAccessibleEditObject::deselectAccessibleChild(
                                                             sal_Int32 )
-                                                            throw ( IndexOutOfBoundsException,
-                                                            RuntimeException, std::exception )
 {
 }
 
 uno::Reference< XAccessibleRelationSet > ScAccessibleEditObject::getAccessibleRelationSet(  )
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     vcl::Window* pWindow = mpWindow;

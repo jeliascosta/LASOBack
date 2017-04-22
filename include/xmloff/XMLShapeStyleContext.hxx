@@ -32,12 +32,12 @@ class SvXMLImport;
 
 class XMLOFF_DLLPUBLIC XMLShapeStyleContext: public XMLPropStyleContext
 {
-protected:
     OUString     m_sControlDataStyleName;
-    OUString     m_sListStyleName;
     bool         m_bIsNumRuleAlreadyConverted;
 
 protected:
+    OUString     m_sListStyleName;
+
     virtual void SetAttribute( sal_uInt16 nPrefixKey,
                                const OUString& rLocalName,
                                const OUString& rValue ) override;
@@ -49,8 +49,8 @@ public:
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
         SvXMLStylesContext& rStyles,
-        sal_uInt16 nFamily = XML_STYLE_FAMILY_SD_GRAPHICS_ID);
-    virtual ~XMLShapeStyleContext();
+        sal_uInt16 nFamily);
+    virtual ~XMLShapeStyleContext() override;
 
     SvXMLImportContext * CreateChildContext(
         sal_uInt16 nPrefix,

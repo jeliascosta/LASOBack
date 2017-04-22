@@ -51,8 +51,8 @@ namespace dbaui
         virtual OUString            getAutoIncrementValue() const override;
 
     public:
-        OWizTypeSelectControl(vcl::Window* pParent, vcl::Window* pParentTabPage, OTableDesignHelpBar* pHelpBar=nullptr);
-        virtual ~OWizTypeSelectControl();
+        OWizTypeSelectControl(vcl::Window* pParent, vcl::Window* pParentTabPage);
+        virtual ~OWizTypeSelectControl() override;
         virtual void dispose() override;
 
         virtual css::uno::Reference< css::sdbc::XDatabaseMetaData> getMetaData() override;
@@ -72,12 +72,12 @@ namespace dbaui
         virtual bool            PreNotify( NotifyEvent& rNEvt ) override;
         VclPtr<vcl::Window>     m_pParentTabPage;
     public:
-        OWizTypeSelectList( vcl::Window* pParent, WinBits nStyle = WB_BORDER | WB_SIMPLEMODE )
-            : MultiListBox(pParent,nStyle)
+        OWizTypeSelectList( vcl::Window* pParent )
+            : MultiListBox(pParent, WB_BORDER | WB_SIMPLEMODE)
             , m_bPKey(false)
             , m_pParentTabPage(nullptr)
             {}
-        virtual ~OWizTypeSelectList();
+        virtual ~OWizTypeSelectList() override;
         virtual void dispose() override;
         void                    SetPKey(bool bPKey) { m_bPKey = bPKey; }
         void                    SetParentTabPage(vcl::Window* pParentTabPage) { m_pParentTabPage = pParentTabPage; }
@@ -91,8 +91,8 @@ namespace dbaui
         friend class OWizTypeSelectControl;
         friend class OWizTypeSelectList;
 
-        DECL_LINK_TYPED( ColumnSelectHdl, ListBox&, void );
-        DECL_LINK_TYPED( ButtonClickHdl, Button *, void );
+        DECL_LINK( ColumnSelectHdl, ListBox&, void );
+        DECL_LINK( ButtonClickHdl, Button *, void );
     protected:
         VclPtr<OWizTypeSelectList>      m_pColumnNames;
         VclPtr<FixedText>               m_pColumns;
@@ -109,7 +109,6 @@ namespace dbaui
         bool                    m_bAutoIncrementEnabled;
         bool                    m_bDuplicateName;
 
-        void                    fillColumnList(sal_uInt32 nRows);
         virtual SvParser*       createReader(sal_Int32 _nRows) = 0;
 
         void                    EnableAuto(bool bEnable);
@@ -120,11 +119,11 @@ namespace dbaui
         virtual OUString        GetTitle() const override;
 
         OWizTypeSelect(vcl::Window* pParent, SvStream* _pStream = nullptr );
-        virtual ~OWizTypeSelect();
+        virtual ~OWizTypeSelect() override;
         virtual void dispose() override;
 
-        inline void setDisplayRow(sal_Int32 _nRow) { m_nDisplayRow = _nRow - 1; }
-        inline void setDuplicateName(bool _bDuplicateName) { m_bDuplicateName = _bDuplicateName; }
+        void setDisplayRow(sal_Int32 _nRow) { m_nDisplayRow = _nRow - 1; }
+        void setDuplicateName(bool _bDuplicateName) { m_bDuplicateName = _bDuplicateName; }
     };
 
     typedef VclPtr<OWizTypeSelect> (*TypeSelectionPageFactory)( vcl::Window*, SvStream& );

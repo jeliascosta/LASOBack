@@ -60,7 +60,6 @@ TabWinFactory::~TabWinFactory()
 
 css::uno::Reference< css::uno::XInterface > SAL_CALL TabWinFactory::createInstanceWithContext(
     const css::uno::Reference< css::uno::XComponentContext >& xContext )
-throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     css::uno::Sequence< css::uno::Any > aArgs;
 
@@ -69,7 +68,6 @@ throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 
 css::uno::Reference< css::uno::XInterface > SAL_CALL TabWinFactory::createInstanceWithArgumentsAndContext(
     const css::uno::Sequence< css::uno::Any >& Arguments, const css::uno::Reference< css::uno::XComponentContext >& )
-throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     const OUString aTopWindowArgName( "TopWindow");
 
@@ -128,8 +126,8 @@ throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
         css::uno::Sequence< css::uno::Any > aArgs( 1 );
 
         aPropValue.Name  = aTopWindowArgName;
-        aPropValue.Value = css::uno::makeAny( xTopWindow );
-        aArgs[0] = css::uno::makeAny( aPropValue );
+        aPropValue.Value <<= xTopWindow;
+        aArgs[0] <<= aPropValue;
         pTabWindow->initialize( aArgs );
 
         xReturn.set( static_cast< OWeakObject* >( pTabWindow ), css::uno::UNO_QUERY );

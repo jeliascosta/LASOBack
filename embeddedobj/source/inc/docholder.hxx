@@ -36,6 +36,7 @@
 #include <com/sun/star/frame/XLayoutManager.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <cppuhelper/implbase.hxx>
+#include <rtl/ref.hxx>
 
 class OCommonEmbeddedObject;
 class Interceptor;
@@ -53,7 +54,7 @@ private:
 
     OCommonEmbeddedObject* m_pEmbedObj;
 
-    Interceptor*        m_pInterceptor;
+    rtl::Reference<Interceptor>        m_xInterceptor;
     css::uno::Reference< css::frame::XDispatchProviderInterceptor > m_xOutplaceInterceptor;
 
     css::uno::Reference< css::uno::XComponentContext > m_xContext;
@@ -82,7 +83,7 @@ private:
     css::uno::Sequence< css::uno::Any > m_aOutplaceFrameProps;
 
 
-    css::uno::Reference< css::frame::XFrame > GetDocFrame();
+    css::uno::Reference< css::frame::XFrame > const & GetDocFrame();
     bool LoadDocToFrame( bool );
 
     css::awt::Rectangle CalculateBorderedArea( const css::awt::Rectangle& aRect );
@@ -98,24 +99,23 @@ private:
                 const OUString& aContModuleName );
 
 public:
-
+    /// @throws css::uno::Exception
     static void FindConnectPoints(
         const css::uno::Reference< css::container::XIndexAccess >& xMenu,
-        sal_Int32 nConnectPoints[2] )
-            throw ( css::uno::Exception );
+        sal_Int32 nConnectPoints[2] );
 
+    /// @throws css::uno::Exception
     static css::uno::Reference< css::container::XIndexAccess > MergeMenusForInplace(
         const css::uno::Reference< css::container::XIndexAccess >& xContMenu,
         const css::uno::Reference< css::frame::XDispatchProvider >& xContDisp,
         const OUString& aContModuleName,
         const css::uno::Reference< css::container::XIndexAccess >& xOwnMenu,
-        const css::uno::Reference< css::frame::XDispatchProvider >& xOwnDisp )
-            throw ( css::uno::Exception );
+        const css::uno::Reference< css::frame::XDispatchProvider >& xOwnDisp );
 
 
     DocumentHolder( const css::uno::Reference< css::uno::XComponentContext >& xContext,
                     OCommonEmbeddedObject* pEmbObj );
-    virtual ~DocumentHolder();
+    virtual ~DocumentHolder() override;
 
     OCommonEmbeddedObject* GetEmbedObject() { return m_pEmbedObj; }
 
@@ -167,30 +167,30 @@ public:
     const css::uno::Reference< css::util::XCloseable >& GetComponent() { return m_xComponent; }
 
 // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
 // XCloseListener
-    virtual void SAL_CALL queryClosing( const css::lang::EventObject& Source, sal_Bool GetsOwnership ) throw (css::util::CloseVetoException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL notifyClosing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL queryClosing( const css::lang::EventObject& Source, sal_Bool GetsOwnership ) override;
+    virtual void SAL_CALL notifyClosing( const css::lang::EventObject& Source ) override;
 
 // XTerminateListener
-    virtual void SAL_CALL queryTermination( const css::lang::EventObject& Event ) throw (css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& Event ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL queryTermination( const css::lang::EventObject& Event ) override;
+    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& Event ) override;
 
 // XModifyListener
-    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) override;
 
 // XEventListener
-    virtual void SAL_CALL notifyEvent( const css::document::EventObject& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL notifyEvent( const css::document::EventObject& Event ) override;
 
 // XBorderResizeListener
-    virtual void SAL_CALL borderWidthsChanged( const css::uno::Reference< css::uno::XInterface >& aObject, const css::frame::BorderWidths& aNewSize ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL borderWidthsChanged( const css::uno::Reference< css::uno::XInterface >& aObject, const css::frame::BorderWidths& aNewSize ) override;
 
 // XHatchWindowController
-    virtual void SAL_CALL requestPositioning( const css::awt::Rectangle& aRect ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::awt::Rectangle SAL_CALL calcAdjustedRectangle( const css::awt::Rectangle& aRect ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL activated(  ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL deactivated(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL requestPositioning( const css::awt::Rectangle& aRect ) override;
+    virtual css::awt::Rectangle SAL_CALL calcAdjustedRectangle( const css::awt::Rectangle& aRect ) override;
+    virtual void SAL_CALL activated(  ) override;
+    virtual void SAL_CALL deactivated(  ) override;
 };
 
 #endif

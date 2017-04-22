@@ -20,6 +20,8 @@
 #ifndef INCLUDED_SD_SOURCE_UI_INC_UNMODPG_HXX
 #define INCLUDED_SD_SOURCE_UI_INC_UNMODPG_HXX
 
+#include <xmloff/autolayout.hxx>
+
 #include "sdundo.hxx"
 #include "pres.hxx"
 
@@ -38,8 +40,6 @@ class ModifyPageUndoAction : public SdUndoAction
     bool        mbOldBckgrndObjsVisible;
     bool        mbNewBckgrndObjsVisible;
 
-    OUString        maComment;
-
 public:
     ModifyPageUndoAction(
         SdDrawDocument*         pTheDoc,
@@ -49,11 +49,9 @@ public:
         bool                    bTheNewBckgrndVisible,
         bool                    bTheNewBckgrndObjsVisible);
 
-    virtual ~ModifyPageUndoAction();
+    virtual ~ModifyPageUndoAction() override;
     virtual void Undo() override;
     virtual void Redo() override;
-
-    virtual OUString GetComment() const override;
 };
 
 class RenameLayoutTemplateUndoAction : public SdUndoAction

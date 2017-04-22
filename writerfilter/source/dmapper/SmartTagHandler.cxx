@@ -35,9 +35,9 @@ namespace dmapper
 
 using namespace ::com::sun::star;
 
-SmartTagHandler::SmartTagHandler(const uno::Reference<uno::XComponentContext>& xComponentContext, const uno::Reference<text::XTextDocument>& xTextDocument)
+SmartTagHandler::SmartTagHandler(uno::Reference<uno::XComponentContext> xComponentContext, const uno::Reference<text::XTextDocument>& xTextDocument)
     : LoggedProperties("SmartTagHandler"),
-      m_xComponentContext(xComponentContext),
+      m_xComponentContext(std::move(xComponentContext)),
       m_xDocumentMetadataAccess(xTextDocument, uno::UNO_QUERY)
 {
 }
@@ -68,7 +68,7 @@ void SmartTagHandler::lcl_sprm(Sprm& rSprm)
     case NS_ooxml::LN_CT_SmartTagPr_attr:
     {
         writerfilter::Reference<Properties>::Pointer_t pProperties = rSprm.getProps();
-        if (pProperties.get())
+        if (pProperties)
             pProperties->resolve(*this);
         break;
     }

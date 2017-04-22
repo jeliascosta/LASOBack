@@ -49,12 +49,6 @@ namespace sdr
             return *(new E3dSceneProperties(*this, rObj));
         }
 
-        const SfxItemSet& E3dSceneProperties::GetObjectItemSet() const
-        {
-            //DBG_ASSERT(sal_False, "E3dSceneProperties::GetObjectItemSet() maybe the wrong call (!)");
-            return E3dProperties::GetObjectItemSet();
-        }
-
         const SfxItemSet& E3dSceneProperties::GetMergedItemSet() const
         {
             // prepare ItemSet
@@ -286,7 +280,7 @@ namespace sdr
 
                 if(pSubList && rObj.GetScene() == &rObj)
                 {
-                    SdrObjListIter a3DIterator(*pSubList, IM_DEEPWITHGROUPS);
+                    SdrObjListIter a3DIterator(*pSubList, SdrIterMode::DeepWithGroups);
 
                     while(a3DIterator.IsMore())
                     {
@@ -307,7 +301,7 @@ namespace sdr
             Camera3D aSceneCam(rObj.GetCamera());
 
             // ProjectionType
-            mpItemSet->Put(Svx3DPerspectiveItem((sal_uInt16)aSceneCam.GetProjection()));
+            mpItemSet->Put(Svx3DPerspectiveItem(aSceneCam.GetProjection()));
 
             // CamPos
             mpItemSet->Put(makeSvx3DDistanceItem((sal_uInt32)(aSceneCam.GetPosition().getZ() + 0.5)));

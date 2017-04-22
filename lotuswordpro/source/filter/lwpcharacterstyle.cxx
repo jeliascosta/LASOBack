@@ -66,15 +66,14 @@
 #include "lwpfont.hxx"
 #include "lwpfoundry.hxx"
 #include "lwpcharborderoverride.hxx"
+#include "xfilter/xfparastyle.hxx"
+#include "xfilter/xffont.hxx"
+
 
 /*class LwpTextStyle*/
 LwpTextStyle::LwpTextStyle(LwpObjectHeader& objHdr, LwpSvStream* pStrm)
     : LwpDLNFPVList(objHdr, pStrm),
     m_nFontID(0), m_nFinalFontID(0), m_nCSFlags(0), m_nUseCount(0),
-    m_pDescription(new LwpAtomHolder), m_pLangOverride(new LwpTextLanguageOverride),
-    m_pTxtAttrOverride(new LwpTextAttributeOverride),
-    m_pCharacterBorderOverride(new LwpCharacterBorderOverride),
-    m_pAmikakeOverride(new LwpAmikakeOverride),
     m_nStyleDefinition(0), m_nKey(0)
 {
 }
@@ -87,26 +86,6 @@ void LwpTextStyle::Read()
 
 LwpTextStyle::~LwpTextStyle()
 {
-    if (m_pDescription)
-    {
-        delete m_pDescription;
-    }
-    if (m_pLangOverride)
-    {
-        delete m_pLangOverride;
-    }
-    if (m_pTxtAttrOverride)
-    {
-        delete m_pTxtAttrOverride;
-    }
-    if (m_pCharacterBorderOverride)
-    {
-        delete m_pCharacterBorderOverride;
-    }
-    if (m_pAmikakeOverride)
-    {
-        delete m_pAmikakeOverride;
-    }
 }
 
 void LwpTextStyle::ReadCommon()
@@ -116,33 +95,33 @@ void LwpTextStyle::ReadCommon()
     m_nCSFlags = m_pObjStrm->QuickReaduInt16();
     m_nUseCount = m_pObjStrm->QuickReaduInt32();
 
-    m_pDescription->Read(m_pObjStrm);
+    m_aDescription.Read(m_pObjStrm.get());
 
-    m_pLangOverride->Read(m_pObjStrm);
-    m_pTxtAttrOverride->Read(m_pObjStrm);
+    m_aLangOverride.Read(m_pObjStrm.get());
+    m_aTxtAttrOverride.Read(m_pObjStrm.get());
     if (LwpFileHeader::m_nFileRevision < 0x000B)
     {
-        m_pCharacterBorderOverride->Read(m_pObjStrm);
-        m_pAmikakeOverride->Read(m_pObjStrm);
+        m_aCharacterBorderOverride.Read(m_pObjStrm.get());
+        m_aAmikakeOverride.Read(m_pObjStrm.get());
     }
     else
     {
-        m_CharacterBorder.ReadIndexed(m_pObjStrm);
-        m_Amikake.ReadIndexed(m_pObjStrm);
+        m_CharacterBorder.ReadIndexed(m_pObjStrm.get());
+        m_Amikake.ReadIndexed(m_pObjStrm.get());
     }
     sal_uInt16 nCount = 6;
     if (LwpFileHeader::m_nFileRevision > 0x0005)
         nCount = m_pObjStrm->QuickReaduInt16();
 
-    m_FaceStyle.ReadIndexed(m_pObjStrm);
+    m_FaceStyle.ReadIndexed(m_pObjStrm.get());
 
     if (nCount > 1)
     {
-        m_SizeStyle.ReadIndexed(m_pObjStrm);
-        m_AttributeStyle.ReadIndexed(m_pObjStrm);
-        m_FontStyle.ReadIndexed(m_pObjStrm);
-        m_CharacterBorderStyle.ReadIndexed(m_pObjStrm);
-        m_AmikakeStyle.ReadIndexed(m_pObjStrm);
+        m_SizeStyle.ReadIndexed(m_pObjStrm.get());
+        m_AttributeStyle.ReadIndexed(m_pObjStrm.get());
+        m_FontStyle.ReadIndexed(m_pObjStrm.get());
+        m_CharacterBorderStyle.ReadIndexed(m_pObjStrm.get());
+        m_AmikakeStyle.ReadIndexed(m_pObjStrm.get());
     }
 
     if (m_pObjStrm->CheckExtra())
@@ -157,9 +136,6 @@ void LwpTextStyle::ReadCommon()
     }
 
 }
-
-#include "xfilter/xfparastyle.hxx"
-#include "xfilter/xffont.hxx"
 
 void LwpTextStyle::RegisterStyle()
 {

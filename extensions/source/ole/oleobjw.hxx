@@ -66,31 +66,22 @@ public:
     IUnknownWrapper_Impl(Reference<XMultiServiceFactory> &xFactory,
                          sal_uInt8 unoWrapperClass, sal_uInt8 comWrapperClass);
 
-    ~IUnknownWrapper_Impl();
+    ~IUnknownWrapper_Impl() override;
 
     //XInterface
-    Any SAL_CALL queryInterface(const Type& t)
-        throw (RuntimeException);
+    Any SAL_CALL queryInterface(const Type& t) override;
 
     // XInvokation
-    virtual Reference< XIntrospectionAccess > SAL_CALL getIntrospection(  )
-        throw(RuntimeException);
+    virtual Reference< XIntrospectionAccess > SAL_CALL getIntrospection(  ) override;
     virtual Any SAL_CALL invoke( const OUString& aFunctionName,
                                  const Sequence< Any >& aParams,
                                  Sequence< sal_Int16 >& aOutParamIndex,
-                                 Sequence< Any >& aOutParam )
-        throw(IllegalArgumentException, CannotConvertException,
-              InvocationTargetException, RuntimeException);
+                                 Sequence< Any >& aOutParam ) override;
     virtual void SAL_CALL setValue( const OUString& aPropertyName,
-                                    const Any& aValue )
-        throw(UnknownPropertyException, CannotConvertException,
-              InvocationTargetException, RuntimeException);
-    virtual Any SAL_CALL getValue( const OUString& aPropertyName )
-        throw(UnknownPropertyException, RuntimeException);
-    virtual sal_Bool SAL_CALL hasMethod( const OUString& aName )
-        throw(RuntimeException);
-    virtual sal_Bool SAL_CALL hasProperty( const OUString& aName )
-        throw(RuntimeException);
+                                    const Any& aValue ) override;
+    virtual Any SAL_CALL getValue( const OUString& aPropertyName ) override;
+    virtual sal_Bool SAL_CALL hasMethod( const OUString& aName ) override;
+    virtual sal_Bool SAL_CALL hasProperty( const OUString& aName ) override;
 
     // XBridgeSupplier2
     // This interface is implemented to provide a safe way to obtain the original
@@ -100,25 +91,23 @@ public:
     virtual Any SAL_CALL createBridge( const Any& modelDepObject,
                                        const Sequence< sal_Int8 >& aProcessId,
                                        sal_Int16 sourceModelType,
-                                       sal_Int16 destModelType )
-        throw(IllegalArgumentException, RuntimeException);
+                                       sal_Int16 destModelType ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments )
-        throw(Exception, RuntimeException);
+    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
 
     // XDefaultProperty
-    virtual OUString SAL_CALL getDefaultPropertyName(  ) throw (css::uno::RuntimeException) { return m_sDefaultMember; }
+    virtual OUString SAL_CALL getDefaultPropertyName(  ) override { return m_sDefaultMember; }
 
     // XDefaultMethod
-    virtual OUString SAL_CALL getDefaultMethodName(  ) throw (css::uno::RuntimeException) { return m_sDefaultMember; }
+    virtual OUString SAL_CALL getDefaultMethodName(  ) override { return m_sDefaultMember; }
 
-    virtual css::uno::Any SAL_CALL invokeGetProperty( const OUString& aFunctionName, const css::uno::Sequence< css::uno::Any >& aParams, css::uno::Sequence< ::sal_Int16 >& aOutParamIndex, css::uno::Sequence< css::uno::Any >& aOutParam ) throw (css::lang::IllegalArgumentException, css::script::CannotConvertException, css::reflection::InvocationTargetException, css::uno::RuntimeException);
-    virtual css::uno::Any SAL_CALL invokePutProperty( const OUString& aFunctionName, const css::uno::Sequence< css::uno::Any >& aParams, css::uno::Sequence< ::sal_Int16 >& aOutParamIndex, css::uno::Sequence< css::uno::Any >& aOutParam ) throw (css::lang::IllegalArgumentException, css::script::CannotConvertException, css::reflection::InvocationTargetException, css::uno::RuntimeException);
+    virtual css::uno::Any SAL_CALL invokeGetProperty( const OUString& aFunctionName, const css::uno::Sequence< css::uno::Any >& aParams, css::uno::Sequence< ::sal_Int16 >& aOutParamIndex, css::uno::Sequence< css::uno::Any >& aOutParam ) override;
+    virtual css::uno::Any SAL_CALL invokePutProperty( const OUString& aFunctionName, const css::uno::Sequence< css::uno::Any >& aParams, css::uno::Sequence< ::sal_Int16 >& aOutParamIndex, css::uno::Sequence< css::uno::Any >& aOutParam ) override;
 
     // XDirectInvocation
-    virtual css::uno::Any SAL_CALL directInvoke( const OUString& aName, const css::uno::Sequence< css::uno::Any >& aParams ) throw (css::lang::IllegalArgumentException, css::script::CannotConvertException, css::reflection::InvocationTargetException, css::uno::RuntimeException);
-    virtual sal_Bool SAL_CALL hasMember( const OUString& aName ) throw (css::uno::RuntimeException);
+    virtual css::uno::Any SAL_CALL directInvoke( const OUString& aName, const css::uno::Sequence< css::uno::Any >& aParams ) override;
+    virtual sal_Bool SAL_CALL hasMember( const OUString& aName ) override;
 
 
     Any  invokeWithDispIdComTlb(FuncDesc& aFuncDesc,
@@ -141,8 +130,8 @@ protected:
                                        Sequence< Any >& OutParam);
 
     // UnoConversionUtilities -------------------------------------------------------------------------------
-    virtual Reference<XInterface> createUnoWrapperInstance();
-    virtual Reference<XInterface> createComWrapperInstance();
+    virtual Reference<XInterface> createUnoWrapperInstance() override;
+    virtual Reference<XInterface> createComWrapperInstance() override;
 
     /**Obtains a FUNCDESC structure for a function.
        Fills the FUNCDESC structure if ITypeInfo provides information for
@@ -218,7 +207,7 @@ protected:
     // done by
     // asking for the property "_environment". If it has the value "JScript"
     // (case insensitive) then the IDispatch is considered a JScript object.
-    sal_Bool isJScriptObject();
+    bool isJScriptObject();
 
 
     // If UNO interfaces are implemented in JScript objects, VB or C++ COM objects
@@ -237,7 +226,7 @@ protected:
     /** This value is set during XInitialization::initialize. It indicates that the COM interface
     was transported as VT_DISPATCH in a VARIANT rather then a VT_UNKNOWN
     */
-    sal_Bool  m_bOriginalDispatch;
+    bool  m_bOriginalDispatch;
     DispIdMap           m_dispIdMap;
     Reference<XIdlClass>*       m_pxIdlClass;
 
@@ -248,7 +237,7 @@ protected:
     // The map is filled by buildComTlbIndex
     // It maps Uno Function names to an index which is used in ITypeInfo::GetFuncDesc
     TLBFuncIndexMap m_mapComFunc;
-    // used for synchroizing the computation of the content for m_mapComFunc
+    // used for synchronizing the computation of the content for m_mapComFunc
     bool m_bComTlbIndexInit;
     // Keeps the ITypeInfo obtained from IDispatch::GetTypeInfo
     CComPtr< ITypeInfo > m_spTypeInfo;

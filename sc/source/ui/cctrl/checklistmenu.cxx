@@ -18,9 +18,9 @@
  */
 
 #include "checklistmenu.hxx"
-#include "checklistmenu.hrc"
-#include "strload.hxx"
 #include "globstr.hrc"
+#include "scresid.hxx"
+#include "scres.hrc"
 
 #include <vcl/decoview.hxx>
 #include <vcl/settings.hxx>
@@ -32,6 +32,7 @@
 #include <com/sun/star/accessibility/XAccessible.hpp>
 #include <com/sun/star/accessibility/XAccessibleContext.hpp>
 #include <svtools/fmtfield.hxx>
+#include <svtools/svlbitm.hxx>
 #include <svtools/treelistentry.hxx>
 #include "document.hxx"
 
@@ -53,7 +54,7 @@ ScMenuFloatingWindow::SubMenuItemData::SubMenuItemData(ScMenuFloatingWindow* pPa
     mnMenuPos(MENU_NOT_SELECTED),
     mpParent(pParent)
 {
-    maTimer.SetTimeoutHdl( LINK(this, ScMenuFloatingWindow::SubMenuItemData, TimeoutHdl) );
+    maTimer.SetInvokeHandler( LINK(this, ScMenuFloatingWindow::SubMenuItemData, TimeoutHdl) );
     maTimer.SetTimeout(mpParent->GetSettings().GetMouseSettings().GetMenuDelay());
 }
 
@@ -64,7 +65,7 @@ void ScMenuFloatingWindow::SubMenuItemData::reset()
     maTimer.Stop();
 }
 
-IMPL_LINK_NOARG_TYPED(ScMenuFloatingWindow::SubMenuItemData, TimeoutHdl, Timer *, void)
+IMPL_LINK_NOARG(ScMenuFloatingWindow::SubMenuItemData, TimeoutHdl, Timer *, void)
 {
     mpParent->handleMenuTimeout(this);
 }
@@ -86,8 +87,7 @@ ScMenuFloatingWindow::ScMenuFloatingWindow(vcl::Window* pParent, ScDocument* pDo
 
     const StyleSettings& rStyle = GetSettings().GetStyleSettings();
 
-    sal_Int32 nScaleFactor = GetDPIScaleFactor();
-    const sal_uInt16 nPopupFontHeight = 12 * nScaleFactor;
+    const sal_uInt16 nPopupFontHeight = 12 * GetDPIScaleFactor();
     maLabelFont = rStyle.GetLabelFont();
     maLabelFont.SetFontHeight(nPopupFontHeight);
 }
@@ -238,7 +238,7 @@ void ScMenuFloatingWindow::KeyInput(const KeyEvent& rKEvt)
         Window::KeyInput(rKEvt);
 }
 
-void ScMenuFloatingWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/)
+void ScMenuFloatingWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/)
 {
     const StyleSettings& rStyle = GetSettings().GetStyleSettings();
 
@@ -247,7 +247,7 @@ void ScMenuFloatingWindow::Paint(vcl::RenderContext& rRenderContext, const Recta
     Color aBackColor = rStyle.GetMenuColor();
     Color aBorderColor = rStyle.GetShadowColor();
 
-    Rectangle aCtrlRect(Point(0, 0), GetOutputSizePixel());
+    tools::Rectangle aCtrlRect(Point(0, 0), GetOutputSizePixel());
 
     // Window background
     bool bNativeDrawn = true;
@@ -373,7 +373,7 @@ void ScMenuFloatingWindow::drawMenuItem(vcl::RenderContext& rRenderContext, size
         aMarkerPos.Y() += aSize.Height() / 2 - nFontHeight / 4 + 1;
         aMarkerPos.X() += aSize.Width() - nFontHeight + nFontHeight / 4;
         Size aMarkerSize(nFontHeight / 2, nFontHeight / 2);
-        aDecoView.DrawSymbol(Rectangle(aMarkerPos, aMarkerSize), SymbolType::SPIN_RIGHT, GetTextColor());
+        aDecoView.DrawSymbol(tools::Rectangle(aMarkerPos, aMarkerSize), SymbolType::SPIN_RIGHT, GetTextColor());
     }
 }
 
@@ -382,13 +382,13 @@ void ScMenuFloatingWindow::drawSeparator(vcl::RenderContext& rRenderContext, siz
     Point aPos;
     Size aSize;
     getMenuItemPosSize(nPos, aPos, aSize);
-    Rectangle aRegion(aPos,aSize);
+    tools::Rectangle aRegion(aPos,aSize);
 
     if (rRenderContext.IsNativeControlSupported(ControlType::MenuPopup, ControlPart::Entire))
     {
         rRenderContext.Push(PushFlags::CLIPREGION);
         rRenderContext.IntersectClipRegion(aRegion);
-        Rectangle aCtrlRect(Point(0,0), GetOutputSizePixel());
+        tools::Rectangle aCtrlRect(Point(0,0), GetOutputSizePixel());
         rRenderContext.DrawNativeControl(ControlType::MenuPopup, ControlPart::Entire, aCtrlRect,
                                          ControlState::ENABLED, ImplControlValue(), OUString());
 
@@ -565,7 +565,7 @@ void ScMenuFloatingWindow::launchSubMenu(bool bSetMenuPos)
     SetPopupModeFlags(nOldFlags | FloatWinPopupFlags::NoAppFocusClose);
     pSubMenu->resizeToFitMenuItems(); // set the size before launching the popup to get it positioned correctly.
     pSubMenu->StartPopupMode(
-        Rectangle(aPos,aSize), (FloatWinPopupFlags::Right | FloatWinPopupFlags::GrabFocus));
+        tools::Rectangle(aPos,aSize), (FloatWinPopupFlags::Right | FloatWinPopupFlags::GrabFocus));
     pSubMenu->AddPopupModeWindow(this);
     if (bSetMenuPos)
         pSubMenu->setSelectedMenuItem(0, false, false); // select menu item after the popup becomes fully visible.
@@ -675,13 +675,13 @@ void ScMenuFloatingWindow::highlightMenuItem(vcl::RenderContext& rRenderContext,
     Point aPos;
     Size aSize;
     getMenuItemPosSize(nPos, aPos, aSize);
-    Rectangle aRegion(aPos,aSize);
+    tools::Rectangle aRegion(aPos,aSize);
 
     if (rRenderContext.IsNativeControlSupported(ControlType::MenuPopup, ControlPart::Entire))
     {
         rRenderContext.Push(PushFlags::CLIPREGION);
-        rRenderContext.IntersectClipRegion(Rectangle(aPos, aSize));
-        Rectangle aCtrlRect(Point(0,0), GetOutputSizePixel());
+        rRenderContext.IntersectClipRegion(tools::Rectangle(aPos, aSize));
+        tools::Rectangle aCtrlRect(Point(0,0), GetOutputSizePixel());
         rRenderContext.DrawNativeControl(ControlType::MenuPopup, ControlPart::Entire, aCtrlRect, ControlState::ENABLED,
                                          ImplControlValue(), OUString());
         rRenderContext.Pop();
@@ -707,7 +707,7 @@ void ScMenuFloatingWindow::highlightMenuItem(vcl::RenderContext& rRenderContext,
             rRenderContext.SetFillColor(aBackColor);
             rRenderContext.SetLineColor(aBackColor);
         }
-        rRenderContext.DrawRect(Rectangle(aPos,aSize));
+        rRenderContext.DrawRect(tools::Rectangle(aPos,aSize));
     }
 
     Color aTextColor = bSelected ? rStyle.GetMenuHighlightTextColor() : rStyle.GetMenuTextColor();
@@ -744,7 +744,7 @@ size_t ScMenuFloatingWindow::getEnclosingMenuItem(const Point& rPos) const
         Point aPos;
         Size aSize;
         getMenuItemPosSize(i, aPos, aSize);
-        Rectangle aRect(aPos, aSize);
+        tools::Rectangle aRect(aPos, aSize);
         if (aRect.IsInside(rPos))
             return maMenuItems[i].mbSeparator ? MENU_NOT_SELECTED : i;
     }
@@ -778,7 +778,7 @@ void ScMenuFloatingWindow::fireMenuHighlightedEvent()
     if (!xAccMenu.is())
         return;
 
-    VclAccessibleEvent aEvent(VCLEVENT_MENU_HIGHLIGHT, xAccMenu);
+    VclAccessibleEvent aEvent(VclEventId::MenuHighlight, xAccMenu);
     FireVclEvent(aEvent);
 }
 
@@ -815,7 +815,7 @@ void ScMenuFloatingWindow::ensureSubMenuVisible(ScMenuFloatingWindow* pSubMenu)
         SetPopupModeFlags(nOldFlags | FloatWinPopupFlags::NoAppFocusClose);
         pSubMenu->resizeToFitMenuItems(); // set the size before launching the popup to get it positioned correctly.
         pSubMenu->StartPopupMode(
-            Rectangle(aPos,aSize), (FloatWinPopupFlags::Right | FloatWinPopupFlags::GrabFocus));
+            tools::Rectangle(aPos,aSize), (FloatWinPopupFlags::Right | FloatWinPopupFlags::GrabFocus));
         pSubMenu->AddPopupModeWindow(this);
         SetPopupModeFlags(nOldFlags);
     }
@@ -877,7 +877,7 @@ void ScCheckListMenuWindow::CancelButton::Click()
 ScCheckListMenuWindow::ScCheckListMenuWindow(vcl::Window* pParent, ScDocument* pDoc) :
     ScMenuFloatingWindow(pParent, pDoc),
     maEdSearch(VclPtr<ScSearchEdit>::Create(this)),
-    maChecks(VclPtr<ScCheckListBox>::Create(this,  WB_HASBUTTONS | WB_HASLINES | WB_HASLINESATROOT | WB_HASBUTTONSATROOT) ),
+    maChecks(VclPtr<ScCheckListBox>::Create(this)),
     maChkToggleAll(VclPtr<TriStateBox>::Create(this, 0)),
     maBtnSelectSingle(VclPtr<ImageButton>::Create(this, 0)),
     maBtnUnselectSingle(VclPtr<ImageButton>::Create(this, 0)),
@@ -890,9 +890,9 @@ ScCheckListMenuWindow::ScCheckListMenuWindow(vcl::Window* pParent, ScDocument* p
     mePrevToggleAllState(TRISTATE_INDET),
     maTabStops(this)
 {
-    sal_Int32 nScaleFactor = GetDPIScaleFactor();
+    float fScaleFactor = GetDPIScaleFactor();
 
-    maWndSize = Size(200 * nScaleFactor, 330 * nScaleFactor);
+    maWndSize = Size(200 * fScaleFactor, 330 * fScaleFactor);
 
     maTabStops.AddTabStop( this );
     maTabStops.AddTabStop( maEdSearch.get() );
@@ -906,8 +906,10 @@ ScCheckListMenuWindow::ScCheckListMenuWindow(vcl::Window* pParent, ScDocument* p
     maEdSearch->SetTabStopsContainer( &maTabStops );
     maChecks->SetTabStopsContainer( &maTabStops );
 
-    // Enable type-ahead search in the check list box.
-    maChecks->SetStyle(maChecks->GetStyle() | WB_QUICK_SEARCH);
+    set_id("check_list_menu");
+    maChkToggleAll->set_id("toggle_all");
+    maBtnSelectSingle->set_id("select_current");
+    maBtnUnselectSingle->set_id("unselect_current");
 }
 
 ScCheckListMenuWindow::~ScCheckListMenuWindow()
@@ -931,21 +933,21 @@ void ScCheckListMenuWindow::dispose()
 void ScCheckListMenuWindow::getSectionPosSize(
     Point& rPos, Size& rSize, SectionType eType) const
 {
-    sal_Int32 nScaleFactor = GetDPIScaleFactor();
+    float fScaleFactor = GetDPIScaleFactor();
 
     // constant parameters.
-    const long nSearchBoxMargin = 10 *nScaleFactor;
-    const long nListBoxMargin = 5 * nScaleFactor;            // horizontal distance from the side of the dialog to the listbox border.
-    const long nListBoxInnerPadding = 5 * nScaleFactor;
-    const long nTopMargin = 5 * nScaleFactor;
+    const long nSearchBoxMargin = 10 *fScaleFactor;
+    const long nListBoxMargin = 5 * fScaleFactor;            // horizontal distance from the side of the dialog to the listbox border.
+    const long nListBoxInnerPadding = 5 * fScaleFactor;
+    const long nTopMargin = 5 * fScaleFactor;
     const long nMenuHeight = maMenuSize.getHeight();
-    const long nSingleItemBtnAreaHeight = 32 * nScaleFactor; // height of the middle area below the list box where the single-action buttons are.
-    const long nBottomBtnAreaHeight = 50 * nScaleFactor;     // height of the bottom area where the OK and Cancel buttons are.
-    const long nBtnWidth = 90 * nScaleFactor;
+    const long nSingleItemBtnAreaHeight = 32 * fScaleFactor; // height of the middle area below the list box where the single-action buttons are.
+    const long nBottomBtnAreaHeight = 50 * fScaleFactor;     // height of the bottom area where the OK and Cancel buttons are.
+    const long nBtnWidth = 90 * fScaleFactor;
     const long nLabelHeight = getLabelFont().GetFontHeight();
     const long nBtnHeight = nLabelHeight * 2;
-    const long nBottomMargin = 10 * nScaleFactor;
-    const long nMenuListMargin = 5 * nScaleFactor;
+    const long nBottomMargin = 10 * fScaleFactor;
+    const long nMenuListMargin = 5 * fScaleFactor;
     const long nSearchBoxHeight = nLabelHeight * 2;
 
     // parameters calculated from constants.
@@ -1003,7 +1005,7 @@ void ScCheckListMenuWindow::getSectionPosSize(
         break;
         case BTN_SINGLE_SELECT:
         {
-            long h = 26 * nScaleFactor;
+            long h = 26 * fScaleFactor;
             rPos = Point(nListBoxMargin, nSingleBtnAreaY);
             rPos.X() += nListBoxWidth - h - 10 - h - 10;
             rPos.Y() += (nSingleItemBtnAreaHeight - h)/2;
@@ -1012,7 +1014,7 @@ void ScCheckListMenuWindow::getSectionPosSize(
         break;
         case BTN_SINGLE_UNSELECT:
         {
-            long h = 26 * nScaleFactor;
+            long h = 26 * fScaleFactor;
             rPos = Point(nListBoxMargin, nSingleBtnAreaY);
             rPos.X() += nListBoxWidth - h - 10;
             rPos.Y() += (nSingleItemBtnAreaHeight - h)/2;
@@ -1079,7 +1081,7 @@ void ScCheckListMenuWindow::packWindow()
     maEdSearch->SetPosSizePixel(aPos, aSize);
     maEdSearch->SetFont(getLabelFont());
     maEdSearch->SetControlBackground(rStyle.GetFieldColor());
-    maEdSearch->SetPlaceholderText(SC_STRLOAD(RID_POPUP_FILTER, STR_EDIT_SEARCH_ITEMS));
+    maEdSearch->SetPlaceholderText(SC_RESSTR(STR_EDIT_SEARCH_ITEMS));
     maEdSearch->SetModifyHdl( LINK(this, ScCheckListMenuWindow, EdModifyHdl) );
     maEdSearch->Show();
 
@@ -1092,40 +1094,34 @@ void ScCheckListMenuWindow::packWindow()
     getSectionPosSize(aPos, aSize, CHECK_TOGGLE_ALL);
     maChkToggleAll->SetPosSizePixel(aPos, aSize);
     maChkToggleAll->SetFont(getLabelFont());
-    maChkToggleAll->SetText(SC_STRLOAD(RID_POPUP_FILTER, STR_BTN_TOGGLE_ALL));
+    maChkToggleAll->SetText(SC_RESSTR(STR_BTN_TOGGLE_ALL));
     maChkToggleAll->SetTextColor(rStyle.GetMenuTextColor());
     maChkToggleAll->SetControlBackground(rStyle.GetMenuColor());
     maChkToggleAll->SetClickHdl( LINK(this, ScCheckListMenuWindow, TriStateHdl) );
     maChkToggleAll->Show();
 
-    sal_Int32 nScaleFactor = GetDPIScaleFactor();
+    float fScaleFactor = GetDPIScaleFactor();
 
-    Image aSingleSelect(ScResId(RID_IMG_SELECT_CURRENT));
-    if (nScaleFactor != 1)
-    {
-        BitmapEx aBitmap = aSingleSelect.GetBitmapEx();
-        aBitmap.Scale(nScaleFactor, nScaleFactor, BmpScaleFlag::Fast);
-        aSingleSelect = Image(aBitmap);
-    }
+    BitmapEx aSingleSelectBmp(ScResId(RID_BMP_SELECT_CURRENT));
+    if (fScaleFactor > 1)
+        aSingleSelectBmp.Scale(fScaleFactor, fScaleFactor, BmpScaleFlag::Fast);
+    Image aSingleSelect(aSingleSelectBmp);
 
     getSectionPosSize(aPos, aSize, BTN_SINGLE_SELECT);
     maBtnSelectSingle->SetPosSizePixel(aPos, aSize);
-    maBtnSelectSingle->SetQuickHelpText(SC_STRLOAD(RID_POPUP_FILTER, STR_BTN_SELECT_CURRENT));
+    maBtnSelectSingle->SetQuickHelpText(SC_RESSTR(STR_BTN_SELECT_CURRENT));
     maBtnSelectSingle->SetModeImage(aSingleSelect);
     maBtnSelectSingle->SetClickHdl( LINK(this, ScCheckListMenuWindow, ButtonHdl) );
     maBtnSelectSingle->Show();
 
-    Image aSingleUnselect(ScResId(RID_IMG_UNSELECT_CURRENT));
-    if (nScaleFactor != 1)
-    {
-        BitmapEx aBitmap = aSingleUnselect.GetBitmapEx();
-        aBitmap.Scale(nScaleFactor, nScaleFactor, BmpScaleFlag::Fast);
-        aSingleUnselect = Image(aBitmap);
-    }
+    BitmapEx aSingleUnselectBmp(ScResId(RID_BMP_UNSELECT_CURRENT));
+    if (fScaleFactor > 1)
+        aSingleUnselectBmp.Scale(fScaleFactor, fScaleFactor, BmpScaleFlag::Fast);
+    Image aSingleUnselect(aSingleUnselectBmp);
 
     getSectionPosSize(aPos, aSize, BTN_SINGLE_UNSELECT);
     maBtnUnselectSingle->SetPosSizePixel(aPos, aSize);
-    maBtnUnselectSingle->SetQuickHelpText(SC_STRLOAD(RID_POPUP_FILTER, STR_BTN_UNSELECT_CURRENT));
+    maBtnUnselectSingle->SetQuickHelpText(SC_RESSTR(STR_BTN_UNSELECT_CURRENT));
     maBtnUnselectSingle->SetModeImage(aSingleUnselect);
     maBtnUnselectSingle->SetClickHdl( LINK(this, ScCheckListMenuWindow, ButtonHdl) );
     maBtnUnselectSingle->Show();
@@ -1178,7 +1174,7 @@ void ScCheckListMenuWindow::selectCurrentMemberOnly(bool bSet)
     maChecks->CheckEntry(pEntry, bSet );
 }
 
-IMPL_LINK_TYPED( ScCheckListMenuWindow, ButtonHdl, Button*, pBtn, void )
+IMPL_LINK( ScCheckListMenuWindow, ButtonHdl, Button*, pBtn, void )
 {
     if (pBtn == maBtnOk.get())
         close(true);
@@ -1194,7 +1190,7 @@ IMPL_LINK_TYPED( ScCheckListMenuWindow, ButtonHdl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, TriStateHdl, Button*, void)
+IMPL_LINK_NOARG(ScCheckListMenuWindow, TriStateHdl, Button*, void)
 {
     switch (mePrevToggleAllState)
     {
@@ -1216,10 +1212,10 @@ IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, TriStateHdl, Button*, void)
     mePrevToggleAllState = maChkToggleAll->GetState();
 }
 
-IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, EdModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(ScCheckListMenuWindow, EdModifyHdl, Edit&, void)
 {
     OUString aSearchText = maEdSearch->GetText();
-    aSearchText = aSearchText.toAsciiLowerCase();
+    aSearchText = ScGlobal::pCharClass->lowercase( aSearchText );
     bool bSearchTextEmpty = aSearchText.isEmpty();
     size_t n = maMembers.size();
     size_t nSelCount = 0;
@@ -1238,10 +1234,10 @@ IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, EdModifyHdl, Edit&, void)
         if ( !bSearchTextEmpty )
         {
             if ( !bIsDate )
-                bPartialMatch = ( aLabelDisp.toAsciiLowerCase().indexOf( aSearchText ) != -1 );
+                bPartialMatch = ( ScGlobal::pCharClass->lowercase( aLabelDisp ).indexOf( aSearchText ) != -1 );
             else if ( maMembers[i].meDatePartType == ScCheckListMember::DAY ) // Match with both numerical and text version of month
-                bPartialMatch = bPartialMatch || ( OUString( maMembers[i].maRealName + maMembers[i].maDateParts[1] )
-                                                   .toAsciiLowerCase().indexOf( aSearchText ) != -1 );
+                bPartialMatch = bPartialMatch || ( ScGlobal::pCharClass->lowercase( OUString( maMembers[i].maRealName + maMembers[i].maDateParts[1] ) )
+                                                   .indexOf( aSearchText ) != -1 );
             else
                 continue;
         }
@@ -1292,7 +1288,7 @@ IMPL_LINK_NOARG_TYPED(ScCheckListMenuWindow, EdModifyHdl, Edit&, void)
         maBtnOk->Enable( nSelCount != 0);
 }
 
-IMPL_LINK_TYPED( ScCheckListMenuWindow, CheckHdl, SvTreeListBox*, pChecks, void )
+IMPL_LINK( ScCheckListMenuWindow, CheckHdl, SvTreeListBox*, pChecks, void )
 {
     if (pChecks != maChecks.get())
         return;
@@ -1325,7 +1321,7 @@ void ScCheckListMenuWindow::MouseMove(const MouseEvent& rMEvt)
         queueCloseSubMenu();
 }
 
-bool ScCheckListMenuWindow::Notify(NotifyEvent& rNEvt)
+bool ScCheckListMenuWindow::EventNotify(NotifyEvent& rNEvt)
 {
     if (rNEvt.GetType() == MouseNotifyEvent::KEYUP)
     {
@@ -1338,10 +1334,10 @@ bool ScCheckListMenuWindow::Notify(NotifyEvent& rNEvt)
             return true;
         }
     }
-    return ScMenuFloatingWindow::Notify(rNEvt);
+    return ScMenuFloatingWindow::EventNotify(rNEvt);
 }
 
-void ScCheckListMenuWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void ScCheckListMenuWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     ScMenuFloatingWindow::Paint(rRenderContext, rRect);
 
@@ -1356,12 +1352,12 @@ void ScCheckListMenuWindow::Paint(vcl::RenderContext& rRenderContext, const Rect
     // Member list box background
     rRenderContext.SetFillColor(aMemberBackColor);
     rRenderContext.SetLineColor(aBorderColor);
-    rRenderContext.DrawRect(Rectangle(aPos,aSize));
+    rRenderContext.DrawRect(tools::Rectangle(aPos,aSize));
 
     // Single-action button box
     getSectionPosSize(aPos, aSize, SINGLE_BTN_AREA);
     rRenderContext.SetFillColor(rStyle.GetMenuColor());
-    rRenderContext.DrawRect(Rectangle(aPos,aSize));
+    rRenderContext.DrawRect(tools::Rectangle(aPos,aSize));
 }
 
 void ScCheckListMenuWindow::updateMemberParents( SvTreeListEntry* pLeaf, size_t nIdx )
@@ -1442,7 +1438,7 @@ void ScCheckListMenuWindow::addDateMember(const OUString& rsName, double nVal, b
     Date aDate = *(pFormatter->GetNullDate());
     aDate += static_cast<long>(rtl::math::approxFloor(nVal));
 
-    sal_uInt16 nYear = aDate.GetYear();
+    sal_Int16 nYear = aDate.GetYear();
     sal_uInt16 nMonth = aDate.GetMonth();
     sal_uInt16 nDay = aDate.GetDay();
 
@@ -1614,10 +1610,11 @@ void ScTabStops::clear()
     maControls.clear();
 }
 
-ScCheckListBox::ScCheckListBox( vcl::Window* pParent, WinBits nWinStyle )
-    :  SvTreeListBox( pParent, nWinStyle ), mpCheckButton( nullptr ), mbSeenMouseButtonDown( false )
+ScCheckListBox::ScCheckListBox( vcl::Window* pParent )
+    :  SvTreeListBox( pParent, 0 ), mpCheckButton( nullptr ), mbSeenMouseButtonDown( false )
 {
     Init();
+    set_id("check_list_box");
 }
 
 SvTreeListEntry* ScCheckListBox::FindEntry( SvTreeListEntry* pParent, const OUString& sNode )
@@ -1707,7 +1704,7 @@ void ScCheckListBox::CheckEntry( SvTreeListEntry* pParent, bool bCheck )
 SvTreeListEntry* ScCheckListBox::ShowCheckEntry( const OUString& sName, ScCheckListMember& rMember, bool bShow, bool bCheck )
 {
     SvTreeListEntry* pEntry = nullptr;
-    if ( !rMember.mbDate || ( rMember.mbDate && rMember.mpParent ) )
+    if (!rMember.mbDate || rMember.mpParent)
         pEntry = FindEntry( rMember.mpParent, sName );
 
     if ( bShow )
@@ -1831,6 +1828,15 @@ void ScSearchEdit::MouseButtonDown(const MouseEvent& rMEvt)
         mpTabStops->SetTabStop( this );
 }
 
+void ScCheckListMenuWindow::setHasDates(bool bHasDates)
+{
+    // WB_QUICK_SEARCH Enables type-ahead search in the check list box.
+    if (bHasDates)
+        maChecks->SetStyle(WB_QUICK_SEARCH | WB_HASBUTTONS | WB_HASLINES | WB_HASLINESATROOT | WB_HASBUTTONSATROOT);
+    else
+        maChecks->SetStyle(WB_QUICK_SEARCH | WB_HASBUTTONS);
+}
+
 void ScCheckListMenuWindow::initMembers()
 {
     size_t n = maMembers.size();
@@ -1911,25 +1917,27 @@ void ScCheckListMenuWindow::getResult(ResultType& rResult)
             if (aLabel.isEmpty())
                 aLabel = ScGlobal::GetRscString(STR_EMPTYDATA);
             bool bState =  maChecks->IsChecked( aLabel,  maMembers[i].mpParent );
-            OUString sName;
+            ResultEntry aResultEntry;
+            aResultEntry.bValid = bState;
             if ( maMembers[i].mbDate )
-                sName = maMembers[i].maRealName;
+                aResultEntry.aName = maMembers[i].maRealName;
             else
-                sName = maMembers[i].maName;
-            aResult.insert(ResultType::value_type(sName, bState));
+                aResultEntry.aName = maMembers[i].maName;
+            aResultEntry.bDate = maMembers[i].mbDate;
+            aResult.insert(aResultEntry);
         }
     }
     rResult.swap(aResult);
 }
 
-void ScCheckListMenuWindow::launch(const Rectangle& rRect)
+void ScCheckListMenuWindow::launch(const tools::Rectangle& rRect)
 {
     packWindow();
     if (!maConfig.mbAllowEmptySet)
         // We need to have at least one member selected.
         maBtnOk->Enable(maChecks->GetCheckedEntryCount() != 0);
 
-    Rectangle aRect(rRect);
+    tools::Rectangle aRect(rRect);
     if (maConfig.mbRTL)
     {
         // In RTL mode, the logical "left" is visual "right".

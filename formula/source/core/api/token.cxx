@@ -27,6 +27,8 @@
 #include <tools/debug.hxx>
 #include <osl/diagnose.h>
 
+#include <com/sun/star/sheet/FormulaToken.hpp>
+#include "formula/errorcodes.hxx"
 #include "formula/token.hxx"
 #include "formula/tokenarray.hxx"
 #include "formula/FormulaCompiler.hxx"
@@ -42,6 +44,8 @@ namespace formula
 
 // Need a lot of FormulaDoubleToken
 IMPL_FIXEDMEMPOOL_NEWDEL_DLL( FormulaDoubleToken )
+// Need quite some FormulaTypedDoubleToken
+IMPL_FIXEDMEMPOOL_NEWDEL_DLL( FormulaTypedDoubleToken )
 // Need a lot of FormulaByteToken
 IMPL_FIXEDMEMPOOL_NEWDEL_DLL( FormulaByteToken )
 // Need several FormulaStringToken
@@ -188,7 +192,8 @@ void FormulaToken::SetInForceArray( bool )
 
 double FormulaToken::GetDouble() const
 {
-    SAL_WARN( "formula.core", "FormulaToken::GetDouble: virtual dummy called" );
+    // This one is worth an assert.
+    assert( !"FormulaToken::GetDouble: virtual dummy called" );
     return 0.0;
 }
 
@@ -197,6 +202,12 @@ double & FormulaToken::GetDoubleAsReference()
     SAL_WARN( "formula.core", "FormulaToken::GetDouble: virtual dummy called" );
     static double fVal = 0.0;
     return fVal;
+}
+
+short FormulaToken::GetDoubleType() const
+{
+    SAL_WARN( "formula.core", "FormulaToken::GetDoubleType: virtual dummy called" );
+    return 0;
 }
 
 svl::SharedString FormulaToken::GetString() const
@@ -252,13 +263,13 @@ FormulaToken* FormulaToken::GetFAPOrigToken() const
     return nullptr;
 }
 
-sal_uInt16 FormulaToken::GetError() const
+FormulaError FormulaToken::GetError() const
 {
     SAL_WARN( "formula.core", "FormulaToken::GetError: virtual dummy called" );
-    return 0;
+    return FormulaError::NONE;
 }
 
-void FormulaToken::SetError( sal_uInt16 )
+void FormulaToken::SetError( FormulaError )
 {
     SAL_WARN( "formula.core", "FormulaToken::SetError: virtual dummy called" );
 }
@@ -354,18 +365,17 @@ bool FormulaFAPToken::operator==( const FormulaToken& r ) const
 }
 
 
-short*  FormulaJumpToken::GetJump() const               { return pJump; }
+short*  FormulaJumpToken::GetJump() const               { return pJump.get(); }
 bool    FormulaJumpToken::IsInForceArray() const        { return bIsInForceArray; }
 void    FormulaJumpToken::SetInForceArray( bool b )     { bIsInForceArray = b; }
 bool FormulaJumpToken::operator==( const FormulaToken& r ) const
 {
     return FormulaToken::operator==( r ) && pJump[0] == r.GetJump()[0] &&
-        memcmp( pJump+1, r.GetJump()+1, pJump[0] * sizeof(short) ) == 0 &&
+        memcmp( pJump.get()+1, r.GetJump()+1, pJump[0] * sizeof(short) ) == 0 &&
         bIsInForceArray == r.IsInForceArray();
 }
 FormulaJumpToken::~FormulaJumpToken()
 {
-    delete [] pJump;
 }
 
 
@@ -709,7 +719,7 @@ FormulaTokenArray::FormulaTokenArray() :
     nLen(0),
     nRPN(0),
     nIndex(0),
-    nError(0),
+    nError(FormulaError::NONE),
     nMode(ScRecalcMode::NORMAL),
     bHyperLink(false),
     mbFromRangeName(false),
@@ -781,57 +791,6 @@ FormulaTokenArray& FormulaTokenArray::operator=( const FormulaTokenArray& rArr )
     return *this;
 }
 
-FormulaTokenArray* FormulaTokenArray::Clone() const
-{
-    FormulaTokenArray* p = new FormulaTokenArray;
-    p->nLen = nLen;
-    p->nRPN = nRPN;
-    p->nMode = nMode;
-    p->nError = nError;
-    p->bHyperLink = bHyperLink;
-    p->mbFromRangeName = mbFromRangeName;
-    FormulaToken** pp;
-    if( nLen )
-    {
-        pp = p->pCode = new FormulaToken*[ nLen ];
-        memcpy( pp, pCode, nLen * sizeof( FormulaToken* ) );
-        for( sal_uInt16 i = 0; i < nLen; i++, pp++ )
-        {
-            *pp = (*pp)->Clone();
-            (*pp)->IncRef();
-        }
-    }
-    if( nRPN )
-    {
-        pp = p->pRPN = new FormulaToken*[ nRPN ];
-        memcpy( pp, pRPN, nRPN * sizeof( FormulaToken* ) );
-        for( sal_uInt16 i = 0; i < nRPN; i++, pp++ )
-        {
-            FormulaToken* t = *pp;
-            if( t->GetRef() > 1 )
-            {
-                FormulaToken** p2 = pCode;
-                sal_uInt16 nIdx = 0xFFFF;
-                for( sal_uInt16 j = 0; j < nLen; j++, p2++ )
-                {
-                    if( *p2 == t )
-                    {
-                        nIdx = j; break;
-                    }
-                }
-                if( nIdx == 0xFFFF )
-                    *pp = t->Clone();
-                else
-                    *pp = p->pCode[ nIdx ];
-            }
-            else
-                *pp = t->Clone();
-            (*pp)->IncRef();
-        }
-    }
-    return p;
-}
-
 void FormulaTokenArray::Clear()
 {
     if( nRPN ) DelRPN();
@@ -845,7 +804,8 @@ void FormulaTokenArray::Clear()
         delete [] pCode;
     }
     pCode = nullptr; pRPN = nullptr;
-    nError = nLen = nIndex = nRPN = 0;
+    nError = FormulaError::NONE;
+    nLen = nIndex = nRPN = 0;
     bHyperLink = false;
     mbFromRangeName = false;
     mbShareable = true;
@@ -900,6 +860,62 @@ FormulaToken* FormulaTokenArray::ReplaceToken( sal_uInt16 nOffset, FormulaToken*
     }
 }
 
+sal_uInt16 FormulaTokenArray::RemoveToken( sal_uInt16 nOffset, sal_uInt16 nCount )
+{
+    if (nOffset < nLen)
+    {
+        SAL_WARN_IF( nOffset + nCount > nLen, "formula.core",
+                "FormulaTokenArray::RemoveToken - nOffset " << nOffset << " + nCount " << nCount << " > nLen " << nLen);
+        const sal_uInt16 nStop = ::std::min( static_cast<sal_uInt16>(nOffset + nCount), nLen);
+        nCount = nStop - nOffset;
+        for (sal_uInt16 j = nOffset; j < nStop; ++j)
+        {
+            FormulaToken* p = pCode[j];
+            if (p->GetRef() > 1)
+            {
+                for (sal_uInt16 i=0; i < nRPN; ++i)
+                {
+                    if (pRPN[i] == p)
+                    {
+                        // Shift remaining tokens in pRPN down.
+                        for (sal_uInt16 x=i+1; x < nRPN; ++x)
+                        {
+                            pRPN[x-1] = pRPN[x];
+                        }
+                        --nRPN;
+
+                        p->DecRef();
+                        if (p->GetRef() == 1)
+                            break;  // for
+                    }
+                }
+            }
+            p->DecRef();    // may be dead now
+        }
+
+        // Shift remaining tokens in pCode down.
+        for (sal_uInt16 x = nStop; x < nLen; ++x)
+        {
+            pCode[x-nCount] = pCode[x];
+        }
+        nLen -= nCount;
+
+        if (nIndex >= nOffset)
+        {
+            if (nIndex < nStop)
+                nIndex = nOffset + 1;
+            else
+                nIndex -= nStop - nOffset;
+        }
+        return nCount;
+    }
+    else
+    {
+        SAL_WARN("formula.core","FormulaTokenArray::RemoveToken - nOffset " << nOffset << " >= nLen " << nLen);
+        return 0;
+    }
+}
+
 FormulaToken* FormulaTokenArray::Add( FormulaToken* t )
 {
     if( !pCode )
@@ -949,12 +965,12 @@ FormulaToken* FormulaTokenArray::AddExternal( const OUString& rStr,
 
 FormulaToken* FormulaTokenArray::AddBad( const OUString& rStr )
 {
-    return Add( new FormulaStringOpToken( ocBad, rStr ) );
+    return Add( new FormulaStringOpToken( ocBad, svl::SharedString( rStr ) ) ); // string not interned
 }
 
 FormulaToken* FormulaTokenArray::AddStringXML( const OUString& rStr )
 {
-    return Add( new FormulaStringOpToken( ocStringXML, rStr ) );
+    return Add( new FormulaStringOpToken( ocStringXML, svl::SharedString( rStr ) ) );   // string not interned
 }
 
 
@@ -1052,9 +1068,9 @@ inline bool MissingConventionODF::isRewriteNeeded( OpCode eOp ) const
         case ocGammaDist:
         case ocPoissonDist:
         case ocAddress:
+        case ocLogInv:
         case ocLogNormDist:
         case ocNormDist:
-        case ocWeeknumOOo:
             return true;
         case ocMissing:
         case ocLog:
@@ -1097,11 +1113,14 @@ inline bool MissingConventionOOXML::isRewriteNeeded( OpCode eOp )
         case ocFDist_LT:
         case ocPoissonDist:
         case ocNormDist:
+        case ocLogInv:
         case ocLogNormDist:
+        case ocHypGeomDist:
 
         case ocDBCount:
         case ocDBCount2:
             return true;
+
         default:
             return false;
     }
@@ -1153,6 +1172,7 @@ void FormulaMissingContext::AddMoreArgs( FormulaTokenArray *pNewArr, const Missi
                             pNewArr->AddDouble( 1.0 );      // 4th, Cumulative=true()
                         }
                         break;
+                    case ocLogInv:
                     case ocLogNormDist:
                         if ( mnCurArg == 0 )
                         {
@@ -1218,6 +1238,7 @@ void FormulaMissingContext::AddMoreArgs( FormulaTokenArray *pNewArr, const Missi
                         }
                         break;
 
+                    case ocLogInv:
                     case ocLogNormDist:
                         if ( mnCurArg == 0 )
                         {
@@ -1228,6 +1249,14 @@ void FormulaMissingContext::AddMoreArgs( FormulaTokenArray *pNewArr, const Missi
                         {
                             pNewArr->AddOpCode( ocSep );
                             pNewArr->AddDouble( 1.0 );      // 3rd, standard deviation = 1.0
+                        }
+                        break;
+
+                    case ocHypGeomDist:
+                        if ( mnCurArg == 3 )
+                        {
+                            pNewArr->AddOpCode( ocSep );
+                            pNewArr->AddDouble( 0.0 );      // 5th, Cumulative = false()
                         }
                         break;
 
@@ -1495,27 +1524,33 @@ FormulaTokenArray * FormulaTokenArray::RewriteMissing( const MissingConvention &
         }
         if (bAdd)
         {
-            if ( ( pCur->GetOpCode() == ocCeil || pCur->GetOpCode() == ocFloor ) &&
+            OpCode eOp = pCur->GetOpCode();
+            if ( ( eOp == ocCeil || eOp == ocFloor ||
+                   ( eOp == ocLogNormDist && pCur->GetByte() == 4 ) ) &&
                  rConv.getConvention() == MissingConvention::FORMULA_MISSING_CONVENTION_OOXML )
             {
-                FormulaToken *pToken = new FormulaToken( svByte,
-                        ( pCur->GetOpCode() == ocCeil ? ocCeil_Math : ocFloor_Math ) );
+                switch ( eOp )
+                {
+                    case ocCeil :
+                        eOp = ocCeil_Math;
+                        break;
+                    case ocFloor :
+                        eOp = ocFloor_Math;
+                        break;
+                    case ocLogNormDist :
+                        eOp = ocLogNormDist_MS;
+                        break;
+                    default :
+                        eOp = ocNone;
+                        break;
+                }
+                FormulaToken *pToken = new FormulaToken( svByte, eOp );
                 pNewArr->Add( pToken );
             }
-            else if (pCur->GetOpCode() == ocWeeknumOOo &&
-                    rConv.getConvention() == MissingConvention::FORMULA_MISSING_CONVENTION_ODFF)
+            else if ( eOp == ocHypGeomDist &&
+                      rConv.getConvention() == MissingConvention::FORMULA_MISSING_CONVENTION_OOXML )
             {
-                /* XXX TODO FIXME: Remove this special handling (also
-                 * ocWeeknumOOo in MissingConventionODF::isRewriteNeeded()
-                 * above) in 5.3 or later, this still abuses the ODFF
-                 * ISOWEEKNUM function to store the old WEEKNUM (now
-                 * WEEKNUM_OOO) cases that can't be mapped to the new WEEKNUM
-                 * or ISOWEEKNUM, as 5.0 and earlier always stored the old
-                 * WEEKNUM as ISOWEEKNUM. Ugly nasty ...
-                 * Later write ORG.LIBREOFFICE.WEEKNUM_OOO, see
-                 * formula/source/core/resource/core_resource.src
-                 * SC_OPCODE_WEEKNUM_OOO */
-                FormulaToken *pToken = new FormulaByteToken( ocIsoWeeknum, pCur->GetByte(), pCur->IsInForceArray());
+                FormulaToken *pToken = new FormulaToken( svByte, ocHypGeomDist_MS );
                 pNewArr->Add( pToken );
             }
             else
@@ -1711,9 +1746,27 @@ bool FormulaTokenIterator::IsEndOfPath() const
 
 double      FormulaDoubleToken::GetDouble() const            { return fDouble; }
 double &    FormulaDoubleToken::GetDoubleAsReference()       { return fDouble; }
+
+short FormulaDoubleToken::GetDoubleType() const
+{
+    // This is a plain double value without type information, don't emit a
+    // warning via FormulaToken::GetDoubleType().
+    return 0;
+}
+
 bool FormulaDoubleToken::operator==( const FormulaToken& r ) const
 {
     return FormulaToken::operator==( r ) && fDouble == r.GetDouble();
+}
+
+short FormulaTypedDoubleToken::GetDoubleType() const
+{
+    return mnType;
+}
+
+bool FormulaTypedDoubleToken::operator==( const FormulaToken& r ) const
+{
+    return FormulaDoubleToken::operator==( r ) && mnType == r.GetDoubleType();
 }
 
 FormulaStringToken::FormulaStringToken( const svl::SharedString& r ) :
@@ -1789,8 +1842,8 @@ bool FormulaExternalToken::operator==( const FormulaToken& r ) const
 }
 
 
-sal_uInt16      FormulaErrorToken::GetError() const             { return nError; }
-void            FormulaErrorToken::SetError( sal_uInt16 nErr )  { nError = nErr; }
+FormulaError      FormulaErrorToken::GetError() const             { return nError; }
+void            FormulaErrorToken::SetError( FormulaError nErr )  { nError = nErr; }
 bool FormulaErrorToken::operator==( const FormulaToken& r ) const
 {
     return FormulaToken::operator==( r ) &&

@@ -90,7 +90,8 @@ namespace comphelper
     COMPHELPER_DLLPUBLIC OUString       getString(const css::uno::Any& _rAny);
     COMPHELPER_DLLPUBLIC bool           getBOOL(const css::uno::Any& _rAny);
 
-    COMPHELPER_DLLPUBLIC sal_Int32      getEnumAsINT32(const css::uno::Any& _rAny) throw(css::lang::IllegalArgumentException);
+    /// @throws css::lang::IllegalArgumentException
+    COMPHELPER_DLLPUBLIC sal_Int32      getEnumAsINT32(const css::uno::Any& _rAny);
 
 }   // namespace comphelper
 

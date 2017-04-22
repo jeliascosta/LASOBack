@@ -42,37 +42,31 @@ public:
         : IdlMemberImpl( pReflection, rName, pTypeDescr, pTypeDescr )
         , _nValue( nValue )
         {}
-    virtual ~IdlEnumFieldImpl();
 
     // XInterface
-    virtual Any SAL_CALL queryInterface( const Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual Any SAL_CALL queryInterface( const Type & rType ) override;
     virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     // XTypeProvider
-    virtual Sequence< Type > SAL_CALL getTypes() throw (css::uno::RuntimeException, std::exception) override;
-    virtual Sequence< sal_Int8 > SAL_CALL getImplementationId() throw (css::uno::RuntimeException, std::exception) override;
+    virtual Sequence< Type > SAL_CALL getTypes() override;
+    virtual Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
 
     // XIdlMember
-    virtual Reference< XIdlClass > SAL_CALL getDeclaringClass() throw(css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual Reference< XIdlClass > SAL_CALL getDeclaringClass() override;
+    virtual OUString SAL_CALL getName() override;
     // XIdlField
-    virtual Reference< XIdlClass > SAL_CALL getType() throw(css::uno::RuntimeException, std::exception) override;
-    virtual FieldAccessMode SAL_CALL getAccessMode() throw(css::uno::RuntimeException, std::exception) override;
-    virtual Any SAL_CALL get( const Any & rObj ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL set( const Any & rObj, const Any & rValue ) throw(css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception) override;
+    virtual Reference< XIdlClass > SAL_CALL getType() override;
+    virtual FieldAccessMode SAL_CALL getAccessMode() override;
+    virtual Any SAL_CALL get( const Any & rObj ) override;
+    virtual void SAL_CALL set( const Any & rObj, const Any & rValue ) override;
     // XIdlField2: getType, getAccessMode and get are equal to XIdlField
-    virtual void SAL_CALL set( Any & rObj, const Any & rValue ) throw(css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL set( Any & rObj, const Any & rValue ) override;
 };
-
-IdlEnumFieldImpl::~IdlEnumFieldImpl()
-{
-}
 
 // XInterface
 
 Any IdlEnumFieldImpl::queryInterface( const Type & rType )
-    throw(css::uno::RuntimeException, std::exception)
 {
     Any aRet( ::cppu::queryInterface( rType,
                                       static_cast< XIdlField * >( this ),
@@ -93,7 +87,6 @@ void IdlEnumFieldImpl::release() throw()
 // XTypeProvider
 
 Sequence< Type > IdlEnumFieldImpl::getTypes()
-    throw (css::uno::RuntimeException, std::exception)
 {
     static ::cppu::OTypeCollection * s_pTypes = nullptr;
     if (! s_pTypes)
@@ -112,7 +105,6 @@ Sequence< Type > IdlEnumFieldImpl::getTypes()
 }
 
 Sequence< sal_Int8 > IdlEnumFieldImpl::getImplementationId()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -120,13 +112,11 @@ Sequence< sal_Int8 > IdlEnumFieldImpl::getImplementationId()
 // XIdlMember
 
 Reference< XIdlClass > IdlEnumFieldImpl::getDeclaringClass()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return IdlMemberImpl::getDeclaringClass();
 }
 
 OUString IdlEnumFieldImpl::getName()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return IdlMemberImpl::getName();
 }
@@ -134,49 +124,42 @@ OUString IdlEnumFieldImpl::getName()
 // XIdlField
 
 Reference< XIdlClass > IdlEnumFieldImpl::getType()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return getDeclaringClass();
 }
 
 FieldAccessMode IdlEnumFieldImpl::getAccessMode()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return FieldAccessMode_READONLY;
 }
 
 Any IdlEnumFieldImpl::get( const Any & )
-    throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     return Any( &_nValue, getTypeDescr() );
 }
 
 void IdlEnumFieldImpl::set( const Any &, const Any & )
-    throw(css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception)
 {
     throw IllegalAccessException(
-        "enum field is constant!",
+        "cannot set enum field, it is constant",
         static_cast<XWeak *>(static_cast<OWeakObject *>(this)) );
 }
 
 void IdlEnumFieldImpl::set( Any &, const Any & )
-    throw(css::lang::IllegalArgumentException, css::lang::IllegalAccessException, css::uno::RuntimeException, std::exception)
 {
     throw IllegalAccessException(
-        "enum field is constant!",
+        "cannot set enum field, it is constant",
         static_cast<XWeak *>(static_cast<OWeakObject *>(this)) );
 }
 
 
 EnumIdlClassImpl::~EnumIdlClassImpl()
 {
-    delete _pFields;
 }
 
 // IdlClassImpl modifications
 
 Reference< XIdlField > EnumIdlClassImpl::getField( const OUString & rName )
-    throw(css::uno::RuntimeException, std::exception)
 {
     if (! _pFields)
         getFields(); // init members
@@ -189,7 +172,6 @@ Reference< XIdlField > EnumIdlClassImpl::getField( const OUString & rName )
 }
 
 Sequence< Reference< XIdlField > > EnumIdlClassImpl::getFields()
-    throw(css::uno::RuntimeException, std::exception)
 {
     if (! _pFields)
     {
@@ -208,14 +190,13 @@ Sequence< Reference< XIdlField > > EnumIdlClassImpl::getFields()
                     getReflection(), aName, IdlClassImpl::getTypeDescr(), getTypeDescr()->pEnumValues[nFields] );
             }
 
-            _pFields = pFields;
+            _pFields.reset( pFields );
         }
     }
     return *_pFields;
 }
 
 void EnumIdlClassImpl::createObject( Any & rObj )
-    throw(css::uno::RuntimeException, std::exception)
 {
     sal_Int32 eVal =
         reinterpret_cast<typelib_EnumTypeDescription *>(IdlClassImpl::getTypeDescr())->nDefaultEnumValue;

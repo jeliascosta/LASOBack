@@ -47,9 +47,8 @@ namespace pcr
     // OSelectLabelDialog
 
 
-    OSelectLabelDialog::OSelectLabelDialog( vcl::Window* pParent, Reference< XPropertySet >  _xControlModel )
+    OSelectLabelDialog::OSelectLabelDialog( vcl::Window* pParent, Reference< XPropertySet > const & _xControlModel )
         :ModalDialog(pParent, "LabelSelectionDialog", "modules/spropctrlr/ui/labelselectiondialog.ui")
-        ,m_aModelImages(PcrRes(RID_IL_FORMEXPLORER))
         ,m_xControlModel(_xControlModel)
         ,m_pInitialSelection(nullptr)
         ,m_pLastSelected(nullptr)
@@ -60,12 +59,13 @@ namespace pcr
         get(m_pNoAssignment, "noassignment");
 
         // initialize the TreeListBox
-        m_pControlTree->SetSelectionMode( SINGLE_SELECTION );
+        m_pControlTree->SetSelectionMode( SelectionMode::Single );
         m_pControlTree->SetDragDropMode( DragDropMode::NONE );
         m_pControlTree->EnableInplaceEditing( false );
         m_pControlTree->SetStyle(m_pControlTree->GetStyle() | WB_BORDER | WB_HASLINES | WB_HASLINESATROOT | WB_HASBUTTONS | WB_HASBUTTONSATROOT | WB_HSCROLL);
 
-        m_pControlTree->SetNodeBitmaps( m_aModelImages.GetImage( RID_SVXIMG_COLLAPSEDNODE ), m_aModelImages.GetImage( RID_SVXIMG_EXPANDEDNODE ) );
+        m_pControlTree->SetNodeBitmaps(Image(BitmapEx(PcrRes(RID_EXTBMP_COLLAPSEDNODE))),
+                                       Image(BitmapEx(PcrRes(RID_EXTBMP_EXPANDEDNODE))));
         m_pControlTree->SetSelectHdl(LINK(this, OSelectLabelDialog, OnEntrySelected));
         m_pControlTree->SetDeselectHdl(LINK(this, OSelectLabelDialog, OnEntrySelected));
 
@@ -99,7 +99,7 @@ namespace pcr
             sal_Int16 nClassId = 0;
             try { nClassId = ::comphelper::getINT16(m_xControlModel->getPropertyValue(PROPERTY_CLASSID)); } catch(...) { }
             m_sRequiredService = (FormComponentType::RADIOBUTTON == nClassId) ? OUString(SERVICE_COMPONENT_GROUPBOX) : OUString(SERVICE_COMPONENT_FIXEDTEXT);
-            m_aRequiredControlImage = m_aModelImages.GetImage((FormComponentType::RADIOBUTTON == nClassId) ? RID_SVXIMG_GROUPBOX : RID_SVXIMG_FIXEDTEXT);
+            m_aRequiredControlImage = Image(BitmapEx(PcrRes(FormComponentType::RADIOBUTTON == nClassId ? RID_EXTBMP_GROUPBOX : RID_EXTBMP_FIXEDTEXT)));
 
             // calc the currently set label control (so InsertEntries can calc m_pInitialSelection)
             Any aCurrentLabelControl( m_xControlModel->getPropertyValue(PROPERTY_CONTROLLABEL) );
@@ -110,7 +110,7 @@ namespace pcr
                 aCurrentLabelControl >>= m_xInitialLabelControl;
 
             // insert the root
-            Image aRootImage = m_aModelImages.GetImage(RID_SVXIMG_FORMS);
+            Image aRootImage(BitmapEx(PcrRes(RID_EXTBMP_FORMS)));
             SvTreeListEntry* pRoot = m_pControlTree->InsertEntry(PcrRes(RID_STR_FORMS).toString(), aRootImage, aRootImage);
 
             // build the tree
@@ -198,7 +198,7 @@ namespace pcr
                 Reference< XIndexAccess >  xCont(xAsSet, UNO_QUERY);
                 if (xCont.is() && xCont->getCount())
                 {   // yes -> step down
-                    Image aFormImage = m_aModelImages.GetImage( RID_SVXIMG_FORM );
+                    Image aFormImage(BitmapEx(PcrRes(RID_EXTBMP_FORM)));
                     SvTreeListEntry* pCont = m_pControlTree->InsertEntry(sName, aFormImage, aFormImage, pContainerEntry);
                     sal_Int32 nContChildren = InsertEntries(xCont, pCont);
                     if (nContChildren)
@@ -240,7 +240,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_TYPED(OSelectLabelDialog, OnEntrySelected, SvTreeListBox*, pLB, void)
+    IMPL_LINK(OSelectLabelDialog, OnEntrySelected, SvTreeListBox*, pLB, void)
     {
         DBG_ASSERT(pLB == m_pControlTree, "OSelectLabelDialog::OnEntrySelected : where did this come from ?");
         (void)pLB;
@@ -256,7 +256,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_TYPED(OSelectLabelDialog, OnNoAssignmentClicked, Button*, pButton, void)
+    IMPL_LINK(OSelectLabelDialog, OnNoAssignmentClicked, Button*, pButton, void)
     {
         DBG_ASSERT(pButton == m_pNoAssignment, "OSelectLabelDialog::OnNoAssignmentClicked : where did this come from ?");
         (void)pButton;

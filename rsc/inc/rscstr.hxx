@@ -33,16 +33,15 @@ class RscString : public RscTop
         bool    bDflt;  // is default
         RscId   aRefId; // reference name
     };
-    sal_uInt32  nSize;
 public:
-                    RscString( Atom nId, sal_uInt32 nTypId );
+                    RscString( Atom nId, RESOURCE_TYPE nTypId );
     virtual RSCCLASS_TYPE   GetClassType() const override;
 
     void            SetRefClass( RscTop * pClass ) { pRefClass = pClass; }
-    RSCINST         Create( RSCINST * pInst, const RSCINST & rDfltInst, bool ) override;
+    RSCINST         Create( RSCINST * pInst, const RSCINST & rDfltInst, bool bOwnClass = false ) override;
                     // sets the allowed range
     void            Destroy( const RSCINST & rInst ) override;
-    sal_uInt32      Size() override { return nSize; }
+    sal_uInt32      Size() const override { return ALIGNED_SIZE(sizeof(RscStringInst)); }
     void            SetToDefault( const RSCINST & rInst ) override
                         {
                             reinterpret_cast<RscStringInst*>(rInst.pData)->bDflt = true;
@@ -60,7 +59,7 @@ public:
     void            WriteSrc( const RSCINST &, FILE * fOutput,
                               RscTypCont * pTC, sal_uInt32 nTab, const char * ) override;
     ERRTYPE         WriteRc( const RSCINST &, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32, bool bExtra ) override;
+                             RscTypCont * pTC, sal_uInt32 ) override;
 };
 
 #endif // INCLUDED_RSC_INC_RSCSTR_HXX

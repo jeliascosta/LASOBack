@@ -50,7 +50,7 @@ void SalFrame::SetCallback( vcl::Window* pWindow, SALFRAMEPROC pProc )
 
 // default to full-frame flushes
 // on ports where partial-flushes are much cheaper this method should be overridden
-void SalFrame::Flush( const Rectangle& )
+void SalFrame::Flush( const tools::Rectangle& )
 {
     Flush();
 }
@@ -85,6 +85,16 @@ void SalInstance::DestroyMenuItem( SalMenuItem* pItem )
 {
     (void)pItem;
     OSL_ENSURE( pItem == nullptr, "DestroyMenu called with non-native menus" );
+}
+
+bool SalInstance::CallEventCallback( void* pEvent, int nBytes )
+{
+    return m_pEventInst.is() && m_pEventInst->dispatchEvent( pEvent, nBytes );
+}
+
+SalI18NImeStatus* SalInstance::CreateI18NImeStatus()
+{
+    return new SalI18NImeStatus;
 }
 
 SalTimer::~SalTimer()
@@ -129,7 +139,7 @@ SalMenu::~SalMenu()
 {
 }
 
-bool SalMenu::ShowNativePopupMenu(FloatingWindow *, const Rectangle&, FloatWinPopupFlags )
+bool SalMenu::ShowNativePopupMenu(FloatingWindow *, const tools::Rectangle&, FloatWinPopupFlags )
 {
     return false;
 }
@@ -147,9 +157,9 @@ void SalMenu::RemoveMenuBarButton( sal_uInt16 )
 {
 }
 
-Rectangle SalMenu::GetMenuBarButtonRectPixel( sal_uInt16, SalFrame* )
+tools::Rectangle SalMenu::GetMenuBarButtonRectPixel( sal_uInt16, SalFrame* )
 {
-    return Rectangle();
+    return tools::Rectangle();
 }
 
 SalMenuItem::~SalMenuItem()

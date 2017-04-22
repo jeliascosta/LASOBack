@@ -31,9 +31,9 @@ SwClient::~SwClient()
 {
     if(GetRegisteredIn())
         DBG_TESTSOLARMUTEX();
-    OSL_ENSURE( !pRegisteredIn || pRegisteredIn->HasWriterListeners(), "SwModify still known, but Client already disconnected!" );
-    if( pRegisteredIn && pRegisteredIn->HasWriterListeners() )
-        pRegisteredIn->Remove( this );
+    OSL_ENSURE( !m_pRegisteredIn || m_pRegisteredIn->HasWriterListeners(), "SwModify still known, but Client already disconnected!" );
+    if( m_pRegisteredIn && m_pRegisteredIn->HasWriterListeners() )
+        m_pRegisteredIn->Remove( this );
 }
 
 void SwClient::CheckRegistration( const SfxPoolItem* pOld, const SfxPoolItem* )
@@ -44,10 +44,10 @@ void SwClient::CheckRegistration( const SfxPoolItem* pOld, const SfxPoolItem* )
         return;
 
     const SwPtrMsgPoolItem* pDead = static_cast<const SwPtrMsgPoolItem*>(pOld);
-    if(pDead && pDead->pObject == pRegisteredIn)
+    if(pDead && pDead->pObject == m_pRegisteredIn)
     {
         // I've got a notification from the object I know
-        SwModify* pAbove = pRegisteredIn->GetRegisteredIn();
+        SwModify* pAbove = m_pRegisteredIn->GetRegisteredIn();
         if(pAbove)
         {
             // if the dying object itself was listening at an SwModify, I take over
@@ -56,15 +56,14 @@ void SwClient::CheckRegistration( const SfxPoolItem* pOld, const SfxPoolItem* )
             return;
         }
         // destroy connection
-        pRegisteredIn->Remove(this);
+        m_pRegisteredIn->Remove(this);
     }
 }
 
 void SwClient::SwClientNotify(const SwModify&, const SfxHint& rHint)
 {
-    if (typeid(rHint) == typeid(sw::LegacyModifyHint))
+    if (auto pLegacyHint = dynamic_cast<const sw::LegacyModifyHint*>(&rHint))
     {
-        auto pLegacyHint(static_cast<const sw::LegacyModifyHint*>(&rHint));
         Modify(pLegacyHint->m_pOld, pLegacyHint->m_pNew);
     }
 };
@@ -81,7 +80,7 @@ void SwModify::SetInDocDTOR()
     // later when they also get destroyed
     SwIterator<SwClient,SwModify> aIter(*this);
     for(SwClient* pClient = aIter.First(); pClient; pClient = aIter.Next())
-        pClient->pRegisteredIn = nullptr;
+        pClient->m_pRegisteredIn = nullptr;
     m_pWriterListeners = nullptr;
 }
 
@@ -161,7 +160,7 @@ void SwModify::Add( SwClient* pDepend )
     DBG_TESTSOLARMUTEX();
     OSL_ENSURE( !m_bLockClientList, "Client inserted while in Modify" );
 
-    if(pDepend->pRegisteredIn != this )
+    if(pDepend->m_pRegisteredIn != this )
     {
 #if OSL_DEBUG_LEVEL > 0
         if(sw::ClientIteratorBase::our_pClientIters)
@@ -173,8 +172,8 @@ void SwModify::Add( SwClient* pDepend )
         }
 #endif
         // deregister new client in case it is already registered elsewhere
-        if( pDepend->pRegisteredIn != nullptr )
-            pDepend->pRegisteredIn->Remove( pDepend );
+        if( pDepend->m_pRegisteredIn != nullptr )
+            pDepend->m_pRegisteredIn->Remove( pDepend );
 
         if( !m_pWriterListeners )
         {
@@ -194,14 +193,14 @@ void SwModify::Add( SwClient* pDepend )
         }
 
         // connect client to me
-        pDepend->pRegisteredIn = this;
+        pDepend->m_pRegisteredIn = this;
     }
 }
 
 SwClient* SwModify::Remove( SwClient* pDepend )
 {
     DBG_TESTSOLARMUTEX();
-    assert(pDepend->pRegisteredIn == this);
+    assert(pDepend->m_pRegisteredIn == this);
 
     // SwClient is my listener
     // remove it from my list
@@ -220,7 +219,8 @@ SwClient* SwModify::Remove( SwClient* pDepend )
     {
         for(auto& rIter : sw::ClientIteratorBase::our_pClientIters->GetRingContainer())
         {
-            if( rIter.m_pCurrent == pDepend || rIter.m_pPosition == pDepend )
+            if (&rIter.m_rRoot == this &&
+                (rIter.m_pCurrent == pDepend || rIter.m_pPosition == pDepend))
             {
                 // if object being removed is the current or next object in an
                 // iterator, advance this iterator
@@ -230,7 +230,7 @@ SwClient* SwModify::Remove( SwClient* pDepend )
     }
     pDepend->m_pLeft = nullptr;
     pDepend->m_pRight = nullptr;
-    pDepend->pRegisteredIn = nullptr;
+    pDepend->m_pRegisteredIn = nullptr;
     return pDepend;
 }
 

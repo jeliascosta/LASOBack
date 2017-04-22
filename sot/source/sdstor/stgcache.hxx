@@ -70,7 +70,6 @@ public:
     SvStream* GetStrm()                     { return m_pStrm;     }
     void  SetStrm( SvStream*, bool );
     void  SetStrm( UCBStorageStream* );
-    bool  IsWritable() const                { return ( m_pStrm && m_pStrm->IsWritable() ); }
     bool  Good() const                      { return m_nError == SVSTREAM_OK; }
     ErrCode GetError()                      { return m_nError;    }
     void  MoveError( StorageBase& );
@@ -97,17 +96,18 @@ public:
 class StgPage : public salhelper::SimpleReferenceObject
 {
     const sal_Int32 mnPage;                // page index
-    sal_uInt8*      mpData;                // nSize bytes
+    std::unique_ptr<sal_uInt8[]>
+                    mpData;                // nSize bytes
     short           mnSize;                // size of this page
              StgPage( short nData, sal_Int32 nPage );
-    virtual ~StgPage();
+    virtual ~StgPage() override;
 public:
              StgPage(const StgPage&) = delete;
     StgPage& operator=(const StgPage&) = delete;
     static rtl::Reference< StgPage > Create( short nData, sal_Int32 nPage );
 
     sal_Int32 GetPage()  { return mnPage; }
-    void*     GetData()  { return mpData; }
+    void*     GetData()  { return mpData.get(); }
     short     GetSize()  { return mnSize; }
 
 public:

@@ -50,13 +50,6 @@ public:
     sal_uInt16          nKey;
 };
 
-struct uInt32lt
-{
-    bool operator()( const sal_uInt32 &r1, const sal_uInt32 &r2) const
-    {
-        return r1 < r2;
-    }
-};
 typedef ::std::pair < sal_uInt16, OUString > QNamePair;
 
 struct QNamePairHash
@@ -69,7 +62,7 @@ struct QNamePairHash
 
 typedef std::unordered_map < QNamePair, OUString, QNamePairHash > QNameCache;
 typedef std::unordered_map < OUString, ::rtl::Reference <NameSpaceEntry >, OUStringHash > NameSpaceHash;
-typedef std::map < sal_uInt16, ::rtl::Reference < NameSpaceEntry >, uInt32lt > NameSpaceMap;
+typedef std::map < sal_uInt16, ::rtl::Reference < NameSpaceEntry > > NameSpaceMap;
 
 class XMLOFF_DLLPUBLIC SvXMLNamespaceMap
 {
@@ -119,7 +112,7 @@ public:
 
     /* This will replace the version with the unused 3rd default parameter */
     sal_uInt16 GetKeyByAttrName_( const OUString& rAttrName,
-                             OUString *pLocalName = nullptr) const;
+                             OUString *pLocalName) const;
 
     sal_uInt16 GetFirstKey() const;
     sal_uInt16 GetNextKey( sal_uInt16 nOldKey ) const;
@@ -134,7 +127,7 @@ public:
     static bool NormalizeURI( OUString& rName );
 
 /* deprecated */ void AddAtIndex( sal_uInt16 nIdx, const OUString& rPrefix,
-                     const OUString& rName, sal_uInt16 nKey = XML_NAMESPACE_UNKNOWN );
+                     const OUString& rName, sal_uInt16 nKey );
 /* deprecated */ static sal_uInt16 GetIndexByKey( sal_uInt16 nKey );
 /* deprecated */ sal_uInt16 GetIndexByPrefix( const OUString& rPrefix ) const;
 /* deprecated */ sal_uInt16 GetFirstIndex() const;
@@ -147,11 +140,9 @@ public:
 /* deprecated */ sal_uInt16 GetKeyByAttrName( const OUString& rAttrName,
                              OUString *pPrefix,
                              OUString *pLocalName,
-                             OUString *pNamespace=nullptr,
-                             sal_uInt16 nIdxGuess = USHRT_MAX ) const;
+                             OUString *pNamespace ) const;
 /* deprecated */ sal_uInt16 GetKeyByAttrName( const OUString& rAttrName,
-                             OUString *pLocalName = nullptr,
-                             sal_uInt16 nIdxGuess = USHRT_MAX ) const;
+                             OUString *pLocalName = nullptr ) const;
 };
 
 #endif // INCLUDED_XMLOFF_NMSPMAP_HXX

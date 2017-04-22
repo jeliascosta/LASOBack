@@ -44,15 +44,15 @@ namespace drawinglayer
 
         protected:
             // local decomposition.
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrCaptionPrimitive2D(
                 const ::basegfx::B2DHomMatrix& rTransform,
                 const attribute::SdrLineFillShadowTextAttribute& rSdrLFSTAttribute,
                 const ::basegfx::B2DPolygon& rTail,
-                double fCornerRadiusX = 0.0,
-                double fCornerRadiusY = 0.0);
+                double fCornerRadiusX,
+                double fCornerRadiusY);
 
             // compare operator
             virtual bool operator==(const BasePrimitive2D& rPrimitive) const override;

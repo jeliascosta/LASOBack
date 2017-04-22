@@ -23,6 +23,7 @@
 #include <osl/mutex.hxx>
 
 #include <svtools/toolbarmenu.hxx>
+#include <svx/colorwindow.hxx>
 #include <vcl/toolbox.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/dispatch.hxx>
@@ -41,7 +42,6 @@
 #include "helpid.hrc"
 #include "extrusioncontrols.hxx"
 #include "extrusioncontrols.hrc"
-#include "colorwindow.hxx"
 #include "extrusiondepthdialog.hxx"
 
 using namespace ::com::sun::star::uno;
@@ -59,18 +59,16 @@ static const char g_sExtrusionProjection[] = ".uno:ExtrusionProjection";
 
 ExtrusionDirectionWindow::ExtrusionDirectionWindow(
     svt::ToolboxController& rController,
-    const css::uno::Reference< css::frame::XFrame >& rFrame,
     vcl::Window* pParentWindow
 )
-    : ToolbarMenu(rFrame, pParentWindow,
-                  WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+    : ToolbarMenu(rController.getFrameInterface(), pParentWindow, WB_STDPOPUP)
     , mrController(rController)
-    , maImgPerspective(SVX_RES(RID_SVXIMG_PERSPECTIVE))
-    , maImgParallel(SVX_RES(RID_SVXIMG_PARALLEL))
+    , maImgPerspective(BitmapEx(SVX_RES(RID_SVXBMP_PERSPECTIVE)))
+    , maImgParallel(BitmapEx(SVX_RES(RID_SVXBMP_PARALLEL)))
 {
     for(sal_uInt16 i = DIRECTION_NW; i <= DIRECTION_SE; ++i)
     {
-        maImgDirection[i] = Image( SVX_RES( RID_SVXIMG_DIRECTION + i ) );
+        maImgDirection[i] = Image(BitmapEx(SVX_RES(RID_SVXBMP_DIRECTION + i)));
     }
 
     SetSelectHdl( LINK( this, ExtrusionDirectionWindow, SelectToolbarMenuHdl ) );
@@ -162,7 +160,7 @@ void ExtrusionDirectionWindow::implSetProjection( sal_Int32 nProjection, bool bE
 
 void ExtrusionDirectionWindow::statusChanged(
     const css::frame::FeatureStateEvent& Event
-)   throw ( css::uno::RuntimeException )
+)
 {
     if( Event.FeatureURL.Main == g_sExtrusionDirection )
     {
@@ -174,7 +172,7 @@ void ExtrusionDirectionWindow::statusChanged(
         {
             sal_Int32 nValue = 0;
             if( Event.State >>= nValue )
-                implSetDirection( nValue );
+                implSetDirection( nValue, true );
         }
     }
     else if( Event.FeatureURL.Main == g_sExtrusionProjection )
@@ -187,17 +185,17 @@ void ExtrusionDirectionWindow::statusChanged(
         {
             sal_Int32 nValue = 0;
             if( Event.State >>= nValue )
-                implSetProjection( nValue );
+                implSetProjection( nValue, true );
         }
     }
 }
 
 
-IMPL_LINK_TYPED( ExtrusionDirectionWindow, SelectValueSetHdl, ValueSet*, pControl, void )
+IMPL_LINK( ExtrusionDirectionWindow, SelectValueSetHdl, ValueSet*, pControl, void )
 {
     SelectHdl(pControl);
 }
-IMPL_LINK_TYPED( ExtrusionDirectionWindow, SelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
+IMPL_LINK( ExtrusionDirectionWindow, SelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
 {
     SelectHdl(pControl);
 }
@@ -224,7 +222,7 @@ void ExtrusionDirectionWindow::SelectHdl(void* pControl)
             aArgs[0].Value <<= (sal_Int32)nProjection;
 
             mrController.dispatchCommand( g_sExtrusionProjection, aArgs );
-            implSetProjection( nProjection );
+            implSetProjection( nProjection, true );
         }
     }
 }
@@ -234,7 +232,7 @@ ExtrusionDirectionControl::ExtrusionDirectionControl(
 )   : svt::PopupWindowController(
         rxContext,
         Reference< css::frame::XFrame >(),
-        OUString( ".uno:ExtrusionDirectionFloater" )
+        ".uno:ExtrusionDirectionFloater"
     )
 {
 }
@@ -242,12 +240,11 @@ ExtrusionDirectionControl::ExtrusionDirectionControl(
 
 VclPtr<vcl::Window> ExtrusionDirectionControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<ExtrusionDirectionWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<ExtrusionDirectionWindow>::Create( *this, pParent );
 }
 
 // XInitialization
 void SAL_CALL ExtrusionDirectionControl::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-    throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     svt::PopupWindowController::initialize( aArguments );
 
@@ -266,7 +263,7 @@ OUString SAL_CALL ExtrusionDirectionControl_getImplementationName()
 }
 
 
-Sequence< OUString > SAL_CALL ExtrusionDirectionControl_getSupportedServiceNames() throw( RuntimeException )
+Sequence< OUString > SAL_CALL ExtrusionDirectionControl_getSupportedServiceNames()
 {
     Sequence<OUString> aSNS { "com.sun.star.frame.ToolbarController" };
     return aSNS;
@@ -275,19 +272,19 @@ Sequence< OUString > SAL_CALL ExtrusionDirectionControl_getSupportedServiceNames
 
 Reference< XInterface > SAL_CALL SAL_CALL ExtrusionDirectionControl_createInstance(
     const Reference< XMultiServiceFactory >& rSMgr
-)   throw( RuntimeException )
+)
 {
     return *new ExtrusionDirectionControl( comphelper::getComponentContext(rSMgr) );
 }
 
 
-OUString SAL_CALL ExtrusionDirectionControl::getImplementationName(  ) throw (RuntimeException, std::exception)
+OUString SAL_CALL ExtrusionDirectionControl::getImplementationName(  )
 {
     return ExtrusionDirectionControl_getImplementationName();
 }
 
 
-Sequence< OUString > SAL_CALL ExtrusionDirectionControl::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL ExtrusionDirectionControl::getSupportedServiceNames(  )
 {
     return ExtrusionDirectionControl_getSupportedServiceNames();
 }
@@ -316,21 +313,20 @@ double ExtrusionDepthDialog::getDepth() const
     return (double)( m_pMtrDepth->GetValue( FUNIT_100TH_MM ) ) / 100.0;
 }
 
-double aDepthListInch[] = { 0, 1270,2540,5080,10160 };
-double aDepthListMM[] = { 0, 1000, 2500, 5000, 10000 };
+double const aDepthListInch[] = { 0, 1270,2540,5080,10160 };
+double const aDepthListMM[] = { 0, 1000, 2500, 5000, 10000 };
 
 ExtrusionDepthWindow::ExtrusionDepthWindow(
     svt::ToolboxController& rController,
-    const css::uno::Reference< css::frame::XFrame >& rFrame,
     vcl::Window* pParentWindow
-)   : ToolbarMenu( rFrame, pParentWindow, WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+)   : ToolbarMenu( rController.getFrameInterface(), pParentWindow, WB_STDPOPUP )
     , mrController( rController )
-    , maImgDepth0(SVX_RES(RID_SVXIMG_DEPTH_0))
-    , maImgDepth1(SVX_RES(RID_SVXIMG_DEPTH_1))
-    , maImgDepth2(SVX_RES(RID_SVXIMG_DEPTH_2))
-    , maImgDepth3(SVX_RES(RID_SVXIMG_DEPTH_3))
-    , maImgDepth4(SVX_RES(RID_SVXIMG_DEPTH_4))
-    , maImgDepthInfinity(SVX_RES(RID_SVXIMG_DEPTH_INFINITY))
+    , maImgDepth0(BitmapEx(SVX_RES(RID_SVXBMP_DEPTH_0)))
+    , maImgDepth1(BitmapEx(SVX_RES(RID_SVXBMP_DEPTH_1)))
+    , maImgDepth2(BitmapEx(SVX_RES(RID_SVXBMP_DEPTH_2)))
+    , maImgDepth3(BitmapEx(SVX_RES(RID_SVXBMP_DEPTH_3)))
+    , maImgDepth4(BitmapEx(SVX_RES(RID_SVXBMP_DEPTH_4)))
+    , maImgDepthInfinity(BitmapEx(SVX_RES(RID_SVXBMP_DEPTH_INFINITY)))
     , meUnit(FUNIT_NONE)
     , mfDepth( -1.0 )
     , msExtrusionDepth( ".uno:ExtrusionDepth" )
@@ -385,7 +381,7 @@ void ExtrusionDepthWindow::implFillStrings( FieldUnit eUnit )
 
 void ExtrusionDepthWindow::statusChanged(
     const css::frame::FeatureStateEvent& Event
-)   throw ( css::uno::RuntimeException, std::exception )
+)
 {
     if( Event.FeatureURL.Main.equals( msExtrusionDepth ) )
     {
@@ -415,7 +411,7 @@ void ExtrusionDepthWindow::statusChanged(
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ExtrusionDepthWindow, SelectHdl, ToolbarMenu*, void)
+IMPL_LINK_NOARG(ExtrusionDepthWindow, SelectHdl, ToolbarMenu*, void)
 {
     int nSelected = getSelectedEntryId();
     if( nSelected != -1 )
@@ -470,7 +466,7 @@ ExtrusionDepthController::ExtrusionDepthController(
 )   : svt::PopupWindowController(
         rxContext,
         Reference< css::frame::XFrame >(),
-        OUString( ".uno:ExtrusionDepthFloater" )
+        ".uno:ExtrusionDepthFloater"
     )
 {
 }
@@ -478,12 +474,11 @@ ExtrusionDepthController::ExtrusionDepthController(
 
 VclPtr<vcl::Window> ExtrusionDepthController::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<ExtrusionDepthWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<ExtrusionDepthWindow>::Create( *this, pParent );
 }
 
 // XInitialization
 void SAL_CALL ExtrusionDepthController::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-    throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     svt::PopupWindowController::initialize( aArguments );
 
@@ -502,24 +497,24 @@ OUString SAL_CALL ExtrusionDepthController_getImplementationName()
 }
 
 
-Sequence< OUString > SAL_CALL ExtrusionDepthController_getSupportedServiceNames() throw( RuntimeException )
+Sequence< OUString > SAL_CALL ExtrusionDepthController_getSupportedServiceNames()
 {
     Sequence<OUString> aSNS { "com.sun.star.frame.ToolbarController" };
     return aSNS;
 }
 
 
-Reference< XInterface > SAL_CALL SAL_CALL ExtrusionDepthController_createInstance( const Reference< XMultiServiceFactory >& rSMgr ) throw( RuntimeException )
+Reference< XInterface > SAL_CALL SAL_CALL ExtrusionDepthController_createInstance( const Reference< XMultiServiceFactory >& rSMgr )
 {
     return *new ExtrusionDepthController( comphelper::getComponentContext(rSMgr) );
 }
 
-OUString SAL_CALL ExtrusionDepthController::getImplementationName(  ) throw (RuntimeException, std::exception)
+OUString SAL_CALL ExtrusionDepthController::getImplementationName(  )
 {
     return ExtrusionDepthController_getImplementationName();
 }
 
-Sequence< OUString > SAL_CALL ExtrusionDepthController::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL ExtrusionDepthController::getSupportedServiceNames(  )
 {
     return ExtrusionDepthController_getSupportedServiceNames();
 }
@@ -528,13 +523,12 @@ static const char g_sExtrusionLightingDirection[] = ".uno:ExtrusionLightingDirec
 static const char g_sExtrusionLightingIntensity[] = ".uno:ExtrusionLightingIntensity";
 
 ExtrusionLightingWindow::ExtrusionLightingWindow(svt::ToolboxController& rController,
-                                                 const css::uno::Reference<css::frame::XFrame >& rFrame,
                                                  vcl::Window* pParentWindow)
-    : ToolbarMenu(rFrame, pParentWindow, WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+    : ToolbarMenu(rController.getFrameInterface(), pParentWindow, WB_STDPOPUP)
     , mrController(rController)
-    , maImgBright(SVX_RES(RID_SVXIMG_LIGHTING_BRIGHT))
-    , maImgNormal(SVX_RES(RID_SVXIMG_LIGHTING_NORMAL))
-    , maImgDim(SVX_RES(RID_SVXIMG_LIGHTING_DIM))
+    , maImgBright(BitmapEx(SVX_RES(RID_SVXBMP_LIGHTING_BRIGHT)))
+    , maImgNormal(BitmapEx(SVX_RES(RID_SVXBMP_LIGHTING_NORMAL)))
+    , maImgDim(BitmapEx(SVX_RES(RID_SVXBMP_LIGHTING_DIM)))
     , mnLevel(0)
     , mbLevelEnabled(false)
     , mnDirection(FROM_FRONT)
@@ -544,10 +538,10 @@ ExtrusionLightingWindow::ExtrusionLightingWindow(svt::ToolboxController& rContro
     {
         if( i != FROM_FRONT )
         {
-            maImgLightingOff[i] = Image(SVX_RES(RID_SVXIMG_LIGHT_OFF + i));
-            maImgLightingOn[i] = Image(SVX_RES(RID_SVXIMG_LIGHT_ON + i));
+            maImgLightingOff[i] = Image(BitmapEx(SVX_RES(RID_SVXBMP_LIGHT_OFF + i)));
+            maImgLightingOn[i] = Image(BitmapEx(SVX_RES(RID_SVXBMP_LIGHT_ON + i)));
         }
-        maImgLightingPreview[i] = Image(SVX_RES(RID_SVXIMG_LIGHT_PREVIEW + i));
+        maImgLightingPreview[i] = Image(BitmapEx(SVX_RES(RID_SVXBMP_LIGHT_PREVIEW + i)));
     }
 
     SetSelectHdl( LINK( this, ExtrusionLightingWindow, SelectToolbarMenuHdl ) );
@@ -636,7 +630,7 @@ void ExtrusionLightingWindow::implSetDirection( int nDirection, bool bEnabled )
 
 void ExtrusionLightingWindow::statusChanged(
     const css::frame::FeatureStateEvent& Event
-)   throw ( css::uno::RuntimeException )
+)
 {
     if( Event.FeatureURL.Main == g_sExtrusionLightingIntensity )
     {
@@ -681,11 +675,11 @@ void ExtrusionLightingWindow::DataChanged( const DataChangedEvent& rDCEvt )
 }
 
 
-IMPL_LINK_TYPED( ExtrusionLightingWindow, SelectValueSetHdl, ValueSet*, pControl, void )
+IMPL_LINK( ExtrusionLightingWindow, SelectValueSetHdl, ValueSet*, pControl, void )
 {
     SelectHdl(pControl);
 }
-IMPL_LINK_TYPED( ExtrusionLightingWindow, SelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
+IMPL_LINK( ExtrusionLightingWindow, SelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
 {
     SelectHdl(pControl);
 }
@@ -721,7 +715,7 @@ void ExtrusionLightingWindow::SelectHdl(void* pControl)
 
             Sequence< PropertyValue > aArgs( 1 );
             aArgs[0].Name = OUString(g_sExtrusionLightingDirection).copy(5);
-            aArgs[0].Value <<= (sal_Int32)nDirection;
+            aArgs[0].Value <<= nDirection;
 
             mrController.dispatchCommand( g_sExtrusionLightingDirection, aArgs );
 
@@ -736,7 +730,7 @@ ExtrusionLightingControl::ExtrusionLightingControl(
     const Reference< XComponentContext >& rxContext
 )   : svt::PopupWindowController( rxContext,
                 Reference< css::frame::XFrame >(),
-                OUString( ".uno:ExtrusionDirectionFloater" )
+                ".uno:ExtrusionDirectionFloater"
     )
 {
 }
@@ -744,12 +738,11 @@ ExtrusionLightingControl::ExtrusionLightingControl(
 
 VclPtr<vcl::Window> ExtrusionLightingControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<ExtrusionLightingWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<ExtrusionLightingWindow>::Create( *this, pParent );
 }
 
 // XInitialization
 void SAL_CALL ExtrusionLightingControl::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-    throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     svt::PopupWindowController::initialize( aArguments );
 
@@ -768,7 +761,7 @@ OUString SAL_CALL ExtrusionLightingControl_getImplementationName()
 }
 
 
-Sequence< OUString > SAL_CALL ExtrusionLightingControl_getSupportedServiceNames() throw( RuntimeException )
+Sequence< OUString > SAL_CALL ExtrusionLightingControl_getSupportedServiceNames()
 {
     Sequence<OUString> aSNS { "com.sun.star.frame.ToolbarController" };
     return aSNS;
@@ -777,19 +770,19 @@ Sequence< OUString > SAL_CALL ExtrusionLightingControl_getSupportedServiceNames(
 
 Reference< XInterface > SAL_CALL SAL_CALL ExtrusionLightingControl_createInstance(
     const Reference< XMultiServiceFactory >& rSMgr
-)   throw( RuntimeException )
+)
 {
     return *new ExtrusionLightingControl( comphelper::getComponentContext(rSMgr) );
 }
 
 
-OUString SAL_CALL ExtrusionLightingControl::getImplementationName(  ) throw (RuntimeException, std::exception)
+OUString SAL_CALL ExtrusionLightingControl::getImplementationName(  )
 {
     return ExtrusionLightingControl_getImplementationName();
 }
 
 
-Sequence< OUString > SAL_CALL ExtrusionLightingControl::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL ExtrusionLightingControl::getSupportedServiceNames(  )
 {
     return ExtrusionLightingControl_getSupportedServiceNames();
 }
@@ -798,14 +791,13 @@ static const char g_sExtrusionSurface[] = ".uno:ExtrusionSurface";
 
 ExtrusionSurfaceWindow::ExtrusionSurfaceWindow(
     svt::ToolboxController& rController,
-    const css::uno::Reference< css::frame::XFrame >& rFrame,
     vcl::Window* pParentWindow)
-    : ToolbarMenu(rFrame, pParentWindow, WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+    : ToolbarMenu(rController.getFrameInterface(), pParentWindow, WB_STDPOPUP)
     , mrController(rController)
-    , maImgSurface1(SVX_RES(RID_SVXIMG_WIRE_FRAME))
-    , maImgSurface2(SVX_RES(RID_SVXIMG_MATTE))
-    , maImgSurface3(SVX_RES(RID_SVXIMG_PLASTIC))
-    , maImgSurface4(SVX_RES(RID_SVXIMG_METAL))
+    , maImgSurface1(BitmapEx(SVX_RES(RID_SVXBMP_WIRE_FRAME)))
+    , maImgSurface2(BitmapEx(SVX_RES(RID_SVXBMP_MATTE)))
+    , maImgSurface3(BitmapEx(SVX_RES(RID_SVXBMP_PLASTIC)))
+    , maImgSurface4(BitmapEx(SVX_RES(RID_SVXBMP_METAL)))
 {
     SetSelectHdl( LINK( this, ExtrusionSurfaceWindow, SelectHdl ) );
 
@@ -830,7 +822,7 @@ void ExtrusionSurfaceWindow::implSetSurface( int nSurface, bool bEnabled )
 
 void ExtrusionSurfaceWindow::statusChanged(
     const css::frame::FeatureStateEvent& Event
-)   throw ( css::uno::RuntimeException )
+)
 {
     if( Event.FeatureURL.Main == g_sExtrusionSurface )
     {
@@ -848,7 +840,7 @@ void ExtrusionSurfaceWindow::statusChanged(
 }
 
 
-IMPL_LINK_NOARG_TYPED(ExtrusionSurfaceWindow, SelectHdl, ToolbarMenu*, void)
+IMPL_LINK_NOARG(ExtrusionSurfaceWindow, SelectHdl, ToolbarMenu*, void)
 {
     if ( IsInPopupMode() )
         EndPopupMode();
@@ -858,7 +850,7 @@ IMPL_LINK_NOARG_TYPED(ExtrusionSurfaceWindow, SelectHdl, ToolbarMenu*, void)
     {
         Sequence< PropertyValue > aArgs( 1 );
         aArgs[0].Name = OUString(g_sExtrusionSurface).copy(5);
-        aArgs[0].Value <<= (sal_Int32)nSurface;
+        aArgs[0].Value <<= nSurface;
 
         mrController.dispatchCommand( g_sExtrusionSurface, aArgs );
 
@@ -873,7 +865,7 @@ ExtrusionSurfaceControl::ExtrusionSurfaceControl(
 :   svt::PopupWindowController(
         rxContext,
         Reference< css::frame::XFrame >(),
-        OUString( ".uno:ExtrusionSurfaceFloater" )
+        ".uno:ExtrusionSurfaceFloater"
     )
 {
 }
@@ -881,12 +873,11 @@ ExtrusionSurfaceControl::ExtrusionSurfaceControl(
 
 VclPtr<vcl::Window> ExtrusionSurfaceControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<ExtrusionSurfaceWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<ExtrusionSurfaceWindow>::Create( *this, pParent );
 }
 
 // XInitialization
 void SAL_CALL ExtrusionSurfaceControl::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-    throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     svt::PopupWindowController::initialize( aArguments );
 
@@ -905,7 +896,7 @@ OUString SAL_CALL ExtrusionSurfaceControl_getImplementationName()
 }
 
 
-Sequence< OUString > SAL_CALL ExtrusionSurfaceControl_getSupportedServiceNames() throw( RuntimeException )
+Sequence< OUString > SAL_CALL ExtrusionSurfaceControl_getSupportedServiceNames()
 {
     Sequence<OUString> aSNS { "com.sun.star.frame.ToolbarController" };
     return aSNS;
@@ -914,19 +905,19 @@ Sequence< OUString > SAL_CALL ExtrusionSurfaceControl_getSupportedServiceNames()
 
 Reference< XInterface > SAL_CALL SAL_CALL ExtrusionSurfaceControl_createInstance(
     const Reference< XMultiServiceFactory >& rSMgr
-)   throw( RuntimeException )
+)
 {
     return *new ExtrusionSurfaceControl( comphelper::getComponentContext(rSMgr) );
 }
 
 
-OUString SAL_CALL ExtrusionSurfaceControl::getImplementationName(  ) throw (RuntimeException, std::exception)
+OUString SAL_CALL ExtrusionSurfaceControl::getImplementationName(  )
 {
     return ExtrusionSurfaceControl_getImplementationName();
 }
 
 
-Sequence< OUString > SAL_CALL ExtrusionSurfaceControl::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL ExtrusionSurfaceControl::getSupportedServiceNames(  )
 {
     return ExtrusionSurfaceControl_getSupportedServiceNames();
 }

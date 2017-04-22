@@ -58,7 +58,7 @@ void ScTabViewShell::InsertURLButton( const OUString& rName, const OUString& rUR
     ScDrawView* pDrView = pView->GetScDrawView();
     SdrModel*   pModel  = pDrView->GetModel();
 
-    SdrObject* pObj = SdrObjFactory::MakeNewObject(FmFormInventor, OBJ_FM_BUTTON,
+    SdrObject* pObj = SdrObjFactory::MakeNewObject(SdrInventor::FmForm, OBJ_FM_BUTTON,
                                pDrView->GetSdrPageView()->GetPage(), pModel);
     SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( pObj );
     OSL_ENSURE( pUnoCtrl, "no SdrUnoObj");
@@ -102,7 +102,7 @@ void ScTabViewShell::InsertURLButton( const OUString& rName, const OUString& rUR
     if ( pDoc->IsNegativePage(nTab) )
         aPos.X() -= aSize.Width();
 
-    pObj->SetLogicRect(Rectangle(aPos, aSize));
+    pObj->SetLogicRect(tools::Rectangle(aPos, aSize));
 
     // for the old VC-Button the position/size had to be set explicitly once more
     // that seems not to be needed with UnoControls

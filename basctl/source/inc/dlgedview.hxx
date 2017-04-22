@@ -40,10 +40,10 @@ private:
 public:
 
     DlgEdView (SdrModel& rModel, OutputDevice& rOut, DlgEditor& rEditor);
-    virtual ~DlgEdView();
+    virtual ~DlgEdView() override;
 
     virtual void MarkListHasChanged() override;
-    virtual void MakeVisible( const Rectangle& rRect, vcl::Window& rWin ) override;
+    virtual void MakeVisible( const tools::Rectangle& rRect, vcl::Window& rWin ) override;
 
 protected:
     /// override to handle HitTest for some objects specially

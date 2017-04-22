@@ -18,6 +18,9 @@
  */
 
 #include "elementexport.hxx"
+
+#include <o3tl/make_unique.hxx>
+
 #include "strings.hxx"
 #include <xmloff/xmlnmspe.hxx>
 #include "eventexport.hxx"
@@ -92,13 +95,11 @@ namespace xmloff
         const Sequence< ScriptEventDescriptor >& _rEvents)
         :OPropertyExport(_rContext, _rxProps)
         ,m_aEvents(_rEvents)
-        ,m_pXMLElement(nullptr)
     {
     }
 
     OElementExport::~OElementExport()
     {
-        implEndElement();
     }
 
     void OElementExport::doExport()
@@ -142,13 +143,12 @@ namespace xmloff
 
     void OElementExport::implStartElement(const sal_Char* _pName)
     {
-        m_pXMLElement = new SvXMLElementExport(m_rContext.getGlobalContext(), XML_NAMESPACE_FORM, _pName, true, true);
+        m_pXMLElement = o3tl::make_unique<SvXMLElementExport>(m_rContext.getGlobalContext(), XML_NAMESPACE_FORM, _pName, true, true);
     }
 
     void OElementExport::implEndElement()
     {
-        delete m_pXMLElement;
-        m_pXMLElement = nullptr;
+        m_pXMLElement.reset();
     }
 
     void OElementExport::exportServiceNameAttribute()
@@ -239,14 +239,8 @@ namespace xmloff
         ,m_nIncludeSpecial(SCAFlags::NONE)
         ,m_nIncludeEvents(EAFlags::NONE)
         ,m_nIncludeBindings(BAFlags::NONE)
-        ,m_pOuterElement(nullptr)
     {
         OSL_ENSURE(m_xProps.is(), "OControlExport::OControlExport: invalid arguments!");
-    }
-
-    OControlExport::~OControlExport()
-    {
-        implEndElement();
     }
 
     void OControlExport::exportOuterAttributes()
@@ -300,7 +294,7 @@ namespace xmloff
         exportDatabaseAttributes();
 
         // attributes related to external bindings
-        exportBindingAtributes();
+        exportBindingAttributes();
 
         // attributes special to the respective control type
         exportSpecialAttributes();
@@ -314,7 +308,7 @@ namespace xmloff
         exportOuterAttributes();
     }
 
-    void OControlExport::exportSubTags() throw (Exception, std::exception)
+    void OControlExport::exportSubTags()
     {
         // for the upcoming exportRemainingProperties:
         // if a control has the LabelControl property, this is not stored with the control itself, but instead with
@@ -655,7 +649,7 @@ namespace xmloff
                     OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::ButtonType),
                     OAttributeMetaData::getCommonControlAttributeName(CCAFlags::ButtonType),
                     PROPERTY_BUTTONTYPE,
-                    OEnumMapper::getEnumMap(OEnumMapper::epButtonType),
+                    aFormButtonTypeMap,
                     FormButtonType_PUSH);
         #if OSL_DEBUG_LEVEL > 0
                 //  reset the bit for later checking
@@ -668,7 +662,7 @@ namespace xmloff
                     OAttributeMetaData::getCommonControlAttributeNamespace( CCAFlags::Orientation ),
                     OAttributeMetaData::getCommonControlAttributeName( CCAFlags::Orientation ),
                     PROPERTY_ORIENTATION,
-                    OEnumMapper::getEnumMap( OEnumMapper::epOrientation ),
+                    aOrientationMap,
                     ScrollBarOrientation::HORIZONTAL
                 );
         #if OSL_DEBUG_LEVEL > 0
@@ -683,7 +677,7 @@ namespace xmloff
                     OAttributeMetaData::getCommonControlAttributeNamespace( CCAFlags::VisualEffect ),
                     OAttributeMetaData::getCommonControlAttributeName( CCAFlags::VisualEffect ),
                     PROPERTY_VISUAL_EFFECT,
-                    OEnumMapper::getEnumMap( OEnumMapper::epVisualEffect ),
+                    aVisualEffectMap,
                     VisualEffect::LOOK3D
                 );
             #if OSL_DEBUG_LEVEL > 0
@@ -778,31 +772,34 @@ namespace xmloff
             // get the property names
             getValuePropertyNames(m_eType, m_nClassId, pCurrentValuePropertyName, pValuePropertyName);
 
-            static const sal_Char* pCurrentValueAttributeName = OAttributeMetaData::getCommonControlAttributeName(CCAFlags::CurrentValue);
-            static const sal_Char* pValueAttributeName = OAttributeMetaData::getCommonControlAttributeName(CCAFlags::Value);
-            static const sal_uInt16 nCurrentValueAttributeNamespaceKey = OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::CurrentValue);
-            static const sal_uInt16 nValueAttributeNamespaceKey = OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::Value);
-
             // add the attributes if necessary and possible
             if (pCurrentValuePropertyName && (CCAFlags::CurrentValue & m_nIncludeCommon))
             {
+                static const sal_Char* pCurrentValueAttributeName = OAttributeMetaData::getCommonControlAttributeName(CCAFlags::CurrentValue);
                 // don't export the current-value if this value originates from a data binding
                 // #i26944#
                 if ( controlHasActiveDataBinding() )
                     exportedProperty( OUString::createFromAscii( pCurrentValuePropertyName ) );
                 else
+                {
+                    static const sal_uInt16 nCurrentValueAttributeNamespaceKey = OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::CurrentValue);
                     exportGenericPropertyAttribute(
                         nCurrentValueAttributeNamespaceKey,
                         pCurrentValueAttributeName,
                         pCurrentValuePropertyName
                     );
+                }
             }
 
             if (pValuePropertyName && (CCAFlags::Value & m_nIncludeCommon))
+            {
+                static const sal_Char* pValueAttributeName = OAttributeMetaData::getCommonControlAttributeName(CCAFlags::Value);
+                static const sal_uInt16 nValueAttributeNamespaceKey = OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::Value);
                 exportGenericPropertyAttribute(
                     nValueAttributeNamespaceKey,
                     pValueAttributeName,
                     pValuePropertyName);
+            }
 
             OSL_ENSURE((nullptr == pValuePropertyName) == (CCAFlags::NONE == (CCAFlags::Value & m_nIncludeCommon)),
                 "OControlExport::exportCommonControlAttributes: no property found for the value attribute!");
@@ -879,7 +876,7 @@ namespace xmloff
                 OAttributeMetaData::getDatabaseAttributeNamespace(DAFlags::ListSource_TYPE),
                 OAttributeMetaData::getDatabaseAttributeName(DAFlags::ListSource_TYPE),
                 PROPERTY_LISTSOURCETYPE,
-                OEnumMapper::getEnumMap(OEnumMapper::epListSourceType),
+                aListSourceTypeMap,
                 ListSourceType_VALUELIST
                 );
             RESET_BIT( nIncludeDatabase, DAFlags::ListSource_TYPE );
@@ -899,7 +896,7 @@ namespace xmloff
 #endif
     }
 
-    void OControlExport::exportBindingAtributes()
+    void OControlExport::exportBindingAttributes()
     {
 #if OSL_DEBUG_LEVEL > 0
         BAFlags nIncludeBinding = m_nIncludeBindings;
@@ -952,7 +949,7 @@ namespace xmloff
 
         #if OSL_DEBUG_LEVEL > 0
         OSL_ENSURE( BAFlags::NONE == nIncludeBinding,
-            "OControlExport::exportBindingAtributes: forgot some flags!");
+            "OControlExport::exportBindingAttributes: forgot some flags!");
             // in the debug version, we should have removed every bit we handled from the mask, so it should
             // be 0 now ...
         #endif
@@ -1075,7 +1072,7 @@ namespace xmloff
                     OAttributeMetaData::getSpecialAttributeNamespace(SCAFlags::State),
                     OAttributeMetaData::getSpecialAttributeName(SCAFlags::State),
                     PROPERTY_DEFAULT_STATE,
-                    OEnumMapper::getEnumMap(OEnumMapper::epCheckState),
+                    aCheckStateMap,
                     TRISTATE_FALSE);
             #if OSL_DEBUG_LEVEL > 0
                 //  reset the bit for later checking
@@ -1089,7 +1086,7 @@ namespace xmloff
                     OAttributeMetaData::getSpecialAttributeNamespace(SCAFlags::CurrentState),
                     OAttributeMetaData::getSpecialAttributeName(SCAFlags::CurrentState),
                     PROPERTY_STATE,
-                    OEnumMapper::getEnumMap(OEnumMapper::epCheckState),
+                    aCheckStateMap,
                     TRISTATE_FALSE);
             #if OSL_DEBUG_LEVEL > 0
                 //  reset the bit for later checking
@@ -1159,9 +1156,9 @@ namespace xmloff
             {   // attribute flags
                 SCAFlags::GroupName
             };
-            static const OUString pStringPropertyNames[] =
+            static const OUStringLiteral pStringPropertyNames[] =
             {   // property names
-                OUString(PROPERTY_GROUP_NAME)
+                PROPERTY_GROUP_NAME
             };
 
             static const sal_Int32 nIdCount = SAL_N_ELEMENTS( nStringPropertyAttributeIds );
@@ -1403,13 +1400,12 @@ namespace xmloff
     {
         // before we let the base class start it's outer element, we add a wrapper element
         const sal_Char *pOuterElementName = getOuterXMLElementName();
-        m_pOuterElement = pOuterElementName
-                               ? new SvXMLElementExport(
+        if (pOuterElementName)
+            m_pOuterElement = o3tl::make_unique<SvXMLElementExport>(
                                         m_rContext.getGlobalContext(),
                                         XML_NAMESPACE_FORM,
                                         pOuterElementName, true,
-                                        true)
-                            : nullptr;
+                                        true);
 
         // add the attributes for the inner element
         exportInnerAttributes();
@@ -1424,8 +1420,7 @@ namespace xmloff
         OElementExport::implEndElement();
 
         // end the outer element if it exists
-        delete m_pOuterElement;
-        m_pOuterElement = nullptr;
+        m_pOuterElement.reset();
     }
 
     const sal_Char* OControlExport::getOuterXMLElementName() const
@@ -1789,8 +1784,8 @@ namespace xmloff
                     OUStringBuffer sBuffer;
                     SvXMLUnitConverter::convertEnum(
                         sBuffer,
-                        (sal_uInt16)nLinkageType,
-                        OEnumMapper::getEnumMap( OEnumMapper::epListLinkageType )
+                        nLinkageType,
+                        aListLinkageMap
                     );
 
                     AddAttribute(
@@ -1968,7 +1963,6 @@ namespace xmloff
 
     OColumnExport::~OColumnExport()
     {
-        implEndElement();
     }
 
     void OColumnExport::exportServiceNameAttribute()
@@ -2062,7 +2056,7 @@ namespace xmloff
                 AddAttribute(
                     OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::TargetLocation),
                     OAttributeMetaData::getCommonControlAttributeName(CCAFlags::TargetLocation),
-                    sPropValue);
+                    m_rContext.getGlobalContext().GetRelativeReference(sPropValue));
             if ( m_rContext.getGlobalContext().GetAttrList().getLength() )
             {
                 SvXMLElementExport aFormElement(m_rContext.getGlobalContext(), XML_NAMESPACE_FORM, xmloff::token::XML_CONNECTION_RESOURCE, true, true);
@@ -2164,44 +2158,46 @@ namespace xmloff
 
         // the enum properties
         {
-            static const FormAttributes eEnumPropertyIds[] =
-            {
-                faEnctype, faMethod, faCommandType, faNavigationMode, faTabbingCycle
-            };
-            static const char * pEnumPropertyNames[] =
-            {
-                PROPERTY_SUBMIT_ENCODING, PROPERTY_SUBMIT_METHOD, PROPERTY_COMMAND_TYPE, PROPERTY_NAVIGATION, PROPERTY_CYCLE
-            };
-            static const OEnumMapper::EnumProperties eEnumPropertyMaps[] =
-            {
-                OEnumMapper::epSubmitEncoding, OEnumMapper::epSubmitMethod, OEnumMapper::epCommandType, OEnumMapper::epNavigationType, OEnumMapper::epTabCyle
-            };
-            static const sal_Int32 nEnumPropertyAttrDefaults[] =
-            {
-                FormSubmitEncoding_URL, FormSubmitMethod_GET, CommandType::COMMAND, NavigationBarMode_CURRENT, TabulatorCycle_RECORDS
-            };
-            static const bool nEnumPropertyAttrDefaultFlags[] =
-            {
-                false, false, false, false, true
-            };
-            static const sal_Int32 nIdCount = SAL_N_ELEMENTS(eEnumPropertyIds);
-        #if OSL_DEBUG_LEVEL > 0
-            static const sal_Int32 nNameCount = SAL_N_ELEMENTS(pEnumPropertyNames);
-            static const sal_Int32 nDefaultCount = SAL_N_ELEMENTS(nEnumPropertyAttrDefaults);
-            static const sal_Int32 nDefaultFlagCount = SAL_N_ELEMENTS(nEnumPropertyAttrDefaultFlags);
-            static const sal_Int32 nMapCount = SAL_N_ELEMENTS(eEnumPropertyMaps);
-            OSL_ENSURE((nIdCount == nNameCount) && (nNameCount == nDefaultCount) && (nDefaultCount == nDefaultFlagCount) && (nDefaultFlagCount == nMapCount),
-                "OFormExport::exportAttributes: somebody tampered with the maps (3)!");
-        #endif
-            for (i=0; i<nIdCount; ++i)
-                exportEnumPropertyAttribute(
-                    OAttributeMetaData::getFormAttributeNamespace(eEnumPropertyIds[i]),
-                    OAttributeMetaData::getFormAttributeName(eEnumPropertyIds[i]),
-                    OUString::createFromAscii(pEnumPropertyNames[i]),
-                    OEnumMapper::getEnumMap(eEnumPropertyMaps[i]),
-                    nEnumPropertyAttrDefaults[i],
-                    nEnumPropertyAttrDefaultFlags[i]
-                );
+            exportEnumPropertyAttribute(
+                OAttributeMetaData::getFormAttributeNamespace(faEnctype),
+                OAttributeMetaData::getFormAttributeName(faEnctype),
+                PROPERTY_SUBMIT_ENCODING,
+                aSubmitEncodingMap,
+                FormSubmitEncoding_URL,
+                false
+            );
+            exportEnumPropertyAttribute(
+                OAttributeMetaData::getFormAttributeNamespace(faMethod),
+                OAttributeMetaData::getFormAttributeName(faMethod),
+                PROPERTY_SUBMIT_METHOD,
+                aSubmitMethodMap,
+                FormSubmitMethod_GET,
+                false
+            );
+            exportEnumPropertyAttribute(
+                OAttributeMetaData::getFormAttributeNamespace(faCommandType),
+                OAttributeMetaData::getFormAttributeName(faCommandType),
+                PROPERTY_COMMAND_TYPE,
+                aCommandTypeMap,
+                CommandType::COMMAND,
+                false
+            );
+            exportEnumPropertyAttribute(
+                OAttributeMetaData::getFormAttributeNamespace(faNavigationMode),
+                OAttributeMetaData::getFormAttributeName(faNavigationMode),
+                PROPERTY_NAVIGATION,
+                aNavigationTypeMap,
+                NavigationBarMode_CURRENT,
+                false
+            );
+            exportEnumPropertyAttribute(
+                OAttributeMetaData::getFormAttributeNamespace(faTabbingCycle),
+                OAttributeMetaData::getFormAttributeName(faTabbingCycle),
+                PROPERTY_CYCLE,
+                aTabulatorCycleMap,
+                TabulatorCycle_RECORDS,
+                true
+            );
         }
 
         // the service name

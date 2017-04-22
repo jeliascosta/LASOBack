@@ -32,7 +32,7 @@ public:
     TitleBar (const OUString& rsTitle,
               vcl::Window* pParentWindow,
               const sidebar::Paint& rInitialBackgroundPaint);
-    virtual ~TitleBar();
+    virtual ~TitleBar() override;
     virtual void dispose() override;
 
     void SetTitle (const OUString& rsTitle);
@@ -41,7 +41,7 @@ public:
     void SetIcon (const Image& rIcon);
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rUpdateArea) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rUpdateArea) override;
     virtual void DataChanged (const DataChangedEvent& rEvent) override;
     virtual void setPosSizePixel (long nX, long nY, long nWidth, long nHeight, PosSizeFlags nFlags = PosSizeFlags::All) override;
 
@@ -58,9 +58,9 @@ protected:
     VclPtr<SidebarToolBox> maToolBox;
     OUString msTitle;
 
-    virtual Rectangle GetTitleArea (const Rectangle& rTitleBarBox) = 0;
-    virtual void PaintDecoration (vcl::RenderContext& rRenderContext, const Rectangle& rTitleBarBox) = 0;
-    void PaintFocus(vcl::RenderContext& rRenderContext, const Rectangle& rFocusBox);
+    virtual tools::Rectangle GetTitleArea (const tools::Rectangle& rTitleBarBox) = 0;
+    virtual void PaintDecoration (vcl::RenderContext& rRenderContext, const tools::Rectangle& rTitleBarBox) = 0;
+    void PaintFocus(vcl::RenderContext& rRenderContext, const tools::Rectangle& rFocusBox);
     virtual sidebar::Paint GetBackgroundPaint() = 0;
     virtual void HandleToolBoxItemClick (const sal_uInt16 nItemIndex);
     virtual css::uno::Reference<css::accessibility::XAccessible> CreateAccessible() override;
@@ -69,8 +69,8 @@ private:
     Image maIcon;
     sidebar::Paint maBackgroundPaint;
 
-    void PaintTitle(vcl::RenderContext& rRenderContext, const Rectangle& rTitleBox);
-    DECL_LINK_TYPED(SelectionHandler, ToolBox*, void);
+    void PaintTitle(vcl::RenderContext& rRenderContext, const tools::Rectangle& rTitleBox);
+    DECL_LINK(SelectionHandler, ToolBox*, void);
 };
 
 } } // end of namespace sfx2::sidebar

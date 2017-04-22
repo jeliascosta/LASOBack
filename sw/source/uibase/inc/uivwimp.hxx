@@ -21,7 +21,6 @@
 
 #include <config_features.h>
 
-#include <com/sun/star/embed/XEmbeddedObject.hpp>
 #include <view.hxx>
 
 #include <sfx2/objsh.hxx>
@@ -53,11 +52,11 @@ class SwScannerEventListener : public ::cppu::WeakImplHelper<
 public:
 
     SwScannerEventListener( SwView& rView ) : pView( &rView )  {}
-    virtual ~SwScannerEventListener();
+    virtual ~SwScannerEventListener() override;
 
     // XEventListener
     virtual void SAL_CALL disposing(
-                    const css::lang::EventObject& rEventObject ) throw(css::uno::RuntimeException, std::exception) override;
+                    const css::lang::EventObject& rEventObject ) override;
 
     void ViewDestroyed() { pView = nullptr; }
 };
@@ -69,17 +68,14 @@ class SwClipboardChangeListener : public ::cppu::WeakImplHelper<
     SwView* pView;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& rEventObject )
-        throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& rEventObject ) override;
 
     // XClipboardListener
-    virtual void SAL_CALL changedContents( const css::datatransfer::clipboard::ClipboardEvent& rEventObject )
-        throw (css::uno::RuntimeException,
-               std::exception) override;
+    virtual void SAL_CALL changedContents( const css::datatransfer::clipboard::ClipboardEvent& rEventObject ) override;
 
 public:
     SwClipboardChangeListener( SwView& rView ) : pView( &rView ) {}
-    virtual ~SwClipboardChangeListener();
+    virtual ~SwClipboardChangeListener() override;
 
     void ViewDestroyed() { pView = nullptr; }
 
@@ -90,26 +86,24 @@ class SwMailMergeConfigItem;
 
 class SwView_Impl
 {
-    css::uno::Reference< css::lang::XEventListener >  xScanEvtLstnr;
-    css::uno::Reference< css::lang::XEventListener >  xClipEvtLstnr;
     css::uno::Reference< css::frame::XDispatchProviderInterceptor >   xDisProvInterceptor;
     css::uno::Reference< css::view::XSelectionSupplier >              mxXTextView;       // UNO object
-    css::uno::WeakReference< css::lang::XUnoTunnel > xTransferable;
+    css::uno::WeakReference< css::lang::XUnoTunnel >                  xTransferable;
 
     // temporary document for printing text of selection / multi selection
     // in PDF export.
-    SfxObjectShellLock           xTmpSelDocSh;
+    SfxObjectShellLock          xTmpSelDocSh;
 
-    SwView* pView;
-    SwScannerEventListener*     pScanEvtLstnr;
-    SwClipboardChangeListener*  pClipEvtLstnr;
-    ShellModes                  eShellMode;
+    SwView*                     pView;
+    rtl::Reference<SwScannerEventListener>
+                                mxScanEvtLstnr;
+    rtl::Reference<SwClipboardChangeListener>
+                                mxClipEvtLstnr;
+    ShellMode                   eShellMode;
 
-#if HAVE_FEATURE_DBCONNECTIVITY
-    SwMailMergeConfigItem*      pConfigItem;
+    std::shared_ptr<SwMailMergeConfigItem>
+                                xConfigItem;
     sal_uInt16                  nMailMergeRestartPage;
-    bool                    bMailMergeSourceView;
-#endif
 
     sfx2::DocumentInserter*     m_pDocInserter;
     SfxRequest*                 m_pRequest;
@@ -120,16 +114,19 @@ class SwView_Impl
     bool                        m_bEditingPositionSet;
 
 public:
+    /// Redline author that's specific to this view.
+    OUString m_sRedlineAuthor;
+
     SwView_Impl(SwView* pShell);
     ~SwView_Impl();
 
-    void                            SetShellMode(ShellModes eSet);
+    void                            SetShellMode(ShellMode eSet);
 
     css::view::XSelectionSupplier* GetUNOObject();
     SwXTextView*                    GetUNOObject_Impl();
     void                            Invalidate();
 
-    ShellModes                      GetShellMode() {return eShellMode;}
+    ShellMode                       GetShellMode() {return eShellMode;}
 
     void                            ExecuteScan(SfxRequest& rReq);
     SwScannerEventListener&         GetScannerEventListener();
@@ -138,17 +135,12 @@ public:
 
     void                            AddTransferable(SwTransferable& rTransferable);
 
-#if HAVE_FEATURE_DBCONNECTIVITY
-    void   SetMailMergeConfigItem(SwMailMergeConfigItem*  pItem,
-                                                sal_uInt16 nRestart, bool bIsSource)
-                            {   pConfigItem = pItem;
-                                nMailMergeRestartPage = nRestart;
-                                bMailMergeSourceView = bIsSource;
-                            }
-    SwMailMergeConfigItem*  GetMailMergeConfigItem() {return pConfigItem;}
-    sal_uInt16              GetMailMergeRestartPage() const {return nMailMergeRestartPage;}
-    bool                IsMailMergeSourceView() const { return bMailMergeSourceView;  }
-#endif
+    void SetMailMergeConfigItem(std::shared_ptr<SwMailMergeConfigItem>& rItem, sal_uInt16 nRestart)
+    {
+        xConfigItem = rItem;
+        nMailMergeRestartPage = nRestart;
+    }
+    std::shared_ptr<SwMailMergeConfigItem>  GetMailMergeConfigItem() {return xConfigItem;}
 
     //#i33307# restore editing position
     void                    SetRestorePosition(const Point& rCursorPos, bool bSelectObj)
@@ -168,9 +160,9 @@ public:
     SfxMedium*              CreateMedium();
     void                    InitRequest( const SfxRequest& rRequest );
 
-    inline SfxRequest*      GetRequest() const { return m_pRequest; }
-    inline sal_Int16        GetParam() const { return m_nParam; }
-    inline void             SetParam( sal_Int16 nParam ) { m_nParam = nParam; }
+    SfxRequest*      GetRequest() const { return m_pRequest; }
+    sal_Int16        GetParam() const { return m_nParam; }
+    void             SetParam( sal_Int16 nParam ) { m_nParam = nParam; }
 };
 #endif
 

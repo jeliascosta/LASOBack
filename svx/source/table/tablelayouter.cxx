@@ -427,8 +427,8 @@ sal_Int32 TableLayouter::distribute( LayoutVector& rLayouts, sal_Int32 nDistribu
     // break loops after 100 runs to avoid freezing office due to developer error
     sal_Int32 nSafe = 100;
 
-    const sal_Size nCount = rLayouts.size();
-    sal_Size nIndex;
+    const std::size_t nCount = rLayouts.size();
+    std::size_t nIndex;
 
     bool bConstrainsBroken = false;
 
@@ -496,7 +496,7 @@ typedef std::vector< MergeableCellVector > MergeVector;
 typedef std::vector< sal_Int32 > Int32Vector;
 
 
-void TableLayouter::LayoutTableWidth( Rectangle& rArea, bool bFit )
+void TableLayouter::LayoutTableWidth( tools::Rectangle& rArea, bool bFit )
 {
     const sal_Int32 nColCount = getColumnCount();
     const sal_Int32 nRowCount = getRowCount();
@@ -648,7 +648,7 @@ void TableLayouter::LayoutTableWidth( Rectangle& rArea, bool bFit )
 }
 
 
-void TableLayouter::LayoutTableHeight( Rectangle& rArea, bool bFit )
+void TableLayouter::LayoutTableHeight( tools::Rectangle& rArea, bool bFit )
 {
     const sal_Int32 nColCount = getColumnCount();
     const sal_Int32 nRowCount = getRowCount();
@@ -807,7 +807,7 @@ void TableLayouter::LayoutTableHeight( Rectangle& rArea, bool bFit )
 
 /** try to fit the table into the given rectangle.
     If the rectangle is to small, it will be grown to fit the table. */
-void TableLayouter::LayoutTable( Rectangle& rRectangle, bool bFitWidth, bool bFitHeight )
+void TableLayouter::LayoutTable( tools::Rectangle& rRectangle, bool bFitWidth, bool bFitHeight )
 {
     if( !mxTable.is() )
         return;
@@ -837,7 +837,7 @@ void TableLayouter::LayoutTable( Rectangle& rRectangle, bool bFitWidth, bool bFi
 }
 
 
-void TableLayouter::updateCells( Rectangle& rRectangle )
+void TableLayouter::updateCells( tools::Rectangle& rRectangle )
 {
     const sal_Int32 nColCount = getColumnCount();
     const sal_Int32 nRowCount = getRowCount();
@@ -853,7 +853,7 @@ void TableLayouter::updateCells( Rectangle& rRectangle )
                 basegfx::B2IRectangle aCellArea;
                 if( getCellArea( xCell, aPos, aCellArea ) )
                 {
-                    Rectangle aCellRect;
+                    tools::Rectangle aCellRect;
                     aCellRect.Left() = aCellArea.getMinX();
                     aCellRect.Right() = aCellArea.getMaxX();
                     aCellRect.Top() = aCellArea.getMinY();
@@ -1012,7 +1012,7 @@ void TableLayouter::UpdateBorderLayout()
             if( !xCell.is() )
                 continue;
 
-            const SvxBoxItem* pThisAttr = static_cast<const SvxBoxItem*>(xCell->GetItemSet().GetItem( SDRATTR_TABLE_BORDER ));
+            const SvxBoxItem* pThisAttr = xCell->GetItemSet().GetItem<SvxBoxItem>( SDRATTR_TABLE_BORDER );
             OSL_ENSURE(pThisAttr,"sdr::table::TableLayouter::UpdateBorderLayout(), no border attribute?");
 
             if( !pThisAttr )
@@ -1037,7 +1037,7 @@ void TableLayouter::UpdateBorderLayout()
 }
 
 
-void TableLayouter::DistributeColumns( ::Rectangle& rArea, sal_Int32 nFirstCol, sal_Int32 nLastCol )
+void TableLayouter::DistributeColumns( ::tools::Rectangle& rArea, sal_Int32 nFirstCol, sal_Int32 nLastCol )
 {
     if( mxTable.is() ) try
     {
@@ -1075,7 +1075,7 @@ void TableLayouter::DistributeColumns( ::Rectangle& rArea, sal_Int32 nFirstCol, 
 }
 
 
-void TableLayouter::DistributeRows( ::Rectangle& rArea, sal_Int32 nFirstRow, sal_Int32 nLastRow )
+void TableLayouter::DistributeRows( ::tools::Rectangle& rArea, sal_Int32 nFirstRow, sal_Int32 nLastRow )
 {
     if( mxTable.is() ) try
     {
@@ -1127,7 +1127,7 @@ void TableLayouter::DistributeRows( ::Rectangle& rArea, sal_Int32 nFirstRow, sal
 
 void TableLayouter::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("tableLayouter"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("TableLayouter"));
 
     xmlTextWriterStartElement(pWriter, BAD_CAST("columns"));
     for (const auto& rColumn : maColumns)
@@ -1144,7 +1144,7 @@ void TableLayouter::dumpAsXml(xmlTextWriterPtr pWriter) const
 
 void TableLayouter::Layout::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("layout"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("TableLayouter_Layout"));
 
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("pos"), BAD_CAST(OString::number(mnPos).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("size"), BAD_CAST(OString::number(mnSize).getStr()));

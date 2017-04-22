@@ -29,15 +29,11 @@
 #include <osl/mutex.hxx>
 #include <cppuhelper/compbase.hxx>
 
-namespace {
+namespace sd { namespace framework {
 
 typedef ::cppu::WeakComponentImplHelper <
     css::drawing::framework::XConfigurationChangeListener
     > ViewTabBarModuleInterfaceBase;
-
-} // end of anonymous namespace.
-
-namespace sd { namespace framework {
 
 /** This module is responsible for showing the ViewTabBar above the view in
     the center pane.
@@ -59,21 +55,19 @@ public:
         const css::uno::Reference<css::frame::XController>& rxController,
         const css::uno::Reference<
             css::drawing::framework::XResourceId>& rxViewTabBarId);
-    virtual ~ViewTabBarModule();
+    virtual ~ViewTabBarModule() override;
 
     virtual void SAL_CALL disposing() override;
 
     // XConfigurationChangeListener
 
     virtual void SAL_CALL notifyConfigurationChange (
-        const css::drawing::framework::ConfigurationChangeEvent& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
 
     // XEventListener
 
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& rEvent) override;
 
 private:
     css::uno::Reference<

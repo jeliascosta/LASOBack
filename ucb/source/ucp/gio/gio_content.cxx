@@ -25,11 +25,12 @@
 
 #include <osl/diagnose.h>
 #include <osl/doublecheckedlocking.h>
-
+#include <com/sun/star/beans/IllegalTypeException.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/beans/PropertySetInfoChange.hpp>
 #include <com/sun/star/beans/PropertySetInfoChangeEvent.hpp>
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XActiveDataSink.hpp>
 #include <com/sun/star/io/XOutputStream.hpp>
 #include <com/sun/star/lang/IllegalAccessException.hpp>
@@ -85,7 +86,6 @@ Content::Content(
     const uno::Reference< uno::XComponentContext >& rxContext,
     ContentProvider* pProvider,
     const uno::Reference< ucb::XContentIdentifier >& Identifier)
-        throw ( ucb::ContentCreationException )
     : ContentImplHelper( rxContext, pProvider, Identifier ),
       m_pProvider( pProvider ), mpFile (nullptr), mpInfo( nullptr ), mbTransient(false)
 {
@@ -97,7 +97,6 @@ Content::Content(
     ContentProvider* pProvider,
     const uno::Reference< ucb::XContentIdentifier >& Identifier,
     bool bIsFolder)
-        throw ( ucb::ContentCreationException )
     : ContentImplHelper( rxContext, pProvider, Identifier ),
       m_pProvider( pProvider ), mpFile (nullptr), mpInfo( nullptr ), mbTransient(true)
 {
@@ -126,14 +125,13 @@ OUString Content::getParentURL()
 }
 
 void SAL_CALL Content::abort( sal_Int32 /*CommandId*/ )
-       throw( uno::RuntimeException, std::exception )
 {
     //TODO
     //stick a map from each CommandId to a new GCancellable and propagate
     //it throughout the g_file_* calls
 }
 
-OUString SAL_CALL Content::getContentType() throw( uno::RuntimeException, std::exception )
+OUString SAL_CALL Content::getContentType()
 {
     return isFolder(uno::Reference< ucb::XCommandEnvironment >())
         ? OUString( GIO_FOLDER_TYPE )
@@ -143,7 +141,7 @@ OUString SAL_CALL Content::getContentType() throw( uno::RuntimeException, std::e
 #define EXCEPT(aExcept) \
 do { \
     if (bThrow) throw aExcept;\
-    aRet = uno::makeAny( aExcept );\
+    aRet <<= aExcept;\
 } while(false)
 
 uno::Any convertToException(GError *pError, const uno::Reference< uno::XInterface >& rContext, bool bThrow)
@@ -281,7 +279,6 @@ uno::Any convertToException(GError *pError, const uno::Reference< uno::XInterfac
 }
 
 void convertToIOException(GError *pError, const uno::Reference< uno::XInterface >& rContext)
-    throw( io::IOException, uno::RuntimeException, std::exception )
 {
     try
     {
@@ -315,7 +312,7 @@ uno::Any Content::mapGIOError( GError *pError )
 uno::Any Content::getBadArgExcept()
 {
     return uno::makeAny( lang::IllegalArgumentException(
-        OUString("Wrong argument type!"),
+        "Wrong argument type!",
         static_cast< cppu::OWeakObject * >( this ), -1) );
 }
 
@@ -701,7 +698,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
             if (!( rValue.Value >>= aNewTitle ))
             {
                 aRet[ n ] <<= beans::IllegalTypeException
-                    ( OUString("Property value has wrong type!"),
+                    ( "Property value has wrong type!",
                       static_cast< cppu::OWeakObject * >( this ) );
                 continue;
             }
@@ -709,7 +706,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
             if ( aNewTitle.getLength() <= 0 )
             {
                 aRet[ n ] <<= lang::IllegalArgumentException
-                    ( OUString("Empty title not allowed!"),
+                    ( "Empty title not allowed!",
                       static_cast< cppu::OWeakObject * >( this ), -1 );
                 continue;
 
@@ -725,8 +722,8 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
 
                 aEvent.PropertyName = "Title";
                 if (oldName)
-                    aEvent.OldValue = uno::makeAny(OUString(oldName, strlen(oldName), RTL_TEXTENCODING_UTF8));
-                aEvent.NewValue = uno::makeAny(aNewTitle);
+                    aEvent.OldValue <<= OUString(oldName, strlen(oldName), RTL_TEXTENCODING_UTF8);
+                aEvent.NewValue <<= aNewTitle;
                 aChanges.getArray()[ nChanged ] = aEvent;
                 nTitlePos = nChanged++;
 
@@ -749,7 +746,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
             if ((bOk = doSetFileInfo(pNewInfo)))
             {
                 for (sal_Int32 i = 0; i < nChanged; ++i)
-                    aRet[ i ] <<= getBadArgExcept();
+                    aRet[ i ] = getBadArgExcept();
             }
         }
 
@@ -765,7 +762,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
                 if (!exchangeIdentity( xNewId ) )
                 {
                     aRet[ nTitlePos ] <<= uno::Exception
-                        ( OUString("Exchange failed!"),
+                        ( "Exchange failed!",
                           static_cast< cppu::OWeakObject * >( this ) );
                 }
             }
@@ -856,7 +853,6 @@ bool Content::feedSink( const uno::Reference< uno::XInterface >& xSink,
 
 uno::Any Content::open(const ucb::OpenCommandArgument2 & rOpenCommand,
     const uno::Reference< ucb::XCommandEnvironment > & xEnv )
-    throw( uno::Exception )
 {
     bool bIsFolder = isFolder(xEnv);
 
@@ -924,9 +920,6 @@ uno::Any SAL_CALL Content::execute(
         const ucb::Command& aCommand,
         sal_Int32 /*CommandId*/,
         const uno::Reference< ucb::XCommandEnvironment >& xEnv )
-    throw( uno::Exception,
-           ucb::CommandAbortedException,
-           uno::RuntimeException, std::exception )
 {
     SAL_INFO("ucb.ucp.gio", "Content::execute " << aCommand.Name << "\n");
     uno::Any aRet;
@@ -1012,7 +1005,6 @@ uno::Any SAL_CALL Content::execute(
 }
 
 void Content::destroy( bool bDeletePhysical )
-    throw( uno::Exception, std::exception )
 {
     uno::Reference< ucb::XContent > xThis = this;
 
@@ -1033,7 +1025,6 @@ void Content::destroy( bool bDeletePhysical )
 
 void Content::insert(const uno::Reference< io::XInputStream > &xInputStream,
     bool bReplaceExisting, const uno::Reference< ucb::XCommandEnvironment > &xEnv )
-        throw( uno::Exception )
 {
     GError *pError = nullptr;
     GFileInfo *pInfo = getGFileInfo(xEnv);
@@ -1082,7 +1073,6 @@ const GFileCopyFlags DEFAULT_COPYDATA_FLAGS =
     static_cast<GFileCopyFlags>(G_FILE_COPY_OVERWRITE|G_FILE_COPY_TARGET_DEFAULT_PERMS);
 
 void Content::transfer( const ucb::TransferInfo& aTransferInfo, const uno::Reference< ucb::XCommandEnvironment >& xEnv )
-    throw( uno::Exception, std::exception )
 {
     OUString sDest = m_xIdentifier->getContentIdentifier();
     if (!sDest.endsWith("/")) {
@@ -1110,7 +1100,6 @@ void Content::transfer( const ucb::TransferInfo& aTransferInfo, const uno::Refer
 
 uno::Sequence< ucb::ContentInfo > Content::queryCreatableContentsInfo(
     const uno::Reference< ucb::XCommandEnvironment >& xEnv)
-            throw( uno::RuntimeException )
 {
     if ( isFolder( xEnv ) )
     {
@@ -1119,7 +1108,7 @@ uno::Sequence< ucb::ContentInfo > Content::queryCreatableContentsInfo(
         // Minimum set of props we really need
         uno::Sequence< beans::Property > props( 1 );
         props[0] = beans::Property(
-            OUString("Title"),
+            "Title",
             -1,
             cppu::UnoType<OUString>::get(),
             beans::PropertyAttribute::MAYBEVOID | beans::PropertyAttribute::BOUND );
@@ -1144,14 +1133,12 @@ uno::Sequence< ucb::ContentInfo > Content::queryCreatableContentsInfo(
 }
 
 uno::Sequence< ucb::ContentInfo > SAL_CALL Content::queryCreatableContentsInfo()
-            throw( uno::RuntimeException, std::exception )
 {
     return queryCreatableContentsInfo( uno::Reference< ucb::XCommandEnvironment >() );
 }
 
 uno::Reference< ucb::XContent >
     SAL_CALL Content::createNewContent( const ucb::ContentInfo& Info )
-        throw( uno::RuntimeException, std::exception )
 {
     bool create_document;
     const char *name;
@@ -1187,7 +1174,6 @@ uno::Reference< ucb::XContent >
 }
 
 uno::Sequence< uno::Type > SAL_CALL Content::getTypes()
-    throw( uno::RuntimeException, std::exception )
 {
     if ( isFolder( uno::Reference< ucb::XCommandEnvironment >() ) )
     {
@@ -1228,40 +1214,40 @@ uno::Sequence< beans::Property > Content::getProperties(
 {
     static const beans::Property aGenericProperties[] =
     {
-        beans::Property( OUString(  "IsDocument"  ),
+        beans::Property( "IsDocument",
             -1, cppu::UnoType<bool>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "IsFolder"  ),
+        beans::Property( "IsFolder",
             -1, cppu::UnoType<bool>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "Title"  ),
+        beans::Property( "Title",
             -1, cppu::UnoType<OUString>::get(),
             beans::PropertyAttribute::BOUND ),
-        beans::Property( OUString(  "IsReadOnly"  ),
+        beans::Property( "IsReadOnly",
             -1, cppu::UnoType<bool>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "DateCreated"  ),
+        beans::Property( "DateCreated",
             -1, cppu::UnoType<util::DateTime>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "DateModified"  ),
+        beans::Property( "DateModified",
             -1, cppu::UnoType<util::DateTime>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "Size"  ),
+        beans::Property( "Size",
             -1, cppu::UnoType<sal_Int64>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "IsVolume"  ),
+        beans::Property( "IsVolume",
             1, cppu::UnoType<bool>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "IsCompactDisc"  ),
+        beans::Property( "IsCompactDisc",
             -1, cppu::UnoType<bool>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "IsRemoveable"  ),
+        beans::Property( "IsRemoveable",
             -1, cppu::UnoType<bool>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "IsHidden"  ),
+        beans::Property( "IsHidden",
             -1, cppu::UnoType<bool>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY ),
-        beans::Property( OUString(  "CreatableContentsInfo"  ),
+        beans::Property( "CreatableContentsInfo",
             -1, cppu::UnoType<uno::Sequence< ucb::ContentInfo >>::get(),
             beans::PropertyAttribute::BOUND | beans::PropertyAttribute::READONLY )
     };
@@ -1276,35 +1262,35 @@ uno::Sequence< ucb::CommandInfo > Content::getCommands( const uno::Reference< uc
     {
         // Required commands
         ucb::CommandInfo
-        ( OUString(  "getCommandInfo"  ),
+        ( "getCommandInfo",
           -1, cppu::UnoType<void>::get() ),
         ucb::CommandInfo
-        ( OUString(  "getPropertySetInfo"  ),
+        ( "getPropertySetInfo",
           -1, cppu::UnoType<void>::get() ),
         ucb::CommandInfo
-        ( OUString(  "getPropertyValues"  ),
+        ( "getPropertyValues",
           -1, cppu::UnoType<uno::Sequence< beans::Property >>::get() ),
         ucb::CommandInfo
-        ( OUString(  "setPropertyValues"  ),
+        ( "setPropertyValues",
           -1, cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get() ),
 
         // Optional standard commands
         ucb::CommandInfo
-        ( OUString(  "delete"  ),
+        ( "delete",
           -1, cppu::UnoType<bool>::get() ),
         ucb::CommandInfo
-        ( OUString(  "insert"  ),
+        ( "insert",
           -1, cppu::UnoType<ucb::InsertCommandArgument>::get() ),
         ucb::CommandInfo
-        ( OUString(  "open"  ),
+        ( "open",
           -1, cppu::UnoType<ucb::OpenCommandArgument2>::get() ),
 
         // Folder Only, omitted if not a folder
         ucb::CommandInfo
-        ( OUString(  "transfer"  ),
+        ( "transfer",
           -1, cppu::UnoType<ucb::TransferInfo>::get() ),
         ucb::CommandInfo
-        ( OUString(  "createNewContent"  ),
+        ( "createNewContent",
           -1, cppu::UnoType<ucb::ContentInfo>::get() )
     };
 
@@ -1324,19 +1310,18 @@ void SAL_CALL Content::release() throw()
     ContentImplHelper::release();
 }
 
-uno::Any SAL_CALL Content::queryInterface( const uno::Type & rType ) throw ( uno::RuntimeException, std::exception )
+uno::Any SAL_CALL Content::queryInterface( const uno::Type & rType )
 {
     uno::Any aRet = cppu::queryInterface( rType, static_cast< ucb::XContentCreator * >( this ) );
     return aRet.hasValue() ? aRet : ContentImplHelper::queryInterface(rType);
 }
 
-OUString SAL_CALL Content::getImplementationName() throw( uno::RuntimeException, std::exception )
+OUString SAL_CALL Content::getImplementationName()
 {
        return OUString("com.sun.star.comp.GIOContent");
 }
 
 uno::Sequence< OUString > SAL_CALL Content::getSupportedServiceNames()
-       throw( uno::RuntimeException, std::exception )
 {
        uno::Sequence<OUString> aSNS { "com.sun.star.ucb.GIOContent" };
        return aSNS;

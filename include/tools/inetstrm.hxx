@@ -20,11 +20,10 @@
 #define INCLUDED_TOOLS_INETSTRM_HXX
 
 #include <tools/toolsdllapi.h>
+#include <tools/stream.hxx>
 #include <sal/types.h>
-#include <rtl/ustring.hxx>
 
 class INetMIMEMessage;
-class SvMemoryStream;
 class SvStream;
 
 class TOOLS_DLLPUBLIC INetMIMEMessageStream
@@ -32,13 +31,12 @@ class TOOLS_DLLPUBLIC INetMIMEMessageStream
     INetMIMEMessage *pSourceMsg;
     bool            bHeaderGenerated;
 
-    sal_uIntPtr           nBufSiz;
     sal_Char       *pBuffer;
     sal_Char       *pRead;
     sal_Char       *pWrite;
 
     SvStream       *pMsgStrm;
-    SvMemoryStream *pMsgBuffer;
+    SvMemoryStream  maMsgBuffer;
     sal_Char       *pMsgRead;
     sal_Char       *pMsgWrite;
 

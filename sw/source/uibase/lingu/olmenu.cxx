@@ -77,17 +77,12 @@
 
 #include <map>
 
-#include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/document/XDocumentLanguages.hpp>
-#include <com/sun/star/frame/XModuleManager.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
 #include <com/sun/star/i18n/ScriptType.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/linguistic2/SingleProofreadingError.hpp>
 #include <com/sun/star/linguistic2/XLanguageGuessing.hpp>
-#include <com/sun/star/linguistic2/XSpellChecker1.hpp>
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/system/SystemShellExecuteFlags.hpp>
 #include <com/sun/star/system/SystemShellExecute.hpp>
@@ -263,15 +258,29 @@ OUString RetrieveLabelFromCommand( const OUString& aCmdURL )
 SwSpellPopup::SwSpellPopup(
         SwWrtShell* pWrtSh,
         const uno::Reference< linguistic2::XSpellAlternatives >  &xAlt,
-        const OUString &rParaText
-)   : PopupMenu( SW_RES(MN_SPELL_POPUP) )
+        const OUString &rParaText)
+    : m_aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/swriter/ui/spellmenu.ui", "")
+    , m_xPopupMenu(m_aBuilder.get_menu("menu"))
+    , m_nIgnoreWordId(m_xPopupMenu->GetItemId("ignoreall"))
+    , m_nAddMenuId(m_xPopupMenu->GetItemId("addmenu"))
+    , m_nAddId(m_xPopupMenu->GetItemId("add"))
+    , m_nSpellDialogId(m_xPopupMenu->GetItemId("spelldialog"))
+    , m_nCorrectMenuId(m_xPopupMenu->GetItemId("correctmenu"))
+    , m_nCorrectDialogId(m_xPopupMenu->GetItemId("correctdialog"))
+    , m_nLangSelectionMenuId(m_xPopupMenu->GetItemId("langselection"))
+    , m_nLangParaMenuId(m_xPopupMenu->GetItemId("langpara"))
+    , m_nRedlineAcceptId(m_xPopupMenu->GetItemId("accept"))
+    , m_nRedlineRejectId(m_xPopupMenu->GetItemId("reject"))
+    , m_nRedlineNextId(m_xPopupMenu->GetItemId("next"))
+    , m_nRedlinePrevId(m_xPopupMenu->GetItemId("prev"))
     , m_pSh( pWrtSh )
     , m_xSpellAlt(xAlt)
+    , m_nGrammarError(0)
     , m_bGrammarResults(false)
 {
     OSL_ENSURE(m_xSpellAlt.is(), "no spelling alternatives available");
 
-    SetMenuFlags(MenuFlags::NoAutoMnemonics);
+    m_xPopupMenu->SetMenuFlags(MenuFlags::NoAutoMnemonics);
     bool bUseImagesInMenus = Application::GetSettings().GetStyleSettings().GetUseImagesInMenus();
 
     m_nCheckedLanguage = LANGUAGE_NONE;
@@ -284,7 +293,7 @@ SwSpellPopup::SwSpellPopup(
 
     SvtLinguConfig aCfg;
 
-    PopupMenu *pMenu = GetPopupMenu(MN_AUTOCORR);
+    PopupMenu *pMenu = m_xPopupMenu->GetPopupMenu(m_nCorrectMenuId);
     pMenu->SetMenuFlags(MenuFlags::NoAutoMnemonics);
     bool bEnable = false;
     if( nStringCount )
@@ -302,17 +311,17 @@ SwSpellPopup::SwSpellPopup(
             }
         }
 
-        InsertSeparator(OString(), 0);
+        m_xPopupMenu->InsertSeparator(OString(), 0);
         bEnable = true;
         sal_uInt16 nAutoCorrItemId  = MN_AUTOCORR_START;
         sal_uInt16 nItemId          = MN_SUGGESTION_START;
         for (sal_uInt16 i = 0; i < nStringCount; ++i)
         {
             const OUString aEntry = m_aSuggestions[ i ];
-            InsertItem(nItemId, aEntry, MenuItemBits::NONE, OString(), i);
-            SetHelpId( nItemId, HID_LINGU_REPLACE);
+            m_xPopupMenu->InsertItem(nItemId, aEntry, MenuItemBits::NONE, OString(), i);
+            m_xPopupMenu->SetHelpId(nItemId, HID_LINGU_REPLACE);
             if (!aSuggestionImageUrl.isEmpty())
-                SetItemImage( nItemId, aImage );
+                m_xPopupMenu->SetItemImage(nItemId, aImage);
 
             pMenu->InsertItem( nAutoCorrItemId, aEntry );
             pMenu->SetHelpId( nAutoCorrItemId, HID_LINGU_AUTOCORR);
@@ -324,13 +333,13 @@ SwSpellPopup::SwSpellPopup(
 
     OUString aIgnoreSelection( SW_RES( STR_IGNORE_SELECTION ) );
     OUString aSpellingAndGrammar = RetrieveLabelFromCommand( ".uno:SpellingAndGrammarDialog" );
-    SetItemText( MN_SPELLING_DLG, aSpellingAndGrammar );
-    SetItemText(MN_AUTO_CORRECT_DLG, RetrieveLabelFromCommand(".uno:AutoCorrectDlg"));
-    sal_uInt16 nItemPos = GetItemPos( MN_IGNORE_WORD );
-    InsertItem(MN_IGNORE_SELECTION, aIgnoreSelection, MenuItemBits::NONE, OString(), nItemPos);
-    SetHelpId( MN_IGNORE_SELECTION, HID_LINGU_IGNORE_SELECTION);
+    m_xPopupMenu->SetItemText(m_nSpellDialogId, aSpellingAndGrammar);
+    m_xPopupMenu->SetItemText(m_nCorrectDialogId, RetrieveLabelFromCommand(".uno:AutoCorrectDlg"));
+    sal_uInt16 nItemPos = m_xPopupMenu->GetItemPos(m_nIgnoreWordId);
+    m_xPopupMenu->InsertItem(MN_IGNORE_SELECTION, aIgnoreSelection, MenuItemBits::NONE, OString(), nItemPos);
+    m_xPopupMenu->SetHelpId(MN_IGNORE_SELECTION, HID_LINGU_IGNORE_SELECTION);
 
-    EnableItem( MN_AUTOCORR, bEnable );
+    m_xPopupMenu->EnableItem(m_nCorrectMenuId, bEnable);
 
     uno::Reference< linguistic2::XLanguageGuessing > xLG = SW_MOD()->GetLanguageGuesser();
     m_nGuessLangWord = LANGUAGE_NONE;
@@ -349,16 +358,16 @@ SwSpellPopup::SwSpellPopup(
             m_nGuessLangPara = m_nGuessLangWord;
     }
 
-    pMenu = GetPopupMenu(MN_ADD_TO_DIC);
+    pMenu = m_xPopupMenu->GetPopupMenu(m_nAddMenuId);
     pMenu->SetMenuFlags(MenuFlags::NoAutoMnemonics);     //! necessary to retrieve the correct dictionary name in 'Execute' below
-    uno::Reference< linguistic2::XSearchableDictionaryList >    xDicList( SvxGetDictionaryList() );
+    uno::Reference< linguistic2::XSearchableDictionaryList >    xDicList( LinguMgr::GetDictionaryList() );
     sal_uInt16 nItemId = MN_DICTIONARIES_START;
     if (xDicList.is())
     {
         // add the default positive dictionary to dic-list (if not already done).
         // This is to ensure that there is at least one dictionary to which
         // words could be added.
-        uno::Reference< linguistic2::XDictionary >  xDic( SvxGetOrCreatePosDic( xDicList ) );
+        uno::Reference< linguistic2::XDictionary >  xDic( LinguMgr::GetStandardDic() );
         if (xDic.is())
             xDic->setActive( true );
 
@@ -369,7 +378,7 @@ SwSpellPopup::SwSpellPopup(
         for( sal_uInt16 i = 0; i < nDicCount; i++ )
         {
             uno::Reference< linguistic2::XDictionary >  xDicTmp( pDic[i], uno::UNO_QUERY );
-            if (!xDicTmp.is() || SvxGetIgnoreAllList() == xDicTmp)
+            if (!xDicTmp.is() || LinguMgr::GetIgnoreAllList() == xDicTmp)
                 continue;
 
             uno::Reference< frame::XStorable > xStor( xDicTmp, uno::UNO_QUERY );
@@ -403,8 +412,8 @@ SwSpellPopup::SwSpellPopup(
             }
         }
     }
-    EnableItem( MN_ADD_TO_DIC, (nItemId - MN_DICTIONARIES_START) > 1 );
-    EnableItem( MN_ADD_TO_DIC_SINGLE, (nItemId - MN_DICTIONARIES_START) == 1 );
+    m_xPopupMenu->EnableItem(m_nAddMenuId, (nItemId - MN_DICTIONARIES_START) > 1);
+    m_xPopupMenu->EnableItem(m_nAddId, (nItemId - MN_DICTIONARIES_START) == 1);
 
     //ADD NEW LANGUAGE MENU ITEM
 
@@ -430,23 +439,23 @@ SwSpellPopup::SwSpellPopup(
     aSeq[2] = aKeyboardLang;
     aSeq[3] = SvtLanguageTable::GetLanguageString(m_nGuessLangWord);
 
-    pMenu = GetPopupMenu(MN_SET_LANGUAGE_SELECTION);
+    pMenu = m_xPopupMenu->GetPopupMenu(m_nLangSelectionMenuId);
     fillLangPopupMenu( pMenu, MN_SET_LANGUAGE_SELECTION_START, aSeq, pWrtSh, m_aLangTable_Text );
-    EnableItem( MN_SET_LANGUAGE_SELECTION );
+    m_xPopupMenu->EnableItem(m_nLangSelectionMenuId);
 
-    pMenu = GetPopupMenu(MN_SET_LANGUAGE_PARAGRAPH);
+    pMenu = m_xPopupMenu->GetPopupMenu(m_nLangParaMenuId);
     fillLangPopupMenu( pMenu, MN_SET_LANGUAGE_PARAGRAPH_START, aSeq, pWrtSh, m_aLangTable_Paragraph );
-    EnableItem( MN_SET_LANGUAGE_PARAGRAPH );
+    m_xPopupMenu->EnableItem(m_nLangParaMenuId);
 
     if (bUseImagesInMenus)
     {
         uno::Reference< frame::XFrame > xFrame = pWrtSh->GetView().GetViewFrame()->GetFrame().GetFrameInterface();
         Image rImg = ::GetImage( xFrame, ".uno:SpellingAndGrammarDialog", false );
-        SetItemImage( MN_SPELLING_DLG, rImg );
+        m_xPopupMenu->SetItemImage(m_nSpellDialogId, rImg);
     }
 
     checkRedline();
-    RemoveDisabledEntries( true, true );
+    m_xPopupMenu->RemoveDisabledEntries( true, true );
 }
 
 SwSpellPopup::SwSpellPopup(
@@ -454,14 +463,26 @@ SwSpellPopup::SwSpellPopup(
     const linguistic2::ProofreadingResult &rResult,
     sal_Int32 nErrorInResult,
     const uno::Sequence< OUString > &rSuggestions,
-    const OUString &rParaText ) :
-PopupMenu( SW_RES(MN_SPELL_POPUP) ),
-m_pSh( pWrtSh ),
-m_xGrammarResult( rResult ),
-m_aSuggestions( rSuggestions ),
-m_sExplanationLink( ),
-m_bGrammarResults( true ),
-m_aInfo16( SW_RES(IMG_INFO_16) )
+    const OUString &rParaText )
+    : m_aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/swriter/ui/spellmenu.ui", "")
+    , m_xPopupMenu(m_aBuilder.get_menu("menu"))
+    , m_nIgnoreWordId(m_xPopupMenu->GetItemId("ignoreall"))
+    , m_nAddMenuId(m_xPopupMenu->GetItemId("addmenu"))
+    , m_nAddId(m_xPopupMenu->GetItemId("add"))
+    , m_nSpellDialogId(m_xPopupMenu->GetItemId("spelldialog"))
+    , m_nCorrectMenuId(m_xPopupMenu->GetItemId("correctmenu"))
+    , m_nCorrectDialogId(m_xPopupMenu->GetItemId("correctdialog"))
+    , m_nLangSelectionMenuId(m_xPopupMenu->GetItemId("langselection"))
+    , m_nLangParaMenuId(m_xPopupMenu->GetItemId("langpara"))
+    , m_nRedlineAcceptId(m_xPopupMenu->GetItemId("accept"))
+    , m_nRedlineRejectId(m_xPopupMenu->GetItemId("reject"))
+    , m_nRedlineNextId(m_xPopupMenu->GetItemId("next"))
+    , m_nRedlinePrevId(m_xPopupMenu->GetItemId("prev"))
+    , m_pSh(pWrtSh)
+    , m_xGrammarResult(rResult)
+    , m_aSuggestions(rSuggestions)
+    , m_sExplanationLink()
+    , m_bGrammarResults(true)
 {
     m_nCheckedLanguage = LanguageTag::convertToLanguageType( rResult.aLocale );
     m_nGrammarError = nErrorInResult;
@@ -469,10 +490,10 @@ m_aInfo16( SW_RES(IMG_INFO_16) )
 
     sal_uInt16 nPos = 0;
     OUString aMessageText( rResult.aErrors[ nErrorInResult ].aShortComment );
-    InsertSeparator(OString(), nPos++);
-    InsertItem(MN_SHORT_COMMENT, aMessageText, MenuItemBits::NOSELECT, OString(), nPos++);
+    m_xPopupMenu->InsertSeparator(OString(), nPos++);
+    m_xPopupMenu->InsertItem(MN_SHORT_COMMENT, aMessageText, MenuItemBits::NOSELECT, OString(), nPos++);
     if (bUseImagesInMenus)
-        SetItemImage( MN_SHORT_COMMENT, m_aInfo16 );
+        m_xPopupMenu->SetItemImage(MN_SHORT_COMMENT, Image(BitmapEx(SW_RES(BMP_INFO_16))));
 
     // Add an item to show detailed infos if the FullCommentURL property is defined
     beans::PropertyValues  aProperties = rResult.aErrors[ nErrorInResult ].aProperties;
@@ -491,12 +512,12 @@ m_aInfo16( SW_RES(IMG_INFO_16) )
 
     if ( !m_sExplanationLink.isEmpty( ) )
     {
-        InsertItem(MN_EXPLANATION_LINK, SW_RESSTR(STR_EXPLANATION_LINK), MenuItemBits::TEXT | MenuItemBits::HELP, OString(), nPos++);
+        m_xPopupMenu->InsertItem(MN_EXPLANATION_LINK, SW_RESSTR(STR_EXPLANATION_LINK), MenuItemBits::TEXT | MenuItemBits::HELP, OString(), nPos++);
     }
 
-    SetMenuFlags(MenuFlags::NoAutoMnemonics);
+    m_xPopupMenu->SetMenuFlags(MenuFlags::NoAutoMnemonics);
 
-    InsertSeparator(OString(), nPos++);
+    m_xPopupMenu->InsertSeparator(OString(), nPos++);
     sal_Int32 nStringCount = m_aSuggestions.getLength();
     if ( nStringCount )     // suggestions available...
     {
@@ -517,25 +538,25 @@ m_aInfo16( SW_RES(IMG_INFO_16) )
         for (sal_Int32 i = 0;  i < nStringCount;  ++i)
         {
             const OUString aEntry = m_aSuggestions[ i ];
-            InsertItem(nItemId, aEntry, MenuItemBits::NONE, OString(), nPos++);
-            SetHelpId( nItemId, HID_LINGU_REPLACE );
+            m_xPopupMenu->InsertItem(nItemId, aEntry, MenuItemBits::NONE, OString(), nPos++);
+            m_xPopupMenu->SetHelpId(nItemId, HID_LINGU_REPLACE);
             if (!aSuggestionImageUrl.isEmpty())
-                SetItemImage( nItemId, aImage );
+                m_xPopupMenu->SetItemImage(nItemId, aImage);
 
             ++nItemId;
         }
-        InsertSeparator(OString(), nPos++);
+        m_xPopupMenu->InsertSeparator(OString(), nPos++);
     }
 
     OUString aIgnoreSelection( SW_RES( STR_IGNORE_SELECTION ) );
     OUString aSpellingAndGrammar = RetrieveLabelFromCommand( ".uno:SpellingAndGrammarDialog" );
-    SetItemText( MN_SPELLING_DLG, aSpellingAndGrammar );
-    sal_uInt16 nItemPos = GetItemPos( MN_IGNORE_WORD );
-    InsertItem( MN_IGNORE_SELECTION, aIgnoreSelection, MenuItemBits::NONE, OString(), nItemPos );
-    SetHelpId( MN_IGNORE_SELECTION, HID_LINGU_IGNORE_SELECTION);
+    m_xPopupMenu->SetItemText(m_nSpellDialogId, aSpellingAndGrammar);
+    sal_uInt16 nItemPos = m_xPopupMenu->GetItemPos(m_nIgnoreWordId);
+    m_xPopupMenu->InsertItem(MN_IGNORE_SELECTION, aIgnoreSelection, MenuItemBits::NONE, OString(), nItemPos);
+    m_xPopupMenu->SetHelpId(MN_IGNORE_SELECTION, HID_LINGU_IGNORE_SELECTION);
 
-    EnableItem( MN_AUTOCORR, false );
-    EnableItem( MN_AUTO_CORRECT_DLG, false );
+    m_xPopupMenu->EnableItem(m_nCorrectMenuId, false);
+    m_xPopupMenu->EnableItem(m_nCorrectDialogId, false);
 
     uno::Reference< linguistic2::XLanguageGuessing > xLG = SW_MOD()->GetLanguageGuesser();
     m_nGuessLangWord = LANGUAGE_NONE;
@@ -553,8 +574,8 @@ m_aInfo16( SW_RES(IMG_INFO_16) )
             m_nGuessLangPara = m_nGuessLangWord;
     }
 
-    EnableItem( MN_ADD_TO_DIC, false );
-    EnableItem( MN_ADD_TO_DIC_SINGLE, false );
+    m_xPopupMenu->EnableItem(m_nAddMenuId, false);
+    m_xPopupMenu->EnableItem(m_nAddId, false);
 
     //ADD NEW LANGUAGE MENU ITEM
 
@@ -580,24 +601,26 @@ m_aInfo16( SW_RES(IMG_INFO_16) )
     aSeq[2] = aKeyboardLang;
     aSeq[3] = SvtLanguageTable::GetLanguageString(m_nGuessLangWord);
 
-    PopupMenu *pMenu = GetPopupMenu(MN_SET_LANGUAGE_SELECTION);
+    PopupMenu *pMenu = m_xPopupMenu->GetPopupMenu(m_nLangSelectionMenuId);
     fillLangPopupMenu( pMenu, MN_SET_LANGUAGE_SELECTION_START, aSeq, pWrtSh, m_aLangTable_Text );
-    EnableItem( MN_SET_LANGUAGE_SELECTION );
+    m_xPopupMenu->EnableItem(m_nLangSelectionMenuId);
 
-    pMenu = GetPopupMenu(MN_SET_LANGUAGE_PARAGRAPH);
+    pMenu = m_xPopupMenu->GetPopupMenu(m_nLangParaMenuId);
     fillLangPopupMenu( pMenu, MN_SET_LANGUAGE_PARAGRAPH_START, aSeq, pWrtSh, m_aLangTable_Paragraph );
-    EnableItem( MN_SET_LANGUAGE_PARAGRAPH );
+    m_xPopupMenu->EnableItem(m_nLangParaMenuId);
 
     if (bUseImagesInMenus)
     {
         uno::Reference< frame::XFrame > xFrame = pWrtSh->GetView().GetViewFrame()->GetFrame().GetFrameInterface();
         Image rImg = ::GetImage( xFrame, ".uno:SpellingAndGrammarDialog", false );
-        SetItemImage( MN_SPELLING_DLG, rImg );
+        m_xPopupMenu->SetItemImage(m_nSpellDialogId, rImg);
     }
 
     checkRedline();
-    RemoveDisabledEntries( true, true );
+    m_xPopupMenu->RemoveDisabledEntries(true, true);
 }
+
+SwSpellPopup::~SwSpellPopup() {}
 
 void SwSpellPopup::checkRedline()
 {
@@ -616,7 +639,7 @@ void SwSpellPopup::checkRedline()
     SfxItemSet aSet(pDoc->GetAttrPool(), FN_REDLINE_ACCEPT_DIRECT, FN_REDLINE_PREV_CHANGE);
     for (sal_uInt16 nWhich : pRedlineIds)
     {
-        aSet.Put(SfxVoidItem(nWhich), nWhich);
+        aSet.Put(SfxVoidItem(nWhich));
     }
     m_pSh->GetView().GetState(aSet);
 
@@ -624,13 +647,22 @@ void SwSpellPopup::checkRedline()
     // cleared or not.
     for (sal_uInt16 nWhich : pRedlineIds)
     {
-        EnableItem(nWhich, aSet.Get(nWhich).Which());
+        sal_uInt16 nId(0);
+        if (nWhich == FN_REDLINE_ACCEPT_DIRECT)
+            nId = m_nRedlineAcceptId;
+        else if (nWhich == FN_REDLINE_REJECT_DIRECT)
+            nId = m_nRedlineRejectId;
+        else if (nWhich == FN_REDLINE_NEXT_CHANGE)
+            nId = m_nRedlineNextId;
+        else if (nWhich == FN_REDLINE_PREV_CHANGE)
+            nId = m_nRedlinePrevId;
+        m_xPopupMenu->EnableItem(nId, aSet.Get(nWhich).Which());
     }
 }
 
-void  SwSpellPopup::Execute( const Rectangle& rWordPos, vcl::Window* pWin )
+void SwSpellPopup::Execute( const tools::Rectangle& rWordPos, vcl::Window* pWin )
 {
-    sal_uInt16 nRet = PopupMenu::Execute(pWin, pWin->LogicToPixel(rWordPos));
+    sal_uInt16 nRet = m_xPopupMenu->Execute(pWin, pWin->LogicToPixel(rWordPos));
     Execute( nRet );
 }
 
@@ -675,7 +707,7 @@ void SwSpellPopup::Execute( sal_uInt16 nId )
             aTmpStr += OUString(SW_RES(STR_END_QUOTE));
             aRewriter.AddRule(UndoArg3, aTmpStr);
 
-            m_pSh->StartUndo(UNDO_UI_REPLACE, &aRewriter);
+            m_pSh->StartUndo(SwUndoId::UI_REPLACE, &aRewriter);
             m_pSh->StartAction();
             m_pSh->DelLeft();
 
@@ -704,7 +736,7 @@ void SwSpellPopup::Execute( sal_uInt16 nId )
             m_pSh->SetInsMode( bOldIns );
         }
     }
-    else if (nId == MN_SPELLING_DLG)
+    else if (nId == m_nSpellDialogId)
     {
         if (m_bGrammarResults)
         {
@@ -712,13 +744,13 @@ void SwSpellPopup::Execute( sal_uInt16 nId )
         }
         m_pSh->Left(CRSR_SKIP_CHARS, false, 1, false );
         {
-            uno::Reference<linguistic2::XSearchableDictionaryList> xDictionaryList( SvxGetDictionaryList() );
+            uno::Reference<linguistic2::XSearchableDictionaryList> xDictionaryList( LinguMgr::GetDictionaryList() );
             SvxDicListChgClamp aClamp( xDictionaryList );
             m_pSh->GetView().GetViewFrame()->GetDispatcher()->
                 Execute( FN_SPELL_GRAMMAR_DIALOG, SfxCallMode::ASYNCHRON );
         }
     }
-    else if (nId == MN_AUTO_CORRECT_DLG)
+    else if (nId == m_nCorrectDialogId)
     {
         m_pSh->GetView().GetViewFrame()->GetDispatcher()->Execute( SID_AUTO_CORRECT_DLG, SfxCallMode::ASYNCHRON );
     }
@@ -728,9 +760,9 @@ void SwSpellPopup::Execute( sal_uInt16 nId )
         if (pPaM)
             SwEditShell::IgnoreGrammarErrorAt( *pPaM );
     }
-    else if (nId == MN_IGNORE_WORD)
+    else if (nId == m_nIgnoreWordId)
     {
-        uno::Reference< linguistic2::XDictionary > xDictionary( SvxGetIgnoreAllList(), uno::UNO_QUERY );
+        uno::Reference< linguistic2::XDictionary > xDictionary( LinguMgr::GetIgnoreAllList(), uno::UNO_QUERY );
         if (m_bGrammarResults) {
             try
             {
@@ -758,21 +790,21 @@ void SwSpellPopup::Execute( sal_uInt16 nId )
             }
         }
     }
-    else if ((MN_DICTIONARIES_START <= nId && nId <= MN_DICTIONARIES_END) || nId == MN_ADD_TO_DIC_SINGLE)
+    else if ((MN_DICTIONARIES_START <= nId && nId <= MN_DICTIONARIES_END) || nId == m_nAddId)
     {
         OUString sWord( m_xSpellAlt->getWord() );
         OUString aDicName;
 
         if (MN_DICTIONARIES_START <= nId && nId <= MN_DICTIONARIES_END)
         {
-            PopupMenu *pMenu = GetPopupMenu(MN_ADD_TO_DIC);
+            PopupMenu *pMenu = m_xPopupMenu->GetPopupMenu(m_nAddMenuId);
             aDicName = pMenu->GetItemText(nId);
         }
         else
             aDicName = m_aDicNameSingle;
 
         uno::Reference< linguistic2::XDictionary >      xDic;
-        uno::Reference< linguistic2::XSearchableDictionaryList >  xDicList( SvxGetDictionaryList() );
+        uno::Reference< linguistic2::XSearchableDictionaryList >  xDicList( LinguMgr::GetDictionaryList() );
         if (xDicList.is())
             xDic = xDicList->getDictionaryByName( aDicName );
 
@@ -809,9 +841,17 @@ void SwSpellPopup::Execute( sal_uInt16 nId )
             aErrorBox->Execute();
         }
     }
-    else if (nId == FN_REDLINE_ACCEPT_DIRECT || nId == FN_REDLINE_REJECT_DIRECT
-            || nId == FN_REDLINE_NEXT_CHANGE || nId == FN_REDLINE_PREV_CHANGE)
+    else if (nId == m_nRedlineAcceptId || nId == m_nRedlineRejectId
+            || nId == m_nRedlineNextId || nId == m_nRedlinePrevId)
     {
+        if (nId == m_nRedlineAcceptId)
+            nId = FN_REDLINE_ACCEPT_DIRECT;
+        else if (nId == m_nRedlineRejectId)
+            nId = FN_REDLINE_REJECT_DIRECT;
+        else if (nId == m_nRedlineNextId)
+            nId = FN_REDLINE_NEXT_CHANGE;
+        else if (nId == m_nRedlinePrevId)
+            nId = FN_REDLINE_PREV_CHANGE;
         // Let SwView::Execute() handle the redline actions.
         SfxRequest aReq(m_pSh->GetView().GetViewFrame(), nId);
         m_pSh->GetView().Execute(aReq);

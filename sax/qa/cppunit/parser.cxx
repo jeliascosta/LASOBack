@@ -27,15 +27,12 @@ class DummyTokenHandler : public cppu::WeakImplHelper< xml::sax::XFastTokenHandl
 {
 public:
              DummyTokenHandler() {}
-    virtual ~DummyTokenHandler() {}
 
-    virtual sal_Int32 SAL_CALL getTokenFromUTF8( const uno::Sequence<sal_Int8>& )
-        throw (uno::RuntimeException, std::exception) override
+    virtual sal_Int32 SAL_CALL getTokenFromUTF8( const uno::Sequence<sal_Int8>& ) override
     {
         return FastToken::DONTKNOW;
     }
-    virtual uno::Sequence< sal_Int8 > SAL_CALL getUTF8Identifier( sal_Int32 )
-        throw (uno::RuntimeException, std::exception) override
+    virtual uno::Sequence< sal_Int8 > SAL_CALL getUTF8Identifier( sal_Int32 ) override
     {
         CPPUNIT_ASSERT_MESSAGE( "getUTF8Identifier: unexpected call", false );
         return uno::Sequence<sal_Int8>();
@@ -45,12 +42,11 @@ public:
 class ParserTest: public test::BootstrapFixture
 {
     InputSource maInput;
-    uno::Reference< sax_fastparser::FastSaxParser > mxParser;
-    uno::Reference< DummyTokenHandler > mxTokenHandler;
+    rtl::Reference< sax_fastparser::FastSaxParser > mxParser;
+    rtl::Reference< DummyTokenHandler > mxTokenHandler;
 
 public:
     virtual void setUp() override;
-    virtual void tearDown() override;
 
     void parse();
 
@@ -68,11 +64,6 @@ void ParserTest::setUp()
     mxTokenHandler.set( new DummyTokenHandler() );
     mxParser.set( new sax_fastparser::FastSaxParser() );
     mxParser->setTokenHandler( mxTokenHandler.get() );
-}
-
-void ParserTest::tearDown()
-{
-    test::BootstrapFixture::tearDown();
 }
 
 uno::Reference< io::XInputStream > ParserTest::createStream(const OString& sInput)

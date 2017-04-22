@@ -113,7 +113,7 @@ inline void ImplScalePoint( Point& rPt, double fScaleX, double fScaleY )
     rPt.Y() = FRound( fScaleY * rPt.Y() );
 }
 
-inline void ImplScaleRect( Rectangle& rRect, double fScaleX, double fScaleY )
+inline void ImplScaleRect( tools::Rectangle& rRect, double fScaleX, double fScaleY )
 {
     Point aTL( rRect.TopLeft() );
     Point aBR( rRect.BottomRight() );
@@ -121,7 +121,7 @@ inline void ImplScaleRect( Rectangle& rRect, double fScaleX, double fScaleY )
     ImplScalePoint( aTL, fScaleX, fScaleY );
     ImplScalePoint( aBR, fScaleX, fScaleY );
 
-    rRect = Rectangle( aTL, aBR );
+    rRect = tools::Rectangle( aTL, aBR );
     rRect.Justify();
 }
 
@@ -446,7 +446,7 @@ MetaRectAction::MetaRectAction() :
 MetaRectAction::~MetaRectAction()
 {}
 
-MetaRectAction::MetaRectAction( const Rectangle& rRect ) :
+MetaRectAction::MetaRectAction( const tools::Rectangle& rRect ) :
     MetaAction  ( MetaActionType::RECT ),
     maRect      ( rRect )
 {}
@@ -495,7 +495,7 @@ MetaRoundRectAction::MetaRoundRectAction() :
 MetaRoundRectAction::~MetaRoundRectAction()
 {}
 
-MetaRoundRectAction::MetaRoundRectAction( const Rectangle& rRect,
+MetaRoundRectAction::MetaRoundRectAction( const tools::Rectangle& rRect,
                                           sal_uInt32 nHorzRound, sal_uInt32 nVertRound ) :
     MetaAction  ( MetaActionType::ROUNDRECT ),
     maRect      ( rRect ),
@@ -548,7 +548,7 @@ MetaEllipseAction::MetaEllipseAction() :
 MetaEllipseAction::~MetaEllipseAction()
 {}
 
-MetaEllipseAction::MetaEllipseAction( const Rectangle& rRect ) :
+MetaEllipseAction::MetaEllipseAction( const tools::Rectangle& rRect ) :
     MetaAction  ( MetaActionType::ELLIPSE ),
     maRect      ( rRect )
 {}
@@ -595,7 +595,7 @@ MetaArcAction::MetaArcAction() :
 MetaArcAction::~MetaArcAction()
 {}
 
-MetaArcAction::MetaArcAction( const Rectangle& rRect,
+MetaArcAction::MetaArcAction( const tools::Rectangle& rRect,
                               const Point& rStart, const Point& rEnd ) :
     MetaAction  ( MetaActionType::ARC ),
     maRect      ( rRect ),
@@ -653,7 +653,7 @@ MetaPieAction::MetaPieAction() :
 MetaPieAction::~MetaPieAction()
 {}
 
-MetaPieAction::MetaPieAction( const Rectangle& rRect,
+MetaPieAction::MetaPieAction( const tools::Rectangle& rRect,
                               const Point& rStart, const Point& rEnd ) :
     MetaAction  ( MetaActionType::PIE ),
     maRect      ( rRect ),
@@ -711,7 +711,7 @@ MetaChordAction::MetaChordAction() :
 MetaChordAction::~MetaChordAction()
 {}
 
-MetaChordAction::MetaChordAction( const Rectangle& rRect,
+MetaChordAction::MetaChordAction( const tools::Rectangle& rRect,
                                   const Point& rStart, const Point& rEnd ) :
     MetaAction  ( MetaActionType::CHORD ),
     maRect      ( rRect ),
@@ -1092,13 +1092,9 @@ MetaTextArrayAction::MetaTextArrayAction( const MetaTextArrayAction& rAction ) :
 {
     if( rAction.mpDXAry )
     {
-        const sal_Int32 nAryLen = mnLen;
-
-        mpDXAry = new long[ nAryLen ];
-        memcpy( mpDXAry, rAction.mpDXAry, nAryLen * sizeof( long ) );
+        mpDXAry.reset( new long[ mnLen ] );
+        memcpy( mpDXAry.get(), rAction.mpDXAry.get(), mnLen * sizeof( long ) );
     }
-    else
-        mpDXAry = nullptr;
 }
 
 MetaTextArrayAction::MetaTextArrayAction( const Point& rStartPt,
@@ -1116,21 +1112,18 @@ MetaTextArrayAction::MetaTextArrayAction( const Point& rStartPt,
 
     if (nAryLen > 0)
     {
-        mpDXAry = new long[ nAryLen ];
-        memcpy( mpDXAry, pDXAry, nAryLen * sizeof(long) );
+        mpDXAry.reset( new long[ nAryLen ] );
+        memcpy( mpDXAry.get(), pDXAry, nAryLen * sizeof(long) );
     }
-    else
-        mpDXAry = nullptr;
 }
 
 MetaTextArrayAction::~MetaTextArrayAction()
 {
-    delete[] mpDXAry;
 }
 
 void MetaTextArrayAction::Execute( OutputDevice* pOut )
 {
-    pOut->DrawTextArray( maStartPt, maStr, mpDXAry, mnIndex, mnLen );
+    pOut->DrawTextArray( maStartPt, maStr, mpDXAry.get(), mnIndex, mnLen );
 }
 
 MetaAction* MetaTextArrayAction::Clone()
@@ -1176,7 +1169,7 @@ void MetaTextArrayAction::Write( SvStream& rOStm, ImplMetaWriteData* pData )
 
 void MetaTextArrayAction::Read( SvStream& rIStm, ImplMetaReadData* pData )
 {
-    delete[] mpDXAry;
+    mpDXAry.reset();
 
     VersionCompat aCompat(rIStm, StreamMode::READ);
     ReadPair( rIStm, maStartPt );
@@ -1202,7 +1195,7 @@ void MetaTextArrayAction::Read( SvStream& rIStm, ImplMetaReadData* pData )
         // #i9762#, #106172# Ensure that DX array is at least mnLen entries long
         if ( mnLen >= nAryLen )
         {
-            mpDXAry = new (std::nothrow)long[ mnLen ];
+            mpDXAry.reset( new (std::nothrow)long[ mnLen ] );
             if ( mpDXAry )
             {
                 sal_Int32 i;
@@ -1233,8 +1226,7 @@ void MetaTextArrayAction::Read( SvStream& rIStm, ImplMetaReadData* pData )
         if ( mnIndex + mnLen > maStr.getLength() )
         {
             mnIndex = 0;
-            delete[] mpDXAry;
-            mpDXAry = nullptr;
+            mpDXAry.reset();
         }
     }
 }
@@ -1321,7 +1313,7 @@ MetaTextRectAction::MetaTextRectAction() :
 MetaTextRectAction::~MetaTextRectAction()
 {}
 
-MetaTextRectAction::MetaTextRectAction( const Rectangle& rRect,
+MetaTextRectAction::MetaTextRectAction( const tools::Rectangle& rRect,
                                         const OUString& rStr, DrawTextFlags nStyle ) :
     MetaAction  ( MetaActionType::TEXTRECT ),
     maRect      ( rRect ),
@@ -1440,18 +1432,22 @@ void MetaTextLineAction::Read( SvStream& rIStm, ImplMetaReadData* )
 
     sal_Int32 nTempWidth(0);
     ReadPair( rIStm, maPos );
-    rIStm.ReadInt32( nTempWidth );
+    rIStm.ReadInt32(nTempWidth);
     mnWidth = nTempWidth;
+
     sal_uInt32 nTempStrikeout(0);
     rIStm.ReadUInt32( nTempStrikeout );
     meStrikeout = (FontStrikeout)nTempStrikeout;
+
     sal_uInt32 nTempUnderline(0);
     rIStm.ReadUInt32( nTempUnderline );
     meUnderline = (FontLineStyle)nTempUnderline;
-    if ( aCompat.GetVersion() >= 2 ) {
-        sal_uInt32 nTempUnderline2(0);
-        rIStm.ReadUInt32(nTempUnderline2);
-        meUnderline = (FontLineStyle)nTempUnderline2;
+
+    if (aCompat.GetVersion() >= 2)
+    {
+        sal_uInt32 nTempOverline(0);
+        rIStm.ReadUInt32(nTempOverline);
+        meOverline = (FontLineStyle)nTempOverline;
     }
 }
 
@@ -1542,7 +1538,7 @@ void MetaBmpScaleAction::Move( long nHorzMove, long nVertMove )
 
 void MetaBmpScaleAction::Scale( double fScaleX, double fScaleY )
 {
-    Rectangle aRectangle(maPt, maSz);
+    tools::Rectangle aRectangle(maPt, maSz);
     ImplScaleRect( aRectangle, fScaleX, fScaleY );
     maPt = aRectangle.TopLeft();
     maSz = aRectangle.GetSize();
@@ -1605,7 +1601,7 @@ void MetaBmpScalePartAction::Move( long nHorzMove, long nVertMove )
 
 void MetaBmpScalePartAction::Scale( double fScaleX, double fScaleY )
 {
-    Rectangle aRectangle(maDstPt, maDstSz);
+    tools::Rectangle aRectangle(maDstPt, maDstSz);
     ImplScaleRect( aRectangle, fScaleX, fScaleY );
     maDstPt = aRectangle.TopLeft();
     maDstSz = aRectangle.GetSize();
@@ -1722,7 +1718,7 @@ void MetaBmpExScaleAction::Move( long nHorzMove, long nVertMove )
 
 void MetaBmpExScaleAction::Scale( double fScaleX, double fScaleY )
 {
-    Rectangle aRectangle(maPt, maSz);
+    tools::Rectangle aRectangle(maPt, maSz);
     ImplScaleRect( aRectangle, fScaleX, fScaleY );
     maPt = aRectangle.TopLeft();
     maSz = aRectangle.GetSize();
@@ -1785,7 +1781,7 @@ void MetaBmpExScalePartAction::Move( long nHorzMove, long nVertMove )
 
 void MetaBmpExScalePartAction::Scale( double fScaleX, double fScaleY )
 {
-    Rectangle aRectangle(maDstPt, maDstSz);
+    tools::Rectangle aRectangle(maDstPt, maDstSz);
     ImplScaleRect( aRectangle, fScaleX, fScaleY );
     maDstPt = aRectangle.TopLeft();
     maDstSz = aRectangle.GetSize();
@@ -1907,7 +1903,7 @@ void MetaMaskScaleAction::Move( long nHorzMove, long nVertMove )
 
 void MetaMaskScaleAction::Scale( double fScaleX, double fScaleY )
 {
-    Rectangle aRectangle(maPt, maSz);
+    tools::Rectangle aRectangle(maPt, maSz);
     ImplScaleRect( aRectangle, fScaleX, fScaleY );
     maPt = aRectangle.TopLeft();
     maSz = aRectangle.GetSize();
@@ -1972,7 +1968,7 @@ void MetaMaskScalePartAction::Move( long nHorzMove, long nVertMove )
 
 void MetaMaskScalePartAction::Scale( double fScaleX, double fScaleY )
 {
-    Rectangle aRectangle(maDstPt, maDstSz);
+    tools::Rectangle aRectangle(maDstPt, maDstSz);
     ImplScaleRect( aRectangle, fScaleX, fScaleY );
     maDstPt = aRectangle.TopLeft();
     maDstSz = aRectangle.GetSize();
@@ -2011,7 +2007,7 @@ MetaGradientAction::MetaGradientAction() :
 MetaGradientAction::~MetaGradientAction()
 {}
 
-MetaGradientAction::MetaGradientAction( const Rectangle& rRect, const Gradient& rGradient ) :
+MetaGradientAction::MetaGradientAction( const tools::Rectangle& rRect, const Gradient& rGradient ) :
     MetaAction  ( MetaActionType::GRADIENT ),
     maRect      ( rRect ),
     maGradient  ( rGradient )
@@ -2177,7 +2173,7 @@ MetaWallpaperAction::MetaWallpaperAction() :
 MetaWallpaperAction::~MetaWallpaperAction()
 {}
 
-MetaWallpaperAction::MetaWallpaperAction( const Rectangle& rRect,
+MetaWallpaperAction::MetaWallpaperAction( const tools::Rectangle& rRect,
                                           const Wallpaper& rPaper ) :
     MetaAction  ( MetaActionType::WALLPAPER ),
     maRect      ( rRect ),
@@ -2282,7 +2278,7 @@ MetaISectRectClipRegionAction::MetaISectRectClipRegionAction() :
 MetaISectRectClipRegionAction::~MetaISectRectClipRegionAction()
 {}
 
-MetaISectRectClipRegionAction::MetaISectRectClipRegionAction( const Rectangle& rRect ) :
+MetaISectRectClipRegionAction::MetaISectRectClipRegionAction( const tools::Rectangle& rRect ) :
     MetaAction  ( MetaActionType::ISECTRECTCLIPREGION ),
     maRect      ( rRect )
 {}
@@ -2894,7 +2890,7 @@ void MetaPopAction::Read( SvStream& rIStm, ImplMetaReadData* )
 
 MetaRasterOpAction::MetaRasterOpAction() :
     MetaAction  ( MetaActionType::RASTEROP ),
-    meRasterOp  ( ROP_OVERPAINT )
+    meRasterOp  ( RasterOp::OverPaint )
 {}
 
 MetaRasterOpAction::~MetaRasterOpAction()
@@ -2922,7 +2918,7 @@ void MetaRasterOpAction::Write( SvStream& rOStm, ImplMetaWriteData* pData )
 {
     MetaAction::Write(rOStm, pData);
     VersionCompat aCompat(rOStm, StreamMode::WRITE, 1);
-    rOStm.WriteUInt16( meRasterOp );
+    rOStm.WriteUInt16( (sal_uInt16)meRasterOp );
 }
 
 void MetaRasterOpAction::Read( SvStream& rIStm, ImplMetaReadData* )
@@ -2978,7 +2974,7 @@ void MetaTransparentAction::Write( SvStream& rOStm, ImplMetaWriteData* pData )
     // #i105373# The tools::PolyPolygon in this action may be a curve; this
     // was ignored until now what is an error. To make older office
     // versions work with MetaFiles, i opt for applying AdaptiveSubdivide
-    // to the PolyPoylgon.
+    // to the PolyPolygon.
     // The alternative would be to really write the curve information
     // like in MetaPolyPolygonAction::Write (where someone extended it
     // correctly, but not here :-( ).
@@ -3033,7 +3029,7 @@ void MetaFloatTransparentAction::Move( long nHorzMove, long nVertMove )
 
 void MetaFloatTransparentAction::Scale( double fScaleX, double fScaleY )
 {
-    Rectangle aRectangle(maPoint, maSize);
+    tools::Rectangle aRectangle(maPoint, maSize);
     ImplScaleRect( aRectangle, fScaleX, fScaleY );
     maPoint = aRectangle.TopLeft();
     maSize = aRectangle.GetSize();
@@ -3094,7 +3090,7 @@ void MetaEPSAction::Move( long nHorzMove, long nVertMove )
 
 void MetaEPSAction::Scale( double fScaleX, double fScaleY )
 {
-    Rectangle aRectangle(maPoint, maSize);
+    tools::Rectangle aRectangle(maPoint, maSize);
     ImplScaleRect( aRectangle, fScaleX, fScaleY );
     maPoint = aRectangle.TopLeft();
     maSize = aRectangle.GetSize();
@@ -3349,7 +3345,7 @@ void MetaCommentAction::Write( SvStream& rOStm, ImplMetaWriteData* pData )
     rOStm.WriteInt32( mnValue ).WriteUInt32( mnDataSize );
 
     if ( mnDataSize )
-        rOStm.Write( mpData, mnDataSize );
+        rOStm.WriteBytes( mpData, mnDataSize );
 }
 
 void MetaCommentAction::Read( SvStream& rIStm, ImplMetaReadData* )
@@ -3358,6 +3354,13 @@ void MetaCommentAction::Read( SvStream& rIStm, ImplMetaReadData* )
     maComment = read_uInt16_lenPrefixed_uInt8s_ToOString(rIStm);
     rIStm.ReadInt32( mnValue ).ReadUInt32( mnDataSize );
 
+    if (mnDataSize > rIStm.remainingSize())
+    {
+        SAL_WARN("vcl.gdi", "Parsing error: " << rIStm.remainingSize() <<
+                 " available data, but " << mnDataSize << " claimed, truncating");
+        mnDataSize = rIStm.remainingSize();
+    }
+
     SAL_INFO("vcl.gdi", "MetaCommentAction::Read " << maComment);
 
     delete[] mpData;
@@ -3365,7 +3368,7 @@ void MetaCommentAction::Read( SvStream& rIStm, ImplMetaReadData* )
     if( mnDataSize )
     {
         mpData = new sal_uInt8[ mnDataSize ];
-        rIStm.Read( mpData, mnDataSize );
+        rIStm.ReadBytes(mpData, mnDataSize);
     }
     else
         mpData = nullptr;
@@ -3373,13 +3376,13 @@ void MetaCommentAction::Read( SvStream& rIStm, ImplMetaReadData* )
 
 MetaLayoutModeAction::MetaLayoutModeAction() :
     MetaAction  ( MetaActionType::LAYOUTMODE ),
-    mnLayoutMode( TEXT_LAYOUT_DEFAULT )
+    mnLayoutMode( ComplexTextLayoutFlags::Default )
 {}
 
 MetaLayoutModeAction::~MetaLayoutModeAction()
 {}
 
-MetaLayoutModeAction::MetaLayoutModeAction( ComplexTextLayoutMode nLayoutMode ) :
+MetaLayoutModeAction::MetaLayoutModeAction( ComplexTextLayoutFlags nLayoutMode ) :
     MetaAction  ( MetaActionType::LAYOUTMODE ),
     mnLayoutMode( nLayoutMode )
 {}
@@ -3400,7 +3403,7 @@ void MetaLayoutModeAction::Write( SvStream& rOStm, ImplMetaWriteData* pData )
 {
     MetaAction::Write(rOStm, pData);
     VersionCompat aCompat(rOStm, StreamMode::WRITE, 1);
-    rOStm.WriteUInt32( mnLayoutMode );
+    rOStm.WriteUInt32( (sal_uInt32)mnLayoutMode );
 }
 
 void MetaLayoutModeAction::Read( SvStream& rIStm, ImplMetaReadData* )
@@ -3408,7 +3411,7 @@ void MetaLayoutModeAction::Read( SvStream& rIStm, ImplMetaReadData* )
     VersionCompat aCompat(rIStm, StreamMode::READ);
     sal_uInt32 tmp;
     rIStm.ReadUInt32( tmp );
-    mnLayoutMode = static_cast<ComplexTextLayoutMode>(tmp);
+    mnLayoutMode = static_cast<ComplexTextLayoutFlags>(tmp);
 }
 
 MetaTextLanguageAction::MetaTextLanguageAction() :

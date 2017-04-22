@@ -20,12 +20,13 @@
 #include <cstring>
 #include <climits>
 
+#include <vcl/builder.hxx>
 #include <vcl/image.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 #include <svl/eitem.hxx>
 #include <svl/rectitem.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <sfx2/dispatch.hxx>
 #include <svx/dialogs.hrc>
 #include <svx/dialmgr.hxx>
@@ -1039,11 +1040,11 @@ sal_uInt16 ToSvTab_Impl(SvxTabAdjust eAdj)
 {
     /* Internal conversion routine between SV-Tab.-Enum and Svx */
     switch(eAdj) {
-        case SVX_TAB_ADJUST_LEFT:    return RULER_TAB_LEFT;
-        case SVX_TAB_ADJUST_RIGHT:   return RULER_TAB_RIGHT;
-        case SVX_TAB_ADJUST_DECIMAL: return RULER_TAB_DECIMAL;
-        case SVX_TAB_ADJUST_CENTER:  return RULER_TAB_CENTER;
-        case SVX_TAB_ADJUST_DEFAULT: return RULER_TAB_DEFAULT;
+        case SvxTabAdjust::Left:    return RULER_TAB_LEFT;
+        case SvxTabAdjust::Right:   return RULER_TAB_RIGHT;
+        case SvxTabAdjust::Decimal: return RULER_TAB_DECIMAL;
+        case SvxTabAdjust::Center:  return RULER_TAB_CENTER;
+        case SvxTabAdjust::Default: return RULER_TAB_DEFAULT;
         default: ; //prevent warning
     }
     return 0;
@@ -1052,13 +1053,13 @@ sal_uInt16 ToSvTab_Impl(SvxTabAdjust eAdj)
 SvxTabAdjust ToAttrTab_Impl(sal_uInt16 eAdj)
 {
     switch(eAdj) {
-        case RULER_TAB_LEFT:    return SVX_TAB_ADJUST_LEFT    ;
-        case RULER_TAB_RIGHT:   return SVX_TAB_ADJUST_RIGHT   ;
-        case RULER_TAB_DECIMAL: return SVX_TAB_ADJUST_DECIMAL ;
-        case RULER_TAB_CENTER:  return SVX_TAB_ADJUST_CENTER  ;
-        case RULER_TAB_DEFAULT: return SVX_TAB_ADJUST_DEFAULT ;
+        case RULER_TAB_LEFT:    return SvxTabAdjust::Left    ;
+        case RULER_TAB_RIGHT:   return SvxTabAdjust::Right   ;
+        case RULER_TAB_DECIMAL: return SvxTabAdjust::Decimal ;
+        case RULER_TAB_CENTER:  return SvxTabAdjust::Center  ;
+        case RULER_TAB_DEFAULT: return SvxTabAdjust::Default ;
     }
-    return SVX_TAB_ADJUST_LEFT;
+    return SvxTabAdjust::Left;
 }
 
 void SvxRuler::UpdateTabs()
@@ -1585,7 +1586,7 @@ void SvxRuler::DrawLine_Impl(long& lTabPosition, int nNew, bool bHorizontal)
         if(lTabPosition != -1)
         {
             pEditWin->InvertTracking(
-                Rectangle( Point(lTabPosition, -aZero.Y()),
+                tools::Rectangle( Point(lTabPosition, -aZero.Y()),
                            Point(lTabPosition, -aZero.Y() + nHeight)),
                 ShowTrackFlags::Split | ShowTrackFlags::Clip );
         }
@@ -1597,7 +1598,7 @@ void SvxRuler::DrawLine_Impl(long& lTabPosition, int nNew, bool bHorizontal)
             if(mxPagePosItem.get())
                 lTabPosition += mxPagePosItem->GetPos().X();
             pEditWin->InvertTracking(
-                Rectangle( Point(lTabPosition, -aZero.Y()),
+                tools::Rectangle( Point(lTabPosition, -aZero.Y()),
                            Point(lTabPosition, -aZero.Y() + nHeight) ),
                 ShowTrackFlags::Clip | ShowTrackFlags::Split );
         }
@@ -1609,7 +1610,7 @@ void SvxRuler::DrawLine_Impl(long& lTabPosition, int nNew, bool bHorizontal)
         if(lTabPosition != -1)
         {
             pEditWin->InvertTracking(
-                Rectangle( Point(-aZero.X(),          lTabPosition),
+                tools::Rectangle( Point(-aZero.X(),          lTabPosition),
                            Point(-aZero.X() + nWidth, lTabPosition)),
                 ShowTrackFlags::Split | ShowTrackFlags::Clip );
         }
@@ -1622,7 +1623,7 @@ void SvxRuler::DrawLine_Impl(long& lTabPosition, int nNew, bool bHorizontal)
             if(mxPagePosItem.get())
                 lTabPosition += mxPagePosItem->GetPos().Y();
             pEditWin->InvertTracking(
-                Rectangle( Point(-aZero.X(),        lTabPosition),
+                tools::Rectangle( Point(-aZero.X(),        lTabPosition),
                            Point(-aZero.X()+nWidth, lTabPosition)),
                 ShowTrackFlags::Clip | ShowTrackFlags::Split );
         }
@@ -1714,13 +1715,10 @@ void SvxRuler::UpdateParaContents_Impl(
     /* Helper function; carry Tabs and Paragraph Margins */
     switch(eType)
     {
-        case MOVE_RIGHT:
+        case UpdateType::MoveRight:
             mpIndents[INDENT_RIGHT_MARGIN].nPos += lDifference;
             break;
-        case MOVE_ALL:
-            mpIndents[INDENT_RIGHT_MARGIN].nPos += lDifference;
-            SAL_FALLTHROUGH;
-        case MOVE_LEFT:
+        case UpdateType::MoveLeft:
         {
             mpIndents[INDENT_FIRST_LINE].nPos += lDifference;
             mpIndents[INDENT_LEFT_MARGIN].nPos += lDifference;
@@ -1783,13 +1781,13 @@ ADD_DEBUG_TEXT("lLastLMargin: ", OUString::number(mxRulerImpl->lLastLMargin))
                     // RR update the column
                     if(i == GetActRightColumn())
                     {
-                        UpdateParaContents_Impl(mpBorders[i].nPos - l, MOVE_RIGHT);
+                        UpdateParaContents_Impl(mpBorders[i].nPos - l, UpdateType::MoveRight);
                         bRightIndentsCorrected = true;
                     }
                     // LAR, EZE update the column
                     else if(i == GetActLeftColumn())
                     {
-                        UpdateParaContents_Impl(mpBorders[i].nPos - l, MOVE_LEFT);
+                        UpdateParaContents_Impl(mpBorders[i].nPos - l, UpdateType::MoveLeft);
                         bLeftIndentsCorrected = true;
                     }
                 }
@@ -1857,13 +1855,13 @@ ADD_DEBUG_TEXT("lLastLMargin: ", OUString::number(mxRulerImpl->lLastLMargin))
                     {
                         if(i == GetActRightColumn())
                         {
-                            UpdateParaContents_Impl(mpBorders[i].nPos - l, MOVE_RIGHT);
+                            UpdateParaContents_Impl(mpBorders[i].nPos - l, UpdateType::MoveRight);
                             bRightIndentsCorrected = true;
                         }
                         // LAR, EZE update the column
                         else if(i == GetActLeftColumn())
                         {
-                            UpdateParaContents_Impl(mpBorders[i].nPos - l, MOVE_LEFT);
+                            UpdateParaContents_Impl(mpBorders[i].nPos - l, UpdateType::MoveLeft);
                             bLeftIndentsCorrected = true;
                         }
                     }
@@ -1946,14 +1944,14 @@ ADD_DEBUG_TEXT("lLastLMargin: ", OUString::number(mxRulerImpl->lLastLMargin))
        !mpIndents.empty() &&
        !mxRulerImpl->bIsTableRows)
     {
-        UpdateParaContents_Impl(lDiff, MOVE_RIGHT);
+        UpdateParaContents_Impl(lDiff, UpdateType::MoveRight);
     }
     else if(!bLeftIndentsCorrected &&
             GetActLeftColumn() == nIndex &&
             nDragSize != RulerDragSize::N1 &&
             !mpIndents.empty())
     {
-        UpdateParaContents_Impl(lDiff, MOVE_LEFT);
+        UpdateParaContents_Impl(lDiff, UpdateType::MoveLeft);
     }
     SetBorders(mxColumnItem->Count() - 1, &mpBorders[0]);
 }
@@ -2174,7 +2172,7 @@ void SvxRuler::ApplyTabs()
         //remove default tab stops
         for ( sal_uInt16 i = 0; i < pItem->Count(); )
         {
-            if ( SVX_TAB_ADJUST_DEFAULT == (*pItem)[i].GetAdjustment() )
+            if ( SvxTabAdjust::Default == (*pItem)[i].GetAdjustment() )
             {
                 pItem->Remove(i);
                 continue;
@@ -2621,7 +2619,6 @@ void SvxRuler::CalcMinMax()
             {
                 //top border is not moveable when table rows are displayed
                 // protection of content means the margin is not moveable
-                // - it's just a page break inside of a cell
                 if(bHorz && !mxRulerImpl->aProtectItem.IsContentProtected())
                 {
                     nMaxLeft = mpBorders[0].nMinPos + lNullPix;
@@ -2712,7 +2709,7 @@ void SvxRuler::CalcMinMax()
             else if(mxRulerImpl->bIsTableRows)
             {
                 // get the bottom move range from the last border position - only available for rows!
-                // protection of content means the margin is not moveable - it's just a page break inside of a cell
+                // protection of content means the margin is not moveable
                 if(bHorz || mxRulerImpl->aProtectItem.IsContentProtected())
                 {
                     nMaxLeft = nMaxRight = mpBorders[mxColumnItem->Count() - 1].nMaxPos + lNullPix;
@@ -3337,11 +3334,8 @@ void SvxRuler::Notify(SfxBroadcaster&, const SfxHint& rHint)
     */
 
     // start update
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
-    if(bActive &&
-       pSimpleHint &&
-       pSimpleHint->GetId() == SFX_HINT_UPDATEDONE )
-     {
+    if (bActive && rHint.GetId() == SfxHintId::UpdateDone)
+    {
         Update();
         EndListening(*pBindings);
         bValid = true;
@@ -3349,15 +3343,14 @@ void SvxRuler::Notify(SfxBroadcaster&, const SfxHint& rHint)
     }
 }
 
-
-IMPL_LINK_TYPED( SvxRuler, MenuSelect, Menu *, pMenu, bool )
+IMPL_LINK( SvxRuler, MenuSelect, Menu *, pMenu, bool )
 {
     /* Handler of the context menus for switching the unit of measurement */
-    SetUnit(FieldUnit(pMenu->GetCurItemId()));
+    SetUnit(MetricFormatter::StringToMetric(OUString::fromUtf8(pMenu->GetCurItemIdent())));
     return false;
 }
 
-IMPL_LINK_TYPED( SvxRuler, TabMenuSelect, Menu *, pMenu, bool )
+IMPL_LINK( SvxRuler, TabMenuSelect, Menu *, pMenu, bool )
 {
     /* Handler of the tab menu for setting the type */
     if(mxTabStopItem.get() && mxTabStopItem->Count() > mxRulerImpl->nIdx)
@@ -3387,8 +3380,8 @@ void SvxRuler::Command( const CommandEvent& rCommandEvent )
              GetType( rCommandEvent.GetMousePosPixel(), &mxRulerImpl->nIdx ) &&
              mpTabs[mxRulerImpl->nIdx + TAB_GAP].nStyle < RULER_TAB_DEFAULT )
         {
-            PopupMenu aMenu;
-            aMenu.SetSelectHdl(LINK(this, SvxRuler, TabMenuSelect));
+            ScopedVclPtrInstance<PopupMenu> aMenu;
+            aMenu->SetSelectHdl(LINK(this, SvxRuler, TabMenuSelect));
             ScopedVclPtrInstance< VirtualDevice > pDev;
             const Size aSz(ruler_tab_svx.width + 2, ruler_tab_svx.height + 2);
             pDev->SetOutputSize(aSz);
@@ -3401,46 +3394,49 @@ void SvxRuler::Command( const CommandEvent& rCommandEvent )
                 sal_uInt16 nStyle = bRTL ? i|RULER_TAB_RTL : i;
                 nStyle |= static_cast<sal_uInt16>(bHorz ? WB_HORZ : WB_VERT);
                 DrawTab(*pDev, aFillColor, aPt, nStyle);
-                aMenu.InsertItem(i + 1,
+                aMenu->InsertItem(i + 1,
                                  ResId(RID_SVXSTR_RULER_START + i, DIALOG_MGR()).toString(),
-                                 Image(pDev->GetBitmap(Point(), aSz), Color(COL_WHITE)));
-                aMenu.CheckItem(i + 1, i == mpTabs[mxRulerImpl->nIdx + TAB_GAP].nStyle);
+                                 Image(BitmapEx(pDev->GetBitmap(Point(), aSz), Color(COL_WHITE))));
+                aMenu->CheckItem(i + 1, i == mpTabs[mxRulerImpl->nIdx + TAB_GAP].nStyle);
                 pDev->SetOutputSize(aSz); // delete device
             }
-            aMenu.Execute( this, rCommandEvent.GetMousePosPixel() );
+            aMenu->Execute( this, rCommandEvent.GetMousePosPixel() );
         }
         else
         {
-            PopupMenu aMenu(ResId(RID_SVXMN_RULER, DIALOG_MGR()));
-            aMenu.SetSelectHdl(LINK(this, SvxRuler, MenuSelect));
+            VclBuilder aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "svx/ui/rulermenu.ui", "");
+            VclPtr<PopupMenu> aMenu(aBuilder.get_menu("menu"));
+            aMenu->SetSelectHdl(LINK(this, SvxRuler, MenuSelect));
             FieldUnit eUnit = GetUnit();
-            const sal_uInt16 nCount = aMenu.GetItemCount();
+            const sal_uInt16 nCount = aMenu->GetItemCount();
 
             bool bReduceMetric = bool(nFlags & SvxRulerSupportFlags::REDUCED_METRIC);
             for ( sal_uInt16 i = nCount; i; --i )
             {
-                const sal_uInt16 nId = aMenu.GetItemId(i - 1);
-                aMenu.CheckItem(nId, nId == (sal_uInt16)eUnit);
+                sal_uInt16 nId = aMenu->GetItemId(i - 1);
+                OString sIdent = aMenu->GetItemIdent(nId);
+                FieldUnit eMenuUnit = MetricFormatter::StringToMetric(OUString::fromUtf8(sIdent));
+                aMenu->CheckItem(nId, eMenuUnit == eUnit);
                 if( bReduceMetric )
                 {
-                    if ( nId == FUNIT_M    ||
-                         nId == FUNIT_KM   ||
-                         nId == FUNIT_FOOT ||
-                         nId == FUNIT_MILE )
+                    if (eMenuUnit == FUNIT_M    ||
+                        eMenuUnit == FUNIT_KM   ||
+                        eMenuUnit == FUNIT_FOOT ||
+                        eMenuUnit == FUNIT_MILE)
                     {
-                        aMenu.RemoveItem(i - 1);
+                        aMenu->RemoveItem(i - 1);
                     }
-                    else if (( nId == FUNIT_CHAR ) && !bHorz )
+                    else if (( eMenuUnit == FUNIT_CHAR ) && !bHorz )
                     {
-                        aMenu.RemoveItem(i - 1);
+                        aMenu->RemoveItem(i - 1);
                     }
-                    else if (( nId == FUNIT_LINE ) && bHorz )
+                    else if (( eMenuUnit == FUNIT_LINE ) && bHorz )
                     {
-                        aMenu.RemoveItem(i - 1);
+                        aMenu->RemoveItem(i - 1);
                     }
                 }
             }
-            aMenu.Execute( this, rCommandEvent.GetMousePosPixel() );
+            aMenu->Execute( this, rCommandEvent.GetMousePosPixel() );
         }
     }
     else

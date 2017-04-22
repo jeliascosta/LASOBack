@@ -20,6 +20,7 @@
 
 #include <tools/urlobj.hxx>
 #include <com/sun/star/uno/Reference.h>
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/ui/dialogs/CommonFilePickerElementIds.hpp>
 #include <com/sun/star/ui/dialogs/ExecutableDialogResults.hpp>
@@ -33,6 +34,7 @@
 #include <com/sun/star/ui/dialogs/XFilePickerNotifier.hpp>
 #include <com/sun/star/ui/dialogs/XFilePreview.hpp>
 #include <com/sun/star/ui/dialogs/XFilterManager.hpp>
+#include <o3tl/any.hxx>
 #include <svl/urihelper.hxx>
 #include <unotools/ucbstreamhelper.hxx>
 #include <svtools/transfer.hxx>
@@ -124,12 +126,12 @@ short SvxOpenGraphicDialog::Execute()
             // non-local?
             if ( INetProtocol::File != aObj.GetProtocol() )
             {
-                SfxMedium aMed( aObj.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ );
+                SfxMedium aMed( aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READ );
                 aMed.Download();
                 SvStream* pStream = aMed.GetInStream();
 
                 if( pStream )
-                    nImpRet = rFilter.CanImportGraphic( aObj.GetMainURL( INetURLObject::NO_DECODE ), *pStream, nFormatNum, &nRetFormat );
+                    nImpRet = rFilter.CanImportGraphic( aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ), *pStream, nFormatNum, &nRetFormat );
                 else
                     nImpRet = rFilter.CanImportGraphic( aObj, nFormatNum, &nRetFormat );
 
@@ -138,7 +140,7 @@ short SvxOpenGraphicDialog::Execute()
                     if ( !pStream )
                         nImpRet = rFilter.CanImportGraphic( aObj, GRFILTER_FORMAT_DONTKNOW, &nRetFormat );
                     else
-                        nImpRet = rFilter.CanImportGraphic( aObj.GetMainURL( INetURLObject::NO_DECODE ), *pStream,
+                        nImpRet = rFilter.CanImportGraphic( aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ), *pStream,
                                                              GRFILTER_FORMAT_DONTKNOW, &nRetFormat );
                 }
             }
@@ -176,14 +178,9 @@ short SvxOpenGraphicDialog::Execute()
 }
 
 
-void SvxOpenGraphicDialog::SetPath( const OUString& rPath )
-{
-    mpImpl->aFileDlg.SetDisplayDirectory(rPath);
-}
-
 void SvxOpenGraphicDialog::SetPath( const OUString& rPath, bool bLinkState )
 {
-    SetPath(rPath);
+    mpImpl->aFileDlg.SetDisplayDirectory(rPath);
     AsLink(bLinkState);
 }
 
@@ -232,7 +229,7 @@ bool SvxOpenGraphicDialog::IsAsLink() const
         {
             Any aVal = mpImpl->xCtrlAcc->getValue( ExtendedFilePickerElementIds::CHECKBOX_LINK, 0 );
             DBG_ASSERT(aVal.hasValue(), "Value CBX_INSERT_AS_LINK not found");
-            return aVal.hasValue() && ( *static_cast<sal_Bool const *>(aVal.getValue()) );
+            return aVal.hasValue() && *o3tl::doAccess<bool>(aVal);
         }
     }
     catch(const IllegalArgumentException&)

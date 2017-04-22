@@ -42,53 +42,47 @@ SourceContext::~SourceContext()
 
 void SAL_CALL SourceContext::addDragSourceListener(
     const Reference<XDragSourceListener >& )
-    throw( RuntimeException)
 {
 }
 
 void SAL_CALL SourceContext::removeDragSourceListener(
      const Reference<XDragSourceListener >& )
-    throw( RuntimeException)
 {
 }
 
 sal_Int32 SAL_CALL SourceContext::getCurrentCursor(  )
-    throw( RuntimeException)
 {
     return 0;
 }
 
 void SAL_CALL SourceContext::setCursor( sal_Int32 /*cursorId*/ )
-    throw( RuntimeException)
 {
 }
 
 void SAL_CALL SourceContext::setImage( sal_Int32 /*imageId*/ )
-    throw( RuntimeException)
 {
 }
 
 void SAL_CALL SourceContext::transferablesFlavorsChanged(  )
-    throw( RuntimeException)
 {
 }
 
 // non -interface functions
 // Fires XDragSourceListener::dragDropEnd events.
-void SourceContext::fire_dragDropEnd( sal_Bool success, sal_Int8 effect)
+void SourceContext::fire_dragDropEnd( bool success, sal_Int8 effect)
 {
 
     DragSourceDropEvent e;
 
-    if( success == sal_True)
+    if( success )
     {
         e.DropAction=  effect;
-        e.DropSuccess= sal_True;
+        e.DropSuccess= true;
     }
     else
     {
         e.DropAction= ACTION_NONE;
-        e.DropSuccess= sal_False;
+        e.DropSuccess= false;
     }
     e.DragSource= m_dragSource;
     e.DragSourceContext= static_cast<XDragSourceContext*>( this);

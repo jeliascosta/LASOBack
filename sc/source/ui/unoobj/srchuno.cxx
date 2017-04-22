@@ -34,9 +34,9 @@
 
 using namespace com::sun::star;
 
-//! SearchWords sucht in ganzen Zellen - umbenennen ???
+//! SearchWords searches in whole cells - rename it ???
 
-//  SfxItemPropertyMapEntry nur fuer GetPropertySetInfo
+//  SfxItemPropertyMapEntry only for GetPropertySetInfo
 
 static const SfxItemPropertyMapEntry* lcl_GetSearchPropertyMap()
 {
@@ -53,7 +53,7 @@ static const SfxItemPropertyMapEntry* lcl_GetSearchPropertyMap()
         {OUString(SC_UNO_SRCHSIMREL),   0,      cppu::UnoType<bool>::get(),       0, 0},
         {OUString(SC_UNO_SRCHSIMREM),   0,      cppu::UnoType<sal_Int16>::get(), 0, 0},
         {OUString(SC_UNO_SRCHSTYLES),   0,      cppu::UnoType<bool>::get(),       0, 0},
-        {OUString(SC_UNO_SRCHTYPE),     0,      cppu::UnoType<sal_Int16>::get(), 0, 0}, // enum TableSearch ist weg
+        {OUString(SC_UNO_SRCHTYPE),     0,      cppu::UnoType<sal_Int16>::get(), 0, 0}, // enum TableSearch is gone
         {OUString(SC_UNO_SRCHWORDS),    0,      cppu::UnoType<bool>::get(),       0, 0},
         { OUString(), 0, css::uno::Type(), 0, 0 }
     };
@@ -64,9 +64,9 @@ static const SfxItemPropertyMapEntry* lcl_GetSearchPropertyMap()
 #define SCREPLACEDESCRIPTOR_SERVICE     "com.sun.star.util.ReplaceDescriptor"
 
 ScCellSearchObj::ScCellSearchObj() :
-    aPropSet(lcl_GetSearchPropertyMap())
+    aPropSet(lcl_GetSearchPropertyMap()),
+    pSearchItem( new SvxSearchItem( SCITEM_SEARCHDATA ) )
 {
-    pSearchItem = new SvxSearchItem( SCITEM_SEARCHDATA );
     //  Defaults:
     pSearchItem->SetWordOnly(false);
     pSearchItem->SetExact(false);
@@ -86,24 +86,22 @@ ScCellSearchObj::ScCellSearchObj() :
     pSearchItem->SetRowDirection(false);
     pSearchItem->SetCellType(SvxSearchCellType::FORMULA);
 
-    //  Selection-Flag wird beim Aufruf gesetzt
+    //  Selection-Flag will be set when this is called
 }
 
 ScCellSearchObj::~ScCellSearchObj()
 {
-    delete pSearchItem;
 }
 
 // XSearchDescriptor
 
-OUString SAL_CALL ScCellSearchObj::getSearchString() throw(uno::RuntimeException, std::exception)
+OUString SAL_CALL ScCellSearchObj::getSearchString()
 {
     SolarMutexGuard aGuard;
     return pSearchItem->GetSearchString();
 }
 
 void SAL_CALL ScCellSearchObj::setSearchString( const OUString& aString )
-                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     pSearchItem->SetSearchString( aString );
@@ -111,14 +109,13 @@ void SAL_CALL ScCellSearchObj::setSearchString( const OUString& aString )
 
 // XReplaceDescriptor
 
-OUString SAL_CALL ScCellSearchObj::getReplaceString() throw(uno::RuntimeException, std::exception)
+OUString SAL_CALL ScCellSearchObj::getReplaceString()
 {
     SolarMutexGuard aGuard;
     return pSearchItem->GetReplaceString();
 }
 
 void SAL_CALL ScCellSearchObj::setReplaceString( const OUString& aReplaceString )
-                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     pSearchItem->SetReplaceString( aReplaceString );
@@ -127,7 +124,6 @@ void SAL_CALL ScCellSearchObj::setReplaceString( const OUString& aReplaceString 
 // XPropertySet
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScCellSearchObj::getPropertySetInfo()
-                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     static uno::Reference<beans::XPropertySetInfo> aRef(
@@ -137,9 +133,6 @@ uno::Reference<beans::XPropertySetInfo> SAL_CALL ScCellSearchObj::getPropertySet
 
 void SAL_CALL ScCellSearchObj::setPropertyValue(
                         const OUString& aPropertyName, const uno::Any& aValue )
-                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
-                        lang::IllegalArgumentException, lang::WrappedTargetException,
-                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -161,8 +154,6 @@ void SAL_CALL ScCellSearchObj::setPropertyValue(
 }
 
 uno::Any SAL_CALL ScCellSearchObj::getPropertyValue( const OUString& aPropertyName )
-                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
-                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -190,31 +181,25 @@ SC_IMPL_DUMMY_PROPERTY_LISTENER( ScCellSearchObj )
 
 // XServiceInfo
 
-OUString SAL_CALL ScCellSearchObj::getImplementationName() throw(uno::RuntimeException, std::exception)
+OUString SAL_CALL ScCellSearchObj::getImplementationName()
 {
     return OUString( "ScCellSearchObj" );
 }
 
 sal_Bool SAL_CALL ScCellSearchObj::supportsService( const OUString& rServiceName )
-                                                    throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence<OUString> SAL_CALL ScCellSearchObj::getSupportedServiceNames()
-                                                    throw(uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aRet(2);
-    OUString* pArray = aRet.getArray();
-    pArray[0] = SCSEARCHDESCRIPTOR_SERVICE;
-    pArray[1] = SCREPLACEDESCRIPTOR_SERVICE;
-    return aRet;
+    return {SCSEARCHDESCRIPTOR_SERVICE, SCREPLACEDESCRIPTOR_SERVICE};
 }
 
 // XUnoTunnel
 
 sal_Int64 SAL_CALL ScCellSearchObj::getSomething(
-                const uno::Sequence<sal_Int8 >& rId ) throw(uno::RuntimeException, std::exception)
+                const uno::Sequence<sal_Int8 >& rId )
 {
     if ( rId.getLength() == 16 &&
           0 == memcmp( getUnoTunnelId().getConstArray(),

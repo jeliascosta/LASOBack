@@ -224,11 +224,14 @@ bool MsLangId::isRightToLeft( LanguageType nLang )
         case LANGUAGE_KURDISH_ARABIC_LSO:
         case LANGUAGE_USER_KURDISH_SOUTHERN_IRAN:
         case LANGUAGE_USER_KURDISH_SOUTHERN_IRAQ:
+        case LANGUAGE_USER_HUNGARIAN_ROVAS:
             return true;
 
         default:
             break;
     }
+    if (LanguageTag::isOnTheFlyID(nLang))
+        return LanguageTag::getOnTheFlyScriptType(nLang) == LanguageTag::ScriptType::RTL;
     return false;
 }
 
@@ -302,6 +305,8 @@ bool MsLangId::isCJK( LanguageType nLang )
         default:
             break;
     }
+    if (LanguageTag::isOnTheFlyID(nLang))
+        return LanguageTag::getOnTheFlyScriptType(nLang) == LanguageTag::ScriptType::CJK;
     return false;
 }
 
@@ -339,6 +344,7 @@ bool MsLangId::needsSequenceChecking( LanguageType nLang )
 sal_Int16 MsLangId::getScriptType( LanguageType nLang )
 {
     sal_Int16 nScript;
+
     switch( nLang )
     {
         // CTL
@@ -352,6 +358,9 @@ sal_Int16 MsLangId::getScriptType( LanguageType nLang )
         case LANGUAGE_USER_KURDISH_SOUTHERN_IRAN:
         case LANGUAGE_USER_KURDISH_SOUTHERN_IRAQ:
         case LANGUAGE_USER_KYRGYZ_CHINA:
+        case LANGUAGE_USER_HUNGARIAN_ROVAS:
+        case LANGUAGE_USER_MANCHU:
+        case LANGUAGE_USER_XIBE:
             nScript = css::i18n::ScriptType::COMPLEX;
             break;
 
@@ -427,7 +436,26 @@ sal_Int16 MsLangId::getScriptType( LanguageType nLang )
                 // Western (actually not necessarily Latin but also Cyrillic,
                 // for example)
                 default:
-                    nScript = css::i18n::ScriptType::LATIN;
+                    if (LanguageTag::isOnTheFlyID(nLang))
+                    {
+                        switch (LanguageTag::getOnTheFlyScriptType(nLang))
+                        {
+                            case LanguageTag::ScriptType::CJK :
+                                nScript = css::i18n::ScriptType::ASIAN;
+                                break;
+                            case LanguageTag::ScriptType::CTL :
+                            case LanguageTag::ScriptType::RTL :
+                                nScript = css::i18n::ScriptType::COMPLEX;
+                                break;
+                            case LanguageTag::ScriptType::WESTERN :
+                            case LanguageTag::ScriptType::UNKNOWN :
+                            default:
+                                nScript = css::i18n::ScriptType::LATIN;
+                                break;
+                        }
+                    }
+                    else
+                        nScript = css::i18n::ScriptType::LATIN;
             }
             break;
     }
@@ -579,6 +607,11 @@ LanguageType MsLangId::getReplacementForObsoleteLanguage( LanguageType nLang, bo
         // documents ;-)
         case LANGUAGE_TIBETAN_BHUTAN:
             nLang = LANGUAGE_DZONGKHA_BHUTAN;
+            break;
+
+        // en-GB-oed is deprecated, use en-GB-oxendict instead.
+        case LANGUAGE_USER_ENGLISH_UK_OED:
+            nLang = LANGUAGE_USER_ENGLISH_UK_OXENDICT;
             break;
     }
     return nLang;

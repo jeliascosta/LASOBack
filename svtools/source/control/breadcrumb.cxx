@@ -114,8 +114,8 @@ void Breadcrumb::SetURL( const OUString& rURL )
         sHostPort += OUString::number( aURL.GetPort() );
     }
 
-    OUString sUser = aURL.GetUser( INetURLObject::NO_DECODE );
-    OUString sPath = aURL.GetURLPath(INetURLObject::DECODE_WITH_CHARSET);
+    OUString sUser = aURL.GetUser( INetURLObject::DecodeMechanism::NONE );
+    OUString sPath = aURL.GetURLPath(INetURLObject::DecodeMechanism::WithCharset);
     OUString sRootPath = INetURLObject::GetScheme( aURL.GetProtocol() )
                         + sUser
                         + ( sUser.isEmpty() ? OUString() : "@" )
@@ -282,7 +282,7 @@ bool Breadcrumb::showField( unsigned int nIndex, unsigned int nWidthMax )
     return true;
 }
 
-IMPL_LINK_TYPED( Breadcrumb, ClickLinkHdl, FixedHyperlink&, rLink, void )
+IMPL_LINK( Breadcrumb, ClickLinkHdl, FixedHyperlink&, rLink, void )
 {
     m_sClickedURL = rLink.GetURL();
     m_aClickHdl.Call( this );

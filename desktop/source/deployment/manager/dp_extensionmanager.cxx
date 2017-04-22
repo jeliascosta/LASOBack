@@ -23,6 +23,7 @@
 #include <comphelper/servicedecl.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 #include <rtl/bootstrap.hxx>
+#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/deployment/ExtensionManager.hpp>
 #include <com/sun/star/deployment/XExtensionManager.hpp>
 #include <com/sun/star/deployment/thePackageManagerFactory.hpp>
@@ -32,19 +33,24 @@
 #include <com/sun/star/deployment/InstallException.hpp>
 #include <com/sun/star/deployment/VersionException.hpp>
 #include <com/sun/star/deployment/LicenseException.hpp>
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/registry/XRegistryKey.hpp>
 #include <com/sun/star/beans/Optional.hpp>
 #include <com/sun/star/task/XInteractionApprove.hpp>
 #include <com/sun/star/beans/Ambiguous.hpp>
+#include <com/sun/star/ucb/CommandFailedException.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/util/XModifyBroadcaster.hpp>
+#include <comphelper/processfactory.hxx>
 #include <comphelper/sequence.hxx>
 #include <xmlscript/xml_helper.hxx>
 #include <osl/diagnose.h>
+#include <vcl/svapp.hxx>
 #include "dp_interact.h"
 #include "dp_resource.h"
+#include "dp_services.hxx"
 #include "dp_ucb.h"
 #include "dp_identifier.hxx"
 #include "dp_descriptioninfoset.hxx"
@@ -69,23 +75,23 @@ namespace {
 
 struct CompIdentifiers
 {
-    bool operator() (::std::vector<Reference<css::deployment::XPackage> > const & a,
-                     ::std::vector<Reference<css::deployment::XPackage> > const & b)
+    bool operator() (std::vector<Reference<css::deployment::XPackage> > const & a,
+                     std::vector<Reference<css::deployment::XPackage> > const & b)
         {
             if (getName(a).compareTo(getName(b)) < 0)
                 return true;
             return false;
         }
 
-    static OUString getName(::std::vector<Reference<css::deployment::XPackage> > const & a);
+    static OUString getName(std::vector<Reference<css::deployment::XPackage> > const & a);
 };
 
-OUString CompIdentifiers::getName(::std::vector<Reference<css::deployment::XPackage> > const & a)
+OUString CompIdentifiers::getName(std::vector<Reference<css::deployment::XPackage> > const & a)
 {
     OSL_ASSERT(a.size() == 3);
     //get the first non-null reference
     Reference<css::deployment::XPackage>  extension;
-    ::std::vector<Reference<css::deployment::XPackage> >::const_iterator it = a.begin();
+    std::vector<Reference<css::deployment::XPackage> >::const_iterator it = a.begin();
     for (; it != a.end(); ++it)
     {
         if (it->is())
@@ -157,11 +163,10 @@ ExtensionRemoveGuard::~ExtensionRemoveGuard()
 
 namespace dp_manager {
 
-
 //ToDo: bundled extension
 ExtensionManager::ExtensionManager( Reference< uno::XComponentContext > const& xContext) :
-    ::cppu::WeakComponentImplHelper< css::deployment::XExtensionManager >(getMutex()),
-    m_xContext( xContext )
+    ::cppu::WeakComponentImplHelper< css::deployment::XExtensionManager >(getMutex())
+    , m_xContext(xContext)
 {
     m_xPackageManagerFactory = css::deployment::thePackageManagerFactory::get(m_xContext);
     OSL_ASSERT(m_xPackageManagerFactory.is());
@@ -170,7 +175,6 @@ ExtensionManager::ExtensionManager( Reference< uno::XComponentContext > const& x
     m_repositoryNames.push_back("shared");
     m_repositoryNames.push_back("bundled");
 }
-
 
 ExtensionManager::~ExtensionManager()
 {
@@ -198,14 +202,12 @@ Reference<css::deployment::XPackageManager>  ExtensionManager::getBakRepository(
 }
 
 Reference<task::XAbortChannel> ExtensionManager::createAbortChannel()
-    throw (uno::RuntimeException, std::exception)
 {
     return new dp_misc::AbortChannel;
 }
 
 css::uno::Reference<css::deployment::XPackageManager>
 ExtensionManager::getPackageManager(OUString const & repository)
-    throw (css::lang::IllegalArgumentException, css::uno::RuntimeException)
 {
     Reference<css::deployment::XPackageManager> xPackageManager;
     if (repository == "user")
@@ -239,7 +241,7 @@ void ExtensionManager::addExtensionsToMap(
 {
     //Determine the index in the vector where these extensions are to be
     //added.
-    ::std::list<OUString>::const_iterator citNames =
+    std::list<OUString>::const_iterator citNames =
         m_repositoryNames.begin();
     int index = 0;
     for (;citNames != m_repositoryNames.end(); ++citNames, ++index)
@@ -255,7 +257,7 @@ void ExtensionManager::addExtensionsToMap(
         id2extensions::iterator ivec =  mapExt.find(id);
         if (ivec == mapExt.end())
         {
-            ::std::vector<Reference<css::deployment::XPackage> > vec(3);
+            std::vector<Reference<css::deployment::XPackage> > vec(3);
             vec[index] = xExtension;
             mapExt[id] = vec;
         }
@@ -270,7 +272,7 @@ void ExtensionManager::addExtensionsToMap(
    returns a list containing extensions with the same identifier from
    all repositories (user, shared, bundled). If one repository does not
    have this extension, then the list contains an empty Reference. The list
-   is ordered according to the priority of the repostories:
+   is ordered according to the priority of the repositories:
    1. user
    2. shared
    3. bundled
@@ -278,13 +280,13 @@ void ExtensionManager::addExtensionsToMap(
    The number of elements is always three, unless the number of repository
    changes.
  */
-::std::list<Reference<css::deployment::XPackage> >
+std::list<Reference<css::deployment::XPackage> >
     ExtensionManager::getExtensionsWithSameId(
         OUString const & identifier, OUString const & fileName,
         Reference< ucb::XCommandEnvironment> const & /*xCmdEnv*/)
 
 {
-    ::std::list<Reference<css::deployment::XPackage> > extensionList;
+    std::list<Reference<css::deployment::XPackage> > extensionList;
     Reference<css::deployment::XPackageManager> lRepos[] = {
           getUserRepository(), getSharedRepository(), getBundledRepository() };
     for (int i(0); i != SAL_N_ELEMENTS(lRepos); ++i)
@@ -310,21 +312,16 @@ ExtensionManager::getExtensionsWithSameIdentifier(
         OUString const & identifier,
         OUString const & fileName,
         Reference< ucb::XCommandEnvironment> const & xCmdEnv )
-        throw (
-            css::deployment::DeploymentException,
-            ucb::CommandFailedException,
-            lang::IllegalArgumentException,
-            uno::RuntimeException, std::exception)
 {
     try
     {
-        ::std::list<Reference<css::deployment::XPackage> > listExtensions =
+        std::list<Reference<css::deployment::XPackage> > listExtensions =
             getExtensionsWithSameId(
                 identifier, fileName, xCmdEnv);
         bool bHasExtension = false;
 
         //throw an IllegalArgumentException if there is no extension at all.
-        typedef  ::std::list<Reference<css::deployment::XPackage> >::const_iterator CIT;
+        typedef  std::list<Reference<css::deployment::XPackage> >::const_iterator CIT;
         for (CIT i = listExtensions.begin(); i != listExtensions.end(); ++i)
             bHasExtension |= i->is();
         if (!bHasExtension)
@@ -332,10 +329,7 @@ ExtensionManager::getExtensionsWithSameIdentifier(
                 "Could not find extension: " + identifier + ", " + fileName,
                 static_cast<cppu::OWeakObject*>(this), -1);
 
-        return comphelper::containerToSequence<
-            Reference<css::deployment::XPackage>,
-            ::std::list<Reference<css::deployment::XPackage> >
-            > (listExtensions);
+        return comphelper::containerToSequence(listExtensions);
     }
     catch ( const css::deployment::DeploymentException & )
     {
@@ -361,7 +355,7 @@ ExtensionManager::getExtensionsWithSameIdentifier(
 bool ExtensionManager::isUserDisabled(
     OUString const & identifier, OUString const & fileName)
 {
-    ::std::list<Reference<css::deployment::XPackage> > listExtensions;
+    std::list<Reference<css::deployment::XPackage> > listExtensions;
 
     try {
         listExtensions = getExtensionsWithSameId(identifier, fileName);
@@ -369,10 +363,7 @@ bool ExtensionManager::isUserDisabled(
     }
     OSL_ASSERT(listExtensions.size() == 3);
 
-    return isUserDisabled( ::comphelper::containerToSequence<
-                           Reference<css::deployment::XPackage>,
-                           ::std::list<Reference<css::deployment::XPackage> >
-                           > (listExtensions));
+    return isUserDisabled( ::comphelper::containerToSequence(listExtensions) );
 }
 
 bool ExtensionManager::isUserDisabled(
@@ -417,7 +408,7 @@ void ExtensionManager::activateExtension(
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv )
 {
-    ::std::list<Reference<css::deployment::XPackage> > listExtensions;
+    std::list<Reference<css::deployment::XPackage> > listExtensions;
     try {
         listExtensions = getExtensionsWithSameId(identifier, fileName);
     } catch (const lang::IllegalArgumentException &) {
@@ -425,10 +416,7 @@ void ExtensionManager::activateExtension(
     OSL_ASSERT(listExtensions.size() == 3);
 
     activateExtension(
-        ::comphelper::containerToSequence<
-        Reference<css::deployment::XPackage>,
-        ::std::list<Reference<css::deployment::XPackage> >
-        > (listExtensions),
+        ::comphelper::containerToSequence(listExtensions),
         bUserDisabled, bStartup, xAbortChannel, xCmdEnv);
 
     fireModified();
@@ -516,7 +504,6 @@ Reference<css::deployment::XPackage> ExtensionManager::backupExtension(
 //call to one of the repositories.
 uno::Sequence< Reference<css::deployment::XPackageTypeInfo> >
 ExtensionManager::getSupportedPackageTypes()
-    throw (uno::RuntimeException, std::exception)
 {
     return getUserRepository()->getSupportedPackageTypes();
 }
@@ -532,11 +519,6 @@ bool ExtensionManager::doChecksForAddExtension(
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv,
     Reference<css::deployment::XPackage> & out_existingExtension )
-    throw (css::deployment::DeploymentException,
-           ucb::CommandFailedException,
-           ucb::CommandAbortedException,
-           lang::IllegalArgumentException,
-           uno::RuntimeException)
 {
     try
     {
@@ -627,11 +609,6 @@ Reference<css::deployment::XPackage> ExtensionManager::addExtension(
     OUString const & repository,
         Reference<task::XAbortChannel> const & xAbortChannel,
         Reference<ucb::XCommandEnvironment> const & xCmdEnv )
-        throw (css::deployment::DeploymentException,
-               ucb::CommandFailedException,
-               ucb::CommandAbortedException,
-               lang::IllegalArgumentException,
-               uno::RuntimeException, std::exception)
 {
     Reference<css::deployment::XPackage> xNewExtension;
     //Determine the repository to use
@@ -837,11 +814,6 @@ void ExtensionManager::removeExtension(
     OUString const & repository,
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv )
-    throw (css::deployment::DeploymentException,
-           ucb::CommandFailedException,
-           ucb::CommandAbortedException,
-           lang::IllegalArgumentException,
-           uno::RuntimeException, std::exception)
 {
     uno::Any excOccurred1;
     Reference<css::deployment::XPackage> xExtensionBackup;
@@ -937,11 +909,6 @@ void ExtensionManager::enableExtension(
     Reference<css::deployment::XPackage> const & extension,
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv)
-    throw (css::deployment::DeploymentException,
-        ucb::CommandFailedException,
-        ucb::CommandAbortedException,
-        lang::IllegalArgumentException,
-        uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard guard(getMutex());
     bool bUserDisabled = false;
@@ -1002,11 +969,6 @@ sal_Int32 ExtensionManager::checkPrerequisitesAndEnable(
     Reference<css::deployment::XPackage> const & extension,
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv)
-    throw (css::deployment::DeploymentException,
-        ucb::CommandFailedException,
-        ucb::CommandAbortedException,
-        lang::IllegalArgumentException,
-        uno::RuntimeException, std::exception)
 {
     try
     {
@@ -1051,11 +1013,6 @@ void ExtensionManager::disableExtension(
     Reference<css::deployment::XPackage> const & extension,
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv )
-    throw (css::deployment::DeploymentException,
-           ucb::CommandFailedException,
-           ucb::CommandAbortedException,
-           lang::IllegalArgumentException,
-           uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard guard(getMutex());
     uno::Any excOccurred;
@@ -1114,11 +1071,6 @@ uno::Sequence< Reference<css::deployment::XPackage> >
     OUString const & repository,
     Reference<task::XAbortChannel> const &xAbort,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv )
-    throw (css::deployment::DeploymentException,
-        ucb::CommandFailedException,
-        ucb::CommandAbortedException,
-        lang::IllegalArgumentException,
-        uno::RuntimeException, std::exception)
 {
     return getPackageManager(repository)->getDeployedPackages(
         xAbort, xCmdEnv);
@@ -1130,10 +1082,6 @@ Reference<css::deployment::XPackage>
     OUString const & identifier,
     OUString const & filename,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv )
-    throw (css::deployment::DeploymentException,
-        ucb::CommandFailedException,
-        lang::IllegalArgumentException,
-        uno::RuntimeException, std::exception)
 {
     return getPackageManager(repository)->getDeployedPackage(
         identifier, filename, xCmdEnv);
@@ -1143,11 +1091,6 @@ uno::Sequence< uno::Sequence<Reference<css::deployment::XPackage> > >
     ExtensionManager::getAllExtensions(
     Reference<task::XAbortChannel> const & xAbort,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv )
-    throw (css::deployment::DeploymentException,
-        ucb::CommandFailedException,
-        ucb::CommandAbortedException,
-        lang::IllegalArgumentException,
-        uno::RuntimeException, std::exception)
 {
     try
     {
@@ -1168,16 +1111,16 @@ uno::Sequence< uno::Sequence<Reference<css::deployment::XPackage> > >
         getTmpRepository();
 
         //copy the values of the map to a vector for sorting
-        ::std::vector< ::std::vector<Reference<css::deployment::XPackage> > >
+        std::vector< std::vector<Reference<css::deployment::XPackage> > >
               vecExtensions;
         id2extensions::const_iterator mapIt = mapExt.begin();
         for (;mapIt != mapExt.end(); ++mapIt)
             vecExtensions.push_back(mapIt->second);
 
         //sort the element according to the identifier
-        ::std::sort(vecExtensions.begin(), vecExtensions.end(), CompIdentifiers());
+        std::sort(vecExtensions.begin(), vecExtensions.end(), CompIdentifiers());
 
-        ::std::vector< ::std::vector<Reference<css::deployment::XPackage> > >::const_iterator
+        std::vector< std::vector<Reference<css::deployment::XPackage> > >::const_iterator
               citVecVec = vecExtensions.begin();
         sal_Int32 j = 0;
         uno::Sequence< uno::Sequence<Reference<css::deployment::XPackage> > > seqSeq(vecExtensions.size());
@@ -1211,9 +1154,6 @@ void ExtensionManager::reinstallDeployedExtensions(
     sal_Bool force, OUString const & repository,
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv )
-    throw (css::deployment::DeploymentException,
-        ucb::CommandFailedException, ucb::CommandAbortedException,
-        lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -1290,11 +1230,6 @@ void ExtensionManager::reinstallDeployedExtensions(
 sal_Bool ExtensionManager::synchronize(
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv )
-    throw (css::deployment::DeploymentException,
-           ucb::CommandFailedException,
-           ucb::CommandAbortedException,
-           lang::IllegalArgumentException,
-           uno::RuntimeException, std::exception)
 {
     try
     {
@@ -1431,8 +1366,6 @@ uno::Sequence<Reference<css::deployment::XPackage> > SAL_CALL
 ExtensionManager::getExtensionsWithUnacceptedLicenses(
         OUString const & repository,
         Reference<ucb::XCommandEnvironment> const & xCmdEnv)
-        throw (css::deployment::DeploymentException,
-               uno::RuntimeException, std::exception)
 {
     Reference<css::deployment::XPackageManager>
         xPackageManager = getPackageManager(repository);
@@ -1441,15 +1374,14 @@ ExtensionManager::getExtensionsWithUnacceptedLicenses(
 }
 
 sal_Bool ExtensionManager::isReadOnlyRepository(OUString const & repository)
-        throw (uno::RuntimeException, std::exception)
 {
     return getPackageManager(repository)->isReadOnly();
 }
 
 
 namespace sdecl = comphelper::service_decl;
-sdecl::class_<ExtensionManager> servicePIP;
-extern sdecl::ServiceDecl const serviceDecl(
+sdecl::class_<ExtensionManager> const servicePIP;
+sdecl::ServiceDecl const serviceDecl(
     servicePIP,
     // a private one:
     "com.sun.star.comp.deployment.ExtensionManager",
@@ -1459,7 +1391,6 @@ extern sdecl::ServiceDecl const serviceDecl(
 
 void ExtensionManager::addModifyListener(
     Reference<util::XModifyListener> const & xListener )
-    throw (uno::RuntimeException, std::exception)
 {
      check();
      rBHelper.addListener( cppu::UnoType<decltype(xListener)>::get(), xListener );
@@ -1468,7 +1399,6 @@ void ExtensionManager::addModifyListener(
 
 void ExtensionManager::removeModifyListener(
     Reference<util::XModifyListener> const & xListener )
-    throw (uno::RuntimeException, std::exception)
 {
     check();
     rBHelper.removeListener( cppu::UnoType<decltype(xListener)>::get(), xListener );

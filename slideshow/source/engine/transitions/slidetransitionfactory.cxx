@@ -26,7 +26,6 @@
 
 #include <cppcanvas/basegfxfactory.hxx>
 
-#include <comphelper/optional.hxx>
 #include <comphelper/make_shared_from_uno.hxx>
 
 #include <com/sun/star/rendering/XIntegerBitmap.hpp>
@@ -95,7 +94,7 @@ class PluginSlideChange: public SlideChangeBase
     uno::Reference<presentation::XTransition> mxTransition;
     UnoViewSharedPtr mpView;
 
-    TransitionViewPair( uno::Reference<presentation::XTransition> xTransition, const UnoViewSharedPtr& rView )
+    TransitionViewPair( uno::Reference<presentation::XTransition> const & xTransition, const UnoViewSharedPtr& rView )
     {
         mxTransition = xTransition;
         mpView = rView;
@@ -152,7 +151,7 @@ public:
         mbSuccess = true;
     }
 
-    virtual ~PluginSlideChange()
+    virtual ~PluginSlideChange() override
     {
         mxFactory.clear();
 
@@ -196,7 +195,7 @@ public:
     // ViewEventHandler
     virtual void viewAdded( const UnoViewSharedPtr& rView ) override
     {
-        OSL_TRACE("PluginSlideChange viewAdded");
+        SAL_INFO("slideshow", "PluginSlideChange viewAdded");
         SlideChangeBase::viewAdded( rView );
 
         for( const auto& pCurrView : maTransitions )
@@ -205,13 +204,13 @@ public:
                 return;
         }
 
-        OSL_TRACE( "need to be added" );
+        SAL_INFO("slideshow", "need to be added" );
         addTransition( rView );
     }
 
     virtual void viewRemoved( const UnoViewSharedPtr& rView ) override
     {
-        OSL_TRACE("PluginSlideChange viewRemoved");
+        SAL_INFO("slideshow", "PluginSlideChange viewRemoved");
         SlideChangeBase::viewRemoved( rView );
 
         ::std::vector< TransitionViewPair* >::const_iterator aEnd(maTransitions.end());
@@ -221,7 +220,7 @@ public:
         {
             if( ( *aIter )->mpView == rView )
             {
-                OSL_TRACE( "view removed" );
+                SAL_INFO("slideshow", "view removed" );
                 delete ( *aIter );
                 maTransitions.erase( aIter );
                 break;
@@ -231,31 +230,31 @@ public:
 
     virtual void viewChanged( const UnoViewSharedPtr& rView ) override
     {
-        OSL_TRACE("PluginSlideChange viewChanged");
+        SAL_INFO("slideshow", "PluginSlideChange viewChanged");
         SlideChangeBase::viewChanged( rView );
 
         for( const auto& pCurrView : maTransitions )
         {
             if( pCurrView->mpView == rView )
             {
-                OSL_TRACE( "view changed" );
+                SAL_INFO("slideshow", "view changed" );
                 pCurrView->mxTransition->viewChanged( rView->getUnoView(),
                                                       getLeavingBitmap(ViewEntry(rView))->getXBitmap(),
                                                       getEnteringBitmap(ViewEntry(rView))->getXBitmap() );
             }
             else
-                OSL_TRACE( "view did not changed" );
+                SAL_INFO("slideshow", "view did not change" );
         }
     }
 
     virtual void viewsChanged() override
     {
-        OSL_TRACE("PluginSlideChange viewsChanged");
+        SAL_INFO("slideshow", "PluginSlideChange viewsChanged");
         SlideChangeBase::viewsChanged();
 
         for( const auto& pCurrView : maTransitions )
         {
-            OSL_TRACE( "view changed" );
+            SAL_INFO("slideshow", "view changed" );
             UnoViewSharedPtr pView = pCurrView->mpView;
             pCurrView->mxTransition->viewChanged( pView->getUnoView(),
                                                   getLeavingBitmap(ViewEntry(pView))->getXBitmap(),
@@ -941,7 +940,7 @@ NumberAnimationSharedPtr TransitionFactory::createSlideTransition(
             createPluginTransition(
                 nTransitionType,
                 nTransitionSubType,
-                comphelper::make_optional(pLeavingSlide),
+                boost::make_optional(pLeavingSlide),
                 pEnteringSlide,
                 rViewContainer,
                 rScreenUpdater,
@@ -962,11 +961,10 @@ NumberAnimationSharedPtr TransitionFactory::createSlideTransition(
         {
             default:
             case TransitionInfo::TRANSITION_INVALID:
-                OSL_TRACE(
+                SAL_WARN("slideshow",
                     "TransitionFactory::createSlideTransition(): "
-                    "Invalid type/subtype (%d/%d) combination encountered.",
-                    nTransitionType,
-                    nTransitionSubType );
+                    "Invalid type/subtype combination encountered."
+                    << nTransitionType << " " << nTransitionSubType );
                 return NumberAnimationSharedPtr();
 
 
@@ -1037,7 +1035,7 @@ NumberAnimationSharedPtr TransitionFactory::createSlideTransition(
                     case animations::TransitionType::PUSHWIPE:
                     {
                         return createPushWipeTransition(
-                            comphelper::make_optional(pLeavingSlide),
+                            boost::make_optional(pLeavingSlide),
                             pEnteringSlide,
                             rViewContainer,
                             rScreenUpdater,
@@ -1051,7 +1049,7 @@ NumberAnimationSharedPtr TransitionFactory::createSlideTransition(
                     case animations::TransitionType::SLIDEWIPE:
                     {
                         return createSlideWipeTransition(
-                            comphelper::make_optional(pLeavingSlide),
+                            boost::make_optional(pLeavingSlide),
                             pEnteringSlide,
                             rViewContainer,
                             rScreenUpdater,
@@ -1125,11 +1123,10 @@ NumberAnimationSharedPtr TransitionFactory::createSlideTransition(
 
     // No animation generated, maybe no table entry for given
     // transition?
-    OSL_TRACE(
+    SAL_WARN("slideshow",
         "TransitionFactory::createSlideTransition(): "
-        "Unknown type/subtype (%d/%d) combination encountered",
-        nTransitionType,
-        nTransitionSubType );
+        "Unknown type/subtype combination encountered "
+        << nTransitionType << " " << nTransitionSubType );
     OSL_FAIL(
         "TransitionFactory::createSlideTransition(): "
         "Unknown type/subtype combination encountered" );

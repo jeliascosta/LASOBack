@@ -19,6 +19,7 @@
 
 #include <cstddef>
 #include <cstdio>
+#include <functional>
 
 #include <string.h>
 #include <tools/mempool.hxx>
@@ -31,7 +32,10 @@
 #include "clipparam.hxx"
 #include "compiler.hxx"
 #include "interpre.hxx"
+#include <formula/FormulaCompiler.hxx>
 #include <formula/compiler.hrc>
+#include <formula/grammar.hxx>
+#include <formula/opcode.hxx>
 #include <formulagroup.hxx>
 #include "rechead.hxx"
 #include "parclass.hxx"
@@ -52,6 +56,7 @@ using ::std::vector;
 
 #include <com/sun/star/sheet/ComplexReference.hpp>
 #include <com/sun/star/sheet/ExternalReference.hpp>
+#include <com/sun/star/sheet/FormulaToken.hpp>
 #include <com/sun/star/sheet/ReferenceFlags.hpp>
 #include <com/sun/star/sheet/NameToken.hpp>
 
@@ -199,10 +204,7 @@ namespace
 
 } // namespace
 
-// Align MemPools on 4k boundaries - 64 bytes (4k is a MUST for OS/2)
-
-// Since RawTokens are temporary for the compiler, don't align on 4k and waste memory.
-// ScRawToken size is FixMembers + MAXSTRLEN + ~4 ~= 1036
+// ScRawToken size is OpCode + StackVar + MAXSTRLEN+1 + ~20 ~= 1049
 IMPL_FIXEDMEMPOOL_NEWDEL( ScRawToken )
 
 // Need a whole bunch of ScSingleRefToken
@@ -292,7 +294,7 @@ void ScRawToken::SetDouble(double rVal)
     nValue = rVal;
 }
 
-void ScRawToken::SetErrorConstant( sal_uInt16 nErr )
+void ScRawToken::SetErrorConstant( FormulaError nErr )
 {
     eOp   = ocPush;
     eType = svError;
@@ -355,7 +357,7 @@ void ScRawToken::SetExternal( const sal_Unicode* pStr )
     if( nLen >= MAXSTRLEN )
         nLen = MAXSTRLEN-1;
     // Platz fuer Byte-Parameter lassen!
-    memcpy( cStr+1, pStr, GetStrLenBytes( nLen ) );
+    memcpy( cStr+1, pStr, nLen * sizeof(sal_Unicode) );
     cStr[ nLen+1 ] = 0;
 }
 
@@ -418,17 +420,17 @@ FormulaToken* ScRawToken::CreateToken() const
                 return new FormulaIndexToken( eOp, name.nIndex, name.nSheet);
         case svExternalSingleRef:
             {
-                OUString aTabName(extref.cTabName);
+                svl::SharedString aTabName( OUString( extref.cTabName));    // string not interned
                 return new ScExternalSingleRefToken(extref.nFileId, aTabName, extref.aRef.Ref1);
             }
         case svExternalDoubleRef:
             {
-                OUString aTabName(extref.cTabName);
+                svl::SharedString aTabName( OUString( extref.cTabName));    // string not interned
                 return new ScExternalDoubleRefToken(extref.nFileId, aTabName, extref.aRef);
             }
         case svExternalName:
             {
-                OUString aName(extname.cName);
+                svl::SharedString aName( OUString( extname.cName));         // string not interned
                 return new ScExternalNameToken( extname.nFileId, aName );
             }
         case svJump :
@@ -448,7 +450,7 @@ FormulaToken* ScRawToken::CreateToken() const
             return new FormulaUnknownToken( eOp );
         default:
             {
-                OSL_TRACE( "unknown ScRawToken::CreateToken() type %d", int(GetType()));
+                SAL_WARN("sc.core",  "unknown ScRawToken::CreateToken() type " << int(GetType()));
                 return new FormulaUnknownToken( ocBad );
             }
     }
@@ -508,7 +510,8 @@ void DumpToken(formula::FormulaToken const & rToken)
         break;
     default:
         cout << "-- FormulaToken" << endl;
-        cout << "  opcode: " << rToken.GetOpCode() << endl;
+        cout << "  opcode: " << rToken.GetOpCode() << " " <<
+            formula::FormulaCompiler::GetNativeSymbol( rToken.GetOpCode()).toUtf8().getStr() << endl;
         cout << "  type: " << static_cast<int>(rToken.GetType()) << endl;
         switch (rToken.GetType())
         {
@@ -532,12 +535,14 @@ FormulaTokenRef extendRangeReference( FormulaToken & rTok1, FormulaToken & rTok2
         const ScAddress & rPos, bool bReuseDoubleRef )
 {
 
-    StackVar sv1, sv2;
+    StackVar sv1 = rTok1.GetType();
     // Doing a RangeOp with RefList is probably utter nonsense, but Xcl
     // supports it, so do we.
-    if (((sv1 = rTok1.GetType()) != svSingleRef && sv1 != svDoubleRef && sv1 != svRefList &&
-            sv1 != svExternalSingleRef && sv1 != svExternalDoubleRef ) ||
-        ((sv2 = rTok2.GetType()) != svSingleRef && sv2 != svDoubleRef && sv2 != svRefList))
+    if (sv1 != svSingleRef && sv1 != svDoubleRef && sv1 != svRefList
+         && sv1 != svExternalSingleRef && sv1 != svExternalDoubleRef)
+        return nullptr;
+    StackVar sv2 = rTok2.GetType();
+    if (sv2 != svSingleRef && sv2 != svDoubleRef && sv2 != svRefList)
         return nullptr;
 
     ScTokenRef xRes;
@@ -1151,11 +1156,14 @@ void ScMatrixFormulaCellToken::ResetResult()
 }
 
 ScHybridCellToken::ScHybridCellToken(
-    double f, const svl::SharedString & rStr, const OUString & rFormula ) :
+    double f, const svl::SharedString & rStr, const OUString & rFormula, bool bEmptyDisplayedAsString ) :
         FormulaToken( formula::svHybridCell ),
         mfDouble( f ), maString( rStr ),
-        maFormula( rFormula )
+        maFormula( rFormula ),
+        mbEmptyDisplayedAsString( bEmptyDisplayedAsString)
 {
+    // caller, make up your mind..
+    assert( !bEmptyDisplayedAsString || (f == 0.0 && rStr.getString().isEmpty()));
 }
 
 double ScHybridCellToken::GetDouble() const { return mfDouble; }
@@ -1251,7 +1259,7 @@ bool ScTokenArray::AddFormulaToken(
                                     ScSingleRefData aSingleRef;
                                     // convert column/row settings, set sheet index to absolute
                                     lcl_ExternalRefToCalc( aSingleRef, aApiSRef );
-                                    AddExternalSingleReference( nFileId, aTabName, aSingleRef );
+                                    AddExternalSingleReference( nFileId, rSPool.intern( aTabName), aSingleRef );
                                 }
                                 else
                                     bError = true;
@@ -1270,7 +1278,7 @@ bool ScTokenArray::AddFormulaToken(
                                     // NOTE: This assumes that cached sheets are in consecutive order!
                                     aComplRef.Ref2.SetAbsTab(
                                         aComplRef.Ref1.Tab() + static_cast<SCTAB>(aApiCRef.Reference2.Sheet - aApiCRef.Reference1.Sheet));
-                                    AddExternalDoubleReference( nFileId, aTabName, aComplRef );
+                                    AddExternalDoubleReference( nFileId, rSPool.intern( aTabName), aComplRef );
                                 }
                                 else
                                     bError = true;
@@ -1278,7 +1286,7 @@ bool ScTokenArray::AddFormulaToken(
                             else if( aApiExtRef.Reference >>= aName )
                             {
                                 if( !aName.isEmpty() )
-                                    AddExternalName( nFileId, aName );
+                                    AddExternalName( nFileId, rSPool.intern( aName) );
                                 else
                                     bError = true;
                             }
@@ -1328,6 +1336,7 @@ void ScTokenArray::CheckToken( const FormulaToken& r )
     {
         if (ScInterpreter::GetGlobalConfig().mbOpenCLSubsetOnly && ScInterpreter::GetGlobalConfig().mpOpenCLSubsetOpCodes->find(eOp) == ScInterpreter::GetGlobalConfig().mpOpenCLSubsetOpCodes->end())
         {
+            SAL_INFO("sc.opencl", "opcode " << formula::FormulaCompiler().GetOpCodeMap(sheet::FormulaLanguage::ENGLISH)->getSymbol(eOp) << " disables vectorisation for formula group");
             meVectorState = FormulaVectorDisabled;
             return;
         }
@@ -1336,6 +1345,7 @@ void ScTokenArray::CheckToken( const FormulaToken& r )
         // interpreter blacklist is more strict than the OpenCL one
         if (ScCalcConfig::isSwInterpreterEnabled() && (dynamic_cast<sc::FormulaGroupInterpreterSoftware*>(sc::FormulaGroupInterpreter::getStatic()) != nullptr) && ScInterpreter::GetGlobalConfig().mpSwInterpreterSubsetOpCodes->find(eOp) == ScInterpreter::GetGlobalConfig().mpSwInterpreterSubsetOpCodes->end())
         {
+            SAL_INFO("sc.core.formulagroup", "opcode " << formula::FormulaCompiler().GetOpCodeMap(sheet::FormulaLanguage::ENGLISH)->getSymbol(eOp) << " disables S/W interpreter for formula group");
             meVectorState = FormulaVectorDisabled;
             return;
         }
@@ -1384,7 +1394,7 @@ void ScTokenArray::CheckToken( const FormulaToken& r )
             case ocCosecant:
             case ocCosecantHyp:
             case ocISPMT:
-            case ocDuration:
+            case ocPDuration:
             case ocSinHyp:
             case ocAbs:
             case ocPV:
@@ -1524,6 +1534,7 @@ void ScTokenArray::CheckToken( const FormulaToken& r )
             // Don't change the state.
             break;
             default:
+                SAL_INFO("sc.opencl", "opcode " << formula::FormulaCompiler().GetOpCodeMap(sheet::FormulaLanguage::ENGLISH)->getSymbol(eOp) << " disables vectorisation for formula group");
                 meVectorState = FormulaVectorDisabled;
         }
     }
@@ -1551,7 +1562,6 @@ void ScTokenArray::CheckToken( const FormulaToken& r )
             case svExternalSingleRef:
             case svFAP:
             case svHybridCell:
-            case svHybridValueCell:
             case svIndex:
             case svJump:
             case svJumpMatrix:
@@ -1560,9 +1570,9 @@ void ScTokenArray::CheckToken( const FormulaToken& r )
             case svMissing:
             case svRefList:
             case svSep:
-            case svSubroutine:
             case svUnknown:
                 // We don't support vectorization on these.
+                SAL_INFO("sc.opencl", "opcode ocPush: variable type " << StackVarEnumToString(r.GetType()) << " disables vectorisation for formula group");
                 meVectorState = FormulaVectorDisabled;
             break;
             default:
@@ -1573,6 +1583,7 @@ void ScTokenArray::CheckToken( const FormulaToken& r )
         ScInterpreter::GetGlobalConfig().mbOpenCLSubsetOnly &&
         ScInterpreter::GetGlobalConfig().mpOpenCLSubsetOpCodes->find(eOp) == ScInterpreter::GetGlobalConfig().mpOpenCLSubsetOpCodes->end())
     {
+        SAL_INFO("sc.opencl", "opcode " << formula::FormulaCompiler().GetOpCodeMap(sheet::FormulaLanguage::ENGLISH)->getSymbol(eOp) << " disables vectorisation for formula group");
         meVectorState = FormulaVectorDisabled;
     }
     // only when openCL interpreter is not enabled - the assumption is that
@@ -1582,6 +1593,7 @@ void ScTokenArray::CheckToken( const FormulaToken& r )
         (dynamic_cast<sc::FormulaGroupInterpreterSoftware*>(sc::FormulaGroupInterpreter::getStatic()) != nullptr) &&
         ScInterpreter::GetGlobalConfig().mpSwInterpreterSubsetOpCodes->find(eOp) == ScInterpreter::GetGlobalConfig().mpSwInterpreterSubsetOpCodes->end())
     {
+        SAL_INFO("sc.core.formulagroup", "opcode " << formula::FormulaCompiler().GetOpCodeMap(sheet::FormulaLanguage::ENGLISH)->getSymbol(eOp) << " disables S/W interpreter for formula group");
         meVectorState = FormulaVectorDisabled;
     }
 }
@@ -1661,7 +1673,7 @@ void ScTokenArray::GenHash()
                 {
                     // Constant value.
                     double fVal = p->GetDouble();
-                    nHash += static_cast<size_t>(fVal);
+                    nHash += std::hash<double>()(fVal);
                 }
                 break;
                 case svString:
@@ -2071,9 +2083,9 @@ FormulaToken* ScTokenArray::AddMatrix( const ScMatrixRef& p )
     return Add( new ScMatrixToken( p ) );
 }
 
-FormulaToken* ScTokenArray::AddRangeName( sal_uInt16 n, sal_Int16 nSheet )
+void ScTokenArray::AddRangeName( sal_uInt16 n, sal_Int16 nSheet )
 {
-    return Add( new FormulaIndexToken( ocName, n, nSheet));
+    Add( new FormulaIndexToken( ocName, n, nSheet));
 }
 
 FormulaToken* ScTokenArray::AddDBRange( sal_uInt16 n )
@@ -2081,17 +2093,19 @@ FormulaToken* ScTokenArray::AddDBRange( sal_uInt16 n )
     return Add( new FormulaIndexToken( ocDBArea, n));
 }
 
-FormulaToken* ScTokenArray::AddExternalName( sal_uInt16 nFileId, const OUString& rName )
+FormulaToken* ScTokenArray::AddExternalName( sal_uInt16 nFileId, const svl::SharedString& rName )
 {
     return Add( new ScExternalNameToken(nFileId, rName) );
 }
 
-void ScTokenArray::AddExternalSingleReference( sal_uInt16 nFileId, const OUString& rTabName, const ScSingleRefData& rRef )
+void ScTokenArray::AddExternalSingleReference( sal_uInt16 nFileId, const svl::SharedString& rTabName,
+        const ScSingleRefData& rRef )
 {
     Add( new ScExternalSingleRefToken(nFileId, rTabName, rRef) );
 }
 
-FormulaToken* ScTokenArray::AddExternalDoubleReference( sal_uInt16 nFileId, const OUString& rTabName, const ScComplexRefData& rRef )
+FormulaToken* ScTokenArray::AddExternalDoubleReference( sal_uInt16 nFileId, const svl::SharedString& rTabName,
+        const ScComplexRefData& rRef )
 {
     return Add( new ScExternalDoubleRefToken(nFileId, rTabName, rRef) );
 }
@@ -2106,9 +2120,10 @@ void ScTokenArray::AssignXMLString( const OUString &rText, const OUString &rForm
     sal_uInt16 nTokens = 1;
     FormulaToken *aTokens[2];
 
-    aTokens[0] = new FormulaStringOpToken( ocStringXML, rText );
+    aTokens[0] = new FormulaStringOpToken( ocStringXML, svl::SharedString( rText) );    // string not interned
     if( !rFormulaNmsp.isEmpty() )
-        aTokens[ nTokens++ ] = new FormulaStringOpToken( ocStringXML, rFormulaNmsp );
+        aTokens[ nTokens++ ] = new FormulaStringOpToken( ocStringXML,
+                svl::SharedString( rFormulaNmsp) );   // string not interned
 
     Assign( nTokens, aTokens );
 }
@@ -2250,66 +2265,6 @@ bool ScTokenArray::GetAdjacentExtendOfOuterFuncRefs( SCCOLROW& nExtend,
     return false;
 }
 
-void ScTokenArray::ReadjustRelative3DReferences( const ScAddress& rOldPos,
-        const ScAddress& rNewPos )
-{
-    TokenPointers aPtrs( pCode, nLen, pRPN, nRPN, false);
-    for (size_t j=0; j<2; ++j)
-    {
-        FormulaToken** pp = aPtrs.maPointerRange[j].mpStart;
-        FormulaToken** pEnd = aPtrs.maPointerRange[j].mpStop;
-        for (; pp != pEnd; ++pp)
-        {
-            FormulaToken* p = aPtrs.getHandledToken(j,pp);
-            if (!p)
-                continue;
-
-            switch ( p->GetType() )
-            {
-                case svDoubleRef :
-                    {
-                        ScSingleRefData& rRef2 = *p->GetSingleRef2();
-                        // Also adjust if the reference is of the form Sheet1.A2:A3
-                        if ( rRef2.IsFlag3D() || p->GetSingleRef()->IsFlag3D() )
-                        {
-                            ScAddress aAbs = rRef2.toAbs(rOldPos);
-                            rRef2.SetAddress(aAbs, rNewPos);
-                        }
-                    }
-                    SAL_FALLTHROUGH;
-                case svSingleRef :
-                    {
-                        ScSingleRefData& rRef1 = *p->GetSingleRef();
-                        if ( rRef1.IsFlag3D() )
-                        {
-                            ScAddress aAbs = rRef1.toAbs(rOldPos);
-                            rRef1.SetAddress(aAbs, rNewPos);
-                        }
-                    }
-                    break;
-                case svExternalDoubleRef :
-                    {
-                        ScSingleRefData& rRef2 = *p->GetSingleRef2();
-                        ScAddress aAbs = rRef2.toAbs(rOldPos);
-                        rRef2.SetAddress(aAbs, rNewPos);
-                    }
-                    SAL_FALLTHROUGH;
-                case svExternalSingleRef :
-                    {
-                        ScSingleRefData& rRef1 = *p->GetSingleRef();
-                        ScAddress aAbs = rRef1.toAbs(rOldPos);
-                        rRef1.SetAddress(aAbs, rNewPos);
-                    }
-                    break;
-                default:
-                    {
-                        // added to avoid warnings
-                    }
-            }
-        }
-    }
-}
-
 namespace {
 
 void GetExternalTableData(const ScDocument* pOldDoc, const ScDocument* pNewDoc, const SCTAB nTab, OUString& rTabName, sal_uInt16& rFileId)
@@ -2381,7 +2336,7 @@ void AdjustSingleRefData( ScSingleRefData& rRef, const ScAddress& rOldPos, const
 
 }
 
-void ScTokenArray::ReadjustAbsolute3DReferences( const ScDocument* pOldDoc, const ScDocument* pNewDoc, const ScAddress& rPos, bool bRangeName )
+void ScTokenArray::ReadjustAbsolute3DReferences( const ScDocument* pOldDoc, ScDocument* pNewDoc, const ScAddress& rPos, bool bRangeName )
 {
     for ( sal_uInt16 j=0; j<nLen; ++j )
     {
@@ -2401,7 +2356,8 @@ void ScTokenArray::ReadjustAbsolute3DReferences( const ScDocument* pOldDoc, cons
                     OUString aTabName;
                     sal_uInt16 nFileId;
                     GetExternalTableData(pOldDoc, pNewDoc, rRef1.Tab(), aTabName, nFileId);
-                    ReplaceToken( j, new ScExternalDoubleRefToken(nFileId, aTabName, rRef), CODE_AND_RPN);
+                    ReplaceToken( j, new ScExternalDoubleRefToken( nFileId,
+                                pNewDoc->GetSharedStringPool().intern( aTabName), rRef), CODE_AND_RPN);
                     // ATTENTION: rRef can't be used after this point
                 }
             }
@@ -2418,7 +2374,8 @@ void ScTokenArray::ReadjustAbsolute3DReferences( const ScDocument* pOldDoc, cons
                     OUString aTabName;
                     sal_uInt16 nFileId;
                     GetExternalTableData(pOldDoc, pNewDoc, rRef.Tab(), aTabName, nFileId);
-                    ReplaceToken( j, new ScExternalSingleRefToken(nFileId, aTabName, rRef), CODE_AND_RPN);
+                    ReplaceToken( j, new ScExternalSingleRefToken( nFileId,
+                                pNewDoc->GetSharedStringPool().intern( aTabName), rRef), CODE_AND_RPN);
                     // ATTENTION: rRef can't be used after this point
                 }
             }
@@ -3177,8 +3134,8 @@ sc::RefUpdateResult ScTokenArray::AdjustReferenceOnMove(
         // The cell hasn't moved at all.
         return aRes;
 
-    // When moving, the range is the destination range. We need to use the old
-    // range prior to the move for hit analysis.
+    // When moving, the range in the context is the destination range. We need
+    // to use the old range prior to the move for hit analysis.
     ScRange aOldRange = rCxt.maRange;
     ScRange aErrorMoveRange( ScAddress::UNINITIALIZED );
     if (!aOldRange.Move(-rCxt.mnColDelta, -rCxt.mnRowDelta, -rCxt.mnTabDelta, aErrorMoveRange))
@@ -3210,6 +3167,11 @@ sc::RefUpdateResult ScTokenArray::AdjustReferenceOnMove(
                                 aAbs = aErrorPos;
                             aRes.mbReferenceModified = true;
                         }
+                        else if (rCxt.maRange.In(aAbs))
+                        {
+                            // Referenced cell has been overwritten.
+                            aRes.mbValueChanged = true;
+                        }
 
                         rRef.SetAddress(aAbs, rNewPos);
                         rRef.SetFlag3D(aAbs.Tab() != rNewPos.Tab() || !rRef.IsTabRel());
@@ -3225,6 +3187,11 @@ sc::RefUpdateResult ScTokenArray::AdjustReferenceOnMove(
                             if (!aAbs.Move(rCxt.mnColDelta, rCxt.mnRowDelta, rCxt.mnTabDelta, aErrorRange))
                                 aAbs = aErrorRange;
                             aRes.mbReferenceModified = true;
+                        }
+                        else if (rCxt.maRange.In(aAbs))
+                        {
+                            // Referenced range has been entirely overwritten.
+                            aRes.mbValueChanged = true;
                         }
 
                         rRef.SetRange(aAbs, rNewPos);
@@ -4847,8 +4814,8 @@ void appendTokenByType( sc::TokenStringContext& rCxt, OUStringBuffer& rBuf, cons
                         }
                         else
                         {
-                            sal_uInt16 nErr = pMat->GetError(nC, nR);
-                            if (nErr)
+                            FormulaError nErr = pMat->GetError(nC, nR);
+                            if (nErr != FormulaError::NONE)
                                 rBuf.append(ScGlobal::GetErrorString(nErr));
                             else
                                 appendDouble(rCxt, rBuf, pMat->GetDouble(nC, nR));
@@ -4962,30 +4929,30 @@ void appendTokenByType( sc::TokenStringContext& rCxt, OUStringBuffer& rBuf, cons
         break;
         case svError:
         {
-            sal_uInt16 nErr = rToken.GetError();
+            FormulaError nErr = rToken.GetError();
             OpCode eOpErr;
             switch (nErr)
             {
                 break;
-                case errDivisionByZero:
+                case FormulaError::DivisionByZero:
                     eOpErr = ocErrDivZero;
                 break;
-                case errNoValue:
+                case FormulaError::NoValue:
                     eOpErr = ocErrValue;
                 break;
-                case errNoRef:
+                case FormulaError::NoRef:
                     eOpErr = ocErrRef;
                 break;
-                case errNoName:
+                case FormulaError::NoName:
                     eOpErr = ocErrName;
                 break;
-                case errIllegalFPOperation:
+                case FormulaError::IllegalFPOperation:
                     eOpErr = ocErrNum;
                 break;
-                case NOTAVAILABLE:
+                case FormulaError::NotAvailable:
                     eOpErr = ocErrNA;
                 break;
-                case errNoCode:
+                case FormulaError::NoCode:
                 default:
                     eOpErr = ocErrNull;
             }

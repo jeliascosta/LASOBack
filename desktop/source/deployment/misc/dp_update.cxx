@@ -24,6 +24,8 @@
 #include "dp_identifier.hxx"
 #include "dp_descriptioninfoset.hxx"
 
+#include <com/sun/star/ucb/CommandAbortedException.hpp>
+#include <com/sun/star/ucb/CommandFailedException.hpp>
 #include <osl/diagnose.h>
 #include <rtl/bootstrap.hxx>
 
@@ -73,7 +75,7 @@ getUpdateInformation( Reference<deployment::XUpdateInformationProvider > const &
         out_error = e.Reason;
     } catch (const ucb::CommandAbortedException &) {
     } catch (const uno::Exception & e) {
-        out_error = uno::makeAny(e);
+        out_error <<= e;
     }
     return
         Sequence<Reference< xml::dom::XElement > >();

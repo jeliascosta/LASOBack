@@ -24,6 +24,7 @@
 #include <com/sun/star/frame/XController.hpp>
 #include <com/sun/star/view/XSelectionSupplier.hpp>
 #include <cppuhelper/implbase.hxx>
+#include <rtl/ref.hxx>
 
 #include <memory>
 
@@ -59,7 +60,7 @@ public:
     explicit ControllerCommandDispatch(
         const css::uno::Reference< css::uno::XComponentContext > & xContext,
         ChartController* pController, CommandDispatchContainer* pContainer );
-    virtual ~ControllerCommandDispatch();
+    virtual ~ControllerCommandDispatch() override;
 
     // late initialisation, especially for adding as listener
     virtual void initialize() override;
@@ -68,8 +69,7 @@ protected:
     // ____ XDispatch ____
     virtual void SAL_CALL dispatch(
         const css::util::URL& URL,
-        const css::uno::Sequence< css::beans::PropertyValue >& Arguments )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
 
     // ____ WeakComponentImplHelperBase ____
     /// is called when this is disposed
@@ -77,8 +77,7 @@ protected:
 
     // ____ XEventListener (base of XModifyListener) ____
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& Source ) override;
 
     virtual void fireStatusEvent(
         const OUString & rURL,
@@ -86,13 +85,11 @@ protected:
 
     // ____ XModifyListener ____
     virtual void SAL_CALL modified(
-        const css::lang::EventObject& aEvent )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& aEvent ) override;
 
     // ____ XSelectionChangeListener ____
     virtual void SAL_CALL selectionChanged(
-        const css::lang::EventObject& aEvent )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& aEvent ) override;
 
 private:
     void fireStatusEventForURLImpl(
@@ -104,16 +101,15 @@ private:
 
     bool isShapeControllerCommandAvailable( const OUString& rCommand );
 
-    ChartController* m_pChartController;
-    css::uno::Reference< css::frame::XController > m_xController;
+    rtl::Reference<ChartController> m_xChartController;
     css::uno::Reference< css::view::XSelectionSupplier > m_xSelectionSupplier;
     css::uno::Reference< css::frame::XDispatch > m_xDispatch;
 
-    ::std::unique_ptr< impl::ModelState > m_apModelState;
-    ::std::unique_ptr< impl::ControllerState > m_apControllerState;
+    std::unique_ptr< impl::ModelState > m_apModelState;
+    std::unique_ptr< impl::ControllerState > m_apControllerState;
 
-    mutable ::std::map< OUString, bool > m_aCommandAvailability;
-    mutable ::std::map< OUString, css::uno::Any > m_aCommandArguments;
+    mutable std::map< OUString, bool > m_aCommandAvailability;
+    mutable std::map< OUString, css::uno::Any > m_aCommandArguments;
 
     CommandDispatchContainer* m_pDispatchContainer;
 };

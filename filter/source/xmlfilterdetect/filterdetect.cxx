@@ -27,6 +27,7 @@
 #include <cppuhelper/supportsservice.hxx>
 #include <ucbhelper/content.hxx>
 #include <unotools/ucbstreamhelper.hxx>
+#include <svl/inettype.hxx>
 #include <memory>
 
 using namespace com::sun::star::container;
@@ -49,9 +50,28 @@ OUString supportedByType( const OUString& clipBoardFormat,  const OUString& resu
     return sTypeName;
 }
 
+bool IsMediaTypeXML( const OUString& mediaType )
+{
+    if (!mediaType.isEmpty())
+    {
+        OUString sType, sSubType;
+        if (INetContentTypes::parse(mediaType, sType, sSubType)
+            && sType == "application")
+        {
+            // RFC 3023: application/xml; don't detect text/xml
+            if (sSubType == "xml")
+                return true;
+            // Registered media types: application/XXXX+xml
+            if (sSubType.endsWith("+xml"))
+                return true;
+        }
+    }
+    return false;
 }
 
-OUString SAL_CALL FilterDetect::detect( css::uno::Sequence< css::beans::PropertyValue >& aArguments ) throw( css::uno::RuntimeException, std::exception )
+}
+
+OUString SAL_CALL FilterDetect::detect( css::uno::Sequence< css::beans::PropertyValue >& aArguments )
 {
     OUString sTypeName;
     OUString sUrl;
@@ -95,7 +115,7 @@ OUString SAL_CALL FilterDetect::detect( css::uno::Sequence< css::beans::Property
 
         std::unique_ptr< SvStream > pInStream( ::utl::UcbStreamHelper::CreateStream( xInStream ) );
         pInStream->StartReadingUnicodeText( RTL_TEXTENCODING_DONTKNOW );
-        sal_Size nUniPos = pInStream->Tell();
+        sal_uInt64 const nUniPos = pInStream->Tell();
 
         const sal_uInt16 nSize = 4000;
         bool  bTryUtf16 = false;
@@ -125,9 +145,30 @@ OUString SAL_CALL FilterDetect::detect( css::uno::Sequence< css::beans::Property
             resultString = read_uInt16s_ToOUString( *pInStream, nSize );
 
         if ( !resultString.startsWith( "<?xml" ) )
-            // This is not an XML stream.  It makes no sense to try to detect
-            // a non-XML file type here.
-            return OUString();
+        {
+            // Check the content type; XML declaration is optional in XML files according to XML 1.0 ch.2.8
+            // (see https://www.w3.org/TR/2008/REC-xml-20081126/#sec-prolog-dtd)
+            OUString sMediaType;
+            try
+            {
+                ::ucbhelper::Content aContent(
+                    sUrl, Reference< css::ucb::XCommandEnvironment >(),
+                    mxCtx);
+                aContent.getPropertyValue("MediaType") >>= sMediaType;
+                if (sMediaType.isEmpty())
+                {
+                    aContent.getPropertyValue("Content-Type") >>= sMediaType;
+                }
+            }
+            catch (...) {}
+
+            if (!IsMediaTypeXML(sMediaType))
+            {
+                // This is not an XML stream.  It makes no sense to try to detect
+                // a non-XML file type here.
+                return OUString();
+            }
+        }
 
         // test typedetect code
         Reference <XNameAccess> xTypeCont(mxCtx->getServiceManager()->createInstanceWithContext("com.sun.star.document.TypeDetection", mxCtx), UNO_QUERY);
@@ -175,7 +216,6 @@ OUString SAL_CALL FilterDetect::detect( css::uno::Sequence< css::beans::Property
 
 // XInitialization
 void SAL_CALL FilterDetect::initialize( const Sequence< Any >& /*aArguments*/ )
-    throw (Exception, RuntimeException, std::exception)
 {
 }
 
@@ -197,19 +237,16 @@ Reference< XInterface > FilterDetect_createInstance( const Reference< XComponent
 
 // XServiceInfo
 OUString SAL_CALL FilterDetect::getImplementationName(  )
-    throw (RuntimeException, std::exception)
 {
     return FilterDetect_getImplementationName();
 }
 
 sal_Bool SAL_CALL FilterDetect::supportsService( const OUString& rServiceName )
-    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService( this, rServiceName );
 }
 
 Sequence< OUString > SAL_CALL FilterDetect::getSupportedServiceNames(  )
-    throw (RuntimeException, std::exception)
 {
     return FilterDetect_getSupportedServiceNames();
 }

@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <osl/mutex.hxx>
 #include <sfx2/printer.hxx>
 #include <vcl/svapp.hxx>
@@ -60,11 +63,6 @@ using namespace ::com::sun::star::script;
 
 SmPrintUIOptions::SmPrintUIOptions()
 {
-    ResStringArray      aLocalizedStrings( SmResId( RID_PRINTUIOPTIONS ) );
-    SAL_WARN_IF( aLocalizedStrings.Count() < 9, "starmath", "resource incomplete" );
-    if( aLocalizedStrings.Count() < 9 ) // bad resource ?
-        return;
-
     SmModule *pp = SM_MOD();
     SmMathConfig *pConfig = pp->GetConfig();
     SAL_WARN_IF( !pConfig, "starmath", "SmConfig not found" );
@@ -84,37 +82,37 @@ SmPrintUIOptions::SmPrintUIOptions()
     // create Section for formula (results in an extra tab page in dialog)
     SvtModuleOptions aOpt;
     OUString aAppGroupname(
-        aLocalizedStrings.GetString( 0 ).
+        SM_RESSTR( RID_PRINTUIOPT_PRODNAME ).
             replaceFirst( "%s", aOpt.GetModuleName( SvtModuleOptions::EModule::MATH ) ) );
     m_aUIProperties[nIdx++].Value = setGroupControlOpt("tabcontrol-page2", aAppGroupname, ".HelpID:vcl:PrintDialog:TabPage:AppPage");
 
     // create subgroup for print options
-    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("contents", aLocalizedStrings.GetString(1), OUString());
+    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("contents", SM_RESSTR( RID_PRINTUIOPT_CONTENTS ), OUString());
 
     // create a bool option for title row (matches to SID_PRINTTITLE)
-    m_aUIProperties[nIdx++].Value = setBoolControlOpt("title", aLocalizedStrings.GetString( 2 ),
+    m_aUIProperties[nIdx++].Value = setBoolControlOpt("title", SM_RESSTR( RID_PRINTUIOPT_TITLE ),
                                                   ".HelpID:vcl:PrintDialog:TitleRow:CheckBox",
                                                   PRTUIOPT_TITLE_ROW,
                                                   pConfig->IsPrintTitle());
     // create a bool option for formula text (matches to SID_PRINTTEXT)
-    m_aUIProperties[nIdx++].Value = setBoolControlOpt("formulatext", aLocalizedStrings.GetString( 3 ),
+    m_aUIProperties[nIdx++].Value = setBoolControlOpt("formulatext", SM_RESSTR( RID_PRINTUIOPT_FRMLTXT ),
                                                   ".HelpID:vcl:PrintDialog:FormulaText:CheckBox",
                                                   PRTUIOPT_FORMULA_TEXT,
                                                   pConfig->IsPrintFormulaText());
     // create a bool option for border (matches to SID_PRINTFRAME)
-    m_aUIProperties[nIdx++].Value = setBoolControlOpt("borders", aLocalizedStrings.GetString( 4 ),
+    m_aUIProperties[nIdx++].Value = setBoolControlOpt("borders", SM_RESSTR( RID_PRINTUIOPT_BORDERS ),
                                                   ".HelpID:vcl:PrintDialog:Border:CheckBox",
                                                   PRTUIOPT_BORDER,
                                                   pConfig->IsPrintFrame());
 
     // create subgroup for print format
-    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("size", aLocalizedStrings.GetString(5), OUString());
+    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("size", SM_RESSTR( RID_PRINTUIOPT_SIZE ), OUString());
 
     // create a radio button group for print format (matches to SID_PRINTSIZE)
     Sequence< OUString > aChoices{
-        aLocalizedStrings.GetString( 6 ),
-        aLocalizedStrings.GetString( 7 ),
-        aLocalizedStrings.GetString( 8 )
+        SM_RESSTR( RID_PRINTUIOPT_ORIGSIZE ),
+        SM_RESSTR( RID_PRINTUIOPT_FITTOPAGE ),
+        SM_RESSTR( RID_PRINTUIOPT_SCALING )
     };
     Sequence< OUString > aHelpIds{
         ".HelpID:vcl:PrintDialog:PrintFormat:RadioButton:0",
@@ -145,7 +143,7 @@ SmPrintUIOptions::SmPrintUIOptions()
 
     Sequence< PropertyValue > aHintNoLayoutPage( 1 );
     aHintNoLayoutPage[0].Name = "HintNoLayoutPage";
-    aHintNoLayoutPage[0].Value = makeAny( true );
+    aHintNoLayoutPage[0].Value <<= true;
     m_aUIProperties[nIdx++].Value <<= aHintNoLayoutPage;
 
     assert(nIdx == nNumProps);
@@ -316,7 +314,7 @@ SmModel::~SmModel() throw ()
 {
 }
 
-uno::Any SAL_CALL SmModel::queryInterface( const uno::Type& rType ) throw(uno::RuntimeException, std::exception)
+uno::Any SAL_CALL SmModel::queryInterface( const uno::Type& rType )
 {
     uno::Any aRet =  ::cppu::queryInterface ( rType,
                                     // OWeakObject interfaces
@@ -343,7 +341,7 @@ void SAL_CALL SmModel::release() throw()
     OWeakObject::release();
 }
 
-uno::Sequence< uno::Type > SAL_CALL SmModel::getTypes(  ) throw(uno::RuntimeException, std::exception)
+uno::Sequence< uno::Type > SAL_CALL SmModel::getTypes(  )
 {
     SolarMutexGuard aGuard;
     uno::Sequence< uno::Type > aTypes = SfxBaseModel::getTypes();
@@ -369,7 +367,6 @@ const uno::Sequence< sal_Int8 > & SmModel::getUnoTunnelId()
 }
 
 sal_Int64 SAL_CALL SmModel::getSomething( const uno::Sequence< sal_Int8 >& rId )
-    throw(uno::RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
         && 0 == memcmp( getUnoTunnelId().getConstArray(),
@@ -383,29 +380,25 @@ sal_Int64 SAL_CALL SmModel::getSomething( const uno::Sequence< sal_Int8 >& rId )
 
 static sal_Int16 lcl_AnyToINT16(const uno::Any& rAny)
 {
-    uno::TypeClass eType = rAny.getValueType().getTypeClass();
-
     sal_Int16 nRet = 0;
-    if( eType == uno::TypeClass_DOUBLE )
-        nRet = static_cast<sal_Int16>(*static_cast<double const *>(rAny.getValue()));
-    else if( eType == uno::TypeClass_FLOAT )
-        nRet = static_cast<sal_Int16>(*static_cast<float const *>(rAny.getValue()));
+    if( auto x = o3tl::tryAccess<double>(rAny) )
+        nRet = static_cast<sal_Int16>(*x);
     else
         rAny >>= nRet;
     return nRet;
 }
 
-OUString SmModel::getImplementationName() throw( uno::RuntimeException, std::exception )
+OUString SmModel::getImplementationName()
 {
     return OUString("com.sun.star.comp.Math.FormulaDocument");
 }
 
-sal_Bool SmModel::supportsService(const OUString& rServiceName) throw( uno::RuntimeException, std::exception )
+sal_Bool SmModel::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-uno::Sequence< OUString > SmModel::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
+uno::Sequence< OUString > SmModel::getSupportedServiceNames()
 {
     return uno::Sequence<OUString>{
         "com.sun.star.document.OfficeDocument",
@@ -414,7 +407,6 @@ uno::Sequence< OUString > SmModel::getSupportedServiceNames() throw( uno::Runtim
 }
 
 void SmModel::_setPropertyValues(const PropertyMapEntry** ppEntries, const Any* pValues)
-    throw (RuntimeException, UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -471,11 +463,11 @@ void SmModel::_setPropertyValues(const PropertyMapEntry** ppEntries, const Any* 
             case HANDLE_FONT_NUMBERS_POSTURE     :
             case HANDLE_FONT_TEXT_POSTURE        :
             {
-                if((*pValues).getValueType() != cppu::UnoType<bool>::get())
+                auto bVal = o3tl::tryAccess<bool>(*pValues);
+                if(!bVal)
                     throw IllegalArgumentException();
-                bool bVal = *static_cast<sal_Bool const *>((*pValues).getValue());
                 vcl::Font aNewFont(aFormat.GetFont((*ppEntries)->mnMemberId));
-                aNewFont.SetItalic((bVal) ? ITALIC_NORMAL : ITALIC_NONE);
+                aNewFont.SetItalic(*bVal ? ITALIC_NORMAL : ITALIC_NONE);
                 aFormat.SetFont((*ppEntries)->mnMemberId, aNewFont);
             }
             break;
@@ -487,11 +479,11 @@ void SmModel::_setPropertyValues(const PropertyMapEntry** ppEntries, const Any* 
             case HANDLE_FONT_NUMBERS_WEIGHT      :
             case HANDLE_FONT_TEXT_WEIGHT         :
             {
-                if((*pValues).getValueType() != cppu::UnoType<bool>::get())
+                auto bVal = o3tl::tryAccess<bool>(*pValues);
+                if(!bVal)
                     throw IllegalArgumentException();
-                bool bVal = *static_cast<sal_Bool const *>((*pValues).getValue());
                 vcl::Font aNewFont(aFormat.GetFont((*ppEntries)->mnMemberId));
-                aNewFont.SetWeight((bVal) ? WEIGHT_BOLD : WEIGHT_NORMAL);
+                aNewFont.SetWeight(*bVal ? WEIGHT_BOLD : WEIGHT_NORMAL);
                 aFormat.SetFont((*ppEntries)->mnMemberId, aNewFont);
             }
             break;
@@ -502,9 +494,7 @@ void SmModel::_setPropertyValues(const PropertyMapEntry** ppEntries, const Any* 
                 if(nVal < 1)
                     throw IllegalArgumentException();
                 Size aSize = aFormat.GetBaseSize();
-                nVal *= 20;
-                nVal = static_cast < sal_Int16 > ( convertTwipToMm100(nVal) );
-                aSize.Height() = nVal;
+                aSize.Height() = SmPtsTo100th_mm(nVal);
                 aFormat.SetBaseSize(aSize);
 
                 // apply base size to fonts
@@ -529,7 +519,7 @@ void SmModel::_setPropertyValues(const PropertyMapEntry** ppEntries, const Any* 
 
             case HANDLE_IS_TEXT_MODE                       :
             {
-                aFormat.SetTextmode(*static_cast<sal_Bool const *>((*pValues).getValue()));
+                aFormat.SetTextmode(*o3tl::doAccess<bool>(*pValues));
             }
             break;
 
@@ -587,7 +577,7 @@ void SmModel::_setPropertyValues(const PropertyMapEntry** ppEntries, const Any* 
             }
             break;
             case HANDLE_IS_SCALE_ALL_BRACKETS              :
-                aFormat.SetScaleNormalBrackets(*static_cast<sal_Bool const *>((*pValues).getValue()));
+                aFormat.SetScaleNormalBrackets(*o3tl::doAccess<bool>(*pValues));
             break;
             case HANDLE_PRINTER_NAME:
             {
@@ -696,11 +686,10 @@ void SmModel::_setPropertyValues(const PropertyMapEntry** ppEntries, const Any* 
 
     // #i67283# since about all of the above changes are likely to change
     // the formula size we have to recalculate the vis-area now
-    pDocSh->SetVisArea( Rectangle( Point(0, 0), pDocSh->GetSize() ) );
+    pDocSh->SetVisArea( tools::Rectangle( Point(0, 0), pDocSh->GetSize() ) );
 }
 
 void SmModel::_getPropertyValues( const PropertyMapEntry **ppEntries, Any *pValue )
-    throw (RuntimeException, UnknownPropertyException, WrappedTargetException, std::exception)
 {
     SmDocShell *pDocSh = static_cast < SmDocShell * > (GetObjectShell());
 
@@ -714,7 +703,7 @@ void SmModel::_getPropertyValues( const PropertyMapEntry **ppEntries, Any *pValu
         switch ( (*ppEntries)->mnHandle )
         {
             case HANDLE_FORMULA:
-                *pValue <<= OUString(pDocSh->GetText());
+                *pValue <<= pDocSh->GetText();
             break;
             case HANDLE_FONT_NAME_VARIABLES                :
             case HANDLE_FONT_NAME_FUNCTIONS                :
@@ -725,7 +714,7 @@ void SmModel::_getPropertyValues( const PropertyMapEntry **ppEntries, Any *pValu
             case HANDLE_CUSTOM_FONT_NAME_FIXED             :
             {
                 const SmFace &  rFace = aFormat.GetFont((*ppEntries)->mnMemberId);
-                *pValue <<= OUString(rFace.GetFamilyName());
+                *pValue <<= rFace.GetFamilyName();
             }
             break;
             case HANDLE_CUSTOM_FONT_FIXED_POSTURE:
@@ -755,10 +744,9 @@ void SmModel::_getPropertyValues( const PropertyMapEntry **ppEntries, Any *pValu
             case HANDLE_BASE_FONT_HEIGHT                   :
             {
                 // Point!
-                sal_Int16 nVal = static_cast < sal_Int16 > (aFormat.GetBaseSize().Height());
-                nVal = static_cast < sal_Int16 > (convertMm100ToTwip(nVal));
-                nVal = (nVal + 10) / 20;
-                *pValue <<= nVal;
+                *pValue <<= sal_Int16(
+                    SmRoundFraction(
+                        Sm100th_mmToPts(aFormat.GetBaseSize().Height())));
             }
             break;
             case HANDLE_RELATIVE_FONT_HEIGHT_TEXT           :
@@ -774,7 +762,7 @@ void SmModel::_getPropertyValues( const PropertyMapEntry **ppEntries, Any *pValu
             break;
 
             case HANDLE_GREEK_CHAR_STYLE                    :
-                *pValue <<= static_cast<sal_Int16>(aFormat.GetGreekCharStyle());
+                *pValue <<= aFormat.GetGreekCharStyle();
             break;
 
             case HANDLE_ALIGNMENT                          :
@@ -828,7 +816,7 @@ void SmModel::_getPropertyValues( const PropertyMapEntry **ppEntries, Any *pValu
                     sal_uInt32 nSize = aStream.Tell();
                     aStream.Seek ( STREAM_SEEK_TO_BEGIN );
                     Sequence < sal_Int8 > aSequence ( nSize );
-                    aStream.Read ( aSequence.getArray(), nSize );
+                    aStream.ReadBytes(aSequence.getArray(), nSize);
                     *pValue <<= aSequence;
                 }
             }
@@ -892,14 +880,13 @@ void SmModel::_getPropertyValues( const PropertyMapEntry **ppEntries, Any *pValu
             // #i972#
             case HANDLE_BASELINE:
             {
-                if ( !pDocSh->pTree )
+                if ( !pDocSh->GetFormulaTree() )
                     pDocSh->Parse();
-                if ( pDocSh->pTree )
+                if ( pDocSh->GetFormulaTree() )
                 {
-                    if ( !pDocSh->IsFormulaArranged() )
-                        pDocSh->ArrangeFormula();
+                    pDocSh->ArrangeFormula();
 
-                    *pValue <<= static_cast<sal_Int32>( pDocSh->pTree->GetFormulaBaseline() );
+                    *pValue <<= static_cast<sal_Int32>( pDocSh->GetFormulaTree()->GetFormulaBaseline() );
                 }
                 break;
             }
@@ -914,7 +901,6 @@ void SmModel::_getPropertyValues( const PropertyMapEntry **ppEntries, Any *pValu
 sal_Int32 SAL_CALL SmModel::getRendererCount(
         const uno::Any& /*rSelection*/,
         const uno::Sequence< beans::PropertyValue >& /*xOptions*/ )
-    throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     return 1;
@@ -946,7 +932,6 @@ uno::Sequence< beans::PropertyValue > SAL_CALL SmModel::getRenderer(
         sal_Int32 nRenderer,
         const uno::Any& /*rSelection*/,
         const uno::Sequence< beans::PropertyValue >& /*rxOptions*/ )
-    throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -983,7 +968,6 @@ void SAL_CALL SmModel::render(
         sal_Int32 nRenderer,
         const uno::Any& rSelection,
         const uno::Sequence< beans::PropertyValue >& rxOptions )
-    throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1010,7 +994,7 @@ void SAL_CALL SmModel::render(
         if (!pOut)
             throw RuntimeException();
 
-        pOut->SetMapMode( MAP_100TH_MM );
+        pOut->SetMapMode( MapUnit::Map100thMM );
 
         uno::Reference< frame::XModel > xModel;
         rSelection >>= xModel;
@@ -1044,7 +1028,7 @@ void SAL_CALL SmModel::render(
                                             static_cast<long>(aPrtPaperSize.Height() * 0.0214));
                 }
                 Point   aZeroPoint;
-                Rectangle OutputRect( aZeroPoint, aOutputSize );
+                tools::Rectangle OutputRect( aZeroPoint, aOutputSize );
 
 
                 // set minimum top and bottom border
@@ -1065,7 +1049,7 @@ void SAL_CALL SmModel::render(
                     m_pPrintUIOptions.reset(new SmPrintUIOptions);
                 m_pPrintUIOptions->processProperties( rxOptions );
 
-                pView->Impl_Print( *pOut, *m_pPrintUIOptions, Rectangle( OutputRect ), Point() );
+                pView->Impl_Print( *pOut, *m_pPrintUIOptions, tools::Rectangle( OutputRect ), Point() );
 
                 // release SmPrintUIOptions when everything is done.
                 // That way, when SmPrintUIOptions is needed again it will read the latest configuration settings in its c-tor.
@@ -1079,7 +1063,6 @@ void SAL_CALL SmModel::render(
 }
 
 void SAL_CALL SmModel::setParent( const uno::Reference< uno::XInterface >& xParent)
-        throw( lang::NoSupportException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     SfxBaseModel::setParent( xParent );

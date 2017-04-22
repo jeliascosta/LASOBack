@@ -26,6 +26,7 @@
 #include <editeng/AccessibleContextBase.hxx>
 #include <cppuhelper/compbase.hxx>
 #include <osl/mutex.hxx>
+#include <tools/gen.hxx>
 #include <vector>
 #include <com/sun/star/drawing/XShape.hpp>
 #include <com/sun/star/drawing/XShapes.hpp>
@@ -105,7 +106,7 @@ public:
     /** If there still are managed children these are disposed and
         released.
     */
-    virtual ~ChildrenManagerImpl();
+    virtual ~ChildrenManagerImpl() override;
 
     /** Do that part of the initialization that you can not or should not do
         in the constructor like registering at broadcasters.
@@ -118,9 +119,9 @@ public:
     */
     long GetChildCount() const throw ();
 
-    css::uno::Reference<css::drawing::XShape> GetChildShape(long nIndex)
-        throw (css::uno::RuntimeException,
-               css::lang::IndexOutOfBoundsException);
+    /// @throws css::uno::RuntimeException
+    /// @throws css::lang::IndexOutOfBoundsException
+    css::uno::Reference<css::drawing::XShape> GetChildShape(long nIndex);
     /** Return the requested accessible child or throw and
         IndexOutOfBoundsException if the given index is invalid.
         @param nIndex
@@ -131,13 +132,11 @@ public:
             requested accessible child.  This reference is empty if it has
             not been possible to create the accessible object of the
             corresponding shape.
-        @raises
+        @throws
             Throws an IndexOutOfBoundsException if the index is not valid.
     */
     css::uno::Reference<css::accessibility::XAccessible>
-        GetChild (long nIndex)
-        throw (css::uno::RuntimeException,
-               css::lang::IndexOutOfBoundsException);
+        GetChild (long nIndex);
 
     /** Return the requested accessible child.
         @param aChildDescriptor
@@ -149,10 +148,10 @@ public:
             Returns a reference to the requested accessible child.  This
             reference is empty if it has not been possible to create the
             accessible object of the corresponding shape.
+        @throws css::uno::RuntimeException
     */
     css::uno::Reference<css::accessibility::XAccessible>
-        GetChild (ChildDescriptor& aChildDescriptor,sal_Int32 _nIndex)
-        throw (css::uno::RuntimeException);
+        GetChild (ChildDescriptor& aChildDescriptor,sal_Int32 _nIndex);
 
     /** Return the requested accessible child given a shape.  This method
         searches the list of descriptors for the one that holds the
@@ -165,10 +164,10 @@ public:
             Returns a reference to the requested accessible child.  The
             reference is empty if there is no shape descriptor that
             associates the shape with an accessible object.
+        @throws css::uno::RuntimeException
     */
     css::uno::Reference<css::accessibility::XAccessible>
-        GetChild (const css::uno::Reference<css::drawing::XShape>& xShape)
-        throw (css::uno::RuntimeException);
+        GetChild (const css::uno::Reference<css::drawing::XShape>& xShape);
 
     /** Update the child manager.  Take care of a modified set of children
         and modified visible area.  This method can optimize the update
@@ -181,7 +180,7 @@ public:
             before this method returns and events are sent to inform the
             listeners of the new object.
     */
-    void Update (bool bCreateNewObjectsOnDemand = true);
+    void Update (bool bCreateNewObjectsOnDemand);
 
     /** Set the list of UNO shapes to the given list.  This removes the old
         list and does not add to it.  The list of accessible shapes that is
@@ -237,18 +236,15 @@ public:
 
     // lang::XEventListener
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject)
-        throw (css::uno::RuntimeException, std::exception) override;
+        disposing (const css::lang::EventObject& rEventObject) override;
 
     // document::XEventListener
     virtual void SAL_CALL
-        notifyEvent (const css::document::EventObject& rEventObject)
-        throw (css::uno::RuntimeException, std::exception) override;
+        notifyEvent (const css::document::EventObject& rEventObject) override;
 
     // view::XSelectionChangeListener
     virtual void  SAL_CALL
-        selectionChanged (const css::lang::EventObject& rEvent)
-        throw (css::uno::RuntimeException, std::exception) override;
+        selectionChanged (const css::lang::EventObject& rEvent) override;
 
     // IAccessibleViewForwarderListener
     /** Informs this children manager and its children about a change of one
@@ -262,8 +258,7 @@ public:
         @param pViewForwarder
             The modified view forwarder.  Use this one from now on.
     */
-    virtual void ViewForwarderChanged (ChangeType aChangeType,
-        const IAccessibleViewForwarder* pViewForwarder) override;
+    virtual void ViewForwarderChanged() override;
 
     // IAccessibleParent
     /** Replace the specified child with a replacement.
@@ -280,15 +275,13 @@ public:
         const css::uno::Reference< css::drawing::XShape >& _rxShape,
         const long _nIndex,
         const AccessibleShapeTreeInfo& _rShapeTreeInfo
-    )   throw (css::uno::RuntimeException) override;
+    ) override;
 
     // Add the impl method for IAccessibleParent interface
     virtual AccessibleControlShape* GetAccControlShapeFromModel
-        (css::beans::XPropertySet* pSet)
-        throw (css::uno::RuntimeException) override;
+        (css::beans::XPropertySet* pSet) override;
     virtual css::uno::Reference<css::accessibility::XAccessible>
-        GetAccessibleCaption (const css::uno::Reference<css::drawing::XShape>& xShape)
-        throw (css::uno::RuntimeException) override;
+        GetAccessibleCaption (const css::uno::Reference<css::drawing::XShape>& xShape) override;
 protected:
     /** This list holds the descriptors of all currently visible shapes and
         associated accessible object.
@@ -320,7 +313,7 @@ protected:
         at least partly, to be accessible through this class.  Used to
         detect changes of the visible area after changes of the view forwarder.
     */
-    Rectangle maVisibleArea;
+    tools::Rectangle maVisibleArea;
 
     /** The parent of the shapes.  It is used for creating accessible
         objects for given shapes.
@@ -344,11 +337,6 @@ protected:
     void impl_dispose();
 
 private:
-    /** Names of new accessible objects are disambiguated with this index.
-        It gets increased every time a new object is created and (at the
-        moment) never reset.
-    */
-    sal_Int32 mnNewNameIndex;
 
     ChildrenManagerImpl (const ChildrenManagerImpl&) = delete;
     ChildrenManagerImpl& operator= (const ChildrenManagerImpl&) = delete;
@@ -398,7 +386,7 @@ private:
             Events are sent to all entries of this list that already contain
             an accessible object.
     */
-    void SendVisibleAreaEvents (ChildDescriptorListType& raChildList);
+    static void SendVisibleAreaEvents (ChildDescriptorListType& raChildList);
 
     /** If children have to be created immediately and not on demand the
         create the missing accessible objects now.
@@ -506,7 +494,7 @@ public:
         descriptor may be based on a UNO shape or, already, on an accessible
         shape.
     */
-    inline bool operator == (const ChildDescriptor& aDescriptor) const
+    bool operator == (const ChildDescriptor& aDescriptor) const
     {
         return (
                 this == &aDescriptor ||

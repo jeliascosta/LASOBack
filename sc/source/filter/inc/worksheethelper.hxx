@@ -33,13 +33,9 @@ namespace com { namespace sun { namespace star {
     namespace awt { struct Rectangle; }
     namespace awt { struct Size; }
     namespace drawing { class XDrawPage; }
-    namespace sheet { class XSheetCellRanges; }
     namespace sheet { class XSpreadsheet; }
     namespace table { class XCell; }
-    namespace table { class XCell2; }
     namespace table { class XCellRange; }
-    namespace table { class XTableColumns; }
-    namespace table { class XTableRows; }
 } } }
 
 namespace oox {
@@ -62,14 +58,13 @@ class WorksheetSettings;
 typedef ::std::map< OUString, ScDataBarFormatData* >  ExtLst;
 
 /** An enumeration for all types of sheets in a workbook. */
-enum WorksheetType
+enum class WorksheetType
 {
-    SHEETTYPE_WORKSHEET,            /// Worksheet.
-    SHEETTYPE_CHARTSHEET,           /// Chart sheet.
-    SHEETTYPE_MACROSHEET,           /// Macro sheet.
-    SHEETTYPE_DIALOGSHEET,          /// Dialog sheet (BIFF5+).
-    SHEETTYPE_MODULESHEET,          /// VB module sheet (BIFF5 only).
-    SHEETTYPE_EMPTYSHEET            /// Other (unsupported) sheet type.
+    Work,            /// Worksheet.
+    Chart,           /// Chart sheet.
+    Macro,           /// Macro sheet.
+    Dialog,          /// Dialog sheet (BIFF5+).
+    Empty            /// Other (unsupported) sheet type.
 };
 
 /** Stores settings and formatting data about a range of sheet columns. */
@@ -127,8 +122,7 @@ struct PageBreakModel
 /** Stores data about a hyperlink range. */
 struct HyperlinkModel : public ::oox::ole::StdHlinkInfo
 {
-    css::table::CellRangeAddress
-                        maRange;            /// The cell area containing the hyperlink.
+    ScRange             maRange;            /// The cell area containing the hyperlink.
     OUString            maTooltip;          /// Additional tooltip text.
 
     explicit            HyperlinkModel();
@@ -137,7 +131,7 @@ struct HyperlinkModel : public ::oox::ole::StdHlinkInfo
 /** Stores data about ranges with data validation settings. */
 struct ValidationModel
 {
-    ApiCellRangeList    maRanges;
+    ScRangeList         maRanges;
     ApiTokenSequence    maTokens1;
     ApiTokenSequence    maTokens2;
     OUString     msRef;
@@ -191,20 +185,17 @@ public:
     /** Returns the type of this sheet. */
     WorksheetType       getSheetType() const;
     /** Returns the index of the current sheet. */
-    sal_Int32           getSheetIndex() const;
+    SCTAB               getSheetIndex() const;
     /** Returns the XSpreadsheet interface of the current sheet. */
     const css::uno::Reference< css::sheet::XSpreadsheet >&
                         getSheet() const;
 
     /** Returns the XCell interface for the passed cell address. */
     css::uno::Reference< css::table::XCell >
-                        getCell( const css::table::CellAddress& rAddress ) const;
-
-    css::uno::Reference< css::table::XCell >
                         getCell( const ScAddress& rAddress ) const;
     /** Returns the XCellRange interface for the passed cell range address. */
     css::uno::Reference< css::table::XCellRange >
-                        getCellRange( const css::table::CellRangeAddress& rRange ) const;
+                        getCellRange( const ScRange& rRange ) const;
 
     /** Returns the XDrawPage interface of the draw page of the current sheet. */
     css::uno::Reference< css::drawing::XDrawPage >
@@ -212,8 +203,6 @@ public:
 
     /** Returns the absolute cell position in 1/100 mm. */
     css::awt::Point getCellPosition( sal_Int32 nCol, sal_Int32 nRow ) const;
-    /** Returns the cell size in 1/100 mm. */
-    css::awt::Size getCellSize( sal_Int32 nCol, sal_Int32 nRow ) const;
     /** Returns the size of the entire drawing page in 1/100 mm. */
     css::awt::Size getDrawPageSize() const;
 
@@ -252,7 +241,7 @@ public:
     /** Extends the used area of this sheet by the passed cell position. */
     void                extendUsedArea( const ScAddress& rAddress );
     /** Extends the used area of this sheet by the passed cell range. */
-    void                extendUsedArea( const css::table::CellRangeAddress& rRange );
+    void                extendUsedArea( const ScRange& rRange );
     /** Extends the shape bounding box by the position and size of the passed rectangle (in 1/100 mm). */
     void                extendShapeBoundingBox( const css::awt::Rectangle& rShapeRect );
 
@@ -276,20 +265,12 @@ public:
         are cached and converted in the finalizeWorksheetImport() call. */
     void                setRowModel( const RowModel& rModel );
 
-    /** Inserts a value cell directly into the Calc sheet. */
-    void putValue( const ScAddress& rAddress, double fValue );
-
-    /** Inserts a string cell directly into the Calc sheet. */
-    void putString( const ScAddress& rAddress, const OUString& rText );
-
     /** Inserts a rich-string cell directly into the Calc sheet. */
     void putRichString(
         const ScAddress& rAddress,
         const RichString& rString, const oox::xls::Font* pFirstPortionFont );
 
     /** Inserts a formula cell directly into the Calc sheet. */
-    void putFormulaTokens(
-        const css::table::CellAddress& rAddress, const ApiTokenSequence& rTokens );
     void putFormulaTokens(
         const ScAddress& rAddress, const ApiTokenSequence& rTokens );
 
@@ -306,7 +287,7 @@ public:
         const ScAddress& rAddr, sal_Int32 nSharedId,
         const OUString& rCellValue, sal_Int32 nValueType );
 
-    void                setCellArrayFormula( const css::table::CellRangeAddress& rRangeAddress, const ScAddress& rTokenAddress, const OUString&  );
+    void                setCellArrayFormula( const ScRange& rRangeAddress, const ScAddress& rTokenAddress, const OUString& rTokenStr );
 
     void createSharedFormulaMapEntry(
         const ScAddress& rAddress,

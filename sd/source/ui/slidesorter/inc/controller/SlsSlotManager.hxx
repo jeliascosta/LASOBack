@@ -78,15 +78,11 @@ private:
     /// The controller for which we manage the slot calls.
     SlideSorter& mrSlideSorter;
 
-    /** Called by FuTemporary to show the slide show.
-    */
-    void ShowSlideShow (SfxRequest& rRequest);
-
     /** The implementation is a copy of the code for SID_RENAMEPAGE in
         drviews2.cxx.
     */
     void RenameSlide();
-    DECL_LINK_TYPED(RenameSlideHdl, AbstractSvxNameDialog&, bool);
+    DECL_LINK(RenameSlideHdl, AbstractSvxNameDialog&, bool);
     bool RenameSlideFromDrawViewShell( sal_uInt16 nPageId, const OUString& rName);
 
     /** Handle SID_INSERTPAGE slot calls.

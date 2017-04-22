@@ -20,6 +20,7 @@
 #ifndef INCLUDED_CONNECTIVITY_SOURCE_DRIVERS_FIREBIRD_CONNECTION_HXX
 #define INCLUDED_CONNECTIVITY_SOURCE_DRIVERS_FIREBIRD_CONNECTION_HXX
 
+#include "Clob.hxx"
 #include "Blob.hxx"
 #include "SubComponent.hxx"
 
@@ -52,10 +53,10 @@ namespace connectivity
     namespace firebird
     {
 
-        typedef ::cppu::WeakComponentImplHelper< ::com::sun::star::document::XDocumentEventListener,
-                                                 ::com::sun::star::lang::XServiceInfo,
-                                                 ::com::sun::star::sdbc::XConnection,
-                                                 ::com::sun::star::sdbc::XWarningsSupplier
+        typedef ::cppu::WeakComponentImplHelper< css::document::XDocumentEventListener,
+                                                 css::lang::XServiceInfo,
+                                                 css::sdbc::XConnection,
+                                                 css::sdbc::XWarningsSupplier
                                                > Connection_BASE;
 
         class OStatementCommonBase;
@@ -63,19 +64,13 @@ namespace connectivity
         class ODatabaseMetaData;
 
 
-        typedef ::std::vector< ::connectivity::OTypeInfo>   TTypeInfoVector;
-        typedef std::vector< ::com::sun::star::uno::WeakReferenceHelper > OWeakRefArray;
+        typedef std::vector< ::connectivity::OTypeInfo>   TTypeInfoVector;
+        typedef std::vector< css::uno::WeakReferenceHelper > OWeakRefArray;
 
         class Connection : public Connection_BASE,
                             public connectivity::OSubComponent<Connection, Connection_BASE>
         {
             friend class connectivity::OSubComponent<Connection, Connection_BASE>;
-
-             /**
-             * Location within the .odb that an embedded .fdb will be stored.
-             * Only relevant for embedded dbs.
-             */
-            static const OUString our_sDBLocation;
 
             ::osl::Mutex        m_aMutex;
 
@@ -95,7 +90,7 @@ namespace connectivity
             ::rtl::OUString     m_sFirebirdURL;
 
             /* EMBEDDED MODE DATA */
-            /** Denotes that we have a .fdb stored within a .odb file. */
+            /** Denotes that we have a database stored within a .odb file. */
             bool            m_bIsEmbedded;
 
             /**
@@ -105,21 +100,43 @@ namespace connectivity
              *
              * Note that this is ONLY set in embedded mode.
              */
-            ::com::sun::star::uno::Reference< ::com::sun::star::util::XModifiable >
+            css::uno::Reference< css::util::XModifiable >
                 m_xParentDocument;
 
             /**
-             * Handle for the folder within the .odb where we store our .fdb
+             * Handle for the folder within the .odb where we store our .fbk
              * (Only used if m_bIsEmbedded is true).
              */
-            ::com::sun::star::uno::Reference< ::com::sun::star::embed::XStorage >
+            css::uno::Reference< css::embed::XStorage >
                 m_xEmbeddedStorage;
             /**
-             * The temporary folder where we extract the .fdb from a .odb.
+             * The temporary folder where we extract the .fbk from a .odb,
+             * and also store the temporary .fdb
              * It is only valid if m_bIsEmbedded is true.
+             *
+             * The extracted .fbk is written in firebird.fbk, the temporary
+             * .fdb is stored as firebird.fdb.
              */
-            std::unique_ptr< ::utl::TempFile >  m_pExtractedFDBFile;
+            std::unique_ptr< ::utl::TempFile >  m_pDatabaseFileDir;
+            /**
+             * Path for our extracted .fbk file.
+             *
+             * (The temporary .fdb is our m_sFirebirdURL.)
+             */
+            ::rtl::OUString m_sFBKPath;
 
+            void loadDatabaseFile(const OUString& pSrcLocation, const OUString& pTmpLocation);
+
+            /**
+             * Run the backup service, use nAction =
+             * isc_action_svc_backup to backup, nAction = isc_action_svc_restore
+             * to restore.
+             */
+            void runBackupService(const short nAction);
+
+            isc_svc_handle attachServiceManager();
+
+            void detachServiceManager(isc_svc_handle pServiceHandle);
 
             /** We are using an external (local) file */
             bool                m_bIsFile;
@@ -132,31 +149,24 @@ namespace connectivity
             isc_db_handle       m_aDBHandle;
             isc_tr_handle       m_aTransactionHandle;
 
-            ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbcx::XTablesSupplier>
-                m_xCatalog;
-            ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbc::XDatabaseMetaData >
-                m_xMetaData;
+            css::uno::WeakReference< css::sdbcx::XTablesSupplier>
+                                m_xCatalog;
+            css::uno::WeakReference< css::sdbc::XDatabaseMetaData >
+                                m_xMetaData;
             /** Statements owned by this connection. */
             OWeakRefArray       m_aStatements;
 
-            /**
-             * Firebird stores binary collations for indexes on Character based
-             * columns, these can be binary-incompatible between different icu
-             * version, hence we need to rebuild the indexes when switching icu
-             * versions.
-             */
-            void rebuildIndexes()
-                throw (css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
-            void buildTypeInfo()
-                throw (css::sdbc::SQLException);
+            /// @throws css::sdbc::SQLException
+            void buildTypeInfo();
 
             /**
              * Creates a new transaction with the desired parameters, if
              * necessary discarding an existing transaction. This has to be done
-             * anytime we change the transaction isolation, or autocommiting.
+             * anytime we change the transaction isolation, or autocommitting.
+             *
+             * @throws css::sdbc::SQLException
              */
-            void setupTransaction()
-                throw(::com::sun::star::sdbc::SQLException);
+            void setupTransaction();
             void disposeStatements();
 
         /** transform named parameters into unnamed parameters
@@ -169,19 +179,18 @@ namespace connectivity
 
         public:
             explicit Connection(FirebirdDriver* _pDriver);
-            virtual ~Connection();
+            virtual ~Connection() override;
 
+            /// @throws css::sdbc::SQLException
+            /// @throws css::uno::RuntimeException
             void construct( const ::rtl::OUString& url,
-                                    const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info)
-            throw(css::sdbc::SQLException,
-                  css::uno::RuntimeException,
-                  std::exception);
+                                    const css::uno::Sequence< css::beans::PropertyValue >& info);
 
             const OUString& getConnectionURL()  const   {return m_sConnectionURL;}
             bool            isEmbedded()        const   {return m_bIsEmbedded;}
             isc_db_handle&  getDBHandle()               {return m_aDBHandle;}
-            isc_tr_handle&  getTransaction()
-                throw(::com::sun::star::sdbc::SQLException);
+            /// @throws css::sdbc::SQLException
+            isc_tr_handle&  getTransaction();
 
             /**
               * Must be called anytime the underlying database is likely to have
@@ -197,17 +206,22 @@ namespace connectivity
              * Create a new Blob tied to this connection. Blobs are tied to a
              * transaction and not to a statement, hence the connection should
              * deal with their management.
+             *
+             * @throws css::sdbc::SQLException
+             * @throws css::uno::RuntimeException
              */
-            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XBlob>
-                createBlob(ISC_QUAD* pBlobID)
-                throw(::com::sun::star::sdbc::SQLException,
-                      ::com::sun::star::uno::RuntimeException);
+            css::uno::Reference< css::sdbc::XBlob>
+                createBlob(ISC_QUAD* pBlobID);
+            /// @throws css::sdbc::SQLException
+            /// @throws css::uno::RuntimeException
+            css::uno::Reference< css::sdbc::XClob>
+                createClob(ISC_QUAD* pBlobID);
 
             /**
              * Create and/or connect to the sdbcx Catalog. This is completely
              * unrelated to the SQL "Catalog".
              */
-            ::com::sun::star::uno::Reference< ::com::sun::star::sdbcx::XTablesSupplier >
+            css::uno::Reference< css::sdbcx::XTablesSupplier >
                 createCatalog();
 
             // OComponentHelper
@@ -218,33 +232,33 @@ namespace connectivity
             // XServiceInfo
             DECLARE_SERVICE_INFO();
             // XConnection
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XStatement > SAL_CALL createStatement(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const ::rtl::OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareCall( const ::rtl::OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::rtl::OUString SAL_CALL nativeSQL( const ::rtl::OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setAutoCommit( sal_Bool autoCommit ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL getAutoCommit(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL commit(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL rollback(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL isClosed(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setReadOnly( sal_Bool readOnly ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Bool SAL_CALL isReadOnly(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setCatalog( const ::rtl::OUString& catalog ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::rtl::OUString SAL_CALL getCatalog(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setTransactionIsolation( sal_Int32 level ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual sal_Int32 SAL_CALL getTransactionIsolation(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess > SAL_CALL getTypeMap(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setTypeMap( const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::sdbc::XStatement > SAL_CALL createStatement(  ) override;
+            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const ::rtl::OUString& sql ) override;
+            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareCall( const ::rtl::OUString& sql ) override;
+            virtual ::rtl::OUString SAL_CALL nativeSQL( const ::rtl::OUString& sql ) override;
+            virtual void SAL_CALL setAutoCommit( sal_Bool autoCommit ) override;
+            virtual sal_Bool SAL_CALL getAutoCommit(  ) override;
+            virtual void SAL_CALL commit(  ) override;
+            virtual void SAL_CALL rollback(  ) override;
+            virtual sal_Bool SAL_CALL isClosed(  ) override;
+            virtual css::uno::Reference< css::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) override;
+            virtual void SAL_CALL setReadOnly( sal_Bool readOnly ) override;
+            virtual sal_Bool SAL_CALL isReadOnly(  ) override;
+            virtual void SAL_CALL setCatalog( const ::rtl::OUString& catalog ) override;
+            virtual ::rtl::OUString SAL_CALL getCatalog(  ) override;
+            virtual void SAL_CALL setTransactionIsolation( sal_Int32 level ) override;
+            virtual sal_Int32 SAL_CALL getTransactionIsolation(  ) override;
+            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getTypeMap(  ) override;
+            virtual void SAL_CALL setTypeMap( const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
             // XCloseable
-            virtual void SAL_CALL close(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL close(  ) override;
             // XWarningsSupplier
-            virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL clearWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL getWarnings(  ) override;
+            virtual void SAL_CALL clearWarnings(  ) override;
             // XDocumentEventListener
-            virtual void SAL_CALL documentEventOccured( const ::com::sun::star::document::DocumentEvent& Event ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL documentEventOccured( const css::document::DocumentEvent& Event ) override;
             // css.lang.XEventListener
-            virtual void SAL_CALL disposing( const ::com::sun::star::lang::EventObject& Source ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
         };
     }

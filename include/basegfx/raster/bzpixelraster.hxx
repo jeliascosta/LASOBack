@@ -30,7 +30,7 @@ namespace basegfx
     {
     protected:
         // additionally, host a ZBuffer
-        sal_uInt16*                 mpZBuffer;
+        std::unique_ptr<sal_uInt16[]>  mpZBuffer;
 
     public:
         // constructor/destructor
@@ -38,12 +38,7 @@ namespace basegfx
         :   BPixelRaster(nWidth, nHeight),
             mpZBuffer(new sal_uInt16[mnCount])
         {
-            memset(mpZBuffer, 0, sizeof(sal_uInt16) * mnCount);
-        }
-
-        ~BZPixelRaster()
-        {
-            delete [] mpZBuffer;
+            memset(mpZBuffer.get(), 0, sizeof(sal_uInt16) * mnCount);
         }
 
         // data access read only

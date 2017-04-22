@@ -37,11 +37,9 @@ namespace sdext { namespace presenter {
 
 class PresenterController;
 
-namespace {
-    typedef ::cppu::WeakComponentImplHelper <
-        css::drawing::framework::XResourceFactory
-    > PresenterPaneFactoryInterfaceBase;
-}
+typedef ::cppu::WeakComponentImplHelper <
+    css::drawing::framework::XResourceFactory
+> PresenterPaneFactoryInterfaceBase;
 
 /** The PresenterPaneFactory provides a fixed set of panes.
 
@@ -71,24 +69,21 @@ public:
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
         const css::uno::Reference<css::frame::XController>& rxController,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterPaneFactory();
+    virtual ~PresenterPaneFactory() override;
 
-    virtual void SAL_CALL disposing()
-        throw (css::uno::RuntimeException) override;
+    virtual void SAL_CALL disposing() override;
 
     // XResourceFactory
 
     virtual css::uno::Reference<css::drawing::framework::XResource>
         SAL_CALL createResource (
             const css::uno::Reference<
-                css::drawing::framework::XResourceId>& rxPaneId)
-        throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, std::exception) override;
+                css::drawing::framework::XResourceId>& rxPaneId) override;
 
     virtual void SAL_CALL
         releaseResource (
             const css::uno::Reference<css::drawing::framework::XResource>&
-                rxPane)
-        throw (css::uno::RuntimeException, std::exception) override;
+                rxPane) override;
 
 private:
     css::uno::WeakReference<css::uno::XComponentContext> mxComponentContextWeak;
@@ -114,7 +109,8 @@ private:
         const css::uno::Reference<css::drawing::framework::XPane>& rxParentPane,
         const bool bIsSpritePane);
 
-    void ThrowIfDisposed() const throw (css::lang::DisposedException);
+    /// @throws css::lang::DisposedException
+    void ThrowIfDisposed() const;
 };
 
 } }

@@ -22,6 +22,52 @@
 #include <svl/intitem.hxx>
 #include <editeng/editengdllapi.h>
 
+ // class SvxTextRotateItem ----------------------------------------------
+
+ /* [Description]
+
+ This item defines a text rotation value. Currently
+ text can only be rotated 90,0 and 270,0 degrees.
+
+ */
+
+class EDITENG_DLLPUBLIC SvxTextRotateItem : public SfxUInt16Item
+{
+public:
+    SvxTextRotateItem(sal_uInt16 nValue, const sal_uInt16 nId);
+
+    virtual SfxPoolItem*    Clone(SfxItemPool *pPool = nullptr) const override;
+    virtual SfxPoolItem*    Create(SvStream &, sal_uInt16) const override;
+    virtual SvStream&       Store(SvStream & rStrm, sal_uInt16 nIVer) const override;
+    virtual sal_uInt16      GetVersion(sal_uInt16 nFileVersion) const override;
+
+    virtual bool GetPresentation(SfxItemPresentation ePres,
+        MapUnit eCoreMetric,
+        MapUnit ePresMetric,
+        OUString &rText,
+        const IntlWrapper * = nullptr) const override;
+
+    virtual bool            QueryValue(css::uno::Any& rVal, sal_uInt8 nMemberId = 0) const override;
+    virtual bool            PutValue(const css::uno::Any& rVal, sal_uInt8 nMemberId) override;
+
+    SvxTextRotateItem& operator=(const SvxTextRotateItem& rItem)
+    {
+        SetValue(rItem.GetValue());
+        return *this;
+    }
+
+    virtual bool operator==(const SfxPoolItem&) const override;
+
+    // our currently only degree values
+    void SetTopToBottom() { SetValue(2700); }
+    void SetBottomToTop() { SetValue(900); }
+    bool IsTopToBottom() const { return 2700 == GetValue(); }
+    bool IsBottomToTop() const { return  900 == GetValue(); }
+
+    void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
+};
+
+
 // class SvxCharRotateItem ----------------------------------------------
 
 /* [Description]
@@ -33,7 +79,7 @@
 
 */
 
-class EDITENG_DLLPUBLIC SvxCharRotateItem : public SfxUInt16Item
+class EDITENG_DLLPUBLIC SvxCharRotateItem : public SvxTextRotateItem
 {
     bool bFitToLine;
 public:
@@ -49,15 +95,15 @@ public:
     virtual sal_uInt16          GetVersion( sal_uInt16 nFileVersion ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
                                     OUString &rText,
                                     const IntlWrapper * = nullptr ) const override;
 
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
-    inline SvxCharRotateItem& operator=( const SvxCharRotateItem& rItem )
+    SvxCharRotateItem& operator=( const SvxCharRotateItem& rItem )
     {
         SetValue( rItem.GetValue() );
         SetFitToLine( rItem.IsFitToLine() );
@@ -65,12 +111,6 @@ public:
     }
 
     virtual bool             operator==( const SfxPoolItem& ) const override;
-
-    // our currently only degree values
-    void SetTopToBotton()                   { SetValue( 2700 ); }
-    void SetBottomToTop()                   { SetValue(  900 ); }
-    bool IsTopToBotton() const              { return 2700 == GetValue(); }
-    bool IsBottomToTop() const              { return  900 == GetValue(); }
 
     bool IsFitToLine() const                { return bFitToLine; }
     void SetFitToLine( bool b )             { bFitToLine = b; }

@@ -34,12 +34,11 @@ private:
     Selection              aOldSel;
     bool                   bMouseFlag;
 
-    DECL_LINK_TYPED(ChangedHdl, void *, void);
+    DECL_LINK(ChangedHdl, void *, void);
 
 protected:
 
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    void            SelectionChanged();
     virtual void    Resize() override;
     virtual void    GetFocus() override;
 
@@ -47,7 +46,7 @@ protected:
 public:
                     EditBox( vcl::Window* pParent, WinBits nBits );
 
-                    virtual ~EditBox();
+                    virtual ~EditBox() override;
     virtual void    dispose() override;
 
     MultiLineEdit*  GetEdit() {return pMEdit;}
@@ -64,7 +63,7 @@ class ArgEdit : public RefEdit
 {
 public:
             ArgEdit( vcl::Window* pParent, WinBits nBits );
-    virtual ~ArgEdit();
+    virtual ~ArgEdit() override;
     virtual void dispose() override;
 
     void    Init( ArgEdit* pPrevEdit, ArgEdit* pNextEdit,
@@ -83,7 +82,7 @@ private:
 
 // class ArgInput
 
-class ArgInput
+class ArgInput final
 {
 private:
     Link<ArgInput&,void>          aFxClickLink;
@@ -96,23 +95,14 @@ private:
     VclPtr<ArgEdit>        pEdArg;
     VclPtr<RefButton>      pRefBtn;
 
-    DECL_LINK_TYPED( FxBtnClickHdl, Button*, void );
-    DECL_LINK_TYPED( FxBtnFocusHdl, Control&, void );
-    DECL_LINK_TYPED( EdFocusHdl, Control&, void );
-    DECL_LINK_TYPED( EdModifyHdl, Edit&, void );
-
-protected:
-
-    void    FxClick();
-    void    FxFocus();
-    void    EdFocus();
-    void    EdModify();
+    DECL_LINK( FxBtnClickHdl, Button*, void );
+    DECL_LINK( FxBtnFocusHdl, Control&, void );
+    DECL_LINK( EdFocusHdl, Control&, void );
+    DECL_LINK( EdModifyHdl, Edit&, void );
 
 public:
 
     ArgInput();
-
-    virtual ~ArgInput() {}
 
     void        InitArgInput (  FixedText*      pftArg,
                                 PushButton*    pbtnFx,

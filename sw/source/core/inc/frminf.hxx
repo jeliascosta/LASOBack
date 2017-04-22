@@ -34,7 +34,7 @@ class SwTextFrameInfo
     static SwTwips GetLineStart( const SwTextCursor &rLine );
 
 public:
-    inline SwTextFrameInfo( const SwTextFrame *pTextFrame ) : pFrame(pTextFrame) { }
+    SwTextFrameInfo( const SwTextFrame *pTextFrame ) : pFrame(pTextFrame) { }
 
     // Does the paragraph fit into a single line?
     bool IsOneLine() const;
@@ -54,7 +54,7 @@ public:
     // Is a bullet point/symbol/etc. at the first text position?
     bool IsBullet( sal_Int32 nTextPos ) const;
 
-    // determine intentation for first line
+    // determine indentation for first line
     SwTwips GetFirstIndent() const;
 
     const SwTextFrame* GetFrame() const { return pFrame; }
@@ -63,7 +63,7 @@ public:
 
     // Is it a comparison? Returns position in frame.
     sal_Int32 GetBigIndent( sal_Int32& rFndPos,
-                        const SwTextFrame *pNextFrame = nullptr ) const;
+                        const SwTextFrame *pNextFrame ) const;
 };
 
 #endif

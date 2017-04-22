@@ -22,6 +22,7 @@
 
 #include <sal/config.h>
 
+#include <memory>
 #include <vector>
 
 #include <com/sun/star/container/XIndexReplace.hpp>
@@ -32,7 +33,7 @@
 namespace com { namespace sun { namespace star { namespace frame { class XModel; } } } }
 
 class SvxXMLListLevelStyleContext_Impl;
-typedef std::vector<SvxXMLListLevelStyleContext_Impl *> SvxXMLListStyle_Impl;
+typedef std::vector<rtl::Reference<SvxXMLListLevelStyleContext_Impl>> SvxXMLListStyle_Impl;
 
 class XMLOFF_DLLPUBLIC SvxXMLListStyleContext
     : public SvXMLStyleContext
@@ -43,7 +44,7 @@ class XMLOFF_DLLPUBLIC SvxXMLListStyleContext
 
     css::uno::Reference< css::container::XIndexReplace > xNumRules;
 
-    SvxXMLListStyle_Impl        *pLevelStyles;
+    std::unique_ptr<SvxXMLListStyle_Impl> pLevelStyles;
 
     sal_Int32                   nLevels;
     bool                        bConsecutive : 1;
@@ -65,7 +66,7 @@ public:
             const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
             bool bOutl = false );
 
-    virtual ~SvxXMLListStyleContext();
+    ~SvxXMLListStyleContext() override;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix,

@@ -27,19 +27,14 @@
 #include <com/sun/star/sheet/XSheetAnnotationShapeSupplier.hpp>
 #include <com/sun/star/sheet/XSheetAnnotations.hpp>
 #include <com/sun/star/sheet/XSheetAnnotationsSupplier.hpp>
+#include <com/sun/star/text/XText.hpp>
 #include <osl/diagnose.h>
 #include <oox/helper/attributelist.hxx>
 #include <oox/vml/vmlshape.hxx>
 #include "addressconverter.hxx"
-#include "biffinputstream.hxx"
 #include "drawingfragment.hxx"
 #include <svx/sdtaitm.hxx>
 #include "unitconverter.hxx"
-#include "drawingmanager.hxx"
-
-#include <com/sun/star/text/XText.hpp>
-
-using ::com::sun::star::text::XText;
 
 namespace oox {
 namespace xls {
@@ -89,7 +84,6 @@ CommentModel::CommentModel()
     , mbRowHidden(false)
     , mnTHA(0)
     , mnTVA(0)
-    , mbVisible( false )
 {
 }
 
@@ -125,7 +119,7 @@ void Comment::importComment( SequenceInputStream& rStrm )
     AddressConverter::convertToCellRangeUnchecked( maModel.maRange, aBinRange, getSheetIndex() );
 }
 
-RichStringRef Comment::createText()
+RichStringRef const & Comment::createText()
 {
     maModel.mxText.reset( new RichString( *this ) );
     return maModel.mxText;
@@ -134,63 +128,50 @@ RichStringRef Comment::createText()
 void Comment::finalizeImport()
 {
     // BIFF12 stores cell range instead of cell address, use first cell of this range
-    OSL_ENSURE( (maModel.maRange.StartColumn == maModel.maRange.EndColumn) &&
-        (maModel.maRange.StartRow == maModel.maRange.EndRow),
+    OSL_ENSURE( maModel.maRange.aStart == maModel.maRange.aEnd,
         "Comment::finalizeImport - comment anchor should be a single cell" );
-    CellAddress aNotePos( maModel.maRange.Sheet, maModel.maRange.StartColumn, maModel.maRange.StartRow );
-    if( getAddressConverter().checkCellAddress( aNotePos, true ) && maModel.mxText.get() ) try
+    if( getAddressConverter().checkCellAddress( maModel.maRange.aStart, true ) && maModel.mxText.get() ) try
     {
+        CellAddress aNotePos( maModel.maRange.aStart.Tab(), maModel.maRange.aStart.Col(), maModel.maRange.aStart.Row() );
         Reference< XSheetAnnotationsSupplier > xAnnosSupp( getSheet(), UNO_QUERY_THROW );
         Reference< XSheetAnnotations > xAnnos( xAnnosSupp->getAnnotations(), UNO_SET_THROW );
         // non-empty string required by note implementation (real text will be added below)
         xAnnos->insertNew( aNotePos, OUString( ' ' ) );
 
         // receive created note from cell (insertNew does not return the note)
-        Reference< XSheetAnnotationAnchor > xAnnoAnchor( getCell( aNotePos ), UNO_QUERY_THROW );
+        Reference< XSheetAnnotationAnchor > xAnnoAnchor( getCell( maModel.maRange.aStart ), UNO_QUERY_THROW );
         Reference< XSheetAnnotation > xAnno( xAnnoAnchor->getAnnotation(), UNO_SET_THROW );
         Reference< XSheetAnnotationShapeSupplier > xAnnoShapeSupp( xAnno, UNO_QUERY_THROW );
         Reference< XShape > xAnnoShape( xAnnoShapeSupp->getAnnotationShape(), UNO_SET_THROW );
 
         // convert shape formatting and visibility
         bool bVisible = true;
-        switch( getFilterType() )
+        // Add shape formatting properties (autoFill, colHidden and rowHidden are dropped)
+        PropertySet aCommentPr( xAnnoShape );
+        aCommentPr.setProperty( PROP_TextFitToSize, maModel.mbAutoScale );
+        aCommentPr.setProperty( PROP_MoveProtect, maModel.mbLocked );
+        aCommentPr.setProperty( PROP_TextHorizontalAdjust, lcl_ToHorizAlign( maModel.mnTHA ) );
+        aCommentPr.setProperty( PROP_TextVerticalAdjust, lcl_ToVertAlign( maModel.mnTVA ) );
+        if( maModel.maAnchor.Width > 0 && maModel.maAnchor.Height > 0 )
         {
-            case FILTER_OOXML:
-                {
-                    // Add shape formatting properties (autoFill, colHidden and rowHidden are dropped)
-                    PropertySet aCommentPr( xAnnoShape );
-                    aCommentPr.setProperty( PROP_TextFitToSize, maModel.mbAutoScale );
-                    aCommentPr.setProperty( PROP_MoveProtect, maModel.mbLocked );
-                    aCommentPr.setProperty( PROP_TextHorizontalAdjust, lcl_ToHorizAlign( maModel.mnTHA ) );
-                    aCommentPr.setProperty( PROP_TextVerticalAdjust, lcl_ToVertAlign( maModel.mnTVA ) );
-                    if( maModel.maAnchor.Width > 0 && maModel.maAnchor.Height > 0 )
-                    {
-                        xAnnoShape->setPosition( css::awt::Point( maModel.maAnchor.X, maModel.maAnchor.Y ) );
-                        xAnnoShape->setSize( css::awt::Size( maModel.maAnchor.Width, maModel.maAnchor.Height ) );
-                    }
+            xAnnoShape->setPosition( css::awt::Point( maModel.maAnchor.X, maModel.maAnchor.Y ) );
+            xAnnoShape->setSize( css::awt::Size( maModel.maAnchor.Width, maModel.maAnchor.Height ) );
+        }
 
-                    // convert shape formatting and visibility
-                    if( const ::oox::vml::ShapeBase* pNoteShape = getVmlDrawing().getNoteShape( aNotePos ) )
-                    {
-                        // position and formatting
-                        pNoteShape->convertFormatting( xAnnoShape );
-                        // visibility
-                        bVisible = pNoteShape->getTypeModel().mbVisible;
-                    }
-                }
-            break;
-            case FILTER_BIFF:
-                bVisible = maModel.mbVisible;
-            break;
-            case FILTER_UNKNOWN:
-            break;
+        // convert shape formatting and visibility
+        if( const ::oox::vml::ShapeBase* pNoteShape = getVmlDrawing().getNoteShape( maModel.maRange.aStart ) )
+        {
+            // position and formatting
+            pNoteShape->convertFormatting( xAnnoShape );
+            // visibility
+            bVisible = pNoteShape->getTypeModel().mbVisible;
         }
         xAnno->setIsVisible( bVisible );
 
         // insert text and convert text formatting
         maModel.mxText->finalizeImport();
         Reference< XText > xAnnoText( xAnnoShape, UNO_QUERY_THROW );
-        maModel.mxText->convert( xAnnoText, true );
+        maModel.mxText->convert( xAnnoText );
     }
     catch( Exception& )
     {

@@ -86,7 +86,6 @@ bool FieldCode::Read(HWPFile & hwpf)
     str1 = new hchar[len1_ ? len1_ : 1];
     str2 = new hchar[len2_ ? len2_ : 1];
     str3 = new hchar[len3_ ? len3_ : 1];
-    bin = new char[binlen];
 
     hwpf.Read2b(str1, len1_);
     hwpf.SkipBlock(len1 - (len1_ * sizeof(hchar)));
@@ -98,7 +97,7 @@ bool FieldCode::Read(HWPFile & hwpf)
     hwpf.SkipBlock(len3 - (len3_ * sizeof(hchar)));
     str3[len3_ ? (len3_ - 1) : 0] = 0;
 
-    hwpf.ReadBlock(bin, binlen);
+    hwpf.SkipBlock(binlen);
 
      if( type[0] == 3 && type[1] == 2 ){ /* It must create a format as created date. */
           DateCode *pDate = new DateCode;
@@ -281,7 +280,7 @@ bool TxtBox::Read(HWPFile & hwpf)
 
     UpdateBBox(this);
 
-    ncell = NCell();
+    ncell = nCell;
     if (!(ncell > 0)){
         return hwpf.SetState(HWP_InvalidFileFormat);
      }
@@ -726,7 +725,7 @@ bool MailMerge::Read(HWPFile & hwpf)
     return !hwpf.State();
 }
 
-// char compositon(23)
+// char composition(23)
 Compose::Compose()
     : HBox(CH_COMPOSE)
     , dummy(0)

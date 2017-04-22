@@ -21,7 +21,7 @@
 
 #include "mtrindlg.hxx"
 #include "scresid.hxx"
-#include "miscdlgs.hrc"
+#include "scres.hrc"
 
 ScMetricInputDlg::ScMetricInputDlg( vcl::Window*         pParent,
                                     const OString&  sDialogName,
@@ -96,7 +96,7 @@ long ScMetricInputDlg::GetInputValue() const
 
 // Handler:
 
-IMPL_LINK_NOARG_TYPED(ScMetricInputDlg, SetDefValHdl, Button*, void)
+IMPL_LINK_NOARG(ScMetricInputDlg, SetDefValHdl, Button*, void)
 {
     if ( m_pBtnDefVal->IsChecked() )
     {
@@ -107,7 +107,7 @@ IMPL_LINK_NOARG_TYPED(ScMetricInputDlg, SetDefValHdl, Button*, void)
         m_pEdValue->SetValue( nCurrentValue );
 }
 
-IMPL_LINK_NOARG_TYPED(ScMetricInputDlg, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(ScMetricInputDlg, ModifyHdl, Edit&, void)
 {
     m_pBtnDefVal->Check( nDefaultValue == m_pEdValue->GetValue() );
 }

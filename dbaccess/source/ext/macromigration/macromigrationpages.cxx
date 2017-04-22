@@ -112,7 +112,7 @@ namespace dbmm
         m_pStartMigration->Show(!m_pSaveAsLocation->GetText().isEmpty());
     }
 
-    IMPL_LINK_NOARG_TYPED( SaveDBDocPage, OnLocationModified, Edit&, void )
+    IMPL_LINK_NOARG( SaveDBDocPage, OnLocationModified, Edit&, void )
     {
         impl_updateLocationDependentItems();
     }
@@ -132,7 +132,7 @@ namespace dbmm
             aBaseName.append( ".backup" );
             aURLParser.setBase( aBaseName.makeStringAndClear() );
 
-            m_pLocationController->setURL( aURLParser.GetMainURL( INetURLObject::NO_DECODE ) );
+            m_pLocationController->setURL( aURLParser.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
             impl_updateLocationDependentItems();
         }
         catch( const Exception& )

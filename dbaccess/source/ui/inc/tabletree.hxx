@@ -48,10 +48,10 @@ protected:
 public:
     OTableTreeListBox(vcl::Window* pParent, WinBits nWinStyle);
 
-    void init(bool bVirtualRoot) { m_bVirtualRoot = bVirtualRoot; }
+    void init() { m_bVirtualRoot = true; }
 
-    typedef ::std::pair< OUString, bool > TTableViewName;
-    typedef ::std::vector< TTableViewName >         TNames;
+    typedef std::pair< OUString, bool > TTableViewName;
+    typedef std::vector< TTableViewName >         TNames;
 
     void    suppressEmptyFolders() { m_bNoEmptyFolders = true; }
 
@@ -71,7 +71,7 @@ public:
     */
     void    UpdateTableList(
                 const css::uno::Reference< css::sdbc::XConnection >& _rxConnection
-            )   throw(css::sdbc::SQLException, std::exception);
+            );
 
     /** fill the table list with the tables and views determined by the two given containers.
         The views sequence is used to determine which table is of type view.

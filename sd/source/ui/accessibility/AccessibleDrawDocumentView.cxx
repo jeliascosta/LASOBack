@@ -88,13 +88,11 @@ AccessibleDrawDocumentView::AccessibleDrawDocumentView (
       mpSdViewSh( pViewShell ),
       mpChildrenManager (nullptr)
 {
-    OSL_TRACE ("AccessibleDrawDocumentView");
     UpdateAccessibleName();
 }
 
 AccessibleDrawDocumentView::~AccessibleDrawDocumentView()
 {
-    OSL_TRACE ("~AccessibleDrawDocumentView");
     DBG_ASSERT (rBHelper.bDisposed || rBHelper.bInDispose,
         "~AccessibleDrawDocumentView: object has not been disposed");
 }
@@ -123,12 +121,11 @@ void AccessibleDrawDocumentView::Init()
     mpChildrenManager->UpdateSelection ();
 }
 
-void AccessibleDrawDocumentView::ViewForwarderChanged (ChangeType aChangeType,
-    const IAccessibleViewForwarder* pViewForwarder)
+void AccessibleDrawDocumentView::ViewForwarderChanged()
 {
-    AccessibleDocumentViewBase::ViewForwarderChanged (aChangeType, pViewForwarder);
+    AccessibleDocumentViewBase::ViewForwarderChanged();
     if (mpChildrenManager != nullptr)
-        mpChildrenManager->ViewForwarderChanged (aChangeType, pViewForwarder);
+        mpChildrenManager->ViewForwarderChanged();
 }
 
 /**  The page shape is created on every call at the moment (provided that
@@ -188,7 +185,6 @@ rtl::Reference<AccessiblePageShape> AccessibleDrawDocumentView::CreateDrawPageSh
 
 sal_Int32 SAL_CALL
     AccessibleDrawDocumentView::getAccessibleChildCount()
-    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed ();
 
@@ -203,7 +199,6 @@ sal_Int32 SAL_CALL
 
 uno::Reference<XAccessible> SAL_CALL
     AccessibleDrawDocumentView::getAccessibleChild (sal_Int32 nIndex)
-    throw (uno::RuntimeException, lang::IndexOutOfBoundsException, std::exception)
 {
     ThrowIfDisposed ();
 
@@ -237,7 +232,6 @@ uno::Reference<XAccessible> SAL_CALL
 
 OUString SAL_CALL
     AccessibleDrawDocumentView::getAccessibleName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -275,7 +269,6 @@ OUString SAL_CALL
 
 void SAL_CALL
     AccessibleDrawDocumentView::disposing (const lang::EventObject& rEventObject)
-    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed ();
 
@@ -293,19 +286,15 @@ void SAL_CALL
 
 void SAL_CALL
     AccessibleDrawDocumentView::propertyChange (const beans::PropertyChangeEvent& rEventObject)
-    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed ();
 
     AccessibleDocumentViewBase::propertyChange (rEventObject);
 
-    OSL_TRACE ("AccessibleDrawDocumentView::propertyChange");
     // add page switch event for slide show mode
     if (rEventObject.PropertyName == "CurrentPage" ||
         rEventObject.PropertyName == "PageChange")
     {
-        OSL_TRACE ("    current page changed");
-
         // Update the accessible name to reflect the current slide.
         UpdateAccessibleName();
 
@@ -328,25 +317,20 @@ void SAL_CALL
             }
         }
         else
-            OSL_TRACE ("View invalid");
+            SAL_WARN("sd", "View invalid");
         CommitChange(AccessibleEventId::PAGE_CHANGED,rEventObject.NewValue,rEventObject.OldValue);
     }
     else if ( rEventObject.PropertyName == "VisibleArea" )
     {
-        OSL_TRACE ("    visible area changed");
         if (mpChildrenManager != nullptr)
-            mpChildrenManager->ViewForwarderChanged (
-                IAccessibleViewForwarderListener::VISIBLE_AREA,
-                &maViewForwarder);
+            mpChildrenManager->ViewForwarderChanged();
     }
-    else if (rEventObject.PropertyName == OUString (RTL_CONSTASCII_USTRINGPARAM("ActiveLayer")))
+    else if (rEventObject.PropertyName == "ActiveLayer")
     {
         CommitChange(AccessibleEventId::PAGE_CHANGED,rEventObject.NewValue,rEventObject.OldValue);
     }
-    else if (rEventObject.PropertyName == OUString (RTL_CONSTASCII_USTRINGPARAM("UpdateAcc")))
+    else if (rEventObject.PropertyName == "UpdateAcc")
     {
-        OSL_TRACE ("    acc on current page should be updated");
-
         // The current page changed.  Update the children manager accordingly.
         uno::Reference<drawing::XDrawView> xView (mxController, uno::UNO_QUERY);
         if (xView.is() && mpChildrenManager!=nullptr)
@@ -385,23 +369,20 @@ void SAL_CALL
     }
     else
     {
-        OSL_TRACE ("  unhandled");
+        SAL_INFO("sd", "unhandled");
     }
-    OSL_TRACE ("  done");
 }
 
 // XServiceInfo
 
 OUString SAL_CALL
     AccessibleDrawDocumentView::getImplementationName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("AccessibleDrawDocumentView");
 }
 
 css::uno::Sequence< OUString> SAL_CALL
     AccessibleDrawDocumentView::getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     // Get list of supported service names from base class...
@@ -420,7 +401,6 @@ css::uno::Sequence< OUString> SAL_CALL
 
 uno::Any SAL_CALL
     AccessibleDrawDocumentView::queryInterface (const uno::Type & rType)
-    throw (uno::RuntimeException, std::exception)
 {
     uno::Any aReturn = AccessibleDocumentViewBase::queryInterface (rType);
     if ( ! aReturn.hasValue())
@@ -445,7 +425,6 @@ void SAL_CALL
 //=====  XAccessibleGroupPosition  =========================================
 uno::Sequence< sal_Int32 > SAL_CALL
     AccessibleDrawDocumentView::getGroupPosition( const uno::Any& rAny )
-    throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -519,7 +498,6 @@ uno::Sequence< sal_Int32 > SAL_CALL
 }
 
 OUString AccessibleDrawDocumentView::getObjectLink( const uno::Any& rAny )
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -553,7 +531,6 @@ OUString AccessibleDrawDocumentView::getObjectLink( const uno::Any& rAny )
 
 /// Create a name for this view.
 OUString AccessibleDrawDocumentView::CreateAccessibleName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     OUString sName;
 
@@ -606,7 +583,6 @@ OUString AccessibleDrawDocumentView::CreateAccessibleName()
 */
 OUString
     AccessibleDrawDocumentView::CreateAccessibleDescription()
-    throw (css::uno::RuntimeException, std::exception)
 {
     OUString sDescription;
 
@@ -658,7 +634,6 @@ OUString
 */
 bool
     AccessibleDrawDocumentView::implIsSelected( sal_Int32 nAccessibleChildIndex )
-    throw (uno::RuntimeException)
 {
     const SolarMutexGuard aSolarGuard;
     uno::Reference< view::XSelectionSupplier >  xSel( mxController, uno::UNO_QUERY );
@@ -700,7 +675,6 @@ bool
 */
 void
     AccessibleDrawDocumentView::implSelect( sal_Int32 nAccessibleChildIndex, bool bSelect )
-    throw (lang::IndexOutOfBoundsException, uno::RuntimeException)
 {
     const SolarMutexGuard aSolarGuard;
     uno::Reference< view::XSelectionSupplier >  xSel( mxController, uno::UNO_QUERY );
@@ -840,7 +814,6 @@ void SAL_CALL AccessibleDrawDocumentView::disposing()
 
 css::uno::Sequence< css::uno::Any >
         SAL_CALL AccessibleDrawDocumentView::getAccFlowTo(const css::uno::Any& rAny, sal_Int32 nType)
-        throw ( css::uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -868,7 +841,7 @@ css::uno::Sequence< css::uno::Any >
                             if ( xSelContext->getAccessibleRole() == AccessibleRole::PARAGRAPH )
                             {
                                 uno::Sequence<uno::Any> aRet( 1 );
-                                aRet[0] = uno::makeAny( xSel );
+                                aRet[0] <<= xSel;
                                 return aRet;
                             }
                         }
@@ -879,7 +852,7 @@ css::uno::Sequence< css::uno::Any >
             if ( xPara.is() )
             {
                 uno::Sequence<uno::Any> aRet( 1 );
-                aRet[0] = uno::makeAny( xPara );
+                aRet[0] <<= xPara;
                 return aRet;
             }
         }
@@ -909,7 +882,7 @@ css::uno::Sequence< css::uno::Any >
                                 xChildSelContext->getAccessibleRole() == AccessibleRole::PARAGRAPH )
                             {
                                 uno::Sequence<uno::Any> aRet( 1 );
-                                aRet[0] = uno::makeAny( xChildSel );
+                                aRet[0] <<= xChildSel;
                                 return aRet;
                             }
                         }
@@ -923,7 +896,7 @@ css::uno::Sequence< css::uno::Any >
             if ( xPara.is() )
             {
                 uno::Sequence<uno::Any> aRet( 1 );
-                aRet[0] = uno::makeAny( xPara );
+                aRet[0] <<= xPara;
                 return aRet;
             }
         }

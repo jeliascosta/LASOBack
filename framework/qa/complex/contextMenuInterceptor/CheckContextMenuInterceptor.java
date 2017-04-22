@@ -106,7 +106,7 @@ public class CheckContextMenuInterceptor
     {
         System.out.println(" **** Context Menu Interceptor *** ");
 
-        // intialize the test document
+        // initialize the test document
         xDrawDoc = DrawTools.createDrawDoc(xMSF);
 
         SOfficeFactory SOF = SOfficeFactory.getFactory(xMSF);
@@ -190,7 +190,7 @@ public class CheckContextMenuInterceptor
     {
         XInterface toolkit = null;
 
-        System.out.println("get accesibility...");
+        System.out.println("get accessibility...");
         try
         {
             toolkit = (XInterface) xMSF.createInstance("com.sun.star.awt.Toolkit");

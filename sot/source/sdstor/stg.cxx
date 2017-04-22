@@ -90,7 +90,7 @@ OLEStorageBase::~OLEStorageBase()
 {
     if( pEntry )
     {
-        DBG_ASSERT( pEntry->m_nRefCnt, "RefCount unter 0" );
+        DBG_ASSERT( pEntry->m_nRefCnt, "RefCount under 0" );
         if( !--pEntry->m_nRefCnt )
         {
             if( pEntry->m_bZombie )
@@ -128,7 +128,7 @@ bool OLEStorageBase::ValidateMode_Impl( StreamMode m, StgDirEntry* p )
     if( m == INTERNAL_MODE )
         return true;
     StreamMode nCurMode = ( p && p->m_nRefCnt ) ? p->m_nMode : StreamMode::SHARE_DENYALL;
-    if( ( m & STREAM_READWRITE ) == StreamMode::READ )
+    if( ( m & StreamMode::READWRITE ) == StreamMode::READ )
     {
         // only SHARE_DENYWRITE or SHARE_DENYALL allowed
         if( ( ( m & StreamMode::SHARE_DENYWRITE )
@@ -166,7 +166,7 @@ StorageStream::StorageStream( StgIo* p, StgDirEntry* q, StreamMode m )
         }
     }
     else
-        m &= ~StreamMode(STREAM_READWRITE);
+        m &= ~StreamMode(StreamMode::READWRITE);
     m_nMode = m;
 }
 
@@ -304,7 +304,7 @@ SvStorageInfo::SvStorageInfo( const StgDirEntry& rE )
 bool Storage::IsStorageFile( const OUString & rFileName )
 {
     StgIo aIo;
-    if( aIo.Open( rFileName, STREAM_STD_READ ) )
+    if( aIo.Open( rFileName, StreamMode::STD_READ ) )
         return aIo.Load();
     return false;
 }
@@ -478,7 +478,7 @@ Storage::Storage( StgIo* p, StgDirEntry* q, StreamMode m )
     if( q )
         q->m_aEntry.GetName( aName );
     else
-        m &= ~StreamMode(STREAM_READWRITE);
+        m &= ~StreamMode(StreamMode::READWRITE);
     m_nMode   = m;
     if( q && q->m_nRefCnt == 1 )
         q->m_nMode = m;
@@ -495,7 +495,7 @@ Storage::~Storage()
         if( pEntry->m_nRefCnt && pEntry->m_bDirect && (m_nMode & StreamMode::WRITE) )
             Commit();
         if( pEntry->m_nRefCnt == 1 )
-            pEntry->Invalidate();
+            pEntry->Invalidate(false);
     }
     // close the stream is root storage
     if( bIsRoot )
@@ -601,11 +601,8 @@ BaseStorage* Storage::OpenStorage( const OUString& rName, StreamMode m, bool bDi
 
 // Open a stream
 
-BaseStorageStream* Storage::OpenStream( const OUString& rName, StreamMode m, bool,
-                                        const OString* pB )
+BaseStorageStream* Storage::OpenStream( const OUString& rName, StreamMode m, bool )
 {
-    DBG_ASSERT(!pB, "Encryption not supported");
-
     if( !Validate() || !ValidateMode( m ) )
         return new StorageStream( pIo, nullptr, m );
     StgDirEntry* p = pIo->m_pTOC->Find( *pEntry, rName );
@@ -845,7 +842,7 @@ void Storage::SetClass( const SvGlobalName & rClass,
             SetError( aCompObj.GetError() );
         else
         {
-            StgOleStream aOle(*this, true);
+            StgOleStream aOle(*this);
             if( !aOle.Store() )
                 SetError( aOle.GetError() );
         }

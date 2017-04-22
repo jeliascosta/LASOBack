@@ -32,6 +32,7 @@
 
 #include <tools/errcode.hxx>
 #include <tools/rc.hxx>
+#include <tools/resary.hxx>
 #include <tools/wintypes.hxx>
 
 #include <unordered_map>
@@ -129,9 +130,6 @@ private:
 
     const css::uno::Reference< css::awt::XWindow>&
     getParentXWindow() const;
-
-    const OUString&
-    getContextProperty();
 
     css::uno::Reference< css::task::XInteractionHandler2 >
     getInteractionHandler();
@@ -250,12 +248,11 @@ private:
             css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > const & rContinuations );
 };
 
-class ErrorResource: private Resource
+class ErrorResource
 {
+    ResStringArray m_aStringArray;
 public:
-    explicit ErrorResource(ResId & rResId): Resource(rResId) {}
-
-    ~ErrorResource() { FreeResource(); }
+    explicit ErrorResource(ResId& rResId) : m_aStringArray(rResId) {}
 
     bool getString(ErrCode nErrorCode, OUString &rString) const;
 };

@@ -1,0 +1,597 @@
+#. extracted from svx/source/gallery2
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2016-07-04 20:03+0000\n"
+"Last-Translator: Christian Kühl <kuehl.christian@googlemail.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Accelerator-Marker: ~\n"
+"X-Generator: LibreOffice\n"
+"X-POOTLE-MTIME: 1467662582.000000\n"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_ACTUALIZE_PROGRESS\n"
+"string.text"
+msgid "Update"
+msgstr "Aktualisieren"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_FOPENERROR\n"
+"string.text"
+msgid "This file cannot be opened"
+msgstr "Diese Datei kann nicht geöffnet werden"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_NOTHEME\n"
+"string.text"
+msgid "Invalid Theme Name!"
+msgstr "Der Themenname ist ungültig!"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_EXTFORMAT1_UI\n"
+"string.text"
+msgid "Wave - Sound File"
+msgstr "Wave - Klangdatei"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_EXTFORMAT2_UI\n"
+"string.text"
+msgid "Audio Interchange File Format"
+msgstr "Audio Interchange File Format"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_EXTFORMAT3_UI\n"
+"string.text"
+msgid "AU - Sound File"
+msgstr "AU - Klangdatei"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_FILTER\n"
+"string.text"
+msgid "Graphics filter"
+msgstr "Grafikfilter"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_LENGTH\n"
+"string.text"
+msgid "Length:"
+msgstr "Länge:"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_SIZE\n"
+"string.text"
+msgid "Size:"
+msgstr "Größe:"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_DELETEDD\n"
+"string.text"
+msgid "Do you want to delete the linked file?"
+msgstr "Möchten Sie die verknüpfte Datei löschen?"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_SGIERROR\n"
+"string.text"
+msgid ""
+"This file cannot be opened.\n"
+"Do you want to enter a different search path? "
+msgstr ""
+"Diese Datei kann nicht geöffnet werden.\n"
+"Möchten Sie einen anderen Suchpfad angeben? "
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_NEWTHEME\n"
+"string.text"
+msgid "New Theme"
+msgstr "Neues Thema"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_BROWSER\n"
+"string.text"
+msgid "~Organizer..."
+msgstr "~Verwaltung..."
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_THEMEERR\n"
+"string.text"
+msgid ""
+"This theme name already exists.\n"
+"Please choose a different one."
+msgstr ""
+"Dieser Themenname existiert bereits.\n"
+"Bitte wählen Sie einen anderen Namen."
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_IMPORTTHEME\n"
+"string.text"
+msgid "I~mport..."
+msgstr "~Importieren..."
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_CREATETHEME\n"
+"string.text"
+msgid "New Theme..."
+msgstr "Neues Thema..."
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_DIALOGID\n"
+"string.text"
+msgid "Assign ID"
+msgstr "ID vergeben"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_TITLE\n"
+"string.text"
+msgid "Title"
+msgstr "Titel"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_PATH\n"
+"string.text"
+msgid "Path"
+msgstr "Pfad"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_ICONVIEW\n"
+"string.text"
+msgid "Icon View"
+msgstr "Symbolansicht"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXSTR_GALLERY_LISTVIEW\n"
+"string.text"
+msgid "Detailed View"
+msgstr "Detailansicht"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY1\n"
+"MN_ACTUALIZE\n"
+"menuitem.text"
+msgid "Update"
+msgstr "Aktualisieren"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY1\n"
+"MN_DELETE\n"
+"menuitem.text"
+msgid "~Delete"
+msgstr "~Löschen"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY1\n"
+"MN_RENAME\n"
+"menuitem.text"
+msgid "~Rename"
+msgstr "~Umbenennen"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY1\n"
+"MN_ASSIGN_ID\n"
+"menuitem.text"
+msgid "Assign ~ID"
+msgstr "~ID vergeben"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY1\n"
+"MN_PROPERTIES\n"
+"menuitem.text"
+msgid "Propert~ies..."
+msgstr "~Eigenschaften..."
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY2\n"
+"MN_ADD\n"
+"menuitem.text"
+msgid "~Insert"
+msgstr "~Hinzufügen"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY2\n"
+"MN_BACKGROUND\n"
+"menuitem.text"
+msgid "Insert as Bac~kground"
+msgstr "Als Hintergrund ver~wenden"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY2\n"
+"MN_PREVIEW\n"
+"menuitem.text"
+msgid "~Preview"
+msgstr "~Vorschau"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY2\n"
+"MN_TITLE\n"
+"menuitem.text"
+msgid "~Title"
+msgstr "~Titel"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY2\n"
+"MN_DELETE\n"
+"menuitem.text"
+msgid "~Delete"
+msgstr "~Löschen"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY2\n"
+"MN_COPYCLIPBOARD\n"
+"menuitem.text"
+msgid "~Copy"
+msgstr "~Kopie"
+
+#: gallery.src
+msgctxt ""
+"gallery.src\n"
+"RID_SVXMN_GALLERY2\n"
+"MN_PASTECLIPBOARD\n"
+"menuitem.text"
+msgid "~Insert"
+msgstr "~Hinzufügen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_3D\n"
+"string.text"
+msgid "3D Effects"
+msgstr "3D-Effekte"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_ANIMATIONS\n"
+"string.text"
+msgid "Animations"
+msgstr "Animationen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_BULLETS\n"
+"string.text"
+msgid "Bullets"
+msgstr "Aufzählungszeichen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_OFFICE\n"
+"string.text"
+msgid "Office"
+msgstr "Büro"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_FLAGS\n"
+"string.text"
+msgid "Flags"
+msgstr "Flaggen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_FLOWCHARTS\n"
+"string.text"
+msgid "Flow Charts"
+msgstr "Flussdiagramme"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_EMOTICONS\n"
+"string.text"
+msgid "Emoticons"
+msgstr "Emoticons"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_PHOTOS\n"
+"string.text"
+msgid "Pictures"
+msgstr "Fotos"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_BACKGROUNDS\n"
+"string.text"
+msgid "Backgrounds"
+msgstr "Hintergründe"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_HOMEPAGE\n"
+"string.text"
+msgid "Homepage"
+msgstr "Homepage"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_INTERACTION\n"
+"string.text"
+msgid "Interaction"
+msgstr "Interaktion"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_MAPS\n"
+"string.text"
+msgid "Maps"
+msgstr "Karten"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_PEOPLE\n"
+"string.text"
+msgid "People"
+msgstr "Personen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_SURFACES\n"
+"string.text"
+msgid "Surfaces"
+msgstr "Oberflächen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_COMPUTERS\n"
+"string.text"
+msgid "Computers"
+msgstr "Computer"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_DIAGRAMS\n"
+"string.text"
+msgid "Diagrams"
+msgstr "Diagramme"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_ENVIRONMENT\n"
+"string.text"
+msgid "Environment"
+msgstr "Umgebung"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_FINANCE\n"
+"string.text"
+msgid "Finance"
+msgstr "Finanzen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_TRANSPORT\n"
+"string.text"
+msgid "Transport"
+msgstr "Transport"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_TXTSHAPES\n"
+"string.text"
+msgid "Textshapes"
+msgstr "Textformen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_SOUNDS\n"
+"string.text"
+msgid "Sounds"
+msgstr "Klänge"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_SYMBOLS\n"
+"string.text"
+msgid "Symbols"
+msgstr "Symbole"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_MYTHEME\n"
+"string.text"
+msgid "My Theme"
+msgstr "Eigenes Thema"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_ARROWS\n"
+"string.text"
+msgid "Arrows"
+msgstr "Pfeile"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_BALLOONS\n"
+"string.text"
+msgid "Balloons"
+msgstr "Sprechblasen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_KEYBOARD\n"
+"string.text"
+msgid "Keyboard"
+msgstr "Tastatur"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_TIME\n"
+"string.text"
+msgid "Time"
+msgstr "Zeit"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_PRESENTATION\n"
+"string.text"
+msgid "Presentation"
+msgstr "Präsentation"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_CALENDAR\n"
+"string.text"
+msgid "Calendar"
+msgstr "Kalender"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_NAVIGATION\n"
+"string.text"
+msgid "Navigation"
+msgstr "Navigation"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_COMMUNICATION\n"
+"string.text"
+msgid "Communication"
+msgstr "Kommunikation"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_FINANCES\n"
+"string.text"
+msgid "Finances"
+msgstr "Finanzen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_COMPUTER\n"
+"string.text"
+msgid "Computers"
+msgstr "Computer"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_CLIMA\n"
+"string.text"
+msgid "Climate"
+msgstr "Klima"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_EDUCATION\n"
+"string.text"
+msgid "School & University"
+msgstr "Schule & Uni"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_TROUBLE\n"
+"string.text"
+msgid "Problem Solving"
+msgstr "Problemlösungen"
+
+#: galtheme.src
+msgctxt ""
+"galtheme.src\n"
+"RID_GALLERYSTR_THEME_SCREENBEANS\n"
+"string.text"
+msgid "Screen Beans"
+msgstr "ScreenBeans"

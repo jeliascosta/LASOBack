@@ -53,14 +53,14 @@ class MasterPageContainerChangeEvent;
     Entries are accessed via a Token, which is mostly a numerical index but
     whose values do not necessarily have to be consecutive.
 */
-class MasterPageContainer
+class MasterPageContainer final
 {
 public:
     typedef int Token;
     static const Token NIL_TOKEN = -1;
 
     MasterPageContainer();
-    virtual ~MasterPageContainer();
+    ~MasterPageContainer();
 
     void AddChangeListener (const Link<MasterPageContainerChangeEvent&,void>& rLink);
     void RemoveChangeListener (const Link<MasterPageContainerChangeEvent&,void>& rLink);
@@ -134,7 +134,7 @@ public:
     OUString GetURLForToken (Token aToken);
     OUString GetPageNameForToken (Token aToken);
     OUString GetStyleNameForToken (Token aToken);
-    SdPage* GetPageObjectForToken (Token aToken, bool bLoad=true);
+    SdPage* GetPageObjectForToken (Token aToken, bool bLoad);
     Origin GetOriginForToken (Token aToken);
     sal_Int32 GetTemplateIndexForToken (Token aToken);
     std::shared_ptr<MasterPageDescriptor> GetDescriptorForToken (Token aToken);
@@ -170,7 +170,7 @@ private:
 class MasterPageContainerChangeEvent
 {
 public:
-    enum EventType {
+    enum class EventType {
         // A master page was added to the container.
         CHILD_ADDED,
         // A master page was removed from the container.
@@ -183,8 +183,6 @@ public:
         DATA_CHANGED,
         // The TemplateIndex of a master page has changed.
         INDEX_CHANGED,
-        // More than one entries changed their TemplateIndex
-        INDEXES_CHANGED
     } meEventType;
 
     // Token of the container entry whose data changed or which was added or

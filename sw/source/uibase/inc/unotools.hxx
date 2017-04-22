@@ -28,9 +28,7 @@
 #include <actctrl.hxx>
 #include <com/sun/star/frame/XController.hpp>
 #include <com/sun/star/text/XTextCursor.hpp>
-#include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/awt/XControl.hpp>
-#include <com/sun/star/container/XNamed.hpp>
 #include <tools/resary.hxx>
 #include "swdllapi.h"
 
@@ -45,16 +43,6 @@ public:
     virtual void Command( const CommandEvent& rCEvt ) override;
     virtual Size GetOptimalSize() const override;
     virtual void Resize() override;
-};
-
-class MenuResource : public Resource
-{
-    ResStringArray      aMenuArray;
-
-public:
-    MenuResource(const ResId& rResId);
-
-    ResStringArray& GetMenuArray() {return aMenuArray;}
 };
 
 #define EX_SHOW_ONLINE_LAYOUT   0x001
@@ -77,7 +65,7 @@ class SW_DLLPUBLIC SwOneExampleFrame
     Idle            aLoadedIdle;
     Link<SwOneExampleFrame&,void> aInitializedLink;
 
-    MenuResource    aMenuRes;
+    ResStringArray  aMenuRes;
     OUString        sArgumentURL;
 
     SwView*         pModuleView;
@@ -89,16 +77,16 @@ class SW_DLLPUBLIC SwOneExampleFrame
 
     static  bool    bShowServiceNotAvailableMessage;
 
-    DECL_DLLPRIVATE_LINK_TYPED( TimeoutHdl, Idle*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( PopupHdl, Menu*, bool );
+    DECL_DLLPRIVATE_LINK( TimeoutHdl, Timer*, void );
+    DECL_DLLPRIVATE_LINK( PopupHdl, Menu*, bool );
 
     SAL_DLLPRIVATE void  CreateControl();
     SAL_DLLPRIVATE void  DisposeControl();
 
 public:
     SwOneExampleFrame(vcl::Window& rWin,
-                    sal_uInt32 nStyleFlags = EX_SHOW_ONLINE_LAYOUT,
-                    const Link<SwOneExampleFrame&,void>* pInitalizedLink = nullptr,
+                    sal_uInt32 nStyleFlags,
+                    const Link<SwOneExampleFrame&,void>* pInitalizedLink,
                     const OUString* pURL = nullptr);
     ~SwOneExampleFrame();
 

@@ -69,11 +69,6 @@ String RID_STR_XFORMS_VALUE_MIN_EXCL
     Text [ en-US ] = "The value must be greater than $2.";
 };
 
-String RID_STR_XFORMS_VALUE_PATTERN
-{
-    Text [ en-US ] = "The value does not match the pattern '$2'.";
-};
-
 String RID_STR_XFORMS_VALUE_TOTAL_DIGITS
 {
     Text [ en-US ] = "$2 digits allowed at most.";
@@ -144,19 +139,9 @@ String RID_STR_DATATYPE_DATETIME
     Text [ en-US ] = "Date and Time";
 };
 
-String RID_STR_DATATYPE_YEARMONTH
-{
-    Text [ en-US ] = "Month and year";
-};
-
 String RID_STR_DATATYPE_YEAR
 {
     Text [ en-US ] = "Year";
-};
-
-String RID_STR_DATATYPE_MONTHDAY
-{
-    Text [ en-US ] = "Month and day";
 };
 
 String RID_STR_DATATYPE_MONTH
@@ -182,6 +167,11 @@ String RID_STR_XFORMS_PATTERN_DOESNT_MATCH
 String RID_STR_XFORMS_BINDING_UI_NAME
 {
     Text [ en-US ] = "Binding" ;
+};
+
+String RID_STR_XFORMS_CANT_REMOVE_TYPE
+{
+    Text [ en-US ] = "This is a built-in type and cannot be removed." ;
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

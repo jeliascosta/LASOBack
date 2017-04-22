@@ -36,6 +36,7 @@ AVAILABLE TARGETS
        check                run unit tests and if in toplevel subsequentcheck
        unitcheck            run unit tests
        slowcheck            run slow unit tests
+       screenshot           create all screenshots
        subsequentcheck      run system tests (requires full installation)
        stagingcheck         run (unstable/failing) tests from staging area
                             (requires full installation)
@@ -122,6 +123,7 @@ INTERACTIVE VARIABLES:
        PARALLELISM     If not empty, pass argument on as the -j switch
                        to recursive make invocations. Useful to
                        lower/increase build parallelism individually.
+       verbose=t       Verbose mode: display all commands
        LEXFLAGS        Append flags for LEX scanner generator invocation.
        YACCFLAGS       Append flags for YACC parser generator invocation.
        CPPFLAGS        Append preprocessor flags for C/C++/ObjC/ObjC++ compilation.

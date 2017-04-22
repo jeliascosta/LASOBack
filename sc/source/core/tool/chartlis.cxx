@@ -24,8 +24,6 @@
 #include "document.hxx"
 #include "reftokenhelper.hxx"
 
-#include <boost/checked_delete.hpp>
-
 using namespace com::sun::star;
 using ::std::vector;
 using ::std::unary_function;
@@ -43,7 +41,6 @@ public:
             ScChartUnoData( const uno::Reference< chart::XChartDataChangeEventListener >& rL,
                             const uno::Reference< chart::XChartData >& rS ) :
                     xListener( rL ), xSource( rS ) {}
-            ~ScChartUnoData() {}
 
     const uno::Reference< chart::XChartDataChangeEventListener >& GetListener() const   { return xListener; }
     const uno::Reference< chart::XChartData >& GetSource() const                        { return xSource; }
@@ -194,7 +191,7 @@ uno::Reference< chart::XChartData > ScChartListener::GetUnoSource() const
 void ScChartListener::Notify( const SfxHint& rHint )
 {
     const ScHint* p = dynamic_cast<const ScHint*>(&rHint);
-    if (p && (p->GetId() & SC_HINT_DATACHANGED))
+    if (p && (p->GetId() == SfxHintId::ScDataChanged))
         SetUpdateQueue();
 }
 
@@ -402,21 +399,26 @@ ScChartHiddenRangeListener::~ScChartHiddenRangeListener()
     // empty d'tor
 }
 
+void ScChartListenerCollection::Init()
+{
+    aIdle.SetInvokeHandler( LINK( this, ScChartListenerCollection, TimerHdl ) );
+    aIdle.SetPriority( TaskPriority::REPAINT );
+    aIdle.SetDebugName( "sc::ScChartListenerCollection aIdle" );
+}
+
 ScChartListenerCollection::ScChartListenerCollection( ScDocument* pDocP ) :
     meModifiedDuringUpdate( SC_CLCUPDATE_NONE ),
-    aIdle( "sc ScChartListenerCollection" ),
     pDoc( pDocP )
 {
-    aIdle.SetIdleHdl( LINK( this, ScChartListenerCollection, TimerHdl ) );
+    Init();
 }
 
 ScChartListenerCollection::ScChartListenerCollection(
         const ScChartListenerCollection& rColl ) :
     meModifiedDuringUpdate( SC_CLCUPDATE_NONE ),
-    aIdle( "sc ScChartListenerCollection" ),
     pDoc( rColl.pDoc )
 {
-    aIdle.SetIdleHdl( LINK( this, ScChartListenerCollection, TimerHdl ) );
+    Init();
 }
 
 ScChartListenerCollection::~ScChartListenerCollection()
@@ -586,16 +588,15 @@ void ScChartListenerCollection::FreeUno( const uno::Reference< chart::XChartData
     std::for_each(aUsed.begin(), aUsed.end(), InsertChartListener(m_Listeners));
 
     // Now, delete the ones no longer needed.
-    std::for_each(aUnused.begin(), aUnused.end(), boost::checked_deleter<ScChartListener>());
+    std::for_each(aUnused.begin(), aUnused.end(), std::default_delete<ScChartListener>());
 }
 
 void ScChartListenerCollection::StartTimer()
 {
-    aIdle.SetPriority( SchedulerPriority::REPAINT );
     aIdle.Start();
 }
 
-IMPL_LINK_NOARG_TYPED(ScChartListenerCollection, TimerHdl, Idle *, void)
+IMPL_LINK_NOARG(ScChartListenerCollection, TimerHdl, Timer *, void)
 {
     if ( Application::AnyInput( VclInputFlags::KEYBOARD ) )
     {
@@ -654,8 +655,8 @@ void ScChartListenerCollection::SetDiffDirty(
                 {
                     const ScRangeListRef& rList1 = pCL->GetRangeList();
                     const ScRangeListRef& rList2 = pCLCmp->GetRangeList();
-                    bool b1 = rList1.Is();
-                    bool b2 = rList2.Is();
+                    bool b1 = rList1.is();
+                    bool b2 = rList2.is();
                     if ( b1 != b2 || (b1 && b2 && (*rList1 != *rList2)) )
                         pDoc->SetChartRangeList( pCL->GetName(), rList1 );
                 }
@@ -677,7 +678,7 @@ void ScChartListenerCollection::SetRangeDirty( const ScRange& rRange )
     {
         ScChartListener *const pCL = it.second.get();
         const ScRangeListRef& rList = pCL->GetRangeList();
-        if ( rList.Is() && rList->Intersects( rRange ) )
+        if ( rList.is() && rList->Intersects( rRange ) )
         {
             bDirty = true;
             pCL->SetDirty( true );
@@ -715,7 +716,7 @@ void ScChartListenerCollection::UpdateChartsContainingTab( SCTAB nTab )
 
 bool ScChartListenerCollection::operator==( const ScChartListenerCollection& r ) const
 {
-    // Do not use ScStrCollection::operator==() here that uses IsEqual und Compare.
+    // Do not use ScStrCollection::operator==() here that uses IsEqual and Compare.
     // Use ScChartListener::operator==() instead.
     if (pDoc != r.pDoc || m_Listeners.size() != r.m_Listeners.size())
         return false;

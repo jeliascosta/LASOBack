@@ -30,6 +30,7 @@
 #include <svl/itempool.hxx>
 #include <svl/languageoptions.hxx>
 #include <tools/lineend.hxx>
+#include <o3tl/typed_flags_set.hxx>
 
 #include <deque>
 #include <memory>
@@ -164,6 +165,8 @@ public:
                     ContentAttribs( const ContentAttribs& );
                     ~ContentAttribs();  // only for larger Tabs
 
+    void            dumpAsXml(struct _xmlTextWriter* pWriter) const;
+
     SvxTabStop      FindTabStop( sal_Int32 nCurPos, sal_uInt16 nDefTab );
     SfxItemSet&     GetItems()                          { return aAttribSet; }
     const SfxItemSet& GetItems() const { return aAttribSet; }
@@ -188,11 +191,13 @@ private:
     SvxFont         aDefFont;          // faster than ever from the pool!
     bool            bHasEmptyAttribs;
 
-                    CharAttribList( const CharAttribList& ) {;}
+                    CharAttribList( const CharAttribList& ) {}
 
 public:
                     CharAttribList();
                     ~CharAttribList();
+
+    void            dumpAsXml(struct _xmlTextWriter* pWriter) const;
 
     void            DeleteEmptyAttribs(  SfxItemPool& rItemPool );
 
@@ -248,13 +253,15 @@ public:
                     ContentNode(const ContentNode&) = delete;
     ContentNode&    operator=(const ContentNode&) = delete;
 
+    void            dumpAsXml(struct _xmlTextWriter* pWriter) const;
+
     ContentAttribs& GetContentAttribs()     { return aContentAttribs; }
     const ContentAttribs& GetContentAttribs() const { return aContentAttribs; }
     CharAttribList& GetCharAttribs()        { return aCharAttribList; }
     const CharAttribList& GetCharAttribs() const { return aCharAttribList; }
 
     void            ExpandAttribs( sal_Int32 nIndex, sal_Int32 nNewChars, SfxItemPool& rItemPool );
-    void            CollapsAttribs( sal_Int32 nIndex, sal_Int32 nDelChars, SfxItemPool& rItemPool );
+    void            CollapseAttribs( sal_Int32 nIndex, sal_Int32 nDelChars, SfxItemPool& rItemPool );
     void            AppendAttribs( ContentNode* pNextNode );
     void            CopyAndCutAttribs( ContentNode* pPrevNode, SfxItemPool& rPool, bool bKeepEndingAttribs );
 
@@ -332,14 +339,20 @@ enum class PortionKind
     HYPHENATOR  = 4
 };
 
-#define DELMODE_SIMPLE          0
-#define DELMODE_RESTOFWORD      1
-#define DELMODE_RESTOFCONTENT   2
+enum class DeleteMode {
+    Simple, RestOfWord, RestOfContent
+};
 
-#define CHAR_NORMAL            0x00
-#define CHAR_KANA              0x01
-#define CHAR_PUNCTUATIONLEFT   0x02
-#define CHAR_PUNCTUATIONRIGHT  0x04
+enum class AsianCompressionFlags {
+    Normal            = 0x00,
+    Kana              = 0x01,
+    PunctuationLeft   = 0x02,
+    PunctuationRight  = 0x04,
+};
+namespace o3tl {
+    template<> struct typed_flags<AsianCompressionFlags> : is_typed_flags<AsianCompressionFlags, 0x07> {};
+}
+
 
 
 // struct ExtraPortionInfos
@@ -353,12 +366,12 @@ struct ExtraPortionInfo
 
     sal_uInt16  nMaxCompression100thPercent;
 
-    sal_uInt8    nAsianCompressionTypes;
+    AsianCompressionFlags nAsianCompressionTypes;
     bool    bFirstCharIsRightPunktuation;
     bool    bCompressed;
 
-    long*    pOrgDXArray;
-    ::std::vector< sal_Int32 > lineBreaksList;
+    std::unique_ptr<long[]>    pOrgDXArray;
+    std::vector< sal_Int32 > lineBreaksList;
 
 
             ExtraPortionInfo();
@@ -373,7 +386,7 @@ struct ExtraPortionInfo
 class TextPortion
 {
 private:
-    ExtraPortionInfo*   pExtraInfos;
+    std::unique_ptr<ExtraPortionInfo> xExtraInfos;
     sal_Int32           nLen;
     Size                aOutSz;
     PortionKind         nKind;
@@ -383,8 +396,7 @@ private:
 
 public:
                 TextPortion( sal_Int32 nL )
-                : pExtraInfos( nullptr )
-                , nLen( nL )
+                : nLen( nL )
                 , aOutSz( -1, -1 )
                 , nKind( PortionKind::TEXT )
                 , nRightToLeftLevel( 0 )
@@ -393,8 +405,7 @@ public:
                 }
 
                 TextPortion( const TextPortion& r )
-                : pExtraInfos( nullptr )
-                , nLen( r.nLen )
+                : nLen( r.nLen )
                 , aOutSz( r.aOutSz )
                 , nKind( r.nKind )
                 , nRightToLeftLevel( r.nRightToLeftLevel )
@@ -409,7 +420,7 @@ public:
     Size&          GetSize()                   { return aOutSz; }
     const Size&    GetSize() const             { return aOutSz; }
 
-    PortionKind&   GetKind()                   { return nKind; }
+    void           SetKind(PortionKind n)      { nKind = n; }
     PortionKind    GetKind() const             { return nKind; }
 
     void           SetRightToLeftLevel( sal_uInt8 n ) { nRightToLeftLevel = n; }
@@ -421,8 +432,8 @@ public:
 
     bool           HasValidSize() const        { return aOutSz.Width() != (-1); }
 
-    ExtraPortionInfo*   GetExtraInfos() const { return pExtraInfos; }
-    void                SetExtraInfos( ExtraPortionInfo* p ) { delete pExtraInfos; pExtraInfos = p; }
+    ExtraPortionInfo*   GetExtraInfos() const { return xExtraInfos.get(); }
+    void                SetExtraInfos( ExtraPortionInfo* p ) { xExtraInfos.reset(p); }
 };
 
 
@@ -465,7 +476,7 @@ public:
 private:
     CharPosArrayType aPositions;
     long            nTxtWidth;
-    sal_uInt16          nStartPosX;
+    long            nStartPosX;
     sal_Int32          nStart;     // could be replaced by nStartPortion
     sal_Int32          nEnd;       // could be replaced by nEndPortion
     sal_Int32          nStartPortion;
@@ -519,7 +530,7 @@ public:
 
     sal_Int32       GetLen() const                  { return nEnd - nStart; }
 
-    sal_uInt16      GetStartPosX() const            { return nStartPosX; }
+    long            GetStartPosX() const            { return nStartPosX; }
     void            SetStartPosX( long start );
     Size            CalcTextSize( ParaPortion& rParaPortion );
 
@@ -579,7 +590,7 @@ private:
 
     sal_Int32              nInvalidPosStart;
     sal_Int32              nFirstLineOffset;   // For Writer-LineSpacing-Interpretation
-    sal_uInt16             nBulletX;
+    sal_Int32             nBulletX;
     sal_Int32              nInvalidDiff;
 
     bool                bInvalid            : 1;
@@ -605,8 +616,8 @@ public:
     bool                MustRepaint() const         { return bForceRepaint; }
     void                SetMustRepaint( bool bRP )  { bForceRepaint = bRP; }
 
-    sal_uInt16          GetBulletX() const          { return nBulletX; }
-    void                SetBulletX( sal_uInt16 n )      { nBulletX = n; }
+    sal_Int32           GetBulletX() const          { return nBulletX; }
+    void                SetBulletX( sal_Int32 n )   { nBulletX = n; }
 
     void                MarkInvalid( sal_Int32 nStart, sal_Int32 nDiff);
     void                MarkSelectionInvalid( sal_Int32 nStart, sal_Int32 nEnd );
@@ -747,7 +758,8 @@ public:
                     EditDoc( SfxItemPool* pItemPool );
                     ~EditDoc();
 
-    void ClearSpellErrors();
+    void            dumpAsXml(struct _xmlTextWriter* pWriter) const;
+    void            ClearSpellErrors();
 
     bool            IsModified() const      { return bModified; }
     void            SetModified( bool b );
@@ -791,8 +803,8 @@ public:
     void            InsertAttrib( const SfxPoolItem& rItem, ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd );
     void            InsertAttrib( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, const SfxPoolItem& rPoolItem );
     void            InsertAttribInSelection( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, const SfxPoolItem& rPoolItem );
-    bool            RemoveAttribs( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, sal_uInt16 nWhich = 0 );
-    bool            RemoveAttribs( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, EditCharAttrib*& rpStarting, EditCharAttrib*& rpEnding, sal_uInt16 nWhich = 0 );
+    bool            RemoveAttribs( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, sal_uInt16 nWhich );
+    bool            RemoveAttribs( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, EditCharAttrib*& rpStarting, EditCharAttrib*& rpEnding, sal_uInt16 nWhich );
     static void     FindAttribs( ContentNode* pNode, sal_Int32 nStartPos, sal_Int32 nEndPos, SfxItemSet& rCurSet );
 
     sal_Int32 GetPos(const ContentNode* pNode) const;
@@ -825,7 +837,7 @@ class EditEngineItemPool : public SfxItemPool
 public:
                         EditEngineItemPool( bool bPersistenRefCounts );
 protected:
-                        virtual ~EditEngineItemPool();
+                        virtual ~EditEngineItemPool() override;
 public:
 
     virtual SvStream&   Store( SvStream& rStream ) const override;

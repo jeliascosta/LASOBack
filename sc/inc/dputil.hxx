@@ -18,6 +18,7 @@
 
 class SvNumberFormatter;
 struct ScDPNumGroupInfo;
+enum class ScGeneralFunction;
 
 class ScDPUtil
 {
@@ -50,7 +51,7 @@ public:
 
     static OUString getDisplayedMeasureName(const OUString& rName, ScSubTotalFunc eFunc);
 
-    static ScSubTotalFunc toSubTotalFunc(css::sheet::GeneralFunction eGenFunc);
+    static ScSubTotalFunc toSubTotalFunc(ScGeneralFunction eGenFunc);
 };
 
 #endif

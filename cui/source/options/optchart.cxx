@@ -21,22 +21,97 @@
 #include <cuires.hrc>
 #include "optchart.hxx"
 #include <dialmgr.hxx>
+#include <vcl/builderfactory.hxx>
 #include <vcl/msgbox.hxx>
+#include <vcl/svapp.hxx>
 #include <svx/svxids.hrc>
 
-namespace
+Color SvxDefaultColorOptPage::GetSelectEntryColor() const
 {
-    void FillBoxChartColorLB(ColorLB *pLB, const SvxChartColorTable & rTab)
+    sal_Int32 nPos = m_pLbChartColors->GetSelectEntryPos();
+    Color aColor;
+    if (nPos != LISTBOX_ENTRY_NOTFOUND)
+        aColor = GetEntryColor(nPos);
+    return aColor;
+}
+
+void SvxDefaultColorOptPage::InsertColorEntry(const XColorEntry& rEntry, sal_Int32 nPos)
+{
+    const Color& rColor = rEntry.GetColor();
+    const OUString& rStr = rEntry.GetName();
+
+    const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
+    Size aImageSize = rStyleSettings.GetListBoxPreviewDefaultPixelSize();
+
+    VclPtr<VirtualDevice> xDevice = VclPtr<VirtualDevice>::Create();
+    xDevice->SetOutputSize(aImageSize);
+    const ::tools::Rectangle aRect(Point(0, 0), aImageSize);
+    xDevice->SetFillColor(rColor);
+    xDevice->SetLineColor(rStyleSettings.GetDisableColor());
+    xDevice->DrawRect(aRect);
+    Bitmap aBitmap(xDevice->GetBitmap(Point(0, 0), xDevice->GetOutputSize()));
+
+    nPos = m_pLbChartColors->InsertEntry(rStr, Image(aBitmap), nPos);
+
+    if (nPos != LISTBOX_ERROR)
     {
-        pLB->SetUpdateMode(false);
-        pLB->Clear();
-        long nCount = rTab.size();
-        for(long i = 0; i < nCount; ++i)
+        if ( static_cast<size_t>(nPos) < aColorList.size() )
         {
-            pLB->Append(rTab[i]);
+            ImpColorList::iterator it = aColorList.begin();
+            std::advance( it, nPos );
+            aColorList.insert( it, rColor );
         }
-        pLB->SetUpdateMode(true);
+        else
+        {
+            aColorList.push_back( rColor );
+            nPos = aColorList.size() - 1;
+        }
     }
+}
+
+void SvxDefaultColorOptPage::RemoveColorEntry(sal_Int32 nPos)
+{
+    m_pLbChartColors->RemoveEntry(nPos);
+    if ( 0 <= nPos && static_cast<size_t>(nPos) < aColorList.size() )
+    {
+        ImpColorList::iterator it = aColorList.begin();
+        std::advance(it, nPos);
+        aColorList.erase(it);
+    }
+}
+
+void SvxDefaultColorOptPage::ClearColorEntries()
+{
+    aColorList.clear();
+    m_pLbChartColors->Clear();
+}
+
+Color SvxDefaultColorOptPage::GetEntryColor(sal_Int32 nPos) const
+{
+    Color aColor;
+    if (0 <= nPos && static_cast<size_t>(nPos) < aColorList.size())
+        aColor = aColorList[nPos];
+    return aColor;
+}
+
+void SvxDefaultColorOptPage::ModifyColorEntry(const XColorEntry& rEntry, sal_Int32 nPos)
+{
+    RemoveColorEntry(nPos);
+    InsertColorEntry(rEntry, nPos);
+}
+
+void SvxDefaultColorOptPage::FillBoxChartColorLB()
+{
+    if (!pColorConfig)
+        return;
+
+    const SvxChartColorTable & rTab = pColorConfig->GetColorList();
+    m_pLbChartColors->SetUpdateMode(false);
+    ClearColorEntries();
+    long nCount = rTab.size();
+    for (long i = 0; i < nCount; ++i)
+        InsertColorEntry(rTab[i]);
+    m_pLbChartColors->SetUpdateMode(true);
 }
 
 SvxDefaultColorOptPage::SvxDefaultColorOptPage(vcl::Window* pParent, const SfxItemSet& rInAttrs)
@@ -109,9 +184,7 @@ void SvxDefaultColorOptPage::dispose()
 
 void SvxDefaultColorOptPage::Construct()
 {
-    if( pColorConfig )
-        FillBoxChartColorLB(m_pLbChartColors, pColorConfig->GetColorList());
-
+    FillBoxChartColorLB();
     FillColorBox();
 
     m_pLbChartColors->SelectEntryPos( 0 );
@@ -149,7 +222,7 @@ void SvxDefaultColorOptPage::FillColorBox()
 
     for( long i = 0; i < nCount; i++ )
     {
-        XColorEntry* pColorEntry = pColorList->GetColor( i );
+        const XColorEntry* pColorEntry = pColorList->GetColor(i);
         m_pValSetColorBox->InsertItem( i + 1, pColorEntry->GetColor(), pColorEntry->GetName() );
     }
 }
@@ -163,7 +236,7 @@ long SvxDefaultColorOptPage::GetColorIndex( const Color& rCol )
 
         for( long i = nCount - 1; i >= 0; i-- )         // default chart colors are at the end of the table
         {
-            XColorEntry* pColorEntry = pColorList->GetColor( i );
+            const XColorEntry* pColorEntry = pColorList->GetColor(i);
             if( pColorEntry && pColorEntry->GetColor() == rCol )
                 return pColorList->GetIndex( pColorEntry->GetName() );
         }
@@ -178,13 +251,13 @@ long SvxDefaultColorOptPage::GetColorIndex( const Color& rCol )
 // ResetToDefaults
 
 
-IMPL_LINK_NOARG_TYPED(SvxDefaultColorOptPage, ResetToDefaults, Button*, void)
+IMPL_LINK_NOARG(SvxDefaultColorOptPage, ResetToDefaults, Button*, void)
 {
     if( pColorConfig )
     {
         pColorConfig->GetColorList().useDefault();
 
-        FillBoxChartColorLB(m_pLbChartColors, pColorConfig->GetColorList());
+        FillBoxChartColorLB();
 
         m_pLbChartColors->GetFocus();
         m_pLbChartColors->SelectEntryPos( 0 );
@@ -195,7 +268,7 @@ IMPL_LINK_NOARG_TYPED(SvxDefaultColorOptPage, ResetToDefaults, Button*, void)
 // AddChartColor
 
 
-IMPL_LINK_NOARG_TYPED(SvxDefaultColorOptPage, AddChartColor, Button*, void)
+IMPL_LINK_NOARG(SvxDefaultColorOptPage, AddChartColor, Button*, void)
 {
     if( pColorConfig )
     {
@@ -203,7 +276,7 @@ IMPL_LINK_NOARG_TYPED(SvxDefaultColorOptPage, AddChartColor, Button*, void)
 
         pColorConfig->GetColorList().append (XColorEntry ( black, pColorConfig->GetColorList().getDefaultName(pColorConfig->GetColorList().size())));
 
-        FillBoxChartColorLB(m_pLbChartColors, pColorConfig->GetColorList());
+        FillBoxChartColorLB();
 
         m_pLbChartColors->GetFocus();
         m_pLbChartColors->SelectEntryPos( pColorConfig->GetColorList().size() - 1 );
@@ -214,7 +287,7 @@ IMPL_LINK_NOARG_TYPED(SvxDefaultColorOptPage, AddChartColor, Button*, void)
 // RemoveChartColor
 
 
-IMPL_LINK_TYPED( SvxDefaultColorOptPage, RemoveChartColor, Button*, pButton, void )
+IMPL_LINK( SvxDefaultColorOptPage, RemoveChartColor, Button*, pButton, void )
 {
     sal_Int32 nIndex = m_pLbChartColors->GetSelectEntryPos();
 
@@ -231,7 +304,7 @@ IMPL_LINK_TYPED( SvxDefaultColorOptPage, RemoveChartColor, Button*, pButton, voi
         {
             pColorConfig->GetColorList().remove( nIndex  );
 
-            FillBoxChartColorLB(m_pLbChartColors, pColorConfig->GetColorList());
+            FillBoxChartColorLB();
 
             m_pLbChartColors->GetFocus();
 
@@ -245,9 +318,9 @@ IMPL_LINK_TYPED( SvxDefaultColorOptPage, RemoveChartColor, Button*, pButton, voi
     }
 }
 
-IMPL_LINK_TYPED( SvxDefaultColorOptPage, ListClickedHdl, ListBox&, _rBox, void )
+IMPL_LINK_NOARG( SvxDefaultColorOptPage, ListClickedHdl, ListBox&, void )
 {
-    Color aCol = static_cast<ColorLB&>(_rBox).GetSelectEntryColor();
+    Color aCol = GetSelectEntryColor();
 
     long nIndex = GetColorIndex( aCol );
 
@@ -257,14 +330,14 @@ IMPL_LINK_TYPED( SvxDefaultColorOptPage, ListClickedHdl, ListBox&, _rBox, void )
         m_pValSetColorBox->SelectItem( nIndex + 1 );       // ValueSet is 1-based
 }
 
-IMPL_LINK_NOARG_TYPED(SvxDefaultColorOptPage, BoxClickedHdl, ValueSet*, void)
+IMPL_LINK_NOARG(SvxDefaultColorOptPage, BoxClickedHdl, ValueSet*, void)
 {
     sal_Int32 nIdx = m_pLbChartColors->GetSelectEntryPos();
     if( nIdx != LISTBOX_ENTRY_NOTFOUND )
     {
         const XColorEntry aEntry( m_pValSetColorBox->GetItemColor( m_pValSetColorBox->GetSelectItemId() ), m_pLbChartColors->GetSelectEntry() );
 
-        m_pLbChartColors->Modify( aEntry, nIdx );
+        ModifyColorEntry(aEntry, nIdx);
         pColorConfig->ReplaceColorByIndex( nIdx, aEntry );
 
         m_pLbChartColors->SelectEntryPos( nIdx );  // reselect entry

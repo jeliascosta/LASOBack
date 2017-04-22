@@ -64,11 +64,11 @@ namespace sd { namespace slidesorter {
 
     Note that this class is not in its final state.
 */
-class SlideSorter
+class SlideSorter final
 {
     friend class controller::SlotManager;
 public:
-    virtual ~SlideSorter();
+    ~SlideSorter();
 
     /// Forbid copy construction and copy assignment
     SlideSorter(const SlideSorter&) = delete;
@@ -160,7 +160,7 @@ public:
     */
     ViewShellBase* GetViewShellBase() const { return mpViewShellBase;}
 
-    void Paint (const Rectangle& rRepaintArea);
+    void Paint (const ::tools::Rectangle& rRepaintArea);
 
     /** Place and size the controls and windows.  You may want to call this
         method when something has changed that for instance affects the
@@ -181,13 +181,13 @@ public:
     /** Return a collection of properties that are used throughout the slide
         sorter.
     */
-    std::shared_ptr<controller::Properties> GetProperties() const;
+    std::shared_ptr<controller::Properties> const & GetProperties() const;
 
     /** Return the active theme which gives access to colors and fonts.
     */
-    std::shared_ptr<view::Theme> GetTheme() const;
+    std::shared_ptr<view::Theme> const & GetTheme() const;
 
-protected:
+private:
     /** This virtual method makes it possible to create a specialization of
         the slide sorter view shell that works with its own implementation
         of model, view, and controller.  The default implementation simply
@@ -202,19 +202,12 @@ protected:
     */
     model::SlideSorterModel* CreateModel();
 
-    /** Create the view for the view shell.  When called from the default
-        implementation of CreateModelViewController() then the model but not
-        the controller does exist.  Test their pointers when in doubt.
-    */
-    view::SlideSorterView* CreateView();
-
     /** Create the controller for the view shell.  When called from the default
         implementation of CreateModelViewController() then both the view and
         the controller do exist.  Test their pointers when in doubt.
     */
     controller::SlideSorterController* CreateController();
 
-private:
     bool mbIsValid;
 
     std::unique_ptr<controller::SlideSorterController> mpSlideSorterController;

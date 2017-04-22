@@ -21,7 +21,6 @@
 #include <sfx2/sidebar/DeckTitleBar.hxx>
 #include <sfx2/sidebar/Panel.hxx>
 #include <sfx2/sidebar/PanelTitleBar.hxx>
-#include <sfx2/sidebar/SidebarResource.hxx>
 #include <sfx2/sidebar/TabBar.hxx>
 #include <sfx2/sidebar/Theme.hxx>
 #include <sfx2/sidebar/SidebarChildWindow.hxx>
@@ -35,11 +34,11 @@
 #include <sfx2/sfxsids.hrc>
 #include <sfx2/titledockwin.hxx>
 #include "sfxlocal.hrc"
+#include "Sidebar.hrc"
 #include <framework/ContextChangeEventMultiplexerTunnel.hxx>
 #include <vcl/floatwin.hxx>
 #include <vcl/fixed.hxx>
 #include "splitwin.hxx"
-#include <svl/smplhint.hxx>
 #include <tools/link.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <comphelper/processfactory.hxx>
@@ -62,7 +61,6 @@ using namespace css::uno;
 namespace
 {
     const static char gsReadOnlyCommandName[] = ".uno:EditDoc";
-    const static char gsHideSidebarCommandName[] = ".uno:Sidebar";
     const static sal_Int32 gnWidthCloseThreshold (70);
     const static sal_Int32 gnWidthOpenThreshold (40);
 }
@@ -96,7 +94,7 @@ SidebarController::SidebarController (
               mpParentWindow,
               rxFrame,
               [this](const ::rtl::OUString& rsDeckId) { return this->OpenThenToggleDeck(rsDeckId); },
-              [this](const Rectangle& rButtonBox,const ::std::vector<TabBar::DeckMenuData>& rMenuData) { return this->ShowPopupMenu(rButtonBox,rMenuData); },
+              [this](const tools::Rectangle& rButtonBox,const ::std::vector<TabBar::DeckMenuData>& rMenuData) { return this->ShowPopupMenu(rButtonBox,rMenuData); },
               this)),
       mxFrame(rxFrame),
       maCurrentContext(OUString(), OUString()),
@@ -108,7 +106,6 @@ SidebarController::SidebarController (
       maAsynchronousDeckSwitch(),
       mbIsDeckRequestedOpen(),
       mbIsDeckOpen(),
-      mbCanDeckBeOpened(true),
       mnSavedSidebarWidth(pParentWindow->GetSizePixel().Width()),
       maFocusManager([this](const Panel& rPanel){ return this->ShowPanel(rPanel); }),
       mxReadOnlyModeDispatch(),
@@ -119,25 +116,35 @@ SidebarController::SidebarController (
 {
     // Decks and panel collections for this sidebar
     mpResourceManager = o3tl::make_unique<ResourceManager>();
+}
 
-    registerSidebarForFrame(this, mxFrame->getController());
-    rxFrame->addFrameActionListener(this);
+rtl::Reference<SidebarController> SidebarController::create(
+    SidebarDockingWindow* pParentWindow,
+    const css::uno::Reference<css::frame::XFrame>& rxFrame)
+{
+    rtl::Reference<SidebarController> instance(
+        new SidebarController(pParentWindow, rxFrame));
+
+    registerSidebarForFrame(instance.get(), rxFrame->getController());
+    rxFrame->addFrameActionListener(instance.get());
     // Listen for window events.
-    mpParentWindow->AddEventListener(LINK(this, SidebarController, WindowEventHandler));
+    instance->mpParentWindow->AddEventListener(LINK(instance.get(), SidebarController, WindowEventHandler));
 
     // Listen for theme property changes.
     Theme::GetPropertySet()->addPropertyChangeListener(
         "",
-        static_cast<css::beans::XPropertyChangeListener*>(this));
+        static_cast<css::beans::XPropertyChangeListener*>(instance.get()));
 
     // Get the dispatch object as preparation to listen for changes of
     // the read-only state.
     const util::URL aURL (Tools::GetURL(gsReadOnlyCommandName));
-    mxReadOnlyModeDispatch = Tools::GetDispatch(mxFrame, aURL);
-    if (mxReadOnlyModeDispatch.is())
-        mxReadOnlyModeDispatch->addStatusListener(this, aURL);
+    instance->mxReadOnlyModeDispatch = Tools::GetDispatch(rxFrame, aURL);
+    if (instance->mxReadOnlyModeDispatch.is())
+        instance->mxReadOnlyModeDispatch->addStatusListener(instance.get(), aURL);
 
-    SwitchToDeck(gsDefaultDeckId);
+    instance->SwitchToDeck(gsDefaultDeckId);
+
+    return instance;
 }
 
 SidebarController::~SidebarController()
@@ -168,10 +175,9 @@ void SidebarController::registerSidebarForFrame(SidebarController* pController, 
     css::uno::Reference<css::ui::XContextChangeEventMultiplexer> xMultiplexer (
         css::ui::ContextChangeEventMultiplexer::get(
             ::comphelper::getProcessComponentContext()));
-    if (xMultiplexer.is())
-        xMultiplexer->addContextChangeEventListener(
-            static_cast<css::ui::XContextChangeEventListener*>(pController),
-            xController);
+    xMultiplexer->addContextChangeEventListener(
+        static_cast<css::ui::XContextChangeEventListener*>(pController),
+        xController);
 }
 
 void SidebarController::unregisterSidebarForFrame(SidebarController* pController, const css::uno::Reference<css::frame::XController>& xController)
@@ -180,10 +186,9 @@ void SidebarController::unregisterSidebarForFrame(SidebarController* pController
     css::uno::Reference<css::ui::XContextChangeEventMultiplexer> xMultiplexer (
         css::ui::ContextChangeEventMultiplexer::get(
             ::comphelper::getProcessComponentContext()));
-    if (xMultiplexer.is())
-        xMultiplexer->removeContextChangeEventListener(
-            static_cast<css::ui::XContextChangeEventListener*>(pController),
-            xController);
+    xMultiplexer->removeContextChangeEventListener(
+        static_cast<css::ui::XContextChangeEventListener*>(pController),
+        xController);
 }
 
 void SidebarController::disposeDecks()
@@ -260,7 +265,6 @@ void SAL_CALL SidebarController::disposing()
 }
 
 void SAL_CALL SidebarController::notifyContextChangeEvent (const css::ui::ContextChangeEventObject& rEvent)
-    throw(css::uno::RuntimeException, std::exception)
 {
     // Update to the requested new context asynchronously to avoid
     // subtle errors caused by SFX2 which in rare cases can not
@@ -281,19 +285,16 @@ void SAL_CALL SidebarController::notifyContextChangeEvent (const css::ui::Contex
 }
 
 void SAL_CALL SidebarController::disposing (const css::lang::EventObject& )
-    throw(css::uno::RuntimeException, std::exception)
 {
     dispose();
 }
 
 void SAL_CALL SidebarController::propertyChange (const css::beans::PropertyChangeEvent& )
-    throw(css::uno::RuntimeException, std::exception)
 {
     maPropertyChangeForwarder.RequestCall();
 }
 
 void SAL_CALL SidebarController::statusChanged (const css::frame::FeatureStateEvent& rEvent)
-    throw(css::uno::RuntimeException, std::exception)
 {
     bool bIsReadWrite (true);
     if (rEvent.IsEnabled)
@@ -314,7 +315,6 @@ void SAL_CALL SidebarController::statusChanged (const css::frame::FeatureStateEv
 }
 
 void SAL_CALL SidebarController::requestLayout()
-    throw(css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nMinimalWidth = 0;
     if (mpCurrentDeck && !mpCurrentDeck->isDisposed())
@@ -352,18 +352,13 @@ void SidebarController::NotifyResize()
         mnSavedSidebarWidth = nWidth;
 
     bool bIsDeckVisible;
-    if (mbCanDeckBeOpened)
-    {
-        const bool bIsOpening (nWidth > mnWidthOnSplitterButtonDown);
-        if (bIsOpening)
-            bIsDeckVisible = nWidth >= nTabBarDefaultWidth + gnWidthOpenThreshold;
-        else
-            bIsDeckVisible = nWidth >= nTabBarDefaultWidth + gnWidthCloseThreshold;
-        mbIsDeckRequestedOpen = bIsDeckVisible;
-        UpdateCloseIndicator(!bIsDeckVisible);
-    }
+    const bool bIsOpening (nWidth > mnWidthOnSplitterButtonDown);
+    if (bIsOpening)
+        bIsDeckVisible = nWidth >= nTabBarDefaultWidth + gnWidthOpenThreshold;
     else
-        bIsDeckVisible = false;
+        bIsDeckVisible = nWidth >= nTabBarDefaultWidth + gnWidthCloseThreshold;
+    mbIsDeckRequestedOpen = bIsDeckVisible;
+    UpdateCloseIndicator(!bIsDeckVisible);
 
     if (mpCurrentDeck && !mpCurrentDeck->isDisposed())
     {
@@ -401,8 +396,8 @@ void SidebarController::NotifyResize()
     sal_Int32 nMinimalWidth = 0;
     if (mpCurrentDeck && !mpCurrentDeck->isDisposed())
     {
-        DeckTitleBar* pTitleBar = mpCurrentDeck->GetTitleBar();
-        if (pTitleBar != nullptr && pTitleBar->IsVisible())
+        VclPtr<DeckTitleBar> pTitleBar = mpCurrentDeck->GetTitleBar();
+        if (pTitleBar && pTitleBar->IsVisible())
             pTitleBar->SetCloserVisible(CanModifyChildWindowWidth());
         nMinimalWidth = mpCurrentDeck->GetMinimalWidth();
     }
@@ -424,7 +419,7 @@ void SidebarController::ProcessNewWidth (const sal_Int32 nNewWidth)
     else
     {
         // Deck became too small.  Close it completely.
-        // If window is wider than the tab bar then mark the deck as being visible, even when it its not.
+        // If window is wider than the tab bar then mark the deck as being visible, even when it is not.
         // This is to trigger an adjustment of the width to the width of the tab bar.
         mbIsDeckOpen = true;
         RequestCloseDeck();
@@ -640,8 +635,8 @@ void SidebarController::CreatePanels(const ::rtl::OUString& rDeckId, const Conte
 
                     // Depending on the context we have to change the command
                     // for the "more options" dialog.
-                    PanelTitleBar* pTitleBar = aNewPanels[nWriteIndex]->GetTitleBar();
-                    if (pTitleBar != nullptr)
+                    VclPtr<PanelTitleBar> pTitleBar = aNewPanels[nWriteIndex]->GetTitleBar();
+                    if (pTitleBar)
                     {
                         pTitleBar->SetMoreOptionsCommand(
                             rPanelContexDescriptor.msMenuCommand,
@@ -692,14 +687,14 @@ void SidebarController::SwitchToDeck (
     if (aPanelContextDescriptors.empty())
     {
         // There are no panels to be displayed in the current context.
-        if (EnumContext::GetContextEnum(rContext.msContext) != EnumContext::Context_Empty)
+        if (vcl::EnumContext::GetContextEnum(rContext.msContext) != vcl::EnumContext::Context::Empty)
         {
             // Switch to the "empty" context and try again.
             SwitchToDeck(
                 rDeckDescriptor,
                 Context(
                     rContext.msApplication,
-                    EnumContext::GetContextName(EnumContext::Context_Empty)));
+                    vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Empty)));
             return;
         }
         else
@@ -723,8 +718,8 @@ void SidebarController::SwitchToDeck (
 
 #ifdef DEBUG
     // Show the context name in the deck title bar.
-    DeckTitleBar* pDebugTitleBar = mpCurrentDeck->GetTitleBar();
-    if (pDebugTitleBar != NULL)
+    VclPtr<DeckTitleBar> pDebugTitleBar = mpCurrentDeck->GetTitleBar();
+    if (pDebugTitleBar)
         pDebugTitleBar->SetTitle(rDeckDescriptor.msTitle + " (" + maCurrentContext.msContext + ")");
 #endif
 
@@ -869,18 +864,18 @@ Reference<ui::XUIElement> SidebarController::CreateUIElement (
     }
 }
 
-IMPL_LINK_TYPED(SidebarController, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK(SidebarController, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
     if (rEvent.GetWindow() == mpParentWindow)
     {
         switch (rEvent.GetId())
         {
-            case VCLEVENT_WINDOW_SHOW:
-            case VCLEVENT_WINDOW_RESIZE:
+            case VclEventId::WindowShow:
+            case VclEventId::WindowResize:
                 NotifyResize();
                 break;
 
-            case VCLEVENT_WINDOW_DATACHANGED:
+            case VclEventId::WindowDataChanged:
                 // Force an update of deck and tab bar to reflect
                 // changes in theme (high contrast mode).
                 Theme::HandleDataChange();
@@ -891,12 +886,12 @@ IMPL_LINK_TYPED(SidebarController, WindowEventHandler, VclWindowEvent&, rEvent, 
                 maContextChangeUpdate.RequestCall();
                 break;
 
-            case SFX_HINT_DYING:
+            case VclEventId::ObjectDying:
                 dispose();
                 break;
 
-            case VCLEVENT_WINDOW_PAINT:
-                OSL_TRACE("Paint");
+            case VclEventId::WindowPaint:
+                SAL_INFO("sfx.sidebar", "Paint");
                 break;
 
             default:
@@ -907,42 +902,45 @@ IMPL_LINK_TYPED(SidebarController, WindowEventHandler, VclWindowEvent&, rEvent, 
     {
         switch (rEvent.GetId())
         {
-            case VCLEVENT_WINDOW_MOUSEBUTTONDOWN:
+            case VclEventId::WindowMouseButtonDown:
                 mnWidthOnSplitterButtonDown = mpParentWindow->GetSizePixel().Width();
                 break;
 
-            case VCLEVENT_WINDOW_MOUSEBUTTONUP:
+            case VclEventId::WindowMouseButtonUp:
             {
                 ProcessNewWidth(mpParentWindow->GetSizePixel().Width());
                 mnWidthOnSplitterButtonDown = 0;
                 break;
             }
 
-            case SFX_HINT_DYING:
+            case VclEventId::ObjectDying:
                 dispose();
                 break;
+
+            default: break;
          }
     }
 }
 
 void SidebarController::ShowPopupMenu (
-    const Rectangle& rButtonBox,
+    const tools::Rectangle& rButtonBox,
     const ::std::vector<TabBar::DeckMenuData>& rMenuData) const
 {
-    std::shared_ptr<PopupMenu> pMenu = CreatePopupMenu(rMenuData);
+    VclPtr<PopupMenu> pMenu = CreatePopupMenu(rMenuData);
     pMenu->SetSelectHdl(LINK(const_cast<SidebarController*>(this), SidebarController, OnMenuItemSelected));
 
     // pass toolbox button rect so the menu can stay open on button up
-    Rectangle aBox (rButtonBox);
+    tools::Rectangle aBox (rButtonBox);
     aBox.Move(mpTabBar->GetPosPixel().X(), 0);
     pMenu->Execute(mpParentWindow, aBox, PopupMenuFlags::ExecuteDown);
+    pMenu.disposeAndClear();
 }
 
-std::shared_ptr<PopupMenu> SidebarController::CreatePopupMenu (
+VclPtr<PopupMenu> SidebarController::CreatePopupMenu (
     const ::std::vector<TabBar::DeckMenuData>& rMenuData) const
 {
     // Create the top level popup menu.
-    std::shared_ptr<PopupMenu> pMenu (new PopupMenu());
+    VclPtrInstance<PopupMenu> pMenu;
     FloatingWindow* pMenuWindow = dynamic_cast<FloatingWindow*>(pMenu->GetWindow());
     if (pMenuWindow != nullptr)
     {
@@ -950,9 +948,7 @@ std::shared_ptr<PopupMenu> SidebarController::CreatePopupMenu (
     }
 
     // Create sub menu for customization (hiding of deck tabs.)
-    PopupMenu* pCustomizationMenu = new PopupMenu();
-
-    SidebarResource aLocalResource;
+    VclPtr<PopupMenu> pCustomizationMenu = VclPtr<PopupMenu>::Create();
 
     // Add one entry for every tool panel element to individually make
     // them visible or hide them.
@@ -990,11 +986,11 @@ std::shared_ptr<PopupMenu> SidebarController::CreatePopupMenu (
     else
         pMenu->InsertItem(MID_UNLOCK_TASK_PANEL, SFX2_RESSTR(STR_SFX_UNDOCK));
 
-    pMenu->InsertItem(MID_HIDE_SIDEBAR, SFX2_RESSTR(STRING_HIDE_SIDEBAR));
+    pMenu->InsertItem(MID_HIDE_SIDEBAR, SFX2_RESSTR(SFX_STR_SIDEBAR_HIDE_SIDEBAR));
     pCustomizationMenu->InsertSeparator();
-    pCustomizationMenu->InsertItem(MID_RESTORE_DEFAULT, SFX2_RESSTR(STRING_RESTORE));
+    pCustomizationMenu->InsertItem(MID_RESTORE_DEFAULT, SFX2_RESSTR(SFX_STR_SIDEBAR_RESTORE));
 
-    pMenu->InsertItem(MID_CUSTOMIZATION, SFX2_RESSTR(STRING_CUSTOMIZATION));
+    pMenu->InsertItem(MID_CUSTOMIZATION, SFX2_RESSTR(SFX_STR_SIDEBAR_CUSTOMIZATION));
     pMenu->SetPopupMenu(MID_CUSTOMIZATION, pCustomizationMenu);
 
     pMenu->RemoveDisabledEntries(false);
@@ -1002,7 +998,7 @@ std::shared_ptr<PopupMenu> SidebarController::CreatePopupMenu (
     return pMenu;
 }
 
-IMPL_LINK_TYPED(SidebarController, OnMenuItemSelected, Menu*, pMenu, bool)
+IMPL_LINK(SidebarController, OnMenuItemSelected, Menu*, pMenu, bool)
 {
     if (pMenu == nullptr)
     {
@@ -1028,7 +1024,7 @@ IMPL_LINK_TYPED(SidebarController, OnMenuItemSelected, Menu*, pMenu, bool)
 
         case MID_HIDE_SIDEBAR:
         {
-            const util::URL aURL (Tools::GetURL(gsHideSidebarCommandName));
+            const util::URL aURL (Tools::GetURL(".uno:Sidebar"));
             Reference<frame::XDispatch> xDispatch (Tools::GetDispatch(mxFrame, aURL));
             if (xDispatch.is())
                     xDispatch->dispatch(aURL, Sequence<beans::PropertyValue>());
@@ -1160,7 +1156,8 @@ sal_Int32 SidebarController::SetChildWindowWidth (const sal_Int32 nNewWidth)
         mpParentWindow,
         Size(nNewWidth, aWindowSize.Height()),
         nColumn,
-        nRow);
+        nRow,
+        false);
     static_cast<SplitWindow*>(pSplitWindow)->Split();
 
     return static_cast<sal_Int32>(nColumnWidth);
@@ -1265,7 +1262,7 @@ void SidebarController::UpdateTitleBarIcons()
     {
         if ( ! *iPanel)
             continue;
-        if ((*iPanel)->GetTitleBar() == nullptr)
+        if (!(*iPanel)->GetTitleBar())
             continue;
         std::shared_ptr<PanelDescriptor> xPanelDescriptor = rResourceManager.GetPanelDescriptor((*iPanel)->GetId());
         if (!xPanelDescriptor)
@@ -1310,8 +1307,19 @@ void SidebarController::updateModel(const css::uno::Reference<css::frame::XModel
     mpResourceManager->UpdateModel(xModel);
 }
 
+void SidebarController::FadeOut()
+{
+    if (mpSplitWindow)
+        mpSplitWindow->FadeOut();
+}
+
+void SidebarController::FadeIn()
+{
+    if (mpSplitWindow)
+        mpSplitWindow->FadeIn();
+}
+
 void SidebarController::frameAction(const css::frame::FrameActionEvent& rEvent)
-     throw (com::sun::star::uno::RuntimeException, std::exception)
 {
     if (rEvent.Frame == mxFrame)
     {

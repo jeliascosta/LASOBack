@@ -19,6 +19,7 @@
 
 
 #include <com/sun/star/lang/DisposedException.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 
 #include "cell.hxx"
 #include "tablerow.hxx"
@@ -80,7 +81,7 @@ void TableRow::dispose()
 }
 
 
-void TableRow::throwIfDisposed() const throw (css::uno::RuntimeException)
+void TableRow::throwIfDisposed() const
 {
     if( !mxTableModel.is() )
         throw DisposedException();
@@ -157,7 +158,7 @@ const TableModelRef& TableRow::getModel() const
 // XCellRange
 
 
-Reference< XCell > SAL_CALL TableRow::getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+Reference< XCell > SAL_CALL TableRow::getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow )
 {
     throwIfDisposed();
     if( nRow != 0 )
@@ -167,7 +168,7 @@ Reference< XCell > SAL_CALL TableRow::getCellByPosition( sal_Int32 nColumn, sal_
 }
 
 
-Reference< XCellRange > SAL_CALL TableRow::getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop, sal_Int32 nRight, sal_Int32 nBottom ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+Reference< XCellRange > SAL_CALL TableRow::getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop, sal_Int32 nRight, sal_Int32 nBottom )
 {
     throwIfDisposed();
     if( (nLeft >= 0 ) && (nTop == 0) && (nRight >= nLeft) && (nBottom == 0)  )
@@ -178,7 +179,7 @@ Reference< XCellRange > SAL_CALL TableRow::getCellRangeByPosition( sal_Int32 nLe
 }
 
 
-Reference< XCellRange > SAL_CALL TableRow::getCellRangeByName( const OUString& /*aRange*/ ) throw (RuntimeException, std::exception)
+Reference< XCellRange > SAL_CALL TableRow::getCellRangeByName( const OUString& /*aRange*/ )
 {
     throwIfDisposed();
     return Reference< XCellRange >();
@@ -188,13 +189,13 @@ Reference< XCellRange > SAL_CALL TableRow::getCellRangeByName( const OUString& /
 // XNamed
 
 
-OUString SAL_CALL TableRow::getName() throw (RuntimeException, std::exception)
+OUString SAL_CALL TableRow::getName()
 {
     return maName;
 }
 
 
-void SAL_CALL TableRow::setName( const OUString& aName ) throw (RuntimeException, std::exception)
+void SAL_CALL TableRow::setName( const OUString& aName )
 {
     maName = aName;
 }
@@ -203,7 +204,7 @@ void SAL_CALL TableRow::setName( const OUString& aName ) throw (RuntimeException
 // XFastPropertySet
 
 
-void SAL_CALL TableRow::setFastPropertyValue( sal_Int32 nHandle, const Any& aValue ) throw (UnknownPropertyException, PropertyVetoException, IllegalArgumentException, css::lang::WrappedTargetException, RuntimeException, std::exception)
+void SAL_CALL TableRow::setFastPropertyValue( sal_Int32 nHandle, const Any& aValue )
 {
     bool bOk = false;
     bool bChange = false;
@@ -273,7 +274,7 @@ void SAL_CALL TableRow::setFastPropertyValue( sal_Int32 nHandle, const Any& aVal
         }
     default:
         delete pUndo;
-        throw UnknownPropertyException();
+        throw UnknownPropertyException( OUString::number(nHandle), static_cast<cppu::OWeakObject*>(this));
     }
     if( !bOk )
     {
@@ -295,7 +296,7 @@ void SAL_CALL TableRow::setFastPropertyValue( sal_Int32 nHandle, const Any& aVal
 }
 
 
-Any SAL_CALL TableRow::getFastPropertyValue( sal_Int32 nHandle ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
+Any SAL_CALL TableRow::getFastPropertyValue( sal_Int32 nHandle )
 {
     switch( nHandle )
     {
@@ -303,7 +304,7 @@ Any SAL_CALL TableRow::getFastPropertyValue( sal_Int32 nHandle ) throw (UnknownP
     case Property_OptimalHeight:    return Any( mbOptimalHeight );
     case Property_IsVisible:        return Any( mbIsVisible );
     case Property_IsStartOfNewPage: return Any( mbIsStartOfNewPage );
-    default:                        throw UnknownPropertyException();
+    default:                        throw UnknownPropertyException( OUString::number(nHandle), static_cast<cppu::OWeakObject*>(this));
     }
 }
 

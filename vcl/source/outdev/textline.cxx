@@ -96,7 +96,7 @@ void OutputDevice::ImplDrawWaveLine( long nBaseX, long nBaseY,
     long nStartX = nBaseX + nDistX;
     long nStartY = nBaseY + nDistY;
 
-    // If the height is 1 pixel, it's enough ouput a line
+    // If the height is 1 pixel, it's enough output a line
     if ( (nLineWidth == 1) && (nHeight == 1) )
     {
         mpGraphics->SetLineColor( ImplColorToSal( rColor ) );
@@ -123,7 +123,7 @@ void OutputDevice::ImplDrawWaveLine( long nBaseX, long nBaseY,
         long    nPixWidth;
         long    nPixHeight;
         bool    bDrawPixAsRect;
-        // On printers that ouput pixel via DrawRect()
+        // On printers that output pixel via DrawRect()
         if ( (GetOutDevType() == OUTDEV_PRINTER) || (nLineWidth > 1) )
         {
             if ( mbLineColor || mbInitLineColor )
@@ -629,8 +629,8 @@ void OutputDevice::ImplDrawStrikeoutChar( long nBaseX, long nBaseY,
     nBaseY += nDistY;
 
     // strikeout text has to be left aligned
-    ComplexTextLayoutMode nOrigTLM = mnTextLayoutMode;
-    mnTextLayoutMode = TEXT_LAYOUT_BIDI_STRONG | TEXT_LAYOUT_COMPLEX_DISABLED;
+    ComplexTextLayoutFlags nOrigTLM = mnTextLayoutMode;
+    mnTextLayoutMode = ComplexTextLayoutFlags::BiDiStrong;
     pLayout = ImplLayout( aStrikeoutText, 0, aStrikeoutText.getLength() );
     mnTextLayoutMode = nOrigTLM;
 
@@ -644,7 +644,7 @@ void OutputDevice::ImplDrawStrikeoutChar( long nBaseX, long nBaseY,
 
     pLayout->DrawBase() = Point( nBaseX+mnTextOffX, nBaseY+mnTextOffY );
 
-    Rectangle aPixelRect;
+    tools::Rectangle aPixelRect;
     aPixelRect.Left() = nBaseX+mnTextOffX;
     aPixelRect.Right() = aPixelRect.Left()+nWidth;
     aPixelRect.Bottom() = nBaseY+mpFontInstance->mxFontMetric->GetDescent();
@@ -751,16 +751,12 @@ void OutputDevice::ImplDrawTextLines( SalLayout& rSalLayout, FontStrikeout eStri
         Point aPos;
         DeviceCoordinate nDist = 0;
         DeviceCoordinate nWidth = 0;
-        DeviceCoordinate nAdvance = 0;
-        for( int nStart = 0;;)
+        const GlyphItem* pGlyph;
+        int nStart = 0;
+        while (rSalLayout.GetNextGlyphs(1, &pGlyph, aPos, nStart))
         {
-            // iterate through the layouted glyphs
-            sal_GlyphId aGlyphId;
-            if( !rSalLayout.GetNextGlyphs( 1, &aGlyphId, aPos, nStart, &nAdvance ) )
-                break;
-
             // calculate the boundaries of each word
-            if( !SalLayout::IsSpacingGlyph( aGlyphId ) )
+            if (!pGlyph->IsSpacing())
             {
                 if( !nWidth )
                 {
@@ -775,7 +771,7 @@ void OutputDevice::ImplDrawTextLines( SalLayout& rSalLayout, FontStrikeout eStri
                 }
 
                 // update the length of the textline
-                nWidth += nAdvance;
+                nWidth += pGlyph->mnNewWidth;
             }
             else if( nWidth > 0 )
             {
@@ -1017,20 +1013,20 @@ void OutputDevice::DrawWaveLine( const Point& rStartPos, const Point& rEndPos )
         aStartPt.RotateAround( nEndX, nEndY, -nOrientation );
     }
 
-    long nWaveHeight;
-
-    nWaveHeight = 3;
+    long nWaveHeight = 3;
     nStartY++;
     nEndY++;
 
-    if (mnDPIScaleFactor > 1)
-    {
-        nWaveHeight *= mnDPIScaleFactor;
+    float fScaleFactor = GetDPIScaleFactor();
 
-        nStartY += mnDPIScaleFactor - 1; // Shift down additional pixel(s) to create more visual separation.
+    if (fScaleFactor > 1.0f)
+    {
+        nWaveHeight *= fScaleFactor;
+
+        nStartY += fScaleFactor - 1; // Shift down additional pixel(s) to create more visual separation.
 
         // odd heights look better than even
-        if (mnDPIScaleFactor % 2 == 0)
+        if (nWaveHeight % 2 == 0)
         {
             nWaveHeight--;
         }
@@ -1044,7 +1040,7 @@ void OutputDevice::DrawWaveLine( const Point& rStartPos, const Point& rEndPos )
     }
     ImplDrawWaveLine(nStartX, nStartY, 0, 0,
                      nEndX-nStartX, nWaveHeight,
-                     mnDPIScaleFactor, nOrientation, GetLineColor());
+                     fScaleFactor, nOrientation, GetLineColor());
 
     if( mpAlphaVDev )
         mpAlphaVDev->DrawWaveLine( rStartPos, rEndPos );

@@ -37,7 +37,6 @@
 #include <com/sun/star/document/XScriptInvocationContext.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
 #include <com/sun/star/embed/XEmbedPersist.hpp>
-#include <com/sun/star/logging/DocumentIOLogRing.hpp>
 #include <com/sun/star/script/XTypeConverter.hpp>
 #include <com/sun/star/script/FinishEngineEvent.hpp>
 #include <com/sun/star/script/InterruptReason.hpp>
@@ -118,7 +117,7 @@
 #include "doc.hrc"
 #include "workwin.hxx"
 #include "helpid.hrc"
-#include "../appl/app.hrc"
+#include "app.hrc"
 #include <sfx2/sfxdlg.hxx>
 #include "appbaslib.hxx"
 #include <openflag.hxx>
@@ -170,15 +169,9 @@ sal_uInt16 const aTitleMap_Impl[3][2] =
 };
 
 
-void SfxObjectShell::AbortImport()
-{
-    pImp->bIsAbortingImport = true;
-}
-
-
 bool SfxObjectShell::IsAbortingImport() const
 {
-    return pImp->bIsAbortingImport;
+    return pImpl->bIsAbortingImport;
 }
 
 
@@ -216,74 +209,54 @@ void SfxObjectShell::FlushDocInfo()
                  (delay > 0) || !url.isEmpty() );
 }
 
-
-void SfxObjectShell::SetError( sal_uInt32 lErr, const OUString& aLogMessage )
+void SfxObjectShell::SetError(sal_uInt32 lErr)
 {
-    if(pImp->lErr==ERRCODE_NONE)
+    if (pImpl->lErr==ERRCODE_NONE)
     {
-        pImp->lErr=lErr;
-
-        if( lErr != ERRCODE_NONE && !aLogMessage.isEmpty() )
-            AddLog( aLogMessage );
+        pImpl->lErr=lErr;
     }
 }
-
 
 sal_uInt32 SfxObjectShell::GetError() const
 {
     return ERRCODE_TOERROR(GetErrorCode());
 }
 
-
 sal_uInt32 SfxObjectShell::GetErrorCode() const
 {
-    sal_uInt32 lError=pImp->lErr;
+    sal_uInt32 lError=pImpl->lErr;
     if(!lError && GetMedium())
         lError=GetMedium()->GetErrorCode();
     return lError;
 }
 
-
 void SfxObjectShell::ResetError()
 {
-    if( pImp->lErr != ERRCODE_NONE )
-        AddLog( OSL_LOG_PREFIX "Resetting Error." );
-
-    pImp->lErr=0;
+    pImpl->lErr=0;
     SfxMedium * pMed = GetMedium();
     if( pMed )
         pMed->ResetError();
 }
 
-
-bool SfxObjectShell::IsTemplate() const
-{
-    return pImp->bIsTemplate;
-}
-
-
 void SfxObjectShell::EnableSetModified( bool bEnable )
 {
-#ifdef DBG_UTIL
-    if ( bEnable == pImp->m_bEnableSetModified )
-        SAL_INFO( "sfx", "SFX_PERSIST: EnableSetModified 2x called with the same value" );
-#endif
-    pImp->m_bEnableSetModified = bEnable;
+    SAL_INFO_IF( bEnable == pImpl->m_bEnableSetModified, "sfx", "SFX_PERSIST: EnableSetModified 2x called with the same value" );
+    pImpl->m_bEnableSetModified = bEnable;
 }
 
 
 bool SfxObjectShell::IsEnableSetModified() const
 {
-    return pImp->m_bEnableSetModified && !IsReadOnly();
+    return pImpl->m_bEnableSetModified && !IsReadOnly();
 }
 
 
 bool SfxObjectShell::IsModified()
 {
-    if ( pImp->m_bIsModified )
+    if ( pImpl->m_bIsModified )
         return true;
 
-    if ( !pImp->m_xDocStorage.is() || IsReadOnly() )
+    if ( !pImpl->m_xDocStorage.is() || IsReadOnly() )
     {
         // if the document still has no storage and is not set to be modified explicitly it is not modified
         // a readonly document is also not modified
@@ -291,7 +264,7 @@ bool SfxObjectShell::IsModified()
         return false;
     }
 
-    if (pImp->mpObjectContainer)
+    if (pImpl->mpObjectContainer)
     {
         uno::Sequence < OUString > aNames = GetEmbeddedObjectContainer().GetObjectNames();
         for ( sal_Int32 n=0; n<aNames.getLength(); n++ )
@@ -322,17 +295,15 @@ bool SfxObjectShell::IsModified()
 
 void SfxObjectShell::SetModified( bool bModifiedP )
 {
-#ifdef DBG_UTIL
-    if ( !bModifiedP && !IsEnableSetModified() )
-        SAL_INFO( "sfx", "SFX_PERSIST: SetModified( sal_False ), although IsEnableSetModified() == sal_False" );
-#endif
+    SAL_INFO_IF( !bModifiedP && !IsEnableSetModified(), "sfx",
+        "SFX_PERSIST: SetModified( sal_False ), although IsEnableSetModified() == sal_False" );
 
     if( !IsEnableSetModified() )
         return;
 
-    if( pImp->m_bIsModified != bModifiedP )
+    if( pImpl->m_bIsModified != bModifiedP )
     {
-        pImp->m_bIsModified = bModifiedP;
+        pImpl->m_bIsModified = bModifiedP;
         ModifyChanged();
     }
 }
@@ -340,7 +311,7 @@ void SfxObjectShell::SetModified( bool bModifiedP )
 
 void SfxObjectShell::ModifyChanged()
 {
-    if ( pImp->bClosing )
+    if ( pImpl->bClosing )
         // SetModified dispose of the models!
         return;
 
@@ -351,9 +322,9 @@ void SfxObjectShell::ModifyChanged()
 
     Invalidate( SID_SIGNATURE );
     Invalidate( SID_MACRO_SIGNATURE );
-    Broadcast( SfxSimpleHint( SFX_HINT_TITLECHANGED ) );    // xmlsec05, signed state might change in title...
+    Broadcast( SfxHint( SfxHintId::TitleChanged ) );    // xmlsec05, signed state might change in title...
 
-    SfxGetpApp()->NotifyEvent( SfxEventHint( SFX_EVENT_MODIFYCHANGED, GlobalEventConfig::GetEventName(GlobalEventId::MODIFYCHANGED), this ) );
+    SfxGetpApp()->NotifyEvent( SfxEventHint( SfxEventHintId::ModifyChanged, GlobalEventConfig::GetEventName(GlobalEventId::MODIFYCHANGED), this ) );
 }
 
 
@@ -366,7 +337,7 @@ bool SfxObjectShell::IsReadOnlyUI() const
 */
 
 {
-    return pImp->bReadOnlyUI;
+    return pImpl->bReadOnlyUI;
 }
 
 
@@ -388,6 +359,11 @@ bool SfxObjectShell::IsOriginallyReadOnlyMedium() const
     return pMedium == nullptr || pMedium->IsOriginallyReadOnly();
 }
 
+bool SfxObjectShell::IsOriginallyLoadedReadOnlyMedium() const
+{
+    return pMedium != nullptr && pMedium->IsOriginallyLoadedReadOnly();
+}
+
 
 void SfxObjectShell::SetReadOnlyUI( bool bReadOnly )
 
@@ -398,10 +374,10 @@ void SfxObjectShell::SetReadOnlyUI( bool bReadOnly )
 */
 
 {
-    if ( bReadOnly != pImp->bReadOnlyUI )
+    if ( bReadOnly != pImpl->bReadOnlyUI )
     {
-        pImp->bReadOnlyUI = bReadOnly;
-        Broadcast( SfxSimpleHint(SFX_HINT_MODECHANGED) );
+        pImpl->bReadOnlyUI = bReadOnly;
+        Broadcast( SfxHint(SfxHintId::ModeChanged) );
     }
 }
 
@@ -427,20 +403,20 @@ void SfxObjectShell::SetReadOnly()
         pMedium->GetItemSet()->Put( SfxBoolItem( SID_DOC_READONLY, true ) );
 
         if ( !bWasROUI )
-            Broadcast( SfxSimpleHint(SFX_HINT_MODECHANGED) );
+            Broadcast( SfxHint(SfxHintId::ModeChanged) );
     }
 }
 
 
 bool SfxObjectShell::IsReadOnly() const
 {
-    return pImp->bReadOnlyUI || pMedium == nullptr;
+    return pImpl->bReadOnlyUI || pMedium == nullptr;
 }
 
 
 bool SfxObjectShell::IsInModalMode() const
 {
-    return pImp->bModalMode || pImp->bRunningMacro;
+    return pImpl->bModalMode || pImpl->bRunningMacro;
 }
 
 bool SfxObjectShell::AcceptStateUpdate() const
@@ -451,10 +427,10 @@ bool SfxObjectShell::AcceptStateUpdate() const
 
 void SfxObjectShell::SetMacroMode_Impl( bool bModal )
 {
-    if ( !pImp->bRunningMacro != !bModal )
+    if ( !pImpl->bRunningMacro != !bModal )
     {
-        pImp->bRunningMacro = bModal;
-        Broadcast( SfxSimpleHint( SFX_HINT_MODECHANGED ) );
+        pImpl->bRunningMacro = bModal;
+        Broadcast( SfxHint( SfxHintId::ModeChanged ) );
     }
 }
 
@@ -463,7 +439,7 @@ void SfxObjectShell::SetModalMode_Impl( bool bModal )
 {
     // Broadcast only if modified, or otherwise it will possibly go into
     // an endless loop
-    if ( !pImp->bModalMode != !bModal )
+    if ( !pImpl->bModalMode != !bModal )
     {
         // Central count
         sal_uInt16 &rDocModalCount = SfxGetpApp()->Get_Impl()->nDocModalMode;
@@ -473,8 +449,8 @@ void SfxObjectShell::SetModalMode_Impl( bool bModal )
             --rDocModalCount;
 
         // Switch
-        pImp->bModalMode = bModal;
-        Broadcast( SfxSimpleHint( SFX_HINT_MODECHANGED ) );
+        pImpl->bModalMode = bModal;
+        Broadcast( SfxHint( SfxHintId::ModeChanged ) );
     }
 }
 
@@ -486,7 +462,7 @@ bool SfxObjectShell::SwitchToShared( bool bShared, bool bSave )
 
     if ( bShared != IsDocShared() )
     {
-        OUString aOrigURL = GetMedium()->GetURLObject().GetMainURL( INetURLObject::NO_DECODE );
+        OUString aOrigURL = GetMedium()->GetURLObject().GetMainURL( INetURLObject::DecodeMechanism::NONE );
 
         if ( aOrigURL.isEmpty() && bSave )
         {
@@ -503,7 +479,7 @@ bool SfxObjectShell::SwitchToShared( bool bShared, bool bSave )
                 const SfxBoolItem* pResult = dynamic_cast<const SfxBoolItem*>( pItem  );
                 bResult = ( pResult && pResult->GetValue() );
                 if ( bResult )
-                    aOrigURL = GetMedium()->GetURLObject().GetMainURL( INetURLObject::NO_DECODE );
+                    aOrigURL = GetMedium()->GetURLObject().GetMainURL( INetURLObject::DecodeMechanism::NONE );
             }
         }
 
@@ -544,14 +520,14 @@ bool SfxObjectShell::SwitchToShared( bool bShared, bool bSave )
             // TODO/LATER: Is it possible that the following calls fail?
             if ( bShared )
             {
-                pImp->m_aSharedFileURL = aOrigURL;
+                pImpl->m_aSharedFileURL = aOrigURL;
                 GetMedium()->SwitchDocumentToTempFile();
             }
             else
             {
-                OUString aTempFileURL = pMedium->GetURLObject().GetMainURL( INetURLObject::NO_DECODE );
+                OUString aTempFileURL = pMedium->GetURLObject().GetMainURL( INetURLObject::DecodeMechanism::NONE );
                 GetMedium()->SwitchDocumentToFile( GetSharedFileURL() );
-                (pImp->m_aSharedFileURL).clear();
+                (pImpl->m_aSharedFileURL).clear();
 
                 // now remove the temporary file the document was based on
                 ::utl::UCBContentHelper::Kill( aTempFileURL );
@@ -559,7 +535,7 @@ bool SfxObjectShell::SwitchToShared( bool bShared, bool bSave )
                 try
                 {
                     // aOrigURL can not be used since it contains an old value
-                    ::svt::ShareControlFile aControlFile( GetMedium()->GetURLObject().GetMainURL( INetURLObject::NO_DECODE ) );
+                    ::svt::ShareControlFile aControlFile( GetMedium()->GetURLObject().GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
                     aControlFile.RemoveFile();
                 }
                 catch( uno::Exception& )
@@ -594,13 +570,6 @@ bool SfxObjectShell::SwitchToShared( bool bShared, bool bSave )
 }
 
 
-void SfxObjectShell::FreeSharedFile()
-{
-    if ( pMedium )
-        FreeSharedFile( pMedium->GetURLObject().GetMainURL( INetURLObject::NO_DECODE ) );
-}
-
-
 void SfxObjectShell::FreeSharedFile( const OUString& aTempFileURL )
 {
     SetSharedXMLFlag( false );
@@ -608,7 +577,7 @@ void SfxObjectShell::FreeSharedFile( const OUString& aTempFileURL )
     if ( IsDocShared() && !aTempFileURL.isEmpty()
       && !::utl::UCBContentHelper::EqualURLs( aTempFileURL, GetSharedFileURL() ) )
     {
-        if ( pImp->m_bAllowShareControlFileClean )
+        if ( pImpl->m_bAllowShareControlFileClean )
         {
             try
             {
@@ -621,31 +590,31 @@ void SfxObjectShell::FreeSharedFile( const OUString& aTempFileURL )
         }
 
         // the cleaning is forbidden only once
-        pImp->m_bAllowShareControlFileClean = true;
+        pImpl->m_bAllowShareControlFileClean = true;
 
         // now remove the temporary file the document is based currently on
         ::utl::UCBContentHelper::Kill( aTempFileURL );
 
-        (pImp->m_aSharedFileURL).clear();
+        (pImpl->m_aSharedFileURL).clear();
     }
 }
 
 
 void SfxObjectShell::DoNotCleanShareControlFile()
 {
-    pImp->m_bAllowShareControlFileClean = false;
+    pImpl->m_bAllowShareControlFileClean = false;
 }
 
 
 void SfxObjectShell::SetSharedXMLFlag( bool bFlag ) const
 {
-    pImp->m_bSharedXMLFlag = bFlag;
+    pImpl->m_bSharedXMLFlag = bFlag;
 }
 
 
 bool SfxObjectShell::HasSharedXMLFlagSet() const
 {
-    return pImp->m_bSharedXMLFlag;
+    return pImpl->m_bSharedXMLFlag;
 }
 
 #endif
@@ -653,7 +622,7 @@ bool SfxObjectShell::HasSharedXMLFlagSet() const
 bool SfxObjectShell::IsDocShared() const
 {
 #if HAVE_FEATURE_MULTIUSER_ENVIRONMENT
-    return ( !pImp->m_aSharedFileURL.isEmpty() );
+    return ( !pImpl->m_aSharedFileURL.isEmpty() );
 #else
     return false;
 #endif
@@ -663,7 +632,7 @@ bool SfxObjectShell::IsDocShared() const
 OUString SfxObjectShell::GetSharedFileURL() const
 {
 #if HAVE_FEATURE_MULTIUSER_ENVIRONMENT
-    return pImp->m_aSharedFileURL;
+    return pImpl->m_aSharedFileURL;
 #else
     return OUString();
 #endif
@@ -677,7 +646,7 @@ Size SfxObjectShell::GetFirstPageSize()
 
 IndexBitSet& SfxObjectShell::GetNoSet_Impl()
 {
-    return pImp->aBitSet;
+    return pImpl->aBitSet;
 }
 
 
@@ -699,74 +668,34 @@ void SfxObjectShell::SetTitle
 {
 
     // Nothing to do?
-    if ( ( ( HasName() && pImp->aTitle == rTitle )
+    if ( ( ( HasName() && pImpl->aTitle == rTitle )
         || ( !HasName() && GetTitle() == rTitle ) )
       && !IsDocShared() )
         return;
 
     SfxApplication *pSfxApp = SfxGetpApp();
 
-    // If possible relase the unnamed number.
-    if ( pImp->bIsNamedVisible && USHRT_MAX != pImp->nVisualDocumentNumber )
+    // If possible release the unnamed number.
+    if ( pImpl->bIsNamedVisible && USHRT_MAX != pImpl->nVisualDocumentNumber )
     {
-        pSfxApp->ReleaseIndex(pImp->nVisualDocumentNumber);
-        pImp->bIsNamedVisible = false;
+        pSfxApp->ReleaseIndex(pImpl->nVisualDocumentNumber);
+        pImpl->bIsNamedVisible = false;
     }
 
     // Set Title
-    pImp->aTitle = rTitle;
+    pImpl->aTitle = rTitle;
 
     // Notification
     if ( GetMedium() )
     {
         SfxShell::SetName( GetTitle(SFX_TITLE_APINAME) );
-        Broadcast( SfxSimpleHint(SFX_HINT_TITLECHANGED) );
+        Broadcast( SfxHint(SfxHintId::TitleChanged) );
     }
 }
 
 
 
-OUString SfxObjectShell::GetTitle
-(
-    sal_uInt16  nMaxLength      /*  0 (default)
-                                the title itself, as it is
-
-                                1 (==SFX_TITLE_FILENAME)
-                                provides the logical file name without path
-                                (under WNT depending on the system settings
-                                without extension)
-
-                                2 (==SFX_TITLE_FULLNAME)
-                                provides the logical file names with full path
-                                (remote =>:: com:: sun:: star:: util:: URL)
-
-                                3 (==SFX_TITLE_APINAME)
-                                provides the logical filename without path
-                                and extension
-
-                                4 (==SFX_TITLE_DETECT)
-                                provides the complete title, if not set yet
-                                it will be created from DocInfo or the name of
-                                the medium.
-
-                                5 (==SFX_TITLE_CAPTION)
-                                provides the Title just like MB now in the
-                                CaptionBar view
-
-                                6 (==SFX_TITLE_PICKLIST)
-                                returns the Title, just like MB now would
-                                display it in the PickList
-
-                                7 (==SFX_TITLE_HISTORY)
-                                returns the Title just like MB now would
-                                display it in the History
-
-                                10 bis USHRT_MAX
-                                provides the 'nMaxLength' of the logical
-                                file name including the path
-                                (remote => css::util::URL)
-                                */
-) const
+OUString SfxObjectShell::GetTitle( sal_uInt16  nMaxLength ) const
 
 /*  [Description]
 
@@ -784,7 +713,7 @@ OUString SfxObjectShell::GetTitle
         return OUString();
 
     // Create Title?
-    if ( SFX_TITLE_DETECT == nMaxLength && pImp->aTitle.isEmpty() )
+    if ( SFX_TITLE_DETECT == nMaxLength && pImpl->aTitle.isEmpty() )
     {
         static bool bRecur = false;
         if ( bRecur )
@@ -792,7 +721,6 @@ OUString SfxObjectShell::GetTitle
         bRecur = true;
 
         OUString aTitle;
-        SfxObjectShell *pThis = const_cast<SfxObjectShell*>(this);
 
         if ( pMed )
         {
@@ -804,18 +732,11 @@ OUString SfxObjectShell::GetTitle
         if ( aTitle.isEmpty() )
             aTitle = GetTitle( SFX_TITLE_FILENAME );
 
-        if ( IsTemplate() )
-            pThis->SetTitle( aTitle );
         bRecur = false;
         return aTitle;
     }
     else if (SFX_TITLE_APINAME == nMaxLength )
         return GetAPIName();
-
-    // Special case templates:
-    if( IsTemplate() && !pImp->aTitle.isEmpty() &&
-         ( nMaxLength == SFX_TITLE_CAPTION || nMaxLength == SFX_TITLE_PICKLIST ) )
-        return pImp->aTitle;
 
     // Picklist/Caption is mapped
     if ( pMed && ( nMaxLength == SFX_TITLE_CAPTION || nMaxLength == SFX_TITLE_PICKLIST ) )
@@ -833,18 +754,18 @@ OUString SfxObjectShell::GetTitle
     if ( !HasName() || !pMed )
     {
         // Title already set?
-        if ( !pImp->aTitle.isEmpty() )
-            return pImp->aTitle;
+        if ( !pImpl->aTitle.isEmpty() )
+            return pImpl->aTitle;
 
         // must it be numbered?
         OUString aNoName(SFX2_RESSTR(STR_NONAME));
-        if (pImp->bIsNamedVisible)
+        if (pImpl->bIsNamedVisible)
         {
             // Append number
-            aNoName += OUString::number(pImp->nVisualDocumentNumber);
+            aNoName += " " + OUString::number(pImpl->nVisualDocumentNumber);
         }
 
-        // Document called "noname" for the time being
+        // Document called "Untitled" for the time being
         return aNoName;
     }
 
@@ -866,16 +787,16 @@ OUString SfxObjectShell::GetTitle
         if ( nMaxLength == SFX_TITLE_FULLNAME )
             return aName;
         else if ( nMaxLength == SFX_TITLE_FILENAME )
-            return aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET);
-        else if ( pImp->aTitle.isEmpty() )
-            pImp->aTitle = aURL.getBase( INetURLObject::LAST_SEGMENT,
-                                         true, INetURLObject::DECODE_WITH_CHARSET );
+            return aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset);
+        else if ( pImpl->aTitle.isEmpty() )
+            pImpl->aTitle = aURL.getBase( INetURLObject::LAST_SEGMENT,
+                                         true, INetURLObject::DecodeMechanism::WithCharset );
     }
     else
     {
         if ( nMaxLength >= SFX_TITLE_MAXLEN )
         {
-            OUString aComplete( aURL.GetMainURL( INetURLObject::NO_DECODE ) );
+            OUString aComplete( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
             if( aComplete.getLength() > nMaxLength )
             {
                 OUString aRet( "..." );
@@ -888,25 +809,25 @@ OUString SfxObjectShell::GetTitle
         else if ( nMaxLength == SFX_TITLE_FILENAME )
         {
             OUString aName( aURL.GetBase() );
-            aName = INetURLObject::decode( aName, INetURLObject::DECODE_WITH_CHARSET );
+            aName = INetURLObject::decode( aName, INetURLObject::DecodeMechanism::WithCharset );
             if( aName.isEmpty() )
                 aName = aURL.GetURLNoPass();
             return aName;
         }
         else if ( nMaxLength == SFX_TITLE_FULLNAME )
-            return aURL.GetMainURL( INetURLObject::DECODE_TO_IURI );
+            return aURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
 
         // Generate Title from file name if possible
-        if ( pImp->aTitle.isEmpty() )
-            pImp->aTitle = aURL.GetBase();
+        if ( pImpl->aTitle.isEmpty() )
+            pImpl->aTitle = aURL.GetBase();
 
         // workaround for the case when the name can not be retrieved from URL by INetURLObject
-        if ( pImp->aTitle.isEmpty() )
-            pImp->aTitle = aURL.GetMainURL( INetURLObject::DECODE_WITH_CHARSET );
+        if ( pImpl->aTitle.isEmpty() )
+            pImpl->aTitle = aURL.GetMainURL( INetURLObject::DecodeMechanism::WithCharset );
     }
 
     // Complete Title
-    return pImp->aTitle;
+    return pImpl->aTitle;
 }
 
 
@@ -919,22 +840,22 @@ void SfxObjectShell::InvalidateName()
 */
 
 {
-    pImp->aTitle.clear();
+    pImpl->aTitle.clear();
     SetName( GetTitle( SFX_TITLE_APINAME ) );
 
-    Broadcast( SfxSimpleHint(SFX_HINT_TITLECHANGED) );
+    Broadcast( SfxHint(SfxHintId::TitleChanged) );
 }
 
 
 void SfxObjectShell::SetNamedVisibility_Impl()
 {
-    if ( !pImp->bIsNamedVisible )
+    if ( !pImpl->bIsNamedVisible )
     {
-        pImp->bIsNamedVisible = true;
-        if ( !HasName() && USHRT_MAX == pImp->nVisualDocumentNumber && pImp->aTitle.isEmpty() )
+        pImpl->bIsNamedVisible = true;
+        if ( !HasName() && USHRT_MAX == pImpl->nVisualDocumentNumber && pImpl->aTitle.isEmpty() )
         {
-            pImp->nVisualDocumentNumber = SfxGetpApp()->GetFreeIndex();
-            Broadcast( SfxSimpleHint(SFX_HINT_TITLECHANGED) );
+            pImpl->nVisualDocumentNumber = SfxGetpApp()->GetFreeIndex();
+            Broadcast( SfxHint(SfxHintId::TitleChanged) );
         }
     }
 
@@ -950,7 +871,7 @@ void SfxObjectShell::SetNoName()
 
 SfxProgress* SfxObjectShell::GetProgress() const
 {
-    return pImp->pProgress;
+    return pImpl->pProgress;
 }
 
 
@@ -967,10 +888,10 @@ void SfxObjectShell::SetProgress_Impl
 */
 
 {
-    DBG_ASSERT( ( !pImp->pProgress && pProgress ) ||
-                ( pImp->pProgress && !pProgress ),
+    DBG_ASSERT( ( !pImpl->pProgress && pProgress ) ||
+                ( pImpl->pProgress && !pProgress ),
                 "Progress activation/deactivation mismatch" );
-    pImp->pProgress = pProgress;
+    pImpl->pProgress = pProgress;
 }
 
 
@@ -982,27 +903,25 @@ void SfxObjectShell::PostActivateEvent_Impl( SfxViewFrame* pFrame )
         const SfxBoolItem* pHiddenItem = SfxItemSet::GetItem<SfxBoolItem>(pMedium->GetItemSet(), SID_HIDDEN, false);
         if ( !pHiddenItem || !pHiddenItem->GetValue() )
         {
-            sal_uInt16 nId = pImp->nEventId;
-            pImp->nEventId = 0;
-            if ( nId == SFX_EVENT_OPENDOC )
+            SfxEventHintId nId = pImpl->nEventId;
+            pImpl->nEventId = SfxEventHintId::NONE;
+            if ( nId == SfxEventHintId::OpenDoc )
                 pSfxApp->NotifyEvent(SfxViewEventHint( nId, GlobalEventConfig::GetEventName(GlobalEventId::OPENDOC), this, pFrame->GetFrame().GetController() ), false);
-            else if (nId == SFX_EVENT_CREATEDOC )
+            else if (nId == SfxEventHintId::CreateDoc )
                 pSfxApp->NotifyEvent(SfxViewEventHint( nId, GlobalEventConfig::GetEventName(GlobalEventId::CREATEDOC), this, pFrame->GetFrame().GetController() ), false);
         }
     }
 }
 
 
-void SfxObjectShell::SetActivateEvent_Impl(sal_uInt16 nId )
+void SfxObjectShell::SetActivateEvent_Impl(SfxEventHintId nId )
 {
-    if ( GetFactory().GetFlags() & SfxObjectShellFlags::HASOPENDOC )
-        pImp->nEventId = nId;
+    pImpl->nEventId = nId;
 }
 
 void SfxObjectShell::PrepareReload( )
-/*  [Description]
-
-    Is called before the Reload and gives the opportunity to clear any caches.
+/*
+  Is called before the Reload and gives the opportunity to clear any caches.
 */
 {
 }
@@ -1014,13 +933,13 @@ bool SfxObjectShell::IsAutoLoadLocked() const
 */
 
 {
-    return !IsReadOnly() || pImp->nAutoLoadLocks > 0;
+    return !IsReadOnly() || pImpl->nAutoLoadLocks > 0;
 }
 
 
 void SfxObjectShell::BreakMacroSign_Impl( bool bBreakMacroSign )
 {
-    pImp->m_bMacroSignBroken = bBreakMacroSign;
+    pImpl->m_bMacroSignBroken = bBreakMacroSign;
 }
 
 
@@ -1031,12 +950,12 @@ void SfxObjectShell::CheckSecurityOnLoading_Impl()
         xInteraction = GetMedium()->GetInteractionHandler();
 
     // check if there is a broken signature...
-    CheckForBrokenDocSignatures_Impl( xInteraction );
+    CheckForBrokenDocSignatures_Impl();
 
     CheckEncryption_Impl( xInteraction );
 
     // check macro security
-    pImp->aMacroMode.checkMacrosOnLoading( xInteraction );
+    pImpl->aMacroMode.checkMacrosOnLoading( xInteraction );
 }
 
 
@@ -1062,64 +981,62 @@ void SfxObjectShell::CheckEncryption_Impl( const uno::Reference< task::XInteract
         // this is ODF1.2 or later
         if ( bIsEncrypted && bHasNonEncrypted )
         {
-            if ( !pImp->m_bIncomplEncrWarnShown )
+            if ( !pImpl->m_bIncomplEncrWarnShown )
             {
                 // this is an encrypted document with nonencrypted streams inside, show the warning
                 css::task::ErrorCodeRequest aErrorCode;
                 aErrorCode.ErrCode = ERRCODE_SFX_INCOMPLETE_ENCRYPTION;
 
                 SfxMedium::CallApproveHandler( xHandler, uno::makeAny( aErrorCode ), false );
-                pImp->m_bIncomplEncrWarnShown = true;
+                pImpl->m_bIncomplEncrWarnShown = true;
             }
 
             // broken signatures imply no macro execution at all
-            pImp->aMacroMode.disallowMacroExecution();
+            pImpl->aMacroMode.disallowMacroExecution();
         }
     }
 }
 
 
-void SfxObjectShell::CheckForBrokenDocSignatures_Impl( const uno::Reference< task::XInteractionHandler >& xHandler )
+void SfxObjectShell::CheckForBrokenDocSignatures_Impl()
 {
     SignatureState nSignatureState = GetDocumentSignatureState();
     bool bSignatureBroken = ( nSignatureState == SignatureState::BROKEN );
     if ( !bSignatureBroken )
         return;
 
-    pImp->showBrokenSignatureWarning( xHandler );
-
     // broken signatures imply no macro execution at all
-    pImp->aMacroMode.disallowMacroExecution();
+    pImpl->aMacroMode.disallowMacroExecution();
 }
 
 
 void SfxObjectShell::SetAutoLoad(
     const INetURLObject& rUrl, sal_uInt32 nTime, bool bReload )
 {
-    if ( pImp->pReloadTimer )
-        DELETEZ(pImp->pReloadTimer);
+    if ( pImpl->pReloadTimer )
+        DELETEZ(pImpl->pReloadTimer);
     if ( bReload )
     {
-        pImp->pReloadTimer = new AutoReloadTimer_Impl(
-                                rUrl.GetMainURL( INetURLObject::DECODE_TO_IURI ),
+        pImpl->pReloadTimer = new AutoReloadTimer_Impl(
+                                rUrl.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ),
                                 nTime, this );
-        pImp->pReloadTimer->Start();
+        pImpl->pReloadTimer->Start();
     }
 }
 
 bool SfxObjectShell::IsLoadingFinished() const
 {
-    return ( pImp->nLoadedFlags == SfxLoadedFlags::ALL );
+    return ( pImpl->nLoadedFlags == SfxLoadedFlags::ALL );
 }
 
 void SfxObjectShell::InitOwnModel_Impl()
 {
-    if ( !pImp->bModelInitialized )
+    if ( !pImpl->bModelInitialized )
     {
         const SfxStringItem* pSalvageItem = SfxItemSet::GetItem<SfxStringItem>(pMedium->GetItemSet(), SID_DOC_SALVAGE, false);
         if ( pSalvageItem )
         {
-            pImp->aTempName = pMedium->GetPhysicalName();
+            pImpl->aTempName = pMedium->GetPhysicalName();
             pMedium->GetItemSet()->ClearItem( SID_DOC_SALVAGE );
             pMedium->GetItemSet()->ClearItem( SID_FILE_NAME );
             pMedium->GetItemSet()->Put( SfxStringItem( SID_FILE_NAME, pMedium->GetOrigURL() ) );
@@ -1144,22 +1061,26 @@ void SfxObjectShell::InitOwnModel_Impl()
             impl_addToModelCollection(xModel);
         }
 
-        pImp->bModelInitialized = true;
+        pImpl->bModelInitialized = true;
     }
 }
 
 void SfxObjectShell::FinishedLoading( SfxLoadedFlags nFlags )
 {
+    std::shared_ptr<const SfxFilter> pFlt = pMedium->GetFilter();
+    if( pFlt )
+    {
+        SetFormatSpecificCompatibilityOptions( pFlt->GetTypeName() );
+    }
+
     bool bSetModifiedTRUE = false;
     const SfxStringItem* pSalvageItem = SfxItemSet::GetItem<SfxStringItem>(pMedium->GetItemSet(), SID_DOC_SALVAGE, false);
-    if( ( nFlags & SfxLoadedFlags::MAINDOCUMENT ) && !(pImp->nLoadedFlags & SfxLoadedFlags::MAINDOCUMENT )
-        && !(pImp->nFlagsInProgress & SfxLoadedFlags::MAINDOCUMENT ))
+    if( ( nFlags & SfxLoadedFlags::MAINDOCUMENT ) && !(pImpl->nLoadedFlags & SfxLoadedFlags::MAINDOCUMENT )
+        && !(pImpl->nFlagsInProgress & SfxLoadedFlags::MAINDOCUMENT ))
     {
-        pImp->nFlagsInProgress |= SfxLoadedFlags::MAINDOCUMENT;
+        pImpl->nFlagsInProgress |= SfxLoadedFlags::MAINDOCUMENT;
         static_cast<SfxHeaderAttributes_Impl*>(GetHeaderAttributes())->SetAttributes();
-        pImp->bImportDone = true;
-        if( !IsAbortingImport() )
-            PositionView_Impl();
+        pImpl->bImportDone = true;
 
         if ( ( GetModifyPasswordHash() || GetModifyPasswordInfo().getLength() ) && !IsModifyPasswordEntered() )
             SetReadOnly();
@@ -1179,13 +1100,13 @@ void SfxObjectShell::FinishedLoading( SfxLoadedFlags nFlags )
         bHasName = true; // the document is loaded, so the name should already available
         GetTitle( SFX_TITLE_DETECT );
         InitOwnModel_Impl();
-        pImp->nFlagsInProgress &= ~SfxLoadedFlags::MAINDOCUMENT;
+        pImpl->nFlagsInProgress &= ~SfxLoadedFlags::MAINDOCUMENT;
     }
 
-    if( ( nFlags & SfxLoadedFlags::IMAGES ) && !(pImp->nLoadedFlags & SfxLoadedFlags::IMAGES )
-        && !(pImp->nFlagsInProgress & SfxLoadedFlags::IMAGES ))
+    if( ( nFlags & SfxLoadedFlags::IMAGES ) && !(pImpl->nLoadedFlags & SfxLoadedFlags::IMAGES )
+        && !(pImpl->nFlagsInProgress & SfxLoadedFlags::IMAGES ))
     {
-        pImp->nFlagsInProgress |= SfxLoadedFlags::IMAGES;
+        pImpl->nFlagsInProgress |= SfxLoadedFlags::IMAGES;
         uno::Reference<document::XDocumentProperties> xDocProps(
             getDocProperties());
         OUString url(xDocProps->getAutoloadURL());
@@ -1195,12 +1116,12 @@ void SfxObjectShell::FinishedLoading( SfxLoadedFlags nFlags )
         if( !bSetModifiedTRUE && IsEnableSetModified() )
             SetModified( false );
         Invalidate( SID_SAVEASDOC );
-        pImp->nFlagsInProgress &= ~SfxLoadedFlags::IMAGES;
+        pImpl->nFlagsInProgress &= ~SfxLoadedFlags::IMAGES;
     }
 
-    pImp->nLoadedFlags |= nFlags;
+    pImpl->nLoadedFlags |= nFlags;
 
-    if ( pImp->nFlagsInProgress == SfxLoadedFlags::NONE )
+    if ( pImpl->nFlagsInProgress == SfxLoadedFlags::NONE )
     {
         // in case of reentrance calls the first called FinishedLoading() call on the stack
         // should do the notification, in result the notification is done when all the FinishedLoading() calls are finished
@@ -1210,7 +1131,7 @@ void SfxObjectShell::FinishedLoading( SfxLoadedFlags nFlags )
         else
             SetModified( false );
 
-        if ( (pImp->nLoadedFlags & SfxLoadedFlags::MAINDOCUMENT ) && (pImp->nLoadedFlags & SfxLoadedFlags::IMAGES ) )
+        if ( (pImpl->nLoadedFlags & SfxLoadedFlags::MAINDOCUMENT ) && (pImpl->nLoadedFlags & SfxLoadedFlags::IMAGES ) )
         {
             const SfxBoolItem* pTemplateItem = SfxItemSet::GetItem<SfxBoolItem>(pMedium->GetItemSet(), SID_TEMPLATE, false);
             bool bTemplate = pTemplateItem && pTemplateItem->GetValue();
@@ -1234,12 +1155,11 @@ void SfxObjectShell::FinishedLoading( SfxLoadedFlags nFlags )
         SetInitialized_Impl( false );
 
         // Title is not available until loading has finished
-        Broadcast( SfxSimpleHint( SFX_HINT_TITLECHANGED ) );
-        if ( pImp->nEventId )
+        Broadcast( SfxHint( SfxHintId::TitleChanged ) );
+        if ( pImpl->nEventId != SfxEventHintId::NONE )
             PostActivateEvent_Impl(SfxViewFrame::GetFirst(this));
     }
 }
-
 
 void SfxObjectShell::TemplateDisconnectionAfterLoad()
 {
@@ -1263,7 +1183,7 @@ void SfxObjectShell::TemplateDisconnectionAfterLoad()
             {
                 INetURLObject aURL( aName );
                 aURL.CutExtension();
-                aTemplateName = aURL.getName( INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET );
+                aTemplateName = aURL.getName( INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset );
             }
         }
 
@@ -1310,7 +1230,7 @@ void SfxObjectShell::TemplateDisconnectionAfterLoad()
             }
             else
             {
-                SetError( ERRCODE_IO_GENERAL, OSL_LOG_PREFIX );
+                SetError(ERRCODE_IO_GENERAL);
             }
         }
         else
@@ -1325,25 +1245,10 @@ void SfxObjectShell::TemplateDisconnectionAfterLoad()
         pTmpMedium->SetOpenMode( SFX_STREAM_READWRITE, true );
 
         // notifications about possible changes in readonly state and document info
-        Broadcast( SfxSimpleHint(SFX_HINT_MODECHANGED) );
+        Broadcast( SfxHint(SfxHintId::ModeChanged) );
 
         // created untitled document can't be modified
         SetModified( false );
-    }
-}
-
-
-void SfxObjectShell::PositionView_Impl()
-{
-    MarkData_Impl *pMark = Get_Impl()->pMarkData;
-    if( pMark )
-    {
-        SfxViewShell* pSh = pMark->pFrame->GetViewShell();
-        if( !pMark->aUserData.isEmpty() )
-            pSh->ReadUserData( pMark->aUserData, true );
-        else if( !pMark->aMark.isEmpty() )
-            pSh->JumpToMark( pMark->aMark );
-        DELETEZ( Get_Impl()->pMarkData );
     }
 }
 
@@ -1354,7 +1259,7 @@ bool SfxObjectShell::IsLoading() const
     Has FinishedLoading been called?
 */
 {
-    return !( pImp->nLoadedFlags & SfxLoadedFlags::MAINDOCUMENT );
+    return !( pImpl->nLoadedFlags & SfxLoadedFlags::MAINDOCUMENT );
 }
 
 
@@ -1365,9 +1270,9 @@ void SfxObjectShell::CancelTransfers()
     by RegisterTransfer.
 */
 {
-    if( ( pImp->nLoadedFlags & SfxLoadedFlags::ALL ) != SfxLoadedFlags::ALL )
+    if( ( pImpl->nLoadedFlags & SfxLoadedFlags::ALL ) != SfxLoadedFlags::ALL )
     {
-        AbortImport();
+        pImpl->bIsAbortingImport = true;
         if( IsLoading() )
             FinishedLoading();
     }
@@ -1388,7 +1293,7 @@ void AutoReloadTimer_Impl::Invoke()
 
     if ( pFrame )
     {
-        // Not possible/meanigfull at the moment?
+        // Not possible/meaningful at the moment?
         if ( !pObjSh->CanReload_Impl() || pObjSh->IsAutoLoadLocked() || Application::IsUICaptured() )
         {
             // Allow a retry
@@ -1464,7 +1369,7 @@ namespace
 ErrCode SfxObjectShell::CallXScript( const Reference< XInterface >& _rxScriptContext, const OUString& _rScriptURL,
     const Sequence< Any >& aParams, Any& aRet, Sequence< sal_Int16 >& aOutParamIndex, Sequence< Any >& aOutParam, bool bRaiseError, const css::uno::Any* pCaller )
 {
-    OSL_TRACE( "in CallXScript" );
+    SAL_INFO("sfx", "in CallXScript" );
     ErrCode nErr = ERRCODE_NONE;
 
     bool bIsDocumentScript = ( _rScriptURL.indexOf( "location=document" ) >= 0 );
@@ -1516,17 +1421,18 @@ ErrCode SfxObjectShell::CallXScript( const Reference< XInterface >& _rxScriptCon
 
     if ( bCaughtException && bRaiseError )
     {
-        std::unique_ptr< VclAbstractDialog > pScriptErrDlg;
         SfxAbstractDialogFactory* pFact = SfxAbstractDialogFactory::Create();
         if ( pFact )
-            pScriptErrDlg.reset( pFact->CreateScriptErrorDialog( aException ) );
-        OSL_ENSURE( pScriptErrDlg.get(), "SfxObjectShell::CallXScript: no script error dialog!" );
+        {
+            ScopedVclPtr<VclAbstractDialog> pScriptErrDlg( pFact->CreateScriptErrorDialog( aException ) );
+            OSL_ENSURE( pScriptErrDlg.get(), "SfxObjectShell::CallXScript: no script error dialog!" );
 
-        if ( pScriptErrDlg.get() )
-            pScriptErrDlg->Execute();
+            if ( pScriptErrDlg.get() )
+                pScriptErrDlg->Execute();
+        }
     }
 
-    OSL_TRACE( "leaving CallXScript" );
+    SAL_INFO("sfx", "leaving CallXScript" );
     return nErr;
 }
 
@@ -1545,9 +1451,9 @@ ErrCode SfxObjectShell::CallXScript( const OUString& rScriptURL,
 
 SfxObjectShellFlags SfxObjectShell::GetFlags() const
 {
-    if( pImp->eFlags == SfxObjectShellFlags::UNDEFINED )
-        pImp->eFlags = GetFactory().GetFlags();
-    return pImp->eFlags;
+    if( pImpl->eFlags == SfxObjectShellFlags::UNDEFINED )
+        pImpl->eFlags = GetFactory().GetFlags();
+    return pImpl->eFlags;
 }
 
 void SfxHeaderAttributes_Impl::SetAttributes()
@@ -1573,7 +1479,7 @@ void SfxHeaderAttributes_Impl::SetAttribute( const SvKeyValue& rKV )
             INetURLObject aObj;
             INetURLObject( pDoc->GetMedium()->GetName() ).GetNewAbsURL( aURL.copy( 4 ), &aObj );
             xDocProps->setAutoloadURL(
-                aObj.GetMainURL( INetURLObject::NO_DECODE ) );
+                aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
         }
         try
         {
@@ -1607,12 +1513,12 @@ void SfxHeaderAttributes_Impl::Append( const SvKeyValue& rKV )
 
 SvKeyValueIterator* SfxObjectShell::GetHeaderAttributes()
 {
-    if( !pImp->xHeaderAttributes.Is() )
+    if( !pImpl->xHeaderAttributes.is() )
     {
         DBG_ASSERT( pMedium, "No Medium" );
-        pImp->xHeaderAttributes = new SfxHeaderAttributes_Impl( this );
+        pImpl->xHeaderAttributes = new SfxHeaderAttributes_Impl( this );
     }
-    return static_cast<SvKeyValueIterator*>( &pImp->xHeaderAttributes );
+    return static_cast<SvKeyValueIterator*>( pImpl->xHeaderAttributes.get() );
 }
 
 void SfxObjectShell::ClearHeaderAttributesForSourceViewHack()
@@ -1688,16 +1594,16 @@ bool SfxObjectShell::AdjustMacroMode()
     if ( pMedium )
         xInteraction = pMedium->GetInteractionHandler();
 
-    CheckForBrokenDocSignatures_Impl( xInteraction );
+    CheckForBrokenDocSignatures_Impl();
 
     CheckEncryption_Impl( xInteraction );
 
-    return pImp->aMacroMode.adjustMacroMode( xInteraction );
+    return pImpl->aMacroMode.adjustMacroMode( xInteraction );
 }
 
 vcl::Window* SfxObjectShell::GetDialogParent( SfxMedium* pLoadingMedium )
 {
-    vcl::Window* pWindow = nullptr;
+    VclPtr<vcl::Window> pWindow;
     SfxItemSet* pSet = pLoadingMedium ? pLoadingMedium->GetItemSet() : GetMedium()->GetItemSet();
     const SfxUnoFrameItem* pUnoItem = SfxItemSet::GetItem<SfxUnoFrameItem>(pSet, SID_FILLFRAME, false);
     if ( pUnoItem )
@@ -1893,7 +1799,7 @@ bool SfxObjectShell_Impl::hasTrustedScriptingSignature( bool bAllowUIToAddAuthor
             if ( aInfo.getLength() )
             {
                 if ( nScriptingSignatureState == SignatureState::UNKNOWN )
-                    nScriptingSignatureState = rDocShell.ImplCheckSignaturesInformation( aInfo );
+                    nScriptingSignatureState = SfxObjectShell::ImplCheckSignaturesInformation( aInfo );
 
                 if ( nScriptingSignatureState == SignatureState::OK
                   || nScriptingSignatureState == SignatureState::NOTVALIDATED )
@@ -1930,96 +1836,24 @@ bool SfxObjectShell_Impl::hasTrustedScriptingSignature( bool bAllowUIToAddAuthor
     return bResult;
 }
 
-void SfxObjectShell_Impl::showBrokenSignatureWarning( const uno::Reference< task::XInteractionHandler >& _rxInteraction ) const
+bool SfxObjectShell::IsContinueImportOnFilterExceptions(const OUString& aErrMessage)
 {
-    if  ( !bSignatureErrorIsShown )
+    if (mbContinueImportOnFilterExceptions == undefined)
     {
-        SfxObjectShell::UseInteractionToHandleError( _rxInteraction, ERRCODE_SFX_BROKENSIGNATURE );
-        const_cast< SfxObjectShell_Impl* >( this )->bSignatureErrorIsShown = true;
-    }
-}
-
-void SfxObjectShell::AddLog( const OUString& aMessage )
-{
-    if ( !pImp->m_xLogRing.is() )
-    {
-        try
+        if (Application::GetDialogCancelMode() == Application::DialogCancelMode::Off)
         {
-            Reference<XComponentContext> xContext( ::comphelper::getProcessComponentContext() );
-            pImp->m_xLogRing.set( logging::DocumentIOLogRing::get(xContext) );
+            // Ask the user to try to continue or abort loading
+            OUString aMessage = SfxResId(STR_QMSG_ERROR_OPENING_FILE).toString();
+            if (!aErrMessage.isEmpty())
+                aMessage += SfxResId(STR_QMSG_ERROR_OPENING_FILE_DETAILS).toString() + aErrMessage;
+            aMessage += SfxResId(STR_QMSG_ERROR_OPENING_FILE_CONTINUE).toString();
+            ScopedVclPtrInstance< MessageDialog > aBox(nullptr, aMessage, VclMessageType::Question, VclButtonsType::YesNo);
+            mbContinueImportOnFilterExceptions = (aBox->Execute() == RET_YES) ? yes : no;
         }
-        catch( uno::Exception& )
-        {}
+        else
+            mbContinueImportOnFilterExceptions = no;
     }
-
-    if ( pImp->m_xLogRing.is() )
-        pImp->m_xLogRing->logString( aMessage );
-}
-
-namespace {
-
-void WriteStringInStream( const uno::Reference< io::XOutputStream >& xOutStream, const OUString& aString )
-{
-    if ( xOutStream.is() )
-    {
-        OString aStrLog = OUStringToOString( aString, RTL_TEXTENCODING_UTF8 );
-        uno::Sequence< sal_Int8 > aLogData( reinterpret_cast<const sal_Int8*>(aStrLog.getStr()), aStrLog.getLength() );
-        xOutStream->writeBytes( aLogData );
-
-        aLogData.realloc( 1 );
-        aLogData[0] = '\n';
-        xOutStream->writeBytes( aLogData );
-    }
-}
-
-}
-
-void SfxObjectShell::StoreLog()
-{
-    if ( !pImp->m_xLogRing.is() )
-    {
-        try
-        {
-            Reference<XComponentContext> xContext( ::comphelper::getProcessComponentContext() );
-            pImp->m_xLogRing.set( logging::DocumentIOLogRing::get(xContext) );
-        }
-        catch( uno::Exception& )
-        {}
-    }
-
-    if ( pImp->m_xLogRing.is() )
-    {
-        OUString aFileURL = ( "${$BRAND_BASE_DIR/" LIBO_ETC_FOLDER "/" SAL_CONFIGFILE("bootstrap") ":UserInstallation}"  );
-
-        ::rtl::Bootstrap::expandMacros( aFileURL );
-
-        OUString aBuildID = ( "${$BRAND_BASE_DIR/" LIBO_ETC_FOLDER "/" SAL_CONFIGFILE("setup") ":buildid}"  );
-
-        ::rtl::Bootstrap::expandMacros( aBuildID );
-
-        if ( !aFileURL.isEmpty() )
-        {
-            aFileURL += "/user/temp/document_io_logring.txt";
-            try
-            {
-                uno::Reference< uno::XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
-                uno::Reference< ucb::XSimpleFileAccess3 > xSimpleFileAccess(ucb::SimpleFileAccess::create(xContext));
-                uno::Reference< io::XStream > xStream( xSimpleFileAccess->openFileReadWrite( aFileURL ), uno::UNO_SET_THROW );
-                uno::Reference< io::XOutputStream > xOutStream( xStream->getOutputStream(), uno::UNO_SET_THROW );
-                uno::Reference< io::XTruncate > xTruncate( xOutStream, uno::UNO_QUERY_THROW );
-                xTruncate->truncate();
-
-                if ( !aBuildID.isEmpty() )
-                    WriteStringInStream( xOutStream, aBuildID );
-
-                uno::Sequence< OUString > aLogSeq = pImp->m_xLogRing->getCollectedLog();
-                for ( sal_Int32 nInd = 0; nInd < aLogSeq.getLength(); nInd++ )
-                    WriteStringInStream( xOutStream, aLogSeq[nInd] );
-            }
-            catch( uno::Exception& )
-            {}
-        }
-    }
+    return mbContinueImportOnFilterExceptions == yes;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

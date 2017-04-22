@@ -58,6 +58,7 @@
         else if( mpMenu->mpVCLMenu )
         {
             mpMenu->mpVCLMenu->Activate();
+            mpMenu->mpVCLMenu->Deactivate();
 
             // Hide disabled items
             NSArray* elements = [pMenu itemArray];
@@ -98,6 +99,12 @@
     // must still end up in the view. This is necessary to handle common edit actions in docked
     // windows (e.g. in toolbar fields).
     NSEvent* pEvent = [NSApp currentEvent];
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+        // 'NSAlternateKeyMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSCommandKeyMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSControlKeyMask' is deprecated: first deprecated in macOS 10.12
+        // 'NSKeyDown' is deprecated: first deprecated in macOS 10.12
+        // 'NSShiftKeyMask' is deprecated: first deprecated in macOS 10.12
     if( pEvent && [pEvent type] == NSKeyDown )
     {
         unsigned int nModMask = ([pEvent modifierFlags] & (NSShiftKeyMask|NSControlKeyMask|NSAlternateKeyMask|NSCommandKeyMask));
@@ -113,6 +120,7 @@
             return;
         }
     }
+SAL_WNODEPRECATED_DECLARATIONS_POP
 
     const AquaSalFrame* pFrame = mpMenuItem->mpParentMenu ? mpMenuItem->mpParentMenu->getFrame() : nullptr;
     if( pFrame && AquaSalFrame::isAlive( pFrame ) && ! pFrame->GetWindow()->IsInModalMode() )
@@ -125,7 +133,7 @@
         // if an item from submenu was selected. the corresponding Window does not exist because
         // we use native popup menus, so we have to set the selected menuitem directly
         // incidentally this of course works for top level popup menus, too
-        PopupMenu * pPopupMenu = dynamic_cast<PopupMenu *>(mpMenuItem->mpVCLMenu);
+        PopupMenu * pPopupMenu = dynamic_cast<PopupMenu *>(mpMenuItem->mpVCLMenu.get());
         if( pPopupMenu )
         {
             // FIXME: revise this ugly code
@@ -172,7 +180,10 @@
             aImgRect.origin.y = floor((aFrame.size.height - aFromRect.size.height)/2);
             aImgRect.size = aFromRect.size;
             if( rButtons[i].mpNSImage )
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+    // 'NSCompositeSourceOver' is deprecated: first deprecated in macOS 10.12
                 [rButtons[i].mpNSImage drawInRect: aImgRect fromRect: aFromRect operation: NSCompositeSourceOver fraction: 1.0];
+SAL_WNODEPRECATED_DECLARATIONS_POP
             aImgRect.origin.x += aFromRect.size.width + 2;
         }
     }
@@ -223,7 +234,7 @@
             aSize.width = 2;
             for( size_t i = 0; i < rButtons.size(); ++i )
             {
-                NSRect aImgRect = { { static_cast<CGFloat>(aSize.width),
+                NSRect aImgRect = { { aSize.width,
                                       static_cast<CGFloat>(floor((aSize.height-rButtons[i].maButton.maImage.GetSizePixel().Height())/2)) },
                                     { static_cast<CGFloat>(rButtons[i].maButton.maImage.GetSizePixel().Width()),
                                       static_cast<CGFloat>(rButtons[i].maButton.maImage.GetSizePixel().Height()) } };

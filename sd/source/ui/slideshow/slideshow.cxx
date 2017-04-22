@@ -135,7 +135,7 @@ SlideShow::SlideShow( SdDrawDocument* pDoc )
 {
 }
 
-void SlideShow::ThrowIfDisposed() const throw (RuntimeException)
+void SlideShow::ThrowIfDisposed() const
 {
     if( mpDoc == nullptr )
         throw DisposedException();
@@ -226,17 +226,17 @@ void SlideShow::CreateController(  ViewShell* pViewSh, ::sd::View* pView, vcl::W
 }
 
 // XServiceInfo
-OUString SAL_CALL SlideShow::getImplementationName(  ) throw(RuntimeException, std::exception)
+OUString SAL_CALL SlideShow::getImplementationName(  )
 {
     return OUString( "com.sun.star.comp.sd.SlideShow" );
 }
 
-sal_Bool SAL_CALL SlideShow::supportsService( const OUString& ServiceName ) throw(RuntimeException, std::exception)
+sal_Bool SAL_CALL SlideShow::supportsService( const OUString& ServiceName )
 {
     return cppu::supportsService( this, ServiceName );
 }
 
-Sequence< OUString > SAL_CALL SlideShow::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL SlideShow::getSupportedServiceNames(  )
 {
     OUString aService( "com.sun.star.presentation.Presentation" );
     Sequence< OUString > aSeq( &aService, 1 );
@@ -244,14 +244,14 @@ Sequence< OUString > SAL_CALL SlideShow::getSupportedServiceNames(  ) throw(Runt
 }
 
 // XPropertySet
-Reference< XPropertySetInfo > SAL_CALL SlideShow::getPropertySetInfo() throw(RuntimeException, std::exception)
+Reference< XPropertySetInfo > SAL_CALL SlideShow::getPropertySetInfo()
 {
     SolarMutexGuard aGuard;
     static Reference< XPropertySetInfo > xInfo = maPropSet.getPropertySetInfo();
     return xInfo;
  }
 
-void SAL_CALL SlideShow::setPropertyValue( const OUString& aPropertyName, const Any& aValue ) throw(UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
+void SAL_CALL SlideShow::setPropertyValue( const OUString& aPropertyName, const Any& aValue )
 {
     SolarMutexGuard aGuard;
     ThrowIfDisposed();
@@ -491,7 +491,7 @@ void SAL_CALL SlideShow::setPropertyValue( const OUString& aPropertyName, const 
         {
             bIllegalArgument = false;
 
-            SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
+            SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
             pOptions->SetDisplay( nDisplay );
 
             FullScreenWorkWindow *pWin = dynamic_cast<FullScreenWorkWindow *>(GetWorkWindow());
@@ -503,7 +503,7 @@ void SAL_CALL SlideShow::setPropertyValue( const OUString& aPropertyName, const 
     }
 
     default:
-        throw UnknownPropertyException();
+        throw UnknownPropertyException( OUString::number(pEntry ? pEntry->nWID : -1), static_cast<cppu::OWeakObject*>(this));
     }
 
     if( bIllegalArgument )
@@ -513,7 +513,7 @@ void SAL_CALL SlideShow::setPropertyValue( const OUString& aPropertyName, const 
         mpDoc->SetChanged();
 }
 
-Any SAL_CALL SlideShow::getPropertyValue( const OUString& PropertyName ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
+Any SAL_CALL SlideShow::getPropertyValue( const OUString& PropertyName )
 {
     SolarMutexGuard aGuard;
     ThrowIfDisposed();
@@ -570,34 +570,34 @@ Any SAL_CALL SlideShow::getPropertyValue( const OUString& PropertyName ) throw(U
         return Any( rPresSettings.mbShowPauseLogo );
     case ATTR_PRESENT_DISPLAY:
     {
-        SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
+        SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
         return Any(pOptions->GetDisplay());
     }
 
     default:
-        throw UnknownPropertyException();
+        throw UnknownPropertyException( OUString::number(pEntry ? pEntry->nWID : -1), static_cast<cppu::OWeakObject*>(this));
     }
 }
 
-void SAL_CALL SlideShow::addPropertyChangeListener( const OUString& , const Reference< XPropertyChangeListener >&  ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
+void SAL_CALL SlideShow::addPropertyChangeListener( const OUString& , const Reference< XPropertyChangeListener >&  )
 {
 }
 
-void SAL_CALL SlideShow::removePropertyChangeListener( const OUString& , const Reference< XPropertyChangeListener >&  ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
+void SAL_CALL SlideShow::removePropertyChangeListener( const OUString& , const Reference< XPropertyChangeListener >&  )
 {
 }
 
-void SAL_CALL SlideShow::addVetoableChangeListener( const OUString& , const Reference< XVetoableChangeListener >&  ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
+void SAL_CALL SlideShow::addVetoableChangeListener( const OUString& , const Reference< XVetoableChangeListener >&  )
 {
 }
 
-void SAL_CALL SlideShow::removeVetoableChangeListener( const OUString& , const Reference< XVetoableChangeListener >&  ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
+void SAL_CALL SlideShow::removeVetoableChangeListener( const OUString& , const Reference< XVetoableChangeListener >&  )
 {
 }
 
 // XPresentation
 
-void SAL_CALL SlideShow::start() throw(RuntimeException, std::exception)
+void SAL_CALL SlideShow::start()
 {
     const Sequence< PropertyValue > aArguments;
     startWithArguments( aArguments );
@@ -613,7 +613,7 @@ WorkWindow *SlideShow::GetWorkWindow()
     if( !pShell || !pShell->GetViewFrame() )
         return nullptr;
 
-    return dynamic_cast<WorkWindow*>(pShell->GetViewFrame()->GetTopFrame().GetWindow().GetParent());
+    return dynamic_cast<WorkWindow*>(pShell->GetViewFrame()->GetFrame().GetWindow().GetParent());
 }
 
 bool SlideShow::IsExitAfterPresenting() const
@@ -631,7 +631,6 @@ void SlideShow::SetExitAfterPresenting(bool bExit)
 }
 
 void SAL_CALL SlideShow::end()
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -668,10 +667,11 @@ void SAL_CALL SlideShow::end()
 
             if( pShell && pShell->GetViewFrame() )
             {
-                WorkWindow* pWorkWindow = dynamic_cast<WorkWindow*>(pShell->GetViewFrame()->GetTopFrame().GetWindow().GetParent());
+                WorkWindow* pWorkWindow = dynamic_cast<WorkWindow*>(pShell->GetViewFrame()->GetFrame().GetWindow().GetParent());
                 if( pWorkWindow )
                 {
-                    pWorkWindow->StartPresentationMode( isAlwaysOnTop() ? PresentationFlags::HideAllApps : PresentationFlags::NONE );
+                    pWorkWindow->StartPresentationMode(   (mxController.is() && mxController->maPresSettings.mbAlwaysOnTop)
+                                                        ? PresentationFlags::HideAllApps : PresentationFlags::NONE );
                 }
             }
         }
@@ -737,7 +737,7 @@ void SAL_CALL SlideShow::end()
                         if (xDrawView.is())
                             xDrawView->setCurrentPage(
                                 Reference<XDrawPage>(
-                                    mpDoc->GetSdPage(xController->getRestoreSlide(), PK_STANDARD)->getUnoPage(),
+                                    mpDoc->GetSdPage(xController->getRestoreSlide(), PageKind::Standard)->getUnoPage(),
                                     UNO_QUERY));
                     }
                 }
@@ -773,7 +773,7 @@ void SAL_CALL SlideShow::end()
     }
 }
 
-void SAL_CALL SlideShow::rehearseTimings() throw(RuntimeException, std::exception)
+void SAL_CALL SlideShow::rehearseTimings()
 {
     Sequence< PropertyValue > aArguments(1);
     aArguments[0].Name = "RehearseTimings";
@@ -784,7 +784,6 @@ void SAL_CALL SlideShow::rehearseTimings() throw(RuntimeException, std::exceptio
 // XPresentation2
 
 void SAL_CALL SlideShow::startWithArguments(const Sequence< PropertyValue >& rArguments)
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     ThrowIfDisposed();
@@ -845,13 +844,13 @@ void SAL_CALL SlideShow::startWithArguments(const Sequence< PropertyValue >& rAr
 
 }
 
-sal_Bool SAL_CALL SlideShow::isRunning(  ) throw (RuntimeException, std::exception)
+sal_Bool SAL_CALL SlideShow::isRunning(  )
 {
     SolarMutexGuard aGuard;
     return mxController.is() && mxController->isRunning();
 }
 
-Reference< XSlideShowController > SAL_CALL SlideShow::getController(  ) throw (RuntimeException, std::exception)
+Reference< XSlideShowController > SAL_CALL SlideShow::getController(  )
 {
     ThrowIfDisposed();
 
@@ -882,7 +881,7 @@ void SAL_CALL SlideShow::disposing()
     mpDoc = nullptr;
 }
 
-bool SlideShow::startPreview( const Reference< XDrawPage >& xDrawPage, const Reference< XAnimationNode >& xAnimationNode, vcl::Window* pParent )
+bool SlideShow::startPreview( const Reference< XDrawPage >& xDrawPage, const Reference< XAnimationNode >& xAnimationNode )
 {
     Sequence< PropertyValue > aArguments(4);
 
@@ -895,12 +894,8 @@ bool SlideShow::startPreview( const Reference< XDrawPage >& xDrawPage, const Ref
     aArguments[2].Name = "AnimationNode";
     aArguments[2].Value <<= xAnimationNode;
 
-    Reference< XWindow > xParentWindow;
-    if( pParent )
-        xParentWindow = VCLUnoHelper::GetInterface( pParent );
-
     aArguments[3].Name = "ParentWindow";
-    aArguments[3].Value <<= xParentWindow;
+    aArguments[3].Value <<= Reference< XWindow >();
 
     startWithArguments( aArguments );
 
@@ -992,15 +987,10 @@ bool SlideShow::keyInput(const KeyEvent& rKEvt)
     return mxController.is() && mxController->keyInput(rKEvt);
 }
 
-void SlideShow::paint( const Rectangle& rRect )
+void SlideShow::paint( const ::tools::Rectangle& rRect )
 {
     if( mxController.is() )
         mxController->paint( rRect );
-}
-
-bool SlideShow::isAlwaysOnTop()
-{
-    return mxController.is() && mxController->maPresSettings.mbAlwaysOnTop;
 }
 
 void SlideShow::pause( bool bPause )
@@ -1032,7 +1022,7 @@ void SlideShow::StartInPlacePresentationConfigurationCallback()
     mnInPlaceConfigEvent = Application::PostUserEvent( LINK( this, SlideShow, StartInPlacePresentationConfigurationHdl ) );
 }
 
-IMPL_LINK_NOARG_TYPED(SlideShow, StartInPlacePresentationConfigurationHdl, void*, void)
+IMPL_LINK_NOARG(SlideShow, StartInPlacePresentationConfigurationHdl, void*, void)
 {
     mnInPlaceConfigEvent = nullptr;
     StartInPlacePresentation();
@@ -1063,7 +1053,7 @@ void SlideShow::StartInPlacePresentation()
                 FrameView* pFrameView = pMainViewShell->GetFrameView();
                 pFrameView->SetPresentationViewShellId(SID_VIEWSHELL1);
                 pFrameView->SetPreviousViewShellType (pMainViewShell->GetShellType());
-                pFrameView->SetPageKind (PK_STANDARD);
+                pFrameView->SetPageKind (PageKind::Standard);
             }
 
             pHelper->RequestView( FrameworkHelper::msImpressViewURL, FrameworkHelper::msCenterPaneURL );
@@ -1156,7 +1146,7 @@ sal_Int32 SlideShow::GetDisplay()
 {
     sal_Int32 nDisplay = 0;
 
-    SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
+    SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
     if( pOptions )
         nDisplay = pOptions->GetDisplay();
 

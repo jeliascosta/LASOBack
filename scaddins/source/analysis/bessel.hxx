@@ -31,17 +31,33 @@ namespace analysis {
 //     BESSEL functions
 
 
-/** Returns the result for the unmodified BESSEL function of first kind (J), n-th order, at point x. */
-double BesselJ( double x, sal_Int32 n ) throw( css::lang::IllegalArgumentException, css::sheet::NoConvergenceException );
+/** Returns the result for the unmodified BESSEL function of first kind (J), n-th order, at point x.
 
-/** Returns the result for the modified BESSEL function of first kind (I), n-th order, at point x. */
-double BesselI( double x, sal_Int32 n ) throw( css::lang::IllegalArgumentException, css::sheet::NoConvergenceException );
+    @throws css::lang::IllegalArgumentException
+    @throws css::sheet::NoConvergenceException
+*/
+double BesselJ( double x, sal_Int32 n );
 
-/** Returns the result for the unmodified BESSEL function of second kind (Y), n-th order, at point x. */
-double BesselY( double x, sal_Int32 n ) throw( css::lang::IllegalArgumentException, css::sheet::NoConvergenceException );
+/** Returns the result for the modified BESSEL function of first kind (I), n-th order, at point x.
 
-/** Returns the result for the modified BESSEL function of second kind (K), n-th order, at point x. */
-double BesselK( double x, sal_Int32 n ) throw( css::lang::IllegalArgumentException, css::sheet::NoConvergenceException );
+    @throws css::lang::IllegalArgumentException
+    @throws css::sheet::NoConvergenceException
+*/
+double BesselI( double x, sal_Int32 n );
+
+/** Returns the result for the unmodified BESSEL function of second kind (Y), n-th order, at point x.
+
+    @throws css::lang::IllegalArgumentException
+    @throws css::sheet::NoConvergenceException
+*/
+double BesselY( double x, sal_Int32 n );
+
+/** Returns the result for the modified BESSEL function of second kind (K), n-th order, at point x.
+
+    @throws css::lang::IllegalArgumentException
+    @throws css::sheet::NoConvergenceException
+*/
+double BesselK( double x, sal_Int32 n );
 
 } // namespace analysis
 } // namespace sca

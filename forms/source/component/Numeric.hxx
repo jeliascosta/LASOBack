@@ -31,21 +31,18 @@ class ONumericModel
 {
 private:
     css::uno::Any          m_aSaveValue;
-protected:
-    virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
 
 public:
     DECLARE_DEFAULT_LEAF_XTOR( ONumericModel );
 
     // css::lang::XServiceInfo
-    OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    OUString SAL_CALL getImplementationName() override
     { return OUString("com.sun.star.form.ONumericModel"); }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(std::exception) override;
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
 
     // css::io::XPersistObject
-    virtual OUString SAL_CALL getServiceName() throw ( css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getServiceName() override;
 
     // OControlModel's property handling
     virtual void describeFixedProperties(
@@ -63,23 +60,19 @@ protected:
     virtual void            resetNoBroadcast() override;
 
 protected:
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) override;
 };
 
 class ONumericControl: public OBoundControl
 {
-protected:
-    virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
-
 public:
     explicit ONumericControl(const css::uno::Reference< css::uno::XComponentContext>& _rxFactory);
 
     // css::lang::XServiceInfo
-    OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    OUString SAL_CALL getImplementationName() override
     { return OUString("com.sun.star.form.ONumericControl"); }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(std::exception) override;
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
 };
 
 

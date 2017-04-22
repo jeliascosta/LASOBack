@@ -46,7 +46,6 @@
 #include <svx/svxdlg.hxx>
 #include <memory>
 
-//UUUU
 #include <svx/xdef.hxx>
 #include <svx/xenum.hxx>
 #include <svx/xfillit0.hxx>
@@ -66,7 +65,7 @@ const sal_uInt16 SvxHFPage::pRanges[] =
 {
     SID_ATTR_BRUSH,          SID_ATTR_BRUSH,
 
-    //UUUU Support DrawingLayer FillStyles (no real call to below GetRanges()
+    // Support DrawingLayer FillStyles (no real call to below GetRanges()
     // detected, still do the complete transition)
     XATTR_FILL_FIRST,        XATTR_FILL_LAST,
 
@@ -95,7 +94,7 @@ namespace svx {
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         if(pFact)
         {
-            std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSvxBorderBackgroundDlg( pParent, *pBBSet, bEnableBackgroundSelector ));
+            ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSvxBorderBackgroundDlg( pParent, *pBBSet, bEnableBackgroundSelector ));
             DBG_ASSERT(pDlg, "Dialog creation failed!");
             if ( pDlg->Execute() == RET_OK && pDlg->GetOutputItemSet() )
             {
@@ -147,9 +146,7 @@ SvxHFPage::SvxHFPage( vcl::Window* pParent, const SfxItemSet& rSet, sal_uInt16 n
     SfxTabPage(pParent, "HFFormatPage", "svx/ui/headfootformatpage.ui", &rSet),
     nId(nSetId),
     pBBSet(nullptr),
-    // bitfield
     mbDisableQueryBox(false),
-    mbEnableBackgroundSelector(true),
     mbEnableDrawingLayerFillStyles(false)
 {
     get(m_pCntSharedBox,"checkSameLR");
@@ -172,6 +169,19 @@ SvxHFPage::SvxHFPage( vcl::Window* pParent, const SfxItemSet& rSet, sal_uInt16 n
     {
         get(m_pPageLbl,"labelFooterFormat");
         get(m_pTurnOnBox, "checkFooterOn");
+
+        /* Set custom HIDs for the Footer help page (shared/01/05040400.xhp)
+        otherwise it would display the same extended help
+        on both the Header and Footer tabs */
+        m_pCntSharedBox->SetHelpId( "SVX_HID_FOOTER_CHECKSAMELR" );
+        m_pCntSharedFirstBox->SetHelpId( "SVX_HID_FOOTER_CHECKSAMEFP" );
+        m_pLMEdit->SetHelpId( "SVX_HID_FOOTER_SPINMARGLEFT" );
+        m_pRMEdit->SetHelpId( "SVX_HID_FOOTER_SPINMARGRIGHT" );
+        m_pDistEdit->SetHelpId( "SVX_HID_FOOTER_SPINSPACING" );
+        m_pDynSpacingCB->SetHelpId( "SVX_HID_FOOTER_CHECKDYNSPACING" );
+        m_pHeightEdit->SetHelpId( "SVX_HID_FOOTER_SPINHEIGHT" );
+        m_pHeightDynBtn->SetHelpId( "SVX_HID_FOOTER_CHECKAUTOFIT" );
+        m_pBackgroundBtn->SetHelpId( "SVX_HID_FOOTER_BUTTONMORE" );
     }
     else //Header
     {
@@ -254,7 +264,7 @@ bool SvxHFPage::FillItemSet( SfxItemSet* rSet )
         nWShadow, nWShadow,
         nWDynSpacing, nWDynSpacing,
 
-        //UUUU take over DrawingLayer FillStyles
+        // take over DrawingLayer FillStyles
         XATTR_FILL_FIRST, XATTR_FILL_LAST,                // [1014
 
         0, 0};
@@ -262,12 +272,12 @@ bool SvxHFPage::FillItemSet( SfxItemSet* rSet )
     const SfxItemSet& rOldSet = GetItemSet();
     SfxItemPool* pPool = rOldSet.GetPool();
     DBG_ASSERT(pPool,"no pool :-(");
-    SfxMapUnit eUnit = pPool->GetMetric(nWSize);
+    MapUnit eUnit = pPool->GetMetric(nWSize);
     SfxItemSet aSet(*pPool,aWhichTab);
 
     if(mbEnableDrawingLayerFillStyles)
     {
-        //UUUU When using the XATTR_FILLSTYLE DrawingLayer FillStyle definition
+        // When using the XATTR_FILLSTYLE DrawingLayer FillStyle definition
         // extra action has to be done here since the pool default is drawing::FillStyle_SOLID
         // instead of drawing::FillStyle_NONE (to have the default blue fill color at start).
         aSet.Put(XFillStyleItem(drawing::FillStyle_NONE));
@@ -278,7 +288,7 @@ bool SvxHFPage::FillItemSet( SfxItemSet* rSet )
     aSet.Put( SfxBoolItem( nWShared,  m_pCntSharedBox->IsChecked() ) );
     if(m_pCntSharedFirstBox->IsVisible())
         aSet.Put( SfxBoolItem( nWSharedFirst,  m_pCntSharedFirstBox->IsChecked() ) );
-    if(m_pDynSpacingCB->IsVisible() && SFX_WHICH_MAX > nWDynSpacing)
+    if (m_pDynSpacingCB->IsVisible() && SfxItemPool::IsWhich(nWDynSpacing))
     {
         std::unique_ptr<SfxBoolItem> pBoolItem(static_cast<SfxBoolItem*>(pPool->GetDefaultItem(nWDynSpacing).Clone()));
         pBoolItem->SetValue(m_pDynSpacingCB->IsChecked());
@@ -342,7 +352,7 @@ bool SvxHFPage::FillItemSet( SfxItemSet* rSet )
                 aSet.Put(_pSet->Get(nWShadow));
             }
 
-            //UUUU take care of [XATTR_XATTR_FILL_FIRST .. XATTR_FILL_LAST]
+            // take care of [XATTR_XATTR_FILL_FIRST .. XATTR_FILL_LAST]
             for(sal_uInt16 nFillStyleId(XATTR_FILL_FIRST); nFillStyleId <= XATTR_FILL_LAST; nFillStyleId++)
             {
                 if(_pSet->GetItemState(nFillStyleId) == SfxItemState::SET)
@@ -368,7 +378,7 @@ void SvxHFPage::Reset( const SfxItemSet* rSet )
 
     SfxItemPool* pPool = GetItemSet().GetPool();
     DBG_ASSERT( pPool, "Where is the pool" );
-    SfxMapUnit eUnit = pPool->GetMetric( GetWhich( SID_ATTR_PAGE_SIZE ) );
+    MapUnit eUnit = pPool->GetMetric( GetWhich( SID_ATTR_PAGE_SIZE ) );
 
     //hide "same content on first page when this is calc
     bool bIsCalc = false;
@@ -440,8 +450,8 @@ void SvxHFPage::Reset( const SfxItemSet* rSet )
     {
         // defaults for distance and height
         long nDefaultDist = bIsCalc ? DEF_DIST_CALC : DEF_DIST_WRITER;
-        SetMetricValue( *m_pDistEdit, nDefaultDist, SFX_MAPUNIT_100TH_MM );
-        SetMetricValue( *m_pHeightEdit, 500, SFX_MAPUNIT_100TH_MM );
+        SetMetricValue( *m_pDistEdit, nDefaultDist, MapUnit::Map100thMM );
+        SetMetricValue( *m_pHeightEdit, 500, MapUnit::Map100thMM );
     }
 
     if ( !pSetItem )
@@ -496,7 +506,7 @@ void SvxHFPage::InitHandler()
     m_pBackgroundBtn->SetClickHdl(LINK(this,SvxHFPage, BackgroundHdl));
 }
 
-IMPL_LINK_TYPED( SvxHFPage, TurnOnHdl, Button *, pButton, void )
+IMPL_LINK( SvxHFPage, TurnOnHdl, Button *, pButton, void )
 {
     CheckBox* pBox = static_cast<CheckBox*>(pButton);
     if ( m_pTurnOnBox->IsChecked() )
@@ -512,9 +522,9 @@ IMPL_LINK_TYPED( SvxHFPage, TurnOnHdl, Button *, pButton, void )
         m_pRMLbl->Enable();
         m_pRMEdit->Enable();
 
-        sal_uInt16 nUsage = m_pBspWin->GetUsage();
+        SvxPageUsage nUsage = m_pBspWin->GetUsage();
 
-        if( nUsage == SVX_PAGE_RIGHT || nUsage == SVX_PAGE_LEFT )
+        if( nUsage == SvxPageUsage::Right || nUsage == SvxPageUsage::Left )
             m_pCntSharedBox->Disable();
         else
         {
@@ -561,22 +571,22 @@ IMPL_LINK_TYPED( SvxHFPage, TurnOnHdl, Button *, pButton, void )
     UpdateExample();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxHFPage, DistModify, Edit&, void)
+IMPL_LINK_NOARG(SvxHFPage, DistModify, Edit&, void)
 {
     UpdateExample();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxHFPage, HeightModify, Edit&, void)
+IMPL_LINK_NOARG(SvxHFPage, HeightModify, Edit&, void)
 {
     UpdateExample();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxHFPage, BorderModify, Edit&, void)
+IMPL_LINK_NOARG(SvxHFPage, BorderModify, Edit&, void)
 {
     UpdateExample();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxHFPage, BackgroundHdl, Button*, void)
+IMPL_LINK_NOARG(SvxHFPage, BackgroundHdl, Button*, void)
 {
     if(!pBBSet)
     {
@@ -590,19 +600,20 @@ IMPL_LINK_NOARG_TYPED(SvxHFPage, BackgroundHdl, Button*, void)
             pBBSet = new SfxItemSet(
                 *GetItemSet().GetPool(),
                 XATTR_FILL_FIRST, XATTR_FILL_LAST,  // DrawingLayer FillStyle definitions
-                SID_COLOR_TABLE, SID_BITMAP_LIST,   // XPropertyLists for Color, Gradient, Hatch and Graphic fills
+                SID_COLOR_TABLE, SID_PATTERN_LIST,   // XPropertyLists for Color, Gradient, Hatch and Graphic fills
                 nOuter, nOuter,
                 nInner, nInner,
                 nShadow, nShadow,
                 0, 0);
 
-            //UUUU copy items for XPropertyList entries from the DrawModel so that
+            // copy items for XPropertyList entries from the DrawModel so that
             // the Area TabPage can access them
             static const sal_uInt16 nCopyFlags[] = {
                 SID_COLOR_TABLE,
                 SID_GRADIENT_LIST,
                 SID_HATCH_LIST,
                 SID_BITMAP_LIST,
+                SID_PATTERN_LIST,
                 0
             };
 
@@ -645,7 +656,7 @@ IMPL_LINK_NOARG_TYPED(SvxHFPage, BackgroundHdl, Button*, void)
         {
             if(mbEnableDrawingLayerFillStyles)
             {
-                //UUUU The style for header/footer is not yet created, need to reset
+                // The style for header/footer is not yet created, need to reset
                 // XFillStyleItem to drawing::FillStyle_NONE which is the same as in the style
                 // initialization. This needs to be done since the pool default for
                 // XFillStyleItem is drawing::FillStyle_SOLID
@@ -664,12 +675,11 @@ IMPL_LINK_NOARG_TYPED(SvxHFPage, BackgroundHdl, Button*, void)
 
     if(pFact)
     {
-        //UUUU
-        SfxAbstractTabDialog* pDlg = pFact->CreateSvxBorderBackgroundDlg(
+        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSvxBorderBackgroundDlg(
             this,
             *pBBSet,
-            mbEnableBackgroundSelector,
-            mbEnableDrawingLayerFillStyles);
+            true/*EnableBackgroundSelector*/,
+            mbEnableDrawingLayerFillStyles));
 
         DBG_ASSERT(pDlg,"Dialog creation failed!");
         if(RET_OK == pDlg->Execute() && pDlg->GetOutputItemSet())
@@ -692,7 +702,7 @@ IMPL_LINK_NOARG_TYPED(SvxHFPage, BackgroundHdl, Button*, void)
 
                 if(mbEnableDrawingLayerFillStyles)
                 {
-                    //UUUU create FillAttributes directly from DrawingLayer FillStyle entries
+                    // create FillAttributes directly from DrawingLayer FillStyle entries
                     aFillAttributes.reset(new drawinglayer::attribute::SdrAllFillAttributesHelper(*pBBSet));
                 }
                 else
@@ -701,7 +711,7 @@ IMPL_LINK_NOARG_TYPED(SvxHFPage, BackgroundHdl, Button*, void)
 
                     if(pBBSet->GetItemState(nWhich) == SfxItemState::SET)
                     {
-                        //UUUU create FillAttributes from SvxBrushItem
+                        // create FillAttributes from SvxBrushItem
                         const SvxBrushItem& rItem = static_cast< const SvxBrushItem& >(pBBSet->Get(nWhich));
                         SfxItemSet aTempSet(*pBBSet->GetPool(), XATTR_FILL_FIRST, XATTR_FILL_LAST);
 
@@ -747,18 +757,18 @@ void SvxHFPage::UpdateExample()
     if ( nId == SID_ATTR_PAGE_HEADERSET )
     {
         m_pBspWin->SetHeader( m_pTurnOnBox->IsChecked() );
-        m_pBspWin->SetHdHeight( GetCoreValue( *m_pHeightEdit, SFX_MAPUNIT_TWIP ) );
-        m_pBspWin->SetHdDist( GetCoreValue( *m_pDistEdit, SFX_MAPUNIT_TWIP ) );
-        m_pBspWin->SetHdLeft( GetCoreValue( *m_pLMEdit, SFX_MAPUNIT_TWIP ) );
-        m_pBspWin->SetHdRight( GetCoreValue( *m_pRMEdit, SFX_MAPUNIT_TWIP ) );
+        m_pBspWin->SetHdHeight( GetCoreValue( *m_pHeightEdit, MapUnit::MapTwip ) );
+        m_pBspWin->SetHdDist( GetCoreValue( *m_pDistEdit, MapUnit::MapTwip ) );
+        m_pBspWin->SetHdLeft( GetCoreValue( *m_pLMEdit, MapUnit::MapTwip ) );
+        m_pBspWin->SetHdRight( GetCoreValue( *m_pRMEdit, MapUnit::MapTwip ) );
     }
     else
     {
         m_pBspWin->SetFooter( m_pTurnOnBox->IsChecked() );
-        m_pBspWin->SetFtHeight( GetCoreValue( *m_pHeightEdit, SFX_MAPUNIT_TWIP ) );
-        m_pBspWin->SetFtDist( GetCoreValue( *m_pDistEdit, SFX_MAPUNIT_TWIP ) );
-        m_pBspWin->SetFtLeft( GetCoreValue( *m_pLMEdit, SFX_MAPUNIT_TWIP ) );
-        m_pBspWin->SetFtRight( GetCoreValue( *m_pRMEdit, SFX_MAPUNIT_TWIP ) );
+        m_pBspWin->SetFtHeight( GetCoreValue( *m_pHeightEdit, MapUnit::MapTwip ) );
+        m_pBspWin->SetFtDist( GetCoreValue( *m_pDistEdit, MapUnit::MapTwip ) );
+        m_pBspWin->SetFtLeft( GetCoreValue( *m_pLMEdit, MapUnit::MapTwip ) );
+        m_pBspWin->SetFtRight( GetCoreValue( *m_pRMEdit, MapUnit::MapTwip ) );
     }
     m_pBspWin->Invalidate();
 }
@@ -779,7 +789,7 @@ void SvxHFPage::ResetBackground_Impl( const SfxItemSet& rSet )
 
             if(mbEnableDrawingLayerFillStyles)
             {
-                //UUUU create FillAttributes directly from DrawingLayer FillStyle entries
+                // create FillAttributes directly from DrawingLayer FillStyle entries
                 aHeaderFillAttributes.reset(new drawinglayer::attribute::SdrAllFillAttributesHelper(rTmpSet));
             }
             else
@@ -788,7 +798,7 @@ void SvxHFPage::ResetBackground_Impl( const SfxItemSet& rSet )
 
                 if(SfxItemState::SET == rTmpSet.GetItemState(nWhich))
                 {
-                    //UUUU create FillAttributes from SvxBrushItem
+                    // create FillAttributes from SvxBrushItem
                     const SvxBrushItem& rItem = static_cast< const SvxBrushItem& >(rTmpSet.Get(nWhich));
                     SfxItemSet aTempSet(*rTmpSet.GetPool(), XATTR_FILL_FIRST, XATTR_FILL_LAST);
 
@@ -823,7 +833,7 @@ void SvxHFPage::ResetBackground_Impl( const SfxItemSet& rSet )
 
             if(mbEnableDrawingLayerFillStyles)
             {
-                //UUUU create FillAttributes directly from DrawingLayer FillStyle entries
+                // create FillAttributes directly from DrawingLayer FillStyle entries
                 aFooterFillAttributes.reset(new drawinglayer::attribute::SdrAllFillAttributesHelper(rTmpSet));
             }
             else
@@ -832,7 +842,7 @@ void SvxHFPage::ResetBackground_Impl( const SfxItemSet& rSet )
 
                 if(SfxItemState::SET == rTmpSet.GetItemState(nWhich))
                 {
-                    //UUUU create FillAttributes from SvxBrushItem
+                    // create FillAttributes from SvxBrushItem
                     const SvxBrushItem& rItem = static_cast< const SvxBrushItem& >(rTmpSet.Get(nWhich));
                     SfxItemSet aTempSet(*rTmpSet.GetPool(), XATTR_FILL_FIRST, XATTR_FILL_LAST);
 
@@ -856,7 +866,7 @@ void SvxHFPage::ResetBackground_Impl( const SfxItemSet& rSet )
 
     if(mbEnableDrawingLayerFillStyles)
     {
-        //UUUU create FillAttributes directly from DrawingLayer FillStyle entries
+        // create FillAttributes directly from DrawingLayer FillStyle entries
         aPageFillAttributes.reset(new drawinglayer::attribute::SdrAllFillAttributesHelper(rSet));
     }
     else
@@ -865,7 +875,7 @@ void SvxHFPage::ResetBackground_Impl( const SfxItemSet& rSet )
 
         if(rSet.GetItemState(nWhich) >= SfxItemState::DEFAULT)
         {
-            //UUUU create FillAttributes from SvxBrushItem
+            // create FillAttributes from SvxBrushItem
             const SvxBrushItem& rItem = static_cast< const SvxBrushItem& >(rSet.Get(nWhich));
             SfxItemSet aTempSet(*rSet.GetPool(), XATTR_FILL_FIRST, XATTR_FILL_LAST);
 
@@ -918,7 +928,7 @@ void SvxHFPage::ActivatePage( const SfxItemSet& rSet )
         m_pBspWin->SetBottom( 0 );
     }
 
-    sal_uInt16 nUsage = SVX_PAGE_ALL;
+    SvxPageUsage nUsage = SvxPageUsage::All;
     pItem = GetItem( rSet, SID_ATTR_PAGE );
 
     if ( pItem )
@@ -926,7 +936,7 @@ void SvxHFPage::ActivatePage( const SfxItemSet& rSet )
 
     m_pBspWin->SetUsage( nUsage );
 
-    if ( SVX_PAGE_RIGHT == nUsage || SVX_PAGE_LEFT == nUsage )
+    if ( SvxPageUsage::Right == nUsage || SvxPageUsage::Left == nUsage )
         m_pCntSharedBox->Disable();
     else
     {
@@ -1044,14 +1054,14 @@ void SvxHFPage::ActivatePage( const SfxItemSet& rSet )
     RangeHdl();
 }
 
-SfxTabPage::sfxpg SvxHFPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxHFPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if ( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
-IMPL_LINK_NOARG_TYPED(SvxHFPage, RangeFocusHdl, Control&, void)
+IMPL_LINK_NOARG(SvxHFPage, RangeFocusHdl, Control&, void)
 {
     RangeHdl();
 }
@@ -1154,14 +1164,13 @@ void SvxHFPage::EnableDynamicSpacing()
 
 void SvxHFPage::PageCreated(const SfxAllItemSet &rSet)
 {
-    //UUUU
     const SfxBoolItem* pSupportDrawingLayerFillStyleItem = rSet.GetItem<SfxBoolItem>(SID_DRAWINGLAYER_FILLSTYLES, false);
 
     if(pSupportDrawingLayerFillStyleItem)
     {
         const bool bNew(pSupportDrawingLayerFillStyleItem->GetValue());
 
-        EnableDrawingLayerFillStyles(bNew);
+        mbEnableDrawingLayerFillStyles = bNew;
     }
 }
 

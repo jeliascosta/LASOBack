@@ -36,7 +36,7 @@
 #include <editeng/flstitem.hxx>
 #include <editeng/fontitem.hxx>
 #include <svx/hlnkitem.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <editeng/postitem.hxx>
 #include <editeng/scripttypeitem.hxx>
 #include <editeng/shdditem.hxx>
@@ -93,27 +93,24 @@ void ScEditShell::InitInterface_Impl()
 ScEditShell::ScEditShell(EditView* pView, ScViewData* pData) :
     pEditView       (pView),
     pViewData       (pData),
-    pClipEvtLstnr   (nullptr),
     bPastePossible  (false),
     bIsInsertMode   (true)
 {
     SetPool( pEditView->GetEditEngine()->GetEmptyItemSet().GetPool() );
     SetUndoManager( &pEditView->GetEditEngine()->GetUndoManager() );
     SetName("EditCell");
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_EditCell));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::EditCell));
 }
 
 ScEditShell::~ScEditShell()
 {
-    if ( pClipEvtLstnr )
+    if ( mxClipEvtLstnr.is() )
     {
-        pClipEvtLstnr->AddRemoveListener( pViewData->GetActiveWin(), false );
+        mxClipEvtLstnr->RemoveListener( pViewData->GetActiveWin() );
 
         //  The listener may just now be waiting for the SolarMutex and call the link
         //  afterwards, in spite of RemoveListener. So the link has to be reset, too.
-        pClipEvtLstnr->ClearCallbackLink();
-
-        pClipEvtLstnr->release();
+        mxClipEvtLstnr->ClearCallbackLink();
     }
 }
 
@@ -138,7 +135,10 @@ static void lcl_RemoveAttribs( EditView& rEditView )
     pEngine->SetUpdateMode(false);
 
     OUString aName = ScGlobal::GetRscString( STR_UNDO_DELETECONTENTS );
-    pEngine->GetUndoManager().EnterListAction( aName, aName );
+    ViewShellId nViewShellId(-1);
+    if (ScTabViewShell* pViewSh = ScTabViewShell::GetActiveViewShell())
+        nViewShellId = pViewSh->GetViewShellId();
+    pEngine->GetUndoManager().EnterListAction( aName, aName, 0, nViewShellId );
 
     rEditView.RemoveAttribs(true);
     pEngine->RepeatDefaults();      // paragraph attributes from cell formats must be preserved
@@ -273,19 +273,20 @@ void ScEditShell::Execute( SfxRequest& rReq )
         case SID_PASTE_SPECIAL:
             {
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                std::unique_ptr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( pViewData->GetDialogParent() ));
+                ScopedVclPtr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( pViewData->GetDialogParent() ));
                 SotClipboardFormatId nFormat = SotClipboardFormatId::NONE;
                 if ( pDlg )
                 {
                     pDlg->Insert( SotClipboardFormatId::STRING, EMPTY_OUSTRING );
                     pDlg->Insert( SotClipboardFormatId::RTF,    EMPTY_OUSTRING );
+                    pDlg->Insert( SotClipboardFormatId::RICHTEXT,    EMPTY_OUSTRING );
 
                     TransferableDataHelper aDataHelper(
                         TransferableDataHelper::CreateFromSystemClipboard( pViewData->GetActiveWin() ) );
 
                     nFormat = pDlg->GetFormat( aDataHelper.GetTransferable() );
                 }
-                pDlg.reset();
+                pDlg.disposeAndClear();
 
                 // while the dialog was open, edit mode may have been stopped
                 if (!SC_MOD()->IsInputMode())
@@ -453,7 +454,7 @@ void ScEditShell::Execute( SfxRequest& rReq )
                 ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                std::unique_ptr<AbstractScNamePasteDlg> pDlg(pFact->CreateScNamePasteDlg( pViewData->GetDialogParent(), pViewData->GetDocShell(), false ));
+                ScopedVclPtr<AbstractScNamePasteDlg> pDlg(pFact->CreateScNamePasteDlg( pViewData->GetDialogParent(), pViewData->GetDocShell(), false ));
                 OSL_ENSURE(pDlg, "Dialog create fail!");
                 short nRet = pDlg->Execute();
                 // pDlg is needed below
@@ -478,7 +479,7 @@ void ScEditShell::Execute( SfxRequest& rReq )
                             pTopView->InsertText(aBuffer.makeStringAndClear());
                     }
                 }
-                pDlg.reset();
+                pDlg.disposeAndClear();
 
                 if (pTopView)
                     pTopView->GetWindow()->GrabFocus();
@@ -495,7 +496,7 @@ void ScEditShell::Execute( SfxRequest& rReq )
                 ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateScCharDlg(
+                ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateScCharDlg(
                     pViewData->GetDialogParent(), &aAttrs, pObjSh));
                 OSL_ENSURE(pDlg, "Dialog create fail!");
                 if (nSlot == SID_CHAR_DLG_EFFECT)
@@ -797,9 +798,10 @@ const SvxURLField* ScEditShell::GetURLField()
     return nullptr;
 }
 
-IMPL_LINK_TYPED( ScEditShell, ClipboardChanged, TransferableDataHelper*, pDataHelper, void )
+IMPL_LINK( ScEditShell, ClipboardChanged, TransferableDataHelper*, pDataHelper, void )
 {
-    bPastePossible = ( pDataHelper->HasFormat( SotClipboardFormatId::STRING ) || pDataHelper->HasFormat( SotClipboardFormatId::RTF ) );
+    bPastePossible = ( pDataHelper->HasFormat( SotClipboardFormatId::STRING ) || pDataHelper->HasFormat( SotClipboardFormatId::RTF )
+        || pDataHelper->HasFormat( SotClipboardFormatId::RICHTEXT )    );
 
     SfxBindings& rBindings = pViewData->GetBindings();
     rBindings.Invalidate( SID_PASTE );
@@ -809,17 +811,17 @@ IMPL_LINK_TYPED( ScEditShell, ClipboardChanged, TransferableDataHelper*, pDataHe
 
 void ScEditShell::GetClipState( SfxItemSet& rSet )
 {
-    if ( !pClipEvtLstnr )
+    if ( !mxClipEvtLstnr.is() )
     {
         // create listener
-        pClipEvtLstnr = new TransferableClipboardListener( LINK( this, ScEditShell, ClipboardChanged ) );
-        pClipEvtLstnr->acquire();
+        mxClipEvtLstnr = new TransferableClipboardListener( LINK( this, ScEditShell, ClipboardChanged ) );
         vcl::Window* pWin = pViewData->GetActiveWin();
-        pClipEvtLstnr->AddRemoveListener( pWin, true );
+        mxClipEvtLstnr->AddListener( pWin );
 
         // get initial state
         TransferableDataHelper aDataHelper( TransferableDataHelper::CreateFromSystemClipboard( pViewData->GetActiveWin() ) );
-        bPastePossible = ( aDataHelper.HasFormat( SotClipboardFormatId::STRING ) || aDataHelper.HasFormat( SotClipboardFormatId::RTF ) );
+        bPastePossible = ( aDataHelper.HasFormat( SotClipboardFormatId::STRING ) || aDataHelper.HasFormat( SotClipboardFormatId::RTF )
+            || aDataHelper.HasFormat( SotClipboardFormatId::RICHTEXT ) );
     }
 
     SfxWhichIter aIter( rSet );
@@ -1036,8 +1038,8 @@ void ScEditShell::ExecuteAttr(SfxRequest& rReq)
             {
                 SvxEscapement eOld = (SvxEscapement) static_cast<const SvxEscapementItem&>(
                         pEditView->GetAttribs().Get(EE_CHAR_ESCAPEMENT)).GetEnumValue();
-                SvxEscapement eNew = (eOld == SVX_ESCAPEMENT_SUPERSCRIPT) ?
-                                        SVX_ESCAPEMENT_OFF : SVX_ESCAPEMENT_SUPERSCRIPT;
+                SvxEscapement eNew = (eOld == SvxEscapement::Superscript) ?
+                                        SvxEscapement::Off : SvxEscapement::Superscript;
                 aSet.Put( SvxEscapementItem( eNew, EE_CHAR_ESCAPEMENT ) );
                 rBindings.Invalidate( nSlot );
             }
@@ -1046,8 +1048,8 @@ void ScEditShell::ExecuteAttr(SfxRequest& rReq)
             {
                 SvxEscapement eOld = (SvxEscapement) static_cast<const SvxEscapementItem&>(
                         pEditView->GetAttribs().Get(EE_CHAR_ESCAPEMENT)).GetEnumValue();
-                SvxEscapement eNew = (eOld == SVX_ESCAPEMENT_SUBSCRIPT) ?
-                                        SVX_ESCAPEMENT_OFF : SVX_ESCAPEMENT_SUBSCRIPT;
+                SvxEscapement eNew = (eOld == SvxEscapement::Subscript) ?
+                                        SvxEscapement::Off : SvxEscapement::Subscript;
                 aSet.Put( SvxEscapementItem( eNew, EE_CHAR_ESCAPEMENT ) );
                 rBindings.Invalidate( nSlot );
             }
@@ -1159,11 +1161,11 @@ void ScEditShell::GetAttrState(SfxItemSet &rSet)
 
     SvxEscapement eEsc = (SvxEscapement) static_cast<const SvxEscapementItem&>(
                     aAttribs.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
-    if( eEsc == SVX_ESCAPEMENT_SUPERSCRIPT )
+    if( eEsc == SvxEscapement::Superscript )
     {
         rSet.Put( SfxBoolItem( SID_SET_SUPER_SCRIPT, true ) );
     }
-    else if( eEsc == SVX_ESCAPEMENT_SUBSCRIPT )
+    else if( eEsc == SvxEscapement::Subscript )
     {
         rSet.Put( SfxBoolItem( SID_SET_SUB_SCRIPT, true ) );
     }
@@ -1285,8 +1287,8 @@ void ScEditShell::GetUndoState(SfxItemSet &rSet)
 
 void ScEditShell::ExecuteTrans( SfxRequest& rReq )
 {
-    sal_Int32 nType = ScViewUtil::GetTransliterationType( rReq.GetSlot() );
-    if ( nType )
+    TransliterationFlags nType = ScViewUtil::GetTransliterationType( rReq.GetSlot() );
+    if ( nType != TransliterationFlags::NONE )
     {
         ScInputHandler* pHdl = GetMyInputHdl();
         assert(pHdl && "no ScInputHandler");

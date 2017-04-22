@@ -25,8 +25,6 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::text;
 
 
-SfxPoolItem* SvxWritingModeItem::CreateDefault() { return new  SvxWritingModeItem(css::text::WritingMode_LR_TB, 0);}
-
 SvxWritingModeItem::SvxWritingModeItem( WritingMode eValue, sal_uInt16 _nWhich )
     : SfxUInt16Item( _nWhich, (sal_uInt16)eValue )
 {
@@ -38,7 +36,7 @@ SvxWritingModeItem::~SvxWritingModeItem()
 
 bool SvxWritingModeItem::operator==( const SfxPoolItem& rCmp ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==(rCmp), "unequal types" );
+    assert(SfxPoolItem::operator==(rCmp));
 
     return GetValue() == static_cast<const SvxWritingModeItem&>(rCmp).GetValue();
 }
@@ -66,12 +64,12 @@ sal_uInt16 SvxWritingModeItem::GetVersion( sal_uInt16 /*nFVer*/ ) const
 }
 
 bool SvxWritingModeItem::GetPresentation( SfxItemPresentation /*ePres*/,
-        SfxMapUnit /*eCoreMetric*/,
-        SfxMapUnit /*ePresMetric*/,
+        MapUnit /*eCoreMetric*/,
+        MapUnit /*ePresMetric*/,
         OUString &rText,
         const IntlWrapper *  ) const
 {
-    rText = EE_RESSTR(RID_SVXITEMS_FRMDIR_BEGIN + GetValue());
+    rText = EditResId::GetString(RID_SVXITEMS_FRMDIR_BEGIN + (int)GetValue());
     return true;
 }
 
@@ -93,7 +91,7 @@ bool SvxWritingModeItem::PutValue( const css::uno::Any& rVal, sal_uInt8 )
 
     if( bRet )
     {
-        switch( nVal )
+        switch( (WritingMode)nVal )
         {
             case WritingMode_LR_TB:
             case WritingMode_RL_TB:
@@ -119,7 +117,7 @@ bool SvxWritingModeItem::QueryValue( css::uno::Any& rVal,
 
 SvxWritingModeItem& SvxWritingModeItem::operator=( const SvxWritingModeItem& rItem )
 {
-    SetValue( rItem.GetValue() );
+    SetValue( (sal_uInt16)rItem.GetValue() );
     return *this;
 }
 

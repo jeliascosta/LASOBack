@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svgellipsenode.hxx>
+#include <svgellipsenode.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 
@@ -40,7 +40,6 @@ namespace svgio
 
         SvgEllipseNode::~SvgEllipseNode()
         {
-            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgEllipseNode::getSvgStyleAttributes() const
@@ -70,7 +69,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setCx(aNum);
+                        maCx = aNum;
                     }
                     break;
                 }
@@ -80,7 +79,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setCy(aNum);
+                        maCy = aNum;
                     }
                     break;
                 }
@@ -92,7 +91,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setRx(aNum);
+                            maRx = aNum;
                         }
                     }
                     break;
@@ -105,7 +104,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setRy(aNum);
+                            maRy = aNum;
                         }
                     }
                     break;

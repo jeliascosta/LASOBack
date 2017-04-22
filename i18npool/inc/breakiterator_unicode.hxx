@@ -37,43 +37,38 @@ class BreakIterator_Unicode : public BreakIteratorImpl
 {
 public:
     BreakIterator_Unicode();
-    virtual ~BreakIterator_Unicode();
+    virtual ~BreakIterator_Unicode() override;
 
     virtual sal_Int32 SAL_CALL previousCharacters( const OUString& Text, sal_Int32 nStartPos,
         const css::lang::Locale& nLocale, sal_Int16 nCharacterIteratorMode, sal_Int32 nCount,
-        sal_Int32& nDone ) throw(css::uno::RuntimeException, std::exception) override;
+        sal_Int32& nDone ) override;
     virtual sal_Int32 SAL_CALL nextCharacters( const OUString& Text, sal_Int32 nStartPos,
         const css::lang::Locale& rLocale, sal_Int16 nCharacterIteratorMode, sal_Int32 nCount,
-        sal_Int32& nDone ) throw(css::uno::RuntimeException, std::exception) override;
+        sal_Int32& nDone ) override;
 
     virtual Boundary SAL_CALL previousWord( const OUString& Text, sal_Int32 nStartPos,
-        const css::lang::Locale& nLocale, sal_Int16 WordType) throw(css::uno::RuntimeException, std::exception) override;
+        const css::lang::Locale& nLocale, sal_Int16 WordType) override;
     virtual Boundary SAL_CALL nextWord( const OUString& Text, sal_Int32 nStartPos,
-        const css::lang::Locale& nLocale, sal_Int16 WordType) throw(css::uno::RuntimeException, std::exception) override;
+        const css::lang::Locale& nLocale, sal_Int16 WordType) override;
     virtual Boundary SAL_CALL getWordBoundary( const OUString& Text, sal_Int32 nPos,
-        const css::lang::Locale& nLocale, sal_Int16 WordType, sal_Bool bDirection )
-        throw(css::uno::RuntimeException, std::exception) override;
+        const css::lang::Locale& nLocale, sal_Int16 WordType, sal_Bool bDirection ) override;
 
     virtual sal_Int32 SAL_CALL beginOfSentence( const OUString& Text, sal_Int32 nStartPos,
-        const css::lang::Locale& nLocale ) throw(css::uno::RuntimeException, std::exception) override;
+        const css::lang::Locale& nLocale ) override;
     virtual sal_Int32 SAL_CALL endOfSentence( const OUString& Text, sal_Int32 nStartPos,
-        const css::lang::Locale& nLocale ) throw(css::uno::RuntimeException, std::exception) override;
+        const css::lang::Locale& nLocale ) override;
 
     virtual LineBreakResults SAL_CALL getLineBreak( const OUString& Text, sal_Int32 nStartPos,
         const css::lang::Locale& nLocale, sal_Int32 nMinBreakPos,
-        const LineBreakHyphenationOptions& hOptions, const LineBreakUserOptions& bOptions )
-        throw(css::uno::RuntimeException, std::exception) override;
+        const LineBreakHyphenationOptions& hOptions, const LineBreakUserOptions& bOptions ) override;
 
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName)
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
 protected:
     const sal_Char *cBreakIterator, *lineRule;
-    Boundary result; // for word break iterator
 
     struct BI_Data
     {
@@ -93,8 +88,9 @@ protected:
     } character, sentence, line, *icuBI;
     BI_Data words[4]; // 4 is css::i18n::WordType enumeration size
 
+    /// @throws css::uno::RuntimeException
     void SAL_CALL loadICUBreakIterator(const css::lang::Locale& rLocale,
-        sal_Int16 rBreakType, sal_Int16 rWordType, const sal_Char* name, const OUString& rText) throw(css::uno::RuntimeException);
+        sal_Int16 rBreakType, sal_Int16 rWordType, const sal_Char* name, const OUString& rText);
 };
 
 } } } }

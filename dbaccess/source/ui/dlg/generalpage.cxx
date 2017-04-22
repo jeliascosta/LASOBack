@@ -24,10 +24,10 @@
 #include "dsitems.hxx"
 #include "dbustrings.hrc"
 #include "dbadmin.hxx"
+#include "moduledbu.hxx"
 #include <sfx2/filedlghelper.hxx>
 #include <sfx2/docfilt.hxx>
 #include <vcl/stdtext.hxx>
-#include "localresaccess.hxx"
 #include <vcl/msgbox.hxx>
 #include <svl/stritem.hxx>
 #include <vcl/waitobj.hxx>
@@ -67,7 +67,7 @@ namespace dbaui
         const DbuTypeCollectionItem* pCollectionItem = dynamic_cast<const DbuTypeCollectionItem*>( _rItems.GetItem(DSID_TYPECOLLECTION) );
         if (pCollectionItem)
             m_pCollection = pCollectionItem->getCollection();
-        SAL_WARN_IF(!m_pCollection, "dbaccess", "OGeneralPage::OGeneralPage : really need a DSN type collection !");
+        SAL_WARN_IF(!m_pCollection, "dbaccess.ui.generalpage", "OGeneralPage::OGeneralPage : really need a DSN type collection !");
 
         // do some knittings
         m_pDatasourceType->SetSelectHdl(LINK(this, OGeneralPage, OnDatasourceTypeSelected));
@@ -94,9 +94,9 @@ namespace dbaui
 
             DisplayedType( const OUString& _eType, const OUString& _rDisplayName ) : eType( _eType ), sDisplayName( _rDisplayName ) { }
         };
-        typedef ::std::vector< DisplayedType > DisplayedTypes;
+        typedef std::vector< DisplayedType > DisplayedTypes;
 
-        struct DisplayedTypeLess : ::std::binary_function< DisplayedType, DisplayedType, bool >
+        struct DisplayedTypeLess : std::binary_function< DisplayedType, DisplayedType, bool >
         {
             bool operator() ( const DisplayedType& _rLHS, const DisplayedType& _rRHS )
             {
@@ -133,7 +133,7 @@ namespace dbaui
                         }
                     }
                 }
-                ::std::sort( aDisplayedTypes.begin(), aDisplayedTypes.end(), DisplayedTypeLess() );
+                std::sort( aDisplayedTypes.begin(), aDisplayedTypes.end(), DisplayedTypeLess() );
                 DisplayedTypes::const_iterator aDisplayEnd = aDisplayedTypes.end();
                 for (   DisplayedTypes::const_iterator loop = aDisplayedTypes.begin();
                         loop != aDisplayEnd;
@@ -172,7 +172,7 @@ namespace dbaui
                         }
                     }
                 }
-                ::std::sort( aDisplayedTypes.begin(), aDisplayedTypes.end(), DisplayedTypeLess() );
+                std::sort( aDisplayedTypes.begin(), aDisplayedTypes.end(), DisplayedTypeLess() );
                 DisplayedTypes::const_iterator aDisplayEnd = aDisplayedTypes.end();
                 for (   DisplayedTypes::const_iterator loop = aDisplayedTypes.begin();
                         loop != aDisplayEnd;
@@ -377,12 +377,12 @@ namespace dbaui
         m_aEmbeddedURLPrefixes[nPos] = _sType;
     }
 
-    void OGeneralPage::fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList)
+    void OGeneralPage::fillWindows(std::vector< ISaveValueWrapper* >& _rControlList)
     {
         _rControlList.push_back( new ODisableWrapper<FixedText>( m_pSpecialMessage ) );
     }
 
-    void OGeneralPage::fillControls(::std::vector< ISaveValueWrapper* >& _rControlList)
+    void OGeneralPage::fillControls(std::vector< ISaveValueWrapper* >& _rControlList)
     {
         _rControlList.push_back( new OSaveValueWrapper<ListBox>( m_pDatasourceType ) );
     }
@@ -404,7 +404,7 @@ namespace dbaui
         OGenericAdministrationPage::Reset(_rCoreAttrs);
     }
 
-    IMPL_LINK_TYPED( OGeneralPageWizard, OnEmbeddedDBTypeSelected, ListBox&, _rBox, void )
+    IMPL_LINK( OGeneralPageWizard, OnEmbeddedDBTypeSelected, ListBox&, _rBox, void )
     {
         // get the type from the entry data
         const sal_Int32 nSelected = _rBox.GetSelectEntryPos();
@@ -424,7 +424,7 @@ namespace dbaui
         return;
     }
 
-    IMPL_LINK_TYPED( OGeneralPage, OnDatasourceTypeSelected, ListBox&, _rBox, void )
+    IMPL_LINK( OGeneralPage, OnDatasourceTypeSelected, ListBox&, _rBox, void )
     {
         // get the type from the entry data
         const sal_Int32 nSelected = _rBox.GetSelectEntryPos();
@@ -616,7 +616,7 @@ namespace dbaui
 
     OUString OGeneralPageWizard::getDatasourceName(const SfxItemSet& _rSet)
     {
-        // Sets jdbc as the default selected databse on startup.
+        // Sets jdbc as the default selected database on startup.
         if (m_pRB_CreateDatabase->IsChecked() )
             return m_pCollection->getTypeDisplayName( "jdbc:" );
 
@@ -695,29 +695,29 @@ namespace dbaui
         return aDocument;
     }
 
-    IMPL_LINK_NOARG_TYPED( OGeneralPageWizard, OnCreateDatabaseModeSelected, Button*, void )
+    IMPL_LINK_NOARG( OGeneralPageWizard, OnCreateDatabaseModeSelected, Button*, void )
     {
         m_aCreationModeHandler.Call( *this );
 
         OnEmbeddedDBTypeSelected( *m_pEmbeddedDBType );
     }
 
-    IMPL_LINK_NOARG_TYPED( OGeneralPageWizard, OnSetupModeSelected, Button*, void )
+    IMPL_LINK_NOARG( OGeneralPageWizard, OnSetupModeSelected, Button*, void )
     {
         m_aCreationModeHandler.Call( *this );
         OnDatasourceTypeSelected(*m_pDatasourceType);
     }
 
-    IMPL_LINK_NOARG_TYPED( OGeneralPageWizard, OnDocumentSelected, ListBox&, void )
+    IMPL_LINK_NOARG( OGeneralPageWizard, OnDocumentSelected, ListBox&, void )
     {
         m_aDocumentSelectionHandler.Call( *this );
     }
 
-    IMPL_LINK_NOARG_TYPED( OGeneralPageWizard, OnOpenDocument, Button*, void )
+    IMPL_LINK_NOARG( OGeneralPageWizard, OnOpenDocument, Button*, void )
     {
         ::sfx2::FileDialogHelper aFileDlg(
                 ui::dialogs::TemplateDescription::FILEOPEN_READONLY_VERSION,
-                FileDialogFlags::NONE, OUString("sdatabase") );
+                FileDialogFlags::NONE, "sdatabase" );
         std::shared_ptr<const SfxFilter> pFilter = getStandardDatabaseFilter();
         if ( pFilter )
         {

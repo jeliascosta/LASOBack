@@ -72,7 +72,6 @@ GraphicObjectBar::GraphicObjectBar (
     SetPool( &pDocShell->GetPool() );
     SetUndoManager( pDocShell->GetUndoManager() );
     SetRepeatTarget( mpView );
-    SetHelpId( SD_IF_SDDRAWGRAFOBJECTBAR );
     SetName( "Graphic objectbar");
 }
 
@@ -105,7 +104,7 @@ void GraphicObjectBar::GetFilterState( SfxItemSet& rSet )
     {
         SdrObject* pObj = rMarkList.GetMark( 0 )->GetMarkedSdrObj();
 
-        if( pObj && dynamic_cast< SdrGrafObj *>( pObj ) != nullptr && ( static_cast<SdrGrafObj*>(pObj)->GetGraphicType() == GRAPHIC_BITMAP ) )
+        if( pObj && dynamic_cast< SdrGrafObj *>( pObj ) != nullptr && ( static_cast<SdrGrafObj*>(pObj)->GetGraphicType() == GraphicType::Bitmap ) )
             bEnable = true;
     }
 
@@ -121,7 +120,7 @@ void GraphicObjectBar::ExecuteFilter( SfxRequest& rReq )
     {
         SdrObject* pObj = rMarkList.GetMark( 0 )->GetMarkedSdrObj();
 
-        if( pObj && dynamic_cast< SdrGrafObj *>( pObj ) != nullptr && static_cast<SdrGrafObj*>(pObj)->GetGraphicType() == GRAPHIC_BITMAP )
+        if( pObj && dynamic_cast< SdrGrafObj *>( pObj ) != nullptr && static_cast<SdrGrafObj*>(pObj)->GetGraphicType() == GraphicType::Bitmap )
         {
             GraphicObject aFilterObj( static_cast<SdrGrafObj*>(pObj)->GetGraphicObject() );
 

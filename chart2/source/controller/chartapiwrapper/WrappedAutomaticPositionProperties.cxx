@@ -37,26 +37,18 @@ class WrappedAutomaticPositionProperty : public WrappedProperty
 {
 public:
     WrappedAutomaticPositionProperty();
-    virtual ~WrappedAutomaticPositionProperty();
 
-    virtual void setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
-                                    throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException) override;
-    virtual Any getPropertyValue( const Reference< beans::XPropertySet >& xInnerPropertySet ) const
-                                    throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException) override;
-    virtual Any getPropertyDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
-                                    throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException) override;
+    virtual void setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual Any getPropertyValue( const Reference< beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual Any getPropertyDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const override;
 };
 
 WrappedAutomaticPositionProperty::WrappedAutomaticPositionProperty()
     : ::chart::WrappedProperty( "AutomaticPosition" , OUString() )
 {
 }
-WrappedAutomaticPositionProperty::~WrappedAutomaticPositionProperty()
-{
-}
 
 void WrappedAutomaticPositionProperty::setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
-                throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException)
 {
     if( xInnerPropertySet.is() )
     {
@@ -81,7 +73,6 @@ void WrappedAutomaticPositionProperty::setPropertyValue( const Any& rOuterValue,
 }
 
 Any WrappedAutomaticPositionProperty::getPropertyValue( const Reference< beans::XPropertySet >& xInnerPropertySet ) const
-                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     Any aRet( getPropertyDefault( Reference< beans::XPropertyState >( xInnerPropertySet, uno::UNO_QUERY ) ) );
     if( xInnerPropertySet.is() )
@@ -94,7 +85,6 @@ Any WrappedAutomaticPositionProperty::getPropertyValue( const Reference< beans::
 }
 
 Any WrappedAutomaticPositionProperty::getPropertyDefault( const Reference< beans::XPropertyState >& /*xInnerPropertyState*/ ) const
-                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     Any aRet;
     aRet <<= false;
@@ -115,7 +105,7 @@ void lcl_addWrappedProperties( std::vector< WrappedProperty* >& rList )
 
 }//anonymous namespace
 
-void WrappedAutomaticPositionProperties::addProperties( ::std::vector< Property > & rOutProperties )
+void WrappedAutomaticPositionProperties::addProperties( std::vector< Property > & rOutProperties )
 {
     rOutProperties.push_back(
         Property( "AutomaticPosition",

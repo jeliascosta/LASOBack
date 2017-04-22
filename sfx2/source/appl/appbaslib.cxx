@@ -45,8 +45,7 @@ void SfxBasicManagerHolder::Notify(SfxBroadcaster& rBC, SfxHint const& rHint)
 {
     if (!mpBasicManager || &rBC != mpBasicManager)
         return;
-    SfxSimpleHint const*const pSimpleHint(dynamic_cast<SfxSimpleHint const*>(&rHint));
-    if (pSimpleHint && SFX_HINT_DYING == pSimpleHint->GetId())
+    if (SfxHintId::Dying == rHint.GetId())
     {
         mpBasicManager = nullptr;
         mxBasicContainer.clear();

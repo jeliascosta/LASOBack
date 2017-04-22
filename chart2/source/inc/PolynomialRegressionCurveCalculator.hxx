@@ -29,33 +29,20 @@ class PolynomialRegressionCurveCalculator : public RegressionCurveCalculator
 {
 public:
     PolynomialRegressionCurveCalculator();
-    virtual ~PolynomialRegressionCurveCalculator();
+    virtual ~PolynomialRegressionCurveCalculator() override;
 
 protected:
     virtual OUString ImplGetRepresentation(
         const css::uno::Reference<css::util::XNumberFormatter>& xNumFormatter,
         sal_Int32 nNumberFormatKey, sal_Int32* pFormulaMaxWidth = nullptr ) const override;
 
-    virtual double SAL_CALL getCurveValue( double x )
-        throw (css::lang::IllegalArgumentException,
-               css::uno::RuntimeException, std::exception) override;
+    virtual double SAL_CALL getCurveValue( double x ) override;
 
 private:
     // ____ XRegressionCurveCalculator ____
     virtual void SAL_CALL recalculateRegression(
         const css::uno::Sequence<double>& aXValues,
-        const css::uno::Sequence<double>& aYValues )
-        throw (css::uno::RuntimeException, std::exception) override;
-
-    virtual css::uno::Sequence<css::geometry::RealPoint2D> SAL_CALL getCurveValues(
-        double min,
-        double max,
-        sal_Int32 nPointCount,
-        const css::uno::Reference<css::chart2::XScaling>& xScalingX,
-        const css::uno::Reference<css::chart2::XScaling>& xScalingY,
-        sal_Bool bMaySkipPointsInCalculation )
-        throw (css::lang::IllegalArgumentException,
-               css::uno::RuntimeException, std::exception) override;
+        const css::uno::Sequence<double>& aYValues ) override;
 
     std::vector<double> mCoefficients;
 };

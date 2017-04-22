@@ -61,7 +61,7 @@ struct Listener : public ::cppu::WeakImplHelper<io::XStreamListener>
     virtual void SAL_CALL started() throw() override { m_bDone = false; }
     virtual void SAL_CALL closed() throw() override { m_bDone = true; }
     virtual void SAL_CALL terminated() throw() override { m_bDone = true; }
-    virtual void SAL_CALL error(const uno::Any& e) throw(uno::RuntimeException, std::exception) override
+    virtual void SAL_CALL error(const uno::Any& e) override
     {
         m_bDone = true; // set on error too, otherwise main thread waits forever
         SAL_WARN("filter.xslt", "exception " << e);
@@ -76,7 +76,7 @@ void XsltFilterTest::testXsltCopyNew()
     oslFileHandle tempFile;
     OUString tempURL;
     osl::File::RC rc = osl::File::createTempFile(nullptr, &tempFile, &tempURL);
-    CPPUNIT_ASSERT(osl::FileBase::E_None == rc);
+    CPPUNIT_ASSERT_EQUAL(osl::FileBase::E_None, rc);
     osl_closeFile(tempFile); // close it so xSFA can open it on WNT
 
     OUString source(
@@ -133,7 +133,7 @@ void XsltFilterTest::testXsltCopyOld()
     oslFileHandle tempFile;
     OUString tempURL;
     osl::File::RC rc = osl::File::createTempFile(nullptr, &tempFile, &tempURL);
-    CPPUNIT_ASSERT(osl::FileBase::E_None == rc);
+    CPPUNIT_ASSERT_EQUAL(osl::FileBase::E_None, rc);
     osl_closeFile(tempFile); // close it so xSFA can open it on WNT
 
     OUString source(

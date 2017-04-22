@@ -33,7 +33,6 @@ namespace stoc_corefl
 // XInterface
 
 Any ArrayIdlClassImpl::queryInterface( const Type & rType )
-    throw(css::uno::RuntimeException, std::exception)
 {
     Any aRet( ::cppu::queryInterface( rType, static_cast< XIdlArray * >( this ) ) );
     return (aRet.hasValue() ? aRet : IdlClassImpl::queryInterface( rType ));
@@ -52,7 +51,6 @@ void ArrayIdlClassImpl::release() throw()
 // XTypeProvider
 
 Sequence< Type > ArrayIdlClassImpl::getTypes()
-    throw (css::uno::RuntimeException, std::exception)
 {
     static ::cppu::OTypeCollection * s_pTypes = nullptr;
     if (! s_pTypes)
@@ -70,7 +68,6 @@ Sequence< Type > ArrayIdlClassImpl::getTypes()
 }
 
 Sequence< sal_Int8 > ArrayIdlClassImpl::getImplementationId()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -78,19 +75,18 @@ Sequence< sal_Int8 > ArrayIdlClassImpl::getImplementationId()
 // XIdlArray
 
 void ArrayIdlClassImpl::realloc( Any & rArray, sal_Int32 nLen )
-    throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     TypeClass eTC = rArray.getValueTypeClass();
     if (eTC != TypeClass_SEQUENCE)
     {
         throw IllegalArgumentException(
-            "no sequence given!",
+            "expected sequence, but found " + rArray.getValueType().getTypeName(),
             static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 0 );
     }
     if (nLen < 0)
     {
         throw IllegalArgumentException(
-            "illegal length given!",
+            "negative length given!",
             static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 1 );
     }
 
@@ -103,13 +99,12 @@ void ArrayIdlClassImpl::realloc( Any & rArray, sal_Int32 nLen )
 }
 
 sal_Int32 ArrayIdlClassImpl::getLen( const Any & rArray )
-    throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     TypeClass eTC = rArray.getValueTypeClass();
     if (eTC != TypeClass_SEQUENCE)
     {
         throw IllegalArgumentException(
-            "no sequence given!",
+            "expected sequence, but found " + rArray.getValueType().getTypeName(),
             static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 0 );
     }
 
@@ -117,13 +112,12 @@ sal_Int32 ArrayIdlClassImpl::getLen( const Any & rArray )
 }
 
 Any ArrayIdlClassImpl::get( const Any & rArray, sal_Int32 nIndex )
-    throw(css::lang::IllegalArgumentException, css::lang::ArrayIndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
 {
     TypeClass eTC = rArray.getValueTypeClass();
     if (eTC != TypeClass_SEQUENCE)
     {
         throw IllegalArgumentException(
-            "no sequence given!",
+            "expected sequence, but found " + rArray.getValueType().getTypeName(),
             static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 0 );
     }
 
@@ -131,7 +125,7 @@ Any ArrayIdlClassImpl::get( const Any & rArray, sal_Int32 nIndex )
     if (pSeq->nElements <= nIndex)
     {
         throw ArrayIndexOutOfBoundsException(
-            "illegal index given!",
+            "illegal index given, index " + OUString::number(nIndex) + " is < " + OUString::number(pSeq->nElements),
             static_cast<XWeak *>(static_cast<OWeakObject *>(this)) );
     }
 
@@ -148,13 +142,12 @@ Any ArrayIdlClassImpl::get( const Any & rArray, sal_Int32 nIndex )
 
 
 void ArrayIdlClassImpl::set( Any & rArray, sal_Int32 nIndex, const Any & rNewValue )
-    throw(css::lang::IllegalArgumentException, css::lang::ArrayIndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
 {
     TypeClass eTC = rArray.getValueTypeClass();
     if (eTC != TypeClass_SEQUENCE)
     {
         throw IllegalArgumentException(
-            "no sequence given!",
+            "expected sequence, but found " + rArray.getValueType().getTypeName(),
             static_cast<XWeak *>(static_cast<OWeakObject *>(this)), 0 );
     }
 
@@ -162,7 +155,7 @@ void ArrayIdlClassImpl::set( Any & rArray, sal_Int32 nIndex, const Any & rNewVal
     if (pSeq->nElements <= nIndex)
     {
         throw ArrayIndexOutOfBoundsException(
-            "illegal index given!",
+            "illegal index given, index " + OUString::number(nIndex) + " is < " + OUString::number(pSeq->nElements),
             static_cast<XWeak *>(static_cast<OWeakObject *>(this)) );
     }
 
@@ -191,7 +184,6 @@ void ArrayIdlClassImpl::set( Any & rArray, sal_Int32 nIndex, const Any & rNewVal
 // ArrayIdlClassImpl
 
 sal_Bool ArrayIdlClassImpl::isAssignableFrom( const Reference< XIdlClass > & xType )
-    throw(css::uno::RuntimeException, std::exception)
 {
     return (xType.is() &&
             (equals( xType ) ||
@@ -200,13 +192,11 @@ sal_Bool ArrayIdlClassImpl::isAssignableFrom( const Reference< XIdlClass > & xTy
 }
 
 Reference< XIdlClass > ArrayIdlClassImpl::getComponentType()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return getReflection()->forType( getTypeDescr()->pType );
 }
 
 Reference< XIdlArray > ArrayIdlClassImpl::getArray()
-    throw(css::uno::RuntimeException, std::exception)
 {
     return this;
 }

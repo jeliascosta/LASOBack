@@ -103,7 +103,7 @@ void OFileTable::refreshIndexes()
 {
 }
 
-Any SAL_CALL OFileTable::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any SAL_CALL OFileTable::queryInterface( const Type & rType )
 {
     if( rType == cppu::UnoType<XKeysSupplier>::get()||
         rType == cppu::UnoType<XRename>::get()||
@@ -139,9 +139,9 @@ Sequence< sal_Int8 > OFileTable::getUnoTunnelImplementationId()
     return pId->getImplementationId();
 }
 
-// com::sun::star::lang::XUnoTunnel
+// css::lang::XUnoTunnel
 
-sal_Int64 OFileTable::getSomething( const Sequence< sal_Int8 > & rId ) throw (RuntimeException, std::exception)
+sal_Int64 OFileTable::getSomething( const Sequence< sal_Int8 > & rId )
 {
     return (rId.getLength() == 16 && 0 == memcmp(getUnoTunnelImplementationId().getConstArray(),  rId.getConstArray(), 16 ) )
                 ? reinterpret_cast< sal_Int64 >( this )
@@ -165,17 +165,7 @@ void OFileTable::FileClose()
     }
 }
 
-void SAL_CALL OFileTable::acquire() throw()
-{
-    OTable_TYPEDEF::acquire();
-}
-
-void SAL_CALL OFileTable::release() throw()
-{
-    OTable_TYPEDEF::release();
-}
-
-bool OFileTable::InsertRow(OValueRefVector& /*rRow*/, const ::com::sun::star::uno::Reference< ::com::sun::star::container::XIndexAccess>& /*_xCols*/)
+bool OFileTable::InsertRow(OValueRefVector& /*rRow*/, const css::uno::Reference< css::container::XIndexAccess>& /*_xCols*/)
 {
     return false;
 }
@@ -185,12 +175,12 @@ bool OFileTable::DeleteRow(const OSQLColumns& /*_rCols*/)
     return false;
 }
 
-bool OFileTable::UpdateRow(OValueRefVector& /*rRow*/, OValueRefRow& /*pOrgRow*/,const ::com::sun::star::uno::Reference< ::com::sun::star::container::XIndexAccess>& /*_xCols*/)
+bool OFileTable::UpdateRow(OValueRefVector& /*rRow*/, OValueRefRow& /*pOrgRow*/,const css::uno::Reference< css::container::XIndexAccess>& /*_xCols*/)
 {
     return false;
 }
 
-void OFileTable::addColumn(const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet>& /*descriptor*/)
+void OFileTable::addColumn(const css::uno::Reference< css::beans::XPropertySet>& /*descriptor*/)
 {
     OSL_FAIL( "OFileTable::addColumn: not implemented!" );
 }

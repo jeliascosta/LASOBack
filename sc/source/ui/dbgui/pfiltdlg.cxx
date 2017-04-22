@@ -31,8 +31,7 @@
 #include "queryentry.hxx"
 #include "typedstrdata.hxx"
 
-#include "sc.hrc"
-#include "filter.hrc"
+#include "scres.hrc"
 #include "globstr.hrc"
 
 #include "pfiltdlg.hxx"
@@ -127,7 +126,7 @@ void ScPivotFilterDlg::Init( const SfxItemSet& rArgSet )
     m_pLbConnect2->SetSelectHdl( LINK( this, ScPivotFilterDlg, LbSelectHdl ) );
 
     m_pBtnCase->Check( theQueryData.bCaseSens );
-    m_pBtnRegExp->Check( theQueryData.eSearchType == utl::SearchParam::SRCH_REGEXP );
+    m_pBtnRegExp->Check( theQueryData.eSearchType == utl::SearchParam::SearchType::Regexp );
     m_pBtnUnique->Check( !theQueryData.bDuplicate );
 
     pViewData   = rQueryItem.GetViewData();
@@ -294,7 +293,7 @@ void ScPivotFilterDlg::UpdateValueList( sal_uInt16 nList )
 {
     if ( pDoc && nList>0 && nList<=3 )
     {
-        ComboBox*   pValList        = aValueEdArr[nList-1];
+        ComboBox*   pValList        = aValueEdArr[nList-1].get();
         sal_Int32   nFieldSelPos    = aFieldLbArr[nList-1]->GetSelectEntryPos();
         sal_Int32   nListPos        = 0;
         OUString    aCurValue       = pValList->GetText();
@@ -338,7 +337,7 @@ void ScPivotFilterDlg::ClearValueList( sal_uInt16 nList )
 {
     if ( nList>0 && nList<=3 )
     {
-        ComboBox* pValList = aValueEdArr[nList-1];
+        ComboBox* pValList = aValueEdArr[nList-1].get();
         pValList->Clear();
         pValList->InsertEntry( aStrNotEmpty, 0 );
         pValList->InsertEntry( aStrEmpty, 1 );
@@ -378,7 +377,7 @@ const ScQueryItem& ScPivotFilterDlg::GetOutputItem()
             OUString aStrVal = aValueEdArr[i]->GetText();
 
             /*
-             * The dialog returns the specifc field values "empty"/"non empty"
+             * The dialog returns the specific field values "empty"/"non empty"
              * as constant in nVal in connection with the bQueryByString switch
              * set to false
              */
@@ -419,7 +418,7 @@ const ScQueryItem& ScPivotFilterDlg::GetOutputItem()
 
     theParam.bDuplicate     = !m_pBtnUnique->IsChecked();
     theParam.bCaseSens      = m_pBtnCase->IsChecked();
-    theParam.eSearchType    = m_pBtnRegExp->IsChecked() ? utl::SearchParam::SRCH_REGEXP : utl::SearchParam::SRCH_NORMAL;
+    theParam.eSearchType    = m_pBtnRegExp->IsChecked() ? utl::SearchParam::SearchType::Regexp : utl::SearchParam::SearchType::Normal;
 
     if ( pOutItem ) DELETEZ( pOutItem );
     pOutItem = new ScQueryItem( nWhichQuery, &theParam );
@@ -429,7 +428,7 @@ const ScQueryItem& ScPivotFilterDlg::GetOutputItem()
 
 // Handler:
 
-IMPL_LINK_TYPED( ScPivotFilterDlg, LbSelectHdl, ListBox&, rLb, void )
+IMPL_LINK( ScPivotFilterDlg, LbSelectHdl, ListBox&, rLb, void )
 {
 
     /*
@@ -518,7 +517,7 @@ IMPL_LINK_TYPED( ScPivotFilterDlg, LbSelectHdl, ListBox&, rLb, void )
     }
 }
 
-IMPL_LINK_TYPED( ScPivotFilterDlg, CheckBoxHdl, Button*, pBox, void )
+IMPL_LINK( ScPivotFilterDlg, CheckBoxHdl, Button*, pBox, void )
 {
     // update the value lists when dealing with uppercase/lowercase
 
@@ -539,7 +538,7 @@ IMPL_LINK_TYPED( ScPivotFilterDlg, CheckBoxHdl, Button*, pBox, void )
     }
 }
 
-IMPL_LINK_TYPED( ScPivotFilterDlg, ValModifyHdl, Edit&, rEd, void )
+IMPL_LINK( ScPivotFilterDlg, ValModifyHdl, Edit&, rEd, void )
 {
     OUString aStrVal = rEd.GetText();
     ListBox* pLb = m_pLbCond1;
@@ -547,7 +546,7 @@ IMPL_LINK_TYPED( ScPivotFilterDlg, ValModifyHdl, Edit&, rEd, void )
     if ( &rEd == m_pEdVal2 ) pLb = m_pLbCond2;
     else if ( &rEd == m_pEdVal3 ) pLb = m_pLbCond3;
 
-    // if ond of the special values "empty"/"non-empty" was chosen only the
+    // if cond of the special values "empty"/"non-empty" was chosen only the
     // =-operand makes sense:
 
     if ( aStrEmpty.equals(aStrVal) || aStrNotEmpty.equals(aStrVal) )

@@ -41,6 +41,7 @@ $(eval $(call gb_Library_add_defs,svx,\
 $(eval $(call gb_Library_set_precompiled_header,svx,$(SRCDIR)/svx/inc/pch/precompiled_svx))
 
 $(eval $(call gb_Library_use_libraries,svx,\
+    avmedia\
     basegfx \
     sb \
     comphelper \
@@ -145,6 +146,8 @@ $(eval $(call gb_Library_add_exception_objects,svx,\
     svx/source/dialog/rlrcitem \
     svx/source/dialog/rubydialog \
     svx/source/dialog/rulritem \
+    svx/source/dialog/SafeModeDialog \
+    svx/source/dialog/SafeModeUI \
     svx/source/dialog/SpellDialogChildWindow \
     svx/source/dialog/srchctrl \
     svx/source/dialog/srchdlg \
@@ -188,9 +191,10 @@ $(eval $(call gb_Library_add_exception_objects,svx,\
     svx/source/sidebar/paragraph/ParaLineSpacingControl \
     svx/source/sidebar/paragraph/ParaLineSpacingPopup \
     svx/source/sidebar/paragraph/ParaPropertyPanel \
+    svx/source/sidebar/paragraph/ParaSpacingWindow \
+    svx/source/sidebar/paragraph/ParaSpacingControl \
     svx/source/sidebar/area/AreaPropertyPanel \
     svx/source/sidebar/area/AreaPropertyPanelBase \
-    svx/source/sidebar/area/AreaTransparencyGradientControl \
     svx/source/sidebar/area/AreaTransparencyGradientPopup \
     svx/source/sidebar/shadow/ShadowPropertyPanel \
     svx/source/sidebar/graphic/GraphicPropertyPanel \
@@ -198,11 +202,11 @@ $(eval $(call gb_Library_add_exception_objects,svx,\
     svx/source/sidebar/line/LinePropertyPanelBase \
     svx/source/sidebar/line/LineWidthValueSet \
     svx/source/sidebar/line/LineWidthPopup \
+    svx/source/sidebar/media/MediaPlaybackPanel \
     svx/source/sidebar/possize/PosSizePropertyPanel \
     svx/source/sidebar/possize/SidebarDialControl \
-    svx/source/sidebar/tools/PopupControl \
-    svx/source/sidebar/tools/PopupContainer \
-    svx/source/sidebar/tools/Popup \
+    svx/source/sidebar/shapes/DefaultShapesPanel \
+    svx/source/sidebar/shapes/ShapesUtil \
     svx/source/sidebar/tools/ValueSetWithTextControl \
     svx/source/stbctrls/pszctrl \
     svx/source/stbctrls/insctrl \
@@ -233,6 +237,7 @@ $(eval $(call gb_Library_add_exception_objects,svx,\
     svx/source/tbxctrls/tbxcolor \
     svx/source/tbxctrls/tbxdrctl \
     svx/source/tbxctrls/verttexttbxctrl \
+    svx/source/uitest/uiobject \
     svx/source/unodraw/recoveryui \
     svx/source/unodraw/unoctabl \
     svx/source/unodraw/UnoNamespaceMap \

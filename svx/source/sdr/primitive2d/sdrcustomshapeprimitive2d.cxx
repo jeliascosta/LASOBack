@@ -33,7 +33,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer SdrCustomShapePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*aViewInformation*/) const
+        void SdrCustomShapePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*aViewInformation*/) const
         {
             Primitive2DContainer aRetval(getSubPrimitives());
 
@@ -50,7 +50,7 @@ namespace drawinglayer
                         attribute::SdrLineAttribute(),
                         false,
                         getWordWrap(),
-                        isForceTextClipToTextRange()));
+                        false/*ForceTextClipToTextRange*/));
             }
 
             // add shadow
@@ -72,7 +72,7 @@ namespace drawinglayer
                 }
             }
 
-            return aRetval;
+            rContainer.insert(rContainer.end(), aRetval.begin(), aRetval.end());
         }
 
         SdrCustomShapePrimitive2D::SdrCustomShapePrimitive2D(
@@ -86,8 +86,7 @@ namespace drawinglayer
             maSubPrimitives(rSubPrimitives),
             maTextBox(rTextBox),
             mbWordWrap(bWordWrap),
-            mb3DShape(b3DShape),
-            mbForceTextClipToTextRange(false)
+            mb3DShape(b3DShape)
         {
         }
 
@@ -101,8 +100,7 @@ namespace drawinglayer
                     && getSubPrimitives() == rCompare.getSubPrimitives()
                     && getTextBox() == rCompare.getTextBox()
                     && getWordWrap() == rCompare.getWordWrap()
-                    && get3DShape() == rCompare.get3DShape()
-                    && isForceTextClipToTextRange() == rCompare.isForceTextClipToTextRange());
+                    && get3DShape() == rCompare.get3DShape());
             }
 
             return false;

@@ -88,11 +88,8 @@ class Ppt97Animation
 public: //public methods
     explicit Ppt97Animation( SvStream& rIn );
 
-    Ppt97Animation( const Ppt97Animation& rAnimation );
-    Ppt97Animation& operator= ( const Ppt97Animation& rAnimation );
     bool operator < ( const Ppt97Animation& rAnimation ) const;//later is greater
     bool operator > ( const Ppt97Animation& rAnimation ) const;//later is greater
-    ~Ppt97Animation();
 
     //get methods
     bool HasEffect() const;
@@ -117,8 +114,8 @@ public: //public methods
 private: //private methods
 
     //read methods
-    OUString GetPresetId() const;
-    OUString GetPresetSubType() const;
+    OUString const & GetPresetId() const;
+    OUString const & GetPresetSubType() const;
     bool HasAfterEffect() const;
     bool HasAfterEffect_ChangeColor() const;
     bool HasAfterEffect_DimAtNextEffect() const;

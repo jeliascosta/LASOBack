@@ -19,6 +19,8 @@
 
 #include <config_features.h>
 
+#include <o3tl/any.hxx>
+#include <o3tl/typed_flags_set.hxx>
 #include <unotools/fltrcfg.hxx>
 #include <tools/debug.hxx>
 #include <tools/solar.h>
@@ -29,28 +31,34 @@
 using namespace utl;
 using namespace com::sun::star::uno;
 
-#define FILTERCFG_WORD_CODE             0x0001
-#define FILTERCFG_WORD_STORAGE          0x0002
-#define FILTERCFG_EXCEL_CODE            0x0004
-#define FILTERCFG_EXCEL_STORAGE         0x0008
-#define FILTERCFG_PPOINT_CODE           0x0010
-#define FILTERCFG_PPOINT_STORAGE        0x0020
-#define FILTERCFG_MATH_LOAD             0x0100
-#define FILTERCFG_MATH_SAVE             0x0200
-#define FILTERCFG_WRITER_LOAD           0x0400
-#define FILTERCFG_WRITER_SAVE           0x0800
-#define FILTERCFG_CALC_LOAD             0x1000
-#define FILTERCFG_CALC_SAVE             0x2000
-#define FILTERCFG_IMPRESS_LOAD          0x4000
-#define FILTERCFG_IMPRESS_SAVE          0x8000
-#define FILTERCFG_EXCEL_EXECTBL         0x10000
-#define FILTERCFG_ENABLE_PPT_PREVIEW    0x20000
-#define FILTERCFG_ENABLE_EXCEL_PREVIEW  0x40000
-#define FILTERCFG_ENABLE_WORD_PREVIEW   0x80000
-#define FILTERCFG_USE_ENHANCED_FIELDS   0x100000
-#define FILTERCFG_WORD_WBCTBL           0x200000
-#define FILTERCFG_SMARTART_SHAPE_LOAD   0x400000
-#define FILTERCFG_CHAR_BACKGROUND_TO_HIGHLIGHTING   0x8000000
+enum class ConfigFlags {
+    NONE                         = 0x0000000,
+    WordCode                     = 0x0000001,
+    WordStorage                  = 0x0000002,
+    ExcelCode                    = 0x0000004,
+    ExcelStorage                 = 0x0000008,
+    PowerPointCode               = 0x0000010,
+    PowerPointStorage            = 0x0000020,
+    MathLoad                     = 0x0000100,
+    MathSave                     = 0x0000200,
+    WriterLoad                   = 0x0000400,
+    WriterSave                   = 0x0000800,
+    CalcLoad                     = 0x0001000,
+    CalcSave                     = 0x0002000,
+    ImpressLoad                  = 0x0004000,
+    ImpressSave                  = 0x0008000,
+    ExcelExecTbl                 = 0x0010000,
+    EnablePowerPointPreview      = 0x0020000,
+    EnableExcelPreview           = 0x0040000,
+    EnableWordPreview            = 0x0080000,
+    UseEnhancedFields            = 0x0100000,
+    WordWbctbl                   = 0x0200000,
+    SmartArtShapeLoad            = 0x0400000,
+    CharBackgroundToHighlighting = 0x8000000
+};
+namespace o3tl {
+    template<> struct typed_flags<ConfigFlags> : is_typed_flags<ConfigFlags, 0x87fff3f> {};
+}
 
 class SvtAppFilterOptions_Impl : public utl::ConfigItem
 {
@@ -66,7 +74,7 @@ public:
         utl::ConfigItem(rRoot),
         bLoadVBA(false),
         bSaveVBA(false)  {}
-    virtual ~SvtAppFilterOptions_Impl();
+    virtual ~SvtAppFilterOptions_Impl() override;
     virtual void            Notify( const css::uno::Sequence<OUString>& aPropertyNames) override;
     void                    Load();
 
@@ -113,9 +121,9 @@ void    SvtAppFilterOptions_Impl::Load()
     const Any* pValues = aValues.getConstArray();
 
     if(pValues[0].hasValue())
-        bLoadVBA = *static_cast<sal_Bool const *>(pValues[0].getValue());
+        bLoadVBA = *o3tl::doAccess<bool>(pValues[0]);
     if(pValues[1].hasValue())
-        bSaveVBA = *static_cast<sal_Bool const *>(pValues[1].getValue());
+        bSaveVBA = *o3tl::doAccess<bool>(pValues[1]);
 }
 
 class SvtWriterFilterOptions_Impl : public SvtAppFilterOptions_Impl
@@ -161,7 +169,7 @@ void SvtWriterFilterOptions_Impl::Load()
     Sequence<Any> aValues = GetProperties(aNames);
     const Any* pValues = aValues.getConstArray();
     if(pValues[0].hasValue())
-        bLoadExecutable = *static_cast<sal_Bool const *>(pValues[0].getValue());
+        bLoadExecutable = *o3tl::doAccess<bool>(pValues[0]);
 }
 
 class SvtCalcFilterOptions_Impl : public SvtAppFilterOptions_Impl
@@ -207,12 +215,12 @@ void SvtCalcFilterOptions_Impl::Load()
     Sequence<Any> aValues = GetProperties(aNames);
     const Any* pValues = aValues.getConstArray();
     if(pValues[0].hasValue())
-        bLoadExecutable = *static_cast<sal_Bool const *>(pValues[0].getValue());
+        bLoadExecutable = *o3tl::doAccess<bool>(pValues[0]);
 }
 
 struct SvtFilterOptions_Impl
 {
-    sal_uLong nFlags;
+    ConfigFlags nFlags;
     SvtWriterFilterOptions_Impl aWriterCfg;
     SvtCalcFilterOptions_Impl aCalcCfg;
     SvtAppFilterOptions_Impl aImpressCfg;
@@ -222,28 +230,28 @@ struct SvtFilterOptions_Impl
         aCalcCfg("Office.Calc/Filter/Import/VBA"),
         aImpressCfg("Office.Impress/Filter/Import/VBA")
     {
-        nFlags = FILTERCFG_WORD_CODE |
-            FILTERCFG_WORD_STORAGE |
-            FILTERCFG_EXCEL_CODE |
-            FILTERCFG_EXCEL_STORAGE |
-            FILTERCFG_PPOINT_CODE |
-            FILTERCFG_PPOINT_STORAGE |
-            FILTERCFG_MATH_LOAD |
-            FILTERCFG_MATH_SAVE |
-            FILTERCFG_WRITER_LOAD |
-            FILTERCFG_WRITER_SAVE |
-            FILTERCFG_CALC_LOAD |
-            FILTERCFG_CALC_SAVE |
-            FILTERCFG_IMPRESS_LOAD |
-            FILTERCFG_IMPRESS_SAVE |
-            FILTERCFG_USE_ENHANCED_FIELDS |
-            FILTERCFG_SMARTART_SHAPE_LOAD |
-            FILTERCFG_CHAR_BACKGROUND_TO_HIGHLIGHTING;
+        nFlags = ConfigFlags::WordCode |
+            ConfigFlags::WordStorage |
+            ConfigFlags::ExcelCode |
+            ConfigFlags::ExcelStorage |
+            ConfigFlags::PowerPointCode |
+            ConfigFlags::PowerPointStorage |
+            ConfigFlags::MathLoad |
+            ConfigFlags::MathSave |
+            ConfigFlags::WriterLoad |
+            ConfigFlags::WriterSave |
+            ConfigFlags::CalcLoad |
+            ConfigFlags::CalcSave |
+            ConfigFlags::ImpressLoad |
+            ConfigFlags::ImpressSave |
+            ConfigFlags::UseEnhancedFields |
+            ConfigFlags::SmartArtShapeLoad |
+            ConfigFlags::CharBackgroundToHighlighting;
         Load();
     }
 
-    void SetFlag( sal_uLong nFlag, bool bSet );
-    bool IsFlag( sal_uLong nFlag ) const;
+    void SetFlag( ConfigFlags nFlag, bool bSet );
+    bool IsFlag( ConfigFlags nFlag ) const;
     void Load()
     {
         aWriterCfg.Load();
@@ -252,18 +260,18 @@ struct SvtFilterOptions_Impl
     }
 };
 
-void SvtFilterOptions_Impl::SetFlag( sal_uLong nFlag, bool bSet )
+void SvtFilterOptions_Impl::SetFlag( ConfigFlags nFlag, bool bSet )
 {
     switch(nFlag)
     {
-        case FILTERCFG_WORD_CODE:       aWriterCfg.SetLoad(bSet);break;
-        case FILTERCFG_WORD_STORAGE:    aWriterCfg.SetSave(bSet);break;
-        case FILTERCFG_WORD_WBCTBL: aWriterCfg.SetLoadExecutable(bSet);break;
-        case FILTERCFG_EXCEL_CODE:      aCalcCfg.SetLoad(bSet);break;
-        case FILTERCFG_EXCEL_STORAGE:   aCalcCfg.SetSave(bSet);break;
-        case FILTERCFG_EXCEL_EXECTBL:   aCalcCfg.SetLoadExecutable(bSet);break;
-        case FILTERCFG_PPOINT_CODE:     aImpressCfg.SetLoad(bSet);break;
-        case FILTERCFG_PPOINT_STORAGE:  aImpressCfg.SetSave(bSet);break;
+        case ConfigFlags::WordCode:       aWriterCfg.SetLoad(bSet);break;
+        case ConfigFlags::WordStorage:    aWriterCfg.SetSave(bSet);break;
+        case ConfigFlags::WordWbctbl: aWriterCfg.SetLoadExecutable(bSet);break;
+        case ConfigFlags::ExcelCode:      aCalcCfg.SetLoad(bSet);break;
+        case ConfigFlags::ExcelStorage:   aCalcCfg.SetSave(bSet);break;
+        case ConfigFlags::ExcelExecTbl:   aCalcCfg.SetLoadExecutable(bSet);break;
+        case ConfigFlags::PowerPointCode:     aImpressCfg.SetLoad(bSet);break;
+        case ConfigFlags::PowerPointStorage:  aImpressCfg.SetSave(bSet);break;
         default:
             if( bSet )
                 nFlags |= nFlag;
@@ -272,39 +280,28 @@ void SvtFilterOptions_Impl::SetFlag( sal_uLong nFlag, bool bSet )
     }
 }
 
-bool SvtFilterOptions_Impl::IsFlag( sal_uLong nFlag ) const
+bool SvtFilterOptions_Impl::IsFlag( ConfigFlags nFlag ) const
 {
     bool bRet;
     switch(nFlag)
     {
-        case FILTERCFG_WORD_CODE        : bRet = aWriterCfg.IsLoad();break;
-        case FILTERCFG_WORD_STORAGE     : bRet = aWriterCfg.IsSave();break;
-        case FILTERCFG_WORD_WBCTBL      : bRet = aWriterCfg.IsLoadExecutable();break;
-        case FILTERCFG_EXCEL_CODE       : bRet = aCalcCfg.IsLoad();break;
-        case FILTERCFG_EXCEL_STORAGE    : bRet = aCalcCfg.IsSave();break;
-        case FILTERCFG_EXCEL_EXECTBL    : bRet = aCalcCfg.IsLoadExecutable();break;
-        case FILTERCFG_PPOINT_CODE      : bRet = aImpressCfg.IsLoad();break;
-        case FILTERCFG_PPOINT_STORAGE   : bRet = aImpressCfg.IsSave();break;
+        case ConfigFlags::WordCode        : bRet = aWriterCfg.IsLoad();break;
+        case ConfigFlags::WordStorage     : bRet = aWriterCfg.IsSave();break;
+        case ConfigFlags::WordWbctbl      : bRet = aWriterCfg.IsLoadExecutable();break;
+        case ConfigFlags::ExcelCode       : bRet = aCalcCfg.IsLoad();break;
+        case ConfigFlags::ExcelStorage    : bRet = aCalcCfg.IsSave();break;
+        case ConfigFlags::ExcelExecTbl    : bRet = aCalcCfg.IsLoadExecutable();break;
+        case ConfigFlags::PowerPointCode      : bRet = aImpressCfg.IsLoad();break;
+        case ConfigFlags::PowerPointStorage   : bRet = aImpressCfg.IsSave();break;
         default:
-            bRet = 0 != (nFlags & nFlag );
+            bRet = bool(nFlags & nFlag );
     }
     return bRet;
 }
 
-SvtFilterOptions::SvtFilterOptions() :
-    ConfigItem( "Office.Common/Filter/Microsoft" ),
-    pImp(new SvtFilterOptions_Impl)
-{
-    EnableNotification(GetPropertyNames());
-    Load();
-}
+namespace {
 
-SvtFilterOptions::~SvtFilterOptions()
-{
-    delete pImp;
-}
-
-const Sequence<OUString>& SvtFilterOptions::GetPropertyNames()
+const Sequence<OUString>& GetPropertyNames()
 {
     static Sequence<OUString> aNames;
     if(!aNames.getLength())
@@ -335,25 +332,39 @@ const Sequence<OUString>& SvtFilterOptions::GetPropertyNames()
     return aNames;
 }
 
-static sal_uLong lcl_GetFlag(sal_Int32 nProp)
+}
+
+SvtFilterOptions::SvtFilterOptions() :
+    ConfigItem( "Office.Common/Filter/Microsoft" ),
+    pImpl(new SvtFilterOptions_Impl)
 {
-    sal_uLong nFlag = 0;
+    EnableNotification(GetPropertyNames());
+    Load();
+}
+
+SvtFilterOptions::~SvtFilterOptions()
+{
+}
+
+static ConfigFlags lcl_GetFlag(sal_Int32 nProp)
+{
+    ConfigFlags nFlag = ConfigFlags::NONE;
     switch(nProp)
     {
-        case  0: nFlag = FILTERCFG_MATH_LOAD; break;
-        case  1: nFlag = FILTERCFG_WRITER_LOAD; break;
-        case  2: nFlag = FILTERCFG_IMPRESS_LOAD; break;
-        case  3: nFlag = FILTERCFG_CALC_LOAD; break;
-        case  4: nFlag = FILTERCFG_MATH_SAVE; break;
-        case  5: nFlag = FILTERCFG_WRITER_SAVE; break;
-        case  6: nFlag = FILTERCFG_IMPRESS_SAVE; break;
-        case  7: nFlag = FILTERCFG_CALC_SAVE; break;
-        case  8: nFlag = FILTERCFG_ENABLE_PPT_PREVIEW; break;
-        case  9: nFlag = FILTERCFG_ENABLE_EXCEL_PREVIEW; break;
-        case 10: nFlag = FILTERCFG_ENABLE_WORD_PREVIEW; break;
-        case 11: nFlag = FILTERCFG_USE_ENHANCED_FIELDS; break;
-        case 12: nFlag = FILTERCFG_SMARTART_SHAPE_LOAD; break;
-        case 13: nFlag = FILTERCFG_CHAR_BACKGROUND_TO_HIGHLIGHTING; break;
+        case  0: nFlag = ConfigFlags::MathLoad; break;
+        case  1: nFlag = ConfigFlags::WriterLoad; break;
+        case  2: nFlag = ConfigFlags::ImpressLoad; break;
+        case  3: nFlag = ConfigFlags::CalcLoad; break;
+        case  4: nFlag = ConfigFlags::MathSave; break;
+        case  5: nFlag = ConfigFlags::WriterSave; break;
+        case  6: nFlag = ConfigFlags::ImpressSave; break;
+        case  7: nFlag = ConfigFlags::CalcSave; break;
+        case  8: nFlag = ConfigFlags::EnablePowerPointPreview; break;
+        case  9: nFlag = ConfigFlags::EnableExcelPreview; break;
+        case 10: nFlag = ConfigFlags::EnableWordPreview; break;
+        case 11: nFlag = ConfigFlags::UseEnhancedFields; break;
+        case 12: nFlag = ConfigFlags::SmartArtShapeLoad; break;
+        case 13: nFlag = ConfigFlags::CharBackgroundToHighlighting; break;
 
         default: OSL_FAIL("illegal value");
     }
@@ -373,8 +384,8 @@ void SvtFilterOptions::ImplCommit()
 
     for(int nProp = 0; nProp < aNames.getLength(); nProp++)
     {
-        sal_uLong nFlag = lcl_GetFlag(nProp);
-        pValues[nProp] <<= pImp->IsFlag(nFlag);
+        ConfigFlags nFlag = lcl_GetFlag(nProp);
+        pValues[nProp] <<= pImpl->IsFlag(nFlag);
 
     }
     PutProperties(aNames, aValues);
@@ -382,7 +393,7 @@ void SvtFilterOptions::ImplCommit()
 
 void SvtFilterOptions::Load()
 {
-    pImp->Load();
+    pImpl->Load();
     const Sequence<OUString>& rNames = GetPropertyNames();
     Sequence<Any> aValues = GetProperties(rNames);
     const Any* pValues = aValues.getConstArray();
@@ -393,9 +404,9 @@ void SvtFilterOptions::Load()
         {
             if(pValues[nProp].hasValue())
             {
-                bool bVal = *static_cast<sal_Bool const *>(pValues[nProp].getValue());
-                sal_uLong nFlag = lcl_GetFlag(nProp);
-                pImp->SetFlag( nFlag, bVal);
+                bool bVal = *o3tl::doAccess<bool>(pValues[nProp]);
+                ConfigFlags nFlag = lcl_GetFlag(nProp);
+                pImpl->SetFlag( nFlag, bVal);
             }
         }
     }
@@ -403,193 +414,193 @@ void SvtFilterOptions::Load()
 
 void SvtFilterOptions::SetLoadWordBasicCode( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_WORD_CODE, bFlag );
+    pImpl->SetFlag( ConfigFlags::WordCode, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsLoadWordBasicCode() const
 {
-    return pImp->IsFlag( FILTERCFG_WORD_CODE );
+    return pImpl->IsFlag( ConfigFlags::WordCode );
 }
 
 void SvtFilterOptions::SetLoadWordBasicExecutable( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_WORD_WBCTBL, bFlag );
+    pImpl->SetFlag( ConfigFlags::WordWbctbl, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsLoadWordBasicExecutable() const
 {
-    return pImp->IsFlag( FILTERCFG_WORD_WBCTBL );
+    return pImpl->IsFlag( ConfigFlags::WordWbctbl );
 }
 
 void SvtFilterOptions::SetLoadWordBasicStorage( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_WORD_STORAGE, bFlag );
+    pImpl->SetFlag( ConfigFlags::WordStorage, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsLoadWordBasicStorage() const
 {
-    return pImp->IsFlag( FILTERCFG_WORD_STORAGE );
+    return pImpl->IsFlag( ConfigFlags::WordStorage );
 }
 
 void SvtFilterOptions::SetLoadExcelBasicCode( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_EXCEL_CODE, bFlag );
+    pImpl->SetFlag( ConfigFlags::ExcelCode, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsLoadExcelBasicCode() const
 {
-    return pImp->IsFlag( FILTERCFG_EXCEL_CODE );
+    return pImpl->IsFlag( ConfigFlags::ExcelCode );
 }
 
 void SvtFilterOptions::SetLoadExcelBasicExecutable( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_EXCEL_EXECTBL, bFlag );
+    pImpl->SetFlag( ConfigFlags::ExcelExecTbl, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsLoadExcelBasicExecutable() const
 {
-    return pImp->IsFlag( FILTERCFG_EXCEL_EXECTBL );
+    return pImpl->IsFlag( ConfigFlags::ExcelExecTbl );
 }
 
 void SvtFilterOptions::SetLoadExcelBasicStorage( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_EXCEL_STORAGE, bFlag );
+    pImpl->SetFlag( ConfigFlags::ExcelStorage, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsLoadExcelBasicStorage() const
 {
-    return pImp->IsFlag( FILTERCFG_EXCEL_STORAGE );
+    return pImpl->IsFlag( ConfigFlags::ExcelStorage );
 }
 
 void SvtFilterOptions::SetLoadPPointBasicCode( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_PPOINT_CODE, bFlag );
+    pImpl->SetFlag( ConfigFlags::PowerPointCode, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsLoadPPointBasicCode() const
 {
-    return pImp->IsFlag( FILTERCFG_PPOINT_CODE );
+    return pImpl->IsFlag( ConfigFlags::PowerPointCode );
 }
 
 void SvtFilterOptions::SetLoadPPointBasicStorage( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_PPOINT_STORAGE, bFlag );
+    pImpl->SetFlag( ConfigFlags::PowerPointStorage, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsLoadPPointBasicStorage() const
 {
-    return pImp->IsFlag( FILTERCFG_PPOINT_STORAGE );
+    return pImpl->IsFlag( ConfigFlags::PowerPointStorage );
 }
 
 bool SvtFilterOptions::IsMathType2Math() const
 {
-    return pImp->IsFlag( FILTERCFG_MATH_LOAD );
+    return pImpl->IsFlag( ConfigFlags::MathLoad );
 }
 
 void SvtFilterOptions::SetMathType2Math( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_MATH_LOAD, bFlag );
+    pImpl->SetFlag( ConfigFlags::MathLoad, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsMath2MathType() const
 {
-    return pImp->IsFlag( FILTERCFG_MATH_SAVE );
+    return pImpl->IsFlag( ConfigFlags::MathSave );
 }
 
 void SvtFilterOptions::SetMath2MathType( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_MATH_SAVE, bFlag );
+    pImpl->SetFlag( ConfigFlags::MathSave, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsWinWord2Writer() const
 {
-    return pImp->IsFlag( FILTERCFG_WRITER_LOAD );
+    return pImpl->IsFlag( ConfigFlags::WriterLoad );
 }
 
 void SvtFilterOptions::SetWinWord2Writer( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_WRITER_LOAD, bFlag );
+    pImpl->SetFlag( ConfigFlags::WriterLoad, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsWriter2WinWord() const
 {
-    return pImp->IsFlag( FILTERCFG_WRITER_SAVE );
+    return pImpl->IsFlag( ConfigFlags::WriterSave );
 }
 
 void SvtFilterOptions::SetWriter2WinWord( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_WRITER_SAVE, bFlag );
+    pImpl->SetFlag( ConfigFlags::WriterSave, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsUseEnhancedFields() const
 {
-    return pImp->IsFlag( FILTERCFG_USE_ENHANCED_FIELDS );
+    return pImpl->IsFlag( ConfigFlags::UseEnhancedFields );
 }
 
 bool SvtFilterOptions::IsExcel2Calc() const
 {
-    return pImp->IsFlag( FILTERCFG_CALC_LOAD );
+    return pImpl->IsFlag( ConfigFlags::CalcLoad );
 }
 
 void SvtFilterOptions::SetExcel2Calc( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_CALC_LOAD, bFlag );
+    pImpl->SetFlag( ConfigFlags::CalcLoad, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsCalc2Excel() const
 {
-    return pImp->IsFlag( FILTERCFG_CALC_SAVE );
+    return pImpl->IsFlag( ConfigFlags::CalcSave );
 }
 
 void SvtFilterOptions::SetCalc2Excel( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_CALC_SAVE, bFlag );
+    pImpl->SetFlag( ConfigFlags::CalcSave, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsPowerPoint2Impress() const
 {
-    return pImp->IsFlag( FILTERCFG_IMPRESS_LOAD );
+    return pImpl->IsFlag( ConfigFlags::ImpressLoad );
 }
 
 void SvtFilterOptions::SetPowerPoint2Impress( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_IMPRESS_LOAD, bFlag );
+    pImpl->SetFlag( ConfigFlags::ImpressLoad, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsImpress2PowerPoint() const
 {
-    return pImp->IsFlag( FILTERCFG_IMPRESS_SAVE );
+    return pImpl->IsFlag( ConfigFlags::ImpressSave );
 }
 
 void SvtFilterOptions::SetImpress2PowerPoint( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_IMPRESS_SAVE, bFlag );
+    pImpl->SetFlag( ConfigFlags::ImpressSave, bFlag );
     SetModified();
 }
 
 bool SvtFilterOptions::IsSmartArt2Shape() const
 {
-    return pImp->IsFlag( FILTERCFG_SMARTART_SHAPE_LOAD );
+    return pImpl->IsFlag( ConfigFlags::SmartArtShapeLoad );
 }
 
 void SvtFilterOptions::SetSmartArt2Shape( bool bFlag )
 {
-    pImp->SetFlag( FILTERCFG_SMARTART_SHAPE_LOAD, bFlag );
+    pImpl->SetFlag( ConfigFlags::SmartArtShapeLoad, bFlag );
     SetModified();
 }
 
@@ -608,39 +619,39 @@ SvtFilterOptions& SvtFilterOptions::Get()
 
 bool SvtFilterOptions::IsEnablePPTPreview() const
 {
-    return pImp->IsFlag( FILTERCFG_ENABLE_PPT_PREVIEW );
+    return pImpl->IsFlag( ConfigFlags::EnablePowerPointPreview );
 }
 
 bool SvtFilterOptions::IsEnableCalcPreview() const
 {
-    return pImp->IsFlag( FILTERCFG_ENABLE_EXCEL_PREVIEW );
+    return pImpl->IsFlag( ConfigFlags::EnableExcelPreview );
 }
 
 bool SvtFilterOptions::IsEnableWordPreview() const
 {
-    return pImp->IsFlag( FILTERCFG_ENABLE_WORD_PREVIEW );
+    return pImpl->IsFlag( ConfigFlags::EnableWordPreview );
 }
 
 
 bool SvtFilterOptions::IsCharBackground2Highlighting() const
 {
-    return pImp->IsFlag( FILTERCFG_CHAR_BACKGROUND_TO_HIGHLIGHTING );
+    return pImpl->IsFlag( ConfigFlags::CharBackgroundToHighlighting );
 }
 
 bool SvtFilterOptions::IsCharBackground2Shading() const
 {
-    return !pImp->IsFlag( FILTERCFG_CHAR_BACKGROUND_TO_HIGHLIGHTING );
+    return !pImpl->IsFlag( ConfigFlags::CharBackgroundToHighlighting );
 }
 
 void SvtFilterOptions::SetCharBackground2Highlighting()
 {
-    pImp->SetFlag( FILTERCFG_CHAR_BACKGROUND_TO_HIGHLIGHTING, true );
+    pImpl->SetFlag( ConfigFlags::CharBackgroundToHighlighting, true );
     SetModified();
 }
 
 void SvtFilterOptions::SetCharBackground2Shading()
 {
-    pImp->SetFlag( FILTERCFG_CHAR_BACKGROUND_TO_HIGHLIGHTING, false );
+    pImpl->SetFlag( ConfigFlags::CharBackgroundToHighlighting, false );
     SetModified();
 }
 

@@ -52,8 +52,6 @@
 #include <vcl/graphicfilter.hxx>
 #include <sfx2/htmlmode.hxx>
 #include <svtools/htmlcfg.hxx>
-#include <com/sun/star/i18n/TransliterationModules.hpp>
-#include <com/sun/star/i18n/TransliterationModulesExtra.hpp>
 #include <com/sun/star/embed/Aspects.hpp>
 
 #include <comphelper/classids.hxx>
@@ -90,7 +88,6 @@
 #include <column.hxx>
 #include <edtwin.hxx>
 #include <shells.hrc>
-#include <popup.hrc>
 #include <swerror.h>
 #include <unochart.hxx>
 
@@ -98,7 +95,7 @@
 
 #define SwTextShell
 #include <sfx2/msg.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <swslots.hxx>
 #include <SwRewriter.hxx>
 #include <comcore.hrc>
@@ -121,7 +118,7 @@ void SwTextShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("text");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_TEXT_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_TEXT_TOOLBOX);
 
     GetStaticInterface()->RegisterChildWindow(FN_EDIT_FORMULA);
     GetStaticInterface()->RegisterChildWindow(FN_INSERT_FIELD);
@@ -273,8 +270,8 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
             {
                 try
                 {
-                    ScrollingMode eScroll = ScrollingAuto;
-                    if( pScrollingItem && pScrollingItem->GetValue() <= ScrollingAuto )
+                    ScrollingMode eScroll = ScrollingMode::Auto;
+                    if( pScrollingItem && pScrollingItem->GetValue() <= (int)ScrollingMode::Auto )
                         eScroll = (ScrollingMode) pScrollingItem->GetValue();
 
                     Size aMargin;
@@ -286,12 +283,12 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
                     if ( pNameItem )
                         xSet->setPropertyValue("FrameName", uno::makeAny( OUString( pNameItem->GetValue() ) ) );
 
-                    if ( eScroll == ScrollingAuto )
+                    if ( eScroll == ScrollingMode::Auto )
                         xSet->setPropertyValue("FrameIsAutoScroll",
                             uno::makeAny( true ) );
                     else
                         xSet->setPropertyValue("FrameIsScrollingMode",
-                            uno::makeAny( eScroll == ScrollingYes ) );
+                            uno::makeAny( eScroll == ScrollingMode::Yes ) );
 
                     if ( pBorderItem )
                         xSet->setPropertyValue("FrameIsBorder",
@@ -355,7 +352,7 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
                 {
                     Size aSize(static_cast<const SvxSizeItem*>(pItem)->GetSize());
                     aSize = OutputDevice::LogicToLogic
-                                    ( aSize, MapMode( MAP_TWIP ), MapMode( MAP_100TH_MM ) );
+                                    ( aSize, MapMode( MapUnit::MapTwip ), MapMode( MapUnit::Map100thMM ) );
 
                     if(aSize.Width() > MINLAY&& aSize.Height()> MINLAY)
                     {
@@ -414,7 +411,7 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
                 aCol.Init( nCols, aCol.GetGutterWidth(), aCol.GetWishWidth() );
                 aMgr.SetCol( aCol );
             }
-            aMgr.InsertFlyFrame(FLY_AT_PARA, aStartPos, aSize);
+            aMgr.InsertFlyFrame(RndStdIds::FLY_AT_PARA, aStartPos, aSize);
             GetShell().EndAllAction();
             GetShell().UnlockPaint();
         }
@@ -442,9 +439,9 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
         if(pArgs)
         {
             Size aSize(aMgr.GetSize());
-            aSize.Width() = GetShell().GetAnyCurRect(RECT_PAGE_PRT).Width();
+            aSize.Width() = GetShell().GetAnyCurRect(CurRectType::PagePrt).Width();
             Point aPos = aMgr.GetPos();
-            RndStdIds eAnchor = FLY_AT_PARA;
+            RndStdIds eAnchor = RndStdIds::FLY_AT_PARA;
             if(pArgs->GetItemState(nSlot, false, &pItem) == SfxItemState::SET)
                 eAnchor = (RndStdIds)static_cast<const SfxUInt16Item *>(pItem)->GetValue();
             if(pArgs->GetItemState(FN_PARAM_1, false, &pItem)  == SfxItemState::SET)
@@ -479,7 +476,7 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
             SW_MOD()->PutItem(SfxUInt16Item(SID_ATTR_METRIC, static_cast< sal_uInt16 >(eMetric)));
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             OSL_ENSURE(pFact, "Dialog creation failed!");
-            std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog("FrameDialog",
+            ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog("FrameDialog",
                                                   GetView().GetViewFrame(),
                                                   &GetView().GetViewFrame()->GetWindow(),
                                                   aSet));
@@ -490,7 +487,7 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
                 SwWrtShell& rShell = GetShell();
                 rShell.LockPaint();
                 rShell.StartAllAction();
-                rShell.StartUndo(UNDO_INSERT);
+                rShell.StartUndo(SwUndoId::INSERT);
 
                 const SfxItemSet* pOutSet = pDlg->GetOutputItemSet();
                 aMgr.SetAttrSet(*pOutSet);
@@ -520,7 +517,7 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
 
                     aRewriter.AddRule(UndoArg1, SW_RESSTR(STR_FRAME));
 
-                    rShell.EndUndo(UNDO_INSERT, &aRewriter);
+                    rShell.EndUndo(SwUndoId::INSERT, &aRewriter);
                 }
                 rShell.EndAllAction();
                 rShell.UnlockPaint();
@@ -532,7 +529,7 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
     {
         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "Dialog creation failed!");
-        std::unique_ptr<VclAbstractDialog> pColDlg(pFact->CreateVclAbstractDialog( GetView().GetWindow(), rSh, DLG_COLUMN));
+        ScopedVclPtr<VclAbstractDialog> pColDlg(pFact->CreateVclAbstractDialog( GetView().GetWindow(), rSh, DLG_COLUMN));
         OSL_ENSURE(pColDlg, "Dialog creation failed!");
         pColDlg->Execute();
     }
@@ -696,8 +693,8 @@ void SwTextShell::StateInsert( SfxItemSet &rSet )
             case FN_INSERT_FRAME:
                 if (rSh.IsSelFrameMode() )
                 {
-                    const int nSel = rSh.GetSelectionType();
-                    if( ((nsSelectionType::SEL_GRF | nsSelectionType::SEL_OLE ) & nSel ) || bCursorInHidden )
+                    const SelectionType nSel = rSh.GetSelectionType();
+                    if( ((SelectionType::Graphic | SelectionType::Ole ) & nSel ) || bCursorInHidden )
                         rSet.DisableItem(nWhich);
                 }
                 else if ( rSh.CursorInsideInputField() )
@@ -781,45 +778,45 @@ void  SwTextShell::ExecDelete(SfxRequest &rReq)
 void SwTextShell::ExecTransliteration( SfxRequest & rReq )
 {
     using namespace ::com::sun::star::i18n;
-    sal_uInt32 nMode = 0;
+    TransliterationFlags nMode = TransliterationFlags::NONE;
 
     switch( rReq.GetSlot() )
     {
     case SID_TRANSLITERATE_SENTENCE_CASE:
-        nMode = TransliterationModulesExtra::SENTENCE_CASE;
+        nMode = TransliterationFlags::SENTENCE_CASE;
         break;
     case SID_TRANSLITERATE_TITLE_CASE:
-        nMode = TransliterationModulesExtra::TITLE_CASE;
+        nMode = TransliterationFlags::TITLE_CASE;
         break;
     case SID_TRANSLITERATE_TOGGLE_CASE:
-        nMode = TransliterationModulesExtra::TOGGLE_CASE;
+        nMode = TransliterationFlags::TOGGLE_CASE;
         break;
     case SID_TRANSLITERATE_UPPER:
-        nMode = TransliterationModules_LOWERCASE_UPPERCASE;
+        nMode = TransliterationFlags::LOWERCASE_UPPERCASE;
         break;
     case SID_TRANSLITERATE_LOWER:
-        nMode = TransliterationModules_UPPERCASE_LOWERCASE;
+        nMode = TransliterationFlags::UPPERCASE_LOWERCASE;
         break;
 
     case SID_TRANSLITERATE_HALFWIDTH:
-        nMode = TransliterationModules_FULLWIDTH_HALFWIDTH;
+        nMode = TransliterationFlags::FULLWIDTH_HALFWIDTH;
         break;
     case SID_TRANSLITERATE_FULLWIDTH:
-        nMode = TransliterationModules_HALFWIDTH_FULLWIDTH;
+        nMode = TransliterationFlags::HALFWIDTH_FULLWIDTH;
         break;
 
     case SID_TRANSLITERATE_HIRAGANA:
-        nMode = TransliterationModules_KATAKANA_HIRAGANA;
+        nMode = TransliterationFlags::KATAKANA_HIRAGANA;
         break;
     case SID_TRANSLITERATE_KATAGANA:
-        nMode = TransliterationModules_HIRAGANA_KATAKANA;
+        nMode = TransliterationFlags::HIRAGANA_KATAKANA;
         break;
 
     default:
         OSL_ENSURE(false, "wrong dispatcher");
     }
 
-    if( nMode )
+    if( nMode != TransliterationFlags::NONE )
         GetShell().TransliterateText( nMode );
 }
 
@@ -833,8 +830,7 @@ SwTextShell::SwTextShell(SwView &_rView) :
     SwBaseShell(_rView)
 {
     SetName("Text");
-    SetHelpId(SW_TEXTSHELL);
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Text));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Text));
 }
 
 SwTextShell::~SwTextShell()
@@ -851,7 +847,7 @@ SfxItemSet SwTextShell::CreateInsertFrameItemSet(SwFlyFrameAttrMgr& rMgr)
         SID_ATTR_PAGE_SIZE,     SID_ATTR_PAGE_SIZE,
         FN_SET_FRM_NAME,        FN_SET_FRM_NAME,
         SID_HTML_MODE,          SID_HTML_MODE,
-        SID_COLOR_TABLE,        SID_BITMAP_LIST,
+        SID_COLOR_TABLE,        SID_PATTERN_LIST,
         0
     };
 
@@ -861,12 +857,12 @@ SfxItemSet SwTextShell::CreateInsertFrameItemSet(SwFlyFrameAttrMgr& rMgr)
     // For the Area tab page.
     GetShell().GetDoc()->getIDocumentDrawModelAccess().GetDrawModel()->PutAreaListItems(aSet);
 
-    const SwRect &rPg = GetShell().GetAnyCurRect(RECT_PAGE);
+    const SwRect &rPg = GetShell().GetAnyCurRect(CurRectType::Page);
     SwFormatFrameSize aFrameSize(ATT_VAR_SIZE, rPg.Width(), rPg.Height());
     aFrameSize.SetWhich(GetPool().GetWhich(SID_ATTR_PAGE_SIZE));
     aSet.Put(aFrameSize);
 
-    const SwRect &rPr = GetShell().GetAnyCurRect(RECT_PAGE_PRT);
+    const SwRect &rPr = GetShell().GetAnyCurRect(CurRectType::PagePrt);
     SwFormatFrameSize aPrtSize(ATT_VAR_SIZE, rPr.Width(), rPr.Height());
     aPrtSize.SetWhich(GetPool().GetWhich(FN_GET_PRINT_AREA));
     aSet.Put(aPrtSize);
@@ -942,7 +938,7 @@ void SwTextShell::InsertSymbol( SfxRequest& rReq )
             aAllSet.Put( SfxStringItem( SID_FONT_NAME, aFont.GetFamilyName() ) );
 
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( GetView().GetWindow(), aAllSet,
+        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( GetView().GetWindow(), aAllSet,
             GetView().GetViewFrame()->GetFrame().GetFrameInterface(), RID_SVXDLG_CHARMAP ));
         if( RET_OK == pDlg->Execute() )
         {
@@ -973,7 +969,7 @@ void SwTextShell::InsertSymbol( SfxRequest& rReq )
         SwRewriter aRewriter;
         aRewriter.AddRule(UndoArg1, SW_RESSTR(STR_SPECIALCHAR));
 
-        rSh.StartUndo( UNDO_INSERT, &aRewriter );
+        rSh.StartUndo( SwUndoId::INSERT, &aRewriter );
         if ( rSh.HasSelection() )
         {
             rSh.DelRight();
@@ -1011,17 +1007,20 @@ void SwTextShell::InsertSymbol( SfxRequest& rReq )
             if( SvtScriptType::LATIN & nScript )
             {
                 aRestoreSet.Put( aSet.Get( RES_CHRATR_FONT ) );
-                aSet.Put( aNewFontItem, RES_CHRATR_FONT);
+                aNewFontItem.SetWhich(RES_CHRATR_FONT);
+                aSet.Put( aNewFontItem );
             }
             if( SvtScriptType::ASIAN & nScript )
             {
                 aRestoreSet.Put( aSet.Get( RES_CHRATR_CJK_FONT ) );
-                aSet.Put( aNewFontItem, RES_CHRATR_CJK_FONT );
+                aNewFontItem.SetWhich(RES_CHRATR_CJK_FONT);
+                aSet.Put( aNewFontItem );
             }
             if( SvtScriptType::COMPLEX & nScript )
             {
                 aRestoreSet.Put( aSet.Get( RES_CHRATR_CTL_FONT ) );
-                aSet.Put( aNewFontItem, RES_CHRATR_CTL_FONT );
+                aNewFontItem.SetWhich(RES_CHRATR_CTL_FONT);
+                aSet.Put( aNewFontItem );
             }
 
             rSh.SetMark();

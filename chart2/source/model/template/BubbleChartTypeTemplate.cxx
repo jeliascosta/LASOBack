@@ -24,7 +24,6 @@
 #include "Scaling.hxx"
 #include "DiagramHelper.hxx"
 #include "servicenames_charttypes.hxx"
-#include "ContainerHelper.hxx"
 #include "DataSeriesHelper.hxx"
 #include <com/sun/star/drawing/LineStyle.hpp>
 #include "PropertyHelper.hxx"
@@ -65,9 +64,9 @@ struct StaticBubbleChartTypeTemplateInfoHelper_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        ::std::vector< css::beans::Property > aProperties;
+        std::vector< css::beans::Property > aProperties;
 
-        ::std::sort( aProperties.begin(), aProperties.end(),
+        std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -112,7 +111,6 @@ BubbleChartTypeTemplate::~BubbleChartTypeTemplate()
 
 // ____ OPropertySet ____
 uno::Any BubbleChartTypeTemplate::GetDefaultValue( sal_Int32 nHandle ) const
-    throw(beans::UnknownPropertyException)
 {
     const tPropertyValueMap& rStaticDefaults = *StaticBubbleChartTypeTemplateDefaults::get();
     tPropertyValueMap::const_iterator aFound( rStaticDefaults.find( nHandle ) );
@@ -128,7 +126,6 @@ uno::Any BubbleChartTypeTemplate::GetDefaultValue( sal_Int32 nHandle ) const
 
 // ____ XPropertySet ____
 uno::Reference< beans::XPropertySetInfo > SAL_CALL BubbleChartTypeTemplate::getPropertySetInfo()
-    throw (uno::RuntimeException, std::exception)
 {
     return *StaticBubbleChartTypeTemplateInfo::get();
 }
@@ -140,7 +137,7 @@ sal_Int32 BubbleChartTypeTemplate::getDimension() const
 
 StackMode BubbleChartTypeTemplate::getStackMode( sal_Int32 /* nChartTypeIndex */ ) const
 {
-    return StackMode_NONE;
+    return StackMode::NONE;
 }
 
 void SAL_CALL BubbleChartTypeTemplate::applyStyle(
@@ -148,15 +145,13 @@ void SAL_CALL BubbleChartTypeTemplate::applyStyle(
     ::sal_Int32 nChartTypeIndex,
     ::sal_Int32 nSeriesIndex,
     ::sal_Int32 nSeriesCount )
-    throw (uno::RuntimeException, std::exception)
 {
     ChartTypeTemplate::applyStyle( xSeries, nChartTypeIndex, nSeriesIndex, nSeriesCount );
-    DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "BorderStyle", uno::makeAny( drawing::LineStyle_NONE ) );
+    DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "BorderStyle", uno::Any( drawing::LineStyle_NONE ) );
 }
 
 // ____ XChartTypeTemplate ____
 sal_Bool SAL_CALL BubbleChartTypeTemplate::supportsCategories()
-    throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
@@ -182,7 +177,6 @@ Reference< chart2::XChartType > BubbleChartTypeTemplate::getChartTypeForIndex( s
 
 Reference< chart2::XChartType > SAL_CALL BubbleChartTypeTemplate::getChartTypeForNewSeries(
         const uno::Sequence< Reference< chart2::XChartType > >& aFormerlyUsedChartTypes )
-    throw (uno::RuntimeException, std::exception)
 {
     Reference< chart2::XChartType > xResult;
 
@@ -204,10 +198,9 @@ Reference< chart2::XChartType > SAL_CALL BubbleChartTypeTemplate::getChartTypeFo
 }
 
 Reference< chart2::XDataInterpreter > SAL_CALL BubbleChartTypeTemplate::getDataInterpreter()
-    throw (uno::RuntimeException, std::exception)
 {
     if( ! m_xDataInterpreter.is())
-        m_xDataInterpreter.set( new BubbleDataInterpreter( GetComponentContext()) );
+        m_xDataInterpreter.set( new BubbleDataInterpreter );
 
     return m_xDataInterpreter;
 }

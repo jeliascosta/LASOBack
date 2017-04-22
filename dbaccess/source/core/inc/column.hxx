@@ -39,13 +39,13 @@
 #include <com/sun/star/sdbcx/XDrop.hpp>
 #include <com/sun/star/util/XNumberFormatsSupplier.hpp>
 
-#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/proparrhlp.hxx>
 #include <comphelper/propertycontainer.hxx>
 #include <connectivity/CommonTools.hxx>
 #include <connectivity/FValue.hxx>
 #include <connectivity/TColumnsHelper.hxx>
 #include <connectivity/sdbcx/IRefreshable.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/implbase1.hxx>
 #include <cppuhelper/propshlp.hxx>
@@ -61,7 +61,7 @@ namespace dbaccess
                                                css::container::XNamed
                                            >   OColumnBase;
 
-    class OColumn   :public comphelper::OBaseMutex
+    class OColumn   :public cppu::BaseMutex
                     ,public OColumnBase
                     ,public ::comphelper::OPropertyContainer
                     ,public IPropertyContainer  // convenience for the derived class which also derive from OColumnSettings
@@ -77,31 +77,31 @@ namespace dbaccess
         OColumn( const bool _bNameIsReadOnly );
 
     public:
-        virtual ~OColumn();
+        virtual ~OColumn() override;
 
     // css::lang::XTypeProvider
-        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() throw (css::uno::RuntimeException, std::exception) override = 0;
+        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override = 0;
 
     // css::uno::XInterface
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
         virtual void SAL_CALL acquire() throw() override;
         virtual void SAL_CALL release() throw() override;
 
     // css::beans::XPropertySet
-        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
 
     // cppu::OComponentHelper
         virtual void SAL_CALL disposing() override;
 
     // css::lang::XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName(  ) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
         // XNamed
-        virtual OUString SAL_CALL getName(  ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL setName( const OUString& _rName ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getName(  ) override;
+        virtual void SAL_CALL setName( const OUString& _rName ) override;
 
         virtual void fireValueChange( const ::connectivity::ORowSetValue& _rOldValue );
 
@@ -159,7 +159,7 @@ namespace dbaccess
         bool                                    m_bAddColumn    : 1;
         bool                                    m_bDropColumn   : 1;
 
-        virtual void impl_refresh() throw(css::uno::RuntimeException) override;
+        virtual void impl_refresh() override;
         virtual connectivity::sdbcx::ObjectType createObject(const OUString& _rName) override;
         virtual css::uno::Reference< css::beans::XPropertySet > createDescriptor() override;
         virtual connectivity::sdbcx::ObjectType appendObject( const OUString& _rForName, const css::uno::Reference< css::beans::XPropertySet >& descriptor ) override;
@@ -172,9 +172,9 @@ namespace dbaccess
         }
         /** flag which determines whether the container is filled or not
         */
-        inline bool isInitialized() const { return m_bInitialized; }
-        inline void     setInitialized() {m_bInitialized = true;}
-        inline void     setMediator(OContainerMediator* _pMediator) { m_pMediator = _pMediator; }
+        bool isInitialized() const { return m_bInitialized; }
+        void     setInitialized() {m_bInitialized = true;}
+        void     setMediator(OContainerMediator* _pMediator) { m_pMediator = _pMediator; }
 
     public:
         /** constructs an empty container without configuration location.
@@ -188,7 +188,7 @@ namespace dbaccess
                 ::cppu::OWeakObject& _rParent,
                 ::osl::Mutex& _rMutex,
                 bool _bCaseSensitive,
-                const ::std::vector< OUString>& _rVector,
+                const std::vector< OUString>& _rVector,
                 IColumnFactory* _pColFactory,
                 ::connectivity::sdbcx::IRefreshableColumns* _pRefresh,
                 bool _bAddColumn = false,
@@ -200,29 +200,29 @@ namespace dbaccess
             ::osl::Mutex& _rMutex,
             const css::uno::Reference< css::container::XNameAccess >& _rxDrvColumns,
             bool _bCaseSensitive,
-            const ::std::vector< OUString> &_rVector,
+            const std::vector< OUString> &_rVector,
             IColumnFactory* _pColFactory,
             ::connectivity::sdbcx::IRefreshableColumns* _pRefresh,
             bool _bAddColumn = false,
             bool _bDropColumn = false,
             bool _bUseHardRef = true);
-        virtual ~OColumns();
+        virtual ~OColumns() override;
 
         //XInterface
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
         virtual void SAL_CALL acquire() throw() override { OColumns_BASE::acquire(); }
         virtual void SAL_CALL release() throw() override { OColumns_BASE::release(); }
         //XTypeProvider
-        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
 
     // css::lang::XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName(  ) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
         // css::container::XChild
-        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getParent(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL setParent( const css::uno::Reference< css::uno::XInterface >& Parent ) throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getParent(  ) override;
+        virtual void SAL_CALL setParent( const css::uno::Reference< css::uno::XInterface >& Parent ) override;
 
         void append(const OUString& rName, OColumn*);
         void clearColumns();

@@ -37,16 +37,16 @@ class ScAddInListener : public cppu::WeakImplHelper<
 private:
     css::uno::Reference<css::sheet::XVolatileResult> xVolRes;
     css::uno::Any aResult;
-    ScAddInDocs* pDocs; // documents where this is used
+    std::unique_ptr<ScAddInDocs> pDocs; // documents where this is used
 
     static ::std::list<ScAddInListener*> aAllListeners;
 
     // always allocated via CreateListener
-    ScAddInListener( css::uno::Reference<css::sheet::XVolatileResult> xVR,
+    ScAddInListener( css::uno::Reference<css::sheet::XVolatileResult> const & xVR,
                     ScDocument* pD );
 
 public:
-    virtual ~ScAddInListener();
+    virtual ~ScAddInListener() override;
 
     // create Listener and put it into global list
     static ScAddInListener* CreateListener(
@@ -67,22 +67,17 @@ public:
           { return aResult; }
 
     // XResultListener
-    virtual void SAL_CALL modified( const css::sheet::ResultEvent& aEvent )
-                              throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL modified( const css::sheet::ResultEvent& aEvent ) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
-                              throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-                                         throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-                                  throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 };
 
 #endif // INCLUDED_SC_SOURCE_CORE_INC_ADDINLIS_HXX

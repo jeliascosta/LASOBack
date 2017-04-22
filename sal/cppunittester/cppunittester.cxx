@@ -34,6 +34,7 @@
 #include "osl/module.h"
 #include "osl/module.hxx"
 #include "osl/thread.h"
+#include "rtl/character.hxx"
 #include "rtl/process.h"
 #include "rtl/string.h"
 #include "rtl/string.hxx"
@@ -81,12 +82,15 @@ std::string convertLazy(rtl::OUString const & s16) {
         s8.getStr(), static_cast< std::string::size_type >(s8.getLength()));
 }
 
-#if defined TIMETESTS
 //Output how long each test took
 class TimingListener
     : public CppUnit::TestListener
 {
 public:
+    TimingListener()
+        : m_nStartTime(0)
+    {
+    }
     TimingListener(const TimingListener&) = delete;
     TimingListener& operator=(const TimingListener&) = delete;
 
@@ -98,14 +102,13 @@ public:
     void endTest( CppUnit::Test *test ) override
     {
         sal_uInt32 nEndTime = osl_getGlobalTimer();
-        std::cout << test->getName() << ": " << nEndTime-m_nStartTime
-            << "ms" << std::endl;
+        std::cout << test->getName() << " finished in: "
+            << nEndTime-m_nStartTime << "ms" << std::endl;
     }
 
 private:
     sal_uInt32 m_nStartTime;
 };
-#endif
 
 #ifdef UNX
 #include <stdlib.h>
@@ -125,7 +128,7 @@ public:
         int len = strlen(tn.get());
         for(int i = 0; i < len; i++)
         {
-            if(!isalnum(tn[i]))
+            if(!rtl::isAsciiAlphanumeric(static_cast<unsigned char>(tn[i])))
             {
                 tn[i] = '_';
             }
@@ -275,10 +278,8 @@ public:
             LogFailuresAsTheyHappen logger;
             result.addListener(&logger);
 
-#ifdef TIMETESTS
             TimingListener timer;
             result.addListener(&timer);
-#endif
 
 #ifdef UNX
             EyecatcherListener eye;

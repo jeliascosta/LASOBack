@@ -2,12 +2,10 @@ package org.libreoffice.canvas;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
-public class ImageUtils {
-    public static Bitmap getBitmapForDrawable(Drawable drawable) {
+class ImageUtils {
+    static Bitmap getBitmapForDrawable(Drawable drawable) {
         drawable = drawable.mutate();
 
         int width = !drawable.getBounds().isEmpty() ?

@@ -12,6 +12,7 @@ $(eval $(call gb_UIConfig_UIConfig,sfx))
 $(eval $(call gb_UIConfig_add_uifiles,sfx,\
 	sfx2/uiconfig/ui/alienwarndialog \
 	sfx2/uiconfig/ui/bookmarkdialog \
+	sfx2/uiconfig/ui/bookmarkmenu \
 	sfx2/uiconfig/ui/checkin \
 	sfx2/uiconfig/ui/cmisinfopage \
 	sfx2/uiconfig/ui/cmisline \
@@ -20,13 +21,16 @@ $(eval $(call gb_UIConfig_add_uifiles,sfx,\
 	sfx2/uiconfig/ui/documentfontspage \
 	sfx2/uiconfig/ui/documentinfopage \
 	sfx2/uiconfig/ui/documentpropertiesdialog \
+	sfx2/uiconfig/ui/editdocumentdialog \
 	sfx2/uiconfig/ui/editdurationdialog \
+	sfx2/uiconfig/ui/emojicontrol \
 	sfx2/uiconfig/ui/errorfindemaildialog \
 	sfx2/uiconfig/ui/floatingrecord \
 	sfx2/uiconfig/ui/helpbookmarkpage \
 	sfx2/uiconfig/ui/helpcontrol \
 	sfx2/uiconfig/ui/helpcontentpage \
 	sfx2/uiconfig/ui/helpindexpage \
+	sfx2/uiconfig/ui/helpmanual \
 	sfx2/uiconfig/ui/helpsearchpage \
 	sfx2/uiconfig/ui/inputdialog \
 	sfx2/uiconfig/ui/licensedialog \
@@ -37,12 +41,15 @@ $(eval $(call gb_UIConfig_add_uifiles,sfx,\
 	sfx2/uiconfig/ui/notebookbar \
 	sfx2/uiconfig/ui/optprintpage \
 	sfx2/uiconfig/ui/password \
+	sfx2/uiconfig/ui/notebookbarpopup \
 	sfx2/uiconfig/ui/printeroptionsdialog \
 	sfx2/uiconfig/ui/querysavedialog \
+	sfx2/uiconfig/ui/safemodequerydialog \
 	sfx2/uiconfig/ui/searchdialog \
 	sfx2/uiconfig/ui/securityinfopage \
 	sfx2/uiconfig/ui/singletabdialog \
 	sfx2/uiconfig/ui/startcenter \
+	sfx2/uiconfig/ui/stylecontextmenu \
 	sfx2/uiconfig/ui/templatedlg \
 	sfx2/uiconfig/ui/saveastemplatedlg \
 	sfx2/uiconfig/ui/templatecategorydlg \

@@ -180,7 +180,6 @@ bool SeriesOptionsItemConverter::GetItemProperty( tWhichIdType /*nWhichId*/, tPr
 }
 
 bool SeriesOptionsItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
-    throw( uno::Exception )
 {
     bool bChanged = false;
     switch( nWhichId )
@@ -235,7 +234,7 @@ bool SeriesOptionsItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const Sf
                             else if( nAxisIndex >= 0 && nAxisIndex < aBarPositionSequence.getLength() )
                                 aBarPositionSequence[nAxisIndex] = rBarPosition;
 
-                            xChartTypeProps->setPropertyValue( aPropName, uno::makeAny(aBarPositionSequence) );
+                            xChartTypeProps->setPropertyValue( aPropName, uno::Any(aBarPositionSequence) );
                             bChanged = true;
                         }
                     }
@@ -256,7 +255,7 @@ bool SeriesOptionsItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const Sf
                     (xDiagramProperties->getPropertyValue( "ConnectBars" ) >>= bOldConnectBars) &&
                     bOldConnectBars != m_bConnectBars )
                 {
-                    xDiagramProperties->setPropertyValue( "ConnectBars" , uno::makeAny(m_bConnectBars) );
+                    xDiagramProperties->setPropertyValue( "ConnectBars" , uno::Any(m_bConnectBars) );
                     bChanged = true;
                 }
             }
@@ -275,7 +274,7 @@ bool SeriesOptionsItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const Sf
                     (xDiagramProperties->getPropertyValue( "GroupBarsPerAxis" ) >>= bOldGroupBarsPerAxis) &&
                     bOldGroupBarsPerAxis != m_bGroupBarsPerAxis )
                 {
-                    xDiagramProperties->setPropertyValue( "GroupBarsPerAxis" , uno::makeAny(m_bGroupBarsPerAxis) );
+                    xDiagramProperties->setPropertyValue( "GroupBarsPerAxis" , uno::Any(m_bGroupBarsPerAxis) );
                     bChanged = true;
                 }
             }
@@ -290,7 +289,7 @@ bool SeriesOptionsItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const Sf
                 uno::Reference< beans::XPropertySet > xDiagramProperties( ChartModelHelper::findDiagram(m_xChartModel), uno::UNO_QUERY );
                 if( xDiagramProperties.is() )
                 {
-                    xDiagramProperties->setPropertyValue( "StartingAngle" , uno::makeAny(m_nStartingAngle) );
+                    xDiagramProperties->setPropertyValue( "StartingAngle" , uno::Any(m_nStartingAngle) );
                     bChanged = true;
                 }
             }
@@ -327,7 +326,7 @@ bool SeriesOptionsItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const Sf
                         uno::Reference< beans::XPropertySet > xDiagramProperties( ChartModelHelper::findDiagram(m_xChartModel), uno::UNO_QUERY );
                         if( xDiagramProperties.is() )
                         {
-                            xDiagramProperties->setPropertyValue( "MissingValueTreatment" , uno::makeAny( nNew ));
+                            xDiagramProperties->setPropertyValue( "MissingValueTreatment" , uno::Any( nNew ));
                             bChanged = true;
                         }
                     }
@@ -359,7 +358,6 @@ bool SeriesOptionsItemConverter::ApplySpecialItem( sal_uInt16 nWhichId, const Sf
 
 void SeriesOptionsItemConverter::FillSpecialItem(
     sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
-    throw( uno::Exception )
 {
     switch( nWhichId )
     {

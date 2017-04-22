@@ -37,7 +37,7 @@ class SdrPage;
 class SdrObject;
 class SdrUnoObj;
 class SdrView;
-class Rectangle;
+namespace tools { class Rectangle; }
 namespace comphelper
 {
     class OPropertyChangeMultiplexer;
@@ -138,9 +138,9 @@ namespace rptui
     * \param _bAllObjects  if <TRUE/> all objects are taken into account, otherwise only not marked ones
     * \return the object which is overlapped, otherwise <NULL/>
     */
-    SdrObject* isOver(const Rectangle& _rRect,SdrPage& _rPage,SdrView& _rView,bool _bAllObjects = false,SdrObject* _pIgnore = nullptr, sal_Int16 _nIgnoreType=0);
+    SdrObject* isOver(const tools::Rectangle& _rRect,SdrPage& _rPage,SdrView& _rView,bool _bAllObjects = false,SdrObject* _pIgnore = nullptr, sal_Int16 _nIgnoreType=0);
 
-    SdrObject* isOver(const Rectangle& _rRect,SdrPage& _rPage,SdrView& _rView,bool _bAllObjects, SdrUnoObj* _pIgnoreList[], int _nIgnoreListLength);
+    SdrObject* isOver(const tools::Rectangle& _rRect,SdrPage& _rPage,SdrView& _rView,bool _bAllObjects, SdrUnoObj* _pIgnoreList[], int _nIgnoreListLength);
 
     /** checks whether the given OUnoObject object rectangle overlapps another object in that view.
     *
@@ -160,7 +160,7 @@ namespace rptui
     *
     * \param pControl           the control which should place in the section without overlapping
     * \param _pReportSection    the section
-    * \param _bInsert           sal_True whe the control should be inserted, otherwise not.
+    * \param _bInsert           sal_True when the control should be inserted, otherwise not.
     */
     void correctOverlapping(SdrObject* pControl,OReportSection& _aReportSection,bool _bInsert = true);
 
@@ -169,7 +169,7 @@ namespace rptui
      * \param pControl          the SdrObject
      */
 
-    Rectangle getRectangleFromControl(SdrObject* pControl);
+    tools::Rectangle getRectangleFromControl(SdrObject* pControl);
 
     /** sets the map mode at the window
         @param  _aZoom      the zoom scale

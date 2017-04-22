@@ -19,7 +19,12 @@
 
 #include <framework/undomanagerhelper.hxx>
 
+#include <com/sun/star/document/EmptyUndoStackException.hpp>
+#include <com/sun/star/document/UndoContextNotClosedException.hpp>
+#include <com/sun/star/document/UndoFailedException.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
+#include <com/sun/star/util/InvalidStateException.hpp>
+#include <com/sun/star/util/NotLockedException.hpp>
 
 #include <comphelper/interfacecontainer2.hxx>
 #include <cppuhelper/exc_hlp.hxx>
@@ -66,7 +71,7 @@ namespace framework
         explicit            UndoActionWrapper(
                                 Reference< XUndoAction > const& i_undoAction
                             );
-        virtual             ~UndoActionWrapper();
+        virtual             ~UndoActionWrapper() override;
 
         virtual OUString    GetComment() const override;
         virtual void        Undo() override;
@@ -163,14 +168,14 @@ namespace framework
         void cancel( const Reference< XInterface >& i_context )
         {
             m_caughtException <<= RuntimeException(
-                OUString( "Concurrency error: an earlier operation on the stack failed." ),
+                "Concurrency error: an earlier operation on the stack failed.",
                 i_context
             );
             m_finishCondition.set();
         }
 
     protected:
-        virtual ~UndoManagerRequest()
+        virtual ~UndoManagerRequest() override
         {
         }
 
@@ -287,11 +292,6 @@ namespace framework
         void notify(    OUString const& i_title,
                         void ( SAL_CALL XUndoManagerListener::*i_notificationMethod )( const UndoManagerEvent& )
                     );
-        void notify( void ( SAL_CALL XUndoManagerListener::*i_notificationMethod )( const UndoManagerEvent& ) )
-        {
-            notify( OUString(), i_notificationMethod );
-        }
-
         void notify( void ( SAL_CALL XUndoManagerListener::*i_notificationMethod )( const EventObject& ) );
 
     private:
@@ -343,7 +343,7 @@ namespace framework
         const UndoManagerEvent aEvent( buildEvent( i_title ) );
 
         // TODO: this notification method here is used by UndoManagerHelper_Impl, to multiplex the notifications we
-        // receive from the IUndoManager. Those notitications are sent with a locked SolarMutex, which means
+        // receive from the IUndoManager. Those notifications are sent with a locked SolarMutex, which means
         // we're doing the multiplexing here with a locked SM, too. Which is Bad (TM).
         // Fixing this properly would require outsourcing all the notifications into an own thread - which might lead
         // to problems of its own, since clients might expect synchronous notifications.
@@ -525,7 +525,7 @@ namespace framework
 
         {
             ::comphelper::FlagGuard aNotificationGuard( m_bAPIActionRunning );
-            rUndoManager.EnterListAction( i_title, OUString() );
+            rUndoManager.EnterListAction( i_title, OUString(), 0, ViewShellId(-1) );
         }
 
         m_aContextVisibilities.push( i_hidden );
@@ -825,7 +825,7 @@ namespace framework
         if ( m_bAPIActionRunning )
             return;
 
-        notify( &XUndoManagerListener::cancelledContext );
+        notify( OUString(), &XUndoManagerListener::cancelledContext );
     }
 
     void UndoManagerHelper_Impl::undoManagerDying()

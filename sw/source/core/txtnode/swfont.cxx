@@ -66,11 +66,10 @@ SvStatistics g_SvStat;
 
 using namespace ::com::sun::star;
 
-// Hintergrundbrush setzen, z.B. bei Zeichenvorlagen
+// set background brush, depending on character formatting
 void SwFont::SetBackColor( Color* pNewColor )
 {
-    delete m_pBackColor;
-    m_pBackColor = pNewColor;
+    m_pBackColor.reset( pNewColor );
     m_bFontChg = true;
     m_aSub[SwFontScript::Latin].m_pMagic = m_aSub[SwFontScript::CJK].m_pMagic = m_aSub[SwFontScript::CTL].m_pMagic = nullptr;
 }
@@ -225,7 +224,7 @@ SwFont::GetAbsRightBorder( const bool bVertLayout ) const
 
 SvxShadowLocation SwFont::GetAbsShadowLocation( const bool bVertLayout ) const
 {
-    SvxShadowLocation aLocation = SVX_SHADOW_NONE;
+    SvxShadowLocation aLocation = SvxShadowLocation::NONE;
     switch( GetOrientation( bVertLayout ) )
     {
         case 0:
@@ -235,20 +234,20 @@ SvxShadowLocation SwFont::GetAbsShadowLocation( const bool bVertLayout ) const
         case 900:
             switch ( m_aShadowLocation )
             {
-                case SVX_SHADOW_TOPLEFT:
-                    aLocation = SVX_SHADOW_BOTTOMLEFT;
+                case SvxShadowLocation::TopLeft:
+                    aLocation = SvxShadowLocation::BottomLeft;
                     break;
-                case SVX_SHADOW_TOPRIGHT:
-                    aLocation = SVX_SHADOW_TOPLEFT;
+                case SvxShadowLocation::TopRight:
+                    aLocation = SvxShadowLocation::TopLeft;
                     break;
-                case SVX_SHADOW_BOTTOMLEFT:
-                    aLocation = SVX_SHADOW_BOTTOMRIGHT;
+                case SvxShadowLocation::BottomLeft:
+                    aLocation = SvxShadowLocation::BottomRight;
                     break;
-                case SVX_SHADOW_BOTTOMRIGHT:
-                    aLocation = SVX_SHADOW_TOPRIGHT;
+                case SvxShadowLocation::BottomRight:
+                    aLocation = SvxShadowLocation::TopRight;
                     break;
-                case SVX_SHADOW_NONE:
-                case SVX_SHADOW_END:
+                case SvxShadowLocation::NONE:
+                case SvxShadowLocation::End:
                     aLocation = m_aShadowLocation;
                     break;
             }
@@ -257,20 +256,20 @@ SvxShadowLocation SwFont::GetAbsShadowLocation( const bool bVertLayout ) const
         case 1800:
             switch ( m_aShadowLocation )
             {
-                case SVX_SHADOW_TOPLEFT:
-                    aLocation = SVX_SHADOW_BOTTOMRIGHT;
+                case SvxShadowLocation::TopLeft:
+                    aLocation = SvxShadowLocation::BottomRight;
                     break;
-                case SVX_SHADOW_TOPRIGHT:
-                    aLocation = SVX_SHADOW_BOTTOMLEFT;
+                case SvxShadowLocation::TopRight:
+                    aLocation = SvxShadowLocation::BottomLeft;
                     break;
-                case SVX_SHADOW_BOTTOMLEFT:
-                    aLocation = SVX_SHADOW_TOPRIGHT;
+                case SvxShadowLocation::BottomLeft:
+                    aLocation = SvxShadowLocation::TopRight;
                     break;
-                case SVX_SHADOW_BOTTOMRIGHT:
-                    aLocation = SVX_SHADOW_TOPLEFT;
+                case SvxShadowLocation::BottomRight:
+                    aLocation = SvxShadowLocation::TopLeft;
                     break;
-                case SVX_SHADOW_NONE:
-                case SVX_SHADOW_END:
+                case SvxShadowLocation::NONE:
+                case SvxShadowLocation::End:
                     aLocation = m_aShadowLocation;
                     break;
             }
@@ -279,20 +278,20 @@ SvxShadowLocation SwFont::GetAbsShadowLocation( const bool bVertLayout ) const
         case 2700:
             switch ( m_aShadowLocation )
             {
-                case SVX_SHADOW_TOPLEFT:
-                    aLocation = SVX_SHADOW_TOPRIGHT;
+                case SvxShadowLocation::TopLeft:
+                    aLocation = SvxShadowLocation::TopRight;
                     break;
-                case SVX_SHADOW_TOPRIGHT:
-                    aLocation = SVX_SHADOW_BOTTOMRIGHT;
+                case SvxShadowLocation::TopRight:
+                    aLocation = SvxShadowLocation::BottomRight;
                     break;
-                case SVX_SHADOW_BOTTOMLEFT:
-                    aLocation = SVX_SHADOW_TOPLEFT;
+                case SvxShadowLocation::BottomLeft:
+                    aLocation = SvxShadowLocation::TopLeft;
                     break;
-                case SVX_SHADOW_BOTTOMRIGHT:
-                    aLocation = SVX_SHADOW_BOTTOMLEFT;
+                case SvxShadowLocation::BottomRight:
+                    aLocation = SvxShadowLocation::BottomLeft;
                     break;
-                case SVX_SHADOW_NONE:
-                case SVX_SHADOW_END:
+                case SvxShadowLocation::NONE:
+                case SvxShadowLocation::End:
                     aLocation = m_aShadowLocation;
                     break;
             }
@@ -315,8 +314,8 @@ sal_uInt16 SwFont::CalcShadowSpace(
     switch( nShadow )
     {
         case SvxShadowItemSide::TOP:
-            if(( aLoc == SVX_SHADOW_TOPLEFT ||
-               aLoc == SVX_SHADOW_TOPRIGHT ) &&
+            if(( aLoc == SvxShadowLocation::TopLeft ||
+               aLoc == SvxShadowLocation::TopRight ) &&
                ( nOrient == 0 || nOrient == 1800 ||
                ( nOrient == 900 && !bSkipRight ) ||
                ( nOrient == 2700 && !bSkipLeft )))
@@ -326,8 +325,8 @@ sal_uInt16 SwFont::CalcShadowSpace(
             break;
 
         case SvxShadowItemSide::BOTTOM:
-            if(( aLoc == SVX_SHADOW_BOTTOMLEFT ||
-               aLoc == SVX_SHADOW_BOTTOMRIGHT ) &&
+            if(( aLoc == SvxShadowLocation::BottomLeft ||
+               aLoc == SvxShadowLocation::BottomRight ) &&
                ( nOrient == 0 || nOrient == 1800 ||
                ( nOrient == 900 && !bSkipLeft ) ||
                ( nOrient == 2700 && !bSkipRight )))
@@ -337,8 +336,8 @@ sal_uInt16 SwFont::CalcShadowSpace(
             break;
 
         case SvxShadowItemSide::LEFT:
-            if(( aLoc == SVX_SHADOW_TOPLEFT ||
-               aLoc == SVX_SHADOW_BOTTOMLEFT ) &&
+            if(( aLoc == SvxShadowLocation::TopLeft ||
+               aLoc == SvxShadowLocation::BottomLeft ) &&
                ( nOrient == 900 || nOrient == 2700 ||
                ( nOrient == 0 && !bSkipLeft ) ||
                ( nOrient == 1800 && !bSkipRight )))
@@ -348,8 +347,8 @@ sal_uInt16 SwFont::CalcShadowSpace(
             break;
 
          case SvxShadowItemSide::RIGHT:
-            if(( aLoc == SVX_SHADOW_TOPRIGHT ||
-               aLoc == SVX_SHADOW_BOTTOMRIGHT ) &&
+            if(( aLoc == SvxShadowLocation::TopRight ||
+               aLoc == SvxShadowLocation::BottomRight ) &&
                ( nOrient == 900 || nOrient == 2700 ||
                ( nOrient == 0 && !bSkipRight ) ||
                ( nOrient == 1800 && !bSkipLeft )))
@@ -439,32 +438,32 @@ void SwFont::SetVertical( sal_uInt16 nDir, const bool bVertFormat )
 
 /*
  Escapement:
-    frEsc:  Fraction, Grad des Escapements
-    Esc = resultierendes Escapement
-    A1 = Original-Ascent            (nOrgAscent)
-    A2 = verkleinerter Ascent       (nEscAscent)
-    Ax = resultierender Ascent      (GetAscent())
-    H1 = Original-Hoehe             (nOrgHeight)
-    H2 = verkleinerter Hoehe        (nEscHeight)
-    Hx = resultierender Hoehe       (GetHeight())
-    Bx = resultierende Baseline fuer die Textausgabe (CalcPos())
-         (Vorsicht: Y - A1!)
+    frEsc:  Fraction, ratio of Escapements
+    Esc = resulting Escapement
+    A1 = original Ascent            (nOrgAscent)
+    A2 = shrunk Ascent              (nEscAscent)
+    Ax = resulting Ascent           (GetAscent())
+    H1 = original Height            (nOrgHeight)
+    H2 = shrunk Height              (nEscHeight)
+    Hx = resulting Height           (GetHeight())
+    Bx = resulting Baseline for Text (CalcPos())
+         (Attention: Y - A1!)
 
     Escapement:
         Esc = H1 * frEsc;
 
-    Hochstellung:
+    Superscript:
         Ax = A2 + Esc;
         Hx = H2 + Esc;
         Bx = A1 - Esc;
 
-    Tiefstellung:
+    Subscript:
         Ax = A1;
         Hx = A1 + Esc + (H2 - A2);
         Bx = A1 + Esc;
 */
 
-// nEsc ist der Prozentwert
+// nEsc is the percentage
 sal_uInt16 SwSubFont::CalcEscAscent( const sal_uInt16 nOldAscent ) const
 {
     if( DFLT_ESC_AUTO_SUPER != GetEscapement() &&
@@ -481,8 +480,7 @@ sal_uInt16 SwSubFont::CalcEscAscent( const sal_uInt16 nOldAscent ) const
 void SwFont::SetDiffFnt( const SfxItemSet *pAttrSet,
                          const IDocumentSettingAccess *pIDocumentSettingAccess )
 {
-    delete m_pBackColor;
-    m_pBackColor = nullptr;
+    m_pBackColor.reset();
 
     if( pAttrSet )
     {
@@ -615,7 +613,7 @@ void SwFont::SetDiffFnt( const SfxItemSet *pAttrSet,
             SetShadow( static_cast<const SvxShadowedItem*>(pItem)->GetValue() );
         if( SfxItemState::SET == pAttrSet->GetItemState( RES_CHRATR_RELIEF,
             true, &pItem ))
-            SetRelief( (FontRelief)static_cast<const SvxCharReliefItem*>(pItem)->GetValue() );
+            SetRelief( static_cast<const SvxCharReliefItem*>(pItem)->GetValue() );
         if( SfxItemState::SET == pAttrSet->GetItemState( RES_CHRATR_SHADOWED,
             true, &pItem ))
             SetPropWidth(static_cast<const SvxShadowedItem*>(pItem)->GetValue() ? 50 : 100 );
@@ -661,7 +659,7 @@ void SwFont::SetDiffFnt( const SfxItemSet *pAttrSet,
             SetVertical( static_cast<const SvxCharRotateItem*>(pItem)->GetValue() );
         if( SfxItemState::SET == pAttrSet->GetItemState( RES_CHRATR_BACKGROUND,
             true, &pItem ))
-            m_pBackColor = new Color( static_cast<const SvxBrushItem*>(pItem)->GetColor() );
+            m_pBackColor.reset( new Color( static_cast<const SvxBrushItem*>(pItem)->GetColor() ) );
         if( SfxItemState::SET == pAttrSet->GetItemState( RES_CHRATR_HIGHLIGHT,
             true, &pItem ))
             SetHighlightColor(static_cast<const SvxBrushItem*>(pItem)->GetColor());
@@ -699,7 +697,6 @@ void SwFont::SetDiffFnt( const SfxItemSet *pAttrSet,
         m_bBlink = false;
     }
     m_bPaintBlank = false;
-    m_bPaintWrong = false;
     OSL_ENSURE( m_aSub[SwFontScript::Latin].IsTransparent(), "SwFont: Transparent revolution" );
 }
 
@@ -707,7 +704,7 @@ SwFont::SwFont( const SwFont &rFont )
     : m_aSub(rFont.m_aSub)
 {
     m_nActual = rFont.m_nActual;
-    m_pBackColor = rFont.m_pBackColor ? new Color( *rFont.m_pBackColor ) : nullptr;
+    m_pBackColor.reset( rFont.m_pBackColor ? new Color( *rFont.m_pBackColor ) : nullptr );
     m_aHighlightColor = rFont.m_aHighlightColor;
     m_aTopBorder = rFont.m_aTopBorder;
     m_aBottomBorder = rFont.m_aBottomBorder;
@@ -729,7 +726,6 @@ SwFont::SwFont( const SwFont &rFont )
     m_bFontChg = rFont.m_bFontChg;
     m_bOrgChg = rFont.m_bOrgChg;
     m_bPaintBlank = rFont.m_bPaintBlank;
-    m_bPaintWrong = false;
     m_bURL = rFont.m_bURL;
     m_bGreyWave = rFont.m_bGreyWave;
     m_bNoColorReplace = rFont.m_bNoColorReplace;
@@ -747,7 +743,6 @@ SwFont::SwFont( const SwAttrSet* pAttrSet,
     m_nMetaCount = 0;
     m_nInputFieldCount = 0;
     m_bPaintBlank = false;
-    m_bPaintWrong = false;
     m_bURL = false;
     m_bGreyWave = false;
     m_bNoColorReplace = false;
@@ -761,7 +756,7 @@ SwFont::SwFont( const SwAttrSet* pAttrSet,
         m_aSub[SwFontScript::Latin].SetStyleName( rFont.GetStyleName() );
         m_aSub[SwFontScript::Latin].SetPitch( rFont.GetPitch() );
         m_aSub[SwFontScript::Latin].SetCharSet( rFont.GetCharSet() );
-        m_aSub[SwFontScript::Latin].SvxFont::SetPropr( 100 );   // 100% der FontSize
+        m_aSub[SwFontScript::Latin].SvxFont::SetPropr( 100 ); // 100% of FontSize
         Size aTmpSize = m_aSub[SwFontScript::Latin].m_aSize;
         aTmpSize.Height() = pAttrSet->GetSize().GetHeight();
         m_aSub[SwFontScript::Latin].SetSize( aTmpSize );
@@ -777,7 +772,7 @@ SwFont::SwFont( const SwAttrSet* pAttrSet,
         m_aSub[SwFontScript::CJK].SetStyleName( rFont.GetStyleName() );
         m_aSub[SwFontScript::CJK].SetPitch( rFont.GetPitch() );
         m_aSub[SwFontScript::CJK].SetCharSet( rFont.GetCharSet() );
-        m_aSub[SwFontScript::CJK].SvxFont::SetPropr( 100 );   // 100% der FontSize
+        m_aSub[SwFontScript::CJK].SvxFont::SetPropr( 100 ); // 100% of FontSize
         Size aTmpSize = m_aSub[SwFontScript::CJK].m_aSize;
         aTmpSize.Height() = pAttrSet->GetCJKSize().GetHeight();
         m_aSub[SwFontScript::CJK].SetSize( aTmpSize );
@@ -797,7 +792,7 @@ SwFont::SwFont( const SwAttrSet* pAttrSet,
         m_aSub[SwFontScript::CTL].SetStyleName( rFont.GetStyleName() );
         m_aSub[SwFontScript::CTL].SetPitch( rFont.GetPitch() );
         m_aSub[SwFontScript::CTL].SetCharSet( rFont.GetCharSet() );
-        m_aSub[SwFontScript::CTL].SvxFont::SetPropr( 100 );   // 100% der FontSize
+        m_aSub[SwFontScript::CTL].SvxFont::SetPropr( 100 ); // 100% of FontSize
         Size aTmpSize = m_aSub[SwFontScript::CTL].m_aSize;
         aTmpSize.Height() = pAttrSet->GetCTLSize().GetHeight();
         m_aSub[SwFontScript::CTL].SetSize( aTmpSize );
@@ -820,7 +815,7 @@ SwFont::SwFont( const SwAttrSet* pAttrSet,
     SetOutline( pAttrSet->GetContour().GetValue() );
     SetShadow( pAttrSet->GetShadowed().GetValue() );
     SetPropWidth( pAttrSet->GetCharScaleW().GetValue() );
-    SetRelief( (FontRelief)pAttrSet->GetCharRelief().GetValue() );
+    SetRelief( pAttrSet->GetCharRelief().GetValue() );
     if( pAttrSet->GetAutoKern().GetValue() )
     {
         SetAutoKern( ( !pIDocumentSettingAccess ||
@@ -840,9 +835,7 @@ SwFont::SwFont( const SwAttrSet* pAttrSet,
     const SfxPoolItem* pItem;
     if( SfxItemState::SET == pAttrSet->GetItemState( RES_CHRATR_BACKGROUND,
         true, &pItem ))
-        m_pBackColor = new Color( static_cast<const SvxBrushItem*>(pItem)->GetColor() );
-    else
-        m_pBackColor = nullptr;
+        m_pBackColor.reset( new Color( static_cast<const SvxBrushItem*>(pItem)->GetColor() ) );
     if( SfxItemState::SET == pAttrSet->GetItemState( RES_CHRATR_HIGHLIGHT,
         true, &pItem ))
         SetHighlightColor(static_cast<const SvxBrushItem*>(pItem)->GetColor());
@@ -885,7 +878,7 @@ SwFont::SwFont( const SwAttrSet* pAttrSet,
     {
         SetShadowColor(COL_TRANSPARENT);
         SetShadowWidth(0);
-        SetShadowLocation(SVX_SHADOW_NONE);
+        SetShadowLocation(SvxShadowLocation::NONE);
     }
 
     const SvxTwoLinesItem& rTwoLinesItem = pAttrSet->Get2Lines();
@@ -903,7 +896,6 @@ SwFont::SwFont( const SwAttrSet* pAttrSet,
 
 SwFont::~SwFont()
 {
-    delete m_pBackColor;
 }
 
 SwSubFont& SwSubFont::operator=( const SwSubFont &rFont )
@@ -925,8 +917,7 @@ SwFont& SwFont::operator=( const SwFont &rFont )
     m_aSub[SwFontScript::CJK] = rFont.m_aSub[SwFontScript::CJK];
     m_aSub[SwFontScript::CTL] = rFont.m_aSub[SwFontScript::CTL];
     m_nActual = rFont.m_nActual;
-    delete m_pBackColor;
-    m_pBackColor = rFont.m_pBackColor ? new Color( *rFont.m_pBackColor ) : nullptr;
+    m_pBackColor.reset( rFont.m_pBackColor ? new Color( *rFont.m_pBackColor ) : nullptr );
     m_aHighlightColor = rFont.m_aHighlightColor;
     m_aTopBorder = rFont.m_aTopBorder;
     m_aBottomBorder = rFont.m_aBottomBorder;
@@ -948,7 +939,6 @@ SwFont& SwFont::operator=( const SwFont &rFont )
     m_bFontChg = rFont.m_bFontChg;
     m_bOrgChg = rFont.m_bOrgChg;
     m_bPaintBlank = rFont.m_bPaintBlank;
-    m_bPaintWrong = false;
     m_bURL = rFont.m_bURL;
     m_bGreyWave = rFont.m_bGreyWave;
     m_bNoColorReplace = rFont.m_bNoColorReplace;
@@ -1063,8 +1053,8 @@ sal_uInt16 SwSubFont::GetHeight( SwViewShell *pSh, const OutputDevice& rOut )
 
 Size SwSubFont::GetTextSize_( SwDrawTextInfo& rInf )
 {
-    // Robust: Eigentlich sollte der Font bereits eingestellt sein, aber
-    // sicher ist sicher ...
+    // Robust: the font is supposed to be set already, but better safe than
+    // sorry...
     if ( !pLastFont || pLastFont->GetOwner()!=m_pMagic ||
          !IsSameInstance( rInf.GetpOut()->GetFont() ) )
         ChgFnt( rInf.GetShell(), rInf.GetOut() );
@@ -1120,8 +1110,8 @@ Size SwSubFont::GetTextSize_( SwDrawTextInfo& rInf )
         }
         rInf.SetKern( nOldKern );
         rInf.SetText(oldText);
-        // 15142: Ein Wort laenger als eine Zeile, beim Zeilenumbruch
-        //        hochgestellt, muss seine effektive Hoehe melden.
+        // A word that's longer than one line, with escapement at the line
+        // break, must report its effective height.
         if( GetEscapement() )
         {
             const sal_uInt16 nAscent = pLastFont->GetFontAscent( rInf.GetShell(),
@@ -1478,7 +1468,7 @@ void SwDrawTextInfo::Shift( sal_uInt16 nDir )
 #endif
 
     const bool bBidiPor = ( GetFrame() && GetFrame()->IsRightToLeft() ) !=
-                          ( TEXT_LAYOUT_DEFAULT != ( TEXT_LAYOUT_BIDI_RTL & GetpOut()->GetLayoutMode() ) );
+                          ( ComplexTextLayoutFlags::Default != ( ComplexTextLayoutFlags::BiDiRtl & GetpOut()->GetLayoutMode() ) );
 
     nDir = bBidiPor ?
             1800 :
@@ -1505,14 +1495,13 @@ void SwDrawTextInfo::Shift( sal_uInt16 nDir )
 /**
  * @note Used for the "continuous underline" feature.
  **/
-SwUnderlineFont::SwUnderlineFont( SwFont& rFnt, const Point& rPoint )
-        : m_aPos( rPoint ), m_pFont( &rFnt )
+SwUnderlineFont::SwUnderlineFont( SwFont& rFnt, sal_Int32 nEnd, const Point& rPoint )
+        : m_aPos( rPoint ), m_nEnd( nEnd ), m_pFont( &rFnt )
 {
 };
 
 SwUnderlineFont::~SwUnderlineFont()
 {
-     delete m_pFont;
 }
 
 /// Helper for filters to find true lineheight of a font

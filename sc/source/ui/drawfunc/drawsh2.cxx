@@ -58,7 +58,7 @@ ScDrawShell::ScDrawShell( ScViewData* pData ) :
     mpSelectionChangeHandler(new svx::sidebar::SelectionChangeHandler(
             [this] () { return this->GetSidebarContextName(); },
             GetFrame()->GetFrame().GetController(),
-            sfx2::sidebar::EnumContext::Context_Cell))
+            vcl::EnumContext::Context::Cell))
 {
     SetPool( &pViewData->GetScDrawView()->GetModel()->GetItemPool() );
     ::svl::IUndoManager* pMgr = pViewData->GetSfxDocShell()->GetUndoManager();
@@ -67,7 +67,6 @@ ScDrawShell::ScDrawShell( ScViewData* pData ) :
     {
         pMgr->SetMaxUndoActionCount( 0 );
     }
-    SetHelpId( HID_SCSHELL_DRAWSH );
     SetName("Drawing");
 
     mpSelectionChangeHandler->Connect();
@@ -83,8 +82,8 @@ void ScDrawShell::GetState( SfxItemSet& rSet )          // Zustaende / Toggles
     ScDrawView* pView    = pViewData->GetScDrawView();
     SdrDragMode eMode    = pView->GetDragMode();
 
-    rSet.Put( SfxBoolItem( SID_OBJECT_ROTATE, eMode == SDRDRAG_ROTATE ) );
-    rSet.Put( SfxBoolItem( SID_OBJECT_MIRROR, eMode == SDRDRAG_MIRROR ) );
+    rSet.Put( SfxBoolItem( SID_OBJECT_ROTATE, eMode == SdrDragMode::Rotate ) );
+    rSet.Put( SfxBoolItem( SID_OBJECT_MIRROR, eMode == SdrDragMode::Mirror ) );
     rSet.Put( SfxBoolItem( SID_BEZIER_EDIT, !pView->IsFrameDragSingles() ) );
 
     sal_uInt16 nFWId = ScGetFontWorkId();
@@ -127,7 +126,7 @@ void ScDrawShell::GetState( SfxItemSet& rSet )          // Zustaende / Toggles
     }
 }
 
-void ScDrawShell::GetDrawFuncState( SfxItemSet& rSet )      // Funktionen disablen
+void ScDrawShell::GetDrawFuncState( SfxItemSet& rSet )      // disable functions
 {
     ScDrawView* pView = pViewData->GetScDrawView();
 
@@ -153,10 +152,10 @@ void ScDrawShell::GetDrawFuncState( SfxItemSet& rSet )      // Funktionen disabl
     if ( !pView->IsGroupEntered() )
         rSet.DisableItem( SID_LEAVE_GROUP );
 
-    if ( nMarkCount <= 1 )                      // nichts oder nur ein Objekt selektiert
+    if ( nMarkCount <= 1 )                      // Nothing or only one object selected
     {
-            //  Ausrichtung
-        rSet.DisableItem( SID_OBJECT_ALIGN_LEFT );      // keine Ausrichtung an der Seite
+            //  alignment
+        rSet.DisableItem( SID_OBJECT_ALIGN_LEFT );      // no alignment on the side
         rSet.DisableItem( SID_OBJECT_ALIGN_CENTER );
         rSet.DisableItem( SID_OBJECT_ALIGN_RIGHT );
         rSet.DisableItem( SID_OBJECT_ALIGN_UP );
@@ -309,7 +308,7 @@ void ScDrawShell::GetDrawAttrState( SfxItemSet& rSet )
         bool bActionItem = false;
         if ( pDrView->IsAction() )              // action rectangle
         {
-            Rectangle aRect;
+            tools::Rectangle aRect;
             pDrView->TakeActionRect( aRect );
             if ( !aRect.IsEmpty() )
             {
@@ -324,7 +323,7 @@ void ScDrawShell::GetDrawAttrState( SfxItemSet& rSet )
         {
             if ( pDrView->AreObjectsMarked() )      // selected objects
             {
-                Rectangle aRect = pDrView->GetAllMarkedRect();
+                tools::Rectangle aRect = pDrView->GetAllMarkedRect();
                 pPV->LogicToPagePos(aRect);
                 rSet.Put( SfxPointItem( SID_ATTR_POSITION, aRect.TopLeft() ) );
                 Size aSize( aRect.Right() - aRect.Left(), aRect.Bottom() - aRect.Top() );
@@ -347,6 +346,22 @@ void ScDrawShell::GetAttrFuncState(SfxItemSet &rSet)
 
     ScDrawView* pDrView = pViewData->GetScDrawView();
     SfxItemSet aViewSet = pDrView->GetAttrFromMarked(false);
+    const SdrMarkList& rMarkList = pDrView->GetMarkedObjectList();
+
+    if ( rMarkList.GetMarkCount() == 1 )
+    {
+        SdrObject* pObj = rMarkList.GetMark( 0 )->GetMarkedSdrObj();
+        sal_uInt16 nObjType = pObj->GetObjIdentifier();
+
+        // If marked object is 2D, disable format area command.
+        if ( nObjType == OBJ_PLIN     ||
+             nObjType == OBJ_LINE     ||
+             nObjType == OBJ_PATHLINE ||
+             nObjType == OBJ_FREELINE ||
+             nObjType == OBJ_EDGE     ||
+             nObjType == OBJ_CARC )
+            rSet.DisableItem( SID_ATTRIBUTES_AREA );
+    }
 
     if ( aViewSet.GetItemState( XATTR_LINESTYLE ) == SfxItemState::DEFAULT )
     {
@@ -395,13 +410,13 @@ void ScDrawShell::Activate (const bool bMDI)
 
     ContextChangeEventMultiplexer::NotifyContextChange(
         GetFrame()->GetFrame().GetController(),
-        ::sfx2::sidebar::EnumContext::GetContextEnum(
+        vcl::EnumContext::GetContextEnum(
             GetSidebarContextName()));
 }
 
 ::rtl::OUString ScDrawShell::GetSidebarContextName()
 {
-    return sfx2::sidebar::EnumContext::GetContextName(
+    return vcl::EnumContext::GetContextName(
         svx::sidebar::SelectionAnalyzer::GetContextForSelection_SC(
             GetDrawView()->GetMarkedObjectList()));
 }

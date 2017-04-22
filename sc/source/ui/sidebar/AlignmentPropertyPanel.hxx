@@ -50,7 +50,7 @@ public:
         const DataChangedEvent& rEvent) override;
 
     virtual void HandleContextChange(
-        const ::sfx2::sidebar::EnumContext& rContext) override;
+        const vcl::EnumContext& rContext) override;
 
     virtual void NotifyItemUpdate(
         const sal_uInt16 nSId,
@@ -60,12 +60,12 @@ public:
 
     SfxBindings* GetBindings() { return mpBindings;}
 
-    // constructor/destuctor
+    // constructor/destructor
     AlignmentPropertyPanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         SfxBindings* pBindings);
-    virtual ~AlignmentPropertyPanel();
+    virtual ~AlignmentPropertyPanel() override;
     virtual void dispose() override;
 
 private:
@@ -90,18 +90,17 @@ private:
     ::sfx2::sidebar::ControllerItem             maVrtStackControl;
     ::sfx2::sidebar::ControllerItem             maRefEdgeControl;
 
-    /// bitfield
     bool                                        mbMultiDisable : 1;
 
-    ::sfx2::sidebar::EnumContext                maContext;
+    vcl::EnumContext                            maContext;
     SfxBindings*                                mpBindings;
 
-    DECL_LINK_TYPED( MFLeftIndentMdyHdl, Edit&, void );
-    DECL_LINK_TYPED( CBOXMergnCellClkHdl, Button*, void );
-    DECL_LINK_TYPED( CBOXWrapTextClkHdl, Button*, void );
-    DECL_LINK_TYPED( AngleModifiedHdl, Edit&, void );
-    DECL_LINK_TYPED( ClickStackHdl, Button*, void );
-    DECL_LINK_TYPED( ReferenceEdgeHdl, Button*, void );
+    DECL_LINK( MFLeftIndentMdyHdl, Edit&, void );
+    DECL_LINK( CBOXMergnCellClkHdl, Button*, void );
+    DECL_LINK( CBOXWrapTextClkHdl, Button*, void );
+    DECL_LINK( AngleModifiedHdl, Edit&, void );
+    DECL_LINK( ClickStackHdl, Button*, void );
+    DECL_LINK( ReferenceEdgeHdl, Button*, void );
 
     void Initialize();
     static void FormatDegrees(double& dTmp);

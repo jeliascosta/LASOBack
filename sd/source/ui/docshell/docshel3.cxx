@@ -65,7 +65,7 @@ using namespace ::com::sun::star::uno;
 
 namespace sd {
 
-static void lcl_setLanguageForObj( SdrObject *pObj, LanguageType nLang, bool bLanguageNone = false )
+static void lcl_setLanguageForObj( SdrObject *pObj, LanguageType nLang, bool bLanguageNone )
 {
     const sal_uInt16 aLangWhichId_EE[3] =
     {
@@ -283,7 +283,7 @@ void DrawDocShell::Execute( SfxRequest& rReq )
                 SfxAbstractDialogFactory* pFact = SfxAbstractDialogFactory::Create();
                 if (pFact && mpViewShell)
                 {
-                    std::unique_ptr<VclAbstractDialog> pDlg(pFact->CreateVclDialog( mpViewShell->GetActiveWindow(), SID_LANGUAGE_OPTIONS ));
+                    ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateVclDialog( mpViewShell->GetActiveWindow(), SID_LANGUAGE_OPTIONS ));
                     pDlg->Execute();
                 }
             }
@@ -320,8 +320,17 @@ void DrawDocShell::Execute( SfxRequest& rReq )
 
         case SID_NOTEBOOKBAR:
         {
-            if (mpViewShell)
-                sfx2::SfxNotebookBar::ExecMethod(mpViewShell->GetFrame()->GetBindings());
+            const SfxStringItem* pFile = rReq.GetArg<SfxStringItem>( SID_NOTEBOOKBAR );
+
+            if ( mpViewShell )
+            {
+                SfxBindings& rBindings( mpViewShell->GetFrame()->GetBindings() );
+
+                if ( sfx2::SfxNotebookBar::IsActive() )
+                    sfx2::SfxNotebookBar::ExecMethod( rBindings, pFile ? pFile->GetValue() : "" );
+                else
+                    sfx2::SfxNotebookBar::CloseMethod( rBindings );
+            }
         }
         break;
 

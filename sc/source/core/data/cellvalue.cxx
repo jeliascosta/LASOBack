@@ -63,6 +63,9 @@ bool equalsFormulaCells( const ScFormulaCell* p1, const ScFormulaCell* p2 )
     if (pCode1->GetLen() != pCode2->GetLen())
         return false;
 
+    if (pCode1->GetCodeError() != pCode2->GetCodeError())
+        return false;
+
     sal_uInt16 n = pCode1->GetLen();
     formula::FormulaToken** ppToken1 = pCode1->GetArray();
     formula::FormulaToken** ppToken2 = pCode2->GetArray();
@@ -308,7 +311,7 @@ void ScCellValue::assign( const ScDocument& rDoc, const ScAddress& rPos )
     }
 }
 
-void ScCellValue::assign( const ScCellValue& rOther, ScDocument& rDestDoc, int nCloneFlags )
+void ScCellValue::assign(const ScCellValue& rOther, ScDocument& rDestDoc, ScCloneFlags nCloneFlags)
 {
     clear();
 
@@ -489,17 +492,9 @@ ScRefCellValue::ScRefCellValue( const svl::SharedString* pString ) : meType(CELL
 ScRefCellValue::ScRefCellValue( const EditTextObject* pEditText ) : meType(CELLTYPE_EDIT), mpEditText(pEditText) {}
 ScRefCellValue::ScRefCellValue( ScFormulaCell* pFormula ) : meType(CELLTYPE_FORMULA), mpFormula(pFormula) {}
 
-// It should be enough to copy the double value, which is at least as large
-// as the pointer values.
-ScRefCellValue::ScRefCellValue( const ScRefCellValue& r ) : meType(r.meType), mfValue(r.mfValue) {}
-
 ScRefCellValue::ScRefCellValue( ScDocument& rDoc, const ScAddress& rPos )
 {
     assign( rDoc, rPos);
-}
-
-ScRefCellValue::~ScRefCellValue()
-{
 }
 
 void ScRefCellValue::clear()
@@ -587,18 +582,6 @@ bool ScRefCellValue::hasEmptyValue()
 bool ScRefCellValue::equalsWithoutFormat( const ScRefCellValue& r ) const
 {
     return equalsWithoutFormatImpl(*this, r);
-}
-
-ScRefCellValue& ScRefCellValue::operator= ( const ScRefCellValue& r )
-{
-    // So we *could* have a copy-swap-idiom here for exception-safety if we had
-    // to slow down things.. but then implement an explicit move-ctor and pass
-    // r by-value instead of manually creating a temporary so the compiler can
-    // take advantage. And initialize
-    // ScRefCellValue(ScDocument&,const ScAddress&) with default ctor.
-    meType = r.meType;
-    mfValue = r.mfValue;    // largest member of union
-    return *this;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

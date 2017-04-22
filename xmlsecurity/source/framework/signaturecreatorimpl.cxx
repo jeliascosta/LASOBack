@@ -18,7 +18,7 @@
  */
 
 
-#include "signaturecreatorimpl.hxx"
+#include "framework/signaturecreatorimpl.hxx"
 #include <com/sun/star/xml/crypto/XXMLSignatureTemplate.hpp>
 #include <com/sun/star/xml/wrapper/XXMLElementWrapper.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
@@ -34,8 +34,8 @@ namespace cssxw = com::sun::star::xml::wrapper;
 
 #define IMPLEMENTATION_NAME "com.sun.star.xml.security.framework.SignatureCreatorImpl"
 
-SignatureCreatorImpl::SignatureCreatorImpl( const Reference<XComponentContext> & xContext )
-    : SignatureCreatorImpl_Base(xContext), m_nIdOfBlocker(-1)
+SignatureCreatorImpl::SignatureCreatorImpl()
+    : SignatureCreatorImpl_Base(), m_nIdOfBlocker(-1)
 {
 }
 
@@ -68,7 +68,6 @@ bool SignatureCreatorImpl::checkReady() const
 }
 
 void SignatureCreatorImpl::notifyResultListener() const
-    throw (cssu::Exception, cssu::RuntimeException)
 /****** SignatureCreatorImpl/notifyResultListener *****************************
  *
  *   NAME
@@ -85,7 +84,6 @@ void SignatureCreatorImpl::notifyResultListener() const
 void SignatureCreatorImpl::startEngine( const cssu::Reference<
     cssxc::XXMLSignatureTemplate >&
     xSignatureTemplate)
-        throw (cssu::Exception, cssu::RuntimeException)
 /****** SignatureCreatorImpl/startEngine *************************************
  *
  *   NAME
@@ -147,7 +145,6 @@ void SignatureCreatorImpl::clearUp() const
 
 /* XBlockerMonitor */
 void SAL_CALL SignatureCreatorImpl::setBlockerId( sal_Int32 id )
-        throw (cssu::Exception, cssu::RuntimeException, std::exception)
 {
     m_nIdOfBlocker = id;
     tryToPerform();
@@ -156,7 +153,6 @@ void SAL_CALL SignatureCreatorImpl::setBlockerId( sal_Int32 id )
 /* XSignatureCreationResultBroadcaster */
 void SAL_CALL SignatureCreatorImpl::addSignatureCreationResultListener(
     const cssu::Reference< cssxc::sax::XSignatureCreationResultListener >& listener )
-    throw (cssu::Exception, cssu::RuntimeException, std::exception)
 {
     m_xResultListener = listener;
     tryToPerform();
@@ -164,13 +160,11 @@ void SAL_CALL SignatureCreatorImpl::addSignatureCreationResultListener(
 
 void SAL_CALL SignatureCreatorImpl::removeSignatureCreationResultListener(
     const cssu::Reference< cssxc::sax::XSignatureCreationResultListener >&)
-    throw (cssu::RuntimeException, std::exception)
 {
 }
 
 /* XInitialization */
 void SAL_CALL SignatureCreatorImpl::initialize( const cssu::Sequence< cssu::Any >& aArguments )
-    throw (cssu::Exception, cssu::RuntimeException, std::exception)
 {
     OSL_ASSERT(aArguments.getLength() == 5);
 
@@ -187,40 +181,34 @@ void SAL_CALL SignatureCreatorImpl::initialize( const cssu::Sequence< cssu::Any 
 
 
 OUString SignatureCreatorImpl_getImplementationName ()
-    throw (cssu::RuntimeException)
 {
     return OUString ( IMPLEMENTATION_NAME );
 }
 
 cssu::Sequence< OUString > SAL_CALL SignatureCreatorImpl_getSupportedServiceNames(  )
-    throw (cssu::RuntimeException)
 {
     cssu::Sequence<OUString> aRet { "com.sun.star.xml.crypto.sax.SignatureCreator" };
     return aRet;
 }
 
 cssu::Reference< cssu::XInterface > SAL_CALL SignatureCreatorImpl_createInstance(
-    const cssu::Reference< cssl::XMultiServiceFactory >& xMSF )
-    throw( cssu::Exception )
+    const cssu::Reference< cssl::XMultiServiceFactory >& /*xMSF*/ )
 {
-    return static_cast<cppu::OWeakObject*>(new SignatureCreatorImpl( comphelper::getComponentContext( xMSF ) ));
+    return static_cast<cppu::OWeakObject*>(new SignatureCreatorImpl);
 }
 
 /* XServiceInfo */
 OUString SAL_CALL SignatureCreatorImpl::getImplementationName(  )
-    throw (cssu::RuntimeException, std::exception)
 {
     return SignatureCreatorImpl_getImplementationName();
 }
 
 sal_Bool SAL_CALL SignatureCreatorImpl::supportsService( const OUString& rServiceName )
-    throw (cssu::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 cssu::Sequence< OUString > SAL_CALL SignatureCreatorImpl::getSupportedServiceNames(  )
-    throw (cssu::RuntimeException, std::exception)
 {
     return SignatureCreatorImpl_getSupportedServiceNames();
 }

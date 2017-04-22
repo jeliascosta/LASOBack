@@ -55,13 +55,13 @@
 
 using namespace css;
 
-const sal_uInt32 HTML_FRMOPTS_MARQUEE   =
-    HTML_FRMOPT_ALIGN |
-    HTML_FRMOPT_SPACE;
+const HtmlFrmOpts HTML_FRMOPTS_MARQUEE   =
+    HtmlFrmOpts::Align |
+    HtmlFrmOpts::Space;
 
-const sal_uInt32 HTML_FRMOPTS_MARQUEE_CSS1  =
-    HTML_FRMOPT_S_ALIGN |
-    HTML_FRMOPT_S_SPACE;
+const HtmlFrmOpts HTML_FRMOPTS_MARQUEE_CSS1  =
+    HtmlFrmOpts::SAlign |
+    HtmlFrmOpts::SSpace;
 
 const SdrObject *SwHTMLWriter::GetMarqueeTextObj( const SwDrawFrameFormat& rFormat )
 {
@@ -153,17 +153,17 @@ Writer& OutHTML_DrawFrameFormatAsMarquee( Writer& rWrt,
 
     // BEHAVIOUR
     SdrTextAniKind eAniKind = pTextObj->GetTextAniKind();
-    OSL_ENSURE( SDRTEXTANI_SCROLL==eAniKind ||
-            SDRTEXTANI_ALTERNATE==eAniKind ||
-            SDRTEXTANI_SLIDE==eAniKind,
+    OSL_ENSURE( SdrTextAniKind::Scroll==eAniKind ||
+            SdrTextAniKind::Alternate==eAniKind ||
+            SdrTextAniKind::Slide==eAniKind,
             "Text-Draw-Objekt nicht fuer Marquee geeignet" );
 
     const sal_Char *pStr = nullptr;
     switch( eAniKind )
     {
-    case SDRTEXTANI_SCROLL:     pStr = OOO_STRING_SVTOOLS_HTML_BEHAV_scroll;        break;
-    case SDRTEXTANI_SLIDE:      pStr = OOO_STRING_SVTOOLS_HTML_BEHAV_slide;     break;
-    case SDRTEXTANI_ALTERNATE:  pStr = OOO_STRING_SVTOOLS_HTML_BEHAV_alternate; break;
+    case SdrTextAniKind::Scroll:     pStr = OOO_STRING_SVTOOLS_HTML_BEHAV_scroll;        break;
+    case SdrTextAniKind::Slide:      pStr = OOO_STRING_SVTOOLS_HTML_BEHAV_slide;     break;
+    case SdrTextAniKind::Alternate:  pStr = OOO_STRING_SVTOOLS_HTML_BEHAV_alternate; break;
     default:
         ;
     }
@@ -179,8 +179,8 @@ Writer& OutHTML_DrawFrameFormatAsMarquee( Writer& rWrt,
     SdrTextAniDirection eAniDir = pTextObj->GetTextAniDirection();
     switch( eAniDir )
     {
-    case SDRTEXTANI_LEFT:       pStr = OOO_STRING_SVTOOLS_HTML_AL_left;     break;
-    case SDRTEXTANI_RIGHT:      pStr = OOO_STRING_SVTOOLS_HTML_AL_right;        break;
+    case SdrTextAniDirection::Left:       pStr = OOO_STRING_SVTOOLS_HTML_AL_left;     break;
+    case SdrTextAniDirection::Right:      pStr = OOO_STRING_SVTOOLS_HTML_AL_right;        break;
     default:
         ;
     }
@@ -196,7 +196,7 @@ Writer& OutHTML_DrawFrameFormatAsMarquee( Writer& rWrt,
         static_cast<const SdrTextAniCountItem&>(rItemSet.Get( SDRATTR_TEXT_ANICOUNT ))
                                              .GetValue();
     if( 0==nCount )
-        nCount = SDRTEXTANI_SLIDE==eAniKind ? 1 : -1;
+        nCount = SdrTextAniKind::Slide==eAniKind ? 1 : -1;
     sOut.append(' ').append(OOO_STRING_SVTOOLS_HTML_O_loop).append("=\"").
         append(nCount).append("\"");
 
@@ -219,7 +219,7 @@ Writer& OutHTML_DrawFrameFormatAsMarquee( Writer& rWrt,
     {
         nAmount = Application::GetDefaultDevice()
                             ->LogicToPixel( Size(nAmount,0),
-                                            MapMode(MAP_TWIP) ).Width();
+                                            MapMode(MapUnit::MapTwip) ).Width();
     }
     if( nAmount )
     {
@@ -247,7 +247,7 @@ Writer& OutHTML_DrawFrameFormatAsMarquee( Writer& rWrt,
     {
         Size aPixelSz =
             Application::GetDefaultDevice()->LogicToPixel( aTwipSz,
-                                                MapMode(MAP_TWIP) );
+                                                MapMode(MapUnit::MapTwip) );
         if( !aPixelSz.Width() && aTwipSz.Width() )
             aPixelSz.Width() = 1;
         if( !aPixelSz.Height() && aTwipSz.Height() )
@@ -283,7 +283,7 @@ Writer& OutHTML_DrawFrameFormatAsMarquee( Writer& rWrt,
         rWrt.Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
 
     // und nun noch ALIGN, HSPACE und VSPACE
-    sal_uInt32 nFrameFlags = HTML_FRMOPTS_MARQUEE;
+    HtmlFrmOpts nFrameFlags = HTML_FRMOPTS_MARQUEE;
     if( rHTMLWrt.IsHTMLMode( HTMLMODE_ABS_POS_DRAW ) )
         nFrameFlags |= HTML_FRMOPTS_MARQUEE_CSS1;
     OString aEndTags = rHTMLWrt.OutFrameFormatOptions( rFormat, aEmptyOUStr, nFrameFlags );

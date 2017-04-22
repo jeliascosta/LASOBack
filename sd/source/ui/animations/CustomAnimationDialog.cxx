@@ -45,7 +45,6 @@
 #include <vcl/field.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/layout.hxx>
-#include <vcl/field.hxx>
 #include <vcl/msgbox.hxx>
 #include <vcl/decoview.hxx>
 #include <vcl/combobox.hxx>
@@ -62,6 +61,7 @@
 #include <editeng/flstitem.hxx>
 #include <svx/drawitem.hxx>
 
+#include <svx/colorbox.hxx>
 #include <svx/xtable.hxx>
 #include <svx/gallery.hxx>
 
@@ -101,7 +101,7 @@ class PresetPropertyBox  : public PropertySubControl
 {
 public:
     PresetPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const OUString& aPresetId, const Link<LinkParamNone*,void>& rModifyHdl );
-    virtual ~PresetPropertyBox();
+    virtual ~PresetPropertyBox() override;
 
     virtual Any getValue() override;
     virtual void setValue( const Any& rValue, const OUString& rPresetId ) override;
@@ -110,7 +110,7 @@ public:
 private:
     std::map< sal_uInt16, OUString > maPropertyValues;
     VclPtr<ListBox> mpControl;
-    DECL_LINK_TYPED(OnSelect, ListBox&, void);
+    DECL_LINK(OnSelect, ListBox&, void);
     Link<LinkParamNone*,void> maModifyLink;
 };
 
@@ -126,7 +126,7 @@ PresetPropertyBox::PresetPropertyBox( sal_Int32 nControlType, vcl::Window* pPare
     setValue( rValue, aPresetId );
 }
 
-IMPL_LINK_NOARG_TYPED(PresetPropertyBox, OnSelect, ListBox&, void)
+IMPL_LINK_NOARG(PresetPropertyBox, OnSelect, ListBox&, void)
 {
     maModifyLink.Call(nullptr);
 }
@@ -185,51 +185,32 @@ class ColorPropertyBox  : public PropertySubControl
 {
 public:
     ColorPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl );
-    virtual ~ColorPropertyBox();
+    virtual ~ColorPropertyBox() override;
 
     virtual Any getValue() override;
     virtual void setValue( const Any& rValue, const OUString& rPresetId  ) override;
     virtual Control* getControl() override;
 
 private:
-    VclPtr<ColorListBox> mpControl;
-    DECL_LINK_TYPED(OnSelect, ListBox&, void);
+    VclPtr<SvxColorListBox> mpControl;
+    DECL_LINK(OnSelect, SvxColorListBox&, void);
     Link<LinkParamNone*,void> maModifyLink;
 };
 
 ColorPropertyBox::ColorPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl )
 : PropertySubControl( nControlType ), maModifyLink(rModifyHdl)
 {
-    mpControl = VclPtr<ColorListBox>::Create( pParent, WB_BORDER|WB_TABSTOP|WB_DROPDOWN );
-    mpControl->SetDropDownLineCount( 10 );
+    mpControl = VclPtr<SvxColorListBox>::Create(pParent);
     mpControl->set_hexpand(true);
     mpControl->SetSelectHdl( LINK(this, ColorPropertyBox, OnSelect) );
     mpControl->SetHelpId( HID_SD_CUSTOMANIMATIONPANE_COLORPROPERTYBOX );
 
-    SfxObjectShell* pDocSh = SfxObjectShell::Current();
-    DBG_ASSERT( pDocSh, "DocShell not found!" );
-    XColorListRef pColorList;
-    const SfxPoolItem* pItem = nullptr;
-
-    if ( pDocSh && ( ( pItem = pDocSh->GetItem( SID_COLOR_TABLE ) ) != nullptr) )
-        pColorList = static_cast<const SvxColorListItem*>(pItem)->GetColorList();
-
-    if ( !pColorList.is() )
-        pColorList = XColorList::CreateStdColorList();
-
     sal_Int32 nColor = 0;
     rValue >>= nColor;
-
-    for ( long i = 0; i < pColorList->Count(); i++ )
-    {
-        XColorEntry* pEntry = pColorList->GetColor(i);
-        sal_Int32 nPos = mpControl->InsertEntry( pEntry->GetColor(), pEntry->GetName() );
-        if( pEntry->GetColor().GetRGBColor() == (sal_uInt32)nColor )
-            mpControl->SelectEntryPos( nPos );
-    }
+    mpControl->SelectEntry(static_cast<Color>(nColor));
 }
 
-IMPL_LINK_NOARG_TYPED(ColorPropertyBox, OnSelect, ListBox&, void)
+IMPL_LINK_NOARG(ColorPropertyBox, OnSelect, SvxColorListBox&, void)
 {
     maModifyLink.Call(nullptr);
 }
@@ -247,7 +228,7 @@ void ColorPropertyBox::setValue( const Any& rValue, const OUString& )
         rValue >>= nColor;
 
         mpControl->SetNoSelection();
-        mpControl->SelectEntryPos( mpControl->GetEntryPos( static_cast<Color>(nColor) ) );
+        mpControl->SelectEntry(static_cast<Color>(nColor));
     }
 }
 
@@ -265,7 +246,7 @@ class FontPropertyBox : public PropertySubControl
 {
 public:
     FontPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl );
-    virtual ~FontPropertyBox();
+    virtual ~FontPropertyBox() override;
 
     virtual Any getValue() override;
     virtual void setValue( const Any& rValue, const OUString& rPresetId  ) override;
@@ -275,7 +256,7 @@ public:
 private:
     VclPtr<FontNameBox>         mpControl;
     Link<LinkParamNone*,void>   maModifyHdl;
-    DECL_LINK_TYPED(ControlSelectHdl, ComboBox&, void);
+    DECL_LINK(ControlSelectHdl, ComboBox&, void);
 };
 
 FontPropertyBox::FontPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl )
@@ -298,7 +279,7 @@ FontPropertyBox::FontPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, 
 
     if(!pFontList)
     {
-        pFontList = new FontList( Application::GetDefaultDevice(), nullptr, false );
+        pFontList = new FontList(Application::GetDefaultDevice(), nullptr);
         bMustDelete = true;
     }
 
@@ -311,7 +292,7 @@ FontPropertyBox::FontPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, 
     setValue( rValue, aPresetId );
 }
 
-IMPL_LINK_NOARG_TYPED(FontPropertyBox, ControlSelectHdl, ComboBox&, void)
+IMPL_LINK_NOARG(FontPropertyBox, ControlSelectHdl, ComboBox&, void)
 {
     maModifyHdl.Call(nullptr);
 }
@@ -346,7 +327,7 @@ class DropdownMenuBox : public Edit
 {
 public:
     DropdownMenuBox( vcl::Window* pParent, Edit* pSubControl, PopupMenu* pMenu );
-    virtual ~DropdownMenuBox();
+    virtual ~DropdownMenuBox() override;
     virtual void dispose() override;
 
     void Resize() override;
@@ -355,9 +336,9 @@ public:
     void SetMenuSelectHdl( const Link<MenuButton *, void>& rLink ) { mpDropdownButton->SetSelectHdl( rLink ); }
 
 private:
-    VclPtr<Edit> mpSubControl;
+    VclPtr<Edit>        mpSubControl;
     VclPtr<MenuButton>  mpDropdownButton;
-    PopupMenu*   mpMenu;
+    VclPtr<PopupMenu>   mpMenu;
 };
 
 DropdownMenuBox::DropdownMenuBox( vcl::Window* pParent, Edit* pSubControl, PopupMenu* pMenu )
@@ -384,7 +365,7 @@ void DropdownMenuBox::dispose()
 {
     SetSubEdit(nullptr);
     mpDropdownButton.disposeAndClear();
-    delete mpMenu;
+    mpMenu.disposeAndClear();
     mpSubControl.disposeAndClear();
     Edit::dispose();
 }
@@ -428,32 +409,35 @@ class CharHeightPropertyBox : public PropertySubControl
 {
 public:
     CharHeightPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl );
-    virtual ~CharHeightPropertyBox();
+    virtual ~CharHeightPropertyBox() override;
 
     virtual Any getValue() override;
     virtual void setValue( const Any& rValue, const OUString& ) override;
 
     virtual Control* getControl() override;
 
-    DECL_LINK_TYPED( implMenuSelectHdl, MenuButton*, void );
+    DECL_LINK( implMenuSelectHdl, MenuButton*, void );
 
 private:
-    DECL_LINK_TYPED( EditModifyHdl, Edit&, void );
+    DECL_LINK( EditModifyHdl, Edit&, void );
+    VclBuilder maBuilder;
     VclPtr<DropdownMenuBox> mpControl;
-    PopupMenu* mpMenu;
+    VclPtr<PopupMenu> mpMenu;
     VclPtr<MetricField> mpMetric;
     Link<LinkParamNone*,void> maModifyHdl;
 };
 
-CharHeightPropertyBox::CharHeightPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl )
-: PropertySubControl( nControlType ), maModifyHdl(rModifyHdl)
+CharHeightPropertyBox::CharHeightPropertyBox(sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl)
+    : PropertySubControl(nControlType)
+    , maBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/simpress/ui/fontsizemenu.ui", "")
+    , maModifyHdl(rModifyHdl)
 {
     mpMetric.set( VclPtr<MetricField>::Create( pParent, WB_TABSTOP|WB_IGNORETAB| WB_NOBORDER) );
     mpMetric->SetUnit( FUNIT_PERCENT );
     mpMetric->SetMin( 0 );
     mpMetric->SetMax( 1000 );
 
-    mpMenu = new PopupMenu(SdResId( RID_CUSTOMANIMATION_FONTSIZE_POPUP ) );
+    mpMenu = maBuilder.get_menu("menu");
     mpControl = VclPtr<DropdownMenuBox>::Create( pParent, mpMetric, mpMenu );
     mpControl->SetMenuSelectHdl( LINK( this, CharHeightPropertyBox, implMenuSelectHdl ));
     mpControl->SetModifyHdl( LINK( this, CharHeightPropertyBox, EditModifyHdl ) );
@@ -465,25 +449,19 @@ CharHeightPropertyBox::CharHeightPropertyBox( sal_Int32 nControlType, vcl::Windo
 
 CharHeightPropertyBox::~CharHeightPropertyBox()
 {
+    maBuilder.disposeBuilder();
     mpControl.disposeAndClear();
 }
 
-IMPL_LINK_NOARG_TYPED( CharHeightPropertyBox, EditModifyHdl, Edit&, void )
+IMPL_LINK_NOARG( CharHeightPropertyBox, EditModifyHdl, Edit&, void )
 {
     maModifyHdl.Call(nullptr);
 }
 
-IMPL_LINK_TYPED( CharHeightPropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
+IMPL_LINK( CharHeightPropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
 {
-    long nValue = 100;
-    switch( pPb->GetCurItemId() )
-    {
-    case CM_SIZE_25: nValue = 25; break;
-    case CM_SIZE_50: nValue = 50; break;
-    case CM_SIZE_150: nValue = 150; break;
-    case CM_SIZE_400: nValue = 400; break;
-    }
-    mpMetric->SetValue( nValue );
+    sal_Int32 nValue = pPb->GetCurItemIdent().toInt32();
+    mpMetric->SetValue(nValue);
     mpMetric->Modify();
 }
 
@@ -499,7 +477,7 @@ void CharHeightPropertyBox::setValue( const Any& rValue, const OUString& )
 
 Any CharHeightPropertyBox::getValue()
 {
-    return makeAny( (double)((double)mpMetric->GetValue() / 100.0) );
+    return makeAny( (double)mpMetric->GetValue() / 100.0 );
 }
 
 Control* CharHeightPropertyBox::getControl()
@@ -511,21 +489,21 @@ class TransparencyPropertyBox : public PropertySubControl
 {
 public:
     TransparencyPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl );
-    virtual ~TransparencyPropertyBox();
+    virtual ~TransparencyPropertyBox() override;
 
     virtual Any getValue() override;
     virtual void setValue( const Any& rValue, const OUString& rPresetId  ) override;
 
     virtual Control* getControl() override;
 
-    DECL_LINK_TYPED( implMenuSelectHdl, MenuButton*, void );
-    DECL_LINK_TYPED( implModifyHdl, Edit&, void );
+    DECL_LINK( implMenuSelectHdl, MenuButton*, void );
+    DECL_LINK( implModifyHdl, Edit&, void );
 
     void updateMenu();
 
 private:
     VclPtr<DropdownMenuBox>   mpControl;
-    PopupMenu*                mpMenu;
+    VclPtr<PopupMenu>         mpMenu;
     VclPtr<MetricField>       mpMetric;
     Link<LinkParamNone*,void> maModifyHdl;
 };
@@ -539,7 +517,7 @@ TransparencyPropertyBox::TransparencyPropertyBox( sal_Int32 nControlType, vcl::W
     mpMetric->SetMin( 0 );
     mpMetric->SetMax( 100 );
 
-    mpMenu = new PopupMenu();
+    mpMenu = VclPtr<PopupMenu>::Create();
     for( sal_Int32 i = 25; i < 101; i += 25 )
     {
         OUString aStr(unicode::formatPercent(i,
@@ -570,13 +548,13 @@ void TransparencyPropertyBox::updateMenu()
         mpMenu->CheckItem( i, nValue == i );
 }
 
-IMPL_LINK_NOARG_TYPED(TransparencyPropertyBox, implModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(TransparencyPropertyBox, implModifyHdl, Edit&, void)
 {
     updateMenu();
     maModifyHdl.Call(nullptr);
 }
 
-IMPL_LINK_TYPED( TransparencyPropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
+IMPL_LINK( TransparencyPropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
 {
     if( pPb->GetCurItemId() != mpMetric->GetValue() )
     {
@@ -599,7 +577,7 @@ void TransparencyPropertyBox::setValue( const Any& rValue, const OUString& )
 
 Any TransparencyPropertyBox::getValue()
 {
-    return makeAny( (double)((double)mpMetric->GetValue()) / 100.0 );
+    return makeAny( ((double)mpMetric->GetValue()) / 100.0 );
 }
 
 Control* TransparencyPropertyBox::getControl()
@@ -611,28 +589,30 @@ class RotationPropertyBox : public PropertySubControl
 {
 public:
     RotationPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl );
-    virtual ~RotationPropertyBox();
+    virtual ~RotationPropertyBox() override;
 
     virtual Any getValue() override;
     virtual void setValue( const Any& rValue, const OUString& ) override;
 
     virtual Control* getControl() override;
 
-    DECL_LINK_TYPED( implMenuSelectHdl, MenuButton*, void );
-    DECL_LINK_TYPED( implModifyHdl, Edit&, void );
+    DECL_LINK( implMenuSelectHdl, MenuButton*, void );
+    DECL_LINK( implModifyHdl, Edit&, void );
 
     void updateMenu();
 
 private:
+    VclBuilder                maBuilder;
     VclPtr<DropdownMenuBox>   mpControl;
-    PopupMenu*                mpMenu;
+    VclPtr<PopupMenu>         mpMenu;
     VclPtr<MetricField>       mpMetric;
     Link<LinkParamNone*,void> maModifyHdl;
 };
 
 RotationPropertyBox::RotationPropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl )
-: PropertySubControl( nControlType )
-, maModifyHdl( rModifyHdl )
+    : PropertySubControl(nControlType)
+    , maBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/simpress/ui/rotatemenu.ui", "")
+    , maModifyHdl(rModifyHdl)
 {
     mpMetric.set( VclPtr<MetricField>::Create( pParent ,WB_TABSTOP|WB_IGNORETAB| WB_NOBORDER) );
     mpMetric->SetUnit( FUNIT_CUSTOM );
@@ -640,7 +620,7 @@ RotationPropertyBox::RotationPropertyBox( sal_Int32 nControlType, vcl::Window* p
     mpMetric->SetMin( -10000 );
     mpMetric->SetMax( 10000 );
 
-    mpMenu = new PopupMenu(SdResId( RID_CUSTOMANIMATION_ROTATION_POPUP ) );
+    mpMenu = maBuilder.get_menu("menu");
     mpControl = VclPtr<DropdownMenuBox>::Create( pParent, mpMetric, mpMenu );
     mpControl->SetMenuSelectHdl( LINK( this, RotationPropertyBox, implMenuSelectHdl ));
     mpControl->SetHelpId( HID_SD_CUSTOMANIMATIONPANE_ROTATIONPROPERTYBOX );
@@ -654,6 +634,7 @@ RotationPropertyBox::RotationPropertyBox( sal_Int32 nControlType, vcl::Window* p
 
 RotationPropertyBox::~RotationPropertyBox()
 {
+    maBuilder.disposeBuilder();
     mpControl.disposeAndClear();
 }
 
@@ -663,38 +644,34 @@ void RotationPropertyBox::updateMenu()
     bool bDirection = nValue >= 0;
     nValue = (nValue < 0 ? -nValue : nValue);
 
-    mpMenu->CheckItem( CM_QUARTER_SPIN, nValue == 90 );
-    mpMenu->CheckItem( CM_HALF_SPIN, nValue == 180 );
-    mpMenu->CheckItem( CM_FULL_SPIN, nValue == 360 );
-    mpMenu->CheckItem( CM_TWO_SPINS, nValue == 720 );
+    mpMenu->CheckItem(mpMenu->GetItemId("90"), nValue == 90);
+    mpMenu->CheckItem(mpMenu->GetItemId("180"), nValue == 180);
+    mpMenu->CheckItem(mpMenu->GetItemId("360"), nValue == 360);
+    mpMenu->CheckItem(mpMenu->GetItemId("720"), nValue == 720);
 
-    mpMenu->CheckItem( CM_CLOCKWISE, bDirection );
-    mpMenu->CheckItem( CM_COUNTERCLOCKWISE, !bDirection );
+    mpMenu->CheckItem(mpMenu->GetItemId("closewise"), bDirection);
+    mpMenu->CheckItem(mpMenu->GetItemId("counterclock"), !bDirection);
 }
 
-IMPL_LINK_NOARG_TYPED(RotationPropertyBox, implModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(RotationPropertyBox, implModifyHdl, Edit&, void)
 {
     updateMenu();
     maModifyHdl.Call(nullptr);
 }
 
-IMPL_LINK_TYPED( RotationPropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
+IMPL_LINK( RotationPropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
 {
     sal_Int64 nValue = mpMetric->GetValue();
     bool bDirection = nValue >= 0;
     nValue = (nValue < 0 ? -nValue : nValue);
 
-    switch( pPb->GetCurItemId() )
-    {
-    case CM_QUARTER_SPIN: nValue = 90; break;
-    case CM_HALF_SPIN: nValue = 180; break;
-    case CM_FULL_SPIN: nValue = 360; break;
-    case CM_TWO_SPINS: nValue = 720; break;
-
-    case CM_CLOCKWISE: bDirection = true; break;
-    case CM_COUNTERCLOCKWISE: bDirection = false; break;
-
-    }
+    OString sIdent = pPb->GetCurItemIdent();
+    if (sIdent == "clockwise")
+        bDirection = true;
+    else if (sIdent == "counterclock")
+        bDirection = false;
+    else
+        nValue = sIdent.toInt32();
 
     if( !bDirection )
         nValue = -nValue;
@@ -720,7 +697,7 @@ void RotationPropertyBox::setValue( const Any& rValue, const OUString& )
 
 Any RotationPropertyBox::getValue()
 {
-    return makeAny( (double)((double)mpMetric->GetValue()) );
+    return makeAny( (double)mpMetric->GetValue() );
 }
 
 Control* RotationPropertyBox::getControl()
@@ -732,36 +709,38 @@ class ScalePropertyBox : public PropertySubControl
 {
 public:
     ScalePropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl );
-    virtual ~ScalePropertyBox();
+    virtual ~ScalePropertyBox() override;
 
     virtual Any getValue() override;
     virtual void setValue( const Any& rValue, const OUString& ) override;
 
     virtual Control* getControl() override;
 
-    DECL_LINK_TYPED( implMenuSelectHdl, MenuButton*, void );
-    DECL_LINK_TYPED( implModifyHdl, Edit&, void );
+    DECL_LINK( implMenuSelectHdl, MenuButton*, void );
+    DECL_LINK( implModifyHdl, Edit&, void );
 
     void updateMenu();
 
 private:
+    VclBuilder maBuilder;
     VclPtr<DropdownMenuBox>   mpControl;
-    PopupMenu*                mpMenu;
+    VclPtr<PopupMenu>         mpMenu;
     VclPtr<MetricField>       mpMetric;
     Link<LinkParamNone*,void> maModifyHdl;
     int                       mnDirection;
 };
 
-ScalePropertyBox::ScalePropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl )
-: PropertySubControl( nControlType )
-, maModifyHdl( rModifyHdl )
+ScalePropertyBox::ScalePropertyBox(sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl)
+    : PropertySubControl( nControlType )
+    , maBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/simpress/ui/scalemenu.ui", "")
+    , maModifyHdl( rModifyHdl )
 {
     mpMetric.set( VclPtr<MetricField>::Create( pParent ,WB_TABSTOP|WB_IGNORETAB| WB_NOBORDER) );
     mpMetric->SetUnit( FUNIT_PERCENT );
     mpMetric->SetMin( 0 );
     mpMetric->SetMax( 10000 );
 
-    mpMenu = new PopupMenu(SdResId( RID_CUSTOMANIMATION_SCALE_POPUP ) );
+    mpMenu = maBuilder.get_menu("menu");
     mpControl = VclPtr<DropdownMenuBox>::Create( pParent, mpMetric, mpMenu );
     mpControl->SetMenuSelectHdl( LINK( this, ScalePropertyBox, implMenuSelectHdl ));
     mpControl->SetHelpId( HID_SD_CUSTOMANIMATIONPANE_SCALEPROPERTYBOX );
@@ -775,6 +754,7 @@ ScalePropertyBox::ScalePropertyBox( sal_Int32 nControlType, vcl::Window* pParent
 
 ScalePropertyBox::~ScalePropertyBox()
 {
+    maBuilder.disposeBuilder();
     mpControl.disposeAndClear();
 }
 
@@ -782,37 +762,37 @@ void ScalePropertyBox::updateMenu()
 {
     sal_Int64 nValue = mpMetric->GetValue();
 
-    mpMenu->CheckItem( 25, nValue == 25 );
-    mpMenu->CheckItem( 50, nValue == 50 );
-    mpMenu->CheckItem( 150, nValue == 150 );
-    mpMenu->CheckItem( 400, nValue == 400 );
+    mpMenu->CheckItem(mpMenu->GetItemId("25"), nValue == 25);
+    mpMenu->CheckItem(mpMenu->GetItemId("50"), nValue == 50);
+    mpMenu->CheckItem(mpMenu->GetItemId("150"), nValue == 150);
+    mpMenu->CheckItem(mpMenu->GetItemId("400"), nValue == 400);
 
-    mpMenu->CheckItem( CM_HORIZONTAL, mnDirection == 1 );
-    mpMenu->CheckItem( CM_VERTICAL, mnDirection == 2 );
-    mpMenu->CheckItem( CM_BOTH, mnDirection == 3 );
+    mpMenu->CheckItem(mpMenu->GetItemId("hori"), mnDirection == 1);
+    mpMenu->CheckItem(mpMenu->GetItemId("vert"), mnDirection == 2);
+    mpMenu->CheckItem(mpMenu->GetItemId("both"), mnDirection == 3);
 }
 
-IMPL_LINK_NOARG_TYPED(ScalePropertyBox, implModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(ScalePropertyBox, implModifyHdl, Edit&, void)
 {
     updateMenu();
     maModifyHdl.Call(nullptr);
 }
 
-IMPL_LINK_TYPED( ScalePropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
+IMPL_LINK( ScalePropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
 {
     sal_Int64 nValue = mpMetric->GetValue();
 
     int nDirection = mnDirection;
 
-    switch( pPb->GetCurItemId() )
-    {
-    case CM_HORIZONTAL: nDirection = 1; break;
-    case CM_VERTICAL: nDirection = 2; break;
-    case CM_BOTH: nDirection = 3; break;
-
-    default:
-        nValue = pPb->GetCurItemId();
-    }
+    OString sIdent(pPb->GetCurItemIdent());
+    if (sIdent == "hori")
+        nDirection = 1;
+    else if (sIdent == "veri")
+        nDirection = 2;
+    else if (sIdent == "both")
+        nDirection = 3;
+    else
+        nValue = sIdent.toInt32();
 
     bool bModified = false;
 
@@ -867,7 +847,7 @@ void ScalePropertyBox::setValue( const Any& rValue, const OUString& )
 
 Any ScalePropertyBox::getValue()
 {
-    double fValue1 = (double)((double)mpMetric->GetValue() / 100.0);
+    double fValue1 = (double)mpMetric->GetValue() / 100.0;
     double fValue2 = fValue1;
 
     if( mnDirection == 1 )
@@ -891,20 +871,21 @@ class FontStylePropertyBox : public PropertySubControl
 {
 public:
     FontStylePropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl );
-    virtual ~FontStylePropertyBox();
+    virtual ~FontStylePropertyBox() override;
 
     virtual Any getValue() override;
     virtual void setValue( const Any& rValue, const OUString& ) override;
 
     virtual Control* getControl() override;
 
-    DECL_LINK_TYPED( implMenuSelectHdl, MenuButton*, void );
+    DECL_LINK( implMenuSelectHdl, MenuButton*, void );
 
     void update();
 
 private:
+    VclBuilder                maBuilder;
     VclPtr<DropdownMenuBox>   mpControl;
-    PopupMenu*                mpMenu;
+    VclPtr<PopupMenu>         mpMenu;
     VclPtr<Edit>              mpEdit;
     Link<LinkParamNone*,void> maModifyHdl;
 
@@ -914,13 +895,14 @@ private:
 };
 
 FontStylePropertyBox::FontStylePropertyBox( sal_Int32 nControlType, vcl::Window* pParent, const Any& rValue, const Link<LinkParamNone*,void>& rModifyHdl )
-: PropertySubControl( nControlType )
-, maModifyHdl( rModifyHdl )
+    : PropertySubControl(nControlType)
+    , maBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/simpress/ui/fontstylemenu.ui", "")
+    , maModifyHdl( rModifyHdl )
 {
     mpEdit.set( VclPtr<Edit>::Create( pParent, WB_TABSTOP|WB_IGNORETAB|WB_NOBORDER|WB_READONLY) );
     mpEdit->SetText( SD_RESSTR(STR_CUSTOMANIMATION_SAMPLE) );
 
-    mpMenu = new PopupMenu(SdResId( RID_CUSTOMANIMATION_FONTSTYLE_POPUP ) );
+    mpMenu = maBuilder.get_menu("menu");
     mpControl = VclPtr<DropdownMenuBox>::Create( pParent, mpEdit, mpMenu );
     mpControl->SetMenuSelectHdl( LINK( this, FontStylePropertyBox, implMenuSelectHdl ));
     mpControl->SetHelpId( HID_SD_CUSTOMANIMATIONPANE_FONTSTYLEPROPERTYBOX );
@@ -931,15 +913,16 @@ FontStylePropertyBox::FontStylePropertyBox( sal_Int32 nControlType, vcl::Window*
 
 FontStylePropertyBox::~FontStylePropertyBox()
 {
+    maBuilder.disposeBuilder();
     mpControl.disposeAndClear();
 }
 
 void FontStylePropertyBox::update()
 {
     // update menu
-    mpMenu->CheckItem( CM_BOLD, mfFontWeight == awt::FontWeight::BOLD );
-    mpMenu->CheckItem( CM_ITALIC, meFontSlant == awt::FontSlant_ITALIC);
-    mpMenu->CheckItem( CM_UNDERLINED, mnFontUnderline != awt::FontUnderline::NONE );
+    mpMenu->CheckItem(mpMenu->GetItemId("bold"), mfFontWeight == awt::FontWeight::BOLD);
+    mpMenu->CheckItem(mpMenu->GetItemId("italic"), meFontSlant == awt::FontSlant_ITALIC);
+    mpMenu->CheckItem(mpMenu->GetItemId("underline"), mnFontUnderline != awt::FontUnderline::NONE );
 
     // update sample edit
     vcl::Font aFont( mpEdit->GetFont() );
@@ -950,30 +933,29 @@ void FontStylePropertyBox::update()
     mpEdit->Invalidate();
 }
 
-IMPL_LINK_TYPED( FontStylePropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
+IMPL_LINK( FontStylePropertyBox, implMenuSelectHdl, MenuButton*, pPb, void )
 {
-    switch( pPb->GetCurItemId() )
+    OString sIdent = pPb->GetCurItemIdent();
+    if (sIdent == "bold")
     {
-    case CM_BOLD:
         if( mfFontWeight == awt::FontWeight::BOLD )
             mfFontWeight = awt::FontWeight::NORMAL;
         else
             mfFontWeight = awt::FontWeight::BOLD;
-        break;
-    case CM_ITALIC:
+    }
+    else if (sIdent == "italic")
+    {
         if( meFontSlant == awt::FontSlant_ITALIC )
             meFontSlant = awt::FontSlant_NONE;
         else
             meFontSlant = awt::FontSlant_ITALIC;
-        break;
-    case CM_UNDERLINED:
+    }
+    else if (sIdent == "underline")
+    {
         if( mnFontUnderline == awt::FontUnderline::SINGLE )
             mnFontUnderline = awt::FontUnderline::NONE;
         else
             mnFontUnderline = awt::FontUnderline::SINGLE;
-        break;
-    default:
-        return;
     }
 
     update();
@@ -1010,12 +992,12 @@ class CustomAnimationEffectTabPage : public TabPage
 {
 public:
     CustomAnimationEffectTabPage( vcl::Window* pParent, const STLPropertySet* pSet );
-    virtual ~CustomAnimationEffectTabPage();
+    virtual ~CustomAnimationEffectTabPage() override;
     virtual void dispose() override;
 
     void update( STLPropertySet* pSet );
-    DECL_LINK_TYPED( implSelectHdl, ListBox&, void );
-    DECL_LINK_TYPED( implClickHdl, Button*, void );
+    DECL_LINK( implSelectHdl, ListBox&, void );
+    DECL_LINK( implClickHdl, Button*, void );
     void implHdl(Control*);
 
 private:
@@ -1044,7 +1026,7 @@ private:
     VclPtr<FixedText>      mpFTAfterEffect;
     VclPtr<ListBox>        mpLBAfterEffect;
     VclPtr<FixedText>      mpFTDimColor;
-    VclPtr<ColorListBox>   mpCLBDimColor;
+    VclPtr<SvxColorListBox> mpCLBDimColor;
     VclPtr<FixedText>      mpFTTextAnim;
     VclPtr<ListBox>        mpLBTextAnim;
     VclPtr<MetricField>    mpMFTextDelay;
@@ -1069,6 +1051,7 @@ CustomAnimationEffectTabPage::CustomAnimationEffectTabPage( vcl::Window* pParent
     get(mpLBAfterEffect, "aeffect_list" );
     get(mpFTDimColor, "dim_color_label" );
     get(mpCLBDimColor, "dim_color_list" );
+    mpCLBDimColor->SelectEntry(Color(COL_BLACK));
     get(mpFTTextAnim, "text_animation_label" );
     get(mpLBTextAnim, "text_animation_list" );
     get(mpMFTextDelay,"text_delay" );
@@ -1081,37 +1064,15 @@ CustomAnimationEffectTabPage::CustomAnimationEffectTabPage( vcl::Window* pParent
 
     mpPBSoundPreview->SetClickHdl( LINK( this, CustomAnimationEffectTabPage, implClickHdl ) );
 
-    // fill the color box
-    SfxObjectShell* pDocSh = SfxObjectShell::Current();
-    DBG_ASSERT( pDocSh, "DocShell not found!" );
-    XColorListRef pColorList;
-    const SfxPoolItem* pItem = nullptr;
-
-    if ( pDocSh && ( (pItem = pDocSh->GetItem( SID_COLOR_TABLE ) ) != nullptr ) )
-        pColorList = static_cast<const SvxColorListItem*>(pItem)->GetColorList();
-
-    if ( !pColorList.is() )
-        pColorList = XColorList::CreateStdColorList();
-
-    mpCLBDimColor->SetUpdateMode( false );
-
-    for ( long i = 0; i < pColorList->Count(); i++ )
-    {
-        XColorEntry* pEntry = pColorList->GetColor(i);
-        mpCLBDimColor->InsertEntry( pEntry->GetColor(), pEntry->GetName() );
-    }
-
-    mpCLBDimColor->SetUpdateMode( true );
-
     // only show settings if all selected effects have the same preset-id
-    if( pSet->getPropertyState( nHandlePresetId ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandlePresetId ) != STLPropertyState::Ambiguous )
     {
         OUString aPresetId;
         pSet->getPropertyValue( nHandlePresetId ) >>= aPresetId;
 
         // property 1
 
-        if( pSet->getPropertyState( nHandleProperty1Type ) != STLPropertyState_AMBIGUOUS )
+        if( pSet->getPropertyState( nHandleProperty1Type ) != STLPropertyState::Ambiguous )
         {
             sal_Int32 nType = 0;
             pSet->getPropertyValue( nHandleProperty1Type ) >>= nType;
@@ -1139,7 +1100,7 @@ CustomAnimationEffectTabPage::CustomAnimationEffectTabPage( vcl::Window* pParent
 
         // accelerate & decelerate
 
-        if( pSet->getPropertyState( nHandleAccelerate ) == STLPropertyState_DIRECT )
+        if( pSet->getPropertyState( nHandleAccelerate ) == STLPropertyState::Direct )
         {
             mpCBSmoothStart->Show();
             mpCBSmoothEnd->Show();
@@ -1158,9 +1119,9 @@ CustomAnimationEffectTabPage::CustomAnimationEffectTabPage( vcl::Window* pParent
     mpLBAfterEffect->SetSelectHdl( LINK( this, CustomAnimationEffectTabPage, implSelectHdl ) );
     mpLBTextAnim->SetSelectHdl( LINK( this, CustomAnimationEffectTabPage, implSelectHdl ) );
 
-    if( (pSet->getPropertyState( nHandleHasAfterEffect ) != STLPropertyState_AMBIGUOUS) &&
-        (pSet->getPropertyState( nHandleAfterEffectOnNextEffect ) != STLPropertyState_AMBIGUOUS) &&
-        (pSet->getPropertyState( nHandleDimColor ) != STLPropertyState_AMBIGUOUS))
+    if( (pSet->getPropertyState( nHandleHasAfterEffect ) != STLPropertyState::Ambiguous) &&
+        (pSet->getPropertyState( nHandleAfterEffectOnNextEffect ) != STLPropertyState::Ambiguous) &&
+        (pSet->getPropertyState( nHandleDimColor ) != STLPropertyState::Ambiguous))
     {
         bool bHasAfterEffect = false;
         pSet->getPropertyValue( nHandleHasAfterEffect ) >>= bHasAfterEffect;
@@ -1178,13 +1139,8 @@ CustomAnimationEffectTabPage::CustomAnimationEffectTabPage( vcl::Window* pParent
             {
                 sal_Int32 nColor = 0;
                 aDimColor >>= nColor;
-                Color aColor( nColor );
-                sal_Int32 nColorPos = mpCLBDimColor->GetEntryPos( aColor );
-                if ( LISTBOX_ENTRY_NOTFOUND != nColorPos )
-                    mpCLBDimColor->SelectEntryPos( nColorPos );
-                else
-                    mpCLBDimColor->SelectEntryPos(
-                        mpCLBDimColor->InsertEntry( aColor, SVX_RESSTR(RID_SVXSTR_COLOR_USER) ) );
+                Color aColor(nColor);
+                mpCLBDimColor->SelectEntry(aColor);
             }
             else
             {
@@ -1197,12 +1153,12 @@ CustomAnimationEffectTabPage::CustomAnimationEffectTabPage( vcl::Window* pParent
         mpLBAfterEffect->SelectEntryPos( nPos );
     }
 
-    if( pSet->getPropertyState( nHandleHasText ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleHasText ) != STLPropertyState::Ambiguous )
         pSet->getPropertyValue( nHandleHasText ) >>= mbHasText;
 
     if( mbHasText )
     {
-        if( pSet->getPropertyState( nHandleIterateType ) != STLPropertyState_AMBIGUOUS)
+        if( pSet->getPropertyState( nHandleIterateType ) != STLPropertyState::Ambiguous)
         {
             sal_Int32 nPos = LISTBOX_ENTRY_NOTFOUND;
 
@@ -1218,7 +1174,7 @@ CustomAnimationEffectTabPage::CustomAnimationEffectTabPage( vcl::Window* pParent
             mpLBTextAnim->SelectEntryPos( nPos );
         }
 
-        if( pSet->getPropertyState( nHandleIterateInterval ) )
+        if( pSet->getPropertyState( nHandleIterateInterval ) != STLPropertyState::Default )
         {
             double fIterateInterval = 0.0;
             pSet->getPropertyValue( nHandleIterateInterval ) >>= fIterateInterval;
@@ -1234,7 +1190,7 @@ CustomAnimationEffectTabPage::CustomAnimationEffectTabPage( vcl::Window* pParent
 
     }
 
-    if( pSet->getPropertyState( nHandleSoundURL ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleSoundURL ) != STLPropertyState::Ambiguous )
     {
         sal_Int32 nPos = 0;
 
@@ -1325,27 +1281,18 @@ void CustomAnimationEffectTabPage::updateControlStates()
     mpPBSoundPreview->Enable( nPos >= 2 );
 }
 
-IMPL_LINK_TYPED( CustomAnimationEffectTabPage, implClickHdl, Button*, pBtn, void )
+IMPL_LINK( CustomAnimationEffectTabPage, implClickHdl, Button*, pBtn, void )
 {
     implHdl(pBtn);
 }
-IMPL_LINK_TYPED( CustomAnimationEffectTabPage, implSelectHdl, ListBox&, rListBox, void )
+IMPL_LINK( CustomAnimationEffectTabPage, implSelectHdl, ListBox&, rListBox, void )
 {
     implHdl(&rListBox);
 }
 
 void CustomAnimationEffectTabPage::implHdl(Control* pControl )
 {
-    if( pControl == mpLBAfterEffect )
-    {
-        sal_Int32 nPos = static_cast<ListBox*>( mpLBAfterEffect )->GetSelectEntryPos();
-        if( nPos == 1 )
-        {
-            if( mpCLBDimColor->GetSelectEntryPos() == LISTBOX_ENTRY_NOTFOUND )
-                mpCLBDimColor->SelectEntryPos(0);
-        }
-    }
-    else if( pControl == mpLBTextAnim )
+    if( pControl == mpLBTextAnim )
     {
         if( mpMFTextDelay->GetValue() == 0 )
             mpMFTextDelay->SetValue( 100 );
@@ -1372,7 +1319,7 @@ void CustomAnimationEffectTabPage::update( STLPropertySet* pSet )
     {
         Any aNewValue( mpLBProperty1->getSubControl()->getValue() );
         Any aOldValue;
-        if( mpSet->getPropertyState( nHandleProperty1Value ) != STLPropertyState_AMBIGUOUS)
+        if( mpSet->getPropertyState( nHandleProperty1Value ) != STLPropertyState::Ambiguous)
             aOldValue = mpSet->getPropertyValue( nHandleProperty1Value );
 
         if( aOldValue != aNewValue )
@@ -1386,7 +1333,7 @@ void CustomAnimationEffectTabPage::update( STLPropertySet* pSet )
         double fTemp = mpCBSmoothStart->IsChecked() ? 0.5 : 0.0;
 
         double fOldTemp = 0.0;
-        if(mpSet->getPropertyState( nHandleAccelerate ) != STLPropertyState_AMBIGUOUS)
+        if(mpSet->getPropertyState( nHandleAccelerate ) != STLPropertyState::Ambiguous)
             mpSet->getPropertyValue( nHandleAccelerate ) >>= fOldTemp;
         else
             fOldTemp = -2.0;
@@ -1397,7 +1344,7 @@ void CustomAnimationEffectTabPage::update( STLPropertySet* pSet )
         // set selected value for decelerate if different then in original set
         fTemp = mpCBSmoothEnd->IsChecked() ? 0.5 : 0.0;
 
-        if(mpSet->getPropertyState( nHandleDecelerate ) != STLPropertyState_AMBIGUOUS)
+        if(mpSet->getPropertyState( nHandleDecelerate ) != STLPropertyState::Ambiguous)
             mpSet->getPropertyValue( nHandleDecelerate ) >>= fOldTemp;
         else
             fOldTemp = -2.0;
@@ -1413,7 +1360,7 @@ void CustomAnimationEffectTabPage::update( STLPropertySet* pSet )
 
         bool bOldAfterEffect = false;
 
-        if(mpSet->getPropertyState( nHandleHasAfterEffect ) != STLPropertyState_AMBIGUOUS)
+        if(mpSet->getPropertyState( nHandleHasAfterEffect ) != STLPropertyState::Ambiguous)
             mpSet->getPropertyValue( nHandleHasAfterEffect ) >>= bOldAfterEffect;
         else
             bOldAfterEffect = !bAfterEffect;
@@ -1424,21 +1371,18 @@ void CustomAnimationEffectTabPage::update( STLPropertySet* pSet )
         Any aDimColor;
         if( nPos == 1 )
         {
-            Color aSelectedColor;
-            if ( mpCLBDimColor->GetSelectEntryPos() != LISTBOX_ENTRY_NOTFOUND )
-                aSelectedColor = mpCLBDimColor->GetSelectEntryColor();
-
-            aDimColor = makeAny( (sal_Int32)aSelectedColor.GetRGBColor() );
+            Color aSelectedColor = mpCLBDimColor->GetSelectEntryColor();
+            aDimColor <<= (sal_Int32)aSelectedColor.GetRGBColor();
         }
 
-        if( (mpSet->getPropertyState( nHandleDimColor ) == STLPropertyState_AMBIGUOUS) ||
+        if( (mpSet->getPropertyState( nHandleDimColor ) == STLPropertyState::Ambiguous) ||
             (mpSet->getPropertyValue( nHandleDimColor ) != aDimColor) )
             pSet->setPropertyValue( nHandleDimColor, aDimColor );
 
         bool bAfterEffectOnNextEffect = nPos != 2;
         bool bOldAfterEffectOnNextEffect = !bAfterEffectOnNextEffect;
 
-        if( mpSet->getPropertyState( nHandleAfterEffectOnNextEffect ) != STLPropertyState_AMBIGUOUS)
+        if( mpSet->getPropertyState( nHandleAfterEffectOnNextEffect ) != STLPropertyState::Ambiguous)
             mpSet->getPropertyValue( nHandleAfterEffectOnNextEffect ) >>= bOldAfterEffectOnNextEffect;
 
         if( bAfterEffectOnNextEffect != bOldAfterEffectOnNextEffect )
@@ -1460,7 +1404,7 @@ void CustomAnimationEffectTabPage::update( STLPropertySet* pSet )
 
         sal_Int16 nOldIterateType = nIterateType-1;
 
-        if(mpSet->getPropertyState( nHandleIterateType ) != STLPropertyState_AMBIGUOUS)
+        if(mpSet->getPropertyState( nHandleIterateType ) != STLPropertyState::Ambiguous)
             mpSet->getPropertyValue( nHandleIterateType ) >>= nOldIterateType;
 
         if( nIterateType != nOldIterateType )
@@ -1471,7 +1415,7 @@ void CustomAnimationEffectTabPage::update( STLPropertySet* pSet )
         double fIterateInterval = static_cast< double >( mpMFTextDelay->GetValue() ) / 10;
         double fOldIterateInterval = -1.0;
 
-        if( mpSet->getPropertyState( nHandleIterateInterval ) != STLPropertyState_AMBIGUOUS )
+        if( mpSet->getPropertyState( nHandleIterateInterval ) != STLPropertyState::Ambiguous )
             mpSet->getPropertyValue( nHandleIterateInterval ) >>= fOldIterateInterval;
 
         if( fIterateInterval != fOldIterateInterval )
@@ -1490,16 +1434,16 @@ void CustomAnimationEffectTabPage::update( STLPropertySet* pSet )
         else if( nPos == 1 )
         {
             // this means stop sound
-            aNewSoundURL = makeAny( true );
+            aNewSoundURL <<= true;
         }
         else
         {
             OUString aSoundURL( maSoundList[ nPos-2 ] );
-            aNewSoundURL = makeAny( aSoundURL );
+            aNewSoundURL <<= aSoundURL;
         }
 
-        if( mpSet->getPropertyState( nHandleSoundURL ) != STLPropertyState_AMBIGUOUS )
-            mpSet->getPropertyValue( nHandleSoundURL  ) >>= aOldSoundURL;
+        if( mpSet->getPropertyState( nHandleSoundURL ) != STLPropertyState::Ambiguous )
+            aOldSoundURL = mpSet->getPropertyValue( nHandleSoundURL  );
 
         if( aNewSoundURL != aOldSoundURL )
             pSet->setPropertyValue( nHandleSoundURL, aNewSoundURL );
@@ -1544,7 +1488,7 @@ void CustomAnimationEffectTabPage::openSoundFileDialog()
 {
     SdOpenSoundFileDialog   aFileDialog;
 
-    OUString aFile( SvtPathOptions().GetGraphicPath() );
+    OUString aFile( SvtPathOptions().GetWorkPath() );
     aFileDialog.SetPath( aFile );
 
     bool bValidSoundFile = false;
@@ -1614,14 +1558,14 @@ class CustomAnimationDurationTabPage : public TabPage
 {
 public:
     CustomAnimationDurationTabPage( vcl::Window* pParent, const STLPropertySet* pSet );
-    virtual ~CustomAnimationDurationTabPage();
+    virtual ~CustomAnimationDurationTabPage() override;
     virtual void dispose() override;
 
     void update( STLPropertySet* pSet );
 
-    DECL_LINK_TYPED( implControlHdl, ListBox&, void );
-    DECL_LINK_TYPED( implClickHdl, Button*, void );
-    DECL_LINK_TYPED( DurationModifiedHdl, Edit&, void );
+    DECL_LINK( implControlHdl, ListBox&, void );
+    DECL_LINK( implClickHdl, Button*, void );
+    DECL_LINK( DurationModifiedHdl, Edit&, void );
     void implHdl(Control*);
 
 private:
@@ -1672,7 +1616,7 @@ CustomAnimationDurationTabPage::CustomAnimationDurationTabPage(vcl::Window* pPar
     mpLBTrigger->SetSelectHdl( LINK( this, CustomAnimationDurationTabPage, implControlHdl ) );
     mpCBXDuration->SetModifyHdl(LINK( this, CustomAnimationDurationTabPage, DurationModifiedHdl));
 
-    if( pSet->getPropertyState( nHandleStart ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleStart ) != STLPropertyState::Ambiguous )
     {
         sal_Int16 nStart = 0;
         pSet->getPropertyValue( nHandleStart ) >>= nStart;
@@ -1685,14 +1629,14 @@ CustomAnimationDurationTabPage::CustomAnimationDurationTabPage(vcl::Window* pPar
         mpLBStart->SelectEntryPos( nPos );
     }
 
-    if( pSet->getPropertyState( nHandleBegin ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleBegin ) != STLPropertyState::Ambiguous )
     {
         double fBegin = 0.0;
         pSet->getPropertyValue( nHandleBegin ) >>= fBegin;
         mpMFStartDelay->SetValue( (long)(fBegin*10) );
     }
 
-    if( pSet->getPropertyState( nHandleDuration ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleDuration ) != STLPropertyState::Ambiguous )
     {
         double fDuration = 0.0;
         pSet->getPropertyValue( nHandleDuration ) >>= fDuration;
@@ -1711,7 +1655,7 @@ CustomAnimationDurationTabPage::CustomAnimationDurationTabPage(vcl::Window* pPar
         }
     }
 
-    if( pSet->getPropertyState( nHandleRepeat ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleRepeat ) != STLPropertyState::Ambiguous )
     {
         Any aRepeatCount( pSet->getPropertyValue( nHandleRepeat ) );
         if( (aRepeatCount.getValueType() == ::cppu::UnoType<double>::get()) || !aRepeatCount.hasValue() )
@@ -1743,14 +1687,14 @@ CustomAnimationDurationTabPage::CustomAnimationDurationTabPage(vcl::Window* pPar
         else if( aRepeatCount.getValueType() == ::cppu::UnoType<Timing>::get() )
         {
             Any aEnd;
-            if( pSet->getPropertyState( nHandleEnd ) != STLPropertyState_AMBIGUOUS )
+            if( pSet->getPropertyState( nHandleEnd ) != STLPropertyState::Ambiguous )
                 aEnd = pSet->getPropertyValue( nHandleEnd );
 
             mpCBRepeat->SelectEntryPos( aEnd.hasValue() ? 6 : 7 );
         }
     }
 
-    if( pSet->getPropertyState( nHandleRewind ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleRewind ) != STLPropertyState::Ambiguous )
     {
         sal_Int16 nFill = 0;
         if( pSet->getPropertyValue( nHandleRewind ) >>= nFill )
@@ -1765,7 +1709,7 @@ CustomAnimationDurationTabPage::CustomAnimationDurationTabPage(vcl::Window* pPar
 
     Reference< XShape > xTrigger;
 
-    if( pSet->getPropertyState( nHandleTrigger ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleTrigger ) != STLPropertyState::Ambiguous )
     {
         pSet->getPropertyValue( nHandleTrigger ) >>= xTrigger;
 
@@ -1796,7 +1740,7 @@ CustomAnimationDurationTabPage::CustomAnimationDurationTabPage(vcl::Window* pPar
                     continue;
             }
 
-            OUString aDescription( getShapeDescription( xShape ) );
+            OUString aDescription( getShapeDescription( xShape, true ) );
             sal_Int32 nPos = mpLBTrigger->InsertEntry( aDescription );
 
             mpLBTrigger->SetEntryData( nPos, reinterpret_cast<void*>((sal_IntPtr)nShape) );
@@ -1828,17 +1772,17 @@ void CustomAnimationDurationTabPage::dispose()
     TabPage::dispose();
 }
 
-IMPL_LINK_TYPED( CustomAnimationDurationTabPage, implClickHdl, Button*, pBtn, void )
+IMPL_LINK( CustomAnimationDurationTabPage, implClickHdl, Button*, pBtn, void )
 {
     implHdl(pBtn);
 }
 
-IMPL_LINK_TYPED( CustomAnimationDurationTabPage, implControlHdl, ListBox&, rListBox, void )
+IMPL_LINK( CustomAnimationDurationTabPage, implControlHdl, ListBox&, rListBox, void )
 {
     implHdl(&rListBox);
 }
 
-IMPL_LINK_NOARG_TYPED(CustomAnimationDurationTabPage, DurationModifiedHdl, Edit&, void)
+IMPL_LINK_NOARG(CustomAnimationDurationTabPage, DurationModifiedHdl, Edit&, void)
 {
     if(!(mpCBXDuration->GetText()).isEmpty() )
     {
@@ -1875,7 +1819,7 @@ void CustomAnimationDurationTabPage::update( STLPropertySet* pSet )
             nStart = EffectNodeType::ON_CLICK; break;
         }
 
-        if(mpSet->getPropertyState( nHandleStart ) != STLPropertyState_AMBIGUOUS)
+        if(mpSet->getPropertyState( nHandleStart ) != STLPropertyState::Ambiguous)
             mpSet->getPropertyValue( nHandleStart ) >>= nOldStart;
 
         if( nStart != nOldStart )
@@ -1886,7 +1830,7 @@ void CustomAnimationDurationTabPage::update( STLPropertySet* pSet )
         double fBegin = static_cast<double>( mpMFStartDelay->GetValue()) / 10.0;
         double fOldBegin = -1.0;
 
-        if( mpSet->getPropertyState( nHandleBegin ) != STLPropertyState_AMBIGUOUS )
+        if( mpSet->getPropertyState( nHandleBegin ) != STLPropertyState::Ambiguous )
             mpSet->getPropertyValue( nHandleBegin ) >>= fOldBegin;
 
         if( fBegin != fOldBegin )
@@ -1924,14 +1868,14 @@ void CustomAnimationDurationTabPage::update( STLPropertySet* pSet )
         }
 
         Any aOldRepeatCount( aRepeatCount );
-        if( mpSet->getPropertyState( nHandleRepeat ) != STLPropertyState_AMBIGUOUS )
+        if( mpSet->getPropertyState( nHandleRepeat ) != STLPropertyState::Ambiguous )
             aOldRepeatCount = mpSet->getPropertyValue( nHandleRepeat );
 
         if( aRepeatCount != aOldRepeatCount )
             pSet->setPropertyValue( nHandleRepeat, aRepeatCount );
 
         Any aOldEnd( aEnd );
-        if( mpSet->getPropertyState( nHandleEnd ) != STLPropertyState_AMBIGUOUS )
+        if( mpSet->getPropertyState( nHandleEnd ) != STLPropertyState::Ambiguous )
             aOldEnd = mpSet->getPropertyValue( nHandleEnd );
 
         if( aEnd != aOldEnd )
@@ -1952,7 +1896,7 @@ void CustomAnimationDurationTabPage::update( STLPropertySet* pSet )
     {
         double fOldDuration = -1;
 
-        if( mpSet->getPropertyState( nHandleDuration ) != STLPropertyState_AMBIGUOUS )
+        if( mpSet->getPropertyState( nHandleDuration ) != STLPropertyState::Ambiguous )
             mpSet->getPropertyValue( nHandleDuration ) >>= fOldDuration;
 
         if( fDuration != fOldDuration )
@@ -1965,7 +1909,7 @@ void CustomAnimationDurationTabPage::update( STLPropertySet* pSet )
 
         bool bSet = true;
 
-        if( mpSet->getPropertyState( nHandleRewind ) != STLPropertyState_AMBIGUOUS )
+        if( mpSet->getPropertyState( nHandleRewind ) != STLPropertyState::Ambiguous )
         {
             sal_Int16 nOldFill = 0;
             mpSet->getPropertyValue( nHandleRewind ) >>= nOldFill;
@@ -1998,7 +1942,7 @@ void CustomAnimationDurationTabPage::update( STLPropertySet* pSet )
         Any aNewValue( makeAny( xTrigger ) );
         Any aOldValue;
 
-        if( mpSet->getPropertyState( nHandleTrigger ) != STLPropertyState_AMBIGUOUS )
+        if( mpSet->getPropertyState( nHandleTrigger ) != STLPropertyState::Ambiguous )
             aOldValue = mpSet->getPropertyValue( nHandleTrigger );
 
         if( aNewValue != aOldValue )
@@ -2010,13 +1954,13 @@ class CustomAnimationTextAnimTabPage : public TabPage
 {
 public:
     CustomAnimationTextAnimTabPage( vcl::Window* pParent, const STLPropertySet* pSet );
-    virtual ~CustomAnimationTextAnimTabPage();
+    virtual ~CustomAnimationTextAnimTabPage() override;
     virtual void dispose() override;
 
     void update( STLPropertySet* pSet );
 
     void updateControlStates();
-    DECL_LINK_TYPED(implSelectHdl, ListBox&, void);
+    DECL_LINK(implSelectHdl, ListBox&, void);
 
 private:
     VclPtr<FixedText>   maFTGroupText;
@@ -2045,17 +1989,17 @@ CustomAnimationTextAnimTabPage::CustomAnimationTextAnimTabPage(vcl::Window* pPar
 
     maLBGroupText->SetSelectHdl( LINK( this, CustomAnimationTextAnimTabPage, implSelectHdl ) );
 
-    if( pSet->getPropertyState( nHandleTextGrouping ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleTextGrouping ) != STLPropertyState::Ambiguous )
     {
         sal_Int32 nTextGrouping = 0;
         if( pSet->getPropertyValue( nHandleTextGrouping ) >>= nTextGrouping )
             maLBGroupText->SelectEntryPos( nTextGrouping + 1 );
     }
 
-    if( pSet->getPropertyState( nHandleHasVisibleShape ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleHasVisibleShape ) != STLPropertyState::Ambiguous )
         pSet->getPropertyValue( nHandleHasVisibleShape ) >>= mbHasVisibleShapes;
 
-    if( pSet->getPropertyState( nHandleTextGroupingAuto ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleTextGroupingAuto ) != STLPropertyState::Ambiguous )
     {
         double fTextGroupingAuto = 0.0;
         if( pSet->getPropertyValue( nHandleTextGroupingAuto ) >>= fTextGroupingAuto )
@@ -2071,7 +2015,7 @@ CustomAnimationTextAnimTabPage::CustomAnimationTextAnimTabPage(vcl::Window* pPar
     }
 
     maCBXAnimateForm->SetState( TRISTATE_INDET );
-    if( pSet->getPropertyState( nHandleAnimateForm ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleAnimateForm ) != STLPropertyState::Ambiguous )
     {
         bool bAnimateForm = false;
         if( pSet->getPropertyValue( nHandleAnimateForm ) >>= bAnimateForm )
@@ -2085,7 +2029,7 @@ CustomAnimationTextAnimTabPage::CustomAnimationTextAnimTabPage(vcl::Window* pPar
     }
 
     maCBXReverse->SetState( TRISTATE_INDET );
-    if( pSet->getPropertyState( nHandleTextReverse ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleTextReverse ) != STLPropertyState::Ambiguous )
     {
         bool bTextReverse = false;
         if( pSet->getPropertyValue( nHandleTextReverse ) >>= bTextReverse )
@@ -2094,7 +2038,7 @@ CustomAnimationTextAnimTabPage::CustomAnimationTextAnimTabPage(vcl::Window* pPar
         }
     }
 
-    if( pSet->getPropertyState( nHandleMaxParaDepth ) == STLPropertyState_DIRECT )
+    if( pSet->getPropertyState( nHandleMaxParaDepth ) == STLPropertyState::Direct )
     {
         sal_Int32 nMaxParaDepth = 0;
         pSet->getPropertyValue( nHandleMaxParaDepth ) >>= nMaxParaDepth;
@@ -2135,7 +2079,7 @@ void CustomAnimationTextAnimTabPage::update( STLPropertySet* pSet )
         sal_Int32 nTextGrouping = nPos - 1;
         sal_Int32 nOldGrouping = -2;
 
-        if(mpSet->getPropertyState( nHandleTextGrouping ) != STLPropertyState_AMBIGUOUS)
+        if(mpSet->getPropertyState( nHandleTextGrouping ) != STLPropertyState::Ambiguous)
             mpSet->getPropertyValue( nHandleTextGrouping ) >>= nOldGrouping;
 
         if( nTextGrouping != nOldGrouping )
@@ -2147,7 +2091,7 @@ void CustomAnimationTextAnimTabPage::update( STLPropertySet* pSet )
         bool bTextReverse = maCBXReverse->IsChecked();
         bool bOldTextReverse = !bTextReverse;
 
-        if(mpSet->getPropertyState( nHandleTextReverse ) != STLPropertyState_AMBIGUOUS)
+        if(mpSet->getPropertyState( nHandleTextReverse ) != STLPropertyState::Ambiguous)
             mpSet->getPropertyValue( nHandleTextReverse ) >>= bOldTextReverse;
 
         if( bTextReverse != bOldTextReverse )
@@ -2158,7 +2102,7 @@ void CustomAnimationTextAnimTabPage::update( STLPropertySet* pSet )
             double fTextGroupingAuto = maCBXGroupAuto->IsChecked() ? maMFGroupAuto->GetValue() / 10.0 : -1.0;
             double fOldTextGroupingAuto = -2.0;
 
-            if(mpSet->getPropertyState( nHandleTextGroupingAuto ) != STLPropertyState_AMBIGUOUS)
+            if(mpSet->getPropertyState( nHandleTextGroupingAuto ) != STLPropertyState::Ambiguous)
                 mpSet->getPropertyValue( nHandleTextGroupingAuto ) >>= fOldTextGroupingAuto;
 
             if( fTextGroupingAuto != fOldTextGroupingAuto )
@@ -2173,7 +2117,7 @@ void CustomAnimationTextAnimTabPage::update( STLPropertySet* pSet )
         bool bAnimateForm = maCBXAnimateForm->IsChecked();
         bool bOldAnimateForm = !bAnimateForm;
 
-        if(mpSet->getPropertyState( nHandleAnimateForm ) != STLPropertyState_AMBIGUOUS)
+        if(mpSet->getPropertyState( nHandleAnimateForm ) != STLPropertyState::Ambiguous)
             mpSet->getPropertyValue( nHandleAnimateForm ) >>= bOldAnimateForm;
 
         if( bAnimateForm != bOldAnimateForm )
@@ -2200,7 +2144,7 @@ void CustomAnimationTextAnimTabPage::updateControlStates()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(CustomAnimationTextAnimTabPage, implSelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(CustomAnimationTextAnimTabPage, implSelectHdl, ListBox&, void)
 {
     updateControlStates();
 }
@@ -2222,7 +2166,7 @@ CustomAnimationDialog::CustomAnimationDialog(vcl::Window* pParent, STLPropertySe
     mpTabControl->SetTabPage( nTimingId, mpDurationTabPage );
 
     bool bHasText = false;
-    if( pSet->getPropertyState( nHandleHasText ) != STLPropertyState_AMBIGUOUS )
+    if( pSet->getPropertyState( nHandleHasText ) != STLPropertyState::Ambiguous )
         pSet->getPropertyValue( nHandleHasText ) >>= bHasText;
 
     if( bHasText )
@@ -2283,11 +2227,11 @@ STLPropertySet* CustomAnimationDialog::createDefaultSet()
     pSet->setPropertyDefaultValue( nHandleAfterEffectOnNextEffect, makeAny( false ) );
     pSet->setPropertyDefaultValue( nHandleDimColor, aEmpty );
     pSet->setPropertyDefaultValue( nHandleIterateType, makeAny( (sal_Int16)0 ) );
-    pSet->setPropertyDefaultValue( nHandleIterateInterval, makeAny( (double)0.0 ) );
+    pSet->setPropertyDefaultValue( nHandleIterateInterval, makeAny( 0.0 ) );
 
     pSet->setPropertyDefaultValue( nHandleStart, makeAny( (sal_Int16)EffectNodeType::ON_CLICK ) );
-    pSet->setPropertyDefaultValue( nHandleBegin, makeAny( (double)0.0 ) );
-    pSet->setPropertyDefaultValue( nHandleDuration, makeAny( (double)2.0 ) );
+    pSet->setPropertyDefaultValue( nHandleBegin, makeAny( 0.0 ) );
+    pSet->setPropertyDefaultValue( nHandleDuration, makeAny( 2.0 ) );
     pSet->setPropertyDefaultValue( nHandleRepeat, aEmpty );
     pSet->setPropertyDefaultValue( nHandleRewind, makeAny( AnimationFill::HOLD ) );
 
@@ -2307,13 +2251,13 @@ STLPropertySet* CustomAnimationDialog::createDefaultSet()
     pSet->setPropertyDefaultValue( nHandleHasVisibleShape, makeAny( false ) );
     pSet->setPropertyDefaultValue( nHandleTextGrouping, makeAny( (sal_Int32)-1 ) );
     pSet->setPropertyDefaultValue( nHandleAnimateForm, makeAny( true ) );
-    pSet->setPropertyDefaultValue( nHandleTextGroupingAuto, makeAny( (double)-1.0 ) );
+    pSet->setPropertyDefaultValue( nHandleTextGroupingAuto, makeAny( -1.0 ) );
     pSet->setPropertyDefaultValue( nHandleTextReverse, makeAny( false ) );
 
     pSet->setPropertyDefaultValue( nHandleCurrentPage, aEmpty );
 
     pSet->setPropertyDefaultValue( nHandleSoundURL, aEmpty );
-    pSet->setPropertyDefaultValue( nHandleSoundVolumne, makeAny( (double)1.0) );
+    pSet->setPropertyDefaultValue( nHandleSoundVolumne, makeAny( 1.0) );
     pSet->setPropertyDefaultValue( nHandleSoundEndAfterSlide, makeAny( (sal_Int32)0 ) );
 
     pSet->setPropertyDefaultValue( nHandleCommand, makeAny( (sal_Int16)0 ) );

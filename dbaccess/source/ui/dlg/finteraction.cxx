@@ -18,8 +18,6 @@
  */
 
 #include "finteraction.hxx"
-#include <tools/debug.hxx>
-#include <osl/diagnose.h>
 #include <com/sun/star/ucb/InteractiveIOException.hpp>
 
 namespace dbaui
@@ -33,14 +31,14 @@ namespace dbaui
         :m_xMaster( _rxMaster )
         ,m_bDoesNotExist(false)
     {
-        OSL_ENSURE( m_xMaster.is(), "OFilePickerInteractionHandler::OFilePickerInteractionHandler: invalid master handler!" );
+        assert(m_xMaster.is());
     }
 
     OFilePickerInteractionHandler::~OFilePickerInteractionHandler( )
     {
     }
 
-    void SAL_CALL OFilePickerInteractionHandler::handle( const Reference< XInteractionRequest >& _rxRequest ) throw (RuntimeException, std::exception)
+    void SAL_CALL OFilePickerInteractionHandler::handle( const Reference< XInteractionRequest >& _rxRequest )
     {
         InteractiveIOException aIoException;
         if ( _rxRequest->getRequest() >>= aIoException )

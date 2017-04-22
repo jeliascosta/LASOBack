@@ -22,32 +22,32 @@
 
 #include <svtools/svtdllapi.h>
 #include <tools/link.hxx>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <com/sun/star/datatransfer/clipboard/XClipboardListener.hpp>
 
 namespace vcl { class Window; }
 
 class TransferableDataHelper;
 
-class SVT_DLLPUBLIC TransferableClipboardListener : public ::cppu::WeakImplHelper1<
+class SVT_DLLPUBLIC TransferableClipboardListener : public cppu::WeakImplHelper<
                             css::datatransfer::clipboard::XClipboardListener >
 {
     Link<TransferableDataHelper*,void>  aLink;
 
+    void    AddRemoveListener( vcl::Window* pWin, bool bAdd );
 public:
             // Link is called with a TransferableDataHelper pointer
             TransferableClipboardListener( const Link<TransferableDataHelper*,void>& rCallback );
-            virtual ~TransferableClipboardListener();
+            virtual ~TransferableClipboardListener() override;
 
-    void    AddRemoveListener( vcl::Window* pWin, bool bAdd );
+    void    AddListener( vcl::Window* pWin ) { AddRemoveListener(pWin, true); }
+    void    RemoveListener( vcl::Window* pWin ) { AddRemoveListener(pWin, false); }
     void    ClearCallbackLink();
 
             // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
-                                            throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
             // XClipboardListener
-    virtual void SAL_CALL changedContents( const css::datatransfer::clipboard::ClipboardEvent& event )
-                                            throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL changedContents( const css::datatransfer::clipboard::ClipboardEvent& event ) override;
 };
 
 #endif

@@ -19,9 +19,12 @@
 
 #include <config_features.h>
 
+#include <boost/property_tree/json_parser.hpp>
+
 #include "scitems.hxx"
 #include <editeng/editview.hxx>
 #include <editeng/outliner.hxx>
+#include <o3tl/any.hxx>
 #include <svx/fmdpage.hxx>
 #include <svx/fmview.hxx>
 #include <svx/svditer.hxx>
@@ -30,10 +33,11 @@
 #include <svx/unoshape.hxx>
 
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
+#include <comphelper/lok.hxx>
 #include <officecfg/Office/Common.hxx>
 #include <officecfg/Office/Calc.hxx>
 #include <svl/numuno.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <unotools/moduleoptions.hxx>
 #include <sfx2/printer.hxx>
 #include <sfx2/bindings.hxx>
@@ -46,9 +50,9 @@
 #include <toolkit/awt/vclxdevice.hxx>
 #include <unotools/saveopt.hxx>
 
-#include <ctype.h>
 #include <float.h>
 
+#include <com/sun/star/datatransfer/UnsupportedFlavorException.hpp>
 #include <com/sun/star/util/Date.hpp>
 #include <com/sun/star/sheet/XNamedRanges.hpp>
 #include <com/sun/star/sheet/XLabelRanges.hpp>
@@ -69,6 +73,7 @@
 #if HAVE_FEATURE_OPENCL
 #include <opencl/platforminfo.hxx>
 #endif
+#include <sfx2/lokhelper.hxx>
 
 #include "cellsuno.hxx"
 #include <columnspanset.hxx>
@@ -113,17 +118,18 @@
 #include "drawsh.hxx"
 #include "drtxtob.hxx"
 #include "transobj.hxx"
+#include "chgtrack.hxx"
 
-#include "sc.hrc"
+#include "scres.hrc"
 
 using namespace com::sun::star;
 
 // #i111553# provides the name of the VBA constant for this document type (e.g. 'ThisExcelDoc' for Calc)
 #define SC_UNO_VBAGLOBNAME "VBAGlobalConstantName"
 
-//  alles ohne Which-ID, Map nur fuer PropertySetInfo
+//  no Which-ID here, map only for PropertySetInfo
 
-//! umbenennen, sind nicht mehr nur Options
+//! rename this, those are no longer only options
 static const SfxItemPropertyMapEntry* lcl_GetDocOptPropertyMap()
 {
     static const SfxItemPropertyMapEntry aDocOptPropertyMap_Impl[] =
@@ -177,7 +183,7 @@ static const SfxItemPropertyMapEntry* lcl_GetDocOptPropertyMap()
     return aDocOptPropertyMap_Impl;
 }
 
-//! StandardDecimals als Property und vom NumberFormatter ????????
+//! StandardDecimals as property and from NumberFormatter ????????
 
 static const SfxItemPropertyMapEntry* lcl_GetColumnsPropertyMap()
 {
@@ -239,11 +245,6 @@ ScPrintUIOptions::ScPrintUIOptions()
     sal_Int32 nContent = rPrintOpt.GetAllSheets() ? 0 : 1;
     bool bSuppress = rPrintOpt.GetSkipEmpty();
 
-    ResStringArray aStrings( ScResId( SCSTR_PRINT_OPTIONS ) );
-    OSL_ENSURE( aStrings.Count() >= 10, "resource incomplete" );
-    if( aStrings.Count() < 10 ) // bad resource ?
-        return;
-
     sal_Int32 nNumProps= 9, nIdx = 0;
 
     m_aUIProperties.resize(nNumProps);
@@ -254,43 +255,45 @@ ScPrintUIOptions::ScPrintUIOptions()
 
     // create Section for spreadsheet (results in an extra tab page in dialog)
     SvtModuleOptions aOpt;
-    OUString aAppGroupname( aStrings.GetString( 9 ) );
+    OUString aAppGroupname( SC_RESSTR( SCSTR_PRINTOPT_PRODNAME ) );
     aAppGroupname = aAppGroupname.replaceFirst( "%s", aOpt.GetModuleName( SvtModuleOptions::EModule::CALC ) );
     m_aUIProperties[nIdx++].Value = setGroupControlOpt("tabcontrol-page2", aAppGroupname, OUString());
 
     // show subgroup for pages
-    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("pages", OUString(aStrings.GetString(0)), OUString());
+    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("pages", SC_RESSTR( SCSTR_PRINTOPT_PAGES ), OUString());
 
     // create a bool option for empty pages
-    m_aUIProperties[nIdx++].Value = setBoolControlOpt("suppressemptypages", OUString( aStrings.GetString( 1 ) ),
+    m_aUIProperties[nIdx++].Value = setBoolControlOpt("suppressemptypages", SC_RESSTR( SCSTR_PRINTOPT_SUPPRESSEMPTY ),
                                                   ".HelpID:vcl:PrintDialog:IsSuppressEmptyPages:CheckBox",
                                                   "IsSuppressEmptyPages",
                                                   bSuppress);
     // show Subgroup for print content
     vcl::PrinterOptionsHelper::UIControlOptions aPrintRangeOpt;
     aPrintRangeOpt.maGroupHint = "PrintRange";
-    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("printrange", OUString(aStrings.GetString(2)),
+    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("printrange", SC_RESSTR( SCSTR_PRINTOPT_PRNTCONTENT ),
                                                       OUString(),
                                                       aPrintRangeOpt);
 
     // create a choice for the content to create
-    uno::Sequence< OUString > aChoices( 3 ), aHelpIds( 3 ), aWidgetIds( 3 );
-    aChoices[0] = aStrings.GetString( 3 );
-    aHelpIds[0] = ".HelpID:vcl:PrintDialog:PrintContent:RadioButton:0";
-    aWidgetIds[0] = "printallsheets";
-    aChoices[1] = aStrings.GetString( 4 );
-    aHelpIds[1] = ".HelpID:vcl:PrintDialog:PrintContent:RadioButton:1";
-    aWidgetIds[1] = "printselectedsheets";
-    aChoices[2] = aStrings.GetString( 5 );
-    aHelpIds[2] = ".HelpID:vcl:PrintDialog:PrintContent:RadioButton:2";
-    aWidgetIds[2] = "printselectedcells";
+    uno::Sequence< OUString > aChoices{
+        SC_RESSTR( SCSTR_PRINTOPT_ALLSHEETS ),
+        SC_RESSTR( SCSTR_PRINTOPT_SELECTEDSHEETS ),
+        SC_RESSTR( SCSTR_PRINTOPT_SELECTEDCELLS )};
+    uno::Sequence< OUString > aHelpIds{
+        ".HelpID:vcl:PrintDialog:PrintContent:RadioButton:0",
+        ".HelpID:vcl:PrintDialog:PrintContent:RadioButton:1",
+        ".HelpID:vcl:PrintDialog:PrintContent:RadioButton:2"};
+    uno::Sequence< OUString > aWidgetIds{
+        "printallsheets",
+        "printselectedsheets",
+        "printselectedcells"};
     m_aUIProperties[nIdx++].Value = setChoiceRadiosControlOpt(aWidgetIds, OUString(),
                                                     aHelpIds, "PrintContent",
                                                     aChoices, nContent );
 
     // show Subgroup for print range
     aPrintRangeOpt.mbInternalOnly = true;
-    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("fromwhich", OUString(aStrings.GetString(6)),
+    m_aUIProperties[nIdx++].Value = setSubgroupControlOpt("fromwhich", SC_RESSTR( SCSTR_PRINTOPT_FROMWHICH ),
                                                       OUString(),
                                                       aPrintRangeOpt);
 
@@ -299,10 +302,10 @@ ScPrintUIOptions::ScPrintUIOptions()
     aChoices.realloc( 2 );
     aHelpIds.realloc( 2 );
     aWidgetIds.realloc( 2 );
-    aChoices[0] = aStrings.GetString( 7 );
+    aChoices[0] = SC_RESSTR( SCSTR_PRINTOPT_ALLPAGES );
     aHelpIds[0] = ".HelpID:vcl:PrintDialog:PrintRange:RadioButton:0";
     aWidgetIds[0] = "printallpages";
-    aChoices[1] = aStrings.GetString( 8 );
+    aChoices[1] = SC_RESSTR( SCSTR_PRINTOPT_PAGES_ );
     aHelpIds[1] = ".HelpID:vcl:PrintDialog:PrintRange:RadioButton:1";
     aWidgetIds[1] = "printpages";
     m_aUIProperties[nIdx++].Value = setChoiceRadiosControlOpt(aWidgetIds, OUString(),
@@ -394,23 +397,23 @@ ScModelObj::~ScModelObj()
     delete pPrinterOptions;
 }
 
-uno::Reference< uno::XAggregation> ScModelObj::GetFormatter()
+uno::Reference< uno::XAggregation> const & ScModelObj::GetFormatter()
 {
     // pDocShell may be NULL if this is the base of a ScDocOptionsObj
     if ( !xNumberAgg.is() && pDocShell )
     {
-        // setDelegator veraendert den RefCount, darum eine Referenz selber halten
-        // (direkt am m_refCount, um sich beim release nicht selbst zu loeschen)
+        // setDelegator changes RefCount, so we'd better hold the reference ourselves
+        // (directly in m_refCount, so we don't delete ourselves with release())
         osl_atomic_increment( &m_refCount );
-        // waehrend des queryInterface braucht man ein Ref auf das
-        // SvNumberFormatsSupplierObj, sonst wird es geloescht.
+        // we need a reference to SvNumberFormatsSupplierObj during queryInterface,
+        // otherwise it'll be deleted
         uno::Reference<util::XNumberFormatsSupplier> xFormatter(new SvNumberFormatsSupplierObj(pDocShell->GetDocument().GetFormatTable() ));
         {
             xNumberAgg.set(uno::Reference<uno::XAggregation>( xFormatter, uno::UNO_QUERY ));
             // extra block to force deletion of the temporary before setDelegator
         }
 
-        // beim setDelegator darf die zusaetzliche Ref nicht mehr existieren
+        // during setDelegator no additional reference should exist
         xFormatter = nullptr;
 
         if (xNumberAgg.is())
@@ -457,16 +460,23 @@ ScSheetSaveData* ScModelObj::GetSheetSaveData()
     return nullptr;
 }
 
+ScFormatSaveData* ScModelObj::GetFormatSaveData()
+{
+    if (pDocShell)
+        return pDocShell->GetFormatSaveData();
+    return nullptr;
+}
+
 void ScModelObj::RepaintRange( const ScRange& rRange )
 {
     if (pDocShell)
-        pDocShell->PostPaint( rRange, PAINT_GRID );
+        pDocShell->PostPaint( rRange, PaintPartFlags::Grid );
 }
 
 void ScModelObj::RepaintRange( const ScRangeList& rRange )
 {
     if (pDocShell)
-        pDocShell->PostPaint( rRange, PAINT_GRID );
+        pDocShell->PostPaint( rRange, PaintPartFlags::Grid );
 }
 
 void ScModelObj::paintTile( VirtualDevice& rDevice,
@@ -512,7 +522,7 @@ int ScModelObj::getParts()
 int ScModelObj::getPart()
 {
     ScViewData* pViewData = ScDocShell::GetViewData();
-    return pViewData->GetTabNo();
+    return pViewData->GetViewShell()->getPart();
 }
 
 OUString ScModelObj::getPartName( int nPart )
@@ -550,12 +560,6 @@ Size ScModelObj::getDocumentSize()
     aSize.setHeight(rDoc.GetRowHeight(0, nEndRow, nTab));
 
     return aSize;
-}
-
-void ScModelObj::registerCallback(LibreOfficeKitCallback pCallback, void* pData)
-{
-    SolarMutexGuard aGuard;
-    pDocShell->GetDocument().GetDrawLayer()->registerLibreOfficeKitCallback(pCallback, pData);
 }
 
 void ScModelObj::postKeyEvent(int nType, int nCharCode, int nKeyCode)
@@ -721,13 +725,11 @@ OString ScModelObj::getTextSelection(const char* pMimeType, OString& rUsedMimeTy
 {
     SolarMutexGuard aGuard;
 
-    ScEditShell* pShell;
-    ScDrawShell* pDrawShell;
     TransferableDataHelper aDataHelper;
     ScViewData* pViewData = ScDocShell::GetViewData();
     uno::Reference<datatransfer::XTransferable> xTransferable;
 
-    if (( pShell = dynamic_cast<ScEditShell*>( pViewData->GetViewShell()->GetViewFrame()->GetDispatcher()->GetShell(0) )) )
+    if ( ScEditShell * pShell = dynamic_cast<ScEditShell*>( pViewData->GetViewShell()->GetViewFrame()->GetDispatcher()->GetShell(0) ) )
         xTransferable = pShell->GetEditView()->GetTransferable();
     else if ( nullptr != dynamic_cast<ScDrawTextObjectBar*>( pViewData->GetViewShell()->GetViewFrame()->GetDispatcher()->GetShell(0) ))
     {
@@ -736,7 +738,7 @@ OString ScModelObj::getTextSelection(const char* pMimeType, OString& rUsedMimeTy
         if (pOutView)
             xTransferable = pOutView->GetEditView().GetTransferable();
     }
-    else if (( pDrawShell = dynamic_cast<ScDrawShell*>( pViewData->GetViewShell()->GetViewFrame()->GetDispatcher()->GetShell(0) )) )
+    else if ( ScDrawShell * pDrawShell = dynamic_cast<ScDrawShell*>( pViewData->GetViewShell()->GetViewFrame()->GetDispatcher()->GetShell(0) ) )
         xTransferable = pDrawShell->GetDrawView()->CopyToTransferable();
     else
     {
@@ -770,7 +772,21 @@ OString ScModelObj::getTextSelection(const char* pMimeType, OString& rUsedMimeTy
     if (!xTransferable.is() || !xTransferable->isDataFlavorSupported(aFlavor))
         return OString();
 
-    uno::Any aAny(xTransferable->getTransferData(aFlavor));
+    uno::Any aAny;
+    try
+    {
+        aAny = xTransferable->getTransferData(aFlavor);
+    }
+    catch (const datatransfer::UnsupportedFlavorException& e)
+    {
+        SAL_WARN("sc", "Caught UnsupportedFlavorException " << e.Message);
+        return OString();
+    }
+    catch (const css::uno::Exception& e)
+    {
+        SAL_WARN("sc", "Caught UNO Exception " << e.Message);
+        return OString();
+    }
 
     OString aRet;
     if (aFlavor.DataType == cppu::UnoType<OUString>::get())
@@ -851,7 +867,8 @@ void ScModelObj::resetSelection()
         pViewShell->Unmark();
 
     // and hide the cell and text selection
-    pDocShell->GetDocument().GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION, "");
+    pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION, "");
+    SfxLokHelper::notifyOtherViews(pViewShell, LOK_CALLBACK_TEXT_VIEW_SELECTION, "selection", "");
 }
 
 void ScModelObj::setClipboard(const uno::Reference<datatransfer::clipboard::XClipboard>& xClipboard)
@@ -886,7 +903,7 @@ void ScModelObj::setClientZoom(int nTilePixelWidth_, int nTilePixelHeight_, int 
     mnTileTwipHeight = nTileTwipHeight_;
 }
 
-OUString ScModelObj::getRowColumnHeaders(const Rectangle& rRectangle)
+OUString ScModelObj::getRowColumnHeaders(const tools::Rectangle& rRectangle)
 {
     ScViewData* pViewData = ScDocShell::GetViewData();
 
@@ -936,13 +953,94 @@ Pointer ScModelObj::getPointer()
     return pGridWindow->GetPointer();
 }
 
+OUString ScModelObj::getTrackedChanges()
+{
+    OUString aRet;
+
+    if (pDocShell)
+    {
+        if (ScChangeTrack* pChangeTrack = pDocShell->GetDocument().GetChangeTrack())
+            aRet = pChangeTrack->GetChangeTrackInfo();
+    }
+
+    return aRet;
+}
+
+void ScModelObj::setClientVisibleArea(const tools::Rectangle& rRectangle)
+{
+    ScViewData* pViewData = ScDocShell::GetViewData();
+    if (!pViewData)
+        return;
+
+    // set the PgUp/PgDown offset
+    pViewData->ForcePageUpDownOffset(rRectangle.GetHeight());
+}
+
+OUString ScModelObj::getPostIts()
+{
+    if (!pDocShell)
+        return OUString();
+
+    ScDocument& rDoc = pDocShell->GetDocument();
+    std::vector<sc::NoteEntry> aNotes;
+    rDoc.GetAllNoteEntries(aNotes);
+
+    boost::property_tree::ptree aAnnotations;
+    for (const sc::NoteEntry& aNote : aNotes)
+    {
+        boost::property_tree::ptree aAnnotation;
+        OStringBuffer aBuf;
+        aNote.maPos.Format(aBuf, ScRefFlags::VALID | ScRefFlags::TAB_3D, &rDoc,
+                           ScAddress::Details(formula::FormulaGrammar::AddressConvention::CONV_ODF, aNote.maPos));
+
+        aAnnotation.put("id", aBuf.toString());
+        aAnnotation.put("author", aNote.mpNote->GetAuthor());
+        aAnnotation.put("dateTime", aNote.mpNote->GetDate());
+        aAnnotation.put("text", aNote.mpNote->GetText());
+
+        // Calculating the cell cursor position
+        ScViewData* pViewData = ScDocShell::GetViewData();
+        ScGridWindow* pGridWindow = pViewData->GetActiveWin();
+        if (pGridWindow)
+        {
+            SCCOL nX = aNote.maPos.Col();
+            SCROW nY = aNote.maPos.Row();
+            Point aScrPos = pViewData->GetScrPos(nX, nY, pViewData->GetActivePart(), true);
+            long nSizeXPix;
+            long nSizeYPix;
+            pViewData->GetMergeSizePixel(nX, nY, nSizeXPix, nSizeYPix);
+
+            double fPPTX = pViewData->GetPPTX();
+            double fPPTY = pViewData->GetPPTY();
+            tools::Rectangle aRect(Point(aScrPos.getX() / fPPTX, aScrPos.getY() / fPPTY),
+                            Size(nSizeXPix / fPPTX, nSizeYPix / fPPTY));
+
+            aAnnotation.put("cellPos", aRect.toString());
+        }
+
+        aAnnotations.push_back(std::make_pair("", aAnnotation));
+    }
+
+    boost::property_tree::ptree aTree;
+    aTree.add_child("comments", aAnnotations);
+    std::stringstream aStream;
+    boost::property_tree::write_json(aStream, aTree);
+
+    return OUString::fromUtf8(aStream.str().c_str());
+}
 void ScModelObj::initializeForTiledRendering(const css::uno::Sequence<css::beans::PropertyValue>& /*rArguments*/)
 {
     SolarMutexGuard aGuard;
 
+    // disable word autocompletion
+    ScAppOptions aAppOptions( SC_MOD()->GetAppOptions() );
+    aAppOptions.SetAutoComplete(false);
+    SC_MOD()->SetAppOptions(aAppOptions);
+
     // show us the text exactly
     ScInputOptions aInputOptions(SC_MOD()->GetInputOptions());
     aInputOptions.SetTextWysiwyg(true);
+    aInputOptions.SetReplaceCellsWarn(false);
     SC_MOD()->SetInputOptions(aInputOptions);
     pDocShell->CalcOutputFactor();
 
@@ -951,6 +1049,10 @@ void ScModelObj::initializeForTiledRendering(const css::uno::Sequence<css::beans
     // causing 'Save' being disabled; so let's always save to the original
     // format
     SvtSaveOptions().SetWarnAlienFormat(false);
+
+    // If annotations are turned off in tiled rendering case
+    if (comphelper::LibreOfficeKit::isActive() && !comphelper::LibreOfficeKit::isTiledAnnotations())
+        ScDocShell::GetViewData()->SetNotesMode(false);
 
     // default tile size in pixels
     mnTilePixelWidth = 256;
@@ -961,7 +1063,6 @@ void ScModelObj::initializeForTiledRendering(const css::uno::Sequence<css::beans
 }
 
 uno::Any SAL_CALL ScModelObj::queryInterface( const uno::Type& rType )
-                                                throw(uno::RuntimeException, std::exception)
 {
     SC_QUERYINTERFACE( sheet::XSpreadsheetDocument )
     SC_QUERYINTERFACE( document::XActionLockable )
@@ -1007,7 +1108,7 @@ void SAL_CALL ScModelObj::release() throw()
     SfxBaseModel::release();
 }
 
-uno::Sequence<uno::Type> SAL_CALL ScModelObj::getTypes() throw(uno::RuntimeException, std::exception)
+uno::Sequence<uno::Type> SAL_CALL ScModelObj::getTypes()
 {
     static uno::Sequence<uno::Type> aTypes;
     if ( aTypes.getLength() == 0 )
@@ -1021,11 +1122,10 @@ uno::Sequence<uno::Type> SAL_CALL ScModelObj::getTypes() throw(uno::RuntimeExcep
         {
             const uno::Type& rProvType = cppu::UnoType<lang::XTypeProvider>::get();
             uno::Any aNumProv(xNumberAgg->queryAggregation(rProvType));
-            if(aNumProv.getValueType() == rProvType)
+            if(auto xNumProv
+               = o3tl::tryAccess<uno::Reference<lang::XTypeProvider>>(aNumProv))
             {
-                uno::Reference<lang::XTypeProvider> xNumProv(
-                    *static_cast<uno::Reference<lang::XTypeProvider> const *>(aNumProv.getValue()));
-                aAggTypes = xNumProv->getTypes();
+                aAggTypes = (*xNumProv)->getTypes();
             }
         }
         long nAggLen = aAggTypes.getLength();
@@ -1062,7 +1162,6 @@ uno::Sequence<uno::Type> SAL_CALL ScModelObj::getTypes() throw(uno::RuntimeExcep
 }
 
 uno::Sequence<sal_Int8> SAL_CALL ScModelObj::getImplementationId()
-                                                    throw(uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -1071,63 +1170,42 @@ void ScModelObj::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
     //  Not interested in reference update hints here
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint )
+    const SfxHintId nId = rHint.GetId();
+    if ( nId == SfxHintId::Dying )
     {
-        const sal_uInt32 nId = pSimpleHint->GetId();
-        if ( nId == SFX_HINT_DYING )
+        pDocShell = nullptr;       // has become invalid
+        if (xNumberAgg.is())
         {
-            pDocShell = nullptr;       // has become invalid
-            if (xNumberAgg.is())
-            {
-                SvNumberFormatsSupplierObj* pNumFmt =
-                    SvNumberFormatsSupplierObj::getImplementation(
+            SvNumberFormatsSupplierObj* pNumFmt =
+                SvNumberFormatsSupplierObj::getImplementation(
                         uno::Reference<util::XNumberFormatsSupplier>(xNumberAgg, uno::UNO_QUERY) );
-                if ( pNumFmt )
-                    pNumFmt->SetNumberFormatter( nullptr );
-            }
-
-            DELETEZ( pPrintFuncCache );     // must be deleted because it has a pointer to the DocShell
+            if ( pNumFmt )
+                pNumFmt->SetNumberFormatter( nullptr );
         }
-        else if ( nId == SFX_HINT_DATACHANGED )
-        {
-            //  cached data for rendering become invalid when contents change
-            //  (if a broadcast is added to SetDrawModified, is has to be tested here, too)
 
-            DELETEZ( pPrintFuncCache );
-
-            // handle "OnCalculate" sheet events (search also for VBA event handlers)
-            if ( pDocShell )
-            {
-                ScDocument& rDoc = pDocShell->GetDocument();
-                if ( rDoc.GetVbaEventProcessor().is() )
-                {
-                    // If the VBA event processor is set, HasAnyCalcNotification is much faster than HasAnySheetEventScript
-                    if ( rDoc.HasAnyCalcNotification() && rDoc.HasAnySheetEventScript( ScSheetEventId::CALCULATE, true ) )
-                        HandleCalculateEvents();
-                }
-                else
-                {
-                    if ( rDoc.HasAnySheetEventScript( ScSheetEventId::CALCULATE ) )
-                        HandleCalculateEvents();
-                }
-            }
-        }
+        DELETEZ( pPrintFuncCache );     // must be deleted because it has a pointer to the DocShell
     }
-    else if ( dynamic_cast<const ScPointerChangedHint*>(&rHint) )
+    else if ( nId == SfxHintId::DataChanged )
     {
-        sal_uInt16 nFlags = static_cast<const ScPointerChangedHint&>(rHint).GetFlags();
-        if (nFlags & SC_POINTERCHANGED_NUMFMT)
-        {
-            //  NumberFormatter-Pointer am Uno-Objekt neu setzen
+        //  cached data for rendering become invalid when contents change
+        //  (if a broadcast is added to SetDrawModified, is has to be tested here, too)
 
-            if (GetFormatter().is())
+        DELETEZ( pPrintFuncCache );
+
+        // handle "OnCalculate" sheet events (search also for VBA event handlers)
+        if ( pDocShell )
+        {
+            ScDocument& rDoc = pDocShell->GetDocument();
+            if ( rDoc.GetVbaEventProcessor().is() )
             {
-                SvNumberFormatsSupplierObj* pNumFmt =
-                    SvNumberFormatsSupplierObj::getImplementation(
-                        uno::Reference<util::XNumberFormatsSupplier>(xNumberAgg, uno::UNO_QUERY) );
-                if ( pNumFmt && pDocShell )
-                    pNumFmt->SetNumberFormatter( pDocShell->GetDocument().GetFormatTable() );
+                // If the VBA event processor is set, HasAnyCalcNotification is much faster than HasAnySheetEventScript
+                if ( rDoc.HasAnyCalcNotification() && rDoc.HasAnySheetEventScript( ScSheetEventId::CALCULATE, true ) )
+                    HandleCalculateEvents();
+            }
+            else
+            {
+                if ( rDoc.HasAnySheetEventScript( ScSheetEventId::CALCULATE ) )
+                    HandleCalculateEvents();
             }
         }
     }
@@ -1138,7 +1216,7 @@ void ScModelObj::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 
 // XSpreadsheetDocument
 
-uno::Reference<sheet::XSpreadsheets> SAL_CALL ScModelObj::getSheets() throw(uno::RuntimeException, std::exception)
+uno::Reference<sheet::XSpreadsheets> SAL_CALL ScModelObj::getSheets()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -1149,7 +1227,6 @@ uno::Reference<sheet::XSpreadsheets> SAL_CALL ScModelObj::getSheets() throw(uno:
 // XStyleFamiliesSupplier
 
 uno::Reference<container::XNameAccess> SAL_CALL ScModelObj::getStyleFamilies()
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -1177,7 +1254,7 @@ static OutputDevice* lcl_GetRenderDevice( const uno::Sequence<beans::PropertyVal
                 VCLXDevice* pDevice = VCLXDevice::GetImplementation( xRenderDevice );
                 if ( pDevice )
                 {
-                    pRet = pDevice->GetOutputDevice();
+                    pRet = pDevice->GetOutputDevice().get();
                     pRet->SetDigitLanguage( SC_MOD()->GetOptDigitLanguage() );
                 }
             }
@@ -1186,7 +1263,7 @@ static OutputDevice* lcl_GetRenderDevice( const uno::Sequence<beans::PropertyVal
     return pRet;
 }
 
-static bool lcl_ParseTarget( const OUString& rTarget, ScRange& rTargetRange, Rectangle& rTargetRect,
+static bool lcl_ParseTarget( const OUString& rTarget, ScRange& rTargetRange, tools::Rectangle& rTargetRect,
                         bool& rIsSheet, ScDocument* pDoc, SCTAB nSourceTab )
 {
     // test in same order as in SID_CURRENTCELL execute
@@ -1240,7 +1317,7 @@ static bool lcl_ParseTarget( const OUString& rTarget, ScRange& rTargetRange, Rec
                 OSL_ENSURE(pPage,"Page ?");
                 if (pPage)
                 {
-                    SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
+                    SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
                     SdrObject* pObject = aIter.Next();
                     while (pObject && !bRangeValid)
                     {
@@ -1379,7 +1456,7 @@ bool ScModelObj::FillRenderMarkData( const uno::Any& aSelection,
                         ScDocument& rDoc = pDocShell->GetDocument();
                         if( pSdrObj )
                         {
-                            Rectangle aObjRect = pSdrObj->GetCurrentBoundRect();
+                            tools::Rectangle aObjRect = pSdrObj->GetCurrentBoundRect();
                             SCTAB nCurrentTab = ScDocShell::GetCurTab();
                             ScRange aRange = rDoc.GetRange( nCurrentTab, aObjRect );
                             rMark.SetMarkArea( aRange );
@@ -1440,7 +1517,6 @@ bool ScModelObj::FillRenderMarkData( const uno::Any& aSelection,
 
 sal_Int32 SAL_CALL ScModelObj::getRendererCount(const uno::Any& aSelection,
     const uno::Sequence<beans::PropertyValue>& rOptions)
-        throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!pDocShell)
@@ -1491,9 +1567,6 @@ static sal_Int32 lcl_GetRendererNum( sal_Int32 nSelRenderer, const OUString& rPa
 
 uno::Sequence<beans::PropertyValue> SAL_CALL ScModelObj::getRenderer( sal_Int32 nSelRenderer,
                                     const uno::Any& aSelection, const uno::Sequence<beans::PropertyValue>& rOptions  )
-                                throw (lang::IllegalArgumentException,
-                                       uno::RuntimeException,
-                                       std::exception)
 {
     SolarMutexGuard aGuard;
     if (!pDocShell)
@@ -1581,7 +1654,7 @@ uno::Sequence<beans::PropertyValue> SAL_CALL ScModelObj::getRenderer( sal_Int32 
     pArray[0].Value <<= aPageSize;
     // #i111158# all positions are relative to the whole page, including non-printable area
     pArray[1].Name = SC_UNONAME_INC_NP_AREA;
-    pArray[1].Value = uno::makeAny( true );
+    pArray[1].Value <<= true;
     if ( bWasCellRange )
     {
         table::CellRangeAddress aRangeAddress( nTab,
@@ -1601,9 +1674,6 @@ uno::Sequence<beans::PropertyValue> SAL_CALL ScModelObj::getRenderer( sal_Int32 
 
 void SAL_CALL ScModelObj::render( sal_Int32 nSelRenderer, const uno::Any& aSelection,
                                     const uno::Sequence<beans::PropertyValue>& rOptions )
-                                throw(lang::IllegalArgumentException,
-                                      uno::RuntimeException,
-                                      std::exception)
 {
     SolarMutexGuard aGuard;
     if (!pDocShell)
@@ -1679,7 +1749,7 @@ void SAL_CALL ScModelObj::render( sal_Int32 nSelRenderer, const uno::Any& aSelec
         if ( pPDFData && pPDFData->GetIsExportBookmarks() )
         {
             // the sheet starts at the top of the page
-            Rectangle aArea( pDev->PixelToLogic( Rectangle( 0,0,0,0 ) ) );
+            tools::Rectangle aArea( pDev->PixelToLogic( tools::Rectangle( 0,0,0,0 ) ) );
             sal_Int32 nDestID = pPDFData->CreateDest( aArea );
             OUString aTabName;
             rDoc.GetName( nTab, aTabName );
@@ -1689,7 +1759,7 @@ void SAL_CALL ScModelObj::render( sal_Int32 nSelRenderer, const uno::Any& aSelec
         // #i56629# add the named destination stuff
         if( pPDFData && pPDFData->GetIsExportNamedDestinations() )
         {
-            Rectangle aArea( pDev->PixelToLogic( Rectangle( 0,0,0,0 ) ) );
+            tools::Rectangle aArea( pDev->PixelToLogic( tools::Rectangle( 0,0,0,0 ) ) );
             OUString aTabName;
             rDoc.GetName( nTab, aTabName );
             //need the PDF page number here
@@ -1711,27 +1781,27 @@ void SAL_CALL ScModelObj::render( sal_Int32 nSelRenderer, const uno::Any& aSelec
         while ( aIter != aIEnd )
         {
             OUString aBookmark = aIter->aBookmark;
-            if ( aBookmark.toChar() == (sal_Unicode) '#' )
+            if ( aBookmark.toChar() == '#' )
             {
                 //  try to resolve internal link
 
                 OUString aTarget( aBookmark.copy( 1 ) );
 
                 ScRange aTargetRange;
-                Rectangle aTargetRect;      // 1/100th mm
+                tools::Rectangle aTargetRect;      // 1/100th mm
                 bool bIsSheet = false;
                 bool bValid = lcl_ParseTarget( aTarget, aTargetRange, aTargetRect, bIsSheet, &rDoc, nTab );
 
                 if ( bValid )
                 {
                     sal_Int32 nPage = -1;
-                    Rectangle aArea;
+                    tools::Rectangle aArea;
                     if ( bIsSheet )
                     {
                         //  Get first page for sheet (if nothing from that sheet is printed,
                         //  this page can show a different sheet)
                         nPage = pPrintFuncCache->GetTabStart( aTargetRange.aStart.Tab() );
-                        aArea = pDev->PixelToLogic( Rectangle( 0,0,0,0 ) );
+                        aArea = pDev->PixelToLogic( tools::Rectangle( 0,0,0,0 ) );
                     }
                     else
                     {
@@ -1744,11 +1814,11 @@ void SAL_CALL ScModelObj::render( sal_Int32 nSelRenderer, const uno::Any& aSelec
 
                             // get the rectangle of the page's cell range in 1/100th mm
                             ScRange aLocRange = aLocation.aCellRange;
-                            Rectangle aLocationMM = rDoc.GetMMRect(
+                            tools::Rectangle aLocationMM = rDoc.GetMMRect(
                                        aLocRange.aStart.Col(), aLocRange.aStart.Row(),
                                        aLocRange.aEnd.Col(),   aLocRange.aEnd.Row(),
                                        aLocRange.aStart.Tab() );
-                            Rectangle aLocationPixel = aLocation.aRectangle;
+                            tools::Rectangle aLocationPixel = aLocation.aRectangle;
 
                             // Scale and move the target rectangle from aLocationMM to aLocationPixel,
                             // to get the target rectangle in pixels.
@@ -1774,7 +1844,7 @@ void SAL_CALL ScModelObj::render( sal_Int32 nSelRenderer, const uno::Any& aSelec
                             // the time of the CreateDest call, so PixelToLogic can be used here,
                             // regardless of the MapMode that is actually selected.
 
-                            aArea = pDev->PixelToLogic( Rectangle( nX1, nY1, nX2, nY2 ) );
+                            aArea = pDev->PixelToLogic( tools::Rectangle( nX1, nY1, nX2, nY2 ) );
                         }
                     }
 
@@ -1799,7 +1869,7 @@ void SAL_CALL ScModelObj::render( sal_Int32 nSelRenderer, const uno::Any& aSelec
 
 // XLinkTargetSupplier
 
-uno::Reference<container::XNameAccess> SAL_CALL ScModelObj::getLinks() throw(uno::RuntimeException, std::exception)
+uno::Reference<container::XNameAccess> SAL_CALL ScModelObj::getLinks()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -1809,7 +1879,7 @@ uno::Reference<container::XNameAccess> SAL_CALL ScModelObj::getLinks() throw(uno
 
 // XActionLockable
 
-sal_Bool SAL_CALL ScModelObj::isActionLocked() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScModelObj::isActionLocked()
 {
     SolarMutexGuard aGuard;
     bool bLocked = false;
@@ -1818,28 +1888,28 @@ sal_Bool SAL_CALL ScModelObj::isActionLocked() throw(uno::RuntimeException, std:
     return bLocked;
 }
 
-void SAL_CALL ScModelObj::addActionLock() throw(uno::RuntimeException, std::exception)
+void SAL_CALL ScModelObj::addActionLock()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
         pDocShell->LockDocument();
 }
 
-void SAL_CALL ScModelObj::removeActionLock() throw(uno::RuntimeException, std::exception)
+void SAL_CALL ScModelObj::removeActionLock()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
         pDocShell->UnlockDocument();
 }
 
-void SAL_CALL ScModelObj::setActionLocks( sal_Int16 nLock ) throw(uno::RuntimeException, std::exception)
+void SAL_CALL ScModelObj::setActionLocks( sal_Int16 nLock )
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
         pDocShell->SetLockCount(nLock);
 }
 
-sal_Int16 SAL_CALL ScModelObj::resetActionLocks() throw(uno::RuntimeException, std::exception)
+sal_Int16 SAL_CALL ScModelObj::resetActionLocks()
 {
     SolarMutexGuard aGuard;
     sal_uInt16 nRet = 0;
@@ -1851,7 +1921,7 @@ sal_Int16 SAL_CALL ScModelObj::resetActionLocks() throw(uno::RuntimeException, s
     return nRet;
 }
 
-void SAL_CALL ScModelObj::lockControllers() throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL ScModelObj::lockControllers()
 {
     SolarMutexGuard aGuard;
     SfxBaseModel::lockControllers();
@@ -1859,7 +1929,7 @@ void SAL_CALL ScModelObj::lockControllers() throw (css::uno::RuntimeException, s
         pDocShell->LockPaint();
 }
 
-void SAL_CALL ScModelObj::unlockControllers() throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL ScModelObj::unlockControllers()
 {
     SolarMutexGuard aGuard;
     if (hasControllersLocked())
@@ -1872,40 +1942,39 @@ void SAL_CALL ScModelObj::unlockControllers() throw (css::uno::RuntimeException,
 
 // XCalculate
 
-void SAL_CALL ScModelObj::calculate() throw(uno::RuntimeException, std::exception)
+void SAL_CALL ScModelObj::calculate()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
         pDocShell->DoRecalc(true);
     else
     {
-        OSL_FAIL("keine DocShell");     //! Exception oder so?
+        OSL_FAIL("no DocShell");     //! throw exception?
     }
 }
 
-void SAL_CALL ScModelObj::calculateAll() throw(uno::RuntimeException, std::exception)
+void SAL_CALL ScModelObj::calculateAll()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
         pDocShell->DoHardRecalc(true);
     else
     {
-        OSL_FAIL("keine DocShell");     //! Exception oder so?
+        OSL_FAIL("no DocShell");     //! throw exception?
     }
 }
 
-sal_Bool SAL_CALL ScModelObj::isAutomaticCalculationEnabled() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScModelObj::isAutomaticCalculationEnabled()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
         return pDocShell->GetDocument().GetAutoCalc();
 
-    OSL_FAIL("keine DocShell");     //! Exception oder so?
+    OSL_FAIL("no DocShell");     //! throw exception?
     return false;
 }
 
 void SAL_CALL ScModelObj::enableAutomaticCalculation( sal_Bool bEnabledIn )
-                                                throw(uno::RuntimeException, std::exception)
 {
     bool bEnabled(bEnabledIn);
     SolarMutexGuard aGuard;
@@ -1920,13 +1989,13 @@ void SAL_CALL ScModelObj::enableAutomaticCalculation( sal_Bool bEnabledIn )
     }
     else
     {
-        OSL_FAIL("keine DocShell");     //! Exception oder so?
+        OSL_FAIL("no DocShell");     //! throw exception?
     }
 }
 
 // XProtectable
 
-void SAL_CALL ScModelObj::protect( const OUString& aPassword ) throw(uno::RuntimeException, std::exception)
+void SAL_CALL ScModelObj::protect( const OUString& aPassword )
 {
     SolarMutexGuard aGuard;
     // #i108245# if already protected, don't change anything
@@ -1937,7 +2006,6 @@ void SAL_CALL ScModelObj::protect( const OUString& aPassword ) throw(uno::Runtim
 }
 
 void SAL_CALL ScModelObj::unprotect( const OUString& aPassword )
-                        throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -1948,25 +2016,25 @@ void SAL_CALL ScModelObj::unprotect( const OUString& aPassword )
     }
 }
 
-sal_Bool SAL_CALL ScModelObj::isProtected() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScModelObj::isProtected()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
         return pDocShell->GetDocument().IsDocProtected();
 
-    OSL_FAIL("keine DocShell");     //! Exception oder so?
+    OSL_FAIL("no DocShell");     //! throw exception?
     return false;
 }
 
 // XDrawPagesSupplier
 
-uno::Reference<drawing::XDrawPages> SAL_CALL ScModelObj::getDrawPages() throw(uno::RuntimeException, std::exception)
+uno::Reference<drawing::XDrawPages> SAL_CALL ScModelObj::getDrawPages()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
         return new ScDrawPagesObj(pDocShell);
 
-    OSL_FAIL("keine DocShell");     //! Exception oder so?
+    OSL_FAIL("no DocShell");     //! throw exception?
     return nullptr;
 }
 
@@ -1976,12 +2044,10 @@ sheet::GoalResult SAL_CALL ScModelObj::seekGoal(
                                 const table::CellAddress& aFormulaPosition,
                                 const table::CellAddress& aVariablePosition,
                                 const OUString& aGoalValue )
-                                    throw (uno::RuntimeException,
-                                           std::exception)
 {
     SolarMutexGuard aGuard;
     sheet::GoalResult aResult;
-    aResult.Divergence = DBL_MAX;       // nichts gefunden
+    aResult.Divergence = DBL_MAX;       // not found
     if (pDocShell)
     {
         WaitObject aWait( ScDocShell::GetActiveDialogParent() );
@@ -1993,7 +2059,7 @@ sheet::GoalResult SAL_CALL ScModelObj::seekGoal(
                     aGoalValue, fValue );
         aResult.Result = fValue;
         if (bFound)
-            aResult.Divergence = 0.0;   //! das ist gelogen
+            aResult.Divergence = 0.0;   //! this is a lie
     }
     return aResult;
 }
@@ -2001,7 +2067,7 @@ sheet::GoalResult SAL_CALL ScModelObj::seekGoal(
 // XConsolidatable
 
 uno::Reference<sheet::XConsolidationDescriptor> SAL_CALL ScModelObj::createConsolidationDescriptor(
-                                sal_Bool bEmpty ) throw(uno::RuntimeException, std::exception)
+                                sal_Bool bEmpty )
 {
     SolarMutexGuard aGuard;
     ScConsolidationDescriptor* pNew = new ScConsolidationDescriptor;
@@ -2017,15 +2083,14 @@ uno::Reference<sheet::XConsolidationDescriptor> SAL_CALL ScModelObj::createConso
 
 void SAL_CALL ScModelObj::consolidate(
     const uno::Reference<sheet::XConsolidationDescriptor>& xDescriptor )
-        throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
-    //  das koennte theoretisch ein fremdes Objekt sein, also nur das
-    //  oeffentliche XConsolidationDescriptor Interface benutzen, um
-    //  die Daten in ein ScConsolidationDescriptor Objekt zu kopieren:
-    //! wenn es schon ein ScConsolidationDescriptor ist, direkt per getImplementation?
+    //  in theory, this could also be a different object, so use only
+    //  public XConsolidationDescriptor interface to copy the data into
+    //  ScConsolidationDescriptor object
+    //! but if this already is ScConsolidationDescriptor, do it directly via getImplementation?
 
-    uno::Reference< ScConsolidationDescriptor > xImpl(new ScConsolidationDescriptor);
+    rtl::Reference< ScConsolidationDescriptor > xImpl(new ScConsolidationDescriptor);
     xImpl->setFunction( xDescriptor->getFunction() );
     xImpl->setSources( xDescriptor->getSources() );
     xImpl->setStartOutputPosition( xDescriptor->getStartOutputPosition() );
@@ -2043,7 +2108,7 @@ void SAL_CALL ScModelObj::consolidate(
 
 // XDocumentAuditing
 
-void SAL_CALL ScModelObj::refreshArrows() throw(uno::RuntimeException, std::exception)
+void SAL_CALL ScModelObj::refreshArrows()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -2052,7 +2117,6 @@ void SAL_CALL ScModelObj::refreshArrows() throw(uno::RuntimeException, std::exce
 
 // XViewDataSupplier
 uno::Reference< container::XIndexAccess > SAL_CALL ScModelObj::getViewData(  )
-    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference < container::XIndexAccess > xRet( SfxBaseModel::getViewData() );
 
@@ -2078,11 +2142,10 @@ uno::Reference< container::XIndexAccess > SAL_CALL ScModelObj::getViewData(  )
     return xRet;
 }
 
-//  XPropertySet (Doc-Optionen)
-//! auch an der Applikation anbieten?
+//  XPropertySet (Doc-Options)
+//! provide them also to the application?
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScModelObj::getPropertySetInfo()
-                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     static uno::Reference<beans::XPropertySetInfo> aRef(
@@ -2092,9 +2155,6 @@ uno::Reference<beans::XPropertySetInfo> SAL_CALL ScModelObj::getPropertySetInfo(
 
 void SAL_CALL ScModelObj::setPropertyValue(
                         const OUString& aPropertyName, const uno::Any& aValue )
-    throw(beans::UnknownPropertyException, beans::PropertyVetoException,
-          lang::IllegalArgumentException, lang::WrappedTargetException,
-          uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -2242,8 +2302,6 @@ void SAL_CALL ScModelObj::setPropertyValue(
 }
 
 uno::Any SAL_CALL ScModelObj::getPropertyValue( const OUString& aPropertyName )
-                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
-                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -2483,8 +2541,8 @@ css::uno::Reference<css::uno::XInterface> ScModelObj::create(
     }
     else
     {
-        //  alles was ich nicht kenn, werf ich der SvxFmMSFactory an den Hals,
-        //  da wird dann 'ne Exception geworfen, wenn's nicht passt...
+        //  we offload everything we don't know to SvxFmMSFactory,
+        //  it'll throw exception if this isn't okay ...
 
         try
         {
@@ -2514,7 +2572,6 @@ css::uno::Reference<css::uno::XInterface> ScModelObj::create(
 
 uno::Reference<uno::XInterface> SAL_CALL ScModelObj::createInstance(
                                 const OUString& aServiceSpecifier )
-                                throw(uno::Exception, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     return create(aServiceSpecifier, nullptr);
@@ -2523,9 +2580,8 @@ uno::Reference<uno::XInterface> SAL_CALL ScModelObj::createInstance(
 uno::Reference<uno::XInterface> SAL_CALL ScModelObj::createInstanceWithArguments(
                                 const OUString& ServiceSpecifier,
                                 const uno::Sequence<uno::Any>& aArgs )
-                                throw(uno::Exception, uno::RuntimeException, std::exception)
 {
-    //! unterscheiden zwischen eigenen Services und denen vom Drawing-Layer?
+    //! distinguish between own services and those of drawing layer?
 
     SolarMutexGuard aGuard;
     uno::Reference<uno::XInterface> xInt(create(ServiceSpecifier, &aArgs));
@@ -2543,11 +2599,10 @@ uno::Reference<uno::XInterface> SAL_CALL ScModelObj::createInstanceWithArguments
 }
 
 uno::Sequence<OUString> SAL_CALL ScModelObj::getAvailableServiceNames()
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    //! warum sind die Parameter bei concatServiceNames nicht const ???
+    //! why are the parameters of concatServiceNames not const ???
     //! return concatServiceNames( ScServiceProvider::GetAllServiceNames(),
     //!                            SvxFmMSFactory::getAvailableServiceNames() );
 
@@ -2558,7 +2613,7 @@ uno::Sequence<OUString> SAL_CALL ScModelObj::getAvailableServiceNames()
 }
 
 // XServiceInfo
-OUString SAL_CALL ScModelObj::getImplementationName() throw(uno::RuntimeException, std::exception)
+OUString SAL_CALL ScModelObj::getImplementationName()
 {
     return OUString( "ScModelObj" );
     /* // Matching the .component information:
@@ -2567,25 +2622,19 @@ OUString SAL_CALL ScModelObj::getImplementationName() throw(uno::RuntimeExceptio
 }
 
 sal_Bool SAL_CALL ScModelObj::supportsService( const OUString& rServiceName )
-                                                    throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence<OUString> SAL_CALL ScModelObj::getSupportedServiceNames()
-                                                    throw(uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aRet(3);
-    aRet[0] = SCMODELOBJ_SERVICE;
-    aRet[1] = SCDOCSETTINGS_SERVICE;
-    aRet[2] = SCDOC_SERVICE;
-    return aRet;
+    return {SCMODELOBJ_SERVICE, SCDOCSETTINGS_SERVICE, SCDOC_SERVICE};
 }
 
 // XUnoTunnel
 
 sal_Int64 SAL_CALL ScModelObj::getSomething(
-                const uno::Sequence<sal_Int8 >& rId ) throw(uno::RuntimeException, std::exception)
+                const uno::Sequence<sal_Int8 >& rId )
 {
     if ( rId.getLength() == 16 &&
           0 == memcmp( getUnoTunnelId().getConstArray(),
@@ -2612,11 +2661,10 @@ sal_Int64 SAL_CALL ScModelObj::getSomething(
     {
         const uno::Type& rTunnelType = cppu::UnoType<lang::XUnoTunnel>::get();
         uno::Any aNumTunnel(xNumberAgg->queryAggregation(rTunnelType));
-        if(aNumTunnel.getValueType() == rTunnelType)
+        if(auto xTunnelAgg = o3tl::tryAccess<uno::Reference<lang::XUnoTunnel>>(
+               aNumTunnel))
         {
-            uno::Reference<lang::XUnoTunnel> xTunnelAgg(
-                *static_cast<uno::Reference<lang::XUnoTunnel> const *>(aNumTunnel.getValue()));
-            return xTunnelAgg->getSomething( rId );
+            return (*xTunnelAgg)->getSomething( rId );
         }
     }
 
@@ -2645,14 +2693,12 @@ ScModelObj* ScModelObj::getImplementation(const uno::Reference<uno::XInterface>&
 // XChangesNotifier
 
 void ScModelObj::addChangesListener( const uno::Reference< util::XChangesListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     maChangesListeners.addInterface( aListener );
 }
 
 void ScModelObj::removeChangesListener( const uno::Reference< util::XChangesListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     maChangesListeners.removeInterface( aListener );
@@ -2773,7 +2819,7 @@ void ScModelObj::HandleCalculateEvents()
     {
         ScDocument& rDoc = pDocShell->GetDocument();
         // don't call events before the document is visible
-        // (might also set a flag on SFX_EVENT_LOADFINISHED and only disable while loading)
+        // (might also set a flag on SfxEventHintId::LoadFinished and only disable while loading)
         if ( rDoc.IsDocVisible() )
         {
             SCTAB nTabCount = rDoc.GetTableCount();
@@ -2813,14 +2859,15 @@ void ScModelObj::HandleCalculateEvents()
 // XOpenCLSelection
 
 sal_Bool ScModelObj::isOpenCLEnabled()
-    throw (uno::RuntimeException, std::exception)
 {
     return officecfg::Office::Common::Misc::UseOpenCL::get();
 }
 
 void ScModelObj::enableOpenCL(sal_Bool bEnable)
-    throw (uno::RuntimeException, std::exception)
 {
+    if (ScCalcConfig::isOpenCLEnabled() == static_cast<bool>(bEnable))
+        return;
+
     std::shared_ptr<comphelper::ConfigurationChanges> batch(comphelper::ConfigurationChanges::create());
     officecfg::Office::Common::Misc::UseOpenCL::set(bEnable, batch);
     batch->commit();
@@ -2829,10 +2876,17 @@ void ScModelObj::enableOpenCL(sal_Bool bEnable)
     if (bEnable)
         aConfig.setOpenCLConfigToDefault();
     ScInterpreter::SetGlobalConfig(aConfig);
+
+#if HAVE_FEATURE_OPENCL
+    sc::FormulaGroupInterpreter::switchOpenCLDevice(OUString(), true);
+#endif
+
+    ScDocument* pDoc = GetDocument();
+    pDoc->CheckVectorizationState();
+
 }
 
 void ScModelObj::enableAutomaticDeviceSelection(sal_Bool bForce)
-    throw (uno::RuntimeException, std::exception)
 {
     ScCalcConfig aConfig = ScInterpreter::GetGlobalConfig();
     aConfig.mbOpenCLAutoSelect = true;
@@ -2848,7 +2902,6 @@ void ScModelObj::enableAutomaticDeviceSelection(sal_Bool bForce)
 }
 
 void ScModelObj::disableAutomaticDeviceSelection()
-    throw (uno::RuntimeException, std::exception)
 {
     ScCalcConfig aConfig = ScInterpreter::GetGlobalConfig();
     aConfig.mbOpenCLAutoSelect = false;
@@ -2859,7 +2912,6 @@ void ScModelObj::disableAutomaticDeviceSelection()
 }
 
 void ScModelObj::selectOpenCLDevice( sal_Int32 nPlatform, sal_Int32 nDevice )
-    throw (uno::RuntimeException, std::exception)
 {
     if(nPlatform < 0 || nDevice < 0)
         throw uno::RuntimeException();
@@ -2881,7 +2933,6 @@ void ScModelObj::selectOpenCLDevice( sal_Int32 nPlatform, sal_Int32 nDevice )
 }
 
 sal_Int32 ScModelObj::getPlatformID()
-    throw (uno::RuntimeException, std::exception)
 {
 #if !HAVE_FEATURE_OPENCL
     return -1;
@@ -2894,7 +2945,6 @@ sal_Int32 ScModelObj::getPlatformID()
 }
 
 sal_Int32 ScModelObj::getDeviceID()
-    throw (uno::RuntimeException, std::exception)
 {
 #if !HAVE_FEATURE_OPENCL
     return -1;
@@ -2907,7 +2957,6 @@ sal_Int32 ScModelObj::getDeviceID()
 }
 
 uno::Sequence< sheet::opencl::OpenCLPlatform > ScModelObj::getOpenCLPlatforms()
-    throw (uno::RuntimeException, std::exception)
 {
 #if !HAVE_FEATURE_OPENCL
     return uno::Sequence<sheet::opencl::OpenCLPlatform>();
@@ -2937,8 +2986,8 @@ uno::Sequence< sheet::opencl::OpenCLPlatform > ScModelObj::getOpenCLPlatforms()
 
 namespace {
 
+/// @throws css::uno::RuntimeException
 void setOpcodeSubsetTest(bool bFlag)
-    throw (uno::RuntimeException, std::exception)
 {
     std::shared_ptr<comphelper::ConfigurationChanges> batch(comphelper::ConfigurationChanges::create());
     officecfg::Office::Calc::Formula::Calculation::OpenCLSubsetOnly::set(bFlag, batch);
@@ -2948,25 +2997,21 @@ void setOpcodeSubsetTest(bool bFlag)
 }
 
 void ScModelObj::enableOpcodeSubsetTest()
-    throw (uno::RuntimeException, std::exception)
 {
     setOpcodeSubsetTest(true);
 }
 
 void ScModelObj::disableOpcodeSubsetTest()
-    throw (uno::RuntimeException, std::exception)
 {
     setOpcodeSubsetTest(false);
 }
 
 sal_Bool ScModelObj::isOpcodeSubsetTested()
-    throw (uno::RuntimeException, std::exception)
 {
     return officecfg::Office::Calc::Formula::Calculation::OpenCLSubsetOnly::get();
 }
 
 void ScModelObj::setFormulaCellNumberLimit( sal_Int32 number )
-    throw (uno::RuntimeException, std::exception)
 {
     std::shared_ptr<comphelper::ConfigurationChanges> batch(comphelper::ConfigurationChanges::create());
     officecfg::Office::Calc::Formula::Calculation::OpenCLMinimumDataSize::set(number, batch);
@@ -2974,7 +3019,6 @@ void ScModelObj::setFormulaCellNumberLimit( sal_Int32 number )
 }
 
 sal_Int32 ScModelObj::getFormulaCellNumberLimit()
-    throw (uno::RuntimeException, std::exception)
 {
     return officecfg::Office::Calc::Formula::Calculation::OpenCLMinimumDataSize::get().get();
 }
@@ -2995,12 +3039,11 @@ ScDrawPagesObj::~ScDrawPagesObj()
 
 void ScDrawPagesObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    //  Referenz-Update interessiert hier nicht
+    //  we don't care about update of references here
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SfxHintId::Dying )
     {
-        pDocShell = nullptr;       // ungueltig geworden
+        pDocShell = nullptr;       // became invalid
     }
 }
 
@@ -3009,11 +3052,11 @@ uno::Reference<drawing::XDrawPage> ScDrawPagesObj::GetObjectByIndex_Impl(sal_Int
     if (pDocShell)
     {
         ScDrawLayer* pDrawLayer = pDocShell->MakeDrawLayer();
-        OSL_ENSURE(pDrawLayer,"kann Draw-Layer nicht anlegen");
+        OSL_ENSURE(pDrawLayer,"Cannot create Draw-Layer");
         if ( pDrawLayer && nIndex >= 0 && nIndex < pDocShell->GetDocument().GetTableCount() )
         {
             SdrPage* pPage = pDrawLayer->GetPage((sal_uInt16)nIndex);
-            OSL_ENSURE(pPage,"Draw-Page nicht gefunden");
+            OSL_ENSURE(pPage,"Draw-Page not found");
             if (pPage)
             {
                 return uno::Reference<drawing::XDrawPage> (pPage->getUnoPage(), uno::UNO_QUERY);
@@ -3026,7 +3069,6 @@ uno::Reference<drawing::XDrawPage> ScDrawPagesObj::GetObjectByIndex_Impl(sal_Int
 // XDrawPages
 
 uno::Reference<drawing::XDrawPage> SAL_CALL ScDrawPagesObj::insertNewByIndex( sal_Int32 nPos )
-                                            throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<drawing::XDrawPage> xRet;
@@ -3042,7 +3084,6 @@ uno::Reference<drawing::XDrawPage> SAL_CALL ScDrawPagesObj::insertNewByIndex( sa
 }
 
 void SAL_CALL ScDrawPagesObj::remove( const uno::Reference<drawing::XDrawPage>& xPage )
-                                            throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SvxDrawPage* pImp = SvxDrawPage::getImplementation( xPage );
@@ -3059,7 +3100,7 @@ void SAL_CALL ScDrawPagesObj::remove( const uno::Reference<drawing::XDrawPage>& 
 
 // XIndexAccess
 
-sal_Int32 SAL_CALL ScDrawPagesObj::getCount() throw(uno::RuntimeException, std::exception)
+sal_Int32 SAL_CALL ScDrawPagesObj::getCount()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -3068,8 +3109,6 @@ sal_Int32 SAL_CALL ScDrawPagesObj::getCount() throw(uno::RuntimeException, std::
 }
 
 uno::Any SAL_CALL ScDrawPagesObj::getByIndex( sal_Int32 nIndex )
-                            throw(lang::IndexOutOfBoundsException,
-                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<drawing::XDrawPage> xPage(GetObjectByIndex_Impl(nIndex));
@@ -3079,13 +3118,13 @@ uno::Any SAL_CALL ScDrawPagesObj::getByIndex( sal_Int32 nIndex )
         throw lang::IndexOutOfBoundsException();
 }
 
-uno::Type SAL_CALL ScDrawPagesObj::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL ScDrawPagesObj::getElementType()
 {
     SolarMutexGuard aGuard;
     return cppu::UnoType<drawing::XDrawPage>::get();
 }
 
-sal_Bool SAL_CALL ScDrawPagesObj::hasElements() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScDrawPagesObj::hasElements()
 {
     SolarMutexGuard aGuard;
     return ( getCount() != 0 );
@@ -3107,12 +3146,11 @@ ScTableSheetsObj::~ScTableSheetsObj()
 
 void ScTableSheetsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    //  Referenz-Update interessiert hier nicht
+    // we don't care about update of references here
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SfxHintId::Dying )
     {
-        pDocShell = nullptr;       // ungueltig geworden
+        pDocShell = nullptr;       // became invalid
     }
 }
 
@@ -3138,7 +3176,6 @@ ScTableSheetObj* ScTableSheetsObj::GetObjectByName_Impl(const OUString& aName) c
 }
 
 void SAL_CALL ScTableSheetsObj::insertNewByName( const OUString& aName, sal_Int16 nPosition )
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
@@ -3151,7 +3188,6 @@ void SAL_CALL ScTableSheetsObj::insertNewByName( const OUString& aName, sal_Int1
 }
 
 void SAL_CALL ScTableSheetsObj::moveByName( const OUString& aName, sal_Int16 nDestination )
-    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
@@ -3167,7 +3203,6 @@ void SAL_CALL ScTableSheetsObj::moveByName( const OUString& aName, sal_Int16 nDe
 
 void SAL_CALL ScTableSheetsObj::copyByName( const OUString& aName,
     const OUString& aCopy, sal_Int16 nDestination )
-        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
@@ -3195,8 +3230,6 @@ void SAL_CALL ScTableSheetsObj::copyByName( const OUString& aName,
 }
 
 void SAL_CALL ScTableSheetsObj::insertByName( const OUString& aName, const uno::Any& aElement )
-                            throw(lang::IllegalArgumentException, container::ElementExistException,
-                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
@@ -3210,7 +3243,7 @@ void SAL_CALL ScTableSheetsObj::insertByName( const OUString& aName, const uno::
         if ( xInterface.is() )
         {
             ScTableSheetObj* pSheetObj = ScTableSheetObj::getImplementation( xInterface );
-            if ( pSheetObj && !pSheetObj->GetDocShell() )   // noch nicht eingefuegt?
+            if ( pSheetObj && !pSheetObj->GetDocShell() )   // not inserted yet?
             {
                 ScDocument& rDoc = pDocShell->GetDocument();
                 SCTAB nDummy;
@@ -3226,7 +3259,7 @@ void SAL_CALL ScTableSheetsObj::insertByName( const OUString& aName, const uno::
                                                                  true, true );
                     if (bDone)
                         pSheetObj->InitInsertSheet( pDocShell, nPosition );
-                    //  Dokument und neuen Range am Objekt setzen
+                    //  set document and new range in the object
                 }
             }
             else
@@ -3246,8 +3279,6 @@ void SAL_CALL ScTableSheetsObj::insertByName( const OUString& aName, const uno::
 }
 
 void SAL_CALL ScTableSheetsObj::replaceByName( const OUString& aName, const uno::Any& aElement )
-                            throw(lang::IllegalArgumentException, container::NoSuchElementException,
-                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
@@ -3261,14 +3292,14 @@ void SAL_CALL ScTableSheetsObj::replaceByName( const OUString& aName, const uno:
         if ( xInterface.is() )
         {
             ScTableSheetObj* pSheetObj = ScTableSheetObj::getImplementation( xInterface );
-            if ( pSheetObj && !pSheetObj->GetDocShell() )   // noch nicht eingefuegt?
+            if ( pSheetObj && !pSheetObj->GetDocShell() )   // not inserted yet?
             {
                 SCTAB nPosition;
                 if ( pDocShell->GetDocument().GetTable( aName, nPosition ) )
                 {
                     if ( pDocShell->GetDocFunc().DeleteTable( nPosition, true, true ) )
                     {
-                        //  InsertTable kann jetzt eigentlich nicht schiefgehen...
+                        //  InsertTable can't really go wrong now
                         bDone = pDocShell->GetDocFunc().InsertTable( nPosition, aName, true, true );
                         if (bDone)
                             pSheetObj->InitInsertSheet( pDocShell, nPosition );
@@ -3297,8 +3328,6 @@ void SAL_CALL ScTableSheetsObj::replaceByName( const OUString& aName, const uno:
 }
 
 void SAL_CALL ScTableSheetsObj::removeByName( const OUString& aName )
-                                throw(container::NoSuchElementException,
-                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
@@ -3318,7 +3347,6 @@ void SAL_CALL ScTableSheetsObj::removeByName( const OUString& aName )
 sal_Int32 ScTableSheetsObj::importSheet(
     const uno::Reference < sheet::XSpreadsheetDocument > & xDocSrc,
     const OUString& srcName, const sal_Int32 nDestPosition )
-        throw( lang::IllegalArgumentException, lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception )
 {
     //pDocShell is the destination
     ScDocument& rDocDest = pDocShell->GetDocument();
@@ -3340,7 +3368,7 @@ sal_Int32 ScTableSheetsObj::importSheet(
     if (nIndexDest > nCount || nIndexDest < 0)
         throw lang::IndexOutOfBoundsException();
 
-    // Transfert Tab
+    // Transfer Tab
     bool bInsertNew = true;
     bool bNotifyAndPaint = true;
     pDocShell->TransferTab(
@@ -3352,7 +3380,6 @@ sal_Int32 ScTableSheetsObj::importSheet(
 // XCellRangesAccess
 
 uno::Reference< table::XCell > SAL_CALL ScTableSheetsObj::getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow, sal_Int32 nSheet )
-    throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<table::XCellRange> xSheet(static_cast<ScCellRangeObj*>(GetObjectByIndex_Impl((sal_uInt16)nSheet)));
@@ -3363,7 +3390,6 @@ uno::Reference< table::XCell > SAL_CALL ScTableSheetsObj::getCellByPosition( sal
 }
 
 uno::Reference< table::XCellRange > SAL_CALL ScTableSheetsObj::getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop, sal_Int32 nRight, sal_Int32 nBottom, sal_Int32 nSheet )
-    throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<table::XCellRange> xSheet(static_cast<ScCellRangeObj*>(GetObjectByIndex_Impl((sal_uInt16)nSheet)));
@@ -3374,7 +3400,6 @@ uno::Reference< table::XCellRange > SAL_CALL ScTableSheetsObj::getCellRangeByPos
 }
 
 uno::Sequence < uno::Reference< table::XCellRange > > SAL_CALL ScTableSheetsObj::getCellRangesByName( const OUString& aRange )
-    throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Sequence < uno::Reference < table::XCellRange > > xRet;
@@ -3405,15 +3430,14 @@ uno::Sequence < uno::Reference< table::XCellRange > > SAL_CALL ScTableSheetsObj:
 // XEnumerationAccess
 
 uno::Reference<container::XEnumeration> SAL_CALL ScTableSheetsObj::createEnumeration()
-                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
-    return new ScIndexEnumeration(this, OUString("com.sun.star.sheet.SpreadsheetsEnumeration"));
+    return new ScIndexEnumeration(this, "com.sun.star.sheet.SpreadsheetsEnumeration");
 }
 
 // XIndexAccess
 
-sal_Int32 SAL_CALL ScTableSheetsObj::getCount() throw(uno::RuntimeException, std::exception)
+sal_Int32 SAL_CALL ScTableSheetsObj::getCount()
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -3422,8 +3446,6 @@ sal_Int32 SAL_CALL ScTableSheetsObj::getCount() throw(uno::RuntimeException, std
 }
 
 uno::Any SAL_CALL ScTableSheetsObj::getByIndex( sal_Int32 nIndex )
-                            throw(lang::IndexOutOfBoundsException,
-                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<sheet::XSpreadsheet> xSheet(GetObjectByIndex_Impl(nIndex));
@@ -3434,13 +3456,13 @@ uno::Any SAL_CALL ScTableSheetsObj::getByIndex( sal_Int32 nIndex )
 //    return uno::Any();
 }
 
-uno::Type SAL_CALL ScTableSheetsObj::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL ScTableSheetsObj::getElementType()
 {
     SolarMutexGuard aGuard;
     return cppu::UnoType<sheet::XSpreadsheet>::get();
 }
 
-sal_Bool SAL_CALL ScTableSheetsObj::hasElements() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScTableSheetsObj::hasElements()
 {
     SolarMutexGuard aGuard;
     return ( getCount() != 0 );
@@ -3449,8 +3471,6 @@ sal_Bool SAL_CALL ScTableSheetsObj::hasElements() throw(uno::RuntimeException, s
 // XNameAccess
 
 uno::Any SAL_CALL ScTableSheetsObj::getByName( const OUString& aName )
-            throw(container::NoSuchElementException,
-                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<sheet::XSpreadsheet> xSheet(GetObjectByName_Impl(aName));
@@ -3461,7 +3481,6 @@ uno::Any SAL_CALL ScTableSheetsObj::getByName( const OUString& aName )
 }
 
 uno::Sequence<OUString> SAL_CALL ScTableSheetsObj::getElementNames()
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -3482,7 +3501,6 @@ uno::Sequence<OUString> SAL_CALL ScTableSheetsObj::getElementNames()
 }
 
 sal_Bool SAL_CALL ScTableSheetsObj::hasByName( const OUString& aName )
-                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -3515,12 +3533,11 @@ void ScTableColumnsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     if ( dynamic_cast<const ScUpdateRefHint*>(&rHint) )
     {
-        //! Referenz-Update fuer Tab und Start/Ende
+        //! update of references for sheet and its start/end
     }
-    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) &&
-            static_cast<const SfxSimpleHint&>(rHint).GetId() == SFX_HINT_DYING )
+    else if ( rHint.GetId() == SfxHintId::Dying )
     {
-        pDocShell = nullptr;       // ungueltig geworden
+        pDocShell = nullptr;       // became invalid
     }
 }
 
@@ -3532,7 +3549,7 @@ ScTableColumnObj* ScTableColumnsObj::GetObjectByIndex_Impl(sal_Int32 nIndex) con
     if ( pDocShell && nCol <= nEndCol )
         return new ScTableColumnObj( pDocShell, nCol, nTab );
 
-    return nullptr;    // falscher Index
+    return nullptr;    // wrong index
 }
 
 ScTableColumnObj* ScTableColumnsObj::GetObjectByName_Impl(const OUString& aName) const
@@ -3546,7 +3563,6 @@ ScTableColumnObj* ScTableColumnsObj::GetObjectByName_Impl(const OUString& aName)
 }
 
 void SAL_CALL ScTableColumnsObj::insertByIndex( sal_Int32 nPosition, sal_Int32 nCount )
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
@@ -3562,11 +3578,10 @@ void SAL_CALL ScTableColumnsObj::insertByIndex( sal_Int32 nPosition, sal_Int32 n
 }
 
 void SAL_CALL ScTableColumnsObj::removeByIndex( sal_Int32 nIndex, sal_Int32 nCount )
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
-    //  Der zu loeschende Bereich muss innerhalb des Objekts liegen
+    //  the range to be deleted has to lie within the object
     if ( pDocShell && nCount > 0 && nIndex >= 0 && nStartCol+nIndex+nCount-1 <= nEndCol )
     {
         ScRange aRange( (SCCOL)(nStartCol+nIndex), 0, nTab,
@@ -3580,23 +3595,20 @@ void SAL_CALL ScTableColumnsObj::removeByIndex( sal_Int32 nIndex, sal_Int32 nCou
 // XEnumerationAccess
 
 uno::Reference<container::XEnumeration> SAL_CALL ScTableColumnsObj::createEnumeration()
-                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
-    return new ScIndexEnumeration(this, OUString("com.sun.star.table.TableColumnsEnumeration"));
+    return new ScIndexEnumeration(this, "com.sun.star.table.TableColumnsEnumeration");
 }
 
 // XIndexAccess
 
-sal_Int32 SAL_CALL ScTableColumnsObj::getCount() throw(uno::RuntimeException, std::exception)
+sal_Int32 SAL_CALL ScTableColumnsObj::getCount()
 {
     SolarMutexGuard aGuard;
     return nEndCol - nStartCol + 1;
 }
 
 uno::Any SAL_CALL ScTableColumnsObj::getByIndex( sal_Int32 nIndex )
-                            throw(lang::IndexOutOfBoundsException,
-                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<table::XCellRange> xColumn(GetObjectByIndex_Impl(nIndex));
@@ -3606,21 +3618,19 @@ uno::Any SAL_CALL ScTableColumnsObj::getByIndex( sal_Int32 nIndex )
         throw lang::IndexOutOfBoundsException();
 }
 
-uno::Type SAL_CALL ScTableColumnsObj::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL ScTableColumnsObj::getElementType()
 {
     SolarMutexGuard aGuard;
     return cppu::UnoType<table::XCellRange>::get();
 }
 
-sal_Bool SAL_CALL ScTableColumnsObj::hasElements() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScTableColumnsObj::hasElements()
 {
     SolarMutexGuard aGuard;
     return ( getCount() != 0 );
 }
 
 uno::Any SAL_CALL ScTableColumnsObj::getByName( const OUString& aName )
-            throw(container::NoSuchElementException,
-                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<table::XCellRange> xColumn(GetObjectByName_Impl(aName));
@@ -3631,7 +3641,6 @@ uno::Any SAL_CALL ScTableColumnsObj::getByName( const OUString& aName )
 }
 
 uno::Sequence<OUString> SAL_CALL ScTableColumnsObj::getElementNames()
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SCCOL nCount = nEndCol - nStartCol + 1;
@@ -3644,7 +3653,6 @@ uno::Sequence<OUString> SAL_CALL ScTableColumnsObj::getElementNames()
 }
 
 sal_Bool SAL_CALL ScTableColumnsObj::hasByName( const OUString& aName )
-                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SCCOL nCol = 0;
@@ -3652,13 +3660,12 @@ sal_Bool SAL_CALL ScTableColumnsObj::hasByName( const OUString& aName )
         if ( pDocShell && nCol >= nStartCol && nCol <= nEndCol )
             return true;
 
-    return false;       // nicht gefunden
+    return false;       // not found
 }
 
 // XPropertySet
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScTableColumnsObj::getPropertySetInfo()
-                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     static uno::Reference<beans::XPropertySetInfo> aRef(
@@ -3668,9 +3675,6 @@ uno::Reference<beans::XPropertySetInfo> SAL_CALL ScTableColumnsObj::getPropertyS
 
 void SAL_CALL ScTableColumnsObj::setPropertyValue(
                         const OUString& aPropertyName, const uno::Any& aValue )
-                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
-                        lang::IllegalArgumentException, lang::WrappedTargetException,
-                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!pDocShell)
@@ -3714,8 +3718,6 @@ void SAL_CALL ScTableColumnsObj::setPropertyValue(
 }
 
 uno::Any SAL_CALL ScTableColumnsObj::getPropertyValue( const OUString& aPropertyName )
-    throw(beans::UnknownPropertyException, lang::WrappedTargetException,
-          uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!pDocShell)
@@ -3739,18 +3741,18 @@ uno::Any SAL_CALL ScTableColumnsObj::getPropertyValue( const OUString& aProperty
     }
     else if ( aPropertyName == SC_UNONAME_OWIDTH )
     {
-        bool bOpt = !(rDoc.GetColFlags( nStartCol, nTab ) & CR_MANUALSIZE);
+        bool bOpt = !(rDoc.GetColFlags( nStartCol, nTab ) & CRFlags::ManualSize);
         aAny <<= bOpt;
     }
     else if ( aPropertyName == SC_UNONAME_NEWPAGE )
     {
         ScBreakType nBreak = rDoc.HasColBreak(nStartCol, nTab);
-        aAny <<= (nBreak != BREAK_NONE);
+        aAny <<= (nBreak != ScBreakType::NONE);
     }
     else if ( aPropertyName == SC_UNONAME_MANPAGE )
     {
         ScBreakType nBreak = rDoc.HasColBreak(nStartCol, nTab);
-        aAny <<= ((nBreak & BREAK_MANUAL) != 0);
+        aAny <<= bool(nBreak & ScBreakType::Manual);
     }
 
     return aAny;
@@ -3779,12 +3781,11 @@ void ScTableRowsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     if ( dynamic_cast<const ScUpdateRefHint*>(&rHint) )
     {
-        //! Referenz-Update fuer Tab und Start/Ende
+        //! update of references for sheet and its start/end
     }
-    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) &&
-            static_cast<const SfxSimpleHint&>(rHint).GetId() == SFX_HINT_DYING )
+    else if ( rHint.GetId() == SfxHintId::Dying )
     {
-        pDocShell = nullptr;       // ungueltig geworden
+        pDocShell = nullptr;       // became invalid
     }
 }
 
@@ -3796,11 +3797,10 @@ ScTableRowObj* ScTableRowsObj::GetObjectByIndex_Impl(sal_Int32 nIndex) const
     if ( pDocShell && nRow <= nEndRow )
         return new ScTableRowObj( pDocShell, nRow, nTab );
 
-    return nullptr;    // falscher Index
+    return nullptr;    // wrong index
 }
 
 void SAL_CALL ScTableRowsObj::insertByIndex( sal_Int32 nPosition, sal_Int32 nCount )
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
@@ -3816,11 +3816,10 @@ void SAL_CALL ScTableRowsObj::insertByIndex( sal_Int32 nPosition, sal_Int32 nCou
 }
 
 void SAL_CALL ScTableRowsObj::removeByIndex( sal_Int32 nIndex, sal_Int32 nCount )
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     bool bDone = false;
-    //  Der zu loeschende Bereich muss innerhalb des Objekts liegen
+    // the range to be deleted has to lie within the object
     if ( pDocShell && nCount > 0 && nIndex >= 0 && nStartRow+nIndex+nCount-1 <= nEndRow )
     {
         ScRange aRange( 0, (SCROW)(nStartRow+nIndex), nTab,
@@ -3834,23 +3833,20 @@ void SAL_CALL ScTableRowsObj::removeByIndex( sal_Int32 nIndex, sal_Int32 nCount 
 // XEnumerationAccess
 
 uno::Reference<container::XEnumeration> SAL_CALL ScTableRowsObj::createEnumeration()
-                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
-    return new ScIndexEnumeration(this, OUString("com.sun.star.table.TableRowsEnumeration"));
+    return new ScIndexEnumeration(this, "com.sun.star.table.TableRowsEnumeration");
 }
 
 // XIndexAccess
 
-sal_Int32 SAL_CALL ScTableRowsObj::getCount() throw(uno::RuntimeException, std::exception)
+sal_Int32 SAL_CALL ScTableRowsObj::getCount()
 {
     SolarMutexGuard aGuard;
     return nEndRow - nStartRow + 1;
 }
 
 uno::Any SAL_CALL ScTableRowsObj::getByIndex( sal_Int32 nIndex )
-                            throw(lang::IndexOutOfBoundsException,
-                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<table::XCellRange> xRow(GetObjectByIndex_Impl(nIndex));
@@ -3860,13 +3856,13 @@ uno::Any SAL_CALL ScTableRowsObj::getByIndex( sal_Int32 nIndex )
         throw lang::IndexOutOfBoundsException();
 }
 
-uno::Type SAL_CALL ScTableRowsObj::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL ScTableRowsObj::getElementType()
 {
     SolarMutexGuard aGuard;
     return cppu::UnoType<table::XCellRange>::get();
 }
 
-sal_Bool SAL_CALL ScTableRowsObj::hasElements() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScTableRowsObj::hasElements()
 {
     SolarMutexGuard aGuard;
     return ( getCount() != 0 );
@@ -3875,7 +3871,6 @@ sal_Bool SAL_CALL ScTableRowsObj::hasElements() throw(uno::RuntimeException, std
 // XPropertySet
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScTableRowsObj::getPropertySetInfo()
-                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     static uno::Reference<beans::XPropertySetInfo> aRef(
@@ -3885,9 +3880,6 @@ uno::Reference<beans::XPropertySetInfo> SAL_CALL ScTableRowsObj::getPropertySetI
 
 void SAL_CALL ScTableRowsObj::setPropertyValue(
                         const OUString& aPropertyName, const uno::Any& aValue )
-                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
-                        lang::IllegalArgumentException, lang::WrappedTargetException,
-                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!pDocShell)
@@ -3983,8 +3975,6 @@ void SAL_CALL ScTableRowsObj::setPropertyValue(
 }
 
 uno::Any SAL_CALL ScTableRowsObj::getPropertyValue( const OUString& aPropertyName )
-    throw(beans::UnknownPropertyException, lang::WrappedTargetException,
-          uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!pDocShell)
@@ -4014,18 +4004,18 @@ uno::Any SAL_CALL ScTableRowsObj::getPropertyValue( const OUString& aPropertyNam
     }
     else if ( aPropertyName == SC_UNONAME_OHEIGHT )
     {
-        bool bOpt = !(rDoc.GetRowFlags( nStartRow, nTab ) & CR_MANUALSIZE);
+        bool bOpt = !(rDoc.GetRowFlags( nStartRow, nTab ) & CRFlags::ManualSize);
         aAny <<= bOpt;
     }
     else if ( aPropertyName == SC_UNONAME_NEWPAGE )
     {
         ScBreakType nBreak = rDoc.HasRowBreak(nStartRow, nTab);
-        aAny <<= (nBreak != BREAK_NONE);
+        aAny <<= (nBreak != ScBreakType::NONE);
     }
     else if ( aPropertyName == SC_UNONAME_MANPAGE )
     {
         ScBreakType nBreak = rDoc.HasRowBreak(nStartRow, nTab);
-        aAny <<= ((nBreak & BREAK_MANUAL) != 0);
+        aAny <<= bool(nBreak & ScBreakType::Manual);
     }
     else if ( aPropertyName == SC_UNONAME_CELLBACK || aPropertyName == SC_UNONAME_CELLTRAN )
     {
@@ -4044,46 +4034,22 @@ SC_IMPL_DUMMY_PROPERTY_LISTENER( ScTableRowsObj )
 
 ScSpreadsheetSettingsObj::~ScSpreadsheetSettingsObj()
 {
-    SolarMutexGuard g;
-
-    if (pDocShell)
-        pDocShell->GetDocument().RemoveUnoObject(*this);
-}
-
-void ScSpreadsheetSettingsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
-{
-    //  Referenz-Update interessiert hier nicht
-
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
-    {
-        pDocShell = nullptr;       // ungueltig geworden
-    }
 }
 
 // XPropertySet
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScSpreadsheetSettingsObj::getPropertySetInfo()
-                                                        throw(uno::RuntimeException, std::exception)
 {
-    //! muss noch
     return nullptr;
 }
 
 void SAL_CALL ScSpreadsheetSettingsObj::setPropertyValue(
                         const OUString& /* aPropertyName */, const uno::Any& /* aValue */ )
-                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
-                        lang::IllegalArgumentException, lang::WrappedTargetException,
-                        uno::RuntimeException, std::exception)
 {
-    //! muss noch
 }
 
 uno::Any SAL_CALL ScSpreadsheetSettingsObj::getPropertyValue( const OUString& /* aPropertyName */ )
-                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
-                        uno::RuntimeException, std::exception)
 {
-    //! muss noch
     return uno::Any();
 }
 
@@ -4106,12 +4072,11 @@ ScAnnotationsObj::~ScAnnotationsObj()
 
 void ScAnnotationsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    //! nTab bei Referenz-Update anpassen!!!
+    //! adjust nTab when updating references!!!
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SfxHintId::Dying )
     {
-        pDocShell = nullptr;       // ungueltig geworden
+        pDocShell = nullptr;       // became invalid
     }
 }
 
@@ -4140,18 +4105,17 @@ ScAnnotationObj* ScAnnotationsObj::GetObjectByIndex_Impl( sal_Int32 nIndex ) con
 
 void SAL_CALL ScAnnotationsObj::insertNew(
         const table::CellAddress& aPosition, const OUString& rText )
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
     {
-        OSL_ENSURE( aPosition.Sheet == nTab, "addAnnotation mit falschem Sheet" );
+        OSL_ENSURE( aPosition.Sheet == nTab, "addAnnotation with a wrong Sheet" );
         ScAddress aPos( (SCCOL)aPosition.Column, (SCROW)aPosition.Row, nTab );
         pDocShell->GetDocFunc().ReplaceNote( aPos, rText, nullptr, nullptr, true );
     }
 }
 
-void SAL_CALL ScAnnotationsObj::removeByIndex( sal_Int32 nIndex ) throw(uno::RuntimeException, std::exception)
+void SAL_CALL ScAnnotationsObj::removeByIndex( sal_Int32 nIndex )
 {
     SolarMutexGuard aGuard;
     if (pDocShell)
@@ -4171,35 +4135,29 @@ void SAL_CALL ScAnnotationsObj::removeByIndex( sal_Int32 nIndex ) throw(uno::Run
 // XEnumerationAccess
 
 uno::Reference<container::XEnumeration> SAL_CALL ScAnnotationsObj::createEnumeration()
-                                                    throw(uno::RuntimeException, std::exception)
 {
     //! iterate directly (more efficiently)?
 
     SolarMutexGuard aGuard;
-    return new ScIndexEnumeration(this, OUString("com.sun.star.sheet.CellAnnotationsEnumeration"));
+    return new ScIndexEnumeration(this, "com.sun.star.sheet.CellAnnotationsEnumeration");
 }
 
 // XIndexAccess
 
 sal_Int32 SAL_CALL ScAnnotationsObj::getCount()
-    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     sal_Int32 nCount = 0;
     if (pDocShell)
     {
-        ScDocument& rDoc = pDocShell->GetDocument();
-        const ScRangeList aRangeList( ScRange( 0, 0, nTab, MAXCOL, MAXROW, nTab) );
-        std::vector<sc::NoteEntry> rNotes;
-        rDoc.GetNotesInRange(aRangeList, rNotes);
-        nCount = rNotes.size();
+        const ScDocument& rDoc = pDocShell->GetDocument();
+        for (SCCOL nCol = 0; nCol <= MAXCOL; ++nCol)
+            nCount += rDoc.GetNoteCount(nTab, nCol);
     }
     return nCount;
 }
 
 uno::Any SAL_CALL ScAnnotationsObj::getByIndex( sal_Int32 nIndex )
-                            throw(lang::IndexOutOfBoundsException,
-                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<sheet::XSheetAnnotation> xAnnotation(GetObjectByIndex_Impl(nIndex));
@@ -4209,13 +4167,13 @@ uno::Any SAL_CALL ScAnnotationsObj::getByIndex( sal_Int32 nIndex )
         throw lang::IndexOutOfBoundsException();
 }
 
-uno::Type SAL_CALL ScAnnotationsObj::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL ScAnnotationsObj::getElementType()
 {
     SolarMutexGuard aGuard;
     return cppu::UnoType<sheet::XSheetAnnotation>::get();
 }
 
-sal_Bool SAL_CALL ScAnnotationsObj::hasElements() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScAnnotationsObj::hasElements()
 {
     SolarMutexGuard aGuard;
     return ( getCount() != 0 );
@@ -4240,12 +4198,11 @@ void ScScenariosObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     if ( dynamic_cast<const ScUpdateRefHint*>(&rHint) )
     {
-        //! Referenz-Update fuer Tab und Start/Ende
+        //! update of references for sheet and its start/end
     }
-    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) &&
-            static_cast<const SfxSimpleHint&>(rHint).GetId() == SFX_HINT_DYING )
+    else if ( rHint.GetId() == SfxHintId::Dying )
     {
-        pDocShell = nullptr;       // ungueltig geworden
+        pDocShell = nullptr;       // became invalid
     }
 }
 
@@ -4253,7 +4210,7 @@ void ScScenariosObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 
 bool ScScenariosObj::GetScenarioIndex_Impl( const OUString& rName, SCTAB& rIndex )
 {
-    //! Case-insensitiv ????
+    //! Case-insensitive ????
 
     if ( pDocShell )
     {
@@ -4278,7 +4235,7 @@ ScTableSheetObj* ScScenariosObj::GetObjectByIndex_Impl(sal_Int32 nIndex)
     if ( pDocShell && nIndex >= 0 && nIndex < nCount )
         return new ScTableSheetObj( pDocShell, nTab+static_cast<SCTAB>(nIndex)+1 );
 
-    return nullptr;    // kein Dokument oder falscher Index
+    return nullptr;    // no document or wrong index
 }
 
 ScTableSheetObj* ScScenariosObj::GetObjectByName_Impl(const OUString& aName)
@@ -4287,13 +4244,12 @@ ScTableSheetObj* ScScenariosObj::GetObjectByName_Impl(const OUString& aName)
     if ( pDocShell && GetScenarioIndex_Impl( aName, nIndex ) )
         return new ScTableSheetObj( pDocShell, nTab+nIndex+1 );
 
-    return nullptr;    // nicht gefunden
+    return nullptr;    // not found
 }
 
 void SAL_CALL ScScenariosObj::addNewByName( const OUString& aName,
                                 const uno::Sequence<table::CellRangeAddress>& aRanges,
                                 const OUString& aComment )
-                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if ( pDocShell )
@@ -4307,7 +4263,7 @@ void SAL_CALL ScScenariosObj::addNewByName( const OUString& aName,
             const table::CellRangeAddress* pAry = aRanges.getConstArray();
             for (sal_uInt16 i=0; i<nRangeCount; i++)
             {
-                OSL_ENSURE( pAry[i].Sheet == nTab, "addScenario mit falscher Tab" );
+                OSL_ENSURE( pAry[i].Sheet == nTab, "addScenario with a wrong Tab" );
                 ScRange aRange( (SCCOL)pAry[i].StartColumn, (SCROW)pAry[i].StartRow, nTab,
                                 (SCCOL)pAry[i].EndColumn,   (SCROW)pAry[i].EndRow,   nTab );
 
@@ -4316,14 +4272,14 @@ void SAL_CALL ScScenariosObj::addNewByName( const OUString& aName,
         }
 
         Color aColor( COL_LIGHTGRAY );  // Default
-        sal_uInt16 nFlags = SC_SCENARIO_SHOWFRAME | SC_SCENARIO_PRINTFRAME | SC_SCENARIO_TWOWAY | SC_SCENARIO_PROTECT;
+        ScScenarioFlags nFlags = ScScenarioFlags::ShowFrame | ScScenarioFlags::PrintFrame
+                               | ScScenarioFlags::TwoWay    | ScScenarioFlags::Protected;
 
         pDocShell->MakeScenario( nTab, aName, aComment, aColor, nFlags, aMarkData );
     }
 }
 
 void SAL_CALL ScScenariosObj::removeByName( const OUString& aName )
-                                            throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SCTAB nIndex;
@@ -4334,15 +4290,14 @@ void SAL_CALL ScScenariosObj::removeByName( const OUString& aName )
 // XEnumerationAccess
 
 uno::Reference<container::XEnumeration> SAL_CALL ScScenariosObj::createEnumeration()
-                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
-    return new ScIndexEnumeration(this, OUString("com.sun.star.sheet.ScenariosEnumeration"));
+    return new ScIndexEnumeration(this, "com.sun.star.sheet.ScenariosEnumeration");
 }
 
 // XIndexAccess
 
-sal_Int32 SAL_CALL ScScenariosObj::getCount() throw(uno::RuntimeException, std::exception)
+sal_Int32 SAL_CALL ScScenariosObj::getCount()
 {
     SolarMutexGuard aGuard;
     SCTAB nCount = 0;
@@ -4364,8 +4319,6 @@ sal_Int32 SAL_CALL ScScenariosObj::getCount() throw(uno::RuntimeException, std::
 }
 
 uno::Any SAL_CALL ScScenariosObj::getByIndex( sal_Int32 nIndex )
-                            throw(lang::IndexOutOfBoundsException,
-                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<sheet::XScenario> xScen(GetObjectByIndex_Impl(nIndex));
@@ -4375,21 +4328,19 @@ uno::Any SAL_CALL ScScenariosObj::getByIndex( sal_Int32 nIndex )
         throw lang::IndexOutOfBoundsException();
 }
 
-uno::Type SAL_CALL ScScenariosObj::getElementType() throw(uno::RuntimeException, std::exception)
+uno::Type SAL_CALL ScScenariosObj::getElementType()
 {
     SolarMutexGuard aGuard;
     return cppu::UnoType<sheet::XScenario>::get();
 }
 
-sal_Bool SAL_CALL ScScenariosObj::hasElements() throw(uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL ScScenariosObj::hasElements()
 {
     SolarMutexGuard aGuard;
     return ( getCount() != 0 );
 }
 
 uno::Any SAL_CALL ScScenariosObj::getByName( const OUString& aName )
-            throw(container::NoSuchElementException,
-                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference<sheet::XScenario> xScen(GetObjectByName_Impl(aName));
@@ -4400,13 +4351,12 @@ uno::Any SAL_CALL ScScenariosObj::getByName( const OUString& aName )
 }
 
 uno::Sequence<OUString> SAL_CALL ScScenariosObj::getElementNames()
-                                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SCTAB nCount = (SCTAB)getCount();
     uno::Sequence<OUString> aSeq(nCount);
 
-    if ( pDocShell )    // sonst ist auch Count = 0
+    if ( pDocShell )    // otherwise Count = 0
     {
         OUString aTabName;
         ScDocument& rDoc = pDocShell->GetDocument();
@@ -4420,7 +4370,6 @@ uno::Sequence<OUString> SAL_CALL ScScenariosObj::getElementNames()
 }
 
 sal_Bool SAL_CALL ScScenariosObj::hasByName( const OUString& aName )
-                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SCTAB nIndex;

@@ -19,6 +19,7 @@
 #ifndef INCLUDED_SW_SOURCE_UI_VBA_VBAFIELD_HXX
 #define INCLUDED_SW_SOURCE_UI_VBA_VBAFIELD_HXX
 #include <vbahelper/vbahelperinterface.hxx>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/text/XTextDocument.hpp>
 #include <com/sun/star/text/XTextField.hpp>
 #include <ooo/vba/word/XField.hpp>
@@ -31,9 +32,10 @@ class SwVbaField : public SwVbaField_BASE
 {
     css::uno::Reference< css::text::XTextField > mxTextField;
 public:
-    SwVbaField( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextField >& xTextField) throw ( css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    SwVbaField( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextField >& xTextField);
 
-    virtual sal_Bool SAL_CALL Update() throw ( css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL Update() override;
     // XHelperInterface
     virtual OUString getServiceImplName() override;
     virtual css::uno::Sequence<OUString> getServiceNames() override;
@@ -46,18 +48,20 @@ class SwVbaFields : public SwVbaFields_BASE
     css::uno::Reference< css::frame::XModel > mxModel;
     css::uno::Reference< css::lang::XMultiServiceFactory > mxMSF;
 private:
-    css::uno::Reference< css::text::XTextField > Create_Field_FileName(const OUString& rText)
-        throw (css::uno::RuntimeException, css::script::BasicErrorException);
-    css::uno::Reference< css::text::XTextField > Create_Field_DocProperty( const OUString& _text ) throw (css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    /// @throws css::script::BasicErrorException
+    css::uno::Reference< css::text::XTextField > Create_Field_FileName(const OUString& rText);
+    /// @throws css::uno::RuntimeException
+    css::uno::Reference< css::text::XTextField > Create_Field_DocProperty( const OUString& _text );
 
 public:
     SwVbaFields( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::frame::XModel >& xModel );
     // XFields
-    virtual css::uno::Reference< ::ooo::vba::word::XField > SAL_CALL Add( const css::uno::Reference< ::ooo::vba::word::XRange >& Range, const css::uno::Any& Type, const css::uno::Any& Text, const css::uno::Any& PreserveFormatting ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL Update() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< ::ooo::vba::word::XField > SAL_CALL Add( const css::uno::Reference< ::ooo::vba::word::XRange >& Range, const css::uno::Any& Type, const css::uno::Any& Text, const css::uno::Any& PreserveFormatting ) override;
+    virtual sal_Int32 SAL_CALL Update() override;
     // XEnumerationAccess
-    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override;
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Type SAL_CALL getElementType() override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
     // ScVbaCollectionBaseImpl
     virtual css::uno::Any createCollectionObject( const css::uno::Any& aSource ) override;
 

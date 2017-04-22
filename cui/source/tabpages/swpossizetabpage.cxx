@@ -30,7 +30,6 @@
 #include <svx/svdpagv.hxx>
 #include <svx/rectenum.hxx>
 #include <sal/macros.h>
-#include <com/sun/star/text/TextContentAnchorType.hpp>
 #include <com/sun/star/text/HoriOrientation.hpp>
 #include <com/sun/star/text/VertOrientation.hpp>
 #include <com/sun/star/text/RelOrientation.hpp>
@@ -305,7 +304,7 @@ static FrmMap aVCharMap[] =
     // #i22341#
     // introduce mappings for new vertical alignment at top of line <LB::VertLine>
     // and correct mapping for vertical alignment at character for position <FROM_BOTTOM>
-    // Note: Because of these adjustments the map becomes ambigous in its values
+    // Note: because of these adjustments the map becomes ambiguous in its values
     //       <eStrId>/<eMirrorStrId> and <nAlign>. These ambiguities are considered
     //       in the methods <SwFrmPage::FillRelLB(..)>, <SwFrmPage::GetAlignment(..)>
     //       and <SwFrmPage::FillPosLB(..)>
@@ -653,7 +652,7 @@ void SvxSwPosSizeTabPage::setOptimalFrmWidth()
         { aHFrameMap, SAL_N_ELEMENTS(aHFrameMap) },
         { aHFlyHtmlMap, SAL_N_ELEMENTS(aHFlyHtmlMap) },
         { aVFrameMap, SAL_N_ELEMENTS(aVFrameMap) },
-        { aVFlyHtmlMap, SAL_N_ELEMENTS(aVFrameMap) },
+        { aVFlyHtmlMap, SAL_N_ELEMENTS(aVFlyHtmlMap) },
         { aHParaMap, SAL_N_ELEMENTS(aHParaMap) },
         { aHParaHtmlMap, SAL_N_ELEMENTS(aHParaHtmlMap) },
         { aHParaHtmlAbsMap, SAL_N_ELEMENTS(aHParaHtmlAbsMap) },
@@ -772,11 +771,11 @@ const sal_uInt16* SvxSwPosSizeTabPage::GetRanges()
 bool SvxSwPosSizeTabPage::FillItemSet( SfxItemSet* rSet)
 {
     bool bAnchorChanged = false;
-    short nAnchor = GetAnchorType(&bAnchorChanged);
+    RndStdIds nAnchor = GetAnchorType(&bAnchorChanged);
     bool bModified = false;
     if(bAnchorChanged)
     {
-        rSet->Put(SfxInt16Item(SID_ATTR_TRANSFORM_ANCHOR, nAnchor));
+        rSet->Put(SfxInt16Item(SID_ATTR_TRANSFORM_ANCHOR, (sal_Int16)nAnchor));
         bModified = true;
     }
     if ( m_pPositionCB->IsValueChangedFromSaved() )
@@ -876,7 +875,7 @@ bool SvxSwPosSizeTabPage::FillItemSet( SfxItemSet* rSet)
                 // as-character anchored objects
                 long nVertByPos =
                         static_cast<long>(m_pVertByMF->Denormalize(m_pVertByMF->GetValue(FUNIT_TWIP)));
-                if ( GetAnchorType() == TextContentAnchorType_AS_CHARACTER )
+                if (GetAnchorType() == RndStdIds::FLY_AS_CHAR)
                 {
                     nVertByPos *= -1;
                 }
@@ -911,12 +910,10 @@ bool SvxSwPosSizeTabPage::FillItemSet( SfxItemSet* rSet)
     {
         sal_uInt32 nWidth = static_cast<sal_uInt32>(m_pWidthMF->Denormalize(m_pWidthMF->GetValue(FUNIT_TWIP)));
         sal_uInt32 nHeight = static_cast<sal_uInt32>(m_pHeightMF->Denormalize(m_pHeightMF->GetValue(FUNIT_TWIP)));
-        rSet->Put( SfxUInt32Item( GetWhich( SID_ATTR_TRANSFORM_WIDTH ),
-                        (sal_uInt32) nWidth ) );
-        rSet->Put( SfxUInt32Item( GetWhich( SID_ATTR_TRANSFORM_HEIGHT ),
-                        (sal_uInt32) nHeight ) );
+        rSet->Put( SfxUInt32Item( GetWhich( SID_ATTR_TRANSFORM_WIDTH ), nWidth ) );
+        rSet->Put( SfxUInt32Item( GetWhich( SID_ATTR_TRANSFORM_HEIGHT ), nHeight ) );
         //this item is required by SdrEditView::SetGeoAttrToMarked()
-        rSet->Put( SfxAllEnumItem( GetWhich( SID_ATTR_TRANSFORM_SIZE_POINT ), RP_LT ) );
+        rSet->Put( SfxAllEnumItem( GetWhich( SID_ATTR_TRANSFORM_SIZE_POINT ), (sal_uInt16)RectPoint::LT ) );
 
         bModified = true;
     }
@@ -928,17 +925,17 @@ void SvxSwPosSizeTabPage::Reset( const SfxItemSet* rSet)
 {
     const SfxPoolItem* pItem = GetItem( *rSet, SID_ATTR_TRANSFORM_ANCHOR );
     bool bInvalidateAnchor = false;
-    short nAnchorType = TextContentAnchorType_AT_PARAGRAPH;
+    RndStdIds nAnchorType = RndStdIds::FLY_AT_PARA;
     if(pItem)
     {
-        nAnchorType = static_cast<const SfxInt16Item*>(pItem)->GetValue();
+        nAnchorType = (RndStdIds) static_cast<const SfxInt16Item*>(pItem)->GetValue();
         switch(nAnchorType)
         {
-            case  TextContentAnchorType_AT_PAGE:        m_pToPageRB->Check();  break;
-            case  TextContentAnchorType_AT_PARAGRAPH:   m_pToParaRB->Check();  break;
-            case  TextContentAnchorType_AT_CHARACTER:   m_pToCharRB->Check();  break;
-            case  TextContentAnchorType_AS_CHARACTER:   m_pAsCharRB->Check();  break;
-            case  TextContentAnchorType_AT_FRAME:       m_pToFrameRB->Check(); break;
+            case RndStdIds::FLY_AT_PAGE:   m_pToPageRB->Check();  break;
+            case RndStdIds::FLY_AT_PARA:   m_pToParaRB->Check();  break;
+            case RndStdIds::FLY_AT_CHAR:   m_pToCharRB->Check();  break;
+            case RndStdIds::FLY_AS_CHAR:   m_pAsCharRB->Check();  break;
+            case RndStdIds::FLY_AT_FLY:    m_pToFrameRB->Check(); break;
             default : bInvalidateAnchor = true;
         }
         m_pToPageRB->SaveValue();
@@ -1037,7 +1034,7 @@ void SvxSwPosSizeTabPage::Reset( const SfxItemSet* rSet)
     pItem = GetItem( *rSet, SID_ATTR_TRANSFORM_HEIGHT );
     sal_Int32 nHeight = std::max( pItem ? ( static_cast<const SfxUInt32Item*>(pItem)->GetValue()) : 0, (sal_uInt32)1 );
     m_pHeightMF->SetValue(m_pHeightMF->Normalize(nHeight), FUNIT_TWIP);
-    m_fWidthHeightRatio = nHeight ? double(nWidth) / double(nHeight) : 1.0;
+    m_fWidthHeightRatio = double(nWidth) / double(nHeight);
 
     if(!m_bPositioningDisabled)
     {
@@ -1089,50 +1086,50 @@ void SvxSwPosSizeTabPage::Reset( const SfxItemSet* rSet)
     }
 }
 
-SfxTabPage::sfxpg SvxSwPosSizeTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxSwPosSizeTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
-void SvxSwPosSizeTabPage::EnableAnchorTypes(sal_uInt16 nAnchorEnable)
+void SvxSwPosSizeTabPage::EnableAnchorTypes(SvxAnchorIds nAnchorEnable)
 {
-    if((nAnchorEnable & SVX_OBJ_AT_FLY))
+    if((nAnchorEnable & SvxAnchorIds::Fly))
         m_pToFrameRB->Show();
-    if(!(nAnchorEnable & SVX_OBJ_PAGE))
+    if(!(nAnchorEnable & SvxAnchorIds::Page))
         m_pToPageRB->Enable(false);
 }
 
-short SvxSwPosSizeTabPage::GetAnchorType(bool* pbHasChanged)
+RndStdIds SvxSwPosSizeTabPage::GetAnchorType(bool* pbHasChanged)
 {
-    short nRet = -1;
+    RndStdIds nRet = RndStdIds::UNKNOWN;
     RadioButton* pCheckedButton = nullptr;
     if(m_pToParaRB->IsEnabled())
     {
         if(m_pToPageRB->IsChecked())
         {
-            nRet = TextContentAnchorType_AT_PAGE;
+            nRet = RndStdIds::FLY_AT_PAGE;
             pCheckedButton = m_pToPageRB;
         }
         else if(m_pToParaRB->IsChecked())
         {
-            nRet = TextContentAnchorType_AT_PARAGRAPH;
+            nRet = RndStdIds::FLY_AT_PARA;
             pCheckedButton = m_pToParaRB;
         }
         else if(m_pToCharRB->IsChecked())
         {
-            nRet = TextContentAnchorType_AT_CHARACTER;
+            nRet = RndStdIds::FLY_AT_CHAR;
             pCheckedButton = m_pToCharRB;
         }
         else if(m_pAsCharRB->IsChecked())
         {
-            nRet = TextContentAnchorType_AS_CHARACTER;
+            nRet = RndStdIds::FLY_AS_CHAR;
             pCheckedButton = m_pAsCharRB;
         }
         else if(m_pToFrameRB->IsChecked())
         {
-            nRet = TextContentAnchorType_AT_FRAME;
+            nRet = RndStdIds::FLY_AT_FLY;
             pCheckedButton = m_pToFrameRB;
         }
     }
@@ -1146,11 +1143,12 @@ short SvxSwPosSizeTabPage::GetAnchorType(bool* pbHasChanged)
    return nRet;
 }
 
-IMPL_LINK_NOARG_TYPED(SvxSwPosSizeTabPage, RangeModifyClickHdl, Button*, void)
+IMPL_LINK_NOARG(SvxSwPosSizeTabPage, RangeModifyClickHdl, Button*, void)
 {
     RangeModifyHdl(*m_pWidthMF);
 }
-IMPL_LINK_NOARG_TYPED(SvxSwPosSizeTabPage, RangeModifyHdl, Control&, void)
+
+IMPL_LINK_NOARG(SvxSwPosSizeTabPage, RangeModifyHdl, Control&, void)
 {
     if(m_bPositioningDisabled)
         return;
@@ -1228,7 +1226,7 @@ IMPL_LINK_NOARG_TYPED(SvxSwPosSizeTabPage, RangeModifyHdl, Control&, void)
         m_pVertByMF->SetValue(m_pVertByMF->Normalize(aVal.nVPos), FUNIT_TWIP);
 }
 
-IMPL_LINK_NOARG_TYPED(SvxSwPosSizeTabPage, AnchorTypeHdl, Button*, void)
+IMPL_LINK_NOARG(SvxSwPosSizeTabPage, AnchorTypeHdl, Button*, void)
 {
     m_pHoriMirrorCB->Enable(!m_pAsCharRB->IsChecked() && !m_bIsMultiSelection);
 
@@ -1236,7 +1234,7 @@ IMPL_LINK_NOARG_TYPED(SvxSwPosSizeTabPage, AnchorTypeHdl, Button*, void)
     // type to-paragraph' and to-character
     m_pFollowCB->Enable( m_pToParaRB->IsChecked() || m_pToCharRB->IsChecked() );
 
-    short nId = GetAnchorType();
+    RndStdIds nId = GetAnchorType();
 
     InitPos( nId, USHRT_MAX, 0, USHRT_MAX, 0, LONG_MAX, LONG_MAX);
     RangeModifyHdl(*m_pWidthMF);
@@ -1248,13 +1246,13 @@ IMPL_LINK_NOARG_TYPED(SvxSwPosSizeTabPage, AnchorTypeHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxSwPosSizeTabPage, MirrorHdl, Button*, void)
+IMPL_LINK_NOARG(SvxSwPosSizeTabPage, MirrorHdl, Button*, void)
 {
-    short nId = GetAnchorType();
+    RndStdIds nId = GetAnchorType();
     InitPos( nId, USHRT_MAX, 0, USHRT_MAX, 0, LONG_MAX, LONG_MAX);
 }
 
-IMPL_LINK_TYPED( SvxSwPosSizeTabPage, RelHdl, ListBox&, rLB, void )
+IMPL_LINK( SvxSwPosSizeTabPage, RelHdl, ListBox&, rLB, void )
 {
     bool bHori = &rLB == m_pHoriToLB;
 
@@ -1265,7 +1263,7 @@ IMPL_LINK_TYPED( SvxSwPosSizeTabPage, RelHdl, ListBox&, rLB, void )
     else
         m_bAtVertPosModified = true;
 
-    if(m_bHtmlMode  && TextContentAnchorType_AT_CHARACTER == GetAnchorType()) // again special treatment
+    if (m_bHtmlMode && RndStdIds::FLY_AT_CHAR == GetAnchorType()) // again special treatment
     {
         if(bHori)
         {
@@ -1283,11 +1281,11 @@ IMPL_LINK_TYPED( SvxSwPosSizeTabPage, RelHdl, ListBox&, rLB, void )
     RangeModifyHdl(*m_pWidthMF);
 }
 
-IMPL_LINK_TYPED( SvxSwPosSizeTabPage, PosHdl, ListBox&, rLB, void )
+IMPL_LINK( SvxSwPosSizeTabPage, PosHdl, ListBox&, rLB, void )
 {
     bool bHori = &rLB == m_pHoriLB;
-    ListBox *pRelLB = bHori ? m_pHoriToLB : m_pVertToLB;
-    FixedText *pRelFT = bHori ? m_pHoriToFT : m_pVertToFT;
+    ListBox *pRelLB = bHori ? m_pHoriToLB.get() : m_pVertToLB.get();
+    FixedText *pRelFT = bHori ? m_pHoriToFT.get() : m_pVertToFT.get();
     FrmMap *pMap = bHori ? m_pHMap : m_pVMap;
 
 
@@ -1329,7 +1327,7 @@ IMPL_LINK_TYPED( SvxSwPosSizeTabPage, PosHdl, ListBox&, rLB, void )
         m_bAtVertPosModified = true;
 
     // special treatment for HTML-Mode with horz-vert-dependencies
-    if(m_bHtmlMode && TextContentAnchorType_AT_CHARACTER == GetAnchorType())
+    if (m_bHtmlMode && RndStdIds::FLY_AT_CHAR == GetAnchorType())
     {
         bool bSet = false;
         if(bHori)
@@ -1385,7 +1383,7 @@ IMPL_LINK_TYPED( SvxSwPosSizeTabPage, PosHdl, ListBox&, rLB, void )
     }
 }
 
-IMPL_LINK_TYPED( SvxSwPosSizeTabPage, ModifyHdl, Edit&, rEdit, void )
+IMPL_LINK( SvxSwPosSizeTabPage, ModifyHdl, Edit&, rEdit, void )
 {
     sal_Int64 nWidth = m_pWidthMF->Denormalize(m_pWidthMF->GetValue(FUNIT_TWIP));
     sal_Int64 nHeight = m_pHeightMF->Denormalize(m_pHeightMF->GetValue(FUNIT_TWIP));
@@ -1406,7 +1404,7 @@ IMPL_LINK_TYPED( SvxSwPosSizeTabPage, ModifyHdl, Edit&, rEdit, void )
     UpdateExample();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxSwPosSizeTabPage, ProtectHdl, Button*, void)
+IMPL_LINK_NOARG(SvxSwPosSizeTabPage, ProtectHdl, Button*, void)
 {
     m_pSizeCB->Enable(m_pPositionCB->IsEnabled() && !m_pPositionCB->IsChecked());
 }
@@ -1430,7 +1428,7 @@ short SvxSwPosSizeTabPage::GetAlignment(FrmMap *pMap, sal_uInt16 nMapPos, ListBo
     short nAlign = 0;
 
     // #i22341# - special handling also for map <aVCharMap>,
-    // because it contains ambigous items for alignment
+    // because it contains ambiguous items for alignment
     if (pMap == aVAsCharHtmlMap || pMap == aVAsCharMap ||
             pMap == aVCharMap )
     {
@@ -1492,7 +1490,7 @@ sal_uInt16 SvxSwPosSizeTabPage::GetMapPos(FrmMap *pMap, ListBox &rAlignLB)
     return nMapPos;
 }
 
-void SvxSwPosSizeTabPage::InitPos(short nAnchor,
+void SvxSwPosSizeTabPage::InitPos(RndStdIds nAnchor,
                                 sal_uInt16 nH,
                                 sal_uInt16 nHRel,
                                 sal_uInt16 nV,
@@ -1525,19 +1523,19 @@ void SvxSwPosSizeTabPage::InitPos(short nAnchor,
         m_pVMap = aVMultiSelectionMap;
         m_pHMap = aHMultiSelectionMap;
     }
-    else if( nAnchor == TextContentAnchorType_AT_PAGE )
+    else if (nAnchor == RndStdIds::FLY_AT_PAGE)
     {
         m_pVMap = m_bHtmlMode ? aVPageHtmlMap : aVPageMap;
         m_pHMap = m_bHtmlMode ? aHPageHtmlMap : aHPageMap;
     }
-    else if ( nAnchor == TextContentAnchorType_AT_FRAME )
+    else if (nAnchor == RndStdIds::FLY_AT_FLY)
     {
         // #i18732# - own vertical alignment map for to frame
         // anchored objects.
         m_pVMap = m_bHtmlMode ? aVFlyHtmlMap : aVFrameMap;
         m_pHMap = m_bHtmlMode ? aHFlyHtmlMap : aHFrameMap;
     }
-    else if ( nAnchor == TextContentAnchorType_AT_PARAGRAPH )
+    else if (nAnchor == RndStdIds::FLY_AT_PARA)
     {
         if(m_bHtmlMode)
         {
@@ -1550,7 +1548,7 @@ void SvxSwPosSizeTabPage::InitPos(short nAnchor,
             m_pHMap = aHParaMap;
         }
     }
-    else if ( nAnchor == TextContentAnchorType_AT_CHARACTER )
+    else if (nAnchor == RndStdIds::FLY_AT_CHAR)
     {
         if(m_bHtmlMode)
         {
@@ -1563,7 +1561,7 @@ void SvxSwPosSizeTabPage::InitPos(short nAnchor,
             m_pHMap = aHCharMap;
         }
     }
-    else if ( nAnchor == TextContentAnchorType_AS_CHARACTER )
+    else if (nAnchor == RndStdIds::FLY_AS_CHAR)
     {
         m_pVMap = m_bHtmlMode ? aVAsCharHtmlMap     : aVAsCharMap;
         m_pHMap = nullptr;
@@ -1594,8 +1592,7 @@ void SvxSwPosSizeTabPage::InitPos(short nAnchor,
     FillRelLB(m_pVMap, nMapPos, nV, nVRel, *m_pVertToLB, *m_pVertToFT);
 
     // Edits init
-    bEnable = nH == HoriOrientation::NONE &&
-            nAnchor != TextContentAnchorType_AS_CHARACTER;//#61359# why not in formats&& !bFormat;
+    bEnable = nH == HoriOrientation::NONE && nAnchor != RndStdIds::FLY_AS_CHAR; //#61359# why not in formats&& !bFormat;
     if (!bEnable)
     {
         m_pHoriByMF->SetValue( 0, FUNIT_TWIP );
@@ -1627,7 +1624,7 @@ void SvxSwPosSizeTabPage::InitPos(short nAnchor,
     }
     else
     {
-        if ( nAnchor == TextContentAnchorType_AS_CHARACTER )
+        if (nAnchor == RndStdIds::FLY_AS_CHAR)
         {
             if ( nY == LONG_MAX )
                 nY = 0;
@@ -1739,7 +1736,7 @@ void SvxSwPosSizeTabPage::FillRelLB(FrmMap *pMap, sal_uInt16 nMapPos, sal_uInt16
             sal_uInt16 nRelCount = SAL_N_ELEMENTS(aRelationMap);
 
             // #i22341# - special handling for map <aVCharMap>,
-            // because its ambigous in its <eStrId>/<eMirrorStrId>.
+            // because its ambiguous in its <eStrId>/<eMirrorStrId>.
             if ( pMap == aVCharMap )
             {
                 nLBRelations = ::lcl_GetLBRelationsForStrID( pMap,
@@ -1851,7 +1848,7 @@ sal_uInt16 SvxSwPosSizeTabPage::FillPosLB(FrmMap *_pMap,
                 _rLB.InsertEntry(sEntry);
             }
             // #i22341# - add condition to handle map <aVCharMap>
-            // that is ambigous in the alignment.
+            // that is ambiguous in the alignment.
             if ( _pMap[i].nAlign == _nAlign &&
                  ( !(_pMap == aVCharMap) || _pMap[i].nLBRelations & nLBRelations ) )
             {
@@ -1927,7 +1924,7 @@ void SvxSwPosSizeTabPage::SetView( const SdrView* pSdrView )
     {
         const SdrObject* pObj = rMarkList.GetMark( 0 )->GetMarkedSdrObj();
         SdrObjKind eKind = (SdrObjKind) pObj->GetObjIdentifier();
-        if( ( pObj->GetObjInventor() == SdrInventor ) &&
+        if( ( pObj->GetObjInventor() == SdrInventor::Default ) &&
             ( eKind==OBJ_TEXT || eKind==OBJ_TITLETEXT || eKind==OBJ_OUTLINETEXT) &&
             pObj->HasText() )
         {

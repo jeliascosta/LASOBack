@@ -80,16 +80,15 @@ class ModuleData
 {
 friend class ModuleCollection;
     OUString aName;
-    osl::Module* pInstance;
+    std::unique_ptr<osl::Module> pInstance;
 public:
     ModuleData(const ModuleData&) = delete;
     const ModuleData& operator=(const ModuleData&) = delete;
 
     ModuleData(const OUString& rStr, osl::Module* pInst) : aName(rStr), pInstance(pInst) {}
-    ~ModuleData() { delete pInstance; }
 
     const OUString& GetName() const { return aName; }
-    osl::Module*    GetInstance() const { return pInstance; }
+    osl::Module*    GetInstance() const { return pInstance.get(); }
 };
 
 LegacyFuncData::LegacyFuncData(const ModuleData*pModule,
@@ -193,11 +192,11 @@ bool InitExternalFunc(const OUString& rModuleName)
         (*reinterpret_cast<SetLanguagePtr>(fpSetLanguage))( nLanguage );
     }
 
-    // Module in die Collection aufnehmen
+    // include module into the collection
     ModuleData* pModuleData = new ModuleData(rModuleName, pLib.release());
     aModuleCollection.insert(pModuleData);
 
-    // Schnittstelle initialisieren
+    // initialize interface
     AdvData pfCallBack = &ScAddInAsyncCallBack;
     LegacyFuncCollection* pLegacyFuncCol = ScGlobal::GetLegacyFuncCollection();
     sal_uInt16 nCount;
@@ -360,7 +359,7 @@ void LegacyFuncData::getParamDesc( OUString& aName, OUString& aDesc, sal_uInt16 
             sal_Char pcName[256];
             sal_Char pcDesc[256];
             *pcName = *pcDesc = 0;
-            sal_uInt16 nFuncNo = nNumber;   // nicht per Reference versauen lassen..
+            sal_uInt16 nFuncNo = nNumber;   // don't let it mess up via reference...
             reinterpret_cast< ::GetParamDesc>(fProc)( nFuncNo, nParam, pcName, pcDesc );
             aName = OUString( pcName, 256, osl_getThreadTextEncoding() );
             aDesc = OUString( pcDesc, 256, osl_getThreadTextEncoding() );

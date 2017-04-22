@@ -241,7 +241,7 @@ void OFieldDescControl::Init()
     ::dbaui::setEvalDateFormatForFormatter(xFormatter);
 }
 
-IMPL_LINK_TYPED(OFieldDescControl, OnScroll, ScrollBar*, /*pBar*/, void)
+IMPL_LINK(OFieldDescControl, OnScroll, ScrollBar*, /*pBar*/, void)
 {
     ScrollAllAggregates();
 }
@@ -253,7 +253,7 @@ namespace
         if (_pWindow)
         {
             long nTemp = _pWindow->GetSizePixel().Width() + _pWindow->GetPosPixel().X();
-            _rnMaxXPosition = ::std::max(_rnMaxXPosition, nTemp);
+            _rnMaxXPosition = std::max(_rnMaxXPosition, nTemp);
         }
     }
 }
@@ -290,7 +290,7 @@ void OFieldDescControl::CheckScrollBars()
     // Which one is the last one that fits?
     sal_uInt16 nLastVisible;
     const sal_Int32 nControlHeight = GetMaxControlHeight();
-    const sal_Int32 nControl_Spacing_y = LogicToPixel(Size(0, CONTROL_SPACING_Y),MAP_APPFONT).Height();
+    const sal_Int32 nControl_Spacing_y = LogicToPixel(Size(0, CONTROL_SPACING_Y),MapUnit::MapAppFont).Height();
     if (bNeedHScrollBar)
         nLastVisible = static_cast<sal_uInt16>((szOverallSize.Height() - nControl_Spacing_y - nHScrollHeight) / (nControl_Spacing_y + nControlHeight));
     else
@@ -369,7 +369,7 @@ void OFieldDescControl::ScrollAllAggregates()
     if (m_nOldVThumb != m_pVertScroll->GetThumbPos())
     {
         const sal_Int32 nControlHeight = GetMaxControlHeight();
-        const sal_Int32 nControl_Spacing_y = LogicToPixel(Size(0, CONTROL_SPACING_Y),MAP_APPFONT).Height();
+        const sal_Int32 nControl_Spacing_y = LogicToPixel(Size(0, CONTROL_SPACING_Y),MapUnit::MapAppFont).Height();
         nDeltaY = (m_nOldVThumb - m_pVertScroll->GetThumbPos()) * (nControl_Spacing_y + nControlHeight);
         m_nOldVThumb = m_pVertScroll->GetThumbPos();
     }
@@ -525,7 +525,7 @@ void OFieldDescControl::SetControlText( sal_uInt16 nControlId, const OUString& r
     }
 }
 
-IMPL_LINK_NOARG_TYPED( OFieldDescControl, FormatClickHdl, Button *, void )
+IMPL_LINK_NOARG( OFieldDescControl, FormatClickHdl, Button *, void )
 {
     // Create temporary Column, which is used for data exchange with Dialog
     if( !pActFieldDescr )
@@ -565,7 +565,7 @@ void OFieldDescControl::SetModified(bool /*bModified*/)
 {
 }
 
-IMPL_LINK_TYPED( OFieldDescControl, ChangeHdl, ListBox&, rListBox, void )
+IMPL_LINK( OFieldDescControl, ChangeHdl, ListBox&, rListBox, void )
 {
     if ( !pActFieldDescr )
         return;
@@ -666,7 +666,7 @@ void OFieldDescControl::ArrangeAggregates()
     {
         if (adAggregate.pctrlTextControl)
         {
-            nMaxWidth = ::std::max<long>(OutputDevice::GetTextWidth(adAggregate.pctrlTextControl->GetText()),nMaxWidth);
+            nMaxWidth = std::max<long>(OutputDevice::GetTextWidth(adAggregate.pctrlTextControl->GetText()),nMaxWidth);
         }
     }
 
@@ -868,10 +868,12 @@ void OFieldDescControl::ActivateAggregate( EControlType eType )
             pFormatSample->Enable(false);
             InitializeControl(pFormatSample,HID_TAB_ENT_FORMAT_SAMPLE,false);
 
-            pFormat = VclPtr<PushButton>::Create( this, ModuleRes(PB_FORMAT) );
+            pFormat = VclPtr<PushButton>::Create(this, WB_TABSTOP);
+            pFormat->SetText(ModuleRes(STR_BUTTON_FORMAT));
             const sal_Int32 nControlHeight = GetMaxControlHeight();
             pFormat->SetSizePixel(Size(nControlHeight, nControlHeight));
             pFormat->SetClickHdl( LINK( this, OFieldDescControl, FormatClickHdl ) );
+            pFormat->Show();
             InitializeControl(pFormat,HID_TAB_ENT_FORMAT,false);
         }
 
@@ -994,7 +996,7 @@ void OFieldDescControl::SetPosSize( VclPtr<Control>& rControl, long nRow, sal_uI
     const sal_Int32 nControlHeight = GetMaxControlHeight();
     Size aSize(0,nControlHeight);
     if ( isRightAligned() && nCol )
-        aSize.Width() = LogicToPixel(Size(m_nWidth, 0),MAP_APPFONT).Width();
+        aSize.Width() = LogicToPixel(Size(m_nWidth, 0),MapUnit::MapAppFont).Width();
     else
     {
         switch( nCol )
@@ -1041,7 +1043,7 @@ void OFieldDescControl::SetPosSize( VclPtr<Control>& rControl, long nRow, sal_uI
     rControl->SetSizePixel( aSize );
     aSize = rControl->GetSizePixel( );
 
-    const sal_Int32 nControl_Spacing_y = LogicToPixel(Size(0, CONTROL_SPACING_Y),MAP_APPFONT).Height();
+    const sal_Int32 nControl_Spacing_y = LogicToPixel(Size(0, CONTROL_SPACING_Y),MapUnit::MapAppFont).Height();
     aPosition.Y() += ((nRow+1)*nControl_Spacing_y) +
                     (nRow*nControlHeight);
 
@@ -1133,7 +1135,7 @@ void OFieldDescControl::DisplayData(OFieldDescription* pFieldDescr )
         if (pFieldType->nPrecision)
         {
             ActivateAggregate( tpLength );
-            pLength->SetMax(::std::max<sal_Int32>(pFieldType->nPrecision,pFieldDescr->GetPrecision()));
+            pLength->SetMax(std::max<sal_Int32>(pFieldType->nPrecision,pFieldDescr->GetPrecision()));
             pLength->SetSpecialReadOnly(pFieldType->aCreateParams.isEmpty());
         }
         else
@@ -1142,10 +1144,9 @@ void OFieldDescControl::DisplayData(OFieldDescription* pFieldDescr )
         if (pFieldType->nMaximumScale)
         {
             ActivateAggregate( tpScale );
-            pScale->SetMax(::std::max<sal_Int32>(pFieldType->nMaximumScale,pFieldDescr->GetScale()));
+            pScale->SetMax(std::max<sal_Int32>(pFieldType->nMaximumScale,pFieldDescr->GetScale()));
             pScale->SetMin(pFieldType->nMinimumScale);
-            static const char s_sPRECISION[] = "PRECISION";
-            pScale->SetSpecialReadOnly(pFieldType->aCreateParams.isEmpty() || pFieldType->aCreateParams == s_sPRECISION);
+            pScale->SetSpecialReadOnly(pFieldType->aCreateParams.isEmpty() || pFieldType->aCreateParams == "PRECISION");
         }
         else
             DeactivateAggregate( tpScale );
@@ -1164,7 +1165,7 @@ void OFieldDescControl::DisplayData(OFieldDescription* pFieldDescr )
                 if (pFieldType->nPrecision)
                 {
                     ActivateAggregate( tpTextLen );
-                    pTextLen->SetMax(::std::max<sal_Int32>(pFieldType->nPrecision,pFieldDescr->GetPrecision()));
+                    pTextLen->SetMax(std::max<sal_Int32>(pFieldType->nPrecision,pFieldDescr->GetPrecision()));
                     pTextLen->SetSpecialReadOnly(pFieldType->aCreateParams.isEmpty());
                 }
                 else
@@ -1380,7 +1381,7 @@ void OFieldDescControl::DisplayData(OFieldDescription* pFieldDescr )
     SetReadOnly( bRead );
 }
 
-IMPL_LINK_TYPED(OFieldDescControl, OnControlFocusGot, Control&, rControl, void )
+IMPL_LINK(OFieldDescControl, OnControlFocusGot, Control&, rControl, void )
 {
     OUString strHelpText;
     OPropNumericEditCtrl* pNumeric = dynamic_cast< OPropNumericEditCtrl* >( &rControl );
@@ -1420,7 +1421,7 @@ IMPL_LINK_TYPED(OFieldDescControl, OnControlFocusGot, Control&, rControl, void )
     m_pActFocusWindow = &rControl;
 }
 
-IMPL_LINK_TYPED(OFieldDescControl, OnControlFocusLost, Control&, rControl, void )
+IMPL_LINK(OFieldDescControl, OnControlFocusLost, Control&, rControl, void )
 {
     if ((&rControl == pLength) || (&rControl == pTextLen) || (&rControl == pScale))
     {

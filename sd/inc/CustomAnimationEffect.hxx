@@ -38,7 +38,7 @@ class SdrPathObj;
 
 namespace sd {
 
-enum EValue { VALUE_FROM, VALUE_TO, VALUE_BY, VALUE_FIRST, VALUE_LAST };
+enum class EValue { To, By };
 
 class CustomAnimationEffect;
 
@@ -51,14 +51,14 @@ typedef std::list< CustomAnimationEffectPtr > EffectSequence;
 
 class EffectSequenceHelper;
 
-class SD_DLLPUBLIC CustomAnimationEffect
+class SD_DLLPUBLIC CustomAnimationEffect final
 {
     friend class MainSequence;
     friend class EffectSequenceHelper;
 
 public:
     CustomAnimationEffect( const css::uno::Reference< css::animations::XAnimationNode >& xNode );
-    virtual ~CustomAnimationEffect();
+    ~CustomAnimationEffect();
 
     SAL_DLLPRIVATE const css::uno::Reference< css::animations::XAnimationNode >& getNode() const { return mxNode; }
     SAL_DLLPRIVATE void setNode( const css::uno::Reference< css::animations::XAnimationNode >& xNode );
@@ -158,7 +158,8 @@ public:
     SAL_DLLPRIVATE EffectSequenceHelper*   getEffectSequence() const { return mpEffectSequence; }
 
     // helper
-    SAL_DLLPRIVATE css::uno::Reference< css::animations::XAnimationNode > createAfterEffectNode() const throw (css::uno::Exception);
+    /// @throws css::uno::Exception
+    SAL_DLLPRIVATE css::uno::Reference< css::animations::XAnimationNode > createAfterEffectNode() const;
     SAL_DLLPRIVATE css::uno::Reference< css::drawing::XShape > getTargetShape() const;
 
     // static helpers
@@ -169,10 +170,9 @@ public:
     SAL_DLLPRIVATE void updateSdrPathObjFromPath( SdrPathObj& rPathObj );
     SAL_DLLPRIVATE void updatePathFromSdrPathObj( const SdrPathObj& rPathObj );
 
-protected:
+private:
     SAL_DLLPRIVATE void setEffectSequence( EffectSequenceHelper* pSequence ) { mpEffectSequence = pSequence; }
 
-private:
     sal_Int16       mnNodeType;
     OUString        maPresetId;
     OUString        maPresetSubType;
@@ -272,11 +272,11 @@ public:
 
     SAL_DLLPRIVATE virtual css::uno::Reference< css::animations::XAnimationNode > getRootNode();
 
-    SAL_DLLPRIVATE CustomAnimationEffectPtr append( const CustomAnimationPresetPtr& pDescriptor, const css::uno::Any& rTarget, double fDuration = -1.0 );
-    SAL_DLLPRIVATE CustomAnimationEffectPtr append( const SdrPathObj& rPathObj, const css::uno::Any& rTarget, double fDuration = -1.0 );
+    SAL_DLLPRIVATE CustomAnimationEffectPtr append( const CustomAnimationPresetPtr& pDescriptor, const css::uno::Any& rTarget, double fDuration );
+    SAL_DLLPRIVATE CustomAnimationEffectPtr append( const SdrPathObj& rPathObj, const css::uno::Any& rTarget, double fDuration );
     void append( const CustomAnimationEffectPtr& pEffect );
-    SAL_DLLPRIVATE void replace( const CustomAnimationEffectPtr& pEffect, const CustomAnimationPresetPtr& pDescriptor, double fDuration = -1.0 );
-    SAL_DLLPRIVATE void replace( const CustomAnimationEffectPtr& pEffect, const CustomAnimationPresetPtr& pDescriptor, const OUString& rPresetSubType, double fDuration = -1.0 );
+    SAL_DLLPRIVATE void replace( const CustomAnimationEffectPtr& pEffect, const CustomAnimationPresetPtr& pDescriptor, double fDuration );
+    SAL_DLLPRIVATE void replace( const CustomAnimationEffectPtr& pEffect, const CustomAnimationPresetPtr& pDescriptor, const OUString& rPresetSubType, double fDuration );
     SAL_DLLPRIVATE void remove( const CustomAnimationEffectPtr& pEffect );
 
     SAL_DLLPRIVATE void create( const css::uno::Reference< css::animations::XAnimationNode >& xNode );
@@ -373,7 +373,7 @@ class MainSequence : public EffectSequenceHelper, public ISequenceListener
 public:
     MainSequence();
     MainSequence( const css::uno::Reference< css::animations::XAnimationNode >& xTimingRootNode );
-    virtual ~MainSequence();
+    virtual ~MainSequence() override;
 
     virtual css::uno::Reference< css::animations::XAnimationNode > getRootNode() override;
     void reset( const css::uno::Reference< css::animations::XAnimationNode >& xTimingRootNode );
@@ -410,7 +410,7 @@ protected:
     void lockRebuilds();
     void unlockRebuilds();
 
-    DECL_LINK_TYPED(onTimerHdl, Timer *, void);
+    DECL_LINK(onTimerHdl, Timer *, void);
 
     virtual void implRebuild() override;
 

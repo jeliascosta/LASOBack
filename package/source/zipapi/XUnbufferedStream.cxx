@@ -42,7 +42,7 @@ XUnbufferedStream::XUnbufferedStream(
                       const uno::Reference< uno::XComponentContext >& xContext,
                       const rtl::Reference<SotMutexHolder>& aMutexHolder,
                       ZipEntry & rEntry,
-                      Reference < XInputStream > xNewZipStream,
+                      Reference < XInputStream > const & xNewZipStream,
                       const ::rtl::Reference< EncryptionData >& rData,
                       sal_Int8 nStreamMode,
                       bool bIsEncrypted,
@@ -56,7 +56,6 @@ XUnbufferedStream::XUnbufferedStream(
 , maInflater ( true )
 , mbRawStream ( nStreamMode == UNBUFF_STREAM_RAW || nStreamMode == UNBUFF_STREAM_WRAPPEDRAW )
 , mbWrappedRaw ( nStreamMode == UNBUFF_STREAM_WRAPPEDRAW )
-, mbFinished ( false )
 , mnHeaderToRead ( 0 )
 , mnZipCurrent ( 0 )
 , mnZipEnd ( 0 )
@@ -118,7 +117,6 @@ XUnbufferedStream::XUnbufferedStream(
 , maInflater ( true )
 , mbRawStream ( false )
 , mbWrappedRaw ( false )
-, mbFinished ( false )
 , mnHeaderToRead ( 0 )
 , mnZipCurrent ( 0 )
 , mnZipEnd ( 0 )
@@ -153,7 +151,6 @@ XUnbufferedStream::~XUnbufferedStream()
 }
 
 sal_Int32 SAL_CALL XUnbufferedStream::readBytes( Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead )
-        throw( NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( maMutexHolder->GetMutex() );
 
@@ -297,12 +294,10 @@ sal_Int32 SAL_CALL XUnbufferedStream::readBytes( Sequence< sal_Int8 >& aData, sa
 }
 
 sal_Int32 SAL_CALL XUnbufferedStream::readSomeBytes( Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead )
-        throw( NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     return readBytes ( aData, nMaxBytesToRead );
 }
 void SAL_CALL XUnbufferedStream::skipBytes( sal_Int32 nBytesToSkip )
-        throw( NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     if ( nBytesToSkip )
     {
@@ -312,13 +307,11 @@ void SAL_CALL XUnbufferedStream::skipBytes( sal_Int32 nBytesToSkip )
 }
 
 sal_Int32 SAL_CALL XUnbufferedStream::available(  )
-        throw( NotConnectedException, IOException, RuntimeException, std::exception)
 {
     return static_cast < sal_Int32 > ( mnZipSize - mnMyCurrent );
 }
 
 void SAL_CALL XUnbufferedStream::closeInput(  )
-        throw( NotConnectedException, IOException, RuntimeException, std::exception)
 {
 }
 

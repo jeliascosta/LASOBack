@@ -53,13 +53,13 @@ public:
 
     /** Schedule a task to be executed repeatedly.  The task is executed the
         first time after nFirst nano-seconds (1000000000 corresponds to one
-        second).  After that task is executed in intervalls that are
-        nIntervall ns long until CancelTask is called.
+        second).  After that task is executed in intervals that are
+        nInterval ns long until CancelTask is called.
     */
     static sal_Int32 ScheduleRepeatedTask (
         const Task& rTask,
         const sal_Int64 nFirst,
-        const sal_Int64 nIntervall);
+        const sal_Int64 nInterval);
 
     static void CancelTask (const sal_Int32 nTaskId);
 };
@@ -95,8 +95,7 @@ public:
 
     // XCallback
 
-    virtual void SAL_CALL notify (const css::uno::Any& rUserData)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notify (const css::uno::Any& rUserData) override;
 
 private:
     static ::rtl::Reference<PresenterClockTimer> mpInstance;
@@ -111,7 +110,7 @@ private:
 
     PresenterClockTimer (
         const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~PresenterClockTimer();
+    virtual ~PresenterClockTimer() override;
 
     void CheckCurrentTime (const TimeValue& rCurrentTime);
 };

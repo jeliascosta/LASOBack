@@ -40,13 +40,13 @@ public:
     /// set reference date for offset calculation
     void ChangeNullDate( const sal_uInt16 nDay,
                          const sal_uInt16 nMonth,
-                         const sal_uInt16 nYear );
+                         const sal_Int16 nYear );
 
     /// convert input string to number
     bool IsNumberFormat( const OUString& rString,            /// input string
                          short& F_Type,                      /// format type (in + out)
                          double& fOutNumber,                 /// value determined (out)
-                         const SvNumberformat* pFormat = nullptr);  /// optional a number format to which compare against
+                         const SvNumberformat* pFormat);     /// number format to which compare against
 
     /// after IsNumberFormat: get decimal position
     short   GetDecPos() const { return nDecPos; }
@@ -62,13 +62,13 @@ public:
 
         Depends on locale's date separator and a specific date format order.
 
-        @param eDateFormat
+        @param eDateOrder
             Evaluated only on first call during one scan process, subsequent
             calls return state of nCanForceToIso8601!
 
         @see nCanForceToIso8601
      */
-    bool CanForceToIso8601( DateFormat eDateFormat );
+    bool CanForceToIso8601( DateOrder eDateOrder );
 
     void InvalidateDateAcceptancePatterns();
 
@@ -128,7 +128,6 @@ private:
                                                 // default 18
                                                 // number <= nYear2000 => 20xx
                                                 // number >  nYear2000 => 19xx
-    sal_uInt16  nTimezonePos;                   // Index of timezone separator (+1)
 
     /** State of ISO 8601 detection.
 
@@ -225,7 +224,7 @@ private:
     // optimized substring versions
 
     // Whether rString contains rWhat at nPos
-    static inline bool StringContains( const OUString& rWhat,
+    static bool StringContains( const OUString& rWhat,
                                        const OUString& rString,
                                        sal_Int32 nPos )
         {
@@ -242,7 +241,7 @@ private:
         }
 
     // Whether pString contains rWhat at nPos
-    static inline bool StringPtrContains( const OUString& rWhat,
+    static bool StringPtrContains( const OUString& rWhat,
                                           const sal_Unicode* pString,
                                           sal_Int32 nPos ) // nPos MUST be a valid offset from pString
         {
@@ -295,7 +294,7 @@ private:
     // Get currency symbol and advance string position
     bool GetCurrency( const OUString& rString,
                       sal_Int32& nPos,
-                      const SvNumberformat* pFormat = nullptr ); // optional number format to match against
+                      const SvNumberformat* pFormat ); // number format to match against
 
     // Get symbol AM or PM and advance string position
     bool GetTimeAmPm( const OUString& rString,
@@ -336,21 +335,21 @@ private:
     // Conversion of date to number
     bool GetDateRef( double& fDays,                          // OUT: days diff to null date
                      sal_uInt16& nCounter,                   // Count of date substrings
-                     const SvNumberformat* pFormat = nullptr ); // optional number format to match against
+                     const SvNumberformat* pFormat );        // number format to match against
 
     // Analyze start of string
     bool ScanStartString( const OUString& rString,
-                          const SvNumberformat* pFormat = nullptr );
+                          const SvNumberformat* pFormat );
 
     // Analyze middle substring
     bool ScanMidString( const OUString& rString,
                         sal_uInt16 nStringPos,
-                        const SvNumberformat* pFormat = nullptr );
+                        const SvNumberformat* pFormat );
 
 
     // Analyze end of string
     bool ScanEndString( const OUString& rString,
-                        const SvNumberformat* pFormat = nullptr );
+                        const SvNumberformat* pFormat );
 
     // Compare rString to substring of array indexed by nString
     // nString == 0xFFFF => last substring
@@ -370,9 +369,7 @@ private:
 
     // Main analyzing function
     bool IsNumberFormatMain( const OUString& rString,
-                             const SvNumberformat* pFormat = nullptr);    // optional number format to match against
-
-    static inline bool MyIsdigit( sal_Unicode c );
+                             const SvNumberformat* pFormat);    // number format to match against
 
     /** Whether input matches locale dependent date acceptance pattern.
 
@@ -405,7 +402,7 @@ private:
     /** Obtain date format order, from accepted date pattern if available or
         otherwise the locale's default order.
      */
-    DateFormat GetDateOrder();
+    DateOrder GetDateOrder();
 
     /** Whether input may be an ISO 8601 date format, yyyy-mm-dd...
 

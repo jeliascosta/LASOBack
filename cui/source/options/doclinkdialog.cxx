@@ -103,7 +103,7 @@ namespace svx
     }
 
 
-    IMPL_LINK_NOARG_TYPED(ODocumentLinkDialog, OnOk, Button*, void)
+    IMPL_LINK_NOARG(ODocumentLinkDialog, OnOk, Button*, void)
     {
         // get the current URL
         OUString sURL = m_pURL->GetText();
@@ -147,7 +147,7 @@ namespace svx
             {
                 OUString sMsg = CUI_RES(STR_NAME_CONFLICT);
                 sMsg = sMsg.replaceFirst("$file$", sCurrentText);
-                ScopedVclPtrInstance< MessageDialog > aError(this, sMsg, VCL_MESSAGE_INFO);
+                ScopedVclPtrInstance< MessageDialog > aError(this, sMsg, VclMessageType::Info);
                 aError->Execute();
 
                 m_pName->SetSelection(Selection(0,sCurrentText.getLength()));
@@ -160,7 +160,7 @@ namespace svx
     }
 
 
-    IMPL_LINK_NOARG_TYPED(ODocumentLinkDialog, OnBrowseFile, Button*, void)
+    IMPL_LINK_NOARG(ODocumentLinkDialog, OnBrowseFile, Button*, void)
     {
         ::sfx2::FileDialogHelper aFileDlg(
                 ui::dialogs::TemplateDescription::FILEOPEN_READONLY_VERSION);
@@ -188,7 +188,7 @@ namespace svx
             aParser.SetSmartProtocol(INetProtocol::File);
             aParser.SetSmartURL(aFileDlg.GetPath());
 
-            m_pName->SetText(aParser.getBase(INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET));
+            m_pName->SetText(aParser.getBase(INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset));
 
             m_pName->SetSelection(Selection(0,m_pName->GetText().getLength()));
             m_pName->GrabFocus();
@@ -204,7 +204,7 @@ namespace svx
     }
 
 
-    IMPL_LINK_NOARG_TYPED(ODocumentLinkDialog, OnTextModified, Edit&, void)
+    IMPL_LINK_NOARG(ODocumentLinkDialog, OnTextModified, Edit&, void)
     {
         validate( );
     }

@@ -22,6 +22,7 @@
 #include <xml/toolboxdocumenthandler.hxx>
 #include <xml/toolboxconfigurationdefines.hxx>
 
+#include <com/sun/star/xml/sax/SAXException.hpp>
 #include <com/sun/star/xml/sax/XExtendedDocumentHandler.hpp>
 #include <com/sun/star/ui/ItemType.hpp>
 #include <com/sun/star/ui/ItemStyle.hpp>
@@ -35,6 +36,7 @@
 #include <rtl/ustrbuf.hxx>
 
 #include <comphelper/attributelist.hxx>
+#include <comphelper/propertysequence.hxx>
 
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::beans;
@@ -48,7 +50,6 @@ namespace framework
 
 // Property names of a menu/menu item ItemDescriptor
 static const char ITEM_DESCRIPTOR_COMMANDURL[]  = "CommandURL";
-static const char ITEM_DESCRIPTOR_HELPURL[]     = "HelpURL";
 static const char ITEM_DESCRIPTOR_LABEL[]       = "Label";
 static const char ITEM_DESCRIPTOR_TYPE[]        = "Type";
 static const char ITEM_DESCRIPTOR_STYLE[]       = "Style";
@@ -57,7 +58,6 @@ static const char ITEM_DESCRIPTOR_VISIBLE[]     = "IsVisible";
 static void ExtractToolbarParameters( const Sequence< PropertyValue >& rProp,
                                       OUString&                        rCommandURL,
                                       OUString&                        rLabel,
-                                      OUString&                        rHelpURL,
                                       sal_Int16&                       rStyle,
                                       bool&                            rVisible,
                                       sal_Int16&                       rType )
@@ -69,8 +69,6 @@ static void ExtractToolbarParameters( const Sequence< PropertyValue >& rProp,
             rProp[i].Value >>= rCommandURL;
             rCommandURL = rCommandURL.intern();
         }
-        else if ( rProp[i].Name == ITEM_DESCRIPTOR_HELPURL )
-            rProp[i].Value >>= rHelpURL;
         else if ( rProp[i].Name == ITEM_DESCRIPTOR_LABEL )
             rProp[i].Value >>= rLabel;
         else if ( rProp[i].Name == ITEM_DESCRIPTOR_TYPE )
@@ -99,7 +97,7 @@ const ToolboxStyleItem Styles[ ] = {
     { css::ui::ItemStyle::TEXT,          ATTRIBUTE_ITEMSTYLE_TEXT },
 };
 
-sal_Int32 nStyleItemEntries = SAL_N_ELEMENTS(Styles);
+sal_Int32 const nStyleItemEntries = SAL_N_ELEMENTS(Styles);
 
 struct ToolBarEntryProperty
 {
@@ -107,7 +105,7 @@ struct ToolBarEntryProperty
     char                                                aEntryName[20];
 };
 
-ToolBarEntryProperty ToolBoxEntries[OReadToolBoxDocumentHandler::TB_XML_ENTRY_COUNT] =
+ToolBarEntryProperty const ToolBoxEntries[OReadToolBoxDocumentHandler::TB_XML_ENTRY_COUNT] =
 {
     { OReadToolBoxDocumentHandler::TB_NS_TOOLBAR,   ELEMENT_TOOLBAR             },
     { OReadToolBoxDocumentHandler::TB_NS_TOOLBAR,   ELEMENT_TOOLBARITEM         },
@@ -117,7 +115,6 @@ ToolBarEntryProperty ToolBoxEntries[OReadToolBoxDocumentHandler::TB_XML_ENTRY_CO
     { OReadToolBoxDocumentHandler::TB_NS_TOOLBAR,   ATTRIBUTE_TEXT              },
     { OReadToolBoxDocumentHandler::TB_NS_XLINK,     ATTRIBUTE_URL               },
     { OReadToolBoxDocumentHandler::TB_NS_TOOLBAR,   ATTRIBUTE_VISIBLE           },
-    { OReadToolBoxDocumentHandler::TB_NS_TOOLBAR,   ATTRIBUTE_HELPID            },
     { OReadToolBoxDocumentHandler::TB_NS_TOOLBAR,   ATTRIBUTE_ITEMSTYLE         },
     { OReadToolBoxDocumentHandler::TB_NS_TOOLBAR,   ATTRIBUTE_UINAME            },
 };
@@ -127,7 +124,6 @@ OReadToolBoxDocumentHandler::OReadToolBoxDocumentHandler( const Reference< XInde
     m_aType( ITEM_DESCRIPTOR_TYPE ),
     m_aLabel( ITEM_DESCRIPTOR_LABEL ),
     m_aStyle( ITEM_DESCRIPTOR_STYLE ),
-    m_aHelpURL( ITEM_DESCRIPTOR_HELPURL ),
     m_aIsVisible( ITEM_DESCRIPTOR_VISIBLE ),
     m_aCommandURL( ITEM_DESCRIPTOR_COMMANDURL )
  {
@@ -166,7 +162,6 @@ OReadToolBoxDocumentHandler::OReadToolBoxDocumentHandler( const Reference< XInde
     m_nHashCode_Style_Image         = OUString( ATTRIBUTE_ITEMSTYLE_IMAGE ).hashCode();
 
     m_bToolBarStartFound            = false;
-    m_bToolBarEndFound              = false;
     m_bToolBarItemStartFound        = false;
     m_bToolBarSpaceStartFound       = false;
     m_bToolBarBreakStartFound       = false;
@@ -179,17 +174,14 @@ OReadToolBoxDocumentHandler::~OReadToolBoxDocumentHandler()
 
 // XDocumentHandler
 void SAL_CALL OReadToolBoxDocumentHandler::startDocument()
-throw ( SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadToolBoxDocumentHandler::endDocument()
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
-    if (( m_bToolBarStartFound && !m_bToolBarEndFound ) ||
-        ( !m_bToolBarStartFound && m_bToolBarEndFound )     )
+    if ( m_bToolBarStartFound )
     {
         OUString aErrorMessage = getErrorLineString();
         aErrorMessage += "No matching start or end element 'toolbar' found!";
@@ -199,7 +191,6 @@ throw(  SAXException, RuntimeException, std::exception )
 
 void SAL_CALL OReadToolBoxDocumentHandler::startElement(
     const OUString& aName, const Reference< XAttributeList > &xAttribs )
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -280,7 +271,6 @@ throw(  SAXException, RuntimeException, std::exception )
                 m_bToolBarItemStartFound = true;
                 OUString        aLabel;
                 OUString        aCommandURL;
-                OUString        aHelpURL;
                 sal_uInt16      nItemBits( 0 );
                 bool            bVisible( true );
 
@@ -316,12 +306,6 @@ throw(  SAXException, RuntimeException, std::exception )
                                     aErrorMessage += "Attribute toolbar:visible must have value 'true' or 'false'!";
                                     throw SAXException( aErrorMessage, Reference< XInterface >(), Any() );
                                 }
-                            }
-                            break;
-
-                            case TB_ATTRIBUTE_HELPID:
-                            {
-                                aHelpURL = xAttribs->getValueByIndex( n );
                             }
                             break;
 
@@ -374,14 +358,6 @@ throw(  SAXException, RuntimeException, std::exception )
 
                 if ( !aCommandURL.isEmpty() )
                 {
-                    Sequence< PropertyValue > aToolbarItemProp( 6 );
-                    aToolbarItemProp[0].Name = m_aCommandURL;
-                    aToolbarItemProp[1].Name = m_aHelpURL;
-                    aToolbarItemProp[2].Name = m_aLabel;
-                    aToolbarItemProp[3].Name = m_aType;
-                    aToolbarItemProp[4].Name = m_aStyle;
-                    aToolbarItemProp[5].Name = m_aIsVisible;
-
                     //fix for fdo#39370
                     /// check whether RTL interface or not
                     if(AllSettings::GetLayoutRTL()){
@@ -399,12 +375,13 @@ throw(  SAXException, RuntimeException, std::exception )
                             aCommandURL = ".uno:AlignLeft";
                     }
 
-                    aToolbarItemProp[0].Value <<= aCommandURL;
-                    aToolbarItemProp[1].Value <<= aHelpURL;
-                    aToolbarItemProp[2].Value <<= aLabel;
-                    aToolbarItemProp[3].Value = makeAny( css::ui::ItemType::DEFAULT );
-                    aToolbarItemProp[4].Value <<= nItemBits;
-                    aToolbarItemProp[5].Value <<= bVisible;
+                    auto aToolbarItemProp( comphelper::InitPropertySequence( {
+                        { m_aCommandURL, css::uno::makeAny( aCommandURL ) },
+                        { m_aLabel, css::uno::makeAny( aLabel ) },
+                        { m_aType, css::uno::makeAny( css::ui::ItemType::DEFAULT ) },
+                        { m_aStyle, css::uno::makeAny( nItemBits ) },
+                        { m_aIsVisible, css::uno::makeAny( bVisible ) },
+                    } ) );
 
                     m_rItemContainer->insertByIndex( m_rItemContainer->getCount(), makeAny( aToolbarItemProp ) );
                 }
@@ -493,7 +470,6 @@ throw(  SAXException, RuntimeException, std::exception )
 }
 
 void SAL_CALL OReadToolBoxDocumentHandler::endElement(const OUString& aName)
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -574,24 +550,20 @@ throw(  SAXException, RuntimeException, std::exception )
 }
 
 void SAL_CALL OReadToolBoxDocumentHandler::characters(const OUString&)
-throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadToolBoxDocumentHandler::ignorableWhitespace(const OUString&)
-throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadToolBoxDocumentHandler::processingInstruction(
     const OUString& /*aTarget*/, const OUString& /*aData*/ )
-throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL OReadToolBoxDocumentHandler::setDocumentLocator(
     const Reference< XLocator > &xLocator)
-throw(  SAXException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -631,8 +603,7 @@ OWriteToolBoxDocumentHandler::~OWriteToolBoxDocumentHandler()
 {
 }
 
-void OWriteToolBoxDocumentHandler::WriteToolBoxDocument() throw
-( SAXException, RuntimeException )
+void OWriteToolBoxDocumentHandler::WriteToolBoxDocument()
 {
     SolarMutexGuard g;
 
@@ -689,14 +660,13 @@ void OWriteToolBoxDocumentHandler::WriteToolBoxDocument() throw
         {
             OUString    aCommandURL;
             OUString    aLabel;
-            OUString    aHelpURL;
             bool    bVisible( true );
             sal_Int16   nType( css::ui::ItemType::DEFAULT );
             sal_Int16   nStyle( 0 );
 
-            ExtractToolbarParameters( aProps, aCommandURL, aLabel, aHelpURL, nStyle, bVisible, nType );
+            ExtractToolbarParameters( aProps, aCommandURL, aLabel, nStyle, bVisible, nType );
             if ( nType == css::ui::ItemType::DEFAULT )
-                WriteToolBoxItem( aCommandURL, aLabel, aHelpURL, nStyle, bVisible );
+                WriteToolBoxItem( aCommandURL, aLabel, nStyle, bVisible );
             else if ( nType == css::ui::ItemType::SEPARATOR_SPACE )
                 WriteToolBoxSpace();
             else if ( nType == css::ui::ItemType::SEPARATOR_LINE )
@@ -717,10 +687,8 @@ void OWriteToolBoxDocumentHandler::WriteToolBoxDocument() throw
 void OWriteToolBoxDocumentHandler::WriteToolBoxItem(
     const OUString& rCommandURL,
     const OUString& rLabel,
-    const OUString& rHelpURL,
     sal_Int16       nStyle,
     bool        bVisible )
-throw ( SAXException, RuntimeException )
 {
     ::comphelper::AttributeList* pList = new ::comphelper::AttributeList;
     Reference< XAttributeList > xList( static_cast<XAttributeList *>(pList) , UNO_QUERY );
@@ -745,13 +713,6 @@ throw ( SAXException, RuntimeException )
         pList->AddAttribute( m_aXMLToolbarNS + ATTRIBUTE_VISIBLE,
                              m_aAttributeType,
                              ATTRIBUTE_BOOLEAN_FALSE );
-    }
-
-    if ( !rHelpURL.isEmpty() )
-    {
-        pList->AddAttribute( m_aXMLToolbarNS + ATTRIBUTE_HELPID,
-                             m_aAttributeType,
-                             rHelpURL );
     }
 
     if ( nStyle > 0 )
@@ -779,8 +740,7 @@ throw ( SAXException, RuntimeException )
     m_xWriteDocumentHandler->endElement( ELEMENT_NS_TOOLBARITEM );
 }
 
-void OWriteToolBoxDocumentHandler::WriteToolBoxSpace() throw
-( SAXException, RuntimeException )
+void OWriteToolBoxDocumentHandler::WriteToolBoxSpace()
 {
     m_xWriteDocumentHandler->ignorableWhitespace( OUString() );
     m_xWriteDocumentHandler->startElement( ELEMENT_NS_TOOLBARSPACE, m_xEmptyList );
@@ -788,8 +748,7 @@ void OWriteToolBoxDocumentHandler::WriteToolBoxSpace() throw
     m_xWriteDocumentHandler->endElement( ELEMENT_NS_TOOLBARSPACE );
 }
 
-void OWriteToolBoxDocumentHandler::WriteToolBoxBreak() throw
-( SAXException, RuntimeException )
+void OWriteToolBoxDocumentHandler::WriteToolBoxBreak()
 {
     m_xWriteDocumentHandler->ignorableWhitespace( OUString() );
     m_xWriteDocumentHandler->startElement( ELEMENT_NS_TOOLBARBREAK, m_xEmptyList );
@@ -797,8 +756,7 @@ void OWriteToolBoxDocumentHandler::WriteToolBoxBreak() throw
     m_xWriteDocumentHandler->endElement( ELEMENT_NS_TOOLBARBREAK );
 }
 
-void OWriteToolBoxDocumentHandler::WriteToolBoxSeparator() throw
-( SAXException, RuntimeException )
+void OWriteToolBoxDocumentHandler::WriteToolBoxSeparator()
 {
     m_xWriteDocumentHandler->ignorableWhitespace( OUString() );
     m_xWriteDocumentHandler->startElement( ELEMENT_NS_TOOLBARSEPARATOR, m_xEmptyList );

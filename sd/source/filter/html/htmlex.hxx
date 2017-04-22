@@ -66,8 +66,7 @@ private:
     OUString  maURL2;
 
 public:
-                    explicit HtmlErrorContext(vcl::Window *pWin=nullptr);
-                    virtual ~HtmlErrorContext() {};
+                    explicit HtmlErrorContext();
 
     virtual bool    GetString( sal_uLong nErrId, OUString& rCtxStr ) override;
 
@@ -76,7 +75,7 @@ public:
 };
 
 /// this class exports an Impress Document as a HTML Presentation.
-class HtmlExport
+class HtmlExport final
 {
     std::vector< SdPage* > maPages;
     std::vector< SdPage* > maNotesPages;
@@ -167,7 +166,7 @@ class HtmlExport
     bool    checkForExistingFiles();
     bool    checkFileExists( css::uno::Reference< css::ucb::XSimpleFileAccess3 >& xFileAccess, OUString const & aFileName );
 
-    OUString getDocumentTitle();
+    OUString const & getDocumentTitle();
     bool    SavePresentation();
 
     static OUString CreateLink( const OUString& aLink, const OUString& aText,
@@ -186,7 +185,7 @@ class HtmlExport
     static OUString CreateHTMLCircleArea( sal_uLong nRadius, sal_uLong nCenterX,
                                   sal_uLong nCenterY, const OUString& rHRef );
     static OUString CreateHTMLPolygonArea( const ::basegfx::B2DPolyPolygon& rPolyPoly, Size aShift, double fFactor, const OUString& rHRef );
-    static OUString CreateHTMLRectArea( const Rectangle& rRect,
+    static OUString CreateHTMLRectArea( const ::tools::Rectangle& rRect,
                                 const OUString& rHRef );
 
     OUString CreatePageURL( sal_uInt16 nPgNum );
@@ -229,7 +228,7 @@ class HtmlExport
                SdDrawDocument* pExpDoc,
                sd::DrawDocShell* pDocShell);
 
-    virtual ~HtmlExport();
+    ~HtmlExport();
 
     static OUString ColorToHTMLString( Color aColor );
     static OUString StringToHTMLString( const OUString& rString );

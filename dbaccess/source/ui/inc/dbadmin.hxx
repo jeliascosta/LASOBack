@@ -48,10 +48,10 @@ class ODbDataSourceAdministrationHelper;
 class ODbAdminDialog : public SfxTabDialog , public IItemSetHelper, public IDatabaseSettingsDialog
 {
 private:
-    typedef ::std::stack< sal_Int32 > PageStack;
+    typedef std::stack< sal_Int32 > PageStack;
     PageStack               m_aCurrentDetailPages;  // ids of all currently enabled (type-dependent) detail pages
 
-    ::std::unique_ptr<ODbDataSourceAdministrationHelper>  m_pImpl;
+    std::unique_ptr<ODbDataSourceAdministrationHelper>  m_pImpl;
 
     bool                m_bApplied : 1;     /// sal_True if any changes have been applied while the dialog was executing
     bool                m_bUIEnabled : 1;   /// <TRUE/> if the UI is enabled, false otherwise. Cannot be switched back to <TRUE/>, once it is <FALSE/>
@@ -65,17 +65,17 @@ public:
         SfxItemSet* _pItems,
         const css::uno::Reference< css::uno::XComponentContext >& _rxORB
         );
-    virtual ~ODbAdminDialog();
+    virtual ~ODbAdminDialog() override;
     virtual void dispose() override;
 
     /** create and return an item set for use with the dialog.
         @param      _pTypeCollection        pointer to an <type>ODatasourceMap</type>. May be NULL, in this case
                                             the pool will not contain a typecollection default.
     */
-    static SfxItemSet*  createItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, SfxPoolItem**& _rppDefaults, ::dbaccess::ODsnTypeCollection* _pTypeCollection);
+    static SfxItemSet*  createItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, std::vector<SfxPoolItem*>*& _rpDefaults, ::dbaccess::ODsnTypeCollection* _pTypeCollection);
     /** destroy and item set / item pool / pool defaults previously created by <method>createItemSet</method>
     */
-    static void         destroyItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, SfxPoolItem**& _rppDefaults);
+    static void         destroyItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, std::vector<SfxPoolItem*>*& _rpDefaults);
 
     /** selects the DataSource
         @param  _rName
@@ -88,7 +88,7 @@ public:
 
     // forwards to ODbDataSourceAdministrationHelper
     virtual css::uno::Reference< css::uno::XComponentContext > getORB() const override;
-    virtual ::std::pair< css::uno::Reference< css::sdbc::XConnection >,sal_Bool> createConnection() override;
+    virtual std::pair< css::uno::Reference< css::sdbc::XConnection >,sal_Bool> createConnection() override;
     virtual css::uno::Reference< css::sdbc::XDriver > getDriver() override;
     virtual OUString getDatasourceType(const SfxItemSet& _rSet) const override;
     virtual void clearPassword() override;
@@ -103,10 +103,6 @@ protected:
     virtual void PageCreated(sal_uInt16 _nId, SfxTabPage& _rPage) override;
     virtual short Ok() override;
 
-protected:
-    inline bool isUIEnabled() const { return m_bUIEnabled; }
-    inline void     disabledUI() { m_bUIEnabled = false; }
-
 private:
     /// select a datasource with a given name, adjust the item set accordingly, and everything like that ..
     void impl_selectDataSource(const css::uno::Any& _aDataSourceName);
@@ -116,7 +112,6 @@ private:
     enum ApplyResult
     {
         AR_LEAVE_MODIFIED,      // something was modified and has successfully been committed
-        AR_LEAVE_UNCHANGED,     // no changes were made
         AR_KEEP                 // don't leave the page (e.g. because an error occurred)
     };
     /** apply all changes made

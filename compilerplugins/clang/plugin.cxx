@@ -12,12 +12,12 @@
 #include "plugin.hxx"
 
 #include <cassert>
+#include <string>
 
 #include <clang/Basic/FileManager.h>
 #include <clang/Lex/Lexer.h>
 
 #include "pluginhandler.hxx"
-#include "compat.hxx"
 
 /*
 Base classes for plugin actions.
@@ -41,14 +41,72 @@ bool Plugin::ignoreLocation( SourceLocation loc )
     if( compiler.getSourceManager().isInSystemHeader( expansionLoc ))
         return true;
     const char* bufferName = compiler.getSourceManager().getPresumedLoc( expansionLoc ).getFilename();
-    if( bufferName == NULL
-        || strncmp( bufferName, WORKDIR, strlen( WORKDIR )) == 0
-        || strncmp( bufferName, SRCDIR "/external/", strlen( SRCDIR "/external/" )) == 0 )
+    if (bufferName == NULL
+        || strncmp( bufferName, SRCDIR "/external/", strlen( SRCDIR "/external/" )) == 0
+        || strcmp( bufferName, SRCDIR "/sdext/source/pdfimport/wrapper/keyword_list" ) == 0 )
+            // workdir/CustomTarget/sdext/pdfimport/hash.cxx is generated from
+            // sdext/source/pdfimport/wrapper/keyword_list by gperf, which
+            // inserts various #line directives denoting the latter into the
+            // former, but fails to add a #line directive returning back to
+            // hash.cxx itself before the gperf generated boilerplate, so
+            // compilers erroneously consider errors in the boilerplate to come
+            // from keyword_list instead of hash.cxx (for Clang on Linux/macOS
+            // this is not an issue due to the '#pragma GCC system_header'
+            // generated into the start of hash.cxx, #if'ed for __GNUC__, but
+            // for clang-cl it is an issue)
         return true;
+    if( strncmp( bufferName, WORKDIR, strlen( WORKDIR )) == 0 )
+    {
+        // workdir/CustomTarget/vcl/unx/kde4/tst_exclude_socket_notifiers.moc
+        // includes
+        // "../../../../../vcl/unx/kde4/tst_exclude_socket_notifiers.hxx",
+        // making the latter file erroneously match here; so strip any ".."
+        // segments:
+        if (strstr(bufferName, "/..") == nullptr) {
+            return true;
+        }
+        std::string s(bufferName);
+        normalizeDotDotInFilePath(s);
+        if (strncmp(s.c_str(), WORKDIR, strlen(WORKDIR)) == 0) {
+            return true;
+        }
+    }
     if( strncmp( bufferName, BUILDDIR, strlen( BUILDDIR )) == 0
         || strncmp( bufferName, SRCDIR, strlen( SRCDIR )) == 0 )
         return false; // ok
     return true;
+    }
+
+void Plugin::normalizeDotDotInFilePath( std::string & s )
+    {
+    for (std::string::size_type i = 0;;) {
+        i = s.find("/.", i);
+        if (i == std::string::npos) {
+            break;
+        }
+        if (i + 2 == s.length() || s[i + 2] == '/') {
+            s.erase(i, 2); // [AAA]/.[/CCC] -> [AAA][/CCC]
+        } else if (s[i + 2] == '.'
+                   && (i + 3 == s.length() || s[i + 3] == '/'))
+        {
+            if (i == 0) { // /..[/CCC] -> /..[/CCC]
+                break;
+            }
+            auto j = s.rfind('/', i - 1);
+            if (j == std::string::npos) {
+                // BBB/..[/CCC] -> BBB/..[/CCC] (instead of BBB/../CCC ->
+                // CCC, to avoid wrong ../../CCC -> CCC; relative paths
+                // shouldn't happen anyway, and even if they did, wouldn't
+                // match against WORKDIR anyway, as WORKDIR should be
+                // absolute):
+                break;
+            }
+            s.erase(j, i + 3 - j); // AAA/BBB/..[/CCC] -> AAA[/CCC]
+            i = j;
+        } else {
+            i += 2;
+        }
+    }
     }
 
 void Plugin::registerPlugin( Plugin* (*create)( const InstantiationData& ), const char* optionName, bool isPPCallback, bool byDefault )
@@ -75,11 +133,38 @@ Stmt* Plugin::parentStmt( Stmt* stmt )
     return const_cast< Stmt* >( parents[ stmt ] );
     }
 
+static const Decl* getDeclContext(ASTContext& context, const Stmt* stmt)
+    {
+    auto it = context.getParents(*stmt).begin();
+
+    if (it == context.getParents(*stmt).end())
+          return nullptr;
+
+    const Decl *aDecl = it->get<Decl>();
+    if (aDecl)
+          return aDecl;
+
+    const Stmt *aStmt = it->get<Stmt>();
+    if (aStmt)
+        return getDeclContext(context, aStmt);
+
+    return nullptr;
+    }
+
+const FunctionDecl* Plugin::parentFunctionDecl( const Stmt* stmt )
+    {
+    const Decl *decl = getDeclContext(compiler.getASTContext(), stmt);
+    if (decl)
+        return static_cast<const FunctionDecl*>(decl->getNonClosureContext());
+
+    return nullptr;
+    }
+
 
 bool Plugin::isInUnoIncludeFile(SourceLocation spellingLocation) const {
     StringRef name {
         compiler.getSourceManager().getFilename(spellingLocation) };
-    return compat::isInMainFile(compiler.getSourceManager(), spellingLocation)
+    return compiler.getSourceManager().isInMainFile(spellingLocation)
         ? (name == SRCDIR "/cppu/source/cppu/compat.cxx"
            || name == SRCDIR "/cppuhelper/source/compat.cxx"
            || name == SRCDIR "/sal/osl/all/compat.cxx")
@@ -92,8 +177,12 @@ bool Plugin::isInUnoIncludeFile(SourceLocation spellingLocation) const {
            || name.startswith(SRCDIR "/include/salhelper/")
            || name.startswith(SRCDIR "/include/systools/")
            || name.startswith(SRCDIR "/include/typelib/")
-           || name.startswith(SRCDIR "/include/uno/")
-           || name.startswith(WORKDIR "/"));
+           || name.startswith(SRCDIR "/include/uno/"));
+}
+
+bool Plugin::isInUnoIncludeFile(const FunctionDecl* functionDecl) const {
+    return isInUnoIncludeFile(compiler.getSourceManager().getSpellingLoc(
+             functionDecl->getCanonicalDecl()->getNameInfo().getLoc()));
 }
 
 namespace

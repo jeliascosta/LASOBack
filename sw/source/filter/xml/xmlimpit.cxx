@@ -56,11 +56,11 @@ using namespace ::com::sun::star;
 using namespace ::xmloff::token;
 using uno::Any;
 
+static const sal_uInt16 nUnknownWhich = RES_UNKNOWNATR_CONTAINER;
+
 SvXMLImportItemMapper::SvXMLImportItemMapper(
-                                SvXMLItemMapEntriesRef rMapEntries,
-                                sal_uInt16 nUnknWhich ) :
-    mrMapEntries( rMapEntries ),
-    nUnknownWhich( nUnknWhich )
+                                SvXMLItemMapEntriesRef const & rMapEntries ) :
+    mrMapEntries( rMapEntries )
 {
 }
 
@@ -76,7 +76,7 @@ SvXMLImportItemMapper::setMapEntries( SvXMLItemMapEntriesRef rMapEntries )
 
 // fills the given itemset with the attributes in the given list
 void SvXMLImportItemMapper::importXML( SfxItemSet& rSet,
-                                      uno::Reference< xml::sax::XAttributeList > xAttrList,
+                                      uno::Reference< xml::sax::XAttributeList > const & xAttrList,
                                       const SvXMLUnitConverter& rUnitConverter,
                                       const SvXMLNamespaceMap& rNamespaceMap )
 {
@@ -96,7 +96,7 @@ void SvXMLImportItemMapper::importXML( SfxItemSet& rSet,
         const OUString& rValue = xAttrList->getValueByIndex( i );
 
         // find a map entry for this attribute
-        SvXMLItemMapEntry* pEntry = mrMapEntries->getByName( nPrefix, aLocalName );
+        SvXMLItemMapEntry const * pEntry = mrMapEntries->getByName( nPrefix, aLocalName );
 
         if( pEntry )
         {
@@ -109,8 +109,8 @@ void SvXMLImportItemMapper::importXML( SfxItemSet& rSet,
                 SfxItemState eState = rSet.GetItemState( pEntry->nWhichId, true,
                                                          &pItem );
 
-                // if its not set, try the pool
-                if(SfxItemState::SET != eState && SFX_WHICH_MAX > pEntry->nWhichId )
+                // if it's not set, try the pool
+                if (SfxItemState::SET != eState && SfxItemPool::IsWhich(pEntry->nWhichId))
                     pItem = &rSet.GetPool()->GetDefaultItem(pEntry->nWhichId);
 
                 // do we have an item?
@@ -285,10 +285,10 @@ bool SvXMLImportItemMapper::PutXMLValue(
                         switch( nMemberId )
                         {
                             case MID_L_MARGIN:
-                                rLRSpace.SetTextLeft( (sal_Int32)nAbs, (sal_uInt16)nProp );
+                                rLRSpace.SetTextLeft( nAbs, (sal_uInt16)nProp );
                                 break;
                             case MID_R_MARGIN:
-                                rLRSpace.SetRight( (sal_Int32)nAbs, (sal_uInt16)nProp );
+                                rLRSpace.SetRight( nAbs, (sal_uInt16)nProp );
                                 break;
                         }
                     }
@@ -361,14 +361,14 @@ bool SvXMLImportItemMapper::PutXMLValue(
             SvXMLTokenEnumerator aTokenEnum( rValue );
 
             Color aColor( 128,128, 128 );
-            rShadow.SetLocation( SVX_SHADOW_BOTTOMRIGHT );
+            rShadow.SetLocation( SvxShadowLocation::BottomRight );
 
             OUString aToken;
             while( aTokenEnum.getNextToken( aToken ) )
             {
                 if( IsXMLToken( aToken, XML_NONE ) )
                 {
-                    rShadow.SetLocation( SVX_SHADOW_NONE );
+                    rShadow.SetLocation( SvxShadowLocation::NONE );
                     bOk = true;
                 }
                 else if( !bColorFound && aToken.startsWith("#") )
@@ -395,22 +395,22 @@ bool SvXMLImportItemMapper::PutXMLValue(
                         {
                             if( nY < 0 )
                             {
-                                rShadow.SetLocation( SVX_SHADOW_TOPLEFT );
+                                rShadow.SetLocation( SvxShadowLocation::TopLeft );
                             }
                             else
                             {
-                                rShadow.SetLocation( SVX_SHADOW_BOTTOMLEFT );
+                                rShadow.SetLocation( SvxShadowLocation::BottomLeft );
                             }
                         }
                         else
                         {
                             if( nY < 0 )
                             {
-                                rShadow.SetLocation( SVX_SHADOW_TOPRIGHT );
+                                rShadow.SetLocation( SvxShadowLocation::TopRight );
                             }
                             else
                             {
-                                rShadow.SetLocation( SVX_SHADOW_BOTTOMRIGHT );
+                                rShadow.SetLocation( SvxShadowLocation::BottomRight );
                             }
                         }
 
@@ -589,14 +589,14 @@ bool SvXMLImportItemMapper::PutXMLValue(
         case RES_BREAK:
         {
             SvxFormatBreakItem& rFormatBreak = dynamic_cast<SvxFormatBreakItem&>(rItem);
-            sal_uInt16 eEnum;
+            sal_uInt16 eEnum{};
 
             if( !SvXMLUnitConverter::convertEnum( eEnum, rValue, psXML_BreakType ) )
                 return false;
 
             if( eEnum == 0 )
             {
-                rFormatBreak.SetValue( SVX_BREAK_NONE );
+                rFormatBreak.SetValue( SvxBreak::NONE );
                 bOk = true;
             }
             else
@@ -604,14 +604,14 @@ bool SvXMLImportItemMapper::PutXMLValue(
                 switch( nMemberId )
                 {
                     case MID_BREAK_BEFORE:
-                        rFormatBreak.SetValue( static_cast< sal_uInt16 >((eEnum == 1) ?
-                                             SVX_BREAK_COLUMN_BEFORE :
-                                             SVX_BREAK_PAGE_BEFORE) );
+                        rFormatBreak.SetValue( eEnum == 1 ?
+                                               SvxBreak::ColumnBefore :
+                                               SvxBreak::PageBefore );
                         break;
                     case MID_BREAK_AFTER:
-                        rFormatBreak.SetValue( static_cast< sal_uInt16 >((eEnum == 1) ?
-                                             SVX_BREAK_COLUMN_AFTER :
-                                             SVX_BREAK_PAGE_AFTER) );
+                        rFormatBreak.SetValue( eEnum == 1 ?
+                                               SvxBreak::ColumnAfter :
+                                               SvxBreak::PageAfter );
                         break;
                 }
                 bOk = true;
@@ -674,13 +674,13 @@ bool SvXMLImportItemMapper::PutXMLValue(
                 case MID_GRAPHIC_REPEAT:
                 {
                     SvxGraphicPosition eGraphicPos = rBrush.GetGraphicPos();
-                    sal_uInt16 nPos = GPOS_NONE;
+                    SvxGraphicPosition nPos = GPOS_NONE;
                     if( SvXMLUnitConverter::convertEnum( nPos, rValue,
                                                     psXML_BrushRepeat ) )
                     {
                         if( GPOS_MM != nPos || GPOS_NONE == eGraphicPos ||
                             GPOS_AREA == eGraphicPos || GPOS_TILED == eGraphicPos )
-                            rBrush.SetGraphicPos( (SvxGraphicPosition)nPos );
+                            rBrush.SetGraphicPos( nPos );
                         bOk = true;
                     }
                 }
@@ -689,7 +689,7 @@ bool SvXMLImportItemMapper::PutXMLValue(
                 case MID_GRAPHIC_POSITION:
                 {
                     SvxGraphicPosition ePos = GPOS_NONE, eTmp;
-                    sal_uInt16 nTmp;
+                    SvxGraphicPosition nTmp;
                     SvXMLTokenEnumerator aTokenEnum( rValue );
                     OUString aToken;
                     bool bHori = false, bVert = false;
@@ -739,9 +739,9 @@ bool SvXMLImportItemMapper::PutXMLValue(
                         {
                             if( bVert )
                                 sw_frmitems_MergeXMLHoriPos(
-                                    ePos, (SvxGraphicPosition)nTmp );
+                                    ePos, nTmp );
                             else if( !bHori )
-                                ePos = (SvxGraphicPosition)nTmp;
+                                ePos = nTmp;
                             else
                                 bOk = false;
                             bHori = true;
@@ -751,9 +751,9 @@ bool SvXMLImportItemMapper::PutXMLValue(
                         {
                             if( bHori )
                                 sw_frmitems_MergeXMLVertPos(
-                                    ePos, (SvxGraphicPosition)nTmp );
+                                    ePos, nTmp );
                             else if( !bVert )
-                                ePos = (SvxGraphicPosition)nTmp;
+                                ePos = nTmp;
                             else
                                 bOk = false;
                             bVert = true;
@@ -787,6 +787,9 @@ bool SvXMLImportItemMapper::PutXMLValue(
                 sal_Int32 nVal;
                 bOk = ::sax::Converter::convertNumber(
                         nVal, rValue, 0, USHRT_MAX);
+                // i#114163 tdf#77111: OOo < 3.3 had a bug where it wrote
+                // "auto" as "0" for tables - now that we support a real offset
+                //  0, this fake "0" MUST NOT be imported as offset 0!
                 if( bOk && nVal > 0 )
                     rPageDesc.SetNumOffset( (sal_uInt16)nVal );
             }
@@ -817,7 +820,7 @@ bool SvXMLImportItemMapper::PutXMLValue(
         {
             SwFormatHoriOrient& rHoriOrient = dynamic_cast<SwFormatHoriOrient&>(rItem);
 
-            sal_uInt16 nValue;
+            sal_Int16 nValue;
             bOk = SvXMLUnitConverter::convertEnum( nValue, rValue,
                                               aXMLTableAlignMap );
             if( bOk )
@@ -829,7 +832,7 @@ bool SvXMLImportItemMapper::PutXMLValue(
         {
             SwFormatVertOrient& rVertOrient = dynamic_cast<SwFormatVertOrient&>(rItem);
 
-            sal_uInt16 nValue;
+            sal_Int16 nValue;
             bOk = SvXMLUnitConverter::convertEnum( nValue, rValue,
                                               aXMLTableVAlignMap );
             if( bOk )

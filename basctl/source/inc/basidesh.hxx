@@ -39,9 +39,6 @@ class StarBASIC;
 
 namespace basctl
 {
-
-const sal_uLong BASICIDE_UI_FEATURE_SHOW_BROWSER = 0x00000001;
-
 class Layout;
 class ModulWindow;
 class ModulWindowLayout;
@@ -102,9 +99,7 @@ private:
     void                SetCurLib( const ScriptDocument& rDocument, const OUString& aLibName, bool bUpdateWindows = true , bool bCheck = true );
     void                SetCurLibForLocalization( const ScriptDocument& rDocument, const OUString& aLibName );
 
-    void                ImplStartListening( StarBASIC* pBasic );
-
-    DECL_LINK_TYPED( TabBarHdl, ::TabBar*, void );
+    DECL_LINK( TabBarHdl, ::TabBar*, void );
 
     static unsigned nShellCount;
 
@@ -112,7 +107,7 @@ private:
     virtual void        AdjustPosSizePixel( const Point &rPos, const Size &rSize ) override;
     virtual void        OuterResizePixel( const Point &rPos, const Size &rSize ) override;
     sal_uInt16          InsertWindowInTable (BaseWindow* pNewWin);
-    virtual bool        PrepareClose( bool bUI ) override;
+    virtual bool        PrepareClose( bool bUI = true ) override;
 
     void                SetCurWindow (BaseWindow* pNewWin, bool bUpdateTabBar = false, bool bRememberAsCurrent = true);
     void                ManageToolbars();
@@ -151,10 +146,9 @@ private:
 
 public:
     Shell( SfxViewFrame *pFrame, SfxViewShell *pOldSh );
-    virtual ~Shell();
+    virtual ~Shell() override;
 
     BaseWindow*      GetCurWindow() const    { return pCurWin; }
-    ScriptDocument const& GetCurDocument() const { return m_aCurDocument; }
     OUString const&  GetCurLibName() const { return m_aCurLibName; }
     const std::shared_ptr<LocalizationMgr>& GetCurLocalizationMgr() const { return m_pCurLocalizationMgr; }
 
@@ -169,10 +163,10 @@ public:
     virtual css::uno::Reference< css::view::XRenderable > GetRenderable() override;
 
     // virtual sal_uInt16           Print( SfxProgress &rProgress, sal_Bool bIsAPI, PrintDialog *pPrintDialog = 0 );
-    virtual SfxPrinter*     GetPrinter( bool bCreate ) override;
+    virtual SfxPrinter*     GetPrinter( bool bCreate = false ) override;
     virtual sal_uInt16      SetPrinter( SfxPrinter *pNewPrinter, SfxPrinterChangeFlags nDiffFlags = SFX_PRINTER_ALL ) override;
-    virtual OUString        GetSelectionText( bool bCompleteWords ) override;
-    virtual bool            HasSelection( bool bText ) const override;
+    virtual OUString        GetSelectionText( bool bCompleteWords = false ) override;
+    virtual bool            HasSelection( bool bText = true ) const override;
 
     void                GetState( SfxItemSet& );
     void                ExecuteGlobal( SfxRequest& rReq );
@@ -180,19 +174,19 @@ public:
     void                ExecuteBasic( SfxRequest& rReq );
     void                ExecuteDialog( SfxRequest& rReq );
 
-    virtual bool        HasUIFeature( sal_uInt32 nFeature ) override;
+    virtual bool        HasUIFeature(SfxShellFeature nFeature) const override;
 
     bool                CallBasicErrorHdl( StarBASIC* pBasic );
-    long                CallBasicBreakHdl( StarBASIC* pBasic );
+    BasicDebugFlags     CallBasicBreakHdl( StarBASIC* pBasic );
 
-    VclPtr<BaseWindow>   FindWindow( const ScriptDocument& rDocument, const OUString& rLibName = OUString(), const OUString& rName = OUString(), ItemType nType = TYPE_UNKNOWN, bool bFindSuspended = false );
+    VclPtr<BaseWindow>   FindWindow( const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rName, ItemType nType, bool bFindSuspended = false );
     VclPtr<DialogWindow> FindDlgWin( const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rName, bool bCreateIfNotExist = false, bool bFindSuspended = false );
     VclPtr<ModulWindow>  FindBasWin( const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rModName, bool bCreateIfNotExist = false, bool bFindSuspended = false );
     VclPtr<BaseWindow>   FindApplicationWindow();
-    bool                 NextPage( bool bPrev = false );
+    bool                 NextPage( bool bPrev );
 
     bool                IsAppBasicModified () const { return m_bAppBasicModified; }
-    void                SetAppBasicModified (bool bModified = true) { m_bAppBasicModified = bModified; }
+    void                SetAppBasicModified (bool bModified) { m_bAppBasicModified = bModified; }
 
     // For Dialog Drag&Drop in Dialog Organizer:
     // (defined in moduldlg.cxx)
@@ -200,6 +194,8 @@ public:
         css::uno::Reference< css::io::XInputStreamProvider >& io_xISP,
         const ScriptDocument& rSourceDoc, const OUString& rSourceLibName, const ScriptDocument& rDestDoc,
         const OUString& rDestLibName, const OUString& rDlgName );
+
+    static void InvalidateControlSlots();
 
     virtual css::uno::Reference< css::frame::XModel >
                         GetCurrentDocument() const override;

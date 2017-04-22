@@ -17,16 +17,17 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblescrollbar.hxx>
+#include <standard/vclxaccessiblescrollbar.hxx>
 
 #include <toolkit/awt/vclxwindows.hxx>
-#include <accessibility/helper/accresmgr.hxx>
-#include <accessibility/helper/accessiblestrings.hrc>
+#include <helper/accresmgr.hxx>
+#include <helper/accessiblestrings.hrc>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/awt/ScrollBarOrientation.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/typeprovider.hxx>
 #include <comphelper/sequence.hxx>
 #include <vcl/scrbar.hxx>
@@ -58,7 +59,7 @@ void VCLXAccessibleScrollBar::ProcessWindowEvent( const VclWindowEvent& rVclWind
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VCLEVENT_SCROLLBAR_SCROLL:
+        case VclEventId::ScrollbarScroll:
         {
             NotifyAccessibleEvent( AccessibleEventId::VALUE_CHANGED, Any(), Any() );
         }
@@ -101,23 +102,22 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2( VCLXAccessibleScrollBar, VCLXAccessibleCompone
 // XServiceInfo
 
 
-OUString VCLXAccessibleScrollBar::getImplementationName() throw (RuntimeException, std::exception)
+OUString VCLXAccessibleScrollBar::getImplementationName()
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleScrollBar" );
 }
 
 
-Sequence< OUString > VCLXAccessibleScrollBar::getSupportedServiceNames() throw (RuntimeException, std::exception)
+Sequence< OUString > VCLXAccessibleScrollBar::getSupportedServiceNames()
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleScrollBar" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleScrollBar" };
 }
 
 
 // XAccessibleAction
 
 
-sal_Int32 VCLXAccessibleScrollBar::getAccessibleActionCount( ) throw (RuntimeException, std::exception)
+sal_Int32 VCLXAccessibleScrollBar::getAccessibleActionCount( )
 {
     OExternalLockGuard aGuard( this );
 
@@ -125,7 +125,7 @@ sal_Int32 VCLXAccessibleScrollBar::getAccessibleActionCount( ) throw (RuntimeExc
 }
 
 
-sal_Bool VCLXAccessibleScrollBar::doAccessibleAction ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+sal_Bool VCLXAccessibleScrollBar::doAccessibleAction ( sal_Int32 nIndex )
 {
     OExternalLockGuard aGuard( this );
 
@@ -139,11 +139,11 @@ sal_Bool VCLXAccessibleScrollBar::doAccessibleAction ( sal_Int32 nIndex ) throw 
         ScrollType eScrollType;
         switch ( nIndex )
         {
-            case 0:     eScrollType = SCROLL_LINEUP;    break;
-            case 1:     eScrollType = SCROLL_LINEDOWN;  break;
-            case 2:     eScrollType = SCROLL_PAGEUP;    break;
-            case 3:     eScrollType = SCROLL_PAGEDOWN;  break;
-            default:    eScrollType = SCROLL_DONTKNOW;  break;
+            case 0:     eScrollType = ScrollType::LineUp;    break;
+            case 1:     eScrollType = ScrollType::LineDown;  break;
+            case 2:     eScrollType = ScrollType::PageUp;    break;
+            case 3:     eScrollType = ScrollType::PageDown;  break;
+            default:    eScrollType = ScrollType::DontKnow;  break;
         }
         if ( pScrollBar->DoScrollAction( eScrollType ) )
             bReturn = true;
@@ -153,7 +153,7 @@ sal_Bool VCLXAccessibleScrollBar::doAccessibleAction ( sal_Int32 nIndex ) throw 
 }
 
 
-OUString VCLXAccessibleScrollBar::getAccessibleActionDescription ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+OUString VCLXAccessibleScrollBar::getAccessibleActionDescription ( sal_Int32 nIndex )
 {
     OExternalLockGuard aGuard( this );
 
@@ -175,7 +175,7 @@ OUString VCLXAccessibleScrollBar::getAccessibleActionDescription ( sal_Int32 nIn
 }
 
 
-Reference< XAccessibleKeyBinding > VCLXAccessibleScrollBar::getAccessibleActionKeyBinding( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+Reference< XAccessibleKeyBinding > VCLXAccessibleScrollBar::getAccessibleActionKeyBinding( sal_Int32 nIndex )
 {
     OExternalLockGuard aGuard( this );
 
@@ -189,7 +189,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleScrollBar::getAccessibleActionK
 // XAccessibleValue
 
 
-Any VCLXAccessibleScrollBar::getCurrentValue(  ) throw (RuntimeException, std::exception)
+Any VCLXAccessibleScrollBar::getCurrentValue(  )
 {
     OExternalLockGuard aGuard( this );
 
@@ -197,13 +197,13 @@ Any VCLXAccessibleScrollBar::getCurrentValue(  ) throw (RuntimeException, std::e
 
     VCLXScrollBar* pVCLXScrollBar = static_cast< VCLXScrollBar* >( GetVCLXWindow() );
     if ( pVCLXScrollBar )
-        aValue <<= (sal_Int32) pVCLXScrollBar->getValue();
+        aValue <<=  pVCLXScrollBar->getValue();
 
     return aValue;
 }
 
 
-sal_Bool VCLXAccessibleScrollBar::setCurrentValue( const Any& aNumber ) throw (RuntimeException, std::exception)
+sal_Bool VCLXAccessibleScrollBar::setCurrentValue( const Any& aNumber )
 {
     OExternalLockGuard aGuard( this );
 
@@ -230,7 +230,7 @@ sal_Bool VCLXAccessibleScrollBar::setCurrentValue( const Any& aNumber ) throw (R
 }
 
 
-Any VCLXAccessibleScrollBar::getMaximumValue(  ) throw (RuntimeException, std::exception)
+Any VCLXAccessibleScrollBar::getMaximumValue(  )
 {
     OExternalLockGuard aGuard( this );
 
@@ -238,13 +238,13 @@ Any VCLXAccessibleScrollBar::getMaximumValue(  ) throw (RuntimeException, std::e
 
     VCLXScrollBar* pVCLXScrollBar = static_cast< VCLXScrollBar* >( GetVCLXWindow() );
     if ( pVCLXScrollBar )
-        aValue <<= (sal_Int32) pVCLXScrollBar->getMaximum();
+        aValue <<= pVCLXScrollBar->getMaximum();
 
     return aValue;
 }
 
 
-Any VCLXAccessibleScrollBar::getMinimumValue(  ) throw (RuntimeException, std::exception)
+Any VCLXAccessibleScrollBar::getMinimumValue(  )
 {
     OExternalLockGuard aGuard( this );
 
@@ -255,7 +255,7 @@ Any VCLXAccessibleScrollBar::getMinimumValue(  ) throw (RuntimeException, std::e
 }
 
 
-OUString VCLXAccessibleScrollBar::getAccessibleName(  ) throw (uno::RuntimeException, std::exception)
+OUString VCLXAccessibleScrollBar::getAccessibleName(  )
 {
     OExternalLockGuard aGuard( this );
 

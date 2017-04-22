@@ -40,7 +40,7 @@ static void load_FixedWidthList(ScCsvSplits &rSplits)
     Sequence<Any>aValues;
     const Any *pProperties;
     Sequence<OUString> aNames { FIXED_WIDTH_LIST };
-    ScLinkConfigItem aItem( OUString( SEP_PATH ) );
+    ScLinkConfigItem aItem( SEP_PATH );
 
     aValues = aItem.GetProperties( aNames );
     pProperties = aValues.getConstArray();
@@ -73,7 +73,7 @@ static void save_FixedWidthList(const ScCsvSplits& rSplits)
     Sequence<Any> aValues;
     Any *pProperties;
     Sequence<OUString> aNames { FIXED_WIDTH_LIST };
-    ScLinkConfigItem aItem( OUString( SEP_PATH ) );
+    ScLinkConfigItem aItem( SEP_PATH );
 
     aValues = aItem.GetProperties( aNames );
     pProperties = aValues.getArray();
@@ -118,24 +118,24 @@ void ScCsvRuler::setPosSizePixel(
 
 void ScCsvRuler::ApplyLayout( const ScCsvLayoutData& rOldData )
 {
-    ScCsvDiff nDiff = GetLayoutData().GetDiff( rOldData ) & (CSV_DIFF_HORIZONTAL | CSV_DIFF_RULERCURSOR);
-    if( nDiff == CSV_DIFF_EQUAL ) return;
+    ScCsvDiff nDiff = GetLayoutData().GetDiff( rOldData ) & (ScCsvDiff::HorizontalMask | ScCsvDiff::RulerCursor);
+    if( nDiff == ScCsvDiff::Equal ) return;
 
     DisableRepaint();
-    if( nDiff & CSV_DIFF_HORIZONTAL )
+    if( nDiff & ScCsvDiff::HorizontalMask )
     {
         InitSizeData();
         if( GetRulerCursorPos() >= GetPosCount() )
             MoveCursor( GetPosCount() - 1 );
     }
-    if( nDiff & CSV_DIFF_RULERCURSOR )
+    if( nDiff & ScCsvDiff::RulerCursor )
     {
         ImplInvertCursor( rOldData.mnPosCursor );
         ImplInvertCursor( GetRulerCursorPos() );
     }
     EnableRepaint();
 
-    if( nDiff & CSV_DIFF_POSOFFSET )
+    if( nDiff & ScCsvDiff::PosOffset )
         AccSendVisibleEvent();
 }
 
@@ -411,7 +411,7 @@ void ScCsvRuler::MouseMove( const MouseEvent& rMEvt )
         else
         {
             Point aPoint;
-            Rectangle aRect( aPoint, maWinSize );
+            tools::Rectangle aRect( aPoint, maWinSize );
             if( !IsVisibleSplitPos( nPos ) || !aRect.IsInside( rMEvt.GetPosPixel() ) )
                 // if focused, keep old cursor position for key input
                 nPos = HasFocus() ? GetRulerCursorPos() : CSV_POS_INVALID;
@@ -514,7 +514,7 @@ void ScCsvRuler::EndMouseTracking( bool bApply )
 
 // painting -------------------------------------------------------------------
 
-void ScCsvRuler::Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& )
+void ScCsvRuler::Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& )
 {
     Repaint();
 }
@@ -530,14 +530,17 @@ void ScCsvRuler::ImplRedraw()
             ImplDrawRulerDev();
         }
         DrawOutDev( Point(), maWinSize, Point(), maWinSize, *maRulerDev.get() );
-        ImplDrawTrackingRect();
+        /* Draws directly tracking rectangle to the column with the specified index. */
+        if( HasFocus() )
+            InvertTracking( tools::Rectangle( 0, 0, GetWidth() - 1, GetHeight() - 2 ),
+                ShowTrackFlags::Small | ShowTrackFlags::TrackWindow );
     }
 }
 
 void ScCsvRuler::ImplDrawArea( sal_Int32 nPosX, sal_Int32 nWidth )
 {
     maBackgrDev->SetLineColor();
-    Rectangle aRect( Point( nPosX, 0 ), Size( nWidth, GetHeight() ) );
+    tools::Rectangle aRect( Point( nPosX, 0 ), Size( nWidth, GetHeight() ) );
     maBackgrDev->SetFillColor( maBackColor );
     maBackgrDev->DrawRect( aRect );
 
@@ -597,7 +600,7 @@ void ScCsvRuler::ImplDrawSplit( sal_Int32 nPos )
         Size aSize( mnSplitSize, mnSplitSize );
         maRulerDev->SetLineColor( maTextColor );
         maRulerDev->SetFillColor( maSplitColor );
-        maRulerDev->DrawEllipse( Rectangle( aPos, aSize ) );
+        maRulerDev->DrawEllipse( tools::Rectangle( aPos, aSize ) );
         maRulerDev->DrawPixel( Point( GetX( nPos ), GetHeight() - 2 ) );
     }
 }
@@ -630,17 +633,10 @@ void ScCsvRuler::ImplInvertCursor( sal_Int32 nPos )
 {
     if( IsVisibleSplitPos( nPos ) )
     {
-        ImplInvertRect( *maRulerDev.get(), Rectangle( Point( GetX( nPos ) - 1, 0 ), Size( 3, GetHeight() - 1 ) ) );
+        ImplInvertRect( *maRulerDev.get(), tools::Rectangle( Point( GetX( nPos ) - 1, 0 ), Size( 3, GetHeight() - 1 ) ) );
         if( HasSplit( nPos ) )
             ImplDrawSplit( nPos );
     }
-}
-
-void ScCsvRuler::ImplDrawTrackingRect()
-{
-    if( HasFocus() )
-        InvertTracking( Rectangle( 0, 0, GetWidth() - 1, GetHeight() - 2 ),
-            ShowTrackFlags::Small | ShowTrackFlags::TrackWindow );
 }
 
 void ScCsvRuler::ImplSetMousePointer( sal_Int32 nPos )

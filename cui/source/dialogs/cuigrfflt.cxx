@@ -38,26 +38,15 @@ GraphicPreviewWindow::GraphicPreviewWindow(vcl::Window* pParent,
 {
 }
 
-
-VCL_BUILDER_DECL_FACTORY(GraphicPreviewWindow)
-{
-    WinBits nWinBits = WB_TABSTOP;
-
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-
-    rRet = VclPtr<GraphicPreviewWindow>::Create(pParent, nWinBits);
-}
-
+VCL_BUILDER_FACTORY_CONSTRUCTOR(GraphicPreviewWindow, WB_TABSTOP)
 
 Size GraphicPreviewWindow::GetOptimalSize() const
 {
-    return LogicToPixel(Size(81, 73), MAP_APPFONT);
+    return LogicToPixel(Size(81, 73), MapUnit::MapAppFont);
 }
 
 
-void GraphicPreviewWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void GraphicPreviewWindow::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect)
 {
     Control::Paint(rRenderContext, rRect);
 
@@ -99,7 +88,7 @@ void GraphicPreviewWindow::ScaleImageToFit()
         mpOrigGraphic->GetPrefMapMode()));
     Size aGrfSize(aSizePixel);
 
-    if( mpOrigGraphic->GetType() == GRAPHIC_BITMAP &&
+    if( mpOrigGraphic->GetType() == GraphicType::Bitmap &&
         aPreviewSize.Width() && aPreviewSize.Height() &&
         aGrfSize.Width() && aGrfSize.Height() )
     {
@@ -147,9 +136,9 @@ GraphicFilterDialog::GraphicFilterDialog(vcl::Window* pParent,
     , maSizePixel(LogicToPixel(rGraphic.GetPrefSize(),
         rGraphic.GetPrefMapMode()))
 {
-    bIsBitmap = rGraphic.GetType() == GRAPHIC_BITMAP;
+    bIsBitmap = rGraphic.GetType() == GraphicType::Bitmap;
 
-    maTimer.SetTimeoutHdl( LINK( this, GraphicFilterDialog, ImplPreviewTimeoutHdl ) );
+    maTimer.SetInvokeHandler( LINK( this, GraphicFilterDialog, ImplPreviewTimeoutHdl ) );
     maTimer.SetTimeout( 5 );
 
     get(mpPreview, "preview");
@@ -170,7 +159,7 @@ void GraphicFilterDialog::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(GraphicFilterDialog, ImplPreviewTimeoutHdl, Timer *, void)
+IMPL_LINK_NOARG(GraphicFilterDialog, ImplPreviewTimeoutHdl, Timer *, void)
 {
     maTimer.Stop();
     mpPreview->SetPreview(GetFilteredGraphic(mpPreview->GetScaledOriginal(),
@@ -178,7 +167,7 @@ IMPL_LINK_NOARG_TYPED(GraphicFilterDialog, ImplPreviewTimeoutHdl, Timer *, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(GraphicFilterDialog, ImplModifyHdl, LinkParamNone*, void)
+IMPL_LINK_NOARG(GraphicFilterDialog, ImplModifyHdl, LinkParamNone*, void)
 {
     if (bIsBitmap)
     {
@@ -212,13 +201,13 @@ GraphicFilterMosaic::GraphicFilterMosaic( vcl::Window* pParent, const Graphic& r
 }
 
 
-IMPL_LINK_NOARG_TYPED(GraphicFilterMosaic, CheckBoxModifyHdl, CheckBox&, void)
+IMPL_LINK_NOARG(GraphicFilterMosaic, CheckBoxModifyHdl, CheckBox&, void)
 {
     GetModifyHdl().Call(nullptr);
 }
 
 
-IMPL_LINK_NOARG_TYPED(GraphicFilterMosaic, EditModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(GraphicFilterMosaic, EditModifyHdl, Edit&, void)
 {
     GetModifyHdl().Call(nullptr);
 }
@@ -243,18 +232,20 @@ Graphic GraphicFilterMosaic::GetFilteredGraphic( const Graphic& rGraphic,
                                                  double fScaleX, double fScaleY )
 {
     Graphic         aRet;
-    const Size      aSize( std::max( FRound( GetTileWidth() * fScaleX ), 1L ),
-                           std::max( FRound( GetTileHeight() * fScaleY ), 1L ) );
+    long            nTileWidth = static_cast<long>(mpMtrWidth->GetValue());
+    long            nTileHeight = static_cast<long>(mpMtrHeight->GetValue());
+    const Size      aSize( std::max( FRound( nTileWidth * fScaleX ), 1L ),
+                           std::max( FRound( nTileHeight * fScaleY ), 1L ) );
     BmpFilterParam  aParam( aSize );
 
     if( rGraphic.IsAnimated() )
     {
         Animation aAnim( rGraphic.GetAnimation() );
 
-        if( aAnim.Filter( BMP_FILTER_MOSAIC, &aParam ) )
+        if( aAnim.Filter( BmpFilter::Mosaic, &aParam ) )
         {
             if( IsEnhanceEdges() )
-                aAnim.Filter( BMP_FILTER_SHARPEN );
+                aAnim.Filter( BmpFilter::Sharpen );
 
             aRet = aAnim;
         }
@@ -263,10 +254,10 @@ Graphic GraphicFilterMosaic::GetFilteredGraphic( const Graphic& rGraphic,
     {
         BitmapEx aBmpEx( rGraphic.GetBitmapEx() );
 
-        if( aBmpEx.Filter( BMP_FILTER_MOSAIC, &aParam ) )
+        if( aBmpEx.Filter( BmpFilter::Mosaic, &aParam ) )
         {
             if( IsEnhanceEdges() )
-                (void)aBmpEx.Filter( BMP_FILTER_SHARPEN );
+                (void)aBmpEx.Filter( BmpFilter::Sharpen );
 
             aRet = aBmpEx;
         }
@@ -288,7 +279,7 @@ GraphicFilterSmooth::GraphicFilterSmooth( vcl::Window* pParent, const Graphic& r
 }
 
 
-IMPL_LINK_NOARG_TYPED(GraphicFilterSmooth, EditModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(GraphicFilterSmooth, EditModifyHdl, Edit&, void)
 {
     GetModifyHdl().Call(nullptr);
 }
@@ -310,13 +301,14 @@ void GraphicFilterSmooth::dispose()
 Graphic GraphicFilterSmooth::GetFilteredGraphic( const Graphic& rGraphic, double, double )
 {
     Graphic         aRet;
-    BmpFilterParam  aParam( GetRadius() );
+    double          nRadius = mpMtrRadius->GetValue() / 10.0;
+    BmpFilterParam  aParam( nRadius );
 
     if( rGraphic.IsAnimated() )
     {
         Animation aAnim( rGraphic.GetAnimation() );
 
-        if( aAnim.Filter( BMP_FILTER_SMOOTH, &aParam ) )
+        if( aAnim.Filter( BmpFilter::Smooth, &aParam ) )
         {
             aRet = aAnim;
         }
@@ -325,7 +317,7 @@ Graphic GraphicFilterSmooth::GetFilteredGraphic( const Graphic& rGraphic, double
     {
         BitmapEx aBmpEx( rGraphic.GetBitmapEx() );
 
-        if( aBmpEx.Filter( BMP_FILTER_SMOOTH, &aParam ) )
+        if( aBmpEx.Filter( BmpFilter::Smooth, &aParam ) )
         {
             aRet = aBmpEx;
         }
@@ -351,13 +343,13 @@ GraphicFilterSolarize::GraphicFilterSolarize( vcl::Window* pParent, const Graphi
 }
 
 
-IMPL_LINK_NOARG_TYPED(GraphicFilterSolarize, CheckBoxModifyHdl, CheckBox&, void)
+IMPL_LINK_NOARG(GraphicFilterSolarize, CheckBoxModifyHdl, CheckBox&, void)
 {
     GetModifyHdl().Call(nullptr);
 }
 
 
-IMPL_LINK_NOARG_TYPED(GraphicFilterSolarize, EditModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(GraphicFilterSolarize, EditModifyHdl, Edit&, void)
 {
     GetModifyHdl().Call(nullptr);
 }
@@ -380,13 +372,14 @@ void GraphicFilterSolarize::dispose()
 Graphic GraphicFilterSolarize::GetFilteredGraphic( const Graphic& rGraphic, double, double )
 {
     Graphic         aRet;
-    BmpFilterParam  aParam( GetGreyThreshold() );
+    sal_uInt8       nGreyThreshold = (sal_uInt8) FRound( mpMtrThreshold->GetValue() * 2.55 );
+    BmpFilterParam  aParam( nGreyThreshold );
 
     if( rGraphic.IsAnimated() )
     {
         Animation aAnim( rGraphic.GetAnimation() );
 
-        if( aAnim.Filter( BMP_FILTER_SOLARIZE, &aParam ) )
+        if( aAnim.Filter( BmpFilter::Solarize, &aParam ) )
         {
             if( IsInvert() )
                 aAnim.Invert();
@@ -398,7 +391,7 @@ Graphic GraphicFilterSolarize::GetFilteredGraphic( const Graphic& rGraphic, doub
     {
         BitmapEx aBmpEx( rGraphic.GetBitmapEx() );
 
-        if( aBmpEx.Filter( BMP_FILTER_SOLARIZE, &aParam ) )
+        if( aBmpEx.Filter( BmpFilter::Solarize, &aParam ) )
         {
             if( IsInvert() )
                 aBmpEx.Invert();
@@ -421,7 +414,7 @@ GraphicFilterSepia::GraphicFilterSepia( vcl::Window* pParent, const Graphic& rGr
     mpMtrSepia->SetModifyHdl( LINK(this, GraphicFilterSepia, EditModifyHdl) );
 }
 
-IMPL_LINK_NOARG_TYPED(GraphicFilterSepia, EditModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(GraphicFilterSepia, EditModifyHdl, Edit&, void)
 {
     GetModifyHdl().Call(nullptr);
 }
@@ -441,20 +434,21 @@ void GraphicFilterSepia::dispose()
 Graphic GraphicFilterSepia::GetFilteredGraphic( const Graphic& rGraphic, double, double )
 {
     Graphic         aRet;
-    BmpFilterParam  aParam( GetSepiaPercent() );
+    sal_uInt16      nSepiaPct = sal::static_int_cast< sal_uInt16 >(mpMtrSepia->GetValue());
+    BmpFilterParam  aParam( nSepiaPct );
 
     if( rGraphic.IsAnimated() )
     {
         Animation aAnim( rGraphic.GetAnimation() );
 
-        if( aAnim.Filter( BMP_FILTER_SEPIA, &aParam ) )
+        if( aAnim.Filter( BmpFilter::Sepia, &aParam ) )
             aRet = aAnim;
     }
     else
     {
         BitmapEx aBmpEx( rGraphic.GetBitmapEx() );
 
-        if( aBmpEx.Filter( BMP_FILTER_SEPIA, &aParam ) )
+        if( aBmpEx.Filter( BmpFilter::Sepia, &aParam ) )
             aRet = aBmpEx;
     }
 
@@ -476,7 +470,7 @@ GraphicFilterPoster::GraphicFilterPoster(vcl::Window* pParent, const Graphic& rG
 }
 
 
-IMPL_LINK_NOARG_TYPED(GraphicFilterPoster, EditModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(GraphicFilterPoster, EditModifyHdl, Edit&, void)
 {
     GetModifyHdl().Call(nullptr);
 }
@@ -497,8 +491,8 @@ void GraphicFilterPoster::dispose()
 
 Graphic GraphicFilterPoster::GetFilteredGraphic( const Graphic& rGraphic, double, double )
 {
-    Graphic         aRet;
-    const sal_uInt16    nPosterCount = GetPosterColorCount();
+    Graphic          aRet;
+    const sal_uInt16 nPosterCount = (sal_uInt16) mpNumPoster->GetValue();
 
     if( rGraphic.IsAnimated() )
     {
@@ -521,7 +515,7 @@ Graphic GraphicFilterPoster::GetFilteredGraphic( const Graphic& rGraphic, double
 
 void EmbossControl::MouseButtonDown( const MouseEvent& rEvt )
 {
-    const RECT_POINT eOldRP = GetActualRP();
+    const RectPoint eOldRP = GetActualRP();
 
     SvxRectCtl::MouseButtonDown( rEvt );
 
@@ -532,7 +526,7 @@ void EmbossControl::MouseButtonDown( const MouseEvent& rEvt )
 
 Size EmbossControl::GetOptimalSize() const
 {
-    return LogicToPixel(Size(77, 60), MAP_APPFONT);
+    return LogicToPixel(Size(77, 60), MapUnit::MapAppFont);
 }
 
 
@@ -540,7 +534,7 @@ VCL_BUILDER_FACTORY(EmbossControl)
 
 
 GraphicFilterEmboss::GraphicFilterEmboss(vcl::Window* pParent,
-    const Graphic& rGraphic, RECT_POINT eLightSource)
+    const Graphic& rGraphic, RectPoint eLightSource)
     : GraphicFilterDialog (pParent, "EmbossDialog",
         "cui/ui/embossdialog.ui", rGraphic)
 {
@@ -573,15 +567,15 @@ Graphic GraphicFilterEmboss::GetFilteredGraphic( const Graphic& rGraphic, double
     {
         default:       OSL_FAIL("svx::GraphicFilterEmboss::GetFilteredGraphic(), unknown Reference Point!" );
                        SAL_FALLTHROUGH;
-        case RP_LT: nAzim = 4500;    nElev = 4500; break;
-        case RP_MT: nAzim = 9000;    nElev = 4500; break;
-        case RP_RT: nAzim = 13500;   nElev = 4500; break;
-        case RP_LM: nAzim = 0;       nElev = 4500; break;
-        case RP_MM: nAzim = 0;       nElev = 9000; break;
-        case RP_RM: nAzim = 18000;   nElev = 4500; break;
-        case RP_LB: nAzim = 31500;   nElev = 4500; break;
-        case RP_MB: nAzim = 27000;   nElev = 4500; break;
-        case RP_RB: nAzim = 22500;   nElev = 4500; break;
+        case RectPoint::LT: nAzim = 4500;    nElev = 4500; break;
+        case RectPoint::MT: nAzim = 9000;    nElev = 4500; break;
+        case RectPoint::RT: nAzim = 13500;   nElev = 4500; break;
+        case RectPoint::LM: nAzim = 0;       nElev = 4500; break;
+        case RectPoint::MM: nAzim = 0;       nElev = 9000; break;
+        case RectPoint::RM: nAzim = 18000;   nElev = 4500; break;
+        case RectPoint::LB: nAzim = 31500;   nElev = 4500; break;
+        case RectPoint::MB: nAzim = 27000;   nElev = 4500; break;
+        case RectPoint::RB: nAzim = 22500;   nElev = 4500; break;
     }
 
     BmpFilterParam aParam( nAzim, nElev );
@@ -590,14 +584,14 @@ Graphic GraphicFilterEmboss::GetFilteredGraphic( const Graphic& rGraphic, double
     {
         Animation aAnim( rGraphic.GetAnimation() );
 
-        if( aAnim.Filter( BMP_FILTER_EMBOSS_GREY, &aParam ) )
+        if( aAnim.Filter( BmpFilter::EmbossGrey, &aParam ) )
             aRet = aAnim;
     }
     else
     {
         BitmapEx aBmpEx( rGraphic.GetBitmapEx() );
 
-        if( aBmpEx.Filter( BMP_FILTER_EMBOSS_GREY, &aParam ) )
+        if( aBmpEx.Filter( BmpFilter::EmbossGrey, &aParam ) )
             aRet = aBmpEx;
     }
 

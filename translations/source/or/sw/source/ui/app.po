@@ -1,0 +1,1550 @@
+#. extracted from sw/source/ui/app
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2016-04-17 06:51+0000\n"
+"Last-Translator: Anonymous Pootle User\n"
+"Language-Team: Oriya <oriya-it@googlegroups.com>\n"
+"Language: or\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Accelerator-Marker: ~\n"
+"X-Generator: LibreOffice\n"
+"X-POOTLE-MTIME: 1460875867.000000\n"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PRINT_MERGE_MACRO\n"
+"string.text"
+msgid "Print form letters"
+msgstr "ଫର୍ମ ପତ୍ରଗୁଡିକୁ ମୁଦ୍ରଣ କର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGE_COUNT_MACRO\n"
+"string.text"
+msgid "Changing the page count"
+msgstr "ପୃଷ୍ଠା ଗଣନା ପରିବର୍ତ୍ତନକରିବା"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PARAGRAPHSTYLEFAMILY\n"
+"string.text"
+msgid "Paragraph Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CHARACTERSTYLEFAMILY\n"
+"string.text"
+msgid "Character Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FRAMESTYLEFAMILY\n"
+"string.text"
+msgid "Frame Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGESTYLEFAMILY\n"
+"string.text"
+msgid "Page Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LISTSTYLEFAMILY\n"
+"string.text"
+msgid "List Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_TABLESTYLEFAMILY\n"
+"string.text"
+msgid "Table Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"All Styles\n"
+"itemlist.text"
+msgid "All Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Automatic\n"
+"itemlist.text"
+msgid "Automatic"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Text Styles\n"
+"itemlist.text"
+msgid "Text Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Chapter Styles\n"
+"itemlist.text"
+msgid "Chapter Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"List Styles\n"
+"itemlist.text"
+msgid "List Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Index Styles\n"
+"itemlist.text"
+msgid "Index Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Special Styles\n"
+"itemlist.text"
+msgid "Special Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"HTML Styles\n"
+"itemlist.text"
+msgid "HTML Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PARAGRAPHSTYLEFAMILY\n"
+"Conditional Styles\n"
+"itemlist.text"
+msgid "Conditional Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_CHARACTERSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_FRAMESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_PAGESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_LISTSTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"All\n"
+"itemlist.text"
+msgid "All"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Hidden Styles\n"
+"itemlist.text"
+msgid "Hidden Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Applied Styles\n"
+"itemlist.text"
+msgid "Applied Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"RID_TABLESTYLEFAMILY\n"
+"Custom Styles\n"
+"itemlist.text"
+msgid "Custom Styles"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ENV_TITLE\n"
+"string.text"
+msgid "Envelope"
+msgstr "ଲଫାପା"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LAB_TITLE\n"
+"string.text"
+msgid "Labels"
+msgstr "ଲେବଲଗୁଡିକ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_HUMAN_SWDOC_NAME\n"
+"string.text"
+msgid "Text"
+msgstr "ପାଠ୍ୟ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WRITER_DOCUMENT_FULLTYPE\n"
+"string.text"
+msgid "%PRODUCTNAME %PRODUCTVERSION Text Document"
+msgstr "%PRODUCTNAME %PRODUCTVERSION ଟେକ୍ସଟ ଦଲିଲ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CANTOPEN\n"
+"string.text"
+msgid "Cannot open document."
+msgstr "ଦଲିଲ ଖୋଲା ହୋଇପାରିବ ନାହିଁ ।"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CANTCREATE\n"
+"string.text"
+msgid "Can't create document."
+msgstr "ଦଲିଲ ସୃଷ୍ଟି ହୋଇ ପାରିବ ନାହିଁ୤"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DLLNOTFOUND\n"
+"string.text"
+msgid "Filter not found."
+msgstr "ଫିଲଟର ମିଳୁ ନାହିଁ୤"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_UNBENANNT\n"
+"string.text"
+msgid "Untitled"
+msgstr "ଶୀର୍ଷକ- ରହିତ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LOAD_GLOBAL_DOC\n"
+"string.text"
+msgid "Name and Path of Master Document"
+msgstr "ମାଷ୍ଟର ଦଲିଲର ନାମ ଏବଂ ପଥ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_LOAD_HTML_DOC\n"
+"string.text"
+msgid "Name and Path of the HTML Document"
+msgstr "HTML ଦଲିଲର ନାମ ଏବଂ ପଥ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_JAVA_EDIT\n"
+"string.text"
+msgid "Edit Script"
+msgstr "ସ୍କ୍ରିପ୍ଟ ସମ୍ପାଦନ କରନ୍ତୁ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REMOVE_WARNING\n"
+"string.text"
+msgid "The following characters are not valid and have been removed: "
+msgstr "ନିମ୍ନ ଅକ୍ଷରଗୁଡିକ ନ୍ଯାୟ୍ଯ ନୁହେଁ ଏବଂ ହଟା ହୋଇଛି: "
+
+#: app.src
+#, fuzzy
+msgctxt ""
+"app.src\n"
+"STR_BOOKMARK_NAME\n"
+"string.text"
+msgid "Name"
+msgstr "ନାମ"
+
+#: app.src
+#, fuzzy
+msgctxt ""
+"app.src\n"
+"STR_BOOKMARK_TEXT\n"
+"string.text"
+msgid "Text"
+msgstr "ପାଠ୍ୟ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"SW_STR_NONE\n"
+"string.text"
+msgid "[None]"
+msgstr "[କିଛି ନାହିଁ]"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_BEGINNING\n"
+"string.text"
+msgid "Start"
+msgstr "ଆରମ୍ଭ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_END\n"
+"string.text"
+msgid "End"
+msgstr "ସମାପ୍ତ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_ABOVE\n"
+"string.text"
+msgid "Above"
+msgstr "ଉପର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_BELOW\n"
+"string.text"
+msgid "Below"
+msgstr "ତଳ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"SW_STR_READONLY\n"
+"string.text"
+msgid "read-only"
+msgstr "କେବଳ-ପଢିବା"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_READONLY_PATH\n"
+"string.text"
+msgid "The 'AutoText' directories are read-only. Do you want to call the path settings dialog?"
+msgstr "'ସ୍ବଯଂଚାଳିତଟେକ୍ସଟ' ବିବରଣୀପଞ୍ଜିକା କେବଳ-ପଢିବା ପାଇଁ ଅଟେ୤ ତୁମେ ପଥ ଡାଇଲୋଗ ସେଟିଙ୍ଗଗୁଡିକ ଡାକିବାକୁ ଚାହୁଁଛ କି?"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ERROR_PASSWD\n"
+"string.text"
+msgid "Invalid password"
+msgstr "ଅମାନ୍ଯ ଗୁପ୍ତଶବ୍ଦ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FMT_STD\n"
+"string.text"
+msgid "(none)"
+msgstr "(କିଛି ନାହିଁ)"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DOC_STAT\n"
+"string.text"
+msgid "Statistics"
+msgstr "ପରିସଂଖ୍ଯାନ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_W4WREAD\n"
+"string.text"
+msgid "Importing document..."
+msgstr "ଦଲିଲକ ଆମଦାନୀକରୁଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_W4WWRITE\n"
+"string.text"
+msgid "Exporting document..."
+msgstr "ଦଲିଲ ରତ୍ପାନୀକରୁଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGREAD\n"
+"string.text"
+msgid "Loading document..."
+msgstr "ଦଲିଲ ଲୋଡକରୁଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGWRITE\n"
+"string.text"
+msgid "Saving document..."
+msgstr "ଦଲିଲ  ସଂଚଯକରୁଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_REFORMAT\n"
+"string.text"
+msgid "Repagination..."
+msgstr "ରିପାଜିନେସନ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_AUTOFORMAT\n"
+"string.text"
+msgid "Formatting document automatically..."
+msgstr "ସ୍ବଯଂଚାଳିତଭାବରେ ଦଲିଲ ଫର୍ମାଟିଙ୍ଗକରୁଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_IMPGRF\n"
+"string.text"
+msgid "Importing images..."
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SEARCH\n"
+"string.text"
+msgid "Search..."
+msgstr "ତଦନ୍ତ କରୁଛି... "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_FORMAT\n"
+"string.text"
+msgid "Formatting..."
+msgstr "ଫର୍ମାଟ କରୁଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_PRINT\n"
+"string.text"
+msgid "Printing..."
+msgstr "ମୁଦ୍ରଣକରିବା..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_LAYOUTINIT\n"
+"string.text"
+msgid "Converting..."
+msgstr "ରୂପାନ୍ତର କରୁଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_LETTER\n"
+"string.text"
+msgid "Letter"
+msgstr "ଅକ୍ଷର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SPELL\n"
+"string.text"
+msgid "Spellcheck..."
+msgstr "ବର୍ଣ୍ଣଶୁଦ୍ଦୀକରଣ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_HYPHEN\n"
+"string.text"
+msgid "Hyphenation..."
+msgstr "ହାଇଫନେସନ..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_TOX_INSERT\n"
+"string.text"
+msgid "Inserting Index..."
+msgstr "ସୂଚୀ  ଭର୍ତ୍ତି କରୁଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_TOX_UPDATE\n"
+"string.text"
+msgid "Updating Index..."
+msgstr "ସୂଚୀ  ଅପଡେଟ କରୁଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SUMMARY\n"
+"string.text"
+msgid "Creating abstract..."
+msgstr "ସଂକ୍ଷିପ୍ତ ସୃଷ୍ଟିକରାୟାଉଛି..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATSTR_SWGPRTOLENOTIFY\n"
+"string.text"
+msgid "Adapt Objects..."
+msgstr "ବସ୍ତୁଗୁଡିକ ଗ୍ରହଣକର..."
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_TABLE_DEFNAME\n"
+"string.text"
+msgid "Table"
+msgstr "ସାରଣୀ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_GRAPHIC_DEFNAME\n"
+"string.text"
+msgid "Image"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_OBJECT_DEFNAME\n"
+"string.text"
+msgid "Object"
+msgstr "ବସ୍ତୁ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FRAME_DEFNAME\n"
+"string.text"
+msgid "Frame"
+msgstr "ଫ୍ରେମ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SHAPE_DEFNAME\n"
+"string.text"
+msgid "Shape"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REGION_DEFNAME\n"
+"string.text"
+msgid "Section"
+msgstr "ବିଭାଗ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NUMRULE_DEFNAME\n"
+"string.text"
+msgid "Numbering"
+msgstr "ସଂଖ୍ଯାଦେବା"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_EMPTYPAGE\n"
+"string.text"
+msgid "blank page"
+msgstr "ଶୂନ୍ଯ ପୃଷ୍ଠା"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ABSTRACT_TITLE\n"
+"string.text"
+msgid "Abstract: "
+msgstr "ସଂକ୍ଷିପ୍ତ:"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_TEMPLATE_BUTTON\n"
+"string.text"
+msgid "Style"
+msgstr "ଶୈଳୀ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_TEMPLATE_NAME\n"
+"string.text"
+msgid "separated by: "
+msgstr "ଦ୍ବାରା "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_OUTLINE_LEVEL\n"
+"string.text"
+msgid "Outline: Level "
+msgstr "ବାହ୍ଯରେଖା ସ୍ତର "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FDLG_STYLE\n"
+"string.text"
+msgid "Style: "
+msgstr "ଶୈଳୀ "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGEOFFSET\n"
+"string.text"
+msgid "Page number: "
+msgstr "ପୃଷ୍ଠା ସଂଖ୍ଯା:"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_PAGEBREAK\n"
+"string.text"
+msgid "Break before new page"
+msgstr "ନୂଆ ପୃଷ୍ଠା ପୂର୍ବରୁ ଭାଙ୍ଗ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WESTERN_FONT\n"
+"string.text"
+msgid "Western text: "
+msgstr "ପାଶ୍ଚାତ୍ଯ ଟେକ୍ସଟ:"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CJK_FONT\n"
+"string.text"
+msgid "Asian text: "
+msgstr "ଏସିଆନ ଟେକ୍ସଟ :"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_REDLINE_UNKNOWN_AUTHOR\n"
+"string.text"
+msgid "Unknown Author"
+msgstr "ଅଜ୍ଞାତ ଲେଖକ"
+
+#: app.src
+#, fuzzy
+msgctxt ""
+"app.src\n"
+"STR_DELETE_NOTE_AUTHOR\n"
+"string.text"
+msgid "Delete ~All Comments by $1"
+msgstr "$1 ଦ୍ୱାରା ସମସ୍ତ ଟିପ୍ପଣୀଗୁଡିକ ଅପସରାଣ କରନ୍ତୁ (~A)"
+
+#: app.src
+#, fuzzy
+msgctxt ""
+"app.src\n"
+"STR_HIDE_NOTE_AUTHOR\n"
+"string.text"
+msgid "H~ide All Comments by $1"
+msgstr "$1 ଦ୍ୱାରା ସମସ୍ତ ଟିପ୍ପଣୀଗୁଡିକ ଅପସରାଣ କରନ୍ତୁ (~A)"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DONT_ASK_AGAIN\n"
+"string.text"
+msgid "~Do not show warning again"
+msgstr "ପୁଣି ଚେତାବନୀ ଦେଖଅନାହିଁ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_OUTLINE_NUMBERING\n"
+"string.text"
+msgid "Outline Numbering"
+msgstr "ବାହ୍ଯରେଖା ସଂଖ୍ଯାଦେବା"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATUSBAR_WORDCOUNT_NO_SELECTION\n"
+"string.text"
+msgid "%1 words, %2 characters"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_STATUSBAR_WORDCOUNT\n"
+"string.text"
+msgid "%1 words, %2 characters selected"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CONVERT_TEXT_TABLE\n"
+"string.text"
+msgid "Convert Text to Table"
+msgstr "ଟେକ୍ସଟରୁ ଟେବୁଲକୁ ରୂପାନ୍ତର କର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ADD_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Add AutoFormat"
+msgstr "ସ୍ବଯଂଚାଳିତ ଫର୍ମାଟ ମିଶାଅ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ADD_AUTOFORMAT_LABEL\n"
+"string.text"
+msgid "Name"
+msgstr "ନାମ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DEL_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Delete AutoFormat"
+msgstr "ସ୍ବଯଂଚାଳିତ ଫର୍ମାଟ ବିଲୋପ କର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_DEL_AUTOFORMAT_MSG\n"
+"string.text"
+msgid "The following AutoFormat entry will be deleted:"
+msgstr "ନିମ୍ନ ସ୍ବଯଂଚାଳିତ ଫର୍ମାଟ ପ୍ରବେଶ ବିଲୋପ ହେବ:"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_RENAME_AUTOFORMAT_TITLE\n"
+"string.text"
+msgid "Rename AutoFormat"
+msgstr "ସ୍ବଯଂଚାଳିତ ଫର୍ମାଟ ପୁନଃନାମ ଦିଅ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_BTN_AUTOFORMAT_CLOSE\n"
+"string.text"
+msgid "~Close"
+msgstr "ବନ୍ଦ କର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_JAN\n"
+"string.text"
+msgid "Jan"
+msgstr "ଜାନୁଯାରୀ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_FEB\n"
+"string.text"
+msgid "Feb"
+msgstr "ଫେବୃଯାରି"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_MAR\n"
+"string.text"
+msgid "Mar"
+msgstr "ମାର୍ଚ୍ଚ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NORTH\n"
+"string.text"
+msgid "North"
+msgstr "ଉତ୍ତର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_MID\n"
+"string.text"
+msgid "Mid"
+msgstr "ମିଡ୍"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SOUTH\n"
+"string.text"
+msgid "South"
+msgstr "ଦକ୍ଷିଣ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SUM\n"
+"string.text"
+msgid "Sum"
+msgstr "ସମଷ୍ଟି"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_INVALID_AUTOFORMAT_NAME\n"
+"string.text"
+msgid ""
+"You have entered an invalid name.\n"
+"The desired AutoFormat could not be created. \n"
+"Try again using a different name."
+msgstr ""
+"ଗୋଟିଏ ଅମାନ୍ଯ ନାମ ତୁମେ ପ୍ରବେଶ କରି ଅଛ୤\n"
+"ଆବଶ୍ଯକୀଯ ସ୍ବଯଂଚାଳିତଫର୍ମାଟ ସୃଷ୍ଟି ହୋଇ ପାରିବ ନାହିଁ୤\n"
+"ଗୋଟିଏ ଭିନ୍ନ ନାମ ଉପୟୋଗକରି ଆଉଥରେ ଟେଷ୍ଟା କର୤"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_NUMERIC\n"
+"string.text"
+msgid "Numeric"
+msgstr "ସଂଖ୍ଯକ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ROW\n"
+"string.text"
+msgid "Rows"
+msgstr "ପଂକ୍ତିଗୁଡିକ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_COL\n"
+"string.text"
+msgid "Column"
+msgstr "ସ୍ତମ୍ଭ"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SIMPLE\n"
+"string.text"
+msgid "Plain"
+msgstr "ସାଧା "
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_AUTHMRK_EDIT\n"
+"string.text"
+msgid "Edit Bibliography Entry"
+msgstr "ଗ୍ରନ୍ଥସୂଚୀ ପ୍ରବେଶ ସମ୍ପାଦନ କର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_AUTHMRK_INSERT\n"
+"string.text"
+msgid "Insert Bibliography Entry"
+msgstr "ଗ୍ରନ୍ଥସୂଚୀ ପ୍ରବେଶ ଭର୍ତ୍ତି କର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ACCESS_PAGESETUP_SPACING\n"
+"string.text"
+msgid "Spacing between %1 and %2"
+msgstr "%1 ଏବଂ %2 ମଧ୍ଯରେ ଅନ୍ତର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ACCESS_COLUMN_WIDTH\n"
+"string.text"
+msgid "Column %1 Width"
+msgstr "ସ୍ତମ୍ଭ %1 ଓସାର"
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_TABLE\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Table"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_FRAME\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Frame"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_GRAPHIC\n"
+"string.text"
+msgid "%PRODUCTNAME Writer Image"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_CAPTION_OLE\n"
+"string.text"
+msgid "Other OLE Objects"
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_WRONG_TABLENAME\n"
+"string.text"
+msgid "The name of the table must not contain spaces."
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_ERR_TABLE_MERGE\n"
+"string.text"
+msgid "Selected table cells are too complex to merge."
+msgstr ""
+
+#: app.src
+msgctxt ""
+"app.src\n"
+"STR_SRTERR\n"
+"string.text"
+msgid "Cannot sort selection"
+msgstr ""
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_COMCORE_READERROR\n"
+"string.text"
+msgid "Read Error"
+msgstr ""
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_COMCORE_CANT_SHOW\n"
+"string.text"
+msgid "Image cannot be displayed."
+msgstr ""
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"STR_ERROR_CLPBRD_READ\n"
+"string.text"
+msgid "Error reading from the clipboard."
+msgstr "କ୍ଲିପବୋର୍ଡକୁ ପଢିବା ସମଯରେ ତୃଟି୤ "
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_FILE_FORMAT_ERROR )\n"
+"string.text"
+msgid "File format error found."
+msgstr "ଫାଇଲ."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_READ_ERROR )\n"
+"string.text"
+msgid "Error reading file."
+msgstr "ତୃଟି."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_INPUT_FILE )\n"
+"string.text"
+msgid "Input file error."
+msgstr "ଇନପୁଟ."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_NOWRITER_FILE )\n"
+"string.text"
+msgid "This is not a %PRODUCTNAME Writer file."
+msgstr "ଏହା ଗୋଟିଏ %PRODUCTNAME ଲିଖନ ଫାଇଲ।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_UNEXPECTED_EOF )\n"
+"string.text"
+msgid "Unexpected end of file."
+msgstr "ଶେଷ ର."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SW6_PASSWD )\n"
+"string.text"
+msgid "Password-protected files cannot be opened."
+msgstr "ଗୁପ୍ତଶବ୍ଦ-ସୁରକ୍ଷିତ ଫାଇଲଗୁଡିକ ଖୋଲା ହୋଇ ପାରିବ ନାହିଁ୤"
+
+#: error.src
+#, fuzzy
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW6_NO_WW6_FILE_ERR )\n"
+"string.text"
+msgid "This is not a valid WinWord6 file."
+msgstr "ଏହା ଗୋଟିଏ WinWord6 ଫାଇଲ ନୁହଁ।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW6_FASTSAVE_ERR )\n"
+"string.text"
+msgid "This file was saved with WinWord in 'Fast Save' mode. Please unmark the WinWord option 'Allow Fast Saves' and save the file again."
+msgstr "'ଶୀଘ୍ର ସଞ୍ଚୟ' ଧାରାରେ WinWord ସହିତ ଏହି ଫାଇଲ ସଞ୍ଚିତ ହୋଇଛି। ଦୟାକରି WinWord ବିକଳ୍ପରେ 'ଶୀଘ୍ର ସଞ୍ଚୟକୁ ଅନୁମତି ଦିଅନ୍ତୁ' କୁ ଚିହ୍ନଟକରନାହିଁ ଏବଂ ପୁଣିଥରେ ଫାଇଲ ସଞ୍ଚୟ କରନ୍ତୁ।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_ROWCOL )\n"
+"string.text"
+msgid "File format error found at $(ARG1)(row,col)."
+msgstr "$(ARG1)(row,col)ରେ ଫାଇଲ ସଜ୍ଜିକରଣ ଶୈଳୀ ତ୍ରୁଟି ମିଳିଛି।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_NEW_VERSION )\n"
+"string.text"
+msgid "File has been written in a newer version."
+msgstr "ଫାଇଲ."
+
+#: error.src
+#, fuzzy
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_WW8_NO_WW8_FILE_ERR )\n"
+"string.text"
+msgid "This is not a valid WinWord97 file."
+msgstr "ଏହା ଗୋଟିଏ WinWord97 ଫାଇଲ ନୁହଁ।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_FILE_ROWCOL )\n"
+"string.text"
+msgid "Format error discovered in the file in sub-document $(ARG1) at $(ARG2)(row,col)."
+msgstr "$(ARG2)(row,col) ର ଉପଦଲିଲ $(ARG1) ରେ ସଜ୍ଜିକରଣ ତ୍ରୁଟି ପରିଲକ୍ଷିତ ହୋଇଛି।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_WRITE_ERROR )\n"
+"string.text"
+msgid "Error writing file."
+msgstr "ତୃଟି."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_OLD_GLOSSARY )\n"
+"string.text"
+msgid "Wrong AutoText document version."
+msgstr "ସ୍ବଯଂଚାଳିତ ଟେକ୍ସଟ."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_WRITE_ERROR_FILE )\n"
+"string.text"
+msgid "Error in writing sub-document $(ARG1)."
+msgstr "ଉପ-ଦଲିଲ $(ARG1) ରେ ଲେଖିବା ସମୟରେ ତ୍ରୁଟି।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_READ , ERR_SWG_INTERNAL_ERROR )\n"
+"string.text"
+msgid "Internal error in %PRODUCTNAME Writer file format."
+msgstr "%PRODUCTNAME ଲିଖନ ଫାଇଲ ଶୈଳୀରେ ଆଭ୍ୟନ୍ତରୀଣ ତ୍ରୁଟି।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , ERR_SWG_INTERNAL_ERROR )\n"
+"string.text"
+msgid "Internal error in %PRODUCTNAME Writer file format."
+msgstr "%PRODUCTNAME ଲିଖନ ଫାଇଲ ଶୈଳୀରେ ଆଭ୍ୟନ୍ତରୀଣ ତ୍ରୁଟି।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_LOCKING , ERR_TXTBLOCK_NEWFILE_ERROR )\n"
+"string.text"
+msgid "$(ARG1) has changed."
+msgstr "$(ARG1) ପରିବର୍ତ୍ତିତ ହୋଇଛି।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_PATH , ERR_AUTOPATH_ERROR )\n"
+"string.text"
+msgid "$(ARG1) does not exist."
+msgstr "$(ARG1) ଅବସ୍ଥିତ ନାହିଁ।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLSPLIT_ERROR )\n"
+"string.text"
+msgid "Cells cannot be further split."
+msgstr "କୋଷଗୁଡିକ."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLINSCOL_ERROR )\n"
+"string.text"
+msgid "Additional columns cannot be inserted."
+msgstr "ସ୍ତମ୍ଭଗୁଡିକ."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_NONE , ERR_TBLDDECHG_ERROR )\n"
+"string.text"
+msgid "The structure of a linked table cannot be modified."
+msgstr "ର."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_NO_DRAWINGS )\n"
+"string.text"
+msgid "No drawings could be read."
+msgstr "ନାହିଁ."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_WW6_FASTSAVE_ERR )\n"
+"string.text"
+msgid "This file was saved with WinWord in 'Fast Save' mode. Please unmark the WinWord option 'Allow Fast Saves' and save the file again."
+msgstr "'ଶୀଘ୍ର ସଞ୍ଚୟ' ଧାରାରେ WinWord ସହିତ ଏହି ଫାଇଲ ସଞ୍ଚିତ ହୋଇଛି। ଦୟାକରି WinWord ବିକଳ୍ପରେ 'ଶୀଘ୍ର ସଞ୍ଚୟକୁ ଅନୁମତି ଦିଅନ୍ତୁ' କୁ ଚିହ୍ନଟକରନାହିଁ ଏବଂ ପୁଣିଥରେ ଫାଇଲ ସଞ୍ଚୟ କରନ୍ତୁ।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_FEATURES_LOST )\n"
+"string.text"
+msgid "Not all attributes could be read."
+msgstr "ସମସ୍ତ ଗୁଣକୁ ପଢ଼ିହେବ ନାହିଁ।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_FEATURES_LOST )\n"
+"string.text"
+msgid "Not all attributes could be recorded."
+msgstr "ସମସ୍ତ ଗୁଣକୁ ଲେଖିହେବ ନାହିଁ।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_OLE )\n"
+"string.text"
+msgid "Some OLE objects could only be loaded as images."
+msgstr ""
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_OLE )\n"
+"string.text"
+msgid "Some OLE objects could only be saved as images."
+msgstr ""
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_READ , WARN_SWG_POOR_LOAD )\n"
+"string.text"
+msgid "Document could not be completely loaded."
+msgstr "ଦଲିଲ ."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_POOR_LOAD )\n"
+"string.text"
+msgid "Document could not be completely saved."
+msgstr "ଦଲିଲ ."
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"WARN_CODE ( ERRCODE_CLASS_WRITE , WARN_SWG_HTML_NO_MACROS)\n"
+"string.text"
+msgid ""
+"This HTML document contains %PRODUCTNAME Basic macros.\n"
+"They were not saved with the current export settings."
+msgstr ""
+"ଏହି HTML ଦଲିଲରେ %PRODUCTNAMEମୌଳିକ ମାକ୍ରୋଗୁଡିକ୤\n"
+"ଚଳିତ ରତ୍ପାନୀ ସେଟିଙ୍ଗଗୁଡିକ ସହିତ ତାହା ସଞ୍ଚିତ ହୋଇ ନାହିଁ୤"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , WARN_WRITE_ERROR_FILE )\n"
+"string.text"
+msgid "Error in writing sub-document $(ARG1)."
+msgstr "ଉପ-ଦଲିଲ $(ARG1) ରେ ଲେଖିବା ସମୟରେ ତ୍ରୁଟି।"
+
+#: error.src
+msgctxt ""
+"error.src\n"
+"RID_SW_ERRHDL\n"
+"ERR_CODE ( ERRCODE_CLASS_WRITE , WARN_FORMAT_FILE_ROWCOL )\n"
+"string.text"
+msgid "Format error discovered in the file in sub-document $(ARG1) at $(ARG2)(row,col)."
+msgstr "$(ARG2)(row,col) ର ଉପଦଲିଲ $(ARG1) ରେ ସଜ୍ଜିକରଣ ତ୍ରୁଟି ପରିଲକ୍ଷିତ ହୋଇଛି।"
+
+#: mn.src
+#, fuzzy
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_REPLY\n"
+"menuitem.text"
+msgid "Reply"
+msgstr "ଉତ୍ତର ଦିଅନ୍ତୁ"
+
+#: mn.src
+#, fuzzy
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_COMMENT\n"
+"menuitem.text"
+msgid "Delete ~Comment"
+msgstr "ଟିପ୍ପଣୀଗୁଡିକୁ ବିଲୋପ କରନ୍ତୁ (~C)"
+
+#: mn.src
+#, fuzzy
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_NOTE_AUTHOR\n"
+"menuitem.text"
+msgid "Delete ~All Comments by $1"
+msgstr "$1 ଦ୍ୱାରା ସମସ୍ତ ଟିପ୍ପଣୀଗୁଡିକ ଅପସରାଣ କରନ୍ତୁ (~A)"
+
+#: mn.src
+#, fuzzy
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_DELETE_ALL_NOTES\n"
+"menuitem.text"
+msgid "~Delete All Comments"
+msgstr "ସମସ୍ତ ଟିପ୍ପଣୀଗୁଡିକ ଅପସରାଣ କରନ୍ତୁ (~D)"
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_ANNOTATION_BUTTON\n"
+"FN_FORMAT_ALL_NOTES\n"
+"menuitem.text"
+msgid "~Format All Comments..."
+msgstr ""
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_HEADERFOOTER_BUTTON\n"
+"FN_HEADERFOOTER_BORDERBACK\n"
+"menuitem.text"
+msgid "Border and Background..."
+msgstr "ସୀମା ଏବଂ ପୃଷ୍ଠଭାଗ ..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_PAGEBREAK_BUTTON\n"
+"FN_PAGEBREAK_EDIT\n"
+"menuitem.text"
+msgid "Edit Page Break..."
+msgstr "ପୃଷ୍ଠା ଭାଙ୍ଗକୁ ସଜାନ୍ତୁ ..."
+
+#: mn.src
+msgctxt ""
+"mn.src\n"
+"MN_PAGEBREAK_BUTTON\n"
+"FN_PAGEBREAK_DELETE\n"
+"menuitem.text"
+msgid "Delete Page Break"
+msgstr "ପୃଷ୍ଠା ଭାଙ୍ଗକୁ ବିଲୋପ କରନ୍ତୁ"

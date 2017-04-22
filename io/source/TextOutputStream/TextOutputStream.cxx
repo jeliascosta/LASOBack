@@ -30,6 +30,7 @@
 #include <rtl/textenc.h>
 #include <rtl/tencinfo.h>
 
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XTextOutputStream2.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 
@@ -61,36 +62,30 @@ class OTextOutputStream : public WeakImplHelper< XTextOutputStream2, XServiceInf
     rtl_UnicodeToTextContext    mContextUnicode2Text;
 
     Sequence<sal_Int8> implConvert( const OUString& rSource );
-    void checkOutputStream() throw(IOException);
+    /// @throws IOException
+    void checkOutputStream();
 
 public:
     OTextOutputStream();
-    virtual ~OTextOutputStream();
+    virtual ~OTextOutputStream() override;
 
     // Methods XTextOutputStream
-    virtual void SAL_CALL writeString( const OUString& aString )
-        throw(IOException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL setEncoding( const OUString& Encoding )
-        throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeString( const OUString& aString ) override;
+    virtual void SAL_CALL setEncoding( const OUString& Encoding ) override;
 
     // Methods XOutputStream
-    virtual void SAL_CALL writeBytes( const Sequence< sal_Int8 >& aData )
-        throw(NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL flush(  )
-        throw(NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL closeOutput(  )
-        throw(NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeBytes( const Sequence< sal_Int8 >& aData ) override;
+    virtual void SAL_CALL flush(  ) override;
+    virtual void SAL_CALL closeOutput(  ) override;
 
     // Methods XActiveDataSource
-    virtual void SAL_CALL setOutputStream( const Reference< XOutputStream >& aStream )
-        throw(RuntimeException, std::exception) override;
-    virtual Reference< XOutputStream > SAL_CALL getOutputStream(  )
-        throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL setOutputStream( const Reference< XOutputStream >& aStream ) override;
+    virtual Reference< XOutputStream > SAL_CALL getOutputStream(  ) override;
 
     // Methods XServiceInfo
-        virtual OUString              SAL_CALL getImplementationName() throw(std::exception) override;
-        virtual Sequence< OUString >  SAL_CALL getSupportedServiceNames() throw(std::exception) override;
-        virtual sal_Bool              SAL_CALL supportsService(const OUString& ServiceName) throw(std::exception) override;
+        virtual OUString              SAL_CALL getImplementationName() override;
+        virtual Sequence< OUString >  SAL_CALL getSupportedServiceNames() override;
+        virtual sal_Bool              SAL_CALL supportsService(const OUString& ServiceName) override;
 };
 
 OTextOutputStream::OTextOutputStream()
@@ -161,7 +156,6 @@ Sequence<sal_Int8> OTextOutputStream::implConvert( const OUString& rSource )
 // XTextOutputStream
 
 void OTextOutputStream::writeString( const OUString& aString )
-    throw(IOException, RuntimeException, std::exception)
 {
     checkOutputStream();
     if( !mbEncodingInitialized )
@@ -177,7 +171,6 @@ void OTextOutputStream::writeString( const OUString& aString )
 }
 
 void OTextOutputStream::setEncoding( const OUString& Encoding )
-    throw(RuntimeException, std::exception)
 {
     OString aOEncodingStr = OUStringToOString( Encoding, RTL_TEXTENCODING_ASCII_US );
     rtl_TextEncoding encoding = rtl_getTextEncodingFromMimeCharset( aOEncodingStr.getStr() );
@@ -193,21 +186,18 @@ void OTextOutputStream::setEncoding( const OUString& Encoding )
 
 // XOutputStream
 void OTextOutputStream::writeBytes( const Sequence< sal_Int8 >& aData )
-    throw(NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     checkOutputStream();
     mxStream->writeBytes( aData );
 }
 
 void OTextOutputStream::flush(  )
-    throw(NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     checkOutputStream();
     mxStream->flush();
 }
 
 void OTextOutputStream::closeOutput(  )
-    throw(NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     checkOutputStream();
     mxStream->closeOutput();
@@ -215,7 +205,6 @@ void OTextOutputStream::closeOutput(  )
 
 
 void OTextOutputStream::checkOutputStream()
-    throw(IOException)
 {
     if (! mxStream.is() )
         throw IOException("output stream is not initialized, you have to use setOutputStream first");
@@ -225,13 +214,11 @@ void OTextOutputStream::checkOutputStream()
 // XActiveDataSource
 
 void OTextOutputStream::setOutputStream( const Reference< XOutputStream >& aStream )
-    throw(RuntimeException, std::exception)
 {
     mxStream = aStream;
 }
 
 Reference< XOutputStream > OTextOutputStream::getOutputStream()
-    throw(RuntimeException, std::exception)
 {
     return mxStream;
 }
@@ -255,17 +242,17 @@ Sequence< OUString > TextOutputStream_getSupportedServiceNames()
     return seqNames;
 }
 
-OUString OTextOutputStream::getImplementationName() throw(std::exception)
+OUString OTextOutputStream::getImplementationName()
 {
     return TextOutputStream_getImplementationName();
 }
 
-sal_Bool OTextOutputStream::supportsService(const OUString& ServiceName) throw(std::exception)
+sal_Bool OTextOutputStream::supportsService(const OUString& ServiceName)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-Sequence< OUString > OTextOutputStream::getSupportedServiceNames() throw(std::exception)
+Sequence< OUString > OTextOutputStream::getSupportedServiceNames()
 {
     return TextOutputStream_getSupportedServiceNames();
 }

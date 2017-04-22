@@ -17,15 +17,16 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblebutton.hxx>
-#include <accessibility/helper/accresmgr.hxx>
-#include <accessibility/helper/accessiblestrings.hrc>
+#include <standard/vclxaccessiblebutton.hxx>
+#include <helper/accresmgr.hxx>
+#include <helper/accessiblestrings.hrc>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <comphelper/accessiblekeybindinghelper.hxx>
 #include <com/sun/star/awt/KeyModifier.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/typeprovider.hxx>
 #include <comphelper/sequence.hxx>
 
@@ -57,7 +58,7 @@ void VCLXAccessibleButton::ProcessWindowEvent( const VclWindowEvent& rVclWindowE
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VCLEVENT_PUSHBUTTON_TOGGLE:
+        case VclEventId::PushbuttonToggle:
         {
             Any aOldValue;
             Any aNewValue;
@@ -93,7 +94,7 @@ void VCLXAccessibleButton::FillAccessibleStateSet( utl::AccessibleStateSetHelper
             rStateSet.AddState( AccessibleStateType::PRESSED );
 
         // IA2 CWS: if the button has a popup menu, it should has the state EXPANDABLE
-        if( pButton->GetType() == WINDOW_MENUBUTTON )
+        if( pButton->GetType() == WindowType::MENUBUTTON )
         {
             rStateSet.AddState( AccessibleStateType::EXPANDABLE );
         }
@@ -120,23 +121,22 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2( VCLXAccessibleButton, VCLXAccessibleTextCompon
 // XServiceInfo
 
 
-OUString VCLXAccessibleButton::getImplementationName() throw (RuntimeException, std::exception)
+OUString VCLXAccessibleButton::getImplementationName()
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleButton" );
 }
 
 
-Sequence< OUString > VCLXAccessibleButton::getSupportedServiceNames() throw (RuntimeException, std::exception)
+Sequence< OUString > VCLXAccessibleButton::getSupportedServiceNames()
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleButton" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleButton" };
 }
 
 
 // XAccessibleContext
 
 
-OUString VCLXAccessibleButton::getAccessibleName(  ) throw (RuntimeException, std::exception)
+OUString VCLXAccessibleButton::getAccessibleName(  )
 {
     OExternalLockGuard aGuard( this );
 
@@ -174,7 +174,7 @@ OUString VCLXAccessibleButton::getAccessibleName(  ) throw (RuntimeException, st
 // XAccessibleAction
 
 
-sal_Int32 VCLXAccessibleButton::getAccessibleActionCount( ) throw (RuntimeException, std::exception)
+sal_Int32 VCLXAccessibleButton::getAccessibleActionCount( )
 {
     OExternalLockGuard aGuard( this );
 
@@ -182,7 +182,7 @@ sal_Int32 VCLXAccessibleButton::getAccessibleActionCount( ) throw (RuntimeExcept
 }
 
 
-sal_Bool VCLXAccessibleButton::doAccessibleAction ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+sal_Bool VCLXAccessibleButton::doAccessibleAction ( sal_Int32 nIndex )
 {
     OExternalLockGuard aGuard( this );
 
@@ -197,7 +197,7 @@ sal_Bool VCLXAccessibleButton::doAccessibleAction ( sal_Int32 nIndex ) throw (In
 }
 
 
-OUString VCLXAccessibleButton::getAccessibleActionDescription ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+OUString VCLXAccessibleButton::getAccessibleActionDescription ( sal_Int32 nIndex )
 {
     OExternalLockGuard aGuard( this );
 
@@ -208,7 +208,7 @@ OUString VCLXAccessibleButton::getAccessibleActionDescription ( sal_Int32 nIndex
 }
 
 
-Reference< XAccessibleKeyBinding > VCLXAccessibleButton::getAccessibleActionKeyBinding( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+Reference< XAccessibleKeyBinding > VCLXAccessibleButton::getAccessibleActionKeyBinding( sal_Int32 nIndex )
 {
     OExternalLockGuard aGuard( this );
 
@@ -218,7 +218,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleButton::getAccessibleActionKeyB
     OAccessibleKeyBindingHelper* pKeyBindingHelper = new OAccessibleKeyBindingHelper();
     Reference< XAccessibleKeyBinding > xKeyBinding = pKeyBindingHelper;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
     {
         KeyEvent aKeyEvent = pWindow->GetActivationKey();
@@ -249,7 +249,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleButton::getAccessibleActionKeyB
 // XAccessibleValue
 
 
-Any VCLXAccessibleButton::getCurrentValue(  ) throw (RuntimeException, std::exception)
+Any VCLXAccessibleButton::getCurrentValue(  )
 {
     OExternalLockGuard aGuard( this );
 
@@ -263,7 +263,7 @@ Any VCLXAccessibleButton::getCurrentValue(  ) throw (RuntimeException, std::exce
 }
 
 
-sal_Bool VCLXAccessibleButton::setCurrentValue( const Any& aNumber ) throw (RuntimeException, std::exception)
+sal_Bool VCLXAccessibleButton::setCurrentValue( const Any& aNumber )
 {
     OExternalLockGuard aGuard( this );
 
@@ -288,7 +288,7 @@ sal_Bool VCLXAccessibleButton::setCurrentValue( const Any& aNumber ) throw (Runt
 }
 
 
-Any VCLXAccessibleButton::getMaximumValue(  ) throw (RuntimeException, std::exception)
+Any VCLXAccessibleButton::getMaximumValue(  )
 {
     OExternalLockGuard aGuard( this );
 
@@ -299,7 +299,7 @@ Any VCLXAccessibleButton::getMaximumValue(  ) throw (RuntimeException, std::exce
 }
 
 
-Any VCLXAccessibleButton::getMinimumValue(  ) throw (RuntimeException, std::exception)
+Any VCLXAccessibleButton::getMinimumValue(  )
 {
     OExternalLockGuard aGuard( this );
 

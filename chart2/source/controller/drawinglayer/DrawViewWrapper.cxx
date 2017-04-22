@@ -24,6 +24,7 @@
 
 #include <unotools/lingucfg.hxx>
 #include <editeng/langitem.hxx>
+#include <svl/itempool.hxx>
 #include <svx/svdpage.hxx>
 #include <svx/svdpagv.hxx>
 #include <svx/svdmodel.hxx>
@@ -146,7 +147,7 @@ void DrawViewWrapper::ReInit()
     this->SetNoDragXorPolys(true);//for interactive 3D resize-dragging: paint only a single rectangle (not a simulated 3D object)
 
     //a correct work area is at least necessary for correct values in the position and  size dialog
-    Rectangle aRect(Point(0,0), aOutputSize);
+    tools::Rectangle aRect(Point(0,0), aOutputSize);
     this->SetWorkArea(aRect);
 
     this->ShowSdrPage(this->GetModel()->GetPage(0));
@@ -164,26 +165,30 @@ SdrPageView* DrawViewWrapper::GetPageView() const
     return pSdrPageView;
 };
 
-void DrawViewWrapper::SetMarkHandles()
+void DrawViewWrapper::SetMarkHandles(SfxViewShell* pOtherShell)
 {
     if( m_pMarkHandleProvider && m_pMarkHandleProvider->getMarkHandles( maHdlList ) )
         return;
     else
-        SdrView::SetMarkHandles();
+        SdrView::SetMarkHandles(pOtherShell);
 }
 
 SdrObject* DrawViewWrapper::getHitObject( const Point& rPnt ) const
 {
-    SdrObject* pRet = nullptr;
     SdrSearchOptions nOptions = SdrSearchOptions::DEEP | SdrSearchOptions::TESTMARKABLE;
 
     SdrPageView* pSdrPageView = this->GetPageView();
-    this->SdrView::PickObj(rPnt, lcl_getHitTolerance( this->GetFirstOutputDevice() ), pRet, pSdrPageView, nOptions);
+    SdrObject* pRet = this->SdrView::PickObj(rPnt, lcl_getHitTolerance( this->GetFirstOutputDevice() ), pSdrPageView, nOptions);
 
     if( pRet )
     {
-        //ignore some special shapes
+        // ignore some special shapes
         OUString aShapeName = pRet->GetName();
+
+        // return right away if it is a field button
+        if (aShapeName.startsWith("FieldButton"))
+            return pRet;
+
         if( aShapeName.match("PlotAreaIncludingAxes") || aShapeName.match("PlotAreaExcludingAxes") )
         {
             pRet->SetMarkProtect( true );
@@ -199,7 +204,7 @@ SdrObject* DrawViewWrapper::getHitObject( const Point& rPnt ) const
             if( pScene )
             {
                 // prepare result vector and call helper
-                ::std::vector< const E3dCompoundObject* > aHitList;
+                std::vector< const E3dCompoundObject* > aHitList;
                 const basegfx::B2DPoint aHitPoint(rPnt.X(), rPnt.Y());
                 getAllHit3DObjectsSortedFrontToBack(aHitPoint, *pScene, aHitList);
 
@@ -306,7 +311,7 @@ bool DrawViewWrapper::IsObjectHit( SdrObject* pObj, const Point& rPnt )
 {
     if(pObj)
     {
-        Rectangle aRect(pObj->GetCurrentBoundRect());
+        tools::Rectangle aRect(pObj->GetCurrentBoundRect());
         return aRect.IsInside(rPnt);
     }
     return false;
@@ -334,7 +339,7 @@ void DrawViewWrapper::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
     if( pSdrHint != nullptr )
     {
         SdrHintKind eKind = pSdrHint->GetKind();
-        if( eKind == HINT_BEGEDIT )
+        if( eKind == SdrHintKind::BeginEdit )
         {
             // #i79965# remember map mode
             OSL_ASSERT( ! m_bRestoreMapMode );
@@ -345,7 +350,7 @@ void DrawViewWrapper::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
                 m_bRestoreMapMode = true;
             }
         }
-        else if( eKind == HINT_ENDEDIT )
+        else if( eKind == SdrHintKind::EndEdit )
         {
             // #i79965# scroll back view when ending text edit
             OSL_ASSERT( m_bRestoreMapMode );

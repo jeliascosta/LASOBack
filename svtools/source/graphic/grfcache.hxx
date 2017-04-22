@@ -48,13 +48,13 @@ private:
     GraphicCacheEntry*      ImplGetCacheEntry( const GraphicObject& rObj );
 
 
-                            DECL_LINK_TYPED( ReleaseTimeoutHdl, Timer*, void );
+                            DECL_LINK( ReleaseTimeoutHdl, Timer*, void );
 
 public:
 
                             GraphicCache(
-                                sal_uLong nDisplayCacheSize = 10000000UL,
-                                sal_uLong nMaxObjDisplayCacheSize = 2400000UL
+                                sal_uLong nDisplayCacheSize,
+                                sal_uLong nMaxObjDisplayCacheSize
                             );
 
                             ~GraphicCache();

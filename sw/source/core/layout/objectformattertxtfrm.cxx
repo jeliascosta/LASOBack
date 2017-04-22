@@ -110,14 +110,6 @@ SwFrame& SwObjectFormatterTextFrame::GetAnchorFrame()
 bool SwObjectFormatterTextFrame::DoFormatObj( SwAnchoredObject& _rAnchoredObj,
                                            const bool _bCheckForMovedFwd )
 {
-    // check, if only as-character anchored object have to be formatted, and
-    // check the anchor type
-    if ( FormatOnlyAsCharAnchored() &&
-         !(_rAnchoredObj.GetFrameFormat().GetAnchor().GetAnchorId() == FLY_AS_CHAR) )
-    {
-        return true;
-    }
-
     // consider, if the layout action has to be
     // restarted due to a delete of a page frame.
     if ( GetLayAction() && GetLayAction()->IsAgain() )
@@ -160,11 +152,11 @@ bool SwObjectFormatterTextFrame::DoFormatObj( SwAnchoredObject& _rAnchoredObj,
         // format anchor text frame, if wrapping style influence of the object
         // has to be considered and it's <NONE_SUCCESSIVE_POSITIONED>
         // #i3317# - consider also anchored objects, whose
-        // wrapping style influence is temporarly considered.
+        // wrapping style influence is temporarily considered.
         // #i40147# - consider also anchored objects, for
         // whose the check of a moved forward anchor frame is requested.
         // revise decision made for i3317:
-        // anchored objects, whose wrapping style influence is temporarly considered,
+        // anchored objects, whose wrapping style influence is temporarily considered,
         // have to be considered in method <SwObjectFormatterTextFrame::DoFormatObjs()>
         if ( bSuccess &&
              _rAnchoredObj.ConsiderObjWrapInfluenceOnObjPos() &&
@@ -336,7 +328,7 @@ bool SwObjectFormatterTextFrame::DoFormatObjs()
         bSuccess = FormatObjsAtFrame_();
     }
 
-    // consider anchored objects, whose wrapping style influence are temporarly
+    // consider anchored objects, whose wrapping style influence are temporarily
     // considered.
     if ( bSuccess &&
          ( ConsiderWrapOnObjPos() ||
@@ -588,8 +580,8 @@ bool SwObjectFormatterTextFrame::CheckMovedFwdCondition(
     // which will be on the next page.
     if ( !bAnchorIsMovedForward &&
          _bAnchoredAtMasterBeforeFormatAnchor &&
-        ((_rAnchoredObj.GetFrameFormat().GetAnchor().GetAnchorId() == FLY_AT_CHAR) ||
-         (_rAnchoredObj.GetFrameFormat().GetAnchor().GetAnchorId() == FLY_AT_PARA)))
+        ((_rAnchoredObj.GetFrameFormat().GetAnchor().GetAnchorId() == RndStdIds::FLY_AT_CHAR) ||
+         (_rAnchoredObj.GetFrameFormat().GetAnchor().GetAnchorId() == RndStdIds::FLY_AT_PARA)))
     {
         SwFrame* pAnchorFrame = _rAnchoredObj.GetAnchorFrameContainingAnchPos();
         OSL_ENSURE( pAnchorFrame->IsTextFrame(),
@@ -760,7 +752,7 @@ void SwObjectFormatterTextFrame::FormatAnchorFrameForCheckMoveFwd()
 }
 
 /** method to determine if at least one anchored object has state
-    <temporarly consider wrapping style influence> set.
+    <temporarily consider wrapping style influence> set.
 */
 bool SwObjectFormatterTextFrame::AtLeastOneObjIsTmpConsiderWrapInfluence()
 {

@@ -27,8 +27,13 @@
 class AutoTimer;
 
 
-enum ScrollType { SCROLL_DONTKNOW, SCROLL_LINEUP, SCROLL_LINEDOWN,
-                  SCROLL_PAGEUP, SCROLL_PAGEDOWN, SCROLL_DRAG, SCROLL_SET };
+enum class ScrollType
+{
+    DontKnow,
+    LineUp, LineDown,
+    PageUp, PageDown,
+    Drag, Set
+};
 
 
 struct ImplScrollBarData;
@@ -36,11 +41,12 @@ struct ImplScrollBarData;
 class VCL_DLLPUBLIC ScrollBar : public Control
 {
 private:
-    Rectangle       maBtn1Rect;
-    Rectangle       maBtn2Rect;
-    Rectangle       maPage1Rect;
-    Rectangle       maPage2Rect;
-    Rectangle       maThumbRect;
+    tools::Rectangle       maBtn1Rect;
+    tools::Rectangle       maBtn2Rect;
+    tools::Rectangle       maPage1Rect;
+    tools::Rectangle       maPage2Rect;
+    tools::Rectangle       maThumbRect;
+    tools::Rectangle       maTrackRect;
     ImplScrollBarData* mpData;
     long            mnStartPos;
     long            mnMouseOff;
@@ -57,13 +63,12 @@ private:
     sal_uInt16      mnDragDraw;
     sal_uInt16      mnStateFlags;
     ScrollType      meScrollType;
-    ScrollType      meDDScrollType;
     bool            mbCalcSize;
     bool            mbFullDrag;
     Link<ScrollBar*,void>       maScrollHdl;
     Link<ScrollBar*,void>       maEndScrollHdl;
 
-    SAL_DLLPRIVATE Rectangle*   ImplFindPartRect( const Point& rPt );
+    SAL_DLLPRIVATE tools::Rectangle*   ImplFindPartRect( const Point& rPt );
     using Window::ImplInit;
     SAL_DLLPRIVATE void         ImplInit( vcl::Window* pParent, WinBits nStyle );
     SAL_DLLPRIVATE void         ImplInitStyle( WinBits nStyle );
@@ -71,7 +76,7 @@ private:
     SAL_DLLPRIVATE long         ImplCalcThumbPos( long nPixPos );
     SAL_DLLPRIVATE long         ImplCalcThumbPosPix( long nPos );
     SAL_DLLPRIVATE void         ImplCalc( bool bUpdate = true );
-    SAL_DLLPRIVATE void         ImplDraw(vcl::RenderContext& rRenderContext, sal_uInt16 nDrawFlags);
+    SAL_DLLPRIVATE void         ImplDraw(vcl::RenderContext& rRenderContext);
     using Window::ImplScroll;
     SAL_DLLPRIVATE long         ImplScroll( long nNewPos, bool bCallEndScroll );
     SAL_DLLPRIVATE long         ImplDoAction( bool bCallEndScroll );
@@ -80,17 +85,17 @@ private:
     SAL_DLLPRIVATE bool         ImplDrawNative(vcl::RenderContext& rRenderContext, sal_uInt16 nDrawFlags);
     SAL_DLLPRIVATE void         ImplDragThumb( const Point& rMousePos );
     SAL_DLLPRIVATE Size         getCurrentCalcSize() const;
-    DECL_DLLPRIVATE_LINK_TYPED( ImplAutoTimerHdl, Timer*, void );
+    DECL_DLLPRIVATE_LINK( ImplAutoTimerHdl, Timer*, void );
 
 public:
     explicit        ScrollBar( vcl::Window* pParent, WinBits nStyle = WB_VERT );
-    virtual         ~ScrollBar();
+    virtual         ~ScrollBar() override;
     virtual void    dispose() override;
 
     virtual void MouseButtonDown(const MouseEvent& rMEvt) override;
     virtual void Tracking(const TrackingEvent& rTEvt) override;
     virtual void KeyInput(const KeyEvent& rKEvt) override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual void Draw(OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags) override;
     virtual void Resize() override;
     virtual void StateChanged(StateChangedType nType) override;

@@ -20,7 +20,7 @@
 #ifndef INCLUDED_SVX_SMARTTAGMGR_HXX
 #define INCLUDED_SVX_SMARTTAGMGR_HXX
 
-#include <cppuhelper/implbase2.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/util/XModifyListener.hpp>
@@ -72,7 +72,7 @@ struct ActionReference
 {
     css::uno::Reference< css::smarttags::XSmartTagAction > mxSmartTagAction;
     sal_Int32 mnSmartTagIndex;
-    ActionReference( css::uno::Reference< css::smarttags::XSmartTagAction > xSmartTagAction, sal_Int32 nSmartTagIndex )
+    ActionReference( css::uno::Reference< css::smarttags::XSmartTagAction > const & xSmartTagAction, sal_Int32 nSmartTagIndex )
         : mxSmartTagAction( xSmartTagAction), mnSmartTagIndex( nSmartTagIndex ) {}
 };
 
@@ -81,7 +81,7 @@ struct ActionReference
     This class organizes the available smarttag libraries and provides access functions
     to these libraries. The smart tag manager is a singleton.
 */
-class SVX_DLLPUBLIC SmartTagMgr : public cppu::WeakImplHelper2< css::util::XModifyListener,
+class SVX_DLLPUBLIC SmartTagMgr : public cppu::WeakImplHelper< css::util::XModifyListener,
                                                                 css::util::XChangesListener >
 {
 private:
@@ -117,12 +117,10 @@ private:
     */
     void AssociateActionsWithRecognizers();
 
-    void CreateBreakIterator() const;
-
 public:
 
     SmartTagMgr( const OUString& rApplicationName );
-    virtual ~SmartTagMgr();
+    virtual ~SmartTagMgr() override;
 
     /** Triggers configuration reading, library loading and listener registration
         NOTE: MUST BE CALLED AFTER CONSTRUCTION!
@@ -218,13 +216,13 @@ public:
     const OUString& GetApplicationName() const { return maApplicationName; }
 
     // css::lang::XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
     // css::util::XModifyListener
-    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) override;
 
     // css::util::XChangesListener
-      virtual void SAL_CALL changesOccurred( const css::util::ChangesEvent& Event ) throw(css::uno::RuntimeException, std::exception) override;
+      virtual void SAL_CALL changesOccurred( const css::util::ChangesEvent& Event ) override;
 };
 
 #endif

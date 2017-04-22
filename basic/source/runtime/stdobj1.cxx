@@ -67,9 +67,9 @@ void SbStdPicture::PropType( SbxVariable* pVar, SbxArray*, bool bWrite )
     GraphicType eType = aGraphic.GetType();
     sal_Int16 nType = 0;
 
-    if( eType == GRAPHIC_BITMAP )
+    if( eType == GraphicType::Bitmap )
         nType = 1;
-    else if( eType != GRAPHIC_NONE )
+    else if( eType != GraphicType::NONE )
         nType = 2;
 
     pVar->PutInteger( nType );
@@ -86,7 +86,7 @@ void SbStdPicture::PropWidth( SbxVariable* pVar, SbxArray*, bool bWrite )
 
     Size aSize = aGraphic.GetPrefSize();
     aSize = Application::GetAppWindow()->LogicToPixel( aSize, aGraphic.GetPrefMapMode() );
-    aSize = Application::GetAppWindow()->PixelToLogic( aSize, MapMode( MAP_TWIP ) );
+    aSize = Application::GetAppWindow()->PixelToLogic( aSize, MapMode( MapUnit::MapTwip ) );
 
     pVar->PutInteger( (sal_Int16)aSize.Width() );
 }
@@ -101,14 +101,14 @@ void SbStdPicture::PropHeight( SbxVariable* pVar, SbxArray*, bool bWrite )
 
     Size aSize = aGraphic.GetPrefSize();
     aSize = Application::GetAppWindow()->LogicToPixel( aSize, aGraphic.GetPrefMapMode() );
-    aSize = Application::GetAppWindow()->PixelToLogic( aSize, MapMode( MAP_TWIP ) );
+    aSize = Application::GetAppWindow()->PixelToLogic( aSize, MapMode( MapUnit::MapTwip ) );
 
     pVar->PutInteger( (sal_Int16)aSize.Height() );
 }
 
 
 SbStdPicture::SbStdPicture() :
-    SbxObject( OUString("Picture"))
+    SbxObject( "Picture" )
 {
     // Properties
     SbxVariable* p = Make( "Type", SbxClassType::Property, SbxVARIANT );
@@ -127,13 +127,6 @@ SbStdPicture::~SbStdPicture()
 }
 
 
-SbxVariable* SbStdPicture::Find( const OUString& rName, SbxClassType t )
-{
-    // entered already?
-    return SbxObject::Find( rName, t );
-}
-
-
 void SbStdPicture::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 
 {
@@ -141,7 +134,7 @@ void SbStdPicture::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 
     if( pHint )
     {
-        if( pHint->GetId() == SBX_HINT_INFOWANTED )
+        if( pHint->GetId() == SfxHintId::BasicInfoWanted )
         {
             SbxObject::Notify( rBC, rHint );
             return;
@@ -150,7 +143,7 @@ void SbStdPicture::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
         SbxVariable* pVar   = pHint->GetVar();
         SbxArray*    pPar_  = pVar->GetParameters();
         const sal_uInt32 nWhich = pVar->GetUserData();
-        bool         bWrite = pHint->GetId() == SBX_HINT_DATACHANGED;
+        bool         bWrite = pHint->GetId() == SfxHintId::BasicDataChanged;
 
         // Propteries
         switch( nWhich )
@@ -209,7 +202,7 @@ void SbStdFont::PropName( SbxVariable* pVar, SbxArray*, bool bWrite )
 {
     if( bWrite )
     {
-        SetFontName( pVar->GetOUString() );
+        aName = pVar->GetOUString();
     }
     else
     {
@@ -219,7 +212,7 @@ void SbStdFont::PropName( SbxVariable* pVar, SbxArray*, bool bWrite )
 
 
 SbStdFont::SbStdFont()
-    : SbxObject( OUString("Font") )
+    : SbxObject( "Font" )
     , bBold(false)
     , bItalic(false)
     , bStrikeThrough(false)
@@ -253,18 +246,13 @@ SbStdFont::~SbStdFont()
 {
 }
 
-SbxVariable* SbStdFont::Find( const OUString& rName, SbxClassType t )
-{
-    return SbxObject::Find( rName, t );
-}
-
 void SbStdFont::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
     const SbxHint* pHint = dynamic_cast<const SbxHint*>(&rHint);
 
     if( pHint )
     {
-        if( pHint->GetId() == SBX_HINT_INFOWANTED )
+        if( pHint->GetId() == SfxHintId::BasicInfoWanted )
         {
             SbxObject::Notify( rBC, rHint );
             return;
@@ -273,7 +261,7 @@ void SbStdFont::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
         SbxVariable* pVar   = pHint->GetVar();
         SbxArray*    pPar_  = pVar->GetParameters();
         const sal_uInt32 nWhich = pVar->GetUserData();
-        bool         bWrite = pHint->GetId() == SBX_HINT_DATACHANGED;
+        bool         bWrite = pHint->GetId() == SfxHintId::BasicDataChanged;
 
         // Propteries
         switch( nWhich )
@@ -382,7 +370,7 @@ void SbStdClipboard::MethSetText( SbxVariable* pVar, SbxArray* pPar_, bool )
 
 
 SbStdClipboard::SbStdClipboard() :
-    SbxObject( OUString("Clipboard") )
+    SbxObject( "Clipboard" )
 {
     SbxVariable* p = Find( "Name", SbxClassType::Property );
     assert(p && "No Name Property");
@@ -413,20 +401,13 @@ SbStdClipboard::~SbStdClipboard()
 {
 }
 
-
-SbxVariable* SbStdClipboard::Find( const OUString& rName, SbxClassType t )
-{
-    return SbxObject::Find( rName, t );
-}
-
-
 void SbStdClipboard::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
     const SbxHint* pHint = dynamic_cast<const SbxHint*>(&rHint);
 
     if( pHint )
     {
-        if( pHint->GetId() == SBX_HINT_INFOWANTED )
+        if( pHint->GetId() == SfxHintId::BasicInfoWanted )
         {
             SbxObject::Notify( rBC, rHint );
             return;
@@ -435,7 +416,7 @@ void SbStdClipboard::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
         SbxVariable* pVar   = pHint->GetVar();
         SbxArray*    pPar_  = pVar->GetParameters();
         const sal_uInt32 nWhich = pVar->GetUserData();
-        bool         bWrite = pHint->GetId() == SBX_HINT_DATACHANGED;
+        bool         bWrite = pHint->GetId() == SfxHintId::BasicDataChanged;
 
         // Methods
         switch( nWhich )

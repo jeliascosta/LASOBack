@@ -46,12 +46,13 @@ class ScChartPositionMap
                                     SCROW nRowAdd,      // header rows
                                     ColumnMap& rCols        // table with col tables with address*
                                     );
-                                ~ScChartPositionMap();  //! deletes all ScAddress*
 
                                 ScChartPositionMap( const ScChartPositionMap& ) = delete;
             ScChartPositionMap& operator=( const ScChartPositionMap& ) = delete;
 
 public:
+                                ~ScChartPositionMap();  //! deletes all ScAddress*
+
             SCCOL               GetColCount() const { return nColCount; }
             SCROW               GetRowCount() const { return nRowCount; }
 
@@ -89,21 +90,21 @@ public:
                                     }
 };
 
-enum ScChartGlue {
-    SC_CHARTGLUE_NA,
-    SC_CHARTGLUE_NONE,      // old mimic
-    SC_CHARTGLUE_COLS,      // old mimic
-    SC_CHARTGLUE_ROWS,
-    SC_CHARTGLUE_BOTH
+enum class ScChartGlue {
+    NA,
+    NONE,      // old mimic
+    Cols,      // old mimic
+    Rows,
+    Both
 };
 
 class ScDocument;
 
-class ScChartPositioner             // only parameter struct
+class ScChartPositioner final             // only parameter struct
 {
     ScRangeListRef  aRangeListRef;
     ScDocument* pDocument;
-    ScChartPositionMap* pPositionMap;
+    std::unique_ptr<ScChartPositionMap> pPositionMap;
     ScChartGlue eGlue;
     SCCOL       nStartCol;
     SCROW       nStartRow;
@@ -111,7 +112,6 @@ class ScChartPositioner             // only parameter struct
     bool        bRowHeaders;
     bool        bDummyUpperLeft;
 
-private:
     void        CheckColRowHeaders();
 
     void        GlueState();        // summarised areas
@@ -124,7 +124,7 @@ public:
     ScChartPositioner( ScDocument* pDoc, const ScRangeListRef& rRangeList );
     ScChartPositioner( const ScChartPositioner& rPositioner );
 
-    virtual ~ScChartPositioner();
+    ~ScChartPositioner();
 
     const ScRangeListRef&   GetRangeList() const { return aRangeListRef; }
     void    SetRangeList( const ScRange& rNew );
@@ -133,15 +133,7 @@ public:
     bool    HasColHeaders() const            { return bColHeaders; }
     bool    HasRowHeaders() const            { return bRowHeaders; }
 
-    void                    InvalidateGlue()
-                                {
-                                    eGlue = SC_CHARTGLUE_NA;
-                                    if ( pPositionMap )
-                                    {
-                                        delete pPositionMap;
-                                        pPositionMap = nullptr;
-                                    }
-                                }
+    void                        InvalidateGlue();
     const ScChartPositionMap*   GetPositionMap();
 };
 

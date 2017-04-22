@@ -117,7 +117,7 @@ Calc_FilterOptionsDialog_get_implementation(css::uno::XComponentContext*, css::u
 
 // XPropertyAccess
 
-uno::Sequence<beans::PropertyValue> SAL_CALL ScFilterOptionsObj::getPropertyValues() throw(uno::RuntimeException, std::exception)
+uno::Sequence<beans::PropertyValue> SAL_CALL ScFilterOptionsObj::getPropertyValues()
 {
     uno::Sequence<beans::PropertyValue> aRet(1);
     beans::PropertyValue* pArray = aRet.getArray();
@@ -129,8 +129,6 @@ uno::Sequence<beans::PropertyValue> SAL_CALL ScFilterOptionsObj::getPropertyValu
 }
 
 void SAL_CALL ScFilterOptionsObj::setPropertyValues( const uno::Sequence<beans::PropertyValue>& aProps )
-                    throw(beans::UnknownPropertyException, beans::PropertyVetoException,
-                            lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     const beans::PropertyValue* pPropArray = aProps.getConstArray();
     long nPropCount = aProps.getLength();
@@ -152,12 +150,12 @@ void SAL_CALL ScFilterOptionsObj::setPropertyValues( const uno::Sequence<beans::
 
 // XExecutableDialog
 
-void SAL_CALL ScFilterOptionsObj::setTitle( const OUString& /* aTitle */ ) throw(uno::RuntimeException, std::exception)
+void SAL_CALL ScFilterOptionsObj::setTitle( const OUString& /* aTitle */ )
 {
     // not used
 }
 
-sal_Int16 SAL_CALL ScFilterOptionsObj::execute() throw(uno::RuntimeException, std::exception)
+sal_Int16 SAL_CALL ScFilterOptionsObj::execute()
 {
     sal_Int16 nRet = ui::dialogs::ExecutableDialogResults::CANCEL;
 
@@ -176,7 +174,7 @@ sal_Int16 SAL_CALL ScFilterOptionsObj::execute() throw(uno::RuntimeException, st
         if ( xInputStream.is() )
             pInStream.reset(utl::UcbStreamHelper::CreateStream( xInputStream ));
 
-        std::unique_ptr<AbstractScImportAsciiDlg> pDlg(pFact->CreateScImportAsciiDlg( aPrivDatName, pInStream.get(), SC_IMPORTFILE));
+        ScopedVclPtr<AbstractScImportAsciiDlg> pDlg(pFact->CreateScImportAsciiDlg( aPrivDatName, pInStream.get(), SC_IMPORTFILE));
         OSL_ENSURE(pDlg, "Dialog create fail!");
         if ( pDlg->Execute() == RET_OK )
         {
@@ -194,7 +192,7 @@ sal_Int16 SAL_CALL ScFilterOptionsObj::execute() throw(uno::RuntimeException, st
         else
         {
             // HTML import.
-            std::unique_ptr<AbstractScTextImportOptionsDlg> pDlg(
+            ScopedVclPtr<AbstractScTextImportOptionsDlg> pDlg(
                 pFact->CreateScTextImportOptionsDlg());
 
             if (pDlg->Execute() == RET_OK)
@@ -277,12 +275,13 @@ sal_Int16 SAL_CALL ScFilterOptionsObj::execute() throw(uno::RuntimeException, st
 
         ScImportOptions aOptions( cAsciiDel, cStrDel, eEncoding);
 
-        std::unique_ptr<AbstractScImportOptionsDlg> pDlg(pFact->CreateScImportOptionsDlg(
+        ScopedVclPtr<AbstractScImportOptionsDlg> pDlg(pFact->CreateScImportOptionsDlg(
                                                                             bAscii, &aOptions, &aTitle, bMultiByte, bDBEnc,
                                                                             !bExport));
         OSL_ENSURE(pDlg, "Dialog create fail!");
         if ( pDlg->Execute() == RET_OK )
         {
+            pDlg->SaveImportOptions();
             pDlg->GetImportOptions( aOptions );
             save_CharSet( aOptions.eCharSet, bExport );
             if ( bAscii )
@@ -301,7 +300,6 @@ sal_Int16 SAL_CALL ScFilterOptionsObj::execute() throw(uno::RuntimeException, st
 // XImporter
 
 void SAL_CALL ScFilterOptionsObj::setTargetDocument( const uno::Reference<lang::XComponent>& /* xDoc */ )
-                            throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     bExport = false;
 }
@@ -309,7 +307,6 @@ void SAL_CALL ScFilterOptionsObj::setTargetDocument( const uno::Reference<lang::
 // XExporter
 
 void SAL_CALL ScFilterOptionsObj::setSourceDocument( const uno::Reference<lang::XComponent>& /* xDoc */ )
-                            throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     bExport = true;
 }

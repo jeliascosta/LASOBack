@@ -117,15 +117,15 @@ namespace accessibility
             only be called from the main office thread.
 
             The EditSource set here is required to broadcast out the
-            following hints: EDITSOURCE_HINT_PARASMOVED,
-            EDITSOURCE_HINT_SELECTIONCHANGED, TEXT_HINT_MODIFIED,
-            TEXT_HINT_PARAINSERTED, TEXT_HINT_PARAREMOVED,
-            TEXT_HINT_TEXTHEIGHTCHANGED,
-            TEXT_HINT_VIEWSCROLLED. Otherwise, not all state changes
+            following hints: SfxHintId::EditSourceParasMoved,
+            SfxHintId::EditSourceSelectionChanged, SfxHintId::TextModified,
+            SfxHintId::TextParaInserted, SfxHintId::TextParaRemoved,
+            SfxHintId::TextHeightChanged,
+            SfxHintId::TextViewScrolled. Otherwise, not all state changes
             will get noticed by the accessibility object. Further
             more, when the corresponding core object or the model is
             dying, either the edit source must be set to NULL or it
-            has to broadcast a SFX_HINT_DYING hint.
+            has to broadcast a SfxHintId::Dying hint.
 
             This class does not have a dispose method, since it is not
             a UNO component. Nevertheless, it holds C++ references to
@@ -177,42 +177,46 @@ namespace accessibility
         void Dispose();
 
         // XAccessibleText interface implementation
-        virtual sal_Int32 SAL_CALL getCaretPosition() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL setCaretPosition( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual sal_Unicode SAL_CALL getCharacter( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& aRequestedAttributes ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual css::awt::Rectangle SAL_CALL getCharacterBounds( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getCharacterCount() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getIndexAtPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getSelectedText() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getSelectionStart() throw (css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int32 SAL_CALL getSelectionEnd() throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getCaretPosition() override;
+        virtual sal_Bool SAL_CALL setCaretPosition( sal_Int32 nIndex ) override;
+        virtual sal_Unicode SAL_CALL getCharacter( sal_Int32 nIndex ) override;
+        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& aRequestedAttributes ) override;
+        virtual css::awt::Rectangle SAL_CALL getCharacterBounds( sal_Int32 nIndex ) override;
+        virtual sal_Int32 SAL_CALL getCharacterCount() override;
+        virtual sal_Int32 SAL_CALL getIndexAtPoint( const css::awt::Point& aPoint ) override;
+        virtual OUString SAL_CALL getSelectedText() override;
+        virtual sal_Int32 SAL_CALL getSelectionStart() override;
+        virtual sal_Int32 SAL_CALL getSelectionEnd() override;
         /// This will only work with a functional SvxEditViewForwarder, i.e. an EditEngine/Outliner in edit mode
-        virtual sal_Bool SAL_CALL setSelection( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getText() throw (css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL setSelection( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) override;
+        virtual OUString SAL_CALL getText() override;
+        virtual OUString SAL_CALL getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) override;
         /// Does not support AccessibleTextType::SENTENCE (missing feature in EditEngine)
-        virtual css::accessibility::TextSegment SAL_CALL getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+        virtual css::accessibility::TextSegment SAL_CALL getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType ) override;
         /// Does not support AccessibleTextType::SENTENCE (missing feature in EditEngine)
-        virtual css::accessibility::TextSegment SAL_CALL getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+        virtual css::accessibility::TextSegment SAL_CALL getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType ) override;
         /// Does not support AccessibleTextType::SENTENCE (missing feature in EditEngine)
-        virtual css::accessibility::TextSegment SAL_CALL getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+        virtual css::accessibility::TextSegment SAL_CALL getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType ) override;
         /// This will only work with a functional SvxEditViewForwarder, i.e. an EditEngine/Outliner in edit mode
-        virtual sal_Bool SAL_CALL copyText( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL copyText( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) override;
 
         // XAccessibleTextAttributes
-        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getDefaultAttributes( const css::uno::Sequence< OUString >& RequestedAttributes ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getRunAttributes( sal_Int32 Index, const css::uno::Sequence< OUString >& RequestedAttributes ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getDefaultAttributes( const css::uno::Sequence< OUString >& RequestedAttributes ) override;
+        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getRunAttributes( sal_Int32 Index, const css::uno::Sequence< OUString >& RequestedAttributes ) override;
 
         // child-related methods from XAccessibleContext
-        virtual sal_Int32 SAL_CALL getAccessibleChildCount() throw (css::uno::RuntimeException, std::exception);
-        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception);
+        /// @throws css::uno::RuntimeException
+        virtual sal_Int32 SAL_CALL getAccessibleChildCount();
+        /// @throws css::lang::IndexOutOfBoundsException
+        /// @throws css::uno::RuntimeException
+        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i );
 
         // child-related methods from XAccessibleComponent
-        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException, std::exception);
+        /// @throws css::uno::RuntimeException
+        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint( const css::awt::Point& aPoint );
 
     protected:
-        Rectangle GetParagraphBoundingBox() const;
+        tools::Rectangle GetParagraphBoundingBox() const;
 
     private:
 

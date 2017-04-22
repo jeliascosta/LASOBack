@@ -25,7 +25,6 @@
 #include "hlmarkwn_def.hxx"
 
 sal_Char const sAnonymous[]    = "anonymous";
-sal_Char const sHTTPScheme[]   = INET_HTTP_SCHEME;
 sal_Char const sFTPScheme[]    = INET_FTP_SCHEME;
 
 /*************************************************************************
@@ -71,7 +70,7 @@ SvxHyperlinkInternetTp::SvxHyperlinkInternetTp ( vcl::Window *pParent,
     m_pEdLogin->SetModifyHdl          ( LINK ( this, SvxHyperlinkInternetTp, ModifiedLoginHdl_Impl ) );
     m_pCbbTarget->SetLoseFocusHdl     ( LINK ( this, SvxHyperlinkInternetTp, LostFocusTargetHdl_Impl ) );
     m_pCbbTarget->SetModifyHdl        ( LINK ( this, SvxHyperlinkInternetTp, ModifiedTargetHdl_Impl ) );
-    maTimer.SetTimeoutHdl           ( LINK ( this, SvxHyperlinkInternetTp, TimeoutHdl_Impl ) );
+    maTimer.SetInvokeHandler          ( LINK ( this, SvxHyperlinkInternetTp, TimeoutHdl_Impl ) );
 }
 
 SvxHyperlinkInternetTp::~SvxHyperlinkInternetTp()
@@ -119,7 +118,7 @@ void SvxHyperlinkInternetTp::FillDlgFields(const OUString& rStrURL)
     // set URL-field
     // Show the scheme, #72740
     if ( aURL.GetProtocol() != INetProtocol::NotValid )
-        m_pCbbTarget->SetText( aURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS ) );
+        m_pCbbTarget->SetText( aURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous ) );
     else
         m_pCbbTarget->SetText(rStrURL);
 
@@ -183,7 +182,7 @@ OUString SvxHyperlinkInternetTp::CreateAbsoluteURL() const
         aURL.SetUserAndPass ( m_pEdLogin->GetText(), m_pEdPassword->GetText() );
 
     if ( aURL.GetProtocol() != INetProtocol::NotValid )
-        return aURL.GetMainURL( INetURLObject::DECODE_TO_IURI );
+        return aURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
     else //#105788# always create a URL even if it is not valid
         return aStrURL;
 }
@@ -216,7 +215,7 @@ void SvxHyperlinkInternetTp::SetInitFocus()
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, ModifiedTargetHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxHyperlinkInternetTp, ModifiedTargetHdl_Impl, Edit&, void)
 {
     OUString aScheme = GetSchemeFromURL( m_pCbbTarget->GetText() );
     if( !aScheme.isEmpty() )
@@ -233,7 +232,7 @@ IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, ModifiedTargetHdl_Impl, Edit&, voi
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, TimeoutHdl_Impl, Timer *, void)
+IMPL_LINK_NOARG(SvxHyperlinkInternetTp, TimeoutHdl_Impl, Timer *, void)
 {
     RefreshMarkWindow();
 }
@@ -244,7 +243,7 @@ IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, TimeoutHdl_Impl, Timer *, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, ModifiedLoginHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxHyperlinkInternetTp, ModifiedLoginHdl_Impl, Edit&, void)
 {
     OUString aStrLogin ( m_pEdLogin->GetText() );
     if ( aStrLogin.equalsIgnoreAsciiCase( sAnonymous ) )
@@ -276,7 +275,7 @@ void SvxHyperlinkInternetTp::SetScheme(const OUString& rScheme)
     m_pCbAnonymous->Show( bFTP );
 
     //update 'link target in document'-window and opening-button
-    if (rScheme.startsWith(sHTTPScheme) || rScheme.isEmpty())
+    if (rScheme.startsWith(INET_HTTP_SCHEME) || rScheme.isEmpty())
     {
         if ( mbMarkWndOpen )
             ShowMarkWnd ();
@@ -331,7 +330,7 @@ INetProtocol SvxHyperlinkInternetTp::GetSmartProtocolFromButtons() const
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, Click_SmartProtocol_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxHyperlinkInternetTp, Click_SmartProtocol_Impl, Button*, void)
 {
     OUString aScheme = GetSchemeFromButtons();
     SetScheme(aScheme);
@@ -343,7 +342,7 @@ IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, Click_SmartProtocol_Impl, Button*,
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, ClickAnonymousHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxHyperlinkInternetTp, ClickAnonymousHdl_Impl, Button*, void)
 {
     // disable login-editfields if checked
     if ( m_pCbAnonymous->IsChecked() )
@@ -371,7 +370,7 @@ IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, ClickAnonymousHdl_Impl, Button*, v
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG_TYPED(SvxHyperlinkInternetTp, LostFocusTargetHdl_Impl, Control&, void)
+IMPL_LINK_NOARG(SvxHyperlinkInternetTp, LostFocusTargetHdl_Impl, Control&, void)
 {
     RefreshMarkWindow();
 }
@@ -407,7 +406,7 @@ void SvxHyperlinkInternetTp::SetMarkStr ( const OUString& aStrMark )
     if( nPos != -1 )
         aStrURL = aStrURL.copy(0, nPos);
 
-    aStrURL += OUStringLiteral1<sUHash>() + aStrMark;
+    aStrURL += OUStringLiteral1(sUHash) + aStrMark;
 
     m_pCbbTarget->SetText ( aStrURL );
 }

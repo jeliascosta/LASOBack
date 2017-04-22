@@ -33,7 +33,7 @@ using namespace cppu;
 
 #define COMP_IMPL_NAME  "com.sun.star.sys.shell.SimpleSystemMail"
 
-namespace // private
+namespace
 {
     Sequence< OUString > SAL_CALL Component_getSupportedServiceNames()
     {
@@ -41,7 +41,7 @@ namespace // private
         return aRet;
     }
 
-} // end private namespace
+}
 
 CSmplMailSuppl::CSmplMailSuppl() :
     WeakComponentImplHelper<XSimpleMailClientSupplier, XServiceInfo>(m_aMutex)
@@ -53,16 +53,15 @@ CSmplMailSuppl::~CSmplMailSuppl()
 }
 
 Reference<XSimpleMailClient> SAL_CALL CSmplMailSuppl::querySimpleMailClient()
-    throw (RuntimeException)
 {
     /* We just try to load the MAPI dll as a test
        if a mail client is available */
     Reference<XSimpleMailClient> xSmplMailClient;
     HMODULE handle = LoadLibrary("mapi32.dll");
-    if ((handle != INVALID_HANDLE_VALUE) && (handle != NULL))
+    if ((handle != INVALID_HANDLE_VALUE) && (handle != nullptr))
     {
         FreeLibrary(handle);
-        xSmplMailClient.set(new CSmplMailClient());
+        xSmplMailClient.set(new CSmplMailClient);
     }
     return xSmplMailClient;
 }
@@ -70,19 +69,16 @@ Reference<XSimpleMailClient> SAL_CALL CSmplMailSuppl::querySimpleMailClient()
 // XServiceInfo
 
 OUString SAL_CALL CSmplMailSuppl::getImplementationName()
-    throw(RuntimeException)
 {
     return OUString(COMP_IMPL_NAME);
 }
 
 sal_Bool SAL_CALL CSmplMailSuppl::supportsService(const OUString& ServiceName)
-    throw(RuntimeException)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence<OUString> SAL_CALL CSmplMailSuppl::getSupportedServiceNames()
-    throw(RuntimeException)
 {
     return Component_getSupportedServiceNames();
 }

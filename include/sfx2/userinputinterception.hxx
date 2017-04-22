@@ -50,10 +50,14 @@ namespace sfx2
         UserInputInterception& operator=( const UserInputInterception& ) = delete;
 
         // delegator functions for your XUserInputInterception implementation
-        void    addKeyHandler( const css::uno::Reference< css::awt::XKeyHandler >& xHandler ) throw (css::uno::RuntimeException);
-        void    removeKeyHandler( const css::uno::Reference< css::awt::XKeyHandler >& xHandler ) throw (css::uno::RuntimeException);
-        void    addMouseClickHandler( const css::uno::Reference< css::awt::XMouseClickHandler >& xHandler ) throw (css::uno::RuntimeException);
-        void    removeMouseClickHandler( const css::uno::Reference< css::awt::XMouseClickHandler >& xHandler ) throw (css::uno::RuntimeException);
+        /// @throws css::uno::RuntimeException
+        void    addKeyHandler( const css::uno::Reference< css::awt::XKeyHandler >& xHandler );
+        /// @throws css::uno::RuntimeException
+        void    removeKeyHandler( const css::uno::Reference< css::awt::XKeyHandler >& xHandler );
+        /// @throws css::uno::RuntimeException
+        void    addMouseClickHandler( const css::uno::Reference< css::awt::XMouseClickHandler >& xHandler );
+        /// @throws css::uno::RuntimeException
+        void    removeMouseClickHandler( const css::uno::Reference< css::awt::XMouseClickHandler >& xHandler );
 
         // state
         bool    hasKeyHandlers() const;

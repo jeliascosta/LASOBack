@@ -70,19 +70,19 @@ struct FileViewAsyncAction
 class SVT_DLLPUBLIC SvtFileView : public Control
 {
 private:
-    SvtFileView_Impl*              mpImp;
+    std::unique_ptr<SvtFileView_Impl>              mpImpl;
     bool                           bSortColumn;
     css::uno::Sequence< OUString > mpBlackList;
 
-    DECL_DLLPRIVATE_LINK_TYPED( HeaderSelect_Impl, HeaderBar*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( HeaderEndDrag_Impl, HeaderBar*, void );
+    DECL_DLLPRIVATE_LINK( HeaderSelect_Impl, HeaderBar*, void );
+    DECL_DLLPRIVATE_LINK( HeaderEndDrag_Impl, HeaderBar*, void );
 
 protected:
     virtual void GetFocus() override;
 
 public:
     SvtFileView( vcl::Window* pParent, WinBits nBits, bool bOnlyFolder, bool bMultiSelection, bool bShowType = true );
-    virtual ~SvtFileView();
+    virtual ~SvtFileView() override;
     virtual void dispose() override;
 
     virtual Size GetOptimalSize() const override;
@@ -100,7 +100,6 @@ public:
     const OString&          GetHelpId( ) const;
     void                    SetSizePixel( const Size& rNewSize ) override;
     virtual void            SetPosSizePixel( const Point& rNewPos, const Size& rNewSize ) override;
-    void                    SetSortColumn( bool bValue ) { bSortColumn = bValue; }
 
     /** initialize the view with the content of a folder given by URL, and apply an immediate filter
 
@@ -207,9 +206,7 @@ namespace svtools {
 
 enum QueryDeleteResult_Impl
 {
-    QUERYDELETE_CANCEL = RET_CANCEL,
     QUERYDELETE_YES = RET_YES,
-    QUERYDELETE_NO = RET_NO,
     QUERYDELETE_ALL = -1
 };
 
@@ -220,7 +217,7 @@ private:
 public:
 
     QueryDeleteDlg_Impl(vcl::Window* pParent, const OUString& rName);
-    virtual ~QueryDeleteDlg_Impl();
+    virtual ~QueryDeleteDlg_Impl() override;
     virtual void dispose() override;
 
     void EnableAllButton() { m_pAllButton->Enable(); }

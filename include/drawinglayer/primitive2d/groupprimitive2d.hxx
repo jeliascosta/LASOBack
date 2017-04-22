@@ -76,14 +76,19 @@ namespace drawinglayer
             /// data read access
             const Primitive2DContainer& getChildren() const { return maChildren; }
 
+            void getChildren(Primitive2DDecompositionVisitor& rVisitor) const { rVisitor.append(maChildren); }
+
             /// compare operator
             virtual bool operator==( const BasePrimitive2D& rPrimitive ) const override;
 
             /// local decomposition. Implementation will just return children
-            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
 
             /// provide unique ID
             DeclPrimitive2DIDBlock()
+
+            // XAccounting
+            virtual sal_Int64 SAL_CALL estimateUsage() override;
         };
     } // end of namespace primitive2d
 } // end of namespace drawinglayer

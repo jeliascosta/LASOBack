@@ -32,6 +32,14 @@ String RID_SVXSTR_BITMAP
 {
     Text [ en-US ] = "Bitmap" ;
 };
+String RID_SVXSTR_PATTERN
+{
+    Text [ en-US ] = "Pattern";
+};
+String RID_SVXSTR_PATTERN_UNTITLED
+{
+    Text [ en-US ] = "Untitled Pattern";
+};
 String RID_SVXSTR_LINESTYLE
 {
     Text [ en-US ] = "Line Style" ;
@@ -53,10 +61,6 @@ String RID_SVXSTR_LINEEND
     Text [ en-US ] = "Arrowheads" ;
 };
 
-String RID_SVXSTR_CLOSE
-{
-    Text [ en-US ] = "Close" ;
-};
 String RID_SVXSTR_COLOR_BLACK
 {
     Text [ en-US ] = "Black" ;
@@ -149,40 +153,6 @@ String RID_SVXSTR_GRAFMODE_MONO
 String RID_SVXSTR_GRAFMODE_WATERMARK
 {
     Text [ en-US ] = "Watermark";
-};
-String STR_INSERT_VIDEO_EXTFILTER_IVF
-{
-    Text [ en-US ] = "Intel Indeo Video (*.ivf)" ;
-};
-
-String STR_INSERT_VIDEO_EXTFILTER_AVI
-{
-    Text [ en-US ] = "Video for Windows (*.avi)" ;
-};
-
-String STR_INSERT_VIDEO_EXTFILTER_MOV
-{
-    Text [ en-US ] = "QuickTime Movie (*.mov)" ;
-};
-
-String STR_INSERT_VIDEO_EXTFILTER_MPEG
-{
-    Text [ en-US ] = "MPEG - Motion Pictures Experts Group (*.mpe;*.mpeg;*.mpg)" ;
-};
-
-String STR_EXTFILTER_ALL
-{
-    Text [ en-US ] = "<All>" ;
-};
-
-String STR_INSERT_SOUND_TITLE
-{
-    Text [ en-US ] = "Insert audio" ;
-};
-
-String STR_INSERT_VIDEO_TITLE
-{
-    Text [ en-US ] = "Insert video" ;
 };
 
 // BM: some additional standard colors
@@ -437,12 +407,6 @@ String RID_SVXSTR_COLOR_SALMON_DEF
 String RID_SVXSTR_COLOR_SEABLUE_DEF
 {
     Text = "Sea blue";
-};
-/* do not translate */
-String RID_SVXSTR_COLOR_SUN_DEF
-{
-    // attention: this is the color string for the Sun Microsystems specific colors !!!
-    Text = "Sun";
 };
 /* do not translate */
 String RID_SVXSTR_COLOR_CHART_DEF
@@ -944,7 +908,7 @@ String RID_SVXSTR_GRDT77_DEF
 /* do not translate */
 String RID_SVXSTR_GRDT78_DEF
 {
-    Text = "Argile";
+    Text = "Clay";
 };
 
 /* do not translate */
@@ -956,7 +920,7 @@ String RID_SVXSTR_GRDT79_DEF
 /* do not translate */
 String RID_SVXSTR_GRDT80_DEF
 {
-    Text = "Grison";
+    Text = "Silver";
 };
 
 /* do not translate */
@@ -974,7 +938,7 @@ String RID_SVXSTR_GRDT82_DEF
 /* do not translate */
 String RID_SVXSTR_GRDT83_DEF
 {
-    Text = "Sun-Set";
+    Text = "Sunset";
 };
 
 /* do not translate */
@@ -1500,43 +1464,43 @@ String RID_SVXSTR_HATCH10_DEF
 
 String RID_SVXSTR_HATCH0
 {
-    Text [ en-US ] = "Black 45 degrees wide";
+    Text [ en-US ] = "Black 45 Degrees Wide";
 };
 String RID_SVXSTR_HATCH1
 {
-    Text [ en-US ] = "Black 45 degrees";
+    Text [ en-US ] = "Black 45 Degrees";
 };
 String RID_SVXSTR_HATCH2
 {
-    Text [ en-US ] = "Black -45 degrees";
+    Text [ en-US ] = "Black -45 Degrees";
 };
 String RID_SVXSTR_HATCH3
 {
-    Text [ en-US ] = "Black 90 degrees";
+    Text [ en-US ] = "Black 90 Degrees";
 };
 String RID_SVXSTR_HATCH4
 {
-    Text [ en-US ] = "Red crossed 45 degrees";
+    Text [ en-US ] = "Red Crossed 45 Degrees";
 };
 String RID_SVXSTR_HATCH5
 {
-    Text [ en-US ] = "Red crossed 0 degrees";
+    Text [ en-US ] = "Red Crossed 0 Degrees";
 };
 String RID_SVXSTR_HATCH6
 {
-    Text [ en-US ] = "Blue crossed 45 degrees";
+    Text [ en-US ] = "Blue Crossed 45 Degrees";
 };
 String RID_SVXSTR_HATCH7
 {
-    Text [ en-US ] = "Blue crossed 0 degrees";
+    Text [ en-US ] = "Blue Crossed 0 Degrees";
 };
 String RID_SVXSTR_HATCH8
 {
-    Text [ en-US ] = "Blue triple 90 degrees";
+    Text [ en-US ] = "Blue Triple 90 Degrees";
 };
 String RID_SVXSTR_HATCH9
 {
-    Text [ en-US ] = "Black 0 degrees";
+    Text [ en-US ] = "Black 0 Degrees";
 };
 String RID_SVXSTR_HATCH10
 {
@@ -1659,7 +1623,7 @@ String RID_SVXSTR_BMP21_DEF
 
 String RID_SVXSTR_BMP0
 {
-    Text [ en-US ] = "Blank";
+    Text [ en-US ] = "Empty";
 };
 String RID_SVXSTR_BMP1
 {
@@ -2098,12 +2062,6 @@ StringArray RID_SVXSTR_FIELDUNIT_TABLE
     };
     };
 
-// unknown text color
-String RID_SVXSTR_COLOR_USER
-{
-    Text [ en-US ] = "User" ;
-};
-
 String RID_SVXSTR_COLOR_LIBRE_GREEN_1
 {
     Text [ en-US ] = "Green 1 (%PRODUCTNAME Main Color)" ;
@@ -2277,49 +2235,39 @@ String RID_SVXSTR_GALLERY_PREVIEW
     Text [ en-US ] = "Preview";
 };
 
-String RID_SVXSTR_FILTER
+Bitmap RID_SVXBMP_GREENCHECK
 {
-    Text [ en-US ] = "Filter" ;
+    File = "nu01.png";
 };
 
-String RID_SVXSTR_VIEW
+Bitmap RID_SVXBMP_YELLOWCHECK
 {
-    Text [ en-US ] = "List" ;
+    File = "nu04.png";
 };
 
-Image RID_SVXIMG_GREENCHECK
+Bitmap RID_SVXBMP_REDCROSS
 {
-    ImageBitmap = Bitmap { File = "nu01.png"; };
+    File = "nu02.png";
 };
 
-Image RID_SVXIMG_YELLOWCHECK
+Bitmap RID_SVXBMP_SHADOW_ANGLE
 {
-    ImageBitmap = Bitmap { File = "nu04.png"; };
+    File = "fw018.png";
 };
 
-Image RID_SVXIMG_REDCROSS
+Bitmap RID_SVXBMP_SHADOW_SIZE
 {
-    ImageBitmap = Bitmap { File = "nu02.png"; };
+    File = "fw019.png";
 };
 
-Image  RID_SVXIMG_SHADOW_ANGLE
+Bitmap RID_SVXBMP_SHADOW_XDIST
 {
-    ImageBitmap = Bitmap { File = "fw018.png"; };
+    File = "fw016.png";
 };
 
-Image  RID_SVXIMG_SHADOW_SIZE
+Bitmap RID_SVXBMP_SHADOW_YDIST
 {
-    ImageBitmap = Bitmap { File = "fw019.png"; };
-};
-
-Image  RID_SVXIMG_SHADOW_XDIST
-{
-    ImageBitmap = Bitmap { File = "fw016.png"; };
-};
-
-Image  RID_SVXIMG_SHADOW_YDIST
-{
-    ImageBitmap = Bitmap { File = "fw017.png"; };
+    File = "fw017.png";
 };
 
 String RID_SVXSTR_SUCCESSRECOV
@@ -2349,12 +2297,12 @@ String RID_SVXSTR_NOTRECOVYET
 
 String RID_SVXSTR_RECOVERY_INPROGRESS
 {
-    Text[ en-US ] = "%PRODUCTNAME %PRODUCTVERSION will start to recover your documents. Depending on the size of the documents this process can take some time." ;
+    Text[ en-US ] = "%PRODUCTNAME %PRODUCTVERSION has begun recovering your documents. Depending on the size of the documents this process can take some time." ;
 };
 
 String RID_SVXSTR_RECOVERYONLY_FINISH_DESCR
 {
-    Text[ en-US ] = "Recovery of your documents was finished.\nClick 'Finish' to see your documents.";
+    Text[ en-US ] = "Recovery of your documents was finished. Click 'Finish' to see your documents.";
 };
 
 String RID_SVXSTR_RECOVERYONLY_FINISH

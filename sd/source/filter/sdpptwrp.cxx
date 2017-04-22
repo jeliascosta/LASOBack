@@ -84,17 +84,17 @@ bool SdPPTFilter::Import()
         OUString sDualStorage( "PP97_DUALSTORAGE"  );
         if ( pStorage->IsContained( sDualStorage ) )
         {
-            xDualStorage = pStorage->OpenSotStorage( sDualStorage, STREAM_STD_READ );
+            xDualStorage = pStorage->OpenSotStorage( sDualStorage, StreamMode::STD_READ );
             pStorage = xDualStorage;
         }
-        SvStream* pDocStream = pStorage->OpenSotStream( "PowerPoint Document" , STREAM_STD_READ );
+        SvStream* pDocStream = pStorage->OpenSotStream( "PowerPoint Document" , StreamMode::STD_READ );
         if( pDocStream )
         {
             pDocStream->SetVersion( pStorage->GetVersion() );
             pDocStream->SetCryptMaskKey(pStorage->GetKey());
 
             if ( pStorage->IsStream( "EncryptedSummary" ) )
-                mrMedium.SetError( ERRCODE_SVX_READ_FILTER_PPOINT, OSL_LOG_PREFIX );
+                mrMedium.SetError(ERRCODE_SVX_READ_FILTER_PPOINT);
             else
             {
 #ifndef DISABLE_DYNLOADING
@@ -106,14 +106,14 @@ bool SdPPTFilter::Import()
                         bRet = PPTImport( &mrDocument, *pDocStream, *pStorage, mrMedium );
 
                     if ( !bRet )
-                        mrMedium.SetError( SVSTREAM_WRONGVERSION, OSL_LOG_PREFIX );
+                        mrMedium.SetError(SVSTREAM_WRONGVERSION);
                     pLibrary->release(); //TODO: let it get unloaded?
                     delete pLibrary;
                 }
 #else
                 bRet = ImportPPT( &mrDocument, *pDocStream, *pStorage, mrMedium );
                 if ( !bRet )
-                    mrMedium.SetError( SVSTREAM_WRONGVERSION, OSL_LOG_PREFIX );
+                    mrMedium.SetError(SVSTREAM_WRONGVERSION);
 #endif
             }
 
@@ -144,7 +144,7 @@ bool SdPPTFilter::Export()
             ExportPPTPointer PPTExport = ExportPPT;
 #endif
 
-            if( PPTExport && xStorRef.Is() )
+            if( PPTExport && xStorRef.is() )
             {
                 sal_uInt32          nCnvrtFlags = 0;
                 const SvtFilterOptions& rFilterOptions = SvtFilterOptions::Get();
@@ -167,7 +167,7 @@ bool SdPPTFilter::Export()
                 std::vector< PropertyValue > aProperties;
                 PropertyValue aProperty;
                 aProperty.Name = "BaseURI";
-                aProperty.Value = makeAny( mrMedium.GetBaseURL( true ) );
+                aProperty.Value <<= mrMedium.GetBaseURL( true );
                 aProperties.push_back( aProperty );
 
                 bRet = PPTExport( aProperties, xStorRef, mxModel, mxStatusIndicator, pBas, nCnvrtFlags );

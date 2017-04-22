@@ -70,11 +70,11 @@ void ScUndoAllRangeNames::DoChange(const std::map<OUString, std::unique_ptr<ScRa
 {
     ScDocument& rDoc = pDocShell->GetDocument();
 
-    rDoc.PreprocessRangeNameUpdate();
+    rDoc.PreprocessAllRangeNamesUpdate(rNames);
     rDoc.SetAllRangeNames(rNames);
     rDoc.CompileHybridFormula();
 
-    SfxGetpApp()->Broadcast(SfxSimpleHint(SC_HINT_AREAS_CHANGED));
+    SfxGetpApp()->Broadcast(SfxHint(SfxHintId::ScAreasChanged));
 }
 
 ScUndoAddRangeData::ScUndoAddRangeData(ScDocShell* pDocSh, ScRangeData* pRangeData, SCTAB nTab) :
@@ -87,7 +87,6 @@ ScUndoAddRangeData::ScUndoAddRangeData(ScDocShell* pDocSh, ScRangeData* pRangeDa
 
 ScUndoAddRangeData::~ScUndoAddRangeData()
 {
-    delete mpRangeData;
 }
 
 void ScUndoAddRangeData::Undo()
@@ -103,7 +102,7 @@ void ScUndoAddRangeData::Undo()
         pRangeName = rDoc.GetRangeName( mnTab );
     }
     pRangeName->erase(*mpRangeData);
-    SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_AREAS_CHANGED ) );
+    SfxGetpApp()->Broadcast( SfxHint( SfxHintId::ScAreasChanged ) );
 
 }
 
@@ -120,7 +119,7 @@ void ScUndoAddRangeData::Redo()
         pRangeName = rDoc.GetRangeName( mnTab );
     }
     pRangeName->insert(new ScRangeData(*mpRangeData));
-    SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_AREAS_CHANGED ) );
+    SfxGetpApp()->Broadcast( SfxHint( SfxHintId::ScAreasChanged ) );
 }
 
 void ScUndoAddRangeData::Repeat(SfxRepeatTarget& /*rTarget*/)

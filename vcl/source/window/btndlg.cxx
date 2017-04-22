@@ -31,6 +31,8 @@ struct ImplBtnDlgItem
     bool                    mbOwnButton;
     long                    mnSepSize;
     VclPtr<PushButton>      mpPushButton;
+
+    ImplBtnDlgItem() : mnId(0), mbOwnButton(false), mnSepSize(0) {}
 };
 
 void ButtonDialog::ImplInitButtonDialogData()
@@ -48,7 +50,7 @@ ButtonDialog::ButtonDialog( WindowType nType ) :
 }
 
 ButtonDialog::ButtonDialog( vcl::Window* pParent, WinBits nStyle ) :
-    Dialog( WINDOW_BUTTONDIALOG )
+    Dialog( WindowType::BUTTONDIALOG )
 {
     ImplInitButtonDialogData();
     ImplInit( pParent, nStyle );
@@ -211,14 +213,15 @@ void ButtonDialog::ImplPosControls()
     mbFormat = false;
 }
 
-IMPL_LINK_TYPED( ButtonDialog, ImplClickHdl, Button*, pBtn, void )
+IMPL_LINK( ButtonDialog, ImplClickHdl, Button*, pBtn, void )
 {
     for (auto & it : m_ItemList)
     {
         if ( it->mpPushButton == pBtn )
         {
             mnCurButtonId = it->mnId;
-            Click();
+            if ( IsInExecute() )
+                EndDialog( mnCurButtonId );
             break;
         }
     }
@@ -256,12 +259,6 @@ void ButtonDialog::StateChanged( StateChangedType nType )
     }
 
     Dialog::StateChanged( nType );
-}
-
-void ButtonDialog::Click()
-{
-    if ( IsInExecute() )
-        EndDialog( GetCurButtonId() );
 }
 
 void ButtonDialog::AddButton( const OUString& rText, sal_uInt16 nId,
@@ -303,9 +300,9 @@ void ButtonDialog::AddButton( StandardButtonType eType, sal_uInt16 nId,
     pItem->mpPushButton = ImplCreatePushButton( nBtnFlags );
 
     // Standard-Buttons have the right text already
-    if ( !((eType == StandardButtonType::OK     && pItem->mpPushButton->GetType() == WINDOW_OKBUTTON) ||
-           (eType == StandardButtonType::Cancel && pItem->mpPushButton->GetType() == WINDOW_CANCELBUTTON) ||
-           (eType == StandardButtonType::Help   && pItem->mpPushButton->GetType() == WINDOW_HELPBUTTON)) )
+    if ( !((eType == StandardButtonType::OK     && pItem->mpPushButton->GetType() == WindowType::OKBUTTON) ||
+           (eType == StandardButtonType::Cancel && pItem->mpPushButton->GetType() == WindowType::CANCELBUTTON) ||
+           (eType == StandardButtonType::Help   && pItem->mpPushButton->GetType() == WindowType::HELPBUTTON)) )
     {
         pItem->mpPushButton->SetText( Button::GetStandardText( eType ) );
     }

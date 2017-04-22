@@ -22,36 +22,36 @@
 #include "globals.hrc"
 #include "helpid.h"
 
-ImageList IL_SECTION_BITMAPS
+Bitmap RID_BMP_HIDE
 {
-    Prefix = "re";
-    MaskColor = IMAGE_MASK_COLOR ;
-    IdList =
-    {
-        BMP_HIDE           /*1*/ ;
-        BMP_NO_HIDE        /*2*/ ;
-        BMP_PROT_HIDE      /*3*/ ;
-        BMP_PROT_NO_HIDE   /*4*/ ;
-    };
-    IdCount = { 4 ; };
+    File = "re01.png";
 };
 
-String STR_REG_DUPLICATE
+Bitmap RID_BMP_NO_HIDE
 {
-    Text [ en-US ] = "Section name changed:" ;
+    File = "re02.png";
 };
-String STR_INFO_DUPLICATE
+
+Bitmap RID_BMP_PROT_HIDE
 {
-    Text [ en-US ] = "Duplicate section name" ;
+    File = "re03.png";
 };
+
+Bitmap RID_BMP_PROT_NO_HIDE
+{
+    File = "re04.png";
+};
+
 String STR_QUERY_CONNECT
 {
     Text[ en-US ] = "A file connection will delete the contents of the current section. Connect anyway?" ;
 };
+
 String STR_WRONG_PASSWORD
 {
     Text [ en-US ] = "The password entered is invalid." ;
 };
+
 String STR_WRONG_PASSWD_REPEAT
 {
     Text [ en-US ] = "The password has not been set." ;

@@ -76,10 +76,9 @@ bool resolvePathnameUrl(rtl::OUString * url) {
          osl::FileBase::E_None))
     {
         return true;
-    } else {
-        *url = rtl::OUString();
-        return false;
     }
+    *url = rtl::OUString();
+    return false;
 }
 
 enum LookupMode {
@@ -119,9 +118,9 @@ struct rtl_bootstrap_NameValue
     OUString sName;
     OUString sValue;
 
-    inline rtl_bootstrap_NameValue()
+    rtl_bootstrap_NameValue()
         {}
-    inline rtl_bootstrap_NameValue(
+    rtl_bootstrap_NameValue(
         OUString const & name, OUString const & value )
         : sName( name ),
           sValue( value )
@@ -163,11 +162,11 @@ static bool getFromCommandLineArgs(
         {
             rtl_uString *pArg = nullptr;
             osl_getCommandArg( i, &pArg );
-            if( ('-' == pArg->buffer[0] || '/' == pArg->buffer[0] ) &&
-                'e' == pArg->buffer[1] &&
-                'n' == pArg->buffer[2] &&
-                'v' == pArg->buffer[3] &&
-                ':' == pArg->buffer[4] )
+            if( (pArg->buffer[0] == '-' || pArg->buffer[0] == '/' ) &&
+                pArg->buffer[1] == 'e' &&
+                pArg->buffer[2] == 'n' &&
+                pArg->buffer[3] == 'v' &&
+                pArg->buffer[4] == ':' )
             {
                 sal_Int32 nIndex = rtl_ustr_indexOfChar( pArg->buffer, '=' );
                 if( nIndex >= 0 )
@@ -338,8 +337,8 @@ Bootstrap_Impl::Bootstrap_Impl( OUString const & rIniName )
     // normalize path
     FileStatus status( osl_FileStatus_Mask_FileURL );
     DirectoryItem dirItem;
-    if (DirectoryItem::E_None == DirectoryItem::get( base_ini, dirItem ) &&
-        DirectoryItem::E_None == dirItem.getFileStatus( status ))
+    if (DirectoryItem::get( base_ini, dirItem ) == DirectoryItem::E_None &&
+        dirItem.getFileStatus( status ) == DirectoryItem::E_None)
     {
         base_ini = status.getFileURL();
         if (! rIniName.equals( base_ini ))
@@ -348,14 +347,14 @@ Bootstrap_Impl::Bootstrap_Impl( OUString const & rIniName )
                 rtl_bootstrap_args_open( base_ini.pData ) );
         }
     }
-    SAL_INFO("sal.rtl", "Bootstrap_Impl(): sFile=" << _iniName);
+    SAL_INFO("sal.bootstrap", "Bootstrap_Impl(): sFile=" << _iniName);
     oslFileHandle handle;
     if (!_iniName.isEmpty() &&
-        osl_File_E_None == osl_openFile(_iniName.pData, &handle, osl_File_OpenFlag_Read))
+        osl_openFile(_iniName.pData, &handle, osl_File_OpenFlag_Read) == osl_File_E_None)
     {
         rtl::ByteSequence seq;
 
-        while (osl_File_E_None == osl_readLine(handle , reinterpret_cast<sal_Sequence **>(&seq)))
+        while (osl_readLine(handle , reinterpret_cast<sal_Sequence **>(&seq)) == osl_File_E_None)
         {
             OString line( reinterpret_cast<const char *>(seq.getConstArray()), seq.getLength() );
             sal_Int32 nIndex = line.indexOf('=');
@@ -367,7 +366,7 @@ Bootstrap_Impl::Bootstrap_Impl( OUString const & rIniName )
                 nameValue.sValue = OStringToOUString(
                     line.copy(nIndex+1).trim(), RTL_TEXTENCODING_UTF8 );
 
-                SAL_INFO("sal.rtl", "pushing: name=" << nameValue.sName << " value=" << nameValue.sValue);
+                SAL_INFO("sal.bootstrap", "pushing: name=" << nameValue.sName << " value=" << nameValue.sValue);
 
                 _nameValueList.push_back(nameValue);
             }
@@ -376,7 +375,7 @@ Bootstrap_Impl::Bootstrap_Impl( OUString const & rIniName )
     }
     else
     {
-        SAL_WARN( "sal.rtl", "couldn't open file: " <<  _iniName );
+        SAL_WARN( "sal.bootstrap", "couldn't open file: " <<  _iniName );
     }
 }
 
@@ -413,11 +412,10 @@ struct FundamentalIniData {
     FundamentalIniData() {
         OUString uri;
         ini =
-            ((static_cast< Bootstrap_Impl * >(get_static_bootstrap_handle())->
-              getValue(
-                  "URE_BOOTSTRAP",
-                  &uri.pData, nullptr, LOOKUP_MODE_NORMAL, false, nullptr)) &&
-             resolvePathnameUrl(&uri))
+            (get_static_bootstrap_handle()->getValue(
+                "URE_BOOTSTRAP", &uri.pData, nullptr, LOOKUP_MODE_NORMAL, false,
+                nullptr)
+             && resolvePathnameUrl(&uri))
             ? rtl_bootstrap_args_open(uri.pData) : nullptr;
     }
 
@@ -471,7 +469,7 @@ bool Bootstrap_Impl::getValue(
 #endif
 #ifdef IOS
     if (key == "APP_DATA_DIR") {
-        const char *app_data_dir = [[[[NSBundle mainBundle] bundlePath] stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding] UTF8String];
+        const char *app_data_dir = [[[[NSBundle mainBundle] bundlePath] stringByAddingPercentEncodingWithAllowedCharacters: [NSCharacterSet URLPathAllowedCharacterSet]] UTF8String];
         rtl_uString_assign(
             value, rtl::OUString(app_data_dir, strlen(app_data_dir), RTL_TEXTENCODING_UTF8).pData);
         return true;
@@ -538,9 +536,8 @@ bool Bootstrap_Impl::getDirectValue(
     if (find(_nameValueList, key, &v)) {
         expandValue(value, v, mode, this, key, requestStack);
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 
 bool Bootstrap_Impl::getAmbienceValue(
@@ -558,9 +555,8 @@ bool Bootstrap_Impl::getAmbienceValue(
     {
         expandValue(value, v, mode, nullptr, key, requestStack);
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 
 void Bootstrap_Impl::expandValue(
@@ -623,8 +619,8 @@ rtlBootstrapHandle SAL_CALL rtl_bootstrap_args_open (
     // normalize path
     FileStatus status( osl_FileStatus_Mask_FileURL );
     DirectoryItem dirItem;
-    if (DirectoryItem::E_None != DirectoryItem::get( iniName, dirItem ) ||
-        DirectoryItem::E_None != dirItem.getFileStatus( status ))
+    if (DirectoryItem::get( iniName, dirItem ) != DirectoryItem::E_None ||
+        dirItem.getFileStatus( status ) != DirectoryItem::E_None)
     {
         return nullptr;
     }
@@ -777,7 +773,7 @@ void SAL_CALL rtl_bootstrap_set (
         }
     }
 
-    SAL_INFO("sal.rtl", "explicitly getting: name=" << name << " value=" <<value);
+    SAL_INFO("sal.bootstrap", "explicitly getting: name=" << name << " value=" <<value);
 
     r_rtl_bootstrap_set_list.push_back( rtl_bootstrap_NameValue( name, value ) );
 }
@@ -839,7 +835,8 @@ sal_Unicode read(rtl::OUString const & text, sal_Int32 * pos, bool * escaped) {
             *escaped = true;
             return static_cast< sal_Unicode >(
                 (n1 << 12) | (n2 << 8) | (n3 << 4) | n4);
-        } else if (*pos < text.getLength()) {
+        }
+        if (*pos < text.getLength()) {
             *escaped = true;
             return text[(*pos)++];
         }

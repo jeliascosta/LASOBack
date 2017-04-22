@@ -29,28 +29,28 @@
 namespace comphelper
 {
 
-// FmUnoIOStream,
 // Stream to read and write data, based on File
 
-class COMPHELPER_DLLPUBLIC OSLInputStreamWrapper : public ::cppu::WeakImplHelper<css::io::XInputStream>
+class OSLInputStreamWrapper : public ::cppu::WeakImplHelper<css::io::XInputStream>
 {
-    ::osl::Mutex    m_aMutex;
-    ::osl::File*    m_pFile;
-
 public:
-    OSLInputStreamWrapper(::osl::File& _rStream);
-    virtual ~OSLInputStreamWrapper();
+    COMPHELPER_DLLPUBLIC OSLInputStreamWrapper(::osl::File& _rStream);
+
+private:
+    virtual ~OSLInputStreamWrapper() override;
 
 // css::io::XInputStream
-    virtual sal_Int32   SAL_CALL    readBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32   SAL_CALL    readSomeBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
-    virtual void        SAL_CALL    skipBytes(sal_Int32 nBytesToSkip) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32   SAL_CALL    available() throw(css::io::NotConnectedException, css::uno::RuntimeException, std::exception) override;
-    virtual void        SAL_CALL    closeInput() throw(css::io::NotConnectedException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32   SAL_CALL    readBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead) override;
+    virtual sal_Int32   SAL_CALL    readSomeBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead) override;
+    virtual void        SAL_CALL    skipBytes(sal_Int32 nBytesToSkip) override;
+    virtual sal_Int32   SAL_CALL    available() override;
+    virtual void        SAL_CALL    closeInput() override;
+
+    ::osl::Mutex    m_aMutex;
+    ::osl::File*    m_pFile;
 };
 
 
-// FmUnoOutStream,
 // data sink for the files
 
 class OSLOutputStreamWrapper : public ::cppu::WeakImplHelper<css::io::XOutputStream>
@@ -59,12 +59,12 @@ public:
     COMPHELPER_DLLPUBLIC OSLOutputStreamWrapper(::osl::File& _rFile);
 
 private:
-    virtual ~OSLOutputStreamWrapper();
+    virtual ~OSLOutputStreamWrapper() override;
 
 // css::io::XOutputStream
-    virtual void SAL_CALL writeBytes(const css::uno::Sequence< sal_Int8 >& aData) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL flush() throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL closeOutput() throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeBytes(const css::uno::Sequence< sal_Int8 >& aData) override;
+    virtual void SAL_CALL flush() override;
+    virtual void SAL_CALL closeOutput() override;
 
     ::osl::File&        rFile;
 };

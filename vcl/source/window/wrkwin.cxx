@@ -41,6 +41,8 @@ void WorkWindow::ImplInitWorkWindowData()
     mbPresentationVisible   = false;
     mbPresentationFull      = false;
     mbFullScreenMode        = false;
+
+    maLayoutIdle.SetDebugName( "vcl::WorkWindow maLayoutIdle" );
 }
 
 void WorkWindow::ImplInit( vcl::Window* pParent, WinBits nStyle, SystemParentData* pSystemParentData )
@@ -60,7 +62,7 @@ void WorkWindow::ImplInit( vcl::Window* pParent, WinBits nStyle, SystemParentDat
     if ( nStyle & WB_APP )
     {
         ImplSVData* pSVData = ImplGetSVData();
-        DBG_ASSERT( !pSVData->maWinData.mpAppWin, "WorkWindow::WorkWindow(): More than one window with style WB_APP" );
+        SAL_WARN_IF( pSVData->maWinData.mpAppWin, "vcl", "WorkWindow::WorkWindow(): More than one window with style WB_APP" );
         pSVData->maWinData.mpAppWin = this;
     }
 
@@ -74,7 +76,7 @@ void WorkWindow::ImplInit( vcl::Window* pParent, WinBits nStyle, const css::uno:
         css::uno::Sequence< sal_Int8 > aSeq;
         aSystemWorkWindowToken >>= aSeq;
         SystemParentData* pData = reinterpret_cast<SystemParentData*>(aSeq.getArray());
-        DBG_ASSERT( aSeq.getLength() == sizeof( SystemParentData ) && pData->nSize == sizeof( SystemParentData ), "WorkWindow::WorkWindow( vcl::Window*, const Any&, WinBits ) called with invalid Any" );
+        SAL_WARN_IF( aSeq.getLength() != sizeof( SystemParentData ) || pData->nSize != sizeof( SystemParentData ), "vcl", "WorkWindow::WorkWindow( vcl::Window*, const Any&, WinBits ) called with invalid Any" );
         // init with style 0 as does WorkWindow::WorkWindow( SystemParentData* );
         ImplInit( pParent, 0, pData );
     }
@@ -89,14 +91,14 @@ WorkWindow::WorkWindow( WindowType nType ) :
 }
 
 WorkWindow::WorkWindow( vcl::Window* pParent, WinBits nStyle ) :
-    SystemWindow( WINDOW_WORKWINDOW )
+    SystemWindow( WindowType::WORKWINDOW )
 {
     ImplInitWorkWindowData();
     ImplInit( pParent, nStyle );
 }
 
 WorkWindow::WorkWindow( vcl::Window* pParent, const css::uno::Any& aSystemWorkWindowToken, WinBits nStyle ) :
-    SystemWindow( WINDOW_WORKWINDOW )
+    SystemWindow( WindowType::WORKWINDOW )
 {
     ImplInitWorkWindowData();
     mbSysChild = true;
@@ -104,7 +106,7 @@ WorkWindow::WorkWindow( vcl::Window* pParent, const css::uno::Any& aSystemWorkWi
 }
 
 WorkWindow::WorkWindow( SystemParentData* pParent ) :
-    SystemWindow( WINDOW_WORKWINDOW )
+    SystemWindow( WindowType::WORKWINDOW )
 {
     ImplInitWorkWindowData();
     mbSysChild = true;
@@ -216,7 +218,7 @@ bool WorkWindow::IsMinimized() const
 
 bool WorkWindow::SetPluginParent( SystemParentData* pParent )
 {
-    DBG_ASSERT( ! mbPresentationMode && ! mbFullScreenMode, "SetPluginParent in fullscreen or presentation mode !" );
+    SAL_WARN_IF( mbPresentationMode || mbFullScreenMode, "vcl", "SetPluginParent in fullscreen or presentation mode !" );
 
     bool bWasDnd = Window::ImplStopDnd();
 
@@ -253,7 +255,7 @@ bool WorkWindow::Close()
 {
     bool bCanClose = SystemWindow::Close();
 
-    // Ist es das Applikationsfenster, dann beende die Applikation
+    // if it's the application window then close the application
     if ( bCanClose && ( ImplGetSVData()->maWinData.mpAppWin == this ) )
         Application::Quit();
 

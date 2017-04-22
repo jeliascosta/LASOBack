@@ -18,6 +18,7 @@
  */
 
 #include <tools/debug.hxx>
+#include <sal/log.hxx>
 
 #include "bitset.hxx"
 
@@ -34,9 +35,9 @@ IndexBitSet& IndexBitSet::operator-=(sal_uInt16 nBit)
     if ( nBlock >= nBlocks )
       return *this;
 
-    if ( (*(pBitmap+nBlock) & nBitVal) )
+    if ( pBitmap[nBlock] & nBitVal )
     {
-        *(pBitmap+nBlock) &= ~nBitVal;
+        pBitmap[nBlock] &= ~nBitVal;
         --nCount;
     }
 
@@ -57,16 +58,15 @@ IndexBitSet& IndexBitSet::operator|=( sal_uInt16 nBit )
 
         if ( pBitmap )
         {
-            memcpy( pNewMap, pBitmap, 4 * nBlocks );
-            delete [] pBitmap;
+            memcpy( pNewMap, pBitmap.get(), 4 * nBlocks );
         }
-        pBitmap = pNewMap;
+        pBitmap.reset(pNewMap);
         nBlocks = nBlock+1;
     }
 
-    if ( (*(pBitmap+nBlock) & nBitVal) == 0 )
+    if ( (pBitmap[nBlock] & nBitVal) == 0 )
     {
-        *(pBitmap+nBlock) |= nBitVal;
+        pBitmap[nBlock] |= nBitVal;
         ++nCount;
     }
 
@@ -83,19 +83,17 @@ bool IndexBitSet::Contains( sal_uInt16 nBit ) const
 
     if ( nBlock >= nBlocks )
         return false;
-    return ( nBitVal & *(pBitmap+nBlock) ) == nBitVal;
+    return ( nBitVal & pBitmap[nBlock] ) == nBitVal;
 }
 
 IndexBitSet::IndexBitSet()
 {
     nCount = 0;
     nBlocks = 0;
-    pBitmap = nullptr;
 }
 
 IndexBitSet::~IndexBitSet()
 {
-    delete [] pBitmap;
 }
 
 sal_uInt16 IndexBitSet::GetFreeIndex()
@@ -106,7 +104,7 @@ sal_uInt16 IndexBitSet::GetFreeIndex()
         *this|=i;
         return i;
       }
-  DBG_ASSERT(false, "IndexBitSet enthaelt mehr als USHRT_MAX Eintraege");
+  SAL_WARN( "sfx", "IndexBitSet enthaelt mehr als USHRT_MAX Eintraege");
   return 0;
 }
 

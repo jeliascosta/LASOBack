@@ -28,10 +28,10 @@ namespace connectivity
         class WpADOKey : public WpOLEBase<ADOKey>
         {
         public:
-            WpADOKey(ADOKey* pInt=NULL) :   WpOLEBase<ADOKey>(pInt){}
+            WpADOKey(ADOKey* pInt=nullptr) :   WpOLEBase<ADOKey>(pInt){}
             WpADOKey(const WpADOKey& rhs) : WpOLEBase<ADOKey>(rhs) {}
 
-            inline WpADOKey& operator=(const WpADOKey& rhs)
+            WpADOKey& operator=(const WpADOKey& rhs)
                 {WpOLEBase<ADOKey>::operator=(rhs); return *this;}
 
             void Create();

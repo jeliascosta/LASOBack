@@ -41,21 +41,20 @@ class SvxLineBox : public LineLB
     SfxObjectShell* mpSh;
     css::uno::Reference< css::frame::XFrame > mxFrame;
 
-                    DECL_LINK_TYPED(DelayHdl_Impl, Timer *, void);
+                    DECL_LINK(DelayHdl_Impl, Timer *, void);
 
     void            ReleaseFocus_Impl();
 
 public:
     SvxLineBox( vcl::Window* pParent,
-                const css::uno::Reference< css::frame::XFrame >& rFrame,
-                WinBits nBits = WB_BORDER | WB_DROPDOWN | WB_AUTOHSCROLL );
+                const css::uno::Reference< css::frame::XFrame >& rFrame );
 
     void FillControl();
 
 protected:
     virtual void    Select() override;
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    virtual bool    Notify( NotifyEvent& rNEvt ) override;
+    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
 };
@@ -66,7 +65,7 @@ class SVX_DLLPUBLIC SvxMetricField : public MetricField
     using Window::Update;
 
     OUString        aCurTxt;
-    SfxMapUnit      ePoolUnit;
+    MapUnit         ePoolUnit;
     FieldUnit       eDlgUnit;
     Size            aLogicalSize;
     css::uno::Reference< css::frame::XFrame > mxFrame;
@@ -75,20 +74,17 @@ class SVX_DLLPUBLIC SvxMetricField : public MetricField
 
 protected:
     virtual void    Modify() override;
-    virtual void    Down() override;
-    virtual void    Up() override;       // just to be sure
 
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    virtual bool    Notify( NotifyEvent& rNEvt ) override;
+    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
 public:
     SvxMetricField( vcl::Window* pParent,
-                    const css::uno::Reference< css::frame::XFrame >& rFrame,
-                    WinBits nBits = WB_BORDER | WB_SPIN | WB_REPEAT );
+                    const css::uno::Reference< css::frame::XFrame >& rFrame );
 
     void            Update( const XLineWidthItem* pItem );
-    void            SetCoreUnit( SfxMapUnit eUnit );
+    void            SetCoreUnit( MapUnit eUnit );
     void            RefreshDlgUnit();
 };
 
@@ -97,13 +93,13 @@ public:
 class SVX_DLLPUBLIC SvxFillTypeBox : public FillTypeLB
 {
 public:
-    SvxFillTypeBox( vcl::Window* pParent, WinBits nBits = WB_BORDER | WB_DROPDOWN | WB_AUTOHSCROLL );
+    SvxFillTypeBox( vcl::Window* pParent );
 
     void            Selected() { bSelect = true; }
 
 protected:
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    virtual bool    Notify( NotifyEvent& rNEvt ) override;
+    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
 
 private:
     sal_uInt16      nCurPos;
@@ -118,12 +114,11 @@ private:
 class SVX_DLLPUBLIC SvxFillAttrBox : public FillAttrLB
 {
 public:
-    SvxFillAttrBox( vcl::Window* pParent, WinBits nBits = WB_BORDER | WB_DROPDOWN | WB_AUTOHSCROLL );
+    SvxFillAttrBox( vcl::Window* pParent );
 
 protected:
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    virtual bool    Notify( NotifyEvent& rNEvt ) override;
-    virtual void    Select() override;
+    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
 
 private:
     sal_uInt16      nCurPos;

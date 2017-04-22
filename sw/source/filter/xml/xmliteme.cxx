@@ -45,10 +45,6 @@ using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 using namespace ::xmloff::token;
 
-extern SvXMLItemMapEntry aXMLTableItemMap[];
-extern SvXMLItemMapEntry aXMLTableRowItemMap[];
-extern SvXMLItemMapEntry aXMLTableCellItemMap[];
-
 class SwXMLTableItemMapper_Impl: public SvXMLExportItemMapper
 {
     SwXMLBrushItemExport aBrushItemExport;
@@ -68,14 +64,12 @@ public:
             SvXMLItemMapEntriesRef rMapEntries,
             SwXMLExport& rExp );
 
-    virtual ~SwXMLTableItemMapper_Impl();
-
     virtual void handleSpecialItem( SvXMLAttributeList& rAttrList,
                                     const SvXMLItemMapEntry& rEntry,
                                     const SfxPoolItem& rItem,
                                     const SvXMLUnitConverter& rUnitConverter,
                                     const SvXMLNamespaceMap& rNamespaceMap,
-                                    const SfxItemSet *pSet = nullptr ) const override;
+                                    const SfxItemSet *pSet ) const override;
 
     virtual void handleElementItem(
             SvXMLExport& rExport,
@@ -94,10 +88,6 @@ SwXMLTableItemMapper_Impl::SwXMLTableItemMapper_Impl(
     SvXMLExportItemMapper( rMapEntries ),
     aBrushItemExport( rExp ),
     nAbsWidth( USHRT_MAX )
-{
-}
-
-SwXMLTableItemMapper_Impl::~SwXMLTableItemMapper_Impl()
 {
 }
 
@@ -216,25 +206,25 @@ inline void SwXMLTableItemMapper_Impl::SetAbsWidth( sal_uInt32 nAbs )
 
 void SwXMLExport::InitItemExport()
 {
-    pTwipUnitConv = new SvXMLUnitConverter(getComponentContext(),
+    m_pTwipUnitConverter = new SvXMLUnitConverter(getComponentContext(),
         util::MeasureUnit::TWIP, GetMM100UnitConverter().GetXMLMeasureUnit());
 
-    xTableItemMap = new SvXMLItemMapEntries( aXMLTableItemMap );
-    xTableRowItemMap = new SvXMLItemMapEntries( aXMLTableRowItemMap );
-    xTableCellItemMap = new SvXMLItemMapEntries( aXMLTableCellItemMap );
+    m_xTableItemMap = new SvXMLItemMapEntries( aXMLTableItemMap );
+    m_xTableRowItemMap = new SvXMLItemMapEntries( aXMLTableRowItemMap );
+    m_xTableCellItemMap = new SvXMLItemMapEntries( aXMLTableCellItemMap );
 
-    pTableItemMapper = new SwXMLTableItemMapper_Impl( xTableItemMap, *this );
+    m_pTableItemMapper = new SwXMLTableItemMapper_Impl( m_xTableItemMap, *this );
 }
 
 void SwXMLExport::FinitItemExport()
 {
-    delete pTableItemMapper;
-    delete pTwipUnitConv;
+    delete m_pTableItemMapper;
+    delete m_pTwipUnitConverter;
 }
 
 void SwXMLExport::ExportTableFormat( const SwFrameFormat& rFormat, sal_uInt32 nAbsWidth )
 {
-    static_cast<SwXMLTableItemMapper_Impl *>(pTableItemMapper)
+    static_cast<SwXMLTableItemMapper_Impl *>(m_pTableItemMapper)
         ->SetAbsWidth( nAbsWidth );
     ExportFormat( rFormat, XML_TABLE );
 }

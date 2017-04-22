@@ -34,7 +34,7 @@ public:
     SystemEnvData m_aSystemChildData;
 
     SvpSalObject();
-    virtual ~SvpSalObject();
+    virtual ~SvpSalObject() override;
 
     // override all pure virtual methods
     virtual void                    ResetClipRegion() override;
@@ -48,24 +48,14 @@ public:
     virtual const SystemEnvData*    GetSystemData() const override;
 };
 
-class VCL_DLLPUBLIC SvpImeStatus : public SalI18NImeStatus
-{
-  public:
-        SvpImeStatus() {}
-        virtual ~SvpImeStatus();
-
-        virtual bool canToggle() override;
-        virtual void toggle() override;
-};
-
 class VCL_DLLPUBLIC SvpSalSystem : public SalGenericSystem
 {
 public:
     SvpSalSystem() {}
-    virtual ~SvpSalSystem();
+    virtual ~SvpSalSystem() override;
     // get info about the display
     virtual unsigned int GetDisplayScreenCount() override;
-    virtual Rectangle GetDisplayScreenPosSizePixel( unsigned int nScreen ) override;
+    virtual tools::Rectangle GetDisplayScreenPosSizePixel( unsigned int nScreen ) override;
 
     virtual int ShowNativeDialog( const OUString& rTitle,
                                   const OUString& rMessage,

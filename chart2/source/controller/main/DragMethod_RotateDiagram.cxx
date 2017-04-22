@@ -47,7 +47,7 @@ DragMethod_RotateDiagram::DragMethod_RotateDiagram( DrawViewWrapper& rDrawViewWr
         , const OUString& rObjectCID
         , const Reference< frame::XModel >& xChartModel
         , RotationDirection eRotationDirection )
-    : DragMethod_Base( rDrawViewWrapper, rObjectCID, xChartModel, ActionDescriptionProvider::ROTATE )
+    : DragMethod_Base( rDrawViewWrapper, rObjectCID, xChartModel, ActionDescriptionProvider::ActionType::Rotate )
     , m_pScene(nullptr)
     , m_aReferenceRect(100,100,100,100)
     , m_aStartPos(0,0)
@@ -137,8 +137,8 @@ void DragMethod_RotateDiagram::MoveSdrDrag(const Point& rPnt)
             double fCx = m_aReferenceRect.Center().X();
             double fCy = m_aReferenceRect.Center().Y();
 
-            m_fAdditionalZAngleRad = atan((double)(fCx - m_aStartPos.X())/(m_aStartPos.Y()-fCy))
-                + atan((double)(fCx - rPnt.X())/(fCy-rPnt.Y()));
+            m_fAdditionalZAngleRad = atan((fCx - m_aStartPos.X())/(m_aStartPos.Y()-fCy))
+                + atan((fCx - rPnt.X())/(fCy-rPnt.Y()));
         }
 
         m_nAdditionalHorizontalAngleDegree = static_cast<sal_Int32>(m_fAdditionalXAngleRad*180.0/F_PI);
@@ -215,7 +215,7 @@ void DragMethod_RotateDiagram::CreateOverlayGeometry(sdr::overlay::OverlayManage
         sdr::overlay::OverlayPolyPolygonStripedAndFilled* pNew = new sdr::overlay::OverlayPolyPolygonStripedAndFilled(
             aPolyPolygon);
         rOverlayManager.add(*pNew);
-        addToOverlayObjectList(*pNew);
+        addToOverlayObjectList(pNew);
     }
 }
 } //namespace chart

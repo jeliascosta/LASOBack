@@ -110,7 +110,6 @@ void LifeTimeManager::impl_unregisterApiCall(bool bLongLastingCall)
 }
 
 bool LifeTimeManager::dispose()
-    throw(uno::RuntimeException)
 {
     //hold no mutex
     {
@@ -118,7 +117,7 @@ bool LifeTimeManager::dispose()
 
         if( m_bDisposed || m_bInDispose )
         {
-            OSL_TRACE( "This component is already disposed " );
+            SAL_WARN("chart2",  "This component is already disposed " );
             return false; //behave passive if already disposed
         }
 
@@ -190,7 +189,6 @@ bool CloseableLifeTimeManager::impl_isDisposedOrClosed( bool bAssert )
 }
 
 bool CloseableLifeTimeManager::g_close_startTryClose(bool bDeliverOwnership)
-    throw ( uno::Exception )
 {
     //no mutex is allowed to be acquired
     {
@@ -263,7 +261,6 @@ void CloseableLifeTimeManager::g_close_endTryClose(bool bDeliverOwnership, bool 
 }
 
 bool CloseableLifeTimeManager::g_close_isNeedToCancelLongLastingCalls( bool bDeliverOwnership, util::CloseVetoException& ex )
-    throw ( util::CloseVetoException )
 {
     //this method is called when no closelistener has had a veto during queryclosing
     //the method returns false, if nothing stands against closing anymore
@@ -310,7 +307,7 @@ void CloseableLifeTimeManager::impl_apiCallCountReachedNull()
 {
     //Mutex needs to be acquired exactly ones
     //mutex will be released inbetween in impl_doClose()
-    if( m_pCloseable && impl_shouldCloseAtNextChance() )
+    if( m_pCloseable && m_bOwnership )
         impl_doClose();
 }
 
@@ -369,7 +366,6 @@ void CloseableLifeTimeManager::impl_doClose()
 }
 
 void CloseableLifeTimeManager::g_addCloseListener( const uno::Reference< util::XCloseListener > & xListener )
-    throw(uno::RuntimeException)
 {
     osl::Guard< osl::Mutex > aGuard( m_aAccessMutex );
     //Mutex needs to be acquired exactly ones; will be released inbetween

@@ -75,7 +75,7 @@ namespace pcr
         {
             return m_xControl;
         }
-        inline vcl::Window* getControlWindow() const
+        vcl::Window* getControlWindow() const
         {
             return m_pControlWindow;
         }
@@ -113,8 +113,8 @@ namespace pcr
         void                IndentTitle( bool _bIndent );
 
     private:
-        DECL_LINK_TYPED( OnButtonClicked, Button*, void );
-        DECL_LINK_TYPED( OnButtonFocus, Control&, void );
+        DECL_LINK( OnButtonClicked, Button*, void );
+        DECL_LINK( OnButtonFocus, Control&, void );
 
         void    implHideBrowseButton( bool _bPrimary, bool _bReLayout );
         void    implUpdateEnabledDisabled();
@@ -122,7 +122,6 @@ namespace pcr
         void    impl_layoutComponents();
 
         PushButton& impl_ensureButton( bool _bPrimary );
-        static void impl_getImagesFromURL_nothrow( const OUString& _rImageURL, Image& _out_rImage );
     };
 
 

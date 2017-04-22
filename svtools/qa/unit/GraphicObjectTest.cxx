@@ -41,6 +41,7 @@ public:
     void testSizeBasedAutoSwap();
     void testTdf88836();
     void testTdf88935();
+    void testPdf();
 
 
     virtual void setUp() override
@@ -51,7 +52,7 @@ public:
     }
 
 private:
-    DECL_LINK_TYPED(getLinkStream, const GraphicObject*, SvStream*);
+    DECL_LINK(getLinkStream, const GraphicObject*, SvStream*);
 
 private:
     CPPUNIT_TEST_SUITE(GraphicObjectTest);
@@ -59,6 +60,7 @@ private:
     CPPUNIT_TEST(testSizeBasedAutoSwap);
     CPPUNIT_TEST(testTdf88836);
     CPPUNIT_TEST(testTdf88935);
+    CPPUNIT_TEST(testPdf);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -71,7 +73,7 @@ const Graphic lcl_loadGraphic(const rtl::OUString &rUrl)
     return Graphic(aImage.GetBitmapEx());
 }
 
-IMPL_LINK_NOARG_TYPED(GraphicObjectTest, getLinkStream, const GraphicObject*, SvStream*)
+IMPL_LINK_NOARG(GraphicObjectTest, getLinkStream, const GraphicObject*, SvStream*)
 {
     return GRFMGR_AUTOSWAPSTREAM_LINK;
 }
@@ -233,11 +235,11 @@ void GraphicObjectTest::testSizeBasedAutoSwap()
 
 void GraphicObjectTest::testTdf88836()
 {
-    // Construction with empty bitmap -> type should be GRAPHIC_NONE
+    // Construction with empty bitmap -> type should be GraphicType::NONE
     Graphic aGraphic = Bitmap();
-    CPPUNIT_ASSERT_EQUAL(GRAPHIC_NONE, aGraphic.GetType());
+    CPPUNIT_ASSERT_EQUAL(int(GraphicType::NONE), int(aGraphic.GetType()));
     aGraphic = Graphic(BitmapEx());
-    CPPUNIT_ASSERT_EQUAL(GRAPHIC_NONE, aGraphic.GetType());
+    CPPUNIT_ASSERT_EQUAL(int(GraphicType::NONE), int(aGraphic.GetType()));
 }
 
 void GraphicObjectTest::testTdf88935()
@@ -291,7 +293,7 @@ void GraphicObjectTest::testTdf88935()
     // Create and remove some copy of the first image
     for( int i = 0; i < 50; ++i )
     {
-        GraphicObject aGraphObj3(*pGraphObj1, &pGraphObj1->GetGraphicManager());
+        GraphicObject aGraphObj3(*pGraphObj1);
         CPPUNIT_ASSERT(aGraphObj3.SwapOut());
         CPPUNIT_ASSERT(aGraphObj3.SwapIn());
     }
@@ -305,6 +307,40 @@ void GraphicObjectTest::testTdf88935()
     }
 
     xComponent->dispose();
+}
+
+void GraphicObjectTest::testPdf()
+{
+#if HAVE_FEATURE_PDFIUM
+    uno::Reference<lang::XComponent> xComponent = loadFromDesktop(m_directories.getURLFromSrc("svtools/qa/unit/data/pdf.odt"), "com.sun.star.text.TextDocument");
+    SwXTextDocument* pTxtDoc = dynamic_cast<SwXTextDocument*>(xComponent.get());
+    CPPUNIT_ASSERT(pTxtDoc);
+    SwDoc* pDoc = pTxtDoc->GetDocShell()->GetDoc();
+    CPPUNIT_ASSERT(pDoc);
+    SwNodes& aNodes = pDoc->GetNodes();
+
+    // Find images
+    GraphicObject* pGraphicObject = nullptr;
+    for( sal_uLong nIndex = 0; nIndex < aNodes.Count(); ++nIndex)
+    {
+        if( aNodes[nIndex]->IsGrfNode() )
+        {
+            SwGrfNode* pGrfNode = aNodes[nIndex]->GetGrfNode();
+            CPPUNIT_ASSERT(pGrfNode);
+            pGraphicObject = const_cast<GraphicObject*>(&pGrfNode->GetGrfObj());
+            break;
+        }
+    }
+    CPPUNIT_ASSERT_MESSAGE("Missing image", pGraphicObject);
+
+    CPPUNIT_ASSERT(pGraphicObject->GetGraphic().getPdfData().hasElements());
+    CPPUNIT_ASSERT(pGraphicObject->SwapOut());
+    CPPUNIT_ASSERT(pGraphicObject->SwapIn());
+    // This failed, swap out + swap in lost the PDF data.
+    CPPUNIT_ASSERT(pGraphicObject->GetGraphic().getPdfData().hasElements());
+
+    xComponent->dispose();
+#endif
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(GraphicObjectTest);

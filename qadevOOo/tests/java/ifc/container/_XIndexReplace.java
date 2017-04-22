@@ -53,14 +53,14 @@ import com.sun.star.uno.UnoRuntime;
 * <p>
 * This ObjectRelations should be necessary to create an Object,
 * which is can be replaced by index
-* INSTANCEn are n Objectrelations so that every thread can isert it's own
+* INSTANCEn are n Objectrelations so that every thread can insert its own
 * object. n depends on the variable THRCNT which and comes from API.INI
 * <p>
 * Why that:
 * If you insert the same Object by replaceByIndex() several times you
 * don't insert the Object several times. The first replaceByIndex() inserts
 * the Object to the Container but all other replaceByIndex() changes
-* the Index in the Continer because it's the same Object. <p>
+* the Index in the Container because it's the same Object. <p>
 * Test is multithread compliant. <p>
 * @see com.sun.star.container.XIndexReplace
 */

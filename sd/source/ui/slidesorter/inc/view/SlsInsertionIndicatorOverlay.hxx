@@ -53,7 +53,7 @@ class InsertionIndicatorOverlay
 {
 public:
     InsertionIndicatorOverlay (SlideSorter& rSlideSorter);
-    virtual ~InsertionIndicatorOverlay();
+    virtual ~InsertionIndicatorOverlay() override;
 
     virtual void SetLayerInvalidator (const SharedILayerInvalidator& rpInvalidator) override;
 
@@ -69,18 +69,17 @@ public:
 
     virtual void Paint (
         OutputDevice& rDevice,
-        const Rectangle& rRepaintArea) override;
+        const ::tools::Rectangle& rRepaintArea) override;
 
     bool IsVisible() const { return mbIsVisible;}
     void Hide();
     void Show();
 
-    Rectangle GetBoundingBox() const;
+    ::tools::Rectangle GetBoundingBox() const;
 
 private:
     SlideSorter& mrSlideSorter;
     bool mbIsVisible;
-    const sal_Int32 mnLayerIndex;
     SharedILayerInvalidator mpLayerInvalidator;
     // Center of the insertion indicator.
     Point maLocation;

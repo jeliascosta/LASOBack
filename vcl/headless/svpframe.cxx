@@ -26,9 +26,9 @@
 
 #include <basegfx/vector/b2ivector.hxx>
 
+#ifndef IOS
 #include <cairo.h>
-
-using namespace basegfx;
+#endif
 
 SvpSalFrame* SvpSalFrame::s_pFocusFrame = nullptr;
 
@@ -44,7 +44,9 @@ SvpSalFrame::SvpSalFrame( SvpSalInstance* pInstance,
     m_pParent( static_cast<SvpSalFrame*>(pParent) ),
     m_nStyle( nSalFrameStyle ),
     m_bVisible( false ),
+#ifndef IOS
     m_pSurface( nullptr ),
+#endif
     m_nMinWidth( 0 ),
     m_nMinHeight( 0 ),
     m_nMaxWidth( 0 ),
@@ -55,7 +57,7 @@ SvpSalFrame::SvpSalFrame( SvpSalInstance* pInstance,
     memset( static_cast<void *>(&m_aSystemChildData), 0, sizeof( SystemEnvData ) );
     m_aSystemChildData.nSize        = sizeof( SystemEnvData );
 #ifdef IOS
-    (void) nScanlineFormat;
+    // Nothing
 #elif defined ANDROID
     // Nothing
 #else
@@ -111,8 +113,10 @@ SvpSalFrame::~SvpSalFrame()
             }
         }
     }
+#ifndef IOS
     if (m_pSurface)
         cairo_surface_destroy(m_pSurface);
+#endif
 }
 
 void SvpSalFrame::GetFocus()
@@ -144,7 +148,7 @@ SalGraphics* SvpSalFrame::AcquireGraphics()
 {
     SvpSalGraphics* pGraphics = new SvpSalGraphics();
 #ifndef IOS
-    pGraphics->setSurface( m_pSurface );
+    pGraphics->setSurface(m_pSurface, basegfx::B2IVector(maGeometry.nWidth, maGeometry.nHeight));
 #endif
     m_aGraphics.push_back( pGraphics );
     return pGraphics;
@@ -251,7 +255,7 @@ void SvpSalFrame::SetPosSize( long nX, long nY, long nWidth, long nHeight, sal_u
             maGeometry.nHeight = m_nMinHeight;
     }
 #ifndef IOS
-    B2IVector aFrameSize( maGeometry.nWidth, maGeometry.nHeight );
+    basegfx::B2IVector aFrameSize( maGeometry.nWidth, maGeometry.nHeight );
     if (!m_pSurface || cairo_image_surface_get_width(m_pSurface) != aFrameSize.getX() ||
                        cairo_image_surface_get_height(m_pSurface) != aFrameSize.getY() )
     {
@@ -265,7 +269,7 @@ void SvpSalFrame::SetPosSize( long nX, long nY, long nWidth, long nHeight, sal_u
 
         // Creating backing surfaces for invisible windows costs a big chunk of RAM.
         if (Application::IsHeadlessModeEnabled())
-             aFrameSize = B2IVector( 1, 1 );
+             aFrameSize = basegfx::B2IVector( 1, 1 );
 
         m_pSurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
                                                 aFrameSize.getX(),
@@ -275,7 +279,7 @@ void SvpSalFrame::SetPosSize( long nX, long nY, long nWidth, long nHeight, sal_u
         for( std::list< SvpSalGraphics* >::iterator it = m_aGraphics.begin();
              it != m_aGraphics.end(); ++it )
         {
-             (*it)->setSurface(m_pSurface);
+             (*it)->setSurface(m_pSurface, aFrameSize);
         }
     }
     if( m_bVisible )
@@ -285,18 +289,13 @@ void SvpSalFrame::SetPosSize( long nX, long nY, long nWidth, long nHeight, sal_u
 
 void SvpSalFrame::GetClientSize( long& rWidth, long& rHeight )
 {
-    if( m_bVisible )
-    {
-        rWidth = maGeometry.nWidth;
-        rHeight = maGeometry.nHeight;
-    }
-    else
-        rWidth = rHeight = 0;
+    rWidth = maGeometry.nWidth;
+    rHeight = maGeometry.nHeight;
 }
 
-void SvpSalFrame::GetWorkArea( Rectangle& rRect )
+void SvpSalFrame::GetWorkArea( tools::Rectangle& rRect )
 {
-    rRect = Rectangle( Point( 0, 0 ),
+    rRect = tools::Rectangle( Point( 0, 0 ),
                        Size( VIRTUAL_DESKTOP_WIDTH, VIRTUAL_DESKTOP_HEIGHT ) );
 }
 

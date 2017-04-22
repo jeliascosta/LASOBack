@@ -21,15 +21,13 @@
 
 #include "swtypes.hxx"
 #include "swrect.hxx"
-#include <fmtsrndenum.hxx>
+#include <com/sun/star/text/WrapTextMode.hpp>
 #include <vector>
 
 class OutputDevice;
 class SwContentFrame;
 class SwPageFrame;
-class SwTextFly;
 class SdrObject;
-class SwTextPaintInfo;
 class SwFormat;
 class TextRanger;
 class SwAnchoredObject;
@@ -118,11 +116,11 @@ public:
  */
 class SwTextFly
 {
-    const SwPageFrame             * pPage;
-    const SwAnchoredObject      * mpCurrAnchoredObj;
-    const SwTextFrame              * pCurrFrame;
-    const SwContentFrame            * pMaster;
-    SwAnchoredObjList           * mpAnchoredObjList;
+    const SwPageFrame                * pPage;
+    const SwAnchoredObject           * mpCurrAnchoredObj;
+    const SwTextFrame                * pCurrFrame;
+    const SwContentFrame             * pMaster;
+    std::unique_ptr<SwAnchoredObjList> mpAnchoredObjList;
 
     long nMinBottom;
     long nNextTop;  /// Stores the upper edge of the "next" frame
@@ -160,19 +158,19 @@ class SwTextFly
 
     /**
       \li There is less than 2cm space on both sides for the text:
-      no surround (SURROUND_NONE)
+      no surround (css::text::WrapTextMode_NONE)
 
       \li There is more than 2cm space on only one side:
-      surround on that side (SURROUND_LEFT or SURROUND_RIGHT)
+      surround on that side (css::text::WrapTextMode_LEFT or css::text::WrapTextMode_RIGHT)
 
       \li There is more than 2cm space on both sides, the object is
       larger than 1.5cm: surround on the wider side
-      (SURROUND_LET or SURROUND_RIGHT)
+      (css::text::WrapTextMode_LEFT or css::text::WrapTextMode_RIGHT)
 
       \li There is more than 2cm space on both sides and the object
-      width is less than 1.5cm: both sides surround (SURROUND_PARALLEL)
+      width is less than 1.5cm: both sides surround (css::text::WrapTextMode_PARALLEL)
      */
-    SwSurround GetSurroundForTextWrap( const SwAnchoredObject* pAnchoredObj ) const;
+    css::text::WrapTextMode GetSurroundForTextWrap( const SwAnchoredObject* pAnchoredObj ) const;
 
     /**
        The right margin is the right margin or it is determined by the
@@ -301,7 +299,7 @@ public:
 inline SwAnchoredObjList* SwTextFly::GetAnchoredObjList() const
 {
     return mpAnchoredObjList
-           ? mpAnchoredObjList
+           ? mpAnchoredObjList.get()
            : const_cast<SwTextFly*>(this)->InitAnchoredObjList();
 }
 

@@ -33,9 +33,6 @@ namespace drawinglayer
     {
         void AnimatedSwitchPrimitive2D::setAnimationEntry(const animation::AnimationEntry& rNew)
         {
-            // delete cloned animation description
-            delete mpAnimationEntry;
-
             // clone given animation description
             mpAnimationEntry = rNew.clone();
         }
@@ -45,7 +42,6 @@ namespace drawinglayer
             const Primitive2DContainer& rChildren,
             bool bIsTextAnimation)
         :   GroupPrimitive2D(rChildren),
-            mpAnimationEntry(nullptr),
             mbIsTextAnimation(bIsTextAnimation)
         {
             // clone given animation description
@@ -54,8 +50,6 @@ namespace drawinglayer
 
         AnimatedSwitchPrimitive2D::~AnimatedSwitchPrimitive2D()
         {
-            // delete cloned animation description
-            delete mpAnimationEntry;
         }
 
         bool AnimatedSwitchPrimitive2D::operator==(const BasePrimitive2D& rPrimitive) const
@@ -70,7 +64,7 @@ namespace drawinglayer
             return false;
         }
 
-        Primitive2DContainer AnimatedSwitchPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void AnimatedSwitchPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
         {
             if(!getChildren().empty())
             {
@@ -80,14 +74,12 @@ namespace drawinglayer
 
                 if(nIndex >= nLen)
                 {
-                    nIndex = nLen - 1L;
+                    nIndex = nLen - 1;
                 }
 
                 const Primitive2DReference xRef(getChildren()[nIndex], uno::UNO_QUERY_THROW);
-                return Primitive2DContainer { xRef };
+                rVisitor.append(xRef);
             }
-
-            return Primitive2DContainer();
         }
 
         // provide unique ID
@@ -103,13 +95,12 @@ namespace drawinglayer
     {
         AnimatedBlinkPrimitive2D::AnimatedBlinkPrimitive2D(
             const animation::AnimationEntry& rAnimationEntry,
-            const Primitive2DContainer& rChildren,
-            bool bIsTextAnimation)
-        :   AnimatedSwitchPrimitive2D(rAnimationEntry, rChildren, bIsTextAnimation)
+            const Primitive2DContainer& rChildren)
+        :   AnimatedSwitchPrimitive2D(rAnimationEntry, rChildren, true/*bIsTextAnimation*/)
         {
         }
 
-        Primitive2DContainer AnimatedBlinkPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void AnimatedBlinkPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
         {
             if(!getChildren().empty())
             {
@@ -117,11 +108,9 @@ namespace drawinglayer
 
                 if(fState < 0.5)
                 {
-                    return getChildren();
+                    getChildren(rVisitor);
                 }
             }
-
-            return Primitive2DContainer();
         }
 
         // provide unique ID
@@ -138,9 +127,8 @@ namespace drawinglayer
         AnimatedInterpolatePrimitive2D::AnimatedInterpolatePrimitive2D(
             const std::vector< basegfx::B2DHomMatrix >& rmMatrixStack,
             const animation::AnimationEntry& rAnimationEntry,
-            const Primitive2DContainer& rChildren,
-            bool bIsTextAnimation)
-        :   AnimatedSwitchPrimitive2D(rAnimationEntry, rChildren, bIsTextAnimation),
+            const Primitive2DContainer& rChildren)
+        :   AnimatedSwitchPrimitive2D(rAnimationEntry, rChildren, true/*bIsTextAnimation*/),
             maMatrixStack()
         {
             // copy matrices to locally pre-decomposed matrix stack
@@ -153,7 +141,7 @@ namespace drawinglayer
             }
         }
 
-        Primitive2DContainer AnimatedInterpolatePrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void AnimatedInterpolatePrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
         {
             const sal_uInt32 nSize(maMatrixStack.size());
 
@@ -200,11 +188,11 @@ namespace drawinglayer
 
                 // create new transform primitive reference, return new sequence
                 const Primitive2DReference xRef(new TransformPrimitive2D(aTargetTransform, getChildren()));
-                return Primitive2DContainer { xRef };
+                rVisitor.append(xRef);
             }
             else
             {
-                return getChildren();
+                getChildren(rVisitor);
             }
         }
 

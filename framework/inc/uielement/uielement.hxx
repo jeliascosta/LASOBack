@@ -37,9 +37,9 @@ struct DockedData
                    m_nDockedArea( css::ui::DockingArea_DOCKINGAREA_TOP ),
                    m_bLocked( false ) {}
 
-    css::awt::Point m_aPos;
-    sal_Int16 m_nDockedArea;
-    bool      m_bLocked;
+    css::awt::Point      m_aPos;
+    css::ui::DockingArea m_nDockedArea;
+    bool                 m_bLocked;
 };
 
 struct FloatingData
@@ -50,7 +50,7 @@ struct FloatingData
 
     css::awt::Point  m_aPos;
     css::awt::Size   m_aSize;
-    sal_Int16        m_nLines;
+    ToolBox::ImplToolItems::size_type m_nLines;
     bool             m_bIsHorizontal;
 };
 
@@ -59,8 +59,6 @@ struct UIElement
     UIElement() : m_bFloating( false ),
                   m_bVisible( true ),
                   m_bUserActive( false ),
-                  m_bCreateNewRowCol0( false ),
-                  m_bDeactiveHide( false ),
                   m_bMasterHide( false ),
                   m_bContextSensitive( false ),
                   m_bContextActive( true ),
@@ -79,8 +77,6 @@ struct UIElement
                    m_bFloating( false ),
                    m_bVisible( true ),
                    m_bUserActive( false ),
-                   m_bCreateNewRowCol0( false ),
-                   m_bDeactiveHide( false ),
                    m_bMasterHide( false ),
                    m_bContextSensitive( false ),
                    m_bContextActive( true ),
@@ -99,8 +95,6 @@ struct UIElement
     bool                                                               m_bFloating,
                                                                        m_bVisible,
                                                                        m_bUserActive,
-                                                                       m_bCreateNewRowCol0,
-                                                                       m_bDeactiveHide,
                                                                        m_bMasterHide,
                                                                        m_bContextSensitive,
                                                                        m_bContextActive;

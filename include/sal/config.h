@@ -44,30 +44,16 @@
 #endif /* defined _MSC_VER */
 
 /* Provide ISO C99 compatible versions of snprint and vsnprintf */
-#ifdef __MINGW32__
-#define _SNPRINTF_DLLIMPORT
-#endif
 #ifndef _SNPRINTF_H
 #include <systools/win32/snprintf.h>
 #endif
 
 #endif /* defined WIN32 */
 
-#if defined(SOLARIS) || defined(LINUX) || defined(NETBSD) || defined(FREEBSD) || \
+#if defined(__sun) || defined(LINUX) || defined(NETBSD) || defined(FREEBSD) || \
     defined(AIX) || defined(OPENBSD) || defined(DRAGONFLY) || defined(ANDROID)
 #define SAL_UNX
 #define SAL_DLLEXTENSION ".so"
-#define SAL_EXEEXTENSION ""
-#define SAL_DLLPREFIX "lib"
-#define SAL_PATHSEPARATOR ':'
-#define SAL_PATHDELIMITER '/'
-#define SAL_NEWLINE_STRING "\n"
-#define SAL_CONFIGFILE( name ) name "rc"
-#endif
-
-#ifdef EMSCRIPTEN
-#define SAL_UNX
-#define SAL_DLLEXTENSION ".bc"
 #define SAL_EXEEXTENSION ""
 #define SAL_DLLPREFIX "lib"
 #define SAL_PATHSEPARATOR ':'

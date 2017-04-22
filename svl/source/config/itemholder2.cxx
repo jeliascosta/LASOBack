@@ -50,10 +50,10 @@ ItemHolder2::ItemHolder2()
         if(bMessage)
         {
             bMessage = false;
-            OString sMsg("CreateInstance with arguments exception: ");
-            sMsg += OString(rEx.Message.getStr(),
-                        rEx.Message.getLength(),
-                        RTL_TEXTENCODING_ASCII_US);
+            OString sMsg = "CreateInstance with arguments exception: "
+                         + OString(rEx.Message.getStr(),
+                                   rEx.Message.getLength(),
+                                   RTL_TEXTENCODING_ASCII_US);
             OSL_FAIL(sMsg.getStr());
         }
     }
@@ -74,7 +74,6 @@ void ItemHolder2::holdConfigItem(EItem eItem)
 }
 
 void SAL_CALL ItemHolder2::disposing(const css::lang::EventObject&)
-    throw(css::uno::RuntimeException, std::exception)
 {
     impl_releaseAllItems();
 }
@@ -119,16 +118,12 @@ void ItemHolder2::impl_newItem(TItemInfo& rItem)
 {
     switch(rItem.eItem)
     {
-        case E_CJKOPTIONS :
+        case EItem::CJKOptions :
             rItem.pItem = new SvtCJKOptions();
             break;
 
-        case E_CTLOPTIONS :
+        case EItem::CTLOptions :
             rItem.pItem = new SvtCTLOptions();
-            break;
-
-        case E_LANGUAGEOPTIONS :
-// capsulate CTL and CJL options !            rItem.pItem = new SvtLanguageOptions();
             break;
 
         default:

@@ -33,14 +33,10 @@
 #include <osl/file.hxx>
 #include <vcl/svapp.hxx>
 
-// Create a new task or recycle an existing one
-const char SPECIALTARGET_DEFAULT[] = "_default";
-
 OpenFileDropTargetListener::OpenFileDropTargetListener( const css::uno::Reference< css::uno::XComponentContext >& xContext,
                                         const css::uno::Reference< css::frame::XFrame >&          xFrame  )
         : m_xContext      ( xContext                      )
         , m_xTargetFrame  ( xFrame                        )
-        , m_pFormats      ( new DataFlavorExVector        )
 {
 }
 
@@ -49,19 +45,17 @@ OpenFileDropTargetListener::~OpenFileDropTargetListener()
 {
     m_xTargetFrame.clear();
     m_xContext.clear();
-    delete m_pFormats;
-    m_pFormats = nullptr;
 }
 
 
-void SAL_CALL OpenFileDropTargetListener::disposing( const css::lang::EventObject& ) throw( css::uno::RuntimeException, std::exception )
+void SAL_CALL OpenFileDropTargetListener::disposing( const css::lang::EventObject& )
 {
     m_xTargetFrame.clear();
     m_xContext.clear();
 }
 
 
-void SAL_CALL OpenFileDropTargetListener::drop( const css::datatransfer::dnd::DropTargetDropEvent& dtde ) throw( css::uno::RuntimeException, std::exception )
+void SAL_CALL OpenFileDropTargetListener::drop( const css::datatransfer::dnd::DropTargetDropEvent& dtde )
 {
     const sal_Int8 nAction = dtde.DropAction;
 
@@ -95,7 +89,7 @@ void SAL_CALL OpenFileDropTargetListener::drop( const css::datatransfer::dnd::Dr
 }
 
 
-void SAL_CALL OpenFileDropTargetListener::dragEnter( const css::datatransfer::dnd::DropTargetDragEnterEvent& dtdee ) throw( css::uno::RuntimeException, std::exception )
+void SAL_CALL OpenFileDropTargetListener::dragEnter( const css::datatransfer::dnd::DropTargetDragEnterEvent& dtdee )
 {
     try
     {
@@ -109,7 +103,7 @@ void SAL_CALL OpenFileDropTargetListener::dragEnter( const css::datatransfer::dn
 }
 
 
-void SAL_CALL OpenFileDropTargetListener::dragExit( const css::datatransfer::dnd::DropTargetEvent& ) throw( css::uno::RuntimeException, std::exception )
+void SAL_CALL OpenFileDropTargetListener::dragExit( const css::datatransfer::dnd::DropTargetEvent& )
 {
     try
     {
@@ -121,7 +115,7 @@ void SAL_CALL OpenFileDropTargetListener::dragExit( const css::datatransfer::dnd
 }
 
 
-void SAL_CALL OpenFileDropTargetListener::dragOver( const css::datatransfer::dnd::DropTargetDragEvent& dtde ) throw( css::uno::RuntimeException, std::exception )
+void SAL_CALL OpenFileDropTargetListener::dragOver( const css::datatransfer::dnd::DropTargetDragEvent& dtde )
 {
     try
     {
@@ -139,7 +133,7 @@ void SAL_CALL OpenFileDropTargetListener::dragOver( const css::datatransfer::dnd
 }
 
 
-void SAL_CALL OpenFileDropTargetListener::dropActionChanged( const css::datatransfer::dnd::DropTargetDragEvent& ) throw( css::uno::RuntimeException, std::exception )
+void SAL_CALL OpenFileDropTargetListener::dropActionChanged( const css::datatransfer::dnd::DropTargetDragEvent& )
 {
 }
 
@@ -148,8 +142,8 @@ void OpenFileDropTargetListener::implts_BeginDrag( const css::uno::Sequence< css
     /* SAFE { */
     SolarMutexGuard aGuard;
 
-    m_pFormats->clear();
-    TransferableDataHelper::FillDataFlavorExVector(rSupportedDataFlavors,*m_pFormats);
+    m_aFormats.clear();
+    TransferableDataHelper::FillDataFlavorExVector(rSupportedDataFlavors, m_aFormats);
     /* } SAFE */
 }
 
@@ -158,7 +152,7 @@ void OpenFileDropTargetListener::implts_EndDrag()
     /* SAFE { */
     SolarMutexGuard aGuard;
 
-    m_pFormats->clear();
+    m_aFormats.clear();
     /* } SAFE */
 }
 
@@ -167,7 +161,7 @@ bool OpenFileDropTargetListener::implts_IsDropFormatSupported( SotClipboardForma
     /* SAFE { */
     SolarMutexGuard aGuard;
 
-    DataFlavorExVector::iterator aIter( m_pFormats->begin() ), aEnd( m_pFormats->end() );
+    DataFlavorExVector::iterator aIter( m_aFormats.begin() ), aEnd( m_aFormats.end() );
     bool bRet = false;
 
     while ( aIter != aEnd )
@@ -209,7 +203,8 @@ void OpenFileDropTargetListener::implts_OpenFile( const OUString& rFilePath )
         xParser->parseStrict(aURL);
 
         css::uno::Reference < css::frame::XDispatchProvider > xProvider( xTargetFrame, css::uno::UNO_QUERY );
-        css::uno::Reference< css::frame::XDispatch > xDispatcher = xProvider->queryDispatch( aURL, SPECIALTARGET_DEFAULT, 0 );
+        // Create a new task or recycle an existing one
+        css::uno::Reference< css::frame::XDispatch > xDispatcher = xProvider->queryDispatch( aURL, "_default", 0 );
         if ( xDispatcher.is() )
             xDispatcher->dispatch( aURL, css::uno::Sequence < css::beans::PropertyValue >() );
     }

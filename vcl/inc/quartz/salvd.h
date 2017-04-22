@@ -32,12 +32,6 @@
 
 #include "salvd.hxx"
 
-struct SalVirDevData
-{
-};
-
-typedef struct SalVirDevData   SalVirDevData;
-
 class AquaSalGraphics;
 
 class AquaSalVirtualDevice : public SalVirtualDevice
@@ -54,7 +48,7 @@ private:
 
 public:
     AquaSalVirtualDevice( AquaSalGraphics* pGraphic, long &nDX, long &nDY, DeviceFormat eFormat, const SystemGraphicsData *pData );
-    virtual ~AquaSalVirtualDevice();
+    virtual ~AquaSalVirtualDevice() override;
 
     virtual SalGraphics*            AcquireGraphics() override;
     virtual void                    ReleaseGraphics( SalGraphics* pGraphics ) override;

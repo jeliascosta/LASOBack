@@ -19,7 +19,7 @@
 
 #include <sal/types.h>
 #include <svtools/accessibletableprovider.hxx>
-#include <accessibility/extended/accessiblebrowseboxcell.hxx>
+#include <extended/accessiblebrowseboxcell.hxx>
 
 namespace accessibility
 {
@@ -48,18 +48,20 @@ namespace accessibility
     {
     }
 
-    void SAL_CALL AccessibleBrowseBoxCell::grabFocus() throw ( RuntimeException, std::exception )
+    void SAL_CALL AccessibleBrowseBoxCell::grabFocus()
     {
-        SolarMethodGuard aGuard( *this );
+        SolarMethodGuard aGuard(getMutex());
+        ensureIsAlive();
+
         mpBrowseBox->GoToCell( m_nRowPos, m_nColPos );
     }
 
-    ::Rectangle AccessibleBrowseBoxCell::implGetBoundingBox()
+    ::tools::Rectangle AccessibleBrowseBoxCell::implGetBoundingBox()
     {
         return mpBrowseBox->GetFieldRectPixelAbs( m_nRowPos, m_nColPos, false, false );
     }
 
-    ::Rectangle AccessibleBrowseBoxCell::implGetBoundingBoxOnScreen()
+    ::tools::Rectangle AccessibleBrowseBoxCell::implGetBoundingBoxOnScreen()
     {
         return mpBrowseBox->GetFieldRectPixelAbs( m_nRowPos, m_nColPos, false );
     }

@@ -17,6 +17,7 @@
 
 struct TestImpl;
 class ScUndoPaste;
+class ScUndoCut;
 
 /**
  * Temporarily set formula grammar.
@@ -45,8 +46,10 @@ public:
     static void printRange(ScDocument* pDoc, const ScRange& rRange, const char* pCaption);
     static void clearRange(ScDocument* pDoc, const ScRange& rRange);
     static void clearSheet(ScDocument* pDoc, SCTAB nTab);
+    static ScUndoCut* cutToClip(ScDocShell& rDocSh, const ScRange& rRange, ScDocument* pClipDoc, bool bCreateUndo);
     static void copyToClip(ScDocument* pSrcDoc, const ScRange& rRange, ScDocument* pClipDoc);
     static void pasteFromClip(ScDocument* pDestDoc, const ScRange& rDestRange, ScDocument* pClipDoc);
+    static void pasteOneCellFromClip(ScDocument* pDestDoc, const ScRange& rDestRange, ScDocument* pClipDoc, InsertDeleteFlags eFlags = InsertDeleteFlags::ALL);
     static ScUndoPaste* createUndoPaste(ScDocShell& rDocSh, const ScRange& rRange, ScDocument* pUndoDoc);
 
     /**
@@ -57,6 +60,10 @@ public:
 
     static void setCalcAsShown(ScDocument* pDoc, bool bCalcAsShown);
 
+    void checkPrecisionAsShown( OUString& rCode, double fValue, double fExpectedRoundVal );
+
+    ScRange insertRangeData(
+        ScDocument* pDoc, const ScAddress& rPos, const std::vector<std::vector<const char*>>& rData );
 
     template<size_t Size>
     static ScRange insertRangeData(
@@ -92,9 +99,14 @@ public:
     }
 
     Test();
-    virtual ~Test();
+    virtual ~Test() override;
 
     ScDocShell& getDocShell();
+
+    /** Get a separate new ScDocShell with ScDocument that suits unit test needs. */
+    void getNewDocShell( ScDocShellRef& rDocShellRef );
+    /** Close such new ScDocShell. */
+    void closeDocShell( ScDocShellRef& rDocShellRef );
 
     virtual void setUp() override;
     virtual void tearDown() override;
@@ -106,6 +118,7 @@ public:
     void testMarkData();
     void testInput();
     void testDocStatistics();
+    void testRowForHeight();
 
     /**
      * The 'data entries' data is a list of strings used for suggestions as
@@ -119,9 +132,12 @@ public:
      */
     void testSelectionFunction();
 
+    void testMarkedCellIteration();
+
     void testFormulaCreateStringFromTokens();
     void testFormulaParseReference();
     void testFetchVectorRefArray();
+    void testGroupConverter3D();
     void testFormulaHashAndTag();
     void testFormulaTokenEquality();
     void testFormulaRefData();
@@ -135,18 +151,23 @@ public:
     void testFormulaRefUpdateInsertColumns();
     void testFormulaRefUpdateMove();
     void testFormulaRefUpdateMoveUndo();
+    void testFormulaRefUpdateMoveUndo2();
     void testFormulaRefUpdateMoveToSheet();
     void testFormulaRefUpdateDeleteContent();
     void testFormulaRefUpdateDeleteAndShiftLeft();
+    void testFormulaRefUpdateDeleteAndShiftLeft2();
     void testFormulaRefUpdateDeleteAndShiftUp();
     void testFormulaRefUpdateName();
     void testFormulaRefUpdateNameMove();
     void testFormulaRefUpdateNameExpandRef();
+    void testFormulaRefUpdateNameExpandRef2();
     void testFormulaRefUpdateNameDeleteRow();
     void testFormulaRefUpdateNameCopySheet();
     void testFormulaRefUpdateNameCopySheetCheckTab( SCTAB Tab, bool bCheckNames );
     void testFormulaRefUpdateNameDelete();
     void testFormulaRefUpdateValidity();
+    void testTokenArrayRefUpdateMove();
+    void testSingleCellCopyColumnLabel();
     void testMultipleOperations();
     void testFuncCOLUMN();
     void testFuncCOUNT();
@@ -313,11 +334,23 @@ public:
      */
     void testPivotTableRepeatItemLabels();
 
+    /**
+     * Test DPCollection public methods
+     */
+    void testPivotTableDPCollection();
+
+    /**
+    * Test pivot table median function
+    */
+    void testPivotTableMedianFunc();
+
     void testCellCopy();
     void testSheetCopy();
     void testSheetMove();
     void testDataArea();
     void testAutofilter();
+    void testAutoFilterTimeValue();
+    void testAdvancedFilter();
     void testCopyPaste();
     void testCopyPasteAsLink();
     void testCopyPasteTranspose();
@@ -326,6 +359,7 @@ public:
     void testCopyPasteSkipEmpty2();
     void testCopyPasteSkipEmptyConditionalFormatting();
     void testCutPasteRefUndo();
+    void testCutPasteGroupRefUndo();
     void testMoveRefBetweenSheets();
     void testUndoCut();
     void testMoveBlock();
@@ -396,6 +430,7 @@ public:
     void testAutoFillSimple();
     void testCopyPasteFormulas();
     void testCopyPasteFormulasExternalDoc();
+    void testCopyPasteReferencesExternalDoc(); // tdf#106456
 
     void testFindAreaPosVertical();
     void testFindAreaPosColRight();
@@ -440,6 +475,8 @@ public:
     void testCondCopyPaste();
     void testCondCopyPasteSingleCell(); //e.g. fdo#82503
     void testCondCopyPasteSingleCellToRange(); //e.g. fdo#82503
+    void testCondCopyPasteSingleRowToRange(); //e.g. tdf#106242
+    void testCondCopyPasteSingleRowToRange2();
     void testCondCopyPasteSheetBetweenDoc();
     void testCondCopyPasteSheet();
     void testIconSet();
@@ -458,9 +495,13 @@ public:
     void testCondFormatUpdateDeleteTab();
     void testCondFormatUpdateInsertTab();
     void testCondFormatUpdateReference();
+    void testCondFormatUpdateReferenceDelRow();
+    void testCondFormatUpdateReferenceInsRow();
 
     void testCondFormatEndsWithStr();
     void testCondFormatEndsWithVal();
+
+    void testCondFormatUndoList();
 
     void testImportStream();
     void testDeleteContents();
@@ -481,6 +522,10 @@ public:
     void testTdf97369();
     void testTdf97587();
 
+    void testEmptyCalcDocDefaults();
+
+    void testPrecisionAsShown();
+
     CPPUNIT_TEST_SUITE(Test);
     CPPUNIT_TEST(testCollator);
     CPPUNIT_TEST(testSharedStringPool);
@@ -489,11 +534,14 @@ public:
     CPPUNIT_TEST(testMarkData);
     CPPUNIT_TEST(testInput);
     CPPUNIT_TEST(testDocStatistics);
+    CPPUNIT_TEST(testRowForHeight);
     CPPUNIT_TEST(testDataEntries);
     CPPUNIT_TEST(testSelectionFunction);
+    CPPUNIT_TEST(testMarkedCellIteration);
     CPPUNIT_TEST(testFormulaCreateStringFromTokens);
     CPPUNIT_TEST(testFormulaParseReference);
     CPPUNIT_TEST(testFetchVectorRefArray);
+    CPPUNIT_TEST(testGroupConverter3D);
     // CPPUNIT_TEST(testFormulaHashAndTag);
     CPPUNIT_TEST(testFormulaTokenEquality);
     CPPUNIT_TEST(testFormulaRefData);
@@ -507,17 +555,21 @@ public:
     CPPUNIT_TEST(testFormulaRefUpdateInsertColumns);
     CPPUNIT_TEST(testFormulaRefUpdateMove);
     CPPUNIT_TEST(testFormulaRefUpdateMoveUndo);
+    CPPUNIT_TEST(testFormulaRefUpdateMoveUndo2);
     CPPUNIT_TEST(testFormulaRefUpdateMoveToSheet);
     CPPUNIT_TEST(testFormulaRefUpdateDeleteContent);
     CPPUNIT_TEST(testFormulaRefUpdateDeleteAndShiftLeft);
+    CPPUNIT_TEST(testFormulaRefUpdateDeleteAndShiftLeft2);
     CPPUNIT_TEST(testFormulaRefUpdateDeleteAndShiftUp);
     CPPUNIT_TEST(testFormulaRefUpdateName);
     CPPUNIT_TEST(testFormulaRefUpdateNameMove);
     CPPUNIT_TEST(testFormulaRefUpdateNameExpandRef);
+    CPPUNIT_TEST(testFormulaRefUpdateNameExpandRef2);
     CPPUNIT_TEST(testFormulaRefUpdateNameDeleteRow);
     CPPUNIT_TEST(testFormulaRefUpdateNameCopySheet);
     CPPUNIT_TEST(testFormulaRefUpdateNameDelete);
     CPPUNIT_TEST(testFormulaRefUpdateValidity);
+    CPPUNIT_TEST(testTokenArrayRefUpdateMove);
     CPPUNIT_TEST(testMultipleOperations);
     CPPUNIT_TEST(testFuncCOLUMN);
     CPPUNIT_TEST(testFuncCOUNT);
@@ -551,7 +603,7 @@ public:
     CPPUNIT_TEST(testFuncFORMULA);
     CPPUNIT_TEST(testFuncTableRef);
     CPPUNIT_TEST(testFuncFTEST);
-    CPPUNIT_TEST_FAIL(testFuncFTESTBug);
+    CPPUNIT_TEST(testFuncFTESTBug);
     CPPUNIT_TEST(testFuncCHITEST);
     CPPUNIT_TEST(testFuncTTEST);
     CPPUNIT_TEST(testFuncSUMX2PY2);
@@ -606,6 +658,8 @@ public:
     CPPUNIT_TEST(testPivotTableFieldReference);
     CPPUNIT_TEST(testPivotTableDocFunc);
     CPPUNIT_TEST(testPivotTableRepeatItemLabels);
+    CPPUNIT_TEST(testPivotTableDPCollection);
+    CPPUNIT_TEST(testPivotTableMedianFunc);
     CPPUNIT_TEST(testCellCopy);
     CPPUNIT_TEST(testSheetCopy);
     CPPUNIT_TEST(testSheetMove);
@@ -616,6 +670,8 @@ public:
     CPPUNIT_TEST(testFunctionLists);
     CPPUNIT_TEST(testToggleRefFlag);
     CPPUNIT_TEST(testAutofilter);
+    CPPUNIT_TEST(testAutoFilterTimeValue);
+    CPPUNIT_TEST(testAdvancedFilter);
     CPPUNIT_TEST(testCopyPaste);
     CPPUNIT_TEST(testCopyPasteAsLink);
     CPPUNIT_TEST(testCopyPasteTranspose);
@@ -624,6 +680,7 @@ public:
     CPPUNIT_TEST(testCopyPasteSkipEmpty2);
     //CPPUNIT_TEST(testCopyPasteSkipEmptyConditionalFormatting);
     CPPUNIT_TEST(testCutPasteRefUndo);
+    CPPUNIT_TEST(testCutPasteGroupRefUndo);
     CPPUNIT_TEST(testMoveRefBetweenSheets);
     CPPUNIT_TEST(testUndoCut);
     CPPUNIT_TEST(testMoveBlock);
@@ -664,6 +721,7 @@ public:
     CPPUNIT_TEST(testAutoFillSimple);
     CPPUNIT_TEST(testCopyPasteFormulas);
     CPPUNIT_TEST(testCopyPasteFormulasExternalDoc);
+    CPPUNIT_TEST(testCopyPasteReferencesExternalDoc);
     CPPUNIT_TEST(testFindAreaPosVertical);
     CPPUNIT_TEST(testFindAreaPosColRight);
     CPPUNIT_TEST(testSort);
@@ -701,10 +759,15 @@ public:
     CPPUNIT_TEST(testCondCopyPaste);
     CPPUNIT_TEST(testCondCopyPasteSingleCell);
     CPPUNIT_TEST(testCondCopyPasteSingleCellToRange);
+    CPPUNIT_TEST(testCondCopyPasteSingleRowToRange);
+    CPPUNIT_TEST(testCondCopyPasteSingleRowToRange2);
     CPPUNIT_TEST(testCondCopyPasteSheetBetweenDoc);
     CPPUNIT_TEST(testCondCopyPasteSheet);
     CPPUNIT_TEST(testCondFormatEndsWithStr);
     CPPUNIT_TEST(testCondFormatEndsWithVal);
+    CPPUNIT_TEST(testCondFormatUpdateReferenceDelRow);
+    CPPUNIT_TEST(testCondFormatUpdateReferenceInsRow);
+    CPPUNIT_TEST(testCondFormatUndoList);
     CPPUNIT_TEST(testIconSet);
     CPPUNIT_TEST(testDataBarLengthAutomaticAxis);
     CPPUNIT_TEST(testDataBarLengthMiddleAxis);
@@ -725,6 +788,8 @@ public:
     CPPUNIT_TEST(testSetFormula);
     CPPUNIT_TEST(testTdf97369);
     CPPUNIT_TEST(testTdf97587);
+    CPPUNIT_TEST(testEmptyCalcDocDefaults);
+    CPPUNIT_TEST(testPrecisionAsShown);
     CPPUNIT_TEST_SUITE_END();
 
 private:

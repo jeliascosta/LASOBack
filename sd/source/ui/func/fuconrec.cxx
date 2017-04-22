@@ -89,7 +89,7 @@ void FuConstructRectangle::DoExecute( SfxRequest& rReq )
     FuConstruct::DoExecute( rReq );
 
     mpViewShell->GetViewShellBase().GetToolBarManager()->SetToolBar(
-        ToolBarManager::TBG_FUNCTION,
+        ToolBarManager::ToolBarGroup::Function,
         ToolBarManager::msDrawingObjectToolBar);
 
     const SfxItemSet *pArgs = rReq.GetArgs ();
@@ -105,7 +105,7 @@ void FuConstructRectangle::DoExecute( SfxRequest& rReq )
                 const SfxUInt32Item* pAxisX = rReq.GetArg<SfxUInt32Item>(ID_VAL_AXIS_X);
                 const SfxUInt32Item* pAxisY = rReq.GetArg<SfxUInt32Item>(ID_VAL_AXIS_Y);
 
-                Rectangle   aNewRectangle (pCenterX->GetValue () - pAxisX->GetValue () / 2,
+                ::tools::Rectangle   aNewRectangle (pCenterX->GetValue () - pAxisX->GetValue () / 2,
                                            pCenterY->GetValue () - pAxisY->GetValue () / 2,
                                            pCenterX->GetValue () + pAxisX->GetValue () / 2,
                                            pCenterY->GetValue () + pAxisY->GetValue () / 2);
@@ -123,7 +123,7 @@ void FuConstructRectangle::DoExecute( SfxRequest& rReq )
                 const SfxUInt32Item* pMouseEndX = rReq.GetArg<SfxUInt32Item>(ID_VAL_MOUSEEND_X);
                 const SfxUInt32Item* pMouseEndY = rReq.GetArg<SfxUInt32Item>(ID_VAL_MOUSEEND_Y);
 
-                Rectangle   aNewRectangle (pMouseStartX->GetValue (),
+                ::tools::Rectangle   aNewRectangle (pMouseStartX->GetValue (),
                                            pMouseStartY->GetValue (),
                                            pMouseEndX->GetValue (),
                                            pMouseEndY->GetValue ());
@@ -215,11 +215,6 @@ bool FuConstructRectangle::MouseButtonDown(const MouseEvent& rMEvt)
     return bReturn;
 }
 
-bool FuConstructRectangle::MouseMove(const MouseEvent& rMEvt)
-{
-    return FuConstruct::MouseMove(rMEvt);
-}
-
 bool FuConstructRectangle::MouseButtonUp(const MouseEvent& rMEvt)
 {
     bool bReturn(false);
@@ -228,7 +223,7 @@ bool FuConstructRectangle::MouseButtonUp(const MouseEvent& rMEvt)
     {
         SdrObject* pObj = mpView->GetCreateObj();
 
-        if(pObj && mpView->EndCreateObj(SDRCREATE_FORCEEND))
+        if(pObj && mpView->EndCreateObj(SdrCreateCmd::ForceEnd))
         {
             if(SID_DRAW_MEASURELINE == nSlotId)
             {
@@ -264,15 +259,6 @@ bool FuConstructRectangle::MouseButtonUp(const MouseEvent& rMEvt)
         mpViewShell->GetViewFrame()->GetDispatcher()->Execute(SID_OBJECT_SELECT, SfxCallMode::ASYNCHRON);
 
     return bReturn;
-}
-
-/**
- * Process keyboard input
- * @returns sal_True if a KeyEvent is being processed, sal_False otherwise
- */
-bool FuConstructRectangle::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
 }
 
 void FuConstructRectangle::Activate()
@@ -441,7 +427,7 @@ void FuConstructRectangle::SetAttributes(SfxItemSet& rAttr, SdrObject* pObj)
              nSlotId == SID_CONNECTOR_LINE_CIRCLES)
     {
         // direct connector
-        rAttr.Put(SdrEdgeKindItem(SDREDGE_ONELINE));
+        rAttr.Put(SdrEdgeKindItem(SdrEdgeKind::OneLine));
     }
     else if (nSlotId == SID_CONNECTOR_LINES              ||
              nSlotId == SID_CONNECTOR_LINES_ARROW_START  ||
@@ -452,7 +438,7 @@ void FuConstructRectangle::SetAttributes(SfxItemSet& rAttr, SdrObject* pObj)
              nSlotId == SID_CONNECTOR_LINES_CIRCLES)
     {
         // line connector
-        rAttr.Put(SdrEdgeKindItem(SDREDGE_THREELINES));
+        rAttr.Put(SdrEdgeKindItem(SdrEdgeKind::ThreeLines));
     }
     else if (nSlotId == SID_CONNECTOR_CURVE              ||
              nSlotId == SID_CONNECTOR_CURVE_ARROW_START  ||
@@ -463,7 +449,7 @@ void FuConstructRectangle::SetAttributes(SfxItemSet& rAttr, SdrObject* pObj)
              nSlotId == SID_CONNECTOR_CURVE_CIRCLES)
     {
         // curve connector
-        rAttr.Put(SdrEdgeKindItem(SDREDGE_BEZIER));
+        rAttr.Put(SdrEdgeKindItem(SdrEdgeKind::Bezier));
     }
     else if ( nSlotId == SID_DRAW_CAPTION || nSlotId == SID_DRAW_CAPTION_VERTICAL )
     {
@@ -480,7 +466,7 @@ void FuConstructRectangle::SetAttributes(SfxItemSet& rAttr, SdrObject* pObj)
         else
             rAttr.Put( SdrTextVertAdjustItem( SDRTEXTVERTADJUST_BLOCK ) );
 
-        rAttr.Put( SvxAdjustItem( SVX_ADJUST_CENTER, EE_PARA_JUST ) );
+        rAttr.Put( SvxAdjustItem( SvxAdjust::Center, EE_PARA_JUST ) );
         rAttr.Put( makeSdrTextLeftDistItem( 100 ) );
         rAttr.Put( makeSdrTextRightDistItem( 100 ) );
         rAttr.Put( makeSdrTextUpperDistItem( 100 ) );
@@ -525,7 +511,7 @@ void FuConstructRectangle::SetAttributes(SfxItemSet& rAttr, SdrObject* pObj)
         long nIndex;
         for( nIndex = 0L; nIndex < nCount; nIndex++ )
         {
-            XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nIndex);
+            const XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nIndex);
             if( pEntry->GetName() == aArrowName )
             {
                 aRetval = pEntry->GetLineEnd();
@@ -723,7 +709,7 @@ void FuConstructRectangle::SetLineEnds(SfxItemSet& rAttr, SdrObject* pObj)
     }
 }
 
-SdrObject* FuConstructRectangle::CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle)
+SdrObject* FuConstructRectangle::CreateDefaultObject(const sal_uInt16 nID, const ::tools::Rectangle& rRectangle)
 {
     DBG_ASSERT( (nID != SID_DRAW_FONTWORK) && (nID != SID_DRAW_FONTWORK_VERTICAL ), "FuConstRectangle::CreateDefaultObject can not create Fontwork shapes!" );
 
@@ -786,7 +772,7 @@ SdrObject* FuConstructRectangle::CreateDefaultObject(const sal_uInt16 nID, const
 
     if(pObj)
     {
-        Rectangle aRect(rRectangle);
+        ::tools::Rectangle aRect(rRectangle);
 
         if(SID_DRAW_SQUARE == nID ||
             SID_DRAW_SQUARE_NOFILL == nID ||

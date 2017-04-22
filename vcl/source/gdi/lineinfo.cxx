@@ -28,7 +28,7 @@
 
 
 ImplLineInfo::ImplLineInfo() :
-    meStyle     ( LINE_SOLID ),
+    meStyle     ( LineStyle::Solid ),
     mnWidth     ( 0 ),
     mnDashCount ( 0 ),
     mnDashLen   ( 0 ),
@@ -77,6 +77,10 @@ LineInfo::LineInfo( const LineInfo& rLineInfo ) : mpImplLineInfo(rLineInfo.mpImp
 {
 }
 
+LineInfo::LineInfo( LineInfo&& rLineInfo ) : mpImplLineInfo(std::move(rLineInfo.mpImplLineInfo))
+{
+}
+
 LineInfo::~LineInfo()
 {
 }
@@ -84,6 +88,12 @@ LineInfo::~LineInfo()
 LineInfo& LineInfo::operator=( const LineInfo& rLineInfo )
 {
     mpImplLineInfo = rLineInfo.mpImplLineInfo;
+    return *this;
+}
+
+LineInfo& LineInfo::operator=( LineInfo&& rLineInfo )
+{
+    mpImplLineInfo = std::move(rLineInfo.mpImplLineInfo);
     return *this;
 }
 
@@ -147,7 +157,7 @@ void LineInfo::SetLineCap(css::drawing::LineCap eLineCap)
 bool LineInfo::IsDefault() const
 {
     return( !mpImplLineInfo->mnWidth
-        && ( LINE_SOLID == mpImplLineInfo->meStyle )
+        && ( LineStyle::Solid == mpImplLineInfo->meStyle )
         && ( css::drawing::LineCap_BUTT == mpImplLineInfo->meLineCap));
 }
 
@@ -192,7 +202,7 @@ SvStream& WriteLineInfo( SvStream& rOStm, const LineInfo& rLineInfo )
     VersionCompat aCompat( rOStm, StreamMode::WRITE, 4 );
 
     // version 1
-    rOStm.WriteUInt16( rLineInfo.mpImplLineInfo->meStyle )
+    rOStm.WriteUInt16( (sal_uInt16)rLineInfo.mpImplLineInfo->meStyle )
          .WriteInt32( rLineInfo.mpImplLineInfo->mnWidth );
 
     // since version2
@@ -206,7 +216,7 @@ SvStream& WriteLineInfo( SvStream& rOStm, const LineInfo& rLineInfo )
     rOStm.WriteUInt16( static_cast<sal_uInt16>(rLineInfo.mpImplLineInfo->meLineJoin) );
 
     // since version4
-    rOStm.WriteUInt16( rLineInfo.mpImplLineInfo->meLineCap );
+    rOStm.WriteUInt16( (sal_uInt16)rLineInfo.mpImplLineInfo->meLineCap );
 
     return rOStm;
 }
@@ -219,7 +229,7 @@ void LineInfo::applyToB2DPolyPolygon(
 
     if(io_rLinePolyPolygon.count())
     {
-        if(LINE_DASH == GetStyle())
+        if(LineStyle::Dash == GetStyle())
         {
             ::std::vector< double > fDotDashArray;
             const double fDashLen(GetDashLen());

@@ -49,7 +49,7 @@ class DomainMapperTableHandler;
  */
 class TableManager
 {
-    class TableManagerState
+    class TableManagerState final
     {
         /**
          properties of the current cell
@@ -87,10 +87,6 @@ class TableManager
          */
         TableManagerState()
         : mbRowEnd(false), mbInCell(false), mbCellEnd(false)
-        {
-        }
-
-        virtual ~TableManagerState()
         {
         }
 
@@ -211,30 +207,10 @@ protected:
         return mState.getCellProps();
     }
 
-    void setCellProps(TablePropertyMapPtr pProps)
-    {
-        mState.setCellProps(pProps);
-    }
-
-    void resetCellProps()
-    {
-        mState.resetCellProps();
-    }
-
 public:
     TablePropertyMapPtr getRowProps()
     {
         return mState.getRowProps();
-    }
-
-    void setRowProps(TablePropertyMapPtr pProps)
-    {
-        mState.setRowProps(pProps);
-    }
-
-    void resetRowProps()
-    {
-        mState.resetRowProps();
     }
 
 protected:
@@ -253,11 +229,6 @@ protected:
         mState.setCellEnd(bCellEnd);
     }
 
-    bool isCellEnd() const
-    {
-        return mState.isCellEnd();
-    }
-
     void setRowEnd(bool bRowEnd)
     {
         mState.setRowEnd(bRowEnd);
@@ -271,16 +242,6 @@ protected:
     TablePropertyMapPtr getTableProps()
     {
         return mState.getTableProps();
-    }
-
-    void setTableProps(TablePropertyMapPtr pProps)
-    {
-        mState.setTableProps(pProps);
-    }
-
-    void resetTableProps()
-    {
-        mState.resetTableProps();
     }
 
     const css::uno::Reference<css::text::XTextRange>& getHandle()

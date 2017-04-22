@@ -15,6 +15,8 @@
 #include <editeng/unoprnms.hxx>
 #include <editeng/charrotateitem.hxx>
 #include <svx/svdogrp.hxx>
+#include <oox/helper/propertyset.hxx>
+#include <oox/token/namespaces.hxx>
 #include <oox/token/properties.hxx>
 #include <textboxhelper.hxx>
 #include <fmtanchr.hxx>
@@ -131,28 +133,27 @@ struct DocxSdrExport::Impl
     const Size* m_pFlyFrameSize;
     bool m_bTextFrameSyntax;
     bool m_bDMLTextFrameSyntax;
-    uno::Reference<sax_fastparser::FastAttributeList> m_pFlyAttrList;
-    uno::Reference<sax_fastparser::FastAttributeList> m_pTextboxAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pFlyAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pTextboxAttrList;
     OStringBuffer m_aTextFrameStyle;
     bool m_bFrameBtLr;
     bool m_bDrawingOpen;
     bool m_bParagraphSdtOpen;
     bool m_bParagraphHasDrawing; ///Flag for checking drawing in a paragraph.
     bool m_bFlyFrameGraphic;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pFlyFillAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pFlyFillAttrList;
     sax_fastparser::FastAttributeList* m_pFlyWrapAttrList;
     sax_fastparser::FastAttributeList* m_pBodyPrAttrList;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pDashLineStyleAttr;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pDashLineStyleAttr;
     bool m_bDMLAndVMLDrawingOpen;
     /// List of TextBoxes in this document: they are exported as part of their shape, never alone.
-    std::set<const SwFrameFormat*> m_aTextBoxes;
     /// Preserved rotation for TextFrames.
     sal_Int32 m_nDMLandVMLTextFrameRotation;
 
     Impl(DocxSdrExport& rSdrExport, DocxExport& rExport, sax_fastparser::FSHelperPtr pSerializer, oox::drawingml::DrawingML* pDrawingML)
         : m_rSdrExport(rSdrExport),
           m_rExport(rExport),
-          m_pSerializer(pSerializer),
+          m_pSerializer(std::move(pSerializer)),
           m_pDrawingML(pDrawingML),
           m_pFlyFrameSize(nullptr),
           m_bTextFrameSyntax(false),
@@ -165,12 +166,7 @@ struct DocxSdrExport::Impl
           m_pFlyWrapAttrList(nullptr),
           m_pBodyPrAttrList(nullptr),
           m_bDMLAndVMLDrawingOpen(false),
-          m_aTextBoxes(SwTextBoxHelper::findTextBoxes(m_rExport.m_pDoc)),
           m_nDMLandVMLTextFrameRotation(0)
-    {
-    }
-
-    ~Impl()
     {
     }
 
@@ -187,9 +183,7 @@ DocxSdrExport::DocxSdrExport(DocxExport& rExport, sax_fastparser::FSHelperPtr pS
 {
 }
 
-DocxSdrExport::~DocxSdrExport()
-{
-}
+DocxSdrExport::~DocxSdrExport() = default;
 
 void DocxSdrExport::setSerializer(const sax_fastparser::FSHelperPtr& pSerializer)
 {
@@ -211,12 +205,12 @@ bool DocxSdrExport::getDMLTextFrameSyntax()
     return m_pImpl->m_bDMLTextFrameSyntax;
 }
 
-uno::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getFlyAttrList()
+rtl::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getFlyAttrList()
 {
     return m_pImpl->m_pFlyAttrList;
 }
 
-uno::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getTextboxAttrList()
+rtl::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getTextboxAttrList()
 {
     return m_pImpl->m_pTextboxAttrList;
 }
@@ -256,7 +250,7 @@ void DocxSdrExport::setParagraphHasDrawing(bool bParagraphHasDrawing)
     m_pImpl->m_bParagraphHasDrawing = bParagraphHasDrawing;
 }
 
-uno::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getFlyFillAttrList()
+rtl::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getFlyFillAttrList()
 {
     return m_pImpl->m_pFlyFillAttrList;
 }
@@ -271,7 +265,7 @@ sax_fastparser::FastAttributeList* DocxSdrExport::getBodyPrAttrList()
     return m_pImpl->m_pBodyPrAttrList;
 }
 
-uno::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getDashLineStyle()
+rtl::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getDashLineStyle()
 {
     return m_pImpl->m_pDashLineStyleAttr;
 }
@@ -298,31 +292,31 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
     }
     else
     {
-        isAnchor = pFrameFormat->GetAnchor().GetAnchorId() != FLY_AS_CHAR;
+        isAnchor = pFrameFormat->GetAnchor().GetAnchorId() != RndStdIds::FLY_AS_CHAR;
     }
 
     // Count effectExtent values, their value is needed before dist{T,B,L,R} is written.
     SvxShadowItem aShadowItem = pFrameFormat->GetShadow();
     sal_Int32 nLeftExt = 0, nRightExt = 0, nTopExt = 0, nBottomExt = 0;
-    if (aShadowItem.GetLocation() != SVX_SHADOW_NONE)
+    if (aShadowItem.GetLocation() != SvxShadowLocation::NONE)
     {
         sal_Int32 nShadowWidth(TwipsToEMU(aShadowItem.GetWidth()));
         switch (aShadowItem.GetLocation())
         {
-        case SVX_SHADOW_TOPLEFT:
+        case SvxShadowLocation::TopLeft:
             nTopExt = nLeftExt = nShadowWidth;
             break;
-        case SVX_SHADOW_TOPRIGHT:
+        case SvxShadowLocation::TopRight:
             nTopExt = nRightExt = nShadowWidth;
             break;
-        case SVX_SHADOW_BOTTOMLEFT:
+        case SvxShadowLocation::BottomLeft:
             nBottomExt = nLeftExt = nShadowWidth;
             break;
-        case SVX_SHADOW_BOTTOMRIGHT:
+        case SvxShadowLocation::BottomRight:
             nBottomExt = nRightExt = nShadowWidth;
             break;
-        case SVX_SHADOW_NONE:
-        case SVX_SHADOW_END:
+        case SvxShadowLocation::NONE:
+        case SvxShadowLocation::End:
             break;
         }
     }
@@ -332,7 +326,7 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
         uno::Any aAny;
         pObject->GetGrabBagItem(aAny);
         comphelper::SequenceAsHashMap aGrabBag(aAny);
-        comphelper::SequenceAsHashMap::iterator it = aGrabBag.find("CT_EffectExtent");
+        auto it = aGrabBag.find("CT_EffectExtent");
         if (it != aGrabBag.end())
         {
             comphelper::SequenceAsHashMap aEffectExtent(it->second);
@@ -483,7 +477,7 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
         m_pImpl->m_pSerializer->startElementNS(XML_wp, XML_positionH, XML_relativeFrom, relativeFromH, FSEND);
         /**
         * Sizes of integral types
-        * climits header defines constants with the limits of integral types for the specific system and compiler implemetation used.
+        * climits header defines constants with the limits of integral types for the specific system and compiler implementation used.
         * Use of this might cause platform dependent problem like posOffset exceed the limit.
         **/
         const sal_Int64 MAX_INTEGER_VALUE = SAL_MAX_INT32;
@@ -629,9 +623,9 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
 
     OString aWidth(OString::number(TwipsToEMU(cx)));
     //we explicitly check the converted EMU value for the range as mentioned in above comment.
-    aWidth = (aWidth.toInt64() > 0 ? (aWidth.toInt64() > MAX_INTEGER_VALUE ? I64S(MAX_INTEGER_VALUE) : aWidth.getStr()): "0");
+    aWidth = (aWidth.toInt64() > 0 ? (aWidth.toInt64() > MAX_INTEGER_VALUE ? IS(MAX_INTEGER_VALUE) : aWidth.getStr()): "0");
     OString aHeight(OString::number(TwipsToEMU(cy)));
-    aHeight = (aHeight.toInt64() > 0 ? (aHeight.toInt64() > MAX_INTEGER_VALUE ? I64S(MAX_INTEGER_VALUE) : aHeight.getStr()): "0");
+    aHeight = (aHeight.toInt64() > 0 ? (aHeight.toInt64() > MAX_INTEGER_VALUE ? IS(MAX_INTEGER_VALUE) : aHeight.getStr()): "0");
 
     m_pImpl->m_pSerializer->singleElementNS(XML_wp, XML_extent,
                                             XML_cx, aWidth,
@@ -653,7 +647,7 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
         uno::Any aAny;
         pObject->GetGrabBagItem(aAny);
         comphelper::SequenceAsHashMap aGrabBag(aAny);
-        comphelper::SequenceAsHashMap::iterator it = aGrabBag.find("EG_WrapType");
+        auto it = aGrabBag.find("EG_WrapType");
         if (it != aGrabBag.end())
         {
             OUString sType = it->second.get<OUString>();
@@ -675,7 +669,7 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
                                                        FSEND);
                 drawing::PointSequenceSequence aSeqSeq = it->second.get< drawing::PointSequenceSequence >();
                 std::vector<awt::Point> aPoints(comphelper::sequenceToContainer<std::vector<awt::Point> >(aSeqSeq[0]));
-                for (std::vector<awt::Point>::iterator i = aPoints.begin(); i != aPoints.end(); ++i)
+                for (auto i = aPoints.begin(); i != aPoints.end(); ++i)
                 {
                     awt::Point& rPoint = *i;
                     m_pImpl->m_pSerializer->singleElementNS(XML_wp, (i == aPoints.begin() ? XML_start : XML_lineTo),
@@ -723,17 +717,17 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
     {
         switch (pFrameFormat->GetSurround().GetValue())
         {
-        case SURROUND_NONE:
+        case css::text::WrapTextMode_NONE:
             m_pImpl->m_pSerializer->singleElementNS(XML_wp, XML_wrapTopAndBottom, FSEND);
             break;
-        case SURROUND_THROUGHT:
+        case css::text::WrapTextMode_THROUGH:
             m_pImpl->m_pSerializer->singleElementNS(XML_wp, XML_wrapNone, FSEND);
             break;
-        case SURROUND_PARALLEL:
+        case css::text::WrapTextMode_PARALLEL:
             m_pImpl->m_pSerializer->singleElementNS(XML_wp, XML_wrapSquare,
                                                     XML_wrapText, "bothSides", FSEND);
             break;
-        case SURROUND_IDEAL:
+        case css::text::WrapTextMode_DYNAMIC:
         default:
             m_pImpl->m_pSerializer->singleElementNS(XML_wp, XML_wrapSquare,
                                                     XML_wrapText, "largest", FSEND);
@@ -751,7 +745,7 @@ void DocxSdrExport::endDMLAnchorInline(const SwFrameFormat* pFrameFormat)
     }
     else
     {
-        isAnchor = pFrameFormat->GetAnchor().GetAnchorId() != FLY_AS_CHAR;
+        isAnchor = pFrameFormat->GetAnchor().GetAnchorId() != RndStdIds::FLY_AS_CHAR;
     }
     m_pImpl->m_pSerializer->endElementNS(XML_wp, isAnchor ? XML_anchor : XML_inline);
 
@@ -840,7 +834,7 @@ void DocxSdrExport::writeDMLDrawing(const SdrObject* pSdrObject, const SwFrameFo
     else if (xServiceInfo->supportsService("com.sun.star.drawing.GraphicObjectShape"))
         pNamespace = "http://schemas.openxmlformats.org/drawingml/2006/picture";
     pFS->startElementNS(XML_a, XML_graphic,
-                        FSNS(XML_xmlns, XML_a), "http://schemas.openxmlformats.org/drawingml/2006/main",
+                        FSNS(XML_xmlns, XML_a), OUStringToOString(m_pImpl->m_rExport.GetFilter().getNamespaceURL(OOX_NS(dml)), RTL_TEXTENCODING_UTF8).getStr(),
                         FSEND);
     pFS->startElementNS(XML_a, XML_graphicData,
                         XML_uri, pNamespace,
@@ -849,7 +843,7 @@ void DocxSdrExport::writeDMLDrawing(const SdrObject* pSdrObject, const SwFrameFo
     bool bLockedCanvas = lcl_isLockedCanvas(xShape);
     if (bLockedCanvas)
         pFS->startElementNS(XML_lc, XML_lockedCanvas,
-                            FSNS(XML_xmlns, XML_lc), "http://schemas.openxmlformats.org/drawingml/2006/lockedCanvas",
+                            FSNS(XML_xmlns, XML_lc), OUStringToOString(m_pImpl->m_rExport.GetFilter().getNamespaceURL(OOX_NS(dmlLockedCanvas)), RTL_TEXTENCODING_UTF8).getStr(),
                             FSEND);
 
     m_pImpl->m_rExport.OutputDML(xShape);
@@ -888,27 +882,27 @@ void DocxSdrExport::writeDMLDrawing(const SdrObject* pSdrObject, const SwFrameFo
 void DocxSdrExport::Impl::textFrameShadow(const SwFrameFormat& rFrameFormat)
 {
     const SvxShadowItem& aShadowItem = rFrameFormat.GetShadow();
-    if (aShadowItem.GetLocation() == SVX_SHADOW_NONE)
+    if (aShadowItem.GetLocation() == SvxShadowLocation::NONE)
         return;
 
     OString aShadowWidth(OString::number(double(aShadowItem.GetWidth()) / 20) + "pt");
     OString aOffset;
     switch (aShadowItem.GetLocation())
     {
-    case SVX_SHADOW_TOPLEFT:
+    case SvxShadowLocation::TopLeft:
         aOffset = "-" + aShadowWidth + ",-" + aShadowWidth;
         break;
-    case SVX_SHADOW_TOPRIGHT:
+    case SvxShadowLocation::TopRight:
         aOffset = aShadowWidth + ",-" + aShadowWidth;
         break;
-    case SVX_SHADOW_BOTTOMLEFT:
+    case SvxShadowLocation::BottomLeft:
         aOffset = "-" + aShadowWidth + "," + aShadowWidth;
         break;
-    case SVX_SHADOW_BOTTOMRIGHT:
+    case SvxShadowLocation::BottomRight:
         aOffset = aShadowWidth + "," + aShadowWidth;
         break;
-    case SVX_SHADOW_NONE:
-    case SVX_SHADOW_END:
+    case SvxShadowLocation::NONE:
+    case SvxShadowLocation::End:
         break;
     }
     if (aOffset.isEmpty())
@@ -955,7 +949,7 @@ void DocxSdrExport::writeDMLAndVMLDrawing(const SdrObject* sdrObj, const SwFrame
     {
         m_pImpl->m_pSerializer->startElementNS(XML_mc, XML_AlternateContent, FSEND);
 
-        const SdrObjGroup* pObjGroup = dynamic_cast<const SdrObjGroup*>(sdrObj);
+        auto pObjGroup = dynamic_cast<const SdrObjGroup*>(sdrObj);
         m_pImpl->m_pSerializer->startElementNS(XML_mc, XML_Choice,
                                                XML_Requires, (pObjGroup ? "wpg" : "wps"),
                                                FSEND);
@@ -991,7 +985,7 @@ void DocxSdrExport::writeDMLEffectLst(const SwFrameFormat& rFrameFormat)
     const SvxShadowItem& aShadowItem = rFrameFormat.GetShadow();
 
     // Output effects
-    if (aShadowItem.GetLocation() != SVX_SHADOW_NONE)
+    if (aShadowItem.GetLocation() != SvxShadowLocation::NONE)
     {
         // Distance is measured diagonally from corner
         double nShadowDist = sqrt((double)aShadowItem.GetWidth()*aShadowItem.GetWidth()*2.0);
@@ -1001,20 +995,20 @@ void DocxSdrExport::writeDMLEffectLst(const SwFrameFormat& rFrameFormat)
         sal_uInt32 nShadowDir = 0;
         switch (aShadowItem.GetLocation())
         {
-        case SVX_SHADOW_TOPLEFT:
+        case SvxShadowLocation::TopLeft:
             nShadowDir = 13500000;
             break;
-        case SVX_SHADOW_TOPRIGHT:
+        case SvxShadowLocation::TopRight:
             nShadowDir = 18900000;
             break;
-        case SVX_SHADOW_BOTTOMLEFT:
+        case SvxShadowLocation::BottomLeft:
             nShadowDir = 8100000;
             break;
-        case SVX_SHADOW_BOTTOMRIGHT:
+        case SvxShadowLocation::BottomRight:
             nShadowDir = 2700000;
             break;
-        case SVX_SHADOW_NONE:
-        case SVX_SHADOW_END:
+        case SvxShadowLocation::NONE:
+        case SvxShadowLocation::End:
             break;
         }
         OString aShadowDir(OString::number(nShadowDir));
@@ -1173,7 +1167,7 @@ void DocxSdrExport::writeDiagram(const SdrObject* sdrObject, const SwFrameFormat
                          FSEND);
 
     pFS->startElementNS(XML_a, XML_graphic,
-                        FSNS(XML_xmlns, XML_a), "http://schemas.openxmlformats.org/drawingml/2006/main",
+                        FSNS(XML_xmlns, XML_a), OUStringToOString(m_pImpl->m_rExport.GetFilter().getNamespaceURL(OOX_NS(dml)), RTL_TEXTENCODING_UTF8).getStr(),
                         FSEND);
 
     pFS->startElementNS(XML_a, XML_graphicData,
@@ -1233,8 +1227,8 @@ void DocxSdrExport::writeDiagram(const SdrObject* sdrObject, const SwFrameFormat
     }
 
     pFS->singleElementNS(XML_dgm, XML_relIds,
-                         FSNS(XML_xmlns, XML_dgm), "http://schemas.openxmlformats.org/drawingml/2006/diagram",
-                         FSNS(XML_xmlns, XML_r), "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                         FSNS(XML_xmlns, XML_dgm), OUStringToOString(m_pImpl->m_rExport.GetFilter().getNamespaceURL(OOX_NS(dmlDiagram)), RTL_TEXTENCODING_UTF8).getStr(),
+                         FSNS(XML_xmlns, XML_r), OUStringToOString(m_pImpl->m_rExport.GetFilter().getNamespaceURL(OOX_NS(officeRel)), RTL_TEXTENCODING_UTF8).getStr(),
                          FSNS(XML_r, XML_dm), dataRelId.getStr(),
                          FSNS(XML_r, XML_lo), layoutRelId.getStr(),
                          FSNS(XML_r, XML_qs), styleRelId.getStr(),
@@ -1358,7 +1352,7 @@ void DocxSdrExport::writeBoxItemLine(const SvxBoxItem& rBox)
                          FSEND);
     pFS->endElementNS(XML_a, XML_solidFill);
 
-    if (drawing::LineStyle_DASH == pBorderLine->GetBorderLineStyle()) // Line Style is Dash type
+    if (SvxBorderLineStyle::DASHED == pBorderLine->GetBorderLineStyle()) // Line Style is Dash type
         pFS->singleElementNS(XML_a, XML_prstDash, XML_val, "dash", FSEND);
 
     pFS->endElementNS(XML_a, XML_ln);
@@ -1411,7 +1405,7 @@ void DocxSdrExport::writeDMLTextFrame(ww8::Frame* pParentFrame, int nAnchorId, b
         pFS->singleElementNS(XML_wp, XML_docPr, xDocPrAttrListRef);
 
         pFS->startElementNS(XML_a, XML_graphic,
-                            FSNS(XML_xmlns, XML_a), "http://schemas.openxmlformats.org/drawingml/2006/main",
+                            FSNS(XML_xmlns, XML_a), OUStringToOString(m_pImpl->m_rExport.GetFilter().getNamespaceURL(OOX_NS(dml)), RTL_TEXTENCODING_UTF8).getStr(),
                             FSEND);
         pFS->startElementNS(XML_a, XML_graphicData,
                             XML_uri, "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
@@ -1556,8 +1550,8 @@ void DocxSdrExport::writeDMLTextFrame(ww8::Frame* pParentFrame, int nAnchorId, b
         {
             //not the first in the chain, so write the tag as linkedTxbx
             pFS->singleElementNS(XML_wps, XML_linkedTxbx,
-                                 XML_id,  I32S(linkedTextboxesIter->second.nId),
-                                 XML_seq, I32S(linkedTextboxesIter->second.nSeq),
+                                 XML_id,  IS(linkedTextboxesIter->second.nId),
+                                 XML_seq, IS(linkedTextboxesIter->second.nSeq),
                                  FSEND);
             /* no text content should be added to this tag,
                since the textbox is linked, the entire content
@@ -1571,7 +1565,7 @@ void DocxSdrExport::writeDMLTextFrame(ww8::Frame* pParentFrame, int nAnchorId, b
                to this block*/
             //since the text box is linked, it needs an id.
             pFS->startElementNS(XML_wps, XML_txbx,
-                                XML_id,  I32S(linkedTextboxesIter->second.nId),
+                                XML_id,  IS(linkedTextboxesIter->second.nId),
                                 FSEND);
             isTxbxLinked = true ;
         }
@@ -1774,7 +1768,7 @@ bool DocxSdrExport::Impl::checkFrameBtlr(SwNode* pStartNode, bool bDML)
 
     if (bItemSet)
     {
-        const SvxCharRotateItem& rCharRotate = static_cast<const SvxCharRotateItem&>(*pItem);
+        auto& rCharRotate = static_cast<const SvxCharRotateItem&>(*pItem);
         if (rCharRotate.GetValue() == 900)
         {
             if (bDML)
@@ -1789,7 +1783,7 @@ bool DocxSdrExport::Impl::checkFrameBtlr(SwNode* pStartNode, bool bDML)
 
 bool DocxSdrExport::isTextBox(const SwFrameFormat& rFrameFormat)
 {
-    return m_pImpl->m_aTextBoxes.find(&rFrameFormat) != m_pImpl->m_aTextBoxes.end();
+    return SwTextBoxHelper::isTextBox(&rFrameFormat, RES_FLYFRMFMT);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -23,14 +23,15 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <oox/ole/axcontrol.hxx>
-#include <oox/ole/oleobjecthelper.hxx>
-#include <oox/vml/vmlshapecontainer.hxx>
+
+#include <com/sun/star/uno/Reference.hxx>
 #include <oox/dllapi.h>
+#include <oox/ole/oleobjecthelper.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
 
 namespace com { namespace sun { namespace star {
     namespace awt { struct Rectangle; }
-    namespace awt { class XControlModel; }
     namespace drawing { class XDrawPage; }
     namespace drawing { class XShape; }
     namespace drawing { class XShapes; }
@@ -39,13 +40,14 @@ namespace com { namespace sun { namespace star {
 namespace oox {
     namespace core { class XmlFilterBase; }
     namespace ole { class EmbeddedControl; }
+    namespace ole { class EmbeddedForm; }
+    namespace vml { class ShapeContainer; }
 }
 
 namespace oox {
 namespace vml {
 
 class ShapeBase;
-struct ClientData;
 
 
 /** Enumerates different types of VML drawings. */
@@ -182,17 +184,15 @@ public:
 
 private:
     typedef ::std::vector< sal_Int32 >                      BlockIdVector;
-    typedef ::std::unique_ptr< ::oox::ole::EmbeddedForm >   EmbeddedFormPtr;
-    typedef ::std::unique_ptr< ShapeContainer >             ShapeContainerPtr;
     typedef ::std::map< OUString, OleObjectInfo >    OleObjectInfoMap;
     typedef ::std::map< OUString, ControlInfo >      ControlInfoMap;
 
     ::oox::core::XmlFilterBase& mrFilter;   ///< Filter object that imports/exports the VML drawing.
     css::uno::Reference< css::drawing::XDrawPage >
                         mxDrawPage;         ///< UNO draw page used to insert the shapes.
-    mutable EmbeddedFormPtr mxCtrlForm;     ///< The control form used to process embedded controls.
+    mutable std::unique_ptr<::oox::ole::EmbeddedForm> mxCtrlForm;     ///< The control form used to process embedded controls.
     mutable BlockIdVector maBlockIds;       ///< Block identifiers used by this drawing.
-    ShapeContainerPtr   mxShapes;           ///< All shapes and shape templates.
+    std::unique_ptr<ShapeContainer>   mxShapes;           ///< All shapes and shape templates.
     OleObjectInfoMap    maOleObjects;       ///< Info about all embedded OLE objects, mapped by shape id.
     ControlInfoMap      maControls;         ///< Info about all embedded form controls, mapped by control name.
     const DrawingType   meType;             ///< Application type containing the drawing.

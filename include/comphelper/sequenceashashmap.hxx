@@ -47,7 +47,7 @@ struct SequenceAsHashMapBase : public std::unordered_map<
 {
 };
 
-class COMPHELPER_DLLPUBLIC SequenceAsHashMap : public SequenceAsHashMapBase
+class SAL_WARN_UNUSED COMPHELPER_DLLPUBLIC SequenceAsHashMap : public SequenceAsHashMapBase
 {
 
     public:
@@ -76,11 +76,6 @@ class COMPHELPER_DLLPUBLIC SequenceAsHashMap : public SequenceAsHashMapBase
         /** @see    operator<<(const css::uno::Sequence< css::beans::NamedValue >&)
          */
         SequenceAsHashMap(const css::uno::Sequence< css::beans::NamedValue >& lSource);
-
-
-        /** @short  not really used but maybe useful :-)
-         */
-        ~SequenceAsHashMap();
 
 
         /** @short  fill this map from the given
@@ -235,6 +230,30 @@ class COMPHELPER_DLLPUBLIC SequenceAsHashMap : public SequenceAsHashMapBase
                 return aDefault;
 
             return aValue;
+        }
+
+        /** @short  check if the specified item exists
+                    and return its value or it returns
+                    an empty css::uno::Any.
+
+            @descr  If a value should be extracted only in case
+                    the requested property exists really (without creating
+                    of new items as the index operator of a
+                    hash map does!) this method can be used.
+
+            @param  sKey
+                    key name of the item.
+
+            @return The value of the specified property or
+                    an empty css::uno::Any.
+         */
+        css::uno::Any getValue(const OUString& sKey) const
+        {
+            const_iterator pIt = find(sKey);
+            if (pIt == end())
+                return css::uno::Any();
+
+            return pIt->second;
         }
 
 

@@ -31,7 +31,7 @@
 #include <cppuhelper/weak.hxx>
 #include <rtl/ustring.hxx>
 #include <sal/types.h>
-#include "xmlsecurity/biginteger.hxx"
+#include "biginteger.hxx"
 
 #include "serialnumberadapter.hxx"
 
@@ -47,29 +47,24 @@ public:
     Service& operator=(const Service&) = delete;
 
 private:
-    virtual ~Service() {}
+    virtual ~Service() override {}
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     { return xml_security::serial_number_adapter::implementationName(); }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     { return cppu::supportsService(this, ServiceName); }
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override
     { return xml_security::serial_number_adapter::serviceNames(); }
 
     virtual OUString SAL_CALL toString(
-        css::uno::Sequence< sal_Int8 > const & SerialNumber)
-        throw (css::uno::RuntimeException, std::exception) override
-    { return bigIntegerToNumericString(SerialNumber); }
+        css::uno::Sequence< sal_Int8 > const & SerialNumber) override
+    { return xmlsecurity::bigIntegerToNumericString(SerialNumber); }
 
     virtual css::uno::Sequence< sal_Int8 > SAL_CALL toSequence(
-        OUString const & SerialNumber)
-        throw (css::uno::RuntimeException, std::exception) override
-    { return numericStringToBigInteger(SerialNumber); }
+        OUString const & SerialNumber) override
+    { return xmlsecurity::numericStringToBigInteger(SerialNumber); }
 };
 
 }
@@ -82,14 +77,12 @@ xml_security::serial_number_adapter::create(
 }
 
 OUString xml_security::serial_number_adapter::implementationName()
-    throw (css::uno::RuntimeException)
 {
     return OUString("com.sun.star.comp.security.SerialNumberAdapter");
 }
 
 css::uno::Sequence< OUString >
 xml_security::serial_number_adapter::serviceNames()
-    throw (css::uno::RuntimeException)
 {
     css::uno::Sequence< OUString > s { "com.sun.star.security.SerialNumberAdapter" };
     return s;

@@ -21,7 +21,7 @@
 #include <rtl/uuid.h>
 #include "xmlsignature_nssimpl.hxx"
 
-#include "xmldocumentwrapper_xmlsecimpl.hxx"
+#include "xmlsec/xmldocumentwrapper_xmlsecimpl.hxx"
 
 #include "xmlelementwrapper_xmlsecimpl.hxx"
 
@@ -31,7 +31,7 @@
 #include "xmlstreamio.hxx"
 #include "errorcallback.hxx"
 
-#include "xmlsecurity/xmlsec-wrapper.h"
+#include "xmlsec-wrapper.h"
 
 using namespace ::com::sun::star::uno ;
 using namespace ::com::sun::star::lang ;
@@ -45,7 +45,6 @@ using ::com::sun::star::xml::crypto::XXMLSignature ;
 using ::com::sun::star::xml::crypto::XXMLSignatureTemplate ;
 using ::com::sun::star::xml::crypto::XXMLSecurityContext ;
 using ::com::sun::star::xml::crypto::XUriBinding ;
-using ::com::sun::star::xml::crypto::XMLSignatureException ;
 
 XMLSignature_NssImpl::XMLSignature_NssImpl() {
 }
@@ -58,9 +57,7 @@ Reference< XXMLSignatureTemplate >
 SAL_CALL XMLSignature_NssImpl::generate(
     const Reference< XXMLSignatureTemplate >& aTemplate ,
     const Reference< XSecurityEnvironment >& aEnvironment
-) throw( css::xml::crypto::XMLSignatureException,
-         css::uno::SecurityException,
-         css::uno::RuntimeException, std::exception )
+)
 {
     xmlSecKeysMngrPtr pMngr = nullptr ;
     xmlSecDSigCtxPtr pDsigCtx = nullptr ;
@@ -78,11 +75,7 @@ SAL_CALL XMLSignature_NssImpl::generate(
         throw RuntimeException() ;
     }
 
-    Reference< XUnoTunnel > xNodTunnel( xElement , UNO_QUERY ) ;
-    if( !xNodTunnel.is() ) {
-        throw RuntimeException() ;
-    }
-
+    Reference< XUnoTunnel > xNodTunnel( xElement , UNO_QUERY_THROW ) ;
     XMLElementWrapper_XmlSecImpl* pElement =
         reinterpret_cast<XMLElementWrapper_XmlSecImpl*>(
             sal::static_int_cast<sal_uIntPtr>(
@@ -102,10 +95,7 @@ SAL_CALL XMLSignature_NssImpl::generate(
     }
 
     //Get Keys Manager
-    Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY ) ;
-    if( !xSecTunnel.is() ) {
-         throw RuntimeException() ;
-    }
+    Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY_THROW ) ;
 
     // the key manager should be retrieved from SecurityEnvironment, instead of SecurityContext
 
@@ -163,9 +153,7 @@ Reference< XXMLSignatureTemplate >
 SAL_CALL XMLSignature_NssImpl::validate(
     const Reference< XXMLSignatureTemplate >& aTemplate ,
     const Reference< XXMLSecurityContext >& aSecurityCtx
-) throw( css::uno::RuntimeException,
-         css::uno::SecurityException,
-         css::xml::crypto::XMLSignatureException, std::exception ) {
+) {
     xmlSecKeysMngrPtr pMngr = nullptr ;
     xmlSecDSigCtxPtr pDsigCtx = nullptr ;
     xmlNodePtr pNode = nullptr ;
@@ -182,11 +170,7 @@ SAL_CALL XMLSignature_NssImpl::validate(
     if( !xElement.is() )
         throw RuntimeException() ;
 
-    Reference< XUnoTunnel > xNodTunnel( xElement , UNO_QUERY ) ;
-    if( !xNodTunnel.is() ) {
-        throw RuntimeException() ;
-    }
-
+    Reference< XUnoTunnel > xNodTunnel( xElement , UNO_QUERY_THROW ) ;
     XMLElementWrapper_XmlSecImpl* pElement =
         reinterpret_cast<XMLElementWrapper_XmlSecImpl*>(
             sal::static_int_cast<sal_uIntPtr>(
@@ -214,11 +198,7 @@ SAL_CALL XMLSignature_NssImpl::validate(
         Reference< XSecurityEnvironment > aEnvironment = aSecurityCtx->getSecurityEnvironmentByIndex(i);
 
         //Get Keys Manager
-        Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY ) ;
-        if( !xSecTunnel.is() ) {
-             throw RuntimeException() ;
-        }
-
+        Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY_THROW ) ;
         SecurityEnvironment_NssImpl* pSecEnv =
             reinterpret_cast<SecurityEnvironment_NssImpl*>(
                 sal::static_int_cast<sal_uIntPtr>(
@@ -284,12 +264,12 @@ SAL_CALL XMLSignature_NssImpl::validate(
 }
 
 /* XServiceInfo */
-OUString SAL_CALL XMLSignature_NssImpl::getImplementationName() throw( RuntimeException, std::exception ) {
+OUString SAL_CALL XMLSignature_NssImpl::getImplementationName() {
     return impl_getImplementationName() ;
 }
 
 /* XServiceInfo */
-sal_Bool SAL_CALL XMLSignature_NssImpl::supportsService( const OUString& serviceName) throw( RuntimeException, std::exception ) {
+sal_Bool SAL_CALL XMLSignature_NssImpl::supportsService( const OUString& serviceName) {
     Sequence< OUString > seqServiceNames = getSupportedServiceNames() ;
     const OUString* pArray = seqServiceNames.getConstArray() ;
     for( sal_Int32 i = 0 ; i < seqServiceNames.getLength() ; i ++ ) {
@@ -300,7 +280,7 @@ sal_Bool SAL_CALL XMLSignature_NssImpl::supportsService( const OUString& service
 }
 
 /* XServiceInfo */
-Sequence< OUString > SAL_CALL XMLSignature_NssImpl::getSupportedServiceNames() throw( RuntimeException, std::exception ) {
+Sequence< OUString > SAL_CALL XMLSignature_NssImpl::getSupportedServiceNames() {
     return impl_getSupportedServiceNames() ;
 }
 
@@ -311,19 +291,16 @@ Sequence< OUString > XMLSignature_NssImpl::impl_getSupportedServiceNames() {
     return seqServiceNames ;
 }
 
-OUString XMLSignature_NssImpl::impl_getImplementationName() throw( RuntimeException ) {
+OUString XMLSignature_NssImpl::impl_getImplementationName() {
     return OUString("com.sun.star.xml.security.bridge.xmlsec.XMLSignature_NssImpl") ;
 }
 
 //Helper for registry
-Reference< XInterface > SAL_CALL XMLSignature_NssImpl::impl_createInstance( const Reference< XMultiServiceFactory >& ) throw( RuntimeException ) {
+Reference< XInterface > SAL_CALL XMLSignature_NssImpl::impl_createInstance( const Reference< XMultiServiceFactory >& ) {
     return Reference< XInterface >( *new XMLSignature_NssImpl ) ;
 }
 
 Reference< XSingleServiceFactory > XMLSignature_NssImpl::impl_createFactory( const Reference< XMultiServiceFactory >& aServiceManager ) {
-    //Reference< XSingleServiceFactory > xFactory ;
-    //xFactory = ::cppu::createSingleFactory( aServiceManager , impl_getImplementationName , impl_createInstance , impl_getSupportedServiceNames ) ;
-    //return xFactory ;
     return ::cppu::createSingleFactory( aServiceManager , impl_getImplementationName() , impl_createInstance , impl_getSupportedServiceNames() ) ;
 }
 

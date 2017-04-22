@@ -41,6 +41,7 @@ $(eval $(call gb_Library_use_libraries,fwi,\
     cppuhelper \
     i18nlangtag \
     sal \
+    salhelper \
     svl \
     svt \
     tk \
@@ -54,7 +55,6 @@ $(eval $(call gb_Library_add_exception_objects,fwi,\
     framework/source/fwi/classes/converter \
     framework/source/fwi/classes/protocolhandlercache \
     framework/source/fwi/helper/mischelper \
-    framework/source/fwi/helper/networkdomain \
     framework/source/fwi/helper/shareablemutex \
     framework/source/fwi/jobs/configaccess \
     framework/source/fwi/jobs/jobconst \

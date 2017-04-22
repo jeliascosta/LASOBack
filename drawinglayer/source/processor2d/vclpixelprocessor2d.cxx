@@ -53,9 +53,20 @@
 #include <toolkit/helper/vclunohelper.hxx>
 #include <vcl/window.hxx>
 #include <svtools/borderhelper.hxx>
+#include <editeng/borderline.hxx>
 
 #include <com/sun/star/table/BorderLineStyle.hpp>
 
+#if defined(ANDROID)
+namespace std
+{
+template<typename T>
+T round(T x)
+{
+    return ::round(x);
+}
+}
+#endif
 
 using namespace com::sun::star;
 
@@ -165,6 +176,27 @@ namespace drawinglayer
                 return true;
             }
 
+            //Resolves: tdf#105998 if we are a hairline along the very right/bottom edge
+            //of the canvas then distory the polygon inwards one pixel right/bottom so that
+            //the hairline falls inside the paintable area and becomes visible
+            Size aSize = mpOutputDevice->GetOutputSize();
+            basegfx::B2DRange aRange = aLocalPolygon.getB2DRange();
+            basegfx::B2DRange aOutputRange = aRange;
+            aOutputRange.transform(maCurrentTransformation);
+            if (std::round(aOutputRange.getMaxX()) == aSize.Width() || std::round(aOutputRange.getMaxY()) == aSize.Height())
+            {
+                basegfx::B2DRange aOnePixel(0, 0, 1, 1);
+                aOnePixel.transform(maCurrentTransformation);
+                double fXOnePixel = 1.0 / aOnePixel.getMaxX();
+                double fYOnePixel = 1.0 / aOnePixel.getMaxY();
+
+                basegfx::B2DPoint aTopLeft(aRange.getMinX(), aRange.getMinY());
+                basegfx::B2DPoint aTopRight(aRange.getMaxX() - fXOnePixel, aRange.getMinY());
+                basegfx::B2DPoint aBottomLeft(aRange.getMinX(), aRange.getMaxY() - fYOnePixel);
+                basegfx::B2DPoint aBottomRight(aRange.getMaxX() - fXOnePixel, aRange.getMaxY() - fYOnePixel);
+                aLocalPolygon = basegfx::tools::distort(aLocalPolygon, aRange, aTopLeft, aTopRight, aBottomLeft, aBottomRight);
+            }
+
             const basegfx::BColor aLineColor(maBColorModifierStack.getModifiedColor(rSource.getBColor()));
 
             mpOutputDevice->SetFillColor();
@@ -182,16 +214,18 @@ namespace drawinglayer
 
         bool VclPixelProcessor2D::tryDrawPolygonStrokePrimitive2DDirect(const drawinglayer::primitive2d::PolygonStrokePrimitive2D& rSource, double fTransparency)
         {
-            basegfx::B2DPolygon aLocalPolygon(rSource.getB2DPolygon());
-
-            if(!aLocalPolygon.count())
+            if(!rSource.getB2DPolygon().count())
             {
                 // no geometry, done
                 return true;
             }
 
-            aLocalPolygon = basegfx::tools::simplifyCurveSegments(aLocalPolygon);
+            // get geometry data, prepare hairline data
+            basegfx::B2DPolygon aLocalPolygon(rSource.getB2DPolygon());
             basegfx::B2DPolyPolygon aHairLinePolyPolygon;
+
+            // simplify curve segments
+            aLocalPolygon = basegfx::tools::simplifyCurveSegments(aLocalPolygon);
 
             if(rSource.getStrokeAttribute().isDefault() || 0.0 == rSource.getStrokeAttribute().getFullDotDashLen())
             {
@@ -304,14 +338,14 @@ namespace drawinglayer
 
             switch (rSource.getStyle())
             {
-                case table::BorderLineStyle::SOLID:
-                case table::BorderLineStyle::DOUBLE_THIN:
+                case SvxBorderLineStyle::SOLID:
+                case SvxBorderLineStyle::DOUBLE_THIN:
                 {
                     const basegfx::BColor aLineColor =
                         maBColorModifierStack.getModifiedColor(rSource.getRGBColorLeft());
                     double nThick = rtl::math::round(rSource.getLeftWidth());
 
-                    bool bDouble = rSource.getStyle() == table::BorderLineStyle::DOUBLE_THIN;
+                    bool bDouble = rSource.getStyle() == SvxBorderLineStyle::DOUBLE_THIN;
 
                     basegfx::B2DPolygon aTarget;
 
@@ -408,11 +442,11 @@ namespace drawinglayer
                     return true;
                 }
                 break;
-                case table::BorderLineStyle::DOTTED:
-                case table::BorderLineStyle::DASHED:
-                case table::BorderLineStyle::DASH_DOT:
-                case table::BorderLineStyle::DASH_DOT_DOT:
-                case table::BorderLineStyle::FINE_DASHED:
+                case SvxBorderLineStyle::DOTTED:
+                case SvxBorderLineStyle::DASHED:
+                case SvxBorderLineStyle::DASH_DOT:
+                case SvxBorderLineStyle::DASH_DOT_DOT:
+                case SvxBorderLineStyle::FINE_DASHED:
                 {
                     std::vector<double> aPattern =
                         svtools::GetLineDashing(rSource.getStyle(), rSource.getPatternScale()*10.0);
@@ -632,12 +666,12 @@ namespace drawinglayer
                             maBColorModifierStack))
                         {
                             // fallback to decomposition (MetaFile)
-                            process(rWrongSpellPrimitive.get2DDecomposition(getViewInformation2D()));
+                            process(rWrongSpellPrimitive);
                         }
                     }
                     else
                     {
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
                     break;
                 }
@@ -656,7 +690,7 @@ namespace drawinglayer
                     }
                     else
                     {
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
 
                     // restore DrawMode
@@ -679,7 +713,7 @@ namespace drawinglayer
                     }
                     else
                     {
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
 
                     // restore DrawMode
@@ -756,7 +790,7 @@ namespace drawinglayer
                         else
                         {
                             // use the primitive decomposition of the metafile
-                            process(rPolygonCandidate.get2DDecomposition(getViewInformation2D()));
+                            process(rPolygonCandidate);
                         }
                     }
                     break;
@@ -836,7 +870,7 @@ namespace drawinglayer
                     {
                         // use new Metafile decomposition
                         // TODO EMF+ stuffed into METACOMMENT support required
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
                     else
                     {
@@ -1029,7 +1063,7 @@ namespace drawinglayer
                         // DBG_UNHANDLED_EXCEPTION();
 
                         // process recursively and use the decomposition as Bitmap
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
 
                     break;
@@ -1061,7 +1095,7 @@ namespace drawinglayer
                         mnPolygonStrokePrimitive2D++;
 
                         // with AA there is no need to handle thin lines special
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
 
                         // leave PolygonStrokePrimitive2D
                         mnPolygonStrokePrimitive2D--;
@@ -1088,7 +1122,7 @@ namespace drawinglayer
                     {
                         // if AA is used (or ignore smoothing is on), there is no need to smooth
                         // hatch painting, use decomposition
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
                     else
                     {
@@ -1120,7 +1154,7 @@ namespace drawinglayer
                         mpOutputDevice->SetLineColor(Color(aHatchColor));
 
                         // get hatch style
-                        HatchStyle eHatchStyle(HATCH_SINGLE);
+                        HatchStyle eHatchStyle(HatchStyle::Single);
 
                         switch(rFillHatchAttributes.getStyle())
                         {
@@ -1130,12 +1164,12 @@ namespace drawinglayer
                             }
                             case attribute::HatchStyle::Double :
                             {
-                                eHatchStyle = HATCH_DOUBLE;
+                                eHatchStyle = HatchStyle::Double;
                                 break;
                             }
                             case attribute::HatchStyle::Triple :
                             {
-                                eHatchStyle = HATCH_TRIPLE;
+                                eHatchStyle = HatchStyle::Triple;
                                 break;
                             }
                         }
@@ -1169,7 +1203,7 @@ namespace drawinglayer
 
                     // create rectangle for fill
                     const basegfx::B2DRange& aViewport(getViewInformation2D().getDiscreteViewport());
-                    const Rectangle aRectangle(
+                    const tools::Rectangle aRectangle(
                         (sal_Int32)floor(aViewport.getMinX()), (sal_Int32)floor(aViewport.getMinY()),
                         (sal_Int32)ceil(aViewport.getMaxX()), (sal_Int32)ceil(aViewport.getMaxY()));
                     mpOutputDevice->DrawRect(aRectangle);
@@ -1195,12 +1229,12 @@ namespace drawinglayer
                     // (Not true, also used at least for the drawing of dragged column and row boundaries in SC.)
                     // Set OutDev to XOR and switch AA off (XOR does not work with AA)
                     mpOutputDevice->Push();
-                    mpOutputDevice->SetRasterOp( ROP_XOR );
+                    mpOutputDevice->SetRasterOp( RasterOp::Xor );
                     const AntialiasingFlags nAntiAliasing(mpOutputDevice->GetAntialiasing());
                     mpOutputDevice->SetAntialiasing(nAntiAliasing & ~AntialiasingFlags::EnableB2dDraw);
 
                     // process content recursively
-                    process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                    process(rCandidate);
 
                     // restore OutDev
                     mpOutputDevice->Pop();
@@ -1235,10 +1269,14 @@ namespace drawinglayer
 
                     if (!tryDrawBorderLinePrimitive2DDirect(rBorder))
                     {
-                        if (rBorder.getStyle() == table::BorderLineStyle::DOUBLE)
-                            process(rBorder.createDecomposition(getViewInformation2D(), true));
+                        if (rBorder.getStyle() == SvxBorderLineStyle::DOUBLE)
+                        {
+                            primitive2d::Primitive2DContainer aContainer;
+                            rBorder.createDecomposition(aContainer, getViewInformation2D(), true);
+                            process(aContainer);
+                        }
                         else
-                            process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                            process(rCandidate);
                     }
 
                     mpOutputDevice->SetAntialiasing(nAntiAliasing);
@@ -1248,7 +1286,7 @@ namespace drawinglayer
                 {
                     SAL_INFO("drawinglayer", "default case for " << drawinglayer::primitive2d::idToString(rCandidate.getPrimitive2DID()));
                     // process recursively
-                    process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                    process(rCandidate);
                     break;
                 }
             }

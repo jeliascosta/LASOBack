@@ -28,6 +28,7 @@
 #include <vcl/svapp.hxx>
 #include <vcl/alpha.hxx>
 #include <osl/endian.h>
+#include <o3tl/make_unique.hxx>
 
 namespace vcl
 {
@@ -74,23 +75,26 @@ private:
     std::vector<vcl::PNGReader::ChunkData>::iterator maChunkIter;
     std::vector<sal_uInt8>::iterator maDataIter;
 
-    Bitmap*             mpBmp;
-    BitmapWriteAccess*  mpAcc;
-    Bitmap*             mpMaskBmp;
-    AlphaMask*          mpAlphaMask;
-    BitmapWriteAccess*  mpMaskAcc;
+    std::unique_ptr<Bitmap>    mpBmp;
+    Bitmap::ScopedWriteAccess  mxAcc;
+    std::unique_ptr<Bitmap>    mpMaskBmp;
+    Bitmap::ScopedWriteAccess  mxMaskAcc;
+    std::unique_ptr<AlphaMask> mpAlphaMask;
+    AlphaMask::ScopedWriteAccess mxAlphaAcc;
+    BitmapWriteAccess*         mpMaskAcc;
+
     ZCodec              mpZCodec;
     sal_uInt8*          mpInflateInBuf; // as big as the size of a scanline + alphachannel + 1
     sal_uInt8*          mpScanPrior;    // pointer to the latest scanline
     sal_uInt8*          mpTransTab;     // for transparency in images with palette colortype
     sal_uInt8*          mpScanCurrent;  // pointer into the current scanline
     sal_uInt8*          mpColorTable;
-    sal_Size            mnStreamSize;   // estimate of PNG file size
+    std::size_t         mnStreamSize;   // estimate of PNG file size
     sal_uInt32          mnChunkType;    // Type of current PNG chunk
     sal_Int32           mnChunkLen;     // Length of current PNG chunk
     Size                maOrigSize;     // pixel size of the full image
     Size                maTargetSize;   // pixel size of the result image
-    Size                maPhysSize;     // preferred size in MAP_100TH_MM units
+    Size                maPhysSize;     // preferred size in MapUnit::Map100thMM units
     sal_uInt32          mnBPP;          // number of bytes per pixel
     sal_uInt32          mnScansize;     // max size of scanline
     sal_uInt32          mnYpos;         // latest y position in full image
@@ -165,10 +169,6 @@ public:
 
 PNGReaderImpl::PNGReaderImpl( SvStream& rPNGStream )
 :   mrPNGStream( rPNGStream ),
-    mpBmp           ( nullptr ),
-    mpAcc           ( nullptr ),
-    mpMaskBmp       ( nullptr ),
-    mpAlphaMask     ( nullptr ),
     mpMaskAcc       ( nullptr ),
     mpInflateInBuf  ( nullptr ),
     mpScanPrior     ( nullptr ),
@@ -220,7 +220,7 @@ PNGReaderImpl::PNGReaderImpl( SvStream& rPNGStream )
     maChunkIter = maChunkSeq.begin();
 
     // estimate PNG file size (to allow sanity checks)
-    const sal_Size nStreamPos = mrPNGStream.Tell();
+    const std::size_t nStreamPos = mrPNGStream.Tell();
     mrPNGStream.Seek( STREAM_SEEK_TO_END );
     mnStreamSize = mrPNGStream.Tell();
     mrPNGStream.Seek( nStreamPos );
@@ -246,9 +246,6 @@ PNGReaderImpl::~PNGReaderImpl()
     if( mpColorTable != mpDefaultColorTable )
         delete[] mpColorTable;
 
-    delete mpBmp;
-    delete mpAlphaMask;
-    delete mpMaskBmp;
     delete[] mpTransTab;
     delete[] mpInflateInBuf;
     delete[] mpScanPrior;
@@ -278,7 +275,7 @@ bool PNGReaderImpl::ReadNextChunk()
         rChunkData.nType = mnChunkType;
 
         // fdo#61847 truncate over-long, trailing chunks
-        const sal_Size nStreamPos = mrPNGStream.Tell();
+        const std::size_t nStreamPos = mrPNGStream.Tell();
         if( mnChunkLen < 0 || nStreamPos + mnChunkLen >= mnStreamSize )
             mnChunkLen = mnStreamSize - nStreamPos;
 
@@ -297,7 +294,7 @@ bool PNGReaderImpl::ReadNextChunk()
             sal_Int32 nBytesRead = 0;
             do {
                 sal_uInt8* pPtr = &rChunkData.aData[ nBytesRead ];
-                nBytesRead += mrPNGStream.Read( pPtr, mnChunkLen - nBytesRead );
+                nBytesRead += mrPNGStream.ReadBytes(pPtr, mnChunkLen - nBytesRead);
             } while ( ( nBytesRead < mnChunkLen ) && ( mrPNGStream.GetError() == ERRCODE_NONE ) );
 
             nCRC32 = rtl_crc32( nCRC32, &rChunkData.aData[ 0 ], mnChunkLen );
@@ -408,7 +405,7 @@ BitmapEx PNGReaderImpl::GetBitmapEx( const Size& rPreviewSizeHint )
                     {
                         mbpHYs = true;
 
-                        // convert into MAP_100TH_MM
+                        // convert into MapUnit::Map100thMM
                         maPhysSize.Width()  = (sal_Int32)( (100000.0 * maOrigSize.Width()) / nXPixelPerMeter );
                         maPhysSize.Height() = (sal_Int32)( (100000.0 * maOrigSize.Height()) / nYPixelPerMeter );
                     }
@@ -423,21 +420,10 @@ BitmapEx PNGReaderImpl::GetBitmapEx( const Size& rPreviewSizeHint )
     }
 
     // release write access of the bitmaps
-    if ( mpAcc )
-    {
-        Bitmap::ReleaseAccess( mpAcc );
-        mpAcc = nullptr;
-    }
-
-    if ( mpMaskAcc )
-    {
-        if ( mpAlphaMask )
-            mpAlphaMask->ReleaseAccess( mpMaskAcc );
-        else if ( mpMaskBmp )
-            Bitmap::ReleaseAccess( mpMaskAcc );
-
-        mpMaskAcc = nullptr;
-    }
+    mxAcc.reset();
+    mxMaskAcc.reset();
+    mxAlphaAcc.reset();
+    mpMaskAcc = nullptr;
 
     // return the resulting BitmapEx
     BitmapEx aRet;
@@ -455,7 +441,7 @@ BitmapEx PNGReaderImpl::GetBitmapEx( const Size& rPreviewSizeHint )
 
         if ( mbpHYs && maPhysSize.Width() && maPhysSize.Height() )
         {
-            aRet.SetPrefMapMode( MAP_100TH_MM );
+            aRet.SetPrefMapMode( MapUnit::Map100thMM );
             aRet.SetPrefSize( maPhysSize );
         }
     }
@@ -610,6 +596,16 @@ bool PNGReaderImpl::ImplReadHeader( const Size& rPreviewSizeHint )
     if ( nScansize64 > SAL_MAX_UINT32 )
         return false;
 
+    // assume max theoretical compression of 1:1032
+    sal_uInt64 nMinSizeRequired = (nScansize64 * maOrigSize.Height()) / 1032;
+    if (nMinSizeRequired > mnStreamSize)
+    {
+        SAL_WARN("vcl.gdi", "overlarge png dimensions: " <<
+                 maOrigSize.Width() << " x " << maOrigSize.Height() << " depth: " << (int)mnPngDepth <<
+                 " couldn't be supplied by file length " << mnStreamSize << " at least " << nMinSizeRequired << " needed ");
+        return false;
+    }
+
     mnScansize = static_cast< sal_uInt32 >( nScansize64 );
 
     // calculate target size from original size and the preview hint
@@ -629,16 +625,17 @@ bool PNGReaderImpl::ImplReadHeader( const Size& rPreviewSizeHint )
         }
 
         if( aPreviewSize.Width() < maOrigSize.Width() && aPreviewSize.Height() < maOrigSize.Height() ) {
-            OSL_TRACE("preview size %ldx%ld", aPreviewSize.Width(), aPreviewSize.Height() );
+            SAL_INFO( "vcl.gdi", "preview size " << aPreviewSize.Width() << " " << aPreviewSize.Height() );
 
             for( int i = 1; i < 5; ++i )
-                {
-                    if( (maTargetSize.Width() >> i) < aPreviewSize.Width() )
-                        break;
-                    if( (maTargetSize.Height() >> i) < aPreviewSize.Height() )
-                        break;
-                    mnPreviewShift = i;
-                }
+            {
+                if( (maTargetSize.Width() >> i) < aPreviewSize.Width() )
+                    break;
+                if( (maTargetSize.Height() >> i) < aPreviewSize.Height() )
+                    break;
+                mnPreviewShift = i;
+            }
+
             mnPreviewMask = (1 << mnPreviewShift) - 1;
         }
     }
@@ -665,17 +662,18 @@ bool PNGReaderImpl::ImplReadHeader( const Size& rPreviewSizeHint )
     if ( !mpInflateInBuf || !mpScanPrior )
         return false;
 
-    mpBmp = new Bitmap( maTargetSize, mnTargetDepth );
-    mpAcc = mpBmp->AcquireWriteAccess();
-    if( !mpAcc )
+    mpBmp = o3tl::make_unique<Bitmap>( maTargetSize, mnTargetDepth );
+    mxAcc = Bitmap::ScopedWriteAccess(*mpBmp);
+    if (!mxAcc)
         return false;
 
     if ( mbAlphaChannel )
     {
-        mpAlphaMask = new AlphaMask( maTargetSize );
+        mpAlphaMask = o3tl::make_unique<AlphaMask>( maTargetSize );
         mpAlphaMask->Erase( 128 );
-        mpMaskAcc = mpAlphaMask->AcquireWriteAccess();
-        if( !mpMaskAcc )
+        mxAlphaAcc = AlphaMask::ScopedWriteAccess(*mpAlphaMask);
+        mpMaskAcc = mxAlphaAcc.get();
+        if (!mpMaskAcc)
             return false;
     }
 
@@ -700,9 +698,9 @@ void PNGReaderImpl::ImplGetGrayPalette( sal_uInt16 nBitDepth )
     if( nBitDepth == 2 )
         nPaletteEntryCount = 16;
 
-    mpAcc->SetPaletteEntryCount( nPaletteEntryCount );
+    mxAcc->SetPaletteEntryCount( nPaletteEntryCount );
     for ( sal_uInt32 i = 0, nStart = 0; nStart < 256; i++, nStart += nAdd )
-        mpAcc->SetPaletteColor( (sal_uInt16)i, BitmapColor( mpColorTable[ nStart ],
+        mxAcc->SetPaletteColor( (sal_uInt16)i, BitmapColor( mpColorTable[ nStart ],
             mpColorTable[ nStart ], mpColorTable[ nStart ] ) );
 }
 
@@ -710,17 +708,17 @@ bool PNGReaderImpl::ImplReadPalette()
 {
     sal_uInt16 nCount = static_cast<sal_uInt16>( mnChunkLen / 3 );
 
-    if ( ( ( mnChunkLen % 3 ) == 0 ) && ( ( 0 < nCount ) && ( nCount <= 256 ) ) && mpAcc )
+    if ( ( ( mnChunkLen % 3 ) == 0 ) && ( ( 0 < nCount ) && ( nCount <= 256 ) ) && mxAcc )
     {
         mbPalette = true;
-        mpAcc->SetPaletteEntryCount( (sal_uInt16) nCount );
+        mxAcc->SetPaletteEntryCount( nCount );
 
         for ( sal_uInt16 i = 0; i < nCount; i++ )
         {
             sal_uInt8 nRed =   mpColorTable[ *maDataIter++ ];
             sal_uInt8 nGreen = mpColorTable[ *maDataIter++ ];
             sal_uInt8 nBlue =  mpColorTable[ *maDataIter++ ];
-            mpAcc->SetPaletteColor( i, Color( nRed, nGreen, nBlue ) );
+            mxAcc->SetPaletteColor( i, Color( nRed, nGreen, nBlue ) );
         }
     }
     else
@@ -789,13 +787,15 @@ bool PNGReaderImpl::ImplReadTransparent()
     {
         if( bNeedAlpha)
         {
-            mpAlphaMask = new AlphaMask( maTargetSize );
-            mpMaskAcc = mpAlphaMask->AcquireWriteAccess();
+            mpAlphaMask = o3tl::make_unique<AlphaMask>( maTargetSize );
+            mxAlphaAcc = AlphaMask::ScopedWriteAccess(*mpAlphaMask);
+            mpMaskAcc = mxAlphaAcc.get();
         }
         else
         {
-            mpMaskBmp = new Bitmap( maTargetSize, 1 );
-            mpMaskAcc = mpMaskBmp->AcquireWriteAccess();
+            mpMaskBmp = o3tl::make_unique<Bitmap>( maTargetSize, 1 );
+            mxMaskAcc = Bitmap::ScopedWriteAccess(*mpMaskBmp);
+            mpMaskAcc = mxMaskAcc.get();
         }
         mbTransparent = (mpMaskAcc != nullptr);
         if( !mbTransparent )
@@ -841,9 +841,9 @@ void PNGReaderImpl::ImplGetBackground()
             if ( mnChunkLen == 1 )
             {
                 sal_uInt16 nCol = *maDataIter++;
-                if ( nCol < mpAcc->GetPaletteEntryCount() )
+                if ( nCol < mxAcc->GetPaletteEntryCount() )
                 {
-                    mpAcc->Erase( mpAcc->GetPaletteColor( (sal_uInt8)nCol ) );
+                    mxAcc->Erase( mxAcc->GetPaletteColor( (sal_uInt8)nCol ) );
                     break;
                 }
             }
@@ -858,7 +858,7 @@ void PNGReaderImpl::ImplGetBackground()
                 // the color type 0 and 4 is always greyscale,
                 // so the return value can be used as index
                 sal_uInt8 nIndex = ImplScaleColor();
-                mpAcc->Erase( mpAcc->GetPaletteColor( nIndex ) );
+                mxAcc->Erase( mxAcc->GetPaletteColor( nIndex ) );
             }
         }
         break;
@@ -871,7 +871,7 @@ void PNGReaderImpl::ImplGetBackground()
                 sal_uInt8 nRed = ImplScaleColor();
                 sal_uInt8 nGreen = ImplScaleColor();
                 sal_uInt8 nBlue = ImplScaleColor();
-                mpAcc->Erase( Color( nRed, nGreen, nBlue ) );
+                mxAcc->Erase( Color( nRed, nGreen, nBlue ) );
             }
         }
         break;
@@ -1075,7 +1075,7 @@ void PNGReaderImpl::ImplApplyFilter()
         }
         break;
 
-        case 4: // Scanline Filter Type "PaethPredictor"
+        case 4: // Scanline Filter Type "PathPredictor"
         {
             sal_uInt8* p1 = mpInflateInBuf + 1;
             const sal_uInt8* p2 = mpScanPrior + 1;
@@ -1093,8 +1093,8 @@ void PNGReaderImpl::ImplApplyFilter()
                 int nb = *(p3++);
                 int nc = *(p4++);
 
-                int npa = nb - (int)nc;
-                int npb = na - (int)nc;
+                int npa = nb - nc;
+                int npb = na - nc;
                 int npc = npa + npb;
 
                 if( npa < 0 )
@@ -1137,9 +1137,9 @@ namespace
         return nIndex;
     }
 
-    void SanitizePaletteIndexes(sal_uInt8* pEntries, int nLen, BitmapWriteAccess* pAcc)
+    void SanitizePaletteIndexes(sal_uInt8* pEntries, int nLen, const Bitmap::ScopedWriteAccess& rAcc)
     {
-        sal_uInt16 nPaletteEntryCount = pAcc->GetPaletteEntryCount();
+        sal_uInt16 nPaletteEntryCount = rAcc->GetPaletteEntryCount();
         for (int nX = 0; nX < nLen; ++nX)
         {
             if (pEntries[nX] >= nPaletteEntryCount)
@@ -1169,15 +1169,15 @@ void PNGReaderImpl::ImplDrawScanline( sal_uInt32 nXStart, sal_uInt32 nXAdd )
     const sal_uInt32 nY = mnYpos >> mnPreviewShift;
 
     sal_uInt8* pTmp = mpInflateInBuf + 1;
-    if ( mpAcc->HasPalette() ) // alphachannel is not allowed by pictures including palette entries
+    if ( mxAcc->HasPalette() ) // alphachannel is not allowed by pictures including palette entries
     {
-        switch ( mpAcc->GetBitCount() )
+        switch ( mxAcc->GetBitCount() )
         {
             case 1 :
             {
                 if ( mbTransparent )
                 {
-                    for ( sal_Int32 nX = nXStart, nShift = 0; nX < maOrigSize.Width(); nX += nXAdd )
+                    for ( long nX = nXStart, nShift = 0; nX < maOrigSize.Width(); nX += nXAdd )
                     {
                         sal_uInt8 nCol;
                         nShift = (nShift - 1) & 7;
@@ -1192,7 +1192,7 @@ void PNGReaderImpl::ImplDrawScanline( sal_uInt32 nXStart, sal_uInt32 nXAdd )
                 }
                 else
                 {   // ScanlineFormat::N1BitMsbPal
-                    for ( sal_Int32 nX = nXStart, nShift = 0; nX < maOrigSize.Width(); nX += nXAdd )
+                    for ( long nX = nXStart, nShift = 0; nX < maOrigSize.Width(); nX += nXAdd )
                     {
                         nShift = (nShift - 1) & 7;
 
@@ -1215,7 +1215,7 @@ void PNGReaderImpl::ImplDrawScanline( sal_uInt32 nXStart, sal_uInt32 nXAdd )
                 {
                     if ( mnPngDepth == 4 )  // check if source has a two bit pixel format
                     {
-                        for ( sal_Int32 nX = nXStart, nXIndex = 0; nX < maOrigSize.Width(); nX += nXAdd, ++nXIndex )
+                        for ( long nX = nXStart, nXIndex = 0; nX < maOrigSize.Width(); nX += nXAdd, ++nXIndex )
                         {
                             if( nXIndex & 1 )
                             {
@@ -1230,7 +1230,7 @@ void PNGReaderImpl::ImplDrawScanline( sal_uInt32 nXStart, sal_uInt32 nXAdd )
                     }
                     else // if ( mnPngDepth == 2 )
                     {
-                        for ( sal_Int32 nX = nXStart, nXIndex = 0; nX < maOrigSize.Width(); nX += nXAdd, nXIndex++ )
+                        for ( long nX = nXStart, nXIndex = 0; nX < maOrigSize.Width(); nX += nXAdd, nXIndex++ )
                         {
                             sal_uInt8 nCol;
                             switch( nXIndex & 3 )
@@ -1264,7 +1264,7 @@ void PNGReaderImpl::ImplDrawScanline( sal_uInt32 nXStart, sal_uInt32 nXAdd )
                 {
                     if ( mnPngDepth == 4 )  // maybe the source is a two bitmap graphic
                     {   // ScanlineFormat::N4BitLsnPal
-                        for ( sal_Int32 nX = nXStart, nXIndex = 0; nX < maOrigSize.Width(); nX += nXAdd, nXIndex++ )
+                        for ( long nX = nXStart, nXIndex = 0; nX < maOrigSize.Width(); nX += nXAdd, nXIndex++ )
                         {
                             if( nXIndex & 1 )
                                 ImplSetPixel( nY, nX, *pTmp++ & 0x0f );
@@ -1274,7 +1274,7 @@ void PNGReaderImpl::ImplDrawScanline( sal_uInt32 nXStart, sal_uInt32 nXAdd )
                     }
                     else // if ( mnPngDepth == 2 )
                     {
-                        for ( sal_Int32 nX = nXStart, nXIndex = 0; nX < maOrigSize.Width(); nX += nXAdd, nXIndex++ )
+                        for ( long nX = nXStart, nXIndex = 0; nX < maOrigSize.Width(); nX += nXAdd, nXIndex++ )
                         {
                             switch( nXIndex & 3 )
                             {
@@ -1336,8 +1336,8 @@ void PNGReaderImpl::ImplDrawScanline( sal_uInt32 nXStart, sal_uInt32 nXAdd )
                         {
                             int nLineBytes = maOrigSize.Width();
                             if (mbPalette)
-                                SanitizePaletteIndexes(pTmp, nLineBytes, mpAcc);
-                            mpAcc->CopyScanline( nY, pTmp, ScanlineFormat::N8BitPal, nLineBytes );
+                                SanitizePaletteIndexes(pTmp, nLineBytes, mxAcc);
+                            mxAcc->CopyScanline( nY, pTmp, ScanlineFormat::N8BitPal, nLineBytes );
                         }
                         else
                         {
@@ -1428,7 +1428,7 @@ void PNGReaderImpl::ImplDrawScanline( sal_uInt32 nXStart, sal_uInt32 nXAdd )
 
                     // copy scanlines directly to bitmaps for content and alpha; use the formats which
                     // are able to copy directly to BitmapBuffer
-                    mpAcc->CopyScanline(nY, mpScanline, ScanlineFormat::N24BitTcBgr, maOrigSize.Width() * 3);
+                    mxAcc->CopyScanline(nY, mpScanline, ScanlineFormat::N24BitTcBgr, maOrigSize.Width() * 3);
                     mpMaskAcc->CopyScanline(nY, mpScanlineAlpha, ScanlineFormat::N8BitPal, maOrigSize.Width());
                 }
                 else
@@ -1560,7 +1560,7 @@ void PNGReaderImpl::ImplDrawScanline( sal_uInt32 nXStart, sal_uInt32 nXAdd )
 
                     // copy scanline directly to bitmap for content; use the format which is able to
                     // copy directly to BitmapBuffer
-                    mpAcc->CopyScanline(nY, mpScanline, ScanlineFormat::N24BitTcBgr, maOrigSize.Width() * 3);
+                    mxAcc->CopyScanline(nY, mpScanline, ScanlineFormat::N24BitTcBgr, maOrigSize.Width() * 3);
                 }
                 else
                 {
@@ -1615,7 +1615,7 @@ void PNGReaderImpl::ImplSetPixel( sal_uInt32 nY, sal_uInt32 nX, const BitmapColo
         return;
     nX >>= mnPreviewShift;
 
-    mpAcc->SetPixel( nY, nX, rBitmapColor );
+    mxAcc->SetPixel( nY, nX, rBitmapColor );
 }
 
 void PNGReaderImpl::ImplSetPixel( sal_uInt32 nY, sal_uInt32 nX, sal_uInt8 nPalIndex )
@@ -1625,7 +1625,7 @@ void PNGReaderImpl::ImplSetPixel( sal_uInt32 nY, sal_uInt32 nX, sal_uInt8 nPalIn
         return;
     nX >>= mnPreviewShift;
 
-    mpAcc->SetPixelIndex(nY, nX, SanitizePaletteIndex(nPalIndex, mpAcc->GetPaletteEntryCount()));
+    mxAcc->SetPixelIndex(nY, nX, SanitizePaletteIndex(nPalIndex, mxAcc->GetPaletteEntryCount()));
 }
 
 void PNGReaderImpl::ImplSetTranspPixel( sal_uInt32 nY, sal_uInt32 nX, const BitmapColor& rBitmapColor, bool bTrans )
@@ -1635,7 +1635,7 @@ void PNGReaderImpl::ImplSetTranspPixel( sal_uInt32 nY, sal_uInt32 nX, const Bitm
         return;
     nX >>= mnPreviewShift;
 
-    mpAcc->SetPixel( nY, nX, rBitmapColor );
+    mxAcc->SetPixel( nY, nX, rBitmapColor );
 
     if ( bTrans )
         mpMaskAcc->SetPixel( nY, nX, mcTranspColor );
@@ -1651,7 +1651,7 @@ void PNGReaderImpl::ImplSetAlphaPixel( sal_uInt32 nY, sal_uInt32 nX,
         return;
     nX >>= mnPreviewShift;
 
-    mpAcc->SetPixelIndex(nY, nX, SanitizePaletteIndex(nPalIndex, mpAcc->GetPaletteEntryCount()));
+    mxAcc->SetPixelIndex(nY, nX, SanitizePaletteIndex(nPalIndex, mxAcc->GetPaletteEntryCount()));
     mpMaskAcc->SetPixel(nY, nX, BitmapColor(~nAlpha));
 }
 
@@ -1663,7 +1663,7 @@ void PNGReaderImpl::ImplSetAlphaPixel( sal_uInt32 nY, sal_uInt32 nX,
         return;
     nX >>= mnPreviewShift;
 
-    mpAcc->SetPixel( nY, nX, rBitmapColor );
+    mxAcc->SetPixel( nY, nX, rBitmapColor );
     if (!mpMaskAcc)
         return;
     mpMaskAcc->SetPixel(nY, nX, BitmapColor(~nAlpha));

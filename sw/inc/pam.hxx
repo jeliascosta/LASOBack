@@ -38,17 +38,15 @@ class SwNode;
 class SwContentNode;
 class SwPaM;
 class Point;
-
-namespace com { namespace sun { namespace star { namespace util {
+namespace i18nutil {
     struct SearchOptions2;
-} } } }
-
+}
 namespace utl {
     class TextSearch;
 }
 
 /// Marks a position in the document model.
-struct SW_DLLPUBLIC SwPosition
+struct SAL_WARN_UNUSED SW_DLLPUBLIC SwPosition
 {
     SwNodeIndex nNode;
     SwIndex nContent;
@@ -57,9 +55,6 @@ struct SW_DLLPUBLIC SwPosition
     explicit SwPosition( const SwNodeIndex &rNode );
     explicit SwPosition( const SwNode& rNode );
     explicit SwPosition( SwContentNode& rNode, const sal_Int32 nOffset = 0 );
-
-    SwPosition( const SwPosition & );
-    SwPosition &operator=(const SwPosition &);
 
     /**
        Returns the document this position is in.
@@ -80,16 +75,16 @@ struct SW_DLLPUBLIC SwPosition
 SW_DLLPUBLIC std::ostream &operator <<(std::ostream& s, const SwPosition& position);
 
 // Result of comparing positions.
-enum SwComparePosition {
-    POS_BEFORE,             ///< Pos1 before Pos2.
-    POS_BEHIND,             ///< Pos1 behind Pos2.
-    POS_INSIDE,             ///< Pos1 completely contained in Pos2.
-    POS_OUTSIDE,            ///< Pos2 completely contained in Pos1.
-    POS_EQUAL,              ///< Pos1 is as large as Pos2.
-    POS_OVERLAP_BEFORE,     ///< Pos1 overlaps Pos2 at the beginning.
-    POS_OVERLAP_BEHIND,     ///< Pos1 overlaps Pos2 at the end.
-    POS_COLLIDE_START,      ///< Pos1 start touches at Pos2 end.
-    POS_COLLIDE_END         ///< Pos1 end touches at Pos2 start.
+enum class SwComparePosition {
+    Before,             ///< Pos1 before Pos2.
+    Behind,             ///< Pos1 behind Pos2.
+    Inside,             ///< Pos1 completely contained in Pos2.
+    Outside,            ///< Pos2 completely contained in Pos1.
+    Equal,              ///< Pos1 is as large as Pos2.
+    OverlapBefore,      ///< Pos1 overlaps Pos2 at the beginning.
+    OverlapBehind,      ///< Pos1 overlaps Pos2 at the end.
+    CollideStart,       ///< Pos1 start touches at Pos2 end.
+    CollideEnd          ///< Pos1 end touches at Pos2 start.
 };
 
 template<typename T>
@@ -103,60 +98,56 @@ SwComparePosition ComparePosition(
         if( rEnd1 > rStt2 )
         {
             if( rEnd1 >= rEnd2 )
-                nRet = POS_OUTSIDE;
+                nRet = SwComparePosition::Outside;
             else
-                nRet = POS_OVERLAP_BEFORE;
+                nRet = SwComparePosition::OverlapBefore;
 
         }
         else if( rEnd1 == rStt2 )
-            nRet = POS_COLLIDE_END;
+            nRet = SwComparePosition::CollideEnd;
         else
-            nRet = POS_BEFORE;
+            nRet = SwComparePosition::Before;
     }
     else if( rEnd2 > rStt1 )
     {
         if( rEnd2 >= rEnd1 )
         {
             if( rEnd2 == rEnd1 && rStt2 == rStt1 )
-                nRet = POS_EQUAL;
+                nRet = SwComparePosition::Equal;
             else
-                nRet = POS_INSIDE;
+                nRet = SwComparePosition::Inside;
         }
         else
         {
             if (rStt1 == rStt2)
-                nRet = POS_OUTSIDE;
+                nRet = SwComparePosition::Outside;
             else
-                nRet = POS_OVERLAP_BEHIND;
+                nRet = SwComparePosition::OverlapBehind;
         }
     }
     else if( rEnd2 == rStt1 )
-        nRet = POS_COLLIDE_START;
+        nRet = SwComparePosition::CollideStart;
     else
-        nRet = POS_BEHIND;
+        nRet = SwComparePosition::Behind;
     return nRet;
 }
 
 /// SwPointAndMark / SwPaM
 struct SwMoveFnCollection;
-typedef SwMoveFnCollection* SwMoveFn;
-SW_DLLPUBLIC extern SwMoveFn fnMoveForward; ///< SwPam::Move()/Find() default argument.
-SW_DLLPUBLIC extern SwMoveFn fnMoveBackward;
+SW_DLLPUBLIC extern SwMoveFnCollection const & fnMoveForward; ///< SwPam::Move()/Find() default argument.
+SW_DLLPUBLIC extern SwMoveFnCollection const & fnMoveBackward;
 
-// also works: using SwGoInDoc = bool (*) (SwPaM& rPam, SwMoveFn fnMove);
-// no works: using SwGoInDoc = [](SwPaM& rPam, SwMoveFn fnMove) -> bool;
-using SwGoInDoc = auto (*)(SwPaM& rPam, SwMoveFn fnMove) -> bool;
-SW_DLLPUBLIC extern SwGoInDoc fnGoDoc;
-extern SwGoInDoc fnGoSection;
-SW_DLLPUBLIC extern SwGoInDoc fnGoNode;
-SW_DLLPUBLIC extern SwGoInDoc fnGoContent; ///< SwPam::Move() default argument.
-extern SwGoInDoc fnGoContentCells;
-extern SwGoInDoc fnGoContentSkipHidden;
-extern SwGoInDoc fnGoContentCellsSkipHidden;
+using SwGoInDoc = auto (*)(SwPaM& rPam, SwMoveFnCollection const & fnMove) -> bool;
+SW_DLLPUBLIC bool GoInDoc( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInSection( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInNode( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInContent( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInContentCells( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInContentSkipHidden( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInContentCellsSkipHidden( SwPaM&, SwMoveFnCollection const &);
 
-class SwPaM;
 /// PaM is Point and Mark: a selection of the document model.
-class SW_DLLPUBLIC SwPaM : public sw::Ring<SwPaM>
+class SAL_WARN_UNUSED SW_DLLPUBLIC SwPaM : public sw::Ring<SwPaM>
 {
     SwPosition   m_Bound1;
     SwPosition   m_Bound2;
@@ -164,7 +155,7 @@ class SW_DLLPUBLIC SwPaM : public sw::Ring<SwPaM>
     SwPosition * m_pMark;  ///< points at either m_Bound1 or m_Bound2
     bool m_bIsInFrontOfLabel;
 
-    SwPaM* MakeRegion( SwMoveFn fnMove, const SwPaM * pOrigRg = nullptr );
+    SwPaM* MakeRegion( SwMoveFnCollection const & fnMove, const SwPaM * pOrigRg );
 
     SwPaM(SwPaM const& rPaM) = delete;
 
@@ -181,7 +172,7 @@ public:
             const SwNode& rPt, sal_Int32 nPtContent, SwPaM* pRing = nullptr );
     SwPaM( const SwNode& rNd, sal_Int32 nContent = 0, SwPaM* pRing = nullptr );
     SwPaM( const SwNodeIndex& rNd, sal_Int32 nContent = 0, SwPaM* pRing = nullptr );
-    virtual ~SwPaM();
+    virtual ~SwPaM() override;
 
     /// this takes a second parameter, which indicates the Ring that
     /// the new PaM should be part of (may be null)
@@ -190,31 +181,31 @@ public:
     SwPaM& operator=( const SwPaM & );
 
     /// Movement of cursor.
-    bool Move( SwMoveFn fnMove = fnMoveForward,
-                SwGoInDoc fnGo = fnGoContent );
+    bool Move( SwMoveFnCollection const & fnMove = fnMoveForward,
+                SwGoInDoc fnGo = GoInContent );
 
     /// Search.
-    bool Find(  const css::util::SearchOptions2& rSearchOpt,
+    bool Find(  const i18nutil::SearchOptions2& rSearchOpt,
                 bool bSearchInNotes,
                 utl::TextSearch& rSText,
-                SwMoveFn fnMove = fnMoveForward,
+                SwMoveFnCollection const & fnMove = fnMoveForward,
                 const SwPaM *pPam =nullptr, bool bInReadOnly = false);
     bool Find(  const SwFormat& rFormat,
-                SwMoveFn fnMove = fnMoveForward,
+                SwMoveFnCollection const & fnMove = fnMoveForward,
                 const SwPaM *pPam =nullptr, bool bInReadOnly = false);
-    bool Find(  const SfxPoolItem& rAttr, bool bValue = true,
-                SwMoveFn fnMove = fnMoveForward,
+    bool Find(  const SfxPoolItem& rAttr, bool bValue,
+                SwMoveFnCollection const & fnMove = fnMoveForward,
                 const SwPaM *pPam =nullptr, bool bInReadOnly = false );
     bool Find(  const SfxItemSet& rAttr, bool bNoColls,
-                SwMoveFn fnMove,
+                SwMoveFnCollection const & fnMove,
                 const SwPaM *pPam, bool bInReadOnly, bool bMoveFirst );
 
-    bool DoSearch( const css::util::SearchOptions2& rSearchOpt, utl::TextSearch& rSText,
-                   SwMoveFn fnMove, bool bSrchForward, bool bRegSearch, bool bChkEmptyPara, bool bChkParaEnd,
+    bool DoSearch( const i18nutil::SearchOptions2& rSearchOpt, utl::TextSearch& rSText,
+                   SwMoveFnCollection const & fnMove, bool bSrchForward, bool bRegSearch, bool bChkEmptyPara, bool bChkParaEnd,
                    sal_Int32 &nStart, sal_Int32 &nEnd, sal_Int32 nTextLen, SwNode* pNode, SwPaM* pPam);
 
-    inline bool IsInFrontOfLabel() const        { return m_bIsInFrontOfLabel; }
-    inline void SetInFrontOfLabel_( bool bNew ) { m_bIsInFrontOfLabel = bNew; }
+    bool IsInFrontOfLabel() const        { return m_bIsInFrontOfLabel; }
+    void SetInFrontOfLabel_( bool bNew ) { m_bIsInFrontOfLabel = bNew; }
 
     /// Unless this is called, the getter method of Mark will return Point.
     virtual void SetMark();

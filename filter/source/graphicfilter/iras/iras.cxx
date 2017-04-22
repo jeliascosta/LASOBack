@@ -43,14 +43,12 @@ private:
     SvStream&           m_rRAS;                 // Die einzulesende RAS-Datei
 
     bool                mbStatus;
-    Bitmap              maBmp;
     sal_Int32           mnWidth, mnHeight;      // Bildausmass in Pixeln
     sal_uInt16          mnDstBitsPerPix;
     sal_uInt16          mnDstColors;
     sal_Int32           mnDepth, mnImageDatSize, mnType;
     sal_Int32           mnColorMapType, mnColorMapSize;
     sal_uInt8           mnRepCount, mnRepVal;   // RLE Decoding
-    bool                mbPalette;
 
     bool                ImplReadBody(BitmapWriteAccess * pAcc);
     bool                ImplReadHeader();
@@ -58,7 +56,6 @@ private:
 
 public:
     explicit RASReader(SvStream &rRAS);
-    ~RASReader();
     bool                ReadRAS(Graphic & rGraphic);
 };
 
@@ -78,14 +75,17 @@ RASReader::RASReader(SvStream &rRAS)
     , mnColorMapSize(0)
     , mnRepCount(0)
     , mnRepVal(0)
-    , mbPalette(false)
 {
 }
 
-RASReader::~RASReader()
+namespace
 {
+    bool checkSeek(SvStream &rSt, sal_uInt32 nOffset)
+    {
+        const sal_uInt64 nMaxSeek(rSt.Tell() + rSt.remainingSize());
+        return (nOffset <= nMaxSeek && rSt.Seek(nOffset) == nOffset);
+    }
 }
-
 
 bool RASReader::ReadRAS(Graphic & rGraphic)
 {
@@ -101,20 +101,20 @@ bool RASReader::ReadRAS(Graphic & rGraphic)
 
     // Kopf einlesen:
 
-    if ( !( mbStatus = ImplReadHeader() ) )
+    mbStatus = ImplReadHeader();
+    if ( !mbStatus )
         return false;
 
-    maBmp = Bitmap( Size( mnWidth, mnHeight ), mnDstBitsPerPix );
-    Bitmap::ScopedWriteAccess pAcc(maBmp);
-    if ( pAcc == nullptr )
-        return false;
+    bool bPalette(false);
+    BitmapPalette aPalette;
 
+    bool bOk = true;
     if ( mnDstBitsPerPix <= 8 )     // paletten bildchen
     {
         if ( mnColorMapType == RAS_COLOR_RAW_MAP )      // RAW Colormap wird geskipped
         {
             sal_uLong nCurPos = m_rRAS.Tell();
-            m_rRAS.Seek( nCurPos + mnColorMapSize );
+            bOk = checkSeek(m_rRAS, nCurPos + mnColorMapSize);
         }
         else if ( mnColorMapType == RAS_COLOR_RGB_MAP ) // RGB koennen wir auslesen
         {
@@ -125,7 +125,7 @@ bool RASReader::ReadRAS(Graphic & rGraphic)
 
             if ( ( mnDstColors >= 2 ) && ( ( mnColorMapSize % 3 ) == 0 ) )
             {
-                pAcc->SetPaletteEntryCount( mnDstColors );
+                aPalette.SetEntryCount(mnDstColors);
                 sal_uInt16  i;
                 sal_uInt8   nRed[256], nGreen[256], nBlue[256];
                 for ( i = 0; i < mnDstColors; i++ ) m_rRAS.ReadUChar( nRed[ i ] );
@@ -133,26 +133,27 @@ bool RASReader::ReadRAS(Graphic & rGraphic)
                 for ( i = 0; i < mnDstColors; i++ ) m_rRAS.ReadUChar( nBlue[ i ] );
                 for ( i = 0; i < mnDstColors; i++ )
                 {
-                    pAcc->SetPaletteColor( i, BitmapColor( nRed[ i ], nGreen[ i ], nBlue[ i ] ) );
+                    aPalette[i] = BitmapColor(nRed[ i ], nGreen[ i ], nBlue[ i ]);
                 }
-                mbPalette = true;
+                bPalette = true;
             }
             else
                 return false;
 
         }
-        else if ( mnColorMapType != RAS_COLOR_NO_MAP )  // alles andere ist kein standard
+        else if ( mnColorMapType != RAS_COLOR_NO_MAP )  // everything else is not standard
             return false;
 
-        if ( !mbPalette )
+        if (!bPalette)
         {
             mnDstColors = 1 << mnDstBitsPerPix;
-            pAcc->SetPaletteEntryCount( mnDstColors );
+            aPalette.SetEntryCount(mnDstColors);
             for ( sal_uInt16 i = 0; i < mnDstColors; i++ )
             {
                 sal_uLong nCount = 255 - ( 255 * i / ( mnDstColors - 1 ) );
-                pAcc->SetPaletteColor( i, BitmapColor( (sal_uInt8)nCount, (sal_uInt8)nCount, (sal_uInt8)nCount ) );
+                aPalette[i] = BitmapColor((sal_uInt8)nCount, (sal_uInt8)nCount, (sal_uInt8)nCount);
             }
+            bPalette = true;
         }
     }
     else
@@ -160,15 +161,42 @@ bool RASReader::ReadRAS(Graphic & rGraphic)
         if ( mnColorMapType != RAS_COLOR_NO_MAP )   // when graphic has more than 256 colors and a color map we skip
         {                                           // the colormap
             sal_uLong nCurPos = m_rRAS.Tell();
-            m_rRAS.Seek( nCurPos + mnColorMapSize );
+            bOk = checkSeek(m_rRAS, nCurPos + mnColorMapSize);
         }
     }
+
+    if (!bOk)
+        return false;
+
+    //The RLE packets are typically three bytes in size:
+    //The first byte is a Flag Value indicating the type of RLE packet.
+    //The second byte is the Run Count.
+    //The third byte is the Run Value.
+    //
+    //for the sake of simplicity we'll assume that RAS_TYPE_BYTE_ENCODED can
+    //describe data 255 times larger than the data stored
+    size_t nMaxCompression = mnType != RAS_TYPE_BYTE_ENCODED ? 1 : 255;
+    if (m_rRAS.remainingSize() * nMaxCompression < static_cast<sal_uInt64>(mnHeight) * mnWidth * mnDepth / 8)
+    {
+        return false;
+    }
+
+    Bitmap aBmp(Size(mnWidth, mnHeight), mnDstBitsPerPix);
+    Bitmap::ScopedWriteAccess pAcc(aBmp);
+    if (pAcc == nullptr)
+        return false;
+
+    if (bPalette)
+    {
+        pAcc->SetPalette(aPalette);
+    }
+
 
     // Bitmap-Daten einlesen
     mbStatus = ImplReadBody(pAcc.get());
 
     if ( mbStatus )
-        rGraphic = maBmp;
+        rGraphic = aBmp;
 
     return mbStatus;
 }
@@ -177,7 +205,7 @@ bool RASReader::ImplReadHeader()
 {
     m_rRAS.ReadInt32(mnWidth).ReadInt32(mnHeight).ReadInt32(mnDepth).ReadInt32(mnImageDatSize).ReadInt32(mnType).ReadInt32(mnColorMapType).ReadInt32(mnColorMapSize);
 
-    if (mnWidth <= 0 || mnHeight <= 0 || mnImageDatSize <= 0 || !m_rRAS.good())
+    if (!m_rRAS.good() || mnWidth <= 0 || mnHeight <= 0 || mnImageDatSize <= 0)
         mbStatus = false;
 
     switch ( mnDepth )
@@ -208,7 +236,6 @@ bool RASReader::ImplReadHeader()
     }
     return mbStatus;
 }
-
 
 bool RASReader::ImplReadBody(BitmapWriteAccess * pAcc)
 {

@@ -30,7 +30,6 @@
 
 using namespace css::bridge;
 using namespace css::connection;
-using namespace css::container;
 using namespace css::lang;
 using namespace css::uno;
 
@@ -129,7 +128,6 @@ void Acceptor::run()
 
 // XInitialize
 void Acceptor::initialize( const Sequence<Any>& aArguments )
-    throw( Exception, std::exception )
 {
     // prevent multiple initialization
     osl::ClearableMutexGuard aGuard( m_aMutex );
@@ -185,7 +183,6 @@ OUString Acceptor::impl_getImplementationName()
     return OUString("com.sun.star.office.comp.Acceptor");
 }
 OUString Acceptor::getImplementationName()
-    throw (RuntimeException, std::exception)
 {
     return Acceptor::impl_getImplementationName();
 }
@@ -195,13 +192,11 @@ Sequence<OUString> Acceptor::impl_getSupportedServiceNames()
     return aSequence;
 }
 Sequence<OUString> Acceptor::getSupportedServiceNames()
-    throw (RuntimeException, std::exception)
 {
     return Acceptor::impl_getSupportedServiceNames();
 }
 
 sal_Bool Acceptor::supportsService(OUString const & ServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
@@ -229,7 +224,6 @@ AccInstanceProvider::~AccInstanceProvider()
 }
 
 Reference<XInterface> AccInstanceProvider::getInstance (const OUString& aName )
-        throw ( NoSuchElementException, std::exception )
 {
 
     Reference<XInterface> rInstance;

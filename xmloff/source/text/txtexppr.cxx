@@ -26,14 +26,13 @@
 #include <com/sun/star/text/TextContentAnchorType.hpp>
 #include <com/sun/star/awt/FontUnderline.hpp>
 #include <com/sun/star/text/XChapterNumberingSupplier.hpp>
+#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <tools/color.hxx>
 #include <xmloff/txtprmap.hxx>
 #include <xmloff/xmlexp.hxx>
 #include <xmloff/maptype.hxx>
 #include "XMLSectionFootnoteConfigExport.hxx"
-
-//UUUU
 #include <xmlsdtypes.hxx>
 
 using namespace ::com::sun::star;
@@ -147,11 +146,11 @@ void XMLTextExportPropertySetMapper::handleSpecialItem(
     switch( getPropertySetMapper()->GetEntryContextId( rProperty.mnIndex ) )
     {
     case CTF_DROPCAPWHOLEWORD:
-        DBG_ASSERT( !bDropWholeWord, "drop whole word is set already!" );
-        pThis->bDropWholeWord = *static_cast<sal_Bool const *>(rProperty.maValue.getValue());
+        SAL_WARN_IF( !!bDropWholeWord, "xmloff", "drop whole word is set already!" );
+        pThis->bDropWholeWord = *o3tl::doAccess<bool>(rProperty.maValue);
         break;
     case CTF_DROPCAPCHARSTYLE:
-        DBG_ASSERT( sDropCharStyle.isEmpty(), "drop char style is set already!" );
+        SAL_WARN_IF( !sDropCharStyle.isEmpty(), "xmloff", "drop char style is set already!" );
         rProperty.maValue >>= pThis->sDropCharStyle;
         break;
     case CTF_NUMBERINGSTYLENAME:
@@ -663,7 +662,6 @@ void XMLTextExportPropertySetMapper::ContextFilter(
     XMLPropertyState* pAllParaMargin = nullptr;
     XMLPropertyState* pAllMargin = nullptr;
 
-    //UUUU
     XMLPropertyState* pRepeatOffsetX = nullptr;
     XMLPropertyState* pRepeatOffsetY = nullptr;
 
@@ -809,17 +807,14 @@ void XMLTextExportPropertySetMapper::ContextFilter(
         case CTF_PARAMARGINALL:         pAllParaMargin = propertyState; break;
         case CTF_MARGINALL:             pAllMargin = propertyState; break;
 
-        //UUUU
         case CTF_REPEAT_OFFSET_X:
             pRepeatOffsetX = propertyState;
             break;
 
-        //UUUU
         case CTF_REPEAT_OFFSET_Y:
             pRepeatOffsetY = propertyState;
             break;
 
-        //UUUU
         case CTF_FILLGRADIENTNAME:
         case CTF_FILLHATCHNAME:
         case CTF_FILLBITMAPNAME:
@@ -837,7 +832,6 @@ void XMLTextExportPropertySetMapper::ContextFilter(
         }
     }
 
-    //UUUU
     if( pRepeatOffsetX && pRepeatOffsetY )
     {
         sal_Int32 nOffset = 0;
@@ -994,7 +988,7 @@ void XMLTextExportPropertySetMapper::ContextFilter(
             if( pWrapParagraphOnlyState )
                 pWrapParagraphOnlyState->mnIndex = -1;
             SAL_FALLTHROUGH;
-        case WrapTextMode_THROUGHT:
+        case WrapTextMode_THROUGH:
             // wrap through: disable only contour
             if( pWrapContourState )
                 pWrapContourState->mnIndex = -1;
@@ -1004,7 +998,7 @@ void XMLTextExportPropertySetMapper::ContextFilter(
         }
         if( pWrapContourModeState  &&
             (!pWrapContourState ||
-             !*static_cast<sal_Bool const *>(pWrapContourState ->maValue.getValue()) ) )
+             !*o3tl::doAccess<bool>(pWrapContourState ->maValue) ) )
             pWrapContourModeState->mnIndex = -1;
     }
 
@@ -1022,7 +1016,7 @@ void XMLTextExportPropertySetMapper::ContextFilter(
         if( pHoriOrientState && pHoriOrientMirroredState )
         {
             if( pHoriOrientMirrorState &&
-                *static_cast<sal_Bool const *>(pHoriOrientMirrorState->maValue.getValue()) )
+                *o3tl::doAccess<bool>(pHoriOrientMirrorState->maValue) )
                 pHoriOrientState->mnIndex = -1;
             else
                 pHoriOrientMirroredState->mnIndex = -1;
@@ -1098,7 +1092,7 @@ void XMLTextExportPropertySetMapper::ContextFilter(
         if( pShapeHoriOrientState && pShapeHoriOrientMirroredState )
         {
             if( pShapeHoriOrientMirrorState &&
-                *static_cast<sal_Bool const *>(pShapeHoriOrientMirrorState->maValue.getValue()) )
+                *o3tl::doAccess<bool>(pShapeHoriOrientMirrorState->maValue) )
                 pShapeHoriOrientState->mnIndex = -1;
             else
                 pShapeHoriOrientMirroredState->mnIndex = -1;
@@ -1171,7 +1165,7 @@ bool lcl_IsOutlineStyle(const SvXMLExport &rExport, const OUString & rName)
     {
         Reference<XPropertySet> xNumRule(
             xCNSupplier->getChapterNumberingRules(), UNO_QUERY );
-        DBG_ASSERT( xNumRule.is(), "no chapter numbering rules" );
+        SAL_WARN_IF( !xNumRule.is(), "xmloff", "no chapter numbering rules" );
         if (xNumRule.is())
         {
             xNumRule->getPropertyValue("Name") >>= sOutlineName;

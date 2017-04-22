@@ -36,14 +36,13 @@ public:
     FrameWindowPane (
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxPaneId,
         vcl::Window* pWindow);
-    virtual ~FrameWindowPane() throw();
+    virtual ~FrameWindowPane() throw() override;
 
     /** A frame window typically can (and should) exists on its own without
         children, if only to visualize that something (a view) is missing.
         Therefore this method always returns <FALSE/>.
     */
-    virtual sal_Bool SAL_CALL isAnchorOnly()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isAnchorOnly() override;
 };
 
 } } // end of namespace sd::framework

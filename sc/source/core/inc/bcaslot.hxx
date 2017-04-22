@@ -66,20 +66,20 @@ public:
 
     ScBroadcastArea( const ScRange& rRange );
 
-    inline SvtBroadcaster&       GetBroadcaster()       { return aBroadcaster; }
-    inline const SvtBroadcaster& GetBroadcaster() const { return aBroadcaster; }
-    inline void         UpdateRange( const ScRange& rNewRange )
+    SvtBroadcaster&       GetBroadcaster()       { return aBroadcaster; }
+    const SvtBroadcaster& GetBroadcaster() const { return aBroadcaster; }
+    void         UpdateRange( const ScRange& rNewRange )
                             { aRange = rNewRange; }
-    inline const ScRange&   GetRange() const { return aRange; }
-    inline void         IncRef() { ++nRefCount; }
-    inline sal_uLong        DecRef() { return nRefCount ? --nRefCount : 0; }
-    inline sal_uLong        GetRef() { return nRefCount; }
-    inline ScBroadcastArea* GetUpdateChainNext() const { return pUpdateChainNext; }
-    inline void         SetUpdateChainNext( ScBroadcastArea* p ) { pUpdateChainNext = p; }
-    inline bool         IsInUpdateChain() const { return mbInUpdateChain; }
-    inline void         SetInUpdateChain( bool b ) { mbInUpdateChain = b; }
+    const ScRange&   GetRange() const { return aRange; }
+    void         IncRef() { ++nRefCount; }
+    sal_uLong        DecRef() { return nRefCount ? --nRefCount : 0; }
+    sal_uLong        GetRef() { return nRefCount; }
+    ScBroadcastArea* GetUpdateChainNext() const { return pUpdateChainNext; }
+    void         SetUpdateChainNext( ScBroadcastArea* p ) { pUpdateChainNext = p; }
+    bool         IsInUpdateChain() const { return mbInUpdateChain; }
+    void         SetInUpdateChain( bool b ) { mbInUpdateChain = b; }
 
-    inline bool IsGroupListening() const { return mbGroupListening; }
+    bool IsGroupListening() const { return mbGroupListening; }
     void SetGroupListening( bool b ) { mbGroupListening = b; }
 
     /** Equalness of this or range. */
@@ -191,7 +191,7 @@ public:
             found, that is assigned. In any case, the SvtListener is added to
             the broadcaster.
 
-            If not NULL then no listeners are startet, only the area is
+            If not NULL then no listeners are started, only the area is
             inserted and the reference count incremented. Effectively the same
             as InsertListeningArea(), so use that instead.
 
@@ -211,7 +211,7 @@ public:
     void EndListeningArea(
         const ScRange& rRange, bool bGroupListening, SvtListener* pListener, ScBroadcastArea*& rpArea );
 
-    bool AreaBroadcast( const ScRange& rRange, sal_uInt32 nHint );
+    bool AreaBroadcast( const ScRange& rRange, SfxHintId nHint );
     bool                AreaBroadcast( const ScHint& rHint );
     void                DelBroadcastAreasInRange( const ScRange& rRange );
     void                UpdateRemove( UpdateRefMode eUpdateRefMode,
@@ -265,14 +265,14 @@ private:
     public:
                                         TableSlots();
                                         ~TableSlots();
-        inline ScBroadcastAreaSlot**    getSlots() { return ppSlots; }
+        ScBroadcastAreaSlot**    getSlots() { return ppSlots; }
 
         /**
             Obtain slot pointer, no check on validity! It is assumed that
             all calls are made with the results of ComputeSlotOffset(),
             ComputeAreaPoints() and ComputeNextSlot()
           */
-        inline ScBroadcastAreaSlot*     getAreaSlot( SCSIZE nOff ) { return *(ppSlots + nOff); }
+        ScBroadcastAreaSlot*     getAreaSlot( SCSIZE nOff ) { return *(ppSlots + nOff); }
 
     private:
         ScBroadcastAreaSlot**   ppSlots;
@@ -310,7 +310,7 @@ public:
     void EndListeningArea(
         const ScRange& rRange, bool bGroupListening, SvtListener* pListener );
 
-    bool AreaBroadcast( const ScRange& rRange, sal_uInt32 nHint );
+    bool AreaBroadcast( const ScRange& rRange, SfxHintId nHint );
     bool                AreaBroadcast( const ScHint& rHint ) const;
         // return: at least one broadcast occurred
     void                DelBroadcastAreasInRange( const ScRange& rRange );
@@ -318,19 +318,19 @@ public:
                                             const ScRange& rRange,
                                             SCsCOL nDx, SCsROW nDy, SCsTAB nDz );
     void                EnterBulkBroadcast();
-    void                LeaveBulkBroadcast( sal_uInt32 nHintId );
+    void                LeaveBulkBroadcast( SfxHintId nHintId );
     bool                InsertBulkArea( const ScBroadcastArea* p );
 
     void InsertBulkGroupArea( ScBroadcastArea* pArea, const ScRange& rRange );
     void RemoveBulkGroupArea( ScBroadcastArea* pArea );
-    void BulkBroadcastGroupAreas( sal_uInt32 nHintId );
+    bool BulkBroadcastGroupAreas( SfxHintId nHintId );
 
     /// @return: how many removed
     size_t              RemoveBulkArea( const ScBroadcastArea* p );
-    inline void SetUpdateChain( ScBroadcastArea* p ) { pUpdateChain = p; }
-    inline ScBroadcastArea* GetEOUpdateChain() const { return pEOUpdateChain; }
-    inline void SetEOUpdateChain( ScBroadcastArea* p ) { pEOUpdateChain = p; }
-    inline bool IsInBulkBroadcast() const { return nInBulkBroadcast > 0; }
+    void SetUpdateChain( ScBroadcastArea* p ) { pUpdateChain = p; }
+    ScBroadcastArea* GetEOUpdateChain() const { return pEOUpdateChain; }
+    void SetEOUpdateChain( ScBroadcastArea* p ) { pEOUpdateChain = p; }
+    bool IsInBulkBroadcast() const { return nInBulkBroadcast > 0; }
 
     // only for ScBroadcastAreaSlot
     void                PushAreaToBeErased( ScBroadcastAreaSlot* pSlot,
@@ -340,7 +340,7 @@ public:
 
     std::vector<sc::AreaListener> GetAllListeners(
         const ScRange& rRange, sc::AreaOverlapType eType,
-        sc::ListenerGroupType eGroup = sc::ListenerBoth );
+        sc::ListenerGroupType eGroup = sc::ListenerGroupType::Both );
 
 #if DEBUG_AREA_BROADCASTER
     void Dump() const;
@@ -350,9 +350,9 @@ public:
 class ScBulkBroadcast
 {
     ScBroadcastAreaSlotMachine* pBASM;
-    sal_uInt32                  mnHintId;
+    SfxHintId                  mnHintId;
 public:
-    explicit ScBulkBroadcast( ScBroadcastAreaSlotMachine* p, sal_uInt32 nHintId ) :
+    explicit ScBulkBroadcast( ScBroadcastAreaSlotMachine* p, SfxHintId nHintId ) :
         pBASM(p),
         mnHintId(nHintId)
     {

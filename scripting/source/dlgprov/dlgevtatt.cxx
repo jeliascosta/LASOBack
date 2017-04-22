@@ -38,6 +38,7 @@
 #include <com/sun/star/script/provider/XScriptProviderSupplier.hpp>
 #include <com/sun/star/script/vba/XVBACompatibility.hpp>
 #include <com/sun/star/lang/NoSuchMethodException.hpp>
+#include <com/sun/star/lang/ServiceNotRegisteredException.hpp>
 #include <com/sun/star/reflection/XIdlMethod.hpp>
 #include <com/sun/star/beans/MethodConcept.hpp>
 #include <com/sun/star/beans/XMaterialHolder.hpp>
@@ -156,12 +157,12 @@ namespace dlgprov
         // key listeners by protocol when ScriptType = 'Script'
         // otherwise key is the ScriptType e.g. StarBasic
         if ( rxRTLListener.is() ) // set up handler for RTL_BASIC
-            listernersForTypes[ OUString("StarBasic") ] = rxRTLListener;
+            listenersForTypes[ OUString("StarBasic") ] = rxRTLListener;
         else
-            listernersForTypes[ OUString("StarBasic") ] = new DialogLegacyScriptListenerImpl( rxContext, rxModel );
+            listenersForTypes[ OUString("StarBasic") ] = new DialogLegacyScriptListenerImpl( rxContext, rxModel );
         // handler for Script & OUString("vnd.sun.star.UNO:")
-        listernersForTypes[ OUString("vnd.sun.star.UNO") ] = new DialogUnoScriptListenerImpl( rxContext, rxModel, rxControl, rxHandler, rxIntrospect, bProviderMode );
-        listernersForTypes[ OUString("vnd.sun.star.script") ] = new DialogSFScriptListenerImpl( rxContext, rxModel );
+        listenersForTypes[ OUString("vnd.sun.star.UNO") ] = new DialogUnoScriptListenerImpl( rxContext, rxModel, rxControl, rxHandler, rxIntrospect, bProviderMode );
+        listenersForTypes[ OUString("vnd.sun.star.script") ] = new DialogSFScriptListenerImpl( rxContext, rxModel );
 
         // determine the VBA compatibility mode from the Basic library container
         try
@@ -175,7 +176,7 @@ namespace dlgprov
         {
         }
         if ( mbUseFakeVBAEvents )
-            listernersForTypes[ OUString("VBAInterop") ] = new DialogVBAScriptListenerImpl( rxContext, rxControl, rxModel, sDialogLibName );
+            listenersForTypes[ OUString("VBAInterop") ] = new DialogVBAScriptListenerImpl( rxContext, rxControl, rxModel, sDialogLibName );
     }
 
 
@@ -185,10 +186,10 @@ namespace dlgprov
 
 
     Reference< script::XScriptListener >
-    DialogEventsAttacherImpl::getScriptListenerForKey( const OUString& sKey ) throw ( RuntimeException )
+    DialogEventsAttacherImpl::getScriptListenerForKey( const OUString& sKey )
     {
-        ListenerHash::iterator it = listernersForTypes.find( sKey );
-        if ( it == listernersForTypes.end() )
+        ListenerHash::iterator it = listenersForTypes.find( sKey );
+        if ( it == listenersForTypes.end() )
             throw RuntimeException(); // more text info here please
         return it->second;
     }
@@ -325,8 +326,6 @@ namespace dlgprov
     void SAL_CALL DialogEventsAttacherImpl::attachEvents( const Sequence< Reference< XInterface > >& Objects,
         const css::uno::Reference<css::script::XScriptListener>&,
         const Any& Helper )
-        throw (IllegalArgumentException, IntrospectionException, CannotCreateAdapterException,
-               ServiceNotRegisteredException, RuntimeException, std::exception)
     {
         // get EventAttacher
         {
@@ -408,7 +407,7 @@ namespace dlgprov
     // XEventListener
 
 
-    void DialogAllListenerImpl::disposing(const EventObject& ) throw ( RuntimeException, std::exception )
+    void DialogAllListenerImpl::disposing(const EventObject& )
     {
     }
 
@@ -416,7 +415,7 @@ namespace dlgprov
     // XAllListener
 
 
-    void DialogAllListenerImpl::firing( const AllEventObject& Event ) throw ( RuntimeException, std::exception )
+    void DialogAllListenerImpl::firing( const AllEventObject& Event )
     {
         //::osl::MutexGuard aGuard( getMutex() );
 
@@ -425,7 +424,6 @@ namespace dlgprov
 
 
     Any DialogAllListenerImpl::approveFiring( const AllEventObject& Event )
-        throw ( reflection::InvocationTargetException, RuntimeException, std::exception )
     {
         //::osl::MutexGuard aGuard( getMutex() );
 
@@ -536,9 +534,7 @@ namespace dlgprov
 
     void DialogUnoScriptListenerImpl::firing_impl( const ScriptEvent& aScriptEvent, Any* pRet )
     {
-        static const char sUnoURLScheme[] = "vnd.sun.star.UNO:";
-
-        OUString aMethodName = aScriptEvent.ScriptCode.copy( strlen(sUnoURLScheme) );
+        OUString aMethodName = aScriptEvent.ScriptCode.copy( strlen("vnd.sun.star.UNO:") );
 
         const Any* pArguments = aScriptEvent.Arguments.getConstArray();
         Any aEventObject = pArguments[0];
@@ -644,7 +640,7 @@ namespace dlgprov
     // XEventListener
 
 
-    void DialogScriptListenerImpl::disposing(const EventObject& ) throw ( RuntimeException, std::exception )
+    void DialogScriptListenerImpl::disposing(const EventObject& )
     {
     }
 
@@ -652,7 +648,7 @@ namespace dlgprov
     // XScriptListener
 
 
-    void DialogScriptListenerImpl::firing( const ScriptEvent& aScriptEvent ) throw ( RuntimeException, std::exception )
+    void DialogScriptListenerImpl::firing( const ScriptEvent& aScriptEvent )
     {
         //::osl::MutexGuard aGuard( getMutex() );
 
@@ -661,7 +657,6 @@ namespace dlgprov
 
 
     Any DialogScriptListenerImpl::approveFiring( const ScriptEvent& aScriptEvent )
-        throw ( reflection::InvocationTargetException, RuntimeException, std::exception )
     {
         //::osl::MutexGuard aGuard( getMutex() );
 

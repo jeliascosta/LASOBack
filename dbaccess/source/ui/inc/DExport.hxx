@@ -19,6 +19,9 @@
 #ifndef INCLUDED_DBACCESS_SOURCE_UI_INC_DEXPORT_HXX
 #define INCLUDED_DBACCESS_SOURCE_UI_INC_DEXPORT_HXX
 
+#include <sal/config.h>
+
+#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/sdbc/XResultSet.hpp>
 #include <com/sun/star/sdbc/XResultSetMetaData.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -57,14 +60,14 @@ namespace dbaui
     {
     public:
         typedef std::map<OUString, OFieldDescription*, ::comphelper::UStringMixLess> TColumns;
-        typedef ::std::vector<TColumns::const_iterator>             TColumnVector;
-        typedef ::std::vector< ::std::pair<sal_Int32,sal_Int32> >   TPositions;
+        typedef std::vector<TColumns::const_iterator>             TColumnVector;
+        typedef std::vector< std::pair<sal_Int32,sal_Int32> >   TPositions;
 
     protected:
         TPositions                      m_vColumns;     ///< columns to be used
-        ::std::vector<sal_Int32>        m_vColumnTypes; ///< ColumnTypes for faster access
-        ::std::vector<sal_Int32>        m_vColumnSize;
-        ::std::vector<sal_Int16>        m_vNumberFormat;
+        std::vector<sal_Int32>        m_vColumnTypes; ///< ColumnTypes for faster access
+        std::vector<sal_Int32>        m_vColumnSize;
+        std::vector<sal_Int16>        m_vNumberFormat;
         css::lang::Locale               m_aLocale;
 
         TColumns                        m_aDestColumns; ///< container for new created columns
@@ -136,8 +139,6 @@ namespace dbaui
             const SharedConnection& _rxConnection,
             const css::uno::Reference< css::util::XNumberFormatter >& _rxNumberF,
             const css::uno::Reference< css::uno::XComponentContext >& _rxContext,
-            const TColumnVector* rList,
-            const OTypeInfoMap* _pInfoMap,
             SvStream& _rInputStream
         );
 
@@ -155,7 +156,7 @@ namespace dbaui
 
         void SetColumnTypes(const TColumnVector* rList,const OTypeInfoMap* _pInfoMap);
 
-        inline void SetTableName(const OUString &_sTableName){ m_sDefaultTableName = _sTableName ; }
+        void SetTableName(const OUString &_sTableName){ m_sDefaultTableName = _sTableName ; }
 
         virtual void release() = 0;
 

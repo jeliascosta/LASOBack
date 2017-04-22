@@ -53,12 +53,12 @@ DragSourceHelper::DragGestureListener::~DragGestureListener()
 }
 
 
-void SAL_CALL DragSourceHelper::DragGestureListener::disposing( const EventObject& ) throw( RuntimeException, std::exception )
+void SAL_CALL DragSourceHelper::DragGestureListener::disposing( const EventObject& )
 {
 }
 
 
-void SAL_CALL DragSourceHelper::DragGestureListener::dragGestureRecognized( const DragGestureEvent& rDGE ) throw( RuntimeException, std::exception )
+void SAL_CALL DragSourceHelper::DragGestureListener::dragGestureRecognized( const DragGestureEvent& rDGE )
 {
     const SolarMutexGuard aGuard;
 
@@ -78,10 +78,21 @@ DragSourceHelper::DragSourceHelper( vcl::Window* pWindow ) :
 }
 
 
+void DragSourceHelper::dispose()
+{
+    Reference<XDragGestureRecognizer> xTmp;
+    {
+        osl::MutexGuard aGuard( maMutex );
+        xTmp = mxDragGestureRecognizer;
+        mxDragGestureRecognizer.clear();
+    }
+    if( xTmp.is()  )
+        xTmp->removeDragGestureListener( mxDragGestureListener );
+}
+
 DragSourceHelper::~DragSourceHelper()
 {
-    if( mxDragGestureRecognizer.is()  )
-        mxDragGestureRecognizer->removeDragGestureListener( mxDragGestureListener );
+    dispose();
 }
 
 
@@ -99,16 +110,15 @@ DropTargetHelper::DropTargetListener::DropTargetListener( DropTargetHelper& rDro
 
 DropTargetHelper::DropTargetListener::~DropTargetListener()
 {
-    delete mpLastDragOverEvent;
 }
 
 
-void SAL_CALL DropTargetHelper::DropTargetListener::disposing( const EventObject& ) throw( RuntimeException, std::exception )
+void SAL_CALL DropTargetHelper::DropTargetListener::disposing( const EventObject& )
 {
 }
 
 
-void SAL_CALL DropTargetHelper::DropTargetListener::drop( const DropTargetDropEvent& rDTDE ) throw( RuntimeException, std::exception )
+void SAL_CALL DropTargetHelper::DropTargetListener::drop( const DropTargetDropEvent& rDTDE )
 {
     const SolarMutexGuard aGuard;
 
@@ -145,11 +155,7 @@ void SAL_CALL DropTargetHelper::DropTargetListener::drop( const DropTargetDropEv
 
         rDTDE.Context->dropComplete( DNDConstants::ACTION_NONE != nRet );
 
-        if( mpLastDragOverEvent )
-        {
-            delete mpLastDragOverEvent;
-            mpLastDragOverEvent = nullptr;
-        }
+        mpLastDragOverEvent.reset();
     }
     catch( const css::uno::Exception& )
     {
@@ -157,7 +163,7 @@ void SAL_CALL DropTargetHelper::DropTargetListener::drop( const DropTargetDropEv
 }
 
 
-void SAL_CALL DropTargetHelper::DropTargetListener::dragEnter( const DropTargetDragEnterEvent& rDTDEE ) throw( RuntimeException, std::exception )
+void SAL_CALL DropTargetHelper::DropTargetListener::dragEnter( const DropTargetDragEnterEvent& rDTDEE )
 {
     const SolarMutexGuard aGuard;
 
@@ -173,15 +179,13 @@ void SAL_CALL DropTargetHelper::DropTargetListener::dragEnter( const DropTargetD
 }
 
 
-void SAL_CALL DropTargetHelper::DropTargetListener::dragOver( const DropTargetDragEvent& rDTDE ) throw( RuntimeException, std::exception )
+void SAL_CALL DropTargetHelper::DropTargetListener::dragOver( const DropTargetDragEvent& rDTDE )
 {
     const SolarMutexGuard aGuard;
 
     try
     {
-        delete mpLastDragOverEvent;
-
-        mpLastDragOverEvent = new AcceptDropEvent( rDTDE.DropAction & ~DNDConstants::ACTION_DEFAULT, Point( rDTDE.LocationX, rDTDE.LocationY ), rDTDE );
+        mpLastDragOverEvent.reset( new AcceptDropEvent( rDTDE.DropAction & ~DNDConstants::ACTION_DEFAULT, Point( rDTDE.LocationX, rDTDE.LocationY ), rDTDE ) );
         mpLastDragOverEvent->mbDefault = ( ( rDTDE.DropAction & DNDConstants::ACTION_DEFAULT ) != 0 );
 
         const sal_Int8 nRet = mrParent.AcceptDrop( *mpLastDragOverEvent );
@@ -197,7 +201,7 @@ void SAL_CALL DropTargetHelper::DropTargetListener::dragOver( const DropTargetDr
 }
 
 
-void SAL_CALL DropTargetHelper::DropTargetListener::dragExit( const DropTargetEvent& ) throw( RuntimeException, std::exception )
+void SAL_CALL DropTargetHelper::DropTargetListener::dragExit( const DropTargetEvent& )
 {
     const SolarMutexGuard aGuard;
 
@@ -207,8 +211,7 @@ void SAL_CALL DropTargetHelper::DropTargetListener::dragExit( const DropTargetEv
         {
             mpLastDragOverEvent->mbLeaving = true;
             mrParent.AcceptDrop( *mpLastDragOverEvent );
-            delete mpLastDragOverEvent;
-            mpLastDragOverEvent = nullptr;
+            mpLastDragOverEvent.reset();
         }
 
         mrParent.ImplEndDrag();
@@ -219,33 +222,40 @@ void SAL_CALL DropTargetHelper::DropTargetListener::dragExit( const DropTargetEv
 }
 
 
-void SAL_CALL DropTargetHelper::DropTargetListener::dropActionChanged( const DropTargetDragEvent& ) throw( RuntimeException, std::exception )
+void SAL_CALL DropTargetHelper::DropTargetListener::dropActionChanged( const DropTargetDragEvent& )
 {
 }
 
 
 DropTargetHelper::DropTargetHelper( vcl::Window* pWindow ) :
-    mxDropTarget( pWindow->GetDropTarget() ),
-    mpFormats( new DataFlavorExVector )
+    mxDropTarget( pWindow->GetDropTarget() )
 {
     ImplConstruct();
 }
 
 
 DropTargetHelper::DropTargetHelper( const Reference< XDropTarget >& rxDropTarget ) :
-    mxDropTarget( rxDropTarget ),
-    mpFormats( new DataFlavorExVector )
+    mxDropTarget( rxDropTarget )
 {
     ImplConstruct();
 }
 
 
+void DropTargetHelper::dispose()
+{
+    Reference< XDropTarget >  xTmp;
+    {
+        osl::MutexGuard aGuard( maMutex );
+        xTmp = mxDropTarget;
+        mxDropTarget.clear();
+    }
+    if( xTmp.is() )
+        xTmp->removeDropTargetListener( mxDropTargetListener );
+}
+
 DropTargetHelper::~DropTargetHelper()
 {
-    if( mxDropTarget.is() )
-        mxDropTarget->removeDropTargetListener( mxDropTargetListener );
-
-    delete mpFormats;
+    dispose();
 }
 
 
@@ -262,14 +272,14 @@ void DropTargetHelper::ImplConstruct()
 
 void DropTargetHelper::ImplBeginDrag( const Sequence< DataFlavor >& rSupportedDataFlavors )
 {
-    mpFormats->clear();
-    TransferableDataHelper::FillDataFlavorExVector( rSupportedDataFlavors, *mpFormats );
+    maFormats.clear();
+    TransferableDataHelper::FillDataFlavorExVector( rSupportedDataFlavors, maFormats );
 }
 
 
 void DropTargetHelper::ImplEndDrag()
 {
-    mpFormats->clear();
+    maFormats.clear();
 }
 
 
@@ -287,7 +297,7 @@ sal_Int8 DropTargetHelper::ExecuteDrop( const ExecuteDropEvent& )
 
 bool DropTargetHelper::IsDropFormatSupported( SotClipboardFormatId nFormat )
 {
-    DataFlavorExVector::iterator    aIter( mpFormats->begin() ), aEnd( mpFormats->end() );
+    DataFlavorExVector::iterator    aIter( maFormats.begin() ), aEnd( maFormats.end() );
     bool                            bRet = false;
 
     while( aIter != aEnd )
@@ -344,7 +354,6 @@ TransferDataContainer::TransferDataContainer()
 
 TransferDataContainer::~TransferDataContainer()
 {
-    delete pImpl;
 }
 
 
@@ -463,7 +472,7 @@ void TransferDataContainer::CopyImageMap( const ImageMap& rImgMap )
 void TransferDataContainer::CopyGraphic( const Graphic& rGrf )
 {
     GraphicType nType = rGrf.GetType();
-    if( GRAPHIC_NONE != nType )
+    if( GraphicType::NONE != nType )
     {
         if( !pImpl->pGrf )
             pImpl->pGrf = new Graphic( rGrf );
@@ -472,12 +481,12 @@ void TransferDataContainer::CopyGraphic( const Graphic& rGrf )
 
         AddFormat( SotClipboardFormatId::SVXB );
 
-        if( GRAPHIC_BITMAP == nType )
+        if( GraphicType::Bitmap == nType )
         {
             AddFormat( SotClipboardFormatId::PNG );
             AddFormat( SotClipboardFormatId::BITMAP );
         }
-        else if( GRAPHIC_GDIMETAFILE == nType )
+        else if( GraphicType::GdiMetafile == nType )
         {
             AddFormat( SotClipboardFormatId::GDIMETAFILE );
         }

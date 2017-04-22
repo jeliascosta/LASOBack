@@ -9,16 +9,19 @@
 #ifndef INCLUDED_DESKTOP_UNX_SOURCE_SPLASHX_H
 #define INCLUDED_DESKTOP_UNX_SOURCE_SPLASHX_H
 
+#include <rtl/ustring.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+struct splash;
+
 struct splash* splash_create(rtl_uString* pAppPath, int argc, char** argv);
 
 void splash_destroy(struct splash* splash);
 
-void splash_draw_progress(struct splash* splash, int progess);
+void splash_draw_progress(struct splash* splash, int progress);
 
 #ifdef __cplusplus
 } // extern "C"

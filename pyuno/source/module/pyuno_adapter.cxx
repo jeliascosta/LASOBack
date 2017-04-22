@@ -18,10 +18,13 @@
  */
 #include "pyuno_impl.hxx"
 
+#include <o3tl/any.hxx>
+
 #include <rtl/ustrbuf.hxx>
 #include <rtl/strbuf.hxx>
 
 #include <com/sun/star/beans/MethodConcept.hpp>
+#include <com/sun/star/beans/UnknownPropertyException.hpp>
 
 #include <cppuhelper/typeprovider.hxx>
 
@@ -68,7 +71,7 @@ Sequence<sal_Int8> Adapter::getUnoTunnelImplementationId()
     return g_id.getImplementationId();
 }
 
-sal_Int64 Adapter::getSomething( const Sequence< sal_Int8 > &id) throw (RuntimeException, std::exception)
+sal_Int64 Adapter::getSomething( const Sequence< sal_Int8 > &id)
 {
     if( id == g_id.getImplementationId() )
         return reinterpret_cast<sal_Int64>(this);
@@ -76,7 +79,6 @@ sal_Int64 Adapter::getSomething( const Sequence< sal_Int8 > &id) throw (RuntimeE
 }
 
 void raiseInvocationTargetExceptionWhenNeeded( const Runtime &runtime )
-    throw ( InvocationTargetException )
 {
     if( !Py_IsInitialized() )
         throw InvocationTargetException();
@@ -87,13 +89,12 @@ void raiseInvocationTargetExceptionWhenNeeded( const Runtime &runtime )
         PyErr_Fetch(reinterpret_cast<PyObject **>(&excType), reinterpret_cast<PyObject**>(&excValue), reinterpret_cast<PyObject**>(&excTraceback));
         Any unoExc( runtime.extractUnoException( excType, excValue, excTraceback ) );
         throw InvocationTargetException(
-            static_cast<css::uno::Exception const *>(unoExc.getValue())->Message,
+            o3tl::doAccess<css::uno::Exception>(unoExc)->Message,
             Reference<XInterface>(), unoExc );
     }
 }
 
 Reference< XIntrospectionAccess > Adapter::getIntrospection()
-    throw ( RuntimeException, std::exception )
 {
     // not supported
     return Reference< XIntrospectionAccess > ();
@@ -177,7 +178,6 @@ Any Adapter::invoke( const OUString &aFunctionName,
                      const Sequence< Any >& aParams,
                      Sequence< sal_Int16 > &aOutParamIndex,
                      Sequence< Any > &aOutParam)
-    throw (IllegalArgumentException,CannotConvertException,InvocationTargetException,RuntimeException, std::exception)
 {
     Any ret;
 
@@ -280,7 +280,7 @@ Any Adapter::invoke( const OUString &aFunctionName,
                         buf.append( "pyuno bridge: expected for method " );
                         buf.append( aFunctionName );
                         buf.append( " one return value and " );
-                        buf.append( (sal_Int32) aOutParamIndex.getLength() );
+                        buf.append( aOutParamIndex.getLength() );
                         buf.append( " out parameters, got a sequence of " );
                         buf.append( seq.getLength() );
                         buf.append( " elements as return value." );
@@ -352,14 +352,10 @@ Any Adapter::invoke( const OUString &aFunctionName,
 }
 
 void Adapter::setValue( const OUString & aPropertyName, const Any & value )
-    throw( UnknownPropertyException, CannotConvertException, InvocationTargetException,RuntimeException, std::exception)
 {
     if( !hasProperty( aPropertyName ) )
     {
-        OUStringBuffer buf;
-        buf.append( "pyuno::Adapter: Property " ).append( aPropertyName );
-        buf.append( " is unknown." );
-        throw UnknownPropertyException( buf.makeStringAndClear() );
+        throw UnknownPropertyException( "pyuno::Adapter: Property " + aPropertyName + " is unknown." );
     }
 
     PyThreadAttach guard( mInterpreter );
@@ -387,7 +383,6 @@ void Adapter::setValue( const OUString & aPropertyName, const Any & value )
 }
 
 Any Adapter::getValue( const OUString & aPropertyName )
-    throw ( UnknownPropertyException, RuntimeException, std::exception )
 {
     Any ret;
     PyThreadAttach guard( mInterpreter );
@@ -403,10 +398,7 @@ Any Adapter::getValue( const OUString & aPropertyName )
 
         if (!pyRef.is() || PyErr_Occurred())
         {
-            OUStringBuffer buf;
-            buf.append( "pyuno::Adapter: Property " ).append( aPropertyName );
-            buf.append( " is unknown." );
-            throw UnknownPropertyException( buf.makeStringAndClear() );
+            throw UnknownPropertyException( "pyuno::Adapter: Property " + aPropertyName + " is unknown." );
         }
         ret = runtime.pyObject2Any( pyRef );
     }
@@ -414,13 +406,11 @@ Any Adapter::getValue( const OUString & aPropertyName )
 }
 
 sal_Bool Adapter::hasMethod( const OUString & aMethodName )
-    throw ( RuntimeException, std::exception )
 {
     return hasProperty( aMethodName );
 }
 
 sal_Bool Adapter::hasProperty( const OUString & aPropertyName )
-    throw ( RuntimeException, std::exception )
 {
     bool bRet = false;
     PyThreadAttach guard( mInterpreter );

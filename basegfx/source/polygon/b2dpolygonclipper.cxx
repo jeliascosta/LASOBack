@@ -93,7 +93,7 @@ namespace basegfx
                         bParallelToXAxis ? fValueOnOtherAxis : aCandidateRange.getMaxY() + fSmallExtension);
                     const B2DPolygon aCandidate(addPointsAtCuts(rCandidate, aStart, aEnd));
                     const sal_uInt32 nPointCount(aCandidate.count());
-                    const sal_uInt32 nEdgeCount(aCandidate.isClosed() ? nPointCount : nPointCount - 1L);
+                    const sal_uInt32 nEdgeCount(aCandidate.isClosed() ? nPointCount : nPointCount - 1);
                     B2DCubicBezier aEdge;
                     B2DPolygon aRun;
 
@@ -233,7 +233,7 @@ namespace basegfx
                 // the four implied half-planes, but the outer part is not.
                 // It is possible for strokes, but with creating unnecessary extra
                 // cuts, so using clipPolygonOnPolyPolygon is better there, too.
-                // This needs to be done with the topology knowlegde and is unfortunately
+                // This needs to be done with the topology knowledge and is unfortunately
                 // more expensive, too.
                 const B2DPolygon aClip(createPolygonFromRect(rRange));
 
@@ -247,7 +247,7 @@ namespace basegfx
             if(aRetval.count())
             {
                 // against Y-Axis, lower value
-                if(1L == aRetval.count())
+                if(1 == aRetval.count())
                 {
                     aRetval = clipPolygonOnParallelAxis(aRetval.getB2DPolygon(0), false, bInside, rRange.getMinX(), bStroke);
                 }
@@ -259,7 +259,7 @@ namespace basegfx
                 if(aRetval.count())
                 {
                     // against X-Axis, higher value
-                    if(1L == aRetval.count())
+                    if(1 == aRetval.count())
                     {
                         aRetval = clipPolygonOnParallelAxis(aRetval.getB2DPolygon(0), true, !bInside, rRange.getMaxY(), bStroke);
                     }
@@ -271,7 +271,7 @@ namespace basegfx
                     if(aRetval.count())
                     {
                         // against Y-Axis, higher value
-                        if(1L == aRetval.count())
+                        if(1 == aRetval.count())
                         {
                             aRetval = clipPolygonOnParallelAxis(aRetval.getB2DPolygon(0), false, !bInside, rRange.getMaxX(), bStroke);
                         }
@@ -353,7 +353,7 @@ namespace basegfx
                         // add cuts with clip to polygon, including bezier segments
                         const B2DPolygon aCandidate(addPointsAtCuts(rCandidate.getB2DPolygon(a), rClip));
                         const sal_uInt32 nPointCount(aCandidate.count());
-                        const sal_uInt32 nEdgeCount(aCandidate.isClosed() ? nPointCount : nPointCount - 1L);
+                        const sal_uInt32 nEdgeCount(aCandidate.isClosed() ? nPointCount : nPointCount - 1);
                         B2DCubicBezier aEdge;
                         B2DPolygon aRun;
 
@@ -414,35 +414,10 @@ namespace basegfx
                     // check for simplification with ranges if !bStroke (handling as stroke is more simple),
                     // but also only when bInside, else the simplification may lead to recursive calls (see
                     // calls to clipPolyPolygonOnPolyPolygon in clipPolyPolygonOnRange and clipPolygonOnRange)
-                    if(bInside)
+                    if (bInside && basegfx::tools::isRectangle(rClip))
                     {
                         // #i125349# detect if both given PolyPolygons are indeed ranges
-                        bool bBothRectangle(false);
-
-                        if(basegfx::tools::isRectangle(rCandidate))
-                        {
-                            if(basegfx::tools::isRectangle(rClip))
-                            {
-                                // both are ranges
-                                bBothRectangle = true;
-                            }
-                        }
-                        else if(basegfx::tools::isRectangle(rClip))
-                        {
-                            if(basegfx::tools::isRectangle(rCandidate))
-                            {
-                                // both are ranges
-                                bBothRectangle = true;
-                            }
-                            else
-                            {
-                                // rClip is rectangle -> clip rCandidate on rRectangle, use the much
-                                // cheaper and numerically more stable clipping against a range
-                                return clipPolyPolygonOnRange(rCandidate, rClip.getB2DRange(), bInside, bStroke);
-                            }
-                        }
-
-                        if(bBothRectangle)
+                        if (basegfx::tools::isRectangle(rCandidate))
                         {
                             // both are rectangle
                             if(rCandidate.getB2DRange().equal(rClip.getB2DRange()))
@@ -471,6 +446,12 @@ namespace basegfx
                                         basegfx::tools::createPolygonFromRect(aIntersectionRange));
                                 }
                             }
+                        }
+                        else
+                        {
+                            // rClip is rectangle -> clip rCandidate on rRectangle, use the much
+                            // cheaper and numerically more stable clipping against a range
+                            return clipPolyPolygonOnRange(rCandidate, rClip.getB2DRange(), bInside, bStroke);
                         }
                     }
 
@@ -600,7 +581,7 @@ namespace basegfx
                 else if((clip&0x0f) && (clip&0xf0)==0) { // curr is inside, next is outside
 
                     // direction vector from 'current' to 'next', *not* normalized
-                    // to bring 't' into the [0<=x<=1] intervall.
+                    // to bring 't' into the [0<=x<=1] interval.
                     ::basegfx::B2DPoint dir((*next)-(*curr));
 
                     double denominator = ( pPlane->nx*dir.getX() +
@@ -619,7 +600,7 @@ namespace basegfx
                 else if((clip&0x0f)==0 && (clip&0xf0)) { // curr is outside, next is inside
 
                     // direction vector from 'current' to 'next', *not* normalized
-                    // to bring 't' into the [0<=x<=1] intervall.
+                    // to bring 't' into the [0<=x<=1] interval.
                     ::basegfx::B2DPoint dir((*next)-(*curr));
 
                     double denominator = ( pPlane->nx*dir.getX() +

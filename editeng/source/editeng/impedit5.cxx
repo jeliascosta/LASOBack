@@ -24,8 +24,9 @@
 #include <impedit.hxx>
 #include <editeng/editeng.hxx>
 #include <editdbg.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <editeng/lrspitem.hxx>
+#include <sfx2/app.hxx>
 
 void ImpEditEngine::SetStyleSheetPool( SfxStyleSheetPool* pSPool )
 {
@@ -143,37 +144,38 @@ void ImpEditEngine::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
     if ( !bDowning )
     {
 
-        SfxStyleSheet* pStyle = nullptr;
-        sal_uInt32 nId = 0;
-
         const SfxStyleSheetHint* pStyleSheetHint = dynamic_cast<const SfxStyleSheetHint*>(&rHint);
         if ( pStyleSheetHint )
         {
             DBG_ASSERT( dynamic_cast< const SfxStyleSheet* >(pStyleSheetHint->GetStyleSheet()) != nullptr, "No SfxStyleSheet!" );
-            pStyle = static_cast<SfxStyleSheet*>( pStyleSheetHint->GetStyleSheet() );
-            nId = pStyleSheetHint->GetHint();
-        }
-        else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) && dynamic_cast< const SfxStyleSheet* >(&rBC) !=  nullptr )
-        {
-            pStyle = static_cast<SfxStyleSheet*>(&rBC);
-            nId = dynamic_cast<const SfxSimpleHint*>(&rHint)->GetId();
-        }
-
-        if ( pStyle )
-        {
-            if ( ( nId == SFX_HINT_DYING ) ||
-                 ( nId == SfxStyleSheetHintId::INDESTRUCTION ) ||
-                 ( nId == SfxStyleSheetHintId::ERASED ) )
+            SfxStyleSheet* pStyle = static_cast<SfxStyleSheet*>( pStyleSheetHint->GetStyleSheet() );
+            SfxHintId nId = pStyleSheetHint->GetId();
+            if ( ( nId == SfxHintId::StyleSheetInDestruction ) ||
+                 ( nId == SfxHintId::StyleSheetErased ) )
             {
                 RemoveStyleFromParagraphs( pStyle );
             }
-            else if ( ( nId == SFX_HINT_DATACHANGED ) ||
-                      ( nId == SfxStyleSheetHintId::MODIFIED ) )
+            else if ( nId == SfxHintId::StyleSheetModified )
+            {
+                UpdateParagraphsWithStyleSheet( pStyle );
+            }
+        }
+        else if ( dynamic_cast< const SfxStyleSheet* >(&rBC) !=  nullptr )
+        {
+            SfxStyleSheet* pStyle = static_cast<SfxStyleSheet*>(&rBC);
+            SfxHintId nId = rHint.GetId();
+            if ( nId == SfxHintId::Dying )
+            {
+                RemoveStyleFromParagraphs( pStyle );
+            }
+            else if ( nId == SfxHintId::DataChanged )
             {
                 UpdateParagraphsWithStyleSheet( pStyle );
             }
         }
     }
+    if(dynamic_cast<const SfxApplication*>(&rBC) != nullptr && rHint.GetId() == SfxHintId::Dying)
+        Dispose();
 }
 
 EditUndoSetAttribs* ImpEditEngine::CreateAttribUndo( EditSelection aSel, const SfxItemSet& rSet )
@@ -222,11 +224,23 @@ EditUndoSetAttribs* ImpEditEngine::CreateAttribUndo( EditSelection aSel, const S
     return pUndo;
 }
 
+ViewShellId ImpEditEngine::CreateViewShellId()
+{
+    ViewShellId nRet(-1);
+
+    const EditView* pEditView = pEditEngine ? pEditEngine->GetActiveView() : nullptr;
+    const OutlinerViewShell* pViewShell = pEditView ? pEditView->GetImpEditView()->GetViewShell() : nullptr;
+    if (pViewShell)
+        nRet = pViewShell->GetViewShellId();
+
+    return nRet;
+}
+
 void ImpEditEngine::UndoActionStart( sal_uInt16 nId, const ESelection& aSel )
 {
     if ( IsUndoEnabled() && !IsInUndo() )
     {
-        GetUndoManager().EnterListAction( GetEditEnginePtr()->GetUndoComment( nId ), OUString(), nId );
+        GetUndoManager().EnterListAction( GetEditEnginePtr()->GetUndoComment( nId ), OUString(), nId, CreateViewShellId() );
         DBG_ASSERT( !pUndoMarkSelection, "UndoAction SelectionMarker?" );
         pUndoMarkSelection = new ESelection( aSel );
     }
@@ -236,7 +250,7 @@ void ImpEditEngine::UndoActionStart( sal_uInt16 nId )
 {
     if ( IsUndoEnabled() && !IsInUndo() )
     {
-        GetUndoManager().EnterListAction( GetEditEnginePtr()->GetUndoComment( nId ), OUString(), nId );
+        GetUndoManager().EnterListAction( GetEditEnginePtr()->GetUndoComment( nId ), OUString(), nId, CreateViewShellId() );
         DBG_ASSERT( !pUndoMarkSelection, "UndoAction SelectionMarker?" );
     }
 }
@@ -326,14 +340,14 @@ SfxItemSet ImpEditEngine::GetAttribs( EditSelection aSel, EditEngineAttribs nOnl
         // First the very hard formatting ...
         EditDoc::FindAttribs( pNode, nStartPos, nEndPos, aCurSet );
 
-        if( nOnlyHardAttrib != EditEngineAttribs_OnlyHard )
+        if( nOnlyHardAttrib != EditEngineAttribs::OnlyHard )
         {
             // and then paragraph formatting and template...
             for ( sal_uInt16 nWhich = EE_ITEMS_START; nWhich <= EE_CHAR_END; nWhich++)
             {
                 if ( aCurSet.GetItemState( nWhich ) == SfxItemState::DEFAULT )
                 {
-                    if ( nOnlyHardAttrib == EditEngineAttribs_All )
+                    if ( nOnlyHardAttrib == EditEngineAttribs::All )
                     {
                         const SfxPoolItem& rItem = pNode->GetContentAttribs().GetItem( nWhich );
                         aCurSet.Put( rItem );
@@ -347,7 +361,7 @@ SfxItemSet ImpEditEngine::GetAttribs( EditSelection aSel, EditEngineAttribs nOnl
                 else if ( aCurSet.GetItemState( nWhich ) == SfxItemState::SET )
                 {
                     const SfxPoolItem* pItem = nullptr;
-                    if ( nOnlyHardAttrib == EditEngineAttribs_All )
+                    if ( nOnlyHardAttrib == EditEngineAttribs::All )
                     {
                         pItem = &pNode->GetContentAttribs().GetItem( nWhich );
                     }
@@ -373,7 +387,7 @@ SfxItemSet ImpEditEngine::GetAttribs( EditSelection aSel, EditEngineAttribs nOnl
     }
 
     // fill empty slots with defaults ...
-    if ( nOnlyHardAttrib == EditEngineAttribs_All )
+    if ( nOnlyHardAttrib == EditEngineAttribs::All )
     {
         for ( sal_uInt16 nWhich = EE_ITEMS_START; nWhich <= EE_CHAR_END; nWhich++ )
         {
@@ -478,13 +492,13 @@ SfxItemSet ImpEditEngine::GetAttribs( sal_Int32 nPara, sal_Int32 nStart, sal_Int
 }
 
 
-void ImpEditEngine::SetAttribs( EditSelection aSel, const SfxItemSet& rSet, sal_uInt8 nSpecial )
+void ImpEditEngine::SetAttribs( EditSelection aSel, const SfxItemSet& rSet, SetAttribsMode nSpecial )
 {
     aSel.Adjust( aEditDoc );
 
     // When no selection => use the Attribute on the word.
     // ( the RTF-parser should actually never call the Method without a Range )
-    if ( ( nSpecial == ATTRSPECIAL_WHOLEWORD ) && !aSel.HasRange() )
+    if ( nSpecial == SetAttribsMode::WholeWord && !aSel.HasRange() )
         aSel = SelectWord( aSel, css::i18n::WordType::ANYWORD_IGNOREWHITESPACES, false );
 
     sal_Int32 nStartNode = aEditDoc.GetPos( aSel.Min().GetNode() );
@@ -535,7 +549,7 @@ void ImpEditEngine::SetAttribs( EditSelection aSel, const SfxItemSet& rSet, sal_
                 {
                     aEditDoc.InsertAttrib( pNode, nStartPos, nEndPos, rItem );
                     bCharAttribFound = true;
-                    if ( nSpecial == ATTRSPECIAL_EDGE )
+                    if ( nSpecial == SetAttribsMode::Edge )
                     {
                         CharAttribList::AttribsType& rAttribs = pNode->GetCharAttribs().GetAttribs();
                         for (std::unique_ptr<EditCharAttrib> & rAttrib : rAttribs)
@@ -798,7 +812,7 @@ void IdleFormattter::ForceTimeout()
     if ( IsActive() )
     {
         Stop();
-        ((Link<Idle *, void>&)GetIdleHdl()).Call( this );
+        Invoke();
     }
 }
 
@@ -814,21 +828,18 @@ ImplIMEInfos::ImplIMEInfos( const EditPaM& rPos, const OUString& rOldTextAfterSt
 
 ImplIMEInfos::~ImplIMEInfos()
 {
-    delete[] pAttribs;
 }
 
 void ImplIMEInfos::CopyAttribs( const ExtTextInputAttr* pA, sal_uInt16 nL )
 {
     nLen = nL;
-    delete[] pAttribs;
-    pAttribs = new ExtTextInputAttr[ nL ];
-    memcpy( pAttribs, pA, nL*sizeof(ExtTextInputAttr) );
+    pAttribs.reset( new ExtTextInputAttr[ nL ] );
+    memcpy( pAttribs.get(), pA, nL*sizeof(ExtTextInputAttr) );
 }
 
 void ImplIMEInfos::DestroyAttribs()
 {
-    delete[] pAttribs;
-    pAttribs = nullptr;
+    pAttribs.reset();
     nLen = 0;
 }
 

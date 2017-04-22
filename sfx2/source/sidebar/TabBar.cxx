@@ -28,7 +28,7 @@
 #include <sfx2/sidebar/SidebarController.hxx>
 
 #include <sfx2/sfxresid.hxx>
-#include <sfx2/sidebar/Sidebar.hrc>
+#include "Sidebar.hrc"
 
 #include <vcl/gradient.hxx>
 #include <vcl/image.hxx>
@@ -87,7 +87,7 @@ void TabBar::dispose()
     vcl::Window::dispose();
 }
 
-void TabBar::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rUpdateArea)
+void TabBar::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rUpdateArea)
 {
     Window::Paint(rRenderContext, rUpdateArea);
 
@@ -145,12 +145,6 @@ void TabBar::SetDecks(const ResourceManager::DeckContextDescriptorContainer& rDe
 void TabBar::UpdateButtonIcons()
 {
     Image aImage = Theme::GetImage(Theme::Image_TabBarMenu);
-    if ( mpMenuButton->GetDPIScaleFactor() > 1 )
-    {
-        BitmapEx b = aImage.GetBitmapEx();
-        b.Scale(mpMenuButton->GetDPIScaleFactor(), mpMenuButton->GetDPIScaleFactor(), BmpScaleFlag::Fast);
-        aImage = Image(b);
-    }
     mpMenuButton->SetModeImage(aImage);
 
     for(ItemContainer::const_iterator
@@ -163,13 +157,6 @@ void TabBar::UpdateButtonIcons()
         if (xDeckDescriptor)
         {
             aImage = GetItemImage(*xDeckDescriptor);
-            if ( mpMenuButton->GetDPIScaleFactor() > 1 )
-            {
-                BitmapEx b = aImage.GetBitmapEx();
-                b.Scale(mpMenuButton->GetDPIScaleFactor(), mpMenuButton->GetDPIScaleFactor(), BmpScaleFlag::Fast);
-                aImage = Image(b);
-            }
-
             iItem->mpButton->SetModeImage(aImage);
         }
     }
@@ -253,7 +240,7 @@ void TabBar::DataChanged (const DataChangedEvent& rDataChangedEvent)
     Window::DataChanged(rDataChangedEvent);
 }
 
-bool TabBar::Notify (NotifyEvent& rEvent)
+bool TabBar::EventNotify(NotifyEvent& rEvent)
 {
     if(rEvent.GetType() == MouseNotifyEvent::COMMAND)
     {
@@ -309,7 +296,7 @@ Image TabBar::GetItemImage(const DeckDescriptor& rDeckDescriptor) const
         mxFrame);
 }
 
-IMPL_LINK_NOARG_TYPED(TabBar::Item, HandleClick, Button*, void)
+IMPL_LINK_NOARG(TabBar::Item, HandleClick, Button*, void)
 {
     try
     {
@@ -386,7 +373,7 @@ void TabBar::UpdateFocusManager(FocusManager& rFocusManager)
     rFocusManager.SetButtons(aButtons);
 }
 
-IMPL_LINK_NOARG_TYPED(TabBar, OnToolboxClicked, Button*, void)
+IMPL_LINK_NOARG(TabBar, OnToolboxClicked, Button*, void)
 {
     if (!mpMenuButton)
         return;
@@ -411,7 +398,7 @@ IMPL_LINK_NOARG_TYPED(TabBar, OnToolboxClicked, Button*, void)
     }
 
     maPopupMenuProvider(
-        Rectangle(
+        tools::Rectangle(
             mpMenuButton->GetPosPixel(),
             mpMenuButton->GetSizePixel()),
         aMenuData);

@@ -46,15 +46,13 @@ class PresentationFactoryProvider
 {
 public:
     explicit PresentationFactoryProvider (const Reference<XComponentContext>& rxContext);
-    virtual ~PresentationFactoryProvider();
 
     virtual void SAL_CALL disposing() override;
 
     // XInitialization
 
     virtual void SAL_CALL initialize(
-        const css::uno::Sequence<css::uno::Any>& aArguments)
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        const css::uno::Sequence<css::uno::Any>& aArguments) override;
 };
 
 typedef ::cppu::WeakComponentImplHelper <XView> PresentationViewInterfaceBase;
@@ -70,14 +68,13 @@ class PresentationView
 public:
     explicit PresentationView (const Reference<XResourceId>& rxViewId)
         : PresentationViewInterfaceBase(maMutex),mxResourceId(rxViewId) {};
-    virtual ~PresentationView() {};
 
     // XView
 
-    virtual Reference<XResourceId> SAL_CALL getResourceId() throw (RuntimeException, std::exception) override
+    virtual Reference<XResourceId> SAL_CALL getResourceId() override
     { return mxResourceId; };
 
-    virtual sal_Bool SAL_CALL isAnchorOnly() throw (RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL isAnchorOnly() override
     { return false; }
 
 private:
@@ -88,7 +85,7 @@ private:
 
 //===== PresentationFactory ===================================================
 
-const OUString PresentationFactory::msPresentationViewURL("private:resource/view/Presentation");
+static const char gsPresentationViewURL[] = "private:resource/view/Presentation";
 
 PresentationFactory::PresentationFactory (
     const Reference<frame::XController>& rxController)
@@ -120,12 +117,11 @@ void SAL_CALL PresentationFactory::disposing()
 
 Reference<XResource> SAL_CALL PresentationFactory::createResource (
     const Reference<XResourceId>& rxViewId)
-    throw (RuntimeException, IllegalArgumentException, WrappedTargetException, std::exception)
 {
     ThrowIfDisposed();
 
     if (rxViewId.is())
-        if ( ! rxViewId->hasAnchor() && rxViewId->getResourceURL().equals(msPresentationViewURL))
+        if ( ! rxViewId->hasAnchor() && rxViewId->getResourceURL() == gsPresentationViewURL)
             return new PresentationView(rxViewId);
 
     return Reference<XResource>();
@@ -133,7 +129,6 @@ Reference<XResource> SAL_CALL PresentationFactory::createResource (
 
 void SAL_CALL PresentationFactory::releaseResource (
     const Reference<XResource>& rxView)
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     (void)rxView;
@@ -156,7 +151,6 @@ void SAL_CALL PresentationFactory::releaseResource (
 
 void SAL_CALL PresentationFactory::notifyConfigurationChange (
     const ConfigurationChangeEvent& rEvent)
-    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
 }
@@ -165,13 +159,11 @@ void SAL_CALL PresentationFactory::notifyConfigurationChange (
 
 void SAL_CALL PresentationFactory::disposing (
     const lang::EventObject& rEventObject)
-    throw (RuntimeException, std::exception)
 {
     (void)rEventObject;
 }
 
 void PresentationFactory::ThrowIfDisposed() const
-    throw (lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {
@@ -191,10 +183,6 @@ PresentationFactoryProvider::PresentationFactoryProvider (
     (void)rxContext;
 }
 
-PresentationFactoryProvider::~PresentationFactoryProvider()
-{
-}
-
 void PresentationFactoryProvider::disposing()
 {
 }
@@ -203,7 +191,6 @@ void PresentationFactoryProvider::disposing()
 
 void SAL_CALL PresentationFactoryProvider::initialize(
     const Sequence<Any>& aArguments)
-    throw (Exception, RuntimeException, std::exception)
 {
     if (aArguments.getLength() > 0)
     {
@@ -215,7 +202,7 @@ void SAL_CALL PresentationFactoryProvider::initialize(
             Reference<XConfigurationController> xCC (xCM->getConfigurationController());
             if (xCC.is())
                 xCC->addResourceFactory(
-                    PresentationFactory::msPresentationViewURL,
+                    gsPresentationViewURL,
                     new PresentationFactory(xController));
         }
         catch (RuntimeException&)

@@ -82,20 +82,20 @@ VCL_BUILDER_FACTORY_ARGS(StructListBox, WB_BORDER)
 
 StructPage::StructPage(vcl::Window* pParent):
     TabPage(pParent, "StructPage", "formula/ui/structpage.ui"),
-    maImgEnd        ( ModuleRes( BMP_STR_END ) ),
-    maImgError      ( ModuleRes( BMP_STR_ERROR ) ),
+    maImgEnd(BitmapEx(ModuleRes(BMP_STR_END))),
+    maImgError(BitmapEx(ModuleRes(BMP_STR_ERROR))),
     pSelectedToken  ( nullptr )
 {
     get(m_pTlbStruct, "struct");
-    Size aSize(LogicToPixel(Size(86, 162), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(86, 162), MapUnit::MapAppFont));
     m_pTlbStruct->set_height_request(aSize.Height());
     m_pTlbStruct->set_width_request(aSize.Width());
     m_pTlbStruct->SetStyle(m_pTlbStruct->GetStyle()|WB_HASLINES|WB_CLIPCHILDREN|
                         WB_HASBUTTONS|WB_HSCROLL|WB_NOINITIALSELECTION);
 
     m_pTlbStruct->SetNodeDefaultImages();
-    m_pTlbStruct->SetDefaultExpandedEntryBmp(  Image( ModuleRes( BMP_STR_OPEN  ) ) );
-    m_pTlbStruct->SetDefaultCollapsedEntryBmp( Image( ModuleRes( BMP_STR_CLOSE ) ) );
+    m_pTlbStruct->SetDefaultExpandedEntryBmp(Image(BitmapEx(ModuleRes(BMP_STR_OPEN))));
+    m_pTlbStruct->SetDefaultCollapsedEntryBmp(Image(BitmapEx(ModuleRes(BMP_STR_CLOSE))));
 
 
     m_pTlbStruct->SetSelectHdl(LINK( this, StructPage, SelectHdl ) );
@@ -170,7 +170,7 @@ IFormulaToken* StructPage::GetFunctionEntry(SvTreeListEntry* pEntry)
     return nullptr;
 }
 
-IMPL_LINK_TYPED( StructPage, SelectHdl, SvTreeListBox*, pTlb, void )
+IMPL_LINK( StructPage, SelectHdl, SvTreeListBox*, pTlb, void )
 {
     if(m_pTlbStruct->GetActiveFlag())
     {

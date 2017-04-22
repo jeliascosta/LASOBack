@@ -55,10 +55,10 @@ public:
     SplashScreen *pSpl;
     ScopedVclPtr<VirtualDevice> _vdev;
     explicit SplashScreenWindow(SplashScreen *);
-    virtual ~SplashScreenWindow() { disposeOnce(); }
+    virtual ~SplashScreenWindow() override { disposeOnce(); }
     virtual void dispose() override;
     // workwindow
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
     void Redraw();
 
 };
@@ -68,12 +68,10 @@ class  SplashScreen
 {
     friend class SplashScreenWindow;
 private:
-    enum BitmapMode { BM_FULLSCREEN, BM_DEFAULTMODE };
-
     VclPtr<SplashScreenWindow> pWindow;
 
-    DECL_LINK_TYPED( AppEventListenerHdl, VclSimpleEvent&, void );
-    virtual ~SplashScreen();
+    DECL_LINK( AppEventListenerHdl, VclSimpleEvent&, void );
+    virtual ~SplashScreen() override;
     void loadConfig();
     void updateStatus();
     void SetScreenBitmap(BitmapEx &rBitmap);
@@ -91,8 +89,6 @@ private:
 
     sal_Int32   _iMax;
     sal_Int32   _iProgress;
-    BitmapMode  _eBitmapMode;
-    bool        _bPaintBitmap;
     bool        _bPaintProgress;
     bool        _bVisible;
     bool        _bShowLogo;
@@ -108,26 +104,22 @@ public:
     SplashScreen();
 
     // XStatusIndicator
-    virtual void SAL_CALL end() throw ( RuntimeException, std::exception ) override;
-    virtual void SAL_CALL reset() throw ( RuntimeException, std::exception ) override;
-    virtual void SAL_CALL setText(const OUString& aText) throw ( RuntimeException, std::exception ) override;
-    virtual void SAL_CALL setValue(sal_Int32 nValue) throw ( RuntimeException, std::exception ) override;
-    virtual void SAL_CALL start(const OUString& aText, sal_Int32 nRange) throw ( RuntimeException, std::exception ) override;
+    virtual void SAL_CALL end() override;
+    virtual void SAL_CALL reset() override;
+    virtual void SAL_CALL setText(const OUString& aText) override;
+    virtual void SAL_CALL setValue(sal_Int32 nValue) override;
+    virtual void SAL_CALL start(const OUString& aText, sal_Int32 nRange) override;
 
     // XInitialize
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any>& aArguments )
-        throw ( RuntimeException, std::exception ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any>& aArguments ) override;
 
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     { return desktop::splash::getImplementationName(); }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     { return cppu::supportsService(this, ServiceName); }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     { return desktop::splash::getSupportedServiceNames(); }
 };
 
@@ -150,7 +142,7 @@ void SplashScreenWindow::Redraw()
     Invalidate();
     // Trigger direct painting too - otherwise the splash screen won't be
     // shown in some cases (when the idle timer won't be hit).
-    Paint(*this, Rectangle());
+    Paint(*this, tools::Rectangle());
     Flush();
 }
 
@@ -162,8 +154,6 @@ SplashScreen::SplashScreen()
     , _bNativeProgress(true)
     , _iMax(100)
     , _iProgress(0)
-    , _eBitmapMode(BM_DEFAULTMODE)
-    , _bPaintBitmap(true)
     , _bPaintProgress(false)
     , _bVisible(true)
     , _bShowLogo(true)
@@ -196,47 +186,37 @@ SplashScreen::~SplashScreen()
 }
 
 void SAL_CALL SplashScreen::start(const OUString&, sal_Int32 nRange)
-    throw (RuntimeException, std::exception)
 {
     _iMax = nRange;
     if (_bVisible) {
         _bProgressEnd = false;
         SolarMutexGuard aSolarGuard;
-        if ( _eBitmapMode == BM_FULLSCREEN )
-            pWindow->ShowFullScreenMode();
         pWindow->Show();
         pWindow->Redraw();
     }
 }
 
 void SAL_CALL SplashScreen::end()
-    throw (RuntimeException, std::exception)
 {
     _iProgress = _iMax;
     if (_bVisible )
     {
-        if ( _eBitmapMode == BM_FULLSCREEN )
-            pWindow->EndFullScreenMode();
         pWindow->Hide();
     }
     _bProgressEnd = true;
 }
 
 void SAL_CALL SplashScreen::reset()
-    throw (RuntimeException, std::exception)
 {
     _iProgress = 0;
     if (_bVisible && !_bProgressEnd )
     {
-        if ( _eBitmapMode == BM_FULLSCREEN )
-            pWindow->ShowFullScreenMode();
         pWindow->Show();
         updateStatus();
     }
 }
 
 void SAL_CALL SplashScreen::setText(const OUString& rText)
-    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     if ( _sProgressText != rText )
@@ -245,8 +225,6 @@ void SAL_CALL SplashScreen::setText(const OUString& rText)
 
         if (_bVisible && !_bProgressEnd)
         {
-            if ( _eBitmapMode == BM_FULLSCREEN )
-                pWindow->ShowFullScreenMode();
             pWindow->Show();
             updateStatus();
         }
@@ -254,14 +232,11 @@ void SAL_CALL SplashScreen::setText(const OUString& rText)
 }
 
 void SAL_CALL SplashScreen::setValue(sal_Int32 nValue)
-    throw (RuntimeException, std::exception)
 {
     SAL_INFO( "desktop.splash", "setValue: " << nValue );
 
     SolarMutexGuard aSolarGuard;
     if (_bVisible && !_bProgressEnd) {
-        if ( _eBitmapMode == BM_FULLSCREEN )
-            pWindow->ShowFullScreenMode();
         pWindow->Show();
         if (nValue >= _iMax)
             _iProgress = _iMax;
@@ -274,7 +249,6 @@ void SAL_CALL SplashScreen::setValue(sal_Int32 nValue)
 // XInitialize
 void SAL_CALL
 SplashScreen::initialize( const css::uno::Sequence< css::uno::Any>& aArguments )
-    throw (RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard  aGuard( _aMutex );
     if (aArguments.getLength() > 0)
@@ -303,19 +277,6 @@ SplashScreen::initialize( const css::uno::Sequence< css::uno::Any>& aArguments )
                 _barwidth = 263;
             if ( NOT_LOADED == _barheight )
                 _barheight = 8;
-            if (( _eBitmapMode == BM_FULLSCREEN ) &&
-                _bFullScreenSplash )
-            {
-                if( ( _fXPos >= 0.0 ) && ( _fYPos >= 0.0 ))
-                {
-                    _tlx = sal_Int32( double( aSize.Width() ) * _fXPos );
-                    _tly = sal_Int32( double( aSize.Height() ) * _fYPos );
-                }
-                if ( _fWidth >= 0.0 )
-                    _barwidth  = sal_Int32( double( aSize.Width() ) * _fWidth );
-                if ( _fHeight >= 0.0 )
-                    _barheight = sal_Int32( double( aSize.Width() ) * _fHeight );
-            }
         }
         else
         {
@@ -366,13 +327,13 @@ void SplashScreen::updateStatus()
 }
 
 // internal private methods
-IMPL_LINK_TYPED( SplashScreen, AppEventListenerHdl, VclSimpleEvent&, inEvent, void )
+IMPL_LINK( SplashScreen, AppEventListenerHdl, VclSimpleEvent&, inEvent, void )
 {
     if (static_cast<VclWindowEvent&>(inEvent).GetWindow() == pWindow)
     {
         switch ( inEvent.GetId() )
         {
-            case VCLEVENT_WINDOW_SHOW:
+            case VclEventId::WindowShow:
                 pWindow->Redraw();
                 break;
             default:
@@ -512,7 +473,7 @@ void SplashScreen::SetScreenBitmap(BitmapEx &rBitmap)
     if ( nCount > 0 )
     {
         // retrieve size from first screen
-        Rectangle aScreenArea = Application::GetScreenPosSizePixel((unsigned int)0);
+        tools::Rectangle aScreenArea = Application::GetScreenPosSizePixel((unsigned int)0);
         nWidth  = aScreenArea.GetWidth();
         nHeight = aScreenArea.GetHeight();
     }
@@ -539,7 +500,7 @@ void SplashScreen::SetScreenBitmap(BitmapEx &rBitmap)
     if (Application::LoadBrandBitmap (aResBuf.makeStringAndClear().getStr(), rBitmap))
         return;
 
-    Application::LoadBrandBitmap ("intro", rBitmap);
+    (void)Application::LoadBrandBitmap ("intro", rBitmap);
 }
 
 void SplashScreen::determineProgressRatioValues(
@@ -555,7 +516,7 @@ void SplashScreen::determineProgressRatioValues(
     if ( nCount > 0 )
     {
         // retrieve size from first screen
-        Rectangle aScreenArea = Application::GetScreenPosSizePixel((unsigned int)0);
+        tools::Rectangle aScreenArea = Application::GetScreenPosSizePixel((unsigned int)0);
         nWidth  = aScreenArea.GetWidth();
         nHeight = aScreenArea.GetHeight();
         nScreenRatio  = nHeight ? sal_Int32( rtl::math::round( double( nWidth ) / double( nHeight ), 2 ) * 100 ) :  0;
@@ -613,7 +574,7 @@ void SplashScreen::determineProgressRatioValues(
     }
 }
 
-void SplashScreenWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void SplashScreenWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     if (!pSpl || !pSpl->_bVisible)
         return;
@@ -625,8 +586,8 @@ void SplashScreenWindow::Paint(vcl::RenderContext& rRenderContext, const Rectang
         rRenderContext.DrawBitmapEx(Point(), pSpl->_aIntroBmp);
 
         ImplControlValue aValue( pSpl->_iProgress * pSpl->_barwidth / pSpl->_iMax);
-        Rectangle aDrawRect( Point(pSpl->_tlx, pSpl->_tly), Size( pSpl->_barwidth, pSpl->_barheight));
-        Rectangle aNativeControlRegion, aNativeContentRegion;
+        tools::Rectangle aDrawRect( Point(pSpl->_tlx, pSpl->_tly), Size( pSpl->_barwidth, pSpl->_barheight));
+        tools::Rectangle aNativeControlRegion, aNativeContentRegion;
 
         if (rRenderContext.GetNativeControlRegion(ControlType::IntroProgress, ControlPart::Entire, aDrawRect,
                                                   ControlState::ENABLED, aValue, OUString(),
@@ -646,8 +607,7 @@ void SplashScreenWindow::Paint(vcl::RenderContext& rRenderContext, const Rectang
 
     // non native drawing
     // draw bitmap
-    if (pSpl->_bPaintBitmap)
-        _vdev->DrawBitmapEx(Point(), pSpl->_aIntroBmp);
+    _vdev->DrawBitmapEx(Point(), pSpl->_aIntroBmp);
 
     if (pSpl->_bPaintProgress) {
         // draw progress...
@@ -657,10 +617,10 @@ void SplashScreenWindow::Paint(vcl::RenderContext& rRenderContext, const Rectang
         // border
         _vdev->SetFillColor();
         _vdev->SetLineColor( pSpl->_cProgressFrameColor );
-        _vdev->DrawRect(Rectangle(pSpl->_tlx, pSpl->_tly, pSpl->_tlx+pSpl->_barwidth, pSpl->_tly+pSpl->_barheight));
+        _vdev->DrawRect(tools::Rectangle(pSpl->_tlx, pSpl->_tly, pSpl->_tlx+pSpl->_barwidth, pSpl->_tly+pSpl->_barheight));
         _vdev->SetFillColor( pSpl->_cProgressBarColor );
         _vdev->SetLineColor();
-        _vdev->DrawRect(Rectangle(pSpl->_tlx+pSpl->_barspace, pSpl->_tly+pSpl->_barspace, pSpl->_tlx+pSpl->_barspace+length, pSpl->_tly+pSpl->_barheight-pSpl->_barspace));
+        _vdev->DrawRect(tools::Rectangle(pSpl->_tlx+pSpl->_barspace, pSpl->_tly+pSpl->_barspace, pSpl->_tlx+pSpl->_barspace+length, pSpl->_tly+pSpl->_barheight-pSpl->_barspace));
         vcl::Font aFont;
         aFont.SetFontSize(Size(0, 12));
         aFont.SetAlignment(ALIGN_BASELINE);

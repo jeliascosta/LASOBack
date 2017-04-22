@@ -65,9 +65,10 @@
 #include <unordered_map>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #include "rtl/bootstrap.h"
+
+#include <rtl/character.hxx>
 
 using namespace com::sun::star;
 
@@ -144,6 +145,7 @@ class Parser
     typedef std::unordered_map< sal_Int64,
                            FontAttributes > FontMapType;
 
+    ScopedVclPtr<VirtualDevice> m_xDev;
     const uno::Reference<uno::XComponentContext> m_xContext;
     const ContentSinkSharedPtr                   m_pSink;
     const oslFileHandle                          m_pErr;
@@ -469,9 +471,12 @@ sal_Int32 Parser::parseFontCheckForString(
     if (nCopyLen < nAttribLen)
         return 0;
     for (sal_Int32 i = 0; i < nAttribLen; ++i)
-        if (tolower(pCopy[i]) != pAttrib[i]
-            && toupper(pCopy[i]) != pAttrib[i])
+    {
+        sal_uInt32 nCode = pAttrib[i];
+        if (rtl::toAsciiLowerCase(pCopy[i]) != nCode
+            && rtl::toAsciiUpperCase(pCopy[i]) != nCode)
             return 0;
+    }
     rResult.isItalic |= bItalic;
     rResult.isBold |= bBold;
     return nAttribLen;
@@ -663,13 +668,12 @@ void Parser::readFont()
 
     }
 
-    static vcl::DeleteOnDeinit< VclPtr<VirtualDevice> > vDev( new VclPtr<VirtualDevice> );
-    if (!vDev.get()->get())
-        (*vDev.get()) = VclPtr<VirtualDevice>::Create();
+    if (!m_xDev)
+        m_xDev.disposeAndReset(VclPtr<VirtualDevice>::Create());
 
     vcl::Font font(aResult.familyName, Size(0, 1000));
-    (*vDev.get())->SetFont(font);
-    FontMetric metric((*vDev.get())->GetFontMetric());
+    m_xDev->SetFont(font);
+    FontMetric metric(m_xDev->GetFontMetric());
     aResult.ascent = metric.GetAscent() / 1000.0;
 
     m_aFontMap[nFontID] = aResult;
@@ -680,29 +684,20 @@ void Parser::readFont()
 
 uno::Sequence<beans::PropertyValue> Parser::readImageImpl()
 {
-    static const char aJpegMarker[] = "JPEG";
-    static const char aPbmMarker[]  = "PBM";
-    static const char aPpmMarker[]  = "PPM";
-    static const char aPngMarker[]  = "PNG";
-    static const char aJpegFile[]   = "DUMMY.JPEG";
-    static const char aPbmFile[]    = "DUMMY.PBM";
-    static const char aPpmFile[]    = "DUMMY.PPM";
-    static const char aPngFile[]    = "DUMMY.PNG";
-
     OString aToken = readNextToken();
     const sal_Int32 nImageSize( readInt32() );
 
     OUString           aFileName;
-    if( aToken == aPngMarker )
-        aFileName = aPngFile;
-    else if( aToken == aJpegMarker )
-        aFileName = aJpegFile;
-    else if( aToken == aPbmMarker )
-        aFileName = aPbmFile;
+    if( aToken == "PNG" )
+        aFileName = "DUMMY.PNG";
+    else if( aToken == "JPEG" )
+        aFileName = "DUMMY.JPEG";
+    else if( aToken == "PBM" )
+        aFileName = "DUMMY.PBM";
     else
     {
-        SAL_WARN_IF(aToken != aPpmMarker,"sdext.pdfimport","Invalid bitmap format");
-        aFileName = aPpmFile;
+        SAL_WARN_IF(aToken != "PPM","sdext.pdfimport","Invalid bitmap format");
+        aFileName = "DUMMY.PPM";
     }
 
     uno::Sequence<sal_Int8> aDataSequence(nImageSize);
@@ -718,15 +713,15 @@ uno::Sequence<beans::PropertyValue> Parser::readImageImpl()
         uno::UNO_QUERY_THROW );
 
     uno::Sequence<beans::PropertyValue> aSequence(3);
-    aSequence[0] = beans::PropertyValue( OUString("URL"),
+    aSequence[0] = beans::PropertyValue( "URL",
                                          0,
                                          uno::makeAny(aFileName),
                                          beans::PropertyState_DIRECT_VALUE );
-    aSequence[1] = beans::PropertyValue( OUString("InputStream"),
+    aSequence[1] = beans::PropertyValue( "InputStream",
                                          0,
                                          uno::makeAny( xDataStream ),
                                          beans::PropertyState_DIRECT_VALUE );
-    aSequence[2] = beans::PropertyValue( OUString("InputSequence"),
+    aSequence[2] = beans::PropertyValue( "InputSequence",
                                          0,
                                          uno::makeAny(aDataSequence),
                                          beans::PropertyState_DIRECT_VALUE );
@@ -758,8 +753,8 @@ void Parser::readImage()
             aMaxRange[i] = aDataSequence[i+nMaskColors/2] / 255.0;
         }
 
-        aMaskRanges[0] = uno::makeAny(aMinRange);
-        aMaskRanges[1] = uno::makeAny(aMaxRange);
+        aMaskRanges[0] <<= aMinRange;
+        aMaskRanges[1] <<= aMaxRange;
 
         m_pSink->drawColorMaskedImage( aImg, aMaskRanges );
     }
@@ -956,7 +951,6 @@ static bool checkEncryption( const OUString&                               i_rPa
                             } while( bEntered && ! bAuthenticated );
                         }
 
-                        OSL_TRACE( "password: %s", bAuthenticated ? "matches" : "does not match" );
                         bSuccess = bAuthenticated;
                     }
                 }

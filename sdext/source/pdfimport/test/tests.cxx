@@ -82,8 +82,6 @@ namespace
             m_bImageSeen(false)
         {}
 
-        virtual ~TestSink() {}
-
         void check()
         {
             CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE( "A4 page size (in 100th of points): Width", 79400, m_aPageSize.Width, 0.00000001);
@@ -97,7 +95,7 @@ namespace
                                     rtl::math::approxEqual(m_aHyperlinkBounds.Y2,406.2) );
             CPPUNIT_ASSERT_EQUAL_MESSAGE( "Correct hyperlink URI", OUString("http://download.openoffice.org/"), m_aURI );
 
-            const char* sText = " \n \nThis is a testtext\nNew paragraph,\nnew line\n"
+            const char* const sText = " \n \nThis is a testtext\nNew paragraph,\nnew line\n"
                 "Hyperlink, this is\n?\nThis is more text\noutline mode\n?\nNew paragraph\n";
             OString aTmp;
             m_aTextOut.makeStringAndClear().convertToString( &aTmp,
@@ -231,20 +229,19 @@ namespace
                 CPPUNIT_ASSERT_MESSAGE( "Line width is 0",
                                         rtl::math::approxEqual(rContext.LineWidth, 28.3) );
 
-                const char* sExportString = "m53570 7650-35430 24100";
+                const char sExportString[] = "m53570 7650-35430 24100";
                 CPPUNIT_ASSERT_MESSAGE( "Stroke is m535.7 518.5-354.3-241",
-                                        basegfx::tools::exportToSvgD( aPath, true, true, false ).equalsAscii(sExportString) );
+                                        basegfx::tools::exportToSvgD( aPath, true, true, false ) == sExportString );
 
                 m_bGreenStrokeSeen = true;
             }
             else
             {
-                CPPUNIT_ASSERT_MESSAGE( "Dash array consists of four entries",
-                                        rContext.DashArray.size() == 4 &&
-                                        rtl::math::approxEqual(rContext.DashArray[0],14.3764) &&
-                                        rContext.DashArray[0] == rContext.DashArray[1] &&
-                                        rContext.DashArray[1] == rContext.DashArray[2] &&
-                                        rContext.DashArray[2] == rContext.DashArray[3] );
+                CPPUNIT_ASSERT_EQUAL_MESSAGE( "Dash array consists of four entries", std::vector<double>::size_type(4), rContext.DashArray.size());
+                CPPUNIT_ASSERT_DOUBLES_EQUAL( 14.3764, rContext.DashArray[0], 1E-12 );
+                CPPUNIT_ASSERT_DOUBLES_EQUAL( rContext.DashArray[0], rContext.DashArray[1], 1E-12 );
+                CPPUNIT_ASSERT_DOUBLES_EQUAL( rContext.DashArray[1], rContext.DashArray[2], 1E-12 );
+                CPPUNIT_ASSERT_DOUBLES_EQUAL( rContext.DashArray[2], rContext.DashArray[3], 1E-12 );
 
                 CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE( "Line color is black", 1.0, rContext.LineColor.Alpha, 0.00000001);
                 CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE( "Line color is black", 0.0, rContext.LineColor.Blue, 0.00000001);
@@ -254,9 +251,9 @@ namespace
                 CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE( "Line width is 0",
                                         0, rContext.LineWidth, 0.0000001 );
 
-                const char* sExportString = "m49890 5670.00000000001-35430 24090";
+                const char sExportString[] = "m49890 5670.00000000001-35430 24090";
                 CPPUNIT_ASSERT_MESSAGE( "Stroke is m49890 5670.00000000001-35430 24090",
-                                        basegfx::tools::exportToSvgD( aPath, true, true, false ).equalsAscii(sExportString) );
+                                        basegfx::tools::exportToSvgD( aPath, true, true, false ) == sExportString );
 
                 m_bDashedLineSeen = true;
             }
@@ -311,10 +308,10 @@ namespace
             CPPUNIT_ASSERT_EQUAL_MESSAGE( "Font id is 0",
                                     (sal_Int32) 0, rContext.FontId );
 
-            const char* sExportString = "m12050 49610c-4310 0-7800-3490-7800-7800 0-4300 "
+            const char sExportString[] = "m12050 49610c-4310 0-7800-3490-7800-7800 0-4300 "
                 "3490-7790 7800-7790 4300 0 7790 3490 7790 7790 0 4310-3490 7800-7790 7800z";
             CPPUNIT_ASSERT_MESSAGE( "Stroke is a 4-bezier circle",
-                                    basegfx::tools::exportToSvgD( aPath, true, true, false ).equalsAscii(sExportString) );
+                                    basegfx::tools::exportToSvgD( aPath, true, true, false ) == sExportString );
 
             m_bRedCircleSeen = true;
         }
@@ -462,13 +459,13 @@ namespace
                     pSink,
                     uno::Reference< task::XInteractionHandler >(),
                     OUString(),
-                    getComponentContext() ) );
+                    getComponentContext(), "" ) );
             pSink->check();
         }
 
         void testOdfDrawExport()
         {
-            uno::Reference<pdfi::PDFIRawAdaptor> xAdaptor( new pdfi::PDFIRawAdaptor(OUString(), getComponentContext()) );
+            rtl::Reference<pdfi::PDFIRawAdaptor> xAdaptor( new pdfi::PDFIRawAdaptor(OUString(), getComponentContext()) );
             xAdaptor->setTreeVisitorFactory( createDrawTreeVisitorFactory() );
 
             OUString tempFileURL;
@@ -483,7 +480,7 @@ namespace
 
         void testOdfWriterExport()
         {
-            uno::Reference<pdfi::PDFIRawAdaptor> xAdaptor( new pdfi::PDFIRawAdaptor(OUString(), getComponentContext()) );
+            rtl::Reference<pdfi::PDFIRawAdaptor> xAdaptor( new pdfi::PDFIRawAdaptor(OUString(), getComponentContext()) );
             xAdaptor->setTreeVisitorFactory( createWriterTreeVisitorFactory() );
 
             OUString tempFileURL;
@@ -498,7 +495,7 @@ namespace
 
         void testTdf96993()
         {
-            uno::Reference<pdfi::PDFIRawAdaptor> xAdaptor(new pdfi::PDFIRawAdaptor(OUString(), getComponentContext()));
+            rtl::Reference<pdfi::PDFIRawAdaptor> xAdaptor(new pdfi::PDFIRawAdaptor(OUString(), getComponentContext()));
             xAdaptor->setTreeVisitorFactory(createDrawTreeVisitorFactory());
 
             OString aOutput;
@@ -512,7 +509,7 @@ namespace
 
         void testTdf98421()
         {
-            uno::Reference<pdfi::PDFIRawAdaptor> xAdaptor(new pdfi::PDFIRawAdaptor(OUString(), getComponentContext()));
+            rtl::Reference<pdfi::PDFIRawAdaptor> xAdaptor(new pdfi::PDFIRawAdaptor(OUString(), getComponentContext()));
             xAdaptor->setTreeVisitorFactory(createWriterTreeVisitorFactory());
 
             OString aOutput;
@@ -525,12 +522,27 @@ namespace
             CPPUNIT_ASSERT(aOutput.indexOf("svg:height=\"-262.82mm\"") != -1);
         }
 
+        void testTdf105536()
+        {
+            rtl::Reference<pdfi::PDFIRawAdaptor> xAdaptor(new pdfi::PDFIRawAdaptor(OUString(), getComponentContext()));
+            xAdaptor->setTreeVisitorFactory(createDrawTreeVisitorFactory());
+
+            OString aOutput;
+            CPPUNIT_ASSERT_MESSAGE("Exporting to ODF",
+                xAdaptor->odfConvert(m_directories.getURLFromSrc("/sdext/source/pdfimport/test/testTdf105536.pdf"),
+                new OutputWrapString(aOutput),
+                nullptr));
+            // This ensures that the imported image arrives properly flipped
+            CPPUNIT_ASSERT(aOutput.indexOf("draw:transform=\"matrix(-21488.4 0 0 -27978.1 21488.4 27978.1)\"") != -1);
+        }
+
         CPPUNIT_TEST_SUITE(PDFITest);
         CPPUNIT_TEST(testXPDFParser);
         CPPUNIT_TEST(testOdfWriterExport);
         CPPUNIT_TEST(testOdfDrawExport);
         CPPUNIT_TEST(testTdf96993);
         CPPUNIT_TEST(testTdf98421);
+        CPPUNIT_TEST(testTdf105536);
         CPPUNIT_TEST_SUITE_END();
     };
 

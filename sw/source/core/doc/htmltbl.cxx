@@ -56,22 +56,19 @@ class SwHTMLTableLayoutConstraints
     sal_uInt16 nCol;                    // start column
     sal_uInt16 nColSpan;                // the column's COLSPAN
 
-    SwHTMLTableLayoutConstraints *pNext;        // the next constraint
+    std::unique_ptr<SwHTMLTableLayoutConstraints> pNext;        // the next constraint
 
     sal_uLong nMinNoAlign, nMaxNoAlign; // provisional result of AL-Pass 1
 
 public:
     SwHTMLTableLayoutConstraints( sal_uLong nMin, sal_uLong nMax, sal_uInt16 nRow,
                                 sal_uInt16 nCol, sal_uInt16 nColSp );
-    ~SwHTMLTableLayoutConstraints();
 
     sal_uLong GetMinNoAlign() const { return nMinNoAlign; }
     sal_uLong GetMaxNoAlign() const { return nMaxNoAlign; }
 
     SwHTMLTableLayoutConstraints *InsertNext( SwHTMLTableLayoutConstraints *pNxt );
-    SwHTMLTableLayoutConstraints* GetNext() const { return pNext; }
-
-    sal_uInt16 GetRow() const { return nRow; }
+    SwHTMLTableLayoutConstraints* GetNext() const { return pNext.get(); }
 
     sal_uInt16 GetColSpan() const { return nColSpan; }
     sal_uInt16 GetColumn() const { return nCol; }
@@ -131,11 +128,6 @@ SwHTMLTableLayoutConstraints::SwHTMLTableLayoutConstraints(
     nMinNoAlign( nMin ), nMaxNoAlign( nMax )
 {}
 
-SwHTMLTableLayoutConstraints::~SwHTMLTableLayoutConstraints()
-{
-    delete pNext;
-}
-
 SwHTMLTableLayoutConstraints *SwHTMLTableLayoutConstraints::InsertNext(
     SwHTMLTableLayoutConstraints *pNxt )
 {
@@ -143,7 +135,7 @@ SwHTMLTableLayoutConstraints *SwHTMLTableLayoutConstraints::InsertNext(
     SwHTMLTableLayoutConstraints *pConstr = this;
     while( pConstr )
     {
-        if( pConstr->GetRow() > pNxt->GetRow() ||
+        if( pConstr->nRow > pNxt->nRow ||
             pConstr->GetColumn() > pNxt->GetColumn() )
             break;
         pPrev = pConstr;
@@ -152,13 +144,13 @@ SwHTMLTableLayoutConstraints *SwHTMLTableLayoutConstraints::InsertNext(
 
     if( pPrev )
     {
-        pNxt->pNext = pPrev->GetNext();
-        pPrev->pNext = pNxt;
+        pNxt->pNext.reset( pPrev->pNext.release() );
+        pPrev->pNext.reset( pNxt );
         pConstr = this;
     }
     else
     {
-        pNxt->pNext = this;
+        pNxt->pNext.reset( this );
         pConstr = pNxt;
     }
 
@@ -218,7 +210,7 @@ SwHTMLTableLayout::SwHTMLTableLayout( const SwTable * pTable,
     , m_bMustNotResize( false )
     , m_bMustNotRecalc( false )
 {
-    m_aResizeTimer.SetTimeoutHdl( LINK( this, SwHTMLTableLayout,
+    m_aResizeTimer.SetInvokeHandler( LINK( this, SwHTMLTableLayout,
                                              DelayedResize_Impl ) );
 }
 
@@ -437,7 +429,7 @@ const SwStartNode *SwHTMLTableLayout::GetAnyBoxStartNode() const
 SwFrameFormat *SwHTMLTableLayout::FindFlyFrameFormat() const
 {
     const SwTableNode *pTableNd = GetAnyBoxStartNode()->FindTableNode();
-    OSL_ENSURE( pTableNd, "Kein Table-Node?" );
+    OSL_ENSURE( pTableNd, "No Table-Node?" );
     return pTableNd->GetFlyFormat();
 }
 
@@ -473,7 +465,7 @@ void SwHTMLTableLayout::AutoLayoutPass1()
 {
     m_nPass1Done++;
 
-    ClearPass1Info();
+    m_nMin = m_nMax = 0; // clear pass1 info
 
     bool bFixRelWidths = false;
     sal_uInt16 i;
@@ -1086,7 +1078,7 @@ void SwHTMLTableLayout::AutoLayoutPass2( sal_uInt16 nAbsAvail, sal_uInt16 nRelAv
                                          sal_uInt16 nAbsRightSpace,
                                          sal_uInt16 nParentInhAbsSpace )
 {
-    // For a start we do a lot of plausability tests
+    // For a start we do a lot of plausibility tests
 
     // An absolute width always has to be passed
     OSL_ENSURE( nAbsAvail, "AutoLayout pass 2: No absolute width given" );
@@ -1264,8 +1256,8 @@ void SwHTMLTableLayout::AutoLayoutPass2( sal_uInt16 nAbsAvail, sal_uInt16 nRelAv
                         (sal_uInt16)((nColMinD * m_nRelTabWidth) / m_nMin) );
                 }
 
-                nAbs = nAbs + (sal_uInt16)pColumn->GetAbsColWidth();
-                nRel = nRel + (sal_uInt16)pColumn->GetRelColWidth();
+                nAbs = nAbs + pColumn->GetAbsColWidth();
+                nRel = nRel + pColumn->GetRelColWidth();
             }
             pColumn = GetColumn( m_nCols-1 );
             pColumn->SetAbsColWidth( nAbsTabWidth - nAbs );
@@ -1301,8 +1293,8 @@ void SwHTMLTableLayout::AutoLayoutPass2( sal_uInt16 nAbsAvail, sal_uInt16 nRelAv
                         (sal_uInt16)((((nColMinD-nRealColMin) * nDistRel) / nDistMin) + nRealColMin) );
                 }
 
-                nAbs = nAbs + (sal_uInt16)pColumn->GetAbsColWidth();
-                nRel = nRel + (sal_uInt16)pColumn->GetRelColWidth();
+                nAbs = nAbs + pColumn->GetAbsColWidth();
+                nRel = nRel + pColumn->GetRelColWidth();
             }
             pColumn = GetColumn( m_nCols-1 );
             pColumn->SetAbsColWidth( nAbsTabWidth - nAbs );
@@ -1505,12 +1497,12 @@ void SwHTMLTableLayout::AutoLayoutPass2( sal_uInt16 nAbsAvail, sal_uInt16 nRelAv
         // Calculate the size and position of the additional cells.
         switch( m_eTableAdjust )
         {
-        case SVX_ADJUST_RIGHT:
+        case SvxAdjust::Right:
             nAbsLeftFill = nAbsLeftFill + nAbsDist;
             m_nRelLeftFill = m_nRelLeftFill + nRelDist;
             nParentInhAbsLeftSpace = nParentInhAbsSpace;
             break;
-        case SVX_ADJUST_CENTER:
+        case SvxAdjust::Center:
             {
                 sal_uInt16 nAbsLeftDist = nAbsDist / 2;
                 nAbsLeftFill = nAbsLeftFill + nAbsLeftDist;
@@ -1523,7 +1515,7 @@ void SwHTMLTableLayout::AutoLayoutPass2( sal_uInt16 nAbsAvail, sal_uInt16 nRelAv
                                           nParentInhAbsLeftSpace;
             }
             break;
-        case SVX_ADJUST_LEFT:
+        case SvxAdjust::Left:
         default:
             nAbsRightFill = nAbsRightFill + nAbsDist;
             m_nRelRightFill = m_nRelRightFill + nRelDist;
@@ -1741,7 +1733,7 @@ void SwHTMLTableLayout::Resize_( sal_uInt16 nAbsAvail, bool bRecalc )
         pRoot->EndAllAction( true );    //True per VirDev (browsing is calmer)
 }
 
-IMPL_LINK_NOARG_TYPED( SwHTMLTableLayout, DelayedResize_Impl, Timer*, void )
+IMPL_LINK_NOARG( SwHTMLTableLayout, DelayedResize_Impl, Timer*, void )
 {
     m_aResizeTimer.Stop();
     Resize_( m_nDelayedResizeAbsAvail, m_bDelayedResizeRecalc );

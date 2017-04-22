@@ -30,11 +30,13 @@
 #include "swdllapi.h"
 #include "cmdid.h"
 
+enum class Master_CollCondition;
+
 #define COND_COMMAND_COUNT 28
 
 struct CommandStruct
 {
-    sal_uLong nCnd;
+    Master_CollCondition nCnd;
     sal_uLong nSubCond;
 };
 
@@ -48,14 +50,14 @@ class SW_DLLPUBLIC SwCondCollItem : public SfxPoolItem
     OUString                    m_sStyles[COND_COMMAND_COUNT];
 
 public:
-    SwCondCollItem(sal_uInt16 nWhich = FN_COND_COLL);
-    virtual ~SwCondCollItem();
+    SwCondCollItem();
+    virtual ~SwCondCollItem() override;
 
 
     virtual SfxPoolItem*        Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool                operator==( const SfxPoolItem& ) const override;
 
-    static inline const CommandStruct* GetCmds() { return aCmds; }
+    static const CommandStruct* GetCmds() { return aCmds; }
 
     OUString            GetStyle(sal_uInt16 nPos) const;
     void                SetStyle(const OUString* pStyle, sal_uInt16 nPos);

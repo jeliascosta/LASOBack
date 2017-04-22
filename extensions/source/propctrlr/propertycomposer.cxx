@@ -46,7 +46,7 @@ namespace pcr
     namespace
     {
 
-        struct SetPropertyValue : public ::std::unary_function< Reference< XPropertyHandler >, void >
+        struct SetPropertyValue : public std::unary_function< Reference< XPropertyHandler >, void >
         {
             OUString sPropertyName;
             const Any&      rValue;
@@ -61,8 +61,8 @@ namespace pcr
         template < class BagType >
         void putIntoBag( const Sequence< typename BagType::value_type >& _rArray, BagType& /* [out] */ _rBag )
         {
-            ::std::copy( _rArray.begin(), _rArray.end(),
-                         ::std::insert_iterator< BagType >( _rBag, _rBag.begin() ) );
+            std::copy( _rArray.begin(), _rArray.end(),
+                         std::insert_iterator< BagType >( _rBag, _rBag.begin() ) );
         }
 
 
@@ -70,7 +70,7 @@ namespace pcr
         void copyBagToArray( const BagType& /* [out] */ _rBag, Sequence< typename BagType::value_type >& _rArray )
         {
             _rArray.realloc( _rBag.size() );
-            ::std::copy( _rBag.begin(), _rBag.end(), _rArray.getArray() );
+            std::copy( _rBag.begin(), _rBag.end(), _rArray.getArray() );
         }
     }
 
@@ -84,7 +84,7 @@ namespace pcr
     // of supported properties per handler). Shouldn't we cache this? So that it is O( log k )?
 
 
-    PropertyComposer::PropertyComposer( const ::std::vector< Reference< XPropertyHandler > >& _rSlaveHandlers )
+    PropertyComposer::PropertyComposer( const std::vector< Reference< XPropertyHandler > >& _rSlaveHandlers )
         :PropertyComposer_Base          ( m_aMutex          )
         ,m_aSlaveHandlers               ( _rSlaveHandlers   )
         ,m_aPropertyListeners           ( m_aMutex          )
@@ -110,7 +110,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL PropertyComposer::inspect( const Reference< XInterface >& _rxIntrospectee ) throw (RuntimeException, NullPointerException, std::exception)
+    void SAL_CALL PropertyComposer::inspect( const Reference< XInterface >& _rxIntrospectee )
     {
         MethodGuard aGuard( *this );
 
@@ -124,35 +124,35 @@ namespace pcr
     }
 
 
-    Any SAL_CALL PropertyComposer::getPropertyValue( const OUString& _rPropertyName ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    Any SAL_CALL PropertyComposer::getPropertyValue( const OUString& _rPropertyName )
     {
         MethodGuard aGuard( *this );
         return m_aSlaveHandlers[0]->getPropertyValue( _rPropertyName );
     }
 
 
-    void SAL_CALL PropertyComposer::setPropertyValue( const OUString& _rPropertyName, const Any& _rValue ) throw (UnknownPropertyException, RuntimeException, PropertyVetoException, std::exception)
+    void SAL_CALL PropertyComposer::setPropertyValue( const OUString& _rPropertyName, const Any& _rValue )
     {
         MethodGuard aGuard( *this );
-        ::std::for_each( m_aSlaveHandlers.begin(), m_aSlaveHandlers.end(), SetPropertyValue( _rPropertyName, _rValue ) );
+        std::for_each( m_aSlaveHandlers.begin(), m_aSlaveHandlers.end(), SetPropertyValue( _rPropertyName, _rValue ) );
     }
 
 
-    Any SAL_CALL PropertyComposer::convertToPropertyValue( const OUString& _rPropertyName, const Any& _rControlValue ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    Any SAL_CALL PropertyComposer::convertToPropertyValue( const OUString& _rPropertyName, const Any& _rControlValue )
     {
         MethodGuard aGuard( *this );
         return m_aSlaveHandlers[0]->convertToPropertyValue( _rPropertyName, _rControlValue );
     }
 
 
-    Any SAL_CALL PropertyComposer::convertToControlValue( const OUString& _rPropertyName, const Any& _rPropertyValue, const Type& _rControlValueType ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    Any SAL_CALL PropertyComposer::convertToControlValue( const OUString& _rPropertyName, const Any& _rPropertyValue, const Type& _rControlValueType )
     {
         MethodGuard aGuard( *this );
         return m_aSlaveHandlers[0]->convertToControlValue( _rPropertyName, _rPropertyValue, _rControlValueType );
     }
 
 
-    PropertyState SAL_CALL PropertyComposer::getPropertyState( const OUString& _rPropertyName ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    PropertyState SAL_CALL PropertyComposer::getPropertyState( const OUString& _rPropertyName )
     {
         MethodGuard aGuard( *this );
 
@@ -191,21 +191,21 @@ namespace pcr
     }
 
 
-    void SAL_CALL PropertyComposer::addPropertyChangeListener( const Reference< XPropertyChangeListener >& _rxListener ) throw (RuntimeException, std::exception)
+    void SAL_CALL PropertyComposer::addPropertyChangeListener( const Reference< XPropertyChangeListener >& _rxListener )
     {
         MethodGuard aGuard( *this );
         m_aPropertyListeners.addListener( _rxListener );
     }
 
 
-    void SAL_CALL PropertyComposer::removePropertyChangeListener( const Reference< XPropertyChangeListener >& _rxListener ) throw (RuntimeException, std::exception)
+    void SAL_CALL PropertyComposer::removePropertyChangeListener( const Reference< XPropertyChangeListener >& _rxListener )
     {
         MethodGuard aGuard( *this );
         m_aPropertyListeners.removeListener( _rxListener );
     }
 
 
-    Sequence< Property > SAL_CALL PropertyComposer::getSupportedProperties() throw (RuntimeException, std::exception)
+    Sequence< Property > SAL_CALL PropertyComposer::getSupportedProperties()
     {
         MethodGuard aGuard( *this );
 
@@ -228,8 +228,8 @@ namespace pcr
 
                 // the intersection of those properties with all we already have
                 PropertyBag aIntersection;
-                ::std::set_intersection( aThisRound.begin(), aThisRound.end(), m_aSupportedProperties.begin(), m_aSupportedProperties.end(),
-                    ::std::insert_iterator< PropertyBag >( aIntersection, aIntersection.begin() ), PropertyLessByName() );
+                std::set_intersection( aThisRound.begin(), aThisRound.end(), m_aSupportedProperties.begin(), m_aSupportedProperties.end(),
+                    std::insert_iterator< PropertyBag >( aIntersection, aIntersection.begin() ), PropertyLessByName() );
 
                 m_aSupportedProperties.swap( aIntersection );
                 if ( m_aSupportedProperties.empty() )
@@ -255,15 +255,14 @@ namespace pcr
             m_bSupportedPropertiesAreKnown = true;
         }
 
-        Sequence< Property > aSurvived = comphelper::containerToSequence<Property>( m_aSupportedProperties );
-        return aSurvived;
+        return comphelper::containerToSequence( m_aSupportedProperties );
     }
 
 
     void uniteStringArrays( const PropertyComposer::HandlerArray& _rHandlers, Sequence< OUString > (SAL_CALL XPropertyHandler::*pGetter)( void ),
         Sequence< OUString >& /* [out] */ _rUnion )
     {
-        ::std::set< OUString > aUnitedBag;
+        std::set< OUString > aUnitedBag;
 
         Sequence< OUString > aThisRound;
         for ( PropertyComposer::HandlerArray::const_iterator loop = _rHandlers.begin();
@@ -279,7 +278,7 @@ namespace pcr
     }
 
 
-    Sequence< OUString > SAL_CALL PropertyComposer::getSupersededProperties( ) throw (RuntimeException, std::exception)
+    Sequence< OUString > SAL_CALL PropertyComposer::getSupersededProperties( )
     {
         MethodGuard aGuard( *this );
 
@@ -290,7 +289,7 @@ namespace pcr
     }
 
 
-    Sequence< OUString > SAL_CALL PropertyComposer::getActuatingProperties( ) throw (RuntimeException, std::exception)
+    Sequence< OUString > SAL_CALL PropertyComposer::getActuatingProperties( )
     {
         MethodGuard aGuard( *this );
 
@@ -303,21 +302,20 @@ namespace pcr
 
     LineDescriptor SAL_CALL PropertyComposer::describePropertyLine( const OUString& _rPropertyName,
         const Reference< XPropertyControlFactory >& _rxControlFactory )
-        throw (UnknownPropertyException, NullPointerException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this );
         return m_aSlaveHandlers[0]->describePropertyLine( _rPropertyName, _rxControlFactory );
     }
 
 
-    sal_Bool SAL_CALL PropertyComposer::isComposable( const OUString& _rPropertyName ) throw (UnknownPropertyException, RuntimeException, std::exception)
+    sal_Bool SAL_CALL PropertyComposer::isComposable( const OUString& _rPropertyName )
     {
         MethodGuard aGuard( *this );
         return m_aSlaveHandlers[0]->isComposable( _rPropertyName );
     }
 
 
-    InteractiveSelectionResult SAL_CALL PropertyComposer::onInteractivePropertySelection( const OUString& _rPropertyName, sal_Bool _bPrimary, Any& _rData, const Reference< XObjectInspectorUI >& _rxInspectorUI ) throw (UnknownPropertyException, NullPointerException, RuntimeException, std::exception)
+    InteractiveSelectionResult SAL_CALL PropertyComposer::onInteractivePropertySelection( const OUString& _rPropertyName, sal_Bool _bPrimary, Any& _rData, const Reference< XObjectInspectorUI >& _rxInspectorUI )
     {
         if ( !_rxInspectorUI.is() )
             throw NullPointerException();
@@ -378,7 +376,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL PropertyComposer::actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& _rOldValue, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit ) throw (NullPointerException, RuntimeException, std::exception)
+    void SAL_CALL PropertyComposer::actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& _rOldValue, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit )
     {
         if ( !_rxInspectorUI.is() )
             throw NullPointerException();
@@ -436,7 +434,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL PropertyComposer::propertyChange( const PropertyChangeEvent& evt ) throw (RuntimeException, std::exception)
+    void SAL_CALL PropertyComposer::propertyChange( const PropertyChangeEvent& evt )
     {
         if ( !impl_isSupportedProperty_nothrow( evt.PropertyName ) )
             // A slave handler might fire events for more properties than we support. Ignore those.
@@ -455,14 +453,14 @@ namespace pcr
     }
 
 
-    void SAL_CALL PropertyComposer::disposing( const EventObject& Source ) throw (RuntimeException, std::exception)
+    void SAL_CALL PropertyComposer::disposing( const EventObject& Source )
     {
         MethodGuard aGuard( *this );
         m_aPropertyListeners.disposing( Source );
     }
 
 
-    sal_Bool SAL_CALL PropertyComposer::suspend( sal_Bool _bSuspend ) throw (RuntimeException, std::exception)
+    sal_Bool SAL_CALL PropertyComposer::suspend( sal_Bool _bSuspend )
     {
         MethodGuard aGuard( *this );
         for ( PropertyComposer::HandlerArray::const_iterator loop = m_aSlaveHandlers.begin();
@@ -491,7 +489,7 @@ namespace pcr
     }
 
 
-    bool SAL_CALL PropertyComposer::hasPropertyByName( const OUString& _rName ) throw (RuntimeException)
+    bool SAL_CALL PropertyComposer::hasPropertyByName( const OUString& _rName )
     {
         return impl_isSupportedProperty_nothrow( _rName );
     }

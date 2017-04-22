@@ -40,12 +40,8 @@
 #include <vector>
 
 class Color;
-class SdrModel;
 class SdrObject;
-class SfxItemSet;
-struct SvxMSDffVertPair;
-struct SvxMSDffCalculationData;
-struct SvxMSDffTextRectangles;
+class SdrPathObj;
 
 enum class HandleFlags
 {
@@ -74,8 +70,6 @@ namespace o3tl
 // escher, but we are using it internally in to differentiate
 // between X_RANGE and Y_RANGE
 
-class SdrPathObj;
-
 class SVX_DLLPUBLIC EnhancedCustomShape2d : public SfxItemSet
 {
         SdrObject*                  pCustomShapeObj;
@@ -87,7 +81,7 @@ class SVX_DLLPUBLIC EnhancedCustomShape2d : public SfxItemSet
         sal_Int32                   nCoordHeightG;
         sal_Int32                   nCoordWidth;
         sal_Int32                   nCoordHeight;
-        Rectangle                   aLogicRect;
+        tools::Rectangle                   aLogicRect;
 
         double                      fXScale;
         double                      fYScale;
@@ -137,7 +131,7 @@ class SVX_DLLPUBLIC EnhancedCustomShape2d : public SfxItemSet
         SAL_DLLPRIVATE Point    GetPoint( const css::drawing::EnhancedCustomShapeParameterPair&,
                                                     const bool bScale = true, const bool bReplaceGeoSize = false ) const;
 
-        SAL_DLLPRIVATE void     CreateSubPath( sal_uInt16& rSrcPt, sal_uInt16& rSegmentInd, std::vector< SdrPathObj* >& rObjectList,
+        SAL_DLLPRIVATE void     CreateSubPath( sal_Int32& rSrcPt, sal_Int32& rSegmentInd, std::vector< SdrPathObj* >& rObjectList,
                                                    bool bLineGeometryNeededOnly, bool bSortFilledObjectsToBack,
                                                    sal_Int32 nIndex );
         SAL_DLLPRIVATE SdrObject* CreatePathObj( bool bLineGeometryNeededOnly );
@@ -184,33 +178,17 @@ class SVX_DLLPUBLIC EnhancedCustomShape2d : public SfxItemSet
         SdrObject*              CreateLineGeometry();
         SdrObject*              CreateObject( bool bLineGeometryNeededOnly );
         void                    ApplyGluePoints( SdrObject* pObj );
-        Rectangle               GetTextRect() const;
-        const Rectangle&        GetLogicRect() const { return aLogicRect; }
+        tools::Rectangle               GetTextRect() const;
+        const tools::Rectangle&        GetLogicRect() const { return aLogicRect; }
 
         sal_uInt32              GetHdlCount() const;
         bool                    GetHandlePosition( const sal_uInt32 nIndex, Point& rReturnPosition ) const;
         bool                    SetHandleControllerPosition( const sal_uInt32 nIndex, const css::awt::Point& rPosition );
 
         EnhancedCustomShape2d( SdrObject* pSdrObjCustomShape );
-        virtual ~EnhancedCustomShape2d();
+        virtual ~EnhancedCustomShape2d() override;
 
-        enum SAL_DLLPRIVATE EnumFunc
-        {
-            ENUM_FUNC_PI,
-            ENUM_FUNC_LEFT,
-            ENUM_FUNC_TOP,
-            ENUM_FUNC_RIGHT,
-            ENUM_FUNC_BOTTOM,
-            ENUM_FUNC_XSTRETCH,
-            ENUM_FUNC_YSTRETCH,
-            ENUM_FUNC_HASSTROKE,
-            ENUM_FUNC_HASFILL,
-            ENUM_FUNC_WIDTH,
-            ENUM_FUNC_HEIGHT,
-            ENUM_FUNC_LOGWIDTH,
-            ENUM_FUNC_LOGHEIGHT
-        };
-        SAL_DLLPRIVATE double   GetEnumFunc( const EnumFunc eVal ) const;
+        SAL_DLLPRIVATE double   GetEnumFunc( const EnhancedCustomShape::ExpressionFunct eVal ) const;
 
         SAL_DLLPRIVATE double   GetAdjustValueAsDouble( const sal_Int32 nIndex ) const;
         SAL_DLLPRIVATE double   GetEquationValueAsDouble( const sal_Int32 nIndex ) const;

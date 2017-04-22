@@ -7,19 +7,21 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#include "../sdmodeltestbase.hxx"
 #include <test/bootstrapfixture.hxx>
 #include <unotest/macros_test.hxx>
 #include <test/xmltesttools.hxx>
 #include <boost/property_tree/json_parser.hpp>
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
+#include <sfx2/lokhelper.hxx>
 #include <com/sun/star/frame/Desktop.hpp>
 #include <comphelper/dispatchcommand.hxx>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/propertysequence.hxx>
 #include <comphelper/string.hxx>
 #include <editeng/editids.hrc>
-#include <editeng/editview.hxx>
 #include <editeng/editobj.hxx>
+#include <editeng/editview.hxx>
 #include <editeng/outliner.hxx>
 #include <editeng/fontitem.hxx>
 #include <editeng/fhgtitem.hxx>
@@ -31,84 +33,117 @@
 #include <comphelper/lok.hxx>
 #include <svx/svdotable.hxx>
 #include <svx/svdoutl.hxx>
+#include <unotools/datetime.hxx>
 
 #include <DrawDocShell.hxx>
+#include <ViewShellBase.hxx>
 #include <ViewShell.hxx>
 #include <sdpage.hxx>
 #include <unomodel.hxx>
 #include <drawdoc.hxx>
+#include <undo/undomanager.hxx>
+#include <sfx2/request.hxx>
+#include <svx/svxids.hrc>
+
+#include <chrono>
 
 using namespace css;
 
-#if !defined(_WIN32) && !defined(MACOSX)
-static const char* DATA_DIRECTORY = "/sd/qa/unit/tiledrendering/data/";
-#endif
+static const char* const DATA_DIRECTORY = "/sd/qa/unit/tiledrendering/data/";
 
-class SdTiledRenderingTest : public test::BootstrapFixture, public unotest::MacrosTest, public XmlTestTools
+static std::ostream& operator<<(std::ostream& os, ViewShellId id)
+{
+    os << (sal_Int32)id;
+    return os;
+}
+
+class SdTiledRenderingTest : public SdModelTestBase, public XmlTestTools
 {
 public:
     SdTiledRenderingTest();
     virtual void setUp() override;
     virtual void tearDown() override;
 
-#if !defined(_WIN32) && !defined(MACOSX)
     void testRegisterCallback();
     void testPostKeyEvent();
     void testPostMouseEvent();
     void testSetTextSelection();
     void testGetTextSelection();
     void testSetGraphicSelection();
+    void testUndoShells();
     void testResetSelection();
     void testSearch();
     void testSearchAll();
     void testSearchAllSelections();
     void testSearchAllNotifications();
     void testSearchAllFollowedBySearch();
+    void testDontSearchInMasterPages();
     void testInsertDeletePage();
     void testInsertTable();
     void testPartHash();
     void testResizeTable();
     void testResizeTableColumn();
+    void testViewCursors();
+    void testViewCursorParts();
+    void testCursorViews();
+    void testViewLock();
+    void testUndoLimiting();
+    void testCreateViewGraphicSelection();
+    void testCreateViewTextCursor();
     void testTdf102223();
+    void testPostKeyEventInvalidation();
     void testTdf103083();
-#endif
+    void testTdf104405();
+    void testTdf81754();
+    void testTdf105502();
+    void testCommentCallbacks();
 
     CPPUNIT_TEST_SUITE(SdTiledRenderingTest);
-#if !defined(_WIN32) && !defined(MACOSX)
     CPPUNIT_TEST(testRegisterCallback);
     CPPUNIT_TEST(testPostKeyEvent);
     CPPUNIT_TEST(testPostMouseEvent);
     CPPUNIT_TEST(testSetTextSelection);
     CPPUNIT_TEST(testGetTextSelection);
     CPPUNIT_TEST(testSetGraphicSelection);
+    CPPUNIT_TEST(testUndoShells);
     CPPUNIT_TEST(testResetSelection);
     CPPUNIT_TEST(testSearch);
     CPPUNIT_TEST(testSearchAll);
     CPPUNIT_TEST(testSearchAllSelections);
     CPPUNIT_TEST(testSearchAllNotifications);
     CPPUNIT_TEST(testSearchAllFollowedBySearch);
+    CPPUNIT_TEST(testDontSearchInMasterPages);
     CPPUNIT_TEST(testInsertDeletePage);
     CPPUNIT_TEST(testInsertTable);
     CPPUNIT_TEST(testPartHash);
     CPPUNIT_TEST(testResizeTable);
     CPPUNIT_TEST(testResizeTableColumn);
+    CPPUNIT_TEST(testViewCursors);
+    CPPUNIT_TEST(testViewCursorParts);
+    CPPUNIT_TEST(testCursorViews);
+    CPPUNIT_TEST(testViewLock);
+    CPPUNIT_TEST(testUndoLimiting);
+    CPPUNIT_TEST(testCreateViewGraphicSelection);
+    CPPUNIT_TEST(testCreateViewTextCursor);
     CPPUNIT_TEST(testTdf102223);
+    CPPUNIT_TEST(testPostKeyEventInvalidation);
     CPPUNIT_TEST(testTdf103083);
-#endif
+    CPPUNIT_TEST(testTdf104405);
+    CPPUNIT_TEST(testTdf81754);
+    CPPUNIT_TEST(testTdf105502);
+    CPPUNIT_TEST(testCommentCallbacks);
+
     CPPUNIT_TEST_SUITE_END();
 
 private:
-#if !defined(_WIN32) && !defined(MACOSX)
-    SdXImpressDocument* createDoc(const char* pName);
+    SdXImpressDocument* createDoc(const char* pName, const uno::Sequence<beans::PropertyValue>& rArguments = uno::Sequence<beans::PropertyValue>());
     static void callback(int nType, const char* pPayload, void* pData);
     void callbackImpl(int nType, const char* pPayload);
     xmlDocPtr parseXmlDump();
-#endif
 
     uno::Reference<lang::XComponent> mxComponent;
-#if !defined(_WIN32) && !defined(MACOSX)
-    Rectangle m_aInvalidation;
-    std::vector<Rectangle> m_aSelection;
+    ::tools::Rectangle m_aInvalidation;
+    std::vector<::tools::Rectangle> m_aSelection;
     bool m_bFound;
     sal_Int32 m_nPart;
     std::vector<OString> m_aSearchResultSelection;
@@ -119,17 +154,14 @@ private:
     /// For document size changed callback.
     osl::Condition m_aDocumentSizeCondition;
     xmlBufferPtr m_pXmlBuffer;
-#endif
 };
 
 SdTiledRenderingTest::SdTiledRenderingTest()
-#if !defined(_WIN32) && !defined(MACOSX)
     : m_bFound(true),
       m_nPart(0),
       m_nSelectionBeforeSearchResult(0),
       m_nSelectionAfterSearchResult(0),
       m_pXmlBuffer(nullptr)
-#endif
 {
 }
 
@@ -145,23 +177,20 @@ void SdTiledRenderingTest::tearDown()
     if (mxComponent.is())
         mxComponent->dispose();
 
-#if !defined(_WIN32) && !defined(MACOSX)
     if (m_pXmlBuffer)
         xmlBufferFree(m_pXmlBuffer);
-#endif
 
     test::BootstrapFixture::tearDown();
 }
 
-#if !defined(_WIN32) && !defined(MACOSX)
-SdXImpressDocument* SdTiledRenderingTest::createDoc(const char* pName)
+SdXImpressDocument* SdTiledRenderingTest::createDoc(const char* pName, const uno::Sequence<beans::PropertyValue>& rArguments)
 {
     if (mxComponent.is())
         mxComponent->dispose();
     mxComponent = loadFromDesktop(m_directories.getURLFromSrc(DATA_DIRECTORY) + OUString::createFromAscii(pName), "com.sun.star.presentation.PresentationDocument");
     SdXImpressDocument* pImpressDocument = dynamic_cast<SdXImpressDocument*>(mxComponent.get());
     CPPUNIT_ASSERT(pImpressDocument);
-    pImpressDocument->initializeForTiledRendering(uno::Sequence<beans::PropertyValue>());
+    pImpressDocument->initializeForTiledRendering(rArguments);
     return pImpressDocument;
 }
 
@@ -187,7 +216,7 @@ static std::vector<OUString> lcl_convertSeparated(const OUString& rString, sal_U
     return aRet;
 }
 
-static void lcl_convertRectangle(const OUString& rString, Rectangle& rRectangle)
+static void lcl_convertRectangle(const OUString& rString, ::tools::Rectangle& rRectangle)
 {
     uno::Sequence<OUString> aSeq = comphelper::string::convertCommaSeparated(rString);
     CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(4), aSeq.getLength());
@@ -214,7 +243,7 @@ void SdTiledRenderingTest::callbackImpl(int nType, const char* pPayload)
         m_aSelection.clear();
         for (const OUString& rString : lcl_convertSeparated(aPayload, static_cast<sal_Unicode>(';')))
         {
-            Rectangle aRectangle;
+            ::tools::Rectangle aRectangle;
             lcl_convertRectangle(rString, aRectangle);
             m_aSelection.push_back(aRectangle);
         }
@@ -282,8 +311,8 @@ xmlDocPtr SdTiledRenderingTest::parseXmlDump()
 void SdTiledRenderingTest::testRegisterCallback()
 {
     SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
-    pXImpressDocument->registerCallback(&SdTiledRenderingTest::callback, this);
     sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    pViewShell->GetViewShellBase().registerLibreOfficeKitViewCallback(&SdTiledRenderingTest::callback, this);
 
     // Start text edit of the empty title shape.
     SdPage* pActualPage = pViewShell->GetActualPage();
@@ -294,7 +323,7 @@ void SdTiledRenderingTest::testRegisterCallback()
 
     // Check that the top left 256x256px tile would be invalidated.
     CPPUNIT_ASSERT(!m_aInvalidation.IsEmpty());
-    Rectangle aTopLeft(0, 0, 256*15, 256*15); // 1 px = 15 twips, assuming 96 DPI.
+    ::tools::Rectangle aTopLeft(0, 0, 256*15, 256*15); // 1 px = 15 twips, assuming 96 DPI.
     CPPUNIT_ASSERT(m_aInvalidation.IsOver(aTopLeft));
 }
 
@@ -345,10 +374,14 @@ void SdTiledRenderingTest::testPostMouseEvent()
     CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(1), rEditView.GetSelection().nStartPos);
 
     vcl::Cursor* pCursor = rEditView.GetCursor();
-    Point aPosition = pCursor->GetPos();
+    Point aPosition(pCursor->GetPos().getX(), pCursor->GetPos().getY() + pCursor->GetSize().Height() / 2);
     aPosition.setX(aPosition.getX() - 1000);
-    pXImpressDocument->postMouseEvent(LOK_MOUSEEVENT_MOUSEBUTTONDOWN, convertMm100ToTwip(aPosition.getX()), convertMm100ToTwip(aPosition.getY()), 1);
-    pXImpressDocument->postMouseEvent(LOK_MOUSEEVENT_MOUSEBUTTONUP, convertMm100ToTwip(aPosition.getX()), convertMm100ToTwip(aPosition.getY()), 1);
+    pXImpressDocument->postMouseEvent(LOK_MOUSEEVENT_MOUSEBUTTONDOWN,
+                                      convertMm100ToTwip(aPosition.getX()), convertMm100ToTwip(aPosition.getY()),
+                                      1, MOUSE_LEFT, 0);
+    pXImpressDocument->postMouseEvent(LOK_MOUSEEVENT_MOUSEBUTTONUP,
+                                      convertMm100ToTwip(aPosition.getX()), convertMm100ToTwip(aPosition.getY()),
+                                      1, MOUSE_LEFT, 0);
     CPPUNIT_ASSERT(pView->GetTextEditObject());
     // The new cursor position must be before the first word.
     CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(0), rEditView.GetSelection().nStartPos);
@@ -417,15 +450,48 @@ void SdTiledRenderingTest::testSetGraphicSelection()
     CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt32>(8), pObject->GetHdlCount());
     // Take the bottom center one.
     SdrHdl* pHdl = pObject->GetHdl(6);
-    CPPUNIT_ASSERT_EQUAL(HDL_LOWER, pHdl->GetKind());
-    Rectangle aShapeBefore = pObject->GetSnapRect();
+    CPPUNIT_ASSERT_EQUAL((int)SdrHdlKind::Lower, (int)pHdl->GetKind());
+    ::tools::Rectangle aShapeBefore = pObject->GetSnapRect();
     // Resize.
     pXImpressDocument->setGraphicSelection(LOK_SETGRAPHICSELECTION_START, convertMm100ToTwip(pHdl->GetPos().getX()), convertMm100ToTwip(pHdl->GetPos().getY()));
     pXImpressDocument->setGraphicSelection(LOK_SETGRAPHICSELECTION_END, convertMm100ToTwip(pHdl->GetPos().getX()), convertMm100ToTwip(pHdl->GetPos().getY() + 1000));
-    Rectangle aShapeAfter = pObject->GetSnapRect();
+
+    // Assert that view shell ID tracking works.
+    sal_Int32 nView1 = SfxLokHelper::getView();
+    SdDrawDocument* pDocument = pXImpressDocument->GetDoc();
+    sd::UndoManager* pUndoManager = pDocument->GetUndoManager();
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), pUndoManager->GetUndoActionCount());
+    auto pListAction = dynamic_cast<SfxListUndoAction*>(pUndoManager->GetUndoAction());
+    CPPUNIT_ASSERT(pListAction);
+    for (size_t i = 0; i < pListAction->aUndoActions.size(); ++i)
+        // The second item was -1 here, view shell ID wasn't known.
+        CPPUNIT_ASSERT_EQUAL(ViewShellId(nView1), pListAction->aUndoActions.GetUndoAction(i)->GetViewShellId());
+
+    ::tools::Rectangle aShapeAfter = pObject->GetSnapRect();
     // Check that a resize happened, but aspect ratio is not kept.
     CPPUNIT_ASSERT_EQUAL(aShapeBefore.getWidth(), aShapeAfter.getWidth());
     CPPUNIT_ASSERT(aShapeBefore.getHeight() < aShapeAfter.getHeight());
+}
+
+void SdTiledRenderingTest::testUndoShells()
+{
+    // Load a document and set the page size.
+    SdXImpressDocument* pXImpressDocument = createDoc("shape.odp");
+    uno::Sequence<beans::PropertyValue> aPropertyValues(comphelper::InitPropertySequence(
+    {
+        {"AttributePageSize.Width", uno::makeAny(static_cast<sal_Int32>(10000))},
+        {"AttributePageSize.Height", uno::makeAny(static_cast<sal_Int32>(10000))},
+    }));
+    comphelper::dispatchCommand(".uno:AttributePageSize", aPropertyValues);
+    Scheduler::ProcessEventsToIdle();
+
+    // Assert that view shell ID tracking works for SdUndoAction subclasses.
+    SdDrawDocument* pDocument = pXImpressDocument->GetDoc();
+    sd::UndoManager* pUndoManager = pDocument->GetUndoManager();
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), pUndoManager->GetUndoActionCount());
+    sal_Int32 nView1 = SfxLokHelper::getView();
+    // This was -1, SdUndoGroup did not track what view shell created it.
+    CPPUNIT_ASSERT_EQUAL(ViewShellId(nView1), pUndoManager->GetUndoAction()->GetViewShellId());
 }
 
 void SdTiledRenderingTest::testResetSelection()
@@ -467,14 +533,14 @@ void SdTiledRenderingTest::testSearch()
 {
     comphelper::LibreOfficeKit::setActive();
     SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
-    pXImpressDocument->registerCallback(&SdTiledRenderingTest::callback, this);
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    pViewShell->GetViewShellBase().registerLibreOfficeKitViewCallback(&SdTiledRenderingTest::callback, this);
     uno::Reference<container::XIndexAccess> xDrawPage(pXImpressDocument->getDrawPages()->getByIndex(0), uno::UNO_QUERY);
     uno::Reference<text::XTextRange> xShape(xDrawPage->getByIndex(0), uno::UNO_QUERY);
     xShape->setString("Aaa bbb.");
 
     lcl_search("bbb");
 
-    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
     SdrView* pView = pViewShell->GetView();
     EditView& rEditView = pView->GetTextEditOutlinerView()->GetEditView();
     // Did we indeed manage to select the second word?
@@ -502,7 +568,8 @@ void SdTiledRenderingTest::testSearchAll()
 {
     comphelper::LibreOfficeKit::setActive();
     SdXImpressDocument* pXImpressDocument = createDoc("search-all.odp");
-    pXImpressDocument->registerCallback(&SdTiledRenderingTest::callback, this);
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    pViewShell->GetViewShellBase().registerLibreOfficeKitViewCallback(&SdTiledRenderingTest::callback, this);
 
     lcl_search("match", /*bFindAll=*/true);
 
@@ -522,7 +589,8 @@ void SdTiledRenderingTest::testSearchAllSelections()
 {
     comphelper::LibreOfficeKit::setActive();
     SdXImpressDocument* pXImpressDocument = createDoc("search-all.odp");
-    pXImpressDocument->registerCallback(&SdTiledRenderingTest::callback, this);
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    pViewShell->GetViewShellBase().registerLibreOfficeKitViewCallback(&SdTiledRenderingTest::callback, this);
 
     lcl_search("third", /*bFindAll=*/true);
     // Make sure this is found on the 3rd slide.
@@ -536,7 +604,8 @@ void SdTiledRenderingTest::testSearchAllNotifications()
 {
     comphelper::LibreOfficeKit::setActive();
     SdXImpressDocument* pXImpressDocument = createDoc("search-all.odp");
-    pXImpressDocument->registerCallback(&SdTiledRenderingTest::callback, this);
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    pViewShell->GetViewShellBase().registerLibreOfficeKitViewCallback(&SdTiledRenderingTest::callback, this);
 
     lcl_search("third", /*bFindAll=*/true);
     // Make sure that we get no notifications about selection changes during search.
@@ -550,7 +619,8 @@ void SdTiledRenderingTest::testSearchAllFollowedBySearch()
 {
     comphelper::LibreOfficeKit::setActive();
     SdXImpressDocument* pXImpressDocument = createDoc("search-all.odp");
-    pXImpressDocument->registerCallback(&SdTiledRenderingTest::callback, this);
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    pViewShell->GetViewShellBase().registerLibreOfficeKitViewCallback(&SdTiledRenderingTest::callback, this);
 
     lcl_search("third", /*bFindAll=*/true);
     lcl_search("match" /*,bFindAll=false*/);
@@ -559,6 +629,21 @@ void SdTiledRenderingTest::testSearchAllFollowedBySearch()
     // This used to give wrong result: 'search' after 'search all' still
     // returned 'third'
     CPPUNIT_ASSERT_EQUAL(OString("match"), pXImpressDocument->getTextSelection("text/plain;charset=utf-8", aUsedFormat));
+}
+
+void SdTiledRenderingTest::testDontSearchInMasterPages()
+{
+    comphelper::LibreOfficeKit::setActive();
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp");
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    pViewShell->GetViewShellBase().registerLibreOfficeKitViewCallback(&SdTiledRenderingTest::callback, this);
+
+    // This should trigger the not-found callback ("date" is present only on
+    // the master page)
+    lcl_search("date");
+    CPPUNIT_ASSERT_EQUAL(false, m_bFound);
+
+    comphelper::LibreOfficeKit::setActive(false);
 }
 
 namespace
@@ -583,7 +668,8 @@ void SdTiledRenderingTest::testInsertDeletePage()
 {
     comphelper::LibreOfficeKit::setActive();
     SdXImpressDocument* pXImpressDocument = createDoc("insert-delete.odp");
-    pXImpressDocument->registerCallback(&SdTiledRenderingTest::callback, this);
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    pViewShell->GetViewShellBase().registerLibreOfficeKitViewCallback(&SdTiledRenderingTest::callback, this);
 
     SdDrawDocument* pDoc = pXImpressDocument->GetDocShell()->GetDoc();
     CPPUNIT_ASSERT(pDoc);
@@ -600,7 +686,7 @@ void SdTiledRenderingTest::testInsertDeletePage()
     };
 
     // the document has 1 slide
-    CPPUNIT_ASSERT(pDoc->GetSdPageCount(PK_STANDARD) == 1);
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(1), pDoc->GetSdPageCount(PageKind::Standard));
 
     uno::Sequence<beans::PropertyValue> aArgs;
 
@@ -609,8 +695,7 @@ void SdTiledRenderingTest::testInsertDeletePage()
     for (unsigned it = 1; it <= 10; it++)
         comphelper::dispatchCommand(".uno:InsertPage", aArgs);
 
-    TimeValue aTimeValue = { 2 , 0 }; // 2 seconds max
-    osl::Condition::Result aResult = m_aDocumentSizeCondition.wait(aTimeValue);
+    osl::Condition::Result aResult = m_aDocumentSizeCondition.wait(std::chrono::seconds(2));
     CPPUNIT_ASSERT_EQUAL(aResult, osl::Condition::result_ok);
 
     // Verify inserted slides
@@ -627,7 +712,7 @@ void SdTiledRenderingTest::testInsertDeletePage()
     for (unsigned it = 1; it <= 10; it++)
         comphelper::dispatchCommand(".uno:DeletePage", aArgs);
 
-    aResult = m_aDocumentSizeCondition.wait(aTimeValue);
+    aResult = m_aDocumentSizeCondition.wait(std::chrono::seconds(2));
     CPPUNIT_ASSERT_EQUAL(aResult, osl::Condition::result_ok);
 
     // Verify deleted slides
@@ -643,7 +728,7 @@ void SdTiledRenderingTest::testInsertDeletePage()
     for (unsigned it = 1; it <= 10; it++)
         comphelper::dispatchCommand(".uno:Undo", aArgs);
 
-    aResult = m_aDocumentSizeCondition.wait(aTimeValue);
+    aResult = m_aDocumentSizeCondition.wait(std::chrono::seconds(2));
     CPPUNIT_ASSERT_EQUAL(aResult, osl::Condition::result_ok);
 
     // Verify inserted slides
@@ -659,7 +744,7 @@ void SdTiledRenderingTest::testInsertDeletePage()
     for (unsigned it = 1; it <= 10; it++)
         comphelper::dispatchCommand(".uno:Redo", aArgs);
 
-    aResult = m_aDocumentSizeCondition.wait(aTimeValue);
+    aResult = m_aDocumentSizeCondition.wait(std::chrono::seconds(2));
     CPPUNIT_ASSERT_EQUAL(aResult, osl::Condition::result_ok);
 
     // Verify deleted slides
@@ -671,7 +756,7 @@ void SdTiledRenderingTest::testInsertDeletePage()
     }
 
     // the document has 1 slide
-    CPPUNIT_ASSERT(pDoc->GetSdPageCount(PK_STANDARD) == 1);
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(1), pDoc->GetSdPageCount(PageKind::Standard));
 
     comphelper::LibreOfficeKit::setActive(false);
 }
@@ -789,9 +874,9 @@ void SdTiledRenderingTest::testResizeTableColumn()
 
     // Remember the original cell widths.
     xmlDocPtr pXmlDoc = parseXmlDump();
-    OString aPrefix = "/sdDrawDocument/sdrModel/sdPage/sdrObjList/sdrTableObj/sdrTableObjImpl/tableLayouter/columns/";
-    sal_Int32 nExpectedColumn1 = getXPath(pXmlDoc, aPrefix + "layout[1]", "size").toInt32();
-    sal_Int32 nExpectedColumn2 = getXPath(pXmlDoc, aPrefix + "layout[2]", "size").toInt32();
+    OString aPrefix = "/SdDrawDocument/SdrModel/SdPage/SdrObjList/SdrTableObj/SdrTableObjImpl/TableLayouter/columns/";
+    sal_Int32 nExpectedColumn1 = getXPath(pXmlDoc, aPrefix + "TableLayouter_Layout[1]", "size").toInt32();
+    sal_Int32 nExpectedColumn2 = getXPath(pXmlDoc, aPrefix + "TableLayouter_Layout[2]", "size").toInt32();
     xmlFreeDoc(pXmlDoc);
     pXmlDoc = nullptr;
 
@@ -802,9 +887,9 @@ void SdTiledRenderingTest::testResizeTableColumn()
 
     // Remember the resized column widths.
     pXmlDoc = parseXmlDump();
-    sal_Int32 nResizedColumn1 = getXPath(pXmlDoc, aPrefix + "layout[1]", "size").toInt32();
+    sal_Int32 nResizedColumn1 = getXPath(pXmlDoc, aPrefix + "TableLayouter_Layout[1]", "size").toInt32();
     CPPUNIT_ASSERT(nResizedColumn1 < nExpectedColumn1);
-    sal_Int32 nResizedColumn2 = getXPath(pXmlDoc, aPrefix + "layout[2]", "size").toInt32();
+    sal_Int32 nResizedColumn2 = getXPath(pXmlDoc, aPrefix + "TableLayouter_Layout[2]", "size").toInt32();
     CPPUNIT_ASSERT(nResizedColumn2 > nExpectedColumn2);
     xmlFreeDoc(pXmlDoc);
     pXmlDoc = nullptr;
@@ -814,13 +899,403 @@ void SdTiledRenderingTest::testResizeTableColumn()
 
     // Check the undo result.
     pXmlDoc = parseXmlDump();
-    sal_Int32 nActualColumn1 = getXPath(pXmlDoc, aPrefix + "layout[1]", "size").toInt32();
+    sal_Int32 nActualColumn1 = getXPath(pXmlDoc, aPrefix + "TableLayouter_Layout[1]", "size").toInt32();
     // Expected was 7049, actual was 6048, i.e. the first column width after undo was 1cm smaller than expected.
     CPPUNIT_ASSERT_EQUAL(nExpectedColumn1, nActualColumn1);
-    sal_Int32 nActualColumn2 = getXPath(pXmlDoc, aPrefix + "layout[2]", "size").toInt32();
+    sal_Int32 nActualColumn2 = getXPath(pXmlDoc, aPrefix + "TableLayouter_Layout[2]", "size").toInt32();
     CPPUNIT_ASSERT_EQUAL(nExpectedColumn2, nActualColumn2);
     xmlFreeDoc(pXmlDoc);
     pXmlDoc = nullptr;
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
+/// A view callback tracks callbacks invoked on one specific view.
+class ViewCallback
+{
+public:
+    bool m_bGraphicSelectionInvalidated;
+    bool m_bGraphicViewSelectionInvalidated;
+    /// Our current part, to be able to decide if a view cursor/selection is relevant for us.
+    int m_nPart;
+    bool m_bCursorVisibleChanged;
+    bool m_bViewLock;
+    bool m_bTilesInvalidated;
+    std::map<int, bool> m_aViewCursorInvalidations;
+    std::map<int, bool> m_aViewCursorVisibilities;
+    bool m_bViewSelectionSet;
+    boost::property_tree::ptree m_aCommentCallbackResult;
+
+    ViewCallback()
+        : m_bGraphicSelectionInvalidated(false),
+          m_bGraphicViewSelectionInvalidated(false),
+          m_nPart(0),
+          m_bCursorVisibleChanged(false),
+          m_bViewLock(false),
+          m_bTilesInvalidated(false),
+          m_bViewSelectionSet(false)
+    {
+    }
+
+    static void callback(int nType, const char* pPayload, void* pData)
+    {
+        static_cast<ViewCallback*>(pData)->callbackImpl(nType, pPayload);
+    }
+
+    void callbackImpl(int nType, const char* pPayload)
+    {
+        switch (nType)
+        {
+        case LOK_CALLBACK_INVALIDATE_TILES:
+        {
+            m_bTilesInvalidated = true;
+        }
+        break;
+        case LOK_CALLBACK_GRAPHIC_SELECTION:
+        {
+            m_bGraphicSelectionInvalidated = true;
+        }
+        break;
+        case LOK_CALLBACK_GRAPHIC_VIEW_SELECTION:
+        {
+            std::stringstream aStream(pPayload);
+            boost::property_tree::ptree aTree;
+            boost::property_tree::read_json(aStream, aTree);
+            if (aTree.get_child("part").get_value<int>() == m_nPart)
+                // Ignore callbacks which are for a different part.
+                m_bGraphicViewSelectionInvalidated = true;
+        }
+        break;
+        case LOK_CALLBACK_CURSOR_VISIBLE:
+        {
+            m_bCursorVisibleChanged = true;
+        }
+        break;
+        case LOK_CALLBACK_VIEW_LOCK:
+        {
+            std::stringstream aStream(pPayload);
+            boost::property_tree::ptree aTree;
+            boost::property_tree::read_json(aStream, aTree);
+            m_bViewLock = aTree.get_child("rectangle").get_value<std::string>() != "EMPTY";
+        }
+        break;
+        case LOK_CALLBACK_INVALIDATE_VIEW_CURSOR:
+        {
+            std::stringstream aStream(pPayload);
+            boost::property_tree::ptree aTree;
+            boost::property_tree::read_json(aStream, aTree);
+            int nViewId = aTree.get_child("viewId").get_value<int>();
+            m_aViewCursorInvalidations[nViewId] = true;
+        }
+        break;
+        case LOK_CALLBACK_VIEW_CURSOR_VISIBLE:
+        {
+            std::stringstream aStream(pPayload);
+            boost::property_tree::ptree aTree;
+            boost::property_tree::read_json(aStream, aTree);
+            int nViewId = aTree.get_child("viewId").get_value<int>();
+            m_aViewCursorVisibilities[nViewId] = OString("true") == pPayload;
+        }
+        break;
+        case LOK_CALLBACK_TEXT_VIEW_SELECTION:
+        {
+            m_bViewSelectionSet = true;
+        }
+        break;
+        case LOK_CALLBACK_COMMENT:
+        {
+            m_aCommentCallbackResult.clear();
+            std::stringstream aStream(pPayload);
+            boost::property_tree::read_json(aStream, m_aCommentCallbackResult);
+            m_aCommentCallbackResult = m_aCommentCallbackResult.get_child("comment");
+        }
+        break;
+        }
+    }
+};
+
+void SdTiledRenderingTest::testViewCursors()
+{
+    comphelper::LibreOfficeKit::setActive();
+
+    // Create two views.
+    SdXImpressDocument* pXImpressDocument = createDoc("shape.odp");
+    ViewCallback aView1;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView1);
+    SfxLokHelper::createView();
+    ViewCallback aView2;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView2);
+
+    // Select the shape in the second view.
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdPage* pActualPage = pViewShell->GetActualPage();
+    SdrObject* pObject = pActualPage->GetObj(0);
+    SdrView* pView = pViewShell->GetView();
+    pView->MarkObj(pObject, pView->GetSdrPageView());
+    Scheduler::ProcessEventsToIdle();
+
+    // First view notices that there was a selection change in the other view.
+    CPPUNIT_ASSERT(aView1.m_bGraphicViewSelectionInvalidated);
+    // Second view notices that there was a selection change in its own view.
+    CPPUNIT_ASSERT(aView2.m_bGraphicSelectionInvalidated);
+    mxComponent->dispose();
+    mxComponent.clear();
+
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
+void SdTiledRenderingTest::testViewCursorParts()
+{
+    comphelper::LibreOfficeKit::setActive();
+
+    // Create two views.
+    SdXImpressDocument* pXImpressDocument = createDoc("shape.odp");
+    ViewCallback aView1;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView1);
+    SfxLokHelper::createView();
+    pXImpressDocument->initializeForTiledRendering(uno::Sequence<beans::PropertyValue>());
+    ViewCallback aView2;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView2);
+
+    // Select the shape in the second view.
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdPage* pActualPage = pViewShell->GetActualPage();
+    SdrObject* pObject = pActualPage->GetObj(0);
+    SdrView* pView = pViewShell->GetView();
+    pView->MarkObj(pObject, pView->GetSdrPageView());
+    Scheduler::ProcessEventsToIdle();
+    // First view notices that there was a selection change in the other view.
+    CPPUNIT_ASSERT(aView1.m_bGraphicViewSelectionInvalidated);
+    pView->UnmarkAllObj(pView->GetSdrPageView());
+
+    // Now switch to the second part in the second view.
+    pXImpressDocument->setPart(1);
+    aView2.m_nPart = 1;
+    aView1.m_bGraphicViewSelectionInvalidated = false;
+    pActualPage = pViewShell->GetActualPage();
+    pObject = pActualPage->GetObj(0);
+    pView->MarkObj(pObject, pView->GetSdrPageView());
+    Scheduler::ProcessEventsToIdle();
+    // First view ignores view selection, as it would be for part 1, and it's in part 0.
+    // This failed when the "part" was always 0 in the callback.
+    CPPUNIT_ASSERT(!aView1.m_bGraphicViewSelectionInvalidated);
+
+    mxComponent->dispose();
+    mxComponent.clear();
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
+void SdTiledRenderingTest::testCursorViews()
+{
+    comphelper::LibreOfficeKit::setActive();
+
+    // Create the first view.
+    SdXImpressDocument* pXImpressDocument = createDoc("title-shape.odp");
+    ViewCallback aView1;
+    int nView1 = SfxLokHelper::getView();
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView1);
+
+    // Begin text edit on the only object on the slide.
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdrView* pView = pViewShell->GetView();
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 0, awt::Key::TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 0, awt::Key::TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 'x', 0);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 'x', 0);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(pView->IsTextEdit());
+
+    // Make sure that cursor state is not changed just because we create a second view.
+    aView1.m_bCursorVisibleChanged = false;
+    SfxLokHelper::createView();
+    pXImpressDocument->initializeForTiledRendering(uno::Sequence<beans::PropertyValue>());
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(!aView1.m_bCursorVisibleChanged);
+
+    // Make sure that typing in the first view causes an invalidation in the
+    // second view as well, even if the second view was created after begin
+    // text edit in the first view.
+    ViewCallback aView2;
+    aView2.m_bViewLock = false;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView2);
+    // This failed: the second view didn't get a lock notification, even if the
+    // first view already started text edit.
+    CPPUNIT_ASSERT(aView2.m_bViewLock);
+    SfxLokHelper::setView(nView1);
+    aView2.m_bTilesInvalidated = false;
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 'x', 0);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 'x', 0);
+    Scheduler::ProcessEventsToIdle();
+    // This failed: the second view was not invalidated when pressing a key in
+    // the first view.
+    CPPUNIT_ASSERT(aView2.m_bTilesInvalidated);
+
+    mxComponent->dispose();
+    mxComponent.clear();
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
+void SdTiledRenderingTest::testViewLock()
+{
+    comphelper::LibreOfficeKit::setActive();
+
+    // Load a document that has a shape and create two views.
+    SdXImpressDocument* pXImpressDocument = createDoc("shape.odp");
+    ViewCallback aView1;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView1);
+    SfxLokHelper::createView();
+    pXImpressDocument->initializeForTiledRendering(uno::Sequence<beans::PropertyValue>());
+
+    // Begin text edit in the second view and assert that the first gets a lock
+    // notification.
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdPage* pActualPage = pViewShell->GetActualPage();
+    SdrObject* pObject = pActualPage->GetObj(0);
+    SdrView* pView = pViewShell->GetView();
+    aView1.m_bViewLock = false;
+    pView->SdrBeginTextEdit(pObject);
+    CPPUNIT_ASSERT(aView1.m_bViewLock);
+
+    // End text edit in the second view, and assert that the lock is removed in
+    // the first view.
+    pView->SdrEndTextEdit();
+    CPPUNIT_ASSERT(!aView1.m_bViewLock);
+
+    mxComponent->dispose();
+    mxComponent.clear();
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
+void SdTiledRenderingTest::testUndoLimiting()
+{
+    comphelper::LibreOfficeKit::setActive();
+
+    // Create the first view.
+    SdXImpressDocument* pXImpressDocument = createDoc("title-shape.odp");
+    SfxViewShell& rViewShell1 = pXImpressDocument->GetDocShell()->GetViewShell()->GetViewShellBase();
+    SfxLokHelper::createView();
+    pXImpressDocument->initializeForTiledRendering(uno::Sequence<beans::PropertyValue>());
+    SfxViewShell& rViewShell2 = pXImpressDocument->GetDocShell()->GetViewShell()->GetViewShellBase();
+
+    // Begin text edit on the only object on the slide.
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdrView* pView = pViewShell->GetView();
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 0, awt::Key::TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 0, awt::Key::TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 'x', 0);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 'x', 0);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(pView->IsTextEdit());
+
+    // Now check what views see the undo action.
+    SdDrawDocument* pDocument = pXImpressDocument->GetDoc();
+    sd::UndoManager* pUndoManager = pDocument->GetUndoManager();
+    pUndoManager->SetViewShell(&rViewShell1);
+    // This was 1, undo action was visible to the first view, even if the
+    // action belongs to the second view.
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(0), pUndoManager->GetUndoActionCount());
+    pUndoManager->SetViewShell(&rViewShell2);
+    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), pUndoManager->GetUndoActionCount());
+    pUndoManager->SetViewShell(nullptr);
+
+    mxComponent->dispose();
+    mxComponent.clear();
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
+void SdTiledRenderingTest::testCreateViewGraphicSelection()
+{
+    comphelper::LibreOfficeKit::setActive();
+
+    // Load a document and register a callback.
+    SdXImpressDocument* pXImpressDocument = createDoc("shape.odp");
+    ViewCallback aView1;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView1);
+
+    // Select the only shape in the document and assert that the graphic selection is changed.
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdPage* pActualPage = pViewShell->GetActualPage();
+    SdrObject* pObject = pActualPage->GetObj(0);
+    SdrView* pView = pViewShell->GetView();
+    aView1.m_bGraphicSelectionInvalidated = false;
+    pView->MarkObj(pObject, pView->GetSdrPageView());
+    CPPUNIT_ASSERT(aView1.m_bGraphicSelectionInvalidated);
+
+    // Now create a new view.
+    aView1.m_bGraphicSelectionInvalidated = false;
+    SfxLokHelper::createView();
+    pXImpressDocument->initializeForTiledRendering({});
+    // This failed, creating a new view affected the graphic selection of an
+    // existing view.
+    CPPUNIT_ASSERT(!aView1.m_bGraphicSelectionInvalidated);
+
+    // Check that when the first view has a shape selected and we register a
+    // callback on the second view, then it gets a "graphic view selection".
+    ViewCallback aView2;
+    aView2.m_bGraphicViewSelectionInvalidated = false;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView2);
+    // This failed, the created new view had no "view selection" of the first
+    // view's selected shape.
+    CPPUNIT_ASSERT(aView2.m_bGraphicViewSelectionInvalidated);
+
+    mxComponent->dispose();
+    mxComponent.clear();
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
+void SdTiledRenderingTest::testCreateViewTextCursor()
+{
+    comphelper::LibreOfficeKit::setActive();
+
+    // Load a document and register a callback.
+    SdXImpressDocument* pXImpressDocument = createDoc("title-shape.odp");
+    ViewCallback aView1;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView1);
+
+    // Begin text edit.
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 0, awt::Key::TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 0, awt::Key::TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 'x', 0);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 'x', 0);
+    Scheduler::ProcessEventsToIdle();
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdrView* pSdrView = pViewShell->GetView();
+    CPPUNIT_ASSERT(pSdrView->IsTextEdit());
+
+    // Create an editeng text selection.
+    EditView& rEditView = pSdrView->GetTextEditOutlinerView()->GetEditView();
+    // 0th para, 0th char -> 0th para, 1st char.
+    ESelection aWordSelection(0, 0, 0, 1);
+    rEditView.SetSelection(aWordSelection);
+
+    // Make sure that creating a new view either doesn't affect the previous
+    // one, or at least the effect is not visible at the end.
+    aView1.m_aViewCursorInvalidations.clear();
+    aView1.m_aViewCursorVisibilities.clear();
+    SfxLokHelper::createView();
+    pXImpressDocument->initializeForTiledRendering({});
+    ViewCallback aView2;
+    aView2.m_bViewSelectionSet = false;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView2);
+    bool bFoundCursor = false;
+    for (const auto& rInvalidation : aView1.m_aViewCursorInvalidations)
+    {
+        auto itVisibility = aView1.m_aViewCursorVisibilities.find(rInvalidation.first);
+        // For each cursor invalidation: if there is no visibility or the visibility is true, that's a problem.
+        if (itVisibility == aView1.m_aViewCursorVisibilities.end() || itVisibility->second)
+        {
+            bFoundCursor = true;
+            break;
+        }
+    }
+    // This failed: the second view created an unexpected view cursor in the
+    // first view.
+    CPPUNIT_ASSERT(!bFoundCursor);
+    // This failed: the text view selection of the first view wasn't seen by
+    // the second view.
+    CPPUNIT_ASSERT(aView2.m_bViewSelectionSet);
+
+    mxComponent->dispose();
+    mxComponent.clear();
     comphelper::LibreOfficeKit::setActive(false);
 }
 
@@ -836,7 +1311,7 @@ void SdTiledRenderingTest::testTdf102223()
     SdrView* pView = pViewShell->GetView();
 
     // select contents of cell
-    Rectangle aRect = pTableObject->GetCurrentBoundRect();
+    ::tools::Rectangle aRect = pTableObject->GetCurrentBoundRect();
     pXImpressDocument->postMouseEvent(LOK_MOUSEEVENT_MOUSEBUTTONDOWN,
                                       convertMm100ToTwip(aRect.getX() + 2), convertMm100ToTwip(aRect.getY() + 2),
                                       1, MOUSE_LEFT, 0);
@@ -865,6 +1340,52 @@ void SdTiledRenderingTest::testTdf102223()
     comphelper::LibreOfficeKit::setActive(false);
 }
 
+void SdTiledRenderingTest::testPostKeyEventInvalidation()
+{
+    // Load a document and begin text edit on the first slide.
+    comphelper::LibreOfficeKit::setActive();
+    SdXImpressDocument* pXImpressDocument = createDoc("2slides.odp");
+    CPPUNIT_ASSERT_EQUAL(0, pXImpressDocument->getPart());
+    ViewCallback aView1;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView1);
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdrView* pView = pViewShell->GetView();
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 0, KEY_TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 0, KEY_TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 0, KEY_F2);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 0, KEY_F2);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(pView->GetTextEditObject());
+
+    // Create a second view and begin text edit there as well, in parallel.
+    SfxLokHelper::createView();
+    pXImpressDocument->initializeForTiledRendering({});
+    ViewCallback aView2;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView2);
+    pXImpressDocument->setPart(1);
+    sd::ViewShell* pViewShell2 = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdrView* pView2 = pViewShell2->GetView();
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 0, KEY_TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 0, KEY_TAB);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 0, KEY_F2);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 0, KEY_F2);
+    Scheduler::ProcessEventsToIdle();
+    CPPUNIT_ASSERT(pView2->GetTextEditObject());
+
+    // Now go left with the cursor in the second view an watch for
+    // invalidations.
+    aView2.m_bTilesInvalidated = false;
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 0, KEY_LEFT);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 0, KEY_LEFT);
+    Scheduler::ProcessEventsToIdle();
+    // This failed: moving the cursor caused unexpected invalidation.
+    CPPUNIT_ASSERT(!aView2.m_bTilesInvalidated);
+
+    mxComponent->dispose();
+    mxComponent.clear();
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
 /**
  * tests a cut/paste bug around bullet items in a list
  */
@@ -883,7 +1404,7 @@ void SdTiledRenderingTest::testTdf103083()
     SdrView* pView = pViewShell->GetView();
 
     // select contents of bullet item
-    Rectangle aRect = pTextObject->GetCurrentBoundRect();
+    ::tools::Rectangle aRect = pTextObject->GetCurrentBoundRect();
     pXImpressDocument->postMouseEvent(LOK_MOUSEEVENT_MOUSEBUTTONDOWN,
                                       convertMm100ToTwip(aRect.getX() + 2), convertMm100ToTwip(aRect.getY() + 2),
                                       1, MOUSE_LEFT, 0);
@@ -932,7 +1453,261 @@ void SdTiledRenderingTest::testTdf103083()
     comphelper::LibreOfficeKit::setActive(false);
 }
 
-#endif
+/**
+ * tests a clone-formatting bug around table cell attributes
+ */
+void SdTiledRenderingTest::testTdf104405()
+{
+    // Load the document.
+    comphelper::LibreOfficeKit::setActive();
+    SdXImpressDocument* pXImpressDocument = createDoc("tdf104405.fodp");
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdPage* pActualPage = pViewShell->GetActualPage();
+    SdrObject* pObject = pActualPage->GetObj(2);
+    auto pTableObject = dynamic_cast<sdr::table::SdrTableObj*>(pObject);
+    CPPUNIT_ASSERT(pTableObject);
+
+    // select the middle cell
+    SdrView* pView = pViewShell->GetView();
+    pView->MarkObj(pTableObject, pView->GetSdrPageView());
+    pTableObject->setActiveCell(sdr::table::CellPos(2,1));
+    pView->SdrBeginTextEdit(pTableObject);
+    EditView& rEditView = pView->GetTextEditOutlinerView()->GetEditView();
+    rEditView.SetSelection(ESelection(0, 0, 0, 3)); // start para, start char, end para, end char.
+
+    // trigger the clone-formatting/paintbrush command to copy formatting contents of cell
+    uno::Sequence< beans::PropertyValue > aArgs(1);
+    aArgs[0].Name  = "PersistentCopy";
+    aArgs[0].Value <<= true;
+    comphelper::dispatchCommand(".uno:FormatPaintbrush", aArgs);
+
+    Scheduler::ProcessEventsToIdle();
+
+    // now click on the table
+    pView->MarkObj(pTableObject, pView->GetSdrPageView());
+    pTableObject->setActiveCell(sdr::table::CellPos(0,0));
+    pView->SdrBeginTextEdit(pTableObject);
+    EditView& rEditView2 = pView->GetTextEditOutlinerView()->GetEditView();
+    rEditView2.SetSelection(ESelection(0, 0, 0, 3)); // start para, start char, end para, end char.
+    ::tools::Rectangle aRect = pTableObject->GetCurrentBoundRect();
+    pXImpressDocument->postMouseEvent(LOK_MOUSEEVENT_MOUSEBUTTONDOWN,
+                                      convertMm100ToTwip(aRect.getX()), convertMm100ToTwip(aRect.getY()),
+                                      1, MOUSE_LEFT, 0);
+    pXImpressDocument->postMouseEvent(LOK_MOUSEEVENT_MOUSEBUTTONUP,
+                                      convertMm100ToTwip(aRect.getX()), convertMm100ToTwip(aRect.getY()),
+                                      1, MOUSE_LEFT, 0);
+
+    Scheduler::ProcessEventsToIdle();
+
+    // check that the first cell has acquired the resulting vertical style
+    xmlDocPtr pXmlDoc = parseXmlDump();
+    OString aPrefix = "/SdDrawDocument/SdrModel/SdPage/SdrObjList/SdrTableObj/SdrTableObjImpl"
+                      "/TableModel/Cell[1]/DefaultProperties/SfxItemSet/SdrTextVertAdjustItem";
+    // the following name has a compiler-dependent part
+    CPPUNIT_ASSERT_EQUAL(getXPath(pXmlDoc, aPrefix, "value"), OUString("2"));
+    xmlFreeDoc(pXmlDoc);
+
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
+void SdTiledRenderingTest::testTdf81754()
+{
+    SdXImpressDocument* pXImpressDocument = createDoc("tdf81754.pptx");
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    SdPage* pActualPage = pViewShell->GetActualPage();
+    SdrObject* pObject = pActualPage->GetObj(1);
+
+    SdrTextObj* pTextObj = static_cast<SdrTextObj*>(pObject);
+    SdrView* pView = pViewShell->GetView();
+    pView->MarkObj(pTextObj, pView->GetSdrPageView());
+    SfxStringItem aInputString(SID_ATTR_CHAR, "x");
+    pViewShell->GetViewFrame()->GetDispatcher()->ExecuteList(SID_ATTR_CHAR,
+            SfxCallMode::SYNCHRON, { &aInputString });
+
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYINPUT, 'x', 0);
+    pXImpressDocument->postKeyEvent(LOK_KEYEVENT_KEYUP, 'x', 0);
+
+    Scheduler::ProcessEventsToIdle();
+
+    // now save, reload, and assert that we did not lose the edit
+    ::sd::DrawDocShellRef xDocShRef = saveAndReload(pXImpressDocument->GetDocShell(), PPTX);
+
+    const SdrPage* pPage = GetPage(1, xDocShRef);
+    SdrTextObj* pTextObject = dynamic_cast<SdrTextObj*>(pPage->GetObj(1));
+    CPPUNIT_ASSERT(pTextObject);
+
+    OutlinerParaObject* pOutlinerParagraphObject = pTextObject->GetOutlinerParaObject();
+    const EditTextObject& aEdit = pOutlinerParagraphObject->GetTextObject();
+
+    CPPUNIT_ASSERT_EQUAL(OUString("Somethingxx"), aEdit.GetText(0));
+
+    xDocShRef->DoClose();
+}
+
+void SdTiledRenderingTest::testTdf105502()
+{
+    // Load the document.
+    comphelper::LibreOfficeKit::setActive();
+    SdXImpressDocument* pXImpressDocument = createDoc("tdf105502.odp");
+    sd::ViewShell* pViewShell = pXImpressDocument->GetDocShell()->GetViewShell();
+    sd::Window* pWindow = pViewShell->GetActiveWindow();
+    CPPUNIT_ASSERT(pWindow);
+    SdPage* pActualPage = pViewShell->GetActualPage();
+    SdrObject* pObject = pActualPage->GetObj(0);
+    auto pTableObject = dynamic_cast<sdr::table::SdrTableObj*>(pObject);
+    CPPUNIT_ASSERT(pTableObject);
+
+    // Select the first row.
+    sd::View* pView = pViewShell->GetView();
+    pView->MarkObj(pObject, pView->GetSdrPageView());
+    pView->SdrBeginTextEdit(pObject);
+    rtl::Reference<sdr::SelectionController> xSelectionController(pView->getSelectionController());
+    CPPUNIT_ASSERT(xSelectionController.is());
+    SfxRequest aRequest(pViewShell->GetViewFrame(), SID_TABLE_SELECT_ROW);
+    xSelectionController->Execute(aRequest);
+
+    // Assert that the A1:B1 selection succeeded.
+    CPPUNIT_ASSERT(xSelectionController->hasSelectedCells());
+    sdr::table::CellPos aFirstCell;
+    sdr::table::CellPos aLastCell;
+    xSelectionController->getSelectedCells(aFirstCell, aLastCell);
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(0), aFirstCell.mnCol);
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(0), aFirstCell.mnRow);
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(1), aLastCell.mnCol);
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(0), aLastCell.mnRow);
+
+    // Grow font size for the selection.
+    comphelper::dispatchCommand(".uno:Grow", {});
+    Scheduler::ProcessEventsToIdle();
+
+    // Assert that the selected A1 has now a larger font than the unselected
+    // A2.
+    xmlDocPtr pXmlDoc = parseXmlDump();
+    sal_Int32 nA1Height = getXPath(pXmlDoc, "//Cell[1]/SdrText/OutlinerParaObject/EditTextObject/ContentInfo/attribs[1]/SvxFontHeightItem", "height").toInt32();
+    sal_Int32 nA2Height = getXPath(pXmlDoc, "//Cell[3]/SdrText/OutlinerParaObject/EditTextObject/ContentInfo/attribs[1]/SvxFontHeightItem", "height").toInt32();
+    // This failed when FuText::ChangeFontSize() never did "continue" in the
+    // text loop, instead of doing so depending on what IsInSelection() returns.
+    CPPUNIT_ASSERT(nA1Height > nA2Height);
+    xmlFreeDoc(pXmlDoc);
+
+    comphelper::LibreOfficeKit::setActive(false);
+}
+
+void SdTiledRenderingTest::testCommentCallbacks()
+{
+    // Load the document.
+    comphelper::LibreOfficeKit::setActive();
+    // Set the tiled annotations off
+    comphelper::LibreOfficeKit::setTiledAnnotations(false);
+
+    SdXImpressDocument* pXImpressDocument = createDoc("dummy.odp", comphelper::InitPropertySequence(
+    {
+        {".uno:Author", uno::makeAny(OUString("LOK User1"))},
+    }));
+    ViewCallback aView1;
+    int nView1 = SfxLokHelper::getView();
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView1);
+
+    SfxLokHelper::createView();
+    uno::Sequence<beans::PropertyValue> aArgs(comphelper::InitPropertySequence(
+    {
+        {".uno:Author", uno::makeAny(OUString("LOK User2"))},
+    }));
+    pXImpressDocument->initializeForTiledRendering(aArgs);
+    ViewCallback aView2;
+    SfxViewShell::Current()->registerLibreOfficeKitViewCallback(&ViewCallback::callback, &aView2);
+    int nView2 = SfxLokHelper::getView();
+
+    SfxLokHelper::setView(nView1);
+
+    // Add a new comment
+    aArgs = comphelper::InitPropertySequence(
+    {
+        {"Text", uno::makeAny(OUString("Comment"))},
+    });
+    comphelper::dispatchCommand(".uno:InsertAnnotation", aArgs);
+    Scheduler::ProcessEventsToIdle();
+
+    // We received a LOK_CALLBACK_COMMENT callback with comment 'Add' action
+    CPPUNIT_ASSERT_EQUAL(std::string("Add"), aView1.m_aCommentCallbackResult.get<std::string>("action"));
+    CPPUNIT_ASSERT_EQUAL(std::string("Add"), aView2.m_aCommentCallbackResult.get<std::string>("action"));
+    int nComment1 = aView1.m_aCommentCallbackResult.get<int>("id");
+    CPPUNIT_ASSERT_EQUAL(nComment1, aView2.m_aCommentCallbackResult.get<int>("id"));
+    css::util::DateTime aDateTime;
+    OUString aDateTimeString = OUString::createFromAscii(aView1.m_aCommentCallbackResult.get<std::string>("dateTime").c_str());
+    CPPUNIT_ASSERT(utl::ISO8601parseDateTime(aDateTimeString, aDateTime));
+    CPPUNIT_ASSERT_EQUAL(std::string("LOK User1"), aView1.m_aCommentCallbackResult.get<std::string>("author"));
+    CPPUNIT_ASSERT_EQUAL(std::string("LOK User1"), aView2.m_aCommentCallbackResult.get<std::string>("author"));
+    CPPUNIT_ASSERT_EQUAL(std::string("Comment"), aView1.m_aCommentCallbackResult.get<std::string>("text"));
+    CPPUNIT_ASSERT_EQUAL(std::string("Comment"), aView2.m_aCommentCallbackResult.get<std::string>("text"));
+    CPPUNIT_ASSERT(!aView1.m_aCommentCallbackResult.get<std::string>("parthash").empty());
+    CPPUNIT_ASSERT(!aView2.m_aCommentCallbackResult.get<std::string>("parthash").empty());
+
+    // Reply to a just added comment
+    SfxLokHelper::setView(nView2);
+    aArgs = comphelper::InitPropertySequence(
+    {
+        {"Id", uno::makeAny(OUString::number(nComment1))},
+        {"Text", uno::makeAny(OUString("Reply to comment"))},
+    });
+    comphelper::dispatchCommand(".uno:ReplyToAnnotation", aArgs);
+    Scheduler::ProcessEventsToIdle();
+
+    // We received a LOK_CALLBACK_COMMENT callback with comment 'Modify' action
+    CPPUNIT_ASSERT_EQUAL(std::string("Modify"), aView1.m_aCommentCallbackResult.get<std::string>("action"));
+    CPPUNIT_ASSERT_EQUAL(std::string("Modify"), aView2.m_aCommentCallbackResult.get<std::string>("action"));
+    CPPUNIT_ASSERT_EQUAL(nComment1, aView1.m_aCommentCallbackResult.get<int>("id"));
+    CPPUNIT_ASSERT_EQUAL(nComment1, aView2.m_aCommentCallbackResult.get<int>("id"));
+    CPPUNIT_ASSERT_EQUAL(std::string("LOK User2"), aView1.m_aCommentCallbackResult.get<std::string>("author"));
+    CPPUNIT_ASSERT_EQUAL(std::string("LOK User2"), aView2.m_aCommentCallbackResult.get<std::string>("author"));
+    OUString aReplyTextView1 = OUString::createFromAscii(aView1.m_aCommentCallbackResult.get<std::string>("text").c_str());
+    OUString aReplyTextView2 = OUString::createFromAscii(aView2.m_aCommentCallbackResult.get<std::string>("text").c_str());
+    CPPUNIT_ASSERT(aReplyTextView1.startsWith("Reply to LOK User1"));
+    CPPUNIT_ASSERT(aReplyTextView1.endsWith("Reply to comment"));
+    CPPUNIT_ASSERT(aReplyTextView2.startsWith("Reply to LOK User1"));
+    CPPUNIT_ASSERT(aReplyTextView2.endsWith("Reply to comment"));
+    CPPUNIT_ASSERT(!aView1.m_aCommentCallbackResult.get<std::string>("parthash").empty());
+    CPPUNIT_ASSERT(!aView2.m_aCommentCallbackResult.get<std::string>("parthash").empty());
+
+    // Edit this annotation now
+    aArgs = comphelper::InitPropertySequence(
+    {
+        {"Id", uno::makeAny(OUString::number(nComment1))},
+        {"Text", uno::makeAny(OUString("Edited comment"))},
+    });
+    comphelper::dispatchCommand(".uno:EditAnnotation", aArgs);
+    Scheduler::ProcessEventsToIdle();
+
+    // We received a LOK_CALLBACK_COMMENT callback with comment 'Modify' action
+    CPPUNIT_ASSERT_EQUAL(std::string("Modify"), aView1.m_aCommentCallbackResult.get<std::string>("action"));
+    CPPUNIT_ASSERT_EQUAL(std::string("Modify"), aView2.m_aCommentCallbackResult.get<std::string>("action"));
+    CPPUNIT_ASSERT_EQUAL(nComment1, aView1.m_aCommentCallbackResult.get<int>("id"));
+    CPPUNIT_ASSERT_EQUAL(nComment1, aView2.m_aCommentCallbackResult.get<int>("id"));
+    CPPUNIT_ASSERT(!aView1.m_aCommentCallbackResult.get<std::string>("parthash").empty());
+    CPPUNIT_ASSERT(!aView2.m_aCommentCallbackResult.get<std::string>("parthash").empty());
+    CPPUNIT_ASSERT_EQUAL(std::string("Edited comment"), aView1.m_aCommentCallbackResult.get<std::string>("text"));
+    CPPUNIT_ASSERT_EQUAL(std::string("Edited comment"), aView2.m_aCommentCallbackResult.get<std::string>("text"));
+
+    // Delete the comment
+    aArgs = comphelper::InitPropertySequence(
+    {
+        {"Id", uno::makeAny(OUString::number(nComment1))},
+    });
+    comphelper::dispatchCommand(".uno:DeleteAnnotation", aArgs);
+    Scheduler::ProcessEventsToIdle();
+
+    // We received a LOK_CALLBACK_COMMENT callback with comment 'Remove' action
+    CPPUNIT_ASSERT_EQUAL(std::string("Remove"), aView1.m_aCommentCallbackResult.get<std::string>("action"));
+    CPPUNIT_ASSERT_EQUAL(std::string("Remove"), aView2.m_aCommentCallbackResult.get<std::string>("action"));
+    CPPUNIT_ASSERT_EQUAL(nComment1, aView1.m_aCommentCallbackResult.get<int>("id"));
+    CPPUNIT_ASSERT_EQUAL(nComment1, aView2.m_aCommentCallbackResult.get<int>("id"));
+
+    mxComponent->dispose();
+    mxComponent.clear();
+
+    comphelper::LibreOfficeKit::setTiledAnnotations(true);
+    comphelper::LibreOfficeKit::setActive(false);
+}
 
 CPPUNIT_TEST_SUITE_REGISTRATION(SdTiledRenderingTest);
 

@@ -36,16 +36,15 @@
 #include "appoptio.hxx"
 #include "compiler.hxx"
 
-#include "dwfunctr.hrc"
 #include "dwfunctr.hxx"
 
 /*************************************************************************
 #*  Member:     ScFunctionWin
 #*------------------------------------------------------------------------
 #*
-#*  Klasse:     ScFunctionWin
+#*  Class:      ScFunctionWin
 #*
-#*  Funktion:   Konstruktor der Klasse ScFunctionWin
+#*  Function:   Constructor of ScFunctionWin Class
 #*
 #*  Input:      Sfx- Verknuepfungen, Fenster, Resource
 #*
@@ -53,62 +52,35 @@
 #*
 #************************************************************************/
 
-ScFunctionWin::ScFunctionWin( SfxBindings* pBindingsP, vcl::Window* pParent, const ResId& rResId ) :
-    vcl::Window(pParent, rResId),
-    rBindings   ( *pBindingsP ),
-    aIdle       ( "sc formdlg ScFunctionWin" ),
-    aPrivatSplit    ( VclPtr<ScPrivatSplit>::Create( this, ResId( FT_SPLIT, *rResId.GetResMgr() ) ) ),
-    aCatBox         ( VclPtr<ListBox>::Create( this, ResId( CB_CAT, *rResId.GetResMgr() ) ) ),
-    aFuncList       ( VclPtr<ListBox>::Create( this, ResId( LB_FUNC, *rResId.GetResMgr() ) ) ),
-    aDDFuncList     ( VclPtr<ListBox>::Create( this, ResId( DDLB_FUNC, *rResId.GetResMgr() ) ) ),
-    aInsertButton   ( VclPtr<ImageButton>::Create( this, ResId( IMB_INSERT, *rResId.GetResMgr() ) ) ),
-    aFiFuncDesc     ( VclPtr<FixedText>::Create( this, ResId( FI_FUNCDESC, *rResId.GetResMgr() ) ) ),
-    aOldSize        (0,0),
-    pFuncDesc       (nullptr)
+ScFunctionWin::ScFunctionWin(vcl::Window* pParent, const css::uno::Reference<css::frame::XFrame> &rFrame)
+    : PanelLayout(pParent, "FunctionPanel", "modules/scalc/ui/functionpanel.ui", rFrame)
+    , pFuncDesc(nullptr)
 {
-    FreeResource();
-    InitLRUList();
-    SetStyle(GetStyle()|WB_CLIPCHILDREN);
+    get(aCatBox, "category");
+    get(aFuncList, "funclist");
+    get(aInsertButton, "insert");
+    get(aFiFuncDesc, "funcdesc");
 
-    aIdle.SetPriority(SchedulerPriority::LOWER);
-    aIdle.SetIdleHdl(LINK( this, ScFunctionWin, TimerHdl));
+    InitLRUList();
 
     aFiFuncDesc->SetUpdateMode(true);
-    pAllFuncList=aFuncList;
-    aDDFuncList->Disable();
-    aDDFuncList->Hide();
     nArgs=0;
-    bSizeFlag=false;
     aCatBox->SetDropDownLineCount(9);
     vcl::Font aFont=aFiFuncDesc->GetFont();
     aFont.SetColor(Color(COL_BLACK));
     aFiFuncDesc->SetFont(aFont);
     aFiFuncDesc->SetBackground( GetBackground() );       //! never transparent?
+    aFiFuncDesc->set_height_request(5 * aFiFuncDesc->GetTextHeight());
 
     Link<ListBox&,void> aLink=LINK( this, ScFunctionWin, SelHdl);
     aCatBox->SetSelectHdl(aLink);
     aFuncList->SetSelectHdl(aLink);
-    aDDFuncList->SetSelectHdl(aLink);
 
     aFuncList->SetDoubleClickHdl(LINK( this, ScFunctionWin, SetSelectionHdl));
-    aDDFuncList->SetSelectHdl(aLink);
     aInsertButton->SetClickHdl(LINK( this, ScFunctionWin, SetSelectionClickHdl));
 
-    Link<ScPrivatSplit&,void> a3Link=LINK( this, ScFunctionWin, SetSplitHdl);
-    aPrivatSplit->SetCtrModifiedHdl(a3Link);
-    StartListening( rBindings, true );
-
-    Point aTopLeft=aCatBox->GetPosPixel();
-    OUString aString("ww");
-    Size aTxtSize( aFiFuncDesc->GetTextWidth(aString), aFiFuncDesc->GetTextHeight() );
-    nMinWidth=aTxtSize.Width()+aTopLeft.X()
-            +2*aFuncList->GetPosPixel().X();
-    nMinHeight=19*aTxtSize.Height();
     aCatBox->SelectEntryPos(0);
 
-    Range aYRange(3*aTxtSize.Height()+aFuncList->GetPosPixel().Y(),
-                GetOutputSizePixel().Height()-2*aTxtSize.Height());
-    aPrivatSplit->SetYRange(aYRange);
     SelHdl(*aCatBox.get());
 }
 
@@ -116,9 +88,9 @@ ScFunctionWin::ScFunctionWin( SfxBindings* pBindingsP, vcl::Window* pParent, con
 #*  Member:     ScFunctionWin
 #*------------------------------------------------------------------------
 #*
-#*  Klasse:     ScFunctionWin
+#*  Class:      ScFunctionWin
 #*
-#*  Funktion:   Destruktor der Klasse ScFunctionWin
+#*  Function:   Destructor of ScFunctionWin Class
 #*
 #*  Input:      ---
 #*
@@ -133,25 +105,20 @@ ScFunctionWin::~ScFunctionWin()
 
 void ScFunctionWin::dispose()
 {
-    EndListening( rBindings );
-    aPrivatSplit.disposeAndClear();
-    aCatBox.disposeAndClear();
-    aFuncList.disposeAndClear();
-    aDDFuncList.disposeAndClear();
-    aInsertButton.disposeAndClear();
-    aFiFuncDesc.disposeAndClear();
-    pAllFuncList.clear();
-    vcl::Window::dispose();
+    aCatBox.clear();
+    aFuncList.clear();
+    aInsertButton.clear();
+    aFiFuncDesc.clear();
+    PanelLayout::dispose();
 }
 
 /*************************************************************************
 #*  Member:     UpdateFunctionList
 #*------------------------------------------------------------------------
 #*
-#*  Klasse:     ScFunctionWin
+#*  Class:      ScFunctionWin
 #*
-#*  Funktion:   Aktualisiert die Liste der Funktionen ab-
-#*              haengig von der eingestellten Kategorie.
+#*  Function:   Updates the list of functions depending on the set category
 #*
 #*  Input:      ---
 #*
@@ -174,9 +141,9 @@ void ScFunctionWin::InitLRUList()
 #*  Member:     UpdateFunctionList
 #*------------------------------------------------------------------------
 #*
-#*  Klasse:     ScFunctionWin
+#*  Class:      ScFunctionWin
 #*
-#*  Funktion:   Aktualisiert die Liste der zuletzt verwendeten Funktionen.
+#*  Function:   Updates the list of last used functions.
 #*
 #*  Input:      ---
 #*
@@ -194,164 +161,12 @@ void ScFunctionWin::UpdateLRUList()
 }
 
 /*************************************************************************
-#*  Member:     SetSize
-#*------------------------------------------------------------------------
-#*
-#*  Klasse:     ScFunctionWin
-#*
-#*  Funktion:   Groesse fuer die einzelnen Controls einzustellen.
-#*
-#*  Input:      ---
-#*
-#*  Output:     ---
-#*
-#************************************************************************/
-
-void ScFunctionWin::SetSize()
-{
-    SetLeftRightSize();
-}
-
-/*************************************************************************
-#*  Member:     SetLeftRightSize
-#*------------------------------------------------------------------------
-#*
-#*  Klasse:     ScFunctionWin
-#*
-#*  Funktion:   Groesse fuer die einzelnen Controls einstellen,
-#*              wenn Links oder Rechts angedockt wird.
-#*
-#*  Input:      ---
-#*
-#*  Output:     ---
-#*
-#************************************************************************/
-
-void ScFunctionWin::SetLeftRightSize()
-{
-    if(!bSizeFlag)
-    {
-        bSizeFlag = true;
-
-        Size aDiffSize=GetSizePixel();
-        Size aNewSize=GetOutputSizePixel();
-        aDiffSize.Width()-=aNewSize.Width();
-        aDiffSize.Height()-=aNewSize.Height();
-
-        OUString aString("ww");
-        Size aTxtSize( aFuncList->GetTextWidth(aString), aFuncList->GetTextHeight() );
-
-        Range aYRange(3*aTxtSize.Height()+aFuncList->GetPosPixel().Y(),
-                    GetOutputSizePixel().Height()-2*aTxtSize.Height());
-        aPrivatSplit->SetYRange(aYRange);
-
-        if(aOldSize.Width()!=aNewSize.Width())
-            SetMyWidthLeRi(aNewSize);
-
-        if(aOldSize.Height()!=aNewSize.Height())
-            SetMyHeightLeRi(aNewSize);
-
-        aOldSize=aNewSize;
-        aNewSize.Width()+=aDiffSize.Width();
-        aNewSize.Height()+=aDiffSize.Height();
-        bSizeFlag=false;
-    }
-
-}
-
-/*************************************************************************
-#*  Member:     SetMyWidthLeRi
-#*------------------------------------------------------------------------
-#*
-#*  Klasse:     ScFunctionWin
-#*
-#*  Funktion:   Breite fuer die einzelnen Controls und
-#*              das Fenster einstellen,wenn Li oder Re
-#*
-#*  Input:      neue Fenstergroesse
-#*
-#*  Output:     ---
-#*
-#************************************************************************/
-
-void ScFunctionWin::SetMyWidthLeRi(Size &aNewSize)
-{
-    if((sal_uLong)aNewSize.Width()<nMinWidth)   aNewSize.Width()=nMinWidth;
-
-    Size aCDSize=aCatBox->GetSizePixel();
-    Size aFLSize=aFuncList->GetSizePixel();
-    Size aSplitterSize=aPrivatSplit->GetSizePixel();
-    Size aFDSize=aFiFuncDesc->GetSizePixel();
-
-    Point aCDTopLeft=aCatBox->GetPosPixel();
-    Point aFLTopLeft=aFuncList->GetPosPixel();
-
-    aCDSize.Width()=aNewSize.Width()-aCDTopLeft.X()-aFLTopLeft.X();
-    aFLSize.Width()=aNewSize.Width()-2*aFLTopLeft.X();
-    aFDSize.Width()=aFLSize.Width();
-    aSplitterSize.Width()=aFLSize.Width();
-
-    aCatBox->SetSizePixel(aCDSize);
-    aFuncList->SetSizePixel(aFLSize);
-    aPrivatSplit->SetSizePixel(aSplitterSize);
-    aFiFuncDesc->SetSizePixel(aFDSize);
-}
-
-/*************************************************************************
-#*  Member:     SetHeight
-#*------------------------------------------------------------------------
-#*
-#*  Klasse:     ScFunctionWin
-#*
-#*  Funktion:   Hoehe fuer die einzelnen Controls und
-#*              das Fenster einstellen bei Li oder Re
-#*
-#*  Input:      neue Fenstergroesse
-#*
-#*  Output:     ---
-#*
-#************************************************************************/
-
-void ScFunctionWin::SetMyHeightLeRi(Size &aNewSize)
-{
-    if((sal_uLong)aNewSize.Height()<nMinHeight) aNewSize.Height()=nMinHeight;
-
-    Size aFLSize=aFuncList->GetSizePixel();
-    Size aSplitterSize=aPrivatSplit->GetSizePixel();
-    Size aFDSize=aFiFuncDesc->GetSizePixel();
-
-    Point aFLTopLeft=aFuncList->GetPosPixel();
-    Point aSplitterTopLeft=aPrivatSplit->GetPosPixel();
-    Point aFDTopLeft=aFiFuncDesc->GetPosPixel();
-
-    long nTxtHeight = aFuncList->GetTextHeight();
-
-    short nY=(short)(3*nTxtHeight+
-        aFuncList->GetPosPixel().Y()+aSplitterSize.Height());
-
-    aFDTopLeft.Y()=aNewSize.Height()-aFDSize.Height()-4;
-    if(nY>aFDTopLeft.Y())
-    {
-        aFDSize.Height()-=nY-aFDTopLeft.Y();
-        aFDTopLeft.Y()=nY;
-    }
-    aSplitterTopLeft.Y()=aFDTopLeft.Y()-aSplitterSize.Height()-1;
-    aFLSize.Height()=aSplitterTopLeft.Y()-aFLTopLeft.Y()-1;
-
-    aFuncList->SetSizePixel(aFLSize);
-    aPrivatSplit->SetPosPixel(aSplitterTopLeft);
-    aFiFuncDesc->SetPosPixel(aFDTopLeft);
-    aFiFuncDesc->SetSizePixel(aFDSize);
-
-}
-
-/*************************************************************************
 #*  Member:     SetDescription
 #*------------------------------------------------------------------------
 #*
-#*  Klasse:     ScFunctionWin
+#*  Class:      ScFunctionWin
 #*
-#*  Funktion:   Erklaerungstext fuer die Funktion einstellen.
+#*  Function:
 #*
 #*  Input:      ---
 #*
@@ -363,13 +178,13 @@ void ScFunctionWin::SetDescription()
 {
     aFiFuncDesc->SetText( EMPTY_OUSTRING );
     const ScFuncDesc* pDesc =
-             static_cast<const ScFuncDesc*>(pAllFuncList->GetEntryData(
-                    pAllFuncList->GetSelectEntryPos() ));
+             static_cast<const ScFuncDesc*>(aFuncList->GetEntryData(
+                    aFuncList->GetSelectEntryPos() ));
     if (pDesc)
     {
         pDesc->initArgumentInfo();      // full argument info is needed
 
-        OUStringBuffer aBuf(pAllFuncList->GetSelectEntry());
+        OUStringBuffer aBuf(aFuncList->GetSelectEntry());
         aBuf.append(":\n\n");
         aBuf.append(pDesc->GetParamList());
         aBuf.append("\n\n");
@@ -381,40 +196,15 @@ void ScFunctionWin::SetDescription()
         aFiFuncDesc->Update();
 
     }
- }
-
-/*************************************************************************
-#*  Member:     Close
-#*------------------------------------------------------------------------
-#*
-#*  Klasse:     ScFunctionWin
-#*
-#*  Funktion:   Aenderungen erkennen
-#*
-#*  Input:      ---
-#*
-#*  Output:     TRUE
-#*
-#************************************************************************/
-void ScFunctionWin::Notify( SfxBroadcaster&, const SfxHint& /* rHint */ )
-{
-}
-
-/// override to set new size of the controls
-void ScFunctionWin::Resize()
-{
-    SetSize();
-    vcl::Window::Resize();
 }
 
 /*************************************************************************
 #*  Member:     UpdateFunctionList
 #*------------------------------------------------------------------------
 #*
-#*  Klasse:     ScFunctionWin
+#*  Class:      ScFunctionWin
 #*
-#*  Funktion:   Aktualisiert die Liste der Funktionen ab-
-#*              haengig von der eingestellten Kategorie.
+#*  Function:   Updates the list of functions depending on the set category
 #*
 #*  Input:      ---
 #*
@@ -428,8 +218,8 @@ void ScFunctionWin::UpdateFunctionList()
     sal_Int32  nCategory = ( LISTBOX_ENTRY_NOTFOUND != nSelPos )
                             ? (nSelPos-1) : 0;
 
-    pAllFuncList->Clear();
-    pAllFuncList->SetUpdateMode( false );
+    aFuncList->Clear();
+    aFuncList->SetUpdateMode( false );
 
     if ( nSelPos > 0 )
     {
@@ -438,8 +228,8 @@ void ScFunctionWin::UpdateFunctionList()
         const ScFuncDesc* pDesc = pFuncMgr->First( nCategory );
         while ( pDesc )
         {
-            pAllFuncList->SetEntryData(
-                pAllFuncList->InsertEntry( *(pDesc->pFuncName) ),
+            aFuncList->SetEntryData(
+                aFuncList->InsertEntry( *(pDesc->pFuncName) ),
                 const_cast<ScFuncDesc *>(pDesc) );
             pDesc = pFuncMgr->Next();
         }
@@ -451,20 +241,20 @@ void ScFunctionWin::UpdateFunctionList()
         {
             const formula::IFunctionDescription* pDesc = *iter;
             if (pDesc)
-                pAllFuncList->SetEntryData( pAllFuncList->InsertEntry( pDesc->getFunctionName()), const_cast<formula::IFunctionDescription *>(pDesc));
+                aFuncList->SetEntryData( aFuncList->InsertEntry( pDesc->getFunctionName()), const_cast<formula::IFunctionDescription *>(pDesc));
         }
     }
 
-    pAllFuncList->SetUpdateMode( true );
+    aFuncList->SetUpdateMode( true );
 
-    if ( pAllFuncList->GetEntryCount() > 0 )
+    if ( aFuncList->GetEntryCount() > 0 )
     {
-        pAllFuncList->Enable();
-        pAllFuncList->SelectEntryPos( 0 );
+        aFuncList->Enable();
+        aFuncList->SelectEntryPos( 0 );
     }
     else
     {
-        pAllFuncList->Disable();
+        aFuncList->Disable();
     }
 }
 
@@ -472,11 +262,10 @@ void ScFunctionWin::UpdateFunctionList()
 #*  Member:     DoEnter
 #*------------------------------------------------------------------------
 #*
-#*  Klasse:     ScFunctionWin
+#*  Class:      ScFunctionWin
 #*
-#*  Funktion:   Eingabe ins Dokument uebernehmen. Wird aufgerufen
-#*              nach betaetigen der Uebernehmen- Schaltflaeche
-#*              oder einem Doppelklick in die Funktionsliste.
+#*  Function:   Save input into document. Is called after clicking the
+#*              Apply button or a double-click on the function list.
 #*
 #*  Input:      ---
 #*
@@ -488,7 +277,7 @@ void ScFunctionWin::DoEnter()
 {
     OUString aFirstArgStr;
     OUString aArgStr;
-    OUString aString=pAllFuncList->GetSelectEntry();
+    OUString aString=aFuncList->GetSelectEntry();
     SfxViewShell* pCurSh = SfxViewShell::Current();
     nArgs=0;
 
@@ -505,13 +294,13 @@ void ScFunctionWin::DoEnter()
             if (OutputDevice::isDisposed())
                 return;
             aString = "=";
-            aString += pAllFuncList->GetSelectEntry();
+            aString += aFuncList->GetSelectEntry();
             if (pHdl)
                 pHdl->ClearText();
         }
         const ScFuncDesc* pDesc =
-             static_cast<const ScFuncDesc*>(pAllFuncList->GetEntryData(
-                    pAllFuncList->GetSelectEntryPos() ));
+             static_cast<const ScFuncDesc*>(aFuncList->GetEntryData(
+                    aFuncList->GetSelectEntryPos() ));
         if (pDesc)
         {
             pFuncDesc=pDesc;
@@ -538,14 +327,11 @@ void ScFunctionWin::DoEnter()
                     for ( sal_uInt16 nArg = 1;
                             nArg < nFix && !pDesc->pDefArgFlags[nArg].bOptional; nArg++ )
                     {
-                        if (!pDesc->pDefArgFlags[nArg].bSuppress)
-                        {
-                            aArgStr += aArgSep;
-                            OUString sTmp = pDesc->maDefArgNames[nArg];
-                            sTmp = comphelper::string::strip(sTmp, ' ');
-                            sTmp = sTmp.replaceAll(" ", "_");
-                            aArgStr += sTmp;
-                        }
+                        aArgStr += aArgSep;
+                        OUString sTmp = pDesc->maDefArgNames[nArg];
+                        sTmp = comphelper::string::strip(sTmp, ' ');
+                        sTmp = sTmp.replaceAll(" ", "_");
+                        aArgStr += sTmp;
                     }
                 }
             }
@@ -555,10 +341,10 @@ void ScFunctionWin::DoEnter()
             if (pHdl->GetEditString().isEmpty())
             {
                 aString = "=";
-                aString += pAllFuncList->GetSelectEntry();
+                aString += aFuncList->GetSelectEntry();
             }
             EditView *pEdView=pHdl->GetActiveView();
-            if(pEdView!=nullptr) // @ Wegen Absturz bei Namen festlegen
+            if(pEdView!=nullptr) // @ needed because of crash during setting a name
             {
                 if(nArgs>0)
                 {
@@ -593,10 +379,9 @@ void ScFunctionWin::DoEnter()
 #*  Handle:     SelHdl
 #*------------------------------------------------------------------------
 #*
-#*  Klasse:     ScFunctionWin
+#*  Class:      ScFunctionWin
 #*
-#*  Funktion:   Bei einer Aenderung der Kategorie wird die
-#*              die Liste der Funktionen aktualisiert.
+#*  Function:   A change of the category will update the list of functions.
 #*
 #*  Input:      ---
 #*
@@ -604,15 +389,15 @@ void ScFunctionWin::DoEnter()
 #*
 #************************************************************************/
 
-IMPL_LINK_TYPED( ScFunctionWin, SelHdl, ListBox&, rLb, void )
+IMPL_LINK( ScFunctionWin, SelHdl, ListBox&, rLb, void )
 {
-    if ( &rLb == aCatBox.get() )
+    if (&rLb == aCatBox.get())
     {
         UpdateFunctionList();
         SetDescription();
     }
 
-    if ( &rLb == aFuncList.get() || &rLb == aDDFuncList.get() )
+    if (&rLb == aFuncList.get())
     {
         SetDescription();
     }
@@ -622,10 +407,9 @@ IMPL_LINK_TYPED( ScFunctionWin, SelHdl, ListBox&, rLb, void )
 #*  Handle:     SelHdl
 #*------------------------------------------------------------------------
 #*
-#*  Klasse:     ScFunctionWin
+#*  Class:      ScFunctionWin
 #*
-#*  Funktion:   Bei einer Aenderung der Kategorie wird die
-#*              die Liste der Funktionen aktualisiert.
+#*  Function:   A change of the category will update the list of functions.
 #*
 #*  Input:      ---
 #*
@@ -633,75 +417,13 @@ IMPL_LINK_TYPED( ScFunctionWin, SelHdl, ListBox&, rLb, void )
 #*
 #************************************************************************/
 
-IMPL_LINK_NOARG_TYPED( ScFunctionWin, SetSelectionClickHdl, Button*, void )
+IMPL_LINK_NOARG( ScFunctionWin, SetSelectionClickHdl, Button*, void )
 {
-    DoEnter();          // Uebernimmt die Eingabe
+    DoEnter();          // saves the input
 }
-IMPL_LINK_NOARG_TYPED( ScFunctionWin, SetSelectionHdl, ListBox&, void )
+IMPL_LINK_NOARG( ScFunctionWin, SetSelectionHdl, ListBox&, void )
 {
-    DoEnter();          // Uebernimmt die Eingabe
-}
-
-/*************************************************************************
-#*  Handle:     SetSplitHdl
-#*------------------------------------------------------------------------
-#*
-#*  Klasse:     ScFunctionWin
-#*
-#*  Funktion:   Bei einer Aenderung des Split- Controls werden die
-#*              einzelnen Controls an die neue Groesse angepasst.
-#*
-#*  Input:      Zeiger auf Control
-#*
-#*  Output:     ---
-#*
-#************************************************************************/
-
-IMPL_LINK_TYPED( ScFunctionWin, SetSplitHdl, ScPrivatSplit&, rCtrl, void )
-{
-    if (&rCtrl == aPrivatSplit.get())
-    {
-        short nDeltaY=aPrivatSplit->GetDeltaY();
-        Size aFLSize=aFuncList->GetSizePixel();
-        Size aFDSize=aFiFuncDesc->GetSizePixel();
-        Point aFDTopLeft=aFiFuncDesc->GetPosPixel();
-
-        aFLSize.Height()+=nDeltaY;
-        aFDSize.Height()-=nDeltaY;
-        aFDTopLeft.Y()+=nDeltaY;
-        aFuncList->SetSizePixel(aFLSize);
-        aFiFuncDesc->SetPosPixel(aFDTopLeft);
-        aFiFuncDesc->SetSizePixel(aFDSize);
-    }
-}
-
-IMPL_LINK_NOARG_TYPED(ScFunctionWin, TimerHdl, Idle *, void)
-{
-    OUString aString("ww");
-    Size aTxtSize( aFiFuncDesc->GetTextWidth(aString), aFiFuncDesc->GetTextHeight() );
-    Point aTopLeft=aCatBox->GetPosPixel();
-    nMinWidth=aTxtSize.Width()+aTopLeft.X() +2*aFuncList->GetPosPixel().X();
-    nMinHeight=19*aTxtSize.Height();
-    SetSize();
-}
-
-void ScFunctionWin::UseSplitterInitPos()
-{
-    if ( IsVisible() && aPrivatSplit->IsEnabled() && aSplitterInitPos != Point() )
-    {
-        aPrivatSplit->MoveSplitTo(aSplitterInitPos);
-        aSplitterInitPos = Point();     // use only once
-    }
-}
-
-void ScFunctionWin::StateChanged( StateChangedType nStateChange )
-{
-    vcl::Window::StateChanged( nStateChange );
-
-    if (nStateChange == StateChangedType::InitShow)
-    {
-        UseSplitterInitPos();           //  set initial splitter position if necessary
-    }
+    DoEnter();          // saves the input
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

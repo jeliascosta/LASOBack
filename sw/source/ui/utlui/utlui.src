@@ -22,99 +22,33 @@
 #include "helpid.h"
 #include "comcore.hrc"
 
-Resource RID_SHELLRES_AUTOFMTSTRS
+StringArray RID_SHELLRES_AUTOFMTSTRS
 {
-    String STR_AUTOFMTREDL_DEL_EMPTY_PARA+1
+    ItemList [ en-US ] =
     {
-        Text [ en-US ] = "Remove empty paragraphs" ;
+        < "Remove empty paragraphs" ; > ;
+        < "Use replacement table" ; > ;
+        < "Correct TWo INitial CApitals" ; > ;
+        < "Capitalize first letter of sentences" ; > ;
+        < "Replace \"standard\" quotes with %1 \bcustom%2 quotes" ; > ;
+        < "Replace Custom Styles" ; > ;
+        < "Bullets replaced"; > ;
+        < "Automatic _underline_"; > ;
+        < "Automatic *bold*"; > ;
+        < "Replace 1/2 ... with ½ ..." ; > ;
+        < "URL recognition" ; > ;
+        < "Replace dashes" ; > ;
+        < "Replace 1st... with 1^st..." ; > ;
+        < "Combine single line paragraphs"; > ;
+        < "Set \"Text body\" Style"; > ;
+        < "Set \"Text body indent\" Style"; > ;
+        < "Set \"Hanging indent\" Style"; > ;
+        < "Set \"Text body indent\" Style"; > ;
+        < "Set \"Heading $(ARG1)\" Style"; > ;
+        < "Set \"Bullet\" or \"Numbering\" Style"; > ;
+        < "Combine paragraphs"; > ;
+        < "Add non breaking space"; > ;
     };
-    String STR_AUTOFMTREDL_USE_REPLACE+1
-    {
-        Text [ en-US ] = "Use replacement table" ;
-    };
-    String STR_AUTOFMTREDL_CPTL_STT_WORD+1
-    {
-        Text [ en-US ] = "Correct TWo INitial CApitals" ;
-    };
-    String STR_AUTOFMTREDL_CPTL_STT_SENT+1
-    {
-        Text [ en-US ] = "Capitalize first letter of sentences" ;
-    };
-    String STR_AUTOFMTREDL_TYPO+1
-    {
-        Text [ en-US ] = "Replace \"standard\" quotes with %1 \bcustom%2 quotes" ;
-    };
-    String STR_AUTOFMTREDL_USER_STYLE+1
-    {
-        Text [ en-US ] = "Replace Custom Styles" ;
-    };
-    String STR_AUTOFMTREDL_BULLET+1
-    {
-        Text [ en-US ] = "Bullets replaced";
-    };
-    String STR_AUTOFMTREDL_UNDER+1
-    {
-        Text [ en-US ] = "Automatic _underline_";
-    };
-    String STR_AUTOFMTREDL_BOLD+1
-    {
-        Text [ en-US ] = "Automatic *bold*";
-    };
-    String STR_AUTOFMTREDL_FRACTION+1
-    {
-        Text [ en-US ] = "Replace 1/2 ... with ½ ..." ;
-    };
-    String STR_AUTOFMTREDL_DETECT_URL+1
-    {
-        Text [ en-US ] = "URL recognition" ;
-    };
-    String STR_AUTOFMTREDL_DASH+1
-    {
-        Text [ en-US ] = "Replace dashes" ;
-    };
-    String STR_AUTOFMTREDL_ORDINAL+1
-    {
-        Text [ en-US ] = "Replace 1st... with 1^st..." ;
-    };
-    String STR_AUTOFMTREDL_RIGHT_MARGIN+1
-    {
-        Text [ en-US ] = "Combine single line paragraphs";
-    };
-
-    String STR_AUTOFMTREDL_SET_TMPL_TEXT +1
-    {
-        Text [ en-US ] = "Set \"Text body\" Style";
-    };
-    String STR_AUTOFMTREDL_SET_TMPL_INDENT  +1
-    {
-        Text [ en-US ] = "Set \"Text body indent\" Style";
-    };
-    String STR_AUTOFMTREDL_SET_TMPL_NEG_INDENT  +1
-    {
-        Text [ en-US ] = "Set \"Hanging indent\" Style";
-    };
-    String STR_AUTOFMTREDL_SET_TMPL_TEXT_INDENT +1
-    {
-        Text [ en-US ] = "Set \"Text body indent\" Style";
-    };
-    String STR_AUTOFMTREDL_SET_TMPL_HEADLINE +1
-    {
-        Text [ en-US ] = "Set \"Heading $(ARG1)\" Style";
-    };
-    String STR_AUTOFMTREDL_SET_NUMBULET +1
-    {
-        Text [ en-US ] = "Set \"Bullet\" or \"Numbering\" Style";
-    };
-
-    String STR_AUTOFMTREDL_DEL_MORELINES +1
-    {
-        Text [ en-US ] = "Combine paragraphs";
-    };
-    String STR_AUTOFMTREDL_NON_BREAK_SPACE +1
-    {
-        Text [ en-US ] = "Add non breaking space";
-    };
-
 };
 
 // Miscellaneous
@@ -307,103 +241,73 @@ String RID_STR_SYSTEM
 {
     Text [ en-US ] = "[System]";
 };
-String STR_MULT_INTERACT_SPELL_WARN
-{
-    Text [ en-US ] = "The interactive spellcheck is already active\nin a different document";
-};
 String STR_MULT_INTERACT_HYPH_WARN
 {
     Text [ en-US ] = "The interactive hyphenation is already active\nin a different document";
-};
-String STR_SPELL_TITLE
-{
-    Text [ en-US ] = "Spellcheck";
 };
 String STR_HYPH_TITLE
 {
     Text [ en-US ] = "Hyphenation";
 };
 
-ImageList ILIST_DB_DLG
+Bitmap RID_BMP_COLLAPSE
 {
-    Prefix = "sx";
-    MaskColor = IMAGE_MASK_COLOR;
-    IdList =
-    {
-        IMG_COLLAPSE;
-        IMG_EXPAND  ;
-        IMG_DB      ;
-        IMG_DBTABLE ;
-        IMG_DBQUERY ;
-    };
-    IdCount = 5;
-};
-Image IMG_VIEWLAYOUT_AUTOMATIC
-{
-    ImageBitmap = Bitmap
-    {
-        File = "twopages_10x24.png" ;
-    };
-    MaskColor = IMAGE_MASK_COLOR;
-};
-Image IMG_VIEWLAYOUT_AUTOMATIC_ACTIVE
-{
-    ImageBitmap = Bitmap
-    {
-        File = "twopages_a_10x24.png" ;
-    };
-    MaskColor = IMAGE_MASK_COLOR;
+    File = "sx18002.png";
 };
 
-Image IMG_VIEWLAYOUT_BOOKMODE
+Bitmap RID_BMP_EXPAND
 {
-    ImageBitmap = Bitmap
-    {
-        File = "doublepage_10x22.png" ;
-    };
-    MaskColor = IMAGE_MASK_COLOR;
-};
-Image IMG_VIEWLAYOUT_BOOKMODE_ACTIVE
-{
-    ImageBitmap = Bitmap
-    {
-        File = "doublepage_a_10x22.png" ;
-    };
-    MaskColor = IMAGE_MASK_COLOR;
+    File = "sx18003.png";
 };
 
-Image IMG_VIEWLAYOUT_SINGLECOLUMN
+Bitmap RID_BMP_DB
 {
-    ImageBitmap = Bitmap
-    {
-        File = "emptypage_10x14.png" ;
-    };
-    MaskColor = IMAGE_MASK_COLOR;
-};
-Image IMG_VIEWLAYOUT_SINGLECOLUMN_ACTIVE
-{
-    ImageBitmap = Bitmap
-    {
-        File = "emptypage_a_10x14.png" ;
-    };
-    MaskColor = IMAGE_MASK_COLOR;
-};
-Image IMG_PAGE_BREAK
-{
-    ImageBitmap = Bitmap
-    {
-        File = "page_break.png" ;
-    };
-    MaskColor = IMAGE_MASK_COLOR;
+    File = "sx01.png";
 };
 
-String STR_HYPERCTRL_SEL
+Bitmap RID_BMP_DBTABLE
 {
-    Text [ en-US ] = "SEL";
+    File = "sx02.png";
 };
-String STR_HYPERCTRL_HYP
+
+Bitmap RID_BMP_DBQUERY
 {
-    Text [ en-US ] = "HYP";
+    File = "sx03.png";
+};
+
+Bitmap RID_BMP_VIEWLAYOUT_AUTOMATIC
+{
+    File = "twopages_10x24.png" ;
+};
+
+Bitmap RID_BMP_VIEWLAYOUT_AUTOMATIC_ACTIVE
+{
+    File = "twopages_a_10x24.png" ;
+};
+
+Bitmap RID_BMP_VIEWLAYOUT_BOOKMODE
+{
+    File = "doublepage_10x22.png" ;
+};
+
+Bitmap RID_BMP_VIEWLAYOUT_BOOKMODE_ACTIVE
+{
+    File = "doublepage_a_10x22.png" ;
+};
+
+Bitmap RID_BMP_VIEWLAYOUT_SINGLECOLUMN
+{
+    File = "emptypage_10x14.png" ;
+};
+
+Bitmap RID_BMP_VIEWLAYOUT_SINGLECOLUMN_ACTIVE
+{
+    File = "emptypage_a_10x14.png" ;
+};
+
+Bitmap RID_BMP_PAGE_BREAK
+{
+    File = "page_break.png" ;
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

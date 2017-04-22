@@ -27,26 +27,36 @@
 class SfxPoolItem;
 class VirtualDevice;
 
+namespace editeng
+{
+    class SharedVclResources
+    {
+        private:
+            VclPtr<VirtualDevice> m_pVirDev;
+        public:
+            SharedVclResources();
+            ~SharedVclResources();
+            VclPtr<VirtualDevice> GetVirtualDevice();
+    };
+}
+
 class GlobalEditData
 {
 private:
     css::uno::Reference< css::linguistic2::XLanguageGuessing >  xLanguageGuesser;
-    SfxPoolItem**   ppDefItems;
+    std::vector<SfxPoolItem*>*   ppDefItems;
 
     rtl::Reference<SvxForbiddenCharactersTable> xForbiddenCharsTable;
-    VclPtr<VirtualDevice> mpVirDev;
 
 public:
                     GlobalEditData();
                     ~GlobalEditData();
 
-    SfxPoolItem**   GetDefItems();
+    std::vector<SfxPoolItem*>*   GetDefItems();
 
-    rtl::Reference<SvxForbiddenCharactersTable> GetForbiddenCharsTable();
-    void            SetForbiddenCharsTable( rtl::Reference<SvxForbiddenCharactersTable> xForbiddenChars ) { xForbiddenCharsTable = xForbiddenChars; }
-    css::uno::Reference< css::linguistic2::XLanguageGuessing > GetLanguageGuesser();
-
-    VclPtr<VirtualDevice> GetStdVirtualDevice();
+    rtl::Reference<SvxForbiddenCharactersTable> const & GetForbiddenCharsTable();
+    void            SetForbiddenCharsTable( rtl::Reference<SvxForbiddenCharactersTable> const & xForbiddenChars ) { xForbiddenCharsTable = xForbiddenChars; }
+    css::uno::Reference< css::linguistic2::XLanguageGuessing > const & GetLanguageGuesser();
 };
 
 #endif // INCLUDED_EDITENG_SOURCE_EDITENG_EERDLL2_HXX

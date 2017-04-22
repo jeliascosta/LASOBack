@@ -92,15 +92,12 @@ public:
         const OUString& rsEventType,
         const ::sd::framework::FrameworkHelper::ConfigurationChangeEventFilter& rFilter,
         const ::sd::framework::FrameworkHelper::Callback& rCallback);
-    virtual ~CallbackCaller();
 
     virtual void SAL_CALL disposing() override;
     // XEventListener
-    virtual void SAL_CALL disposing (const lang::EventObject& rEvent)
-        throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing (const lang::EventObject& rEvent) override;
     // XConfigurationChangeListener
-    virtual void SAL_CALL notifyConfigurationChange (const ConfigurationChangeEvent& rEvent)
-        throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyConfigurationChange (const ConfigurationChangeEvent& rEvent) override;
 
 private:
     OUString msEventType;
@@ -127,15 +124,14 @@ class LifetimeController
 {
 public:
     explicit LifetimeController (::sd::ViewShellBase& rBase);
-    virtual ~LifetimeController();
+    virtual ~LifetimeController() override;
 
     virtual void SAL_CALL disposing() override;
 
     /** XEventListener.  This method is called when the frame::XController
         is being destroyed.
     */
-    virtual void SAL_CALL disposing (const lang::EventObject& rEvent)
-        throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing (const lang::EventObject& rEvent) override;
 
     /** This method is called when the ViewShellBase is being destroyed.
     */
@@ -297,12 +293,10 @@ class FrameworkHelper::DisposeListener
 {
 public:
     explicit DisposeListener (const ::std::shared_ptr<FrameworkHelper>& rpHelper);
-    virtual ~DisposeListener();
 
     virtual void SAL_CALL disposing() override;
 
-    virtual void SAL_CALL disposing (const lang::EventObject& rEventObject)
-        throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing (const lang::EventObject& rEventObject) override;
 
 private:
     ::std::shared_ptr<FrameworkHelper> mpHelper;
@@ -620,11 +614,11 @@ void FrameworkHelper::HandleModeChangeSlot (
         }
 
         // Compute requested mode
-        EditMode eEMode = EM_PAGE;
+        EditMode eEMode = EditMode::Page;
         if (nSlotId == SID_SLIDE_MASTER_MODE
             || nSlotId == SID_NOTES_MASTER_MODE
             || nSlotId == SID_HANDOUT_MASTER_MODE)
-            eEMode = EM_MASTERPAGE;
+            eEMode = EditMode::MasterPage;
         // Ensure we have the expected view shell
         if (!(xView.is() && xView->getResourceId()->getResourceURL().equals(sRequestedView)))
 
@@ -811,10 +805,6 @@ FrameworkHelper::DisposeListener::DisposeListener (
         xComponent->addEventListener(this);
 }
 
-FrameworkHelper::DisposeListener::~DisposeListener()
-{
-}
-
 void SAL_CALL FrameworkHelper::DisposeListener::disposing()
 {
     Reference<XComponent> xComponent (mpHelper->mxConfigurationController, UNO_QUERY);
@@ -825,7 +815,6 @@ void SAL_CALL FrameworkHelper::DisposeListener::disposing()
 }
 
 void SAL_CALL FrameworkHelper::DisposeListener::disposing (const lang::EventObject& rEventObject)
-    throw(RuntimeException, std::exception)
 {
     if (mpHelper.get() != nullptr)
         mpHelper->disposing(rEventObject);
@@ -883,10 +872,6 @@ CallbackCaller::CallbackCaller (
     }
 }
 
-CallbackCaller::~CallbackCaller()
-{
-}
-
 void CallbackCaller::disposing()
 {
     try
@@ -905,7 +890,6 @@ void CallbackCaller::disposing()
 }
 
 void SAL_CALL CallbackCaller::disposing (const lang::EventObject& rEvent)
-    throw (RuntimeException, std::exception)
 {
     if (rEvent.Source == mxConfigurationController)
     {
@@ -916,7 +900,6 @@ void SAL_CALL CallbackCaller::disposing (const lang::EventObject& rEvent)
 
 void SAL_CALL CallbackCaller::notifyConfigurationChange (
     const ConfigurationChangeEvent& rEvent)
-    throw (RuntimeException, std::exception)
 {
     if (rEvent.Type.equals(msEventType) && maFilter(rEvent))
     {
@@ -970,7 +953,6 @@ void LifetimeController::disposing()
 }
 
 void SAL_CALL LifetimeController::disposing (const lang::EventObject& rEvent)
-    throw(RuntimeException, std::exception)
 {
     (void)rEvent;
     mbListeningToController = false;
@@ -980,8 +962,7 @@ void SAL_CALL LifetimeController::disposing (const lang::EventObject& rEvent)
 void LifetimeController::Notify (SfxBroadcaster& rBroadcaster, const SfxHint& rHint)
 {
     (void)rBroadcaster;
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint != nullptr && pSimpleHint->GetId() == SFX_HINT_DYING)
+    if (rHint.GetId() == SfxHintId::Dying)
     {
         mbListeningToViewShellBase = false;
         Update();

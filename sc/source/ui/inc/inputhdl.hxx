@@ -32,6 +32,7 @@
 #include <editeng/svxenum.hxx>
 
 #include <set>
+#include <memory>
 
 class ScDocument;
 class ScTabViewShell;
@@ -50,12 +51,12 @@ struct ESelection;
 
 //  ScInputHandler
 
-class ScInputHandler
+class ScInputHandler final
 {
 private:
     VclPtr<ScInputWindow>          pInputWin;
 
-    ScEditEngineDefaulter*  pEngine;                    ///< Edited data in the sheet (when the user clicks into the sheet, and starts writing there).
+    std::unique_ptr<ScEditEngineDefaulter> mpEditEngine;     ///< Edited data in the sheet (when the user clicks into the sheet, and starts writing there).
     EditView*               pTableView;                 // associated active EditView
     EditView*               pTopView;                   // EditView in the input row
 
@@ -134,7 +135,7 @@ private:
     void            UpdateFormulaMode();
     static void     InvalidateAttribs();
     void            ImplCreateEditEngine();
-    DECL_LINK_TYPED( DelayTimer, Timer*, void );
+    DECL_LINK( DelayTimer, Timer*, void );
     void            GetColData();
     void            UseColData();
     void            NextAutoEntry( bool bBack );
@@ -156,16 +157,16 @@ private:
     void            SkipClosingPar();
     bool            GetFuncName( OUString& aStart, OUString& aResult );  // fdo75264
     void            ShowArgumentsTip( OUString& rSelText );
-    DECL_LINK_TYPED( ModifyHdl, LinkParamNone*, void );
-    DECL_LINK_TYPED( ShowHideTipVisibleParentListener, VclWindowEvent&, void );
-    DECL_LINK_TYPED( ShowHideTipVisibleSecParentListener, VclWindowEvent&, void );
+    DECL_LINK( ModifyHdl, LinkParamNone*, void );
+    DECL_LINK( ShowHideTipVisibleParentListener, VclWindowEvent&, void );
+    DECL_LINK( ShowHideTipVisibleSecParentListener, VclWindowEvent&, void );
 
 public:
     ScInputHandler(const ScInputHandler&) = delete;
     const ScInputHandler& operator=(const ScInputHandler&) = delete;
 
                     ScInputHandler();
-    virtual         ~ScInputHandler();
+                    ~ScInputHandler();
 
     void SetMode( ScInputMode eNewMode, const OUString* pInitText = nullptr );
     bool            IsInputMode() const { return (eMode != SC_INPUT_NONE); }
@@ -180,7 +181,7 @@ public:
 
     bool            GetTextAndFields( ScEditEngineDefaulter& rDestEngine );
 
-    bool            KeyInput( const KeyEvent& rKEvt, bool bStartEdit = false );
+    bool            KeyInput( const KeyEvent& rKEvt, bool bStartEdit );
     void            EnterHandler( ScEnterMode nBlockMode = ScEnterMode::NORMAL );
     void            CancelHandler();
     void            SetReference( const ScRange& rRef, ScDocument* pDoc );
@@ -192,7 +193,7 @@ public:
     void            ClearText();
 
     void            InputSelection( EditView* pView );
-    void            InputChanged( EditView* pView, bool bFromNotify = false );
+    void            InputChanged( EditView* pView, bool bFromNotify );
 
     void            ViewShellGone(ScTabViewShell* pViewSh);
     void            SetRefViewShell(ScTabViewShell* pRefVsh) {pRefViewSh=pRefVsh;}
@@ -288,14 +289,14 @@ public:
     const ScAddress&        GetStartPos() const     { return aStartPos; }
     const ScAddress&        GetEndPos() const       { return aEndPos; }
     const OUString&         GetString() const       { return aString; }
-    const EditTextObject*   GetEditData() const     { return pEditData; }
+    const EditTextObject*   GetEditData() const     { return pEditData.get(); }
 
 private:
     ScAddress       aCursorPos;
     ScAddress       aStartPos;
     ScAddress       aEndPos;
     OUString        aString;
-    EditTextObject* pEditData;
+    std::unique_ptr<EditTextObject> pEditData;
 };
 
 #endif

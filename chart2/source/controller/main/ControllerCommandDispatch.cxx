@@ -462,8 +462,7 @@ ControllerCommandDispatch::ControllerCommandDispatch(
     const Reference< uno::XComponentContext > & xContext,
     ChartController* pController, CommandDispatchContainer* pContainer ) :
         impl::ControllerCommandDispatch_Base( xContext ),
-        m_pChartController( pController ),
-        m_xController( Reference< frame::XController >( pController ) ),
+        m_xChartController( pController ),
         m_xSelectionSupplier( Reference< view::XSelectionSupplier >( pController ) ),
         m_xDispatch( Reference< frame::XDispatch >( pController ) ),
         m_apModelState( new impl::ModelState() ),
@@ -478,9 +477,9 @@ ControllerCommandDispatch::~ControllerCommandDispatch()
 
 void ControllerCommandDispatch::initialize()
 {
-    if( m_xController.is())
+    if( m_xChartController.is())
     {
-        Reference< frame::XModel > xModel( m_xController->getModel());
+        Reference< frame::XModel > xModel( m_xChartController->getModel());
         Reference< util::XModifyBroadcaster > xModifyBroadcaster( xModel, uno::UNO_QUERY );
         OSL_ASSERT( xModifyBroadcaster.is());
         if( xModifyBroadcaster.is())
@@ -494,7 +493,7 @@ void ControllerCommandDispatch::initialize()
             m_apModelState->update( xModel );
 
         if( m_apControllerState.get() && xModel.is())
-            m_apControllerState->update( m_xController, xModel );
+            m_apControllerState->update( m_xChartController.get(), xModel );
 
         updateCommandAvailability();
     }
@@ -504,7 +503,7 @@ void ControllerCommandDispatch::fireStatusEventForURLImpl(
     const OUString & rURL,
     const Reference< frame::XStatusListener > & xSingleListener )
 {
-    ::std::map< OUString, uno::Any >::const_iterator aArgIt( m_aCommandArguments.find( rURL ));
+    std::map< OUString, uno::Any >::const_iterator aArgIt( m_aCommandArguments.find( rURL ));
     if( aArgIt != m_aCommandArguments.end())
         fireStatusEventForURL( rURL, aArgIt->second, commandAvailable( rURL ), xSingleListener );
     else
@@ -525,12 +524,12 @@ void ControllerCommandDispatch::updateCommandAvailability()
     // @todo: determine correctly
     bool bHasSuitableClipboardContent = true;
 
-    bool bShapeContext = m_pChartController && m_pChartController->isShapeContext();
+    bool bShapeContext = m_xChartController.is() && m_xChartController->isShapeContext();
 
     bool bEnableDataTableDialog = false;
-    if ( m_xController.is() )
+    if ( m_xChartController.is() )
     {
-        Reference< beans::XPropertySet > xProps( m_xController->getModel(), uno::UNO_QUERY );
+        Reference< beans::XPropertySet > xProps( m_xChartController->getModel(), uno::UNO_QUERY );
         if ( xProps.is() )
         {
             try
@@ -551,12 +550,12 @@ void ControllerCommandDispatch::updateCommandAvailability()
 
     // toolbar commands
     m_aCommandAvailability[ ".uno:ToggleGridHorizontal" ] = bIsWritable;
-    m_aCommandArguments[ ".uno:ToggleGridHorizontal" ] = uno::makeAny( m_apModelState->bHasMainYGrid );
+    m_aCommandArguments[ ".uno:ToggleGridHorizontal" ] <<= m_apModelState->bHasMainYGrid;
     m_aCommandAvailability[ ".uno:ToggleGridVertical" ] = bIsWritable;
-    m_aCommandArguments[ ".uno:ToggleGridVertical" ] = uno::makeAny( m_apModelState->bHasMainXGrid );
+    m_aCommandArguments[ ".uno:ToggleGridVertical" ] <<= m_apModelState->bHasMainXGrid;
 
     m_aCommandAvailability[ ".uno:ToggleLegend" ] = bIsWritable;
-    m_aCommandArguments[ ".uno:ToggleLegend" ] = uno::makeAny( m_apModelState->bHasLegend );
+    m_aCommandArguments[ ".uno:ToggleLegend" ] <<= m_apModelState->bHasLegend;
 
     m_aCommandAvailability[ ".uno:NewArrangement" ] = bIsWritable;
     m_aCommandAvailability[ ".uno:Update" ] = bIsWritable;
@@ -629,7 +628,7 @@ void ControllerCommandDispatch::updateCommandAvailability()
 
     // text
     m_aCommandAvailability[ ".uno:ScaleText" ] = bIsWritable && bModelStateIsValid ;
-    m_aCommandArguments[ ".uno:ScaleText" ] = uno::makeAny( m_apModelState->bHasAutoScaledText );
+    m_aCommandArguments[ ".uno:ScaleText" ] <<= m_apModelState->bHasAutoScaledText;
 
     // axes
     m_aCommandAvailability[ ".uno:DiagramAxisX" ] = bIsWritable && bModelStateIsValid && m_apModelState->bHasXAxis;
@@ -691,7 +690,7 @@ void ControllerCommandDispatch::updateCommandAvailability()
 
 bool ControllerCommandDispatch::commandAvailable( const OUString & rCommand )
 {
-    ::std::map< OUString, bool >::const_iterator aIt( m_aCommandAvailability.find( rCommand ));
+    std::map< OUString, bool >::const_iterator aIt( m_aCommandAvailability.find( rCommand ));
     if( aIt != m_aCommandAvailability.end())
         return aIt->second;
     OSL_FAIL( "commandAvailable: command not in availability map" );
@@ -722,12 +721,12 @@ void ControllerCommandDispatch::fireStatusEvent(
     if( rURL.isEmpty() || bIsChartSelectorURL )
     {
         uno::Any aArg;
-        aArg <<= m_xController;
+        aArg <<= Reference< frame::XController >(m_xChartController.get());
         fireStatusEventForURL( ".uno:ChartElementSelector", aArg, true, xSingleListener );
     }
 
     if( rURL.isEmpty() )
-        for( ::std::map< OUString, bool >::const_iterator aIt( m_aCommandAvailability.begin());
+        for( std::map< OUString, bool >::const_iterator aIt( m_aCommandAvailability.begin());
              aIt != m_aCommandAvailability.end(); ++aIt )
             fireStatusEventForURLImpl( aIt->first, xSingleListener );
     else if( !bIsChartSelectorURL )
@@ -737,8 +736,8 @@ void ControllerCommandDispatch::fireStatusEvent(
     // @todo: remove if Issue 68864 is fixed
     if( rURL.isEmpty() || rURL == ".uno:StatusBarVisible" )
     {
-        bool bIsStatusBarVisible( lcl_isStatusBarVisible( m_xController ));
-        fireStatusEventForURL( ".uno:StatusBarVisible", uno::makeAny( bIsStatusBarVisible ), true, xSingleListener );
+        bool bIsStatusBarVisible( lcl_isStatusBarVisible( m_xChartController.get() ));
+        fireStatusEventForURL( ".uno:StatusBarVisible", uno::Any( bIsStatusBarVisible ), true, xSingleListener );
     }
 }
 
@@ -746,7 +745,6 @@ void ControllerCommandDispatch::fireStatusEvent(
 void SAL_CALL ControllerCommandDispatch::dispatch(
     const util::URL& URL,
     const Sequence< beans::PropertyValue >& Arguments )
-    throw (uno::RuntimeException, std::exception)
 {
     if( commandAvailable( URL.Complete ))
         m_xDispatch->dispatch( URL, Arguments );
@@ -756,37 +754,35 @@ void SAL_CALL ControllerCommandDispatch::dispatch(
 /// is called when this is disposed
 void SAL_CALL ControllerCommandDispatch::disposing()
 {
-    m_xController.clear();
+    m_xChartController.clear();
     m_xDispatch.clear();
     m_xSelectionSupplier.clear();
 }
 
 // ____ XEventListener (base of XModifyListener) ____
 void SAL_CALL ControllerCommandDispatch::disposing( const lang::EventObject& /* Source */ )
-    throw (uno::RuntimeException, std::exception)
 {
-    m_xController.clear();
+    m_xChartController.clear();
     m_xDispatch.clear();
     m_xSelectionSupplier.clear();
 }
 
 // ____ XModifyListener ____
 void SAL_CALL ControllerCommandDispatch::modified( const lang::EventObject& aEvent )
-    throw (uno::RuntimeException, std::exception)
 {
     bool bUpdateCommandAvailability = false;
 
     // Update the "ModelState" Struct.
-    if( m_apModelState.get() && m_xController.is())
+    if( m_apModelState.get() && m_xChartController.is())
     {
-        m_apModelState->update( m_xController->getModel());
+        m_apModelState->update( m_xChartController->getModel());
         bUpdateCommandAvailability = true;
     }
 
     // Update the "ControllerState" Struct.
-    if( m_apControllerState.get() && m_xController.is())
+    if( m_apControllerState.get() && m_xChartController.is())
     {
-        m_apControllerState->update( m_xController, m_xController->getModel());
+        m_apControllerState->update( m_xChartController.get(), m_xChartController->getModel());
         bUpdateCommandAvailability = true;
     }
 
@@ -798,12 +794,11 @@ void SAL_CALL ControllerCommandDispatch::modified( const lang::EventObject& aEve
 
 // ____ XSelectionChangeListener ____
 void SAL_CALL ControllerCommandDispatch::selectionChanged( const lang::EventObject& aEvent )
-    throw (uno::RuntimeException, std::exception)
 {
     // Update the "ControllerState" Struct.
-    if( m_apControllerState.get() && m_xController.is())
+    if( m_apControllerState.get() && m_xChartController.is())
     {
-        m_apControllerState->update( m_xController, m_xController->getModel());
+        m_apControllerState->update( m_xChartController.get(), m_xChartController->getModel());
         updateCommandAvailability();
     }
 

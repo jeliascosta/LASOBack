@@ -98,21 +98,19 @@ public:
         rtlRandomPool aPool = rtl_random_createPool();
 
         sal_uInt32  nBufLen = 4;
-        sal_uInt8   *pBuffer = new sal_uInt8[ nBufLen ];
-        memset(pBuffer, 0, nBufLen);
+        std::unique_ptr<sal_uInt8[]>  pBuffer( new sal_uInt8[ nBufLen ] );
+        memset(pBuffer.get(), 0, nBufLen);
 
         rtlRandomError aError = rtl_random_addBytes(nullptr, nullptr, 0);
-        CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_Argument);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong parameter", rtl_Random_E_Argument, aError);
 
         /* rtlRandomError */ aError = rtl_random_addBytes(aPool, nullptr, 0);
-        CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_Argument);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong parameter", rtl_Random_E_Argument, aError);
 
-        /* rtlRandomError */ aError = rtl_random_addBytes(aPool, pBuffer, nBufLen);
-        CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_None);
+        /* rtlRandomError */ aError = rtl_random_addBytes(aPool, pBuffer.get(), nBufLen);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong parameter", rtl_Random_E_None, aError);
 
         rtl_random_destroyPool(aPool);
-        delete [] pBuffer;
-
     }
 
     void addBytes_001()
@@ -120,16 +118,15 @@ public:
             rtlRandomPool aPool = rtl_random_createPool();
 
             sal_uInt32  nBufLen = 4;
-            sal_uInt8   *pBuffer = new sal_uInt8[ nBufLen ];
+            std::unique_ptr<sal_uInt8[]> pBuffer( new sal_uInt8[ nBufLen ] );
 
-            memset(pBuffer, 0, nBufLen);
+            memset(pBuffer.get(), 0, nBufLen);
 
-            rtl_random_addBytes(aPool, pBuffer, nBufLen);
+            rtl_random_addBytes(aPool, pBuffer.get(), nBufLen);
 
             printf("%2x %2x %2x %2x\n", pBuffer[0], pBuffer[1], pBuffer[2], pBuffer[3]);
 
             rtl_random_destroyPool(aPool);
-            delete [] pBuffer;
         }
 
     // Change the following lines only, if you add, remove or rename
@@ -169,7 +166,6 @@ public:
     {
         clearDispensation();
     }
-    ~Statistics(){}
 
     void addValue(sal_uInt8 _nIndex, sal_Int32 _nValue)
     {
@@ -221,20 +217,19 @@ public:
         rtlRandomPool aPool = rtl_random_createPool();
 
         sal_uInt32  nBufLen = 4;
-        sal_uInt8   *pBuffer = new sal_uInt8[ nBufLen ];
-        memset(pBuffer, 0, nBufLen);
+        std::unique_ptr<sal_uInt8[]> pBuffer( new sal_uInt8[ nBufLen ] );
+        memset(pBuffer.get(), 0, nBufLen);
 
         rtlRandomError aError = rtl_random_getBytes(nullptr, nullptr, 0);
-        CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_Argument);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong parameter", rtl_Random_E_Argument, aError);
 
         /* rtlRandomError */ aError = rtl_random_getBytes(aPool, nullptr, 0);
-        CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_Argument);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong parameter", rtl_Random_E_Argument, aError);
 
-        /* rtlRandomError */ aError = rtl_random_getBytes(aPool, pBuffer, nBufLen);
-        CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_None);
+        /* rtlRandomError */ aError = rtl_random_getBytes(aPool, pBuffer.get(), nBufLen);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong parameter", rtl_Random_E_None, aError);
 
         rtl_random_destroyPool(aPool);
-        delete [] pBuffer;
     }
 
     void getBytes_001()
@@ -242,16 +237,15 @@ public:
         rtlRandomPool aPool = rtl_random_createPool();
 
         sal_uInt32  nBufLen = 4;
-        sal_uInt8   *pBuffer = new sal_uInt8[ nBufLen ];
-        memset(pBuffer, 0, nBufLen);
+        std::unique_ptr<sal_uInt8[]> pBuffer( new sal_uInt8[ nBufLen ] );
+        memset(pBuffer.get(), 0, nBufLen);
 
-        rtlRandomError aError = rtl_random_getBytes(aPool, pBuffer, nBufLen);
-        CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_None);
+        rtlRandomError aError = rtl_random_getBytes(aPool, pBuffer.get(), nBufLen);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong parameter", rtl_Random_E_None, aError);
 
         printf("%2x %2x %2x %2x\n", pBuffer[0], pBuffer[1], pBuffer[2], pBuffer[3]);
 
         rtl_random_destroyPool(aPool);
-        delete [] pBuffer;
     }
 
     void getBytes_002()
@@ -259,20 +253,19 @@ public:
         rtlRandomPool aPool = rtl_random_createPool();
 
         sal_uInt32  nBufLen = 4;
-        sal_uInt8   *pBuffer = new sal_uInt8[ nBufLen << 1 ];
-        memset(pBuffer, 0, nBufLen << 1);
+        std::unique_ptr<sal_uInt8[]>  pBuffer( new sal_uInt8[ nBufLen << 1 ] );
+        memset(pBuffer.get(), 0, nBufLen << 1);
 
         CPPUNIT_ASSERT_MESSAGE("memset failed", pBuffer[4] == 0 && pBuffer[5] == 0 && pBuffer[6] == 0 && pBuffer[7] == 0);
 
-        rtlRandomError aError = rtl_random_getBytes(aPool, pBuffer, nBufLen);
-        CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_None);
+        rtlRandomError aError = rtl_random_getBytes(aPool, pBuffer.get(), nBufLen);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("wrong parameter", rtl_Random_E_None, aError);
 
         printf("%2x %2x %2x %2x %2x %2x %2x %2x\n", pBuffer[0], pBuffer[1], pBuffer[2], pBuffer[3], pBuffer[4], pBuffer[5], pBuffer[6], pBuffer[7]);
 
         CPPUNIT_ASSERT_MESSAGE("internal memory overwrite", pBuffer[4] == 0 && pBuffer[5] == 0 && pBuffer[6] == 0 && pBuffer[7] == 0);
 
         rtl_random_destroyPool(aPool);
-        delete [] pBuffer;
     }
 
     void getBytes_003()
@@ -280,19 +273,19 @@ public:
         rtlRandomPool aPool = rtl_random_createPool();
 
         sal_uInt32  nBufLen = 1;
-        sal_uInt8   *pBuffer = new sal_uInt8[ nBufLen ];
-        memset(pBuffer, 0, nBufLen);
+        std::unique_ptr<sal_uInt8[]> pBuffer( new sal_uInt8[ nBufLen ] );
+        memset(pBuffer.get(), 0, nBufLen);
 
         Statistics aStat;
 
-        CPPUNIT_ASSERT_MESSAGE("memset failed", pBuffer[0] == 0);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("memset failed", static_cast<sal_uInt8>(0), pBuffer[0]);
 
         int nCount = 0;
 
         int nCountMax = 1000000;
         for(nCount = 0;nCount < nCountMax; ++nCount)                  // run 100000000 through getBytes(...)
         {
-            /* rtlRandomError aError = */ rtl_random_getBytes(aPool, pBuffer, nBufLen);
+            /* rtlRandomError aError = */ rtl_random_getBytes(aPool, pBuffer.get(), nBufLen);
             /* CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_None); */
 
             aStat.addValue(pBuffer[0], 1);
@@ -304,7 +297,6 @@ public:
         CPPUNIT_ASSERT_MESSAGE("deviation should be less average", aStat.getMaxDeviation() < aStat.getAverage());
 
         rtl_random_destroyPool(aPool);
-        delete [] pBuffer;
     }
 
     void getBytes_003_1()
@@ -312,19 +304,19 @@ public:
         rtlRandomPool aPool = rtl_random_createPool();
 
         sal_uInt32  nBufLen = 256;
-        sal_uInt8   *pBuffer = new sal_uInt8[ nBufLen ];
-        memset(pBuffer, 0, nBufLen);
+        std::unique_ptr<sal_uInt8[]> pBuffer( new sal_uInt8[ nBufLen ] );
+        memset(pBuffer.get(), 0, nBufLen);
 
         Statistics aStat;
 
-        CPPUNIT_ASSERT_MESSAGE("memset failed", pBuffer[0] == 0);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("memset failed", static_cast<sal_uInt8>(0), pBuffer[0]);
 
         int nCount = 0;
 
         int nCountMax = 10000;
         for(nCount = 0;nCount < nCountMax; ++nCount)                  // run 100000000 through getBytes(...)
         {
-            /* rtlRandomError aError = */ rtl_random_getBytes(aPool, pBuffer, nBufLen);
+            /* rtlRandomError aError = */ rtl_random_getBytes(aPool, pBuffer.get(), nBufLen);
             // CPPUNIT_ASSERT_MESSAGE("wrong parameter", aError == rtl_Random_E_None);
 
             for (sal_uInt32 i=0;i<nBufLen;++i)
@@ -337,7 +329,6 @@ public:
         CPPUNIT_ASSERT_MESSAGE("deviation should be less average", aStat.getMaxDeviation() < aStat.getAverage());
 
         rtl_random_destroyPool(aPool);
-        delete [] pBuffer;
     }
 
     // Change the following lines only, if you add, remove or rename
@@ -358,7 +349,5 @@ CPPUNIT_TEST_SUITE_REGISTRATION(rtl_random::destroyPool);
 CPPUNIT_TEST_SUITE_REGISTRATION(rtl_random::addBytes);
 CPPUNIT_TEST_SUITE_REGISTRATION(rtl_random::getBytes);
 } // namespace rtl_random
-
-CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

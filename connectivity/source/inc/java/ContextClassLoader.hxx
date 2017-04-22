@@ -52,10 +52,10 @@ namespace connectivity { namespace jdbc
             JNIEnv& environment,
             const GlobalRef< jobject >& newClassLoader,
             const ::comphelper::ResourceBasedEventLogger& _rLoggerForErrors,
-            const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _rxErrorContext
+            const css::uno::Reference< css::uno::XInterface >& _rxErrorContext
         );
 
-        ~ContextClassLoaderScope() { pop(); }
+        ~ContextClassLoaderScope();
 
         bool isActive() const
         {
@@ -66,8 +66,6 @@ namespace connectivity { namespace jdbc
     private:
         ContextClassLoaderScope(ContextClassLoaderScope &) = delete;
         void operator =(ContextClassLoaderScope &) = delete;
-
-        void pop();
 
         JNIEnv&                             m_environment;
         LocalRef< jobject >                 m_currentThread;

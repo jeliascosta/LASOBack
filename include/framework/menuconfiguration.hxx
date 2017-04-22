@@ -94,24 +94,26 @@ public:
     }
 };
 
-class FWE_DLLPUBLIC MenuConfiguration
+class FWE_DLLPUBLIC MenuConfiguration final
 {
 public:
         MenuConfiguration(
             // use const when giving a uno reference by reference
             const css::uno::Reference< css::uno::XComponentContext >& rxContext );
 
-        virtual ~MenuConfiguration();
+        ~MenuConfiguration();
 
+        /// @throws css::lang::WrappedTargetException
+        /// @throws css::uno::RuntimeException
         css::uno::Reference< css::container::XIndexAccess > CreateMenuBarConfigurationFromXML(
-            css::uno::Reference< css::io::XInputStream >& rInputStream )
-            throw (css::lang::WrappedTargetException, css::uno::RuntimeException);
+            css::uno::Reference< css::io::XInputStream >& rInputStream );
 
+        /// @throws css::lang::WrappedTargetException
+        /// @throws css::uno::RuntimeException
         void StoreMenuBarConfigurationToXML(
                       css::uno::Reference< css::container::XIndexAccess >& rMenuBarConfiguration,
                       css::uno::Reference< css::io::XOutputStream >& rOutputStream,
-                      bool bIsMenuBar )
-            throw (css::lang::WrappedTargetException, css::uno::RuntimeException);
+                      bool bIsMenuBar );
 
 private:
         css::uno::Reference< css::uno::XComponentContext> m_xContext;

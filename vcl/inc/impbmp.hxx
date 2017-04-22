@@ -37,7 +37,8 @@ class Bitmap;
 class ImpBitmap
 {
 private:
-    SalBitmap*          mpSalBitmap;
+    std::unique_ptr<SalBitmap>
+                        mpSalBitmap;
 
 public:
                         ImpBitmap();
@@ -49,7 +50,7 @@ public:
 
     bool                ImplIsEqual(const ImpBitmap& rBmp) const;
 
-    SalBitmap*          ImplGetSalBitmap() const { return mpSalBitmap; }
+    SalBitmap*          ImplGetSalBitmap() const { return mpSalBitmap.get(); }
 
     bool                ImplCreate( const Size& rSize, sal_uInt16 nBitCount, const BitmapPalette& rPal );
     bool                ImplCreate( const ImpBitmap& rImpBitmap );
@@ -65,6 +66,7 @@ public:
     BitmapChecksum      ImplGetChecksum() const;
     void                ImplInvalidateChecksum();
 
+    bool                ImplScalingSupported() const;
     bool                ImplScale( const double& rScaleX, const double& rScaleY, BmpScaleFlag nScaleFlag );
     bool                ImplReplace( const Color& rSearchColor, const Color& rReplaceColor, sal_uLong nTol );
     bool                ImplConvert( BmpConversion eConversion );

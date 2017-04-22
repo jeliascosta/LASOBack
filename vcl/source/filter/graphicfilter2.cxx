@@ -28,7 +28,7 @@
 #define DATA_SIZE           640
 
 GraphicDescriptor::GraphicDescriptor( const INetURLObject& rPath ) :
-    pFileStm( ::utl::UcbStreamHelper::CreateStream( rPath.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ ) ),
+    pFileStm( ::utl::UcbStreamHelper::CreateStream( rPath.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READ ) ),
     aPathExt( rPath.GetFileExtension().toAsciiLowerCase() ),
     bOwnStream( true )
 {
@@ -237,7 +237,7 @@ sal_uInt8 ImpDetectJPG_GetNextMarker( SvStream& rStm )
         while( nByte == 0xff );
     }
     while( nByte == 0 );        // 0xff00 represents 0xff and not a marker,
-                                // the marker detection has to be restartet.
+                                // the marker detection has to be restarted.
     return nByte;
 }
 
@@ -335,10 +335,10 @@ bool GraphicDescriptor::ImpDetectJPG( SvStream& rStm,  bool bExtendedInfo )
                                             if ( nUnits && nHorizontalResolution && nVerticalResolution )
                                             {
                                                 MapMode aMap;
-                                                aMap.SetMapUnit( nUnits == 1 ? MAP_INCH : MAP_CM );
+                                                aMap.SetMapUnit( nUnits == 1 ? MapUnit::MapInch : MapUnit::MapCM );
                                                 aMap.SetScaleX( Fraction( 1, nHorizontalResolution ) );
                                                 aMap.SetScaleY( Fraction( 1, nVerticalResolution ) );
-                                                aLogSize = OutputDevice::LogicToLogic( aPixSize, aMap, MapMode( MAP_100TH_MM ) );
+                                                aLogSize = OutputDevice::LogicToLogic( aPixSize, aMap, MapMode( MapUnit::Map100thMM ) );
                                             }
                                         }
                                     }
@@ -375,7 +375,7 @@ bool GraphicDescriptor::ImpDetectJPG( SvStream& rStm,  bool bExtendedInfo )
                                         .ReadUChar( nSamplingFactor )
                                         .ReadUChar( nQuantizationTableDestinationSelector );
 
-                                    // nSamplingFactor (lower nibble: vertial,
+                                    // nSamplingFactor (lower nibble: vertical,
                                     // upper nibble: horizontal) is unused
 
                                     aPixSize.Height() = nNumberOfLines;
@@ -490,10 +490,10 @@ bool GraphicDescriptor::ImpDetectPCX( SvStream& rStm, bool bExtendedInfo )
                 nDPIy = nTemp16;
 
                 // set logical size
-                MapMode aMap( MAP_INCH, Point(),
+                MapMode aMap( MapUnit::MapInch, Point(),
                               Fraction( 1, nDPIx ), Fraction( 1, nDPIy ) );
                 aLogSize = OutputDevice::LogicToLogic( aPixSize, aMap,
-                                                       MapMode( MAP_100TH_MM ) );
+                                                       MapMode( MapUnit::Map100thMM ) );
 
                 // number of color planes
                 cByte = 5; // Illegal value in case of EOF.
@@ -910,7 +910,7 @@ bool GraphicDescriptor::ImpDetectEPS( SvStream& rStm, bool )
     rStm.SetEndian( SvStreamEndian::BIG );
     rStm.ReadUInt32( nFirstLong );
     rStm.SeekRel( -4 );
-    rStm.Read( &nFirstBytes, 20 );
+    rStm.ReadBytes( &nFirstBytes, 20 );
 
     if ( ( nFirstLong == 0xC5D0D3C6 ) || aPathExt.startsWith( "eps" ) ||
         ( ImplSearchEntry( nFirstBytes, reinterpret_cast<sal_uInt8 const *>("%!PS-Adobe"), 10, 10 )
@@ -948,8 +948,8 @@ bool GraphicDescriptor::ImpDetectPCT( SvStream& rStm, bool )
         nFormat = GraphicFileFormat::PCT;
     else
     {
-        sal_Size nStreamPos = rStm.Tell();
-        sal_Size nStreamLen = rStm.remainingSize();
+        sal_uInt64 const nStreamPos = rStm.Tell();
+        sal_uInt64 const nStreamLen = rStm.remainingSize();
         if (isPCT(rStm, nStreamPos, nStreamLen))
         {
             bRet = true;
@@ -1035,7 +1035,7 @@ bool GraphicDescriptor::ImpDetectSVM( SvStream& rStm, bool bExtendedInfo )
                 rStm.ReadUInt16( nTemp16 );
                 aLogSize = OutputDevice::LogicToLogic( aLogSize,
                                                        MapMode( (MapUnit) nTemp16 ),
-                                                       MapMode( MAP_100TH_MM ) );
+                                                       MapMode( MapUnit::Map100thMM ) );
             }
         }
     }
@@ -1063,7 +1063,7 @@ bool GraphicDescriptor::ImpDetectSVM( SvStream& rStm, bool bExtendedInfo )
                     rStm.SeekRel( 0x06 );
                     ReadMapMode( rStm, aMapMode );
                     ReadPair( rStm, aLogSize );
-                    aLogSize = OutputDevice::LogicToLogic( aLogSize, aMapMode, MapMode( MAP_100TH_MM ) );
+                    aLogSize = OutputDevice::LogicToLogic( aLogSize, aMapMode, MapMode( MapUnit::Map100thMM ) );
                 }
             }
         }

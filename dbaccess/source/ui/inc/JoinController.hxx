@@ -51,7 +51,7 @@ namespace dbaui
         ::dbtools::SQLExceptionInfo             m_aExceptionInfo;
 
         VclPtr<OAddTableDlg>                          m_pAddTableDialog;
-        ::std::unique_ptr< AddTableDialogContext >    m_pDialogContext;
+        std::unique_ptr< AddTableDialogContext >    m_pDialogContext;
         Point                                   m_aMinimumTableViewSize;
 
         // state of a feature. 'feature' may be the handle of a css::util::URL somebody requested a dispatch interface for OR a toolbar slot.
@@ -77,14 +77,14 @@ namespace dbaui
         */
         void saveTableWindows( ::comphelper::NamedValueCollection& o_rViewSettings ) const;
 
-        virtual ~OJoinController();
+        virtual ~OJoinController() override;
     public:
         OJoinController(const css::uno::Reference< css::uno::XComponentContext >& _rM);
 
         // attribute access
-        inline TTableWindowData&        getTableWindowData()     { return m_vTableData; }
-        inline TTableConnectionData&    getTableConnectionData() { return m_vTableConnectionData;}
-        inline OAddTableDlg*            getAddTableDialog()const { return m_pAddTableDialog; }
+        TTableWindowData&        getTableWindowData()     { return m_vTableData; }
+        TTableConnectionData&    getTableConnectionData() { return m_vTableConnectionData;}
+        OAddTableDlg*            getAddTableDialog()const { return m_pAddTableDialog; }
 
         // OSingleDocumentController overridables
         virtual void        reconnect( bool _bUI ) override;
@@ -116,12 +116,12 @@ namespace dbaui
 
         // UNO interface overridables
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
+        using OJoinController_BASE::disposing;
 
         // css::lang::XComponent
         virtual void    SAL_CALL disposing() override;
         // css::frame::XController
-        virtual sal_Bool SAL_CALL suspend(sal_Bool bSuspend) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual sal_Bool SAL_CALL suspend(sal_Bool bSuspend) override;
 
         // misc
         /** only defines a method to save a SQLException in d&d methods to show the error at a later state
@@ -145,7 +145,7 @@ namespace dbaui
         TTableWindowData::value_type createTableWindowData(const OUString& _sComposedName,const OUString& _sTableName,const OUString& _sWindowName);
         // ask the user if the design should be saved when it is modified
         virtual short saveModified() = 0;
-        // called when the orignal state should be reseted (first time load)
+        // called when the original state should be reseted (first time load)
         virtual void reset()         = 0;
         virtual void describeSupportedFeatures() override;
 

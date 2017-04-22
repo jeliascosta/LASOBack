@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <rtl/ustrbuf.hxx>
 
 
@@ -63,16 +66,15 @@ void XMLTextColumnsExport::exportXML( const Any& rAny )
     sal_Int32 nCount = aColumns.getLength();
 
     OUStringBuffer sValue;
-    ::sax::Converter::convertNumber( sValue, (nCount) ? nCount : 1 );
     GetExport().AddAttribute( XML_NAMESPACE_FO, XML_COLUMN_COUNT,
-                              sValue.makeStringAndClear() );
+                              OUString::number(nCount ? nCount : 1) );
 
     // handle 'automatic' columns
     Reference < XPropertySet > xPropSet( xColumns, UNO_QUERY );
     if( xPropSet.is() )
     {
         Any aAny = xPropSet->getPropertyValue( sIsAutomatic );
-        if ( *static_cast<sal_Bool const *>(aAny.getValue()) )
+        if ( *o3tl::doAccess<bool>(aAny) )
         {
             aAny = xPropSet->getPropertyValue( sAutomaticDistance );
             sal_Int32 nDistance = 0;
@@ -92,7 +94,7 @@ void XMLTextColumnsExport::exportXML( const Any& rAny )
     if( xPropSet.is() )
     {
         Any aAny = xPropSet->getPropertyValue( sSeparatorLineIsOn );
-        if( *static_cast<sal_Bool const *>(aAny.getValue()) )
+        if( *o3tl::doAccess<bool>(aAny) )
         {
             // style:width
             aAny = xPropSet->getPropertyValue( sSeparatorLineWidth );
@@ -166,10 +168,8 @@ void XMLTextColumnsExport::exportXML( const Any& rAny )
     while( nCount-- )
     {
         // style:rel-width
-        ::sax::Converter::convertNumber( sValue, pColumns->Width );
-        sValue.append( '*' );
         GetExport().AddAttribute( XML_NAMESPACE_STYLE, XML_REL_WIDTH,
-                                  sValue.makeStringAndClear() );
+                                  OUString::number(pColumns->Width) + "*" );
 
         // fo:margin-left
         GetExport().GetMM100UnitConverter().convertMeasureToXML( sValue,

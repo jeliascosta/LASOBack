@@ -54,13 +54,12 @@ public:
     OEnumerationByName(const css::uno::Reference< css::container::XNameAccess >& _rxAccess);
     OEnumerationByName(const css::uno::Reference< css::container::XNameAccess >& _rxAccess,
                        const css::uno::Sequence< OUString >&             _aNames  );
-    virtual ~OEnumerationByName();
+    virtual ~OEnumerationByName() override;
 
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL nextElement(  )
-        throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasMoreElements(  ) override;
+    virtual css::uno::Any SAL_CALL nextElement(  ) override;
 
-    virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) override;
 
 private:
     COMPHELPER_DLLPRIVATE void impl_startDisposeListening();
@@ -80,13 +79,12 @@ class COMPHELPER_DLLPUBLIC OEnumerationByIndex : private OEnumerationLock
 
 public:
     OEnumerationByIndex(const css::uno::Reference< css::container::XIndexAccess >& _rxAccess);
-    virtual ~OEnumerationByIndex();
+    virtual ~OEnumerationByIndex() override;
 
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL nextElement(  )
-        throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasMoreElements(  ) override;
+    virtual css::uno::Any SAL_CALL nextElement(  ) override;
 
-    virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) override;
 
 private:
     COMPHELPER_DLLPRIVATE void impl_startDisposeListening();
@@ -109,11 +107,10 @@ class COMPHELPER_DLLPUBLIC OAnyEnumeration : private OEnumerationLock
 
 public:
     OAnyEnumeration(const css::uno::Sequence< css::uno::Any >& lItems);
-    virtual ~OAnyEnumeration();
+    virtual ~OAnyEnumeration() override;
 
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL nextElement(  )
-        throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasMoreElements(  ) override;
+    virtual css::uno::Any SAL_CALL nextElement(  ) override;
 
 };
 

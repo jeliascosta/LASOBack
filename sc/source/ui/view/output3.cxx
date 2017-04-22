@@ -38,7 +38,7 @@
 // #i72502#
 Point ScOutputData::PrePrintDrawingLayer(long nLogStX, long nLogStY )
 {
-    Rectangle aRect;
+    tools::Rectangle aRect;
     SCCOL nCol;
     Point aOffset;
     long nLayoutSign(bLayoutRTL ? -1 : 1);
@@ -82,7 +82,7 @@ Point ScOutputData::PrePrintDrawingLayer(long nLogStX, long nLogStY )
             // #i76114# MapMode has to be set because BeginDrawLayers uses GetPaintRegion
             MapMode aOldMode = mpDev->GetMapMode();
             if (!bMetaFile)
-                mpDev->SetMapMode( MapMode( MAP_100TH_MM, aMMOffset, aOldMode.GetScaleX(), aOldMode.GetScaleY() ) );
+                mpDev->SetMapMode( MapMode( MapUnit::Map100thMM, aMMOffset, aOldMode.GetScaleX(), aOldMode.GetScaleY() ) );
 
             // #i74769# work with SdrPaintWindow directly
             // #i76114# pass bDisableIntersect = true, because the intersection of the table area
@@ -108,7 +108,7 @@ void ScOutputData::PostPrintDrawingLayer(const Point& rMMOffset) // #i74768#
 
     if (!bMetaFile)
     {
-        mpDev->SetMapMode( MapMode( MAP_100TH_MM, rMMOffset, aOldMode.GetScaleX(), aOldMode.GetScaleY() ) );
+        mpDev->SetMapMode( MapMode( MapUnit::Map100thMM, rMMOffset, aOldMode.GetScaleX(), aOldMode.GetScaleY() ) );
     }
 
     if(pViewShell || pDrawView)
@@ -155,7 +155,7 @@ void ScOutputData::PrintDrawingLayer(const sal_uInt16 nLayer, const Point& rMMOf
 
     if (!bMetaFile)
     {
-        mpDev->SetMapMode( MapMode( MAP_100TH_MM, rMMOffset, aOldMode.GetScaleX(), aOldMode.GetScaleY() ) );
+        mpDev->SetMapMode( MapMode( MapUnit::Map100thMM, rMMOffset, aOldMode.GetScaleX(), aOldMode.GetScaleY() ) );
     }
 
     DrawSelectiveObjects( nLayer );
@@ -209,34 +209,6 @@ void ScOutputData::DrawSelectiveObjects(const sal_uInt16 nLayer)
     }
 
     mpDev->SetDrawMode(nOldDrawMode);
-}
-
-// parts only for the screen
-
-void ScOutputData::DrawingSingle(const sal_uInt16 nLayer)
-{
-    bool    bHad    = false;
-    SCSIZE  nArrY;
-    for (nArrY=1; nArrY+1<nArrCount; nArrY++)
-    {
-        RowInfo* pThisRowInfo = &pRowInfo[nArrY];
-
-        if ( pThisRowInfo->bChanged )
-        {
-            if (!bHad)
-            {
-                bHad = true;
-            }
-        }
-        else if (bHad)
-        {
-            DrawSelectiveObjects( nLayer );
-            bHad = false;
-        }
-    }
-
-    if (bHad)
-        DrawSelectiveObjects( nLayer );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

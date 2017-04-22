@@ -54,11 +54,11 @@ namespace TextFormatCollFunc
         if ( !pTextFormatColl->StayAssignedToListLevelOfOutlineStyle() &&
              pTextFormatColl->IsAssignedToListLevelOfOutlineStyle() )
         {
-            if ( !pNewNumRuleItem )
+            if (!pNewNumRuleItem)
             {
-                pTextFormatColl->GetItemState( RES_PARATR_NUMRULE, false, reinterpret_cast<const SfxPoolItem**>(&pNewNumRuleItem) );
+                (void)pTextFormatColl->GetItemState(RES_PARATR_NUMRULE, false, reinterpret_cast<const SfxPoolItem**>(&pNewNumRuleItem));
             }
-            if ( pNewNumRuleItem )
+            if (pNewNumRuleItem)
             {
                 OUString sNumRuleName = pNewNumRuleItem->GetValue();
                 if ( sNumRuleName.isEmpty() ||
@@ -75,9 +75,9 @@ namespace TextFormatCollFunc
     {
         SwNumRule* pNumRule( nullptr );
 
-        const SwNumRuleItem* pNumRuleItem( nullptr );
-        rTextFormatColl.GetItemState( RES_PARATR_NUMRULE, false, reinterpret_cast<const SfxPoolItem**>(&pNumRuleItem) );
-        if ( pNumRuleItem )
+        const SwNumRuleItem* pNumRuleItem(nullptr);
+        (void)rTextFormatColl.GetItemState(RES_PARATR_NUMRULE, false, reinterpret_cast<const SfxPoolItem**>(&pNumRuleItem));
+        if (pNumRuleItem)
         {
             const OUString sNumRuleName = pNumRuleItem->GetValue();
             if ( !sNumRuleName.isEmpty() )
@@ -284,7 +284,7 @@ void SwTextFormatColl::Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew 
             pFSize != pOldFSize )
         {
             if( 100 == pOldFSize->GetProp() &&
-                SFX_MAPUNIT_RELATIVE == pOldFSize->GetPropUnit() )
+                MapUnit::MapRelative == pOldFSize->GetPropUnit() )
             {
                 // We set it to absolute -> do not propagate it further, unless
                 // we set it!
@@ -461,7 +461,7 @@ bool SwTextFormatColl::AreListLevelIndentsApplicable() const
 
 void SwTextFormatColl::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swTextFormatColl"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwTextFormatColl"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("name"), BAD_CAST(GetName().toUtf8().getStr()));
     GetAttrSet().dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);
@@ -469,7 +469,7 @@ void SwTextFormatColl::dumpAsXml(xmlTextWriterPtr pWriter) const
 
 void SwTextFormatColls::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swTextFormatColls"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwTextFormatColls"));
     for (size_t i = 0; i < size(); ++i)
         GetFormat(i)->dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);
@@ -477,36 +477,22 @@ void SwTextFormatColls::dumpAsXml(xmlTextWriterPtr pWriter) const
 
 //FEATURE::CONDCOLL
 
-SwCollCondition::SwCollCondition( SwTextFormatColl* pColl, sal_uLong nMasterCond,
+SwCollCondition::SwCollCondition( SwTextFormatColl* pColl, Master_CollCondition nMasterCond,
                                 sal_uLong nSubCond )
-    : SwClient( pColl ), m_nCondition( nMasterCond )
+    : SwClient( pColl ), m_nCondition( nMasterCond ),
+      m_nSubCondition( nSubCond )
 {
-    m_aSubCondition.nSubCondition = nSubCond;
-}
-
-SwCollCondition::SwCollCondition( SwTextFormatColl* pColl, sal_uLong nMasterCond,
-                                    const OUString& rSubExp )
-    : SwClient( pColl ), m_nCondition( nMasterCond )
-{
-    if( USRFLD_EXPRESSION & m_nCondition )
-        m_aSubCondition.pFieldExpression = new OUString( rSubExp );
-    else
-        m_aSubCondition.nSubCondition = 0;
 }
 
 SwCollCondition::SwCollCondition( const SwCollCondition& rCopy )
-    : SwClient( const_cast<SwModify*>(rCopy.GetRegisteredIn()) ), m_nCondition( rCopy.m_nCondition )
+    : SwClient( const_cast<SwModify*>(rCopy.GetRegisteredIn()) ),
+      m_nCondition( rCopy.m_nCondition ),
+      m_nSubCondition( rCopy.m_nSubCondition )
 {
-    if( USRFLD_EXPRESSION & rCopy.m_nCondition )
-        m_aSubCondition.pFieldExpression = new OUString( *rCopy.GetFieldExpression() );
-    else
-        m_aSubCondition.nSubCondition = rCopy.m_aSubCondition.nSubCondition;
 }
 
 SwCollCondition::~SwCollCondition()
 {
-    if( USRFLD_EXPRESSION & m_nCondition )
-        delete m_aSubCondition.pFieldExpression;
 }
 
 void SwCollCondition::RegisterToFormat( SwFormat& rFormat )
@@ -516,41 +502,14 @@ void SwCollCondition::RegisterToFormat( SwFormat& rFormat )
 
 bool SwCollCondition::operator==( const SwCollCondition& rCmp ) const
 {
-    bool bRet = false;
-    if( m_nCondition == rCmp.m_nCondition )
-    {
-        if( USRFLD_EXPRESSION & m_nCondition )
-        {
-            // The SubCondition contains the expression for the UserField
-            const OUString* pTmp = m_aSubCondition.pFieldExpression;
-            if( !pTmp )
-                pTmp = rCmp.m_aSubCondition.pFieldExpression;
-            if( pTmp )
-            {
-                SwTextFormatColl* pColl = GetTextFormatColl();
-                if( !pColl )
-                    pColl = rCmp.GetTextFormatColl();
-
-                if( pColl )
-                {
-                    SwCalc aCalc( *pColl->GetDoc() );
-                    bRet = aCalc.Calculate( *pTmp ).GetBool();
-                }
-            }
-        }
-        else if( m_aSubCondition.nSubCondition ==
-                    rCmp.m_aSubCondition.nSubCondition )
-            bRet = true;
-    }
-    return bRet;
+    return ( m_nCondition == rCmp.m_nCondition )
+        && ( m_nSubCondition == rCmp.m_nSubCondition );
 }
 
-void SwCollCondition::SetCondition( sal_uLong nCond, sal_uLong nSubCond )
+void SwCollCondition::SetCondition( Master_CollCondition nCond, sal_uLong nSubCond )
 {
-    if( USRFLD_EXPRESSION & m_nCondition )
-        delete m_aSubCondition.pFieldExpression;
     m_nCondition = nCond;
-    m_aSubCondition.nSubCondition = nSubCond;
+    m_nSubCondition = nSubCond;
 }
 
 SwConditionTextFormatColl::~SwConditionTextFormatColl()
@@ -610,11 +569,7 @@ void SwConditionTextFormatColl::SetConditions( const SwFormatCollConditions& rCn
                             ? rDoc.CopyTextColl( *rpFnd->GetTextFormatColl() )
                             : nullptr;
         std::unique_ptr<SwCollCondition> pNew;
-        if (USRFLD_EXPRESSION & rpFnd->GetCondition())
-            pNew.reset(new SwCollCondition( pTmpColl, rpFnd->GetCondition(),
-                                            *rpFnd->GetFieldExpression() ));
-        else
-            pNew.reset(new SwCollCondition( pTmpColl, rpFnd->GetCondition(),
+        pNew.reset(new SwCollCondition( pTmpColl, rpFnd->GetCondition(),
                                             rpFnd->GetSubCondition() ));
         m_CondColls.push_back( std::move(pNew) );
     }

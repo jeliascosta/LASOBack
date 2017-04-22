@@ -20,7 +20,6 @@
 #include "dsselect.hxx"
 #include "dbu_dlg.hrc"
 #include <vcl/msgbox.hxx>
-#include "localresaccess.hxx"
 #include <tools/rcid.h>
 
 #include <com/sun/star/sdbcx/XCreateCatalog.hpp>
@@ -80,11 +79,14 @@ void ODatasourceSelectDialog::dispose()
     m_pDatasource.clear();
     m_pOk.clear();
     m_pCancel.clear();
+#if defined HAVE_ODBC_ADMINISTRATION
+    m_pManageDatasources.clear();
+#endif
     ModalDialog::dispose();
 }
 
 
-IMPL_LINK_TYPED( ODatasourceSelectDialog, ListDblClickHdl, ListBox&, rListBox, void )
+IMPL_LINK( ODatasourceSelectDialog, ListDblClickHdl, ListBox&, rListBox, void )
 {
     if (rListBox.GetSelectEntryCount())
         EndDialog(RET_OK);
@@ -94,14 +96,14 @@ bool ODatasourceSelectDialog::Close()
 {
 #ifdef HAVE_ODBC_ADMINISTRATION
     if ( m_pODBCManagement.get() && m_pODBCManagement->isRunning() )
-        return sal_False;
+        return false;
 #endif
 
     return ModalDialog::Close();
 }
 
 #ifdef HAVE_ODBC_ADMINISTRATION
-IMPL_LINK_NOARG_TYPED(ODatasourceSelectDialog, ManageClickHdl, Button*, void)
+IMPL_LINK_NOARG(ODatasourceSelectDialog, ManageClickHdl, Button*, void)
 {
     if ( !m_pODBCManagement.get() )
         m_pODBCManagement.reset( new OOdbcManagement( LINK( this, ODatasourceSelectDialog, ManageProcessFinished ) ) );
@@ -122,7 +124,7 @@ IMPL_LINK_NOARG_TYPED(ODatasourceSelectDialog, ManageClickHdl, Button*, void)
     SAL_WARN_IF( !m_pODBCManagement->isRunning(), "dbaccess.ui", "ODatasourceSelectDialog::ManageClickHdl: success, but not running - you were *fast*!" );
 }
 
-IMPL_LINK_NOARG_TYPED( ODatasourceSelectDialog, ManageProcessFinished, void*, void )
+IMPL_LINK_NOARG( ODatasourceSelectDialog, ManageProcessFinished, void*, void )
 {
     StringBag aOdbcDatasources;
     OOdbcEnumeration aEnumeration;

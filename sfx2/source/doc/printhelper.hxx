@@ -46,23 +46,21 @@ class SfxPrintHelper : public cppu::WeakImplHelper
 public:
 
     SfxPrintHelper() ;
-    virtual ~SfxPrintHelper() ;
+    virtual ~SfxPrintHelper() override ;
 
-    void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL addPrintJobListener( const css::uno::Reference< css::view::XPrintJobListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL removePrintJobListener( const css::uno::Reference< css::view::XPrintJobListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getPrinter() throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL setPrinter( const css::uno::Sequence< css::beans::PropertyValue >& seqPrinter )
-        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL print( const css::uno::Sequence< css::beans::PropertyValue >& seqOptions )
-        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL addPrintJobListener( const css::uno::Reference< css::view::XPrintJobListener >& xListener ) override;
+    virtual void SAL_CALL removePrintJobListener( const css::uno::Reference< css::view::XPrintJobListener >& xListener ) override;
+    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getPrinter() override;
+    virtual void SAL_CALL setPrinter( const css::uno::Sequence< css::beans::PropertyValue >& seqPrinter ) override;
+    virtual void SAL_CALL print( const css::uno::Sequence< css::beans::PropertyValue >& seqOptions ) override;
 
 private:
 
     osl::Mutex m_aMutex;
-    IMPL_PrintListener_DataContainer* m_pData ;
+    std::unique_ptr<IMPL_PrintListener_DataContainer> m_pData ;
     void impl_setPrinter(const css::uno::Sequence< css::beans::PropertyValue >& rPrinter,
-                         SfxPrinter*& pPrinter,
+                         VclPtr<SfxPrinter>& pPrinter,
                          SfxPrinterChangeFlags& nChangeFlags,
                          SfxViewShell*& pViewSh);
 } ;

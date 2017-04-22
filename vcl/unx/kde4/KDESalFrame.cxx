@@ -177,31 +177,40 @@ void KDESalFrame::UpdateSettings( AllSettings& rSettings )
     KConfig *pConfig = KGlobal::config().data();
     if ( pConfig )
     {
-        KConfigGroup aGroup = pConfig->group( "WM" );
         const char *pKey;
 
-        pKey = "titleFont";
-        if ( aGroup.hasKey( pKey ) )
         {
-            vcl::Font aFont = toFont( aGroup.readEntry( pKey, QFont() ), rSettings.GetUILanguageTag().getLocale() );
-            style.SetTitleFont( aFont );
-            bSetTitleFont = true;
+            KConfigGroup aWMGroup = pConfig->group( "WM" );
+
+            pKey = "titleFont";
+            if (aWMGroup.hasKey(pKey))
+            {
+                vcl::Font aFont = toFont(aWMGroup.readEntry(pKey, QFont()),
+                                         rSettings.GetUILanguageTag().getLocale());
+                style.SetTitleFont( aFont );
+                bSetTitleFont = true;
+            }
         }
 
-        aGroup = pConfig->group( "Icons" );
+        KConfigGroup aIconsGroup = pConfig->group("Icons");
 
         pKey = "Theme";
-        if ( aGroup.hasKey( pKey ) )
-            style.SetPreferredIconTheme( readEntryUntranslated( &aGroup, pKey ) );
+        if (aIconsGroup.hasKey(pKey))
+            style.SetPreferredIconTheme( readEntryUntranslated(&aIconsGroup, pKey));
 
         //toolbar
         pKey = "toolbarFont";
-        if ( aGroup.hasKey( pKey ) )
+        if (aIconsGroup.hasKey(pKey))
         {
-            vcl::Font aFont = toFont( aGroup.readEntry( pKey, QFont() ), rSettings.GetUILanguageTag().getLocale() );
+            vcl::Font aFont = toFont(aIconsGroup.readEntry(pKey, QFont()),
+                                     rSettings.GetUILanguageTag().getLocale());
             style.SetToolFont( aFont );
         }
     }
+
+    // Menu
+    std::unique_ptr<KMenuBar> pMenuBar = std::unique_ptr<KMenuBar>( new KMenuBar() );
+    QPalette qMenuCG = pMenuBar->palette();
 
     Color aFore = toColor( pal.color( QPalette::Active, QPalette::WindowText ) );
     Color aBack = toColor( pal.color( QPalette::Active, QPalette::Window ) );
@@ -210,11 +219,13 @@ void KDESalFrame::UpdateSettings( AllSettings& rSettings )
     Color aButn = toColor( pal.color( QPalette::Active, QPalette::ButtonText ) );
     Color aMid = toColor( pal.color( QPalette::Active, QPalette::Mid ) );
     Color aHigh = toColor( pal.color( QPalette::Active, QPalette::Highlight ) );
+    Color aHighText = toColor( pal.color( QPalette::Active, QPalette::HighlightedText ) );
+
+    style.SetSkipDisabledInMenus( TRUE );
 
     // Foreground
     style.SetRadioCheckTextColor( aFore );
     style.SetLabelTextColor( aFore );
-    style.SetInfoTextColor( aFore );
     style.SetDialogTextColor( aFore );
     style.SetGroupTextColor( aFore );
 
@@ -239,7 +250,7 @@ void KDESalFrame::UpdateSettings( AllSettings& rSettings )
     style.SetTabHighlightTextColor( aButn );
 
     // Disable color
-    style.SetDisableColor( aMid );
+    style.SetDisableColor( toColor( pal.color( QPalette::Disabled, QPalette::WindowText ) ) );
 
     // Workspace
     style.SetWorkspaceColor( aMid );
@@ -253,7 +264,7 @@ void KDESalFrame::UpdateSettings( AllSettings& rSettings )
 
     // Selection
     style.SetHighlightColor( aHigh );
-    style.SetHighlightTextColor( toColor(pal.color( QPalette::HighlightedText))  );
+    style.SetHighlightTextColor( aHighText );
 
     // Tooltip
     style.SetHelpColor( toColor( QToolTip::palette().color( QPalette::Active, QPalette::ToolTipBase )));
@@ -265,9 +276,7 @@ void KDESalFrame::UpdateSettings( AllSettings& rSettings )
     style.SetAppFont( aFont );
 
     style.SetMenuFont( aFont ); // will be changed according to pMenuBar
-    //style.SetToolFont( aFont ); //already set above
     style.SetLabelFont( aFont );
-    style.SetInfoFont( aFont );
     style.SetRadioCheckFont( aFont );
     style.SetPushButtonFont( aFont );
     style.SetFieldFont( aFont );
@@ -287,13 +296,6 @@ void KDESalFrame::UpdateSettings( AllSettings& rSettings )
     int flash_time = QApplication::cursorFlashTime();
     style.SetCursorBlinkTime( flash_time != 0 ? flash_time/2 : STYLE_CURSOR_NOBLINKTIME );
 
-    // Menu
-    style.SetSkipDisabledInMenus( TRUE );
-    std::unique_ptr<KMenuBar> pMenuBar = std::unique_ptr<KMenuBar>( new KMenuBar() );
-
-    // Color
-    QPalette qMenuCG = pMenuBar->palette();
-
     // Menu text and background color, theme specific
     Color aMenuFore = toColor( qMenuCG.color( QPalette::WindowText ) );
     Color aMenuBack = toColor( qMenuCG.color( QPalette::Window ) );
@@ -303,9 +305,9 @@ void KDESalFrame::UpdateSettings( AllSettings& rSettings )
     style.SetMenuColor( aMenuBack );
     style.SetMenuBarColor( aMenuBack );
     style.SetMenuHighlightColor( toColor ( qMenuCG.color( QPalette::Highlight ) ) );
-    style.SetMenuHighlightTextColor( aMenuFore );
+    style.SetMenuHighlightTextColor( toColor ( qMenuCG.color( QPalette::HighlightedText ) ) );
 
-    // set special menubar higlight text color
+    // set special menubar highlight text color
     if ( QApplication::style()->inherits( "HighContrastStyle" ) )
         ImplGetSVData()->maNWFData.maMenuBarHighlightTextColor = toColor( qMenuCG.color( QPalette::HighlightedText ) );
     else
@@ -332,6 +334,10 @@ void KDESalFrame::UpdateSettings( AllSettings& rSettings )
     style.SetScrollBarSize( QApplication::style()->pixelMetric( QStyle::PM_ScrollBarExtent ) );
     style.SetMinThumbSize( QApplication::style()->pixelMetric( QStyle::PM_ScrollBarSliderMin ));
 
+    // These colors are used for the ruler text and marks
+    style.SetShadowColor(toColor(pal.color(QPalette::Disabled, QPalette::WindowText)));
+    style.SetDarkShadowColor(toColor(pal.color(QPalette::Inactive, QPalette::WindowText)));
+
     rSettings.SetStyleSettings( style );
 }
 
@@ -339,7 +345,7 @@ void KDESalFrame::ReleaseGraphics( SalGraphics *pGraphics )
 {
     for( int i = 0; i < nMaxGraphics; i++ )
     {
-        if( m_aGraphics[i].pGraphics == pGraphics )
+        if( m_aGraphics[i].pGraphics.get() == pGraphics )
         {
             m_aGraphics[i].bInUse = false;
             break;
@@ -357,14 +363,6 @@ void KDESalFrame::updateGraphics( bool bClear )
     }
 }
 
-KDESalFrame::~KDESalFrame()
-{
-}
-
-KDESalFrame::GraphicsHolder::~GraphicsHolder()
-{
-}
-
 SalGraphics* KDESalFrame::AcquireGraphics()
 {
     if( GetWindow() )
@@ -376,10 +374,10 @@ SalGraphics* KDESalFrame::AcquireGraphics()
                 m_aGraphics[i].bInUse = true;
                 if( ! m_aGraphics[i].pGraphics )
                 {
-                    m_aGraphics[i].pGraphics = new KDESalGraphics();
+                    m_aGraphics[i].pGraphics.reset( new KDESalGraphics );
                     m_aGraphics[i].pGraphics->Init( this, GetWindow(), GetScreenNumber() );
                 }
-                return m_aGraphics[i].pGraphics;
+                return m_aGraphics[i].pGraphics.get();
             }
         }
     }

@@ -24,9 +24,8 @@
 #include <sys/time.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <ctype.h>
 
-#if defined(SOLARIS) || defined(AIX)
+#if defined(__sun) || defined(AIX)
 #include <osl/module.h>
 #endif
 
@@ -37,7 +36,7 @@
 #include <X11/cursorfont.h>
 #include "unx/x11_cursors/salcursors.h"
 #include "unx/x11_cursors/invert50.h"
-#ifdef SOLARIS
+#ifdef __sun
 #define XK_KOREAN
 #endif
 #include <X11/keysym.h>
@@ -47,7 +46,6 @@
 #include <X11/extensions/Xinerama.h>
 #endif
 
-#include "GL/glxew.h"
 #include <opengl/zone.hxx>
 
 #include <vcl/svapp.hxx>
@@ -77,7 +75,6 @@
 #include <memory>
 #include <vector>
 
-#include <com/sun/star/uno/DeploymentException.hpp>
 #include <officecfg/Office/Common.hxx>
 
 /* From <X11/Intrinsic.h> */
@@ -153,7 +150,7 @@ static bool sal_GetVisualInfo( Display *pDisplay, XID nVID, XVisualInfo &rVI )
     rVI = *pInfo;
     XFree( pInfo );
 
-    DBG_ASSERT( rVI.visualid == nVID,
+    SAL_WARN_IF( rVI.visualid != nVID, "vcl",
                 "sal_GetVisualInfo: could not get correct visual by visualId" );
     return true;
 }
@@ -223,15 +220,9 @@ bool SalDisplay::BestVisual( Display     *pDisplay,
     if( nVID && sal_GetVisualInfo( pDisplay, nVID, rVI ) )
         return rVI.visualid == nDefVID;
 
-    try {
-        bool bUseOpenGL = OpenGLHelper::isVCLOpenGLEnabled();
-        if (bUseOpenGL && BestOpenGLVisual(pDisplay, nScreen, rVI))
-            return rVI.visualid == nDefVID;
-    }
-    catch (const css::uno::DeploymentException&)
-    {
-        // too early to try to access configmgr
-    }
+    bool bUseOpenGL = OpenGLHelper::isVCLOpenGLEnabled();
+    if (bUseOpenGL && BestOpenGLVisual(pDisplay, nScreen, rVI))
+        return rVI.visualid == nDefVID;
 
     XVisualInfo aVI;
     aVI.screen = nScreen;
@@ -285,7 +276,6 @@ bool SalDisplay::BestVisual( Display     *pDisplay,
 
 SalDisplay::SalDisplay( Display *display ) :
         pXLib_( nullptr ),
-        mpInputMethod( nullptr ),
         mpKbdExtension( nullptr ),
         mpFactory( nullptr ),
         pDisp_( display ),
@@ -308,7 +298,7 @@ SalDisplay::SalDisplay( Display *display ) :
 #endif
     SalGenericData *pData = GetGenericData();
 
-    DBG_ASSERT( ! pData->GetDisplay(), "Second SalDisplay created !!!\n" );
+    SAL_WARN_IF(  pData->GetDisplay(), "vcl", "Second SalDisplay created !!!\n" );
     pData->SetDisplay( this );
 
     m_nXDefaultScreen = SalX11Screen( DefaultScreen( pDisp_ ) );
@@ -343,8 +333,6 @@ void SalDisplay::doDestruct()
 
     if( IsDisplay() )
     {
-        delete mpInputMethod;
-        mpInputMethod = nullptr;
         delete mpKbdExtension;
         mpKbdExtension = nullptr;
 
@@ -382,10 +370,10 @@ void SalDisplay::doDestruct()
         pData->SetDisplay( nullptr );
 }
 
-static int DisplayHasEvent( int fd, SalX11Display *pDisplay  )
+static int DisplayHasEvent( int fd, void * data )
 {
-  (void)fd;
-  DBG_ASSERT( ConnectionNumber( pDisplay->GetDisplay() ) == fd,
+  auto pDisplay = static_cast<SalX11Display *>(data);
+  SAL_WARN_IF( ConnectionNumber( pDisplay->GetDisplay() ) != fd, "vcl",
               "wrong fd in DisplayHasEvent" );
   if( ! pDisplay->IsDisplay() )
       return 0;
@@ -397,10 +385,10 @@ static int DisplayHasEvent( int fd, SalX11Display *pDisplay  )
   GetSalData()->m_pInstance->GetYieldMutex()->release();
   return int(result);
 }
-static int DisplayQueue( int fd, SalX11Display *pDisplay )
+static int DisplayQueue( int fd, void * data )
 {
-  (void)fd;
-  DBG_ASSERT( ConnectionNumber( pDisplay->GetDisplay() ) == fd,
+  auto pDisplay = static_cast<SalX11Display *>(data);
+  SAL_WARN_IF( ConnectionNumber( pDisplay->GetDisplay() ) != fd, "vcl",
               "wrong fd in DisplayHasEvent" );
   int result;
 
@@ -411,10 +399,10 @@ static int DisplayQueue( int fd, SalX11Display *pDisplay )
 
   return result;
 }
-static int DisplayYield( int fd, SalX11Display *pDisplay )
+static int DisplayYield( int fd, void * data )
 {
-  (void)fd;
-  DBG_ASSERT( ConnectionNumber( pDisplay->GetDisplay() ) == fd,
+  auto pDisplay = static_cast<SalX11Display *>(data);
+  SAL_WARN_IF( ConnectionNumber( pDisplay->GetDisplay() ) != fd, "vcl",
               "wrong fd in DisplayHasEvent" );
 
   GetSalData()->m_pInstance->GetYieldMutex()->acquire();
@@ -642,7 +630,7 @@ void SalDisplay::Init()
     if( !nMaxRequestSize_ )
         nMaxRequestSize_ = XMaxRequestSize( pDisp_ ) * 4;
 
-    SetServerVendor();
+    meServerVendor = sal_GetServerVendor(pDisp_);
     X11SalBitmap::ImplCreateCache();
 
     // - - - - - - - - - - Synchronize - - - - - - - - - - - - -
@@ -662,10 +650,8 @@ void SalDisplay::Init()
 #endif
 }
 
-void SalX11Display::SetupInput( SalI18N_InputMethod *pInputMethod )
+void SalX11Display::SetupInput()
 {
-    SetInputMethod( pInputMethod );
-
     GetGenericData()->ErrorTrapPush();
     SalI18N_KeyboardExtension *pKbdExtension = new SalI18N_KeyboardExtension( pDisp_ );
     XSync( pDisp_, False );
@@ -908,6 +894,8 @@ OUString SalDisplay::GetKeyName( sal_uInt16 nKeyCode ) const
             break;
 
         #if !defined (SunXK_Undo)
+            // we don't intend to use SunXK_Undo, but if it has not been
+            // defined already, then we _do_ need the following:
             #define SunXK_Props     0x1005FF70
             #define SunXK_Front     0x1005FF71
             #define SunXK_Copy      0x1005FF72
@@ -915,6 +903,12 @@ OUString SalDisplay::GetKeyName( sal_uInt16 nKeyCode ) const
             #define SunXK_Paste     0x1005FF74
             #define SunXK_Cut       0x1005FF75
         #endif
+            // the following are for XF86 systems
+            #define XF86XK_Copy     0x1008FF57
+            #define XF86XK_Cut      0x1008FF58
+            #define XF86XK_Open     0x1008FF6B
+            #define XF86XK_Paste    0x1008FF6D
+            // which leaves Apollo and OSF systems in the lurch
 
         case KEY_REPEAT:
             nKeySym = XK_Redo;
@@ -929,19 +923,25 @@ OUString SalDisplay::GetKeyName( sal_uInt16 nKeyCode ) const
             nKeySym = SunXK_Front;
             break;
         case KEY_COPY:
-            nKeySym = SunXK_Copy;
+            nKeySym = GetServerVendor() == vendor_sun ? SunXK_Copy : XF86XK_Copy;
             break;
         case KEY_OPEN:
-            nKeySym = SunXK_Open;
+            nKeySym = GetServerVendor() == vendor_sun ? SunXK_Open : XF86XK_Open;
             break;
         case KEY_PASTE:
-            nKeySym = SunXK_Paste;
+            nKeySym = GetServerVendor() == vendor_sun ? SunXK_Paste : XF86XK_Paste;
             break;
         case KEY_FIND:
             nKeySym = XK_Find;
             break;
         case KEY_CUT:
+            nKeySym = GetServerVendor() == vendor_sun ? SunXK_Cut : XF86XK_Cut;
+            /* The original code here had:
             nKeySym = GetServerVendor() == vendor_sun ? SunXK_Cut   : XK_L10;
+            if anyone can remember which non-vendor_sun system used this
+            XK_L10 keysym, and why this hack only applied to KEY_CUT,
+            then please re-hack this code to put it back
+            */
             break;
         case KEY_ADD:
             aCustomKeyName = "+";
@@ -1013,7 +1013,7 @@ OUString SalDisplay::GetKeyName( sal_uInt16 nKeyCode ) const
     }
     else if (!aCustomKeyName.isEmpty())
     {
-        // For semicolumn, bracket left and bracket right, it's better to use
+        // For semicolon, bracket left and bracket right, it's better to use
         // their keys than their names. (fdo#32891)
         if (!aStrMap.isEmpty())
             aStrMap += "+";
@@ -1163,7 +1163,7 @@ sal_uInt16 SalDisplay::GetKeyCode( KeySym keysym, char*pcPrintable ) const
             // - - - - - Sun X-Server keyboard ??? - - - - - - - - - - - -
             case XK_L1: // XK_F11:
                 nKey = KEY_F11; // on a sun keyboard this actually is usually SunXK_Stop = 0x0000FF69 (XK_Cancel),
-                // but VCL doesn't have a key definition for that
+                                // but VCL doesn't have a key definition for that
                 break;
             case XK_L2: // XK_F12:
                 if ( GetServerVendor() == vendor_sun )
@@ -1420,7 +1420,7 @@ sal_uInt16 SalDisplay::GetKeyCode( KeySym keysym, char*pcPrintable ) const
 }
 
 KeySym SalDisplay::GetKeySym( XKeyEvent        *pEvent,
-                                    unsigned char    *pPrintable,
+                                    char             *pPrintable,
                                     int              *pLen,
                                     KeySym           *pUnmodifiedKeySym,
                                     Status           *pStatusReturn,
@@ -1430,24 +1430,28 @@ KeySym SalDisplay::GetKeySym( XKeyEvent        *pEvent,
     memset( pPrintable, 0, *pLen );
     *pStatusReturn = 0;
 
+    SalI18N_InputMethod *pInputMethod = nullptr;
+    if ( pXLib_ )
+        pInputMethod = pXLib_->GetInputMethod();
+
     // first get the printable of the possibly modified KeySym
     if (   (aInputContext == nullptr)
         || (pEvent->type == KeyRelease)
-        || (mpInputMethod != nullptr && mpInputMethod->PosixLocale()) )
+        || (pInputMethod != nullptr && pInputMethod->PosixLocale()) )
     {
         // XmbLookupString must not be called for KeyRelease events
         // Cannot enter space in c locale problem #89616# #88978# btraq #4478197
-        *pLen = XLookupString( pEvent, reinterpret_cast<char*>(pPrintable), 1, &nKeySym, nullptr );
+        *pLen = XLookupString( pEvent, pPrintable, 1, &nKeySym, nullptr );
     }
     else
     {
         *pLen = XmbLookupString( aInputContext,
-                        pEvent, reinterpret_cast<char*>(pPrintable), *pLen - 1, &nKeySym, pStatusReturn );
+                        pEvent, pPrintable, *pLen - 1, &nKeySym, pStatusReturn );
 
         // Lookup the string again, now with appropriate size
         if ( *pStatusReturn == XBufferOverflow )
         {
-            pPrintable[ 0 ] = (char)0;
+            pPrintable[ 0 ] = '\0';
             return 0;
         }
 
@@ -1533,54 +1537,54 @@ Cursor SalDisplay::GetPointer( PointerStyle ePointerStyle )
             break;
         case PointerStyle::Arrow:
             aCur = XCreateFontCursor( pDisp_, XC_left_ptr );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::Wait:
             aCur = XCreateFontCursor( pDisp_, XC_watch );
             break;
         case PointerStyle::Text:          // Mouse Pointer is a "I" Beam
             aCur = XCreateFontCursor( pDisp_, XC_xterm );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::Help:
             aCur = XCreateFontCursor( pDisp_, XC_question_arrow );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::Cross:         // Mouse Pointer is a cross
             aCur = XCreateFontCursor( pDisp_, XC_crosshair );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::NSize:
             aCur = XCreateFontCursor( pDisp_, XC_sb_v_double_arrow );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::SSize:
             aCur = XCreateFontCursor( pDisp_, XC_sb_v_double_arrow );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::WSize:
             aCur = XCreateFontCursor( pDisp_, XC_sb_h_double_arrow );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::ESize:
             aCur = XCreateFontCursor( pDisp_, XC_sb_h_double_arrow );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::WindowNSize:
             aCur = XCreateFontCursor( pDisp_, XC_top_side );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::WindowSSize:
             aCur = XCreateFontCursor( pDisp_, XC_bottom_side );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::WindowWSize:
             aCur = XCreateFontCursor( pDisp_, XC_left_side );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::WindowESize:
             aCur = XCreateFontCursor( pDisp_, XC_right_side );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::NWSize:
             aCur = XCreateFontCursor( pDisp_, XC_top_left_corner );
@@ -1596,19 +1600,19 @@ Cursor SalDisplay::GetPointer( PointerStyle ePointerStyle )
             break;
         case PointerStyle::WindowNWSize:
             aCur = XCreateFontCursor( pDisp_, XC_top_left_corner );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::WindowNESize:
             aCur = XCreateFontCursor( pDisp_, XC_top_right_corner );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::WindowSWSize:
             aCur = XCreateFontCursor( pDisp_, XC_bottom_left_corner );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::WindowSESize:
             aCur = XCreateFontCursor( pDisp_, XC_bottom_right_corner );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::HSplit:
             aCur = XCreateFontCursor( pDisp_, XC_sb_h_double_arrow );
@@ -1618,15 +1622,15 @@ Cursor SalDisplay::GetPointer( PointerStyle ePointerStyle )
             break;
         case PointerStyle::HSizeBar:
             aCur = XCreateFontCursor( pDisp_, XC_sb_h_double_arrow ); // ???
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::VSizeBar:
             aCur = XCreateFontCursor( pDisp_, XC_sb_v_double_arrow ); // ???
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::RefHand:
             aCur = XCreateFontCursor( pDisp_, XC_hand1 );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::Hand:
             aCur = XCreateFontCursor( pDisp_, XC_hand2 );
@@ -1723,7 +1727,7 @@ Cursor SalDisplay::GetPointer( PointerStyle ePointerStyle )
             break;
         case PointerStyle::Pen:       // Mouse Pointer is a pencil
             aCur = XCreateFontCursor( pDisp_, XC_pencil );
-            DBG_ASSERT( aCur != None, "GetPointer: Could not define cursor" );
+            SAL_WARN_IF( aCur == None, "vcl", "GetPointer: Could not define cursor" );
             break;
         case PointerStyle::LinkData:
             MAKE_CURSOR( linkdata_ );
@@ -1767,12 +1771,6 @@ Cursor SalDisplay::GetPointer( PointerStyle ePointerStyle )
         case PointerStyle::ChainNotAllowed:
             MAKE_CURSOR( chainnot_ );
             break;
-        case PointerStyle::TimeEventMove:
-            MAKE_CURSOR( timemove_ );
-            break;
-        case PointerStyle::TimeEventSize:
-            MAKE_CURSOR( timesize_ );
-            break;
         case PointerStyle::AutoScrollN:
             MAKE_CURSOR(asn_ );
             break;
@@ -1806,9 +1804,6 @@ Cursor SalDisplay::GetPointer( PointerStyle ePointerStyle )
         case PointerStyle::AutoScrollNSWE:
             MAKE_CURSOR( asnswe_ );
             break;
-        case PointerStyle::Airbrush:
-            MAKE_CURSOR( airbrush_ );
-            break;
         case PointerStyle::TextVertical:
             MAKE_CURSOR( vertcurs_ );
             break;
@@ -1828,11 +1823,6 @@ Cursor SalDisplay::GetPointer( PointerStyle ePointerStyle )
             break;
         case PointerStyle::TabSelectSW:
             MAKE_CURSOR( tblselsw_ );
-            break;
-
-        // #i20119# Paintbrush tool
-        case PointerStyle::Paintbrush:
-            MAKE_CURSOR( paintbrush_ );
             break;
 
         case PointerStyle::HideWhitespace:
@@ -1946,6 +1936,10 @@ void SalX11Display::Yield()
 
 bool SalX11Display::Dispatch( XEvent *pEvent )
 {
+    SalI18N_InputMethod *pInputMethod = nullptr;
+    if ( pXLib_ )
+        pInputMethod = pXLib_->GetInputMethod();
+
     if( pEvent->type == KeyPress || pEvent->type == KeyRelease )
     {
         ::Window aWindow = pEvent->xkey.window;
@@ -1962,12 +1956,12 @@ bool SalX11Display::Dispatch( XEvent *pEvent )
         }
         if( it != m_aFrames.end() )
         {
-            if ( mpInputMethod->FilterEvent( pEvent , aWindow ) )
+            if ( pInputMethod && pInputMethod->FilterEvent( pEvent , aWindow ) )
                 return false;
         }
     }
     else
-        if ( mpInputMethod->FilterEvent( pEvent, None ) )
+        if ( pInputMethod && pInputMethod->FilterEvent( pEvent, None ) )
             return false;
 
     SalInstance* pInstance = GetSalData()->m_pInstance;
@@ -2253,7 +2247,7 @@ void SalDisplay::PrintInfo() const
         SAL_INFO( "vcl", "\tshift ctrl alt    \t" << KeyStr( nShiftKeySym_ ) << " (0x" << std::hex << sal::static_int_cast< unsigned int >(nShiftKeySym_) << ") "
                 << KeyStr( nCtrlKeySym_ ) << " (0x" << sal::static_int_cast< unsigned int >(nCtrlKeySym_) << ") "
                 << KeyStr( nMod1KeySym_ ) << " (0x" << sal::static_int_cast< unsigned int >(nMod1KeySym_) << ")");
-        if( XExtendedMaxRequestSize(pDisp_) * 4 )
+        if( XExtendedMaxRequestSize(pDisp_) != 0 )
             SAL_INFO( "vcl", "\tXMaxRequestSize   \t" << XMaxRequestSize(pDisp_) * 4 << " " << XExtendedMaxRequestSize(pDisp_) * 4 << " [bytes]");
         SAL_INFO( "vcl", "\tWMName            \t" << getWMAdaptor()->getWindowManagerName() );
     }
@@ -2291,7 +2285,7 @@ void SalDisplay::addXineramaScreenUnique( int i, long i_nX, long i_nY, long i_nW
         }
     }
     m_aXineramaScreenIndexMap[i] = m_aXineramaScreens.size();
-    m_aXineramaScreens.push_back( Rectangle( Point( i_nX, i_nY ), Size( i_nWidth, i_nHeight ) ) );
+    m_aXineramaScreens.push_back( tools::Rectangle( Point( i_nX, i_nY ), Size( i_nWidth, i_nHeight ) ) );
 }
 
 void SalDisplay::InitXinerama()
@@ -2310,7 +2304,7 @@ void SalDisplay::InitXinerama()
         {
             if( nFramebuffers > 1 )
             {
-                m_aXineramaScreens = std::vector<Rectangle>();
+                m_aXineramaScreens = std::vector<tools::Rectangle>();
                 m_aXineramaScreenIndexMap = std::vector<int>(nFramebuffers);
                 for( int i = 0; i < nFramebuffers; i++ )
                 {
@@ -2368,7 +2362,6 @@ Time SalDisplay::GetLastUserEventTime( bool i_bAlwaysReget ) const
 bool SalDisplay::XIfEventWithTimeout( XEvent* o_pEvent, XPointer i_pPredicateData,
                                       X_if_predicate i_pPredicate ) const
 {
-    long nTimeout = 1000;
     /* #i99360# ugly workaround an X11 library bug
        this replaces the following call:
        XIfEvent( GetDisplay(), o_pEvent, i_pPredicate, i_pPredicateData );
@@ -2382,6 +2375,7 @@ bool SalDisplay::XIfEventWithTimeout( XEvent* o_pEvent, XPointer i_pPredicateDat
         aFD.fd = ConnectionNumber(GetDisplay());
         aFD.events = POLLIN;
         aFD.revents = 0;
+        long nTimeout = 1000;
         (void)poll(&aFD, 1, nTimeout);
         if( ! XCheckIfEvent( GetDisplay(), o_pEvent, i_pPredicate, i_pPredicateData ) )
         {
@@ -2631,7 +2625,7 @@ SalColormap::SalColormap( sal_uInt16 nDepth )
                                TrueColor,
                                &aVI ) )
         {
-            aVI.visual          = new Visual();
+            aVI.visual          = new Visual;
             aVI.visualid        = (VisualID)0; // beware of temporary destructor below
             aVI.screen          = 0;
             aVI.depth           = nDepth;
@@ -2693,14 +2687,6 @@ SalColormap::SalColormap( sal_uInt16 nDepth )
         else
             m_aVisual = SalVisual( &aVI );
     }
-}
-
-SalColormap::~SalColormap()
-{
-#ifdef DBG_UTIL
-    m_hColormap      = None;
-    m_pDisplay       = nullptr;
-#endif
 }
 
 void SalColormap::GetPalette()
@@ -2898,7 +2884,7 @@ Pixel SalColormap::GetPixel( SalColor nSalColor ) const
         const_cast<SalColormap*>(this)->GetLookupTable();
     }
 
-    // Colormatching ueber Palette
+    // color matching via palette
     sal_uInt16 r = SALCOLOR_RED  ( nSalColor );
     sal_uInt16 g = SALCOLOR_GREEN( nSalColor );
     sal_uInt16 b = SALCOLOR_BLUE ( nSalColor );

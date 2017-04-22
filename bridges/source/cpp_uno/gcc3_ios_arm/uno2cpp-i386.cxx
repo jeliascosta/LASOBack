@@ -26,10 +26,10 @@
 #include <com/sun/star/uno/RuntimeException.hpp>
 #include <sal/log.hxx>
 
-#include "bridges/cpp_uno/shared/bridge.hxx"
-#include "bridges/cpp_uno/shared/types.hxx"
-#include "bridges/cpp_uno/shared/unointerfaceproxy.hxx"
-#include "bridges/cpp_uno/shared/vtables.hxx"
+#include "bridge.hxx"
+#include "types.hxx"
+#include "unointerfaceproxy.hxx"
+#include "vtables.hxx"
 
 #include "share.hxx"
 
@@ -115,6 +115,7 @@ void callVirtualMethod(
     case typelib_TypeClass_HYPER:
     case typelib_TypeClass_UNSIGNED_HYPER:
         ((long*)pRegisterReturn)[1] = edx;
+        SAL_FALLTHROUGH;
     case typelib_TypeClass_LONG:
     case typelib_TypeClass_UNSIGNED_LONG:
     case typelib_TypeClass_CHAR:
@@ -221,6 +222,7 @@ static void cpp_call(
             case typelib_TypeClass_UNSIGNED_HYPER:
             case typelib_TypeClass_DOUBLE:
                 pCppStack += sizeof(sal_Int32); // extra long
+                SAL_FALLTHROUGH;
             default:
                 break;
             }
@@ -453,6 +455,7 @@ void unoInterfaceProxyDispatch(
                 TYPELIB_DANGER_RELEASE( pTD );
             }
         } // else perform queryInterface()
+        SAL_FALLTHROUGH;
         default:
             // dependent dispatch
             cpp_call(

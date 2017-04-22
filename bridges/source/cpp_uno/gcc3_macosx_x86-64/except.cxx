@@ -52,11 +52,11 @@ struct Fake_type_info {
 };
 
 struct Fake_class_type_info: Fake_type_info {
-    virtual ~Fake_class_type_info() = delete;
+    virtual ~Fake_class_type_info() override = delete;
 };
 
 struct Fake_si_class_type_info: Fake_class_type_info {
-    virtual ~Fake_si_class_type_info() = delete;
+    virtual ~Fake_si_class_type_info() override = delete;
     void const * base;
 };
 
@@ -303,12 +303,8 @@ void raiseException( uno_Any * pUnoExc, uno_Mapping * pUno2Cpp )
         MutexGuard guard( Mutex::getGlobalMutex() );
         if (! s_rtti)
         {
-#ifdef LEAK_STATIC_DATA
-            s_rtti = new RTTI();
-#else
             static RTTI rtti_data;
             s_rtti = &rtti_data;
-#endif
         }
     }
     rtti = s_rtti->getRTTI( reinterpret_cast<typelib_CompoundTypeDescription *>(pTypeDescr) );

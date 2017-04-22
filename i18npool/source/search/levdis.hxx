@@ -21,6 +21,7 @@
 #define INCLUDED_I18NPOOL_SOURCE_SEARCH_LEVDIS_HXX
 
 #include <rtl/ustring.hxx>
+#include <memory>
 
 // Sensible default values for a user interface could be:
 //  LEVDISDEFAULT_XOTHER    2
@@ -115,19 +116,17 @@ public:
 
 class WLevDisDistanceMem
 {
-    int*    p;
+    std::unique_ptr<int[]> p;
 public:
     explicit WLevDisDistanceMem( size_t s )
-        : p(nullptr)
     {
         NewMem(s);
     }
-    ~WLevDisDistanceMem()           { delete [] p; }
-    int* GetPtr() const             { return p; }
+    int* GetPtr() const             { return p.get(); }
     int* NewMem( size_t s )
     {
-        delete [] p;
-        return (p = new int[ s<3 ? 3 : s ]);
+        p.reset(new int[ s<3 ? 3 : s ]);
+        return p.get();
     }
 };
 
@@ -168,7 +167,7 @@ public:
         @param  bRelaxed    the mathematically incorrect method is default (TRUE)
      */
     WLevDistance( const sal_Unicode* cPattern, int nOtherX, int nShorterY,
-                    int nLongerZ, bool bRelaxed = true );
+                    int nLongerZ, bool bRelaxed );
 
     WLevDistance( const WLevDistance& rWLD );
     ~WLevDistance();
@@ -180,9 +179,9 @@ public:
         @returns nLimit for later comparison with WLD()
      */
     void CalcLPQR( int nOtherX, int nShorterY, int nLongerZ,
-                    bool bRelaxed = true );
+                    bool bRelaxed );
 
-    inline int GetLimit() const     { return nLimit; }
+    int GetLimit() const     { return nLimit; }
 
     // Calculate current balance, keep this inline for performance reasons!
     // c == cpPattern[jj] == cString[ii]

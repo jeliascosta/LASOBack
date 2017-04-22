@@ -49,7 +49,7 @@ FuConstructUnoControl::FuConstructUnoControl (
     SdDrawDocument* pDoc,
     SfxRequest&     rReq)
     : FuConstruct(pViewSh, pWin, pView, pDoc, rReq)
-    , nInventor(0)
+    , nInventor(SdrInventor::Unknown)
     , nIdentifier(0)
 {
 }
@@ -70,12 +70,12 @@ void FuConstructUnoControl::DoExecute( SfxRequest& rReq )
     const SfxUInt32Item* pInventorItem = rReq.GetArg<SfxUInt32Item>(SID_FM_CONTROL_INVENTOR);
     const SfxUInt16Item* pIdentifierItem = rReq.GetArg<SfxUInt16Item>(SID_FM_CONTROL_IDENTIFIER);
     if( pInventorItem )
-        nInventor = pInventorItem->GetValue();
+        nInventor = (SdrInventor)pInventorItem->GetValue();
     if( pIdentifierItem )
         nIdentifier = pIdentifierItem->GetValue();
 
     mpViewShell->GetViewShellBase().GetToolBarManager()->SetToolBar(
-        ToolBarManager::TBG_FUNCTION,
+        ToolBarManager::ToolBarGroup::Function,
         ToolBarManager::msDrawingObjectToolBar);
 }
 
@@ -94,18 +94,13 @@ bool FuConstructUnoControl::MouseButtonDown(const MouseEvent& rMEvt)
     return bReturn;
 }
 
-bool FuConstructUnoControl::MouseMove(const MouseEvent& rMEvt)
-{
-    return FuConstruct::MouseMove(rMEvt);
-}
-
 bool FuConstructUnoControl::MouseButtonUp(const MouseEvent& rMEvt)
 {
     bool bReturn = false;
 
     if ( mpView->IsCreateObj() && rMEvt.IsLeft() )
     {
-        mpView->EndCreateObj(SDRCREATE_FORCEEND);
+        mpView->EndCreateObj(SdrCreateCmd::ForceEnd);
         bReturn = true;
     }
 
@@ -115,15 +110,6 @@ bool FuConstructUnoControl::MouseButtonUp(const MouseEvent& rMEvt)
         mpViewShell->GetViewFrame()->GetDispatcher()->Execute(SID_OBJECT_SELECT, SfxCallMode::ASYNCHRON);
 
     return bReturn;
-}
-
-/**
- * Process keyboard input
- * @returns sal_True if a KeyEvent is being processed, sal_False otherwise
- */
-bool FuConstructUnoControl::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
 }
 
 void FuConstructUnoControl::Activate()
@@ -147,7 +133,7 @@ void FuConstructUnoControl::Deactivate()
     mpWindow->SetPointer( aOldPointer );
 }
 
-SdrObject* FuConstructUnoControl::CreateDefaultObject(const sal_uInt16, const Rectangle& rRectangle)
+SdrObject* FuConstructUnoControl::CreateDefaultObject(const sal_uInt16, const ::tools::Rectangle& rRectangle)
 {
     // case SID_FM_CREATE_CONTROL:
 

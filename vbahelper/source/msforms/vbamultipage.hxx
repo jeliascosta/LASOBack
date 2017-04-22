@@ -31,7 +31,6 @@ typedef cppu::ImplInheritanceHelper< ScVbaControl, ov::msforms::XMultiPage > Mul
 
 class ScVbaMultiPage : public MultiPageImpl_BASE
 {
-    static css::uno::Reference< css::container::XIndexAccess > getPages( sal_Int32 nPages );
 public:
     ScVbaMultiPage(
         const css::uno::Reference< ov::XHelperInterface >& xParent,
@@ -41,9 +40,9 @@ public:
         ov::AbstractGeometryAttributes* pGeomHelper);
 
    // Attributes
-    virtual sal_Int32 SAL_CALL getValue() throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL setValue( sal_Int32 _value ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL Pages( const css::uno::Any& index ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getValue() override;
+    virtual void SAL_CALL setValue( sal_Int32 _value ) override;
+    virtual css::uno::Any SAL_CALL Pages( const css::uno::Any& index ) override;
 
     //XHelperInterface
     virtual OUString getServiceImplName() override;

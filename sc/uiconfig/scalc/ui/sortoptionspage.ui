@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.20.0 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
-  <!-- interface-requires LibreOffice 1.0 -->
+  <requires lib="gtk+" version="3.0"/>
+  <requires lib="LibreOffice" version="1.0"/>
   <object class="GtkBox" id="SortOptionsPage">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -39,8 +40,6 @@
                   <packing>
                     <property name="left_attach">0</property>
                     <property name="top_attach">0</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
                   </packing>
                 </child>
                 <child>
@@ -55,8 +54,6 @@
                   <packing>
                     <property name="left_attach">0</property>
                     <property name="top_attach">1</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
                   </packing>
                 </child>
                 <child>
@@ -71,8 +68,6 @@
                   <packing>
                     <property name="left_attach">0</property>
                     <property name="top_attach">2</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
                   </packing>
                 </child>
                 <child>
@@ -87,8 +82,20 @@
                   <packing>
                     <property name="left_attach">0</property>
                     <property name="top_attach">3</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkCheckButton" id="includenotes">
+                    <property name="label" translatable="yes">Include comments-only boundary column(s)</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="xalign">0</property>
+                    <property name="draw_indicator">True</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">4</property>
                   </packing>
                 </child>
                 <child>
@@ -105,9 +112,7 @@
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">4</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
+                    <property name="top_attach">5</property>
                   </packing>
                 </child>
                 <child>
@@ -119,12 +124,15 @@
                       <relation type="labelled-by" target="copyresult"/>
                       <relation type="label-for" target="outareaed"/>
                     </accessibility>
+                    <child internal-child="accessible">
+                      <object class="AtkObject" id="outarealb-atkobject">
+                        <property name="AtkObject::accessible-name" translatable="yes">Copy sort results to:</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">5</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
+                    <property name="top_attach">6</property>
                   </packing>
                 </child>
                 <child>
@@ -133,16 +141,18 @@
                     <property name="can_focus">True</property>
                     <property name="hexpand">True</property>
                     <property name="invisible_char">•</property>
-                    <property name="invisible_char_set">True</property>
                     <accessibility>
                       <relation type="labelled-by" target="outarealb"/>
                     </accessibility>
+                    <child internal-child="accessible">
+                      <object class="AtkObject" id="outareaed-atkobject">
+                        <property name="AtkObject::accessible-name" translatable="yes">Copy sort results to:</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
-                    <property name="top_attach">5</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
+                    <property name="top_attach">6</property>
                   </packing>
                 </child>
                 <child>
@@ -159,9 +169,7 @@
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">6</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
+                    <property name="top_attach">7</property>
                   </packing>
                 </child>
                 <child>
@@ -173,12 +181,16 @@
                     <accessibility>
                       <relation type="labelled-by" target="sortuser"/>
                     </accessibility>
+                    <child internal-child="accessible">
+                      <object class="AtkObject" id="sortuserlb-atkobject">
+                        <property name="AtkObject::accessible-name" translatable="yes">Custom sort order</property>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">7</property>
+                    <property name="top_attach">8</property>
                     <property name="width">2</property>
-                    <property name="height">1</property>
                   </packing>
                 </child>
                 <child>
@@ -192,9 +204,7 @@
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">8</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
+                    <property name="top_attach">9</property>
                   </packing>
                 </child>
                 <child>
@@ -208,9 +218,7 @@
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
-                    <property name="top_attach">8</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
+                    <property name="top_attach">9</property>
                   </packing>
                 </child>
                 <child>
@@ -220,9 +228,7 @@
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
-                    <property name="top_attach">9</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
+                    <property name="top_attach">10</property>
                   </packing>
                 </child>
                 <child>
@@ -232,9 +238,7 @@
                   </object>
                   <packing>
                     <property name="left_attach">1</property>
-                    <property name="top_attach">9</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
+                    <property name="top_attach">10</property>
                   </packing>
                 </child>
                 <child>
@@ -307,8 +311,6 @@
                   <packing>
                     <property name="left_attach">0</property>
                     <property name="top_attach">0</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
                   </packing>
                 </child>
                 <child>
@@ -325,8 +327,6 @@
                   <packing>
                     <property name="left_attach">0</property>
                     <property name="top_attach">1</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
                   </packing>
                 </child>
               </object>

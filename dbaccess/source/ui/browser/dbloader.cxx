@@ -71,12 +71,11 @@ private:
     Reference< XComponentContext >      m_xContext;
 public:
     explicit DBContentLoader(const Reference< XComponentContext >&);
-    virtual ~DBContentLoader();
 
     // XServiceInfo
-    OUString                 SAL_CALL getImplementationName() throw(std::exception  ) override;
-    sal_Bool                        SAL_CALL supportsService(const OUString& ServiceName) throw(std::exception  ) override;
-    Sequence< OUString >     SAL_CALL getSupportedServiceNames() throw(std::exception  ) override;
+    OUString                 SAL_CALL getImplementationName() override;
+    sal_Bool                        SAL_CALL supportsService(const OUString& ServiceName) override;
+    Sequence< OUString >     SAL_CALL getSupportedServiceNames() override;
 
     // static methods
     static OUString          getImplementationName_Static() throw(  )
@@ -90,18 +89,13 @@ public:
     // XLoader
     virtual void SAL_CALL load( const Reference< XFrame > & _rFrame, const OUString& _rURL,
                                 const Sequence< PropertyValue >& _rArgs,
-                                const Reference< XLoadEventListener > & _rListener) throw(css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL cancel() throw(std::exception) override;
+                                const Reference< XLoadEventListener > & _rListener) override;
+    virtual void SAL_CALL cancel() override;
 };
 
 
 DBContentLoader::DBContentLoader(const Reference< XComponentContext >& _rxContext)
     :m_xContext(_rxContext)
-{
-
-}
-
-DBContentLoader::~DBContentLoader()
 {
 
 }
@@ -117,19 +111,19 @@ Reference< XInterface > SAL_CALL DBContentLoader::Create( const Reference< XMult
 }
 
 // XServiceInfo
-OUString SAL_CALL DBContentLoader::getImplementationName() throw(std::exception  )
+OUString SAL_CALL DBContentLoader::getImplementationName()
 {
     return getImplementationName_Static();
 }
 
 // XServiceInfo
-sal_Bool SAL_CALL DBContentLoader::supportsService(const OUString& ServiceName) throw(std::exception  )
+sal_Bool SAL_CALL DBContentLoader::supportsService(const OUString& ServiceName)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // XServiceInfo
-Sequence< OUString > SAL_CALL DBContentLoader::getSupportedServiceNames() throw(std::exception  )
+Sequence< OUString > SAL_CALL DBContentLoader::getSupportedServiceNames()
 {
     return getSupportedServiceNames_Static();
 }
@@ -145,7 +139,7 @@ Sequence< OUString > DBContentLoader::getSupportedServiceNames_Static() throw(  
 
 void SAL_CALL DBContentLoader::load(const Reference< XFrame > & rFrame, const OUString& rURL,
         const Sequence< PropertyValue >& rArgs,
-        const Reference< XLoadEventListener > & rListener) throw(css::uno::RuntimeException, std::exception)
+        const Reference< XLoadEventListener > & rListener)
 {
     m_xFrame    = rFrame;
     m_xListener = rListener;
@@ -173,7 +167,7 @@ void SAL_CALL DBContentLoader::load(const Reference< XFrame > & rFrame, const OU
     INetURLObject aParser( rURL );
     Reference< XController2 > xController;
 
-    const OUString sComponentURL( aParser.GetMainURL( INetURLObject::DECODE_TO_IURI ) );
+    const OUString sComponentURL( aParser.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ) );
     for (const ServiceNameToImplName& aImplementation : aImplementations)
     {
         if ( sComponentURL.equalsAscii( aImplementation.pAsciiServiceName ) )
@@ -260,7 +254,7 @@ void SAL_CALL DBContentLoader::load(const Reference< XFrame > & rFrame, const OU
         try
         {
             Reference<XInitialization > xIni(xController,UNO_QUERY);
-            PropertyValue aFrame(OUString("Frame"),0,makeAny(rFrame),PropertyState_DIRECT_VALUE);
+            PropertyValue aFrame("Frame",0,makeAny(rFrame),PropertyState_DIRECT_VALUE);
             Sequence< Any > aInitArgs(m_aArgs.getLength()+1);
 
             Any* pBegin = aInitArgs.getArray();
@@ -306,7 +300,7 @@ void SAL_CALL DBContentLoader::load(const Reference< XFrame > & rFrame, const OU
             rListener->loadCancelled( this );
 }
 
-void DBContentLoader::cancel() throw(std::exception)
+void DBContentLoader::cancel()
 {
 }
 

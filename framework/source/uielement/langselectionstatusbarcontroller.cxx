@@ -82,20 +82,20 @@ public:
     LangSelectionStatusbarController& operator=(const LangSelectionStatusbarController&) = delete;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     // XStatusListener
-    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override;
 
     // XStatusbarController
     virtual void SAL_CALL command( const css::awt::Point& aPos,
                                    ::sal_Int32 nCommand,
                                    sal_Bool bMouseEvent,
-                                   const css::uno::Any& aData ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL click( const css::awt::Point& aPos ) throw (css::uno::RuntimeException, std::exception) override;
+                                   const css::uno::Any& aData ) override;
+    virtual void SAL_CALL click( const css::awt::Point& aPos ) override;
 
 private:
-    virtual ~LangSelectionStatusbarController() {}
+    virtual ~LangSelectionStatusbarController() override {}
 
     bool            m_bShowMenu;        // if the menu is to be displayed or not (depending on the selected object/text)
     SvtScriptType   m_nScriptType;      // the flags for the different script types available in the selection, LATIN = 0x0001, ASIAN = 0x0002, COMPLEX = 0x0004
@@ -104,7 +104,8 @@ private:
     OUString        m_aGuessedTextLang;     // the 'guessed' language for the selection, "" if none could be guessed
     LanguageGuessingHelper      m_aLangGuessHelper;
 
-    void LangMenu( const css::awt::Point& aPos ) throw (css::uno::RuntimeException, std::exception);
+    /// @throws css::uno::RuntimeException
+    void LangMenu( const css::awt::Point& aPos );
 };
 
 LangSelectionStatusbarController::LangSelectionStatusbarController( const uno::Reference< uno::XComponentContext >& xContext ) :
@@ -116,7 +117,6 @@ LangSelectionStatusbarController::LangSelectionStatusbarController( const uno::R
 }
 
 void SAL_CALL LangSelectionStatusbarController::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarMutexGuard;
 
@@ -131,7 +131,6 @@ throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 
 void LangSelectionStatusbarController::LangMenu(
     const css::awt::Point& aPos )
-throw (css::uno::RuntimeException, std::exception)
 {
     if (!m_bShowMenu)
         return;
@@ -266,7 +265,6 @@ void SAL_CALL LangSelectionStatusbarController::command(
     ::sal_Int32 nCommand,
     sal_Bool /*bMouseEvent*/,
     const css::uno::Any& /*aData*/ )
-throw (css::uno::RuntimeException, std::exception)
 {
     if ( nCommand & ::awt::Command::CONTEXTMENU )
     {
@@ -276,14 +274,12 @@ throw (css::uno::RuntimeException, std::exception)
 
 void SAL_CALL LangSelectionStatusbarController::click(
     const css::awt::Point& aPos )
-throw (css::uno::RuntimeException, std::exception)
 {
     LangMenu( aPos );
 }
 
 // XStatusListener
 void SAL_CALL LangSelectionStatusbarController::statusChanged( const FeatureStateEvent& Event )
-throw ( RuntimeException, std::exception )
 {
     // This function will be called when observed data changes,
     // for example the selection or keyboard language.

@@ -61,8 +61,7 @@ struct SfxShell_Impl: public SfxBroadcaster
     SfxViewFrame*               pFrame;        // Frame, if  <UI-active>
     SfxRepeatTarget*            pRepeatTarget; // SbxObjectRef xParent;
     bool                        bActive;
-    sal_uIntPtr                 nDisableFlags;
-    sal_uIntPtr                 nHelpId;
+    SfxDisableFlags             nDisableFlags;
     svtools::AsynchronLink*     pExecuter;
     svtools::AsynchronLink*     pUpdater;
     std::vector<std::unique_ptr<SfxSlot> >  aSlotArr;
@@ -75,14 +74,13 @@ struct SfxShell_Impl: public SfxBroadcaster
         , pFrame(nullptr)
         , pRepeatTarget(nullptr)
         , bActive(false)
-        , nDisableFlags(0)
-        , nHelpId(0)
+        , nDisableFlags(SfxDisableFlags::NONE)
         , pExecuter(nullptr)
         , pUpdater(nullptr)
     {
     }
 
-    virtual ~SfxShell_Impl() { delete pExecuter; delete pUpdater;}
+    virtual ~SfxShell_Impl() override { delete pExecuter; delete pUpdater;}
 };
 
 
@@ -265,18 +263,8 @@ void SfxShell::Invalidate_Impl( SfxBindings& rBindings, sal_uInt16 nId )
             const SfxSlot *pSlot = pIF->GetSlot(nId);
             if ( pSlot )
             {
-                // At Enum-Slots invalidate the Master-Slot
-                if ( SfxSlotKind::Enum == pSlot->GetKind() )
-                    pSlot = pSlot->GetLinkedSlot();
-
-                // Invalidate the Slot itself and possible also all Slave-Slots
+                // Invalidate the Slot itself
                 rBindings.Invalidate( pSlot->GetSlotId() );
-                for ( const SfxSlot *pSlave = pSlot->GetLinkedSlot();
-                      pSlave && pIF->ContainsSlot_Impl( pSlave ) &&
-                        pSlave->GetLinkedSlot() == pSlot;
-                      ++pSlave )
-                    rBindings.Invalidate( pSlave->GetSlotId() );
-
                 return;
             }
 
@@ -559,7 +547,6 @@ void SfxShell::SetVerbs(const css::uno::Sequence < css::embed::VerbDescriptor >&
         pNewSlot->fnExec = SFX_STUB_PTR(SfxShell,VerbExec);
         pNewSlot->fnState = SFX_STUB_PTR(SfxShell,VerbState);
         pNewSlot->pType = nullptr; // HACK(SFX_TYPE(SfxVoidItem)) ???
-        pNewSlot->pLinkedSlot = nullptr;
         pNewSlot->nArgDefCount = 0;
         pNewSlot->pFirstArgDef = nullptr;
         pNewSlot->pUnoName = nullptr;
@@ -639,16 +626,6 @@ const SfxSlot* SfxShell::GetVerbSlot_Impl(sal_uInt16 nId) const
         return nullptr;
 }
 
-void SfxShell::SetHelpId(sal_uIntPtr nId)
-{
-    pImpl->nHelpId = nId;
-}
-
-sal_uIntPtr SfxShell::GetHelpId() const
-{
-    return pImpl->nHelpId;
-}
-
 SfxObjectShell* SfxShell::GetObjectShell()
 {
     if ( GetViewShell() )
@@ -657,7 +634,7 @@ SfxObjectShell* SfxShell::GetObjectShell()
         return nullptr;
 }
 
-bool SfxShell::HasUIFeature( sal_uInt32 )
+bool SfxShell::HasUIFeature(SfxShellFeature) const
 {
     return false;
 }
@@ -684,12 +661,12 @@ void SfxShell::UIFeatureChanged()
     }
 }
 
-void SfxShell::SetDisableFlags( sal_uIntPtr nFlags )
+void SfxShell::SetDisableFlags( SfxDisableFlags nFlags )
 {
     pImpl->nDisableFlags = nFlags;
 }
 
-sal_uIntPtr SfxShell::GetDisableFlags() const
+SfxDisableFlags SfxShell::GetDisableFlags() const
 {
     return pImpl->nDisableFlags;
 }

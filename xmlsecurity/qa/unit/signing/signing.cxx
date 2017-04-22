@@ -7,19 +7,21 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#include <config_features.h>
+
 #include <sal/config.h>
 
 #include <type_traits>
 
 #include <test/bootstrapfixture.hxx>
 #include <unotest/macros_test.hxx>
+#include <test/xmltesttools.hxx>
 
 #include <com/sun/star/document/XStorageBasedDocument.hpp>
 #include <com/sun/star/embed/XStorage.hpp>
 #include <com/sun/star/embed/XTransactedObject.hpp>
 #include <com/sun/star/frame/Desktop.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
-#include <com/sun/star/security/SerialNumberAdapter.hpp>
 #include <com/sun/star/xml/crypto/SEInitializer.hpp>
 #include <com/sun/star/io/TempFile.hpp>
 #include <com/sun/star/packages/manifest/ManifestReader.hpp>
@@ -38,19 +40,19 @@
 #include <osl/file.hxx>
 #include <comphelper/ofopxmlhelper.hxx>
 
-#include <xmlsecurity/documentsignaturehelper.hxx>
-#include <xmlsecurity/xmlsignaturehelper.hxx>
+#include <documentsignaturehelper.hxx>
+#include <xmlsignaturehelper.hxx>
 #include <documentsignaturemanager.hxx>
 
 using namespace com::sun::star;
 
 namespace
 {
-const char* DATA_DIRECTORY = "/xmlsecurity/qa/unit/signing/data/";
+const char* const DATA_DIRECTORY = "/xmlsecurity/qa/unit/signing/data/";
 }
 
 /// Testsuite for the document signing feature.
-class SigningTest : public test::BootstrapFixture, public unotest::MacrosTest
+class SigningTest : public test::BootstrapFixture, public unotest::MacrosTest, public XmlTestTools
 {
     uno::Reference<uno::XComponentContext> mxComponentContext;
     uno::Reference<lang::XComponent> mxComponent;
@@ -59,12 +61,15 @@ public:
     SigningTest();
     virtual void setUp() override;
     virtual void tearDown() override;
+    void registerNamespaces(xmlXPathContextPtr& pXmlXpathCtx) override;
 
     void testDescription();
     /// Test a typical ODF where all streams are signed.
     void testODFGood();
     /// Test a typical broken ODF signature where one stream is corrupted.
     void testODFBroken();
+    /// Document has a signature stream, but no actual signatures.
+    void testODFNo();
     /// Test a typical OOXML where a number of (but not all) streams are signed.
     void testOOXMLPartial();
     /// Test a typical broken OOXML signature where one stream is corrupted.
@@ -76,13 +81,26 @@ public:
     void testOOXMLRemove();
     /// Test removing all signatures from a document.
     void testOOXMLRemoveAll();
+#if HAVE_FEATURE_PDFIMPORT
+    /// Test a typical PDF where the signature is good.
+    void testPDFGood();
+    /// Test a typical PDF where the signature is bad.
+    void testPDFBad();
+    /// Test a typical PDF which is not signed.
+    void testPDFNo();
+#endif
     void test96097Calc();
     void test96097Doc();
+    /// Creates a XAdES signature from scratch.
+    void testXAdES();
+    /// Works with an existing good XAdES signature.
+    void testXAdESGood();
 
     CPPUNIT_TEST_SUITE(SigningTest);
     CPPUNIT_TEST(testDescription);
     CPPUNIT_TEST(testODFGood);
     CPPUNIT_TEST(testODFBroken);
+    CPPUNIT_TEST(testODFNo);
     CPPUNIT_TEST(testODFBroken);
     CPPUNIT_TEST(testOOXMLPartial);
     CPPUNIT_TEST(testOOXMLBroken);
@@ -90,14 +108,21 @@ public:
     CPPUNIT_TEST(testOOXMLAppend);
     CPPUNIT_TEST(testOOXMLRemove);
     CPPUNIT_TEST(testOOXMLRemoveAll);
+#if HAVE_FEATURE_PDFIMPORT
+    CPPUNIT_TEST(testPDFGood);
+    CPPUNIT_TEST(testPDFBad);
+    CPPUNIT_TEST(testPDFNo);
+#endif
     CPPUNIT_TEST(test96097Calc);
     CPPUNIT_TEST(test96097Doc);
+    CPPUNIT_TEST(testXAdES);
+    CPPUNIT_TEST(testXAdESGood);
     CPPUNIT_TEST_SUITE_END();
 
 private:
-    void createDoc(const OUString& rURL = OUString());
-    void createCalc(const OUString& rURL = OUString());
-    uno::Reference<security::XCertificate> getCertificate(XMLSignatureHelper& rSignatureHelper);
+    void createDoc(const OUString& rURL);
+    void createCalc(const OUString& rURL);
+    uno::Reference<security::XCertificate> getCertificate(DocumentSignatureManager& rSignatureManager);
 };
 
 SigningTest::SigningTest()
@@ -110,6 +135,18 @@ void SigningTest::setUp()
 
     mxComponentContext.set(comphelper::getComponentContext(getMultiServiceFactory()));
     mxDesktop.set(frame::Desktop::create(mxComponentContext));
+
+#ifndef _WIN32
+    // Set up cert8.db in workdir/CppunitTest/
+    OUString aSourceDir = m_directories.getURLFromSrc(DATA_DIRECTORY);
+    OUString aTargetDir = m_directories.getURLFromWorkdir(
+                              "/CppunitTest/xmlsecurity_signing.test.user/");
+    osl::File::copy(aSourceDir + "cert8.db", aTargetDir + "cert8.db");
+    osl::File::copy(aSourceDir + "key3.db", aTargetDir + "key3.db");
+    OUString aTargetPath;
+    osl::FileBase::getSystemPathFromFileURL(aTargetDir, aTargetPath);
+    setenv("MOZILLA_CERTIFICATE_FOLDER", aTargetPath.toUtf8().getStr(), 1);
+#endif
 }
 
 void SigningTest::tearDown()
@@ -140,28 +177,22 @@ void SigningTest::createCalc(const OUString& rURL)
         mxComponent = loadFromDesktop(rURL, "com.sun.star.sheet.SpreadsheetDocument");
 }
 
-uno::Reference<security::XCertificate> SigningTest::getCertificate(XMLSignatureHelper& rSignatureHelper)
+uno::Reference<security::XCertificate> SigningTest::getCertificate(DocumentSignatureManager& rSignatureManager)
 {
-    uno::Reference<xml::crypto::XSecurityEnvironment> xSecurityEnvironment = rSignatureHelper.GetSecurityEnvironment();
-    OUString aCertificate;
-    {
-        SvFileStream aStream(m_directories.getURLFromSrc(DATA_DIRECTORY) + "certificate.crt", StreamMode::READ);
-        OString aLine;
-        bool bMore = aStream.ReadLine(aLine);
-        while (bMore)
-        {
-            aCertificate += OUString::fromUtf8(aLine);
-            aCertificate += "\n";
-            bMore = aStream.ReadLine(aLine);
-        }
-    }
-    return xSecurityEnvironment->createCertificateFromAscii(aCertificate);
+    uno::Reference<security::XCertificate> xCertificate;
+
+    uno::Reference<xml::crypto::XSecurityEnvironment> xSecurityEnvironment = rSignatureManager.getSecurityEnvironment();
+    uno::Sequence<uno::Reference<security::XCertificate>> aCertificates = xSecurityEnvironment->getPersonalCertificates();
+    if (!aCertificates.hasElements())
+        return xCertificate;
+
+    return aCertificates[0];
 }
 
 void SigningTest::testDescription()
 {
     // Create an empty document and store it to a tempfile, finally load it as a storage.
-    createDoc();
+    createDoc("");
 
     utl::TempFile aTempFile;
     aTempFile.EnableKillingFile();
@@ -170,19 +201,20 @@ void SigningTest::testDescription()
     aMediaDescriptor["FilterName"] <<= OUString("writer8");
     xStorable->storeAsURL(aTempFile.GetURL(), aMediaDescriptor.getAsConstPropertyValueList());
 
-    DocumentSignatureManager aManager(mxComponentContext, SignatureModeDocumentContent);
-    CPPUNIT_ASSERT(aManager.maSignatureHelper.Init());
+    DocumentSignatureManager aManager(mxComponentContext, DocumentSignatureMode::Content);
+    CPPUNIT_ASSERT(aManager.init());
     uno::Reference <embed::XStorage> xStorage = comphelper::OStorageHelper::GetStorageOfFormatFromURL(ZIP_STORAGE_FORMAT_STRING, aTempFile.GetURL(), embed::ElementModes::READWRITE);
     CPPUNIT_ASSERT(xStorage.is());
     aManager.mxStore = xStorage;
     aManager.maSignatureHelper.SetStorage(xStorage, "1.2");
 
     // Then add a signature document.
-    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager.maSignatureHelper);
-    CPPUNIT_ASSERT(xCertificate.is());
+    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager);
+    if (!xCertificate.is())
+        return;
     OUString aDescription("SigningTest::testDescription");
     sal_Int32 nSecurityId;
-    aManager.add(xCertificate, aDescription, nSecurityId);
+    aManager.add(xCertificate, aDescription, nSecurityId, false);
 
     // Read back the signature and make sure that the description survives the roundtrip.
     aManager.read(/*bUseTempStream=*/true);
@@ -194,7 +226,7 @@ void SigningTest::testDescription()
 void SigningTest::testOOXMLDescription()
 {
     // Create an empty document and store it to a tempfile, finally load it as a storage.
-    createDoc();
+    createDoc("");
 
     utl::TempFile aTempFile;
     aTempFile.EnableKillingFile();
@@ -203,19 +235,20 @@ void SigningTest::testOOXMLDescription()
     aMediaDescriptor["FilterName"] <<= OUString("MS Word 2007 XML");
     xStorable->storeAsURL(aTempFile.GetURL(), aMediaDescriptor.getAsConstPropertyValueList());
 
-    DocumentSignatureManager aManager(mxComponentContext, SignatureModeDocumentContent);
-    CPPUNIT_ASSERT(aManager.maSignatureHelper.Init());
+    DocumentSignatureManager aManager(mxComponentContext, DocumentSignatureMode::Content);
+    CPPUNIT_ASSERT(aManager.init());
     uno::Reference <embed::XStorage> xStorage = comphelper::OStorageHelper::GetStorageOfFormatFromURL(ZIP_STORAGE_FORMAT_STRING, aTempFile.GetURL(), embed::ElementModes::READWRITE);
     CPPUNIT_ASSERT(xStorage.is());
     aManager.mxStore = xStorage;
     aManager.maSignatureHelper.SetStorage(xStorage, "1.2");
 
     // Then add a document signature.
-    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager.maSignatureHelper);
-    CPPUNIT_ASSERT(xCertificate.is());
+    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager);
+    if (!xCertificate.is())
+        return;
     OUString aDescription("SigningTest::testDescription");
     sal_Int32 nSecurityId;
-    aManager.add(xCertificate, aDescription, nSecurityId);
+    aManager.add(xCertificate, aDescription, nSecurityId, false);
 
     // Read back the signature and make sure that the description survives the roundtrip.
     aManager.read(/*bUseTempStream=*/true);
@@ -233,8 +266,8 @@ void SigningTest::testOOXMLAppend()
     CPPUNIT_ASSERT_EQUAL(osl::File::RC::E_None,
                          osl::File::copy(m_directories.getURLFromSrc(DATA_DIRECTORY) + "partial.docx", aURL));
     // Load the test document as a storage and read its single signature.
-    DocumentSignatureManager aManager(mxComponentContext, SignatureModeDocumentContent);
-    CPPUNIT_ASSERT(aManager.maSignatureHelper.Init());
+    DocumentSignatureManager aManager(mxComponentContext, DocumentSignatureMode::Content);
+    CPPUNIT_ASSERT(aManager.init());
     uno::Reference <embed::XStorage> xStorage = comphelper::OStorageHelper::GetStorageOfFormatFromURL(ZIP_STORAGE_FORMAT_STRING, aURL, embed::ElementModes::READWRITE);
     CPPUNIT_ASSERT(xStorage.is());
     aManager.mxStore = xStorage;
@@ -244,10 +277,11 @@ void SigningTest::testOOXMLAppend()
     CPPUNIT_ASSERT_EQUAL(static_cast<std::size_t>(1), rInformations.size());
 
     // Then add a second document signature.
-    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager.maSignatureHelper);
-    CPPUNIT_ASSERT(xCertificate.is());
+    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager);
+    if (!xCertificate.is())
+        return;
     sal_Int32 nSecurityId;
-    aManager.add(xCertificate, OUString(), nSecurityId);
+    aManager.add(xCertificate, OUString(), nSecurityId, false);
 
     // Read back the signatures and make sure that we have the expected amount.
     aManager.read(/*bUseTempStream=*/true);
@@ -258,8 +292,8 @@ void SigningTest::testOOXMLAppend()
 void SigningTest::testOOXMLRemove()
 {
     // Load the test document as a storage and read its signatures: purpose1 and purpose2.
-    DocumentSignatureManager aManager(mxComponentContext, SignatureModeDocumentContent);
-    CPPUNIT_ASSERT(aManager.maSignatureHelper.Init());
+    DocumentSignatureManager aManager(mxComponentContext, DocumentSignatureMode::Content);
+    CPPUNIT_ASSERT(aManager.init());
     OUString aURL = m_directories.getURLFromSrc(DATA_DIRECTORY) + "multi.docx";
     uno::Reference <embed::XStorage> xStorage = comphelper::OStorageHelper::GetStorageOfFormatFromURL(ZIP_STORAGE_FORMAT_STRING, aURL, embed::ElementModes::READWRITE);
     CPPUNIT_ASSERT(xStorage.is());
@@ -270,8 +304,9 @@ void SigningTest::testOOXMLRemove()
     CPPUNIT_ASSERT_EQUAL(static_cast<std::size_t>(2), rInformations.size());
 
     // Then remove the last added signature.
-    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager.maSignatureHelper);
-    CPPUNIT_ASSERT(xCertificate.is());
+    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager);
+    if (!xCertificate.is())
+        return;
     aManager.remove(0);
 
     // Read back the signatures and make sure that only purpose1 is left.
@@ -289,8 +324,8 @@ void SigningTest::testOOXMLRemoveAll()
     CPPUNIT_ASSERT_EQUAL(osl::File::RC::E_None,
                          osl::File::copy(m_directories.getURLFromSrc(DATA_DIRECTORY) + "partial.docx", aURL));
     // Load the test document as a storage and read its single signature.
-    DocumentSignatureManager aManager(mxComponentContext, SignatureModeDocumentContent);
-    CPPUNIT_ASSERT(aManager.maSignatureHelper.Init());
+    DocumentSignatureManager aManager(mxComponentContext, DocumentSignatureMode::Content);
+    CPPUNIT_ASSERT(aManager.init());
     uno::Reference <embed::XStorage> xStorage = comphelper::OStorageHelper::GetStorageOfFormatFromURL(ZIP_STORAGE_FORMAT_STRING, aURL, embed::ElementModes::READWRITE);
     CPPUNIT_ASSERT(xStorage.is());
     aManager.mxStore = xStorage;
@@ -300,11 +335,12 @@ void SigningTest::testOOXMLRemoveAll()
     CPPUNIT_ASSERT_EQUAL(static_cast<std::size_t>(1), rInformations.size());
 
     // Then remove the only signature in the document.
-    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager.maSignatureHelper);
-    CPPUNIT_ASSERT(xCertificate.is());
+    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager);
+    if (!xCertificate.is())
+        return;
     aManager.remove(0);
     aManager.read(/*bUseTempStream=*/true);
-    aManager.write();
+    aManager.write(/*bXAdESCompliantIfODF=*/false);
 
     // Make sure that the signature count is zero and the whole signature storage is removed completely.
     CPPUNIT_ASSERT_EQUAL(static_cast<std::size_t>(0), rInformations.size());
@@ -350,6 +386,16 @@ void SigningTest::testODFBroken()
     CPPUNIT_ASSERT_EQUAL(static_cast<int>(SignatureState::BROKEN), static_cast<int>(pObjectShell->GetDocumentSignatureState()));
 }
 
+void SigningTest::testODFNo()
+{
+    createDoc(m_directories.getURLFromSrc(DATA_DIRECTORY) + "no.odt");
+    SfxBaseModel* pBaseModel = dynamic_cast<SfxBaseModel*>(mxComponent.get());
+    CPPUNIT_ASSERT(pBaseModel);
+    SfxObjectShell* pObjectShell = pBaseModel->GetObjectShell();
+    CPPUNIT_ASSERT(pObjectShell);
+    CPPUNIT_ASSERT_EQUAL(static_cast<int>(SignatureState::NOSIGNATURES), static_cast<int>(pObjectShell->GetDocumentSignatureState()));
+}
+
 void SigningTest::testOOXMLPartial()
 {
     createDoc(m_directories.getURLFromSrc(DATA_DIRECTORY) + "partial.docx");
@@ -379,6 +425,47 @@ void SigningTest::testOOXMLBroken()
     CPPUNIT_ASSERT_EQUAL(static_cast<int>(SignatureState::BROKEN), static_cast<int>(pObjectShell->GetDocumentSignatureState()));
 }
 
+#if HAVE_FEATURE_PDFIMPORT
+
+void SigningTest::testPDFGood()
+{
+    createDoc(m_directories.getURLFromSrc(DATA_DIRECTORY) + "good.pdf");
+    SfxBaseModel* pBaseModel = dynamic_cast<SfxBaseModel*>(mxComponent.get());
+    CPPUNIT_ASSERT(pBaseModel);
+    SfxObjectShell* pObjectShell = pBaseModel->GetObjectShell();
+    CPPUNIT_ASSERT(pObjectShell);
+    // We expect NOTVALIDATED in case the root CA is not imported on the system, and OK otherwise, so accept both.
+    SignatureState nActual = pObjectShell->GetDocumentSignatureState();
+    CPPUNIT_ASSERT_MESSAGE(
+        (OString::number(
+             static_cast<std::underlying_type<SignatureState>::type>(nActual))
+         .getStr()),
+        (nActual == SignatureState::NOTVALIDATED
+         || nActual == SignatureState::OK));
+}
+
+void SigningTest::testPDFBad()
+{
+    createDoc(m_directories.getURLFromSrc(DATA_DIRECTORY) + "bad.pdf");
+    SfxBaseModel* pBaseModel = dynamic_cast<SfxBaseModel*>(mxComponent.get());
+    CPPUNIT_ASSERT(pBaseModel);
+    SfxObjectShell* pObjectShell = pBaseModel->GetObjectShell();
+    CPPUNIT_ASSERT(pObjectShell);
+    CPPUNIT_ASSERT_EQUAL(static_cast<int>(SignatureState::BROKEN), static_cast<int>(pObjectShell->GetDocumentSignatureState()));
+}
+
+void SigningTest::testPDFNo()
+{
+    createDoc(m_directories.getURLFromSrc(DATA_DIRECTORY) + "no.pdf");
+    SfxBaseModel* pBaseModel = dynamic_cast<SfxBaseModel*>(mxComponent.get());
+    CPPUNIT_ASSERT(pBaseModel);
+    SfxObjectShell* pObjectShell = pBaseModel->GetObjectShell();
+    CPPUNIT_ASSERT(pObjectShell);
+    CPPUNIT_ASSERT_EQUAL(static_cast<int>(SignatureState::NOSIGNATURES), static_cast<int>(pObjectShell->GetDocumentSignatureState()));
+}
+
+#endif
+
 void SigningTest::test96097Calc()
 {
     createCalc(m_directories.getURLFromSrc(DATA_DIRECTORY) + "tdf96097.ods");
@@ -406,7 +493,7 @@ void SigningTest::test96097Calc()
     aTempFileSaveCopy.EnableKillingFile();
     uno::Sequence<beans::PropertyValue> descSaveACopy(2);
     descSaveACopy[0].Name = "SaveACopy";
-    descSaveACopy[0].Value <<= uno::makeAny(true);
+    descSaveACopy[0].Value <<= true;
     descSaveACopy[1].Name = "FilterName";
     descSaveACopy[1].Value <<= OUString("calc8");
     xDocStorable->storeToURL(aTempFileSaveCopy.GetURL(), descSaveACopy);
@@ -454,7 +541,7 @@ void SigningTest::test96097Doc()
     aTempFileSaveCopy.EnableKillingFile();
     uno::Sequence<beans::PropertyValue> descSaveACopy(2);
     descSaveACopy[0].Name = "SaveACopy";
-    descSaveACopy[0].Value <<= uno::makeAny(true);
+    descSaveACopy[0].Value <<= true;
     descSaveACopy[1].Name = "FilterName";
     descSaveACopy[1].Value <<= OUString("writer8");
     xDocStorable->storeToURL(aTempFileSaveCopy.GetURL(), descSaveACopy);
@@ -473,6 +560,74 @@ void SigningTest::test96097Doc()
     {
         CPPUNIT_FAIL("Fail to save as the document");
     }
+}
+
+void SigningTest::testXAdES()
+{
+    // Create an empty document, store it to a tempfile and load it as a storage.
+    createDoc(OUString());
+
+    utl::TempFile aTempFile;
+    aTempFile.EnableKillingFile();
+    uno::Reference<frame::XStorable> xStorable(mxComponent, uno::UNO_QUERY);
+    utl::MediaDescriptor aMediaDescriptor;
+    aMediaDescriptor["FilterName"] <<= OUString("writer8");
+    xStorable->storeAsURL(aTempFile.GetURL(), aMediaDescriptor.getAsConstPropertyValueList());
+
+    DocumentSignatureManager aManager(mxComponentContext, DocumentSignatureMode::Content);
+    CPPUNIT_ASSERT(aManager.init());
+    uno::Reference <embed::XStorage> xStorage = comphelper::OStorageHelper::GetStorageOfFormatFromURL(ZIP_STORAGE_FORMAT_STRING, aTempFile.GetURL(), embed::ElementModes::READWRITE);
+    CPPUNIT_ASSERT(xStorage.is());
+    aManager.mxStore = xStorage;
+    aManager.maSignatureHelper.SetStorage(xStorage, "1.2");
+
+    // Create a signature.
+    uno::Reference<security::XCertificate> xCertificate = getCertificate(aManager);
+    if (!xCertificate.is())
+        return;
+    sal_Int32 nSecurityId;
+    aManager.add(xCertificate, /*rDescription=*/OUString(), nSecurityId, /*bAdESCompliant=*/true);
+
+    // Write to storage.
+    aManager.read(/*bUseTempStream=*/true);
+    aManager.write(/*bXAdESCompliantIfODF=*/true);
+    uno::Reference<embed::XTransactedObject> xTransactedObject(xStorage, uno::UNO_QUERY);
+    xTransactedObject->commit();
+
+    // Parse the resulting XML.
+    uno::Reference<embed::XStorage> xMetaInf = xStorage->openStorageElement("META-INF", embed::ElementModes::READ);
+    uno::Reference<io::XInputStream> xInputStream(xMetaInf->openStreamElement("documentsignatures.xml", embed::ElementModes::READ), uno::UNO_QUERY);
+    std::shared_ptr<SvStream> pStream(utl::UcbStreamHelper::CreateStream(xInputStream, true));
+    xmlDocPtr pXmlDoc = parseXmlStream(pStream.get());
+
+    // Assert that the digest algorithm is SHA-256 in the bAdESCompliant case, not SHA-1.
+    assertXPath(pXmlDoc, "/odfds:document-signatures/dsig:Signature/dsig:SignedInfo/dsig:Reference[@URI='content.xml']/dsig:DigestMethod", "Algorithm", ALGO_XMLDSIGSHA256);
+
+    // Assert that the digest of the signing certificate is included.
+    assertXPath(pXmlDoc, "//xd:CertDigest", 1);
+}
+
+void SigningTest::testXAdESGood()
+{
+    createDoc(m_directories.getURLFromSrc(DATA_DIRECTORY) + "good-xades.odt");
+    SfxBaseModel* pBaseModel = dynamic_cast<SfxBaseModel*>(mxComponent.get());
+    CPPUNIT_ASSERT(pBaseModel);
+    SfxObjectShell* pObjectShell = pBaseModel->GetObjectShell();
+    CPPUNIT_ASSERT(pObjectShell);
+    // We expect NOTVALIDATED in case the root CA is not imported on the system, and OK otherwise, so accept both.
+    SignatureState nActual = pObjectShell->GetDocumentSignatureState();
+    CPPUNIT_ASSERT_MESSAGE(
+        (OString::number(
+             static_cast<std::underlying_type<SignatureState>::type>(nActual))
+         .getStr()),
+        (nActual == SignatureState::NOTVALIDATED
+         || nActual == SignatureState::OK));
+}
+void SigningTest::registerNamespaces(xmlXPathContextPtr& pXmlXpathCtx)
+{
+    xmlXPathRegisterNs(pXmlXpathCtx, BAD_CAST("odfds"), BAD_CAST("urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0"));
+    xmlXPathRegisterNs(pXmlXpathCtx, BAD_CAST("dsig"), BAD_CAST("http://www.w3.org/2000/09/xmldsig#"));
+    xmlXPathRegisterNs(pXmlXpathCtx, BAD_CAST("xd"), BAD_CAST("http://uri.etsi.org/01903/v1.3.2#"));
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(SigningTest);

@@ -206,17 +206,19 @@ namespace URLEncoder
 {
     static std::string encode(const std::string &rIn)
     {
-        const char *good = "!$&'()*+,-.=@_";
+        const char * const good = "!$&'()*+,-.=@_";
         static const char hex[17] = "0123456789ABCDEF";
 
         std::string result;
         for (char c : rIn)
         {
-            if (isalnum (c) || strchr (good, c))
+            if (rtl::isAsciiAlphanumeric (static_cast<unsigned char>(c))
+                || strchr (good, c))
+            {
                 result += c;
-            else {
+            } else {
                 result += '%';
-                result += hex[c >> 4];
+                result += hex[static_cast<unsigned char>(c) >> 4];
                 result += hex[c & 0xf];
             }
         }
@@ -266,15 +268,14 @@ void HelpLinker::addBookmark( FILE* pFile_DBHelp, std::string thishid,
 
 void HelpLinker::initIndexerPreProcessor()
 {
-    delete m_pIndexerPreProcessor;
-    m_pIndexerPreProcessor = new IndexerPreProcessor( indexDirParentName,
-         idxCaptionStylesheet, idxContentStylesheet );
+    m_pIndexerPreProcessor.reset( new IndexerPreProcessor( indexDirParentName,
+         idxCaptionStylesheet, idxContentStylesheet ) );
 }
 
 /**
 *
 */
-void HelpLinker::link() throw(HelpProcessingException, BasicCodeTagger::TaggerException, std::exception)
+void HelpLinker::link()
 {
 
     if( bExtensionMode )
@@ -388,7 +389,7 @@ void HelpLinker::link() throw(HelpProcessingException, BasicCodeTagger::TaggerEx
                         << "' for language '"
                         << lang
                         << "' failed!";
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             if (!m_bCreateIndex)
@@ -412,8 +413,6 @@ void HelpLinker::link() throw(HelpProcessingException, BasicCodeTagger::TaggerEx
             addBookmark( pFileDbBase_DBHelp, documentPath, fileB, std::string(), jarfileB, titleB);
 
             const HashSet *hidlist = streamTable.appl_hidlist;
-            if (!hidlist)
-                hidlist = streamTable.default_hidlist;
             if (hidlist && !hidlist->empty())
             {
                 // now iterate over all elements of the hidlist
@@ -436,8 +435,6 @@ void HelpLinker::link() throw(HelpProcessingException, BasicCodeTagger::TaggerEx
 
             // now the keywords
             const Hashtable *anchorToLL = streamTable.appl_keywords;
-            if (!anchorToLL)
-                anchorToLL = streamTable.default_keywords;
             if (anchorToLL && !anchorToLL->empty())
             {
                 std::string fakedHid = URLEncoder::encode(documentPath);
@@ -463,8 +460,6 @@ void HelpLinker::link() throw(HelpProcessingException, BasicCodeTagger::TaggerEx
 
             // and last the helptexts
             const Stringtable *helpTextHash = streamTable.appl_helptexts;
-            if (!helpTextHash)
-                helpTextHash = streamTable.default_helptexts;
             if (helpTextHash && !helpTextHash->empty())
             {
                 Stringtable::const_iterator aEnd = helpTextHash->end();
@@ -486,8 +481,6 @@ void HelpLinker::link() throw(HelpProcessingException, BasicCodeTagger::TaggerEx
             {
                 // now the indexing
                 xmlDocPtr document = streamTable.appl_doc;
-                if (!document)
-                    document = streamTable.default_doc;
                 if (document)
                 {
                     std::string temp = module;
@@ -544,7 +537,6 @@ void HelpLinker::link() throw(HelpProcessingException, BasicCodeTagger::TaggerEx
 void HelpLinker::main( std::vector<std::string> &args,
                        std::string* pExtensionPath, std::string* pDestination,
                        const OUString* pOfficeHelpPath )
-    throw( HelpProcessingException, std::exception )
 {
     bExtensionMode = false;
     helpFiles.clear();
@@ -577,7 +569,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "extension source missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
             extsource = args[i];
         }
@@ -590,7 +582,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "extension destination missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
             extdestination = args[i];
         }
@@ -601,7 +593,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "sourceroot missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
             bSrcOption = true;
             sourceRoot = fs::path(args[i], fs::native);
@@ -613,7 +605,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "compactStylesheet missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             compactStylesheet = fs::path(args[i], fs::native);
@@ -625,7 +617,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "embeddingStylesheet missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             embeddStylesheet = fs::path(args[i], fs::native);
@@ -637,7 +629,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "idxtemp missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             zipdir = fs::path(args[i], fs::native);
@@ -649,7 +641,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "idxcaption stylesheet missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             idxCaptionStylesheet = fs::path(args[i], fs::native);
@@ -661,7 +653,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "idxcontent stylesheet missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             idxContentStylesheet = fs::path(args[i], fs::native);
@@ -673,7 +665,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "outputfilename missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             outputFile = fs::path(args[i], fs::native);
@@ -685,7 +677,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "module name missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             module = args[i];
@@ -697,7 +689,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "language name missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             lang = args[i];
@@ -705,7 +697,7 @@ void HelpLinker::main( std::vector<std::string> &args,
         else if (args[i].compare("-hid") == 0)
         {
             ++i;
-            throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, "obsolete -hid argument used" );
+            throw HelpProcessingException( HelpProcessingErrorClass::General, "obsolete -hid argument used" );
         }
         else if (args[i].compare("-add") == 0)
         {
@@ -715,7 +707,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "pathname missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
 
             addFileUnderPath = args[i];
@@ -724,7 +716,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "pathname missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
             addFile = args[i];
             if (!addFileUnderPath.empty() && !addFile.empty())
@@ -756,7 +748,7 @@ void HelpLinker::main( std::vector<std::string> &args,
             {
                 std::stringstream aStrStream;
                 aStrStream << "-extlangdest is missing" << std::endl;
-                throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+                throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
             }
             else
             {
@@ -777,7 +769,7 @@ void HelpLinker::main( std::vector<std::string> &args,
         {
             std::stringstream aStrStream;
             aStrStream << "-src must not be used together with -extsource missing" << std::endl;
-            throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+            throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
         }
     }
 
@@ -785,7 +777,7 @@ void HelpLinker::main( std::vector<std::string> &args,
     {
         std::stringstream aStrStream;
         aStrStream << "no index dir given" << std::endl;
-        throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+        throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
     }
 
     if ( (!bExtensionMode && idxCaptionStylesheet.empty())
@@ -796,7 +788,7 @@ void HelpLinker::main( std::vector<std::string> &args,
         // -idxcaption parameter is required
         std::stringstream aStrStream;
         aStrStream << "no index caption stylesheet given" << std::endl;
-        throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+        throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
     }
     else if ( bExtensionMode &&  extsource.empty())
     {
@@ -820,7 +812,7 @@ void HelpLinker::main( std::vector<std::string> &args,
         // -idxcontent parameter is required
         std::stringstream aStrStream;
         aStrStream << "no index content stylesheet given" << std::endl;
-        throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+        throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
     }
     else if ( bExtensionMode && extsource.empty())
     {
@@ -840,31 +832,31 @@ void HelpLinker::main( std::vector<std::string> &args,
     {
         std::stringstream aStrStream;
         aStrStream << "no embedding resolving file given" << std::endl;
-        throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+        throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
     }
     if (sourceRoot.empty())
     {
         std::stringstream aStrStream;
         aStrStream << "no sourceroot given" << std::endl;
-        throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+        throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
     }
     if (!bExtensionMode && outputFile.empty())
     {
         std::stringstream aStrStream;
         aStrStream << "no output file given" << std::endl;
-        throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+        throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
     }
     if (module.empty())
     {
         std::stringstream aStrStream;
         aStrStream << "module missing" << std::endl;
-        throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+        throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
     }
     if (!bExtensionMode && lang.empty())
     {
         std::stringstream aStrStream;
         aStrStream << "language missing" << std::endl;
-        throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
+        throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
     }
     link();
 }
@@ -984,7 +976,7 @@ bool compileExtensionHelp
         if (XML_STATUS_ERROR == parsed)
         {
             XML_Error nError = XML_GetErrorCode( parser );
-            o_rHelpProcessingErrorInfo.m_eErrorClass = HELPPROCESSING_XMLPARSING_ERROR;
+            o_rHelpProcessingErrorInfo.m_eErrorClass = HelpProcessingErrorClass::XmlParsing;
             o_rHelpProcessingErrorInfo.m_aErrorMsg = OUString::createFromAscii( XML_ErrorString( nError ) );
             o_rHelpProcessingErrorInfo.m_aXMLParsingFile = aTreeFileURL;
             // CRASHES!!! o_rHelpProcessingErrorInfo.m_nXMLParsingLine = XML_GetCurrentLineNumber( parser );

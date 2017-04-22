@@ -25,7 +25,7 @@
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/implbase1.hxx>
 #include <connectivity/CommonTools.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <connectivity/sdbcx/VDescriptor.hxx>
 #include <connectivity/dbtoolsdllapi.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
@@ -43,7 +43,7 @@ namespace connectivity
 
 
         class OOO_DLLPUBLIC_DBTOOLS OColumn :
-                                    public comphelper::OBaseMutex,
+                                    public cppu::BaseMutex,
                                     public OColumn_BASE,
                                     public OColumnDescriptor_BASE,
                                     public OColumn_PROP,
@@ -71,7 +71,7 @@ namespace connectivity
             virtual ::cppu::IPropertyArrayHelper* createArrayHelper( sal_Int32 _nId) const override;
             virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
-            virtual ~OColumn();
+            virtual ~OColumn() override;
         public:
             virtual void    SAL_CALL acquire() throw() override;
             virtual void    SAL_CALL release() throw() override;
@@ -95,20 +95,20 @@ namespace connectivity
 
             DECLARE_SERVICE_INFO();
             //XInterface
-            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
             //XTypeProvider
-            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
             // ODescriptor
             virtual void construct() override;
             // ::cppu::OComponentHelper
             virtual void SAL_CALL disposing() override;
             // XPropertySet
-            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
             // XNamed
-            virtual OUString SAL_CALL getName(  ) throw(css::uno::RuntimeException, std::exception) override;
-            virtual void SAL_CALL setName( const OUString& aName ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getName(  ) override;
+            virtual void SAL_CALL setName( const OUString& aName ) override;
             // XDataDescriptorFactory
-            virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL createDataDescriptor(  ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL createDataDescriptor(  ) override;
         };
     }
 }

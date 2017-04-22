@@ -42,7 +42,7 @@ class SdTransferable : public TransferableHelper, public SfxListener
 public:
 
                                     SdTransferable( SdDrawDocument* pSrcDoc, ::sd::View* pWorkView, bool bInitOnGetData );
-                                    virtual ~SdTransferable();
+                                    virtual ~SdTransferable() override;
 
     void                            SetDocShell( const SfxObjectShellRef& rRef ) { maDocShellRef = rRef; }
     const SfxObjectShellRef&        GetDocShell() const { return maDocShellRef; }
@@ -109,7 +109,7 @@ protected:
     virtual bool                    WriteObject( tools::SvRef<SotStorageStream>& rxOStm, void* pUserObject, SotClipboardFormatId nUserObjectId, const css::datatransfer::DataFlavor& rFlavor ) override;
     virtual void                    ObjectReleased() override;
 
-    virtual sal_Int64 SAL_CALL      getSomething( const css::uno::Sequence< sal_Int8 >& rId ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Int64 SAL_CALL      getSomething( const css::uno::Sequence< sal_Int8 >& rId ) override;
 
 private:
 
@@ -127,7 +127,7 @@ private:
     INetBookmark*                   mpBookmark;
     Graphic*                        mpGraphic;
     ImageMap*                       mpImageMap;
-    Rectangle                       maVisArea;
+    ::tools::Rectangle                       maVisArea;
     Point                           maStartPos;
     bool                            mbInternalMove               : 1;
     bool                            mbOwnDocument                : 1;

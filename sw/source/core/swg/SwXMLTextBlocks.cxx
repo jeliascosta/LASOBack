@@ -57,8 +57,7 @@ void SwXMLTextBlocks::ResetBlockMode ( )
 
 SwXMLTextBlocks::SwXMLTextBlocks( const OUString& rFile )
     : SwImpBlocks(rFile)
-    , bAutocorrBlock(false)
-    , nFlags(0)
+    , nFlags(SwXmlFlags::NONE)
 {
     SwDocShell* pDocSh = new SwDocShell ( SfxObjectCreateMode::INTERNAL );
     if( !pDocSh->DoInitNew() )
@@ -101,8 +100,7 @@ SwXMLTextBlocks::SwXMLTextBlocks( const OUString& rFile )
 
 SwXMLTextBlocks::SwXMLTextBlocks( const uno::Reference < embed::XStorage >& rStg, const OUString& rName )
     : SwImpBlocks( rName )
-    , bAutocorrBlock(false)
-    , nFlags(0)
+    , nFlags(SwXmlFlags::NONE)
 {
     SwDocShell* pDocSh = new SwDocShell ( SfxObjectCreateMode::INTERNAL );
     if( !pDocSh->DoInitNew() )
@@ -124,7 +122,7 @@ SwXMLTextBlocks::~SwXMLTextBlocks()
     if ( bInfoChanged )
         WriteInfo();
     ResetBlockMode ();
-    if(xDocShellRef.Is())
+    if(xDocShellRef.is())
         xDocShellRef->DoClose();
     xDocShellRef = nullptr;
     if( pDoc && !pDoc->release() )
@@ -321,9 +319,7 @@ sal_uLong SwXMLTextBlocks::BeginPutDoc( const OUString& rShort, const OUString& 
 sal_uLong SwXMLTextBlocks::PutBlock( SwPaM& , const OUString& )
 {
     sal_uLong nRes = 0; // dead variable, this always returns 0
-    sal_uInt16 nCommitFlags = nFlags & (SWXML_CONVBLOCK|SWXML_NOROOTCOMMIT);
-
-    nFlags |= nCommitFlags;
+    SwXmlFlags nCommitFlags = nFlags;
 
     WriterRef xWrt;
     ::GetXMLWriter ( OUString(), GetBaseURL(), xWrt);
@@ -381,7 +377,7 @@ sal_uLong SwXMLTextBlocks::PutBlock( SwPaM& , const OUString& )
         if ( xTrans.is() )
             xTrans->commit();
         xRoot = nullptr;
-        if ( !nCommitFlags )
+        if ( nCommitFlags == SwXmlFlags::NONE )
         {
             uno::Reference < embed::XTransactedObject > xTmpTrans( xBlkRoot, uno::UNO_QUERY );
             if ( xTmpTrans.is() )
@@ -429,14 +425,14 @@ bool SwXMLTextBlocks::PutMuchEntries( bool bOn )
             bRet = 0 == OpenFile( false );
             if( bRet )
             {
-                nFlags |= SWXML_NOROOTCOMMIT;
+                nFlags |= SwXmlFlags::NoRootCommit;
                 bInPutMuchBlocks = true;
             }
         }
     }
     else if( bInPutMuchBlocks )
     {
-        nFlags &= ~SWXML_NOROOTCOMMIT;
+        nFlags &= ~SwXmlFlags::NoRootCommit;
         if( xBlkRoot.is() )
         {
             try
@@ -460,8 +456,6 @@ bool SwXMLTextBlocks::PutMuchEntries( bool bOn )
 
 sal_uLong SwXMLTextBlocks::OpenFile( bool bRdOnly )
 {
-    if( bAutocorrBlock )
-        return 0;
     sal_uLong nRet = 0;
     try
     {
@@ -480,12 +474,9 @@ sal_uLong SwXMLTextBlocks::OpenFile( bool bRdOnly )
 
 void SwXMLTextBlocks::CloseFile()
 {
-    if ( !bAutocorrBlock )
-    {
-        if (bInfoChanged)
-            WriteInfo();
-        ResetBlockMode();
-    }
+    if (bInfoChanged)
+        WriteInfo();
+    ResetBlockMode();
 }
 
 void SwXMLTextBlocks::SetIsTextOnly( const OUString& rShort, bool bNewValue )
@@ -519,10 +510,10 @@ bool SwXMLTextBlocks::IsFileUCBStorage( const OUString & rFileName)
         OUString aURL;
         osl::FileBase::getFileURLFromSystemPath( aName, aURL );
         aObj.SetURL( aURL );
-        aName = aObj.GetMainURL( INetURLObject::NO_DECODE );
+        aName = aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
     }
 
-    SvStream * pStm = ::utl::UcbStreamHelper::CreateStream( aName, STREAM_STD_READ );
+    SvStream * pStm = ::utl::UcbStreamHelper::CreateStream( aName, StreamMode::STD_READ );
     bool bRet = UCBStorage::IsStorageFile( pStm );
     delete pStm;
     return bRet;

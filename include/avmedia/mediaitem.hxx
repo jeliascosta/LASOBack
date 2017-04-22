@@ -68,15 +68,15 @@ public:
     explicit                MediaItem( sal_uInt16 i_nWhich = 0,
                                        AVMediaSetMask nMaskSet = AVMediaSetMask::NONE );
                             MediaItem( const MediaItem& rMediaItem );
-    virtual                 ~MediaItem();
+    virtual                 ~MediaItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual bool            GetPresentation( SfxItemPresentation ePres,
-                                                 SfxMapUnit eCoreUnit,
-                                                 SfxMapUnit ePresUnit,
+                                                 MapUnit eCoreUnit,
+                                                 MapUnit ePresUnit,
                                                  OUString&  rText,
-                                                 const IntlWrapper *pIntl ) const override;
+                                                 const IntlWrapper *pIntl = nullptr ) const override;
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 

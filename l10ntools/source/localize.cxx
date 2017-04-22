@@ -45,16 +45,11 @@ using namespace std;
 
 namespace {
 
-struct AsciiString {
-    char const * string;
-    sal_Int32 length;
-};
-
 bool matchList(
-    const OUString& rUrl, const AsciiString* pList, size_t nLength)
+    const OUString& rUrl, const OUStringLiteral* pList, size_t nLength)
 {
     for (size_t i = 0; i != nLength; ++i) {
-        if (rUrl.endsWithAsciiL(pList[i].string, pList[i].length)) {
+        if (rUrl.endsWith(pList[i])) {
             return true;
         }
     }
@@ -62,31 +57,24 @@ bool matchList(
 }
 
 bool passesNegativeList(const OUString& rUrl) {
-    static const AsciiString list[] = {
-        { RTL_CONSTASCII_STRINGPARAM("/dictionaries.xcu") },
-        { RTL_CONSTASCII_STRINGPARAM(
-            "/dictionaries/da_DK/help/da/help.tree") },
-        { RTL_CONSTASCII_STRINGPARAM(
-            "/dictionaries/da_DK/help/da/"
-            "org.openoffice.da.hunspell.dictionaries/page1.xhp") },
-        { RTL_CONSTASCII_STRINGPARAM(
-            "/dictionaries/da_DK/help/da/"
-            "org.openoffice.da.hunspell.dictionaries/page2.xhp") },
-        { RTL_CONSTASCII_STRINGPARAM(
-            "/dictionaries/hu_HU/help/hu/help.tree") },
-        { RTL_CONSTASCII_STRINGPARAM(
-            "/dictionaries/hu_HU/help/hu/"
-            "org.openoffice.hu.hunspell.dictionaries/page1.xhp") },
-        { RTL_CONSTASCII_STRINGPARAM(
-            "/officecfg/registry/data/org/openoffice/Office/"
-            "Accelerators.xcu") }
+    static const OUStringLiteral list[] = {
+        "/dictionaries.xcu",
+        "/dictionaries/da_DK/help/da/help.tree",
+        ("/dictionaries/da_DK/help/da/"
+         "org.openoffice.da.hunspell.dictionaries/page1.xhp"),
+        ("/dictionaries/da_DK/help/da/"
+         "org.openoffice.da.hunspell.dictionaries/page2.xhp"),
+        "/dictionaries/hu_HU/help/hu/help.tree",
+        ("/dictionaries/hu_HU/help/hu/"
+         "org.openoffice.hu.hunspell.dictionaries/page1.xhp"),
+        "/officecfg/registry/data/org/openoffice/Office/Accelerators.xcu"
     };
     return !matchList(rUrl, list, SAL_N_ELEMENTS(list));
 }
 
 bool passesPositiveList(const OUString& rUrl) {
-    static const AsciiString list[] = {
-        { RTL_CONSTASCII_STRINGPARAM("/description.xml") }
+    static const OUStringLiteral list[] = {
+        "/description.xml"
     };
     return matchList(rUrl, list, SAL_N_ELEMENTS(list));
 }
@@ -160,26 +148,24 @@ bool handleFile(
     const OString& rPotDir, bool bInitPoFile )
 {
     struct Command {
-        char const * extension;
-        sal_Int32 extensionLength;
+        OUStringLiteral extension;
         OString executable;
         bool positive;
     };
     static Command const commands[] = {
-        { RTL_CONSTASCII_STRINGPARAM(".src"), "transex3", false },
-        { RTL_CONSTASCII_STRINGPARAM(".hrc"), "transex3", true },
-        { RTL_CONSTASCII_STRINGPARAM(".ulf"), "ulfex", false },
-        { RTL_CONSTASCII_STRINGPARAM(".xcu"), "cfgex", false },
-        { RTL_CONSTASCII_STRINGPARAM(".xrm"), "xrmex", false },
-        { RTL_CONSTASCII_STRINGPARAM("description.xml"), "xrmex", true },
-        { RTL_CONSTASCII_STRINGPARAM(".xhp"), "helpex", false },
-        { RTL_CONSTASCII_STRINGPARAM(".properties"), "propex", false },
-        { RTL_CONSTASCII_STRINGPARAM(".ui"), "uiex", false },
-        { RTL_CONSTASCII_STRINGPARAM(".tree"), "treex", false } };
+        { OUStringLiteral(".src"), "transex3", false },
+        { OUStringLiteral(".hrc"), "transex3", true },
+        { OUStringLiteral(".ulf"), "ulfex", false },
+        { OUStringLiteral(".xcu"), "cfgex", false },
+        { OUStringLiteral(".xrm"), "xrmex", false },
+        { OUStringLiteral("description.xml"), "xrmex", true },
+        { OUStringLiteral(".xhp"), "helpex", false },
+        { OUStringLiteral(".properties"), "propex", false },
+        { OUStringLiteral(".ui"), "uiex", false },
+        { OUStringLiteral(".tree"), "treex", false } };
     for (size_t i = 0; i != SAL_N_ELEMENTS(commands); ++i)
     {
-        if (rUrl.endsWithAsciiL(
-                commands[i].extension, commands[i].extensionLength) &&
+        if (rUrl.endsWith(commands[i].extension) &&
             (commands[i].executable != "propex" || rUrl.indexOf("en_US") != -1))
         {
             if (commands[i].positive ? passesPositiveList(rUrl) : passesNegativeList(rUrl))
@@ -297,7 +283,6 @@ bool includeProject(const OString& rProject) {
         "sw",
         "swext",
         "sysui",
-        "tubes",
         "uui",
         "vcl",
         "wizards",

@@ -53,7 +53,6 @@ namespace accessibility
         AccessibleProxyEditSource_Impl( SdrObject&      rObj,
                                         SdrView&        rView,
                                         const vcl::Window&   rViewWindow );
-        virtual ~AccessibleProxyEditSource_Impl();
 
         // from the SvxEditSource interface
         SvxTextForwarder*       GetTextForwarder() override;
@@ -78,7 +77,6 @@ namespace accessibility
     public:
 
         AccessibleEmptyEditSource_Impl() {}
-        virtual ~AccessibleEmptyEditSource_Impl() {}
 
         // SvxEditSource
         SvxTextForwarder*       GetTextForwarder() override { return this; }
@@ -91,7 +89,7 @@ namespace accessibility
         sal_Int32          GetParagraphCount() const override { return 1; }
         sal_Int32          GetTextLen( sal_Int32 /*nParagraph*/ ) const override { return 0; }
         OUString           GetText( const ESelection& /*rSel*/ ) const override { return OUString(); }
-        SfxItemSet         GetAttribs( const ESelection& /*rSel*/, EditEngineAttribs /*nOnlyHardAttrib*/ = EditEngineAttribs_All ) const override
+        SfxItemSet         GetAttribs( const ESelection& /*rSel*/, EditEngineAttribs /*nOnlyHardAttrib*/ = EditEngineAttribs::All ) const override
         {
             // AW: Very dangerous: The former implementation used a SfxItemPool created on the
             // fly which of course was deleted again ASAP. Thus, the returned SfxItemSet was using
@@ -125,7 +123,7 @@ namespace accessibility
         {
             return  OUString();
         }
-        void            FieldClicked( const SvxFieldItem&, sal_Int32, sal_Int32 ) override {;}
+        void            FieldClicked( const SvxFieldItem&, sal_Int32, sal_Int32 ) override {}
 
         bool            IsValid() const override { return true; }
 
@@ -133,8 +131,8 @@ namespace accessibility
         sal_Int32       GetFieldCount( sal_Int32 ) const override { return 0; }
         EFieldInfo      GetFieldInfo( sal_Int32, sal_uInt16 ) const override { return EFieldInfo(); }
         EBulletInfo     GetBulletInfo( sal_Int32 ) const override { return EBulletInfo(); }
-        Rectangle       GetCharBounds( sal_Int32, sal_Int32 ) const override { return Rectangle(); }
-        Rectangle       GetParaBounds( sal_Int32 ) const override { return Rectangle(); }
+        tools::Rectangle       GetCharBounds( sal_Int32, sal_Int32 ) const override { return tools::Rectangle(); }
+        tools::Rectangle       GetParaBounds( sal_Int32 ) const override { return tools::Rectangle(); }
         MapMode         GetMapMode() const override { return MapMode(); }
         OutputDevice*   GetRefDevice() const override { return nullptr; }
         bool            GetIndexAtPoint( const Point&, sal_Int32&, sal_Int32& ) const override { return false; }
@@ -159,7 +157,7 @@ namespace accessibility
         sal_Int16       GetDepth( sal_Int32 ) const override { return -1; }
         bool            SetDepth( sal_Int32, sal_Int16 ) override { return true; }
 
-        Rectangle       GetVisArea() const override { return Rectangle(); }
+        tools::Rectangle       GetVisArea() const override { return tools::Rectangle(); }
         Point           LogicToPixel( const Point& rPoint, const MapMode& /*rMapMode*/ ) const override { return rPoint; }
         Point           PixelToLogic( const Point& rPoint, const MapMode& /*rMapMode*/ ) const override { return rPoint; }
 
@@ -173,10 +171,6 @@ namespace accessibility
                                                                     SdrView&        rView,
                                                                     const vcl::Window&   rViewWindow ) :
         maEditSource( rObj, nullptr, rView, rViewWindow )
-    {
-    }
-
-    AccessibleProxyEditSource_Impl::~AccessibleProxyEditSource_Impl()
     {
     }
 
@@ -309,7 +303,7 @@ namespace accessibility
     {
         const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>( &rHint );
 
-        if( pSdrHint && pSdrHint->GetKind() == HINT_BEGEDIT &&
+        if( pSdrHint && pSdrHint->GetKind() == SdrHintKind::BeginEdit &&
             &mrObj == pSdrHint->GetObject() && mpEditSource.get() )
         {
             // switch edit source, if not yet done. This is necessary

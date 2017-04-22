@@ -131,8 +131,6 @@ double ScrollTextAnimNode::GetStateAtRelativeTime(
 class ActivityImpl : public Activity
 {
 public:
-    virtual ~ActivityImpl();
-
     ActivityImpl(
         SlideShowContext const& rContext,
         std::shared_ptr<WakeupEvent> const& pWakeupEvent,
@@ -155,10 +153,6 @@ public:
 private:
     void updateShapeAttributes( double fTime,
                                 basegfx::B2DRectangle const& parentBounds );
-
-    // Access to VisibleWhenSTarted flags
-    bool IsVisibleWhenStarted() const { return mbVisibleWhenStarted; }
-    bool IsVisibleWhenStopped() const { return mbVisibleWhenStopped; }
 
     // scroll horizontal? if sal_False, scroll is vertical.
     bool ScrollHorizontal() const {
@@ -222,9 +216,6 @@ private:
     // Flag to remember if this is a simple scrolling text
     bool                                        mbScrollIn;
 
-    // start time for this animation
-    sal_uInt32                                  mnStartTime;
-
     // The AnimationDirection
     drawing::TextAnimationDirection             meDirection;
 
@@ -235,10 +226,10 @@ private:
     std::vector< ScrollTextAnimNode >           maVector;
 
     // the scroll rectangle
-    Rectangle                                   maScrollRectangleLogic;
+    tools::Rectangle                                   maScrollRectangleLogic;
 
     // the paint rectangle
-    Rectangle                                   maPaintRectangleLogic;
+    tools::Rectangle                                   maPaintRectangleLogic;
 };
 
 
@@ -421,15 +412,7 @@ void ActivityImpl::ImpForceScrollTextAnimNodes()
             fOneRelative = 1.0;
         }
 
-        if(mnStartTime)
-        {
-            // Start time loop
-            ScrollTextAnimNode aStartNode(
-                mnStartTime, 1L, 0.0, 0.0, mnStartTime, false);
-            maVector.push_back(aStartNode);
-        }
-
-        if(IsVisibleWhenStarted())
+        if(mbVisibleWhenStarted)
         {
             double fRelativeStartValue, fRelativeEndValue,fRelativeDistance;
 
@@ -507,7 +490,7 @@ void ActivityImpl::ImpForceScrollTextAnimNodes()
             }
         }
 
-        if(IsVisibleWhenStopped())
+        if(mbVisibleWhenStopped)
         {
             double fRelativeStartValue, fRelativeEndValue, fRelativeDistance;
 
@@ -547,9 +530,8 @@ ScrollTextAnimNode* ActivityImpl::ImpGetScrollTextAnimNode(
     {
         rRelativeTime = nTime;
 
-        for(sal_uInt32 a(0L); !pRetval && a < maVector.size(); a++)
+        for(ScrollTextAnimNode & rNode: maVector)
         {
-            ScrollTextAnimNode & rNode = maVector[a];
             if(!rNode.GetRepeat())
             {
                 // endless loop, use it
@@ -751,22 +733,21 @@ ActivityImpl::ActivityImpl(
       meAnimKind(drawing::TextAnimationKind_NONE),
       mbVisibleWhenStopped(false),
       mbVisibleWhenStarted(false),
-      mnStartTime(0L),
       mnStepWidth(0)
 {
     // get doctreenode:
     sal_Int32 const nNodes = pParentDrawShape->getNumberOfTreeNodes(
-        DocTreeNode::NODETYPE_LOGICAL_PARAGRAPH );
+        DocTreeNode::NodeType::LogicalParagraph );
 
     DocTreeNode scrollTextNode(
         pParentDrawShape->getTreeNode(
-            0, DocTreeNode::NODETYPE_LOGICAL_PARAGRAPH ));
+            0, DocTreeNode::NodeType::LogicalParagraph ));
     // xxx todo: remove this hack
     if( nNodes > 1 )
         scrollTextNode.setEndIndex(
             pParentDrawShape->getTreeNode(
                 nNodes - 1,
-                DocTreeNode::NODETYPE_LOGICAL_PARAGRAPH ).getEndIndex());
+                DocTreeNode::NodeType::LogicalParagraph ).getEndIndex());
 
     // TODO(Q3): Doing this manually, instead of using
     // ShapeSubset. This is because of lifetime issues (ShapeSubset
@@ -843,7 +824,7 @@ ActivityImpl::ActivityImpl(
     if( DoScrollIn() )
     {
         // most parameters are set correctly from the dialog logic, but
-        // eg VisisbleWhenStopped is grayed out and needs to be corrected here.
+        // eg VisibleWhenStopped is grayed out and needs to be corrected here.
         mbVisibleWhenStopped = true;
         mbVisibleWhenStarted = false;
         mnRepeat = 0L;
@@ -863,10 +844,6 @@ bool ActivityImpl::enableAnimations()
 {
     mbIsActive = true;
     return maContext.mrActivitiesQueue.addActivity( std::dynamic_pointer_cast<Activity>(shared_from_this()) );
-}
-
-ActivityImpl::~ActivityImpl()
-{
 }
 
 void ActivityImpl::dispose()

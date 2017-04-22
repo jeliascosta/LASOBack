@@ -47,7 +47,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxLineStyleToolBoxControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SvxLineStyleToolBoxControl();
+    virtual ~SvxLineStyleToolBoxControl() override;
 
     virtual void        StateChanged( sal_uInt16 nSID, SfxItemState eState,
                                       const SfxPoolItem* pState ) override;
@@ -65,79 +65,12 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxLineWidthToolBoxControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SvxLineWidthToolBoxControl();
+    virtual ~SvxLineWidthToolBoxControl() override;
 
     virtual void        StateChanged( sal_uInt16 nSID, SfxItemState eState,
                                       const SfxPoolItem* pState ) override;
     virtual VclPtr<vcl::Window> CreateItemWindow( vcl::Window *pParent ) override;
 };
-
-
-// class SvxLineEndWindow
-
-class SvxLineEndWindow : public SfxPopupWindow
-{
-    using FloatingWindow::StateChanged;
-
-private:
-    XLineEndListRef pLineEndList;
-    VclPtr<ValueSet> aLineEndSet;
-    sal_uInt16      nCols;
-    sal_uInt16      nLines;
-    sal_uIntPtr     nLineEndWidth;
-    Size            aBmpSize;
-    bool            bPopupMode;
-    bool            mbInResize;
-    css::uno::Reference< css::frame::XFrame > mxFrame;
-
-
-    DECL_LINK_TYPED( SelectHdl, ValueSet*, void );
-    void            FillValueSet();
-    void            SetSize();
-    void            implInit();
-
-protected:
-    virtual void    Resizing( Size& rSize ) override;
-    virtual void    Resize() override;
-    virtual bool    Close() override;
-    virtual void    PopupModeEnd() override;
-
-    /** This function is called when the window gets the focus.  It grabs
-        the focus to the line ends value set so that it can be controlled with
-        the keyboard.
-    */
-    virtual void GetFocus() override;
-
-public:
-    SvxLineEndWindow( sal_uInt16 nId,
-                      const css::uno::Reference< css::frame::XFrame >& rFrame,
-                      vcl::Window* pParentWindow,
-                      const OUString& rWndTitle );
-    virtual ~SvxLineEndWindow();
-    virtual void    dispose() override;
-
-    void            StartSelection();
-
-    virtual void    StateChanged( sal_uInt16 nSID, SfxItemState eState,
-                                  const SfxPoolItem* pState ) override;
-};
-
-
-// class SvxLineEndToolBoxControl
-
-
-class SVX_DLLPUBLIC SvxLineEndToolBoxControl : public SfxToolBoxControl
-{
-public:
-    SFX_DECL_TOOLBOX_CONTROL();
-    SvxLineEndToolBoxControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SvxLineEndToolBoxControl();
-
-    virtual void                StateChanged( sal_uInt16 nSID, SfxItemState eState,
-                                              const SfxPoolItem* pState ) override;
-    virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
-};
-
 
 #endif
 

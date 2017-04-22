@@ -59,8 +59,7 @@ class ContentNode;
 class EditNodeIdx
 {
 public:
-    EditNodeIdx(EditEngine* pEE, ContentNode* pNd = nullptr);
-    ~EditNodeIdx() {}
+    EditNodeIdx(EditEngine* pEE, ContentNode* pNd);
     sal_Int32   GetIdx() const;
     EditNodeIdx* Clone() const;  // Cloning itself
     ContentNode* GetNode() { return mpNode; }
@@ -88,8 +87,6 @@ public:
     // clone NodeIndex
     EditNodeIdx* MakeNodeIdx() const;
 };
-
-#define ACTION_INSERTTEXT       1
 
 typedef std::map<short, std::unique_ptr<vcl::Font>> SvxRTFFontTbl;
 typedef std::map<sal_uInt16, std::unique_ptr<SvxRTFStyleType>> SvxRTFStyleTbl;
@@ -148,7 +145,6 @@ struct RTFPlainAttrMapIds
             nTwoLines,
             nCharScaleX,
             nHorzVert,
-            nRuby,
             nRelief,
             nHidden
             ;
@@ -219,8 +215,6 @@ class EDITENG_DLLPUBLIC SvxRTFParser : public SvRTFParser
     void operator=(SvxRTFParser const&) = delete;
 
     void ClearColorTbl();
-    void ClearFontTbl();
-    void ClearStyleTbl();
     void ClearAttrStack();
 
     SvxRTFItemStackType* GetAttrSet_();  // Create new ItemStackType:s
@@ -255,9 +249,6 @@ protected:
     // is called for each token that is recognized in CallParser
     virtual void NextToken( int nToken ) override;
 
-    virtual void ReadBitmapData() override;
-    virtual void ReadOLEData() override;
-
     void ReadStyleTable();
     void ReadColorTable();
     void ReadFontTable();
@@ -289,8 +280,8 @@ protected:
 
     SvxRTFParser( SfxItemPool& rAttrPool,
                     SvStream& rIn,
-                    css::uno::Reference< css::document::XDocumentProperties> i_xDocProps );
-    virtual ~SvxRTFParser();
+                    css::uno::Reference< css::document::XDocumentProperties> const & i_xDocProps );
+    virtual ~SvxRTFParser() override;
 
     void SetNewDoc( bool bFlag )        { bNewDoc = bFlag; }
     bool IsChkStyleAttr() const         { return bChkStyleAttr; }
@@ -351,18 +342,15 @@ class EDITENG_DLLPUBLIC SvxRTFItemStackType
 
 public:
     SvxRTFItemStackType( const SvxRTFItemStackType&, const EditPosition&,
-                        bool bCopyAttr = false );
+                        bool bCopyAttr );
     ~SvxRTFItemStackType();
-    //cmc, I'm very suspicios about SetStartPos, it doesn't change
+    //cmc, I'm very suspicious about SetStartPos, it doesn't change
     //its children's starting position, and the implementation looks
     //bad, consider this deprecated.
     void SetStartPos( const EditPosition& rPos );
 
     void MoveFullNode(const EditNodeIdx &rOldNode,
         const EditNodeIdx &rNewNode);
-
-    sal_Int32 GetSttNodeIdx() const { return pSttNd->GetIdx(); }
-    sal_Int32 GetEndNodeIdx() const { return pEndNd->GetIdx(); }
 
     const EditNodeIdx& GetSttNode() const { return *pSttNd; }
     const EditNodeIdx& GetEndNode() const { return *pEndNd; }

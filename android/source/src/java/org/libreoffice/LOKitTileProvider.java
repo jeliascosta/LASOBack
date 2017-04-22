@@ -19,7 +19,6 @@ import org.libreoffice.kit.LibreOfficeKit;
 import org.libreoffice.kit.Office;
 import org.mozilla.gecko.gfx.BufferedCairoImage;
 import org.mozilla.gecko.gfx.CairoImage;
-import org.mozilla.gecko.gfx.GeckoLayerClient;
 import org.mozilla.gecko.gfx.IntSize;
 
 import java.nio.ByteBuffer;
@@ -27,16 +26,16 @@ import java.nio.ByteBuffer;
 /**
  * LOKit implementation of TileProvider.
  */
-public class LOKitTileProvider implements TileProvider {
+class LOKitTileProvider implements TileProvider {
     private static final String LOGTAG = LOKitTileProvider.class.getSimpleName();
     private static int TILE_SIZE = 256;
-    private final GeckoLayerClient mLayerClient;
     private final float mTileWidth;
     private final float mTileHeight;
     private final String mInputFile;
     private Office mOffice;
     private Document mDocument;
     private boolean mIsReady = false;
+    private LibreOfficeMainActivity mContext;
 
     private float mDPI;
     private float mWidthTwip;
@@ -48,19 +47,18 @@ public class LOKitTileProvider implements TileProvider {
 
     /**
      * Initialize LOKit and load the document.
-     * @param layerClient - layerclient implementation
      * @param messageCallback - callback for messages retrieved from LOKit
      * @param input - input path of the document
      */
-    public LOKitTileProvider(GeckoLayerClient layerClient, Document.MessageCallback messageCallback, String input) {
-        mLayerClient = layerClient;
+    LOKitTileProvider(LibreOfficeMainActivity context, Document.MessageCallback messageCallback, String input) {
+        mContext = context;
         mMessageCallback = messageCallback;
-        mDPI = LOKitShell.getDpi();
+        mDPI = LOKitShell.getDpi(mContext);
         mTileWidth = pixelToTwip(TILE_SIZE, mDPI);
         mTileHeight = pixelToTwip(TILE_SIZE, mDPI);
 
         LibreOfficeKit.putenv("SAL_LOG=+WARN+INFO");
-        LibreOfficeKit.init(LibreOfficeMainActivity.mAppContext);
+        LibreOfficeKit.init(mContext);
 
         mOffice = new Office(LibreOfficeKit.getLibreOfficeKitHandle());
 
@@ -101,8 +99,7 @@ public class LOKitTileProvider implements TileProvider {
 
         int parts = mDocument.getParts();
         Log.i(LOGTAG, "Document parts: " + parts);
-
-        LibreOfficeMainActivity.mAppContext.getDocumentPartView().clear();
+        mContext.getDocumentPartView().clear();
 
         // Writer documents always have one part, so hide the navigation drawer.
         if (mDocument.getDocumentType() != Document.DOCTYPE_TEXT) {
@@ -116,10 +113,10 @@ public class LOKitTileProvider implements TileProvider {
                 mDocument.setPart(i);
                 resetDocumentSize();
                 final DocumentPartView partView = new DocumentPartView(i, partName);
-                LibreOfficeMainActivity.mAppContext.getDocumentPartView().add(partView);
+                mContext.getDocumentPartView().add(partView);
             }
         } else {
-            LibreOfficeMainActivity.mAppContext.disableNavigationDrawer();
+            mContext.disableNavigationDrawer();
         }
 
         mDocument.setPart(0);
@@ -129,7 +126,31 @@ public class LOKitTileProvider implements TileProvider {
         LOKitShell.getMainHandler().post(new Runnable() {
             @Override
             public void run() {
-                LibreOfficeMainActivity.mAppContext.getDocumentPartViewListAdapter().notifyDataSetChanged();
+                mContext.getDocumentPartViewListAdapter().notifyDataSetChanged();
+            }
+        });
+    }
+
+    @Override
+    public void saveDocumentAs(String filePath, String format) {
+        String newFilePath = "file://" + filePath;
+        Log.d("saveFilePathURL", newFilePath);
+        mDocument.saveAs(newFilePath, format, "");
+        if (!mOffice.getError().isEmpty()){
+            Log.e("Save Error", mOffice.getError());
+            LOKitShell.getMainHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    // There was some error
+                    mContext.showSaveStatusToast(true);
+                }
+            });
+        }
+        LOKitShell.getMainHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                // There was no error
+                mContext.showSaveStatusToast(false);
             }
         });
     }
@@ -139,8 +160,8 @@ public class LOKitTileProvider implements TileProvider {
         if (values == null || values.isEmpty())
             return;
 
-        LOKitShell.getFontController().parseJson(values);
-        LOKitShell.getFontController().setupFontViews();
+        mContext.getFontController().parseJson(values);
+        mContext.getFontController().setupFontViews();
     }
 
     private String getGenericPartName(int i) {
@@ -161,11 +182,11 @@ public class LOKitTileProvider implements TileProvider {
         }
     }
 
-    public static float twipToPixel(float input, float dpi) {
+    static float twipToPixel(float input, float dpi) {
         return input / 1440.0f * dpi;
     }
 
-    public static float pixelToTwip(float input, float dpi) {
+    private static float pixelToTwip(float input, float dpi) {
         return (input / dpi) * 1440.0f;
     }
 
@@ -219,7 +240,7 @@ public class LOKitTileProvider implements TileProvider {
             LOKitShell.getMainHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    LibreOfficeMainActivity.mAppContext.showAlertDialog(message);
+                    mContext.showAlertDialog(message);
                 }
             });
         }
@@ -417,7 +438,7 @@ public class LOKitTileProvider implements TileProvider {
     }
 
     /**
-     * @see TileProvider#mouseButtonDown(android.graphics.PointF, int)
+     * @see TileProvider#mouseButtonDown(android.graphics.PointF, int, float)
      */
     @Override
     public void mouseButtonDown(PointF documentCoordinate, int numberOfClicks, float zoomFactor) {
@@ -425,7 +446,7 @@ public class LOKitTileProvider implements TileProvider {
     }
 
     /**
-     * @see TileProvider#mouseButtonUp(android.graphics.PointF, int)
+     * @see TileProvider#mouseButtonUp(android.graphics.PointF, int, float)
      */
     @Override
     public void mouseButtonUp(PointF documentCoordinate, int numberOfClicks, float zoomFactor) {

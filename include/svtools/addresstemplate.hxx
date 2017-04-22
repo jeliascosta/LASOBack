@@ -64,8 +64,7 @@ namespace svt
         css::uno::Reference< css::container::XNameAccess >
                                m_xCurrentDatasourceTables;
 
-        AddressBookSourceDialogData*
-                               m_pImpl;
+        std::unique_ptr<AddressBookSourceDialogData> m_pImpl;
 
     public:
         AddressBookSourceDialog( vcl::Window* _pParent,
@@ -98,7 +97,7 @@ namespace svt
             const css::uno::Sequence< css::util::AliasProgrammaticPair >& _rMapping
         );
 
-        virtual ~AddressBookSourceDialog();
+        virtual ~AddressBookSourceDialog() override;
         virtual void dispose() override;
 
         // to be used if the object was constructed for editing a field mapping only
@@ -124,14 +123,14 @@ namespace svt
         // initialize the dialog from the configuration data
         void    loadConfiguration();
 
-        DECL_LINK_TYPED(OnFieldScroll, ScrollBar*, void);
-        DECL_LINK_TYPED(OnFieldSelect, ListBox&, void);
-        DECL_LINK_TYPED(OnAdministrateDatasources, Button*, void);
-        DECL_STATIC_LINK_TYPED(AddressBookSourceDialog, OnComboGetFocus, Control&, void);
-        DECL_LINK_TYPED(OnComboLoseFocus, Control&, void);
-        DECL_LINK_TYPED(OnComboSelect, ComboBox&, void);
-        DECL_LINK_TYPED(OnOkClicked, Button*, void);
-        DECL_LINK_TYPED(OnDelayedInitialize, void*, void);
+        DECL_LINK(OnFieldScroll, ScrollBar*, void);
+        DECL_LINK(OnFieldSelect, ListBox&, void);
+        DECL_LINK(OnAdministrateDatasources, Button*, void);
+        DECL_STATIC_LINK(AddressBookSourceDialog, OnComboGetFocus, Control&, void);
+        DECL_LINK(OnComboLoseFocus, Control&, void);
+        DECL_LINK(OnComboSelect, ComboBox&, void);
+        DECL_LINK(OnOkClicked, Button*, void);
+        DECL_LINK(OnDelayedInitialize, void*, void);
     };
 
 

@@ -42,12 +42,27 @@ namespace drawinglayer
         {
         private:
             const basegfx::B2DPolyPolygon       maMask;
-            const Primitive2DContainer             maChildren;
+            const Primitive2DContainer          maChildren;
             const basegfx::B2DRange             maReferenceRange;
+
+            /// values holding the discrete buffer size
+            sal_uInt32                          mnDiscreteWidth;
+            sal_uInt32                          mnDiscreteHeight;
+
+            /// helper that is capable to calculate the needed discrete buffer size for
+            /// eventually buffered content
+            void calculateNeededDiscreteBufferSize(
+                sal_uInt32& rWidth,
+                sal_uInt32& rHeight,
+                const geometry::ViewInformation2D& rViewInformation) const;
+
+            /// helper which creates the content - checks if clipping is needed and eventually
+            /// creates buffered content to speed up rendering
+            Primitive2DContainer createContent(const geometry::ViewInformation2D& rViewInformation) const;
 
         protected:
             /// create local decomposition
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -67,8 +82,14 @@ namespace drawinglayer
             /// get range
             virtual basegfx::B2DRange getB2DRange(const geometry::ViewInformation2D& rViewInformation) const override;
 
+            /// overload to react on evtl. buffered content
+            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
+
             /// provide unique ID
             DeclPrimitive2DIDBlock()
+
+            // XAccounting
+            virtual sal_Int64 SAL_CALL estimateUsage() override;
         };
     } // end of namespace primitive2d
 } // end of namespace drawinglayer

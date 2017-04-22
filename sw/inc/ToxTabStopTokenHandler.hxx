@@ -56,7 +56,7 @@ public:
 
     enum TabStopReferencePolicy {TABSTOPS_RELATIVE_TO_INDENT, TABSTOPS_RELATIVE_TO_PAGE};
 
-   /**
+    /**
     * @param indexOfSectionNode
     * The index of the section node. It is needed to determine whether a page description was given by a node
     * before the tox section.
@@ -73,7 +73,7 @@ public:
     */
     DefaultToxTabStopTokenHandler(sal_uInt32 indexOfSectionNode, const SwPageDesc& defaultPageDescription,
             bool tabPositionIsRelativeToParagraphIndent,
-            TabStopReferencePolicy referencePolicy = TABSTOPS_RELATIVE_TO_PAGE);
+            TabStopReferencePolicy referencePolicy);
 
     /** Handle a tab stop token.
      *

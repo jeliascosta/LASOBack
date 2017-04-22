@@ -22,12 +22,13 @@
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/sheet/XCellRangeAddressable.hpp>
 #include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
+#include <convuno.hxx>
 #include <osl/diagnose.h>
 #include <rtl/strbuf.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <oox/core/filterbase.hxx>
 #include <oox/helper/containerhelper.hxx>
-#include "biffinputstream.hxx"
+#include <oox/helper/binaryinputstream.hxx>
 
 namespace oox {
 namespace xls {
@@ -46,51 +47,13 @@ const sal_Int32 OOX_MAXCOL          = static_cast< sal_Int32 >( (1 << 14) - 1 );
 const sal_Int32 OOX_MAXROW          = static_cast< sal_Int32 >( (1 << 20) - 1 );
 const sal_Int16 OOX_MAXTAB          = static_cast< sal_Int16 >( (1 << 15) - 1 );
 
-const sal_Int32 BIFF2_MAXCOL        = 255;
-const sal_Int32 BIFF2_MAXROW        = 16383;
-const sal_Int16 BIFF2_MAXTAB        = 0;
-
-const sal_Int32 BIFF3_MAXCOL        = BIFF2_MAXCOL;
-const sal_Int32 BIFF3_MAXROW        = BIFF2_MAXROW;
-const sal_Int16 BIFF3_MAXTAB        = BIFF2_MAXTAB;
-
-const sal_Int32 BIFF4_MAXCOL        = BIFF3_MAXCOL;
-const sal_Int32 BIFF4_MAXROW        = BIFF3_MAXROW;
-const sal_Int16 BIFF4_MAXTAB        = 32767;
-
-const sal_Int32 BIFF5_MAXCOL        = BIFF4_MAXCOL;
-const sal_Int32 BIFF5_MAXROW        = BIFF4_MAXROW;
-const sal_Int16 BIFF5_MAXTAB        = BIFF4_MAXTAB;
-
-const sal_Int32 BIFF8_MAXCOL        = BIFF5_MAXCOL;
-const sal_Int32 BIFF8_MAXROW        = 65535;
-const sal_Int16 BIFF8_MAXTAB        = BIFF5_MAXTAB;
-
 } // namespace
 
-
-ScAddress ApiCellRangeList::getBaseAddress() const
-{
-    if( mvAddresses.empty() )
-        return ScAddress(0, 0, 0);
-    return ScAddress( SCCOL( mvAddresses.front().StartColumn ), SCROW( mvAddresses.front().StartRow ), SCTAB( mvAddresses.front().Sheet ) );
-}
-
-css::uno::Sequence< CellRangeAddress > ApiCellRangeList::toSequence() const
-{
-    return ContainerHelper::vectorToSequence( mvAddresses );
-}
 
 void BinAddress::read( SequenceInputStream& rStrm )
 {
     mnRow = rStrm.readInt32();
     mnCol = rStrm.readInt32();
-}
-
-void BinAddress::read( BiffInputStream& rStrm )
-{
-    mnRow = rStrm.readuInt16();
-    mnCol = rStrm.readuInt16();
 }
 
 void BinRange::read( SequenceInputStream& rStrm )
@@ -99,14 +62,6 @@ void BinRange::read( SequenceInputStream& rStrm )
     maLast.mnRow = rStrm.readInt32();
     maFirst.mnCol = rStrm.readInt32();
     maLast.mnCol = rStrm.readInt32();
-}
-
-void BinRange::read( BiffInputStream& rStrm )
-{
-    maFirst.mnRow =  rStrm.readuInt16();
-    maLast.mnRow = rStrm.readuInt16();
-    maFirst.mnCol = rStrm.readuInt16();
-    maLast.mnCol = rStrm.readuInt16();
 }
 
 void BinRangeList::read( SequenceInputStream& rStrm )
@@ -124,45 +79,8 @@ AddressConverter::AddressConverter( const WorkbookHelper& rHelper ) :
     mbTabOverflow( false )
 {
     maDConChars.set( 0xFFFF, '\x01', 0xFFFF, '\x02', 0xFFFF );
-    switch( getFilterType() )
-    {
-        case FILTER_OOXML:
-            initializeMaxPos( OOX_MAXTAB, OOX_MAXCOL, OOX_MAXROW );
-            maLinkChars.set( 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF );
-        break;
-        case FILTER_BIFF: switch( getBiff() )
-        {
-            case BIFF2:
-                initializeMaxPos( BIFF2_MAXTAB, BIFF2_MAXCOL, BIFF2_MAXROW );
-                maLinkChars.set( 0xFFFF, '\x01', '\x02', 0xFFFF, 0xFFFF );
-            break;
-            case BIFF3:
-                initializeMaxPos( BIFF3_MAXTAB, BIFF3_MAXCOL, BIFF3_MAXROW );
-                maLinkChars.set( 0xFFFF, '\x01', '\x02', 0xFFFF, 0xFFFF );
-            break;
-            case BIFF4:
-                initializeMaxPos( BIFF4_MAXTAB, BIFF4_MAXCOL, BIFF4_MAXROW );
-                maLinkChars.set( 0xFFFF, '\x01', '\x02', 0xFFFF, '\x00' );
-            break;
-            case BIFF5:
-                initializeMaxPos( BIFF5_MAXTAB, BIFF5_MAXCOL, BIFF5_MAXROW );
-                maLinkChars.set( '\x04', '\x01', '\x02', '\x03', '\x00' );
-            break;
-            case BIFF8:
-                initializeMaxPos( BIFF8_MAXTAB, BIFF8_MAXCOL, BIFF8_MAXROW );
-                maLinkChars.set( '\x04', '\x01', 0xFFFF, '\x02', '\x00' );
-            break;
-            case BIFF_UNKNOWN:
-                initializeMaxPos( 0, 0, 0 );
-                maLinkChars.set( 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF );
-            break;
-        }
-        break;
-        case FILTER_UNKNOWN:
-            initializeMaxPos( 0, 0, 0 );
-            maLinkChars.set( 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF );
-        break;
-    }
+    initializeMaxPos( OOX_MAXTAB, OOX_MAXCOL, OOX_MAXROW );
+    maLinkChars.set( 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF );
 }
 
 bool AddressConverter::parseOoxAddress2d(
@@ -333,34 +251,12 @@ bool AddressConverter::checkTab( sal_Int16 nSheet, bool bTrackOverflow )
     return bValid;
 }
 
-bool AddressConverter::checkCellAddress( const CellAddress& rAddress, bool bTrackOverflow )
-{
-    return
-        checkTab( rAddress.Sheet, bTrackOverflow ) &&
-        checkCol( rAddress.Column, bTrackOverflow ) &&
-        checkRow( rAddress.Row, bTrackOverflow );
-}
-
 bool AddressConverter::checkCellAddress( const ScAddress& rAddress, bool bTrackOverflow )
 {
     return
         checkTab( rAddress.Tab(), bTrackOverflow ) &&
         checkCol( rAddress.Col(), bTrackOverflow ) &&
         checkRow( rAddress.Row(), bTrackOverflow );
-}
-
-bool AddressConverter::convertToCellAddressUnchecked( CellAddress& orAddress,
-        const OUString& rString, sal_Int16 nSheet )
-{
-    orAddress.Sheet = nSheet;
-    return parseOoxAddress2d( orAddress.Column, orAddress.Row, rString );
-}
-
-bool AddressConverter::convertToCellAddressUnchecked(
-        css::table::CellAddress& orAddress, const char* pStr, sal_Int16 nSheet )
-{
-    orAddress.Sheet = nSheet;
-    return parseOoxAddress2d(orAddress.Column, orAddress.Row, pStr);
 }
 
 bool AddressConverter::convertToCellAddressUnchecked( ScAddress& orAddress,
@@ -420,14 +316,6 @@ ScAddress AddressConverter::createValidCellAddress(
     return aAddress;
 }
 
-void AddressConverter::convertToCellAddressUnchecked( CellAddress& orAddress,
-        const BinAddress& rBinAddress, sal_Int16 nSheet )
-{
-    orAddress.Sheet  = nSheet;
-    orAddress.Column = rBinAddress.mnCol;
-    orAddress.Row    = rBinAddress.mnRow;
-}
-
 void AddressConverter::convertToCellAddressUnchecked( ScAddress& orAddress,
         const BinAddress& rBinAddress, sal_Int16 nSheet )
 {
@@ -456,39 +344,57 @@ ScAddress AddressConverter::createValidCellAddress(
     return aAddress;
 }
 
-bool AddressConverter::checkCellRange( const CellRangeAddress& rRange, bool bAllowOverflow, bool bTrackOverflow )
+bool AddressConverter::checkCellRange( const ScRange& rRange, bool bAllowOverflow, bool bTrackOverflow )
 {
     return
-        (checkCol( rRange.EndColumn, bTrackOverflow ) || bAllowOverflow) &&     // bAllowOverflow after checkCol to track overflow!
-        (checkRow( rRange.EndRow, bTrackOverflow ) || bAllowOverflow) &&        // bAllowOverflow after checkRow to track overflow!
-        checkTab( rRange.Sheet, bTrackOverflow ) &&
-        checkCol( rRange.StartColumn, bTrackOverflow ) &&
-        checkRow( rRange.StartRow, bTrackOverflow );
+        (checkCol( rRange.aEnd.Col(), bTrackOverflow ) || bAllowOverflow) &&     // bAllowOverflow after checkCol to track overflow!
+        (checkRow( rRange.aEnd.Row(), bTrackOverflow ) || bAllowOverflow) &&     // bAllowOverflow after checkRow to track overflow!
+        checkTab( rRange.aStart.Tab(), bTrackOverflow ) &&
+        checkCol( rRange.aStart.Col(), bTrackOverflow ) &&
+        checkRow( rRange.aStart.Row(), bTrackOverflow );
 }
 
-bool AddressConverter::validateCellRange( CellRangeAddress& orRange, bool bAllowOverflow, bool bTrackOverflow )
+bool AddressConverter::validateCellRange( ScRange& orRange, bool bAllowOverflow, bool bTrackOverflow )
 {
-    if( orRange.StartColumn > orRange.EndColumn )
-        ::std::swap( orRange.StartColumn, orRange.EndColumn );
-    if( orRange.StartRow > orRange.EndRow )
-        ::std::swap( orRange.StartRow, orRange.EndRow );
+    if( orRange.aStart.Col() > orRange.aEnd.Col() )
+    {
+        SCCOL nCol = orRange.aStart.Col();
+        orRange.aStart.SetCol( orRange.aEnd.Col() );
+        orRange.aEnd.SetCol( nCol );
+    }
+    if( orRange.aStart.Row() > orRange.aEnd.Row() )
+    {
+        SCROW nRow = orRange.aStart.Row();
+        orRange.aStart.SetRow( orRange.aEnd.Row() );
+        orRange.aEnd.SetRow( nRow );
+    }
     if( !checkCellRange( orRange, bAllowOverflow, bTrackOverflow ) )
         return false;
-    if( orRange.EndColumn > maMaxPos.Col() )
-        orRange.EndColumn = maMaxPos.Col();
-    if( orRange.EndRow > maMaxPos.Row() )
-        orRange.EndRow = maMaxPos.Row();
+    if( orRange.aEnd.Col() > maMaxPos.Col() )
+        orRange.aEnd.SetCol( maMaxPos.Col() );
+    if( orRange.aEnd.Row() > maMaxPos.Row() )
+        orRange.aEnd.SetRow( maMaxPos.Row() );
     return true;
 }
 
-bool AddressConverter::convertToCellRangeUnchecked( CellRangeAddress& orRange,
+bool AddressConverter::convertToCellRangeUnchecked( ScRange& orRange,
         const OUString& rString, sal_Int16 nSheet )
 {
-    orRange.Sheet = nSheet;
-    return parseOoxRange2d( orRange.StartColumn, orRange.StartRow, orRange.EndColumn, orRange.EndRow, rString );
+    orRange.aStart.SetTab( nSheet );
+    orRange.aEnd.SetTab( nSheet );
+    sal_Int32 aStartCol = orRange.aStart.Col();
+    sal_Int32 aStartRow = orRange.aStart.Row();
+    sal_Int32 aEndCol = orRange.aEnd.Col();
+    sal_Int32 aEndRow = orRange.aEnd.Row();
+    bool bReturnValue = parseOoxRange2d( aStartCol, aStartRow, aEndCol, aEndRow, rString );
+    orRange.aStart.SetCol( aStartCol );
+    orRange.aStart.SetRow( aStartRow );
+    orRange.aEnd.SetCol( aEndCol );
+    orRange.aEnd.SetRow( aEndRow );
+    return bReturnValue;
 }
 
-bool AddressConverter::convertToCellRange( CellRangeAddress& orRange,
+bool AddressConverter::convertToCellRange( ScRange& orRange,
         const OUString& rString, sal_Int16 nSheet, bool bAllowOverflow, bool bTrackOverflow )
 {
     return
@@ -496,51 +402,64 @@ bool AddressConverter::convertToCellRange( CellRangeAddress& orRange,
         validateCellRange( orRange, bAllowOverflow, bTrackOverflow );
 }
 
-void AddressConverter::convertToCellRangeUnchecked( CellRangeAddress& orRange,
+void AddressConverter::convertToCellRangeUnchecked( ScRange& orRange,
         const BinRange& rBinRange, sal_Int16 nSheet )
 {
-    orRange.Sheet       = nSheet;
-    orRange.StartColumn = rBinRange.maFirst.mnCol;
-    orRange.StartRow    = rBinRange.maFirst.mnRow;
-    orRange.EndColumn   = rBinRange.maLast.mnCol;
-    orRange.EndRow      = rBinRange.maLast.mnRow;
+    orRange.aStart.SetTab( nSheet );
+    orRange.aStart.SetCol( rBinRange.maFirst.mnCol );
+    orRange.aStart.SetRow( rBinRange.maFirst.mnRow );
+    orRange.aEnd.SetTab( nSheet );
+    orRange.aEnd.SetCol( rBinRange.maLast.mnCol );
+    orRange.aEnd.SetRow( rBinRange.maLast.mnRow );
 }
 
-bool AddressConverter::convertToCellRange( CellRangeAddress& orRange,
+bool AddressConverter::convertToCellRange( ScRange& orRange,
         const BinRange& rBinRange, sal_Int16 nSheet, bool bAllowOverflow, bool bTrackOverflow )
 {
     convertToCellRangeUnchecked( orRange, rBinRange, nSheet );
     return validateCellRange( orRange, bAllowOverflow, bTrackOverflow );
 }
 
-void AddressConverter::validateCellRangeList( ApiCellRangeList& orRanges, bool bTrackOverflow )
+void AddressConverter::validateCellRangeList( ScRangeList& orRanges, bool bTrackOverflow )
 {
     for( size_t nIndex = orRanges.size(); nIndex > 0; --nIndex )
-        if( !validateCellRange( orRanges[ nIndex - 1 ], true, bTrackOverflow ) )
-            orRanges.erase( orRanges.begin() + nIndex - 1 );
+        if( !validateCellRange( *orRanges[ nIndex - 1 ], true, bTrackOverflow ) )
+            orRanges.Remove( nIndex - 1 );
 }
 
-void AddressConverter::convertToCellRangeList( ApiCellRangeList& orRanges,
+void AddressConverter::convertToCellRangeList( ScRangeList& orRanges,
         const OUString& rString, sal_Int16 nSheet, bool bTrackOverflow )
 {
     sal_Int32 nPos = 0;
     sal_Int32 nLen = rString.getLength();
-    CellRangeAddress aRange;
+    ScRange aRange;
     while( (0 <= nPos) && (nPos < nLen) )
     {
         OUString aToken = rString.getToken( 0, ' ', nPos );
         if( !aToken.isEmpty() && convertToCellRange( aRange, aToken, nSheet, true, bTrackOverflow ) )
-            orRanges.push_back( aRange );
+            orRanges.Append(aRange);
     }
 }
 
-void AddressConverter::convertToCellRangeList( ApiCellRangeList& orRanges,
+void AddressConverter::convertToCellRangeList( ScRangeList& orRanges,
         const BinRangeList& rBinRanges, sal_Int16 nSheet, bool bTrackOverflow )
 {
-    CellRangeAddress aRange;
+    ScRange aRange;
     for( ::std::vector< BinRange >::const_iterator aIt = rBinRanges.begin(), aEnd = rBinRanges.end(); aIt != aEnd; ++aIt )
         if( convertToCellRange( aRange, *aIt, nSheet, true, bTrackOverflow ) )
-            orRanges.push_back( aRange );
+            orRanges.Append( aRange );
+}
+
+Sequence<CellRangeAddress> AddressConverter::toApiSequence(const ScRangeList& orRanges)
+{
+    const size_t nSize = orRanges.size();
+    Sequence<CellRangeAddress> aRangeSequence(nSize);
+    CellRangeAddress* pApiRanges = aRangeSequence.getArray();
+    for (size_t i = 0; i < nSize; ++i)
+    {
+        ScUnoConversion::FillApiRange(pApiRanges[i], *orRanges[i]);
+    }
+    return aRangeSequence;
 }
 
 // private --------------------------------------------------------------------

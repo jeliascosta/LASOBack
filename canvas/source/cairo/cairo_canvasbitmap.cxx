@@ -86,7 +86,7 @@ namespace cairocanvas
         return mpSurfaceProvider->createSurface(rBitmap);
     }
 
-    SurfaceSharedPtr CanvasBitmap::changeSurface( bool, bool )
+    SurfaceSharedPtr CanvasBitmap::changeSurface()
     {
         // non-modifiable surface here
         return SurfaceSharedPtr();
@@ -104,17 +104,17 @@ namespace cairocanvas
         return maCanvasHelper.repaint( pSurface, viewState, renderState );
     }
 
-    uno::Any SAL_CALL CanvasBitmap::getFastPropertyValue( sal_Int32 nHandle )  throw (uno::RuntimeException, std::exception)
+    uno::Any SAL_CALL CanvasBitmap::getFastPropertyValue( sal_Int32 nHandle )
     {
         uno::Any aRV( sal_Int32(0) );
         // 0 ... get BitmapEx
         // 1 ... get Pixbuf with bitmap RGB content
-        // 2 ... get Pixbuf with bitmap alpha mask
+        // 2 ... return nothing (empty Any)
         switch( nHandle )
         {
             case 0:
             {
-                aRV = uno::Any( reinterpret_cast<sal_Int64>( nullptr ) );
+                aRV <<= reinterpret_cast<sal_Int64>( nullptr );
                 if ( !mbHasAlpha )
                     break;
 
@@ -188,7 +188,7 @@ namespace cairocanvas
                 cairo_destroy( pCairo );
                 cairo_surface_destroy( pPixels );
 
-                aRV = uno::Any( reinterpret_cast<sal_Int64>( pBitmapEx ) );
+                aRV <<= reinterpret_cast<sal_Int64>( pBitmapEx );
                 break;
             }
             case 1:
@@ -208,21 +208,19 @@ namespace cairocanvas
         return aRV;
     }
 
-    OUString SAL_CALL CanvasBitmap::getImplementationName(  ) throw (uno::RuntimeException, std::exception)
+    OUString SAL_CALL CanvasBitmap::getImplementationName(  )
     {
         return OUString( "CairoCanvas.CanvasBitmap" );
     }
 
-    sal_Bool SAL_CALL CanvasBitmap::supportsService( const OUString& ServiceName ) throw (uno::RuntimeException, std::exception)
+    sal_Bool SAL_CALL CanvasBitmap::supportsService( const OUString& ServiceName )
     {
         return cppu::supportsService( this, ServiceName );
     }
 
-    uno::Sequence< OUString > SAL_CALL CanvasBitmap::getSupportedServiceNames(  ) throw (uno::RuntimeException, std::exception)
+    uno::Sequence< OUString > SAL_CALL CanvasBitmap::getSupportedServiceNames(  )
     {
-        uno::Sequence< OUString > aRet { "com.sun.star.rendering.CanvasBitmap" };
-
-        return aRet;
+        return { "com.sun.star.rendering.CanvasBitmap" };
     }
 
 }

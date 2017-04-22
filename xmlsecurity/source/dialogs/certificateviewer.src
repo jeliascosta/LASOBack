@@ -18,17 +18,15 @@
  */
 
 #include "dialogs.hrc"
-#include "helpids.hrc"
 
 String STR_CERTIFICATE_NOT_VALIDATED
 {
     Text [ en-US ] = "The certificate could not be validated.";
 };
 
-Image IMG_STATE_NOT_VALIDATED
+Bitmap BMP_STATE_NOT_VALIDATED
 {
-    ImageBitmap = Bitmap { File = "notcertificate_40x56.png"; };
-        MaskColor = STD_MASKCOLOR;
+    File = "notcertificate_40x56.png";
 };
 
 String STR_HEADERBAR
@@ -44,11 +42,6 @@ String STR_VERSION
 String STR_SERIALNUM
 {
     Text [ en-US ] = "Serial Number";
-};
-
-String STR_SIGALGORITHM
-{
-    Text [ en-US ] = "Signature Algorithm";
 };
 
 String STR_ISSUER

@@ -72,7 +72,6 @@ struct EmitImplData
         m_nDecryptObject( 0 ),
         m_nDecryptGeneration( 0 )
     {}
-    ~EmitImplData() {}
     void decrypt( const sal_uInt8* pInBuffer, sal_uInt32 nLen, sal_uInt8* pOutBuffer,
                   unsigned int nObject, unsigned int nGeneration ) const
     {
@@ -97,12 +96,11 @@ EmitContext::EmitContext( const PDFContainer* pTop ) :
     m_pImplData( nullptr )
 {
     if( pTop )
-        m_pImplData = new EmitImplData( pTop );
+        m_pImplData.reset( new EmitImplData( pTop ) );
 }
 
 EmitContext::~EmitContext()
 {
-    delete m_pImplData;
 }
 
 PDFEntry::~PDFEntry()
@@ -111,14 +109,14 @@ PDFEntry::~PDFEntry()
 
 EmitImplData* PDFEntry::getEmitData( EmitContext& rContext )
 {
-    return rContext.m_pImplData;
+    return rContext.m_pImplData.get();
 }
 
 void PDFEntry::setEmitData( EmitContext& rContext, EmitImplData* pNewEmitData )
 {
-    if( rContext.m_pImplData && rContext.m_pImplData != pNewEmitData )
-        delete rContext.m_pImplData;
-    rContext.m_pImplData = pNewEmitData;
+    if( rContext.m_pImplData && rContext.m_pImplData.get() != pNewEmitData )
+        rContext.m_pImplData.reset();
+    rContext.m_pImplData.reset( pNewEmitData );
 }
 
 PDFValue::~PDFValue()
@@ -433,7 +431,7 @@ bool PDFObjectRef::emit( EmitContext& rWriteContext ) const
     aBuf.append( sal_Int32( m_nNumber ) );
     aBuf.append( ' ' );
     aBuf.append( sal_Int32( m_nGeneration ) );
-    aBuf.append( " R", 2 );
+    aBuf.append( " R" );
     return rWriteContext.write( aBuf.getStr(), aBuf.getLength() );
 }
 
@@ -882,8 +880,7 @@ bool PDFObject::emit( EmitContext& rWriteContext ) const
                 if( pOutBytes != reinterpret_cast<sal_uInt8*>(pStream) )
                     rtl_freeMemory( pOutBytes );
                 rtl_freeMemory( pStream );
-                if( pEData )
-                    pEData->setDecryptObject( 0, 0 );
+                pEData->setDecryptObject( 0, 0 );
                 return bRet;
             }
             if( pOutBytes != reinterpret_cast<sal_uInt8*>(pStream) )
@@ -1052,9 +1049,13 @@ struct PDFFileImplData
 };
 }
 
+PDFFile::PDFFile()
+   : PDFContainer(), m_nMajor( 0 ), m_nMinor( 0 )
+{
+}
+
 PDFFile::~PDFFile()
 {
-    delete m_pData;
 }
 
 bool PDFFile::isEncrypted() const
@@ -1224,7 +1225,7 @@ bool PDFFile::setupDecryptionData( const OString& rPwd ) const
         m_pData->m_aDigest = rtl_digest_createMD5();
 
     // first try user password
-    bool bValid = check_user_password( rPwd, m_pData );
+    bool bValid = check_user_password( rPwd, m_pData.get() );
 
     if( ! bValid )
     {
@@ -1233,7 +1234,7 @@ bool PDFFile::setupDecryptionData( const OString& rPwd ) const
         sal_uInt8 aKey[ENCRYPTION_KEY_LEN];
         sal_uInt8 nPwd[ENCRYPTION_BUF_LEN];
         memset( nPwd, 0, sizeof(nPwd) );
-        sal_uInt32 nKeyLen = password_to_key( rPwd, aKey, m_pData, true );
+        sal_uInt32 nKeyLen = password_to_key( rPwd, aKey, m_pData.get(), true );
         if( m_pData->m_nStandardRevision == 2 )
         {
             rtl_cipher_initARCFOUR( m_pData->m_aCipher, rtl_Cipher_DirectionDecode,
@@ -1257,34 +1258,17 @@ bool PDFFile::setupDecryptionData( const OString& rPwd ) const
                                           nPwd, 32 ); // decrypt inplace
             }
         }
-        bValid = check_user_password( OString( reinterpret_cast<char*>(nPwd), 32 ), m_pData );
+        bValid = check_user_password( OString( reinterpret_cast<char*>(nPwd), 32 ), m_pData.get() );
     }
 
     return bValid;
 }
 
-OUString PDFFile::getDecryptionKey() const
-{
-    OUStringBuffer aBuf( ENCRYPTION_KEY_LEN * 2 );
-    if( impl_getData()->m_bIsEncrypted )
-    {
-        for( sal_uInt32 i = 0; i < m_pData->m_nKeyLength; i++ )
-        {
-            static const sal_Unicode pHexTab[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
-                                                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-            aBuf.append( pHexTab[(m_pData->m_aDecryptionKey[i] >> 4) & 0x0f] );
-            aBuf.append( pHexTab[(m_pData->m_aDecryptionKey[i] & 0x0f)] );
-        }
-
-    }
-    return aBuf.makeStringAndClear();
-}
-
 PDFFileImplData* PDFFile::impl_getData() const
 {
     if( m_pData )
-        return m_pData;
-    m_pData = new PDFFileImplData();
+        return m_pData.get();
+    m_pData.reset( new PDFFileImplData );
     // check for encryption dict in a trailer
     unsigned int nElements = m_aSubElements.size();
     while( nElements-- > 0 )
@@ -1306,7 +1290,7 @@ PDFFileImplData* PDFFile::impl_getData() const
                     OUString aTmp;
                     for( int i = 0; i < m_pData->m_aDocID.getLength(); i++ )
                         aTmp += OUString::number((unsigned int)sal_uInt8(m_pData->m_aDocID[i]), 16);
-                    SAL_INFO("sdext.pdfimport.pdfparse", "DocId is <" << OUStringToOString(aTmp, RTL_TEXTENCODING_UTF8).getStr() << ">");
+                    SAL_INFO("sdext.pdfimport.pdfparse", "DocId is <" << aTmp << ">");
 #endif
                 }
             }
@@ -1371,7 +1355,7 @@ PDFFileImplData* PDFFile::impl_getData() const
                                     for( int i = 0; i < aEnt.getLength(); i++ )
                                         aTmp += " " + OUString::number((unsigned int)sal_uInt8(aEnt[i]), 16);
                                     SAL_WARN("sdext.pdfimport.pdfparse",
-                                             "O entry has length " << (int)aEnt.getLength() << ", should be 32 <" << OUStringToOString(aTmp, RTL_TEXTENCODING_UTF8).getStr() << ">" );
+                                             "O entry has length " << (int)aEnt.getLength() << ", should be 32 <" << aTmp << ">" );
                                 }
 #endif
                             }
@@ -1391,7 +1375,7 @@ PDFFileImplData* PDFFile::impl_getData() const
                                     for( int i = 0; i < aEnt.getLength(); i++ )
                                         aTmp += " " + OUString::number((unsigned int)sal_uInt8(aEnt[i]), 16);
                                     SAL_WARN("sdext.pdfimport.pdfparse",
-                                             "U entry has length " << (int)aEnt.getLength() << ", should be 32 <" << OUStringToOString(aTmp, RTL_TEXTENCODING_UTF8).getStr() << ">" );
+                                             "U entry has length " << (int)aEnt.getLength() << ", should be 32 <" << aTmp << ">" );
                                 }
 #endif
                             }
@@ -1410,7 +1394,7 @@ PDFFileImplData* PDFFile::impl_getData() const
                             SAL_INFO("sdext.pdfimport.pdfparse", "p entry is " << m_pData->m_nPEntry );
                         }
 
-                        SAL_INFO("sdext.pdfimport.pdfparse", "Encryption dict: sec handler: " << (pFilter ? OUStringToOString( pFilter->getFilteredName(), RTL_TEXTENCODING_UTF8 ).getStr() : "<unknown>") << ", version = " << (int)m_pData->m_nAlgoVersion << ", revision = " << (int)m_pData->m_nStandardRevision << ", key length = " << m_pData->m_nKeyLength );
+                        SAL_INFO("sdext.pdfimport.pdfparse", "Encryption dict: sec handler: " << (pFilter ? pFilter->getFilteredName() : OUString("<unknown>")) << ", version = " << (int)m_pData->m_nAlgoVersion << ", revision = " << (int)m_pData->m_nStandardRevision << ", key length = " << m_pData->m_nKeyLength );
                         break;
                     }
                 }
@@ -1418,7 +1402,7 @@ PDFFileImplData* PDFFile::impl_getData() const
         }
     }
 
-    return m_pData;
+    return m_pData.get();
 }
 
 bool PDFFile::emit( EmitContext& rWriteContext ) const

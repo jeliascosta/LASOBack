@@ -97,20 +97,24 @@ class SwEndNoteInfo;
 class SwLineNumberInfo;
 class SwAuthEntry;
 class SwRewriter;
+class SwView;
 struct SwConversionArgs;
 enum class SvtScriptType;
 enum class SfxClassificationPolicyType;
+enum class RedlineFlags;
+enum class TransliterationFlags;
+
 namespace com { namespace sun { namespace star { namespace uno {
     template < class > class Sequence;
 }}}}
 
 namespace svx{
-struct SpellPortion;
-typedef std::vector<SpellPortion> SpellPortions;
+    struct SpellPortion;
+    typedef std::vector<SpellPortion> SpellPortions;
 }
 
 namespace sfx2{
-class LinkManager;
+    class LinkManager;
 }
 
 namespace sw {
@@ -175,7 +179,7 @@ public:
      bRegExpRplc - replace tabs (\\t) and insert found string (not \&).
      E.g.: Fnd: "zzz", Repl: "xx\t\\t..&..\&"
            --> "xx\t<Tab>..zzz..&" */
-    bool Replace( const OUString& rNewStr, bool bRegExpRplc = false );
+    bool Replace( const OUString& rNewStr, bool bRegExpRplc );
 
     /** Delete content of all ranges.
      If whole nodes are selected, these nodes get deleted. */
@@ -185,7 +189,7 @@ public:
     bool DelFullPara();
 
     /// Change text to Upper/Lower/Hiragana/Katagana/...
-    void TransliterateText( sal_uInt32 nType );
+    void TransliterateText( TransliterationFlags nType );
 
     /// Count words in current selection.
     void CountWords( SwDocStat& rStat ) const;
@@ -201,7 +205,7 @@ public:
     void SetLinkUpdMode( sal_uInt16 nMode );
 
     /// Copy content of all ranges at current position of cursor to given Shell.
-    bool Copy( SwEditShell* pDestShell = nullptr );
+    bool Copy( SwEditShell* pDestShell );
 
     /** For copying via ClipBoard:
        If table is copied into table, move all cursors away from it.
@@ -280,7 +284,7 @@ public:
     void ResetAttr( const std::set<sal_uInt16> &attrs = std::set<sal_uInt16>(), SwPaM* pCursor = nullptr );
     void GCAttr();
 
-    /// @return the scripttpye of the selection.
+    /// @return the scripttype of the selection.
     SvtScriptType GetScriptType() const;
 
     /// @return the language at current cursor position.
@@ -362,16 +366,16 @@ public:
 
     void SetClassification(const OUString& rName, SfxClassificationPolicyType eType);
 
-    void Insert2(SwField&, const bool bForceExpandHints = false);
+    void Insert2(SwField&, const bool bForceExpandHints);
 
     void UpdateFields( SwField & );   ///< One single field.
 
-    size_t GetFieldTypeCount(sal_uInt16 nResId = USHRT_MAX) const;
-    SwFieldType* GetFieldType(size_t nField, sal_uInt16 nResId = USHRT_MAX) const;
-    SwFieldType* GetFieldType(sal_uInt16 nResId, const OUString& rName) const;
+    size_t GetFieldTypeCount(SwFieldIds nResId = SwFieldIds::Unknown) const;
+    SwFieldType* GetFieldType(size_t nField, SwFieldIds nResId = SwFieldIds::Unknown) const;
+    SwFieldType* GetFieldType(SwFieldIds nResId, const OUString& rName) const;
 
     void RemoveFieldType(size_t nField);
-    void RemoveFieldType(sal_uInt16 nResId, const OUString& rName);
+    void RemoveFieldType(SwFieldIds nResId, const OUString& rName);
 
     void FieldToText( SwFieldType* pType );
 
@@ -384,7 +388,7 @@ public:
     void ChangeDBFields( const std::vector<OUString>& rOldNames,
                          const OUString& rNewName );
     void GetAllUsedDB( std::vector<OUString>& rDBNameList,
-                       std::vector<OUString>* pAllDBNames = nullptr );
+                       std::vector<OUString>* pAllDBNames );
 
     bool IsAnyDatabaseFieldInDoc()const;
 
@@ -434,10 +438,10 @@ public:
 
     sal_uInt16              GetTOXCount() const;
     const SwTOXBase*    GetTOX( sal_uInt16 nPos ) const;
-    bool                DeleteTOX( const SwTOXBase& rTOXBase, bool bDelNodes = false );
+    bool                DeleteTOX( const SwTOXBase& rTOXBase, bool bDelNodes );
 
     /// After reading file update all content tables.
-    void SetUpdateTOX( bool bFlag = true );
+    void SetUpdateTOX( bool bFlag );
     bool IsUpdateTOX() const;
 
     /// Manage types of content tables.
@@ -451,14 +455,14 @@ public:
     void            ApplyAutoMark();
 
     /// Key for managing index.
-    sal_uInt16 GetTOIKeys( SwTOIKeyType eTyp, std::vector<OUString>& rArr ) const;
+    void GetTOIKeys( SwTOIKeyType eTyp, std::vector<OUString>& rArr ) const;
 
     void SetOutlineNumRule(const SwNumRule&);
     const SwNumRule* GetOutlineNumRule() const;
 
     bool OutlineUpDown( short nOffset = 1 );
 
-    bool MoveOutlinePara( short nOffset = 1);
+    bool MoveOutlinePara( SwOutlineNodes::difference_type nOffset = 1);
 
     bool IsProtectedOutlinePara() const;
 
@@ -528,11 +532,11 @@ public:
     void ChgNumRuleFormats( const SwNumRule& rRule );
 
     /// Set (and query if) a numbering with StartFlag starts at current PointPos.
-    void SetNumRuleStart( bool bFlag = true, SwPaM* pCursor = nullptr );
+    void SetNumRuleStart( bool bFlag, SwPaM* pCursor );
     bool IsNumRuleStart( SwPaM* pPaM = nullptr ) const;
     void SetNodeNumStart( sal_uInt16 nStt );
 
-    sal_uInt16 GetNodeNumStart( SwPaM* pPaM = nullptr ) const;
+    sal_uInt16 GetNodeNumStart( SwPaM* pPaM ) const;
 
     bool ReplaceNumRule( const OUString& rOldRule, const OUString& rNewRule );
 
@@ -547,19 +551,22 @@ public:
      Reset UndoHistory at Save, SaveAs, Create ??? */
     void DoUndo( bool bOn = true );
     bool DoesUndo() const;
-    void DoGroupUndo( bool bUn = true );
+    void DoGroupUndo( bool bUn );
     bool DoesGroupUndo() const;
     void DelAllUndoObj();
 
     /// Undo: set up Undo parenthesis, return nUndoId of this parenthesis.
-    SwUndoId StartUndo( SwUndoId eUndoId = UNDO_EMPTY, const SwRewriter * pRewriter = nullptr );
+    SwUndoId StartUndo( SwUndoId eUndoId = SwUndoId::EMPTY, const SwRewriter * pRewriter = nullptr );
 
     /// Closes parenthesis of nUndoId, not used by UI.
-    SwUndoId EndUndo( SwUndoId eUndoId = UNDO_EMPTY, const SwRewriter * pRewriter = nullptr );
+    SwUndoId EndUndo( SwUndoId eUndoId = SwUndoId::EMPTY, const SwRewriter * pRewriter = nullptr );
 
     bool     GetLastUndoInfo(OUString *const o_pStr,
-                             SwUndoId *const o_pId) const;
-    bool     GetFirstRedoInfo(OUString *const o_pStr) const;
+                             SwUndoId *const o_pId,
+                             const SwView* pView = nullptr) const;
+    bool     GetFirstRedoInfo(OUString *const o_pStr,
+                              SwUndoId *const o_pId,
+                              const SwView* pView = nullptr) const;
     SwUndoId GetRepeatInfo(OUString *const o_pStr) const;
 
     /// is it forbidden to modify cursors via API calls?
@@ -601,7 +608,7 @@ public:
     const GraphicObject* GetGraphicObj() const;
 
     bool IsLinkedGrfSwapOut() const;
-    sal_uInt16 GetGraphicType() const;
+    GraphicType GetGraphicType() const;
 
     const tools::PolyPolygon *GetGraphicPolygon() const;
     void SetGraphicPolygon( const tools::PolyPolygon *pPoly );
@@ -621,8 +628,7 @@ public:
 
     /// Re-read if graphic is not ok. Current graphic is replaced by the new one.
     void ReRead( const OUString& rGrfName, const OUString& rFltName,
-                  const Graphic* pGraphic = nullptr,
-                  const GraphicObject* pGrafObj = nullptr );
+                  const Graphic* pGraphic = nullptr );
 
     /// Unique identification of object (for ImageMapDlg).
     void    *GetIMapInventor() const;
@@ -655,14 +661,14 @@ public:
     /** Make current selection glossary and insert into glossary document
      including styles. */
     sal_uInt16 MakeGlossary( SwTextBlocks& rToFill, const OUString& rName,
-                         const OUString& rShortName, bool bSaveRelFile = false,
-                         const OUString* pOnlyText=nullptr );
+                         const OUString& rShortName, bool bSaveRelFile,
+                         const OUString* pOnlyText );
 
     /// Save complete content of doc as glossary.
     sal_uInt16 SaveGlossaryDoc( SwTextBlocks& rGlossary, const OUString& rName,
                             const OUString& rShortName,
-                            bool bSaveRelFile = false,
-                            bool bOnlyText = false );
+                            bool bSaveRelFile,
+                            bool bOnlyText );
 
     // Linguistics...
     /// Save selections.
@@ -680,7 +686,6 @@ public:
 
     const SwTable& InsertTable( const SwInsertTableOptions& rInsTableOpts,  ///< ALL_TBL_INS_ATTR
                                 sal_uInt16 nRows, sal_uInt16 nCols,
-                                sal_Int16 eAdj = css::text::HoriOrientation::FULL,
                                 const SwTableAutoFormat* pTAFormat = nullptr );
 
     void InsertDDETable( const SwInsertTableOptions& rInsTableOpts,  ///< HEADLINE_NO_BORDER
@@ -693,7 +698,6 @@ public:
     SwFrameFormat *GetTableFormat();
     bool TextToTable( const SwInsertTableOptions& rInsTableOpts,  ///< ALL_TBL_INS_ATTR
                       sal_Unicode cCh,
-                      sal_Int16 eAdj = css::text::HoriOrientation::FULL,
                       const SwTableAutoFormat* pTAFormat = nullptr );
     bool TableToText( sal_Unicode cCh );
     bool IsTextToTableAvailable() const;
@@ -708,14 +712,14 @@ public:
     void SetTableChgMode( TableChgMode eMode );
 
     /// Split table at cursor position.
-    bool SplitTable( sal_uInt16 eMode );
+    bool SplitTable( SplitTable_HeadlineOption eMode );
 
     /** Merge tables.
 
      Can Merge checks if Prev or Next are possible.
         If pointer pChkNxtPrv is passed possible direction is given. */
     bool CanMergeTable( bool bWithPrev = true, bool* pChkNxtPrv = nullptr ) const;
-    bool MergeTable( bool bWithPrev = true );
+    bool MergeTable( bool bWithPrev );
 
     /// Set up InsertDB as table Undo.
     void AppendUndoForInsertFromDB( bool bIsTable );
@@ -730,7 +734,7 @@ public:
     void SpellEnd( SwConversionArgs *pConvArgs = nullptr, bool bRestoreSelection = true );
     css::uno::Any SpellContinue(
                     sal_uInt16* pPageCnt, sal_uInt16* pPageSt,
-                    SwConversionArgs *pConvArgs = nullptr );
+                    SwConversionArgs *pConvArgs );
 
     /** Spells on a sentence basis - the SpellPortions are needed
      @return false if no error could be found. */
@@ -779,7 +783,7 @@ public:
     bool GetPrevAutoCorrWord( SvxAutoCorrect& rACorr, OUString& rWord );
 
     /// Set our styles according to the respective rules.
-    void AutoFormat( const SvxSwAutoFormatFlags* pAFlags = nullptr );
+    void AutoFormat( const SvxSwAutoFormatFlags* pAFlags );
 
     static SvxSwAutoFormatFlags* GetAutoFormatFlags();
     static void SetAutoFormatFlags(SvxSwAutoFormatFlags *);
@@ -796,8 +800,8 @@ public:
 
     /** May an outline be moved or copied?
      Check whether it's in text body, not in table, and not read-only (move). */
-    bool IsOutlineMovable( sal_uInt16 nIdx ) const;
-    bool IsOutlineCopyable( sal_uInt16 nIdx ) const;
+    bool IsOutlineMovable( SwOutlineNodes::size_type nIdx ) const;
+    bool IsOutlineCopyable( SwOutlineNodes::size_type nIdx ) const;
 
     sal_uInt16 GetLineCount();
 
@@ -856,17 +860,17 @@ public:
     /** Adjust left margin via object bar (similar to adjustment of numerations).
      One can either change the margin "by" adding or subtracting a given
      offset or set it "to" this position @param (bModulus = true). */
-    bool IsMoveLeftMargin( bool bRight = true, bool bModulus = true ) const;
-    void MoveLeftMargin( bool bRight = true, bool bModulus = true );
+    bool IsMoveLeftMargin( bool bRight, bool bModulus = true ) const;
+    void MoveLeftMargin( bool bRight, bool bModulus = true );
 
-    /// Query NumberFormater from document.
+    /// Query NumberFormatter from document.
           SvNumberFormatter* GetNumberFormatter();
     const SvNumberFormatter* GetNumberFormatter() const
     {   return const_cast<SwEditShell*>(this)->GetNumberFormatter();  }
 
     /// Interfaces for GlobalDocument.
     bool IsGlobalDoc() const;
-    void SetGlblDocSaveLinks( bool bFlag = true );
+    void SetGlblDocSaveLinks( bool bFlag );
     bool IsGlblDocSaveLinks() const;
     void GetGlobalDocContent( SwGlblDocContents& rArr ) const;
     bool InsertGlobalDocContent( const SwGlblDocContent& rPos,
@@ -882,19 +886,19 @@ public:
     bool GotoGlobalDocContent( const SwGlblDocContent& rPos );
 
     /// For Redlining.
-    sal_uInt16 GetRedlineMode() const;
-    void SetRedlineMode( sal_uInt16 eMode );
+    RedlineFlags GetRedlineFlags() const;
+    void SetRedlineFlags( RedlineFlags eMode );
     bool IsRedlineOn() const;
-    sal_uInt16 GetRedlineCount() const;
-    const SwRangeRedline& GetRedline( sal_uInt16 nPos ) const;
-    bool AcceptRedline( sal_uInt16 nPos );
-    bool RejectRedline( sal_uInt16 nPos );
+    SwRedlineTable::size_type GetRedlineCount() const;
+    const SwRangeRedline& GetRedline( SwRedlineTable::size_type nPos ) const;
+    bool AcceptRedline( SwRedlineTable::size_type nPos );
+    bool RejectRedline( SwRedlineTable::size_type nPos );
     bool AcceptRedlinesInSelection();
     bool RejectRedlinesInSelection();
 
     /** Search Redline for this Data and @return position in array.
-     If not found, return USHRT_MAX. */
-    sal_uInt16 FindRedlineOfData( const SwRedlineData& ) const;
+     If not found, return SwRedlineTable::npos. */
+    SwRedlineTable::size_type FindRedlineOfData( const SwRedlineData& ) const;
 
     /// Set comment to Redline at position.
     bool SetRedlineComment( const OUString& rS );
@@ -919,7 +923,7 @@ public:
     void  SetLineNumberInfo( const SwLineNumberInfo& rInfo);
 
     /// Labels: Synchronize ranges.
-    void SetLabelDoc( bool bFlag = true );
+    void SetLabelDoc( bool bFlag );
     bool IsLabelDoc() const;
 
     /// Interface for TextInputData - (for input of Japanese/Chinese chars.)
@@ -935,11 +939,11 @@ public:
     sal_uInt16 GetScalingOfSelectedText() const;
 
     /// Ctor/Dtor.
-    SwEditShell( SwDoc&, vcl::Window*, const SwViewOption *pOpt = nullptr );
+    SwEditShell( SwDoc&, vcl::Window*, const SwViewOption *pOpt );
 
     /// Copy-Constructor in disguise.
     SwEditShell( SwEditShell&, vcl::Window* );
-    virtual ~SwEditShell();
+    virtual ~SwEditShell() override;
 
 private:
     SwEditShell(const SwEditShell &) = delete;

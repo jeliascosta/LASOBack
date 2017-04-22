@@ -83,7 +83,7 @@ class Request
         void setArgument(const OUString& sName ,
                          const TArgumentType&   aValue)
         {
-            m_lArguments[sName] <<= aValue;
+            m_lArguments[sName] = css::uno::toAny(aValue);
         }
 
 
@@ -94,6 +94,10 @@ class Request
             return m_lArguments.getUnpackedValueOrDefault(sName, aDefault);
         }
 
+        css::uno::Any getValue(OUString const & key) const
+        {
+            return m_lArguments.getValue(key);
+        }
 
         void wait(::sal_Int32 nMilliSeconds = WAIT_INFINITE);
 
@@ -153,9 +157,9 @@ class AsyncRequests : private ::cppu::BaseMutex
         void triggerJobExecution();
 
 
-        /** does nothing special / excepting to make sure our class wont be inline .-)
+        /** does nothing special / excepting to make sure our class won't be inline .-)
          */
-        virtual ~AsyncRequests();
+        virtual ~AsyncRequests() override;
 
 
         /** @todo document me
@@ -191,11 +195,11 @@ class AsyncRequests : private ::cppu::BaseMutex
          *  waiting for requests. Every request will be executed synchronously
          *  in blocked mode.
          */
-        virtual void SAL_CALL run();
+        virtual void SAL_CALL run() override;
 
     private:
 
-        sal_Bool m_bFinish;
+        bool m_bFinish;
         RequestHandlerRef m_rHandler;
         RequestQueue m_lRequests;
         osl::Condition maWait;

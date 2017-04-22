@@ -54,7 +54,6 @@ ContentProvider::ContentProvider( const uno::Reference< uno::XComponentContext >
 // virtual
 ContentProvider::~ContentProvider()
 {
-    delete m_pDatabases;
 }
 
 // XInterface methods.
@@ -71,7 +70,6 @@ void SAL_CALL ContentProvider::release()
 }
 
 css::uno::Any SAL_CALL ContentProvider::queryInterface( const css::uno::Type & rType )
-    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< lang::XTypeProvider* >(this)),
@@ -87,13 +85,11 @@ css::uno::Any SAL_CALL ContentProvider::queryInterface( const css::uno::Type & r
 // XTypeProvider methods.
 
 css::uno::Sequence< sal_Int8 > SAL_CALL ContentProvider::getImplementationId()
-    throw( css::uno::RuntimeException, std::exception )
 {
       return css::uno::Sequence<sal_Int8>();
 }
 
 css::uno::Sequence< css::uno::Type > SAL_CALL ContentProvider::getTypes()
-    throw( css::uno::RuntimeException, std::exception )
 {
     static cppu::OTypeCollection* pCollection = nullptr;
       if ( !pCollection )
@@ -118,7 +114,6 @@ css::uno::Sequence< css::uno::Type > SAL_CALL ContentProvider::getTypes()
 // XServiceInfo methods.
 
 OUString SAL_CALL ContentProvider::getImplementationName()
-    throw( uno::RuntimeException, std::exception )
 {
     return getImplementationName_Static();
 }
@@ -130,22 +125,20 @@ OUString ContentProvider::getImplementationName_Static()
 
 sal_Bool SAL_CALL
 ContentProvider::supportsService(const OUString& ServiceName )
-    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL
 ContentProvider::getSupportedServiceNames()
-    throw( uno::RuntimeException, std::exception )
 {
     return getSupportedServiceNames_Static();
 }
 
+/// @throws uno::Exception
 static uno::Reference< uno::XInterface > SAL_CALL
 ContentProvider_CreateInstance(
          const uno::Reference< lang::XMultiServiceFactory> & rSMgr )
-    throw( uno::Exception )
 {
     lang::XServiceInfo * pX = static_cast< lang::XServiceInfo * >(
         new ContentProvider( comphelper::getComponentContext(rSMgr) ) );
@@ -183,7 +176,6 @@ ContentProvider::createServiceFactory( const css::uno::Reference<
 uno::Reference< ucb::XContent > SAL_CALL
 ContentProvider::queryContent(
         const uno::Reference< ucb::XContentIdentifier >& xCanonicId )
-    throw( ucb::IllegalIdentifierException, uno::RuntimeException, std::exception )
 {
     if ( !xCanonicId->getContentProviderScheme()
              .equalsIgnoreAsciiCase( m_aScheme ) )
@@ -206,7 +198,7 @@ ContentProvider::queryContent(
     if ( xContent.is() )
         return xContent;
 
-    xContent = new Content( m_xContext, this, xCanonicId, m_pDatabases );
+    xContent = new Content( m_xContext, this, xCanonicId, m_pDatabases.get() );
 
     // register new content
     registerNewContent( xContent );
@@ -221,7 +213,6 @@ ContentProvider::queryContent(
 
 void SAL_CALL
 ContentProvider::dispose()
-    throw ( uno::RuntimeException, std::exception)
 {
     if(m_xContainer.is())
     {
@@ -232,7 +223,6 @@ ContentProvider::dispose()
 
 void SAL_CALL
 ContentProvider::elementReplaced(const container::ContainerEvent& Event)
-    throw (uno::RuntimeException, std::exception)
 {
     if(!m_pDatabases)
         return;
@@ -283,12 +273,12 @@ void ContentProvider::init()
 
     bool showBasic = officecfg::Office::Common::Help::ShowBasic::get(
         m_xContext);
-    m_pDatabases = new Databases( showBasic,
+    m_pDatabases.reset( new Databases( showBasic,
                                   instPath,
                                   utl::ConfigManager::getProductName(),
                                   productversion,
                                   stylesheet,
-                                  m_xContext );
+                                  m_xContext ) );
 }
 
 void ContentProvider::subst( OUString& instpath )

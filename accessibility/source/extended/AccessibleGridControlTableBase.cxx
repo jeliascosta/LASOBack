@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "accessibility/extended/AccessibleGridControlTableBase.hxx"
+#include "extended/AccessibleGridControlTableBase.hxx"
 #include <svtools/accessibletable.hxx>
 #include <tools/multisel.hxx>
 #include <comphelper/sequence.hxx>
@@ -52,7 +52,6 @@ AccessibleGridControlTableBase::~AccessibleGridControlTableBase()
 // XAccessibleContext ---------------------------------------------------------
 
 sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleChildCount()
-    throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
 
@@ -68,7 +67,6 @@ sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleChildCount()
 }
 
 sal_Int16 SAL_CALL AccessibleGridControlTableBase::getAccessibleRole()
-    throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -79,7 +77,6 @@ sal_Int16 SAL_CALL AccessibleGridControlTableBase::getAccessibleRole()
 // XAccessibleTable -----------------------------------------------------------
 
 sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleRowCount()
-    throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
 
@@ -88,7 +85,6 @@ sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleRowCount()
 }
 
 sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleColumnCount()
-    throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
 
@@ -98,7 +94,6 @@ sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleColumnCount()
 
 sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleRowExtentAt(
         sal_Int32 nRow, sal_Int32 nColumn )
-    throw ( lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
 
@@ -109,7 +104,6 @@ sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleRowExtentAt(
 
 sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleColumnExtentAt(
         sal_Int32 nRow, sal_Int32 nColumn )
-    throw ( lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
 
@@ -119,7 +113,6 @@ sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleColumnExtentAt(
 }
 
 Reference< XAccessible > SAL_CALL AccessibleGridControlTableBase::getAccessibleCaption()
-    throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -128,7 +121,6 @@ Reference< XAccessible > SAL_CALL AccessibleGridControlTableBase::getAccessibleC
 }
 
 Reference< XAccessible > SAL_CALL AccessibleGridControlTableBase::getAccessibleSummary()
-    throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -138,17 +130,15 @@ Reference< XAccessible > SAL_CALL AccessibleGridControlTableBase::getAccessibleS
 
 sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleIndex(
         sal_Int32 nRow, sal_Int32 nColumn )
-    throw ( lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
 
     ensureIsAlive();
     ensureIsValidAddress( nRow, nColumn );
-    return implGetChildIndex( nRow, nColumn );
+    return nRow * m_aTable.GetColumnCount() + nColumn;
 }
 
 sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleRow( sal_Int32 nChildIndex )
-    throw ( lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
 
@@ -158,7 +148,6 @@ sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleRow( sal_Int32 n
 }
 
 sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleColumn( sal_Int32 nChildIndex )
-    throw ( lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
 
@@ -170,7 +159,6 @@ sal_Int32 SAL_CALL AccessibleGridControlTableBase::getAccessibleColumn( sal_Int3
 // XInterface -----------------------------------------------------------------
 
 Any SAL_CALL AccessibleGridControlTableBase::queryInterface( const uno::Type& rType )
-    throw ( uno::RuntimeException, std::exception )
 {
     Any aAny( GridControlAccessibleElement::queryInterface( rType ) );
     return aAny.hasValue() ?
@@ -190,7 +178,6 @@ void SAL_CALL AccessibleGridControlTableBase::release() throw ()
 // XTypeProvider --------------------------------------------------------------
 
 Sequence< uno::Type > SAL_CALL AccessibleGridControlTableBase::getTypes()
-    throw ( uno::RuntimeException, std::exception )
 {
     return ::comphelper::concatSequences(
         GridControlAccessibleElement::getTypes(),
@@ -198,17 +185,11 @@ Sequence< uno::Type > SAL_CALL AccessibleGridControlTableBase::getTypes()
 }
 
 Sequence< sal_Int8 > SAL_CALL AccessibleGridControlTableBase::getImplementationId()
-    throw ( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 // internal helper methods ----------------------------------------------------
-
-sal_Int32 AccessibleGridControlTableBase::implGetChildCount() const
-{
-    return m_aTable.GetRowCount()*m_aTable.GetColumnCount();
-}
 
 sal_Int32 AccessibleGridControlTableBase::implGetRow( sal_Int32 nChildIndex ) const
 {
@@ -222,12 +203,6 @@ sal_Int32 AccessibleGridControlTableBase::implGetColumn( sal_Int32 nChildIndex )
     return nColumns ? (nChildIndex % nColumns) : 0;
 }
 
-sal_Int32 AccessibleGridControlTableBase::implGetChildIndex(
-        sal_Int32 nRow, sal_Int32 nColumn ) const
-{
-    return nRow * m_aTable.GetColumnCount() + nColumn;
-}
-
 void AccessibleGridControlTableBase::implGetSelectedRows( Sequence< sal_Int32 >& rSeq )
 {
     sal_Int32 const selectionCount( m_aTable.GetSelectedRowCount() );
@@ -237,35 +212,28 @@ void AccessibleGridControlTableBase::implGetSelectedRows( Sequence< sal_Int32 >&
 }
 
 void AccessibleGridControlTableBase::ensureIsValidRow( sal_Int32 nRow )
-    throw ( lang::IndexOutOfBoundsException )
 {
     if( nRow >= m_aTable.GetRowCount() )
-        throw lang::IndexOutOfBoundsException(
-            OUString( "row index is invalid" ), *this );
+        throw lang::IndexOutOfBoundsException( "row index is invalid", *this );
 }
 
 void AccessibleGridControlTableBase::ensureIsValidColumn( sal_Int32 nColumn )
-    throw ( lang::IndexOutOfBoundsException )
 {
     if( nColumn >= m_aTable.GetColumnCount() )
-        throw lang::IndexOutOfBoundsException(
-            OUString( "column index is invalid" ), *this );
+        throw lang::IndexOutOfBoundsException( "column index is invalid", *this );
 }
 
 void AccessibleGridControlTableBase::ensureIsValidAddress(
         sal_Int32 nRow, sal_Int32 nColumn )
-    throw ( lang::IndexOutOfBoundsException )
 {
     ensureIsValidRow( nRow );
     ensureIsValidColumn( nColumn );
 }
 
 void AccessibleGridControlTableBase::ensureIsValidIndex( sal_Int32 nChildIndex )
-    throw ( lang::IndexOutOfBoundsException )
 {
-    if( nChildIndex >= implGetChildCount() )
-        throw lang::IndexOutOfBoundsException(
-            OUString( "child index is invalid" ), *this );
+    if( nChildIndex >= m_aTable.GetRowCount()*m_aTable.GetColumnCount() )
+        throw lang::IndexOutOfBoundsException( "child index is invalid", *this );
 }
 
 

@@ -7,7 +7,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include <config_opengl.h>
 #include <chrono>
 
 #include <vcl/opengl/OpenGLContext.hxx>
@@ -205,17 +204,15 @@ extern "C" void
 APIENTRY
 #endif
 debug_callback(GLenum source, GLenum type, GLuint id,
-        GLenum severity, GLsizei , const GLchar* message,
-#if HAVE_GLEW_1_12
-        const GLvoid*
-#else
-        GLvoid*
-#endif
-        )
+               GLenum severity, GLsizei , const GLchar* message,
+               const GLvoid*)
 {
-    // ignore Nvidia's : "Program/shader state performance warning: Fragment Shader is going to be recompiled because the shader key based on GL state mismatches."
+    // ignore Nvidia's 131218: "Program/shader state performance warning: Fragment Shader is going to be recompiled because the shader key based on GL state mismatches."
     // the GLSL compiler is a bit too aggressive in optimizing the state based on the current OpenGL state
-    if (id == 131218)
+
+    // ignore 131185: "Buffer detailed info: Buffer object x (bound to GL_ARRAY_BUFFER_ARB,
+    // usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations."
+    if (id == 131218 || id == 131185)
         return;
 
     SAL_WARN("vcl.opengl", "OpenGL debug message: source: " << getSourceString(source) << ", type: "
@@ -264,29 +261,27 @@ bool OpenGLContext::ImplInit()
     return false;
 }
 
-bool OpenGLContext::InitGLEW()
+OUString getGLString(GLenum eGlEnum)
 {
-    static bool bGlewInit = false;
-    if(!bGlewInit)
+    OUString sString;
+    const GLubyte* pString = glGetString(eGlEnum);
+    if (pString)
     {
-        OpenGLZone aZone;
-
-        glewExperimental = GL_TRUE;
-        GLenum err = glewInit();
-        if (err != GLEW_OK)
-        {
-            SAL_WARN("vcl.opengl", "Failed to initialize GLEW: " << glewGetErrorString(err));
-            return false;
-        }
-        else
-            bGlewInit = true;
+        sString = OUString::createFromAscii(reinterpret_cast<const sal_Char*>(pString));
     }
 
-    VCL_GL_INFO("OpenGLContext::ImplInit----end, GL version: " << OpenGLHelper::getGLVersion());
+    CHECK_GL_ERROR();
+    return sString;
+}
+
+bool OpenGLContext::InitGL()
+{
+    VCL_GL_INFO("OpenGLContext::ImplInit----end");
+    VCL_GL_INFO("Vendor: " << getGLString(GL_VENDOR) << " Renderer: " << getGLString(GL_RENDERER) << " GL version: " << OpenGLHelper::getGLVersion());
     mbInitialized = true;
 
     // I think we need at least GL 3.0
-    if (!GLEW_VERSION_3_0)
+    if (epoxy_gl_version() < 30)
     {
         SAL_WARN("vcl.opengl", "We don't have at least OpenGL 3.0");
         return false;
@@ -302,11 +297,11 @@ bool OpenGLContext::InitGLEW()
     return true;
 }
 
-void OpenGLContext::InitGLEWDebugging()
+void OpenGLContext::InitGLDebugging()
 {
 #ifdef DBG_UTIL
     // only enable debug output in dbgutil build
-    if( GLEW_ARB_debug_output)
+    if (epoxy_has_gl_extension("GL_ARB_debug_output"))
     {
         OpenGLZone aZone;
 
@@ -331,8 +326,13 @@ void OpenGLContext::InitGLEWDebugging()
     }
 
     // Test hooks for inserting tracing messages into the stream
-    VCL_GL_INFO("LibreOffice GLContext initialized: " << this);
+    VCL_GL_INFO("LibreOffice GLContext initialized");
 #endif
+}
+
+void OpenGLContext::restoreDefaultFramebuffer()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void OpenGLContext::setWinPosAndSize(const Point &rPos, const Size& rSize)
@@ -427,6 +427,7 @@ void OpenGLContext::reset()
 SystemWindowData OpenGLContext::generateWinData(vcl::Window* /*pParent*/, bool /*bRequestLegacyContext*/)
 {
     SystemWindowData aWinData;
+    memset(&aWinData, 0, sizeof(aWinData));
     aWinData.nSize = sizeof(aWinData);
     return aWinData;
 }
@@ -505,10 +506,11 @@ rtl::Reference<OpenGLContext> OpenGLContext::getVCLContext(bool bMakeIfNecessary
         pContext = pContext->mpPrevContext;
     }
     rtl::Reference<OpenGLContext> xContext;
-    if( !pContext && bMakeIfNecessary )
+    vcl::Window* pDefWindow = !pContext && bMakeIfNecessary ? ImplGetDefaultWindow() : nullptr;
+    if (pDefWindow)
     {
         // create our magic fallback window context.
-        xContext = ImplGetDefaultContextWindow()->GetGraphics()->GetOpenGLContext();
+        xContext = pDefWindow->GetGraphics()->GetOpenGLContext();
         assert(xContext.is());
     }
     else
@@ -550,6 +552,9 @@ void OpenGLContext::registerAsCurrent()
         pSVData->maGDIData.mpLastContext->mpNextContext = this;
         pSVData->maGDIData.mpLastContext = this;
     }
+
+    // sync the render state with the current context
+    mpRenderState->sync();
 }
 
 void OpenGLContext::resetCurrent()
@@ -689,7 +694,7 @@ OpenGLFramebuffer* OpenGLContext::AcquireFramebuffer( const OpenGLTexture& rText
     BindFramebuffer( pFramebuffer );
     pFramebuffer->AttachTexture( rTexture );
 
-    state()->viewport(Rectangle(Point(), Size(rTexture.GetWidth(), rTexture.GetHeight())));
+    state().viewport(tools::Rectangle(Point(), Size(rTexture.GetWidth(), rTexture.GetHeight())));
 
     return pFramebuffer;
 }

@@ -35,7 +35,7 @@ namespace editeng {
     struct MisspellRanges;
 }
 
-class Rectangle;
+namespace tools { class Rectangle; }
 namespace vcl { class Font; }
 class OutputDevice;
 class EditEngine;
@@ -64,8 +64,8 @@ friend class ScGridWindow;
 private:
     struct OutputAreaParam
     {
-        Rectangle   maAlignRect;
-        Rectangle   maClipRect;
+        tools::Rectangle   maAlignRect;
+        tools::Rectangle   maClipRect;
         long        mnColWidth;
         long        mnLeftClipLength; /// length of the string getting cut off on the left.
         long        mnRightClipLength; /// length of the string getting cut off on the right.
@@ -113,7 +113,7 @@ private:
         bool readCellContent(ScDocument* pDoc, bool bShowNullValues, bool bShowFormulas, bool bSyntaxMode, bool bUseStyleColor, bool bForceAutoColor, bool& rWrapFields);
         void setPatternToEngine(bool bUseStyleColor);
         void calcMargins(long& rTop, long& rLeft, long& rBottom, long& rRight, double nPPTX, double nPPTY) const;
-        void calcPaperSize(Size& rPaperSize, const Rectangle& rAlignRect, double nPPTX, double nPPTY) const;
+        void calcPaperSize(Size& rPaperSize, const tools::Rectangle& rAlignRect, double nPPTX, double nPPTY) const;
         void getEngineSize(ScFieldEditEngine* pEngine, long& rWidth, long& rHeight) const;
         bool hasLineBreak() const;
         bool isHyperlinkCell() const;
@@ -179,7 +179,6 @@ private:
     SCROW nEditRow;
 
     bool bMetaFile;             // Output to metafile (not pixels!)
-    bool bSingleGrid;           // beim Gitter bChanged auswerten
 
     bool bPagebreakMode;        // Page break preview
     bool bSolidBackground;      // white instead of transparant
@@ -227,7 +226,7 @@ private:
                                    bool bBreak, bool bOverwrite,
                                    OutputAreaParam& rParam );
 
-    void            ShrinkEditEngine( EditEngine& rEngine, const Rectangle& rAlignRect,
+    void            ShrinkEditEngine( EditEngine& rEngine, const tools::Rectangle& rAlignRect,
                                     long nLeftM, long nTopM, long nRightM, long nBottomM,
                                     bool bWidth, sal_uInt16 nOrient, long nAttrRotate, bool bPixelToLogic,
                                     long& rEngineWidth, long& rEngineHeight, long& rNeededPixel,
@@ -283,12 +282,11 @@ public:
     void    SetEditCell( SCCOL nCol, SCROW nRow );
     void    SetSyntaxMode( bool bNewMode );
     void    SetMetaFileMode( bool bNewMode );
-    void    SetSingleGrid( bool bNewMode );
     void    SetGridColor( const Color& rColor );
     void    SetMarkClipped( bool bSet );
-    void    SetShowNullValues ( bool bSet = true );
-    void    SetShowFormulas   ( bool bSet = true );
-    void    SetShowSpellErrors( bool bSet = true );
+    void    SetShowNullValues ( bool bSet );
+    void    SetShowFormulas   ( bool bSet );
+    void    SetShowSpellErrors( bool bSet );
     void    SetMirrorWidth( long nNew );
     long    GetScrW() const     { return nScrW; }
     long    GetScrH() const     { return nScrH; }
@@ -299,7 +297,7 @@ public:
     void    DrawStrings( bool bPixelToLogic = false );
 
     /// Draw all strings, or provide Rectangle where the text (defined by rAddress) would be drawn.
-    Rectangle LayoutStrings(bool bPixelToLogic = false, bool bPaint = true, const ScAddress &rAddress = ScAddress());
+    tools::Rectangle LayoutStrings(bool bPixelToLogic, bool bPaint = true, const ScAddress &rAddress = ScAddress());
 
     void    DrawDocumentBackground();
     void    DrawBackground(vcl::RenderContext& rRenderContext);
@@ -321,7 +319,6 @@ public:
     void PrintDrawingLayer(const sal_uInt16 nLayer, const Point& rMMOffset);
 
     // only screen:
-    void    DrawingSingle(const sal_uInt16 nLayer);
     void    DrawSelectiveObjects(const sal_uInt16 nLayer);
 
     bool    SetChangedClip();       // sal_False = not

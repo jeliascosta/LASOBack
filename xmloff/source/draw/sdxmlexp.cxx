@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <xmloff/autolayout.hxx>
 #include <xmloff/unointerfacetouniqueidentifiermapper.hxx>
 #include <xmloff/nmspmap.hxx>
 #include <xmloff/xmlnmspe.hxx>
@@ -196,8 +197,8 @@ class ImpXMLAutoLayoutInfo
     sal_uInt16                  mnType;
     ImpXMLEXPPageMasterInfo*    mpPageMasterInfo;
     OUString                    msLayoutName;
-    Rectangle                   maTitleRect;
-    Rectangle                   maPresRect;
+    tools::Rectangle                   maTitleRect;
+    tools::Rectangle                   maPresRect;
     sal_Int32                   mnGapX;
     sal_Int32                   mnGapY;
 
@@ -213,8 +214,8 @@ public:
     const OUString& GetLayoutName() const { return msLayoutName; }
     void SetLayoutName(const OUString& rNew) { msLayoutName = rNew; }
 
-    const Rectangle& GetTitleRectangle() const { return maTitleRect; }
-    const Rectangle& GetPresRectangle() const { return maPresRect; }
+    const tools::Rectangle& GetTitleRectangle() const { return maTitleRect; }
+    const tools::Rectangle& GetPresRectangle() const { return maPresRect; }
 
     static bool IsCreateNecessary(sal_uInt16 nTyp);
 };
@@ -240,7 +241,7 @@ ImpXMLAutoLayoutInfo::ImpXMLAutoLayoutInfo(sal_uInt16 nTyp, ImpXMLEXPPageMasterI
     , mnGapX(0)
     , mnGapY(0)
 {
-    // create full info (initialze with typical values)
+    // create full info (initialize with typical values)
     Point aPagePos(0,0);
     Size aPageSize(28000, 21000);
     Size aPageInnerSize(28000, 21000);
@@ -281,10 +282,8 @@ ImpXMLAutoLayoutInfo::ImpXMLAutoLayoutInfo(sal_uInt16 nTyp, ImpXMLEXPPageMasterI
         aTitlePos = aPos;
         aTitleSize = aSize;
     }
-    else if(mnType == 27 || mnType == 28)
+    else if(mnType == AUTOLAYOUT_VTITLE_VCONTENT_OVER_VCONTENT || mnType == AUTOLAYOUT_VTITLE_VCONTENT)
     {
-        // AUTOLAYOUT_VERTICAL_TITLE_TEXT_CHART or
-        // AUTOLAYOUT_VERTICAL_TITLE_VERTICAL_OUTLINE
         Point aClassicTPos(
             aTitlePos.X() + long( aTitleSize.Width() * 0.0735 ),
             aTitlePos.Y() + long( aTitleSize.Height() * 0.083 ));
@@ -327,7 +326,7 @@ ImpXMLAutoLayoutInfo::ImpXMLAutoLayoutInfo(sal_uInt16 nTyp, ImpXMLEXPPageMasterI
         aLayoutSize.Width() = long( aLayoutSize.Width() * 0.854 );
         aLayoutSize.Height() = long( aLayoutSize.Height() * 0.444 );
     }
-    else if((mnType >= 22 && mnType <= 26) || (mnType == 31)) // AUTOLAYOUT_HANDOUT
+    else if((mnType >= 22 && mnType <= 26) || (mnType == 31)) // AUTOLAYOUT_HANDOUT*
     {
         // keep info for inner area in maPresRect, put info for gap size
         // to maTitleRect position
@@ -346,10 +345,8 @@ ImpXMLAutoLayoutInfo::ImpXMLAutoLayoutInfo(sal_uInt16 nTyp, ImpXMLEXPPageMasterI
         if(mnGapY < aPageInnerSize.Height() / 10)
             mnGapY = aPageInnerSize.Height() / 10;
     }
-    else if(mnType == 27 || mnType == 28)
+    else if(mnType == AUTOLAYOUT_VTITLE_VCONTENT_OVER_VCONTENT || mnType == AUTOLAYOUT_VTITLE_VCONTENT)
     {
-        // AUTOLAYOUT_VERTICAL_TITLE_TEXT_CHART or
-        // AUTOLAYOUT_VERTICAL_TITLE_VERTICAL_OUTLINE
         Point aClassicTPos(
             aTitlePos.X() + long( aTitleSize.Width() * 0.0735 ),
             aTitlePos.Y() + long( aTitleSize.Height() * 0.083 ));
@@ -369,9 +366,8 @@ ImpXMLAutoLayoutInfo::ImpXMLAutoLayoutInfo(sal_uInt16 nTyp, ImpXMLEXPPageMasterI
             - (aClassicTSize.Height() + (aClassicLPos.Y() - (aClassicTPos.Y() + aClassicTSize.Height())));
         aLayoutSize.Height() = (aClassicLPos.Y() + aClassicLSize.Height()) - aClassicTPos.Y();
     }
-    else if( mnType == 32 )
+    else if( mnType == AUTOLAYOUT_ONLY_TEXT )
     {
-        // AUTOLAYOUT_ONLY_TEXT
         aLayoutPos = aTitlePos;
         aLayoutSize.Width() = aTitleSize.Width();
         aLayoutSize.Height() = long( aLayoutSize.Height() * 0.825 );
@@ -397,14 +393,11 @@ SdXMLExport::SdXMLExport(
     mnDocMasterPageCount(0L),
     mnDocDrawPageCount(0L),
     mnObjectCount(0L),
-    mpPageMasterInfoList(new ImpXMLEXPPageMasterList()),
-    mpPageMasterUsageList(new ImpXMLEXPPageMasterList()),
-    mpNotesPageMasterUsageList(new ImpXMLEXPPageMasterList()),
+    mpPageMasterInfoList(new ImpXMLEXPPageMasterList),
+    mpPageMasterUsageList(new ImpXMLEXPPageMasterList),
+    mpNotesPageMasterUsageList(new ImpXMLEXPPageMasterList),
     mpHandoutPageMaster(nullptr),
-    mpAutoLayoutInfoList(new ImpXMLAutoLayoutInfoList()),
-    mpSdPropHdlFactory(nullptr),
-    mpPropertySetMapper(nullptr),
-    mpPresPagePropsMapper(nullptr),
+    mpAutoLayoutInfoList(new ImpXMLAutoLayoutInfoList),
     mbIsDraw(bIsDraw),
     msPageLayoutNames( "PageLayoutNames" )
 {
@@ -413,39 +406,26 @@ SdXMLExport::SdXMLExport(
 
 // XExporter
 void SAL_CALL SdXMLExport::setSourceDocument( const Reference< lang::XComponent >& xDoc )
-    throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SvXMLExport::setSourceDocument( xDoc );
-
-    const OUString aEmpty;
 
     // prepare factory parts
     mpSdPropHdlFactory = new XMLSdPropHdlFactory( GetModel(), *this );
 
-    // set lock to avoid deletion
-    mpSdPropHdlFactory->acquire();
-
-    // build one ref
-    const rtl::Reference< XMLPropertyHandlerFactory > aFactoryRef = mpSdPropHdlFactory;
-
     // construct PropertySetMapper
-    rtl::Reference < XMLPropertySetMapper > xMapper = new XMLShapePropertySetMapper( aFactoryRef, true);
+    rtl::Reference < XMLPropertySetMapper > xMapper = new XMLShapePropertySetMapper( mpSdPropHdlFactory.get(), true);
 
     // get or create text paragraph export
     GetTextParagraphExport();
     mpPropertySetMapper = new XMLShapeExportPropertyMapper( xMapper, *this );
-    // set lock to avoid deletion
-    mpPropertySetMapper->acquire();
 
     // chain text attributes
     mpPropertySetMapper->ChainExportMapper(XMLTextParagraphExport::CreateParaExtPropMapper(*this));
 
     // construct PresPagePropsMapper
-    xMapper = new XMLPropertySetMapper(aXMLSDPresPageProps, aFactoryRef, true);
+    xMapper = new XMLPropertySetMapper(aXMLSDPresPageProps, mpSdPropHdlFactory.get(), true);
 
     mpPresPagePropsMapper = new XMLPageExportPropertyMapper( xMapper, *this  );
-    // set lock to avoid deletion
-    mpPresPagePropsMapper->acquire();
 
     // add family name
       GetAutoStylePool()->AddFamily(
@@ -478,7 +458,7 @@ void SAL_CALL SdXMLExport::setSourceDocument( const Reference< lang::XComponent 
         if(mxDocMasterPages.is())
         {
             mnDocMasterPageCount = mxDocMasterPages->getCount();
-            maMasterPagesStyleNames.insert( maMasterPagesStyleNames.begin(), mnDocMasterPageCount, aEmpty );
+            maMasterPagesStyleNames.insert( maMasterPagesStyleNames.begin(), mnDocMasterPageCount, "" );
         }
     }
 
@@ -490,8 +470,8 @@ void SAL_CALL SdXMLExport::setSourceDocument( const Reference< lang::XComponent 
         if(mxDocDrawPages.is())
         {
             mnDocDrawPageCount = mxDocDrawPages->getCount();
-            maDrawPagesStyleNames.insert( maDrawPagesStyleNames.begin(), mnDocDrawPageCount, aEmpty );
-            maDrawNotesPagesStyleNames.insert( maDrawNotesPagesStyleNames.begin(), mnDocDrawPageCount, aEmpty );
+            maDrawPagesStyleNames.insert( maDrawPagesStyleNames.begin(), mnDocDrawPageCount, "" );
+            maDrawNotesPagesStyleNames.insert( maDrawNotesPagesStyleNames.begin(), mnDocDrawPageCount, "" );
             if( !mbIsDraw )
                 maDrawPagesAutoLayoutNames.realloc( mnDocDrawPageCount + 1 );
 
@@ -654,25 +634,13 @@ sal_uInt32 SdXMLExport::ImpRecursiveObjectCount(const Reference< drawing::XShape
 SdXMLExport::~SdXMLExport()
 {
     // cleanup factory, decrease refcount. Should lead to destruction.
-    if(mpSdPropHdlFactory)
-    {
-        mpSdPropHdlFactory->release();
-        mpSdPropHdlFactory = nullptr;
-    }
+    mpSdPropHdlFactory.clear();
 
     // cleanup mapper, decrease refcount. Should lead to destruction.
-    if(mpPropertySetMapper)
-    {
-        mpPropertySetMapper->release();
-        mpPropertySetMapper = nullptr;
-    }
+    mpPropertySetMapper.clear();
 
     // cleanup presPage mapper, decrease refcount. Should lead to destruction.
-    if(mpPresPagePropsMapper)
-    {
-        mpPresPagePropsMapper->release();
-        mpPresPagePropsMapper = nullptr;
-    }
+    mpPresPagePropsMapper.clear();
 
     // clear evtl. temporary page master infos
     if(mpPageMasterUsageList)
@@ -825,29 +793,29 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                 // write presentation placeholders
                 switch(pInfo->GetLayoutType())
                 {
-                    case 0 : // AUTOLAYOUT_TITLE
+                    case AUTOLAYOUT_TITLE :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderSubtitle, pInfo->GetPresRectangle());
                         break;
                     }
-                    case 1 : // AUTOLAYOUT_ENUM
+                    case AUTOLAYOUT_TITLE_CONTENT :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderOutline, pInfo->GetPresRectangle());
                         break;
                     }
-                    case 2 : // AUTOLAYOUT_CHART
+                    case AUTOLAYOUT_CHART :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderChart, pInfo->GetPresRectangle());
                         break;
                     }
-                    case 3 : // AUTOLAYOUT_2TEXT
+                    case AUTOLAYOUT_TITLE_2CONTENT :
                     {
-                        Rectangle aLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeft(pInfo->GetPresRectangle());
                         aLeft.setWidth(long(aLeft.GetWidth() * 0.488));
-                        Rectangle aRight(aLeft);
+                        tools::Rectangle aRight(aLeft);
                         aRight.Left() = long(aRight.Left() + aRight.GetWidth() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -855,11 +823,11 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderOutline, aRight);
                         break;
                     }
-                    case 4 : // AUTOLAYOUT_TEXTCHART
+                    case AUTOLAYOUT_TEXTCHART :
                     {
-                        Rectangle aLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeft(pInfo->GetPresRectangle());
                         aLeft.setWidth(long(aLeft.GetWidth() * 0.488));
-                        Rectangle aRight(aLeft);
+                        tools::Rectangle aRight(aLeft);
                         aRight.Left() = long(aRight.Left() + aRight.GetWidth() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -867,11 +835,11 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderChart, aRight);
                         break;
                     }
-                    case 6 : // AUTOLAYOUT_TEXTCLIP
+                    case AUTOLAYOUT_TEXTCLIP :
                     {
-                        Rectangle aLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeft(pInfo->GetPresRectangle());
                         aLeft.setWidth(long(aLeft.GetWidth() * 0.488));
-                        Rectangle aRight(aLeft);
+                        tools::Rectangle aRight(aLeft);
                         aRight.Left() = long(aRight.Left() + aRight.GetWidth() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -879,11 +847,11 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderGraphic, aRight);
                         break;
                     }
-                    case 7 : // AUTOLAYOUT_CHARTTEXT
+                    case AUTOLAYOUT_CHARTTEXT :
                     {
-                        Rectangle aLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeft(pInfo->GetPresRectangle());
                         aLeft.setWidth(long(aLeft.GetWidth() * 0.488));
-                        Rectangle aRight(aLeft);
+                        tools::Rectangle aRight(aLeft);
                         aRight.Left() = long(aRight.Left() + aRight.GetWidth() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -891,17 +859,17 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderOutline, aRight);
                         break;
                     }
-                    case 8 : // AUTOLAYOUT_TAB
+                    case AUTOLAYOUT_TAB :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTable, pInfo->GetPresRectangle());
                         break;
                     }
-                    case 9 : // AUTOLAYOUT_CLIPTEXT
+                    case AUTOLAYOUT_CLIPTEXT :
                     {
-                        Rectangle aLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeft(pInfo->GetPresRectangle());
                         aLeft.setWidth(long(aLeft.GetWidth() * 0.488));
-                        Rectangle aRight(aLeft);
+                        tools::Rectangle aRight(aLeft);
                         aRight.Left() = long(aRight.Left() + aRight.GetWidth() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -909,11 +877,11 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderOutline, aRight);
                         break;
                     }
-                    case 10 : // AUTOLAYOUT_TEXTOBJ
+                    case AUTOLAYOUT_TEXTOBJ :
                     {
-                        Rectangle aLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeft(pInfo->GetPresRectangle());
                         aLeft.setWidth(long(aLeft.GetWidth() * 0.488));
-                        Rectangle aRight(aLeft);
+                        tools::Rectangle aRight(aLeft);
                         aRight.Left() = long(aRight.Left() + aRight.GetWidth() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -921,20 +889,20 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderObject, aRight);
                         break;
                     }
-                    case 11 : // AUTOLAYOUT_OBJ
+                    case AUTOLAYOUT_OBJ :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderObject, pInfo->GetPresRectangle());
                         break;
                     }
-                    case 12 : // AUTOLAYOUT_TEXT2OBJ
+                    case AUTOLAYOUT_TITLE_CONTENT_2CONTENT :
                     {
-                        Rectangle aLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeft(pInfo->GetPresRectangle());
                         aLeft.setWidth(long(aLeft.GetWidth() * 0.488));
-                        Rectangle aRightTop(aLeft);
+                        tools::Rectangle aRightTop(aLeft);
                         aRightTop.Left() = long(aRightTop.Left() + aRightTop.GetWidth() * 1.05);
                         aRightTop.setHeight(long(aRightTop.GetHeight() * 0.477));
-                        Rectangle aRightBottom(aRightTop);
+                        tools::Rectangle aRightBottom(aRightTop);
                         aRightBottom.Top() = long(aRightBottom.Top() + aRightBottom.GetHeight() * 1.095);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -943,11 +911,11 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderObject, aRightBottom);
                         break;
                     }
-                    case 13 : // AUTOLAYOUT_OBJTEXT
+                    case AUTOLAYOUT_OBJTEXT :
                     {
-                        Rectangle aLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeft(pInfo->GetPresRectangle());
                         aLeft.setWidth(long(aLeft.GetWidth() * 0.488));
-                        Rectangle aRight(aLeft);
+                        tools::Rectangle aRight(aLeft);
                         aRight.Left() = long(aRight.Left() + aRight.GetWidth() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -955,11 +923,11 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderOutline, aRight);
                         break;
                     }
-                    case 14 : // AUTOLAYOUT_OBJOVERTEXT
+                    case AUTOLAYOUT_TITLE_CONTENT_OVER_CONTENT :
                     {
-                        Rectangle aTop(pInfo->GetPresRectangle());
+                        tools::Rectangle aTop(pInfo->GetPresRectangle());
                         aTop.setHeight(long(aTop.GetHeight() * 0.477));
-                        Rectangle aBottom(aTop);
+                        tools::Rectangle aBottom(aTop);
                         aBottom.Top() = long(aBottom.Top() + aBottom.GetHeight() * 1.095);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -967,14 +935,14 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderOutline, aBottom);
                         break;
                     }
-                    case 15 : // AUTOLAYOUT_2OBJTEXT
+                    case AUTOLAYOUT_TITLE_2CONTENT_CONTENT :
                     {
-                        Rectangle aLeftTop(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeftTop(pInfo->GetPresRectangle());
                         aLeftTop.setWidth(long(aLeftTop.GetWidth() * 0.488));
-                        Rectangle aRight(aLeftTop);
+                        tools::Rectangle aRight(aLeftTop);
                         aRight.Left() = long(aRight.Left() + aRight.GetWidth() * 1.05);
                         aLeftTop.setHeight(long(aLeftTop.GetHeight() * 0.477));
-                        Rectangle aLeftBottom(aLeftTop);
+                        tools::Rectangle aLeftBottom(aLeftTop);
                         aLeftBottom.Top() = long(aLeftBottom.Top() + aLeftBottom.GetHeight() * 1.095);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -983,14 +951,14 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderOutline, aRight);
                         break;
                     }
-                    case 16 : // AUTOLAYOUT_2OBJOVERTEXT
+                    case AUTOLAYOUT_TITLE_2CONTENT_OVER_CONTENT :
                     {
-                        Rectangle aTopLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aTopLeft(pInfo->GetPresRectangle());
                         aTopLeft.setHeight(long(aTopLeft.GetHeight() * 0.477));
-                        Rectangle aBottom(aTopLeft);
+                        tools::Rectangle aBottom(aTopLeft);
                         aBottom.Top() = long(aBottom.Top() + aBottom.GetHeight() * 1.095);
                         aTopLeft.setWidth(long(aTopLeft.GetWidth() * 0.488));
-                        Rectangle aTopRight(aTopLeft);
+                        tools::Rectangle aTopRight(aTopLeft);
                         aTopRight.Left() = long(aTopRight.Left() + aTopRight.GetWidth() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -999,11 +967,11 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderOutline, aBottom);
                         break;
                     }
-                    case 17 : // AUTOLAYOUT_TEXTOVEROBJ
+                    case AUTOLAYOUT_TEXTOVEROBJ :
                     {
-                        Rectangle aTop(pInfo->GetPresRectangle());
+                        tools::Rectangle aTop(pInfo->GetPresRectangle());
                         aTop.setHeight(long(aTop.GetHeight() * 0.477));
-                        Rectangle aBottom(aTop);
+                        tools::Rectangle aBottom(aTop);
                         aBottom.Top() = long(aBottom.Top() + aBottom.GetHeight() * 1.095);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -1011,16 +979,16 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderObject, aBottom);
                         break;
                     }
-                    case 18 : // AUTOLAYOUT_4OBJ
+                    case AUTOLAYOUT_TITLE_4CONTENT :
                     {
-                        Rectangle aTopLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aTopLeft(pInfo->GetPresRectangle());
                         aTopLeft.setHeight(long(aTopLeft.GetHeight() * 0.477));
                         aTopLeft.setWidth(long(aTopLeft.GetWidth() * 0.488));
-                        Rectangle aBottomLeft(aTopLeft);
+                        tools::Rectangle aBottomLeft(aTopLeft);
                         aBottomLeft.Top() = long(aBottomLeft.Top() + aBottomLeft.GetHeight() * 1.095);
-                        Rectangle aTopRight(aTopLeft);
+                        tools::Rectangle aTopRight(aTopLeft);
                         aTopRight.Left() = long(aTopRight.Left() + aTopRight.GetWidth() * 1.05);
-                        Rectangle aBottomRight(aTopRight);
+                        tools::Rectangle aBottomRight(aTopRight);
                         aBottomRight.Top() = long(aBottomRight.Top() + aBottomRight.GetHeight() * 1.095);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -1030,23 +998,23 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderObject, aBottomRight);
                         break;
                     }
-                    case 19 : // AUTOLAYOUT_ONLY_TITLE
+                    case AUTOLAYOUT_TITLE_ONLY :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
                         break;
                     }
-                    case 21 : // AUTOLAYOUT_NOTES
+                    case AUTOLAYOUT_NOTES :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderPage, pInfo->GetTitleRectangle());
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderNotes, pInfo->GetPresRectangle());
                         break;
                     }
-                    case 22 : // AUTOLAYOUT_HANDOUT1
-                    case 23 : // AUTOLAYOUT_HANDOUT2
-                    case 24 : // AUTOLAYOUT_HANDOUT3
-                    case 25 : // AUTOLAYOUT_HANDOUT4
-                    case 26 : // AUTOLAYOUT_HANDOUT6
-                    case 31 : // AUTOLAYOUT_HANDOUT9
+                    case AUTOLAYOUT_HANDOUT1 :
+                    case AUTOLAYOUT_HANDOUT2 :
+                    case AUTOLAYOUT_HANDOUT3 :
+                    case AUTOLAYOUT_HANDOUT4 :
+                    case AUTOLAYOUT_HANDOUT6 :
+                    case AUTOLAYOUT_HANDOUT9 :
                     {
                         sal_Int32 nColCnt, nRowCnt;
                         sal_Int32 nGapX = pInfo->GetGapX();
@@ -1087,7 +1055,7 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
 
                             for (sal_Int32 b = 0; b < nColCnt; b++)
                             {
-                                Rectangle aTmpRect(aTmpPos, aPartSize);
+                                tools::Rectangle aTmpRect(aTmpPos, aPartSize);
 
                                 ImpWriteAutoLayoutPlaceholder(XmlPlaceholderHandout, aTmpRect);
                                 aTmpPos.X() += aPartSize.Width() + nGapX;
@@ -1097,11 +1065,11 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         }
                         break;
                     }
-                    case 27 : // AUTOLAYOUT_VERTICAL_TITLE_TEXT_CHART
+                    case AUTOLAYOUT_VTITLE_VCONTENT_OVER_VCONTENT :
                     {
-                        Rectangle aTop(pInfo->GetPresRectangle());
+                        tools::Rectangle aTop(pInfo->GetPresRectangle());
                         aTop.setHeight(long(aTop.GetHeight() * 0.488));
-                        Rectangle aBottom(aTop);
+                        tools::Rectangle aBottom(aTop);
                         aBottom.Top() = long(aBottom.Top() + aBottom.GetHeight() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderVerticalTitle, pInfo->GetTitleRectangle());
@@ -1109,23 +1077,23 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderChart, aBottom);
                         break;
                     }
-                    case 28 : // AUTOLAYOUT_VERTICAL_TITLE_VERTICAL_OUTLINE
+                    case AUTOLAYOUT_VTITLE_VCONTENT :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderVerticalTitle, pInfo->GetTitleRectangle());
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderVerticalOutline, pInfo->GetPresRectangle());
                         break;
                     }
-                    case 29 : // AUTOLAYOUT_TITLE_VERTICAL_OUTLINE
+                    case AUTOLAYOUT_TITLE_VCONTENT :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderVerticalOutline, pInfo->GetPresRectangle());
                         break;
                     }
-                    case 30 : // AUTOLAYOUT_TITLE_VERTICAL_OUTLINE_CLIPART
+                    case AUTOLAYOUT_TITLE_2VTEXT :
                     {
-                        Rectangle aLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aLeft(pInfo->GetPresRectangle());
                         aLeft.setWidth(long(aLeft.GetWidth() * 0.488));
-                        Rectangle aRight(aLeft);
+                        tools::Rectangle aRight(aLeft);
                         aRight.Left() = long(aRight.Left() + aRight.GetWidth() * 1.05);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -1133,22 +1101,22 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderVerticalOutline, aRight);
                         break;
                     }
-                    case 32 : // AUTOLAYOUT_TITLE
+                    case AUTOLAYOUT_ONLY_TEXT :
                     {
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderSubtitle, pInfo->GetPresRectangle());
                         break;
                     }
 
-                    case 33 : // AUTOLAYOUT_4CLIPART
+                    case AUTOLAYOUT_4CLIPART :
                     {
-                        Rectangle aTopLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aTopLeft(pInfo->GetPresRectangle());
                         aTopLeft.setHeight(long(aTopLeft.GetHeight() * 0.477));
                         aTopLeft.setWidth(long(aTopLeft.GetWidth() * 0.488));
-                        Rectangle aBottomLeft(aTopLeft);
+                        tools::Rectangle aBottomLeft(aTopLeft);
                         aBottomLeft.Top() = long(aBottomLeft.Top() + aBottomLeft.GetHeight() * 1.095);
-                        Rectangle aTopRight(aTopLeft);
+                        tools::Rectangle aTopRight(aTopLeft);
                         aTopRight.Left() = long(aTopRight.Left() + aTopRight.GetWidth() * 1.05);
-                        Rectangle aBottomRight(aTopRight);
+                        tools::Rectangle aBottomRight(aTopRight);
                         aBottomRight.Top() = long(aBottomRight.Top() + aBottomRight.GetHeight() * 1.095);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -1159,21 +1127,21 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
                         break;
                     }
 
-                    case 34 : // AUTOLAYOUT_6CLIPART
+                    case AUTOLAYOUT_TITLE_6CONTENT :
                     {
-                        Rectangle aTopLeft(pInfo->GetPresRectangle());
+                        tools::Rectangle aTopLeft(pInfo->GetPresRectangle());
                         aTopLeft.setHeight(long(aTopLeft.GetHeight() * 0.477));
                         aTopLeft.setWidth(long(aTopLeft.GetWidth() * 0.322));
-                        Rectangle aTopCenter(aTopLeft);
+                        tools::Rectangle aTopCenter(aTopLeft);
                         aTopCenter.Left() = long(aTopCenter.Left() + aTopCenter.GetWidth() * 1.05);
-                        Rectangle aTopRight(aTopLeft);
+                        tools::Rectangle aTopRight(aTopLeft);
                         aTopRight.Left() = long(aTopRight.Left() + aTopRight.GetWidth() * 2 * 1.05);
 
-                        Rectangle aBottomLeft(aTopLeft);
+                        tools::Rectangle aBottomLeft(aTopLeft);
                         aBottomLeft.Top() = long(aBottomLeft.Top() + aBottomLeft.GetHeight() * 1.095);
-                        Rectangle aBottomCenter(aTopCenter);
+                        tools::Rectangle aBottomCenter(aTopCenter);
                         aBottomCenter.Top() = long(aBottomCenter.Top() + aBottomCenter.GetHeight() * 1.095);
-                        Rectangle aBottomRight(aTopRight);
+                        tools::Rectangle aBottomRight(aTopRight);
                         aBottomRight.Top() = long(aBottomRight.Top() + aBottomRight.GetHeight() * 1.095);
 
                         ImpWriteAutoLayoutPlaceholder(XmlPlaceholderTitle, pInfo->GetTitleRectangle());
@@ -1196,7 +1164,7 @@ void SdXMLExport::ImpWriteAutoLayoutInfos()
     }
 }
 
-void SdXMLExport::ImpWriteAutoLayoutPlaceholder(XmlPlaceholder ePl, const Rectangle& rRect)
+void SdXMLExport::ImpWriteAutoLayoutPlaceholder(XmlPlaceholder ePl, const tools::Rectangle& rRect)
 {
     OUString aStr;
     OUStringBuffer sStringBuffer;
@@ -1207,11 +1175,9 @@ void SdXMLExport::ImpWriteAutoLayoutPlaceholder(XmlPlaceholder ePl, const Rectan
         case XmlPlaceholderTitle: aStr = "title"; break;
         case XmlPlaceholderOutline: aStr = "outline"; break;
         case XmlPlaceholderSubtitle: aStr = "subtitle"; break;
-        case XmlPlaceholderText: aStr = "text"; break;
         case XmlPlaceholderGraphic: aStr = "graphic"; break;
         case XmlPlaceholderObject: aStr = "object"; break;
         case XmlPlaceholderChart: aStr = "chart"; break;
-        case XmlPlaceholderOrgchart: aStr = "orgchart"; break;
         case XmlPlaceholderTable: aStr = "table"; break;
         case XmlPlaceholderPage: aStr = "page"; break;
         case XmlPlaceholderNotes: aStr = "notes"; break;
@@ -1480,9 +1446,9 @@ static OUString findOrAppendImpl( std::vector< DateTimeDeclImpl >& rVector, cons
 
 }
 
-static const sal_Char* gpStrHeaderTextPrefix = "hdr";
-static const sal_Char* gpStrFooterTextPrefix = "ftr";
-static const sal_Char* gpStrDateTimeTextPrefix = "dtd";
+static const sal_Char gpStrHeaderTextPrefix[] = "hdr";
+static const sal_Char gpStrFooterTextPrefix[] = "ftr";
+static const sal_Char gpStrDateTimeTextPrefix[] = "dtd";
 
 HeaderFooterPageSettingsImpl SdXMLExport::ImpPrepDrawPageHeaderFooterDecls( const Reference<XDrawPage>& xDrawPage )
 {
@@ -1543,7 +1509,7 @@ void SdXMLExport::ImpWriteHeaderFooterDecls()
     if( !maHeaderDeclsVector.empty() )
     {
         // export header decls
-        const OUString aPrefix( OUString::createFromAscii( gpStrHeaderTextPrefix ) );
+        const OUString aPrefix( gpStrHeaderTextPrefix );
         std::vector< OUString >::iterator aIter;
         sal_Int32 nIndex;
         for( nIndex = 1, aIter = maHeaderDeclsVector.begin(); aIter != maHeaderDeclsVector.end(); ++aIter, ++nIndex )
@@ -1560,7 +1526,7 @@ void SdXMLExport::ImpWriteHeaderFooterDecls()
     if( !maFooterDeclsVector.empty() )
     {
         // export footer decls
-        const OUString aPrefix( OUString::createFromAscii( gpStrFooterTextPrefix ) );
+        const OUString aPrefix( gpStrFooterTextPrefix );
         std::vector< OUString >::iterator aIter;
         sal_Int32 nIndex;
         for( nIndex = 1, aIter = maFooterDeclsVector.begin(); aIter != maFooterDeclsVector.end(); ++aIter, ++nIndex )
@@ -1577,7 +1543,7 @@ void SdXMLExport::ImpWriteHeaderFooterDecls()
     if( !maDateTimeDeclsVector.empty() )
     {
         // export footer decls
-        const OUString aPrefix( OUString::createFromAscii( gpStrDateTimeTextPrefix ) );
+        const OUString aPrefix( gpStrDateTimeTextPrefix );
         std::vector< DateTimeDeclImpl >::iterator aIter;
         sal_Int32 nIndex;
         for( nIndex = 1, aIter = maDateTimeDeclsVector.begin(); aIter != maDateTimeDeclsVector.end(); ++aIter, ++nIndex )
@@ -1729,14 +1695,6 @@ void SdXMLExport::ImpWritePresentationStyles()
     }
 }
 
-void SdXMLExport::SetProgress(sal_Int32 nProg)
-{
-    // set progress view
-    if(GetStatusIndicator().is())
-        GetStatusIndicator()->setValue(nProg);
-}
-
-
 void SdXMLExport::ExportMeta_()
 {
     uno::Sequence<beans::NamedValue> stats { { "ObjectCount", uno::makeAny(mnObjectCount) } };
@@ -1770,7 +1728,9 @@ void SdXMLExport::ExportContent_()
     {
         uno::Reference<drawing::XDrawPage> xDrawPage( mxDocDrawPages->getByIndex(nPageInd), uno::UNO_QUERY );
 
-        SetProgress(((nPageInd + 1) * 100) / mnDocDrawPageCount);
+        // set progress view
+        if(GetStatusIndicator().is())
+            GetStatusIndicator()->setValue(((nPageInd + 1) * 100) / mnDocDrawPageCount);
 
         if(xDrawPage.is())
         {
@@ -2095,7 +2055,7 @@ void SdXMLExport::exportPresentationSettings()
                 AddAttribute(XML_NAMESPACE_PRESENTATION, XML_NAME, *pShowNames );
 
                 xShows->getByName( *pShowNames ) >>= xShow;
-                DBG_ASSERT( xShow.is(), "invalid custom show!" );
+                SAL_WARN_IF( !xShow.is(), "xmloff", "invalid custom show!" );
                 if( !xShow.is() )
                     continue;
 
@@ -2742,7 +2702,7 @@ OUString SAL_CALL classname##_getImplementationName() throw()\
 {\
     return OUString( implementationname );\
 }\
-uno::Reference< uno::XInterface > SAL_CALL classname##_createInstance(const uno::Reference< lang::XMultiServiceFactory > & rSMgr) throw( uno::Exception )\
+uno::Reference< uno::XInterface > SAL_CALL classname##_createInstance(const uno::Reference< lang::XMultiServiceFactory > & rSMgr)\
 {\
     return static_cast<cppu::OWeakObject*>(new SdXMLExport( comphelper::getComponentContext(rSMgr), implementationname, draw, flags )); \
 }

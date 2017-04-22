@@ -18,7 +18,7 @@
  */
 
 #include <svx/svdmodel.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 
 #include "prevwsh.hxx"
 #include "docsh.hxx"
@@ -30,37 +30,38 @@ void ScPreviewShell::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     bool bDataChanged = false;
 
-    if (dynamic_cast<const SfxSimpleHint*>(&rHint))
+    if (const ScPaintHint* pPaintHint = dynamic_cast<const ScPaintHint*>(&rHint))
     {
-        switch ( static_cast<const SfxSimpleHint&>(rHint).GetId() )
+        if ( pPaintHint->GetPrintFlag() )
         {
-            case FID_DATACHANGED:
-            case SID_SCPRINTOPTIONS:
+            PaintPartFlags nParts = pPaintHint->GetParts();
+            if (nParts & ( PaintPartFlags::Grid | PaintPartFlags::Left | PaintPartFlags::Top | PaintPartFlags::Size ))
+                bDataChanged = true;
+        }
+    }
+    else if (const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint))
+    {
+        // SdrHints are no longer used for invalidating, thus react on objectchange instead
+        if(SdrHintKind::ObjectChange == pSdrHint->GetKind())
+            bDataChanged = true;
+    }
+    else
+    {
+        switch ( rHint.GetId() )
+        {
+            case SfxHintId::ScDataChanged:
+            case SfxHintId::ScPrintOptions:
                 bDataChanged = true;
                 break;
-            case SC_HINT_DRWLAYER_NEW:
+            case SfxHintId::ScDrawLayerNew:
                 {
                     SfxBroadcaster* pDrawBC = pDocShell->GetDocument().GetDrawBroadcaster();
                     if (pDrawBC)
                         StartListening(*pDrawBC);
                 }
                 break;
+            default: break;
         }
-    }
-    else if (dynamic_cast<const ScPaintHint*>(&rHint))
-    {
-        if ( static_cast<const ScPaintHint&>(rHint).GetPrintFlag() )
-        {
-            sal_uInt16 nParts = static_cast<const ScPaintHint&>(rHint).GetParts();
-            if (nParts & ( PAINT_GRID | PAINT_LEFT | PAINT_TOP | PAINT_SIZE ))
-                bDataChanged = true;
-        }
-    }
-    else if (dynamic_cast<const SdrHint*>(&rHint))
-    {
-        // SdrHints are no longer used for invalidating, thus react on objectchange instead
-        if(HINT_OBJCHG == static_cast<const SdrHint&>(rHint).GetKind())
-            bDataChanged = true;
     }
 
     if (bDataChanged)

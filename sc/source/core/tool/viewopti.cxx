@@ -41,8 +41,8 @@ void ScGridOptions::SetDefaults()
 {
     *this = ScGridOptions();
 
-    //  Raster-Defaults sind jetzt zwischen den Apps unterschiedlich
-    //  darum hier selber eintragen (alles in 1/100mm)
+    //  grid defaults differ now between the apps
+    //  therefore, enter here in its own right (all in 1/100mm)
 
     if ( ScOptionsUtil::IsMetricSystem() )
     {
@@ -136,7 +136,7 @@ void ScViewOptions::SetDefaults()
     aGridOpt.SetDefaults();
 }
 
-Color ScViewOptions::GetGridColor( OUString* pStrName ) const
+Color const & ScViewOptions::GetGridColor( OUString* pStrName ) const
 {
     if ( pStrName )
         *pStrName = aGridColName;
@@ -191,10 +191,10 @@ SvxGridItem* ScViewOptions::CreateGridItem() const
     return pItem;
 }
 
-//      ScTpViewItem - Daten fuer die ViewOptions-TabPage
+//      ScTpViewItem - data for the ViewOptions TabPage
 
-ScTpViewItem::ScTpViewItem( sal_uInt16 nWhichP, const ScViewOptions& rOpt )
-    :   SfxPoolItem ( nWhichP ),
+ScTpViewItem::ScTpViewItem( const ScViewOptions& rOpt )
+    :   SfxPoolItem ( SID_SCVIEWOPTIONS ),
         theOptions  ( rOpt )
 {
 }
@@ -237,7 +237,6 @@ SfxPoolItem* ScTpViewItem::Clone( SfxItemPool * ) const
 #define SCLAYOUTOPT_SHEETTAB        7
 #define SCLAYOUTOPT_OUTLINE         8
 #define SCLAYOUTOPT_GRID_ONCOLOR    9
-#define SCLAYOUTOPT_COUNT           10
 
 #define CFGPATH_DISPLAY     "Office.Calc/Content/Display"
 
@@ -250,7 +249,6 @@ SfxPoolItem* ScTpViewItem::Clone( SfxItemPool * ) const
 #define SCDISPLAYOPT_OBJECTGRA      6
 #define SCDISPLAYOPT_CHART          7
 #define SCDISPLAYOPT_DRAWING        8
-#define SCDISPLAYOPT_COUNT          9
 
 #define CFGPATH_GRID        "Office.Calc/Grid"
 
@@ -264,89 +262,58 @@ SfxPoolItem* ScTpViewItem::Clone( SfxItemPool * ) const
 #define SCGRIDOPT_SYNCHRON          7
 #define SCGRIDOPT_VISIBLE           8
 #define SCGRIDOPT_SIZETOGRID        9
-#define SCGRIDOPT_COUNT             10
 
 Sequence<OUString> ScViewCfg::GetLayoutPropertyNames()
 {
-    static const char* aPropNames[] =
-    {
-        "Line/GridLine",            // SCLAYOUTOPT_GRIDLINES
-        "Line/GridLineColor",       // SCLAYOUTOPT_GRIDCOLOR
-        "Line/PageBreak",           // SCLAYOUTOPT_PAGEBREAK
-        "Line/Guide",               // SCLAYOUTOPT_GUIDE
-        "Window/ColumnRowHeader",   // SCLAYOUTOPT_COLROWHDR
-        "Window/HorizontalScroll",  // SCLAYOUTOPT_HORISCROLL
-        "Window/VerticalScroll",    // SCLAYOUTOPT_VERTSCROLL
-        "Window/SheetTab",          // SCLAYOUTOPT_SHEETTAB
-        "Window/OutlineSymbol",     // SCLAYOUTOPT_OUTLINE
-        "Line/GridOnColoredCells"   // SCLAYOUTOPT_GRID_ONCOLOR
-    };
-    Sequence<OUString> aNames(SCLAYOUTOPT_COUNT);
-    OUString* pNames = aNames.getArray();
-    for(int i = 0; i < SCLAYOUTOPT_COUNT; i++)
-        pNames[i] = OUString::createFromAscii(aPropNames[i]);
-
-    return aNames;
+    return {"Line/GridLine",            // SCLAYOUTOPT_GRIDLINES
+            "Line/GridLineColor",       // SCLAYOUTOPT_GRIDCOLOR
+            "Line/PageBreak",           // SCLAYOUTOPT_PAGEBREAK
+            "Line/Guide",               // SCLAYOUTOPT_GUIDE
+            "Window/ColumnRowHeader",   // SCLAYOUTOPT_COLROWHDR
+            "Window/HorizontalScroll",  // SCLAYOUTOPT_HORISCROLL
+            "Window/VerticalScroll",    // SCLAYOUTOPT_VERTSCROLL
+            "Window/SheetTab",          // SCLAYOUTOPT_SHEETTAB
+            "Window/OutlineSymbol",     // SCLAYOUTOPT_OUTLINE
+            "Line/GridOnColoredCells"}; // SCLAYOUTOPT_GRID_ONCOLOR;
 }
 
 Sequence<OUString> ScViewCfg::GetDisplayPropertyNames()
 {
-    static const char* aPropNames[] =
-    {
-        "Formula",                  // SCDISPLAYOPT_FORMULA
-        "ZeroValue",                // SCDISPLAYOPT_ZEROVALUE
-        "NoteTag",                  // SCDISPLAYOPT_NOTETAG
-        "ValueHighlighting",        // SCDISPLAYOPT_VALUEHI
-        "Anchor",                   // SCDISPLAYOPT_ANCHOR
-        "TextOverflow",             // SCDISPLAYOPT_TEXTOVER
-        "ObjectGraphic",            // SCDISPLAYOPT_OBJECTGRA
-        "Chart",                    // SCDISPLAYOPT_CHART
-        "DrawingObject"             // SCDISPLAYOPT_DRAWING
-    };
-    Sequence<OUString> aNames(SCDISPLAYOPT_COUNT);
-    OUString* pNames = aNames.getArray();
-    for(int i = 0; i < SCDISPLAYOPT_COUNT; i++)
-        pNames[i] = OUString::createFromAscii(aPropNames[i]);
-
-    return aNames;
+    return {"Formula",                  // SCDISPLAYOPT_FORMULA
+            "ZeroValue",                // SCDISPLAYOPT_ZEROVALUE
+            "NoteTag",                  // SCDISPLAYOPT_NOTETAG
+            "ValueHighlighting",        // SCDISPLAYOPT_VALUEHI
+            "Anchor",                   // SCDISPLAYOPT_ANCHOR
+            "TextOverflow",             // SCDISPLAYOPT_TEXTOVER
+            "ObjectGraphic",            // SCDISPLAYOPT_OBJECTGRA
+            "Chart",                    // SCDISPLAYOPT_CHART
+            "DrawingObject"};           // SCDISPLAYOPT_DRAWING;
 }
 
 Sequence<OUString> ScViewCfg::GetGridPropertyNames()
 {
-    static const char* aPropNames[] =
-    {
-        "Resolution/XAxis/NonMetric",   // SCGRIDOPT_RESOLU_X
-        "Resolution/YAxis/NonMetric",   // SCGRIDOPT_RESOLU_Y
-        "Subdivision/XAxis",            // SCGRIDOPT_SUBDIV_X
-        "Subdivision/YAxis",            // SCGRIDOPT_SUBDIV_Y
-        "Option/XAxis/NonMetric",       // SCGRIDOPT_OPTION_X
-        "Option/YAxis/NonMetric",       // SCGRIDOPT_OPTION_Y
-        "Option/SnapToGrid",            // SCGRIDOPT_SNAPTOGRID
-        "Option/Synchronize",           // SCGRIDOPT_SYNCHRON
-        "Option/VisibleGrid",           // SCGRIDOPT_VISIBLE
-        "Option/SizeToGrid"             // SCGRIDOPT_SIZETOGRID
-    };
-    Sequence<OUString> aNames(SCGRIDOPT_COUNT);
-    OUString* pNames = aNames.getArray();
-    for(int i = 0; i < SCGRIDOPT_COUNT; i++)
-        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+    const bool bIsMetric = ScOptionsUtil::IsMetricSystem();
 
-    //  adjust for metric system
-    if (ScOptionsUtil::IsMetricSystem())
-    {
-        pNames[SCGRIDOPT_RESOLU_X] = "Resolution/XAxis/Metric";
-        pNames[SCGRIDOPT_RESOLU_Y] = "Resolution/YAxis/Metric";
-        pNames[SCGRIDOPT_OPTION_X] = "Option/XAxis/Metric";
-        pNames[SCGRIDOPT_OPTION_Y] = "Option/YAxis/Metric";
-    }
-
-    return aNames;
+    return {(bIsMetric ? OUString("Resolution/XAxis/Metric")
+                       : OUString("Resolution/XAxis/NonMetric")),   // SCGRIDOPT_RESOLU_X
+            (bIsMetric ? OUString("Resolution/YAxis/Metric")
+                       : OUString("Resolution/YAxis/NonMetric")),   // SCGRIDOPT_RESOLU_Y
+             "Subdivision/XAxis",                                   // SCGRIDOPT_SUBDIV_X
+             "Subdivision/YAxis",                                   // SCGRIDOPT_SUBDIV_Y
+            (bIsMetric ? OUString("Option/XAxis/Metric")
+                       : OUString("Option/XAxis/NonMetric")),       // SCGRIDOPT_OPTION_X
+            (bIsMetric ? OUString("Option/YAxis/Metric")
+                       : OUString("Option/YAxis/NonMetric")),       // SCGRIDOPT_OPTION_Y
+             "Option/SnapToGrid",                                   // SCGRIDOPT_SNAPTOGRID
+             "Option/Synchronize",                                  // SCGRIDOPT_SYNCHRON
+             "Option/VisibleGrid",                                  // SCGRIDOPT_VISIBLE
+             "Option/SizeToGrid"};                                  // SCGRIDOPT_SIZETOGRID;
 }
 
 ScViewCfg::ScViewCfg() :
-    aLayoutItem( OUString( CFGPATH_LAYOUT ) ),
-    aDisplayItem( OUString( CFGPATH_DISPLAY ) ),
-    aGridItem( OUString( CFGPATH_GRID ) )
+    aLayoutItem( CFGPATH_LAYOUT ),
+    aDisplayItem( CFGPATH_DISPLAY ),
+    aGridItem( CFGPATH_GRID )
 {
     sal_Int32 nIntVal = 0;
 
@@ -519,7 +486,7 @@ ScViewCfg::ScViewCfg() :
     aGridItem.SetCommitLink( LINK( this, ScViewCfg, GridCommitHdl ) );
 }
 
-IMPL_LINK_NOARG_TYPED(ScViewCfg, LayoutCommitHdl, ScLinkConfigItem&, void)
+IMPL_LINK_NOARG(ScViewCfg, LayoutCommitHdl, ScLinkConfigItem&, void)
 {
     Sequence<OUString> aNames = GetLayoutPropertyNames();
     Sequence<Any> aValues(aNames.getLength());
@@ -564,7 +531,7 @@ IMPL_LINK_NOARG_TYPED(ScViewCfg, LayoutCommitHdl, ScLinkConfigItem&, void)
     aLayoutItem.PutProperties(aNames, aValues);
 }
 
-IMPL_LINK_NOARG_TYPED(ScViewCfg, DisplayCommitHdl, ScLinkConfigItem&, void)
+IMPL_LINK_NOARG(ScViewCfg, DisplayCommitHdl, ScLinkConfigItem&, void)
 {
     Sequence<OUString> aNames = GetDisplayPropertyNames();
     Sequence<Any> aValues(aNames.getLength());
@@ -606,7 +573,7 @@ IMPL_LINK_NOARG_TYPED(ScViewCfg, DisplayCommitHdl, ScLinkConfigItem&, void)
     aDisplayItem.PutProperties(aNames, aValues);
 }
 
-IMPL_LINK_NOARG_TYPED(ScViewCfg, GridCommitHdl, ScLinkConfigItem&, void)
+IMPL_LINK_NOARG(ScViewCfg, GridCommitHdl, ScLinkConfigItem&, void)
 {
     const ScGridOptions& rGrid = GetGridOptions();
 

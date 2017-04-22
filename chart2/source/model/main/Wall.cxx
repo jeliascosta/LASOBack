@@ -22,7 +22,6 @@
 #include "LinePropertiesHelper.hxx"
 #include "FillProperties.hxx"
 #include "UserDefinedProperties.hxx"
-#include "ContainerHelper.hxx"
 #include "PropertyHelper.hxx"
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/drawing/FillStyle.hpp>
@@ -79,12 +78,12 @@ struct StaticWallInfoHelper_Initializer
 private:
     static uno::Sequence< Property > lcl_GetPropertySequence()
     {
-        ::std::vector< css::beans::Property > aProperties;
+        std::vector< css::beans::Property > aProperties;
         ::chart::LinePropertiesHelper::AddPropertiesToVector( aProperties );
         ::chart::FillProperties::AddPropertiesToVector( aProperties );
         ::chart::UserDefinedProperties::AddPropertiesToVector( aProperties );
 
-        ::std::sort( aProperties.begin(), aProperties.end(),
+        std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -132,14 +131,12 @@ Wall::~Wall()
 
 // ____ XCloneable ____
 uno::Reference< util::XCloneable > SAL_CALL Wall::createClone()
-    throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< util::XCloneable >( new Wall( *this ));
 }
 
 // ____ OPropertySet ____
 uno::Any Wall::GetDefaultValue( sal_Int32 nHandle ) const
-    throw(beans::UnknownPropertyException)
 {
     const tPropertyValueMap& rStaticDefaults = *StaticWallDefaults::get();
     tPropertyValueMap::const_iterator aFound( rStaticDefaults.find( nHandle ) );
@@ -155,14 +152,12 @@ uno::Any Wall::GetDefaultValue( sal_Int32 nHandle ) const
 
 // ____ XPropertySet ____
 uno::Reference< beans::XPropertySetInfo > SAL_CALL Wall::getPropertySetInfo()
-    throw (uno::RuntimeException, std::exception)
 {
     return *StaticWallInfo::get();
 }
 
 // ____ XModifyBroadcaster ____
 void SAL_CALL Wall::addModifyListener( const uno::Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -176,7 +171,6 @@ void SAL_CALL Wall::addModifyListener( const uno::Reference< util::XModifyListen
 }
 
 void SAL_CALL Wall::removeModifyListener( const uno::Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -191,25 +185,18 @@ void SAL_CALL Wall::removeModifyListener( const uno::Reference< util::XModifyLis
 
 // ____ XModifyListener ____
 void SAL_CALL Wall::modified( const lang::EventObject& aEvent )
-    throw (uno::RuntimeException, std::exception)
 {
     m_xModifyEventForwarder->modified( aEvent );
 }
 
 // ____ XEventListener (base of XModifyListener) ____
 void SAL_CALL Wall::disposing( const lang::EventObject& /* Source */ )
-    throw (uno::RuntimeException, std::exception)
 {
     // nothing
 }
 
 // ____ OPropertySet ____
 void Wall::firePropertyChangeEvent()
-{
-    fireModifyEvent();
-}
-
-void Wall::fireModifyEvent()
 {
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
 }

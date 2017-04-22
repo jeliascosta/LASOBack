@@ -30,7 +30,7 @@ class DrawViewShell;
 /**
  * Derivative of ::sd::View; contains also a pointer to the document
  */
-class DrawView : public ::sd::View
+class SD_DLLPUBLIC DrawView : public ::sd::View
 {
 public:
 
@@ -38,7 +38,7 @@ public:
         DrawDocShell* pDocSh,
         OutputDevice* pOutDev,
         DrawViewShell* pShell);
-    virtual ~DrawView();
+    virtual ~DrawView() override;
 
     virtual void MarkListHasChanged() override;
     void CompleteRedraw(OutputDevice* pOutDev, const vcl::Region& rReg, sdr::contact::ViewObjectContactRedirector* pRedirector = nullptr) override;
@@ -50,12 +50,9 @@ public:
     void    BlockPageOrderChangedHint(bool bBlock);
 
     bool    SetStyleSheet(SfxStyleSheet* pStyleSheet, bool bDontRemoveHardAttr = false) override;
-    virtual bool IsObjMarkable(SdrObject* pObj, SdrPageView* pPV) const override;
 
-    virtual void MakeVisible(const Rectangle& rRect, vcl::Window& rWin) override;
+    virtual void MakeVisible(const ::tools::Rectangle& rRect, vcl::Window& rWin) override;
     virtual void HideSdrPage() override; // SdrPageView* pPV);
-
-    void    PresPaint(const vcl::Region& rRegion);
 
     virtual void DeleteMarked() override; // from SdrView
 protected:

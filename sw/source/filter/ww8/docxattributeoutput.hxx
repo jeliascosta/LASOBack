@@ -87,7 +87,7 @@ struct OutputBorderOptions
     SvxShadowLocation   aShadowLocation;
     bool                bCheckDistanceSize;
 
-    OutputBorderOptions() : tag(0), bUseStartEnd(false), bWriteTag(true), bWriteInsideHV(false), bWriteDistance(false), aShadowLocation(SVX_SHADOW_NONE), bCheckDistanceSize(false) {}
+    OutputBorderOptions() : tag(0), bUseStartEnd(false), bWriteTag(true), bWriteInsideHV(false), bWriteDistance(false), aShadowLocation(SvxShadowLocation::NONE), bCheckDistanceSize(false) {}
 };
 
 /**
@@ -217,7 +217,7 @@ public:
     void EndRedline( const SwRedlineData * pRedlineData );
 
     virtual void SetStateOfFlyFrame( FlyProcessingState nStateOfFlyFrame ) override;
-    virtual void SetAnchorIsLinkedToNode( bool bAnchorLinkedToNode = false ) override;
+    virtual void SetAnchorIsLinkedToNode( bool bAnchorLinkedToNode ) override;
     virtual bool IsFlyProcessingPostponed() override;
     virtual void ResetFlyProcessingFlag() override;
 
@@ -230,7 +230,7 @@ public:
     virtual void TableInfoRow( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
     virtual void TableDefinition( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
     virtual void TableDefaultBorders( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
-    void TableDefaultCellMargins( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner );
+    void TableDefaultCellMargins( ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner );
     virtual void TableBackgrounds( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
     virtual void TableRowRedline( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
     virtual void TableCellRedline( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
@@ -241,7 +241,7 @@ public:
     virtual void TableNodeInfoInner( ww8::WW8TableNodeInfoInner::Pointer_t pNodeInfoInner ) override;
     virtual void TableOrientation( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
     virtual void TableSpacing( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
-    virtual void TableRowEnd( sal_uInt32 nDepth = 1 ) override;
+    virtual void TableRowEnd( sal_uInt32 nDepth ) override;
 
     /// Start of the styles table.
     virtual void StartStyles() override;
@@ -250,7 +250,7 @@ public:
     virtual void EndStyles( sal_uInt16 nNumberOfStyles ) override;
 
     /// Write default style.
-    virtual void DefaultStyle( sal_uInt16 nStyle ) override;
+    virtual void DefaultStyle() override;
 
     /// Write Doc Defaults
     void DocDefaults( );
@@ -364,9 +364,9 @@ public:
         sal_Int16 nFirstLineIndex,
         sal_Int16 nListTabPos,
         const OUString &rNumberingString,
-        const SvxBrushItem* pBrush = nullptr ) override;
+        const SvxBrushItem* pBrush ) override;
 
-    void WriteField_Impl( const SwField* pField, ww::eField eType, const OUString& rFieldCmd, sal_uInt8 nMode );
+    void WriteField_Impl( const SwField* pField, ww::eField eType, const OUString& rFieldCmd, FieldFlags nMode );
     void WriteFormData_Impl( const ::sw::mark::IFieldmark& rFieldmark );
 
     void WriteBookmarks_Impl( std::vector< OUString >& rStarts, std::vector< OUString >& rEnds );
@@ -409,8 +409,8 @@ private:
     /// replacement graphics, set the first as 0, and pass the remaining three.
     ///
     /// @see WriteOLE2Obj()
-    void FlyFrameGraphic( const SwGrfNode* pGrfNode, const Size& rSize, const SwFlyFrameFormat* pOLEFrameFormat = nullptr, SwOLENode* pOLENode = nullptr, const SdrObject* pSdrObj = nullptr);
-    void WriteSrcRect( const SdrObject* pSdrObj );
+    void FlyFrameGraphic( const SwGrfNode* pGrfNode, const Size& rSize, const SwFlyFrameFormat* pOLEFrameFormat, SwOLENode* pOLENode, const SdrObject* pSdrObj = nullptr);
+    void WriteSrcRect( const SdrObject* pSdrObj, const SwFrameFormat* pFrameFormat );
     void WriteOLE2Obj( const SdrObject* pSdrObj, SwOLENode& rNode, const Size& rSize, const SwFlyFrameFormat* pFlyFrameFormat);
     bool WriteOLEChart( const SdrObject* pSdrObj, const Size& rSize );
     bool WriteOLEMath( const SdrObject* pSdrObj, const SwOLENode& rNode, const Size& rSize );
@@ -420,19 +420,19 @@ private:
     /// checks whether the current component is a diagram
     static bool IsDiagram (const SdrObject* sdrObject);
 
-    void InitTableHelper( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner );
-    void StartTable( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner );
-    void StartTableRow( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner );
-    void StartTableCell( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner, sal_uInt32 nCell, sal_uInt32 nRow );
-    void TableCellProperties( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner, sal_uInt32 nCell, sal_uInt32 nRow );
-    void EndTableCell( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner, sal_uInt32 nCell, sal_uInt32 nRow );
+    void InitTableHelper( ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner );
+    void StartTable( ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner );
+    void StartTableRow( ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner );
+    void StartTableCell( ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner, sal_uInt32 nCell, sal_uInt32 nRow );
+    void TableCellProperties( ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner, sal_uInt32 nCell, sal_uInt32 nRow );
+    void EndTableCell( ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner, sal_uInt32 nCell, sal_uInt32 nRow );
     void EndTableRow( );
     void EndTable();
-    void SyncNodelessCells(ww8::WW8TableNodeInfoInner::Pointer_t pInner, sal_Int32 nCell, sal_uInt32 nRow);
+    void SyncNodelessCells(ww8::WW8TableNodeInfoInner::Pointer_t const & pInner, sal_Int32 nCell, sal_uInt32 nRow);
     void PopulateFrameProperties(const SwFrameFormat* pFrameFormat, const Size& rSize);
     static bool TextBoxIsFramePr(const SwFrameFormat& rFrameFormat);
     /// End cell, row, and even the entire table if necessary.
-    void FinishTableRowCell( ww8::WW8TableNodeInfoInner::Pointer_t pInner, bool bForceEmptyParagraph = false );
+    void FinishTableRowCell( ww8::WW8TableNodeInfoInner::Pointer_t const & pInner, bool bForceEmptyParagraph = false );
 
     void WriteFFData( const FieldInfos& rInfos );
     void WritePendingPlaceholder();
@@ -705,9 +705,9 @@ private:
     void WritePostponedCustomShape();
 
     void WriteSdtBlock(sal_Int32& nSdtPrToken,
-                       css::uno::Reference<sax_fastparser::FastAttributeList>& pSdtPrTokenChildren,
-                       css::uno::Reference<sax_fastparser::FastAttributeList>& pSdtPrTokenAttributes,
-                       css::uno::Reference<sax_fastparser::FastAttributeList>& pSdtPrDataBindingAttrs,
+                       rtl::Reference<sax_fastparser::FastAttributeList>& pSdtPrTokenChildren,
+                       rtl::Reference<sax_fastparser::FastAttributeList>& pSdtPrTokenAttributes,
+                       rtl::Reference<sax_fastparser::FastAttributeList>& pSdtPrDataBindingAttrs,
                        OUString& rSdtPrAlias,
                        bool bPara);
     /// Closes a currently open SDT block.
@@ -718,15 +718,15 @@ private:
     void CmdField_Impl( FieldInfos& rInfos );
     void EndField_Impl( FieldInfos& rInfos );
 
-    static void AddToAttrList( css::uno::Reference<sax_fastparser::FastAttributeList>& pAttrList, sal_Int32 nAttrName, const sal_Char* sAttrValue );
-    static void AddToAttrList( css::uno::Reference<sax_fastparser::FastAttributeList>& pAttrList, sal_Int32 nArgs, ... );
+    static void AddToAttrList( rtl::Reference<sax_fastparser::FastAttributeList>& pAttrList, sal_Int32 nAttrName, const sal_Char* sAttrValue );
+    static void AddToAttrList( rtl::Reference<sax_fastparser::FastAttributeList>& pAttrList, sal_Int32 nArgs, ... );
 
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pFontsAttrList;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pEastAsianLayoutAttrList;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pCharLangAttrList;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pSectionSpacingAttrList;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pParagraphSpacingAttrList;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pHyperlinkAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pFontsAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pEastAsianLayoutAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pCharLangAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pSectionSpacingAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pParagraphSpacingAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pHyperlinkAttrList;
     /// If the current SDT around runs should be ended before the current run.
     bool m_bEndCharSdt;
     /// If an SDT around runs is currently open.
@@ -734,9 +734,9 @@ private:
     /// If an SDT around paragraphs is currently open.
     bool m_bStartedParaSdt;
     /// Attributes of the run color
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pColorAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pColorAttrList;
     /// Attributes of the paragraph background
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pBackgroundAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pBackgroundAttrList;
     OUString m_sOriginalBackgroundColor;
     OUString m_hyperLinkAnchor;
     bool m_endPageRef;
@@ -922,15 +922,15 @@ private:
 
     /// members to control the existence of grabbagged SDT properties in the paragraph
     sal_Int32 m_nParagraphSdtPrToken;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pParagraphSdtPrTokenChildren;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pParagraphSdtPrTokenAttributes;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pParagraphSdtPrDataBindingAttrs;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pParagraphSdtPrTokenChildren;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pParagraphSdtPrTokenAttributes;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pParagraphSdtPrDataBindingAttrs;
     /// members to control the existence of grabbagged SDT properties in the text run
     sal_Int32 m_nRunSdtPrToken;
     /// State of the Fly at current position
     FlyProcessingState m_nStateOfFlyFrame;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pRunSdtPrTokenChildren;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pRunSdtPrDataBindingAttrs;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pRunSdtPrTokenChildren;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pRunSdtPrDataBindingAttrs;
     /// Value of the <w:alias> paragraph SDT element.
     OUString m_aParagraphSdtPrAlias;
     /// Same as m_aParagraphSdtPrAlias, but its content is available till the SDT is closed.
@@ -944,14 +944,14 @@ private:
 public:
     DocxAttributeOutput( DocxExport &rExport, ::sax_fastparser::FSHelperPtr pSerializer, oox::drawingml::DrawingML* pDrawingML );
 
-    virtual ~DocxAttributeOutput();
+    virtual ~DocxAttributeOutput() override;
 
     /// Return the right export class.
     virtual DocxExport& GetExport() override;
     const DocxExport& GetExport() const { return const_cast< DocxAttributeOutput* >( this )->GetExport(); }
 
     /// For e.g. the output of the styles, we need to switch the serializer to another one.
-    void SetSerializer( ::sax_fastparser::FSHelperPtr pSerializer );
+    void SetSerializer( ::sax_fastparser::FSHelperPtr const & pSerializer );
 
     /// Occasionally need to use this serializer from the outside
     const ::sax_fastparser::FSHelperPtr& GetSerializer( ) { return m_pSerializer; }
@@ -966,7 +966,7 @@ public:
     void FootnotesEndnotes( bool bFootnotes );
 
     /// writes the footnotePr/endnotePr (depending on tag) section
-    static void WriteFootnoteEndnotePr( ::sax_fastparser::FSHelperPtr fs, int tag, const SwEndNoteInfo& info, int listtag );
+    static void WriteFootnoteEndnotePr( ::sax_fastparser::FSHelperPtr const & fs, int tag, const SwEndNoteInfo& info, int listtag );
 
     bool HasPostitFields() const;
     void WritePostitFields();

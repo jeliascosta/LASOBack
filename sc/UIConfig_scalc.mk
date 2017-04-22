@@ -9,15 +9,9 @@
 
 $(eval $(call gb_UIConfig_UIConfig,modules/scalc))
 
-ifeq ($(ENABLE_TELEPATHY),TRUE)
-$(eval $(call gb_UIConfig_add_generated_menubarfiles,modules/scalc,\
-	CustomTarget/sc/uiconfig/scalc/menubar/menubar \
-))
-else
 $(eval $(call gb_UIConfig_add_menubarfiles,modules/scalc,\
 	sc/uiconfig/scalc/menubar/menubar \
 ))
-endif
 
 $(eval $(call gb_UIConfig_add_popupmenufiles,modules/scalc,\
 	sc/uiconfig/scalc/popupmenu/anchor \
@@ -26,6 +20,7 @@ $(eval $(call gb_UIConfig_add_popupmenufiles,modules/scalc,\
 	sc/uiconfig/scalc/popupmenu/celledit \
 	sc/uiconfig/scalc/popupmenu/chart \
 	sc/uiconfig/scalc/popupmenu/colheader \
+	sc/uiconfig/scalc/popupmenu/column_operations \
 	sc/uiconfig/scalc/popupmenu/conditional \
 	sc/uiconfig/scalc/popupmenu/draw \
 	sc/uiconfig/scalc/popupmenu/drawtext \
@@ -34,11 +29,13 @@ $(eval $(call gb_UIConfig_add_popupmenufiles,modules/scalc,\
 	sc/uiconfig/scalc/popupmenu/freezepanes \
 	sc/uiconfig/scalc/popupmenu/graphic \
 	sc/uiconfig/scalc/popupmenu/media \
+	sc/uiconfig/scalc/popupmenu/notebookbar \
 	sc/uiconfig/scalc/popupmenu/oleobject \
 	sc/uiconfig/scalc/popupmenu/pagebreak \
 	sc/uiconfig/scalc/popupmenu/pivot \
 	sc/uiconfig/scalc/popupmenu/preview \
 	sc/uiconfig/scalc/popupmenu/rowheader \
+	sc/uiconfig/scalc/popupmenu/row_operations \
 	sc/uiconfig/scalc/popupmenu/sheettab \
 ))
 
@@ -48,6 +45,7 @@ $(eval $(call gb_UIConfig_add_statusbarfiles,modules/scalc,\
 
 $(eval $(call gb_UIConfig_add_toolbarfiles,modules/scalc,\
 	sc/uiconfig/scalc/toolbar/alignmentbar \
+	sc/uiconfig/scalc/toolbar/arrowsbar \
 	sc/uiconfig/scalc/toolbar/arrowshapes \
 	sc/uiconfig/scalc/toolbar/basicshapes \
 	sc/uiconfig/scalc/toolbar/calloutshapes \
@@ -75,6 +73,7 @@ $(eval $(call gb_UIConfig_add_toolbarfiles,modules/scalc,\
 	sc/uiconfig/scalc/toolbar/linesbar \
 	sc/uiconfig/scalc/toolbar/mediaobjectbar \
 	sc/uiconfig/scalc/toolbar/moreformcontrols \
+	sc/uiconfig/scalc/toolbar/notebookbarshortcuts \
 	sc/uiconfig/scalc/toolbar/previewbar \
 	sc/uiconfig/scalc/toolbar/singlemode \
 	sc/uiconfig/scalc/toolbar/standardbar \
@@ -98,6 +97,8 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/scalc,\
 	sc/uiconfig/scalc/ui/colwidthdialog \
 	sc/uiconfig/scalc/ui/condformatmanager \
 	sc/uiconfig/scalc/ui/conditionalformatdialog \
+	sc/uiconfig/scalc/ui/conditionalentry \
+	sc/uiconfig/scalc/ui/conditionaliconset \
 	sc/uiconfig/scalc/ui/conflictsdialog \
 	sc/uiconfig/scalc/ui/consolidatedialog \
 	sc/uiconfig/scalc/ui/correlationdialog \
@@ -114,6 +115,7 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/scalc,\
 	sc/uiconfig/scalc/ui/deletecells \
 	sc/uiconfig/scalc/ui/deletecontents \
 	sc/uiconfig/scalc/ui/descriptivestatisticsdialog \
+	sc/uiconfig/scalc/ui/dropmenu \
 	sc/uiconfig/scalc/ui/doubledialog \
 	sc/uiconfig/scalc/ui/erroralerttabpage \
 	sc/uiconfig/scalc/ui/externaldata \
@@ -122,6 +124,9 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/scalc,\
 	sc/uiconfig/scalc/ui/footerdialog \
 	sc/uiconfig/scalc/ui/formatcellsdialog \
 	sc/uiconfig/scalc/ui/formulacalculationoptions \
+	sc/uiconfig/scalc/ui/floatingborderstyle \
+	sc/uiconfig/scalc/ui/floatinglinestyle \
+	sc/uiconfig/scalc/ui/functionpanel \
 	sc/uiconfig/scalc/ui/goalseekdlg \
 	sc/uiconfig/scalc/ui/groupdialog \
 	sc/uiconfig/scalc/ui/groupbydate \
@@ -139,10 +144,13 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/scalc,\
 	sc/uiconfig/scalc/ui/leftheaderdialog \
 	sc/uiconfig/scalc/ui/namerangesdialog \
 	sc/uiconfig/scalc/ui/notebookbar \
+	sc/uiconfig/scalc/ui/notebookbar_groups \
 	sc/uiconfig/scalc/ui/managenamesdialog \
+	sc/uiconfig/scalc/ui/mergecellsdialog \
 	sc/uiconfig/scalc/ui/movecopysheet \
 	sc/uiconfig/scalc/ui/movingaveragedialog \
 	sc/uiconfig/scalc/ui/multipleoperationsdialog \
+	sc/uiconfig/scalc/ui/navigatorpanel \
 	sc/uiconfig/scalc/ui/nosolutiondialog \
 	sc/uiconfig/scalc/ui/optcalculatepage \
 	sc/uiconfig/scalc/ui/optchangespage \
@@ -174,6 +182,7 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/scalc,\
 	sc/uiconfig/scalc/ui/samplingdialog \
 	sc/uiconfig/scalc/ui/standardfilterdialog \
 	sc/uiconfig/scalc/ui/scenariodialog \
+	sc/uiconfig/scalc/ui/scenariomenu \
 	sc/uiconfig/scalc/ui/scgeneralpage \
 	sc/uiconfig/scalc/ui/searchresults \
 	sc/uiconfig/scalc/ui/selectdatasource \

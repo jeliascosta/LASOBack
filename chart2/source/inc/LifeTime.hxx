@@ -23,6 +23,7 @@
 #include <osl/conditn.hxx>
 #include <com/sun/star/uno/Exception.hpp>
 #include <cppuhelper/interfacecontainer.hxx>
+#include <com/sun/star/util/CloseVetoException.hpp>
 #include <com/sun/star/util/XCloseListener.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
@@ -43,7 +44,8 @@ public:
     virtual ~LifeTimeManager();
 
     bool        impl_isDisposed( bool bAssert=true );
-    bool    dispose() throw(css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    bool    dispose();
 
 public:
     ::cppu::OMultiTypeInterfaceContainerHelper      m_aListenerContainer;
@@ -75,7 +77,7 @@ class CloseableLifeTimeManager : public LifeTimeManager
 protected:
     css::util::XCloseable*         m_pCloseable;
 
-    ::osl::Condition        m_aEndTryClosingCondition;
+    ::osl::Condition    m_aEndTryClosingCondition;
     bool volatile       m_bClosed;
     bool volatile       m_bInTryClose;
     //the ownership between model and controller is not clear at first
@@ -86,24 +88,23 @@ protected:
 public:
 OOO_DLLPUBLIC_CHARTTOOLS    CloseableLifeTimeManager( css::util::XCloseable* pCloseable
         , css::lang::XComponent* pComponent );
-OOO_DLLPUBLIC_CHARTTOOLS    virtual ~CloseableLifeTimeManager();
+OOO_DLLPUBLIC_CHARTTOOLS    virtual ~CloseableLifeTimeManager() override;
 
 OOO_DLLPUBLIC_CHARTTOOLS    bool        impl_isDisposedOrClosed( bool bAssert=true );
-OOO_DLLPUBLIC_CHARTTOOLS    bool    g_close_startTryClose(bool bDeliverOwnership)
-                    throw ( css::uno::Exception );
-OOO_DLLPUBLIC_CHARTTOOLS    bool    g_close_isNeedToCancelLongLastingCalls( bool bDeliverOwnership, css::util::CloseVetoException& ex )
-                    throw ( css::util::CloseVetoException );
+/// @throws css::uno::Exception
+OOO_DLLPUBLIC_CHARTTOOLS    bool    g_close_startTryClose(bool bDeliverOwnership);
+/// @throws css::util::CloseVetoException
+OOO_DLLPUBLIC_CHARTTOOLS    bool    g_close_isNeedToCancelLongLastingCalls( bool bDeliverOwnership, css::util::CloseVetoException& ex );
 OOO_DLLPUBLIC_CHARTTOOLS    void        g_close_endTryClose(bool bDeliverOwnership, bool bMyVeto );
 OOO_DLLPUBLIC_CHARTTOOLS    void        g_close_endTryClose_doClose();
-OOO_DLLPUBLIC_CHARTTOOLS    void    g_addCloseListener( const css::uno::Reference< css::util::XCloseListener > & xListener )
-                    throw(css::uno::RuntimeException);
+/// @throws css::uno::RuntimeException
+OOO_DLLPUBLIC_CHARTTOOLS    void    g_addCloseListener( const css::uno::Reference< css::util::XCloseListener > & xListener );
 
 protected:
     virtual bool    impl_canStartApiCall() override;
-    virtual void        impl_apiCallCountReachedNull() override;
+    virtual void    impl_apiCallCountReachedNull() override;
 
     void        impl_setOwnership( bool bDeliverOwnership, bool bMyVeto );
-    bool    impl_shouldCloseAtNextChance() { return m_bOwnership;}
     void        impl_doClose();
 
     void        impl_init()

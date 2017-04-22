@@ -33,8 +33,10 @@
 #include <mdds/multi_type_vector_custom_func3.hpp>
 
 #include <unordered_map>
+#include <memory>
 
 class ScDocument;
+class ScColumn;
 struct ScRefCellValue;
 
 namespace sc {
@@ -86,6 +88,17 @@ MDDS_MTV_DEFINE_ELEMENT_CALLBACKS(SharedString, sc::element_type_string, SharedS
 
 namespace sc {
 
+class CellStoreEvent
+{
+    ScColumn* mpCol;
+public:
+    CellStoreEvent();
+    CellStoreEvent(ScColumn* pCol);
+
+    void element_block_acquired(const mdds::mtv::base_element_block* block);
+    void element_block_released(const mdds::mtv::base_element_block* block);
+};
+
 /// Cell note container
 typedef mdds::mtv::custom_block_func1<sc::cellnote_block> CNoteFunc;
 typedef mdds::multi_type_vector<CNoteFunc> CellNoteStoreType;
@@ -100,7 +113,7 @@ typedef mdds::multi_type_vector<CTAttrFunc> CellTextAttrStoreType;
 
 /// Cell container
 typedef mdds::mtv::custom_block_func3<sc::string_block, sc::edittext_block, sc::formula_block> CellFunc;
-typedef mdds::multi_type_vector<CellFunc> CellStoreType;
+typedef mdds::multi_type_vector<CellFunc, CellStoreEvent> CellStoreType;
 
 /**
  * Store position data for column array storage.
@@ -140,6 +153,22 @@ public:
     ColumnBlockPosition* getBlockPosition(SCTAB nTab, SCCOL nCol);
 
     void clear();
+};
+
+/**
+ * Set of column block positions only for one table.
+ */
+class TableColumnBlockPositionSet
+{
+    struct Impl;
+    std::unique_ptr<Impl> mpImpl;
+
+public:
+    TableColumnBlockPositionSet( ScDocument& rDoc, SCTAB nTab );
+    TableColumnBlockPositionSet( TableColumnBlockPositionSet&& rOther );
+    ~TableColumnBlockPositionSet();
+
+    ColumnBlockPosition* getBlockPosition( SCCOL nCol );
 };
 
 ScRefCellValue toRefCell( const sc::CellStoreType::const_iterator& itPos, size_t nOffset );

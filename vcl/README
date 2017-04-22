@@ -59,7 +59,7 @@ How the platform abstraction works
 	  API for platform backends
 		+ It is a factory for:
 		  SalFrames, SalVirtualDevices, SalPrinters,
-		  Timers, the SolarMutexe, Drag&Drop and other
+		  Timers, the SolarMutex, Drag&Drop and other
 		  objects, as well as the primary event loop wrapper.
 
 Note: references to "SV" in the code mean StarView, which was a
@@ -195,6 +195,10 @@ the MARK function puts comments into the PDF file about which method
 generated the following PDF content.
 
 touch vcl/source/gdi/pdfwriter* && make vcl dbglevel=3
+
+The compression can be disabled even using a env. var:
+
+export VCL_DEBUG_DISABLE_PDFCOMPRESSION=1
 
 To de-compress the contents of a PDF file written by a release build or
 other programs, use the "pdfunzip" tool:

@@ -131,7 +131,10 @@ struct XMLFontAutoStylePoolEntryCmp_Impl {
 class XMLFontAutoStylePool_Impl : public o3tl::sorted_vector<XMLFontAutoStylePoolEntry_Impl*, XMLFontAutoStylePoolEntryCmp_Impl>
 {
 public:
-    ~XMLFontAutoStylePool_Impl() { DeleteAndDestroyAll(); }
+    ~XMLFontAutoStylePool_Impl()
+    {
+        DeleteAndDestroyAll();
+    }
 };
 
 XMLFontAutoStylePool::XMLFontAutoStylePool( SvXMLExport& rExp, bool _tryToEmbedFonts ) :
@@ -143,7 +146,6 @@ XMLFontAutoStylePool::XMLFontAutoStylePool( SvXMLExport& rExp, bool _tryToEmbedF
 
 XMLFontAutoStylePool::~XMLFontAutoStylePool()
 {
-    delete pPool;
 }
 
 OUString XMLFontAutoStylePool::Add(
@@ -306,7 +308,7 @@ void XMLFontAutoStylePool::exportXML()
                 // the font license rights too and open either read-only or not use the font for editing).
                 OUString fileUrl = EmbeddedFontsHelper::fontFileUrl( pEntry->GetFamilyName(), pEntry->GetFamily(),
                     italic[ j ], weight[ j ], pEntry->GetPitch(), pEntry->GetEncoding(),
-                    EmbeddedFontsHelper::ViewingAllowed );
+                    EmbeddedFontsHelper::FontRights::ViewingAllowed );
                 if( fileUrl.isEmpty())
                     continue;
                 if( !fontFilesMap.count( fileUrl ))

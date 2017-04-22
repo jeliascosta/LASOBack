@@ -34,9 +34,8 @@ class DrawViewShell;
 
 ClientView::ClientView(
     DrawDocShell* pDocSh,
-    OutputDevice* pOutDev,
-    DrawViewShell* pShell)
-    : DrawView (pDocSh, pOutDev, pShell)
+    OutputDevice* pOutDev)
+    : DrawView (pDocSh, pOutDev, nullptr)
 {
 }
 
@@ -60,14 +59,9 @@ void ClientView::InvalidateOneWin(vcl::Window& rWin)
  * to be overridden and properly handled.
  */
 
-void ClientView::InvalidateOneWin(vcl::Window& rWin, const Rectangle& rRect)
+void ClientView::InvalidateOneWin(vcl::Window& rWin, const ::tools::Rectangle& rRect)
 {
     CompleteRedraw(&rWin, vcl::Region(rRect));
-}
-
-void ClientView::CompleteRedraw(OutputDevice* pOutDev, const vcl::Region& rReg, sdr::contact::ViewObjectContactRedirector* pRedirector )
-{
-    DrawView::CompleteRedraw(pOutDev, rReg, pRedirector);
 }
 
 } // end of namespace sd

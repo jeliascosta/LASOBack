@@ -45,14 +45,14 @@ namespace framework
 {
 
 // Wrapper class to notify controller about events from edit.
-// Unfortunaltly the events are notifed through virtual methods instead
+// Unfortunaltly the events are notified through virtual methods instead
 // of Listeners.
 
 class EditControl : public Edit
 {
     public:
         EditControl( vcl::Window* pParent, WinBits nStyle, EditToolbarController* pEditToolbarController );
-        virtual ~EditControl();
+        virtual ~EditControl() override;
         virtual void dispose() override;
 
         virtual void Modify() override;
@@ -139,7 +139,6 @@ EditToolbarController::~EditToolbarController()
 }
 
 void SAL_CALL EditToolbarController::dispose()
-throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 

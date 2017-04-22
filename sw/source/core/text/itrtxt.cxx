@@ -163,7 +163,7 @@ const SwLineLayout *SwTextIter::GetPrevLine()
         }
     }
 
-    // Wenn sich nichts getan hat, dann gibt es nur noch Dummys
+    // If nothing has changed, then there are only dummy's
     return pLay;
 }
 
@@ -261,17 +261,17 @@ sal_uInt16 SwTextCursor::AdjustBaseLine( const SwLineLayout& rLine,
     else
     {
         switch ( GetLineInfo().GetVertAlign() ) {
-            case SvxParaVertAlignItem::TOP :
+            case SvxParaVertAlignItem::Align::Top :
                 nOfst = nOfst + nPorAscent;
                 break;
-            case SvxParaVertAlignItem::CENTER :
+            case SvxParaVertAlignItem::Align::Center :
                 OSL_ENSURE( rLine.Height() >= nPorHeight, "Portion height > Line height");
                 nOfst += ( rLine.Height() - nPorHeight ) / 2 + nPorAscent;
                 break;
-            case SvxParaVertAlignItem::BOTTOM :
+            case SvxParaVertAlignItem::Align::Bottom :
                 nOfst += rLine.Height() - nPorHeight + nPorAscent;
                 break;
-            case SvxParaVertAlignItem::AUTOMATIC :
+            case SvxParaVertAlignItem::Align::Automatic :
                 if ( bAutoToCentered || GetInfo().GetTextFrame()->IsVertical() )
                 {
                     if( GetInfo().GetTextFrame()->IsVertLR() )
@@ -281,7 +281,7 @@ sal_uInt16 SwTextCursor::AdjustBaseLine( const SwLineLayout& rLine,
                     break;
                 }
                 SAL_FALLTHROUGH;
-            case SvxParaVertAlignItem::BASELINE :
+            case SvxParaVertAlignItem::Align::Baseline :
                 // base line
                 nOfst = nOfst + rLine.GetAscent();
                 break;

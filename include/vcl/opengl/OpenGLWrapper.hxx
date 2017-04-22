@@ -7,7 +7,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-// Fully wrapped methods that have no exotic GL / GLEW header deps.
+// Fully wrapped methods that have no exotic GL header deps.
 
 #ifndef INCLUDED_VCL_OPENGL_OPENGLWRAPPER_HXX
 #define INCLUDED_VCL_OPENGL_OPENGLWRAPPER_HXX
@@ -22,13 +22,19 @@ struct VCL_DLLPUBLIC OpenGLWrapper
     /**
      * Returns true if VCL has OpenGL rendering enabled
      */
+#ifdef LIBO_HEADLESS
+    static bool isVCLOpenGLEnabled()
+    {
+        return false;
+    }
+#else
     static bool isVCLOpenGLEnabled();
-
 
     /**
      * Returns the number of times OpenGL buffers have been swapped.
      */
     static sal_Int64 getBufferSwapCounter();
+#endif
 };
 
 #endif // INCLUDED_VCL_OPENGL_OPENGLWRAPPER_HXX

@@ -144,29 +144,23 @@ public:
     OUString     readNulUnicodeArray();
 
     /** Reads a byte character array and returns the string.
+        NUL characters are replaced by question marks.
 
         @param nChars
             Number of characters (bytes) to read from the stream.
-
-        @param bAllowNulChars
-            True = NUL characters are inserted into the imported string.
-            False = NUL characters are replaced by question marks (default).
      */
-    OString      readCharArray( sal_Int32 nChars, bool bAllowNulChars = false );
+    OString      readCharArray( sal_Int32 nChars );
 
     /** Reads a byte character array and returns a Unicode string.
+        NUL characters are replaced by question marks.
 
         @param nChars
             Number of characters (bytes) to read from the stream.
 
         @param eTextEnc
             The text encoding used to create the Unicode string.
-
-        @param bAllowNulChars
-            True = NUL characters are inserted into the imported string.
-            False = NUL characters are replaced by question marks (default).
      */
-    OUString     readCharArrayUC( sal_Int32 nChars, rtl_TextEncoding eTextEnc, bool bAllowNulChars = false );
+    OUString     readCharArrayUC( sal_Int32 nChars, rtl_TextEncoding eTextEnc );
 
     /** Reads a Unicode character array and returns the string.
 
@@ -181,6 +175,7 @@ public:
 
     /** Reads a Unicode character array (may be compressed) and returns the
         string.
+        NUL characters are replaced by question marks (default).
 
         @param nChars
             Number of 8-bit or 16-bit characters to read from the stream.
@@ -188,12 +183,8 @@ public:
         @param bCompressed
             True = Character array is compressed (stored as 8-bit characters).
             False = Character array is not compressed (stored as 16-bit characters).
-
-        @param bAllowNulChars
-            True = NUL characters are inserted into the imported string.
-            False = NUL characters are replaced by question marks (default).
      */
-    OUString     readCompressedUnicodeArray( sal_Int32 nChars, bool bCompressed, bool bAllowNulChars = false );
+    OUString     readCompressedUnicodeArray( sal_Int32 nChars, bool bCompressed );
 
     /** Copies bytes from the current position to the passed output stream.
      */
@@ -245,7 +236,7 @@ template< typename Type >
 sal_Int32 BinaryInputStream::readArray( ::std::vector< Type >& orVector, sal_Int32 nElemCount )
 {
     orVector.resize( static_cast< size_t >( nElemCount ) );
-    return orVector.empty() ? 0 : readArray( &orVector.front(), nElemCount );
+    return orVector.empty() ? 0 : readArray(orVector.data(), nElemCount);
 }
 
 
@@ -270,7 +261,7 @@ public:
                             const css::uno::Reference< css::io::XInputStream >& rxInStrm,
                             bool bAutoClose );
 
-    virtual             ~BinaryXInputStream();
+    virtual             ~BinaryXInputStream() override;
 
     /** Closes the input stream. Does also close the wrapped UNO input stream
         if bAutoClose has been set to true in the constructor. */
@@ -354,7 +345,7 @@ public:
      */
     explicit            RelativeInputStream(
                             BinaryInputStream& rInStrm,
-                            sal_Int64 nSize = SAL_MAX_INT64 );
+                            sal_Int64 nSize );
 
     /** Returns the size of the data block in the wrapped stream offered by
         this wrapper. */

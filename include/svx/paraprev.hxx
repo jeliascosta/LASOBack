@@ -23,14 +23,14 @@
 #include <editeng/svxenum.hxx>
 #include <svx/svxdllapi.h>
 
-enum SvxPrevLineSpace
+enum class SvxPrevLineSpace
 {
-    SVX_PREV_LINESPACE_1 = 0,
-    SVX_PREV_LINESPACE_15,
-    SVX_PREV_LINESPACE_2,
-    SVX_PREV_LINESPACE_PROP,
-    SVX_PREV_LINESPACE_MIN,
-    SVX_PREV_LINESPACE_DURCH
+    N1 = 0,
+    N15,
+    N2,
+    Prop,
+    Min,
+    Leading
 };
 
 class SVX_DLLPUBLIC SvxParaPrevWindow : public vcl::Window
@@ -55,10 +55,10 @@ private:
     sal_uInt16          nLineVal;
 
     OUString            aText;
-    Rectangle           Lines[9];
+    tools::Rectangle           Lines[9];
 
 protected:
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual Size GetOptimalSize() const override;
 
     void DrawParagraph(vcl::RenderContext& rRenderContext);

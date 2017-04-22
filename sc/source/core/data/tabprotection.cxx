@@ -89,8 +89,8 @@ ScPassHashProtectable::~ScPassHashProtectable()
 class ScTableProtectionImpl
 {
 public:
-    static Sequence<sal_Int8> hashPassword(const OUString& aPassText, ScPasswordHash eHash = PASSHASH_SHA1);
-    static Sequence<sal_Int8> hashPassword(const Sequence<sal_Int8>& rPassHash, ScPasswordHash eHash = PASSHASH_SHA1);
+    static Sequence<sal_Int8> hashPassword(const OUString& aPassText, ScPasswordHash eHash);
+    static Sequence<sal_Int8> hashPassword(const Sequence<sal_Int8>& rPassHash, ScPasswordHash eHash);
 
     explicit ScTableProtectionImpl(SCSIZE nOptSize);
     explicit ScTableProtectionImpl(const ScTableProtectionImpl& r);
@@ -100,13 +100,13 @@ public:
     void setProtected(bool bProtected);
 
     bool isPasswordEmpty() const { return mbEmptyPass;}
-    bool hasPasswordHash(ScPasswordHash eHash, ScPasswordHash eHash2 = PASSHASH_UNSPECIFIED) const;
+    bool hasPasswordHash(ScPasswordHash eHash, ScPasswordHash eHash2) const;
     void setPassword(const OUString& aPassText);
     css::uno::Sequence<sal_Int8> getPasswordHash(
-        ScPasswordHash eHash, ScPasswordHash eHash2 = PASSHASH_UNSPECIFIED) const;
+        ScPasswordHash eHash, ScPasswordHash eHash2) const;
     void setPasswordHash(
         const css::uno::Sequence<sal_Int8>& aPassword,
-        ScPasswordHash eHash = PASSHASH_SHA1, ScPasswordHash eHash2 = PASSHASH_UNSPECIFIED);
+        ScPasswordHash eHash, ScPasswordHash eHash2);
     bool verifyPassword(const OUString& aPassText) const;
 
     bool isOptionEnabled(SCSIZE nOptId) const;
@@ -357,7 +357,7 @@ bool ScTableProtectionImpl::updateReference( UpdateRefMode eMode, ScDocument* pD
     for (::std::vector<ScEnhancedProtection>::iterator it(maEnhancedProtection.begin());
             it != maEnhancedProtection.end(); ++it)
     {
-        if ((*it).maRangeList.Is())
+        if ((*it).maRangeList.is())
             bChanged |= (*it).maRangeList->UpdateReference( eMode, pDoc, rWhere, nDx, nDy, nDz);
     }
     return bChanged;
@@ -382,7 +382,7 @@ bool ScTableProtectionImpl::isBlockEditable( const ScRange& rRange ) const
     for (::std::vector<ScEnhancedProtection>::const_iterator it(maEnhancedProtection.begin()),
             itEnd(maEnhancedProtection.end()); it != itEnd; ++it)
     {
-        if (!(*it).hasSecurityDescriptor() && (*it).maRangeList.Is())
+        if (!(*it).hasSecurityDescriptor() && (*it).maRangeList.is())
         {
             if ((*it).maRangeList->In( rRange))
             {
@@ -402,7 +402,7 @@ bool ScTableProtectionImpl::isBlockEditable( const ScRange& rRange ) const
     for (::std::vector<ScEnhancedProtection>::const_iterator it(maEnhancedProtection.begin()),
             itEnd(maEnhancedProtection.end()); it != itEnd; ++it)
     {
-        if (!(*it).hasSecurityDescriptor() && (*it).maRangeList.Is())
+        if (!(*it).hasSecurityDescriptor() && (*it).maRangeList.is())
         {
             ScRangeList aList( (*it).maRangeList->GetIntersectedRange( rRange));
             if (aList.size() == 1 && *aList[0] == rRange)
@@ -423,7 +423,7 @@ bool ScTableProtectionImpl::isBlockEditable( const ScRange& rRange ) const
     for (::std::vector<ScEnhancedProtection>::const_iterator it(maEnhancedProtection.begin()),
             itEnd(maEnhancedProtection.end()); it != itEnd; ++it)
     {
-        if (!(*it).hasSecurityDescriptor() && (*it).maRangeList.Is())
+        if (!(*it).hasSecurityDescriptor() && (*it).maRangeList.is())
         {
             // Ranges are editable if no password is assigned.
             if (!(*it).hasPassword())

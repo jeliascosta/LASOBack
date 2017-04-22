@@ -312,7 +312,7 @@ public:
             sal_uInt8 nSFConvFlags
                           );
 
-    virtual ~XMLImpSpanContext_Impl();
+    virtual ~XMLImpSpanContext_Impl() override;
 
     static SvXMLImportContext *CreateChildContext(
             SvXMLImport& rImport,
@@ -347,7 +347,7 @@ public:
             XMLHints_Impl& rHints,
             bool& rIgnLeadSpace );
 
-    virtual ~XMLImpHyperlinkContext_Impl();
+    virtual ~XMLImpHyperlinkContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -478,8 +478,6 @@ public:
             XMLHints_Impl& rHints,
             bool& rIgnLeadSpace );
 
-    virtual ~XMLImpRubyBaseContext_Impl();
-
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix, const OUString& rLocalName,
             const Reference< xml::sax::XAttributeList > & xAttrList ) override;
@@ -498,10 +496,6 @@ XMLImpRubyBaseContext_Impl::XMLImpRubyBaseContext_Impl(
     : SvXMLImportContext( rImport, nPrfx, rLName )
     , m_rHints( rHints )
     , rIgnoreLeadingSpace( rIgnLeadSpace )
-{
-}
-
-XMLImpRubyBaseContext_Impl::~XMLImpRubyBaseContext_Impl()
 {
 }
 
@@ -545,7 +539,7 @@ public:
             XMLHints_Impl& rHints,
             bool& rIgnLeadSpace );
 
-    virtual ~XMLImpRubyContext_Impl();
+    virtual ~XMLImpRubyContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -568,8 +562,6 @@ public:
             const OUString& rLName,
             const Reference< xml::sax::XAttributeList > & xAttrList,
             XMLImpRubyContext_Impl & rParent );
-
-    virtual ~XMLImpRubyTextContext_Impl();
 
     virtual void Characters( const OUString& rChars ) override;
 };
@@ -601,10 +593,6 @@ XMLImpRubyTextContext_Impl::XMLImpRubyTextContext_Impl(
             break;
         }
     }
-}
-
-XMLImpRubyTextContext_Impl::~XMLImpRubyTextContext_Impl()
-{
 }
 
 void XMLImpRubyTextContext_Impl::Characters( const OUString& rChars )
@@ -708,8 +696,6 @@ public:
         XMLHints_Impl& i_rHints,
         bool & i_rIgnoreLeadingSpace );
 
-    virtual ~XMLMetaImportContextBase();
-
     virtual void StartElement(
             const Reference<xml::sax::XAttributeList> & i_xAttrList) override;
 
@@ -739,10 +725,6 @@ XMLMetaImportContextBase::XMLMetaImportContextBase(
     , m_rHints( i_rHints )
     , m_rIgnoreLeadingSpace( i_rIgnoreLeadingSpace )
     , m_xStart( GetImport().GetTextImport()->GetCursorAsRange()->getStart() )
-{
-}
-
-XMLMetaImportContextBase::~XMLMetaImportContextBase()
 {
 }
 
@@ -1001,8 +983,6 @@ void XMLMetaFieldImportContext::InsertMeta(
  */
 class XMLIndexMarkImportContext_Impl : public SvXMLImportContext
 {
-    const OUString sAlternativeText;
-
     XMLHints_Impl& m_rHints;
     const enum XMLTextPElemTokens eToken;
     OUString sID;
@@ -1052,7 +1032,6 @@ XMLIndexMarkImportContext_Impl::XMLIndexMarkImportContext_Impl(
     enum XMLTextPElemTokens eTok,
     XMLHints_Impl& rHints)
     : SvXMLImportContext(rImport, nPrefix, rLocalName)
-    , sAlternativeText("AlternativeText")
     , m_rHints(rHints)
     , eToken(eTok)
 {
@@ -1177,7 +1156,7 @@ void XMLIndexMarkImportContext_Impl::ProcessAttribute(
             if ( (XML_NAMESPACE_TEXT == nNamespace) &&
                  IsXMLToken( sLocalName, XML_STRING_VALUE ) )
             {
-                rPropSet->setPropertyValue(sAlternativeText, uno::makeAny(sValue));
+                rPropSet->setPropertyValue("AlternativeText", uno::makeAny(sValue));
             }
             // else: ignore!
             break;
@@ -1202,12 +1181,6 @@ void XMLIndexMarkImportContext_Impl::ProcessAttribute(
     }
 }
 
-static const sal_Char sAPI_com_sun_star_text_ContentIndexMark[] =
-        "com.sun.star.text.ContentIndexMark";
-static const sal_Char sAPI_com_sun_star_text_UserIndexMark[] =
-        "com.sun.star.text.UserIndexMark";
-static const sal_Char sAPI_com_sun_star_text_DocumentIndexMark[] =
-        "com.sun.star.text.DocumentIndexMark";
 
 void XMLIndexMarkImportContext_Impl::GetServiceName(
     OUString& sServiceName,
@@ -1219,9 +1192,7 @@ void XMLIndexMarkImportContext_Impl::GetServiceName(
         case XML_TOK_TEXT_TOC_MARK_START:
         case XML_TOK_TEXT_TOC_MARK_END:
         {
-            OUString sTmp(
-                sAPI_com_sun_star_text_ContentIndexMark);
-            sServiceName = sTmp;
+            sServiceName = "com.sun.star.text.ContentIndexMark";
             break;
         }
 
@@ -1229,9 +1200,7 @@ void XMLIndexMarkImportContext_Impl::GetServiceName(
         case XML_TOK_TEXT_USER_INDEX_MARK_START:
         case XML_TOK_TEXT_USER_INDEX_MARK_END:
         {
-            OUString sTmp(
-                sAPI_com_sun_star_text_UserIndexMark);
-            sServiceName = sTmp;
+            sServiceName = "com.sun.star.text.UserIndexMark";
             break;
         }
 
@@ -1239,9 +1208,7 @@ void XMLIndexMarkImportContext_Impl::GetServiceName(
         case XML_TOK_TEXT_ALPHA_INDEX_MARK_START:
         case XML_TOK_TEXT_ALPHA_INDEX_MARK_END:
         {
-            OUString sTmp(
-                sAPI_com_sun_star_text_DocumentIndexMark);
-            sServiceName = sTmp;
+            sServiceName = "com.sun.star.text.DocumentIndexMark";
             break;
         }
 
@@ -1275,8 +1242,6 @@ bool XMLIndexMarkImportContext_Impl::CreateMark(
 
 class XMLTOCMarkImportContext_Impl : public XMLIndexMarkImportContext_Impl
 {
-    const OUString sLevel;
-
 public:
 
     XMLTOCMarkImportContext_Impl(
@@ -1300,8 +1265,7 @@ XMLTOCMarkImportContext_Impl::XMLTOCMarkImportContext_Impl(
     SvXMLImport& rImport, sal_uInt16 nPrefix, const OUString& rLocalName,
     enum XMLTextPElemTokens nTok, XMLHints_Impl& rHints) :
         XMLIndexMarkImportContext_Impl(rImport, nPrefix, rLocalName,
-                                       nTok, rHints),
-        sLevel("Level")
+                                       nTok, rHints)
 {
 }
 
@@ -1323,7 +1287,7 @@ void XMLTOCMarkImportContext_Impl::ProcessAttribute(
              && nTmp < GetImport().GetTextImport()->
                               GetChapterNumbering()->getCount() )
         {
-            rPropSet->setPropertyValue(sLevel, uno::makeAny((sal_Int16)(nTmp - 1)));
+            rPropSet->setPropertyValue("Level", uno::makeAny((sal_Int16)(nTmp - 1)));
         }
         // else: value out of range -> ignore
     }
@@ -1337,9 +1301,6 @@ void XMLTOCMarkImportContext_Impl::ProcessAttribute(
 
 class XMLUserIndexMarkImportContext_Impl : public XMLIndexMarkImportContext_Impl
 {
-    const OUString sUserIndexName;
-    const OUString sLevel;
-
 public:
 
     XMLUserIndexMarkImportContext_Impl(
@@ -1363,9 +1324,7 @@ XMLUserIndexMarkImportContext_Impl::XMLUserIndexMarkImportContext_Impl(
     SvXMLImport& rImport, sal_uInt16 nPrefix, const OUString& rLocalName,
     enum XMLTextPElemTokens nTok, XMLHints_Impl& rHints) :
         XMLIndexMarkImportContext_Impl(rImport, nPrefix, rLocalName,
-                                       nTok, rHints),
-        sUserIndexName("UserIndexName"),
-        sLevel("Level")
+                                       nTok, rHints)
 {
 }
 
@@ -1377,7 +1336,7 @@ void XMLUserIndexMarkImportContext_Impl::ProcessAttribute(
     {
         if ( IsXMLToken( sLocalName, XML_INDEX_NAME ) )
         {
-            rPropSet->setPropertyValue(sUserIndexName, uno::makeAny(sValue));
+            rPropSet->setPropertyValue("UserIndexName", uno::makeAny(sValue));
         }
         else if ( IsXMLToken( sLocalName, XML_OUTLINE_LEVEL ) )
         {
@@ -1387,7 +1346,7 @@ void XMLUserIndexMarkImportContext_Impl::ProcessAttribute(
                 nTmp, sValue, 0,
                GetImport().GetTextImport()->GetChapterNumbering()->getCount()))
             {
-                rPropSet->setPropertyValue(sLevel, uno::makeAny(static_cast<sal_Int16>(nTmp - 1)));
+                rPropSet->setPropertyValue("Level", uno::makeAny(static_cast<sal_Int16>(nTmp - 1)));
             }
             // else: value out of range -> ignore
         }
@@ -1408,13 +1367,6 @@ void XMLUserIndexMarkImportContext_Impl::ProcessAttribute(
 
 class XMLAlphaIndexMarkImportContext_Impl : public XMLIndexMarkImportContext_Impl
 {
-    const OUString sPrimaryKey;
-    const OUString sSecondaryKey;
-    const OUString sTextReading;
-    const OUString sPrimaryKeyReading;
-    const OUString sSecondaryKeyReading;
-    const OUString sMainEntry;
-
 public:
 
     XMLAlphaIndexMarkImportContext_Impl(
@@ -1438,13 +1390,7 @@ XMLAlphaIndexMarkImportContext_Impl::XMLAlphaIndexMarkImportContext_Impl(
     SvXMLImport& rImport, sal_uInt16 nPrefix, const OUString& rLocalName,
     enum XMLTextPElemTokens nTok, XMLHints_Impl& rHints) :
         XMLIndexMarkImportContext_Impl(rImport, nPrefix, rLocalName,
-                                       nTok, rHints),
-        sPrimaryKey("PrimaryKey"),
-        sSecondaryKey("SecondaryKey"),
-        sTextReading("TextReading"),
-        sPrimaryKeyReading("PrimaryKeyReading"),
-        sSecondaryKeyReading("SecondaryKeyReading"),
-        sMainEntry("IsMainEntry")
+                                       nTok, rHints)
 {
 }
 
@@ -1456,23 +1402,23 @@ void XMLAlphaIndexMarkImportContext_Impl::ProcessAttribute(
     {
         if ( IsXMLToken( sLocalName, XML_KEY1 ) )
         {
-            rPropSet->setPropertyValue(sPrimaryKey, uno::makeAny(sValue));
+            rPropSet->setPropertyValue("PrimaryKey", uno::makeAny(sValue));
         }
         else if ( IsXMLToken( sLocalName, XML_KEY2 ) )
         {
-            rPropSet->setPropertyValue(sSecondaryKey, uno::makeAny(sValue));
+            rPropSet->setPropertyValue("SecondaryKey", uno::makeAny(sValue));
         }
         else if ( IsXMLToken( sLocalName, XML_KEY1_PHONETIC ) )
         {
-            rPropSet->setPropertyValue(sPrimaryKeyReading, uno::makeAny(sValue));
+            rPropSet->setPropertyValue("PrimaryKeyReading", uno::makeAny(sValue));
         }
         else if ( IsXMLToken( sLocalName, XML_KEY2_PHONETIC ) )
         {
-            rPropSet->setPropertyValue(sSecondaryKeyReading, uno::makeAny(sValue));
+            rPropSet->setPropertyValue("SecondaryKeyReading", uno::makeAny(sValue));
         }
         else if ( IsXMLToken( sLocalName, XML_STRING_VALUE_PHONETIC ) )
         {
-            rPropSet->setPropertyValue(sTextReading, uno::makeAny(sValue));
+            rPropSet->setPropertyValue("TextReading", uno::makeAny(sValue));
         }
         else if ( IsXMLToken( sLocalName, XML_MAIN_ENTRY ) )
         {
@@ -1482,7 +1428,7 @@ void XMLAlphaIndexMarkImportContext_Impl::ProcessAttribute(
             if (::sax::Converter::convertBool(bTmp, sValue))
                 bMainEntry = bTmp;
 
-            rPropSet->setPropertyValue(sMainEntry, uno::makeAny(bMainEntry));
+            rPropSet->setPropertyValue("IsMainEntry", uno::makeAny(bMainEntry));
         }
         else
         {
@@ -1585,6 +1531,7 @@ SvXMLImportContext *XMLImpSpanContext_Impl::CreateChildContext(
         pContext = new XMLCharContext( rImport, nPrefix,
                                                rLocalName, xAttrList,
                                                0x0020, true );
+        rIgnoreLeadingSpace = false;
         break;
 
     case XML_TOK_TEXT_HYPERLINK:
@@ -1736,8 +1683,11 @@ SvXMLImportContext *XMLImpSpanContext_Impl::CreateChildContext(
     case XML_TOK_TEXTP_CHANGE:
         pContext = new XMLChangeImportContext(
             rImport, nPrefix, rLocalName,
-            (nToken != XML_TOK_TEXTP_CHANGE_END),
-            (nToken != XML_TOK_TEXTP_CHANGE_START),
+            ((nToken == XML_TOK_TEXTP_CHANGE_END)
+                ? XMLChangeImportContext::Element::END
+                : (nToken == XML_TOK_TEXTP_CHANGE_START)
+                    ? XMLChangeImportContext::Element::START
+                    : XMLChangeImportContext::Element::POINT),
             false);
         break;
 
@@ -1874,9 +1824,6 @@ XMLParaContext::XMLParaContext(
             break;
         case XML_TOK_TEXT_P_STYLE_NAME:
             sStyleName = rValue;
-            break;
-        case XML_TOK_TEXT_P_CLASS_NAMES:
-            sClassNames = rValue;
             break;
         case XML_TOK_TEXT_P_COND_STYLE_NAME:
             aCondStyleName = rValue;
@@ -2311,10 +2258,6 @@ XMLNumberedParaContext::XMLNumberedParaContext(
     SAL_WARN_IF(!m_xNumRules.is(), "xmloff.text", "numbered-paragraph: no NumRules");
 
     i_rImport.GetTextImport()->GetTextListHelper().PushListContext( this );
-}
-
-XMLNumberedParaContext::~XMLNumberedParaContext()
-{
 }
 
 void XMLNumberedParaContext::EndElement()

@@ -84,7 +84,7 @@ public:
             set and the whole window is repainted.
     */
     void UpdateScrollBars (
-        bool bScrollToCurrentPosition = true);
+        bool bScrollToCurrentPosition);
 
     /** Place the scroll bars inside the given area.  When the available
         area is not large enough for the content to display the horizontal
@@ -102,8 +102,8 @@ public:
             Returns the space that remains after the scroll bars are
             placed.
     */
-    Rectangle PlaceScrollBars (
-        const Rectangle& rAvailableArea,
+    ::tools::Rectangle PlaceScrollBars (
+        const ::tools::Rectangle& rAvailableArea,
         const bool bIsHorizontalScrollBarAllowed,
         const bool bIsVerticalScrollBarAllowed);
 
@@ -148,18 +148,15 @@ public:
     void clearAutoScrollFunctor();
 
     enum Orientation { Orientation_Horizontal, Orientation_Vertical };
-    enum Unit { Unit_Pixel, Unit_Slide };
     /** Scroll the slide sorter by setting the thumbs of the scroll bars and
         by moving the content of the content window.
         @param eOrientation
             Defines whether to scroll horizontally or vertically.
-        @param eUnit
-            Defines whether the distance is a pixel value or the number of
-            slides to scroll.
+        @param nDistance
+            distance in slides.
     */
     void Scroll(
         const Orientation eOrientation,
-        const Unit eUnit,
         const sal_Int32 nDistance);
 
 private:
@@ -220,8 +217,8 @@ private:
             The area that is enclosed by the scroll bars is returned.  It
             will be filled with the SlideSorterView.
     */
-    Rectangle DetermineScrollBarVisibilities(
-        const Rectangle& rAvailableArea,
+    ::tools::Rectangle DetermineScrollBarVisibilities(
+        const ::tools::Rectangle& rAvailableArea,
         const bool bIsHorizontalScrollBarAllowed,
         const bool bIsVerticalScrollBarAllowed);
 
@@ -236,18 +233,18 @@ private:
     bool TestScrollBarVisibilities (
         bool bHorizontalScrollBarVisible,
         bool bVerticalScrollBarVisible,
-        const Rectangle& rAvailableArea);
+        const ::tools::Rectangle& rAvailableArea);
 
     void CalcAutoScrollOffset (const Point& rMouseWindowPosition);
     bool RepeatAutoScroll();
 
-    DECL_LINK_TYPED(HorizontalScrollBarHandler, ScrollBar*, void);
-    DECL_LINK_TYPED(VerticalScrollBarHandler, ScrollBar*, void);
-    DECL_LINK_TYPED(AutoScrollTimeoutHandler, Timer *, void);
+    DECL_LINK(HorizontalScrollBarHandler, ScrollBar*, void);
+    DECL_LINK(VerticalScrollBarHandler, ScrollBar*, void);
+    DECL_LINK(AutoScrollTimeoutHandler, Timer *, void);
 
-    void PlaceHorizontalScrollBar (const Rectangle& aArea);
-    void PlaceVerticalScrollBar (const Rectangle& aArea);
-    void PlaceFiller (const Rectangle& aArea);
+    void PlaceHorizontalScrollBar (const ::tools::Rectangle& aArea);
+    void PlaceVerticalScrollBar (const ::tools::Rectangle& aArea);
+    void PlaceFiller (const ::tools::Rectangle& aArea);
 };
 
 } } } // end of namespace ::sd::slidesorter::controller

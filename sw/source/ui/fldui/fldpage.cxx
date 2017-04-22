@@ -88,9 +88,9 @@ void SwFieldPage::Init()
             {
                 SwDoc* pDoc = pSh->GetDoc();
                 pSh->InsertFieldType( SwSetExpFieldType( pDoc,
-                                    OUString("HTML_ON"), 1));
+                                    "HTML_ON", 1));
                 pSh->InsertFieldType( SwSetExpFieldType(pDoc,
-                                    OUString("HTML_OFF"), 1));
+                                    "HTML_OFF", 1));
             }
         }
     }
@@ -237,7 +237,7 @@ void SwFieldPage::InsertField(sal_uInt16 nTypeId, sal_uInt16 nSubType, const OUS
         case TYP_INPUTFLD:
             {
                 // User- or SetField ?
-                if (m_aMgr.GetFieldType(RES_USERFLD, sPar1) == nullptr &&
+                if (m_aMgr.GetFieldType(SwFieldIds::User, sPar1) == nullptr &&
                 !(pTmpField->GetSubType() & INP_TXT)) // SETEXPFLD
                 {
                     SwSetExpField* pField = static_cast<SwSetExpField*>(pTmpField);
@@ -299,13 +299,13 @@ void SwFieldPage::RestorePos(ListBox* pLst1)
 }
 
 // Insert new fields
-IMPL_LINK_TYPED( SwFieldPage, TreeListBoxInsertHdl, SvTreeListBox*, pBtn, bool )
+IMPL_LINK( SwFieldPage, TreeListBoxInsertHdl, SvTreeListBox*, pBtn, bool )
 {
     InsertHdl(pBtn);
     return false;
 }
 
-IMPL_LINK_TYPED( SwFieldPage, ListBoxInsertHdl, ListBox&, rBox, void )
+IMPL_LINK( SwFieldPage, ListBoxInsertHdl, ListBox&, rBox, void )
 {
     InsertHdl(&rBox);
 }
@@ -345,7 +345,7 @@ void SwFieldPage::EnableInsert(bool bEnable)
     m_bInsert = bEnable;
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldPage, NumFormatHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwFieldPage, NumFormatHdl, ListBox&, void)
 {
     InsertHdl(nullptr);
 }

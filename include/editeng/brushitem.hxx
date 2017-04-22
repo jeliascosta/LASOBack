@@ -22,6 +22,7 @@
 #include <svl/poolitem.hxx>
 #include <vcl/wall.hxx>
 #include <tools/link.hxx>
+#include <unotools/securityoptions.hxx>
 #include <editeng/editengdllapi.h>
 #include <memory>
 
@@ -42,19 +43,21 @@ enum SvxGraphicPosition
     GPOS_AREA, GPOS_TILED
 };
 
-class SvxBrushItem_Impl;
 class EDITENG_DLLPUBLIC SvxBrushItem : public SfxPoolItem
 {
     Color               aColor;
     sal_Int32           nShadingValue;
-    std::unique_ptr<SvxBrushItem_Impl>  pImpl;
+    mutable std::unique_ptr<GraphicObject> xGraphicObject;
+    sal_Int8            nGraphicTransparency; //contains a percentage value which is
+                                              //copied to the GraphicObject when necessary
+    SvtSecurityOptions  maSecOptions;
     OUString            maStrLink;
     OUString            maStrFilter;
     SvxGraphicPosition  eGraphicPos;
     mutable bool        bLoadAgain;
 
     void        ApplyGraphicTransparency_Impl();
-    // wird nur von Create benutzt
+    // only used by Create
     SvxBrushItem( SvStream& rStrm,
                   sal_uInt16 nVersion, sal_uInt16 nWhich  );
 
@@ -71,16 +74,17 @@ public:
     SvxBrushItem( const OUString& rLink, const OUString& rFilter,
                   SvxGraphicPosition ePos, sal_uInt16 nWhich );
     SvxBrushItem( const SvxBrushItem& );
+    SvxBrushItem( SvxBrushItem&& );
     SvxBrushItem( const CntWallpaperItem&, sal_uInt16 nWhich );
 
-    virtual ~SvxBrushItem();
+    virtual ~SvxBrushItem() override;
 
 public:
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual bool             operator==( const SfxPoolItem& ) const override;
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
@@ -97,18 +101,14 @@ public:
 
     SvxGraphicPosition  GetGraphicPos() const       { return eGraphicPos; }
 
-    void                PurgeMedium() const;
-
     sal_Int32               GetShadingValue() const     { return nShadingValue; }
     const Graphic*          GetGraphic(OUString const & referer = OUString()/*TODO*/) const;
     const GraphicObject*    GetGraphicObject(OUString const & referer = OUString()/*TODO*/) const;
     const OUString&         GetGraphicLink() const      { return maStrLink; }
     const OUString&         GetGraphicFilter() const    { return maStrFilter; }
 
-    void                SetShadingValue( const sal_Int32 nNew );
-
-    //UUUU get graphic transparency in percent
-    sal_Int8 getGraphicTransparency() const;
+    // get graphic transparency in percent
+    sal_Int8 getGraphicTransparency() const { return nGraphicTransparency; }
     void setGraphicTransparency(sal_Int8 nNew);
 
     void                SetGraphicPos( SvxGraphicPosition eNew );
@@ -117,7 +117,8 @@ public:
     void                SetGraphicLink( const OUString& rNew );
     void                SetGraphicFilter( const OUString& rNew );
 
-    SvxBrushItem&       operator=( const SvxBrushItem& rItem);
+    SvxBrushItem&       operator=(const SvxBrushItem& rItem);
+    SvxBrushItem&       operator=(SvxBrushItem&& rItem);
 
     static SvxGraphicPosition   WallpaperStyle2GraphicPos( WallpaperStyle eStyle );
     static WallpaperStyle       GraphicPos2WallpaperStyle( SvxGraphicPosition ePos );

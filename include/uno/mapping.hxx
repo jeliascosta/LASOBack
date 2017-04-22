@@ -57,13 +57,13 @@ class Mapping
 public:
     // these are here to force memory de/allocation to sal lib.
     /// @cond INTERNAL
-    inline static void * SAL_CALL operator new ( size_t nSize )
+    static void * SAL_CALL operator new ( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    inline static void SAL_CALL operator delete ( void * pMem )
+    static void SAL_CALL operator delete ( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    inline static void * SAL_CALL operator new ( size_t, void * pMem )
+    static void * SAL_CALL operator new ( size_t, void * pMem )
         { return pMem; }
-    inline static void SAL_CALL operator delete ( void *, void * )
+    static void SAL_CALL operator delete ( void *, void * )
         {}
     /// @endcond
 
@@ -110,6 +110,11 @@ public:
     */
     inline Mapping( const Mapping & rMapping );
 
+#if defined LIBO_INTERNAL_ONLY
+    Mapping(Mapping && other): _pMapping(other._pMapping)
+    { other._pMapping = nullptr; }
+#endif
+
     /** Destructor.
     */
     inline ~Mapping();
@@ -125,21 +130,32 @@ public:
         @param rMapping another mapping
         @return this mapping
     */
-    inline Mapping & SAL_CALL operator = ( const Mapping & rMapping )
+    Mapping & SAL_CALL operator = ( const Mapping & rMapping )
         { return operator = ( rMapping._pMapping ); }
+
+#if defined LIBO_INTERNAL_ONLY
+    Mapping & operator =(Mapping && other) {
+        if (_pMapping != nullptr) {
+            (*_pMapping->release)(_pMapping);
+        }
+        _pMapping = other._pMapping;
+        other._pMapping = nullptr;
+        return *this;
+    }
+#endif
 
     /** Provides a pointer to the C mapping. The returned mapping is NOT acquired!
 
         @return UNacquired C mapping
     */
-    inline uno_Mapping * SAL_CALL get() const
+    uno_Mapping * SAL_CALL get() const
         { return _pMapping; }
 
     /** Tests if a mapping is set.
 
         @return true if a mapping is set
     */
-    inline bool SAL_CALL is() const
+    bool SAL_CALL is() const
         { return (_pMapping != NULL); }
 
     /** Releases a set mapping.
@@ -159,7 +175,7 @@ public:
         @param pTypeDescr       type description of interface
         @return                 mapped interface
     */
-    inline void * SAL_CALL mapInterface( void * pInterface, typelib_TypeDescription * pTypeDescr ) const
+    void * SAL_CALL mapInterface( void * pInterface, typelib_TypeDescription * pTypeDescr ) const
         { return mapInterface( pInterface, reinterpret_cast<typelib_InterfaceTypeDescription *>(pTypeDescr) ); }
 
     /** Maps an interface from one environment to another.
@@ -177,7 +193,7 @@ public:
         @param pInterface       source interface
         @param pTypeDescr       type description of interface
     */
-    inline void SAL_CALL mapInterface( void ** ppOut, void * pInterface, typelib_InterfaceTypeDescription * pTypeDescr ) const
+    void SAL_CALL mapInterface( void ** ppOut, void * pInterface, typelib_InterfaceTypeDescription * pTypeDescr ) const
         { (*_pMapping->mapInterface)( _pMapping, ppOut, pInterface, pTypeDescr ); }
     /** Maps an interface from one environment to another.
 
@@ -185,7 +201,7 @@ public:
         @param pInterface       source interface
         @param pTypeDescr       type description of interface
     */
-    inline void SAL_CALL mapInterface( void ** ppOut, void * pInterface, typelib_TypeDescription * pTypeDescr ) const
+    void SAL_CALL mapInterface( void ** ppOut, void * pInterface, typelib_TypeDescription * pTypeDescr ) const
         { (*_pMapping->mapInterface)( _pMapping, ppOut, pInterface, reinterpret_cast<typelib_InterfaceTypeDescription *>(pTypeDescr) ); }
 
     /** Maps an interface from one environment to another.
@@ -298,6 +314,7 @@ inline void * Mapping::mapInterface(
     @deprecated
 */
 template< class C >
+SAL_DEPRECATED("use uno_Mapping")
 inline bool mapToCpp( Reference< C > * ppRet, uno_Interface * pUnoI )
 {
     Mapping aMapping(
@@ -321,6 +338,7 @@ inline bool mapToCpp( Reference< C > * ppRet, uno_Interface * pUnoI )
     @deprecated
 */
 template< class C >
+SAL_DEPRECATED("use uno_Mapping")
 inline bool mapToUno( uno_Interface ** ppRet, const Reference< C > & x )
 {
     Mapping aMapping(

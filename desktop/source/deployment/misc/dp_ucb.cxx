@@ -49,7 +49,7 @@ bool create_ucb_content(
         // content ctor/isFolder() will throw exception in case the resource
         // does not exist.
 
-        // dilemma: no chance to use the given iahandler here, because it would
+        // dilemma: no chance to use the given handler here, because it would
         //          raise no such file dialogs, else no interaction for
         //          passwords, ...? xxx todo
         ::ucbhelper::Content ucbContent(
@@ -253,7 +253,7 @@ bool readLine( OUString * res, OUString const & startingWith,
     return false;
 }
 
-bool readProperties( ::std::list< ::std::pair< OUString, OUString> > & out_result,
+bool readProperties( std::list< std::pair< OUString, OUString> > & out_result,
                      ::ucbhelper::Content & ucb_content )
 {
     // read whole file:
@@ -290,7 +290,7 @@ bool readProperties( ::std::list< ::std::pair< OUString, OUString> > & out_resul
         {
             OUString name = aLine.copy(0, posEqual);
             OUString value = aLine.copy(posEqual + 1);
-            out_result.push_back(::std::make_pair(name, value));
+            out_result.push_back(std::make_pair(name, value));
         }
 
         if (bEOF)

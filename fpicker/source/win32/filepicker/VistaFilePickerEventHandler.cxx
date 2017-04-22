@@ -64,20 +64,20 @@ VistaFilePickerEventHandler::~VistaFilePickerEventHandler()
 HRESULT STDMETHODCALLTYPE VistaFilePickerEventHandler::QueryInterface(REFIID rIID    ,
                                                                       void** ppObject)
 {
-    *ppObject=NULL;
+    *ppObject=nullptr;
 
     if ( rIID == IID_IUnknown )
-        *ppObject = (IUnknown*)(IFileDialogEvents*)this;
+        *ppObject = static_cast<IUnknown*>(static_cast<IFileDialogEvents*>(this));
 
     if ( rIID == IID_IFileDialogEvents )
-        *ppObject = (IFileDialogEvents*)this;
+        *ppObject = static_cast<IFileDialogEvents*>(this);
 
     if ( rIID == IID_IFileDialogControlEvents )
-        *ppObject = (IFileDialogControlEvents*)this;
+        *ppObject = static_cast<IFileDialogControlEvents*>(this);
 
-    if ( *ppObject != NULL )
+    if ( *ppObject != nullptr )
     {
-        ((IUnknown*)*ppObject)->AddRef();
+        static_cast<IUnknown*>(*ppObject)->AddRef();
         return S_OK;
     }
 
@@ -205,14 +205,12 @@ STDMETHODIMP VistaFilePickerEventHandler::OnControlActivating(IFileDialogCustomi
 
 
 void SAL_CALL VistaFilePickerEventHandler::addFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener )
-    throw( css::uno::RuntimeException )
 {
     m_lListener.addInterface(cppu::UnoType<css::ui::dialogs::XFilePickerListener>::get(), xListener);
 }
 
 
 void SAL_CALL VistaFilePickerEventHandler::removeFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener )
-    throw( css::uno::RuntimeException )
 {
     m_lListener.removeInterface(cppu::UnoType<css::ui::dialogs::XFilePickerListener>::get(), xListener);
 }
@@ -248,13 +246,10 @@ public:
     AsyncPickerEvents()
     {}
 
-    virtual ~AsyncPickerEvents()
+    virtual void before() override
     {}
 
-    virtual void before()
-    {}
-
-    virtual void doRequest(const RequestRef& rRequest)
+    virtual void doRequest(const RequestRef& rRequest) override
     {
         const ::sal_Int32 nEventID   = rRequest->getRequest();
         const ::sal_Int16 nControlID = rRequest->getArgumentOrDefault(PROP_CONTROL_ID, (::sal_Int16)0);
@@ -292,7 +287,7 @@ public:
         }
     }
 
-    virtual void after()
+    virtual void after() override
     {}
 };
 

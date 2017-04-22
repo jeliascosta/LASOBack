@@ -39,17 +39,12 @@ class TargetHelper
         /** @short  its used at the following interfaces to classify
                     target names.
          */
-        enum ESpecialTarget
+        enum class ESpecialTarget
         {
-            E_NOT_SPECIAL   ,
-            E_SELF          ,
-            E_PARENT        ,
-            E_TOP           ,
-            E_BLANK         ,
-            E_DEFAULT       ,
-            E_BEAMER        ,
-            E_HELPAGENT     ,
-            E_HELPTASK
+            Blank,
+            Default,
+            Beamer,
+            HelpTask
         };
 
     // interface
@@ -82,7 +77,7 @@ class TargetHelper
 
                     And in case such special names can exists one times only
                     by definition inside the same frame tree (e.g. _beamer and
-                    OFFICE_HELP_TASK) its not a good idea to allow anything here :-)
+                    OFFICE_HELP_TASK) it's not a good idea to allow anything here :-)
 
                     Of course we can't check unknown names, which are not special ones.
                     But we decide, that it's not allowed to use "_" as first sign

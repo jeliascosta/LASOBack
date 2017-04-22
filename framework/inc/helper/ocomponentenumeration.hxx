@@ -35,7 +35,7 @@ namespace framework{
 
 /*-************************************************************************************************************
     @short          implement a helper for a oneway enumeration of components
-    @descr          You can step during this list only for one time! Its a snapshot.
+    @descr          You can step during this list only for one time! It's a snapshot.
                     Don't forget to release the reference. You are the owner of an instance of this implementation.
                     You can't use this as a baseclass. Please use it as a dynamical object for return.
 
@@ -81,7 +81,7 @@ class OComponentEnumeration :   public ::cppu::WeakImplHelper< css::container::X
             @param      "aEvent" describe the source of this event.
         *//*-*****************************************************************************************************/
 
-        virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) override;
 
         //  XEnumeration
 
@@ -95,10 +95,10 @@ class OComponentEnumeration :   public ::cppu::WeakImplHelper< css::container::X
                         sal_False = other way
 
             @onerror    sal_False<BR>
-                        (List is emtpy and there no accessible elements ...)
+                        (List is empty and there no accessible elements ...)
         *//*-*****************************************************************************************************/
 
-        virtual sal_Bool SAL_CALL hasMoreElements() throw( css::uno::RuntimeException, std::exception ) override;
+        virtual sal_Bool SAL_CALL hasMoreElements() override;
 
         /*-****************************************************************************************************
             @short      give the next element, if some exist
@@ -110,9 +110,7 @@ class OComponentEnumeration :   public ::cppu::WeakImplHelper< css::container::X
             @onerror    If end of enumeration is arrived or there are no elements in list => a NoSuchElementException is thrown.
         *//*-*****************************************************************************************************/
 
-        virtual css::uno::Any SAL_CALL nextElement() throw( css::container::NoSuchElementException  ,
-                                                             css::lang::WrappedTargetException      ,
-                                                            css::uno::RuntimeException, std::exception              ) override;
+        virtual css::uno::Any SAL_CALL nextElement() override;
 
     //  protected methods
 
@@ -121,11 +119,11 @@ class OComponentEnumeration :   public ::cppu::WeakImplHelper< css::container::X
         /*-****************************************************************************************************
             @short      standard destructor
             @descr      This method destruct an instance of this class and clear some member.
-                        We make it protected, because its not supported to use this class as normal instance!
+                        We make it protected, because it's not supported to use this class as normal instance!
                         You must create it dynamical in memory and use a pointer.
         *//*-*****************************************************************************************************/
 
-        virtual ~OComponentEnumeration();
+        virtual ~OComponentEnumeration() override;
 
         /*-****************************************************************************************************
             @short      reset instance to default values
@@ -148,7 +146,7 @@ class OComponentEnumeration :   public ::cppu::WeakImplHelper< css::container::X
     //  (should be private everyway!)
 
         /*-****************************************************************************************************
-            @short      debug-method to check incoming parameter of some other mehods of this class
+            @short      debug-method to check incoming parameter of some other methods of this class
             @descr      The following methods are used to check parameters for other methods
                         of this class. The return value is used directly for an ASSERT(...).
 

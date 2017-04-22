@@ -50,7 +50,7 @@ class TOOLS_DLLPUBLIC SvRttiBase : public SvRefBase
 public:
 };
 
-#define SV_DECL_PERSIST1( Class, Super1, CLASS_ID )                 \
+#define SV_DECL_PERSIST1( Class, CLASS_ID )                 \
     static  sal_Int32  StaticClassId() { return CLASS_ID; }         \
     static  void *  CreateInstance( SvPersistBase ** ppBase );      \
     friend SvPersistStream& operator >> ( SvPersistStream & rStm,   \
@@ -108,7 +108,7 @@ class SvStream;
     [Example]
 
     One example is described in the constructor.
-    Assume a ring-like dependency, where A referenes B,
+    Assume a ring-like dependency, where A references B,
     B itself references C, and C references to both D and A.
 
     The order of the objects upon saving and loading does not matter,
@@ -137,10 +137,9 @@ private:
     UniqueIndex<SvPersistBase>
                         aPUIdx;
     Index               nStartIdx;
-    const SvPersistStream * pRefStm;
 
-    virtual sal_uIntPtr GetData( void* pData, sal_uIntPtr nSize ) override;
-    virtual sal_uIntPtr PutData( const void* pData, sal_uIntPtr nSize ) override;
+    virtual std::size_t GetData(void* pData, std::size_t nSize) override;
+    virtual std::size_t PutData(const void* pData, std::size_t nSize) override;
     virtual sal_uInt64  SeekPos(sal_uInt64 nPos) override;
     virtual void        FlushData() override;
 
@@ -152,9 +151,7 @@ public:
     virtual void        ResetError() override;
 
                         SvPersistStream( SvClassManager &, SvStream * pStream );
-                        virtual ~SvPersistStream();
-
-    void                ClearStream();
+                        virtual ~SvPersistStream() override;
 
     SvPersistBase *     GetObject( Index nIdx ) const;
     Index               GetIndex( SvPersistBase * ) const;

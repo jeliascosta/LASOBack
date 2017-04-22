@@ -40,6 +40,26 @@ static int help()
     return 1;
 }
 
+/// Represents the comment sidebar widget (only for text documents as of now)
+class CommentsSidebar
+{
+public:
+    /// Main Vertical Box containing comments box and additional controls (eg. buttons)
+    GtkWidget* m_pMainVBox;
+    /// Button to issue a .uno:ViewAnnotations command
+    GtkWidget* m_pViewAnnotationsButton;
+    /// top level container for all comments in the sidebar
+    GtkWidget* m_pCommentsVBox;
+    /// scrolled window for main comments box
+    GtkWidget* m_pScrolledWindow;
+
+    /// Prepare and return a comment object (GtkBox)
+    static GtkWidget* createCommentBox(const boost::property_tree::ptree& aComment);
+    /// Click even handler for m_pViewAnnotationsButton
+    static void unoViewAnnotations(GtkWidget* pWidget, gpointer userdata);
+};
+
+
 /// Represents the row or column header widget for spreadsheets.
 class TiledRowColumnBar
 {
@@ -97,6 +117,7 @@ public:
     GtkWidget* m_pStatusBar;
     GtkWidget* m_pProgressBar;
     GtkWidget* m_pStatusbarLabel;
+    GtkWidget* m_pRedlineLabel;
     GtkWidget* m_pZoomLabel;
     GtkToolItem* m_pSaveButton;
     GtkToolItem* m_pCopyButton;
@@ -116,12 +137,18 @@ public:
     GtkToolItem* m_pJustifypara;
     GtkToolItem* m_pInsertAnnotation;
     GtkToolItem* m_pDeleteComment;
+    GtkToolItem* m_pTrackChanges;
     GtkWidget* m_pFormulabarEntry;
     GtkWidget* m_pScrolledWindow;
     std::map<GtkToolItem*, std::string> m_aToolItemCommandNames;
+    std::map<GtkToolItem*, std::string> m_aToolItemCommandArgs;
     std::map<std::string, GtkToolItem*> m_aCommandNameToolItems;
+    /// Sensitivity (enabled or disabled) or each tool item, ignoring edit
+    /// state.
+    std::map<GtkToolItem*, bool> m_aToolItemSensitivities;
     bool m_bToolItemBroadcast;
     GtkWidget* m_pVBox;
+    GtkWidget* m_pMainHBox;
     GtkComboBoxText* m_pPartSelector;
     GtkWidget* m_pPartModeComboBox;
     /// Should the part selector avoid calling lok::Document::setPart()?
@@ -133,6 +160,10 @@ public:
     std::shared_ptr<TiledRowColumnBar> m_pRowBar;
     std::shared_ptr<TiledRowColumnBar> m_pColumnBar;
     std::shared_ptr<TiledCornerButton> m_pCornerButton;
+    std::shared_ptr<CommentsSidebar> m_pCommentsSidebar;
+    /// Rendering arguments, which are the same for all views.
+    boost::property_tree::ptree m_aRenderingArguments;
+    /// Author of this window
     std::string m_aAuthor;
 
     TiledWindow()
@@ -140,6 +171,7 @@ public:
         m_pStatusBar(nullptr),
         m_pProgressBar(nullptr),
         m_pStatusbarLabel(nullptr),
+        m_pRedlineLabel(nullptr),
         m_pZoomLabel(nullptr),
         m_pSaveButton(nullptr),
         m_pCopyButton(nullptr),
@@ -159,10 +191,12 @@ public:
         m_pJustifypara(nullptr),
         m_pInsertAnnotation(nullptr),
         m_pDeleteComment(nullptr),
+        m_pTrackChanges(nullptr),
         m_pFormulabarEntry(nullptr),
         m_pScrolledWindow(nullptr),
         m_bToolItemBroadcast(true),
         m_pVBox(nullptr),
+        m_pMainHBox(nullptr),
         m_pPartSelector(nullptr),
         m_pPartModeComboBox(nullptr),
         m_bPartSelectorBroadcast(true),
@@ -171,8 +205,6 @@ public:
         m_pFindbarLabel(nullptr),
         m_bFindAll(false)
     {
-        struct passwd* pPasswd = getpwuid(getuid());
-        m_aAuthor = std::string(pPasswd->pw_gecos);
     }
 };
 
@@ -181,12 +213,227 @@ static std::map<GtkWidget*, TiledWindow> g_aWindows;
 static void setupDocView(GtkWidget* pDocView);
 static GtkWidget* createWindow(TiledWindow& rWindow);
 static void openDocumentCallback (GObject* source_object, GAsyncResult* res, gpointer userdata);
+/// Handler for m_pPartModeComboBox.
+static void changePartMode( GtkWidget* pSelector, gpointer /*pItem*/);
+/// Handler for m_pPartSelector.
+static void changePart( GtkWidget* pSelector, gpointer /*pItem*/ );
+/// Part selector populator
+static void populatePartSelector(LOKDocView* pLOKDocView);
+/// Part mode selector populator
+static void populatePartModeSelector( GtkComboBoxText* pSelector );
 
 static TiledWindow& lcl_getTiledWindow(GtkWidget* pWidget)
 {
     GtkWidget* pToplevel = gtk_widget_get_toplevel(pWidget);
     assert(g_aWindows.find(pToplevel) != g_aWindows.end());
     return g_aWindows[pToplevel];
+}
+
+/// Generate an author string for multiple views.
+static std::string getNextAuthor()
+{
+    static int nCounter = 0;
+    struct passwd* pPasswd = getpwuid(getuid());
+    return std::string(pPasswd->pw_gecos) + " #" + std::to_string(++nCounter);
+}
+
+static void lcl_registerToolItem(TiledWindow& rWindow, GtkToolItem* pItem, const std::string& rName, const std::string& rArgs = "")
+{
+    rWindow.m_aToolItemCommandNames[pItem] = rName;
+    rWindow.m_aToolItemCommandArgs[pItem] = rArgs;
+    rWindow.m_aCommandNameToolItems[rName] = pItem;
+    rWindow.m_aToolItemSensitivities[pItem] = true;
+}
+
+static void userPromptDialog(GtkWidget* pDocView, const std::string& aTitle, std::map<std::string, std::string>& aEntries)
+{
+    GtkWidget* pDialog = gtk_dialog_new_with_buttons (aTitle.c_str(),
+                                                      GTK_WINDOW (gtk_widget_get_toplevel(pDocView)),
+                                                      GTK_DIALOG_MODAL,
+                                                      "Ok",
+                                                      GTK_RESPONSE_OK,
+                                                      nullptr);
+
+    GtkWidget* pDialogMessageArea = gtk_dialog_get_content_area (GTK_DIALOG (pDialog));
+    GtkWidget* pEntryArea = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(pDialogMessageArea), pEntryArea);
+    for (const auto& entry : aEntries)
+    {
+        GtkWidget* pEntry = gtk_entry_new();
+#if GTK_CHECK_VERSION(3,2,0)
+        gtk_entry_set_placeholder_text(GTK_ENTRY(pEntry), entry.first.c_str());
+#endif
+        gtk_container_add(GTK_CONTAINER(pEntryArea), pEntry);
+    }
+
+    gtk_widget_show_all(pDialog);
+
+    gint res = gtk_dialog_run(GTK_DIALOG(pDialog));
+    switch(res)
+    {
+    case GTK_RESPONSE_OK:
+        GList* pList = gtk_container_get_children(GTK_CONTAINER(pEntryArea));
+
+        for (GList* l = pList; l != nullptr; l = l->next)
+        {
+            const gchar* pKey = gtk_entry_get_placeholder_text(GTK_ENTRY(l->data));
+            aEntries[std::string(pKey)] = std::string(gtk_entry_get_text(GTK_ENTRY(l->data)));
+        }
+        break;
+    }
+
+    gtk_widget_destroy(pDialog);
+}
+
+static void editButtonClicked(GtkWidget* pWidget, gpointer userdata)
+{
+    TiledWindow& rWindow = lcl_getTiledWindow(pWidget);
+    std::map<std::string, std::string> aEntries;
+    aEntries["Text"] = "";
+
+    userPromptDialog(rWindow.m_pDocView, "Edit comment", aEntries);
+
+    gchar *commentId = static_cast<gchar*>(g_object_get_data(G_OBJECT(userdata), "id"));
+
+    boost::property_tree::ptree aTree;
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Id", "/", "type", nullptr), '/'), "string");
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Id", "/", "value", nullptr), '/'), std::string(commentId));
+
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Text", "/", "type", nullptr), '/'), "string");
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Text", "/", "value", nullptr), '/'), aEntries["Text"]);
+
+    std::stringstream aStream;
+    boost::property_tree::write_json(aStream, aTree);
+    std::string aArguments = aStream.str();
+
+    lok_doc_view_post_command(LOK_DOC_VIEW(rWindow.m_pDocView), ".uno:EditAnnotation", aArguments.c_str(), false);
+}
+
+static void replyButtonClicked(GtkWidget* pWidget, gpointer userdata)
+{
+    TiledWindow& rWindow = lcl_getTiledWindow(pWidget);
+    std::map<std::string, std::string> aEntries;
+    aEntries["Text"] = "";
+
+    userPromptDialog(rWindow.m_pDocView, "Reply comment", aEntries);
+
+    gchar *commentId = static_cast<gchar*>(g_object_get_data(G_OBJECT(userdata), "id"));
+
+    boost::property_tree::ptree aTree;
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Id", "/", "type", nullptr), '/'), "string");
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Id", "/", "value", nullptr), '/'), std::string(commentId));
+
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Text", "/", "type", nullptr), '/'), "string");
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Text", "/", "value", nullptr), '/'), aEntries["Text"]);
+
+    std::stringstream aStream;
+    boost::property_tree::write_json(aStream, aTree);
+    std::string aArguments = aStream.str();
+
+    // Different reply UNO command for impress
+    std::string replyCommand = ".uno:ReplyComment";
+    LibreOfficeKitDocument* pDocument = lok_doc_view_get_document(LOK_DOC_VIEW(rWindow.m_pDocView));
+    if (pDocument && pDocument->pClass->getDocumentType(pDocument) == LOK_DOCTYPE_PRESENTATION)
+        replyCommand = ".uno:ReplyToAnnotation";
+    lok_doc_view_post_command(LOK_DOC_VIEW(rWindow.m_pDocView), replyCommand.c_str(), aArguments.c_str(), false);
+}
+
+static void deleteCommentButtonClicked(GtkWidget* pWidget, gpointer userdata)
+{
+    TiledWindow& rWindow = lcl_getTiledWindow(pWidget);
+
+    gchar *commentid = static_cast<gchar*>(g_object_get_data(G_OBJECT(userdata), "id"));
+
+    boost::property_tree::ptree aTree;
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Id", "/", "type", nullptr), '/'), "string");
+    aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Id", "/", "value", nullptr), '/'), std::string(commentid));
+
+    std::stringstream aStream;
+    boost::property_tree::write_json(aStream, aTree);
+    std::string aArguments = aStream.str();
+
+    lok_doc_view_post_command(LOK_DOC_VIEW(rWindow.m_pDocView), rWindow.m_aToolItemCommandNames[rWindow.m_pDeleteComment].c_str(), aArguments.c_str(), false);
+}
+
+GtkWidget* CommentsSidebar::createCommentBox(const boost::property_tree::ptree& aComment)
+{
+    GtkWidget* pCommentVBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
+    gchar *id = g_strndup(aComment.get<std::string>("id").c_str(), 20);
+    g_object_set_data_full(G_OBJECT(pCommentVBox), "id", id, g_free);
+
+    // Set background if its a reply comment
+    if (aComment.get("parent", -1) > 0)
+    {
+        GtkStyleContext* pStyleContext = gtk_widget_get_style_context(pCommentVBox);
+        GtkCssProvider* pCssProvider = gtk_css_provider_get_default();
+        gtk_style_context_add_class(pStyleContext, "commentbox");
+        gtk_style_context_add_provider(pStyleContext, GTK_STYLE_PROVIDER(pCssProvider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        gtk_css_provider_load_from_data(pCssProvider, ".commentbox {background-color: lightgreen;}", -1, nullptr);
+    }
+
+    GtkWidget* pCommentText = gtk_label_new(aComment.get<std::string>("text").c_str());
+    GtkWidget* pCommentAuthor = gtk_label_new(aComment.get<std::string>("author").c_str());
+    GtkWidget* pCommentDate = gtk_label_new(aComment.get<std::string>("dateTime").c_str());
+    GtkWidget* pControlsHBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    GtkWidget* pEditButton = gtk_button_new_with_label("Edit");
+    GtkWidget* pReplyButton = gtk_button_new_with_label("Reply");
+    GtkWidget* pDeleteButton = gtk_button_new_with_label("Delete");
+    g_signal_connect(G_OBJECT(pEditButton), "clicked", G_CALLBACK(editButtonClicked), pCommentVBox);
+    g_signal_connect(G_OBJECT(pReplyButton), "clicked", G_CALLBACK(replyButtonClicked), pCommentVBox);
+    g_signal_connect(G_OBJECT(pDeleteButton), "clicked", G_CALLBACK(deleteCommentButtonClicked), pCommentVBox);
+
+    gtk_container_add(GTK_CONTAINER(pControlsHBox), pEditButton);
+    gtk_container_add(GTK_CONTAINER(pControlsHBox), pReplyButton);
+    gtk_container_add(GTK_CONTAINER(pControlsHBox), pDeleteButton);
+    GtkWidget* pCommentSeparator = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+
+    gtk_container_add(GTK_CONTAINER(pCommentVBox), pCommentText);
+    gtk_container_add(GTK_CONTAINER(pCommentVBox), pCommentAuthor);
+    gtk_container_add(GTK_CONTAINER(pCommentVBox), pCommentDate);
+    gtk_container_add(GTK_CONTAINER(pCommentVBox), pControlsHBox);
+    gtk_container_add(GTK_CONTAINER(pCommentVBox), pCommentSeparator);
+
+    gtk_label_set_line_wrap(GTK_LABEL(pCommentText), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(pCommentText), 35);
+
+    return pCommentVBox;
+}
+
+void CommentsSidebar::unoViewAnnotations(GtkWidget* pWidget, gpointer /*userdata*/)
+{
+    TiledWindow& rWindow = lcl_getTiledWindow(pWidget);
+
+    LibreOfficeKitDocument* pDocument = lok_doc_view_get_document(LOK_DOC_VIEW(rWindow.m_pDocView));
+    char* pValues = pDocument->pClass->getCommandValues(pDocument, ".uno:ViewAnnotations");
+    g_info("lok::Document::getCommandValues(%s) : %s", ".uno:ViewAnnotations", pValues);
+    std::stringstream aStream(pValues);
+    free(pValues);
+
+    gtk_widget_destroy(rWindow.m_pCommentsSidebar->m_pScrolledWindow);
+
+    rWindow.m_pCommentsSidebar->m_pScrolledWindow = gtk_scrolled_window_new(nullptr, nullptr);
+    gtk_widget_set_vexpand(rWindow.m_pCommentsSidebar->m_pScrolledWindow, TRUE);
+    rWindow.m_pCommentsSidebar->m_pCommentsVBox = gtk_grid_new();
+    g_object_set(rWindow.m_pCommentsSidebar->m_pCommentsVBox, "orientation", GTK_ORIENTATION_VERTICAL, nullptr);
+
+    gtk_container_add(GTK_CONTAINER(rWindow.m_pCommentsSidebar->m_pScrolledWindow), rWindow.m_pCommentsSidebar->m_pCommentsVBox);
+    gtk_container_add(GTK_CONTAINER(rWindow.m_pCommentsSidebar->m_pMainVBox), rWindow.m_pCommentsSidebar->m_pScrolledWindow);
+
+    boost::property_tree::ptree aTree;
+    boost::property_tree::read_json(aStream, aTree);
+    try
+    {
+        for (boost::property_tree::ptree::value_type& rValue : aTree.get_child("comments"))
+        {
+            GtkWidget* pCommentBox = CommentsSidebar::createCommentBox(rValue.second);
+            gtk_container_add(GTK_CONTAINER(rWindow.m_pCommentsSidebar->m_pCommentsVBox), pCommentBox);
+        }
+        gtk_widget_show_all(rWindow.m_pCommentsSidebar->m_pScrolledWindow);
+    }
+    catch(boost::property_tree::ptree_bad_path& rException)
+    {
+        std::cerr << "CommentsSidebar::unoViewAnnotations: failed to get comments" << rException.what() << std::endl;
+    }
 }
 
 TiledRowColumnBar::TiledRowColumnBar(TiledBarType eType)
@@ -344,6 +591,7 @@ gboolean TiledRowColumnBar::docConfigureEvent(GtkWidget* pDocView, GdkEventConfi
         gtk_widget_show(rWindow.m_pColumnBar->m_pDrawingArea);
         gtk_widget_queue_draw(rWindow.m_pColumnBar->m_pDrawingArea);
         gtk_widget_show(rWindow.m_pFormulabarEntry);
+
     }
 
     return TRUE;
@@ -376,14 +624,334 @@ gboolean TiledCornerButton::drawImpl(GtkWidget* /*pWidget*/, cairo_t* pCairo)
     return FALSE;
 }
 
-static void lcl_registerToolItem(TiledWindow& rWindow, GtkToolItem* pItem, const std::string& rName)
-{
-    rWindow.m_aToolItemCommandNames[pItem] = rName;
-    rWindow.m_aCommandNameToolItems[rName] = pItem;
-}
-
 const float fZooms[] = { 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0 };
 
+static void iterateUnoParams(GtkWidget* pWidget, gpointer userdata)
+{
+    boost::property_tree::ptree *pTree = static_cast<boost::property_tree::ptree*>(userdata);
+
+    GList* pChildren = gtk_container_get_children(GTK_CONTAINER(pWidget));
+    GList* pIt;
+    guint i = 0;
+    const gchar* unoParam[3];
+    for (pIt = pChildren, i = 0; pIt != nullptr && i < 3; pIt = pIt->next, i++)
+    {
+        unoParam[i] = gtk_entry_get_text(GTK_ENTRY(pIt->data));
+    }
+
+    pTree->put(boost::property_tree::ptree::path_type(g_strconcat(unoParam[1], "/", "type", nullptr), '/'), unoParam[0]);
+    pTree->put(boost::property_tree::ptree::path_type(g_strconcat(unoParam[1], "/", "value", nullptr), '/'), unoParam[2]);
+}
+
+static void removeUnoParam(GtkWidget* pWidget, gpointer userdata)
+{
+    GtkWidget* pParamAreaBox = GTK_WIDGET(userdata);
+    GtkWidget* pParamContainer = gtk_widget_get_parent(pWidget);
+
+    gtk_container_remove(GTK_CONTAINER(pParamAreaBox), pParamContainer);
+}
+
+static void addMoreUnoParam(GtkWidget* /*pWidget*/, gpointer userdata)
+{
+    GtkWidget* pUnoParamAreaBox = GTK_WIDGET(userdata);
+
+    GtkWidget* pParamContainer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(pUnoParamAreaBox), pParamContainer, TRUE, TRUE, 2);
+
+    GtkWidget* pTypeEntry = gtk_entry_new();
+    gtk_box_pack_start(GTK_BOX(pParamContainer), pTypeEntry, TRUE, TRUE, 2);
+#if GTK_CHECK_VERSION(3,2,0)
+    gtk_entry_set_placeholder_text(GTK_ENTRY(pTypeEntry), "Param type (Eg. boolean, string etc.)");
+#endif
+
+    GtkWidget* pNameEntry = gtk_entry_new();
+    gtk_box_pack_start(GTK_BOX(pParamContainer), pNameEntry, TRUE, TRUE, 2);
+#if GTK_CHECK_VERSION(3,2,0)
+    gtk_entry_set_placeholder_text(GTK_ENTRY(pNameEntry), "Param name");
+#endif
+
+    GtkWidget* pValueEntry = gtk_entry_new();
+    gtk_box_pack_start(GTK_BOX(pParamContainer), pValueEntry, TRUE, TRUE, 2);
+#if GTK_CHECK_VERSION(3,2,0)
+    gtk_entry_set_placeholder_text(GTK_ENTRY(pValueEntry), "Param value");
+#endif
+
+    GtkWidget* pRemoveButton = gtk_button_new_from_icon_name("list-remove-symbolic", GTK_ICON_SIZE_BUTTON);
+    g_signal_connect(pRemoveButton, "clicked", G_CALLBACK(removeUnoParam), pUnoParamAreaBox);
+    gtk_box_pack_start(GTK_BOX(pParamContainer), pRemoveButton, TRUE, TRUE, 2);
+
+    gtk_widget_show_all(pUnoParamAreaBox);
+}
+
+/// Exposes the info returned for tracked changes.
+static void documentRedline(GtkWidget* pButton, gpointer /*pItem*/)
+{
+    TiledWindow& rWindow = lcl_getTiledWindow(pButton);
+    LOKDocView* pDocView = LOK_DOC_VIEW(rWindow.m_pDocView);
+    // Get the data.
+    LibreOfficeKitDocument* pDocument = lok_doc_view_get_document(pDocView);
+    char* pValues = pDocument->pClass->getCommandValues(pDocument, ".uno:AcceptTrackedChanges");
+    if (!pValues)
+        return;
+
+    std::stringstream aInfo;
+    aInfo << "lok::Document::getCommandValues('.uno:AcceptTrackedChanges') returned '" << pValues << "'" << std::endl;
+    g_info("%s", aInfo.str().c_str());
+    std::stringstream aStream(pValues);
+    free(pValues);
+    assert(!aStream.str().empty());
+    boost::property_tree::ptree aTree;
+    boost::property_tree::read_json(aStream, aTree);
+
+    // Create the dialog.
+    GtkWidget* pDialog = gtk_dialog_new_with_buttons("Manage Changes",
+                                                     GTK_WINDOW (gtk_widget_get_toplevel(GTK_WIDGET(pDocView))),
+                                                     GTK_DIALOG_MODAL,
+                                                     "Accept",
+                                                     GTK_RESPONSE_YES,
+                                                     "Reject",
+                                                     GTK_RESPONSE_NO,
+                                                     "Jump",
+                                                     GTK_RESPONSE_APPLY,
+                                                     nullptr);
+    gtk_window_set_default_size(GTK_WINDOW(pDialog), 800, 600);
+    GtkWidget* pContentArea = gtk_dialog_get_content_area(GTK_DIALOG (pDialog));
+    GtkWidget* pScrolledWindow = gtk_scrolled_window_new(nullptr, nullptr);
+
+    // Build the table.
+    GtkTreeStore* pTreeStore = gtk_tree_store_new(6, G_TYPE_INT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+    for (const auto& rValue : aTree.get_child("redlines"))
+    {
+        GtkTreeIter aTreeIter;
+        gtk_tree_store_append(pTreeStore, &aTreeIter, nullptr);
+        gtk_tree_store_set(pTreeStore, &aTreeIter,
+                           0, rValue.second.get<int>("index"),
+                           1, rValue.second.get<std::string>("author").c_str(),
+                           2, rValue.second.get<std::string>("type").c_str(),
+                           3, rValue.second.get<std::string>("comment").c_str(),
+                           4, rValue.second.get<std::string>("description").c_str(),
+                           5, rValue.second.get<std::string>("dateTime").c_str(),
+                           -1);
+    }
+    GtkWidget* pTreeView = gtk_tree_view_new_with_model(GTK_TREE_MODEL(pTreeStore));
+    std::vector<std::string> aColumns = {"Index", "Author", "Type", "Comment", "Description", "Timestamp"};
+    for (size_t nColumn = 0; nColumn < aColumns.size(); ++nColumn)
+    {
+        GtkCellRenderer* pRenderer = gtk_cell_renderer_text_new();
+        GtkTreeViewColumn* pColumn = gtk_tree_view_column_new_with_attributes(aColumns[nColumn].c_str(),
+                                                                              pRenderer,
+                                                                              "text", nColumn,
+                                                                              nullptr);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(pTreeView), pColumn);
+    }
+    gtk_container_add(GTK_CONTAINER(pScrolledWindow), pTreeView);
+    gtk_box_pack_start(GTK_BOX(pContentArea), pScrolledWindow, TRUE, TRUE, 2);
+
+    // Show the dialog.
+    gtk_widget_show_all(pDialog);
+    gint res = gtk_dialog_run(GTK_DIALOG(pDialog));
+
+    // Dispatch the matching command, if necessary.
+    if (res == GTK_RESPONSE_YES || res == GTK_RESPONSE_NO || res == GTK_RESPONSE_APPLY)
+    {
+        GtkTreeSelection* pSelection = gtk_tree_view_get_selection(GTK_TREE_VIEW(pTreeView));
+        GtkTreeIter aTreeIter;
+        GtkTreeModel* pTreeModel;
+        if (gtk_tree_selection_get_selected(pSelection, &pTreeModel, &aTreeIter))
+        {
+            gint nIndex = 0;
+            // 0: index
+            gtk_tree_model_get(pTreeModel, &aTreeIter, 0, &nIndex, -1);
+            std::string aCommand;
+            if (res == GTK_RESPONSE_YES)
+                aCommand = ".uno:AcceptTrackedChange";
+            else if (res == GTK_RESPONSE_NO)
+                aCommand = ".uno:RejectTrackedChange";
+            else
+                // Just select the given redline, don't accept or reject it.
+                aCommand = ".uno:NextTrackedChange";
+            // Without the '.uno:' prefix.
+            std::string aKey = aCommand.substr(strlen(".uno:"));
+
+            // Post the command.
+            boost::property_tree::ptree aCommandTree;
+            aCommandTree.put(boost::property_tree::ptree::path_type(aKey + "/type", '/'), "unsigned short");
+            aCommandTree.put(boost::property_tree::ptree::path_type(aKey + "/value", '/'), nIndex);
+
+            aStream.str(std::string());
+            boost::property_tree::write_json(aStream, aCommandTree);
+            std::string aArguments = aStream.str();
+            lok_doc_view_post_command(pDocView, aCommand.c_str(), aArguments.c_str(), false);
+        }
+    }
+
+    gtk_widget_destroy(pDialog);
+}
+
+static void documentRepair(GtkWidget* pButton, gpointer /*pItem*/)
+{
+    TiledWindow& rWindow = lcl_getTiledWindow(pButton);
+    LOKDocView* pDocView = LOK_DOC_VIEW(rWindow.m_pDocView);
+    // Get the data.
+    LibreOfficeKitDocument* pDocument = lok_doc_view_get_document(pDocView);
+    // Show it in linear time, so first redo in reverse order, then undo.
+    std::vector<std::string> aTypes = {".uno:Redo", ".uno:Undo"};
+    std::vector<boost::property_tree::ptree> aTrees;
+    for (size_t nType = 0; nType < aTypes.size(); ++nType)
+    {
+        const std::string& rType = aTypes[nType];
+        char* pValues = pDocument->pClass->getCommandValues(pDocument, rType.c_str());
+        std::stringstream aInfo;
+        aInfo << "lok::Document::getCommandValues('" << rType << "') returned '" << pValues << "'" << std::endl;
+        g_info("%s", aInfo.str().c_str());
+        std::stringstream aStream(pValues);
+        free(pValues);
+        assert(!aStream.str().empty());
+        boost::property_tree::ptree aTree;
+        boost::property_tree::read_json(aStream, aTree);
+        aTrees.push_back(aTree);
+    }
+
+    // Create the dialog.
+    GtkWidget* pDialog = gtk_dialog_new_with_buttons("Repair document",
+                                                     GTK_WINDOW (gtk_widget_get_toplevel(GTK_WIDGET(pDocView))),
+                                                     GTK_DIALOG_MODAL,
+                                                     "Jump to state",
+                                                     GTK_RESPONSE_OK,
+                                                     nullptr);
+    gtk_window_set_default_size(GTK_WINDOW(pDialog), 800, 600);
+    GtkWidget* pContentArea = gtk_dialog_get_content_area(GTK_DIALOG (pDialog));
+    GtkWidget* pScrolledWindow = gtk_scrolled_window_new(nullptr, nullptr);
+
+    // Build the table.
+    GtkTreeStore* pTreeStore = gtk_tree_store_new(5, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+    for (size_t nTree = 0; nTree < aTrees.size(); ++nTree)
+    {
+        const auto& rTree = aTrees[nTree];
+        for (const auto& rValue : rTree.get_child("actions"))
+        {
+            GtkTreeIter aTreeIter;
+            gtk_tree_store_append(pTreeStore, &aTreeIter, nullptr);
+            gtk_tree_store_set(pTreeStore, &aTreeIter,
+                               0, aTypes[nTree].c_str(),
+                               1, rValue.second.get<int>("index"),
+                               2, rValue.second.get<std::string>("comment").c_str(),
+                               3, rValue.second.get<std::string>("viewId").c_str(),
+                               4, rValue.second.get<std::string>("dateTime").c_str(),
+                               -1);
+        }
+    }
+    GtkWidget* pTreeView = gtk_tree_view_new_with_model(GTK_TREE_MODEL(pTreeStore));
+    std::vector<std::string> aColumns = {"Type", "Index", "Comment", "View ID", "Timestamp"};
+    for (size_t nColumn = 0; nColumn < aColumns.size(); ++nColumn)
+    {
+        GtkCellRenderer* pRenderer = gtk_cell_renderer_text_new();
+        GtkTreeViewColumn* pColumn = gtk_tree_view_column_new_with_attributes(aColumns[nColumn].c_str(),
+                                                                              pRenderer,
+                                                                              "text", nColumn,
+                                                                              nullptr);
+        gtk_tree_view_append_column(GTK_TREE_VIEW(pTreeView), pColumn);
+    }
+    gtk_container_add(GTK_CONTAINER(pScrolledWindow), pTreeView);
+    gtk_box_pack_start(GTK_BOX(pContentArea), pScrolledWindow, TRUE, TRUE, 2);
+
+    // Show the dialog.
+    gtk_widget_show_all(pDialog);
+    gint res = gtk_dialog_run(GTK_DIALOG(pDialog));
+
+    // Dispatch the matching command, if necessary.
+    if (res == GTK_RESPONSE_OK)
+    {
+        GtkTreeSelection* pSelection = gtk_tree_view_get_selection(GTK_TREE_VIEW(pTreeView));
+        GtkTreeIter aTreeIter;
+        GtkTreeModel* pTreeModel;
+        if (gtk_tree_selection_get_selected(pSelection, &pTreeModel, &aTreeIter))
+        {
+            gchar* pType = nullptr;
+            gint nIndex = 0;
+            // 0: type, 1: index
+            gtk_tree_model_get(pTreeModel, &aTreeIter, 0, &pType, 1, &nIndex, -1);
+            // '.uno:Undo' or '.uno:Redo'
+            const std::string aType(pType);
+            // Without the '.uno:' prefix.
+            std::string aKey = aType.substr(strlen(".uno:"));
+            g_free(pType);
+
+            // Post the command.
+            boost::property_tree::ptree aTree;
+            aTree.put(boost::property_tree::ptree::path_type(aKey + "/type", '/'), "unsigned short");
+            aTree.put(boost::property_tree::ptree::path_type(aKey + "/value", '/'), nIndex + 1);
+
+            // Without this, we could only undo our own commands.
+            aTree.put(boost::property_tree::ptree::path_type("Repair/type", '/'), "boolean");
+            aTree.put(boost::property_tree::ptree::path_type("Repair/value", '/'), true);
+
+            std::stringstream aStream;
+            boost::property_tree::write_json(aStream, aTree);
+            std::string aArguments = aStream.str();
+            lok_doc_view_post_command(pDocView, aType.c_str(), aArguments.c_str(), false);
+        }
+    }
+
+    gtk_widget_destroy(pDialog);
+}
+
+static void unoCommandDebugger(GtkWidget* pButton, gpointer /* pItem */)
+{
+    TiledWindow& rWindow = lcl_getTiledWindow(pButton);
+    LOKDocView* pDocView = LOK_DOC_VIEW(rWindow.m_pDocView);
+
+    GtkWidget* pUnoCmdDialog = gtk_dialog_new_with_buttons ("Execute UNO command",
+                                                            GTK_WINDOW (gtk_widget_get_toplevel(GTK_WIDGET(pDocView))),
+                                                            GTK_DIALOG_MODAL,
+                                                            "Execute",
+                                                            GTK_RESPONSE_OK,
+                                                            nullptr);
+    g_object_set(G_OBJECT(pUnoCmdDialog), "resizable", FALSE, nullptr);
+    GtkWidget* pDialogMessageArea = gtk_dialog_get_content_area (GTK_DIALOG (pUnoCmdDialog));
+    GtkWidget* pUnoCmdAreaBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(pDialogMessageArea), pUnoCmdAreaBox, TRUE, TRUE, 2);
+
+    GtkWidget* pUnoCmdLabel = gtk_label_new("Enter UNO command");
+    gtk_box_pack_start(GTK_BOX(pUnoCmdAreaBox), pUnoCmdLabel, TRUE, TRUE, 2);
+
+    GtkWidget* pUnoCmdEntry = gtk_entry_new ();
+    gtk_box_pack_start(GTK_BOX(pUnoCmdAreaBox), pUnoCmdEntry, TRUE, TRUE, 2);
+#if GTK_CHECK_VERSION(3,2,0)
+    gtk_entry_set_placeholder_text(GTK_ENTRY(pUnoCmdEntry), "UNO command (Eg. Bold, Italic etc.)");
+#endif
+    GtkWidget* pUnoParamAreaBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(pDialogMessageArea), pUnoParamAreaBox, TRUE, TRUE, 2);
+
+    GtkWidget* pAddMoreButton = gtk_button_new_with_label("Add UNO parameter");
+    gtk_box_pack_start(GTK_BOX(pDialogMessageArea), pAddMoreButton, TRUE, TRUE, 2);
+    g_signal_connect(G_OBJECT(pAddMoreButton), "clicked", G_CALLBACK(addMoreUnoParam), pUnoParamAreaBox);
+
+    gtk_widget_show_all(pUnoCmdDialog);
+
+    gint res = gtk_dialog_run (GTK_DIALOG(pUnoCmdDialog));
+    switch (res)
+    {
+    case GTK_RESPONSE_OK:
+    {
+        const gchar* sUnoCmd = g_strconcat(".uno:", gtk_entry_get_text(GTK_ENTRY(pUnoCmdEntry)), nullptr);
+
+        boost::property_tree::ptree aTree;
+        gtk_container_foreach(GTK_CONTAINER(pUnoParamAreaBox), iterateUnoParams, &aTree);
+
+        std::stringstream aStream;
+        boost::property_tree::write_json(aStream, aTree);
+        std::string aArguments = aStream.str();
+
+        g_info("Generated UNO command: %s %s", sUnoCmd, aArguments.c_str());
+
+        lok_doc_view_post_command(pDocView, sUnoCmd, (aArguments.empty() ? nullptr : aArguments.c_str()), false);
+    }
+        break;
+    }
+
+    gtk_widget_destroy(pUnoCmdDialog);
+}
 
 /// Get the visible area of the scrolled window
 static void getVisibleAreaTwips(GtkWidget* pDocView, GdkRectangle* pArea)
@@ -454,7 +1022,7 @@ static void changeZoom( GtkWidget* pButton, gpointer /* pItem */ )
             lok_doc_view_set_visible_area(LOK_DOC_VIEW(pDocView), &aVisibleArea);
         }
     }
-    std::string aZoom = std::to_string(int(fZoom * 100)) + std::string("%");
+    std::string aZoom = std::string("Zoom: ") + std::to_string(int(fZoom * 100)) + std::string("%");
     gtk_label_set_text(GTK_LABEL(rWindow.m_pZoomLabel), aZoom.c_str());
 }
 
@@ -496,32 +1064,130 @@ static void toggleFindbar(GtkWidget* pButton, gpointer /*pItem*/)
 }
 
 static void
-setLOKFeatures (GtkWidget* pDocView)
+setLOKFeatures (GtkWidget* pDocView, gboolean bTiledAnnotations)
 {
     g_object_set(G_OBJECT(pDocView),
                  "doc-password", TRUE,
                  "doc-password-to-modify", TRUE,
+                 "tiled-annotations", bTiledAnnotations,
                  nullptr);
 }
 
 /// Common initialization, regardless if it's just a new view or a full init.
-static TiledWindow& setupWidgetAndCreateWindow(GtkWidget* pDocView)
+static TiledWindow& setupWidgetAndCreateWindow(GtkWidget* pDocView, gboolean bTiledAnnotations)
 {
     setupDocView(pDocView);
-    setLOKFeatures(pDocView);
+    setLOKFeatures(pDocView, bTiledAnnotations);
     TiledWindow aWindow;
     aWindow.m_pDocView = pDocView;
     GtkWidget* pWindow = createWindow(aWindow);
     return lcl_getTiledWindow(pWindow);
 }
 
+/// Register handlers on the combo boxes.
+static void registerSelectorHandlers(TiledWindow& rWindow)
+{
+    // Connect these signals after populating the selectors, to avoid re-rendering on setting the default part/partmode.
+    g_signal_connect(G_OBJECT(rWindow.m_pPartModeComboBox), "changed", G_CALLBACK(changePartMode), 0);
+    g_signal_connect(G_OBJECT(rWindow.m_pPartSelector), "changed", G_CALLBACK(changePart), 0);
+}
+
+/// Helper function to do some tasks after widget is fully loaded (including
+/// document load)
+static void initWindow(TiledWindow& rWindow)
+{
+    rWindow.m_bPartSelectorBroadcast = false;
+    populatePartSelector(LOK_DOC_VIEW(rWindow.m_pDocView));
+    rWindow.m_bPartSelectorBroadcast = true;
+
+    populatePartModeSelector( GTK_COMBO_BOX_TEXT(rWindow.m_pPartModeComboBox) );
+    registerSelectorHandlers(rWindow);
+
+    registerSelectorHandlers(rWindow);
+
+    GList *focusChain = nullptr;
+    focusChain = g_list_append( focusChain, rWindow.m_pDocView );
+    gtk_container_set_focus_chain ( GTK_CONTAINER (rWindow.m_pVBox), focusChain );
+
+    gtk_widget_show_all(rWindow.m_pStatusBar);
+    gtk_widget_hide(rWindow.m_pProgressBar);
+
+    gtk_toggle_tool_button_set_active(GTK_TOGGLE_TOOL_BUTTON(rWindow.m_pEnableEditing), TRUE);
+
+    LibreOfficeKitDocument* pDocument = lok_doc_view_get_document(LOK_DOC_VIEW(rWindow.m_pDocView));
+    if (pDocument)
+    {
+        if (pDocument->pClass->getDocumentType(pDocument) == LOK_DOCTYPE_SPREADSHEET)
+        {
+            // Align to top left corner, so the tiles are in sync with the
+            // row/column bar, even when zooming out enough that not all space is
+            // used.
+            gtk_widget_set_halign(GTK_WIDGET(rWindow.m_pDocView), GTK_ALIGN_START);
+            gtk_widget_set_valign(GTK_WIDGET(rWindow.m_pDocView), GTK_ALIGN_START);
+
+            // Change cell alignment uno commands for spreadsheet
+            lcl_registerToolItem(rWindow, rWindow.m_pLeftpara, ".uno:AlignLeft");
+            lcl_registerToolItem(rWindow, rWindow.m_pCenterpara, ".uno:AlignHorizontalCenter");
+            lcl_registerToolItem(rWindow, rWindow.m_pRightpara, ".uno:AlignRight");
+            gtk_widget_hide(GTK_WIDGET(rWindow.m_pJustifypara));
+
+            lcl_registerToolItem(rWindow, rWindow.m_pDeleteComment, ".uno:DeleteNote");
+        }
+        else if (pDocument->pClass->getDocumentType(pDocument) == LOK_DOCTYPE_PRESENTATION)
+        {
+            lcl_registerToolItem(rWindow, rWindow.m_pDeleteComment, ".uno:DeleteAnnotation");
+        }
+    }
+
+    // Fill our comments sidebar
+    gboolean bTiledAnnotations;
+    g_object_get(G_OBJECT(rWindow.m_pDocView), "tiled-annotations", &bTiledAnnotations, nullptr);
+
+    // comments api implemented only for writer, calc as of now
+    if (!bTiledAnnotations && pDocument)
+    {
+        if (!rWindow.m_pCommentsSidebar)
+        {
+            rWindow.m_pCommentsSidebar.reset(new CommentsSidebar);
+            rWindow.m_pCommentsSidebar->m_pCommentsVBox = nullptr;
+            rWindow.m_pCommentsSidebar->m_pScrolledWindow = nullptr;
+            rWindow.m_pCommentsSidebar->m_pMainVBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+            gtk_container_add(GTK_CONTAINER(rWindow.m_pMainHBox), rWindow.m_pCommentsSidebar->m_pMainVBox);
+
+            rWindow.m_pCommentsSidebar->m_pViewAnnotationsButton = gtk_button_new_with_label(".uno:ViewAnnotations");
+#if GTK_CHECK_VERSION(3,12,0)
+            // Hack to make sidebar grid wide enough to not need any horizontal scrollbar
+            gtk_widget_set_margin_start(rWindow.m_pCommentsSidebar->m_pViewAnnotationsButton, 20);
+            gtk_widget_set_margin_end(rWindow.m_pCommentsSidebar->m_pViewAnnotationsButton, 20);
+#endif
+            gtk_container_add(GTK_CONTAINER(rWindow.m_pCommentsSidebar->m_pMainVBox), rWindow.m_pCommentsSidebar->m_pViewAnnotationsButton);
+            g_signal_connect(rWindow.m_pCommentsSidebar->m_pViewAnnotationsButton, "clicked", G_CALLBACK(CommentsSidebar::unoViewAnnotations), nullptr);
+
+            gtk_widget_show_all(rWindow.m_pCommentsSidebar->m_pMainVBox);
+
+            gtk_button_clicked(GTK_BUTTON(rWindow.m_pCommentsSidebar->m_pViewAnnotationsButton));
+        }
+    }
+}
+
 /// Creates a new view, i.e. no LOK init or document load.
 static void createView(GtkWidget* pButton, gpointer /*pItem*/)
 {
     TiledWindow& rWindow = lcl_getTiledWindow(pButton);
-    GtkWidget* pDocView = lok_doc_view_new_from_widget(LOK_DOC_VIEW(rWindow.m_pDocView));
 
-    TiledWindow& rNewWindow = setupWidgetAndCreateWindow(pDocView);
+    boost::property_tree::ptree aTree = rWindow.m_aRenderingArguments;
+    rWindow.m_aAuthor = getNextAuthor();
+    aTree.put(boost::property_tree::ptree::path_type(".uno:Author/type", '/'), "string");
+    aTree.put(boost::property_tree::ptree::path_type(".uno:Author/value", '/'), rWindow.m_aAuthor);
+    std::stringstream aStream;
+    boost::property_tree::write_json(aStream, aTree);
+    std::string aArguments = aStream.str();
+
+    GtkWidget* pDocView = lok_doc_view_new_from_widget(LOK_DOC_VIEW(rWindow.m_pDocView), aArguments.c_str());
+    gboolean bTiledAnnotations;
+    g_object_get(G_OBJECT(rWindow.m_pDocView), "tiled-annotations", &bTiledAnnotations, nullptr);
+    TiledWindow& rNewWindow = setupWidgetAndCreateWindow(pDocView, bTiledAnnotations);
+    initWindow(rNewWindow);
     // Hide the unused progress bar.
     gtk_widget_show_all(rNewWindow.m_pStatusBar);
     gtk_widget_hide(rNewWindow.m_pProgressBar);
@@ -531,17 +1197,20 @@ static void createView(GtkWidget* pButton, gpointer /*pItem*/)
 static void createModelAndView(const char* pLOPath, const char* pDocPath, const std::vector<std::string>& rArguments)
 {
     std::string aUserProfile;
+    gboolean bTiledAnnotations = FALSE;
     for (size_t i = 0; i < rArguments.size(); ++i)
     {
         const std::string& rArgument = rArguments[i];
         if (rArgument == "--user-profile" && i + 1 < rArguments.size())
             aUserProfile = std::string("vnd.sun.star.pathname:")
                 + rArguments[i + 1].c_str();
+        else if (rArgument == "--enable-tiled-annotations")
+            bTiledAnnotations = TRUE;
     }
     const gchar* pUserProfile = aUserProfile.empty() ? nullptr : aUserProfile.c_str();
     GtkWidget* pDocView = lok_doc_view_new_from_user_profile(pLOPath, pUserProfile, nullptr, nullptr);
 
-    setupWidgetAndCreateWindow(pDocView);
+    TiledWindow& rWindow = setupWidgetAndCreateWindow(pDocView, bTiledAnnotations);
 
     boost::property_tree::ptree aTree;
     for (size_t i = 0; i < rArguments.size(); ++i)
@@ -566,6 +1235,12 @@ static void createModelAndView(const char* pLOPath, const char* pDocPath, const 
             aTree.put(boost::property_tree::ptree::path_type(".uno:HideWhitespace/value", '/'), true);
         }
     }
+
+    // Save rendering arguments for views which are created later.
+    rWindow.m_aRenderingArguments = aTree;
+    rWindow.m_aAuthor = getNextAuthor();
+    aTree.put(boost::property_tree::ptree::path_type(".uno:Author/type", '/'), "string");
+    aTree.put(boost::property_tree::ptree::path_type(".uno:Author/value", '/'), rWindow.m_aAuthor);
 
     std::stringstream aStream;
     boost::property_tree::write_json(aStream, aTree);
@@ -735,6 +1410,13 @@ static gboolean signalFormulabar(GtkWidget* /*pWidget*/, GdkEventKey* /*pEvent*/
     return TRUE;
 }
 
+/// Set sensitivity based on rWindow.m_aToolItemSensitivities, taking edit
+/// state into account.
+static void setSensitiveIfInEdit(GtkToolItem* pItem, gboolean bEdit, TiledWindow& rWindow)
+{
+    gtk_widget_set_sensitive(GTK_WIDGET(pItem), bEdit && rWindow.m_aToolItemSensitivities[pItem]);
+}
+
 /// LOKDocView changed edit state -> inform the tool button.
 static void signalEdit(LOKDocView* pLOKDocView, gboolean bWasEdit, gpointer /*pData*/)
 {
@@ -743,22 +1425,23 @@ static void signalEdit(LOKDocView* pLOKDocView, gboolean bWasEdit, gpointer /*pD
     g_info("signalEdit: %d -> %d", bWasEdit, bEdit);
 
     // Set toggle button sensitivity
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pBold), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pItalic), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pUnderline), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pStrikethrough), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pSuperscript), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pSubscript), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pLeftpara), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pCenterpara), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pRightpara), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pJustifypara), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pInsertAnnotation), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pDeleteComment), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pUndo), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pRedo), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pPasteButton), bEdit);
-    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pSaveButton), bEdit);
+    setSensitiveIfInEdit(rWindow.m_pBold, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pItalic, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pUnderline, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pStrikethrough, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pSuperscript, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pSubscript, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pLeftpara, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pCenterpara, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pRightpara, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pJustifypara, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pInsertAnnotation, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pDeleteComment, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pUndo, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pRedo, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pPasteButton, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pSaveButton, bEdit, rWindow);
+    setSensitiveIfInEdit(rWindow.m_pTrackChanges, bEdit, rWindow);
 }
 
 /// LOKDocView changed command state -> inform the tool button.
@@ -767,23 +1450,40 @@ static void signalCommand(LOKDocView* pLOKDocView, char* pPayload, gpointer /*pD
     TiledWindow& rWindow = lcl_getTiledWindow(GTK_WIDGET(pLOKDocView));
 
     std::string aPayload(pPayload);
-    size_t nPosition = aPayload.find("=");
+    size_t nPosition = aPayload.find('=');
     if (nPosition != std::string::npos)
     {
         std::string aKey = aPayload.substr(0, nPosition);
         std::string aValue = aPayload.substr(nPosition + 1);
-
         if (rWindow.m_aCommandNameToolItems.find(aKey) != rWindow.m_aCommandNameToolItems.end())
         {
             GtkToolItem* pItem = rWindow.m_aCommandNameToolItems[aKey];
-            gboolean bEdit = aValue == "true";
-            if (gtk_toggle_tool_button_get_active(GTK_TOGGLE_TOOL_BUTTON(pItem)) != bEdit)
-            {
-                // Avoid invoking lok_doc_view_post_command().
-                rWindow.m_bToolItemBroadcast = false;
-                gtk_toggle_tool_button_set_active(GTK_TOGGLE_TOOL_BUTTON(pItem), bEdit);
-                rWindow.m_bToolItemBroadcast = true;
+            if (aValue == "true" || aValue == "false") {
+                gboolean bEdit = aValue == "true";
+                if (gtk_toggle_tool_button_get_active(GTK_TOGGLE_TOOL_BUTTON(pItem)) != bEdit)
+                {
+                    // Avoid invoking lok_doc_view_post_command().
+                    rWindow.m_bToolItemBroadcast = false;
+                    gtk_toggle_tool_button_set_active(GTK_TOGGLE_TOOL_BUTTON(pItem), bEdit);
+                    rWindow.m_bToolItemBroadcast = true;
+                }
+            } else if (aValue == "enabled" || aValue == "disabled") {
+                gboolean bSensitive = aValue == "enabled";
+                gtk_widget_set_sensitive(GTK_WIDGET(pItem), bSensitive);
+
+                // Remember state, so in case edit is disable and enabled
+                // later, the correct sensitivity can be restored.
+                rWindow.m_aToolItemSensitivities[pItem] = bSensitive;
             }
+        }
+        else if (aKey == ".uno:TrackedChangeIndex")
+        {
+            std::string aText = std::string("Current redline: ");
+            if (aValue.empty())
+                aText += "none";
+            else
+                aText += aValue;
+            gtk_label_set_text(GTK_LABEL(rWindow.m_pRedlineLabel), aText.c_str());
         }
     }
 }
@@ -825,10 +1525,17 @@ static void signalPart(LOKDocView* pLOKDocView, int nPart, gpointer /*pData*/)
 }
 
 /// User clicked on a command button -> inform LOKDocView.
-static void signalHyperlink(LOKDocView* /*pLOKDocView*/, char* pPayload, gpointer /*pData*/)
+static void signalHyperlink(LOKDocView* pLOKDocView, char* pPayload, gpointer /*pData*/)
 {
     GError* pError = nullptr;
+#if GTK_CHECK_VERSION(3,22,0)
+    gtk_show_uri_on_window(
+            GTK_WINDOW (gtk_widget_get_toplevel(GTK_WIDGET(pLOKDocView))),
+            pPayload, GDK_CURRENT_TIME, &pError);
+#else
+    (void) pLOKDocView;
     gtk_show_uri(nullptr, pPayload, GDK_CURRENT_TIME, &pError);
+#endif
     if (pError != nullptr)
     {
         g_warning("Unable to show URI %s : %s", pPayload, pError->message);
@@ -893,7 +1600,7 @@ static void formulaChanged(LOKDocView* pLOKDocView, char* pPayload, gpointer /*p
     gtk_entry_set_text(GTK_ENTRY(rWindow.m_pFormulabarEntry), pPayload);
 }
 
-/// LOKDocView password is requried to open the document
+/// LOKDocView password is required to open the document
 static void passwordRequired(LOKDocView* pLOKDocView, gchar* pUrl, gboolean bModify, gpointer /*pData*/)
 {
     GtkWidget* pPasswordDialog = gtk_dialog_new_with_buttons ("Password required",
@@ -932,6 +1639,56 @@ static void passwordRequired(LOKDocView* pLOKDocView, gchar* pUrl, gboolean bMod
     gtk_widget_destroy(pPasswordDialog);
 }
 
+static void commentCallback(LOKDocView* pLOKDocView, gchar* pComment, gpointer /*  pData */)
+{
+    TiledWindow& rWindow = lcl_getTiledWindow(GTK_WIDGET(pLOKDocView));
+    std::stringstream aStream(pComment);
+    boost::property_tree::ptree aRoot;
+    boost::property_tree::read_json(aStream, aRoot);
+    boost::property_tree::ptree aComment = aRoot.get_child("comment");
+    GtkWidget* pCommentsGrid = rWindow.m_pCommentsSidebar->m_pCommentsVBox;
+    GList* pChildren = gtk_container_get_children(GTK_CONTAINER(pCommentsGrid));
+    GtkWidget* pSelf = nullptr;
+    GtkWidget* pParent = nullptr;
+    for (GList* l = pChildren; l != nullptr; l = l->next)
+    {
+        gchar *id = static_cast<gchar*>(g_object_get_data(G_OBJECT(l->data), "id"));
+
+        if (g_strcmp0(id, aComment.get<std::string>("id").c_str()) == 0)
+            pSelf = GTK_WIDGET(l->data);
+
+        // There is no 'parent' in Remove callbacks
+        if (g_strcmp0(id, aComment.get("parent", std::string("0")).c_str()) == 0)
+            pParent = GTK_WIDGET(l->data);
+    }
+
+    if (aComment.get<std::string>("action") == "Remove")
+    {
+        if (pSelf)
+            gtk_widget_destroy(pSelf);
+        else
+            g_warning("Can't find the comment to remove in the list !!");
+    }
+    else if (aComment.get<std::string>("action") == "Add" || aComment.get<std::string>("action") == "Modify")
+    {
+        GtkWidget* pCommentBox = CommentsSidebar::createCommentBox(aComment);
+        if (pSelf != nullptr || pParent != nullptr)
+        {
+            gtk_grid_insert_next_to(GTK_GRID(pCommentsGrid), pSelf != nullptr ? pSelf : pParent, GTK_POS_BOTTOM);
+            gtk_grid_attach_next_to(GTK_GRID(pCommentsGrid), pCommentBox, pSelf != nullptr ? pSelf : pParent, GTK_POS_BOTTOM, 1, 1);
+        }
+        else
+            gtk_container_add(GTK_CONTAINER(pCommentsGrid), pCommentBox);
+
+        gtk_widget_show_all(pCommentBox);
+
+        // We added the widget already below the existing one, so destroy the
+        // already existing one now
+        if (pSelf)
+            gtk_widget_destroy(pSelf);
+    }
+}
+
 static void toggleToolItem(GtkWidget* pWidget, gpointer /*pData*/)
 {
     TiledWindow& rWindow = lcl_getTiledWindow(pWidget);
@@ -941,23 +1698,29 @@ static void toggleToolItem(GtkWidget* pWidget, gpointer /*pData*/)
         LOKDocView* pLOKDocView = LOK_DOC_VIEW(rWindow.m_pDocView);
         GtkToolItem* pItem = GTK_TOOL_ITEM(pWidget);
         const std::string& rString = rWindow.m_aToolItemCommandNames[pItem];
-        g_info("toggleToolItem: lok_doc_view_post_command('%s')", rString.c_str());
+        std::string& rArguments = rWindow.m_aToolItemCommandArgs[pItem];
+
+        if (rString == ".uno:InsertAnnotation")
+        {
+            std::map<std::string, std::string> aEntries;
+            aEntries["Text"] = "";
+            userPromptDialog(rWindow.m_pDocView, "Insert Comment", aEntries);
+
+            boost::property_tree::ptree aTree;
+            aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Text", "/", "type", nullptr), '/'), "string");
+            aTree.put(boost::property_tree::ptree::path_type(g_strconcat("Text", "/", "value", nullptr), '/'), aEntries["Text"]);
+
+            std::stringstream aStream;
+            boost::property_tree::write_json(aStream, aTree);
+            rArguments = aStream.str();
+        }
+
+        g_info("toggleToolItem: lok_doc_view_post_command('%s %s')", rString.c_str(), rArguments.c_str());
 
         // notify about the finished Save
         gboolean bNotify = (rString == ".uno:Save");
 
-        std::string aArguments;
-        if (rString == ".uno:InsertAnnotation" && !rWindow.m_aAuthor.empty())
-        {
-            boost::property_tree::ptree aTree;
-            aTree.put(boost::property_tree::ptree::path_type("Author/type", '/'), "string");
-            aTree.put(boost::property_tree::ptree::path_type("Author/value", '/'), rWindow.m_aAuthor);
-            std::stringstream aStream;
-            boost::property_tree::write_json(aStream, aTree);
-            aArguments = aStream.str();
-        }
-
-        lok_doc_view_post_command(pLOKDocView, rString.c_str(), (aArguments.empty() ? nullptr : aArguments.c_str()), bNotify);
+        lok_doc_view_post_command(pLOKDocView, rString.c_str(), rArguments.c_str(), bNotify);
     }
 }
 
@@ -987,14 +1750,6 @@ static void populatePartSelector(LOKDocView* pLOKDocView)
         gtk_combo_box_text_append_text( rWindow.m_pPartSelector, sText );
     }
     gtk_combo_box_set_active(GTK_COMBO_BOX(rWindow.m_pPartSelector), lok_doc_view_get_part(pLOKDocView));
-}
-
-static void signalSize(LOKDocView* pLOKDocView, gpointer /*pData*/)
-{
-    TiledWindow& rWindow = lcl_getTiledWindow(GTK_WIDGET(pLOKDocView));
-    rWindow.m_bPartSelectorBroadcast = false;
-    populatePartSelector(pLOKDocView);
-    rWindow.m_bPartSelectorBroadcast = true;
 }
 
 static void changePart( GtkWidget* pSelector, gpointer /* pItem */ )
@@ -1042,7 +1797,6 @@ static void openDocumentCallback (GObject* source_object, GAsyncResult* res, gpo
     LOKDocView* pDocView = LOK_DOC_VIEW (source_object);
     TiledWindow& rWindow = lcl_getTiledWindow(GTK_WIDGET(pDocView));
     GError* error = nullptr;
-    GList *focusChain = nullptr;
 
     if (!lok_doc_view_open_document_finish(pDocView, res, &error))
     {
@@ -1062,17 +1816,22 @@ static void openDocumentCallback (GObject* source_object, GAsyncResult* res, gpo
         return;
     }
 
-    populatePartSelector(pDocView);
-    populatePartModeSelector( GTK_COMBO_BOX_TEXT(rWindow.m_pPartModeComboBox) );
-    // Connect these signals after populating the selectors, to avoid re-rendering on setting the default part/partmode.
-    g_signal_connect(G_OBJECT(rWindow.m_pPartModeComboBox), "changed", G_CALLBACK(changePartMode), 0);
-    g_signal_connect(G_OBJECT(rWindow.m_pPartSelector), "changed", G_CALLBACK(changePart), 0);
+    initWindow(rWindow);
+}
 
-    focusChain = g_list_append( focusChain, pDocView );
-    gtk_container_set_focus_chain ( GTK_CONTAINER (rWindow.m_pVBox), focusChain );
+/**
+ * Wrapper around gtk_widget_destroy() that quits when the last tiled window is
+ * destroyed.
+ */
+static void destroyWindow(GtkWidget* pWidget)
+{
+    gtk_widget_destroy(pWidget);
+    auto it = g_aWindows.find(pWidget);
+    if (it != g_aWindows.end())
+        g_aWindows.erase(it);
 
-    gtk_widget_show_all(rWindow.m_pStatusBar);
-    gtk_widget_hide(rWindow.m_pProgressBar);
+    if (g_aWindows.empty())
+        gtk_main_quit();
 }
 
 /// Creates the GtkWindow that has main widget as children and registers it in the window map.
@@ -1080,8 +1839,8 @@ static GtkWidget* createWindow(TiledWindow& rWindow)
 {
     GtkWidget *pWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(pWindow), "LibreOfficeKit GTK Tiled Viewer");
-    gtk_window_set_default_size(GTK_WINDOW(pWindow), 1280, 720);
-    g_signal_connect(pWindow, "destroy", G_CALLBACK(gtk_main_quit), 0);
+    gtk_window_set_default_size(GTK_WINDOW(pWindow), 1024, 768);
+    g_signal_connect(pWindow, "destroy", G_CALLBACK(destroyWindow), pWindow);
 
     rWindow.m_pVBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(pWindow), rWindow.m_pVBox);
@@ -1117,7 +1876,7 @@ static GtkWidget* createWindow(TiledWindow& rWindow)
 
     gtk_toolbar_insert( GTK_TOOLBAR(pUpperToolbar), gtk_separator_tool_item_new(), -1);
 
-    // Undo and redo.
+    // Undo, redo and document repair.
     rWindow.m_pUndo = gtk_tool_button_new(nullptr, nullptr);
     gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(rWindow.m_pUndo), "edit-undo-symbolic");
     gtk_tool_item_set_tooltip_text(rWindow.m_pUndo, "Undo");
@@ -1133,6 +1892,18 @@ static GtkWidget* createWindow(TiledWindow& rWindow)
     g_signal_connect(G_OBJECT(rWindow.m_pRedo), "clicked", G_CALLBACK(toggleToolItem), nullptr);
     lcl_registerToolItem(rWindow, rWindow.m_pRedo, ".uno:Redo");
     gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pRedo), false);
+
+    GtkToolItem* pDocumentRepair = gtk_tool_button_new(nullptr, nullptr);
+    gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(pDocumentRepair), "document-properties");
+    gtk_tool_item_set_tooltip_text(pDocumentRepair, "Document repair");
+    gtk_toolbar_insert(GTK_TOOLBAR(pUpperToolbar), pDocumentRepair, -1);
+    g_signal_connect(G_OBJECT(pDocumentRepair), "clicked", G_CALLBACK(documentRepair), nullptr);
+
+    GtkToolItem* pDocumentRedline = gtk_tool_button_new(nullptr, nullptr);
+    gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(pDocumentRedline), "system-run");
+    gtk_tool_item_set_tooltip_text(pDocumentRedline, "Document redlines");
+    gtk_toolbar_insert(GTK_TOOLBAR(pUpperToolbar), pDocumentRedline, -1);
+    g_signal_connect(G_OBJECT(pDocumentRedline), "clicked", G_CALLBACK(documentRedline), nullptr);
 
     gtk_toolbar_insert(GTK_TOOLBAR(pUpperToolbar), gtk_separator_tool_item_new(), -1);
 
@@ -1182,15 +1953,20 @@ static GtkWidget* createWindow(TiledWindow& rWindow)
     gtk_toolbar_insert(GTK_TOOLBAR(pUpperToolbar), pEnableEditing, -1);
     g_signal_connect(G_OBJECT(pEnableEditing), "toggled", G_CALLBACK(toggleEditing), nullptr);
 
-    static bool bViewCallback = getenv("LOK_VIEW_CALLBACK");
-    if (bViewCallback)
-    {
-        GtkToolItem* pNewViewButton = gtk_tool_button_new( nullptr, nullptr);
-        gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON (pNewViewButton), "view-continuous-symbolic");
-        gtk_tool_item_set_tooltip_text(pNewViewButton, "New View");
-        gtk_toolbar_insert(GTK_TOOLBAR(pUpperToolbar), pNewViewButton, -1);
-        g_signal_connect(G_OBJECT(pNewViewButton), "clicked", G_CALLBACK(createView), nullptr);
-    }
+    // UNO command dialog debugger
+    GtkToolItem* pUnoCmdDebugger = gtk_tool_button_new(nullptr, nullptr);
+    gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(pUnoCmdDebugger), "dialog-question-symbolic");
+    gtk_tool_item_set_tooltip_text(pUnoCmdDebugger, "UNO Command Debugger");
+    gtk_toolbar_insert(GTK_TOOLBAR(pUpperToolbar), pUnoCmdDebugger, -1);
+    g_signal_connect(G_OBJECT(pUnoCmdDebugger), "clicked", G_CALLBACK(unoCommandDebugger), nullptr);
+
+    // New view button.
+    GtkToolItem* pNewViewButton = gtk_tool_button_new( nullptr, nullptr);
+    gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON (pNewViewButton), "view-continuous-symbolic");
+    gtk_tool_item_set_tooltip_text(pNewViewButton, "New View");
+    gtk_toolbar_insert(GTK_TOOLBAR(pUpperToolbar), pNewViewButton, -1);
+    g_signal_connect(G_OBJECT(pNewViewButton), "clicked", G_CALLBACK(createView), nullptr);
+
     gtk_box_pack_start(GTK_BOX(rWindow.m_pVBox), pUpperToolbar, FALSE, FALSE, 0 ); // Adds to top.
 
     // Lower toolbar.
@@ -1303,6 +2079,15 @@ static GtkWidget* createWindow(TiledWindow& rWindow)
     lcl_registerToolItem(rWindow, rWindow.m_pDeleteComment, ".uno:DeleteComment");
     gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pDeleteComment), false);
 
+    // Track changes
+    rWindow.m_pTrackChanges = gtk_toggle_tool_button_new();
+    gtk_tool_button_set_icon_name(GTK_TOOL_BUTTON(rWindow.m_pTrackChanges), "media-record-symbolic");
+    gtk_tool_item_set_tooltip_text(rWindow.m_pTrackChanges, "Track Changes");
+    gtk_toolbar_insert(GTK_TOOLBAR(pLowerToolbar), rWindow.m_pTrackChanges, -1);
+    g_signal_connect(G_OBJECT(rWindow.m_pTrackChanges), "toggled", G_CALLBACK(toggleToolItem), nullptr);
+    lcl_registerToolItem(rWindow, rWindow.m_pTrackChanges, ".uno:TrackChanges");
+    gtk_widget_set_sensitive(GTK_WIDGET(rWindow.m_pTrackChanges), false);
+
     // Formula bar
     GtkToolItem* pFormulaEntryContainer = gtk_tool_item_new();
     rWindow.m_pFormulabarEntry = gtk_entry_new();
@@ -1348,9 +2133,12 @@ static GtkWidget* createWindow(TiledWindow& rWindow)
 
     gtk_box_pack_end(GTK_BOX(rWindow.m_pVBox), rWindow.m_pFindbar, FALSE, FALSE, 0);
 
+    rWindow.m_pMainHBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add(GTK_CONTAINER(rWindow.m_pVBox), rWindow.m_pMainHBox);
+
     // Grid for the row/column bar + doc view.
     GtkWidget* pGrid = gtk_grid_new();
-    gtk_container_add(GTK_CONTAINER(rWindow.m_pVBox), pGrid);
+    gtk_container_add(GTK_CONTAINER(rWindow.m_pMainHBox), pGrid);
     rWindow.m_pCornerButton.reset(new TiledCornerButton());
     // "A1" cell of the grid.
     gtk_grid_attach(GTK_GRID(pGrid), rWindow.m_pCornerButton->m_pDrawingArea, 0, 0, 1, 1);
@@ -1388,7 +2176,9 @@ static GtkWidget* createWindow(TiledWindow& rWindow)
     gtk_widget_set_hexpand(rWindow.m_pStatusbarLabel, TRUE);
     gtk_container_add(GTK_CONTAINER(pStatusBar), rWindow.m_pStatusbarLabel);
 
-    rWindow.m_pZoomLabel = gtk_label_new("100%");
+    rWindow.m_pRedlineLabel = gtk_label_new("Current redline: none");
+    gtk_container_add(GTK_CONTAINER(pStatusBar), rWindow.m_pRedlineLabel);
+    rWindow.m_pZoomLabel = gtk_label_new("Zoom: 100%");
     gtk_container_add(GTK_CONTAINER(pStatusBar), rWindow.m_pZoomLabel);
 
     gtk_widget_show_all(pWindow);
@@ -1401,9 +2191,11 @@ static GtkWidget* createWindow(TiledWindow& rWindow)
     gtk_widget_hide(rWindow.m_pFormulabarEntry);
     // Hide the non-progressbar children of the status bar by default.
     gtk_widget_hide(rWindow.m_pStatusbarLabel);
+    gtk_widget_hide(rWindow.m_pRedlineLabel);
     gtk_widget_hide(rWindow.m_pZoomLabel);
 
     g_aWindows[pWindow] = rWindow;
+
     g_signal_connect(rWindow.m_pDocView, "configure-event", G_CALLBACK(TiledRowColumnBar::docConfigureEvent), 0);
     return pWindow;
 }
@@ -1420,11 +2212,11 @@ static void setupDocView(GtkWidget* pDocView)
     g_signal_connect(pDocView, "search-not-found", G_CALLBACK(signalSearch), nullptr);
     g_signal_connect(pDocView, "search-result-count", G_CALLBACK(signalSearchResultCount), nullptr);
     g_signal_connect(pDocView, "part-changed", G_CALLBACK(signalPart), nullptr);
-    g_signal_connect(pDocView, "size-changed", G_CALLBACK(signalSize), nullptr);
     g_signal_connect(pDocView, "hyperlink-clicked", G_CALLBACK(signalHyperlink), nullptr);
     g_signal_connect(pDocView, "cursor-changed", G_CALLBACK(cursorChanged), nullptr);
     g_signal_connect(pDocView, "formula-changed", G_CALLBACK(formulaChanged), nullptr);
     g_signal_connect(pDocView, "password-required", G_CALLBACK(passwordRequired), nullptr);
+    g_signal_connect(pDocView, "comment", G_CALLBACK(commentCallback), nullptr);
 }
 
 int main( int argc, char* argv[] )

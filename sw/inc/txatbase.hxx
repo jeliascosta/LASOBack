@@ -106,7 +106,7 @@ public:
 
     inline const SfxPoolItem& GetAttr() const;
     inline       SfxPoolItem& GetAttr();
-    inline sal_uInt16 Which() const { return GetAttr().Which(); }
+    sal_uInt16 Which() const { return GetAttr().Which(); }
 
     bool operator==( const SwTextAttr& ) const;
 
@@ -140,7 +140,7 @@ class SwTextAttrNesting : public SwTextAttrEnd
 protected:
     SwTextAttrNesting( SfxPoolItem & i_rAttr,
         const sal_Int32 i_nStart, const sal_Int32 i_nEnd );
-    virtual ~SwTextAttrNesting();
+    virtual ~SwTextAttrNesting() override;
 };
 
 inline const sal_Int32* SwTextAttr::End() const

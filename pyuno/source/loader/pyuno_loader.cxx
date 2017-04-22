@@ -20,7 +20,9 @@
 #include <config_features.h>
 #include <config_folders.h>
 
-#include <pyuno/pyuno.hxx>
+#include <pyuno.hxx>
+
+#include <o3tl/any.hxx>
 
 #include <osl/process.h>
 #include <osl/file.hxx>
@@ -61,7 +63,8 @@ using com::sun::star::uno::RuntimeException;
 namespace pyuno_loader
 {
 
-static void raiseRuntimeExceptionWhenNeeded() throw ( RuntimeException )
+/// @throws RuntimeException
+static void raiseRuntimeExceptionWhenNeeded()
 {
     if( PyErr_Occurred() )
     {
@@ -71,13 +74,14 @@ static void raiseRuntimeExceptionWhenNeeded() throw ( RuntimeException )
         css::uno::Any a = runtime.extractUnoException( excType, excValue, excTraceback );
         OUStringBuffer buf;
         buf.append( "python-loader:" );
-        if( a.hasValue() )
-            buf.append( static_cast<css::uno::Exception const *>(a.getValue())->Message );
+        if( auto e = o3tl::tryAccess<css::uno::Exception>(a) )
+            buf.append( e->Message );
         throw RuntimeException( buf.makeStringAndClear() );
     }
 }
 
-static PyRef getLoaderModule() throw( RuntimeException )
+/// @throws RuntimeException
+static PyRef getLoaderModule()
 {
     PyRef module(
         PyImport_ImportModule( "pythonloader" ),
@@ -90,16 +94,14 @@ static PyRef getLoaderModule() throw( RuntimeException )
     return PyRef( PyModule_GetDict( module.get() ));
 }
 
+/// @throws RuntimeException
 static PyRef getObjectFromLoaderModule( const char * func )
-    throw ( RuntimeException )
 {
     PyRef object( PyDict_GetItemString(getLoaderModule().get(), func ) );
     if( !object.is() )
     {
-        OUStringBuffer buf;
-        buf.append( "pythonloader: couldn't find core element pythonloader." );
-        buf.appendAscii( func );
-        throw RuntimeException(buf.makeStringAndClear());
+        throw RuntimeException( "pythonloader: couldn't find core element pythonloader." +
+                OUString::createFromAscii( func ));
     }
     return object;
 }

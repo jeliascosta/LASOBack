@@ -28,6 +28,7 @@
 #include <boost/optional.hpp>
 #include <com/sun/star/configuration/theDefaultProvider.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
+#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/beans/Optional.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -43,6 +44,7 @@
 #include <com/sun/star/xml/dom/XNodeList.hpp>
 #include <com/sun/star/xml/dom/DocumentBuilder.hpp>
 #include <com/sun/star/xml/xpath/XPathAPI.hpp>
+#include <com/sun/star/xml/xpath/XPathException.hpp>
 #include <com/sun/star/ucb/InteractiveIOException.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/weak.hxx>
@@ -62,27 +64,22 @@ class EmptyNodeList:
 public:
     EmptyNodeList();
 
-    virtual ~EmptyNodeList();
-
     EmptyNodeList(const EmptyNodeList&) = delete;
     const EmptyNodeList& operator=(const EmptyNodeList&) = delete;
 
-    virtual ::sal_Int32 SAL_CALL getLength() throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getLength() override;
 
     virtual css::uno::Reference< css::xml::dom::XNode > SAL_CALL
-    item(::sal_Int32 index) throw (css::uno::RuntimeException, std::exception) override;
+    item(::sal_Int32 index) override;
 };
 
 EmptyNodeList::EmptyNodeList() {}
 
-EmptyNodeList::~EmptyNodeList() {}
-
-::sal_Int32 EmptyNodeList::getLength() throw (css::uno::RuntimeException, std::exception) {
+::sal_Int32 EmptyNodeList::getLength() {
     return 0;
 }
 
 css::uno::Reference< css::xml::dom::XNode > EmptyNodeList::item(::sal_Int32)
-    throw (css::uno::RuntimeException, std::exception)
 {
     throw css::uno::RuntimeException("bad EmptyNodeList com.sun.star.xml.dom.XNodeList.item call",
         static_cast< ::cppu::OWeakObject * >(this));
@@ -122,8 +119,6 @@ public:
         const OUString& installDir,
         const css::uno::Reference< css::ucb::XCommandEnvironment >& xCmdEnv);
 
-    ~ExtensionDescription();
-
     const css::uno::Reference<css::xml::dom::XNode>& getRootElement() const
     {
         return m_xRoot;
@@ -146,21 +141,19 @@ class FileDoesNotExistFilter
     css::uno::Reference< css::ucb::XCommandEnvironment > m_xCommandEnv;
 
 public:
-    virtual ~FileDoesNotExistFilter();
     explicit FileDoesNotExistFilter(
         const css::uno::Reference< css::ucb::XCommandEnvironment >& xCmdEnv);
 
     bool exist() { return m_bExist;}
     // XCommandEnvironment
     virtual css::uno::Reference<css::task::XInteractionHandler > SAL_CALL
-    getInteractionHandler() throw (css::uno::RuntimeException, std::exception) override;
+    getInteractionHandler() override;
     virtual css::uno::Reference<css::ucb::XProgressHandler >
-    SAL_CALL getProgressHandler() throw (css::uno::RuntimeException, std::exception) override;
+    SAL_CALL getProgressHandler() override;
 
     // XInteractionHandler
     virtual void SAL_CALL handle(
-        css::uno::Reference<css::task::XInteractionRequest > const & xRequest )
-        throw (css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference<css::task::XInteractionRequest > const & xRequest ) override;
 };
 
 ExtensionDescription::ExtensionDescription(
@@ -247,29 +240,20 @@ ExtensionDescription::ExtensionDescription(
     }
 }
 
-ExtensionDescription::~ExtensionDescription()
-{
-}
-
-
 FileDoesNotExistFilter::FileDoesNotExistFilter(
     const Reference< css::ucb::XCommandEnvironment >& xCmdEnv):
     m_bExist(true), m_xCommandEnv(xCmdEnv)
 {}
 
-FileDoesNotExistFilter::~FileDoesNotExistFilter()
-{
-};
-
     // XCommandEnvironment
 Reference<css::task::XInteractionHandler >
-    FileDoesNotExistFilter::getInteractionHandler() throw (css::uno::RuntimeException, std::exception)
+    FileDoesNotExistFilter::getInteractionHandler()
 {
     return static_cast<css::task::XInteractionHandler*>(this);
 }
 
 Reference<css::ucb::XProgressHandler >
-    FileDoesNotExistFilter::getProgressHandler() throw (css::uno::RuntimeException, std::exception)
+    FileDoesNotExistFilter::getProgressHandler()
 {
     return m_xCommandEnv.is()
         ? m_xCommandEnv->getProgressHandler()
@@ -281,7 +265,6 @@ Reference<css::ucb::XProgressHandler >
 //of FileDoesNotExistFilter, then we do nothing
 void  FileDoesNotExistFilter::handle(
         Reference<css::task::XInteractionRequest > const & xRequest )
-        throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Any request( xRequest->getRequest() );
 
@@ -447,7 +430,7 @@ void DescriptionInfoset::checkBlacklist() const
 
 bool DescriptionInfoset::checkBlacklistVersion(
     const OUString& currentversion,
-    css::uno::Sequence< OUString > const & versions) const
+    css::uno::Sequence< OUString > const & versions)
 {
     sal_Int32 nLen = versions.getLength();
     for (sal_Int32 i=0; i<nLen; i++) {
@@ -482,7 +465,7 @@ css::uno::Sequence< OUString > DescriptionInfoset::getSupportedPlatforms() const
     //There is a platform element.
     const OUString value = getNodeValueFromExpression("desc:platform/@value");
     //parse the string, it can contained multiple strings separated by commas
-    ::std::vector< OUString> vec;
+    std::vector< OUString> vec;
     sal_Int32 nIndex = 0;
     do
     {
@@ -584,7 +567,7 @@ css::uno::Sequence< OUString > DescriptionInfoset::getUrls(
     return urls;
 }
 
-::std::pair< OUString, OUString > DescriptionInfoset::getLocalizedPublisherNameAndURL() const
+std::pair< OUString, OUString > DescriptionInfoset::getLocalizedPublisherNameAndURL() const
 {
     css::uno::Reference< css::xml::dom::XNode > node =
         getLocalizedChild("desc:publisher");
@@ -615,7 +598,7 @@ css::uno::Sequence< OUString > DescriptionInfoset::getUrls(
         if (xURL.is())
            sURL = xURL->getNodeValue();
     }
-    return ::std::make_pair(sPublisherName, sURL);
+    return std::make_pair(sPublisherName, sURL);
 }
 
 OUString DescriptionInfoset::getLocalizedReleaseNotesURL() const
@@ -709,8 +692,8 @@ DescriptionInfoset::getLocalizedChild( const OUString & sParent) const
         if (! nodeMatch.is())
         {
             // Already tried full tag, continue with first fallback.
-            const ::std::vector< OUString > aFallbacks( getOfficeLanguageTag().getFallbackStrings( false));
-            for (::std::vector< OUString >::const_iterator it( aFallbacks.begin()); it != aFallbacks.end(); ++it)
+            const std::vector< OUString > aFallbacks( getOfficeLanguageTag().getFallbackStrings( false));
+            for (std::vector< OUString >::const_iterator it( aFallbacks.begin()); it != aFallbacks.end(); ++it)
             {
                 nodeMatch = matchLanguageTag(xParent, *it);
                 if (nodeMatch.is())

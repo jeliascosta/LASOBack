@@ -51,11 +51,11 @@ namespace connectivity
 
         class KabComplexOrder : public KabOrder
         {
-            ::std::vector<KabOrder *> m_aOrders;
+            std::vector<KabOrder *> m_aOrders;
 
         public:
             KabComplexOrder();
-            virtual ~KabComplexOrder();
+            virtual ~KabComplexOrder() override;
 
             void addOrder(KabOrder *pOrder);
             virtual sal_Int32 compare(const ::KABC::Addressee &aAddressee1, const ::KABC::Addressee &aAddressee2) const override;

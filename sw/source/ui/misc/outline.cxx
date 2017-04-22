@@ -63,13 +63,13 @@ class SwNumNamesDlg : public ModalDialog
     VclPtr<ListBox>  m_pFormBox;
     VclPtr<OKButton> m_pOKBtn;
 
-    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
-    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
-    DECL_LINK_TYPED( DoubleClickHdl, ListBox&, void );
+    DECL_LINK( ModifyHdl, Edit&, void );
+    DECL_LINK( SelectHdl, ListBox&, void );
+    DECL_LINK( DoubleClickHdl, ListBox&, void );
 
 public:
     explicit SwNumNamesDlg(vcl::Window *pParent);
-    virtual ~SwNumNamesDlg();
+    virtual ~SwNumNamesDlg() override;
     virtual void dispose() override;
     void SetUserNames(const OUString *pList[]);
     OUString GetName() const { return m_pFormEdit->GetText(); }
@@ -91,7 +91,7 @@ void SwNumNamesDlg::dispose()
 
 
 // remember selected entry
-IMPL_LINK_TYPED( SwNumNamesDlg, SelectHdl, ListBox&, rBox, void )
+IMPL_LINK( SwNumNamesDlg, SelectHdl, ListBox&, rBox, void )
 {
     m_pFormEdit->SetText(rBox.GetSelectEntry());
     m_pFormEdit->SetSelection(Selection(0, SELECTION_MAX));
@@ -119,13 +119,13 @@ void SwNumNamesDlg::SetUserNames(const OUString *pList[])
 }
 
 // unlock OK-Button when text is in Edit
-IMPL_LINK_TYPED( SwNumNamesDlg, ModifyHdl, Edit&, rBox, void )
+IMPL_LINK( SwNumNamesDlg, ModifyHdl, Edit&, rBox, void )
 {
     m_pOKBtn->Enable(!rBox.GetText().isEmpty());
 }
 
 // DoubleClickHdl
-IMPL_LINK_NOARG_TYPED(SwNumNamesDlg, DoubleClickHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwNumNamesDlg, DoubleClickHdl, ListBox&, void)
 {
     EndDialog(RET_OK);
 }
@@ -167,7 +167,7 @@ SwOutlineTabDialog::SwOutlineTabDialog(vcl::Window* pParent, const SfxItemSet* p
     pUserButton->SetClickHdl(LINK(this, SwOutlineTabDialog, FormHdl));
     pUserButton->SetAccessibleRole( css::accessibility::AccessibleRole::BUTTON_MENU );
 
-    pNumRule = new SwNumRule( *rSh.GetOutlineNumRule() );
+    xNumRule.reset(new SwNumRule(*rSh.GetOutlineNumRule()));
     GetCancelButton().SetClickHdl(LINK(this, SwOutlineTabDialog, CancelHdl));
 
     m_nNumPosId = AddTabPage("position", &SwNumPositionTabPage::Create, nullptr);
@@ -208,7 +208,7 @@ SwOutlineTabDialog::~SwOutlineTabDialog()
 
 void SwOutlineTabDialog::dispose()
 {
-    delete pNumRule;
+    xNumRule.reset();
     SfxTabDialog::dispose();
 }
 
@@ -225,14 +225,14 @@ void SwOutlineTabDialog::PageCreated(sal_uInt16 nPageId, SfxTabPage& rPage)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwOutlineTabDialog, CancelHdl, Button*, void)
+IMPL_LINK_NOARG(SwOutlineTabDialog, CancelHdl, Button*, void)
 {
     if (!bModified)
         rWrtSh.ResetModified();
     EndDialog();
 }
 
-IMPL_LINK_TYPED( SwOutlineTabDialog, FormHdl, Button *, pBtn, void )
+IMPL_LINK( SwOutlineTabDialog, FormHdl, Button *, pBtn, void )
 {
     PopupMenu *pFormMenu = get_menu("form");
     // fill PopupMenu
@@ -251,10 +251,10 @@ IMPL_LINK_TYPED( SwOutlineTabDialog, FormHdl, Button *, pBtn, void )
     }
 
     pFormMenu->SetSelectHdl(LINK(this, SwOutlineTabDialog, MenuSelectHdl));
-    pFormMenu->Execute(pBtn, Rectangle(Point(0,0), pBtn->GetSizePixel()), PopupMenuFlags::ExecuteDown);
+    pFormMenu->Execute(pBtn, tools::Rectangle(Point(0,0), pBtn->GetSizePixel()), PopupMenuFlags::ExecuteDown);
 }
 
-IMPL_LINK_TYPED( SwOutlineTabDialog, MenuSelectHdl, Menu *, pMenu, bool )
+IMPL_LINK( SwOutlineTabDialog, MenuSelectHdl, Menu *, pMenu, bool )
 {
     sal_uInt8 nLevelNo = 0;
     OString sIdent = pMenu->GetCurItemIdent();
@@ -294,7 +294,7 @@ IMPL_LINK_TYPED( SwOutlineTabDialog, MenuSelectHdl, Menu *, pMenu, bool )
         {
             const OUString aName(pDlg->GetName());
             pChapterNumRules->ApplyNumRules( SwNumRulesWithName(
-                    *pNumRule, aName ), pDlg->GetCurEntryPos() );
+                    *xNumRule, aName ), pDlg->GetCurEntryPos() );
             pMenu->SetItemText(pMenu->GetItemId(pDlg->GetCurEntryPos()), aName);
         }
         return false;
@@ -305,11 +305,11 @@ IMPL_LINK_TYPED( SwOutlineTabDialog, MenuSelectHdl, Menu *, pMenu, bool )
         const SwNumRulesWithName *pRules = pChapterNumRules->GetRules( nLevelNo );
         if( pRules )
         {
-            pRules->MakeNumRule( rWrtSh, *pNumRule );
-            pNumRule->SetRuleType( OUTLINE_RULE );
+            xNumRule.reset(pRules->MakeNumRule(rWrtSh));
+            xNumRule->SetRuleType( OUTLINE_RULE );
         }
         else
-            *pNumRule = *rWrtSh.GetOutlineNumRule();
+            *xNumRule = *rWrtSh.GetOutlineNumRule();
     }
 
     sal_uInt16  nPageId = GetCurPageId();
@@ -406,7 +406,7 @@ short SwOutlineTabDialog::Ok()
         }
     }
 
-    rWrtSh.SetOutlineNumRule( *pNumRule);
+    rWrtSh.SetOutlineNumRule(*xNumRule);
 
     // #i30443#
     rWrtSh.EndAction();
@@ -562,7 +562,7 @@ void    SwOutlineSettingsTabPage::Update()
     SetModified();
 }
 
-IMPL_LINK_TYPED( SwOutlineSettingsTabPage, LevelHdl, ListBox&, rBox, void )
+IMPL_LINK( SwOutlineSettingsTabPage, LevelHdl, ListBox&, rBox, void )
 {
     nActLevel = 0;
     if(rBox.IsEntryPosSelected( MAXLEVEL ))
@@ -582,7 +582,7 @@ IMPL_LINK_TYPED( SwOutlineSettingsTabPage, LevelHdl, ListBox&, rBox, void )
     Update();
 }
 
-IMPL_LINK_TYPED( SwOutlineSettingsTabPage, ToggleComplete, Edit&, rEdit, void )
+IMPL_LINK( SwOutlineSettingsTabPage, ToggleComplete, Edit&, rEdit, void )
 {
     sal_uInt16 nMask = 1;
     for(sal_uInt16 i = 0; i < MAXLEVEL; i++)
@@ -599,7 +599,7 @@ IMPL_LINK_TYPED( SwOutlineSettingsTabPage, ToggleComplete, Edit&, rEdit, void )
     SetModified();
 }
 
-IMPL_LINK_TYPED( SwOutlineSettingsTabPage, CollSelect, ListBox&, rBox, void )
+IMPL_LINK( SwOutlineSettingsTabPage, CollSelect, ListBox&, rBox, void )
 {
     sal_uInt8 i;
 
@@ -641,16 +641,16 @@ IMPL_LINK_TYPED( SwOutlineSettingsTabPage, CollSelect, ListBox&, rBox, void )
     SetModified();
 }
 
-IMPL_LINK_NOARG_TYPED(SwOutlineSettingsTabPage, CollSelectGetFocus, Control&, void)
+IMPL_LINK_NOARG(SwOutlineSettingsTabPage, CollSelectGetFocus, Control&, void)
 {
     for( sal_uInt8 i = 0; i < MAXLEVEL; ++i)
         aSaveCollNames[i] =  pCollNames[i];
 }
 
-IMPL_LINK_TYPED( SwOutlineSettingsTabPage, NumberSelect, ListBox&, rBox, void )
+IMPL_LINK( SwOutlineSettingsTabPage, NumberSelect, ListBox&, rBox, void )
 {
     sal_uInt16 nMask = 1;
-    sal_Int16 nNumberType = static_cast<SwNumberingTypeListBox&>(rBox).GetSelectedNumberingType();
+    SvxNumType nNumberType = static_cast<SwNumberingTypeListBox&>(rBox).GetSelectedNumberingType();
     for(sal_uInt16 i = 0; i < MAXLEVEL; i++)
     {
         if(nActLevel & nMask)
@@ -665,7 +665,7 @@ IMPL_LINK_TYPED( SwOutlineSettingsTabPage, NumberSelect, ListBox&, rBox, void )
     SetModified();
 }
 
-IMPL_LINK_NOARG_TYPED(SwOutlineSettingsTabPage, DelimModify, Edit&, void)
+IMPL_LINK_NOARG(SwOutlineSettingsTabPage, DelimModify, Edit&, void)
 {
     sal_uInt16 nMask = 1;
     for(sal_uInt16 i = 0; i < MAXLEVEL; i++)
@@ -682,7 +682,7 @@ IMPL_LINK_NOARG_TYPED(SwOutlineSettingsTabPage, DelimModify, Edit&, void)
     SetModified();
 }
 
-IMPL_LINK_TYPED( SwOutlineSettingsTabPage, StartModified, Edit&, rEdit, void )
+IMPL_LINK( SwOutlineSettingsTabPage, StartModified, Edit&, rEdit, void )
 {
     sal_uInt16 nMask = 1;
     for(sal_uInt16 i = 0; i < MAXLEVEL; i++)
@@ -698,7 +698,7 @@ IMPL_LINK_TYPED( SwOutlineSettingsTabPage, StartModified, Edit&, rEdit, void )
     SetModified();
 }
 
-IMPL_LINK_NOARG_TYPED(SwOutlineSettingsTabPage, CharFormatHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwOutlineSettingsTabPage, CharFormatHdl, ListBox&, void)
 {
     OUString sEntry = m_pCharFormatLB->GetSelectEntry();
     sal_uInt16 nMask = 1;
@@ -804,9 +804,9 @@ void SwOutlineSettingsTabPage::SetWrtShell(SwWrtShell* pShell)
     }
 
     m_pNumberBox->SelectNumberingType(rNumFormat.GetNumberingType());
-    sal_uInt16 nOutlinePos = pSh->GetOutlinePos(MAXLEVEL);
+    SwOutlineNodes::size_type nOutlinePos = pSh->GetOutlinePos(MAXLEVEL);
     sal_uInt16 nTmp = 0;
-    if(nOutlinePos != USHRT_MAX)
+    if(nOutlinePos != SwOutlineNodes::npos)
     {
         nTmp = static_cast<sal_uInt16>(pSh->getIDocumentOutlineNodesAccess()->getOutlineLevel(nOutlinePos));
     }
@@ -832,10 +832,10 @@ void SwOutlineSettingsTabPage::ActivatePage(const SfxItemSet& )
     LevelHdl(*m_pLevelLB);
 }
 
-SfxTabPage::sfxpg SwOutlineSettingsTabPage::DeactivatePage(SfxItemSet*)
+DeactivateRC SwOutlineSettingsTabPage::DeactivatePage(SfxItemSet*)
 {
     SwOutlineTabDialog::SetActNumLevel(nActLevel);
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 bool SwOutlineSettingsTabPage::FillItemSet( SfxItemSet*  )
@@ -903,7 +903,7 @@ static long lcl_DrawGraphic(vcl::RenderContext* pVDev, const SwNumFormat &rForma
 VCL_BUILDER_FACTORY(NumberingPreview)
 
 // paint numbering's preview
-void NumberingPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/)
+void NumberingPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/)
 {
     const Size aSize(rRenderContext.PixelToLogic(GetOutputSizePixel()));
 
@@ -914,7 +914,7 @@ void NumberingPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle
     // #101524# OJ
     pVDev->SetFillColor(rRenderContext.GetSettings().GetStyleSettings().GetWindowColor());
     pVDev->SetLineColor(rRenderContext.GetSettings().GetStyleSettings().GetButtonTextColor());
-    pVDev->DrawRect(Rectangle(Point(0,0), aSize));
+    pVDev->DrawRect(tools::Rectangle(Point(0,0), aSize));
 
     if (pActNum)
     {
@@ -1044,11 +1044,11 @@ void NumberingPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle
                     nXStart = rFormat.GetIndentAt() / nWidthRelation;
                 }
 
-                Rectangle aRect1(Point(nTextXPos, nYStart + nFontHeight / 2), Size(aSize.Width() / 2, 2));
+                tools::Rectangle aRect1(Point(nTextXPos, nYStart + nFontHeight / 2), Size(aSize.Width() / 2, 2));
                 pVDev->SetFillColor(rRenderContext.GetSettings().GetStyleSettings().GetWindowColor()); // Color( COL_BLACK ) );
                 pVDev->DrawRect(aRect1);
 
-                Rectangle aRect2(Point(nXStart, nYStart + nLineHeight + nFontHeight / 2), Size(aSize.Width() / 2, 2));
+                tools::Rectangle aRect2(Point(nXStart, nYStart + nLineHeight + nFontHeight / 2), Size(aSize.Width() / 2, 2));
                 pVDev->DrawRect(aRect2);
                 nYStart += 2 * nLineHeight;
             }

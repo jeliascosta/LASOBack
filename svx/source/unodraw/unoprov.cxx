@@ -841,7 +841,7 @@ const UHashMapImpl& GetUHashImpl()
             { RTL_CONSTASCII_STRINGPARAM("com.sun.star.drawing.CustomShape"),          OBJ_CUSTOMSHAPE },
             { RTL_CONSTASCII_STRINGPARAM("com.sun.star.drawing.MediaShape"),           OBJ_MEDIA },
 
-            { RTL_CONSTASCII_STRINGPARAM("com.sun.star.drawing.Shape3DSceneObject"),   E3D_POLYSCENE_ID  | E3D_INVENTOR_FLAG },
+            { RTL_CONSTASCII_STRINGPARAM("com.sun.star.drawing.Shape3DSceneObject"),   E3D_SCENE_ID  | E3D_INVENTOR_FLAG },
             { RTL_CONSTASCII_STRINGPARAM("com.sun.star.drawing.Shape3DCubeObject"),    E3D_CUBEOBJ_ID    | E3D_INVENTOR_FLAG },
             { RTL_CONSTASCII_STRINGPARAM("com.sun.star.drawing.Shape3DSphereObject"),  E3D_SPHEREOBJ_ID  | E3D_INVENTOR_FLAG },
             { RTL_CONSTASCII_STRINGPARAM("com.sun.star.drawing.Shape3DLatheObject"),   E3D_LATHEOBJ_ID   | E3D_INVENTOR_FLAG },
@@ -928,7 +928,7 @@ const SfxItemPropertyMapEntry* SvxUnoPropertyMapProvider::GetMap(sal_uInt16 nPro
             case SVXMAP_POLYPOLYGONBEZIER: aMapArr[SVXMAP_POLYPOLYGONBEZIER]=ImplGetSvxPolyPolygonBezierPropertyMap(); break;
             case SVXMAP_GRAPHICOBJECT: aMapArr[SVXMAP_GRAPHICOBJECT]=ImplGetSvxGraphicObjectPropertyMap(); break;
             case SVXMAP_3DSCENEOBJECT: aMapArr[SVXMAP_3DSCENEOBJECT]=ImplGetSvx3DSceneObjectPropertyMap(); break;
-            case SVXMAP_3DCUBEOBJEKT: aMapArr[SVXMAP_3DCUBEOBJEKT]=ImplGetSvx3DCubeObjectPropertyMap(); break;
+            case SVXMAP_3DCUBEOBJECT: aMapArr[SVXMAP_3DCUBEOBJECT]=ImplGetSvx3DCubeObjectPropertyMap(); break;
             case SVXMAP_3DSPHEREOBJECT: aMapArr[SVXMAP_3DSPHEREOBJECT]=ImplGetSvx3DSphereObjectPropertyMap(); break;
             case SVXMAP_3DLATHEOBJECT: aMapArr[SVXMAP_3DLATHEOBJECT]=ImplGetSvx3DLatheObjectPropertyMap(); break;
             case SVXMAP_3DEXTRUDEOBJECT: aMapArr[SVXMAP_3DEXTRUDEOBJECT]=ImplGetSvx3DExtrudeObjectPropertyMap(); break;
@@ -971,17 +971,17 @@ sal_Bool SvxMeasureUnitToMapUnit( const short eApi, int& eVcl ) throw()
 {
     switch( eVcl )
     {
-    case util::MeasureUnit::MM_100TH:       eVcl = MAP_100TH_MM;    break;
-    case util::MeasureUnit::MM_10TH:        eVcl = MAP_10TH_MM;     break;
-    case util::MeasureUnit::MM:             eVcl = MAP_MM;          break;
-    case util::MeasureUnit::CM:             eVcl = MAP_CM;          break;
-    case util::MeasureUnit::INCH_1000TH:    eVcl = MAP_1000TH_INCH; break;
-    case util::MeasureUnit::INCH_100TH:     eVcl = MAP_100TH_INCH;  break;
-    case util::MeasureUnit::INCH_10TH:      eVcl = MAP_10TH_INCH;   break;
-    case util::MeasureUnit::INCH:           eVcl = MAP_INCH;        break;
-    case util::MeasureUnit::POINT:          eVcl = MAP_POINT;       break;
-    case util::MeasureUnit::TWIP:           eVcl = MAP_TWIP;        break;
-    case util::MeasureUnit::PERCENT:        eVcl = MAP_RELATIVE;    break;
+    case util::MeasureUnit::MM_100TH:       eVcl = MapUnit::Map100thMM;    break;
+    case util::MeasureUnit::MM_10TH:        eVcl = MapUnit::Map10thMM;     break;
+    case util::MeasureUnit::MM:             eVcl = MapUnit::MapMM;          break;
+    case util::MeasureUnit::CM:             eVcl = MapUnit::MapCM;          break;
+    case util::MeasureUnit::INCH_1000TH:    eVcl = MapUnit::Map1000thInch; break;
+    case util::MeasureUnit::INCH_100TH:     eVcl = MapUnit::Map100thInch;  break;
+    case util::MeasureUnit::INCH_10TH:      eVcl = MapUnit::Map10thInch;   break;
+    case util::MeasureUnit::INCH:           eVcl = MapUnit::MapInch;        break;
+    case util::MeasureUnit::POINT:          eVcl = MapUnit::MapPoint;       break;
+    case util::MeasureUnit::TWIP:           eVcl = MapUnit::MapTwip;        break;
+    case util::MeasureUnit::PERCENT:        eVcl = MapUnit::MapRelative;    break;
     default:
         return false;
     }
@@ -997,17 +997,17 @@ bool SvxMapUnitToMeasureUnit( const MapUnit eVcl, short& eApi ) throw()
 {
     switch( eVcl )
     {
-    case MAP_100TH_MM:      eApi = util::MeasureUnit::MM_100TH;     break;
-    case MAP_10TH_MM:       eApi = util::MeasureUnit::MM_10TH;      break;
-    case MAP_MM:            eApi = util::MeasureUnit::MM;           break;
-    case MAP_CM:            eApi = util::MeasureUnit::CM;           break;
-    case MAP_1000TH_INCH:   eApi = util::MeasureUnit::INCH_1000TH;  break;
-    case MAP_100TH_INCH:    eApi = util::MeasureUnit::INCH_100TH;   break;
-    case MAP_10TH_INCH:     eApi = util::MeasureUnit::INCH_10TH;    break;
-    case MAP_INCH:          eApi = util::MeasureUnit::INCH;         break;
-    case MAP_POINT:         eApi = util::MeasureUnit::POINT;        break;
-    case MAP_TWIP:          eApi = util::MeasureUnit::TWIP;         break;
-    case MAP_RELATIVE:      eApi = util::MeasureUnit::PERCENT;      break;
+    case MapUnit::Map100thMM:      eApi = util::MeasureUnit::MM_100TH;     break;
+    case MapUnit::Map10thMM:       eApi = util::MeasureUnit::MM_10TH;      break;
+    case MapUnit::MapMM:            eApi = util::MeasureUnit::MM;           break;
+    case MapUnit::MapCM:            eApi = util::MeasureUnit::CM;           break;
+    case MapUnit::Map1000thInch:   eApi = util::MeasureUnit::INCH_1000TH;  break;
+    case MapUnit::Map100thInch:    eApi = util::MeasureUnit::INCH_100TH;   break;
+    case MapUnit::Map10thInch:     eApi = util::MeasureUnit::INCH_10TH;    break;
+    case MapUnit::MapInch:          eApi = util::MeasureUnit::INCH;         break;
+    case MapUnit::MapPoint:         eApi = util::MeasureUnit::POINT;        break;
+    case MapUnit::MapTwip:          eApi = util::MeasureUnit::TWIP;         break;
+    case MapUnit::MapRelative:      eApi = util::MeasureUnit::PERCENT;      break;
     default:
         return false;
     }
@@ -1116,7 +1116,8 @@ bool SvxUnoGetResourceRanges( const short nWhich, int& nApiResIds, int& nIntResI
     return true;
 }
 
-bool SvxUnoConvertResourceString( int nSourceResIds, int nDestResIds, int nCount, OUString& rString ) throw(std::exception)
+/// @throws std::exception
+bool SvxUnoConvertResourceString( int nSourceResIds, int nDestResIds, int nCount, OUString& rString )
 {
     // first, calculate the search string length without an optional number behind the name
     sal_Int32 nLength = rString.getLength();
@@ -1269,8 +1270,8 @@ static const sal_uInt16 SvxUnoColorNameResId[] =
     RID_SVXSTR_COLOR_TANGO_ALUMINIUM
 };
 
-
-bool SvxUnoConvertResourceString( const sal_uInt16* pSourceResIds, const sal_uInt16* pDestResIds, int nCount, OUString& rString ) throw (std::exception)
+/// @throws std::exception
+bool SvxUnoConvertResourceString( const sal_uInt16* pSourceResIds, const sal_uInt16* pDestResIds, int nCount, OUString& rString )
 {
     //We replace e.g. "Gray 10%" with the translation of Gray, but we shouldn't
     //replace "Red Hat 1" with the translation of Red :-)
@@ -1301,7 +1302,7 @@ bool SvxUnoConvertResourceString( const sal_uInt16* pSourceResIds, const sal_uIn
 /** if the given name is a predefined name for the current language it is replaced by
     the corresponding api name.
 */
-OUString SvxUnogetApiNameForItem(const sal_Int16 nWhich, const OUString& rInternalName) throw(std::exception)
+OUString SvxUnogetApiNameForItem(const sal_Int16 nWhich, const OUString& rInternalName)
 {
     OUString aNew = rInternalName;
 
@@ -1334,7 +1335,7 @@ OUString SvxUnogetApiNameForItem(const sal_Int16 nWhich, const OUString& rIntern
 /** if the given name is a predefined api name it is replaced by the predefined name
     for the current language.
 */
-OUString SvxUnogetInternalNameForItem(const sal_Int16 nWhich, const OUString& rApiName) throw(std::exception)
+OUString SvxUnogetInternalNameForItem(const sal_Int16 nWhich, const OUString& rApiName)
 {
     OUString aNew = rApiName;
 
@@ -1375,21 +1376,20 @@ comphelper::PropertySetInfo* SvxPropertySetInfoPool::getOrCreate( sal_Int32 nSer
         return nullptr;
     }
 
-    if( mpInfos[ nServiceId ] == nullptr )
+    if( !mxInfos[ nServiceId ].is() )
     {
-        mpInfos[nServiceId] = new comphelper::PropertySetInfo();
-        mpInfos[nServiceId]->acquire();
+        mxInfos[nServiceId] = new comphelper::PropertySetInfo();
 
         switch( nServiceId )
         {
         case SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS:
-            mpInfos[SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS]->add( ImplGetSvxDrawingDefaultsPropertyMap() );
+            mxInfos[SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS]->add( ImplGetSvxDrawingDefaultsPropertyMap() );
             break;
         case SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS_WRITER:
-            mpInfos[SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS_WRITER]->add( ImplGetSvxDrawingDefaultsPropertyMap() );
-            mpInfos[SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS_WRITER]->remove( UNO_NAME_EDIT_PARA_IS_HANGING_PUNCTUATION );
+            mxInfos[SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS_WRITER]->add( ImplGetSvxDrawingDefaultsPropertyMap() );
+            mxInfos[SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS_WRITER]->remove( UNO_NAME_EDIT_PARA_IS_HANGING_PUNCTUATION );
             // OD 13.10.2003 #i18732# - add property map for writer item 'IsFollowingTextFlow'
-            mpInfos[SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS_WRITER]->add( ImplGetAdditionalWriterDrawingDefaultsPropertyMap() );
+            mxInfos[SVXUNO_SERVICEID_COM_SUN_STAR_DRAWING_DEFAULTS_WRITER]->add( ImplGetAdditionalWriterDrawingDefaultsPropertyMap() );
             break;
 
         default:
@@ -1397,9 +1397,9 @@ comphelper::PropertySetInfo* SvxPropertySetInfoPool::getOrCreate( sal_Int32 nSer
         }
     }
 
-    return mpInfos[ nServiceId ];
+    return mxInfos[ nServiceId ].get();
 }
 
-comphelper::PropertySetInfo* SvxPropertySetInfoPool::mpInfos[SVXUNO_SERVICEID_LASTID+1] = { nullptr };
+rtl::Reference<comphelper::PropertySetInfo> SvxPropertySetInfoPool::mxInfos[SVXUNO_SERVICEID_LASTID+1] = { nullptr };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

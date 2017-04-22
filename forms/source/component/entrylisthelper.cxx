@@ -23,6 +23,7 @@
 #include <osl/diagnose.h>
 #include <comphelper/sequence.hxx>
 #include <comphelper/property.hxx>
+#include <com/sun/star/form/binding/XListEntryTypedSource.hpp>
 #include <algorithm>
 
 
@@ -56,7 +57,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OEntryListHelper::setListEntrySource( const Reference< XListEntrySource >& _rxSource ) throw (RuntimeException, std::exception)
+    void SAL_CALL OEntryListHelper::setListEntrySource( const Reference< XListEntrySource >& _rxSource )
     {
         ControlModelLock aLock( m_rControlModel );
 
@@ -69,13 +70,13 @@ namespace frm
     }
 
 
-    Reference< XListEntrySource > SAL_CALL OEntryListHelper::getListEntrySource(  ) throw (RuntimeException, std::exception)
+    Reference< XListEntrySource > SAL_CALL OEntryListHelper::getListEntrySource(  )
     {
         return m_xListSource;
     }
 
 
-    void SAL_CALL OEntryListHelper::entryChanged( const ListEntryEvent& _rEvent ) throw (RuntimeException, std::exception)
+    void SAL_CALL OEntryListHelper::entryChanged( const ListEntryEvent& _rEvent )
     {
         ControlModelLock aLock( m_rControlModel );
 
@@ -92,12 +93,14 @@ namespace frm
             )
         {
             m_aStringItems[ _rEvent.Position ] = _rEvent.Entries[ 0 ];
+            if (m_aTypedItems.getLength())
+                m_aTypedItems = Sequence<Any>();    // doesn't match anymore
             stringItemListChanged( aLock );
         }
     }
 
 
-    void SAL_CALL OEntryListHelper::entryRangeInserted( const ListEntryEvent& _rEvent ) throw (RuntimeException, std::exception)
+    void SAL_CALL OEntryListHelper::entryRangeInserted( const ListEntryEvent& _rEvent )
     {
         ControlModelLock aLock( m_rControlModel );
 
@@ -112,13 +115,14 @@ namespace frm
             )
         {
             m_aStringItems.insert(m_aStringItems.begin() + _rEvent.Position, _rEvent.Entries.begin(), _rEvent.Entries.end());
-
+            if (m_aTypedItems.getLength())
+                m_aTypedItems = Sequence<Any>();    // doesn't match anymore
             stringItemListChanged( aLock );
         }
     }
 
 
-    void SAL_CALL OEntryListHelper::entryRangeRemoved( const ListEntryEvent& _rEvent ) throw (RuntimeException, std::exception)
+    void SAL_CALL OEntryListHelper::entryRangeRemoved( const ListEntryEvent& _rEvent )
     {
         ControlModelLock aLock( m_rControlModel );
 
@@ -134,12 +138,32 @@ namespace frm
         {
             m_aStringItems.erase(m_aStringItems.begin() + _rEvent.Position,
                                  m_aStringItems.begin() + _rEvent.Position + _rEvent.Count );
+            if (_rEvent.Position + _rEvent.Count <= m_aTypedItems.getLength())
+            {
+                Sequence<Any> aTmp( m_aTypedItems.getLength() - _rEvent.Count );
+                sal_Int32 nStop = _rEvent.Position;
+                sal_Int32 i = 0;
+                for ( ; i < nStop; ++i)
+                {
+                    aTmp[i] = m_aTypedItems[i];
+                }
+                nStop = aTmp.getLength();
+                for (sal_Int32 j = _rEvent.Position + _rEvent.Count; i < nStop; ++i, ++j)
+                {
+                    aTmp[i] = m_aTypedItems[j];
+                }
+                m_aTypedItems = aTmp;
+            }
+            else if (m_aTypedItems.getLength())
+            {
+                m_aTypedItems = Sequence<Any>();    // doesn't match anymore
+            }
             stringItemListChanged( aLock );
         }
     }
 
 
-    void SAL_CALL OEntryListHelper::allEntriesChanged( const EventObject& _rEvent ) throw (RuntimeException, std::exception)
+    void SAL_CALL OEntryListHelper::allEntriesChanged( const EventObject& _rEvent )
     {
         ControlModelLock aLock( m_rControlModel );
 
@@ -155,21 +179,21 @@ namespace frm
 
     // XRefreshable
 
-    void SAL_CALL OEntryListHelper::addRefreshListener(const Reference<XRefreshListener>& _rxListener) throw(RuntimeException, std::exception)
+    void SAL_CALL OEntryListHelper::addRefreshListener(const Reference<XRefreshListener>& _rxListener)
     {
         if ( _rxListener.is() )
             m_aRefreshListeners.addInterface( _rxListener );
     }
 
 
-    void SAL_CALL OEntryListHelper::removeRefreshListener(const Reference<XRefreshListener>& _rxListener) throw(RuntimeException, std::exception)
+    void SAL_CALL OEntryListHelper::removeRefreshListener(const Reference<XRefreshListener>& _rxListener)
     {
         if ( _rxListener.is() )
             m_aRefreshListeners.removeInterface( _rxListener );
     }
 
 
-    void SAL_CALL OEntryListHelper::refresh() throw(RuntimeException, std::exception)
+    void SAL_CALL OEntryListHelper::refresh()
     {
         {
             ControlModelLock aLock( m_rControlModel );
@@ -184,10 +208,7 @@ namespace frm
     void OEntryListHelper::impl_lock_refreshList( ControlModelLock& _rInstanceLock )
     {
         if ( hasExternalListSource() )
-        {
-            comphelper::sequenceToContainer(m_aStringItems, m_xListSource->getAllListEntries());
-            stringItemListChanged( _rInstanceLock );
-        }
+            obtainListSourceEntries( _rInstanceLock );
         else
             refreshInternalEntryList();
     }
@@ -251,12 +272,29 @@ namespace frm
             // be notified when the list changes ...
             m_xListSource->addListEntryListener( this );
 
-            comphelper::sequenceToContainer( m_aStringItems, m_xListSource->getAllListEntries() );
-            stringItemListChanged( _rInstanceLock );
+            obtainListSourceEntries( _rInstanceLock );
 
             // let derivees react on the new list source
             connectedExternalListSource();
         }
+    }
+
+
+    void OEntryListHelper::obtainListSourceEntries( ControlModelLock& _rInstanceLock )
+    {
+        Reference< XListEntryTypedSource > xTyped;
+        xTyped.set( m_xListSource, UNO_QUERY);
+        if (xTyped.is())
+        {
+            comphelper::sequenceToContainer( m_aStringItems, xTyped->getAllListEntriesTyped( m_aTypedItems));
+        }
+        else
+        {
+            comphelper::sequenceToContainer( m_aStringItems, m_xListSource->getAllListEntries());
+            if (m_aTypedItems.getLength())
+                m_aTypedItems = Sequence<Any>();
+        }
+        stringItemListChanged( _rInstanceLock );
     }
 
 
@@ -277,6 +315,8 @@ namespace frm
         css::uno::Sequence<OUString> aTmp;
         OSL_VERIFY( _rValue >>= aTmp );
         comphelper::sequenceToContainer(m_aStringItems, aTmp);
+        if (m_aTypedItems.getLength())
+            m_aTypedItems = Sequence<Any>();    // doesn't match anymore
         stringItemListChanged( _rInstanceLock );
     }
 

@@ -111,15 +111,16 @@ private:
     void                    ImpLinkAbmeldung();
     bool                    ImpUpdateGraphicLink( bool bAsynchron = true ) const;
     void                    ImpSetLinkedGraphic( const Graphic& rGraphic );
-                            DECL_LINK_TYPED( ImpSwapHdl, const GraphicObject*, SvStream* );
+                            DECL_LINK( ImpSwapHdl, const GraphicObject*, SvStream* );
     void onGraphicChanged();
+    GDIMetaFile             GetMetaFile(GraphicType &rGraphicType) const;
 
 public:
 
                             SdrGrafObj();
                             SdrGrafObj(const Graphic& rGrf);
-                            SdrGrafObj(const Graphic& rGrf, const Rectangle& rRect);
-    virtual                 ~SdrGrafObj();
+                            SdrGrafObj(const Graphic& rGrf, const tools::Rectangle& rRect);
+    virtual                 ~SdrGrafObj() override;
 
     void                    SetGraphicObject( const GraphicObject& rGrfObj );
     const GraphicObject&    GetGraphicObject(bool bForceSwapIn = false) const;
@@ -174,11 +175,7 @@ public:
     virtual SdrHdl*         GetHdl(sal_uInt32 nHdlNum) const override;
 
     virtual void            NbcResize(const Point& rRef, const Fraction& xFact, const Fraction& yFact) override;
-    virtual void            NbcRotate(const Point& rRef, long nAngle, double sn, double cs) override;
     virtual void            NbcMirror(const Point& rRef1, const Point& rRef2) override;
-    virtual void            NbcShear (const Point& rRef, long nAngle, double tn, bool bVShear) override;
-    virtual void            NbcSetSnapRect(const Rectangle& rRect) override;
-    virtual void            NbcSetLogicRect(const Rectangle& rRect) override;
     virtual SdrObjGeoData*  NewGeoData() const override;
     virtual void            SaveGeoData(SdrObjGeoData& rGeo) const override;
     virtual void            RestGeoData(const SdrObjGeoData& rGeo) override;
@@ -193,7 +190,7 @@ public:
 
     virtual SdrObject*      DoConvertToPolyObj(bool bBezier, bool bAddText) const override;
 
-    virtual void            AdjustToMaxRect( const Rectangle& rMaxRect, bool bShrinkOnly = false ) override;
+    virtual void            AdjustToMaxRect( const tools::Rectangle& rMaxRect, bool bShrinkOnly = false ) override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 

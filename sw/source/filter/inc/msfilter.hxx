@@ -20,6 +20,9 @@
 #ifndef INCLUDED_SW_SOURCE_FILTER_INC_MSFILTER_HXX
 #define INCLUDED_SW_SOURCE_FILTER_INC_MSFILTER_HXX
 
+#include <sal/config.h>
+
+#include <cstddef>
 #include <set>
 #include <map>
 #include <vector>
@@ -133,7 +136,7 @@ namespace sw
     namespace util
     {
         /// Redlining Authors, map word author key to writer author value
-        typedef std::map<sal_uInt16, sal_uInt16> AuthorInfos;
+        typedef std::map<sal_uInt16, std::size_t> AuthorInfos;
 
         /** Clips a value to MAX/MIN 16bit value to make it safe for use
             as a position value to give to writer. i.e. +-57.8cm. Sometimes
@@ -239,7 +242,7 @@ namespace sw
         {
         private:
             //I hate these things stupid pImpl things, but its warranted here
-            ::myImplHelpers::StyleMapperImpl<SwCharFormat> *mpImpl;
+            std::unique_ptr<::myImplHelpers::StyleMapperImpl<SwCharFormat>> mpImpl;
         public:
             explicit CharStyleMapper(SwDoc &rDoc);
             ~CharStyleMapper();
@@ -308,7 +311,7 @@ namespace sw
             their layout frms deleted and recalculated. This TableManager
             detects the necessity to do this, and all tables inserted into
             a document should be registered with this manager with
-            InsertTable, and before finialization DelAndMakeTableFrames should
+            InsertTable, and before finalization DelAndMakeTableFrames should
             be called.
 
             @author
@@ -345,6 +348,7 @@ namespace sw
 
         public:
             explicit RedlineStack(SwDoc &rDoc) : mrDoc(rDoc) {}
+            void MoveAttrs(const SwPosition& rPos);
             void open(const SwPosition& rPos, const SfxPoolItem& rAttr);
             bool close(const SwPosition& rPos, RedlineType_t eType);
             void close(const SwPosition& rPos, RedlineType_t eType,

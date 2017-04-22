@@ -167,9 +167,11 @@ SwCharURLPage::SwCharURLPage(vcl::Window* pParent, const SfxItemSet& rCoreSet)
     SwView *pView = ::GetActiveView();
     ::FillCharStyleListBox(*m_pVisitedLB, pView->GetDocShell());
     ::FillCharStyleListBox(*m_pNotVisitedLB, pView->GetDocShell());
+    m_pVisitedLB->SelectEntryPos(m_pVisitedLB->GetEntryPos(reinterpret_cast<void*>(RES_POOLCHR_INET_VISIT)));
+    m_pNotVisitedLB->SelectEntryPos(m_pNotVisitedLB->GetEntryPos(reinterpret_cast<void*>(RES_POOLCHR_INET_NORMAL)));
 
-    TargetList* pList = new TargetList;
-    const SfxFrame& rFrame = pView->GetViewFrame()->GetTopFrame();
+    std::unique_ptr<TargetList> pList( new TargetList );
+    const SfxFrame& rFrame = pView->GetViewFrame()->GetFrame();
     rFrame.GetTargetList(*pList);
     if ( !pList->empty() )
     {
@@ -180,7 +182,6 @@ SwCharURLPage::SwCharURLPage(vcl::Window* pParent, const SfxItemSet& rCoreSet)
             m_pTargetFrameLB->InsertEntry( pList->at( i ) );
         }
     }
-    delete pList;
 }
 
 SwCharURLPage::~SwCharURLPage()
@@ -211,7 +212,7 @@ void SwCharURLPage::Reset(const SfxItemSet* rSet)
     {
         const SwFormatINetFormat* pINetFormat = static_cast<const SwFormatINetFormat*>( pItem);
         m_pURLED->SetText(INetURLObject::decode(pINetFormat->GetValue(),
-            INetURLObject::DECODE_UNAMBIGUOUS));
+            INetURLObject::DecodeMechanism::Unambiguous));
         m_pURLED->SaveValue();
         m_pNameED->SetText(pINetFormat->GetName());
 
@@ -268,11 +269,11 @@ bool SwCharURLPage::FillItemSet(SfxItemSet* rSet)
 
     // set valid settings first
     OUString sEntry = m_pVisitedLB->GetSelectEntry();
-    sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( sEntry, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT);
+    sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( sEntry, SwGetPoolIdFromName::ChrFmt);
     aINetFormat.SetVisitedFormatAndId( sEntry, nId );
 
     sEntry = m_pNotVisitedLB->GetSelectEntry();
-    nId = SwStyleNameMapper::GetPoolIdFromUIName( sEntry, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT);
+    nId = SwStyleNameMapper::GetPoolIdFromUIName( sEntry, SwGetPoolIdFromName::ChrFmt);
     aINetFormat.SetINetFormatAndId( sEntry, nId );
 
     if( pINetItem && !pINetItem->GetMacroTable().empty() )
@@ -300,7 +301,7 @@ VclPtr<SfxTabPage> SwCharURLPage::Create(  vcl::Window* pParent,
     return VclPtr<SwCharURLPage>::Create( pParent, *rAttrSet );
 }
 
-IMPL_LINK_NOARG_TYPED(SwCharURLPage, InsertFileHdl, Button*, void)
+IMPL_LINK_NOARG(SwCharURLPage, InsertFileHdl, Button*, void)
 {
     FileDialogHelper aDlgHelper( TemplateDescription::FILEOPEN_SIMPLE );
     if( aDlgHelper.Execute() == ERRCODE_NONE )
@@ -310,7 +311,7 @@ IMPL_LINK_NOARG_TYPED(SwCharURLPage, InsertFileHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwCharURLPage, EventHdl, Button*, void)
+IMPL_LINK_NOARG(SwCharURLPage, EventHdl, Button*, void)
 {
     bModified |= SwMacroAssignDlg::INetFormatDlg( this,
                     ::GetActiveView()->GetWrtShell(), pINetItem );

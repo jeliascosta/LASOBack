@@ -146,35 +146,37 @@ namespace dbaui
     {
     public:
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName() throw(RuntimeException, std::exception) override;
-        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName() override;
+        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
 
         // XServiceInfo - static methods
-        static Sequence< OUString >  getSupportedServiceNames_Static() throw( RuntimeException );
-        static OUString              getImplementationName_Static() throw( RuntimeException );
+        /// @throws RuntimeException
+        static Sequence< OUString >  getSupportedServiceNames_Static();
+        /// @throws RuntimeException
+        static OUString              getImplementationName_Static();
         static Reference< XInterface >      Create( const Reference< XMultiServiceFactory >& );
 
         // XCopyTableWizard
-        virtual ::sal_Int16 SAL_CALL getOperation() throw (RuntimeException, std::exception) override;
-        virtual void SAL_CALL setOperation( ::sal_Int16 _operation ) throw (IllegalArgumentException, RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getDestinationTableName() throw (RuntimeException, std::exception) override;
-        virtual void SAL_CALL setDestinationTableName( const OUString& _destinationTableName ) throw (RuntimeException, std::exception) override;
-        virtual Optional< OUString > SAL_CALL getCreatePrimaryKey() throw (RuntimeException, std::exception) override;
-        virtual void SAL_CALL setCreatePrimaryKey( const Optional< OUString >& _newPrimaryKey ) throw (IllegalArgumentException, SQLException, RuntimeException, std::exception) override;
-        virtual sal_Bool SAL_CALL getUseHeaderLineAsColumnNames() throw (RuntimeException, std::exception) override;
-        virtual void SAL_CALL setUseHeaderLineAsColumnNames( sal_Bool _bUseHeaderLineAsColumnNames ) throw (RuntimeException, std::exception) override;
-        virtual void SAL_CALL addCopyTableListener( const Reference< XCopyTableListener >& Listener ) throw (RuntimeException, std::exception) override;
-        virtual void SAL_CALL removeCopyTableListener( const Reference< XCopyTableListener >& Listener ) throw (RuntimeException, std::exception) override;
+        virtual ::sal_Int16 SAL_CALL getOperation() override;
+        virtual void SAL_CALL setOperation( ::sal_Int16 _operation ) override;
+        virtual OUString SAL_CALL getDestinationTableName() override;
+        virtual void SAL_CALL setDestinationTableName( const OUString& _destinationTableName ) override;
+        virtual Optional< OUString > SAL_CALL getCreatePrimaryKey() override;
+        virtual void SAL_CALL setCreatePrimaryKey( const Optional< OUString >& _newPrimaryKey ) override;
+        virtual sal_Bool SAL_CALL getUseHeaderLineAsColumnNames() override;
+        virtual void SAL_CALL setUseHeaderLineAsColumnNames( sal_Bool _bUseHeaderLineAsColumnNames ) override;
+        virtual void SAL_CALL addCopyTableListener( const Reference< XCopyTableListener >& Listener ) override;
+        virtual void SAL_CALL removeCopyTableListener( const Reference< XCopyTableListener >& Listener ) override;
 
         // XCopyTableWizard::XExecutableDialog
-        virtual void SAL_CALL setTitle( const OUString& aTitle ) throw (RuntimeException, std::exception) override;
-        virtual ::sal_Int16 SAL_CALL execute(  ) throw (RuntimeException, std::exception) override;
+        virtual void SAL_CALL setTitle( const OUString& aTitle ) override;
+        virtual ::sal_Int16 SAL_CALL execute(  ) override;
 
         // XInitialization
-        virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception) override;
+        virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
 
         // XPropertySet
-        virtual Reference< XPropertySetInfo > SAL_CALL getPropertySetInfo() throw(RuntimeException, std::exception) override;
+        virtual Reference< XPropertySetInfo > SAL_CALL getPropertySetInfo() override;
         virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
         // OPropertyArrayUsageHelper
@@ -186,7 +188,7 @@ namespace dbaui
 
     protected:
         explicit CopyTableWizard( const Reference< XComponentContext >& _rxORB );
-        virtual ~CopyTableWizard();
+        virtual ~CopyTableWizard() override;
 
         // OGenericUnoDialog overridables
         virtual VclPtr<Dialog> createDialog( vcl::Window* _pParent ) override;
@@ -232,7 +234,7 @@ namespace dbaui
         /** extracts the source object (table or query) described by the given descriptor,
             relative to m_xSourceConnection
         */
-        ::std::unique_ptr< ICopyTableSourceObject >
+        std::unique_ptr< ICopyTableSourceObject >
                 impl_extractSourceObject_throw(
                     const Reference< XPropertySet >& _rxDescriptor,
                     sal_Int32& _out_rCommandType
@@ -331,7 +333,7 @@ private:
         // source
         SharedConnection                m_xSourceConnection;
         sal_Int32                       m_nCommandType;
-        ::std::unique_ptr< ICopyTableSourceObject >
+        std::unique_ptr< ICopyTableSourceObject >
                                         m_pSourceObject;
         Reference< XResultSet >         m_xSourceResultSet;
         Sequence< Any >                 m_aSourceSelection;
@@ -409,40 +411,40 @@ Reference< XInterface > CopyTableWizard::Create( const Reference< XMultiServiceF
     return *( new CopyTableWizard( comphelper::getComponentContext(_rxFactory) ) );
 }
 
-OUString SAL_CALL CopyTableWizard::getImplementationName() throw(RuntimeException, std::exception)
+OUString SAL_CALL CopyTableWizard::getImplementationName()
 {
     return getImplementationName_Static();
 }
 
-OUString CopyTableWizard::getImplementationName_Static() throw(RuntimeException)
+OUString CopyTableWizard::getImplementationName_Static()
 {
     return OUString( "org.openoffice.comp.dbu.CopyTableWizard" );
 }
 
-css::uno::Sequence<OUString> SAL_CALL CopyTableWizard::getSupportedServiceNames() throw(RuntimeException, std::exception)
+css::uno::Sequence<OUString> SAL_CALL CopyTableWizard::getSupportedServiceNames()
 {
     return getSupportedServiceNames_Static();
 }
 
-css::uno::Sequence<OUString> CopyTableWizard::getSupportedServiceNames_Static() throw(RuntimeException)
+css::uno::Sequence<OUString> CopyTableWizard::getSupportedServiceNames_Static()
 {
     css::uno::Sequence<OUString> aSupported { "com.sun.star.sdb.application.CopyTableWizard" };
     return aSupported;
 }
 
-Reference< XPropertySetInfo > SAL_CALL CopyTableWizard::getPropertySetInfo() throw(RuntimeException, std::exception)
+Reference< XPropertySetInfo > SAL_CALL CopyTableWizard::getPropertySetInfo()
 {
     Reference< XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
-::sal_Int16 SAL_CALL CopyTableWizard::getOperation() throw (RuntimeException, std::exception)
+::sal_Int16 SAL_CALL CopyTableWizard::getOperation()
 {
     CopyTableAccessGuard aGuard( *this );
     return m_nOperation;
 }
 
-void SAL_CALL CopyTableWizard::setOperation( ::sal_Int16 _operation ) throw (IllegalArgumentException, RuntimeException, std::exception)
+void SAL_CALL CopyTableWizard::setOperation( ::sal_Int16 _operation )
 {
     CopyTableAccessGuard aGuard( *this );
 
@@ -457,7 +459,7 @@ void SAL_CALL CopyTableWizard::setOperation( ::sal_Int16 _operation ) throw (Ill
         &&  !OCopyTableWizard::supportsViews( m_xDestConnection )
         )
         throw IllegalArgumentException(
-            OUString( ModuleRes( STR_CTW_NO_VIEWS_SUPPORT ) ),
+            ModuleRes( STR_CTW_NO_VIEWS_SUPPORT ),
             *this,
             1
         );
@@ -465,31 +467,31 @@ void SAL_CALL CopyTableWizard::setOperation( ::sal_Int16 _operation ) throw (Ill
     m_nOperation = _operation;
 }
 
-OUString SAL_CALL CopyTableWizard::getDestinationTableName() throw (RuntimeException, std::exception)
+OUString SAL_CALL CopyTableWizard::getDestinationTableName()
 {
     CopyTableAccessGuard aGuard( *this );
     return m_sDestinationTable;
 }
 
-void SAL_CALL CopyTableWizard::setDestinationTableName( const OUString& _destinationTableName ) throw (RuntimeException, std::exception)
+void SAL_CALL CopyTableWizard::setDestinationTableName( const OUString& _destinationTableName )
 {
     CopyTableAccessGuard aGuard( *this );
     m_sDestinationTable = _destinationTableName;
 }
 
-Optional< OUString > SAL_CALL CopyTableWizard::getCreatePrimaryKey() throw (RuntimeException, std::exception)
+Optional< OUString > SAL_CALL CopyTableWizard::getCreatePrimaryKey()
 {
     CopyTableAccessGuard aGuard( *this );
     return m_aPrimaryKeyName;
 }
 
-void SAL_CALL CopyTableWizard::setCreatePrimaryKey( const Optional< OUString >& _newPrimaryKey ) throw (IllegalArgumentException, SQLException, RuntimeException, std::exception)
+void SAL_CALL CopyTableWizard::setCreatePrimaryKey( const Optional< OUString >& _newPrimaryKey )
 {
     CopyTableAccessGuard aGuard( *this );
 
     if ( _newPrimaryKey.IsPresent && !OCopyTableWizard::supportsPrimaryKey( m_xDestConnection ) )
         throw IllegalArgumentException(
-                OUString( ModuleRes( STR_CTW_NO_PRIMARY_KEY_SUPPORT ) ),
+            ModuleRes( STR_CTW_NO_PRIMARY_KEY_SUPPORT ),
             *this,
             1
         );
@@ -497,39 +499,39 @@ void SAL_CALL CopyTableWizard::setCreatePrimaryKey( const Optional< OUString >& 
     m_aPrimaryKeyName = _newPrimaryKey;
 }
 
-sal_Bool SAL_CALL CopyTableWizard::getUseHeaderLineAsColumnNames() throw (RuntimeException, std::exception)
+sal_Bool SAL_CALL CopyTableWizard::getUseHeaderLineAsColumnNames()
 {
     CopyTableAccessGuard aGuard( *this );
     return m_bUseHeaderLineAsColumnNames;
 }
 
-void SAL_CALL CopyTableWizard::setUseHeaderLineAsColumnNames( sal_Bool _bUseHeaderLineAsColumnNames ) throw (RuntimeException, std::exception)
+void SAL_CALL CopyTableWizard::setUseHeaderLineAsColumnNames( sal_Bool _bUseHeaderLineAsColumnNames )
 {
     CopyTableAccessGuard aGuard( *this );
     m_bUseHeaderLineAsColumnNames = _bUseHeaderLineAsColumnNames;
 }
 
-void SAL_CALL CopyTableWizard::addCopyTableListener( const Reference< XCopyTableListener >& _rxListener ) throw (RuntimeException, std::exception)
+void SAL_CALL CopyTableWizard::addCopyTableListener( const Reference< XCopyTableListener >& _rxListener )
 {
     CopyTableAccessGuard aGuard( *this );
     if ( _rxListener.is() )
         m_aCopyTableListeners.addInterface( _rxListener );
 }
 
-void SAL_CALL CopyTableWizard::removeCopyTableListener( const Reference< XCopyTableListener >& _rxListener ) throw (RuntimeException, std::exception)
+void SAL_CALL CopyTableWizard::removeCopyTableListener( const Reference< XCopyTableListener >& _rxListener )
 {
     CopyTableAccessGuard aGuard( *this );
     if ( _rxListener.is() )
         m_aCopyTableListeners.removeInterface( _rxListener );
 }
 
-void SAL_CALL CopyTableWizard::setTitle( const OUString& _rTitle ) throw (RuntimeException, std::exception)
+void SAL_CALL CopyTableWizard::setTitle( const OUString& _rTitle )
 {
     CopyTableAccessGuard aGuard( *this );
     CopyTableWizard_DialogBase::setTitle( _rTitle );
 }
 
-::sal_Int16 SAL_CALL CopyTableWizard::execute(  ) throw (RuntimeException, std::exception)
+::sal_Int16 SAL_CALL CopyTableWizard::execute(  )
 {
     CopyTableAccessGuard aGuard( *this );
 
@@ -654,7 +656,7 @@ Reference< XPropertySet > CopyTableWizard::impl_ensureDataAccessDescriptor_throw
     if ( !bIsValid )
     {
         throw IllegalArgumentException(
-            OUString( ModuleRes( STR_CTW_INVALID_DATA_ACCESS_DESCRIPTOR ) ),
+            ModuleRes( STR_CTW_INVALID_DATA_ACCESS_DESCRIPTOR ),
             *const_cast< CopyTableWizard* >( this ),
             _nArgPos + 1
         );
@@ -709,7 +711,7 @@ void CopyTableWizard::impl_checkForUnsupportedSettings_throw( const Reference< X
 
 }
 
-::std::unique_ptr< ICopyTableSourceObject > CopyTableWizard::impl_extractSourceObject_throw( const Reference< XPropertySet >& _rxDescriptor, sal_Int32& _out_rCommandType ) const
+std::unique_ptr< ICopyTableSourceObject > CopyTableWizard::impl_extractSourceObject_throw( const Reference< XPropertySet >& _rxDescriptor, sal_Int32& _out_rCommandType ) const
 {
     OSL_PRECOND( _rxDescriptor.is() && m_xSourceConnection.is(), "CopyTableWizard::impl_extractSourceObject_throw: illegal arguments!" );
 
@@ -726,7 +728,7 @@ void CopyTableWizard::impl_checkForUnsupportedSettings_throw( const Reference< X
     OSL_VERIFY( _rxDescriptor->getPropertyValue( PROPERTY_COMMAND ) >>= sCommand );
     OSL_VERIFY( _rxDescriptor->getPropertyValue( PROPERTY_COMMAND_TYPE ) >>= _out_rCommandType );
 
-    ::std::unique_ptr< ICopyTableSourceObject > pSourceObject;
+    std::unique_ptr< ICopyTableSourceObject > pSourceObject;
     Reference< XNameAccess > xContainer;
     switch ( _out_rCommandType )
     {
@@ -746,7 +748,7 @@ void CopyTableWizard::impl_checkForUnsupportedSettings_throw( const Reference< X
     break;
     default:
         throw IllegalArgumentException(
-            OUString( ModuleRes( STR_CTW_ONLY_TABLES_AND_QUERIES_SUPPORT ) ),
+            ModuleRes( STR_CTW_ONLY_TABLES_AND_QUERIES_SUPPORT ),
             *const_cast< CopyTableWizard* >( this ),
             1
         );
@@ -765,7 +767,7 @@ void CopyTableWizard::impl_checkForUnsupportedSettings_throw( const Reference< X
         if ( _out_rCommandType == CommandType::QUERY )
             // we cannot copy a query if the connection cannot provide it ...
             throw IllegalArgumentException(
-                OUString(ModuleRes( STR_CTW_ERROR_NO_QUERY )),
+                ModuleRes( STR_CTW_ERROR_NO_QUERY ),
                 *const_cast< CopyTableWizard* >( this ),
                 1
             );
@@ -966,7 +968,7 @@ namespace
     class ValueTransfer
     {
     public:
-        ValueTransfer( const sal_Int32& _rSourcePos, const sal_Int32& _rDestPos, const ::std::vector< sal_Int32 >& _rColTypes,
+        ValueTransfer( const sal_Int32& _rSourcePos, const sal_Int32& _rDestPos, const std::vector< sal_Int32 >& _rColTypes,
             const Reference< XRow >& _rxSource, const Reference< XParameters >& _rxDest )
             :m_rSourcePos( _rSourcePos )
             ,m_rDestPos( _rDestPos )
@@ -1001,7 +1003,7 @@ namespace
     private:
         const sal_Int32&                    m_rSourcePos;
         const sal_Int32&                    m_rDestPos;
-        const ::std::vector< sal_Int32 >    m_rColTypes;
+        const std::vector< sal_Int32 >    m_rColTypes;
         const Reference< XRow >             m_xSource;
         const Reference< XParameters >      m_xDest;
     };
@@ -1104,11 +1106,11 @@ void CopyTableWizard::impl_copyRows_throw( const Reference< XResultSet >& _rxSou
 
     // we need a vector which all types
     sal_Int32 nCount = xMeta->getColumnCount();
-    ::std::vector< sal_Int32 > aSourceColTypes;
+    std::vector< sal_Int32 > aSourceColTypes;
     aSourceColTypes.reserve( nCount + 1 );
     aSourceColTypes.push_back( -1 ); // just to avoid a every time i-1 call
 
-    ::std::vector< sal_Int32 > aSourcePrec;
+    std::vector< sal_Int32 > aSourcePrec;
     aSourcePrec.reserve( nCount + 1 );
     aSourcePrec.push_back( -1 ); // just to avoid a every time i-1 call
 
@@ -1446,7 +1448,7 @@ OUString CopyTableWizard::impl_getServerSideCopyStatement_throw(const Reference<
     return sSql;
 }
 
-void SAL_CALL CopyTableWizard::initialize( const Sequence< Any >& _rArguments ) throw (Exception, RuntimeException, std::exception)
+void SAL_CALL CopyTableWizard::initialize( const Sequence< Any >& _rArguments )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( isInitialized() )
@@ -1455,7 +1457,7 @@ void SAL_CALL CopyTableWizard::initialize( const Sequence< Any >& _rArguments ) 
     sal_Int32 nArgCount( _rArguments.getLength() );
     if ( ( nArgCount != 2 ) && ( nArgCount != 3 ) )
         throw IllegalArgumentException(
-            OUString( ModuleRes( STR_CTW_ILLEGAL_PARAMETER_COUNT ) ),
+            ModuleRes( STR_CTW_ILLEGAL_PARAMETER_COUNT ),
             *this,
             1
         );
@@ -1466,7 +1468,7 @@ void SAL_CALL CopyTableWizard::initialize( const Sequence< Any >& _rArguments ) 
         {   // ->createWithInteractionHandler
             if ( !( _rArguments[2] >>= m_xInteractionHandler ) )
                 throw IllegalArgumentException(
-                    OUString(ModuleRes( STR_CTW_ERROR_INVALID_INTERACTIONHANDLER )),
+                    ModuleRes( STR_CTW_ERROR_INVALID_INTERACTIONHANDLER ),
                     *this,
                     3
                 );
@@ -1491,7 +1493,7 @@ void SAL_CALL CopyTableWizard::initialize( const Sequence< Any >& _rArguments ) 
     catch( const Exception& )
     {
         throw WrappedTargetException(
-            OUString( ModuleRes( STR_CTW_ERROR_DURING_INITIALIZATION ) ),
+            ModuleRes( STR_CTW_ERROR_DURING_INITIALIZATION ),
             *this,
             ::cppu::getCaughtException()
         );

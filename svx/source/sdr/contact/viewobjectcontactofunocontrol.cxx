@@ -178,23 +178,23 @@ namespace sdr { namespace contact {
         }
 
     public:
-        inline  bool    is() const { return m_xControl.is() && m_xControlWindow.is() && m_xControlView.is(); }
-        inline  void    clear() { m_xControl.clear(); m_xControlWindow.clear(); m_xControlView.clear(); }
+        bool    is() const { return m_xControl.is() && m_xControlWindow.is() && m_xControlView.is(); }
+        void    clear() { m_xControl.clear(); m_xControlWindow.clear(); m_xControlView.clear(); }
 
         // delegators for the methods of the UNO interfaces
         // Note all those will crash if called for a NULL object.
-        inline bool     isDesignMode() const                        { return m_xControl->isDesignMode();         }
-        inline void     setDesignMode( const bool _bDesign ) const  { m_xControl->setDesignMode( _bDesign );     }
-        inline bool     isVisible() const                           { return m_xControlWindow->isVisible();      }
-        inline void     setVisible( const bool _bVisible ) const    { m_xControlWindow->setVisible( _bVisible ); }
-        inline Reference< XControlModel >
+        bool     isDesignMode() const                        { return m_xControl->isDesignMode();         }
+        void     setDesignMode( const bool _bDesign ) const  { m_xControl->setDesignMode( _bDesign );     }
+        bool     isVisible() const                           { return m_xControlWindow->isVisible();      }
+        void     setVisible( const bool _bVisible ) const    { m_xControlWindow->setVisible( _bVisible ); }
+        Reference< XControlModel >
                         getModel() const { return m_xControl->getModel(); }
-        inline void     setModel( const Reference< XControlModel >& _m ) const { m_xControl->setModel( _m ); }
+        void     setModel( const Reference< XControlModel >& _m ) const { m_xControl->setModel( _m ); }
 
-        inline void     addWindowListener( const Reference< XWindowListener >& _l ) const    { m_xControlWindow->addWindowListener( _l );    }
-        inline void     removeWindowListener( const Reference< XWindowListener >& _l ) const { m_xControlWindow->removeWindowListener( _l ); }
-               void     setPosSize( const Rectangle& _rPosSize ) const;
-               Rectangle
+        void     addWindowListener( const Reference< XWindowListener >& _l ) const    { m_xControlWindow->addWindowListener( _l );    }
+        void     removeWindowListener( const Reference< XWindowListener >& _l ) const { m_xControlWindow->removeWindowListener( _l ); }
+               void     setPosSize( const tools::Rectangle& _rPosSize ) const;
+               tools::Rectangle
                         getPosSize() const;
                void     setZoom( const ::basegfx::B2DVector& _rScale ) const;
                ::basegfx::B2DVector
@@ -203,7 +203,7 @@ namespace sdr { namespace contact {
                void     invalidate() const;
 
     public:
-        inline  const Reference< XControl >&    getControl() const  { return m_xControl; }
+        const Reference< XControl >&    getControl() const  { return m_xControl; }
     };
 
 
@@ -217,13 +217,13 @@ namespace sdr { namespace contact {
         return _rControl == Reference< XInterface >( _rxCompare, UNO_QUERY );
     }
 
-    void ControlHolder::setPosSize( const Rectangle& _rPosSize ) const
+    void ControlHolder::setPosSize( const tools::Rectangle& _rPosSize ) const
     {
         // no check whether we're valid, this is the responsibility of the caller
 
         // don't call setPosSize when pos/size did not change
         // #i104181# / 2009-08-18 / frank.schoenheit@sun.com
-        ::Rectangle aCurrentRect( getPosSize() );
+        ::tools::Rectangle aCurrentRect( getPosSize() );
         if ( aCurrentRect != _rPosSize )
         {
             m_xControlWindow->setPosSize(
@@ -234,7 +234,7 @@ namespace sdr { namespace contact {
     }
 
 
-    ::Rectangle ControlHolder::getPosSize() const
+    ::tools::Rectangle ControlHolder::getPosSize() const
     {
         // no check whether we're valid, this is the responsibility of the caller
         return VCLUnoHelper::ConvertToVCLRect( m_xControlWindow->getPosSize() );
@@ -253,7 +253,7 @@ namespace sdr { namespace contact {
         Reference< XWindowPeer > xPeer( m_xControl->getPeer() );
         if ( xPeer.is() )
         {
-            vcl::Window* pWindow = VCLUnoHelper::GetWindow( xPeer );
+            VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xPeer );
             OSL_ENSURE( pWindow, "ControlHolder::invalidate: no implementation access!" );
             if ( pWindow )
                 pWindow->Invalidate();
@@ -266,7 +266,7 @@ namespace sdr { namespace contact {
         // no check whether we're valid, this is the responsibility of the caller
 
         // Argh. Why does XView have a setZoom only, but not a getZoom?
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow( m_xControl->getPeer() );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( m_xControl->getPeer() );
         OSL_ENSURE( pWindow, "ControlHolder::getZoom: no implementation access!" );
 
         ::basegfx::B2DVector aZoom( 1, 1 );
@@ -283,7 +283,7 @@ namespace sdr { namespace contact {
 
     /** positions a control, and sets its zoom mode, using a given transformation and output device
      */
-    void adjustControlGeometry_throw( const ControlHolder& _rControl, const Rectangle& _rLogicBoundingRect,
+    void adjustControlGeometry_throw( const ControlHolder& _rControl, const tools::Rectangle& _rLogicBoundingRect,
         const basegfx::B2DHomMatrix& _rViewTransformation, const ::basegfx::B2DHomMatrix& _rZoomLevelNormalization )
     {
         OSL_PRECOND( _rControl.is(), "UnoControlContactHelper::adjustControlGeometry_throw: illegal control!" );
@@ -306,7 +306,7 @@ namespace sdr { namespace contact {
         ::basegfx::B2DPoint aBottomRight( _rLogicBoundingRect.Right(), _rLogicBoundingRect.Bottom() );
         aBottomRight *= _rViewTransformation;
 
-        const Rectangle aPaintRectPixel( (long)aTopLeft.getX(), (long)aTopLeft.getY(), (long)aBottomRight.getX(), (long)aBottomRight.getY() );
+        const tools::Rectangle aPaintRectPixel( (long)aTopLeft.getX(), (long)aTopLeft.getY(), (long)aBottomRight.getX(), (long)aBottomRight.getY() );
         _rControl.setPosSize( aPaintRectPixel );
 
         // determine the scale from the current view transformation, and the normalization matrix
@@ -493,7 +493,7 @@ namespace sdr { namespace contact {
                                         ,   XModeChangeListener
                                         >   ViewObjectContactOfUnoControl_Impl_Base;
 
-    class SVX_DLLPRIVATE ViewObjectContactOfUnoControl_Impl:
+    class ViewObjectContactOfUnoControl_Impl:
         public ViewObjectContactOfUnoControl_Impl_Base
     {
     private:
@@ -568,10 +568,10 @@ namespace sdr { namespace contact {
 
             If you want to ensure that the control exists before accessing it, use ->ensureControl
         */
-        inline const ControlHolder&
+        const ControlHolder&
                 getExistentControl() const { return m_aControl; }
 
-        inline bool
+        bool
                 hasControl() const { return m_aControl.is(); }
 
         /** positions our XControl according to the geometry settings in the SdrUnoObj, modified by the given
@@ -597,7 +597,7 @@ namespace sdr { namespace contact {
         /** determines whether our control is currently visible
             @nofail
         */
-        bool    isControlVisible() const { return impl_isControlVisible_nofail(); }
+        bool    isControlVisible() const { return m_bControlIsVisible; }
 
         /// creates an XControl for the given device and SdrUnoObj
         static bool
@@ -618,27 +618,27 @@ namespace sdr { namespace contact {
         }
 
     protected:
-        virtual ~ViewObjectContactOfUnoControl_Impl();
+        virtual ~ViewObjectContactOfUnoControl_Impl() override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const EventObject& Source ) throw(RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const EventObject& Source ) override;
 
         // XWindowListener
-        virtual void SAL_CALL windowResized( const WindowEvent& e ) throw(RuntimeException, std::exception) override;
-        virtual void SAL_CALL windowMoved( const WindowEvent& e ) throw(RuntimeException, std::exception) override;
-        virtual void SAL_CALL windowShown( const EventObject& e ) throw(RuntimeException, std::exception) override;
-        virtual void SAL_CALL windowHidden( const EventObject& e ) throw(RuntimeException, std::exception) override;
+        virtual void SAL_CALL windowResized( const WindowEvent& e ) override;
+        virtual void SAL_CALL windowMoved( const WindowEvent& e ) override;
+        virtual void SAL_CALL windowShown( const EventObject& e ) override;
+        virtual void SAL_CALL windowHidden( const EventObject& e ) override;
 
         // XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const PropertyChangeEvent& evt ) throw(RuntimeException, std::exception) override;
+        virtual void SAL_CALL propertyChange( const PropertyChangeEvent& evt ) override;
 
         // XModeChangeListener
-        virtual void SAL_CALL modeChanged( const ModeChangeEvent& _rSource ) throw (RuntimeException, std::exception) override;
+        virtual void SAL_CALL modeChanged( const ModeChangeEvent& _rSource ) override;
 
         // XContainerListener
-        virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) override;
+        virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) override;
+        virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) override;
 
     private:
         /** retrieves the SdrPageView which our associated SdrPageViewWindow belongs to
@@ -749,16 +749,6 @@ namespace sdr { namespace contact {
         */
         bool    impl_isDisposed_nofail() const { return m_pAntiImpl == nullptr; }
 
-        /** determines whether our control is currently visible
-            @nofail
-        */
-        bool    impl_isControlVisible_nofail() const { return m_bControlIsVisible; }
-
-        /** determines whether we are currently a listener at the control for design-mode relevant facets
-            @nofail
-        */
-        bool    impl_isDesignModeListening_nofail() const { return m_bIsDesignModeListening; }
-
         /** determines whether the control currently is in design mode
 
             @precond
@@ -766,7 +756,7 @@ namespace sdr { namespace contact {
                 an SdrPageView (which carries this flag), or somebody explicitly set it from
                 outside.
         */
-        inline bool impl_isControlDesignMode_nothrow() const
+        bool impl_isControlDesignMode_nothrow() const
         {
             DBG_ASSERT( m_eControlDesignMode != eUnknown, "ViewObjectContactOfUnoControl_Impl::impl_isControlDesignMode_nothrow: mode is still unknown!" );
             return m_eControlDesignMode == eDesign;
@@ -789,13 +779,14 @@ namespace sdr { namespace contact {
         typedef ::drawinglayer::primitive2d::BufferedDecompositionPrimitive2D  BufferedDecompositionPrimitive2D;
 
     protected:
-        virtual ::drawinglayer::primitive2d::Primitive2DContainer
+        virtual void
             get2DDecomposition(
+                ::drawinglayer::primitive2d::Primitive2DDecompositionVisitor& rVisitor,
                 const ::drawinglayer::geometry::ViewInformation2D& rViewInformation
             ) const override;
 
-        virtual ::drawinglayer::primitive2d::Primitive2DContainer
-            create2DDecomposition(
+        virtual void create2DDecomposition(
+                ::drawinglayer::primitive2d::Primitive2DContainer& rContainer,
                 const ::drawinglayer::geometry::ViewInformation2D& rViewInformation
             ) const override;
 
@@ -936,7 +927,7 @@ namespace sdr { namespace contact {
             if ( getUnoObject( pUnoObject ) )
             {
                 Point aGridOffset = pUnoObject->GetGridOffset();
-                Rectangle aRect( pUnoObject->GetLogicRect() );
+                tools::Rectangle aRect( pUnoObject->GetLogicRect() );
                 // Hack for calc, transform position of object according
                 // to current zoom so as objects relative position to grid
                 // appears stable
@@ -1106,7 +1097,7 @@ namespace sdr { namespace contact {
             // knit the model and the control
             _out_rControl.setModel( xControlModel );
             Point aGridOffset =  _rUnoObject.GetGridOffset();
-            Rectangle aRect( _rUnoObject.GetLogicRect() );
+            tools::Rectangle aRect( _rUnoObject.GetLogicRect() );
             // Hack for calc, transform position of object according
             // to current zoom so as objects relative position to grid
             // appears stable
@@ -1181,7 +1172,7 @@ namespace sdr { namespace contact {
             return;
 
         SdrPageViewAccess aPVAccess( *pPageView );
-        impl_adjustControlVisibilityToLayerVisibility_throw( m_aControl, *pUnoObject, aPVAccess, impl_isControlVisible_nofail(), false/*_bForce*/ );
+        impl_adjustControlVisibilityToLayerVisibility_throw( m_aControl, *pUnoObject, aPVAccess, m_bControlIsVisible, false/*_bForce*/ );
     }
 
 
@@ -1259,7 +1250,7 @@ namespace sdr { namespace contact {
 
     void ViewObjectContactOfUnoControl_Impl::impl_switchDesignModeListening_nothrow( bool _bStart )
     {
-        if ( impl_isDesignModeListening_nofail() != _bStart )
+        if ( m_bIsDesignModeListening != _bStart )
         {
             m_bIsDesignModeListening = _bStart;
             impl_switchPropertyListening_nothrow( _bStart );
@@ -1308,7 +1299,7 @@ namespace sdr { namespace contact {
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::disposing( const EventObject& Source ) throw(RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::disposing( const EventObject& Source )
     {
         SolarMutexGuard aSolarGuard;
             // some code below - in particular our disposal - might trigger actions which require the
@@ -1334,33 +1325,33 @@ namespace sdr { namespace contact {
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::windowResized( const WindowEvent& /*e*/ ) throw(RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::windowResized( const WindowEvent& /*e*/ )
     {
         // not interested in
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::windowMoved( const WindowEvent& /*e*/ ) throw(RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::windowMoved( const WindowEvent& /*e*/ )
     {
         // not interested in
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::windowShown( const EventObject& /*e*/ ) throw(RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::windowShown( const EventObject& /*e*/ )
     {
         SolarMutexGuard aSolarGuard;
         m_bControlIsVisible = true;
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::windowHidden( const EventObject& /*e*/ ) throw(RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::windowHidden( const EventObject& /*e*/ )
     {
         SolarMutexGuard aSolarGuard;
         m_bControlIsVisible = false;
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::propertyChange( const PropertyChangeEvent& /*_rEvent*/ ) throw(RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::propertyChange( const PropertyChangeEvent& /*_rEvent*/ )
     {
         SolarMutexGuard aSolarGuard;
             // (re)painting might require VCL operations, which need the SolarMutex
@@ -1381,7 +1372,7 @@ namespace sdr { namespace contact {
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::modeChanged( const ModeChangeEvent& _rSource ) throw (RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::modeChanged( const ModeChangeEvent& _rSource )
     {
         SolarMutexGuard aSolarGuard;
 
@@ -1403,13 +1394,13 @@ namespace sdr { namespace contact {
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::elementInserted( const ContainerEvent& /*_Event*/ ) throw (RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::elementInserted( const ContainerEvent& /*_Event*/ )
     {
         // not interested in
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::elementRemoved( const ContainerEvent& Event ) throw (RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::elementRemoved( const ContainerEvent& Event )
     {
         SolarMutexGuard aSolarGuard;
             // some code below - in particular our disposal - might trigger actions which require the
@@ -1424,7 +1415,7 @@ namespace sdr { namespace contact {
     }
 
 
-    void SAL_CALL ViewObjectContactOfUnoControl_Impl::elementReplaced( const ContainerEvent& Event ) throw (RuntimeException, std::exception)
+    void SAL_CALL ViewObjectContactOfUnoControl_Impl::elementReplaced( const ContainerEvent& Event )
     {
         SolarMutexGuard aSolarGuard;
         DBG_ASSERT( Event.Source == m_xContainer, "ViewObjectContactOfUnoControl_Impl::elementReplaced: where did this come from?" );
@@ -1509,7 +1500,7 @@ namespace sdr { namespace contact {
         // Do use model data directly to create the correct geometry. Do NOT
         // use getBoundRect()/getSnapRect() here; these will use the sequence of
         // primitives themselves in the long run.
-        Rectangle aSdrGeoData( _rVOC.GetSdrUnoObj().GetGeoRect() );
+        tools::Rectangle aSdrGeoData( _rVOC.GetSdrUnoObj().GetGeoRect() );
         Point aGridOffset = _rVOC.GetSdrUnoObj().GetGridOffset();
         // Hack for calc, transform position of object according
         // to current zoom so as objects relative position to grid
@@ -1538,7 +1529,7 @@ namespace sdr { namespace contact {
     }
 
 
-    ::drawinglayer::primitive2d::Primitive2DContainer LazyControlCreationPrimitive2D::get2DDecomposition( const ::drawinglayer::geometry::ViewInformation2D& _rViewInformation ) const
+    void LazyControlCreationPrimitive2D::get2DDecomposition( ::drawinglayer::primitive2d::Primitive2DDecompositionVisitor& rVisitor, const ::drawinglayer::geometry::ViewInformation2D& _rViewInformation ) const
     {
     #if OSL_DEBUG_LEVEL > 0
         ::basegfx::B2DVector aScale, aTranslate;
@@ -1547,11 +1538,11 @@ namespace sdr { namespace contact {
     #endif
         if ( m_pVOCImpl->hasControl() )
             impl_positionAndZoomControl( _rViewInformation );
-        return BufferedDecompositionPrimitive2D::get2DDecomposition( _rViewInformation );
+        BufferedDecompositionPrimitive2D::get2DDecomposition( rVisitor, _rViewInformation );
     }
 
 
-    ::drawinglayer::primitive2d::Primitive2DContainer LazyControlCreationPrimitive2D::create2DDecomposition( const ::drawinglayer::geometry::ViewInformation2D& _rViewInformation ) const
+    void LazyControlCreationPrimitive2D::create2DDecomposition( ::drawinglayer::primitive2d::Primitive2DContainer& rContainer, const ::drawinglayer::geometry::ViewInformation2D& _rViewInformation ) const
     {
     #if OSL_DEBUG_LEVEL > 0
         ::basegfx::B2DVector aScale, aTranslate;
@@ -1578,17 +1569,19 @@ namespace sdr { namespace contact {
 
         // check if we already have an XControl.
         if ( !xControlModel.is() || !rControl.is() )
+        {
             // use the default mechanism. This will create a ControlPrimitive2D without
             // handing over a XControl. If not even a XControlModel exists, it will
             // create the SdrObject fallback visualisation
-            return rViewContactOfUnoControl.getViewIndependentPrimitive2DSequence();
+            drawinglayer::primitive2d::Primitive2DContainer aTmp = rViewContactOfUnoControl.getViewIndependentPrimitive2DContainer();
+            rContainer.insert(rContainer.end(), aTmp.begin(), aTmp.end());
+            return;
+        }
 
         // create a primitive and hand over the existing xControl. This will
         // allow the primitive to not need to create another one on demand.
-        const drawinglayer::primitive2d::Primitive2DReference xRetval( new ::drawinglayer::primitive2d::ControlPrimitive2D(
+        rContainer.push_back( new ::drawinglayer::primitive2d::ControlPrimitive2D(
             m_aTransformation, xControlModel, rControl.getControl() ) );
-
-        return drawinglayer::primitive2d::Primitive2DContainer { xRetval };
     }
 
 

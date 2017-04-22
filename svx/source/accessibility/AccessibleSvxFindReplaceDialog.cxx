@@ -39,10 +39,10 @@ VCLXAccessibleSvxFindReplaceDialog::~VCLXAccessibleSvxFindReplaceDialog()
 void VCLXAccessibleSvxFindReplaceDialog::FillAccessibleRelationSet( utl::AccessibleRelationSetHelper& rRelationSet )
 {
     VCLXAccessibleComponent::FillAccessibleRelationSet( rRelationSet );
-    vcl::Window* pDlg = GetWindow();
+    VclPtr<vcl::Window> pDlg = GetWindow();
     if ( pDlg )
     {
-        SvxSearchDialog* pSrchDlg = static_cast<SvxSearchDialog*>( pDlg );
+        SvxSearchDialog* pSrchDlg = static_cast<SvxSearchDialog*>( pDlg.get() );
         vcl::Window* pDocWin = pSrchDlg->GetDocWin();
         if ( !pDocWin )
         {
@@ -80,13 +80,13 @@ void VCLXAccessibleSvxFindReplaceDialog::FillAccessibleRelationSet( utl::Accessi
 // XServiceInfo
 
 
-OUString VCLXAccessibleSvxFindReplaceDialog::getImplementationName() throw (RuntimeException, std::exception)
+OUString VCLXAccessibleSvxFindReplaceDialog::getImplementationName()
 {
     return OUString( "VCLXAccessibleSvxFindReplaceDialog" );
 }
 
 
-Sequence< OUString > VCLXAccessibleSvxFindReplaceDialog::getSupportedServiceNames() throw (RuntimeException, std::exception)
+Sequence< OUString > VCLXAccessibleSvxFindReplaceDialog::getSupportedServiceNames()
 {
     Sequence< OUString > aNames { "VCLXAccessibleSvxFindReplaceDialog" };
     return aNames;

@@ -34,13 +34,13 @@ namespace connectivity
 {
     namespace ado
     {
+        /// @throws css::uno::Exception
+        css::uno::Reference< css::uno::XInterface >  SAL_CALL ODriver_CreateInstance(const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxFactory);
 
-        ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >  SAL_CALL ODriver_CreateInstance(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory) throw( ::com::sun::star::uno::Exception );
-
-                typedef ::cppu::WeakComponentImplHelper< ::com::sun::star::sdbc::XDriver,
-                                                         ::com::sun::star::sdbcx::XDataDefinitionSupplier,
-                                                         ::com::sun::star::lang::XServiceInfo
-                                                  > ODriver_BASE;
+        typedef ::cppu::WeakComponentImplHelper< css::sdbc::XDriver,
+                                                 css::sdbcx::XDataDefinitionSupplier,
+                                                 css::lang::XServiceInfo
+                                               > ODriver_BASE;
         class ODriver : public ODriver_BASE
         {
             ::osl::Mutex                            m_aMutex;
@@ -48,38 +48,40 @@ namespace connectivity
             connectivity::OWeakRefArray             m_xConnections; //  vector containing a list
                                                         //  of all the Connection objects
                                                         //  for this Driver
-            ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory > m_xORB;
+            css::uno::Reference< css::lang::XMultiServiceFactory > m_xORB;
 
 
         public:
-            ODriver(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _xORB);
-            ~ODriver();
+            ODriver(const css::uno::Reference< css::lang::XMultiServiceFactory >& _xORB);
+            ~ODriver() override;
 
             // OComponentHelper
-            virtual void SAL_CALL disposing();
+            virtual void SAL_CALL disposing() override;
             // XInterface
-            static OUString getImplementationName_Static(  ) throw(::com::sun::star::uno::RuntimeException);
-            static ::com::sun::star::uno::Sequence< OUString > getSupportedServiceNames_Static(  ) throw (::com::sun::star::uno::RuntimeException);
-            ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory > getORB() const { return m_xORB; }
+            /// @throws css::uno::RuntimeException
+            static OUString getImplementationName_Static(  );
+            /// @throws css::uno::RuntimeException
+            static css::uno::Sequence< OUString > getSupportedServiceNames_Static(  );
+            css::uno::Reference< css::lang::XMultiServiceFactory > getORB() const { return m_xORB; }
 
         private:
             void impl_checkURL_throw(const OUString& _sUrl);
 
             // XServiceInfo
-            virtual OUString SAL_CALL getImplementationName(  ) throw(::com::sun::star::uno::RuntimeException);
-            virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(::com::sun::star::uno::RuntimeException);
-            virtual ::com::sun::star::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(::com::sun::star::uno::RuntimeException);
+            virtual OUString SAL_CALL getImplementationName(  ) override;
+            virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+            virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
             // XDriver
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > SAL_CALL connect( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
-            virtual sal_Bool SAL_CALL acceptsURL( const OUString& url ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
-            virtual ::com::sun::star::uno::Sequence< ::com::sun::star::sdbc::DriverPropertyInfo > SAL_CALL getPropertyInfo( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
-            virtual sal_Int32 SAL_CALL getMajorVersion(  ) throw(::com::sun::star::uno::RuntimeException);
-            virtual sal_Int32 SAL_CALL getMinorVersion(  ) throw(::com::sun::star::uno::RuntimeException);
+            virtual css::uno::Reference< css::sdbc::XConnection > SAL_CALL connect( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info ) override;
+            virtual sal_Bool SAL_CALL acceptsURL( const OUString& url ) override;
+            virtual css::uno::Sequence< css::sdbc::DriverPropertyInfo > SAL_CALL getPropertyInfo( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info ) override;
+            virtual sal_Int32 SAL_CALL getMajorVersion(  ) override;
+            virtual sal_Int32 SAL_CALL getMinorVersion(  ) override;
 
             // XDataDefinitionSupplier
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbcx::XTablesSupplier > SAL_CALL getDataDefinitionByConnection( const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection >& connection ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbcx::XTablesSupplier > SAL_CALL getDataDefinitionByURL( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
+            virtual css::uno::Reference< css::sdbcx::XTablesSupplier > SAL_CALL getDataDefinitionByConnection( const css::uno::Reference< css::sdbc::XConnection >& connection ) override;
+            virtual css::uno::Reference< css::sdbcx::XTablesSupplier > SAL_CALL getDataDefinitionByURL( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info ) override;
         };
     }
 

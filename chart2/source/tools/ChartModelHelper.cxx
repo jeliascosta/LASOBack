@@ -130,10 +130,10 @@ uno::Reference< XCoordinateSystem > ChartModelHelper::getFirstCoordinateSystem( 
     return XCooSys;
 }
 
-::std::vector< uno::Reference< XDataSeries > > ChartModelHelper::getDataSeries(
+std::vector< uno::Reference< XDataSeries > > ChartModelHelper::getDataSeries(
     ChartModel& rModel )
 {
-    ::std::vector< uno::Reference< XDataSeries > > aResult;
+    std::vector< uno::Reference< XDataSeries > > aResult;
 
     uno::Reference< XDiagram > xDiagram = rModel.getFirstDiagram();
     if( xDiagram.is())
@@ -142,10 +142,10 @@ uno::Reference< XCoordinateSystem > ChartModelHelper::getFirstCoordinateSystem( 
     return aResult;
 }
 
-::std::vector< uno::Reference< XDataSeries > > ChartModelHelper::getDataSeries(
+std::vector< uno::Reference< XDataSeries > > ChartModelHelper::getDataSeries(
     const uno::Reference< XChartDocument > & xChartDoc )
 {
-    ::std::vector< uno::Reference< XDataSeries > > aResult;
+    std::vector< uno::Reference< XDataSeries > > aResult;
 
     uno::Reference< XDiagram > xDiagram = ChartModelHelper::findDiagram( xChartDoc );
     if( xDiagram.is())
@@ -154,7 +154,7 @@ uno::Reference< XCoordinateSystem > ChartModelHelper::getFirstCoordinateSystem( 
     return aResult;
 }
 
-::std::vector< uno::Reference< XDataSeries > > ChartModelHelper::getDataSeries(
+std::vector< uno::Reference< XDataSeries > > ChartModelHelper::getDataSeries(
     const uno::Reference< frame::XModel > & xModel )
 {
     return getDataSeries( uno::Reference< chart2::XChartDocument >( xModel, uno::UNO_QUERY ));
@@ -237,7 +237,7 @@ bool ChartModelHelper::setIncludeHiddenCells( bool bIncludeHiddenCells, ChartMod
 
             //set the property on all instances in all cases to get the different objects in sync!
 
-            uno::Any aNewValue = uno::makeAny(bIncludeHiddenCells);
+            uno::Any aNewValue(bIncludeHiddenCells);
 
             try
             {

@@ -25,6 +25,8 @@
 #include "graphic/GraphicPropertyPanel.hxx"
 #include "line/LinePropertyPanel.hxx"
 #include "possize/PosSizePropertyPanel.hxx"
+#include "shapes/DefaultShapesPanel.hxx"
+#include "media/MediaPlaybackPanel.hxx"
 #include "GalleryControl.hxx"
 #include "EmptyPanel.hxx"
 #include <sfx2/sidebar/SidebarPanelBase.hxx>
@@ -63,30 +65,22 @@ class PanelFactory
 {
 public:
     PanelFactory();
-    virtual ~PanelFactory();
     PanelFactory(const PanelFactory&) = delete;
     PanelFactory& operator=(const PanelFactory&) = delete;
 
     // XUIElementFactory
     css::uno::Reference<css::ui::XUIElement> SAL_CALL createUIElement (
         const ::rtl::OUString& rsResourceURL,
-        const ::css::uno::Sequence<css::beans::PropertyValue>& rArguments)
-        throw(
-            css::container::NoSuchElementException,
-            css::lang::IllegalArgumentException,
-            css::uno::RuntimeException, std::exception) override;
+        const ::css::uno::Sequence<css::beans::PropertyValue>& rArguments) override;
 
-    OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    OUString SAL_CALL getImplementationName() override
     { return OUString("org.apache.openoffice.comp.svx.sidebar.PanelFactory"); }
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     { return cppu::supportsService(this, ServiceName); }
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
-    { return css::uno::Sequence<OUString>{"com.sun.star.ui.UIElementFactory"}; }
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    { return {"com.sun.star.ui.UIElementFactory"}; }
 };
 
 PanelFactory::PanelFactory()
@@ -94,19 +88,9 @@ PanelFactory::PanelFactory()
 {
 }
 
-
-PanelFactory::~PanelFactory()
-{
-}
-
-
 Reference<ui::XUIElement> SAL_CALL PanelFactory::createUIElement (
     const ::rtl::OUString& rsResourceURL,
     const ::css::uno::Sequence<css::beans::PropertyValue>& rArguments)
-    throw(
-        container::NoSuchElementException,
-        lang::IllegalArgumentException,
-        RuntimeException, std::exception)
 {
     const ::comphelper::NamedValueCollection aArguments (rArguments);
     Reference<frame::XFrame> xFrame (aArguments.getOrDefault("Frame", Reference<frame::XFrame>()));
@@ -114,11 +98,11 @@ Reference<ui::XUIElement> SAL_CALL PanelFactory::createUIElement (
     Reference<ui::XSidebar> xSidebar (aArguments.getOrDefault("Sidebar", Reference<ui::XSidebar>()));
     const sal_uInt64 nBindingsValue (aArguments.getOrDefault("SfxBindings", sal_uInt64(0)));
     SfxBindings* pBindings = reinterpret_cast<SfxBindings*>(nBindingsValue);
-    ::sfx2::sidebar::EnumContext aContext (
+    vcl::EnumContext aContext (
         aArguments.getOrDefault("ApplicationName", OUString()),
         aArguments.getOrDefault("ContextName", OUString()));
 
-    vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+    VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
     if ( ! xParentWindow.is() || pParentWindow==nullptr)
         throw RuntimeException(
             "PanelFactory::createUIElement called without ParentWindow",
@@ -137,7 +121,7 @@ Reference<ui::XUIElement> SAL_CALL PanelFactory::createUIElement (
 
     if (rsResourceURL.endsWith("/TextPropertyPanel"))
     {
-        pControl = TextPropertyPanel::Create(pParentWindow, xFrame, pBindings, aContext);
+        pControl = TextPropertyPanel::Create(pParentWindow, xFrame);
     }
     else if (rsResourceURL.endsWith("/StylesPropertyPanel"))
     {
@@ -166,6 +150,14 @@ Reference<ui::XUIElement> SAL_CALL PanelFactory::createUIElement (
     else if (rsResourceURL.endsWith("/PosSizePropertyPanel"))
     {
         pControl = PosSizePropertyPanel::Create(pParentWindow, xFrame, pBindings, xSidebar);
+    }
+    else if (rsResourceURL.endsWith("/DefaultShapesPanel"))
+    {
+        pControl = DefaultShapesPanel::Create(pParentWindow, xFrame);
+    }
+    else if (rsResourceURL.endsWith("/MediaPlaybackPanel"))
+    {
+        pControl = MediaPlaybackPanel::Create(pParentWindow, xFrame, pBindings);
     }
     else if (rsResourceURL.endsWith("/GalleryPanel"))
     {

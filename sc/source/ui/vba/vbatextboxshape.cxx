@@ -28,23 +28,22 @@ using namespace ooo::vba;
 ScVbaTextBoxShape::ScVbaTextBoxShape( const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< drawing::XShape >& xShape, const uno::Reference< drawing::XShapes >& xShapes, const uno::Reference< frame::XModel >& xModel ) : TextBoxShapeImpl_BASE( uno::Reference< XHelperInterface >(), xContext, xShape, xShapes, xModel, ScVbaShape::getType( xShape )  )
 {
     m_xTextRange.set( xShape , uno::UNO_QUERY_THROW );
-    m_xModel.set( xModel );
 }
 
 OUString SAL_CALL
-ScVbaTextBoxShape::getText() throw (css::uno::RuntimeException, std::exception)
+ScVbaTextBoxShape::getText()
 {
     return m_xTextRange->getString();
 }
 
 void SAL_CALL
-ScVbaTextBoxShape::setText( const OUString& _text ) throw (css::uno::RuntimeException, std::exception)
+ScVbaTextBoxShape::setText( const OUString& _text )
 {
     m_xTextRange->setString( _text );
 }
 
 uno::Reference< excel::XCharacters > SAL_CALL
-ScVbaTextBoxShape::characters( const uno::Any& Start, const uno::Any& Length ) throw (uno::RuntimeException, std::exception)
+ScVbaTextBoxShape::characters( const uno::Any& Start, const uno::Any& Length )
 {
     ScDocShell* pDocShell = excel::getDocShell( m_xModel );
     ScDocument* pDoc = pDocShell ? &pDocShell->GetDocument() : nullptr;

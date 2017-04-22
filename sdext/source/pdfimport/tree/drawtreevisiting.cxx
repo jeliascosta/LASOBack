@@ -114,7 +114,7 @@ void DrawXmlEmitter::visit( TextElement& elem, const std::list< Element* >::cons
     {
         for(int i=1; i< elem.Text.getLength(); i++)
         {
-            sal_Int16 nType = xCC->getCharacterDirection( str, i );
+            css::i18n::DirectionProperty nType = (css::i18n::DirectionProperty)xCC->getCharacterDirection( str, i );
             if ( nType == css::i18n::DirectionProperty_RIGHT_TO_LEFT           ||
                  nType == css::i18n::DirectionProperty_RIGHT_TO_LEFT_ARABIC    ||
                  nType == css::i18n::DirectionProperty_RIGHT_TO_LEFT_EMBEDDING ||
@@ -170,7 +170,7 @@ void DrawXmlEmitter::visit( ParagraphElement& elem, const std::list< Element* >:
         aProps[ "text:style-name" ] = m_rEmitContext.rStyles.getStyleName( elem.StyleId );
     }
     const char* pTagType = "text:p";
-    if( elem.Type == elem.Headline )
+    if( elem.Type == ParagraphElement::Headline )
         pTagType = "text:h";
     m_rEmitContext.rEmitter.beginTag( pTagType, aProps );
 
@@ -249,7 +249,7 @@ void DrawXmlEmitter::visit( FrameElement& elem, const std::list< Element* >::con
 
     bool bTextBox = (dynamic_cast<ParagraphElement*>(elem.Children.front()) != nullptr);
     PropertyMap aFrameProps;
-    fillFrameProps( elem, aFrameProps, m_rEmitContext );
+    fillFrameProps( elem, aFrameProps, m_rEmitContext, false );
     m_rEmitContext.rEmitter.beginTag( "draw:frame", aFrameProps );
     if( bTextBox )
         m_rEmitContext.rEmitter.beginTag( "draw:text-box", PropertyMap() );

@@ -140,11 +140,11 @@ KabImplModule::KabImplModule( const Reference< XComponentContext >& _rxContext )
     :m_xContext(_rxContext)
     ,m_bAttemptedLoadModule(false)
     ,m_bAttemptedInitialize(false)
-    ,m_hConnectorModule(NULL)
-    ,m_pConnectionFactoryFunc(NULL)
-    ,m_pApplicationInitFunc(NULL)
-    ,m_pApplicationShutdownFunc(NULL)
-    ,m_pKDEVersionCheckFunc(NULL)
+    ,m_hConnectorModule(nullptr)
+    ,m_pConnectionFactoryFunc(nullptr)
+    ,m_pApplicationInitFunc(nullptr)
+    ,m_pApplicationShutdownFunc(nullptr)
+    ,m_pKDEVersionCheckFunc(nullptr)
 {
     if ( !m_xContext.is() )
         throw NullPointerException();
@@ -178,7 +178,7 @@ namespace
     template< typename FUNCTION >
     void lcl_getFunctionFromModuleOrUnload( oslModule& _rModule, const sal_Char* _pAsciiSymbolName, FUNCTION& _rFunction )
     {
-        _rFunction = NULL;
+        _rFunction = nullptr;
         if ( _rModule )
         {
 
@@ -192,7 +192,7 @@ namespace
                 aBuf.append( _pAsciiSymbolName );
                 OSL_FAIL( aBuf.makeStringAndClear().getStr() );
                 osl_unloadModule( _rModule );
-                _rModule = NULL;
+                _rModule = nullptr;
             }
         }
     }
@@ -204,7 +204,7 @@ extern "C" { void SAL_CALL thisModule() {} }
 bool KabImplModule::impl_loadModule()
 {
     if ( m_bAttemptedLoadModule )
-        return ( m_hConnectorModule != NULL );
+        return ( m_hConnectorModule != nullptr );
     m_bAttemptedLoadModule = true;
 
     OSL_ENSURE( !m_hConnectorModule && !m_pConnectionFactoryFunc && !m_pApplicationInitFunc && !m_pApplicationShutdownFunc && !m_pKDEVersionCheckFunc,
@@ -231,15 +231,15 @@ bool KabImplModule::impl_loadModule()
 
 void KabImplModule::impl_unloadModule()
 {
-    OSL_PRECOND( m_hConnectorModule != NULL, "KabImplModule::impl_unloadModule: no module!" );
+    OSL_PRECOND( m_hConnectorModule != nullptr, "KabImplModule::impl_unloadModule: no module!" );
 
     osl_unloadModule( m_hConnectorModule );
-    m_hConnectorModule = NULL;
+    m_hConnectorModule = nullptr;
 
-    m_pConnectionFactoryFunc = NULL;
-    m_pApplicationInitFunc = NULL;
-    m_pApplicationShutdownFunc = NULL;
-    m_pKDEVersionCheckFunc = NULL;
+    m_pConnectionFactoryFunc = nullptr;
+    m_pApplicationInitFunc = nullptr;
+    m_pApplicationShutdownFunc = nullptr;
+    m_pKDEVersionCheckFunc = nullptr;
 
     m_bAttemptedLoadModule = false;
 }
@@ -272,11 +272,9 @@ bool KabImplModule::impl_doAllowNewKDEVersion()
     try
     {
         Reference< XMultiServiceFactory > xConfigProvider(
-            com::sun::star::configuration::theDefaultProvider::get( m_xContext ) );
+            css::configuration::theDefaultProvider::get( m_xContext ) );
         Sequence< Any > aCreationArgs(1);
-        aCreationArgs[0] <<= PropertyValue(
-                                OUString(  "nodepath"  ),
-                                0,
+        aCreationArgs[0] <<= PropertyValue( "nodepath", 0,
                                 makeAny( KabDriver::impl_getConfigurationSettingsPath() ),
                                 PropertyState_DIRECT_VALUE );
         Reference< XPropertySet > xSettings( xConfigProvider->createInstanceWithArguments(
@@ -322,7 +320,7 @@ void KabImplModule::shutdown()
 // = KabDriver
 
 KabDriver::KabDriver(
-    const Reference< ::com::sun::star::uno::XComponentContext >& _rxContext)
+    const Reference< css::uno::XComponentContext >& _rxContext)
     : KDriver_BASE(m_aMutex),
       m_xContext(_rxContext),
       m_aImplModule(_rxContext)
@@ -347,7 +345,7 @@ void KabDriver::disposing()
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
-    // when driver will be destroied so all our connections have to be destroied as well
+    // when driver will be destroyed so all our connections have to be destroyed as well
     for (OWeakRefArray::iterator i = m_xConnections.begin(); m_xConnections.end() != i; ++i)
     {
         Reference< XComponent > xComp(i->get(), UNO_QUERY);
@@ -360,12 +358,12 @@ void KabDriver::disposing()
 }
 // static ServiceInfo
 
-OUString KabDriver::getImplementationName_Static(  ) throw(RuntimeException)
+OUString KabDriver::getImplementationName_Static(  )
 {
     return OUString("com.sun.star.comp.sdbc." KAB_SERVICE_NAME ".Driver");
 }
 
-Sequence< OUString > KabDriver::getSupportedServiceNames_Static(  ) throw (RuntimeException)
+Sequence< OUString > KabDriver::getSupportedServiceNames_Static(  )
 {
     // which service is supported
     // for more information @see com.sun.star.sdbc.Driver
@@ -374,22 +372,22 @@ Sequence< OUString > KabDriver::getSupportedServiceNames_Static(  ) throw (Runti
     return aSNS;
 }
 
-OUString SAL_CALL KabDriver::getImplementationName(  ) throw(RuntimeException, std::exception)
+OUString SAL_CALL KabDriver::getImplementationName(  )
 {
     return getImplementationName_Static();
 }
 
-sal_Bool SAL_CALL KabDriver::supportsService( const OUString& _rServiceName ) throw(RuntimeException, std::exception)
+sal_Bool SAL_CALL KabDriver::supportsService( const OUString& _rServiceName )
 {
     return cppu::supportsService(this, _rServiceName);
 }
 
-Sequence< OUString > SAL_CALL KabDriver::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL KabDriver::getSupportedServiceNames(  )
 {
     return getSupportedServiceNames_Static();
 }
 
-Reference< XConnection > SAL_CALL KabDriver::connect( const OUString&, const Sequence< PropertyValue >& ) throw(SQLException, RuntimeException, std::exception)
+Reference< XConnection > SAL_CALL KabDriver::connect( const OUString&, const Sequence< PropertyValue >& )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -408,44 +406,43 @@ Reference< XConnection > SAL_CALL KabDriver::connect( const OUString&, const Seq
 }
 
 sal_Bool SAL_CALL KabDriver::acceptsURL( const OUString& url )
-        throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
     if ( !m_aImplModule.isKDEPresent() )
-        return sal_False;
+        return false;
 
     // here we have to look whether we support this URL format
     return url.startsWith("sdbc:address:" KAB_SERVICE_NAME);
 }
 
-Sequence< DriverPropertyInfo > SAL_CALL KabDriver::getPropertyInfo( const OUString&, const Sequence< PropertyValue >& ) throw(SQLException, RuntimeException, std::exception)
+Sequence< DriverPropertyInfo > SAL_CALL KabDriver::getPropertyInfo( const OUString&, const Sequence< PropertyValue >& )
 {
     // if you have something special to say, return it here :-)
     return Sequence< DriverPropertyInfo >();
 }
 
-sal_Int32 SAL_CALL KabDriver::getMajorVersion(  ) throw(RuntimeException, std::exception)
+sal_Int32 SAL_CALL KabDriver::getMajorVersion(  )
 {
     return KAB_DRIVER_VERSION_MAJOR;
 }
 
-sal_Int32 SAL_CALL KabDriver::getMinorVersion(  ) throw(RuntimeException, std::exception)
+sal_Int32 SAL_CALL KabDriver::getMinorVersion(  )
 {
     return KAB_DRIVER_VERSION_MINOR;
 }
 
-void SAL_CALL KabDriver::queryTermination( const EventObject& ) throw (TerminationVetoException, RuntimeException, std::exception)
+void SAL_CALL KabDriver::queryTermination( const EventObject& )
 {
     // nothing to do, nothing to veto
 }
 
-void SAL_CALL KabDriver::notifyTermination( const EventObject& ) throw (RuntimeException, std::exception)
+void SAL_CALL KabDriver::notifyTermination( const EventObject& )
 {
     m_aImplModule.shutdown();
 }
 
-void SAL_CALL KabDriver::disposing( const EventObject& ) throw (RuntimeException, std::exception)
+void SAL_CALL KabDriver::disposing( const EventObject& )
 {
     // not interested in (this is the disposing of the desktop, if any)
 }
@@ -458,7 +455,7 @@ OUString KabDriver::impl_getConfigurationSettingsPath()
     return aPath.makeStringAndClear();
 }
 
-Reference< XInterface >  SAL_CALL KabDriver::Create( const Reference< XMultiServiceFactory >& _rxFactory ) throw( Exception )
+Reference< XInterface >  SAL_CALL KabDriver::Create( const Reference< XMultiServiceFactory >& _rxFactory )
 {
     return *(new KabDriver( comphelper::getComponentContext(_rxFactory)));
 }

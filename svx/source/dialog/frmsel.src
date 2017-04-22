@@ -18,42 +18,117 @@
  */
 
 #include <svx/dialogs.hrc>
-#include "frmsel.hrc"
 
-Resource RID_SVXSTR_BORDER_CONTROL
+StringArray RID_SVXSTR_FRMSEL_TEXTS
 {
-    StringArray ARR_TEXTS
+    ItemList [ en-US ] =
     {
-        ItemList [ en-US ] =
-        {
-            < "Border setting" ; 0; > ;
-            < "Left border line" ; 1; > ;
-            < "Right border line" ; 2; > ;
-            < "Top border line" ; 3; > ;
-            < "Bottom border line" ; 4; > ;
-            < "Horizontal border line" ; 5; > ;
-            < "Vertical border line" ; 6; > ;
-            < "Diagonal border line from top left to bottom right" ; 7; > ;
-            < "Diagonal border line from bottom left to top right" ; 8; > ;
-        };
+        < "Border setting" ; 0; > ;
+        < "Left border line" ; 1; > ;
+        < "Right border line" ; 2; > ;
+        < "Top border line" ; 3; > ;
+        < "Bottom border line" ; 4; > ;
+        < "Horizontal border line" ; 5; > ;
+        < "Vertical border line" ; 6; > ;
+        < "Diagonal border line from top left to bottom right" ; 7; > ;
+        < "Diagonal border line from bottom left to top right" ; 8; > ;
     };
-    StringArray ARR_DESCRIPTIONS
-    {
-        ItemList [ en-US ] =
-        {
-            < "Border setting" ; 0; > ;
-            < "Left border line" ; 1; > ;
-            < "Right border line" ; 2; > ;
-            < "Top border line" ; 3; > ;
-            < "Bottom border line" ; 4; > ;
-            < "Horizontal border line" ; 5; > ;
-            < "Vertical border line" ; 6; > ;
-            < "Diagonal border line from top left to bottom right" ; 7; > ;
-            < "Diagonal border line from bottom left to top right" ; 8; > ;
-        };
-    };
+};
 
-    Bitmap BMP_FRMSEL_ARROWS { File = "frmsel.bmp"; };
+StringArray RID_SVXSTR_FRMSEL_DESCRIPTIONS
+{
+    ItemList [ en-US ] =
+    {
+        < "Border setting" ; 0; > ;
+        < "Left border line" ; 1; > ;
+        < "Right border line" ; 2; > ;
+        < "Top border line" ; 3; > ;
+        < "Bottom border line" ; 4; > ;
+        < "Horizontal border line" ; 5; > ;
+        < "Vertical border line" ; 6; > ;
+        < "Diagonal border line from top left to bottom right" ; 7; > ;
+        < "Diagonal border line from bottom left to top right" ; 8; > ;
+    };
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW1
+{
+    File = "frmsel1.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW2
+{
+    File = "frmsel2.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW3
+{
+    File = "frmsel3.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW4
+{
+    File = "frmsel4.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW5
+{
+    File = "frmsel5.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW6
+{
+    File = "frmsel6.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW7
+{
+    File = "frmsel7.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW8
+{
+    File = "frmsel8.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW9
+{
+    File = "frmsel9.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW10
+{
+    File = "frmsel10.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW11
+{
+    File = "frmsel11.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW12
+{
+    File = "frmsel12.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW13
+{
+    File = "frmsel13.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW14
+{
+    File = "frmsel14.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW15
+{
+    File = "frmsel15.png";
+};
+
+Bitmap RID_SVXBMP_FRMSEL_ARROW16
+{
+    File = "frmsel16.png";
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

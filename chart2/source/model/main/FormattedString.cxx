@@ -18,7 +18,6 @@
  */
 
 #include "FormattedString.hxx"
-#include "ContainerHelper.hxx"
 
 #include "CharacterProperties.hxx"
 #include "PropertyHelper.hxx"
@@ -40,13 +39,8 @@ struct StaticFormattedStringDefaults_Initializer
     ::chart::tPropertyValueMap* operator()()
     {
         static ::chart::tPropertyValueMap aStaticDefaults;
-        lcl_AddDefaultsToMap( aStaticDefaults );
+        ::chart::CharacterProperties::AddDefaultsToMap( aStaticDefaults );
         return &aStaticDefaults;
-    }
-private:
-    static void lcl_AddDefaultsToMap( ::chart::tPropertyValueMap & rOutMap )
-    {
-        ::chart::CharacterProperties::AddDefaultsToMap( rOutMap );
     }
 };
 
@@ -65,10 +59,10 @@ struct StaticFormattedStringInfoHelper_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        ::std::vector< css::beans::Property > aProperties;
+        std::vector< css::beans::Property > aProperties;
         ::chart::CharacterProperties::AddPropertiesToVector( aProperties );
 
-        ::std::sort( aProperties.begin(), aProperties.end(),
+        std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -119,21 +113,18 @@ FormattedString::~FormattedString()
 
 // ____ XCloneable ____
 uno::Reference< util::XCloneable > SAL_CALL FormattedString::createClone()
-    throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< util::XCloneable >( new FormattedString( *this ));
 }
 
 // ____ XFormattedString ____
 OUString SAL_CALL FormattedString::getString()
-    throw (uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard( GetMutex());
     return m_aString;
 }
 
 void SAL_CALL FormattedString::setString( const OUString& String )
-    throw (uno::RuntimeException, std::exception)
 {
     {
         MutexGuard aGuard( GetMutex());
@@ -146,7 +137,6 @@ void SAL_CALL FormattedString::setString( const OUString& String )
 
 // ____ XModifyBroadcaster ____
 void SAL_CALL FormattedString::addModifyListener( const uno::Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -160,7 +150,6 @@ void SAL_CALL FormattedString::addModifyListener( const uno::Reference< util::XM
 }
 
 void SAL_CALL FormattedString::removeModifyListener( const uno::Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -175,14 +164,12 @@ void SAL_CALL FormattedString::removeModifyListener( const uno::Reference< util:
 
 // ____ XModifyListener ____
 void SAL_CALL FormattedString::modified( const lang::EventObject& aEvent )
-    throw (uno::RuntimeException, std::exception)
 {
     m_xModifyEventForwarder->modified( aEvent );
 }
 
 // ____ XEventListener (base of XModifyListener) ____
 void SAL_CALL FormattedString::disposing( const lang::EventObject& /* Source */ )
-    throw (uno::RuntimeException, std::exception)
 {
     // nothing
 }
@@ -198,18 +185,8 @@ void FormattedString::fireModifyEvent()
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
 }
 
-Sequence< OUString > FormattedString::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 2 );
-
-    aServices[ 0 ] = "com.sun.star.chart2.FormattedString";
-    aServices[ 1 ] = "com.sun.star.beans.PropertySet";
-    return aServices;
-}
-
 // ____ OPropertySet ____
 uno::Any FormattedString::GetDefaultValue( sal_Int32 nHandle ) const
-    throw (beans::UnknownPropertyException, uno::RuntimeException)
 {
     const tPropertyValueMap& rStaticDefaults = *StaticFormattedStringDefaults::get();
     tPropertyValueMap::const_iterator aFound( rStaticDefaults.find( nHandle ) );
@@ -226,7 +203,6 @@ uno::Any FormattedString::GetDefaultValue( sal_Int32 nHandle ) const
 
 // ____ XPropertySet ____
 uno::Reference< beans::XPropertySetInfo > SAL_CALL FormattedString::getPropertySetInfo()
-    throw (uno::RuntimeException, std::exception)
 {
     return *StaticFormattedStringInfo::get();
 }
@@ -240,26 +216,20 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2( FormattedString, FormattedString_Base, ::prope
 
 // implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL FormattedString::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString FormattedString::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart.FormattedString");
 }
 
 sal_Bool SAL_CALL FormattedString::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL FormattedString::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart2.FormattedString",
+        "com.sun.star.beans.PropertySet" };
 }
 
 } //  namespace chart

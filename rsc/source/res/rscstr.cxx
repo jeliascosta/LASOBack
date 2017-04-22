@@ -28,11 +28,10 @@
 #include <rtl/textcvt.h>
 #include <rtl/textenc.h>
 
-RscString::RscString( Atom nId, sal_uInt32 nTypeId )
+RscString::RscString( Atom nId, RESOURCE_TYPE nTypeId )
     : RscTop( nId, nTypeId )
+    , pRefClass(nullptr)
 {
-    nSize = ALIGNED_SIZE( sizeof( RscStringInst ) );
-    pRefClass = nullptr;
 }
 
 RSCCLASS_TYPE RscString::GetClassType() const
@@ -227,7 +226,7 @@ void RscString::WriteSrc( const RSCINST & rInst, FILE * fOutput,
 }
 
 ERRTYPE RscString::WriteRc( const RSCINST & rInst, RscWriteRc & rMem,
-                            RscTypCont * pTC, sal_uInt32 nDeep, bool bExtra )
+                            RscTypCont * pTC, sal_uInt32 nDeep )
 {
     ERRTYPE aError;
     ObjNode *       pObjNode = nullptr;
@@ -278,7 +277,7 @@ ERRTYPE RscString::WriteRc( const RSCINST & rInst, RscWriteRc & rMem,
             RSCINST     aRefI;
 
             aRefI = RSCINST( pRefClass, pObjNode->GetRscObj() );
-            aError = aRefI.pClass->WriteRc( aRefI, rMem, pTC, nDeep, bExtra );
+            aError = aRefI.pClass->WriteRc( aRefI, rMem, pTC, nDeep );
         }
         else
         {

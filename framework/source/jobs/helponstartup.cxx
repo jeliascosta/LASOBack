@@ -104,9 +104,6 @@ HelpOnStartup::~HelpOnStartup()
 
 // css.task.XJob
 css::uno::Any SAL_CALL HelpOnStartup::execute(const css::uno::Sequence< css::beans::NamedValue >& lArguments)
-    throw(css::lang::IllegalArgumentException,
-          css::uno::Exception                ,
-          css::uno::RuntimeException, std::exception         )
 {
     // Analyze the given arguments; try to locate a model there and
     // classify it's used application module.
@@ -135,14 +132,14 @@ css::uno::Any SAL_CALL HelpOnStartup::execute(const css::uno::Sequence< css::bea
     if (bShowIt)
     {
         // retrieve the help URL for the detected application module
-        OUString sModuleDependendHelpURL = its_checkIfHelpEnabledAndGetURL(sModule);
-        if (!sModuleDependendHelpURL.isEmpty())
+        OUString sModuleDependentHelpURL = its_checkIfHelpEnabledAndGetURL(sModule);
+        if (!sModuleDependentHelpURL.isEmpty())
         {
             // Show this help page.
             // Note: The help window brings itself to front ...
             Help* pHelp = Application::GetHelp();
             if (pHelp)
-                pHelp->Start(sModuleDependendHelpURL, nullptr);
+                pHelp->Start(sModuleDependentHelpURL, nullptr);
         }
     }
 
@@ -150,7 +147,6 @@ css::uno::Any SAL_CALL HelpOnStartup::execute(const css::uno::Sequence< css::bea
 }
 
 void SAL_CALL HelpOnStartup::disposing(const css::lang::EventObject& aEvent)
-    throw(css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(m_mutex);
     if (aEvent.Source == m_xModuleManager)
@@ -165,10 +161,9 @@ OUString HelpOnStartup::its_getModuleIdFromEnv(const css::uno::Sequence< css::be
 {
     ::comphelper::SequenceAsHashMap lArgs        (lArguments);
     ::comphelper::SequenceAsHashMap lEnvironment = lArgs.getUnpackedValueOrDefault("Environment", css::uno::Sequence< css::beans::NamedValue >());
-    ::comphelper::SequenceAsHashMap lJobConfig   = lArgs.getUnpackedValueOrDefault("JobConfig", css::uno::Sequence< css::beans::NamedValue >());
 
     // check for right environment.
-    // If its not a DocumentEvent, which triggered this job,
+    // If it's not a DocumentEvent, which triggered this job,
     // we can't work correctly! => return immediately and do nothing
     OUString sEnvType = lEnvironment.getUnpackedValueOrDefault("EnvType", OUString());
     if (sEnvType != "DOCUMENTEVENT")

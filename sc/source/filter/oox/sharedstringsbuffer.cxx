@@ -19,13 +19,8 @@
 
 #include "sharedstringsbuffer.hxx"
 
-#include "biffinputstream.hxx"
-
 namespace oox {
 namespace xls {
-
-using namespace ::com::sun::star::text;
-using namespace ::com::sun::star::uno;
 
 SharedStringsBuffer::SharedStringsBuffer( const WorkbookHelper& rHelper ) :
      WorkbookHelper( rHelper )

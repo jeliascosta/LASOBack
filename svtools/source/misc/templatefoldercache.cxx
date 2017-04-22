@@ -111,31 +111,31 @@ namespace svt
         TemplateFolderContent   m_aSubContents;     // sorted (by name) list of the children
 
     private:
-        inline  void    implResetDate( )
+        void    implResetDate( )
         {
             m_aLastModified.NanoSeconds = m_aLastModified.Seconds = m_aLastModified.Minutes = m_aLastModified.Hours = 0;
             m_aLastModified.Day = m_aLastModified.Month = m_aLastModified.Year = 0;
         }
 
     private:
-        virtual ~TemplateContent();
+        virtual ~TemplateContent() override;
 
     public:
         explicit TemplateContent( const INetURLObject& _rURL );
 
         // attribute access
-        inline OUString                 getURL( ) const                             { return m_aURL.GetMainURL( INetURLObject::DECODE_TO_IURI ); }
-        inline void                     setModDate( const util::DateTime& _rDate )  { m_aLastModified = _rDate; }
-        inline const util::DateTime&    getModDate( ) const                         { return m_aLastModified; }
+        OUString                 getURL( ) const                             { return m_aURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ); }
+        void                     setModDate( const util::DateTime& _rDate )  { m_aLastModified = _rDate; }
+        const util::DateTime&    getModDate( ) const                         { return m_aLastModified; }
 
-        inline TemplateFolderContent&   getSubContents()            { return m_aSubContents; }
-        inline const TemplateFolderContent& getSubContents() const  { return m_aSubContents; }
+        TemplateFolderContent&   getSubContents()            { return m_aSubContents; }
+        const TemplateFolderContent& getSubContents() const  { return m_aSubContents; }
 
-                inline ConstFolderIterator              end() const             { return m_aSubContents.end(); }
-        inline TemplateFolderContent::size_type
+                ConstFolderIterator              end() const             { return m_aSubContents.end(); }
+        TemplateFolderContent::size_type
                                         size() const    { return m_aSubContents.size(); }
 
-        inline void                     push_back( const ::rtl::Reference< TemplateContent >& _rxNewElement )
+        void                     push_back( const ::rtl::Reference< TemplateContent >& _rxNewElement )
                                                         { m_aSubContents.push_back( _rxNewElement ); }
     };
 
@@ -254,22 +254,9 @@ namespace svt
     };
 
 
-    /// functor which allows storing a string
-    struct StoreString
-            :public ::std::unary_function< OUString, void >
-            ,public StorageHelper
-    {
-        explicit StoreString( SvStream& _rStorage ) : StorageHelper( _rStorage ) { }
-
-        void operator() ( const OUString& _rString ) const
-        {
-            m_rStorage.WriteUniOrByteString( _rString, m_rStorage.GetStreamCharSet() );
-        }
-    };
-
     struct StoreContentURL
             :public ::std::unary_function< ::rtl::Reference< TemplateContent >, void >
-            ,public StoreString
+            ,public StorageHelper
     {
         uno::Reference< util::XOfficeInstallationDirectories > m_xOfficeInstDirs;
 
@@ -277,7 +264,7 @@ namespace svt
                          const uno::Reference<
                             util::XOfficeInstallationDirectories > &
                                 xOfficeInstDirs )
-        : StoreString( _rStorage ), m_xOfficeInstDirs( xOfficeInstDirs ) { }
+        : StorageHelper( _rStorage ), m_xOfficeInstDirs( xOfficeInstDirs ) { }
 
         void operator() ( const ::rtl::Reference< TemplateContent >& _rxContent ) const
         {
@@ -286,7 +273,7 @@ namespace svt
             // #116281# Keep office installtion relocatable. Never store
             // any direct references to office installation directory.
             sURL = m_xOfficeInstDirs->makeRelocatableURL( sURL );
-            StoreString::operator() ( sURL );
+            m_rStorage.WriteUniOrByteString( sURL, m_rStorage.GetStreamCharSet() );
         }
     };
 
@@ -433,7 +420,6 @@ namespace svt
 
         bool        implReadFolder( const ::rtl::Reference< TemplateContent >& _rxRoot );
 
-        static  OUString getCacheFileName();
         static  sal_Int32   getMagicNumber();
         static  void        normalize( TemplateFolderContent& _rState );
 
@@ -473,12 +459,6 @@ namespace svt
         ( nMagic += (sal_Int8)'S' ) <<= 4;
         ( nMagic += (sal_Int8)'C' ) <<= 0;
         return nMagic;
-    }
-
-
-    OUString TemplateFolderCacheImpl::getCacheFileName()
-    {
-        return OUString(".templdir.cache");
     }
 
 
@@ -547,7 +527,7 @@ namespace svt
             osl::FileBase::getFileURLFromSystemPath( _rPath, sURL );
             aParser.SetURL( sURL );
         }
-        return aParser.GetMainURL( INetURLObject::DECODE_TO_IURI );
+        return aParser.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
     }
 
 
@@ -693,7 +673,7 @@ namespace svt
         // their number
         sal_Int32 nRootDirectories = 0;
         m_pCacheStream->ReadInt32( nRootDirectories );
-        // init empty TemplateContens with the URLs
+        // init empty TemplateContents with the URLs
         m_aPreviousState.reserve( nRootDirectories );
         while ( nRootDirectories-- )
         {
@@ -736,10 +716,10 @@ namespace svt
         }
 
         // append our name
-        aStorageURL.Append( getCacheFileName() );
+        aStorageURL.Append( ".templdir.cache" );
 
         // open the stream
-        m_pCacheStream = UcbStreamHelper::CreateStream( aStorageURL.GetMainURL( INetURLObject::DECODE_TO_IURI ),
+        m_pCacheStream = UcbStreamHelper::CreateStream( aStorageURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri ),
             _bForRead ? StreamMode::READ | StreamMode::NOCREATE : StreamMode::WRITE | StreamMode::TRUNC );
         DBG_ASSERT( m_pCacheStream, "TemplateFolderCacheImpl::openCacheStream: could not open/create the cache stream!" );
         if ( m_pCacheStream && m_pCacheStream->GetErrorCode() )

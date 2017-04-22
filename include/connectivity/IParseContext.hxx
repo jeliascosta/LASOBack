@@ -19,11 +19,11 @@
 #ifndef INCLUDED_CONNECTIVITY_IPARSECONTEXT_HXX
 #define INCLUDED_CONNECTIVITY_IPARSECONTEXT_HXX
 
-namespace connectivity { class OSQLParseNode; }
-
 #include <rtl/ustring.hxx>
 #include <com/sun/star/lang/Locale.hpp>
 #include <connectivity/dbtoolsdllapi.hxx>
+
+namespace connectivity { class OSQLParseNode; }
 
 namespace connectivity
 {
@@ -35,7 +35,6 @@ namespace connectivity
     public:
         enum class ErrorCode
         {
-            None      = 0,
             General,                // "Syntax error in SQL expression"
             ValueNoLike,            // "The value #1 can not be used with LIKE."
             FieldNoLike,            // "LIKE can not be used with this field."

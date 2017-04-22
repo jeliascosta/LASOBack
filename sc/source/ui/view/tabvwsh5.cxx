@@ -18,7 +18,8 @@
  */
 
 #include "scitems.hxx"
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
+#include <comphelper/lok.hxx>
 #include <svl/zforlist.hxx>
 #include <svx/numfmtsh.hxx>
 #include <svx/numinf.hxx>
@@ -42,133 +43,43 @@
 
 void ScTabViewShell::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    if (dynamic_cast<const SfxSimpleHint*>(&rHint))                       // ohne Parameter
+    if (const ScPaintHint* pPaintHint = dynamic_cast<const ScPaintHint*>(&rHint))                    // draw new
     {
-        const sal_uInt32 nSlot = static_cast<const SfxSimpleHint&>(rHint).GetId();
-        switch ( nSlot )
-        {
-            case FID_DATACHANGED:
-                UpdateFormulas();
-                break;
-
-            case FID_REFMODECHANGED:
-                {
-                    bool bRefMode = SC_MOD()->IsFormulaMode();
-                    if (!bRefMode)
-                        StopRefMode();
-                    else
-                    {
-                        GetSelEngine()->Reset();
-                        GetFunctionSet().SetAnchorFlag(true);
-                        //  AnchorFlag, damit gleich mit Control angehaengt werden kann
-                    }
-                }
-                break;
-
-            case FID_KILLEDITVIEW:
-            case FID_KILLEDITVIEW_NOPAINT:
-                StopEditShell();
-                KillEditView( nSlot == FID_KILLEDITVIEW_NOPAINT );
-                break;
-
-            case SFX_HINT_DOCCHANGED:
-                {
-                    ScDocument* pDoc = GetViewData().GetDocument();
-                    if (!pDoc->HasTable( GetViewData().GetTabNo() ))
-                    {
-                        SetTabNo(0);
-                    }
-                }
-                break;
-
-            case SC_HINT_DRWLAYER_NEW:
-                MakeDrawView();
-                break;
-
-            case SC_HINT_DOC_SAVED:
-                {
-                    //  beim "Save as" kann ein vorher schreibgeschuetztes Dokument
-                    //  bearbeitbar werden, deshalb die Layer-Locks neu (#39884#)
-                    //  (Invalidate etc. passiert schon vom Sfx her)
-                    //  bei SID_EDITDOC kommt kein SFX_HINT_TITLECHANGED, darum
-                    //  der eigene Hint aus DoSaveCompleted
-                    //! was ist mit SFX_HINT_SAVECOMPLETED ?
-
-                    UpdateLayerLocks();
-
-                    //  Design-Modus bei jedem Speichern anzupassen, waere zuviel
-                    //  (beim Speichern unter gleichem Namen soll er unveraendert bleiben)
-                    //  Darum nur bei SFX_HINT_MODECHANGED (vom ViewFrame)
-                }
-                break;
-
-            case SFX_HINT_MODECHANGED:
-                //  Da man sich nicht mehr darauf verlassen kann, woher
-                //  dieser Hint kommt, den Design-Modus immer dann umschalten, wenn der
-                //  ReadOnly-Status sich wirklich geaendert hat:
-
-                if ( GetViewData().GetSfxDocShell()->IsReadOnly() != bReadOnly )
-                {
-                    bReadOnly = GetViewData().GetSfxDocShell()->IsReadOnly();
-
-                    SfxBoolItem aItem( SID_FM_DESIGN_MODE, !bReadOnly);
-                    GetViewData().GetDispatcher().ExecuteList(SID_FM_DESIGN_MODE,
-                            SfxCallMode::ASYNCHRON, { &aItem });
-
-                    UpdateInputContext();
-                }
-                break;
-
-            case SC_HINT_SHOWRANGEFINDER:
-                PaintRangeFinder();
-                break;
-
-            case SC_HINT_FORCESETTAB:
-                SetTabNo( GetViewData().GetTabNo(), true );
-                break;
-
-            default:
-                break;
-        }
-    }
-    else if (dynamic_cast<const ScPaintHint*>(&rHint))                    // neu zeichnen
-    {
-        const ScPaintHint* pHint = static_cast<const ScPaintHint*>(&rHint);
-        sal_uInt16 nParts = pHint->GetParts();
+        PaintPartFlags nParts = pPaintHint->GetParts();
         SCTAB nTab = GetViewData().GetTabNo();
-        if (pHint->GetStartTab() <= nTab && pHint->GetEndTab() >= nTab)
+        if (pPaintHint->GetStartTab() <= nTab && pPaintHint->GetEndTab() >= nTab)
         {
-            if (nParts & PAINT_EXTRAS)          // zuerst, falls Tabelle weg ist !!!
+            if (nParts & PaintPartFlags::Extras)          // first if table vanished !!!
                 if (PaintExtras())
-                    nParts = PAINT_ALL;
+                    nParts = PaintPartFlags::All;
 
             // if the current sheet has pending row height updates (sheet links refreshed),
             // execute them before invalidating the window
             GetViewData().GetDocShell()->UpdatePendingRowHeights( GetViewData().GetTabNo() );
 
-            if (nParts & PAINT_SIZE)
+            if (nParts & PaintPartFlags::Size)
                 RepeatResize();                     //! InvalidateBorder ???
-            if (nParts & PAINT_GRID)
-                PaintArea( pHint->GetStartCol(), pHint->GetStartRow(),
-                           pHint->GetEndCol(), pHint->GetEndRow() );
-            if (nParts & PAINT_MARKS)
-                PaintArea( pHint->GetStartCol(), pHint->GetStartRow(),
-                           pHint->GetEndCol(), pHint->GetEndRow(), SC_UPDATE_MARKS );
-            if (nParts & PAINT_LEFT)
-                PaintLeftArea( pHint->GetStartRow(), pHint->GetEndRow() );
-            if (nParts & PAINT_TOP)
-                PaintTopArea( pHint->GetStartCol(), pHint->GetEndCol() );
+            if (nParts & PaintPartFlags::Grid)
+                PaintArea( pPaintHint->GetStartCol(), pPaintHint->GetStartRow(),
+                           pPaintHint->GetEndCol(), pPaintHint->GetEndRow() );
+            if (nParts & PaintPartFlags::Marks)
+                PaintArea( pPaintHint->GetStartCol(), pPaintHint->GetStartRow(),
+                           pPaintHint->GetEndCol(), pPaintHint->GetEndRow(), ScUpdateMode::Marks );
+            if (nParts & PaintPartFlags::Left)
+                PaintLeftArea( pPaintHint->GetStartRow(), pPaintHint->GetEndRow() );
+            if (nParts & PaintPartFlags::Top)
+                PaintTopArea( pPaintHint->GetStartCol(), pPaintHint->GetEndCol() );
 
             // #i84689# call UpdateAllOverlays here instead of in ScTabView::PaintArea
-            if (nParts & ( PAINT_LEFT | PAINT_TOP ))    // only if widths or heights changed
+            if (nParts & ( PaintPartFlags::Left | PaintPartFlags::Top ))    // only if widths or heights changed
                 UpdateAllOverlays();
 
             HideNoteMarker();
         }
     }
-    else if (dynamic_cast<const ScEditViewHint*>(&rHint))                 // Edit-View anlegen
+    else if (dynamic_cast<const ScEditViewHint*>(&rHint))                 // create Edit-View
     {
-        //  ScEditViewHint kommt nur an aktiver View an
+        //  ScEditViewHint is only received at active view
 
         const ScEditViewHint* pHint = static_cast<const ScEditViewHint*>(&rHint);
         SCTAB nTab = GetViewData().GetTabNo();
@@ -181,31 +92,31 @@ void ScTabViewShell::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 
                 MakeEditView( pHint->GetEngine(), nCol, nRow );
 
-                StopEditShell();                    // sollte nicht gesetzt sein
+                StopEditShell();                    // shouldn't be set
 
                 ScSplitPos eActive = GetViewData().GetActivePart();
                 if ( GetViewData().HasEditView(eActive) )
                 {
-                    //  MakeEditView geht schief, wenn der Cursor ausserhalb des
-                    //  Bildschirms steht. GetEditView gibt dann eine nicht aktive
-                    //  View zurueck, darum die Abfrage HasEditView.
+                    //  MakeEditView will fail, if the cursor is outside the screen.
+                    //  Then GetEditView will return a none-active view, therefore
+                    //  calling HasEditView.
 
-                    EditView* pView = GetViewData().GetEditView(eActive);  // ist nicht 0
+                    EditView* pView = GetViewData().GetEditView(eActive);  // isn't zero
 
                     SetEditShell(pView, true);
                 }
             }
         }
     }
-    else if (dynamic_cast<const ScTablesHint*>(&rHint))               // Tabelle eingefuegt / geloescht
+    else if (dynamic_cast<const ScTablesHint*>(&rHint))               // table insert / deleted
     {
-            //  aktuelle Tabelle zuerst holen (kann bei DeleteTab an ViewData geaendert werden)
+        // first fetch current table (can be changed during DeleteTab on ViewData)
         SCTAB nActiveTab = GetViewData().GetTabNo();
 
         const ScTablesHint& rTabHint = static_cast<const ScTablesHint&>(rHint);
         SCTAB nTab1 = rTabHint.GetTab1();
         SCTAB nTab2 = rTabHint.GetTab2();
-        sal_uInt16 nId  = rTabHint.GetId();
+        sal_uInt16 nId  = rTabHint.GetTablesHintId();
         switch (nId)
         {
             case SC_TAB_INSERTED:
@@ -229,46 +140,46 @@ void ScTabViewShell::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
                 GetViewData().DeleteTabs( nTab1, nTab2 );
                 break;
             default:
-                OSL_FAIL("unbekannter ScTablesHint");
+                OSL_FAIL("unknown ScTablesHint");
         }
 
-        //  hier keine Abfrage auf IsActive() mehr, weil die Aktion von Basic ausgehen
-        //  kann und dann auch die aktive View umgeschaltet werden muss.
+        //  No calling of IsActive() here, because the actions can be coming from Basic
+        //  and then also the active view has to be switched.
 
         SCTAB nNewTab = nActiveTab;
         bool bStayOnActiveTab = true;
         switch (nId)
         {
             case SC_TAB_INSERTED:
-                if ( nTab1 <= nNewTab )             // vorher eingefuegt
+                if ( nTab1 <= nNewTab )             // insert before
                     ++nNewTab;
                 break;
             case SC_TAB_DELETED:
-                if ( nTab1 < nNewTab )              // vorher geloescht
+                if ( nTab1 < nNewTab )              // deleted before
                     --nNewTab;
-                else if ( nTab1 == nNewTab )        // aktuelle geloescht
+                else if ( nTab1 == nNewTab )        // deleted current
                     bStayOnActiveTab = false;
                 break;
             case SC_TAB_MOVED:
-                if ( nNewTab == nTab1 )             // verschobene Tabelle
+                if ( nNewTab == nTab1 )             // moved table
                     nNewTab = nTab2;
-                else if ( nTab1 < nTab2 )           // nach hinten verschoben
+                else if ( nTab1 < nTab2 )           // moved back
                 {
-                    if ( nNewTab > nTab1 && nNewTab <= nTab2 )      // nachrueckender Bereich
+                    if ( nNewTab > nTab1 && nNewTab <= nTab2 )      // succeeding area
                         --nNewTab;
                 }
-                else                                // nach vorne verschoben
+                else                                // move in front
                 {
-                    if ( nNewTab >= nTab2 && nNewTab < nTab1 )      // nachrueckender Bereich
+                    if ( nNewTab >= nTab2 && nNewTab < nTab1 )      // succeeding area
                         ++nNewTab;
                 }
                 break;
             case SC_TAB_COPIED:
-                if ( nNewTab >= nTab2 )             // vorher eingefuegt
+                if ( nNewTab >= nTab2 )             // insert before
                     ++nNewTab;
                 break;
             case SC_TAB_HIDDEN:
-                if ( nTab1 == nNewTab )             // aktuelle ausgeblendet
+                if ( nTab1 == nNewTab )             // current is hidden
                     bStayOnActiveTab = false;
                 break;
             case SC_TABS_INSERTED:
@@ -288,15 +199,110 @@ void ScTabViewShell::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
         bool bForce = !bStayOnActiveTab;
         SetTabNo( nNewTab, bForce, false, bStayOnActiveTab );
     }
-    else if (dynamic_cast<const ScIndexHint*>(&rHint))
+    else if (const ScIndexHint* pIndexHint = dynamic_cast<const ScIndexHint*>(&rHint))
     {
-        const ScIndexHint& rIndexHint = static_cast<const ScIndexHint&>(rHint);
-        sal_uInt16 nId = rIndexHint.GetId();
-        sal_uInt16 nIndex = rIndexHint.GetIndex();
+        SfxHintId nId = pIndexHint->GetId();
+        sal_uInt16 nIndex = pIndexHint->GetIndex();
         switch (nId)
         {
-            case SC_HINT_SHOWRANGEFINDER:
+            case SfxHintId::ScShowRangeFinder:
                 PaintRangeFinder( nIndex );
+                break;
+            default: break;
+        }
+    }
+    else                       // without parameter
+    {
+        const SfxHintId nSlot = rHint.GetId();
+        switch ( nSlot )
+        {
+            case SfxHintId::ScDataChanged:
+                UpdateFormulas();
+                break;
+
+            case SfxHintId::ScRefModeChanged:
+                {
+                    bool bRefMode = SC_MOD()->IsFormulaMode();
+                    if (!bRefMode)
+                        StopRefMode();
+                    else
+                    {
+                        GetSelEngine()->Reset();
+                        GetFunctionSet().SetAnchorFlag(true);
+                        //  AnchorFlag, so immediately Control can appended
+                    }
+                }
+                break;
+
+            case SfxHintId::ScKillEditView:
+            case SfxHintId::ScKillEditViewNoPaint:
+                if (!comphelper::LibreOfficeKit::isActive()
+                    || this == SfxViewShell::Current()
+                    || bInPrepareClose
+                    || bInDispose)
+                {
+                    StopEditShell();
+                    KillEditView( nSlot == SfxHintId::ScKillEditViewNoPaint );
+                }
+                break;
+
+            case SfxHintId::DocChanged:
+                {
+                    ScDocument* pDoc = GetViewData().GetDocument();
+                    if (!pDoc->HasTable( GetViewData().GetTabNo() ))
+                    {
+                        SetTabNo(0);
+                    }
+                }
+                break;
+
+            case SfxHintId::ScDrawLayerNew:
+                MakeDrawView(TRISTATE_INDET);
+                break;
+
+            case SfxHintId::ScDocSaved:
+                {
+                    //  "Save as" can make a write-protected document writable,
+                    //  therefore the Layer-Locks anew (#39884#)
+                    //  (Invalidate etc. is happening already from Sfx)
+                    //  by SID_EDITDOC no SfxHintId::TitleChanged will occur, that
+                    //  is why the own hint from DoSaveCompleted
+                    //! what is with SfxHintId::SAVECOMPLETED ?
+
+                    UpdateLayerLocks();
+
+                    //  Would be too much to change Design-Mode with every save
+                    //  (when saving under the name, it should remain unchanged)
+                    //  Therefore only by SfxHintId::ModeChanged (from ViewFrame)
+                }
+                break;
+
+            case SfxHintId::ModeChanged:
+                //  Since you can no longer rely on it where this hint was coming
+                //  from, always switch the design mode when the ReadOnly state
+                //  really was changed:
+
+                if ( GetViewData().GetSfxDocShell()->IsReadOnly() != bReadOnly )
+                {
+                    bReadOnly = GetViewData().GetSfxDocShell()->IsReadOnly();
+
+                    SfxBoolItem aItem( SID_FM_DESIGN_MODE, !bReadOnly);
+                    GetViewData().GetDispatcher().ExecuteList(SID_FM_DESIGN_MODE,
+                            SfxCallMode::ASYNCHRON, { &aItem });
+
+                    UpdateInputContext();
+                }
+                break;
+
+            case SfxHintId::ScShowRangeFinder:
+                PaintRangeFinder(-1);
+                break;
+
+            case SfxHintId::ScForceSetTab:
+                SetTabNo( GetViewData().GetTabNo(), true );
+                break;
+
+            default:
                 break;
         }
     }
@@ -307,9 +313,9 @@ void ScTabViewShell::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 SvxNumberInfoItem* ScTabViewShell::MakeNumberInfoItem( ScDocument* pDoc, ScViewData* pViewData )
 {
 
-    // NumberInfo-Item konstruieren:
+    // construct NumberInfo item
 
-    SvxNumberValueType  eValType        = SVX_VALUE_TYPE_UNDEFINED;
+    SvxNumberValueType  eValType        = SvxNumberValueType::Undefined;
     double              nCellValue      = 0;
     OUString aCellString;
 
@@ -320,14 +326,14 @@ SvxNumberInfoItem* ScTabViewShell::MakeNumberInfoItem( ScDocument* pDoc, ScViewD
         case CELLTYPE_VALUE:
         {
             nCellValue = aCell.mfValue;
-            eValType = SVX_VALUE_TYPE_NUMBER;
+            eValType = SvxNumberValueType::Number;
         }
         break;
 
         case CELLTYPE_STRING:
         {
             aCellString = aCell.mpString->getString();
-            eValType = SVX_VALUE_TYPE_STRING;
+            eValType = SvxNumberValueType::String;
         }
         break;
 
@@ -336,36 +342,36 @@ SvxNumberInfoItem* ScTabViewShell::MakeNumberInfoItem( ScDocument* pDoc, ScViewD
             if (aCell.mpFormula->IsValue())
             {
                 nCellValue = aCell.mpFormula->GetValue();
-                eValType = SVX_VALUE_TYPE_NUMBER;
+                eValType = SvxNumberValueType::Number;
             }
             else
             {
                 nCellValue = 0;
-                eValType   = SVX_VALUE_TYPE_UNDEFINED;
+                eValType   = SvxNumberValueType::Undefined;
             }
         }
         break;
 
         default:
             nCellValue = 0;
-            eValType   = SVX_VALUE_TYPE_UNDEFINED;
+            eValType   = SvxNumberValueType::Undefined;
     }
 
     switch ( eValType )
     {
-        case SVX_VALUE_TYPE_STRING:
+        case SvxNumberValueType::String:
             return new SvxNumberInfoItem(
                                 pDoc->GetFormatTable(),
                                 aCellString,
                                 SID_ATTR_NUMBERFORMAT_INFO );
 
-        case SVX_VALUE_TYPE_NUMBER:
+        case SvxNumberValueType::Number:
             return new SvxNumberInfoItem(
                                 pDoc->GetFormatTable(),
                                 nCellValue,
                                 SID_ATTR_NUMBERFORMAT_INFO );
 
-        case SVX_VALUE_TYPE_UNDEFINED:
+        case SvxNumberValueType::Undefined:
         default:
             ;
     }

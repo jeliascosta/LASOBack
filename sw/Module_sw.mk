@@ -17,6 +17,8 @@
 #   the License at http://www.apache.org/licenses/LICENSE-2.0 .
 #
 
+include $(SRCDIR)/sw/ooxmlexport_setup.mk
+
 $(eval $(call gb_Module_Module,sw))
 
 $(eval $(call gb_Module_add_targets,sw,\
@@ -59,10 +61,14 @@ $(eval $(call gb_Module_add_slowcheck_targets,sw,\
     CppunitTest_sw_ooxmlexport5 \
     CppunitTest_sw_ooxmlexport6 \
     CppunitTest_sw_ooxmlexport7 \
+    CppunitTest_sw_ooxmlexport8 \
+    CppunitTest_sw_ooxmlexport9 \
     CppunitTest_sw_ooxmlfieldexport \
     CppunitTest_sw_ooxmlw14export \
+    CppunitTest_sw_ooxmlencryption \
     CppunitTest_sw_ooxmlimport \
     CppunitTest_sw_ww8export \
+    CppunitTest_sw_ww8export2 \
     CppunitTest_sw_ww8import \
     CppunitTest_sw_rtfexport \
     CppunitTest_sw_rtfimport \
@@ -100,5 +106,11 @@ $(eval $(call gb_Module_add_subsequentcheck_targets,sw,\
 	PythonTest_sw_python \
 ))
 endif
+
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,sw,\
+    CppunitTest_sw_dialogs_test \
+    CppunitTest_sw_dialogs_test_2 \
+))
 
 # vim: set noet sw=4 ts=4:

@@ -37,6 +37,8 @@ namespace com { namespace sun { namespace star {
     }
 } } }
 
+class ResStringArray;
+
 namespace pcr
 {
 
@@ -92,7 +94,33 @@ namespace pcr
         static css::uno::Reference< css::inspection::XPropertyControl >
             createListBoxControl(
                 const css::uno::Reference< css::inspection::XPropertyControlFactory >& _rxControlFactory,
-                const ::std::vector< OUString >& _rInitialListEntries,
+                const std::vector< OUString >& _rInitialListEntries,
+                bool _bReadOnlyControl,
+                bool _bSorted
+            );
+
+        /** creates an <member scope="css::inspection">PropertyControlType::ListBox</member>-type control
+            and fills it with initial values
+
+            @param _rxControlFactory
+                A control factory. Must not be <NULL/>.
+
+            @param  _rInitialListEntries
+                the initial values of the control
+
+            @param _bReadOnlyControl
+                determines whether the control should be read-only
+
+            @param _bSorted
+                determines whether the list entries should be sorted
+
+            @return
+                the newly created control
+        */
+        static css::uno::Reference< css::inspection::XPropertyControl >
+            createListBoxControl(
+                const css::uno::Reference< css::inspection::XPropertyControlFactory >& _rxControlFactory,
+                const ResStringArray& _rInitialListEntries,
                 bool _bReadOnlyControl,
                 bool _bSorted
             );
@@ -118,7 +146,7 @@ namespace pcr
         static css::uno::Reference< css::inspection::XPropertyControl >
             createComboBoxControl(
                 const css::uno::Reference< css::inspection::XPropertyControlFactory >& _rxControlFactory,
-                const ::std::vector< OUString >& _rInitialListEntries,
+                const std::vector< OUString >& _rInitialListEntries,
                 bool _bReadOnlyControl,
                 bool _bSorted
             );
@@ -168,7 +196,8 @@ namespace pcr
 
         static css::uno::Reference< css::uno::XInterface > getContextDocument( const css::uno::Reference<css::uno::XComponentContext> & _rContext );
 
-        static css::uno::Reference< css::uno::XInterface > getContextDocument_throw( const css::uno::Reference<css::uno::XComponentContext> & _rContext ) throw (css::uno::RuntimeException);
+        /// @throws css::uno::RuntimeException
+        static css::uno::Reference< css::uno::XInterface > getContextDocument_throw( const css::uno::Reference<css::uno::XComponentContext> & _rContext );
 
         /** gets the window of the ObjectInspector in which an property handler lives
 
@@ -189,7 +218,7 @@ namespace pcr
                 the attributes of the property which should be reflected by a to-be-created
                 <type scope="css::inspection">XPropertyControl</type>
         */
-        inline static bool requiresReadOnlyControl( sal_Int16 _nPropertyAttributes )
+        static bool requiresReadOnlyControl( sal_Int16 _nPropertyAttributes )
         {
             return ( _nPropertyAttributes & css::beans::PropertyAttribute::READONLY ) != 0;
         }

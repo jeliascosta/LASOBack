@@ -45,7 +45,7 @@ public:
     explicit            XclExpPCItem( sal_Int16 nValue );
     explicit            XclExpPCItem( bool bValue );
 
-    inline sal_uInt16   GetTypeFlag() const { return mnTypeFlag; }
+    sal_uInt16   GetTypeFlag() const { return mnTypeFlag; }
 
     bool                EqualsText( const OUString& rText ) const;
     bool                EqualsDouble( double fValue ) const;
@@ -73,13 +73,13 @@ public:
                             sal_uInt16 nFieldIdx,
                             const ScDPObject& rDPObj, const ScDPSaveGroupDimension& rGroupDim,
                             const XclExpPCField& rBaseField );
-    virtual             ~XclExpPCField();
+    virtual             ~XclExpPCField() override;
 
     /** Sets the passed field as direct grouping child field of this field. */
     void                SetGroupChildField( const XclExpPCField& rChildField );
 
     /** Returns the name of this cache field. */
-    inline const OUString& GetFieldName() const { return maFieldInfo.maName; }
+    const OUString& GetFieldName() const { return maFieldInfo.maName; }
 
     /** Returns the number of visible items of this field. */
     sal_uInt16          GetItemCount() const;
@@ -89,7 +89,7 @@ public:
     sal_uInt16          GetItemIndex( const OUString& rItemName ) const;
 
     /** Returns the size an item index needs to write out. */
-    sal_Size            GetIndexSize() const;
+    std::size_t         GetIndexSize() const;
     /** Writes the item index at the passed source row position as part of the SXINDEXLIST record. */
     void                WriteIndex( XclExpStream& rStrm, sal_uInt32 nSrcRow ) const;
 
@@ -164,12 +164,12 @@ public:
                             const ScDPObject& rDPObj, sal_uInt16 nListIdx );
 
     /** Returns true, if the cache has been constructed successfully. */
-    inline bool         IsValid() const { return mbValid; }
+    bool         IsValid() const { return mbValid; }
     /** Returns true, if the item index list will be written. */
     bool                HasItemIndexList() const;
 
     /** Returns the list index of the cache used in pivot table records. */
-    inline sal_uInt16   GetCacheIndex() const { return mnListIdx; }
+    sal_uInt16   GetCacheIndex() const { return mnListIdx; }
 
     /** Returns the number of pivot cache fields. */
     sal_uInt16          GetFieldCount() const;
@@ -186,9 +186,6 @@ public:
     static void SaveXml( XclExpXmlStream& rStrm );
 
 private:
-    /** Returns read/write access to a pivot cache field. */
-    XclExpPCField*      GetFieldAcc( sal_uInt16 nFieldIdx );
-
     /** Adds all pivot cache fields. */
     void                AddFields( const ScDPObject& rDPObj );
 
@@ -330,7 +327,7 @@ public:
     const XclExpPCField* GetCacheField( sal_uInt16 nCacheIdx ) const;
 
     /** Returns the output range of the pivot table. */
-    inline SCTAB         GetScTab() const { return mnOutScTab; }
+    SCTAB         GetScTab() const { return mnOutScTab; }
 
     /** Returns a pivot table field by its name. */
     const XclExpPTField* GetField( sal_uInt16 nFieldIdx ) const;
@@ -439,7 +436,6 @@ private:
 
     XclExpPivotCacheList maPCacheList;      /// List of all pivot caches.
     XclExpPivotTableList maPTableList;      /// List of all pivot tables.
-    bool                mbShareCaches;      /// true = Tries to share caches between tables.
 };
 
 #endif

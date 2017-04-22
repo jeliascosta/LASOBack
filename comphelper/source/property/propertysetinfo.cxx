@@ -31,20 +31,20 @@ using namespace ::com::sun::star::lang;
 
 namespace comphelper
 {
-class PropertyMapImpl
+class PropertyMapImpl final
 {
 public:
     PropertyMapImpl() throw();
-    virtual ~PropertyMapImpl() throw();
 
     void add(PropertyMapEntry const * pMap) throw();
     void remove( const OUString& aName ) throw();
 
-    std::vector< Property > getProperties() throw();
+    std::vector< Property > const & getProperties() throw();
 
     const PropertyMap& getPropertyMap() const throw() { return maPropertyMap;}
 
-    Property getPropertyByName( const OUString& aName ) throw( UnknownPropertyException );
+        /// @throws UnknownPropertyException
+    Property getPropertyByName( const OUString& aName );
     bool hasPropertyByName( const OUString& aName ) throw();
 
 private:
@@ -54,10 +54,6 @@ private:
 }
 
 PropertyMapImpl::PropertyMapImpl() throw()
-{
-}
-
-PropertyMapImpl::~PropertyMapImpl() throw()
 {
 }
 
@@ -83,7 +79,7 @@ void PropertyMapImpl::remove( const OUString& aName ) throw()
     maProperties.clear();
 }
 
-std::vector< Property > PropertyMapImpl::getProperties() throw()
+std::vector< Property > const & PropertyMapImpl::getProperties() throw()
 {
     // maybe we have to generate the properties after
     // a change in the property map or at first call
@@ -110,7 +106,7 @@ std::vector< Property > PropertyMapImpl::getProperties() throw()
 }
 
 
-Property PropertyMapImpl::getPropertyByName( const OUString& aName ) throw( UnknownPropertyException )
+Property PropertyMapImpl::getPropertyByName( const OUString& aName )
 {
     PropertyMap::iterator aIter = maPropertyMap.find( aName );
 
@@ -129,18 +125,18 @@ bool PropertyMapImpl::hasPropertyByName( const OUString& aName ) throw()
 
 
 PropertySetInfo::PropertySetInfo() throw()
+    : mpImpl(new PropertyMapImpl)
 {
-    mpMap = new PropertyMapImpl();
 }
 
 PropertySetInfo::PropertySetInfo( PropertyMapEntry const * pMap ) throw()
+    : mpImpl(new PropertyMapImpl)
 {
-    mpMap = new PropertyMapImpl();
-    mpMap->add( pMap );
+    mpImpl->add( pMap );
 }
 
 PropertySetInfo::PropertySetInfo(uno::Sequence<beans::Property> const& rProps) throw()
-    : mpMap(new PropertyMapImpl)
+    : mpImpl(new PropertyMapImpl)
 {
     PropertyMapEntry * pEntries(new PropertyMapEntry[rProps.getLength() + 1]);
     PropertyMapEntry * pEntry(&pEntries[0]);
@@ -154,42 +150,41 @@ PropertySetInfo::PropertySetInfo(uno::Sequence<beans::Property> const& rProps) t
         ++pEntry;
     }
     pEntry->maName = OUString();
-    mpMap->add(pEntries);
+    mpImpl->add(pEntries);
 }
 
 PropertySetInfo::~PropertySetInfo() throw()
 {
-    delete mpMap;
 }
 
 void PropertySetInfo::add( PropertyMapEntry const * pMap ) throw()
 {
-    mpMap->add( pMap );
+    mpImpl->add( pMap );
 }
 
 void PropertySetInfo::remove( const OUString& aName ) throw()
 {
-    mpMap->remove( aName );
+    mpImpl->remove( aName );
 }
 
-Sequence< css::beans::Property > SAL_CALL PropertySetInfo::getProperties() throw(css::uno::RuntimeException, std::exception)
+Sequence< css::beans::Property > SAL_CALL PropertySetInfo::getProperties()
 {
-    return comphelper::containerToSequence(mpMap->getProperties());
+    return comphelper::containerToSequence(mpImpl->getProperties());
 }
 
-Property SAL_CALL PropertySetInfo::getPropertyByName( const OUString& aName ) throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception)
+Property SAL_CALL PropertySetInfo::getPropertyByName( const OUString& aName )
 {
-    return mpMap->getPropertyByName( aName );
+    return mpImpl->getPropertyByName( aName );
 }
 
-sal_Bool SAL_CALL PropertySetInfo::hasPropertyByName( const OUString& Name ) throw(css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL PropertySetInfo::hasPropertyByName( const OUString& Name )
 {
-    return mpMap->hasPropertyByName( Name );
+    return mpImpl->hasPropertyByName( Name );
 }
 
 const PropertyMap& PropertySetInfo::getPropertyMap() const throw()
 {
-    return mpMap->getPropertyMap();
+    return mpImpl->getPropertyMap();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

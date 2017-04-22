@@ -51,8 +51,8 @@ namespace dbaui
         osl::Mutex              m_mutex;
         css::uno::Reference<  css::beans::XMultiPropertySet > m_notifier;
 
-        DECL_LINK_TYPED(OnUndoActionTimer, Timer*, void);
-        DECL_LINK_TYPED(OnInvalidateTimer, Timer*, void);
+        DECL_LINK(OnUndoActionTimer, Timer*, void);
+        DECL_LINK(OnInvalidateTimer, Timer*, void);
 
     private:
         void            ImplSetFont();
@@ -61,11 +61,11 @@ namespace dbaui
         virtual void KeyInput( const KeyEvent& rKEvt ) override;
         virtual void GetFocus() override;
 
-        DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+        DECL_LINK(ModifyHdl, Edit&, void);
 
     public:
-        OSqlEdit( OQueryTextView* pParent,  WinBits nWinStyle = WB_LEFT | WB_VSCROLL |WB_BORDER);
-        virtual ~OSqlEdit();
+        OSqlEdit( OQueryTextView* pParent);
+        virtual ~OSqlEdit() override;
         virtual void dispose() override;
 
         // Edit overridables
@@ -81,8 +81,7 @@ namespace dbaui
         void stopTimer();
         void startTimer();
 
-        virtual void    ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
-        using MultiLineEditSyntaxHighlight::Notify;
+        virtual void    ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints ) override;
     };
 }
 

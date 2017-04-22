@@ -33,15 +33,15 @@ class SVX_DLLPUBLIC SdrGlueEditView: public SdrPolyEditView
 {
     // copy marked GluePoints and mark instead of the old ones
     void ImpCopyMarkedGluePoints();
-    typedef void (*PGlueDoFunc)(SdrGluePoint&, const SdrObject* pObj, const void*, const void*, const void*, const void*, const void*);
-    typedef void (*PGlueTrFunc)(Point&, const void*, const void*, const void*, const void*, const void*);
-    void ImpDoMarkedGluePoints(PGlueDoFunc pDoFunc, bool bConst, const void* p1=nullptr, const void* p2=nullptr, const void* p3=nullptr, const void* p4=nullptr, const void* p5=nullptr);
-    void ImpTransformMarkedGluePoints(PGlueTrFunc pTrFunc, const void* p1=nullptr, const void* p2=nullptr, const void* p3=nullptr, const void* p4=nullptr, const void* p5=nullptr);
+    typedef void (*PGlueDoFunc)(SdrGluePoint&, const SdrObject* pObj, const void*, const void*, const void*, const void*);
+    typedef void (*PGlueTrFunc)(Point&, const void*, const void*, const void*, const void*);
+    void ImpDoMarkedGluePoints(PGlueDoFunc pDoFunc, bool bConst, const void* p1, const void* p2=nullptr, const void* p3=nullptr, const void* p4=nullptr);
+    void ImpTransformMarkedGluePoints(PGlueTrFunc pTrFunc, const void* p1, const void* p2=nullptr, const void* p3=nullptr, const void* p4=nullptr);
 
 protected:
     // #i71538# make constructors of SdrView sub-components protected to avoid incomplete incarnations which may get casted to SdrView
-    SdrGlueEditView(SdrModel* pModel1, OutputDevice* pOut = nullptr);
-    virtual ~SdrGlueEditView();
+    SdrGlueEditView(SdrModel* pModel1, OutputDevice* pOut);
+    virtual ~SdrGlueEditView() override;
 
 public:
     // the parameter nThisEsc is used to hand over the direction,
@@ -51,7 +51,7 @@ public:
     SDR_TRISTATE IsMarkedGluePointsEscDir(SdrEscapeDirection nThisEsc) const;
     void SetMarkedGluePointsEscDir(SdrEscapeDirection nThisEsc, bool bOn);
 
-    // check/set, if the GluePoints are relativ to the
+    // check/set, if the GluePoints are relative to the
     // object size (Percent=sal_True) or not (Percent=sal_False)
     SDR_TRISTATE IsMarkedGluePointsPercent() const;
     void SetMarkedGluePointsPercent(bool bOn);
@@ -72,9 +72,9 @@ public:
     // delete all marked GluePoints
     void DeleteMarkedGluePoints();
 
-    void MoveMarkedGluePoints  (const Size& rSiz, bool bCopy=false);
-    void ResizeMarkedGluePoints(const Point& rRef, const Fraction& xFact, const Fraction& yFact, bool bCopy=false);
-    void RotateMarkedGluePoints(const Point& rRef, long nAngle, bool bCopy=false);
+    void MoveMarkedGluePoints  (const Size& rSiz, bool bCopy);
+    void ResizeMarkedGluePoints(const Point& rRef, const Fraction& xFact, const Fraction& yFact, bool bCopy);
+    void RotateMarkedGluePoints(const Point& rRef, long nAngle, bool bCopy);
 };
 
 #endif // INCLUDED_SVX_SVDGLEV_HXX

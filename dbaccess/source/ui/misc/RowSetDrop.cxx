@@ -62,7 +62,7 @@ void ORowSetImportExport::initialize()
 
     m_xTargetResultSetMetaData = Reference<XResultSetMetaDataSupplier>(m_xTargetResultSetUpdate,UNO_QUERY)->getMetaData();
     if(!m_xTargetResultSetMetaData.is() || !xColumnLocate.is() || !m_xResultSetMetaData.is() )
-        throw SQLException(ModuleRes(STR_UNEXPECTED_ERROR),*this,OUString("S1000") ,0,Any());
+        throw SQLException(ModuleRes(STR_UNEXPECTED_ERROR),*this,"S1000",0,Any());
 
     sal_Int32 nCount = m_xTargetResultSetMetaData->getColumnCount();
     m_aColumnMapping.reserve(nCount);
@@ -100,8 +100,8 @@ bool ORowSetImportExport::Write()
 bool ORowSetImportExport::Read()
 {
     // check if there is any column to copy
-    if(::std::find_if(m_aColumnMapping.begin(),m_aColumnMapping.end(),
-                        ::std::bind2nd(::std::greater<sal_Int32>(),0)) == m_aColumnMapping.end())
+    if(std::find_if(m_aColumnMapping.begin(),m_aColumnMapping.end(),
+                        std::bind2nd(std::greater<sal_Int32>(),0)) == m_aColumnMapping.end())
         return false;
     bool bContinue = true;
     if(m_aSelection.getLength())
@@ -157,8 +157,8 @@ bool ORowSetImportExport::insertNewRow()
     {
         m_xTargetResultSetUpdate->moveToInsertRow();
         sal_Int32 i = 1;
-        ::std::vector<sal_Int32>::const_iterator aEnd = m_aColumnMapping.end();
-        for (::std::vector<sal_Int32>::const_iterator aIter = m_aColumnMapping.begin(); aIter != aEnd ;++aIter,++i )
+        std::vector<sal_Int32>::const_iterator aEnd = m_aColumnMapping.end();
+        for (std::vector<sal_Int32>::const_iterator aIter = m_aColumnMapping.begin(); aIter != aEnd ;++aIter,++i )
         {
             if(*aIter > 0)
             {

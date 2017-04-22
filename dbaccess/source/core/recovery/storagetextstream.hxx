@@ -29,7 +29,7 @@ namespace dbaccess
 
     // StorageTextStream
     struct StorageTextOutputStream_Data;
-    class DBACCESS_DLLPRIVATE StorageTextOutputStream : public StorageOutputStream
+    class StorageTextOutputStream : public StorageOutputStream
     {
     public:
         StorageTextOutputStream(
@@ -37,13 +37,13 @@ namespace dbaccess
             const css::uno::Reference< css::embed::XStorage >& i_rParentStorage,
             const OUString& i_rStreamName
         );
-        virtual ~StorageTextOutputStream();
+        virtual ~StorageTextOutputStream() override;
 
         void    writeLine( const OUString& i_rLine );
         void    writeLine();
 
     private:
-        ::std::unique_ptr< StorageTextOutputStream_Data > m_pData;
+        std::unique_ptr< StorageTextOutputStream_Data > m_pData;
     };
 
 } // namespace dbaccess

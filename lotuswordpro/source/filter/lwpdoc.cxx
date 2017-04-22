@@ -65,6 +65,7 @@
 #include "lwpsilverbullet.hxx"
 #include "lwplayout.hxx"
 #include "lwppagelayout.hxx"
+#include "lwpverdocument.hxx"
 #include "xfilter/xfstylemanager.hxx"
 #include <osl/thread.h>
 
@@ -102,43 +103,43 @@ void LwpDocument::Read()
 
     //Skip the SortOption and UIDocument
     {
-        LwpSortOption aDocSort( m_pObjStrm );
-        LwpUIDocument aUIDoc( m_pObjStrm );
+        LwpSortOption aDocSort( m_pObjStrm.get() );
+        LwpUIDocument aUIDoc( m_pObjStrm.get() );
     }
 
-    m_pLnOpts = new LwpLineNumberOptions(m_pObjStrm);
+    m_pLnOpts = new LwpLineNumberOptions(m_pObjStrm.get());
 
     //Skip LwpUserDictFiles
     {
-        LwpUserDictFiles aUsrDicts( m_pObjStrm );
+        LwpUserDictFiles aUsrDicts( m_pObjStrm.get() );
     }
 
     if( !IsChildDoc())
     {
         //Skip LwpPrinterInfo
-        LwpPrinterInfo aPrtInfo( m_pObjStrm );
+        LwpPrinterInfo aPrtInfo( m_pObjStrm.get() );
     }
 
-    m_pFoundry = m_pOwnedFoundry = new LwpFoundry(m_pObjStrm, this);
+    m_pFoundry = m_pOwnedFoundry = new LwpFoundry(m_pObjStrm.get(), this);
 
-    m_DivOpts.ReadIndexed(m_pObjStrm);
+    m_DivOpts.ReadIndexed(m_pObjStrm.get());
 
     if(!IsChildDoc())
     {
-        m_FootnoteOpts.ReadIndexed(m_pObjStrm);
-        m_DocData.ReadIndexed(m_pObjStrm);
+        m_FootnoteOpts.ReadIndexed(m_pObjStrm.get());
+        m_DocData.ReadIndexed(m_pObjStrm.get());
     }
     else
     {
         //Skip the docdata used in old version
         LwpObjectID dummyDocData;
-        dummyDocData.ReadIndexed(m_pObjStrm);
+        dummyDocData.ReadIndexed(m_pObjStrm.get());
     }
-    m_DivInfo.ReadIndexed(m_pObjStrm);
-    m_Epoch.Read(m_pObjStrm);
-    m_WYSIWYGPageHints.ReadIndexed(m_pObjStrm);
-    m_VerDoc.ReadIndexed(m_pObjStrm);
-    m_STXInfo.ReadIndexed(m_pObjStrm);
+    m_DivInfo.ReadIndexed(m_pObjStrm.get());
+    m_Epoch.Read(m_pObjStrm.get());
+    m_WYSIWYGPageHints.ReadIndexed(m_pObjStrm.get());
+    m_VerDoc.ReadIndexed(m_pObjStrm.get());
+    m_STXInfo.ReadIndexed(m_pObjStrm.get());
 }
 
 /**
@@ -146,7 +147,7 @@ void LwpDocument::Read()
  **/
 void LwpDocument::ReadPlug()
 {
-    m_DocSockID.ReadIndexed(m_pObjStrm);
+    m_DocSockID.ReadIndexed(m_pObjStrm.get());
     m_nFlags = m_pObjStrm->QuickReaduInt16();
     m_pObjStrm->SkipExtra();
 }
@@ -385,7 +386,6 @@ void LwpDocument::RegisterFootnoteStyles()
 /**
 * @descr   Register default para styles
 */
-#include "lwpverdocument.hxx"
 void LwpDocument::RegisterDefaultParaStyles()
 {
     if(!IsChildDoc())
@@ -613,7 +613,10 @@ LwpDocument* LwpDocument::GetPreviousDivision()
     {
         if(!pRoot->IsChildDoc())
             return pRoot;
-        pRoot = pRoot->GetParentDivision();
+        LwpDocument* pNextRoot = pRoot->GetParentDivision();
+        if (pNextRoot == pRoot)
+            throw std::runtime_error("loop in ParentDivision");
+        pRoot = pNextRoot;
     }
     return nullptr;
 }
@@ -719,23 +722,21 @@ sal_uInt16 LwpDocument::GetNumberOfPagesBefore()
         pDivision = pDivision->GetNextDivision();
     }
 }
-  /**
+
+ /**
  * @descr    Parse the frame which anchor is to page before parse other contents,
- *          This method is called when the document is root document.
+ *           This method is called when the document is root document.
  */
 void LwpDocument::ParseFrameInPage(IXFStream * pOutputStream)
 {
-    if(IsChildDoc())
+    if (IsChildDoc())
         return;
 
-    XFContentContainer* pXFContainer = new XFContentContainer;
-
-    XFConvertFrameInPage(pXFContainer);
-
-    pXFContainer->ToXml(pOutputStream);
-    delete pXFContainer;
-    pXFContainer = nullptr;
+    rtl::Reference<XFContentContainer> xXFContainer(new XFContentContainer);
+    XFConvertFrameInPage(xXFContainer.get());
+    xXFContainer->ToXml(pOutputStream);
 }
+
  /**
  * @descr    Parse the frame which anchor is to page in the entire document
  */
@@ -782,7 +783,7 @@ LwpDocSock::LwpDocSock(LwpObjectHeader& objHdr, LwpSvStream* pStrm)
 void LwpDocSock::Read()
 {
     LwpDLNFVList::Read();
-    m_Doc.ReadIndexed(m_pObjStrm);
+    m_Doc.ReadIndexed(m_pObjStrm.get());
     m_pObjStrm->SkipExtra();
 }
  /**

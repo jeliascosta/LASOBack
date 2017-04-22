@@ -19,7 +19,6 @@
 #ifndef INCLUDED_SVX_SRCHDLG_HXX
 #define INCLUDED_SVX_SRCHDLG_HXX
 
-#include <svtools/stdctrl.hxx>
 #include <vcl/combobox.hxx>
 #include <vcl/edit.hxx>
 #include <vcl/button.hxx>
@@ -39,8 +38,10 @@ class SvxSearchItem;
 class SfxStyleSheetBasePool;
 class SvxJSearchOptionsPage;
 class SvxSearchController;
-
 struct SearchDlg_Impl;
+enum class ModifyFlags;
+enum class TransliterationFlags;
+
 
 struct SearchAttrItem
 {
@@ -78,13 +79,13 @@ public:
 
 // class SvxSearchDialogWrapper ------------------------------------------
 
-enum SearchLabel
+enum class SearchLabel
 {
-    SL_Empty,
-    SL_End,
-    SL_Start,
-    SL_EndSheet,
-    SL_NotFound
+    Empty,
+    End,
+    Start,
+    EndSheet,
+    NotFound
 };
 
 class SvxSearchDialog;
@@ -95,7 +96,7 @@ public:
     SvxSearchDialogWrapper( vcl::Window*pParent, sal_uInt16 nId,
                             SfxBindings* pBindings, SfxChildWinInfo* pInfo );
 
-    virtual ~SvxSearchDialogWrapper ();
+    virtual ~SvxSearchDialogWrapper () override;
     SvxSearchDialog *getDialog () { return dialog;}
     static void SetSearchLabel(const SearchLabel& rSL);
     static void SetSearchLabel(const OUString& sStr);
@@ -121,7 +122,7 @@ friend class SvxJSearchOptionsDialog;
 
 public:
     SvxSearchDialog( vcl::Window* pParent, SfxChildWindow* pChildWin, SfxBindings& rBind );
-    virtual ~SvxSearchDialog();
+    virtual ~SvxSearchDialog() override;
     virtual void dispose() override;
 
     virtual bool    Close() override;
@@ -134,14 +135,14 @@ public:
     const SearchAttrItemList*   GetReplaceItemList() const
                                     { return pReplaceList; }
 
-    sal_Int32       GetTransliterationFlags() const;
+    TransliterationFlags        GetTransliterationFlags() const;
 
     void SetDocWin( vcl::Window* pDocWin ) { mpDocWin = pDocWin; }
     vcl::Window* GetDocWin() { return mpDocWin; }
     void SetSrchFlag( bool bSuccess ) { mbSuccess = bSuccess; }
     bool GetSrchFlag() { return mbSuccess; }
     virtual css::uno::Reference< css::awt::XWindowPeer >
-        GetComponentInterface( bool bCreate ) override;
+        GetComponentInterface( bool bCreate = true ) override;
 
     void            SetSaveToModule(bool b);
 
@@ -211,7 +212,7 @@ private:
     SearchOptionFlags  nOptions;
     bool            bSet;
     bool            bConstruct;
-    sal_uIntPtr         nModifyFlag;
+    ModifyFlags     nModifyFlag;
     OUString        aStylesStr;
     OUString        aLayoutStr;
     OUString        aLayoutWriterStr;
@@ -232,19 +233,20 @@ private:
     SvxSearchController*    pSearchSetController;
     SvxSearchController*    pReplaceSetController;
 
-    mutable sal_Int32           nTransliterationFlags;
+    mutable TransliterationFlags
+                            nTransliterationFlags;
 
-    DECL_LINK_TYPED( ModifyHdl_Impl, Edit&, void );
-    DECL_LINK_TYPED( FlagHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( CommandHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(TemplateHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( FocusHdl_Impl, Control&, void );
-    DECL_LINK_TYPED( LBSelectHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED(LoseFocusHdl_Impl, Control&, void);
-    DECL_LINK_TYPED(FormatHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(NoFormatHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(AttributeHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( TimeoutHdl_Impl, Timer*, void );
+    DECL_LINK( ModifyHdl_Impl, Edit&, void );
+    DECL_LINK( FlagHdl_Impl, Button*, void );
+    DECL_LINK( CommandHdl_Impl, Button*, void );
+    DECL_LINK(TemplateHdl_Impl, Button*, void);
+    DECL_LINK( FocusHdl_Impl, Control&, void );
+    DECL_LINK( LBSelectHdl_Impl, ListBox&, void );
+    DECL_LINK(LoseFocusHdl_Impl, Control&, void);
+    DECL_LINK(FormatHdl_Impl, Button*, void);
+    DECL_LINK(NoFormatHdl_Impl, Button*, void);
+    DECL_LINK(AttributeHdl_Impl, Button*, void);
+    DECL_LINK( TimeoutHdl_Impl, Timer*, void );
     void            ClickHdl_Impl(void* pCtrl);
 
     void            Construct_Impl();
@@ -265,7 +267,7 @@ private:
     void            SetModifyFlag_Impl( const Control* pCtrl );
     void            SaveToModule_Impl();
 
-    void            ApplyTransliterationFlags_Impl( sal_Int32 nSettings );
+    void            ApplyTransliterationFlags_Impl( TransliterationFlags nSettings );
 };
 
 #endif

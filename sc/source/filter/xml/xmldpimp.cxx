@@ -31,6 +31,7 @@
 #include "dpdimsave.hxx"
 #include "rangeutl.hxx"
 #include "dpoutputgeometry.hxx"
+#include "generalfunction.hxx"
 
 #include "pivotsource.hxx"
 
@@ -58,7 +59,7 @@ ScXMLDataPilotTablesContext::ScXMLDataPilotTablesContext( ScXMLImport& rImport,
                                       sal_uInt16 nPrfx,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& /* xAttrList */ ) :
-    SvXMLImportContext( rImport, nPrfx, rLName )
+    ScXMLImportContext( rImport, nPrfx, rLName )
 {
     // has no Attributes
     rImport.LockSolarMutex();
@@ -103,7 +104,7 @@ ScXMLDataPilotTableContext::ScXMLDataPilotTableContext( ScXMLImport& rImport,
                                       sal_uInt16 nPrfx,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDoc(GetScImport().GetDocument()),
     pDPObject(nullptr),
     pDPDimSaveData(nullptr),
@@ -215,7 +216,6 @@ ScXMLDataPilotTableContext::ScXMLDataPilotTableContext( ScXMLImport& rImport,
 
 ScXMLDataPilotTableContext::~ScXMLDataPilotTableContext()
 {
-    delete pDPDimSaveData;
 }
 
 SvXMLImportContext *ScXMLDataPilotTableContext::CreateChildContext( sal_uInt16 nPrefix,
@@ -315,7 +315,7 @@ const ScDPSaveDimension* getDimension(
     return nullptr;
 }
 
-ScDPOutputGeometry::FieldType toFieldType(sal_uInt16 nOrient)
+ScDPOutputGeometry::FieldType toFieldType(sheet::DataPilotFieldOrientation nOrient)
 {
     switch (nOrient)
     {
@@ -453,14 +453,14 @@ void ScXMLDataPilotTableContext::AddDimension(ScDPSaveDimension* pDim)
 void ScXMLDataPilotTableContext::AddGroupDim(const ScDPSaveNumGroupDimension& aNumGroupDim)
 {
     if (!pDPDimSaveData)
-        pDPDimSaveData = new ScDPDimensionSaveData();
+        pDPDimSaveData.reset( new ScDPDimensionSaveData );
     pDPDimSaveData->AddNumGroupDimension(aNumGroupDim);
 }
 
 void ScXMLDataPilotTableContext::AddGroupDim(const ScDPSaveGroupDimension& aGroupDim)
 {
     if (!pDPDimSaveData)
-        pDPDimSaveData = new ScDPDimensionSaveData();
+        pDPDimSaveData.reset( new ScDPDimensionSaveData );
     pDPDimSaveData->AddGroupDimension(aGroupDim);
 }
 
@@ -545,7 +545,7 @@ void ScXMLDataPilotTableContext::EndElement()
     pDPSave->SetFilterButton(bShowFilter);
     pDPSave->SetDrillDown(bDrillDown);
     if (pDPDimSaveData)
-        pDPSave->SetDimensionData(pDPDimSaveData);
+        pDPSave->SetDimensionData(pDPDimSaveData.get());
     pDPObject->SetSaveData(*pDPSave);
 
     ScDPCollection* pDPCollection = pDoc->GetDPCollection();
@@ -592,7 +592,7 @@ ScXMLDPSourceSQLContext::ScXMLDPSourceSQLContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotTableContext* pTempDataPilotTable) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotTable(pTempDataPilotTable)
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -646,7 +646,7 @@ ScXMLDPSourceTableContext::ScXMLDPSourceTableContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotTableContext* pTempDataPilotTable) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotTable(pTempDataPilotTable)
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -695,7 +695,7 @@ ScXMLDPSourceQueryContext::ScXMLDPSourceQueryContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotTableContext* pTempDataPilotTable) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotTable(pTempDataPilotTable)
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -744,7 +744,7 @@ ScXMLSourceServiceContext::ScXMLSourceServiceContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotTableContext* pTempDataPilotTable) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotTable(pTempDataPilotTable)
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -803,15 +803,10 @@ void ScXMLSourceServiceContext::EndElement()
 {
 }
 
-ScXMLImport& ScXMLDataPilotGrandTotalContext::GetScImport()
-{
-    return static_cast<ScXMLImport&>(GetImport());
-}
-
 ScXMLDataPilotGrandTotalContext::ScXMLDataPilotGrandTotalContext(
     ScXMLImport& rImport, sal_uInt16 nPrefix, const OUString& rLName, const Reference<XAttributeList>& xAttrList,
     ScXMLDataPilotTableContext* pTableContext ) :
-    SvXMLImportContext( rImport, nPrefix, rLName ),
+    ScXMLImportContext( rImport, nPrefix, rLName ),
     mpTableContext(pTableContext),
     meOrientation(NONE),
     mbVisible(false)
@@ -883,7 +878,7 @@ ScXMLSourceCellRangeContext::ScXMLSourceCellRangeContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotTableContext* pTempDataPilotTable) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotTable(pTempDataPilotTable)
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -947,16 +942,16 @@ ScXMLDataPilotFieldContext::ScXMLDataPilotFieldContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotTableContext* pTempDataPilotTable) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotTable(pTempDataPilotTable),
-    pDim(nullptr),
+    xDim(),
     fStart(0.0),
     fEnd(0.0),
     fStep(0.0),
     nUsedHierarchy(1),
     nGroupPart(0),
-    nFunction(0),
-    nOrientation(0),
+    nFunction(ScGeneralFunction::NONE),
+    nOrientation(sheet::DataPilotFieldOrientation_HIDDEN),
     bSelectedPage(false),
     bIsGroupField(false),
     bDateValue(false),
@@ -999,12 +994,12 @@ ScXMLDataPilotFieldContext::ScXMLDataPilotFieldContext( ScXMLImport& rImport,
             break;
             case XML_TOK_DATA_PILOT_FIELD_ATTR_FUNCTION :
             {
-                nFunction = (sal_Int16) ScXMLConverter::GetFunctionFromString( sValue );
+                nFunction = ScXMLConverter::GetFunctionFromString2( sValue );
             }
             break;
             case XML_TOK_DATA_PILOT_FIELD_ATTR_ORIENTATION :
             {
-                nOrientation = (sal_Int16) ScXMLConverter::GetOrientationFromString( sValue );
+                nOrientation = ScXMLConverter::GetOrientationFromString( sValue );
             }
             break;
             case XML_TOK_DATA_PILOT_FIELD_ATTR_SELECTED_PAGE :
@@ -1032,9 +1027,9 @@ ScXMLDataPilotFieldContext::ScXMLDataPilotFieldContext( ScXMLImport& rImport,
 
     if (bHasName)
     {
-        pDim = new ScDPSaveDimension(sName, bDataLayout);
+        xDim.reset(new ScDPSaveDimension(sName, bDataLayout));
         if (!aDisplayName.isEmpty())
-            pDim->SetLayoutName(aDisplayName);
+            xDim->SetLayoutName(aDisplayName);
     }
 }
 
@@ -1070,9 +1065,9 @@ SvXMLImportContext *ScXMLDataPilotFieldContext::CreateChildContext( sal_uInt16 n
 
 void ScXMLDataPilotFieldContext::AddMember(ScDPSaveMember* pMember)
 {
-    if (pDim)
+    if (xDim)
     {
-        pDim->AddMember(pMember);
+        xDim->AddMember(pMember);
         if (!pMember->GetIsVisible())
             // This member is hidden.
             mbHasHiddenMember = true;
@@ -1083,8 +1078,8 @@ void ScXMLDataPilotFieldContext::AddMember(ScDPSaveMember* pMember)
 
 void ScXMLDataPilotFieldContext::SetSubTotalName(const OUString& rName)
 {
-    if (pDim)
-        pDim->SetSubtotalName(rName);
+    if (xDim)
+        xDim->SetSubtotalName(rName);
 }
 
 void ScXMLDataPilotFieldContext::AddGroup(const ::std::vector<OUString>& rMembers, const OUString& rName)
@@ -1097,16 +1092,16 @@ void ScXMLDataPilotFieldContext::AddGroup(const ::std::vector<OUString>& rMember
 
 void ScXMLDataPilotFieldContext::EndElement()
 {
-    if (pDim)
+    if (xDim)
     {
-        pDim->SetUsedHierarchy(nUsedHierarchy);
-        pDim->SetFunction(nFunction);
-        pDim->SetOrientation(nOrientation);
+        xDim->SetUsedHierarchy(nUsedHierarchy);
+        xDim->SetFunction(nFunction);
+        xDim->SetOrientation(nOrientation);
         if (bSelectedPage)
         {
-            pDataPilotTable->SetSelectedPage(pDim->GetName(), sSelectedPage);
+            pDataPilotTable->SetSelectedPage(xDim->GetName(), sSelectedPage);
         }
-        pDataPilotTable->AddDimension(pDim);
+        pDataPilotTable->AddDimension(xDim.release());
         if (bIsGroupField)
         {
             ScDPNumGroupInfo aInfo;
@@ -1157,7 +1152,7 @@ ScXMLDataPilotFieldReferenceContext::ScXMLDataPilotFieldReferenceContext( ScXMLI
                         const OUString& rLName,
                         const uno::Reference<xml::sax::XAttributeList>& xAttrList,
                         ScXMLDataPilotFieldContext* pDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName )
+    ScXMLImportContext( rImport, nPrfx, rLName )
 {
     sheet::DataPilotFieldReference aReference;
 
@@ -1224,7 +1219,7 @@ ScXMLDataPilotLevelContext::ScXMLDataPilotLevelContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotFieldContext* pTempDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotField(pTempDataPilotField)
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -1297,7 +1292,7 @@ ScXMLDataPilotDisplayInfoContext::ScXMLDataPilotDisplayInfoContext( ScXMLImport&
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDataPilotFieldContext* pDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName )
+    ScXMLImportContext( rImport, nPrfx, rLName )
 {
     sheet::DataPilotFieldAutoShowInfo aInfo;
 
@@ -1347,7 +1342,7 @@ ScXMLDataPilotSortInfoContext::ScXMLDataPilotSortInfoContext( ScXMLImport& rImpo
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDataPilotFieldContext* pDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName )
+    ScXMLImportContext( rImport, nPrfx, rLName )
 {
     sheet::DataPilotFieldSortInfo aInfo;
 
@@ -1395,7 +1390,7 @@ ScXMLDataPilotLayoutInfoContext::ScXMLDataPilotLayoutInfoContext( ScXMLImport& r
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDataPilotFieldContext* pDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName )
+    ScXMLImportContext( rImport, nPrfx, rLName )
 {
     sheet::DataPilotFieldLayoutInfo aInfo;
 
@@ -1439,10 +1434,8 @@ ScXMLDataPilotSubTotalsContext::ScXMLDataPilotSubTotalsContext( ScXMLImport& rIm
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& /* xAttrList */,
                                       ScXMLDataPilotFieldContext* pTempDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
-    pDataPilotField(pTempDataPilotField),
-    nFunctionCount(0),
-    pFunctions(nullptr)
+    ScXMLImportContext( rImport, nPrfx, rLName ),
+    pDataPilotField(pTempDataPilotField)
 {
 
     // has no attributes
@@ -1450,7 +1443,6 @@ ScXMLDataPilotSubTotalsContext::ScXMLDataPilotSubTotalsContext( ScXMLImport& rIm
 
 ScXMLDataPilotSubTotalsContext::~ScXMLDataPilotSubTotalsContext()
 {
-    delete[] pFunctions;
 }
 
 SvXMLImportContext *ScXMLDataPilotSubTotalsContext::CreateChildContext( sal_uInt16 nPrefix,
@@ -1475,29 +1467,14 @@ SvXMLImportContext *ScXMLDataPilotSubTotalsContext::CreateChildContext( sal_uInt
 
 void ScXMLDataPilotSubTotalsContext::EndElement()
 {
-    pDataPilotField->SetSubTotals(pFunctions, nFunctionCount);
+    pDataPilotField->SetSubTotals(maFunctions);
     if (!maDisplayName.isEmpty())
         pDataPilotField->SetSubTotalName(maDisplayName);
 }
 
-void ScXMLDataPilotSubTotalsContext::AddFunction(sal_Int16 nFunction)
+void ScXMLDataPilotSubTotalsContext::AddFunction(ScGeneralFunction nFunction)
 {
-    if (nFunctionCount)
-    {
-        ++nFunctionCount;
-        sal_uInt16* pTemp = new sal_uInt16[nFunctionCount];
-        for (sal_Int16 i = 0; i < nFunctionCount - 1; ++i)
-            pTemp[i] = pFunctions[i];
-        pTemp[nFunctionCount - 1] = nFunction;
-        delete[] pFunctions;
-        pFunctions = pTemp;
-    }
-    else
-    {
-        nFunctionCount = 1;
-        pFunctions = new sal_uInt16[nFunctionCount];
-        pFunctions[0] = nFunction;
-    }
+    maFunctions.push_back(nFunction);
 }
 
 void ScXMLDataPilotSubTotalsContext::SetDisplayName(const OUString& rName)
@@ -1510,7 +1487,7 @@ ScXMLDataPilotSubTotalContext::ScXMLDataPilotSubTotalContext( ScXMLImport& rImpo
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotSubTotalsContext* pTempDataPilotSubTotals) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotSubTotals(pTempDataPilotSubTotals)
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -1527,8 +1504,7 @@ ScXMLDataPilotSubTotalContext::ScXMLDataPilotSubTotalContext( ScXMLImport& rImpo
         {
             case XML_TOK_DATA_PILOT_SUBTOTAL_ATTR_FUNCTION :
             {
-                pDataPilotSubTotals->AddFunction( sal::static_int_cast<sal_Int16>(
-                                ScXMLConverter::GetFunctionFromString( sValue ) ) );
+                pDataPilotSubTotals->AddFunction( ScXMLConverter::GetFunctionFromString2( sValue ) );
             }
             break;
             case XML_TOK_DATA_PILOT_SUBTOTAL_ATTR_DISPLAY_NAME:
@@ -1559,7 +1535,7 @@ ScXMLDataPilotMembersContext::ScXMLDataPilotMembersContext( ScXMLImport& rImport
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& /* xAttrList */,
                                       ScXMLDataPilotFieldContext* pTempDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotField(pTempDataPilotField)
 {
     // has no attributes
@@ -1599,7 +1575,7 @@ ScXMLDataPilotMemberContext::ScXMLDataPilotMemberContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotFieldContext* pTempDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotField(pTempDataPilotField),
     bDisplay( true ),
     bDisplayDetails( true ),
@@ -1672,7 +1648,7 @@ ScXMLDataPilotGroupsContext::ScXMLDataPilotGroupsContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotFieldContext* pTempDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotField(pTempDataPilotField)
 {
     OUString                sGroupSource;
@@ -1795,7 +1771,7 @@ ScXMLDataPilotGroupContext::ScXMLDataPilotGroupContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotFieldContext* pTempDataPilotField) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotField(pTempDataPilotField)
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -1847,7 +1823,7 @@ ScXMLDataPilotGroupMemberContext::ScXMLDataPilotGroupMemberContext( ScXMLImport&
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDataPilotGroupContext* pTempDataPilotGroup) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     pDataPilotGroup(pTempDataPilotGroup)
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;

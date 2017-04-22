@@ -85,25 +85,49 @@ void LifecycleTest::testMultiDispose()
     xWin->disposeOnce();
     xWin->disposeOnce();
     xWin->disposeOnce();
-    CPPUNIT_ASSERT(xWin->GetWindow(GetWindowType::Parent) == nullptr);
-    CPPUNIT_ASSERT(xWin->GetChild(0) == nullptr);
-    CPPUNIT_ASSERT(xWin->GetChildCount() == 0);
+    CPPUNIT_ASSERT(!xWin->GetWindow(GetWindowType::Parent));
+    CPPUNIT_ASSERT(!xWin->GetChild(0));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(0), xWin->GetChildCount());
 }
 
 void LifecycleTest::testWidgets(vcl::Window *pParent)
 {
-    { ScopedVclPtrInstance< PushButton > aPtr( pParent );   }
-    { ScopedVclPtrInstance< OKButton > aPtr( pParent );     }
-    { ScopedVclPtrInstance< CancelButton > aPtr( pParent ); }
-    { ScopedVclPtrInstance< HelpButton > aPtr( pParent );   }
+    {
+        ScopedVclPtrInstance< PushButton > aPtr( pParent );
+        (void)aPtr; // silence unused variable warning
+    }
+    {
+        ScopedVclPtrInstance< OKButton > aPtr( pParent );
+        (void)aPtr; // silence unused variable warning
+    }
+    {
+        ScopedVclPtrInstance< CancelButton > aPtr( pParent );
+        (void)aPtr; // silence unused variable warning
+    }
+    {
+        ScopedVclPtrInstance< HelpButton > aPtr( pParent );
+        (void)aPtr; // silence unused variable warning
+    }
 
     // Some widgets really insist on adoption.
     if (pParent)
     {
-        { ScopedVclPtrInstance< CheckBox > aPtr( pParent );     }
-        { ScopedVclPtrInstance< Edit > aPtr( pParent );         }
-        { ScopedVclPtrInstance< ComboBox > aPtr( pParent );     }
-        { ScopedVclPtrInstance< RadioButton > aPtr( pParent );  }
+        {
+            ScopedVclPtrInstance< CheckBox > aPtr( pParent );
+            (void)aPtr; // silence unused variable warning
+        }
+        {
+            ScopedVclPtrInstance< Edit > aPtr( pParent );
+            (void)aPtr; // silence unused variable warning
+        }
+        {
+            ScopedVclPtrInstance< ComboBox > aPtr( pParent );
+            (void)aPtr; // silence unused variable warning
+        }
+        {
+            ScopedVclPtrInstance< RadioButton > aPtr( pParent );
+            (void)aPtr; // silence unused variable warning
+        }
     }
 }
 
@@ -124,7 +148,7 @@ class DisposableChild : public vcl::Window
 {
 public:
     explicit DisposableChild(vcl::Window *pParent) : vcl::Window(pParent) {}
-    virtual ~DisposableChild()
+    virtual ~DisposableChild() override
     {
         disposeOnce();
     }
@@ -166,7 +190,7 @@ public:
     {
         return false;
     }
-    virtual bool Notify( NotifyEvent& ) override
+    virtual bool EventNotify( NotifyEvent& ) override
     {
         return false;
     }
@@ -187,7 +211,7 @@ void LifecycleTest::testFocus()
     xWin->Show();
     xChild->GrabFocus();
     // process asynchronous ToTop
-    Scheduler::ProcessTaskScheduling(false);
+    Scheduler::ProcessTaskScheduling( true );
     // FIXME: really awful to test focus issues without showing windows.
     // CPPUNIT_ASSERT(xChild->HasFocus());
 }

@@ -37,6 +37,8 @@
 #include <algorithm>
 #include <functional>
 
+#include <com/sun/star/form/binding/IncompatibleTypesException.hpp>
+#include <com/sun/star/form/binding/InvalidBindingStateException.hpp>
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/xml/dom/XNodeList.hpp>
 #include <com/sun/star/xml/dom/XNode.hpp>
@@ -70,8 +72,6 @@ using com::sun::star::form::binding::InvalidBindingStateException;
 using com::sun::star::form::binding::XValueBinding;
 using com::sun::star::lang::EventObject;
 using com::sun::star::lang::IndexOutOfBoundsException;
-using com::sun::star::lang::NoSupportException;
-using com::sun::star::lang::NullPointerException;
 using com::sun::star::lang::XUnoTunnel;
 using com::sun::star::uno::Any;
 using com::sun::star::uno::Reference;
@@ -93,7 +93,7 @@ using com::sun::star::xml::dom::events::XEventTarget;
 using com::sun::star::xsd::XDataType;
 
 
-#define EXCEPT(msg) OUString(msg),static_cast<XValueBinding*>(this)
+#define EXCEPT(msg) msg,static_cast<XValueBinding*>(this)
 
 #define HANDLE_BindingID 0
 #define HANDLE_BindingExpression 1
@@ -450,17 +450,9 @@ bool Binding::getExternalData() const
 
 
 void Binding::checkLive()
-    throw( RuntimeException )
 {
     if( ! isLive() )
         throw RuntimeException( EXCEPT("Binding not initialized") );
-}
-
-void Binding::checkModel()
-    throw( RuntimeException )
-{
-    if( ! mxModel.is() )
-        throw RuntimeException( EXCEPT("Binding has no Model") );
 }
 
 bool Binding::isLive() const
@@ -548,7 +540,8 @@ static void lcl_removeListenerFromNode( const Reference<XNode>& xNode,
 
 void Binding::bind( bool bForceRebind )
 {
-    checkModel();
+    if( ! mxModel.is() )
+        throw RuntimeException( EXCEPT("Binding has no Model") );
 
     // bind() will evaluate this binding as follows:
     // 1) evaluate the binding expression
@@ -1000,20 +993,16 @@ void Binding::_checkBindingID()
 
 
 css::uno::Sequence<css::uno::Type> Binding::getSupportedValueTypes()
-    throw( RuntimeException, std::exception )
 {
     return Convert::get().getTypes();
 }
 
 sal_Bool Binding::supportsType( const css::uno::Type& rType )
-    throw( RuntimeException, std::exception )
 {
     return Convert::get().hasType( rType );
 }
 
 css::uno::Any Binding::getValue( const css::uno::Type& rType )
-    throw( IncompatibleTypesException,
-           RuntimeException, std::exception )
 {
     // first, check for model
     checkLive();
@@ -1034,10 +1023,6 @@ css::uno::Any Binding::getValue( const css::uno::Type& rType )
 }
 
 void Binding::setValue( const css::uno::Any& aValue )
-    throw( IncompatibleTypesException,
-           InvalidBindingStateException,
-           NoSupportException,
-           RuntimeException, std::exception )
 {
     // first, check for model
     checkLive();
@@ -1068,7 +1053,6 @@ void Binding::setValue( const css::uno::Any& aValue )
 
 
 sal_Int32 Binding::getListEntryCount()
-    throw( RuntimeException, std::exception )
 {
     // first, check for model
     checkLive();
@@ -1103,8 +1087,6 @@ static OUString lcl_getString( const Reference<XNode>& xNode )
 }
 
 OUString Binding::getListEntry( sal_Int32 nPosition )
-    throw( IndexOutOfBoundsException,
-           RuntimeException, std::exception )
 {
     // first, check for model
     checkLive();
@@ -1117,7 +1099,6 @@ OUString Binding::getListEntry( sal_Int32 nPosition )
 }
 
 Sequence<OUString> Binding::getAllListEntries()
-    throw( RuntimeException, std::exception )
 {
     // first, check for model
     checkLive();
@@ -1135,8 +1116,6 @@ Sequence<OUString> Binding::getAllListEntries()
 }
 
 void Binding::addListEntryListener( const css::uno::Reference<css::form::binding::XListEntryListener>& xListener )
-    throw( NullPointerException,
-           RuntimeException, std::exception )
 {
     OSL_ENSURE( xListener.is(), "need listener!" );
     if( ::std::find( maListEntryListeners.begin(),
@@ -1147,8 +1126,6 @@ void Binding::addListEntryListener( const css::uno::Reference<css::form::binding
 }
 
 void Binding::removeListEntryListener( const css::uno::Reference<css::form::binding::XListEntryListener>& xListener )
-    throw( NullPointerException,
-           RuntimeException, std::exception )
 {
     XListEntryListeners_t::iterator aIter =
         ::std::find( maListEntryListeners.begin(), maListEntryListeners.end(),
@@ -1162,7 +1139,6 @@ void Binding::removeListEntryListener( const css::uno::Reference<css::form::bind
 
 
 sal_Bool Binding::isValid( const css::uno::Any& )
-    throw( RuntimeException, std::exception )
 {
     // first, check for model
     checkLive();
@@ -1173,7 +1149,6 @@ sal_Bool Binding::isValid( const css::uno::Any& )
 
 OUString Binding::explainInvalid(
     const css::uno::Any& /*Value*/ )
-    throw( RuntimeException, std::exception )
 {
     // first, check for model
     checkLive();
@@ -1184,8 +1159,6 @@ OUString Binding::explainInvalid(
 
 void Binding::addValidityConstraintListener(
     const css::uno::Reference<css::form::validation::XValidityConstraintListener>& xListener )
-    throw( NullPointerException,
-           RuntimeException, std::exception )
 {
     OSL_ENSURE( xListener.is(), "need listener!" );
     if( ::std::find(maValidityListeners.begin(), maValidityListeners.end(), xListener)
@@ -1195,8 +1168,6 @@ void Binding::addValidityConstraintListener(
 
 void Binding::removeValidityConstraintListener(
     const css::uno::Reference<css::form::validation::XValidityConstraintListener>& xListener )
-    throw( NullPointerException,
-           RuntimeException, std::exception )
 {
     XValidityConstraintListeners_t::iterator aIter =
         ::std::find( maValidityListeners.begin(), maValidityListeners.end(),
@@ -1210,7 +1181,6 @@ void Binding::removeValidityConstraintListener(
 
 
 void Binding::handleEvent( const css::uno::Reference<css::xml::dom::events::XEvent>& xEvent )
-    throw( RuntimeException, std::exception )
 {
     OUString sType(xEvent->getType());
     //OUString sEventMIPChanged("xforms-generic");
@@ -1218,7 +1188,7 @@ void Binding::handleEvent( const css::uno::Reference<css::xml::dom::events::XEve
     if(sType == "xforms-generic") {
 
         // the modification of the 'mnDeferModifyNotifications'-member
-        // is necessary to prevent infinite notication looping.
+        // is necessary to prevent infinite notification looping.
         // This can happened in case the binding which caused
         // the notification chain is listening to those events
         // as well...
@@ -1242,7 +1212,6 @@ void Binding::handleEvent( const css::uno::Reference<css::xml::dom::events::XEve
 
 
 sal_Int64 Binding::getSomething( const css::uno::Sequence<sal_Int8>& xId )
-    throw( RuntimeException, std::exception )
 {
     return reinterpret_cast<sal_Int64>( ( xId == getUnoTunnelID() ) ? this : nullptr );
 }
@@ -1252,7 +1221,6 @@ sal_Int64 Binding::getSomething( const css::uno::Sequence<sal_Int8>& xId )
 
 
 css::uno::Reference<css::util::XCloneable> SAL_CALL Binding::createClone()
-    throw( RuntimeException, std::exception )
 {
     Reference< XPropertySet > xClone;
 
@@ -1281,7 +1249,7 @@ css::uno::Reference<css::util::XCloneable> SAL_CALL Binding::createClone()
 
 #define REGISTER_BOOL_PROPERTY_RO( property )   \
     registerProperty( PROPERTY_RO( property, sal_Bool ), \
-    new BooleanPropertyAccessor< Binding, bool >( this, nullptr, &Binding::get##property ) );
+    new BooleanPropertyAccessor< Binding >( this, nullptr, &Binding::get##property ) );
 
 void Binding::initializePropertySet()
 {
@@ -1308,7 +1276,6 @@ void Binding::initializePropertySet()
 
 void Binding::addModifyListener(
     const css::uno::Reference<css::util::XModifyListener>& xListener )
-    throw( RuntimeException, std::exception )
 {
     OSL_ENSURE( xListener.is(), "need listener!" );
     if( ::std::find( maModifyListeners.begin(), maModifyListeners.end(), xListener )
@@ -1323,7 +1290,6 @@ void Binding::addModifyListener(
 
 void Binding::removeModifyListener(
     const css::uno::Reference<css::util::XModifyListener>& xListener )
-    throw( RuntimeException, std::exception )
 {
     ModifyListeners_t::iterator aIter =
         ::std::find( maModifyListeners.begin(), maModifyListeners.end(), xListener );
@@ -1333,13 +1299,11 @@ void Binding::removeModifyListener(
 
 
 OUString Binding::getName()
-    throw( RuntimeException, std::exception )
 {
     return getBindingID();
 }
 
 void SAL_CALL Binding::setName( const OUString& rName )
-    throw( RuntimeException, std::exception )
 {
     // use the XPropertySet methods, so the change in the name is notified to the
     // property listeners

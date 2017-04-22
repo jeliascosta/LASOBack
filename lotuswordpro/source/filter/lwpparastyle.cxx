@@ -82,22 +82,12 @@
 #include "lwpsilverbullet.hxx"
 
 LwpParaStyle::LwpParaStyle(LwpObjectHeader& objHdr, LwpSvStream* pStrm) :
-LwpTextStyle(objHdr, pStrm), m_pKinsokuOptsOverride(new LwpKinsokuOptsOverride),
-m_pBulletOverride(new LwpBulletOverride)
+LwpTextStyle(objHdr, pStrm)
 {
 }
 
 LwpParaStyle::~LwpParaStyle()
 {
-    if (m_pKinsokuOptsOverride)
-    {
-        delete m_pKinsokuOptsOverride;
-    }
-
-    if (m_pBulletOverride)
-    {
-        delete m_pBulletOverride;
-    }
 }
 
 void LwpParaStyle::Read()
@@ -108,43 +98,43 @@ void LwpParaStyle::Read()
     {
         // read many overrides
         LwpAlignmentOverride    aAlignOverride;
-        aAlignOverride.Read(m_pObjStrm);
+        aAlignOverride.Read(m_pObjStrm.get());
 
         LwpSpacingOverride  aSpacingOverride;
-        aSpacingOverride.Read(m_pObjStrm);
+        aSpacingOverride.Read(m_pObjStrm.get());
 
         LwpIndentOverride       aIndentOverride;
-        aIndentOverride.Read(m_pObjStrm);
+        aIndentOverride.Read(m_pObjStrm.get());
 
         LwpParaBorderOverride   aPBOverride;
-        aPBOverride.Read(m_pObjStrm);
+        aPBOverride.Read(m_pObjStrm.get());
 
         LwpBreaksOverride   aBreaksOverride;
-        aBreaksOverride.Read(m_pObjStrm);
+        aBreaksOverride.Read(m_pObjStrm.get());
 
         LwpNumberingOverride    aNumberingOverride;
-        aNumberingOverride.Read(m_pObjStrm);
+        aNumberingOverride.Read(m_pObjStrm.get());
 
         LwpTabOverride      aTabOverride;
-        aTabOverride.Read(m_pObjStrm);
+        aTabOverride.Read(m_pObjStrm.get());
 
     }
     else
     {
-        m_AlignmentStyle.ReadIndexed(m_pObjStrm);
-        m_SpacingStyle.ReadIndexed(m_pObjStrm);
-        m_IndentStyle.ReadIndexed(m_pObjStrm);
-        m_BorderStyle.ReadIndexed(m_pObjStrm);
-        m_BreaksStyle.ReadIndexed(m_pObjStrm);
-        m_NumberingStyle.ReadIndexed(m_pObjStrm);
-        m_TabStyle.ReadIndexed(m_pObjStrm);
+        m_AlignmentStyle.ReadIndexed(m_pObjStrm.get());
+        m_SpacingStyle.ReadIndexed(m_pObjStrm.get());
+        m_IndentStyle.ReadIndexed(m_pObjStrm.get());
+        m_BorderStyle.ReadIndexed(m_pObjStrm.get());
+        m_BreaksStyle.ReadIndexed(m_pObjStrm.get());
+        m_NumberingStyle.ReadIndexed(m_pObjStrm.get());
+        m_TabStyle.ReadIndexed(m_pObjStrm.get());
 
-        m_pKinsokuOptsOverride->Read(m_pObjStrm);
-        m_pBulletOverride->Read(m_pObjStrm);
+        m_KinsokuOptsOverride.Read(m_pObjStrm.get());
+        m_BulletOverride.Read(m_pObjStrm.get());
 
         if (m_pObjStrm->CheckExtra())
         {
-            m_BackgroundStyle.ReadIndexed(m_pObjStrm);
+            m_BackgroundStyle.ReadIndexed(m_pObjStrm.get());
             m_pObjStrm->SkipExtra();
         }
 
@@ -172,7 +162,7 @@ void LwpParaStyle::Apply(XFParaStyle *pParaStyle)
         LwpIndentOverride   *pIndent = dynamic_cast<LwpIndentOverride*>(pPiece->GetOverride());
         if( pIndent )
         {
-            if (!m_pBulletOverride->IsInValid())// for remove bullet indent in named bullet style
+            if (!m_BulletOverride.IsInValid())// for remove bullet indent in named bullet style
             {
                 std::unique_ptr<LwpIndentOverride> pNewIndent(pIndent->clone());
                 pNewIndent->SetMFirst(0);
@@ -346,7 +336,7 @@ void LwpParaStyle::ApplyParaBorder(XFParaStyle* pParaStyle, LwpParaBorderOverrid
         // apply 4 borders respectively
         LwpBorderStuff::BorderType pType[] = { LwpBorderStuff::LEFT, LwpBorderStuff::RIGHT,
             LwpBorderStuff::TOP, LwpBorderStuff::BOTTOM };
-        float pMarginValue[4];
+        float pMarginValue[4] = { 0.0, 0.0, 0.0, 0.0 };
 
         for (sal_uInt8 nC = 0; nC < 4; nC++)
         {
@@ -666,23 +656,23 @@ void LwpParaStyle::RegisterStyle()
     if (!m_pFoundry)
         throw std::runtime_error("missing Foundry");
 
-    XFParaStyle* pStyle = new XFParaStyle();
+    std::unique_ptr<XFParaStyle> xStyle(new XFParaStyle());
 
     //Set name
     OUString styleName = GetName().str();
-    pStyle->SetStyleName(styleName);
+    xStyle->SetStyleName(styleName);
 
     //Create font
     LwpFontManager& rFontMgr = m_pFoundry->GetFontManger();
     rtl::Reference<XFFont> pFont = rFontMgr.CreateFont(m_nFinalFontID);
-    pStyle->SetFont(pFont);
+    xStyle->SetFont(pFont);
 
     //Set other paragraph properties...
 
-    Apply(pStyle);
+    Apply(xStyle.get());
     //Add style
     LwpStyleManager* pStyleMgr = m_pFoundry->GetStyleManager();
-    pStyleMgr->AddStyle(GetObjectID(), pStyle);
+    pStyleMgr->AddStyle(GetObjectID(), xStyle.release());
 }
 
 LwpAlignmentOverride* LwpParaStyle::GetAlignment()

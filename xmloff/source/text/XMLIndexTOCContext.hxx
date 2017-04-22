@@ -54,9 +54,6 @@ enum IndexTypeEnum
  */
 class XMLIndexTOCContext : public SvXMLImportContext
 {
-    const OUString sIsProtected;
-    const OUString sName;
-
     /** XPropertySet of the index */
     css::uno::Reference<css::beans::XPropertySet> xTOCPropertySet;
 
@@ -74,7 +71,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLocalName );
 
-    virtual ~XMLIndexTOCContext();
+    virtual ~XMLIndexTOCContext() override;
 
 protected:
 

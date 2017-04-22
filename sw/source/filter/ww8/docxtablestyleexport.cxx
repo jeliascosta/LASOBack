@@ -684,15 +684,13 @@ void DocxTableStyleExport::SetSerializer(const sax_fastparser::FSHelperPtr& pSer
     m_pImpl->m_pSerializer = pSerializer;
 }
 
-DocxTableStyleExport::DocxTableStyleExport(SwDoc* pDoc, sax_fastparser::FSHelperPtr pSerializer)
+DocxTableStyleExport::DocxTableStyleExport(SwDoc* pDoc, const sax_fastparser::FSHelperPtr& pSerializer)
     : m_pImpl(o3tl::make_unique<Impl>())
 {
     m_pImpl->m_pDoc = pDoc;
     m_pImpl->m_pSerializer = pSerializer;
 }
 
-DocxTableStyleExport::~DocxTableStyleExport()
-{
-}
+DocxTableStyleExport::~DocxTableStyleExport() = default;
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

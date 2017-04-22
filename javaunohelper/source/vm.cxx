@@ -54,11 +54,9 @@ public:
 
     // XSingleComponentFactory impl
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithContext(
-        css::uno::Reference< css::uno::XComponentContext > const & xContext )
-        throw (css::uno::Exception, std::exception) override;
+        css::uno::Reference< css::uno::XComponentContext > const & xContext ) override;
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArgumentsAndContext(
-        css::uno::Sequence< css::uno::Any > const & args, css::uno::Reference< css::uno::XComponentContext > const & xContext )
-        throw (css::uno::Exception, std::exception) override;
+        css::uno::Sequence< css::uno::Any > const & args, css::uno::Reference< css::uno::XComponentContext > const & xContext ) override;
 };
 
 void SingletonFactory::disposing()
@@ -68,14 +66,9 @@ void SingletonFactory::disposing()
 
 css::uno::Reference< css::uno::XInterface > SingletonFactory::createInstanceWithContext(
     css::uno::Reference< css::uno::XComponentContext > const & xContext )
-    throw (css::uno::Exception, std::exception)
 {
     sal_Int64 handle = reinterpret_cast< sal_Int64 >( m_vm_access.get() );
-    css::uno::Any arg(
-        css::uno::makeAny(
-            css::beans::NamedValue(
-                OUString( "UnoVirtualMachine" ),
-                css::uno::makeAny( handle ) ) ) );
+    css::uno::Any arg( css::beans::NamedValue( "UnoVirtualMachine", css::uno::makeAny( handle ) ) );
     return xContext->getServiceManager()->createInstanceWithArgumentsAndContext(
         "com.sun.star.java.JavaVirtualMachine",
         css::uno::Sequence< css::uno::Any >( &arg, 1 ), xContext );
@@ -83,7 +76,6 @@ css::uno::Reference< css::uno::XInterface > SingletonFactory::createInstanceWith
 
 css::uno::Reference< css::uno::XInterface > SingletonFactory::createInstanceWithArgumentsAndContext(
     css::uno::Sequence< css::uno::Any > const & args, css::uno::Reference< css::uno::XComponentContext > const & xContext )
-    throw (css::uno::Exception, std::exception)
 {
     return xContext->getServiceManager()->createInstanceWithArgumentsAndContext(
         "com.sun.star.java.JavaVirtualMachine",
@@ -115,7 +107,7 @@ css::uno::Reference< css::uno::XComponentContext > install_vm_singleton(
 {
     css::uno::Reference< css::lang::XSingleComponentFactory > xFac( new SingletonFactory( vm_access ) );
     ::cppu::ContextEntry_Init entry(
-        OUString("/singletons/com.sun.star.java.theJavaVirtualMachine"),
+        "/singletons/com.sun.star.java.theJavaVirtualMachine",
         css::uno::makeAny( xFac ), true );
     return ::cppu::createComponentContext( &entry, 1, xContext );
 }

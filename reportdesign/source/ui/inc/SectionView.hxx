@@ -43,13 +43,13 @@ private:
 public:
 
     OSectionView( SdrModel* pModel, OReportSection* _pSectionWindow, OReportWindow* pEditor );
-    virtual ~OSectionView();
+    virtual ~OSectionView() override;
 
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
     virtual void MarkListHasChanged() override;
-    virtual void MakeVisible( const Rectangle& rRect, vcl::Window& rWin ) override;
+    virtual void MakeVisible( const tools::Rectangle& rRect, vcl::Window& rWin ) override;
 
-    inline OReportSection*  getReportSection() const { return m_pSectionWindow; }
+    OReportSection*  getReportSection() const { return m_pSectionWindow; }
 
     // switch the marked objects to the given layer.
     void SetMarkedToLayer( SdrLayerID nLayerNo );

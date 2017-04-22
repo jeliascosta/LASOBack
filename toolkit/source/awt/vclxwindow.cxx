@@ -76,7 +76,6 @@ using ::com::sun::star::style::VerticalAlignment;
 using ::com::sun::star::style::VerticalAlignment_TOP;
 using ::com::sun::star::style::VerticalAlignment_MIDDLE;
 using ::com::sun::star::style::VerticalAlignment_BOTTOM;
-using ::com::sun::star::style::VerticalAlignment_MAKE_FIXED_SIZE;
 
 namespace WritingMode2 = ::com::sun::star::text::WritingMode2;
 
@@ -118,11 +117,12 @@ public:
     bool                                mbSynthesizingVCLEvent  : 1;
     bool                                mbWithDefaultProps      : 1;
 
-    sal_uLong                               mnListenerLockLevel;
+    sal_uLong                           mnListenerLockLevel;
     sal_Int16                           mnWritingMode;
     sal_Int16                           mnContextWritingMode;
 
-    UnoPropertyArrayHelper*             mpPropHelper;
+    std::unique_ptr<UnoPropertyArrayHelper>
+                                        mpPropHelper;
 
     css::uno::Reference< css::awt::XPointer >
                                         mxPointer;
@@ -164,7 +164,7 @@ public:
     */
     void    disposing();
 
-    inline ::toolkit::AccessibilityClient& getAccessibleFactory()
+    ::toolkit::AccessibilityClient& getAccessibleFactory()
     {
         return maAccFactory;
     }
@@ -173,22 +173,20 @@ public:
 
     /** returns the container of registered XWindowListener2 listeners
     */
-    inline ::comphelper::OInterfaceContainerHelper2&   getWindow2Listeners()       { return maWindow2Listeners; }
-    inline ::comphelper::OInterfaceContainerHelper2&   getDockableWindowListeners(){ return maDockableWindowListeners; }
-    inline EventListenerMultiplexer&            getEventListeners()         { return maEventListeners; }
-    inline FocusListenerMultiplexer&            getFocusListeners()         { return maFocusListeners; }
-    inline WindowListenerMultiplexer&           getWindowListeners()        { return maWindowListeners; }
-    inline KeyListenerMultiplexer&              getKeyListeners()           { return maKeyListeners; }
-    inline MouseListenerMultiplexer&            getMouseListeners()         { return maMouseListeners; }
-    inline MouseMotionListenerMultiplexer&      getMouseMotionListeners()   { return maMouseMotionListeners; }
-    inline PaintListenerMultiplexer&            getPaintListeners()         { return maPaintListeners; }
-    inline VclContainerListenerMultiplexer&     getContainerListeners()     { return maContainerListeners; }
-    inline TopWindowListenerMultiplexer&        getTopWindowListeners()     { return maTopWindowListeners; }
-
-    ~VCLXWindowImpl();
+    ::comphelper::OInterfaceContainerHelper2&   getWindow2Listeners()       { return maWindow2Listeners; }
+    ::comphelper::OInterfaceContainerHelper2&   getDockableWindowListeners(){ return maDockableWindowListeners; }
+    EventListenerMultiplexer&            getEventListeners()         { return maEventListeners; }
+    FocusListenerMultiplexer&            getFocusListeners()         { return maFocusListeners; }
+    WindowListenerMultiplexer&           getWindowListeners()        { return maWindowListeners; }
+    KeyListenerMultiplexer&              getKeyListeners()           { return maKeyListeners; }
+    MouseListenerMultiplexer&            getMouseListeners()         { return maMouseListeners; }
+    MouseMotionListenerMultiplexer&      getMouseMotionListeners()   { return maMouseMotionListeners; }
+    PaintListenerMultiplexer&            getPaintListeners()         { return maPaintListeners; }
+    VclContainerListenerMultiplexer&     getContainerListeners()     { return maContainerListeners; }
+    TopWindowListenerMultiplexer&        getTopWindowListeners()     { return maTopWindowListeners; }
 
 private:
-    DECL_LINK_TYPED( OnProcessCallbacks, void*, void );
+    DECL_LINK( OnProcessCallbacks, void*, void );
 };
 
 
@@ -221,12 +219,6 @@ VCLXWindowImpl::VCLXWindowImpl( VCLXWindow& _rAntiImpl, bool _bWithDefaultProps 
     ,mpPropHelper( nullptr )
 {
 }
-
-VCLXWindowImpl::~VCLXWindowImpl()
-{
-    delete mpPropHelper;
-}
-
 
 void VCLXWindowImpl::disposing()
 {
@@ -271,7 +263,7 @@ void VCLXWindowImpl::callBackAsync( const VCLXWindow::Callback& i_callback )
 }
 
 
-IMPL_LINK_NOARG_TYPED(VCLXWindowImpl, OnProcessCallbacks, void*, void)
+IMPL_LINK_NOARG(VCLXWindowImpl, OnProcessCallbacks, void*, void)
 {
     const Reference< uno::XInterface > xKeepAlive( mrAntiImpl );
 
@@ -401,7 +393,7 @@ void VCLXWindow::notifyWindowRemoved( vcl::Window& _rWindow )
     }
 }
 
-IMPL_LINK_TYPED( VCLXWindow, WindowEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( VCLXWindow, WindowEventListener, VclWindowEvent&, rEvent, void )
 {
     if ( mpImpl->mnListenerLockLevel )
         return;
@@ -438,31 +430,31 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
 
     switch ( rVclWindowEvent.GetId() )
     {
-        case VCLEVENT_WINDOW_ENABLED:
-        case VCLEVENT_WINDOW_DISABLED:
+        case VclEventId::WindowEnabled:
+        case VclEventId::WindowDisabled:
         {
             Callback aCallback = CallWindow2Listener(
                 mpImpl->getWindow2Listeners(),
-                ( VCLEVENT_WINDOW_ENABLED == rVclWindowEvent.GetId() ),
+                ( VclEventId::WindowEnabled == rVclWindowEvent.GetId() ),
                 EventObject( *this )
             );
             ImplExecuteAsyncWithoutSolarLock( aCallback );
         }
         break;
 
-        case VCLEVENT_WINDOW_PAINT:
+        case VclEventId::WindowPaint:
         {
             if ( mpImpl->getPaintListeners().getLength() )
             {
                 css::awt::PaintEvent aEvent;
                 aEvent.Source = static_cast<cppu::OWeakObject*>(this);
-                aEvent.UpdateRect = AWTRectangle( *static_cast<Rectangle*>(rVclWindowEvent.GetData()) );
+                aEvent.UpdateRect = AWTRectangle( *static_cast<tools::Rectangle*>(rVclWindowEvent.GetData()) );
                 aEvent.Count = 0;
                 mpImpl->getPaintListeners().windowPaint( aEvent );
             }
         }
         break;
-        case VCLEVENT_WINDOW_MOVE:
+        case VclEventId::WindowMove:
         {
             if ( mpImpl->getWindowListeners().getLength() )
             {
@@ -473,7 +465,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_RESIZE:
+        case VclEventId::WindowResize:
         {
             if ( mpImpl->getWindowListeners().getLength() )
             {
@@ -484,7 +476,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_SHOW:
+        case VclEventId::WindowShow:
         {
             if ( mpImpl->getWindowListeners().getLength() )
             {
@@ -503,7 +495,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_HIDE:
+        case VclEventId::WindowHide:
         {
             if ( mpImpl->getWindowListeners().getLength() )
             {
@@ -522,7 +514,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_ACTIVATE:
+        case VclEventId::WindowActivate:
         {
             if ( mpImpl->getTopWindowListeners().getLength() )
             {
@@ -532,7 +524,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_DEACTIVATE:
+        case VclEventId::WindowDeactivate:
         {
             if ( mpImpl->getTopWindowListeners().getLength() )
             {
@@ -542,7 +534,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_CLOSE:
+        case VclEventId::WindowClose:
         {
             if ( mpImpl->getDockableWindowListeners().getLength() )
             {
@@ -558,14 +550,14 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_CONTROL_GETFOCUS:
-        case VCLEVENT_WINDOW_GETFOCUS:
+        case VclEventId::ControlGetFocus:
+        case VclEventId::WindowGetFocus:
         {
             if  (   (   rVclWindowEvent.GetWindow()->IsCompoundControl()
-                    &&  rVclWindowEvent.GetId() == VCLEVENT_CONTROL_GETFOCUS
+                    &&  rVclWindowEvent.GetId() == VclEventId::ControlGetFocus
                     )
                 ||  (   !rVclWindowEvent.GetWindow()->IsCompoundControl()
-                    &&  rVclWindowEvent.GetId() == VCLEVENT_WINDOW_GETFOCUS
+                    &&  rVclWindowEvent.GetId() == VclEventId::WindowGetFocus
                     )
                 )
             {
@@ -580,14 +572,14 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_CONTROL_LOSEFOCUS:
-        case VCLEVENT_WINDOW_LOSEFOCUS:
+        case VclEventId::ControlLoseFocus:
+        case VclEventId::WindowLoseFocus:
         {
             if  (   (   rVclWindowEvent.GetWindow()->IsCompoundControl()
-                    &&  rVclWindowEvent.GetId() == VCLEVENT_CONTROL_LOSEFOCUS
+                    &&  rVclWindowEvent.GetId() == VclEventId::ControlLoseFocus
                     )
                 ||  (   !rVclWindowEvent.GetWindow()->IsCompoundControl()
-                    &&  rVclWindowEvent.GetId() == VCLEVENT_WINDOW_LOSEFOCUS
+                    &&  rVclWindowEvent.GetId() == VclEventId::WindowLoseFocus
                     )
                 )
             {
@@ -616,7 +608,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_MINIMIZE:
+        case VclEventId::WindowMinimize:
         {
             if ( mpImpl->getTopWindowListeners().getLength() )
             {
@@ -626,7 +618,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_NORMALIZE:
+        case VclEventId::WindowNormalize:
         {
             if ( mpImpl->getTopWindowListeners().getLength() )
             {
@@ -636,7 +628,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_KEYINPUT:
+        case VclEventId::WindowKeyInput:
         {
             if ( mpImpl->getKeyListeners().getLength() )
             {
@@ -647,7 +639,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_KEYUP:
+        case VclEventId::WindowKeyUp:
         {
             if ( mpImpl->getKeyListeners().getLength() )
             {
@@ -658,7 +650,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_COMMAND:
+        case VclEventId::WindowCommand:
         {
             CommandEvent* pCmdEvt = static_cast<CommandEvent*>(rVclWindowEvent.GetData());
             if ( mpImpl->getMouseListeners().getLength() && ( pCmdEvt->GetCommand() == CommandEventId::ContextMenu ) )
@@ -684,7 +676,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_MOUSEMOVE:
+        case VclEventId::WindowMouseMove:
         {
             MouseEvent* pMouseEvt = static_cast<MouseEvent*>(rVclWindowEvent.GetData());
             if ( mpImpl->getMouseListeners().getLength() && ( pMouseEvt->IsEnterWindow() || pMouseEvt->IsLeaveWindow() ) )
@@ -711,7 +703,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_MOUSEBUTTONDOWN:
+        case VclEventId::WindowMouseButtonDown:
         {
             if ( mpImpl->getMouseListeners().getLength() )
             {
@@ -722,7 +714,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_MOUSEBUTTONUP:
+        case VclEventId::WindowMouseButtonUp:
         {
             if ( mpImpl->getMouseListeners().getLength() )
             {
@@ -734,7 +726,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_STARTDOCKING:
+        case VclEventId::WindowStartDocking:
         {
             if ( mpImpl->getDockableWindowListeners().getLength() )
             {
@@ -747,15 +739,15 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
                     aEvent.TrackingRectangle = AWTRectangle( pData->maTrackRect );
                     aEvent.MousePos.X = pData->maMousePos.X();
                     aEvent.MousePos.Y = pData->maMousePos.Y();
-                    aEvent.bLiveMode = pData->mbLivemode;
-                    aEvent.bInteractive = pData->mbInteractive;
+                    aEvent.bLiveMode = false;
+                    aEvent.bInteractive = true;
 
                     mpImpl->getDockableWindowListeners().notifyEach( &XDockableWindowListener::startDocking, aEvent );
                 }
             }
         }
         break;
-        case VCLEVENT_WINDOW_DOCKING:
+        case VclEventId::WindowDocking:
         {
             if ( mpImpl->getDockableWindowListeners().getLength() )
             {
@@ -768,8 +760,8 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
                     aEvent.TrackingRectangle = AWTRectangle( pData->maTrackRect );
                     aEvent.MousePos.X = pData->maMousePos.X();
                     aEvent.MousePos.Y = pData->maMousePos.Y();
-                    aEvent.bLiveMode = pData->mbLivemode;
-                    aEvent.bInteractive = pData->mbInteractive;
+                    aEvent.bLiveMode = false;
+                    aEvent.bInteractive = true;
 
                     Reference< XDockableWindowListener > xFirstListener;
                     ::comphelper::OInterfaceIteratorHelper2 aIter( mpImpl->getDockableWindowListeners() );
@@ -786,7 +778,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_ENDDOCKING:
+        case VclEventId::WindowEndDocking:
         {
             if ( mpImpl->getDockableWindowListeners().getLength() )
             {
@@ -804,7 +796,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_PREPARETOGGLEFLOATING:
+        case VclEventId::WindowPrepareToggleFloating:
         {
             if ( mpImpl->getDockableWindowListeners().getLength() )
             {
@@ -824,7 +816,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-        case VCLEVENT_WINDOW_TOGGLEFLOATING:
+        case VclEventId::WindowToggleFloating:
         {
             if ( mpImpl->getDockableWindowListeners().getLength() )
             {
@@ -834,7 +826,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
        }
         break;
-        case VCLEVENT_WINDOW_ENDPOPUPMODE:
+        case VclEventId::WindowEndPopupMode:
         {
             if ( mpImpl->getDockableWindowListeners().getLength() )
             {
@@ -852,7 +844,7 @@ void VCLXWindow::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
             }
         }
         break;
-
+        default: break;
     }
 }
 
@@ -876,7 +868,7 @@ Size VCLXWindow::ImplCalcWindowSize( const Size& rOutSz ) const
 {
     Size aSz = rOutSz;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
     {
         sal_Int32 nLeft, nTop, nRight, nBottom;
@@ -889,7 +881,7 @@ Size VCLXWindow::ImplCalcWindowSize( const Size& rOutSz ) const
 
 
 // css::lang::XUnoTunnel
-sal_Int64 VCLXWindow::getSomething( const css::uno::Sequence< sal_Int8 >& rIdentifier ) throw(css::uno::RuntimeException, std::exception)
+sal_Int64 VCLXWindow::getSomething( const css::uno::Sequence< sal_Int8 >& rIdentifier )
 {
     if( ( rIdentifier.getLength() == 16 ) && ( 0 == memcmp( VCLXWindow::GetUnoTunnelId().getConstArray(), rIdentifier.getConstArray(), 16 ) ) )
     {
@@ -913,7 +905,7 @@ VCLXWindow* VCLXWindow::GetImplementation( const css::uno::Reference< css::uno::
 
 
 // css::lang::Component
-void VCLXWindow::dispose(  ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::dispose(  )
 {
     SolarMutexGuard aGuard;
 
@@ -935,7 +927,7 @@ void VCLXWindow::dispose(  ) throw(css::uno::RuntimeException, std::exception)
 
         // #i14103# dispose the accessible context after the window has been destroyed,
         // otherwise the old value in the child event fired in VCLXAccessibleComponent::ProcessWindowEvent()
-        // for VCLEVENT_WINDOW_CHILDDESTROYED contains a reference to an already disposed accessible object
+        // for VclEventId::WindowChildDestroyed contains a reference to an already disposed accessible object
         try
         {
             css::uno::Reference< css::lang::XComponent > xComponent( mpImpl->mxAccessibleContext, css::uno::UNO_QUERY );
@@ -952,14 +944,14 @@ void VCLXWindow::dispose(  ) throw(css::uno::RuntimeException, std::exception)
     }
 }
 
-void VCLXWindow::addEventListener( const css::uno::Reference< css::lang::XEventListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::addEventListener( const css::uno::Reference< css::lang::XEventListener >& rxListener )
 {
     SolarMutexGuard aGuard;
 
     mpImpl->getEventListeners().addInterface( rxListener );
 }
 
-void VCLXWindow::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& rxListener )
 {
     SolarMutexGuard aGuard;
 
@@ -968,7 +960,7 @@ void VCLXWindow::removeEventListener( const css::uno::Reference< css::lang::XEve
 
 
 // css::awt::XWindow
-void VCLXWindow::setPosSize( sal_Int32 X, sal_Int32 Y, sal_Int32 Width, sal_Int32 Height, sal_Int16 Flags ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setPosSize( sal_Int32 X, sal_Int32 Y, sal_Int32 Width, sal_Int32 Height, sal_Int16 Flags )
 {
     SolarMutexGuard aGuard;
 
@@ -981,7 +973,7 @@ void VCLXWindow::setPosSize( sal_Int32 X, sal_Int32 Y, sal_Int32 Width, sal_Int3
     }
 }
 
-css::awt::Rectangle VCLXWindow::getPosSize(  ) throw(css::uno::RuntimeException, std::exception)
+css::awt::Rectangle VCLXWindow::getPosSize(  )
 {
     SolarMutexGuard aGuard;
 
@@ -991,17 +983,17 @@ css::awt::Rectangle VCLXWindow::getPosSize(  ) throw(css::uno::RuntimeException,
         if( vcl::Window::GetDockingManager()->IsDockable( GetWindow() ) )
             aBounds = AWTRectangle( vcl::Window::GetDockingManager()->GetPosSizePixel( GetWindow() ) );
         else
-            aBounds = AWTRectangle( Rectangle( GetWindow()->GetPosPixel(), GetWindow()->GetSizePixel() ) );
+            aBounds = AWTRectangle( tools::Rectangle( GetWindow()->GetPosPixel(), GetWindow()->GetSizePixel() ) );
     }
 
     return aBounds;
 }
 
-void VCLXWindow::setVisible( sal_Bool bVisible ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setVisible( sal_Bool bVisible )
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
     {
         mpImpl->setDirectVisible( bVisible );
@@ -1009,11 +1001,11 @@ void VCLXWindow::setVisible( sal_Bool bVisible ) throw(css::uno::RuntimeExceptio
     }
 }
 
-void VCLXWindow::setEnable( sal_Bool bEnable ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setEnable( sal_Bool bEnable )
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
     {
         pWindow->Enable( bEnable, false ); // #95824# without children!
@@ -1021,7 +1013,7 @@ void VCLXWindow::setEnable( sal_Bool bEnable ) throw(css::uno::RuntimeException,
     }
 }
 
-void VCLXWindow::setFocus(  ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setFocus(  )
 {
     SolarMutexGuard aGuard;
 
@@ -1029,7 +1021,7 @@ void VCLXWindow::setFocus(  ) throw(css::uno::RuntimeException, std::exception)
         GetWindow()->GrabFocus();
 }
 
-void VCLXWindow::addWindowListener( const css::uno::Reference< css::awt::XWindowListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::addWindowListener( const css::uno::Reference< css::awt::XWindowListener >& rxListener )
 {
     SolarMutexGuard aGuard;
 
@@ -1044,7 +1036,7 @@ void VCLXWindow::addWindowListener( const css::uno::Reference< css::awt::XWindow
         GetWindow()->EnableAllResize();
 }
 
-void VCLXWindow::removeWindowListener( const css::uno::Reference< css::awt::XWindowListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::removeWindowListener( const css::uno::Reference< css::awt::XWindowListener >& rxListener )
 {
     SolarMutexGuard aGuard;
 
@@ -1055,75 +1047,75 @@ void VCLXWindow::removeWindowListener( const css::uno::Reference< css::awt::XWin
     mpImpl->getWindowListeners().removeInterface( rxListener );
 }
 
-void VCLXWindow::addFocusListener( const css::uno::Reference< css::awt::XFocusListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::addFocusListener( const css::uno::Reference< css::awt::XFocusListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getFocusListeners().addInterface( rxListener );
 }
 
-void VCLXWindow::removeFocusListener( const css::uno::Reference< css::awt::XFocusListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::removeFocusListener( const css::uno::Reference< css::awt::XFocusListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getFocusListeners().removeInterface( rxListener );
 }
 
-void VCLXWindow::addKeyListener( const css::uno::Reference< css::awt::XKeyListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::addKeyListener( const css::uno::Reference< css::awt::XKeyListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getKeyListeners().addInterface( rxListener );
 }
 
-void VCLXWindow::removeKeyListener( const css::uno::Reference< css::awt::XKeyListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::removeKeyListener( const css::uno::Reference< css::awt::XKeyListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getKeyListeners().removeInterface( rxListener );
 }
 
-void VCLXWindow::addMouseListener( const css::uno::Reference< css::awt::XMouseListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::addMouseListener( const css::uno::Reference< css::awt::XMouseListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getMouseListeners().addInterface( rxListener );
 }
 
-void VCLXWindow::removeMouseListener( const css::uno::Reference< css::awt::XMouseListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::removeMouseListener( const css::uno::Reference< css::awt::XMouseListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getMouseListeners().removeInterface( rxListener );
 }
 
-void VCLXWindow::addMouseMotionListener( const css::uno::Reference< css::awt::XMouseMotionListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::addMouseMotionListener( const css::uno::Reference< css::awt::XMouseMotionListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getMouseMotionListeners().addInterface( rxListener );
 }
 
-void VCLXWindow::removeMouseMotionListener( const css::uno::Reference< css::awt::XMouseMotionListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::removeMouseMotionListener( const css::uno::Reference< css::awt::XMouseMotionListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getMouseMotionListeners().removeInterface( rxListener );
 }
 
-void VCLXWindow::addPaintListener( const css::uno::Reference< css::awt::XPaintListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::addPaintListener( const css::uno::Reference< css::awt::XPaintListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getPaintListeners().addInterface( rxListener );
 }
 
-void VCLXWindow::removePaintListener( const css::uno::Reference< css::awt::XPaintListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::removePaintListener( const css::uno::Reference< css::awt::XPaintListener >& rxListener )
 {
     SolarMutexGuard aGuard;
     mpImpl->getPaintListeners().removeInterface( rxListener );
 }
 
 // css::awt::XWindowPeer
-css::uno::Reference< css::awt::XToolkit > VCLXWindow::getToolkit(  ) throw(css::uno::RuntimeException, std::exception)
+css::uno::Reference< css::awt::XToolkit > VCLXWindow::getToolkit(  )
 {
     // no guard. nothing to guard here.
     // 82463 - 12/21/00 - fs
     return Application::GetVCLToolkit();
 }
 
-void VCLXWindow::setPointer( const css::uno::Reference< css::awt::XPointer >& rxPointer ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setPointer( const css::uno::Reference< css::awt::XPointer >& rxPointer )
 {
     SolarMutexGuard aGuard;
 
@@ -1136,7 +1128,7 @@ void VCLXWindow::setPointer( const css::uno::Reference< css::awt::XPointer >& rx
     }
 }
 
-void VCLXWindow::setBackground( sal_Int32 nColor ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setBackground( sal_Int32 nColor )
 {
     SolarMutexGuard aGuard;
 
@@ -1147,16 +1139,16 @@ void VCLXWindow::setBackground( sal_Int32 nColor ) throw(css::uno::RuntimeExcept
         GetWindow()->SetControlBackground( aColor );
 
         WindowType eWinType = GetWindow()->GetType();
-        if ( ( eWinType == WINDOW_WINDOW ) ||
-             ( eWinType == WINDOW_WORKWINDOW ) ||
-             ( eWinType == WINDOW_FLOATINGWINDOW ) )
+        if ( ( eWinType == WindowType::WINDOW ) ||
+             ( eWinType == WindowType::WORKWINDOW ) ||
+             ( eWinType == WindowType::FLOATINGWINDOW ) )
         {
             GetWindow()->Invalidate();
         }
     }
 }
 
-void VCLXWindow::invalidate( sal_Int16 nInvalidateFlags ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::invalidate( sal_Int16 nInvalidateFlags )
 {
     SolarMutexGuard aGuard;
 
@@ -1164,7 +1156,7 @@ void VCLXWindow::invalidate( sal_Int16 nInvalidateFlags ) throw(css::uno::Runtim
         GetWindow()->Invalidate( static_cast<InvalidateFlags>(nInvalidateFlags) );
 }
 
-void VCLXWindow::invalidateRect( const css::awt::Rectangle& rRect, sal_Int16 nInvalidateFlags ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::invalidateRect( const css::awt::Rectangle& rRect, sal_Int16 nInvalidateFlags )
 {
     SolarMutexGuard aGuard;
 
@@ -1174,35 +1166,35 @@ void VCLXWindow::invalidateRect( const css::awt::Rectangle& rRect, sal_Int16 nIn
 
 
 // css::awt::XVclWindowPeer
-sal_Bool VCLXWindow::isChild( const css::uno::Reference< css::awt::XWindowPeer >& rxPeer ) throw(css::uno::RuntimeException, std::exception)
+sal_Bool VCLXWindow::isChild( const css::uno::Reference< css::awt::XWindowPeer >& rxPeer )
 {
     SolarMutexGuard aGuard;
 
     bool bIsChild = false;
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
     {
-        vcl::Window* pPeerWindow = VCLUnoHelper::GetWindow( rxPeer );
+        VclPtr<vcl::Window> pPeerWindow = VCLUnoHelper::GetWindow( rxPeer );
         bIsChild = pPeerWindow && pWindow->IsChild( pPeerWindow );
     }
 
     return bIsChild;
 }
 
-void VCLXWindow::setDesignMode( sal_Bool bOn ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setDesignMode( sal_Bool bOn )
 {
     SolarMutexGuard aGuard;
 
     mpImpl->mbDesignMode = bOn;
 }
 
-sal_Bool VCLXWindow::isDesignMode(  ) throw(css::uno::RuntimeException, std::exception)
+sal_Bool VCLXWindow::isDesignMode(  )
 {
     SolarMutexGuard aGuard;
     return mpImpl->mbDesignMode;
 }
 
-void VCLXWindow::enableClipSiblings( sal_Bool bClip ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::enableClipSiblings( sal_Bool bClip )
 {
     SolarMutexGuard aGuard;
 
@@ -1210,7 +1202,7 @@ void VCLXWindow::enableClipSiblings( sal_Bool bClip ) throw(css::uno::RuntimeExc
         GetWindow()->EnableClipSiblings( bClip );
 }
 
-void VCLXWindow::setForeground( sal_Int32 nColor ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setForeground( sal_Int32 nColor )
 {
     SolarMutexGuard aGuard;
 
@@ -1221,7 +1213,7 @@ void VCLXWindow::setForeground( sal_Int32 nColor ) throw(css::uno::RuntimeExcept
     }
 }
 
-void VCLXWindow::setControlFont( const css::awt::FontDescriptor& rFont ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setControlFont( const css::awt::FontDescriptor& rFont )
 {
     SolarMutexGuard aGuard;
 
@@ -1229,7 +1221,7 @@ void VCLXWindow::setControlFont( const css::awt::FontDescriptor& rFont ) throw(c
         GetWindow()->SetControlFont( VCLUnoHelper::CreateFont( rFont, GetWindow()->GetControlFont() ) );
 }
 
-void VCLXWindow::getStyles( sal_Int16 nType, css::awt::FontDescriptor& Font, sal_Int32& ForegroundColor, sal_Int32& BackgroundColor ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::getStyles( sal_Int16 nType, css::awt::FontDescriptor& Font, sal_Int32& ForegroundColor, sal_Int32& BackgroundColor )
 {
     SolarMutexGuard aGuard;
 
@@ -1279,7 +1271,7 @@ namespace toolkit
 }
 
 // Terminated by BASEPROPERTY_NOTFOUND (or 0)
-void VCLXWindow::PushPropertyIds( std::list< sal_uInt16 > &rIds,
+void VCLXWindow::PushPropertyIds( std::vector< sal_uInt16 > &rIds,
                                   int nFirstId, ...)
 {
     va_list pVarArgs;
@@ -1292,7 +1284,7 @@ void VCLXWindow::PushPropertyIds( std::list< sal_uInt16 > &rIds,
     va_end( pVarArgs );
 }
 
-void VCLXWindow::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds, bool bWithDefaults )
+void VCLXWindow::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds, bool bWithDefaults )
 {
     // These are common across ~all VCLXWindow derived classes
     if( bWithDefaults )
@@ -1314,7 +1306,7 @@ void VCLXWindow::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds, bool bWithDe
 
     // lovely hack from:
     // void UnoControlModel::ImplRegisterProperty( sal_uInt16 nPropId )
-    std::list< sal_uInt16 >::const_iterator iter;
+    std::vector< sal_uInt16 >::const_iterator iter;
     for( iter = rIds.begin(); iter != rIds.end(); ++iter) {
         if( *iter == BASEPROPERTY_FONTDESCRIPTOR )
         {
@@ -1331,7 +1323,7 @@ void VCLXWindow::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds, bool bWithDe
     }
 }
 
-void VCLXWindow::GetPropertyIds( std::list< sal_uInt16 >& _out_rIds )
+void VCLXWindow::GetPropertyIds( std::vector< sal_uInt16 >& _out_rIds )
 {
     return ImplGetPropertyIds( _out_rIds, mpImpl->mbWithDefaultProps );
 }
@@ -1384,12 +1376,10 @@ namespace
 }
 
 void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any& Value )
-    throw(css::uno::RuntimeException,
-          std::exception)
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( !pWindow )
         return;
 
@@ -1401,7 +1391,7 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
     {
         case BASEPROPERTY_REFERENCE_DEVICE:
         {
-            Control* pControl = dynamic_cast< Control* >( pWindow );
+            Control* pControl = dynamic_cast< Control* >( pWindow.get() );
             OSL_ENSURE( pControl, "VCLXWindow::setProperty( RefDevice ): need a Control for this!" );
             if ( !pControl )
                 break;
@@ -1496,9 +1486,9 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
             {
                 switch (eWinType)
                 {
-                    case WINDOW_OKBUTTON:
-                    case WINDOW_CANCELBUTTON:
-                    case WINDOW_HELPBUTTON:
+                    case WindowType::OKBUTTON:
+                    case WindowType::CANCELBUTTON:
+                    case WindowType::HELPBUTTON:
                         // Standard Button: overwrite only if not empty.
                         if (!aText.isEmpty())
                             pWindow->SetText( aText );
@@ -1580,13 +1570,13 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
                 switch ( eWinType )
                 {
                     // set dialog color for default
-                    case WINDOW_DIALOG:
-                    case WINDOW_MESSBOX:
-                    case WINDOW_INFOBOX:
-                    case WINDOW_WARNINGBOX:
-                    case WINDOW_ERRORBOX:
-                    case WINDOW_QUERYBOX:
-                    case WINDOW_TABPAGE:
+                    case WindowType::DIALOG:
+                    case WindowType::MESSBOX:
+                    case WindowType::INFOBOX:
+                    case WindowType::WARNINGBOX:
+                    case WindowType::ERRORBOX:
+                    case WindowType::QUERYBOX:
+                    case WindowType::TABPAGE:
                     {
                         Color aColor = pWindow->GetSettings().GetStyleSettings().GetDialogColor();
                         pWindow->SetBackground( aColor );
@@ -1594,11 +1584,11 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
                         break;
                     }
 
-                    case WINDOW_FIXEDTEXT:
-                    case WINDOW_CHECKBOX:
-                    case WINDOW_RADIOBUTTON:
-                    case WINDOW_GROUPBOX:
-                    case WINDOW_FIXEDLINE:
+                    case WindowType::FIXEDTEXT:
+                    case WindowType::CHECKBOX:
+                    case WindowType::RADIOBUTTON:
+                    case WindowType::GROUPBOX:
+                    case WindowType::FIXEDLINE:
                     {
                         // support transparency only for special controls
                         pWindow->SetBackground();
@@ -1631,11 +1621,11 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
                     switch ( eWinType )
                     {
                         // reset paint transparent mode
-                        case WINDOW_FIXEDTEXT:
-                        case WINDOW_CHECKBOX:
-                        case WINDOW_RADIOBUTTON:
-                        case WINDOW_GROUPBOX:
-                        case WINDOW_FIXEDLINE:
+                        case WindowType::FIXEDTEXT:
+                        case WindowType::CHECKBOX:
+                        case WindowType::RADIOBUTTON:
+                        case WindowType::GROUPBOX:
+                        case WindowType::FIXEDLINE:
                             pWindow->SetPaintTransparent( false );
                             break;
                         default:
@@ -1736,7 +1726,7 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
         break;
         case BASEPROPERTY_VERTICALALIGN:
         {
-            VerticalAlignment eAlign = VerticalAlignment_MAKE_FIXED_SIZE;
+            VerticalAlignment eAlign = css::style::VerticalAlignment::VerticalAlignment_MAKE_FIXED_SIZE;
             WinBits nStyle = pWindow->GetStyle();
             nStyle &= ~(WB_TOP|WB_VCENTER|WB_BOTTOM);
             if ( !bVoid )
@@ -1762,20 +1752,19 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
             sal_Int16 nAlign = PROPERTY_ALIGN_LEFT;
             switch ( eWinType )
             {
-                case WINDOW_COMBOBOX:
-                case WINDOW_BUTTON:
-                case WINDOW_PUSHBUTTON:
-                case WINDOW_OKBUTTON:
-                case WINDOW_CANCELBUTTON:
-                case WINDOW_HELPBUTTON:
+                case WindowType::COMBOBOX:
+                case WindowType::PUSHBUTTON:
+                case WindowType::OKBUTTON:
+                case WindowType::CANCELBUTTON:
+                case WindowType::HELPBUTTON:
                     nAlign = PROPERTY_ALIGN_CENTER;
                     SAL_FALLTHROUGH;
-                case WINDOW_FIXEDTEXT:
-                case WINDOW_EDIT:
-                case WINDOW_MULTILINEEDIT:
-                case WINDOW_CHECKBOX:
-                case WINDOW_RADIOBUTTON:
-                case WINDOW_LISTBOX:
+                case WindowType::FIXEDTEXT:
+                case WindowType::EDIT:
+                case WindowType::MULTILINEEDIT:
+                case WindowType::CHECKBOX:
+                case WindowType::RADIOBUTTON:
+                case WindowType::LISTBOX:
                 {
                     WinBits nStyle = pWindow->GetStyle();
                     nStyle &= ~(WB_LEFT|WB_CENTER|WB_RIGHT);
@@ -1790,19 +1779,19 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
                     pWindow->SetStyle( nStyle );
                 }
                 break;
+                default: break;
             }
         }
         break;
         case BASEPROPERTY_MULTILINE:
         {
-            if  (  ( eWinType == WINDOW_FIXEDTEXT )
-                || ( eWinType == WINDOW_CHECKBOX )
-                || ( eWinType == WINDOW_RADIOBUTTON )
-                || ( eWinType == WINDOW_BUTTON )
-                || ( eWinType == WINDOW_PUSHBUTTON )
-                || ( eWinType == WINDOW_OKBUTTON )
-                || ( eWinType == WINDOW_CANCELBUTTON )
-                || ( eWinType == WINDOW_HELPBUTTON )
+            if  (  ( eWinType == WindowType::FIXEDTEXT )
+                || ( eWinType == WindowType::CHECKBOX )
+                || ( eWinType == WindowType::RADIOBUTTON )
+                || ( eWinType == WindowType::PUSHBUTTON )
+                || ( eWinType == WindowType::OKBUTTON )
+                || ( eWinType == WindowType::CANCELBUTTON )
+                || ( eWinType == WindowType::HELPBUTTON )
                 )
             {
                 WinBits nStyle = pWindow->GetStyle();
@@ -1818,24 +1807,20 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
         break;
         case BASEPROPERTY_ORIENTATION:
         {
-            switch ( eWinType )
+            if ( eWinType == WindowType::FIXEDLINE)
             {
-                case WINDOW_FIXEDLINE:
+                sal_Int32 nOrientation = 0;
+                if ( Value >>= nOrientation )
                 {
-                    sal_Int32 nOrientation = 0;
-                    if ( Value >>= nOrientation )
-                    {
-                        WinBits nStyle = pWindow->GetStyle();
-                        nStyle &= ~(WB_HORZ|WB_VERT);
-                        if ( nOrientation == 0 )
-                            nStyle |= WB_HORZ;
-                        else
-                            nStyle |= WB_VERT;
+                    WinBits nStyle = pWindow->GetStyle();
+                    nStyle &= ~(WB_HORZ|WB_VERT);
+                    if ( nOrientation == 0 )
+                        nStyle |= WB_HORZ;
+                    else
+                        nStyle |= WB_VERT;
 
-                        pWindow->SetStyle( nStyle );
-                    }
+                    pWindow->SetStyle( nStyle );
                 }
-                break;
             }
         }
         break;
@@ -1915,7 +1900,7 @@ void VCLXWindow::setProperty( const OUString& PropertyName, const css::uno::Any&
     }
 }
 
-css::uno::Any VCLXWindow::getProperty( const OUString& PropertyName ) throw(css::uno::RuntimeException, std::exception)
+css::uno::Any VCLXWindow::getProperty( const OUString& PropertyName )
 {
     SolarMutexGuard aGuard;
 
@@ -2062,18 +2047,17 @@ css::uno::Any VCLXWindow::getProperty( const OUString& PropertyName ) throw(css:
             {
                 switch ( eWinType )
                 {
-                    case WINDOW_FIXEDTEXT:
-                    case WINDOW_EDIT:
-                    case WINDOW_MULTILINEEDIT:
-                    case WINDOW_CHECKBOX:
-                    case WINDOW_RADIOBUTTON:
-                    case WINDOW_LISTBOX:
-                    case WINDOW_COMBOBOX:
-                    case WINDOW_BUTTON:
-                    case WINDOW_PUSHBUTTON:
-                    case WINDOW_OKBUTTON:
-                    case WINDOW_CANCELBUTTON:
-                    case WINDOW_HELPBUTTON:
+                    case WindowType::FIXEDTEXT:
+                    case WindowType::EDIT:
+                    case WindowType::MULTILINEEDIT:
+                    case WindowType::CHECKBOX:
+                    case WindowType::RADIOBUTTON:
+                    case WindowType::LISTBOX:
+                    case WindowType::COMBOBOX:
+                    case WindowType::PUSHBUTTON:
+                    case WindowType::OKBUTTON:
+                    case WindowType::CANCELBUTTON:
+                    case WindowType::HELPBUTTON:
                     {
                         WinBits nStyle = GetWindow()->GetStyle();
                         if ( nStyle & WB_LEFT )
@@ -2084,19 +2068,19 @@ css::uno::Any VCLXWindow::getProperty( const OUString& PropertyName ) throw(css:
                             aProp <<= (sal_Int16) PROPERTY_ALIGN_RIGHT;
                     }
                     break;
+                    default: break;
                 }
             }
             break;
             case BASEPROPERTY_MULTILINE:
             {
-                if  (  ( eWinType == WINDOW_FIXEDTEXT )
-                    || ( eWinType == WINDOW_CHECKBOX )
-                    || ( eWinType == WINDOW_RADIOBUTTON )
-                    || ( eWinType == WINDOW_BUTTON )
-                    || ( eWinType == WINDOW_PUSHBUTTON )
-                    || ( eWinType == WINDOW_OKBUTTON )
-                    || ( eWinType == WINDOW_CANCELBUTTON )
-                    || ( eWinType == WINDOW_HELPBUTTON )
+                if  (  ( eWinType == WindowType::FIXEDTEXT )
+                    || ( eWinType == WindowType::CHECKBOX )
+                    || ( eWinType == WindowType::RADIOBUTTON )
+                    || ( eWinType == WindowType::PUSHBUTTON )
+                    || ( eWinType == WindowType::OKBUTTON )
+                    || ( eWinType == WindowType::CANCELBUTTON )
+                    || ( eWinType == WindowType::HELPBUTTON )
                     )
                     aProp <<= ( GetWindow()->GetStyle() & WB_WORDBREAK ) != 0;
             }
@@ -2127,7 +2111,7 @@ css::uno::Any VCLXWindow::getProperty( const OUString& PropertyName ) throw(css:
             case BASEPROPERTY_REPEAT_DELAY:
             {
                 sal_Int32 nButtonRepeat = GetWindow()->GetSettings().GetMouseSettings().GetButtonRepeat();
-                aProp <<= (sal_Int32)nButtonRepeat;
+                aProp <<= nButtonRepeat;
             }
             break;
 
@@ -2145,7 +2129,7 @@ css::uno::Any VCLXWindow::getProperty( const OUString& PropertyName ) throw(css:
 
 
 // css::awt::XLayoutConstrains
-css::awt::Size VCLXWindow::getMinimumSize(  ) throw(css::uno::RuntimeException, std::exception)
+css::awt::Size VCLXWindow::getMinimumSize(  )
 {
     SolarMutexGuard aGuard;
 
@@ -2158,22 +2142,22 @@ css::awt::Size VCLXWindow::getMinimumSize(  ) throw(css::uno::RuntimeException, 
         WindowType nWinType = GetWindow()->GetType();
         switch ( nWinType )
         {
-            case WINDOW_CONTROL:
+            case WindowType::CONTROL:
                 aSz.Width() = GetWindow()->GetTextWidth( GetWindow()->GetText() )+2*12;
                 aSz.Height() = GetWindow()->GetTextHeight()+2*6;
             break;
 
-            case WINDOW_PATTERNBOX:
-            case WINDOW_NUMERICBOX:
-            case WINDOW_METRICBOX:
-            case WINDOW_CURRENCYBOX:
-            case WINDOW_DATEBOX:
-            case WINDOW_TIMEBOX:
-            case WINDOW_LONGCURRENCYBOX:
+            case WindowType::PATTERNBOX:
+            case WindowType::NUMERICBOX:
+            case WindowType::METRICBOX:
+            case WindowType::CURRENCYBOX:
+            case WindowType::DATEBOX:
+            case WindowType::TIMEBOX:
+            case WindowType::LONGCURRENCYBOX:
                 aSz.Width() = GetWindow()->GetTextWidth( GetWindow()->GetText() )+2*2;
                 aSz.Height() = GetWindow()->GetTextHeight()+2*2;
             break;
-            case WINDOW_SCROLLBARBOX:
+            case WindowType::SCROLLBARBOX:
                 return VCLXScrollBar::implGetMinimumSize( GetWindow() );
             default:
                 aSz = GetWindow()->get_preferred_size();
@@ -2183,12 +2167,12 @@ css::awt::Size VCLXWindow::getMinimumSize(  ) throw(css::uno::RuntimeException, 
     return css::awt::Size( aSz.Width(), aSz.Height() );
 }
 
-css::awt::Size VCLXWindow::getPreferredSize(  ) throw(css::uno::RuntimeException, std::exception)
+css::awt::Size VCLXWindow::getPreferredSize(  )
 {
     return getMinimumSize();
 }
 
-css::awt::Size VCLXWindow::calcAdjustedSize( const css::awt::Size& rNewSize ) throw(css::uno::RuntimeException, std::exception)
+css::awt::Size VCLXWindow::calcAdjustedSize( const css::awt::Size& rNewSize )
 {
     SolarMutexGuard aGuard;
 
@@ -2205,7 +2189,7 @@ css::awt::Size VCLXWindow::calcAdjustedSize( const css::awt::Size& rNewSize ) th
 
 
 // css::awt::XView
-sal_Bool VCLXWindow::setGraphics( const css::uno::Reference< css::awt::XGraphics >& rxDevice ) throw(css::uno::RuntimeException, std::exception)
+sal_Bool VCLXWindow::setGraphics( const css::uno::Reference< css::awt::XGraphics >& rxDevice )
 {
     SolarMutexGuard aGuard;
 
@@ -2217,14 +2201,14 @@ sal_Bool VCLXWindow::setGraphics( const css::uno::Reference< css::awt::XGraphics
     return mpImpl->mxViewGraphics.is();
 }
 
-css::uno::Reference< css::awt::XGraphics > VCLXWindow::getGraphics(  ) throw(css::uno::RuntimeException, std::exception)
+css::uno::Reference< css::awt::XGraphics > VCLXWindow::getGraphics(  )
 {
     SolarMutexGuard aGuard;
 
     return mpImpl->mxViewGraphics;
 }
 
-css::awt::Size VCLXWindow::getSize(  ) throw(css::uno::RuntimeException, std::exception)
+css::awt::Size VCLXWindow::getSize(  )
 {
     SolarMutexGuard aGuard;
 
@@ -2234,11 +2218,11 @@ css::awt::Size VCLXWindow::getSize(  ) throw(css::uno::RuntimeException, std::ex
     return css::awt::Size( aSz.Width(), aSz.Height() );
 }
 
-void VCLXWindow::draw( sal_Int32 nX, sal_Int32 nY ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::draw( sal_Int32 nX, sal_Int32 nY )
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( !pWindow )
         return;
 
@@ -2247,7 +2231,7 @@ void VCLXWindow::draw( sal_Int32 nX, sal_Int32 nY ) throw(css::uno::RuntimeExcep
         OutputDevice* pDev = VCLUnoHelper::GetOutputDevice( mpImpl->mxViewGraphics );
         if (!pDev)
             pDev = pWindow->GetParent();
-        TabPage* pTabPage = dynamic_cast< TabPage* >( pWindow );
+        TabPage* pTabPage = dynamic_cast< TabPage* >( pWindow.get() );
         if ( pTabPage )
         {
             Point aPos( nX, nY );
@@ -2309,7 +2293,7 @@ void VCLXWindow::draw( sal_Int32 nX, sal_Int32 nY ) throw(css::uno::RuntimeExcep
 
             vcl::PDFExtOutDevData* pPDFExport   = dynamic_cast<vcl::PDFExtOutDevData*>(pDev->GetExtOutDevData());
             bool bDrawSimple =    ( pDev->GetOutDevType() == OUTDEV_PRINTER )
-                               || ( pDev->GetOutDevViewType() == OUTDEV_VIEWTYPE_PRINTPREVIEW )
+                               || ( pDev->GetOutDevViewType() == OutDevViewType::PrintPreview )
                                || ( pPDFExport != nullptr );
             if ( bDrawSimple )
             {
@@ -2328,7 +2312,7 @@ void VCLXWindow::draw( sal_Int32 nX, sal_Int32 nY ) throw(css::uno::RuntimeExcep
     }
 }
 
-void VCLXWindow::setZoom( float fZoomX, float /*fZoomY*/ ) throw(css::uno::RuntimeException, std::exception)
+void VCLXWindow::setZoom( float fZoomX, float /*fZoomY*/ )
 {
     SolarMutexGuard aGuard;
 
@@ -2345,7 +2329,7 @@ void VCLXWindow::setZoom( float fZoomX, float /*fZoomY*/ ) throw(css::uno::Runti
 }
 
 // css::lang::XEventListener
-void SAL_CALL VCLXWindow::disposing( const css::lang::EventObject& _rSource ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL VCLXWindow::disposing( const css::lang::EventObject& _rSource )
 {
     SolarMutexGuard aGuard;
 
@@ -2360,7 +2344,7 @@ void SAL_CALL VCLXWindow::disposing( const css::lang::EventObject& _rSource ) th
 }
 
 // css::accessibility::XAccessible
-css::uno::Reference< css::accessibility::XAccessibleContext > VCLXWindow::getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception)
+css::uno::Reference< css::accessibility::XAccessibleContext > VCLXWindow::getAccessibleContext(  )
 {
     using namespace ::com::sun::star;
 
@@ -2386,7 +2370,7 @@ css::uno::Reference< css::accessibility::XAccessibleContext > VCLXWindow::getAcc
 }
 
 // css::awt::XDockable
-void SAL_CALL VCLXWindow::addDockableWindowListener( const css::uno::Reference< css::awt::XDockableWindowListener >& xListener ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL VCLXWindow::addDockableWindowListener( const css::uno::Reference< css::awt::XDockableWindowListener >& xListener )
 {
     SolarMutexGuard aGuard;
 
@@ -2395,94 +2379,92 @@ void SAL_CALL VCLXWindow::addDockableWindowListener( const css::uno::Reference< 
 
 }
 
-void SAL_CALL VCLXWindow::removeDockableWindowListener( const css::uno::Reference< css::awt::XDockableWindowListener >& xListener ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL VCLXWindow::removeDockableWindowListener( const css::uno::Reference< css::awt::XDockableWindowListener >& xListener )
 {
     SolarMutexGuard aGuard;
 
     mpImpl->getDockableWindowListeners().removeInterface( xListener );
 }
 
-void SAL_CALL VCLXWindow::enableDocking( sal_Bool bEnable ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL VCLXWindow::enableDocking( sal_Bool bEnable )
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
         pWindow->EnableDocking( bEnable );
 }
 
-sal_Bool SAL_CALL VCLXWindow::isFloating(  ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL VCLXWindow::isFloating(  )
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if( pWindow )
         return vcl::Window::GetDockingManager()->IsFloating( pWindow );
     else
         return false;
 }
 
-void SAL_CALL VCLXWindow::setFloatingMode( sal_Bool bFloating ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL VCLXWindow::setFloatingMode( sal_Bool bFloating )
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if( pWindow )
         vcl::Window::GetDockingManager()->SetFloatingMode( pWindow, bFloating );
 }
 
-sal_Bool SAL_CALL VCLXWindow::isLocked(  ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL VCLXWindow::isLocked(  )
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if( pWindow )
         return vcl::Window::GetDockingManager()->IsLocked( pWindow );
     else
         return false;
 }
 
-void SAL_CALL VCLXWindow::lock(  ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL VCLXWindow::lock(  )
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if( pWindow && !vcl::Window::GetDockingManager()->IsFloating( pWindow ) )
         vcl::Window::GetDockingManager()->Lock( pWindow );
 }
 
-void SAL_CALL VCLXWindow::unlock(  ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL VCLXWindow::unlock(  )
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if( pWindow && !vcl::Window::GetDockingManager()->IsFloating( pWindow ) )
         vcl::Window::GetDockingManager()->Unlock( pWindow );
 }
-void SAL_CALL VCLXWindow::startPopupMode( const css::awt::Rectangle& ) throw (css::uno::RuntimeException, std::exception)
+
+void SAL_CALL VCLXWindow::startPopupMode( const css::awt::Rectangle& )
 {
     // TODO: remove interface in the next incompatible build
-    SolarMutexGuard aGuard;
-
 }
 
-sal_Bool SAL_CALL VCLXWindow::isInPopupMode(  ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL VCLXWindow::isInPopupMode(  )
 {
     // TODO: remove interface in the next incompatible build
-    SolarMutexGuard aGuard;
     return false;
 }
 
 
 // css::awt::XWindow2
 
-void SAL_CALL VCLXWindow::setOutputSize( const css::awt::Size& aSize ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL VCLXWindow::setOutputSize( const css::awt::Size& aSize )
 {
     SolarMutexGuard aGuard;
-    vcl::Window *pWindow;
+    VclPtr<vcl::Window> pWindow;
     if( (pWindow = GetWindow()) != nullptr )
     {
-        DockingWindow *pDockingWindow = dynamic_cast< DockingWindow* >(pWindow);
+        DockingWindow *pDockingWindow = dynamic_cast< DockingWindow* >(pWindow.get());
         if( pDockingWindow )
             pDockingWindow->SetOutputSizePixel( VCLSize( aSize ) );
         else
@@ -2490,13 +2472,13 @@ void SAL_CALL VCLXWindow::setOutputSize( const css::awt::Size& aSize ) throw (cs
     }
 }
 
-css::awt::Size SAL_CALL VCLXWindow::getOutputSize(  ) throw (css::uno::RuntimeException, std::exception)
+css::awt::Size SAL_CALL VCLXWindow::getOutputSize(  )
 {
     SolarMutexGuard aGuard;
-    vcl::Window *pWindow;
+    VclPtr<vcl::Window> pWindow;
     if( (pWindow = GetWindow()) != nullptr )
     {
-        DockingWindow *pDockingWindow = dynamic_cast< DockingWindow* >(pWindow);
+        DockingWindow *pDockingWindow = dynamic_cast< DockingWindow* >(pWindow.get());
         if( pDockingWindow )
             return AWTSize( pDockingWindow->GetOutputSizePixel() );
         else
@@ -2506,7 +2488,7 @@ css::awt::Size SAL_CALL VCLXWindow::getOutputSize(  ) throw (css::uno::RuntimeEx
         return css::awt::Size();
 }
 
-sal_Bool SAL_CALL VCLXWindow::isVisible(  ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL VCLXWindow::isVisible(  )
 {
     SolarMutexGuard aGuard;
     if( GetWindow() )
@@ -2515,7 +2497,7 @@ sal_Bool SAL_CALL VCLXWindow::isVisible(  ) throw (css::uno::RuntimeException, s
         return false;
 }
 
-sal_Bool SAL_CALL VCLXWindow::isActive(  ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL VCLXWindow::isActive(  )
 {
     SolarMutexGuard aGuard;
     if( GetWindow() )
@@ -2525,7 +2507,7 @@ sal_Bool SAL_CALL VCLXWindow::isActive(  ) throw (css::uno::RuntimeException, st
 
 }
 
-sal_Bool SAL_CALL VCLXWindow::isEnabled(  ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL VCLXWindow::isEnabled(  )
 {
     SolarMutexGuard aGuard;
     if( GetWindow() )
@@ -2534,7 +2516,7 @@ sal_Bool SAL_CALL VCLXWindow::isEnabled(  ) throw (css::uno::RuntimeException, s
         return false;
 }
 
-sal_Bool SAL_CALL VCLXWindow::hasFocus(  ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL VCLXWindow::hasFocus(  )
 {
     SolarMutexGuard aGuard;
     if( GetWindow() )
@@ -2551,31 +2533,31 @@ VCLXWindow::GetPropHelper()
     SolarMutexGuard aGuard;
     if ( mpImpl->mpPropHelper == nullptr )
     {
-        std::list< sal_uInt16 > aIDs;
+        std::vector< sal_uInt16 > aIDs;
         GetPropertyIds( aIDs );
-        mpImpl->mpPropHelper = new UnoPropertyArrayHelper( aIDs );
+        mpImpl->mpPropHelper.reset( new UnoPropertyArrayHelper( aIDs ) );
     }
-    return mpImpl->mpPropHelper;
+    return mpImpl->mpPropHelper.get();
 }
 
 css::uno::Sequence< css::beans::Property > SAL_CALL
-VCLXWindow::getProperties() throw (css::uno::RuntimeException, std::exception)
+VCLXWindow::getProperties()
 {
     return GetPropHelper()->getProperties();
 }
 css::beans::Property SAL_CALL
-VCLXWindow::getPropertyByName( const OUString& rName ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception)
+VCLXWindow::getPropertyByName( const OUString& rName )
 {
     return GetPropHelper()->getPropertyByName( rName );
 }
 
 sal_Bool SAL_CALL
-VCLXWindow::hasPropertyByName( const OUString& rName ) throw (css::uno::RuntimeException, std::exception)
+VCLXWindow::hasPropertyByName( const OUString& rName )
 {
     return GetPropHelper()->hasPropertyByName( rName );
 }
 
-Reference< XStyleSettings > SAL_CALL VCLXWindow::getStyleSettings() throw (RuntimeException, std::exception)
+Reference< XStyleSettings > SAL_CALL VCLXWindow::getStyleSettings()
 {
     return mpImpl->getStyleSettings();
 }

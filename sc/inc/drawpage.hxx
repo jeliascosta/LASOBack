@@ -29,8 +29,8 @@ class ScDrawPage: public FmFormPage
     ScDrawPage& operator=(const ScDrawPage&) = delete;
 
 public:
-    explicit ScDrawPage(ScDrawLayer& rNewModel, bool bMasterPage = false);
-    virtual ~ScDrawPage();
+    explicit ScDrawPage(ScDrawLayer& rNewModel, bool bMasterPage);
+    virtual ~ScDrawPage() override;
 
     virtual ScDrawPage* Clone() const override;
     virtual ScDrawPage* Clone(SdrModel* pNewModel) const override;

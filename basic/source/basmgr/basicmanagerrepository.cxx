@@ -30,7 +30,7 @@
 #include <svtools/ehdl.hxx>
 #include <svtools/sfxecode.hxx>
 #include <unotools/pathoptions.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <vcl/svapp.hxx>
 #include <tools/debug.hxx>
 #include <tools/diagnose_ex.h>
@@ -49,8 +49,6 @@
 
 namespace basic
 {
-
-
     using ::com::sun::star::uno::Reference;
     using ::com::sun::star::uno::XComponentContext;
     using ::com::sun::star::frame::XModel;
@@ -65,9 +63,9 @@ namespace basic
     using ::com::sun::star::lang::XComponent;
     using ::com::sun::star::document::XEmbeddedScripts;
 
-    typedef ::std::map< Reference< XInterface >, BasicManager*, ::comphelper::OInterfaceCompare< XInterface > > BasicManagerStore;
+    typedef std::map< Reference< XInterface >, BasicManager*, ::comphelper::OInterfaceCompare< XInterface > > BasicManagerStore;
 
-    typedef ::std::vector< BasicManagerCreationListener* >  CreationListeners;
+    typedef std::vector< BasicManagerCreationListener* >  CreationListeners;
 
     class ImplRepository : public ::utl::OEventListenerAdapter, public SfxListener
     {
@@ -83,8 +81,9 @@ namespace basic
         static ImplRepository& Instance();
 
         BasicManager*   getDocumentBasicManager( const Reference< XModel >& _rxDocumentModel );
-        BasicManager*   getApplicationBasicManager( bool _bCreate );
-        void            setApplicationBasicManager( BasicManager* _pBasicManager );
+        BasicManager*   getOrCreateApplicationBasicManager();
+        static BasicManager* getApplicationBasicManager();
+        static void          setApplicationBasicManager( BasicManager* _pBasicManager );
         void    registerCreationListener( BasicManagerCreationListener& _rListener );
         void    revokeCreationListener( BasicManagerCreationListener& _rListener );
 
@@ -113,7 +112,7 @@ namespace basic
             @precond
                 our mutex is locked
         */
-        bool impl_hasLocationForModel( const Reference< XModel >& _rxDocumentModel );
+        bool impl_hasLocationForModel( const Reference< XModel >& _rxDocumentModel ) const;
 
         /** creates a new BasicManager instance for the given model
 
@@ -238,23 +237,28 @@ namespace basic
         return nullptr;
     }
 
-    BasicManager* ImplRepository::getApplicationBasicManager( bool _bCreate )
+    BasicManager* ImplRepository::getOrCreateApplicationBasicManager()
     {
         SolarMutexGuard g;
 
         BasicManager* pAppManager = GetSbData()->pAppBasMgr;
-        if ( ( pAppManager == nullptr ) && _bCreate )
+        if (pAppManager == nullptr)
             pAppManager = impl_createApplicationBasicManager();
-
         return pAppManager;
     }
 
+    BasicManager* ImplRepository::getApplicationBasicManager()
+    {
+        SolarMutexGuard g;
+
+        return GetSbData()->pAppBasMgr;
+    }
 
     void ImplRepository::setApplicationBasicManager( BasicManager* _pBasicManager )
     {
         SolarMutexGuard g;
 
-        BasicManager* pPreviousManager = getApplicationBasicManager( false );
+        BasicManager* pPreviousManager = getApplicationBasicManager();
         delete pPreviousManager;
 
         GetSbData()->pAppBasMgr = _pBasicManager;
@@ -265,7 +269,7 @@ namespace basic
     {
         SolarMutexGuard g;
 
-        OSL_PRECOND( getApplicationBasicManager( false ) == nullptr, "ImplRepository::impl_createApplicationBasicManager: there already is one!" );
+        OSL_PRECOND(getApplicationBasicManager() == nullptr, "ImplRepository::impl_createApplicationBasicManager: there already is one!");
 
         // Determine Directory
         SvtPathOptions aPathCFG;
@@ -309,7 +313,7 @@ namespace basic
 
         // StarDesktop
         Reference< XComponentContext > xContext = ::comphelper::getProcessComponentContext();
-        pBasicManager->SetGlobalUNOConstant( "StarDesktop", makeAny( Desktop::create(xContext)));
+        pBasicManager->SetGlobalUNOConstant( "StarDesktop", css::uno::Any( Desktop::create(xContext)));
 
         // (BasicLibraries and DialogLibraries have automatically been added in SetLibraryContainerInfo)
 
@@ -333,7 +337,7 @@ namespace basic
     {
         SolarMutexGuard g;
 
-        CreationListeners::iterator pos = ::std::find( m_aCreationListeners.begin(), m_aCreationListeners.end(), &_rListener );
+        CreationListeners::iterator pos = std::find( m_aCreationListeners.begin(), m_aCreationListeners.end(), &_rListener );
         if ( pos != m_aCreationListeners.end() )
             m_aCreationListeners.erase( pos );
         else {
@@ -356,7 +360,7 @@ namespace basic
 
     StarBASIC* ImplRepository::impl_getDefaultAppBasicLibrary()
     {
-        BasicManager* pAppManager = getApplicationBasicManager( true );
+        BasicManager* pAppManager = getOrCreateApplicationBasicManager();
 
         StarBASIC* pAppBasic = pAppManager ? pAppManager->GetLib(0) : nullptr;
         DBG_ASSERT( pAppBasic != nullptr, "impl_getApplicationBasic: unable to determine the default application's Basic library!" );
@@ -372,7 +376,7 @@ namespace basic
         return location;
     }
 
-    bool ImplRepository::impl_hasLocationForModel( const Reference< XModel >& _rxDocumentModel )
+    bool ImplRepository::impl_hasLocationForModel( const Reference< XModel >& _rxDocumentModel ) const
     {
         Reference< XInterface > xNormalized( _rxDocumentModel, UNO_QUERY );
         DBG_ASSERT( _rxDocumentModel.is(), "ImplRepository::impl_getLocationForModel: invalid model!" );
@@ -441,7 +445,7 @@ namespace basic
                 for(const auto& rError : aErrors)
                 {
                     // show message to user
-                    if ( ERRCODE_BUTTON_CANCEL == ErrorHandler::HandleError( rError.GetErrorId() ) )
+                    if ( ErrorHandlerFlags::ButtonsCancel == ErrorHandler::HandleError( rError.GetErrorId() ) )
                     {
                         // user wants to break loading of BASIC-manager
                         delete _out_rpBasicManager;
@@ -474,7 +478,7 @@ namespace basic
         _out_rpBasicManager->GetLib(0)->SetParent( pAppBasic );
 
         // global properties in the document's Basic
-        _out_rpBasicManager->SetGlobalUNOConstant( "ThisComponent", makeAny( _rxDocumentModel ) );
+        _out_rpBasicManager->SetGlobalUNOConstant( "ThisComponent", css::uno::Any( _rxDocumentModel ) );
 
         // notify
         impl_notifyCreationListeners( _rxDocumentModel, *_out_rpBasicManager );
@@ -577,8 +581,7 @@ namespace basic
 
     void ImplRepository::Notify( SfxBroadcaster& _rBC, const SfxHint& _rHint )
     {
-        const SfxSimpleHint* pSimpleHint = dynamic_cast< const SfxSimpleHint* >( &_rHint );
-        if ( !pSimpleHint || ( pSimpleHint->GetId() != SFX_HINT_DYING ) )
+        if ( _rHint.GetId() != SfxHintId::Dying )
             // not interested in
             return;
 
@@ -602,36 +605,30 @@ namespace basic
         }
     }
 
-
     BasicManager* BasicManagerRepository::getDocumentBasicManager( const Reference< XModel >& _rxDocumentModel )
     {
         return ImplRepository::Instance().getDocumentBasicManager( _rxDocumentModel );
     }
 
-
     BasicManager* BasicManagerRepository::getApplicationBasicManager()
     {
-        return ImplRepository::Instance().getApplicationBasicManager( true/*_bCreate*/ );
+        return ImplRepository::Instance().getOrCreateApplicationBasicManager();
     }
-
 
     void BasicManagerRepository::resetApplicationBasicManager()
     {
-        ImplRepository::Instance().setApplicationBasicManager( nullptr );
+        ImplRepository::setApplicationBasicManager( nullptr );
     }
-
 
     void BasicManagerRepository::registerCreationListener( BasicManagerCreationListener& _rListener )
     {
         ImplRepository::Instance().registerCreationListener( _rListener );
     }
 
-
     void BasicManagerRepository::revokeCreationListener( BasicManagerCreationListener& _rListener )
     {
         ImplRepository::Instance().revokeCreationListener( _rListener );
     }
-
 
 } // namespace basic
 

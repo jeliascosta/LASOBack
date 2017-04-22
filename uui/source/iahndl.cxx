@@ -85,8 +85,6 @@
 #include "iahndl.hxx"
 #include "nameclashdlg.hxx"
 
-#include <memory>
-
 using ::com::sun::star::uno::Sequence;
 using ::com::sun::star::uno::UNO_QUERY;
 using ::com::sun::star::uno::Reference;
@@ -163,9 +161,7 @@ UUIInteractionHelper::handleRequest(
     uno::Reference< task::XInteractionRequest > const & rRequest)
 {
     if(
-        // be aware,it is the same type
-        static_cast< oslThreadIdentifier >(
-            Application::GetMainThreadIdentifier())
+        Application::GetMainThreadIdentifier()
         != osl::Thread::getCurrentIdentifier()
         &&
         GetpApp()
@@ -217,9 +213,7 @@ UUIInteractionHelper::getStringFromRequest(
     uno::Reference< task::XInteractionRequest > const & rRequest)
 {
     if(
-        // be aware,it is the same type
-        static_cast< oslThreadIdentifier >(
-            Application::GetMainThreadIdentifier())
+        Application::GetMainThreadIdentifier()
         != osl::Thread::getCurrentIdentifier()
         &&
         GetpApp()
@@ -894,11 +888,7 @@ UUIInteractionHelper::getInteractionHandlerList(
             throw uno::RuntimeException("unable to instanciate config access");
 
         uno::Reference< container::XNameAccess > xNameAccess(
-            xInterface, uno::UNO_QUERY );
-        if ( !xNameAccess.is() )
-            throw uno::RuntimeException(
-                    "config access does not implement XNameAccess");
-
+            xInterface, uno::UNO_QUERY_THROW );
         uno::Sequence< OUString > aElems = xNameAccess->getElementNames();
         const OUString* pElems = aElems.getConstArray();
         sal_Int32 nCount = aElems.getLength();
@@ -906,11 +896,7 @@ UUIInteractionHelper::getInteractionHandlerList(
         if ( nCount > 0 )
         {
             uno::Reference< container::XHierarchicalNameAccess >
-                                xHierNameAccess( xInterface, uno::UNO_QUERY );
-
-            if ( !xHierNameAccess.is() )
-                throw uno::RuntimeException(
-                    "config access does not implement XHierarchicalNameAccess");
+                                xHierNameAccess( xInterface, uno::UNO_QUERY_THROW );
 
             // Iterate over children.
             for ( sal_Int32 n = 0; n < nCount; ++n )
@@ -977,12 +963,6 @@ UUIInteractionHelper::getParentXWindow() const
     return m_xWindowParam;
 }
 
-const OUString&
-UUIInteractionHelper::getContextProperty()
-{
-    return m_aContextParam;
-}
-
 uno::Reference< task::XInteractionHandler2 >
 UUIInteractionHelper::getInteractionHandler()
 {
@@ -993,7 +973,7 @@ UUIInteractionHelper::getInteractionHandler()
 
 namespace {
 
-sal_uInt16
+ErrorHandlerFlags
 executeMessageBox(
     vcl::Window * pParent,
     OUString const & rTitle,
@@ -1004,24 +984,26 @@ executeMessageBox(
 
     ScopedVclPtrInstance< MessBox > xBox(pParent, nButtonMask, rTitle, rMessage);
 
-    sal_uInt16 aResult = xBox->Execute();
-    switch( aResult )
+    sal_uInt16 aMessResult = xBox->Execute();
+    ErrorHandlerFlags aResult = ErrorHandlerFlags::NONE;
+    switch( aMessResult )
     {
     case RET_OK:
-        aResult = ERRCODE_BUTTON_OK;
+        aResult = ErrorHandlerFlags::ButtonsOk;
         break;
     case RET_CANCEL:
-        aResult = ERRCODE_BUTTON_CANCEL;
+        aResult = ErrorHandlerFlags::ButtonsCancel;
         break;
     case RET_YES:
-        aResult = ERRCODE_BUTTON_YES;
+        aResult = ErrorHandlerFlags::ButtonsYes;
         break;
     case RET_NO:
-        aResult = ERRCODE_BUTTON_NO;
+        aResult = ErrorHandlerFlags::ButtonsNo;
         break;
     case RET_RETRY:
-        aResult = ERRCODE_BUTTON_RETRY;
+        aResult = ErrorHandlerFlags::ButtonsRetry;
         break;
+    default: assert(false);
     }
 
     return aResult;
@@ -1132,8 +1114,7 @@ UUIInteractionHelper::handleGenericErrorRequest(
         ErrCode  nError   = static_cast< ErrCode >(nErrorCode);
         bool bWarning = !ERRCODE_TOERROR(nError);
 
-        if ( nError == ERRCODE_SFX_BROKENSIGNATURE
-             || nError == ERRCODE_SFX_INCOMPLETE_ENCRYPTION )
+        if ( nError == ERRCODE_SFX_INCOMPLETE_ENCRYPTION )
         {
             // the security warning box needs a special title
             OUString aErrorString;
@@ -1143,11 +1124,8 @@ UUIInteractionHelper::handleGenericErrorRequest(
                 ResMgr::CreateResMgr( "uui" ) );
             OUString aTitle( utl::ConfigManager::getProductName() );
 
-            OUString aErrTitle
-                  = ResId( nError == ERRCODE_SFX_BROKENSIGNATURE
-                                       ? STR_WARNING_BROKENSIGNATURE_TITLE
-                                       : STR_WARNING_INCOMPLETE_ENCRYPTION_TITLE,
-                                   *xManager.get() ).toString();
+            OUString aErrTitle = ResId( STR_WARNING_INCOMPLETE_ENCRYPTION_TITLE,
+                *xManager.get() ).toString();
 
             if ( !aTitle.isEmpty() && !aErrTitle.isEmpty() )
                 aTitle += " - " ;
@@ -1280,23 +1258,25 @@ UUIInteractionHelper::handleBrokenPackageRequest(
     switch (
         executeMessageBox( getParentProperty(), title, aMessage, nButtonMask ) )
     {
-    case ERRCODE_BUTTON_OK:
+    case ErrorHandlerFlags::ButtonsOk:
         OSL_ENSURE( xAbort.is(), "unexpected situation" );
         if (xAbort.is())
             xAbort->select();
         break;
 
-    case ERRCODE_BUTTON_NO:
+    case ErrorHandlerFlags::ButtonsNo:
         OSL_ENSURE(xDisapprove.is(), "unexpected situation");
         if (xDisapprove.is())
             xDisapprove->select();
         break;
 
-    case ERRCODE_BUTTON_YES:
+    case ErrorHandlerFlags::ButtonsYes:
         OSL_ENSURE(xApprove.is(), "unexpected situation");
         if (xApprove.is())
             xApprove->select();
         break;
+
+    default: break;
     }
 }
 
@@ -1308,14 +1288,10 @@ bool
 ErrorResource::getString(ErrCode nErrorCode, OUString &rString)
     const
 {
-    ResId aResId(static_cast< sal_uInt16 >(nErrorCode & ERRCODE_RES_MASK),
-                 *m_pResMgr);
-    aResId.SetRT(RSC_STRING);
-    if (!IsAvailableRes(aResId))
+    sal_uInt32 nIdx = m_aStringArray.FindIndex(nErrorCode & ERRCODE_RES_MASK);
+    if (nIdx == RESARRAY_INDEX_NOTFOUND)
         return false;
-    aResId.SetAutoRelease(false);
-    rString = aResId.toString();
-    m_pResMgr->PopContext();
+    rString = m_aStringArray.GetString(nIdx);
     return true;
 }
 

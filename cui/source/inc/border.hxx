@@ -25,6 +25,7 @@
 #include <vcl/fixed.hxx>
 #include <svtools/valueset.hxx>
 #include <sfx2/tabdlg.hxx>
+#include <svx/colorbox.hxx>
 #include <svx/frmsel.hxx>
 #include <svx/flagsdef.hxx>
 
@@ -46,7 +47,7 @@ class SvxBorderTabPage : public SfxTabPage
     static const sal_uInt16 pRanges[];
 
 public:
-    virtual ~SvxBorderTabPage();
+    virtual ~SvxBorderTabPage() override;
     virtual void dispose() override;
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent,
                                 const SfxItemSet* rAttrSet);
@@ -60,7 +61,7 @@ public:
     virtual void        PageCreated(const SfxAllItemSet& aSet) override;
     void                SetTableMode();
 protected:
-    virtual sfxpg        DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
 
 private:
@@ -72,7 +73,7 @@ private:
     VclPtr<svx::FrameSelector> m_pFrameSel;
 
     VclPtr<LineListBox>        m_pLbLineStyle;
-    VclPtr<ColorListBox>       m_pLbLineColor;
+    VclPtr<SvxColorListBox>    m_pLbLineColor;
     VclPtr<MetricField>        m_pLineWidthMF;
 
     VclPtr<VclContainer>       m_pSpacingFrame;
@@ -91,7 +92,7 @@ private:
     VclPtr<FixedText>          m_pFtShadowSize;
     VclPtr<MetricField>        m_pEdShadowSize;
     VclPtr<FixedText>          m_pFtShadowColor;
-    VclPtr<ColorListBox>       m_pLbShadowColor;
+    VclPtr<SvxColorListBox>    m_pLbShadowColor;
 
 
     VclPtr<VclContainer>       m_pPropertiesFrame;///< properties - "Merge with next paragraph" in Writer
@@ -99,9 +100,10 @@ private:
     // #i29550#
     VclPtr<CheckBox>           m_pMergeAdjacentBordersCB;
     VclPtr<CheckBox>           m_pRemoveAdjcentCellBordersCB;
+    VclPtr<FixedText>          m_pRemoveAdjcentCellBordersFT;
 
-    ImageList           aShadowImgLst;
-    ImageList           aBorderImgLst;
+    std::vector<BitmapEx>      m_aShadowImgVec;
+    std::vector<BitmapEx>      m_aBorderImgVec;
 
     long                nMinValue;  ///< minimum distance
     SwBorderModes       nSWMode;    ///< table, textframe, paragraph
@@ -111,22 +113,23 @@ private:
     bool                mbTLBREnabled;      ///< true = Top-left to bottom-right border enabled.
     bool                mbBLTREnabled;      ///< true = Bottom-left to top-right border enabled.
     bool                mbUseMarginItem;
+    bool                mbAllowPaddingWithoutBorders;
     bool                mbSync;
     bool                mbRemoveAdjacentCellBorders;
     bool                bIsCalcDoc;
 
-    std::set<sal_Int16> maUsedBorderStyles;
+    std::set<SvxBorderLineStyle> maUsedBorderStyles;
 
     // Handler
-    DECL_LINK_TYPED( SelStyleHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED( SelColHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED( SelPreHdl_Impl, ValueSet*, void );
-    DECL_LINK_TYPED( SelSdwHdl_Impl, ValueSet*, void );
-    DECL_LINK_TYPED( LinesChanged_Impl, LinkParamNone*, void );
-    DECL_LINK_TYPED( ModifyDistanceHdl_Impl, Edit&, void);
-    DECL_LINK_TYPED( ModifyWidthHdl_Impl, Edit&, void);
-    DECL_LINK_TYPED( SyncHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( RemoveAdjacentCellBorderHdl_Impl, Button*, void);
+    DECL_LINK( SelStyleHdl_Impl, ListBox&, void );
+    DECL_LINK( SelColHdl_Impl, SvxColorListBox&, void );
+    DECL_LINK( SelPreHdl_Impl, ValueSet*, void );
+    DECL_LINK( SelSdwHdl_Impl, ValueSet*, void );
+    DECL_LINK( LinesChanged_Impl, LinkParamNone*, void );
+    DECL_LINK( ModifyDistanceHdl_Impl, Edit&, void);
+    DECL_LINK( ModifyWidthHdl_Impl, Edit&, void);
+    DECL_LINK( SyncHdl_Impl, Button*, void);
+    DECL_LINK( RemoveAdjacentCellBorderHdl_Impl, Button*, void);
 
     sal_uInt16              GetPresetImageId( sal_uInt16 nValueSetIdx ) const;
     sal_uInt16              GetPresetStringId( sal_uInt16 nValueSetIdx ) const;
@@ -143,7 +146,7 @@ private:
                                              const editeng::SvxBorderLine* pCurLine,
                                              bool bValid );
 
-    bool IsBorderLineStyleAllowed( sal_Int16 nStyle ) const;
+    bool IsBorderLineStyleAllowed( SvxBorderLineStyle nStyle ) const;
     void UpdateRemoveAdjCellBorderCB( sal_uInt16 nPreset );
 };
 

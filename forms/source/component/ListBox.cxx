@@ -49,6 +49,7 @@
 #include <connectivity/formattedcolumnvalue.hxx>
 #include <connectivity/dbconversion.hxx>
 #include <cppuhelper/queryinterface.hxx>
+#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <tools/diagnose_ex.h>
 #include <unotools/sharedunocomponent.hxx>
@@ -146,6 +147,7 @@ namespace frm
     void OListBoxModel::init()
     {
         startAggregatePropertyListening( PROPERTY_STRINGITEMLIST );
+        startAggregatePropertyListening( PROPERTY_TYPEDITEMLIST );
     }
 
 
@@ -204,7 +206,7 @@ namespace frm
 
     // XServiceInfo
 
-    css::uno::Sequence<OUString> SAL_CALL OListBoxModel::getSupportedServiceNames() throw(RuntimeException, std::exception)
+    css::uno::Sequence<OUString> SAL_CALL OListBoxModel::getSupportedServiceNames()
     {
         css::uno::Sequence<OUString> aSupported = OBoundControlModel::getSupportedServiceNames();
 
@@ -229,7 +231,7 @@ namespace frm
     }
 
 
-    Any SAL_CALL OListBoxModel::queryAggregation(const Type& _rType) throw (RuntimeException, std::exception)
+    Any SAL_CALL OListBoxModel::queryAggregation(const Type& _rType)
     {
         Any aReturn = OBoundControlModel::queryAggregation( _rType );
         if ( !aReturn.hasValue() )
@@ -254,7 +256,7 @@ namespace frm
         switch (_nHandle)
         {
         case PROPERTY_ID_BOUNDCOLUMN:
-            _rValue <<= m_aBoundColumn;
+            _rValue = m_aBoundColumn;
             break;
 
         case PROPERTY_ID_LISTSOURCETYPE:
@@ -270,7 +272,7 @@ namespace frm
             break;
 
         case PROPERTY_ID_SELECT_VALUE_SEQ:
-            _rValue = getCurrentMultiValue();
+            _rValue <<= getCurrentMultiValue();
             break;
 
         case PROPERTY_ID_SELECT_VALUE:
@@ -285,13 +287,17 @@ namespace frm
             _rValue <<= comphelper::containerToSequence(getStringItemList());
             break;
 
+        case PROPERTY_ID_TYPEDITEMLIST:
+            _rValue <<= getTypedItemList();
+            break;
+
         default:
             OBoundControlModel::getFastPropertyValue(_rValue, _nHandle);
         }
     }
 
 
-    void OListBoxModel::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const Any& _rValue) throw (css::uno::Exception, std::exception)
+    void OListBoxModel::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const Any& _rValue)
     {
         switch (_nHandle)
         {
@@ -389,7 +395,6 @@ namespace frm
 
     sal_Bool OListBoxModel::convertFastPropertyValue(
         Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue)
-        throw (IllegalArgumentException)
     {
         bool bModified(false);
         switch (_nHandle)
@@ -415,9 +420,17 @@ namespace frm
             break;
 
         case PROPERTY_ID_SELECT_VALUE :
-            bModified = tryPropertyValue(_rConvertedValue, _rOldValue, _rValue, getCurrentSingleValue());
+        {
+            // Any from connectivity::ORowSetValue
+            Any _rCurrentValue = getCurrentSingleValue();
+            if (_rCurrentValue != _rValue)
+            {
+                _rOldValue = _rCurrentValue;
+                _rConvertedValue = _rValue;
+                bModified = true;
+            }
             break;
-
+        }
         case PROPERTY_ID_DEFAULT_SELECT_SEQ :
             bModified = tryPropertyValue(_rConvertedValue, _rOldValue, _rValue, m_aDefaultSelectSeq);
             break;
@@ -433,7 +446,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OListBoxModel::setPropertyValues( const Sequence< OUString >& _rPropertyNames, const Sequence< Any >& _rValues ) throw(PropertyVetoException, IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
+    void SAL_CALL OListBoxModel::setPropertyValues( const Sequence< OUString >& _rPropertyNames, const Sequence< Any >& _rValues )
     {
         // if both SelectedItems and StringItemList are set, care for this
         // #i27024#
@@ -485,7 +498,7 @@ namespace frm
     }
 
 
-    void OListBoxModel::_propertyChanged( const PropertyChangeEvent& i_rEvent ) throw ( RuntimeException )
+    void OListBoxModel::_propertyChanged( const PropertyChangeEvent& i_rEvent )
     {
         if ( i_rEvent.PropertyName == PROPERTY_STRINGITEMLIST )
         {
@@ -497,6 +510,7 @@ namespace frm
             // <----- SYNCHRONIZED
             return;
         }
+        // XXX NOTE: PROPERTY_TYPEDITEMLIST not handled, used only with external list source.
         OBoundControlModel::_propertyChanged( i_rEvent );
     }
 
@@ -507,17 +521,17 @@ namespace frm
 
         // superseded properties:
         RemoveProperty( _rAggregateProps, PROPERTY_STRINGITEMLIST );
+        RemoveProperty( _rAggregateProps, PROPERTY_TYPEDITEMLIST );
     }
 
 
-    OUString SAL_CALL OListBoxModel::getServiceName() throw(RuntimeException, std::exception)
+    OUString SAL_CALL OListBoxModel::getServiceName()
     {
         return OUString(FRM_COMPONENT_LISTBOX);   // old (non-sun) name for compatibility !
     }
 
 
     void SAL_CALL OListBoxModel::write(const Reference<XObjectOutputStream>& _rxOutStream)
-        throw(IOException, RuntimeException, std::exception)
     {
         OBoundControlModel::write(_rxOutStream);
 
@@ -553,7 +567,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OListBoxModel::read(const Reference<XObjectInputStream>& _rxInStream) throw(IOException, RuntimeException, std::exception)
+    void SAL_CALL OListBoxModel::read(const Reference<XObjectInputStream>& _rxInStream)
     {
         // We need to respect dependencies for certain variables.
         // Therefore, we need to set them explicitly via setPropertyValue().
@@ -662,6 +676,7 @@ namespace frm
             )
         {
             setFastPropertyValue( PROPERTY_ID_STRINGITEMLIST, makeAny( css::uno::Sequence<OUString>() ) );
+            setFastPropertyValue( PROPERTY_ID_TYPEDITEMLIST, makeAny( css::uno::Sequence<css::uno::Any>() ) );
         }
 
         if (nVersion > 3)
@@ -984,6 +999,7 @@ namespace frm
         setBoundValues(aValueList);
 
         setFastPropertyValue( PROPERTY_ID_STRINGITEMLIST, makeAny( lcl_convertToStringSequence( aDisplayList ) ) );
+        setFastPropertyValue( PROPERTY_ID_TYPEDITEMLIST, makeAny( css::uno::Sequence<css::uno::Any>() ) );
     }
 
 
@@ -1061,7 +1077,7 @@ namespace frm
 
     sal_Int32 OListBoxModel::getValueType() const
     {
-        return impl_hasBoundComponent() ? m_nBoundColumnType : getFieldType();
+        return (m_nBoundColumnType != css::sdbc::DataType::SQLNULL) ? m_nBoundColumnType : getFieldType();
     }
 
     ValueList OListBoxModel::impl_getValues() const
@@ -1271,7 +1287,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OListBoxModel::disposing( const EventObject& _rSource ) throw ( RuntimeException, std::exception )
+    void SAL_CALL OListBoxModel::disposing( const EventObject& _rSource )
     {
         if ( !OEntryListHelper::handleDisposing( _rSource ) )
             OBoundControlModel::disposing( _rSource );
@@ -1402,7 +1418,7 @@ namespace frm
             }
 
             // copy the indexes to the sequence
-            aSelectIndexes = comphelper::containerToSequence<sal_Int16>( aSelectionSet );
+            aSelectIndexes = comphelper::containerToSequence( aSelectionSet );
         }
         break;
 
@@ -1419,7 +1435,7 @@ namespace frm
                 ++idx;
             }
 
-            aSelectIndexes = comphelper::containerToSequence<sal_Int16>( aSelectionSet );
+            aSelectIndexes = comphelper::containerToSequence( aSelectionSet );
         }
         break;
         }
@@ -1447,6 +1463,26 @@ namespace frm
                 return OUString();
             }
         };
+
+
+        Any lcl_getSingleSelectedEntryTyped( const Sequence< sal_Int16 >& _rSelectSequence, const Sequence<Any>& _rTypedList )
+        {
+            Any aReturn;
+
+            // by definition, multiple selected entries are transferred as NULL if the
+            // binding does not support lists
+            if ( _rSelectSequence.getLength() <= 1 )
+            {
+                if ( _rSelectSequence.getLength() == 1 )
+                {
+                    sal_Int32 nIndex = _rSelectSequence[0];
+                    if (0 <= nIndex && nIndex < _rTypedList.getLength())
+                        aReturn = _rTypedList[nIndex];
+                }
+            }
+
+            return aReturn;
+        }
 
 
         Any lcl_getSingleSelectedEntry( const Sequence< sal_Int16 >& _rSelectSequence, const std::vector< OUString >& _rStringList )
@@ -1516,7 +1552,7 @@ namespace frm
         }
 
 
-        Any lcl_getMultiSelectedEntriesAny( const Sequence< sal_Int16 >& _rSelectSequence, const ValueList& _rStringList )
+        Sequence< Any > lcl_getMultiSelectedEntriesAny( const Sequence< sal_Int16 >& _rSelectSequence, const ValueList& _rStringList )
         {
             Sequence< Any > aSelectedEntriesValues( _rSelectSequence.getLength() );
             ::std::transform(
@@ -1525,7 +1561,7 @@ namespace frm
                 aSelectedEntriesValues.getArray(),
                 ExtractAnyFromValueList_Safe( _rStringList )
             );
-            return makeAny( aSelectedEntriesValues );
+            return aSelectedEntriesValues;
         }
     }
 
@@ -1541,7 +1577,7 @@ namespace frm
         switch ( lcl_getCurrentExchangeType( getExternalValueType() ) )
         {
         case eValueList:
-            aReturn = getCurrentMultiValue();
+            aReturn <<= getCurrentMultiValue();
             break;
 
         case eValue:
@@ -1579,7 +1615,14 @@ namespace frm
             break;
 
         case eEntry:
-            aReturn = lcl_getSingleSelectedEntry( aSelectSequence, getStringItemList() );
+            {
+                const std::vector<OUString>& rStrings = getStringItemList();
+                const Sequence<Any>& rValues = getTypedItemList();
+                if (rStrings.size() == static_cast<size_t>(rValues.getLength()))
+                    aReturn = lcl_getSingleSelectedEntryTyped( aSelectSequence, rValues );
+                else
+                    aReturn = lcl_getSingleSelectedEntry( aSelectSequence, rStrings );
+            }
             break;
         }
 
@@ -1612,9 +1655,9 @@ namespace frm
         return aCurrentValue;
     }
 
-    Any OListBoxModel::getCurrentMultiValue() const
+    Sequence< Any > OListBoxModel::getCurrentMultiValue() const
     {
-        Any aCurrentValue;
+        Sequence< Any > aCurrentValue;
 
         try
         {
@@ -1647,7 +1690,7 @@ namespace frm
             OSL_VERIFY( const_cast< OListBoxModel* >( this )->getPropertyValue( PROPERTY_MULTISELECTION ) >>= bMultiSelection );
 
             if ( bMultiSelection )
-                aCurrentValue = getCurrentMultiValue();
+                aCurrentValue <<= getCurrentMultiValue();
             else
                 aCurrentValue = getCurrentSingleValue();
         }
@@ -1682,6 +1725,7 @@ namespace frm
         try
         {
             m_xAggregateSet->setPropertyValue( PROPERTY_STRINGITEMLIST, makeAny( comphelper::containerToSequence(getStringItemList()) ) );
+            m_xAggregateSet->setPropertyValue( PROPERTY_TYPEDITEMLIST, makeAny( getTypedItemList() ) );
         }
         catch( const Exception& )
         {
@@ -1754,7 +1798,7 @@ namespace frm
     }
 
 
-    Any SAL_CALL OListBoxControl::queryAggregation(const Type& _rType) throw (RuntimeException, std::exception)
+    Any SAL_CALL OListBoxControl::queryAggregation(const Type& _rType)
     {
         Any aReturn = OListBoxControl_BASE::queryInterface( _rType );
 
@@ -1789,8 +1833,8 @@ namespace frm
 
         doSetDelegator();
 
-        m_aChangeIdle.SetPriority(SchedulerPriority::LOWEST);
-        m_aChangeIdle.SetIdleHdl(LINK(this,OListBoxControl,OnTimeout));
+        m_aChangeIdle.SetPriority(TaskPriority::LOWEST);
+        m_aChangeIdle.SetInvokeHandler(LINK(this,OListBoxControl,OnTimeout));
     }
 
 
@@ -1808,7 +1852,7 @@ namespace frm
     }
 
 
-    css::uno::Sequence<OUString> SAL_CALL OListBoxControl::getSupportedServiceNames() throw(RuntimeException, std::exception)
+    css::uno::Sequence<OUString> SAL_CALL OListBoxControl::getSupportedServiceNames()
     {
         css::uno::Sequence<OUString> aSupported = OBoundControl::getSupportedServiceNames();
         aSupported.realloc(aSupported.getLength() + 2);
@@ -1822,7 +1866,7 @@ namespace frm
 
     // XFocusListener
 
-    void SAL_CALL OListBoxControl::focusGained(const FocusEvent& /*_rEvent*/) throw(RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::focusGained(const FocusEvent& /*_rEvent*/)
     {
         ::osl::MutexGuard aGuard(m_aMutex);
         if ( m_aChangeListeners.getLength() ) // only if there are listeners
@@ -1837,14 +1881,14 @@ namespace frm
     }
 
 
-    void SAL_CALL OListBoxControl::focusLost(const FocusEvent& /*_rEvent*/) throw(RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::focusLost(const FocusEvent& /*_rEvent*/)
     {
         m_aCurrentSelection.clear();
     }
 
     // XItemListener
 
-    void SAL_CALL OListBoxControl::itemStateChanged(const ItemEvent& _rEvent) throw(RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::itemStateChanged(const ItemEvent& _rEvent)
     {
         // forward this to our listeners
         Reference< XChild > xChild( getModel(), UNO_QUERY );
@@ -1886,8 +1930,8 @@ namespace frm
                     bool bModified(false);
                     Any aValue = xSet->getPropertyValue(PROPERTY_SELECT_SEQ);
 
-                    Sequence<sal_Int16> const & rSelection = *static_cast<Sequence<sal_Int16> const *>(aValue.getValue());
-                    Sequence<sal_Int16> const & rOldSelection = *static_cast<Sequence<sal_Int16> const *>(m_aCurrentSelection.getValue());
+                    Sequence<sal_Int16> const & rSelection = *o3tl::doAccess<Sequence<sal_Int16>>(aValue);
+                    Sequence<sal_Int16> const & rOldSelection = *o3tl::doAccess<Sequence<sal_Int16>>(m_aCurrentSelection);
                     sal_Int32 nLen = rSelection.getLength();
                     if (nLen != rOldSelection.getLength())
                         bModified = true;
@@ -1914,20 +1958,20 @@ namespace frm
 
     // XEventListener
 
-    void SAL_CALL OListBoxControl::disposing(const EventObject& _rSource) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::disposing(const EventObject& _rSource)
     {
         OBoundControl::disposing(_rSource);
     }
 
     // XChangeBroadcaster
 
-    void SAL_CALL OListBoxControl::addChangeListener(const Reference<XChangeListener>& _rxListener) throw(RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::addChangeListener(const Reference<XChangeListener>& _rxListener)
     {
         m_aChangeListeners.addInterface( _rxListener );
     }
 
 
-    void SAL_CALL OListBoxControl::removeChangeListener(const Reference<XChangeListener>& _rxListener) throw(RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::removeChangeListener(const Reference<XChangeListener>& _rxListener)
     {
         m_aChangeListeners.removeInterface( _rxListener );
     }
@@ -1975,60 +2019,60 @@ namespace frm
     }
 
 
-    IMPL_LINK_NOARG_TYPED(OListBoxControl, OnTimeout, Idle*, void)
+    IMPL_LINK_NOARG(OListBoxControl, OnTimeout, Timer*, void)
     {
         m_aChangeListeners.notifyEach( &XChangeListener::changed, EventObject( *this ) );
     }
 
 
-    void SAL_CALL OListBoxControl::addItemListener( const Reference< XItemListener >& l ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::addItemListener( const Reference< XItemListener >& l )
     {
         m_aItemListeners.addInterface( l );
     }
 
 
-    void SAL_CALL OListBoxControl::removeItemListener( const Reference< XItemListener >& l ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::removeItemListener( const Reference< XItemListener >& l )
     {
         m_aItemListeners.removeInterface( l );
     }
 
 
-    void SAL_CALL OListBoxControl::addActionListener( const Reference< XActionListener >& l ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::addActionListener( const Reference< XActionListener >& l )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->addActionListener( l );
     }
 
 
-    void SAL_CALL OListBoxControl::removeActionListener( const Reference< XActionListener >& l ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::removeActionListener( const Reference< XActionListener >& l )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->removeActionListener( l );
     }
 
 
-    void SAL_CALL OListBoxControl::addItem( const OUString& aItem, ::sal_Int16 nPos ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::addItem( const OUString& aItem, ::sal_Int16 nPos )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->addItem( aItem, nPos );
     }
 
 
-    void SAL_CALL OListBoxControl::addItems( const Sequence< OUString >& aItems, ::sal_Int16 nPos ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::addItems( const Sequence< OUString >& aItems, ::sal_Int16 nPos )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->addItems( aItems, nPos );
     }
 
 
-    void SAL_CALL OListBoxControl::removeItems( ::sal_Int16 nPos, ::sal_Int16 nCount ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::removeItems( ::sal_Int16 nPos, ::sal_Int16 nCount )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->removeItems( nPos, nCount );
     }
 
 
-    ::sal_Int16 SAL_CALL OListBoxControl::getItemCount(  ) throw (RuntimeException, std::exception)
+    ::sal_Int16 SAL_CALL OListBoxControl::getItemCount(  )
     {
         if ( m_xAggregateListBox.is() )
             return m_xAggregateListBox->getItemCount();
@@ -2036,7 +2080,7 @@ namespace frm
     }
 
 
-    OUString SAL_CALL OListBoxControl::getItem( ::sal_Int16 nPos ) throw (RuntimeException, std::exception)
+    OUString SAL_CALL OListBoxControl::getItem( ::sal_Int16 nPos )
     {
         if ( m_xAggregateListBox.is() )
             return m_xAggregateListBox->getItem( nPos );
@@ -2044,7 +2088,7 @@ namespace frm
     }
 
 
-    Sequence< OUString > SAL_CALL OListBoxControl::getItems(  ) throw (RuntimeException, std::exception)
+    Sequence< OUString > SAL_CALL OListBoxControl::getItems(  )
     {
         if ( m_xAggregateListBox.is() )
             return m_xAggregateListBox->getItems();
@@ -2052,7 +2096,7 @@ namespace frm
     }
 
 
-    ::sal_Int16 SAL_CALL OListBoxControl::getSelectedItemPos(  ) throw (RuntimeException, std::exception)
+    ::sal_Int16 SAL_CALL OListBoxControl::getSelectedItemPos(  )
     {
         if ( m_xAggregateListBox.is() )
             return m_xAggregateListBox->getSelectedItemPos();
@@ -2060,7 +2104,7 @@ namespace frm
     }
 
 
-    Sequence< ::sal_Int16 > SAL_CALL OListBoxControl::getSelectedItemsPos(  ) throw (RuntimeException, std::exception)
+    Sequence< ::sal_Int16 > SAL_CALL OListBoxControl::getSelectedItemsPos(  )
     {
         if ( m_xAggregateListBox.is() )
             return m_xAggregateListBox->getSelectedItemsPos();
@@ -2068,7 +2112,7 @@ namespace frm
     }
 
 
-    OUString SAL_CALL OListBoxControl::getSelectedItem(  ) throw (RuntimeException, std::exception)
+    OUString SAL_CALL OListBoxControl::getSelectedItem(  )
     {
         if ( m_xAggregateListBox.is() )
             return m_xAggregateListBox->getSelectedItem();
@@ -2076,7 +2120,7 @@ namespace frm
     }
 
 
-    Sequence< OUString > SAL_CALL OListBoxControl::getSelectedItems(  ) throw (RuntimeException, std::exception)
+    Sequence< OUString > SAL_CALL OListBoxControl::getSelectedItems(  )
     {
         if ( m_xAggregateListBox.is() )
             return m_xAggregateListBox->getSelectedItems();
@@ -2084,28 +2128,28 @@ namespace frm
     }
 
 
-    void SAL_CALL OListBoxControl::selectItemPos( ::sal_Int16 nPos, sal_Bool bSelect ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::selectItemPos( ::sal_Int16 nPos, sal_Bool bSelect )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->selectItemPos( nPos, bSelect );
     }
 
 
-    void SAL_CALL OListBoxControl::selectItemsPos( const Sequence< ::sal_Int16 >& aPositions, sal_Bool bSelect ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::selectItemsPos( const Sequence< ::sal_Int16 >& aPositions, sal_Bool bSelect )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->selectItemsPos( aPositions, bSelect );
     }
 
 
-    void SAL_CALL OListBoxControl::selectItem( const OUString& aItem, sal_Bool bSelect ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::selectItem( const OUString& aItem, sal_Bool bSelect )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->selectItem( aItem, bSelect );
     }
 
 
-    sal_Bool SAL_CALL OListBoxControl::isMutipleMode(  ) throw (RuntimeException, std::exception)
+    sal_Bool SAL_CALL OListBoxControl::isMutipleMode(  )
     {
         if ( m_xAggregateListBox.is() )
             return m_xAggregateListBox->isMutipleMode();
@@ -2113,14 +2157,14 @@ namespace frm
     }
 
 
-    void SAL_CALL OListBoxControl::setMultipleMode( sal_Bool bMulti ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::setMultipleMode( sal_Bool bMulti )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->setMultipleMode( bMulti );
     }
 
 
-    ::sal_Int16 SAL_CALL OListBoxControl::getDropDownLineCount(  ) throw (RuntimeException, std::exception)
+    ::sal_Int16 SAL_CALL OListBoxControl::getDropDownLineCount(  )
     {
         if ( m_xAggregateListBox.is() )
             return m_xAggregateListBox->getDropDownLineCount();
@@ -2128,14 +2172,14 @@ namespace frm
     }
 
 
-    void SAL_CALL OListBoxControl::setDropDownLineCount( ::sal_Int16 nLines ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::setDropDownLineCount( ::sal_Int16 nLines )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->setDropDownLineCount( nLines );
     }
 
 
-    void SAL_CALL OListBoxControl::makeVisible( ::sal_Int16 nEntry ) throw (RuntimeException, std::exception)
+    void SAL_CALL OListBoxControl::makeVisible( ::sal_Int16 nEntry )
     {
         if ( m_xAggregateListBox.is() )
             m_xAggregateListBox->makeVisible( nEntry );

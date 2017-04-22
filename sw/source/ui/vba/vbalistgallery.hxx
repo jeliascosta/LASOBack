@@ -32,11 +32,12 @@ private:
     sal_Int32 mnType;
 
 public:
-    SwVbaListGallery( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextDocument >& xTextDoc, sal_Int32 nType ) throw ( css::uno::RuntimeException );
-    virtual ~SwVbaListGallery();
+    /// @throws css::uno::RuntimeException
+    SwVbaListGallery( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextDocument >& xTextDoc, sal_Int32 nType );
+    virtual ~SwVbaListGallery() override;
 
     // Methods
-    virtual css::uno::Any SAL_CALL ListTemplates( const css::uno::Any& index ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL ListTemplates( const css::uno::Any& index ) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

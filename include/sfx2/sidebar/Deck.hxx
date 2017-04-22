@@ -41,13 +41,13 @@ public:
     Deck(const DeckDescriptor& rDeckDescriptor,
          vcl::Window* pParentWindow,
          const std::function<void()>& rCloserAction);
-    virtual ~Deck();
+    virtual ~Deck() override;
     virtual void dispose() override;
 
     const OUString& GetId() const { return msId; }
 
-    DeckTitleBar* GetTitleBar() const;
-    Rectangle GetContentArea() const;
+    VclPtr<DeckTitleBar> GetTitleBar() const;
+    tools::Rectangle GetContentArea() const;
     void ResetPanels (const SharedPanelContainer& rPanels);
     const SharedPanelContainer& GetPanels() const  { return maPanels; }
 
@@ -63,9 +63,9 @@ public:
     void ShowPanel (const Panel& rPanel);
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rUpdateArea) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rUpdateArea) override;
     virtual void DataChanged (const DataChangedEvent& rEvent) override;
-    virtual bool Notify(NotifyEvent& rEvent) override;
+    virtual bool EventNotify(NotifyEvent& rEvent) override;
 
     static void PrintWindowSubTree (vcl::Window* pRoot, int nIndentation);
 
@@ -75,7 +75,7 @@ public:
     {
     public:
         ScrollContainerWindow(vcl::Window* pParentWindow);
-        virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rUpdateArea) override;
+        virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rUpdateArea) override;
         void SetSeparators(const ::std::vector<sal_Int32>& rSeparators);
     private:
         std::vector<sal_Int32> maSeparators;
@@ -91,7 +91,7 @@ private:
     VclPtr<vcl::Window> mpFiller;
     VclPtr<ScrollBar> mpVerticalScrollBar;
 
-    DECL_LINK_TYPED(HandleVerticalScrollBarChange, ScrollBar*, void);
+    DECL_LINK(HandleVerticalScrollBarChange, ScrollBar*, void);
     bool ProcessWheelEvent(CommandEvent* pCommandEvent);
 
 };

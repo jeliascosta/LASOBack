@@ -33,11 +33,11 @@
 #include <redline.hxx>
 
 SwUndoInserts::SwUndoInserts( SwUndoId nUndoId, const SwPaM& rPam )
-    : SwUndo( nUndoId ), SwUndRng( rPam ),
+    : SwUndo( nUndoId, rPam.GetDoc() ), SwUndRng( rPam ),
     pTextFormatColl( nullptr ), pLastNdColl(nullptr), pFrameFormats( nullptr ), pRedlData( nullptr ),
     bSttWasTextNd( true ), nNdDiff( 0 ), nSetPos( 0 )
 {
-    pHistory = new SwHistory;
+    pHistory.reset( new SwHistory );
     SwDoc* pDoc = rPam.GetDoc();
 
     SwTextNode* pTextNd = rPam.GetPoint()->nNode.GetNode().GetTextNode();
@@ -58,7 +58,7 @@ SwUndoInserts::SwUndoInserts( SwUndoId nUndoId, const SwPaM& rPam )
                 SwFormatAnchor const*const  pAnchor = &pFormat->GetAnchor();
                 const SwPosition* pAPos = pAnchor->GetContentAnchor();
                 if (pAPos &&
-                    (pAnchor->GetAnchorId() == FLY_AT_PARA) &&
+                    (pAnchor->GetAnchorId() == RndStdIds::FLY_AT_PARA) &&
                      nSttNode == pAPos->nNode.GetIndex() )
                 {
                     if( !pFrameFormats )
@@ -72,7 +72,7 @@ SwUndoInserts::SwUndoInserts( SwUndoId nUndoId, const SwPaM& rPam )
     if( pDoc->getIDocumentRedlineAccess().IsRedlineOn() )
     {
         pRedlData = new SwRedlineData( nsRedlineType_t::REDLINE_INSERT, pDoc->getIDocumentRedlineAccess().GetRedlineAuthor() );
-        SetRedlineMode( pDoc->getIDocumentRedlineAccess().GetRedlineMode() );
+        SetRedlineFlags( pDoc->getIDocumentRedlineAccess().GetRedlineFlags() );
     }
 }
 
@@ -111,7 +111,7 @@ void SwUndoInserts::SetInsertRange( const SwPaM& rPam, bool bScanFlys,
             SwFormatAnchor const*const pAnchor = &pFormat->GetAnchor();
             SwPosition const*const pAPos = pAnchor->GetContentAnchor();
             if (pAPos &&
-                (pAnchor->GetAnchorId() == FLY_AT_PARA) &&
+                (pAnchor->GetAnchorId() == RndStdIds::FLY_AT_PARA) &&
                 nSttNode == pAPos->nNode.GetIndex() )
             {
                 std::vector<SwFrameFormat*>::iterator it;
@@ -150,7 +150,7 @@ void SwUndoInserts::UndoImpl(::sw::UndoRedoContext & rContext)
     SwDoc& rDoc = rContext.GetDoc();
     SwPaM& rPam = AddUndoRedoPaM(rContext);
 
-    if( IDocumentRedlineAccess::IsRedlineOn( GetRedlineMode() ))
+    if( IDocumentRedlineAccess::IsRedlineOn( GetRedlineFlags() ))
         rDoc.getIDocumentRedlineAccess().DeleteRedline(rPam, true, USHRT_MAX);
 
     // if Point and Mark are different text nodes so a JoinNext has to be done
@@ -184,7 +184,7 @@ void SwUndoInserts::UndoImpl(::sw::UndoRedoContext & rContext)
             MoveToUndoNds(rPam, m_pUndoNodeIndex.get());
 
             if( !bSttWasTextNd )
-                rPam.Move( fnMoveBackward, fnGoContent );
+                rPam.Move( fnMoveBackward, GoInContent );
         }
     }
 
@@ -292,14 +292,14 @@ void SwUndoInserts::RedoImpl(::sw::UndoRedoContext & rContext)
 
     pHistory->Rollback( pDoc, nSetPos );
 
-    if( pRedlData && IDocumentRedlineAccess::IsRedlineOn( GetRedlineMode() ))
+    if( pRedlData && IDocumentRedlineAccess::IsRedlineOn( GetRedlineFlags() ))
     {
-        RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)( eOld & ~nsRedlineMode_t::REDLINE_IGNORE ));
+        RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld & ~RedlineFlags::Ignore );
         pDoc->getIDocumentRedlineAccess().AppendRedline( new SwRangeRedline( *pRedlData, rPam ), true);
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     }
-    else if( !( nsRedlineMode_t::REDLINE_IGNORE & GetRedlineMode() ) &&
+    else if( !( RedlineFlags::Ignore & GetRedlineFlags() ) &&
             !pDoc->getIDocumentRedlineAccess().GetRedlineTable().empty() )
         pDoc->getIDocumentRedlineAccess().SplitRedline(rPam);
 }
@@ -313,12 +313,12 @@ void SwUndoInserts::RepeatImpl(::sw::RepeatContext & rContext)
 }
 
 SwUndoInsDoc::SwUndoInsDoc( const SwPaM& rPam )
-    : SwUndoInserts( UNDO_INSDOKUMENT, rPam )
+    : SwUndoInserts( SwUndoId::INSDOKUMENT, rPam )
 {
 }
 
 SwUndoCpyDoc::SwUndoCpyDoc( const SwPaM& rPam )
-    : SwUndoInserts( UNDO_COPY, rPam )
+    : SwUndoInserts( SwUndoId::COPY, rPam )
 {
 }
 

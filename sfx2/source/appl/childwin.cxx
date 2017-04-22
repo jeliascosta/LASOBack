@@ -51,7 +51,6 @@ SfxChildWinFactory::SfxChildWinFactory( SfxChildWinCtor pTheCtor, sal_uInt16 nID
 
 SfxChildWinFactory::~SfxChildWinFactory()
 {
-    delete pArr;
 }
 
 struct SfxChildWindow_Impl
@@ -61,7 +60,6 @@ struct SfxChildWindow_Impl
     SfxChildWinFactory* pFact;
     bool                bHideNotDelete;
     bool                bVisible;
-    bool                bHideAtToggle;
     bool                bWantsFocus;
     SfxModule*          pContextModule;
     SfxWorkWindow*      pWorkWin;
@@ -77,7 +75,7 @@ class DisposeListener : public ::cppu::WeakImplHelper< css::lang::XEventListener
             ,   m_pData ( pData  )
         {}
 
-        virtual void SAL_CALL disposing( const css::lang::EventObject& aSource ) throw (css::uno::RuntimeException, std::exception) override
+        virtual void SAL_CALL disposing( const css::lang::EventObject& aSource ) override
         {
             css::uno::Reference< css::lang::XEventListener > xSelfHold( this );
 
@@ -162,7 +160,6 @@ SfxChildWindow::SfxChildWindow(vcl::Window *pParentWindow, sal_uInt16 nId)
 {
     pImpl->pFact = nullptr;
     pImpl->bHideNotDelete = false;
-    pImpl->bHideAtToggle = false;
     pImpl->bWantsFocus = true;
     pImpl->bVisible = true;
     pImpl->pContextModule = nullptr;
@@ -312,7 +309,7 @@ void SfxChildWindow::SaveStatus(const SfxChildWinInfo& rInfo)
     //but off in another
     if (!rInfo.aModule.isEmpty())
         sName = rInfo.aModule + "/" + sName;
-    SvtViewOptions aWinOpt(E_WINDOW, sName);
+    SvtViewOptions aWinOpt(EViewType::Window, sName);
     aWinOpt.SetWindowState(OStringToOUString(rInfo.aWinState, RTL_TEXTENCODING_UTF8));
 
     css::uno::Sequence < css::beans::NamedValue > aSeq
@@ -370,11 +367,11 @@ void SfxChildWindow::InitializeChildWinFactory_Impl(sal_uInt16 nId, SfxChildWinI
     std::unique_ptr<SvtViewOptions> xWinOpt;
     // first see if a module specific id exists
     if (rInfo.aModule.getLength())
-        xWinOpt.reset(new SvtViewOptions(E_WINDOW, rInfo.aModule + "/" + OUString::number(nId)));
+        xWinOpt.reset(new SvtViewOptions(EViewType::Window, rInfo.aModule + "/" + OUString::number(nId)));
 
     // if not then try the generic id
     if (!xWinOpt || !xWinOpt->Exists())
-        xWinOpt.reset(new SvtViewOptions(E_WINDOW, OUString::number(nId)));
+        xWinOpt.reset(new SvtViewOptions(EViewType::Window, OUString::number(nId)));
 
     if (xWinOpt->Exists() && xWinOpt->HasVisible() )
         rInfo.bVisible  = xWinOpt->IsVisible(); // set state from configuration. Can be overwritten by UserData, see below
@@ -521,26 +518,17 @@ SfxChildWindowContext::~SfxChildWindowContext()
     pWindow.disposeAndClear();
 }
 
-FloatingWindow* SfxChildWindowContext::GetFloatingWindow() const
+FloatingWindow* SfxChildWindowContext::GetFloatingWindow(vcl::Window *pParent)
 {
-    vcl::Window *pParent = pWindow->GetParent();
-    if (pParent->GetType() == WINDOW_DOCKINGWINDOW || pParent->GetType() == WINDOW_TOOLBOX)
+    if (pParent->GetType() == WindowType::DOCKINGWINDOW || pParent->GetType() == WindowType::TOOLBOX)
     {
         return static_cast<DockingWindow*>(pParent)->GetFloatingWindow();
     }
-    else if (pParent->GetType() == WINDOW_FLOATINGWINDOW)
+    if (pParent->GetType() == WindowType::FLOATINGWINDOW)
     {
         return static_cast<FloatingWindow*>(pParent);
     }
-    else
-    {
-        OSL_FAIL("No FloatingWindow-Context!");
-        return nullptr;
-    }
-}
-
-void SfxChildWindowContext::Resizing( Size& )
-{
+    return nullptr;
 }
 
 void SfxChildWindow::SetFactory_Impl( SfxChildWinFactory *pF )
@@ -556,11 +544,6 @@ void SfxChildWindow::SetHideNotDelete( bool bOn )
 bool SfxChildWindow::IsHideNotDelete() const
 {
     return pImpl->bHideNotDelete;
-}
-
-bool SfxChildWindow::IsHideAtToggle() const
-{
-    return pImpl->bHideAtToggle;
 }
 
 void SfxChildWindow::SetWantsFocus( bool bSet )
@@ -663,10 +646,6 @@ void SfxChildWindow::Activate_Impl()
 {
     if(pImpl->pWorkWin!=nullptr)
         pImpl->pWorkWin->SetActiveChild_Impl( pWindow );
-}
-
-void SfxChildWindow::Deactivate_Impl()
-{
 }
 
 bool SfxChildWindow::QueryClose()

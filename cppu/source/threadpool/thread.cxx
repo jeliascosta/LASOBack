@@ -55,7 +55,7 @@ namespace cppu_threadpool {
 
     void ThreadAdmin::remove_locked( rtl::Reference< ORequestThread > const & p )
     {
-        ::std::list< rtl::Reference< ORequestThread > >::iterator ii = ::std::find( m_lst.begin(), m_lst.end(), p );
+        std::list< rtl::Reference< ORequestThread > >::iterator ii = std::find( m_lst.begin(), m_lst.end(), p );
         if( ii != m_lst.end() )
         {
             m_lst.erase( ii );
@@ -86,7 +86,11 @@ namespace cppu_threadpool {
                 pCurrent = m_lst.front();
                 m_lst.pop_front();
             }
-            pCurrent->join();
+            if (pCurrent->getIdentifier()
+                != osl::Thread::getCurrentIdentifier())
+            {
+                pCurrent->join();
+            }
         }
     }
 

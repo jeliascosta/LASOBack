@@ -23,7 +23,7 @@
 #include <vcl/dialog.hxx>
 #include <vcl/event.hxx>
 #include <vcl/fixed.hxx>
-#include <vcl/implimagetree.hxx>
+#include <vcl/ImageTree.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 
@@ -37,7 +37,7 @@
                                  WB_LEFT | WB_CENTER | WB_RIGHT |   \
                                  WB_TOP | WB_VCENTER | WB_BOTTOM |  \
                                  WB_WORDBREAK | WB_NOLABEL |        \
-                                 WB_INFO | WB_PATHELLIPSIS)
+                                 WB_PATHELLIPSIS)
 #define FIXEDLINE_VIEW_STYLE    (WB_3DLOOK | WB_NOLABEL)
 #define FIXEDBITMAP_VIEW_STYLE  (WB_3DLOOK |                        \
                                  WB_LEFT | WB_CENTER | WB_RIGHT |   \
@@ -96,36 +96,21 @@ WinBits FixedText::ImplInitStyle( WinBits nStyle )
 
 const vcl::Font& FixedText::GetCanonicalFont( const StyleSettings& _rStyle ) const
 {
-    return ( GetStyle() & WB_INFO ) ? _rStyle.GetInfoFont() : _rStyle.GetLabelFont();
+    return _rStyle.GetLabelFont();
 }
 
 const Color& FixedText::GetCanonicalTextColor( const StyleSettings& _rStyle ) const
 {
-    return ( GetStyle() & WB_INFO ) ? _rStyle.GetInfoTextColor() : _rStyle.GetLabelTextColor();
+    return _rStyle.GetLabelTextColor();
 }
 
 FixedText::FixedText( vcl::Window* pParent, WinBits nStyle )
-    : Control(WINDOW_FIXEDTEXT)
+    : Control(WindowType::FIXEDTEXT)
     , m_nMaxWidthChars(-1)
     , m_nMinWidthChars(-1)
     , m_pMnemonicWindow(nullptr)
 {
     ImplInit( pParent, nStyle );
-}
-
-FixedText::FixedText( vcl::Window* pParent, const ResId& rResId )
-    : Control(WINDOW_FIXEDTEXT)
-    , m_nMaxWidthChars(-1)
-    , m_nMinWidthChars(-1)
-    , m_pMnemonicWindow(nullptr)
-{
-    rResId.SetRT( RSC_TEXT );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
 }
 
 DrawTextFlags FixedText::ImplGetTextStyle( WinBits nWinStyle )
@@ -197,7 +182,7 @@ void FixedText::ImplDraw(OutputDevice* pDev, DrawFlags nDrawFlags,
     if( bFillLayout )
         (mpControlData->mpLayoutData->m_aDisplayText).clear();
 
-    const Rectangle aRect(aPos, rSize);
+    const tools::Rectangle aRect(aPos, rSize);
     DrawControlText(*pDev, aRect, aText, nTextStyle,
         bFillLayout ? &mpControlData->mpLayoutData->m_aUnicodeBoundRects : nullptr,
         bFillLayout ? &mpControlData->mpLayoutData->m_aDisplayText : nullptr);
@@ -228,7 +213,7 @@ void FixedText::ApplySettings(vcl::RenderContext& rRenderContext)
     }
 }
 
-void FixedText::Paint( vcl::RenderContext& rRenderContext, const Rectangle& )
+void FixedText::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& )
 {
     ImplDraw(&rRenderContext, DrawFlags::NONE, Point(), GetOutputSizePixel());
 }
@@ -255,7 +240,7 @@ void FixedText::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize,
     bool bBackground = !(nFlags & DrawFlags::NoBackground) && IsControlBackground();
     if ( bBorder || bBackground )
     {
-        Rectangle aRect( aPos, aSize );
+        tools::Rectangle aRect( aPos, aSize );
         if ( bBorder )
         {
             ImplDrawFrame( pDev, aRect );
@@ -336,7 +321,7 @@ Size FixedText::getTextDimensions(Control const *pControl, const OUString &rTxt,
     if ( !( pControl->GetStyle() & WB_NOLABEL ) )
         nStyle |= DrawTextFlags::Mnemonic;
 
-    return pControl->GetTextRect(Rectangle( Point(), Size(nMaxWidth, 0x7fffffff)),
+    return pControl->GetTextRect(tools::Rectangle( Point(), Size(nMaxWidth, 0x7fffffff)),
                                        rTxt, nStyle).GetSize();
 }
 
@@ -385,7 +370,7 @@ Size FixedText::GetOptimalSize() const
 
 void FixedText::FillLayoutData() const
 {
-    mpControlData->mpLayoutData = new vcl::ControlLayoutData();
+    mpControlData->mpLayoutData.reset( new vcl::ControlLayoutData );
     ImplDraw(const_cast<FixedText*>(this), DrawFlags::NONE, Point(), GetOutputSizePixel(), true);
     //const_cast<FixedText*>(this)->Invalidate();
 }
@@ -560,7 +545,7 @@ void FixedLine::ImplDraw(vcl::RenderContext& rRenderContext)
     else
     {
         DrawTextFlags nStyle = DrawTextFlags::Mnemonic | DrawTextFlags::Left | DrawTextFlags::VCenter | DrawTextFlags::EndEllipsis;
-        Rectangle aRect(0, 0, aOutSize.Width(), aOutSize.Height());
+        tools::Rectangle aRect(0, 0, aOutSize.Width(), aOutSize.Height());
         const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
         if (nWinStyle & WB_CENTER)
             nStyle |= DrawTextFlags::Center;
@@ -582,27 +567,15 @@ void FixedLine::ImplDraw(vcl::RenderContext& rRenderContext)
 }
 
 FixedLine::FixedLine( vcl::Window* pParent, WinBits nStyle ) :
-    Control( WINDOW_FIXEDLINE )
+    Control( WindowType::FIXEDLINE )
 {
     ImplInit( pParent, nStyle );
     SetSizePixel( Size( 2, 2 ) );
 }
 
-FixedLine::FixedLine( vcl::Window* pParent, const ResId& rResId ) :
-    Control( WINDOW_FIXEDLINE )
-{
-    rResId.SetRT( RSC_FIXEDLINE );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
-}
-
 void FixedLine::FillLayoutData() const
 {
-    mpControlData->mpLayoutData = new vcl::ControlLayoutData();
+    mpControlData->mpLayoutData.reset( new vcl::ControlLayoutData );
     const_cast<FixedLine*>(this)->Invalidate();
 }
 
@@ -631,7 +604,7 @@ void FixedLine::ApplySettings(vcl::RenderContext& rRenderContext)
     }
 }
 
-void FixedLine::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void FixedLine::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     ImplDraw(rRenderContext);
 }
@@ -717,7 +690,7 @@ WinBits FixedBitmap::ImplInitStyle( WinBits nStyle )
 }
 
 FixedBitmap::FixedBitmap( vcl::Window* pParent, WinBits nStyle ) :
-    Control( WINDOW_FIXEDBITMAP )
+    Control( WindowType::FIXEDBITMAP )
 {
     ImplInit( pParent, nStyle );
 }
@@ -763,7 +736,7 @@ void FixedBitmap::ApplySettings(vcl::RenderContext& rRenderContext)
     }
 }
 
-void FixedBitmap::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void FixedBitmap::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     ImplDraw(&rRenderContext, DrawFlags::NONE, Point(), GetOutputSizePixel());
 }
@@ -773,7 +746,7 @@ void FixedBitmap::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize
 {
     Point       aPos  = pDev->LogicToPixel( rPos );
     Size        aSize = pDev->LogicToPixel( rSize );
-    Rectangle   aRect( aPos, aSize );
+    tools::Rectangle   aRect( aPos, aSize );
 
     pDev->Push();
     pDev->SetMapMode();
@@ -842,7 +815,6 @@ void FixedBitmap::SetBitmap( const Bitmap& rBitmap )
 void FixedImage::ImplInit( vcl::Window* pParent, WinBits nStyle )
 {
     nStyle = ImplInitStyle( nStyle );
-    mbInUserDraw = false;
     Control::ImplInit( pParent, nStyle, nullptr );
     ApplySettings(*this);
 }
@@ -854,35 +826,10 @@ WinBits FixedImage::ImplInitStyle( WinBits nStyle )
     return nStyle;
 }
 
-void FixedImage::ImplLoadRes( const ResId& rResId )
-{
-    Control::ImplLoadRes( rResId );
-
-    sal_uLong nObjMask = ReadLongRes();
-
-    if ( RSC_FIXEDIMAGE_IMAGE & nObjMask )
-    {
-        maImage = Image( ResId( static_cast<RSHEADER_TYPE*>(GetClassRes()), *rResId.GetResMgr() ) );
-        IncrementRes( GetObjSizeRes( static_cast<RSHEADER_TYPE*>(GetClassRes()) ) );
-    }
-}
-
 FixedImage::FixedImage( vcl::Window* pParent, WinBits nStyle ) :
-    Control( WINDOW_FIXEDIMAGE )
+    Control( WindowType::FIXEDIMAGE )
 {
     ImplInit( pParent, nStyle );
-}
-
-FixedImage::FixedImage( vcl::Window* pParent, const ResId& rResId ) :
-    Control( WINDOW_FIXEDIMAGE )
-{
-    rResId.SetRT( RSC_FIXEDIMAGE );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
 }
 
 void FixedImage::ImplDraw( OutputDevice* pDev, DrawFlags nDrawFlags,
@@ -934,7 +881,7 @@ void FixedImage::ApplySettings(vcl::RenderContext& rRenderContext)
 }
 
 
-void FixedImage::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void FixedImage::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
 {
     ImplDraw(&rRenderContext, DrawFlags::NONE, Point(), GetOutputSizePixel());
 }
@@ -949,7 +896,7 @@ void FixedImage::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize,
 {
     Point       aPos  = pDev->LogicToPixel( rPos );
     Size        aSize = pDev->LogicToPixel( rSize );
-    Rectangle   aRect( aPos, aSize );
+    tools::Rectangle   aRect( aPos, aSize );
 
     pDev->Push();
     pDev->SetMapMode();
@@ -1027,14 +974,7 @@ bool FixedImage::SetModeImage( const Image& rImage )
 
 Image FixedImage::loadThemeImage(const OString &rFileName)
 {
-    OUString sIconTheme =
-        Application::GetSettings().GetStyleSettings().DetermineIconTheme();
-    const OUString sFileName(OStringToOUString(rFileName, RTL_TEXTENCODING_UTF8));
-    BitmapEx aBitmap;
-    bool bSuccess = ImplImageTree::get().loadImage(
-        sFileName, sIconTheme, aBitmap, true);
-    SAL_WARN_IF(!bSuccess, "vcl.layout", "Unable to load " << sFileName
-        << " from theme " << sIconTheme);
+    BitmapEx aBitmap(OStringToOUString(rFileName, RTL_TEXTENCODING_UTF8));
     return Image(aBitmap);
 }
 
@@ -1042,7 +982,7 @@ bool FixedImage::set_property(const OString &rKey, const OString &rValue)
 {
     if (rKey == "pixbuf")
     {
-        SetImage(FixedImage::loadThemeImage(rValue));
+        SetImage(loadThemeImage(rValue));
     }
     else
         return Control::set_property(rKey, rValue);

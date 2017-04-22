@@ -27,9 +27,9 @@ $(eval $(call gb_Library_use_externals,avmedia,\
 	boost_headers \
 ))
 
-ifeq ($(ENABLE_OPENGL),TRUE)
+ifeq ($(ENABLE_HEADLESS),)
 $(eval $(call gb_Library_use_externals,avmedia,\
-    glew \
+    epoxy \
 ))
 endif
 
@@ -75,6 +75,7 @@ endif
 
 $(eval $(call gb_Library_add_exception_objects,avmedia,\
 	avmedia/source/framework/mediacontrol \
+	avmedia/source/framework/MediaControlBase \
 	avmedia/source/framework/mediaitem \
 	avmedia/source/framework/mediamisc \
 	avmedia/source/framework/mediaplayer \

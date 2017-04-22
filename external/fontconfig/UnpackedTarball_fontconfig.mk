@@ -11,10 +11,10 @@ $(eval $(call gb_UnpackedTarball_UnpackedTarball,fontconfig))
 
 $(eval $(call gb_UnpackedTarball_set_tarball,fontconfig,$(FONTCONFIG_TARBALL),,fontconfig))
 
-$(eval $(call gb_UnpackedTarball_set_patchlevel,fontconfig,3))
-
 $(eval $(call gb_UnpackedTarball_add_patches,fontconfig,\
-	external/fontconfig/fontconfig-2.8.0.patch \
+	external/fontconfig/fontconfig-2.12.1.patch.1 \
+	external/fontconfig/fontconfig-glibc-limits.patch.1 \
+	external/fontconfig/0001-Fix-the-build-issue-with-gperf-3.1.patch.1 \
 ))
 
 # vim: set noet sw=4 ts=4:

@@ -45,7 +45,7 @@ SdVectorizeDlg::SdVectorizeDlg(vcl::Window* pParent, const Bitmap& rBmp, ::sd::D
     get(m_pBmpWin, "source");
     get(m_pMtfWin, "vectorized");
 
-    Size aSize(LogicToPixel(Size(92, 100), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(92, 100), MapUnit::MapAppFont));
     m_pBmpWin->set_width_request(aSize.Width());
     m_pMtfWin->set_width_request(aSize.Width());
     m_pBmpWin->set_height_request(aSize.Height());
@@ -90,9 +90,9 @@ void SdVectorizeDlg::dispose()
     ModalDialog::dispose();
 }
 
-Rectangle SdVectorizeDlg::GetRect( const Size& rDispSize, const Size& rBmpSize )
+::tools::Rectangle SdVectorizeDlg::GetRect( const Size& rDispSize, const Size& rBmpSize )
 {
-    Rectangle aRect;
+    ::tools::Rectangle aRect;
 
     if( rBmpSize.Width() && rBmpSize.Height() && rDispSize.Width() && rDispSize.Height() )
     {
@@ -114,7 +114,7 @@ Rectangle SdVectorizeDlg::GetRect( const Size& rDispSize, const Size& rBmpSize )
         const Point aBmpPos( ( rDispSize.Width()  - aBmpSize.Width() ) >> 1,
                              ( rDispSize.Height() - aBmpSize.Height() ) >> 1 );
 
-        aRect = Rectangle( aBmpPos, aBmpSize );
+        aRect = ::tools::Rectangle( aBmpPos, aBmpSize );
     }
 
     return aRect;
@@ -122,7 +122,7 @@ Rectangle SdVectorizeDlg::GetRect( const Size& rDispSize, const Size& rBmpSize )
 
 void SdVectorizeDlg::InitPreviewBmp()
 {
-    const Rectangle aRect( GetRect( m_pBmpWin->GetSizePixel(), aBmp.GetSizePixel() ) );
+    const ::tools::Rectangle aRect( GetRect( m_pBmpWin->GetSizePixel(), aBmp.GetSizePixel() ) );
 
     aPreviewBmp = aBmp;
     aPreviewBmp.Scale( aRect.GetSize() );
@@ -136,7 +136,7 @@ Bitmap SdVectorizeDlg::GetPreparedBitmap( Bitmap& rBmp, Fraction& rScale )
 
     if( aSizePix.Width() > VECTORIZE_MAX_EXTENT || aSizePix.Height() > VECTORIZE_MAX_EXTENT )
     {
-        const Rectangle aRect( GetRect( Size( VECTORIZE_MAX_EXTENT, VECTORIZE_MAX_EXTENT ), aSizePix ) );
+        const ::tools::Rectangle aRect( GetRect( Size( VECTORIZE_MAX_EXTENT, VECTORIZE_MAX_EXTENT ), aSizePix ) );
         rScale = Fraction( aSizePix.Width(), aRect.GetWidth() );
         aNew.Scale( aRect.GetSize() );
     }
@@ -159,12 +159,12 @@ void SdVectorizeDlg::Calculate( Bitmap& rBmp, GDIMetaFile& rMtf )
     if( !!aTmp )
     {
         const Link<long,void> aPrgsHdl( LINK( this, SdVectorizeDlg, ProgressHdl ) );
-        aTmp.Vectorize( rMtf, (sal_uInt8) m_pMtReduce->GetValue(), BmpVectorizeFlags::Outer | BmpVectorizeFlags::ReduceEdges, &aPrgsHdl );
+        aTmp.Vectorize( rMtf, (sal_uInt8) m_pMtReduce->GetValue(), &aPrgsHdl );
 
         if( m_pCbFillHoles->IsChecked() )
         {
-            GDIMetaFile         aNewMtf;
-            BitmapReadAccess*   pRAcc = aTmp.AcquireReadAccess();
+            GDIMetaFile                 aNewMtf;
+            Bitmap::ScopedReadAccess    pRAcc(aTmp);
 
             if( pRAcc )
             {
@@ -186,10 +186,10 @@ void SdVectorizeDlg::Calculate( Bitmap& rBmp, GDIMetaFile& rMtf )
                     const long nY = nTY * nTileY;
 
                     for( long nTX = 0; nTX < nCountX; nTX++ )
-                        AddTile( pRAcc, aNewMtf, nTX * nTileX, nTY * nTileY, nTileX, nTileY );
+                        AddTile( pRAcc.get(), aNewMtf, nTX * nTileX, nTY * nTileY, nTileX, nTileY );
 
                     if( nRestX )
-                        AddTile( pRAcc, aNewMtf, nCountX * nTileX, nY, nRestX, nTileY );
+                        AddTile( pRAcc.get(), aNewMtf, nCountX * nTileX, nY, nRestX, nTileY );
                 }
 
                 if( nRestY )
@@ -197,13 +197,13 @@ void SdVectorizeDlg::Calculate( Bitmap& rBmp, GDIMetaFile& rMtf )
                     const long nY = nCountY * nTileY;
 
                     for( long nTX = 0; nTX < nCountX; nTX++ )
-                        AddTile( pRAcc, aNewMtf, nTX * nTileX, nY, nTileX, nRestY );
+                        AddTile( pRAcc.get(), aNewMtf, nTX * nTileX, nY, nTileX, nRestY );
 
                     if( nRestX )
-                        AddTile( pRAcc, aNewMtf, nCountX * nTileX, nCountY * nTileY, nRestX, nRestY );
+                        AddTile( pRAcc.get(), aNewMtf, nCountX * nTileX, nCountY * nTileY, nRestX, nRestY );
                 }
 
-                Bitmap::ReleaseAccess( pRAcc );
+                pRAcc.reset();
 
                 for( size_t n = 0, nCount = rMtf.GetActionSize(); n < nCount; n++ )
                     aNewMtf.AddAction( rMtf.GetAction( n )->Clone() );
@@ -244,7 +244,7 @@ void SdVectorizeDlg::AddTile( BitmapReadAccess* pRAcc, GDIMetaFile& rMtf,
                         (sal_uInt8) FRound( nSumG * fMult ),
                         (sal_uInt8) FRound( nSumB * fMult ) );
 
-    Rectangle   aRect( Point( nPosX, nPosY ), Size( nWidth + 1, nHeight + 1 ) );
+    ::tools::Rectangle   aRect( Point( nPosX, nPosY ), Size( nWidth + 1, nHeight + 1 ) );
     const Size& rMaxSize = rMtf.GetPrefSize();
 
     aRect = PixelToLogic( aRect, rMtf.GetPrefMapMode() );
@@ -260,19 +260,19 @@ void SdVectorizeDlg::AddTile( BitmapReadAccess* pRAcc, GDIMetaFile& rMtf,
     rMtf.AddAction( new MetaRectAction( aRect ) );
 }
 
-IMPL_LINK_TYPED( SdVectorizeDlg, ProgressHdl, long, nData, void )
+IMPL_LINK( SdVectorizeDlg, ProgressHdl, long, nData, void )
 {
     m_pPrgs->SetValue( (sal_uInt16)nData );
 }
 
-IMPL_LINK_NOARG_TYPED(SdVectorizeDlg, ClickPreviewHdl, Button*, void)
+IMPL_LINK_NOARG(SdVectorizeDlg, ClickPreviewHdl, Button*, void)
 {
     Calculate( aBmp, aMtf );
     m_pMtfWin->SetGraphic( aMtf );
     m_pBtnPreview->Disable();
 }
 
-IMPL_LINK_NOARG_TYPED(SdVectorizeDlg, ClickOKHdl, Button*, void)
+IMPL_LINK_NOARG(SdVectorizeDlg, ClickOKHdl, Button*, void)
 {
     if( m_pBtnPreview->IsEnabled() )
         Calculate( aBmp, aMtf );
@@ -281,7 +281,7 @@ IMPL_LINK_NOARG_TYPED(SdVectorizeDlg, ClickOKHdl, Button*, void)
     EndDialog( RET_OK );
 }
 
-IMPL_LINK_TYPED( SdVectorizeDlg, ToggleHdl, CheckBox&, rCb, void )
+IMPL_LINK( SdVectorizeDlg, ToggleHdl, CheckBox&, rCb, void )
 {
     if( rCb.IsChecked() )
     {
@@ -297,7 +297,7 @@ IMPL_LINK_TYPED( SdVectorizeDlg, ToggleHdl, CheckBox&, rCb, void )
     m_pBtnPreview->Enable();
 }
 
-IMPL_LINK_NOARG_TYPED(SdVectorizeDlg, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SdVectorizeDlg, ModifyHdl, Edit&, void)
 {
     m_pBtnPreview->Enable();
 }
@@ -312,7 +312,7 @@ void SdVectorizeDlg::LoadSettings()
     sal_uInt16              nFillHoles;
     bool                bFillHoles;
 
-    if( xIStm.Is() )
+    if( xIStm.is() )
     {
         SdIOCompat aCompat( *xIStm, StreamMode::READ );
         xIStm->ReadUInt16( nLayers ).ReadUInt16( nReduce ).ReadUInt16( nFillHoles ).ReadCharAsBool( bFillHoles );
@@ -339,7 +339,7 @@ void SdVectorizeDlg::SaveSettings() const
                               SD_OPTION_VECTORIZE  ,
                               SD_OPTION_STORE ) );
 
-    if( xOStm.Is() )
+    if( xOStm.is() )
     {
         SdIOCompat aCompat( *xOStm, StreamMode::WRITE, 1 );
         xOStm->WriteUInt16( m_pNmLayers->GetValue() ).WriteUInt16( m_pMtReduce->GetValue() );

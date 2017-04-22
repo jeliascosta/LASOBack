@@ -41,14 +41,7 @@ OPatternControl::OPatternControl(const Reference<XComponentContext>& _rxFactory)
 {
 }
 
-
-Sequence<Type> OPatternControl::_getTypes()
-{
-    return OBoundControl::_getTypes();
-}
-
-
-css::uno::Sequence<OUString> OPatternControl::getSupportedServiceNames() throw(std::exception)
+css::uno::Sequence<OUString> OPatternControl::getSupportedServiceNames()
 {
     css::uno::Sequence<OUString> aSupported = OBoundControl::getSupportedServiceNames();
     aSupported.realloc(aSupported.getLength() + 2);
@@ -61,12 +54,6 @@ css::uno::Sequence<OUString> OPatternControl::getSupportedServiceNames() throw(s
 
 
 // OPatternModel
-
-
-Sequence<Type> OPatternModel::_getTypes()
-{
-    return OEditBaseModel::_getTypes();
-}
 
 
 OPatternModel::OPatternModel(const Reference<XComponentContext>& _rxFactory)
@@ -95,7 +82,7 @@ IMPLEMENT_DEFAULT_CLONING( OPatternModel )
 
 // XServiceInfo
 
-css::uno::Sequence<OUString> SAL_CALL OPatternModel::getSupportedServiceNames() throw(std::exception)
+css::uno::Sequence<OUString> SAL_CALL OPatternModel::getSupportedServiceNames()
 {
     css::uno::Sequence<OUString> aSupported = OBoundControlModel::getSupportedServiceNames();
     aSupported.realloc(aSupported.getLength() + 3);
@@ -119,7 +106,7 @@ void OPatternModel::describeFixedProperties( Sequence< Property >& _rProps ) con
 }
 
 
-OUString SAL_CALL OPatternModel::getServiceName() throw ( css::uno::RuntimeException, std::exception)
+OUString SAL_CALL OPatternModel::getServiceName()
 {
     return OUString(FRM_COMPONENT_PATTERNFIELD);  // old (non-sun) name for compatibility !
 }

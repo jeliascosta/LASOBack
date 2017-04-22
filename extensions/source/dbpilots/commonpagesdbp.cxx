@@ -30,7 +30,6 @@
 #include <com/sun/star/sdb/CommandType.hpp>
 #include <com/sun/star/ui/dialogs/TemplateDescription.hpp>
 #include <tools/debug.hxx>
-#include <svtools/localresaccess.hxx>
 #include <comphelper/interaction.hxx>
 #include <connectivity/dbtools.hxx>
 #include <vcl/stdtext.hxx>
@@ -63,7 +62,16 @@ namespace dbp
         get(m_pDatasourceLabel, "datasourcelabel");
         get(m_pSearchDatabase, "search");
 
-        implCollectDatasource();
+        try
+        {
+            m_xDSContext = getContext().xDatasourceContext;
+            if (m_xDSContext.is())
+                fillListBox(*m_pDatasource, m_xDSContext->getElementNames());
+        }
+        catch (const Exception&)
+        {
+            OSL_FAIL("OTableSelectionPage::OTableSelectionPage: could not collect the data source names!");
+        }
 
         m_pDatasource->SetSelectHdl(LINK(this, OTableSelectionPage, OnListboxSelection));
         m_pTable->SetSelectHdl(LINK(this, OTableSelectionPage, OnListboxSelection));
@@ -193,7 +201,7 @@ namespace dbp
     }
 
 
-    IMPL_LINK_NOARG_TYPED( OTableSelectionPage, OnSearchClicked, Button*, void )
+    IMPL_LINK_NOARG( OTableSelectionPage, OnSearchClicked, Button*, void )
     {
         ::sfx2::FileDialogHelper aFileDlg(
                 ui::dialogs::TemplateDescription::FILEOPEN_READONLY_VERSION);
@@ -217,14 +225,14 @@ namespace dbp
         }
     }
 
-    IMPL_LINK_TYPED( OTableSelectionPage, OnListboxDoubleClicked, ListBox&, _rBox, void )
+    IMPL_LINK( OTableSelectionPage, OnListboxDoubleClicked, ListBox&, _rBox, void )
     {
         if (_rBox.GetSelectEntryCount())
             getDialog()->travelNext();
     }
 
 
-    IMPL_LINK_TYPED( OTableSelectionPage, OnListboxSelection, ListBox&, _rBox, void )
+    IMPL_LINK( OTableSelectionPage, OnListboxSelection, ListBox&, _rBox, void )
     {
         if (m_pDatasource == &_rBox)
         {   // new data source selected
@@ -353,28 +361,13 @@ namespace dbp
             return;
         }
 
-        Image aTableImage, aQueryImage;
-        aTableImage = Image( ModuleRes( IMG_TABLE ) );
-        aQueryImage = Image( ModuleRes( IMG_QUERY ) );
+        Image aTableImage(BitmapEx(ModuleRes(BMP_TABLE)));
+        Image aQueryImage(BitmapEx(ModuleRes(BMP_QUERY)));
 
         lcl_fillEntries( *m_pTable, aTableNames, aTableImage, CommandType::TABLE );
         lcl_fillEntries( *m_pTable, aQueryNames, aQueryImage, CommandType::QUERY );
     }
 
-
-    void OTableSelectionPage::implCollectDatasource()
-    {
-        try
-        {
-            m_xDSContext = getContext().xDatasourceContext;
-            if (m_xDSContext.is())
-                fillListBox(*m_pDatasource, m_xDSContext->getElementNames());
-        }
-        catch (const Exception&)
-        {
-            OSL_FAIL("OTableSelectionPage::implCollectDatasource: could not collect the data source names!");
-        }
-    }
 
     OMaybeListSelectionPage::OMaybeListSelectionPage( OControlWizard* _pParent, const OString& _rID, const OUString& _rUIXMLDescription )
         :OControlWizardPage(_pParent, _rID, _rUIXMLDescription)
@@ -408,7 +401,7 @@ namespace dbp
         implEnableWindows();
     }
 
-    IMPL_LINK_NOARG_TYPED( OMaybeListSelectionPage, OnRadioSelected, Button*, void )
+    IMPL_LINK_NOARG( OMaybeListSelectionPage, OnRadioSelected, Button*, void )
     {
         implEnableWindows();
     }

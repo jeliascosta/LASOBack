@@ -30,17 +30,13 @@
 
 #include <memory>
 
-namespace {
+namespace sd { namespace framework {
 
 typedef ::cppu::WeakComponentImplHelper <
     css::drawing::framework::XConfiguration,
     css::container::XNamed,
     css::lang::XServiceInfo
     > ConfigurationInterfaceBase;
-
-} // end of anonymous namespace.
-
-namespace sd { namespace framework {
 
 /** A configuration describes the resources of an application like panes,
     views, and tool bars and their relationships that are currently active
@@ -80,7 +76,7 @@ public:
     */
     Configuration (const css::uno::Reference<css::drawing::framework::XConfigurationControllerBroadcaster>& rxBroadcaster,
         bool bBroadcastRequestEvents);
-    virtual ~Configuration();
+    virtual ~Configuration() override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -88,54 +84,44 @@ public:
 
     virtual void SAL_CALL addResource (
         const css::uno::Reference<css::drawing::framework::XResourceId>&
-            rxResourceId)
-        throw (css::uno::RuntimeException, std::exception) override;
+            rxResourceId) override;
 
     virtual void SAL_CALL removeResource(
         const css::uno::Reference<css::drawing::framework::XResourceId>&
-            rxResourceId)
-        throw (css::uno::RuntimeException, std::exception) override;
+            rxResourceId) override;
 
     virtual css::uno::Sequence< css::uno::Reference<
         css::drawing::framework::XResourceId> > SAL_CALL getResources (
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxAnchorId,
         const OUString& rsResourceURLPrefix,
-        css::drawing::framework::AnchorBindingMode eMode)
-        throw (css::uno::RuntimeException, std::exception) override;
+        css::drawing::framework::AnchorBindingMode eMode) override;
 
     virtual sal_Bool SAL_CALL hasResource (
         const css::uno::Reference<css::drawing::framework::XResourceId>&
-            rxResourceId)
-        throw (css::uno::RuntimeException, std::exception) override;
+            rxResourceId) override;
 
     // XCloneable
 
     virtual css::uno::Reference<css::util::XCloneable>
-        SAL_CALL createClone()
-        throw (css::uno::RuntimeException, std::exception) override;
+        SAL_CALL createClone() override;
 
     // XNamed
 
     /** Return a human readable string representation.  This is used for
         debugging purposes.
     */
-    virtual OUString SAL_CALL getName()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getName() override;
 
     /** This call is ignored because the XNamed interface is (mis)used to
         give access to a human readable name for debugging purposes.
     */
-    virtual void SAL_CALL setName (const OUString& rName)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setName (const OUString& rName) override;
 
-    OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override;
+    OUString SAL_CALL getImplementationName() override;
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override;
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override;
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
 
 private:
     class ResourceContainer;
@@ -178,9 +164,10 @@ private:
 
     /** When the called object has already been disposed this method throws
         an exception and does not return.
+
+        @throws css::lang::DisposedException
     */
-    void ThrowIfDisposed() const
-        throw (css::lang::DisposedException);
+    void ThrowIfDisposed() const;
 };
 
 /** Return whether the two given configurations contain the same resource

@@ -48,20 +48,20 @@ private:
     VclPtr<svx::OptHeaderTabListBox> pPathBox;
     std::unique_ptr<OptPath_Impl>               pImpl;
 
-    css::uno::Reference< ::svt::DialogClosedListener > xDialogListener;
+    rtl::Reference< ::svt::DialogClosedListener > xDialogListener;
     css::uno::Reference< css::ui::dialogs::XFolderPicker2 > xFolderPicker;
 
     void        ChangeCurrentEntry( const OUString& _rFolder );
 
-    DECL_LINK_TYPED( PathHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( DoubleClickPathHdl_Impl, SvTreeListBox*, bool);
-    DECL_LINK_TYPED( StandardHdl_Impl, Button*, void);
+    DECL_LINK( PathHdl_Impl, Button*, void);
+    DECL_LINK( DoubleClickPathHdl_Impl, SvTreeListBox*, bool);
+    DECL_LINK( StandardHdl_Impl, Button*, void);
 
-    DECL_LINK_TYPED( PathSelect_Impl, SvTreeListBox*, void);
-    DECL_LINK_TYPED( HeaderSelect_Impl, HeaderBar *, void );
-    DECL_LINK_TYPED( HeaderEndDrag_Impl, HeaderBar *, void );
+    DECL_LINK( PathSelect_Impl, SvTreeListBox*, void);
+    DECL_LINK( HeaderSelect_Impl, HeaderBar *, void );
+    DECL_LINK( HeaderEndDrag_Impl, HeaderBar *, void );
 
-    DECL_LINK_TYPED( DialogClosedHdl, css::ui::dialogs::DialogClosedEvent*, void );
+    DECL_LINK( DialogClosedHdl, css::ui::dialogs::DialogClosedEvent*, void );
 
     void        GetPathList( sal_uInt16 _nPathHandle, OUString& _rInternalPath,
                              OUString& _rUserPath, OUString& _rWritablePath, bool& _rReadOnly );
@@ -70,7 +70,7 @@ private:
 
 public:
     SvxPathTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxPathTabPage();
+    virtual ~SvxPathTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rSet );

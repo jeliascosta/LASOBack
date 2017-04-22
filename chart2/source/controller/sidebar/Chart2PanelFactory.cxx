@@ -54,10 +54,6 @@ ChartPanelFactory::~ChartPanelFactory()
 Reference<css::ui::XUIElement> SAL_CALL ChartPanelFactory::createUIElement (
     const ::rtl::OUString& rsResourceURL,
     const ::css::uno::Sequence<css::beans::PropertyValue>& rArguments)
-    throw(
-        css::container::NoSuchElementException,
-        css::lang::IllegalArgumentException,
-        RuntimeException, std::exception)
 {
     Reference<css::ui::XUIElement> xElement;
 
@@ -68,7 +64,7 @@ Reference<css::ui::XUIElement> SAL_CALL ChartPanelFactory::createUIElement (
         Reference<css::awt::XWindow> xParentWindow (aArguments.getOrDefault("ParentWindow", Reference<css::awt::XWindow>()));
         Reference<css::frame::XController> xController (aArguments.getOrDefault("Controller", Reference<css::frame::XController>()));
 
-        vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+        VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
         if ( ! xParentWindow.is() || pParentWindow==nullptr)
             throw RuntimeException(
                 "PanelFactory::createUIElement called without ParentWindow",
@@ -117,30 +113,26 @@ Reference<css::ui::XUIElement> SAL_CALL ChartPanelFactory::createUIElement (
     catch (const css::uno::Exception& e)
     {
         throw css::lang::WrappedTargetRuntimeException(
-            OUString("ChartPanelFactory::createUIElement exception"),
-            nullptr, css::uno::makeAny(e));
+            "ChartPanelFactory::createUIElement exception",
+            nullptr, css::uno::Any(e));
     }
 
     return xElement;
 }
 
 OUString ChartPanelFactory::getImplementationName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("org.libreoffice.comp.chart2.sidebar.ChartPanelFactory");
 }
 
 sal_Bool ChartPanelFactory::supportsService(OUString const & ServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> ChartPanelFactory::getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
-    css::uno::Sequence<OUString> aServiceNames { "com.sun.star.ui.UIElementFactory" };
-    return aServiceNames;
+    return { "com.sun.star.ui.UIElementFactory" };
 }
 
 } } // end of namespace chart::sidebar

@@ -50,7 +50,7 @@ void Window::SetSettings( const AllSettings& rSettings, bool bChild )
     if ( mpWindowImpl->mpBorderWindow )
     {
         mpWindowImpl->mpBorderWindow->SetSettings( rSettings, false );
-        if ( (mpWindowImpl->mpBorderWindow->GetType() == WINDOW_BORDERWINDOW) &&
+        if ( (mpWindowImpl->mpBorderWindow->GetType() == WindowType::BORDERWINDOW) &&
              static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->mpMenuBarWindow )
             static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->mpMenuBarWindow->SetSettings( rSettings, true );
     }
@@ -68,7 +68,7 @@ void Window::SetSettings( const AllSettings& rSettings, bool bChild )
         DataChanged( aDCEvt );
     }
 
-    if ( bChild || mpWindowImpl->mbChildNotify )
+    if ( bChild )
     {
         vcl::Window* pChild = mpWindowImpl->mpFirstChild;
         while ( pChild )
@@ -85,7 +85,7 @@ void Window::UpdateSettings( const AllSettings& rSettings, bool bChild )
     if ( mpWindowImpl->mpBorderWindow )
     {
         mpWindowImpl->mpBorderWindow->UpdateSettings( rSettings );
-        if ( (mpWindowImpl->mpBorderWindow->GetType() == WINDOW_BORDERWINDOW) &&
+        if ( (mpWindowImpl->mpBorderWindow->GetType() == WindowType::BORDERWINDOW) &&
              static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->mpMenuBarWindow )
             static_cast<ImplBorderWindow*>(mpWindowImpl->mpBorderWindow.get())->mpMenuBarWindow->UpdateSettings( rSettings, true );
     }
@@ -130,10 +130,10 @@ void Window::UpdateSettings( const AllSettings& rSettings, bool bChild )
         DataChangedEvent aDCEvt( DataChangedEventType::SETTINGS, &aOldSettings, nChangeFlags );
         DataChanged( aDCEvt );
         // notify data change handler
-        CallEventListeners( VCLEVENT_WINDOW_DATACHANGED, &aDCEvt);
+        CallEventListeners( VclEventId::WindowDataChanged, &aDCEvt);
     }
 
-    if ( bChild || mpWindowImpl->mbChildNotify )
+    if ( bChild )
     {
         vcl::Window* pChild = mpWindowImpl->mpFirstChild;
         while ( pChild )
@@ -166,7 +166,7 @@ void Window::ImplUpdateGlobalSettings( AllSettings& rSettings, bool bCallHdl )
         defFontheight = maxFontheight;
 
     // if the UI is korean, chinese or another locale
-    // where the system font size is kown to be often too small to
+    // where the system font size is known to be often too small to
     // generate readable fonts enforce a minimum font size of 9 points
     bool bBrokenLangFontHeight = MsLangId::isCJK(Application::GetSettings().GetUILanguageTag().getLanguageType());
     if (bBrokenLangFontHeight)
@@ -211,9 +211,6 @@ void Window::ImplUpdateGlobalSettings( AllSettings& rSettings, bool bCallHdl )
     aFont = aStyleSettings.GetLabelFont();
     aFont.SetFontHeight( defFontheight );
     aStyleSettings.SetLabelFont( aFont );
-    aFont = aStyleSettings.GetInfoFont();
-    aFont.SetFontHeight( defFontheight );
-    aStyleSettings.SetInfoFont( aFont );
     aFont = aStyleSettings.GetRadioCheckFont();
     aFont.SetFontHeight( defFontheight );
     aStyleSettings.SetRadioCheckFont( aFont );

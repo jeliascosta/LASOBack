@@ -8,33 +8,29 @@ package org.mozilla.gecko.gfx;
 import android.graphics.PointF;
 import android.view.MotionEvent;
 import android.view.View;
+import org.libreoffice.LibreOfficeMainActivity;
 
-import org.libreoffice.LOKitShell;
+interface PanZoomController {
 
-public interface PanZoomController {
-    // The distance the user has to pan before we recognize it as such (e.g. to avoid 1-pixel pans
-    // between the touch-down and touch-up of a click). In units of density-independent pixels.
-    public static final float PAN_THRESHOLD = 1/16f * LOKitShell.getDpi();
-
-    static class Factory {
-        static PanZoomController create(PanZoomTarget target, View view) {
-            return new JavaPanZoomController(target, view);
+    class Factory {
+        static PanZoomController create(LibreOfficeMainActivity context, PanZoomTarget target, View view) {
+            return new JavaPanZoomController(context, target, view);
         }
     }
 
-    public void destroy();
+    void destroy();
 
-    public boolean onTouchEvent(MotionEvent event);
-    public boolean onMotionEvent(MotionEvent event);
-    public void notifyDefaultActionPrevented(boolean prevented);
+    boolean onTouchEvent(MotionEvent event);
+    boolean onMotionEvent(MotionEvent event);
+    void notifyDefaultActionPrevented(boolean prevented);
 
-    public boolean getRedrawHint();
-    public PointF getVelocityVector();
+    boolean getRedrawHint();
+    PointF getVelocityVector();
 
-    public void pageRectUpdated();
-    public void abortPanning();
-    public void abortAnimation();
+    void pageRectUpdated();
+    void abortPanning();
+    void abortAnimation();
 
-    public void setOverScrollMode(int overscrollMode);
-    public int getOverScrollMode();
+    void setOverScrollMode(int overscrollMode);
+    int getOverScrollMode();
 }

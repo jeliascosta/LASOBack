@@ -245,6 +245,7 @@ namespace xmloff { namespace token {
         XML_APPLICATION_DATA,
         XML_APPLICATION_XML,
         XML_APPLY,
+        XML_APPLY_DESIGN_MODE,
         XML_APPLY_STYLE_NAME,
         XML_AQUA,
         XML_ARC,
@@ -275,6 +276,7 @@ namespace xmloff { namespace token {
         XML_AUTO_UPDATE,
         XML_AUTOMATIC,
         XML_AUTOMATIC_FIND_LABELS,
+        XML_AUTOMATIC_FOCUS,
         XML_AUTOMATIC_ORDER,
         XML_AUTOMATIC_STYLES,
         XML_AUTOMATIC_UPDATE,
@@ -545,6 +547,7 @@ namespace xmloff { namespace token {
         XML_DATA_LABEL_NUMBER,
         XML_DATA_LABEL_SYMBOL,
         XML_DATA_LABEL_TEXT,
+        XML_DATA_PILOT_SOURCE,
         XML_DATA_PILOT_FIELD,
         XML_DATA_PILOT_GRAND_TOTAL,
         XML_DATA_PILOT_LEVEL,
@@ -575,6 +578,8 @@ namespace xmloff { namespace token {
         XML_DATE_ADJUST,
         XML_DATE_STYLE,
         XML_DATE_TIME,
+        XML_DATE_TIME_UPDATE,
+        XML_DATE_TIME_VISIBLE,
         XML_DATE_VALUE,
         XML_DATETIME,
         XML_DAY,
@@ -846,6 +851,7 @@ namespace xmloff { namespace token {
         XML_FOOTER_FIRST,
         XML_FOOTER_LEFT,
         XML_FOOTER_STYLE,
+        XML_FOOTER_VISIBLE,
         XML_FOOTNOTE,
         XML_FOOTNOTE_BODY,
         XML_FOOTNOTE_CITATION,
@@ -1378,6 +1384,7 @@ namespace xmloff { namespace token {
         XML_PAGE_MASTER_NAME,
         XML_PAGE_NAME,
         XML_PAGE_NUMBER,
+        XML_PAGE_NUMBER_VISIBLE,
         XML_PAGE_START_MARGIN,
         XML_PAGE_STYLE_NAME,
         XML_PAGE_THUMBNAIL,
@@ -2193,6 +2200,8 @@ namespace xmloff { namespace token {
         XML_REGRESSION_PERIOD,
         XML_REGRESSION_FORCE_INTERCEPT,
         XML_REGRESSION_INTERCEPT_VALUE,
+        XML_REGRESSION_X_NAME,
+        XML_REGRESSION_Y_NAME,
 
         XML_ERROR_INDICATOR,
 
@@ -3067,6 +3076,14 @@ namespace xmloff { namespace token {
         XML_ODD_ROWS,
         XML_EVEN_COLUMNS,
         XML_ODD_COLUMNS,
+        // table styles
+        XML_FIRST_ROW_EVEN_COLUMN,
+        XML_LAST_ROW_EVEN_COLUMN,
+        XML_FIRST_ROW_END_COLUMN,
+        XML_FIRST_ROW_START_COLUMN,
+        XML_LAST_ROW_END_COLUMN,
+        XML_LAST_ROW_START_COLUMN,
+
         XML_HORIZONTAL_ON_ODD,
         // Password error from 1.4 to 2.0 Beta (#i45874#)
         XML_RESTART_NUMBERING,
@@ -3259,6 +3276,11 @@ namespace xmloff { namespace token {
         XML_EXPONENT_INTERVAL,
         XML_FORCED_EXPONENT_SIGN,
         XML_MIN_DECIMAL_PLACES,
+        XML_MAX_DENOMINATOR_VALUE,
+        XML_MAX_NUMERATOR_DIGITS,
+        XML_ZEROS_NUMERATOR_DIGITS,
+        XML_ZEROS_DENOMINATOR_DIGITS,
+        XML_INTEGER_FRACTION_DELIMITER,
 
         XML_TOKEN_END
     };
@@ -3271,6 +3293,10 @@ namespace xmloff { namespace token {
     /// compare eToken to the string
     XMLOFF_DLLPUBLIC bool IsXMLToken(
         const OUString& rString,
+        enum XMLTokenEnum eToken );
+
+    XMLOFF_DLLPUBLIC bool IsXMLToken(
+        const char* pCString,
         enum XMLTokenEnum eToken );
 } }
 

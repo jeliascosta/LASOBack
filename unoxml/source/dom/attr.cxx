@@ -63,7 +63,9 @@ namespace DOM
         }
         pNs = xmlSearchNsByHref(pNode->doc, pNode, pUri);
         // if (!pNs) hmm... now what? throw?
-        if (!pNs) { OSL_TRACE("CAtttr: cannot create namespace"); }
+        if (!pNs) {
+            SAL_WARN("unoxml", "CAttr: cannot create namespace");
+        }
         return pNs;
     }
 
@@ -79,17 +81,14 @@ namespace DOM
     }
 
     OUString SAL_CALL CAttr::getNodeName()
-        throw (RuntimeException, std::exception)
     {
         return getName();
     }
     OUString SAL_CALL CAttr::getNodeValue()
-        throw (RuntimeException, std::exception)
     {
         return getValue();
     }
     OUString SAL_CALL CAttr::getLocalName()
-        throw (RuntimeException, std::exception)
     {
         return getName();
     }
@@ -98,7 +97,7 @@ namespace DOM
     /**
     Returns the name of this attribute.
     */
-    OUString SAL_CALL CAttr::getName() throw (RuntimeException, std::exception)
+    OUString SAL_CALL CAttr::getName()
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -115,7 +114,6 @@ namespace DOM
     attribute is not in use.
     */
     Reference< XElement > SAL_CALL CAttr::getOwnerElement()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -137,7 +135,6 @@ namespace DOM
     document, this is true; otherwise, it is false.
     */
     sal_Bool SAL_CALL CAttr::getSpecified()
-        throw (RuntimeException, std::exception)
     {
         // FIXME if this DOM implementation supported DTDs it would need
         // to check that this attribute is not default or something
@@ -148,7 +145,6 @@ namespace DOM
     On retrieval, the value of the attribute is returned as a string.
     */
     OUString SAL_CALL CAttr::getValue()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -169,7 +165,6 @@ namespace DOM
     Sets the value of the attribute from a string.
     */
     void SAL_CALL CAttr::setValue(const OUString& value)
-        throw (RuntimeException, DOMException, std::exception)
     {
         ::osl::ClearableMutexGuard guard(m_rMutex);
 
@@ -216,7 +211,6 @@ namespace DOM
     }
 
     void SAL_CALL CAttr::setPrefix(const OUString& prefix)
-        throw (RuntimeException, DOMException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -232,7 +226,6 @@ namespace DOM
     }
 
     OUString SAL_CALL CAttr::getPrefix()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -249,7 +242,6 @@ namespace DOM
     }
 
     OUString SAL_CALL CAttr::getNamespaceURI()
-        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 

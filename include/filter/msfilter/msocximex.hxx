@@ -36,28 +36,15 @@ namespace com{namespace sun{namespace star{
         }
         namespace container{
                 class XIndexContainer;
-                class XNameContainer;
-        }
-        namespace beans{
-                class XPropertySet;
-        }
-        namespace text{
-                class XText;
         }
         namespace awt{
                 struct Size;
-                class XControlModel;
-        }
-        namespace uno{
-                class XComponentContext;
         }
         namespace frame{
                 class XModel;
         }
 
 }}}
-
-class SfxObjectShell;
 
 class MSFILTER_DLLPUBLIC SvxMSConvertOCXControls
 {
@@ -82,12 +69,12 @@ protected:
 
     css::uno::Reference< css::frame::XModel >               mxModel;
 
-    // gecachte Interfaces
+    // cached interfaces
     css::uno::Reference< css::drawing::XDrawPage >          xDrawPage;
     css::uno::Reference< css::drawing::XShapes >            xShapes;
     css::uno::Reference< css::lang::XMultiServiceFactory >  xServiceFactory;
 
-    // das einzige Formular
+    // the only form
     css::uno::Reference< css::container::XIndexContainer >  xFormComps;
 
     virtual void GetDrawPage();

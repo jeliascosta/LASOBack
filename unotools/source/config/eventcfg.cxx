@@ -26,7 +26,7 @@
 #include <cppuhelper/weakref.hxx>
 #include <o3tl/enumarray.hxx>
 #include <o3tl/enumrange.hxx>
-
+#include <rtl/ref.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <osl/diagnose.h>
 
@@ -40,7 +40,6 @@ using namespace ::osl;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star;
 
-static const char ROOTNODE_EVENTS[] = "Office.Events/ApplicationEvents";
 #define PATHDELIMITER "/"
 #define SETNODE_BINDINGS "Bindings"
 #define PROPERTYNAME_BINDINGURL "BindingURL"
@@ -94,22 +93,33 @@ private:
 
 public:
     GlobalEventConfig_Impl( );
-    virtual ~GlobalEventConfig_Impl( );
+    virtual ~GlobalEventConfig_Impl( ) override;
 
     void            Notify( const css::uno::Sequence<OUString>& aPropertyNames) override;
 
-    void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement ) throw (css::lang::IllegalArgumentException, css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException);
-    css::uno::Any SAL_CALL getByName( const OUString& aName ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException);
-    css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (css::uno::RuntimeException);
-    bool SAL_CALL hasByName( const OUString& aName ) throw (css::uno::RuntimeException);
-    static css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException);
-    bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException);
+    /// @throws css::lang::IllegalArgumentException
+    /// @throws css::container::NoSuchElementException
+    /// @throws css::lang::WrappedTargetException
+    /// @throws css::uno::RuntimeException
+    void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement );
+    /// @throws css::container::NoSuchElementException
+    /// @throws css::lang::WrappedTargetException
+    /// @throws css::uno::RuntimeException
+    css::uno::Any SAL_CALL getByName( const OUString& aName );
+    /// @throws css::uno::RuntimeException
+    css::uno::Sequence< OUString > SAL_CALL getElementNames(  );
+    /// @throws css::uno::RuntimeException
+    bool SAL_CALL hasByName( const OUString& aName );
+    /// @throws css::uno::RuntimeException
+    static css::uno::Type SAL_CALL getElementType(  );
+    /// @throws css::uno::RuntimeException
+    bool SAL_CALL hasElements(  );
     OUString GetEventName( GlobalEventId nID );
 };
 
 
 GlobalEventConfig_Impl::GlobalEventConfig_Impl()
-    :   ConfigItem( ROOTNODE_EVENTS, ConfigItemMode::ImmediateUpdate )
+    :   ConfigItem( "Office.Events/ApplicationEvents", ConfigItemMode::ImmediateUpdate )
 {
     // the supported event names
     for (const GlobalEventId id : o3tl::enumrange<GlobalEventId>())
@@ -146,13 +156,16 @@ void GlobalEventConfig_Impl::Notify( const Sequence< OUString >& )
 
     // don't forget to update all existing frames and her might cached dispatch objects!
     // But look for already killed frames. We hold weak references instead of hard ones ...
-    for (FrameVector::const_iterator pIt  = m_lFrames.begin();
-                                        pIt != m_lFrames.end();
-                                      ++pIt                     )
+    for (FrameVector::iterator pIt  = m_lFrames.begin(); pIt != m_lFrames.end(); )
     {
         css::uno::Reference< css::frame::XFrame > xFrame(pIt->get(), css::uno::UNO_QUERY);
         if (xFrame.is())
+        {
             xFrame->contextChanged();
+            ++pIt;
+        }
+        else
+            pIt = m_lFrames.erase(pIt);
     }
 }
 
@@ -161,23 +174,23 @@ void GlobalEventConfig_Impl::Notify( const Sequence< OUString >& )
 void GlobalEventConfig_Impl::ImplCommit()
 {
     //DF need to check it this is correct??
-    OSL_TRACE("In GlobalEventConfig_Impl::ImplCommit");
+    SAL_INFO("unotools", "In GlobalEventConfig_Impl::ImplCommit");
     EventBindingHash::const_iterator it = m_eventBindingHash.begin();
     EventBindingHash::const_iterator it_end = m_eventBindingHash.end();
     // clear the existing nodes
     ClearNodeSet( SETNODE_BINDINGS );
     Sequence< beans::PropertyValue > seqValues( 1 );
     OUString sNode;
-    static const char sPrefix[] = SETNODE_BINDINGS PATHDELIMITER "BindingType['";
-    static const char sPostfix[] = "']" PATHDELIMITER PROPERTYNAME_BINDINGURL;
     //step through the list of events
     for(int i=0;it!=it_end;++it,++i)
     {
         //no point in writing out empty bindings!
         if(it->second.isEmpty() )
             continue;
-        sNode = sPrefix + it->first + sPostfix;
-        OSL_TRACE("writing binding for: %s",OUStringToOString(sNode , RTL_TEXTENCODING_ASCII_US ).pData->buffer);
+        sNode = SETNODE_BINDINGS PATHDELIMITER "BindingType['" +
+                it->first +
+                "']" PATHDELIMITER PROPERTYNAME_BINDINGURL;
+        SAL_INFO("unotools", "writing binding for: " << sNode);
         seqValues[ 0 ].Name = sNode;
         seqValues[ 0 ].Value <<= it->second;
         //write the data to the registry
@@ -190,7 +203,7 @@ void GlobalEventConfig_Impl::ImplCommit()
 void GlobalEventConfig_Impl::initBindingInfo()
 {
     // Get ALL names of current existing list items in configuration!
-    Sequence< OUString > lEventNames      = GetNodeNames( SETNODE_BINDINGS, utl::CONFIG_NAME_LOCAL_PATH );
+    Sequence< OUString > lEventNames      = GetNodeNames( SETNODE_BINDINGS, utl::ConfigNameFormat::LocalPath );
 
     OUString aSetNode( SETNODE_BINDINGS );
     aSetNode += PATHDELIMITER;
@@ -207,7 +220,7 @@ void GlobalEventConfig_Impl::initBindingInfo()
         aBuffer.append( lEventNames[i] );
         aBuffer.append( aCommandKey );
         lMacros[0] = aBuffer.makeStringAndClear();
-        OSL_TRACE("reading binding for: %s",OUStringToOString(lMacros[0] , RTL_TEXTENCODING_ASCII_US ).pData->buffer);
+        SAL_INFO("unotools", "reading binding for: " << lMacros[0]);
         Sequence< Any > lValues = GetProperties( lMacros );
         OUString sMacroURL;
         if( lValues.getLength() > 0 )
@@ -225,7 +238,7 @@ void GlobalEventConfig_Impl::initBindingInfo()
     }
 }
 
-void SAL_CALL GlobalEventConfig_Impl::replaceByName( const OUString& aName, const Any& aElement ) throw (lang::IllegalArgumentException, container::NoSuchElementException, lang::WrappedTargetException, RuntimeException)
+void SAL_CALL GlobalEventConfig_Impl::replaceByName( const OUString& aName, const Any& aElement )
 {
     Sequence< beans::PropertyValue > props;
     //DF should we prepopulate the hash with a list of valid event Names?
@@ -245,7 +258,7 @@ void SAL_CALL GlobalEventConfig_Impl::replaceByName( const OUString& aName, cons
     SetModified();
 }
 
-Any SAL_CALL GlobalEventConfig_Impl::getByName( const OUString& aName ) throw (container::NoSuchElementException, lang::WrappedTargetException, RuntimeException)
+Any SAL_CALL GlobalEventConfig_Impl::getByName( const OUString& aName )
 {
     Any aRet;
     Sequence< beans::PropertyValue > props(2);
@@ -271,12 +284,12 @@ Any SAL_CALL GlobalEventConfig_Impl::getByName( const OUString& aName ) throw (c
     return aRet;
 }
 
-Sequence< OUString > SAL_CALL GlobalEventConfig_Impl::getElementNames(  ) throw (RuntimeException)
+Sequence< OUString > SAL_CALL GlobalEventConfig_Impl::getElementNames(  )
 {
     return uno::Sequence< OUString >(m_supportedEvents.data(), SupportedEventsVector::size());
 }
 
-bool SAL_CALL GlobalEventConfig_Impl::hasByName( const OUString& aName ) throw (RuntimeException)
+bool SAL_CALL GlobalEventConfig_Impl::hasByName( const OUString& aName )
 {
     if ( m_eventBindingHash.find( aName ) != m_eventBindingHash.end() )
         return true;
@@ -290,13 +303,13 @@ bool SAL_CALL GlobalEventConfig_Impl::hasByName( const OUString& aName ) throw (
     return false;
 }
 
-Type SAL_CALL GlobalEventConfig_Impl::getElementType(  ) throw (RuntimeException)
+Type SAL_CALL GlobalEventConfig_Impl::getElementType(  )
 {
     //DF definitely not sure about this??
     return cppu::UnoType<Sequence<beans::PropertyValue>>::get();
 }
 
-bool SAL_CALL GlobalEventConfig_Impl::hasElements(  ) throw (RuntimeException)
+bool SAL_CALL GlobalEventConfig_Impl::hasElements(  )
 {
     return ( m_eventBindingHash.empty() );
 }
@@ -317,7 +330,7 @@ GlobalEventConfig::GlobalEventConfig()
     if( m_pImpl == nullptr )
     {
         m_pImpl = new GlobalEventConfig_Impl;
-        ItemHolder1::holdConfigItem(E_EVENTCFG);
+        ItemHolder1::holdConfigItem(EItem::EventConfig);
     }
 }
 
@@ -336,39 +349,39 @@ GlobalEventConfig::~GlobalEventConfig()
     }
 }
 
-Reference< container::XNameReplace > SAL_CALL GlobalEventConfig::getEvents() throw (css::uno::RuntimeException, std::exception)
+Reference< container::XNameReplace > SAL_CALL GlobalEventConfig::getEvents()
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
     Reference< container::XNameReplace > ret(this);
     return ret;
 }
 
-void SAL_CALL GlobalEventConfig::replaceByName( const OUString& aName, const Any& aElement ) throw (lang::IllegalArgumentException, container::NoSuchElementException, lang::WrappedTargetException, RuntimeException, std::exception)
+void SAL_CALL GlobalEventConfig::replaceByName( const OUString& aName, const Any& aElement )
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
     m_pImpl->replaceByName( aName, aElement );
 }
-Any SAL_CALL GlobalEventConfig::getByName( const OUString& aName ) throw (container::NoSuchElementException, lang::WrappedTargetException, RuntimeException, std::exception)
+Any SAL_CALL GlobalEventConfig::getByName( const OUString& aName )
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
     return m_pImpl->getByName( aName );
 }
-Sequence< OUString > SAL_CALL GlobalEventConfig::getElementNames(  ) throw (RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL GlobalEventConfig::getElementNames(  )
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
     return m_pImpl->getElementNames( );
 }
-sal_Bool SAL_CALL GlobalEventConfig::hasByName( const OUString& aName ) throw (RuntimeException, std::exception)
+sal_Bool SAL_CALL GlobalEventConfig::hasByName( const OUString& aName )
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
     return m_pImpl->hasByName( aName );
 }
-Type SAL_CALL GlobalEventConfig::getElementType(  ) throw (RuntimeException, std::exception)
+Type SAL_CALL GlobalEventConfig::getElementType(  )
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
     return GlobalEventConfig_Impl::getElementType( );
 }
-sal_Bool SAL_CALL GlobalEventConfig::hasElements(  ) throw (RuntimeException, std::exception)
+sal_Bool SAL_CALL GlobalEventConfig::hasElements(  )
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
     return m_pImpl->hasElements( );
@@ -388,7 +401,8 @@ OUString GlobalEventConfig::GetEventName( GlobalEventId nIndex )
 {
     if (utl::ConfigManager::IsAvoidConfig())
         return OUString();
-    return GlobalEventConfig().m_pImpl->GetEventName( nIndex );
+    rtl::Reference<GlobalEventConfig> createImpl(new GlobalEventConfig);
+    return GlobalEventConfig::m_pImpl->GetEventName( nIndex );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

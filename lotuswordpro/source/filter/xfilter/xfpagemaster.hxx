@@ -78,14 +78,14 @@ class XFPageMaster : public XFStyle
 public:
     XFPageMaster();
 
-    virtual ~XFPageMaster();
+    virtual ~XFPageMaster() override;
 
 public:
     void    SetPageWidth(double width);
 
     void    SetPageHeight(double height);
 
-    void    SetMargins(double left=-1, double right=-1,double top=-1, double bottom=-1);
+    void    SetMargins(double left, double right, double top, double bottom);
 
     void    SetPageUsage(enumXFPageUsage usage);
 
@@ -105,12 +105,12 @@ public:
 
     void    SetTextDir(enumXFTextDir dir);
 
-    void    SetFootNoteSeparator(enumXFAlignType align = enumXFAlignStart,
-                                double width = 0.05,
-                                sal_Int32 lengthPercent = 25,
-                                double spaceAbove = 0.1,
-                                double spaceBelow = 0.1,
-                                XFColor color=XFColor(0,0,0)
+    void    SetFootNoteSeparator(enumXFAlignType align,
+                                double width,
+                                sal_Int32 lengthPercent,
+                                double spaceAbove,
+                                double spaceBelow,
+                                XFColor color
                                 );
 
     virtual enumXFStyle GetStyleFamily() override;
@@ -125,7 +125,6 @@ private:
 
     enumXFPageUsage m_eUsage;
     enumXFTextDir   m_eTextDir;
-    bool    m_bPrintOrient;
 
     XFBorders   *m_pBorders;
     XFShadow    *m_pShadow;

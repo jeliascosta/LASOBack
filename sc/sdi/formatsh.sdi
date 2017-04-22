@@ -38,11 +38,7 @@ interface TableFont
 
 interface FormatForSelection
 {
-    //Auch das Basic muss wieder laufen
-    SbxObject Font SID_PROP_FONT ()
-    SbxObject Interior SID_PROP_INTERIOR () // status(Final)
-
-    // Slot's die in der DrawShell disabled werden. {
+    // slots which are disabled in the DrawShell {{
     SID_STYLE_FAMILY2           [ ExecMethod = ExecuteStyle; StateMethod = GetStyleState; ]
     SID_STYLE_APPLY             [ ExecMethod = ExecuteStyle; StateMethod = GetStyleState; ]
     SID_STYLE_WATERCAN          [ ExecMethod = ExecuteStyle; StateMethod = GetStyleState; ]
@@ -57,7 +53,7 @@ interface FormatForSelection
     SID_STYLE_PREVIEW           [ ExecMethod = ExecuteStyle; ]
     SID_STYLE_END_PREVIEW           [ ExecMethod = ExecuteStyle; ]
     SID_CLASSIFICATION_APPLY [ ExecMethod = ExecuteStyle; ]
-    // } Slot's die in der DrawShell disabled werden.
+    // } slots which are disabled in the DrawShell {{
 
     SID_ATTR_ALIGN_HOR_JUSTIFY    [ ExecMethod = ExecuteAlignment; StateMethod = GetAttrState; ]
     SID_ATTR_ALIGN_VER_JUSTIFY    [ ExecMethod = ExecuteAlignment; StateMethod = GetAttrState; ]
@@ -106,8 +102,8 @@ interface FormatForSelection
     SID_CTLFONT_STATE               [ StateMethod = GetTextDirectionState ; Export = FALSE; ]
 
     SID_ATTR_NUMBERFORMAT_VALUE       [ ExecMethod = ExecuteNumFormat; StateMethod = GetNumFormatState;]
-    SID_NUMBER_FORMAT       [ ExecMethod = ExecuteNumFormat; StateMethod = GetNumFormatState;]
-    SID_NUMBER_TWODEC       [ ExecMethod = ExecuteNumFormat;]
+    SID_NUMBER_FORMAT       [ ExecMethod = ExecuteNumFormat; StateMethod = GetNumFormatState; ]
+    SID_NUMBER_TWODEC       [ ExecMethod = ExecuteNumFormat; StateMethod = GetNumFormatState; ]
     SID_NUMBER_SCIENTIFIC   [ ExecMethod = ExecuteNumFormat; StateMethod = GetNumFormatState; ]
     SID_NUMBER_DATE         [ ExecMethod = ExecuteNumFormat; StateMethod = GetNumFormatState; ]
     SID_NUMBER_CURRENCY     [ ExecMethod = ExecuteNumFormat; StateMethod = GetNumFormatState; ]

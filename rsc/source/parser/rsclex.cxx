@@ -34,13 +34,14 @@
 #include <rsclex.hxx>
 #include <rscyacc.hxx>
 
+#include <rtl/character.hxx>
 #include <rtl/textcvt.h>
 #include <rtl/textenc.h>
 
 
 const char* StringContainer::putString( const char* pString )
 {
-    OString aString( static_cast<const sal_Char*>(pString) );
+    OString aString( pString );
     std::pair<
         std::unordered_set< OString, OStringHash >::iterator,
         bool > aInsert =
@@ -49,8 +50,8 @@ const char* StringContainer::putString( const char* pString )
     return aInsert.first->getStr();
 }
 
-int             c;
-bool            bLastInclude;//  true, if last symbol was INCLUDE
+static char     c;
+static bool     bLastInclude;//  true, if last symbol was INCLUDE
 RscFileInst*    pFI;
 RscTypCont*     pTC;
 RscExpression * pExp;
@@ -58,8 +59,9 @@ struct KeyVal
 {
     int     nKeyWord;
     YYSTYPE aYYSType;
-} aKeyVal[ 1 ];
-bool bTargetDefined;
+};
+static KeyVal aKeyVal[ 1 ];
+static bool bTargetDefined;
 
 StringContainer* pStringContainer = nullptr;
 
@@ -81,9 +83,9 @@ sal_uInt32 GetNumber()
 
     if( nLog == 16 )
     {
-        while( isxdigit( c ) )
+        while( rtl::isAsciiHexDigit( static_cast<unsigned char>(c) ) )
         {
-            if( isdigit( c ) )
+            if( rtl::isAsciiDigit( static_cast<unsigned char>(c) ) )
                 l = l * nLog + (c - '0');
             else
                 l = l * nLog + (toupper( c ) - 'A' + 10 );
@@ -93,7 +95,7 @@ sal_uInt32 GetNumber()
     }
     else
     {
-        while( isdigit( c ) || 'x' == c )
+        while( rtl::isAsciiDigit( static_cast<unsigned char>(c) ) || 'x' == c )
         {
             l = l * nLog + (c - '0');
             c = pFI->GetFastChar();
@@ -115,7 +117,7 @@ int MakeToken( YYSTYPE * pTokenVal )
 
     while( true ) // ignore comments and space characters
     {
-        while( isspace( c ) )
+        while( rtl::isAsciiWhiteSpace( static_cast<unsigned char>(c) ) )
             c = pFI->GetFastChar();
 
         if( '/' == c )
@@ -164,7 +166,7 @@ int MakeToken( YYSTYPE * pTokenVal )
             c = pFI->GetFastChar();
             while( '>' != c && !pFI->IsEof() )
             {
-                aBuf.append( sal_Char(c) );
+                aBuf.append( c );
                 c = pFI->GetFastChar();
             }
             c = pFI->GetFastChar();
@@ -202,28 +204,29 @@ int MakeToken( YYSTYPE * pTokenVal )
                 aBuf.append( '\\' );
                 c = pFI->GetFastChar();
                 if( c )
-                    aBuf.append( sal_Char(c) );
+                    aBuf.append( c );
             }
             else
-                aBuf.append( sal_Char(c) );
+                aBuf.append( c );
         }
         pTokenVal->string = const_cast<char*>(pStringContainer->putString( aBuf.getStr() ));
         return STRING;
     }
-    if (isdigit (c))
+    if (rtl::isAsciiDigit (static_cast<unsigned char>(c)))
     {
         pTokenVal->value = GetNumber();
         return NUMBER;
     }
 
-    if( isalpha (c) || (c == '_') )
+    if( rtl::isAsciiAlpha (static_cast<unsigned char>(c)) || (c == '_') )
     {
         Atom        nHashId;
         OStringBuffer aBuf( 256 );
 
-        while( isalnum (c) || (c == '_') || (c == '-') || (c == ':'))
+        while( rtl::isAsciiAlphanumeric (static_cast<unsigned char>(c))
+               || (c == '_') || (c == '-') || (c == ':'))
         {
-            aBuf.append( sal_Char(c) );
+            aBuf.append( c );
             c = pFI->GetFastChar();
         }
 
@@ -325,7 +328,7 @@ int yylex()
     return aKeyVal[ 0 ].nKeyWord;
 }
 
-#if defined SOLARIS
+#if defined __sun
 extern "C" void yyerror( const char* pMessage )
 #else
 void yyerror( char* pMessage )
@@ -386,13 +389,13 @@ void IncludeParser( RscFileInst * pFileInst )
                 {
                     lKey = pTypCon->aFileTab.NewIncFile( aYYSType.string,
                                                          aYYSType.string );
-                    pFName->InsertDependFile( lKey, ULONG_MAX );
+                    pFName->InsertDependFile( lKey );
                 }
                 else if( INCLUDE_STRING == nToken )
                 {
                     lKey = pTypCon->aFileTab.NewIncFile( aYYSType.string,
                                                          OString() );
-                    pFName->InsertDependFile( lKey, ULONG_MAX );
+                    pFName->InsertDependFile( lKey );
                 }
             }
         }
@@ -413,7 +416,7 @@ ERRTYPE parser( RscFileInst * pFileInst )
     EndParser();
 
     // yyparser returns 0 on success
-    if( 0 == aError )
+    if( 0 == aError.GetError() )
         aError.Clear();
     if( pFileInst->pTypCont->pEH->nErrors )
         aError = ERR_ERROR;

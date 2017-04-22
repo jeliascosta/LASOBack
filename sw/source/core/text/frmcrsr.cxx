@@ -173,7 +173,7 @@ SwTextFrame *SwTextFrame::GetFrameAtPos( const SwPosition &rPos )
  */
 
 bool SwTextFrame::GetCharRect( SwRect& rOrig, const SwPosition &rPos,
-                            SwCursorMoveState *pCMS ) const
+                            SwCursorMoveState *pCMS, bool bAllowFarAway ) const
 {
     OSL_ENSURE( ! IsVertical() || ! IsSwapped(),"SwTextFrame::GetCharRect with swapped frame" );
 
@@ -192,20 +192,23 @@ bool SwTextFrame::GetCharRect( SwRect& rOrig, const SwPosition &rPos,
     SwTextFrame *pFrame = GetAdjFrameAtPos( const_cast<SwTextFrame*>(this), rPos, bRightMargin,
                                      bNoScroll );
     pFrame->GetFormatted();
-    const SwFrame* pTmpFrame = static_cast<SwFrame*>(pFrame->GetUpper());
 
-    SWRECTFN ( pFrame )
-    const SwTwips nUpperMaxY = (pTmpFrame->*fnRect->fnGetPrtBottom)();
-    const SwTwips nFrameMaxY = (pFrame->*fnRect->fnGetPrtBottom)();
+    const SwFrame* pTmpFrame = static_cast<SwFrame*>(pFrame->GetUpper());
+    if (pTmpFrame->Frame().Top() == FAR_AWAY && !bAllowFarAway)
+        return false;
+
+    SwRectFnSet aRectFnSet(pFrame);
+    const SwTwips nUpperMaxY = aRectFnSet.GetPrtBottom(*pTmpFrame);
+    const SwTwips nFrameMaxY = aRectFnSet.GetPrtBottom(*pFrame);
 
     // nMaxY is an absolute value
-    SwTwips nMaxY = bVert ?
-                    ( bVertL2R ? std::min( nFrameMaxY, nUpperMaxY ) : std::max( nFrameMaxY, nUpperMaxY ) ) :
+    SwTwips nMaxY = aRectFnSet.IsVert() ?
+                    ( aRectFnSet.IsVertL2R() ? std::min( nFrameMaxY, nUpperMaxY ) : std::max( nFrameMaxY, nUpperMaxY ) ) :
                     std::min( nFrameMaxY, nUpperMaxY );
 
     bool bRet = false;
 
-    if ( pFrame->IsEmpty() || ! (pFrame->Prt().*fnRect->fnGetHeight)() )
+    if ( pFrame->IsEmpty() || ! aRectFnSet.GetHeight(pFrame->Prt()) )
     {
         Point aPnt1 = pFrame->Frame().Pos() + pFrame->Prt().Pos();
         SwTextNode* pTextNd = const_cast<SwTextFrame*>(this)->GetTextNode();
@@ -213,11 +216,11 @@ bool SwTextFrame::GetCharRect( SwRect& rOrig, const SwPosition &rPos,
         pTextNd->GetFirstLineOfsWithNum( nFirstOffset );
 
         Point aPnt2;
-        if ( bVert )
+        if ( aRectFnSet.IsVert() )
         {
             if( nFirstOffset > 0 )
                 aPnt1.Y() += nFirstOffset;
-            if ( aPnt1.X() < nMaxY && !bVertL2R )
+            if ( aPnt1.X() < nMaxY && !aRectFnSet.IsVertL2R() )
                 aPnt1.X() = nMaxY;
             aPnt2.X() = aPnt1.X() + pFrame->Prt().Width();
             aPnt2.Y() = aPnt1.Y();
@@ -242,7 +245,7 @@ bool SwTextFrame::GetCharRect( SwRect& rOrig, const SwPosition &rPos,
         if ( pCMS )
         {
             pCMS->m_aRealHeight.X() = 0;
-            pCMS->m_aRealHeight.Y() = bVert ? -rOrig.Width() : rOrig.Height();
+            pCMS->m_aRealHeight.Y() = aRectFnSet.IsVert() ? -rOrig.Width() : rOrig.Height();
         }
 
         if ( pFrame->IsRightToLeft() )
@@ -256,7 +259,7 @@ bool SwTextFrame::GetCharRect( SwRect& rOrig, const SwPosition &rPos,
             return false;
 
         SwFrameSwapper aSwapper( pFrame, true );
-        if ( bVert )
+        if ( aRectFnSet.IsVert() )
             nMaxY = pFrame->SwitchVerticalToHorizontal( nMaxY );
 
         bool bGoOn = true;
@@ -278,11 +281,11 @@ bool SwTextFrame::GetCharRect( SwRect& rOrig, const SwPosition &rPos,
             if ( pFrame->IsRightToLeft() )
                 pFrame->SwitchLTRtoRTL( rOrig );
 
-            if ( bVert )
+            if ( aRectFnSet.IsVert() )
                 pFrame->SwitchHorizontalToVertical( rOrig );
 
             if( pFrame->IsUndersized() && pCMS && !pFrame->GetNext() &&
-                (rOrig.*fnRect->fnGetBottom)() == nUpperMaxY &&
+                aRectFnSet.GetBottom(rOrig) == nUpperMaxY &&
                 pFrame->GetOfst() < nOffset &&
                 !pFrame->IsFollow() && !bNoScroll &&
                 pFrame->GetTextNode()->GetText().getLength() != nNextOfst)
@@ -304,7 +307,7 @@ bool SwTextFrame::GetCharRect( SwRect& rOrig, const SwPosition &rPos,
                 }
             }
 
-            if ( bVert )
+            if ( aRectFnSet.IsVert() )
             {
                 if ( pCMS->m_bRealHeight )
                 {
@@ -330,19 +333,19 @@ bool SwTextFrame::GetCharRect( SwRect& rOrig, const SwPosition &rPos,
     {
         SwPageFrame *pPage = pFrame->FindPageFrame();
         OSL_ENSURE( pPage, "Text escaped from page?" );
-        const SwTwips nOrigTop = (rOrig.*fnRect->fnGetTop)();
-        const SwTwips nPageTop = (pPage->Frame().*fnRect->fnGetTop)();
-        const SwTwips nPageBott = (pPage->Frame().*fnRect->fnGetBottom)();
+        const SwTwips nOrigTop = aRectFnSet.GetTop(rOrig);
+        const SwTwips nPageTop = aRectFnSet.GetTop(pPage->Frame());
+        const SwTwips nPageBott = aRectFnSet.GetBottom(pPage->Frame());
 
         // We have the following situation: if the frame is in an invalid
         // sectionframe, it's possible that the frame is outside the page.
         // If we restrict the cursor position to the page area, we enforce
         // the formatting of the page, of the section frame and the frame itself.
-        if( (*fnRect->fnYDiff)( nPageTop, nOrigTop ) > 0 )
-            (rOrig.*fnRect->fnSetTop)( nPageTop );
+        if( aRectFnSet.YDiff( nPageTop, nOrigTop ) > 0 )
+            aRectFnSet.SetTop( rOrig, nPageTop );
 
-        if ( (*fnRect->fnYDiff)( nOrigTop, nPageBott ) > 0 )
-            (rOrig.*fnRect->fnSetTop)( nPageBott );
+        if ( aRectFnSet.YDiff( nOrigTop, nPageBott ) > 0 )
+            aRectFnSet.SetTop( rOrig, nPageBott );
     }
 
     return bRet;
@@ -364,27 +367,27 @@ bool SwTextFrame::GetAutoPos( SwRect& rOrig, const SwPosition &rPos ) const
     pFrame->GetFormatted();
     const SwFrame* pTmpFrame = static_cast<SwFrame*>(pFrame->GetUpper());
 
-    SWRECTFN( pTmpFrame )
-    SwTwips nUpperMaxY = (pTmpFrame->*fnRect->fnGetPrtBottom)();
+    SwRectFnSet aRectFnSet(pTmpFrame);
+    SwTwips nUpperMaxY = aRectFnSet.GetPrtBottom(*pTmpFrame);
 
     // nMaxY is in absolute value
     SwTwips nMaxY;
-    if ( bVert )
+    if ( aRectFnSet.IsVert() )
     {
-        if ( bVertL2R )
-            nMaxY = std::min( (pFrame->*fnRect->fnGetPrtBottom)(), nUpperMaxY );
+        if ( aRectFnSet.IsVertL2R() )
+            nMaxY = std::min( aRectFnSet.GetPrtBottom(*pFrame), nUpperMaxY );
         else
-            nMaxY = std::max( (pFrame->*fnRect->fnGetPrtBottom)(), nUpperMaxY );
+            nMaxY = std::max( aRectFnSet.GetPrtBottom(*pFrame), nUpperMaxY );
     }
     else
-        nMaxY = std::min( (pFrame->*fnRect->fnGetPrtBottom)(), nUpperMaxY );
-    if ( pFrame->IsEmpty() || ! (pFrame->Prt().*fnRect->fnGetHeight)() )
+        nMaxY = std::min( aRectFnSet.GetPrtBottom(*pFrame), nUpperMaxY );
+    if ( pFrame->IsEmpty() || ! aRectFnSet.GetHeight(pFrame->Prt()) )
     {
         Point aPnt1 = pFrame->Frame().Pos() + pFrame->Prt().Pos();
         Point aPnt2;
-        if ( bVert )
+        if ( aRectFnSet.IsVert() )
         {
-            if ( aPnt1.X() < nMaxY && !bVertL2R )
+            if ( aPnt1.X() < nMaxY && !aRectFnSet.IsVertL2R() )
                 aPnt1.X() = nMaxY;
 
             aPnt2.X() = aPnt1.X() + pFrame->Prt().Width();
@@ -410,7 +413,7 @@ bool SwTextFrame::GetAutoPos( SwRect& rOrig, const SwPosition &rPos ) const
             return false;
 
         SwFrameSwapper aSwapper( pFrame, true );
-        if ( bVert )
+        if ( aRectFnSet.IsVert() )
             nMaxY = pFrame->SwitchVerticalToHorizontal( nMaxY );
 
         SwTextSizeInfo aInf( pFrame );
@@ -428,7 +431,7 @@ bool SwTextFrame::GetAutoPos( SwRect& rOrig, const SwPosition &rPos ) const
             if ( pFrame->IsRightToLeft() )
                 pFrame->SwitchLTRtoRTL( rOrig );
 
-            if ( bVert )
+            if ( aRectFnSet.IsVert() )
                 pFrame->SwitchHorizontalToVertical( rOrig );
 
             return true;
@@ -457,30 +460,30 @@ bool SwTextFrame::GetTopOfLine( SwTwips& _onTopOfLine,
     }
     else
     {
-        SWRECTFN( this )
-        if ( IsEmpty() || !(Prt().*fnRect->fnGetHeight)() )
+        SwRectFnSet aRectFnSet(this);
+        if ( IsEmpty() || !aRectFnSet.GetHeight(Prt()) )
         {
             // consider upper space amount considered
             // for previous frame and the page grid.
-            _onTopOfLine = (this->*fnRect->fnGetPrtTop)();
+            _onTopOfLine = aRectFnSet.GetPrtTop(*this);
         }
         else
         {
             // determine formatted text frame that contains the requested position
             SwTextFrame* pFrame = &(const_cast<SwTextFrame*>(this)->GetFrameAtOfst( nOffset ));
             pFrame->GetFormatted();
-            SWREFRESHFN( pFrame )
+            aRectFnSet.Refresh(pFrame);
             // If proportional line spacing is applied
             // to the text frame, the top of the anchor character is also the
             // top of the line.
             // Otherwise the line layout determines the top of the line
             const SvxLineSpacingItem& rSpace = GetAttrSet()->GetLineSpacing();
-            if ( rSpace.GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_PROP )
+            if ( rSpace.GetInterLineSpaceRule() == SvxInterLineSpaceRule::Prop )
             {
                 SwRect aCharRect;
                 if ( GetAutoPos( aCharRect, _rPos ) )
                 {
-                    _onTopOfLine = (aCharRect.*fnRect->fnGetTop)();
+                    _onTopOfLine = aRectFnSet.GetTop(aCharRect);
                 }
                 else
                 {
@@ -497,7 +500,7 @@ bool SwTextFrame::GetTopOfLine( SwTwips& _onTopOfLine,
                 aLine.CharCursorToLine( nOffset );
                 // determine top of line
                 _onTopOfLine = aLine.Y();
-                if ( bVert )
+                if ( aRectFnSet.IsVert() )
                 {
                     _onTopOfLine = pFrame->SwitchHorizontalToVertical( _onTopOfLine );
                 }
@@ -689,7 +692,7 @@ bool SwTextFrame::LeftMargin(SwPaM *pPam) const
             nIndx = 0;
         }
     }
-    pPam->GetPoint()->nContent = SwIndex( pFrame->GetTextNode(), nIndx );
+    pPam->GetPoint()->nContent.Assign(pFrame->GetTextNode(), nIndx);
     SwTextCursor::SetRightMargin( false );
     return true;
 }
@@ -730,7 +733,7 @@ bool SwTextFrame::RightMargin(SwPaM *pPam, bool bAPI) const
                 --nRightMargin;
         }
     }
-    pPam->GetPoint()->nContent = SwIndex( pFrame->GetTextNode(), nRightMargin );
+    pPam->GetPoint()->nContent.Assign(pFrame->GetTextNode(), nRightMargin);
     SwTextCursor::SetRightMargin( !bAPI );
     return true;
 }
@@ -744,9 +747,9 @@ class SwSetToRightMargin
 {
     bool bRight;
 public:
-    inline SwSetToRightMargin() : bRight( false ) { }
-    inline ~SwSetToRightMargin() { SwTextCursor::SetRightMargin( bRight ); }
-    inline void SetRight( const bool bNew ) { bRight = bNew; }
+    SwSetToRightMargin() : bRight( false ) { }
+    ~SwSetToRightMargin() { SwTextCursor::SetRightMargin( bRight ); }
+    void SetRight( const bool bNew ) { bRight = bNew; }
 };
 
 bool SwTextFrame::UnitUp_( SwPaM *pPam, const SwTwips nOffset,
@@ -839,8 +842,7 @@ bool SwTextFrame::UnitUp_( SwPaM *pPam, const SwTwips nOffset,
                     nTmpOfst = nStart;
                     aSet.SetRight( true );
                 }
-                pPam->GetPoint()->nContent =
-                      SwIndex( const_cast<SwTextFrame*>(this)->GetTextNode(), nTmpOfst );
+                pPam->GetPoint()->nContent.Assign(const_cast<SwTextFrame*>(this)->GetTextNode(), nTmpOfst);
                 return true;
             }
 
@@ -1081,7 +1083,7 @@ void SwTextFrame::PrepareVisualMove( sal_Int32& nPos, sal_uInt8& nCursorLevel,
 
     UErrorCode nError = U_ZERO_ERROR;
     UBiDi* pBidi = ubidi_openSized( nLen, 0, &nError );
-    ubidi_setPara( pBidi, reinterpret_cast<const UChar *>(pLineString), nLen, nDefaultDir, nullptr, &nError ); // UChar != sal_Unicode in MinGW
+    ubidi_setPara( pBidi, reinterpret_cast<const UChar *>(pLineString), nLen, nDefaultDir, nullptr, &nError );
 
     sal_Int32 nTmpPos = 0;
     bool bOutOfBounds = false;
@@ -1199,8 +1201,7 @@ bool SwTextFrame::UnitDown_(SwPaM *pPam, const SwTwips nOffset,
                 // We make sure that we move down.
                 if( nTmpOfst <= nStart && ! bFirstOfDouble )
                     nTmpOfst = nStart + 1;
-                pPam->GetPoint()->nContent =
-                      SwIndex( const_cast<SwTextFrame*>(this)->GetTextNode(), nTmpOfst );
+                pPam->GetPoint()->nContent.Assign(const_cast<SwTextFrame*>(this)->GetTextNode(), nTmpOfst);
 
                 if ( IsVertical() )
                     const_cast<SwTextFrame*>(this)->SwapWidthAndHeight();
@@ -1237,7 +1238,7 @@ bool SwTextFrame::UnitDown_(SwPaM *pPam, const SwTwips nOffset,
                     if( nFormat <= GetOfst() )
                     {
                         nFormat = std::min( sal_Int32( GetOfst() + MIN_OFFSET_STEP ),
-                                       static_cast<sal_Int32>(nTmpLen) );
+                                       nTmpLen );
                         if( nFormat <= GetOfst() )
                             break;
                     }
@@ -1650,13 +1651,13 @@ void SwTextFrame::FillCursorPos( SwFillData& rFill ) const
                          pUp->GetUpper()->GetUpper()->IsSctFrame() )
                     pUp = pUp->GetUpper()->GetUpper()->GetUpper();
             }
-            SWRECTFN( this )
-            SwTwips nLimit = (pUp->*fnRect->fnGetPrtBottom)();
+            SwRectFnSet aRectFnSet(this);
+            SwTwips nLimit = aRectFnSet.GetPrtBottom(*pUp);
             SwTwips nRectBottom = rRect.Bottom();
-            if ( bVert )
+            if ( aRectFnSet.IsVert() )
                 nRectBottom = SwitchHorizontalToVertical( nRectBottom );
 
-            if( (*fnRect->fnYDiff)( nLimit, nRectBottom ) < 0 )
+            if( aRectFnSet.YDiff( nLimit, nRectBottom ) < 0 )
                 bFill = false;
             else
                 rRect.Width( 1 );

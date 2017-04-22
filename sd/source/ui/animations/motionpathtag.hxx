@@ -39,7 +39,7 @@ class MotionPathTag : public SmartTag, public IPolyPolygonEditorController, publ
 {
 public:
     MotionPathTag( CustomAnimationPane& rPane, ::sd::View& rView, const CustomAnimationEffectPtr& pEffect );
-    virtual ~MotionPathTag();
+    virtual ~MotionPathTag() override;
 
     SdrPathObj* getPathObj() const { return mpPathObj; }
 
@@ -52,9 +52,9 @@ public:
     // callbacks from sdr view
     virtual sal_uLong GetMarkablePointCount() const override;
     virtual sal_uLong GetMarkedPointCount() const override;
-    virtual bool MarkPoint(SdrHdl& rHdl, bool bUnmark=false) override;
+    virtual bool MarkPoint(SdrHdl& rHdl, bool bUnmark) override;
     virtual void CheckPossibilities() override;
-    virtual bool MarkPoints(const Rectangle* pRect, bool bUnmark) override;
+    virtual bool MarkPoints(const ::tools::Rectangle* pRect, bool bUnmark) override;
 
     const CustomAnimationEffectPtr& getEffect() const { return mpEffect; }
 
@@ -85,9 +85,9 @@ public:
     bool OnMove( const KeyEvent& rKEvt );
 
     // XChangesListener
-    virtual void SAL_CALL changesOccurred( const css::util::ChangesEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL changesOccurred( const css::util::ChangesEvent& Event ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
     virtual void SAL_CALL acquire(  ) throw () override;
     virtual void SAL_CALL release(  ) throw () override;
 

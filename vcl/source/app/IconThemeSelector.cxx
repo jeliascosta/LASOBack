@@ -16,8 +16,7 @@
 
 namespace vcl {
 
-/*static*/ const OUString
-IconThemeSelector::FALLBACK_ICON_THEME_ID("tango");
+/*static*/ const OUStringLiteral IconThemeSelector::FALLBACK_ICON_THEME_ID("tango");
 
 namespace {
 
@@ -44,7 +43,8 @@ bool icon_theme_is_in_installed_themes(const OUString& theme,
 } // end anonymous namespace
 
 IconThemeSelector::IconThemeSelector()
-: mUseHighContrastTheme(false)
+    : mUseHighContrastTheme(false)
+    , mPreferDarkIconTheme(false)
 {
 }
 
@@ -83,6 +83,10 @@ IconThemeSelector::SelectIconThemeForDesktopEnvironment(
         if (icon_theme_is_in_installed_themes(mPreferredIconTheme, installedThemes)) {
             return mPreferredIconTheme;
         }
+        //if a dark variant is preferred, and we didn't have an exact match, then try our one and only dark theme
+        if (mPreferDarkIconTheme && icon_theme_is_in_installed_themes("breeze_dark", installedThemes)) {
+            return OUString("breeze_dark");
+        }
     }
 
     OUString themeForDesktop = GetIconThemeForDesktopEnvironment(desktopEnvironment);
@@ -118,9 +122,10 @@ IconThemeSelector::SetUseHighContrastTheme(bool v)
 }
 
 void
-IconThemeSelector::SetPreferredIconTheme(const OUString& theme)
+IconThemeSelector::SetPreferredIconTheme(const OUString& theme, bool bDarkIconTheme)
 {
     mPreferredIconTheme = theme;
+    mPreferDarkIconTheme = bDarkIconTheme;
 }
 
 bool
@@ -130,6 +135,9 @@ IconThemeSelector::operator==(const vcl::IconThemeSelector& other) const
         return true;
     }
     if (mPreferredIconTheme != other.mPreferredIconTheme) {
+        return false;
+    }
+    if (mPreferDarkIconTheme != other.mPreferDarkIconTheme) {
         return false;
     }
     if (mUseHighContrastTheme != other.mUseHighContrastTheme) {

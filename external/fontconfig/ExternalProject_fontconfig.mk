@@ -23,12 +23,12 @@ $(call gb_ExternalProject_get_state_target,fontconfig,build) :
 		CFLAGS="$(if $(debug),-g) $(gb_VISIBILITY_FLAGS)" $(if $(filter ANDROID,$(OS)),LIBS="-lm") \
 		./configure \
 			--disable-shared \
-			--with-arch=arm \
+			--disable-silent-rules \
+			$(if $(filter ANDROID,$(OS)),--with-arch=arm) \
 			--with-expat-includes=$(call gb_UnpackedTarball_get_dir,expat)/lib \
 			--with-expat-lib=$(gb_StaticLibrary_WORKDIR) \
-			--with-freetype-config=$(call gb_UnpackedTarball_get_dir,freetype)/instdir/bin/freetype-config \
 			--build=$(BUILD_PLATFORM) --host=$(HOST_PLATFORM) \
-		&& $(MAKE) \
+		&& $(MAKE) -C src \
 	)
 
 # vim: set noet sw=4 ts=4:

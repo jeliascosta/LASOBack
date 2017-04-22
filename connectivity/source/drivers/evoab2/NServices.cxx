@@ -52,7 +52,6 @@ struct ProviderRequest
     {
     }
 
-    inline
     bool CREATE_PROVIDER(
                 const OUString& Implname,
                 const Sequence< OUString > & Services,
@@ -66,7 +65,7 @@ struct ProviderRequest
             {
                 xRet = creator( xServiceManager, sImplementationName,Factory, Services,nullptr);
             }
-            catch(const ::com::sun::star::uno::Exception&)
+            catch(const css::uno::Exception&)
             {
                 OSL_FAIL("Service Creation Exception");
             }

@@ -37,16 +37,15 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer FillGraphicPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void FillGraphicPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
-            Primitive2DContainer aRetval;
             const attribute::FillGraphicAttribute& rAttribute = getFillGraphic();
 
             if(!rAttribute.isDefault())
             {
                 const Graphic& rGraphic = rAttribute.getGraphic();
 
-                if(GRAPHIC_BITMAP == rGraphic.GetType() || GRAPHIC_GDIMETAFILE == rGraphic.GetType())
+                if(GraphicType::Bitmap == rGraphic.GetType() || GraphicType::GdiMetafile == rGraphic.GetType())
                 {
                     const Size aSize(rGraphic.GetPrefSize());
 
@@ -56,7 +55,7 @@ namespace drawinglayer
                         if(rAttribute.getTiling())
                         {
                             // get object range and create tiling matrices
-                            ::std::vector< basegfx::B2DHomMatrix > aMatrices;
+                            std::vector< basegfx::B2DHomMatrix > aMatrices;
                             texture::GeoTexSvxTiled aTiling(
                                 rAttribute.getGraphicRange(),
                                 rAttribute.getOffsetX(),
@@ -64,18 +63,18 @@ namespace drawinglayer
 
                             // get matrices and realloc retval
                             aTiling.appendTransformations(aMatrices);
-                            aRetval.resize(aMatrices.size());
 
                             // prepare content primitive
-                            const Primitive2DContainer xSeq = create2DDecompositionOfGraphic(
+                            Primitive2DContainer xSeq;
+                            create2DDecompositionOfGraphic(xSeq,
                                 rGraphic,
                                 basegfx::B2DHomMatrix());
 
                             for(size_t a(0); a < aMatrices.size(); a++)
                             {
-                                aRetval[a] = new TransformPrimitive2D(
+                                rContainer.push_back(new TransformPrimitive2D(
                                     getTransformation() * aMatrices[a],
-                                    xSeq);
+                                    xSeq));
                             }
                         }
                         else
@@ -86,15 +85,13 @@ namespace drawinglayer
                                     rAttribute.getGraphicRange().getRange(),
                                     rAttribute.getGraphicRange().getMinimum()));
 
-                            aRetval = create2DDecompositionOfGraphic(
+                            create2DDecompositionOfGraphic(rContainer,
                                 rGraphic,
                                 aObjectTransform);
                         }
                     }
                 }
             }
-
-            return aRetval;
         }
 
         FillGraphicPrimitive2D::FillGraphicPrimitive2D(

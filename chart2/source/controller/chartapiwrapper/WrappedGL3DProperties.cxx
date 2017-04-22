@@ -55,11 +55,7 @@ public:
     WrappedGL3DProperty( const OUString& rInName, const OUString& rOutName, const uno::Any& rDefault, const std::shared_ptr<Chart2ModelContact>& pContact ) :
         WrappedProperty(rInName, rOutName), maDefault(rDefault), mpModelContact(pContact) {}
 
-    virtual ~WrappedGL3DProperty() {}
-
-    virtual uno::Any getPropertyValue( const uno::Reference<beans::XPropertySet>& /*xInnerPS*/ ) const
-        throw (beans::UnknownPropertyException, lang::WrappedTargetException,
-               uno::RuntimeException) override
+    virtual uno::Any getPropertyValue( const uno::Reference<beans::XPropertySet>& /*xInnerPS*/ ) const override
     {
         uno::Reference<chart2::XChartType> xCT = getChartType();
         if (!xCT.is())
@@ -76,10 +72,7 @@ public:
     };
 
     virtual void setPropertyValue(
-        const uno::Any& rOutValue, const uno::Reference<beans::XPropertySet>& /*xInnerPS*/ ) const
-            throw (beans::UnknownPropertyException, beans::PropertyVetoException,
-                   lang::IllegalArgumentException, lang::WrappedTargetException,
-                   uno::RuntimeException) override
+        const uno::Any& rOutValue, const uno::Reference<beans::XPropertySet>& /*xInnerPS*/ ) const override
     {
         uno::Reference<chart2::XChartType> xCT = getChartType();
         if (!xCT.is())
@@ -93,8 +86,7 @@ public:
         catch ( const uno::Exception& )  {}
     }
 
-    virtual void setPropertyToDefault( const uno::Reference<beans::XPropertyState>& /*xInnerPropState*/ ) const
-        throw (beans::UnknownPropertyException, uno::RuntimeException) override
+    virtual void setPropertyToDefault( const uno::Reference<beans::XPropertyState>& /*xInnerPropState*/ ) const override
     {
         uno::Reference<chart2::XChartType> xCT = getChartType();
         if (!xCT.is())
@@ -108,15 +100,12 @@ public:
         catch ( const uno::Exception& )  {}
     }
 
-    virtual uno::Any getPropertyDefault( const uno::Reference<beans::XPropertyState>& /*xInnerPS*/ ) const
-        throw (beans::UnknownPropertyException, lang::WrappedTargetException,
-               uno::RuntimeException) override
+    virtual uno::Any getPropertyDefault( const uno::Reference<beans::XPropertyState>& /*xInnerPS*/ ) const override
     {
         return maDefault;
     }
 
-    virtual beans::PropertyState getPropertyState( const uno::Reference<beans::XPropertyState>& /*xInnerPS*/ ) const
-        throw (beans::UnknownPropertyException, uno::RuntimeException) override
+    virtual beans::PropertyState getPropertyState( const uno::Reference<beans::XPropertyState>& /*xInnerPS*/ ) const override
     {
         return beans::PropertyState_DIRECT_VALUE;
     }
@@ -141,7 +130,7 @@ void WrappedGL3DProperties::addWrappedProperties(
 {
     rList.push_back(
         new WrappedGL3DProperty(
-            CHART_UNONAME_ROUNDED_EDGE, CHART_UNONAME_ROUNDED_EDGE, uno::makeAny(false), pChart2ModelContact));
+            CHART_UNONAME_ROUNDED_EDGE, CHART_UNONAME_ROUNDED_EDGE, uno::Any(false), pChart2ModelContact));
 }
 
 }}

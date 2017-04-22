@@ -49,7 +49,7 @@ class UnoInterfaceReference
 public:
     uno_Interface * m_pUnoI;
 
-    inline bool is() const
+    bool is() const
         { return m_pUnoI != NULL; }
 
     inline ~UnoInterfaceReference();
@@ -58,7 +58,13 @@ public:
     inline UnoInterfaceReference( uno_Interface * pUnoI );
     inline UnoInterfaceReference( UnoInterfaceReference const & ref );
 
-    inline uno_Interface * get() const
+#if defined LIBO_INTERNAL_ONLY
+    UnoInterfaceReference(UnoInterfaceReference && other):
+        m_pUnoI(other.m_pUnoI)
+    { other.m_pUnoI = nullptr; }
+#endif
+
+    uno_Interface * get() const
         { return m_pUnoI; }
 
     inline UnoInterfaceReference & set(
@@ -67,22 +73,27 @@ public:
         uno_Interface * pUnoI, __sal_NoAcquire );
     inline void clear();
 
-    inline UnoInterfaceReference & operator = (
+    UnoInterfaceReference & operator = (
         UnoInterfaceReference const & ref )
         { return set( ref.m_pUnoI ); }
-    inline UnoInterfaceReference & operator = (
+    UnoInterfaceReference & operator = (
         uno_Interface * pUnoI )
         { return set( pUnoI ); }
+
+#if defined LIBO_INTERNAL_ONLY
+    UnoInterfaceReference & operator =(UnoInterfaceReference && other) {
+        if (m_pUnoI != nullptr) {
+            (*m_pUnoI->release)(m_pUnoI);
+        }
+        m_pUnoI = other.m_pUnoI;
+        other.m_pUnoI = nullptr;
+        return *this;
+    }
+#endif
 
     inline void dispatch(
         struct _typelib_TypeDescription const * pMemberType,
         void * pReturn, void * pArgs [], uno_Any ** ppException ) const;
-
-private:
-    inline bool operator == ( UnoInterfaceReference const & ); // not impl
-    inline bool operator != ( UnoInterfaceReference const & ); // not impl
-    inline bool operator == ( uno_Interface * ); // not impl
-    inline bool operator != ( uno_Interface * ); // not impl
 };
 
 

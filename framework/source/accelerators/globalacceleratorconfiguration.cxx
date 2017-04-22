@@ -54,30 +54,20 @@ public:
      */
     explicit GlobalAcceleratorConfiguration(const css::uno::Reference< css::uno::XComponentContext >& xContext);
 
-    /** TODO */
-    virtual ~GlobalAcceleratorConfiguration() {}
-
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.framework.GlobalAcceleratorConfiguration");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.GlobalAcceleratorConfiguration" };
-        return aSeq;
+        return {"com.sun.star.ui.GlobalAcceleratorConfiguration"};
     }
-
-    // XComponent
-    virtual  void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
 
     /// This has to be called after when the instance is acquire()'d.
     void fillCache();
@@ -100,7 +90,7 @@ void GlobalAcceleratorConfiguration::fillCache()
 #if 0
     // get current office locale ... but don't cache it.
     // Otherwise we must be listener on the configuration layer
-    // which seems to superflous for this small implementation .-)
+    // which seems to superfluous for this small implementation .-)
     // XXX: what is this good for? it was a comphelper::Locale but unused
     LanguageTag aLanguageTag(m_sLocale);
 #endif
@@ -121,22 +111,21 @@ void GlobalAcceleratorConfiguration::fillCache()
         {}
 }
 
-// XComponent.dispose(),  #i120029#, to release the cyclic reference
-
-void SAL_CALL GlobalAcceleratorConfiguration::dispose()
-    throw(css::uno::RuntimeException, std::exception)
+struct Instance
 {
-    try
+    explicit Instance(css::uno::Reference<css::uno::XComponentContext> const & context)
+        : instance(new GlobalAcceleratorConfiguration(context))
     {
-        css::uno::Reference< css::util::XChangesNotifier > xBroadcaster(m_xCfg, css::uno::UNO_QUERY_THROW);
-        if ( xBroadcaster.is() )
-            xBroadcaster->removeChangesListener(static_cast< css::util::XChangesListener* >(this));
+        instance->fillCache();
     }
-    catch(const css::uno::RuntimeException&)
-    { throw; }
-    catch(const css::uno::Exception&)
-    {}
-}
+
+    rtl::Reference<GlobalAcceleratorConfiguration> instance;
+};
+
+struct Singleton:
+    public rtl::StaticWithArg<
+        Instance, css::uno::Reference<css::uno::XComponentContext>, Singleton>
+{};
 
 }
 
@@ -145,12 +134,7 @@ com_sun_star_comp_framework_GlobalAcceleratorConfiguration_get_implementation(
     css::uno::XComponentContext *context,
     css::uno::Sequence<css::uno::Any> const &)
 {
-    GlobalAcceleratorConfiguration *inst = new GlobalAcceleratorConfiguration(context);
-    css::uno::XInterface *acquired_inst = cppu::acquire(inst);
-
-    inst->fillCache();
-
-    return acquired_inst;
+    return cppu::acquire(static_cast<cppu::OWeakObject*>(Singleton::get(context).instance.get()));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

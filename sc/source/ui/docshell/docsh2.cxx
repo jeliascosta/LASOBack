@@ -18,10 +18,15 @@
  */
 
 #include "scitems.hxx"
+#include <rtl/bootstrap.hxx>
+#include <osl/file.hxx>
 #include <svx/drawitem.hxx>
 #include <svl/asiancfg.hxx>
 #include <editeng/forbiddencharacterstable.hxx>
 #include <editeng/unolingu.hxx>
+#include <orcus/orcus_import_ods.hpp>
+#include <orcusfiltersimpl.hxx>
+#include <config_folders.h>
 
 #include "drwlayer.hxx"
 #include "stlpool.hxx"
@@ -29,6 +34,7 @@
 #include "docshimp.hxx"
 #include "docfunc.hxx"
 #include "sc.hrc"
+#include "filter.hxx"
 
 using namespace com::sun::star;
 
@@ -44,7 +50,7 @@ bool ScDocShell::InitNew( const uno::Reference < embed::XStorage >& xStor )
         Size aSize( (long) ( STD_COL_WIDTH           * HMM_PER_TWIPS * OLE_STD_CELLS_X ),
                     (long) ( ScGlobal::nStdRowHeight * HMM_PER_TWIPS * OLE_STD_CELLS_Y ) );
         // Also adjust start here
-        SetVisAreaOrSize( Rectangle( Point(), aSize ) );
+        SetVisAreaOrSize( tools::Rectangle( Point(), aSize ) );
     }
 
     // InitOptions sets the document languages, must be called before CreateStandardStyles
@@ -52,6 +58,21 @@ bool ScDocShell::InitNew( const uno::Reference < embed::XStorage >& xStor )
 
     aDocument.GetStyleSheetPool()->CreateStandardStyles();
     aDocument.UpdStlShtPtrsFrmNms();
+
+    if (!mbUcalcTest)
+    {
+        /* Create styles that are imported through Orcus */
+
+        OUString aURL("$BRAND_BASE_DIR/" LIBO_SHARE_FOLDER "/calc/styles.xml");
+        rtl::Bootstrap::expandMacros(aURL);
+
+        OUString aPath;
+        osl::FileBase::getSystemPathFromFileURL(aURL, aPath);
+
+        ScOrcusFilters* pOrcus = ScFormatFilter::Get().GetOrcusFilters();
+        if (pOrcus)
+            pOrcus->importODS_Styles(aDocument, aPath);
+    }
 
     //  SetDocumentModified is not allowed anymore in Load/InitNew!
     InitItems();
@@ -78,6 +99,7 @@ void ScDocShell::InitItems()
         PutItem( SvxGradientListItem( pDrawLayer->GetGradientList(), SID_GRADIENT_LIST ) );
         PutItem( SvxHatchListItem   ( pDrawLayer->GetHatchList(), SID_HATCH_LIST ) );
         PutItem( SvxBitmapListItem  ( pDrawLayer->GetBitmapList(), SID_BITMAP_LIST ) );
+        PutItem( SvxPatternListItem ( pDrawLayer->GetPatternList(), SID_PATTERN_LIST ) );
         PutItem( SvxDashListItem    ( pDrawLayer->GetDashList(), SID_DASH_LIST ) );
         PutItem( SvxLineEndListItem ( pDrawLayer->GetLineEndList(), SID_LINEEND_LIST ) );
 
@@ -122,7 +144,7 @@ void ScDocShell::InitItems()
         if ( !aDocument.IsValidAsianCompression() )
         {
             // set compression mode from configuration if not already set (e.g. XML import)
-            aDocument.SetAsianCompression( sal::static_int_cast<sal_uInt8>( aAsian.GetCharDistanceCompression() ) );
+            aDocument.SetAsianCompression( aAsian.GetCharDistanceCompression() );
         }
 
         if ( !aDocument.IsValidAsianKerning() )
@@ -148,7 +170,7 @@ ScDrawLayer* ScDocShell::MakeDrawLayer()
         aDocument.InitDrawLayer(this);
         pDrawLayer = aDocument.GetDrawLayer();
         InitItems(); // including Undo and Basic
-        Broadcast( SfxSimpleHint( SC_HINT_DRWLAYER_NEW ) );
+        Broadcast( SfxHint( SfxHintId::ScDrawLayerNew ) );
         if (nDocumentLock)
             pDrawLayer->setLock(true);
     }

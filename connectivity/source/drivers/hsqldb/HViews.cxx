@@ -40,12 +40,12 @@ using namespace ::comphelper;
 using namespace ::cppu;
 using namespace connectivity;
 using namespace connectivity::hsqldb;
-using namespace ::com::sun::star::uno;
-using namespace ::com::sun::star::beans;
-using namespace ::com::sun::star::sdbcx;
-using namespace ::com::sun::star::sdbc;
-using namespace ::com::sun::star::container;
-using namespace ::com::sun::star::lang;
+using namespace css::uno;
+using namespace css::beans;
+using namespace css::sdbcx;
+using namespace css::sdbc;
+using namespace css::container;
+using namespace css::lang;
 using namespace dbtools;
 typedef connectivity::sdbcx::OCollection OCollection_TYPE;
 
@@ -73,7 +73,7 @@ sdbcx::ObjectType HViews::createObject(const OUString& _rName)
 }
 
 
-void HViews::impl_refresh(  ) throw(RuntimeException)
+void HViews::impl_refresh(  )
 {
     static_cast<OHCatalog&>(m_rParent).refreshTables();
 }

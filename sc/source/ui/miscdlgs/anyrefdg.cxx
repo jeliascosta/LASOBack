@@ -338,7 +338,7 @@ void ScFormulaReferenceHelper::Init()
     }
 }
 
-IMPL_LINK_TYPED( ScFormulaReferenceHelper, AccelSelectHdl, Accelerator&, rSelAccel, void )
+IMPL_LINK( ScFormulaReferenceHelper, AccelSelectHdl, Accelerator&, rSelAccel, void )
 {
     switch ( rSelAccel.GetCurKeyCode().GetCode() )
     {
@@ -399,9 +399,8 @@ void ScFormulaReferenceHelper::RefInputDone( bool bForced )
             pRefBtn->SetStartImage();
 
         // All others: Show();
-        for (auto aI = m_aHiddenWidgets.begin(); aI != m_aHiddenWidgets.end(); ++aI)
+        for (VclPtr<vcl::Window> const & pWindow : m_aHiddenWidgets)
         {
-            vcl::Window *pWindow = *aI;
             pWindow->Show();
         }
         m_aHiddenWidgets.clear();
@@ -642,7 +641,7 @@ void ScFormulaReferenceHelper::DoClose( sal_uInt16 nId )
     }
     SC_MOD()->SetRefDialog( nId, false, pMyViewFrm );
 
-    pSfxApp->Broadcast( SfxSimpleHint( FID_KILLEDITVIEW ) );
+    pSfxApp->Broadcast( SfxHint( SfxHintId::ScKillEditView ) );
 
     ScTabViewShell* pScViewShell = ScTabViewShell::GetActiveViewShell();
     if ( pScViewShell )
@@ -765,8 +764,8 @@ ScRefHandler::ScRefHandler( vcl::Window &rWindow, SfxBindings* pB, bool bBindRef
         pActiveWin(nullptr)
 {
     m_aHelper.SetWindow(m_rWindow.get());
-    aIdle.SetPriority(SchedulerPriority::LOWER);
-    aIdle.SetIdleHdl(LINK( this, ScRefHandler, UpdateFocusHdl));
+    aIdle.SetPriority(TaskPriority::LOWER);
+    aIdle.SetInvokeHandler(LINK( this, ScRefHandler, UpdateFocusHdl));
 
     if( bBindRef ) EnterRefMode();
 }
@@ -840,7 +839,7 @@ bool ScRefHandler::LeaveRefMode()
 
     lcl_HideAllReferences();
 
-    if( Dialog *pDlg = dynamic_cast<Dialog*>( static_cast<vcl::Window*>(*this) ) )
+    if( Dialog *pDlg = dynamic_cast<Dialog*>( m_rWindow.get() ) )
         pDlg->SetModalInputMode(false);
     SetDispatcherLock( false );         //! here and in DoClose ?
 
@@ -926,7 +925,7 @@ bool ScRefHandler::IsTableLocked() const
 }
 
 //  RefInputStart/Done: Zoom-In (AutoHide) on single field
-//  (using button oder movement)
+//  (using button or movement)
 
 void ScRefHandler::RefInputStart( formula::RefEdit* pEdit, formula::RefButton* pButton )
 {
@@ -938,7 +937,7 @@ void ScRefHandler::ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton*
     m_aHelper.ToggleCollapsed( pEdit, pButton );
 }
 
-IMPL_LINK_NOARG_TYPED(ScRefHandler, UpdateFocusHdl, Idle *, void)
+IMPL_LINK_NOARG(ScRefHandler, UpdateFocusHdl, Timer *, void)
 {
     if (pActiveWin)
     {

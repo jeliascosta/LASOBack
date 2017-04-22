@@ -20,22 +20,12 @@
 #include <tools/rc.h>
 #include <vcl/decoview.hxx>
 #include <vcl/event.hxx>
+#include <vcl/floatwin.hxx>
 #include <vcl/menu.hxx>
 #include <vcl/timer.hxx>
 #include <vcl/menubtn.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
-
-void MenuButton::ImplInitMenuButtonData()
-{
-    mnDDStyle       = PushButtonDropdownStyle::MenuButton;
-
-    mpMenuTimer     = nullptr;
-    mpMenu          = nullptr;
-    mpOwnMenu       = nullptr;
-    mnCurItemId     = 0;
-    mnMenuMode      = 0;
-}
 
 void MenuButton::ImplInit( vcl::Window* pParent, WinBits nStyle )
 {
@@ -50,20 +40,29 @@ void MenuButton::ExecuteMenu()
 {
     Activate();
 
-    if ( mpMenu )
+    if (!mpMenu && !mpFloatingWindow)
+        return;
+
+    Size aSize = GetSizePixel();
+    SetPressed( true );
+    EndSelection();
+    if (mpMenu)
     {
-        Point aPos( 0, 1 );
-        Size aSize = GetSizePixel();
-        Rectangle aRect( aPos, aSize );
-        SetPressed( true );
-        EndSelection();
-        mnCurItemId = mpMenu->Execute( this, aRect, PopupMenuFlags::ExecuteDown );
-        SetPressed( false );
-        if ( mnCurItemId )
-        {
-            Select();
-            mnCurItemId = 0;
-        }
+        Point aPos(0, 1);
+        tools::Rectangle aRect(aPos, aSize );
+        mnCurItemId = mpMenu->Execute(this, aRect, PopupMenuFlags::ExecuteDown);
+    }
+    else
+    {
+        Point aPos(GetParent()->OutputToScreenPixel(GetPosPixel()));
+        tools::Rectangle aRect(aPos, aSize );
+        mpFloatingWindow->StartPopupMode(aRect, FloatWinPopupFlags::Down | FloatWinPopupFlags::GrabFocus);
+    }
+    SetPressed(false);
+    if (mnCurItemId)
+    {
+        Select();
+        mnCurItemId = 0;
     }
 }
 
@@ -74,10 +73,13 @@ OString MenuButton::GetCurItemIdent() const
 }
 
 MenuButton::MenuButton( vcl::Window* pParent, WinBits nWinBits )
-    : PushButton( WINDOW_MENUBUTTON )
+    : PushButton(WindowType::MENUBUTTON)
+    , mpMenuTimer(nullptr)
+    , mnCurItemId(0)
+    , mbDelayMenu(false)
 {
-    ImplInitMenuButtonData();
-    ImplInit( pParent, nWinBits );
+    mnDDStyle = PushButtonDropdownStyle::MenuButton;
+    ImplInit(pParent, nWinBits);
 }
 
 MenuButton::~MenuButton()
@@ -88,11 +90,12 @@ MenuButton::~MenuButton()
 void MenuButton::dispose()
 {
     delete mpMenuTimer;
-    delete mpOwnMenu;
+    mpFloatingWindow.clear();
+    mpMenu.clear();
     PushButton::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(MenuButton, ImplMenuTimeoutHdl, Timer *, void)
+IMPL_LINK_NOARG(MenuButton, ImplMenuTimeoutHdl, Timer *, void)
 {
     // See if Button Tracking is still active, as it could've been cancelled earlier
     if ( IsTracking() )
@@ -106,16 +109,16 @@ IMPL_LINK_NOARG_TYPED(MenuButton, ImplMenuTimeoutHdl, Timer *, void)
 void MenuButton::MouseButtonDown( const MouseEvent& rMEvt )
 {
     bool bExecute = true;
-    if ( mnMenuMode & MENUBUTTON_MENUMODE_TIMED )
+    if (mbDelayMenu)
     {
         // If the separated dropdown symbol is not hit, delay the popup execution
-        if( mnDDStyle != PushButtonDropdownStyle::MenuButton || // no separator at all
+        if( mnDDStyle == PushButtonDropdownStyle::Toolbox || // no separator at all
             rMEvt.GetPosPixel().X() <= ImplGetSeparatorX() )
         {
             if ( !mpMenuTimer )
             {
                 mpMenuTimer = new Timer("MenuTimer");
-                mpMenuTimer->SetTimeoutHdl( LINK( this, MenuButton, ImplMenuTimeoutHdl ) );
+                mpMenuTimer->SetInvokeHandler( LINK( this, MenuButton, ImplMenuTimeoutHdl ) );
             }
 
             mpMenuTimer->SetTimeout( GetSettings().GetMouseSettings().GetActionDelay() );
@@ -142,7 +145,7 @@ void MenuButton::KeyInput( const KeyEvent& rKEvt )
     sal_uInt16 nCode = aKeyCode.GetCode();
     if ( (nCode == KEY_DOWN) && aKeyCode.IsMod2() )
         ExecuteMenu();
-    else if ( !(mnMenuMode & MENUBUTTON_MENUMODE_TIMED) &&
+    else if ( !mbDelayMenu &&
               !aKeyCode.GetModifier() &&
               ((nCode == KEY_RETURN) || (nCode == KEY_SPACE)) )
         ExecuteMenu();
@@ -160,12 +163,38 @@ void MenuButton::Select()
     maSelectHdl.Call( this );
 }
 
-void MenuButton::SetPopupMenu( PopupMenu* pNewMenu )
+void MenuButton::SetPopupMenu(PopupMenu* pNewMenu)
 {
     if (pNewMenu == mpMenu)
         return;
 
     mpMenu = pNewMenu;
 }
+
+void MenuButton::SetPopover(FloatingWindow* pFloatingWindow)
+{
+    if (pFloatingWindow == mpFloatingWindow)
+        return;
+
+    mpFloatingWindow = pFloatingWindow;
+}
+
+//class MenuToggleButton ----------------------------------------------------
+
+MenuToggleButton::MenuToggleButton( vcl::Window* pParent, WinBits nWinBits )
+    : MenuButton( pParent, nWinBits )
+{
+}
+
+MenuToggleButton::~MenuToggleButton()
+{
+    disposeOnce();
+}
+
+void MenuToggleButton::SetActive( bool bSel )
+{
+    mbIsActive = bSel;
+}
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

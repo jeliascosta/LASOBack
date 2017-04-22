@@ -62,7 +62,7 @@ class SwExtraPainter
     SwRect aRect;
     const SwTextFrame* pTextFrame;
     SwViewShell *pSh;
-    SwFont* pFnt;
+    std::unique_ptr<SwFont> pFnt;
     const SwLineNumberInfo &rLineInf;
     SwTwips nX;
     SwTwips nRedX;
@@ -70,16 +70,19 @@ class SwExtraPainter
     sal_uInt16 nDivider;
     bool bGoLeft;
     bool bLineNum;
-    inline bool IsClipChg() { return aClip.IsChg(); }
+    bool IsClipChg() { return aClip.IsChg(); }
+
+    SwExtraPainter(const SwExtraPainter&) = delete;
+    SwExtraPainter& operator=(const SwExtraPainter&) = delete;
+
 public:
     SwExtraPainter( const SwTextFrame *pFrame, SwViewShell *pVwSh,
         const SwLineNumberInfo &rLnInf, const SwRect &rRct,
         sal_Int16 eHor, bool bLnNm );
-    ~SwExtraPainter() { delete pFnt; }
-    inline SwFont* GetFont() const { return pFnt; }
-    inline void IncLineNr() { ++nLineNr; }
-    inline bool HasNumber() { return !( nLineNr % rLineInf.GetCountBy() ); }
-    inline bool HasDivider() { if( !nDivider ) return false;
+    SwFont* GetFont() const { return pFnt.get(); }
+    void IncLineNr() { ++nLineNr; }
+    bool HasNumber() { return !( nLineNr % rLineInf.GetCountBy() ); }
+    bool HasDivider() { if( !nDivider ) return false;
         return !(nLineNr % rLineInf.GetDividerCountBy()); }
 
     void PaintExtra( SwTwips nY, long nAsc, long nMax, bool bRed );
@@ -124,7 +127,7 @@ SwExtraPainter::SwExtraPainter( const SwTextFrame *pFrame, SwViewShell *pVwSh,
         nX = pFrame->Frame().Left();
         SwCharFormat* pFormat = rLineInf.GetCharFormat( const_cast<IDocumentStylePoolAccess&>(pFrame->GetNode()->getIDocumentStylePoolAccess()) );
         OSL_ENSURE( pFormat, "PaintExtraData without CharFormat" );
-        pFnt = new SwFont( &pFormat->GetAttrSet(), pFrame->GetTextNode()->getIDocumentSettingAccess() );
+        pFnt.reset( new SwFont( &pFormat->GetAttrSet(), pFrame->GetTextNode()->getIDocumentSettingAccess() ) );
         pFnt->Invalidate();
         pFnt->ChgPhysFnt( pSh, *pSh->GetOut() );
         pFnt->SetVertical( 0, pFrame->IsVertical() );
@@ -196,7 +199,7 @@ void SwExtraPainter::PaintExtra( SwTwips nY, long nAsc, long nMax, bool bRed )
     aDrawInf.SetLeft( 0 );
     aDrawInf.SetRight( LONG_MAX );
     aDrawInf.SetFrame( pTextFrame );
-    aDrawInf.SetFont( pFnt );
+    aDrawInf.SetFont( pFnt.get() );
     aDrawInf.SetSnapToGrid( false );
     aDrawInf.SetIgnoreFrameRTL( true );
 
@@ -291,7 +294,7 @@ void SwTextFrame::PaintExtraData( const SwRect &rRect ) const
     bool bLineNum = !IsInTab() && rLineInf.IsPaintLineNumbers() &&
                ( !IsInFly() || rLineInf.IsCountInFlys() ) && rLineNum.IsCount();
     sal_Int16 eHor = (sal_Int16)SW_MOD()->GetRedlineMarkPos();
-    if( eHor != text::HoriOrientation::NONE && !IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineMode() ) )
+    if( eHor != text::HoriOrientation::NONE && !IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineFlags() ) )
         eHor = text::HoriOrientation::NONE;
     bool bRedLine = eHor != text::HoriOrientation::NONE;
     if ( bLineNum || bRedLine )
@@ -384,7 +387,7 @@ void SwTextFrame::PaintExtraData( const SwRect &rRect ) const
         }
         else
         {
-            if ( USHRT_MAX == rIDRA.GetRedlinePos(rTextNode, USHRT_MAX) )
+            if ( SwRedlineTable::npos == rIDRA.GetRedlinePos(rTextNode, USHRT_MAX) )
                 bRedLine = false;
 
             if( bLineNum && rLineInf.IsCountBlankLines() &&
@@ -479,14 +482,14 @@ bool SwTextFrame::PaintEmpty( const SwRect &rRect, bool bCheck ) const
             }
 
             const IDocumentRedlineAccess& rIDRA = rTextNode.getIDocumentRedlineAccess();
-            if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineMode() ) )
+            if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineFlags() ) )
             {
-                const sal_uInt16 nRedlPos = rIDRA.GetRedlinePos( rTextNode, USHRT_MAX );
-                if( USHRT_MAX != nRedlPos )
+                const SwRedlineTable::size_type nRedlPos = rIDRA.GetRedlinePos( rTextNode, USHRT_MAX );
+                if( SwRedlineTable::npos != nRedlPos )
                 {
                     SwAttrHandler aAttrHandler;
                     aAttrHandler.Init(  rTextNode.GetSwAttrSet(),
-                                       *rTextNode.getIDocumentSettingAccess(), nullptr );
+                                       *rTextNode.getIDocumentSettingAccess() );
                     SwRedlineItr aRedln( rTextNode, *pFnt, aAttrHandler, nRedlPos, true );
                 }
             }

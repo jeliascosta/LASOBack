@@ -9,8 +9,12 @@
 #include <filter/msfilter/mstoolbar.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <stdarg.h>
+#include <com/sun/star/container/XIndexContainer.hpp>
+#include <com/sun/star/ui/XUIConfigurationManager.hpp>
+#include <com/sun/star/ui/XUIConfigurationManagerSupplier.hpp>
 #include <com/sun/star/ui/XUIConfigurationPersistence.hpp>
 #include <com/sun/star/ui/XImageManager.hpp>
+#include <com/sun/star/ui/ImageType.hpp>
 #include <com/sun/star/ui/ItemType.hpp>
 #include <com/sun/star/ui/ItemStyle.hpp>
 #include <com/sun/star/frame/XLayoutManager.hpp>
@@ -37,12 +41,12 @@ void CustomToolBarImportHelper::ScaleImage( uno::Reference< graphic::XGraphic >&
     Size aSize = aGraphic.GetSizePixel();
     if ( aSize.Height() && ( aSize.Height() == aSize.Width() ) )
     {
-        Image aImage( xGraphic );
+        Graphic aImage(xGraphic);
         if ( aSize.Height() != nNewSize )
         {
             BitmapEx aBitmap = aImage.GetBitmapEx();
             BitmapEx aBitmapex = BitmapEx::AutoScaleBitmap(aBitmap, nNewSize );
-            aImage = Image( aBitmapex);
+            aImage = Graphic(aBitmapex);
             xGraphic = aImage.GetXGraphic();
         }
     }
@@ -56,13 +60,12 @@ void CustomToolBarImportHelper::applyIcons()
         uno::Sequence< uno::Reference< graphic::XGraphic > > images(1);
         images[ 0 ] = it->image;
 
-        OSL_TRACE("About to applyIcons for command %s, have image ? %s", OUStringToOString( commands[ 0 ], RTL_TEXTENCODING_UTF8 ).getStr(), images[ 0 ].is() ? "yes" : "no" );
         uno::Reference< ui::XImageManager > xImageManager( getCfgManager()->getImageManager(), uno::UNO_QUERY_THROW );
         sal_uInt16 nColor = ui::ImageType::COLOR_NORMAL;
 
         vcl::Window* topwin = Application::GetActiveTopWindow();
-    if ( topwin != nullptr && topwin->GetDisplayBackground().GetColor().IsDark() )
-            nColor = css::ui::ImageType::COLOR_HIGHCONTRAST;
+        if ( topwin != nullptr && topwin->GetDisplayBackground().GetColor().IsDark() )
+                nColor = css::ui::ImageType::COLOR_HIGHCONTRAST;
 
         ScaleImage( images[ 0 ], 16 );
         xImageManager->replaceImages( ui::ImageType::SIZE_DEFAULT | nColor,  commands, images );
@@ -95,11 +98,9 @@ CustomToolBarImportHelper::getCfgManager()
 uno::Any
 CustomToolBarImportHelper::createCommandFromMacro( const OUString& sCmd )
 {
-//"vnd.sun.star.script:Standard.Module1.Main?language=Basic&location=document"
-    static const char scheme[] = "vnd.sun.star.script:";
-    static const char part2 [] = "?language=Basic&location=document";
+    //"vnd.sun.star.script:Standard.Module1.Main?language=Basic&location=document"
     // create script url
-    OUString scriptURL = scheme + sCmd + part2;
+    OUString scriptURL = "vnd.sun.star.script:" + sCmd + "?language=Basic&location=document";
     return uno::makeAny( scriptURL );
 }
 
@@ -120,7 +121,7 @@ OUString CustomToolBarImportHelper::MSOTCIDToOOCommand( sal_Int16 msoTCID )
 }
 
 bool
-CustomToolBarImportHelper::createMenu( const OUString& rName, const uno::Reference< container::XIndexAccess >& xMenuDesc, bool bPersist )
+CustomToolBarImportHelper::createMenu( const OUString& rName, const uno::Reference< container::XIndexAccess >& xMenuDesc )
 {
     bool bRes = true;
     try
@@ -136,21 +137,18 @@ CustomToolBarImportHelper::createMenu( const OUString& rName, const uno::Referen
         {
             uno::Sequence< beans::PropertyValue > aPopupMenu( 4 );
             aPopupMenu[0].Name = "CommandURL";
-            aPopupMenu[0].Value = uno::makeAny( "vnd.openoffice.org:" + rName );
+            aPopupMenu[0].Value <<= "vnd.openoffice.org:" + rName;
             aPopupMenu[1].Name = "Label";
             aPopupMenu[1].Value <<= rName;
             aPopupMenu[2].Name = "ItemDescriptorContainer";
-            aPopupMenu[2].Value = uno::makeAny( xMenuDesc );
+            aPopupMenu[2].Value <<= xMenuDesc;
             aPopupMenu[3].Name = "Type";
             aPopupMenu[3].Value <<= sal_Int32( 0 );
 
             xPopup->insertByIndex( xPopup->getCount(), uno::makeAny( aPopupMenu ) );
-            if ( bPersist )
-            {
-                xCfgManager->insertSettings( sMenuBar, uno::Reference< container::XIndexAccess >( xPopup, uno::UNO_QUERY ) );
-                uno::Reference< ui::XUIConfigurationPersistence > xPersistence( xCfgManager, uno::UNO_QUERY_THROW );
-                xPersistence->store();
-            }
+            xCfgManager->insertSettings( sMenuBar, uno::Reference< container::XIndexAccess >( xPopup, uno::UNO_QUERY ) );
+            uno::Reference< ui::XUIConfigurationPersistence > xPersistence( xCfgManager, uno::UNO_QUERY_THROW );
+            xPersistence->store();
         }
     }
     catch( const uno::Exception& )
@@ -275,7 +273,7 @@ bool TBCData::ImportToolBarControl( CustomToolBarImportHelper& helper, std::vect
     controlGeneralInfo.ImportToolBarControlData( helper, props );
     beans::PropertyValue aProp;
     aProp.Name = "Visible";
-    aProp.Value = uno::makeAny( rHeader.isVisible() ); // where is the visible attribute stored
+    aProp.Value <<= rHeader.isVisible(); // where is the visible attribute stored
     props.push_back( aProp );
     if ( rHeader.getTct() == 0x01
     || rHeader.getTct() == 0x10 )
@@ -329,7 +327,7 @@ bool TBCData::ImportToolBarControl( CustomToolBarImportHelper& helper, std::vect
 
         TBCMenuSpecific* pMenu = getMenuSpecific();
         if ( pMenu )
-            aProp.Value = uno::makeAny( sMenuBar += pMenu->Name() ); // name of popup
+            aProp.Value <<= sMenuBar += pMenu->Name(); // name of popup
         nStyle |= ui::ItemStyle::DROP_DOWN;
         props.push_back( aProp );
     }
@@ -489,15 +487,15 @@ TBCGeneralInfo::ImportToolBarControlData( CustomToolBarImportHelper& helper, std
         }
 
         aProp.Name = "Label";
-        aProp.Value = uno::makeAny( customText.getString().replace('&','~') );
+        aProp.Value <<= customText.getString().replace('&','~');
         sControlData.push_back( aProp );
 
         aProp.Name = "Type";
-        aProp.Value = uno::makeAny( ui::ItemType::DEFAULT );
+        aProp.Value <<= ui::ItemType::DEFAULT;
         sControlData.push_back( aProp );
 
         aProp.Name = "Tooltip";
-        aProp.Value = uno::makeAny( tooltip.getString() );
+        aProp.Value <<= tooltip.getString();
         sControlData.push_back( aProp );
 /*
 aToolbarItem(0).Name = "CommandURL" wstrOnAction

@@ -45,6 +45,7 @@
 #include <svx/sdrpagewindow.hxx>
 #include <svx/sdrpaintwindow.hxx>
 #include <comphelper/lok.hxx>
+#include <basegfx/range/b2irectangle.hxx>
 
 using namespace ::com::sun::star;
 
@@ -114,11 +115,6 @@ void SdrPageView::ClearPageWindows()
     maPageWindows.clear();
 }
 
-void SdrPageView::AppendPageWindow(SdrPageWindow& rNew)
-{
-    maPageWindows.push_back(&rNew);
-}
-
 SdrPageWindow* SdrPageView::RemovePageWindow(SdrPageWindow& rOld)
 {
     const SdrPageWindowVector::iterator aFindResult = ::std::find(maPageWindows.begin(), maPageWindows.end(), &rOld);
@@ -171,17 +167,11 @@ SdrPageView::~SdrPageView()
     ClearPageWindows();
 }
 
-void SdrPageView::CreateNewPageWindowEntry(SdrPaintWindow& rPaintWindow)
-{
-    SdrPageWindow& rWindow = *(new SdrPageWindow(*this, rPaintWindow));
-    AppendPageWindow(rWindow);
-}
-
 void SdrPageView::AddPaintWindowToPageView(SdrPaintWindow& rPaintWindow)
 {
     if(!FindPageWindow(rPaintWindow))
     {
-        CreateNewPageWindowEntry(rPaintWindow);
+        maPageWindows.push_back(new SdrPageWindow(*this, rPaintWindow));
     }
 }
 
@@ -247,17 +237,17 @@ void SdrPageView::Hide()
     }
 }
 
-Rectangle SdrPageView::GetPageRect() const
+tools::Rectangle SdrPageView::GetPageRect() const
 {
-    if (GetPage()==nullptr) return Rectangle();
-    return Rectangle(Point(),Size(GetPage()->GetWdt()+1,GetPage()->GetHgt()+1));
+    if (GetPage()==nullptr) return tools::Rectangle();
+    return tools::Rectangle(Point(),Size(GetPage()->GetWdt()+1,GetPage()->GetHgt()+1));
 }
 
 void SdrPageView::InvalidateAllWin()
 {
     if(IsVisible() && GetPage())
     {
-        Rectangle aRect(Point(0,0),Size(GetPage()->GetWdt()+1,GetPage()->GetHgt()+1));
+        tools::Rectangle aRect(Point(0,0),Size(GetPage()->GetWdt()+1,GetPage()->GetHgt()+1));
         aRect.Union(GetPage()->GetAllObjBoundRect());
         GetView().InvalidateAllWin(aRect);
     }
@@ -316,7 +306,9 @@ void SdrPageView::setPreparedPageWindow(SdrPageWindow* pKnownTarget)
     mpPreparedPageWindow = pKnownTarget;
 }
 
-void SdrPageView::DrawLayer( SdrLayerID nID, OutputDevice* pGivenTarget, sdr::contact::ViewObjectContactRedirector* pRedirector, const Rectangle& rRect )
+void SdrPageView::DrawLayer(SdrLayerID nID, OutputDevice* pGivenTarget,
+        sdr::contact::ViewObjectContactRedirector* pRedirector,
+        const tools::Rectangle& rRect, basegfx::B2IRectangle const*const pPageFrame)
 {
     if(GetPage())
     {
@@ -327,7 +319,7 @@ void SdrPageView::DrawLayer( SdrLayerID nID, OutputDevice* pGivenTarget, sdr::co
             if(pKnownTarget)
             {
                 // paint known target
-                pKnownTarget->RedrawLayer(&nID, pRedirector);
+                pKnownTarget->RedrawLayer(&nID, pRedirector, nullptr);
             }
             else
             {
@@ -357,12 +349,11 @@ void SdrPageView::DrawLayer( SdrLayerID nID, OutputDevice* pGivenTarget, sdr::co
                         aTemporaryPaintWindow.SetRedrawRegion(rExistingRegion);
                     else
                         aTemporaryPaintWindow.SetRedrawRegion(vcl::Region(rRect));
-
                     // patch the ExistingPageWindow
                     pPreparedTarget->patchPaintWindow(aTemporaryPaintWindow);
 
                     // redraw the layer
-                    pPreparedTarget->RedrawLayer(&nID, pRedirector);
+                    pPreparedTarget->RedrawLayer(&nID, pRedirector, pPageFrame);
 
                     // restore the ExistingPageWindow
                     pPreparedTarget->unpatchPaintWindow();
@@ -388,7 +379,7 @@ void SdrPageView::DrawLayer( SdrLayerID nID, OutputDevice* pGivenTarget, sdr::co
                         aTemporaryPaintWindow.SetRedrawRegion(rExistingRegion);
                     }
 
-                    aTemporaryPageWindow.RedrawLayer(&nID, pRedirector);
+                    aTemporaryPageWindow.RedrawLayer(&nID, pRedirector, nullptr);
                 }
             }
         }
@@ -398,7 +389,7 @@ void SdrPageView::DrawLayer( SdrLayerID nID, OutputDevice* pGivenTarget, sdr::co
             for(sal_uInt32 a(0L); a < PageWindowCount(); a++)
             {
                 SdrPageWindow* pTarget = GetPageWindow(a);
-                pTarget->RedrawLayer(&nID, pRedirector);
+                pTarget->RedrawLayer(&nID, pRedirector, nullptr);
             }
         }
     }
@@ -414,7 +405,7 @@ void SdrPageView::SetDesignMode( bool _bDesignMode ) const
 }
 
 
-void SdrPageView::DrawPageViewGrid(OutputDevice& rOut, const Rectangle& rRect, Color aColor)
+void SdrPageView::DrawPageViewGrid(OutputDevice& rOut, const tools::Rectangle& rRect, Color aColor)
 {
     if (GetPage()==nullptr)
         return;
@@ -564,7 +555,7 @@ void SdrPageView::DrawPageViewGrid(OutputDevice& rOut, const Rectangle& rRect, C
                     {
                         // draw
                         rOut.DrawGrid(
-                            Rectangle( xFinOrg + (a * nx2) + nPointOffset, yBigOrg, x2, y2 ),
+                            tools::Rectangle( xFinOrg + (a * nx2) + nPointOffset, yBigOrg, x2, y2 ),
                             Size( nx1, ny1 ), nGridFlags );
 
                         // do a step
@@ -589,7 +580,7 @@ void SdrPageView::DrawPageViewGrid(OutputDevice& rOut, const Rectangle& rRect, C
                     {
                         // draw
                         rOut.DrawGrid(
-                            Rectangle( xBigOrg, yFinOrg + (a * ny2) + nPointOffset, x2, y2 ),
+                            tools::Rectangle( xBigOrg, yFinOrg + (a * ny2) + nPointOffset, x2, y2 ),
                             Size( nx1, ny1 ), nGridFlags );
 
                         // do a step
@@ -647,59 +638,47 @@ bool SdrPageView::IsLayer(const OUString& rName, const SetOfByte& rBS) const
 
 bool SdrPageView::IsObjMarkable(SdrObject* pObj) const
 {
-    if(pObj)
+    if (!pObj)
+        return false;
+    if (pObj->IsMarkProtect())
+        return false;    // excluded from selection?
+    if (!pObj->IsVisible())
+        return false;    // only visible are selectable
+    if (!pObj->IsInserted())
+        return false;    // Obj deleted?
+    if (dynamic_cast<const SdrObjGroup*>(pObj) !=  nullptr)
     {
-        // excluded from selection?
-        if(pObj->IsMarkProtect())
-        {
-            return false;
-        }
+        // If object is a Group object, visibility may depend on
+        // multiple layers. If one object is markable, Group is markable.
+        SdrObjList* pObjList = static_cast<SdrObjGroup*>(pObj)->GetSubList();
 
-        // only visible are selectable
-        if( !pObj->IsVisible() )
+        if (pObjList && pObjList->GetObjCount())
         {
-            return false;
-        }
-
-        if(dynamic_cast<const SdrObjGroup*>( pObj) !=  nullptr)
-        {
-            // If object is a Group object, visibility may depend on
-            // multiple layers. If one object is markable, Group is markable.
-            SdrObjList* pObjList = static_cast<SdrObjGroup*>(pObj)->GetSubList();
-
-            if(pObjList && pObjList->GetObjCount())
+            for (size_t a = 0; a < pObjList->GetObjCount(); ++a)
             {
-                bool bGroupIsMarkable(false);
-
-                for(size_t a = 0; !bGroupIsMarkable && a < pObjList->GetObjCount(); ++a)
-                {
-                    SdrObject* pCandidate = pObjList->GetObj(a);
-
-                    // call recursively
-                    if(IsObjMarkable(pCandidate))
-                    {
-                        bGroupIsMarkable = true;
-                    }
-                }
-
-                return bGroupIsMarkable;
+                SdrObject* pCandidate = pObjList->GetObj(a);
+                // call recursively
+                if (IsObjMarkable(pCandidate))
+                    return true;
             }
-            else
-            {
-                // #i43302#
-                // Allow empty groups to be selected to be able to delete them
-                return true;
-            }
+            return false;
         }
         else
         {
-            // the layer has to be visible and must not be locked
-            SdrLayerID nL = pObj->GetLayer();
-            return (aLayerVisi.IsSet(sal_uInt8(nL)) && !aLayerLock.IsSet(sal_uInt8(nL)));
+            // #i43302#
+            // Allow empty groups to be selected to be able to delete them
+            return true;
         }
     }
-
-    return false;
+    if (!pObj->Is3DObj() && pObj->GetPage()!=GetPage())
+        return false; // Obj suddenly in different Page
+    // the layer has to be visible and must not be locked
+    SdrLayerID nL = pObj->GetLayer();
+    if (!aLayerVisi.IsSet(sal_uInt8(nL)))
+        return false;
+    if (aLayerLock.IsSet(sal_uInt8(nL)))
+        return false;
+    return true;
 }
 
 void SdrPageView::SetPageOrigin(const Point& rOrg)
@@ -724,7 +703,7 @@ void SdrPageView::ImpInvalidateHelpLineArea(sal_uInt16 nNum) const
             if(pCandidate->OutputToWindow())
             {
                 OutputDevice& rOutDev = pCandidate->GetOutputDevice();
-                Rectangle aR(rHL.GetBoundRect(rOutDev));
+                tools::Rectangle aR(rHL.GetBoundRect(rOutDev));
                 Size aSiz(rOutDev.PixelToLogic(Size(1,1)));
                 aR.Left() -= aSiz.Width();
                 aR.Right() += aSiz.Width();
@@ -748,8 +727,8 @@ void SdrPageView::SetHelpLine(sal_uInt16 nNum, const SdrHelpLine& rNewHelpLine)
         bool bNeedRedraw = true;
         if (aHelpLines[nNum].GetKind()==rNewHelpLine.GetKind()) {
             switch (rNewHelpLine.GetKind()) {
-                case SDRHELPLINE_VERTICAL  : if (aHelpLines[nNum].GetPos().X()==rNewHelpLine.GetPos().X()) bNeedRedraw = false; break;
-                case SDRHELPLINE_HORIZONTAL: if (aHelpLines[nNum].GetPos().Y()==rNewHelpLine.GetPos().Y()) bNeedRedraw = false; break;
+                case SdrHelpLineKind::Vertical  : if (aHelpLines[nNum].GetPos().X()==rNewHelpLine.GetPos().X()) bNeedRedraw = false; break;
+                case SdrHelpLineKind::Horizontal: if (aHelpLines[nNum].GetPos().Y()==rNewHelpLine.GetPos().Y()) bNeedRedraw = false; break;
                 default: break;
             } // switch
         }
@@ -824,10 +803,7 @@ bool SdrPageView::EnterGroup(SdrObject* pObj)
         GetView().AdjustMarkHdl();
 
         // invalidate only when view wants to visualize group entering
-        if(GetView().DoVisualizeEnteredGroup())
-        {
-            InvalidateAllWin();
-        }
+        InvalidateAllWin();
 
         if (bGlueInvalidate)
         {
@@ -870,8 +846,7 @@ void SdrPageView::LeaveOneGroup()
         GetView().AdjustMarkHdl();
 
         // invalidate only if view wants to visualize group entering
-        if(GetView().DoVisualizeEnteredGroup())
-            InvalidateAllWin();
+        InvalidateAllWin();
 
         if(bGlueInvalidate)
             GetView().GlueInvalidate();
@@ -908,8 +883,7 @@ void SdrPageView::LeaveAllGroup()
         GetView().AdjustMarkHdl();
 
         // invalidate only when view wants to visualize group entering
-        if(GetView().DoVisualizeEnteredGroup())
-            InvalidateAllWin();
+        InvalidateAllWin();
 
         if(bGlueInvalidate)
             GetView().GlueInvalidate();

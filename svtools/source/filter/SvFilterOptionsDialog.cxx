@@ -77,41 +77,29 @@ class SvFilterOptionsDialog : public cppu::WeakImplHelper
 public:
 
     explicit SvFilterOptionsDialog( const uno::Reference< uno::XComponentContext >& _rxORB );
-    virtual ~SvFilterOptionsDialog();
 
     // XInterface
     virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const uno::Sequence< uno::Any > & aArguments )
-        throw ( uno::Exception, uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL initialize( const uno::Sequence< uno::Any > & aArguments ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-        throw ( uno::RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-        throw ( uno::RuntimeException, std::exception ) override;
-    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
-        throw ( uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     // XPropertyAccess
-    virtual uno::Sequence< beans::PropertyValue > SAL_CALL getPropertyValues()
-        throw ( uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL setPropertyValues( const uno::Sequence< beans::PropertyValue > & aProps )
-        throw ( beans::UnknownPropertyException, beans::PropertyVetoException,
-                lang::IllegalArgumentException, lang::WrappedTargetException,
-                uno::RuntimeException, std::exception ) override;
+    virtual uno::Sequence< beans::PropertyValue > SAL_CALL getPropertyValues() override;
+    virtual void SAL_CALL setPropertyValues( const uno::Sequence< beans::PropertyValue > & aProps ) override;
 
     // XExecuteDialog
-    virtual sal_Int16 SAL_CALL execute()
-        throw ( uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL setTitle( const OUString& aTitle )
-        throw ( uno::RuntimeException, std::exception ) override;
+    virtual sal_Int16 SAL_CALL execute() override;
+    virtual void SAL_CALL setTitle( const OUString& aTitle ) override;
 
     // XExporter
-    virtual void SAL_CALL setSourceDocument( const uno::Reference< lang::XComponent >& xDoc )
-        throw ( lang::IllegalArgumentException, uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL setSourceDocument( const uno::Reference< lang::XComponent >& xDoc ) override;
 
 };
 
@@ -121,12 +109,6 @@ SvFilterOptionsDialog::SvFilterOptionsDialog( const uno::Reference< uno::XCompon
     mbExportSelection   ( false )
 {
 }
-
-
-SvFilterOptionsDialog::~SvFilterOptionsDialog()
-{
-}
-
 
 void SAL_CALL SvFilterOptionsDialog::acquire() throw()
 {
@@ -141,23 +123,19 @@ void SAL_CALL SvFilterOptionsDialog::release() throw()
 
 // XInitialization
 void SAL_CALL SvFilterOptionsDialog::initialize( const uno::Sequence< uno::Any > & )
-    throw ( uno::Exception, uno::RuntimeException, std::exception )
 {
 }
 
 // XServiceInfo
 OUString SAL_CALL SvFilterOptionsDialog::getImplementationName()
-    throw( uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.svtools.SvFilterOptionsDialog" );
 }
 sal_Bool SAL_CALL SvFilterOptionsDialog::supportsService( const OUString& rServiceName )
-    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 uno::Sequence< OUString > SAL_CALL SvFilterOptionsDialog::getSupportedServiceNames()
-    throw ( uno::RuntimeException, std::exception )
 {
     uno::Sequence<OUString> aRet { "com.sun.star.ui.dialogs.FilterOptionsDialog" };
     return aRet;
@@ -165,7 +143,6 @@ uno::Sequence< OUString > SAL_CALL SvFilterOptionsDialog::getSupportedServiceNam
 
 // XPropertyAccess
 uno::Sequence< beans::PropertyValue > SvFilterOptionsDialog::getPropertyValues()
-        throw ( uno::RuntimeException, std::exception )
 {
     sal_Int32 i, nCount;
     for ( i = 0, nCount = maMediaDescriptor.getLength(); i < nCount; i++ )
@@ -183,9 +160,6 @@ uno::Sequence< beans::PropertyValue > SvFilterOptionsDialog::getPropertyValues()
 }
 
 void SvFilterOptionsDialog::setPropertyValues( const uno::Sequence< beans::PropertyValue > & aProps )
-        throw ( beans::UnknownPropertyException, beans::PropertyVetoException,
-                lang::IllegalArgumentException, lang::WrappedTargetException,
-                uno::RuntimeException, std::exception )
 {
     maMediaDescriptor = aProps;
 
@@ -205,13 +179,11 @@ void SvFilterOptionsDialog::setPropertyValues( const uno::Sequence< beans::Prope
 
 // XExecutableDialog
 void SvFilterOptionsDialog::setTitle( const OUString& aTitle )
-    throw ( uno::RuntimeException, std::exception )
 {
     maDialogTitle = aTitle;
 }
 
 sal_Int16 SvFilterOptionsDialog::execute()
-    throw ( uno::RuntimeException, std::exception )
 {
     sal_Int16 nRet = ui::dialogs::ExecutableDialogResults::CANCEL;
 
@@ -242,18 +214,12 @@ sal_Int16 SvFilterOptionsDialog::execute()
         }
         if ( nFormat < nFilterCount )
         {
-            FltCallDialogParameter aFltCallDlgPara( Application::GetDefDialogParent(), nullptr, meFieldUnit );
+            FltCallDialogParameter aFltCallDlgPara( Application::GetDefDialogParent(), meFieldUnit );
             aFltCallDlgPara.aFilterData = maFilterDataSequence;
-
-            std::unique_ptr<ResMgr> pResMgr(ResMgr::CreateResMgr( "svt", Application::GetSettings().GetUILanguageTag() ));
-            aFltCallDlgPara.pResMgr = pResMgr.get();
-
             aFltCallDlgPara.aFilterExt = aGraphicFilter.GetExportFormatShortName( nFormat );
             bool bIsPixelFormat( aGraphicFilter.IsExportPixelFormat( nFormat ) );
             if ( ScopedVclPtrInstance<ExportDialog>( aFltCallDlgPara, mxContext, mxSourceDocument, mbExportSelection, bIsPixelFormat )->Execute() == RET_OK )
                 nRet = ui::dialogs::ExecutableDialogResults::OK;
-
-            pResMgr.reset();
 
             // taking the out parameter from the dialog
             maFilterDataSequence = aFltCallDlgPara.aFilterData;
@@ -264,7 +230,6 @@ sal_Int16 SvFilterOptionsDialog::execute()
 
 // XEmporter
 void SvFilterOptionsDialog::setSourceDocument( const uno::Reference< lang::XComponent >& xDoc )
-        throw ( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     mxSourceDocument = xDoc;
 

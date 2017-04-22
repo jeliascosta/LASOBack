@@ -23,12 +23,15 @@
 #include <unx/saldisp.hxx>
 #include <unx/saldata.hxx>
 #include <unx/salframe.h>
+#include <unx/salgdi.h>
+
+#include <memory>
 
 class KDEData : public X11SalData
 {
 public:
     KDEData( SalInstance *pInstance ) : X11SalData( SAL_DATA_KDE3, pInstance ) {}
-    virtual ~KDEData();
+    virtual ~KDEData() override;
 
     virtual void Init() override;
     virtual void initNWF() override;
@@ -39,7 +42,7 @@ class SalKDEDisplay : public SalX11Display
 {
 public:
     SalKDEDisplay( Display* pDisp );
-    virtual ~SalKDEDisplay();
+    virtual ~SalKDEDisplay() override;
 };
 
 class KDESalFrame : public X11SalFrame
@@ -48,33 +51,31 @@ class KDESalFrame : public X11SalFrame
 
     struct GraphicsHolder
     {
-        X11SalGraphics*     pGraphics;
+        std::unique_ptr<X11SalGraphics> pGraphics;
         bool                bInUse;
-        GraphicsHolder()
-                : pGraphics( NULL ),
-                  bInUse( false )
-        {}
-        ~GraphicsHolder();
+        GraphicsHolder() : bInUse( false ) {}
     };
     GraphicsHolder m_aGraphics[ nMaxGraphics ];
 
 public:
     KDESalFrame( SalFrame* pParent, SalFrameStyleFlags );
-    virtual ~KDESalFrame();
+    virtual ~KDESalFrame() override;
 
     virtual SalGraphics* AcquireGraphics() override;
     virtual void ReleaseGraphics( SalGraphics *pGraphics ) override;
     virtual void updateGraphics( bool bClear ) override;
     virtual void UpdateSettings( AllSettings& rSettings ) override;
-    virtual void Show( bool bVisible, bool bNoActivate ) override;
+    virtual void Show( bool bVisible, bool bNoActivate = false ) override;
 };
 
 class KDESalInstance : public X11SalInstance
 {
+protected:
+    virtual SalX11Display* CreateDisplay() const override;
+
 public:
     KDESalInstance( SalYieldMutex* pMutex )
             : X11SalInstance( pMutex ) {}
-    virtual ~KDESalInstance() {}
     virtual SalFrame* CreateFrame( SalFrame* pParent, SalFrameStyleFlags nStyle ) override;
 
     virtual bool hasNativeFileSelection() const override { return true; }
@@ -93,12 +94,12 @@ class KDEXLib : public SalXLib
 public:
     KDEXLib() : SalXLib(),
         m_bStartupDone( false ),
-        m_pApplication( NULL ),
-        m_pFreeCmdLineArgs( NULL ),
-        m_pAppCmdLineArgs( NULL ),
+        m_pApplication( nullptr ),
+        m_pFreeCmdLineArgs( nullptr ),
+        m_pAppCmdLineArgs( nullptr ),
         m_nFakeCmdLineArgs( 0 )
         {}
-    virtual ~KDEXLib();
+    virtual ~KDEXLib() override;
     virtual void Init() override;
 
     void doStartup();

@@ -24,15 +24,8 @@
 #include <rscall.h>
 #include <rsckey.hxx>
 
-Atom    nRsc_XYMAPMODEId = InvalidAtom;
-Atom    nRsc_WHMAPMODEId = InvalidAtom;
-Atom    nRsc_X = InvalidAtom;
-Atom    nRsc_Y = InvalidAtom;
-Atom    nRsc_WIDTH = InvalidAtom;
-Atom    nRsc_HEIGHT = InvalidAtom;
 Atom    nRsc_DELTALANG = InvalidAtom;
 Atom    nRsc_DELTASYSTEM = InvalidAtom;
-Atom    nRsc_EXTRADATA = InvalidAtom;
 
 void InitRscCompiler()
 {
@@ -40,12 +33,7 @@ void InitRscCompiler()
     pStdPar1         = new OString('(');
     pStdPar2         = new OString('(');
 
-    pWinParType      = new OString("( vcl::Window * pParent, const ResId & rResId, sal_Bool");
-    pWinPar1         = new OString("( pParent,");
-    pWinPar2         = new OString("( this,");
     nRefDeep         = 10;
-    nRsc_XYMAPMODEId = InvalidAtom;
-    nRsc_WHMAPMODEId = InvalidAtom;
     pHS = new AtomContainer();
 };
 

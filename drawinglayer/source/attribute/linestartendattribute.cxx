@@ -34,8 +34,7 @@ namespace drawinglayer
             double                                  mfWidth;                // absolute line StartEndGeometry base width
             basegfx::B2DPolyPolygon                 maPolyPolygon;          // the StartEndGeometry PolyPolygon
 
-            // bitfield
-            bool                                    mbCentered : 1;         // use centered to ineStart/End point?
+            bool                                    mbCentered : 1;         // use centered to lineStart/End point?
 
             ImpLineStartEndAttribute(
                 double fWidth,

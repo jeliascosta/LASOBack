@@ -45,7 +45,7 @@
 #include <svx/fmshell.hxx>
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svx/sidebar/ContextChangeEventMultiplexer.hxx>
 
 #include <memory>
@@ -55,7 +55,7 @@ using namespace ::cppu;
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::drawing::framework;
-using ::sfx2::sidebar::EnumContext;
+using vcl::EnumContext;
 
 namespace sd {
 
@@ -91,7 +91,7 @@ void DrawController::SetSubController (
     // Update the internal state.
     mxSubController = rxSubController;
     mpPropertyArrayHelper.reset();
-    maLastVisArea = Rectangle();
+    maLastVisArea = ::tools::Rectangle();
 
     // Inform listeners about the changed state.
     FireSelectionChangeListener();
@@ -107,7 +107,6 @@ IMPLEMENT_FORWARD_XINTERFACE2(
 // XTypeProvider
 
 Sequence<Type> SAL_CALL DrawController::getTypes()
-    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     // OPropertySetHelper does not provide getTypes, so we have to
@@ -128,7 +127,6 @@ IMPLEMENT_GET_IMPLEMENTATION_ID(DrawController);
 // XComponent
 
 void SAL_CALL DrawController::dispose()
-    throw( RuntimeException, std::exception )
 {
     if( !mbDisposing )
     {
@@ -170,7 +168,6 @@ void SAL_CALL DrawController::dispose()
 
 void SAL_CALL DrawController::addEventListener(
     const Reference<lang::XEventListener >& xListener)
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     SfxBaseController::addEventListener( xListener );
@@ -178,14 +175,13 @@ void SAL_CALL DrawController::addEventListener(
 
 void SAL_CALL DrawController::removeEventListener (
     const Reference<lang::XEventListener >& aListener)
-    throw (RuntimeException, std::exception)
 {
     if(!rBHelper.bDisposed && !rBHelper.bInDispose && !mbDisposing)
         SfxBaseController::removeEventListener( aListener );
 }
 
 // XController
-sal_Bool SAL_CALL DrawController::suspend( sal_Bool Suspend ) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL DrawController::suspend( sal_Bool Suspend )
 {
     if( Suspend )
     {
@@ -203,7 +199,7 @@ sal_Bool SAL_CALL DrawController::suspend( sal_Bool Suspend ) throw (css::uno::R
 }
 
 // XServiceInfo
-OUString SAL_CALL DrawController::getImplementationName(  ) throw(RuntimeException, std::exception)
+OUString SAL_CALL DrawController::getImplementationName(  )
 {
     // Do not throw an exception at the moment.  This leads to a crash
     // under Solaris on reload.  See issue i70929 for details.
@@ -214,13 +210,11 @@ OUString SAL_CALL DrawController::getImplementationName(  ) throw(RuntimeExcepti
 static const char ssServiceName[] = "com.sun.star.drawing.DrawingDocumentDrawView";
 
 sal_Bool SAL_CALL DrawController::supportsService (const OUString& rsServiceName)
-    throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rsServiceName);
 }
 
 Sequence<OUString> SAL_CALL DrawController::getSupportedServiceNames()
-    throw(RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     Sequence<OUString> aSupportedServices { ssServiceName };
@@ -229,7 +223,6 @@ Sequence<OUString> SAL_CALL DrawController::getSupportedServiceNames()
 
 //------ XSelectionSupplier --------------------------------------------
 sal_Bool SAL_CALL DrawController::select (const Any& aSelection)
-    throw(lang::IllegalArgumentException, RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     SolarMutexGuard aGuard;
@@ -241,7 +234,6 @@ sal_Bool SAL_CALL DrawController::select (const Any& aSelection)
 }
 
 Any SAL_CALL DrawController::getSelection()
-    throw(RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     SolarMutexGuard aGuard;
@@ -254,7 +246,6 @@ Any SAL_CALL DrawController::getSelection()
 
 void SAL_CALL DrawController::addSelectionChangeListener(
     const Reference< view::XSelectionChangeListener >& xListener)
-    throw(RuntimeException, std::exception)
 {
     if( mbDisposing )
         throw lang::DisposedException();
@@ -264,7 +255,6 @@ void SAL_CALL DrawController::addSelectionChangeListener(
 
 void SAL_CALL DrawController::removeSelectionChangeListener(
     const Reference< view::XSelectionChangeListener >& xListener )
-    throw(RuntimeException, std::exception)
 {
     if (rBHelper.bDisposed)
         throw lang::DisposedException();
@@ -276,7 +266,6 @@ void SAL_CALL DrawController::removeSelectionChangeListener(
 
 void SAL_CALL
     DrawController::disposing (const lang::EventObject& )
-    throw (uno::RuntimeException, std::exception)
 {
 }
 
@@ -284,7 +273,6 @@ void SAL_CALL
 
 void  SAL_CALL
     DrawController::selectionChanged (const lang::EventObject& rEvent)
-        throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     // Have to forward the event to our selection change listeners.
@@ -314,7 +302,6 @@ void  SAL_CALL
 // XDrawView
 
 void SAL_CALL DrawController::setCurrentPage( const Reference< drawing::XDrawPage >& xPage )
-    throw(RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     SolarMutexGuard aGuard;
@@ -324,7 +311,6 @@ void SAL_CALL DrawController::setCurrentPage( const Reference< drawing::XDrawPag
 }
 
 Reference< drawing::XDrawPage > SAL_CALL DrawController::getCurrentPage()
-    throw(RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     SolarMutexGuard aGuard;
@@ -342,7 +328,7 @@ Reference< drawing::XDrawPage > SAL_CALL DrawController::getCurrentPage()
     return xPage;
 }
 
-void DrawController::FireVisAreaChanged (const Rectangle& rVisArea) throw()
+void DrawController::FireVisAreaChanged (const ::tools::Rectangle& rVisArea) throw()
 {
     if( maLastVisArea != rVisArea )
     {
@@ -510,37 +496,37 @@ void DrawController::BroadcastContextChange() const
     if ( ! pViewShell)
         return;
 
-    EnumContext::Context eContext (EnumContext::Context_Unknown);
+    EnumContext::Context eContext (EnumContext::Context::Unknown);
     switch (pViewShell->GetShellType())
     {
         case ViewShell::ST_IMPRESS:
         case ViewShell::ST_DRAW:
             if (mbMasterPageMode)
-                eContext = EnumContext::Context_MasterPage;
+                eContext = EnumContext::Context::MasterPage;
             else
-                eContext = EnumContext::Context_DrawPage;
+                eContext = EnumContext::Context::DrawPage;
             break;
 
         case ViewShell::ST_NOTES:
-            eContext = EnumContext::Context_NotesPage;
+            eContext = EnumContext::Context::NotesPage;
             break;
 
         case ViewShell::ST_HANDOUT:
-            eContext = EnumContext::Context_HandoutPage;
+            eContext = EnumContext::Context::HandoutPage;
             break;
 
         case ViewShell::ST_OUTLINE:
-            eContext = EnumContext::Context_OutlineText;
+            eContext = EnumContext::Context::OutlineText;
             break;
 
         case ViewShell::ST_SLIDE_SORTER:
-            eContext = EnumContext::Context_SlidesorterPage;
+            eContext = EnumContext::Context::SlidesorterPage;
             break;
 
         case ViewShell::ST_PRESENTATION:
         case ViewShell::ST_NONE:
         default:
-            eContext = EnumContext::Context_Empty;
+            eContext = EnumContext::Context::Empty;
             break;
     }
 
@@ -557,7 +543,6 @@ void DrawController::ReleaseViewShellBase()
 
 Reference<XConfigurationController> SAL_CALL
     DrawController::getConfigurationController()
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -566,7 +551,6 @@ Reference<XConfigurationController> SAL_CALL
 
 Reference<XModuleController> SAL_CALL
     DrawController::getModuleController()
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -586,7 +570,6 @@ const Sequence<sal_Int8>& DrawController::getUnoTunnelId()
 }
 
 sal_Int64 SAL_CALL DrawController::getSomething (const Sequence<sal_Int8>& rId)
-    throw (RuntimeException, std::exception)
 {
     sal_Int64 nResult = 0;
 
@@ -658,12 +641,12 @@ void DrawController::FillPropertyTable (
             beans::PropertyAttribute::BOUND|beans::PropertyAttribute::READONLY|beans::PropertyAttribute::MAYBEVOID ));
     // add new property to update current page's acc information
     rProperties.push_back(
-        beans::Property( OUString( RTL_CONSTASCII_USTRINGPARAM("UpdateAcc") ),
+        beans::Property( "UpdateAcc",
             PROPERTY_UPDATEACC,
             ::cppu::UnoType<sal_Int16>::get(),
             beans::PropertyAttribute::BOUND ));
     rProperties.push_back(
-        beans::Property( OUString( RTL_CONSTASCII_USTRINGPARAM("PageChange") ),
+        beans::Property( "PageChange",
             PROPERTY_PAGE_CHANGE,
             ::cppu::UnoType<sal_Int16>::get(),
             beans::PropertyAttribute::BOUND ));
@@ -684,7 +667,6 @@ IPropertyArrayHelper & DrawController::getInfoHelper()
 }
 
 Reference < beans::XPropertySetInfo >  DrawController::getPropertySetInfo()
-        throw ( css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -692,7 +674,7 @@ Reference < beans::XPropertySetInfo >  DrawController::getPropertySetInfo()
     return xInfo;
 }
 
-uno::Reference< form::runtime::XFormController > SAL_CALL DrawController::getFormController( const uno::Reference< form::XForm >& Form ) throw (uno::RuntimeException, std::exception)
+uno::Reference< form::runtime::XFormController > SAL_CALL DrawController::getFormController( const uno::Reference< form::XForm >& Form )
 {
     SolarMutexGuard aGuard;
 
@@ -707,7 +689,7 @@ uno::Reference< form::runtime::XFormController > SAL_CALL DrawController::getFor
     return xController;
 }
 
-sal_Bool SAL_CALL DrawController::isFormDesignMode(  ) throw (uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL DrawController::isFormDesignMode(  )
 {
     SolarMutexGuard aGuard;
 
@@ -720,7 +702,7 @@ sal_Bool SAL_CALL DrawController::isFormDesignMode(  ) throw (uno::RuntimeExcept
     return bIsDesignMode;
 }
 
-void SAL_CALL DrawController::setFormDesignMode( sal_Bool DesignMode ) throw (uno::RuntimeException, std::exception)
+void SAL_CALL DrawController::setFormDesignMode( sal_Bool DesignMode )
 {
     SolarMutexGuard aGuard;
 
@@ -729,7 +711,7 @@ void SAL_CALL DrawController::setFormDesignMode( sal_Bool DesignMode ) throw (un
         pFormShell->SetDesignMode( DesignMode );
 }
 
-uno::Reference< awt::XControl > SAL_CALL DrawController::getControl( const uno::Reference< awt::XControlModel >& xModel ) throw (container::NoSuchElementException, uno::RuntimeException, std::exception)
+uno::Reference< awt::XControl > SAL_CALL DrawController::getControl( const uno::Reference< awt::XControlModel >& xModel )
 {
     SolarMutexGuard aGuard;
 
@@ -749,7 +731,6 @@ sal_Bool DrawController::convertFastPropertyValue (
     Any & rOldValue,
     sal_Int32 nHandle,
     const Any& rValue)
-    throw ( css::lang::IllegalArgumentException)
 {
     bool bResult = false;
 
@@ -780,7 +761,6 @@ sal_Bool DrawController::convertFastPropertyValue (
 void DrawController::setFastPropertyValue_NoBroadcast (
     sal_Int32 nHandle,
     const Any& rValue)
-    throw ( css::uno::Exception, std::exception)
 {
     SolarMutexGuard aGuard;
     if (nHandle == PROPERTY_SUB_CONTROLLER)
@@ -850,11 +830,10 @@ void DrawController::DisposeFrameworkControllers()
 }
 
 void DrawController::ThrowIfDisposed() const
-    throw (css::lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose || mbDisposing)
     {
-        OSL_TRACE ("Calling disposed DrawController object. Throwing exception:");
+        SAL_WARN("sd", "Calling disposed DrawController object. Throwing exception:");
         throw lang::DisposedException (
             "DrawController object has already been disposed",
             const_cast<uno::XWeak*>(static_cast<const uno::XWeak*>(this)));

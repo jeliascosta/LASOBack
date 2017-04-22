@@ -38,7 +38,6 @@
 #include <editeng/boxitem.hxx>
 #include <editeng/paperinf.hxx>
 #include <editeng/protitem.hxx>
-#include <com/sun/star/frame/XStorable.hpp>
 #include <com/sun/star/frame/XModel.hpp>
 #include <fmthdft.hxx>
 #include <fmtanchr.hxx>
@@ -91,7 +90,7 @@ static const SwFrameFormat *lcl_InsertBCText( SwWrtShell& rSh, const SwLabItem& 
     rSh.GetPageNum( nPhyPageNum, nVirtPageNum );
 
     //anchor frame to page
-    aSet.Put( SwFormatAnchor( FLY_AT_PAGE, nPhyPageNum ) );
+    aSet.Put( SwFormatAnchor( RndStdIds::FLY_AT_PAGE, nPhyPageNum ) );
     aSet.Put( SwFormatHoriOrient( rItem.m_lLeft + static_cast<SwTwips>(nCol) * rItem.m_lHDist,
                                text::HoriOrientation::NONE, text::RelOrientation::PAGE_FRAME ) );
     aSet.Put( SwFormatVertOrient( rItem.m_lUpper + static_cast<SwTwips>(nRow) * rItem.m_lVDist,
@@ -128,7 +127,7 @@ static const SwFrameFormat *lcl_InsertLabText( SwWrtShell& rSh, const SwLabItem&
     rSh.GetPageNum( nPhyPageNum, nVirtPageNum );
 
     //anchor frame to page
-    aSet.Put( SwFormatAnchor( FLY_AT_PAGE, nPhyPageNum ) );
+    aSet.Put( SwFormatAnchor( RndStdIds::FLY_AT_PAGE, nPhyPageNum ) );
     aSet.Put( SwFormatHoriOrient( rItem.m_lLeft + static_cast<SwTwips>(nCol) * rItem.m_lHDist,
                                text::HoriOrientation::NONE, text::RelOrientation::PAGE_FRAME ) );
     aSet.Put( SwFormatVertOrient( rItem.m_lUpper + static_cast<SwTwips>(nRow) * rItem.m_lVDist,
@@ -172,7 +171,7 @@ void SwModule::InsertLab(SfxRequest& rReq, bool bLabel)
     SwAbstractDialogFactory* pDialogFactory = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pDialogFactory, "SwAbstractDialogFactory fail!");
 
-    std::unique_ptr<AbstractSwLabDlg> pDlg(pDialogFactory->CreateSwLabDlg(aSet,
+    ScopedVclPtr<AbstractSwLabDlg> pDlg(pDialogFactory->CreateSwLabDlg(aSet,
 #if HAVE_FEATURE_DBCONNECTIVITY
                                                                             pDBManager.get(),
 #else
@@ -256,7 +255,7 @@ void SwModule::InsertLab(SfxRequest& rReq, bool bLabel)
             rFormat.SetFormatAttr(SwFormatFooter(false));
             aDesc.ChgFooterShare(false);
 
-            aDesc.SetUseOn(nsUseOnPage::PD_ALL);                // Site numbering
+            aDesc.SetUseOn(UseOnPage::All);                // Site numbering
 
             // Set page size
             long lPgWidth, lPgHeight;
@@ -336,8 +335,7 @@ void SwModule::InsertLab(SfxRequest& rReq, bool bLabel)
                                 else
                                     pSh->SetMark();     // set only the mark
 
-                                SwSectionData aSect(CONTENT_SECTION,
-                                    OUString(MASTER_LABEL));
+                                SwSectionData aSect(CONTENT_SECTION, MASTER_LABEL);
                                 pSh->InsertSection(aSect);
                             }
                         }

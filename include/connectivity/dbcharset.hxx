@@ -86,7 +86,7 @@ namespace dbtools
     protected:
         // needed because we want to call a virtual method during construction
                 void lateConstruct();
-        inline  void ensureConstructed( ) const { if ( m_aEncodings.empty() ) const_cast< OCharsetMap* >( this )->lateConstruct(); }
+        void ensureConstructed( ) const { if ( m_aEncodings.empty() ) const_cast< OCharsetMap* >( this )->lateConstruct(); }
 
         virtual bool approveEncoding( const rtl_TextEncoding _eEncoding, const rtl_TextEncodingInfo& _rInfo ) const;
     };
@@ -144,7 +144,7 @@ namespace dbtools
         const CharsetIterator&  operator--();
 
     protected:
-        CharsetIterator(const OCharsetMap* _pContainer, OCharsetMap::TextEncBag::const_iterator _aPos );
+        CharsetIterator(const OCharsetMap* _pContainer, OCharsetMap::TextEncBag::const_iterator const & _aPos );
     };
 
 

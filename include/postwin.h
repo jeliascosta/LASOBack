@@ -23,6 +23,7 @@
 #undef CompareString
 #undef CopyFile
 #undef DELETE
+#undef DocumentProperties
 #undef DrawText
 #undef FindWindow
 #undef Folder
@@ -44,7 +45,6 @@
 #undef OUT
 #undef PASSTHROUGH
 #undef RELATIVE
-#undef Rectangle
 #undef STRICT
 #undef SetPort
 #undef SetPrinter
@@ -64,11 +64,8 @@
 #define STRETCH_DELETESCANS     3
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
-BOOL WINAPI WIN_Rectangle( HDC hDC, int X1, int Y1, int X2, int Y2 );
-}
+#if !defined INCLUDED_POSTWIN_H && defined __cplusplus
+#define INCLUDED_POSTWIN_H
 #endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

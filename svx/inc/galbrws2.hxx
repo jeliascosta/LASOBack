@@ -44,13 +44,9 @@ enum GalleryBrowserMode
 };
 
 
-enum GalleryBrowserTravel
+enum class GalleryBrowserTravel
 {
-    GALLERYBROWSERTRAVEL_CURRENT = 0,
-    GALLERYBROWSERTRAVEL_FIRST = 1,
-    GALLERYBROWSERTRAVEL_LAST = 2,
-    GALLERYBROWSERTRAVEL_PREVIOUS = 3,
-    GALLERYBROWSERTRAVEL_NEXT = 4
+    First, Last, Previous, Next
 };
 
 enum class GalleryItemFlags {
@@ -91,7 +87,6 @@ class GalleryBrowser2 : public Control, public SfxListener
 {
     friend class GalleryBrowser;
     friend class svx::sidebar::GalleryControl;
-    using Control::Notify;
     using Window::KeyInput;
 
 private:
@@ -126,10 +121,10 @@ private:
     // SfxListener
     virtual void        Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
-                        DECL_LINK_TYPED( SelectObjectHdl, GalleryListView*, void );
-                        DECL_LINK_TYPED( SelectObjectValueSetHdl, ValueSet*, void );
-                        DECL_LINK_TYPED( SelectTbxHdl, ToolBox*, void );
-                        DECL_LINK_TYPED( MiscHdl, LinkParamNone*, void );
+                        DECL_LINK( SelectObjectHdl, GalleryListView*, void );
+                        DECL_LINK( SelectObjectValueSetHdl, ValueSet*, void );
+                        DECL_LINK( SelectTbxHdl, ToolBox*, void );
+                        DECL_LINK( MiscHdl, LinkParamNone*, void );
 
 private:
 
@@ -142,7 +137,7 @@ public:
 public:
 
     GalleryBrowser2(vcl::Window* pParent, Gallery* pGallery);
-    virtual ~GalleryBrowser2();
+    virtual ~GalleryBrowser2() override;
     virtual void dispose() override;
 
     void                SelectTheme( const OUString& rThemeName );
@@ -161,18 +156,17 @@ public:
     sal_Int8            ExecuteDrop( DropTargetHelper& rTarget, const ExecuteDropEvent& rEvt );
     void                StartDrag( vcl::Window* pWindow, const Point* pDragPoint = nullptr );
     void                TogglePreview( vcl::Window* pWindow, const Point* pPreviewPoint = nullptr );
-    void                ShowContextMenu( vcl::Window* pWindow, const Point* pContextPoint = nullptr );
+    void                ShowContextMenu( vcl::Window* pWindow, const Point* pContextPoint );
     bool                KeyInput( const KeyEvent& rEvt, vcl::Window* pWindow );
 
     static css::uno::Reference< css::frame::XFrame > GetFrame();
     const css::uno::Reference< css::util::XURLTransformer >& GetURLTransformer() const { return m_xTransformer; }
 
-    void Execute( sal_uInt16 nId );
-    void Dispatch( sal_uInt16 nId,
-                   const css::uno::Reference< css::frame::XDispatch > &rxDispatch = css::uno::Reference< css::frame::XDispatch >(),
-                   const css::util::URL &rURL = css::util::URL() );
+    void Execute(const OString &rIdent);
+    void DispatchAdd(const css::uno::Reference<css::frame::XDispatch> &rxDispatch,
+                     const css::util::URL &rURL);
 
-    DECL_STATIC_LINK_TYPED( GalleryBrowser2, AsyncDispatch_Impl, void*, void );
+    DECL_STATIC_LINK( GalleryBrowser2, AsyncDispatch_Impl, void*, void );
 };
 
 #endif

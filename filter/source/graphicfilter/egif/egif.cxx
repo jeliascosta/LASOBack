@@ -66,7 +66,6 @@ class GIFWriter
 public:
 
     explicit GIFWriter(SvStream &rStream);
-    ~GIFWriter() {}
 
     bool WriteGIF( const Graphic& rGraphic, FilterConfigItem* pConfigItem );
 };
@@ -101,10 +100,10 @@ bool GIFWriter::WriteGIF(const Graphic& rGraphic, FilterConfigItem* pFilterConfi
 
     Size            aSize100;
     const MapMode   aMap( rGraphic.GetPrefMapMode() );
-    bool            bLogSize = ( aMap.GetMapUnit() != MAP_PIXEL );
+    bool            bLogSize = ( aMap.GetMapUnit() != MapUnit::MapPixel );
 
     if( bLogSize )
-        aSize100 = OutputDevice::LogicToLogic( rGraphic.GetPrefSize(), aMap, MAP_100TH_MM );
+        aSize100 = OutputDevice::LogicToLogic( rGraphic.GetPrefSize(), aMap, MapUnit::Map100thMM );
 
     bStatus = true;
     nLastPercent = 0;
@@ -253,17 +252,17 @@ bool GIFWriter::CreateAccess( const BitmapEx& rBmpEx )
 
         if( !!aMask )
         {
-            if( aAccBmp.Convert( BMP_CONVERSION_8BIT_TRANS ) )
+            if( aAccBmp.Convert( BmpConversion::N8BitTrans ) )
             {
-                aMask.Convert( BMP_CONVERSION_1BIT_THRESHOLD );
+                aMask.Convert( BmpConversion::N1BitThreshold );
                 aAccBmp.Replace( aMask, BMP_COL_TRANS );
                 bTransparent = true;
             }
             else
-                aAccBmp.Convert( BMP_CONVERSION_8BIT_COLORS );
+                aAccBmp.Convert( BmpConversion::N8BitColors );
         }
         else
-            aAccBmp.Convert( BMP_CONVERSION_8BIT_COLORS );
+            aAccBmp.Convert( BmpConversion::N8BitColors );
 
         m_pAcc = aAccBmp.AcquireReadAccess();
 
@@ -286,7 +285,7 @@ void GIFWriter::WriteSignature( bool bGIF89a )
 {
     if( bStatus )
     {
-        m_rGIF.Write( bGIF89a ? "GIF89a" : "GIF87a" , 6 );
+        m_rGIF.WriteBytes(bGIF89a ? "GIF89a" : "GIF87a" , 6);
 
         if( m_rGIF.GetError() )
             bStatus = false;
@@ -345,7 +344,7 @@ void GIFWriter::WriteLoopExtension( const Animation& rAnimation )
         m_rGIF.WriteUChar( 0x21 );
         m_rGIF.WriteUChar( 0xff );
         m_rGIF.WriteUChar( 0x0b );
-        m_rGIF.Write( "NETSCAPE2.0", 11 );
+        m_rGIF.WriteBytes( "NETSCAPE2.0", 11 );
         m_rGIF.WriteUChar( 0x03 );
         m_rGIF.WriteUChar( 0x01 );
         m_rGIF.WriteUChar( cLoByte );
@@ -363,7 +362,7 @@ void GIFWriter::WriteLogSizeExtension( const Size& rSize100 )
         m_rGIF.WriteUChar( 0x21 );
         m_rGIF.WriteUChar( 0xff );
         m_rGIF.WriteUChar( 0x0b );
-        m_rGIF.Write( "STARDIV 5.0", 11 );
+        m_rGIF.WriteBytes( "STARDIV 5.0", 11 );
         m_rGIF.WriteUChar( 0x09 );
         m_rGIF.WriteUChar( 0x01 );
         m_rGIF.WriteUInt32( rSize100.Width() );
@@ -421,7 +420,6 @@ void GIFWriter::WriteLocalHeader()
         // set Flag for the local color palette
         cFlags |= 0x80;
 
-        // alles rausschreiben
         m_rGIF.WriteUChar( 0x2c );
         m_rGIF.WriteUInt16( nPosX );
         m_rGIF.WriteUInt16( nPosY );

@@ -40,19 +40,14 @@ public:
     {
     }
 
-    inline ~SwSaveClip();
-    inline void ChgClip( const SwRect &rRect, const SwTextFrame* pFrame = nullptr,
+    ~SwSaveClip();
+    void ChgClip( const SwRect &rRect, const SwTextFrame* pFrame = nullptr,
                          bool bEnlargeRect = false)
              { if( pOut ) ChgClip_( rRect, pFrame, bEnlargeRect ); }
-           void Reset();
-    inline bool IsOn()  const { return bOn; }
-    inline bool IsChg() const { return bChg; }
+    bool IsOn()  const { return bOn; }
+    bool IsChg() const { return bChg; }
 };
 
-inline SwSaveClip::~SwSaveClip()
-{
-    Reset();
-}
 
 #ifdef DBG_UTIL
 
@@ -68,15 +63,14 @@ class DbgBackColor : public SwDbgOut
 {
         Color   aOldFillColor;
 public:
-        DbgBackColor( OutputDevice* pOut, const bool bOn = true,
-                  ColorData nColor = COL_YELLOW );
+        DbgBackColor( OutputDevice* pOut, const bool bOn = true );
        ~DbgBackColor();
 };
 
 class DbgRect : public SwDbgOut
 {
 public:
-        DbgRect( OutputDevice* pOut, const Rectangle &rRect,
+        DbgRect( OutputDevice* pOut, const tools::Rectangle &rRect,
                  const bool bOn = true,
                  ColorData eColor = COL_LIGHTBLUE );
 };
@@ -85,14 +79,13 @@ inline SwDbgOut::SwDbgOut( OutputDevice* pOutDev, const bool bOn )
                :pOut( bOn ? pOutDev : nullptr )
 { }
 
-inline DbgBackColor::DbgBackColor( OutputDevice* pOutDev, const bool bOn,
-                           ColorData eColor )
+inline DbgBackColor::DbgBackColor( OutputDevice* pOutDev, const bool bOn )
     :SwDbgOut( pOutDev, bOn )
 {
     if( pOut )
     {
         aOldFillColor = pOut->GetFillColor();
-        pOut->SetFillColor( Color(eColor) );
+        pOut->SetFillColor( Color(COL_RED) );
     }
 }
 
@@ -104,7 +97,7 @@ inline DbgBackColor::~DbgBackColor()
     }
 }
 
-inline DbgRect::DbgRect( OutputDevice* pOutDev, const Rectangle &rRect,
+inline DbgRect::DbgRect( OutputDevice* pOutDev, const tools::Rectangle &rRect,
                          const bool bOn,
                          ColorData eColor )
     : SwDbgOut( pOutDev, bOn )

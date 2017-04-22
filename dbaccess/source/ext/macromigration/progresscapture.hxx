@@ -45,17 +45,17 @@ namespace dbmm
         void    dispose();
 
         // XStatusIndicator
-        virtual void SAL_CALL start( const OUString& Text, ::sal_Int32 Range ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL end(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL setText( const OUString& Text ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL setValue( ::sal_Int32 Value ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL reset(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL start( const OUString& Text, ::sal_Int32 Range ) override;
+        virtual void SAL_CALL end(  ) override;
+        virtual void SAL_CALL setText( const OUString& Text ) override;
+        virtual void SAL_CALL setValue( ::sal_Int32 Value ) override;
+        virtual void SAL_CALL reset(  ) override;
 
     protected:
-        virtual ~ProgressCapture();
+        virtual ~ProgressCapture() override;
 
     private:
-        ::std::unique_ptr< ProgressCapture_Data > m_pData;
+        std::unique_ptr< ProgressCapture_Data > m_pData;
     };
 
 } // namespace dbmm

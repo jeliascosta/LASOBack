@@ -17,8 +17,13 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <memory>
+
 #include "DrawDocShell.hxx"
 #include <com/sun/star/document/PrinterIndependentLayout.hpp>
+#include <o3tl/make_unique.hxx>
 #include <tools/urlobj.hxx>
 #include <sfx2/progress.hxx>
 #include <vcl/waitobj.hxx>
@@ -99,8 +104,7 @@ SfxPrinter* DrawDocShell::GetPrinter(bool bCreate)
                             ATTR_OPTIONS_PRINT,         ATTR_OPTIONS_PRINT,
                             0 );
         // set PrintOptionsSet
-        SdOptionsPrintItem aPrintItem( ATTR_OPTIONS_PRINT,
-                            SD_MOD()->GetSdOptions(mpDoc->GetDocumentType()));
+        SdOptionsPrintItem aPrintItem( SD_MOD()->GetSdOptions(mpDoc->GetDocumentType()) );
         SfxFlagItem aFlagItem( SID_PRINTER_CHANGESTODOC );
         SfxPrinterChangeFlags nFlags =
                 (aPrintItem.GetOptionsPrint().IsWarningSize() ? SfxPrinterChangeFlags::CHG_SIZE : SfxPrinterChangeFlags::NONE) |
@@ -127,7 +131,7 @@ SfxPrinter* DrawDocShell::GetPrinter(bool bCreate)
         mpPrinter->SetDrawMode( nMode );
 
         MapMode aMM (mpPrinter->GetMapMode());
-        aMM.SetMapUnit(MAP_100TH_MM);
+        aMM.SetMapUnit(MapUnit::Map100thMM);
         mpPrinter->SetMapMode(aMM);
         UpdateRefDevice();
     }
@@ -164,7 +168,7 @@ void DrawDocShell::UpdateFontList()
         pRefDevice = GetPrinter(true);
     else
         pRefDevice = SD_MOD()->GetVirtualRefDevice();
-    mpFontList = new FontList( pRefDevice, nullptr, false );
+    mpFontList = new FontList(pRefDevice, nullptr);
     SvxFontListItem aFontListItem( mpFontList, SID_ATTR_CHAR_FONTLIST );
     PutItem( aFontListItem );
 }
@@ -176,14 +180,14 @@ Printer* DrawDocShell::GetDocumentPrinter()
 
 void DrawDocShell::OnDocumentPrinterChanged(Printer* pNewPrinter)
 {
-    // if we already have a printer, see if its the same
+    // if we already have a printer, see if it's the same
     if( mpPrinter )
     {
         // easy case
         if( mpPrinter == pNewPrinter )
             return;
 
-        // compare if its the same printer with the same job setup
+        // compare if it's the same printer with the same job setup
         if( (mpPrinter->GetName() == pNewPrinter->GetName()) &&
             (mpPrinter->GetJobSetup() == pNewPrinter->GetJobSetup()))
             return;
@@ -219,19 +223,19 @@ void DrawDocShell::UpdateRefDevice()
                 // We are confronted with an invalid or un-implemented
                 // layout mode.  Use the printer as formatting device
                 // as a fall-back.
-                DBG_ASSERT(false, "DrawDocShell::UpdateRefDevice(): Unexpected printer layout mode");
+                SAL_WARN( "sd", "DrawDocShell::UpdateRefDevice(): Unexpected printer layout mode");
 
                 pRefDevice = mpPrinter.get();
                 break;
         }
         mpDoc->SetRefDevice( pRefDevice.get() );
 
-        ::sd::Outliner* pOutl = mpDoc->GetOutliner( false );
+        SdOutliner* pOutl = mpDoc->GetOutliner( false );
 
         if( pOutl )
             pOutl->SetRefDevice( pRefDevice );
 
-        ::sd::Outliner* pInternalOutl = mpDoc->GetInternalOutliner( false );
+        SdOutliner* pInternalOutl = mpDoc->GetInternalOutliner( false );
 
         if( pInternalOutl )
             pInternalOutl->SetRefDevice( pRefDevice );
@@ -245,7 +249,7 @@ bool DrawDocShell::InitNew( const css::uno::Reference< css::embed::XStorage >& x
 {
     bool bRet = SfxObjectShell::InitNew( xStorage );
 
-    Rectangle aVisArea( Point(0, 0), Size(14100, 10000) );
+    ::tools::Rectangle aVisArea( Point(0, 0), Size(14100, 10000) );
     SetVisArea(aVisArea);
 
     if (bRet)
@@ -264,6 +268,13 @@ bool DrawDocShell::InitNew( const css::uno::Reference< css::embed::XStorage >& x
 bool DrawDocShell::Load( SfxMedium& rMedium )
 {
     mbNewDocument = false;
+
+    // If this is an ODF file being loaded, then by default, use legacy processing
+    // for tdf#99729 (if required, it will be overridden in *::ReadUserDataSequence())
+    if (IsOwnStorageFormat(rMedium))
+    {
+        mpDoc->SetAnchoredTextOverflowLegacy(true);
+    }
 
     bool       bRet = false;
     bool       bStartPresentation = false;
@@ -307,10 +318,10 @@ bool DrawDocShell::Load( SfxMedium& rMedium )
         //TODO/LATER: looks a little bit strange!
         if( ( GetCreateMode() == SfxObjectCreateMode::EMBEDDED ) && SfxObjectShell::GetVisArea( ASPECT_CONTENT ).IsEmpty() )
         {
-            SdPage* pPage = mpDoc->GetSdPage( 0, PK_STANDARD );
+            SdPage* pPage = mpDoc->GetSdPage( 0, PageKind::Standard );
 
             if( pPage )
-                SetVisArea( Rectangle( pPage->GetAllObjBoundRect() ) );
+                SetVisArea( ::tools::Rectangle( pPage->GetAllObjBoundRect() ) );
         }
 
         FinishedLoading();
@@ -321,12 +332,12 @@ bool DrawDocShell::Load( SfxMedium& rMedium )
     else
     {
         if( nError == ERRCODE_IO_BROKENPACKAGE )
-            SetError( ERRCODE_IO_BROKENPACKAGE, OSL_LOG_PREFIX );
+            SetError(ERRCODE_IO_BROKENPACKAGE);
 
         // TODO/LATER: correct error handling?!
-        //pStore->SetError( SVSTREAM_WRONGVERSION, OUString( OSL_LOG_PREFIX ) );
+        //pStore->SetError(SVSTREAM_WRONGVERSION);
         else
-            SetError( ERRCODE_ABORT, OSL_LOG_PREFIX );
+            SetError(ERRCODE_ABORT);
     }
 
     // tell SFX to change viewshell when in preview mode
@@ -522,7 +533,7 @@ bool DrawDocShell::Save()
 
     //TODO/LATER: why this?!
     if( GetCreateMode() == SfxObjectCreateMode::STANDARD )
-        SfxObjectShell::SetVisArea( Rectangle() );
+        SfxObjectShell::SetVisArea( ::tools::Rectangle() );
 
     bool bRet = SfxObjectShell::Save();
 
@@ -572,7 +583,7 @@ bool DrawDocShell::SaveAs( SfxMedium& rMedium )
 
     //TODO/LATER: why this?!
     if( GetCreateMode() == SfxObjectCreateMode::STANDARD )
-        SfxObjectShell::SetVisArea( Rectangle() );
+        SfxObjectShell::SetVisArea( ::tools::Rectangle() );
 
     sal_uInt32  nVBWarning = ERRCODE_NONE;
     bool    bRet = SfxObjectShell::SaveAs( rMedium );
@@ -581,7 +592,7 @@ bool DrawDocShell::SaveAs( SfxMedium& rMedium )
         bRet = SdXMLFilter( rMedium, *this, SDXMLMODE_Normal, SotStorage::GetVersion( rMedium.GetStorage() ) ).Export();
 
     if( GetError() == ERRCODE_NONE )
-        SetError( nVBWarning, OSL_LOG_PREFIX );
+        SetError(nVBWarning);
 
     return bRet;
 }
@@ -597,43 +608,50 @@ bool DrawDocShell::ConvertTo( SfxMedium& rMedium )
     {
         std::shared_ptr<const SfxFilter> pMediumFilter = rMedium.GetFilter();
         const OUString aTypeName( pMediumFilter->GetTypeName() );
-        SdFilter*           pFilter = nullptr;
+        std::unique_ptr<SdFilter> xFilter;
 
         if( aTypeName.indexOf( "graphic_HTML" ) >= 0 )
         {
-            pFilter = new SdHTMLFilter( rMedium, *this );
+            xFilter = o3tl::make_unique<SdHTMLFilter>(rMedium, *this);
         }
         else if( aTypeName.indexOf( "MS_PowerPoint_97" ) >= 0 )
         {
-            pFilter = new SdPPTFilter( rMedium, *this );
-            static_cast<SdPPTFilter*>(pFilter)->PreSaveBasic();
+            xFilter = o3tl::make_unique<SdPPTFilter>(rMedium, *this);
+            static_cast<SdPPTFilter*>(xFilter.get())->PreSaveBasic();
         }
         else if ( aTypeName.indexOf( "CGM_Computer_Graphics_Metafile" ) >= 0 )
         {
-            pFilter = new SdCGMFilter( rMedium, *this );
+            xFilter = o3tl::make_unique<SdCGMFilter>(rMedium, *this);
         }
         else if( aTypeName.indexOf( "draw8" ) >= 0 ||
                  aTypeName.indexOf( "impress8" ) >= 0 )
         {
-            pFilter = new SdXMLFilter( rMedium, *this );
+            xFilter = o3tl::make_unique<SdXMLFilter>(rMedium, *this);
         }
         else if( aTypeName.indexOf( "StarOffice_XML_Impress" ) >= 0 ||
                  aTypeName.indexOf( "StarOffice_XML_Draw" ) >= 0 )
         {
-            pFilter = new SdXMLFilter( rMedium, *this, SDXMLMODE_Normal, SOFFICE_FILEFORMAT_60 );
+            xFilter = o3tl::make_unique<SdXMLFilter>(rMedium, *this, SDXMLMODE_Normal, SOFFICE_FILEFORMAT_60);
         }
         else
         {
-            pFilter = new SdGRFFilter( rMedium, *this );
+            xFilter = o3tl::make_unique<SdGRFFilter>(rMedium, *this);
         }
 
-        if( pFilter )
+        if (xFilter)
         {
             const SdrSwapGraphicsMode nOldSwapMode = mpDoc->GetSwapGraphicsMode();
 
             mpDoc->SetSwapGraphicsMode( SdrSwapGraphicsMode::TEMP );
 
-            bRet = pFilter->Export();
+            if ( mpViewShell )
+            {
+                ::sd::View* pView = mpViewShell->GetView();
+                if ( pView->IsTextEdit() )
+                    pView->SdrEndTextEdit();
+            }
+
+            bRet = xFilter->Export();
             if( !bRet )
                 mpDoc->SetSwapGraphicsMode( nOldSwapMode );
         }
@@ -762,7 +780,7 @@ bool DrawDocShell::GotoBookmark(const OUString& rBookmark)
             // or the handout view.
             PageKind eNewPageKind = pPage->GetPageKind();
 
-            if( (eNewPageKind != PK_STANDARD) && (mpDoc->GetDocumentType() == DOCUMENT_TYPE_DRAW) )
+            if( (eNewPageKind != PageKind::Standard) && (mpDoc->GetDocumentType() == DocumentType::Draw) )
                 return false;
 
             if (eNewPageKind != pDrawViewShell->GetPageKind())
@@ -772,13 +790,13 @@ bool DrawDocShell::GotoBookmark(const OUString& rBookmark)
                 OUString sViewURL;
                 switch (eNewPageKind)
                 {
-                    case PK_STANDARD:
+                    case PageKind::Standard:
                         sViewURL = FrameworkHelper::msImpressViewURL;
                         break;
-                    case PK_NOTES:
+                    case PageKind::Notes:
                         sViewURL = FrameworkHelper::msNotesViewURL;
                         break;
-                    case PK_HANDOUT:
+                    case PageKind::Handout:
                         sViewURL = FrameworkHelper::msHandoutViewURL;
                         break;
                     default:
@@ -869,8 +887,6 @@ bool DrawDocShell::IsMarked( SdrObject* pObject )
 // If object is marked return true else return false. Optionally realize multi-selection of objects.
 bool DrawDocShell::GetObjectIsmarked(const OUString& rBookmark, bool bRealizeMultiSelectionOfObjects /* = false */)
 {
-    OSL_TRACE("GotoBookmark %s",
-        OUStringToOString(rBookmark, RTL_TEXTENCODING_UTF8).getStr());
     bool bUnMark = false;
     bool bFound = false;
 
@@ -988,12 +1004,12 @@ bool DrawDocShell::SaveAsOwnFormat( SfxMedium& rMedium )
             aLayoutName = aURL.getName();
         }
 
-        if (!aLayoutName.isEmpty())
+        if (aLayoutName.isEmpty())
         {
-            sal_uInt32 nCount = mpDoc->GetMasterSdPageCount(PK_STANDARD);
+            sal_uInt32 nCount = mpDoc->GetMasterSdPageCount(PageKind::Standard);
             for (sal_uInt32 i = 0; i < nCount; ++i)
             {
-                OUString aOldPageLayoutName = mpDoc->GetMasterSdPage(i, PK_STANDARD)->GetLayoutName();
+                OUString aOldPageLayoutName = mpDoc->GetMasterSdPage(i, PageKind::Standard)->GetLayoutName();
                 OUString aNewLayoutName = aLayoutName;
                 // Don't add suffix for the first master page
                 if( i > 0 )
@@ -1017,7 +1033,7 @@ void DrawDocShell::FillClass(SvGlobalName* pClassName,
 {
     if (nFileFormat == SOFFICE_FILEFORMAT_60)
     {
-        if ( meDocType == DOCUMENT_TYPE_DRAW )
+        if ( meDocType == DocumentType::Draw )
         {
             *pClassName = SvGlobalName(SO3_SDRAW_CLASSID_60);
             *pFormat = SotClipboardFormatId::STARDRAW_60;
@@ -1032,7 +1048,7 @@ void DrawDocShell::FillClass(SvGlobalName* pClassName,
     }
     else if (nFileFormat == SOFFICE_FILEFORMAT_8)
     {
-        if ( meDocType == DOCUMENT_TYPE_DRAW )
+        if ( meDocType == DocumentType::Draw )
         {
             *pClassName = SvGlobalName(SO3_SDRAW_CLASSID_60);
             *pFormat = bTemplate ? SotClipboardFormatId::STARDRAW_8_TEMPLATE : SotClipboardFormatId::STARDRAW_8;
@@ -1046,7 +1062,7 @@ void DrawDocShell::FillClass(SvGlobalName* pClassName,
         }
     }
 
-    *pShortTypeName = OUString(SdResId( (meDocType == DOCUMENT_TYPE_DRAW) ?
+    *pShortTypeName = OUString(SdResId( (meDocType == DocumentType::Draw) ?
                                       STR_GRAPHIC_DOCUMENT : STR_IMPRESS_DOCUMENT ));
 }
 
@@ -1086,10 +1102,10 @@ void DrawDocShell::setEditMode(DrawViewShell* pDrawViewShell, bool isMasterPage)
 {
     // Set the edit mode to either the normal edit mode or the
     // master page mode.
-    EditMode eNewEditMode = EM_PAGE;
+    EditMode eNewEditMode = EditMode::Page;
     if (isMasterPage)
     {
-        eNewEditMode = EM_MASTERPAGE;
+        eNewEditMode = EditMode::MasterPage;
     }
 
     if (eNewEditMode != pDrawViewShell->GetEditMode())

@@ -25,7 +25,9 @@
 #include <vcl/font.hxx>
 
 
-// Styles
+/**
+ * these must match the values in css::style::NumberingType
+ */
 enum class SvxBulletStyle
 {
     ABC_BIG          = 0,
@@ -43,7 +45,8 @@ enum class SvxBulletStyle
 class EDITENG_DLLPUBLIC SvxBulletItem : public SfxPoolItem
 {
     vcl::Font       aFont;
-    GraphicObject*  pGraphicObject;
+    std::unique_ptr<GraphicObject>
+                    pGraphicObject;
     OUString        aPrevText;
     OUString        aFollowText;
     sal_uInt16      nStart;
@@ -56,34 +59,24 @@ class EDITENG_DLLPUBLIC SvxBulletItem : public SfxPoolItem
     void    SetDefaults_Impl();
 
 public:
-    static SfxPoolItem* CreateDefault();
-
-    explicit SvxBulletItem( sal_uInt16 nWhich = 0 );
-    explicit SvxBulletItem( SvStream& rStrm, sal_uInt16 nWhich = 0 );
+    explicit SvxBulletItem( sal_uInt16 nWhich );
+    explicit SvxBulletItem( SvStream& rStrm, sal_uInt16 nWhich );
     SvxBulletItem( const SvxBulletItem& );
-    virtual ~SvxBulletItem();
+    virtual ~SvxBulletItem() override;
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create( SvStream&, sal_uInt16 nVersion ) const override;
     virtual SvStream&       Store( SvStream & , sal_uInt16 nItemVersion ) const override;
 
     OUString            GetFullText() const;
-    sal_Unicode         GetSymbol() const { return cSymbol; }
-    const OUString&     GetPrevText() const { return aPrevText; }
-    const OUString&     GetFollowText() const { return aFollowText; }
 
-    sal_uInt16          GetStart() const { return nStart; }
     long                GetWidth() const { return nWidth; }
-    SvxBulletStyle      GetStyle() const { return nStyle; }
     const vcl::Font&    GetFont() const { return aFont; }
-    sal_uInt16          GetScale() const { return nScale; }
 
     const GraphicObject& GetGraphicObject() const;
     void                 SetGraphicObject( const GraphicObject& rGraphicObject );
 
     void                SetSymbol( sal_Unicode c) { cSymbol = c; }
-    void                SetPrevText( const OUString& rStr) { aPrevText = rStr;}
-    void                SetFollowText(const OUString& rStr) { aFollowText=rStr;}
 
     void                SetStart( sal_uInt16 nNew ) { nStart = nNew; }
     void                SetWidth( long nNew ) { nWidth = nNew; }
@@ -94,8 +87,8 @@ public:
     virtual sal_uInt16  GetVersion(sal_uInt16 nFileVersion) const override;
     virtual bool        operator==( const SfxPoolItem& ) const override;
     virtual bool        GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
+                                    MapUnit eCoreMetric,
+                                    MapUnit ePresMetric,
                                     OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     static void         StoreFont( SvStream&, const vcl::Font& );

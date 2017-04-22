@@ -40,7 +40,7 @@ using namespace cppu;
 
 OIndexesHelper::OIndexesHelper(OTableHelper* _pTable,
                  ::osl::Mutex& _rMutex,
-             const ::std::vector< OUString> &_rVector
+             const std::vector< OUString> &_rVector
              )
     : OCollection(*_pTable,true,_rMutex,_rVector)
     ,m_pTable(_pTable)
@@ -110,7 +110,7 @@ sdbcx::ObjectType OIndexesHelper::createObject(const OUString& _rName)
     return xRet;
 }
 
-void OIndexesHelper::impl_refresh() throw(RuntimeException)
+void OIndexesHelper::impl_refresh()
 {
     m_pTable->refreshIndexes();
 }

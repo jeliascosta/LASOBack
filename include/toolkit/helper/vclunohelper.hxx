@@ -25,8 +25,17 @@
 #include <com/sun/star/uno/Sequence.h>
 
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/awt/FontSlant.hpp>
 #include <com/sun/star/awt/MouseEvent.hpp>
+
+#include <vcl/bitmapex.hxx>
+#include <vcl/region.hxx>
+#include <vcl/metric.hxx>
+#include <vcl/vclptr.hxx>
+#include <vcl/window.hxx>
+#include <tools/mapunit.hxx>
+#include <tools/fldunit.hxx>
+#include <tools/poly.hxx>
+
 
 namespace com { namespace sun { namespace star { namespace uno {
     class XInterface;
@@ -52,15 +61,6 @@ namespace com { namespace sun { namespace star { namespace awt {
     struct KeyEvent;
 }}}}
 
-
-#include <vcl/bitmapex.hxx>
-#include <vcl/region.hxx>
-#include <vcl/metric.hxx>
-#include <vcl/vclptr.hxx>
-#include <vcl/window.hxx>
-#include <tools/mapunit.hxx>
-#include <tools/fldunit.hxx>
-#include <tools/poly.hxx>
 
 class OutputDevice;
 class MouseEvent;
@@ -103,12 +103,6 @@ public:
     static vcl::Font                                CreateFont( const css::awt::FontDescriptor& rDescr, const vcl::Font& rInitFont );
     static vcl::Font                                CreateFont( const css::uno::Reference< css::awt::XFont >& rxFont );
     static css::awt::SimpleFontMetric  CreateFontMetric( const FontMetric& rFontMetric );
-    static float                                    ConvertFontWidth( FontWidth eWidth );
-    static FontWidth                                ConvertFontWidth( float f );
-    static float                                    ConvertFontWeight( FontWeight eWeight );
-    static FontWeight                               ConvertFontWeight( float f );
-    static css::awt::FontSlant                      ConvertFontSlant( FontItalic eWeight );
-    static FontItalic                               ConvertFontSlant( css::awt::FontSlant );
 
     // Rectangle
     static bool                                     IsZero(const css::awt::Rectangle& rRect);
@@ -128,7 +122,8 @@ public:
     static sal_Int16                                ConvertToMeasurementUnit( FieldUnit _nFieldUnit, sal_Int16 _rFieldToUNOValueFactor );
     static FieldUnit                                ConvertToFieldUnit( sal_Int16 _nMeasurementUnit, sal_Int16& _rFieldToUNOValueFactor );
 
-    static MapUnit /* MapModeUnit */ ConvertToMapModeUnit(sal_Int16 /* com.sun.star.util.MeasureUnit.* */ _nMeasureUnit) throw (css::lang::IllegalArgumentException);
+    /// @throws css::lang::IllegalArgumentException
+    static MapUnit /* MapModeUnit */ ConvertToMapModeUnit(sal_Int16 /* com.sun.star.util.MeasureUnit.* */ _nMeasureUnit);
 
     static ::Size /* VCLSize */ ConvertToVCLSize(css::awt::Size const& _aSize);
     static css::awt::Size ConvertToAWTSize(::Size /* VCLSize */ const& _aSize);
@@ -136,8 +131,8 @@ public:
     static ::Point /* VCLPoint */ ConvertToVCLPoint(css::awt::Point const& _aPoint);
     static css::awt::Point ConvertToAWTPoint(::Point /* VCLPoint */ const& _aPoint);
 
-    static ::Rectangle ConvertToVCLRect( css::awt::Rectangle const & _rRect );
-    static css::awt::Rectangle ConvertToAWTRect( ::Rectangle const & _rRect );
+    static ::tools::Rectangle ConvertToVCLRect( css::awt::Rectangle const & _rRect );
+    static css::awt::Rectangle ConvertToAWTRect( ::tools::Rectangle const & _rRect );
 
     static css::awt::MouseEvent
         createMouseEvent(

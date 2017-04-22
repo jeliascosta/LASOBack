@@ -39,20 +39,15 @@ private:
     const css::uno::Reference< css::uno::XComponentContext >& m_xContext;
     const css::uno::Reference< css::security::XCertificate >& m_rXCert;
 
-    DECL_LINK_TYPED(OKHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(ViewCertHdl_Impl, Button*, void);
+    DECL_LINK(OKHdl_Impl, Button*, void);
+    DECL_LINK(ViewCertHdl_Impl, Button*, void);
 
 public:
     UnknownAuthDialog(vcl::Window* pParent,
         const css::uno::Reference< css::security::XCertificate >& rXCert,
         const css::uno::Reference< css::uno::XComponentContext >& xContext);
-    virtual ~UnknownAuthDialog();
+    virtual ~UnknownAuthDialog() override;
     virtual void dispose() override;
-
-    const css::uno::Reference< css::security::XCertificate >& getCert()
-    {
-        return m_rXCert;
-    }
 
     void setDescriptionText(const OUString &rText)
     {

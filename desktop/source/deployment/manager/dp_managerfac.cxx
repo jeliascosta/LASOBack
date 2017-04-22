@@ -20,6 +20,7 @@
 
 #include "dp_manager.h"
 #include "dp_resource.h"
+#include "dp_services.hxx"
 #include <cppuhelper/compbase.hxx>
 #include <comphelper/servicedecl.hxx>
 #include <com/sun/star/deployment/thePackageManagerFactory.hpp>
@@ -55,19 +56,18 @@ protected:
     virtual void SAL_CALL disposing() override;
 
 public:
-    virtual ~PackageManagerFactoryImpl();
     explicit PackageManagerFactoryImpl(
         Reference<XComponentContext> const & xComponentContext );
 
     // XPackageManagerFactory
     virtual Reference<deployment::XPackageManager> SAL_CALL getPackageManager(
-        OUString const & context ) throw (RuntimeException, std::exception) override;
+        OUString const & context ) override;
 };
 
 
 namespace sdecl = comphelper::service_decl;
-sdecl::class_<PackageManagerFactoryImpl> servicePMFI;
-extern sdecl::ServiceDecl const serviceDecl(
+sdecl::class_<PackageManagerFactoryImpl> const servicePMFI;
+sdecl::ServiceDecl const serviceDecl(
     servicePMFI,
     // a private one:
     "com.sun.star.comp.deployment.PackageManagerFactory",
@@ -80,12 +80,6 @@ PackageManagerFactoryImpl::PackageManagerFactoryImpl(
       m_xComponentContext( xComponentContext )
 {
 }
-
-
-PackageManagerFactoryImpl::~PackageManagerFactoryImpl()
-{
-}
-
 
 inline void PackageManagerFactoryImpl::check()
 {
@@ -120,7 +114,6 @@ void PackageManagerFactoryImpl::disposing()
 
 Reference<deployment::XPackageManager>
 PackageManagerFactoryImpl::getPackageManager( OUString const & context )
-    throw (RuntimeException, std::exception)
 {
     Reference< deployment::XPackageManager > xRet;
     ::osl::ResettableMutexGuard guard( getMutex() );
@@ -135,7 +128,7 @@ PackageManagerFactoryImpl::getPackageManager( OUString const & context )
     guard.clear();
     xRet.set( PackageManagerImpl::create( m_xComponentContext, context ) );
     guard.reset();
-    ::std::pair< t_string2weakref::iterator, bool > insertion(
+    std::pair< t_string2weakref::iterator, bool > insertion(
         m_managers.insert( t_string2weakref::value_type( context, xRet ) ) );
     if (insertion.second)
     {

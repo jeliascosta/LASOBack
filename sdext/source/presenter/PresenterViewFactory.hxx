@@ -34,11 +34,9 @@
 
 namespace sdext { namespace presenter {
 
-namespace {
-    typedef ::cppu::WeakComponentImplHelper <
-        css::drawing::framework::XResourceFactory
-    > PresenterViewFactoryInterfaceBase;
-}
+typedef ::cppu::WeakComponentImplHelper <
+    css::drawing::framework::XResourceFactory
+> PresenterViewFactoryInterfaceBase;
 
 /** Base class for presenter views that allows the view factory to store
     them in a cache and reuse deactivated views.
@@ -96,22 +94,19 @@ public:
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
         const css::uno::Reference<css::frame::XController>& rxController,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterViewFactory();
+    virtual ~PresenterViewFactory() override;
 
-    virtual void SAL_CALL disposing()
-        throw (css::uno::RuntimeException) override;
+    virtual void SAL_CALL disposing() override;
 
     // XResourceFactory
 
     virtual css::uno::Reference<css::drawing::framework::XResource>
         SAL_CALL createResource (
-            const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId)
-        throw (css::uno::RuntimeException, std::exception) override;
+            const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId) override;
 
     virtual void SAL_CALL
         releaseResource (
-            const css::uno::Reference<css::drawing::framework::XResource>& rxPane)
-        throw (css::uno::RuntimeException, std::exception) override;
+            const css::uno::Reference<css::drawing::framework::XResource>& rxPane) override;
 
 private:
     css::uno::Reference<css::uno::XComponentContext> mxComponentContext;
@@ -158,7 +153,8 @@ private:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId,
         const css::uno::Reference<css::drawing::framework::XPane>& rxAnchorPane);
 
-    void ThrowIfDisposed() const throw (css::lang::DisposedException);
+    /// @throws css::lang::DisposedException
+    void ThrowIfDisposed() const;
 };
 
 } }

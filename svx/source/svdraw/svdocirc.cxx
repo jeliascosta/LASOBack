@@ -52,7 +52,7 @@
 
 using namespace com::sun::star;
 
-Point GetAnglePnt(const Rectangle& rR, long nAngle)
+Point GetAnglePnt(const tools::Rectangle& rR, long nAngle)
 {
     Point aCenter(rR.Center());
     long nWdt=rR.Right()-rR.Left();
@@ -113,7 +113,7 @@ SdrCircObj::SdrCircObj(SdrObjKind eNewKind)
     bClosedObj=eNewKind!=OBJ_CARC;
 }
 
-SdrCircObj::SdrCircObj(SdrObjKind eNewKind, const Rectangle& rRect):
+SdrCircObj::SdrCircObj(SdrObjKind eNewKind, const tools::Rectangle& rRect):
     SdrRectObj(rRect)
 {
     nStartAngle=0;
@@ -122,7 +122,7 @@ SdrCircObj::SdrCircObj(SdrObjKind eNewKind, const Rectangle& rRect):
     bClosedObj=eNewKind!=OBJ_CARC;
 }
 
-SdrCircObj::SdrCircObj(SdrObjKind eNewKind, const Rectangle& rRect, long nNewStartWink, long nNewEndWink):
+SdrCircObj::SdrCircObj(SdrObjKind eNewKind, const tools::Rectangle& rRect, long nNewStartWink, long nNewEndWink):
     SdrRectObj(rRect)
 {
     long nAngleDif=nNewEndWink-nNewStartWink;
@@ -201,7 +201,7 @@ bool SdrCircObj::PaintNeedsXPolyCirc() const
     return bNeed;
 }
 
-basegfx::B2DPolygon SdrCircObj::ImpCalcXPolyCirc(const SdrObjKind eCicrleKind, const Rectangle& rRect1, long nStart, long nEnd) const
+basegfx::B2DPolygon SdrCircObj::ImpCalcXPolyCirc(const SdrObjKind eCicrleKind, const tools::Rectangle& rRect1, long nStart, long nEnd) const
 {
     const basegfx::B2DRange aRange(rRect1.Left(), rRect1.Top(), rRect1.Right(), rRect1.Bottom());
     basegfx::B2DPolygon aCircPolygon;
@@ -277,7 +277,7 @@ basegfx::B2DPolygon SdrCircObj::ImpCalcXPolyCirc(const SdrObjKind eCicrleKind, c
 void SdrCircObj::RecalcXPoly()
 {
     const basegfx::B2DPolygon aPolyCirc(ImpCalcXPolyCirc(meCircleKind, maRect, nStartAngle, nEndAngle));
-    mpXPoly = new XPolygon(aPolyCirc);
+    mpXPoly.reset( new XPolygon(aPolyCirc) );
 }
 
 OUString SdrCircObj::TakeObjNameSingul() const
@@ -351,7 +351,7 @@ basegfx::B2DPolyPolygon SdrCircObj::TakeXorPoly() const
 
 struct ImpCircUser : public SdrDragStatUserData
 {
-    Rectangle                   aR;
+    tools::Rectangle                   aR;
     Point                       aCenter;
     Point                       aP1;
     Point                       aP2;
@@ -393,52 +393,52 @@ SdrHdl* SdrCircObj::GetHdl(sal_uInt32 nHdlNum) const
 
     SdrHdl* pH = nullptr;
     Point aPnt;
-    SdrHdlKind eLocalKind(HDL_MOVE);
+    SdrHdlKind eLocalKind(SdrHdlKind::Move);
     sal_uInt32 nPNum(0);
 
     switch (nHdlNum)
     {
         case 0:
             aPnt = GetAnglePnt(maRect,nStartAngle);
-            eLocalKind = HDL_CIRC;
+            eLocalKind = SdrHdlKind::Circle;
             nPNum = 1;
             break;
         case 1:
             aPnt = GetAnglePnt(maRect,nEndAngle);
-            eLocalKind = HDL_CIRC;
+            eLocalKind = SdrHdlKind::Circle;
             nPNum = 2L;
             break;
         case 2:
             aPnt = maRect.TopLeft();
-            eLocalKind = HDL_UPLFT;
+            eLocalKind = SdrHdlKind::UpperLeft;
             break;
         case 3:
             aPnt = maRect.TopCenter();
-            eLocalKind = HDL_UPPER;
+            eLocalKind = SdrHdlKind::Upper;
             break;
         case 4:
             aPnt = maRect.TopRight();
-            eLocalKind = HDL_UPRGT;
+            eLocalKind = SdrHdlKind::UpperRight;
             break;
         case 5:
             aPnt = maRect.LeftCenter();
-            eLocalKind = HDL_LEFT;
+            eLocalKind = SdrHdlKind::Left;
             break;
         case 6:
             aPnt = maRect.RightCenter();
-            eLocalKind = HDL_RIGHT;
+            eLocalKind = SdrHdlKind::Right;
             break;
         case 7:
             aPnt = maRect.BottomLeft();
-            eLocalKind = HDL_LWLFT;
+            eLocalKind = SdrHdlKind::LowerLeft;
             break;
         case 8:
             aPnt = maRect.BottomCenter();
-            eLocalKind = HDL_LOWER;
+            eLocalKind = SdrHdlKind::Lower;
             break;
         case 9:
             aPnt = maRect.BottomRight();
-            eLocalKind = HDL_LWRGT;
+            eLocalKind = SdrHdlKind::LowerRight;
             break;
     }
 
@@ -452,7 +452,7 @@ SdrHdl* SdrCircObj::GetHdl(sal_uInt32 nHdlNum) const
         RotatePoint(aPnt,maRect.TopLeft(),aGeo.nSin,aGeo.nCos);
     }
 
-    if (eLocalKind != HDL_MOVE)
+    if (eLocalKind != SdrHdlKind::Move)
     {
         pH = new SdrHdl(aPnt,eLocalKind);
         pH->SetPointNum(nPNum);
@@ -471,7 +471,7 @@ bool SdrCircObj::hasSpecialDrag() const
 
 bool SdrCircObj::beginSpecialDrag(SdrDragStat& rDrag) const
 {
-    const bool bAngle(rDrag.GetHdl() && HDL_CIRC == rDrag.GetHdl()->GetKind());
+    const bool bAngle(rDrag.GetHdl() && SdrHdlKind::Circle == rDrag.GetHdl()->GetKind());
 
     if(bAngle)
     {
@@ -488,7 +488,7 @@ bool SdrCircObj::beginSpecialDrag(SdrDragStat& rDrag) const
 
 bool SdrCircObj::applySpecialDrag(SdrDragStat& rDrag)
 {
-    const bool bAngle(rDrag.GetHdl() && HDL_CIRC == rDrag.GetHdl()->GetKind());
+    const bool bAngle(rDrag.GetHdl() && SdrHdlKind::Circle == rDrag.GetHdl()->GetKind());
 
     if(bAngle)
     {
@@ -586,7 +586,7 @@ OUString SdrCircObj::getSpecialDragComment(const SdrDragStat& rDrag) const
     }
     else
     {
-        const bool bAngle(rDrag.GetHdl() && HDL_CIRC == rDrag.GetHdl()->GetKind());
+        const bool bAngle(rDrag.GetHdl() && SdrHdlKind::Circle == rDrag.GetHdl()->GetKind());
 
         if(bAngle)
         {
@@ -663,7 +663,7 @@ void ImpCircUser::SetCreateParams(SdrDragStat& rStat)
     } else aP2=aCenter;
 }
 
-void SdrCircObj::ImpSetCreateParams(SdrDragStat& rStat) const
+void SdrCircObj::ImpSetCreateParams(SdrDragStat& rStat)
 {
     ImpCircUser* pU=static_cast<ImpCircUser*>(rStat.GetUser());
     if (pU==nullptr) {
@@ -676,7 +676,7 @@ void SdrCircObj::ImpSetCreateParams(SdrDragStat& rStat) const
 bool SdrCircObj::BegCreate(SdrDragStat& rStat)
 {
     rStat.SetOrtho4Possible();
-    Rectangle aRect1(rStat.GetStart(), rStat.GetNow());
+    tools::Rectangle aRect1(rStat.GetStart(), rStat.GetNow());
     aRect1.Justify();
     rStat.SetActionRect(aRect1);
     maRect = aRect1;
@@ -712,7 +712,7 @@ bool SdrCircObj::EndCreate(SdrDragStat& rStat, SdrCreateCmd eCmd)
     ImpSetCreateParams(rStat);
     ImpCircUser* pU=static_cast<ImpCircUser*>(rStat.GetUser());
     bool bRet = false;
-    if (eCmd==SDRCREATE_FORCEEND && rStat.GetPointCount()<4) meCircleKind=OBJ_CIRC;
+    if (eCmd==SdrCreateCmd::ForceEnd && rStat.GetPointCount()<4) meCircleKind=OBJ_CIRC;
     if (meCircleKind==OBJ_CIRC) {
         bRet=rStat.GetPointCount()>=2;
         if (bRet) {
@@ -945,7 +945,7 @@ void SdrCircObj::RestGeoData(const SdrObjGeoData& rGeo)
     ImpSetCircInfoToAttr();
 }
 
-void Union(Rectangle& rR, const Point& rP)
+void Union(tools::Rectangle& rR, const Point& rP)
 {
     if (rP.X()<rR.Left  ()) rR.Left  ()=rP.X();
     if (rP.X()>rR.Right ()) rR.Right ()=rP.X();
@@ -953,7 +953,7 @@ void Union(Rectangle& rR, const Point& rP)
     if (rP.Y()>rR.Bottom()) rR.Bottom()=rP.Y();
 }
 
-void SdrCircObj::TakeUnrotatedSnapRect(Rectangle& rRect) const
+void SdrCircObj::TakeUnrotatedSnapRect(tools::Rectangle& rRect) const
 {
     rRect = maRect;
     if (meCircleKind!=OBJ_CIRC) {
@@ -1015,10 +1015,10 @@ void SdrCircObj::RecalcSnapRect()
     }
 }
 
-void SdrCircObj::NbcSetSnapRect(const Rectangle& rRect)
+void SdrCircObj::NbcSetSnapRect(const tools::Rectangle& rRect)
 {
     if (aGeo.nRotationAngle!=0 || aGeo.nShearAngle!=0 || meCircleKind!=OBJ_CIRC) {
-        Rectangle aSR0(GetSnapRect());
+        tools::Rectangle aSR0(GetSnapRect());
         long nWdt0=aSR0.Right()-aSR0.Left();
         long nHgt0=aSR0.Bottom()-aSR0.Top();
         long nWdt1=rRect.Right()-rRect.Left();

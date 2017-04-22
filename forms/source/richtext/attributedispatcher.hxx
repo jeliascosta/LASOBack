@@ -55,10 +55,10 @@ namespace frm
         );
 
     protected:
-        virtual ~OAttributeDispatcher( );
+        virtual ~OAttributeDispatcher( ) override;
 
         // XDispatch
-        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
 
         // ITextAttributeListener
         virtual void    onAttributeStateChanged( AttributeId _nAttributeId, const AttributeState& _rState ) override;

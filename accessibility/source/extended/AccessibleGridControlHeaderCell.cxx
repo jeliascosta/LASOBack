@@ -18,9 +18,9 @@
  */
 
 
-#include "accessibility/extended/AccessibleGridControlHeaderCell.hxx"
+#include "extended/AccessibleGridControlHeaderCell.hxx"
 #include <svtools/accessibletable.hxx>
-#include "accessibility/extended/AccessibleGridControl.hxx"
+#include "extended/AccessibleGridControl.hxx"
 
 namespace accessibility
 {
@@ -72,7 +72,6 @@ AccessibleGridControlHeaderCell::AccessibleGridControlHeaderCell(sal_Int32 _nCol
         The count of visible children.
 */
 sal_Int32 SAL_CALL AccessibleGridControlHeaderCell::getAccessibleChildCount()
-    throw ( RuntimeException, std::exception )
 {
     return 0;
 }
@@ -82,7 +81,6 @@ sal_Int32 SAL_CALL AccessibleGridControlHeaderCell::getAccessibleChildCount()
         The XAccessible interface of the specified child.
 */
 Reference<XAccessible > SAL_CALL AccessibleGridControlHeaderCell::getAccessibleChild( sal_Int32 )
-    throw ( IndexOutOfBoundsException,RuntimeException, std::exception )
 {
     throw IndexOutOfBoundsException();
 }
@@ -90,7 +88,6 @@ Reference<XAccessible > SAL_CALL AccessibleGridControlHeaderCell::getAccessibleC
 
     /** Queries for a new interface. */
     css::uno::Any SAL_CALL AccessibleGridControlHeaderCell::queryInterface( const css::uno::Type& rType )
-        throw ( css::uno::RuntimeException, std::exception )
     {
         Any aRet = AccessibleGridControlCell::queryInterface(rType);
         return aRet;
@@ -108,7 +105,7 @@ Reference<XAccessible > SAL_CALL AccessibleGridControlHeaderCell::getAccessibleC
         AccessibleGridControlCell::release();
     }
         /** @return  The XAccessibleContext interface of this object. */
-    Reference< css::accessibility::XAccessibleContext > SAL_CALL AccessibleGridControlHeaderCell::getAccessibleContext() throw ( RuntimeException, std::exception )
+    Reference< css::accessibility::XAccessibleContext > SAL_CALL AccessibleGridControlHeaderCell::getAccessibleContext()
     {
         ensureIsAlive();
         return this;
@@ -117,7 +114,6 @@ Reference<XAccessible > SAL_CALL AccessibleGridControlHeaderCell::getAccessibleC
 
 /** Grabs the focus to the column header. */
 void SAL_CALL AccessibleGridControlHeaderCell::grabFocus()
-    throw ( css::uno::RuntimeException, std::exception )
 {
 }
 
@@ -125,39 +121,37 @@ void SAL_CALL AccessibleGridControlHeaderCell::grabFocus()
         The name of this class.
 */
 OUString SAL_CALL AccessibleGridControlHeaderCell::getImplementationName()
-    throw ( css::uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.accessibility.AccessibleGridControlHeaderCell" );
 }
 
-Rectangle AccessibleGridControlHeaderCell::implGetBoundingBox()
+tools::Rectangle AccessibleGridControlHeaderCell::implGetBoundingBox()
 {
     vcl::Window* pParent = m_aTable.GetAccessibleParentWindow();
-    Rectangle aGridRect( m_aTable.GetWindowExtentsRelative( pParent ) );
+    tools::Rectangle aGridRect( m_aTable.GetWindowExtentsRelative( pParent ) );
     sal_Int32 nIndex = getAccessibleIndexInParent();
-    Rectangle aCellRect;
+    tools::Rectangle aCellRect;
     if(m_eObjType == TCTYPE_COLUMNHEADERCELL)
         aCellRect = m_aTable.calcHeaderCellRect(true, nIndex);
     else
         aCellRect = m_aTable.calcHeaderCellRect(false, nIndex);
-    return Rectangle(Point(aGridRect.Left()+aCellRect.Left(),aGridRect.Top()+aCellRect.Top()), aCellRect.GetSize());
+    return tools::Rectangle(Point(aGridRect.Left()+aCellRect.Left(),aGridRect.Top()+aCellRect.Top()), aCellRect.GetSize());
 }
 
 
-Rectangle AccessibleGridControlHeaderCell::implGetBoundingBoxOnScreen()
+tools::Rectangle AccessibleGridControlHeaderCell::implGetBoundingBoxOnScreen()
 {
-    Rectangle aGridRect( m_aTable.GetWindowExtentsRelative( nullptr ) );
+    tools::Rectangle aGridRect( m_aTable.GetWindowExtentsRelative( nullptr ) );
     sal_Int32 nIndex = getAccessibleIndexInParent();
-    Rectangle aCellRect;
+    tools::Rectangle aCellRect;
     if(m_eObjType == TCTYPE_COLUMNHEADERCELL)
         aCellRect = m_aTable.calcHeaderCellRect(true, nIndex);
     else
         aCellRect = m_aTable.calcHeaderCellRect(false, nIndex);
-    return Rectangle(Point(aGridRect.Left()+aCellRect.Left(),aGridRect.Top()+aCellRect.Top()), aCellRect.GetSize());
+    return tools::Rectangle(Point(aGridRect.Left()+aCellRect.Left(),aGridRect.Top()+aCellRect.Top()), aCellRect.GetSize());
 }
 
 sal_Int32 SAL_CALL AccessibleGridControlHeaderCell::getAccessibleIndexInParent()
-    throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 

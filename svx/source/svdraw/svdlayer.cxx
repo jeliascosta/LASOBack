@@ -102,7 +102,7 @@ void SdrLayer::SetStandardLayer()
     nType=(sal_uInt16)true;
     maName = ImpGetResStr(STR_StandardLayerName);
     if (pModel!=nullptr) {
-        SdrHint aHint(HINT_LAYERCHG);
+        SdrHint aHint(SdrHintKind::LayerChange);
         pModel->Broadcast(aHint);
         pModel->SetChanged();
     }
@@ -118,7 +118,7 @@ void SdrLayer::SetName(const OUString& rNewName)
 
     if (pModel)
     {
-        SdrHint aHint(HINT_LAYERCHG);
+        SdrHint aHint(SdrHintKind::LayerChange);
         pModel->Broadcast(aHint);
         pModel->SetChanged();
     }
@@ -187,7 +187,7 @@ void SdrLayerAdmin::SetModel(SdrModel* pNewModel)
 void SdrLayerAdmin::Broadcast() const
 {
     if (pModel!=nullptr) {
-        SdrHint aHint(HINT_LAYERORDERCHG);
+        SdrHint aHint(SdrHintKind::LayerOrderChange);
         pModel->Broadcast(aHint);
         pModel->SetChanged();
     }
@@ -297,7 +297,7 @@ SdrLayerID SdrLayerAdmin::GetUniqueLayerID() const
     sal_uInt16 j;
     for (j=0; j<GetLayerCount(); j++)
     {
-        aSet.Set(GetLayer((sal_uInt16)j)->GetID());
+        aSet.Set(GetLayer(j)->GetID());
     }
     SdrLayerID i;
     if (!bDown)

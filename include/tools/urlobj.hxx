@@ -25,6 +25,7 @@
 #include <rtl/ustrbuf.hxx>
 #include <rtl/textenc.h>
 #include <sal/types.h>
+#include <o3tl/typed_flags_set.hxx>
 
 #include <memory>
 
@@ -79,6 +80,101 @@ enum class INetProtocol
     LAST = Cmis
 };
 
+/** The supported notations for file system paths.
+ */
+enum class FSysStyle
+{
+    /** VOS notation (e.g., "//server/dir/file").
+     */
+    Vos = 0x1,
+
+    /** Unix notation (e.g., "/dir/file").
+     */
+    Unix = 0x2,
+
+    /** DOS notation (e.g., "a:\dir\file" and "\\server\dir\file").
+     */
+    Dos = 0x4,
+
+    /** Detect the used notation.
+
+        @descr  For the following descriptions, please note that
+        whereas FSYS_DEFAULT includes all style bits, combinations of only
+        a few style bits are also possible, and are also described.
+
+        @descr  When used to translate a file system path to a file URL,
+        the subset of the following productions for which the appropriate
+        style bit is set are checked in order (using the conventions of
+        RFC 2234, RFC 2396, and RFC 2732; UCS4 stands for any UCS4
+        character):
+
+         Production T1 (VOS local; FSysStyle::Vos only):
+            "//." ["/" *UCS4]
+          becomes
+            "file:///" *UCS4
+
+         Production T2 (VOS host; FSysStyle::Vos only):
+            "//" [host] ["/" *UCS4]
+          becomes
+            "file://" host "/" *UCS4
+
+         Production T3 (UNC; FSysStyle::Dos only):
+            "\\" [host] ["\" *UCS4]
+          becomes
+            "file://" host "/" *UCS4
+          replacing "\" by "/" within <*UCS4>
+
+         Production T4 (Unix-like DOS; FSysStyle::Dos only):
+            ALPHA ":" ["/" *UCS4]
+          becomes
+            "file:///" ALPHA ":/" *UCS4
+          replacing "\" by "/" within <*UCS4>
+
+         Production T5 (DOS; FSysStyle::Dos only):
+            ALPHA ":" ["\" *UCS4]
+          becomes
+            "file:///" ALPHA ":/" *UCS4
+          replacing "\" by "/" within <*UCS4>
+
+         Production T6 (any):
+            *UCS4
+          becomes
+            "file:///" *UCS4
+          replacing the delimiter by "/" within <*UCS4>.  The delimiter is
+          that character from the set { "/", "\" } which appears most
+          often in <*UCS4> (if FSysStyle::Unix is not among the style bits, "/"
+          is removed from the set; if FSysStyle::Dos is not among the style
+          bits, "\" is removed from the set).  If two or more
+          characters appear the same number of times, the character
+          mentioned first in that set is chosen.  If the first character
+          of <*UCS4> is the delimiter, that character is not copied.
+
+        @descr  When used to translate a file URL to a file system path,
+        the following productions are checked in order (using the
+        conventions of RFC 2234, RFC 2396, and RFC 2732):
+
+         Production F1 (VOS; FSysStyle::Vos):
+            "file://" host "/" fpath ["#" fragment]
+          becomes
+            "//" host "/" fpath
+
+         Production F2 (DOS; FSysStyle::Dos):
+            "file:///" ALPHA ":" ["/" fpath] ["#" fragment]
+          becomes
+            ALPHA ":" ["\" fpath]
+          replacing "/" by "\" in <fpath>
+
+         Production F3 (Unix; FSysStyle::Unix):
+            "file:///" fpath ["#" fragment]
+          becomes
+            "/" fpath
+     */
+    Detect = Vos | Unix | Dos
+};
+namespace o3tl {
+    template<> struct typed_flags<FSysStyle> : is_typed_flags<FSysStyle, 0x07> {};
+}
+
 class SAL_WARN_UNUSED TOOLS_DLLPUBLIC INetURLObject
 {
 public:
@@ -92,14 +188,14 @@ public:
 
         @descr  Along with an EncodeMechanism parameter, the set-methods all
         take an rtl_TextEncoding parameter, which is ignored unless the
-        EncodeMechanism is WAS_ENCODED.
+        EncodeMechanism is EncodeMechanism::WasEncoded.
      */
-    enum EncodeMechanism
+    enum class EncodeMechanism
     {
         /** All escape sequences that are already present are ignored, and are
             interpreted as literal sequences of three characters.
          */
-        ENCODE_ALL,
+        All,
 
         /** Sequences of escape sequences, that represent characters from the
             specified character set and that can be converted to UTF-32
@@ -108,12 +204,12 @@ public:
             (sequences of) escape sequences.  Other escape sequences are
             copied verbatim (but using upper case hex digits).
          */
-        WAS_ENCODED,
+        WasEncoded,
 
         /** All escape sequences that are already present are copied verbatim
             (but using upper case hex digits).
          */
-        NOT_CANONIC
+        NotCanonical
     };
 
     /** The way strings that represent (parts of) URIs are returned from get-
@@ -121,29 +217,29 @@ public:
 
         @descr  Along with a DecodeMechanism parameter, the get-methods all
         take an rtl_TextEncoding parameter, which is ignored unless the
-        DecodeMechanism is DECODE_WITH_CHARSET or DECODE_UNAMBIGUOUS.
+        DecodeMechanism is DecodeMechanism::WithCharset or DecodeMechanism::Unambiguous.
      */
-    enum DecodeMechanism
+    enum class DecodeMechanism
     {
         /** The (part of the) URI is returned unchanged.  Since URIs are
             written using a subset of US-ASCII, the returned string is
             guaranteed to contain only US-ASCII characters.
          */
-        NO_DECODE,
+        NONE,
 
         /** All sequences of escape sequences that represent UTF-8 coded
             UTF-32 characters with a numerical value greater than 0x7F, are
             replaced by the respective UTF-16 characters.  All other escape
             sequences are not decoded.
          */
-        DECODE_TO_IURI,
+        ToIUri,
 
         /** All (sequences of) escape sequences that represent characters from
             the specified character set, and that can be converted to UTF-32,
             are replaced by the respective UTF-16 characters.  All other
             escape sequences are not decoded.
          */
-        DECODE_WITH_CHARSET,
+        WithCharset,
 
         /** All (sequences of) escape sequences that represent characters from
             the specified character set, that can be converted to UTF-32, and
@@ -152,52 +248,50 @@ public:
             replaced by the respective UTF-16 characters.  All other escape
             sequences are not decoded.
          */
-        DECODE_UNAMBIGUOUS
+        Unambiguous
     };
 
     // General Structure:
 
-    inline INetURLObject():
+    INetURLObject():
         m_eScheme(INetProtocol::NotValid), m_eSmartScheme(INetProtocol::Http) {}
 
-    inline bool HasError() const { return m_eScheme == INetProtocol::NotValid; }
+    bool HasError() const { return m_eScheme == INetProtocol::NotValid; }
 
-    inline OUString GetMainURL(DecodeMechanism eMechanism,
+    OUString GetMainURL(DecodeMechanism eMechanism,
                                 rtl_TextEncoding eCharset
                                     = RTL_TEXTENCODING_UTF8) const
     { return decode(m_aAbsURIRef, eMechanism, eCharset); }
 
-    OUString GetURLNoPass(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetURLNoPass(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                            rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
         const;
 
-    OUString GetURLNoMark(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetURLNoMark(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                            rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
         const;
 
     OUString
-    getAbbreviated(css::uno::Reference<
-                           css::util::XStringWidth > const &
-                       rStringWidth,
+    getAbbreviated(css::uno::Reference< css::util::XStringWidth > const & rStringWidth,
                    sal_Int32 nWidth,
-                   DecodeMechanism eMechanism = DECODE_TO_IURI,
+                   DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                    rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
         const;
 
     bool operator ==(INetURLObject const & rObject) const;
 
-    inline bool operator !=(INetURLObject const & rObject) const
+    bool operator !=(INetURLObject const & rObject) const
     { return !(*this == rObject); }
 
     // Strict Parsing:
 
     inline explicit INetURLObject(
         OUString const & rTheAbsURIRef,
-        EncodeMechanism eMechanism = WAS_ENCODED,
+        EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
         rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     inline bool SetURL(OUString const & rTheAbsURIRef,
-                       EncodeMechanism eMechanism = WAS_ENCODED,
+                       EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                        rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     bool ConcatData(INetProtocol eTheScheme, OUString const & rTheUser,
@@ -207,121 +301,29 @@ public:
 
     // Smart Parsing:
 
-    /** The supported notations for file system paths.
-     */
-    enum FSysStyle
-    {
-        /** VOS notation (e.g., "//server/dir/file").
-         */
-        FSYS_VOS = 0x1,
-
-        /** Unix notation (e.g., "/dir/file").
-         */
-        FSYS_UNX = 0x2,
-
-        /** DOS notation (e.g., "a:\dir\file" and "\\server\dir\file").
-         */
-        FSYS_DOS = 0x4,
-
-        /** Detect the used notation.
-
-            @descr  For the following descriptions, please note that
-            whereas FSYS_DEFAULT includes all style bits, combinations of only
-            a few style bits are also possible, and are also described.
-
-            @descr  When used to translate a file system path to a file URL,
-            the subset of the following productions for which the appropriate
-            style bit is set are checked in order (using the conventions of
-            RFC 2234, RFC 2396, and RFC 2732; UCS4 stands for any UCS4
-            character):
-
-             Production T1 (VOS local; FSYS_VOS only):
-                "//." ["/" *UCS4]
-              becomes
-                "file:///" *UCS4
-
-             Production T2 (VOS host; FSYS_VOS only):
-                "//" [host] ["/" *UCS4]
-              becomes
-                "file://" host "/" *UCS4
-
-             Production T3 (UNC; FSYS_DOS only):
-                "\\" [host] ["\" *UCS4]
-              becomes
-                "file://" host "/" *UCS4
-              replacing "\" by "/" within <*UCS4>
-
-             Production T4 (Unix-like DOS; FSYS_DOS only):
-                ALPHA ":" ["/" *UCS4]
-              becomes
-                "file:///" ALPHA ":/" *UCS4
-              replacing "\" by "/" within <*UCS4>
-
-             Production T5 (DOS; FSYS_DOS only):
-                ALPHA ":" ["\" *UCS4]
-              becomes
-                "file:///" ALPHA ":/" *UCS4
-              replacing "\" by "/" within <*UCS4>
-
-             Production T6 (any):
-                *UCS4
-              becomes
-                "file:///" *UCS4
-              replacing the delimiter by "/" within <*UCS4>.  The delimiter is
-              that character from the set { "/", "\" } which appears most
-              often in <*UCS4> (if FSYS_UNX is not among the style bits, "/"
-              is removed from the set; if FSYS_DOS is not among the style
-              bits, "\" is removed from the set).  If two or more
-              characters appear the same number of times, the character
-              mentioned first in that set is chosen.  If the first character
-              of <*UCS4> is the delimiter, that character is not copied.
-
-            @descr  When used to translate a file URL to a file system path,
-            the following productions are checked in order (using the
-            conventions of RFC 2234, RFC 2396, and RFC 2732):
-
-             Production F1 (VOS; FSYS_VOS):
-                "file://" host "/" fpath ["#" fragment]
-              becomes
-                "//" host "/" fpath
-
-             Production F2 (DOS; FSYS_DOS):
-                "file:///" ALPHA ":" ["/" fpath] ["#" fragment]
-              becomes
-                ALPHA ":" ["\" fpath]
-              replacing "/" by "\" in <fpath>
-
-             Production F3 (Unix; FSYS_UNX):
-                "file:///" fpath ["#" fragment]
-              becomes
-                "/" fpath
-         */
-        FSYS_DETECT = FSYS_VOS | FSYS_UNX | FSYS_DOS
-    };
-
     inline INetURLObject(OUString const & rTheAbsURIRef,
                          INetProtocol eTheSmartScheme,
-                         EncodeMechanism eMechanism = WAS_ENCODED,
+                         EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                          rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8,
-                         FSysStyle eStyle = FSYS_DETECT);
+                         FSysStyle eStyle = FSysStyle::Detect);
 
-    inline void SetSmartProtocol(INetProtocol eTheSmartScheme)
+    void SetSmartProtocol(INetProtocol eTheSmartScheme)
     { m_eSmartScheme = eTheSmartScheme; }
 
     inline bool
     SetSmartURL(OUString const & rTheAbsURIRef,
-                EncodeMechanism eMechanism = WAS_ENCODED,
+                EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                 rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8,
-                FSysStyle eStyle = FSYS_DETECT);
+                FSysStyle eStyle = FSysStyle::Detect);
 
     inline INetURLObject
     smartRel2Abs(OUString const & rTheRelURIRef,
                  bool & rWasAbsolute,
                  bool bIgnoreFragment = false,
-                 EncodeMechanism eMechanism = WAS_ENCODED,
+                 EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                  rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8,
                  bool bRelativeNonURIs = false,
-                 FSysStyle eStyle = FSYS_DETECT) const;
+                 FSysStyle eStyle = FSysStyle::Detect) const;
 
     // Relative URLs:
 
@@ -341,17 +343,17 @@ public:
     GetAbsURL(OUString const & rTheBaseURIRef,
               OUString const & rTheRelURIRef,
               bool bIgnoreFragment = false,
-              EncodeMechanism eEncodeMechanism = WAS_ENCODED,
-              DecodeMechanism eDecodeMechanism = DECODE_TO_IURI,
+              EncodeMechanism eEncodeMechanism = EncodeMechanism::WasEncoded,
+              DecodeMechanism eDecodeMechanism = DecodeMechanism::ToIUri,
               rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     static inline OUString
     GetRelURL(OUString const & rTheBaseURIRef,
               OUString const & rTheAbsURIRef,
-              EncodeMechanism eEncodeMechanism = WAS_ENCODED,
-              DecodeMechanism eDecodeMechanism = DECODE_TO_IURI,
+              EncodeMechanism eEncodeMechanism = EncodeMechanism::WasEncoded,
+              DecodeMechanism eDecodeMechanism = DecodeMechanism::ToIUri,
               rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8,
-              FSysStyle eStyle = FSYS_DETECT);
+              FSysStyle eStyle = FSysStyle::Detect);
 
     // External URLs:
 
@@ -360,14 +362,14 @@ public:
     static inline bool translateToExternal(OUString const & rTheIntURIRef,
                                            OUString & rTheExtURIRef,
                                            DecodeMechanism eDecodeMechanism
-                                               = DECODE_TO_IURI,
+                                               = DecodeMechanism::ToIUri,
                                            rtl_TextEncoding eCharset
                                                = RTL_TEXTENCODING_UTF8);
 
     static inline bool translateToInternal(OUString const & rTheExtURIRef,
                                            OUString & rTheIntURIRef,
                                            DecodeMechanism eDecodeMechanism
-                                               = DECODE_TO_IURI,
+                                               = DecodeMechanism::ToIUri,
                                            rtl_TextEncoding eCharset
                                                = RTL_TEXTENCODING_UTF8);
 
@@ -375,7 +377,7 @@ public:
 
     struct SchemeInfo;
 
-    inline INetProtocol GetProtocol() const { return m_eScheme; }
+    INetProtocol GetProtocol() const { return m_eScheme; }
 
     bool isSchemeEqualTo(INetProtocol scheme) const { return scheme == m_eScheme; }
 
@@ -409,19 +411,19 @@ public:
 
     // User Info:
 
-    inline bool HasUserData() const { return m_aUser.isPresent(); }
+    bool HasUserData() const { return m_aUser.isPresent(); }
 
-    inline OUString GetUser(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetUser(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                              rtl_TextEncoding eCharset
                                  = RTL_TEXTENCODING_UTF8) const
     { return decode(m_aUser, eMechanism, eCharset); }
 
-    inline OUString GetPass(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetPass(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                              rtl_TextEncoding eCharset
                                  = RTL_TEXTENCODING_UTF8) const
     { return decode(m_aAuth, eMechanism, eCharset); }
 
-    inline bool SetUser(OUString const & rTheUser)
+    bool SetUser(OUString const & rTheUser)
     { return setUser(rTheUser, RTL_TEXTENCODING_UTF8); }
 
     inline bool SetPass(OUString const & rThePassword);
@@ -431,34 +433,34 @@ public:
 
     // Host and Port:
 
-    inline bool HasPort() const { return m_aPort.isPresent(); }
+    bool HasPort() const { return m_aPort.isPresent(); }
 
-    inline OUString GetHost(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetHost(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                              rtl_TextEncoding eCharset
                                  = RTL_TEXTENCODING_UTF8) const
     { return decode(m_aHost, eMechanism, eCharset); }
 
-    OUString GetHostPort(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetHostPort(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                           rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     sal_uInt32 GetPort() const;
 
-    inline bool SetHost(OUString const & rTheHost)
+    bool SetHost(OUString const & rTheHost)
     { return setHost(rTheHost, RTL_TEXTENCODING_UTF8); }
 
     bool SetPort(sal_uInt32 nThePort);
 
     // Path:
 
-    inline bool HasURLPath() const { return !m_aPath.isEmpty(); }
+    bool HasURLPath() const { return !m_aPath.isEmpty(); }
 
-    inline OUString GetURLPath(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetURLPath(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                                 rtl_TextEncoding eCharset
                                     = RTL_TEXTENCODING_UTF8) const
     { return decode(m_aPath, eMechanism, eCharset); }
 
-    inline bool SetURLPath(OUString const & rThePath,
-                           EncodeMechanism eMechanism = WAS_ENCODED,
+    bool SetURLPath(OUString const & rThePath,
+                           EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                            rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
     { return setPath(rThePath, eMechanism, eCharset); }
 
@@ -542,7 +544,7 @@ public:
     bool insertName(OUString const & rTheName,
                            bool bAppendFinalSlash = false,
                            sal_Int32 nIndex = LAST_SEGMENT,
-                           EncodeMechanism eMechanism = WAS_ENCODED,
+                           EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                            rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     /** Get the name of a segment of the hierarchical path.
@@ -563,7 +565,7 @@ public:
      */
     OUString getName(sal_Int32 nIndex = LAST_SEGMENT,
                       bool bIgnoreFinalSlash = true,
-                      DecodeMechanism eMechanism = DECODE_TO_IURI,
+                      DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                       rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
         const;
 
@@ -597,7 +599,7 @@ public:
      */
     OUString getBase(sal_Int32 nIndex = LAST_SEGMENT,
                       bool bIgnoreFinalSlash = true,
-                      DecodeMechanism eMechanism = DECODE_TO_IURI,
+                      DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                       rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
         const;
 
@@ -621,7 +623,7 @@ public:
      */
     bool setBase(OUString const & rTheBase,
                  sal_Int32 nIndex = LAST_SEGMENT,
-                 EncodeMechanism eMechanism = WAS_ENCODED,
+                 EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                  rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     /** Determine whether the name of the last segment has an extension.
@@ -650,7 +652,7 @@ public:
      */
     OUString getExtension(sal_Int32 nIndex = LAST_SEGMENT,
                            bool bIgnoreFinalSlash = true,
-                           DecodeMechanism eMechanism = DECODE_TO_IURI,
+                           DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                            rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
         const;
 
@@ -722,27 +724,27 @@ public:
 
     // Query:
 
-    inline bool HasParam() const { return m_aQuery.isPresent(); }
+    bool HasParam() const { return m_aQuery.isPresent(); }
 
-    inline OUString GetParam(rtl_TextEncoding eCharset
+    OUString GetParam(rtl_TextEncoding eCharset
                                   = RTL_TEXTENCODING_UTF8) const
-    { return decode(m_aQuery, NO_DECODE, eCharset); }
+    { return decode(m_aQuery, DecodeMechanism::NONE, eCharset); }
 
     inline bool SetParam(OUString const & rTheQuery,
-                         EncodeMechanism eMechanism = WAS_ENCODED,
+                         EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                          rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     // Fragment:
 
-    inline bool HasMark() const { return m_aFragment.isPresent(); }
+    bool HasMark() const { return m_aFragment.isPresent(); }
 
-    inline OUString GetMark(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetMark(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                              rtl_TextEncoding eCharset
                                  = RTL_TEXTENCODING_UTF8) const
     { return decode(m_aFragment, eMechanism, eCharset); }
 
     inline bool SetMark(OUString const & rTheFragment,
-                        EncodeMechanism eMechanism = WAS_ENCODED,
+                        EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                         rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     // File URLs:
@@ -790,10 +792,6 @@ public:
     // Data URLs:
     std::unique_ptr<SvMemoryStream> getData();
 
-    // POP3 and URLs:
-
-    static OUString GetMsgId(rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
-
     // Coding:
 
     enum Part
@@ -816,11 +814,11 @@ public:
         PART_HTTP_QUERY             = 0x20000, //TODO! unused?
     };
 
-    enum EscapeType
+    enum class EscapeType
     {
-        ESCAPE_NO,
-        ESCAPE_OCTET,
-        ESCAPE_UTF32
+        NONE,
+        Octet,
+        Utf32
     };
 
     /** Encode some text as part of a URI.
@@ -894,10 +892,10 @@ public:
         @param eCharset  See the general discussion for get-methods.
 
         @return  For a hierarchical URL, the last segment (everything after
-        the last unencoded '/').  Not that this last segment may be empty.  If
+        the last unencoded '/').  Note that this last segment may be empty.  If
         the URL is not hierarchical, an empty string is returned.
      */
-    OUString GetLastName(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetLastName(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                           rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
         const;
 
@@ -910,10 +908,9 @@ public:
      */
     OUString GetFileExtension() const;
 
-    inline bool Append(OUString const & rTheSegment,
-                       EncodeMechanism eMechanism = WAS_ENCODED,
-                       rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
-    { return appendSegment(rTheSegment, eMechanism, eCharset); }
+    bool Append(OUString const & rTheSegment,
+                       EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
+                       rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     void CutLastName();
 
@@ -930,17 +927,17 @@ public:
     OUString GetBase() const;
 
     void SetName(OUString const & rTheName,
-                 EncodeMechanism eMechanism = WAS_ENCODED,
+                 EncodeMechanism eMechanism = EncodeMechanism::WasEncoded,
                  rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
-    inline OUString GetName(DecodeMechanism eMechanism = DECODE_TO_IURI,
+    OUString GetName(DecodeMechanism eMechanism = DecodeMechanism::ToIUri,
                              rtl_TextEncoding eCharset
                                  = RTL_TEXTENCODING_UTF8) const
     { return GetLastName(eMechanism, eCharset); }
 
     void SetExtension(OUString const & rTheExtension);
 
-    inline OUString GetExtension() const
+    OUString GetExtension() const
     { return GetFileExtension(); }
 
     OUString CutExtension();
@@ -957,19 +954,19 @@ private:
         sal_Int32 m_nLength;
 
     public:
-        explicit inline SubString(sal_Int32 nTheBegin = -1,
+        explicit SubString(sal_Int32 nTheBegin = -1,
                                   sal_Int32 nTheLength = 0):
             m_nBegin(nTheBegin), m_nLength(nTheLength) {}
 
-        inline bool isPresent() const { return m_nBegin != -1; }
+        bool isPresent() const { return m_nBegin != -1; }
 
-        inline bool isEmpty() const { return m_nLength == 0; }
+        bool isEmpty() const { return m_nLength == 0; }
 
-        inline sal_Int32 getBegin() const { return m_nBegin; }
+        sal_Int32 getBegin() const { return m_nBegin; }
 
-        inline sal_Int32 getLength() const { return m_nLength; }
+        sal_Int32 getLength() const { return m_nLength; }
 
-        inline sal_Int32 getEnd() const { return m_nBegin + m_nLength; }
+        sal_Int32 getEnd() const { return m_nBegin + m_nLength; }
 
         inline sal_Int32 clear();
 
@@ -1098,10 +1095,6 @@ private:
     // Hierarchical Path:
 
     TOOLS_DLLPRIVATE bool checkHierarchical() const;
-
-    bool appendSegment(
-        OUString const & rTheSegment,
-        EncodeMechanism eMechanism, rtl_TextEncoding eCharset);
 
     TOOLS_DLLPRIVATE SubString getSegment(
         sal_Int32 nIndex, bool bIgnoreFinalSlash) const;
@@ -1240,8 +1233,8 @@ inline bool INetURLObject::GetNewAbsURL(OUString const & rTheRelURIRef,
     INetURLObject aTheAbsURIRef;
     bool bWasAbsolute;
     if (!convertRelToAbs(rTheRelURIRef, aTheAbsURIRef, bWasAbsolute,
-                         WAS_ENCODED, RTL_TEXTENCODING_UTF8, false/*bIgnoreFragment*/, false, false,
-                         FSYS_DETECT))
+                         EncodeMechanism::WasEncoded, RTL_TEXTENCODING_UTF8, false/*bIgnoreFragment*/, false, false,
+                         FSysStyle::Detect))
         return false;
     if (pTheAbsURIRef)
         *pTheAbsURIRef = aTheAbsURIRef;

@@ -32,20 +32,20 @@ void INetImage::Write( SvStream& rOStm, SotClipboardFormatId nFormat ) const
     case SotClipboardFormatId::INET_IMAGE:
         {
             OUString sString(
-                aImageURL + OUStringLiteral1<TOKEN_SEPARATOR>() + aTargetURL
-                + OUStringLiteral1<TOKEN_SEPARATOR>() + aTargetFrame
-                + OUStringLiteral1<TOKEN_SEPARATOR>() + aAlternateText
-                + OUStringLiteral1<TOKEN_SEPARATOR>()
+                aImageURL + OUStringLiteral1(TOKEN_SEPARATOR) + aTargetURL
+                + OUStringLiteral1(TOKEN_SEPARATOR) + aTargetFrame
+                + OUStringLiteral1(TOKEN_SEPARATOR) + aAlternateText
+                + OUStringLiteral1(TOKEN_SEPARATOR)
                 + OUString::number(aSizePixel.Width())
-                + OUStringLiteral1<TOKEN_SEPARATOR>()
+                + OUStringLiteral1(TOKEN_SEPARATOR)
                 + OUString::number(aSizePixel.Height()));
 
             OString sOut(OUStringToOString(sString,
                 RTL_TEXTENCODING_UTF8));
 
-            rOStm.Write(sOut.getStr(), sOut.getLength());
+            rOStm.WriteBytes(sOut.getStr(), sOut.getLength());
             static const sal_Char aEndChar[2] = { 0 };
-            rOStm.Write( aEndChar, sizeof( aEndChar ));
+            rOStm.WriteBytes(aEndChar, sizeof(aEndChar));
         }
         break;
 

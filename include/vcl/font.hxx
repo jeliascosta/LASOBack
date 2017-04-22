@@ -47,6 +47,7 @@ class VCL_DLLPUBLIC Font
 public:
     explicit            Font();
                         Font( const Font& ); // TODO make me explicit
+                        Font( Font&& );
     explicit            Font( const OUString& rFamilyName, const Size& );
     explicit            Font( const OUString& rFamilyName, const OUString& rStyleName, const Size& );
     explicit            Font( FontFamily eFamily, const Size& );
@@ -86,20 +87,10 @@ public:
     // Device dependent functions
     int                 GetQuality() const;
 
-    bool                IsBuiltInFont() const;
-    bool                CanEmbed() const;
-    bool                CanSubset() const;
-    bool                CanRotate() const;
-
     void                SetQuality(int);
     void                IncreaseQualityBy(int);
     void                DecreaseQualityBy(int);
     void                SetMapNames(OUString const &);
-
-    void                SetBuiltInFontFlag(bool);
-    void                SetEmbeddableFlag(bool);
-    void                SetSubsettableFlag(bool);
-    void                SetOrientationFlag(bool);
 
     // setting the color on the font is obsolete, the only remaining
     // valid use is for keeping backward compatibility with old MetaFiles
@@ -159,6 +150,7 @@ public:
     void                GetFontAttributes( FontAttributes& rAttrs ) const;
 
     Font&               operator=( const Font& );
+    Font&               operator=( Font&& );
     bool                operator==( const Font& ) const;
     bool                operator!=( const Font& rFont ) const
                             { return !(Font::operator==( rFont )); }

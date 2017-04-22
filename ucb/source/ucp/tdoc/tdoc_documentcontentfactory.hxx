@@ -35,25 +35,20 @@ class DocumentContentFactory :
 {
 public:
     explicit DocumentContentFactory( const css::uno::Reference< css::lang::XMultiServiceFactory >& rXSMgr );
-    virtual ~DocumentContentFactory();
+    virtual ~DocumentContentFactory() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName()
-        throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
 
     virtual sal_Bool SAL_CALL
-    supportsService( const OUString& ServiceName )
-        throw ( css::uno::RuntimeException, std::exception ) override;
+    supportsService( const OUString& ServiceName ) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames()
-        throw ( css::uno::RuntimeException, std::exception ) override;
+    getSupportedServiceNames() override;
 
     // XTransientDocumentsDocumentContentFactory
     virtual css::uno::Reference< css::ucb::XContent > SAL_CALL
-    createDocumentContent( const css::uno::Reference< css::frame::XModel >& Model )
-        throw ( css::lang::IllegalArgumentException,
-                css::uno::RuntimeException, std::exception ) override;
+    createDocumentContent( const css::uno::Reference< css::frame::XModel >& Model ) override;
 
     // Non-UNO interfaces
     static OUString

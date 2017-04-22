@@ -64,6 +64,7 @@
 #include <com/sun/star/text/BibliographyDataType.hpp>
 #include <com/sun/star/sdb/CommandType.hpp>
 #include <com/sun/star/rdf/XMetadatable.hpp>
+#include <o3tl/any.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <tools/debug.hxx>
 #include <rtl/math.hxx>
@@ -155,7 +156,7 @@ static sal_Char const FIELD_SERVICE_MEASURE[] = "Measure";
 static sal_Char const FIELD_SERVICE_TABLE_FORMULA[] = "TableFormula";
 static sal_Char const FIELD_SERVICE_DROP_DOWN[] = "DropDown";
 
-SvXMLEnumStringMapEntry const aFieldServiceNameMapping[] =
+SvXMLEnumStringMapEntry<FieldIdEnum> const aFieldServiceNameMapping[] =
 {
     ENUM_STRING_MAP_ENTRY( FIELD_SERVICE_SENDER, FIELD_ID_SENDER ),
     ENUM_STRING_MAP_ENTRY( FIELD_SERVICE_AUTHOR, FIELD_ID_AUTHOR ),
@@ -243,7 +244,7 @@ SvXMLEnumStringMapEntry const aFieldServiceNameMapping[] =
     ENUM_STRING_MAP_ENTRY( FIELD_SERVICE_TABLE_FORMULA, FIELD_ID_TABLE_FORMULA ),
     ENUM_STRING_MAP_ENTRY( FIELD_SERVICE_DROP_DOWN, FIELD_ID_DROP_DOWN ),
 
-    ENUM_STRING_MAP_END()
+    { nullptr, 0, (FieldIdEnum)0 }
 };
 
 
@@ -440,23 +441,11 @@ enum FieldIdEnum XMLTextFieldExport::MapFieldName(
     if (!sFieldName.isEmpty())
     {
         // map name to prelim. ID
-        sal_uInt16 nTmp;
         bool bRet = SvXMLUnitConverter::convertEnum(
-            nTmp, sFieldName, aFieldServiceNameMapping);
+            nToken, sFieldName, aFieldServiceNameMapping);
 
         // check return
         DBG_ASSERT(bRet, "Unknown field service name encountered!");
-        if (! bRet)
-        {
-            nToken = FIELD_ID_UNKNOWN;
-        }
-        else
-        {
-            nToken = (enum FieldIdEnum)nTmp;
-        }
-    } else {
-        // invalid service name
-        nToken = FIELD_ID_UNKNOWN;
     }
 
     // b) map prelim. to final FIELD_IDs
@@ -730,11 +719,8 @@ bool XMLTextFieldExport::IsStringField(
 
     case FIELD_ID_SCRIPT:
     case FIELD_ID_ANNOTATION:
-       case FIELD_ID_DATABASE_NEXT:
+    case FIELD_ID_DATABASE_NEXT:
     case FIELD_ID_DATABASE_SELECT:
-    case FIELD_ID_VARIABLE_DECL:
-    case FIELD_ID_USER_DECL:
-    case FIELD_ID_SEQUENCE_DECL:
     case FIELD_ID_PLACEHOLDER:
     case FIELD_ID_UNKNOWN:
     case FIELD_ID_DRAW_HEADER:
@@ -847,7 +833,8 @@ void XMLTextFieldExport::ExportFieldAutoStyle(
         // recurse into content (does not export element, so can be done first)
         if (bRecursive)
         {
-            ExportMetaField(xPropSet, true, bProgress);
+            bool dummy_for_autostyles(true);
+            ExportMetaField(xPropSet, true, bProgress, dummy_for_autostyles);
         }
         SAL_FALLTHROUGH;
     case FIELD_ID_DOCINFO_PRINT_TIME:
@@ -969,7 +956,8 @@ void XMLTextFieldExport::ExportFieldAutoStyle(
 
 /// export the given field to XML. Called on second pass through document
 void XMLTextFieldExport::ExportField(
-    const Reference<XTextField> & rTextField, bool bProgress )
+    const Reference<XTextField> & rTextField, bool bProgress,
+    bool & rPrevCharIsSpace)
 {
     // get property set
     Reference<XPropertySet> xPropSet(rTextField, UNO_QUERY);
@@ -1047,7 +1035,7 @@ void XMLTextFieldExport::ExportField(
 
         // finally, export the field itself
         ExportFieldHelper( rTextField, xPropSet, xRangePropSet, nToken,
-            bProgress );
+            bProgress, rPrevCharIsSpace);
     }
 }
 
@@ -1057,7 +1045,8 @@ void XMLTextFieldExport::ExportFieldHelper(
     const Reference<XPropertySet> & rPropSet,
     const Reference<XPropertySet> &,
     enum FieldIdEnum nToken,
-    bool bProgress )
+    bool bProgress,
+    bool & rPrevCharIsSpace)
 {
     // get property set info (because some attributes are not support
     // in all implementations)
@@ -1069,8 +1058,11 @@ void XMLTextFieldExport::ExportFieldHelper(
     switch (nToken) {
     case FIELD_ID_AUTHOR:
         // author field: fixed, field (sub-)type
-        ProcessBoolean(XML_FIXED,
-                       GetBoolProperty(sPropertyIsFixed, rPropSet), true);
+        if (xPropSetInfo->hasPropertyByName(sPropertyIsFixed))
+        {
+            GetExport().AddAttribute(XML_NAMESPACE_TEXT, XML_FIXED,
+                                 (GetBoolProperty(sPropertyIsFixed, rPropSet) ? XML_TRUE : XML_FALSE) );
+        }
         ExportElement(MapAuthorFieldName(rPropSet), sPresentation);
         break;
 
@@ -1794,7 +1786,7 @@ void XMLTextFieldExport::ExportFieldHelper(
 
     case FIELD_ID_META:
     {
-        ExportMetaField(rPropSet, false, bProgress);
+        ExportMetaField(rPropSet, false, bProgress, rPrevCharIsSpace);
         break;
     }
 
@@ -1899,7 +1891,7 @@ void XMLTextFieldExport::ExportFieldDeclarations(
         // export only used masters
         DBG_ASSERT(nullptr != pUsedMasters,
                    "field masters must be recorded in order to be "
-                   "written out separatly" );
+                   "written out separately" );
         if (nullptr != pUsedMasters)
         {
             map<Reference<XText>, set<OUString> > ::iterator aMapIter =
@@ -2316,7 +2308,8 @@ void XMLTextFieldExport::ExportMacro(
 
 void XMLTextFieldExport::ExportMetaField(
     const Reference<XPropertySet> & i_xMeta,
-    bool i_bAutoStyles, bool i_bProgress )
+    bool i_bAutoStyles, bool i_bProgress,
+    bool & rPrevCharIsSpace)
 {
     bool doExport(!i_bAutoStyles); // do not export element if autostyles
     // check version >= 1.2
@@ -2351,7 +2344,7 @@ void XMLTextFieldExport::ExportMetaField(
 
     // recurse to export content
     GetExport().GetTextParagraphExport()->
-        exportTextRangeEnumeration( xTextEnum, i_bAutoStyles, i_bProgress );
+        exportTextRangeEnumeration(xTextEnum, i_bAutoStyles, i_bProgress, rPrevCharIsSpace);
 }
 
 /// export all data-style related attributes
@@ -2446,7 +2439,7 @@ void XMLTextFieldExport::ProcessDisplay(bool bIsVisible,
 void XMLTextFieldExport::ProcessBoolean(enum XMLTokenEnum eName,
                                         bool bBool, bool bDefault)
 {
-    DBG_ASSERT( eName != XML_TOKEN_INVALID, "invalid element token");
+    SAL_WARN_IF( eName == XML_TOKEN_INVALID, "xmloff.text", "invalid element token");
     if ( XML_TOKEN_INVALID == eName )
         return;
 
@@ -2465,7 +2458,7 @@ void XMLTextFieldExport::ProcessString(enum XMLTokenEnum eName,
                                        bool bOmitEmpty,
                                        sal_uInt16 nPrefix)
 {
-    DBG_ASSERT( eName != XML_TOKEN_INVALID, "invalid element token");
+    SAL_WARN_IF( eName == XML_TOKEN_INVALID, "xmloff.text", "invalid element token");
     if ( XML_TOKEN_INVALID == eName )
         return;
 
@@ -2516,8 +2509,8 @@ void XMLTextFieldExport::ProcessString(
     enum XMLTokenEnum eValue,
     sal_uInt16 nPrefix)
 {
-    DBG_ASSERT( eName != XML_TOKEN_INVALID, "invalid element token" );
-    DBG_ASSERT( eValue != XML_TOKEN_INVALID, "invalid value token" );
+    SAL_WARN_IF( eName == XML_TOKEN_INVALID, "xmloff.text", "invalid element token" );
+    SAL_WARN_IF( eValue == XML_TOKEN_INVALID, "xmloff.text", "invalid value token" );
     if ( XML_TOKEN_INVALID == eName )
         return;
 
@@ -2555,7 +2548,7 @@ void XMLTextFieldExport::ProcessParagraphSequence(
 void XMLTextFieldExport::ProcessInteger(enum XMLTokenEnum eName,
                                         sal_Int32 nNum)
 {
-    DBG_ASSERT( eName != XML_TOKEN_INVALID, "invalid element token");
+    SAL_WARN_IF( eName == XML_TOKEN_INVALID, "xmloff.text", "invalid element token");
     if ( XML_TOKEN_INVALID == eName )
         return;
 
@@ -2615,7 +2608,7 @@ void XMLTextFieldExport::ProcessDateTime(enum XMLTokenEnum eName,
     if (bIsDuration)
     {
         // date/time duration handle bOmitDurationIfZero
-        if (!bOmitDurationIfZero || !::rtl::math::approxEqual(dValue, 0.0))
+        if (!bOmitDurationIfZero || dValue != 0.0)
         {
             ::sax::Converter::convertDuration(aBuffer, dValue);
         }
@@ -2673,7 +2666,7 @@ void XMLTextFieldExport::ProcessTimeOrDateTime(enum XMLTokenEnum eName,
 }
 
 
-SvXMLEnumMapEntry const aBibliographyDataTypeMap[] =
+SvXMLEnumMapEntry<sal_Int16> const aBibliographyDataTypeMap[] =
 {
     { XML_ARTICLE,          BibliographyDataType::ARTICLE },
     { XML_BOOK,             BibliographyDataType::BOOK },
@@ -2801,9 +2794,9 @@ void XMLTextFieldExport::ExportDataBaseElement(
     const Reference<XPropertySet>& rPropertySet,
     const Reference<XPropertySetInfo>& rPropertySetInfo )
 {
-    DBG_ASSERT( eElementName != XML_TOKEN_INVALID, "need token" );
-    DBG_ASSERT( rPropertySet.is(), "need property set" );
-    DBG_ASSERT( rPropertySetInfo.is(), "need property set info" );
+    SAL_WARN_IF( eElementName == XML_TOKEN_INVALID, "xmloff.text", "need token" );
+    SAL_WARN_IF( !rPropertySet.is(), "xmloff.text", "need property set" );
+    SAL_WARN_IF( !rPropertySetInfo.is(), "xmloff.text", "need property set info" );
 
     // get database properties
     OUString sDataBaseName;
@@ -2888,7 +2881,7 @@ bool XMLTextFieldExport::GetDependentFieldPropertySet(
         Reference<XDependentTextField> xTField = aFields[0];
         xField.set(xTField, UNO_QUERY);
         DBG_ASSERT(xField.is(),
-                  "Surprisinlgy, this TextField refuses to be a PropertySet!");
+                  "Surprisingly, this TextField refuses to be a PropertySet!");
         return true;
     }
     else
@@ -2938,7 +2931,7 @@ enum XMLTokenEnum XMLTextFieldExport::MapPlaceholderType(sal_uInt16 nType)
 enum XMLTokenEnum XMLTextFieldExport::MapAuthorFieldName(
     const Reference<XPropertySet> & xPropSet)
 {
-    // Initalen oder voller Name?
+    // Initials or full name?
     return GetBoolProperty(sPropertyFullName, xPropSet)
         ? XML_AUTHOR_NAME : XML_AUTHOR_INITIALS;
 }
@@ -2950,7 +2943,7 @@ enum XMLTokenEnum XMLTextFieldExport::MapPageNumberName(
     enum XMLTokenEnum eName = XML_TOKEN_INVALID;
     PageNumberType ePage;
     Any aAny = xPropSet->getPropertyValue(sPropertySubType);
-    ePage = *static_cast<PageNumberType const *>(aAny.getValue());
+    ePage = *o3tl::doAccess<PageNumberType>(aAny);
 
     switch (ePage)
     {
@@ -3492,7 +3485,7 @@ inline bool GetBoolProperty(
     const Reference<XPropertySet> & xPropSet)
 {
     Any aAny = xPropSet->getPropertyValue(sPropName);
-    bool bBool = *static_cast<sal_Bool const *>(aAny.getValue());
+    bool bBool = *o3tl::doAccess<bool>(aAny);
     return bBool;
 }
 

@@ -18,7 +18,6 @@
  */
 
 #include "excform.hxx"
-#include <osl/endian.h>
 
 #include "formulacell.hxx"
 #include "document.hxx"
@@ -30,6 +29,7 @@
 #include <svl/sharedstringpool.hxx>
 
 #include "imp_op.hxx"
+#include "namebuff.hxx"
 #include "root.hxx"
 #include "xltracer.hxx"
 #include "xihelper.hxx"
@@ -132,7 +132,7 @@ void ImportExcel::Formula(
                 rDoc.getDoc().EnsureTable(aScPos.Tab());
                 rDoc.setFormulaCell(aScPos, pCell);
                 pCell->SetNeedNumberFormat(false);
-                if (!rtl::math::isNan(fCurVal))
+                if (rtl::math::isFinite(fCurVal))
                     pCell->SetResultDouble(fCurVal);
 
                 GetXFRangeBuffer().SetXF(aScPos, nXF);
@@ -171,10 +171,10 @@ void ImportExcel::Formula(
     if (pCell)
     {
         pCell->SetNeedNumberFormat(false);
-        if( eErr != ConvOK )
+        if( eErr != ConvErr::OK )
             ExcelToSc::SetError( *pCell, eErr );
 
-        if (!rtl::math::isNan(fCurVal))
+        if (rtl::math::isFinite(fCurVal))
             pCell->SetResultDouble(fCurVal);
     }
 
@@ -182,9 +182,8 @@ void ImportExcel::Formula(
 }
 
 ExcelToSc::ExcelToSc( XclImpRoot& rRoot ) :
-    ExcelConverterBase(rRoot.GetDocImport().getDoc().GetSharedStringPool(), 512),
+    ExcelConverterBase(rRoot.GetDocImport().getDoc().GetSharedStringPool()),
     XclImpRoot( rRoot ),
-    bExternName( false ),
     maFuncProv( rRoot ),
     meBiff( rRoot.GetBiff() )
 {
@@ -204,7 +203,7 @@ void ExcelToSc::GetDummy( const ScTokenArray*& pErgebnis )
 // if bAllowArrays is false stream seeks to first byte after <nFormulaLen>
 // otherwise it will seek to the first byte after the additional content (eg
 // inline arrays) following <nFormulaLen>
-ConvErr ExcelToSc::Convert( const ScTokenArray*& pErgebnis, XclImpStream& aIn, sal_Size nFormulaLen, bool bAllowArrays, const FORMULA_TYPE eFT )
+ConvErr ExcelToSc::Convert( const ScTokenArray*& pErgebnis, XclImpStream& aIn, std::size_t nFormulaLen, bool bAllowArrays, const FORMULA_TYPE eFT )
 {
     RootData&       rR = GetOldRoot();
     sal_uInt8           nOp, nLen;
@@ -220,9 +219,7 @@ ConvErr ExcelToSc::Convert( const ScTokenArray*& pErgebnis, XclImpStream& aIn, s
     ScComplexRefData        aCRD;
     ExtensionTypeVec    aExtensions;
 
-    bExternName = false;
-
-    if( eStatus != ConvOK )
+    if( eStatus != ConvErr::OK )
     {
         aIn.Ignore( nFormulaLen );
         return eStatus;
@@ -233,10 +230,10 @@ ConvErr ExcelToSc::Convert( const ScTokenArray*& pErgebnis, XclImpStream& aIn, s
         aPool.Store( OUString("-/-") );
         aPool >> aStack;
         pErgebnis = aPool[ aStack.Get() ];
-        return ConvOK;
+        return ConvErr::OK;
     }
 
-    sal_Size nEndPos = aIn.GetRecPos() + nFormulaLen;
+    std::size_t nEndPos = aIn.GetRecPos() + nFormulaLen;
 
     while( (aIn.GetRecPos() < nEndPos) && !bError )
     {
@@ -400,7 +397,7 @@ ConvErr ExcelToSc::Convert( const ScTokenArray*& pErgebnis, XclImpStream& aIn, s
                 {
                     // nFakt -> skip bytes or words    AttrChoose
                     ++nData;
-                    aIn.Ignore(static_cast<sal_Size>(nData) * nFakt);
+                    aIn.Ignore(static_cast<std::size_t>(nData) * nFakt);
                 }
                 else if( nOpt & 0x10 )                      // AttrSum
                     DoMulArgs( ocSum, 1 );
@@ -711,25 +708,7 @@ ConvErr ExcelToSc::Convert( const ScTokenArray*& pErgebnis, XclImpStream& aIn, s
                 sal_uInt16 nUINT16 = aIn.ReaduInt16();
                 if( nINT16 >= 0 )
                 {
-                    const ExtName* pExtName = rR.pExtNameBuff->GetNameByIndex( nINT16, nUINT16 );
-                    if( pExtName && pExtName->IsDDE() &&
-                        rR.pExtSheetBuff->IsLink( ( sal_uInt16 ) nINT16 ) )
-                    {
-                        OUString        aAppl, aExtDoc;
-                        TokenId         nPar1, nPar2;
-
-                        rR.pExtSheetBuff->GetLink( ( sal_uInt16 ) nINT16 , aAppl, aExtDoc );
-                        nPar1 = aPool.Store( aAppl );
-                        nPar2 = aPool.Store( aExtDoc );
-                        nMerk0 = aPool.Store( pExtName->aName );
-                        aPool   << ocDde << ocOpen << nPar1 << ocSep << nPar2 << ocSep
-                                << nMerk0 << ocClose;
-
-                        GetDoc().CreateDdeLink( aAppl, aExtDoc, pExtName->aName, SC_DDE_DEFAULT, ScMatrixRef() );
-                    }
-                    else
-                        aPool << ocBad;
-
+                    aPool << ocBad;
                     aPool >> aStack;
                 }
                 else
@@ -889,46 +868,41 @@ ConvErr ExcelToSc::Convert( const ScTokenArray*& pErgebnis, XclImpStream& aIn, s
         aPool << ocBad;
         aPool >> aStack;
         pErgebnis = aPool[ aStack.Get() ];
-        eRet = ConvErrNi;
+        eRet = ConvErr::Ni;
     }
     else if( aIn.GetRecPos() != nEndPos )
     {
         aPool << ocBad;
         aPool >> aStack;
         pErgebnis = aPool[ aStack.Get() ];
-        eRet = ConvErrCount;
-    }
-    else if( bExternName )
-    {
-        pErgebnis = aPool[ aStack.Get() ];
-        eRet = ConvErrExternal;
+        eRet = ConvErr::Count;
     }
     else if( bArrayFormula )
     {
         pErgebnis = nullptr;
-        eRet = ConvOK;
+        eRet = ConvErr::OK;
     }
     else
     {
         pErgebnis = aPool[ aStack.Get() ];
-        eRet = ConvOK;
+        eRet = ConvErr::OK;
     }
 
     aIn.Seek( nEndPos );
 
-    if( eRet == ConvOK )
+    if( eRet == ConvErr::OK )
         ReadExtensions( aExtensions, aIn );
 
     return eRet;
 }
 
 // stream seeks to first byte after <nFormulaLen>
-ConvErr ExcelToSc::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, sal_Size nFormulaLen,
+ConvErr ExcelToSc::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, std::size_t nFormulaLen,
                             SCsTAB nTab, const FORMULA_TYPE eFT )
 {
     RootData&       rR = GetOldRoot();
     sal_uInt8           nOp, nLen;
-    sal_Size        nIgnore;
+    std::size_t        nIgnore;
     bool            bError = false;
     const bool      bRangeName = eFT == FT_RangeName;
     const bool      bSharedFormula = eFT == FT_SharedFormula;
@@ -939,18 +913,16 @@ ConvErr ExcelToSc::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, sal_
     aCRD.Ref1.SetAbsTab(aEingPos.Tab());
     aCRD.Ref2.SetAbsTab(aEingPos.Tab());
 
-    bExternName = false;
-
-    if( eStatus != ConvOK )
+    if( eStatus != ConvErr::OK )
     {
         aIn.Ignore( nFormulaLen );
         return eStatus;
     }
 
     if( nFormulaLen == 0 )
-        return ConvOK;
+        return ConvErr::OK;
 
-    sal_Size nEndPos = aIn.GetRecPos() + nFormulaLen;
+    std::size_t nEndPos = aIn.GetRecPos() + nFormulaLen;
 
     while( (aIn.GetRecPos() < nEndPos) && !bError )
     {
@@ -1017,7 +989,7 @@ ConvErr ExcelToSc::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, sal_
                 {
                     // nFakt -> skip bytes or words    AttrChoose
                     ++nData;
-                    aIn.Ignore(static_cast<sal_Size>(nData) * nFakt);
+                    aIn.Ignore(static_cast<std::size_t>(nData) * nFakt);
                 }
             }
                 break;
@@ -1342,24 +1314,22 @@ ConvErr ExcelToSc::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, sal_
     ConvErr eRet;
 
     if( bError )
-        eRet = ConvErrNi;
+        eRet = ConvErr::Ni;
     else if( aIn.GetRecPos() != nEndPos )
-        eRet = ConvErrCount;
-    else if( bExternName )
-        eRet = ConvErrExternal;
+        eRet = ConvErr::Count;
     else
-        eRet = ConvOK;
+        eRet = ConvErr::OK;
 
     aIn.Seek( nEndPos );
     return eRet;
 }
 
-void ExcelToSc::ConvertExternName( const ScTokenArray*& /*rpArray*/, XclImpStream& /*rStrm*/, sal_Size /*nFormulaLen*/,
+void ExcelToSc::ConvertExternName( const ScTokenArray*& /*rpArray*/, XclImpStream& /*rStrm*/, std::size_t /*nFormulaLen*/,
                                       const OUString& /*rUrl*/, const vector<OUString>& /*rTabNames*/ )
 {
 }
 
-void ExcelToSc::GetAbsRefs( ScRangeList& rRangeList, XclImpStream& rStrm, sal_Size nLen )
+void ExcelToSc::GetAbsRefs( ScRangeList& rRangeList, XclImpStream& rStrm, std::size_t nLen )
 {
     OSL_ENSURE_BIFF( GetBiff() == EXC_BIFF5 );
     if( GetBiff() != EXC_BIFF5 )
@@ -1372,8 +1342,8 @@ void ExcelToSc::GetAbsRefs( ScRangeList& rRangeList, XclImpStream& rStrm, sal_Si
     sal_uInt16 nTabFirst, nTabLast;
     sal_Int16 nRefIdx;
 
-    sal_Size nSeek;
-    sal_Size nEndPos = rStrm.GetRecPos() + nLen;
+    std::size_t nSeek;
+    std::size_t nEndPos = rStrm.GetRecPos() + nLen;
 
     while( rStrm.IsValid() && (rStrm.GetRecPos() < nEndPos) )
     {
@@ -1594,7 +1564,7 @@ void ExcelToSc::DoMulArgs( DefTokenId eId, sal_uInt8 nAnz )
     if( nAnz > 0 && eId == ocExternal )
     {
         TokenId             n = eParam[ nAnz - 1 ];
-//##### ADJUST GRUETZE (?) FOR BASIC-FUNCS!
+//##### ADJUST STUPIDITY FOR BASIC-FUNCS!
         if( const OUString* pExt = aPool.GetExternal( n ) )
         {
             if( const XclFunctionInfo* pFuncInfo = maFuncProv.GetFuncInfoFromXclMacroName( *pExt ) )
@@ -1631,7 +1601,7 @@ void ExcelToSc::DoMulArgs( DefTokenId eId, sal_uInt8 nAnz )
                 if( aPool.IsSingleOp( eParam[ nLauf ], ocMissing ) )
                 {
                     if( !nNullParam )
-                        nNullParam = (sal_uInt16) aPool.Store( ( double ) 0.0 );
+                        nNullParam = (sal_uInt16) aPool.Store( 0.0 );
                     eParam[ nLauf ] = nNullParam;
                 }
             }
@@ -1707,7 +1677,7 @@ void ExcelToSc::ExcRelToScRel( sal_uInt16 nRow, sal_uInt8 nCol, ScSingleRefData 
 
 const ScTokenArray* ExcelToSc::GetBoolErr( XclBoolError eType )
 {
-    sal_uInt16 nError;
+    FormulaError nError;
     aPool.Reset();
     aStack.Reset();
 
@@ -1715,20 +1685,20 @@ const ScTokenArray* ExcelToSc::GetBoolErr( XclBoolError eType )
 
     switch( eType )
     {
-        case xlErrNull:     eOc = ocStop;       nError = formula::errNoCode;             break;
-        case xlErrDiv0:     eOc = ocStop;       nError = formula::errDivisionByZero;     break;
-        case xlErrValue:    eOc = ocStop;       nError = formula::errNoValue;            break;
-        case xlErrRef:      eOc = ocStop;       nError = formula::errNoRef;              break;
-        case xlErrName:     eOc = ocStop;       nError = formula::errNoName;             break;
-        case xlErrNum:      eOc = ocStop;       nError = formula::errIllegalFPOperation; break;
-        case xlErrNA:       eOc = ocNotAvail;   nError = formula::NOTAVAILABLE;          break;
-        case xlErrTrue:     eOc = ocTrue;       nError = 0;                              break;
-        case xlErrFalse:    eOc = ocFalse;      nError = 0;                              break;
-        case xlErrUnknown:  eOc = ocStop;       nError = formula::errUnknownState;       break;
+        case xlErrNull:     eOc = ocStop;       nError = FormulaError::NoCode;             break;
+        case xlErrDiv0:     eOc = ocStop;       nError = FormulaError::DivisionByZero;     break;
+        case xlErrValue:    eOc = ocStop;       nError = FormulaError::NoValue;            break;
+        case xlErrRef:      eOc = ocStop;       nError = FormulaError::NoRef;              break;
+        case xlErrName:     eOc = ocStop;       nError = FormulaError::NoName;             break;
+        case xlErrNum:      eOc = ocStop;       nError = FormulaError::IllegalFPOperation; break;
+        case xlErrNA:       eOc = ocNotAvail;   nError = FormulaError::NotAvailable;       break;
+        case xlErrTrue:     eOc = ocTrue;       nError = FormulaError::NONE;               break;
+        case xlErrFalse:    eOc = ocFalse;      nError = FormulaError::NONE;               break;
+        case xlErrUnknown:  eOc = ocStop;       nError = FormulaError::UnknownState;       break;
         default:
             OSL_FAIL( "ExcelToSc::GetBoolErr - wrong enum!" );
             eOc = ocNoName;
-            nError = formula::errUnknownState;
+            nError = FormulaError::UnknownState;
     }
 
     aPool << eOc;
@@ -1738,7 +1708,7 @@ const ScTokenArray* ExcelToSc::GetBoolErr( XclBoolError eType )
     aPool >> aStack;
 
     const ScTokenArray*     pErgebnis = aPool[ aStack.Get() ];
-    if( nError )
+    if( nError != FormulaError::NONE )
         const_cast<ScTokenArray*>(pErgebnis)->SetCodeError( nError );
 
     const_cast<ScTokenArray*>(pErgebnis)->SetExclusiveRecalcModeNormal();
@@ -1775,15 +1745,13 @@ const ScTokenArray* ExcelToSc::GetSharedFormula( const ScAddress& rRefPos ) cons
 
 void ExcelToSc::SetError( ScFormulaCell &rCell, const ConvErr eErr )
 {
-    sal_uInt16  nInd;
+    FormulaError  nInd;
 
     switch( eErr )
     {
-        case ConvErrNi:         nInd = formula::errUnknownToken; break;
-        case ConvErrNoMem:      nInd = formula::errCodeOverflow; break;
-        case ConvErrExternal:   nInd = formula::errNoName; break;
-        case ConvErrCount:      nInd = formula::errCodeOverflow; break;
-        default:                nInd = formula::errNoCode;   // I had no better idea
+        case ConvErr::Ni:         nInd = FormulaError::UnknownToken; break;
+        case ConvErr::Count:      nInd = FormulaError::CodeOverflow; break;
+        default:                  nInd = FormulaError::NoCode;   // I had no better idea
     }
 
     rCell.SetErrCode( nInd );
@@ -1932,7 +1900,7 @@ void ExcelToSc::ReadExtensionMemArea( XclImpStream& aIn )
     sal_uInt16 nCount(0);
     nCount = aIn.ReaduInt16();
 
-    aIn.Ignore( static_cast<sal_Size>(nCount) * ((GetBiff() == EXC_BIFF8) ? 8 : 6) ); // drop the ranges
+    aIn.Ignore( static_cast<std::size_t>(nCount) * ((GetBiff() == EXC_BIFF8) ? 8 : 6) ); // drop the ranges
 }
 
 void ExcelToSc::ReadExtensions( const ExtensionTypeVec& rExtensions,

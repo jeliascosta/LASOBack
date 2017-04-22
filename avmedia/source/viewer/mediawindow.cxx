@@ -122,7 +122,7 @@ Size MediaWindow::getPreferredSize() const
 }
 
 
-void MediaWindow::setPosSize( const Rectangle& rNewRect )
+void MediaWindow::setPosSize( const tools::Rectangle& rNewRect )
 {
     mpImpl->setPosSize( rNewRect );
 }
@@ -201,7 +201,7 @@ void MediaWindow::getMediaFilters( FilterNameVector& rFilterNameVector )
 
     for( size_t i = 0; i < SAL_N_ELEMENTS(pFilters); i += 2 )
     {
-        rFilterNameVector.push_back( ::std::make_pair< OUString, OUString >(
+        rFilterNameVector.push_back( std::make_pair< OUString, OUString >(
                                         OUString::createFromAscii(pFilters[i]),
                                         OUString::createFromAscii(pFilters[i+1]) ) );
     }
@@ -224,8 +224,7 @@ bool MediaWindow::executeMediaURLDialog(vcl::Window*,
 
     getMediaFilters( aFilters );
 
-    unsigned int i;
-    for( i = 0; i < aFilters.size(); ++i )
+    for( FilterNameVector::size_type i = 0; i < aFilters.size(); ++i )
     {
         for( sal_Int32 nIndex = 0; nIndex >= 0; )
         {
@@ -239,7 +238,7 @@ bool MediaWindow::executeMediaURLDialog(vcl::Window*,
     // add filter for all media types
     aDlg.AddFilter( AVMEDIA_RESSTR( AVMEDIA_STR_ALL_MEDIAFILES ), aAllTypes );
 
-    for( i = 0; i < aFilters.size(); ++i )
+    for( FilterNameVector::size_type i = 0; i < aFilters.size(); ++i )
     {
         OUString aTypes;
 
@@ -266,7 +265,7 @@ bool MediaWindow::executeMediaURLDialog(vcl::Window*,
         // for video link should be the default
         xCtrlAcc->setValue(
                 ui::dialogs::ExtendedFilePickerElementIds::CHECKBOX_LINK, 0,
-                uno::makeAny(true) );
+                uno::Any(true) );
         // disabled for now: TODO: preview?
         xCtrlAcc->enableControl(
                 ui::dialogs::ExtendedFilePickerElementIds::CHECKBOX_PREVIEW,
@@ -276,7 +275,7 @@ bool MediaWindow::executeMediaURLDialog(vcl::Window*,
     if( aDlg.Execute() == ERRCODE_NONE )
     {
         const INetURLObject aURL( aDlg.GetPath() );
-        rURL = aURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS );
+        rURL = aURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous );
 
         if (o_pbLink)
         {
@@ -317,8 +316,8 @@ bool MediaWindow::isMediaURL( const OUString& rURL, const OUString& rReferer, bo
             try
             {
                 uno::Reference< media::XPlayer > xPlayer( priv::MediaWindowImpl::createPlayer(
-                                                            aURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS ),
-                                                            rReferer ) );
+                                                            aURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous ),
+                                                            rReferer, nullptr ) );
 
                 if( xPlayer.is() )
                 {
@@ -344,8 +343,7 @@ bool MediaWindow::isMediaURL( const OUString& rURL, const OUString& rReferer, bo
 
             getMediaFilters( aFilters );
 
-            unsigned int i;
-            for( i = 0; ( i < aFilters.size() ) && !bRet; ++i )
+            for( FilterNameVector::size_type i = 0; ( i < aFilters.size() ) && !bRet; ++i )
             {
                 for( sal_Int32 nIndex = 0; nIndex >= 0 && !bRet; )
                 {
@@ -394,7 +392,7 @@ uno::Reference< graphic::XGraphic > MediaWindow::grabFrame( const OUString& rURL
 
             if( !aPrefSize.Width && !aPrefSize.Height )
             {
-                const BitmapEx aBmpEx( getAudioLogo() );
+                const BitmapEx aBmpEx( AVMEDIA_RESID(AVMEDIA_BMP_AUDIOLOGO) );
                 xGraphic.reset( new Graphic( aBmpEx ) );
             }
         }
@@ -402,7 +400,7 @@ uno::Reference< graphic::XGraphic > MediaWindow::grabFrame( const OUString& rURL
 
     if( !xRet.is() && !xGraphic.get() )
     {
-        const BitmapEx aBmpEx( getEmptyLogo() );
+        const BitmapEx aBmpEx( AVMEDIA_RESID(AVMEDIA_BMP_EMPTYLOGO) );
         xGraphic.reset( new Graphic( aBmpEx ) );
     }
 
@@ -412,17 +410,6 @@ uno::Reference< graphic::XGraphic > MediaWindow::grabFrame( const OUString& rURL
     return xRet;
 }
 
-
-BitmapEx MediaWindow::getAudioLogo()
-{
-    return BitmapEx(AVMEDIA_RESID(AVMEDIA_BMP_AUDIOLOGO));
-}
-
-
-BitmapEx MediaWindow::getEmptyLogo()
-{
-    return BitmapEx(AVMEDIA_RESID(AVMEDIA_BMP_EMPTYLOGO));
-}
 
 } // namespace avmedia
 

@@ -33,11 +33,11 @@
 class MenuFloatingWindow : public FloatingWindow, public MenuWindow
 {
     friend void Menu::ImplFillLayoutData() const;
-    friend Menu::~Menu();
+    friend void Menu::dispose();
 
 private:
-    Menu* pMenu;
-    PopupMenu* pActivePopup;
+    VclPtr<Menu> pMenu;
+    VclPtr<PopupMenu> pActivePopup;
     Timer aHighlightChangedTimer;
     Timer aSubmenuCloseTimer;
     Timer aScrollTimer;
@@ -56,11 +56,11 @@ private:
     bool bIgnoreFirstMove : 1;
     bool bKeyInput : 1;
 
-    DECL_LINK_TYPED( PopupEnd, FloatingWindow*, void );
-    DECL_LINK_TYPED( HighlightChanged, Timer*, void );
-    DECL_LINK_TYPED( SubmenuClose, Timer *, void );
-    DECL_LINK_TYPED( AutoScroll, Timer *, void );
-    DECL_LINK_TYPED( ShowHideListener, VclWindowEvent&, void );
+    DECL_LINK( PopupEnd, FloatingWindow*, void );
+    DECL_LINK( HighlightChanged, Timer*, void );
+    DECL_LINK( SubmenuClose, Timer *, void );
+    DECL_LINK( AutoScroll, Timer *, void );
+    DECL_LINK( ShowHideListener, VclWindowEvent&, void );
 
     virtual void StateChanged( StateChangedType nType ) override;
     virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -79,14 +79,14 @@ protected:
     void ImplCursorUpDown( bool bUp, bool bHomeEnd = false );
     void ImplHighlightItem( const MouseEvent& rMEvt, bool bMBDown );
     long ImplGetStartY() const;
-    Rectangle ImplGetItemRect( sal_uInt16 nPos );
+    tools::Rectangle ImplGetItemRect( sal_uInt16 nPos );
     void RenderHighlightItem( vcl::RenderContext& rRenderContext, sal_uInt16 nPos );
     long GetInitialItemY( long *pOptStartY = nullptr ) const;
     void InvalidateItem( sal_uInt16 nPos );
 
 public:
     MenuFloatingWindow(Menu* pMenu, vcl::Window* pParent, WinBits nStyle);
-    virtual ~MenuFloatingWindow();
+    virtual ~MenuFloatingWindow() override;
 
     virtual void dispose() override;
     void doShutdown();
@@ -96,7 +96,7 @@ public:
     virtual void MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual void KeyInput(const KeyEvent& rKEvent) override;
     virtual void Command(const CommandEvent& rCEvt) override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual void RequestHelp( const HelpEvent& rHEvt ) override;
     virtual void Resize() override;
 

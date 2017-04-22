@@ -22,6 +22,8 @@
 #include <cppuhelper/component_context.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 #include <comphelper/processfactory.hxx>
+#include <com/sun/star/beans/PropertyValue.hpp>
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 
@@ -117,7 +119,7 @@ VbaGlobalsBase::init(  const uno::Sequence< beans::PropertyValue >& aInitArgs )
 }
 
 uno::Reference< uno::XInterface > SAL_CALL
-VbaGlobalsBase::createInstance( const OUString& aServiceSpecifier ) throw (uno::Exception, uno::RuntimeException, std::exception)
+VbaGlobalsBase::createInstance( const OUString& aServiceSpecifier )
 {
     uno::Reference< uno::XInterface > xReturn;
     if ( aServiceSpecifier == sAppService )
@@ -132,7 +134,7 @@ VbaGlobalsBase::createInstance( const OUString& aServiceSpecifier ) throw (uno::
 }
 
 uno::Reference< uno::XInterface > SAL_CALL
-VbaGlobalsBase::createInstanceWithArguments( const OUString& aServiceSpecifier, const uno::Sequence< uno::Any >& Arguments ) throw (uno::Exception, uno::RuntimeException, std::exception)
+VbaGlobalsBase::createInstanceWithArguments( const OUString& aServiceSpecifier, const uno::Sequence< uno::Any >& Arguments )
 {
 
     uno::Reference< uno::XInterface > xReturn;
@@ -148,7 +150,7 @@ VbaGlobalsBase::createInstanceWithArguments( const OUString& aServiceSpecifier, 
 }
 
 uno::Sequence< OUString > SAL_CALL
-VbaGlobalsBase::getAvailableServiceNames(  ) throw (uno::RuntimeException, std::exception)
+VbaGlobalsBase::getAvailableServiceNames(  )
 {
     uno::Sequence< OUString > serviceNames { "ooo.vba.msforms.UserForm" };
     return serviceNames;

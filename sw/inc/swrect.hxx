@@ -26,6 +26,10 @@
 
 class SvStream;
 
+/// *Of course* Writer needs its own rectangles.
+/// This is half-open so m_Point.X() + m_Size.getWidth() is *not* included.
+/// Note the tools Rectangle is (usually? sometimes?) closed so there's a
+/// SVRect() to subtract 1 for the conversion.
 class SAL_WARN_UNUSED SwRect
 {
     Point m_Point;
@@ -39,7 +43,7 @@ public:
     inline SwRect( long X, long Y, long Width, long Height );
 
     //SV-SS e.g. SwRect( pWin->GetClipRect() );
-    SwRect( const Rectangle &rRect );
+    SwRect( const tools::Rectangle &rRect );
 
     //Set-Methods
     inline void Chg( const Point& rNP, const Size &rNS );
@@ -72,16 +76,16 @@ public:
 
     void Justify();
 
-           SwRect &Union( const SwRect& rRect );
-           SwRect &Intersection( const SwRect& rRect );
+    SwRect &Union( const SwRect& rRect );
+    SwRect &Intersection( const SwRect& rRect );
 
-   // Same as Intersection, only assume that Rects are overlapping!
-           SwRect &Intersection_( const SwRect &rRect );
+    // Same as Intersection, only assume that Rects are overlapping!
+    SwRect &Intersection_( const SwRect &rRect );
 
-           bool IsInside( const Point& rPOINT ) const;
-           bool IsNear(const Point& rPoint, long nTolerance ) const;
-           bool IsInside( const SwRect& rRect ) const;
-           bool IsOver( const SwRect& rRect ) const;
+    bool IsInside( const Point& rPOINT ) const;
+    bool IsNear(const Point& rPoint, long nTolerance ) const;
+    bool IsInside( const SwRect& rRect ) const;
+    bool IsOver( const SwRect& rRect ) const;
     inline bool HasArea() const;
     inline bool IsEmpty() const;
     inline void Clear();
@@ -95,7 +99,7 @@ public:
     inline SwRect &operator-=( const Point &rPt );
 
     //SV-SS e.g. pWin->DrawRect( aSwRect.SVRect() );
-    inline Rectangle  SVRect() const;
+    inline tools::Rectangle  SVRect() const;
 
     // Output operator for debugging.
     friend SvStream& WriteSwRect( SvStream &rStream, const SwRect &rRect );
@@ -274,10 +278,10 @@ inline SwRect &SwRect::operator-=( const Point &rPt )
 }
 
 // other
-inline Rectangle SwRect::SVRect() const
+inline tools::Rectangle SwRect::SVRect() const
 {
     SAL_WARN_IF( IsEmpty(), "sw", "SVRect() without Width or Height" );
-    return Rectangle( m_Point.getX(), m_Point.getY(),
+    return tools::Rectangle( m_Point.getX(), m_Point.getY(),
         m_Point.getX() + m_Size.getWidth() - 1,         //Right()
         m_Point.getY() + m_Size.getHeight() - 1 );      //Bottom()
 }

@@ -20,7 +20,6 @@
 #include <svl/SfxBroadcaster.hxx>
 
 #include <svl/hint.hxx>
-#include <svl/smplhint.hxx>
 #include <svl/lstner.hxx>
 #include <tools/debug.hxx>
 
@@ -55,7 +54,7 @@ void SfxBroadcaster::Broadcast( const SfxHint &rHint )
 
 SfxBroadcaster::~SfxBroadcaster()
 {
-    Broadcast( SfxSimpleHint(SFX_HINT_DYING) );
+    Broadcast( SfxHint(SfxHintId::Dying) );
 
     // remove all still registered listeners
     for (size_t i = 0; i < mpImpl->m_Listeners.size(); ++i)

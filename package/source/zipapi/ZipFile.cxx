@@ -32,8 +32,10 @@
 #include <comphelper/processfactory.hxx>
 #include <rtl/digest.h>
 #include <osl/diagnose.h>
+#include <o3tl/make_unique.hxx>
 
 #include <algorithm>
+#include <iterator>
 #include <vector>
 
 #include "blowfishcontext.hxx"
@@ -68,11 +70,9 @@ using ZipUtils::Inflater;
 /** This class is used to read entries from a zip file
  */
 ZipFile::ZipFile( uno::Reference < XInputStream > &xInput, const uno::Reference < XComponentContext > & rxContext, bool bInitialise )
-    throw(IOException, ZipException, RuntimeException)
 : aGrabber(xInput)
 , aInflater( true )
 , xStream(xInput)
-, xSeek(xInput, UNO_QUERY)
 , m_xContext ( rxContext )
 , bRecoveryMode( false )
 , mbUseBufferedStream(false)
@@ -88,11 +88,9 @@ ZipFile::ZipFile( uno::Reference < XInputStream > &xInput, const uno::Reference 
 }
 
 ZipFile::ZipFile( uno::Reference < XInputStream > &xInput, const uno::Reference < XComponentContext > & rxContext, bool bInitialise, bool bForceRecovery)
-    throw(IOException, ZipException, RuntimeException)
 : aGrabber(xInput)
 , aInflater( true )
 , xStream(xInput)
-, xSeek(xInput, UNO_QUERY)
 , m_xContext ( rxContext )
 , bRecoveryMode( bForceRecovery )
 , mbUseBufferedStream(false)
@@ -126,7 +124,6 @@ void ZipFile::setInputStream ( const uno::Reference < XInputStream >& xNewStream
     ::osl::MutexGuard aGuard( m_aMutex );
 
     xStream = xNewStream;
-    xSeek.set( xStream, UNO_QUERY );
     aGrabber.setInputStream ( xStream );
 }
 
@@ -386,7 +383,6 @@ bool ZipFile::StaticFillData (  ::rtl::Reference< BaseEncryptionData > & rData,
 uno::Reference< XInputStream > ZipFile::StaticGetDataFromRawStream( const uno::Reference< uno::XComponentContext >& rxContext,
                                                                 const uno::Reference< XInputStream >& xStream,
                                                                 const ::rtl::Reference< EncryptionData > &rData )
-        throw ( packages::WrongPasswordException, ZipIOException, RuntimeException )
 {
     if ( !rData.is() )
         throw ZipIOException("Encrypted stream without encryption data!" );
@@ -498,6 +494,7 @@ bool ZipFile::hasValidPassword ( ZipEntry & rEntry, const ::rtl::Reference< Encr
     bool bRet = false;
     if ( rData.is() && rData->m_aKey.getLength() )
     {
+        css::uno::Reference < css::io::XSeekable > xSeek(xStream, UNO_QUERY_THROW);
         xSeek->seek( rEntry.nOffset );
         sal_Int64 nSize = rEntry.nMethod == DEFLATED ? rEntry.nCompressedSize : rEntry.nSize;
 
@@ -557,8 +554,7 @@ public:
             readAndCopy(nRemaining);
     }
 
-    virtual sal_Int32 SAL_CALL readBytes( uno::Sequence<sal_Int8>& rData, sal_Int32 nBytesToRead )
-        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override
+    virtual sal_Int32 SAL_CALL readBytes( uno::Sequence<sal_Int8>& rData, sal_Int32 nBytesToRead ) override
     {
         if (!hasBytes())
             return 0;
@@ -575,14 +571,12 @@ public:
         return nReadSize;
     }
 
-    virtual sal_Int32 SAL_CALL readSomeBytes( ::css::uno::Sequence<sal_Int8>& rData, sal_Int32 nMaxBytesToRead )
-        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override
+    virtual sal_Int32 SAL_CALL readSomeBytes( ::css::uno::Sequence<sal_Int8>& rData, sal_Int32 nMaxBytesToRead ) override
     {
         return readBytes(rData, nMaxBytesToRead);
     }
 
-    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip )
-        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override
+    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip ) override
     {
         if (!hasBytes())
             return;
@@ -590,8 +584,7 @@ public:
         mnPos += nBytesToSkip;
     }
 
-    virtual sal_Int32 SAL_CALL available()
-        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override
+    virtual sal_Int32 SAL_CALL available() override
     {
         if (!hasBytes())
             return 0;
@@ -599,8 +592,7 @@ public:
         return remainingSize();
     }
 
-    virtual void SAL_CALL closeInput()
-        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception) override
+    virtual void SAL_CALL closeInput() override
     {
     }
 };
@@ -627,16 +619,15 @@ uno::Reference< XInputStream > ZipFile::createStreamForZipEntry(
     return xBufStream;
 }
 
-ZipEnumeration * SAL_CALL ZipFile::entries(  )
+std::unique_ptr<ZipEnumeration> ZipFile::entries()
 {
-    return new ZipEnumeration ( aEntries );
+    return o3tl::make_unique<ZipEnumeration>(aEntries);
 }
 
-uno::Reference< XInputStream > SAL_CALL ZipFile::getInputStream( ZipEntry& rEntry,
+uno::Reference< XInputStream > ZipFile::getInputStream( ZipEntry& rEntry,
         const ::rtl::Reference< EncryptionData > &rData,
         bool bIsEncrypted,
         const rtl::Reference<SotMutexHolder>& aMutexHolder )
-    throw(IOException, ZipException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -660,14 +651,10 @@ uno::Reference< XInputStream > SAL_CALL ZipFile::getInputStream( ZipEntry& rEntr
                                     bIsEncrypted );
 }
 
-uno::Reference< XInputStream > SAL_CALL ZipFile::getDataStream( ZipEntry& rEntry,
+uno::Reference< XInputStream > ZipFile::getDataStream( ZipEntry& rEntry,
         const ::rtl::Reference< EncryptionData > &rData,
         bool bIsEncrypted,
         const rtl::Reference<SotMutexHolder>& aMutexHolder )
-    throw ( packages::WrongPasswordException,
-            IOException,
-            ZipException,
-            RuntimeException )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -700,11 +687,10 @@ uno::Reference< XInputStream > SAL_CALL ZipFile::getDataStream( ZipEntry& rEntry
                                     bIsEncrypted );
 }
 
-uno::Reference< XInputStream > SAL_CALL ZipFile::getRawData( ZipEntry& rEntry,
+uno::Reference< XInputStream > ZipFile::getRawData( ZipEntry& rEntry,
         const ::rtl::Reference< EncryptionData >& rData,
         bool bIsEncrypted,
         const rtl::Reference<SotMutexHolder>& aMutexHolder )
-    throw(IOException, ZipException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -714,15 +700,11 @@ uno::Reference< XInputStream > SAL_CALL ZipFile::getRawData( ZipEntry& rEntry,
     return createStreamForZipEntry ( aMutexHolder, rEntry, rData, UNBUFF_STREAM_RAW, bIsEncrypted );
 }
 
-uno::Reference< XInputStream > SAL_CALL ZipFile::getWrappedRawStream(
+uno::Reference< XInputStream > ZipFile::getWrappedRawStream(
         ZipEntry& rEntry,
         const ::rtl::Reference< EncryptionData >& rData,
         const OUString& aMediaType,
         const rtl::Reference<SotMutexHolder>& aMutexHolder )
-    throw ( packages::NoEncryptionException,
-            IOException,
-            ZipException,
-            RuntimeException )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -736,7 +718,6 @@ uno::Reference< XInputStream > SAL_CALL ZipFile::getWrappedRawStream(
 }
 
 bool ZipFile::readLOC( ZipEntry &rEntry )
-    throw(IOException, ZipException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -806,8 +787,7 @@ bool ZipFile::readLOC( ZipEntry &rEntry )
     return true;
 }
 
-sal_Int32 ZipFile::findEND( )
-    throw(IOException, ZipException, RuntimeException)
+sal_Int32 ZipFile::findEND()
 {
     // this method is called in constructor only, no need for mutex
     sal_Int32 nLength, nPos, nEnd;
@@ -849,7 +829,6 @@ sal_Int32 ZipFile::findEND( )
 }
 
 sal_Int32 ZipFile::readCEN()
-    throw(IOException, ZipException, RuntimeException)
 {
     // this method is called in constructor only, no need for mutex
     sal_Int32 nCenPos = -1, nEndPos, nLocPos;
@@ -967,7 +946,6 @@ sal_Int32 ZipFile::readCEN()
 }
 
 void ZipFile::recover()
-    throw(IOException, ZipException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 

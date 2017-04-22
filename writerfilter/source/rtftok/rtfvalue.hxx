@@ -20,27 +20,29 @@ namespace rtftok
 {
 class RTFSprms;
 class RTFShape;
+class RTFPicture;
 /// Value of an RTF keyword
 class RTFValue
     : public Value
 {
 public:
     typedef std::shared_ptr<RTFValue> Pointer_t;
-    RTFValue(int nValue, const OUString& sValue, RTFSprms rAttributes, RTFSprms rSprms,
-             css::uno::Reference<css::drawing::XShape> const& xShape,
-             css::uno::Reference<css::io::XInputStream> const& xStream,
-             css::uno::Reference<css::embed::XEmbeddedObject> const& xObject,
-             bool bForceString, const RTFShape& aShape);
+    RTFValue(int nValue, OUString sValue, RTFSprms rAttributes, RTFSprms rSprms,
+             css::uno::Reference<css::drawing::XShape> xShape,
+             css::uno::Reference<css::io::XInputStream> xStream,
+             css::uno::Reference<css::embed::XEmbeddedObject> xObject,
+             bool bForceString, const RTFShape& aShape, const RTFPicture& rPicture);
     RTFValue();
-    RTFValue(int nValue);
-    RTFValue(const OUString& sValue, bool bForce = false);
-    RTFValue(RTFSprms rAttributes);
+    explicit RTFValue(int nValue);
+    RTFValue(OUString sValue, bool bForce = false);
+    explicit RTFValue(RTFSprms rAttributes);
     RTFValue(RTFSprms rAttributes, RTFSprms rSprms);
-    RTFValue(css::uno::Reference<css::drawing::XShape> const& xShape);
-    RTFValue(css::uno::Reference<css::io::XInputStream> const& xStream);
-    RTFValue(css::uno::Reference<css::embed::XEmbeddedObject> const& xObject);
-    RTFValue(const RTFShape& aShape);
-    virtual ~RTFValue();
+    explicit RTFValue(css::uno::Reference<css::drawing::XShape> xShape);
+    explicit RTFValue(css::uno::Reference<css::io::XInputStream> xStream);
+    explicit RTFValue(css::uno::Reference<css::embed::XEmbeddedObject> xObject);
+    explicit RTFValue(const RTFShape& aShape);
+    explicit RTFValue(const RTFPicture& rPicture);
+    virtual ~RTFValue() override;
     void setString(const OUString& sValue);
     virtual int getInt() const override;
     virtual OUString getString() const override;
@@ -55,6 +57,7 @@ public:
     RTFSprms& getAttributes();
     RTFSprms& getSprms();
     RTFShape& getShape() const;
+    RTFPicture& getPicture() const;
     bool equals(RTFValue& rOther);
 private:
     RTFValue& operator=(RTFValue const& rOther) = delete;
@@ -67,6 +70,7 @@ private:
     css::uno::Reference<css::embed::XEmbeddedObject> m_xObject;
     bool m_bForceString;
     std::shared_ptr<RTFShape> m_pShape;
+    std::shared_ptr<RTFPicture> m_pPicture;
 };
 } // namespace rtftok
 } // namespace writerfilter

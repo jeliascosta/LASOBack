@@ -32,7 +32,6 @@
 #include "foptmgr.hxx"
 
 #include "globstr.hrc"
-#include "filter.hrc"
 
 #include "filtdlg.hxx"
 #include <vcl/msgbox.hxx>
@@ -85,15 +84,12 @@ ScSpecialFilterDlg::ScSpecialFilterDlg( SfxBindings* pB, SfxChildWindow* pCW, vc
     Init( rArgSet );
     pEdFilterArea->GrabFocus();
 
-    // Hack: RefInput-Kontrolle
-    pIdle = new Idle;
+    // hack: control of RefInput
+    pIdle = new Idle("Special Filter Dialog");
     // FIXME: this is an abomination
-    pIdle->SetPriority( SchedulerPriority::LOWEST );
-    pIdle->SetIdleHdl( LINK( this, ScSpecialFilterDlg, TimeOutHdl ) );
+    pIdle->SetPriority( TaskPriority::LOWEST );
+    pIdle->SetInvokeHandler( LINK( this, ScSpecialFilterDlg, TimeOutHdl ) );
     pIdle->Start();
-
-    pLbCopyArea->SetAccessibleName(pBtnCopyResult->GetText());
-    pEdCopyArea->SetAccessibleName(pBtnCopyResult->GetText());
 }
 
 ScSpecialFilterDlg::~ScSpecialFilterDlg()
@@ -112,7 +108,7 @@ void ScSpecialFilterDlg::dispose()
 
     delete pOutItem;
 
-    // Hack: RefInput-Kontrolle
+    // hack: control of RefInput
     pIdle->Stop();
     delete pIdle;
 
@@ -187,7 +183,7 @@ void ScSpecialFilterDlg::Init( const SfxItemSet& rArgSet )
 
     pLbFilterArea->SelectEntryPos( 0 );
 
-    // Optionen initialisieren lassen:
+    // let options be initialized:
 
     pOptionsMgr  = new ScFilterOptionsMgr(
                             pViewData,
@@ -205,14 +201,14 @@ void ScSpecialFilterDlg::Init( const SfxItemSet& rArgSet )
                             pFtDbArea,
                             aStrUndefined );
 
-    //  Spezialfilter braucht immer Spaltenkoepfe
+    //  special filter always needs column headers
     pBtnHeader->Check();
     pBtnHeader->Disable();
 
-    // Modal-Modus einschalten
-//  SetDispatcherLock( true );
-    //@BugID 54702 Enablen/Disablen nur noch in Basisklasse
-    //SFX_APPWINDOW->Disable(false);        //! allgemeine Methode im ScAnyRefDlg
+    // turn on modal mode
+    // SetDispatcherLock( true );
+    //@BugID 54702 enable/disable in base class only
+    //SFX_APPWINDOW->Disable(false);        //! general method in ScAnyRefDlg
 }
 
 bool ScSpecialFilterDlg::Close()
@@ -223,12 +219,12 @@ bool ScSpecialFilterDlg::Close()
     return DoClose( ScSpecialFilterDlgWrapper::GetChildWindowId() );
 }
 
-// Uebergabe eines mit der Maus selektierten Tabellenbereiches, der dann als
-// neue Selektion im Referenz-Edit angezeigt wird.
+// Transfer of a table area selected with the mouse, which is then displayed
+// as a new selection in the reference edit.
 
 void ScSpecialFilterDlg::SetReference( const ScRange& rRef, ScDocument* pDocP )
 {
-    if ( bRefInputMode && pRefInputEdit )       // Nur moeglich, wenn im Referenz-Editmodus
+    if ( bRefInputMode && pRefInputEdit )       // only possible if in the reference edit mode
     {
         if ( rRef.aStart != rRef.aEnd )
             RefInputStart( pRefInputEdit );
@@ -283,7 +279,7 @@ bool ScSpecialFilterDlg::IsRefInputMode() const
 
 // Handler:
 
-IMPL_LINK_TYPED( ScSpecialFilterDlg, EndDlgHdl, Button*, pBtn, void )
+IMPL_LINK( ScSpecialFilterDlg, EndDlgHdl, Button*, pBtn, void )
 {
     OSL_ENSURE( pDoc && pViewData, "Document or ViewData not found. :-/" );
 
@@ -333,9 +329,8 @@ IMPL_LINK_TYPED( ScSpecialFilterDlg, EndDlgHdl, Button*, pBtn, void )
         if ( bEditInputOk )
         {
             /*
-             * Alle Edit-Felder enthalten gueltige Bereiche.
-             * Nun wird versucht aus dem Filterbereich
-             * ein ScQueryParam zu erzeugen:
+             * All edit fields contain valid areas. Now try to create
+             * a ScQueryParam from the filter area:
              */
 
             ScRefFlags  nResult = theFilterArea.Parse( theAreaStr, pDoc, eConv );
@@ -363,18 +358,12 @@ IMPL_LINK_TYPED( ScSpecialFilterDlg, EndDlgHdl, Button*, pBtn, void )
                 theOutParam.bHasHeader = pBtnHeader->IsChecked();
                 theOutParam.bByRow     = true;
                 theOutParam.bCaseSens  = pBtnCase->IsChecked();
-                theOutParam.eSearchType = pBtnRegExp->IsChecked() ? utl::SearchParam::SRCH_REGEXP :
-                    utl::SearchParam::SRCH_NORMAL;
+                theOutParam.eSearchType = pBtnRegExp->IsChecked() ? utl::SearchParam::SearchType::Regexp :
+                    utl::SearchParam::SearchType::Normal;
                 theOutParam.bDuplicate = !pBtnUnique->IsChecked();
                 theOutParam.bDestPers  = pBtnDestPers->IsChecked();
 
-                bQueryOk =
-                    pDoc->CreateQueryParam( rStart.Col(),
-                                            rStart.Row(),
-                                            rEnd.Col(),
-                                            rEnd.Row(),
-                                            rStart.Tab(),
-                                            theOutParam );
+                bQueryOk = pDoc->CreateQueryParam(ScRange(rStart,rEnd), theOutParam);
             }
         }
 
@@ -399,7 +388,7 @@ IMPL_LINK_TYPED( ScSpecialFilterDlg, EndDlgHdl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK_TYPED( ScSpecialFilterDlg, TimeOutHdl, Idle*, _pIdle, void )
+IMPL_LINK( ScSpecialFilterDlg, TimeOutHdl, Timer*, _pIdle, void )
 {
     // every 50ms check whether RefInputMode is still true
 
@@ -425,7 +414,7 @@ IMPL_LINK_TYPED( ScSpecialFilterDlg, TimeOutHdl, Idle*, _pIdle, void )
     pIdle->Start();
 }
 
-IMPL_LINK_TYPED( ScSpecialFilterDlg, FilterAreaSelHdl, ListBox&, rLb, void )
+IMPL_LINK( ScSpecialFilterDlg, FilterAreaSelHdl, ListBox&, rLb, void )
 {
     if ( &rLb == pLbFilterArea )
     {
@@ -439,7 +428,7 @@ IMPL_LINK_TYPED( ScSpecialFilterDlg, FilterAreaSelHdl, ListBox&, rLb, void )
     }
 }
 
-IMPL_LINK_TYPED( ScSpecialFilterDlg, FilterAreaModHdl, Edit&, rEd, void )
+IMPL_LINK( ScSpecialFilterDlg, FilterAreaModHdl, Edit&, rEd, void )
 {
     if ( &rEd == pEdFilterArea )
     {

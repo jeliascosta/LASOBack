@@ -30,9 +30,9 @@ class VCL_DLLPUBLIC SpinButton : public Control
 {
 private:
     AutoTimer       maRepeatTimer;
-    Rectangle       maUpperRect;
-    Rectangle       maLowerRect;
-    Rectangle       maFocusRect;
+    tools::Rectangle       maUpperRect;
+    tools::Rectangle       maLowerRect;
+    tools::Rectangle       maFocusRect;
     bool            mbRepeat         : 1;
     bool            mbUpperIn        : 1;
     bool            mbLowerIn        : 1;
@@ -45,19 +45,19 @@ private:
     long            mnValue;
     long            mnValueStep;
 
-    SAL_DLLPRIVATE Rectangle* ImplFindPartRect( const Point& rPt );
+    SAL_DLLPRIVATE tools::Rectangle* ImplFindPartRect( const Point& rPt );
     using Window::ImplInit;
     SAL_DLLPRIVATE void       ImplInit( vcl::Window* pParent, WinBits nStyle );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplTimeout, Timer*, void );
+    DECL_DLLPRIVATE_LINK( ImplTimeout, Timer*, void );
 
 public:
-    explicit        SpinButton( vcl::Window* pParent, WinBits nStyle = 0 );
+    explicit        SpinButton( vcl::Window* pParent, WinBits nStyle );
 
     void            Up();
     void            Down();
 
     virtual void    Resize() override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual void    Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonUp( const MouseEvent& rMEvt ) override;
@@ -83,11 +83,11 @@ private:
     SAL_DLLPRIVATE bool        ImplMoveFocus( bool _bUpper );
     SAL_DLLPRIVATE void        ImplCalcFocusRect( bool _bUpper );
 
-    SAL_DLLPRIVATE inline bool ImplIsUpperEnabled( ) const
+    SAL_DLLPRIVATE bool ImplIsUpperEnabled( ) const
     {
         return mnValue + mnValueStep <= mnMaxRange;
     }
-    SAL_DLLPRIVATE inline bool ImplIsLowerEnabled( ) const
+    SAL_DLLPRIVATE bool ImplIsLowerEnabled( ) const
     {
         return mnValue >= mnMinRange + mnValueStep;
     }

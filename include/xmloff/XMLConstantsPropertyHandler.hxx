@@ -25,6 +25,7 @@
 #include <xmloff/xmlprhdl.hxx>
 #include <xmloff/xmltoken.hxx>
 
+template<typename EnumT>
 struct SvXMLEnumMapEntry;
 
 
@@ -33,16 +34,17 @@ struct SvXMLEnumMapEntry;
 */
 class XMLOFF_DLLPUBLIC XMLConstantsPropertyHandler: public XMLPropertyHandler
 {
-    const SvXMLEnumMapEntry *pMap;
+    const SvXMLEnumMapEntry<sal_uInt16> *pMap;
     const enum ::xmloff::token::XMLTokenEnum eDefault;
 
 public:
-
-    XMLConstantsPropertyHandler( const SvXMLEnumMapEntry *pM,
-                                 enum ::xmloff::token::XMLTokenEnum eDflt);
+    template<typename EnumT>
+    XMLConstantsPropertyHandler( const SvXMLEnumMapEntry<EnumT> *pM,
+                                 enum ::xmloff::token::XMLTokenEnum eDflt)
+     : pMap(reinterpret_cast<const SvXMLEnumMapEntry<sal_uInt16>*>(pM)), eDefault(eDflt) {}
 
     // Just needed for virtual destruction
-    virtual ~XMLConstantsPropertyHandler();
+    virtual ~XMLConstantsPropertyHandler() override;
 
     /// Imports the given value in cas of the given XML-data-type
     virtual bool importXML(

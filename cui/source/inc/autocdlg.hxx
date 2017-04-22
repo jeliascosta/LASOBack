@@ -49,11 +49,11 @@ class OfaAutoCorrDlg : public SfxTabDialog
     sal_uInt16 m_nReplacePageId;
     sal_uInt16 m_nExceptionsPageId;
 
-    DECL_LINK_TYPED(SelectLanguageHdl, ListBox&, void);
+    DECL_LINK(SelectLanguageHdl, ListBox&, void);
 public:
 
     OfaAutoCorrDlg(vcl::Window* pParent, const SfxItemSet *pSet);
-    virtual ~OfaAutoCorrDlg();
+    virtual ~OfaAutoCorrDlg() override;
     virtual void dispose() override;
 
     void EnableLanguage(bool bEnable);
@@ -73,14 +73,14 @@ class OfaACorrCheckListBox : public SvSimpleTable
         virtual void    KeyInput( const KeyEvent& rKEvt ) override;
 
     public:
-        OfaACorrCheckListBox(SvSimpleTableContainer& rParent, WinBits nBits = WB_BORDER)
-            : SvSimpleTable(rParent, nBits)
+        OfaACorrCheckListBox(SvSimpleTableContainer& rParent)
+            : SvSimpleTable(rParent, WB_BORDER)
         {
         }
 
-        inline void *GetUserData(sal_uLong nPos) { return GetEntry(nPos)->GetUserData(); }
-        inline void SetUserData(sal_uLong nPos, void *pData ) { GetEntry(nPos)->SetUserData(pData); }
-        inline sal_uLong GetSelectEntryPos() { return GetModel()->GetAbsPos(FirstSelected()); }
+        void *GetUserData(sal_uLong nPos) { return GetEntry(nPos)->GetUserData(); }
+        void SetUserData(sal_uLong nPos, void *pData ) { GetEntry(nPos)->SetUserData(pData); }
+        sal_uLong GetSelectEntryPos() { return GetModel()->GetAbsPos(FirstSelected()); }
 
         bool            IsChecked(sal_uLong nPos, sal_uInt16 nCol = 0);
         void            CheckEntryPos(sal_uLong nPos, sal_uInt16 nCol, bool bChecked);
@@ -109,7 +109,7 @@ private:
 
 public:
     OfaAutocorrOptionsPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~OfaAutocorrOptionsPage();
+    virtual ~OfaAutocorrOptionsPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent,
@@ -160,15 +160,15 @@ class OfaSwAutoFmtOptionsPage : public SfxTabPage
 
     SvLBoxButtonData*   pCheckButtonData;
 
-        DECL_LINK_TYPED(SelectHdl, SvTreeListBox*, void);
-        DECL_LINK_TYPED(EditHdl, Button*, void);
-        DECL_LINK_TYPED(DoubleClickEditHdl, SvTreeListBox*, bool);
+        DECL_LINK(SelectHdl, SvTreeListBox*, void);
+        DECL_LINK(EditHdl, Button*, void);
+        DECL_LINK(DoubleClickEditHdl, SvTreeListBox*, bool);
         SvTreeListEntry* CreateEntry(OUString& rTxt, sal_uInt16 nCol);
 
 
         OfaSwAutoFmtOptionsPage( vcl::Window* pParent,
                             const SfxItemSet& rSet );
-        virtual ~OfaSwAutoFmtOptionsPage();
+        virtual ~OfaSwAutoFmtOptionsPage() override;
         virtual void dispose() override;
 
 public:
@@ -198,7 +198,7 @@ public:
     {
     }
 
-    virtual ~AutoCorrEdit();
+    virtual ~AutoCorrEdit() override;
 
     void            SetActionHdl( const Link<AutoCorrEdit&,bool>& rLink )
                                 { aActionLink = rLink;}
@@ -263,10 +263,10 @@ private:
         bool bReplaceEditChanged:1;
         bool bSWriter:1;
 
-        DECL_LINK_TYPED(SelectHdl, SvTreeListBox*, void);
-        DECL_LINK_TYPED(NewDelButtonHdl, Button*, void);
-        DECL_LINK_TYPED(NewDelActionHdl, AutoCorrEdit&, bool);
-        DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+        DECL_LINK(SelectHdl, SvTreeListBox*, void);
+        DECL_LINK(NewDelButtonHdl, Button*, void);
+        DECL_LINK(NewDelActionHdl, AutoCorrEdit&, bool);
+        DECL_LINK(ModifyHdl, Edit&, void);
         bool NewDelHdl(void*);
 
         void RefillReplaceBox(  bool bFromReset,
@@ -275,7 +275,7 @@ private:
 
 public:
                         OfaAutocorrReplacePage( vcl::Window* pParent, const SfxItemSet& rSet );
-                        virtual ~OfaAutocorrReplacePage();
+                        virtual ~OfaAutocorrReplacePage() override;
     virtual void        dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet);
@@ -283,7 +283,7 @@ public:
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
     virtual void        Reset( const SfxItemSet* rSet ) override;
     virtual void        ActivatePage( const SfxItemSet& ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
     void    SetLanguage(LanguageType eSet);
     void    DeleteEntry(const OUString& sShort, const OUString& sLong);
@@ -323,10 +323,10 @@ private:
     CollatorWrapper* pCompareClass;
     LanguageType    eLang;
 
-    DECL_LINK_TYPED(NewDelButtonHdl, Button*, void);
-    DECL_LINK_TYPED(NewDelActionHdl, AutoCorrEdit&, bool);
-    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
-    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+    DECL_LINK(NewDelButtonHdl, Button*, void);
+    DECL_LINK(NewDelActionHdl, AutoCorrEdit&, bool);
+    DECL_LINK(SelectHdl, ListBox&, void);
+    DECL_LINK(ModifyHdl, Edit&, void);
     bool NewDelHdl(void*);
                     /// Box filled with new language
     void            RefillReplaceBoxes(bool bFromReset,
@@ -334,7 +334,7 @@ private:
                                         LanguageType eNewLanguage);
 public:
                         OfaAutocorrExceptPage( vcl::Window* pParent, const SfxItemSet& rSet );
-                        virtual ~OfaAutocorrExceptPage();
+                        virtual ~OfaAutocorrExceptPage() override;
     virtual void        dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent,
@@ -343,7 +343,7 @@ public:
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
     virtual void        Reset( const SfxItemSet* rSet ) override;
     virtual void        ActivatePage( const SfxItemSet& ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
     void                SetLanguage(LanguageType eSet);
 
 };
@@ -393,8 +393,8 @@ private:
     sal_UCS4    cStartQuote;
     sal_UCS4    cEndQuote;
 
-    DECL_LINK_TYPED( QuoteHdl, Button*, void );
-    DECL_LINK_TYPED( StdQuoteHdl, Button*, void );
+    DECL_LINK( QuoteHdl, Button*, void );
+    DECL_LINK( StdQuoteHdl, Button*, void );
 
     OUString            ChangeStringExt_Impl( sal_UCS4 );
 
@@ -402,7 +402,7 @@ private:
 
                         OfaQuoteTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
 public:
-                        virtual ~OfaQuoteTabPage();
+                        virtual ~OfaQuoteTabPage() override;
     virtual void        dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent,
@@ -428,7 +428,7 @@ public:
             , m_pPage(nullptr)
         {
         }
-        virtual ~AutoCompleteMultiListBox();
+        virtual ~AutoCompleteMultiListBox() override;
         virtual void dispose() override;
         void SetPage(OfaAutoCompleteTabPage *pPage) { m_pPage = pPage; }
         virtual bool PreNotify( NotifyEvent& rNEvt ) override;
@@ -451,12 +451,12 @@ private:
     editeng::SortedAutoCompleteStrings* m_pAutoCompleteList;
     sal_uInt16      m_nAutoCmpltListCnt;
 
-    DECL_LINK_TYPED( CheckHdl, CheckBox&, void );
+    DECL_LINK( CheckHdl, CheckBox&, void );
 
                         OfaAutoCompleteTabPage( vcl::Window* pParent,
                                                 const SfxItemSet& rSet );
 public:
-    virtual ~OfaAutoCompleteTabPage();
+    virtual ~OfaAutoCompleteTabPage() override;
     virtual void dispose() override;
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent,
                                 const SfxItemSet* rAttrSet);
@@ -466,7 +466,7 @@ public:
     virtual void        ActivatePage( const SfxItemSet& ) override;
 
     void CopyToClipboard() const;
-    DECL_LINK_TYPED(DeleteHdl, Button*, void);
+    DECL_LINK(DeleteHdl, Button*, void);
 };
 
 // class OfaSmartTagOptionsTabPage ---------------------------------------------
@@ -502,26 +502,26 @@ private:
         Enables/disables all controls in the tab page (except from the
         check box.
     */
-    DECL_LINK_TYPED(CheckHdl, CheckBox&, void);
+    DECL_LINK(CheckHdl, CheckBox&, void);
 
     /** Handler for the push button
 
         Calls the displayPropertyPage function of the smart tag recognizer
         associated with the currently selected smart tag type.
     */
-    DECL_LINK_TYPED(ClickHdl, Button*, void);
+    DECL_LINK(ClickHdl, Button*, void);
 
     /** Handler for the list box
 
         Enables/disables the properties push button if selection in the
         smart tag types list box changes.
     */
-    DECL_LINK_TYPED(SelectHdl, SvTreeListBox*, void);
+    DECL_LINK(SelectHdl, SvTreeListBox*, void);
 
 public:
     /// construction via Create()
     OfaSmartTagOptionsTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~OfaSmartTagOptionsTabPage();
+    virtual ~OfaSmartTagOptionsTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet);

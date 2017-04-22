@@ -206,7 +206,7 @@ struct XclImpChRootData : public XclChRootData
 {
     XclImpChChart&      mrChartData;            /// The chart data object.
 
-    inline explicit     XclImpChRootData( XclImpChChart& rChartData ) : mrChartData( rChartData ) {}
+    explicit     XclImpChRootData( XclImpChChart& rChartData ) : mrChartData( rChartData ) {}
 };
 
 XclImpChRoot::XclImpChRoot( const XclImpRoot& rRoot, XclImpChChart& rChartData ) :
@@ -257,7 +257,7 @@ Color XclImpChRoot::GetSeriesFillAutoColor( sal_uInt16 nFormatIdx ) const
     return ScfTools::GetMixedColor( aColor, rPal.GetColor( EXC_COLOR_CHWINDOWBACK ), nTrans );
 }
 
-void XclImpChRoot::InitConversion( const Reference<XChartDocument>& xChartDoc, const Rectangle& rChartRect ) const
+void XclImpChRoot::InitConversion( const Reference<XChartDocument>& xChartDoc, const tools::Rectangle& rChartRect ) const
 {
     // create formatting object tables
     mxChData->InitConversion( GetRoot(), xChartDoc, rChartRect );
@@ -1639,7 +1639,7 @@ Reference< XRegressionCurve > XclImpChSerTrendLine::CreateRegressionCurve() cons
         aPropSet.SetProperty(EXC_CHPROP_EXTRAPOLATE_FORWARD, maData.mfForecastFor);
         aPropSet.SetProperty(EXC_CHPROP_EXTRAPOLATE_BACKWARD, maData.mfForecastBack);
 
-        bool bForceIntercept = !rtl::math::isNan(maData.mfIntercept);
+        bool bForceIntercept = rtl::math::isFinite(maData.mfIntercept);
         aPropSet.SetProperty(EXC_CHPROP_FORCE_INTERCEPT, bForceIntercept);
         if (bForceIntercept)
         {
@@ -1660,12 +1660,6 @@ Reference< XRegressionCurve > XclImpChSerTrendLine::CreateRegressionCurve() cons
         }
     }
 
-    // missing features
-    // #i20819# polynomial trend lines
-    // #i66819# moving average trend lines
-    // #i5085# manual trend line size
-    // #i34093# manual crossing point
-
     return xRegCurve;
 }
 
@@ -1684,7 +1678,7 @@ void XclImpChSerErrorBar::ReadChSerErrorBar( XclImpStream& rStrm )
     maData.mnValueCount = rStrm.ReaduInt16();
 }
 
-void XclImpChSerErrorBar::SetSeriesData( XclImpChSourceLinkRef xValueLink, XclImpChDataFormatRef xDataFmt )
+void XclImpChSerErrorBar::SetSeriesData( XclImpChSourceLinkRef const & xValueLink, XclImpChDataFormatRef const & xDataFmt )
 {
     mxValueLink = xValueLink;
     mxDataFmt = xDataFmt;
@@ -1973,7 +1967,7 @@ void XclImpChSeries::FinalizeDataFormats()
 namespace {
 
 /** Returns the property set of the specified data point. */
-ScfPropertySet lclGetPointPropSet( Reference< XDataSeries > xDataSeries, sal_uInt16 nPointIdx )
+ScfPropertySet lclGetPointPropSet( Reference< XDataSeries > const & xDataSeries, sal_uInt16 nPointIdx )
 {
     ScfPropertySet aPropSet;
     try
@@ -2143,7 +2137,7 @@ XclImpChDataFormatRef XclImpChSeries::CreateDataFormat( sal_uInt16 nPointIdx, sa
     return xDataFmt;
 }
 
-void XclImpChSeries::ConvertTrendLines( Reference< XDataSeries > xDataSeries ) const
+void XclImpChSeries::ConvertTrendLines( Reference< XDataSeries > const & xDataSeries ) const
 {
     Reference< XRegressionCurveContainer > xRegCurveCont( xDataSeries, UNO_QUERY );
     if( xRegCurveCont.is() )
@@ -2358,7 +2352,7 @@ Reference< XCoordinateSystem > XclImpChType::CreateCoordSystem( bool b3dChart ) 
     return xCoordSystem;
 }
 
-Reference< XChartType > XclImpChType::CreateChartType( Reference< XDiagram > xDiagram, bool b3dChart ) const
+Reference< XChartType > XclImpChType::CreateChartType( Reference< XDiagram > const & xDiagram, bool b3dChart ) const
 {
     OUString aService = OUString::createFromAscii( maTypeInfo.mpcServiceName );
     Reference< XChartType > xChartType( ScfApiHelper::CreateInstance( aService ), UNO_QUERY );
@@ -2689,7 +2683,7 @@ void XclImpChTypeGroup::Finalize()
     bool bStockChart =
         (maType.GetRecId() == EXC_ID_CHLINE) &&         // must be a line chart
         !mxChart3d &&                                   // must be a 2d chart
-        HasHiLoLine() &&                                // must contain hi-lo lines
+        m_ChartLines.find(EXC_CHCHARTLINE_HILO) != m_ChartLines.end() && // must contain hi-lo lines
         (maSeries.size() == static_cast<XclImpChSeriesVec::size_type>(HasDropBars() ? 4 : 3));   // correct series count
     maType.Finalize( bStockChart );
 
@@ -2705,7 +2699,7 @@ void XclImpChTypeGroup::Finalize()
         mxGroupFmt->UpdateGroupFormat( maTypeInfo );
 }
 
-void XclImpChTypeGroup::AddSeries( XclImpChSeriesRef xSeries )
+void XclImpChTypeGroup::AddSeries( XclImpChSeriesRef const & xSeries )
 {
     if( xSeries )
         maSeries.push_back( xSeries );
@@ -2763,7 +2757,7 @@ Reference< XCoordinateSystem > XclImpChTypeGroup::CreateCoordSystem() const
     return maType.CreateCoordSystem( Is3dChart() );
 }
 
-Reference< XChartType > XclImpChTypeGroup::CreateChartType( Reference< XDiagram > xDiagram, sal_Int32 nApiAxesSetIdx ) const
+Reference< XChartType > XclImpChTypeGroup::CreateChartType( Reference< XDiagram > const & xDiagram, sal_Int32 nApiAxesSetIdx ) const
 {
     OSL_ENSURE( IsValidGroup(), "XclImpChTypeGroup::CreateChartType - type group without series" );
 
@@ -2834,8 +2828,8 @@ void XclImpChTypeGroup::ReadChDataFormat( XclImpStream& rStrm )
         mxGroupFmt = xDataFmt;
 }
 
-void XclImpChTypeGroup::InsertDataSeries( Reference< XChartType > xChartType,
-        Reference< XDataSeries > xSeries, sal_Int32 nApiAxesSetIdx ) const
+void XclImpChTypeGroup::InsertDataSeries( Reference< XChartType > const & xChartType,
+        Reference< XDataSeries > const & xSeries, sal_Int32 nApiAxesSetIdx ) const
 {
     Reference< XDataSeriesContainer > xSeriesCont( xChartType, UNO_QUERY );
     if( xSeriesCont.is() && xSeries.is() )
@@ -2865,7 +2859,7 @@ void XclImpChTypeGroup::InsertDataSeries( Reference< XChartType > xChartType,
     }
 }
 
-void XclImpChTypeGroup::CreateDataSeries( Reference< XChartType > xChartType, sal_Int32 nApiAxesSetIdx ) const
+void XclImpChTypeGroup::CreateDataSeries( Reference< XChartType > const & xChartType, sal_Int32 nApiAxesSetIdx ) const
 {
     bool bSpline = false;
     for( XclImpChSeriesVec::const_iterator aIt = maSeries.begin(), aEnd = maSeries.end(); aIt != aEnd; ++aIt )
@@ -2882,7 +2876,7 @@ void XclImpChTypeGroup::CreateDataSeries( Reference< XChartType > xChartType, sa
     }
 }
 
-void XclImpChTypeGroup::CreateStockSeries( Reference< XChartType > xChartType, sal_Int32 nApiAxesSetIdx ) const
+void XclImpChTypeGroup::CreateStockSeries( Reference< XChartType > const & xChartType, sal_Int32 nApiAxesSetIdx ) const
 {
     // create the data series object
     Reference< XDataSeries > xDataSeries( ScfApiHelper::CreateInstance( SERVICE_CHART2_DATASERIES ), UNO_QUERY );
@@ -3035,7 +3029,7 @@ void XclImpChLabelRange::ConvertAxisPosition( ScfPropertySet& rPropSet, bool b3d
         /*  Crossing position value depends on base time unit, it specifies the
             number of days, months, or years from null date. Note that Excel
             2007/2010 write broken BIFF8 files, they always stores the number
-            of days cregardless of the base time unit (and they are reading it
+            of days regardless of the base time unit (and they are reading it
             the same way, thus wrongly displaying files written by Excel
             97-2003). This filter sticks to the correct behaviour of Excel
             97-2003. */
@@ -3299,7 +3293,7 @@ Reference< XAxis > XclImpChAxis::CreateAxis( const XclImpChTypeGroup& rTypeGroup
     {
         ScfPropertySet aAxisProp( xAxis );
         // #i58688# axis enabled
-        aAxisProp.SetBoolProperty( EXC_CHPROP_SHOW, IsActivated() );
+        aAxisProp.SetBoolProperty( EXC_CHPROP_SHOW, !mxAxisLine || mxAxisLine->IsShowAxis() );
 
         // axis line properties
         if( mxAxisLine )
@@ -3311,8 +3305,8 @@ Reference< XAxis > XclImpChAxis::CreateAxis( const XclImpChTypeGroup& rTypeGroup
         // axis caption text --------------------------------------------------
 
         // radar charts disable their category labels via chart type, not via axis
-        bool bHasLabels = HasLabels() &&
-            ((GetAxisType() != EXC_CHAXIS_X) || rTypeGroup.HasCategoryLabels());
+        bool bHasLabels = (!mxTick || mxTick->HasLabels()) &&
+                          ((GetAxisType() != EXC_CHAXIS_X) || rTypeGroup.HasCategoryLabels());
         aAxisProp.SetBoolProperty( EXC_CHPROP_DISPLAYLABELS, bHasLabels );
         if( bHasLabels )
         {
@@ -3383,7 +3377,7 @@ Reference< XAxis > XclImpChAxis::CreateAxis( const XclImpChTypeGroup& rTypeGroup
 
         // main grid
         ScfPropertySet aGridProp( xAxis->getGridProperties() );
-        aGridProp.SetBoolProperty( EXC_CHPROP_SHOW, HasMajorGrid() );
+        aGridProp.SetBoolProperty( EXC_CHPROP_SHOW, (bool)mxMajorGrid );
         if( mxMajorGrid )
             mxMajorGrid->Convert( GetChRoot(), aGridProp, EXC_CHOBJTYPE_GRIDLINE );
         // sub grid
@@ -3391,7 +3385,7 @@ Reference< XAxis > XclImpChAxis::CreateAxis( const XclImpChTypeGroup& rTypeGroup
         if( aSubGridPropSeq.hasElements() )
         {
             ScfPropertySet aSubGridProp( aSubGridPropSeq[ 0 ] );
-            aSubGridProp.SetBoolProperty( EXC_CHPROP_SHOW, HasMinorGrid() );
+            aSubGridProp.SetBoolProperty( EXC_CHPROP_SHOW, (bool)mxMinorGrid );
             if( mxMinorGrid )
                 mxMinorGrid->Convert( GetChRoot(), aSubGridProp, EXC_CHOBJTYPE_GRIDLINE );
         }
@@ -3583,7 +3577,7 @@ OUString XclImpChAxesSet::GetSingleSeriesTitle() const
     return (maTypeGroups.size() == 1) ? maTypeGroups.begin()->second->GetSingleSeriesTitle() : OUString();
 }
 
-void XclImpChAxesSet::Convert( Reference< XDiagram > xDiagram ) const
+void XclImpChAxesSet::Convert( Reference< XDiagram > const & xDiagram ) const
 {
     if( IsValidAxesSet() && xDiagram.is() )
     {
@@ -3675,7 +3669,7 @@ void XclImpChAxesSet::ReadChTypeGroup( XclImpStream& rStrm )
             itr, XclImpChTypeGroupMap::value_type(nGroupIdx, xTypeGroup));
 }
 
-Reference< XCoordinateSystem > XclImpChAxesSet::CreateCoordSystem( Reference< XDiagram > xDiagram ) const
+Reference< XCoordinateSystem > XclImpChAxesSet::CreateCoordSystem( Reference< XDiagram > const & xDiagram ) const
 {
     Reference< XCoordinateSystem > xCoordSystem;
 
@@ -3729,8 +3723,8 @@ Reference< XCoordinateSystem > XclImpChAxesSet::CreateCoordSystem( Reference< XD
 }
 
 void XclImpChAxesSet::ConvertAxis(
-        XclImpChAxisRef xChAxis, XclImpChTextRef xChAxisTitle,
-        Reference< XCoordinateSystem > xCoordSystem, const XclImpChAxis* pCrossingAxis ) const
+        XclImpChAxisRef const & xChAxis, XclImpChTextRef const & xChAxisTitle,
+        Reference< XCoordinateSystem > const & xCoordSystem, const XclImpChAxis* pCrossingAxis ) const
 {
     if( xChAxis )
     {
@@ -3773,7 +3767,7 @@ Reference< XAxis > XclImpChAxesSet::CreateAxis( const XclImpChAxis& rChAxis, con
     return xAxis;
 }
 
-void XclImpChAxesSet::ConvertBackground( Reference< XDiagram > xDiagram ) const
+void XclImpChAxesSet::ConvertBackground( Reference< XDiagram > const & xDiagram ) const
 {
     XclImpChTypeGroupRef xTypeGroup = GetFirstTypeGroup();
     if( xTypeGroup && xTypeGroup->Is3dWallChart() )
@@ -3914,7 +3908,7 @@ bool XclImpChChart::IsManualPlotArea() const
 }
 
 void XclImpChChart::Convert( const Reference<XChartDocument>& xChartDoc,
-        XclImpDffConverter& rDffConv, const OUString& rObjName, const Rectangle& rChartRect ) const
+        XclImpDffConverter& rDffConv, const OUString& rObjName, const tools::Rectangle& rChartRect ) const
 {
     // initialize conversion (locks the model to suppress any internal updates)
     InitConversion( xChartDoc, rChartRect );
@@ -4177,7 +4171,7 @@ XclImpChartDrawing::XclImpChartDrawing( const XclImpRoot& rRoot, bool bOwnTab ) 
 }
 
 void XclImpChartDrawing::ConvertObjects( XclImpDffConverter& rDffConv,
-        const Reference< XModel >& rxModel, const Rectangle& rChartRect )
+        const Reference< XModel >& rxModel, const tools::Rectangle& rChartRect )
 {
     maChartRect = rChartRect;   // needed in CalcAnchorRect() callback
 
@@ -4208,12 +4202,12 @@ void XclImpChartDrawing::ConvertObjects( XclImpDffConverter& rDffConv,
         ImplConvertObjects( rDffConv, *pSdrModel, *pSdrPage );
 }
 
-Rectangle XclImpChartDrawing::CalcAnchorRect( const XclObjAnchor& rAnchor, bool bDffAnchor ) const
+tools::Rectangle XclImpChartDrawing::CalcAnchorRect( const XclObjAnchor& rAnchor, bool bDffAnchor ) const
 {
     /*  In objects with DFF client anchor, the position of the shape is stored
         in the cell address components of the client anchor. In old BIFF3-BIFF5
         objects, the position is stored in the offset components of the anchor. */
-    Rectangle aRect(
+    tools::Rectangle aRect(
         static_cast< long >( static_cast< double >( bDffAnchor ? rAnchor.maFirst.mnCol : rAnchor.mnLX ) / EXC_CHART_TOTALUNITS * maChartRect.GetWidth()  + 0.5 ),
         static_cast< long >( static_cast< double >( bDffAnchor ? rAnchor.maFirst.mnRow : rAnchor.mnTY ) / EXC_CHART_TOTALUNITS * maChartRect.GetHeight() + 0.5 ),
         static_cast< long >( static_cast< double >( bDffAnchor ? rAnchor.maLast.mnCol  : rAnchor.mnRX ) / EXC_CHART_TOTALUNITS * maChartRect.GetWidth()  + 0.5 ),
@@ -4326,14 +4320,14 @@ void XclImpChart::UpdateObjFrame( const XclObjLineData& rLineData, const XclObjF
     mxChartData->UpdateObjFrame( rLineData, rFillData );
 }
 
-sal_Size XclImpChart::GetProgressSize() const
+std::size_t XclImpChart::GetProgressSize() const
 {
     return
         (mxChartData ? XclImpChChart::GetProgressSize() : 0) +
         (mxChartDrawing ? mxChartDrawing->GetProgressSize() : 0);
 }
 
-void XclImpChart::Convert( Reference< XModel > xModel, XclImpDffConverter& rDffConv, const OUString& rObjName, const Rectangle& rChartRect ) const
+void XclImpChart::Convert( Reference< XModel > const & xModel, XclImpDffConverter& rDffConv, const OUString& rObjName, const tools::Rectangle& rChartRect ) const
 {
     Reference< XChartDocument > xChartDoc( xModel, UNO_QUERY );
     if( xChartDoc.is() )

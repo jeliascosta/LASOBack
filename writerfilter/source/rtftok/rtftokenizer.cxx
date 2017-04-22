@@ -12,6 +12,7 @@
 #include <vcl/svapp.hxx>
 #include <rtl/strbuf.hxx>
 #include <rtfskipdestination.hxx>
+#include <rtl/character.hxx>
 #include <com/sun/star/io/BufferSizeExceededException.hpp>
 
 using namespace com::sun::star;
@@ -53,21 +54,21 @@ RTFTokenizer::~RTFTokenizer() = default;
 
 RTFError RTFTokenizer::resolveParse()
 {
-    SAL_INFO("writerfilter", OSL_THIS_FUNC);
+    SAL_INFO("writerfilter.rtf", OSL_THIS_FUNC);
     char ch;
     RTFError ret;
     // for hex chars
     int b = 0, count = 2;
-    sal_uInt32 nPercentSize = 0;
-    sal_uInt32 nLastPos = 0;
+    std::size_t nPercentSize = 0;
+    sal_uInt64 nLastPos = 0;
 
     if (m_xStatusIndicator.is())
     {
         static ResMgr* pResMgr = ResMgr::CreateResMgr("svx", Application::GetSettings().GetUILanguageTag());
         OUString sDocLoad(ResId(RID_SVXSTR_DOC_LOAD, *pResMgr).toString());
 
-        sal_Size nCurrentPos = Strm().Tell();
-        sal_Size nEndPos = nCurrentPos + Strm().remainingSize();
+        sal_uInt64 const nCurrentPos = Strm().Tell();
+        sal_uInt64 const nEndPos = nCurrentPos + Strm().remainingSize();
         m_xStatusIndicator->start(sDocLoad, nEndPos);
         nPercentSize = nEndPos / 100;
 
@@ -78,7 +79,7 @@ RTFError RTFTokenizer::resolveParse()
     {
         //SAL_INFO("writerfilter", OSL_THIS_FUNC << ": parsing character '" << ch << "'");
 
-        sal_Size nCurrentPos = Strm().Tell();
+        sal_uInt64 const nCurrentPos = Strm().Tell();
         if (m_xStatusIndicator.is() && nCurrentPos > (nLastPos + nPercentSize))
             m_xStatusIndicator->setValue(nLastPos = nCurrentPos);
 
@@ -133,7 +134,7 @@ RTFError RTFTokenizer::resolveParse()
                 }
                 else
                 {
-                    SAL_INFO("writerfilter", OSL_THIS_FUNC << ": hex internal state");
+                    SAL_INFO("writerfilter.rtf", OSL_THIS_FUNC << ": hex internal state");
                     b = b << 4;
                     sal_Int8 parsed = asHex(ch);
                     if (parsed == -1)
@@ -165,27 +166,20 @@ RTFError RTFTokenizer::resolveParse()
 int RTFTokenizer::asHex(char ch)
 {
     int ret = 0;
-    if (isdigit(ch))
+    if (rtl::isAsciiDigit(static_cast<unsigned char>(ch)))
         ret = ch - '0';
     else
     {
-        if (islower(ch))
-        {
-            if (ch < 'a' || ch > 'f')
-                return -1;
+        if (ch >= 'a' && ch <= 'f')
             ret = ch - 'a';
-        }
-        else
-        {
-            if (ch < 'A' || ch > 'F')
-                return -1;
+        else if (ch >= 'A' && ch <= 'F')
             ret = ch - 'A';
-        }
+        else
+            return -1;
         ret += 10;
     }
     return ret;
 }
-
 
 void RTFTokenizer::pushGroup()
 {
@@ -209,7 +203,7 @@ RTFError RTFTokenizer::resolveKeyword()
     if (Strm().IsEof())
         return RTFError::UNEXPECTED_EOF;
 
-    if (!isalpha(ch))
+    if (!rtl::isAsciiAlpha(static_cast<unsigned char>(ch)))
     {
         aBuf.append(ch);
         OString aKeyword = aBuf.makeStringAndClear();
@@ -217,7 +211,7 @@ RTFError RTFTokenizer::resolveKeyword()
         // without doing any SeekRel()
         return dispatchKeyword(aKeyword, bParam, nParam);
     }
-    while (isalpha(ch))
+    while (rtl::isAsciiAlpha(static_cast<unsigned char>(ch)))
     {
         aBuf.append(ch);
         Strm().ReadChar(ch);
@@ -240,13 +234,13 @@ RTFError RTFTokenizer::resolveKeyword()
         if (Strm().IsEof())
             return RTFError::UNEXPECTED_EOF;
     }
-    if (isdigit(ch))
+    if (rtl::isAsciiDigit(static_cast<unsigned char>(ch)))
     {
         OStringBuffer aParameter;
 
         // we have a parameter
         bParam = true;
-        while (isdigit(ch))
+        while (rtl::isAsciiDigit(static_cast<unsigned char>(ch)))
         {
             aParameter.append(ch);
             Strm().ReadChar(ch);
@@ -280,7 +274,7 @@ RTFError RTFTokenizer::dispatchKeyword(OString& rKeyword, bool bParam, int nPara
 {
     if (m_rImport.getDestination() == Destination::SKIP)
     {
-        // skip binary data explicitely, to not trip over rtf markup
+        // skip binary data explicitly, to not trip over rtf markup
         // control characters
         if (rKeyword.equals("bin") && nParam > 0)
             Strm().SeekRel(nParam);
@@ -294,7 +288,7 @@ RTFError RTFTokenizer::dispatchKeyword(OString& rKeyword, bool bParam, int nPara
     int i = low - s_aRTFControlWords.begin();
     if (low == s_aRTFControlWords.end() || aSymbol < *low)
     {
-        SAL_INFO("writerfilter", OSL_THIS_FUNC << ": unknown keyword '\\" << rKeyword.getStr() << "'");
+        SAL_INFO("writerfilter.rtf", OSL_THIS_FUNC << ": unknown keyword '\\" << rKeyword.getStr() << "'");
         RTFSkipDestination aSkip(m_rImport);
         aSkip.setParsed(false);
         return RTFError::OK;

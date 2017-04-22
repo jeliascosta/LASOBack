@@ -30,7 +30,6 @@
 #include "uitool.hxx"
 #include "docsh.hxx"
 #include "shells.hrc"
-#include "popup.hrc"
 #include "globals.hrc"
 #include "web.hrc"
 #include "wgrfsh.hxx"
@@ -47,7 +46,7 @@ void SwWebGrfShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("graphic");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_WEBGRAPHIC_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_WEBGRAPHIC_TOOLBOX);
 }
 
 
@@ -56,7 +55,6 @@ SwWebGrfShell::SwWebGrfShell(SwView &_rView) :
 
 {
     SetName("Graphic");
-    SetHelpId(SW_GRFSHELL);
 }
 
 SwWebGrfShell::~SwWebGrfShell()

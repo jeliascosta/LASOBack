@@ -78,7 +78,7 @@ namespace /* private */
         {
             wchar_t buff[MAX_PATH];
             LONG sz = sizeof(buff);
-            lret = RegQueryValueW(hkey, NULL, buff, &sz);
+            lret = RegQueryValueW(hkey, nullptr, buff, &sz);
             if (lret == ERROR_SUCCESS)
             {
                 osl::FileBase::getFileURLFromSystemPath(reinterpret_cast<const sal_Unicode*>(buff), altSenddocUrl);
@@ -129,12 +129,12 @@ namespace /* private */
         an array of pointers to rtl_uString's */
         oslProcessError err = osl_executeProcess(
             senddocUrl.pData,
-            (rtl_uString**)&rCommandArgs[0],
+            const_cast<rtl_uString**>(reinterpret_cast<rtl_uString * const *>(&rCommandArgs[0])),
             rCommandArgs.size(),
             osl_Process_WAIT | osl_Process_DETACHED,
-            NULL,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
+            nullptr,
             0,
             &proc);
 
@@ -150,7 +150,6 @@ namespace /* private */
 } // namespace private
 
 Reference<XSimpleMailMessage> SAL_CALL CSmplMailClient::createSimpleMailMessage()
-    throw (RuntimeException)
 {
     return Reference<XSimpleMailMessage>(new CSmplMailMsg());
 }
@@ -248,7 +247,6 @@ void CSmplMailClient::assembleCommandLine(
 
 void SAL_CALL CSmplMailClient::sendSimpleMailMessage(
     const Reference<XSimpleMailMessage>& xSimpleMailMessage, sal_Int32 aFlag)
-    throw (IllegalArgumentException, Exception, RuntimeException)
 {
     validateParameter(xSimpleMailMessage, aFlag);
 

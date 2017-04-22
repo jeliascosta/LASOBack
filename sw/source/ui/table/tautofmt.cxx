@@ -48,7 +48,7 @@ class AutoFormatPreview : public vcl::Window
 {
 public:
     AutoFormatPreview(vcl::Window* pParent, WinBits nStyle);
-    virtual ~AutoFormatPreview();
+    virtual ~AutoFormatPreview() override;
     virtual void dispose() override;
 
     void NotifyChange( const SwTableAutoFormat& rNewData );
@@ -57,7 +57,7 @@ public:
 
     virtual void Resize() override;
 protected:
-    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
 
 private:
     SwTableAutoFormat          aCurData;
@@ -82,16 +82,14 @@ private:
     uno::Reference<i18n::XBreakIterator> m_xBreak;
 
     void    Init();
-    void    DoPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
+    void    DoPaint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
     void    CalcCellArray(bool bFitWidth);
     void    CalcLineMap();
     void    PaintCells(vcl::RenderContext& rRenderContext);
 
     sal_uInt8           GetFormatIndex( size_t nCol, size_t nRow ) const;
-    const SvxBoxItem&   GetBoxItem( size_t nCol, size_t nRow ) const;
 
     void DrawString(vcl::RenderContext& rRenderContext, size_t nCol, size_t nRow);
-    void DrawStrings(vcl::RenderContext& rRenderContext);
     void DrawBackground(vcl::RenderContext& rRenderContext);
 
     void MakeFonts(sal_uInt8 nIndex, vcl::Font& rFont, vcl::Font& rCJKFont, vcl::Font& rCTLFont);
@@ -102,7 +100,7 @@ class SwStringInputDlg : public ModalDialog
 public:
     SwStringInputDlg(vcl::Window* pParent, const OUString& rTitle,
                      const OUString& rEditTitle, const OUString& rDefault );
-    virtual ~SwStringInputDlg();
+    virtual ~SwStringInputDlg() override;
     virtual void dispose() override;
 
     OUString GetInputString() const;
@@ -279,7 +277,7 @@ void SwAutoFormatDlg::FillAutoFormatOfIndex( SwTableAutoFormat*& rToFill ) const
 
 // Handler:
 
-IMPL_LINK_TYPED( SwAutoFormatDlg, CheckHdl, Button *, pBtn, void )
+IMPL_LINK( SwAutoFormatDlg, CheckHdl, Button *, pBtn, void )
 {
     SwTableAutoFormat* pData  = &(*pTableTable)[nIndex];
     bool bCheck = static_cast<CheckBox*>(pBtn)->IsChecked(), bDataChgd = true;
@@ -309,7 +307,7 @@ IMPL_LINK_TYPED( SwAutoFormatDlg, CheckHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, AddHdl, Button*, void)
+IMPL_LINK_NOARG(SwAutoFormatDlg, AddHdl, Button*, void)
 {
     bool bOk = false, bFormatInserted = false;
     while( !bOk )
@@ -332,7 +330,8 @@ IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, AddHdl, Button*, void)
                     // Format with the name does not already exist, so take up.
                     std::unique_ptr<SwTableAutoFormat> pNewData(
                             new SwTableAutoFormat(aFormatName));
-                    pShell->GetTableAutoFormat( *pNewData );
+                    bool bGetOk = pShell->GetTableAutoFormat( *pNewData );
+                    SAL_WARN_IF(!bGetOk, "sw.ui", "GetTableAutoFormat failed for: " << aFormatName);
 
                     // Insert sorted!!
                     for( n = 1; n < pTableTable->size(); ++n )
@@ -357,7 +356,7 @@ IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, AddHdl, Button*, void)
 
             if( !bFormatInserted )
             {
-                bOk = RET_CANCEL == ScopedVclPtrInstance<MessageDialog>(this, aStrInvalidFormat, VCL_MESSAGE_ERROR, VCL_BUTTONS_OK_CANCEL)
+                bOk = RET_CANCEL == ScopedVclPtrInstance<MessageDialog>(this, aStrInvalidFormat, VclMessageType::Error, VclButtonsType::OkCancel)
                                     ->Execute();
             }
         }
@@ -366,7 +365,7 @@ IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, AddHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, RemoveHdl, Button*, void)
+IMPL_LINK_NOARG(SwAutoFormatDlg, RemoveHdl, Button*, void)
 {
     OUString aMessage = aStrDelMsg;
     aMessage += "\n\n";
@@ -401,7 +400,7 @@ IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, RemoveHdl, Button*, void)
     SelFormatHdl( *m_pLbFormat );
 }
 
-IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, RenameHdl, Button*, void)
+IMPL_LINK_NOARG(SwAutoFormatDlg, RenameHdl, Button*, void)
 {
     bool bOk = false;
     while( !bOk )
@@ -455,7 +454,7 @@ IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, RenameHdl, Button*, void)
 
             if( !bFormatRenamed )
             {
-                bOk = RET_CANCEL == ScopedVclPtrInstance<MessageDialog>(this, aStrInvalidFormat, VCL_MESSAGE_ERROR, VCL_BUTTONS_OK_CANCEL)
+                bOk = RET_CANCEL == ScopedVclPtrInstance<MessageDialog>(this, aStrInvalidFormat, VclMessageType::Error, VclButtonsType::OkCancel)
                                     ->Execute();
             }
         }
@@ -464,7 +463,7 @@ IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, RenameHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, SelFormatHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwAutoFormatDlg, SelFormatHdl, ListBox&, void)
 {
     bool bBtnEnable = false;
     sal_uInt8 nSelPos = (sal_uInt8) m_pLbFormat->GetSelectEntryPos(), nOldIdx = nIndex;
@@ -496,7 +495,7 @@ IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, SelFormatHdl, ListBox&, void)
     m_pBtnRename->Enable( bBtnEnable );
 }
 
-IMPL_LINK_NOARG_TYPED(SwAutoFormatDlg, OkHdl, Button*, void)
+IMPL_LINK_NOARG(SwAutoFormatDlg, OkHdl, Button*, void)
 {
     if( bSetAutoFormat )
         pShell->SetTableStyle((*pTableTable)[nIndex]);
@@ -524,14 +523,7 @@ AutoFormatPreview::AutoFormatPreview(vcl::Window* pParent, WinBits nStyle) :
     Init();
 }
 
-VCL_BUILDER_DECL_FACTORY(AutoFormatPreview)
-{
-    WinBits nWinStyle = 0;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<AutoFormatPreview>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(AutoFormatPreview, 0)
 
 void AutoFormatPreview::Resize()
 {
@@ -573,8 +565,8 @@ static void lcl_SetFontProperties(
     rFont.SetStyleName  ( rFontItem.GetStyleName() );
     rFont.SetCharSet    ( rFontItem.GetCharSet() );
     rFont.SetPitch      ( rFontItem.GetPitch() );
-    rFont.SetWeight     ( (FontWeight)rWeightItem.GetValue() );
-    rFont.SetItalic     ( (FontItalic)rPostureItem.GetValue() );
+    rFont.SetWeight     ( rWeightItem.GetValue() );
+    rFont.SetItalic     ( rPostureItem.GetValue() );
 }
 
 #define SETONALLFONTS( MethodName, Value )                  \
@@ -593,9 +585,9 @@ void AutoFormatPreview::MakeFonts( sal_uInt8 nIndex, vcl::Font& rFont, vcl::Font
     lcl_SetFontProperties( rCJKFont, rBoxFormat.GetCJKFont(), rBoxFormat.GetCJKWeight(), rBoxFormat.GetCJKPosture() );
     lcl_SetFontProperties( rCTLFont, rBoxFormat.GetCTLFont(), rBoxFormat.GetCTLWeight(), rBoxFormat.GetCTLPosture() );
 
-    SETONALLFONTS( SetUnderline,        (FontLineStyle)rBoxFormat.GetUnderline().GetValue() );
-    SETONALLFONTS( SetOverline,         (FontLineStyle)rBoxFormat.GetOverline().GetValue() );
-    SETONALLFONTS( SetStrikeout,        (FontStrikeout)rBoxFormat.GetCrossedOut().GetValue() );
+    SETONALLFONTS( SetUnderline,        rBoxFormat.GetUnderline().GetValue() );
+    SETONALLFONTS( SetOverline,         rBoxFormat.GetOverline().GetValue() );
+    SETONALLFONTS( SetStrikeout,        rBoxFormat.GetCrossedOut().GetValue() );
     SETONALLFONTS( SetOutline,          rBoxFormat.GetContour().GetValue() );
     SETONALLFONTS( SetShadow,           rBoxFormat.GetShadowed().GetValue() );
     SETONALLFONTS( SetColor,            rBoxFormat.GetColor().GetValue() );
@@ -614,11 +606,6 @@ sal_uInt8 AutoFormatPreview::GetFormatIndex( size_t nCol, size_t nRow ) const
         12, 13, 14, 13, 15
     };
     return pnFormatMap[ maArray.GetCellIndex( nCol, nRow, mbRTL ) ];
-}
-
-const SvxBoxItem& AutoFormatPreview::GetBoxItem( size_t nCol, size_t nRow ) const
-{
-    return aCurData.GetBoxFormat( GetFormatIndex( nCol, nRow ) ).GetBox();
 }
 
 void AutoFormatPreview::DrawString(vcl::RenderContext& rRenderContext, size_t nCol, size_t nRow)
@@ -719,7 +706,7 @@ MAKENUMSTR:
         SvtScriptedTextHelper aScriptedText(rRenderContext);
         Size aStrSize;
         sal_uInt8 nFormatIndex = GetFormatIndex( nCol, nRow );
-        Rectangle cellRect = maArray.GetCellRect( nCol, nRow );
+        tools::Rectangle cellRect = maArray.GetCellRect( nCol, nRow );
         Point aPos = cellRect.TopLeft();
         long nRightX = 0;
 
@@ -768,10 +755,10 @@ MAKENUMSTR:
             const SvxAdjustItem& rAdj = aCurData.GetBoxFormat(nFormatIndex).GetAdjust();
             switch (rAdj.GetAdjust())
             {
-                case SVX_ADJUST_LEFT:
+                case SvxAdjust::Left:
                     aPos.X() += FRAME_OFFSET;
                     break;
-                case SVX_ADJUST_RIGHT:
+                case SvxAdjust::Right:
                     aPos.X() += nRightX;
                     break;
                 default:
@@ -800,13 +787,6 @@ MAKENUMSTR:
 
 #undef FRAME_OFFSET
 
-void AutoFormatPreview::DrawStrings(vcl::RenderContext& rRenderContext)
-{
-    for (size_t nRow = 0; nRow < 5; ++nRow)
-        for (size_t nCol = 0; nCol < 5; ++nCol)
-            DrawString(rRenderContext, nCol, nRow);
-}
-
 void AutoFormatPreview::DrawBackground(vcl::RenderContext& rRenderContext)
 {
     for (size_t nRow = 0; nRow < 5; ++nRow)
@@ -831,7 +811,9 @@ void AutoFormatPreview::PaintCells(vcl::RenderContext& rRenderContext)
         DrawBackground(rRenderContext);
 
     // 2) values
-    DrawStrings(rRenderContext);
+    for (size_t nRow = 0; nRow < 5; ++nRow)
+        for (size_t nCol = 0; nCol < 5; ++nCol)
+            DrawString(rRenderContext, nCol, nRow);
 
     // 3) border
     if (aCurData.IsFrame())
@@ -843,6 +825,10 @@ void AutoFormatPreview::Init()
     SetBorderStyle( GetBorderStyle() | WindowBorderStyle::MONO );
     maArray.Initialize( 5, 5 );
     maArray.SetUseDiagDoubleClipping( false );
+    nLabelColWidth = 0;
+    nDataColWidth1 = 0;
+    nDataColWidth2 = 0;
+    nRowHeight = 0;
     CalcCellArray( false );
     CalcLineMap();
 }
@@ -874,7 +860,7 @@ void AutoFormatPreview::CalcLineMap()
         {
             svx::frame::Style aStyle;
 
-            const SvxBoxItem& rItem = GetBoxItem( nCol, nRow );
+            const SvxBoxItem& rItem = aCurData.GetBoxFormat( GetFormatIndex( nCol, nRow ) ).GetBox();
             lclSetStyleFromBorder( aStyle, rItem.GetLeft() );
             maArray.SetCellStyleLeft( nCol, nRow, aStyle );
             lclSetStyleFromBorder( aStyle, rItem.GetRight() );
@@ -899,10 +885,10 @@ void AutoFormatPreview::NotifyChange( const SwTableAutoFormat& rNewData )
     bFitWidth = aCurData.IsJustify();  // true;  //???
     CalcCellArray( bFitWidth );
     CalcLineMap();
-    Invalidate(Rectangle(Point(0,0), GetSizePixel()));
+    Invalidate(tools::Rectangle(Point(0,0), GetSizePixel()));
 }
 
-void AutoFormatPreview::DoPaint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/)
+void AutoFormatPreview::DoPaint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/)
 {
     DrawModeFlags nOldDrawMode = aVD->GetDrawMode();
     if (rRenderContext.GetSettings().GetStyleSettings().GetHighContrastMode())
@@ -934,7 +920,7 @@ void AutoFormatPreview::DoPaint(vcl::RenderContext& rRenderContext, const Rectan
     aVD->SetOutputSizePixel(theWndSize);
     oldColor = aVD->GetLineColor();
     aVD->SetLineColor();
-    aVD->DrawRect(Rectangle(Point(0,0), theWndSize));
+    aVD->DrawRect(tools::Rectangle(Point(0,0), theWndSize));
 
     rRenderContext.SetLineColor(oldColor);
 
@@ -948,7 +934,7 @@ void AutoFormatPreview::DoPaint(vcl::RenderContext& rRenderContext, const Rectan
     aVD->SetDrawMode(nOldDrawMode);
 }
 
-void AutoFormatPreview::Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect )
+void AutoFormatPreview::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect )
 {
     DoPaint(rRenderContext, rRect);
 }

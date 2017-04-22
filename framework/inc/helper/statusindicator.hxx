@@ -83,27 +83,22 @@ class StatusIndicator : public  ::cppu::WeakImplHelper< css::task::XStatusIndica
 
         /** @short  does nothing real ....
          */
-        virtual ~StatusIndicator();
+        virtual ~StatusIndicator() override;
 
     // uno interface
     public:
 
         // XStatusIndicator
         virtual void SAL_CALL start(const OUString& sText ,
-                                          sal_Int32        nRange)
-            throw(css::uno::RuntimeException, std::exception) override;
+                                          sal_Int32        nRange) override;
 
-        virtual void SAL_CALL end()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL end() override;
 
-        virtual void SAL_CALL reset()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL reset() override;
 
-        virtual void SAL_CALL setText(const OUString& sText)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setText(const OUString& sText) override;
 
-        virtual void SAL_CALL setValue(sal_Int32 nValue)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setValue(sal_Int32 nValue) override;
 
 }; // class StatusIndicator
 

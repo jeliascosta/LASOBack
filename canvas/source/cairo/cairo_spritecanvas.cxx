@@ -77,7 +77,7 @@ namespace cairocanvas
         uno::Reference< awt::XWindow > xParentWindow;
         maArguments[4] >>= xParentWindow;
 
-        vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+        VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
         if( !pParentWindow )
             throw lang::NoSupportException(
                 "Parent window not VCL window, or canvas out-of-process!", nullptr);
@@ -115,17 +115,17 @@ namespace cairocanvas
         SpriteCanvasBaseT::disposeThis();
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::showBuffer( sal_Bool bUpdateAll ) throw (uno::RuntimeException, std::exception)
+    sal_Bool SAL_CALL SpriteCanvas::showBuffer( sal_Bool bUpdateAll )
     {
         return updateScreen( bUpdateAll );
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::switchBuffer( sal_Bool bUpdateAll ) throw (uno::RuntimeException)
+    sal_Bool SAL_CALL SpriteCanvas::switchBuffer( sal_Bool bUpdateAll )
     {
         return updateScreen( bUpdateAll );
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::updateScreen( sal_Bool bUpdateAll ) throw (uno::RuntimeException, std::exception)
+    sal_Bool SAL_CALL SpriteCanvas::updateScreen( sal_Bool bUpdateAll )
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -138,7 +138,7 @@ namespace cairocanvas
             mbSurfaceDirty);
     }
 
-    OUString SAL_CALL SpriteCanvas::getServiceName(  ) throw (uno::RuntimeException, std::exception)
+    OUString SAL_CALL SpriteCanvas::getServiceName(  )
     {
         return OUString( SPRITECANVAS_SERVICE_NAME );
     }
@@ -165,7 +165,7 @@ namespace cairocanvas
         return SurfaceSharedPtr();
     }
 
-    SurfaceSharedPtr SpriteCanvas::changeSurface( bool, bool )
+    SurfaceSharedPtr SpriteCanvas::changeSurface()
     {
         // non-modifiable surface here
         return SurfaceSharedPtr();

@@ -40,13 +40,13 @@ namespace ww8
 const unsigned int MAXTABLECELLS = 63;
 
 class WW8TableNodeInfo;
-typedef ::std::vector<const SwTableBox *> TableBoxVector;
+typedef std::vector<const SwTableBox *> TableBoxVector;
 typedef std::shared_ptr<TableBoxVector> TableBoxVectorPtr;
-typedef ::std::vector<sal_uInt32> GridCols;
+typedef std::vector<sal_uInt32> GridCols;
 typedef std::shared_ptr<GridCols> GridColsPtr;
-typedef ::std::vector<sal_Int32> RowSpans;
+typedef std::vector<sal_Int32> RowSpans;
 typedef std::shared_ptr<RowSpans> RowSpansPtr;
-typedef ::std::vector<sal_uInt32> Widths;
+typedef std::vector<sal_uInt32> Widths;
 typedef std::shared_ptr<Widths> WidthsPtr;
 
 class WW8TableNodeInfoInner
@@ -108,7 +108,7 @@ public:
     RowSpansPtr getRowSpansOfRow();
 
 #ifdef DBG_UTIL
-    ::std::string toString() const;
+    std::string toString() const;
 #endif
 };
 
@@ -127,8 +127,6 @@ public:
           m_nFormatFrameWidth(aRectAndTableInfo.m_nFormatFrameWidth)
     {
     }
-
-    ~CellInfo() {}
 
     bool operator < (const CellInfo & aCellInfo) const;
 
@@ -152,21 +150,21 @@ public:
     }
 
 #ifdef DBG_UTIL
-    ::std::string toString() const;
+    std::string toString() const;
 #endif
 };
 
-typedef ::std::multiset<CellInfo, ::std::less<CellInfo> > CellInfoMultiSet;
-typedef ::std::map<sal_uInt32, WW8TableNodeInfoInner*,
-            ::std::greater<sal_uInt32> > RowEndInners_t;
+typedef std::multiset<CellInfo> CellInfoMultiSet;
+typedef std::map<sal_uInt32, WW8TableNodeInfoInner*,
+            std::greater<sal_uInt32> > RowEndInners_t;
 
 
 class WW8TableInfo;
-class WW8TableNodeInfo
+class WW8TableNodeInfo final
 {
 public:
-    typedef ::std::map<sal_uInt32, WW8TableNodeInfoInner::Pointer_t,
-                ::std::greater<sal_uInt32> > Inners_t;
+    typedef std::map<sal_uInt32, WW8TableNodeInfoInner::Pointer_t,
+                std::greater<sal_uInt32> > Inners_t;
 
 private:
     WW8TableInfo * mpParent;
@@ -180,7 +178,7 @@ public:
     typedef std::shared_ptr<WW8TableNodeInfo> Pointer_t;
 
     WW8TableNodeInfo(WW8TableInfo * pParent, const SwNode * pTextNode);
-    virtual ~WW8TableNodeInfo();
+    ~WW8TableNodeInfo();
 
     void setDepth(sal_uInt32 nDepth);
     void setEndOfLine(bool bEndOfLine);
@@ -212,7 +210,7 @@ public:
     sal_uInt32 getRow() const;
 
 #ifdef DBG_UTIL
-    ::std::string toString() const;
+    std::string toString() const;
 #endif
 
     bool operator < (const WW8TableNodeInfo & rInfo) const;
@@ -246,9 +244,9 @@ public:
     CellInfoMultiSet::const_iterator begin() const;
     CellInfoMultiSet::const_iterator end() const;
 
-    void setTableBoxVector(TableBoxVectorPtr pTableBoxVector);
-    void setWidths(WidthsPtr pGridCols);
-    void setRowSpans(RowSpansPtr pRowSpans);
+    void setTableBoxVector(TableBoxVectorPtr const & pTableBoxVector);
+    void setWidths(WidthsPtr const & pGridCols);
+    void setRowSpans(RowSpansPtr const & pRowSpans);
 
     const TableBoxVectorPtr& getTableBoxVector() const { return m_pTableBoxVector;}
     const WidthsPtr& getWidths() const { return m_pWidths;}
@@ -257,8 +255,8 @@ public:
 
 class WW8TableCellGrid
 {
-    typedef ::std::set<long> RowTops_t;
-    typedef ::std::map<long, WW8TableCellGridRow::Pointer_t> Rows_t;
+    typedef std::set<long> RowTops_t;
+    typedef std::map<long, WW8TableCellGridRow::Pointer_t> Rows_t;
 
     RowTops_t m_aRowTops;
     Rows_t m_aRows;
@@ -281,7 +279,7 @@ public:
     WW8TableNodeInfo *connectCells(RowEndInners_t &rLastRowEnds);
 
 #ifdef DBG_UTIL
-    ::std::string toString();
+    std::string toString();
 #endif
 
     TableBoxVectorPtr getTableBoxesOfRow(WW8TableNodeInfoInner * pNodeInfo);
@@ -289,7 +287,7 @@ public:
     RowSpansPtr getRowSpansOfRow(WW8TableNodeInfoInner * pNodeInfo);
 };
 
-class WW8TableInfo
+class WW8TableInfo final
 {
     friend class WW8TableNodeInfoInner;
     typedef std::unordered_map<const SwNode *, WW8TableNodeInfo::Pointer_t, hashNode > Map_t;
@@ -339,7 +337,7 @@ public:
     typedef std::shared_ptr<WW8TableInfo> Pointer_t;
 
     WW8TableInfo();
-    virtual ~WW8TableInfo();
+    ~WW8TableInfo();
 
     void processSwTable(const SwTable * pTable);
     WW8TableNodeInfo * processSwTableByLayout(const SwTable * pTable, RowEndInners_t &rLastRowEnds);

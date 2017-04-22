@@ -21,6 +21,7 @@
 #include <optasian.hxx>
 #include <editeng/langitem.hxx>
 #include <editeng/unolingu.hxx>
+#include <o3tl/any.hxx>
 #include <dialmgr.hxx>
 #include <cuires.hrc>
 #include <i18nlangtag/mslangid.hxx>
@@ -47,18 +48,11 @@ const sal_Char cCharacterCompressionType[] = "CharacterCompressionType";
 
 struct SvxForbiddenChars_Impl
 {
-    ~SvxForbiddenChars_Impl();
-
-    bool                bRemoved;
-    ForbiddenCharacters*    pCharacters;
+    bool                                  bRemoved;
+    std::unique_ptr<ForbiddenCharacters>  pCharacters;
 };
 
-SvxForbiddenChars_Impl::~SvxForbiddenChars_Impl()
-{
-    delete pCharacters;
-}
-
-typedef ::std::map< LanguageType, SvxForbiddenChars_Impl* > SvxForbiddenCharacterMap_Impl;
+typedef std::map< LanguageType, SvxForbiddenChars_Impl* > SvxForbiddenCharacterMap_Impl;
 
 struct SvxAsianLayoutPage_Impl
 {
@@ -108,14 +102,13 @@ void SvxAsianLayoutPage_Impl::addForbiddenCharacters(
     {
         SvxForbiddenChars_Impl* pChar = new SvxForbiddenChars_Impl;
         pChar->bRemoved = nullptr == pForbidden;
-        pChar->pCharacters = pForbidden ? new ForbiddenCharacters(*pForbidden) : nullptr;
-        aChangedLanguagesMap.insert( ::std::make_pair( eLang, pChar ) );
+        pChar->pCharacters.reset( pForbidden ? new ForbiddenCharacters(*pForbidden) : nullptr );
+        aChangedLanguagesMap.insert( std::make_pair( eLang, pChar ) );
     }
     else
     {
         itOld->second->bRemoved = nullptr == pForbidden;
-        delete itOld->second->pCharacters;
-        itOld->second->pCharacters = pForbidden ? new ForbiddenCharacters(*pForbidden) : nullptr;
+        itOld->second->pCharacters.reset( pForbidden ? new ForbiddenCharacters(*pForbidden) : nullptr );
     }
 }
 
@@ -156,8 +149,7 @@ SvxAsianLayoutPage::~SvxAsianLayoutPage()
 
 void SvxAsianLayoutPage::dispose()
 {
-    delete pImpl;
-    pImpl = nullptr;
+    pImpl.reset();
     m_pCharKerningRB.clear();
     m_pCharPunctKerningRB.clear();
     m_pNoCompressionRB.clear();
@@ -195,13 +187,14 @@ bool SvxAsianLayoutPage::FillItemSet( SfxItemSet* )
     if(m_pNoCompressionRB->IsValueChangedFromSaved() ||
        m_pPunctCompressionRB->IsValueChangedFromSaved())
     {
-        sal_Int16 nSet = m_pNoCompressionRB->IsChecked() ? 0 :
-                            m_pPunctCompressionRB->IsChecked() ? 1 : 2;
+        CharCompressType nSet = m_pNoCompressionRB->IsChecked() ? CharCompressType::NONE :
+                            m_pPunctCompressionRB->IsChecked() ? CharCompressType::PunctuationOnly :
+                            CharCompressType::PunctuationAndKana;
         pImpl->aConfig.SetCharDistanceCompression(nSet);
         OUString sCompress(cCharacterCompressionType);
         if(pImpl->xPrSetInfo.is() && pImpl->xPrSetInfo->hasPropertyByName(sCompress))
         {
-            pImpl->xPrSet->setPropertyValue(sCompress, Any(nSet));
+            pImpl->xPrSet->setPropertyValue(sCompress, Any((sal_uInt16)nSet));
         }
     }
     pImpl->aConfig.Commit();
@@ -246,7 +239,7 @@ void SvxAsianLayoutPage::Reset( const SfxItemSet* )
         pImpl->xPrSetInfo = pImpl->xPrSet->getPropertySetInfo();
     OUString sForbidden("ForbiddenCharacters");
     bool bKernWesternText = pImpl->aConfig.IsKerningWesternTextOnly();
-    sal_Int16 nCompress = pImpl->aConfig.GetCharDistanceCompression();
+    CharCompressType nCompress = pImpl->aConfig.GetCharDistanceCompression();
     if(pImpl->xPrSetInfo.is())
     {
         if(pImpl->xPrSetInfo->hasPropertyByName(sForbidden))
@@ -258,13 +251,15 @@ void SvxAsianLayoutPage::Reset( const SfxItemSet* )
         if(pImpl->xPrSetInfo->hasPropertyByName(sCompress))
         {
             Any aVal = pImpl->xPrSet->getPropertyValue(sCompress);
-            aVal >>= nCompress;
+            sal_uInt16 nTmp;
+            if (aVal >>= nTmp)
+                nCompress = (CharCompressType)nTmp;
         }
         OUString sPunct(cIsKernAsianPunctuation);
         if(pImpl->xPrSetInfo->hasPropertyByName(sPunct))
         {
             Any aVal = pImpl->xPrSet->getPropertyValue(sPunct);
-            bKernWesternText = !*static_cast<sal_Bool const *>(aVal.getValue());
+            bKernWesternText = !*o3tl::doAccess<bool>(aVal);
         }
     }
     else
@@ -284,8 +279,8 @@ void SvxAsianLayoutPage::Reset( const SfxItemSet* )
         m_pCharPunctKerningRB->Check();
     switch(nCompress)
     {
-        case 0 : m_pNoCompressionRB->Check();        break;
-        case 1 : m_pPunctCompressionRB->Check();     break;
+        case CharCompressType::NONE : m_pNoCompressionRB->Check();        break;
+        case CharCompressType::PunctuationOnly : m_pPunctCompressionRB->Check();     break;
         default: m_pPunctKanaCompressionRB->Check();
     }
     m_pCharKerningRB->SaveValue();
@@ -308,7 +303,7 @@ void SvxAsianLayoutPage::Reset( const SfxItemSet* )
     LanguageHdl(*m_pLanguageLB);
 }
 
-IMPL_LINK_NOARG_TYPED(SvxAsianLayoutPage, LanguageHdl, ListBox&, void)
+IMPL_LINK_NOARG(SvxAsianLayoutPage, LanguageHdl, ListBox&, void)
 {
     //set current value
     LanguageType eSelectLanguage = m_pLanguageLB->GetSelectLanguage();
@@ -371,7 +366,7 @@ IMPL_LINK_NOARG_TYPED(SvxAsianLayoutPage, LanguageHdl, ListBox&, void)
     m_pEndED->SetText(sEnd);
 }
 
-IMPL_LINK_TYPED(SvxAsianLayoutPage, ChangeStandardHdl, Button*, pBox, void)
+IMPL_LINK(SvxAsianLayoutPage, ChangeStandardHdl, Button*, pBox, void)
 {
     bool bCheck = static_cast<CheckBox*>(pBox)->IsChecked();
     m_pStartED->Enable(!bCheck);
@@ -382,7 +377,7 @@ IMPL_LINK_TYPED(SvxAsianLayoutPage, ChangeStandardHdl, Button*, pBox, void)
     ModifyHdl(*m_pStartED);
 }
 
-IMPL_LINK_TYPED(SvxAsianLayoutPage, ModifyHdl, Edit&, rEdit, void)
+IMPL_LINK(SvxAsianLayoutPage, ModifyHdl, Edit&, rEdit, void)
 {
     LanguageType eSelectLanguage = m_pLanguageLB->GetSelectLanguage();
     Locale aLocale( LanguageTag::convertToLocale( eSelectLanguage ));

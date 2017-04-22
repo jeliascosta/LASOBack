@@ -22,7 +22,7 @@ FileChangedChecker::FileChangedChecker(const OUString& rFilename,
     getCurrentModTime(mLastModTime);
 
     // associate the callback function for the Idle
-    mIdle.SetIdleHdl(LINK(this, FileChangedChecker, TimerHandler));
+    mIdle.SetInvokeHandler(LINK(this, FileChangedChecker, TimerHandler));
 
     //start the timer
     resetTimer();
@@ -30,12 +30,12 @@ FileChangedChecker::FileChangedChecker(const OUString& rFilename,
 
 void FileChangedChecker::resetTimer()
 {
-    //Start the Idle if its not active
+    //Start the Idle if it's not active
     if(!mIdle.IsActive())
         mIdle.Start();
 
     // Set lowest Priority
-    mIdle.SetPriority(SchedulerPriority::LOWEST);
+    mIdle.SetPriority(TaskPriority::LOWEST);
 }
 
 bool FileChangedChecker::getCurrentModTime(TimeValue& o_rValue) const
@@ -76,13 +76,13 @@ bool FileChangedChecker::hasFileChanged()
         return false;
 }
 
-IMPL_LINK_NOARG_TYPED(FileChangedChecker, TimerHandler, Idle *, void)
+IMPL_LINK_NOARG(FileChangedChecker, TimerHandler, Timer *, void)
 {
     // If the file has changed, then update the graphic in the doc
-    OSL_TRACE("Timeout Called");
+    SAL_INFO("svtools", "Timeout Called");
     if(hasFileChanged())
     {
-        OSL_TRACE("File modified");
+        SAL_INFO("svtools", "File modified");
         mpCallback();
     }
 

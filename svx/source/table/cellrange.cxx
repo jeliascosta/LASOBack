@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 
 #include "cellrange.hxx"
 
@@ -76,13 +79,13 @@ Reference< XTable > CellRange::getTable()
 // XCellRange
 
 
-Reference< XCell > SAL_CALL CellRange::getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+Reference< XCell > SAL_CALL CellRange::getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow )
 {
     return mxTable->getCellByPosition( mnLeft + nColumn, mnTop + nRow );
 }
 
 
-Reference< XCellRange > SAL_CALL CellRange::getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop, sal_Int32 nRight, sal_Int32 nBottom ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
+Reference< XCellRange > SAL_CALL CellRange::getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop, sal_Int32 nRight, sal_Int32 nBottom )
 {
     if( (nLeft >= 0 ) && (nTop >= 0) && (nRight >= nLeft) && (nBottom >= nTop)  )
     {
@@ -102,7 +105,7 @@ Reference< XCellRange > SAL_CALL CellRange::getCellRangeByPosition( sal_Int32 nL
 }
 
 
-Reference< XCellRange > SAL_CALL CellRange::getCellRangeByName( const OUString& /*aRange*/ ) throw (RuntimeException, std::exception)
+Reference< XCellRange > SAL_CALL CellRange::getCellRangeByName( const OUString& /*aRange*/ )
 {
     return Reference< XCellRange >();
 }

@@ -21,6 +21,8 @@
 #include <localedata.hxx>
 #include <i18nutil/unicode.hxx>
 
+#include <o3tl/make_unique.hxx>
+
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::lang;
 
@@ -30,19 +32,17 @@ namespace com { namespace sun { namespace star { namespace i18n {
 //      class BreakIterator_CJK
 //      ----------------------------------------------------;
 
-BreakIterator_CJK::BreakIterator_CJK() :
-    dict( nullptr ),
-    hangingCharacters()
+BreakIterator_CJK::BreakIterator_CJK()
 {
     cBreakIterator = "com.sun.star.i18n.BreakIterator_CJK";
 }
 
 Boundary SAL_CALL
 BreakIterator_CJK::previousWord(const OUString& text, sal_Int32 anyPos,
-        const lang::Locale& nLocale, sal_Int16 wordType) throw(RuntimeException, std::exception)
+        const lang::Locale& nLocale, sal_Int16 wordType)
 {
-    if (dict) {
-        result = dict->previousWord(text, anyPos, wordType);
+    if (m_xDict) {
+        result = m_xDict->previousWord(text, anyPos, wordType);
         // #109813# for non-CJK, single character word, fallback to ICU breakiterator.
         if (result.endPos - result.startPos != 1 ||
                 getScriptType(text, result.startPos) == ScriptType::ASIAN)
@@ -56,10 +56,10 @@ BreakIterator_CJK::previousWord(const OUString& text, sal_Int32 anyPos,
 
 Boundary SAL_CALL
 BreakIterator_CJK::nextWord(const OUString& text, sal_Int32 anyPos,
-        const lang::Locale& nLocale, sal_Int16 wordType) throw(RuntimeException, std::exception)
+        const lang::Locale& nLocale, sal_Int16 wordType)
 {
-    if (dict) {
-        result = dict->nextWord(text, anyPos, wordType);
+    if (m_xDict) {
+        result = m_xDict->nextWord(text, anyPos, wordType);
         // #109813# for non-CJK, single character word, fallback to ICU breakiterator.
         if (result.endPos - result.startPos != 1 ||
                 getScriptType(text, result.startPos) == ScriptType::ASIAN)
@@ -74,10 +74,9 @@ BreakIterator_CJK::nextWord(const OUString& text, sal_Int32 anyPos,
 Boundary SAL_CALL
 BreakIterator_CJK::getWordBoundary( const OUString& text, sal_Int32 anyPos,
         const lang::Locale& nLocale, sal_Int16 wordType, sal_Bool bDirection )
-        throw(RuntimeException, std::exception)
 {
-    if (dict) {
-        result = dict->getWordBoundary(text, anyPos, wordType, bDirection);
+    if (m_xDict) {
+        result = m_xDict->getWordBoundary(text, anyPos, wordType, bDirection);
         // #109813# for non-CJK, single character word, fallback to ICU breakiterator.
         if (result.endPos - result.startPos != 1 ||
                 getScriptType(text, result.startPos) == ScriptType::ASIAN)
@@ -90,7 +89,7 @@ LineBreakResults SAL_CALL BreakIterator_CJK::getLineBreak(
         const OUString& Text, sal_Int32 nStartPos,
         const lang::Locale& /*rLocale*/, sal_Int32 /*nMinBreakPos*/,
         const LineBreakHyphenationOptions& /*hOptions*/,
-        const LineBreakUserOptions& bOptions ) throw(RuntimeException, std::exception)
+        const LineBreakUserOptions& bOptions )
 {
     LineBreakResults lbr;
 
@@ -116,14 +115,9 @@ LineBreakResults SAL_CALL BreakIterator_CJK::getLineBreak(
 //      ----------------------------------------------------;
 BreakIterator_zh::BreakIterator_zh()
 {
-    dict = new xdictionary("zh");
-    hangingCharacters = LocaleDataImpl().getHangingCharacters(LOCALE("zh", "CN"));
+    m_xDict = o3tl::make_unique<xdictionary>("zh");
+    hangingCharacters = LocaleDataImpl::get()->getHangingCharacters(LOCALE("zh", "CN"));
     cBreakIterator = "com.sun.star.i18n.BreakIterator_zh";
-}
-
-BreakIterator_zh::~BreakIterator_zh()
-{
-    delete dict;
 }
 
 //      ----------------------------------------------------
@@ -131,14 +125,9 @@ BreakIterator_zh::~BreakIterator_zh()
 //      ----------------------------------------------------;
 BreakIterator_zh_TW::BreakIterator_zh_TW()
 {
-    dict = new xdictionary("zh");
-    hangingCharacters = LocaleDataImpl().getHangingCharacters(LOCALE("zh", "TW"));
+    m_xDict = o3tl::make_unique<xdictionary>("zh");
+    hangingCharacters = LocaleDataImpl::get()->getHangingCharacters(LOCALE("zh", "TW"));
     cBreakIterator = "com.sun.star.i18n.BreakIterator_zh_TW";
-}
-
-BreakIterator_zh_TW::~BreakIterator_zh_TW()
-{
-    delete dict;
 }
 
 //      ----------------------------------------------------
@@ -146,15 +135,10 @@ BreakIterator_zh_TW::~BreakIterator_zh_TW()
 //      ----------------------------------------------------;
 BreakIterator_ja::BreakIterator_ja()
 {
-    dict = new xdictionary("ja");
-    dict->setJapaneseWordBreak();
-    hangingCharacters = LocaleDataImpl().getHangingCharacters(LOCALE("ja", "JP"));
+    m_xDict = o3tl::make_unique<xdictionary>("ja");
+    m_xDict->setJapaneseWordBreak();
+    hangingCharacters = LocaleDataImpl::get()->getHangingCharacters(LOCALE("ja", "JP"));
     cBreakIterator = "com.sun.star.i18n.BreakIterator_ja";
-}
-
-BreakIterator_ja::~BreakIterator_ja()
-{
-    delete dict;
 }
 
 //      ----------------------------------------------------
@@ -162,12 +146,8 @@ BreakIterator_ja::~BreakIterator_ja()
 //      ----------------------------------------------------;
 BreakIterator_ko::BreakIterator_ko()
 {
-    hangingCharacters = LocaleDataImpl().getHangingCharacters(LOCALE("ko", "KR"));
+    hangingCharacters = LocaleDataImpl::get()->getHangingCharacters(LOCALE("ko", "KR"));
     cBreakIterator = "com.sun.star.i18n.BreakIterator_ko";
-}
-
-BreakIterator_ko::~BreakIterator_ko()
-{
 }
 
 } } } }

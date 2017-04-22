@@ -49,7 +49,7 @@ class CommandDispatch :
 {
 public:
     explicit CommandDispatch( const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~CommandDispatch();
+    virtual ~CommandDispatch() override;
 
     // late initialisation, especially for adding as listener
     virtual void initialize();
@@ -92,23 +92,19 @@ protected:
         const OUString & rURL,
         const css::uno::Any & rState,
         bool bEnabled,
-        const css::uno::Reference< css::frame::XStatusListener > & xSingleListener =
-            css::uno::Reference< css::frame::XStatusListener >(),
+        const css::uno::Reference< css::frame::XStatusListener > & xSingleListener,
         const OUString & rFeatureDescriptor = OUString() );
 
     // ____ XDispatch ____
     virtual void SAL_CALL dispatch(
         const css::util::URL& URL,
-        const css::uno::Sequence< css::beans::PropertyValue >& Arguments )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
     virtual void SAL_CALL addStatusListener(
         const css::uno::Reference< css::frame::XStatusListener >& Control,
-        const css::util::URL& URL )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::util::URL& URL ) override;
     virtual void SAL_CALL removeStatusListener(
         const css::uno::Reference< css::frame::XStatusListener >& Control,
-        const css::util::URL& URL )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::util::URL& URL ) override;
 
     // ____ WeakComponentImplHelperBase ____
     /// is called when this is disposed
@@ -116,20 +112,18 @@ protected:
 
     // ____ XModifyListener ____
     virtual void SAL_CALL modified(
-        const css::lang::EventObject& aEvent )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& aEvent ) override;
 
     // ____ XEventListener (base of XModifyListener) ____
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source )
-        throw (css::uno::RuntimeException, std::exception) override;
+        const css::lang::EventObject& Source ) override;
 
 protected:
     css::uno::Reference< css::uno::XComponentContext > m_xContext;
     css::uno::Reference< css::util::XURLTransformer >  m_xURLTransformer;
 
 private:
-    typedef ::std::map< OUString, ::comphelper::OInterfaceContainerHelper2* >
+    typedef std::map< OUString, ::comphelper::OInterfaceContainerHelper2* >
         tListenerMap;
 
     tListenerMap m_aListeners;

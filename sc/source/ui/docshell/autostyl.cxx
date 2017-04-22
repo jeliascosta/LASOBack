@@ -24,7 +24,7 @@
 #include "docsh.hxx"
 #include "sc.hrc"
 
-static inline sal_uLong TimeNow()          // Sekunden
+static inline sal_uLong TimeNow()          // seconds
 {
     return (sal_uLong) time(nullptr);
 }
@@ -63,9 +63,9 @@ ScAutoStyleList::ScAutoStyleList(ScDocShell* pShell)
     , aInitIdle("ScAutoStyleList InitIdle")
     , nTimerStart(0)
 {
-    aTimer.SetTimeoutHdl( LINK( this, ScAutoStyleList, TimerHdl ) );
-    aInitIdle.SetIdleHdl( LINK( this, ScAutoStyleList, InitHdl ) );
-    aInitIdle.SetPriority( SchedulerPriority::HIGHEST );
+    aTimer.SetInvokeHandler( LINK( this, ScAutoStyleList, TimerHdl ) );
+    aInitIdle.SetInvokeHandler( LINK( this, ScAutoStyleList, InitHdl ) );
+    aInitIdle.SetPriority( TaskPriority::HIGHEST );
 }
 
 ScAutoStyleList::~ScAutoStyleList()
@@ -81,7 +81,7 @@ void ScAutoStyleList::AddInitial( const ScRange& rRange, const OUString& rStyle1
     aInitIdle.Start();
 }
 
-IMPL_LINK_NOARG_TYPED(ScAutoStyleList, InitHdl, Idle *, void)
+IMPL_LINK_NOARG(ScAutoStyleList, InitHdl, Timer *, void)
 {
     std::vector<ScAutoStyleInitData>::iterator iter;
     for (iter = aInitials.begin(); iter != aInitials.end(); ++iter)
@@ -109,7 +109,7 @@ void ScAutoStyleList::AddEntry( sal_uLong nTimeout, const ScRange& rRange, const
     if (itr != aEntries.end())
         aEntries.erase(itr);
 
-    //  Timeouts von allen Eintraegen anpassen
+    //  adjust timeouts of all entries
 
     if (!aEntries.empty() && nNow != nTimerStart)
     {
@@ -117,27 +117,27 @@ void ScAutoStyleList::AddEntry( sal_uLong nTimeout, const ScRange& rRange, const
         AdjustEntries((nNow-nTimerStart)*1000);
     }
 
-    //  Einfuege-Position suchen
+    //  find insert position
     std::vector<ScAutoStyleData>::iterator iter =
         ::std::find_if(aEntries.begin(), aEntries.end(), FindByTimeout(nTimeout));
 
     aEntries.insert(iter, ScAutoStyleData(nTimeout,rRange,rStyle));
 
-    //  abgelaufene ausfuehren, Timer neu starten
+    //  execute expired, restart timer
 
     ExecuteEntries();
     StartTimer(nNow);
 }
 
-void ScAutoStyleList::AdjustEntries( sal_uLong nDiff )  // Millisekunden
+void ScAutoStyleList::AdjustEntries( sal_uLong nDiff )  // milliseconds
 {
     std::vector<ScAutoStyleData>::iterator iter;
     for (iter = aEntries.begin(); iter != aEntries.end(); ++iter)
     {
         if (iter->nTimeout <= nDiff)
-            iter->nTimeout = 0;                 // abgelaufen
+            iter->nTimeout = 0;                 // expired
         else
-            iter->nTimeout -= nDiff;                // weiterzaehlen
+            iter->nTimeout -= nDiff;                // continue counting
     }
 }
 
@@ -169,9 +169,9 @@ void ScAutoStyleList::ExecuteAllNow()
     aEntries.clear();
 }
 
-void ScAutoStyleList::StartTimer( sal_uLong nNow )      // Sekunden
+void ScAutoStyleList::StartTimer( sal_uLong nNow )      // seconds
 {
-    // ersten Eintrag mit Timeout != 0 suchen
+    // find first entry with Timeout != 0
     std::vector<ScAutoStyleData>::iterator iter =
         ::std::find_if(aEntries.begin(),aEntries.end(), FindNonZeroTimeout());
 
@@ -184,7 +184,7 @@ void ScAutoStyleList::StartTimer( sal_uLong nNow )      // Sekunden
     nTimerStart = nNow;
 }
 
-IMPL_LINK_NOARG_TYPED(ScAutoStyleList, TimerHdl, Timer *, void)
+IMPL_LINK_NOARG(ScAutoStyleList, TimerHdl, Timer *, void)
 {
     sal_uLong nNow = TimeNow();
     AdjustEntries(aTimer.GetTimeout());             // eingestellte Wartezeit

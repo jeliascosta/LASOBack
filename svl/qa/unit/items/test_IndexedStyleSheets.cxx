@@ -25,7 +25,7 @@ class MockedStyleSheet : public SfxStyleSheetBase
     public:
     MockedStyleSheet(const rtl::OUString& name, SfxStyleFamily fam = SfxStyleFamily::Char)
     : SfxStyleSheetBase(name, nullptr, fam, 0)
-    {;}
+    {}
 
 };
 
@@ -87,7 +87,7 @@ void IndexedStyleSheetsTest::AddedStylesheetsCanBeFoundAndRetrievedByPosition()
 
 void IndexedStyleSheetsTest::AddingSameStylesheetTwiceHasNoEffect()
 {
-    rtl::Reference<SfxStyleSheetBase> sheet1(new MockedStyleSheet(rtl::OUString("sheet1")));
+    rtl::Reference<SfxStyleSheetBase> sheet1(new MockedStyleSheet("sheet1"));
     IndexedStyleSheets iss;
     iss.AddStyleSheet(sheet1);
     CPPUNIT_ASSERT_EQUAL(1u, iss.GetNumberOfStyleSheets());
@@ -111,8 +111,8 @@ void IndexedStyleSheetsTest::RemovedStyleSheetIsNotFound()
 
 void IndexedStyleSheetsTest::RemovingStyleSheetWhichIsNotAvailableHasNoEffect()
 {
-    rtl::Reference<SfxStyleSheetBase> sheet1(new MockedStyleSheet(rtl::OUString("sheet1")));
-    rtl::Reference<SfxStyleSheetBase> sheet2(new MockedStyleSheet(rtl::OUString("sheet2")));
+    rtl::Reference<SfxStyleSheetBase> sheet1(new MockedStyleSheet("sheet1"));
+    rtl::Reference<SfxStyleSheetBase> sheet2(new MockedStyleSheet("sheet2"));
     IndexedStyleSheets iss;
     iss.AddStyleSheet(sheet1);
     CPPUNIT_ASSERT_EQUAL(1u, iss.GetNumberOfStyleSheets());
@@ -203,7 +203,7 @@ void IndexedStyleSheetsTest::OnlyOneStyleSheetIsReturnedWhenReturnFirstIsUsed()
     DummyPredicate predicate; // returns always true, i.e., all style sheets match the predicate.
 
     std::vector<unsigned> v = iss.FindPositionsByNameAndPredicate(name, predicate,
-            IndexedStyleSheets::RETURN_FIRST);
+            IndexedStyleSheets::SearchBehavior::ReturnFirst);
     CPPUNIT_ASSERT_EQUAL_MESSAGE("Only one style sheet is returned.", static_cast<size_t>(1), v.size());
 
     std::vector<unsigned> w = iss.FindPositionsByNameAndPredicate(name, predicate);

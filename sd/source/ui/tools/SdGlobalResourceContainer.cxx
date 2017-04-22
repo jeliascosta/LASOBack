@@ -19,6 +19,13 @@
 
 #include "tools/SdGlobalResourceContainer.hxx"
 
+#include <comphelper/processfactory.hxx>
+#include <comphelper/unique_disposing_ptr.hxx>
+
+#include <com/sun/star/frame/Desktop.hpp>
+
+#include <rtl/instance.hxx>
+
 #include <algorithm>
 #include <vector>
 
@@ -27,13 +34,30 @@ using namespace ::com::sun::star::uno;
 
 namespace sd {
 
+class SdGlobalResourceContainerInstance
+    : public comphelper::unique_disposing_solar_mutex_reset_ptr<SdGlobalResourceContainer>
+{
+public:
+    SdGlobalResourceContainerInstance()
+        : comphelper::unique_disposing_solar_mutex_reset_ptr<SdGlobalResourceContainer>(
+            uno::Reference<lang::XComponent>(frame::Desktop::create(comphelper::getProcessComponentContext()), uno::UNO_QUERY_THROW),
+            new SdGlobalResourceContainer, true)
+    {
+    }
+};
+
+namespace {
+
+struct theSdGlobalResourceContainerInstance : public rtl::Static<SdGlobalResourceContainerInstance, theSdGlobalResourceContainerInstance> {};
+
+} // namespace
+
 //===== SdGlobalResourceContainer::Implementation =============================
 
 class SdGlobalResourceContainer::Implementation
 {
 private:
     friend class SdGlobalResourceContainer;
-    static SdGlobalResourceContainer* mpInstance;
 
     ::osl::Mutex maMutex;
 
@@ -53,14 +77,10 @@ private:
 // static
 SdGlobalResourceContainer& SdGlobalResourceContainer::Instance()
 {
-    DBG_ASSERT(Implementation::mpInstance!=nullptr,
-        "SdGlobalResourceContainer::Instance(): instance has been deleted");
-    // Maybe we should throw an exception when the instance has been deleted.
-    return *Implementation::mpInstance;
+    SdGlobalResourceContainer *const pRet(theSdGlobalResourceContainerInstance::get().get());
+    assert(pRet); // error if it has been deleted and is null
+    return *pRet;
 }
-
-SdGlobalResourceContainer*
-    SdGlobalResourceContainer::Implementation::mpInstance = nullptr;
 
 //===== SdGlobalResourceContainer =============================================
 
@@ -80,7 +100,7 @@ void SdGlobalResourceContainer::AddResource (
     {
         // Because the given resource is a unique_ptr it is highly unlikely
         // that we come here.  But who knows?
-        DBG_ASSERT (false,
+        SAL_WARN ( "sd.tools",
             "SdGlobalResourceContainer:AddResource(): Resource added twice.");
     }
     // We can not put the unique_ptr into the vector so we release the
@@ -102,7 +122,7 @@ void SdGlobalResourceContainer::AddResource (
         mpImpl->maSharedResources.push_back(pResource);
     else
     {
-        DBG_ASSERT (false,
+        SAL_WARN ("sd.tools",
             "SdGlobalResourceContainer:AddResource(): Resource added twice.");
     }
 }
@@ -120,15 +140,14 @@ void SdGlobalResourceContainer::AddResource (const Reference<XInterface>& rxReso
         mpImpl->maXInterfaceResources.push_back(rxResource);
     else
     {
-        DBG_ASSERT (false,
+        SAL_WARN ("sd.tools",
             "SdGlobalResourceContainer:AddResource(): Resource added twice.");
     }
 }
 
 SdGlobalResourceContainer::SdGlobalResourceContainer()
-    : mpImpl (new SdGlobalResourceContainer::Implementation())
+    : mpImpl (new SdGlobalResourceContainer::Implementation)
 {
-    Implementation::mpInstance = this;
 }
 
 SdGlobalResourceContainer::~SdGlobalResourceContainer()
@@ -174,10 +193,6 @@ SdGlobalResourceContainer::~SdGlobalResourceContainer()
         if (xComponent.is())
             xComponent->dispose();
     }
-
-    DBG_ASSERT(Implementation::mpInstance == this,
-        "~SdGlobalResourceContainer(): more than one instance of singleton");
-    Implementation::mpInstance = nullptr;
 }
 
 } // end of namespace sd

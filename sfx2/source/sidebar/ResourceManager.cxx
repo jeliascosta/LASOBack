@@ -251,7 +251,7 @@ void ResourceManager::ReadDeckList()
 {
     const utl::OConfigurationTreeRoot aDeckRootNode(
                                         comphelper::getProcessComponentContext(),
-                                        OUString("org.openoffice.Office.UI.Sidebar/Content/DeckList"),
+                                        "org.openoffice.Office.UI.Sidebar/Content/DeckList",
                                         false);
     if (!aDeckRootNode.isValid())
         return;
@@ -311,7 +311,7 @@ void ResourceManager::SaveDeckSettings(const DeckDescriptor* pDeckDesc)
 {
     const utl::OConfigurationTreeRoot aDeckRootNode(
                                     comphelper::getProcessComponentContext(),
-                                    OUString("org.openoffice.Office.UI.Sidebar/Content/DeckList"),
+                                    "org.openoffice.Office.UI.Sidebar/Content/DeckList",
                                     true);
     if (!aDeckRootNode.isValid())
         return;
@@ -332,7 +332,7 @@ void ResourceManager::SaveDeckSettings(const DeckDescriptor* pDeckDesc)
 
     const utl::OConfigurationTreeRoot aPanelRootNode(
                                     comphelper::getProcessComponentContext(),
-                                    OUString("org.openoffice.Office.UI.Sidebar/Content/PanelList"),
+                                    "org.openoffice.Office.UI.Sidebar/Content/PanelList",
                                     true);
 
     if (!aPanelRootNode.isValid())
@@ -346,7 +346,7 @@ void ResourceManager::SaveDeckSettings(const DeckDescriptor* pDeckDesc)
     for ( SharedPanelContainer::iterator iPanel(rPanels.begin()), iEnd(rPanels.end());
               iPanel!=iEnd; ++iPanel)
     {
-        Panel* aPanel = *iPanel;
+        VclPtr<Panel> const & aPanel = *iPanel;
         OUString panelId = aPanel->GetId();
         std::shared_ptr<PanelDescriptor> xPanelDesc = GetPanelDescriptor(panelId);
 
@@ -368,7 +368,7 @@ void ResourceManager::ReadPanelList()
 {
     const utl::OConfigurationTreeRoot aPanelRootNode(
                                         comphelper::getProcessComponentContext(),
-                                        OUString("org.openoffice.Office.UI.Sidebar/Content/PanelList"),
+                                        "org.openoffice.Office.UI.Sidebar/Content/PanelList",
                                         false);
     if (!aPanelRootNode.isValid())
         return;
@@ -466,42 +466,42 @@ void ResourceManager::ReadContextList (
         // application name may result in more than one value (eg
         // DrawImpress will result in two enums, one for Draw and one
         // for Impress).
-        std::vector<EnumContext::Application> aApplications;
-        EnumContext::Application eApplication (EnumContext::GetApplicationEnum(sApplicationName));
+        std::vector<vcl::EnumContext::Application> aApplications;
+        vcl::EnumContext::Application eApplication (vcl::EnumContext::GetApplicationEnum(sApplicationName));
 
-        if (eApplication == EnumContext::Application_None
-            && !sApplicationName.equals(EnumContext::GetApplicationName(EnumContext::Application_None)))
+        if (eApplication == vcl::EnumContext::Application::NONE
+            && !sApplicationName.equals(vcl::EnumContext::GetApplicationName(vcl::EnumContext::Application::NONE)))
         {
             // Handle some special names: abbreviations that make
             // context descriptions more readable.
             if (sApplicationName == "Writer")
-                aApplications.push_back(EnumContext::Application_Writer);
+                aApplications.push_back(vcl::EnumContext::Application::Writer);
             else if (sApplicationName == "Calc")
-                aApplications.push_back(EnumContext::Application_Calc);
+                aApplications.push_back(vcl::EnumContext::Application::Calc);
             else if (sApplicationName == "Draw")
-                aApplications.push_back(EnumContext::Application_Draw);
+                aApplications.push_back(vcl::EnumContext::Application::Draw);
             else if (sApplicationName == "Impress")
-                aApplications.push_back(EnumContext::Application_Impress);
+                aApplications.push_back(vcl::EnumContext::Application::Impress);
             else if (sApplicationName == "Chart")
-                aApplications.push_back(EnumContext::Application_Chart);
+                aApplications.push_back(vcl::EnumContext::Application::Chart);
             else if (sApplicationName == "DrawImpress")
             {
                 // A special case among the special names:  it is
                 // common to use the same context descriptions for
                 // both Draw and Impress.  This special case helps to
                 // avoid duplication in the .xcu file.
-                aApplications.push_back(EnumContext::Application_Draw);
-                aApplications.push_back(EnumContext::Application_Impress);
+                aApplications.push_back(vcl::EnumContext::Application::Draw);
+                aApplications.push_back(vcl::EnumContext::Application::Impress);
             }
             else if (sApplicationName == "WriterVariants")
             {
                 // Another special case for all Writer variants.
-                aApplications.push_back(EnumContext::Application_Writer);
-                aApplications.push_back(EnumContext::Application_WriterGlobal);
-                aApplications.push_back(EnumContext::Application_WriterWeb);
-                aApplications.push_back(EnumContext::Application_WriterXML);
-                aApplications.push_back(EnumContext::Application_WriterForm);
-                aApplications.push_back(EnumContext::Application_WriterReport);
+                aApplications.push_back(vcl::EnumContext::Application::Writer);
+                aApplications.push_back(vcl::EnumContext::Application::WriterGlobal);
+                aApplications.push_back(vcl::EnumContext::Application::WriterWeb);
+                aApplications.push_back(vcl::EnumContext::Application::WriterXML);
+                aApplications.push_back(vcl::EnumContext::Application::WriterForm);
+                aApplications.push_back(vcl::EnumContext::Application::WriterReport);
             }
             else
             {
@@ -516,8 +516,8 @@ void ResourceManager::ReadContextList (
         }
 
         // Setup the actual context enum.
-        const EnumContext::Context eContext (EnumContext::GetContextEnum(sContextName));
-        if (eContext == EnumContext::Context_Unknown)
+        const vcl::EnumContext::Context eContext (vcl::EnumContext::GetContextEnum(sContextName));
+        if (eContext == vcl::EnumContext::Context::Unknown)
         {
             SAL_WARN("sfx.sidebar", "context name " << sContextName << " not recognized");
             continue;
@@ -538,15 +538,15 @@ void ResourceManager::ReadContextList (
 
 
         // Add context descriptors.
-        std::vector<EnumContext::Application>::const_iterator iApplication;
+        std::vector<vcl::EnumContext::Application>::const_iterator iApplication;
         for (iApplication = aApplications.begin(); iApplication != aApplications.end(); ++iApplication)
         {
-            if (*iApplication != EnumContext::Application_None)
+            if (*iApplication != vcl::EnumContext::Application::NONE)
             {
                 rContextList.AddContextDescription(
                     Context(
-                        EnumContext::GetApplicationName(*iApplication),
-                        EnumContext::GetContextName(eContext)),
+                        vcl::EnumContext::GetApplicationName(*iApplication),
+                        vcl::EnumContext::GetContextName(eContext)),
                     bIsInitiallyVisible,
                     sMenuCommand);
             }
@@ -607,7 +607,7 @@ void ResourceManager::ReadLegacyAddons (const Reference<frame::XController>& rxC
         rDeckDescriptor.msHelpText = rDeckDescriptor.msTitle;
         rDeckDescriptor.mbIsEnabled = true;
         rDeckDescriptor.mnOrderIndex = 100000 + nReadIndex;
-        rDeckDescriptor.maContextList.AddContextDescription(Context(sModuleName, OUString("any")), true, OUString());
+        rDeckDescriptor.maContextList.AddContextDescription(Context(sModuleName, "any"), true, OUString());
 
         maPanels.push_back(std::make_shared<PanelDescriptor>());
         PanelDescriptor& rPanelDescriptor(*maPanels.back());
@@ -622,7 +622,7 @@ void ResourceManager::ReadLegacyAddons (const Reference<frame::XController>& rxC
         rPanelDescriptor.mnOrderIndex = 100000 + nReadIndex;
         rPanelDescriptor.mbShowForReadOnlyDocuments = false;
         rPanelDescriptor.mbWantsCanvas = false;
-        rPanelDescriptor.maContextList.AddContextDescription(Context(sModuleName, OUString("any")), true, OUString());
+        rPanelDescriptor.maContextList.AddContextDescription(Context(sModuleName, "any"), true, OUString());
     }
 }
 

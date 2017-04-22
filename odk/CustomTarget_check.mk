@@ -13,8 +13,7 @@ $(eval $(call gb_CustomTarget_register_targets,odk/check,\
 	checkbin \
 ))
 
-odk_PLATFORM := $(if $(filter WNT,$(OS)),\
-	$(if $(filter GCC,$(COM)),mingw,windows),\
+odk_PLATFORM := $(if $(filter WNT,$(OS)),windows,\
 	$(if $(filter SOLARIS,$(OS)),\
 		$(if $(filter SPARC,$(CPUNAME)),solsparc,\
 			$(if $(filter SPARC64,$(CPUNAME)),solsparc64,solintel)),\
@@ -36,7 +35,6 @@ $(call gb_CustomTarget_get_workdir,odk/check)/checkbin : \
 		$(call gb_Package_get_target,odk_docs) \
 		$(call gb_Package_get_target,odk_html) \
 		$(if $(ENABLE_JAVA),$(call gb_GeneratedPackage_get_target,odk_javadoc)) \
-		$(call gb_Package_get_target,odk_lib) \
 		$(call gb_Package_get_target,odk_settings) \
 		$(call gb_Package_get_target,odk_settings_generated) \
 		$(if $(ENABLE_JAVA),$(call gb_Package_get_target,odk_unowinreg))

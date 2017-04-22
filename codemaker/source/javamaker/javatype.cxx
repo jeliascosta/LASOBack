@@ -329,7 +329,7 @@ public:
 
     OString getDescriptor() const;
 
-    OString getSignature() const { return m_needsSignature ? m_signatureStart + m_signatureEnd : OString();}
+    OString getSignature() const { return m_needsSignature ? m_signatureStart.toString() + m_signatureEnd : OString();}
 
 private:
     rtl::Reference< TypeManager > m_manager;
@@ -757,7 +757,7 @@ void handleEnumType(
         std::list< ClassFile::Code * > blocks;
             //FIXME: pointers contained in blocks may leak
         sal_Int32 last = SAL_MAX_INT32;
-        for (const std::pair< sal_Int32, OString >& pair : map)
+        for (const auto& pair : map)
         {
             sal_Int32 value = pair.first;
             if (last != SAL_MAX_INT32) {
@@ -783,7 +783,7 @@ void handleEnumType(
         defCode->instrAreturn();
         std::list< std::pair< sal_Int32, ClassFile::Code * > > blocks;
             //FIXME: pointers contained in blocks may leak
-        for (const std::pair< sal_Int32, OString >& pair : map )
+        for (const auto& pair : map )
         {
             std::unique_ptr< ClassFile::Code > blockCode(cf->newCode());
             blockCode->instrGetstatic(className, pair.second, classDescriptor);
@@ -2087,9 +2087,9 @@ void addExceptionHandlers(
     if (node->present) {
         code->addException(start, end, handler, node->name.replace('.', '/'));
     } else {
-        for (codemaker::ExceptionTreeNode* p : node->children)
+        for (std::unique_ptr<codemaker::ExceptionTreeNode> const & p : node->children)
         {
-            addExceptionHandlers(p, start, end, handler, code);
+            addExceptionHandlers(p.get(), start, end, handler, code);
         }
     }
 }

@@ -158,7 +158,7 @@ public:
     {
         CtorInitTextFormatter( pTextFrame, pTextFormatInf );
     }
-    virtual ~SwTextFormatter();
+    virtual ~SwTextFormatter() override;
 
     sal_Int32 FormatLine( const sal_Int32 nStart );
 
@@ -238,9 +238,10 @@ public:
      * changing the size (width, height and ascent) of the portion
      * to get a merged border.
      * @param   rPortion    portion for merge
+     * @param   pPrev       portion immediately before rPortion
      * @param   rInf        contain information
     **/
-    void MergeCharacterBorder( SwLinePortion& rPortion, SwTextFormatInfo& rInf );
+    void MergeCharacterBorder( SwLinePortion& rPortion, SwLinePortion *pPrev, SwTextFormatInfo& rInf );
 };
 
 #endif

@@ -176,11 +176,11 @@ static OUString encodeValue( const OUString & rValue )
         const sal_Unicode c = pValue[ n ];
 
         if ( '%' == c )
-            aResult.appendAscii( "%per;" );
+            aResult.append( "%per;" );
         else if ( '<' == c )
-            aResult.appendAscii( "%lt;" );
+            aResult.append( "%lt;" );
         else if ( '>' == c )
-            aResult.appendAscii( "%gt;" );
+            aResult.append( "%gt;" );
         else
             aResult.append( c );
     }
@@ -460,7 +460,7 @@ bool UCBDeadPropertyValue::toXML( const uno::Any & rInData,
     else if ( rType == cppu::UnoType<bool>::get() )
     {
         // boolean
-        sal_Bool bValue = false;
+        bool bValue = false;
         rInData >>= bValue;
         aStringValue = OUString::boolean( bValue );
         aStringType = aTypeBoolean;

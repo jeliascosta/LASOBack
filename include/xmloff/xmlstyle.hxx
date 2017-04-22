@@ -54,8 +54,7 @@ enum XMLStyleStylesElemTokens
     XML_TOK_TEXT_BIBLIOGRAPHY_CONFIG,
     XML_TOK_TEXT_LINENUMBERING_CONFIG,
     XML_TOK_STYLE_DEFAULT_STYLE,
-    XML_TOK_STYLE_DEFAULT_PAGE_LAYOUT,  //text grid enhancement
-    XML_TOK_STYLE_STYLES_ELEM_END=XML_TOK_UNKNOWN
+    XML_TOK_STYLE_DEFAULT_PAGE_LAYOUT  //text grid enhancement
 };
 
 class XMLOFF_DLLPUBLIC SvXMLStyleContext : public SvXMLImportContext
@@ -67,9 +66,6 @@ class XMLOFF_DLLPUBLIC SvXMLStyleContext : public SvXMLImportContext
     OUString     maFollow;    // Will be moved to XMLPropStyle soon!!!!
     bool         mbHidden;
 
-    OUString     maHelpFile;  // Will be removed very soon!!!!
-
-    sal_uInt32   mnHelpId;    // Will be removed very soon!!!!
     sal_uInt16   mnFamily;
 
     bool         mbValid : 1; // Set this to false in CreateAndInsert
@@ -97,7 +93,7 @@ public:
               sal_uInt16 nFamily=0,
               bool bDefaultStyle = false );
 
-    virtual ~SvXMLStyleContext();
+    virtual ~SvXMLStyleContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
         const OUString& rLocalName,
@@ -156,7 +152,7 @@ class XMLOFF_DLLPUBLIC SvXMLStylesContext : public SvXMLImportContext
     const OUString msTextStyleServiceName;
 
     std::unique_ptr<SvXMLStylesContext_Impl> mpImpl;
-    SvXMLTokenMap           *mpStyleStylesElemTokenMap;
+    std::unique_ptr<SvXMLTokenMap>           mpStyleStylesElemTokenMap;
 
 
     css::uno::Reference< css::container::XNameContainer > mxParaStyles;
@@ -206,7 +202,7 @@ public:
         const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
         bool bAutomatic = false );
 
-    virtual ~SvXMLStylesContext();
+    virtual ~SvXMLStylesContext() override;
 
     // Create child element.
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,

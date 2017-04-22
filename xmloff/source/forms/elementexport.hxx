@@ -22,6 +22,7 @@
 
 #include <sal/config.h>
 
+#include <memory>
 #include <set>
 
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -43,7 +44,7 @@ namespace xmloff
         css::uno::Sequence< css::script::ScriptEventDescriptor >
                                 m_aEvents;
 
-        SvXMLElementExport*     m_pXMLElement;          // XML element doing the concrete startElement etc.
+        std::unique_ptr<SvXMLElementExport> m_pXMLElement;          // XML element doing the concrete startElement etc.
 
     public:
         OElementExport(IFormsExportContext& _rContext,
@@ -100,7 +101,7 @@ namespace xmloff
         EAFlags                 m_nIncludeEvents;       // events to include
         BAFlags                 m_nIncludeBindings;     // binding attributes to include
 
-        SvXMLElementExport*     m_pOuterElement;        // XML element doing the concrete startElement etc. for the outer element
+        std::unique_ptr<SvXMLElementExport> m_pOuterElement;        // XML element doing the concrete startElement etc. for the outer element
 
     public:
         /** constructs an object capable of exporting controls
@@ -119,7 +120,6 @@ namespace xmloff
             const OUString& _rControlId,
             const OUString& _rReferringControls,
             const css::uno::Sequence< css::script::ScriptEventDescriptor >& _rxEvents);
-        virtual ~OControlExport();
 
     protected:
         /// start the XML element
@@ -149,7 +149,7 @@ namespace xmloff
 
         /** writes everything which needs to be represented as sub tag
         */
-        void exportSubTags() throw (css::uno::Exception, std::exception) override;
+        void exportSubTags() override;
 
         /** adds the attributes which are handled via generic IPropertyHandlers
 
@@ -173,7 +173,7 @@ namespace xmloff
         /** adds the XML attributes which are related to binding controls to
             external values and/or list sources
         */
-        void exportBindingAtributes();
+        void exportBindingAttributes();
 
         /** adds attributes which are special to a control type to the export context's attribute list
         */
@@ -271,7 +271,7 @@ namespace xmloff
             const OUString& _rControlId,
             const css::uno::Sequence< css::script::ScriptEventDescriptor >& _rxEvents);
 
-        virtual ~OColumnExport();
+        virtual ~OColumnExport() override;
 
     protected:
         // OControlExport overridables

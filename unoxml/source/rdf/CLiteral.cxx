@@ -41,23 +41,22 @@ class CLiteral:
 {
 public:
     explicit CLiteral();
-    virtual ~CLiteral() {}
 
     // css::lang::XServiceInfo:
-    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString & ServiceName) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString & ServiceName) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     // css::lang::XInitialization:
-    virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any > & aArguments) throw (css::uno::RuntimeException, css::uno::Exception, std::exception) override;
+    virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any > & aArguments) override;
 
     // css::rdf::XNode:
-    virtual OUString SAL_CALL getStringValue() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getStringValue() override;
 
     // css::rdf::XLiteral:
-    virtual OUString SAL_CALL getValue() throw (css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getLanguage() throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::rdf::XURI > SAL_CALL getDatatype() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getValue() override;
+    virtual OUString SAL_CALL getLanguage() override;
+    virtual css::uno::Reference< css::rdf::XURI > SAL_CALL getDatatype() override;
 
 private:
     CLiteral(CLiteral const&) = delete;
@@ -73,44 +72,41 @@ CLiteral::CLiteral() :
 {}
 
 // com.sun.star.uno.XServiceInfo:
-OUString SAL_CALL CLiteral::getImplementationName() throw (css::uno::RuntimeException, std::exception)
+OUString SAL_CALL CLiteral::getImplementationName()
 {
     return comp_CLiteral::_getImplementationName();
 }
 
-sal_Bool SAL_CALL CLiteral::supportsService(OUString const & serviceName) throw (css::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL CLiteral::supportsService(OUString const & serviceName)
 {
     return cppu::supportsService(this, serviceName);
 }
 
-css::uno::Sequence< OUString > SAL_CALL CLiteral::getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception)
+css::uno::Sequence< OUString > SAL_CALL CLiteral::getSupportedServiceNames()
 {
     return comp_CLiteral::_getSupportedServiceNames();
 }
 
 // css::lang::XInitialization:
-void SAL_CALL CLiteral::initialize(const css::uno::Sequence< css::uno::Any > & aArguments) throw (css::uno::RuntimeException, css::uno::Exception, std::exception)
+void SAL_CALL CLiteral::initialize(const css::uno::Sequence< css::uno::Any > & aArguments)
 {
     const sal_Int32 len( aArguments.getLength() );
     if (len < 1 || len > 2) {
             throw css::lang::IllegalArgumentException(
-                OUString("CLiteral::initialize: "
-                    "must give 1 or 2 argument(s)"), *this, 2);
+                "CLiteral::initialize: must give 1 or 2 argument(s)", *this, 2);
     }
 
     OUString arg0;
     if (!(aArguments[0] >>= arg0)) {
         throw css::lang::IllegalArgumentException(
-            OUString("CLiteral::initialize: "
-                "argument must be string"), *this, 0);
+            "CLiteral::initialize: argument must be string", *this, 0);
     }
     //FIXME: what is legal?
     if (true) {
         m_Value = arg0;
     } else {
         throw css::lang::IllegalArgumentException(
-            OUString("CLiteral::initialize: "
-                "argument is not valid literal value"), *this, 0);
+            "CLiteral::initialize: argument is not valid literal value", *this, 0);
     }
 
     if (len > 1) {
@@ -121,27 +117,24 @@ void SAL_CALL CLiteral::initialize(const css::uno::Sequence< css::uno::Any > & a
                 m_Language = arg1;
             } else {
                 throw css::lang::IllegalArgumentException(
-                    OUString("CLiteral::initialize: "
-                        "argument is not valid language"), *this, 1);
+                    "CLiteral::initialize: argument is not valid language", *this, 1);
             }
         } else if ((aArguments[1] >>= xURI)) {
             if (xURI.is()) {
                 m_xDatatype = xURI;
             } else {
                 throw css::lang::IllegalArgumentException(
-                    OUString("CLiteral::initialize: "
-                        "argument is null"), *this, 1);
+                    "CLiteral::initialize: argument is null", *this, 1);
             }
         } else {
             throw css::lang::IllegalArgumentException(
-                OUString("CLiteral::initialize: "
-                    "argument must be string or URI"), *this, 1);
+                "CLiteral::initialize: argument must be string or URI", *this, 1);
         }
     }
 }
 
 // css::rdf::XNode:
-OUString SAL_CALL CLiteral::getStringValue() throw (css::uno::RuntimeException, std::exception)
+OUString SAL_CALL CLiteral::getStringValue()
 {
     if (!m_Language.isEmpty()) {
         OUStringBuffer buf(m_Value);
@@ -159,17 +152,17 @@ OUString SAL_CALL CLiteral::getStringValue() throw (css::uno::RuntimeException, 
 }
 
 // css::rdf::XLiteral:
-OUString SAL_CALL CLiteral::getValue() throw (css::uno::RuntimeException, std::exception)
+OUString SAL_CALL CLiteral::getValue()
 {
     return m_Value;
 }
 
-OUString SAL_CALL CLiteral::getLanguage() throw (css::uno::RuntimeException, std::exception)
+OUString SAL_CALL CLiteral::getLanguage()
 {
     return m_Language;
 }
 
-css::uno::Reference< css::rdf::XURI > SAL_CALL CLiteral::getDatatype() throw (css::uno::RuntimeException, std::exception)
+css::uno::Reference< css::rdf::XURI > SAL_CALL CLiteral::getDatatype()
 {
     return m_xDatatype;
 }

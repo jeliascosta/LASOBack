@@ -52,7 +52,7 @@ namespace frm
 
     void RichTextControl::implInit( RichTextEngine* _pEngine, ITextAttributeListener* _pTextAttribListener, ITextSelectionListener* _pSelectionListener )
     {
-        m_pImpl = new RichTextControlImpl( this, _pEngine, _pTextAttribListener, _pSelectionListener );
+        m_pImpl.reset( new RichTextControlImpl( this, _pEngine, _pTextAttribListener, _pSelectionListener ) );
         SetCompoundControl( true );
     }
 
@@ -64,7 +64,7 @@ namespace frm
 
     void RichTextControl::dispose()
     {
-        delete m_pImpl;
+        m_pImpl.reset();
         Control::dispose();
     }
 
@@ -160,7 +160,7 @@ namespace frm
 
     void RichTextControl::GetFocus()
     {
-        getViewport().GrabFocus();
+        m_pImpl->getViewport( RichTextControlImpl::GrantAccess() )->GrabFocus();
     }
 
 
@@ -266,7 +266,7 @@ namespace frm
                             {
                                 INetURLObject aURL( sFileName );
                                 aURL.removeSegment();
-                                getEngine().Read( *pStream, aURL.GetMainURL( INetURLObject::NO_DECODE ), eFormat );
+                                getEngine().Read( *pStream, aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), eFormat );
                             }
                             else
                             {
@@ -284,7 +284,7 @@ namespace frm
     }
 
 
-    bool RichTextControl::Notify( NotifyEvent& _rNEvt )
+    bool RichTextControl::EventNotify( NotifyEvent& _rNEvt )
     {
         bool bDone = false;
         if ( _rNEvt.GetType() == MouseNotifyEvent::COMMAND )
@@ -292,7 +292,7 @@ namespace frm
             const CommandEvent& rEvent = *_rNEvt.GetCommandEvent();
             bDone = m_pImpl->HandleCommand( rEvent );
         }
-        return bDone || Control::Notify( _rNEvt );
+        return bDone || Control::EventNotify(_rNEvt);
     }
 
 
@@ -317,12 +317,6 @@ namespace frm
     EditEngine& RichTextControl::getEngine() const
     {
         return *m_pImpl->getEngine( RichTextControlImpl::GrantAccess() );
-    }
-
-
-    vcl::Window& RichTextControl::getViewport() const
-    {
-        return *m_pImpl->getViewport( RichTextControlImpl::GrantAccess() );
     }
 
 

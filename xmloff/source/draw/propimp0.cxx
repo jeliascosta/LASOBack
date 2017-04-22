@@ -19,6 +19,7 @@
 
 #include <rtl/ustrbuf.hxx>
 #include "propimp0.hxx"
+#include "sdxmlexp_impl.hxx"
 #include <com/sun/star/drawing/LineDash.hpp>
 #include <com/sun/star/util/Duration.hpp>
 #include <com/sun/star/uno/Any.hxx>
@@ -217,9 +218,8 @@ bool XMLTextAnimationStepPropertyHdl::exportXML(
 
         if( nVal < 0 )
         {
-            const OUString aPX( "px" );
-            ::sax::Converter::convertNumber( aOut, (sal_Int32)-nVal );
-            aOut.append( aPX );
+            aOut.append( (sal_Int32)-nVal );
+            aOut.append( "px" );
         }
         else
         {
@@ -232,8 +232,6 @@ bool XMLTextAnimationStepPropertyHdl::exportXML(
 
     return bRet;
 }
-
-#include "sdxmlexp_impl.hxx"
 
 XMLDateTimeFormatHdl::XMLDateTimeFormatHdl( SvXMLExport* pExport )
 : mpExport( pExport )

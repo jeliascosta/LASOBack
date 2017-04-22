@@ -42,8 +42,6 @@ namespace com { namespace sun { namespace star {
  */
 class XMLIndexTOCStylesContext : public SvXMLImportContext
 {
-    const OUString sLevelParagraphStyles;
-
     /// XPropertySet of the index
     css::uno::Reference<css::beans::XPropertySet> & rTOCPropertySet;
 
@@ -62,7 +60,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLocalName );
 
-    virtual ~XMLIndexTOCStylesContext();
+    virtual ~XMLIndexTOCStylesContext() override;
 
 protected:
 

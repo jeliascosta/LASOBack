@@ -44,8 +44,10 @@ class ExportDocumentHandler : public ExportDocumentHandler_BASE
 {
 public:
     // XServiceInfo - static versions
-    static OUString getImplementationName_Static(  ) throw(css::uno::RuntimeException);
-    static css::uno::Sequence< OUString > getSupportedServiceNames_static(  ) throw(css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    static OUString getImplementationName_Static(  );
+    /// @throws css::uno::RuntimeException
+    static css::uno::Sequence< OUString > getSupportedServiceNames_static(  );
     static css::uno::Reference< css::uno::XInterface > SAL_CALL
                     create(const css::uno::Reference< css::uno::XComponentContext >&);
 public:
@@ -53,31 +55,32 @@ public:
 
 private:
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
-    DECLARE_XINTERFACE( )
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+
     DECLARE_XTYPEPROVIDER( )
 
     // css::xml::sax::XDocumentHandler:
-    virtual void SAL_CALL startDocument() throw (css::uno::RuntimeException, css::xml::sax::SAXException, std::exception) override;
-    virtual void SAL_CALL endDocument() throw (css::uno::RuntimeException, css::xml::sax::SAXException, std::exception) override;
-    virtual void SAL_CALL startElement(const OUString & aName, const css::uno::Reference< css::xml::sax::XAttributeList > & xAttribs) throw (css::uno::RuntimeException, css::xml::sax::SAXException, std::exception) override;
-    virtual void SAL_CALL endElement(const OUString & aName) throw (css::uno::RuntimeException, css::xml::sax::SAXException, std::exception) override;
-    virtual void SAL_CALL characters(const OUString & aChars) throw (css::uno::RuntimeException, css::xml::sax::SAXException, std::exception) override;
-    virtual void SAL_CALL ignorableWhitespace(const OUString & aWhitespaces) throw (css::uno::RuntimeException, css::xml::sax::SAXException, std::exception) override;
-    virtual void SAL_CALL processingInstruction(const OUString & aTarget, const OUString & aData) throw (css::uno::RuntimeException, css::xml::sax::SAXException, std::exception) override;
-    virtual void SAL_CALL setDocumentLocator(const css::uno::Reference< css::xml::sax::XLocator > & xLocator) throw (css::uno::RuntimeException, css::xml::sax::SAXException, std::exception) override;
+    virtual void SAL_CALL startDocument() override;
+    virtual void SAL_CALL endDocument() override;
+    virtual void SAL_CALL startElement(const OUString & aName, const css::uno::Reference< css::xml::sax::XAttributeList > & xAttribs) override;
+    virtual void SAL_CALL endElement(const OUString & aName) override;
+    virtual void SAL_CALL characters(const OUString & aChars) override;
+    virtual void SAL_CALL ignorableWhitespace(const OUString & aWhitespaces) override;
+    virtual void SAL_CALL processingInstruction(const OUString & aTarget, const OUString & aData) override;
+    virtual void SAL_CALL setDocumentLocator(const css::uno::Reference< css::xml::sax::XLocator > & xLocator) override;
 
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     void exportTableRows();
 private:
     ExportDocumentHandler(ExportDocumentHandler &) = delete;
     void operator =(ExportDocumentHandler &) = delete;
 
-    virtual ~ExportDocumentHandler();
+    virtual ~ExportDocumentHandler() override;
 
     ::osl::Mutex                                              m_aMutex;
     css::uno::Reference< css::uno::XComponentContext >        m_xContext;
@@ -91,7 +94,6 @@ private:
     sal_Int32                                                 m_nColumnCount;
     bool m_bTableRowsStarted;
     bool m_bFirstRowExported;
-    bool m_bExportChar;
     bool m_bCountColumnHeader;
 };
 

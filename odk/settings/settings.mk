@@ -38,8 +38,6 @@ ifeq "$(DEBUG)" "yes"
 JAVAC_FLAGS+=-g
 endif
 
-JAVABIN=bin
-
 ###########################################################################
 #
 # Windows specific settings
@@ -221,7 +219,7 @@ SDK_JAVA_INCLUDES = -I"$(OO_SDK_JAVA_HOME)/include" -I"$(OO_SDK_JAVA_HOME)/inclu
 # define for used compiler necessary for UNO
 
 CC_DEFINES_JNI=-DUNX -DSOLARIS -DCPPU_ENV=$(CPPU_ENV) -DGCC
-CC_DEFINES=-DUNX -DSOLARIS -DSPARC -DCPPU_ENV=$(CPPU_ENV)  -DHAVE_GCC_VISIBILITY_FEATURE -DGCC
+CC_DEFINES=-DUNX -DSOLARIS -DSPARC -DCPPU_ENV=$(CPPU_ENV) -DGCC
 CC_OUTPUT_SWITCH=-o 
 
 LIBO_SDK_LDFLAGS_STDLIBS =
@@ -275,6 +273,11 @@ endif
 
 ifeq "$(PROCTYPE)" "powerpc64"
 JAVA_PROC_TYPE=ppc64
+endif
+
+ifeq "$(PROCTYPE)" "sparc64"
+UNOPKG_PLATFORM=Linux_SPARC64
+JAVA_PROC_TYPE=sparcv9
 endif
 
 OS=LINUX
@@ -334,7 +337,7 @@ endif
 SDK_JAVA_INCLUDES = -I"$(OO_SDK_JAVA_HOME)/include" -I"$(OO_SDK_JAVA_HOME)/include/linux"
 CC_INCLUDES=-I. -I$(OUT)/inc -I$(OUT)/inc/examples -I$(PRJ)/include
 CC_DEFINES_JNI=-DUNX -DGCC -DLINUX -DCPPU_ENV=$(CPPU_ENV)
-CC_DEFINES=-DUNX -DGCC -DLINUX -DCPPU_ENV=$(CPPU_ENV) -DHAVE_GCC_VISIBILITY_FEATURE
+CC_DEFINES=-DUNX -DGCC -DLINUX -DCPPU_ENV=$(CPPU_ENV)
 
 CC_OUTPUT_SWITCH=-o
 
@@ -363,7 +366,6 @@ endif
 ifeq "$(PLATFORM)" "macosx"
 
 UNOPKG_PLATFORM=MacOSX_x86_64
-JAVABIN=Commands
 
 OS=MACOSX
 PS=/
@@ -420,7 +422,7 @@ CC_FLAGS=-c -fPIC -fno-common $(GCC_ARCH_OPTION) -fvisibility=hidden $(OPT_FLAGS
 SDK_JAVA_INCLUDES = -I/System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers -I/System/Library/Frameworks/JavaVM.framework/Headers
 CC_INCLUDES=-I. -I$(OUT)/inc -I$(OUT)/inc/examples -I$(PRJ)/include
 CC_DEFINES_JNI=-DUNX -DGCC -DMACOSX -DCPPU_ENV=$(CPPU_ENV)
-CC_DEFINES=-DUNX -DGCC -DMACOSX -DCPPU_ENV=$(CPPU_ENV) -DHAVE_GCC_VISIBILITY_FEATURE
+CC_DEFINES=-DUNX -DGCC -DMACOSX -DCPPU_ENV=$(CPPU_ENV)
 
 CC_OUTPUT_SWITCH=-o
 
@@ -526,7 +528,7 @@ CC_FLAGS=-c -g -fPIC -DPIC $(PTHREAD_CFLAGS) -fvisibility=hidden $(OPT_FLAGS)
 SDK_JAVA_INCLUDES = -I"$(OO_SDK_JAVA_HOME)/include" -I"$(OO_SDK_JAVA_HOME)/include/freebsd"
 CC_INCLUDES=-I. -I$(OUT)/inc -I$(OUT)/inc/examples -I$(PRJ)/include
 CC_DEFINES_JNI=-DUNX -DGCC -DFREEBSD -DCPPU_ENV=$(CPPU_ENV)
-CC_DEFINES=-DUNX -DGCC -DFREEBSD -DCPPU_ENV=$(CPPU_ENV) -DHAVE_GCC_VISIBILITY_FEATURE
+CC_DEFINES=-DUNX -DGCC -DFREEBSD -DCPPU_ENV=$(CPPU_ENV)
 
 CC_OUTPUT_SWITCH=-o
 

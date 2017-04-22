@@ -33,12 +33,10 @@ namespace com { namespace sun { namespace star { namespace uno {
 
 namespace sd { namespace presenter {
 
-namespace {
-    typedef ::cppu::ImplInheritanceHelper <
-        tools::PropertySet,
-        css::lang::XInitialization
-    > PresenterTextViewInterfaceBase;
-}
+typedef ::cppu::ImplInheritanceHelper <
+    tools::PropertySet,
+    css::lang::XInitialization
+> PresenterTextViewInterfaceBase;
 
 /** Render text into bitmaps.  An edit engine is used to render the text.
     This service is used by the presenter screen to render the notes view.
@@ -48,14 +46,13 @@ class PresenterTextView
 {
 public:
     explicit PresenterTextView (const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~PresenterTextView();
+    virtual ~PresenterTextView() override;
     PresenterTextView(const PresenterTextView&) = delete;
     PresenterTextView& operator=(const PresenterTextView&) = delete;
 
     // XInitialization
 
-    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments)
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments) override;
 
 protected:
     virtual void SAL_CALL disposing() override;
@@ -70,10 +67,10 @@ private:
     class Implementation;
     std::unique_ptr<Implementation> mpImplementation;
 
-    /** This method throws a DisposedException when the object has already been
+    /** @throws css::lang::DisposedException when the object has already been
         disposed.
     */
-    void ThrowIfDisposed() throw (css::lang::DisposedException);
+    void ThrowIfDisposed();
 };
 
 } } // end of namespace ::sd::presenter

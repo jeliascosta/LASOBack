@@ -24,7 +24,6 @@
 #include "CommonConverters.hxx"
 #include "DataSourceHelper.hxx"
 #include "ChartModelHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "macros.hxx"
 #include "NumberFormatterWrapper.hxx"
 #include <unonames.hxx>
@@ -41,7 +40,7 @@ using namespace ::com::sun::star;
 using namespace ::com::sun::star::chart2;
 using ::com::sun::star::uno::Reference;
 using ::com::sun::star::uno::Sequence;
-using ::std::vector;
+using std::vector;
 
 ExplicitCategoriesProvider::ExplicitCategoriesProvider( const Reference< chart2::XCoordinateSystem >& xCooSysModel
                                                        , ChartModel& rModel )
@@ -99,7 +98,7 @@ ExplicitCategoriesProvider::ExplicitCategoriesProvider( const Reference< chart2:
                         //->split them in the direction of the first series
                         //detect whether the first series is a row or a column
                         bool bSeriesUsesColumns = true;
-                        ::std::vector< Reference< XDataSeries > > aSeries( ChartModelHelper::getDataSeries( mrModel ) );
+                        std::vector< Reference< XDataSeries > > aSeries( ChartModelHelper::getDataSeries( mrModel ) );
                         if( !aSeries.empty() )
                         {
                             uno::Reference< data::XDataSource > xSeriesSource( aSeries.front(), uno::UNO_QUERY );
@@ -227,8 +226,6 @@ public:
         : m_rSplitCategoriesList( rSplitCategoriesList )
         , mrModel( rModel )
     {}
-    virtual ~SplitCategoriesProvider_ForLabeledDataSequences()
-    {}
 
     virtual sal_Int32 getLevelCount() const override;
     virtual uno::Sequence< OUString > getStringsForLevel( sal_Int32 nIndex ) const override;
@@ -269,7 +266,7 @@ std::vector< ComplexCategory > lcl_DataSequenceToComplexCategoryVector(
     for( sal_Int32 nN=0; nN<nMaxCount; nN++ )
     {
         const OUString& aCurrent = rStrings[nN];
-        if( bCreateSingleCategories || ::std::find( rLimitingBorders.begin(), rLimitingBorders.end(), nN ) != rLimitingBorders.end() )
+        if( bCreateSingleCategories || std::find( rLimitingBorders.begin(), rLimitingBorders.end(), nN ) != rLimitingBorders.end() )
         {
             aResult.push_back( ComplexCategory(aPrevious,nCurrentCount) );
             nCurrentCount=1;
@@ -309,7 +306,7 @@ sal_Int32 lcl_getCategoryCount( std::vector< ComplexCategory >& rComplexCategori
 
 Sequence< OUString > lcl_getExplicitSimpleCategories(
     const SplitCategoriesProvider& rSplitCategoriesProvider,
-    ::std::vector< ::std::vector< ComplexCategory > >& rComplexCats )
+    std::vector< std::vector< ComplexCategory > >& rComplexCats )
 {
     Sequence< OUString > aRet;
 
@@ -469,7 +466,7 @@ bool lcl_fillDateCategories( const uno::Reference< data::XDataSequence >& xDataS
                 rDateCategories.push_back( aDate );
             }
         }
-        ::std::sort( rDateCategories.begin(), rDateCategories.end() );
+        std::sort( rDateCategories.begin(), rDateCategories.end() );
     }
 
     return bAnyDataFound && bOnlyDatesFound;
@@ -505,7 +502,7 @@ void ExplicitCategoriesProvider::init()
     }
 }
 
-Sequence< OUString > ExplicitCategoriesProvider::getSimpleCategories()
+Sequence< OUString > const & ExplicitCategoriesProvider::getSimpleCategories()
 {
     if( !m_bIsExplicitCategoriesInited )
     {

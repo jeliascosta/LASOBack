@@ -20,9 +20,8 @@
 #ifndef INCLUDED_SVX_ACTIONDESCRIPTIONPROVIDER_HXX
 #define INCLUDED_SVX_ACTIONDESCRIPTIONPROVIDER_HXX
 
-#include <svx/svxdllapi.h>
-
 #include <rtl/ustring.hxx>
+#include <svx/svxdllapi.h>
 
 
 /** This class provides localized descriptions for some basic actions done with objects.
@@ -33,19 +32,17 @@ The name of the object acted on and the type of action needs to be given as inpu
 class SVX_DLLPUBLIC ActionDescriptionProvider
 {
 public:
-    enum ActionType
+    enum class ActionType
     {
-        INSERT
-        , DELETE
-        , CUT
-        , MOVE
-        , RESIZE
-        , ROTATE
-        , TRANSFORM
-        , FORMAT
-        , MOVE_TOTOP
-        , MOVE_TOBOTTOM
-        , POS_SIZE
+        Insert
+        , Delete
+        , Move
+        , Resize
+        , Rotate
+        , Format
+        , MoveToTop
+        , MoveToBottom
+        , PosSize
     };
 
 public:

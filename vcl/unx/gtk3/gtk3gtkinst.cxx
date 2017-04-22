@@ -9,6 +9,7 @@
 
 #include "../gtk/gtkinst.cxx"
 
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include "com/sun/star/lang/XServiceInfo.hpp"
 #include "com/sun/star/lang/XSingleServiceFactory.hpp"
@@ -112,6 +113,14 @@ std::vector<css::datatransfer::DataFlavor> GtkTransferable::getTransferDataFlavo
             }
         }
 
+        // There are more non-MIME-types reported that are not translated by
+        // aConversionTab, like "SAVE_TARGETS", "INTEGER", "ATOM"; just filter
+        // them out for now before they confuse this code's clients:
+        if (rtl_str_indexOfChar(pFinalName, '/') == -1)
+        {
+            continue;
+        }
+
         aFlavor.MimeType = OUString(pFinalName,
                                     rtl_str_getLength(pFinalName),
                                     RTL_TEXTENCODING_UTF8);
@@ -151,13 +160,11 @@ std::vector<css::datatransfer::DataFlavor> GtkTransferable::getTransferDataFlavo
 
 
 css::uno::Sequence<css::datatransfer::DataFlavor> SAL_CALL GtkTransferable::getTransferDataFlavors()
-        throw(css::uno::RuntimeException, std::exception)
 {
     return comphelper::containerToSequence(getTransferDataFlavorsAsVector());
 }
 
 sal_Bool SAL_CALL GtkTransferable::isDataFlavorSupported(const css::datatransfer::DataFlavor& rFlavor)
-        throw(css::uno::RuntimeException, std::exception)
 {
     const std::vector<css::datatransfer::DataFlavor> aAll =
         getTransferDataFlavorsAsVector();
@@ -180,11 +187,7 @@ public:
      * XTransferable
      */
 
-    virtual css::uno::Any SAL_CALL getTransferData(const css::datatransfer::DataFlavor& rFlavor)
-        throw(css::datatransfer::UnsupportedFlavorException,
-              css::io::IOException,
-              css::uno::RuntimeException, std::exception
-              ) override
+    virtual css::uno::Any SAL_CALL getTransferData(const css::datatransfer::DataFlavor& rFlavor) override
     {
         GtkClipboard* clipboard = gtk_clipboard_get(m_nSelection);
         if (rFlavor.MimeType == "text/plain;charset=utf-16")
@@ -256,77 +259,70 @@ class VclGtkClipboard :
 public:
 
     explicit VclGtkClipboard(GdkAtom nSelection);
-    virtual ~VclGtkClipboard();
+    virtual ~VclGtkClipboard() override;
 
     /*
      * XServiceInfo
      */
 
-    virtual OUString SAL_CALL getImplementationName() throw( RuntimeException, std::exception ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw( RuntimeException, std::exception ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
 
     /*
      * XClipboard
      */
 
-    virtual Reference< css::datatransfer::XTransferable > SAL_CALL getContents()
-        throw(RuntimeException, std::exception) override;
+    virtual Reference< css::datatransfer::XTransferable > SAL_CALL getContents() override;
 
     virtual void SAL_CALL setContents(
         const Reference< css::datatransfer::XTransferable >& xTrans,
-        const Reference< css::datatransfer::clipboard::XClipboardOwner >& xClipboardOwner )
-        throw(RuntimeException, std::exception) override;
+        const Reference< css::datatransfer::clipboard::XClipboardOwner >& xClipboardOwner ) override;
 
-    virtual OUString SAL_CALL getName()
-        throw(RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getName() override;
 
     /*
      * XClipboardEx
      */
 
-    virtual sal_Int8 SAL_CALL getRenderingCapabilities()
-        throw(RuntimeException, std::exception) override;
+    virtual sal_Int8 SAL_CALL getRenderingCapabilities() override;
 
     /*
      * XFlushableClipboard
      */
-    virtual void SAL_CALL flushClipboard()
-        throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL flushClipboard() override;
 
     /*
      * XClipboardNotifier
      */
     virtual void SAL_CALL addClipboardListener(
-        const Reference< css::datatransfer::clipboard::XClipboardListener >& listener )
-        throw(RuntimeException, std::exception) override;
+        const Reference< css::datatransfer::clipboard::XClipboardListener >& listener ) override;
 
     virtual void SAL_CALL removeClipboardListener(
-        const Reference< css::datatransfer::clipboard::XClipboardListener >& listener )
-        throw(RuntimeException, std::exception) override;
+        const Reference< css::datatransfer::clipboard::XClipboardListener >& listener ) override;
 
     void ClipboardGet(GtkClipboard *clipboard, GtkSelectionData *selection_data, guint info);
     void ClipboardClear(GtkClipboard *clipboard);
     void OwnerPossiblyChanged(GtkClipboard *clipboard, GdkEvent *event);
 };
 
-OUString VclGtkClipboard::getImplementationName() throw( RuntimeException, std::exception )
+OUString VclGtkClipboard::getImplementationName()
 {
     return OUString("com.sun.star.datatransfer.VclGtkClipboard");
 }
 
-Sequence< OUString > VclGtkClipboard::getSupportedServiceNames() throw( RuntimeException, std::exception )
+Sequence< OUString > VclGtkClipboard::getSupportedServiceNames()
 {
     Sequence<OUString> aRet { "com.sun.star.datatransfer.clipboard.SystemClipboard" };
     return aRet;
 }
 
-sal_Bool VclGtkClipboard::supportsService( const OUString& ServiceName ) throw( RuntimeException, std::exception )
+sal_Bool VclGtkClipboard::supportsService( const OUString& ServiceName )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-Reference< css::datatransfer::XTransferable > VclGtkClipboard::getContents() throw( RuntimeException, std::exception )
+Reference< css::datatransfer::XTransferable > VclGtkClipboard::getContents()
 {
     if (!m_aContents.is())
     {
@@ -393,7 +389,7 @@ void VclGtkClipboard::OwnerPossiblyChanged(GtkClipboard* clipboard, GdkEvent* /*
         return;
 
     //if gdk_display_supports_selection_notification is not supported, e.g. like
-    //right now under wayland, then you only get owner-changed nofications at
+    //right now under wayland, then you only get owner-changed notifications at
     //opportune times when the selection might have changed. So here
     //we see if the selection supports a dummy selection type identifying
     //our pid, in which case it's us.
@@ -528,7 +524,6 @@ VclGtkClipboard::VclGtkClipboard(GdkAtom nSelection)
 }
 
 void VclGtkClipboard::flushClipboard()
-  throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -595,7 +590,6 @@ std::vector<GtkTargetEntry> VclToGtkHelper::FormatsToGtk(const css::uno::Sequenc
 void VclGtkClipboard::setContents(
         const Reference< css::datatransfer::XTransferable >& xTrans,
         const Reference< css::datatransfer::clipboard::XClipboardOwner >& xClipboardOwner )
-    throw(RuntimeException, std::exception)
 {
     osl::ClearableMutexGuard aGuard( m_aMutex );
     Reference< datatransfer::clipboard::XClipboardOwner > xOldOwner( m_aOwner );
@@ -647,18 +641,17 @@ void VclGtkClipboard::setContents(
     }
 }
 
-OUString VclGtkClipboard::getName() throw( RuntimeException, std::exception )
+OUString VclGtkClipboard::getName()
 {
     return (m_nSelection == GDK_SELECTION_CLIPBOARD) ? OUString("CLIPBOARD") : OUString("PRIMARY");
 }
 
-sal_Int8 VclGtkClipboard::getRenderingCapabilities() throw( RuntimeException, std::exception )
+sal_Int8 VclGtkClipboard::getRenderingCapabilities()
 {
     return 0;
 }
 
 void VclGtkClipboard::addClipboardListener( const Reference< datatransfer::clipboard::XClipboardListener >& listener )
-    throw( RuntimeException, std::exception )
 {
     osl::ClearableMutexGuard aGuard( m_aMutex );
 
@@ -666,7 +659,6 @@ void VclGtkClipboard::addClipboardListener( const Reference< datatransfer::clipb
 }
 
 void VclGtkClipboard::removeClipboardListener( const Reference< datatransfer::clipboard::XClipboardListener >& listener )
-    throw( RuntimeException, std::exception )
 {
     osl::ClearableMutexGuard aGuard( m_aMutex );
 
@@ -705,19 +697,16 @@ GtkDropTarget::GtkDropTarget()
 }
 
 OUString SAL_CALL GtkDropTarget::getImplementationName()
-            throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.datatransfer.dnd.VclGtkDropTarget");
 }
 
 sal_Bool SAL_CALL GtkDropTarget::supportsService(OUString const & ServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> SAL_CALL GtkDropTarget::getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
     Sequence<OUString> aRet { "com.sun.star.datatransfer.dnd.GtkDropTarget" };
     return aRet;
@@ -735,7 +724,7 @@ void GtkDropTarget::deinitialize()
     m_bActive = false;
 }
 
-void GtkDropTarget::initialize(const Sequence<Any>& rArguments) throw( Exception, std::exception )
+void GtkDropTarget::initialize(const Sequence<Any>& rArguments)
 {
     if (rArguments.getLength() < 2)
     {
@@ -743,7 +732,7 @@ void GtkDropTarget::initialize(const Sequence<Any>& rArguments) throw( Exception
                                static_cast<OWeakObject*>(this));
     }
 
-    sal_Size nFrame = 0;
+    sal_IntPtr nFrame = 0;
     rArguments.getConstArray()[1] >>= nFrame;
 
     if (!nFrame)
@@ -757,14 +746,14 @@ void GtkDropTarget::initialize(const Sequence<Any>& rArguments) throw( Exception
     m_bActive = true;
 }
 
-void GtkDropTarget::addDropTargetListener( const Reference< css::datatransfer::dnd::XDropTargetListener >& xListener) throw(std::exception)
+void GtkDropTarget::addDropTargetListener( const Reference< css::datatransfer::dnd::XDropTargetListener >& xListener)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( m_aMutex );
 
     m_aListeners.push_back( xListener );
 }
 
-void GtkDropTarget::removeDropTargetListener( const Reference< css::datatransfer::dnd::XDropTargetListener >& xListener) throw(std::exception)
+void GtkDropTarget::removeDropTargetListener( const Reference< css::datatransfer::dnd::XDropTargetListener >& xListener)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( m_aMutex );
 
@@ -819,22 +808,22 @@ void GtkDropTarget::fire_dragExit(const css::datatransfer::dnd::DropTargetEvent&
     }
 }
 
-sal_Bool GtkDropTarget::isActive() throw(std::exception)
+sal_Bool GtkDropTarget::isActive()
 {
     return m_bActive;
 }
 
-void GtkDropTarget::setActive(sal_Bool bActive) throw(std::exception)
+void GtkDropTarget::setActive(sal_Bool bActive)
 {
     m_bActive = bActive;
 }
 
-sal_Int8 GtkDropTarget::getDefaultActions() throw(std::exception)
+sal_Int8 GtkDropTarget::getDefaultActions()
 {
     return m_nDefaultActions;
 }
 
-void GtkDropTarget::setDefaultActions(sal_Int8 nDefaultActions) throw(std::exception)
+void GtkDropTarget::setDefaultActions(sal_Int8 nDefaultActions)
 {
     m_nDefaultActions = nDefaultActions;
 }
@@ -861,17 +850,17 @@ void GtkDragSource::deinitialize()
     m_pFrame = nullptr;
 }
 
-sal_Bool GtkDragSource::isDragImageSupported() throw(std::exception)
+sal_Bool GtkDragSource::isDragImageSupported()
 {
     return true;
 }
 
-sal_Int32 GtkDragSource::getDefaultCursor( sal_Int8 ) throw(std::exception)
+sal_Int32 GtkDragSource::getDefaultCursor( sal_Int8 )
 {
     return 0;
 }
 
-void GtkDragSource::initialize(const css::uno::Sequence<css::uno::Any >& rArguments) throw(Exception, std::exception)
+void GtkDragSource::initialize(const css::uno::Sequence<css::uno::Any >& rArguments)
 {
     if (rArguments.getLength() < 2)
     {
@@ -879,7 +868,7 @@ void GtkDragSource::initialize(const css::uno::Sequence<css::uno::Any >& rArgume
                                static_cast<OWeakObject*>(this));
     }
 
-    sal_Size nFrame = 0;
+    sal_IntPtr nFrame = 0;
     rArguments.getConstArray()[1] >>= nFrame;
 
     if (!nFrame)
@@ -893,19 +882,16 @@ void GtkDragSource::initialize(const css::uno::Sequence<css::uno::Any >& rArgume
 }
 
 OUString SAL_CALL GtkDragSource::getImplementationName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.datatransfer.dnd.VclGtkDragSource");
 }
 
 sal_Bool SAL_CALL GtkDragSource::supportsService(OUString const & ServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> SAL_CALL GtkDragSource::getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
     Sequence<OUString> aRet { "com.sun.star.datatransfer.dnd.GtkDragSource" };
     return aRet;
@@ -914,6 +900,139 @@ css::uno::Sequence<OUString> SAL_CALL GtkDragSource::getSupportedServiceNames()
 Reference< XInterface > GtkInstance::CreateDragSource()
 {
     return Reference< XInterface >( static_cast<cppu::OWeakObject *>(new GtkDragSource()) );
+}
+
+class GtkOpenGLContext : public OpenGLContext
+{
+    GLWindow m_aGLWin;
+#if GTK_CHECK_VERSION(3,16,0)
+    GtkWidget *m_pGLArea;
+#endif
+
+public:
+    GtkOpenGLContext()
+        : OpenGLContext()
+#if GTK_CHECK_VERSION(3,16,0)
+        , m_pGLArea(nullptr)
+#endif
+    {
+    }
+
+    virtual bool initWindow() override
+    {
+        if( !m_pChildWindow )
+        {
+            SystemWindowData winData = generateWinData(mpWindow, mbRequestLegacyContext);
+            m_pChildWindow = VclPtr<SystemChildWindow>::Create(mpWindow, 0, &winData, false);
+        }
+
+        if (m_pChildWindow)
+        {
+            InitChildWindow(m_pChildWindow.get());
+        }
+
+        return true;
+    }
+
+private:
+    virtual const GLWindow& getOpenGLWindow() const override { return m_aGLWin; }
+    virtual GLWindow& getModifiableOpenGLWindow() override { return m_aGLWin; }
+
+#if GTK_CHECK_VERSION(3,16,0)
+    static void signalDestroy(GtkWidget*, gpointer context)
+    {
+        GtkOpenGLContext* pThis = static_cast<GtkOpenGLContext*>(context);
+        pThis->m_pGLArea = nullptr;
+    }
+#endif
+
+    virtual bool ImplInit() override
+    {
+#if GTK_CHECK_VERSION(3,16,0)
+        const SystemEnvData* pEnvData = m_pChildWindow->GetSystemData();
+        GtkWidget *pParent = static_cast<GtkWidget*>(pEnvData->pWidget);
+        m_pGLArea = gtk_gl_area_new();
+        g_signal_connect(G_OBJECT(m_pGLArea), "destroy", G_CALLBACK(signalDestroy), this);
+        gtk_gl_area_set_has_depth_buffer(GTK_GL_AREA(m_pGLArea), true);
+        gtk_gl_area_set_auto_render(GTK_GL_AREA(m_pGLArea), false);
+        gtk_widget_set_hexpand(m_pGLArea, true);
+        gtk_widget_set_vexpand(m_pGLArea, true);
+        gtk_container_add(GTK_CONTAINER(pParent), m_pGLArea);
+        gtk_widget_show_all(pParent);
+        gtk_gl_area_make_current(GTK_GL_AREA(m_pGLArea));
+        gtk_gl_area_attach_buffers(GTK_GL_AREA(m_pGLArea));
+#endif
+        bool bRet = InitGL();
+        InitGLDebugging();
+        return bRet;
+    }
+
+#if GTK_CHECK_VERSION(3,16,0)
+    virtual void restoreDefaultFramebuffer() override
+    {
+        OpenGLContext::restoreDefaultFramebuffer();
+        gtk_gl_area_attach_buffers(GTK_GL_AREA(m_pGLArea));
+    }
+#endif
+
+    virtual void makeCurrent() override
+    {
+        if (isCurrent())
+            return;
+
+        clearCurrent();
+
+#if GTK_CHECK_VERSION(3,16,0)
+        if (m_pGLArea)
+            gtk_gl_area_make_current(GTK_GL_AREA(m_pGLArea));
+#endif
+
+        registerAsCurrent();
+    }
+
+    virtual void destroyCurrentContext() override
+    {
+#if GTK_CHECK_VERSION(3,16,0)
+        gdk_gl_context_clear_current();
+#endif
+    }
+
+    virtual bool isCurrent() override
+    {
+#if GTK_CHECK_VERSION(3,16,0)
+        return m_pGLArea && gdk_gl_context_get_current() == gtk_gl_area_get_context(GTK_GL_AREA(m_pGLArea));
+#else
+        return false;
+#endif
+    }
+
+    virtual void sync() override
+    {
+#if GTK_CHECK_VERSION(3,16,0)
+        gtk_gl_area_queue_render(GTK_GL_AREA(m_pGLArea));
+#endif
+    }
+
+    virtual void resetCurrent() override
+    {
+        clearCurrent();
+#if GTK_CHECK_VERSION(3,16,0)
+        gdk_gl_context_clear_current();
+#endif
+    }
+
+    virtual void swapBuffers() override
+    {
+#if GTK_CHECK_VERSION(3,16,0)
+        gtk_gl_area_queue_render(GTK_GL_AREA(m_pGLArea));
+#endif
+        BuffersSwapped();
+    }
+};
+
+OpenGLContext* GtkInstance::CreateOpenGLContext()
+{
+    return new GtkOpenGLContext;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

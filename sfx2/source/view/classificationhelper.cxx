@@ -20,6 +20,7 @@
 #include <com/sun/star/xml/sax/SAXParseException.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 
+#include <sfx2/infobar.hxx>
 #include <sfx2/objsh.hxx>
 #include <o3tl/make_unique.hxx>
 #include <comphelper/processfactory.hxx>
@@ -99,71 +100,53 @@ public:
     std::vector<SfxClassificationCategory> m_aCategories;
 
     OUString m_aPolicyAuthorityName;
-    bool m_bInPolicyAuthorityName;
+    bool m_bInPolicyAuthorityName = false;
     OUString m_aPolicyName;
-    bool m_bInPolicyName;
+    bool m_bInPolicyName = false;
     OUString m_aProgramID;
-    bool m_bInProgramID;
+    bool m_bInProgramID = false;
     OUString m_aScale;
-    bool m_bInScale;
+    bool m_bInScale = false;
     OUString m_aConfidentalityValue;
-    bool m_bInConfidentalityValue;
+    bool m_bInConfidentalityValue = false;
     OUString m_aIdentifier;
-    bool m_bInIdentifier;
+    bool m_bInIdentifier = false;
     OUString m_aValue;
-    bool m_bInValue;
+    bool m_bInValue = false;
 
     /// Pointer to a value in m_aCategories, the currently parsed category.
-    SfxClassificationCategory* m_pCategory;
+    SfxClassificationCategory* m_pCategory = nullptr;
 
     SfxClassificationParser();
-    virtual ~SfxClassificationParser();
 
-    virtual void SAL_CALL startDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL startDocument() override;
 
-    virtual void SAL_CALL endDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL endDocument() override;
 
-    virtual void SAL_CALL startElement(const OUString& aName, const uno::Reference<xml::sax::XAttributeList>& xAttribs)
-    throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL startElement(const OUString& aName, const uno::Reference<xml::sax::XAttributeList>& xAttribs) override;
 
-    virtual void SAL_CALL endElement(const OUString& aName) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL endElement(const OUString& aName) override;
 
-    virtual void SAL_CALL characters(const OUString& aChars) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL characters(const OUString& aChars) override;
 
-    virtual void SAL_CALL ignorableWhitespace(const OUString& aWhitespaces) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL ignorableWhitespace(const OUString& aWhitespaces) override;
 
-    virtual void SAL_CALL processingInstruction(const OUString& aTarget, const OUString& aData) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL processingInstruction(const OUString& aTarget, const OUString& aData) override;
 
-    virtual void SAL_CALL setDocumentLocator(const uno::Reference<xml::sax::XLocator>& xLocator)
-    throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL setDocumentLocator(const uno::Reference<xml::sax::XLocator>& xLocator) override;
 };
 
-SfxClassificationParser::SfxClassificationParser()
-    : m_bInPolicyAuthorityName(false)
-    , m_bInPolicyName(false)
-    , m_bInProgramID(false)
-    , m_bInScale(false)
-    , m_bInConfidentalityValue(false)
-    , m_bInIdentifier(false)
-    , m_bInValue(false)
-    , m_pCategory(nullptr)
+SfxClassificationParser::SfxClassificationParser() = default;
+
+void SAL_CALL SfxClassificationParser::startDocument()
 {
 }
 
-SfxClassificationParser::~SfxClassificationParser()
-{
-}
-
-void SAL_CALL SfxClassificationParser::startDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
-{
-}
-
-void SAL_CALL SfxClassificationParser::endDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL SfxClassificationParser::endDocument()
 {
 }
 
 void SAL_CALL SfxClassificationParser::startElement(const OUString& rName, const uno::Reference<xml::sax::XAttributeList>& xAttribs)
-throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     if (rName == "baf:PolicyAuthorityName")
     {
@@ -188,7 +171,7 @@ throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
             OUString aIdentifier = xAttribs->getValueByName("Identifier");
 
             // Create a new category and initialize it with the data that's true for all categories.
-            m_aCategories.push_back(SfxClassificationCategory());
+            m_aCategories.emplace_back(SfxClassificationCategory());
             SfxClassificationCategory& rCategory = m_aCategories.back();
             rCategory.m_aName = aName;
             rCategory.m_aLabels["PolicyAuthority:Name"] = m_aPolicyAuthorityName;
@@ -249,7 +232,7 @@ throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
     }
 }
 
-void SAL_CALL SfxClassificationParser::endElement(const OUString& rName) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL SfxClassificationParser::endElement(const OUString& rName)
 {
     if (rName == "baf:PolicyAuthorityName")
         m_bInPolicyAuthorityName = false;
@@ -296,7 +279,7 @@ void SAL_CALL SfxClassificationParser::endElement(const OUString& rName) throw (
     }
 }
 
-void SAL_CALL SfxClassificationParser::characters(const OUString& rChars) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL SfxClassificationParser::characters(const OUString& rChars)
 {
     if (m_bInPolicyAuthorityName)
         m_aPolicyAuthorityName += rChars;
@@ -314,15 +297,15 @@ void SAL_CALL SfxClassificationParser::characters(const OUString& rChars) throw 
         m_aValue += rChars;
 }
 
-void SAL_CALL SfxClassificationParser::ignorableWhitespace(const OUString& /*rWhitespace*/) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL SfxClassificationParser::ignorableWhitespace(const OUString& /*rWhitespace*/)
 {
 }
 
-void SAL_CALL SfxClassificationParser::processingInstruction(const OUString& /*rTarget*/, const OUString& /*rData*/) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL SfxClassificationParser::processingInstruction(const OUString& /*rTarget*/, const OUString& /*rData*/)
 {
 }
 
-void SAL_CALL SfxClassificationParser::setDocumentLocator(const uno::Reference<xml::sax::XLocator>& /*xLocator*/) throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
+void SAL_CALL SfxClassificationParser::setDocumentLocator(const uno::Reference<xml::sax::XLocator>& /*xLocator*/)
 {
 }
 
@@ -338,7 +321,7 @@ public:
     std::vector<SfxClassificationCategory> m_aCategories;
     uno::Reference<document::XDocumentProperties> m_xDocumentProperties;
 
-    explicit Impl(const uno::Reference<document::XDocumentProperties>& xDocumentProperties);
+    explicit Impl(uno::Reference<document::XDocumentProperties> xDocumentProperties);
     void parsePolicy();
     /// Synchronize m_aLabels back to the document properties.
     void pushToDocumentProperties();
@@ -346,8 +329,8 @@ public:
     void setStartValidity(SfxClassificationPolicyType eType);
 };
 
-SfxClassificationHelper::Impl::Impl(const uno::Reference<document::XDocumentProperties>& xDocumentProperties)
-    : m_xDocumentProperties(xDocumentProperties)
+SfxClassificationHelper::Impl::Impl(uno::Reference<document::XDocumentProperties> xDocumentProperties)
+    : m_xDocumentProperties(std::move(xDocumentProperties))
 {
 }
 
@@ -404,7 +387,7 @@ void SfxClassificationHelper::Impl::setStartValidity(SfxClassificationPolicyType
         return;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(policyTypeToString(eType) + PROP_STARTVALIDITY());
+    auto it = rCategory.m_aLabels.find(policyTypeToString(eType) + PROP_STARTVALIDITY());
     if (it != rCategory.m_aLabels.end())
     {
         if (it->second == PROP_NONE())
@@ -504,14 +487,14 @@ bool SfxClassificationHelper::ShowPasteInfo(SfxClassificationCheckPasteResult eR
     case SfxClassificationCheckPasteResult::TargetDocNotClassified:
     {
         if (!Application::IsHeadlessModeEnabled())
-            ScopedVclPtrInstance<MessageDialog>(nullptr, SfxResId(STR_TARGET_DOC_NOT_CLASSIFIED), VCL_MESSAGE_INFO)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(nullptr, SfxResId(STR_TARGET_DOC_NOT_CLASSIFIED), VclMessageType::Info)->Execute();
         return false;
     }
     break;
     case SfxClassificationCheckPasteResult::DocClassificationTooLow:
     {
         if (!Application::IsHeadlessModeEnabled())
-            ScopedVclPtrInstance<MessageDialog>(nullptr, SfxResId(STR_DOC_CLASSIFICATION_TOO_LOW), VCL_MESSAGE_INFO)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(nullptr, SfxResId(STR_DOC_CLASSIFICATION_TOO_LOW), VclMessageType::Info)->Execute();
         return false;
     }
     break;
@@ -552,9 +535,7 @@ SfxClassificationHelper::SfxClassificationHelper(const uno::Reference<document::
     }
 }
 
-SfxClassificationHelper::~SfxClassificationHelper()
-{
-}
+SfxClassificationHelper::~SfxClassificationHelper() = default;
 
 const OUString& SfxClassificationHelper::GetBACName(SfxClassificationPolicyType eType)
 {
@@ -568,7 +549,7 @@ bool SfxClassificationHelper::HasImpactLevel()
         return false;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
     if (it == rCategory.m_aLabels.end())
         return false;
 
@@ -586,7 +567,7 @@ bool SfxClassificationHelper::HasDocumentHeader()
         return false;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCHEADER());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCHEADER());
     if (it == rCategory.m_aLabels.end() || it->second.isEmpty())
         return false;
 
@@ -600,65 +581,55 @@ bool SfxClassificationHelper::HasDocumentFooter()
         return false;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCFOOTER());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCFOOTER());
     if (it == rCategory.m_aLabels.end() || it->second.isEmpty())
         return false;
 
     return true;
 }
 
-basegfx::BColor SfxClassificationHelper::GetImpactLevelColor()
+InfoBarType SfxClassificationHelper::GetImpactLevelType()
 {
-    basegfx::BColor aRet;
+    InfoBarType aRet;
+
+    aRet = InfoBarType::Warning;
 
     auto itCategory = m_pImpl->m_aCategory.find(SfxClassificationPolicyType::IntellectualProperty);
     if (itCategory == m_pImpl->m_aCategory.end())
         return aRet;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
+    OUString aScale = it->second;
     if (it == rCategory.m_aLabels.end())
         return aRet;
-    OUString aScale = it->second;
 
     it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTLEVEL());
+    OUString aLevel = it->second;
     if (it == rCategory.m_aLabels.end())
         return aRet;
-    OUString aLevel = it->second;
 
     // The spec defines two valid scale values: FIPS-199 and UK-Cabinet.
     if (aScale == "UK-Cabinet")
     {
-        static std::map<OUString, basegfx::BColor> aColors;
-        if (aColors.empty())
-        {
-            // Green -> brown -> orange -> red.
-            aColors["0"] = basegfx::BColor(0.0, 0.5, 0.0);
-            aColors["1"] = basegfx::BColor(0.5, 0.5, 0.0);
-            aColors["2"] = basegfx::BColor(1.0, 0.5, 0.0);
-            aColors["3"] = basegfx::BColor(0.5, 0.0, 0.0);
-        }
-        std::map<OUString, basegfx::BColor>::iterator itColor = aColors.find(aLevel);
-        if (itColor == aColors.end())
-            return aRet;
-        aRet = itColor->second;
+        if (aLevel == "0")
+            aRet = InfoBarType::Success;
+        else if (aLevel == "1")
+            aRet = InfoBarType::Warning;
+        else if (aLevel == "2")
+            aRet = InfoBarType::Warning;
+        else if (aLevel == "3")
+            aRet = InfoBarType::Danger;
     }
     else if (aScale == "FIPS-199")
     {
-        static std::map<OUString, basegfx::BColor> aColors;
-        if (aColors.empty())
-        {
-            // Green -> orange -> red.
-            aColors["Low"] = basegfx::BColor(0.0, 0.5, 0.0);
-            aColors["Moderate"] = basegfx::BColor(1.0, 0.5, 0.0);
-            aColors["High"] = basegfx::BColor(0.5, 0.0, 0.0);
-        }
-        std::map<OUString, basegfx::BColor>::iterator itColor = aColors.find(aLevel);
-        if (itColor == aColors.end())
-            return aRet;
-        aRet = itColor->second;
+        if (aLevel == "Low")
+            aRet = InfoBarType::Success;
+        else if (aLevel == "Moderate")
+            aRet = InfoBarType::Warning;
+        else if (aLevel == "High")
+            aRet = InfoBarType::Danger;
     }
-
     return aRet;
 }
 
@@ -671,7 +642,7 @@ sal_Int32 SfxClassificationHelper::GetImpactLevel()
         return nRet;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
     if (it == rCategory.m_aLabels.end())
         return nRet;
     OUString aScale = it->second;
@@ -697,7 +668,7 @@ sal_Int32 SfxClassificationHelper::GetImpactLevel()
             aValues["Moderate"] = 1;
             aValues["High"] = 2;
         }
-        std::map<OUString, sal_Int32>::iterator itValues = aValues.find(aLevel);
+        auto itValues = aValues.find(aLevel);
         if (itValues == aValues.end())
             return nRet;
         nRet = itValues->second;
@@ -713,7 +684,7 @@ OUString SfxClassificationHelper::GetImpactScale()
         return OUString();
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
     if (it != rCategory.m_aLabels.end())
         return it->second;
 
@@ -727,7 +698,7 @@ OUString SfxClassificationHelper::GetDocumentWatermark()
         return OUString();
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCWATERMARK());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCWATERMARK());
     if (it != rCategory.m_aLabels.end())
         return it->second;
 
@@ -752,7 +723,7 @@ void SfxClassificationHelper::SetBACName(const OUString& rName, SfxClassificatio
     if (m_pImpl->m_aCategories.empty())
         m_pImpl->parsePolicy();
 
-    std::vector<SfxClassificationCategory>::iterator it = std::find_if(m_pImpl->m_aCategories.begin(), m_pImpl->m_aCategories.end(), [&](const SfxClassificationCategory& rCategory)
+    auto it = std::find_if(m_pImpl->m_aCategories.begin(), m_pImpl->m_aCategories.end(), [&](const SfxClassificationCategory& rCategory)
     {
         return rCategory.m_aName == rName;
     });
@@ -785,11 +756,9 @@ void SfxClassificationHelper::UpdateInfobar(SfxViewFrame& rViewFrame)
     {
         OUString aMessage = SfxResId(STR_CLASSIFIED_DOCUMENT);
         aMessage = aMessage.replaceFirst("%1", aBACName);
-        basegfx::BColor aBackgroundColor = GetImpactLevelColor();
-        basegfx::BColor aForegroundColor(1.0, 1.0, 1.0);
 
         rViewFrame.RemoveInfoBar("classification");
-        rViewFrame.AppendInfoBar("classification", aMessage, &aBackgroundColor, &aForegroundColor, &aForegroundColor, WB_CENTER);
+        rViewFrame.AppendInfoBar("classification", aMessage, GetImpactLevelType());
     }
 }
 

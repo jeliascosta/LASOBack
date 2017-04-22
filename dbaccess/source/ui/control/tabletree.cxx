@@ -75,14 +75,7 @@ OTableTreeListBox::OTableTreeListBox(vcl::Window* pParent, WinBits nWinStyle)
     implSetDefaultImages();
 }
 
-VCL_BUILDER_DECL_FACTORY(OTableTreeListBox)
-{
-    WinBits nWinStyle = 0;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<OTableTreeListBox>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(OTableTreeListBox, 0)
 
 void OTableTreeListBox::implSetDefaultImages()
 {
@@ -113,7 +106,7 @@ void OTableTreeListBox::notifyHiContrastChanged()
         for (size_t i=0;i<nCount;++i)
         {
             SvLBoxItem& rItem = pEntryLoop->GetItem(i);
-            if (rItem.GetType() == SV_ITEM_ID_LBOXCONTEXTBMP)
+            if (rItem.GetType() == SvLBoxItemType::ContextBmp)
             {
                 SvLBoxContextBmp& rContextBitmapItem = static_cast< SvLBoxContextBmp& >( rItem );
 
@@ -143,7 +136,7 @@ void OTableTreeListBox::implOnNewConnection( const Reference< XConnection >& _rx
     m_xImageProvider.reset( new ImageProvider( m_xConnection  ) );
 }
 
-void OTableTreeListBox::UpdateTableList( const Reference< XConnection >& _rxConnection ) throw(SQLException, std::exception)
+void OTableTreeListBox::UpdateTableList( const Reference< XConnection >& _rxConnection )
 {
     Sequence< OUString > sTables, sViews;
 
@@ -188,7 +181,7 @@ void OTableTreeListBox::UpdateTableList( const Reference< XConnection >& _rxConn
 
 namespace
 {
-    struct OViewSetter : public ::std::unary_function< OTableTreeListBox::TNames::value_type, bool>
+    struct OViewSetter : public std::unary_function< OTableTreeListBox::TNames::value_type, bool>
     {
         const Sequence< OUString> m_aViews;
         ::comphelper::UStringMixEqual m_aEqualFunctor;
@@ -200,7 +193,7 @@ namespace
             aRet.first = lhs;
             const OUString* pIter = m_aViews.getConstArray();
             const OUString* pEnd = m_aViews.getConstArray() + m_aViews.getLength();
-            aRet.second = ::std::any_of(pIter,pEnd,::std::bind2nd(m_aEqualFunctor,lhs));
+            aRet.second = std::any_of(pIter,pEnd,std::bind2nd(m_aEqualFunctor,lhs));
 
             return aRet;
         }
@@ -221,7 +214,7 @@ void OTableTreeListBox::UpdateTableList(
     try
     {
         Reference< XDatabaseMetaData > xMeta( _rxConnection->getMetaData(), UNO_QUERY_THROW );
-        ::std::transform( pIter, pEnd,
+        std::transform( pIter, pEnd,
             aTables.begin(), OViewSetter( _rViews, xMeta->supportsMixedCaseQuotedIdentifiers() ) );
     }
     catch(Exception&)
@@ -233,9 +226,9 @@ void OTableTreeListBox::UpdateTableList(
 
 namespace
 {
-    ::std::vector< OUString > lcl_getMetaDataStrings_throw( const Reference< XResultSet >& _rxMetaDataResult, sal_Int32 _nColumnIndex )
+    std::vector< OUString > lcl_getMetaDataStrings_throw( const Reference< XResultSet >& _rxMetaDataResult, sal_Int32 _nColumnIndex )
     {
-        ::std::vector< OUString > aStrings;
+        std::vector< OUString > aStrings;
         Reference< XRow > xRow( _rxMetaDataResult, UNO_QUERY_THROW );
         while ( _rxMetaDataResult->next() )
             aStrings.push_back( xRow->getString( _nColumnIndex ) );
@@ -261,10 +254,10 @@ void OTableTreeListBox::UpdateTableList( const Reference< XConnection >& _rxConn
         if (haveVirtualRoot())
         {
             OUString sRootEntryText;
-            if ( ::std::none_of(_rTables.begin(),_rTables.end(),
+            if ( std::none_of(_rTables.begin(),_rTables.end(),
                                 [] (const TNames::value_type& name) { return !name.second; }) )
                 sRootEntryText  = ModuleRes(STR_ALL_TABLES);
-            else if ( ::std::none_of(_rTables.begin(),_rTables.end(),
+            else if ( std::none_of(_rTables.begin(),_rTables.end(),
                                      [] (const TNames::value_type& name) { return name.second; }) )
                 sRootEntryText  = ModuleRes(STR_ALL_VIEWS);
             else
@@ -303,12 +296,12 @@ void OTableTreeListBox::UpdateTableList( const Reference< XConnection >& _rxConn
                 // implAddEntry)
                 bool bCatalogs = bSupportsCatalogs && xMeta->isCatalogAtStart();
 
-                ::std::vector< OUString > aFolderNames( lcl_getMetaDataStrings_throw(
+                std::vector< OUString > aFolderNames( lcl_getMetaDataStrings_throw(
                     bCatalogs ? xMeta->getCatalogs() : xMeta->getSchemas(), 1 ) );
                 sal_Int32 nFolderType = bCatalogs ? DatabaseObjectContainer::CATALOG : DatabaseObjectContainer::SCHEMA;
 
                 SvTreeListEntry* pRootEntry = getAllObjectsEntry();
-                for (   ::std::vector< OUString >::const_iterator folder = aFolderNames.begin();
+                for (   std::vector< OUString >::const_iterator folder = aFolderNames.begin();
                         folder != aFolderNames.end();
                         ++folder
                     )
@@ -404,7 +397,7 @@ void OTableTreeListBox::InitEntry(SvTreeListEntry* _pEntry, const OUString& _rSt
     OMarkableTreeListBox::InitEntry(_pEntry, _rString, _rCollapsedBitmap, _rExpandedBitmap, _eButtonKind);
 
     // replace the text item with our own one
-    SvLBoxItem* pTextItem = _pEntry->GetFirstItem(SV_ITEM_ID_LBOXSTRING);
+    SvLBoxItem* pTextItem = _pEntry->GetFirstItem(SvLBoxItemType::String);
     OSL_ENSURE(pTextItem, "OTableTreeListBox::InitEntry: no text item!?");
     size_t nTextPos = _pEntry->GetPos(pTextItem);
     OSL_ENSURE(SvTreeListEntry::ITEM_NOT_FOUND != nTextPos, "OTableTreeListBox::InitEntry: no text item pos!");

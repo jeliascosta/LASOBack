@@ -30,6 +30,7 @@
 #include "salgdiimpl.hxx"
 
 #include <basegfx/polygon/b2dtrapezoid.hxx>
+#include "ControlCacheKey.hxx"
 
 /* From <X11/Intrinsic.h> */
 typedef unsigned long Pixel;
@@ -108,7 +109,7 @@ public:
 
     virtual void freeResources() override;
 
-    virtual ~X11SalGraphicsImpl();
+    virtual ~X11SalGraphicsImpl() override;
 
     virtual bool setClipRegion( const vcl::Region& ) override;
     //
@@ -136,7 +137,7 @@ public:
     virtual void SetFillColor( SalColor nSalColor ) override;
 
     // enable/disable XOR drawing
-    virtual void SetXORMode( bool bSet, bool bInvertOnly ) override;
+    virtual void SetXORMode( bool bSet ) override;
 
     // set line color for raster operations
     virtual void SetROPLineColor( SalROPColor nROPColor ) override;
@@ -170,18 +171,18 @@ public:
     virtual bool drawPolyLineBezier(
                 sal_uInt32 nPoints,
                 const SalPoint* pPtAry,
-                const sal_uInt8* pFlgAry ) override;
+                const PolyFlags* pFlgAry ) override;
 
     virtual bool drawPolygonBezier(
                 sal_uInt32 nPoints,
                 const SalPoint* pPtAry,
-                const sal_uInt8* pFlgAry ) override;
+                const PolyFlags* pFlgAry ) override;
 
     virtual bool drawPolyPolygonBezier(
                 sal_uInt32 nPoly,
                 const sal_uInt32* pPoints,
                 const SalPoint* const* pPtAry,
-                const sal_uInt8* const* pFlgAry ) override;
+                const PolyFlags* const* pFlgAry ) override;
 
     // CopyArea --> No RasterOp, but ClipRegion
     virtual void copyArea(

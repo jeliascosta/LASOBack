@@ -40,8 +40,8 @@ bool SFX2_DLLPUBLIC SAL_CALL IsDockingWindowVisible( const css::uno::Reference< 
 class SFX2_DLLPUBLIC SfxDockingWindow : public DockingWindow
 {
 private:
-    Rectangle               aInnerRect;
-    Rectangle               aOuterRect;
+    tools::Rectangle               aInnerRect;
+    tools::Rectangle               aOuterRect;
     SfxBindings*            pBindings;
     Size                    aFloatSize;
     SfxChildWindow*         pMgr;
@@ -51,7 +51,7 @@ private:
     void operator =(SfxDockingWindow &) = delete;
 
 protected:
-    SfxChildAlignment   CalcAlignment(const Point& rPos, Rectangle& rRect );
+    SfxChildAlignment   CalcAlignment(const Point& rPos, tools::Rectangle& rRect );
     virtual Size        CalcDockingSize(SfxChildAlignment);
     virtual SfxChildAlignment
                         CheckAlignment(SfxChildAlignment,SfxChildAlignment);
@@ -60,10 +60,10 @@ protected:
     virtual bool        PrepareToggleFloatingMode() override;
     virtual void        ToggleFloatingMode() override;
     virtual void        StartDocking() override;
-    virtual bool        Docking( const Point& rPos, Rectangle& rRect ) override;
-    virtual void        EndDocking( const Rectangle& rRect, bool bFloatMode ) override;
+    virtual bool        Docking( const Point& rPos, tools::Rectangle& rRect ) override;
+    virtual void        EndDocking( const tools::Rectangle& rRect, bool bFloatMode ) override;
     virtual void        Resizing( Size& rSize ) override;
-    virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void        Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual bool        Close() override;
     virtual void        Move() override;
 
@@ -73,22 +73,22 @@ public:
                         SfxDockingWindow( SfxBindings *pBindings,
                                           SfxChildWindow *pCW,
                                           vcl::Window* pParent,
-                                          WinBits nWinBits=0);
+                                          WinBits nWinBits);
                         SfxDockingWindow( SfxBindings *pBindings,
                                           SfxChildWindow *pCW,
                                           vcl::Window* pParent,
                                           const OString& rID, const OUString& rUIXMLDescription );
-                        virtual ~SfxDockingWindow();
+                        virtual ~SfxDockingWindow() override;
     virtual void        dispose() override;
 
     void                Initialize (SfxChildWinInfo* pInfo);
     virtual void        FillInfo(SfxChildWinInfo&) const;
     virtual void        StateChanged( StateChangedType nStateChange ) override;
 
-    void                SetDockingRects(const Rectangle& rOuter, const Rectangle& rInner)
+    void                SetDockingRects(const tools::Rectangle& rOuter, const tools::Rectangle& rInner)
                             { aInnerRect = rInner; aOuterRect = rOuter; }
-    const Rectangle&    GetInnerRect() const                    { return aInnerRect; }
-    const Rectangle&    GetOuterRect() const                    { return aOuterRect; }
+    const tools::Rectangle&    GetInnerRect() const                    { return aInnerRect; }
+    const tools::Rectangle&    GetOuterRect() const                    { return aOuterRect; }
     SfxBindings&        GetBindings() const                     { return *pBindings; }
     sal_uInt16              GetType() const                         { return pMgr->GetType(); }
     SfxChildAlignment   GetAlignment() const                    { return pMgr->GetAlignment(); }
@@ -98,11 +98,10 @@ public:
 
     void                SetMinOutputSizePixel( const Size& rSize );
     const Size&         GetMinOutputSizePixel() const;
-    virtual bool        Notify( NotifyEvent& rNEvt ) override;
-    DECL_LINK_TYPED(TimerHdl, Idle *, void);
+    virtual bool        EventNotify( NotifyEvent& rNEvt ) override;
+    DECL_LINK(TimerHdl, Timer *, void);
 
     SAL_DLLPRIVATE void Initialize_Impl();
-    SAL_DLLPRIVATE SplitWindowItemFlags GetWinBits_Impl() const;
     SAL_DLLPRIVATE void SetItemSize_Impl( const Size& rSize );
     SAL_DLLPRIVATE void Disappear_Impl();
     SAL_DLLPRIVATE void Reappear_Impl();

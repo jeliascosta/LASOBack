@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include "dp_services.hxx"
 #include "dp_sfwk.hrc"
 #include "dp_backend.h"
 #include "dp_ucb.h"
@@ -75,12 +78,8 @@ class BackendImpl : public ::dp_registry::backend::PackageRegistryBackend
             OUString const & url, OUString const & libType, bool bRemoved,
             OUString const & identifier);
         // XPackage
-        virtual OUString SAL_CALL getDescription()
-            throw (deployment::ExtensionRemovedException,
-                   RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getLicenseText()
-            throw (deployment::ExtensionRemovedException,
-                   RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getDescription() override;
+        virtual OUString SAL_CALL getLicenseText() override;
     };
     friend class PackageImpl;
 
@@ -100,10 +99,8 @@ public:
 
     // XPackageRegistry
     virtual Sequence< Reference<deployment::XPackageTypeInfo> > SAL_CALL
-    getSupportedPackageTypes() throw (RuntimeException, std::exception) override;
-    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType)
-        throw (deployment::DeploymentException,
-               uno::RuntimeException, std::exception) override;
+    getSupportedPackageTypes() override;
+    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType) override;
 };
 
 BackendImpl * BackendImpl::PackageImpl::getMyBackend() const
@@ -121,8 +118,6 @@ BackendImpl * BackendImpl::PackageImpl::getMyBackend() const
 }
 
 OUString BackendImpl::PackageImpl::getDescription()
-    throw (deployment::ExtensionRemovedException,
-           RuntimeException, std::exception)
 {
     if (m_descr.isEmpty())
         return Package::getDescription();
@@ -131,8 +126,6 @@ OUString BackendImpl::PackageImpl::getDescription()
 }
 
 OUString BackendImpl::PackageImpl::getLicenseText()
-    throw (deployment::ExtensionRemovedException,
-           RuntimeException, std::exception)
 {
     return Package::getDescription();
 }
@@ -159,7 +152,7 @@ BackendImpl::PackageImpl::PackageImpl(
         rtl_UriDecodeWithCharset, RTL_TEXTENCODING_UTF8 );
     m_name = m_displayName;
 
-    dp_misc::TRACE("PakageImpl displayName is " + m_displayName);
+    dp_misc::TRACE("PackageImpl displayName is " + m_displayName);
 }
 
 
@@ -170,8 +163,8 @@ BackendImpl::BackendImpl(
       m_xTypeInfo( new Package::TypeInfo(
                        "application/vnd.sun.star.framework-script",
                        OUString() /* no file filter */,
-                       "Scripting Framework Script Library",
-                       RID_IMG_SCRIPTLIB ) )
+                       "Scripting Framework Script Library"
+                       ) )
 {
     if (! transientMode())
     {
@@ -182,14 +175,12 @@ BackendImpl::BackendImpl(
 // XPackageRegistry
 
 Sequence< Reference<deployment::XPackageTypeInfo> >
-BackendImpl::getSupportedPackageTypes() throw (RuntimeException, std::exception)
+BackendImpl::getSupportedPackageTypes()
 {
     return Sequence< Reference<deployment::XPackageTypeInfo> >(&m_xTypeInfo, 1);
 }
 
 void BackendImpl::packageRemoved(OUString const & /*url*/, OUString const & /*mediaType*/)
-        throw (deployment::DeploymentException,
-               uno::RuntimeException, std::exception)
 {
 }
 
@@ -289,15 +280,15 @@ void BackendImpl::PackageImpl:: initPackageHandler()
     BackendImpl * that = getMyBackend();
     Any aContext;
 
-    if ( that->m_eContext == CONTEXT_USER )
+    if ( that->m_eContext == Context::User )
     {
         aContext  <<= OUString("user");
     }
-    else if ( that->m_eContext == CONTEXT_SHARED )
+    else if ( that->m_eContext == Context::Shared )
     {
         aContext  <<= OUString("share");
     }
-    else if ( that->m_eContext == CONTEXT_BUNDLED )
+    else if ( that->m_eContext == Context::Bundled )
     {
         aContext  <<= OUString("bundled");
     }
@@ -361,8 +352,8 @@ void BackendImpl::PackageImpl::processPackage_(
 }
 
 namespace sdecl = comphelper::service_decl;
-sdecl::class_<BackendImpl, sdecl::with_args<true> > serviceBI;
-extern sdecl::ServiceDecl const serviceDecl(
+sdecl::class_<BackendImpl, sdecl::with_args<true> > const serviceBI;
+sdecl::ServiceDecl const serviceDecl(
     serviceBI,
     "com.sun.star.comp.deployment.sfwk.PackageRegistryBackend",
     BACKEND_SERVICE_NAME );

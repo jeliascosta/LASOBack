@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/util/XCloneable.hpp>
 #include <com/sun/star/util/theMacroExpander.hpp>
 #include <com/sun/star/animations/XAnimationNodeSupplier.hpp>
@@ -232,11 +235,6 @@ CustomAnimationPresets::CustomAnimationPresets()
 
 CustomAnimationPresets::~CustomAnimationPresets()
 {
-}
-
-void CustomAnimationPresets::init()
-{
-    importResources();
 }
 
 Reference< XAnimationNode > implImportEffects( const Reference< XMultiServiceFactory >& xServiceFactory, const OUString& rPath )
@@ -513,7 +511,7 @@ const OUString& CustomAnimationPresets::getUINameForProperty( const OUString& rP
     return translateName( rPresetId, maPropertyNameMap );
 }
 
-const OUString& CustomAnimationPresets::translateName( const OUString& rId, const UStringMap& rNameMap ) const
+const OUString& CustomAnimationPresets::translateName( const OUString& rId, const UStringMap& rNameMap )
 {
     UStringMap::const_iterator aIter( rNameMap.find( rId ) );
 
@@ -552,7 +550,7 @@ const CustomAnimationPresets& CustomAnimationPresets::getCustomAnimationPresets(
         if( !mpCustomAnimationPresets )
         {
             mpCustomAnimationPresets = new sd::CustomAnimationPresets();
-            mpCustomAnimationPresets->init();
+            mpCustomAnimationPresets->importResources();
         }
     }
 

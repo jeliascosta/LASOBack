@@ -19,9 +19,12 @@
 #ifndef INCLUDED_FILTER_MSFILTER_DFFPROPSET_HXX
 #define INCLUDED_FILTER_MSFILTER_DFFPROPSET_HXX
 
-#include <filter/msfilter/msfilterdllapi.h>
-#include <filter/msfilter/dffrecordheader.hxx>
 #include <vector>
+
+#include <filter/msfilter/msfilterdllapi.h>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <tools/solar.h>
 
 class SvStream;
 
@@ -52,7 +55,7 @@ class MSFILTER_DLLPUBLIC DffPropSet
         explicit DffPropSet();
         ~DffPropSet();
 
-        inline bool IsProperty( sal_uInt32 nRecType ) const { return ( mpPropSetEntries[ nRecType & 0x3ff ].aFlags.bSet ); };
+        bool IsProperty( sal_uInt32 nRecType ) const { return ( mpPropSetEntries[ nRecType & 0x3ff ].aFlags.bSet ); };
         bool        IsHardAttribute( sal_uInt32 nId ) const;
         sal_uInt32  GetPropertyValue( sal_uInt32 nId, sal_uInt32 nDefault ) const;
         /** Returns a boolean property by its real identifier. */

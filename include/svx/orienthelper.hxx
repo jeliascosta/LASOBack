@@ -51,7 +51,7 @@ struct OrientationHelper_Impl;
     direct modifications of the "Stacked text" check box. Otherwise the update
     mechanism of registered controls will not work.
  */
-class SVX_DLLPUBLIC OrientationHelper
+class SVX_DLLPUBLIC OrientationHelper final
 {
 public:
     /** @param rNfRotation  A numeric field that will be connected to the DialControl. */
@@ -60,7 +60,7 @@ public:
                             NumericField& rNfRotation,
                             CheckBox& rCbStacked );
 
-    virtual             ~OrientationHelper();
+                         ~OrientationHelper();
 
     /** Registers the passed window to be enabled/disabled on call of Enable().
         @param eDisableIfStacked
@@ -73,9 +73,9 @@ public:
     void                Enable( bool bEnable = true );
 
     /** Shows or hides the dial control and all dependent windows. */
-    void                Show( bool bShow = true );
+    void                Show( bool bShow );
     /** Hides the dial control and all dependent windows. */
-    inline void         Hide() { Show( false ); }
+    void         Hide() { Show( false ); }
 
     /** Sets the "stacked" check box to the passed state and updates dependent controls. */
     void                SetStackedState( TriState eState );
@@ -83,7 +83,7 @@ public:
     TriState            GetStackedState() const;
 
     /** Enables/disables the "don't know" state of the "Stacked text" check box. */
-    void                EnableStackedTriState( bool bEnable = true );
+    void                EnableStackedTriState( bool bEnable );
 
 private:
     std::unique_ptr< OrientationHelper_Impl > mpImpl;

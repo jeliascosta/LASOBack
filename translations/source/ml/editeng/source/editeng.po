@@ -1,0 +1,159 @@
+#. extracted from editeng/source/editeng
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2015-11-10 19:33+0100\n"
+"PO-Revision-Date: 2016-01-20 17:51+0000\n"
+"Last-Translator: mahir <mahirfarook@gmail.com>\n"
+"Language-Team: American English <kde-i18n-doc@kde.org>\n"
+"Language: ml\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Pootle 2.7\n"
+"X-Accelerator-Marker: ~\n"
+"X-POOTLE-MTIME: 1453312303.000000\n"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_EDITUNDO_DEL\n"
+"string.text"
+msgid "Delete"
+msgstr "വെട്ടി നീക്കുക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_EDITUNDO_MOVE\n"
+"string.text"
+msgid "Move"
+msgstr "നീക്കുക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_EDITUNDO_INSERT\n"
+"string.text"
+msgid "Insert"
+msgstr "ഇടയ്ക്കു് ചേര്‍ക്കുക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_EDITUNDO_REPLACE\n"
+"string.text"
+msgid "Replace"
+msgstr "മാറ്റി സ്ഥാപിക്കുക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_EDITUNDO_SETATTRIBS\n"
+"string.text"
+msgid "Apply attributes"
+msgstr "ആറ്റ്റിബ്യൂട്സ് പ്രാബല്യത്തിലാക്കുക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_EDITUNDO_RESETATTRIBS\n"
+"string.text"
+msgid "Reset attributes"
+msgstr "ആറ്റ്റിബ്യൂട്സ്   പുനഃസ്ഥാപിക്കുക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_EDITUNDO_INDENT\n"
+"string.text"
+msgid "Indent"
+msgstr "ഇന്‍ഡന്റ്"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_EDITUNDO_SETSTYLE\n"
+"string.text"
+msgid "Apply Styles"
+msgstr "ശൈലികള്‍ ലഭ്യമാക്കുക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_EDITUNDO_TRANSLITERATE\n"
+"string.text"
+msgid "Change Case"
+msgstr "കേസ് മാറ്റുക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_MENU_SPELL\n"
+"MN_IGNORE\n"
+"menuitem.text"
+msgid "I~gnore All"
+msgstr "എല്ലാം അവഗണിക്കുക (~g)"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_MENU_SPELL\n"
+"MN_INSERT\n"
+"menuitem.text"
+msgid "~Add to Dictionary"
+msgstr "നിഘണ്ടുവില്‍ ചേര്‍ക്കു~ക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_MENU_SPELL\n"
+"MN_INSERT_SINGLE\n"
+"menuitem.text"
+msgid "~Add to Dictionary"
+msgstr "നിഘണ്ടുവില്‍ ചേര്‍ക്കു~ക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_MENU_SPELL\n"
+"MN_SPELLING\n"
+"menuitem.text"
+msgid "~Spellcheck..."
+msgstr "അക്ഷര പരിശോധന"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_MENU_SPELL\n"
+"MN_AUTOCORR\n"
+"menuitem.text"
+msgid "AutoCorrect ~To"
+msgstr "സ്വയം ശരിയാക്കുക"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_MENU_SPELL\n"
+"MN_AUTO_CORRECT_DLG\n"
+"menuitem.text"
+msgid "Auto~Correct Options..."
+msgstr "തനിയെ~ശരിപ്പെടുത്തുക സജ്ജീകരണങ്ങള്‍..."
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_STR_WORD\n"
+"string.text"
+msgid "Word is %x"
+msgstr "%x ആണു് വാക്കു്"
+
+#: editeng.src
+msgctxt ""
+"editeng.src\n"
+"RID_STR_PARAGRAPH\n"
+"string.text"
+msgid "Paragraph is %x"
+msgstr "%x ആണു് ഖണ്ഡിക"

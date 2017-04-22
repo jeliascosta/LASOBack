@@ -38,7 +38,8 @@ public:
     void openPackage( const OUString& rPackageURL, XMLFilterVector& rFilters );
 
 private:
-    void addFile( css::uno::Reference< css::uno::XInterface > xRootFolder, css::uno::Reference< css::lang::XSingleServiceFactory > xFactory, const OUString& rSourceFile ) throw( css::uno::Exception, std::exception );
+    /// @throws css::uno::Exception
+    void addFile( css::uno::Reference< css::uno::XInterface > const & xRootFolder, css::uno::Reference< css::lang::XSingleServiceFactory > const & xFactory, const OUString& rSourceFile );
 
     bool copyFile( const css::uno::Reference< css::container::XHierarchicalNameAccess >& xIfc, OUString& rURL, const OUString& rTargetURL );
     bool copyFiles( const css::uno::Reference< css::container::XHierarchicalNameAccess >& xIfc, filter_info_impl* pFilter );

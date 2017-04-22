@@ -27,6 +27,7 @@
 #include <com/sun/star/container/XNameAccess.hpp>
 
 #include <map>
+#include <memory>
 #include <vector>
 #include <xmloff/xmlimp.hxx>
 
@@ -40,7 +41,6 @@ enum SdXMLDocElemTokenMap
     XML_TOK_DOC_BODY,
     XML_TOK_DOC_SCRIPT,
     XML_TOK_DOC_SETTINGS,
-    XML_TOK_OFFICE_END = XML_TOK_UNKNOWN
 };
 
 enum SdXMLBodyElemTokenMap
@@ -54,15 +54,9 @@ enum SdXMLBodyElemTokenMap
 
 enum SdXMLStylesElemTokenMap
 {
-    XML_TOK_STYLES_MASTER_PAGE,
     XML_TOK_STYLES_STYLE,
     XML_TOK_STYLES_PAGE_MASTER,
     XML_TOK_STYLES_PRESENTATION_PAGE_LAYOUT
-};
-
-enum SdXMLAutoStylesElemTokenMap
-{
-    XML_TOK_AUTOSTYLES_STYLE
 };
 
 enum SdXMLMasterPageElemTokenMap
@@ -97,20 +91,6 @@ enum SdXMLPageMasterStyleAttrTokenMap
     XML_TOK_PAGEMASTERSTYLE_PAGE_WIDTH,
     XML_TOK_PAGEMASTERSTYLE_PAGE_HEIGHT,
     XML_TOK_PAGEMASTERSTYLE_PAGE_ORIENTATION
-};
-
-enum SdXMLDocStyleAttrTokenMap
-{
-    XML_TOK_DOCSTYLE_NAME,
-    XML_TOK_DOCSTYLE_FAMILY,
-    XML_TOK_DOCSTYLE_PARENT_STYLE_NAME,
-    XML_TOK_DOCSTYLE_AUTOMATIC
-};
-
-enum SdXMLDocStyleElemTokenMap
-{
-    XML_TOK_DOCSTYLE_PROPERTIES,
-    XML_TOK_DOCSTYLE_PRESENTATION_PLACEHOLDER
 };
 
 enum SdXMLDrawPageAttrTokenMap
@@ -167,19 +147,19 @@ class SdXMLImport: public SvXMLImport
     css::uno::Reference< css::container::XNameAccess > mxPageLayouts;
 
     // contexts for Style and AutoStyle import
-    SdXMLMasterStylesContext*   mpMasterStylesContext;
+    rtl::Reference<SdXMLMasterStylesContext> mxMasterStylesContext;
 
     // token map lists
-    SvXMLTokenMap*              mpDocElemTokenMap;
-    SvXMLTokenMap*              mpBodyElemTokenMap;
-    SvXMLTokenMap*              mpStylesElemTokenMap;
-    SvXMLTokenMap*              mpMasterPageElemTokenMap;
-    SvXMLTokenMap*              mpMasterPageAttrTokenMap;
-    SvXMLTokenMap*              mpPageMasterAttrTokenMap;
-    SvXMLTokenMap*              mpPageMasterStyleAttrTokenMap;
-    SvXMLTokenMap*              mpDrawPageAttrTokenMap;
-    SvXMLTokenMap*              mpDrawPageElemTokenMap;
-    SvXMLTokenMap*              mpPresentationPlaceholderAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpDocElemTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpBodyElemTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpStylesElemTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpMasterPageElemTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpMasterPageAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpPageMasterAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpPageMasterStyleAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpDrawPageAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpDrawPageElemTokenMap;
+    std::unique_ptr<SvXMLTokenMap>              mpPresentationPlaceholderAttrTokenMap;
 
     sal_Int32                   mnNewPageCount;
     sal_Int32                   mnNewMasterPageCount;
@@ -207,13 +187,12 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& xContext,
         OUString const & implementationName,
         bool bIsDraw, SvXMLImportFlags nImportFlags );
-    virtual ~SdXMLImport() throw ();
 
     // XImporter
-    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw(css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     virtual void SetViewSettings(const css::uno::Sequence<css::beans::PropertyValue>& aViewProps) override;
     virtual void SetConfigurationSettings(const css::uno::Sequence<css::beans::PropertyValue>& aConfigProps) override;
@@ -236,8 +215,6 @@ public:
         const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList );
 
     // Styles and AutoStyles contexts
-
-    bool IsStylesOnlyMode() const { return !mbLoadDoc; }
 
     const SvXMLTokenMap& GetDocElemTokenMap();
     const SvXMLTokenMap& GetBodyElemTokenMap();

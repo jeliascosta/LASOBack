@@ -73,7 +73,6 @@ bool GalleryItem::isValid() const
 
 
 uno::Any SAL_CALL GalleryItem::queryAggregation( const uno::Type & rType )
-    throw( uno::RuntimeException, std::exception )
 {
     uno::Any aAny;
 
@@ -90,14 +89,13 @@ uno::Any SAL_CALL GalleryItem::queryAggregation( const uno::Type & rType )
     else if( rType == cppu::UnoType<beans::XMultiPropertySet>::get())
         aAny <<= uno::Reference< beans::XMultiPropertySet >(this);
     else
-        aAny <<= OWeakAggObject::queryAggregation( rType );
+        aAny = OWeakAggObject::queryAggregation( rType );
 
     return aAny;
 }
 
 
 uno::Any SAL_CALL GalleryItem::queryInterface( const uno::Type & rType )
-    throw( uno::RuntimeException, std::exception )
 {
     return OWeakAggObject::queryInterface( rType );
 }
@@ -117,40 +115,22 @@ void SAL_CALL GalleryItem::release()
 }
 
 
-OUString GalleryItem::getImplementationName_Static()
-    throw()
+OUString SAL_CALL GalleryItem::getImplementationName()
 {
     return OUString( "com.sun.star.comp.gallery.GalleryItem" );
 }
 
-
-uno::Sequence< OUString > GalleryItem::getSupportedServiceNames_Static()
-    throw()
-{
-    uno::Sequence< OUString > aSeq { "com.sun.star.gallery.GalleryItem" };
-    return aSeq;
-}
-
-OUString SAL_CALL GalleryItem::getImplementationName()
-    throw( uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
 sal_Bool SAL_CALL GalleryItem::supportsService( const OUString& ServiceName )
-    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL GalleryItem::getSupportedServiceNames()
-    throw( uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { "com.sun.star.gallery.GalleryItem" };
 }
 
 uno::Sequence< uno::Type > SAL_CALL GalleryItem::getTypes()
-    throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence< uno::Type >  aTypes( 6 );
     uno::Type*                  pTypes = aTypes.getArray();
@@ -166,14 +146,12 @@ uno::Sequence< uno::Type > SAL_CALL GalleryItem::getTypes()
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL GalleryItem::getImplementationId()
-    throw(uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 
 sal_Int8 SAL_CALL GalleryItem::getType()
-    throw (uno::RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
     sal_Int8            nRet = gallery::GalleryItemType::EMPTY;
@@ -182,12 +160,11 @@ sal_Int8 SAL_CALL GalleryItem::getType()
     {
         switch( implGetObject()->eObjKind )
         {
-            case SGA_OBJ_SOUND:
-            case SGA_OBJ_VIDEO:
+            case SgaObjKind::Sound:
                 nRet = gallery::GalleryItemType::MEDIA;
             break;
 
-            case SGA_OBJ_SVDRAW:
+            case SgaObjKind::SvDraw:
                 nRet = gallery::GalleryItemType::DRAWING;
             break;
 
@@ -236,12 +213,6 @@ sal_Int8 SAL_CALL GalleryItem::getType()
 }
 
 void GalleryItem::_setPropertyValues( const comphelper::PropertyMapEntry** ppEntries, const uno::Any* pValues )
-    throw (beans::UnknownPropertyException,
-           beans::PropertyVetoException,
-           lang::IllegalArgumentException,
-           lang::WrappedTargetException,
-           uno::RuntimeException,
-           std::exception)
 {
     const SolarMutexGuard aGuard;
 
@@ -281,10 +252,6 @@ void GalleryItem::_setPropertyValues( const comphelper::PropertyMapEntry** ppEnt
 }
 
 void GalleryItem::_getPropertyValues( const comphelper::PropertyMapEntry** ppEntries, uno::Any* pValue )
-    throw (beans::UnknownPropertyException,
-           lang::WrappedTargetException,
-           css::uno::RuntimeException,
-           std::exception)
 {
     const SolarMutexGuard aGuard;
 
@@ -303,7 +270,7 @@ void GalleryItem::_getPropertyValues( const comphelper::PropertyMapEntry** ppEnt
                 ::GalleryTheme* pGalTheme = ( isValid() ? mpTheme->implGetTheme() : nullptr );
 
                 if( pGalTheme )
-                    *pValue <<= OUString( implGetObject()->aURL.GetMainURL( INetURLObject::NO_DECODE ) );
+                    *pValue <<= OUString( implGetObject()->aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
             }
             break;
 

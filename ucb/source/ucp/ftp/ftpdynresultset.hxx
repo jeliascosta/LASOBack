@@ -31,7 +31,7 @@ namespace ftp {
 
     class DynamicResultSet : public ::ucbhelper::ResultSetImplHelper
     {
-        ResultSetFactory*                    m_pFactory;
+        std::unique_ptr<ResultSetFactory>          m_pFactory;
 
     private:
         virtual void initStatic() override;
@@ -43,7 +43,7 @@ namespace ftp {
             const css::ucb::OpenCommandArgument2& rCommand,
             ResultSetFactory* pFactory );
 
-        virtual ~DynamicResultSet();
+        virtual ~DynamicResultSet() override;
     };
 
 }

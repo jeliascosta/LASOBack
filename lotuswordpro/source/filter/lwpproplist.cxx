@@ -73,8 +73,8 @@ LwpPropListElement* LwpPropListElement::GetNext()
 void LwpPropListElement::Read()
 {
     LwpDLVList::Read();
-    m_Name.Read(m_pObjStrm);
-    m_Value.Read(m_pObjStrm);
+    m_Name.Read(m_pObjStrm.get());
+    m_Value.Read(m_pObjStrm.get());
     m_pObjStrm->SkipExtra();
 }
 
@@ -104,11 +104,6 @@ LwpPropListElement* LwpPropList::FindPropByName(const OUString& name)
         pElement = pElement->GetNext();
     }
     return nullptr;
-}
-
-void LwpPropList::Read(LwpObjectStream* pObjStrm)
-{
-    LwpDLVListHead::Read(pObjStrm);
 }
 
 LwpPropListElement* LwpPropList::GetFirst()

@@ -19,6 +19,10 @@
 #ifndef INCLUDED_SFX2_SOURCE_INC_PARTWND_HXX
 #define INCLUDED_SFX2_SOURCE_INC_PARTWND_HXX
 
+#include <sfx2/childwin.hxx>
+#include <sfx2/dockwin.hxx>
+
+
 namespace com
 {
     namespace sun
@@ -33,9 +37,6 @@ namespace com
     }
 }
 
-#include <sfx2/childwin.hxx>
-#include <sfx2/dockwin.hxx>
-
 // forward ---------------------------------------------------------------
 
 // class SfxPartChildWnd_Impl -----------------------------------
@@ -48,7 +49,7 @@ public:
                                    SfxChildWinInfo* pInfo );
 
     SFX_DECL_CHILDWINDOW(SfxPartChildWnd_Impl);
-                            virtual ~SfxPartChildWnd_Impl();
+                            virtual ~SfxPartChildWnd_Impl() override;
 
     virtual bool            QueryClose() override;
 };
@@ -58,8 +59,7 @@ public:
 class SfxPartDockWnd_Impl : public SfxDockingWindow
 {
 protected:
-    virtual void            Resize() override;
-    virtual bool            Notify( NotifyEvent& rNEvt ) override;
+    virtual bool            EventNotify( NotifyEvent& rNEvt ) override;
 
 public:
                             SfxPartDockWnd_Impl( SfxBindings* pBindings,

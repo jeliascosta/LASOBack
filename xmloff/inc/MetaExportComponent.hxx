@@ -34,7 +34,7 @@ public:
         OUString const & implementationName, SvXMLExportFlags nFlags
         );
 
-    virtual ~XMLMetaExportComponent();
+    virtual ~XMLMetaExportComponent() override;
 
 protected:
     // export the events off all autotexts
@@ -42,7 +42,7 @@ protected:
         enum ::xmloff::token::XMLTokenEnum eClass = xmloff::token::XML_TOKEN_INVALID ) override;
 
     // accept XDocumentProperties in addition to XModel
-    virtual void SAL_CALL setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
 
     // override
     virtual void ExportMeta_() override;

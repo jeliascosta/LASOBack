@@ -82,7 +82,7 @@ namespace slideshow
                                       "TupleAnimation::TupleAnimation(): One of the method pointers is NULL" );
                 }
 
-                virtual ~TupleAnimation()
+                virtual ~TupleAnimation() override
                 {
                     end_();
                 }
@@ -236,7 +236,7 @@ namespace slideshow
                     maPathPoly = ::basegfx::tools::adaptiveSubdivideByAngle(aPolyPoly.getB2DPolygon(0) );
                 }
 
-                virtual ~PathAnimation()
+                virtual ~PathAnimation() override
                 {
                     end_();
                 }
@@ -436,7 +436,7 @@ namespace slideshow
 
                 ~GenericAnimation()
                 {
-                    end_();
+                    end();
                 }
 
                 // Animation interface
@@ -472,8 +472,7 @@ namespace slideshow
                     }
                 }
 
-                virtual void end() { end_(); }
-                void end_()
+                void end()
                 {
                     // TODO(Q2): Factor out common code (most
                     // prominently start() and end()) into base class
@@ -679,10 +678,7 @@ namespace slideshow
 
                 if( !rAny.hasValue() )
                 {
-                    OSL_FAIL( "getDefault(): cannot get requested shape property" );
-                    OSL_TRACE( "getDefault(): cannot get '%s' shape property",
-                               OUStringToOString( rPropertyName,
-                                                         RTL_TEXTENCODING_ASCII_US ).getStr() );
+                    SAL_WARN("slideshow", "getDefault(): cannot get shape property " <<  rPropertyName );
                     return ValueType();
                 }
                 else
@@ -691,10 +687,7 @@ namespace slideshow
 
                     if( !(rAny >>= aValue) )
                     {
-                        OSL_FAIL( "getDefault(): cannot extract requested shape property" );
-                        OSL_TRACE( "getDefault(): cannot extract '%s' shape property",
-                                   OUStringToOString( rPropertyName,
-                                                             RTL_TEXTENCODING_ASCII_US ).getStr() );
+                        SAL_WARN("slideshow", "getDefault(): cannot extract shape property " << rPropertyName);
                         return ValueType();
                     }
 
@@ -710,10 +703,7 @@ namespace slideshow
 
                 if( !rAny.hasValue() )
                 {
-                    OSL_FAIL( "getDefault(): cannot get requested shape color property" );
-                    OSL_TRACE( "getDefault(): cannot get '%s' shape color property",
-                               OUStringToOString( rPropertyName,
-                                                         RTL_TEXTENCODING_ASCII_US ).getStr() );
+                    SAL_WARN("slideshow", "getDefault(): cannot get shape color property " << rPropertyName);
                     return RGBColor();
                 }
                 else
@@ -722,10 +712,7 @@ namespace slideshow
 
                     if( !(rAny >>= nValue) )
                     {
-                        OSL_FAIL( "getDefault(): cannot extract requested shape color property" );
-                        OSL_TRACE( "getDefault(): cannot extract '%s' shape color property",
-                                   OUStringToOString( rPropertyName,
-                                                             RTL_TEXTENCODING_ASCII_US ).getStr() );
+                        SAL_INFO("slideshow", "getDefault(): cannot extract shape color property " << rPropertyName);
                         return RGBColor();
                     }
 
@@ -747,56 +734,54 @@ namespace slideshow
             {
                 default:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_INVALID:
+                case AttributeType::Invalid:
                     return CLASS_UNKNOWN_PROPERTY;
 
-                case ATTRIBUTE_CHAR_COLOR:
+                case AttributeType::CharColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_COLOR:
+                case AttributeType::Color:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_DIMCOLOR:
+                case AttributeType::DimColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_COLOR:
+                case AttributeType::FillColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_COLOR:
+                case AttributeType::LineColor:
                     return CLASS_COLOR_PROPERTY;
 
-                case ATTRIBUTE_CHAR_FONT_NAME:
+                case AttributeType::CharFontName:
                     return CLASS_STRING_PROPERTY;
 
-                case ATTRIBUTE_VISIBILITY:
+                case AttributeType::Visibility:
                     return CLASS_BOOL_PROPERTY;
 
-                case ATTRIBUTE_CHAR_HEIGHT:
+                case AttributeType::CharHeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_WEIGHT:
+                case AttributeType::CharWeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_ROTATION:
+                case AttributeType::Height:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_HEIGHT:
+                case AttributeType::Opacity:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_OPACITY:
+                case AttributeType::Rotate:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_ROTATE:
+                case AttributeType::SkewX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_X:
+                case AttributeType::SkewY:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_Y:
+                case AttributeType::Width:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_WIDTH:
+                case AttributeType::PosX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_POS_X:
-                    // FALLTHROUGH intended
-                case ATTRIBUTE_POS_Y:
+                case AttributeType::PosY:
                     return CLASS_NUMBER_PROPERTY;
 
-                case ATTRIBUTE_CHAR_UNDERLINE:
+                case AttributeType::CharUnderline:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_STYLE:
+                case AttributeType::FillStyle:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_STYLE:
+                case AttributeType::LineStyle:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_POSTURE:
+                case AttributeType::CharPosture:
                     return CLASS_ENUM_PROPERTY;
             }
         }
@@ -813,37 +798,37 @@ namespace slideshow
             {
                 default:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_INVALID:
+                case AttributeType::Invalid:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createNumberPropertyAnimation(): Unknown attribute" );
                     break;
 
-                case ATTRIBUTE_CHAR_COLOR:
+                case AttributeType::CharColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_FONT_NAME:
+                case AttributeType::CharFontName:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_POSTURE:
+                case AttributeType::CharPosture:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_UNDERLINE:
+                case AttributeType::CharUnderline:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_COLOR:
+                case AttributeType::Color:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_DIMCOLOR:
+                case AttributeType::DimColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_COLOR:
+                case AttributeType::FillColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_STYLE:
+                case AttributeType::FillStyle:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_COLOR:
+                case AttributeType::LineColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_STYLE:
+                case AttributeType::LineStyle:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_VISIBILITY:
+                case AttributeType::Visibility:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createNumberPropertyAnimation(): Attribute type mismatch" );
                     break;
 
-                case ATTRIBUTE_CHAR_HEIGHT:
+                case AttributeType::CharHeight:
                     return makeGenericAnimation<NumberAnimation>( rShapeManager,
                                                                   nFlags,
                                                                   &ShapeAttributeLayer::isCharScaleValid,
@@ -852,7 +837,7 @@ namespace slideshow
                                                                   &ShapeAttributeLayer::getCharScale,
                                                                   &ShapeAttributeLayer::setCharScale );
 
-                case ATTRIBUTE_CHAR_WEIGHT:
+                case AttributeType::CharWeight:
                     return makeGenericAnimation<NumberAnimation>( rShapeManager,
                                                                   nFlags,
                                                                   &ShapeAttributeLayer::isCharWeightValid,
@@ -860,15 +845,7 @@ namespace slideshow
                                                                   &ShapeAttributeLayer::getCharWeight,
                                                                   &ShapeAttributeLayer::setCharWeight );
 
-                case ATTRIBUTE_CHAR_ROTATION:
-                    return makeGenericAnimation<NumberAnimation>( rShapeManager,
-                                                                  nFlags,
-                                                                  &ShapeAttributeLayer::isCharRotationAngleValid,
-                                                                  getDefault<double>( rShape, rAttrName ),
-                                                                  &ShapeAttributeLayer::getCharRotationAngle,
-                                                                  &ShapeAttributeLayer::setCharRotationAngle );
-
-                case ATTRIBUTE_HEIGHT:
+                case AttributeType::Height:
                     return makeGenericAnimation( rShapeManager,
                                                  nFlags,
                                                  &ShapeAttributeLayer::isHeightValid,
@@ -882,7 +859,7 @@ namespace slideshow
                                                  // convert expression parser value from relative page size
                                                  rSlideSize.getY() );
 
-                case ATTRIBUTE_OPACITY:
+                case AttributeType::Opacity:
                     return makeGenericAnimation<NumberAnimation>( rShapeManager,
                                                                   nFlags,
                                                                   &ShapeAttributeLayer::isAlphaValid,
@@ -891,7 +868,7 @@ namespace slideshow
                                                                   &ShapeAttributeLayer::getAlpha,
                                                                   &ShapeAttributeLayer::setAlpha );
 
-                case ATTRIBUTE_ROTATE:
+                case AttributeType::Rotate:
                     return makeGenericAnimation<NumberAnimation>( rShapeManager,
                                                                   nFlags,
                                                                   &ShapeAttributeLayer::isRotationAngleValid,
@@ -901,7 +878,7 @@ namespace slideshow
                                                                   &ShapeAttributeLayer::getRotationAngle,
                                                                   &ShapeAttributeLayer::setRotationAngle );
 
-                case ATTRIBUTE_SKEW_X:
+                case AttributeType::SkewX:
                     return makeGenericAnimation<NumberAnimation>( rShapeManager,
                                                                   nFlags,
                                                                   &ShapeAttributeLayer::isShearXAngleValid,
@@ -910,7 +887,7 @@ namespace slideshow
                                                                   &ShapeAttributeLayer::getShearXAngle,
                                                                   &ShapeAttributeLayer::setShearXAngle );
 
-                case ATTRIBUTE_SKEW_Y:
+                case AttributeType::SkewY:
                     return makeGenericAnimation<NumberAnimation>( rShapeManager,
                                                                   nFlags,
                                                                   &ShapeAttributeLayer::isShearYAngleValid,
@@ -919,7 +896,7 @@ namespace slideshow
                                                                   &ShapeAttributeLayer::getShearYAngle,
                                                                   &ShapeAttributeLayer::setShearYAngle );
 
-                case ATTRIBUTE_WIDTH:
+                case AttributeType::Width:
                     return makeGenericAnimation( rShapeManager,
                                                  nFlags,
                                                  &ShapeAttributeLayer::isWidthValid,
@@ -933,7 +910,7 @@ namespace slideshow
                                                  // convert expression parser value from relative page size
                                                  rSlideSize.getX() );
 
-                case ATTRIBUTE_POS_X:
+                case AttributeType::PosX:
                     return makeGenericAnimation( rShapeManager,
                                                  nFlags,
                                                  &ShapeAttributeLayer::isPosXValid,
@@ -947,7 +924,7 @@ namespace slideshow
                                                  // convert expression parser value from relative page size
                                                  rSlideSize.getX() );
 
-                case ATTRIBUTE_POS_Y:
+                case AttributeType::PosY:
                     return makeGenericAnimation( rShapeManager,
                                                  nFlags,
                                                  &ShapeAttributeLayer::isPosYValid,
@@ -977,52 +954,50 @@ namespace slideshow
             {
                 default:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_INVALID:
+                case AttributeType::Invalid:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createEnumPropertyAnimation(): Unknown attribute" );
                     break;
 
-                case ATTRIBUTE_CHAR_COLOR:
+                case AttributeType::CharColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_FONT_NAME:
+                case AttributeType::CharFontName:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_COLOR:
+                case AttributeType::Color:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_DIMCOLOR:
+                case AttributeType::DimColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_COLOR:
+                case AttributeType::FillColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_COLOR:
+                case AttributeType::LineColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_VISIBILITY:
+                case AttributeType::Visibility:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_HEIGHT:
+                case AttributeType::CharHeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_WEIGHT:
+                case AttributeType::CharWeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_ROTATION:
+                case AttributeType::Height:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_HEIGHT:
+                case AttributeType::Opacity:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_OPACITY:
+                case AttributeType::Rotate:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_ROTATE:
+                case AttributeType::SkewX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_X:
+                case AttributeType::SkewY:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_Y:
+                case AttributeType::Width:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_WIDTH:
+                case AttributeType::PosX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_POS_X:
-                    // FALLTHROUGH intended
-                case ATTRIBUTE_POS_Y:
+                case AttributeType::PosY:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createEnumPropertyAnimation(): Attribute type mismatch" );
                     break;
 
 
-                case ATTRIBUTE_FILL_STYLE:
+                case AttributeType::FillStyle:
                     return makeGenericAnimation<EnumAnimation>( rShapeManager,
                                                                 nFlags,
                                                                 &ShapeAttributeLayer::isFillStyleValid,
@@ -1031,7 +1006,7 @@ namespace slideshow
                                                                 &ShapeAttributeLayer::getFillStyle,
                                                                 &ShapeAttributeLayer::setFillStyle );
 
-                case ATTRIBUTE_LINE_STYLE:
+                case AttributeType::LineStyle:
                     return makeGenericAnimation<EnumAnimation>( rShapeManager,
                                                                 nFlags,
                                                                 &ShapeAttributeLayer::isLineStyleValid,
@@ -1040,7 +1015,7 @@ namespace slideshow
                                                                 &ShapeAttributeLayer::getLineStyle,
                                                                 &ShapeAttributeLayer::setLineStyle );
 
-                case ATTRIBUTE_CHAR_POSTURE:
+                case AttributeType::CharPosture:
                     return makeGenericAnimation<EnumAnimation>( rShapeManager,
                                                                 nFlags,
                                                                 &ShapeAttributeLayer::isCharPostureValid,
@@ -1049,7 +1024,7 @@ namespace slideshow
                                                                 &ShapeAttributeLayer::getCharPosture,
                                                                 &ShapeAttributeLayer::setCharPosture );
 
-                case ATTRIBUTE_CHAR_UNDERLINE:
+                case AttributeType::CharUnderline:
                     return makeGenericAnimation<EnumAnimation>( rShapeManager,
                                                                 nFlags,
                                                                 &ShapeAttributeLayer::isUnderlineModeValid,
@@ -1073,49 +1048,47 @@ namespace slideshow
             {
                 default:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_INVALID:
+                case AttributeType::Invalid:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createColorPropertyAnimation(): Unknown attribute" );
                     break;
 
-                case ATTRIBUTE_CHAR_FONT_NAME:
+                case AttributeType::CharFontName:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_HEIGHT:
+                case AttributeType::CharHeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_POSTURE:
+                case AttributeType::CharPosture:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_ROTATION:
+                case AttributeType::CharUnderline:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_UNDERLINE:
+                case AttributeType::CharWeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_WEIGHT:
+                case AttributeType::FillStyle:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_STYLE:
+                case AttributeType::Height:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_HEIGHT:
+                case AttributeType::LineStyle:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_STYLE:
+                case AttributeType::Opacity:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_OPACITY:
+                case AttributeType::Rotate:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_ROTATE:
+                case AttributeType::SkewX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_X:
+                case AttributeType::SkewY:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_Y:
+                case AttributeType::Visibility:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_VISIBILITY:
+                case AttributeType::Width:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_WIDTH:
+                case AttributeType::PosX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_POS_X:
-                    // FALLTHROUGH intended
-                case ATTRIBUTE_POS_Y:
+                case AttributeType::PosY:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createColorPropertyAnimation(): Attribute type mismatch" );
                     break;
 
-                case ATTRIBUTE_CHAR_COLOR:
+                case AttributeType::CharColor:
                     return makeGenericAnimation<ColorAnimation>( rShapeManager,
                                                                  nFlags,
                                                                  &ShapeAttributeLayer::isCharColorValid,
@@ -1123,7 +1096,7 @@ namespace slideshow
                                                                  &ShapeAttributeLayer::getCharColor,
                                                                  &ShapeAttributeLayer::setCharColor );
 
-                case ATTRIBUTE_COLOR:
+                case AttributeType::Color:
                     // TODO(F2): This is just mapped to fill color to make it work
                     return makeGenericAnimation<ColorAnimation>( rShapeManager,
                                                                  nFlags,
@@ -1132,7 +1105,7 @@ namespace slideshow
                                                                  &ShapeAttributeLayer::getFillColor,
                                                                  &ShapeAttributeLayer::setFillColor );
 
-                case ATTRIBUTE_DIMCOLOR:
+                case AttributeType::DimColor:
                     return makeGenericAnimation<ColorAnimation>( rShapeManager,
                                                                  nFlags,
                                                                  &ShapeAttributeLayer::isDimColorValid,
@@ -1140,7 +1113,7 @@ namespace slideshow
                                                                  &ShapeAttributeLayer::getDimColor,
                                                                  &ShapeAttributeLayer::setDimColor );
 
-                case ATTRIBUTE_FILL_COLOR:
+                case AttributeType::FillColor:
                     return makeGenericAnimation<ColorAnimation>( rShapeManager,
                                                                  nFlags,
                                                                  &ShapeAttributeLayer::isFillColorValid,
@@ -1148,7 +1121,7 @@ namespace slideshow
                                                                  &ShapeAttributeLayer::getFillColor,
                                                                  &ShapeAttributeLayer::setFillColor );
 
-                case ATTRIBUTE_LINE_COLOR:
+                case AttributeType::LineColor:
                     return makeGenericAnimation<ColorAnimation>( rShapeManager,
                                                                  nFlags,
                                                                  &ShapeAttributeLayer::isLineColorValid,
@@ -1225,57 +1198,55 @@ namespace slideshow
             {
                 default:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_INVALID:
+                case AttributeType::Invalid:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createStringPropertyAnimation(): Unknown attribute" );
                     break;
 
-                case ATTRIBUTE_CHAR_COLOR:
+                case AttributeType::CharColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_HEIGHT:
+                case AttributeType::CharHeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_ROTATION:
+                case AttributeType::CharUnderline:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_UNDERLINE:
+                case AttributeType::Color:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_COLOR:
+                case AttributeType::DimColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_DIMCOLOR:
+                case AttributeType::FillColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_COLOR:
+                case AttributeType::Height:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_HEIGHT:
+                case AttributeType::LineColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_COLOR:
+                case AttributeType::Opacity:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_OPACITY:
+                case AttributeType::Rotate:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_ROTATE:
+                case AttributeType::SkewX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_X:
+                case AttributeType::SkewY:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_Y:
+                case AttributeType::Visibility:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_VISIBILITY:
+                case AttributeType::Width:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_WIDTH:
+                case AttributeType::PosX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_POS_X:
+                case AttributeType::PosY:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_POS_Y:
+                case AttributeType::CharPosture:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_POSTURE:
+                case AttributeType::CharWeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_WEIGHT:
+                case AttributeType::FillStyle:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_STYLE:
-                    // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_STYLE:
+                case AttributeType::LineStyle:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createStringPropertyAnimation(): Attribute type mismatch" );
                     break;
 
-                case ATTRIBUTE_CHAR_FONT_NAME:
+                case AttributeType::CharFontName:
                     return makeGenericAnimation<StringAnimation>( rShapeManager,
                                                                   nFlags,
                                                                   &ShapeAttributeLayer::isFontFamilyValid,
@@ -1299,57 +1270,55 @@ namespace slideshow
             {
                 default:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_INVALID:
+                case AttributeType::Invalid:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createBoolPropertyAnimation(): Unknown attribute" );
                     break;
 
-                case ATTRIBUTE_CHAR_COLOR:
+                case AttributeType::CharColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_FONT_NAME:
+                case AttributeType::CharFontName:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_HEIGHT:
+                case AttributeType::CharHeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_POSTURE:
+                case AttributeType::CharPosture:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_ROTATION:
+                case AttributeType::CharWeight:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_WEIGHT:
+                case AttributeType::Color:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_COLOR:
+                case AttributeType::DimColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_DIMCOLOR:
+                case AttributeType::FillColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_COLOR:
+                case AttributeType::FillStyle:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_FILL_STYLE:
+                case AttributeType::Height:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_HEIGHT:
+                case AttributeType::LineColor:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_COLOR:
+                case AttributeType::LineStyle:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_LINE_STYLE:
+                case AttributeType::Opacity:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_OPACITY:
+                case AttributeType::Rotate:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_ROTATE:
+                case AttributeType::SkewX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_X:
+                case AttributeType::SkewY:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_SKEW_Y:
+                case AttributeType::Width:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_WIDTH:
+                case AttributeType::PosX:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_POS_X:
+                case AttributeType::PosY:
                     // FALLTHROUGH intended
-                case ATTRIBUTE_POS_Y:
-                    // FALLTHROUGH intended
-                case ATTRIBUTE_CHAR_UNDERLINE:
+                case AttributeType::CharUnderline:
                     ENSURE_OR_THROW( false,
                                       "AnimationFactory::createBoolPropertyAnimation(): Attribute type mismatch" );
                     break;
 
-                case ATTRIBUTE_VISIBILITY:
+                case AttributeType::Visibility:
                     return makeGenericAnimation<BoolAnimation>( rShapeManager,
                                                                 nFlags,
                                                                 &ShapeAttributeLayer::isVisibilityValid,

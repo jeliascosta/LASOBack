@@ -76,7 +76,7 @@ class XFCell : public XFContentContainer
 public:
     XFCell();
 
-    virtual ~XFCell();
+    virtual ~XFCell() override;
 
 public:
     using XFContentContainer::Add;
@@ -114,7 +114,7 @@ public:
     /**
      * @descr   Set cell protected.
      */
-    void    SetProtect(bool protect=true);
+    void    SetProtect(bool protect);
 
     /**
      * @descr   Set cell column id.
@@ -141,11 +141,12 @@ public:
      */
     virtual void    ToXml(IXFStream *pStrm) override;
 
-    const XFTable*  GetSubTable() const { return m_pSubTable; }
+    const XFTable*  GetSubTable() const { return m_pSubTable.get(); }
 
 private:
     XFRow          *m_pOwnerRow;
-    XFTable        *m_pSubTable;
+    rtl::Reference<XFTable>
+                    m_pSubTable;
     sal_Int32       m_nCol;
     sal_Int32       m_nColSpaned;
     sal_Int32       m_nRepeated;

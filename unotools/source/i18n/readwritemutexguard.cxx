@@ -23,83 +23,83 @@
 namespace utl {
 
 ReadWriteGuard::ReadWriteGuard( ReadWriteMutex& rMutexP,
-            sal_Int32 nRequestMode )
+            ReadWriteGuardMode nRequestMode )
         : rMutex( rMutexP )
 {
     // don't do anything until a pending write completed (or another
     // ReadWriteGuard leaves the ctor phase)
-    ::osl::MutexGuard aGuard( rMutex.pWriteMutex );
+    ::osl::MutexGuard aGuard( rMutex.maWriteMutex );
     nMode = nRequestMode;
-    if ( nMode & ReadWriteGuardMode::nWrite )
+    if ( nMode & ReadWriteGuardMode::Write )
     {
-        rMutex.pWriteMutex->acquire();
+        rMutex.maWriteMutex.acquire();
         // wait for any read to complete
 // TODO: set up a waiting thread instead of a loop
         bool bWait = true;
         do
         {
-            rMutex.pMutex->acquire();
+            rMutex.maMutex.acquire();
             bWait = (rMutex.nReadCount != 0);
-            if ( nMode & ReadWriteGuardMode::nCriticalChange )
+            if ( nMode & ReadWriteGuardMode::CriticalChange )
                 bWait |= (rMutex.nBlockCriticalCount != 0);
-            rMutex.pMutex->release();
+            rMutex.maMutex.release();
         } while ( bWait );
     }
-    else if ( nMode & ReadWriteGuardMode::nBlockCritical )
+    else if ( nMode & ReadWriteGuardMode::BlockCritical )
     {
-        rMutex.pMutex->acquire();
+        rMutex.maMutex.acquire();
         ++rMutex.nBlockCriticalCount;
-        rMutex.pMutex->release();
+        rMutex.maMutex.release();
     }
     else
     {
-        rMutex.pMutex->acquire();
+        rMutex.maMutex.acquire();
         ++rMutex.nReadCount;
-        rMutex.pMutex->release();
+        rMutex.maMutex.release();
     }
 }
 
 ReadWriteGuard::~ReadWriteGuard()
 {
-    if ( nMode & ReadWriteGuardMode::nWrite )
-        rMutex.pWriteMutex->release();
-    else if ( nMode & ReadWriteGuardMode::nBlockCritical )
+    if ( nMode & ReadWriteGuardMode::Write )
+        rMutex.maWriteMutex.release();
+    else if ( nMode & ReadWriteGuardMode::BlockCritical )
     {
-        rMutex.pMutex->acquire();
+        rMutex.maMutex.acquire();
         --rMutex.nBlockCriticalCount;
-        rMutex.pMutex->release();
+        rMutex.maMutex.release();
     }
     else
     {
-        rMutex.pMutex->acquire();
+        rMutex.maMutex.acquire();
         --rMutex.nReadCount;
-        rMutex.pMutex->release();
+        rMutex.maMutex.release();
     }
 }
 
 void ReadWriteGuard::changeReadToWrite()
 {
-    bool bOk = !(nMode & (ReadWriteGuardMode::nWrite | ReadWriteGuardMode::nBlockCritical));
+    bool bOk = !(nMode & (ReadWriteGuardMode::Write | ReadWriteGuardMode::BlockCritical));
     DBG_ASSERT( bOk, "ReadWriteGuard::changeReadToWrite: can't" );
     if ( bOk )
     {
         // MUST release read before acquiring write mutex or dead lock would
         // occur if there was a write in another thread waiting for this read
         // to complete.
-        rMutex.pMutex->acquire();
+        rMutex.maMutex.acquire();
         --rMutex.nReadCount;
-        rMutex.pMutex->release();
+        rMutex.maMutex.release();
 
-        rMutex.pWriteMutex->acquire();
-        nMode |= ReadWriteGuardMode::nWrite;
+        rMutex.maWriteMutex.acquire();
+        nMode |= ReadWriteGuardMode::Write;
         // wait for any other read to complete
 // TODO: set up a waiting thread instead of a loop
         bool bWait = true;
         do
         {
-            rMutex.pMutex->acquire();
+            rMutex.maMutex.acquire();
             bWait = (rMutex.nReadCount != 0);
-            rMutex.pMutex->release();
+            rMutex.maMutex.release();
         } while ( bWait );
     }
 }

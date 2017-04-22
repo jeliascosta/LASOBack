@@ -43,7 +43,7 @@
 #include <sys/types.h>
 
 /* Make sockets of type AF_UNIX use underlying FS rights */
-#if defined(SOLARIS) && !defined(_XOPEN_SOURCE)
+#if defined(__sun) && !defined(_XOPEN_SOURCE)
 #   define _XOPEN_SOURCE 500
 #   include <sys/socket.h>
 #   undef _XOPEN_SOURCE
@@ -85,7 +85,7 @@
 
 #endif
 
-#if defined(ANDROID) || defined(EMSCRIPTEN)
+#if defined(ANDROID)
 #   include <pthread.h>
 #   include <sys/file.h>
 #   include <sys/ioctl.h>
@@ -182,7 +182,7 @@
 #   define  LIBPATH "LIBPATH"
 #endif
 
-#ifdef SOLARIS
+#ifdef __sun
 #   include <shadow.h>
 #   include <sys/un.h>
 #   include <stropts.h>
@@ -240,10 +240,9 @@ int macxp_resolveAlias(char *path, int buflen);
 #if !defined(_WIN32)  && \
     !defined(LINUX)   && !defined(NETBSD) && !defined(FREEBSD) && \
     !defined(AIX)     && \
-    !defined(SOLARIS) && !defined(MACOSX) && \
+    !defined(__sun) && !defined(MACOSX) && \
     !defined(OPENBSD) && !defined(DRAGONFLY) && \
-    !defined(IOS) && !defined(ANDROID) && \
-    !defined(EMSCRIPTEN)
+    !defined(IOS) && !defined(ANDROID)
 #   error "Target platform not specified!"
 #endif
 
@@ -333,13 +332,6 @@ int macxp_resolveAlias(char *path, int buflen);
 #ifndef SA_FAMILY_DECL
 #   define SA_FAMILY_DECL short sa_family
 #endif
-
-typedef struct sockaddr_ipx {
-    SA_FAMILY_DECL;
-    char  sa_netnum[4];
-    char  sa_nodenum[6];
-    unsigned short sa_socket;
-} SOCKADDR_IPX;
 
 #define NSPROTO_IPX      1000
 #define NSPROTO_SPX      1256

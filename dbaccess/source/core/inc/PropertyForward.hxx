@@ -24,6 +24,7 @@
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <cppuhelper/implbase.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <comphelper/broadcasthelper.hxx>
 
 #include <vector>
@@ -34,7 +35,7 @@ namespace dbaccess
     // OPropertyForward
     typedef ::cppu::WeakImplHelper<   css::beans::XPropertyChangeListener
                                   >   OPropertyForward_Base;
-    class OPropertyForward  :public ::comphelper::OBaseMutex
+    class OPropertyForward  :public ::cppu::BaseMutex
                             ,public OPropertyForward_Base
     {
         css::uno::Reference< css::beans::XPropertySet >       m_xSource;
@@ -45,22 +46,22 @@ namespace dbaccess
         bool            m_bInInsert;
 
     protected:
-        virtual ~OPropertyForward();
+        virtual ~OPropertyForward() override;
 
     public:
         OPropertyForward( const css::uno::Reference< css::beans::XPropertySet>& _xSource,
                           const css::uno::Reference< css::container::XNameAccess>& _xDestContainer,
                           const OUString& _sName,
-                          const ::std::vector< OUString >& _aPropertyList
+                          const std::vector< OUString >& _aPropertyList
                          );
 
         // css::beans::XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) override;
 
         // css::lang::XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& _rSource ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& _rSource ) override;
 
-        inline void setName( const OUString& _sName ) { m_sName = _sName; }
+        void setName( const OUString& _sName ) { m_sName = _sName; }
         void setDefinition( const css::uno::Reference< css::beans::XPropertySet >& _xDest);
         const css::uno::Reference< css::beans::XPropertySet >& getDefinition() const { return m_xDest; }
     };

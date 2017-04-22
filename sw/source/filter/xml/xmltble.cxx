@@ -49,6 +49,7 @@
 #include "unotbl.hxx"
 #include "xmltexte.hxx"
 #include "xmlexp.hxx"
+#include <o3tl/any.hxx>
 #include <o3tl/sorted_vector.hxx>
 #include <textboxhelper.hxx>
 
@@ -60,12 +61,9 @@ using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::container;
 using namespace ::xmloff::token;
 using table::XCell;
-using ::std::vector;
-using ::std::advance;
+using std::vector;
+using std::advance;
 
-// string constants for table cell export
-static const char g_sNumberFormat[] = "NumberFormat";
-static const char g_sIsProtected[] = "IsProtected";
 
 class SwXMLTableColumn_Impl : public SwWriteTableCol
 {
@@ -113,8 +111,6 @@ class SwXMLTableLines_Impl
 public:
 
     explicit SwXMLTableLines_Impl( const SwTableLines& rLines );
-
-    ~SwXMLTableLines_Impl() {}
 
     sal_uInt32 GetWidth() const { return nWidth; }
     const SwTableLines *GetLines() const { return pLines; }
@@ -572,10 +568,10 @@ void SwXMLExport::ExportTableLinesAutoStyles( const SwTableLines& rLines,
 {
     // pass 1: calculate columns
     SwXMLTableLines_Impl *pLines = new SwXMLTableLines_Impl( rLines );
-    if( !pTableLines )
-        pTableLines = new SwXMLTableLinesCache_Impl();
+    if( !m_pTableLines )
+        m_pTableLines = new SwXMLTableLinesCache_Impl;
 
-    pTableLines->push_back( pLines );
+    m_pTableLines->push_back( pLines );
 
     // pass 2: export column styles
     {
@@ -662,7 +658,7 @@ void SwXMLExport::ExportTableLinesAutoStyles( const SwTableLines& rLines,
             else
                 nCPos = pLines->GetWidth();
 
-            // Und ihren Index
+            // and their index
             const size_t nOldCol = nCol;
             SwXMLTableColumn_Impl aCol( nCPos );
             SwXMLTableColumns_Impl::const_iterator it = pLines->GetColumns().find( &aCol );
@@ -822,7 +818,7 @@ void SwXMLExport::ExportTableBox( const SwTableBox& rBox,
                 if (xCellPropertySet.is())
                 {
                     sal_Int32 nNumberFormat = 0;
-                    Any aAny = xCellPropertySet->getPropertyValue(g_sNumberFormat);
+                    Any aAny = xCellPropertySet->getPropertyValue("NumberFormat");
                     aAny >>= nNumberFormat;
 
                     if (css::util::NumberFormat::TEXT == nNumberFormat)
@@ -842,8 +838,8 @@ void SwXMLExport::ExportTableBox( const SwTableBox& rBox,
                     // else: invalid key; ignore
 
                     // cell protection
-                    aAny = xCellPropertySet->getPropertyValue(g_sIsProtected);
-                    if (*static_cast<sal_Bool const *>(aAny.getValue()))
+                    aAny = xCellPropertySet->getPropertyValue("IsProtected");
+                    if (*o3tl::doAccess<bool>(aAny))
                     {
                         AddAttribute( XML_NAMESPACE_TABLE, XML_PROTECTED,
                                         XML_TRUE );
@@ -934,7 +930,7 @@ void SwXMLExport::ExportTableLine( const SwTableLine& rLine,
             else
                 nCPos = rLines.GetWidth();
 
-            // Und ihren Index
+            // and their index
             const size_t nOldCol = nCol;
             SwXMLTableColumn_Impl aCol( nCPos );
             SwXMLTableColumns_Impl::const_iterator it = rLines.GetColumns().find( &aCol );
@@ -971,18 +967,18 @@ void SwXMLExport::ExportTableLines( const SwTableLines& rLines,
                                     SwXMLTableInfo_Impl& rTableInfo,
                                     sal_uInt32 nHeaderRows )
 {
-    OSL_ENSURE( pTableLines && !pTableLines->empty(),
+    OSL_ENSURE( m_pTableLines && !m_pTableLines->empty(),
             "SwXMLExport::ExportTableLines: table columns infos missing" );
-    if( !pTableLines || pTableLines->empty() )
+    if( !m_pTableLines || m_pTableLines->empty() )
         return;
 
     SwXMLTableLines_Impl* pLines = nullptr;
     size_t nInfoPos;
-    for( nInfoPos=0; nInfoPos < pTableLines->size(); nInfoPos++ )
+    for( nInfoPos=0; nInfoPos < m_pTableLines->size(); nInfoPos++ )
     {
-        if( pTableLines->at( nInfoPos )->GetLines() == &rLines )
+        if( m_pTableLines->at( nInfoPos )->GetLines() == &rLines )
         {
-            pLines = pTableLines->at( nInfoPos );
+            pLines = m_pTableLines->at( nInfoPos );
             break;
         }
     }
@@ -993,14 +989,14 @@ void SwXMLExport::ExportTableLines( const SwTableLines& rLines,
     if( !pLines )
         return;
 
-    SwXMLTableLinesCache_Impl::iterator it = pTableLines->begin();
+    SwXMLTableLinesCache_Impl::iterator it = m_pTableLines->begin();
     advance( it, nInfoPos );
-    pTableLines->erase( it );
+    m_pTableLines->erase( it );
 
-    if( pTableLines->empty() )
+    if( m_pTableLines->empty() )
     {
-        delete pTableLines ;
-        pTableLines = nullptr;
+        delete m_pTableLines ;
+        m_pTableLines = nullptr;
     }
 
     // pass 2: export columns
@@ -1094,11 +1090,14 @@ void SwXMLExport::ExportTable( const SwTableNode& rTableNd )
                       EncodeStyleName( pTableFormat->GetName() ) );
     }
 
+    // table:template-name=
+    if (!rTable.GetTableStyleName().isEmpty())
+        AddAttribute(XML_NAMESPACE_TABLE, XML_TEMPLATE_NAME, rTable.GetTableStyleName());
+
     sal_uInt16 nPrefix = XML_NAMESPACE_TABLE;
     if (const SwFrameFormat* pFlyFormat = rTableNd.GetFlyFormat())
     {
-        std::set<const SwFrameFormat*> aTextBoxes = SwTextBoxHelper::findTextBoxes(rTableNd.GetDoc());
-        if (aTextBoxes.find(pFlyFormat) != aTextBoxes.end())
+        if (SwTextBoxHelper::isTextBox(pFlyFormat, RES_FLYFRMFMT))
             nPrefix = XML_NAMESPACE_LO_EXT;
     }
 
@@ -1196,12 +1195,12 @@ void SwXMLTextParagraphExport::exportTable(
 
 void SwXMLExport::DeleteTableLines()
 {
-    if ( pTableLines )
+    if ( m_pTableLines )
     {
-        for (SwXMLTableLines_Impl* p : *pTableLines)
+        for (SwXMLTableLines_Impl* p : *m_pTableLines)
             delete p;
-        pTableLines->clear();
-        delete pTableLines;
+        m_pTableLines->clear();
+        delete m_pTableLines;
     }
 }
 

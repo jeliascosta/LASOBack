@@ -18,23 +18,6 @@
  */
 #include "dialog.hrc"
 
-CheckBox CB_USE_PASSWD
-{
-    Text [ en-US ] = "~Password" ;
-};
-CheckBox CB_READ_ONLY
-{
-    Text [ en-US ] = "~Read-only" ;
-};
-String STR_LINKEDIT_TEXT
-{
-    Text [ en-US ] = "Edit links" ;
-};
-String STR_PATH_NOT_FOUND
-{
-    Text [ en-US ] = "The directory '%1' does not exist." ;
-};
-
 String STR_QUERY_SPELL_CONTINUE
 {
     Text [ en-US ] = "Continue checking at beginning of document?" ;

@@ -132,11 +132,15 @@ void xforms_formatDate( OUStringBuffer& aBuffer, const util::Date& aDate );
 void xforms_formatTime( OUStringBuffer& aBuffer, const css::util::Time& aTime );
 void xforms_formatDateTime( OUStringBuffer& aBuffer, const util::DateTime& aDateTime );
 
-convert_t xforms_int32    = &xforms_convert<sal_Int32,&::sax::Converter::convertNumber>;
-convert_t xforms_double   = &xforms_convert<double,&::sax::Converter::convertDouble>;
-convert_t xforms_dateTime = &xforms_convertRef<util::DateTime,&xforms_formatDateTime>;
-convert_t xforms_date     = &xforms_convertRef<util::Date,&xforms_formatDate>;
-convert_t xforms_time     = &xforms_convertRef<css::util::Time,&xforms_formatTime>;
+static void convertNumber(OUStringBuffer & b, sal_Int32 n) {
+    b.append(n);
+}
+
+convert_t const xforms_int32    = &xforms_convert<sal_Int32,&convertNumber>;
+convert_t const xforms_double   = &xforms_convert<double,&::sax::Converter::convertDouble>;
+convert_t const xforms_dateTime = &xforms_convertRef<util::DateTime,&xforms_formatDateTime>;
+convert_t const xforms_date     = &xforms_convertRef<util::Date,&xforms_formatDate>;
+convert_t const xforms_time     = &xforms_convertRef<css::util::Time,&xforms_formatTime>;
 
 // other functions
 static OUString lcl_getXSDType( SvXMLExport& rExport,
@@ -256,7 +260,7 @@ static const ExportTable aXFormsBindingTable[] =
     TABLE_ENTRY( "RequiredExpression",   NONE, REQUIRED,   xforms_string ),
     TABLE_ENTRY( "ConstraintExpression", NONE, CONSTRAINT, xforms_string ),
     TABLE_ENTRY( "CalculateExpression",  NONE, CALCULATE,  xforms_string ),
-    // type handled separatly, for type name <-> XSD type conversion
+    // type handled separately, for type name <-> XSD type conversion
     // TABLE_ENTRY( "Type",                 NONE, TYPE,       xforms_string ),
     TABLE_END
 };
@@ -556,13 +560,13 @@ void exportXFormsSchemas( SvXMLExport& rExport,
         SvXMLElementExport aSchemaElem( rExport, XML_NAMESPACE_XSD, XML_SCHEMA,
                                         true, true );
 
-        // now get data type repositry, and export
+        // now get data type repository, and export
         Reference<XEnumerationAccess> xTypes( xModel->getDataTypeRepository(),
                                               UNO_QUERY );
         if( xTypes.is() )
         {
             Reference<XEnumeration> xEnum = xTypes->createEnumeration();
-            DBG_ASSERT( xEnum.is(), "no enum?" );
+            SAL_WARN_IF( !xEnum.is(), "xmloff", "no enum?" );
             while( xEnum->hasMoreElements() )
             {
                 Reference<XPropertySet> xType( xEnum->nextElement(), UNO_QUERY );

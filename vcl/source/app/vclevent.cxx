@@ -19,6 +19,7 @@
 
 #include <vcl/vclevent.hxx>
 #include <vcl/window.hxx>
+#include <vcl/menu.hxx>
 
 #include "svdata.hxx"
 #include "vcleventlisteners.hxx"
@@ -29,7 +30,7 @@ using ::com::sun::star::uno::Reference;
 using ::com::sun::star::accessibility::XAccessible;
 
 
-VclAccessibleEvent::VclAccessibleEvent( sal_uLong n, const Reference<XAccessible>& rxAccessible ) :
+VclAccessibleEvent::VclAccessibleEvent( VclEventId n, const Reference<XAccessible>& rxAccessible ) :
     VclSimpleEvent(n),
     mxAccessible(rxAccessible)
 {
@@ -49,9 +50,9 @@ void VclEventListeners::Call( VclSimpleEvent& rEvent ) const
     std::vector<Link<VclSimpleEvent&,void>> aCopy( m_aListeners );
     std::vector<Link<VclSimpleEvent&,void>>::iterator aIter( aCopy.begin() );
     std::vector<Link<VclSimpleEvent&,void>>::const_iterator aEnd( aCopy.end() );
-    if( dynamic_cast<const VclWindowEvent*>( &rEvent ) != nullptr )
+    if (VclWindowEvent* pWindowEvent = dynamic_cast<VclWindowEvent*>(&rEvent))
     {
-        VclPtr<vcl::Window> xWin((static_cast<VclWindowEvent*>(&rEvent))->GetWindow());
+        VclPtr<vcl::Window> xWin(pWindowEvent->GetWindow());
         while ( aIter != aEnd && xWin && ! xWin->IsDisposed() )
         {
             Link<VclSimpleEvent&,void> &rLink = *aIter;
@@ -83,11 +84,24 @@ void VclEventListeners::removeListener( const Link<VclSimpleEvent&,void>& rListe
     m_aListeners.erase( std::remove(m_aListeners.begin(), m_aListeners.end(), rListener ), m_aListeners.end() );
 }
 
-VclWindowEvent::VclWindowEvent( vcl::Window* pWin, sal_uLong n, void* pDat ) : VclSimpleEvent(n)
+VclWindowEvent::VclWindowEvent( vcl::Window* pWin, VclEventId n, void* pDat ) : VclSimpleEvent(n)
 {
     pWindow = pWin; pData = pDat;
 }
 
 VclWindowEvent::~VclWindowEvent() {}
+
+VclMenuEvent::VclMenuEvent( Menu* pM, VclEventId n, sal_uInt16 nPos )
+    : VclSimpleEvent(n), pMenu(pM), mnPos(nPos)
+{}
+
+VclMenuEvent::~VclMenuEvent()
+{}
+
+Menu* VclMenuEvent::GetMenu() const
+{
+    return pMenu;
+}
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

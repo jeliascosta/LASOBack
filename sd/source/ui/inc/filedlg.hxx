@@ -44,12 +44,14 @@ class SD_DLLPUBLIC SdOpenSoundFileDialog
     SdOpenSoundFileDialog & operator= (const SdOpenSoundFileDialog &) = delete;
 
 public:
-                            SdOpenSoundFileDialog();
-                            ~SdOpenSoundFileDialog();
+    SdOpenSoundFileDialog();
+    ~SdOpenSoundFileDialog();
 
-    ErrCode                  Execute();
-    OUString                 GetPath() const;
-    void                     SetPath( const OUString& rPath );
+    ErrCode Execute();
+    OUString GetPath() const;
+    void SetPath( const OUString& rPath );
+    // WIP, please don't remove, dear Clang plugins
+    bool IsInsertAsLinkSelected();
 };
 
 #endif // INCLUDED_SD_SOURCE_UI_INC_FILEDLG_HXX

@@ -64,14 +64,14 @@ protected:
     static void   ResetFootnote( const SwFootnoteFrame *pAssumed );
 
 public:
-    inline SwFootnoteBossFrame( SwFrameFormat* pFormat, SwFrame* pSib )
+    SwFootnoteBossFrame( SwFrameFormat* pFormat, SwFrame* pSib )
         : SwLayoutFrame( pFormat, pSib )
         , nMaxFootnoteHeight(0)
         {}
 
                  SwLayoutFrame *FindBodyCont();
     inline const SwLayoutFrame *FindBodyCont() const;
-    inline void SetMaxFootnoteHeight( const SwTwips nNewMax ) { nMaxFootnoteHeight = nNewMax; }
+    void SetMaxFootnoteHeight( const SwTwips nNewMax ) { nMaxFootnoteHeight = nNewMax; }
 
     // footnote interface
     void AppendFootnote( SwContentFrame *, SwTextFootnote * );
@@ -84,7 +84,7 @@ public:
 
     static void ChangeFootnoteRef( const SwContentFrame *pOld, const SwTextFootnote *,
                        SwContentFrame *pNew );
-    void RearrangeFootnotes( const SwTwips nDeadLine, const bool bLock = false,
+    void RearrangeFootnotes( const SwTwips nDeadLine, const bool bLock,
                         const SwTextFootnote *pAttr = nullptr );
 
     // Set DeadLine (in document coordinates) so that the text formatter can

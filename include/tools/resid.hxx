@@ -24,26 +24,29 @@
 #include <rtl/ustring.hxx>
 #include <tools/solar.h>
 #include <tools/toolsdllapi.h>
+#include <o3tl/strong_int.hxx>
 
 struct RSHEADER_TYPE;
-typedef sal_uInt32 RESOURCE_TYPE;
-#define RSC_NOTYPE              0x100
+struct RESOURCE_TYPE_Tag {};
+typedef o3tl::strong_int<sal_uInt32, RESOURCE_TYPE_Tag> RESOURCE_TYPE;
+#define RSC_NOTYPE              RESOURCE_TYPE(0x100)
 #define RSC_DONTRELEASE         (sal_uInt32(1U << 31))
 
 class ResMgr;
 
-class ResId
+class SAL_WARN_UNUSED ResId
 {
     /*
-    consider two cases: either m_pResource is valid and points
-    two a resource data buffer; then m_nResId and m_pResMgr are
-    not used and may be 0 resp. NULL
-    or m_pResource is NULL, the m_nResId and m_pResMgr must be valid.
-    In this case the highest bit if set decides whether to
-    not to release the Resource context after loading this id
+    Consider two cases:
+    either
+    (a) m_pResource is valid and points to a resource data buffer;
+        then m_nResId and m_pResMgr are not used and may be 0 and nullptr respectively
+    or
+    (b) m_pResource is NULL, then m_nResId and m_pResMgr must be valid.
+        In this case the highest bit, if set, decides whether or not to
+        release the Resource context after loading this id.
     */
     RSHEADER_TYPE*          m_pResource;
-
     mutable sal_uInt32      m_nResId;      // Resource Identifier
     mutable RESOURCE_TYPE   m_nRT;         // type for loading (mutable to be set later)
     mutable ResMgr *        m_pResMgr;     // load from this ResMgr (mutable for setting on demand)
@@ -70,9 +73,8 @@ public:
 
     [Example]
     ResId aId( 1000 );
-    aId.SetRT( RSC_WINDOW );    // settype window Window
-    aId.SetRT( RSC_BUTTON );    // will not set type Button
-    //aId.GetRT() == RSC_WINDOW is true
+    aId.SetRT( RSC_RESOURCE );    // settype window Resource
+    //aId.GetRT() == RSC_RESOURCE is true
 
     @see
     ResId::GetRT2(), ResId::GetRT()
@@ -85,20 +87,7 @@ public:
      }
 
     ResMgr *        GetResMgr() const { return m_pResMgr; }
-    void            SetResMgr( ResMgr * pMgr ) const
-    {
-        m_pResMgr = pMgr;
-        OSL_ENSURE( m_pResMgr != nullptr, "invalid ResMgr set on ResId" );
-    }
-
-    const ResId &  SetAutoRelease(bool bRelease) const
-    {
-        if( bRelease )
-            m_nResId &= ~RSC_DONTRELEASE;
-        else
-            m_nResId |= RSC_DONTRELEASE;
-        return *this;
-    }
+    void            ClearResMgr() const { m_pResMgr = nullptr; }
 
     bool            IsAutoRelease()  const { return !(m_nResId & RSC_DONTRELEASE); }
 

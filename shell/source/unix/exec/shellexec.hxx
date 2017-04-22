@@ -22,7 +22,6 @@
 
 #include <cppuhelper/implbase.hxx>
 #include <osl/mutex.hxx>
-#include <rtl/strbuf.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 
@@ -44,26 +43,18 @@ public:
     // XSystemShellExecute
 
 
-    virtual void SAL_CALL execute( const OUString& aCommand, const OUString& aParameter, sal_Int32 nFlags )
-        throw (css::lang::IllegalArgumentException, css::system::SystemShellExecuteException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL execute( const OUString& aCommand, const OUString& aParameter, sal_Int32 nFlags ) override;
 
 
     // XServiceInfo
 
 
-    virtual OUString SAL_CALL getImplementationName(  )
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName(  ) override;
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
-        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 };
-
-
-// helper function - needed for urltest
-void escapeForShell( OStringBuffer & rBuffer, const OString & rURL);
 
 #endif
 

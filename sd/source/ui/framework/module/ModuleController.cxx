@@ -65,30 +65,16 @@ Reference<XModuleController> ModuleController::CreateInstance (
 }
 
 ModuleController::ModuleController (const Reference<XComponentContext>& rxContext)
-    throw (std::exception)
     : ModuleControllerInterfaceBase(MutexOwner::maMutex),
       mxController(),
       mpResourceToFactoryMap(new ResourceToFactoryMap()),
       mpLoadedFactories(new LoadedFactoryContainer())
 {
-    (void)rxContext;
-    LoadFactories(rxContext);
-}
-
-ModuleController::~ModuleController() throw()
-{
-}
-
-void SAL_CALL ModuleController::disposing()
-{
-    // Break the cyclic reference back to DrawController object
-    mpLoadedFactories.reset();
-    mpResourceToFactoryMap.reset();
-    mxController.clear();
-}
-
-void ModuleController::LoadFactories (const Reference<XComponentContext>& rxContext)
-{
+    /** Load a list of URL to service mappings from the
+        /org.openoffice.Office.Impress/MultiPaneGUI/Framework/ResourceFactories
+        configuration entry.  The mappings are stored in the
+        mpResourceToFactoryMap member.
+    */
     try
     {
         ConfigurationAccess aConfiguration (
@@ -114,6 +100,18 @@ void ModuleController::LoadFactories (const Reference<XComponentContext>& rxCont
     }
 }
 
+ModuleController::~ModuleController() throw()
+{
+}
+
+void SAL_CALL ModuleController::disposing()
+{
+    // Break the cyclic reference back to DrawController object
+    mpLoadedFactories.reset();
+    mpResourceToFactoryMap.reset();
+    mxController.clear();
+}
+
 void ModuleController::ProcessFactory (const ::std::vector<Any>& rValues)
 {
     OSL_ASSERT(rValues.size() == snFactoryPropertyCount);
@@ -130,16 +128,14 @@ void ModuleController::ProcessFactory (const ::std::vector<Any>& rValues)
         "URL",
         aURLs);
 
-    SAL_INFO("sd.fwk", OSL_THIS_FUNC << ": ModuleController::adding factory " <<
-        OUStringToOString(sServiceName, RTL_TEXTENCODING_UTF8).getStr());
+    SAL_INFO("sd.fwk", OSL_THIS_FUNC << ": ModuleController::adding factory " << sServiceName);
 
     // Add the resource URLs to the map.
     ::std::vector<OUString>::const_iterator iResource;
     for (iResource=aURLs.begin(); iResource!=aURLs.end(); ++iResource)
     {
         (*mpResourceToFactoryMap)[*iResource] = sServiceName;
-        SAL_INFO("sd.fwk", OSL_THIS_FUNC << ":    " <<
-            OUStringToOString(*iResource, RTL_TEXTENCODING_UTF8).getStr());
+        SAL_INFO("sd.fwk", OSL_THIS_FUNC << ":    " << *iResource);
     }
 }
 
@@ -164,7 +160,7 @@ void ModuleController::InstantiateStartupServices()
     }
     catch (Exception&)
     {
-        OSL_TRACE("ERROR in ModuleController::InstantiateStartupServices");
+        SAL_WARN("sd.fwk", "ERROR in ModuleController::InstantiateStartupServices");
     }
 }
 
@@ -191,19 +187,17 @@ void ModuleController::ProcessStartupService (const ::std::vector<Any>& rValues)
         // at the configuration controller.
         xContext->getServiceManager()->createInstanceWithArgumentsAndContext(sServiceName, aArguments, xContext);
 
-        SAL_INFO("sd.fwk", OSL_THIS_FUNC << ": ModuleController::created startup service " <<
-            OUStringToOString(sServiceName, RTL_TEXTENCODING_UTF8).getStr());
+        SAL_INFO("sd.fwk", OSL_THIS_FUNC << ": ModuleController::created startup service " << sServiceName);
     }
     catch (Exception&)
     {
-        OSL_TRACE("ERROR in ModuleController::ProcessStartupServices");
+        SAL_WARN("sd.fwk", "ERROR in ModuleController::ProcessStartupServices");
     }
 }
 
 //----- XModuleController -----------------------------------------------------
 
 void SAL_CALL ModuleController::requestResource (const OUString& rsResourceURL)
-    throw (RuntimeException, std::exception)
 {
     ResourceToFactoryMap::const_iterator iFactory (mpResourceToFactoryMap->find(rsResourceURL));
     if (iFactory != mpResourceToFactoryMap->end())
@@ -224,8 +218,6 @@ void SAL_CALL ModuleController::requestResource (const OUString& rsResourceURL)
             // Create the factory service.
             Sequence<Any> aArguments(1);
             aArguments[0] <<= mxController;
-            OSL_TRACE("creating resource %s",
-                OUStringToOString(iFactory->second, RTL_TEXTENCODING_ASCII_US).getStr());
             try
             {
                 xFactory = xContext->getServiceManager()->createInstanceWithArgumentsAndContext(
@@ -235,7 +227,7 @@ void SAL_CALL ModuleController::requestResource (const OUString& rsResourceURL)
             }
             catch (const Exception&)
             {
-                OSL_TRACE("caught exception while creating factory.");
+                SAL_WARN("sd.fwk", "caught exception while creating factory.");
             }
 
             // Remember that this factory has been instanced.
@@ -247,7 +239,6 @@ void SAL_CALL ModuleController::requestResource (const OUString& rsResourceURL)
 //----- XInitialization -------------------------------------------------------
 
 void SAL_CALL ModuleController::initialize (const Sequence<Any>& aArguments)
-    throw (Exception, RuntimeException, std::exception)
 {
     if (aArguments.getLength() > 0)
     {

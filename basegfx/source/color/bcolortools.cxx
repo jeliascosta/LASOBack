@@ -26,8 +26,8 @@ namespace basegfx { namespace tools
     BColor rgb2hsl(const BColor& rRGBColor)
     {
         const double r=rRGBColor.getRed(), g=rRGBColor.getGreen(), b=rRGBColor.getBlue();
-        const double minVal = ::std::min( ::std::min( r, g ), b );
-        const double maxVal = ::std::max( ::std::max( r, g ), b );
+        const double minVal = std::min( std::min( r, g ), b );
+        const double maxVal = std::max( std::max( r, g ), b );
         const double d = maxVal - minVal;
 
         double h=0, s=0, l=0;
@@ -187,17 +187,6 @@ namespace basegfx { namespace tools
                     return BColor();
             }
         }
-    }
-
-    BColor rgb2ciexyz( const BColor& rRGBColor )
-    {
-        // from Poynton color faq, and SMPTE RP 177-1993, Derivation
-        // of Basic Television Color Equations
-        const double r=rRGBColor.getRed(), g=rRGBColor.getGreen(), b=rRGBColor.getBlue();
-        return BColor(
-            0.412453*r + 0.35758*g  + 0.180423*b,
-            0.212671*r + 0.71516*g  + 0.072169*b,
-            0.019334*r + 0.119193*g + 0.950227*b);
     }
 
 } } // end of namespace basegfx

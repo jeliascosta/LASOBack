@@ -92,7 +92,7 @@ public:
                                 ScDocument* pDocument, const ScAddress& rPos );
             ScValidationData( const ScValidationData& r );
             ScValidationData( ScDocument* pDocument, const ScValidationData& r );
-    virtual ~ScValidationData();
+    virtual ~ScValidationData() override;
 
     ScValidationData* Clone() const     // real copy
                     { return new ScValidationData( GetDocument(), *this ); }
@@ -113,8 +113,8 @@ public:
 
     ScValidationMode GetDataMode() const    { return eDataMode; }
 
-    inline sal_Int16 GetListType() const                { return mnListType; }
-    inline void     SetListType( sal_Int16 nListType )  { mnListType = nListType; }
+    sal_Int16 GetListType() const                { return mnListType; }
+    void     SetListType( sal_Int16 nListType )  { mnListType = nListType; }
 
     /** Returns true, if the validation cell will show a selection list.
         @descr  Use this instead of GetListType() which returns the raw property
@@ -182,7 +182,6 @@ public:
     ScValidationDataList() {}
     ScValidationDataList(const ScValidationDataList& rList);
     ScValidationDataList(ScDocument* pNewDoc, const ScValidationDataList& rList);
-    ~ScValidationDataList() {}
 
     typedef ScValidationDataListDataType::iterator iterator;
     typedef ScValidationDataListDataType::const_iterator const_iterator;

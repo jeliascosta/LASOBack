@@ -25,7 +25,7 @@
 #include <com/sun/star/datatransfer/dnd/XDropTargetListener.hpp>
 #include <com/sun/star/frame/XFrame.hpp>
 
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 
 #include <sot/exchange.hxx>
 
@@ -35,7 +35,7 @@ namespace com { namespace sun { namespace star { namespace uno {
 
 /** DropTargetListener that takes care of opening a file when it is dropped in the frame.
 */
-class SVT_DLLPUBLIC OpenFileDropTargetListener : public ::cppu::WeakImplHelper1< css::datatransfer::dnd::XDropTargetListener >
+class SVT_DLLPUBLIC OpenFileDropTargetListener : public cppu::WeakImplHelper< css::datatransfer::dnd::XDropTargetListener >
 {
     private:
         /// uno service manager to create necessary services
@@ -45,23 +45,23 @@ class SVT_DLLPUBLIC OpenFileDropTargetListener : public ::cppu::WeakImplHelper1<
         css::uno::WeakReference< css::frame::XFrame > m_xTargetFrame;
 
         /// drag/drop info
-        DataFlavorExVector* m_pFormats;
+        DataFlavorExVector m_aFormats;
 
     public:
         OpenFileDropTargetListener( const css::uno::Reference< css::uno::XComponentContext >& xContext,
                                     const css::uno::Reference< css::frame::XFrame >& xFrame );
-        virtual ~OpenFileDropTargetListener();
+        virtual ~OpenFileDropTargetListener() override;
 
     public:
         // XEventListener
-        virtual void SAL_CALL disposing        ( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing        ( const css::lang::EventObject& Source ) override;
 
         // XDropTargetListener
-        virtual void SAL_CALL drop             ( const css::datatransfer::dnd::DropTargetDropEvent&      dtde  ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL dragEnter        ( const css::datatransfer::dnd::DropTargetDragEnterEvent& dtdee ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL dragExit         ( const css::datatransfer::dnd::DropTargetEvent&          dte   ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL dragOver         ( const css::datatransfer::dnd::DropTargetDragEvent&      dtde  ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL dropActionChanged( const css::datatransfer::dnd::DropTargetDragEvent&      dtde  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL drop             ( const css::datatransfer::dnd::DropTargetDropEvent&      dtde  ) override;
+        virtual void SAL_CALL dragEnter        ( const css::datatransfer::dnd::DropTargetDragEnterEvent& dtdee ) override;
+        virtual void SAL_CALL dragExit         ( const css::datatransfer::dnd::DropTargetEvent&          dte   ) override;
+        virtual void SAL_CALL dragOver         ( const css::datatransfer::dnd::DropTargetDragEvent&      dtde  ) override;
+        virtual void SAL_CALL dropActionChanged( const css::datatransfer::dnd::DropTargetDragEvent&      dtde  ) override;
 
     private:
         void     implts_BeginDrag( const css::uno::Sequence< css::datatransfer::DataFlavor >& rSupportedDataFlavors );

@@ -21,8 +21,6 @@
 #include <cuires.hrc>
 #include "helpid.hrc"
 
-#define MASKCOLOR   MaskColor = Color { Red=0xFFFF; Green=0x0000; Blue=0xFFFF; };
-
 String RID_SVXSTR_HYPDLG_CLOSEBUT
 {
     Text [ en-US ] = "Close" ;
@@ -96,64 +94,49 @@ String RID_SVXSTR_HYPERDLG_QUERYOVERWRITE
     Text [ en-US ] = "The file already exists. Overwrite?" ;
 };
 
-Image RID_SVXBMP_HLINETTP
+Bitmap RID_SVXBMP_HLINETTP
 {
-    ImageBitmap = Bitmap { File = "hlinettp.bmp" ; };
-    MASKCOLOR
+    File = "hlinettp.png";
 };
 
-Image RID_SVXBMP_HLMAILTP
+Bitmap RID_SVXBMP_HLMAILTP
 {
-    ImageBitmap = Bitmap { File = "hlmailtp.bmp" ; };
-    MASKCOLOR
+    File = "hlmailtp.png";
 };
 
-Image RID_SVXBMP_HLDOCTP
+Bitmap RID_SVXBMP_HLDOCTP
 {
-    ImageBitmap = Bitmap { File = "hldoctp.bmp" ; };
-    MASKCOLOR
+    File = "hldoctp.png";
 };
 
-Image RID_SVXBMP_HLDOCNTP
+Bitmap RID_SVXBMP_HLDOCNTP
 {
-    ImageBitmap = Bitmap { File = "hldocntp.bmp" ; };
-    MASKCOLOR
+    File = "hldocntp.png";
 };
 
-Image RID_SVXBMP_BROWSE
+Bitmap RID_SVXBMP_SCRIPT
 {
-    ImageBitmap = Bitmap { File = "browse.bmp" ; };
-    MASKCOLOR
+    File = "script.png";
 };
 
-Image RID_SVXBMP_SCRIPT
+Bitmap RID_SVXBMP_ADRESSBOOK
 {
-    ImageBitmap = Bitmap { File = "script.bmp" ; };
-    MASKCOLOR
+    File = "adrbook.png";
 };
 
-Image RID_SVXBMP_ADRESSBOOK
+Bitmap RID_SVXBMP_FILEOPEN
 {
-    ImageBitmap = Bitmap { File = "adrbook.bmp" ; };
-    MASKCOLOR
+    File = "fileopen.png";
 };
 
-Image RID_SVXBMP_FILEOPEN
+Bitmap RID_SVXBMP_TARGET
 {
-    ImageBitmap = Bitmap { File = "fileopen.bmp" ; };
-    MASKCOLOR
+    File = "target.png";
 };
 
-Image RID_SVXBMP_TARGET
+Bitmap RID_SVXBMP_NEWDOC
 {
-    ImageBitmap = Bitmap { File = "target.bmp" ; };
-    MASKCOLOR
-};
-
-Image RID_SVXBMP_NEWDOC
-{
-    ImageBitmap = Bitmap { File = "newdoc.bmp" ; };
-    MASKCOLOR
+    File = "newdoc.png";
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -16,14 +16,6 @@ ScVbaFormat<ooo::vba::excel::XStyle>::setAddIndent(com::sun::star::uno::Any cons
 SdrUndoObjList::SetOrdNum(unsigned int)
 SecurityEnvironment_NssImpl::getCertificate(rtl::OUString const&, rtl::OUString const&)
 StylePool::getCount() const
-StyleSettings::SetAlternatingRowColor(Color const&)
-StyleSettings::SetCursorSize(long)
-StyleSettings::SetFloatTitleHeight(long)
-StyleSettings::SetHideDisabledMenuItems(bool)
-StyleSettings::SetSpinSize(long)
-StyleSettings::SetTitleHeight(long)
-StyleSettings::SetUseFlatBorders(bool)
-StyleSettings::SetUseFlatMenus(bool)
 SvpSalInstance::PostedEventsInQueue()
 SvtAccessibilityOptions::IsModified() const
 SvtListener::IsListening(SvtBroadcaster&) const
@@ -74,10 +66,8 @@ std::_Rb_tree<rtl::OUString, std::pair<rtl::OUString const, (anonymous namespace
 std::__cxx1998::vector<rtl::Reference<oox::xls::(anonymous namespace)::WorkerThread>, std::allocator<rtl::Reference<oox::xls::(anonymous namespace)::WorkerThread> > >::reserve(unsigned long)
 vcl::MapChar(vcl::TrueTypeFont*, unsigned short, bool)
 vcl::Region::IsInside(Rectangle const&) const
-vcl::RenderSettings::PushAndApply(OutputDevice&)
 vcl::Window::DrawGradientWallpaper(OutputDevice&, long, long, long, long, Wallpaper const&)
 vcl::Window::DrawSelectionBackground(Rectangle const&, unsigned short, bool, bool, bool, Color*)
-vcl::Window::GetRenderSettings()
 vcl::Window::SetDoubleBuffering(bool)
 vclcanvas::CanvasBitmapHelper::setData(com::sun::star::uno::Sequence<signed char> const&, com::sun::star::rendering::IntegerBitmapLayout const&, com::sun::star::geometry::IntegerRectangle2D const&)
 vclcanvas::CanvasBitmapHelper::setPixel(com::sun::star::uno::Sequence<signed char> const&, com::sun::star::rendering::IntegerBitmapLayout const&, com::sun::star::geometry::IntegerPoint2D const&)

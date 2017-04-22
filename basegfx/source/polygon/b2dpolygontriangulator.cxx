@@ -71,10 +71,6 @@ namespace basegfx
                 mfAtan2 = atan2(maEnd.getY() - maStart.getY(), maEnd.getX() - maStart.getX());
             }
 
-            ~EdgeEntry()
-            {
-            }
-
             bool operator<(const EdgeEntry& rComp) const
             {
                 if(::basegfx::fTools::equal(maStart.getY(), rComp.maStart.getY()))
@@ -108,8 +104,8 @@ namespace basegfx
             void setNext(EdgeEntry* pNext) { mpNext = pNext; }
         };
 
-        typedef ::std::vector< EdgeEntry > EdgeEntries;
-        typedef ::std::vector< EdgeEntry* > EdgeEntryPointers;
+        typedef std::vector< EdgeEntry > EdgeEntries;
+        typedef std::vector< EdgeEntry* > EdgeEntryPointers;
 
         class Triangulator
         {
@@ -228,9 +224,9 @@ namespace basegfx
                     const B2DPolygon aPolygonCandidate(rCandidate.getB2DPolygon(a));
                     const sal_uInt32 nCount(aPolygonCandidate.count());
 
-                    if(nCount > 2L)
+                    if(nCount > 2)
                     {
-                        B2DPoint aPrevPnt(aPolygonCandidate.getB2DPoint(nCount - 1L));
+                        B2DPoint aPrevPnt(aPolygonCandidate.getB2DPoint(nCount - 1));
 
                         for(sal_uInt32 b(0); b < nCount; b++)
                         {
@@ -249,7 +245,7 @@ namespace basegfx
                 if(!maStartEntries.empty())
                 {
                     // sort initial list
-                    ::std::sort(maStartEntries.begin(), maStartEntries.end());
+                    std::sort(maStartEntries.begin(), maStartEntries.end());
 
                     // insert to own simply linked list
                     EdgeEntries::iterator aPos(maStartEntries.begin());
@@ -396,12 +392,12 @@ namespace basegfx
             aCandidate.removeDoublePoints();
             aCandidate = tools::removeNeutralPoints(aCandidate);
 
-            if(2L == aCandidate.count())
+            if(2 == aCandidate.count())
             {
                 // candidate IS a triangle, just append
                 aRetval.append(aCandidate);
             }
-            else if(aCandidate.count() > 2L)
+            else if(aCandidate.count() > 2)
             {
                 if(tools::isConvex(aCandidate))
                 {
@@ -427,7 +423,7 @@ namespace basegfx
             // subdivide locally (triangulate does not work with beziers)
             B2DPolyPolygon aCandidate(rCandidate.areControlPointsUsed() ? tools::adaptiveSubdivideByAngle(rCandidate) : rCandidate);
 
-            if(1L == aCandidate.count())
+            if(1 == aCandidate.count())
             {
                 // single polygon -> single polygon triangulation
                 const B2DPolygon aSinglePolygon(aCandidate.getB2DPolygon(0));

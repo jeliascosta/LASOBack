@@ -118,7 +118,7 @@ namespace vcl
         static bool is_less( vcl::Window* left, vcl::Window* right );
 
         LazyDeletor()  { LazyDelete::addDeletor( this ); }
-        virtual ~LazyDeletor()
+        virtual ~LazyDeletor() override
         {
             SAL_INFO("vcl.lazydelete", typeid(*this).name() << std::hex << this << " deleted");
             if( s_pOneInstance == this ) // sanity check
@@ -202,7 +202,7 @@ namespace vcl
 
     SomeWindow::Paint()
     {
-        static vcl::DeleteOnDeinit< BitmapEx > aBmp( new BitmapEx( ResId( 1000, myResMgr ) ) );
+        static vcl::DeleteOnDeinit< BitmapEx > aBmp( new BitmapEx( ... ) );
 
         if( aBmp.get() ) // check whether DeInitVCL has been called already
             DrawBitmapEx( Point( 10, 10 ), *aBmp.get() );
@@ -227,7 +227,6 @@ namespace vcl
         virtual void doCleanup() override { delete m_pT; m_pT = nullptr; }
     public:
         DeleteOnDeinit( T* i_pT ) : m_pT( i_pT ) { addDeinitContainer( this ); }
-        virtual ~DeleteOnDeinit() {}
 
         // get contents
         T* get() { return m_pT; }
@@ -235,11 +234,6 @@ namespace vcl
         // set contents, returning old contents
         // ownership is transferred !
         T* set( T* i_pNew ) { T* pOld = m_pT; m_pT = i_pNew; return pOld; }
-
-        // set contents, deleting old contents
-        // ownership is transferred !
-        void reset( T* i_pNew = nullptr )
-            { OSL_ASSERT( i_pNew != m_pT || i_pNew == nullptr ); T* pOld = m_pT; m_pT = i_pNew; delete pOld; }
     };
 
     /** Similar to DeleteOnDeinit, the DeleteUnoReferenceOnDeinit
@@ -261,7 +255,6 @@ namespace vcl
     public:
         DeleteUnoReferenceOnDeinit(const css::uno::Reference<I>& r_xI ) : m_xI( r_xI ) {
             addDeinitContainer( this ); }
-        virtual ~DeleteUnoReferenceOnDeinit() {}
 
         css::uno::Reference<I> get() { return m_xI; }
 

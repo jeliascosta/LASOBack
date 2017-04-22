@@ -24,6 +24,7 @@
 #include <com/sun/star/embed/Aspects.hpp>
 
 #include <algorithm>
+#include <cstddef>
 #include <functional>
 #include <osl/endian.h>
 #include <sot/storage.hxx>
@@ -83,8 +84,8 @@ static bool SwWw8ReadScaling(long& rX, long& rY, tools::SvRef<SotStorage>& rSrc1
     //      0x34, 0x38, 0x3c, 0x40 Crop Left, Top, Right, Bot in tw
 
     tools::SvRef<SotStorageStream> xSrc3 = rSrc1->OpenSotStream( "\3PIC",
-        STREAM_STD_READ | StreamMode::NOCREATE);
-    SotStorageStream* pS = xSrc3;
+        StreamMode::STD_READ );
+    SotStorageStream* pS = xSrc3.get();
     pS->SetEndian( SvStreamEndian::LITTLE );
     pS->Seek( STREAM_SEEK_TO_END );
 
@@ -128,10 +129,10 @@ static bool SwWw6ReadMetaStream(GDIMetaFile& rWMF, OLE_MFP* pMfp,
     tools::SvRef<SotStorage>& rSrc1)
 {
     tools::SvRef<SotStorageStream> xSrc2 = rSrc1->OpenSotStream( "\3META",
-        STREAM_STD_READ | StreamMode::NOCREATE);
-    SotStorageStream* pSt = xSrc2;
+        StreamMode::STD_READ );
+    SotStorageStream* pSt = xSrc2.get();
     pSt->SetEndian( SvStreamEndian::LITTLE );
-    sal_uLong nRead = pSt->Read( pMfp, sizeof(*pMfp ) );
+    size_t const nRead = pSt->ReadBytes(pMfp, sizeof(*pMfp));
                                 // read mini-placable-header
     if (nRead != sizeof(*pMfp))
         return false;
@@ -144,27 +145,27 @@ static bool SwWw6ReadMetaStream(GDIMetaFile& rWMF, OLE_MFP* pMfp,
 
     if( pMfp->mm == 94 || pMfp->mm == 99 )
     {
-        OSL_ENSURE( !pSt, "+OLE: wrong metafile type" );
+        SAL_WARN("sw.ww8", "+OLE: wrong metafile type");
         return false;
     }
     if( pMfp->mm != 8 )
     {
-        OSL_ENSURE( !pSt, "+OLE: wrong mMetafile type (not anisotropic)" );
+        SAL_WARN("sw.ww8", "OLE: wrong mMetafile type (not anisotropic)");
     }
     if( !pMfp->xExt || !pMfp->yExt )
     {
-        OSL_ENSURE( !pSt, "+OLE: size of 0?" );
+        SAL_WARN("sw.ww8", "+OLE: size of 0?");
         return false;
     }
     bool bOk = ReadWindowMetafile( *pSt, rWMF );   // read WMF
                     // *pSt >> aWMF  doesn't work without the placable header
     if (!bOk || pSt->GetError() || rWMF.GetActionSize() == 0)
     {
-        OSL_ENSURE( !pSt, "+OLE: could not read the metafile" );
+        SAL_WARN("sw.ww8", "+OLE: could not read the metafile");
         return false;
     }
 
-    rWMF.SetPrefMapMode( MapMode( MAP_100TH_MM ) );
+    rWMF.SetPrefMapMode( MapMode( MapUnit::Map100thMM ) );
 
     // Scale MetaFile to new size and save new size to MetaFile
     Size        aOldSiz( rWMF.GetPrefSize() );
@@ -182,10 +183,10 @@ static bool SwWw6ReadMacPICTStream(Graphic& rGraph, tools::SvRef<SotStorage>& rS
 {
     // 03-META-stream does not exist. Maybe a 03-PICT?
     tools::SvRef<SotStorageStream> xSrc4 = rSrc1->OpenSotStream("\3PICT");
-    SotStorageStream* pStp = xSrc4;
+    SotStorageStream* pStp = xSrc4.get();
     pStp->SetEndian( SvStreamEndian::LITTLE );
     sal_uInt8 aTestA[10];        // Does the 01Ole-stream even exist?
-    sal_uLong nReadTst = pStp->Read( aTestA, sizeof( aTestA ) );
+    size_t const nReadTst = pStp->ReadBytes(aTestA, sizeof(aTestA));
     if (nReadTst != sizeof(aTestA))
         return false;
 
@@ -235,14 +236,14 @@ SwFlyFrameFormat* SwWW8ImplReader::InsertOle(SdrOle2Obj &rObject,
     if (bSuccess)
     {
         const SfxItemSet *pFlySet = pMathFlySet ? pMathFlySet : &rFlySet;
-        pRet = m_rDoc.getIDocumentContentOperations().InsertOLE(*m_pPaM, sNewName, rObject.GetAspect(), pFlySet, rGrfSet, nullptr);
+        pRet = m_rDoc.getIDocumentContentOperations().InsertOLE(*m_pPaM, sNewName, rObject.GetAspect(), pFlySet, rGrfSet);
     }
     delete pMathFlySet;
     return pRet;
 }
 
 SwFrameFormat* SwWW8ImplReader::ImportOle(const Graphic* pGrf,
-    const SfxItemSet* pFlySet, const SfxItemSet *pGrfSet, const Rectangle& aVisArea )
+    const SfxItemSet* pFlySet, const SfxItemSet *pGrfSet, const tools::Rectangle& aVisArea )
 {
     ::SetProgressState(m_nProgress, m_pDocShell);     // Update
     SwFrameFormat* pFormat = nullptr;
@@ -265,22 +266,22 @@ SwFrameFormat* SwWW8ImplReader::ImportOle(const Graphic* pGrf,
         if (!m_bNewDoc)
             Reader::ResetFrameFormatAttrs( *pTempSet );
 
-        SwFormatAnchor aAnchor( FLY_AS_CHAR );
+        SwFormatAnchor aAnchor( RndStdIds::FLY_AS_CHAR );
         aAnchor.SetAnchor( m_pPaM->GetPoint() );
         pTempSet->Put( aAnchor );
 
         const Size aSizeTwip = OutputDevice::LogicToLogic(
-            aGraph.GetPrefSize(), aGraph.GetPrefMapMode(), MAP_TWIP );
+            aGraph.GetPrefSize(), aGraph.GetPrefMapMode(), MapUnit::MapTwip );
 
         pTempSet->Put( SwFormatFrameSize( ATT_FIX_SIZE, aSizeTwip.Width(),
             aSizeTwip.Height() ) );
         pTempSet->Put( SwFormatVertOrient( 0, text::VertOrientation::TOP, text::RelOrientation::FRAME ));
 
-        if( m_pSFlyPara )
+        if (m_xSFlyPara)
         {
             // Resize the frame to the picture size if there is an OLE object
             // in the frame (only if auto-width)
-            m_pSFlyPara->BoxUpWidth( aSizeTwip.Width() );
+            m_xSFlyPara->BoxUpWidth(aSizeTwip.Width());
         }
     }
 
@@ -295,8 +296,8 @@ SwFrameFormat* SwWW8ImplReader::ImportOle(const Graphic* pGrf,
             pFormat = m_rDoc.getIDocumentContentOperations().InsertDrawObj(*m_pPaM, *pRet, *pFlySet );
     }
     else if (
-                GRAPHIC_GDIMETAFILE == aGraph.GetType() ||
-                GRAPHIC_BITMAP == aGraph.GetType()
+                GraphicType::GdiMetafile == aGraph.GetType() ||
+                GraphicType::Bitmap == aGraph.GetType()
             )
     {
         pFormat = m_rDoc.getIDocumentContentOperations().Insert(*m_pPaM, OUString(), OUString(), &aGraph, pFlySet,
@@ -319,7 +320,7 @@ bool SwWW8ImplReader::ImportOleWMF(tools::SvRef<SotStorage> xSrc1,GDIMetaFile &r
         aFinalSize.Width() = rX;
         aFinalSize.Height() = rY;
         aFinalSize = OutputDevice::LogicToLogic(
-            aFinalSize, MAP_TWIP, rWMF.GetPrefMapMode() );
+            aFinalSize, MapUnit::MapTwip, rWMF.GetPrefMapMode() );
         aOrigSize = rWMF.GetPrefSize();
         Fraction aScaleX(aFinalSize.Width(),aOrigSize.Width());
         Fraction aScaleY(aFinalSize.Height(),aOrigSize.Height());
@@ -330,7 +331,7 @@ bool SwWW8ImplReader::ImportOleWMF(tools::SvRef<SotStorage> xSrc1,GDIMetaFile &r
 }
 
 SdrObject* SwWW8ImplReader::ImportOleBase( Graphic& rGraph,
-    const Graphic* pGrf, const SfxItemSet* pFlySet, const Rectangle& aVisArea )
+    const Graphic* pGrf, const SfxItemSet* pFlySet, const tools::Rectangle& aVisArea )
 {
     if (!m_pStg)
     {
@@ -347,14 +348,14 @@ SdrObject* SwWW8ImplReader::ImportOleBase( Graphic& rGraph,
     // results in the name "_4711"
     aSrcStgName += OUString::number( m_nObjLocFc );
 
-    tools::SvRef<SotStorage> xSrc0 = m_pStg->OpenSotStorage(OUString(SL::aObjectPool));
+    tools::SvRef<SotStorage> xSrc0 = m_pStg->OpenSotStorage(SL::aObjectPool);
     tools::SvRef<SotStorage> xSrc1 = xSrc0->OpenSotStorage( aSrcStgName );
 
     if (pGrf)
     {
         rGraph = *pGrf;
         const Size aSizeTwip = OutputDevice::LogicToLogic(
-            rGraph.GetPrefSize(), rGraph.GetPrefMapMode(), MAP_TWIP );
+            rGraph.GetPrefSize(), rGraph.GetPrefMapMode(), MapUnit::MapTwip );
         nX = aSizeTwip.Width();
         nY = aSizeTwip.Height();
     }
@@ -368,7 +369,7 @@ SdrObject* SwWW8ImplReader::ImportOleBase( Graphic& rGraph,
         {
             // 03-META stream is not available. Maybe it's a 03-PICT?
             const Size aSizeTwip = OutputDevice::LogicToLogic(
-                rGraph.GetPrefSize(), rGraph.GetPrefMapMode(), MAP_TWIP );
+                rGraph.GetPrefSize(), rGraph.GetPrefMapMode(), MapUnit::MapTwip );
             nX = aSizeTwip.Width();
             nY = aSizeTwip.Height();
             // PICT: no WMF available -> Graphic instead of OLE
@@ -376,12 +377,11 @@ SdrObject* SwWW8ImplReader::ImportOleBase( Graphic& rGraph,
         }
     }       // StorageStreams closed again
 
-    Rectangle aRect(0, 0, nX, nY);
+    tools::Rectangle aRect(0, 0, nX, nY);
 
     if (pFlySet)
     {
-        if (const SwFormatFrameSize* pSize =
-            static_cast<const SwFormatFrameSize*>(pFlySet->GetItem(RES_FRM_SIZE, false)))
+        if (const SwFormatFrameSize* pSize = pFlySet->GetItem<SwFormatFrameSize>(RES_FRM_SIZE, false))
         {
             aRect.SetSize(pSize->GetSize());
         }
@@ -404,8 +404,8 @@ SdrObject* SwWW8ImplReader::ImportOleBase( Graphic& rGraph,
         }
     }
 
-    if (GRAPHIC_GDIMETAFILE == rGraph.GetType() ||
-        GRAPHIC_BITMAP == rGraph.GetType())
+    if (GraphicType::GdiMetafile == rGraph.GetType() ||
+        GraphicType::Bitmap == rGraph.GetType())
     {
         ::SetProgressState(m_nProgress, m_pDocShell);     // Update
 
@@ -424,8 +424,8 @@ SdrObject* SwWW8ImplReader::ImportOleBase( Graphic& rGraph,
 
             {
                 tools::SvRef<SotStorageStream> xObjInfoSrc = xSrc1->OpenSotStream("\3ObjInfo",
-                    STREAM_STD_READ | StreamMode::NOCREATE );
-                if ( xObjInfoSrc.Is() && !xObjInfoSrc->GetError() )
+                    StreamMode::STD_READ );
+                if ( xObjInfoSrc.is() && !xObjInfoSrc->GetError() )
                 {
                     sal_uInt8 nByte = 0;
                     xObjInfoSrc->ReadUChar( nByte );
@@ -447,7 +447,7 @@ SdrObject* SwWW8ImplReader::ImportOleBase( Graphic& rGraph,
 void SwWW8ImplReader::ReadRevMarkAuthorStrTabl( SvStream& rStrm,
     sal_Int32 nTablePos, sal_Int32 nTableSiz, SwDoc& rDocOut )
 {
-    ::std::vector<OUString> aAuthorNames;
+    std::vector<OUString> aAuthorNames;
     WW8ReadSTTBF( !m_bVer67, rStrm, nTablePos, nTableSiz, m_bVer67 ? 2 : 0,
         m_eStructCharSet, aAuthorNames );
 
@@ -455,7 +455,7 @@ void SwWW8ImplReader::ReadRevMarkAuthorStrTabl( SvStream& rStrm,
     for( sal_uInt16 nAuthor = 0; nAuthor < nCount; ++nAuthor )
     {
         // Store author in doc
-        sal_uInt16 nSWId = rDocOut.getIDocumentRedlineAccess().InsertRedlineAuthor(aAuthorNames[nAuthor]);
+        std::size_t nSWId = rDocOut.getIDocumentRedlineAccess().InsertRedlineAuthor(aAuthorNames[nAuthor]);
         // Store matchpair
         m_aAuthorInfos[nAuthor] = nSWId;
     }
@@ -485,23 +485,23 @@ void SwWW8ImplReader::Read_CRevisionMark(RedlineType_t eType,
          * of the change, (possibly a word bug) so we must use the "get a full
          * list" variant of HasCharSprm and take the last one as the true one.
          */
-        std::vector<const sal_uInt8 *> aResult;
+        std::vector<SprmResult> aResult;
         bool bIns = (nsRedlineType_t::REDLINE_INSERT == eType);
         if( m_bVer67 )
         {
             m_pPlcxMan->HasCharSprm(69, aResult);
-            pSprmCIbstRMark = aResult.empty() ? nullptr : aResult.back();
+            pSprmCIbstRMark = (aResult.empty() || aResult.back().nRemainingData < 2) ? nullptr : aResult.back().pSprm;
             aResult.clear();
             m_pPlcxMan->HasCharSprm(70, aResult);
-            pSprmCDttmRMark = aResult.empty() ? nullptr : aResult.back();
+            pSprmCDttmRMark = (aResult.empty() || aResult.back().nRemainingData < 4) ? nullptr : aResult.back().pSprm;
         }
         else
         {
             m_pPlcxMan->HasCharSprm( bIns ? 0x4804 : 0x4863, aResult);
-            pSprmCIbstRMark = aResult.empty() ? nullptr : aResult.back();
+            pSprmCIbstRMark = (aResult.empty() || aResult.back().nRemainingData < 2) ? nullptr : aResult.back().pSprm;
             aResult.clear();
-            m_pPlcxMan->HasCharSprm( bIns ? 0x6805 : NS_sprm::LN_CDttmRMarkDel, aResult);
-            pSprmCDttmRMark = aResult.empty() ? nullptr : aResult.back();
+            m_pPlcxMan->HasCharSprm( bIns ? 0x6805 : NS_sprm::sprmCDttmRMarkDel, aResult);
+            pSprmCDttmRMark = (aResult.empty() || aResult.back().nRemainingData < 4) ? nullptr : aResult.back().pSprm;
         }
     }
 
@@ -513,7 +513,7 @@ void SwWW8ImplReader::Read_CRevisionMark(RedlineType_t eType,
         sal_uInt16 nWWAutNo = pSprmCIbstRMark ? SVBT16ToShort(pSprmCIbstRMark) : 0;
         sal_uInt32 nWWDate = pSprmCDttmRMark ? SVBT32ToUInt32(pSprmCDttmRMark): 0;
         DateTime aStamp(msfilter::util::DTTM2DateTime(nWWDate));
-        sal_uInt16 nAuthorNo = m_aAuthorInfos[nWWAutNo];
+        std::size_t nAuthorNo = m_aAuthorInfos[nWWAutNo];
         SwFltRedline  aNewAttr(eType, nAuthorNo, aStamp);
         NewAttr(aNewAttr);
     }

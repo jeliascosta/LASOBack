@@ -43,34 +43,29 @@ LoadDispatcher::~LoadDispatcher()
 void SAL_CALL LoadDispatcher::dispatchWithNotification(const css::util::URL&                                             aURL      ,
                                                        const css::uno::Sequence< css::beans::PropertyValue >&            lArguments,
                                                        const css::uno::Reference< css::frame::XDispatchResultListener >& xListener )
-    throw(css::uno::RuntimeException, std::exception)
 {
     impl_dispatch( aURL, lArguments, xListener );
 }
 
 void SAL_CALL LoadDispatcher::dispatch(const css::util::URL&                                  aURL      ,
                                        const css::uno::Sequence< css::beans::PropertyValue >& lArguments)
-    throw(css::uno::RuntimeException, std::exception)
 {
     impl_dispatch( aURL, lArguments, css::uno::Reference< css::frame::XDispatchResultListener >() );
 }
 
 css::uno::Any SAL_CALL LoadDispatcher::dispatchWithReturnValue( const css::util::URL& rURL,
                                                                 const css::uno::Sequence< css::beans::PropertyValue >& lArguments )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return impl_dispatch( rURL, lArguments, css::uno::Reference< css::frame::XDispatchResultListener >());
 }
 
 void SAL_CALL LoadDispatcher::addStatusListener(const css::uno::Reference< css::frame::XStatusListener >& /*xListener*/,
                                                 const css::util::URL&                                     /*aURL*/     )
-    throw(css::uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL LoadDispatcher::removeStatusListener(const css::uno::Reference< css::frame::XStatusListener >& /*xListener*/,
                                                    const css::util::URL&                                     /*aURL*/     )
-    throw(css::uno::RuntimeException, std::exception)
 {
 }
 
@@ -111,7 +106,7 @@ css::uno::Any LoadDispatcher::impl_dispatch( const css::util::URL& rURL,
     css::uno::Reference< css::lang::XComponent > xComponent;
     try
     {
-        m_aLoader.initializeLoading( rURL.Complete, lArguments, xBaseFrame, m_sTarget, m_nSearchFlags, (LoadEnv::EFeature)(LoadEnv::E_ALLOW_CONTENTHANDLER | LoadEnv::E_WORK_WITH_UI));
+        m_aLoader.initializeLoading( rURL.Complete, lArguments, xBaseFrame, m_sTarget, m_nSearchFlags, LoadEnvFeatures::AllowContentHandler | LoadEnvFeatures::WorkWithUI);
         m_aLoader.startLoading();
         m_aLoader.waitWhileLoading(); // wait for ever!
         xComponent = m_aLoader.getTargetComponent();
@@ -146,7 +141,7 @@ css::uno::Any LoadDispatcher::impl_dispatch( const css::util::URL& rURL,
     // return the model - like loadComponentFromURL()
     css::uno::Any aRet;
     if ( xComponent.is () )
-        aRet = css::uno::makeAny( xComponent );
+        aRet <<= xComponent;
 
     return aRet;
 }

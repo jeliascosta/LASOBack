@@ -18,6 +18,7 @@
  */
 
 #include <i18nlangtag/mslangid.hxx>
+#include <o3tl/any.hxx>
 #include <unotools/fontcfg.hxx>
 #include <unotools/fontdefs.hxx>
 #include <comphelper/processfactory.hxx>
@@ -96,51 +97,44 @@ DefaultFontConfiguration& DefaultFontConfiguration::get()
 
 DefaultFontConfiguration::DefaultFontConfiguration()
 {
+    // create configuration hierarchical access name
     try
     {
         // get service provider
-        Reference< XComponentContext > xContext( comphelper::getProcessComponentContext() );
-        // create configuration hierarchical access name
-        try
+        m_xConfigProvider = theDefaultProvider::get(comphelper::getProcessComponentContext());
+        Sequence< Any > aArgs(1);
+        PropertyValue aVal;
+        aVal.Name = "nodepath";
+        aVal.Value <<= OUString( "/org.openoffice.VCL/DefaultFonts" );
+        aArgs.getArray()[0] <<= aVal;
+        m_xConfigAccess =
+            Reference< XNameAccess >(
+                m_xConfigProvider->createInstanceWithArguments( "com.sun.star.configuration.ConfigurationAccess",
+                                                                aArgs ),
+                UNO_QUERY );
+        if( m_xConfigAccess.is() )
         {
-            m_xConfigProvider = theDefaultProvider::get( xContext );
-            Sequence< Any > aArgs(1);
-            PropertyValue aVal;
-            aVal.Name = "nodepath";
-            aVal.Value <<= OUString( "/org.openoffice.VCL/DefaultFonts" );
-            aArgs.getArray()[0] <<= aVal;
-            m_xConfigAccess =
-                Reference< XNameAccess >(
-                    m_xConfigProvider->createInstanceWithArguments( "com.sun.star.configuration.ConfigurationAccess",
-                                                                    aArgs ),
-                    UNO_QUERY );
-            if( m_xConfigAccess.is() )
+            Sequence< OUString > aLocales = m_xConfigAccess->getElementNames();
+            // fill config hash with empty interfaces
+            int nLocales = aLocales.getLength();
+            const OUString* pLocaleStrings = aLocales.getConstArray();
+            for( int i = 0; i < nLocales; i++ )
             {
-                Sequence< OUString > aLocales = m_xConfigAccess->getElementNames();
-                // fill config hash with empty interfaces
-                int nLocales = aLocales.getLength();
-                const OUString* pLocaleStrings = aLocales.getConstArray();
-                for( int i = 0; i < nLocales; i++ )
-                {
-                    // Feed through LanguageTag for casing.
-                    OUString aLoc( LanguageTag( pLocaleStrings[i], true).getBcp47( false));
-                    m_aConfig[ aLoc ] = LocaleAccess();
-                    m_aConfig[ aLoc ].aConfigLocaleString = pLocaleStrings[i];
-                }
+                // Feed through LanguageTag for casing.
+                OUString aLoc( LanguageTag( pLocaleStrings[i], true).getBcp47( false));
+                m_aConfig[ aLoc ] = LocaleAccess();
+                m_aConfig[ aLoc ].aConfigLocaleString = pLocaleStrings[i];
             }
         }
-        catch (const Exception&)
-        {
-            // configuration is awry
-            m_xConfigProvider.clear();
-            m_xConfigAccess.clear();
-        }
     }
-    catch (const WrappedTargetException&)
+    catch (const Exception&)
     {
+        // configuration is awry
+        m_xConfigProvider.clear();
+        m_xConfigAccess.clear();
     }
-    SAL_INFO("unotools.config", "config provider: " << static_cast<bool>(m_xConfigProvider.is())
-            << ", config access: " << static_cast<bool>(m_xConfigAccess.is()));
+    SAL_INFO("unotools.config", "config provider: " << m_xConfigProvider.is()
+            << ", config access: " << m_xConfigAccess.is());
 }
 
 DefaultFontConfiguration::~DefaultFontConfiguration()
@@ -392,8 +386,8 @@ FontSubstConfiguration::FontSubstConfiguration() :
         m_xConfigProvider.clear();
         m_xConfigAccess.clear();
     }
-    SAL_INFO("unotools.config", "config provider: " << static_cast<bool>(m_xConfigProvider.is())
-            << ", config access: " << static_cast<bool>(m_xConfigAccess.is()));
+    SAL_INFO("unotools.config", "config provider: " << m_xConfigProvider.is()
+            << ", config access: " << m_xConfigAccess.is());
 }
 
 /*
@@ -867,9 +861,8 @@ void FontSubstConfiguration::fillSubstVector( const css::uno::Reference< XNameAc
     try
     {
         Any aAny = rFont->getByName( rType );
-        if( aAny.getValueTypeClass() == TypeClass_STRING )
+        if( auto pLine = o3tl::tryAccess<OUString>(aAny) )
         {
-            const OUString* pLine = static_cast<const OUString*>(aAny.getValue());
             sal_Int32 nLength = pLine->getLength();
             if( nLength )
             {
@@ -916,9 +909,8 @@ FontWeight FontSubstConfiguration::getSubstWeight( const css::uno::Reference< XN
     try
     {
         Any aAny = rFont->getByName( rType );
-        if( aAny.getValueTypeClass() == TypeClass_STRING )
+        if( auto pLine = o3tl::tryAccess<OUString>(aAny) )
         {
-            const OUString* pLine = static_cast<const OUString*>(aAny.getValue());
             if( !pLine->isEmpty() )
             {
                 for( weight=SAL_N_ELEMENTS(pWeightNames)-1; weight >= 0; weight-- )
@@ -944,9 +936,8 @@ FontWidth FontSubstConfiguration::getSubstWidth( const css::uno::Reference< XNam
     try
     {
         Any aAny = rFont->getByName( rType );
-        if( aAny.getValueTypeClass() == TypeClass_STRING )
+        if( auto pLine = o3tl::tryAccess<OUString>(aAny) )
         {
-            const OUString* pLine = static_cast<const OUString*>(aAny.getValue());
             if( !pLine->isEmpty() )
             {
                 for( width=SAL_N_ELEMENTS(pWidthNames)-1; width >= 0; width-- )
@@ -972,9 +963,9 @@ ImplFontAttrs FontSubstConfiguration::getSubstType( const css::uno::Reference< X
     try
     {
         Any aAny = rFont->getByName( rType );
-        if( aAny.getValueTypeClass() != TypeClass_STRING )
+        auto pLine = o3tl::tryAccess<OUString>(aAny);
+        if( !pLine )
             return ImplFontAttrs::None;
-        const OUString* pLine = static_cast<const OUString*>(aAny.getValue());
         if( pLine->isEmpty() )
             return ImplFontAttrs::None;
         sal_Int32 nIndex = 0;

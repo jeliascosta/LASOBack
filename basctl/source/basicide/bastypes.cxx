@@ -90,7 +90,7 @@ void BaseWindow::GrabScrollBars( ScrollBar* pHScroll, ScrollBar* pVScroll )
 }
 
 
-IMPL_LINK_TYPED( BaseWindow, ScrollHdl, ScrollBar *, pCurScrollBar, void )
+IMPL_LINK( BaseWindow, ScrollHdl, ScrollBar *, pCurScrollBar, void )
 {
     DoScroll( pCurScrollBar );
 }
@@ -102,7 +102,7 @@ void BaseWindow::ExecuteGlobal (SfxRequest&)
 { }
 
 
-bool BaseWindow::Notify( NotifyEvent& rNEvt )
+bool BaseWindow::EventNotify( NotifyEvent& rNEvt )
 {
     bool bDone = false;
 
@@ -128,7 +128,7 @@ bool BaseWindow::Notify( NotifyEvent& rNEvt )
         }
     }
 
-    return bDone || Window::Notify( rNEvt );
+    return bDone || Window::EventNotify( rNEvt );
 }
 
 
@@ -284,7 +284,7 @@ void DockingWindow::dispose()
 // when the window is floating. Called by Layout.
 void DockingWindow::ResizeIfDocking (Point const& rPos, Size const& rSize)
 {
-    Rectangle const rRect(rPos, rSize);
+    tools::Rectangle const rRect(rPos, rSize);
     if (rRect != aDockingRect)
     {
         // saving the position and the size
@@ -332,9 +332,9 @@ void DockingWindow::Hide ()
     Show(false);
 }
 
-bool DockingWindow::Docking( const Point& rPos, Rectangle& rRect )
+bool DockingWindow::Docking( const Point& rPos, tools::Rectangle& rRect )
 {
-    if (!IsDockingPrevented() && aDockingRect.IsInside(rPos))
+    if (aDockingRect.IsInside(rPos))
     {
         rRect.SetSize(aDockingRect.GetSize());
         return false; // dock
@@ -347,7 +347,7 @@ bool DockingWindow::Docking( const Point& rPos, Rectangle& rRect )
     }
 }
 
-void DockingWindow::EndDocking( const Rectangle& rRect, bool bFloatMode )
+void DockingWindow::EndDocking( const tools::Rectangle& rRect, bool bFloatMode )
 {
     if ( bFloatMode )
         ::DockingWindow::EndDocking( rRect, bFloatMode );
@@ -376,7 +376,7 @@ bool DockingWindow::PrepareToggleFloatingMode()
     if (IsFloatingMode())
     {
         // memorize position and size on the desktop...
-        aFloatingRect = Rectangle(
+        aFloatingRect = tools::Rectangle(
             GetParent()->OutputToScreenPixel(GetPosPixel()),
             GetSizePixel()
         );
@@ -388,7 +388,7 @@ void DockingWindow::StartDocking()
 {
     if (IsFloatingMode())
     {
-        aFloatingRect = Rectangle(
+        aFloatingRect = tools::Rectangle(
             GetParent()->OutputToScreenPixel(GetPosPixel()),
             GetSizePixel()
         );
@@ -414,38 +414,29 @@ void DockingWindow::DockThis ()
     }
 }
 
-
-// ExtendedEdit
-
-
-ExtendedEdit::ExtendedEdit( vcl::Window* pParent, IDEResId nRes ) :
-    Edit( pParent, nRes )
+ExtendedEdit::ExtendedEdit(vcl::Window* pParent, WinBits nStyle)
+    : Edit(pParent, nStyle)
 {
     aAcc.SetSelectHdl( LINK( this, ExtendedEdit, EditAccHdl ) );
     Control::SetGetFocusHdl( LINK( this, ExtendedEdit, ImplGetFocusHdl ) );
     Control::SetLoseFocusHdl( LINK( this, ExtendedEdit, ImplLoseFocusHdl ) );
 }
 
-IMPL_LINK_NOARG_TYPED(ExtendedEdit, ImplGetFocusHdl, Control&, void)
+IMPL_LINK_NOARG(ExtendedEdit, ImplGetFocusHdl, Control&, void)
 {
     Application::InsertAccel( &aAcc );
     aLoseFocusHdl.Call( this );
 }
 
-
-IMPL_LINK_NOARG_TYPED(ExtendedEdit, ImplLoseFocusHdl, Control&, void)
+IMPL_LINK_NOARG(ExtendedEdit, ImplLoseFocusHdl, Control&, void)
 {
     Application::RemoveAccel( &aAcc );
 }
 
-
-IMPL_LINK_TYPED( ExtendedEdit, EditAccHdl, Accelerator&, rAcc, void )
+IMPL_LINK( ExtendedEdit, EditAccHdl, Accelerator&, rAcc, void )
 {
     aAccHdl.Call( rAcc );
 }
-
-//  TabBar
-
 
 TabBar::TabBar( vcl::Window* pParent ) :
     ::TabBar( pParent, WinBits( WB_3DLOOK | WB_SCROLL | WB_BORDER | WB_SIZEABLE | WB_DRAG ) )
@@ -479,60 +470,8 @@ void TabBar::Command( const CommandEvent& rCEvt )
             MouseEvent aMouseEvent( aP, 1, MouseEventModifiers::SIMPLECLICK, MOUSE_LEFT );
             ::TabBar::MouseButtonDown( aMouseEvent ); // base class
         }
-
-        PopupMenu aPopup( IDEResId( RID_POPUP_TABBAR ) );
-        if ( GetPageCount() == 0 )
-        {
-            aPopup.EnableItem(SID_BASICIDE_DELETECURRENT, false);
-            aPopup.EnableItem(SID_BASICIDE_RENAMECURRENT, false);
-            aPopup.EnableItem(SID_BASICIDE_HIDECURPAGE, false);
-        }
-
-        if ( StarBASIC::IsRunning() )
-        {
-            aPopup.EnableItem(SID_BASICIDE_DELETECURRENT, false);
-            aPopup.EnableItem(SID_BASICIDE_RENAMECURRENT, false);
-            aPopup.EnableItem(SID_BASICIDE_MODULEDLG, false);
-        }
-
-        if (Shell* pShell = GetShell())
-        {
-            ScriptDocument aDocument( pShell->GetCurDocument() );
-            OUString       aOULibName( pShell->GetCurLibName() );
-            Reference< script::XLibraryContainer2 > xModLibContainer( aDocument.getLibraryContainer( E_SCRIPTS ), UNO_QUERY );
-            Reference< script::XLibraryContainer2 > xDlgLibContainer( aDocument.getLibraryContainer( E_DIALOGS ), UNO_QUERY );
-            if ( ( xModLibContainer.is() && xModLibContainer->hasByName( aOULibName ) && xModLibContainer->isLibraryReadOnly( aOULibName ) ) ||
-                 ( xDlgLibContainer.is() && xDlgLibContainer->hasByName( aOULibName ) && xDlgLibContainer->isLibraryReadOnly( aOULibName ) ) )
-            {
-                aPopup.EnableItem(aPopup.GetItemId( 0 ), false);
-                aPopup.EnableItem(SID_BASICIDE_DELETECURRENT, false);
-                aPopup.EnableItem(SID_BASICIDE_RENAMECURRENT, false);
-                aPopup.RemoveDisabledEntries();
-            }
-             if ( aDocument.isInVBAMode() )
-            {
-                // disable to delete or remove object modules in IDE
-                if (BasicManager* pBasMgr = aDocument.getBasicManager())
-                {
-                    if (StarBASIC* pBasic = pBasMgr->GetLib(aOULibName))
-                    {
-                        Shell::WindowTable& aWindowTable = pShell->GetWindowTable();
-                        Shell::WindowTableIt it = aWindowTable.find( GetCurPageId() );
-                        if (it != aWindowTable.end() && dynamic_cast<ModulWindow*>(it->second.get()))
-                        {
-                            SbModule* pActiveModule = pBasic->FindModule( it->second->GetName() );
-                            if( pActiveModule && ( pActiveModule->GetModuleType() == script::ModuleType::DOCUMENT ) )
-                            {
-                                aPopup.EnableItem(SID_BASICIDE_DELETECURRENT, false);
-                                aPopup.EnableItem(SID_BASICIDE_RENAMECURRENT, false);
-                            }
-                        }
-                    }
-                }
-            }
-        }
         if (SfxDispatcher* pDispatcher = GetDispatcher())
-            pDispatcher->Execute(aPopup.Execute(this, aPos));
+            pDispatcher->ExecutePopup("tabbar", this, &aPos);
     }
 }
 
@@ -594,7 +533,7 @@ void TabBar::Sort()
             sal_uInt16 nId = GetPageId( i );
             aTabBarSortHelper.nPageId = nId;
             aTabBarSortHelper.aPageText = GetPageText( nId );
-            BaseWindow* pWin = aWindowTable[ nId ];
+            BaseWindow* pWin = aWindowTable[ nId ].get();
 
             if (dynamic_cast<ModulWindow*>(pWin))
             {
@@ -607,8 +546,8 @@ void TabBar::Sort()
         }
 
         // sort module and dialog lists by page text
-        ::std::sort( aModuleList.begin() , aModuleList.end() );
-        ::std::sort( aDialogList.begin() , aDialogList.end() );
+        std::sort( aModuleList.begin() , aModuleList.end() );
+        std::sort( aDialogList.begin() , aDialogList.end() );
 
 
         sal_uInt16 nModules = sal::static_int_cast<sal_uInt16>( aModuleList.size() );
@@ -641,7 +580,7 @@ void CutLines( OUString& rStr, sal_Int32 nStartLine, sal_Int32 nLines, bool bEra
         nLine++;
     }
 
-    SAL_WARN_IF( nStartPos == -1, "basctl.basicide", "CutLines: Startzeile nicht gefunden!" );
+    SAL_WARN_IF( nStartPos == -1, "basctl.basicide", "CutLines: Start line not found!" );
 
     if ( nStartPos == -1 )
         return;
@@ -777,7 +716,7 @@ bool QueryDel( const OUString& rName, const ResId& rId, vcl::Window* pParent )
     aNameBuf.append('\'');
     aNameBuf.insert(0, '\'');
     aQuery = aQuery.replaceAll("XX", aNameBuf.makeStringAndClear());
-    ScopedVclPtrInstance< MessageDialog > aQueryBox(pParent, aQuery, VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+    ScopedVclPtrInstance< MessageDialog > aQueryBox(pParent, aQuery, VclMessageType::Question, VclButtonsType::YesNo);
     return ( aQueryBox->Execute() == RET_YES );
 }
 

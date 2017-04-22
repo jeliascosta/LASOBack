@@ -23,19 +23,23 @@
 
 class SmNode;
 
-enum SmParseError
+enum class SmParseError
 {
-    PE_NONE,                    PE_UNEXPECTED_END_OF_INPUT,
-    PE_UNEXPECTED_CHAR,         PE_UNEXPECTED_TOKEN,
-    PE_FUNC_EXPECTED,           PE_UNOPER_EXPECTED,
-    PE_BINOPER_EXPECTED,        PE_SYMBOL_EXPECTED,
-    PE_IDENTIFIER_EXPECTED,     PE_POUND_EXPECTED,
-    PE_COLOR_EXPECTED,          PE_LGROUP_EXPECTED,
-    PE_RGROUP_EXPECTED,         PE_LBRACE_EXPECTED,
-    PE_RBRACE_EXPECTED,         PE_PARENT_MISMATCH,
-    PE_RIGHT_EXPECTED,          PE_FONT_EXPECTED,
-    PE_SIZE_EXPECTED,           PE_DOUBLE_ALIGN,
-    PE_DOUBLE_SUBSUPSCRIPT
+    None,
+    UnexpectedChar,
+    UnexpectedToken,
+    PoundExpected,
+    ColorExpected,
+    LgroupExpected,
+    RgroupExpected,
+    LbraceExpected,
+    RbraceExpected,
+    ParentMismatch,
+    RightExpected,
+    FontExpected,
+    SizeExpected,
+    DoubleAlign,
+    DoubleSubsupscript
 };
 
 

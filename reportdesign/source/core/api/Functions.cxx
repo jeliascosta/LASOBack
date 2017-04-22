@@ -21,6 +21,7 @@
 #include <tools/debug.hxx>
 #include "core_resource.hxx"
 #include "core_resource.hrc"
+#include <com/sun/star/lang/NoSupportException.hpp>
 #include <comphelper/property.hxx>
 #include <algorithm>
 
@@ -43,7 +44,7 @@ OFunctions::~OFunctions()
 {
 }
 
-void SAL_CALL OFunctions::dispose() throw(uno::RuntimeException, std::exception)
+void SAL_CALL OFunctions::dispose()
 {
     cppu::WeakComponentImplHelperBase::dispose();
 }
@@ -62,13 +63,13 @@ void SAL_CALL OFunctions::disposing()
 
 // XFunctionsSupplier
 
-uno::Reference< report::XFunction > SAL_CALL OFunctions::createFunction(  ) throw (uno::RuntimeException, std::exception)
+uno::Reference< report::XFunction > SAL_CALL OFunctions::createFunction(  )
 {
     return new OFunction(m_xContext);
 }
 
 // XIndexContainer
-void SAL_CALL OFunctions::insertByIndex( ::sal_Int32 Index, const uno::Any& aElement ) throw (lang::IllegalArgumentException, lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
+void SAL_CALL OFunctions::insertByIndex( ::sal_Int32 Index, const uno::Any& aElement )
 {
     {
         ::osl::MutexGuard aGuard(m_aMutex);
@@ -77,7 +78,7 @@ void SAL_CALL OFunctions::insertByIndex( ::sal_Int32 Index, const uno::Any& aEle
             checkIndex(Index);
         uno::Reference< report::XFunction > xFunction(aElement,uno::UNO_QUERY);
         if ( !xFunction.is() )
-            throw lang::IllegalArgumentException(RPT_RESSTRING(RID_STR_ARGUMENT_IS_NULL,m_xContext->getServiceManager()),*this,2);
+            throw lang::IllegalArgumentException(RPT_RESSTRING(RID_STR_ARGUMENT_IS_NULL),*this,2);
 
         if ( bAdd )
             m_aFunctions.push_back(xFunction);
@@ -95,7 +96,7 @@ void SAL_CALL OFunctions::insertByIndex( ::sal_Int32 Index, const uno::Any& aEle
 }
 
 
-void SAL_CALL OFunctions::removeByIndex( ::sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
+void SAL_CALL OFunctions::removeByIndex( ::sal_Int32 Index )
 {
     uno::Reference< report::XFunction > xFunction;
     {
@@ -112,7 +113,7 @@ void SAL_CALL OFunctions::removeByIndex( ::sal_Int32 Index ) throw (lang::IndexO
 }
 
 // XIndexReplace
-void SAL_CALL OFunctions::replaceByIndex( ::sal_Int32 Index, const uno::Any& Element ) throw (lang::IllegalArgumentException, lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
+void SAL_CALL OFunctions::replaceByIndex( ::sal_Int32 Index, const uno::Any& Element )
 {
     uno::Any aOldElement;
     {
@@ -120,7 +121,7 @@ void SAL_CALL OFunctions::replaceByIndex( ::sal_Int32 Index, const uno::Any& Ele
         checkIndex(Index);
         uno::Reference< report::XFunction > xFunction(Element,uno::UNO_QUERY);
         if ( !xFunction.is() )
-            throw lang::IllegalArgumentException(RPT_RESSTRING(RID_STR_ARGUMENT_IS_NULL,m_xContext->getServiceManager()),*this,2);
+            throw lang::IllegalArgumentException(RPT_RESSTRING(RID_STR_ARGUMENT_IS_NULL),*this,2);
         TFunctions::iterator aPos = m_aFunctions.begin();
         ::std::advance(aPos,Index);
         aOldElement <<= *aPos;
@@ -132,13 +133,13 @@ void SAL_CALL OFunctions::replaceByIndex( ::sal_Int32 Index, const uno::Any& Ele
 }
 
 // XIndexAccess
-::sal_Int32 SAL_CALL OFunctions::getCount(  ) throw (uno::RuntimeException, std::exception)
+::sal_Int32 SAL_CALL OFunctions::getCount(  )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     return m_aFunctions.size();
 }
 
-uno::Any SAL_CALL OFunctions::getByIndex( ::sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
+uno::Any SAL_CALL OFunctions::getByIndex( ::sal_Int32 Index )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkIndex(Index);
@@ -148,35 +149,35 @@ uno::Any SAL_CALL OFunctions::getByIndex( ::sal_Int32 Index ) throw (lang::Index
 }
 
 // XElementAccess
-uno::Type SAL_CALL OFunctions::getElementType(  ) throw (uno::RuntimeException, std::exception)
+uno::Type SAL_CALL OFunctions::getElementType(  )
 {
     return cppu::UnoType<report::XFunction>::get();
 }
 
-sal_Bool SAL_CALL OFunctions::hasElements(  ) throw (uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL OFunctions::hasElements(  )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     return !m_aFunctions.empty();
 }
 
 // XChild
-uno::Reference< uno::XInterface > SAL_CALL OFunctions::getParent(  ) throw (uno::RuntimeException, std::exception)
+uno::Reference< uno::XInterface > SAL_CALL OFunctions::getParent(  )
 {
     return m_xParent;
 }
 
-void SAL_CALL OFunctions::setParent( const uno::Reference< uno::XInterface >& /*Parent*/ ) throw (lang::NoSupportException, uno::RuntimeException, std::exception)
+void SAL_CALL OFunctions::setParent( const uno::Reference< uno::XInterface >& /*Parent*/ )
 {
     throw lang::NoSupportException();
 }
 
 // XContainer
-void SAL_CALL OFunctions::addContainerListener( const uno::Reference< container::XContainerListener >& xListener ) throw (uno::RuntimeException, std::exception)
+void SAL_CALL OFunctions::addContainerListener( const uno::Reference< container::XContainerListener >& xListener )
 {
     m_aContainerListeners.addInterface(xListener);
 }
 
-void SAL_CALL OFunctions::removeContainerListener( const uno::Reference< container::XContainerListener >& xListener ) throw (uno::RuntimeException, std::exception)
+void SAL_CALL OFunctions::removeContainerListener( const uno::Reference< container::XContainerListener >& xListener )
 {
     m_aContainerListeners.removeInterface(xListener);
 }

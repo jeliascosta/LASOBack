@@ -41,13 +41,9 @@ public:
         : m_aTextSequence( rTextSequence )
     {
     }
-    virtual ~TextualDataProvider()
-    {
-    }
 
     //XTextualDataSequence
-    virtual uno::Sequence< OUString > SAL_CALL getTextualData()
-        throw ( uno::RuntimeException, std::exception) override
+    virtual uno::Sequence< OUString > SAL_CALL getTextualData() override
     {
         return m_aTextSequence;
     }

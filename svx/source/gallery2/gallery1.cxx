@@ -33,6 +33,7 @@
 #include <osl/thread.h>
 #include <tools/vcompat.hxx>
 #include <ucbhelper/content.hxx>
+#include <unotools/configmgr.hxx>
 #include <unotools/ucbstreamhelper.hxx>
 #include <unotools/pathoptions.hxx>
 #include <sfx2/docfile.hxx>
@@ -148,16 +149,15 @@ class GalleryThemeCacheEntry
 private:
 
     const GalleryThemeEntry*        mpThemeEntry;
-    GalleryTheme*                           mpTheme;
+    std::unique_ptr<GalleryTheme>   mpTheme;
 
 public:
 
                                 GalleryThemeCacheEntry( const GalleryThemeEntry* pThemeEntry, GalleryTheme* pTheme ) :
                                     mpThemeEntry( pThemeEntry ), mpTheme( pTheme ) {}
-                                ~GalleryThemeCacheEntry() { delete mpTheme; }
 
-    const GalleryThemeEntry*        GetThemeEntry() const { return mpThemeEntry; }
-    GalleryTheme*                           GetTheme() const { return mpTheme; }
+    const GalleryThemeEntry*    GetThemeEntry() const { return mpThemeEntry; }
+    GalleryTheme*               GetTheme() const { return mpTheme.get(); }
 };
 
 
@@ -182,7 +182,7 @@ Gallery* Gallery::GetGalleryInstance()
     if (!s_pGallery)
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
-        if (!s_pGallery)
+        if (!s_pGallery && !utl::ConfigManager::IsAvoidConfig())
         {
             s_pGallery = new Gallery( SvtPathOptions().GetGalleryPath() );
         }
@@ -232,7 +232,7 @@ void Gallery::ImplLoadSubDirs( const INetURLObject& rBaseURL, bool& rbDirIsReadO
     try
     {
         uno::Reference< ucb::XCommandEnvironment > xEnv;
-        ::ucbhelper::Content                       aCnt( rBaseURL.GetMainURL( INetURLObject::NO_DECODE ), xEnv, comphelper::getProcessComponentContext() );
+        ::ucbhelper::Content                       aCnt( rBaseURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), xEnv, comphelper::getProcessComponentContext() );
 
         uno::Sequence<OUString> aProps { "Url" };
 
@@ -254,7 +254,7 @@ void Gallery::ImplLoadSubDirs( const INetURLObject& rBaseURL, bool& rbDirIsReadO
             OUString        aTestFile( "cdefghij.klm" );
 
             aTestURL.Append( aTestFile );
-            std::unique_ptr<SvStream> pTestStm(::utl::UcbStreamHelper::CreateStream( aTestURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::WRITE ));
+            std::unique_ptr<SvStream> pTestStm(::utl::UcbStreamHelper::CreateStream( aTestURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::WRITE ));
 
             if( pTestStm )
             {
@@ -287,8 +287,6 @@ void Gallery::ImplLoadSubDirs( const INetURLObject& rBaseURL, bool& rbDirIsReadO
             {
                 static const char s_sTitle[] = "Title";
                 static const char s_sIsReadOnly[] = "IsReadOnly";
-                static const char s_sSDG_EXT[] = "sdg";
-                static const char s_sSDV_EXT[] = "sdv";
 
                 while( xResultSet->next() )
                 {
@@ -296,15 +294,15 @@ void Gallery::ImplLoadSubDirs( const INetURLObject& rBaseURL, bool& rbDirIsReadO
 
                     if(aThmURL.GetExtension().equalsIgnoreAsciiCase("thm"))
                     {
-                        INetURLObject   aSdgURL( aThmURL); aSdgURL.SetExtension( s_sSDG_EXT );
-                        INetURLObject   aSdvURL( aThmURL ); aSdvURL.SetExtension( s_sSDV_EXT );
+                        INetURLObject   aSdgURL( aThmURL); aSdgURL.SetExtension( "sdg" );
+                        INetURLObject   aSdvURL( aThmURL ); aSdvURL.SetExtension( "sdv" );
                         OUString        aTitle;
 
                         try
                         {
-                            ::ucbhelper::Content aThmCnt( aThmURL.GetMainURL( INetURLObject::NO_DECODE ), xEnv, comphelper::getProcessComponentContext() );
-                            ::ucbhelper::Content aSdgCnt( aSdgURL.GetMainURL( INetURLObject::NO_DECODE ), xEnv, comphelper::getProcessComponentContext() );
-                            ::ucbhelper::Content aSdvCnt( aSdvURL.GetMainURL( INetURLObject::NO_DECODE ), xEnv, comphelper::getProcessComponentContext() );
+                            ::ucbhelper::Content aThmCnt( aThmURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), xEnv, comphelper::getProcessComponentContext() );
+                            ::ucbhelper::Content aSdgCnt( aSdgURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), xEnv, comphelper::getProcessComponentContext() );
+                            ::ucbhelper::Content aSdvCnt( aSdvURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), xEnv, comphelper::getProcessComponentContext() );
 
                             try
                             {
@@ -609,7 +607,7 @@ GalleryTheme* Gallery::ImplGetCachedTheme(const GalleryThemeEntry* pThemeEntry)
 
             if( FileExists( aURL ) )
             {
-                std::unique_ptr<SvStream> pIStm(::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ ));
+                std::unique_ptr<SvStream> pIStm(::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READ ));
 
                 if( pIStm )
                 {

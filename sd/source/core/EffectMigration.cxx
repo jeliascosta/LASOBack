@@ -21,9 +21,6 @@
 #include <com/sun/star/presentation/ShapeAnimationSubType.hpp>
 #include <com/sun/star/presentation/TextAnimationType.hpp>
 #include <com/sun/star/presentation/ParagraphTarget.hpp>
-#include <com/sun/star/animations/Event.hpp>
-#include <com/sun/star/animations/EventTrigger.hpp>
-#include <com/sun/star/animations/Timing.hpp>
 #include <comphelper/processfactory.hxx>
 #include <com/sun/star/animations/AnimationFill.hpp>
 #include <com/sun/star/animations/XAnimate.hpp>
@@ -55,7 +52,7 @@ struct deprecated_FadeEffect_conversion_table_entry
     const sal_Char* mpPresetId;
 }
 
-deprecated_FadeEffect_conversion_table[] =
+const deprecated_FadeEffect_conversion_table[] =
 {
 // OOo 1.x transitions
     { FadeEffect_FADE_FROM_LEFT,            "wipe-right" },
@@ -163,7 +160,7 @@ wedge                           wedge
 
 void EffectMigration::SetFadeEffect( SdPage* pPage, css::presentation::FadeEffect eNewEffect)
 {
-    deprecated_FadeEffect_conversion_table_entry* pEntry = deprecated_FadeEffect_conversion_table;
+    deprecated_FadeEffect_conversion_table_entry const * pEntry = deprecated_FadeEffect_conversion_table;
     while( (pEntry->meFadeEffect != FadeEffect_NONE) && (pEntry->meFadeEffect != eNewEffect) )
         pEntry++;
 
@@ -210,7 +207,7 @@ FadeEffect EffectMigration::GetFadeEffect( const SdPage* pPage )
         {
             const OUString& aPresetId = (*aIt)->getPresetId();
 
-            deprecated_FadeEffect_conversion_table_entry* pEntry = deprecated_FadeEffect_conversion_table;
+            deprecated_FadeEffect_conversion_table_entry const * pEntry = deprecated_FadeEffect_conversion_table;
             while( (pEntry->meFadeEffect != FadeEffect_NONE) && (!aPresetId.equalsAscii( pEntry->mpPresetId ) ) )
                 pEntry++;
 
@@ -226,7 +223,7 @@ struct deprecated_AnimationEffect_conversion_table_entry
     const sal_Char* mpPresetId;
     const sal_Char* mpPresetSubType;
 }
-deprecated_AnimationEffect_conversion_table[] =
+const deprecated_AnimationEffect_conversion_table[] =
 {
 // OOo 1.x entrance effects
     { AnimationEffect_APPEAR, "ooo-entrance-appear",nullptr },
@@ -497,7 +494,7 @@ void EffectMigration::SetAnimationEffect( SvxShape* pShape, AnimationEffect eEff
 
                     pMainSequence->append( pEffect );
 
-                    if( ( pObj->GetObjInventor() == SdrInventor ) && ( pObj->GetObjIdentifier() == OBJ_OUTLINETEXT ) )
+                    if( ( pObj->GetObjInventor() == SdrInventor::Default ) && ( pObj->GetObjIdentifier() == OBJ_OUTLINETEXT ) )
                     {
                         // special case for outline text, effects are always mapped to text group effect
                         pMainSequence->
@@ -525,7 +522,7 @@ void EffectMigration::SetAnimationEffect( SvxShape* pShape, AnimationEffect eEff
                 if( (pEffect->getPresetId() != aPresetId) ||
                     (pEffect->getPresetSubType() != aPresetSubType) )
                 {
-                    pMainSequence->replace( pEffect, pPreset, aPresetSubType );
+                    pMainSequence->replace( pEffect, pPreset, aPresetSubType, -1.0 );
                 }
             }
         }
@@ -749,7 +746,7 @@ bool EffectMigration::ConvertPreset( const OUString& rPresetId, const OUString* 
     if( !rPresetId.isEmpty() )
     {
         // first try a match for preset id and subtype
-        deprecated_AnimationEffect_conversion_table_entry* p = deprecated_AnimationEffect_conversion_table;
+        deprecated_AnimationEffect_conversion_table_entry const * p = deprecated_AnimationEffect_conversion_table;
         while( p->mpPresetId )
         {
             if( rPresetId.equalsAscii( p->mpPresetId ) &&
@@ -773,7 +770,7 @@ bool EffectMigration::ConvertPreset( const OUString& rPresetId, const OUString* 
 
 bool EffectMigration::ConvertAnimationEffect( const AnimationEffect& rEffect, OUString& rPresetId, OUString& rPresetSubType )
 {
-    deprecated_AnimationEffect_conversion_table_entry* p = deprecated_AnimationEffect_conversion_table;
+    deprecated_AnimationEffect_conversion_table_entry const * p = deprecated_AnimationEffect_conversion_table;
     while( p->mpPresetId )
     {
         if( p->meEffect == rEffect )
@@ -1169,7 +1166,7 @@ void EffectMigration::SetPresentationOrder( SvxShape* pShape, sal_Int32 nNewPos 
 
 /** Returns the position of the given SdrObject in the Presentation order.
  *  This function returns -1 if the SdrObject is not in the Presentation order
- *  or if its the path-object.
+ *  or if it's the path-object.
  */
 sal_Int32 EffectMigration::GetPresentationOrder( SvxShape* pShape )
 {
@@ -1309,7 +1306,7 @@ void createVisibilityOnOffNode(Reference< XTimeContainer >& rxParentContainer, S
     Reference< XAnimationNode > xOuterSeqTimeContainer(xMsf->createInstance("com.sun.star.animations.ParallelTimeContainer"), UNO_QUERY_THROW);
 
     // set begin
-    xOuterSeqTimeContainer->setBegin(Any((double)0.0));
+    xOuterSeqTimeContainer->setBegin(Any(0.0));
 
     // set fill
     xOuterSeqTimeContainer->setFill(AnimationFill::HOLD);
@@ -1327,7 +1324,7 @@ void createVisibilityOnOffNode(Reference< XTimeContainer >& rxParentContainer, S
     Reference< XAnimationNode > xAnimateSetForLast(xMsf->createInstance("com.sun.star.animations.AnimateSet"), UNO_QUERY_THROW);
 
     // set begin
-    xAnimateSetForLast->setBegin(Any((double)0.0));
+    xAnimateSetForLast->setBegin(Any(0.0));
 
     // set duration
     xAnimateSetForLast->setDuration(Any(fDuration));
@@ -1361,7 +1358,7 @@ void createVisibilityOnOffNode(Reference< XTimeContainer >& rxParentContainer, S
 // work) animations will not work in slideshow
 void EffectMigration::CreateAnimatedGroup(SdrObjGroup& rGroupObj, SdPage& rPage)
 {
-    // aw080 will give a vector immeditately
+    // aw080 will give a vector immediately
     SdrObjListIter aIter(rGroupObj);
 
     if(aIter.Count())
@@ -1387,7 +1384,7 @@ void EffectMigration::CreateAnimatedGroup(SdrObjGroup& rGroupObj, SdPage& rPage)
             Reference< XAnimationNode > xOuterSeqTimeContainer(xMsf->createInstance("com.sun.star.animations.ParallelTimeContainer"), UNO_QUERY_THROW);
 
             // set begin
-            xOuterSeqTimeContainer->setBegin(Any((double)(0.0)));
+            xOuterSeqTimeContainer->setBegin(Any(0.0));
 
             // prepare parent container
             Reference< XTimeContainer > xParentContainer(xOuterSeqTimeContainer, UNO_QUERY_THROW);
@@ -1429,11 +1426,11 @@ void EffectMigration::CreateAnimatedGroup(SdrObjGroup& rGroupObj, SdPage& rPage)
 
 void EffectMigration::DocumentLoaded(SdDrawDocument & rDoc)
 {
-    if (DOCUMENT_TYPE_DRAW == rDoc.GetDocumentType())
+    if (DocumentType::Draw == rDoc.GetDocumentType())
         return; // no animations in Draw
-    for (sal_uInt16 n = 0; n < rDoc.GetSdPageCount(PK_STANDARD); ++n)
+    for (sal_uInt16 n = 0; n < rDoc.GetSdPageCount(PageKind::Standard); ++n)
     {
-        SdPage *const pPage = rDoc.GetSdPage(n, PK_STANDARD);
+        SdPage *const pPage = rDoc.GetSdPage(n, PageKind::Standard);
         if (pPage->hasAnimationNode())
         {
             // this will force the equivalent of the MainSequence::onTimerHdl
@@ -1442,9 +1439,9 @@ void EffectMigration::DocumentLoaded(SdDrawDocument & rDoc)
             pPage->getMainSequence()->getRootNode();
         }
     }
-    for (sal_uInt16 n = 0; n < rDoc.GetMasterSdPageCount(PK_STANDARD); ++n)
+    for (sal_uInt16 n = 0; n < rDoc.GetMasterSdPageCount(PageKind::Standard); ++n)
     {
-        SdPage *const pPage = rDoc.GetMasterSdPage(n, PK_STANDARD);
+        SdPage *const pPage = rDoc.GetMasterSdPage(n, PageKind::Standard);
         if (pPage->hasAnimationNode())
         {
             pPage->getMainSequence()->getRootNode();

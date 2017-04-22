@@ -32,7 +32,7 @@ struct SalItemParams
     sal_uInt16      nId;                    // item Id
     MenuItemType    eType;                  // MenuItem-Type
     MenuItemBits    nBits;                  // MenuItem-Bits
-    Menu*           pMenu;                  // Pointer to Menu
+    VclPtr<Menu>    pMenu;                  // Pointer to Menu
     OUString        aText;                  // Menu-Text
     Image           aImage;                 // Image
 };
@@ -41,10 +41,10 @@ struct SalMenuButtonItem
 {
     sal_uInt16          mnId;
     Image               maImage;
-    OUString       maToolTipText;
+    OUString            maToolTipText;
 
     SalMenuButtonItem() : mnId( 0 ) {}
-    SalMenuButtonItem( sal_uInt16 i_nId, const Image& rImg, const OUString& i_rTTText = OUString() )
+    SalMenuButtonItem( sal_uInt16 i_nId, const Image& rImg, const OUString& i_rTTText )
     : mnId( i_nId ), maImage( rImg ), maToolTipText( i_rTTText ) {}
 };
 
@@ -74,7 +74,7 @@ public:
     virtual void SetItemImage( unsigned nPos, SalMenuItem* pSalMenuItem, const Image& rImage ) = 0;
     virtual void SetAccelerator( unsigned nPos, SalMenuItem* pSalMenuItem, const vcl::KeyCode& rKeyCode, const OUString& rKeyName ) = 0;
     virtual void GetSystemMenuData( SystemMenuData* pData ) = 0;
-    virtual bool ShowNativePopupMenu(FloatingWindow * pWin, const Rectangle& rRect, FloatWinPopupFlags nFlags);
+    virtual bool ShowNativePopupMenu(FloatingWindow * pWin, const tools::Rectangle& rRect, FloatWinPopupFlags nFlags);
     virtual void ShowCloseButton(bool bShow);
     virtual bool AddMenuBarButton( const SalMenuButtonItem& ); // return false if not implemented or failure
     virtual void RemoveMenuBarButton( sal_uInt16 nId );
@@ -89,7 +89,7 @@ public:
     // return an empty rectangle if not implemented
     // return Rectangle( Point( -1, -1 ), Size( 1, 1 ) ) if menu bar buttons implemented
     // but rectangle cannot be determined
-    virtual Rectangle GetMenuBarButtonRectPixel( sal_uInt16 i_nItemId, SalFrame* i_pReferenceFrame );
+    virtual tools::Rectangle GetMenuBarButtonRectPixel( sal_uInt16 i_nItemId, SalFrame* i_pReferenceFrame );
 };
 
 #endif // INCLUDED_VCL_INC_SALMENU_HXX

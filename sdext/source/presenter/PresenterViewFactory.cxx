@@ -72,10 +72,9 @@ public:
         : PresenterSlidePreview(rxContext, rxViewId, rxAnchorPane, rpPresenterController)
     {
     }
-    virtual ~NextSlidePreview() {}
+
     virtual void SAL_CALL setCurrentPage (
-        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide)
-        throw (css::uno::RuntimeException, std::exception) override
+        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide) override
     {
         Reference<presentation::XSlideShowController> xSlideShowController (
             mpPresenterController->GetSlideShowController());
@@ -179,7 +178,6 @@ PresenterViewFactory::~PresenterViewFactory()
 }
 
 void SAL_CALL PresenterViewFactory::disposing()
-    throw (RuntimeException)
 {
     if (mxConfigurationController.is())
         mxConfigurationController->removeResourceFactoryForReference(this);
@@ -210,7 +208,6 @@ void SAL_CALL PresenterViewFactory::disposing()
 
 Reference<XResource> SAL_CALL PresenterViewFactory::createResource (
     const Reference<XResourceId>& rxViewId)
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -236,7 +233,6 @@ Reference<XResource> SAL_CALL PresenterViewFactory::createResource (
 }
 
 void SAL_CALL PresenterViewFactory::releaseResource (const Reference<XResource>& rxView)
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -515,13 +511,11 @@ Reference<XView> PresenterViewFactory::CreateHelpView(
 }
 
 void PresenterViewFactory::ThrowIfDisposed() const
-    throw (css::lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {
         throw lang::DisposedException (
-            OUString(
-                "PresenterViewFactory object has already been disposed"),
+            "PresenterViewFactory object has already been disposed",
             const_cast<uno::XWeak*>(static_cast<const uno::XWeak*>(this)));
     }
 }

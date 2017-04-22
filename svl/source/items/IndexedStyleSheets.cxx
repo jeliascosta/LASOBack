@@ -53,7 +53,6 @@ IndexedStyleSheets::IndexedStyleSheets()
     }
 ;}
 
-
 void
 IndexedStyleSheets::Register(const SfxStyleSheetBase& style, unsigned pos)
 {
@@ -143,7 +142,7 @@ IndexedStyleSheets::FindPositionsByNameAndPredicate(const rtl::OUString& name,
         SfxStyleSheetBase *ssheet = mStyleSheets.at(pos).get();
         if (predicate.Check(*ssheet)) {
             r.push_back(pos);
-            if (behavior == RETURN_FIRST) {
+            if (behavior == SearchBehavior::ReturnFirst) {
                 break;
             }
         }
@@ -207,7 +206,8 @@ IndexedStyleSheets::Clear(StyleSheetDisposer& disposer)
 }
 
 IndexedStyleSheets::~IndexedStyleSheets()
-{;}
+{
+}
 
 bool
 IndexedStyleSheets::HasStyleSheet(const rtl::Reference< SfxStyleSheetBase >& style) const

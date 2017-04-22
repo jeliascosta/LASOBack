@@ -60,7 +60,7 @@ SwPostItHelper::SwLayoutStatus SwPostItHelper::getLayoutInfos(
                 aRet = VISIBLE;
 
                 o_rInfo.mpAnchorFrame = pTextFrame;
-                pTextFrame->GetCharRect( o_rInfo.mPosition, rAnchorPos );
+                pTextFrame->GetCharRect(o_rInfo.mPosition, rAnchorPos, nullptr, false);
                 if ( pAnnotationStartPos != nullptr )
                 {
                     o_rInfo.mnStartNodeIdx = pAnnotationStartPos->nNode.GetIndex();
@@ -79,7 +79,7 @@ SwPostItHelper::SwLayoutStatus SwPostItHelper::getLayoutInfos(
                 o_rInfo.mRedlineAuthor = 0;
 
                 const IDocumentRedlineAccess& rIDRA = pTextNode->getIDocumentRedlineAccess();
-                if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineMode() ) )
+                if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineFlags() ) )
                 {
                     const SwRangeRedline* pRedline = rIDRA.GetRedline( rAnchorPos, nullptr );
                     if( pRedline )
@@ -143,13 +143,12 @@ bool SwAnnotationItem::UseElement()
     return mrFormatField.IsFieldInDoc();
 }
 
-VclPtr<sw::sidebarwindows::SwSidebarWin> SwAnnotationItem::GetSidebarWindow(
+VclPtr<sw::annotation::SwAnnotationWin> SwAnnotationItem::GetSidebarWindow(
                                                             SwEditWin& rEditWin,
-                                                            WinBits nBits,
                                                             SwPostItMgr& aMgr)
 {
-    return VclPtr<sw::annotation::SwAnnotationWin>::Create( rEditWin, nBits,
-                                                aMgr, 0,
+    return VclPtr<sw::annotation::SwAnnotationWin>::Create( rEditWin, WB_DIALOGCONTROL,
+                                                aMgr,
                                                 *this,
                                                 &mrFormatField );
 }

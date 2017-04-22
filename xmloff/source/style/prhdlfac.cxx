@@ -22,6 +22,7 @@
 #include <com/sun/star/drawing/ColorMode.hpp>
 #include <com/sun/star/text/HorizontalAdjust.hpp>
 #include <com/sun/star/text/WritingMode2.hpp>
+#include <com/sun/star/text/VertOrientation.hpp>
 
 #include <tools/debug.hxx>
 
@@ -59,27 +60,27 @@
 using namespace ::com::sun::star;
 using namespace ::xmloff::token;
 
-static SvXMLEnumMapEntry const aXML_ColorMode_EnumMap[] =
+static SvXMLEnumMapEntry<drawing::ColorMode> const aXML_ColorMode_EnumMap[] =
 {
     { XML_GREYSCALE,    drawing::ColorMode_GREYS },
     { XML_MONO,         drawing::ColorMode_MONO },
     { XML_WATERMARK,    drawing::ColorMode_WATERMARK },
     { XML_STANDARD,     drawing::ColorMode_STANDARD },
-    { XML_TOKEN_INVALID, 0 }
+    { XML_TOKEN_INVALID, (drawing::ColorMode)0 }
 };
 
-static SvXMLEnumMapEntry const aXML_HorizontalAdjust_Enum[] =
+static SvXMLEnumMapEntry<text::HorizontalAdjust> const aXML_HorizontalAdjust_Enum[] =
 {
     { XML_LEFT,     text::HorizontalAdjust_LEFT },
     { XML_CENTER,   text::HorizontalAdjust_CENTER },
     { XML_RIGHT,    text::HorizontalAdjust_RIGHT },
-    { XML_TOKEN_INVALID, 0 }
+    { XML_TOKEN_INVALID, (text::HorizontalAdjust)0 }
 };
 
 // aXML_WritingDirection_Enum is used with and without 'page'
 // attribute, so you'll find uses of aXML_WritingDirection_Enum
 // directly, as well as &(aXML_WritingDirection_Enum[1])
-static SvXMLEnumMapEntry const aXML_WritingDirection_Enum[] =
+static SvXMLEnumMapEntry<sal_uInt16> const aXML_WritingDirection_Enum[] =
 {
     // aXML_WritingDirection_Enum
     { XML_PAGE,     text::WritingMode2::PAGE },
@@ -95,6 +96,22 @@ static SvXMLEnumMapEntry const aXML_WritingDirection_Enum[] =
     { XML_RL,       text::WritingMode2::RL_TB },
     { XML_TB,       text::WritingMode2::TB_RL },
 
+    { XML_TOKEN_INVALID, 0 }
+};
+
+static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertPos_Enum[] =
+{
+    { XML_FROM_TOP,         text::VertOrientation::NONE       },
+    { XML_TOP,              text::VertOrientation::TOP        },
+    { XML_TOP,              text::VertOrientation::CHAR_TOP   },  // export only
+    { XML_TOP,              text::VertOrientation::LINE_TOP   },  // export only
+    { XML_MIDDLE,           text::VertOrientation::CENTER     },
+    { XML_MIDDLE,           text::VertOrientation::CHAR_CENTER    },  // export only
+    { XML_MIDDLE,           text::VertOrientation::LINE_CENTER    },  // export only
+    { XML_BOTTOM,           text::VertOrientation::BOTTOM         },
+    { XML_BOTTOM,           text::VertOrientation::CHAR_BOTTOM    },  // export only
+    { XML_BOTTOM,           text::VertOrientation::LINE_BOTTOM    },  // export only
+    { XML_BELOW,            text::VertOrientation::CHAR_BOTTOM    },  // import only
     { XML_TOKEN_INVALID, 0 }
 };
 
@@ -117,7 +134,7 @@ XMLPropertyHandlerFactory::~XMLPropertyHandlerFactory()
 // Interface
 const XMLPropertyHandler* XMLPropertyHandlerFactory::GetPropertyHandler( sal_Int32 nType ) const
 {
-    DBG_ASSERT( (nType & ~((sal_uInt32)MID_FLAG_MASK)) == 0,
+    SAL_WARN_IF( (nType & ~((sal_uInt32)MID_FLAG_MASK)) != 0, "xmloff",
                 "GetPropertyHandler called with flags in type" );
     return GetBasicHandler( nType );
 }
@@ -184,7 +201,7 @@ const XMLPropertyHandler* XMLPropertyHandlerFactory::CreatePropertyHandler( sal_
             pPropHdl = new XMLPercentPropHdl( 2 );
             break;
         case XML_TYPE_DOUBLE_PERCENT :
-            pPropHdl = new XMLDoublePercentPropHdl();
+            pPropHdl = new XMLDoublePercentPropHdl;
             break;
         case XML_TYPE_NEG_PERCENT :
             pPropHdl = new XMLNegPercentPropHdl( 4 );
@@ -402,16 +419,13 @@ const XMLPropertyHandler* XMLPropertyHandlerFactory::CreatePropertyHandler( sal_
             pPropHdl = new XMLAttributeContainerHandler;
             break;
         case XML_TYPE_COLOR_MODE:
-            pPropHdl = new XMLEnumPropertyHdl( aXML_ColorMode_EnumMap,
-                            cppu::UnoType<drawing::ColorMode>::get());
+            pPropHdl = new XMLEnumPropertyHdl(aXML_ColorMode_EnumMap);
             break;
         case XML_TYPE_DURATION16_MS:
             pPropHdl = new XMLDurationMS16PropHdl_Impl;
             break;
         case XML_TYPE_TEXT_HORIZONTAL_ADJUST:
-            pPropHdl = new XMLEnumPropertyHdl(
-                aXML_HorizontalAdjust_Enum,
-                cppu::UnoType<text::HorizontalAdjust>::get());
+            pPropHdl = new XMLEnumPropertyHdl(aXML_HorizontalAdjust_Enum);
             break;
         case XML_TYPE_TEXT_DRAW_ASPECT:
             pPropHdl = new DrawAspectHdl;
@@ -444,8 +458,12 @@ const XMLPropertyHandler* XMLPropertyHandlerFactory::CreatePropertyHandler( sal_
             pPropHdl = new XMLNumberWithoutZeroPropHdl( 2 );
             break;
         case XML_TYPE_NUMBER16_AUTO:
-            pPropHdl = new XMLNumberWithAutoInsteadZeroPropHdl();
+            pPropHdl = new XMLNumberWithAutoInsteadZeroPropHdl;
             break;
+        case XML_TYPE_TEXT_VERTICAL_POS:
+            pPropHdl = new XMLConstantsPropertyHandler( pXML_VertPos_Enum, XML_TOKEN_INVALID );
+        break;
+
     }
 
     return pPropHdl;

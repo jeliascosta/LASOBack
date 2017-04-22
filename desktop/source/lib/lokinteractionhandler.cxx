@@ -35,9 +35,15 @@
 #include <com/sun/star/ucb/InteractiveNetworkResolveNameException.hpp>
 #include <com/sun/star/ucb/InteractiveNetworkWriteException.hpp>
 
+#include <com/sun/star/task/DocumentPasswordRequest2.hpp>
+#include <com/sun/star/task/DocumentMSPasswordRequest2.hpp>
+
 #include <../../inc/lib/init.hxx>
 
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
+#include <sfx2/lokhelper.hxx>
+#include <sfx2/viewsh.hxx>
+#include <comphelper/lok.hxx>
 
 using namespace com::sun::star;
 
@@ -58,17 +64,17 @@ LOKInteractionHandler::~LOKInteractionHandler()
 {
 }
 
-OUString SAL_CALL LOKInteractionHandler::getImplementationName() throw (uno::RuntimeException, std::exception)
+OUString SAL_CALL LOKInteractionHandler::getImplementationName()
 {
     return OUString("com.sun.star.comp.uui.LOKInteractionHandler");
 }
 
-sal_Bool SAL_CALL LOKInteractionHandler::supportsService(OUString const & rServiceName) throw (uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL LOKInteractionHandler::supportsService(OUString const & rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-uno::Sequence< OUString > SAL_CALL LOKInteractionHandler::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
+uno::Sequence< OUString > SAL_CALL LOKInteractionHandler::getSupportedServiceNames()
 {
     uno::Sequence< OUString > aNames(3);
     aNames[0] = "com.sun.star.task.InteractionHandler";
@@ -79,13 +85,12 @@ uno::Sequence< OUString > SAL_CALL LOKInteractionHandler::getSupportedServiceNam
     return aNames;
 }
 
-void SAL_CALL LOKInteractionHandler::initialize(uno::Sequence<uno::Any> const & /*rArguments*/) throw (uno::Exception, std::exception)
+void SAL_CALL LOKInteractionHandler::initialize(uno::Sequence<uno::Any> const & /*rArguments*/)
 {
 }
 
 void SAL_CALL LOKInteractionHandler::handle(
         uno::Reference<task::XInteractionRequest> const & xRequest)
-throw (uno::RuntimeException, std::exception)
 {
     // just do the same thing in both cases
     handleInteractionRequest(xRequest);
@@ -114,8 +119,9 @@ void LOKInteractionHandler::postError(css::task::InteractionClassification class
     std::stringstream aStream;
     boost::property_tree::write_json(aStream, aTree);
 
-    if (m_pLOKDocument && m_pLOKDocument->mpCallbackFlushHandler)
-        m_pLOKDocument->mpCallbackFlushHandler->queue(LOK_CALLBACK_ERROR, aStream.str().c_str());
+    std::size_t nView = SfxViewShell::Current() ? SfxLokHelper::getView() : 0;
+    if (m_pLOKDocument && m_pLOKDocument->mpCallbackFlushHandlers.size() > nView && m_pLOKDocument->mpCallbackFlushHandlers[nView])
+        m_pLOKDocument->mpCallbackFlushHandlers[nView]->queue(LOK_CALLBACK_ERROR, aStream.str().c_str());
     else if (m_pLOKit->mpCallback)
         m_pLOKit->mpCallback(LOK_CALLBACK_ERROR, aStream.str().c_str(), m_pLOKit->mpCallbackData);
 }
@@ -141,7 +147,7 @@ bool LOKInteractionHandler::handleIOException(const css::uno::Sequence<css::uno:
     if (!(rRequest >>= aIoException))
         return false;
 
-    static ErrCode const aErrorCode[ucb::IOErrorCode_WRONG_VERSION + 1] =
+    static ErrCode const aErrorCode[(int)ucb::IOErrorCode_WRONG_VERSION + 1] =
     {
         ERRCODE_IO_ABORT,
         ERRCODE_IO_ACCESSDENIED,
@@ -181,7 +187,7 @@ bool LOKInteractionHandler::handleIOException(const css::uno::Sequence<css::uno:
         ERRCODE_IO_WRONGVERSION,
     };
 
-    postError(aIoException.Classification, "io", aErrorCode[aIoException.Code], "");
+    postError(aIoException.Classification, "io", aErrorCode[(int)aIoException.Code], "");
     selectApproved(rContinuations);
 
     return true;
@@ -238,20 +244,37 @@ bool LOKInteractionHandler::handleNetworkException(const uno::Sequence<uno::Refe
 
 bool LOKInteractionHandler::handlePasswordRequest(const uno::Sequence<uno::Reference<task::XInteractionContinuation>> &rContinuations, const uno::Any &rRequest)
 {
+    bool bPasswordRequestFound = false;
+    bool bIsRequestPasswordToModify = false;
+
+    OString sUrl;
+
     task::DocumentPasswordRequest2 passwordRequest;
-    if (!(rRequest >>= passwordRequest))
+    if (rRequest >>= passwordRequest)
+    {
+        bIsRequestPasswordToModify = passwordRequest.IsRequestPasswordToModify;
+        sUrl = passwordRequest.Name.toUtf8();
+        bPasswordRequestFound = true;
+    }
+
+    task::DocumentMSPasswordRequest2 passwordMSRequest;
+    if (rRequest >>= passwordMSRequest)
+    {
+        bIsRequestPasswordToModify = passwordMSRequest.IsRequestPasswordToModify;
+        sUrl = passwordMSRequest.Name.toUtf8();
+        bPasswordRequestFound = true;
+    }
+
+    if (!bPasswordRequestFound)
         return false;
 
     if (m_pLOKit->mpCallback &&
-        m_pLOKit->hasOptionalFeature((passwordRequest.IsRequestPasswordToModify)
-                ? LOK_FEATURE_DOCUMENT_PASSWORD_TO_MODIFY
-                : LOK_FEATURE_DOCUMENT_PASSWORD))
+        m_pLOKit->hasOptionalFeature(bIsRequestPasswordToModify ? LOK_FEATURE_DOCUMENT_PASSWORD_TO_MODIFY
+                                                                : LOK_FEATURE_DOCUMENT_PASSWORD))
     {
-        OString const url(passwordRequest.Name.toUtf8());
-        m_pLOKit->mpCallback(passwordRequest.IsRequestPasswordToModify
-                ? LOK_CALLBACK_DOCUMENT_PASSWORD_TO_MODIFY
-                : LOK_CALLBACK_DOCUMENT_PASSWORD,
-                url.getStr(),
+        m_pLOKit->mpCallback(bIsRequestPasswordToModify ? LOK_CALLBACK_DOCUMENT_PASSWORD_TO_MODIFY
+                                                        : LOK_CALLBACK_DOCUMENT_PASSWORD,
+                sUrl.getStr(),
                 m_pLOKit->mpCallbackData);
 
         // block until SetPassword is called
@@ -263,7 +286,7 @@ bool LOKInteractionHandler::handlePasswordRequest(const uno::Sequence<uno::Refer
     {
         if (m_usePassword)
         {
-            if (passwordRequest.IsRequestPasswordToModify)
+            if (bIsRequestPasswordToModify)
             {
                 uno::Reference<task::XInteractionPassword2> const xIPW2(rContinuations[i], uno::UNO_QUERY);
                 xIPW2->setPasswordToModify(m_Password);
@@ -281,7 +304,7 @@ bool LOKInteractionHandler::handlePasswordRequest(const uno::Sequence<uno::Refer
         }
         else
         {
-            if (passwordRequest.IsRequestPasswordToModify)
+            if (bIsRequestPasswordToModify)
             {
                 uno::Reference<task::XInteractionPassword2> const xIPW2(rContinuations[i], uno::UNO_QUERY);
                 xIPW2->setRecommendReadOnly(true);
@@ -301,7 +324,7 @@ bool LOKInteractionHandler::handlePasswordRequest(const uno::Sequence<uno::Refer
 }
 
 sal_Bool SAL_CALL LOKInteractionHandler::handleInteractionRequest(
-        const uno::Reference<task::XInteractionRequest>& xRequest) throw (uno::RuntimeException, std::exception)
+        const uno::Reference<task::XInteractionRequest>& xRequest)
 {
     uno::Sequence<uno::Reference<task::XInteractionContinuation>> const &rContinuations = xRequest->getContinuations();
     uno::Any const request(xRequest->getRequest());

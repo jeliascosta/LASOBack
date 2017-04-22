@@ -30,26 +30,18 @@
 #include <rtl/ustring.hxx>
 #include <rtl/strbuf.hxx>
 
-struct LessString
-{
-    bool operator()(const ::rtl::OString& str1, const ::rtl::OString& str2) const
-    {
-        return (str1 < str2);
-    }
-};
-
 typedef ::std::list< ::rtl::OString >               StringList;
 typedef ::std::vector< ::rtl::OString >             StringVector;
-typedef ::std::set< ::rtl::OString, LessString >    StringSet;
+typedef ::std::set< ::rtl::OString >    StringSet;
 
 
 // FileStream
 
-class FileStream
+class FileStream final
 {
 public:
     FileStream();
-    virtual ~FileStream();
+    ~FileStream();
 
     bool isValid();
 
@@ -92,11 +84,11 @@ bool removeTypeFile(const ::rtl::OString& fileName);
 
 ::rtl::OUString convertToFileUrl(const ::rtl::OString& fileName);
 
-class CannotDumpException {
+class CannotDumpException final {
 public:
     CannotDumpException(OUString const & message): message_(message) {}
 
-    virtual ~CannotDumpException() throw ();
+    ~CannotDumpException() throw ();
 
     const OUString& getMessage() const { return message_; }
 

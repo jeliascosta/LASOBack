@@ -25,8 +25,8 @@
 
 using namespace com::sun::star;
 
-XMLErrorBarStylePropertyHdl::XMLErrorBarStylePropertyHdl(  const SvXMLEnumMapEntry* pEnumMap, const css::uno::Type & rType )
-        : XMLEnumPropertyHdl( pEnumMap, rType )
+XMLErrorBarStylePropertyHdl::XMLErrorBarStylePropertyHdl(  const SvXMLEnumMapEntry<sal_Int32>* pEnumMap )
+        : XMLEnumPropertyHdl( pEnumMap )
 {
 }
 
@@ -48,7 +48,7 @@ bool XMLErrorBarStylePropertyHdl::exportXML( OUString& rStrExpValue,
                 || nValue == css::chart::ErrorBarStyle::FROM_DATA )
             {
                 nValue = css::chart::ErrorBarStyle::NONE;
-                aValue = uno::makeAny(nValue);
+                aValue <<= nValue;
             }
         }
     }

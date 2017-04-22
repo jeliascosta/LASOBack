@@ -83,7 +83,7 @@ protected:
 
 public:
     explicit                    ScHTMLParser( EditEngine* pEditEngine, ScDocument* pDoc );
-    virtual                     ~ScHTMLParser();
+    virtual                     ~ScHTMLParser() override;
 
     virtual sal_uLong           Read( SvStream& rStrm, const OUString& rBaseURL  ) override = 0;
 
@@ -126,7 +126,6 @@ struct ScHTMLTableStackEntry
                             nColOffset( nCO ), nColOffsetStart( nCOS ),
                             bFirstRow( bFR )
                             {}
-                        ~ScHTMLTableStackEntry() {}
 };
 
 struct ScHTMLAdjustStackEntry
@@ -159,7 +158,7 @@ private:
     OUString            aString;
     ScRangeListRef      xLockedList;        // je Table
     OuterMap*           pTables;
-    ScHTMLColOffset*    pColOffset;
+    ScHTMLColOffset     maColOffset;
     ScHTMLColOffset*    pLocalColOffset;    // je Table
     sal_uLong           nFirstTableCell;    // je Table
     short               nTableLevel;
@@ -176,12 +175,12 @@ private:
     bool                bInCell:1;
     bool                bInTitle:1;
 
-    DECL_LINK_TYPED( HTMLImportHdl, ImportInfo&, void );
+    DECL_LINK( HTMLImportHdl, HtmlImportInfo&, void );
     void                NewActEntry( ScEEParseEntry* );
     static void         EntryEnd( ScEEParseEntry*, const ESelection& );
-    void                ProcToken( ImportInfo* );
-    void                CloseEntry( ImportInfo* );
-    void                NextRow(  ImportInfo*  );
+    void                ProcToken( HtmlImportInfo* );
+    void                CloseEntry( HtmlImportInfo* );
+    void                NextRow(  HtmlImportInfo*  );
     void                SkipLocked( ScEEParseEntry*, bool bJoin = true );
     static bool         SeekOffset( ScHTMLColOffset*, sal_uInt16 nOffset,
                                     SCCOL* pCol, sal_uInt16 nOffsetTol );
@@ -194,27 +193,27 @@ private:
     static void         ModifyOffset( ScHTMLColOffset*, sal_uInt16& nOldOffset,
                                     sal_uInt16& nNewOffset, sal_uInt16 nOffsetTol );
     void                Colonize( ScEEParseEntry* );
-    sal_uInt16              GetWidth( ScEEParseEntry* );
+    sal_uInt16          GetWidth( ScEEParseEntry* );
     void                SetWidths();
     void                Adjust();
 
-    sal_uInt16              GetWidthPixel( const HTMLOption& );
-    bool                IsAtBeginningOfText( ImportInfo* );
+    sal_uInt16          GetWidthPixel( const HTMLOption& );
+    bool                IsAtBeginningOfText( HtmlImportInfo* );
 
-    void                TableOn( ImportInfo* );
-    void                ColOn( ImportInfo* );
-    void                TableRowOn( ImportInfo* );
-    void                TableRowOff( ImportInfo* );
-    void                TableDataOn( ImportInfo* );
-    void                TableDataOff( ImportInfo* );
-    void                TableOff( ImportInfo* );
-    void                Image( ImportInfo* );
-    void                AnchorOn( ImportInfo* );
-    void                FontOn( ImportInfo* );
+    void                TableOn( HtmlImportInfo* );
+    void                ColOn( HtmlImportInfo* );
+    void                TableRowOn( HtmlImportInfo* );
+    void                TableRowOff( HtmlImportInfo* );
+    void                TableDataOn( HtmlImportInfo* );
+    void                TableDataOff( HtmlImportInfo* );
+    void                TableOff( HtmlImportInfo* );
+    void                Image( HtmlImportInfo* );
+    void                AnchorOn( HtmlImportInfo* );
+    void                FontOn( HtmlImportInfo* );
 
 public:
                         ScHTMLLayoutParser( EditEngine*, const OUString& rBaseURL, const Size& aPageSize, ScDocument* );
-    virtual             ~ScHTMLLayoutParser();
+    virtual             ~ScHTMLLayoutParser() override;
     virtual sal_uLong   Read( SvStream&, const OUString& rBaseURL  ) override;
     virtual const ScHTMLTable*  GetGlobalTable() const override;
 };
@@ -237,18 +236,18 @@ struct ScHTMLPos
     SCCOL               mnCol;
     SCROW               mnRow;
 
-    inline explicit     ScHTMLPos() : mnCol( 0 ), mnRow( 0 ) {}
-    inline explicit     ScHTMLPos( SCCOL nCol, SCROW nRow ) :
+    explicit     ScHTMLPos() : mnCol( 0 ), mnRow( 0 ) {}
+    explicit     ScHTMLPos( SCCOL nCol, SCROW nRow ) :
                             mnCol( nCol ), mnRow( nRow ) {}
-    inline explicit     ScHTMLPos( const ScAddress& rAddr ) { Set( rAddr ); }
+    explicit     ScHTMLPos( const ScAddress& rAddr ) { Set( rAddr ); }
 
-    inline SCCOLROW     Get( ScHTMLOrient eOrient ) const
+    SCCOLROW     Get( ScHTMLOrient eOrient ) const
                             { return (eOrient == tdCol) ? mnCol : mnRow; }
-    inline void         Set( SCCOL nCol, SCROW nRow )
+    void         Set( SCCOL nCol, SCROW nRow )
                             { mnCol = nCol; mnRow = nRow; }
-    inline void         Set( const ScAddress& rAddr )
+    void         Set( const ScAddress& rAddr )
                             { Set( rAddr.Col(), rAddr.Row() ); }
-    inline ScAddress    MakeAddr() const
+    ScAddress    MakeAddr() const
                             { return ScAddress( mnCol, mnRow, 0 ); }
 };
 
@@ -263,9 +262,9 @@ struct ScHTMLSize
     SCCOL               mnCols;
     SCROW               mnRows;
 
-    inline explicit     ScHTMLSize( SCCOL nCols, SCROW nRows ) :
+    explicit     ScHTMLSize( SCCOL nCols, SCROW nRows ) :
                             mnCols( nCols ), mnRows( nRows ) {}
-    inline void         Set( SCCOL nCols, SCROW nRows )
+    void         Set( SCCOL nCols, SCROW nRows )
                             { mnCols = nCols; mnRows = nRows; }
 };
 
@@ -278,27 +277,27 @@ public:
                             ScHTMLTableId nTableId = SC_HTML_NO_TABLE );
 
     /** Returns true, if the selection of the entry is empty. */
-    inline bool         IsEmpty() const { return !aSel.HasRange(); }
+    bool         IsEmpty() const { return !aSel.HasRange(); }
     /** Returns true, if the entry has any content to be imported. */
     bool                HasContents() const;
     /** Returns true, if the entry represents a table. */
-    inline bool         IsTable() const { return nTab != SC_HTML_NO_TABLE; }
+    bool         IsTable() const { return nTab != SC_HTML_NO_TABLE; }
     /** Returns true, if the entry represents a table. */
-    inline ScHTMLTableId GetTableId() const { return nTab; }
+    ScHTMLTableId GetTableId() const { return nTab; }
 
     /** Sets or cleares the import always state. */
-    inline void         SetImportAlways() { mbImportAlways = true; }
+    void         SetImportAlways() { mbImportAlways = true; }
     /** Sets start point of the entry selection to the start of the import info object. */
-    void                AdjustStart( const ImportInfo& rInfo );
+    void                AdjustStart( const HtmlImportInfo& rInfo );
     /** Sets end point of the entry selection to the end of the import info object. */
-    void                AdjustEnd( const ImportInfo& rInfo );
+    void                AdjustEnd( const HtmlImportInfo& rInfo );
     /** Deletes leading and trailing empty paragraphs from the entry. */
     void                Strip( const EditEngine& rEditEngine );
 
     /** Returns read/write access to the item set of this entry. */
-    inline SfxItemSet&  GetItemSet() { return aItemSet; }
+    SfxItemSet&  GetItemSet() { return aItemSet; }
     /** Returns read-only access to the item set of this entry. */
-    inline const SfxItemSet& GetItemSet() const { return aItemSet; }
+    const SfxItemSet& GetItemSet() const { return aItemSet; }
 
 private:
     bool                mbImportAlways;     /// true = Always import this entry.
@@ -333,15 +332,15 @@ public:
         @param bPreFormText  true = Table is based on preformatted text (<pre> tag). */
     explicit            ScHTMLTable(
                             ScHTMLTable& rParentTable,
-                            const ImportInfo& rInfo,
+                            const HtmlImportInfo& rInfo,
                             bool bPreFormText );
 
     virtual             ~ScHTMLTable();
 
     /** Returns the name of the table, specified in the TABLE tag. */
-    inline const OUString& GetTableName() const { return maTableName; }
+    const OUString& GetTableName() const { return maTableName; }
     /** Returns the unique identifier of the table. */
-    inline ScHTMLTableId GetTableId() const { return maTableId.mnTableId; }
+    ScHTMLTableId GetTableId() const { return maTableId.mnTableId; }
     /** Returns the cell spanning of the specified cell. */
     ScHTMLSize          GetSpan( const ScHTMLPos& rCellPos ) const;
 
@@ -352,9 +351,9 @@ public:
     /** Puts the item into the item set of the current entry. */
     void                PutItem( const SfxPoolItem& rItem );
     /** Inserts a text portion into current entry. */
-    void                PutText( const ImportInfo& rInfo );
+    void                PutText( const HtmlImportInfo& rInfo );
     /** Inserts a new line, if in preformatted text, else does nothing. */
-    void                InsertPara( const ImportInfo& rInfo );
+    void                InsertPara( const HtmlImportInfo& rInfo );
 
     /** Inserts a line break (<br> tag).
         @descr  Inserts the current entry regardless if it is empty. */
@@ -366,38 +365,38 @@ public:
 
     /** Starts a *new* table nested in this table (<table> tag).
         @return  Pointer to the new table. */
-    ScHTMLTable*        TableOn( const ImportInfo& rInfo );
+    ScHTMLTable*        TableOn( const HtmlImportInfo& rInfo );
     /** Closes *this* table (</table> tag).
         @return  Pointer to the parent table. */
-    ScHTMLTable*        TableOff( const ImportInfo& rInfo );
+    ScHTMLTable*        TableOff( const HtmlImportInfo& rInfo );
     /** Starts a *new* table based on preformatted text (<pre> tag).
         @return  Pointer to the new table. */
-    ScHTMLTable*        PreOn( const ImportInfo& rInfo );
+    ScHTMLTable*        PreOn( const HtmlImportInfo& rInfo );
     /** Closes *this* table based on preformatted text (</pre> tag).
         @return  Pointer to the parent table. */
-    ScHTMLTable*        PreOff( const ImportInfo& rInfo );
+    ScHTMLTable*        PreOff( const HtmlImportInfo& rInfo );
 
     /** Starts next row (<tr> tag).
         @descr  Cell address is invalid until first call of DataOn(). */
-    void                RowOn( const ImportInfo& rInfo );
+    void                RowOn( const HtmlImportInfo& rInfo );
     /** Closes the current row (<tr> tag).
         @descr  Cell address is invalid until call of RowOn() and DataOn(). */
-    void                RowOff( const ImportInfo& rInfo );
+    void                RowOff( const HtmlImportInfo& rInfo );
     /** Starts the next cell (<td> or <th> tag). */
-    void                DataOn( const ImportInfo& rInfo );
+    void                DataOn( const HtmlImportInfo& rInfo );
     /** Closes the current cell (</td> or </th> tag).
         @descr  Cell address is invalid until next call of DataOn(). */
-    void                DataOff( const ImportInfo& rInfo );
+    void                DataOff( const HtmlImportInfo& rInfo );
 
     /** Starts the body of the HTML document (<body> tag). */
-    void                BodyOn( const ImportInfo& rInfo );
+    void                BodyOn( const HtmlImportInfo& rInfo );
     /** Closes the body of the HTML document (</body> tag). */
-    void                BodyOff( const ImportInfo& rInfo );
+    void                BodyOff( const HtmlImportInfo& rInfo );
 
     /** Closes *this* table (</table> tag) or preformatted text (</pre> tag).
         @descr  Used to close this table object regardless on opening tag type.
         @return  Pointer to the parent table, or this, if no parent found. */
-    ScHTMLTable*        CloseTable( const ImportInfo& rInfo );
+    ScHTMLTable*        CloseTable( const HtmlImportInfo& rInfo );
 
     /** Returns the resulting document row/column count of the specified HTML row/column. */
     SCCOLROW            GetDocSize( ScHTMLOrient eOrient, SCCOLROW nCellPos ) const;
@@ -409,9 +408,9 @@ public:
     ScHTMLSize          GetDocSize( const ScHTMLPos& rCellPos ) const;
 
     /** Returns the resulting Calc position of the top left edge of the table. */
-    inline const ScHTMLPos& GetDocPos() const { return maDocBasePos; }
+    const ScHTMLPos& GetDocPos() const { return maDocBasePos; }
     /** Calculates the resulting Calc position of the specified HTML column/row. */
-    SCCOLROW            GetDocPos( ScHTMLOrient eOrient, SCCOLROW nCellPos = 0 ) const;
+    SCCOLROW            GetDocPos( ScHTMLOrient eOrient, SCCOLROW nCellPos ) const;
     /** Calculates the resulting Calc position of the specified HTML cell. */
     ScHTMLPos           GetDocPos( const ScHTMLPos& rCellPos ) const;
 
@@ -454,13 +453,13 @@ private:
     const SfxItemSet&   GetCurrItemSet() const;
 
     /** Returns true, if import info represents a space character. */
-    static bool         IsSpaceCharInfo( const ImportInfo& rInfo );
+    static bool         IsSpaceCharInfo( const HtmlImportInfo& rInfo );
 
     /** Creates and returns a new empty flying entry at position (0,0). */
     ScHTMLEntryPtr      CreateEntry() const;
     /** Creates a new flying entry.
         @param rInfo  Contains the initial edit engine selection for the entry. */
-    void                CreateNewEntry( const ImportInfo& rInfo );
+    void                CreateNewEntry( const HtmlImportInfo& rInfo );
 
     /** Inserts an empty line in front of the next entry. */
     void                InsertLeadingEmptyLine();
@@ -476,7 +475,7 @@ private:
         @param rInfo  The import info struct containing the end position of the current entry.
         @param bLastInCell  true = If cell is still empty, put this entry always.
         @return  true = Entry as been pushed into the current cell; false = Entry dropped. */
-    bool                PushEntry( const ImportInfo& rInfo, bool bLastInCell = false );
+    bool                PushEntry( const HtmlImportInfo& rInfo, bool bLastInCell = false );
     /** Pushes a new entry into current cell which references a nested table.*/
     void                PushTableEntry( ScHTMLTableId nTableId );
 
@@ -487,7 +486,7 @@ private:
     ScHTMLTable*        GetExistingTable( ScHTMLTableId nTableId ) const;
     /** Inserts a nested table in the current cell at the specified position.
         @param bPreFormText  true = New table is based on preformatted text (<pre> tag). */
-    ScHTMLTable*        InsertNestedTable( const ImportInfo& rInfo, bool bPreFormText );
+    ScHTMLTable*        InsertNestedTable( const HtmlImportInfo& rInfo, bool bPreFormText );
 
     /** Inserts a new cell in an unused position, starting from current cell position. */
     void                InsertNewCell( const ScHTMLSize& rSpanSize );
@@ -502,7 +501,7 @@ private:
     void                ImplDataOff();
 
     /** Inserts additional formatting options from import info into the item set. */
-    static void         ProcessFormatOptions( SfxItemSet& rItemSet, const ImportInfo& rInfo );
+    static void         ProcessFormatOptions( SfxItemSet& rItemSet, const HtmlImportInfo& rInfo );
 
     /** Updates the document column/row size of the specified column or row.
         @descr  Only increases the present count, never decreases. */
@@ -554,7 +553,7 @@ public:
                             ::std::vector< ScEEParseEntry* >& rEEParseList,
                             ScHTMLTableId& rnUnusedId, ScHTMLParser* pParser );
 
-    virtual             ~ScHTMLGlobalTable();
+    virtual             ~ScHTMLGlobalTable() override;
 
     /** Recalculates sizes and resulting positions of all document entries. */
     void                Recalc();
@@ -569,7 +568,7 @@ class ScHTMLQueryParser : public ScHTMLParser
 {
 public:
     explicit            ScHTMLQueryParser( EditEngine* pEditEngine, ScDocument* pDoc );
-    virtual             ~ScHTMLQueryParser();
+    virtual             ~ScHTMLQueryParser() override;
 
     virtual sal_uLong   Read( SvStream& rStrm, const OUString& rBaseURL  ) override;
 
@@ -578,39 +577,39 @@ public:
 
 private:
     /** Handles all possible tags in the HTML document. */
-    void                ProcessToken( const ImportInfo& rInfo );
+    void                ProcessToken( const HtmlImportInfo& rInfo );
     /** Inserts a text portion into current entry. */
-    void                InsertText( const ImportInfo& rInfo );
+    void                InsertText( const HtmlImportInfo& rInfo );
     /** Processes the <font> tag. */
-    void                FontOn( const ImportInfo& rInfo );
+    void                FontOn( const HtmlImportInfo& rInfo );
 
     /** Processes the <meta> tag. */
-    void                MetaOn( const ImportInfo& rInfo );
+    void                MetaOn( const HtmlImportInfo& rInfo );
     /** Opens the title of the HTML document (<title> tag). */
-    void                TitleOn( const ImportInfo& rInfo );
+    void                TitleOn( const HtmlImportInfo& rInfo );
     /** Closes the title of the HTML document (</title> tag). */
-    void                TitleOff( const ImportInfo& rInfo );
+    void                TitleOff( const HtmlImportInfo& rInfo );
 
     /** Opens a new table at the current position. */
-    void                TableOn( const ImportInfo& rInfo );
+    void                TableOn( const HtmlImportInfo& rInfo );
     /** Closes the current table. */
-    void                TableOff( const ImportInfo& rInfo );
+    void                TableOff( const HtmlImportInfo& rInfo );
     /** Opens a new table based on preformatted text. */
-    void                PreOn( const ImportInfo& rInfo );
+    void                PreOn( const HtmlImportInfo& rInfo );
     /** Closes the current preformatted text table. */
-    void                PreOff( const ImportInfo& rInfo );
+    void                PreOff( const HtmlImportInfo& rInfo );
 
     /** Closes the current table, regardless on opening tag. */
-    void                CloseTable( const ImportInfo& rInfo );
+    void                CloseTable( const HtmlImportInfo& rInfo );
 
     void                ParseStyle(const OUString& rStrm);
 
-    DECL_LINK_TYPED( HTMLImportHdl, ImportInfo&, void );
+    DECL_LINK( HTMLImportHdl, HtmlImportInfo&, void );
 
 private:
     typedef ::std::unique_ptr< ScHTMLGlobalTable >    ScHTMLGlobalTablePtr;
 
-    OUStringBuffer maTitle;            /// The title of the document.
+    OUStringBuffer      maTitle;            /// The title of the document.
     ScHTMLGlobalTablePtr mxGlobTable;       /// Contains the entire imported document.
     ScHTMLTable*        mpCurrTable;        /// Pointer to current table (performance).
     ScHTMLTableId       mnUnusedId;         /// First unused table identifier.

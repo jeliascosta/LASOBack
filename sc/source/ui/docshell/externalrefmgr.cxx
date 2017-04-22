@@ -42,7 +42,6 @@
 #include <sfx2/sfxsids.hrc>
 #include <sfx2/objsh.hxx>
 #include <svl/broadcast.hxx>
-#include <svl/smplhint.hxx>
 #include <svl/itemset.hxx>
 #include <svl/stritem.hxx>
 #include <svl/urihelper.hxx>
@@ -141,10 +140,10 @@ struct UpdateFormulaCell : public unary_function<ScFormulaCell*, void>
         if (!pCode->HasExternalRef())
             return;
 
-        if (pCode->GetCodeError())
+        if (pCode->GetCodeError() != FormulaError::NONE)
         {
             // Clear the error code, or a cell with error won't get re-compiled.
-            pCode->SetCodeError(0);
+            pCode->SetCodeError(FormulaError::NONE);
             pCell->SetCompile(true);
             pCell->CompileTokenArray();
         }
@@ -246,7 +245,7 @@ void removeRangeNamesBySrcDoc(ScRangeName& rRanges, sal_uInt16 nFileId)
 }
 
 ScExternalRefCache::Table::Table()
-    : meReferenced( REFERENCED_MARKED )
+    : mbReferenced( true )
       // Prevent accidental data loss due to lack of knowledge.
 {
 }
@@ -259,26 +258,20 @@ void ScExternalRefCache::Table::clear()
 {
     maRows.clear();
     maCachedRanges.RemoveAll();
-    meReferenced = REFERENCED_MARKED;
-}
-
-void ScExternalRefCache::Table::setReferencedFlag( ScExternalRefCache::Table::ReferencedFlag eFlag )
-{
-    meReferenced = eFlag;
+    mbReferenced = true;
 }
 
 void ScExternalRefCache::Table::setReferenced( bool bReferenced )
 {
-    if (meReferenced != REFERENCED_PERMANENT)
-        meReferenced = (bReferenced ? REFERENCED_MARKED : UNREFERENCED);
+    mbReferenced = bReferenced;
 }
 
 bool ScExternalRefCache::Table::isReferenced() const
 {
-    return meReferenced != UNREFERENCED;
+    return mbReferenced;
 }
 
-void ScExternalRefCache::Table::setCell(SCCOL nCol, SCROW nRow, TokenRef pToken, sal_uLong nFmtIndex, bool bSetCacheRange)
+void ScExternalRefCache::Table::setCell(SCCOL nCol, SCROW nRow, TokenRef const & pToken, sal_uLong nFmtIndex, bool bSetCacheRange)
 {
     using ::std::pair;
     RowsDataType::iterator itrRow = maRows.find(nRow);
@@ -787,7 +780,7 @@ void ScExternalRefCache::setRangeName(sal_uInt16 nFileId, const OUString& rName)
 }
 
 void ScExternalRefCache::setCellData(sal_uInt16 nFileId, const OUString& rTabName, SCCOL nCol, SCROW nRow,
-                                     TokenRef pToken, sal_uLong nFmtIndex)
+                                     TokenRef const & pToken, sal_uLong nFmtIndex)
 {
     if (!isDocInitialized(nFileId))
         return;
@@ -884,9 +877,9 @@ void ScExternalRefCache::setCellRangeData(sal_uInt16 nFileId, const ScRange& rRa
                 SAL_WARN("sc.ui","ScExternalRefCache::setCellRangeData - not a one element matrix");
             else
             {
-                sal_uInt16 nErr = GetDoubleErrorValue( pMat->GetDouble(0,0));
-                SAL_WARN("sc.ui","ScExternalRefCache::setCellRangeData - matrix error value is " << nErr <<
-                        (nErr == errMatrixSize ? ", ok" : ", not ok"));
+                FormulaError nErr = GetDoubleErrorValue( pMat->GetDouble(0,0));
+                SAL_WARN("sc.ui","ScExternalRefCache::setCellRangeData - matrix error value is " << (int)nErr <<
+                        (nErr == FormulaError::MatrixSize ? ", ok" : ", not ok"));
             }
         }
     }
@@ -1159,11 +1152,9 @@ bool ScExternalRefCache::setCacheTableReferenced( sal_uInt16 nFileId, const OUSt
                 TableTypeRef pTab = pDoc->maTables[i];
                 if (pTab.get())
                 {
-                    Table::ReferencedFlag eNewFlag = Table::REFERENCED_MARKED;
-                    Table::ReferencedFlag eOldFlag = pTab->getReferencedFlag();
-                    if (eOldFlag != Table::REFERENCED_PERMANENT && eNewFlag != eOldFlag)
+                    if (!pTab->isReferenced())
                     {
-                        pTab->setReferencedFlag( eNewFlag);
+                        pTab->setReferenced(true);
                         addCacheTableToReferenced( nFileId, i);
                     }
                 }
@@ -1214,17 +1205,12 @@ void ScExternalRefCache::setAllCacheTableReferencedStati( bool bReferenced )
                 TableTypeRef & xTab = rDocItem.maTables[i];
                 if (xTab.get())
                 {
-                    if (xTab->getReferencedFlag() == Table::REFERENCED_PERMANENT)
-                        addCacheTableToReferenced( nFileId, i);
-                    else
-                    {
-                        xTab->setReferencedFlag( Table::UNREFERENCED);
-                        rDocReferenced.maTables[i] = false;
-                        rDocReferenced.mbAllTablesReferenced = false;
-                        // An addCacheTableToReferenced() actually may have
-                        // resulted in mbAllReferenced been set. Clear it.
-                        maReferenced.mbAllReferenced = false;
-                    }
+                    xTab->setReferenced(false);
+                    rDocReferenced.maTables[i] = false;
+                    rDocReferenced.mbAllTablesReferenced = false;
+                    // An addCacheTableToReferenced() actually may have
+                    // resulted in mbAllReferenced been set. Clear it.
+                    maReferenced.mbAllReferenced = false;
                 }
             }
         }
@@ -1548,8 +1534,8 @@ static FormulaToken* convertToToken( ScDocument* pHostDoc, ScDocument* pSrcDoc, 
         case CELLTYPE_FORMULA:
         {
             ScFormulaCell* pFCell = rCell.mpFormula;
-            sal_uInt16 nError = pFCell->GetErrCode();
-            if (nError)
+            FormulaError nError = pFCell->GetErrCode();
+            if (nError != FormulaError::NONE)
                 return new FormulaErrorToken( nError);
             else if (pFCell->IsValue())
             {
@@ -1682,8 +1668,9 @@ ScExternalRefManager::ScExternalRefManager(ScDocument* pDoc) :
     mbUserInteractionEnabled(true),
     mbDocTimerEnabled(true)
 {
-    maSrcDocTimer.SetTimeoutHdl( LINK(this, ScExternalRefManager, TimeOutHdl) );
+    maSrcDocTimer.SetInvokeHandler( LINK(this, ScExternalRefManager, TimeOutHdl) );
     maSrcDocTimer.SetTimeout(SRCDOC_SCAN_INTERVAL);
+    maSrcDocTimer.SetDebugName( "sc::ScExternalRefManager maSrcDocTimer" );
 }
 
 ScExternalRefManager::~ScExternalRefManager()
@@ -1934,7 +1921,7 @@ ScExternalRefCache::TokenRef ScExternalRefManager::getSingleRefToken(
         if (!getSrcDocTable( *pSrcDoc, rTabName, nTab, nFileId))
         {
             // specified table name doesn't exist in the source document.
-            ScExternalRefCache::TokenRef pToken(new FormulaErrorToken(errNoRef));
+            ScExternalRefCache::TokenRef pToken(new FormulaErrorToken(FormulaError::NoRef));
             return pToken;
         }
 
@@ -1965,7 +1952,7 @@ ScExternalRefCache::TokenRef ScExternalRefManager::getSingleRefToken(
     if (!pSrcDoc)
     {
         // Source document not reachable.  Throw a reference error.
-        pToken.reset(new FormulaErrorToken(errNoRef));
+        pToken.reset(new FormulaErrorToken(FormulaError::NoRef));
         return pToken;
     }
 
@@ -1973,7 +1960,7 @@ ScExternalRefCache::TokenRef ScExternalRefManager::getSingleRefToken(
     if (!getSrcDocTable( *pSrcDoc, rTabName, nTab, nFileId))
     {
         // specified table name doesn't exist in the source document.
-        pToken.reset(new FormulaErrorToken(errNoRef));
+        pToken.reset(new FormulaErrorToken(FormulaError::NoRef));
         return pToken;
     }
 
@@ -2038,7 +2025,7 @@ ScExternalRefCache::TokenArrayRef ScExternalRefManager::getDoubleRefTokens(
     {
         // Source document is not reachable.  Throw a reference error.
         pArray.reset(new ScTokenArray);
-        pArray->AddToken(FormulaErrorToken(errNoRef));
+        pArray->AddToken(FormulaErrorToken(FormulaError::NoRef));
         return pArray;
     }
 
@@ -2264,7 +2251,7 @@ ScExternalRefCache::TokenRef ScExternalRefManager::getSingleRefTokenFromSrcDoc(
     if (!pToken.get())
     {
         // Generate an error for unresolvable cells.
-        pToken.reset( new FormulaErrorToken( errNoValue));
+        pToken.reset( new FormulaErrorToken( FormulaError::NoValue));
     }
 
     // Get number format information.
@@ -2286,7 +2273,7 @@ ScExternalRefCache::TokenArrayRef ScExternalRefManager::getDoubleRefTokensFromSr
     {
         // specified table name doesn't exist in the source document.
         pArray.reset(new ScTokenArray);
-        pArray->AddToken(FormulaErrorToken(errNoRef));
+        pArray->AddToken(FormulaErrorToken(FormulaError::NoRef));
         return pArray;
     }
 
@@ -2346,7 +2333,8 @@ ScExternalRefCache::TokenArrayRef ScExternalRefManager::getRangeNameTokensFromSr
                 const ScSingleRefData& rRef = *pToken->GetSingleRef();
                 OUString aTabName;
                 pSrcDoc->GetName(rRef.Tab(), aTabName);
-                ScExternalSingleRefToken aNewToken(nFileId, aTabName, *pToken->GetSingleRef());
+                ScExternalSingleRefToken aNewToken(nFileId, svl::SharedString( aTabName),   // string not interned
+                        *pToken->GetSingleRef());
                 pNew->AddToken(aNewToken);
                 bTokenAdded = true;
             }
@@ -2356,7 +2344,8 @@ ScExternalRefCache::TokenArrayRef ScExternalRefManager::getRangeNameTokensFromSr
                 const ScSingleRefData& rRef = *pToken->GetSingleRef();
                 OUString aTabName;
                 pSrcDoc->GetName(rRef.Tab(), aTabName);
-                ScExternalDoubleRefToken aNewToken(nFileId, aTabName, *pToken->GetDoubleRef());
+                ScExternalDoubleRefToken aNewToken(nFileId, svl::SharedString( aTabName),   // string not interned
+                        *pToken->GetDoubleRef());
                 pNew->AddToken(aNewToken);
                 bTokenAdded = true;
             }
@@ -2428,7 +2417,7 @@ ScDocument* ScExternalRefManager::getSrcDocument(sal_uInt16 nFileId)
     {
         // document already loaded.
 
-        SfxObjectShell* p = itr->second.maShell;
+        SfxObjectShell* p = itr->second.maShell.get();
         itr->second.maLastAccess = tools::Time( tools::Time::SYSTEM );
         return &static_cast<ScDocShell*>(p)->GetDocument();
     }
@@ -2439,7 +2428,7 @@ ScDocument* ScExternalRefManager::getSrcDocument(sal_uInt16 nFileId)
     {
         //document is unsaved document
 
-        SfxObjectShell* p = itr->second.maShell;
+        SfxObjectShell* p = itr->second.maShell.get();
         itr->second.maLastAccess = tools::Time( tools::Time::SYSTEM );
         return &static_cast<ScDocShell*>(p)->GetDocument();
     }
@@ -2458,7 +2447,7 @@ ScDocument* ScExternalRefManager::getSrcDocument(sal_uInt16 nFileId)
     catch (const css::uno::Exception&)
     {
     }
-    if (!aSrcDoc.maShell.Is())
+    if (!aSrcDoc.maShell.is())
     {
         // source document could not be loaded.
         return nullptr;
@@ -2500,7 +2489,7 @@ SfxObjectShellRef ScExternalRefManager::loadSrcDocument(sal_uInt16 nFileId, OUSt
         aBaseURL.insertName("content.xml");
 
         OUString aStr = URIHelper::simpleNormalizedMakeRelative(
-            aBaseURL.GetMainURL(INetURLObject::NO_DECODE), aFile);
+            aBaseURL.GetMainURL(INetURLObject::DecodeMechanism::NONE), aFile);
 
         setRelativeFileName(nFileId, aStr);
     }
@@ -2527,7 +2516,7 @@ SfxObjectShellRef ScExternalRefManager::loadSrcDocument(sal_uInt16 nFileId, OUSt
         }
     }
 
-    unique_ptr<SfxMedium> pMedium(new SfxMedium(aFile, STREAM_STD_READ, pFilter, pSet));
+    unique_ptr<SfxMedium> pMedium(new SfxMedium(aFile, StreamMode::STD_READ, pFilter, pSet));
     if (pMedium->GetError() != ERRCODE_NONE)
         return nullptr;
 
@@ -2557,7 +2546,7 @@ SfxObjectShellRef ScExternalRefManager::loadSrcDocument(sal_uInt16 nFileId, OUSt
     if (!pNewShell->DoLoad(pMedium.release()))
     {
         aRef->DoClose();
-        aRef.Clear();
+        aRef.clear();
         return aRef;
     }
 
@@ -2672,7 +2661,7 @@ void ScExternalRefManager::SrcFileData::maybeCreateRealFileName(const OUString& 
     INetURLObject aBaseURL(rOwnDocName);
     aBaseURL.insertName("content.xml");
     bool bWasAbs = false;
-    maRealFileName = aBaseURL.smartRel2Abs(rRelPath, bWasAbs).GetMainURL(INetURLObject::NO_DECODE);
+    maRealFileName = aBaseURL.smartRel2Abs(rRelPath, bWasAbs).GetMainURL(INetURLObject::DecodeMechanism::NONE);
 }
 
 void ScExternalRefManager::maybeCreateRealFileName(sal_uInt16 nFileId)
@@ -2878,12 +2867,12 @@ public:
                         case sc::FormulaResultValue::Error:
                         case sc::FormulaResultValue::Invalid:
                         default:
-                            pTok.reset(new FormulaErrorToken(errNoValue));
+                            pTok.reset(new FormulaErrorToken(FormulaError::NoValue));
                     }
                 }
                 break;
                 default:
-                    pTok.reset(new FormulaErrorToken(errNoValue));
+                    pTok.reset(new FormulaErrorToken(FormulaError::NoValue));
             }
 
             if (pTok)
@@ -2911,7 +2900,7 @@ bool ScExternalRefManager::refreshSrcDocument(sal_uInt16 nFileId)
     }
     catch ( const css::uno::Exception& ) {}
 
-    if (!xDocShell.Is())
+    if (!xDocShell.is())
         // Failed to load the document.  Bail out.
         return false;
 
@@ -3175,10 +3164,10 @@ void ScExternalRefManager::transformUnsavedRefToSavedRef( SfxObjectShell* pShell
     DocShellMap::iterator itr = maUnsavedDocShells.begin();
     while( itr != maUnsavedDocShells.end() )
     {
-        if (&(itr->second.maShell) == pShell)
+        if ( itr->second.maShell.get() == pShell )
         {
             // found that the shell is marked as unsaved
-            OUString aFileURL = pShell->GetMedium()->GetURLObject().GetMainURL(INetURLObject::DECODE_TO_IURI);
+            OUString aFileURL = pShell->GetMedium()->GetURLObject().GetMainURL(INetURLObject::DecodeMechanism::ToIUri);
             switchSrcFile(itr->first, aFileURL, OUString());
             EndListening(*pShell);
             maUnsavedDocShells.erase(itr++);
@@ -3191,18 +3180,18 @@ void ScExternalRefManager::Notify( SfxBroadcaster&, const SfxHint& rHint )
     const SfxEventHint* pEventHint = dynamic_cast<const SfxEventHint*>(&rHint);
     if ( pEventHint )
     {
-        sal_uLong nEventId = pEventHint->GetEventId();
+        SfxEventHintId nEventId = pEventHint->GetEventId();
         switch ( nEventId )
         {
-            case SFX_EVENT_PREPARECLOSEDOC:
+            case SfxEventHintId::PrepareCloseDoc:
                 {
                     ScopedVclPtrInstance<WarningBox> aBox( ScDocShell::GetActiveDialogParent(), WinBits( WB_OK ),
                                         ScGlobal::GetRscString( STR_CLOSE_WITH_UNSAVED_REFS ) );
                     aBox->Execute();
                 }
                 break;
-            case SFX_EVENT_SAVEDOCDONE:
-            case SFX_EVENT_SAVEASDOCDONE:
+            case SfxEventHintId::SaveDocDone:
+            case SfxEventHintId::SaveAsDocDone:
                 {
                     SfxObjectShell* pObjShell = static_cast<const SfxEventHint&>( rHint ).GetObjShell();
                     transformUnsavedRefToSavedRef(pObjShell);
@@ -3214,7 +3203,7 @@ void ScExternalRefManager::Notify( SfxBroadcaster&, const SfxHint& rHint )
     }
 }
 
-IMPL_LINK_TYPED(ScExternalRefManager, TimeOutHdl, Timer*, pTimer, void)
+IMPL_LINK(ScExternalRefManager, TimeOutHdl, Timer*, pTimer, void)
 {
     if (pTimer == &maSrcDocTimer)
         purgeStaleSrcDocument(SRCDOC_LIFE_SPAN);

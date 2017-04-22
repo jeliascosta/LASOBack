@@ -27,7 +27,7 @@
 
 namespace canvas
 {
-    SurfaceProxy::SurfaceProxy( const canvas::IColorBufferSharedPtr& pBuffer,
+    SurfaceProxy::SurfaceProxy( const std::shared_ptr<canvas::IColorBuffer>& pBuffer,
                                 const PageManagerSharedPtr&          pPageManager ) :
         mpPageManager( pPageManager ),
         maSurfaceList(),
@@ -63,9 +63,9 @@ namespace canvas
                 // the current surface is located at the position [x,y]
                 // and has the size [min(restx,pagesizex),min(resty,pagesizey)
                 ::basegfx::B2IPoint aOffset(x,y);
-                ::basegfx::B2ISize aSize( ::std::min( aImageSize.getX()-x,
+                ::basegfx::B2ISize aSize( std::min( aImageSize.getX()-x,
                                                       aPageSize.getX() ),
-                                          ::std::min( aImageSize.getY()-y,
+                                          std::min( aImageSize.getY()-y,
                                                       aPageSize.getY() ) );
 
                 maSurfaceList.push_back(
@@ -114,7 +114,7 @@ namespace canvas
             ::basegfx::triangulator::triangulate(rClipPoly));
 
         // dump polygons
-        SAL_INFO("canvas", "Orignal clip polygon: " <<  basegfx::tools::exportToSvgD( rClipPoly, true, true, false ));
+        SAL_INFO("canvas", "Original clip polygon: " <<  basegfx::tools::exportToSvgD( rClipPoly, true, true, false ));
         SAL_INFO("canvas", "Triangulated polygon: " <<  basegfx::tools::exportToSvgD(basegfx::B2DPolyPolygon(rTriangulatedPolygon), true, true, false ));
 
         for( const auto& rSurfacePtr : maSurfaceList )

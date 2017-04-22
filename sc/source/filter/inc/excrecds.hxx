@@ -53,7 +53,7 @@ public:
     virtual void            SaveXml( XclExpXmlStream& rStrm ) override;
 
     virtual sal_uInt16          GetNum() const = 0;
-    virtual sal_Size        GetLen() const = 0;
+    virtual std::size_t     GetLen() const = 0;
 
 protected:
     virtual void            SaveCont( XclExpStream& rStrm );
@@ -72,7 +72,7 @@ protected:
 public:
     virtual void            Save( XclExpStream& rStrm ) override;
     virtual sal_uInt16          GetNum() const override;
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t     GetLen() const override;
 };
 
 //--------------------------------------------------------- class ExcDummyRec -
@@ -97,10 +97,10 @@ private:
 protected:
     bool                    bVal;
 
-    inline                  ExcBoolRecord() : bVal( false ) {}
+    ExcBoolRecord() : bVal( false ) {}
 
 public:
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t     GetLen() const override;
 };
 
 //--------------------------------------------------------- class ExcBof_Base -
@@ -128,7 +128,7 @@ public:
                             ExcBof();
 
     virtual sal_uInt16          GetNum() const override;
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t     GetLen() const override;
 };
 
 //------------------------------------------------------------- class ExcBofW -
@@ -142,7 +142,7 @@ public:
                             ExcBofW();
 
     virtual sal_uInt16          GetNum() const override;
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t     GetLen() const override;
 };
 
 //-------------------------------------------------------------- class ExcEof -
@@ -152,7 +152,7 @@ class ExcEof : public ExcRecord
 private:
 public:
     virtual sal_uInt16          GetNum() const override;
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t     GetLen() const override;
 };
 
 //--------------------------------------------------------- class ExcDummy_00 -
@@ -162,9 +162,9 @@ class ExcDummy_00 : public ExcDummyRec
 {
 private:
     static const sal_uInt8      pMyData[];
-    static const sal_Size   nMyLen;
+    static const std::size_t   nMyLen;
 public:
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t        GetLen() const override;
     virtual const sal_uInt8*        GetData() const override;
 };
 
@@ -196,7 +196,7 @@ class XclExpPassHash : public XclExpRecord
 {
 public:
     XclExpPassHash(const css::uno::Sequence<sal_Int8>& aHash);
-    virtual ~XclExpPassHash();
+    virtual ~XclExpPassHash() override;
 
 private:
     virtual void    WriteBody(XclExpStream& rStrm) override;
@@ -212,9 +212,9 @@ class ExcDummy_040 : public ExcDummyRec
 {
 private:
     static const sal_uInt8      pMyData[];
-    static const sal_Size   nMyLen;
+    static const std::size_t   nMyLen;
 public:
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t        GetLen() const override;
     virtual const sal_uInt8*        GetData() const override;
 };
 
@@ -222,9 +222,9 @@ class ExcDummy_041 : public ExcDummyRec
 {
 private:
     static const sal_uInt8      pMyData[];
-    static const sal_Size   nMyLen;
+    static const std::size_t   nMyLen;
 public:
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t        GetLen() const override;
     virtual const sal_uInt8*        GetData() const override;
 };
 
@@ -256,7 +256,7 @@ protected:
 public:
                             ExcBundlesheetBase( RootData& rRootData, SCTAB nTab );
 
-    inline void             SetStreamPos(sal_uInt64 const nStrPos) { m_nStrPos = nStrPos; }
+    void             SetStreamPos(sal_uInt64 const nStrPos) { m_nStrPos = nStrPos; }
     void                    UpdateStreamPos( XclExpStream& rStrm );
 
     virtual sal_uInt16          GetNum() const override;
@@ -271,7 +271,7 @@ private:
 
 public:
                             ExcBundlesheet( RootData& rRootData, SCTAB nTab );
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t     GetLen() const override;
 };
 
 //--------------------------------------------------------- class ExcDummy_02 -
@@ -281,9 +281,9 @@ class ExcDummy_02a : public ExcDummyRec
 {
 private:
     static const sal_uInt8      pMyData[];
-    static const sal_Size   nMyLen;
+    static const std::size_t   nMyLen;
 public:
-    virtual sal_Size        GetLen() const override;
+    virtual std::size_t        GetLen() const override;
     virtual const sal_uInt8*        GetData() const override;
 };
 
@@ -338,8 +338,8 @@ class XclExpAutofilterinfo : public XclExpUInt16Record
 public:
     explicit            XclExpAutofilterinfo( const ScAddress& rStartPos, SCCOL nScCol );
 
-    inline const ScAddress& GetStartPos() const { return maStartPos; }
-    inline SCCOL        GetColCount() const { return static_cast< SCCOL >( GetValue() ); }
+    const ScAddress& GetStartPos() const { return maStartPos; }
+    SCCOL        GetColCount() const { return static_cast< SCCOL >( GetValue() ); }
 
 private:
     ScAddress           maStartPos;
@@ -351,15 +351,16 @@ private:
     sal_uInt8               nType;
     sal_uInt8               nOper;
     double                  fVal;
-    XclExpString*           pText;
+    std::unique_ptr<XclExpString>
+                            pText;
 
 protected:
 public:
                             ExcFilterCondition();
                             ~ExcFilterCondition();
 
-    inline bool             IsEmpty() const     { return (nType == EXC_AFTYPE_NOTUSED); }
-    sal_uLong               GetTextBytes() const;
+    bool             IsEmpty() const     { return (nType == EXC_AFTYPE_NOTUSED); }
+    std::size_t             GetTextBytes() const;
 
     void                    SetCondition( sal_uInt8 nTp, sal_uInt8 nOp, double fV, OUString* pT );
 
@@ -387,8 +388,8 @@ private:
 public:
                             XclExpAutofilter( const XclExpRoot& rRoot, sal_uInt16 nC );
 
-    inline sal_uInt16       GetCol() const          { return nCol; }
-    inline bool             HasTop10() const        { return ::get_flag( nFlags, EXC_AFFLAG_TOP10 ); }
+    sal_uInt16       GetCol() const          { return nCol; }
+    bool             HasTop10() const        { return ::get_flag( nFlags, EXC_AFFLAG_TOP10 ); }
 
     bool                    HasCondition() const;
     bool                    AddEntry( const ScQueryEntry& rEntry );
@@ -405,7 +406,7 @@ public:
                 Else, use defined database range; used with XclExpTables.
      */
     explicit            ExcAutoFilterRecs( const XclExpRoot& rRoot, SCTAB nTab, const ScDBData* pDefinedData );
-    virtual             ~ExcAutoFilterRecs();
+    virtual             ~ExcAutoFilterRecs() override;
 
     void                AddObjRecs();
 
@@ -423,8 +424,8 @@ private:
     typedef XclExpAutofilterList::RecordRefType     XclExpAutofilterRef;
 
     XclExpAutofilterList maFilterList;
-    XclExpFiltermode*   pFilterMode;
-    XclExpAutofilterinfo* pFilterInfo;
+    std::unique_ptr<XclExpFiltermode> m_pFilterMode;
+    std::unique_ptr<XclExpAutofilterinfo> m_pFilterInfo;
     ScRange                 maRef;
     bool mbAutoFilter;
 };

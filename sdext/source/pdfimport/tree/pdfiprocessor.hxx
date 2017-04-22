@@ -71,7 +71,7 @@ namespace pdfi
         enum DocumentTextDirecion { LrTb, RlTb, TbLr };
 
         explicit PDFIProcessor( const css::uno::Reference< css::task::XStatusIndicator >& xStat,
-            css::uno::Reference< css::uno::XComponentContext > xContext) ;
+            css::uno::Reference< css::uno::XComponentContext > const & xContext) ;
 
         /// TEMP - enable writer-like text:p on doc level
         void enableToplevelText();
@@ -191,8 +191,6 @@ namespace pdfi
 
         ImageContainer                     m_aImages;
 
-        DocumentTextDirecion               m_eTextDirection;
-
         sal_Int32                          m_nPages;
         sal_Int32                          m_nNextZOrder;
         css::uno::Reference<
@@ -201,7 +199,7 @@ namespace pdfi
 
         bool                               m_bHaveTextOnDocLevel;
     };
-    class CharGlyph
+    class CharGlyph final
     {
         public:
             CharGlyph(Element* pCurElement, const GraphicsContext& rCurrentContext,
@@ -209,7 +207,6 @@ namespace pdfi
                : m_pCurElement(pCurElement), m_rCurrentContext(rCurrentContext),
                  m_Width(width), m_PrevSpaceWidth(prevSpaceWidth), m_rGlyphs(rGlyphs) {};
 
-            virtual ~CharGlyph(){};
             OUString& getGlyph(){ return m_rGlyphs; }
             double getWidth(){ return m_Width; }
             double getPrevSpaceWidth(){ return m_PrevSpaceWidth; }

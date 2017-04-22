@@ -28,7 +28,7 @@ const SCSIZE kBufferThreshold = 128;
 }
 
 ScJumpMatrix::ScJumpMatrix(SCSIZE nColsP, SCSIZE nRowsP)
-    : pJump(new ScJumpMatrixEntry[nColsP * nRowsP])
+    : mvJump(nColsP * nRowsP)
     , pMat(new ScFullMatrix(nColsP, nRowsP))
     , pParams(nullptr)
     , nCols(nColsP)
@@ -46,7 +46,7 @@ ScJumpMatrix::ScJumpMatrix(SCSIZE nColsP, SCSIZE nRowsP)
     // Initialize result matrix in case of
     // a premature end of the interpreter
     // due to errors.
-    pMat->FillDouble(formula::CreateDoubleError(formula::NOTAVAILABLE), 0, 0, nCols - 1, nRows - 1);
+    pMat->FillDouble(CreateDoubleError(FormulaError::NotAvailable), 0, 0, nCols - 1, nRows - 1);
     /*! pJump not initialized */
 }
 
@@ -62,7 +62,6 @@ ScJumpMatrix::~ScJumpMatrix()
         }
         delete pParams;
     }
-    delete[] pJump;
 }
 
 void ScJumpMatrix::GetDimensions(SCSIZE& rCols, SCSIZE& rRows) const
@@ -74,7 +73,7 @@ void ScJumpMatrix::GetDimensions(SCSIZE& rCols, SCSIZE& rRows) const
 void ScJumpMatrix::SetJump(SCSIZE nCol, SCSIZE nRow, double fBool,
                            short nStart, short nNext)
 {
-    pJump[(sal_uLong)nCol * nRows + nRow].SetJump(fBool, nStart, nNext, SHRT_MAX);
+    mvJump[(sal_uLong)nCol * nRows + nRow].SetJump(fBool, nStart, nNext, SHRT_MAX);
 }
 
 void ScJumpMatrix::GetJump(
@@ -93,7 +92,7 @@ void ScJumpMatrix::GetJump(
         nCol = 0;
         nRow = 0;
     }
-    pJump[(sal_uLong)nCol * nRows + nRow].
+    mvJump[(sal_uLong)nCol * nRows + nRow].
         GetJump(rBool, rStart, rNext, rStop);
 }
 
@@ -102,7 +101,7 @@ void ScJumpMatrix::SetAllJumps(double fBool, short nStart, short nNext, short nS
     sal_uLong n = (sal_uLong)nCols * nRows;
     for (sal_uLong j = 0; j < n; ++j)
     {
-        pJump[j].SetJump(fBool, nStart,
+        mvJump[j].SetJump(fBool, nStart,
                          nNext, nStop);
     }
 }
@@ -152,13 +151,13 @@ void ScJumpMatrix::SetNewResMat(SCSIZE nNewCols, SCSIZE nNewRows)
         if (nResMatCols < nNewCols)
         {
             pMat->FillDouble(
-                formula::CreateDoubleError(formula::NOTAVAILABLE),
+                CreateDoubleError(FormulaError::NotAvailable),
                 nResMatCols, 0, nNewCols - 1, nResMatRows - 1);
         }
         if (nResMatRows < nNewRows)
         {
             pMat->FillDouble(
-                formula::CreateDoubleError(formula::NOTAVAILABLE),
+                CreateDoubleError(FormulaError::NotAvailable),
                 0, nResMatRows, nNewCols - 1, nNewRows - 1);
         }
         if (nRows == 1 && nCurCol != 0)

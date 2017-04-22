@@ -22,6 +22,8 @@
 
 #include "sal/config.h"
 
+#include <memory>
+
 #include "sal/types.h"
 
 #include "store/types.h"
@@ -100,9 +102,9 @@ struct OStoreBTreeEntry
  *======================================================================*/
 #define STORE_MAGIC_BTREENODE sal_uInt32(0x58190322)
 
-struct OStoreBTreeNodeData : public store::OStorePageData
+struct OStoreBTreeNodeData : public store::PageData
 {
-    typedef OStorePageData      base;
+    typedef PageData      base;
     typedef OStoreBTreeNodeData self;
 
     typedef OStorePageGuard     G;
@@ -158,7 +160,7 @@ struct OStoreBTreeNodeData : public store::OStorePageData
 
     /** Construction.
     */
-    explicit OStoreBTreeNodeData (sal_uInt16 nPageSize = self::thePageSize);
+    explicit OStoreBTreeNodeData (sal_uInt16 nPageSize);
 
     /** guard (external representation).
     */
@@ -232,7 +234,7 @@ class OStoreBTreeNodeObject : public store::OStorePageObject
 public:
     /** Construction.
     */
-    explicit OStoreBTreeNodeObject (PageHolder const & rxPage = PageHolder())
+    explicit OStoreBTreeNodeObject (std::shared_ptr<PageData> const & rxPage = std::shared_ptr<PageData>())
         : OStorePageObject (rxPage)
     {}
 
@@ -273,7 +275,7 @@ class OStoreBTreeRootObject : public store::OStoreBTreeNodeObject
 public:
     /** Construction.
      */
-    explicit OStoreBTreeRootObject (PageHolder const & rxPage = PageHolder())
+    explicit OStoreBTreeRootObject (std::shared_ptr<PageData> const & rxPage = std::shared_ptr<PageData>())
         : OStoreBTreeNodeObject (rxPage)
     {}
 

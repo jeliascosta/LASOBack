@@ -23,7 +23,6 @@
 #include "UserDefinedProperties.hxx"
 #include "PropertyHelper.hxx"
 #include "macros.hxx"
-#include "ContainerHelper.hxx"
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/style/XStyle.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -52,12 +51,12 @@ struct StaticDataPointInfoHelper_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        ::std::vector< css::beans::Property > aProperties;
+        std::vector< css::beans::Property > aProperties;
         ::chart::DataPointProperties::AddPropertiesToVector( aProperties );
         ::chart::CharacterProperties::AddPropertiesToVector( aProperties );
         ::chart::UserDefinedProperties::AddPropertiesToVector( aProperties );
 
-        ::std::sort( aProperties.begin(), aProperties.end(),
+        std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -151,29 +150,24 @@ DataPoint::~DataPoint()
 
 // ____ XCloneable ____
 uno::Reference< util::XCloneable > SAL_CALL DataPoint::createClone()
-    throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< util::XCloneable >( new DataPoint( *this ));
 }
 
 // ____ XChild ____
 Reference< uno::XInterface > SAL_CALL DataPoint::getParent()
-    throw (uno::RuntimeException, std::exception)
 {
     return Reference< uno::XInterface >( m_xParentProperties.get(), uno::UNO_QUERY );
 }
 
 void SAL_CALL DataPoint::setParent(
     const Reference< uno::XInterface >& Parent )
-    throw (lang::NoSupportException,
-           uno::RuntimeException, std::exception)
 {
     m_xParentProperties = Reference< beans::XPropertySet >( Parent, uno::UNO_QUERY );
 }
 
 // ____ OPropertySet ____
 uno::Any DataPoint::GetDefaultValue( sal_Int32 nHandle ) const
-    throw(beans::UnknownPropertyException)
 {
     // the value set at the data series is the default
     uno::Reference< beans::XFastPropertySet > xFast( m_xParentProperties.get(), uno::UNO_QUERY );
@@ -188,7 +182,6 @@ uno::Any DataPoint::GetDefaultValue( sal_Int32 nHandle ) const
 
 void SAL_CALL DataPoint::setFastPropertyValue_NoBroadcast(
     sal_Int32 nHandle, const uno::Any& rValue )
-    throw (uno::Exception, std::exception)
 {
     if(    nHandle == DataPointProperties::PROP_DATAPOINT_ERROR_BAR_Y
         || nHandle == DataPointProperties::PROP_DATAPOINT_ERROR_BAR_X )
@@ -222,14 +215,12 @@ void SAL_CALL DataPoint::setFastPropertyValue_NoBroadcast(
 
 // ____ XPropertySet ____
 Reference< beans::XPropertySetInfo > SAL_CALL DataPoint::getPropertySetInfo()
-    throw (uno::RuntimeException, std::exception)
 {
     return *StaticDataPointInfo::get();
 }
 
 // ____ XModifyBroadcaster ____
 void SAL_CALL DataPoint::addModifyListener( const uno::Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -243,7 +234,6 @@ void SAL_CALL DataPoint::addModifyListener( const uno::Reference< util::XModifyL
 }
 
 void SAL_CALL DataPoint::removeModifyListener( const uno::Reference< util::XModifyListener >& aListener )
-    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -258,14 +248,12 @@ void SAL_CALL DataPoint::removeModifyListener( const uno::Reference< util::XModi
 
 // ____ XModifyListener ____
 void SAL_CALL DataPoint::modified( const lang::EventObject& aEvent )
-    throw (uno::RuntimeException, std::exception)
 {
     m_xModifyEventForwarder->modified( aEvent );
 }
 
 // ____ XEventListener (base of XModifyListener) ____
 void SAL_CALL DataPoint::disposing( const lang::EventObject& )
-    throw (uno::RuntimeException, std::exception)
 {
     // nothing
 }
@@ -273,22 +261,7 @@ void SAL_CALL DataPoint::disposing( const lang::EventObject& )
 // ____ OPropertySet ____
 void DataPoint::firePropertyChangeEvent()
 {
-    fireModifyEvent();
-}
-
-void DataPoint::fireModifyEvent()
-{
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
-}
-
-Sequence< OUString > DataPoint::getSupportedServiceNames_Static()
-{
-    return Sequence< OUString >{
-        "com.sun.star.drawing.FillProperties",
-        "com.sun.star.chart2.DataPoint",
-        "com.sun.star.chart2.DataPointProperties",
-        "com.sun.star.beans.PropertySet"
-    };
 }
 
 // needed by MSC compiler
@@ -298,26 +271,23 @@ IMPLEMENT_FORWARD_XINTERFACE2( DataPoint, DataPoint_Base, ::property::OPropertyS
 
 // implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL DataPoint::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString DataPoint::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart.DataPoint") ;
 }
 
 sal_Bool SAL_CALL DataPoint::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL DataPoint::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return Sequence< OUString >{
+        "com.sun.star.drawing.FillProperties",
+        "com.sun.star.chart2.DataPoint",
+        "com.sun.star.chart2.DataPointProperties",
+        "com.sun.star.beans.PropertySet"
+    };
 }
 
 } //  namespace chart

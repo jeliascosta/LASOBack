@@ -37,12 +37,12 @@ using namespace com::sun::star::sdbcx;
 
 void WpADOGroup::Create()
 {
-    ADOGroup* pGroup = NULL;
+    ADOGroup* pGroup = nullptr;
     HRESULT hr = CoCreateInstance(ADOS::CLSID_ADOGROUP_25,
-                          NULL,
+                          nullptr,
                           CLSCTX_INPROC_SERVER,
                           ADOS::IID_ADOGROUP_25,
-                          (void**)&pGroup );
+                          reinterpret_cast<void**>(&pGroup) );
 
 
     if( !FAILED( hr ) )
@@ -52,7 +52,7 @@ void WpADOGroup::Create()
     }
 }
 
-OAdoGroup::OAdoGroup(OCatalog* _pParent,sal_Bool _bCase,    ADOGroup* _pGroup) : OGroup_ADO(_bCase),m_pCatalog(_pParent)
+OAdoGroup::OAdoGroup(OCatalog* _pParent,bool _bCase,    ADOGroup* _pGroup) : OGroup_ADO(_bCase),m_pCatalog(_pParent)
 {
     construct();
     if(_pGroup)
@@ -62,11 +62,11 @@ OAdoGroup::OAdoGroup(OCatalog* _pParent,sal_Bool _bCase,    ADOGroup* _pGroup) :
 
 }
 
-OAdoGroup::OAdoGroup(OCatalog* _pParent,sal_Bool _bCase, const OUString& _Name) : OGroup_ADO(_Name,_bCase),m_pCatalog(_pParent)
+OAdoGroup::OAdoGroup(OCatalog* _pParent,bool _bCase, const OUString& Name) : OGroup_ADO(Name,_bCase),m_pCatalog(_pParent)
 {
     construct();
     m_aGroup.Create();
-    m_aGroup.put_Name(_Name);
+    m_aGroup.put_Name(Name);
 }
 
 void OAdoGroup::refreshUsers()
@@ -79,12 +79,12 @@ void OAdoGroup::refreshUsers()
     if(m_pUsers)
         m_pUsers->reFill(aVector);
     else
-        m_pUsers = new OUsers(m_pCatalog,m_aMutex,aVector,aUsers,isCaseSensitive());
+        m_pUsers.reset( new OUsers(m_pCatalog,m_aMutex,aVector,aUsers,isCaseSensitive()) );
 }
 
 Sequence< sal_Int8 > OAdoGroup::getUnoTunnelImplementationId()
 {
-    static ::cppu::OImplementationId * pId = 0;
+    static ::cppu::OImplementationId * pId = nullptr;
     if (! pId)
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
@@ -97,9 +97,9 @@ Sequence< sal_Int8 > OAdoGroup::getUnoTunnelImplementationId()
     return pId->getImplementationId();
 }
 
-// com::sun::star::lang::XUnoTunnel
+// css::lang::XUnoTunnel
 
-sal_Int64 OAdoGroup::getSomething( const Sequence< sal_Int8 > & rId ) throw (RuntimeException)
+sal_Int64 OAdoGroup::getSomething( const Sequence< sal_Int8 > & rId )
 {
     return (rId.getLength() == 16 && 0 == memcmp(getUnoTunnelImplementationId().getConstArray(),  rId.getConstArray(), 16 ) )
                 ? reinterpret_cast< sal_Int64 >( this )
@@ -107,7 +107,7 @@ sal_Int64 OAdoGroup::getSomething( const Sequence< sal_Int8 > & rId ) throw (Run
 }
 
 
-void OAdoGroup::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rValue)throw (Exception)
+void OAdoGroup::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rValue)
 {
     if(m_aGroup.IsValid())
     {
@@ -139,12 +139,12 @@ void OAdoGroup::getFastPropertyValue(Any& rValue,sal_Int32 nHandle) const
 }
 
 
-sal_Int32 SAL_CALL OAdoGroup::getPrivileges( const OUString& objName, sal_Int32 objType ) throw(::com::sun::star::sdbc::SQLException, RuntimeException)
+sal_Int32 SAL_CALL OAdoGroup::getPrivileges( const OUString& objName, sal_Int32 objType )
 {
     return MapRight(m_aGroup.GetPermissions(objName,MapObjectType(objType)));
 }
 
-sal_Int32 SAL_CALL OAdoGroup::getGrantablePrivileges( const OUString& objName, sal_Int32 objType ) throw(::com::sun::star::sdbc::SQLException, RuntimeException)
+sal_Int32 SAL_CALL OAdoGroup::getGrantablePrivileges( const OUString& objName, sal_Int32 objType )
 {
     RightsEnum eNum = m_aGroup.GetPermissions(objName,MapObjectType(objType));
     if(eNum & adRightWithGrant)
@@ -152,26 +152,14 @@ sal_Int32 SAL_CALL OAdoGroup::getGrantablePrivileges( const OUString& objName, s
     return 0;
 }
 
-void SAL_CALL OAdoGroup::grantPrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges ) throw(::com::sun::star::sdbc::SQLException, RuntimeException)
+void SAL_CALL OAdoGroup::grantPrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges )
 {
     m_aGroup.SetPermissions(objName,MapObjectType(objType),adAccessGrant,Map2Right(objPrivileges));
 }
 
-void SAL_CALL OAdoGroup::revokePrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges ) throw(::com::sun::star::sdbc::SQLException, RuntimeException)
+void SAL_CALL OAdoGroup::revokePrivileges( const OUString& objName, sal_Int32 objType, sal_Int32 objPrivileges )
 {
     m_aGroup.SetPermissions(objName,MapObjectType(objType),adAccessDeny,Map2Right(objPrivileges));
 }
-
-
-void SAL_CALL OAdoGroup::acquire() throw()
-{
-    OGroup_ADO::acquire();
-}
-
-void SAL_CALL OAdoGroup::release() throw()
-{
-    OGroup_ADO::release();
-}
-
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

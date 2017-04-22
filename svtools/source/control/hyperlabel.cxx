@@ -142,7 +142,7 @@ namespace svt
         if ( IsEnabled() && m_pImpl->bInteractive )
         {
             Point aPoint(0,0);
-            Rectangle rRect(aPoint, Size( m_pImpl->m_aMinSize.Width(), GetSizePixel().Height() ) );
+            tools::Rectangle rRect(aPoint, Size( m_pImpl->m_aMinSize.Width(), GetSizePixel().Height() ) );
             ShowFocus( rRect );
         }
     }
@@ -159,7 +159,7 @@ namespace svt
 
     void HyperLabel::dispose()
     {
-        delete m_pImpl;
+        m_pImpl.reset();
         FixedText::dispose();
     }
 

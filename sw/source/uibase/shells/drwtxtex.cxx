@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/ui/dialogs/XSLTFilterDialog.hpp>
 
 #include <comphelper/processfactory.hxx>
 #include <comphelper/string.hxx>
@@ -202,16 +201,16 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
         case SID_ATTR_CHAR_AUTOKERN  :   nEEWhich = EE_CHAR_PAIRKERNING; break;
         case SID_ATTR_CHAR_ESCAPEMENT:   nEEWhich = EE_CHAR_ESCAPEMENT; break;
         case SID_ATTR_PARA_ADJUST_LEFT:
-            aNewAttr.Put(SvxAdjustItem(SVX_ADJUST_LEFT, EE_PARA_JUST));
+            aNewAttr.Put(SvxAdjustItem(SvxAdjust::Left, EE_PARA_JUST));
         break;
         case SID_ATTR_PARA_ADJUST_CENTER:
-            aNewAttr.Put(SvxAdjustItem(SVX_ADJUST_CENTER, EE_PARA_JUST));
+            aNewAttr.Put(SvxAdjustItem(SvxAdjust::Center, EE_PARA_JUST));
         break;
         case SID_ATTR_PARA_ADJUST_RIGHT:
-            aNewAttr.Put(SvxAdjustItem(SVX_ADJUST_RIGHT, EE_PARA_JUST));
+            aNewAttr.Put(SvxAdjustItem(SvxAdjust::Right, EE_PARA_JUST));
         break;
         case SID_ATTR_PARA_ADJUST_BLOCK:
-            aNewAttr.Put(SvxAdjustItem(SVX_ADJUST_BLOCK, EE_PARA_JUST));
+            aNewAttr.Put(SvxAdjustItem(SvxAdjust::Block, EE_PARA_JUST));
         break;
         case SID_ATTR_PARA_LRSPACE:
             {
@@ -222,6 +221,22 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
                 rReq.Done();
             }
             break;
+        case SID_HANGING_INDENT:
+            {
+                SfxItemState eState = aEditAttr.GetItemState( EE_PARA_LRSPACE );
+                if( eState >= SfxItemState::DEFAULT )
+                {
+                    SvxLRSpaceItem aParaMargin = static_cast<const SvxLRSpaceItem&>( aEditAttr.Get( EE_PARA_LRSPACE ) );
+                    aParaMargin.SetWhich( EE_PARA_LRSPACE );
+                    short int nFirstLineOffset = aParaMargin.GetTextFirstLineOfst();
+                    aParaMargin.SetTextLeft( aParaMargin.GetTextLeft() + nFirstLineOffset );
+                    aParaMargin.SetRight( aParaMargin.GetRight() );
+                    aParaMargin.SetTextFirstLineOfst( nFirstLineOffset * (-1) );
+                    aNewAttr.Put(aParaMargin);
+                    rReq.Done();
+                }
+            }
+        break;
         case SID_ATTR_PARA_LINESPACE:
             {
                 SvxLineSpacingItem aLineSpace = static_cast<const SvxLineSpacingItem&>(pNewAttrs->Get(
@@ -267,21 +282,21 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
         break;
         case SID_ATTR_PARA_LINESPACE_10:
         {
-            SvxLineSpacingItem aItem(SVX_LINESPACE_ONE_LINE, EE_PARA_SBL);
+            SvxLineSpacingItem aItem(LINE_SPACE_DEFAULT_HEIGHT, EE_PARA_SBL);
             aItem.SetPropLineSpace(100);
             aNewAttr.Put(aItem);
         }
         break;
         case SID_ATTR_PARA_LINESPACE_15:
         {
-            SvxLineSpacingItem aItem(SVX_LINESPACE_ONE_POINT_FIVE_LINES, EE_PARA_SBL);
+            SvxLineSpacingItem aItem(LINE_SPACE_DEFAULT_HEIGHT, EE_PARA_SBL);
             aItem.SetPropLineSpace(150);
             aNewAttr.Put(aItem);
         }
         break;
         case SID_ATTR_PARA_LINESPACE_20:
         {
-            SvxLineSpacingItem aItem(SVX_LINESPACE_TWO_LINES, EE_PARA_SBL);
+            SvxLineSpacingItem aItem(LINE_SPACE_DEFAULT_HEIGHT, EE_PARA_SBL);
             aItem.SetPropLineSpace(200);
             aNewAttr.Put(aItem);
         }
@@ -293,11 +308,11 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
             SvxEscapement eEsc = (SvxEscapement ) static_cast<const SvxEscapementItem&>(
                             aEditAttr.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-            if( eEsc == SVX_ESCAPEMENT_SUPERSCRIPT )
-                aItem.SetEscapement( SVX_ESCAPEMENT_OFF );
+            if( eEsc == SvxEscapement::Superscript )
+                aItem.SetEscapement( SvxEscapement::Off );
             else
-                aItem.SetEscapement( SVX_ESCAPEMENT_SUPERSCRIPT );
-            aNewAttr.Put( aItem, EE_CHAR_ESCAPEMENT );
+                aItem.SetEscapement( SvxEscapement::Superscript );
+            aNewAttr.Put( aItem );
         }
         break;
         case FN_SET_SUB_SCRIPT:
@@ -306,11 +321,11 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
             SvxEscapement eEsc = (SvxEscapement ) static_cast<const SvxEscapementItem&>(
                             aEditAttr.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-            if( eEsc == SVX_ESCAPEMENT_SUBSCRIPT )
-                aItem.SetEscapement( SVX_ESCAPEMENT_OFF );
+            if( eEsc == SvxEscapement::Subscript )
+                aItem.SetEscapement( SvxEscapement::Off );
             else
-                aItem.SetEscapement( SVX_ESCAPEMENT_SUBSCRIPT );
-            aNewAttr.Put( aItem, EE_CHAR_ESCAPEMENT );
+                aItem.SetEscapement( SvxEscapement::Subscript );
+            aNewAttr.Put( aItem );
         }
         break;
 
@@ -345,7 +360,7 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 assert(pFact && "SwAbstractDialogFactory fail!");
 
-                std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg(pView->GetWindow(), *pView, aDlgAttr, SwCharDlgMode::Draw));
+                ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg(pView->GetWindow(), *pView, aDlgAttr, SwCharDlgMode::Draw));
                 assert(pDlg && "Dialog creation failed!");
                 if (nSlot == SID_CHAR_DLG_EFFECT)
                 {
@@ -414,7 +429,7 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
                 aDlgAttr.Put(aEditAttr);
 
                 aDlgAttr.Put( SvxHyphenZoneItem( false, RES_PARATR_HYPHENZONE) );
-                aDlgAttr.Put( SvxFormatBreakItem( SVX_BREAK_NONE, RES_BREAK ) );
+                aDlgAttr.Put( SvxFormatBreakItem( SvxBreak::NONE, RES_BREAK ) );
                 aDlgAttr.Put( SvxFormatSplitItem( true, RES_PARATR_SPLIT ) );
                 aDlgAttr.Put( SvxWidowsItem( 0, RES_PARATR_WIDOWS ) );
                 aDlgAttr.Put( SvxOrphansItem( 0, RES_PARATR_ORPHANS ) );
@@ -422,7 +437,7 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 assert(pFact && "SwAbstractDialogFactory fail!");
 
-                std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSwParaDlg( GetView().GetWindow(), GetView(), aDlgAttr, nullptr, true ));
+                ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSwParaDlg( GetView().GetWindow(), GetView(), aDlgAttr, true ));
                 assert(pDlg && "Dialog creation failed!");
                 sal_uInt16 nRet = pDlg->Execute();
                 if(RET_OK == nRet)
@@ -527,21 +542,21 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
                         EE_PARA_WRITINGDIR, EE_PARA_WRITINGDIR,
                         0 );
 
-            sal_uInt16 nAdjust = SVX_ADJUST_LEFT;
+            SvxAdjust nAdjust = SvxAdjust::Left;
             if( SfxItemState::SET == aEditAttr.GetItemState(EE_PARA_JUST, true, &pPoolItem ) )
-                nAdjust = static_cast<const SvxAdjustItem*>(pPoolItem)->GetEnumValue();
+                nAdjust = static_cast<const SvxAdjustItem*>(pPoolItem)->GetAdjust();
 
             if( bLeftToRight )
             {
-                aAttr.Put( SvxFrameDirectionItem( FRMDIR_HORI_LEFT_TOP, EE_PARA_WRITINGDIR ) );
-                if( nAdjust == SVX_ADJUST_RIGHT )
-                    aAttr.Put( SvxAdjustItem( SVX_ADJUST_LEFT, EE_PARA_JUST ) );
+                aAttr.Put( SvxFrameDirectionItem( SvxFrameDirection::Horizontal_LR_TB, EE_PARA_WRITINGDIR ) );
+                if( nAdjust == SvxAdjust::Right )
+                    aAttr.Put( SvxAdjustItem( SvxAdjust::Left, EE_PARA_JUST ) );
             }
             else
             {
-                aAttr.Put( SvxFrameDirectionItem( FRMDIR_HORI_RIGHT_TOP, EE_PARA_WRITINGDIR ) );
-                if( nAdjust == SVX_ADJUST_LEFT )
-                    aAttr.Put( SvxAdjustItem( SVX_ADJUST_RIGHT, EE_PARA_JUST ) );
+                aAttr.Put( SvxFrameDirectionItem( SvxFrameDirection::Horizontal_RL_TB, EE_PARA_WRITINGDIR ) );
+                if( nAdjust == SvxAdjust::Left )
+                    aAttr.Put( SvxAdjustItem( SvxAdjust::Right, EE_PARA_JUST ) );
             }
             pTmpView->SetAttributes( aAttr );
             rSh.GetView().BeginTextEdit( pTmpObj, pTmpPV, &rSh.GetView().GetEditWin() );
@@ -564,7 +579,10 @@ void SwDrawTextShell::Execute( SfxRequest &rReq )
             return;
     }
     if(nEEWhich && pNewAttrs)
-        aNewAttr.Put(pNewAttrs->Get(nWhich), nEEWhich);
+    {
+        std::unique_ptr<SfxPoolItem> pNewItem(pNewAttrs->Get(nWhich).CloneSetWhich(nEEWhich));
+        aNewAttr.Put(*pNewItem);
+    }
 
     SetAttrToMarked(aNewAttr);
 
@@ -591,7 +609,9 @@ void SwDrawTextShell::GetState(SfxItemSet& rSet)
 
     SfxItemSet aEditAttr( pOLV->GetAttribs() );
     const SfxPoolItem *pAdjust = nullptr, *pLSpace = nullptr, *pEscItem = nullptr;
-    int eAdjust, nLSpace, nEsc;
+    SvxAdjust eAdjust;
+    int nLSpace;
+    SvxEscapement nEsc;
 
     while(nWhich)
     {
@@ -623,10 +643,10 @@ void SwDrawTextShell::GetState(SfxItemSet& rSet)
                 break;
             }
 
-        case SID_ATTR_PARA_ADJUST_LEFT:     eAdjust = SVX_ADJUST_LEFT; goto ASK_ADJUST;
-        case SID_ATTR_PARA_ADJUST_RIGHT:    eAdjust = SVX_ADJUST_RIGHT; goto ASK_ADJUST;
-        case SID_ATTR_PARA_ADJUST_CENTER:   eAdjust = SVX_ADJUST_CENTER; goto ASK_ADJUST;
-        case SID_ATTR_PARA_ADJUST_BLOCK:    eAdjust = SVX_ADJUST_BLOCK; goto ASK_ADJUST;
+        case SID_ATTR_PARA_ADJUST_LEFT:     eAdjust = SvxAdjust::Left; goto ASK_ADJUST;
+        case SID_ATTR_PARA_ADJUST_RIGHT:    eAdjust = SvxAdjust::Right; goto ASK_ADJUST;
+        case SID_ATTR_PARA_ADJUST_CENTER:   eAdjust = SvxAdjust::Center; goto ASK_ADJUST;
+        case SID_ATTR_PARA_ADJUST_BLOCK:    eAdjust = SvxAdjust::Block; goto ASK_ADJUST;
 ASK_ADJUST:
             {
                 if( !pAdjust )
@@ -643,6 +663,9 @@ ASK_ADJUST:
             break;
 
         case SID_ATTR_PARA_LRSPACE:
+        case SID_ATTR_PARA_LEFTSPACE:
+        case SID_ATTR_PARA_RIGHTSPACE:
+        case SID_ATTR_PARA_FIRSTLINESPACE:
             {
                 SfxItemState eState = aEditAttr.GetItemState(EE_PARA_LRSPACE);
                 if( eState >= SfxItemState::DEFAULT )
@@ -670,6 +693,8 @@ ASK_ADJUST:
             }
             break;
         case SID_ATTR_PARA_ULSPACE:
+        case SID_ATTR_PARA_BELOWSPACE:
+        case SID_ATTR_PARA_ABOVESPACE:
         case SID_PARASPACE_INCREASE:
         case SID_PARASPACE_DECREASE:
             {
@@ -681,9 +706,12 @@ ASK_ADJUST:
                         rSet.DisableItem( SID_PARASPACE_DECREASE );
                     else if ( aULSpace.GetUpper() >= 5670 && aULSpace.GetLower() >= 5670 )
                         rSet.DisableItem( SID_PARASPACE_INCREASE );
-                    if ( nSlotId == SID_ATTR_PARA_ULSPACE )
+                    if ( nSlotId == SID_ATTR_PARA_ULSPACE
+                        || nSlotId == SID_ATTR_PARA_ABOVESPACE
+                        || nSlotId == SID_ATTR_PARA_BELOWSPACE
+                    )
                     {
-                        aULSpace.SetWhich(SID_ATTR_PARA_ULSPACE);
+                        aULSpace.SetWhich(nSlotId);
                         rSet.Put(aULSpace);
                     }
                 }
@@ -692,6 +720,8 @@ ASK_ADJUST:
                     rSet.DisableItem( SID_PARASPACE_INCREASE );
                     rSet.DisableItem( SID_PARASPACE_DECREASE );
                     rSet.InvalidateItem( SID_ATTR_PARA_ULSPACE );
+                    rSet.InvalidateItem( SID_ATTR_PARA_ABOVESPACE );
+                    rSet.InvalidateItem( SID_ATTR_PARA_BELOWSPACE );
                 }
                 nSlotId = 0;
             }
@@ -718,9 +748,9 @@ ASK_LINESPACE:
             }
             break;
 
-        case FN_SET_SUPER_SCRIPT:   nEsc = SVX_ESCAPEMENT_SUPERSCRIPT;
+        case FN_SET_SUPER_SCRIPT:   nEsc = SvxEscapement::Superscript;
                                     goto ASK_ESCAPE;
-        case FN_SET_SUB_SCRIPT:     nEsc = SVX_ESCAPEMENT_SUBSCRIPT;
+        case FN_SET_SUB_SCRIPT:     nEsc = SvxEscapement::Subscript;
                                     goto ASK_ESCAPE;
 ASK_ESCAPE:
             {
@@ -728,7 +758,7 @@ ASK_ESCAPE:
                     pEscItem = &aEditAttr.Get( EE_CHAR_ESCAPEMENT );
 
                 if( nEsc == static_cast<const SvxEscapementItem*>(
-                                                pEscItem)->GetEnumValue() )
+                                                pEscItem)->GetEscapement() )
                     bFlag = true;
                 else
                     nSlotId = 0;
@@ -811,12 +841,14 @@ ASK_ESCAPE:
                 {
                     switch( static_cast<const SvxFrameDirectionItem&>( aEditAttr.Get( EE_PARA_WRITINGDIR ) ).GetValue() )
                     {
-                        case FRMDIR_HORI_LEFT_TOP:
+                        case SvxFrameDirection::Horizontal_LR_TB:
                             bFlag = nWhich == SID_ATTR_PARA_LEFT_TO_RIGHT;
                         break;
 
-                        case FRMDIR_HORI_RIGHT_TOP:
+                        case SvxFrameDirection::Horizontal_RL_TB:
                             bFlag = nWhich != SID_ATTR_PARA_LEFT_TO_RIGHT;
+                        break;
+                        default:
                         break;
                     }
                 }
@@ -891,7 +923,10 @@ void SwDrawTextShell::GetDrawTextCtrlState(SfxItemSet& rSet)
                 aSetItem.GetItemSet().Put( aEditAttr, false );
                 const SfxPoolItem* pI = aSetItem.GetItemOfScript( nScriptType );
                 if( pI )
-                    rSet.Put( *pI, nWhich );
+                {
+                    std::unique_ptr<SfxPoolItem> pNewItem(pI->CloneSetWhich(nWhich));
+                    rSet.Put( *pNewItem );
+                }
                 else
                     rSet.InvalidateItem( nWhich );
             }
@@ -941,7 +976,10 @@ void SwDrawTextShell::GetDrawTextCtrlState(SfxItemSet& rSet)
             }
         }
         if(nEEWhich)
-            rSet.Put(aEditAttr.Get(nEEWhich), nWhich);
+        {
+            std::unique_ptr<SfxPoolItem> pNewItem(aEditAttr.Get(nEEWhich).CloneSetWhich(nWhich));
+            rSet.Put(*pNewItem);
+        }
 
         nWhich = aIter.NextWhich();
     }
@@ -1049,13 +1087,13 @@ void SwDrawTextShell::StateInsert(SfxItemSet &rSet)
 
                     if (pFieldItem)
                     {
-                        const SvxFieldData* pField = pFieldItem->GetField();
+                        const SvxURLField* pURLField = dynamic_cast<const SvxURLField*>(pFieldItem->GetField());
 
-                        if (dynamic_cast< const SvxURLField *>( pField ) !=  nullptr)
+                        if (pURLField)
                         {
-                            aHLinkItem.SetName(static_cast<const SvxURLField*>( pField)->GetRepresentation());
-                            aHLinkItem.SetURL(static_cast<const SvxURLField*>( pField)->GetURL());
-                            aHLinkItem.SetTargetFrame(static_cast<const SvxURLField*>( pField)->GetTargetFrame());
+                            aHLinkItem.SetName(pURLField->GetRepresentation());
+                            aHLinkItem.SetURL(pURLField->GetURL());
+                            aHLinkItem.SetTargetFrame(pURLField->GetTargetFrame());
                         }
                     }
                     else

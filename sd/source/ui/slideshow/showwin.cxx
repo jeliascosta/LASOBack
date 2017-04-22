@@ -52,22 +52,22 @@ ShowWindow::ShowWindow( const ::rtl::Reference< SlideshowImpl >& xController, vc
 , mnFirstMouseMove(0)
 , mxController( xController )
 {
-    SetOutDevViewType( OUTDEV_VIEWTYPE_SLIDESHOW );
+    SetOutDevViewType( OutDevViewType::SlideShow );
 
     // Do never mirror the preview window.  This explicitly includes right
     // to left writing environments.
     EnableRTL (false);
 
     MapMode aMap(GetMapMode());
-    aMap.SetMapUnit(MAP_100TH_MM);
+    aMap.SetMapUnit(MapUnit::Map100thMM);
     SetMapMode(aMap);
 
     // set HelpId
     SetHelpId( HID_SD_WIN_PRESENTATION );
 
-    maPauseTimer.SetTimeoutHdl( LINK( this, ShowWindow, PauseTimeoutHdl ) );
+    maPauseTimer.SetInvokeHandler( LINK( this, ShowWindow, PauseTimeoutHdl ) );
     maPauseTimer.SetTimeout( 1000 );
-    maMouseTimer.SetTimeoutHdl( LINK( this, ShowWindow, MouseTimeoutHdl ) );
+    maMouseTimer.SetInvokeHandler( LINK( this, ShowWindow, MouseTimeoutHdl ) );
     maMouseTimer.SetTimeout( HIDE_MOUSE_TIMEOUT );
 
     maShowBackground = Wallpaper( Color( COL_BLACK ) );
@@ -248,7 +248,7 @@ void ShowWindow::MouseButtonUp(const MouseEvent& rMEvt)
 /**
  * if FuSlideShow is still available, forward it
  */
-void ShowWindow::Paint(vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect)
+void ShowWindow::Paint(vcl::RenderContext& /*rRenderContext*/, const ::tools::Rectangle& rRect)
 {
     if( (meShowWindowMode == SHOWWINDOWMODE_NORMAL) || (meShowWindowMode == SHOWWINDOWMODE_PREVIEW) )
     {
@@ -280,28 +280,12 @@ void ShowWindow::Paint(vcl::RenderContext& /*rRenderContext*/, const Rectangle& 
     }
 }
 
-void ShowWindow::GetFocus()
-{
-    // base class
-    Window::GetFocus();
-}
-
 void ShowWindow::LoseFocus()
 {
     Window::LoseFocus();
 
     if( SHOWWINDOWMODE_PREVIEW == meShowWindowMode)
         TerminateShow();
-}
-
-void ShowWindow::Resize()
-{
-    ::sd::Window::Resize();
-}
-
-void ShowWindow::Move()
-{
-    ::sd::Window::Move();
 }
 
 void ShowWindow::SetEndMode()
@@ -467,8 +451,8 @@ void ShowWindow::DrawPauseScene( bool bTimeoutOnly )
     const MapMode&  rMap = GetMapMode();
     const Point     aOutOrg( PixelToLogic( Point() ) );
     const Size      aOutSize( GetOutputSize() );
-    const Size      aTextSize( LogicToLogic( Size( 0, 14 ), MAP_POINT, rMap ) );
-    const Size      aOffset( LogicToLogic( Size( 1000, 1000 ), MAP_100TH_MM, rMap ) );
+    const Size      aTextSize( LogicToLogic( Size( 0, 14 ), MapUnit::MapPoint, rMap ) );
+    const Size      aOffset( LogicToLogic( Size( 1000, 1000 ), MapUnit::Map100thMM, rMap ) );
     OUString        aText( SdResId( STR_PRES_PAUSE ) );
     bool            bDrawn = false;
 
@@ -480,11 +464,11 @@ void ShowWindow::DrawPauseScene( bool bTimeoutOnly )
     aFont.SetCharSet( aOldFont.GetCharSet() );
     aFont.SetLanguage( aOldFont.GetLanguage() );
 
-    if( !bTimeoutOnly && ( maLogo.GetType() != GRAPHIC_NONE ) )
+    if( !bTimeoutOnly && ( maLogo.GetType() != GraphicType::NONE ) )
     {
         Size aGrfSize;
 
-        if( maLogo.GetPrefMapMode() == MAP_PIXEL )
+        if( maLogo.GetPrefMapMode() == MapUnit::MapPixel )
             aGrfSize = PixelToLogic( maLogo.GetPrefSize() );
         else
             aGrfSize = LogicToLogic( maLogo.GetPrefSize(), maLogo.GetPrefMapMode(), rMap );
@@ -541,7 +525,7 @@ void ShowWindow::DrawEndScene()
     vcl::Font       aFont( GetSettings().GetStyleSettings().GetMenuFont() );
 
     const Point     aOutOrg( PixelToLogic( Point() ) );
-    const Size      aTextSize( LogicToLogic( Size( 0, 14 ), MAP_POINT, GetMapMode() ) );
+    const Size      aTextSize( LogicToLogic( Size( 0, 14 ), MapUnit::MapPoint, GetMapMode() ) );
     const OUString  aText( SdResId( STR_PRES_SOFTEND ) );
 
     aFont.SetFontSize( aTextSize );
@@ -553,7 +537,7 @@ void ShowWindow::DrawEndScene()
     SetFont( aOldFont );
 }
 
-IMPL_LINK_TYPED( ShowWindow, PauseTimeoutHdl, Timer*, pTimer, void )
+IMPL_LINK( ShowWindow, PauseTimeoutHdl, Timer*, pTimer, void )
 {
     if( !( --mnPauseTimeout ) )
         RestartShow();
@@ -564,7 +548,7 @@ IMPL_LINK_TYPED( ShowWindow, PauseTimeoutHdl, Timer*, pTimer, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ShowWindow, MouseTimeoutHdl, Timer *, void)
+IMPL_LINK_NOARG(ShowWindow, MouseTimeoutHdl, Timer *, void)
 {
     if( mbMouseCursorHidden )
     {
@@ -580,11 +564,11 @@ IMPL_LINK_NOARG_TYPED(ShowWindow, MouseTimeoutHdl, Timer *, void)
     }
 }
 
-IMPL_LINK_TYPED( ShowWindow, EventHdl, VclWindowEvent&, rEvent, void )
+IMPL_LINK( ShowWindow, EventHdl, VclWindowEvent&, rEvent, void )
 {
     if( mbMouseAutoHide )
     {
-        if (rEvent.GetId() == VCLEVENT_WINDOW_SHOW)
+        if (rEvent.GetId() == VclEventId::WindowShow)
         {
             maMouseTimer.SetTimeout( HIDE_MOUSE_TIMEOUT );
             maMouseTimer.Start();
@@ -592,7 +576,7 @@ IMPL_LINK_TYPED( ShowWindow, EventHdl, VclWindowEvent&, rEvent, void )
     }
 }
 
-void ShowWindow::SetPresentationArea( const Rectangle& rPresArea )
+void ShowWindow::SetPresentationArea( const ::tools::Rectangle& rPresArea )
 {
     maPresArea = rPresArea;
 }
@@ -634,7 +618,7 @@ css::uno::Reference<css::accessibility::XAccessible>
     }
     else
     {
-        OSL_TRACE ("::sd::Window::CreateAccessible: no view shell");
+        SAL_WARN("sd", "::sd::Window::CreateAccessible: no view shell");
         return vcl::Window::CreateAccessible ();
     }
 }

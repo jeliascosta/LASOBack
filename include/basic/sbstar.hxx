@@ -54,8 +54,8 @@ class BASIC_DLLPUBLIC StarBASIC : public SbxObject
     SbxArrayRef     xUnoListeners;          // Listener handled by CreateUnoListener
 
    // Handler-Support:
-    Link<StarBASIC*,bool>       aErrorHdl;              // Error handler
-    Link<StarBASIC*,sal_uInt16> aBreakHdl;              // Breakpoint handler
+    Link<StarBASIC*,bool>            aErrorHdl;              // Error handler
+    Link<StarBASIC*,BasicDebugFlags> aBreakHdl;              // Breakpoint handler
     bool            bNoRtl;                 // if true: do not search RTL
     bool            bBreak;                 // if true: Break, otherwise Step
     bool            bDocBasic;
@@ -71,21 +71,20 @@ class BASIC_DLLPUBLIC StarBASIC : public SbxObject
 protected:
     bool                                CError( SbError, const OUString&, sal_Int32, sal_Int32, sal_Int32 );
 private:
-    BASIC_DLLPRIVATE void               RTError( SbError, sal_Int32, sal_Int32, sal_Int32 );
     BASIC_DLLPRIVATE bool               RTError( SbError, const OUString& rMsg, sal_Int32, sal_Int32, sal_Int32 );
-    BASIC_DLLPRIVATE sal_uInt16         BreakPoint( sal_Int32 nLine, sal_Int32 nCol1, sal_Int32 nCol2 );
-    BASIC_DLLPRIVATE sal_uInt16         StepPoint( sal_Int32 nLine, sal_Int32 nCol1, sal_Int32 nCol2 );
+    BASIC_DLLPRIVATE BasicDebugFlags    BreakPoint( sal_Int32 nLine, sal_Int32 nCol1, sal_Int32 nCol2 );
+    BASIC_DLLPRIVATE BasicDebugFlags    StepPoint( sal_Int32 nLine, sal_Int32 nCol1, sal_Int32 nCol2 );
     virtual bool LoadData( SvStream&, sal_uInt16 ) override;
     virtual bool StoreData( SvStream& ) const override;
 
 protected:
-    bool        ErrorHdl();
-    sal_uInt16  BreakHdl();
-    virtual ~StarBASIC();
+    bool             ErrorHdl();
+    BasicDebugFlags  BreakHdl();
+    virtual ~StarBASIC() override;
 
 public:
 
-    SBX_DECL_PERSIST_NODATA(SBXCR_SBX,SBXID_BASIC,1);
+    SBX_DECL_PERSIST_NODATA(SBXID_BASIC,1);
 
     StarBASIC( StarBASIC* pParent = nullptr, bool bIsDocBasic = false );
 
@@ -116,7 +115,7 @@ public:
     virtual bool Call( const OUString&, SbxArray* = nullptr ) override;
 
     SbModules&      GetModules() { return pModules; }
-    SbxObject*      GetRtl()     { return pRtl;     }
+    SbxObject*      GetRtl()     { return pRtl.get();     }
     SbModule*       FindModule( const OUString& );
     // Run init code of all modules (including the inserted Doc-Basics)
     void            InitAllModules( StarBASIC* pBasicNotToInit = nullptr );
@@ -134,7 +133,6 @@ public:
     static void     MakeErrorText( SbError, const OUString& aMsg );
     static const    OUString& GetErrorText();
     static SbError  GetErrorCode();
-    static bool     IsCompilerError();
     static sal_uInt16 GetVBErrorCode( SbError nError );
     static SbError  GetSfxFromVBError( sal_uInt16 nError );
     bool            IsBreak() const             { return bBreak; }
@@ -142,9 +140,9 @@ public:
     static Link<StarBASIC*,bool> GetGlobalErrorHdl();
     static void     SetGlobalErrorHdl( const Link<StarBASIC*,bool>& rNewHdl );
 
-    static void     SetGlobalBreakHdl( const Link<StarBASIC*,sal_uInt16>& rNewHdl );
+    static void     SetGlobalBreakHdl( const Link<StarBASIC*,BasicDebugFlags>& rNewHdl );
 
-    SbxArrayRef     getUnoListeners();
+    SbxArrayRef const & getUnoListeners();
 
     static SbxBase* FindSBXInCurrentScope( const OUString& rName );
     static SbMethod* GetActiveMethod( sal_uInt16 nLevel = 0 );

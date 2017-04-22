@@ -29,7 +29,6 @@
 class SVX_DLLPUBLIC XLineEndCenterItem : public SfxBoolItem
 {
 public:
-                            static SfxPoolItem* CreateDefault();
                             XLineEndCenterItem(bool bEndCenter = false);
                             XLineEndCenterItem(SvStream& rIn);
     virtual SfxPoolItem*    Clone(SfxItemPool* pPool = nullptr) const override;
@@ -39,9 +38,9 @@ public:
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 };
 
 #endif

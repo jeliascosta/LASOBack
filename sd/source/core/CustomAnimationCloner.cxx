@@ -17,19 +17,14 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <com/sun/star/animations/XAnimate.hpp>
 #include <com/sun/star/animations/XAnimationNode.hpp>
 #include <com/sun/star/animations/Event.hpp>
-#include <com/sun/star/animations/XAnimateColor.hpp>
-#include <com/sun/star/animations/XAnimateSet.hpp>
 #include <com/sun/star/animations/XCommand.hpp>
-#include <com/sun/star/animations/XAnimateMotion.hpp>
-#include <com/sun/star/animations/XAnimateTransform.hpp>
-#include <com/sun/star/animations/XTransitionFilter.hpp>
 #include <com/sun/star/animations/XIterateContainer.hpp>
 #include <com/sun/star/animations/XAudio.hpp>
 #include <com/sun/star/animations/AnimationNodeType.hpp>
 #include <com/sun/star/animations/ValuePair.hpp>
-#include <com/sun/star/presentation/EffectNodeType.hpp>
 #include <com/sun/star/util/XCloneable.hpp>
 #include <com/sun/star/presentation/ParagraphTarget.hpp>
 #include <com/sun/star/container/XEnumerationAccess.hpp>
@@ -61,7 +56,7 @@ namespace sd
     {
     public:
         CustomAnimationClonerImpl();
-        Reference< XAnimationNode > Clone( const Reference< XAnimationNode >& xSourceNode, const SdPage* pSource = nullptr, const SdPage* pTarget = nullptr );
+        Reference< XAnimationNode > Clone( const Reference< XAnimationNode >& xSourceNode, const SdPage* pSource, const SdPage* pTarget );
 
     private:
         void transformNode( const Reference< XAnimationNode >& xNode );
@@ -96,8 +91,8 @@ namespace sd
             // create a dictionary to map source to cloned shapes
             if( pSourcePage && pTargetPage )
             {
-                SdrObjListIter aSourceIter( *pSourcePage, IM_DEEPWITHGROUPS );
-                SdrObjListIter aTargetIter( *pTargetPage, IM_DEEPWITHGROUPS );
+                SdrObjListIter aSourceIter( *pSourcePage, SdrIterMode::DeepWithGroups );
+                SdrObjListIter aTargetIter( *pTargetPage, SdrIterMode::DeepWithGroups );
 
                 while( aSourceIter.IsMore() && aTargetIter.IsMore() )
                 {

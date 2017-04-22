@@ -20,7 +20,7 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCACTION_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCACTION_H
 
-#include "resource.h"       // main symbols
+#include "Resource.h"       // main symbols
 #include "AccActionBase.h"
 
 /**
@@ -37,23 +37,26 @@ public:
     {
 
     }
-    ~CAccAction()
-    {
-
-    }
 
     DECLARE_NO_REGISTRY()
 
     BEGIN_COM_MAP(CAccAction)
     COM_INTERFACE_ENTRY(IAccessibleAction)
     COM_INTERFACE_ENTRY(IUNOXWrapper)
-    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,_SmartQI)
+    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,SmartQI_)
+#if defined __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winconsistent-missing-override"
+#endif
     END_COM_MAP()
+#if defined __clang__
+#pragma clang diagnostic pop
+#endif
 
-    static HRESULT WINAPI _SmartQI(void* pv,
+    static HRESULT WINAPI SmartQI_(void* pv,
                                    REFIID iid, void** ppvObject, DWORD_PTR)
     {
-        return ((CAccAction*)pv)->SmartQI(iid,ppvObject);
+        return static_cast<CAccAction*>(pv)->SmartQI(iid,ppvObject);
     }
 
     HRESULT SmartQI(REFIID iid, void** ppvObject)
@@ -68,20 +71,20 @@ public:
     // IAccessibleAction
 
     // Returns the number of action.
-    STDMETHOD(nActions)(/*[out,retval]*/long* nActions);
+    STDMETHOD(nActions)(/*[out,retval]*/long* nActions) override;
 
     // Performs specified action on the object.
-    STDMETHOD(doAction)(/* [in] */ long actionIndex);
+    STDMETHOD(doAction)(/* [in] */ long actionIndex) override;
 
     // Gets description of specified action.
-    STDMETHOD(get_description)(long actionIndex,BSTR __RPC_FAR *description);
+    STDMETHOD(get_description)(long actionIndex,BSTR __RPC_FAR *description) override;
 
     // added , 2006/06/28, for driver 07/11
     // get the action name
-    STDMETHOD(get_name)( long actionIndex, BSTR __RPC_FAR *name);
+    STDMETHOD(get_name)( long actionIndex, BSTR __RPC_FAR *name) override;
 
     // get the localized action name
-    STDMETHOD(get_localizedName)( long actionIndex, BSTR __RPC_FAR *localizedName);
+    STDMETHOD(get_localizedName)( long actionIndex, BSTR __RPC_FAR *localizedName) override;
 
     // Returns key binding object (if any) associated with specified action
     // key binding is string.
@@ -90,13 +93,10 @@ public:
         /* [in] */ long actionIndex,
         /* [in] */ long nMaxBinding,
         /* [length_is][length_is][size_is][size_is][out] */ BSTR __RPC_FAR *__RPC_FAR *keyBinding,
-        /* [retval][out] */ long __RPC_FAR *nBinding);
+        /* [retval][out] */ long __RPC_FAR *nBinding) override;
 
     // Override of IUNOXWrapper.
-    STDMETHOD(put_XInterface)(hyper pXInterface);
-
-    // Override of IUNOXWrapper.
-    STDMETHOD(put_XSubInterface)(hyper pXSubInterface);
+    STDMETHOD(put_XSubInterface)(hyper pXSubInterface) override;
 
 };
 

@@ -38,7 +38,7 @@
 #include "document.hxx"
 #include "scresid.hxx"
 #include "progress.hxx"
-#include "sc.hrc"
+#include "scres.hrc"
 #include "globstr.hrc"
 
 using namespace ::com::sun::star;
@@ -127,8 +127,8 @@ static void lcl_InsertGraphic( const Graphic& rGraphic,
     //  at 100% view scale (as in SetMarkedOriginalSize),
     //  instead of respecting the current view scale
     MapMode aSourceMap = rGraphic.GetPrefMapMode();
-    MapMode aDestMap( MAP_100TH_MM );
-    if ( aSourceMap.GetMapUnit() == MAP_PIXEL && pDrawView )
+    MapMode aDestMap( MapUnit::Map100thMM );
+    if ( aSourceMap.GetMapUnit() == MapUnit::MapPixel && pDrawView )
     {
         Fraction aScaleX, aScaleY;
         pDrawView->CalcNormScale( aScaleX, aScaleY );
@@ -150,7 +150,7 @@ static void lcl_InsertGraphic( const Graphic& rGraphic,
 
     ScLimitSizeOnDrawPage( aLogicSize, aInsertPos, pPage->GetSize() );
 
-    Rectangle aRect ( aInsertPos, aLogicSize );
+    tools::Rectangle aRect ( aInsertPos, aLogicSize );
 
     SdrGrafObj* pObj = new SdrGrafObj( rGraphic, aRect );
 
@@ -186,9 +186,9 @@ static void lcl_InsertMedia( const OUString& rMediaURL, bool bApi,
     if( rPrefSize.Width() && rPrefSize.Height() )
     {
         if( pWindow )
-            aSize = pWindow->PixelToLogic( rPrefSize, MAP_100TH_MM );
+            aSize = pWindow->PixelToLogic( rPrefSize, MapUnit::Map100thMM );
         else
-            aSize = Application::GetDefaultDevice()->PixelToLogic( rPrefSize, MAP_100TH_MM );
+            aSize = Application::GetDefaultDevice()->PixelToLogic( rPrefSize, MapUnit::Map100thMM );
     }
     else
         aSize = Size( 5000, 5000 );
@@ -211,7 +211,7 @@ static void lcl_InsertMedia( const OUString& rMediaURL, bool bApi,
         if (!bRet) { return; }
     }
 
-    SdrMediaObj* pObj = new SdrMediaObj( Rectangle( aInsertPos, aSize ) );
+    SdrMediaObj* pObj = new SdrMediaObj( tools::Rectangle( aInsertPos, aSize ) );
 
     pObj->SetModel(rData.GetDocument()->GetDrawLayer()); // set before setURL
     pObj->setURL( realURL, ""/*TODO?*/ );
@@ -303,28 +303,6 @@ FuInsertGraphic::~FuInsertGraphic()
 
 /*************************************************************************
 |*
-|* FuInsertGraphic::Function aktivieren
-|*
-\************************************************************************/
-
-void FuInsertGraphic::Activate()
-{
-    FuPoor::Activate();
-}
-
-/*************************************************************************
-|*
-|* FuInsertGraphic::Function deaktivieren
-|*
-\************************************************************************/
-
-void FuInsertGraphic::Deactivate()
-{
-    FuPoor::Deactivate();
-}
-
-/*************************************************************************
-|*
 |* FuInsertMedia::Konstruktor
 |*
 \************************************************************************/
@@ -387,28 +365,6 @@ FuInsertMedia::FuInsertMedia( ScTabViewShell*   pViewSh,
 
 FuInsertMedia::~FuInsertMedia()
 {
-}
-
-/*************************************************************************
-|*
-|* FuInsertMedia::Function aktivieren
-|*
-\************************************************************************/
-
-void FuInsertMedia::Activate()
-{
-    FuPoor::Activate();
-}
-
-/*************************************************************************
-|*
-|* FuInsertMedia::Function deaktivieren
-|*
-\************************************************************************/
-
-void FuInsertMedia::Deactivate()
-{
-    FuPoor::Deactivate();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -76,18 +76,19 @@ BitmapEx GalleryResGetBitmapEx( sal_uInt32 nId )
     return aBmpEx;
 }
 
-IMPL_STATIC_LINK_TYPED(
-    SgaUserDataFactory, MakeUserData, SdrObjFactory*, pObjFactory, void )
+IMPL_STATIC_LINK(
+    SgaUserDataFactory, MakeUserData, SdrObjUserDataCreatorParams, aParams, SdrObjUserData* )
 {
-    if ( pObjFactory->nInventor == IV_IMAPINFO && pObjFactory->nIdentifier == ID_IMAPINFO )
-        pObjFactory->pNewData = new SgaIMapInfo;
+    if ( aParams.nInventor == SdrInventor::SgaImap && aParams.nObjIdentifier == ID_IMAPINFO )
+        return new SgaIMapInfo;
+    return nullptr;
 }
 
 GalleryGraphicImportRet GalleryGraphicImport( const INetURLObject& rURL, Graphic& rGraphic,
                              OUString& rFilterName, bool bShowProgress )
 {
     GalleryGraphicImportRet  nRet = GalleryGraphicImportRet::IMPORT_NONE;
-    SfxMedium   aMedium( rURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ );
+    SfxMedium   aMedium( rURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READ );
 
     aMedium.Download();
 
@@ -99,7 +100,7 @@ GalleryGraphicImportRet GalleryGraphicImport( const INetURLObject& rURL, Graphic
         std::unique_ptr<GalleryProgress> pProgress(bShowProgress ? new GalleryProgress( &rGraphicFilter ) : nullptr);
         sal_uInt16              nFormat;
 
-        if( !rGraphicFilter.ImportGraphic( rGraphic, rURL.GetMainURL( INetURLObject::NO_DECODE ), *pIStm, GRFILTER_FORMAT_DONTKNOW, &nFormat ) )
+        if( !rGraphicFilter.ImportGraphic( rGraphic, rURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), *pIStm, GRFILTER_FORMAT_DONTKNOW, &nFormat ) )
         {
             rFilterName = rGraphicFilter.GetImportFormatName( nFormat );
             nRet = GalleryGraphicImportRet::IMPORT_FILE;
@@ -138,7 +139,7 @@ bool GallerySvDrawImport( SvStream& rIStm, SdrModel& rModel )
         // read as XML
         uno::Reference< io::XInputStream > xInputStream( new utl::OInputStreamWrapper( rIStm ) );
 
-        rModel.GetItemPool().SetDefaultMetric( SFX_MAPUNIT_100TH_MM );
+        rModel.GetItemPool().SetDefaultMetric( MapUnit::Map100thMM );
         uno::Reference< lang::XComponent > xComponent;
 
         bRet = SvxDrawingLayerImport( &rModel, xInputStream, xComponent, "com.sun.star.comp.Draw.XMLOasisImporter" );
@@ -171,7 +172,7 @@ bool CreateIMapGraphic( const FmFormModel& rModel, Graphic& rGraphic, ImageMap& 
             {
                 const SdrObjUserData* pUserData = pObj->GetUserData( i );
 
-                if ( ( pUserData->GetInventor() == IV_IMAPINFO ) && ( pUserData->GetId() == ID_IMAPINFO ) )
+                if ( ( pUserData->GetInventor() == SdrInventor::SgaImap ) && ( pUserData->GetId() == ID_IMAPINFO ) )
                 {
                     rGraphic = static_cast<const SdrGrafObj*>( pObj )->GetGraphic();
                     rImageMap = static_cast<const SgaIMapInfo*>( pUserData )->GetImageMap();
@@ -187,14 +188,14 @@ bool CreateIMapGraphic( const FmFormModel& rModel, Graphic& rGraphic, ImageMap& 
 
 OUString GetReducedString( const INetURLObject& rURL, sal_Int32 nMaxLen )
 {
-    OUString aReduced( rURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS ) );
+    OUString aReduced( rURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous ) );
 
     aReduced = aReduced.getToken( comphelper::string::getTokenCount(aReduced, '/') - 1, '/' );
 
     if( INetProtocol::PrivSoffice != rURL.GetProtocol() )
     {
         sal_Unicode     aDelimiter;
-        const OUString  aPath( rURL.getFSysPath( INetURLObject::FSYS_DETECT, &aDelimiter ) );
+        const OUString  aPath( rURL.getFSysPath( FSysStyle::Detect, &aDelimiter ) );
         const OUString  aName( aReduced );
 
         if( aPath.getLength() > nMaxLen )
@@ -203,17 +204,13 @@ OUString GetReducedString( const INetURLObject& rURL, sal_Int32 nMaxLen )
 
             if (nPathPrefixLen >= 0)
             {
-                aReduced = aPath.copy(0, nPathPrefixLen);
-                aReduced += "...";
-                aReduced += OUString(aDelimiter);
-                aReduced += aName;
+                aReduced = aPath.copy(0, nPathPrefixLen) + "..."
+                    + OUStringLiteral1(aDelimiter) + aName;
             }
             else
             {
-                aReduced += "...";
-                aReduced += OUString(aDelimiter);
-                aReduced += "...";
-                aReduced += aName.copy( aName.getLength() - (nMaxLen - 7) );
+                aReduced += "..." + OUStringLiteral1(aDelimiter) + "..."
+                    + aName.copy( aName.getLength() - (nMaxLen - 7) );
             }
         }
         else
@@ -228,9 +225,9 @@ OUString GetSvDrawStreamNameFromURL( const INetURLObject& rSvDrawObjURL )
     OUString aRet;
 
     if( rSvDrawObjURL.GetProtocol() == INetProtocol::PrivSoffice &&
-        comphelper::string::getTokenCount(rSvDrawObjURL.GetMainURL( INetURLObject::NO_DECODE ), '/') == 3 )
+        comphelper::string::getTokenCount(rSvDrawObjURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), '/') == 3 )
     {
-        aRet = rSvDrawObjURL.GetMainURL( INetURLObject::NO_DECODE ).getToken( 2, '/' );
+        aRet = rSvDrawObjURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ).getToken( 2, '/' );
     }
 
     return aRet;
@@ -244,7 +241,7 @@ bool FileExists( const INetURLObject& rURL )
     {
         try
         {
-            ::ucbhelper::Content        aCnt( rURL.GetMainURL( INetURLObject::NO_DECODE ), uno::Reference< ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
+            ::ucbhelper::Content        aCnt( rURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), uno::Reference< ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
             OUString    aTitle;
 
             aCnt.getPropertyValue("Title") >>= aTitle;
@@ -275,14 +272,14 @@ bool CreateDir( const INetURLObject& rURL )
             uno::Reference< ucb::XCommandEnvironment >  aCmdEnv;
             INetURLObject                           aParentURL( rURL );
             aParentURL.removeSegment();
-            ::ucbhelper::Content                    aParent( aParentURL.GetMainURL( INetURLObject::NO_DECODE ), aCmdEnv, comphelper::getProcessComponentContext() );
+            ::ucbhelper::Content                    aParent( aParentURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), aCmdEnv, comphelper::getProcessComponentContext() );
             uno::Sequence< OUString >               aProps( 1 );
             uno::Sequence< uno::Any >               aValues( 1 );
 
             aProps[0] = "Title";
-            aValues[0] = uno::makeAny( OUString( rURL.GetName() ) );
+            aValues[0] <<= rURL.GetName();
 
-        ::ucbhelper::Content aContent( rURL.GetMainURL( INetURLObject::NO_DECODE ), aCmdEnv, comphelper::getProcessComponentContext() );
+        ::ucbhelper::Content aContent( rURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), aCmdEnv, comphelper::getProcessComponentContext() );
         bRet = aParent.insertNewContent( "application/vnd.sun.staroffice.fsys-folder", aProps, aValues, aContent );
         }
         catch( const ucb::ContentCreationException& )
@@ -305,10 +302,10 @@ bool CopyFile(  const INetURLObject& rSrcURL, const INetURLObject& rDstURL )
 
     try
     {
-        ::ucbhelper::Content aDestPath( rDstURL.GetMainURL( INetURLObject::NO_DECODE ), uno::Reference< ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
+        ::ucbhelper::Content aDestPath( rDstURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), uno::Reference< ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
 
         aDestPath.executeCommand( "transfer",
-                                  uno::makeAny( ucb::TransferInfo( false, rSrcURL.GetMainURL( INetURLObject::NO_DECODE ),
+                                  uno::makeAny( ucb::TransferInfo( false, rSrcURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ),
                                                 rDstURL.GetName(), ucb::NameClash::OVERWRITE ) ) );
         bRet = true;
     }
@@ -333,7 +330,7 @@ bool KillFile( const INetURLObject& rURL )
     {
         try
         {
-            ::ucbhelper::Content aCnt( rURL.GetMainURL( INetURLObject::NO_DECODE ), uno::Reference< ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
+            ::ucbhelper::Content aCnt( rURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), uno::Reference< ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
             aCnt.executeCommand( "delete", uno::makeAny( true ) );
         }
         catch( const ucb::ContentCreationException& )
@@ -418,7 +415,7 @@ void GalleryTransferable::InitData( bool bLazy )
 {
     switch( meObjectKind )
     {
-        case SGA_OBJ_SVDRAW:
+        case SgaObjKind::SvDraw:
         {
             if( !bLazy )
             {
@@ -430,13 +427,13 @@ void GalleryTransferable::InitData( bool bLazy )
                         mpGraphicObject = new GraphicObject( aGraphic );
                 }
 
-                if( !mxModelStream.Is() )
+                if( !mxModelStream.is() )
                 {
                     mxModelStream = new SotStorageStream( "" );
                     mxModelStream->SetBufferSize( 16348 );
 
                     if( !mpTheme->GetModelStream( mnObjectPos, mxModelStream ) )
-                        mxModelStream.Clear();
+                        mxModelStream.clear();
                     else
                         mxModelStream->Seek( 0 );
                 }
@@ -444,10 +441,10 @@ void GalleryTransferable::InitData( bool bLazy )
         }
         break;
 
-        case SGA_OBJ_ANIM:
-        case SGA_OBJ_BMP:
-        case SGA_OBJ_INET:
-        case SGA_OBJ_SOUND:
+        case SgaObjKind::Animation:
+        case SgaObjKind::Bitmap:
+        case SgaObjKind::Inet:
+        case SgaObjKind::Sound:
         {
             if( !mpURL )
             {
@@ -460,7 +457,7 @@ void GalleryTransferable::InitData( bool bLazy )
                 }
             }
 
-            if( ( SGA_OBJ_SOUND != meObjectKind ) && !mpGraphicObject )
+            if( ( SgaObjKind::Sound != meObjectKind ) && !mpGraphicObject )
             {
                 Graphic aGraphic;
 
@@ -478,7 +475,7 @@ void GalleryTransferable::InitData( bool bLazy )
 
 void GalleryTransferable::AddSupportedFormats()
 {
-    if( SGA_OBJ_SVDRAW == meObjectKind )
+    if( SgaObjKind::SvDraw == meObjectKind )
     {
         AddFormat( SotClipboardFormatId::DRAWING );
         AddFormat( SotClipboardFormatId::SVXB );
@@ -494,7 +491,7 @@ void GalleryTransferable::AddSupportedFormats()
         {
             AddFormat( SotClipboardFormatId::SVXB );
 
-            if( mpGraphicObject->GetType() == GRAPHIC_GDIMETAFILE )
+            if( mpGraphicObject->GetType() == GraphicType::GdiMetafile )
             {
                 AddFormat( SotClipboardFormatId::GDIMETAFILE );
                 AddFormat( SotClipboardFormatId::BITMAP );
@@ -515,9 +512,9 @@ bool GalleryTransferable::GetData( const datatransfer::DataFlavor& rFlavor, cons
 
     InitData( false );
 
-    if( ( SotClipboardFormatId::DRAWING == nFormat ) && ( SGA_OBJ_SVDRAW == meObjectKind ) )
+    if( ( SotClipboardFormatId::DRAWING == nFormat ) && ( SgaObjKind::SvDraw == meObjectKind ) )
     {
-        bRet = ( mxModelStream.Is() && SetObject( &mxModelStream, SotClipboardFormatId::NONE, rFlavor ) );
+        bRet = ( mxModelStream.is() && SetObject( mxModelStream.get(), SotClipboardFormatId::NONE, rFlavor ) );
     }
     else if( ( SotClipboardFormatId::SVIM == nFormat ) && mpImageMap )
     {
@@ -526,7 +523,7 @@ bool GalleryTransferable::GetData( const datatransfer::DataFlavor& rFlavor, cons
     }
     else if( ( SotClipboardFormatId::SIMPLE_FILE == nFormat ) && mpURL )
     {
-        bRet = SetString( mpURL->GetMainURL( INetURLObject::NO_DECODE ), rFlavor );
+        bRet = SetString( mpURL->GetMainURL( INetURLObject::DecodeMechanism::NONE ), rFlavor );
     }
     else if( ( SotClipboardFormatId::SVXB == nFormat ) && mpGraphicObject )
     {
@@ -572,18 +569,13 @@ void GalleryTransferable::DragFinished( sal_Int8 nDropAction )
 
 void GalleryTransferable::ObjectReleased()
 {
-    mxModelStream.Clear();
+    mxModelStream.clear();
     delete mpGraphicObject;
     mpGraphicObject = nullptr;
     delete mpImageMap;
     mpImageMap = nullptr;
     delete mpURL;
     mpURL = nullptr;
-}
-
-void GalleryTransferable::CopyToClipboard( vcl::Window* pWindow )
-{
-    TransferableHelper::CopyToClipboard( pWindow );
 }
 
 void GalleryTransferable::StartDrag( vcl::Window* pWindow, sal_Int8 nDragSourceActions )

@@ -10,12 +10,8 @@
 
 #include "docsh.hxx"
 #include "reffact.hxx"
-#include "strload.hxx"
-#include "StatisticsDialogs.hrc"
 
 #include "CovarianceDialog.hxx"
-
-static const char strCovarianceTemplate[] = "=COVAR(%VAR1%; %VAR2%)";
 
 ScCovarianceDialog::ScCovarianceDialog(
                         SfxBindings* pSfxBindings, SfxChildWindow* pChildWindow,
@@ -37,12 +33,12 @@ bool ScCovarianceDialog::Close()
 
 const OUString ScCovarianceDialog::getLabel()
 {
-    return SC_STRLOAD(RID_STATISTICS_DLGS, STR_COVARIANCE_LABEL);
+    return SC_RESSTR(STR_COVARIANCE_LABEL);
 }
 
 const OUString ScCovarianceDialog::getTemplate()
 {
-    return OUString(strCovarianceTemplate);
+    return OUString("=COVAR(%VAR1%; %VAR2%)");
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

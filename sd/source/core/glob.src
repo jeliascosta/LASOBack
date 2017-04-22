@@ -55,9 +55,13 @@ String STR_SLIDE_NAME
 {
     Text [ en-US ] = "Slide" ;
 };
-String STR_MASTERPAGE
+String STR_MASTERSLIDE_NAME
 {
-    Text [ en-US ] = "Background" ;
+    Text [ en-US ] = "Master Slide";
+};
+String STR_MASTERPAGE_NAME
+{
+    Text [ en-US ] = "Master Page";
 };
 String STR_NOTES
 {
@@ -98,14 +102,6 @@ String STR_PRESOBJ_MPOUTLLAYER6
 String STR_PRESOBJ_MPOUTLLAYER7
 {
     Text [ en-US ] = "Seventh Outline Level" ;
-};
-String STR_PRESOBJ_MPOUTLLAYER8
-{
-    Text [ en-US ] = "Eighth Outline Level" ;
-};
-String STR_PRESOBJ_MPOUTLLAYER9
-{
-    Text [ en-US ] = "Ninth Outline Level" ;
 };
 String STR_PRESOBJ_MPNOTESTITLE
 {
@@ -151,18 +147,6 @@ String STR_PRESOBJ_TABLE
 {
     Text [ en-US ] = "Double-click to add a Spreadsheet" ;
 };
-String STR_PREVIEWVIEWSHELL
-{
-    Text [ en-US ] = "Preview Window";
-};
-String STR_STDOBJECTBARSHELL
-{
-    Text [ en-US ] = "Document Mode" ;
-};
-String STR_GLUEPOINTSOBJECTBARSHELL
-{
-    Text [ en-US ] = "Glue Points Mode" ;
-};
 /* do not translate */
 String STR_LAYOUT_TITLE
 {
@@ -203,10 +187,6 @@ String STR_STANDARD_STYLESHEET_NAME
 String STR_UNDO_MOVEPAGES
 {
     Text [ en-US ] = "Move slides" ;
-};
-String STR_NOT_ENOUGH_MEMORY
-{
-    Text [ en-US ] = "Not enough memory!\nThe action will be aborted." ;
 };
 /* do not translate */
 String STR_LAYOUT_SUBTITLE
@@ -274,10 +254,6 @@ String STR_POOLSHEET_HEADLINE2
 {
     Text [ en-US ] = "Heading2" ;
 };
-String STR_EMPTY_STYLESHEET_NAME
-{
-    Text [ en-US ] = "Blank template" ;
-};
 String STR_PSEUDOSHEET_TITLE
 {
     Text [ en-US ] = "Title" ;
@@ -303,29 +279,9 @@ String STR_PSEUDOSHEET_NOTES
     Text [ en-US ] = "Notes" ;
 };
 
-String STR_TOOL_PANEL_SHELL
-{
-    Text [ en-US ] = "Tool Panel" ;
-};
-
-String STR_TASKPANEVIEWSHELL
-{
-    Text [ en-US ] = "Tasks" ;
-};
-
-String STR_TASKPANELAYOUTMENU
-{
-    Text [ en-US ] = "Layout" ;
-};
-
 String STR_POWERPOINT_IMPORT
 {
     Text [ en-US ] = "PowerPoint Import";
-};
-
-String STR_POOLSHEET_ARROW
-{
-    Text [ en-US ] = "Arrow" ;
 };
 
 String STR_LOAD_DOC
@@ -340,19 +296,16 @@ String STR_SAVE_DOC
 #define ERR_CODE( class, err )  (class | (err - ERROR_SD_BASE))
 #define WARN_CODE( class, err ) (class | ( err - WARN_SD_BASE))
 
-Resource RID_SD_ERRHDL
+StringArray RID_SD_ERRHDL
 {
-    String ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_ROWCOL )
+    ItemList [ en-US ] =
     {
-        Text [ en-US ] = "File format error found at $(ARG1)(row,col)." ;
-    };
-    String ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_FILE_ROWCOL )
-    {
-        Text [ en-US ] = "Format error discovered in the file in sub-document $(ARG1) at position $(ARG2)(row,col).";
-    };
-    String ERR_CODE ( ERRCODE_CLASS_READ , WARN_FORMAT_FILE_ROWCOL )
-    {
-        Text [ en-US ] = "Format error discovered in the file in sub-document $(ARG1) at position $(ARG2)(row,col).";
+        < "File format error found at $(ARG1)(row,col)." ;
+          ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_ROWCOL ) ; >;
+        < "Format error discovered in the file in sub-document $(ARG1) at position $(ARG2)(row,col).";
+          ERR_CODE ( ERRCODE_CLASS_READ , ERR_FORMAT_FILE_ROWCOL ) ; >;
+        < "Format error discovered in the file in sub-document $(ARG1) at position $(ARG2)(row,col).";
+          ERR_CODE ( ERRCODE_CLASS_READ , WARN_FORMAT_FILE_ROWCOL ) ; >;
     };
 };
 

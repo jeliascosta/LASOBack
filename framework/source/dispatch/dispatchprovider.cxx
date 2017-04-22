@@ -97,7 +97,7 @@ DispatchProvider::~DispatchProvider()
 */
 css::uno::Reference< css::frame::XDispatch > SAL_CALL DispatchProvider::queryDispatch( const css::util::URL&  aURL             ,
                                                                                        const OUString& sTargetFrameName ,
-                                                                                             sal_Int32        nSearchFlags     ) throw( css::uno::RuntimeException, std::exception )
+                                                                                             sal_Int32        nSearchFlags     )
 {
     css::uno::Reference< css::frame::XDispatch > xDispatcher;
 
@@ -128,7 +128,7 @@ css::uno::Reference< css::frame::XDispatch > SAL_CALL DispatchProvider::queryDis
 
     @threadsafe yes
 */
-css::uno::Sequence< css::uno::Reference< css::frame::XDispatch > > SAL_CALL DispatchProvider::queryDispatches( const css::uno::Sequence< css::frame::DispatchDescriptor >& lDescriptions ) throw( css::uno::RuntimeException, std::exception )
+css::uno::Sequence< css::uno::Reference< css::frame::XDispatch > > SAL_CALL DispatchProvider::queryDispatches( const css::uno::Sequence< css::frame::DispatchDescriptor >& lDescriptions )
 {
     // Create return list - which must have same size then the given descriptor
     // It's not allowed to pack it!
@@ -198,7 +198,7 @@ css::uno::Reference< css::frame::XDispatch > DispatchProvider::implts_queryDeskt
 
     // I.III) "_self", "", "_top"
     //  The desktop can't load any document - but he can handle some special protocols like "uno", "slot" ...
-    //  Why is "top" here handled too? Because the desktop is the topest frame. Normally it's superflous
+    //  Why is "top" here handled too? Because the desktop is the topest frame. Normally it's superfluous
     //  to use this target - but we can handle it in the same manner then "_self".
 
     else if (
@@ -320,7 +320,7 @@ css::uno::Reference< css::frame::XDispatch > DispatchProvider::implts_queryFrame
 
     // I.VI) "_self", ""
     //  Our owner frame should handle this URL. But we can't do it for all of them.
-    //  So we ask the internal setted controller first. If he disagree we try to find a registered
+    //  So we ask the internal set controller first. If he disagree we try to find a registered
     //  protocol handler. If this failed too - we check for a loadable content and in case of true
     //  we load it into the frame by returning specilized dispatch object.
 

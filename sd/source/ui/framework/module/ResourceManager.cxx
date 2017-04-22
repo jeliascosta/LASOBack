@@ -111,7 +111,6 @@ void SAL_CALL ResourceManager::disposing()
 
 void SAL_CALL ResourceManager::notifyConfigurationChange (
     const ConfigurationChangeEvent& rEvent)
-    throw (RuntimeException, std::exception)
 {
     OSL_ASSERT(rEvent.ResourceId.is());
 
@@ -165,8 +164,16 @@ void SAL_CALL ResourceManager::notifyConfigurationChange (
     }
 }
 
-void ResourceManager::UpdateForMainViewShell()
+void ResourceManager::HandleMainViewSwitch (
+    const OUString& rsViewURL,
+    const Reference<XConfiguration>& /*rxConfiguration*/,
+    const bool bIsActivated)
 {
+    if (bIsActivated)
+        msCurrentMainViewURL = rsViewURL;
+    else
+        msCurrentMainViewURL.clear();
+
     if (mxConfigurationController.is())
     {
         ConfigurationController::Lock aLock (mxConfigurationController);
@@ -187,19 +194,6 @@ void ResourceManager::UpdateForMainViewShell()
             mxConfigurationController->requestResourceDeactivation(mxResourceId);
         }
     }
-}
-
-void ResourceManager::HandleMainViewSwitch (
-    const OUString& rsViewURL,
-    const Reference<XConfiguration>& rxConfiguration,
-    const bool bIsActivated)
-{
-    (void)rxConfiguration;
-    if (bIsActivated)
-        msCurrentMainViewURL = rsViewURL;
-    else
-        msCurrentMainViewURL.clear();
-    UpdateForMainViewShell();
 }
 
 void ResourceManager::HandleResourceRequest(
@@ -228,7 +222,6 @@ void ResourceManager::HandleResourceRequest(
 
 void SAL_CALL ResourceManager::disposing (
     const lang::EventObject& rEvent)
-    throw (RuntimeException, std::exception)
 {
     if (mxConfigurationController.is()
         && rEvent.Source == mxConfigurationController)

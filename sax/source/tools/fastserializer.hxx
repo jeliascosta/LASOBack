@@ -130,7 +130,7 @@ public:
 
         @param nTag debugging aid to ensure mark and merge match in LIFO order
      */
-    void mark(sal_Int32 nTag, const Int32Sequence& rOrder = Int32Sequence());
+    void mark(sal_Int32 nTag, const Int32Sequence& rOrder);
 
     /** Merge 2 topmost marks.
 
@@ -150,7 +150,7 @@ public:
         @see mark()
      */
     void mergeTopMarks(sal_Int32 nTag,
-        sax_fastparser::MergeMarks eMergeType = sax_fastparser::MergeMarks::APPEND);
+        sax_fastparser::MergeMarks eMergeType);
 
 private:
     /** Helper class to cache data and write in chunks to XOutputStream or ForMerge::append.
@@ -177,7 +177,6 @@ private:
 #endif
 
         explicit ForMerge(sal_Int32 const nTag) : m_Tag(nTag) {}
-        virtual ~ForMerge() {}
 
         virtual void setCurrentElement( ::sal_Int32 /*nToken*/ ) {}
         virtual Int8Sequence& getData();
@@ -229,6 +228,9 @@ private:
     rtl_String *mpDoubleStr;
     sal_Int32 mnDoubleStrCapacity;
     TokenValueList maTokenValues;
+    bool mbXescape;     ///< whether to escape invalid XML characters as _xHHHH_ in write(const char*,sal_Int32,true)
+                        /* TODO: make that configurable from the outside for
+                         * some specific cases? */
 
 #ifdef DBG_UTIL
     std::stack<sal_Int32> m_DebugStartedElements;

@@ -66,7 +66,7 @@ namespace dbaui
         try
         {
             OUString aName = GetEntryText( _pApplyTo );
-            OUString aDSName = getDataSourceAcessor( m_pTreeView->getListBox().GetRootLevelParent( _pApplyTo ) );
+            OUString aDSName = getDataSourceAccessor( m_pTreeView->getListBox().GetRootLevelParent( _pApplyTo ) );
 
             ODataClipboard* pData = nullptr;
             SharedConnection xConnection;
@@ -109,7 +109,7 @@ namespace dbaui
                 if ( xChild.is() )
                     xStore.set( getDataSourceOrModel(xChild->getParent()), UNO_QUERY );
                 // check for the concrete type
-                if ( xStore.is() && !xStore->isReadonly() && ::std::any_of(_rFlavors.begin(),_rFlavors.end(),TAppSupportedSotFunctor(E_TABLE)) )
+                if ( xStore.is() && !xStore->isReadonly() && std::any_of(_rFlavors.begin(),_rFlavors.end(),TAppSupportedSotFunctor(E_TABLE)) )
                     return DND_ACTION_COPY;
             }
         }
@@ -194,7 +194,7 @@ namespace dbaui
 
         return nullptr != pTransfer;
     }
-    IMPL_LINK_NOARG_TYPED(SbaTableQueryBrowser, OnCopyEntry, LinkParamNone*, void)
+    IMPL_LINK_NOARG(SbaTableQueryBrowser, OnCopyEntry, LinkParamNone*, void)
     {
         SvTreeListEntry* pSelected = m_pTreeView->getListBox().FirstSelected();
         if( isEntryCopyAllowed( pSelected ) )
@@ -215,7 +215,7 @@ namespace dbaui
         if (pTransfer)
             pTransfer->CopyToClipboard(getView());
     }
-    IMPL_LINK_NOARG_TYPED( SbaTableQueryBrowser, OnAsyncDrop, void*, void )
+    IMPL_LINK_NOARG( SbaTableQueryBrowser, OnAsyncDrop, void*, void )
     {
         m_nAsyncDrop = nullptr;
         SolarMutexGuard aSolarGuard;
@@ -227,7 +227,7 @@ namespace dbaui
             if ( ensureConnection( m_aAsyncDrop.pDroppedAt, xDestConnection ) && xDestConnection.is() )
             {
                 SvTreeListEntry* pDataSourceEntry = m_pTreeView->getListBox().GetRootLevelParent(m_aAsyncDrop.pDroppedAt);
-                m_aTableCopyHelper.asyncCopyTagTable( m_aAsyncDrop, getDataSourceAcessor( pDataSourceEntry ), xDestConnection );
+                m_aTableCopyHelper.asyncCopyTagTable( m_aAsyncDrop, getDataSourceAccessor( pDataSourceEntry ), xDestConnection );
             }
         }
 

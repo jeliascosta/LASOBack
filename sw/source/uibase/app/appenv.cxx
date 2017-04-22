@@ -78,7 +78,7 @@
 OUString InsertLabEnvText( SwWrtShell& rSh, SwFieldMgr& rFieldMgr, const OUString& rText )
 {
     OUString sRet;
-    OUString aText(comphelper::string::remove(rText, '\r'));
+    OUString aText = rText.replaceAll("\r", "");
 
     sal_Int32 nTokenPos = 0;
     while( -1 != nTokenPos )
@@ -160,7 +160,7 @@ void SwModule::InsertEnv( SfxRequest& rReq )
     // Create new document (don't show!)
     SfxObjectShellLock xDocSh( new SwDocShell( SfxObjectCreateMode::STANDARD ) );
     xDocSh->DoInitNew();
-    pFrame = SfxViewFrame::LoadHiddenDocument( *xDocSh, 0 );
+    pFrame = SfxViewFrame::LoadHiddenDocument( *xDocSh, SFX_INTERFACE_NONE );
     pNewView = static_cast<SwView*>( pFrame->GetViewShell());
     pNewView->AttrChangedNotify( &pNewView->GetWrtShell() ); // so that SelectShell is being called
     pSh = pNewView->GetWrtShellPtr();
@@ -207,7 +207,7 @@ void SwModule::InsertEnv( SfxRequest& rReq )
     }
 
     vcl::Window *pParent = pOldSh ? pOldSh->GetWin() : nullptr;
-    std::unique_ptr<SfxAbstractTabDialog> pDlg;
+    ScopedVclPtr<SfxAbstractTabDialog> pDlg;
     short nMode = ENV_INSERT;
 
     const SwEnvItem* pItem = rReq.GetArg<SwEnvItem>(FN_ENVELOP);
@@ -216,7 +216,7 @@ void SwModule::InsertEnv( SfxRequest& rReq )
         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-        pDlg.reset(pFact->CreateSwEnvDlg( pParent, aSet, pOldSh, pTempPrinter, !bEnvChange ));
+        pDlg.disposeAndReset(pFact->CreateSwEnvDlg( pParent, aSet, pOldSh, pTempPrinter, !bEnvChange ));
         OSL_ENSURE(pDlg, "Dialog creation failed!");
         nMode = pDlg->Execute();
     }
@@ -267,7 +267,7 @@ void SwModule::InsertEnv( SfxRequest& rReq )
             //not be deleted on inserting envelopes
             pSh->EnterStdMode();
             // Here it goes (insert)
-            pSh->StartUndo(UNDO_UI_INSERT_ENVELOPE);
+            pSh->StartUndo(SwUndoId::UI_INSERT_ENVELOPE);
             pSh->StartAllAction();
             pSh->SttEndDoc(true);
 
@@ -345,7 +345,7 @@ void SwModule::InsertEnv( SfxRequest& rReq )
 
     // Borders (are put together by Shift-Offset and alignment)
         Size aPaperSize = pPrt->PixelToLogic( pPrt->GetPaperSizePixel(),
-                                              MAP_TWIP);
+                                              MapUnit::MapTwip);
         if ( !aPaperSize.Width() && !aPaperSize.Height() )
                     aPaperSize = SvxPaperInfo::GetPaperSize(PAPER_A4);
         if ( aPaperSize.Width() > aPaperSize.Height() )
@@ -386,7 +386,7 @@ void SwModule::InsertEnv( SfxRequest& rReq )
         pDesc->ChgFooterShare(false);
 
         // Page numbering
-        pDesc->SetUseOn(nsUseOnPage::PD_ALL);
+        pDesc->SetUseOn(UseOnPage::All);
 
         // Page size
         rFormat.SetFormatAttr(SwFormatFrameSize(ATT_FIX_SIZE,
@@ -429,7 +429,7 @@ void SwModule::InsertEnv( SfxRequest& rReq )
         if (rItem.bSend)
         {
             pSh->SttEndDoc(true);
-            aMgr.InsertFlyFrame(FLY_AT_PAGE,
+            aMgr.InsertFlyFrame(RndStdIds::FLY_AT_PAGE,
                 Point(rItem.lSendFromLeft + lLeft, rItem.lSendFromTop  + lUpper),
                 Size (rItem.lAddrFromLeft - rItem.lSendFromLeft, 0));
 
@@ -445,7 +445,7 @@ void SwModule::InsertEnv( SfxRequest& rReq )
         // Addressee
         pSh->SttEndDoc(true);
 
-        aMgr.InsertFlyFrame(FLY_AT_PAGE,
+        aMgr.InsertFlyFrame(RndStdIds::FLY_AT_PAGE,
             Point(rItem.lAddrFromLeft + lLeft, rItem.lAddrFromTop  + lUpper),
             Size (nPageW - rItem.lAddrFromLeft - 566, 0));
         pSh->EnterSelFrameMode();
@@ -467,7 +467,7 @@ void SwModule::InsertEnv( SfxRequest& rReq )
         if (nMode == ENV_NEWDOC)
             pSh->DoUndo();
         else
-            pSh->EndUndo(UNDO_UI_INSERT_ENVELOPE);
+            pSh->EndUndo(SwUndoId::UI_INSERT_ENVELOPE);
 
         if (nMode == ENV_NEWDOC)
         {

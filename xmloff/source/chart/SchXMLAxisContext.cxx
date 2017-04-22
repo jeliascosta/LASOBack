@@ -51,15 +51,15 @@ using namespace com::sun::star;
 
 using com::sun::star::uno::Reference;
 
-static const SvXMLEnumMapEntry aXMLAxisDimensionMap[] =
+static const SvXMLEnumMapEntry<SchXMLAxisDimension> aXMLAxisDimensionMap[] =
 {
     { XML_X,  SCH_XML_AXIS_X  },
     { XML_Y,  SCH_XML_AXIS_Y  },
     { XML_Z,  SCH_XML_AXIS_Z  },
-    { XML_TOKEN_INVALID, 0 }
+    { XML_TOKEN_INVALID, (SchXMLAxisDimension)0 }
 };
 
-static const SvXMLEnumMapEntry aXMLAxisTypeMap[] =
+static const SvXMLEnumMapEntry<sal_uInt16> aXMLAxisTypeMap[] =
 {
     { XML_AUTO,  css::chart::ChartAxisType::AUTOMATIC },
     { XML_TEXT,  css::chart::ChartAxisType::CATEGORY },
@@ -77,7 +77,6 @@ public:
                                    sal_uInt16 nPrefix,
                                    const OUString& rLocalName,
                                    OUString& rAddress );
-    virtual ~SchXMLCategoriesContext();
     virtual void StartElement( const Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };
 
@@ -88,7 +87,6 @@ public:
                         sal_uInt16 nPrefix, const OUString& rLocalName,
                         const Reference< beans::XPropertySet >& rAxisProps );
 
-    virtual ~DateScaleContext();
     virtual void StartElement( const Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 
 private:
@@ -97,7 +95,7 @@ private:
 
 SchXMLAxisContext::SchXMLAxisContext( SchXMLImportHelper& rImpHelper,
                                       SvXMLImport& rImport, const OUString& rLocalName,
-                                      Reference< chart::XDiagram > xDiagram,
+                                      Reference< chart::XDiagram > const & xDiagram,
                                       std::vector< SchXMLAxis >& rAxes,
                                       OUString & rCategoriesAddress,
                                       bool bAddMissingXAxisForNetCharts,
@@ -219,18 +217,8 @@ void SchXMLAxisContext::CreateGrid( const OUString& sAutoStyleName, bool bIsMajo
         // the line color is black as default, in the model it is a light gray
         xGridProp->setPropertyValue("LineColor",
                                      uno::makeAny( COL_BLACK ));
-        if( !sAutoStyleName.isEmpty())
-        {
-            const SvXMLStylesContext* pStylesCtxt = m_rImportHelper.GetAutoStylesContext();
-            if( pStylesCtxt )
-            {
-                const SvXMLStyleContext* pStyle = pStylesCtxt->FindStyleChildContext(
-                    SchXMLImportHelper::GetChartFamilyID(), sAutoStyleName );
-
-                if( pStyle && dynamic_cast<const XMLPropStyleContext*>( pStyle) !=  nullptr)
-                    const_cast<XMLPropStyleContext*>( static_cast< const XMLPropStyleContext* >( pStyle ))->FillPropertySet( xGridProp );
-            }
-        }
+        if (!sAutoStyleName.isEmpty())
+            m_rImportHelper.FillAutoStyle(sAutoStyleName, xGridProp);
     }
 }
 
@@ -283,9 +271,9 @@ void SchXMLAxisContext::StartElement( const Reference< xml::sax::XAttributeList 
         {
             case XML_TOK_AXIS_DIMENSION:
                 {
-                    sal_uInt16 nEnumVal;
+                    SchXMLAxisDimension nEnumVal;
                     if( SvXMLUnitConverter::convertEnum( nEnumVal, aValue, aXMLAxisDimensionMap ))
-                        m_aCurrentAxis.eDimension = ( SchXMLAxisDimension )nEnumVal;
+                        m_aCurrentAxis.eDimension = nEnumVal;
                 }
                 break;
             case XML_TOK_AXIS_NAME:
@@ -361,7 +349,7 @@ bool lcl_divideBy100( uno::Any& rDoubleAny )
     if( (rDoubleAny>>=fValue) && (fValue!=0.0) )
     {
         fValue/=100.0;
-        rDoubleAny = uno::makeAny(fValue);
+        rDoubleAny <<= fValue;
         bChanged = true;
     }
     return bChanged;
@@ -475,17 +463,13 @@ void SchXMLAxisContext::CreateAxis()
         if( !m_aAutoStyleName.isEmpty())
         {
             const SvXMLStylesContext* pStylesCtxt = m_rImportHelper.GetAutoStylesContext();
-            if( pStylesCtxt )
+            if (pStylesCtxt)
             {
-                const SvXMLStyleContext* pStyle = pStylesCtxt->FindStyleChildContext(
-                    SchXMLImportHelper::GetChartFamilyID(), m_aAutoStyleName );
+                SvXMLStyleContext* pStyle = const_cast<SvXMLStyleContext*>(pStylesCtxt->FindStyleChildContext(SchXMLImportHelper::GetChartFamilyID(), m_aAutoStyleName));
 
-                if( pStyle && dynamic_cast<const XMLPropStyleContext*>( pStyle) !=  nullptr)
+                if (XMLPropStyleContext * pPropStyleContext = dynamic_cast<XMLPropStyleContext*>(pStyle))
                 {
-                    // note: SvXMLStyleContext::FillPropertySet is not const
-                    XMLPropStyleContext * pPropStyleContext = const_cast< XMLPropStyleContext * >( dynamic_cast< const XMLPropStyleContext * >( pStyle ));
-                    if( pPropStyleContext )
-                        pPropStyleContext->FillPropertySet( m_xAxisProps );
+                    pPropStyleContext->FillPropertySet(m_xAxisProps);
 
                     if( m_bAdaptWrongPercentScaleValues && m_aCurrentAxis.eDimension==SCH_XML_AXIS_Y )
                     {
@@ -508,7 +492,7 @@ void SchXMLAxisContext::CreateAxis()
                         if( xAxisSuppl.is() )
                         {
                             Reference< beans::XPropertySet > xXAxisProp( xAxisSuppl->getAxis(0), uno::UNO_QUERY );
-                            const_cast<XMLPropStyleContext*>( static_cast< const XMLPropStyleContext* >( pStyle ))->FillPropertySet( xXAxisProp );
+                            pPropStyleContext->FillPropertySet(xXAxisProp);
                         }
 
                         //set scale data of added x axis back to default
@@ -864,10 +848,6 @@ SchXMLCategoriesContext::SchXMLCategoriesContext(
 {
 }
 
-SchXMLCategoriesContext::~SchXMLCategoriesContext()
-{
-}
-
 void SchXMLCategoriesContext::StartElement( const Reference< xml::sax::XAttributeList >& xAttrList )
 {
     sal_Int16 nAttrCount = xAttrList.is()? xAttrList->getLength(): 0;
@@ -894,10 +874,6 @@ DateScaleContext::DateScaleContext(
     const Reference< beans::XPropertySet >& rAxisProps ) :
         SvXMLImportContext( rImport, nPrefix, rLocalName ),
         m_xAxisProps( rAxisProps )
-{
-}
-
-DateScaleContext::~DateScaleContext()
 {
 }
 
@@ -969,7 +945,7 @@ void DateScaleContext::StartElement( const Reference< xml::sax::XAttributeList >
         {
             case XML_TOK_DATESCALE_BASE_TIME_UNIT:
                 {
-                    aIncrement.TimeResolution = uno::makeAny( lcl_getTimeUnit(aValue) );
+                    aIncrement.TimeResolution <<= lcl_getTimeUnit(aValue);
                     bSetNewIncrement = true;
                 }
                 break;
@@ -978,7 +954,7 @@ void DateScaleContext::StartElement( const Reference< xml::sax::XAttributeList >
                     chart::TimeInterval aInterval(1,0);
                     aIncrement.MajorTimeInterval >>= aInterval;
                     ::sax::Converter::convertNumber( aInterval.Number, aValue );
-                    aIncrement.MajorTimeInterval = uno::makeAny(aInterval);
+                    aIncrement.MajorTimeInterval <<= aInterval;
                     bSetNewIncrement = true;
                 }
                 break;
@@ -987,7 +963,7 @@ void DateScaleContext::StartElement( const Reference< xml::sax::XAttributeList >
                     chart::TimeInterval aInterval(1,0);
                     aIncrement.MajorTimeInterval >>= aInterval;
                     aInterval.TimeUnit = lcl_getTimeUnit(aValue);
-                    aIncrement.MajorTimeInterval = uno::makeAny(aInterval);
+                    aIncrement.MajorTimeInterval <<= aInterval;
                     bSetNewIncrement = true;
                 }
                 break;
@@ -996,7 +972,7 @@ void DateScaleContext::StartElement( const Reference< xml::sax::XAttributeList >
                     chart::TimeInterval aInterval(1,0);
                     aIncrement.MinorTimeInterval >>= aInterval;
                     ::sax::Converter::convertNumber( aInterval.Number, aValue );
-                    aIncrement.MinorTimeInterval = uno::makeAny(aInterval);
+                    aIncrement.MinorTimeInterval <<= aInterval;
                     bSetNewIncrement = true;
                 }
                 break;
@@ -1005,7 +981,7 @@ void DateScaleContext::StartElement( const Reference< xml::sax::XAttributeList >
                     chart::TimeInterval aInterval(1,0);
                     aIncrement.MinorTimeInterval >>= aInterval;
                     aInterval.TimeUnit = lcl_getTimeUnit(aValue);
-                    aIncrement.MinorTimeInterval = uno::makeAny(aInterval);
+                    aIncrement.MinorTimeInterval <<= aInterval;
                     bSetNewIncrement = true;
                 }
                 break;

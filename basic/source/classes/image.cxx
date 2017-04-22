@@ -178,7 +178,7 @@ bool SbiImage::Load( SvStream& r, sal_uInt32& nVersion )
                 if( bBadVer ) break;
                 pCode = new char[ nLen ];
                 nCodeSize = nLen;
-                r.Read( pCode, nCodeSize );
+                r.ReadBytes(pCode, nCodeSize);
                 if ( bLegacy )
                 {
                     ReleaseLegacyBuffer(); // release any previously held buffer
@@ -231,7 +231,7 @@ bool SbiImage::Load( SvStream& r, sal_uInt32& nVersion )
                     nStringSize = (sal_uInt16) nLen;
 
                     std::unique_ptr<char[]> pByteStrings(new char[ nLen ]);
-                    r.Read( pByteStrings.get(), nStringSize );
+                    r.ReadBytes(pByteStrings.get(), nStringSize);
                     for( short j = 0; j < nStrings; j++ )
                     {
                         sal_uInt16 nOff2 = (sal_uInt16) pStringOff[ j ];
@@ -427,11 +427,11 @@ bool SbiImage::Save( SvStream& r, sal_uInt32 nVer )
             aNewToLegacy.convert();
             pLegacyPCode = reinterpret_cast<char*>(aNewToLegacy.GetBuffer());
             nLegacyCodeSize = aNewToLegacy.GetSize();
-            r.Write( pLegacyPCode, nLegacyCodeSize );
+            r.WriteBytes(pLegacyPCode, nLegacyCodeSize);
         }
         else
         {
-            r.Write( pCode, nCodeSize );
+            r.WriteBytes(pCode, nCodeSize);
         }
         SbiCloseRecord( r, nPos );
     }
@@ -456,13 +456,13 @@ bool SbiImage::Save( SvStream& r, sal_uInt32 nVer )
             memcpy( pByteStrings.get() + nOff, aStr.getStr(), (aStr.getLength() + 1) * sizeof( char ) );
         }
         r.WriteUInt32( nStringSize );
-        r.Write( pByteStrings.get(), nStringSize );
+        r.WriteBytes(pByteStrings.get(), nStringSize);
 
         pByteStrings.reset();
         SbiCloseRecord( r, nPos );
     }
     // User defined types
-    if (rTypes)
+    if ( rTypes.is() )
     {
         sal_uInt16 nTypes = rTypes->Count();
         if (nTypes > 0 )
@@ -579,7 +579,7 @@ void SbiImage::AddString( const OUString& r )
     {
         sal_Int32  len = r.getLength() + 1;
         sal_uInt32 needed = nStringOff + len;
-        if( needed > 0xFFFFFF00L )
+        if( needed > 0xFFFFFF00 )
         {
             bError = true;  // out of mem!
         }
@@ -620,7 +620,7 @@ void SbiImage::AddCode( char* p, sal_uInt32 s )
 // Add user type
 void SbiImage::AddType(SbxObject* pObject)
 {
-    if( !rTypes.Is() )
+    if( !rTypes.is() )
     {
         rTypes = new SbxArray;
     }
@@ -630,7 +630,7 @@ void SbiImage::AddType(SbxObject* pObject)
 
 void SbiImage::AddEnum(SbxObject* pObject) // Register enum type
 {
-    if( !rEnums.Is() )
+    if( !rEnums.is() )
     {
         rEnums = new SbxArray;
     }
@@ -674,7 +674,7 @@ OUString SbiImage::GetString( short nId ) const
 
 const SbxObject* SbiImage::FindType (const OUString& aTypeName) const
 {
-    return rTypes.Is() ? static_cast<SbxObject*>(rTypes->Find(aTypeName,SbxClassType::Object)) : nullptr;
+    return rTypes.is() ? static_cast<SbxObject*>(rTypes->Find(aTypeName,SbxClassType::Object)) : nullptr;
 }
 
 sal_uInt16 SbiImage::CalcLegacyOffset( sal_Int32 nOffset )
@@ -696,7 +696,7 @@ void  SbiImage::ReleaseLegacyBuffer()
 
 bool SbiImage::ExceedsLegacyLimits()
 {
-    return ( nStringSize > 0xFF00L ) || ( CalcLegacyOffset( nCodeSize ) > 0xFF00L );
+    return ( nStringSize > 0xFF00 ) || ( CalcLegacyOffset( nCodeSize ) > 0xFF00 );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

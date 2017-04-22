@@ -50,7 +50,7 @@ class OSQLMessageBox : public ButtonDialog
     VclPtr<FixedText>       m_aMessage;
     OUString m_sHelpURL;
 
-    ::std::unique_ptr< SQLMessageBox_Impl >   m_pImpl;
+    std::unique_ptr< SQLMessageBox_Impl >   m_pImpl;
 
 public:
     enum MessageType
@@ -89,17 +89,16 @@ public:
                 MessageType _eType = Info,
                 const ::dbtools::SQLExceptionInfo* _pAdditionalErrorInfo = nullptr );
 
-    virtual ~OSQLMessageBox();
+    virtual ~OSQLMessageBox() override;
     virtual void dispose() override;
 
 private:
     void Construct( WinBits nStyle, MessageType eImage );
 
-    DECL_LINK_TYPED(ButtonClickHdl, Button*, void );
+    DECL_LINK(ButtonClickHdl, Button*, void );
 
 private:
     void    impl_positionControls();
-    void    impl_initImage( MessageType _eImage );
     void    impl_createStandardButtons( WinBits _nStyle );
     void    impl_addDetailsButton();
 };
@@ -119,9 +118,7 @@ class OSQLErrorBox : public OSQLMessageBox
 {
 public:
     OSQLErrorBox( vcl::Window* _pParent,
-                  const OUString& _rMessage,
-                  WinBits _nStyle = WB_OK | WB_DEF_OK,
-                  const ::dbtools::SQLExceptionInfo* _pAdditionalErrorInfo = nullptr );
+                  const OUString& _rMessage );
 };
 
 }   // namespace dbaui

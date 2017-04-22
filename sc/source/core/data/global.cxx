@@ -42,7 +42,6 @@
 #include <unotools/securityoptions.hxx>
 #include <stdlib.h>
 #include <time.h>
-#include <ctype.h>
 #include <numeric>
 #include <svx/svdmodel.hxx>
 
@@ -53,7 +52,6 @@
 #include <comphelper/string.hxx>
 #include <unotools/calendarwrapper.hxx>
 #include <unotools/collatorwrapper.hxx>
-#include <com/sun/star/i18n/CollatorOptions.hpp>
 #include <unotools/intlwrapper.hxx>
 #include <unotools/syslocale.hxx>
 #include <unotools/transliterationwrapper.hxx>
@@ -70,7 +68,6 @@
 #include "adiasync.hxx"
 #include "userlist.hxx"
 #include "interpre.hxx"
-#include "strload.hxx"
 #include "docpool.hxx"
 #include "unitconv.hxx"
 #include "compiler.hxx"
@@ -78,7 +75,7 @@
 #include "funcdesc.hxx"
 #include "globstr.hrc"
 #include "scfuncs.hrc"
-#include "sc.hrc"
+#include "scres.hrc"
 #include "scmod.hxx"
 #include "appoptio.hxx"
 #include "editutil.hxx"
@@ -112,8 +109,6 @@ SvxBrushItem*   ScGlobal::pButtonBrushItem = nullptr;
 SvxBrushItem*   ScGlobal::pEmbeddedBrushItem = nullptr;
 SvxBrushItem*   ScGlobal::pProtectedBrushItem = nullptr;
 
-ImageList*      ScGlobal::pOutlineBitmaps = nullptr;
-
 ScFunctionList* ScGlobal::pStarCalcFunctionList = nullptr;
 ScFunctionMgr*  ScGlobal::pStarCalcFunctionMgr  = nullptr;
 
@@ -130,8 +125,6 @@ sal_uInt16          ScGlobal::nStdRowHeight         = 256;
 long            ScGlobal::nLastRowHeightExtra   = 0;
 long            ScGlobal::nLastColWidthExtra    = STD_EXTRA_WIDTH;
 
-static sal_uInt16 nPPTZoom = 0; // ScreenZoom used to determine nScreenPPTX/Y
-
 SfxViewShell* pScActiveViewShell = nullptr; //FIXME: Make this a member
 sal_uInt16 nScClickMouseModifier = 0;    //FIXME: This too
 sal_uInt16 nScFillModeMouseModifier = 0; //FIXME: And this
@@ -143,29 +136,29 @@ bool ScGlobal::HasAttrChanged( const SfxItemSet&  rNewAttrs,
                                const sal_uInt16       nWhich )
 {
     bool                bInvalidate = false;
-    const SfxItemState  eNewState   = rNewAttrs.GetItemState( nWhich );
-    const SfxItemState  eOldState   = rOldAttrs.GetItemState( nWhich );
+    const SfxPoolItem*  pNewItem    = nullptr;
+    const SfxItemState  eNewState   = rNewAttrs.GetItemState( nWhich, true, &pNewItem );
+    const SfxPoolItem*  pOldItem    = nullptr;
+    const SfxItemState  eOldState   = rOldAttrs.GetItemState( nWhich, true, &pOldItem );
 
     if ( eNewState == eOldState )
     {
         // Both Items set
         // PoolItems, meaning comparing pointers is valid
         if ( SfxItemState::SET == eOldState )
-            bInvalidate = (&rNewAttrs.Get( nWhich ) != &rOldAttrs.Get( nWhich ));
+            bInvalidate = (pNewItem != pOldItem);
     }
     else
     {
         // Contains a Default Item
         // PoolItems, meaning Item comparison necessary
-        const SfxPoolItem& rOldItem = ( SfxItemState::SET == eOldState )
-                    ? rOldAttrs.Get( nWhich )
-                    : rOldAttrs.GetPool()->GetDefaultItem( nWhich );
+        if (!pOldItem)
+            pOldItem = &rOldAttrs.GetPool()->GetDefaultItem( nWhich );
 
-        const SfxPoolItem& rNewItem = ( SfxItemState::SET == eNewState )
-                    ? rNewAttrs.Get( nWhich )
-                    : rNewAttrs.GetPool()->GetDefaultItem( nWhich );
+        if (!pNewItem)
+            pNewItem = &rNewAttrs.GetPool()->GetDefaultItem( nWhich );
 
-        bInvalidate = rNewItem != rOldItem;
+        bInvalidate = (*pNewItem != *pOldItem);
     }
 
     return bInvalidate;
@@ -253,10 +246,14 @@ void ScGlobal::SetSearchItem( const SvxSearchItem& rNew )
 
 void ScGlobal::ClearAutoFormat()
 {
-    if (pAutoFormat!=nullptr)
+    if (pAutoFormat)
     {
+        //  When modified via StarOne then only the SaveLater flag is set and no saving is done.
+        //  If the flag is set then save now.
+        if (pAutoFormat->IsSaveLater())
+            pAutoFormat->Save();
         delete pAutoFormat;
-        pAutoFormat=nullptr;
+        pAutoFormat = nullptr;
     }
 }
 
@@ -350,125 +347,112 @@ const OUString& ScGlobal::GetRscString( sal_uInt16 nIndex )
                 ;   // nothing
         }
         if (eOp != ocNone)
-            ppRscString[ nIndex ] = new OUString( ScCompiler::GetNativeSymbol( eOp));
+            ppRscString[ nIndex ] = new OUString(ScCompiler::GetNativeSymbol(eOp));
         else
-            ppRscString[ nIndex ] = new OUString( SC_STRLOAD( RID_GLOBSTR, nIndex ));
+            ppRscString[ nIndex ] = new OUString(ScResId(nIndex + RID_GLOBSTR_OFFSET));
     }
     return *ppRscString[ nIndex ];
 }
 
-OUString ScGlobal::GetErrorString(sal_uInt16 nErrNumber)
+OUString ScGlobal::GetErrorString(FormulaError nErr)
 {
-    OUString sResStr;
-    switch (nErrNumber)
+    sal_uInt16 nErrNumber;
+    switch (nErr)
     {
-        case formula::NOTAVAILABLE          : nErrNumber = STR_NV_STR; break;
-        case formula::errNoRef              : nErrNumber = STR_NO_REF_TABLE; break;
-        case formula::errNoName             : nErrNumber = STR_NO_NAME_REF; break;
-        case formula::errNoAddin            : nErrNumber = STR_NO_ADDIN; break;
-        case formula::errNoMacro            : nErrNumber = STR_NO_MACRO; break;
-        case formula::errDoubleRef          :
-        case formula::errNoValue            : nErrNumber = STR_NO_VALUE; break;
-        case formula::errNoCode             : nErrNumber = STR_NULL_ERROR; break;
-        case formula::errDivisionByZero     : nErrNumber = STR_DIV_ZERO; break;
-        case formula::errIllegalFPOperation : nErrNumber = STR_NUM_ERROR; break;
+        case FormulaError::NotAvailable       : nErrNumber = STR_NV_STR; break;
+        case FormulaError::NoRef              : nErrNumber = STR_NO_REF_TABLE; break;
+        case FormulaError::NoName             : nErrNumber = STR_NO_NAME_REF; break;
+        case FormulaError::NoAddin            : nErrNumber = STR_NO_ADDIN; break;
+        case FormulaError::NoMacro            : nErrNumber = STR_NO_MACRO; break;
+        case FormulaError::NoValue            : nErrNumber = STR_NO_VALUE; break;
+        case FormulaError::NoCode             : nErrNumber = STR_NULL_ERROR; break;
+        case FormulaError::DivisionByZero     : nErrNumber = STR_DIV_ZERO; break;
+        case FormulaError::IllegalFPOperation : nErrNumber = STR_NUM_ERROR; break;
 
-        default          : sResStr = GetRscString(STR_ERROR_STR) + OUString::number( nErrNumber );
-                           nErrNumber = 0;
-                           break;
+        default          : return GetRscString(STR_ERROR_STR) + OUString::number( (int)nErr );
     }
-    if( nErrNumber )
-        sResStr = GetRscString( nErrNumber );
-    return sResStr;
+    return GetRscString( nErrNumber );
 }
 
-OUString ScGlobal::GetLongErrorString(sal_uInt16 nErrNumber)
+OUString ScGlobal::GetLongErrorString(FormulaError nErr)
 {
-    switch (nErrNumber)
+    sal_uInt16 nErrNumber;
+    switch (nErr)
     {
-        case 0:
+        case FormulaError::NONE:
+            nErrNumber = 0;
             break;
-        case 1:
-        case formula::errIllegalArgument:
+        case FormulaError::IllegalArgument:
             nErrNumber = STR_LONG_ERR_ILL_ARG;
         break;
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case formula::errIllegalFPOperation:
+        case FormulaError::IllegalFPOperation:
             nErrNumber = STR_LONG_ERR_ILL_FPO;
         break;
-        case formula::errIllegalChar:
+        case FormulaError::IllegalChar:
             nErrNumber = STR_LONG_ERR_ILL_CHAR;
         break;
-        case formula::errIllegalParameter:
+        case FormulaError::IllegalParameter:
             nErrNumber = STR_LONG_ERR_ILL_PAR;
         break;
-        case formula::errSeparator:
-            nErrNumber = STR_LONG_ERR_ILL_SEP;
-        break;
-        case formula::errPair:
-        case formula::errPairExpected:
+        case FormulaError::Pair:
+        case FormulaError::PairExpected:
             nErrNumber = STR_LONG_ERR_PAIR;
         break;
-        case formula::errOperatorExpected:
+        case FormulaError::OperatorExpected:
             nErrNumber = STR_LONG_ERR_OP_EXP;
         break;
-        case formula::errVariableExpected:
-        case formula::errParameterExpected:
+        case FormulaError::VariableExpected:
+        case FormulaError::ParameterExpected:
             nErrNumber = STR_LONG_ERR_VAR_EXP;
         break;
-        case formula::errCodeOverflow:
+        case FormulaError::CodeOverflow:
             nErrNumber = STR_LONG_ERR_CODE_OVF;
         break;
-        case formula::errStringOverflow:
+        case FormulaError::StringOverflow:
             nErrNumber = STR_LONG_ERR_STR_OVF;
         break;
-        case formula::errStackOverflow:
+        case FormulaError::StackOverflow:
             nErrNumber = STR_LONG_ERR_STACK_OVF;
         break;
-        case formula::errMatrixSize:
+        case FormulaError::MatrixSize:
             nErrNumber = STR_LONG_ERR_MATRIX_SIZE;
         break;
-        case formula::errIllegalJump:
-        case formula::errUnknownState:
-        case formula::errUnknownVariable:
-        case formula::errUnknownOpCode:
-        case formula::errUnknownStackVariable:
-        case formula::errUnknownToken:
-        case formula::errNoCode:
-        case formula::errDoubleRef:
+        case FormulaError::UnknownState:
+        case FormulaError::UnknownVariable:
+        case FormulaError::UnknownOpCode:
+        case FormulaError::UnknownStackVariable:
+        case FormulaError::UnknownToken:
+        case FormulaError::NoCode:
             nErrNumber = STR_LONG_ERR_SYNTAX;
         break;
-        case formula::errCircularReference:
+        case FormulaError::CircularReference:
             nErrNumber = STR_LONG_ERR_CIRC_REF;
         break;
-        case formula::errNoConvergence:
+        case FormulaError::NoConvergence:
             nErrNumber = STR_LONG_ERR_NO_CONV;
         break;
-        case formula::errNoRef:
+        case FormulaError::NoRef:
             nErrNumber = STR_LONG_ERR_NO_REF;
         break;
-        case formula::errNoName:
+        case FormulaError::NoName:
             nErrNumber = STR_LONG_ERR_NO_NAME;
         break;
-        case formula::errNoAddin:
+        case FormulaError::NoAddin:
             nErrNumber = STR_LONG_ERR_NO_ADDIN;
         break;
-        case formula::errNoMacro:
+        case FormulaError::NoMacro:
             nErrNumber = STR_LONG_ERR_NO_MACRO;
         break;
-        case formula::errDivisionByZero:
+        case FormulaError::DivisionByZero:
             nErrNumber = STR_LONG_ERR_DIV_ZERO;
         break;
-        case formula::errNestedArray:
+        case FormulaError::NestedArray:
             nErrNumber = STR_ERR_LONG_NESTED_ARRAY;
         break;
-        case formula::errNoValue:
+        case FormulaError::NoValue:
             nErrNumber = STR_LONG_ERR_NO_VALUE;
         break;
-        case formula::NOTAVAILABLE:
+        case FormulaError::NotAvailable:
             nErrNumber = STR_LONG_ERR_NV;
         break;
         default:
@@ -488,14 +472,6 @@ SvxBrushItem* ScGlobal::GetButtonBrushItem()
 const OUString& ScGlobal::GetEmptyOUString()
 {
     return *pEmptyOUString;
-}
-
-ImageList* ScGlobal::GetOutlineSymbols()
-{
-    ImageList*& rpImageList = pOutlineBitmaps;
-    if( !rpImageList )
-        rpImageList = new ImageList( ScResId( RID_OUTLINEBITMAPS ) );
-    return rpImageList;
 }
 
 void ScGlobal::Init()
@@ -521,7 +497,7 @@ void ScGlobal::Init()
     pEmbeddedBrushItem = new SvxBrushItem( Color( COL_LIGHTCYAN ), ATTR_BACKGROUND );
     pProtectedBrushItem = new SvxBrushItem( Color( COL_LIGHTGRAY ), ATTR_BACKGROUND );
 
-    UpdatePPT(nullptr);
+    InitPPT();
     //ScCompiler::InitSymbolsNative();
     // ScParameterClassification _after_ Compiler, needs function resources if
     // arguments are to be merged in, which in turn need strings of function
@@ -536,23 +512,12 @@ void ScGlobal::Init()
     //  ScDocumentPool::InitVersionMaps() has been called earlier already
 }
 
-void ScGlobal::UpdatePPT( OutputDevice* pDev )
+void ScGlobal::InitPPT()
 {
-    sal_uInt16 nCurrentZoom = Application::GetSettings().GetStyleSettings().GetScreenZoom();
-    if ( nCurrentZoom != nPPTZoom )
-    {
-        // Screen PPT values must be updated when ScreenZoom has changed.
-        // If called from Window::DataChanged, the window is passed as pDev,
-        // to make sure LogicToPixel uses a device which already uses the new zoom.
-        // For the initial settings, NULL is passed and GetDefaultDevice used.
+    OutputDevice* pDev = Application::GetDefaultDevice();
 
-        if ( !pDev )
-            pDev = Application::GetDefaultDevice();
-        Point aPix1000 = pDev->LogicToPixel( Point(100000,100000), MAP_TWIP );
-        nScreenPPTX = aPix1000.X() / 100000.0;
-        nScreenPPTY = aPix1000.Y() / 100000.0;
-        nPPTZoom = nCurrentZoom;
-    }
+    nScreenPPTX = double(pDev->GetDPIX()) / double(TWIPS_PER_INCH);
+    nScreenPPTY = double(pDev->GetDPIY()) / double(TWIPS_PER_INCH);
 }
 
 const OUString& ScGlobal::GetClipDocName()
@@ -582,12 +547,12 @@ void ScGlobal::InitTextHeight(SfxItemPool* pPool)
 
     OutputDevice* pDefaultDev = Application::GetDefaultDevice();
     ScopedVclPtrInstance< VirtualDevice > pVirtWindow( *pDefaultDev );
-    pVirtWindow->SetMapMode(MAP_PIXEL);
+    pVirtWindow->SetMapMode(MapUnit::MapPixel);
     vcl::Font aDefFont;
     pPattern->GetFont(aDefFont, SC_AUTOCOL_BLACK, pVirtWindow); // Font color doesn't matter here
     pVirtWindow->SetFont(aDefFont);
     sal_uInt16 nTest = static_cast<sal_uInt16>(
-        pVirtWindow->PixelToLogic(Size(0, pVirtWindow->GetTextHeight()), MAP_TWIP).Height());
+        pVirtWindow->PixelToLogic(Size(0, pVirtWindow->GetTextHeight()), MapUnit::MapTwip).Height());
 
     if (nTest > nDefFontHeight)
         nDefFontHeight = nTest;
@@ -610,16 +575,19 @@ void ScGlobal::Clear()
     }
     theAddInAsyncTbl.clear();
     ExitExternalFunc();
-    DELETEZ(pAutoFormat);
+    ClearAutoFormat();
     DELETEZ(pSearchItem);
     DELETEZ(pLegacyFuncCollection);
     DELETEZ(pAddInCollection);
     DELETEZ(pUserList);
 
-    for( sal_uInt16 nC = 0 ; nC < SC_GLOBSTR_STR_COUNT ; nC++ )
-        if( ppRscString ) delete ppRscString[ nC ];
-    delete[] ppRscString;
-    ppRscString = nullptr;
+    if (ppRscString)
+    {
+        for (sal_uInt16 nC = 0; nC < SC_GLOBSTR_STR_COUNT; ++nC)
+            delete ppRscString[nC];
+        delete[] ppRscString;
+        ppRscString = nullptr;
+    }
 
     DELETEZ(pStarCalcFunctionList); // Destroy before ResMgr!
     DELETEZ(pStarCalcFunctionMgr);
@@ -631,7 +599,6 @@ void ScGlobal::Clear()
     DELETEZ(pButtonBrushItem);
     DELETEZ(pEmbeddedBrushItem);
     DELETEZ(pProtectedBrushItem);
-    DELETEZ(pOutlineBitmaps);
     DELETEZ(pEnglishFormatter);
     DELETEZ(pCaseTransliteration);
     DELETEZ(pTransliteration);
@@ -653,7 +620,7 @@ void ScGlobal::Clear()
     ScDocumentPool::DeleteVersionMaps();
 
     DELETEZ(pEmptyOUString);
-    xDrawClipDocShellRef.Clear();
+    xDrawClipDocShellRef.clear();
 }
 
 rtl_TextEncoding ScGlobal::GetCharsetValue( const OUString& rCharSet )
@@ -780,9 +747,9 @@ void ScGlobal::AddQuotes( OUString& rString, sal_Unicode cQuote, bool bEscapeEmb
         pQ[0] = pQ[1] = cQuote;
         pQ[2] = 0;
         OUString aQuotes( pQ );
-        rString = rString.replaceAll( OUString(cQuote), aQuotes);
+        rString = rString.replaceAll( OUStringLiteral1(cQuote), aQuotes);
     }
-    rString = OUString( cQuote ) + rString + OUString( cQuote );
+    rString = OUStringLiteral1( cQuote ) + rString + OUStringLiteral1( cQuote );
 }
 
 void ScGlobal::EraseQuotes( OUString& rString, sal_Unicode cQuote, bool bUnescapeEmbedded )
@@ -796,7 +763,7 @@ void ScGlobal::EraseQuotes( OUString& rString, sal_Unicode cQuote, bool bUnescap
             pQ[0] = pQ[1] = cQuote;
             pQ[2] = 0;
             OUString aQuotes( pQ );
-            rString = rString.replaceAll( aQuotes, OUString(cQuote));
+            rString = rString.replaceAll( aQuotes, OUStringLiteral1(cQuote));
         }
     }
 }
@@ -878,12 +845,12 @@ bool ScGlobal::EETextObjEqual( const EditTextObject* pObj1,
     return false;
 }
 
-void ScGlobal::OpenURL(const OUString& rURL, const OUString& rTarget, const SdrModel* pDrawLayer)
+void ScGlobal::OpenURL(const OUString& rURL, const OUString& rTarget)
 {
-    if (pDrawLayer && comphelper::LibreOfficeKit::isActive())
+    if (comphelper::LibreOfficeKit::isActive())
     {
-        pDrawLayer->libreOfficeKitCallback(LOK_CALLBACK_HYPERLINK_CLICKED, rURL.toUtf8().getStr());
-        return;
+        if(SfxViewShell* pViewShell = SfxViewShell::Current())
+            pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_HYPERLINK_CLICKED, rURL.toUtf8().getStr());
     }
 
     // OpenURL is always called in the GridWindow by mouse clicks in some way or another.
@@ -891,7 +858,7 @@ void ScGlobal::OpenURL(const OUString& rURL, const OUString& rTarget, const SdrM
     // SvtSecurityOptions to access Libreoffice global security parameters
     SvtSecurityOptions aSecOpt;
     bool bCtrlClickHappened = (nScClickMouseModifier & KEY_MOD1);
-    bool bCtrlClickSecOption = aSecOpt.IsOptionSet( SvtSecurityOptions::E_CTRLCLICK_HYPERLINK );
+    bool bCtrlClickSecOption = aSecOpt.IsOptionSet( SvtSecurityOptions::EOption::CtrlClickHyperlink );
     if( bCtrlClickHappened && !( bCtrlClickSecOption ) )
     {
         // return since ctrl+click happened when the

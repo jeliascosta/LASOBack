@@ -62,14 +62,14 @@ public:
     using osl::Thread::wait;
     using osl::Thread::yield;
 
-    static inline void * operator new(std::size_t size)
+    static void * operator new(std::size_t size)
     { return SimpleReferenceObject::operator new(size); }
 
-    static inline void operator delete(void * pointer)
+    static void operator delete(void * pointer)
     { SimpleReferenceObject::operator delete(pointer); }
 
 protected:
-    virtual ~Thread();
+    virtual ~Thread() SAL_OVERRIDE;
 
     /**
        The main function executed by the thread.

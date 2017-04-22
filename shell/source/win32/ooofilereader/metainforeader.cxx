@@ -31,9 +31,9 @@ CBaseReader( DocumentName )
 {
     try
     {
-        m_pKeywords_Builder = new CKeywordsTag( );
+        m_pKeywords_Builder = new CKeywordsTag;
         m_pSimple_Builder = new CSimpleTag( );
-        m_pDummy_Builder   = new CDummyTag( );
+        m_pDummy_Builder   = new CDummyTag;
 
         //retrieve all information that is useful
         m_AllMetaInfo[META_INFO_AUTHOR]               = EMPTY_XML_TAG;
@@ -68,9 +68,9 @@ CBaseReader( stream )
 {
 try
     {
-        m_pKeywords_Builder = new CKeywordsTag( );
+        m_pKeywords_Builder = new CKeywordsTag;
         m_pSimple_Builder = new CSimpleTag( );
-        m_pDummy_Builder   = new CDummyTag( );
+        m_pDummy_Builder   = new CDummyTag;
 
         //retrieve all information that is useful
         m_AllMetaInfo[META_INFO_AUTHOR]               = EMPTY_XML_TAG;
@@ -248,7 +248,7 @@ void CMetaInfoReader::start_element(
 {
     //get appropriate Xml Tag Builder using MetaInfoBuilderFactory;
     ITag* pTagBuilder = chooseTagReader( local_name,attributes );
-    assert( pTagBuilder!= NULL );
+    assert( pTagBuilder!= nullptr );
     pTagBuilder->startTag( );
     m_TagBuilderStack.push( pTagBuilder );
 

@@ -36,10 +36,10 @@ private:
 
 public:
     SvxXMeasurePreview(vcl::Window* pParent, WinBits nStyle);
-    virtual ~SvxXMeasurePreview();
+    virtual ~SvxXMeasurePreview() override;
     virtual void dispose() override;
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
     virtual void Resize() override;
     virtual void MouseButtonDown(const MouseEvent& rMEvt) override;
     virtual Size GetOptimalSize() const override;

@@ -53,7 +53,7 @@ std::vector< WeakReference< frame::XModel > > lcl_getAllLivingCharts( ScDocument
             SdrPage* pPage = pDrawLayer->GetPage(static_cast<sal_uInt16>(nTab));
             OSL_ENSURE(pPage,"Page ?");
 
-            SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
+            SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
             SdrObject* pObject = aIter.Next();
             while (pObject)
             {
@@ -146,7 +146,7 @@ ScTemporaryChartLock::ScTemporaryChartLock( ScDocument* pDocP ) :
     mpDoc( pDocP )
 {
     maTimer.SetTimeout( SC_CHARTLOCKTIMEOUT );
-    maTimer.SetTimeoutHdl( LINK( this, ScTemporaryChartLock, TimeoutHdl ) );
+    maTimer.SetInvokeHandler( LINK( this, ScTemporaryChartLock, TimeoutHdl ) );
 }
 
 ScTemporaryChartLock::~ScTemporaryChartLock()
@@ -174,7 +174,7 @@ void ScTemporaryChartLock::AlsoLockThisChart( const Reference< frame::XModel >& 
         mapScChartLockGuard->AlsoLockThisChart( xModel );
 }
 
-IMPL_LINK_NOARG_TYPED(ScTemporaryChartLock, TimeoutHdl, Timer *, void)
+IMPL_LINK_NOARG(ScTemporaryChartLock, TimeoutHdl, Timer *, void)
 {
     mapScChartLockGuard.reset();
 }

@@ -22,17 +22,14 @@
 #include <xmloff/xmlictxt.hxx>
 #include <xmloff/xmlimp.hxx>
 #include "xmlimprt.hxx"
+#include "importcontext.hxx"
 
-
-class ScXMLTableColContext : public SvXMLImportContext
+class ScXMLTableColContext : public ScXMLImportContext
 {
     sal_Int32               nColCount;
     OUString           sStyleName;
     OUString           sVisibility;
     OUString           sCellStyleName;
-
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -40,7 +37,7 @@ public:
                        const OUString& rLName,
                        const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList );
 
-    virtual ~ScXMLTableColContext();
+    virtual ~ScXMLTableColContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -49,7 +46,7 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLTableColsContext : public SvXMLImportContext
+class ScXMLTableColsContext : public ScXMLImportContext
 {
     sal_Int32   nHeaderStartCol;
     sal_Int32   nHeaderEndCol;
@@ -59,9 +56,6 @@ class ScXMLTableColsContext : public SvXMLImportContext
     bool        bGroup;
     bool        bGroupDisplay;
 
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
-
 public:
 
     ScXMLTableColsContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
@@ -69,7 +63,7 @@ public:
                        const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         const bool bHeader, const bool bGroup);
 
-    virtual ~ScXMLTableColsContext();
+    virtual ~ScXMLTableColsContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

@@ -25,6 +25,7 @@
 #include "propctrlr.hrc"
 
 #include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <com/sun/star/util/VetoException.hpp>
 #include <cppuhelper/typeprovider.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 
@@ -92,7 +93,7 @@ namespace pcr
     IMPLEMENT_FORWARD_XINTERFACE2( FormController, OPropertyBrowserController, FormController_PropertyBase1 )
 
 
-    Sequence< Type > SAL_CALL FormController::getTypes(  ) throw(RuntimeException, std::exception)
+    Sequence< Type > SAL_CALL FormController::getTypes(  )
     {
         ::cppu::OTypeCollection aTypes(
             cppu::UnoType<XPropertySet>::get(),
@@ -106,13 +107,13 @@ namespace pcr
     IMPLEMENT_GET_IMPLEMENTATION_ID( FormController )
 
 
-    OUString SAL_CALL FormController::getImplementationName(  ) throw(RuntimeException, std::exception)
+    OUString SAL_CALL FormController::getImplementationName(  )
     {
         return m_aServiceDescriptor.GetImplementationName();
     }
 
 
-    Sequence< OUString > SAL_CALL FormController::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
+    Sequence< OUString > SAL_CALL FormController::getSupportedServiceNames(  )
     {
         Sequence< OUString > aSupported( m_aServiceDescriptor.GetSupportedServiceNames() );
         aSupported.realloc( aSupported.getLength() + 1 );
@@ -121,13 +122,13 @@ namespace pcr
     }
 
 
-    OUString FormController::getImplementationName_static(  ) throw(RuntimeException)
+    OUString FormController::getImplementationName_static(  )
     {
         return OUString("org.openoffice.comp.extensions.FormController");
     }
 
 
-    Sequence< OUString > FormController::getSupportedServiceNames_static(  ) throw(RuntimeException)
+    Sequence< OUString > FormController::getSupportedServiceNames_static(  )
     {
         Sequence< OUString > aSupported { "com.sun.star.form.PropertyBrowserController" };
         return aSupported;
@@ -143,7 +144,7 @@ namespace pcr
     }
 
 
-    Reference< XPropertySetInfo > SAL_CALL FormController::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
+    Reference< XPropertySetInfo > SAL_CALL FormController::getPropertySetInfo(  )
     {
         return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
     }
@@ -174,7 +175,7 @@ namespace pcr
     }
 
 
-    sal_Bool SAL_CALL FormController::convertFastPropertyValue( Any & rConvertedValue, Any & rOldValue, sal_Int32 nHandle, const Any& rValue ) throw (IllegalArgumentException)
+    sal_Bool SAL_CALL FormController::convertFastPropertyValue( Any & rConvertedValue, Any & rOldValue, sal_Int32 nHandle, const Any& rValue )
     {
         switch ( nHandle )
         {
@@ -194,7 +195,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL FormController::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const Any& _rValue) throw (Exception, std::exception)
+    void SAL_CALL FormController::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const Any& _rValue)
     {
         switch ( _nHandle )
         {
@@ -248,13 +249,13 @@ namespace pcr
     //= DialogController
 
 
-    OUString DialogController::getImplementationName_static(  ) throw(RuntimeException)
+    OUString DialogController::getImplementationName_static(  )
     {
         return OUString("org.openoffice.comp.extensions.DialogController");
     }
 
 
-    Sequence< OUString > DialogController::getSupportedServiceNames_static(  ) throw(RuntimeException)
+    Sequence< OUString > DialogController::getSupportedServiceNames_static(  )
     {
         Sequence< OUString > aSupported { "com.sun.star.awt.PropertyBrowserController" };
         return aSupported;

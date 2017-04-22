@@ -66,7 +66,7 @@ public:
     void GotoDBArea( const OUString& rDBName );
 
                     // DB range from Cursor
-    ScDBData*       GetDBData( bool bMarkArea = true, ScGetDBMode eMode = SC_DB_MAKE, ScGetDBSelection eSel = SC_DBSEL_KEEP);
+    ScDBData*       GetDBData( bool bMarkArea = true, ScGetDBMode eMode = SC_DB_MAKE, ScGetDBSelection eSel = ScGetDBSelection::Keep);
     ScDBData*       GetAnonymousDBData();
 
     void            Consolidate( const ScConsolidateParam& rParam );
@@ -85,10 +85,10 @@ public:
     void            UngroupDataPilot();
     void DataPilotInput( const ScAddress& rPos, const OUString& rString );
 
-    void            DataPilotSort( const ScAddress& rPos, bool bAscending, sal_uInt16* pUserListId = nullptr );
+    void            DataPilotSort(ScDPObject* pDPObject, long nDimIndex, bool bAscending, sal_uInt16* pUserListId = nullptr);
     bool            DataPilotMove( const ScRange& rSource, const ScAddress& rDest );
 
-    bool HasSelectionForDrillDown( sal_uInt16& rOrientation );
+    bool HasSelectionForDrillDown( css::sheet::DataPilotFieldOrientation& rOrientation );
     void SetDataPilotDetails(bool bShow, const OUString* pNewDimensionName = nullptr);
 
     void            ShowDataPilotSourceData( ScDPObject& rDPObj,
@@ -112,7 +112,7 @@ public:
     void            HideMarkedOutlines( bool bRecord = true );
     bool            OutlinePossible(bool bHide);
 
-    void            UpdateCharts(bool bAllCharts = false);      // Default: am Cursor
+    void            UpdateCharts(bool bAllCharts);      // Default: am Cursor
 
     static sal_uInt16   DoUpdateCharts( const ScAddress& rPos, ScDocument* pDoc, bool bAllCharts );
 };

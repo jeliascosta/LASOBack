@@ -103,7 +103,7 @@ static bool DoParametersFollow( SbiParser* p, SbiExprType eCurExpr, SbiToken eTo
     else // check for default params with reserved names ( e.g. names of tokens )
     {
         SbiTokenizer tokens( *static_cast<SbiTokenizer*>(p) );
-        // Urk the Next() / Peek() symantics are... weird
+        // Urk the Next() / Peek() semantics are... weird
         tokens.Next();
         if ( tokens.Peek() == ASSIGN )
         {
@@ -192,7 +192,7 @@ SbiExprNode* SbiExpression::Term( const KeywordSymbolInfo* pKeywordSymbolInfo )
         return pNd;
     }
 
-    SbiToken eTok = (pKeywordSymbolInfo == nullptr) ? pParser->Next() : pKeywordSymbolInfo->m_eTok;
+    SbiToken eTok = (pKeywordSymbolInfo == nullptr) ? pParser->Next() : SYMBOL;
     // memorize the parsing's begin
     pParser->LockColumn();
     OUString aSym( (pKeywordSymbolInfo == nullptr) ? pParser->GetSym() : pKeywordSymbolInfo->m_aKeywordSymbol );
@@ -231,7 +231,7 @@ SbiExprNode* SbiExpression::Term( const KeywordSymbolInfo* pKeywordSymbolInfo )
         {
             if( pvMoreParLcl == nullptr )
             {
-                pvMoreParLcl = new SbiExprListVector();
+                pvMoreParLcl = new SbiExprListVector;
             }
             SbiExprListPtr pAddPar = SbiExprList::ParseParameters( pParser );
             bError = bError || !pAddPar->IsValid();
@@ -269,8 +269,7 @@ SbiExprNode* SbiExpression::Term( const KeywordSymbolInfo* pKeywordSymbolInfo )
 
         // #i109184: Check if symbol is or later will be defined inside module
         SbModule& rMod = pParser->aGen.GetModule();
-        SbxArray* pModMethods = rMod.GetMethods();
-        if( pModMethods->Find( aSym, SbxClassType::DontCare ) )
+        if( rMod.FindMethod( aSym, SbxClassType::DontCare ) )
         {
             pDef = nullptr;
         }
@@ -429,7 +428,7 @@ SbiExprNode* SbiExpression::ObjTerm( SbiSymDef& rObj )
         {
             if( pvMoreParLcl == nullptr )
             {
-                pvMoreParLcl = new SbiExprListVector();
+                pvMoreParLcl = new SbiExprListVector;
             }
             SbiExprListPtr pAddPar = SbiExprList::ParseParameters( pParser );
             bError = bError || !pPar->IsValid();

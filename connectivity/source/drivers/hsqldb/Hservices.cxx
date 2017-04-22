@@ -22,10 +22,10 @@
 #include <cppuhelper/factory.hxx>
 
 using namespace connectivity::hsqldb;
-using ::com::sun::star::uno::Reference;
-using ::com::sun::star::uno::Sequence;
-using ::com::sun::star::lang::XSingleServiceFactory;
-using ::com::sun::star::lang::XMultiServiceFactory;
+using css::uno::Reference;
+using css::uno::Sequence;
+using css::lang::XSingleServiceFactory;
+using css::lang::XMultiServiceFactory;
 
 typedef Reference< XSingleServiceFactory > (SAL_CALL *createFactoryFunc)
         (
@@ -52,7 +52,6 @@ struct ProviderRequest
     {
     }
 
-    inline
     bool CREATE_PROVIDER(
                 const OUString& Implname,
                 const Sequence< OUString > & Services,

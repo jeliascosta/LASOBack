@@ -12,14 +12,13 @@
 
 #include <sal/config.h>
 #include <sfx2/dllapi.h>
-
+#include <sfx2/doctempl.hxx>
 #include <vcl/dialog.hxx>
 #include <vcl/button.hxx>
 
 class Edit;
 class ListBox;
 class CheckBox;
-class SfxDocumentTemplates;
 
 //  class SfxSaveAsTemplateDialog -------------------------------------------------------------------
 
@@ -32,20 +31,20 @@ private:
     VclPtr<Edit>            mpTemplateNameEdit;
     VclPtr<PushButton>      mpOKButton;
 
-    OUString     msSelectedCategory;
-    OUString     msTemplateName;
-    sal_uInt16   mnRegionPos;
+    OUString                msSelectedCategory;
+    OUString                msTemplateName;
+    sal_uInt16              mnRegionPos;
 
-    std::vector<OUString> msCategories;
+    std::vector<OUString>   msCategories;
 
-    SfxDocumentTemplates *mpDocTemplates;
+    SfxDocumentTemplates    maDocTemplates;
 
     css::uno::Reference< css::frame::XModel > m_xModel;
 
 public:
-    DECL_LINK_TYPED(OkClickHdl, Button*, void);
-    DECL_LINK_TYPED(TemplateNameEditHdl, Edit&, void);
-    DECL_LINK_TYPED(SelectCategoryHdl, ListBox&, void);
+    DECL_LINK(OkClickHdl, Button*, void);
+    DECL_LINK(TemplateNameEditHdl, Edit&, void);
+    DECL_LINK(SelectCategoryHdl, ListBox&, void);
 
     void setDocumentModel (const css::uno::Reference<css::frame::XModel> &rModel);
 
@@ -59,9 +58,9 @@ public:
 
 public:
 
-    explicit SfxSaveAsTemplateDialog(vcl::Window *parent = nullptr);
+    explicit SfxSaveAsTemplateDialog();
 
-    virtual ~SfxSaveAsTemplateDialog();
+    virtual ~SfxSaveAsTemplateDialog() override;
     virtual void dispose() override;
 };
 

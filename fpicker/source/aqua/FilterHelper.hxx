@@ -81,18 +81,21 @@ public:
     virtual ~FilterHelper();
 
     //XFilterManager delegates
-    void SAL_CALL appendFilter( const OUString& aTitle, const OUString& aFilter )
-        throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
+    /// @throws css::lang::IllegalArgumentException
+    /// @throws css::uno::RuntimeException
+    void SAL_CALL appendFilter( const OUString& aTitle, const OUString& aFilter );
 
-    void SAL_CALL setCurrentFilter( const OUString& aTitle )
-        throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
+    /// @throws css::lang::IllegalArgumentException
+    /// @throws css::uno::RuntimeException
+    void SAL_CALL setCurrentFilter( const OUString& aTitle );
 
-    OUString SAL_CALL getCurrentFilter(  )
-        throw( css::uno::RuntimeException );
+    /// @throws css::uno::RuntimeException
+    OUString SAL_CALL getCurrentFilter(  );
 
     //XFilterGroupManager delegates
-    void SAL_CALL appendFilterGroup( const OUString& sGroupTitle, const css::uno::Sequence< css::beans::StringPair >& aFilters )
-        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException);
+    /// @throws css::lang::IllegalArgumentException
+    /// @throws css::uno::RuntimeException
+    void SAL_CALL appendFilterGroup( const OUString& sGroupTitle, const css::uno::Sequence< css::beans::StringPair >& aFilters );
 
 
     //accessor

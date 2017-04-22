@@ -39,11 +39,12 @@ class FontAttributes;
 class PhysicalFontFace;
 class SalLayout;
 class ImplLayoutArgs;
-class Rectangle;
+namespace tools { class Rectangle; }
 class FontSubsetInfo;
 class OpenGLContext;
 class OutputDevice;
-class ServerFontLayout;
+class FreetypeFont;
+class CommonSalLayout;
 struct SystemGraphicsData;
 
 #if ENABLE_CAIRO_CANVAS
@@ -57,10 +58,7 @@ namespace basegfx {
 }
 
 typedef sal_Unicode sal_Ucs; // TODO: use sal_UCS4 instead of sal_Unicode
-typedef std::map< sal_Ucs, sal_Int32 >    Ucs2SIntMap;
 typedef std::map< sal_Ucs, sal_uInt32 >   Ucs2UIntMap;
-typedef std::map< sal_Ucs, OString > Ucs2OStrMap;
-typedef std::vector< sal_Int32 > Int32Vector;
 
 // note: if you add any new methods to class SalGraphics using coordinates
 //       make sure they have a corresponding protected pure virtual method
@@ -114,7 +112,7 @@ public:
     virtual void                SetFillColor( SalColor nSalColor ) = 0;
 
     // enable/disable XOR drawing
-    virtual void                SetXORMode( bool bSet, bool bInvertOnly ) = 0;
+    virtual void                SetXORMode( bool bSet ) = 0;
 
     // set line color for raster operations
     virtual void                SetROPLineColor( SalROPColor nROPColor ) = 0;
@@ -132,10 +130,10 @@ public:
     void                        ReleaseFonts() { SetFont( nullptr, 0 ); }
 
     // get the current font's metrics
-    virtual void                GetFontMetric( ImplFontMetricDataPtr&, int nFallbackLevel = 0 ) = 0;
+    virtual void                GetFontMetric( ImplFontMetricDataRef&, int nFallbackLevel ) = 0;
 
     // get the repertoire of the current font
-    virtual const FontCharMapPtr GetFontCharMap() const = 0;
+    virtual const FontCharMapRef GetFontCharMap() const = 0;
 
     // get the layout capabilities of the current font
     virtual bool                GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const = 0;
@@ -158,7 +156,7 @@ public:
     //             pFont: describes from which font to create a subset
     //             pGlyphIDs: the glyph ids to be extracted
     //             pEncoding: the character code corresponding to each glyph
-    //             pWidths: the advance widths of the correspoding glyphs (in PS font units)
+    //             pWidths: the advance widths of the corresponding glyphs (in PS font units)
     //             nGlyphs: the number of glyphs
     //             rInfo: additional outgoing information
     // implementation note: encoding 0 with glyph id 0 should be added implicitly
@@ -172,52 +170,30 @@ public:
                                     int nGlyphs,
                                     FontSubsetInfo& rInfo ) = 0;
 
-    // GetFontEncodingVector: a method to get the encoding map Unicode
-    // to font encoded character; this is only used for type1 fonts and
-    // may return NULL in case of unknown encoding vector
-    // if ppNonEncoded is set and non encoded characters (that is type1
-    // glyphs with only a name) exist it is set to the corresponding
-    // map for non encoded glyphs; the encoding vector contains -1
-    // as encoding for these cases
-    virtual const Ucs2SIntMap*  GetFontEncodingVector(
-                                    const PhysicalFontFace*,
-                                    const Ucs2OStrMap** ppNonEncoded,
-                                    std::set<sal_Unicode> const** ppPriority) = 0;
-
     // GetEmbedFontData: gets the font data for a font marked
     // embeddable by GetDevFontList or NULL in case of error
     // parameters: pFont: describes the font in question
-    //             pUnicodes: contains the Unicodes assigned to code points 0 to 255
-    //             pWidths: the widths of all glyphs from char code 0 to 255
-    //             nLen: the number of elements in each of pWidths and pUnicodes
-    //             rInfo: additional outgoing information
     //             pDataLen: out parameter, contains the byte length of the returned buffer
-    virtual const void*         GetEmbedFontData(
-                                    const PhysicalFontFace* pFont,
-                                    const sal_Ucs* pUnicodes,
-                                    sal_Int32* pWidths,
-                                    size_t nLen,
-                                    FontSubsetInfo& rInfo,
-                                    long* pDataLen ) = 0;
+    virtual const void*         GetEmbedFontData(const PhysicalFontFace* pFont, long* pDataLen) = 0;
 
     // free the font data again
     virtual void                FreeEmbedFontData( const void* pData, long nDataLen ) = 0;
 
-    // get the same widths as in CreateFontSubset and GetEmbedFontData
+    // get the same widths as in CreateFontSubset
     // in case of an embeddable font also fill the mapping
     // between unicode and glyph id
     // leave widths vector and mapping untouched in case of failure
     virtual void                GetGlyphWidths(
                                     const PhysicalFontFace* pFont,
                                     bool bVertical,
-                                    Int32Vector& rWidths,
+                                    std::vector< sal_Int32 >& rWidths,
                                     Ucs2UIntMap& rUnicodeEnc ) = 0;
 
-    virtual bool                GetGlyphBoundRect( sal_GlyphId, Rectangle& ) = 0;
-    virtual bool                GetGlyphOutline( sal_GlyphId, basegfx::B2DPolyPolygon& ) = 0;
+    virtual bool                GetGlyphBoundRect(const GlyphItem&, tools::Rectangle&) = 0;
+    virtual bool                GetGlyphOutline(const GlyphItem&, basegfx::B2DPolyPolygon&) = 0;
 
     virtual SalLayout*          GetTextLayout( ImplLayoutArgs&, int nFallbackLevel ) = 0;
-    virtual void                DrawServerFontLayout( const ServerFontLayout& ) = 0;
+    virtual void                DrawTextLayout( const CommonSalLayout& ) = 0;
 
     virtual bool                supportsOperation( OutDevSupportType ) const = 0;
 
@@ -228,7 +204,7 @@ public:
     void                        mirror( long& nX, const OutputDevice *pOutDev ) const;
     void                        mirror( long& nX, long& nWidth, const OutputDevice *pOutDev, bool bBack = false ) const;
     bool                        mirror( sal_uInt32 nPoints, const SalPoint *pPtAry, SalPoint *pPtAry2, const OutputDevice *pOutDev ) const;
-    void                        mirror( Rectangle& rRect, const OutputDevice*, bool bBack = false ) const;
+    void                        mirror( tools::Rectangle& rRect, const OutputDevice*, bool bBack = false ) const;
     void                        mirror( vcl::Region& rRgn, const OutputDevice *pOutDev ) const;
     void                        mirror( ImplControlValue&, const OutputDevice* ) const;
     basegfx::B2DPoint           mirror( const basegfx::B2DPoint& i_rPoint, const OutputDevice *pOutDev ) const;
@@ -274,20 +250,20 @@ public:
     bool                        DrawPolyLineBezier(
                                     sal_uInt32 nPoints,
                                     const SalPoint* pPtAry,
-                                    const sal_uInt8* pFlgAry,
+                                    const PolyFlags* pFlgAry,
                                     const OutputDevice *pOutDev );
 
     bool                        DrawPolygonBezier(
                                     sal_uInt32 nPoints,
                                     const SalPoint* pPtAry,
-                                    const sal_uInt8* pFlgAry,
+                                    const PolyFlags* pFlgAry,
                                     const OutputDevice *pOutDev );
 
     bool                        DrawPolyPolygonBezier(
                                     sal_uInt32 nPoly,
                                     const sal_uInt32* pPoints,
                                     const SalPoint* const* pPtAry,
-                                    const sal_uInt8* const* pFlgAry,
+                                    const PolyFlags* const* pFlgAry,
                                     const OutputDevice *pOutDev );
 
     bool                        DrawGradient(
@@ -359,38 +335,57 @@ public:
 
     //  native widget rendering functions
 
-    // Query the platform layer for control support
-    virtual bool                IsNativeControlSupported( ControlType nType, ControlPart nPart );
+    /**
+     * Query the platform layer for native control support.
+     *
+     * @param [in] eType The widget type.
+     * @param [in] ePart The part of the widget.
+     * @return true if the platform supports native drawing of the widget type defined by part.
+     */
+    virtual bool                IsNativeControlSupported(
+                                    ControlType eType, ControlPart ePart );
 
-    // Query the native control to determine if it was acted upon
-    bool                        HitTestNativeControl(
-                                    ControlType nType,
+
+    /**
+     * Query the native control to determine if it was acted upon
+     *
+     * @see hitTestNativeControl
+     */
+    bool                        HitTestNativeScrollbar(
                                     ControlPart nPart,
-                                    const Rectangle& rControlRegion,
+                                    const tools::Rectangle& rControlRegion,
                                     const Point& aPos,
                                     bool& rIsInside,
                                     const OutputDevice *pOutDev );
 
-    // Request rendering of a particular control and/or part
+    /**
+     * Request rendering of a particular control and/or part
+     *
+     * @see drawNativeControl
+     */
     bool                        DrawNativeControl(
                                     ControlType nType,
                                     ControlPart nPart,
-                                    const Rectangle& rControlRegion,
+                                    const tools::Rectangle& rControlRegion,
                                     ControlState nState,
                                     const ImplControlValue& aValue,
                                     const OUString& aCaption,
                                     const OutputDevice *pOutDev );
 
-    // Query the native control's actual drawing region (including adornment)
+    /**
+     * Query the native control's actual drawing region (including adornment)
+     *
+     * @see getNativeControlRegion
+     */
     bool                        GetNativeControlRegion(
                                     ControlType nType,
                                     ControlPart nPart,
-                                    const Rectangle& rControlRegion,
+                                    const tools::Rectangle& rControlRegion,
                                     ControlState nState,
                                     const ImplControlValue& aValue,
                                     const OUString& aCaption,
-                                    Rectangle &rNativeBoundingRegion,
-                                    Rectangle &rNativeContentRegion,
+                                    tools::Rectangle &rNativeBoundingRegion,
+                                    tools::Rectangle &rNativeContentRegion,
                                     const OutputDevice *pOutDev );
 
     bool                        BlendBitmap(
@@ -472,19 +467,18 @@ protected:
     virtual bool                drawPolyLineBezier(
                                     sal_uInt32 nPoints,
                                     const SalPoint* pPtAry,
-                                    const sal_uInt8* pFlgAry ) = 0;
+                                    const PolyFlags* pFlgAry ) = 0;
 
     virtual bool                drawPolygonBezier(
                                     sal_uInt32 nPoints,
                                     const SalPoint* pPtAry,
-                                    const sal_uInt8* pFlgAry ) = 0;
+                                    const PolyFlags* pFlgAry ) = 0;
 
     virtual bool                drawPolyPolygonBezier(
                                     sal_uInt32 nPoly,
                                     const sal_uInt32* pPoints,
                                     const SalPoint* const* pPtAry,
-                                    const sal_uInt8* const* pFlgAry ) = 0;
-
+                                    const PolyFlags* const* pFlgAry ) = 0;
 
     virtual bool                drawGradient(
                                     const tools::PolyPolygon& rPolyPoly,
@@ -531,28 +525,70 @@ protected:
                                     void* pPtr,
                                     sal_uLong nSize ) = 0;
 
-    // native widget rendering methods that require mirroring
+    /**
+     * Query if a position is inside the native widget part.
+     *
+     * Mainly used for scrollbars.
+     *
+     * @param [in] eType The widget type.
+     * @param [in] ePart The part of the widget.
+     * @param [in] rBoundingControlRegion The bounding Rectangle of
+                   the complete control in VCL frame coordinates.
+     * @param [in] aPos The position to check the hit.
+     * @param [out] rIsInside true, if \a aPos was inside the native widget.
+     * @return true, if the query was successful.
+     */
     virtual bool                hitTestNativeControl(
-                                    ControlType nType, ControlPart nPart,
-                                    const Rectangle& rControlRegion,
-                                    const Point& aPos,
-                                    bool& rIsInside );
+                                    ControlType eType, ControlPart ePart,
+                                    const tools::Rectangle& rBoundingControlRegion,
+                                    const Point& aPos, bool& rIsInside );
 
+    /**
+     * Draw the requested control.
+     *
+     * @param [in] eType The widget type.
+     * @param [in] ePart The part of the widget.
+     * @param [in] rBoundingControlRegion The bounding rectangle of
+     *             the complete control in VCL frame coordinates.
+     * @param [in] eState The general state of the control (enabled, focused, etc.).
+     * @param [in] aValue Addition control specific information.
+     * @param [in] aCaption  A caption or title string (like button text etc.).
+     * @return true, if the control could be drawn.
+     */
     virtual bool                drawNativeControl(
-                                    ControlType nType, ControlPart nPart,
-                                    const Rectangle& rControlRegion,
-                                    ControlState nState,
+                                    ControlType eType, ControlPart ePart,
+                                    const tools::Rectangle& rBoundingControlRegion,
+                                    ControlState eState,
                                     const ImplControlValue& aValue,
                                     const OUString& aCaption );
 
+    /**
+     * Get the native control regions for the control part.
+     *
+     * If the return value is true, \a rNativeBoundingRegion contains
+     * the true bounding region covered by the control including any
+     * adornment, while \a rNativeContentRegion contains the area
+     * within the control that can be safely drawn into without drawing over
+     * the borders of the control.
+     *
+     * @param [in] eType Type of the widget.
+     * @param [in] ePart Specification of the widget's part if it consists of more than one.
+     * @param [in] rBoundingControlRegion The bounding region of the control in VCL frame coordinates.
+     * @param [in] eState The general state of the control (enabled, focused, etc.).
+     * @param [in] aValue Addition control specific information.
+     * @param [in] aCaption A caption or title string (like button text etc.).
+     * @param [out] rNativeBoundingRegion The region covered by the control including any adornment.
+     * @param [out] rNativeContentRegion The region within the control that can be safely drawn into.
+     * @return true, if the regions are filled.
+     */
     virtual bool                getNativeControlRegion(
-                                    ControlType nType, ControlPart nPart,
-                                    const Rectangle& rControlRegion,
-                                    ControlState nState,
+                                    ControlType eType, ControlPart ePart,
+                                    const tools::Rectangle& rBoundingControlRegion,
+                                    ControlState eState,
                                     const ImplControlValue& aValue,
                                     const OUString& aCaption,
-                                    Rectangle &rNativeBoundingRegion,
-                                    Rectangle &rNativeContentRegion );
+                                    tools::Rectangle &rNativeBoundingRegion,
+                                    tools::Rectangle &rNativeContentRegion );
 
     /** Blend the bitmap with the current buffer */
     virtual bool                blendBitmap(
@@ -592,19 +628,14 @@ protected:
                                     const SalBitmap* pAlphaBitmap) = 0;
 
     /** Render solid rectangle with given transparency
-
-      @param nX             Top left coordinate of rectangle
-
-      @param nY             Bottom right coordinate of rectangle
-
-      @param nWidth         Width of rectangle
-
-      @param nHeight        Height of rectangle
-
-      @param nTransparency  Transparency value (0-255) to use. 0 blits and opaque, 255 a
-                            fully transparent rectangle
-
-      @returns true if successfully drawn, false if not able to draw rectangle
+     *
+     * @param nX             Top left coordinate of rectangle
+     * @param nY             Bottom right coordinate of rectangle
+     * @param nWidth         Width of rectangle
+     * @param nHeight        Height of rectangle
+     * @param nTransparency  Transparency value (0-255) to use. 0 blits and opaque, 255 a
+     *                       fully transparent rectangle
+     * @returns true if successfully drawn, false if not able to draw rectangle
      */
     virtual bool                drawAlphaRect(
                                     long nX, long nY,

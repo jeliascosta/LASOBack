@@ -48,14 +48,15 @@ public:
     PlotterBase( sal_Int32 nDimension );
     virtual ~PlotterBase();
 
+    /// @throws css::uno::RuntimeException
     virtual void initPlotter(
           const css::uno::Reference< css::drawing::XShapes >& xLogicTarget
         , const css::uno::Reference< css::drawing::XShapes >& xFinalTarget
         , const css::uno::Reference< css::lang::XMultiServiceFactory >& xFactory
         , const OUString& rCID
-                ) throw (css::uno::RuntimeException, std::exception);
+                );
 
-    virtual void setScales( const ::std::vector< ExplicitScaleData >& rScales, bool bSwapXAndYAxis );
+    virtual void setScales( const std::vector< ExplicitScaleData >& rScales, bool bSwapXAndYAxis );
 
     virtual void setTransformationSceneToScreen( const css::drawing::HomogenMatrix& rMatrix );
 

@@ -31,12 +31,6 @@ using ::com::sun::star::uno::Sequence;
 namespace
 {
 
-static const char lcl_aServiceNameCartesian2d[] = "com.sun.star.chart2.CartesianCoordinateSystem2d";
-static const char lcl_aServiceNameCartesian3d[] = "com.sun.star.chart2.CartesianCoordinateSystem3d";
-
-static const char lcl_aImplementationNameCartesian2d[] = "com.sun.star.comp.chart2.CartesianCoordinateSystem2d";
-static const char lcl_aImplementationNameCartesian3d[] = "com.sun.star.comp.chart2.CartesianCoordinateSystem3d";
-
 static const char CHART2_COOSYSTEM_CARTESIAN_SERVICE_NAME[] = "com.sun.star.chart2.CoordinateSystems.Cartesian";
 
 }
@@ -61,53 +55,35 @@ CartesianCoordinateSystem::~CartesianCoordinateSystem()
 
 // ____ XCoordinateSystem ____
 OUString SAL_CALL CartesianCoordinateSystem::getCoordinateSystemType()
-    throw (RuntimeException, std::exception)
 {
     return OUString(CHART2_COOSYSTEM_CARTESIAN_SERVICE_NAME);
 }
 
 OUString SAL_CALL CartesianCoordinateSystem::getViewServiceName()
-    throw (RuntimeException, std::exception)
 {
     return OUString(CHART2_COOSYSTEM_CARTESIAN_VIEW_SERVICE_NAME);
 }
 
 // ____ XCloneable ____
 uno::Reference< util::XCloneable > SAL_CALL CartesianCoordinateSystem::createClone()
-    throw (RuntimeException, std::exception)
 {
     return Reference< util::XCloneable >( new CartesianCoordinateSystem( *this ));
 }
 
 // ____ XServiceInfo ____
-Sequence< OUString > CartesianCoordinateSystem::getSupportedServiceNames_Static()
-{
-    Sequence<OUString> aServices { CHART2_COOSYSTEM_CARTESIAN_SERVICE_NAME };
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL CartesianCoordinateSystem::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString CartesianCoordinateSystem::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart.CartesianCoordinateSystem");
 }
 
 sal_Bool SAL_CALL CartesianCoordinateSystem::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL CartesianCoordinateSystem::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { CHART2_COOSYSTEM_CARTESIAN_SERVICE_NAME };
 }
 
 // ==== CartesianCoordinateSystem2d ====
@@ -121,36 +97,22 @@ CartesianCoordinateSystem2d::~CartesianCoordinateSystem2d()
 {}
 
 // ____ XServiceInfo ____
-Sequence< OUString > CartesianCoordinateSystem2d::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 2 );
-    aServices[ 0 ] = CHART2_COOSYSTEM_CARTESIAN_SERVICE_NAME;
-    aServices[ 1 ] = lcl_aServiceNameCartesian2d;
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL CartesianCoordinateSystem2d::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString CartesianCoordinateSystem2d::getImplementationName_Static()
-{
-    return OUString(lcl_aImplementationNameCartesian2d);
+    return OUString("com.sun.star.comp.chart2.CartesianCoordinateSystem2d");
 }
 
 sal_Bool SAL_CALL CartesianCoordinateSystem2d::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL CartesianCoordinateSystem2d::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        CHART2_COOSYSTEM_CARTESIAN_SERVICE_NAME,
+        "com.sun.star.chart2.CartesianCoordinateSystem2d"
+    };
 }
 
 // ==== CartesianCoordinateSystem3d ====
@@ -164,36 +126,22 @@ CartesianCoordinateSystem3d::~CartesianCoordinateSystem3d()
 {}
 
 // ____ XServiceInfo ____
-Sequence< OUString > CartesianCoordinateSystem3d::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 2 );
-    aServices[ 0 ] = CHART2_COOSYSTEM_CARTESIAN_SERVICE_NAME;
-    aServices[ 1 ] = lcl_aServiceNameCartesian3d;
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL CartesianCoordinateSystem3d::getImplementationName()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString CartesianCoordinateSystem3d::getImplementationName_Static()
-{
-    return OUString(lcl_aImplementationNameCartesian3d);
+    return OUString("com.sun.star.comp.chart2.CartesianCoordinateSystem3d");
 }
 
 sal_Bool SAL_CALL CartesianCoordinateSystem3d::supportsService( const OUString& rServiceName )
-    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL CartesianCoordinateSystem3d::getSupportedServiceNames()
-    throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        CHART2_COOSYSTEM_CARTESIAN_SERVICE_NAME,
+        "com.sun.star.chart2.CartesianCoordinateSystem3d"
+    };
 }
 
 }  // namespace chart

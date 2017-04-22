@@ -62,7 +62,7 @@ public:
         ViewShellBase& rBase,
         const std::shared_ptr<MasterPageContainer>& rpContainer,
         const css::uno::Reference<css::ui::XSidebar>& rxSidebar);
-    virtual ~MasterPagesSelector();
+    virtual ~MasterPagesSelector() override;
     virtual void dispose() override;
 
     virtual void LateInit();
@@ -112,10 +112,10 @@ protected:
 
     SdDrawDocument& mrDocument;
     ViewShellBase& mrBase;
-    /** Slot that is executed as default action when the left mouse button is
+    /** menu entry that is executed as default action when the left mouse button is
         clicked over a master page.
     */
-    sal_uInt16 mnDefaultClickAction;
+    OString msDefaultClickAction;
 
     SdPage* GetSelectedMasterPage();
 
@@ -139,7 +139,6 @@ protected:
     virtual void NotifyContainerChangeEvent (const MasterPageContainerChangeEvent& rEvent);
 
     typedef ::std::pair<int, MasterPageContainer::Token> UserData;
-    static UserData* CreateUserData (int nIndex, MasterPageContainer::Token aToken);
     UserData* GetUserData (int nIndex) const;
     void SetUserData (int nIndex, UserData* pData);
 
@@ -171,12 +170,12 @@ protected:
         menu.  If they do then they probably have to provide their own
         Execute() and GetState() methods as well.
     */
-    virtual ResId GetContextMenuResId() const;
+    virtual OUString GetContextMenuUIFile() const;
 
     virtual void Command (const CommandEvent& rEvent) override;
 
     virtual void ProcessPopupMenu (Menu& rMenu);
-    virtual void ExecuteCommand (const sal_Int32 nCommandId);
+    virtual void ExecuteCommand(const OString& rIdent);
 
 private:
     css::uno::Reference<css::ui::XSidebar> mxSidebar;
@@ -185,10 +184,10 @@ private:
         last seen.  This value is used heuristically to speed up the lookup
         of an index for a token.
     */
-    DECL_LINK_TYPED(ClickHandler, ValueSet*, void);
-    DECL_LINK_TYPED(RightClickHandler, const MouseEvent&, void);
-    DECL_LINK_TYPED(ContainerChangeListener, MasterPageContainerChangeEvent&, void);
-    DECL_LINK_TYPED(OnMenuItemSelected, Menu*, bool);
+    DECL_LINK(ClickHandler, ValueSet*, void);
+    DECL_LINK(RightClickHandler, const MouseEvent&, void);
+    DECL_LINK(ContainerChangeListener, MasterPageContainerChangeEvent&, void);
+    DECL_LINK(OnMenuItemSelected, Menu*, bool);
 
     void SetItem (
         sal_uInt16 nIndex,

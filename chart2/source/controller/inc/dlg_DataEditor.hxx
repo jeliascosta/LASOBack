@@ -21,7 +21,6 @@
 #define INCLUDED_CHART2_SOURCE_CONTROLLER_INC_DLG_DATAEDITOR_HXX
 
 #include <svl/lstner.hxx>
-#include <svtools/stdctrl.hxx>
 #include <vcl/toolbox.hxx>
 #include <comphelper/stl_types.hxx>
 #include <vcl/dialog.hxx>
@@ -44,7 +43,7 @@ public:
     DataEditor( vcl::Window* pParent,
                 const css::uno::Reference< css::chart2::XChartDocument > & xChartDoc,
                 const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~DataEditor();
+    virtual ~DataEditor() override;
     virtual void dispose() override;
 
     // Dialog
@@ -59,8 +58,10 @@ private:
     sal_uInt16 TBI_DATA_INSERT_TEXT_COL;
     sal_uInt16 TBI_DATA_DELETE_ROW;
     sal_uInt16 TBI_DATA_DELETE_COL;
-    sal_uInt16 TBI_DATA_SWAP_COL;
-    sal_uInt16 TBI_DATA_SWAP_ROW;
+    sal_uInt16 TBI_DATA_MOVE_LEFT_COL;
+    sal_uInt16 TBI_DATA_MOVE_RIGHT_COL;
+    sal_uInt16 TBI_DATA_MOVE_UP_ROW;
+    sal_uInt16 TBI_DATA_MOVE_DOWN_ROW;
 
     bool                           m_bReadOnly;
     VclPtr<DataBrowser>            m_xBrwData;
@@ -70,15 +71,11 @@ private:
         m_xContext;
 
     /// handles actions of the toolbox
-    DECL_LINK_TYPED( ToolboxHdl, ToolBox*, void );
+    DECL_LINK( ToolboxHdl, ToolBox*, void );
     /// is called, if the cursor of the table has moved
-    DECL_LINK_TYPED( BrowserCursorMovedHdl, DataBrowser*, void);
+    DECL_LINK( BrowserCursorMovedHdl, DataBrowser*, void);
     /// this is called if MiscOptions change, esp. High-Contrast mode
-    DECL_LINK_TYPED( MiscHdl, LinkParamNone*, void );
-
-    void UpdateData();
-    /// moved and resizes the series name control etc. to fit the dimensions of the edit browsebox
-//     void ImplAdjustHeaderControls( bool bRefreshFromModel );
+    DECL_LINK( MiscHdl, LinkParamNone*, void );
 
     /** notifySystemWindow adds or remove the given window pToRegister at the Systemwindow found when search pWindow.
         @param  pWindow

@@ -7,7 +7,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include <GL/glew.h>
+#include <epoxy/gl.h>
 
 #include "GL3DRenderer.hxx"
 
@@ -19,7 +19,6 @@
 
 #include <StaticGeometry.h>
 #include "glm/gtc/matrix_inverse.hpp"
-#include <boost/checked_delete.hpp>
 #include <memory>
 
 #define DEBUG_FBO 0
@@ -211,11 +210,6 @@ OpenGL3DRenderer::ShaderResources::~ShaderResources()
     glDeleteProgram(m_BatchTextProID);
 }
 
-void OpenGL3DRenderer::CheckGLSLVersion()
-{
-    maResources.m_b330Support = GLEW_VERSION_3_3;
-}
-
 void OpenGL3DRenderer::ShaderResources::LoadShaders()
 {
     CHECK_GL_ERROR();
@@ -249,8 +243,8 @@ void OpenGL3DRenderer::ShaderResources::LoadShaders()
         m_3DBatchNormalID = glGetAttribLocation(m_3DBatchProID, "vertexNormalModelspace");
         m_3DBatchColorID = glGetAttribLocation(m_3DBatchProID, "barColor");
 #if !defined MACOSX
-        //check whether the texture array is support
-        mbTexBatchSupport = GLEW_EXT_texture_array;
+        //check whether the texture array is supported
+        mbTexBatchSupport = epoxy_has_gl_extension("GL_EXT_texture_array");
 #endif
         CHECK_GL_ERROR();
         if (mbTexBatchSupport)
@@ -406,7 +400,7 @@ void OpenGL3DRenderer::init()
     m_fViewAngle = 30.0f;
     m_3DProjection = glm::perspective(m_fViewAngle, (float)m_iWidth / (float)m_iHeight, 0.01f, 6000.0f);
 
-    CheckGLSLVersion();
+    maResources.m_b330Support = epoxy_gl_version() >= 33;
     CHECK_GL_ERROR();
     maResources.LoadShaders();
     maPickingResources.LoadShaders();
@@ -1115,7 +1109,7 @@ void OpenGL3DRenderer::SetLightInfo(bool lightOn, sal_uInt32 nColor, const glm::
     {
         if (maResources.m_b330Support)
         {
-            if (m_LightsInfo.lightNum >= MAX_LIGHT_NUM)
+            if (m_LightsInfo.lightNum >= maxLights)
             {
                 return;
             }
@@ -1126,7 +1120,7 @@ void OpenGL3DRenderer::SetLightInfo(bool lightOn, sal_uInt32 nColor, const glm::
         }
         else
         {
-            if (m_iLightNum >= MAX_LIGHT_NUM)
+            if (m_iLightNum >= maxLights)
             {
                 return;
             }
@@ -1358,7 +1352,7 @@ void OpenGL3DRenderer::UpdateBatch3DUniformBlock()
     glBufferSubData(GL_UNIFORM_BUFFER, 16, sizeof(glm::vec4), &m_LightsInfo.ambient[0]);
     CHECK_GL_ERROR();
     //current std140 alignment: 16
-    glBufferSubData(GL_UNIFORM_BUFFER, 32, sizeof(LightSource) * MAX_LIGHT_NUM, &m_LightsInfo.light);
+    glBufferSubData(GL_UNIFORM_BUFFER, 32, sizeof(LightSource) * maxLights, &m_LightsInfo.light);
     CHECK_GL_ERROR();
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
@@ -1377,7 +1371,7 @@ void OpenGL3DRenderer::Update3DUniformBlock()
     glBufferSubData(GL_UNIFORM_BUFFER, 16, sizeof(glm::vec4), &m_LightsInfo.ambient[0]);
     CHECK_GL_ERROR();
     //current std140 alignment: 16
-    glBufferSubData(GL_UNIFORM_BUFFER, 32, sizeof(LightSource) * MAX_LIGHT_NUM, &m_LightsInfo.light);
+    glBufferSubData(GL_UNIFORM_BUFFER, 32, sizeof(LightSource) * maxLights, &m_LightsInfo.light);
     CHECK_GL_ERROR();
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
@@ -1422,7 +1416,7 @@ void OpenGL3DRenderer::RenderExtrudeBottomSurface(const Extrude3DInfo& extrude3D
     {
         // the height of rounded corner is higher than the cube than use the org scale matrix
    //     yScale /= (float)(1 + BOTTOM_THRESHOLD);
-        zScale /= (float)(m_RoundBarMesh.bottomThreshold);
+        zScale /= m_RoundBarMesh.bottomThreshold;
         PosVecf3 scale = {xyScale, xyScale, zScale};
         glm::mat4 aTranslationMatrix = glm::translate(glm::vec3(trans.x, trans.y, trans.z));
         glm::mat4 aScaleMatrix = glm::scale(glm::vec3(scale.x, scale.y, scale.z));
@@ -1511,7 +1505,7 @@ void OpenGL3DRenderer::RenderExtrudeTopSurface(const Extrude3DInfo& extrude3D)
     {
         // the height of rounded corner is higher than the cube than use the org scale matrix
         //yScale /= (float)(1 + BOTTOM_THRESHOLD);
-        zScale /= (float)(m_RoundBarMesh.bottomThreshold);
+        zScale /= m_RoundBarMesh.bottomThreshold;
         glm::mat4 orgTrans = glm::translate(glm::vec3(0.0, 0.0, -1.0));
         glm::mat4 scale = glm::scale(glm::vec3(xyScale, xyScale, zScale));
         //MoveModelf(trans, angle, scale);
@@ -2312,7 +2306,7 @@ void OpenGL3DRenderer::GetBatchTopAndFlatInfo(const Extrude3DInfo &extrude3D)
     {
         // the height of rounded corner is higher than the cube than use the org scale matrix
         //yScale /= (float)(1 + BOTTOM_THRESHOLD);
-        zScale /= (float)(m_RoundBarMesh.bottomThreshold);
+        zScale /= m_RoundBarMesh.bottomThreshold;
         glm::mat4 scale = glm::scale(glm::vec3(xyScale, xyScale, zScale));
         //MoveModelf(trans, angle, scale);
         glm::mat4 aTranslationMatrix = glm::translate(glm::vec3(trans.x, trans.y, trans.z));

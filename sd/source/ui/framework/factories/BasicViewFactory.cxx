@@ -36,6 +36,7 @@
 #include "SlideSorterViewShell.hxx"
 #include "FrameView.hxx"
 #include "facreg.hxx"
+#include "Window.hxx"
 
 #include <sfx2/viewfrm.hxx>
 #include <vcl/wrkwin.hxx>
@@ -58,7 +59,6 @@ class BasicViewFactory::ViewDescriptor
 public:
     Reference<XResource> mxView;
     std::shared_ptr<sd::ViewShell> mpViewShell;
-    ViewShellWrapper* mpWrapper;
     Reference<XResourceId> mxViewId;
     static bool CompareView (const std::shared_ptr<ViewDescriptor>& rpDescriptor,
         const Reference<XResource>& rxView)
@@ -110,7 +110,7 @@ void SAL_CALL BasicViewFactory::disposing()
         mpFrameView = nullptr;
     }
 
-    // Relase the view cache.
+    // Release the view cache.
     ViewShellContainer::const_iterator iView;
     for (iView=mpViewCache->begin(); iView!=mpViewCache->end(); ++iView)
     {
@@ -131,7 +131,6 @@ void SAL_CALL BasicViewFactory::disposing()
 
 Reference<XResource> SAL_CALL BasicViewFactory::createResource (
     const Reference<XResourceId>& rxViewId)
-    throw(RuntimeException, IllegalArgumentException, WrappedTargetException, std::exception)
 {
     Reference<XResource> xView;
     const bool bIsCenterPane (
@@ -152,7 +151,7 @@ Reference<XResource> SAL_CALL BasicViewFactory::createResource (
     // Get Window pointer for XWindow of the pane.
     vcl::Window* pWindow = nullptr;
     if (xPane.is())
-        pWindow = VCLUnoHelper::GetWindow(xPane->getWindow());
+        pWindow = VCLUnoHelper::GetWindow(xPane->getWindow()).get();
 
     // Get the view frame.
     SfxViewFrame* pFrame = nullptr;
@@ -185,7 +184,6 @@ Reference<XResource> SAL_CALL BasicViewFactory::createResource (
 }
 
 void SAL_CALL BasicViewFactory::releaseResource (const Reference<XResource>& rxView)
-    throw(RuntimeException, std::exception)
 {
     if ( ! rxView.is())
         throw lang::IllegalArgumentException();
@@ -226,7 +224,7 @@ void SAL_CALL BasicViewFactory::releaseResource (const Reference<XResource>& rxV
                     pSfxViewShell->DisconnectAllClients();
             }
 
-            ReleaseView(*iViewShell);
+            ReleaseView(*iViewShell, false);
 
             mpViewShellContainer->erase(iViewShell);
         }
@@ -238,7 +236,6 @@ void SAL_CALL BasicViewFactory::releaseResource (const Reference<XResource>& rxV
 }
 
 void SAL_CALL BasicViewFactory::initialize (const Sequence<Any>& aArguments)
-    throw (Exception, RuntimeException, std::exception)
 {
     if (aArguments.getLength() > 0)
     {
@@ -286,7 +283,7 @@ std::shared_ptr<BasicViewFactory::ViewDescriptor> BasicViewFactory::CreateView (
     FrameView* pFrameView,
     const bool bIsCenterPane)
 {
-    std::shared_ptr<ViewDescriptor> pDescriptor (new ViewDescriptor());
+    std::shared_ptr<ViewDescriptor> pDescriptor (new ViewDescriptor);
 
     pDescriptor->mpViewShell = CreateViewShell(
         rxViewId,
@@ -302,22 +299,22 @@ std::shared_ptr<BasicViewFactory::ViewDescriptor> BasicViewFactory::CreateView (
         mpBase->GetViewShellManager()->ActivateViewShell(pDescriptor->mpViewShell.get());
 
         Reference<awt::XWindow> xWindow(rxPane->getWindow());
-        pDescriptor->mpWrapper = new ViewShellWrapper(
+        rtl::Reference<ViewShellWrapper> wrapper(new ViewShellWrapper(
             pDescriptor->mpViewShell,
             rxViewId,
-            xWindow);
+            xWindow));
 
         // register ViewShellWrapper on pane window
         if (xWindow.is())
         {
-            xWindow->addWindowListener(pDescriptor->mpWrapper);
+            xWindow->addWindowListener(wrapper.get());
             if (pDescriptor->mpViewShell != nullptr)
             {
                 pDescriptor->mpViewShell->Resize();
             }
         }
 
-        pDescriptor->mxView.set( pDescriptor->mpWrapper->queryInterface( cppu::UnoType<XResource>::get() ), UNO_QUERY_THROW );
+        pDescriptor->mxView = wrapper.get();
     }
 
     return pDescriptor;
@@ -339,8 +336,9 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 &rFrame,
                 *mpBase,
                 &rWindow,
-                PK_STANDARD,
+                PageKind::Standard,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("impress_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msDrawViewURL))
     {
@@ -350,6 +348,7 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 *mpBase,
                 &rWindow,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("draw_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msOutlineViewURL))
     {
@@ -359,6 +358,7 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 *mpBase,
                 &rWindow,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("outline_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msNotesViewURL))
     {
@@ -367,8 +367,9 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 &rFrame,
                 *mpBase,
                 &rWindow,
-                PK_NOTES,
+                PageKind::Notes,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("notes_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msHandoutViewURL))
     {
@@ -377,8 +378,9 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 &rFrame,
                 *mpBase,
                 &rWindow,
-                PK_HANDOUT,
+                PageKind::Handout,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("handout_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msPresentationViewURL))
     {
@@ -388,6 +390,7 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 *mpBase,
                 &rWindow,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("presentation_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msSlideSorterURL))
     {
@@ -397,6 +400,7 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
             &rWindow,
             pFrameView,
             bIsCenterPane);
+        pViewShell->GetContentWindow()->set_id("slidesorter");
     }
 
     return pViewShell;

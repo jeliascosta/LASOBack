@@ -38,8 +38,8 @@ private:
     static void InitInterface_Impl();
 
 public:
-    PresentationViewShell( SfxViewFrame* pFrame, ViewShellBase& rViewShellBase, vcl::Window* pParentWindow, FrameView* pFrameView = nullptr);
-    virtual ~PresentationViewShell();
+    PresentationViewShell( SfxViewFrame* pFrame, ViewShellBase& rViewShellBase, vcl::Window* pParentWindow, FrameView* pFrameView);
+    virtual ~PresentationViewShell() override;
 
     /** This method is used by a simple class that passes some
         arguments from the creator of the new view shell to the new view
@@ -53,14 +53,14 @@ public:
     virtual void Resize() override;
 
 protected:
-    virtual SvxRuler* CreateHRuler(::sd::Window* pWin) override;
-    virtual SvxRuler* CreateVRuler(::sd::Window* pWin) override;
+    virtual VclPtr<SvxRuler> CreateHRuler(::sd::Window* pWin) override;
+    virtual VclPtr<SvxRuler> CreateVRuler(::sd::Window* pWin) override;
 
 private:
-    Rectangle       maOldVisArea;
+    ::tools::Rectangle       maOldVisArea;
 
     virtual void Activate (bool bIsMDIActivate) override;
-    virtual void Paint (const Rectangle& rRect, ::sd::Window* pWin) override;
+    virtual void Paint (const ::tools::Rectangle& rRect, ::sd::Window* pWin) override;
 };
 
 } // end of namespace sd

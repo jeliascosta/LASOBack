@@ -49,6 +49,7 @@
 #include "svx/svdstr.hrc"
 #include <editeng/eeitem.hxx>
 #include "editeng/editstat.hxx"
+#include <editeng/adjustitem.hxx>
 #include <svx/svdoutl.hxx>
 #include <editeng/outlobj.hxx>
 #include <svx/sdtfchim.hxx>
@@ -349,12 +350,12 @@ SdrObject* ImpCreateShadowObjectClone(const SdrObject& rOriginal, const SfxItemS
 
             if(!aBitmap.IsEmpty())
             {
-                BitmapReadAccess* pReadAccess = aBitmap.AcquireReadAccess();
+                Bitmap::ScopedReadAccess pReadAccess(aBitmap);
 
                 if(pReadAccess)
                 {
                     Bitmap aDestBitmap(aBitmap.GetSizePixel(), 24L);
-                    BitmapWriteAccess* pWriteAccess = aDestBitmap.AcquireWriteAccess();
+                    Bitmap::ScopedWriteAccess pWriteAccess(aDestBitmap);
 
                     if(pWriteAccess)
                     {
@@ -371,10 +372,10 @@ SdrObject* ImpCreateShadowObjectClone(const SdrObject& rOriginal, const SfxItemS
                             }
                         }
 
-                        Bitmap::ReleaseAccess(pWriteAccess);
+                        pWriteAccess.reset();
                     }
 
-                    Bitmap::ReleaseAccess(pReadAccess);
+                    pReadAccess.reset();
 
                     if(aBitmapEx.IsTransparent())
                     {
@@ -405,7 +406,7 @@ SdrObject* ImpCreateShadowObjectClone(const SdrObject& rOriginal, const SfxItemS
 }
 
 
-Reference< XCustomShapeEngine > SdrObjCustomShape::GetCustomShapeEngine() const
+Reference< XCustomShapeEngine > const & SdrObjCustomShape::GetCustomShapeEngine() const
 {
     if (mxCustomShapeEngine.is())
         return mxCustomShapeEngine;
@@ -561,7 +562,7 @@ double SdrObjCustomShape::GetExtraTextRotation( const bool bPreRotation ) const
     return fExtraTextRotateAngle;
 }
 
-bool SdrObjCustomShape::GetTextBounds( Rectangle& rTextBound ) const
+bool SdrObjCustomShape::GetTextBounds( tools::Rectangle& rTextBound ) const
 {
     bool bRet = false;
 
@@ -571,7 +572,7 @@ bool SdrObjCustomShape::GetTextBounds( Rectangle& rTextBound ) const
         awt::Rectangle aR( xCustomShapeEngine->getTextBounds() );
         if ( aR.Width > 1 && aR.Height > 1 )
         {
-            rTextBound = Rectangle( Point( aR.X, aR.Y ), Size( aR.Width, aR.Height ) );
+            rTextBound = tools::Rectangle( Point( aR.X, aR.Y ), Size( aR.Width, aR.Height ) );
             bRet = true;
         }
     }
@@ -832,10 +833,11 @@ sdr::properties::BaseProperties* SdrObjCustomShape::CreateObjectSpecificProperti
     return new sdr::properties::CustomShapeProperties(*this);
 }
 
-SdrObjCustomShape::SdrObjCustomShape() :
-    SdrTextObj(),
-    fObjectRotation( 0.0 ),
-    mpLastShadowGeometry(nullptr)
+SdrObjCustomShape::SdrObjCustomShape()
+    : SdrTextObj()
+    , fObjectRotation(0.0)
+    , mbAdjustingTextFrameWidthAndHeight(false)
+    , mpLastShadowGeometry(nullptr)
 {
     bClosedObj = true; // custom shapes may be filled
     bTextFrame = true;
@@ -1108,7 +1110,7 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
     const OUString sPath( "Path" );
     switch( eDefaultType )
     {
-        case DEFAULT_VIEWBOX :
+        case DefaultType::Viewbox :
         {
             const OUString sViewBox( "ViewBox" );
             const Any* pViewBox = ((SdrCustomShapeGeometryItem&)aGeometryItem).GetPropertyValueByName( sViewBox );
@@ -1122,7 +1124,7 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
         }
         break;
 
-        case DEFAULT_PATH :
+        case DefaultType::Path :
         {
             const OUString sCoordinates( "Coordinates" );
             pAny = ((SdrCustomShapeGeometryItem&)aGeometryItem).GetPropertyValueByName( sPath, sCoordinates );
@@ -1147,7 +1149,7 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
         }
         break;
 
-        case DEFAULT_GLUEPOINTS :
+        case DefaultType::Gluepoints :
         {
             const OUString sGluePoints( "GluePoints" );
             pAny = ((SdrCustomShapeGeometryItem&)aGeometryItem).GetPropertyValueByName( sPath, sGluePoints );
@@ -1172,7 +1174,7 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
         }
         break;
 
-        case DEFAULT_SEGMENTS :
+        case DefaultType::Segments :
         {
             // Path/Segments
             const OUString sSegments( "Segments" );
@@ -1200,7 +1202,7 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
                     }
                     else
                     {
-                        // check if its the default segment description ( M L Z N )
+                        // check if it's the default segment description ( M L Z N )
                         if ( seqSegments1.getLength() == 4 )
                         {
                             if ( ( seqSegments1[ 0 ].Command == EnhancedCustomShapeSegmentCommand::MOVETO )
@@ -1217,7 +1219,7 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
         }
         break;
 
-        case DEFAULT_STRETCHX :
+        case DefaultType::StretchX :
         {
             const OUString sStretchX( "StretchX" );
             pAny = ((SdrCustomShapeGeometryItem&)aGeometryItem).GetPropertyValueByName( sPath, sStretchX );
@@ -1235,7 +1237,7 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
         }
         break;
 
-        case DEFAULT_STRETCHY :
+        case DefaultType::StretchY :
         {
             const OUString sStretchY( "StretchY" );
             pAny = ((SdrCustomShapeGeometryItem&)aGeometryItem).GetPropertyValueByName( sPath, sStretchY );
@@ -1253,7 +1255,7 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
         }
         break;
 
-        case DEFAULT_EQUATIONS :
+        case DefaultType::Equations :
         {
             const OUString sEquations(  "Equations"  );
             pAny = ((SdrCustomShapeGeometryItem&)aGeometryItem).GetPropertyValueByName( sEquations );
@@ -1278,7 +1280,7 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
         }
         break;
 
-        case DEFAULT_TEXTFRAMES :
+        case DefaultType::TextFrames :
         {
             const OUString sTextFrames(  "TextFrames"  );
             pAny = ((SdrCustomShapeGeometryItem&)aGeometryItem).GetPropertyValueByName( sPath, sTextFrames );
@@ -1302,35 +1304,6 @@ bool SdrObjCustomShape::IsDefaultGeometry( const DefaultType eDefaultType ) cons
                 }
             }
             else if ( pDefCustomShape && ( ( pDefCustomShape->nTextRect == 0 ) || ( pDefCustomShape->pTextRect == nullptr ) ) )
-                bIsDefaultGeometry = true;
-        }
-        break;
-
-        case DEFAULT_HANDLES :
-        {
-            const OUString sHandles(  "Handles"  );
-            pAny = ((SdrCustomShapeGeometryItem&)aGeometryItem).GetPropertyValueByName( sHandles );
-            if ( pAny && pDefCustomShape && pDefCustomShape->nHandles && pDefCustomShape->pHandles )
-            {
-                css::uno::Sequence< css::beans::PropertyValues > seqHandles1, seqHandles2;
-                if ( *pAny >>= seqHandles1 )
-                {
-                    sal_Int32 i, nCount = pDefCustomShape->nHandles;
-                    const SvxMSDffHandle* pData = pDefCustomShape->pHandles;
-                    seqHandles2.realloc( nCount );
-                    for ( i = 0; i < nCount; i++, pData++ )
-                    {
-                        sal_Int32 nPropertiesNeeded;
-                        css::beans::PropertyValues& rPropValues = seqHandles2[ i ];
-                        nPropertiesNeeded = GetNumberOfProperties( pData );
-                        rPropValues.realloc( nPropertiesNeeded );
-                        lcl_ShapePropertiesFromDFF( pData, rPropValues );
-                    }
-                    if ( seqHandles1 == seqHandles2 )
-                        bIsDefaultGeometry = true;
-                }
-            }
-            else if ( pDefCustomShape && ( ( pDefCustomShape->nHandles == 0 ) || ( pDefCustomShape->pHandles == nullptr ) ) )
                 bIsDefaultGeometry = true;
         }
         break;
@@ -1409,23 +1382,6 @@ sal_uInt16 SdrObjCustomShape::GetObjIdentifier() const
 }
 
 
-void SdrObjCustomShape::RecalcSnapRect()
-{
-    SdrTextObj::RecalcSnapRect();
-}
-const Rectangle& SdrObjCustomShape::GetSnapRect() const
-{
-    return SdrTextObj::GetSnapRect();
-}
-const Rectangle& SdrObjCustomShape::GetCurrentBoundRect() const
-{
-    return SdrTextObj::GetCurrentBoundRect();
-}
-const Rectangle& SdrObjCustomShape::GetLogicRect() const
-{
-    return SdrTextObj::GetLogicRect();
-}
-
 // #115391# This implementation is based on the TextFrame size of the CustomShape and the
 // state of the ResizeShapeToFitText flag to correctly set TextMinFrameWidth/Height
 void SdrObjCustomShape::AdaptTextMinSize()
@@ -1451,7 +1407,7 @@ void SdrObjCustomShape::AdaptTextMinSize()
         else
         {
             // recreate from CustomShape-specific TextBounds
-            Rectangle aTextBound(maRect);
+            tools::Rectangle aTextBound(maRect);
 
             if(GetTextBounds(aTextBound))
             {
@@ -1471,7 +1427,7 @@ void SdrObjCustomShape::AdaptTextMinSize()
     }
 }
 
-void SdrObjCustomShape::NbcSetSnapRect( const Rectangle& rRect )
+void SdrObjCustomShape::NbcSetSnapRect( const tools::Rectangle& rRect )
 {
     maRect = rRect;
     ImpJustifyRect(maRect);
@@ -1484,17 +1440,17 @@ void SdrObjCustomShape::NbcSetSnapRect( const Rectangle& rRect )
     SetChanged();
 }
 
-void SdrObjCustomShape::SetSnapRect( const Rectangle& rRect )
+void SdrObjCustomShape::SetSnapRect( const tools::Rectangle& rRect )
 {
-    Rectangle aBoundRect0;
+    tools::Rectangle aBoundRect0;
     if ( pUserCall )
         aBoundRect0 = GetLastBoundRect();
     NbcSetSnapRect( rRect );
     BroadcastObjectChange();
-    SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize,aBoundRect0);
 }
 
-void SdrObjCustomShape::NbcSetLogicRect( const Rectangle& rRect )
+void SdrObjCustomShape::NbcSetLogicRect( const tools::Rectangle& rRect )
 {
     maRect = rRect;
     ImpJustifyRect(maRect);
@@ -1506,27 +1462,27 @@ void SdrObjCustomShape::NbcSetLogicRect( const Rectangle& rRect )
     SetChanged();
 }
 
-void SdrObjCustomShape::SetLogicRect( const Rectangle& rRect )
+void SdrObjCustomShape::SetLogicRect( const tools::Rectangle& rRect )
 {
-    Rectangle aBoundRect0;
+    tools::Rectangle aBoundRect0;
     if ( pUserCall )
         aBoundRect0 = GetLastBoundRect();
     NbcSetLogicRect(rRect);
     BroadcastObjectChange();
-    SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize,aBoundRect0);
 }
 
 void SdrObjCustomShape::Move( const Size& rSiz )
 {
     if ( rSiz.Width() || rSiz.Height() )
     {
-        Rectangle aBoundRect0;
+        tools::Rectangle aBoundRect0;
         if ( pUserCall )
             aBoundRect0 = GetLastBoundRect();
         NbcMove(rSiz);
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_MOVEONLY,aBoundRect0);
+        SendUserCall(SdrUserCallType::MoveOnly,aBoundRect0);
     }
 }
 void SdrObjCustomShape::NbcMove( const Size& rSiz )
@@ -1550,15 +1506,11 @@ void SdrObjCustomShape::NbcMove( const Size& rSiz )
         mpLastShadowGeometry->NbcMove( rSiz );
     }
 }
-void SdrObjCustomShape::Resize( const Point& rRef, const Fraction& xFact, const Fraction& yFact, bool bUnsetRelative )
-{
-    SdrTextObj::Resize( rRef, xFact, yFact, bUnsetRelative );
-}
 
 void SdrObjCustomShape::NbcResize( const Point& rRef, const Fraction& rxFact, const Fraction& ryFact )
 {
     // taking care of handles that should not been changed
-    Rectangle aOld( maRect );
+    tools::Rectangle aOld( maRect );
     std::vector< SdrCustomShapeInteraction > aInteractionHandles( GetInteractionHandles() );
 
     SdrTextObj::NbcResize( rRef, rxFact, ryFact );
@@ -1798,7 +1750,7 @@ void SdrObjCustomShape::ImpCheckCustomGluePointsAreAdded()
                     if ( aGeo.nRotationAngle )
                         aPoly.Rotate( maRect.Center(), aGeo.nRotationAngle / 10 );
 
-                    Rectangle aBoundRect( aPoly.GetBoundRect() );
+                    tools::Rectangle aBoundRect( aPoly.GetBoundRect() );
                     sal_Int32 nXDiff = aBoundRect.Left() - maRect.Left();
                     sal_Int32 nYDiff = aBoundRect.Top() - maRect.Top();
 
@@ -1898,7 +1850,7 @@ SdrHdl* SdrObjCustomShape::GetHdl( sal_uInt32 nHdlNum ) const
                 try
                 {
                     css::awt::Point aPosition( aInteractionHandles[ nCustomShapeHdlNum ].xInteraction->getPosition() );
-                    pH = new SdrHdl( Point( aPosition.X, aPosition.Y ), HDL_CUSTOMSHAPE1 );
+                    pH = new SdrHdl( Point( aPosition.X, aPosition.Y ), SdrHdlKind::CustomShape1 );
                     pH->SetPointNum( nCustomShapeHdlNum );
                     pH->SetObj( const_cast<SdrObjCustomShape*>(this) );
                 }
@@ -1921,7 +1873,7 @@ bool SdrObjCustomShape::beginSpecialDrag(SdrDragStat& rDrag) const
 {
     const SdrHdl* pHdl = rDrag.GetHdl();
 
-    if(pHdl && HDL_CUSTOMSHAPE1 == pHdl->GetKind())
+    if(pHdl && SdrHdlKind::CustomShape1 == pHdl->GetKind())
     {
         rDrag.SetEndDragChangesAttributes(true);
         rDrag.SetNoSnap();
@@ -1929,19 +1881,19 @@ bool SdrObjCustomShape::beginSpecialDrag(SdrDragStat& rDrag) const
     else
     {
         const SdrHdl* pHdl2 = rDrag.GetHdl();
-        const SdrHdlKind eHdl((pHdl2 == nullptr) ? HDL_MOVE : pHdl2->GetKind());
+        const SdrHdlKind eHdl((pHdl2 == nullptr) ? SdrHdlKind::Move : pHdl2->GetKind());
 
         switch( eHdl )
         {
-            case HDL_UPLFT :
-            case HDL_UPPER :
-            case HDL_UPRGT :
-            case HDL_LEFT  :
-            case HDL_RIGHT :
-            case HDL_LWLFT :
-            case HDL_LOWER :
-            case HDL_LWRGT :
-            case HDL_MOVE  :
+            case SdrHdlKind::UpperLeft :
+            case SdrHdlKind::Upper :
+            case SdrHdlKind::UpperRight :
+            case SdrHdlKind::Left  :
+            case SdrHdlKind::Right :
+            case SdrHdlKind::LowerLeft :
+            case SdrHdlKind::Lower :
+            case SdrHdlKind::LowerRight :
+            case SdrHdlKind::Move  :
             {
                 break;
             }
@@ -1955,13 +1907,13 @@ bool SdrObjCustomShape::beginSpecialDrag(SdrDragStat& rDrag) const
     return true;
 }
 
-void SdrObjCustomShape::DragResizeCustomShape( const Rectangle& rNewRect )
+void SdrObjCustomShape::DragResizeCustomShape( const tools::Rectangle& rNewRect )
 {
-    Rectangle   aOld( maRect );
+    tools::Rectangle   aOld( maRect );
     bool    bOldMirroredX( IsMirroredX() );
     bool    bOldMirroredY( IsMirroredY() );
 
-    Rectangle aNewRect( rNewRect );
+    tools::Rectangle aNewRect( rNewRect );
     aNewRect.Justify();
 
     std::vector< SdrCustomShapeInteraction > aInteractionHandles( GetInteractionHandles() );
@@ -2095,11 +2047,11 @@ void SdrObjCustomShape::DragMoveCustomShapeHdl( const Point& rDestination,
 bool SdrObjCustomShape::applySpecialDrag(SdrDragStat& rDrag)
 {
     const SdrHdl* pHdl = rDrag.GetHdl();
-    const SdrHdlKind eHdl((pHdl == nullptr) ? HDL_MOVE : pHdl->GetKind());
+    const SdrHdlKind eHdl((pHdl == nullptr) ? SdrHdlKind::Move : pHdl->GetKind());
 
     switch(eHdl)
     {
-        case HDL_CUSTOMSHAPE1 :
+        case SdrHdlKind::CustomShape1 :
         {
             rDrag.SetEndDragChangesGeoAndAttributes(true);
             DragMoveCustomShapeHdl( rDrag.GetNow(), (sal_uInt16)pHdl->GetPointNum(), !rDrag.GetDragMethod()->IsShiftPressed() );
@@ -2109,19 +2061,19 @@ bool SdrObjCustomShape::applySpecialDrag(SdrDragStat& rDrag)
             break;
         }
 
-        case HDL_UPLFT :
-        case HDL_UPPER :
-        case HDL_UPRGT :
-        case HDL_LEFT  :
-        case HDL_RIGHT :
-        case HDL_LWLFT :
-        case HDL_LOWER :
-        case HDL_LWRGT :
+        case SdrHdlKind::UpperLeft :
+        case SdrHdlKind::Upper :
+        case SdrHdlKind::UpperRight :
+        case SdrHdlKind::Left  :
+        case SdrHdlKind::Right :
+        case SdrHdlKind::LowerLeft :
+        case SdrHdlKind::Lower :
+        case SdrHdlKind::LowerRight :
         {
             DragResizeCustomShape( ImpDragCalcRect(rDrag) );
             break;
         }
-        case HDL_MOVE :
+        case SdrHdlKind::Move :
         {
             Move(Size(rDrag.GetDX(), rDrag.GetDY()));
             break;
@@ -2135,7 +2087,7 @@ bool SdrObjCustomShape::applySpecialDrag(SdrDragStat& rDrag)
 
 void SdrObjCustomShape::DragCreateObject( SdrDragStat& rStat )
 {
-    Rectangle aRect1;
+    tools::Rectangle aRect1;
     rStat.TakeCreateRect( aRect1 );
 
     std::vector< SdrCustomShapeInteraction > aInteractionHandles( GetInteractionHandles() );
@@ -2147,7 +2099,7 @@ void SdrObjCustomShape::DragCreateObject( SdrDragStat& rStat )
     {
         SetMirroredX( aRect1.Left() > aRect1.Right() );
 
-        aRect1 = Rectangle( rStat.GetNow(), Size( nDefaultObjectSizeWidth, nDefaultObjectSizeHeight ) );
+        aRect1 = tools::Rectangle( rStat.GetNow(), Size( nDefaultObjectSizeWidth, nDefaultObjectSizeHeight ) );
         // subtracting the horizontal difference of the latest handle from shape position
         if ( !aInteractionHandles.empty() )
         {
@@ -2177,11 +2129,6 @@ void SdrObjCustomShape::DragCreateObject( SdrDragStat& rStat )
     bSnapRectDirty=true;
 }
 
-bool SdrObjCustomShape::BegCreate( SdrDragStat& rDrag )
-{
-    return SdrTextObj::BegCreate( rDrag );
-}
-
 bool SdrObjCustomShape::MovCreate(SdrDragStat& rStat)
 {
     SdrView* pView = rStat.GetView();       // #i37448#
@@ -2201,7 +2148,7 @@ bool SdrObjCustomShape::EndCreate( SdrDragStat& rStat, SdrCreateCmd eCmd )
     AdaptTextMinSize();
 
     SetRectsDirty();
-    return ( eCmd == SDRCREATE_FORCEEND || rStat.GetPointCount() >= 2 );
+    return ( eCmd == SdrCreateCmd::ForceEnd || rStat.GetPointCount() >= 2 );
 }
 
 basegfx::B2DPolyPolygon SdrObjCustomShape::TakeCreatePoly(const SdrDragStat& /*rDrag*/) const
@@ -2243,7 +2190,7 @@ void SdrObjCustomShape::SetVerticalWriting( bool bVertical )
 
     if( pOutlinerParaObject )
     {
-        if(pOutlinerParaObject->IsVertical() != (bool)bVertical)
+        if(pOutlinerParaObject->IsVertical() != bVertical)
         {
             // get item settings
             const SfxItemSet& rSet = GetObjectItemSet();
@@ -2253,7 +2200,7 @@ void SdrObjCustomShape::SetVerticalWriting( bool bVertical )
             SdrTextVertAdjust eVert = static_cast<const SdrTextVertAdjustItem&>(rSet.Get(SDRATTR_TEXT_VERTADJUST)).GetValue();
 
             // rescue object size
-            Rectangle aObjectRect = GetSnapRect();
+            tools::Rectangle aObjectRect = GetSnapRect();
 
             // prepare ItemSet to set exchanged width and height items
             SfxItemSet aNewSet(*rSet.GetPool(),
@@ -2297,7 +2244,7 @@ void SdrObjCustomShape::SuggestTextFrameSize(Size aSuggestedTextFrameSize)
     m_aSuggestedTextFrameSize = aSuggestedTextFrameSize;
 }
 
-bool SdrObjCustomShape::AdjustTextFrameWidthAndHeight(Rectangle& rR, bool bHgt, bool bWdt) const
+bool SdrObjCustomShape::AdjustTextFrameWidthAndHeight(tools::Rectangle& rR, bool bHgt, bool bWdt) const
 {
     // Either we have text or the application has native text and suggested its size to us.
     bool bHasText = HasText() || (m_aSuggestedTextFrameSize.Width() != 0 && m_aSuggestedTextFrameSize.Height() != 0);
@@ -2307,7 +2254,7 @@ bool SdrObjCustomShape::AdjustTextFrameWidthAndHeight(Rectangle& rR, bool bHgt, 
         bool bHgtGrow=bHgt && IsAutoGrowHeight();
         if ( bWdtGrow || bHgtGrow )
         {
-            Rectangle aR0(rR);
+            tools::Rectangle aR0(rR);
             long nHgt=0,nMinHgt=0,nMaxHgt=0;
             long nWdt=0,nMinWdt=0,nMaxWdt=0;
             Size aSiz(rR.GetSize()); aSiz.Width()--; aSiz.Height()--;
@@ -2450,16 +2397,16 @@ bool SdrObjCustomShape::AdjustTextFrameWidthAndHeight(Rectangle& rR, bool bHgt, 
     return false;
 }
 
-Rectangle SdrObjCustomShape::ImpCalculateTextFrame( const bool bHgt, const bool bWdt )
+tools::Rectangle SdrObjCustomShape::ImpCalculateTextFrame( const bool bHgt, const bool bWdt )
 {
-    Rectangle aReturnValue;
+    tools::Rectangle aReturnValue;
 
-    Rectangle aOldTextRect( maRect );        // <- initial text rectangle
+    tools::Rectangle aOldTextRect( maRect );        // <- initial text rectangle
 
-    Rectangle aNewTextRect( maRect );        // <- new text rectangle returned from the custom shape renderer,
+    tools::Rectangle aNewTextRect( maRect );        // <- new text rectangle returned from the custom shape renderer,
     GetTextBounds( aNewTextRect );          //    it depends to the current logical shape size
 
-    Rectangle aAdjustedTextRect( aNewTextRect );                            // <- new text rectangle is being tested by AdjustTextFrameWidthAndHeight to ensure
+    tools::Rectangle aAdjustedTextRect( aNewTextRect );                            // <- new text rectangle is being tested by AdjustTextFrameWidthAndHeight to ensure
     if ( AdjustTextFrameWidthAndHeight( aAdjustedTextRect, bHgt, bWdt ) )   //    that the new text rectangle is matching the current text size from the outliner
     {
         if (aAdjustedTextRect != aNewTextRect && aOldTextRect != aAdjustedTextRect &&
@@ -2483,10 +2430,12 @@ Rectangle SdrObjCustomShape::ImpCalculateTextFrame( const bool bHgt, const bool 
 
 bool SdrObjCustomShape::NbcAdjustTextFrameWidthAndHeight(bool bHgt, bool bWdt)
 {
-    Rectangle aNewTextRect = ImpCalculateTextFrame( bHgt, bWdt );
-    bool bRet = !aNewTextRect.IsEmpty() && ( aNewTextRect != maRect );
-    if ( bRet )
+    tools::Rectangle aNewTextRect = ImpCalculateTextFrame(bHgt, bWdt);
+    const bool bRet = !aNewTextRect.IsEmpty() && aNewTextRect != maRect;
+    if (bRet && !mbAdjustingTextFrameWidthAndHeight)
     {
+        mbAdjustingTextFrameWidthAndHeight = true;
+
         // taking care of handles that should not been changed
         std::vector< SdrCustomShapeInteraction > aInteractionHandles( GetInteractionHandles() );
 
@@ -2507,16 +2456,19 @@ bool SdrObjCustomShape::NbcAdjustTextFrameWidthAndHeight(bool bHgt, bool bWdt)
             }
         }
         InvalidateRenderGeometry();
+
+        mbAdjustingTextFrameWidthAndHeight = false;
     }
     return bRet;
 }
+
 bool SdrObjCustomShape::AdjustTextFrameWidthAndHeight()
 {
-    Rectangle aNewTextRect = ImpCalculateTextFrame( true/*bHgt*/, true/*bWdt*/ );
+    tools::Rectangle aNewTextRect = ImpCalculateTextFrame( true/*bHgt*/, true/*bWdt*/ );
     bool bRet = !aNewTextRect.IsEmpty() && ( aNewTextRect != maRect );
     if ( bRet )
     {
-        Rectangle aBoundRect0;
+        tools::Rectangle aBoundRect0;
         if ( pUserCall )
             aBoundRect0 = GetCurrentBoundRect();
 
@@ -2542,18 +2494,14 @@ bool SdrObjCustomShape::AdjustTextFrameWidthAndHeight()
         InvalidateRenderGeometry();
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
     return bRet;
 }
-bool SdrObjCustomShape::BegTextEdit( SdrOutliner& rOutl )
-{
-    return SdrTextObj::BegTextEdit( rOutl );
-}
-void SdrObjCustomShape::TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, Rectangle* pViewInit, Rectangle* pViewMin) const
+void SdrObjCustomShape::TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, tools::Rectangle* pViewInit, tools::Rectangle* pViewMin) const
 {
     Size aPaperMin,aPaperMax;
-    Rectangle aViewInit;
+    tools::Rectangle aViewInit;
     TakeTextAnchorRect( aViewInit );
     if ( aGeo.nRotationAngle )
     {
@@ -2645,7 +2593,7 @@ void SdrObjCustomShape::EndTextEdit( SdrOutliner& rOutl )
     SdrTextObj::EndTextEdit( rOutl );
     InvalidateRenderGeometry();
 }
-void SdrObjCustomShape::TakeTextAnchorRect( Rectangle& rAnchorRect ) const
+void SdrObjCustomShape::TakeTextAnchorRect( tools::Rectangle& rAnchorRect ) const
 {
     if ( GetTextBounds( rAnchorRect ) )
     {
@@ -2670,10 +2618,10 @@ void SdrObjCustomShape::TakeTextAnchorRect( Rectangle& rAnchorRect ) const
     else
         SdrTextObj::TakeTextAnchorRect( rAnchorRect );
 }
-void SdrObjCustomShape::TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText,
-                               Rectangle* pAnchorRect, bool /*bLineWidth*/) const
+void SdrObjCustomShape::TakeTextRect( SdrOutliner& rOutliner, tools::Rectangle& rTextRect, bool bNoEditText,
+                               tools::Rectangle* pAnchorRect, bool /*bLineWidth*/) const
 {
-    Rectangle aAnkRect; // Rect in which we anchor
+    tools::Rectangle aAnkRect; // Rect in which we anchor
     TakeTextAnchorRect(aAnkRect);
     SdrTextVertAdjust eVAdj=GetTextVerticalAdjust();
     SdrTextHorzAdjust eHAdj=GetTextHorizontalAdjust();
@@ -2758,7 +2706,14 @@ void SdrObjCustomShape::TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRe
             // else the alignment is wanted.
             if(SDRTEXTHORZADJUST_BLOCK == eHAdj)
             {
-                eHAdj = SDRTEXTHORZADJUST_CENTER;
+                SvxAdjust eAdjust = static_cast<const SvxAdjustItem&>(GetObjectItemSet().Get(EE_PARA_JUST)).GetAdjust();
+                switch (eAdjust)
+                {
+                    case SvxAdjust::Left:   eHAdj = SDRTEXTHORZADJUST_LEFT; break;
+                    case SvxAdjust::Right:  eHAdj = SDRTEXTHORZADJUST_RIGHT; break;
+                    case SvxAdjust::Center: eHAdj = SDRTEXTHORZADJUST_CENTER; break;
+                    default: break;
+                }
             }
         }
 
@@ -2796,7 +2751,7 @@ void SdrObjCustomShape::TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRe
         *pAnchorRect=aAnkRect;
 
     // using rTextRect together with ContourFrame doesn't always work correctly
-    rTextRect=Rectangle(aTextPos,aTextSiz);
+    rTextRect=tools::Rectangle(aTextPos,aTextSiz);
 }
 
 void SdrObjCustomShape::NbcSetOutlinerParaObject(OutlinerParaObject* pTextObject)
@@ -2817,8 +2772,9 @@ SdrObjCustomShape& SdrObjCustomShape::operator=(const SdrObjCustomShape& rObj)
     if( this == &rObj )
         return *this;
     SdrTextObj::operator=( rObj );
-    aName = rObj.aName;
     fObjectRotation = rObj.fObjectRotation;
+    mbAdjustingTextFrameWidthAndHeight = rObj.mbAdjustingTextFrameWidthAndHeight;
+    assert(!mbAdjustingTextFrameWidthAndHeight);
     InvalidateRenderGeometry();
     return *this;
 }
@@ -2915,7 +2871,7 @@ void SdrObjCustomShape::SetPage( SdrPage* pNewPage )
         // invalidating rectangles by SetRectsDirty is not sufficient,
         // AdjustTextFrameWidthAndHeight() also has to be made, both
         // actions are done by NbcSetSnapRect
-        Rectangle aTmp( maRect );    //creating temporary rectangle #i61108#
+        tools::Rectangle aTmp( maRect );    //creating temporary rectangle #i61108#
         NbcSetSnapRect( aTmp );
     }
 }
@@ -2983,12 +2939,12 @@ void SdrObjCustomShape::TRSetBaseGeometry(const basegfx::B2DHomMatrix& rMatrix, 
     aGeo.RecalcTan();
 
     // force metric to pool metric
-    const SfxMapUnit eMapUnit(GetObjectMapUnit());
-    if(eMapUnit != SFX_MAPUNIT_100TH_MM)
+    const MapUnit eMapUnit(GetObjectMapUnit());
+    if(eMapUnit != MapUnit::Map100thMM)
     {
         switch(eMapUnit)
         {
-            case SFX_MAPUNIT_TWIP :
+            case MapUnit::MapTwip :
             {
                 // position
                 aTranslate.setX(ImplMMToTwips(aTranslate.getX()));
@@ -3023,7 +2979,7 @@ void SdrObjCustomShape::TRSetBaseGeometry(const basegfx::B2DHomMatrix& rMatrix, 
     if( !aSize.Height() ) aSize.setHeight( 1 );
     if( !aSize.Width() ) aSize.setWidth( 1 );
 
-    Rectangle aBaseRect(aPoint, aSize);
+    tools::Rectangle aBaseRect(aPoint, aSize);
     SetSnapRect(aBaseRect);
 
     // shear?
@@ -3066,7 +3022,7 @@ bool SdrObjCustomShape::TRGetBaseGeometry(basegfx::B2DHomMatrix& rMatrix, basegf
     double fShearX = (aGeo.nShearAngle / 100.0) * F_PI180;
 
     // get aRect, this is the unrotated snaprect
-    Rectangle aRectangle(maRect);
+    tools::Rectangle aRectangle(maRect);
 
     bool bMirroredX = IsMirroredX();
     bool bMirroredY = IsMirroredY();
@@ -3078,7 +3034,7 @@ bool SdrObjCustomShape::TRGetBaseGeometry(basegfx::B2DHomMatrix& rMatrix, basegf
         if ( bMirroredX )
         {
             tools::Polygon aPol = Rect2Poly(maRect, aNewGeo);
-            Rectangle aBoundRect( aPol.GetBoundRect() );
+            tools::Rectangle aBoundRect( aPol.GetBoundRect() );
 
             Point aRef1( ( aBoundRect.Left() + aBoundRect.Right() ) >> 1, aBoundRect.Top() );
             Point aRef2( aRef1.X(), aRef1.Y() + 1000 );
@@ -3100,7 +3056,7 @@ bool SdrObjCustomShape::TRGetBaseGeometry(basegfx::B2DHomMatrix& rMatrix, basegf
         if ( bMirroredY )
         {
             tools::Polygon aPol( Rect2Poly( aRectangle, aNewGeo ) );
-            Rectangle aBoundRect( aPol.GetBoundRect() );
+            tools::Rectangle aBoundRect( aPol.GetBoundRect() );
 
             Point aRef1( aBoundRect.Left(), ( aBoundRect.Top() + aBoundRect.Bottom() ) >> 1 );
             Point aRef2( aRef1.X() + 1000, aRef1.Y() );
@@ -3135,12 +3091,12 @@ bool SdrObjCustomShape::TRGetBaseGeometry(basegfx::B2DHomMatrix& rMatrix, basegf
     }
 
     // force MapUnit to 100th mm
-    const SfxMapUnit eMapUnit(GetObjectMapUnit());
-    if(eMapUnit != SFX_MAPUNIT_100TH_MM)
+    const MapUnit eMapUnit(GetObjectMapUnit());
+    if(eMapUnit != MapUnit::Map100thMM)
     {
         switch(eMapUnit)
         {
-            case SFX_MAPUNIT_TWIP :
+            case MapUnit::MapTwip :
             {
                 // position
                 aTranslate.setX(ImplTwipsToMM(aTranslate.getX()));
@@ -3178,29 +3134,24 @@ sdr::contact::ViewContact* SdrObjCustomShape::CreateObjectSpecificViewContact()
 bool SdrObjCustomShape::doConstructOrthogonal(const OUString& rName)
 {
     bool bRetval(false);
-    static const char Imps_sNameASOrtho_quadrat[] = "quadrat";
-    static const char Imps_sNameASOrtho_round_quadrat[] = "round-quadrat";
-    static const char Imps_sNameASOrtho_circle[] = "circle";
-    static const char Imps_sNameASOrtho_circle_pie[] = "circle-pie";
-    static const char Imps_sNameASOrtho_ring[] = "ring";
 
-    if(rName.equalsIgnoreAsciiCase(Imps_sNameASOrtho_quadrat))
+    if(rName.equalsIgnoreAsciiCase("quadrat"))
     {
         bRetval = true;
     }
-    else if(rName.equalsIgnoreAsciiCase(Imps_sNameASOrtho_round_quadrat))
+    else if(rName.equalsIgnoreAsciiCase("round-quadrat"))
     {
         bRetval = true;
     }
-    else if(rName.equalsIgnoreAsciiCase(Imps_sNameASOrtho_circle))
+    else if(rName.equalsIgnoreAsciiCase("circle"))
     {
         bRetval = true;
     }
-    else if(rName.equalsIgnoreAsciiCase(Imps_sNameASOrtho_circle_pie))
+    else if(rName.equalsIgnoreAsciiCase("circle-pie"))
     {
         bRetval = true;
     }
-    else if(rName.equalsIgnoreAsciiCase(Imps_sNameASOrtho_ring))
+    else if(rName.equalsIgnoreAsciiCase("ring"))
     {
         bRetval = true;
     }

@@ -70,7 +70,7 @@ void BitmapTest::testConvert()
         CPPUNIT_ASSERT_EQUAL(sal_Int32(255), sal_Int32(rColor.GetBlue()));
     }
 
-    aBitmap.Convert(BMP_CONVERSION_24BIT);
+    aBitmap.Convert(BmpConversion::N24Bit);
 
     CPPUNIT_ASSERT_EQUAL(sal_uInt16(24), aBitmap.GetBitCount());
     {
@@ -112,8 +112,8 @@ void BitmapTest::testScale()
         Bitmap::ScopedWriteAccess aWriteAccess(aBitmap24Bit);
         aWriteAccess->Erase(COL_WHITE);
         aWriteAccess->SetLineColor(COL_BLACK);
-        aWriteAccess->DrawRect(Rectangle(1, 1, 8, 8));
-        aWriteAccess->DrawRect(Rectangle(3, 3, 6, 6));
+        aWriteAccess->DrawRect(tools::Rectangle(1, 1, 8, 8));
+        aWriteAccess->DrawRect(tools::Rectangle(3, 3, 6, 6));
     }
 
     BitmapSymmetryCheck aBitmapSymmetryCheck;
@@ -126,9 +126,9 @@ void BitmapTest::testScale()
 
     if (bExportBitmap)
     {
-        SvFileStream aStream(OUString("~/scale_before.png"), StreamMode::WRITE | StreamMode::TRUNC);
+        SvFileStream aStream("~/scale_before.png", StreamMode::WRITE | StreamMode::TRUNC);
         GraphicFilter& rFilter = GraphicFilter::GetGraphicFilter();
-        rFilter.compressAsPNG(aBitmap24Bit, aStream, 9);
+        rFilter.compressAsPNG(aBitmap24Bit, aStream);
     }
 
     aBitmap24Bit.Scale(2, 2, BmpScaleFlag::Fast);
@@ -142,9 +142,9 @@ void BitmapTest::testScale()
 
     if (bExportBitmap)
     {
-        SvFileStream aStream(OUString("~/scale_after.png"), StreamMode::WRITE | StreamMode::TRUNC);
+        SvFileStream aStream("~/scale_after.png", StreamMode::WRITE | StreamMode::TRUNC);
         GraphicFilter& rFilter = GraphicFilter::GetGraphicFilter();
-        rFilter.compressAsPNG(aBitmap24Bit, aStream, 9);
+        rFilter.compressAsPNG(aBitmap24Bit, aStream);
     }
 }
 
@@ -165,12 +165,12 @@ void checkAndInsert(CRCHash &rHash, sal_uInt64 nCRC, const char *pLocation)
     rHash[nCRC] = pLocation;
 }
 
-void checkAndInsert(CRCHash &rHash, Bitmap rBmp, const char *pLocation)
+void checkAndInsert(CRCHash &rHash, Bitmap const & rBmp, const char *pLocation)
 {
     checkAndInsert(rHash, rBmp.GetChecksum(), pLocation);
 }
 
-Bitmap getAsBitmap(VclPtr<OutputDevice> pOut)
+Bitmap getAsBitmap(VclPtr<OutputDevice> const & pOut)
 {
     return pOut->GetBitmap(Point(), pOut->GetOutputSizePixel());
 }

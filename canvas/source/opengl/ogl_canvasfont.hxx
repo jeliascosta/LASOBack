@@ -11,7 +11,7 @@
 #define INCLUDED_CANVAS_SOURCE_OPENGL_OGL_CANVASFONT_HXX
 
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 
 #include <com/sun/star/rendering/XCanvas.hpp>
 #include <com/sun/star/rendering/XCanvasFont.hpp>
@@ -27,7 +27,7 @@ namespace oglcanvas
 
     typedef ::cppu::WeakComponentImplHelper< css::rendering::XCanvasFont > CanvasFontBaseT;
 
-    class CanvasFont : public ::comphelper::OBaseMutex,
+    class CanvasFont : public ::cppu::BaseMutex,
                        public CanvasFontBaseT
     {
     public:
@@ -41,15 +41,12 @@ namespace oglcanvas
                     const css::uno::Sequence< css::beans::PropertyValue >&    extraFontProperties,
                     const css::geometry::Matrix2D&                                         fontMatrix );
 
-        /// Dispose all internal references
-        virtual void SAL_CALL disposing() override;
-
         // XCanvasFont
-        virtual css::uno::Reference< css::rendering::XTextLayout > SAL_CALL createTextLayout( const css::rendering::StringContext& aText, sal_Int8 nDirection, sal_Int64 nRandomSeed ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::rendering::FontRequest SAL_CALL getFontRequest(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::rendering::FontMetrics SAL_CALL getFontMetrics(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< double > SAL_CALL getAvailableSizes(  ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getExtraFontProperties(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::rendering::XTextLayout > SAL_CALL createTextLayout( const css::rendering::StringContext& aText, sal_Int8 nDirection, sal_Int64 nRandomSeed ) override;
+        virtual css::rendering::FontRequest SAL_CALL getFontRequest(  ) override;
+        virtual css::rendering::FontMetrics SAL_CALL getFontMetrics(  ) override;
+        virtual css::uno::Sequence< double > SAL_CALL getAvailableSizes(  ) override;
+        virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getExtraFontProperties(  ) override;
 
         const css::geometry::Matrix2D& getFontMatrix() const { return maFontMatrix; }
 

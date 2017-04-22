@@ -37,11 +37,11 @@ class SwUndoInsNum : public SwUndo, private SwUndRng
 public:
     SwUndoInsNum( const SwPaM& rPam, const SwNumRule& rRule );
     SwUndoInsNum( const SwNumRule& rOldRule, const SwNumRule& rNewRule,
-                  SwUndoId nUndoId = UNDO_INSFMTATTR );
+                  const SwDoc* pDoc, SwUndoId nUndoId = SwUndoId::INSFMTATTR );
     SwUndoInsNum( const SwPosition& rPos, const SwNumRule& rRule,
                             const OUString& rReplaceRule );
 
-    virtual ~SwUndoInsNum();
+    virtual ~SwUndoInsNum() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -62,22 +62,22 @@ class SwUndoDelNum : public SwUndo, private SwUndRng
     {
         sal_uLong index;
         int level;
-        inline NodeLevel(sal_uLong idx, int lvl) : index(idx), level(lvl) {};
+        NodeLevel(sal_uLong idx, int lvl) : index(idx), level(lvl) {};
     };
-    std::vector<NodeLevel> aNodes;
-    SwHistory* pHistory;
+    std::vector<NodeLevel>     aNodes;
+    std::unique_ptr<SwHistory> pHistory;
 
 public:
     SwUndoDelNum( const SwPaM& rPam );
 
-    virtual ~SwUndoDelNum();
+    virtual ~SwUndoDelNum() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RepeatImpl( ::sw::RepeatContext & ) override;
 
     void AddNode( const SwTextNode& rNd );
-    SwHistory* GetHistory() { return pHistory; }
+    SwHistory* GetHistory() { return pHistory.get(); }
 };
 
 class SwUndoMoveNum : public SwUndo, private SwUndRng
@@ -86,7 +86,7 @@ class SwUndoMoveNum : public SwUndo, private SwUndRng
     long nOffset;
 
 public:
-    SwUndoMoveNum( const SwPaM& rPam, long nOffset, bool bIsOutlMv = false );
+    SwUndoMoveNum( const SwPaM& rPam, long nOffset, bool bIsOutlMv );
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

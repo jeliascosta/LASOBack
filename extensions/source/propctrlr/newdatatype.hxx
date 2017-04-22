@@ -38,18 +38,18 @@ namespace pcr
         VclPtr<Edit>           m_pName;
         VclPtr<OKButton>       m_pOK;
 
-        ::std::set< OUString > m_aProhibitedNames;
+        std::set< OUString > m_aProhibitedNames;
 
     public:
         NewDataTypeDialog(vcl::Window* _pParent, const OUString& _rNameBase,
-            const ::std::vector< OUString >& _rProhibitedNames );
-        virtual ~NewDataTypeDialog();
+            const std::vector< OUString >& _rProhibitedNames );
+        virtual ~NewDataTypeDialog() override;
         virtual void dispose() override;
 
         OUString GetName() const { return m_pName->GetText(); }
 
     private:
-        DECL_LINK_TYPED( OnNameModified, Edit&, void );
+        DECL_LINK( OnNameModified, Edit&, void );
     };
 
 

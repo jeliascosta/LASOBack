@@ -24,7 +24,6 @@
 #include <tools/urlobj.hxx>
 #include <unotools/charclass.hxx>
 #include <stdlib.h>
-#include <ctype.h>
 #include <unotools/syslocale.hxx>
 #include <svl/zforlist.hxx>
 #include <formula/errorcodes.hxx>
@@ -231,18 +230,15 @@ ScSolveParam::ScSolveParam( const ScAddress& rFormulaCell,
 
 ScSolveParam::~ScSolveParam()
 {
-    delete pStrTargetVal;
 }
 
 ScSolveParam& ScSolveParam::operator=( const ScSolveParam& r )
 {
-    delete pStrTargetVal;
-
     aRefFormulaCell  = r.aRefFormulaCell;
     aRefVariableCell = r.aRefVariableCell;
-    pStrTargetVal    = r.pStrTargetVal
+    pStrTargetVal.reset( r.pStrTargetVal
                             ? new OUString(*r.pStrTargetVal)
-                            : nullptr;
+                            : nullptr);
     return *this;
 }
 
@@ -320,7 +316,7 @@ OUString ScGlobal::GetAbsDocName( const OUString& rFileName,
         aObj.SetSmartURL( aPathOpt.GetWorkPath() );
         aObj.setFinalSlash();       // it IS a path
         bool bWasAbs = true;
-        aAbsName = aObj.smartRel2Abs( rFileName, bWasAbs ).GetMainURL(INetURLObject::NO_DECODE);
+        aAbsName = aObj.smartRel2Abs( rFileName, bWasAbs ).GetMainURL(INetURLObject::DecodeMechanism::NONE);
         //  returned string must be encoded because it's used directly to create SfxMedium
     }
     else
@@ -329,14 +325,14 @@ OUString ScGlobal::GetAbsDocName( const OUString& rFileName,
         if ( pMedium )
         {
             bool bWasAbs = true;
-            aAbsName = pMedium->GetURLObject().smartRel2Abs( rFileName, bWasAbs ).GetMainURL(INetURLObject::NO_DECODE);
+            aAbsName = pMedium->GetURLObject().smartRel2Abs( rFileName, bWasAbs ).GetMainURL(INetURLObject::DecodeMechanism::NONE);
         }
         else
         {   // This can't happen, but ...
             // just to be sure to have the same encoding
             INetURLObject aObj;
             aObj.SetSmartURL( aAbsName );
-            aAbsName = aObj.GetMainURL(INetURLObject::NO_DECODE);
+            aAbsName = aObj.GetMainURL(INetURLObject::DecodeMechanism::NONE);
         }
     }
     return aAbsName;
@@ -353,7 +349,7 @@ OUString ScGlobal::GetDocTabName( const OUString& rFileName,
         aDocTab = aDocTab.replaceAt( nPos, 0, "\\" );
         nPos += 2;
     }
-    aDocTab += "'" + OUStringLiteral1<SC_COMPILER_FILE_TAB_SEP>() + rTabName;
+    aDocTab += "'" + OUStringLiteral1(SC_COMPILER_FILE_TAB_SEP) + rTabName;
         // "'Doc'#Tab"
     return aDocTab;
 }
@@ -378,14 +374,14 @@ bool isEmptyString( const OUString& rStr )
 }
 
 double ScGlobal::ConvertStringToValue( const OUString& rStr, const ScCalcConfig& rConfig,
-        sal_uInt16 & rError, sal_uInt16 nStringNoValueError,
+        FormulaError & rError, FormulaError nStringNoValueError,
         SvNumberFormatter* pFormatter, short & rCurFmtType )
 {
     // We keep ScCalcConfig::StringConversion::LOCALE default until
     // we provide a friendly way to convert string numbers into numbers in the UI.
 
     double fValue = 0.0;
-    if (nStringNoValueError == formula::errCellNoValue)
+    if (nStringNoValueError == FormulaError::CellNoValue)
     {
         // Requested that all strings result in 0, error handled by caller.
         rError = nStringNoValueError;
@@ -482,7 +478,7 @@ Label_fallback_to_unambiguous:
                     if (p < pStop && !rtl::isAsciiDigit(*p))
                         rError = nStringNoValueError;
                     p = pLastStart;
-                    while (p < pStop && !rError && eState < blank)
+                    while (p < pStop && rError == FormulaError::NONE && eState < blank)
                     {
                         if (eState == minute)
                             rCurFmtType |= css::util::NumberFormat::TIME;
@@ -563,7 +559,7 @@ Label_fallback_to_unambiguous:
                             eState == hour || (eState == minute && p <= pLastStart))
                         rError = nStringNoValueError;
 
-                    if (!rError)
+                    if (rError == FormulaError::NONE)
                     {
                         // Catch the very last unit at end of string.
                         if (p > pLastStart && eState < done)
@@ -574,7 +570,7 @@ Label_fallback_to_unambiguous:
                         }
                         if (bDate && nUnit[hour] > 23)
                             rError = nStringNoValueError;
-                        if (!rError)
+                        if (rError == FormulaError::NONE)
                         {
                             if (bDate && nUnit[day] == 0)
                                 nUnit[day] = 1;
@@ -611,7 +607,7 @@ Label_fallback_to_unambiguous:
             default:
                 rError = nStringNoValueError;
         }
-        if (rError)
+        if (rError != FormulaError::NONE)
             fValue = 0.0;
     }
     return fValue;

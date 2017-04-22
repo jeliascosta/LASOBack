@@ -27,13 +27,6 @@
 #include <editeng/lrspitem.hxx>
 #include <editeng/brushitem.hxx>
 #include <editeng/boxitem.hxx>
-#include <com/sun/star/form/XFormsSupplier.hpp>
-#include <com/sun/star/form/XForm.hpp>
-#include <com/sun/star/form/XImageProducerSupplier.hpp>
-#include <com/sun/star/form/XFormController.hpp>
-#include <com/sun/star/container/XContainer.hpp>
-#include <com/sun/star/container/XIndexContainer.hpp>
-#include <com/sun/star/container/XSet.hpp>
 #include <fmtornt.hxx>
 #include <frmfmt.hxx>
 #include <fmtfsize.hxx>
@@ -84,7 +77,7 @@ class SwHTMLWrtTable : public SwWriteTable
 
 public:
     SwHTMLWrtTable( const SwTableLines& rLines, long nWidth, sal_uInt32 nBWidth,
-                    bool bRel, sal_uInt16 nLeftSub=0, sal_uInt16 nRightSub=0,
+                    bool bRel, sal_uInt16 nLeftSub, sal_uInt16 nRightSub=0,
                     sal_uInt16 nNumOfRowsToRepeat = 0 );
     explicit SwHTMLWrtTable( const SwHTMLTableLayout *pLayoutInfo );
 
@@ -107,7 +100,7 @@ SwHTMLWrtTable::SwHTMLWrtTable( const SwHTMLTableLayout *pLayoutInfo )
     : SwWriteTable(nullptr, pLayoutInfo)
 {
     // Einige Twip-Werte an Pixel-Grenzen anpassen
-    if( bCollectBorderWidth )
+    if( m_bCollectBorderWidth )
         PixelizeBorders();
 }
 
@@ -116,19 +109,19 @@ void SwHTMLWrtTable::Pixelize( sal_uInt16& rValue )
     if( rValue && Application::GetDefaultDevice() )
     {
         Size aSz( rValue, 0 );
-        aSz = Application::GetDefaultDevice()->LogicToPixel( aSz, MapMode(MAP_TWIP) );
+        aSz = Application::GetDefaultDevice()->LogicToPixel( aSz, MapMode(MapUnit::MapTwip) );
         if( !aSz.Width() )
             aSz.Width() = 1;
-        aSz = Application::GetDefaultDevice()->PixelToLogic( aSz, MapMode(MAP_TWIP) );
+        aSz = Application::GetDefaultDevice()->PixelToLogic( aSz, MapMode(MapUnit::MapTwip) );
         rValue = (sal_uInt16)aSz.Width();
     }
 }
 
 void SwHTMLWrtTable::PixelizeBorders()
 {
-    Pixelize( nBorder );
-    Pixelize( nCellSpacing );
-    Pixelize( nCellPadding );
+    Pixelize( m_nBorder );
+    Pixelize( m_nCellSpacing );
+    Pixelize( m_nCellPadding );
 }
 
 bool SwHTMLWrtTable::HasTabBackground( const SwTableBox& rBox,
@@ -269,7 +262,7 @@ void SwHTMLWrtTable::OutTableCell( SwHTMLWriter& rWrt,
     if ( !nRowSpan )
         return;
 
-    SwWriteTableCol *pCol = aCols[nCol];
+    SwWriteTableCol *pCol = m_aCols[nCol];
     bool bOutWidth = true;
 
     const SwStartNode* pSttNd = pBox->GetSttNd();
@@ -328,7 +321,7 @@ void SwHTMLWrtTable::OutTableCell( SwHTMLWriter& rWrt,
     sal_uInt32 nPrcWidth = SAL_MAX_UINT32;
     if( bOutWidth )
     {
-        if( bLayoutExport )
+        if( m_bLayoutExport )
         {
             if( pCell->HasPrcWidthOpt() )
             {
@@ -360,7 +353,7 @@ void SwHTMLWrtTable::OutTableCell( SwHTMLWriter& rWrt,
     {
         Size aOldSz( aPixelSz );
         aPixelSz = Application::GetDefaultDevice()->LogicToPixel( aPixelSz,
-                                                        MapMode(MAP_TWIP) );
+                                                        MapMode(MapUnit::MapTwip) );
         if( aOldSz.Width() && !aPixelSz.Width() )
             aPixelSz.Width() = 1;
         if( aOldSz.Height() && !aPixelSz.Height() )
@@ -381,7 +374,7 @@ void SwHTMLWrtTable::OutTableCell( SwHTMLWriter& rWrt,
             sOut.append(static_cast<sal_Int32>(aPixelSz.Width()));
         }
         sOut.append("\"");
-        if( !bLayoutExport && nColSpan==1 )
+        if( !m_bLayoutExport && nColSpan==1 )
             pCol->SetOutWidth( false );
     }
 
@@ -572,10 +565,10 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
     // Wert fur RULES bestimmen
     bool bRowsHaveBorder = false;
     bool bRowsHaveBorderOnly = true;
-    SwWriteTableRow *pRow = aRows[0];
-    for( SwWriteTableRows::size_type nRow=1; nRow < aRows.size(); ++nRow )
+    SwWriteTableRow *pRow = m_aRows[0];
+    for( SwWriteTableRows::size_type nRow=1; nRow < m_aRows.size(); ++nRow )
     {
-        SwWriteTableRow *pNextRow = aRows[nRow];
+        SwWriteTableRow *pNextRow = m_aRows[nRow];
         bool bBorder = ( pRow->bBottomBorder || pNextRow->bTopBorder );
         bRowsHaveBorder |= bBorder;
         bRowsHaveBorderOnly &= bBorder;
@@ -595,10 +588,10 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
 
     bool bColsHaveBorder = false;
     bool bColsHaveBorderOnly = true;
-    SwWriteTableCol *pCol = aCols[0];
-    for( SwWriteTableCols::size_type nCol=1; nCol<aCols.size(); ++nCol )
+    SwWriteTableCol *pCol = m_aCols[0];
+    for( SwWriteTableCols::size_type nCol=1; nCol<m_aCols.size(); ++nCol )
     {
-        SwWriteTableCol *pNextCol = aCols[nCol];
+        SwWriteTableCol *pNextCol = m_aCols[nCol];
         bool bBorder = ( pCol->bRightBorder || pNextCol->bLeftBorder );
         bColsHaveBorder |= bBorder;
         bColsHaveBorderOnly &= bBorder;
@@ -615,7 +608,7 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
     OStringBuffer sOut;
     sOut.append('<').append(OOO_STRING_SVTOOLS_HTML_table);
 
-    const sal_uInt16 nOldDirection = rWrt.m_nDirection;
+    const SvxFrameDirection nOldDirection = rWrt.m_nDirection;
     if( pFrameFormat )
         rWrt.m_nDirection = rWrt.GetHTMLDirection( pFrameFormat->GetAttrSet() );
     if( rWrt.m_bOutFlyFrame || nOldDirection != rWrt.m_nDirection )
@@ -642,16 +635,16 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
     }
 
     // WIDTH ausgeben: Stammt aus Layout oder ist berechnet
-    if( nTabWidth )
+    if( m_nTabWidth )
     {
         sOut.append(' ').append(OOO_STRING_SVTOOLS_HTML_O_width).
             append("=\"");
         if( HasRelWidths() )
-            sOut.append(static_cast<sal_Int32>(nTabWidth)).append('%');
+            sOut.append(static_cast<sal_Int32>(m_nTabWidth)).append('%');
         else if( Application::GetDefaultDevice() )
         {
             sal_Int32 nPixWidth = Application::GetDefaultDevice()->LogicToPixel(
-                        Size(nTabWidth,0), MapMode(MAP_TWIP) ).Width();
+                        Size(m_nTabWidth,0), MapMode(MapUnit::MapTwip) ).Width();
             if( !nPixWidth )
                 nPixWidth = 1;
 
@@ -669,7 +662,7 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
     {
         Size aPixelSpc =
             Application::GetDefaultDevice()->LogicToPixel( Size(nHSpace,nVSpace),
-                                                   MapMode(MAP_TWIP) );
+                                                   MapMode(MapUnit::MapTwip) );
         if( !aPixelSpc.Width() && nHSpace )
             aPixelSpc.Width() = 1;
         if( !aPixelSpc.Height() && nVSpace )
@@ -690,11 +683,11 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
 
     // CELLPADDING ausgeben: Stammt aus Layout oder ist berechnet
     sOut.append(' ').append(OOO_STRING_SVTOOLS_HTML_O_cellpadding).
-        append("=\"").append(static_cast<sal_Int32>(SwHTMLWriter::ToPixel(nCellPadding,false))).append("\"");
+        append("=\"").append(static_cast<sal_Int32>(SwHTMLWriter::ToPixel(m_nCellPadding,false))).append("\"");
 
     // CELLSPACING ausgeben: Stammt aus Layout oder ist berechnet
     sOut.append(' ').append(OOO_STRING_SVTOOLS_HTML_O_cellspacing).
-        append("=\"").append(static_cast<sal_Int32>(SwHTMLWriter::ToPixel(nCellSpacing,false))).append("\"");
+        append("=\"").append(static_cast<sal_Int32>(SwHTMLWriter::ToPixel(m_nCellSpacing,false))).append("\"");
 
     rWrt.Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
 
@@ -725,12 +718,12 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
         HTMLOutFuncs::Out_AsciiTag( rWrt.Strm(), OOO_STRING_SVTOOLS_HTML_caption, false );
     }
 
-    const SwWriteTableCols::size_type nCols = aCols.size();
+    const SwWriteTableCols::size_type nCols = m_aCols.size();
 
     // <COLGRP>/<COL> ausgeben: Bei Export ueber Layout nur wenn beim
     // Import welche da waren, sonst immer.
     bool bColGroups = (bColsHaveBorder && !bColsHaveBorderOnly);
-    if( bColTags )
+    if( m_bColTags )
     {
         if( bColGroups )
         {
@@ -744,14 +737,14 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
         {
             rWrt.OutNewLine(); // <COL> in neue Zeile
 
-            const SwWriteTableCol *pColumn = aCols[nCol];
+            const SwWriteTableCol *pColumn = m_aCols[nCol];
 
             OStringBuffer sOutStr;
             sOutStr.append('<').append(OOO_STRING_SVTOOLS_HTML_col);
 
             sal_uInt32 nWidth;
             bool bRel;
-            if( bLayoutExport )
+            if( m_bLayoutExport )
             {
                 bRel = pColumn->HasRelWidthOpt();
                 nWidth = pColumn->GetWidthOpt();
@@ -802,7 +795,7 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
     // Zeile nur ausgegeben werden, wenn unter der Zeile eine Linie ist
     if( bTHead &&
         (bTSections || bColGroups) &&
-        nHeadEndRow<aRows.size()-1 && !aRows[nHeadEndRow]->bBottomBorder )
+        m_nHeadEndRow<m_aRows.size()-1 && !m_aRows[m_nHeadEndRow]->bBottomBorder )
         bTHead = false;
 
     // <TBODY> aus ausgeben, wenn <THEAD> ausgegeben wird.
@@ -817,12 +810,12 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
         rWrt.IncIndentLevel(); // Inhalt von <THEAD>/<TDATA> einr.
     }
 
-    for( SwWriteTableRows::size_type nRow = 0; nRow < aRows.size(); ++nRow )
+    for( SwWriteTableRows::size_type nRow = 0; nRow < m_aRows.size(); ++nRow )
     {
-        const SwWriteTableRow *pRow2 = aRows[nRow];
+        const SwWriteTableRow *pRow2 = m_aRows[nRow];
 
         OutTableCells( rWrt, pRow2->GetCells(), pRow2->GetBackground() );
-        if( !nCellSpacing && nRow < aRows.size()-1 && pRow2->bBottomBorder &&
+        if( !m_nCellSpacing && nRow < m_aRows.size()-1 && pRow2->bBottomBorder &&
             pRow2->nBottomBorder > DEF_LINE_WIDTH_1 )
         {
             for( auto nCnt = (pRow2->nBottomBorder / DEF_LINE_WIDTH_1) - 1; nCnt; --nCnt )
@@ -833,9 +826,9 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
                                             false );
             }
         }
-        if( ( (bTHead && nRow==nHeadEndRow) ||
+        if( ( (bTHead && nRow==m_nHeadEndRow) ||
               (bTBody && pRow2->bBottomBorder) ) &&
-            nRow < aRows.size()-1 )
+            nRow < m_aRows.size()-1 )
         {
             rWrt.DecIndentLevel(); // Inhalt von <THEAD>/<TDATA> einr.
             rWrt.OutNewLine(); // </THEAD>/</TDATA> in neue Zeile
@@ -843,7 +836,7 @@ void SwHTMLWrtTable::Write( SwHTMLWriter& rWrt, sal_Int16 eAlign,
                             bTHead ? OOO_STRING_SVTOOLS_HTML_thead : OOO_STRING_SVTOOLS_HTML_tbody, false );
             rWrt.OutNewLine(); // <THEAD>/<TDATA> in neue Zeile
 
-            if( bTHead && nRow==nHeadEndRow )
+            if( bTHead && nRow==m_nHeadEndRow )
                 bTHead = false;
 
             HTMLOutFuncs::Out_AsciiTag( rWrt.Strm(),
@@ -883,7 +876,7 @@ Writer& OutHTML_SwTableNode( Writer& rWrt, SwTableNode & rNode,
     // Prioritaet. NONE bedeutet, dass keine horizontale
     // Ausrichtung geschrieben wird.
     sal_Int16 eFlyHoriOri = text::HoriOrientation::NONE;
-    SwSurround eSurround = SURROUND_NONE;
+    css::text::WrapTextMode eSurround = css::text::WrapTextMode_NONE;
     sal_uInt8 nFlyPrcWidth = 0;
     long nFlyWidth = 0;
     sal_uInt16 nFlyHSpace = 0;
@@ -1045,13 +1038,13 @@ Writer& OutHTML_SwTableNode( Writer& rWrt, SwTableNode & rNode,
     case text::HoriOrientation::LEFT:
         // Wenn eine linksbuendigeTabelle keinen rechtsseiigen Durchlauf
         // hat, brauchen wir auch kein ALIGN=LEFT in der Tabelle.
-        if( eSurround==SURROUND_NONE || eSurround==SURROUND_LEFT )
+        if( eSurround==css::text::WrapTextMode_NONE || eSurround==css::text::WrapTextMode_LEFT )
             eTabHoriOri = text::HoriOrientation::NONE;
         break;
     case text::HoriOrientation::RIGHT:
         // Aehnliches gilt fuer rechtsbuendigeTabelle, hier nehmen wir
         // stattdessen ein <DIV ALIGN=RIGHT>.
-        if( eSurround==SURROUND_NONE || eSurround==SURROUND_RIGHT )
+        if( eSurround==css::text::WrapTextMode_NONE || eSurround==css::text::WrapTextMode_RIGHT )
         {
             eDivHoriOri = text::HoriOrientation::RIGHT;
             eTabHoriOri = text::HoriOrientation::NONE;

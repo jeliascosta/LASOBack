@@ -29,11 +29,12 @@
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/awt/XControl.hpp>
 #include <osl/thread.hxx>
-
-
 #include <osl/conditn.hxx>
 #include <cppuhelper/component.hxx>
 #include <comphelper/uno3.hxx>
+#include <rtl/ref.hxx>
+
+
 using namespace comphelper;
 
 
@@ -57,8 +58,7 @@ class OComponentEventThread
     ThreadObjects                   m_aControls;        // Control for Submit
     ThreadBools                     m_aFlags;           // Flags for Submit/Reset
 
-    ::cppu::OComponentHelper*                     m_pCompImpl;    // Implementation of the Control
-    css::uno::Reference< css::lang::XComponent>   m_xComp; // css::lang::XComponent of the Control
+    rtl::Reference<::cppu::OComponentHelper>      m_xComp;    // Implementation of the Control
 
 protected:
 
@@ -84,26 +84,23 @@ public:
 
     // UNO Anbindung
     DECLARE_UNO3_DEFAULTS(OComponentEventThread, OWeakObject)
-    virtual css::uno::Any SAL_CALL queryInterface(const css::uno::Type& _rType) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL queryInterface(const css::uno::Type& _rType) override;
 
     explicit OComponentEventThread(::cppu::OComponentHelper* pCompImpl);
-    virtual ~OComponentEventThread();
+    virtual ~OComponentEventThread() override;
 
     void addEvent( const css::lang::EventObject* _pEvt );
     void addEvent( const css::lang::EventObject* _pEvt, const css::uno::Reference< css::awt::XControl>& rControl,
                    bool bFlag = false );
 
     // css::lang::XEventListener
-    virtual void SAL_CALL disposing(const css::lang::EventObject& _rSource ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& _rSource ) override;
 
     // Resolve ambiguity: both OWeakObject and OObject have these memory operators
     void * SAL_CALL operator new( size_t size ) throw() { return osl::Thread::operator new(size); }
     void SAL_CALL operator delete( void * p ) throw() { osl::Thread::operator delete(p); }
 
 private:
-    void    implStarted( );
-    void    implTerminated( );
-
     void    impl_clearEventQueue();
 };
 

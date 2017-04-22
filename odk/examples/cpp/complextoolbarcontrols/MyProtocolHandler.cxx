@@ -306,7 +306,7 @@ void SAL_CALL BaseDispatch::dispatch( const URL& aURL, const Sequence < Property
             aEvent.Source = (::com::sun::star::frame::XDispatch*) this;
             aEvent.IsEnabled = mbButtonEnabled;
             aEvent.Requery = sal_False;
-            aEvent.State <<= Any();
+            aEvent.State = Any();
 
             // Notify listener about new state
             Reference < XDispatch > xDispatch = aListenerHelper.GetDispatch( mxFrame, aURL.Path );
@@ -327,8 +327,6 @@ void SAL_CALL BaseDispatch::dispatch( const URL& aURL, const Sequence < Property
                     break;
                 }
             }
-            OSL_TRACE( "Dropdownbox control - selected entry text : %s",
-                       rtl::OUStringToOString( aText, RTL_TEXTENCODING_UTF8 ).getStr() );
         }
     }
 }
@@ -345,7 +343,7 @@ void SAL_CALL BaseDispatch::addStatusListener( const Reference< XStatusListener 
             aEvent.Source = (::com::sun::star::frame::XDispatch*) this;
             aEvent.IsEnabled = mbButtonEnabled;
             aEvent.Requery = sal_False;
-            aEvent.State <<= Any();
+            aEvent.State = Any();
             xControl->statusChanged( aEvent );
         }
         else if ( aURL.Path == "ComboboxCmd" )
@@ -356,7 +354,7 @@ void SAL_CALL BaseDispatch::addStatusListener( const Reference< XStatusListener 
             aEvent.Source = (::com::sun::star::frame::XDispatch*) this;
             aEvent.IsEnabled = sal_True;
             aEvent.Requery = sal_False;
-            aEvent.State <<= Any();
+            aEvent.State = Any();
             xControl->statusChanged( aEvent );
         }
         else if ( aURL.Path == "ToggleDropdownButtonCmd" )

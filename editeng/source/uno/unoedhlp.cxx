@@ -26,66 +26,61 @@
 #include <osl/diagnose.h>
 
 
-SvxEditSourceHint::SvxEditSourceHint( sal_uInt32 _nId ) :
+SvxEditSourceHint::SvxEditSourceHint( SfxHintId _nId ) :
     TextHint( _nId ),
     mnStart( 0 ),
     mnEnd( 0 )
 {
 }
 
-SvxEditSourceHint::SvxEditSourceHint( sal_uInt32 _nId, sal_uLong nValue, sal_Int32 nStart, sal_Int32 nEnd ) :
+SvxEditSourceHint::SvxEditSourceHint( SfxHintId _nId, sal_uLong nValue, sal_Int32 nStart, sal_Int32 nEnd ) :
     TextHint( _nId, nValue ),
     mnStart( nStart),
     mnEnd( nEnd )
 {
 }
 
-sal_uLong SvxEditSourceHint::GetValue() const
-{
-    return TextHint::GetValue();
-}
 
-
-::std::unique_ptr<SfxHint> SvxEditSourceHelper::EENotification2Hint( EENotify* aNotify )
+std::unique_ptr<SfxHint> SvxEditSourceHelper::EENotification2Hint( EENotify* aNotify )
 {
     if( aNotify )
     {
         switch( aNotify->eNotificationType )
         {
             case EE_NOTIFY_TEXTMODIFIED:
-                return ::std::unique_ptr<SfxHint>( new TextHint( TEXT_HINT_MODIFIED, aNotify->nParagraph ) );
+                return std::unique_ptr<SfxHint>( new TextHint( SfxHintId::TextModified, aNotify->nParagraph ) );
 
             case EE_NOTIFY_PARAGRAPHINSERTED:
-                return ::std::unique_ptr<SfxHint>( new TextHint( TEXT_HINT_PARAINSERTED, aNotify->nParagraph ) );
+                return std::unique_ptr<SfxHint>( new TextHint( SfxHintId::TextParaInserted, aNotify->nParagraph ) );
 
             case EE_NOTIFY_PARAGRAPHREMOVED:
-                return ::std::unique_ptr<SfxHint>( new TextHint( TEXT_HINT_PARAREMOVED, aNotify->nParagraph ) );
+                return std::unique_ptr<SfxHint>( new TextHint( SfxHintId::TextParaRemoved, aNotify->nParagraph ) );
 
             case EE_NOTIFY_PARAGRAPHSMOVED:
-                return ::std::unique_ptr<SfxHint>( new SvxEditSourceHint( EDITSOURCE_HINT_PARASMOVED, aNotify->nParagraph, aNotify->nParam1, aNotify->nParam2 ) );
+                return std::unique_ptr<SfxHint>( new SvxEditSourceHint( SfxHintId::EditSourceParasMoved, aNotify->nParagraph, aNotify->nParam1, aNotify->nParam2 ) );
 
-            case EE_NOTIFY_TEXTHEIGHTCHANGED:
-                return ::std::unique_ptr<SfxHint>( new TextHint( TEXT_HINT_TEXTHEIGHTCHANGED, aNotify->nParagraph ) );
+            case EE_NOTIFY_TextHeightChanged:
+                return std::unique_ptr<SfxHint>( new TextHint( SfxHintId::TextHeightChanged, aNotify->nParagraph ) );
 
             case EE_NOTIFY_TEXTVIEWSCROLLED:
-                return ::std::unique_ptr<SfxHint>( new TextHint( TEXT_HINT_VIEWSCROLLED ) );
+                return std::unique_ptr<SfxHint>( new TextHint( SfxHintId::TextViewScrolled ) );
 
             case EE_NOTIFY_TEXTVIEWSELECTIONCHANGED:
-                return ::std::unique_ptr<SfxHint>( new SvxEditSourceHint( EDITSOURCE_HINT_SELECTIONCHANGED ) );
+                return std::unique_ptr<SfxHint>( new SvxEditSourceHint( SfxHintId::EditSourceSelectionChanged ) );
 
             case EE_NOTIFY_BLOCKNOTIFICATION_START:
-                return ::std::unique_ptr<SfxHint>( new TextHint( TEXT_HINT_BLOCKNOTIFICATION_START, 0 ) );
+                return std::unique_ptr<SfxHint>( new TextHint( SfxHintId::TextBlockNotificationStart, 0 ) );
 
             case EE_NOTIFY_BLOCKNOTIFICATION_END:
-                return ::std::unique_ptr<SfxHint>( new TextHint( TEXT_HINT_BLOCKNOTIFICATION_END, 0 ) );
+                return std::unique_ptr<SfxHint>( new TextHint( SfxHintId::TextBlockNotificationEnd, 0 ) );
 
             case EE_NOTIFY_INPUT_START:
-                return ::std::unique_ptr<SfxHint>( new TextHint( TEXT_HINT_INPUT_START, 0 ) );
+                return std::unique_ptr<SfxHint>( new TextHint( SfxHintId::TextInputStart, 0 ) );
 
             case EE_NOTIFY_INPUT_END:
-                return ::std::unique_ptr<SfxHint>( new TextHint( TEXT_HINT_INPUT_END, 0 ) );
+                return std::unique_ptr<SfxHint>( new TextHint( SfxHintId::TextInputEnd, 0 ) );
             case EE_NOTIFY_TEXTVIEWSELECTIONCHANGED_ENDD_PARA:
-                return ::std::unique_ptr<SfxHint>( new SvxEditSourceHintEndPara( EDITSOURCE_HINT_SELECTIONCHANGED ) );
+                return std::unique_ptr<SfxHint>( new SvxEditSourceHintEndPara );
             default:
                 OSL_FAIL( "SvxEditSourceHelper::EENotification2Hint unknown notification" );
                 break;
@@ -203,7 +198,7 @@ bool SvxEditSourceHelper::GetAttributeRun( sal_Int32& nStartIndex, sal_Int32& nE
                 }
             }
         }
-        //need find closest index behind nIndex in the following paragrphs
+        //need find closest index behind nIndex in the following paragraphs
         if ( aEndPos.nIndex == nCrrntParaLen )
         {
             SfxItemSet aCrrntSet = rEE.GetAttribs( nPara, nCrrntParaLen-1, nCrrntParaLen, GetAttribsFlags::CHARATTRIBS );
@@ -260,9 +255,9 @@ Point SvxEditSourceHelper::UserSpaceToEE( const Point& rPoint, const Size& rEESi
     return bIsVertical ? Point( rPoint.Y(), -rPoint.X() + rEESize.Height() ) : rPoint;
 }
 
-Rectangle SvxEditSourceHelper::EEToUserSpace( const Rectangle& rRect, const Size& rEESize, bool bIsVertical )
+tools::Rectangle SvxEditSourceHelper::EEToUserSpace( const tools::Rectangle& rRect, const Size& rEESize, bool bIsVertical )
 {
-    return bIsVertical ? Rectangle( EEToUserSpace(rRect.BottomLeft(), rEESize, bIsVertical),
+    return bIsVertical ? tools::Rectangle( EEToUserSpace(rRect.BottomLeft(), rEESize, bIsVertical),
                                     EEToUserSpace(rRect.TopRight(), rEESize, bIsVertical) ) : rRect;
 }
 

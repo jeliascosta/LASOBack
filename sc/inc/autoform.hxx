@@ -23,14 +23,8 @@
 /*************************************************************************
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    Die akt. Struktur der Autoformatierung darf nicht mehr veraendert werden.
-    Diese wird durch unterschiedlichen Code vom StartWriter und vom StarCalc
-    eingelesen/geschrieben.
-    Sollte sich doch mal eine Aenderung nicht vermeiden lassen, dann auf
-    jedenfall in beiden Applikationen aendern.
-
-    The structure of table auto formatting should not changed. It is used
-    by different code of Writer and Calc. If a change is necessary, the
+    The structure of auto formatting should not be changed. It is used
+    by various code of Writer and Calc. If a change is necessary, the
     source code of both applications must be changed!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -55,11 +49,12 @@
 #include <svl/intitem.hxx>
 #include <editeng/lineitem.hxx>
 #include "scdllapi.h"
-#include "global.hxx"
 #include "zforauto.hxx"
 
 #include <memory>
 #include <map>
+
+class ScDocument;
 
 /**
 A binary blob of writer-specific data. This data typically consists of types that are
@@ -73,7 +68,7 @@ blobs to avoid needlessly complicating the Calc logic.
 struct AutoFormatSwBlob
 {
     sal_uInt8 *pData;
-    sal_Size size;
+    std::size_t size;
 
     AutoFormatSwBlob() : pData(nullptr), size(0)
     {
@@ -319,13 +314,14 @@ class SC_DLLPUBLIC ScAutoFormat
     bool mbSaveLater;
     ScAfVersions m_aVersions;
 
+    ScAutoFormat(const ScAutoFormat&) = delete;
+    const ScAutoFormat operator=(const ScAutoFormat&) = delete;
+
 public:
     typedef MapType::const_iterator const_iterator;
     typedef MapType::iterator iterator;
 
     ScAutoFormat();
-    ScAutoFormat(const ScAutoFormat& r);
-    ~ScAutoFormat();
     void Load();
     bool Save();
 

@@ -62,18 +62,18 @@ void SfxPreviewBase_Impl::Resize()
 
 Size SfxPreviewBase_Impl::GetOptimalSize() const
 {
-    return LogicToPixel(Size(127, 129), MAP_APPFONT);
+    return LogicToPixel(Size(127, 129), MapUnit::MapAppFont);
 }
 
-void SfxPreviewWin_Impl::ImpPaint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/, GDIMetaFile* pFile)
+void SfxPreviewWin_Impl::ImpPaint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/, GDIMetaFile* pFile)
 {
     rRenderContext.SetLineColor();
     Color aLightGrayCol(COL_LIGHTGRAY);
     rRenderContext.SetFillColor(aLightGrayCol);
-    rRenderContext.DrawRect(Rectangle(Point(0,0), rRenderContext.GetOutputSize()));
+    rRenderContext.DrawRect(tools::Rectangle(Point(0,0), rRenderContext.GetOutputSize()));
 
     Size aTmpSize = pFile ? pFile->GetPrefSize() : Size(1, 1);
-    DBG_ASSERT(aTmpSize.Height() * aTmpSize.Width(), "size of first page is 0, override GetFirstPageSize or set vis-area!");
+    DBG_ASSERT(aTmpSize.Height() != 0 && aTmpSize.Width() != 0, "size of first page is 0, override GetFirstPageSize or set visible-area!");
 
 #define FRAME 4
 
@@ -104,13 +104,13 @@ void SfxPreviewWin_Impl::ImpPaint(vcl::RenderContext& rRenderContext, const Rect
         Color aWhiteCol(COL_WHITE);
         rRenderContext.SetLineColor(aBlackCol);
         rRenderContext.SetFillColor(aWhiteCol);
-        rRenderContext.DrawRect(Rectangle(aPoint + Point(FRAME, FRAME), bPoint + Point(FRAME, FRAME)));
+        rRenderContext.DrawRect(tools::Rectangle(aPoint + Point(FRAME, FRAME), bPoint + Point(FRAME, FRAME)));
         pFile->WindStart();
         pFile->Play(&rRenderContext, aPoint + Point(FRAME, FRAME), aSize);
     }
 }
 
-void SfxPreviewWin_Impl::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
+void SfxPreviewWin_Impl::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
 {
     ImpPaint(rRenderContext, rRect, xMetaFile.get());
 }
@@ -140,28 +140,27 @@ class SfxNewFileDialog_Impl
     OUString aNone;
     OUString sLoadTemplate;
 
-    sal_uInt16 nFlags;
+    SfxNewFileDialogMode nFlags;
     SfxDocumentTemplates aTemplates;
     SfxObjectShellLock xDocShell;
     VclPtr<SfxNewFileDialog> pAntiImpl;
 
-    DECL_LINK_TYPED( Update, Idle *, void );
+    DECL_LINK( Update, Timer *, void );
 
-    DECL_LINK_TYPED(RegionSelect, ListBox&, void);
-    DECL_LINK_TYPED(TemplateSelect, ListBox&, void);
-    DECL_LINK_TYPED(DoubleClick, ListBox&, void);
-    DECL_LINK_TYPED(Expand, VclExpander&, void);
-    DECL_LINK_TYPED(LoadFile, Button*, void);
+    DECL_LINK(RegionSelect, ListBox&, void);
+    DECL_LINK(TemplateSelect, ListBox&, void);
+    DECL_LINK(DoubleClick, ListBox&, void);
+    DECL_LINK(Expand, VclExpander&, void);
+    DECL_LINK(LoadFile, Button*, void);
     sal_uInt16  GetSelectedTemplatePos() const;
 
 public:
 
-    SfxNewFileDialog_Impl(SfxNewFileDialog* pAntiImplP, sal_uInt16 nFlags);
+    SfxNewFileDialog_Impl(SfxNewFileDialog* pAntiImplP, SfxNewFileDialogMode nFlags);
     ~SfxNewFileDialog_Impl();
 
     // Returns sal_False if '- No -' is set as a template
     // Template name can only be obtained if IsTemplate() is TRUE
-    // erfragt werden
     bool IsTemplate() const;
     OUString GetTemplateFileName() const;
 
@@ -169,7 +168,7 @@ public:
     void             SetTemplateFlags(SfxTemplateFlags nSet);
 };
 
-IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, Update, Idle*, void)
+IMPL_LINK_NOARG(SfxNewFileDialog_Impl, Update, Timer*, void)
 {
     if (xDocShell.Is())
     {
@@ -186,7 +185,7 @@ IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, Update, Idle*, void)
         return;
     }
 
-    if (m_pMoreBt->get_expanded() && (nFlags & SFXWB_PREVIEW) == SFXWB_PREVIEW)
+    if (m_pMoreBt->get_expanded() && (nFlags == SfxNewFileDialogMode::Preview))
     {
 
         OUString aFileName = aTemplates.GetPath(m_pRegionLb->GetSelectEntryPos(), nEntry - 1);
@@ -235,7 +234,7 @@ IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, Update, Idle*, void)
     }
 }
 
-IMPL_LINK_TYPED( SfxNewFileDialog_Impl, RegionSelect, ListBox&, rBox, void )
+IMPL_LINK( SfxNewFileDialog_Impl, RegionSelect, ListBox&, rBox, void )
 {
     if (xDocShell.Is() && xDocShell->GetProgress())
         return;
@@ -259,12 +258,12 @@ IMPL_LINK_TYPED( SfxNewFileDialog_Impl, RegionSelect, ListBox&, rBox, void )
     TemplateSelect(*m_pTemplateLb);
 }
 
-IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, Expand, VclExpander&, void)
+IMPL_LINK_NOARG(SfxNewFileDialog_Impl, Expand, VclExpander&, void)
 {
     TemplateSelect(*m_pTemplateLb);
 }
 
-IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, TemplateSelect, ListBox&, void)
+IMPL_LINK_NOARG(SfxNewFileDialog_Impl, TemplateSelect, ListBox&, void)
 {
     // Still loading
     if ( xDocShell && xDocShell->GetProgress() )
@@ -277,14 +276,14 @@ IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, TemplateSelect, ListBox&, void)
     aPrevIdle.Start();
 }
 
-IMPL_LINK_NOARG_TYPED( SfxNewFileDialog_Impl, DoubleClick, ListBox&, void )
+IMPL_LINK_NOARG( SfxNewFileDialog_Impl, DoubleClick, ListBox&, void )
 {
     // Still loading
     if ( !xDocShell.Is() || !xDocShell->GetProgress() )
         pAntiImpl->EndDialog(RET_OK);
 }
 
-IMPL_LINK_NOARG_TYPED(SfxNewFileDialog_Impl, LoadFile, Button*, void)
+IMPL_LINK_NOARG(SfxNewFileDialog_Impl, LoadFile, Button*, void)
 {
     pAntiImpl->EndDialog(RET_TEMPLATE_LOAD);
 }
@@ -342,7 +341,7 @@ void    SfxNewFileDialog_Impl::SetTemplateFlags(SfxTemplateFlags nSet)
 
 
 SfxNewFileDialog_Impl::SfxNewFileDialog_Impl(
-    SfxNewFileDialog* pAntiImplP, sal_uInt16 nFl)
+    SfxNewFileDialog* pAntiImplP, SfxNewFileDialogMode nFl)
     : aNone(SfxResId(STR_NONE).toString())
     , nFlags(nFl)
     , pAntiImpl(pAntiImplP)
@@ -350,7 +349,7 @@ SfxNewFileDialog_Impl::SfxNewFileDialog_Impl(
     pAntiImplP->get(m_pRegionLb, "categories");
     pAntiImplP->get(m_pTemplateLb, "templates");
 
-    Size aSize(m_pRegionLb->LogicToPixel(Size(127, 72), MAP_APPFONT));
+    Size aSize(m_pRegionLb->LogicToPixel(Size(127, 72), MapUnit::MapAppFont));
     m_pRegionLb->set_width_request(aSize.Width());
     m_pRegionLb->set_height_request(aSize.Height());
     m_pTemplateLb->set_width_request(aSize.Width());
@@ -366,9 +365,9 @@ SfxNewFileDialog_Impl::SfxNewFileDialog_Impl(
     pAntiImplP->get(m_pLoadFilePB, "fromfile");
     sLoadTemplate = pAntiImplP->get<FixedText>("alttitle")->GetText();
 
-    if (!nFlags)
+    if (nFlags == SfxNewFileDialogMode::NONE)
         m_pMoreBt->Hide();
-    else if(SFXWB_LOAD_TEMPLATE == nFlags)
+    else if(SfxNewFileDialogMode::LoadTemplate == nFlags)
     {
         m_pLoadFilePB->SetClickHdl(LINK(this, SfxNewFileDialog_Impl, LoadFile));
         m_pLoadFilePB->Show();
@@ -389,7 +388,7 @@ SfxNewFileDialog_Impl::SfxNewFileDialog_Impl(
 
     OUString &rExtra = pAntiImplP->GetExtraData();
     bool bExpand = !rExtra.isEmpty() && rExtra[0] == 'Y';
-    m_pMoreBt->set_expanded(bExpand && nFlags);
+    m_pMoreBt->set_expanded(bExpand && (nFlags != SfxNewFileDialogMode::NONE));
 
     m_pTemplateLb->SetSelectHdl(LINK(this, SfxNewFileDialog_Impl, TemplateSelect));
     m_pTemplateLb->SetDoubleClickHdl(LINK(this, SfxNewFileDialog_Impl, DoubleClick));
@@ -408,8 +407,8 @@ SfxNewFileDialog_Impl::SfxNewFileDialog_Impl(
         m_pRegionLb->SetSelectHdl(LINK(this, SfxNewFileDialog_Impl, RegionSelect));
     }
 
-    aPrevIdle.SetPriority( SchedulerPriority::LOWEST );
-    aPrevIdle.SetIdleHdl( LINK( this, SfxNewFileDialog_Impl, Update));
+    aPrevIdle.SetPriority( TaskPriority::LOWEST );
+    aPrevIdle.SetInvokeHandler( LINK( this, SfxNewFileDialog_Impl, Update));
 
     m_pRegionLb->SelectEntryPos(0);
     RegionSelect(*m_pRegionLb);
@@ -421,7 +420,7 @@ SfxNewFileDialog_Impl::~SfxNewFileDialog_Impl()
     rExtra = m_pMoreBt->get_expanded() ? OUString("Y") : OUString("N");
 }
 
-SfxNewFileDialog::SfxNewFileDialog(vcl::Window *pParent, sal_uInt16 nFlags)
+SfxNewFileDialog::SfxNewFileDialog(vcl::Window *pParent, SfxNewFileDialogMode nFlags)
     : SfxModalDialog(pParent, "LoadTemplateDialog",
         "sfx/ui/loadtemplatedialog.ui"),
       pImpl( new SfxNewFileDialog_Impl(this, nFlags) )

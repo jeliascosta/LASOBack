@@ -46,60 +46,51 @@ public:
     Interceptor(
         const ::rtl::Reference< EmbeddedDocumentInstanceAccess_Impl >& xOleAccess,
         DocumentHolder* pDocH,
-        sal_Bool bLink );
+        bool bLink );
 
-    ~Interceptor();
+    ~Interceptor() override;
 
     void DisconnectDocHolder();
 
     void generateFeatureStateEvent();
 
-    // overwritten to release the statuslistner.
+    // overwritten to release the statuslistener.
 
 
     // XComponent
+    /// @throws css::uno::RuntimeException
     virtual void SAL_CALL
     addEventListener(
-        const css::uno::Reference< css::lang::XEventListener >& xListener )
-        throw( css::uno::RuntimeException );
+        const css::uno::Reference< css::lang::XEventListener >& xListener );
 
+    /// @throws css::uno::RuntimeException
     virtual void SAL_CALL
-    removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener )
-        throw( css::uno::RuntimeException );
+    removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener );
 
+    /// @throws css::uno::RuntimeException
     void SAL_CALL
-    dispose() throw(css::uno::RuntimeException);
+    dispose();
 
 
     //XDispatch
     virtual void SAL_CALL
     dispatch(
         const css::util::URL& URL,
-        const css::uno::Sequence< css::beans::PropertyValue >& Arguments )
-        throw (css::uno::RuntimeException);
+        const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
 
     virtual void SAL_CALL
     addStatusListener(
         const css::uno::Reference< css::frame::XStatusListener >& Control,
-        const css::util::URL& URL )
-        throw (
-            css::uno::RuntimeException
-        );
+        const css::util::URL& URL ) override;
 
     virtual void SAL_CALL
     removeStatusListener(
         const css::uno::Reference< css::frame::XStatusListener >& Control,
-        const css::util::URL& URL )
-        throw (
-            css::uno::RuntimeException
-        );
+        const css::util::URL& URL ) override;
 
     //XInterceptorInfo
     virtual css::uno::Sequence< OUString >
-    SAL_CALL getInterceptedURLs(  )
-        throw (
-            css::uno::RuntimeException
-        );
+    SAL_CALL getInterceptedURLs(  ) override;
 
 
     //XDispatchProvider ( inherited by XDispatchProviderInterceptor )
@@ -108,46 +99,28 @@ public:
     queryDispatch(
         const css::util::URL& URL,
         const OUString& TargetFrameName,
-        sal_Int32 SearchFlags )
-        throw (
-            css::uno::RuntimeException
-        );
+        sal_Int32 SearchFlags ) override;
 
     virtual css::uno::Sequence< css::uno::Reference< css::frame::XDispatch > > SAL_CALL
     queryDispatches(
         const css::uno::Sequence<
-        css::frame::DispatchDescriptor >& Requests )
-        throw (
-            css::uno::RuntimeException
-        );
+        css::frame::DispatchDescriptor >& Requests ) override;
 
 
     //XDispatchProviderInterceptor
     virtual css::uno::Reference< css::frame::XDispatchProvider > SAL_CALL
-    getSlaveDispatchProvider(  )
-        throw (
-            css::uno::RuntimeException
-        );
+    getSlaveDispatchProvider(  ) override;
 
     virtual void SAL_CALL
     setSlaveDispatchProvider(
-        const css::uno::Reference< css::frame::XDispatchProvider >& NewDispatchProvider )
-        throw (
-            css::uno::RuntimeException
-        );
+        const css::uno::Reference< css::frame::XDispatchProvider >& NewDispatchProvider ) override;
 
     virtual css::uno::Reference< css::frame::XDispatchProvider > SAL_CALL
-    getMasterDispatchProvider(  )
-        throw (
-            css::uno::RuntimeException
-        );
+    getMasterDispatchProvider(  ) override;
 
     virtual void SAL_CALL
     setMasterDispatchProvider(
-        const css::uno::Reference< css::frame::XDispatchProvider >& NewSupplier )
-        throw (
-            css::uno::RuntimeException
-        );
+        const css::uno::Reference< css::frame::XDispatchProvider >& NewSupplier ) override;
 
 
 private:
@@ -168,7 +141,7 @@ private:
     comphelper::OInterfaceContainerHelper2*    m_pDisposeEventListeners;
     StatusChangeListenerContainer*      m_pStatCL;
 
-    sal_Bool m_bLink;
+    bool m_bLink;
 };
 
 #endif

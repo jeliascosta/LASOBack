@@ -107,7 +107,6 @@ public:
     Renderer (
         const Reference<XComponentContext>& rxContext,
         const std::shared_ptr<PresenterTheme>& rpTheme);
-    ~Renderer();
 
     void SetCanvas (const Reference<rendering::XCanvas>& rxCanvas);
     void PaintBorder (
@@ -173,7 +172,6 @@ awt::Rectangle SAL_CALL PresenterPaneBorderPainter::addBorder (
     const OUString& rsPaneBorderStyleName,
     const css::awt::Rectangle& rRectangle,
     drawing::framework::BorderType eBorderType)
-    throw(css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -186,7 +184,6 @@ awt::Rectangle SAL_CALL PresenterPaneBorderPainter::removeBorder (
     const OUString& rsPaneBorderStyleName,
     const css::awt::Rectangle& rRectangle,
     drawing::framework::BorderType eBorderType)
-    throw(css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -201,7 +198,6 @@ void SAL_CALL PresenterPaneBorderPainter::paintBorder (
     const css::awt::Rectangle& rOuterBorderRectangle,
     const css::awt::Rectangle& rRepaintArea,
     const OUString& rsTitle)
-    throw(css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -237,7 +233,6 @@ void SAL_CALL PresenterPaneBorderPainter::paintBorderWithCallout (
     const css::awt::Rectangle& rRepaintArea,
     const OUString& rsTitle,
     const css::awt::Point& rCalloutAnchor)
-    throw(css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -269,7 +264,6 @@ void SAL_CALL PresenterPaneBorderPainter::paintBorderWithCallout (
 
 awt::Point SAL_CALL PresenterPaneBorderPainter::getCalloutOffset (
     const OUString& rsPaneBorderStyleName)
-    throw(css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     ProvideTheme();
@@ -371,13 +365,11 @@ awt::Rectangle PresenterPaneBorderPainter::RemoveBorder (
 }
 
 void PresenterPaneBorderPainter::ThrowIfDisposed() const
-    throw (css::lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {
         throw lang::DisposedException (
-            OUString(
-                "PresenterPaneBorderPainter object has already been disposed"),
+            "PresenterPaneBorderPainter object has already been disposed",
             const_cast<uno::XWeak*>(static_cast<const uno::XWeak*>(this)));
     }
 }
@@ -407,10 +399,6 @@ PresenterPaneBorderPainter::Renderer::Renderer (
                 rxContext),
             UNO_QUERY_THROW);
     }
-}
-
-PresenterPaneBorderPainter::Renderer::~Renderer()
-{
 }
 
 void PresenterPaneBorderPainter::Renderer::SetCanvas (const Reference<rendering::XCanvas>& rxCanvas)

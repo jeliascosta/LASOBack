@@ -79,7 +79,7 @@ class LwpSuperTable: public LwpContent
 {
 public:
     LwpSuperTable(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpSuperTable();
+    virtual ~LwpSuperTable() override;
 
     virtual void Parse(IXFStream* pOutputStream) override;
     virtual void XFConvert(XFContentContainer* pCont) override;
@@ -94,7 +94,6 @@ class LwpForkedNotifyList
 {
 public:
     LwpForkedNotifyList(){}
-    ~LwpForkedNotifyList() {}
     void Read(LwpObjectStream* pObjStrm)
     {
         m_PersistentList.Read(pObjStrm);
@@ -111,7 +110,7 @@ class LwpTable: public LwpContent
 {
 public:
     LwpTable(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpTable();
+    virtual ~LwpTable() override;
 
     virtual void Parse(IXFStream* pOutputStream) override;
     double GetWidth() {return LwpTools::ConvertFromUnitsToMetric(m_nWidth);}
@@ -154,7 +153,7 @@ class LwpTableHeading : public LwpTable
 {
 public:
     LwpTableHeading(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpTableHeading();
+    virtual ~LwpTableHeading() override;
 
     virtual void Parse(IXFStream* pOutputStream) override;
 protected:
@@ -165,18 +164,21 @@ class LwpParallelColumns : public LwpTable
 {
 public:
     LwpParallelColumns(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpParallelColumns();
+    virtual ~LwpParallelColumns() override;
 protected:
     void Read() override;
     LwpObjectID     cDefaultLeftColumnStyle;
     LwpObjectID cDefaultRightColumnStyle;
 };
+
 #define MAX_NUM_ROWS 8192
+#define MAX_NUM_COLS 255
+
 class LwpGlossary : public LwpParallelColumns
 {
 public:
     LwpGlossary(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpGlossary();
+    virtual ~LwpGlossary() override;
 protected:
     void Read() override;
     sal_uInt16 GetNumIndexRows();

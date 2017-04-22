@@ -140,7 +140,7 @@ namespace rtl
 
 enum __ByteSequence_NoDefault
 {
-    /** This enum value can be used to create a bytesequence with uninitalized data
+    /** This enum value can be used to create a bytesequence with uninitialized data
     */
     BYTESEQ_NODEFAULT = 0xcafe
 };
@@ -171,13 +171,13 @@ class SAL_WARN_UNUSED ByteSequence
 public:
     /// @cond INTERNAL
     // these are here to force memory de/allocation to sal lib.
-    inline static void * SAL_CALL operator new ( size_t nSize )
+    static void * SAL_CALL operator new ( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    inline static void SAL_CALL operator delete ( void * pMem )
+    static void SAL_CALL operator delete ( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    inline static void * SAL_CALL operator new ( size_t, void * pMem )
+    static void * SAL_CALL operator new ( size_t, void * pMem )
         { return pMem; }
-    inline static void SAL_CALL operator delete ( void *, void * )
+    static void SAL_CALL operator delete ( void *, void * )
         {}
     /// @endcond
 
@@ -189,6 +189,9 @@ public:
         @param rSeq another byte sequence
     */
     inline ByteSequence( const ByteSequence & rSeq );
+#if defined LIBO_INTERNAL_ONLY
+    inline ByteSequence( ByteSequence && rSeq );
+#endif
     /** Copy constructor Creates a copy from the C-Handle.
 
         @param pSequence another byte sequence handle
@@ -214,7 +217,7 @@ public:
     inline ByteSequence( sal_Int32 len , enum __ByteSequence_NoDefault nodefault );
     /** Constructor:
         Creates a sequence from a C-Handle without acquiring the handle, thus taking
-        over owenership. Eitherway the handle is release by the destructor.
+        over ownership. Eitherway the handle is released by the destructor.
         This ctor is useful, when working with a c-interface (it safes a pair of
         acquire and release call and is thus a performance optimization only).
 
@@ -232,12 +235,15 @@ public:
         @return this sequence
     */
     inline ByteSequence & SAL_CALL operator = ( const ByteSequence & rSeq );
+#if defined LIBO_INTERNAL_ONLY
+    inline ByteSequence & SAL_CALL operator = ( ByteSequence && rSeq );
+#endif
 
     /** Gets the length of sequence.
 
         @return length of sequence
     */
-    inline sal_Int32 SAL_CALL getLength() const
+    sal_Int32 SAL_CALL getLength() const
         { return _pSequence->nElements; }
 
     /** Gets a pointer to byte array for READING. If the sequence has a length of 0, then the
@@ -245,7 +251,7 @@ public:
 
         @return pointer to byte array
     */
-    inline const sal_Int8 * SAL_CALL getConstArray() const
+    const sal_Int8 * SAL_CALL getConstArray() const
         { return reinterpret_cast<sal_Int8 *>(_pSequence->elements); }
     /** Gets a pointer to elements array for READING AND WRITING. In general if the sequence
         has a handle acquired by other sequences (reference count > 1), then a new sequence is
@@ -276,7 +282,7 @@ public:
         @param nIndex index
         @return const C++ reference to byte at element of index nIndex
     */
-    inline const sal_Int8 & SAL_CALL operator [] ( sal_Int32 nIndex ) const
+    const sal_Int8 & SAL_CALL operator [] ( sal_Int32 nIndex ) const
         { return getConstArray()[ nIndex ]; }
 
     /** Equality operator: Compares two sequences.
@@ -304,13 +310,13 @@ public:
 
         @return UNacquired handle of the sequence
     */
-    inline sal_Sequence * SAL_CALL getHandle() const
+    sal_Sequence * SAL_CALL getHandle() const
         { return _pSequence; }
     /** Returns the UNnacquired C handle of the sequence (for compatibility reasons)
 
         @return UNacquired handle of the sequence
     */
-    inline sal_Sequence * SAL_CALL get() const
+    sal_Sequence * SAL_CALL get() const
         { return _pSequence; }
 };
 

@@ -52,11 +52,10 @@ namespace dbaui
 
     protected:
         explicit ComposerDialog(const css::uno::Reference< css::uno::XComponentContext >& _rxORB);
-        virtual ~ComposerDialog();
+        virtual ~ComposerDialog() override;
 
     public:
-        virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId()
-            throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId() override;
 
         DECLARE_PROPERTYCONTAINER_DEFAULTS( );
 
@@ -81,7 +80,13 @@ namespace dbaui
             const css::uno::Reference< css::uno::XComponentContext >& _rxORB
         );
 
-        DECLARE_SERVICE_INFO_STATIC( );
+        DECLARE_SERVICE_INFO();
+        /// @throws css::uno::RuntimeException
+        static OUString SAL_CALL getImplementationName_Static(  );
+        /// @throws css::uno::RuntimeException
+        static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static(  );
+        static css::uno::Reference< css::uno::XInterface >
+        SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&);
 
     protected:
         // own overridables
@@ -93,8 +98,7 @@ namespace dbaui
 
         // OGenericUnoDialog overridables
         virtual void executedDialog( sal_Int16 _nExecutionResult ) override;
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     };
 
@@ -106,7 +110,13 @@ namespace dbaui
             const css::uno::Reference< css::uno::XComponentContext >& _rxORB
         );
 
-        DECLARE_SERVICE_INFO_STATIC( );
+        DECLARE_SERVICE_INFO();
+        /// @throws css::uno::RuntimeException
+        static OUString SAL_CALL getImplementationName_Static(  );
+        /// @throws css::uno::RuntimeException
+        static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static(  );
+        static css::uno::Reference< css::uno::XInterface >
+        SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&);
 
     protected:
         // own overridables
@@ -118,8 +128,7 @@ namespace dbaui
 
         // OGenericUnoDialog overridables
         virtual void executedDialog( sal_Int16 _nExecutionResult ) override;
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
-            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
     };
 
 }   // namespace dbaui

@@ -81,11 +81,6 @@ else ifeq ($(COM),MSC)
 bridges_SELECTED_BRIDGE := msvc_win32_intel
 bridge_exception_objects := cpp2uno dllinit uno2cpp
 bridge_noopt_objects := except
-else ifeq ($(OS)$(COM),WNTGCC)
-bridges_SELECTED_BRIDGE := mingw_intel
-bridge_asm_objects := call
-bridge_noopt_objects := uno2cpp
-bridge_exception_objects := callvirtualmethod cpp2uno dllinit except smallstruct
 endif
 
 else ifeq ($(CPUNAME),M68K)
@@ -159,6 +154,13 @@ bridge_noopt_objects := cpp2uno uno2cpp
 bridge_exception_objects := except
 endif
 
+else ifeq ($(OS)-$(CPUNAME),LINUX-SPARC64)
+
+bridges_SELECTED_BRIDGE := gcc3_linux_sparc64
+bridge_asm_objects := call
+bridge_noopt_objects := cpp2uno uno2cpp
+bridge_exception_objects := except
+
 else ifeq ($(CPUNAME),X86_64)
 
 ifneq ($(filter DRAGONFLY FREEBSD LINUX NETBSD OPENBSD,$(OS)),)
@@ -175,11 +177,6 @@ bridges_SELECTED_BRIDGE := msvc_win32_x86-64
 bridge_exception_objects := cpp2uno dllinit uno2cpp
 bridge_noopt_objects := except
 bridge_asm_objects := call
-else ifeq ($(OS)$(COM),WNTGCC)
-bridges_SELECTED_BRIDGE := mingw_x86-64
-bridge_asm_objects := call
-bridge_noncallexception_noopt_objects := callvirtualmethod
-bridge_exception_objects := abi cpp2uno except uno2cpp
 endif
 
 endif
@@ -196,17 +193,6 @@ $(eval $(call gb_Library_set_include,$(gb_CPPU_ENV)_uno,\
 ifeq ($(HAVE_POSIX_FALLOCATE),YES)
 $(eval $(call gb_Library_add_defs,$(gb_CPPU_ENV)_uno,\
 	-DHAVE_POSIX_FALLOCATE \
-))
-endif
-ifeq ($(OS),WNT)
-$(eval $(call gb_Library_add_defs,$(gb_CPPU_ENV)_uno,\
-	$(if $(filter GCC,$(COM)),\
-	$(if $(filter sjlj,$(EXCEPTIONS)),\
-		-DBROKEN_ALLOCA \
-	), \
-	$(if $(cppu_no_leak)$(bndchk),,\
-		-DLEAK_STATIC_DATA \
-	)) \
 ))
 endif
 
@@ -236,7 +222,7 @@ bridges_NON_CALL_EXCEPTIONS_FLAGS := -fnon-call-exceptions
 endif
 endif
 
-bridges_DEBUGINFO_FLAGS := $(if $(filter-out 0,$(gb_DEBUGLEVEL))$(filter $(true),$(gb_SYMBOL)),$(gb_DEBUGINFO_FLAGS))
+bridges_DEBUGINFO_FLAGS := $(if $(filter $(true),$(gb_SYMBOL)),$(gb_DEBUGINFO_FLAGS))
 
 $(eval $(call gb_Library_use_libraries,$(gb_CPPU_ENV)_uno,\
 	cppu \

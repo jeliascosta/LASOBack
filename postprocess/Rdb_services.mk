@@ -32,7 +32,6 @@ $(eval $(call gb_Rdb_add_components,services,\
 	filter/source/msfilter/msfilter \
 	filter/source/odfflatxml/odfflatxml \
 	filter/source/pdf/pdffilter \
-	filter/source/placeware/placeware \
 	filter/source/storagefilterdetect/storagefd \
 	filter/source/svg/svgfilter \
 	filter/source/t602/t602filter \
@@ -109,9 +108,8 @@ $(eval $(call gb_Rdb_add_components,services,\
 	xmloff/source/transform/xof \
 	xmloff/util/xo \
 	xmlscript/util/xmlscript \
-	xmlsecurity/util/xmlsecurity \
-	xmlsecurity/util/xsec_fw \
-	$(if $(filter-out ANDROID IOS,$(OS)), \
+	$(if $(ENABLE_NSS), \
+		xmlsecurity/util/xmlsecurity \
 		xmlsecurity/util/xsec_xmlsec$(if $(filter WNT,$(OS)),.windows)) \
 	$(if $(ENABLE_COINMP), \
 		sccomp/source/solver/coinmpsolver \
@@ -127,7 +125,9 @@ $(eval $(call gb_Rdb_add_components,services,\
 	$(if $(filter MACOSX,$(OS)), \
 		$(call gb_Helper_optional,AVMEDIA,avmedia/source/macavf/avmediaMacAVF) \
 		$(if $(filter TRUE,$(ENABLE_MACOSX_SANDBOX)),, \
-			$(call gb_Helper_optional,AVMEDIA,avmedia/source/quicktime/avmediaQuickTime) \
+			$(if $(shell test $(MACOSX_SDK_VERSION) -ge 101200 || echo nope), \
+				$(call gb_Helper_optional,AVMEDIA,avmedia/source/quicktime/avmediaQuickTime) \
+			) \
 		) \
 		lingucomponent/source/spellcheck/macosxspell/MacOSXSpell \
 		fpicker/source/aqua/fps_aqua \
@@ -135,6 +135,7 @@ $(eval $(call gb_Rdb_add_components,services,\
 		vcl/vcl.macosx \
 	) \
 	$(if $(filter WNT,$(OS)), \
+		avmedia/source/win/avmediawin \
 		dtrans/source/generic/dtrans \
 		dtrans/util/dnd \
 		dtrans/util/ftransl \
@@ -179,14 +180,12 @@ $(eval $(call gb_Rdb_add_components,services,\
 			wizards/com/sun/star/wizards/agenda/agenda \
 			wizards/com/sun/star/wizards/fax/fax \
 			wizards/com/sun/star/wizards/letter/letter \
-			wizards/com/sun/star/wizards/web/web \
 		) \
 	) \
 	$(if $(ENABLE_CAIRO_CANVAS), \
 		canvas/source/cairo/cairocanvas \
 	) \
 	$(if $(ENABLE_DIRECTX), \
-		avmedia/source/win/avmediawin \
 		canvas/source/directx/directx9canvas \
 		canvas/source/directx/gdipluscanvas \
 	) \
@@ -213,8 +212,8 @@ $(eval $(call gb_Rdb_add_components,services,\
 		extensions/source/update/check/updchk.uno \
 		extensions/source/update/ui/updchk \
 	) \
-	$(if $(ENABLE_OPENGL), \
-		slideshow/source/engine/OGLTrans/ogltrans \
+	$(if $(ENABLE_OPENGL_TRANSITIONS), \
+		slideshow/source/engine/opengl/ogltrans \
 	) \
 	$(if $(ENABLE_TDE), \
 		shell/source/backends/kdebe/tdebe1 \
@@ -229,10 +228,8 @@ $(eval $(call gb_Rdb_add_components,services,\
 		wizards/com/sun/star/wizards/report/report \
 		wizards/com/sun/star/wizards/table/table \
 	) \
-    $(if $(ENABLE_OPENGL), \
-        $(if $(ENABLE_GLTF), \
-			$(call gb_Helper_optional,AVMEDIA,avmedia/source/opengl/avmediaogl) \
-		) \
+    $(if $(ENABLE_GLTF), \
+		$(call gb_Helper_optional,AVMEDIA,avmedia/source/opengl/avmediaogl) \
 	) \
 ))
 

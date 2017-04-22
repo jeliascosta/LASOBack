@@ -20,6 +20,7 @@
 #include <connectivity/dbexception.hxx>
 #include <comphelper/types.hxx>
 #include <cppuhelper/exc_hlp.hxx>
+#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <com/sun/star/sdb/SQLContext.hpp>
 #include <com/sun/star/sdbc/SQLWarning.hpp>
@@ -45,21 +46,21 @@ SQLExceptionInfo::SQLExceptionInfo()
 }
 
 
-SQLExceptionInfo::SQLExceptionInfo(const ::com::sun::star::sdbc::SQLException& _rError)
+SQLExceptionInfo::SQLExceptionInfo(const css::sdbc::SQLException& _rError)
 {
     m_aContent <<= _rError;
     implDetermineType();
 }
 
 
-SQLExceptionInfo::SQLExceptionInfo(const ::com::sun::star::sdbc::SQLWarning& _rError)
+SQLExceptionInfo::SQLExceptionInfo(const css::sdbc::SQLWarning& _rError)
 {
     m_aContent <<= _rError;
     implDetermineType();
 }
 
 
-SQLExceptionInfo::SQLExceptionInfo(const ::com::sun::star::sdb::SQLContext& _rError)
+SQLExceptionInfo::SQLExceptionInfo(const css::sdb::SQLContext& _rError)
 {
     m_aContent <<= _rError;
     implDetermineType();
@@ -82,7 +83,7 @@ SQLExceptionInfo::SQLExceptionInfo(const SQLExceptionInfo& _rCopySource)
 }
 
 
-SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::sdbc::SQLException& _rError)
+SQLExceptionInfo& SQLExceptionInfo::operator=(const css::sdbc::SQLException& _rError)
 {
     m_aContent <<= _rError;
     implDetermineType();
@@ -90,7 +91,7 @@ SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::sdbc::SQLE
 }
 
 
-SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::sdbc::SQLWarning& _rError)
+SQLExceptionInfo& SQLExceptionInfo::operator=(const css::sdbc::SQLWarning& _rError)
 {
     m_aContent <<= _rError;
     implDetermineType();
@@ -98,7 +99,7 @@ SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::sdbc::SQLW
 }
 
 
-SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::sdb::SQLContext& _rError)
+SQLExceptionInfo& SQLExceptionInfo::operator=(const css::sdb::SQLContext& _rError)
 {
     m_aContent <<= _rError;
     implDetermineType();
@@ -106,7 +107,7 @@ SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::sdb::SQLCo
 }
 
 
-SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::sdb::SQLErrorEvent& _rErrorEvent)
+SQLExceptionInfo& SQLExceptionInfo::operator=(const css::sdb::SQLErrorEvent& _rErrorEvent)
 {
     m_aContent = _rErrorEvent.Reason;
     implDetermineType();
@@ -114,7 +115,7 @@ SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::sdb::SQLEr
 }
 
 
-SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::uno::Any& _rCaughtSQLException)
+SQLExceptionInfo& SQLExceptionInfo::operator=(const css::uno::Any& _rCaughtSQLException)
 {
     m_aContent = _rCaughtSQLException;
     implDetermineType();
@@ -124,7 +125,7 @@ SQLExceptionInfo& SQLExceptionInfo::operator=(const ::com::sun::star::uno::Any& 
 
 SQLExceptionInfo::SQLExceptionInfo(const css::uno::Any& _rError)
 {
-    const css::uno::Type& aSQLExceptionType = cppu::UnoType<com::sun::star::sdbc::SQLException>::get();
+    const css::uno::Type& aSQLExceptionType = cppu::UnoType<css::sdbc::SQLException>::get();
     bool bValid = isAssignableFrom(aSQLExceptionType, _rError.getValueType());
     if (bValid)
         m_aContent = _rError;
@@ -171,17 +172,17 @@ bool SQLExceptionInfo::isKindOf(TYPE _eType) const
 }
 
 
-SQLExceptionInfo::operator const ::com::sun::star::sdbc::SQLException*() const
+SQLExceptionInfo::operator const css::sdbc::SQLException*() const
 {
     OSL_ENSURE(isKindOf(TYPE::SQLException), "SQLExceptionInfo::operator SQLException* : invalid call !");
-    return static_cast<const ::com::sun::star::sdbc::SQLException*>(m_aContent.getValue());
+    return o3tl::doAccess<css::sdbc::SQLException>(m_aContent);
 }
 
 
-SQLExceptionInfo::operator const ::com::sun::star::sdb::SQLContext*() const
+SQLExceptionInfo::operator const css::sdb::SQLContext*() const
 {
     OSL_ENSURE(isKindOf(TYPE::SQLContext), "SQLExceptionInfo::operator SQLException* : invalid call !");
-    return static_cast<const ::com::sun::star::sdb::SQLContext*>(m_aContent.getValue());
+    return o3tl::doAccess<css::sdb::SQLContext>(m_aContent);
 }
 
 
@@ -212,10 +213,10 @@ void SQLExceptionInfo::append( TYPE _eType, const OUString& _rErrorMessage, cons
         break;
     }
 
-    SQLException* pAppendException( static_cast< SQLException* >( const_cast< void* >( aAppend.getValue() ) ) );
-    pAppendException->Message = _rErrorMessage;
-    pAppendException->SQLState = _rSQLState;
-    pAppendException->ErrorCode = _nErrorCode;
+    SQLException& pAppendException = const_cast<SQLException &>(*o3tl::forceAccess<SQLException>(aAppend));
+    pAppendException.Message = _rErrorMessage;
+    pAppendException.SQLState = _rSQLState;
+    pAppendException.ErrorCode = _nErrorCode;
 
     // find the end of the current chain
     Any* pChainIterator = &m_aContent;
@@ -229,7 +230,7 @@ void SQLExceptionInfo::append( TYPE _eType, const OUString& _rErrorMessage, cons
         if ( !isAssignableFrom( aSQLExceptionType, pChainIterator->getValueType() ) )
             break;
 
-        pLastException = static_cast< SQLException* >( const_cast< void* >( pChainIterator->getValue() ) );
+        pLastException = const_cast< SQLException* >( o3tl::doAccess<SQLException>( *pChainIterator ) );
         pChainIterator = &pLastException->NextException;
     }
 
@@ -263,7 +264,7 @@ SQLExceptionIteratorHelper::SQLExceptionIteratorHelper( const SQLExceptionInfo& 
 }
 
 
-SQLExceptionIteratorHelper::SQLExceptionIteratorHelper( const ::com::sun::star::sdbc::SQLException& _rChainStart )
+SQLExceptionIteratorHelper::SQLExceptionIteratorHelper( const css::sdbc::SQLException& _rChainStart )
     :m_pCurrent( &_rChainStart )
     ,m_eCurrentType( SQLExceptionInfo::TYPE::SQLException )
 {
@@ -293,11 +294,11 @@ void SQLExceptionIteratorHelper::current( SQLExceptionInfo& _out_rInfo ) const
 }
 
 
-const ::com::sun::star::sdbc::SQLException* SQLExceptionIteratorHelper::next()
+const css::sdbc::SQLException* SQLExceptionIteratorHelper::next()
 {
     OSL_ENSURE( hasMoreElements(), "SQLExceptionIteratorHelper::next : invalid call (please use hasMoreElements)!" );
 
-    const ::com::sun::star::sdbc::SQLException* pReturn = current();
+    const css::sdbc::SQLException* pReturn = m_pCurrent;
     if ( !m_pCurrent )
         return pReturn;
 
@@ -313,7 +314,7 @@ const ::com::sun::star::sdbc::SQLException* SQLExceptionIteratorHelper::next()
         return pReturn;
     }
 
-    m_pCurrent = static_cast< const SQLException* >( m_pCurrent->NextException.getValue() );
+    m_pCurrent = o3tl::doAccess< SQLException >( m_pCurrent->NextException );
 
     // no finally determine the proper type of the exception
     const Type aTypeContext( ::cppu::UnoType< SQLContext >::get() );
@@ -343,7 +344,7 @@ void SQLExceptionIteratorHelper::next( SQLExceptionInfo& _out_rInfo )
 }
 
 
-void throwFunctionSequenceException(const Reference< XInterface >& Context, const Any& Next)  throw ( ::com::sun::star::sdbc::SQLException )
+void throwFunctionSequenceException(const Reference< XInterface >& Context, const Any& Next)
 {
     ::connectivity::SharedResources aResources;
     throw SQLException(
@@ -355,8 +356,8 @@ void throwFunctionSequenceException(const Reference< XInterface >& Context, cons
     );
 }
 
-void throwInvalidIndexException(const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& Context,
-        const ::com::sun::star::uno::Any& Next)  throw ( ::com::sun::star::sdbc::SQLException )
+void throwInvalidIndexException(const css::uno::Reference< css::uno::XInterface >& Context,
+        const css::uno::Any& Next)
 {
     ::connectivity::SharedResources aResources;
     throw SQLException(
@@ -369,7 +370,7 @@ void throwInvalidIndexException(const ::com::sun::star::uno::Reference< ::com::s
 }
 
 void throwFunctionNotSupportedSQLException(const OUString& _rFunctionName,
-    const css::uno::Reference<css::uno::XInterface>& _rxContext) throw (css::sdbc::SQLException)
+    const css::uno::Reference<css::uno::XInterface>& _rxContext)
 {
     ::connectivity::SharedResources aResources;
     const OUString sError( aResources.getResourceStringWithSubstitution(
@@ -386,7 +387,7 @@ void throwFunctionNotSupportedSQLException(const OUString& _rFunctionName,
 }
 
 void throwFunctionNotSupportedRuntimeException(const OUString& _rFunctionName,
-    const css::uno::Reference<css::uno::XInterface>& _rxContext) throw (css::uno::RuntimeException)
+    const css::uno::Reference<css::uno::XInterface>& _rxContext)
 {
     ::connectivity::SharedResources aResources;
     const OUString sError( aResources.getResourceStringWithSubstitution(
@@ -399,21 +400,18 @@ void throwFunctionNotSupportedRuntimeException(const OUString& _rFunctionName,
     );
 }
 
-void throwGenericSQLException(const OUString& _rMsg, const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _rxSource)
-    throw (::com::sun::star::sdbc::SQLException)
+void throwGenericSQLException(const OUString& _rMsg, const css::uno::Reference< css::uno::XInterface >& _rxSource)
 {
     throwGenericSQLException(_rMsg, _rxSource, Any());
 }
 
 
 void throwGenericSQLException(const OUString& _rMsg, const Reference< XInterface >& _rxSource, const Any& _rNextException)
-    throw (SQLException)
 {
     throw SQLException( _rMsg, _rxSource, getStandardSQLState( StandardSQLState::GENERAL_ERROR ), 0, _rNextException);
 }
 
 void throwFeatureNotImplementedSQLException( const OUString& _rFeatureName, const Reference< XInterface >& _rxContext )
-    throw (SQLException)
 {
     ::connectivity::SharedResources aResources;
     const OUString sError( aResources.getResourceStringWithSubstitution(
@@ -431,7 +429,6 @@ void throwFeatureNotImplementedSQLException( const OUString& _rFeatureName, cons
 }
 
 void throwFeatureNotImplementedRuntimeException(const OUString& _rFeatureName, const Reference< XInterface >& _rxContext)
-    throw (RuntimeException)
 {
     ::connectivity::SharedResources aResources;
     const OUString sError( aResources.getResourceStringWithSubstitution(
@@ -443,7 +440,6 @@ void throwFeatureNotImplementedRuntimeException(const OUString& _rFeatureName, c
 }
 
 void throwInvalidColumnException( const OUString& _rColumnName, const Reference< XInterface >& _rxContext)
-    throw (SQLException)
 {
     ::connectivity::SharedResources aResources;
     OUString sErrorMessage( aResources.getResourceStringWithSubstitution(
@@ -453,7 +449,7 @@ void throwInvalidColumnException( const OUString& _rColumnName, const Reference<
 }
 
 void throwSQLException( const OUString& _rMessage, const OUString& _rSQLState,
-        const Reference< XInterface >& _rxContext, const sal_Int32 _nErrorCode, const Any* _pNextException ) throw (SQLException)
+        const Reference< XInterface >& _rxContext, const sal_Int32 _nErrorCode, const Any* _pNextException )
 {
     throw SQLException(
         _rMessage,
@@ -466,7 +462,7 @@ void throwSQLException( const OUString& _rMessage, const OUString& _rSQLState,
 
 
 void throwSQLException( const OUString& _rMessage, StandardSQLState _eSQLState,
-        const Reference< XInterface >& _rxContext, const sal_Int32 _nErrorCode ) throw (SQLException)
+        const Reference< XInterface >& _rxContext, const sal_Int32 _nErrorCode )
 {
     throwSQLException( _rMessage, getStandardSQLState( _eSQLState ), _rxContext, _nErrorCode );
 }
@@ -476,28 +472,17 @@ OUString getStandardSQLState( StandardSQLState _eState )
 {
     switch ( _eState )
     {
-    case StandardSQLState::WRONG_PARAMETER_NUMBER:    return OUString("07001");
     case StandardSQLState::INVALID_DESCRIPTOR_INDEX:  return OUString("07009");
-    case StandardSQLState::UNABLE_TO_CONNECT:         return OUString("08001");
-    case StandardSQLState::NUMERIC_OUT_OF_RANGE:      return OUString("22003");
-    case StandardSQLState::INVALID_DATE_TIME:         return OUString("22007");
     case StandardSQLState::INVALID_CURSOR_STATE:      return OUString("24000");
-    case StandardSQLState::TABLE_OR_VIEW_EXISTS:      return OUString("42S01");
-    case StandardSQLState::TABLE_OR_VIEW_NOT_FOUND:   return OUString("42S02");
-    case StandardSQLState::INDEX_ESISTS:              return OUString("42S11");
-    case StandardSQLState::INDEX_NOT_FOUND:           return OUString("42S12");
-    case StandardSQLState::COLUMN_EXISTS:             return OUString("42S21");
     case StandardSQLState::COLUMN_NOT_FOUND:          return OUString("42S22");
     case StandardSQLState::GENERAL_ERROR:             return OUString("HY000");
     case StandardSQLState::INVALID_SQL_DATA_TYPE:     return OUString("HY004");
-    case StandardSQLState::OPERATION_CANCELED:        return OUString("HY008");
     case StandardSQLState::FUNCTION_SEQUENCE_ERROR:   return OUString("HY010");
     case StandardSQLState::INVALID_CURSOR_POSITION:   return OUString("HY109");
-    case StandardSQLState::INVALID_BOOKMARK_VALUE:    return OUString("HY111");
     case StandardSQLState::FEATURE_NOT_IMPLEMENTED:   return OUString("HYC00");
     case StandardSQLState::FUNCTION_NOT_SUPPORTED:    return OUString("IM001");
     case StandardSQLState::CONNECTION_DOES_NOT_EXIST: return OUString("08003");
-    default:                            return OUString("HY001"); // General Error
+    default:                                          return OUString("HY001"); // General Error
     }
 }
 

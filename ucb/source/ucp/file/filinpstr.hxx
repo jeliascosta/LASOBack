@@ -32,7 +32,7 @@
 
 namespace fileaccess {
 
-    class shell;
+    class TaskManager;
 
     class XInputStream_impl
         : public cppu::OWeakObject,
@@ -44,7 +44,7 @@ namespace fileaccess {
 
         XInputStream_impl( const OUString& aUncPath, bool bLock );
 
-        virtual ~XInputStream_impl();
+        virtual ~XInputStream_impl() override;
 
         /**
          *  Returns an error code as given by filerror.hxx
@@ -56,84 +56,47 @@ namespace fileaccess {
 
         // XTypeProvider
 
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
-            throw( css::uno::RuntimeException, std::exception ) override;
-        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
-            throw( css::uno::RuntimeException, std::exception ) override;
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
 
         virtual css::uno::Any SAL_CALL
-        queryInterface(
-            const css::uno::Type& rType )
-            throw( css::uno::RuntimeException, std::exception) override;
+        queryInterface( const css::uno::Type& rType ) override;
 
         virtual void SAL_CALL
-        acquire(
-            void )
+        acquire()
             throw() override;
 
         virtual void SAL_CALL
-        release(
-            void )
+        release()
             throw() override;
 
         virtual sal_Int32 SAL_CALL
         readBytes(
             css::uno::Sequence< sal_Int8 >& aData,
-            sal_Int32 nBytesToRead )
-            throw( css::io::NotConnectedException,
-                   css::io::BufferSizeExceededException,
-                   css::io::IOException,
-                   css::uno::RuntimeException, std::exception) override;
+            sal_Int32 nBytesToRead ) override;
 
         virtual sal_Int32 SAL_CALL
         readSomeBytes(
             css::uno::Sequence< sal_Int8 >& aData,
-            sal_Int32 nMaxBytesToRead )
-            throw( css::io::NotConnectedException,
-                   css::io::BufferSizeExceededException,
-                   css::io::IOException,
-                   css::uno::RuntimeException, std::exception) override;
+            sal_Int32 nMaxBytesToRead ) override;
 
         virtual void SAL_CALL
-        skipBytes(
-            sal_Int32 nBytesToSkip )
-            throw( css::io::NotConnectedException,
-                   css::io::BufferSizeExceededException,
-                   css::io::IOException,
-                   css::uno::RuntimeException, std::exception ) override;
+        skipBytes( sal_Int32 nBytesToSkip ) override;
 
         virtual sal_Int32 SAL_CALL
-        available(
-            void )
-            throw( css::io::NotConnectedException,
-                   css::io::IOException,
-                   css::uno::RuntimeException, std::exception ) override;
+        available() override;
 
         virtual void SAL_CALL
-        closeInput(
-            void )
-            throw( css::io::NotConnectedException,
-                   css::io::IOException,
-                   css::uno::RuntimeException, std::exception ) override;
+        closeInput() override;
 
         virtual void SAL_CALL
-        seek(
-            sal_Int64 location )
-            throw( css::lang::IllegalArgumentException,
-                   css::io::IOException,
-                   css::uno::RuntimeException, std::exception ) override;
+        seek( sal_Int64 location ) override;
 
         virtual sal_Int64 SAL_CALL
-        getPosition(
-            void )
-            throw( css::io::IOException,
-                   css::uno::RuntimeException, std::exception ) override;
+        getPosition() override;
 
         virtual sal_Int64 SAL_CALL
-        getLength(
-            void )
-            throw( css::io::IOException,
-                   css::uno::RuntimeException, std::exception ) override;
+        getLength() override;
 
     private:
 

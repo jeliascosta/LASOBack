@@ -131,7 +131,7 @@ void ScInsertTableDlg::Init_Impl( bool bFromFile )
         m_pBtnFromFile->Check();
         SetFromTo_Impl();
 
-        aBrowseTimer.SetTimeoutHdl( LINK( this, ScInsertTableDlg, BrowseTimeoutHdl ) );
+        aBrowseTimer.SetInvokeHandler( LINK( this, ScInsertTableDlg, BrowseTimeoutHdl ) );
         aBrowseTimer.SetTimeout( 200 );
     }
 }
@@ -240,7 +240,7 @@ const OUString* ScInsertTableDlg::GetNextTable( sal_uInt16* pN )
 
 // Handler:
 
-IMPL_LINK_NOARG_TYPED(ScInsertTableDlg, CountHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(ScInsertTableDlg, CountHdl_Impl, Edit&, void)
 {
     nTableCount = static_cast<SCTAB>(m_pNfCount->GetValue());
     if ( nTableCount==1)
@@ -261,7 +261,7 @@ IMPL_LINK_NOARG_TYPED(ScInsertTableDlg, CountHdl_Impl, Edit&, void)
     DoEnable_Impl();
 }
 
-IMPL_LINK_NOARG_TYPED(ScInsertTableDlg, ChoiceHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(ScInsertTableDlg, ChoiceHdl_Impl, Button*, void)
 {
     if ( m_pBtnNew->IsChecked() )
         SetNewTable_Impl();
@@ -271,15 +271,14 @@ IMPL_LINK_NOARG_TYPED(ScInsertTableDlg, ChoiceHdl_Impl, Button*, void)
     DoEnable_Impl();
 }
 
-IMPL_LINK_NOARG_TYPED(ScInsertTableDlg, BrowseHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(ScInsertTableDlg, BrowseHdl_Impl, Button*, void)
 {
     delete pDocInserter;
-    pDocInserter = new ::sfx2::DocumentInserter(
-            OUString::createFromAscii( ScDocShell::Factory().GetShortName() ) );
+    pDocInserter = new ::sfx2::DocumentInserter(ScDocShell::Factory().GetFactoryName());
     pDocInserter->StartExecuteModal( LINK( this, ScInsertTableDlg, DialogClosedHdl ) );
 }
 
-IMPL_LINK_NOARG_TYPED(ScInsertTableDlg, SelectHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(ScInsertTableDlg, SelectHdl_Impl, ListBox&, void)
 {
     DoEnable_Impl();
 }
@@ -292,7 +291,7 @@ void ScInsertTableDlg::DoEnable_Impl()
         m_pBtnOk->Disable();
 }
 
-IMPL_LINK_NOARG_TYPED(ScInsertTableDlg, DoEnterHdl, Button*, void)
+IMPL_LINK_NOARG(ScInsertTableDlg, DoEnterHdl, Button*, void)
 {
     if(nTableCount > 1 || ScDocument::ValidTabName(m_pEdName->GetText()))
     {
@@ -305,13 +304,13 @@ IMPL_LINK_NOARG_TYPED(ScInsertTableDlg, DoEnterHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScInsertTableDlg, BrowseTimeoutHdl, Timer *, void)
+IMPL_LINK_NOARG(ScInsertTableDlg, BrowseTimeoutHdl, Timer *, void)
 {
     bMustClose = true;
     BrowseHdl_Impl(m_pBtnBrowse);
 }
 
-IMPL_LINK_TYPED( ScInsertTableDlg, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
+IMPL_LINK( ScInsertTableDlg, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
 {
     if ( ERRCODE_NONE == _pFileDlg->GetError() )
     {
@@ -346,7 +345,7 @@ IMPL_LINK_TYPED( ScInsertTableDlg, DialogClosedHdl, sfx2::FileDialogHelper*, _pF
             else
             {
                 pDocShTables->DoClose();
-                aDocShTablesRef.Clear();
+                aDocShTablesRef.clear();
                 pDocShTables = nullptr;
 
                 FillTables_Impl( nullptr );

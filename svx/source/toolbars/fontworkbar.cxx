@@ -30,6 +30,10 @@
 #include <svx/dialogs.hrc>
 #include <svx/svdview.hxx>
 #include <svx/sdasitm.hxx>
+#include "svx/gallery.hxx"
+#include <svx/fmmodel.hxx>
+#include <svx/fmpage.hxx>
+#include <svl/itempool.hxx>
 #include <com/sun/star/drawing/EnhancedCustomShapeAdjustmentValue.hpp>
 #include <sfx2/bindings.hxx>
 #include <editeng/eeitem.hxx>
@@ -69,9 +73,9 @@ void SetAlignmentState( SdrView* pSdrView, SfxItemSet& rSet )
                 case SDRTEXTHORZADJUST_RIGHT  : nAlignment = 2; break;
                 case SDRTEXTHORZADJUST_BLOCK  :
                 {
-                    if ( rTextFitToSizeTypeItem.GetValue() == SDRTEXTFIT_NONE )
+                    if ( rTextFitToSizeTypeItem.GetValue() == SdrFitToSizeType::NONE )
                         nAlignment = 3;
-                    else if ( rTextFitToSizeTypeItem.GetValue() == SDRTEXTFIT_ALLLINES )
+                    else if ( rTextFitToSizeTypeItem.GetValue() == SdrFitToSizeType::AllLines )
                         nAlignment = 4;
                 }
             }
@@ -168,14 +172,14 @@ void SetFontWorkShapeTypeState( SdrView* pSdrView, SfxItemSet& rSet )
 // tragen wir etwas ein, was hier (hoffentlich) nie vorkommt).
 static SfxSlot aFontworkBarSlots_Impl[] =
 {
-    { 0, 0, SfxSlotMode::NONE, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0, 0, nullptr }
+    { 0, 0, SfxSlotMode::NONE, 0, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0, SfxDisableFlags::NONE, nullptr }
 };
 
 SFX_IMPL_INTERFACE(FontworkBar, SfxShell)
 
 void FontworkBar::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_SVX_FONTWORK_BAR);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_SVX_FONTWORK_BAR);
 }
 
 
@@ -186,7 +190,6 @@ FontworkBar::FontworkBar(SfxViewShell* pViewShell )
     if( pViewShell )
         SetPool(&pViewShell->GetPool());
 
-    SetHelpId( SVX_INTERFACE_FONTWORK_BAR );
     SetName( SVX_RESSTR( RID_SVX_FONTWORK_BAR ));
 }
 
@@ -245,15 +248,12 @@ bool checkForSelectedFontWork( SdrView* pSdrView, sal_uInt32& nCheckStatus )
 
 static void impl_execute( SdrView*, SfxRequest& rReq, SdrCustomShapeGeometryItem& rGeometryItem, SdrObject* pObj )
 {
-    static const char  sTextPath[] = "TextPath";
-    static const char  sSameLetterHeights[] = "SameLetterHeights";
-
     sal_uInt16 nSID = rReq.GetSlot();
     switch( nSID )
     {
         case SID_FONTWORK_SAME_LETTER_HEIGHTS:
         {
-            css::uno::Any* pAny = rGeometryItem.GetPropertyValueByName( sTextPath, sSameLetterHeights );
+            css::uno::Any* pAny = rGeometryItem.GetPropertyValueByName( "TextPath", "SameLetterHeights" );
             if( pAny )
             {
                 bool bOn = false;
@@ -268,14 +268,14 @@ static void impl_execute( SdrView*, SfxRequest& rReq, SdrCustomShapeGeometryItem
         {
             if( rReq.GetArgs() && rReq.GetArgs()->GetItemState( SID_FONTWORK_ALIGNMENT ) == SfxItemState::SET )
             {
-                sal_Int32 nValue = static_cast<const SfxInt32Item*>(rReq.GetArgs()->GetItem(SID_FONTWORK_ALIGNMENT))->GetValue();
+                sal_Int32 nValue = rReq.GetArgs()->GetItem<SfxInt32Item>(SID_FONTWORK_ALIGNMENT)->GetValue();
                 if ( ( nValue >= 0 ) && ( nValue < 5 ) )
                 {
-                    SdrFitToSizeType eFTS = SDRTEXTFIT_NONE;
+                    SdrFitToSizeType eFTS = SdrFitToSizeType::NONE;
                     SdrTextHorzAdjust eHorzAdjust;
                     switch ( nValue )
                     {
-                        case 4 : eFTS = SDRTEXTFIT_ALLLINES; SAL_FALLTHROUGH;
+                        case 4 : eFTS = SdrFitToSizeType::AllLines; SAL_FALLTHROUGH;
                         case 3 : eHorzAdjust = SDRTEXTHORZADJUST_BLOCK; break;
                         default: eHorzAdjust = SDRTEXTHORZADJUST_LEFT; break;
                         case 1 : eHorzAdjust = SDRTEXTHORZADJUST_CENTER; break;
@@ -293,7 +293,7 @@ static void impl_execute( SdrView*, SfxRequest& rReq, SdrCustomShapeGeometryItem
         {
             if( rReq.GetArgs() && ( rReq.GetArgs()->GetItemState( SID_FONTWORK_CHARACTER_SPACING ) == SfxItemState::SET ) )
             {
-                sal_Int32 nCharSpacing = static_cast<const SfxInt32Item*>(rReq.GetArgs()->GetItem(SID_FONTWORK_CHARACTER_SPACING))->GetValue();
+                sal_Int32 nCharSpacing = rReq.GetArgs()->GetItem<SfxInt32Item>(SID_FONTWORK_CHARACTER_SPACING)->GetValue();
                 pObj->SetMergedItem( SvxCharScaleWidthItem( (sal_uInt16)nCharSpacing, EE_CHAR_FONTWIDTH ) );
                 pObj->BroadcastObjectChange();
             }
@@ -312,11 +312,6 @@ static void impl_execute( SdrView*, SfxRequest& rReq, SdrCustomShapeGeometryItem
         break;
     }
 }
-
-#include "svx/gallery.hxx"
-#include <svx/fmmodel.hxx>
-#include <svx/fmpage.hxx>
-#include <svl/itempool.hxx>
 
 void GetGeometryForCustomShape( SdrCustomShapeGeometryItem& rGeometryItem, const OUString& rCustomShape )
 {
@@ -348,8 +343,7 @@ void GetGeometryForCustomShape( SdrCustomShapeGeometryItem& rGeometryItem, const
         std::vector< OUString > aObjList;
         if ( GalleryExplorer::FillObjListTitle( GALLERY_THEME_POWERPOINT, aObjList ) )
         {
-            sal_uInt16 i;
-            for ( i = 0; i < aObjList.size(); i++ )
+            for ( std::vector<OUString>::size_type i = 0; i < aObjList.size(); i++ )
             {
                 if ( aObjList[ i ].equalsIgnoreAsciiCase( rCustomShape ) )
                 {
@@ -488,7 +482,7 @@ void FontworkBar::execute( SdrView* pSdrView, SfxRequest& rReq, SfxBindings& rBi
         {
             if( rReq.GetArgs() && ( rReq.GetArgs()->GetItemState( SID_FONTWORK_CHARACTER_SPACING ) == SfxItemState::SET ) )
             {
-                sal_Int32 nCharSpacing = static_cast<const SfxInt32Item*>(rReq.GetArgs()->GetItem(SID_FONTWORK_CHARACTER_SPACING))->GetValue();
+                sal_Int32 nCharSpacing = rReq.GetArgs()->GetItem<SfxInt32Item>(SID_FONTWORK_CHARACTER_SPACING)->GetValue();
                 ScopedVclPtrInstance< FontworkCharacterSpacingDialog > aDlg( nullptr, nCharSpacing );
                 sal_uInt16 nRet = aDlg->Execute();
                 if( nRet != 0 )

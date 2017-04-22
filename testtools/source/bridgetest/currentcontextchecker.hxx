@@ -28,9 +28,11 @@
 #include "sal/types.h"
 #include "test/testtools/bridgetest/XCurrentContextChecker.hpp"
 
+#include <dllapi.hxx>
+
 namespace testtools { namespace bridgetest {
 
-class SAL_DLLPRIVATE CurrentContextChecker :
+class LO_DLLPUBLIC_TESTTOOLS CurrentContextChecker :
     public ::osl::DebugBase< CurrentContextChecker >,
     public ::cppu::WeakImplHelper<
         ::test::testtools::bridgetest::XCurrentContextChecker >
@@ -38,18 +40,17 @@ class SAL_DLLPRIVATE CurrentContextChecker :
 public:
     CurrentContextChecker();
 
-    virtual ~CurrentContextChecker();
+    virtual ~CurrentContextChecker() override;
 
     virtual sal_Bool SAL_CALL perform(
         css::uno::Reference< ::test::testtools::bridgetest::XCurrentContextChecker > const & other,
-        ::sal_Int32 setSteps, ::sal_Int32 checkSteps)
-        throw (css::uno::RuntimeException, std::exception) override;
+        ::sal_Int32 setSteps, ::sal_Int32 checkSteps) override;
 
 private:
     CurrentContextChecker(CurrentContextChecker &) = delete;
     void operator =(CurrentContextChecker &) = delete;
 
-    bool performCheck(
+    SAL_DLLPRIVATE bool performCheck(
         css::uno::Reference< ::test::testtools::bridgetest::XCurrentContextChecker > const & other,
         ::sal_Int32 setSteps, ::sal_Int32 checkSteps);
 };

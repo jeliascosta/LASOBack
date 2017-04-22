@@ -21,7 +21,6 @@
 
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
 #include <stdlib.h>
 
 #include "scitems.hxx"
@@ -118,7 +117,7 @@ void OP_Label(LotusContext& rContext, SvStream& r, sal_uInt16 n)
     n -= (n > 5) ? 5 : n;
 
     std::unique_ptr<sal_Char[]> pText(new sal_Char[n + 1]);
-    r.Read( pText.get(), n );
+    r.ReadBytes(pText.get(), n);
     pText[n] = 0;
 
     if (ValidColRow(nCol, nRow))
@@ -196,7 +195,7 @@ void OP_NamedRange(LotusContext& rContext, SvStream& r, sal_uInt16 /*n*/)
     sal_uInt16              nColSt, nRowSt, nColEnd, nRowEnd;
 
     sal_Char cPuffer[ 16+1 ];
-    r.Read( cPuffer, 16 );
+    r.ReadBytes(cPuffer, 16);
     cPuffer[ 16 ] = 0;
 
     r.ReadUInt16( nColSt ).ReadUInt16( nRowSt ).ReadUInt16( nColEnd ).ReadUInt16( nRowEnd );
@@ -212,7 +211,7 @@ void OP_NamedRange(LotusContext& rContext, SvStream& r, sal_uInt16 /*n*/)
                     static_cast<SCCOL> (nColEnd), static_cast<SCROW> (nRowEnd) );
 
         sal_Char cBuf[sizeof(cPuffer)+1];
-        if( isdigit( *cPuffer ) )
+        if( rtl::isAsciiDigit( static_cast<unsigned char>(*cPuffer) ) )
         {  // first char in name is a number -> prepend 'A'
             cBuf[0] = 'A';
             strcpy( cBuf + 1, cPuffer );       // #100211# - checked
@@ -224,7 +223,7 @@ void OP_NamedRange(LotusContext& rContext, SvStream& r, sal_uInt16 /*n*/)
 
         aTmp = ScfTools::ConvertToScDefinedName( aTmp );
 
-        rContext.pLotusRoot->pRangeNames->Append( pRange, aTmp );
+        rContext.pLotusRoot->maRangeNames.Append( pRange, aTmp );
     }
 }
 
@@ -235,7 +234,7 @@ void OP_SymphNamedRange(LotusContext& rContext, SvStream& r, sal_uInt16 /*n*/)
     sal_uInt8               nType;
 
     sal_Char cPuffer[ 16+1 ];
-    r.Read( cPuffer, 16 );
+    r.ReadBytes(cPuffer, 16);
     cPuffer[ 16 ] = 0;
 
     r.ReadUInt16( nColSt ).ReadUInt16( nRowSt ).ReadUInt16( nColEnd ).ReadUInt16( nRowEnd ).ReadUChar( nType );
@@ -251,7 +250,7 @@ void OP_SymphNamedRange(LotusContext& rContext, SvStream& r, sal_uInt16 /*n*/)
                     static_cast<SCCOL> (nColEnd), static_cast<SCROW> (nRowEnd) );
 
         sal_Char cBuf[sizeof(cPuffer)+1];
-        if( isdigit( *cPuffer ) )
+        if( rtl::isAsciiDigit( static_cast<unsigned char>(*cPuffer) ) )
         {  // first char in name is a number -> prepend 'A'
             cBuf[0] = 'A';
             strcpy( cBuf + 1, cPuffer );       // #100211# - checked
@@ -262,7 +261,7 @@ void OP_SymphNamedRange(LotusContext& rContext, SvStream& r, sal_uInt16 /*n*/)
         OUString  aTmp( cBuf, strlen(cBuf), rContext.pLotusRoot->eCharsetQ );
         aTmp = ScfTools::ConvertToScDefinedName( aTmp );
 
-        rContext.pLotusRoot->pRangeNames->Append( pRange, aTmp );
+        rContext.pLotusRoot->maRangeNames.Append( pRange, aTmp );
     }
 }
 
@@ -357,7 +356,7 @@ void OP_Label123(LotusContext& rContext, SvStream& r, sal_uInt16 n)
     n -= (n > 4) ? 4 : n;
 
     std::unique_ptr<sal_Char[]> pText(new sal_Char[n + 1]);
-    r.Read( pText.get(), n );
+    r.ReadBytes(pText.get(), n);
     pText[ n ] = 0;
 
     PutFormString(rContext, nCol, nRow, nTab, pText.get());
@@ -438,7 +437,7 @@ void OP_Note123(LotusContext& rContext, SvStream& r, sal_uInt16 n)
     n -= (n > 4) ? 4 : n;
 
     std::unique_ptr<sal_Char[]> pText(new sal_Char[n + 1]);
-    r.Read( pText.get(), n );
+    r.ReadBytes(pText.get(), n);
     pText[ n ] = 0;
 
     OUString aNoteText(pText.get(), strlen(pText.get()), rContext.pLotusRoot->eCharsetQ);
@@ -451,7 +450,7 @@ void OP_Note123(LotusContext& rContext, SvStream& r, sal_uInt16 n)
 void OP_HorAlign123(LotusContext& /*rContext*/, sal_uInt8 nAlignPattern, SfxItemSet& rPatternItemSet)
 {
 //      pre:  Pattern is stored in the last 3 bites of the 21st byte
-//      post: Appropriate Horizontal Alignement is set in rPattern according to the bit pattern.
+//      post: Appropriate Horizontal Alignment is set in rPattern according to the bit pattern.
 //
 //      LEFT:001, RIGHT:010, CENTER:011, JUSTIFY:110,
 //      LEFT-Text/RIGHT-NUMBER:100, DEFAULT:000
@@ -461,22 +460,22 @@ void OP_HorAlign123(LotusContext& /*rContext*/, sal_uInt8 nAlignPattern, SfxItem
     switch (nAlignPattern)
     {
         case 1:
-            rPatternItemSet.Put( SvxHorJustifyItem( SVX_HOR_JUSTIFY_LEFT, ATTR_HOR_JUSTIFY ) );
+            rPatternItemSet.Put( SvxHorJustifyItem( SvxCellHorJustify::Left, ATTR_HOR_JUSTIFY ) );
             break;
           case 2:
-            rPatternItemSet.Put( SvxHorJustifyItem( SVX_HOR_JUSTIFY_RIGHT, ATTR_HOR_JUSTIFY ) );
+            rPatternItemSet.Put( SvxHorJustifyItem( SvxCellHorJustify::Right, ATTR_HOR_JUSTIFY ) );
             break;
         case 3:
-            rPatternItemSet.Put( SvxHorJustifyItem( SVX_HOR_JUSTIFY_CENTER, ATTR_HOR_JUSTIFY) );
+            rPatternItemSet.Put( SvxHorJustifyItem( SvxCellHorJustify::Center, ATTR_HOR_JUSTIFY) );
             break;
         case 4:
-            rPatternItemSet.Put( SvxHorJustifyItem( SVX_HOR_JUSTIFY_STANDARD, ATTR_HOR_JUSTIFY ) );
+            rPatternItemSet.Put( SvxHorJustifyItem( SvxCellHorJustify::Standard, ATTR_HOR_JUSTIFY ) );
             break;
         case 6:
-            rPatternItemSet.Put( SvxHorJustifyItem( SVX_HOR_JUSTIFY_BLOCK, ATTR_HOR_JUSTIFY ) );
+            rPatternItemSet.Put( SvxHorJustifyItem( SvxCellHorJustify::Block, ATTR_HOR_JUSTIFY ) );
             break;
         default:
-            rPatternItemSet.Put( SvxHorJustifyItem( SVX_HOR_JUSTIFY_STANDARD, ATTR_HOR_JUSTIFY ) );
+            rPatternItemSet.Put( SvxHorJustifyItem( SvxCellHorJustify::Standard, ATTR_HOR_JUSTIFY ) );
             break;
       }
 }
@@ -484,7 +483,7 @@ void OP_HorAlign123(LotusContext& /*rContext*/, sal_uInt8 nAlignPattern, SfxItem
 void OP_VerAlign123(LotusContext& /*rContext*/, sal_uInt8 nAlignPattern, SfxItemSet& rPatternItemSet)
 {
 //      pre:  Pattern is stored in the last 3 bites of the 22nd byte
-//      post: Appropriate Verticle Alignement is set in rPattern according to the bit pattern.
+//      post: Appropriate Vertical Alignment is set in rPattern according to the bit pattern.
 //
 //      TOP:001, MIDDLE:010, DOWN:100, DEFAULT:000
 
@@ -618,7 +617,7 @@ void OP_ApplyPatternArea123(LotusContext& rContext, SvStream& rStream)
                     rStream.ReadUInt16( nData );
                     rStream.SeekRel( nLength - 2 );
                     if( nLevel == 1 )
-                        nTabCount = nData;
+                        nTabCount = SanitizeTab(nData);
                     else if( nLevel == 2 )
                     {
                         nCol = nCol + nColCount;

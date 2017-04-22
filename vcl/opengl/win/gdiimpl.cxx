@@ -8,16 +8,19 @@
  */
 
 #include "opengl/win/gdiimpl.hxx"
-#include <desktop/exithelper.h>
+
+#include <comphelper/windowserrorstring.hxx>
 #include <opengl/zone.hxx>
 #include <o3tl/lru_map.hxx>
 #include <win/wincomp.hxx>
 #include <win/saldata.hxx>
 #include <win/salframe.h>
 #include <win/salinst.h>
-#include <GL/wglew.h>
+#include <epoxy/wgl.h>
+#include "ControlCacheKey.hxx"
 
 static std::vector<HGLRC> g_vShareList;
+static bool g_bAnyCurrent;
 
 class GLWinWindow : public GLWindow
 {
@@ -29,9 +32,9 @@ public:
 };
 
 GLWinWindow::GLWinWindow()
-    : hWnd(NULL)
-    , hDC(NULL)
-    , hRC(NULL)
+    : hWnd(nullptr)
+    , hDC(nullptr)
+    , hRC(nullptr)
 {
 }
 
@@ -68,19 +71,20 @@ void WinOpenGLContext::resetCurrent()
 
     OpenGLZone aZone;
 
-    wglMakeCurrent(NULL, NULL);
+    wglMakeCurrent(nullptr, nullptr);
+    g_bAnyCurrent = false;
 }
 
 bool WinOpenGLContext::isCurrent()
 {
     OpenGLZone aZone;
-    return wglGetCurrentContext() == m_aGLWin.hRC &&
+    return g_bAnyCurrent && m_aGLWin.hRC && wglGetCurrentContext() == m_aGLWin.hRC &&
            wglGetCurrentDC() == m_aGLWin.hDC;
 }
 
 bool WinOpenGLContext::isAnyCurrent()
 {
-    return wglGetCurrentContext() != NULL;
+    return g_bAnyCurrent && wglGetCurrentContext() != nullptr;
 }
 
 void WinOpenGLContext::makeCurrent()
@@ -92,11 +96,16 @@ void WinOpenGLContext::makeCurrent()
 
     clearCurrent();
 
+    epoxy_handle_external_wglMakeCurrent();
+
     if (!wglMakeCurrent(m_aGLWin.hDC, m_aGLWin.hRC))
     {
-        SAL_WARN("vcl.opengl", "OpenGLContext::makeCurrent(): wglMakeCurrent failed: " << GetLastError());
+        g_bAnyCurrent = false;
+        SAL_WARN("vcl.opengl", "wglMakeCurrent failed: " << WindowsErrorString(GetLastError()));
         return;
     }
+
+    g_bAnyCurrent = true;
 
     registerAsCurrent();
 }
@@ -104,7 +113,7 @@ void WinOpenGLContext::makeCurrent()
 bool WinOpenGLContext::init(HDC hDC, HWND hWnd)
 {
     if (isInitialized())
-        return false;
+        return true;
 
     m_aGLWin.hDC = hDC;
     m_aGLWin.hWnd = hWnd;
@@ -138,11 +147,14 @@ void WinOpenGLContext::destroyCurrentContext()
         if (itr != g_vShareList.end())
             g_vShareList.erase(itr);
 
-        if (wglGetCurrentContext() != NULL)
-            wglMakeCurrent(NULL, NULL);
+        if (wglGetCurrentContext() != nullptr)
+        {
+            wglMakeCurrent(nullptr, nullptr);
+            g_bAnyCurrent = false;
+        }
         wglDeleteContext( m_aGLWin.hRC );
         ReleaseDC( m_aGLWin.hWnd, m_aGLWin.hDC );
-        m_aGLWin.hRC = 0;
+        m_aGLWin.hRC = nullptr;
     }
 }
 
@@ -162,48 +174,60 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
     }
 }
 
-int InitTempWindow(HWND *hwnd, int width, int height, const PIXELFORMATDESCRIPTOR& inPfd, GLWinWindow& glWin)
+bool InitTempWindow(HWND& hwnd, int width, int height, const PIXELFORMATDESCRIPTOR& inPfd, GLWinWindow& glWin)
 {
     OpenGLZone aZone;
 
     PIXELFORMATDESCRIPTOR  pfd = inPfd;
-    int  pfmt;
     int ret;
     WNDCLASS wc;
     wc.style = 0;
     wc.lpfnWndProc = WndProc;
     wc.cbClsExtra = wc.cbWndExtra = 0;
-    wc.hInstance = NULL;
-    wc.hIcon = NULL;
-    wc.hCursor = NULL;
-    wc.hbrBackground = NULL;
-    wc.lpszMenuName = NULL;
-    wc.lpszClassName = (LPCSTR)"GLRenderer";
+    wc.hInstance = nullptr;
+    wc.hIcon = nullptr;
+    wc.hCursor = nullptr;
+    wc.hbrBackground = nullptr;
+    wc.lpszMenuName = nullptr;
+    wc.lpszClassName = "GLRenderer";
     RegisterClass(&wc);
-    *hwnd = CreateWindow(wc.lpszClassName, NULL, WS_DISABLED, 0, 0, width, height, NULL, NULL, wc.hInstance, NULL);
-    glWin.hDC = GetDC(*hwnd);
-    pfmt = ChoosePixelFormat(glWin.hDC, &pfd);
-    if (!pfmt)
+    hwnd = CreateWindow(wc.lpszClassName, nullptr, WS_DISABLED, 0, 0, width, height, nullptr, nullptr, wc.hInstance, nullptr);
+    glWin.hDC = GetDC(hwnd);
+
+    int nPixelFormat = ChoosePixelFormat(glWin.hDC, &pfd);
+    if (!nPixelFormat)
     {
-        return -1;
+        ReleaseDC(hwnd, glWin.hDC);
+        DestroyWindow(hwnd);
+        return false;
     }
-    ret = SetPixelFormat(glWin.hDC, pfmt, &pfd);
+    ret = SetPixelFormat(glWin.hDC, nPixelFormat, &pfd);
     if(!ret)
     {
-        return -1;
+        ReleaseDC(hwnd, glWin.hDC);
+        DestroyWindow(hwnd);
+        return false;
     }
     glWin.hRC = wglCreateContext(glWin.hDC);
     if(!(glWin.hRC))
     {
-        return -1;
+        ReleaseDC(hwnd, glWin.hDC);
+        DestroyWindow(hwnd);
+        return false;
     }
     ret = wglMakeCurrent(glWin.hDC, glWin.hRC);
     if(!ret)
     {
-        return -1;
+        wglMakeCurrent(nullptr, nullptr);
+        g_bAnyCurrent = false;
+        wglDeleteContext(glWin.hRC);
+        ReleaseDC(hwnd, glWin.hDC);
+        DestroyWindow(hwnd);
+        return false;
     }
+    g_bAnyCurrent = false;
 
-    return 0;
+    return true;
 }
 
 bool WGLisExtensionSupported(const char *extension)
@@ -211,18 +235,18 @@ bool WGLisExtensionSupported(const char *extension)
     OpenGLZone aZone;
 
     const size_t extlen = strlen(extension);
-    const char *supported = NULL;
+    const char *supported = nullptr;
 
     // Try to use wglGetExtensionStringARB on current DC, if possible
     PROC wglGetExtString = wglGetProcAddress("wglGetExtensionsStringARB");
 
     if (wglGetExtString)
-        supported = ((char*(__stdcall*)(HDC))wglGetExtString)(wglGetCurrentDC());
+        supported = reinterpret_cast<char*(__stdcall*)(HDC)>(wglGetExtString)(wglGetCurrentDC());
     // If that failed, try standard OpenGL extensions string
-    if (supported == NULL)
-        supported = (char*)glGetString(GL_EXTENSIONS);
+    if (supported == nullptr)
+        supported = reinterpret_cast<char const *>(glGetString(GL_EXTENSIONS));
     // If that failed too, must be no extensions supported
-    if (supported == NULL)
+    if (supported == nullptr)
         return false;
 
     // Begin examination at start of string, increment by 1 on false match
@@ -231,8 +255,8 @@ bool WGLisExtensionSupported(const char *extension)
         // Advance p up to the next possible match
         p = strstr(p, extension);
 
-        if (p == NULL)
-            return 0; // No Match
+        if (p == nullptr)
+            return false; // No Match
 
         // Make sure that match is at the start of the string or that
         // the previous char is a space, or else we could accidentally
@@ -241,7 +265,7 @@ bool WGLisExtensionSupported(const char *extension)
         // Also, make sure that the following character is space or null
         // or else "wglExtensionTwo" might match "wglExtension"
         if ((p==supported || p[-1]==' ') && (p[extlen]=='\0' || p[extlen]==' '))
-            return 1; // Match
+            return true; // Match
     }
 }
 
@@ -250,10 +274,10 @@ bool InitMultisample(const PIXELFORMATDESCRIPTOR& pfd, int& rPixelFormat,
 {
     OpenGLZone aZone;
 
-    HWND hWnd = NULL;
+    HWND hWnd = nullptr;
     GLWinWindow glWin;
     // Create a temp window to check whether support multi-sample, if support, get the format
-    if (InitTempWindow(&hWnd, 1, 1, pfd, glWin) < 0)
+    if (!InitTempWindow(hWnd, 32, 32, pfd, glWin))
     {
         SAL_WARN("vcl.opengl", "Can't create temp window to test");
         return false;
@@ -263,12 +287,22 @@ bool InitMultisample(const PIXELFORMATDESCRIPTOR& pfd, int& rPixelFormat,
     if (!WGLisExtensionSupported("WGL_ARB_multisample"))
     {
         SAL_WARN("vcl.opengl", "Device doesn't support multisample");
+        wglMakeCurrent(nullptr, nullptr);
+        g_bAnyCurrent = false;
+        wglDeleteContext(glWin.hRC);
+        ReleaseDC(hWnd, glWin.hDC);
+        DestroyWindow(hWnd);
         return false;
     }
     // Get our pixel format
-    PFNWGLCHOOSEPIXELFORMATARBPROC fn_wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
+    PFNWGLCHOOSEPIXELFORMATARBPROC fn_wglChoosePixelFormatARB = reinterpret_cast<PFNWGLCHOOSEPIXELFORMATARBPROC>(wglGetProcAddress("wglChoosePixelFormatARB"));
     if (!fn_wglChoosePixelFormatARB)
     {
+        wglMakeCurrent(nullptr, nullptr);
+        g_bAnyCurrent = false;
+        wglDeleteContext(glWin.hRC);
+        ReleaseDC(hWnd, glWin.hDC);
+        DestroyWindow(hWnd);
         return false;
     }
     // Get our current device context
@@ -321,7 +355,8 @@ bool InitMultisample(const PIXELFORMATDESCRIPTOR& pfd, int& rPixelFormat,
     {
         bArbMultisampleSupported = true;
         rPixelFormat = pixelFormat;
-        wglMakeCurrent(NULL, NULL);
+        wglMakeCurrent(nullptr, nullptr);
+        g_bAnyCurrent = false;
         wglDeleteContext(glWin.hRC);
         ReleaseDC(hWnd, glWin.hDC);
         DestroyWindow(hWnd);
@@ -335,14 +370,16 @@ bool InitMultisample(const PIXELFORMATDESCRIPTOR& pfd, int& rPixelFormat,
     {
         bArbMultisampleSupported = true;
         rPixelFormat = pixelFormat;
-        wglMakeCurrent(NULL, NULL);
+        wglMakeCurrent(nullptr, nullptr);
+        g_bAnyCurrent = false;
         wglDeleteContext(glWin.hRC);
         ReleaseDC(hWnd, glWin.hDC);
         DestroyWindow(hWnd);
         return bArbMultisampleSupported;
     }
     // Return the valid format
-    wglMakeCurrent(NULL, NULL);
+    wglMakeCurrent(nullptr, nullptr);
+    g_bAnyCurrent = false;
     wglDeleteContext(glWin.hRC);
     ReleaseDC(hWnd, glWin.hDC);
     DestroyWindow(hWnd);
@@ -352,12 +389,6 @@ bool InitMultisample(const PIXELFORMATDESCRIPTOR& pfd, int& rPixelFormat,
 
 namespace
 {
-
-void disableOpenGLAndTerminateForRestart()
-{
-    OpenGLZone::hardDisable();
-    TerminateProcess(GetCurrentProcess(), EXITHELPER_NORMAL_RESTART);
-}
 
 bool tryShaders(const OUString& rVertexShader, const OUString& rFragmentShader, const OUString& rGeometryShader = "", const OString& rPreamble = "")
 {
@@ -453,14 +484,6 @@ bool compiledShaderBinariesWork()
 
 bool WinOpenGLContext::ImplInit()
 {
-    // Failures here typically means that OpenGL can't be used. Returning false is fairly pointless
-    // as the calling code doesn't even check, but oh well. If we notice that OpenGL is broken the
-    // first time being called, it is not too late to call
-    // disableOpenGLAndTerminateForRestart(). The first time this will be called is from displaying
-    // the splash screen, so if OpenGL is broken, it is "early enough" for us to be able to disable
-    // OpenGL and terminate bluntly with EXITHELPER_NORMAL_RESTART, thus causing the wrapper process
-    // to restart us, then without using OpenGL.
-
     static bool bFirstCall = true;
 
     OpenGLZone aZone;
@@ -494,8 +517,13 @@ bool WinOpenGLContext::ImplInit()
 
     //  we must check whether can set the MSAA
     int WindowPix = 0;
-    bool bMultiSampleSupport = InitMultisample(PixelFormatFront, WindowPix,
-            mbUseDoubleBufferedRendering, false);
+    bool bMultiSampleSupport = false;
+
+    if (!mbVCLOnly)
+        bMultiSampleSupport = InitMultisample(PixelFormatFront, WindowPix, mbUseDoubleBufferedRendering, false);
+    else
+        VCL_GL_INFO("Skipping multisample detection for VCL.");
+
     if (bMultiSampleSupport && WindowPix != 0)
     {
         m_aGLWin.bMultiSampleSupported = true;
@@ -514,62 +542,48 @@ bool WinOpenGLContext::ImplInit()
     if (WindowPix == 0)
     {
         SAL_WARN("vcl.opengl", "Invalid pixelformat");
-        if (bFirstCall)
-            disableOpenGLAndTerminateForRestart();
-        bFirstCall = false;
         return false;
     }
 
     if (!SetPixelFormat(m_aGLWin.hDC, WindowPix, &PixelFormatFront))
     {
-        ImplWriteLastError(GetLastError(), "SetPixelFormat in OpenGLContext::ImplInit");
-        SAL_WARN("vcl.opengl", "SetPixelFormat failed");
-        if (bFirstCall)
-            disableOpenGLAndTerminateForRestart();
-        bFirstCall = false;
+        SAL_WARN("vcl.opengl", "SetPixelFormat failed: " << WindowsErrorString(GetLastError()));
         return false;
     }
 
     HGLRC hTempRC = wglCreateContext(m_aGLWin.hDC);
-    if (hTempRC == NULL)
+    if (hTempRC == nullptr)
     {
-        ImplWriteLastError(GetLastError(), "wglCreateContext in OpenGLContext::ImplInit");
-        SAL_WARN("vcl.opengl", "wglCreateContext failed");
-        if (bFirstCall)
-            disableOpenGLAndTerminateForRestart();
-        bFirstCall = false;
+        SAL_WARN("vcl.opengl", "wglCreateContext failed: "<< WindowsErrorString(GetLastError()));
         return false;
     }
 
     if (!wglMakeCurrent(m_aGLWin.hDC, hTempRC))
     {
-        ImplWriteLastError(GetLastError(), "wglMakeCurrent in OpenGLContext::ImplInit");
-        SAL_WARN("vcl.opengl", "wglMakeCurrent failed");
-        if (bFirstCall)
-            disableOpenGLAndTerminateForRestart();
-        bFirstCall = false;
+        g_bAnyCurrent = false;
+        SAL_WARN("vcl.opengl", "wglMakeCurrent failed: "<< WindowsErrorString(GetLastError()));
         return false;
     }
 
-    if (!InitGLEW())
+    g_bAnyCurrent = true;
+
+    if (!InitGL())
     {
-        if (bFirstCall)
-            disableOpenGLAndTerminateForRestart();
-        bFirstCall = false;
+        wglMakeCurrent(nullptr, nullptr);
+        g_bAnyCurrent = false;
+        wglDeleteContext(hTempRC);
         return false;
     }
 
-    HGLRC hSharedCtx = 0;
+    HGLRC hSharedCtx = nullptr;
     if (!g_vShareList.empty())
         hSharedCtx = g_vShareList.front();
 
     if (!wglCreateContextAttribsARB)
     {
-        wglMakeCurrent(NULL, NULL);
+        wglMakeCurrent(nullptr, nullptr);
+        g_bAnyCurrent = false;
         wglDeleteContext(hTempRC);
-        if (bFirstCall)
-            disableOpenGLAndTerminateForRestart();
-        bFirstCall = false;
         return false;
     }
 
@@ -583,42 +597,68 @@ bool WinOpenGLContext::ImplInit()
         0
     };
     m_aGLWin.hRC = wglCreateContextAttribsARB(m_aGLWin.hDC, hSharedCtx, attribs);
-    if (m_aGLWin.hRC == 0)
+    if (m_aGLWin.hRC == nullptr)
     {
-        ImplWriteLastError(GetLastError(), "wglCreateContextAttribsARB in OpenGLContext::ImplInit");
-        SAL_WARN("vcl.opengl", "wglCreateContextAttribsARB failed");
-        wglMakeCurrent(NULL, NULL);
+        SAL_WARN("vcl.opengl", "wglCreateContextAttribsARB failed: "<< WindowsErrorString(GetLastError()));
+        wglMakeCurrent(nullptr, nullptr);
+        g_bAnyCurrent = false;
         wglDeleteContext(hTempRC);
-        if (bFirstCall)
-            disableOpenGLAndTerminateForRestart();
-        bFirstCall = false;
         return false;
     }
 
     if (!compiledShaderBinariesWork())
     {
-        wglMakeCurrent(NULL, NULL);
+        wglMakeCurrent(nullptr, nullptr);
+        g_bAnyCurrent = false;
         wglDeleteContext(hTempRC);
-        if (bFirstCall)
-            disableOpenGLAndTerminateForRestart();
-        bFirstCall = false;
         return false;
     }
 
-    wglMakeCurrent(NULL, NULL);
+    wglMakeCurrent(nullptr, nullptr);
+    g_bAnyCurrent = false;
     wglDeleteContext(hTempRC);
 
     if (!wglMakeCurrent(m_aGLWin.hDC, m_aGLWin.hRC))
     {
-        ImplWriteLastError(GetLastError(), "wglMakeCurrent (with shared context) in OpenGLContext::ImplInit");
-        SAL_WARN("vcl.opengl", "wglMakeCurrent failed");
-        if (bFirstCall)
-            disableOpenGLAndTerminateForRestart();
-        bFirstCall = false;
+        g_bAnyCurrent = false;
+        SAL_WARN("vcl.opengl", "wglMakeCurrent failed: " << WindowsErrorString(GetLastError()));
         return false;
     }
 
-    InitGLEWDebugging();
+    g_bAnyCurrent = true;
+
+    if (bFirstCall)
+    {
+        // Checking texture size
+        GLint nMaxTextureSize;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &nMaxTextureSize);
+        if (nMaxTextureSize <= 4096)
+            SAL_WARN("vcl.opengl", "Max texture size is " << nMaxTextureSize
+                                    << ". This may not be enough for normal operation.");
+        else
+            VCL_GL_INFO("Max texture size: " << nMaxTextureSize);
+
+        // Trying to make a texture and check its size
+        for (GLint nWidthHeight = 1023; nWidthHeight < nMaxTextureSize; nWidthHeight += (nWidthHeight + 1))
+        {
+            glTexImage2D(GL_PROXY_TEXTURE_2D, 0, 4, nWidthHeight, nWidthHeight, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, nullptr);
+            CHECK_GL_ERROR();
+            if (glGetError() == GL_NO_ERROR)
+            {
+                GLint nWidth = 0;
+                GLint nHeight = 0;
+                glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &nWidth);
+                glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &nHeight);
+                VCL_GL_INFO("Created texture " << nWidthHeight << "," << nWidthHeight << " reports size: " << nWidth << ", " << nHeight);
+            }
+            else
+            {
+                SAL_WARN("vcl.opengl", "Error when creating a " << nWidthHeight << ", " << nWidthHeight << " test texture.");
+            }
+        }
+    }
+
+    InitGLDebugging();
 
     g_vShareList.push_back(m_aGLWin.hRC);
 
@@ -649,7 +689,7 @@ OpenGLContext* WinSalInstance::CreateOpenGLContext()
 WinOpenGLSalGraphicsImpl::WinOpenGLSalGraphicsImpl(WinSalGraphics& rGraphics,
                                                    SalGeometryProvider *mpProvider):
     OpenGLSalGraphicsImpl(rGraphics,mpProvider),
-    mrParent(rGraphics)
+    mrWinParent(rGraphics)
 {
 }
 
@@ -663,7 +703,11 @@ rtl::Reference<OpenGLContext> WinOpenGLSalGraphicsImpl::CreateWinContext()
 {
     rtl::Reference<WinOpenGLContext> xContext(new WinOpenGLContext);
     xContext->setVCLOnly();
-    xContext->init(mrParent.mhLocalDC, mrParent.mhWnd);
+    if (!xContext->init(mrWinParent.mhLocalDC, mrWinParent.mhWnd))
+    {
+        SAL_WARN("vcl.opengl", "Context could not be created.");
+        return rtl::Reference<OpenGLContext>();
+    }
     return rtl::Reference<OpenGLContext>(xContext.get());
 }
 
@@ -672,7 +716,7 @@ void WinOpenGLSalGraphicsImpl::Init()
     if (!IsOffscreen() && mpContext.is() && mpContext->isInitialized())
     {
         const GLWinWindow& rGLWindow = static_cast<const GLWinWindow&>(mpContext->getOpenGLWindow());
-        if (rGLWindow.hWnd != mrParent.mhWnd || rGLWindow.hDC == mrParent.mhLocalDC)
+        if (rGLWindow.hWnd != mrWinParent.mhWnd || rGLWindow.hDC == mrWinParent.mhLocalDC)
         {
             // This can legitimately happen, SalFrame keeps 2x
             // SalGraphics which share the same hWnd and hDC.
@@ -727,7 +771,7 @@ bool WinOpenGLSalGraphicsImpl::RenderTextureCombo(TextureCombo& rCombo, int nX, 
     SalTwoRect aPosAry(0,   0, rTexture.GetWidth(), rTexture.GetHeight(),
                        nX, nY, rTexture.GetWidth(), rTexture.GetHeight());
 
-    DrawTextureDiff(rTexture, *rCombo.mpMask, aPosAry);
+    DrawTextureDiff(rTexture, *rCombo.mpMask, aPosAry, false);
 
     return true;
 }

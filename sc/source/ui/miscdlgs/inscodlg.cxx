@@ -21,12 +21,12 @@
 
 #include "inscodlg.hxx"
 #include "scresid.hxx"
-#include "miscdlgs.hrc"
+#include "scres.hrc"
 
 bool       ScInsertContentsDlg::bPreviousAllCheck = false;
 InsertDeleteFlags ScInsertContentsDlg::nPreviousChecks   = (InsertDeleteFlags::VALUE | InsertDeleteFlags::DATETIME | InsertDeleteFlags::STRING);
 ScPasteFunc  ScInsertContentsDlg::nPreviousFormulaChecks = ScPasteFunc::NONE;
-sal_uInt16 ScInsertContentsDlg::nPreviousChecks2 = 0;
+InsertContentsFlags ScInsertContentsDlg::nPreviousChecks2 = InsertContentsFlags::NONE;
 sal_uInt16 ScInsertContentsDlg::nPreviousMoveMode = INS_NONE;   // enum InsCellCmd
 
 ScInsertContentsDlg::ScInsertContentsDlg( vcl::Window*       pParent,
@@ -41,10 +41,7 @@ ScInsertContentsDlg::ScInsertContentsDlg( vcl::Window*       pParent,
     bMoveRightDisabled( false ),
     bUsedShortCut   ( false ),
     nShortCutInsContentsCmdBits( InsertDeleteFlags::NONE ),
-    nShortCutFormulaCmdBits(ScPasteFunc::NONE),
-    bShortCutSkipEmptyCells(false),
     bShortCutTranspose(false),
-    bShortCutIsLink(false),
     nShortCutMoveMode(INS_NONE)
 {
     get( mpBtnInsAll, "paste_all" );
@@ -77,7 +74,7 @@ ScInsertContentsDlg::ScInsertContentsDlg( vcl::Window*       pParent,
     {
         ScInsertContentsDlg::nPreviousChecks = nCheckDefaults;
         ScInsertContentsDlg::bPreviousAllCheck = false;
-        ScInsertContentsDlg::nPreviousChecks2 = 0;
+        ScInsertContentsDlg::nPreviousChecks2 = InsertContentsFlags::NONE;
     }
 
     mpBtnInsAll->Check     ( ScInsertContentsDlg::bPreviousAllCheck );
@@ -112,9 +109,9 @@ ScInsertContentsDlg::ScInsertContentsDlg( vcl::Window*       pParent,
         case INS_CELLSRIGHT: mpRbMoveRight->Check(); break;
     }
 
-    mpBtnSkipEmptyCells->Check( ( ScInsertContentsDlg::nPreviousChecks2 & INS_CONT_NOEMPTY ) != 0);
-    mpBtnTranspose->Check( ( ScInsertContentsDlg::nPreviousChecks2    & INS_CONT_TRANS ) != 0);
-    mpBtnLink->Check( ( ScInsertContentsDlg::nPreviousChecks2             & INS_CONT_LINK  ) != 0);
+    mpBtnSkipEmptyCells->Check( bool( ScInsertContentsDlg::nPreviousChecks2 & InsertContentsFlags::NoEmpty ));
+    mpBtnTranspose->Check( bool( ScInsertContentsDlg::nPreviousChecks2    & InsertContentsFlags::Trans ));
+    mpBtnLink->Check( bool( ScInsertContentsDlg::nPreviousChecks2             & InsertContentsFlags::Link  ));
 
     DisableChecks( mpBtnInsAll->IsChecked() );
 
@@ -170,7 +167,7 @@ InsCellCmd ScInsertContentsDlg::GetMoveMode()
 bool ScInsertContentsDlg::IsSkipEmptyCells() const
 {
     if (bUsedShortCut)
-        return bShortCutSkipEmptyCells;
+        return false;
     return mpBtnSkipEmptyCells->IsChecked();
 }
 
@@ -184,7 +181,7 @@ bool ScInsertContentsDlg::IsTranspose() const
 bool ScInsertContentsDlg::IsLink() const
 {
     if (bUsedShortCut)
-        return bShortCutIsLink;
+        return false;
     return mpBtnLink->IsChecked();
 }
 
@@ -236,7 +233,7 @@ void ScInsertContentsDlg::TestModes()
         mpRbMoveRight->Disable();
 
         mpBtnInsAll->Disable();
-        DisableChecks();
+        DisableChecks(true);
     }
     else
     {
@@ -290,10 +287,10 @@ void ScInsertContentsDlg::SetChangeTrack( bool bSet )
     }
 }
 
-void ScInsertContentsDlg::SetCellShiftDisabled( int nDisable )
+void ScInsertContentsDlg::SetCellShiftDisabled( CellShiftDisabledFlags nDisable )
 {
-    bool bDown = ((nDisable & SC_CELL_SHIFT_DISABLE_DOWN) != 0);
-    bool bRight = ((nDisable & SC_CELL_SHIFT_DISABLE_RIGHT) != 0);
+    bool bDown(nDisable & CellShiftDisabledFlags::Down);
+    bool bRight(nDisable & CellShiftDisabledFlags::Right);
     if ( bDown != bMoveDownDisabled || bRight != bMoveRightDisabled )
     {
         bMoveDownDisabled = bDown;
@@ -306,16 +303,13 @@ void ScInsertContentsDlg::SetCellShiftDisabled( int nDisable )
     }
 }
 
-IMPL_LINK_TYPED( ScInsertContentsDlg, ShortCutHdl, Button*, pBtn, void )
+IMPL_LINK( ScInsertContentsDlg, ShortCutHdl, Button*, pBtn, void )
 {
     if ( pBtn == mpBtnShortCutPasteValuesOnly )
     {
         bUsedShortCut = true;
         nShortCutInsContentsCmdBits = InsertDeleteFlags::STRING | InsertDeleteFlags::VALUE | InsertDeleteFlags::DATETIME;
-        nShortCutFormulaCmdBits = ScPasteFunc::NONE;
-        bShortCutSkipEmptyCells = false;
         bShortCutTranspose = false;
-        bShortCutIsLink = false;
         nShortCutMoveMode = INS_NONE;
         EndDialog(RET_OK);
     }
@@ -323,10 +317,7 @@ IMPL_LINK_TYPED( ScInsertContentsDlg, ShortCutHdl, Button*, pBtn, void )
     {
         bUsedShortCut = true;
         nShortCutInsContentsCmdBits = InsertDeleteFlags::STRING | InsertDeleteFlags::VALUE | InsertDeleteFlags::DATETIME | InsertDeleteFlags::ATTRIB;
-        nShortCutFormulaCmdBits = ScPasteFunc::NONE;
-        bShortCutSkipEmptyCells = false;
         bShortCutTranspose = false;
-        bShortCutIsLink = false;
         nShortCutMoveMode = INS_NONE;
         EndDialog(RET_OK);
     }
@@ -334,22 +325,19 @@ IMPL_LINK_TYPED( ScInsertContentsDlg, ShortCutHdl, Button*, pBtn, void )
     {
         bUsedShortCut = true;
         nShortCutInsContentsCmdBits = InsertDeleteFlags::ALL;
-        nShortCutFormulaCmdBits = ScPasteFunc::NONE;
-        bShortCutSkipEmptyCells = false;
         bShortCutTranspose = true;
-        bShortCutIsLink = false;
         nShortCutMoveMode = INS_NONE;
         EndDialog(RET_OK);
     }
 }
 
 
-IMPL_LINK_NOARG_TYPED(ScInsertContentsDlg, InsAllHdl, Button*, void)
+IMPL_LINK_NOARG(ScInsertContentsDlg, InsAllHdl, Button*, void)
 {
     DisableChecks( mpBtnInsAll->IsChecked() );
 }
 
-IMPL_LINK_NOARG_TYPED(ScInsertContentsDlg, LinkBtnHdl, Button*, void)
+IMPL_LINK_NOARG(ScInsertContentsDlg, LinkBtnHdl, Button*, void)
 {
     TestModes();
 }
@@ -361,13 +349,13 @@ ScInsertContentsDlg::~ScInsertContentsDlg()
 
 void ScInsertContentsDlg::dispose()
 {
-    ScInsertContentsDlg::nPreviousChecks2 = 0;
+    ScInsertContentsDlg::nPreviousChecks2 = InsertContentsFlags::NONE;
     if(mpBtnSkipEmptyCells->IsChecked())
-        ScInsertContentsDlg::nPreviousChecks2 |= INS_CONT_NOEMPTY;
+        ScInsertContentsDlg::nPreviousChecks2 |= InsertContentsFlags::NoEmpty;
     if( mpBtnTranspose->IsChecked())
-        ScInsertContentsDlg::nPreviousChecks2 |= INS_CONT_TRANS;
+        ScInsertContentsDlg::nPreviousChecks2 |= InsertContentsFlags::Trans;
     if( mpBtnLink->IsChecked() )
-        ScInsertContentsDlg::nPreviousChecks2 |= INS_CONT_LINK;
+        ScInsertContentsDlg::nPreviousChecks2 |= InsertContentsFlags::Link;
 
     if (!bFillMode)     // in FillMode, None is checked and all three options are disabled
     {
@@ -415,7 +403,7 @@ ScPasteFunc  ScInsertContentsDlg::GetFormulaCmdBits() const
     else if(mpRbDiv->IsChecked())
         ScInsertContentsDlg::nPreviousFormulaChecks = ScPasteFunc::DIV;
     if (bUsedShortCut)
-        return nShortCutFormulaCmdBits;
+        return ScPasteFunc::NONE;
     return ScInsertContentsDlg::nPreviousFormulaChecks;
 }
 

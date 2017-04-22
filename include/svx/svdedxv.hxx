@@ -44,11 +44,13 @@ namespace sdr {
     class SelectionController;
 }
 
-enum SdrEndTextEditKind {SDRENDTEXTEDIT_UNCHANGED, // textobject unchanged
-                         SDRENDTEXTEDIT_CHANGED,   // textobject changed
-                         SDRENDTEXTEDIT_DELETED,   // textobject implicitly deleted
-                         SDRENDTEXTEDIT_SHOULDBEDELETED}; // for writer: textobject should be deleted
-
+enum class SdrEndTextEditKind
+{
+    Unchanged,      // textobject unchanged
+    Changed,        // textobject changed
+    Deleted,        // textobject implicitly deleted
+    ShouldBeDeleted // for writer: textobject should be deleted
+};
 
 // - general edit for objectspecific properties
 // - textedit for all drawobjects, inherited from SdrTextObj
@@ -73,8 +75,8 @@ protected:
     SdrPageView*                pMacroPV;
     VclPtr<vcl::Window>         pMacroWin;
 
-    Rectangle                   aTextEditArea;
-    Rectangle                   aMinTextEditArea;
+    tools::Rectangle                   aTextEditArea;
+    tools::Rectangle                   aMinTextEditArea;
     Link<EditFieldInfo*,void>   aOldCalcFieldValueLink; // for call the old handler
     Point                       aMacroDownPos;
 
@@ -84,7 +86,6 @@ protected:
     bool                        bTextEditOnlyOneView : 1;  // a single OutlinerView (f. spellchecking)
     bool                        bTextEditNewObj : 1;       // current edited object was just recreated
     bool                        bQuickTextEditMode : 1;    // persistent(->CrtV). Default=TRUE
-    bool                        bMacroMode : 1;            // persistent(->CrtV). Default=TRUE
     bool                        bMacroDown : 1;
 
     rtl::Reference< sdr::SelectionController > mxSelectionController;
@@ -110,13 +111,13 @@ protected:
 
     // Create a new OutlinerView at the heap and initialize all required parameters.
     // pTextEditObj, pTextEditPV and pTextEditOutliner have to be initialized
-    OutlinerView* ImpMakeOutlinerView(vcl::Window* pWin, bool bNoPaint, OutlinerView* pGivenView) const;
-    void ImpPaintOutlinerView(OutlinerView& rOutlView, const Rectangle& rRect, OutputDevice& rTargetDevice) const;
+    OutlinerView* ImpMakeOutlinerView(vcl::Window* pWin, bool bNoPaint, OutlinerView* pGivenView, SfxViewShell* pViewShell = nullptr) const;
+    void ImpPaintOutlinerView(OutlinerView& rOutlView, const tools::Rectangle& rRect, OutputDevice& rTargetDevice) const;
     void ImpInvalidateOutlinerView(OutlinerView& rOutlView) const;
 
     // Chaining
     void ImpChainingEventHdl();
-    DECL_LINK_TYPED(ImpAfterCutOrPasteChainingEventHdl, LinkParamNone*, void);
+    DECL_LINK(ImpAfterCutOrPasteChainingEventHdl, LinkParamNone*, void);
 
 
     // Check if the whole text is selected.
@@ -125,22 +126,22 @@ protected:
     void ImpMakeTextCursorAreaVisible();
 
     // handler for AutoGrowing text with active Outliner
-    DECL_LINK_TYPED(ImpOutlinerStatusEventHdl, EditStatus&, void);
-    DECL_LINK_TYPED(ImpOutlinerCalcFieldValueHdl, EditFieldInfo*, void);
+    DECL_LINK(ImpOutlinerStatusEventHdl, EditStatus&, void);
+    DECL_LINK(ImpOutlinerCalcFieldValueHdl, EditFieldInfo*, void);
 
     // link for EndTextEditHdl
-    DECL_LINK_TYPED(EndTextEditHdl, SdrUndoManager*, void);
+    DECL_LINK(EndTextEditHdl, SdrUndoManager*, void);
 
     void ImpMacroUp(const Point& rUpPos);
     void ImpMacroDown(const Point& rDownPos);
 
-    DECL_LINK_TYPED( BeginPasteOrDropHdl, PasteOrDropInfos*, void );
-    DECL_LINK_TYPED( EndPasteOrDropHdl, PasteOrDropInfos*, void );
+    DECL_LINK( BeginPasteOrDropHdl, PasteOrDropInfos*, void );
+    DECL_LINK( EndPasteOrDropHdl, PasteOrDropInfos*, void );
 
 protected:
     // #i71538# make constructors of SdrView sub-components protected to avoid incomplete incarnations which may get casted to SdrView
-    SdrObjEditView(SdrModel* pModel1, OutputDevice* pOut = nullptr);
-    virtual ~SdrObjEditView();
+    SdrObjEditView(SdrModel* pModel1, OutputDevice* pOut);
+    virtual ~SdrObjEditView() override;
 
 public:
 
@@ -154,7 +155,10 @@ public:
     virtual void EndAction() override;
     virtual void BrkAction() override;
     virtual void BckAction() override;
-    virtual void TakeActionRect(Rectangle& rRect) const override;
+    virtual void TakeActionRect(tools::Rectangle& rRect) const override;
+
+    SdrPageView* ShowSdrPage(SdrPage* pPage) override;
+    void HideSdrPage() override;
 
     virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override;
     virtual void ModelHasChanged() override;
@@ -183,11 +187,11 @@ public:
         bool bDontDeleteOutliner = false, bool bOnlyOneView = false, bool bGrabFocus = true);
     // bDontDeleteReally is a special parameter for writer
     // If this flag is set, then a maybe empty textobject is not deleted.
-    // Instead you get a return code SDRENDTEXTEDIT_SHOULDBEDELETED
+    // Instead you get a return code SdrEndTextEditKind::ShouldBeDeleted
     // (in place of SDRENDTEXTEDIT_BEDELETED), which says, the obj should be
     // deleted.
     virtual SdrEndTextEditKind SdrEndTextEdit(bool bDontDeleteReally = false);
-    virtual bool IsTextEdit() const override;
+    virtual bool IsTextEdit() const final override;
 
     // This method returns sal_True, if the point rHit is inside the
     // objectspace or the OutlinerView.
@@ -227,7 +231,7 @@ public:
     virtual SvtScriptType GetScriptType() const;
 
     /* new interface src537 */
-    bool GetAttributes(SfxItemSet& rTargetSet, bool bOnlyHardAttr=false) const;
+    bool GetAttributes(SfxItemSet& rTargetSet, bool bOnlyHardAttr) const;
 
     bool SetAttributes(const SfxItemSet& rSet, bool bReplaceAll);
     SfxStyleSheet* GetStyleSheet() const; // SfxStyleSheet* GetStyleSheet(bool& rOk) const;
@@ -242,9 +246,6 @@ public:
 
     // Object-MacroModus (e.g. rect as button or sth. like that):
 
-    // Persistent. Default TRUE. SvDraw evaluates the flag e.g. at SdrView::GetPreferredPointer().
-    // Has only effect, if the document has draw-objects with macrofunctionality (SdrObject::HasMacro()==sal_True).
-    bool IsMacroMode() const { return bMacroMode; }
     bool BegMacroObj(const Point& rPnt, short nTol, SdrObject* pObj, SdrPageView* pPV, vcl::Window* pWin);
     void BegMacroObj(const Point& rPnt, SdrObject* pObj, SdrPageView* pPV, vcl::Window* pWin) { BegMacroObj(rPnt,-2,pObj,pPV,pWin); }
     void MovMacroObj(const Point& rPnt);
@@ -261,7 +262,7 @@ public:
     const rtl::Reference< sdr::SelectionController >& getSelectionController() const { return mxSelectionController; }
 
     /** returns true if the shape identified by its inventor and identifier supports format paint brush operation */
-    static bool SupportsFormatPaintbrush( sal_uInt32 nObjectInventor, sal_uInt16 nObjectIdentifier );
+    static bool SupportsFormatPaintbrush( SdrInventor nObjectInventor, sal_uInt16 nObjectIdentifier );
 
     /** returns a format paint brush set from the current selection */
     void TakeFormatPaintBrush( std::shared_ptr< SfxItemSet >& rFormatSet  );

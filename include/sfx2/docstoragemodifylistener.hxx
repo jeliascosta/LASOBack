@@ -24,7 +24,7 @@
 
 #include <com/sun/star/util/XModifyListener.hpp>
 
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 
 namespace comphelper { class SolarMutex; }
 
@@ -50,7 +50,7 @@ namespace sfx2
 
     //= DocumentStorageModifyListener
 
-    typedef ::cppu::WeakImplHelper1 < css::util::XModifyListener > DocumentStorageModifyListener_Base;
+    typedef cppu::WeakImplHelper<css::util::XModifyListener> DocumentStorageModifyListener_Base;
 
     class SFX2_DLLPUBLIC DocumentStorageModifyListener : public DocumentStorageModifyListener_Base
     {
@@ -63,13 +63,13 @@ namespace sfx2
         void dispose();
 
         // XModifyListener
-        virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
     protected:
-        virtual ~DocumentStorageModifyListener();
+        virtual ~DocumentStorageModifyListener() override;
 
     private:
         DocumentStorageModifyListener( const DocumentStorageModifyListener& ) = delete;

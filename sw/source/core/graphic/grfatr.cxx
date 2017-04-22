@@ -17,19 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/text/RelOrientation.hpp>
-#include <com/sun/star/text/VertOrientation.hpp>
-#include <com/sun/star/text/HorizontalAdjust.hpp>
-#include <com/sun/star/text/DocumentStatistic.hpp>
-#include <com/sun/star/text/HoriOrientation.hpp>
-#include <com/sun/star/text/HoriOrientationFormat.hpp>
-#include <com/sun/star/text/NotePrintMode.hpp>
-#include <com/sun/star/text/SizeType.hpp>
-#include <com/sun/star/text/VertOrientationFormat.hpp>
-#include <com/sun/star/text/WrapTextMode.hpp>
-#include <com/sun/star/text/GraphicCrop.hpp>
-#include <com/sun/star/text/XTextGraphicObjectsSupplier.hpp>
 #include <com/sun/star/drawing/ColorMode.hpp>
+#include <o3tl/any.hxx>
 #include <svtools/grfmgr.hxx>
 #include <swtypes.hxx>
 #include <grfatr.hxx>
@@ -48,26 +37,26 @@ SfxPoolItem* SwMirrorGrf::Clone( SfxItemPool* ) const
 
 sal_uInt16 SwMirrorGrf::GetValueCount() const
 {
-    return RES_MIRROR_GRAPH_END - RES_MIRROR_GRAPH_BEGIN;
+    return 4;
 }
 
 bool SwMirrorGrf::operator==( const SfxPoolItem& rItem) const
 {
-    return SfxEnumItem::operator==(rItem) &&
+    return SfxEnumItem::operator==(static_cast<const SfxEnumItem<MirrorGraph>&>(rItem)) &&
             static_cast<const SwMirrorGrf&>(rItem).IsGrfToggle() == IsGrfToggle();
 }
 
-static bool lcl_IsHoriOnEvenPages(int nEnum, bool bToggle)
+static bool lcl_IsHoriOnEvenPages(MirrorGraph nEnum, bool bToggle)
 {
-    bool bEnum = nEnum == RES_MIRROR_GRAPH_VERT ||
-                   nEnum == RES_MIRROR_GRAPH_BOTH;
+    bool bEnum = nEnum == MirrorGraph::Vertical ||
+                   nEnum == MirrorGraph::Both;
             return bEnum != bToggle;
 }
 
-static bool lcl_IsHoriOnOddPages(int nEnum)
+static bool lcl_IsHoriOnOddPages(MirrorGraph nEnum)
 {
-    bool bEnum = nEnum == RES_MIRROR_GRAPH_VERT ||
-                   nEnum == RES_MIRROR_GRAPH_BOTH;
+    bool bEnum = nEnum == MirrorGraph::Vertical ||
+                   nEnum == MirrorGraph::Both;
             return bEnum;
 }
 
@@ -86,8 +75,8 @@ bool SwMirrorGrf::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
             bVal = lcl_IsHoriOnOddPages(GetValue());
         break;
         case MID_MIRROR_VERT:
-            bVal = GetValue() == RES_MIRROR_GRAPH_HOR ||
-                   GetValue() == RES_MIRROR_GRAPH_BOTH;
+            bVal = GetValue() == MirrorGraph::Horizontal ||
+                   GetValue() == MirrorGraph::Both;
             break;
         default:
             OSL_ENSURE( false, "unknown MemberId" );
@@ -100,7 +89,7 @@ bool SwMirrorGrf::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
 bool SwMirrorGrf::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
 {
     bool bRet = true;
-    bool bVal = *static_cast<sal_Bool const *>(rVal.getValue());
+    bool bVal = *o3tl::doAccess<bool>(rVal);
     // vertical and horizontal were swapped at some point
     nMemberId &= ~CONVERT_TWIPS;
     switch ( nMemberId )
@@ -108,34 +97,34 @@ bool SwMirrorGrf::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
         case MID_MIRROR_HORZ_EVEN_PAGES:
         case MID_MIRROR_HORZ_ODD_PAGES:
         {
-            bool bIsVert = GetValue() == RES_MIRROR_GRAPH_HOR ||
-                                GetValue() == RES_MIRROR_GRAPH_BOTH;
+            bool bIsVert = GetValue() == MirrorGraph::Horizontal ||
+                                GetValue() == MirrorGraph::Both;
             bool bOnOddPages = nMemberId == MID_MIRROR_HORZ_EVEN_PAGES ?
                                     lcl_IsHoriOnOddPages(GetValue()) : bVal;
             bool bOnEvenPages = nMemberId == MID_MIRROR_HORZ_ODD_PAGES ?
                                        lcl_IsHoriOnEvenPages(GetValue(), IsGrfToggle()) : bVal;
             MirrorGraph nEnum = bOnOddPages ?
-                    bIsVert ? RES_MIRROR_GRAPH_BOTH : RES_MIRROR_GRAPH_VERT :
-                        bIsVert ? RES_MIRROR_GRAPH_HOR : RES_MIRROR_GRAPH_DONT;
+                    bIsVert ? MirrorGraph::Both : MirrorGraph::Vertical :
+                        bIsVert ? MirrorGraph::Horizontal : MirrorGraph::Dont;
             bool bToggle = bOnOddPages != bOnEvenPages;
-            SetValue(static_cast<sal_uInt16>(nEnum));
+            SetValue(nEnum);
             SetGrfToggle( bToggle );
         }
         break;
         case MID_MIRROR_VERT:
             if ( bVal )
             {
-                if ( GetValue() == RES_MIRROR_GRAPH_VERT )
-                    SetValue( RES_MIRROR_GRAPH_BOTH );
-                else if ( GetValue() != RES_MIRROR_GRAPH_BOTH )
-                    SetValue( RES_MIRROR_GRAPH_HOR );
+                if ( GetValue() == MirrorGraph::Vertical )
+                    SetValue( MirrorGraph::Both );
+                else if ( GetValue() != MirrorGraph::Both )
+                    SetValue( MirrorGraph::Horizontal );
             }
             else
             {
-                if ( GetValue() == RES_MIRROR_GRAPH_BOTH )
-                    SetValue( RES_MIRROR_GRAPH_VERT );
-                else if ( GetValue() == RES_MIRROR_GRAPH_HOR )
-                    SetValue( RES_MIRROR_GRAPH_DONT );
+                if ( GetValue() == MirrorGraph::Both )
+                    SetValue( MirrorGraph::Vertical );
+                else if ( GetValue() == MirrorGraph::Horizontal )
+                    SetValue( MirrorGraph::Dont );
             }
             break;
         default:
@@ -299,7 +288,7 @@ SfxPoolItem* SwDrawModeGrf::Clone( SfxItemPool * ) const
 
 sal_uInt16 SwDrawModeGrf::GetValueCount() const
 {
-    return GRAPHICDRAWMODE_WATERMARK + 1;
+    return (sal_uInt16)GraphicDrawMode::Watermark + 1;
 }
 
 bool SwDrawModeGrf::QueryValue( uno::Any& rVal,
@@ -314,7 +303,7 @@ bool SwDrawModeGrf::PutValue( const uno::Any& rVal,
                                 sal_uInt8 )
 {
     sal_Int32 eVal = SWUnoHelper::GetEnumAsInt32( rVal );
-    if(eVal >= 0 && eVal <= GRAPHICDRAWMODE_WATERMARK)
+    if(eVal >= 0 && eVal <= (sal_uInt16)GraphicDrawMode::Watermark)
     {
         SetEnumValue((sal_uInt16)eVal);
         return true;

@@ -39,8 +39,6 @@ DocxExportFilter::DocxExportFilter( const uno::Reference< uno::XComponentContext
 
 bool DocxExportFilter::exportDocument()
 {
-    OSL_TRACE( "DocxExportFilter::exportDocument()\n" ); // DEBUG remove me
-
     // get SwDoc*
     uno::Reference< uno::XInterface > xIfc( getModel(), uno::UNO_QUERY );
     SwXTextDocument *pTextDoc = dynamic_cast< SwXTextDocument * >( xIfc.get() );
@@ -62,23 +60,22 @@ bool DocxExportFilter::exportDocument()
     // get the correct SwPaM* then...
     SwPaM aPam( pDoc->GetNodes().GetEndOfContent() );
     aPam.SetMark();
-    aPam.Move( fnMoveBackward, fnGoDoc );
+    aPam.Move( fnMoveBackward, GoInDoc );
 
-    SwPaM *pCurPam = new SwPaM( *aPam.End(), *aPam.Start() );
+    std::unique_ptr<SwPaM> pCurPam( new SwPaM( *aPam.End(), *aPam.Start() ) );
 
     // export the document
     // (in a separate block so that it's destructed before the commit)
     {
-        DocxExport aExport( this, pDoc, pCurPam, &aPam );
+        DocxExport aExport( this, pDoc, pCurPam.get(), &aPam );
         aExport.ExportDocument( true ); // FIXME support exporting selection only
     }
 
     commitStorage();
 
     // delete the pCurPam
-    while ( pCurPam->GetNext() != pCurPam )
+    while ( pCurPam->GetNext() != pCurPam.get() )
         delete pCurPam->GetNext();
-    delete pCurPam;
 
     return true;
 }
@@ -91,7 +88,7 @@ OUString DocxExport_getImplementationName()
     return OUString( IMPL_NAME );
 }
 
-OUString DocxExportFilter::getImplementationName() throw (css::uno::RuntimeException, std::exception)
+OUString DocxExportFilter::getImplementationName()
 {
     return DocxExport_getImplementationName();
 }
@@ -101,7 +98,8 @@ uno::Sequence< OUString > SAL_CALL DocxExport_getSupportedServiceNames() throw()
     return uno::Sequence< OUString > { "com.sun.star.document.ExportFilter" };
 }
 
-uno::Reference< uno::XInterface > SAL_CALL DocxExport_createInstance(const uno::Reference< uno::XComponentContext > & xCtx ) throw( uno::Exception )
+/// @throws uno::Exception
+uno::Reference< uno::XInterface > SAL_CALL DocxExport_createInstance(const uno::Reference< uno::XComponentContext > & xCtx )
 {
     return static_cast<cppu::OWeakObject*>(new DocxExportFilter( xCtx ));
 }
@@ -109,7 +107,7 @@ uno::Reference< uno::XInterface > SAL_CALL DocxExport_createInstance(const uno::
 extern "C"
 {
 
-::cppu::ImplementationEntry entries [] =
+::cppu::ImplementationEntry const entries [] =
 {
     {
         DocxExport_createInstance, DocxExport_getImplementationName,

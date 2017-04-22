@@ -61,7 +61,7 @@ namespace slideshow
                                           const uno::Reference< drawing::XShape >&        rxShape,
                                           const OUString&                          rServiceName,
                                           const char**                                    pPropCopyTable,
-                                          sal_Size                                        nNumPropEntries,
+                                          std::size_t                                     nNumPropEntries,
                                           const uno::Reference< uno::XComponentContext >& rxContext ) :
             mpViewLayer( rViewLayer ),
             mxViewer(),
@@ -88,7 +88,7 @@ namespace slideshow
 
             // copy shape properties to applet viewer
             OUString aPropName;
-            for( sal_Size i=0; i<nNumPropEntries; ++i )
+            for( std::size_t i=0; i<nNumPropEntries; ++i )
             {
                 aPropName = OUString::createFromAscii( pPropCopyTable[i] );
                 xViewerPropSet->setPropertyValue( aPropName,
@@ -184,8 +184,8 @@ namespace slideshow
 
                     uno::Reference< awt::XWindow > xSurroundingWindow( mxFrame->getContainerWindow() );
                     if( xSurroundingWindow.is() )
-                        xSurroundingWindow->setPosSize( static_cast<sal_Int32>(rPixelBounds.getMinX()),
-                                                        static_cast<sal_Int32>(rPixelBounds.getMinY()),
+                        xSurroundingWindow->setPosSize( rPixelBounds.getMinX(),
+                                                        rPixelBounds.getMinY(),
                                                         static_cast<sal_Int32>(rPixelBounds.getWidth()),
                                                         static_cast<sal_Int32>(rPixelBounds.getHeight()),
                                                         awt::PosSize::POSSIZE );
@@ -250,8 +250,8 @@ namespace slideshow
 
             uno::Reference< awt::XWindow > xFrameWindow( mxFrame->getContainerWindow() );
             if( xFrameWindow.is() )
-                xFrameWindow->setPosSize( static_cast<sal_Int32>(rPixelBounds.getMinX()),
-                                          static_cast<sal_Int32>(rPixelBounds.getMinY()),
+                xFrameWindow->setPosSize( rPixelBounds.getMinX(),
+                                          rPixelBounds.getMinY(),
                                           static_cast<sal_Int32>(rPixelBounds.getWidth()),
                                           static_cast<sal_Int32>(rPixelBounds.getHeight()),
                                           awt::PosSize::POSSIZE );

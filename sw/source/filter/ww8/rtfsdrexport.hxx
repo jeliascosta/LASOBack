@@ -56,12 +56,9 @@ class RtfSdrExport : public EscherEx
     /// Remember which shape types we had already written.
     bool* m_pShapeTypeWritten;
 
-    /// List of TextBoxes in this document: they are exported as part of their shape, never alone.
-    std::set<const SwFrameFormat*> m_aTextBoxes;
-
 public:
     explicit RtfSdrExport(RtfExport& rExport);
-    virtual             ~RtfSdrExport();
+    virtual             ~RtfSdrExport() override;
 
     /// Export the sdr object as Sdr.
     ///
@@ -69,7 +66,7 @@ public:
     void AddSdrObject(const SdrObject& rObj);
 
     /// Is this a standalone TextFrame, or used as a TextBox of a shape?
-    bool isTextBox(const SwFrameFormat& rFrameFormat);
+    static bool isTextBox(const SwFrameFormat& rFrameFormat);
     /// Write editeng text, e.g. shape or comment.
     void WriteOutliner(const OutlinerParaObject& rParaObj, TextTypes eType);
 
@@ -86,24 +83,24 @@ protected:
     using EscherEx::EndShape;
     void        EndShape(sal_Int32 nShapeElement);
 
-    virtual void        Commit(EscherPropertyContainer& rProps, const Rectangle& rRect) override;
+    virtual void        Commit(EscherPropertyContainer& rProps, const tools::Rectangle& rRect) override;
 
 private:
 
     virtual void OpenContainer(sal_uInt16 nEscherContainer, int nRecInstance = 0) override;
     virtual void CloseContainer() override;
 
-    virtual sal_uInt32 EnterGroup(const OUString& rShapeName, const Rectangle* pBoundRect = nullptr) override;
+    virtual sal_uInt32 EnterGroup(const OUString& rShapeName, const tools::Rectangle* pBoundRect) override;
     virtual void LeaveGroup() override;
 
     virtual void AddShape(sal_uInt32 nShapeType, sal_uInt32 nShapeFlags, sal_uInt32 nShapeId = 0) override;
 
 private:
     /// Add starting and ending point of a line to the m_pShapeAttrList.
-    void AddLineDimensions(const Rectangle& rRectangle);
+    void AddLineDimensions(const tools::Rectangle& rRectangle);
 
     /// Add position and size to the OStringBuffer.
-    void AddRectangleDimensions(OStringBuffer& rBuffer, const Rectangle& rRectangle);
+    void AddRectangleDimensions(OStringBuffer& rBuffer, const tools::Rectangle& rRectangle);
 
     /// Exports the pib property of the shape
     void impl_writeGraphic();

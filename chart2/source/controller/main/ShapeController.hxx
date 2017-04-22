@@ -38,18 +38,14 @@ class ShapeController: public FeatureCommandDispatchBase
 
 public:
     ShapeController( const css::uno::Reference< css::uno::XComponentContext >& rxContext, ChartController* pController );
-    virtual ~ShapeController();
-
-    // late initialisation, especially for adding as listener
-    virtual void initialize() override;
+    virtual ~ShapeController() override;
 
 protected:
     // WeakComponentImplHelperBase
     virtual void SAL_CALL disposing() override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
     // state of a feature
     virtual FeatureState getState( const OUString& rCommand ) override;
@@ -61,7 +57,7 @@ protected:
     virtual void describeSupportedFeatures() override;
 
 private:
-    DECL_LINK_TYPED( CheckNameHdl, AbstractSvxObjectNameDialog&, bool);
+    DECL_LINK( CheckNameHdl, AbstractSvxObjectNameDialog&, bool);
 
     void executeDispatch_FormatLine();
     void executeDispatch_FormatArea();

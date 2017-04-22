@@ -21,7 +21,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include<rtl/character.hxx>
+#include <rtl/character.hxx>
 using namespace std;
 
 #include "gL10nMem.hxx"
@@ -599,10 +599,6 @@ bool l10nMem::convFilterWarning(const string& sSourceFile,
              sKey        == "WriterCommands.UserInterface.Commands..uno:FlipVertical.Label") ||
             (sSourceFile == "registry/data/org/openoffice/Office/UI/WriterCommands.xcu" &&
              sKey        == "WriterCommands.UserInterface.Commands..uno:FlipHorizontal.Label") ||
-            (sSourceFile == "registry/data/org/openoffice/Office/Common.xcu" &&
-             sKey        == "Common.View.Localisation.AutoMnemonic") ||
-            (sSourceFile == "registry/data/org/openoffice/Office/Common.xcu" &&
-             sKey        == "Common.View.Localisation.DialogScale") ||
             (sSourceFile == "registry/data/org/openoffice/Office/UI/ImpressWindowState.xcu" &&
              sKey        == "ImpressWindowState.UIElements.States.private:resource/toolpanel/DrawingFramework/SlideTransitions.UIName") ||
             (sSourceFile == "registry/data/org/openoffice/Office/UI/ImpressWindowState.xcu" &&
@@ -871,7 +867,7 @@ bool l10nMem::locateKey(int                iLineNo,
         if (ch == ' ' || ch == '*' || ch == '+' || ch == '%')
             sUpperKey[i] = '_';
         else
-            sUpperKey[i] = toupper(sUpperKey[i]);
+            sUpperKey[i] = rtl::toAsciiUpperCase(sUpperKey[i]);
     }
 
     // Fast check, to see if next key is the one (normal with load and source without change)

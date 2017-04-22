@@ -127,7 +127,7 @@ class CloseDispatcher : public  ::cppu::WeakImplHelper<
                         const OUString&                                           sTarget);
 
         /** @short  does nothing real. */
-        virtual ~CloseDispatcher();
+        virtual ~CloseDispatcher() override;
 
     // uno interface
 
@@ -136,19 +136,19 @@ class CloseDispatcher : public  ::cppu::WeakImplHelper<
         // XNotifyingDispatch
         virtual void SAL_CALL dispatchWithNotification( const css::util::URL&                                             aURL      ,
                                                         const css::uno::Sequence< css::beans::PropertyValue >&            lArguments,
-                                                        const css::uno::Reference< css::frame::XDispatchResultListener >& xListener ) throw(css::uno::RuntimeException, std::exception) override;
+                                                        const css::uno::Reference< css::frame::XDispatchResultListener >& xListener ) override;
 
         // XDispatch
         virtual void SAL_CALL dispatch            ( const css::util::URL&                                     aURL      ,
-                                                    const css::uno::Sequence< css::beans::PropertyValue >&    lArguments) throw(css::uno::RuntimeException, std::exception) override;
+                                                    const css::uno::Sequence< css::beans::PropertyValue >&    lArguments) override;
         virtual void SAL_CALL addStatusListener   ( const css::uno::Reference< css::frame::XStatusListener >& xListener ,
-                                                    const css::util::URL&                                     aURL      ) throw(css::uno::RuntimeException, std::exception) override;
+                                                    const css::util::URL&                                     aURL      ) override;
         virtual void SAL_CALL removeStatusListener( const css::uno::Reference< css::frame::XStatusListener >& xListener ,
-                                                    const css::util::URL&                                     aURL      ) throw(css::uno::RuntimeException, std::exception) override;
+                                                    const css::util::URL&                                     aURL      ) override;
 
         // XDispatchInformationProvider
-        virtual css::uno::Sequence< sal_Int16 >                       SAL_CALL getSupportedCommandGroups         (                         ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< css::frame::DispatchInformation > SAL_CALL getConfigurableDispatchInformation( sal_Int16 nCommandGroup ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< sal_Int16 >                       SAL_CALL getSupportedCommandGroups         (                         ) override;
+        virtual css::uno::Sequence< css::frame::DispatchInformation > SAL_CALL getConfigurableDispatchInformation( sal_Int16 nCommandGroup ) override;
 
     // internal helper
 
@@ -160,7 +160,7 @@ class CloseDispatcher : public  ::cppu::WeakImplHelper<
                     asynchronous. Otherwise our callis kill its own environment
                     during they call us...
         */
-        DECL_LINK_TYPED( impl_asyncCallback, LinkParamNone*, void );
+        DECL_LINK( impl_asyncCallback, LinkParamNone*, void );
 
         /** @short  prepare m_xCloseFrame so it should be closeable without problems.
 

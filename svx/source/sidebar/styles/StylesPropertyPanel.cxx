@@ -1,3 +1,7 @@
+#include <sal/config.h>
+
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
+
 #include "StylesPropertyPanel.hxx"
 
 using namespace css;
@@ -26,11 +30,6 @@ StylesPropertyPanel::StylesPropertyPanel ( vcl::Window* pParent, const css::uno:
 StylesPropertyPanel::~StylesPropertyPanel()
 {
     disposeOnce();
-}
-
-void StylesPropertyPanel::dispose()
-{
-    PanelLayout::dispose();
 }
 
 void StylesPropertyPanel::DataChanged( const DataChangedEvent& /*rEvent*/)

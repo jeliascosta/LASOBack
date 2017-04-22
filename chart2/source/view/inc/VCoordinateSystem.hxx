@@ -50,12 +50,12 @@ public:
     static VCoordinateSystem* createCoordinateSystem( const css::uno::Reference<
                                 css::chart2::XCoordinateSystem >& xCooSysModel );
 
+    /// @throws css::uno::RuntimeException
     void initPlottingTargets(
                   const css::uno::Reference< css::drawing::XShapes >& xLogicTarget
                 , const css::uno::Reference< css::drawing::XShapes >& xFinalTarget
                 , const css::uno::Reference< css::lang::XMultiServiceFactory >& xFactory
-                , css::uno::Reference< css::drawing::XShapes >& xLogicTargetForSeriesBehindAxis )
-                        throw (css::uno::RuntimeException, std::exception);
+                , css::uno::Reference< css::drawing::XShapes >& xLogicTargetForSeriesBehindAxis );
 
     void setParticle( const OUString& rCooSysParticle );
 
@@ -73,9 +73,9 @@ public:
     ExplicitCategoriesProvider* getExplicitCategoriesProvider();
 
     // returns a complete scale set for a given dimension and index; for example if nDimensionIndex==1 and nAxisIndex==2 you get returned the secondary x axis, main y axis and main z axis
-    ::std::vector< ExplicitScaleData > getExplicitScales( sal_Int32 nDimensionIndex, sal_Int32 nAxisIndex ) const;
+    std::vector< ExplicitScaleData > getExplicitScales( sal_Int32 nDimensionIndex, sal_Int32 nAxisIndex ) const;
     // returns a complete increment set for a given dimension and index; for example if nDimensionIndex==1 and nAxisIndex==2 you get returned the secondary x axis, main y axis and main z axis
-    ::std::vector< ExplicitIncrementData > getExplicitIncrements( sal_Int32 nDimensionIndex, sal_Int32 nAxisIndex ) const;
+    std::vector< ExplicitIncrementData > getExplicitIncrements( sal_Int32 nDimensionIndex, sal_Int32 nAxisIndex ) const;
 
     void addMinimumAndMaximumSupplier( MinimumAndMaximumSupplier* pMinimumAndMaximumSupplier );
     bool hasMinimumAndMaximumSupplier( MinimumAndMaximumSupplier* pMinimumAndMaximumSupplier );

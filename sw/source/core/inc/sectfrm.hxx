@@ -22,7 +22,6 @@
 
 #include "layfrm.hxx"
 #include "flowfrm.hxx"
-#include <set>
 
 class SwSection;
 class SwSectionFormat;
@@ -56,7 +55,7 @@ class SwSectionFrame: public SwLayoutFrame, public SwFlowFrame
     bool IsEndnoteAtMyEnd() const;
 
     virtual void DestroyImpl() override;
-    virtual ~SwSectionFrame();
+    virtual ~SwSectionFrame() override;
 
 protected:
     virtual void MakeAll(vcl::RenderContext* pRenderContext) override;
@@ -83,10 +82,10 @@ public:
 
                  SwContentFrame *FindLastContent( SwFindMode nMode = SwFindMode::None );
     inline const SwContentFrame *FindLastContent() const;
-    inline SwSection* GetSection() { return m_pSection; }
-    inline const SwSection* GetSection() const { return m_pSection; }
-    inline void ColLock()       { mbColLocked = true; }
-    inline void ColUnlock()     { mbColLocked = false; }
+    SwSection* GetSection() { return m_pSection; }
+    const SwSection* GetSection() const { return m_pSection; }
+    void ColLock()       { mbColLocked = true; }
+    void ColUnlock()     { mbColLocked = false; }
 
     void CalcFootnoteContent();
     void SimpleFormat();
@@ -111,7 +110,7 @@ public:
      * if bCheckFollow is set.
      */
     bool ToMaximize( bool bCheckFollow ) const;
-    inline bool ToMaximize_() const {
+    bool ToMaximize_() const {
         if( !m_pSection ) return false;
         return ToMaximize( false );
     }
@@ -160,8 +159,6 @@ public:
 
     DECL_FIXEDMEMPOOL_NEWDEL(SwSectionFrame)
 };
-
-class SwDestroyList : public std::set<SwSectionFrame*> {};
 
 inline const SwSectionFrame *SwSectionFrame::GetFollow() const
 {

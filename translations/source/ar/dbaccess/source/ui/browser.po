@@ -1,0 +1,323 @@
+#. extracted from dbaccess/source/ui/browser
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
+"POT-Creation-Date: 2016-11-09 14:10+0100\n"
+"PO-Revision-Date: 2016-07-04 15:45+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+"X-Accelerator-Marker: ~\n"
+"X-Generator: LibreOffice\n"
+"X-POOTLE-MTIME: 1467647101.000000\n"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_QUERY_BRW_DELETE_ROWS\n"
+"string.text"
+msgid "Do you want to delete the selected data?"
+msgstr "أتريد حذف البيانات المحدّدة؟"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"RID_STR_DATABROWSER_FILTERED\n"
+"string.text"
+msgid "(filtered)"
+msgstr "(مرشحة)"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"SBA_BROWSER_SETTING_ORDER\n"
+"string.text"
+msgid "Error setting the sort criteria"
+msgstr "خطأ في تعيين معيار الفرز"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"SBA_BROWSER_SETTING_FILTER\n"
+"string.text"
+msgid "Error setting the filter criteria"
+msgstr "خطأ في تعيين معيار التّرشيح"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"RID_STR_CONNECTION_LOST\n"
+"string.text"
+msgid "Connection lost"
+msgstr "فُقد الاتّصال"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"RID_STR_QUERIES_CONTAINER\n"
+"string.text"
+msgid "Queries"
+msgstr "الاستعلامات"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"RID_STR_TABLES_CONTAINER\n"
+"string.text"
+msgid "Tables"
+msgstr "الجداول"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"MENU_BROWSER_DEFAULTCONTEXT\n"
+"ID_TREE_EDIT_DATABASE\n"
+"menuitem.text"
+msgid "Edit ~Database File..."
+msgstr "حرّر ملفّ ~قاعدة البيانات..."
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"MENU_BROWSER_DEFAULTCONTEXT\n"
+"ID_TREE_CLOSE_CONN\n"
+"menuitem.text"
+msgid "Disco~nnect"
+msgstr "اقطع الاتّصا~ل"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"MENU_BROWSER_DEFAULTCONTEXT\n"
+"SID_COPY\n"
+"menuitem.text"
+msgid "~Copy"
+msgstr "ا~نسخ"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"MENU_BROWSER_DEFAULTCONTEXT\n"
+"ID_TREE_ADMINISTRATE\n"
+"menuitem.text"
+msgid "Registered databases ..."
+msgstr "قواعد البيانات المسجّلة..."
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_TITLE_CONFIRM_DELETION\n"
+"string.text"
+msgid "Confirm Deletion"
+msgstr "أكّد الحذف"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_QUERY_DELETE_TABLE\n"
+"string.text"
+msgid "Do you want to delete the table '%1'?"
+msgstr "أتريد حذف الجدول '%1'؟"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_QUERY_CONNECTION_LOST\n"
+"string.text"
+msgid "The connection to the database has been lost. Do you want to reconnect?"
+msgstr "فُقد الاتّصال بقاعدة البيانات. أتريد إعادة الاتّصال؟"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_OPENTABLES_WARNINGS\n"
+"string.text"
+msgid "Warnings encountered"
+msgstr "صودفت تحذيرات"
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_OPENTABLES_WARNINGS_DETAILS\n"
+"string.text"
+msgid "While retrieving the tables, warnings were reported by the database connection."
+msgstr "أثناء جلب الجداول، اتصال قاعدة البيانات أبلغ عن تحذيرات."
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_CONNECTING_DATASOURCE\n"
+"string.text"
+msgid "Connecting to \"$name$\" ..."
+msgstr "يتّصل بـ \"$name$\"..."
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_LOADING_QUERY\n"
+"string.text"
+msgid "Loading query $name$ ..."
+msgstr "يحمّل الاستعلام $name$..."
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_LOADING_TABLE\n"
+"string.text"
+msgid "Loading table $name$ ..."
+msgstr "يحمّل الجدول $name$..."
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_NO_TABLE_FORMAT_INSIDE\n"
+"string.text"
+msgid "No table format could be found."
+msgstr "لم يعثر على نسق جداول."
+
+#: sbabrw.src
+msgctxt ""
+"sbabrw.src\n"
+"STR_COULDNOTCONNECT_DATASOURCE\n"
+"string.text"
+msgid "The connection to the data source \"$name$\" could not be established."
+msgstr "تعذّرت إقامة الاتّصال بمصدر البيانات \"$name$\"."
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"RID_SBA_GRID_COLCTXMENU\n"
+"ID_BROWSER_COLATTRSET\n"
+"menuitem.text"
+msgid "Column ~Format..."
+msgstr "~نسق العمود..."
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"RID_SBA_GRID_COLCTXMENU\n"
+"ID_BROWSER_COLWIDTH\n"
+"menuitem.text"
+msgid "Column ~Width..."
+msgstr "عر~ض العمود..."
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"RID_SBA_GRID_COLCTXMENU\n"
+"ID_BROWSER_COLUMNINFO\n"
+"menuitem.text"
+msgid "Copy Column D~escription"
+msgstr "انسخ و~صف العمود"
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"RID_SBA_GRID_ROWCTXMENU\n"
+"ID_BROWSER_TABLEATTR\n"
+"menuitem.text"
+msgid "Table Format..."
+msgstr "نسق الجداول..."
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"RID_SBA_GRID_ROWCTXMENU\n"
+"ID_BROWSER_ROWHEIGHT\n"
+"menuitem.text"
+msgid "Row Height..."
+msgstr "ارتفاع الصفّ..."
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"RID_SBA_GRID_ROWCTXMENU\n"
+"SID_COPY\n"
+"menuitem.text"
+msgid "~Copy"
+msgstr "ا~نسخ"
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"RID_STR_UNDO_MODIFY_RECORD\n"
+"string.text"
+msgid "Undo: Data Input"
+msgstr "تراجع عن: إدخال البيانات"
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"RID_STR_SAVE_CURRENT_RECORD\n"
+"string.text"
+msgid "Save current record"
+msgstr "احفظ السّجلّ الحاليّ"
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"STR_QRY_TITLE\n"
+"string.text"
+msgid "Query #"
+msgstr "الاستعلام #"
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"STR_TBL_TITLE\n"
+"string.text"
+msgid "Table #"
+msgstr "الجدول #"
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"STR_VIEW_TITLE\n"
+"string.text"
+msgid "View #"
+msgstr "المنظور #"
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"STR_NAME_ALREADY_EXISTS\n"
+"string.text"
+msgid "The name \"#\" already exists."
+msgstr "الاسم \"#\" موجود بالفعل."
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"STR_NO_COLUMNNAME_MATCHING\n"
+"string.text"
+msgid "No matching column names were found."
+msgstr "لم يعثر على أسماء عواميد مطابقة."
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"STR_ERROR_OCCURRED_WHILE_COPYING\n"
+"string.text"
+msgid "An error occurred. Do you want to continue copying?"
+msgstr "حدث خطأ, هل تريد متابعة النسخ؟"
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"STR_DATASOURCE_GRIDCONTROL_NAME\n"
+"string.text"
+msgid "Data source table view"
+msgstr "منظور جدول مصدر البيانات"
+
+#: sbagrid.src
+msgctxt ""
+"sbagrid.src\n"
+"STR_DATASOURCE_GRIDCONTROL_DESC\n"
+"string.text"
+msgid "Shows the selected table or query."
+msgstr "يظهر الجدول أو الاستعلام المحدّد."

@@ -30,8 +30,9 @@
 #include <unx/gtk/gtkgdi.hxx>
 
 GtkSalObject::GtkSalObject( GtkSalFrame* pParent, bool bShow )
-        : m_pSocket( nullptr ),
-          m_pRegion( nullptr )
+        : m_pSocket(nullptr)
+        , m_pParent(pParent)
+        , m_pRegion(nullptr)
 {
     if( pParent )
     {
@@ -48,7 +49,7 @@ GtkSalObject::GtkSalObject( GtkSalFrame* pParent, bool bShow )
         // system data
         m_aSystemData.nSize         = sizeof( SystemEnvData );
         m_aSystemData.aWindow       = pParent->GetNativeWindowHandle(m_pSocket);
-        m_aSystemData.aShellWindow  = reinterpret_cast<long>(this);
+        m_aSystemData.aShellWindow  = reinterpret_cast<sal_IntPtr>(this);
         m_aSystemData.pSalFrame     = nullptr;
         m_aSystemData.pWidget       = m_pSocket;
         m_aSystemData.nScreen       = pParent->getXScreenNumber().getXScreen();
@@ -136,7 +137,7 @@ void GtkSalObject::SetPosSize( long nX, long nY, long nWidth, long nHeight )
         GtkFixed* pContainer = GTK_FIXED(gtk_widget_get_parent(m_pSocket));
         gtk_fixed_move( pContainer, m_pSocket, nX, nY );
         gtk_widget_set_size_request( m_pSocket, nWidth, nHeight );
-        gtk_container_resize_children( GTK_CONTAINER(pContainer) );
+        m_pParent->nopaint_container_resize_children(GTK_CONTAINER(pContainer));
     }
 }
 

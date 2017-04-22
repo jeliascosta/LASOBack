@@ -35,6 +35,7 @@
 
 #include <osl/diagnose.h>
 #include <o3tl/make_unique.hxx>
+#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 #include <com/sun/star/ucb/OpenMode.hpp>
 #include <ucbhelper/contentidentifier.hxx>
 #include <ucbhelper/providerhelper.hxx>
@@ -321,7 +322,6 @@ void DataSupplier::close()
 
 // virtual
 void DataSupplier::validate()
-    throw( ucb::ResultSetException )
 {
     if ( m_pImpl->m_bThrowException )
         throw ucb::ResultSetException();

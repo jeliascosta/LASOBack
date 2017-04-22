@@ -64,6 +64,13 @@ void ScTable::CopyOneCellFromClip(
         nColOffset = nColOffset % nSrcColSize;
         assert(nColOffset >= 0);
         aCol[nCol].CopyOneCellFromClip(rCxt, nRow1, nRow2, nColOffset);
+
+        if ((rCxt.getInsertFlag() & InsertDeleteFlags::ATTRIB) && (nColOffset == 0))
+        {
+            for (SCROW nRow = nRow1; nRow <= nRow2; ++nRow)
+                CopyConditionalFormat(nCol, nRow, nCol + nSrcColSize - 1, nRow, nCol - aSrcRange.aStart.Col(),
+                        nRow - nSrcRow, pSrcTab);
+        }
     }
 
     if (nCol1 == 0 && nCol2 == MAXCOL && mpRowHeights)
@@ -117,21 +124,21 @@ void ScTable::SwapNonEmpty(
 void ScTable::PreprocessRangeNameUpdate(
     sc::EndListeningContext& rEndListenCxt, sc::CompileFormulaContext& rCompileCxt )
 {
-    for (SCCOL i = 0; i <= MAXCOL; ++i)
+    for (SCCOL i = 0; i < aCol.size(); ++i)
         aCol[i].PreprocessRangeNameUpdate(rEndListenCxt, rCompileCxt);
 }
 
 void ScTable::PreprocessDBDataUpdate(
     sc::EndListeningContext& rEndListenCxt, sc::CompileFormulaContext& rCompileCxt )
 {
-    for (SCCOL i = 0; i <= MAXCOL; ++i)
+    for (SCCOL i = 0; i < aCol.size(); ++i)
         aCol[i].PreprocessDBDataUpdate(rEndListenCxt, rCompileCxt);
 }
 
 void ScTable::CompileHybridFormula(
     sc::StartListeningContext& rStartListenCxt, sc::CompileFormulaContext& rCompileCxt )
 {
-    for (SCCOL i = 0; i <= MAXCOL; ++i)
+    for (SCCOL i = 0; i < aCol.size(); ++i)
         aCol[i].CompileHybridFormula(rStartListenCxt, rCompileCxt);
 }
 

@@ -47,12 +47,11 @@ private:
     // discrete line width
     double                          mfDiscreteLineWidth;
 
-    // bitfield
-    bool                            mbShadow : 1;
     bool                            mbLineSolid : 1;
 
 protected:
-    virtual drawinglayer::primitive2d::Primitive2DContainer create2DDecomposition(
+    virtual void create2DDecomposition(
+        drawinglayer::primitive2d::Primitive2DContainer& rContainer,
         const drawinglayer::geometry::ViewInformation2D& rViewInformation) const override;
 
 public:
@@ -70,18 +69,12 @@ public:
         maAnchorState(aAnchorState),
         maColor(rColor),
         mfDiscreteLineWidth(fDiscreteLineWidth),
-        mbShadow(false),
         mbLineSolid(bLineSolid)
     {}
 
     // data access
-    const basegfx::B2DPolygon& getTriangle() const { return maTriangle; }
     const basegfx::B2DPolygon& getLine() const { return maLine; }
-    const basegfx::B2DPolygon& getLineTop() const { return maLineTop; }
-    AnchorState getAnchorState() const { return maAnchorState; }
     const basegfx::BColor& getColor() const { return maColor; }
-    double getDiscreteLineWidth() const { return mfDiscreteLineWidth; }
-    bool getShadow() const { return mbShadow; }
     bool getLineSolid() const { return mbLineSolid; }
 
     virtual bool operator==( const drawinglayer::primitive2d::BasePrimitive2D& rPrimitive ) const override;
@@ -89,31 +82,28 @@ public:
     DeclPrimitive2DIDBlock()
 };
 
-drawinglayer::primitive2d::Primitive2DContainer AnchorPrimitive::create2DDecomposition(
+void AnchorPrimitive::create2DDecomposition(
+    drawinglayer::primitive2d::Primitive2DContainer& rContainer,
     const drawinglayer::geometry::ViewInformation2D& /*rViewInformation*/) const
 {
-    drawinglayer::primitive2d::Primitive2DContainer aRetval;
-
-    if ( AS_TRI == maAnchorState ||
-         AS_ALL == maAnchorState ||
-         AS_START == maAnchorState )
+    if ( AnchorState::Tri == maAnchorState ||
+         AnchorState::All == maAnchorState )
     {
         // create triangle
         const drawinglayer::primitive2d::Primitive2DReference aTriangle(
             new drawinglayer::primitive2d::PolyPolygonColorPrimitive2D(
-                basegfx::B2DPolyPolygon(getTriangle()),
+                basegfx::B2DPolyPolygon(maTriangle),
                 getColor()));
 
-        aRetval.push_back(aTriangle);
+        rContainer.push_back(aTriangle);
     }
 
     // prepare view-independent LineWidth and color
     const drawinglayer::attribute::LineAttribute aLineAttribute(
         getColor(),
-        getDiscreteLineWidth() * getDiscreteUnit());
+        mfDiscreteLineWidth * getDiscreteUnit());
 
-    if ( AS_ALL == maAnchorState ||
-         AS_START == maAnchorState )
+    if ( AnchorState::All == maAnchorState )
     {
         // create line start
         if(getLineSolid())
@@ -123,11 +113,11 @@ drawinglayer::primitive2d::Primitive2DContainer AnchorPrimitive::create2DDecompo
                     getLine(),
                     aLineAttribute));
 
-            aRetval.push_back(aSolidLine);
+            rContainer.push_back(aSolidLine);
         }
         else
         {
-            ::std::vector< double > aDotDashArray;
+            std::vector< double > aDotDashArray;
             const double fDistance(3.0 * 15.0);
             const double fDashLen(5.0 * 15.0);
 
@@ -144,65 +134,22 @@ drawinglayer::primitive2d::Primitive2DContainer AnchorPrimitive::create2DDecompo
                     aLineAttribute,
                     aStrokeAttribute));
 
-            aRetval.push_back(aStrokedLine);
+            rContainer.push_back(aStrokedLine);
         }
     }
 
-    if(!aRetval.empty() && getShadow())
-    {
-        // shadow is only for triangle and line start, and in upper left
-        // and lower right direction, in different colors
-        const double fColorChange(20.0 / 255.0);
-        const basegfx::B3DTuple aColorChange(fColorChange, fColorChange, fColorChange);
-        basegfx::BColor aLighterColor(getColor() + aColorChange);
-        basegfx::BColor aDarkerColor(getColor() - aColorChange);
-
-        aLighterColor.clamp();
-        aDarkerColor.clamp();
-
-        // create shadow sequence
-        drawinglayer::primitive2d::Primitive2DContainer aShadows(2);
-        basegfx::B2DHomMatrix aTransform;
-
-        aTransform.set(0, 2, -getDiscreteUnit());
-        aTransform.set(1, 2, -getDiscreteUnit());
-
-        aShadows[0] = drawinglayer::primitive2d::Primitive2DReference(
-            new drawinglayer::primitive2d::ShadowPrimitive2D(
-                aTransform,
-                aLighterColor,
-                aRetval));
-
-        aTransform.set(0, 2, getDiscreteUnit());
-        aTransform.set(1, 2, getDiscreteUnit());
-
-        aShadows[1] = drawinglayer::primitive2d::Primitive2DReference(
-            new drawinglayer::primitive2d::ShadowPrimitive2D(
-                aTransform,
-                aDarkerColor,
-                aRetval));
-
-        // add shadow before geometry to make it be proccessed first
-        const drawinglayer::primitive2d::Primitive2DContainer aTemporary(aRetval);
-
-        aRetval = aShadows;
-        aRetval.append(aTemporary);
-    }
-
-    if ( AS_ALL == maAnchorState ||
-         AS_END == maAnchorState )
+    if ( AnchorState::All == maAnchorState ||
+         AnchorState::End == maAnchorState )
     {
         // LineTop has to be created, too, but uses no shadow, so add after
         // the other parts are created
         const drawinglayer::primitive2d::Primitive2DReference aLineTop(
             new drawinglayer::primitive2d::PolygonStrokePrimitive2D(
-                getLineTop(),
+                maLineTop,
                 aLineAttribute));
 
-        aRetval.push_back(aLineTop);
+        rContainer.push_back(aLineTop);
     }
-
-    return aRetval;
 }
 
 bool AnchorPrimitive::operator==( const drawinglayer::primitive2d::BasePrimitive2D& rPrimitive ) const
@@ -211,13 +158,12 @@ bool AnchorPrimitive::operator==( const drawinglayer::primitive2d::BasePrimitive
     {
         const AnchorPrimitive& rCompare = static_cast< const AnchorPrimitive& >(rPrimitive);
 
-        return (getTriangle() == rCompare.getTriangle()
+        return (maTriangle == rCompare.maTriangle
             && getLine() == rCompare.getLine()
-            && getLineTop() == rCompare.getLineTop()
-            && getAnchorState() == rCompare.getAnchorState()
+            && maLineTop == rCompare.maLineTop
+            && maAnchorState == rCompare.maAnchorState
             && getColor() == rCompare.getColor()
-            && getDiscreteLineWidth() == rCompare.getDiscreteLineWidth()
-            && getShadow() == rCompare.getShadow()
+            && mfDiscreteLineWidth == rCompare.mfDiscreteLineWidth
             && getLineSolid() == rCompare.getLineSolid());
     }
 
@@ -293,7 +239,7 @@ AnchorOverlayObject::AnchorOverlayObject( const basegfx::B2DPoint& rBasePos,
     , maLine()
     , maLineTop()
     , mHeight(0)
-    , mAnchorState(AS_ALL)
+    , mAnchorState(AnchorState::All)
     , mbLineSolid(false)
 {
 }

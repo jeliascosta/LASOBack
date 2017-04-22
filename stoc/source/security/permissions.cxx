@@ -70,12 +70,7 @@ static inline sal_Int32 makeMask(
 #if OSL_DEBUG_LEVEL > 0
         if (! strings[ nPos ])
         {
-            OUStringBuffer buf( 48 );
-            buf.append( "### ignoring unknown socket action: " );
-            buf.append( item );
-            OString str( OUStringToOString(
-                buf.makeStringAndClear(), RTL_TEXTENCODING_ASCII_US ) );
-            OSL_TRACE( "%s", str.getStr() );
+            SAL_WARN("stoc", "ignoring unknown socket action: " << item );
         }
 #endif
     }
@@ -92,7 +87,7 @@ static inline OUString makeStrings(
         if (0x80000000 & mask)
         {
             buf.appendAscii( *strings );
-            if (mask << 1) // more items following
+            if ((mask << 1) != 0) // more items following
                 buf.append( ',' );
         }
         mask = (mask << 1);
@@ -425,7 +420,7 @@ class RuntimePermission : public Permission
     OUString m_name;
 
 public:
-    inline RuntimePermission(
+    RuntimePermission(
         security::RuntimePermission const & perm,
         ::rtl::Reference< Permission > const & next = ::rtl::Reference< Permission >() )
         : Permission( RUNTIME, next )
@@ -499,10 +494,7 @@ PermissionCollection::PermissionCollection(
         }
         else
         {
-            OUStringBuffer buf( 48 );
-            buf.append( "checking for unsupported permission type: " );
-            buf.append( perm_type.getTypeName() );
-            throw RuntimeException( buf.makeStringAndClear() );
+            throw RuntimeException( "checking for unsupported permission type: " + perm_type.getTypeName() );
         }
     }
 }
@@ -542,18 +534,16 @@ static void demanded_diag(
     buf.append( " => ok." );
     OString str(
         OUStringToOString( buf.makeStringAndClear(), RTL_TEXTENCODING_ASCII_US ) );
-    OSL_TRACE( "%s", str.getStr() );
+    SAL_INFO("stoc",( "%s", str.getStr() );
 }
 #endif
 
 static void throwAccessControlException(
     Permission const & perm, Any const & demanded_perm )
 {
-    OUStringBuffer buf( 48 );
-    buf.append( "access denied: " );
-    buf.append( perm.toString() );
     throw security::AccessControlException(
-        buf.makeStringAndClear(), Reference< XInterface >(), demanded_perm );
+        "access denied: " + perm.toString(),
+        Reference< XInterface >(), demanded_perm );
 }
 
 void PermissionCollection::checkPermission( Any const & perm ) const
@@ -616,10 +606,7 @@ void PermissionCollection::checkPermission( Any const & perm ) const
     }
     else
     {
-        OUStringBuffer buf( 48 );
-        buf.append( "checking for unsupported permission type: " );
-        buf.append( demanded_type.getTypeName() );
-        throw RuntimeException( buf.makeStringAndClear() );
+        throw RuntimeException( "checking for unsupported permission type: " + demanded_type.getTypeName() );
     }
 }
 

@@ -40,6 +40,7 @@
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
+#include <com/sun/star/packages/WrongPasswordException.hpp>
 #include <com/sun/star/uno/Sequence.h>
 #include <com/sun/star/ui/dialogs/TemplateDescription.hpp>
 #include <rtl/ustring.hxx>
@@ -124,7 +125,7 @@ void SetTemplate_Impl( const OUString &rFileName,
 class SfxDocPasswordVerifier : public ::comphelper::IDocPasswordVerifier
 {
 public:
-    inline explicit     SfxDocPasswordVerifier( const Reference< embed::XStorage >& rxStorage ) :
+    explicit     SfxDocPasswordVerifier( const Reference< embed::XStorage >& rxStorage ) :
                             mxStorage( rxStorage ) {}
 
     virtual ::comphelper::DocPasswordVerifierResult
@@ -340,7 +341,7 @@ sal_uIntPtr SfxApplication::LoadTemplate( SfxObjectShellLock& xDoc, const OUStri
             xDoc = SfxObjectShell::CreateObject( pFilter->GetServiceName() );
 
         //pMedium takes ownership of pSet
-        SfxMedium *pMedium = new SfxMedium( rFileName, STREAM_STD_READ, pFilter, pSet );
+        SfxMedium *pMedium = new SfxMedium( rFileName, StreamMode::STD_READ, pFilter, pSet );
         if(!xDoc->DoLoad(pMedium))
         {
             ErrCode nErrCode = xDoc->GetErrorCode();
@@ -450,14 +451,13 @@ void SfxApplication::NewDocExec_Impl( SfxRequest& rReq )
 
         SfxObjectShell* pCurrentShell = SfxObjectShell::Current();
         Reference<XModel> xModel;
-
         if(pCurrentShell)
             xModel = pCurrentShell->GetModel();
 
         ScopedVclPtrInstance< SfxTemplateManagerDlg > aTemplDlg;
 
-        if(xModel.is())
-            aTemplDlg->setDocumentModel(pCurrentShell->GetModel());
+        if (xModel.is())
+            aTemplDlg->setDocumentModel(xModel);
 
         int nRet = aTemplDlg->Execute();
         if ( nRet == RET_OK )
@@ -529,7 +529,7 @@ void SfxApplication::NewDocExec_Impl( SfxRequest& rReq )
         {
             DBG_ASSERT( aObj.GetProtocol() != INetProtocol::NotValid, "Illegal URL!" );
 
-            SfxStringItem aName( SID_FILE_NAME, aObj.GetMainURL( INetURLObject::NO_DECODE ) );
+            SfxStringItem aName( SID_FILE_NAME, aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
             SfxStringItem aTemplName( SID_TEMPLATE_NAME, aTemplateName );
             SfxStringItem aTemplRegionName( SID_TEMPLATE_REGIONNAME, aTemplateRegion );
             pRet = GetDispatcher_Impl()->ExecuteList(SID_OPENDOC, eMode,
@@ -625,6 +625,15 @@ void SfxApplication::OpenDocExec_Impl( SfxRequest& rReq )
         if ( pRemoteDialogItem && pRemoteDialogItem->GetValue())
             nDialog = SFX2_IMPL_DIALOG_REMOTE;
 
+        sal_Int16 nDialogType = ui::dialogs::TemplateDescription::FILEOPEN_READONLY_VERSION;
+        FileDialogFlags eDialogFlags = FileDialogFlags::MultiSelection;
+        const SfxBoolItem* pSignPDFItem = rReq.GetArg<SfxBoolItem>(SID_SIGNPDF);
+        if (pSignPDFItem && pSignPDFItem->GetValue())
+        {
+            eDialogFlags |= FileDialogFlags::SignPDF;
+            nDialogType = ui::dialogs::TemplateDescription::FILEOPEN_SIMPLE;
+        }
+
         OUString sStandardDir;
 
         const SfxStringItem* pStandardDirItem = rReq.GetArg<SfxStringItem>(SID_STANDARD_DIR);
@@ -639,8 +648,8 @@ void SfxApplication::OpenDocExec_Impl( SfxRequest& rReq )
 
 
         sal_uIntPtr nErr = sfx2::FileOpenDialog_Impl(
-                ui::dialogs::TemplateDescription::FILEOPEN_READONLY_VERSION,
-                FileDialogFlags::MultiSelection, OUString(), aURLList,
+                nDialogType,
+                eDialogFlags, OUString(), aURLList,
                 aFilter, pSet, &aPath, nDialog, sStandardDir, aBlackList );
 
         if ( nErr == ERRCODE_ABORT )
@@ -831,7 +840,7 @@ void SfxApplication::OpenDocExec_Impl( SfxRequest& rReq )
 
                 ScopedVclPtrInstance<MessageDialog> aSecurityWarningBox(pWindow,
                                                   SfxResId(STR_SECURITY_WARNING_NO_HYPERLINKS),
-                                                  VCL_MESSAGE_WARNING);
+                                                  VclMessageType::Warning);
                 aSecurityWarningBox->SetText( SfxResId(RID_SECURITY_WARNING_TITLE).toString() );
                 aSecurityWarningBox->Execute();
                 return;
@@ -1126,6 +1135,12 @@ void SfxApplication::OpenRemoteExec_Impl( SfxRequest& rReq )
 {
     rReq.AppendItem( SfxBoolItem( SID_REMOTE_DIALOG, true ) );
     GetDispatcher_Impl()->Execute( SID_OPENDOC, SfxCallMode::SYNCHRON, *rReq.GetArgs() );
+}
+
+void SfxApplication::SignPDFExec_Impl(SfxRequest& rReq)
+{
+    rReq.AppendItem(SfxBoolItem(SID_SIGNPDF, true));
+    GetDispatcher_Impl()->Execute(SID_OPENDOC, SfxCallMode::SYNCHRON, *rReq.GetArgs());
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

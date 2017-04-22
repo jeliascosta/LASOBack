@@ -135,7 +135,6 @@ Image FmFilterData::GetImage() const
     return Image();
 }
 
-
 FmParentData::~FmParentData()
 {
     for (::std::vector<FmFilterData*>::const_iterator i = m_aChildren.begin();
@@ -143,13 +142,10 @@ FmParentData::~FmParentData()
         delete (*i);
 }
 
-
 Image FmFormItem::GetImage() const
 {
-    ImageList aNavigatorImages( SVX_RES( RID_SVXIMGLIST_FMEXPL ) );
-    return aNavigatorImages.GetImage( RID_SVXIMG_FORM );
+    return Image(BitmapEx(SVX_RES(RID_SVXBMP_FORM)));
 }
-
 
 FmFilterItem* FmFilterItems::Find( const ::sal_Int32 _nFilterComponentIndex ) const
 {
@@ -166,13 +162,10 @@ FmFilterItem* FmFilterItems::Find( const ::sal_Int32 _nFilterComponentIndex ) co
     return nullptr;
 }
 
-
 Image FmFilterItems::GetImage() const
 {
-    ImageList aNavigatorImages( SVX_RES( RID_SVXIMGLIST_FMEXPL ) );
-    return aNavigatorImages.GetImage( RID_SVXIMG_FILTER );
+    return Image(BitmapEx(SVX_RES(RID_SVXBMP_FILTER)));
 }
-
 
 FmFilterItem::FmFilterItem( FmFilterItems* pParent,
                             const OUString& aFieldName,
@@ -184,13 +177,10 @@ FmFilterItem::FmFilterItem( FmFilterItems* pParent,
 {
 }
 
-
 Image FmFilterItem::GetImage() const
 {
-    ImageList aNavigatorImages( SVX_RES( RID_SVXIMGLIST_FMEXPL ) );
-    return aNavigatorImages.GetImage( RID_SVXIMG_FIELD );
+    return Image(BitmapEx(SVX_RES(RID_SVXBMP_FIELD)));
 }
-
 
 // Hints for communication between model and view
 
@@ -203,7 +193,6 @@ public:
     FmFilterData* GetData() const { return m_pData; }
 };
 
-
 class FmFilterInsertedHint : public FmFilterHint
 {
     sal_uLong m_nPos;   // Position relative to the parent of the data
@@ -215,7 +204,6 @@ public:
 
     sal_uLong GetPos() const { return m_nPos; }
 };
-
 
 class FmFilterRemovedHint : public FmFilterHint
 {
@@ -232,13 +220,11 @@ public:
         :FmFilterHint(pData){}
 };
 
-
 class FilterClearingHint : public SfxHint
 {
 public:
     FilterClearingHint(){}
 };
-
 
 class FmFilterCurrentChangedHint : public SfxHint
 {
@@ -246,9 +232,7 @@ public:
     FmFilterCurrentChangedHint(){}
 };
 
-
 // class FmFilterAdapter, Listener an den FilterControls
-
 class FmFilterAdapter : public ::cppu::WeakImplHelper< XFilterControllerListener >
 {
     FmFilterModel*              m_pModel;
@@ -258,15 +242,16 @@ public:
     FmFilterAdapter(FmFilterModel* pModel, const Reference< XIndexAccess >& xControllers);
 
 // XEventListener
-    virtual void SAL_CALL disposing(const EventObject& Source) throw( RuntimeException, std::exception ) override;
+    virtual void SAL_CALL disposing(const EventObject& Source) override;
 
 // XFilterControllerListener
-    virtual void SAL_CALL predicateExpressionChanged( const FilterEvent& Event ) throw (RuntimeException, std::exception) override;
-    virtual void SAL_CALL disjunctiveTermRemoved( const FilterEvent& Event ) throw (RuntimeException, std::exception) override;
-    virtual void SAL_CALL disjunctiveTermAdded( const FilterEvent& Event ) throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL predicateExpressionChanged( const FilterEvent& Event ) override;
+    virtual void SAL_CALL disjunctiveTermRemoved( const FilterEvent& Event ) override;
+    virtual void SAL_CALL disjunctiveTermAdded( const FilterEvent& Event ) override;
 
 // helpers
-    void dispose() throw( RuntimeException );
+    /// @throws RuntimeException
+    void dispose();
 
     void AddOrRemoveListener( const Reference< XIndexAccess >& _rxControllers, const bool _bAdd );
 
@@ -284,7 +269,7 @@ FmFilterAdapter::FmFilterAdapter(FmFilterModel* pModel, const Reference< XIndexA
 }
 
 
-void FmFilterAdapter::dispose() throw( RuntimeException )
+void FmFilterAdapter::dispose()
 {
     AddOrRemoveListener( m_xControllers, false );
 }
@@ -333,7 +318,7 @@ void FmFilterAdapter::setText(sal_Int32 nRowPos,
 
 // XEventListener
 
-void SAL_CALL FmFilterAdapter::disposing(const EventObject& /*e*/) throw( RuntimeException, std::exception )
+void SAL_CALL FmFilterAdapter::disposing(const EventObject& /*e*/)
 {
 }
 
@@ -373,7 +358,7 @@ namespace
 
 // XFilterControllerListener
 
-void FmFilterAdapter::predicateExpressionChanged( const FilterEvent& Event ) throw( RuntimeException, std::exception )
+void FmFilterAdapter::predicateExpressionChanged( const FilterEvent& Event )
 {
     SolarMutexGuard aGuard;
 
@@ -424,7 +409,7 @@ void FmFilterAdapter::predicateExpressionChanged( const FilterEvent& Event ) thr
 }
 
 
-void SAL_CALL FmFilterAdapter::disjunctiveTermRemoved( const FilterEvent& Event ) throw (RuntimeException, std::exception)
+void SAL_CALL FmFilterAdapter::disjunctiveTermRemoved( const FilterEvent& Event )
 {
     SolarMutexGuard aGuard;
 
@@ -459,7 +444,7 @@ void SAL_CALL FmFilterAdapter::disjunctiveTermRemoved( const FilterEvent& Event 
 }
 
 
-void SAL_CALL FmFilterAdapter::disjunctiveTermAdded( const FilterEvent& Event ) throw (RuntimeException, std::exception)
+void SAL_CALL FmFilterAdapter::disjunctiveTermAdded( const FilterEvent& Event )
 {
     SolarMutexGuard aGuard;
 
@@ -490,7 +475,6 @@ void SAL_CALL FmFilterAdapter::disjunctiveTermAdded( const FilterEvent& Event ) 
 FmFilterModel::FmFilterModel()
               :FmParentData(nullptr, OUString())
               ,OSQLParserClient(comphelper::getProcessComponentContext())
-              ,m_pAdapter(nullptr)
               ,m_pCurrentItems(nullptr)
 {
 }
@@ -509,11 +493,10 @@ void FmFilterModel::Clear()
     Broadcast( aClearedHint );
 
     // lose endings
-    if (m_pAdapter)
+    if (m_pAdapter.is())
     {
         m_pAdapter->dispose();
-        m_pAdapter->release();
-        m_pAdapter= nullptr;
+        m_pAdapter.clear();
     }
 
     m_pCurrentItems  = nullptr;
@@ -551,7 +534,6 @@ void FmFilterModel::Update(const Reference< XIndexAccess > & xControllers, const
 
         // Listening for TextChanges
         m_pAdapter = new FmFilterAdapter(this, xControllers);
-        m_pAdapter->acquire();
 
         SetCurrentController(xCurrent);
         EnsureEmptyFilterRows( *this );
@@ -795,7 +777,7 @@ void FmFilterModel::Remove(FmFilterData* pData)
     {
         FmFilterItem& rFilterItem = dynamic_cast<FmFilterItem&>(*pData);
 
-        // if its the last condition remove the parent
+        // if it's the last condition remove the parent
         if (rItems.size() == 1)
             Remove(rFilterItem.GetParent());
         else
@@ -988,7 +970,7 @@ public:
 
     virtual void Paint(const Point& rPos, SvTreeListBox& rDev, vcl::RenderContext& rRenderContext,
                        const SvViewDataEntry* pView, const SvTreeListEntry& rEntry) override;
-    virtual void InitViewData( SvTreeListBox* pView,SvTreeListEntry* pEntry, SvViewDataItem* pViewData) override;
+    virtual void InitViewData( SvTreeListBox* pView,SvTreeListEntry* pEntry, SvViewDataItem* pViewData = nullptr) override;
 };
 
 const int nxDBmp = 12;
@@ -1006,7 +988,7 @@ void FmFilterItemsString::Paint(const Point& rPos, SvTreeListBox& rDev, vcl::Ren
         rRenderContext.Push(PushFlags::LINECOLOR);
         rRenderContext.SetLineColor(rRenderContext.GetTextColor());
 
-        Rectangle aRect(rPos, GetSize(&rDev, &rEntry));
+        tools::Rectangle aRect(rPos, GetSize(&rDev, &rEntry));
         Point aFirst(rPos.X(), aRect.Bottom() - 6);
         Point aSecond(aFirst .X() + 2, aFirst.Y() + 3);
 
@@ -1049,7 +1031,7 @@ public:
 
     virtual void Paint(const Point& rPos, SvTreeListBox& rDev, vcl::RenderContext& rRenderContext,
                        const SvViewDataEntry* pView, const SvTreeListEntry& rEntry) override;
-    virtual void InitViewData( SvTreeListBox* pView,SvTreeListEntry* pEntry, SvViewDataItem* pViewData) override;
+    virtual void InitViewData( SvTreeListBox* pView,SvTreeListEntry* pEntry, SvViewDataItem* pViewData = nullptr) override;
 };
 
 const int nxD = 4;
@@ -1099,23 +1081,20 @@ FmFilterNavigator::FmFilterNavigator( vcl::Window* pParent )
 {
     SetHelpId( HID_FILTER_NAVIGATOR );
 
-    {
-        ImageList aNavigatorImages( SVX_RES( RID_SVXIMGLIST_FMEXPL ) );
-        SetNodeBitmaps(
-            aNavigatorImages.GetImage( RID_SVXIMG_COLLAPSEDNODE ),
-            aNavigatorImages.GetImage( RID_SVXIMG_EXPANDEDNODE )
-        );
-    }
+    SetNodeBitmaps(
+        Image(BitmapEx(SVX_RES(RID_SVXBMP_COLLAPSEDNODE))),
+        Image(BitmapEx(SVX_RES(RID_SVXBMP_EXPANDEDNODE)))
+    );
 
     m_pModel = new FmFilterModel();
     StartListening( *m_pModel );
 
     EnableInplaceEditing( true );
-    SetSelectionMode(MULTIPLE_SELECTION);
+    SetSelectionMode(SelectionMode::Multiple);
 
     SetDragDropMode(DragDropMode::ALL);
 
-    m_aDropActionTimer.SetTimeoutHdl(LINK(this, FmFilterNavigator, OnDropActionTimer));
+    m_aDropActionTimer.SetInvokeHandler(LINK(this, FmFilterNavigator, OnDropActionTimer));
 }
 
 
@@ -1215,7 +1194,7 @@ bool FmFilterNavigator::EditedEntry( SvTreeListEntry* pEntry, const OUString& rN
 }
 
 
-IMPL_LINK_TYPED( FmFilterNavigator, OnRemove, void*, p, void )
+IMPL_LINK( FmFilterNavigator, OnRemove, void*, p, void )
 {
     SvTreeListEntry* pEntry = static_cast<SvTreeListEntry*>(p);
     // now remove the entry
@@ -1223,7 +1202,7 @@ IMPL_LINK_TYPED( FmFilterNavigator, OnRemove, void*, p, void )
 }
 
 
-IMPL_LINK_NOARG_TYPED(FmFilterNavigator, OnDropActionTimer, Timer *, void)
+IMPL_LINK_NOARG(FmFilterNavigator, OnDropActionTimer, Timer *, void)
 {
     if (--m_aTimerCounter > 0)
         return;
@@ -1632,24 +1611,21 @@ void FmFilterNavigator::Command( const CommandEvent& rEvt )
                     aSelectList.clear();
             }
 
-            PopupMenu aContextMenu(SVX_RES(RID_FM_FILTER_MENU));
+            ScopedVclPtrInstance<PopupMenu> aContextMenu(SVX_RES(RID_FM_FILTER_MENU));
 
-            // every condition could be deleted except the first one if its the only one
-            aContextMenu.EnableItem( SID_FM_DELETE, !aSelectList.empty() );
+            // every condition could be deleted except the first one if it's the only one
+            aContextMenu->EnableItem( SID_FM_DELETE, !aSelectList.empty() );
 
 
             bool bEdit = dynamic_cast<FmFilterItem*>( static_cast<FmFilterData*>(pClicked->GetUserData()) ) != nullptr &&
                 IsSelected(pClicked) && GetSelectionCount() == 1;
 
-            aContextMenu.EnableItem( SID_FM_FILTER_EDIT,
-                bEdit );
-            aContextMenu.EnableItem( SID_FM_FILTER_IS_NULL,
-                bEdit );
-            aContextMenu.EnableItem( SID_FM_FILTER_IS_NOT_NULL,
-                bEdit );
+            aContextMenu->EnableItem( SID_FM_FILTER_EDIT, bEdit );
+            aContextMenu->EnableItem( SID_FM_FILTER_IS_NULL, bEdit );
+            aContextMenu->EnableItem( SID_FM_FILTER_IS_NOT_NULL, bEdit );
 
-            aContextMenu.RemoveDisabledEntries(true, true);
-            sal_uInt16 nSlotId = aContextMenu.Execute( this, aWhere );
+            aContextMenu->RemoveDisabledEntries(true, true);
+            sal_uInt16 nSlotId = aContextMenu->Execute( this, aWhere );
             switch( nSlotId )
             {
                 case SID_FM_FILTER_EDIT:
@@ -1773,7 +1749,7 @@ void FmFilterNavigator::KeyInput(const KeyEvent& rKEvt)
 
         if ( pTargetItems )
         {
-            insertFilterItem( aItemList, pTargetItems );
+            insertFilterItem( aItemList, pTargetItems, false );
             return;
         }
     }
@@ -1942,13 +1918,13 @@ void FmFilterNavigatorWin::Resize()
 {
     SfxDockingWindow::Resize();
 
-    Size aLogOutputSize = PixelToLogic( GetOutputSizePixel(), MAP_APPFONT );
+    Size aLogOutputSize = PixelToLogic( GetOutputSizePixel(), MapUnit::MapAppFont );
     Size aLogExplSize = aLogOutputSize;
     aLogExplSize.Width() -= 6;
     aLogExplSize.Height() -= 6;
 
-    Point aExplPos = LogicToPixel( Point(3,3), MAP_APPFONT );
-    Size aExplSize = LogicToPixel( aLogExplSize, MAP_APPFONT );
+    Point aExplPos = LogicToPixel( Point(3,3), MapUnit::MapAppFont );
+    Size aExplSize = LogicToPixel( aLogExplSize, MapUnit::MapAppFont );
 
     m_pNavigator->SetPosSizePixel( aExplPos, aExplSize );
 }

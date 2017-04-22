@@ -29,16 +29,7 @@ SvxColorValueSet::SvxColorValueSet(vcl::Window* _pParent, WinBits nWinStyle)
     SetEdgeBlending(true);
 }
 
-VCL_BUILDER_DECL_FACTORY(SvxColorValueSet)
-{
-    WinBits nWinBits = WB_TABSTOP;
-
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-
-    rRet = VclPtr<SvxColorValueSet>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxColorValueSet, WB_TABSTOP)
 
 sal_uInt32 SvxColorValueSet::getMaxRowCount()
 {
@@ -131,10 +122,7 @@ Size SvxColorValueSet::layoutAllVisible(sal_uInt32 nEntryCount)
 
 void SvxColorValueSet::Resize()
 {
-    vcl::Window *pParent = GetParent();
-    //don't do this for the drop down color palettes
-    if (pParent && pParent->GetType() != WINDOW_FLOATINGWINDOW)
-        layoutToGivenHeight(GetOutputSizePixel().Height(), GetItemCount());
+    layoutToGivenHeight(GetSizePixel().Height(), GetItemCount());
     ValueSet::Resize();
 }
 
@@ -145,7 +133,7 @@ Size SvxColorValueSet::layoutToGivenHeight(sal_uInt32 nHeight, sal_uInt32 nEntry
         nEntryCount++;
     }
 
-    const Size aItemSize(getEntryEdgeLength(), getEntryEdgeLength());
+    const Size aItemSize(getEntryEdgeLength() - 2, getEntryEdgeLength() - 2);
     const WinBits aWinBits(GetStyle() & ~WB_VSCROLL);
 
     // get size with all fields disabled

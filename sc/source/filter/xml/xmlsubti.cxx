@@ -40,14 +40,7 @@
 #include <xmloff/nmspmap.hxx>
 #include <xmloff/xmlerror.hxx>
 #include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
-#include <com/sun/star/sheet/XSheetCellRange.hpp>
-#include <com/sun/star/sheet/XCellRangeAddressable.hpp>
-#include <com/sun/star/sheet/CellInsertMode.hpp>
-#include <com/sun/star/sheet/XCellRangeMovement.hpp>
 #include <com/sun/star/drawing/XDrawPageSupplier.hpp>
-#include <com/sun/star/container/XNamed.hpp>
-#include <com/sun/star/util/XProtectable.hpp>
-#include <com/sun/star/sheet/XArrayFormulaRange.hpp>
 
 #include <memory>
 
@@ -222,7 +215,7 @@ void ScMyTables::AddColStyle(const sal_Int32 nRepeat, const OUString& rCellStyle
     nCurrentColCount = std::min<sal_Int32>( nCurrentColCount, MAXCOLCOUNT );
 }
 
-uno::Reference< drawing::XDrawPage > ScMyTables::GetCurrentXDrawPage()
+uno::Reference< drawing::XDrawPage > const & ScMyTables::GetCurrentXDrawPage()
 {
     if( (maCurrentCellPos.Tab() != nCurrentDrawPage) || !xDrawPage.is() )
     {
@@ -234,7 +227,7 @@ uno::Reference< drawing::XDrawPage > ScMyTables::GetCurrentXDrawPage()
     return xDrawPage;
 }
 
-uno::Reference< drawing::XShapes > ScMyTables::GetCurrentXShapes()
+uno::Reference< drawing::XShapes > const & ScMyTables::GetCurrentXShapes()
 {
     if( (maCurrentCellPos.Tab() != nCurrentXShapes) || !xShapes.is() )
     {
@@ -242,10 +235,8 @@ uno::Reference< drawing::XShapes > ScMyTables::GetCurrentXShapes()
         rImport.GetShapeImport()->startPage(xShapes);
         rImport.GetShapeImport()->pushGroupForSorting ( xShapes );
         nCurrentXShapes = sal::static_int_cast<sal_Int16>(maCurrentCellPos.Tab());
-        return xShapes;
     }
-    else
-        return xShapes;
+    return xShapes;
 }
 
 bool ScMyTables::HasDrawPage()

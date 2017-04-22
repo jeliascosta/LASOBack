@@ -23,6 +23,7 @@
 #include <editeng/svxenum.hxx>
 #include <rtl/textenc.h>
 #include "parcss1.hxx"
+#include <o3tl/typed_flags_set.hxx>
 
 #include <memory>
 #include <vector>
@@ -36,9 +37,8 @@ enum SvxCSS1Position
 {
     SVX_CSS1_POS_NONE,          // nichts angegeben
     SVX_CSS1_POS_STATIC,        // normal
-    SVX_CSS1_POS_ABSOLUTE,      // absolut
-    SVX_CSS1_POS_RELATIVE,      // relativ
-    SVX_CSS1_POS_END
+    SVX_CSS1_POS_ABSOLUTE,      // absolute
+    SVX_CSS1_POS_RELATIVE,      // relative
 };
 
 enum SvxCSS1LengthType
@@ -47,7 +47,6 @@ enum SvxCSS1LengthType
     SVX_CSS1_LTYPE_AUTO,        // automatisch
     SVX_CSS1_LTYPE_TWIP,        // twip
     SVX_CSS1_LTYPE_PERCENTAGE,  // %-Angabe
-    SVX_CSS1_LTYPE_END
 };
 
 // Feature: PrintExt
@@ -58,7 +57,6 @@ enum SvxCSS1SizeType
     SVX_CSS1_STYPE_TWIP,        // twip
     SVX_CSS1_STYPE_LANDSCAPE,   // Landscape
     SVX_CSS1_STYPE_PORTRAIT,    // Landscape
-    SVX_CSS1_STYPE_END
 };
 
 enum SvxCSS1PageBreak
@@ -69,19 +67,23 @@ enum SvxCSS1PageBreak
     SVX_CSS1_PBREAK_AVOID,      // nie
     SVX_CSS1_PBREAK_LEFT,       // naechste Seite ist eine linke
     SVX_CSS1_PBREAK_RIGHT,      // naechste Seite ist eine rechte
-    SVX_CSS1_PBREAK_END
 };
 
 
-#define CSS1_SCRIPT_WESTERN 0x01
-#define CSS1_SCRIPT_CJK     0x02
-#define CSS1_SCRIPT_CTL     0x04
-#define CSS1_SCRIPT_ALL     0x07
+enum class Css1ScriptFlags {
+    Western = 0x01,
+    CJK     = 0x02,
+    CTL     = 0x04,
+    AllMask = Western | CJK | CTL,
+};
+namespace o3tl {
+    template<> struct typed_flags<Css1ScriptFlags> : is_typed_flags<Css1ScriptFlags, 0x07> {};
+}
 
 struct CSS1PropertyEnum
 {
     const sal_Char *pName;  // Wert einer Property
-    sal_uInt16 nEnum;           // und der dazugehoerige Wert eines Enums
+    sal_uInt16 nEnum;       // und der dazugehoerige Wert eines Enums
 };
 
 namespace editeng { class SvxBorderLine; }
@@ -93,43 +95,48 @@ namespace editeng { class SvxBorderLine; }
 struct SvxCSS1BorderInfo;
 class SvxCSS1PropertyInfo
 {
-    SvxCSS1BorderInfo *aBorderInfos[4];
+    SvxCSS1BorderInfo *m_aBorderInfos[4];
 
     void DestroyBorderInfos();
 
 public:
 
-    OUString aId;             // ID fuer Bookmarks, Rahmen etc.
+    OUString m_aId;             // ID fuer Bookmarks, Rahmen etc.
 
-    bool bTopMargin : 1;
-    bool bBottomMargin : 1;
+    bool m_bTopMargin : 1;
+    bool m_bBottomMargin : 1;
 
-    bool bLeftMargin : 1;
-    bool bRightMargin : 1;
-    bool bTextIndent : 1;
+    bool m_bLeftMargin : 1;
+    bool m_bRightMargin : 1;
+    bool m_bTextIndent : 1;
+    bool m_bNumbering : 1;
+    bool m_bBullet : 1;
 
-    SvxAdjust eFloat;
+    SvxAdjust m_eFloat;
 
-    SvxCSS1Position ePosition;
+    SvxCSS1Position m_ePosition;
 
-    sal_uInt16 nTopBorderDistance;
-    sal_uInt16 nBottomBorderDistance;
-    sal_uInt16 nLeftBorderDistance;
-    sal_uInt16 nRightBorderDistance;
+    sal_uInt16 m_nTopBorderDistance;
+    sal_uInt16 m_nBottomBorderDistance;
+    sal_uInt16 m_nLeftBorderDistance;
+    sal_uInt16 m_nRightBorderDistance;
 
-    sal_uInt16 nColumnCount;
+    SvxNumType m_nNumberingType;
+    sal_Unicode m_cBulletChar;
 
-    long nLeft, nTop;
-    long nWidth, nHeight;
-    long nLeftMargin, nRightMargin;
+    sal_uInt16 m_nColumnCount;
 
-    SvxCSS1LengthType eLeftType, eTopType;
-    SvxCSS1LengthType eWidthType, eHeightType;
+    long m_nLeft, m_nTop;
+    long m_nWidth, m_nHeight;
+    long m_nLeftMargin, m_nRightMargin;
 
-    SvxCSS1SizeType eSizeType;
+    SvxCSS1LengthType m_eLeftType, m_eTopType;
+    SvxCSS1LengthType m_eWidthType, m_eHeightType;
 
-    SvxCSS1PageBreak ePageBreakBefore;
-    SvxCSS1PageBreak ePageBreakAfter;
+    SvxCSS1SizeType m_eSizeType;
+
+    SvxCSS1PageBreak m_ePageBreakBefore;
+    SvxCSS1PageBreak m_ePageBreakAfter;
 
     SvxCSS1PropertyInfo();
     SvxCSS1PropertyInfo( const SvxCSS1PropertyInfo& rProp );
@@ -177,8 +184,8 @@ public:
 
 class SvxCSS1Parser : public CSS1Parser
 {
-    typedef ::std::vector<std::unique_ptr<CSS1Selector>> CSS1Selectors;
-    typedef ::std::map<OUString, std::unique_ptr<SvxCSS1MapEntry>> CSS1Map;
+    typedef std::vector<std::unique_ptr<CSS1Selector>> CSS1Selectors;
+    typedef std::map<OUString, std::unique_ptr<SvxCSS1MapEntry>> CSS1Map;
     CSS1Selectors m_Selectors;   // List of "open" Selectors
 
     CSS1Map m_Ids;
@@ -198,7 +205,7 @@ class SvxCSS1Parser : public CSS1Parser
     sal_uInt16 nMinFixLineSpace;    // Mindest-Abstand fuer festen Zeilenabstand
 
     rtl_TextEncoding    eDfltEnc;
-    sal_uInt16          nScriptFlags;
+    Css1ScriptFlags     nScriptFlags;
 
     bool bIgnoreFontFamily;
 
@@ -240,9 +247,8 @@ public:
 
     SvxCSS1Parser( SfxItemPool& rPool,
                     const OUString& rBaseURL,
-                   sal_uInt16 nMinFixLineSp,
-                   sal_uInt16 *pWhichIds=nullptr, sal_uInt16 nWhichIds=0 );
-    virtual ~SvxCSS1Parser();
+                   sal_uInt16 *pWhichIds, sal_uInt16 nWhichIds=0 );
+    virtual ~SvxCSS1Parser() override;
 
     bool IsIgnoreFontFamily() const { return bIgnoreFontFamily; }
     void SetIgnoreFontFamily( bool bSet ) { bIgnoreFontFamily = bSet; }
@@ -305,9 +311,9 @@ public:
     virtual void SetDfltEncoding( rtl_TextEncoding eEnc );
     rtl_TextEncoding GetDfltEncoding() const { return eDfltEnc; }
 
-    bool IsSetWesternProps() const { return (nScriptFlags & CSS1_SCRIPT_WESTERN) != 0; }
-    bool IsSetCJKProps() const { return (nScriptFlags & CSS1_SCRIPT_CJK) != 0; }
-    bool IsSetCTLProps() const { return (nScriptFlags & CSS1_SCRIPT_CTL) != 0; }
+    bool IsSetWesternProps() const { return bool(nScriptFlags & Css1ScriptFlags::Western); }
+    bool IsSetCJKProps() const { return bool(nScriptFlags & Css1ScriptFlags::CJK); }
+    bool IsSetCTLProps() const { return bool(nScriptFlags & Css1ScriptFlags::CTL); }
 
     const OUString& GetBaseURL() const { return sBaseURL;}
 

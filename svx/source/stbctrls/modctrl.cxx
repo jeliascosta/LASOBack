@@ -54,11 +54,11 @@ struct SvxModifyControl::ImplData
     ImplData():
         mnModState(MODIFICATION_STATE_NO)
     {
-        maImages[MODIFICATION_STATE_NO]       = Image(SVX_RES(RID_SVXBMP_DOC_MODIFIED_NO));
-        maImages[MODIFICATION_STATE_YES]      = Image(SVX_RES(RID_SVXBMP_DOC_MODIFIED_YES));
-        maImages[MODIFICATION_STATE_FEEDBACK] = Image(SVX_RES(RID_SVXBMP_DOC_MODIFIED_FEEDBACK));
+        maImages[MODIFICATION_STATE_NO]       = Image(BitmapEx(SVX_RES(RID_SVXBMP_DOC_MODIFIED_NO)));
+        maImages[MODIFICATION_STATE_YES]      = Image(BitmapEx(SVX_RES(RID_SVXBMP_DOC_MODIFIED_YES)));
+        maImages[MODIFICATION_STATE_FEEDBACK] = Image(BitmapEx(SVX_RES(RID_SVXBMP_DOC_MODIFIED_FEEDBACK)));
 
-        maIdle.SetPriority(SchedulerPriority::LOWEST);
+        maIdle.SetPriority(TaskPriority::LOWEST);
     }
 };
 
@@ -66,18 +66,7 @@ SvxModifyControl::SvxModifyControl( sal_uInt16 _nSlotId, sal_uInt16 _nId, Status
     SfxStatusBarControl( _nSlotId, _nId, rStb ),
     mxImpl(new ImplData)
 {
-//#ifndef MACOSX
-    if ( rStb.GetDPIScaleFactor() > 1 )
-    {
-        for (int i = 0; i < mxImpl->MODIFICATION_STATE_SIZE; i++)
-        {
-            BitmapEx b = mxImpl->maImages[i].GetBitmapEx();
-            b.Scale(rStb.GetDPIScaleFactor(), rStb.GetDPIScaleFactor(), BmpScaleFlag::Fast);
-            mxImpl->maImages[i] = Image(b);
-        }
-    }
-//#endif
-    mxImpl->maIdle.SetIdleHdl( LINK(this, SvxModifyControl, OnTimer) );
+    mxImpl->maIdle.SetInvokeHandler( LINK(this, SvxModifyControl, OnTimer) );
 }
 
 
@@ -106,7 +95,7 @@ void SvxModifyControl::StateChanged( sal_uInt16, SfxItemState eState,
 }
 
 
-IMPL_LINK_TYPED( SvxModifyControl, OnTimer, Idle *, pTimer, void )
+IMPL_LINK( SvxModifyControl, OnTimer, Timer *, pTimer, void )
 {
     if (pTimer == nullptr)
         return;
@@ -134,7 +123,7 @@ void SvxModifyControl::_repaint()
  *
  * @return Point top-left corner of the centered image position
  */
-Point centerImage(const Rectangle& rBoundingRect, const Image& rImg)
+Point centerImage(const tools::Rectangle& rBoundingRect, const Image& rImg)
 {
     Size aImgSize = rImg.GetSizePixel();
     Size aRectSize = rBoundingRect.GetSize();
@@ -148,7 +137,7 @@ Point centerImage(const Rectangle& rBoundingRect, const Image& rImg)
 void SvxModifyControl::Paint( const UserDrawEvent& rUsrEvt )
 {
     vcl::RenderContext* pDev = rUsrEvt.GetRenderContext();
-    Rectangle aRect(rUsrEvt.GetRect());
+    tools::Rectangle aRect(rUsrEvt.GetRect());
 
     ImplData::ModificationState state = mxImpl->mnModState;
     Point aPt = centerImage(aRect, mxImpl->maImages[state]);

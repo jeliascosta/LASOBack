@@ -19,6 +19,7 @@
 #ifndef INCLUDED_EDITENG_SOURCE_EDITENG_IMPEDIT_HXX
 #define INCLUDED_EDITENG_SOURCE_EDITENG_IMPEDIT_HXX
 
+#include <eerdll2.hxx>
 #include <editdoc.hxx>
 #include <editsel.hxx>
 #include <editundo.hxx>
@@ -56,25 +57,10 @@
 #include <i18nlangtag/lang.h>
 #include <rtl/ref.hxx>
 #include <LibreOfficeKit/LibreOfficeKitTypes.h>
+#include <o3tl/typed_flags_set.hxx>
 
 #include <memory>
 #include <vector>
-
-#define DEL_LEFT    1
-#define DEL_RIGHT   2
-#define TRAVEL_X_DONTKNOW   0xFFFFFFFF
-#define CURSOR_BIDILEVEL_DONTKNOW   0xFFFF
-#define MAXCHARSINPARA      0x3FFF-CHARPOSGROW  // Max 16K, because WYSIWYG array
-
-#define ATTRSPECIAL_WHOLEWORD   1
-#define ATTRSPECIAL_EDGE        2
-
-#define GETCRSR_TXTONLY             0x0001
-#define GETCRSR_STARTOFLINE         0x0002
-#define GETCRSR_ENDOFLINE           0x0004
-#define GETCRSR_PREFERPORTIONSTART  0x0008
-
-#define LINE_SEP    '\x0A'
 
 class EditView;
 class EditEngine;
@@ -106,10 +92,32 @@ namespace editeng {
     struct MisspellRanges;
 }
 
+#define DEL_LEFT    1
+#define DEL_RIGHT   2
+#define TRAVEL_X_DONTKNOW           0xFFFFFFFF
+#define CURSOR_BIDILEVEL_DONTKNOW   0xFFFF
+#define MAXCHARSINPARA              0x3FFF-CHARPOSGROW  // Max 16K, because WYSIWYG array
+#define LINE_SEP    '\x0A'
+
+#define ATTRSPECIAL_WHOLEWORD   1
+#define ATTRSPECIAL_EDGE        2
+
+enum class GetCursorFlags {
+    NONE                = 0x0000,
+    TextOnly            = 0x0001,
+    StartOfLine         = 0x0002,
+    EndOfLine           = 0x0004,
+    PreferPortionStart  = 0x0008,
+};
+namespace o3tl {
+    template<> struct typed_flags<GetCursorFlags> : is_typed_flags<GetCursorFlags, 0x0f> {};
+}
+
+
 struct DragAndDropInfo
 {
-    Rectangle           aCurCursor;
-    Rectangle           aCurSavedCursor;
+    tools::Rectangle           aCurCursor;
+    tools::Rectangle           aCurSavedCursor;
     sal_uInt16          nSensibleRange;
     sal_uInt16          nCursorWidth;
     ESelection          aBeginDragSel;
@@ -137,7 +145,7 @@ struct DragAndDropInfo
 struct ImplIMEInfos
 {
     OUString    aOldTextAfterStartPos;
-    ExtTextInputAttr* pAttribs;
+    std::unique_ptr<ExtTextInputAttr[]> pAttribs;
     EditPaM     aPos;
     sal_Int32   nLen;
     bool        bCursor;
@@ -165,7 +173,7 @@ struct SpellInfo
     svx::SpellPortions    aLastSpellPortions;
     SpellContentSelections  aLastSpellContentSelections;
     SpellInfo()
-        { bSpellToEnd = true; eState = EE_SPELL_OK; bMultipleDoc = false; }
+        { bSpellToEnd = true; eState = EESpellState::Ok; bMultipleDoc = false; }
 };
 
 // used for text conversion
@@ -197,7 +205,7 @@ private:
 
 public:
                 IdleFormattter();
-                virtual ~IdleFormattter();
+                virtual ~IdleFormattter() override;
 
     void        DoIdleFormat( EditView* pV );
     void        ForceTimeout();
@@ -218,14 +226,18 @@ class ImpEditView : public vcl::unohelper::DragAndDropClient
     using vcl::unohelper::DragAndDropClient::dragOver;
 
 private:
-    EditView*           pEditView;
-    vcl::Cursor*        pCursor;
-    Color*              pBackgroundColor;
-    OutlinerSearchable* mpLibreOfficeKitSearchable;
-    EditEngine*         pEditEngine;
-    VclPtr<vcl::Window> pOutWin;
-    Pointer*            pPointer;
-    DragAndDropInfo*    pDragAndDropInfo;
+    EditView*                 pEditView;
+    vcl::Cursor*              pCursor;
+    Color*                    pBackgroundColor;
+    /// Containing view shell, if any.
+    OutlinerViewShell*        mpViewShell;
+    /// An other shell, just listening to our state, if any.
+    OutlinerViewShell*        mpOtherShell;
+    EditEngine*               pEditEngine;
+    VclPtr<vcl::Window>       pOutWin;
+    EditView::OutWindowSet    aOutWindowSet;
+    Pointer*                  pPointer;
+    DragAndDropInfo*          pDragAndDropInfo;
 
     css::uno::Reference< css::datatransfer::dnd::XDragSourceListener > mxDnDListener;
 
@@ -233,7 +245,7 @@ private:
     long                nInvMore;
     EVControlBits       nControl;
     sal_uInt32          nTravelXPos;
-    sal_uInt16          nExtraCursorFlags;
+    GetCursorFlags      nExtraCursorFlags;
     sal_uInt16          nCursorBidiLevel;
     sal_uInt16          nScrollDiffX;
     bool                bReadOnly;
@@ -241,7 +253,7 @@ private:
     bool                bActiveDragAndDropListener;
 
     Point               aAnchorPoint;
-    Rectangle           aOutArea;
+    tools::Rectangle           aOutArea;
     Point               aVisDocStartPos;
     EESelectionMode     eSelectionMode;
     EditSelection       aEditSelection;
@@ -250,29 +262,21 @@ private:
 protected:
 
     // DragAndDropClient
-    void dragGestureRecognized(const css::datatransfer::dnd::DragGestureEvent& dge)
-        throw (css::uno::RuntimeException,
-               std::exception) override;
-    void dragDropEnd( const css::datatransfer::dnd::DragSourceDropEvent& dsde )
-        throw (css::uno::RuntimeException,
-               std::exception) override;
-    void drop(const css::datatransfer::dnd::DropTargetDropEvent& dtde)
-        throw (css::uno::RuntimeException,
-               std::exception) override;
-    void dragEnter( const css::datatransfer::dnd::DropTargetDragEnterEvent& dtdee ) throw (css::uno::RuntimeException, std::exception) override;
-    void dragExit( const css::datatransfer::dnd::DropTargetEvent& dte ) throw (css::uno::RuntimeException, std::exception) override;
-    void dragOver(const css::datatransfer::dnd::DropTargetDragEvent& dtde)
-        throw (css::uno::RuntimeException,
-               std::exception) override;
+    void dragGestureRecognized(const css::datatransfer::dnd::DragGestureEvent& dge) override;
+    void dragDropEnd( const css::datatransfer::dnd::DragSourceDropEvent& dsde ) override;
+    void drop(const css::datatransfer::dnd::DropTargetDropEvent& dtde) override;
+    void dragEnter( const css::datatransfer::dnd::DropTargetDragEnterEvent& dtdee ) override;
+    void dragExit( const css::datatransfer::dnd::DropTargetEvent& dte ) override;
+    void dragOver(const css::datatransfer::dnd::DropTargetDragEvent& dtde) override;
 
-    void ShowDDCursor( const Rectangle& rRect );
+    void ShowDDCursor( const tools::Rectangle& rRect );
     void HideDDCursor();
 
     void ImplDrawHighlightRect( OutputDevice* _pTarget, const Point& rDocPosTopLeft, const Point& rDocPosBottomRight, tools::PolyPolygon* pPolyPoly );
 
 public:
                     ImpEditView( EditView* pView, EditEngine* pEng, vcl::Window* pWindow );
-                    virtual ~ImpEditView();
+                    virtual ~ImpEditView() override;
 
     EditView*       GetEditViewPtr() { return pEditView; }
 
@@ -284,15 +288,15 @@ public:
 
     Point           GetDocPos( const Point& rWindowPos ) const;
     Point           GetWindowPos( const Point& rDocPos ) const;
-    Rectangle       GetWindowPos( const Rectangle& rDocPos ) const;
+    tools::Rectangle       GetWindowPos( const tools::Rectangle& rDocPos ) const;
 
-    void                SetOutputArea( const Rectangle& rRect );
-    void                ResetOutputArea( const Rectangle& rRect );
-    const Rectangle&    GetOutputArea() const   { return aOutArea; }
+    void                SetOutputArea( const tools::Rectangle& rRect );
+    void                ResetOutputArea( const tools::Rectangle& rRect );
+    const tools::Rectangle&    GetOutputArea() const   { return aOutArea; }
 
     bool            IsVertical() const;
 
-    bool            PostKeyEvent( const KeyEvent& rKeyEvent, vcl::Window* pFrameWin = nullptr );
+    bool            PostKeyEvent( const KeyEvent& rKeyEvent, vcl::Window* pFrameWin );
 
     bool            MouseButtonUp( const MouseEvent& rMouseEvent );
     bool            MouseButtonDown( const MouseEvent& rMouseEvent );
@@ -309,7 +313,7 @@ public:
     long            GetVisDocTop() const { return aVisDocStartPos.Y(); }
     long            GetVisDocRight() const { return aVisDocStartPos.X() + ( !IsVertical() ? aOutArea.GetWidth() : aOutArea.GetHeight() ); }
     long            GetVisDocBottom() const { return aVisDocStartPos.Y() + ( !IsVertical() ? aOutArea.GetHeight() : aOutArea.GetWidth() ); }
-    Rectangle       GetVisDocArea() const;
+    tools::Rectangle       GetVisDocArea() const;
 
     EditSelection&  GetEditSelection()          { return aEditSelection; }
     void            SetEditSelection( const EditSelection& rEditSelection );
@@ -317,11 +321,10 @@ public:
 
     void            DrawSelection() { DrawSelection( aEditSelection ); }
     void            DrawSelection( EditSelection, vcl::Region* pRegion = nullptr, OutputDevice* pTargetDevice = nullptr );
-    void GetSelectionRectangles(std::vector<Rectangle>& rLogicRects);
+    void GetSelectionRectangles(std::vector<tools::Rectangle>& rLogicRects);
 
     vcl::Window*    GetWindow() const           { return pOutWin; }
 
-    EESelectionMode GetSelectionMode() const    { return eSelectionMode; }
     void            SetSelectionMode( EESelectionMode eMode );
 
     inline const Pointer&   GetPointer();
@@ -366,10 +369,11 @@ public:
     const Color&    GetBackgroundColor() const {
                         return ( pBackgroundColor ? *pBackgroundColor : pOutWin->GetBackground().GetColor() ); }
 
-    /// @see vcl::ITiledRenderable::registerCallback().
-    void registerLibreOfficeKitCallback(OutlinerSearchable* pSearchable);
-    /// Invokes the registered callback, if there are any.
-    void libreOfficeKitCallback(int nType, const char* pPayload) const;
+    /// Informs this edit view about which view shell contains it.
+    void RegisterViewShell(OutlinerViewShell* pViewShell);
+    const OutlinerViewShell* GetViewShell() const;
+    /// Informs this edit view about which other shell listens to it.
+    void RegisterOtherShell(OutlinerViewShell* pViewShell);
 
     bool            IsWrongSpelledWord( const EditPaM& rPaM, bool bMarkIfWrong );
     OUString        SpellIgnoreWord();
@@ -394,6 +398,7 @@ class ImpEditEngine : public SfxListener
     typedef EditEngine::ViewsType ViewsType;
 
 private:
+    std::shared_ptr<editeng::SharedVclResources> pSharedVCL;
 
 
     // Data ...
@@ -441,7 +446,7 @@ private:
     sal_uInt16          nStretchX;
     sal_uInt16          nStretchY;
 
-    sal_uInt16              nAsianCompressionMode;
+    CharCompressType    nAsianCompressionMode;
 
     EEHorizontalTextDirection eDefaultHorizontalTextDirection;
 
@@ -465,7 +470,7 @@ private:
 
     // For Formatting / Update ....
     std::vector<std::unique_ptr<DeletedNodeInfo> > aDeletedNodes;
-    Rectangle           aInvalidRect;
+    tools::Rectangle           aInvalidRect;
     sal_uInt32          nCurTextHeight;
     sal_uInt32          nCurTextHeightNTP;  // without trailing empty paragraphs
     sal_uInt16          nOnePixelInRef;
@@ -482,9 +487,10 @@ private:
     // If it is detected at one point that the StatusHdl has to be called, but
     // this should not happen immediately (critical section):
     Timer               aStatusTimer;
-    Link<EditStatus&,void>  aStatusHdlLink;
-    Link<EENotify&,void>    aNotifyHdl;
-    Link<ImportInfo&,void>  aImportHdl;
+    Link<EditStatus&,void>         aStatusHdlLink;
+    Link<EENotify&,void>           aNotifyHdl;
+    Link<HtmlImportInfo&,void>     aHtmlImportHdl;
+    Link<RtfImportInfo&,void>      aRtfImportHdl;
     Link<MoveParagraphsInfo&,void> aBeginMovingParagraphsHdl;
     Link<MoveParagraphsInfo&,void> aEndMovingParagraphsHdl;
     Link<PasteOrDropInfos&,void>   aBeginPasteOrDropHdl;
@@ -530,7 +536,7 @@ private:
     EditTextObject* GetEmptyTextObject();
 
     EditPaM             GetPaM( Point aDocPos, bool bSmart = true );
-    EditPaM             GetPaM( ParaPortion* pPortion, Point aPos, bool bSmart = true );
+    EditPaM             GetPaM( ParaPortion* pPortion, Point aPos, bool bSmart );
     long GetXPos(const ParaPortion* pParaPortion, const EditLine* pLine, sal_Int32 nIndex, bool bPreferPortionStart = false) const;
     long GetPortionXOffset(const ParaPortion* pParaPortion, const EditLine* pLine, sal_Int32 nTextPortion) const;
     sal_Int32 GetChar(const ParaPortion* pParaPortion, const EditLine* pLine, long nX, bool bSmart = true);
@@ -542,7 +548,7 @@ private:
 
     EditTextObject*     CreateTextObject(EditSelection aSelection, SfxItemPool*, bool bAllowBigObjects = false, sal_Int32 nBigObjStart = 0);
     EditSelection       InsertTextObject( const EditTextObject&, EditPaM aPaM );
-    EditSelection       InsertText( css::uno::Reference< css::datatransfer::XTransferable >& rxDataObj, const OUString& rBaseURL, const EditPaM& rPaM, bool bUseSpecial );
+    EditSelection       InsertText( css::uno::Reference< css::datatransfer::XTransferable > const & rxDataObj, const OUString& rBaseURL, const EditPaM& rPaM, bool bUseSpecial );
 
     void                CheckPageOverflow();
 
@@ -662,12 +668,12 @@ private:
     bool                IsForceAutoColor() const { return bForceAutoColor; }
 
     inline VirtualDevice*   GetVirtualDevice( const MapMode& rMapMode, DrawModeFlags nDrawMode );
-    inline void             EraseVirtualDevice() { pVirtDev.disposeAndClear(); }
+    void             EraseVirtualDevice() { pVirtDev.disposeAndClear(); }
 
-    DECL_LINK_TYPED( StatusTimerHdl, Timer *, void);
-    DECL_LINK_TYPED( IdleFormatHdl, Idle *, void);
-    DECL_LINK_TYPED( OnlineSpellHdl, Timer *, void);
-    DECL_LINK_TYPED( DocModified, LinkParamNone*, void );
+    DECL_LINK( StatusTimerHdl, Timer *, void);
+    DECL_LINK( IdleFormatHdl, Timer *, void);
+    DECL_LINK( OnlineSpellHdl, Timer *, void);
+    DECL_LINK( DocModified, LinkParamNone*, void );
 
     void                CheckIdleFormatter();
 
@@ -678,13 +684,15 @@ private:
 
     void                SetValidPaperSize( const Size& rSz );
 
-    css::uno::Reference < css::i18n::XBreakIterator > ImplGetBreakIterator() const;
-    css::uno::Reference < css::i18n::XExtendedInputSequenceChecker > ImplGetInputSequenceChecker() const;
+    css::uno::Reference < css::i18n::XBreakIterator > const & ImplGetBreakIterator() const;
+    css::uno::Reference < css::i18n::XExtendedInputSequenceChecker > const & ImplGetInputSequenceChecker() const;
 
     void ImplUpdateOverflowingParaNum( sal_uInt32 );
     void ImplUpdateOverflowingLineNum( sal_uInt32, sal_uInt32, sal_uInt32 );
 
     SpellInfo *     CreateSpellInfo( bool bMultipleDocs );
+    /// Obtains a view shell ID from the active EditView.
+    ViewShellId CreateViewShellId();
 
     ImpEditEngine(EditEngine* pEditEngine, SfxItemPool* pPool);
     void InitDoc(bool bKeepParaAttribs);
@@ -698,7 +706,7 @@ protected:
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
 public:
-                            virtual ~ImpEditEngine();
+                            virtual ~ImpEditEngine() override;
                             ImpEditEngine(const ImpEditEngine&) = delete;
     ImpEditEngine&          operator=(const ImpEditEngine&) = delete;
 
@@ -743,8 +751,8 @@ public:
     void                    FormatDoc();
     void                    FormatFullDoc();
     void                    UpdateViews( EditView* pCurView = nullptr );
-    void                    Paint( ImpEditView* pView, const Rectangle& rRect, OutputDevice* pTargetDevice = nullptr );
-    void                    Paint( OutputDevice* pOutDev, Rectangle aClipRect, Point aStartPos, bool bStripOnly = false, short nOrientation = 0 );
+    void                    Paint( ImpEditView* pView, const tools::Rectangle& rRect, OutputDevice* pTargetDevice );
+    void                    Paint( OutputDevice* pOutDev, tools::Rectangle aClipRect, Point aStartPos, bool bStripOnly = false, short nOrientation = 0 );
 
     bool                MouseButtonUp( const MouseEvent& rMouseEvent, EditView* pView );
     bool                MouseButtonDown( const MouseEvent& rMouseEvent, EditView* pView );
@@ -782,7 +790,7 @@ public:
     EditPaM         InsertTextUserInput( const EditSelection& rCurEditSelection, sal_Unicode c, bool bOverwrite );
     EditPaM         InsertText(const EditSelection& aCurEditSelection, const OUString& rStr);
     EditPaM         AutoCorrect( const EditSelection& rCurEditSelection, sal_Unicode c, bool bOverwrite, vcl::Window* pFrameWin = nullptr );
-    EditPaM         DeleteLeftOrRight( const EditSelection& rEditSelection, sal_uInt8 nMode, sal_uInt8 nDelMode = DELMODE_SIMPLE );
+    EditPaM         DeleteLeftOrRight( const EditSelection& rEditSelection, sal_uInt8 nMode, DeleteMode nDelMode );
     EditPaM         InsertParaBreak(const EditSelection& rEditSelection);
     EditPaM         InsertLineBreak(const EditSelection& aEditSelection);
     EditPaM         InsertTab(const EditSelection& rEditSelection);
@@ -814,9 +822,9 @@ public:
     sal_uInt32      GetParaHeight( sal_Int32 nParagraph );
 
     SfxItemSet      GetAttribs( sal_Int32 nPara, sal_Int32 nStart, sal_Int32 nEnd, GetAttribsFlags nFlags = GetAttribsFlags::ALL ) const;
-    SfxItemSet      GetAttribs( EditSelection aSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs_All  );
-    void            SetAttribs( EditSelection aSel, const SfxItemSet& rSet, sal_uInt8 nSpecial = 0 );
-    void            RemoveCharAttribs( EditSelection aSel, bool bRemoveParaAttribs, sal_uInt16 nWhich = 0 );
+    SfxItemSet      GetAttribs( EditSelection aSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs::All  );
+    void            SetAttribs( EditSelection aSel, const SfxItemSet& rSet, SetAttribsMode nSpecial = SetAttribsMode::NONE );
+    void            RemoveCharAttribs( EditSelection aSel, bool bRemoveParaAttribs, sal_uInt16 nWhich );
     void            RemoveCharAttribs( sal_Int32 nPara, sal_uInt16 nWhich = 0, bool bRemoveFeatures = false );
     void            SetFlatMode( bool bFlat );
 
@@ -826,8 +834,8 @@ public:
     bool            HasParaAttrib( sal_Int32 nPara, sal_uInt16 nWhich ) const;
     const SfxPoolItem&  GetParaAttrib( sal_Int32 nPara, sal_uInt16 nWhich ) const;
 
-    Rectangle       PaMtoEditCursor( EditPaM aPaM, sal_uInt16 nFlags = 0 );
-    Rectangle       GetEditCursor( ParaPortion* pPortion, sal_Int32 nIndex, sal_uInt16 nFlags = 0 );
+    tools::Rectangle       PaMtoEditCursor( EditPaM aPaM, GetCursorFlags nFlags = GetCursorFlags::NONE );
+    tools::Rectangle       GetEditCursor( ParaPortion* pPortion, sal_Int32 nIndex, GetCursorFlags nFlags = GetCursorFlags::NONE );
 
     bool            IsModified() const      { return aEditDoc.IsModified(); }
     void            SetModifyFlag( bool b ) { aEditDoc.SetModified( b ); }
@@ -854,7 +862,7 @@ public:
     const Link<EENotify&,void>&   GetNotifyHdl() const            { return aNotifyHdl; }
 
     void            FormatAndUpdate( EditView* pCurView = nullptr, bool bCalledFromUndo = false );
-    inline void     IdleFormatAndUpdate( EditView* pCurView = nullptr );
+    inline void     IdleFormatAndUpdate( EditView* pCurView );
 
     svtools::ColorConfig& GetColorConfig();
     bool            IsVisualCursorTravelingEnabled();
@@ -898,9 +906,9 @@ public:
     EditView*           GetActiveView() const   { return pActiveView; }
     void                SetActiveView( EditView* pView );
 
-    css::uno::Reference< css::linguistic2::XSpellChecker1 >
+    css::uno::Reference< css::linguistic2::XSpellChecker1 > const &
                         GetSpeller();
-    void                SetSpeller( css::uno::Reference< css::linguistic2::XSpellChecker1 >  &xSpl )
+    void                SetSpeller( css::uno::Reference< css::linguistic2::XSpellChecker1 > const &xSpl )
                             { xSpeller = xSpl; }
     const css::uno::Reference< css::linguistic2::XHyphenator >&
                         GetHyphenator() const { return xHyphenator; }
@@ -982,7 +990,7 @@ public:
 
     sal_Int32           GetBigTextObjectStart() const                               { return nBigTextObjectStart; }
 
-    inline EditEngine*  GetEditEnginePtr() const    { return pEditEngine; }
+    EditEngine*  GetEditEnginePtr() const    { return pEditEngine; }
 
     void                StartOnlineSpellTimer()     { aOnlineSpellTimer.Start(); }
     void                StopOnlineSpellTimer()      { aOnlineSpellTimer.Stop(); }
@@ -990,11 +998,11 @@ public:
     const OUString&     GetAutoCompleteText() const { return aAutoCompleteText; }
     void                SetAutoCompleteText(const OUString& rStr, bool bUpdateTipWindow);
 
-    EditSelection       TransliterateText( const EditSelection& rSelection, sal_Int32 nTransliterationMode );
+    EditSelection       TransliterateText( const EditSelection& rSelection, TransliterationFlags nTransliterationMode );
     short               ReplaceTextOnly( ContentNode* pNode, sal_Int32 nCurrentStart, sal_Int32 nLen, const OUString& rText, const css::uno::Sequence< sal_Int32 >& rOffsets );
 
-    void                SetAsianCompressionMode( sal_uInt16 n );
-    sal_uInt16          GetAsianCompressionMode() const { return nAsianCompressionMode; }
+    void                SetAsianCompressionMode( CharCompressType n );
+    CharCompressType    GetAsianCompressionMode() const { return nAsianCompressionMode; }
 
     void                SetKernAsianPunctuation( bool b );
     bool                IsKernAsianPunctuation() const { return bKernAsianPunctuation; }
@@ -1026,6 +1034,7 @@ public:
         mark (apostrophe) or not (default is on) */
     void            SetReplaceLeadingSingleQuotationMark( bool bReplace ) { mbReplaceLeadingSingleQuotationMark = bReplace; }
     bool            IsReplaceLeadingSingleQuotationMark() const { return mbReplaceLeadingSingleQuotationMark; }
+    void Dispose();
 };
 
 inline EPaM ImpEditEngine::CreateEPaM( const EditPaM& rPaM )
@@ -1203,7 +1212,7 @@ inline vcl::Cursor* ImpEditView::GetCursor()
 
 void ConvertItem( SfxPoolItem& rPoolItem, MapUnit eSourceUnit, MapUnit eDestUnit );
 void ConvertAndPutItems( SfxItemSet& rDest, const SfxItemSet& rSource, const MapUnit* pSourceUnit = nullptr, const MapUnit* pDestUnit = nullptr );
-sal_uInt8 GetCharTypeForCompression( sal_Unicode cChar );
+AsianCompressionFlags GetCharTypeForCompression( sal_Unicode cChar );
 Point Rotate( const Point& rPoint, short nOrientation, const Point& rOrigin );
 
 #endif // INCLUDED_EDITENG_SOURCE_EDITENG_IMPEDIT_HXX

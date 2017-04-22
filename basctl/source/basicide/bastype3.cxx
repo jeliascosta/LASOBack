@@ -20,7 +20,7 @@
 #include <basic/basmgr.hxx>
 #include <basic/sbmod.hxx>
 #include <bastype2.hxx>
-#include <baside2.hrc>
+#include <basidesh.hrc>
 #include <bastypes.hxx>
 #include <com/sun/star/script/XLibraryContainer.hpp>
 #include <com/sun/star/script/XLibraryContainerPassword.hpp>
@@ -105,8 +105,8 @@ void TreeListBox::RequestingChildren( SvTreeListEntry* pEntry )
                 ImpCreateLibSubEntries( pEntry, aDocument, aOULibName );
 
                 // exchange image
-                bool bDlgMode = ( nMode & BROWSEMODE_DIALOGS ) && !( nMode & BROWSEMODE_MODULES );
-                Image aImage( IDEResId( bDlgMode ? RID_IMG_DLGLIB : RID_IMG_MODLIB ) );
+                const bool bDlgMode = (nMode & BrowseMode::Dialogs) && !(nMode & BrowseMode::Modules);
+                Image aImage(BitmapEx(IDEResId(bDlgMode ? RID_BMP_DLGLIB : RID_BMP_MODLIB)));
                 SetEntryBitmaps( pEntry, aImage );
             }
             else
@@ -131,7 +131,7 @@ void TreeListBox::RequestingChildren( SvTreeListEntry* pEntry )
 void TreeListBox::ExpandedHdl()
 {
     SvTreeListEntry* pEntry = GetHdlEntry();
-    assert(pEntry && "Was wurde zugeklappt?");
+    assert(pEntry && "What was collapsed?");
     if ( !IsExpanded( pEntry ) && pEntry->HasChildrenOnDemand() )
     {
         SvTreeListEntry* pChild = FirstChild( pEntry );
@@ -221,7 +221,7 @@ SbxVariable* TreeListBox::FindVariable( SvTreeListEntry* pEntry )
                 pVar = static_cast<StarBASIC*>(pVar)->FindModule( aName );
                 break;
             case OBJ_TYPE_METHOD:
-                DBG_ASSERT(dynamic_cast<SbxObject*>(pVar), "FindVariable: invalid modul/object");
+                DBG_ASSERT(dynamic_cast<SbxObject*>(pVar), "FindVariable: invalid module/object");
                 if(!pVar)
                 {
                     break;
@@ -240,7 +240,7 @@ SbxVariable* TreeListBox::FindVariable( SvTreeListEntry* pEntry )
                 // skip, to find the child entry.
                 continue;
             default:
-                OSL_FAIL( "FindVariable: Unbekannter Typ!" );
+                OSL_FAIL( "FindVariable: unknown type" );
                 pVar = nullptr;
                 break;
             }
@@ -298,9 +298,9 @@ EntryDescriptor TreeListBox::GetEntryDescriptor( SvTreeListEntry* pEntry )
     {
         for (SvTreeListEntry* pLE : aEntries)
         {
-            assert(pLE && "Entrie im Array nicht gefunden");
+            assert(pLE && "Entry not found in array");
             Entry* pBE = static_cast<Entry*>(pLE->GetUserData());
-            assert(pBE && "Keine Daten im Eintrag gefunden!");
+            assert(pBE && "No data found in entry!");
 
             switch ( pBE->GetType() )
             {
@@ -339,7 +339,7 @@ EntryDescriptor TreeListBox::GetEntryDescriptor( SvTreeListEntry* pEntry )
                 break;
                 default:
                 {
-                    OSL_FAIL( "GetEntryDescriptor: Unbekannter Typ!" );
+                    OSL_FAIL( "GetEntryDescriptor: unknown type" );
                     eType = OBJ_TYPE_UNKNOWN;
                 }
                 break;
@@ -434,7 +434,7 @@ SvTreeListEntry* TreeListBox::FindRootEntry( const ScriptDocument& rDocument, Li
     SvTreeListEntry* pRootEntry = GetEntry( nRootPos );
     while ( pRootEntry )
     {
-        DBG_ASSERT( static_cast<Entry*>(pRootEntry->GetUserData())->GetType() == OBJ_TYPE_DOCUMENT, "Kein Shelleintrag?" );
+        DBG_ASSERT( static_cast<Entry*>(pRootEntry->GetUserData())->GetType() == OBJ_TYPE_DOCUMENT, "No shell entry?" );
         DocumentEntry* pBDEntry = static_cast<DocumentEntry*>(pRootEntry->GetUserData());
         if (pBDEntry && pBDEntry->GetDocument() == rDocument && pBDEntry->GetLocation() == eLocation)
             return pRootEntry;

@@ -25,21 +25,16 @@
 
 #include <vector>
 
-class SOT_DLLPUBLIC FileList : public SvDataCopyStream
+class SOT_DLLPUBLIC FileList
 {
-    ::std::vector< OUString >  aStrList;
+    std::vector< OUString >  aStrList;
 
-protected:
+private:
 
     // Liste loeschen;
-    void            ClearAll();
+    void clear() { aStrList.clear(); }
 
 public:
-    FileList() {};
-    virtual ~FileList();
-
-    // Zuweisungsoperator
-    FileList&           operator=( const FileList& rFileList );
 
     // Im-/Export
     SOT_DLLPUBLIC friend SvStream&  ReadFileList( SvStream& rIStm, FileList& rFileList );

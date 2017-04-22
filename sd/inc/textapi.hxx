@@ -40,9 +40,10 @@ class TextApiObject : public SvxUnoText
 public:
     static rtl::Reference< TextApiObject > create( SdDrawDocument* pDoc );
 
-    virtual             ~TextApiObject() throw();
+    virtual             ~TextApiObject() throw() override;
 
-    void SAL_CALL dispose() throw(css::uno::RuntimeException);
+    /// @throws css::uno::RuntimeException
+    void SAL_CALL dispose();
 
     OutlinerParaObject* CreateText();
     void                SetText( OutlinerParaObject& rText );

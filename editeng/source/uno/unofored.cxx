@@ -68,13 +68,10 @@ SfxItemSet SvxEditEngineForwarder::GetAttribs( const ESelection& rSel, EditEngin
         GetAttribsFlags nFlags = GetAttribsFlags::NONE;
         switch( nOnlyHardAttrib )
         {
-        case EditEngineAttribs_All:
+        case EditEngineAttribs::All:
             nFlags = GetAttribsFlags::ALL;
             break;
-        case EditEngineAttribs_HardAndPara:
-            nFlags = GetAttribsFlags::PARAATTRIBS|GetAttribsFlags::CHARATTRIBS;
-            break;
-        case EditEngineAttribs_OnlyHard:
+        case EditEngineAttribs::OnlyHard:
             nFlags = GetAttribsFlags::CHARATTRIBS;
             break;
         default:
@@ -288,18 +285,18 @@ EBulletInfo SvxEditEngineForwarder::GetBulletInfo( sal_Int32 ) const
     return EBulletInfo();
 }
 
-Rectangle SvxEditEngineForwarder::GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const
+tools::Rectangle SvxEditEngineForwarder::GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const
 {
     // EditEngine's 'internal' methods like GetCharacterBounds()
     // don't rotate for vertical text.
     Size aSize( rEditEngine.CalcTextWidth(), rEditEngine.GetTextHeight() );
-    ::std::swap( aSize.Width(), aSize.Height() );
+    std::swap( aSize.Width(), aSize.Height() );
     bool bIsVertical( rEditEngine.IsVertical() );
 
     // #108900# Handle virtual position one-past-the end of the string
     if( nIndex >= rEditEngine.GetTextLen(nPara) )
     {
-        Rectangle aLast;
+        tools::Rectangle aLast;
 
         if( nIndex )
         {
@@ -335,7 +332,7 @@ Rectangle SvxEditEngineForwarder::GetCharBounds( sal_Int32 nPara, sal_Int32 nInd
     }
 }
 
-Rectangle SvxEditEngineForwarder::GetParaBounds( sal_Int32 nPara ) const
+tools::Rectangle SvxEditEngineForwarder::GetParaBounds( sal_Int32 nPara ) const
 {
     const Point aPnt = rEditEngine.GetDocPosTopLeft( nPara );
     sal_uLong nWidth;
@@ -351,14 +348,14 @@ Rectangle SvxEditEngineForwarder::GetParaBounds( sal_Int32 nPara ) const
         nHeight = rEditEngine.GetTextHeight();
         nTextWidth = rEditEngine.GetTextHeight();
 
-        return Rectangle( nTextWidth - aPnt.Y() - nWidth, 0, nTextWidth - aPnt.Y(), nHeight );
+        return tools::Rectangle( nTextWidth - aPnt.Y() - nWidth, 0, nTextWidth - aPnt.Y(), nHeight );
     }
     else
     {
         nWidth = rEditEngine.CalcTextWidth();
         nHeight = rEditEngine.GetTextHeight( nPara );
 
-        return Rectangle( 0, aPnt.Y(), nWidth, aPnt.Y() + nHeight );
+        return tools::Rectangle( 0, aPnt.Y(), nWidth, aPnt.Y() + nHeight );
     }
 }
 
@@ -375,7 +372,7 @@ OutputDevice* SvxEditEngineForwarder::GetRefDevice() const
 bool SvxEditEngineForwarder::GetIndexAtPoint( const Point& rPos, sal_Int32& nPara, sal_Int32& nIndex ) const
 {
     Size aSize( rEditEngine.CalcTextWidth(), rEditEngine.GetTextHeight() );
-    ::std::swap( aSize.Width(), aSize.Height() );
+    std::swap( aSize.Width(), aSize.Height() );
     Point aEEPos( SvxEditSourceHelper::UserSpaceToEE( rPos,
                                                       aSize,
                                                       rEditEngine.IsVertical() ));

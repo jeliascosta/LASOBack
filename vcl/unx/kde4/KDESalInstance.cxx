@@ -23,6 +23,9 @@
 #include "KDESalFrame.hxx"
 
 #include "KDEXLib.hxx"
+#include "KDESalDisplay.hxx"
+
+#include <QX11Info>
 
 using namespace com::sun::star;
 
@@ -50,9 +53,9 @@ uno::Reference< ui::dialogs::XFilePicker2 > KDESalInstance::createFilePicker(
         return X11SalInstance::createFilePicker( xMSF );
 }
 
-int KDESalInstance::getFrameWidth()
+SalX11Display* KDESalInstance::CreateDisplay() const
 {
-    return static_cast<KDEXLib*>( mpXLib )->getFrameWidth();
+    return new SalKDEDisplay( QX11Info::display() );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

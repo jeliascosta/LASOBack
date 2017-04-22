@@ -30,6 +30,7 @@
 #include <com/sun/star/xml/sax/XFastParser.hpp>
 #include <com/sun/star/xml/sax/XFastSAXSerializable.hpp>
 #include <com/sun/star/document/XDocumentProperties.hpp>
+#include <o3tl/any.hxx>
 #include <unotools/mediadescriptor.hxx>
 #include <unotools/docinfohelper.hxx>
 #include <sax/fshelper.hxx>
@@ -62,6 +63,7 @@
 #include <tools/datetime.hxx>
 #include <com/sun/star/util/Duration.hpp>
 #include <sax/tools/converter.hxx>
+#include <oox/token/namespacemap.hxx>
 
 using ::com::sun::star::xml::dom::DocumentBuilder;
 using ::com::sun::star::xml::dom::XDocument;
@@ -145,7 +147,10 @@ struct NamespaceIds: public rtl::StaticWithInit<
             {"http://schemas.microsoft.com/office/powerpoint/2010/main",
              NMSP_p14},
             {"http://schemas.microsoft.com/office/powerpoint/2012/main",
-             NMSP_p15}};
+             NMSP_p15},
+            {"http://schemas.microsoft.com/office/spreadsheetml/2011/1/ac",
+             NMSP_x12ac},
+        };
     }
 };
 
@@ -169,32 +174,27 @@ struct XmlFilterBaseImpl
 {
     typedef RefMap< OUString, Relations > RelationsMap;
 
-    Reference<XComponentContext>   mxContext;
     FastParser                     maFastParser;
     const OUString                 maBinSuffix;
     RelationsMap                   maRelationsMap;
     TextFieldStack                 maTextFieldStack;
+    const NamespaceMap&            mrNamespaceMap;
 
-    explicit            XmlFilterBaseImpl( const Reference< XComponentContext >& rxContext ) throw( RuntimeException );
-    ~XmlFilterBaseImpl();
+    /// @throws RuntimeException
+    explicit            XmlFilterBaseImpl();
 };
 
-XmlFilterBaseImpl::XmlFilterBaseImpl( const Reference< XComponentContext >& rxContext ) throw( RuntimeException ) :
-    mxContext(rxContext),
-    maFastParser( rxContext ),
-    maBinSuffix( ".bin" )
+XmlFilterBaseImpl::XmlFilterBaseImpl() :
+    maBinSuffix( ".bin" ),
+    mrNamespaceMap(StaticNamespaceMap::get())
 {
     // register XML namespaces
     registerNamespaces(maFastParser);
 }
 
-XmlFilterBaseImpl::~XmlFilterBaseImpl()
-{
-}
-
-XmlFilterBase::XmlFilterBase( const Reference< XComponentContext >& rxContext ) throw( RuntimeException ) :
+XmlFilterBase::XmlFilterBase( const Reference< XComponentContext >& rxContext ) :
     FilterBase( rxContext ),
-    mxImpl( new XmlFilterBaseImpl( rxContext ) ),
+    mxImpl( new XmlFilterBaseImpl ),
     mnRelId( 1 ),
     mnMaxDocId( 0 ),
     mbMSO2007(false),
@@ -211,7 +211,7 @@ XmlFilterBase::~XmlFilterBase()
     // the following implicit destruction chain of ~XmlFilterBaseImpl, but in that
     // case it's member RelationsMap maRelationsMap will be destroyed, but maybe
     // still be used by ~FragmentHandler -> crash.
-    mxImpl->maFastParser.setDocumentHandler( nullptr );
+    mxImpl->maFastParser.clearDocumentHandler();
 }
 
 void XmlFilterBase::checkDocumentProperties(const Reference<XDocumentProperties>& xDocProps)
@@ -236,7 +236,7 @@ void XmlFilterBase::checkDocumentProperties(const Reference<XDocumentProperties>
     if (!aValue.startsWithIgnoreAsciiCase("12."))
         return;
 
-    SAL_WARN("oox", "a MSO 2007 document");
+    SAL_INFO("oox", "a MSO 2007 document");
     mbMSO2007 = true;
 }
 
@@ -246,7 +246,7 @@ void XmlFilterBase::importDocumentProperties()
     MediaDescriptor aMediaDesc( getMediaDescriptor() );
     Reference< XInputStream > xInputStream;
     Reference< XComponentContext > xContext = getComponentContext();
-    Reference< ::oox::core::FilterDetect > xDetector( new ::oox::core::FilterDetect( xContext ) );
+    rtl::Reference< ::oox::core::FilterDetect > xDetector( new ::oox::core::FilterDetect( xContext ) );
     xInputStream = xDetector->extractUnencryptedPackage( aMediaDesc );
     Reference< XComponent > xModel( getModel(), UNO_QUERY );
     Reference< XStorage > xDocumentStorage (
@@ -261,9 +261,9 @@ void XmlFilterBase::importDocumentProperties()
     checkDocumentProperties(xDocProps);
 }
 
-FastParser* XmlFilterBase::createParser() const
+FastParser* XmlFilterBase::createParser()
 {
-    FastParser* pParser = new FastParser(getComponentContext());
+    FastParser* pParser = new FastParser;
     registerNamespaces(*pParser);
     return pParser;
 }
@@ -298,7 +298,7 @@ OUString XmlFilterBase::getFragmentPathFromFirstTypeFromOfficeDoc( const OUStrin
 
 bool XmlFilterBase::importFragment( const rtl::Reference<FragmentHandler>& rxHandler )
 {
-    FastParser aParser(mxImpl->mxContext);
+    FastParser aParser;
     registerNamespaces(aParser);
     return importFragment(rxHandler, aParser);
 }
@@ -591,11 +591,11 @@ writeCoreProperties( XmlFilterBase& rSelf, const Reference< XDocumentProperties 
             "docProps/core.xml",
             "application/vnd.openxmlformats-package.core-properties+xml" );
     pCoreProps->startElementNS( XML_cp, XML_coreProperties,
-            FSNS( XML_xmlns, XML_cp ),          "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
-            FSNS( XML_xmlns, XML_dc ),          "http://purl.org/dc/elements/1.1/",
-            FSNS( XML_xmlns, XML_dcterms ),     "http://purl.org/dc/terms/",
-            FSNS( XML_xmlns, XML_dcmitype ),    "http://purl.org/dc/dcmitype/",
-            FSNS( XML_xmlns, XML_xsi ),         "http://www.w3.org/2001/XMLSchema-instance",
+            FSNS( XML_xmlns, XML_cp ),          OUStringToOString(rSelf.getNamespaceURL(OOX_NS(packageMetaCorePr)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_dc ),          OUStringToOString(rSelf.getNamespaceURL(OOX_NS(dc)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_dcterms ),     OUStringToOString(rSelf.getNamespaceURL(OOX_NS(dcTerms)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_dcmitype ),    OUStringToOString(rSelf.getNamespaceURL(OOX_NS(dcmiType)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_xsi ),         OUStringToOString(rSelf.getNamespaceURL(OOX_NS(xsi)), RTL_TEXTENCODING_UTF8).getStr(),
             FSEND );
 
 #ifdef OOXTODO
@@ -634,8 +634,8 @@ writeAppProperties( XmlFilterBase& rSelf, const Reference< XDocumentProperties >
             "docProps/app.xml",
             "application/vnd.openxmlformats-officedocument.extended-properties+xml" );
     pAppProps->startElement( XML_Properties,
-            XML_xmlns,                  "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties",
-            FSNS( XML_xmlns, XML_vt ),  "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+            XML_xmlns,                  OUStringToOString(rSelf.getNamespaceURL(OOX_NS(officeExtPr)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_vt ),  OUStringToOString(rSelf.getNamespaceURL(OOX_NS(officeDocPropsVT)), RTL_TEXTENCODING_UTF8).getStr(),
             FSEND );
 
     writeElement( pAppProps, XML_Template,              xProperties->getTemplateName() );
@@ -736,8 +736,8 @@ writeCustomProperties( XmlFilterBase& rSelf, const Reference< XDocumentPropertie
             "docProps/custom.xml",
             "application/vnd.openxmlformats-officedocument.custom-properties+xml" );
     pAppProps->startElement( XML_Properties,
-            XML_xmlns,                  "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties",
-            FSNS( XML_xmlns, XML_vt ),  "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+            XML_xmlns,                  OUStringToOString(rSelf.getNamespaceURL(OOX_NS(officeCustomPr)), RTL_TEXTENCODING_UTF8).getStr(),
+            FSNS( XML_xmlns, XML_vt ),  OUStringToOString(rSelf.getNamespaceURL(OOX_NS(officeDocPropsVT)), RTL_TEXTENCODING_UTF8).getStr(),
             FSEND );
 
     for ( sal_Int32 n = 0; n < nbCustomProperties; ++n )
@@ -763,8 +763,7 @@ writeCustomProperties( XmlFilterBase& rSelf, const Reference< XDocumentPropertie
                 break;
                 case TypeClass_BOOLEAN:
                 {
-                    bool val ;
-                    val = *static_cast<sal_Bool const *>(( aprop[n].Value ).getValue());
+                    bool val = *o3tl::forceAccess<bool>(aprop[n].Value);
                     writeElement( pAppProps, FSNS( XML_vt, XML_bool ), val ? 1 : 0);
                 }
                 break;
@@ -804,7 +803,7 @@ writeCustomProperties( XmlFilterBase& rSelf, const Reference< XDocumentPropertie
     pAppProps->endElement( XML_Properties );
 }
 
-XmlFilterBase& XmlFilterBase::exportDocumentProperties( const Reference< XDocumentProperties >& xProperties )
+void XmlFilterBase::exportDocumentProperties( const Reference< XDocumentProperties >& xProperties )
 {
     if( xProperties.is() )
     {
@@ -812,7 +811,6 @@ XmlFilterBase& XmlFilterBase::exportDocumentProperties( const Reference< XDocume
         writeAppProperties( *this, xProperties );
         writeCustomProperties( *this, xProperties );
     }
-    return *this;
 }
 
 // protected ------------------------------------------------------------------
@@ -822,7 +820,7 @@ Reference< XInputStream > XmlFilterBase::implGetInputStream( MediaDescriptor& rM
     /*  Get the input stream directly from the media descriptor, or decrypt the
         package again. The latter is needed e.g. when the document is reloaded.
         All this is implemented in the detector service. */
-    Reference< FilterDetect > xDetector( new FilterDetect( getComponentContext() ) );
+    rtl::Reference< FilterDetect > xDetector( new FilterDetect( getComponentContext() ) );
     return xDetector->extractUnencryptedPackage( rMediaDesc );
 }
 
@@ -912,6 +910,18 @@ bool XmlFilterBase::isMSO2007Document() const
 void XmlFilterBase::setMissingExtDrawing()
 {
     mbMissingExtDrawing = true;
+}
+
+OUString XmlFilterBase::getNamespaceURL(sal_Int32 nNSID) const
+{
+    auto itr = mxImpl->mrNamespaceMap.maTransitionalNamespaceMap.find(nNSID);
+    if (itr == mxImpl->mrNamespaceMap.maTransitionalNamespaceMap.end())
+    {
+        SAL_WARN("oox", "missing namespace in the namespace map for : " << nNSID);
+        return OUString();
+    }
+
+    return itr->second;
 }
 
 } // namespace core

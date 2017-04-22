@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <xmlsecurity/certificatechooser.hxx>
-#include <xmlsecurity/certificateviewer.hxx>
+#include <certificatechooser.hxx>
+#include <certificateviewer.hxx>
 #include <com/sun/star/security/XCertificate.hpp>
 
 #include <com/sun/star/security/CertificateCharacters.hpp>
@@ -56,7 +56,10 @@ CertificateViewer::CertificateViewer(
 
     mpTabCtrl->SetTabPage(mnGeneralId, VclPtr<CertificateViewerGeneralTP>::Create( mpTabCtrl, this));
     mpTabCtrl->SetTabPage(mnDetailsId, VclPtr<CertificateViewerDetailsTP>::Create( mpTabCtrl, this));
-    mpTabCtrl->SetTabPage(mnPathId, VclPtr<CertificateViewerCertPathTP>::Create( mpTabCtrl, this));
+    if (mxSecurityEnvironment->buildCertificatePath(mxCert).getLength() == 0)
+        mpTabCtrl->RemovePage(mnPathId);
+    else
+        mpTabCtrl->SetTabPage(mnPathId, VclPtr<CertificateViewerCertPathTP>::Create( mpTabCtrl, this));
     mpTabCtrl->SetCurPageId(mnGeneralId);
 }
 
@@ -69,7 +72,8 @@ void CertificateViewer::dispose()
 {
     mpTabCtrl->GetTabPage(mnGeneralId)->disposeOnce();
     mpTabCtrl->GetTabPage(mnDetailsId)->disposeOnce();
-    mpTabCtrl->GetTabPage(mnPathId)->disposeOnce();
+    if (mpTabCtrl->GetTabPage(mnPathId))
+        mpTabCtrl->GetTabPage(mnPathId)->disposeOnce();
     mpTabCtrl.clear();
     TabDialog::dispose();
 }
@@ -97,13 +101,15 @@ CertificateViewerGeneralTP::CertificateViewerGeneralTP( vcl::Window* _pParent, C
     :CertificateViewerTP    ( _pParent, "CertGeneral", "xmlsec/ui/certgeneral.ui", _pDlg )
 {
     get( m_pCertImg, "certimage" );
-    get( m_pHintNotTrustedFI, "hintnotrust" );
-    get( m_pIssuedToFI, "issued_to_value" );
-    get( m_pIssuedByFI, "issued_by_value" );
-    get( m_pValidFromDateFI, "valid_from_value" );
-    get( m_pValidToDateFI, "valid_to_value" );
+    get( m_pHintNotTrustedFT, "hintnotrust" );
+    get( m_pIssuedToLabelFT, "issued_to" );
+    get( m_pIssuedToFT, "issued_to_value" );
+    get( m_pIssuedByLabelFT, "issued_by");
+    get( m_pIssuedByFT, "issued_by_value" );
+    get( m_pValidFromDateFT, "valid_from_value" );
+    get( m_pValidToDateFT, "valid_to_value" );
     get( m_pKeyImg, "keyimage" );
-    get( m_pHintCorrespPrivKeyFI, "privatekey" );
+    get( m_pHintCorrespPrivKeyFT, "privatekey" );
 
     //Verify the certificate
     sal_Int32 certStatus = mpDlg->mxSecurityEnvironment->verifyCertificate(mpDlg->mxCert,
@@ -113,27 +119,34 @@ CertificateViewerGeneralTP::CertificateViewerGeneralTP( vcl::Window* _pParent, C
 
     if ( !bCertValid )
     {
-        m_pCertImg->SetImage(
-            Image( XMLSEC_RES( IMG_STATE_NOT_VALIDATED ) ) );
-        m_pHintNotTrustedFI->SetText( XMLSEC_RES( STR_CERTIFICATE_NOT_VALIDATED ) );
+        m_pCertImg->SetImage(Image(BitmapEx(XMLSEC_RES(BMP_STATE_NOT_VALIDATED))));
+        m_pHintNotTrustedFT->SetText( XMLSEC_RES( STR_CERTIFICATE_NOT_VALIDATED ) );
     }
 
     // insert data
     css::uno::Reference< css::security::XCertificate > xCert = mpDlg->mxCert;
 
-    m_pIssuedToFI->SetText( XmlSec::GetContentPart( xCert->getSubjectName() ) );
-    m_pIssuedByFI->SetText( XmlSec::GetContentPart( xCert->getIssuerName() ) );
+    OUString sSubjectName(XmlSec::GetContentPart(xCert->getSubjectName()));
+    if (!sSubjectName.isEmpty())
+        m_pIssuedToFT->SetText(sSubjectName);
+    else
+        m_pIssuedToLabelFT->Hide();
+    OUString sIssuerName(XmlSec::GetContentPart(xCert->getIssuerName()));
+    if (!sIssuerName.isEmpty())
+        m_pIssuedByFT->SetText(sIssuerName);
+    else
+        m_pIssuedByLabelFT->Hide();
 
     DateTime aDateTimeStart( DateTime::EMPTY );
     DateTime aDateTimeEnd( DateTime::EMPTY );
     utl::typeConvert( xCert->getNotValidBefore(), aDateTimeStart );
     utl::typeConvert( xCert->getNotValidAfter(), aDateTimeEnd );
 
-    OUString sValidFromDate = GetSettings().GetUILocaleDataWrapper().getDate( aDateTimeStart.GetDate() );
-    OUString sValidToDate = GetSettings().GetUILocaleDataWrapper().getDate( aDateTimeEnd.GetDate() );
+    OUString sValidFromDate = GetSettings().GetUILocaleDataWrapper().getDate( Date( aDateTimeStart.GetDate()));
+    OUString sValidToDate = GetSettings().GetUILocaleDataWrapper().getDate( Date( aDateTimeEnd.GetDate()));
 
-    m_pValidFromDateFI->SetText(sValidFromDate);
-    m_pValidToDateFI->SetText(sValidToDate);
+    m_pValidFromDateFT->SetText(sValidFromDate);
+    m_pValidToDateFT->SetText(sValidToDate);
 
     // Check if we have the private key...
     bool bHasPrivateKey = false;
@@ -146,7 +159,7 @@ CertificateViewerGeneralTP::CertificateViewerGeneralTP( vcl::Window* _pParent, C
     if ( !bHasPrivateKey )
     {
         m_pKeyImg->Hide();
-        m_pHintCorrespPrivKeyFI->Hide();
+        m_pHintCorrespPrivKeyFT->Hide();
     }
 }
 
@@ -158,13 +171,15 @@ CertificateViewerGeneralTP::~CertificateViewerGeneralTP()
 void CertificateViewerGeneralTP::dispose()
 {
     m_pCertImg.clear();
-    m_pHintNotTrustedFI.clear();
-    m_pIssuedToFI.clear();
-    m_pIssuedByFI.clear();
-    m_pValidFromDateFI.clear();
-    m_pValidToDateFI.clear();
+    m_pHintNotTrustedFT.clear();
+    m_pIssuedToLabelFT.clear();
+    m_pIssuedToFT.clear();
+    m_pIssuedByLabelFT.clear();
+    m_pIssuedByFT.clear();
+    m_pValidFromDateFT.clear();
+    m_pValidToDateFT.clear();
     m_pKeyImg.clear();
-    m_pHintCorrespPrivKeyFI.clear();
+    m_pHintCorrespPrivKeyFT.clear();
     CertificateViewerTP::dispose();
 }
 
@@ -217,16 +232,21 @@ CertificateViewerDetailsTP::CertificateViewerDetailsTP( vcl::Window* _pParent, C
     ,m_aFixedWidthFont( OutputDevice::GetDefaultFont( DefaultFontType::UI_FIXED, LANGUAGE_DONTKNOW, GetDefaultFontFlags::OnlyOne, this ) )
 {
     get( m_pValueDetails, "valuedetails" );
+    WinBits nStyle = m_pValueDetails->GetStyle();
+    nStyle |= WB_AUTOVSCROLL;
+    m_pValueDetails->SetStyle(nStyle);
     get( m_pElementsLBContainer, "tablecontainer" );
     m_pElementsLB = VclPtr<SvSimpleTable>::Create( *m_pElementsLBContainer );
 
     m_aStdFont = m_pValueDetails->GetControlFont();
-    WinBits nStyle = m_pElementsLB->GetStyle();
+    nStyle = m_pElementsLB->GetStyle();
     nStyle &= ~WB_HSCROLL;
     m_pElementsLB->SetStyle( nStyle );
 
     m_aFixedWidthFont.SetFontHeight( m_aStdFont.GetFontHeight() );
 
+    constexpr int DLGS_WIDTH = 287;
+    constexpr int CS_LB_WIDTH = (DLGS_WIDTH - RSC_SP_DLG_INNERBORDER_RIGHT) - RSC_SP_DLG_INNERBORDER_LEFT;
     static long nTabs[] = { 2, 0, 30*CS_LB_WIDTH/100 };
     m_pElementsLB->SetTabs( &nTabs[ 0 ] );
     m_pElementsLB->InsertHeaderEntry( XMLSEC_RES( STR_HEADERBAR ) );
@@ -234,7 +254,7 @@ CertificateViewerDetailsTP::CertificateViewerDetailsTP( vcl::Window* _pParent, C
     // fill list box
     Reference< security::XCertificate > xCert = mpDlg->mxCert;
     sal_uInt16                  nLineBreak = 16;
-    const char*             pHexSep = " ";
+    const char* const pHexSep = " ";
     OUString                aLBEntry;
     OUString                aDetails;
     // Certificate Versions are reported wrong (#i35107#) - 0 == "V1", 1 == "V2", ..., n = "V(n+1)"
@@ -253,12 +273,12 @@ CertificateViewerDetailsTP::CertificateViewerDetailsTP( vcl::Window* _pParent, C
 
     DateTime aDateTime( DateTime::EMPTY );
     utl::typeConvert( xCert->getNotValidBefore(), aDateTime );
-    aLBEntry = GetSettings().GetUILocaleDataWrapper().getDate( aDateTime.GetDate() );
+    aLBEntry = GetSettings().GetUILocaleDataWrapper().getDate( Date( aDateTime.GetDate()) );
     aLBEntry += " ";
     aLBEntry += GetSettings().GetUILocaleDataWrapper().getTime( aDateTime.GetTime() );
     InsertElement( XMLSEC_RES( STR_VALIDFROM ), aLBEntry, aLBEntry  );
     utl::typeConvert( xCert->getNotValidAfter(), aDateTime );
-    aLBEntry = GetSettings().GetUILocaleDataWrapper().getDate( aDateTime.GetDate() );
+    aLBEntry = GetSettings().GetUILocaleDataWrapper().getDate( Date( aDateTime.GetDate()) );
     aLBEntry += " ";
     aLBEntry += GetSettings().GetUILocaleDataWrapper().getTime( aDateTime.GetTime() );
     InsertElement( XMLSEC_RES( STR_VALIDTO ), aLBEntry, aLBEntry );
@@ -317,7 +337,7 @@ void CertificateViewerDetailsTP::ActivatePage()
 {
 }
 
-IMPL_LINK_NOARG_TYPED(CertificateViewerDetailsTP, ElementSelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(CertificateViewerDetailsTP, ElementSelectHdl, SvTreeListBox*, void)
 {
     SvTreeListEntry*    pEntry = m_pElementsLB->FirstSelected();
     OUString        aElementText;
@@ -341,7 +361,7 @@ struct CertPath_UserData
     css::uno::Reference< css::security::XCertificate > mxCert;
     bool mbValid;
 
-    CertPath_UserData( css::uno::Reference< css::security::XCertificate > xCert, bool bValid):
+    CertPath_UserData( css::uno::Reference< css::security::XCertificate > const & xCert, bool bValid):
         mxCert(xCert),
         mbValid(bValid)
     {
@@ -363,7 +383,7 @@ CertificateViewerCertPathTP::CertificateViewerCertPathTP( vcl::Window* _pParent,
     maCertImage = get<FixedImage>("imgok")->GetImage();
     maCertNotValidatedImage = get<FixedImage>("imgnotok")->GetImage();
 
-    Size aControlSize(LogicToPixel(Size(251, 45), MAP_APPFONT));
+    Size aControlSize(LogicToPixel(Size(251, 45), MapUnit::MapAppFont));
     mpCertPathLB->set_width_request(aControlSize.Width());
     mpCertPathLB->set_height_request(aControlSize.Height());
     mpCertStatusML->set_width_request(aControlSize.Width());
@@ -401,9 +421,9 @@ void CertificateViewerCertPathTP::ActivatePage()
 
         sal_Int32 i, nCnt = aCertPath.getLength();
         SvTreeListEntry* pParent = nullptr;
-        for( i = nCnt; i; )
+        for (i = nCnt-1; i >= 0; i--)
         {
-            const Reference< security::XCertificate > rCert = pCertPath[ --i ];
+            const Reference< security::XCertificate > rCert = pCertPath[ i ];
             OUString sName = XmlSec::GetContentPart( rCert->getSubjectName() );
             //Verify the certificate
             sal_Int32 certStatus = mpDlg->mxSecurityEnvironment->verifyCertificate(rCert,
@@ -412,7 +432,8 @@ void CertificateViewerCertPathTP::ActivatePage()
             pParent = InsertCert( pParent, sName, rCert, bCertValid);
         }
 
-        mpCertPathLB->Select( pParent );
+        if (pParent)
+            mpCertPathLB->Select( pParent );
         mpViewCertPB->Disable(); // Own certificate selected
 
         while( pParent )
@@ -425,7 +446,7 @@ void CertificateViewerCertPathTP::ActivatePage()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(CertificateViewerCertPathTP, ViewCertHdl, Button*, void)
+IMPL_LINK_NOARG(CertificateViewerCertPathTP, ViewCertHdl, Button*, void)
 {
     SvTreeListEntry* pEntry = mpCertPathLB->FirstSelected();
     if( pEntry )
@@ -438,7 +459,7 @@ IMPL_LINK_NOARG_TYPED(CertificateViewerCertPathTP, ViewCertHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(CertificateViewerCertPathTP, CertSelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(CertificateViewerCertPathTP, CertSelectHdl, SvTreeListBox*, void)
 {
     OUString sStatus;
     SvTreeListEntry* pEntry = mpCertPathLB->FirstSelected();

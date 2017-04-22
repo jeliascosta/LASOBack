@@ -74,10 +74,10 @@ namespace dbaui
         );
 
         // XInteractionHandler2
-        virtual sal_Bool SAL_CALL handleInteractionRequest( const css::uno::Reference< css::task::XInteractionRequest >& Request ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL handleInteractionRequest( const css::uno::Reference< css::task::XInteractionRequest >& Request ) override;
 
         // XInteractionHandler
-        virtual void SAL_CALL handle( const css::uno::Reference< css::task::XInteractionRequest >& Request ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL handle( const css::uno::Reference< css::task::XInteractionRequest >& Request ) override;
 
     protected:
         bool
@@ -133,7 +133,13 @@ namespace dbaui
         }
 
         // XServiceInfo
-        DECLARE_SERVICE_INFO_STATIC();
+        DECLARE_SERVICE_INFO();
+        /// @throws css::uno::RuntimeException
+        static OUString SAL_CALL getImplementationName_Static(  );
+        /// @throws css::uno::RuntimeException
+        static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static(  );
+        static css::uno::Reference< css::uno::XInterface >
+        SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&);
     };
 
     // SQLExceptionInteractionHandler
@@ -161,7 +167,13 @@ namespace dbaui
         }
 
         // XServiceInfo
-        DECLARE_SERVICE_INFO_STATIC();
+        DECLARE_SERVICE_INFO();
+        /// @throws css::uno::RuntimeException
+        static OUString SAL_CALL getImplementationName_Static(  );
+        /// @throws css::uno::RuntimeException
+        static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static(  );
+        static css::uno::Reference< css::uno::XInterface >
+        SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&);
     };
 
 }   // namespace dbaui

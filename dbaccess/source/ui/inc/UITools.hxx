@@ -121,7 +121,7 @@ namespace dbaui
     void fillTypeInfo(  const css::uno::Reference< css::sdbc::XConnection>& _rxConnection,
                         const OUString& _rsTypeNames,
                         OTypeInfoMap& _rTypeInfoMap,
-                        ::std::vector<OTypeInfoMap::iterator>& _rTypeInfoIters);
+                        std::vector<OTypeInfoMap::iterator>& _rTypeInfoIters);
 
     /** fill a column with data of a field description
         @param  _rxColumn   the column which should be filled
@@ -277,14 +277,6 @@ namespace dbaui
     void fillAutoIncrementValue(const css::uno::Reference< css::sdbc::XConnection>& _xConnection
                                 ,bool& _rAutoIncrementValueEnabled
                                 ,OUString& _rsAutoIncrementValue);
-
-    /** creates the URL or the help agent
-        @param  _sModuleName
-        @param  _nHelpId
-        @return
-            The URL for the help agent to dispatch.
-    */
-    css::util::URL createHelpAgentURL(const OUString& _sModuleName,const OString& _rHelpId);
 
     /** set the evaluation flag at the number formatter
         @param  _rxFormatter

@@ -19,6 +19,16 @@
 
 #include <vcl/fixedhyper.hxx>
 #include <vcl/svapp.hxx>
+#include <vcl/layout.hxx>
+#include <comphelper/anytostring.hxx>
+#include <comphelper/processfactory.hxx>
+#include <cppuhelper/exc_hlp.hxx>
+
+#include <com/sun/star/system/XSystemShellExecute.hpp>
+#include <com/sun/star/system/SystemShellExecuteFlags.hpp>
+#include <com/sun/star/system/SystemShellExecute.hpp>
+
+using namespace css;
 
 FixedHyperlink::FixedHyperlink(vcl::Window* pParent, WinBits nWinStyle)
     : FixedText(pParent, nWinStyle)
@@ -40,6 +50,8 @@ void FixedHyperlink::Initialize()
     SetControlForeground( Application::GetSettings().GetStyleSettings().GetLinkColor() );
     // calculates text len
     m_nTextLen = GetCtrlTextWidth( GetText() );
+
+    SetClickHdl(LINK(this, FixedHyperlink, HandleClick));
 }
 
 bool FixedHyperlink::ImplIsOverText(Point aPosition)
@@ -78,7 +90,7 @@ void FixedHyperlink::MouseButtonUp( const MouseEvent& )
 {
     // calls the link if the control is enabled and the mouse is over the text.
     if ( IsEnabled() && ImplIsOverText(GetPointerPosPixel()) )
-        ImplCallEventListenersAndHandler( VCLEVENT_BUTTON_CLICK, [this] () { m_aClickHdl.Call(*this); } );
+        ImplCallEventListenersAndHandler( VclEventId::ButtonClick, [this] () { m_aClickHdl.Call(*this); } );
 }
 
 void FixedHyperlink::RequestHelp( const HelpEvent& rHEvt )
@@ -90,14 +102,14 @@ void FixedHyperlink::RequestHelp( const HelpEvent& rHEvt )
 void FixedHyperlink::GetFocus()
 {
     SetTextColor( Color( COL_LIGHTRED ) );
-    Invalidate(Rectangle(Point(), GetSizePixel()));
-    ShowFocus( Rectangle( Point( 1, 1 ), Size( m_nTextLen + 4, GetSizePixel().Height() - 2 ) ) );
+    Invalidate(tools::Rectangle(Point(), GetSizePixel()));
+    ShowFocus( tools::Rectangle( Point( 1, 1 ), Size( m_nTextLen + 4, GetSizePixel().Height() - 2 ) ) );
 }
 
 void FixedHyperlink::LoseFocus()
 {
     SetTextColor( GetControlForeground() );
-    Invalidate(Rectangle(Point(), GetSizePixel()));
+    Invalidate(tools::Rectangle(Point(), GetSizePixel()));
     HideFocus();
 }
 
@@ -135,6 +147,29 @@ bool FixedHyperlink::set_property(const OString &rKey, const OString &rValue)
     else
         return FixedText::set_property(rKey, rValue);
     return true;
+}
+
+IMPL_STATIC_LINK(FixedHyperlink, HandleClick, FixedHyperlink&, rHyperlink, void)
+{
+    if ( rHyperlink.m_sURL.isEmpty() ) // Nothing to do, when the URL is empty
+        return;
+
+    try
+    {
+        uno::Reference< system::XSystemShellExecute > xSystemShellExecute(
+            system::SystemShellExecute::create(comphelper::getProcessComponentContext()));
+        //throws css::lang::IllegalArgumentException, css::system::SystemShellExecuteException
+        xSystemShellExecute->execute( rHyperlink.m_sURL, OUString(), system::SystemShellExecuteFlags::URIS_ONLY );
+    }
+    catch ( const uno::Exception& )
+    {
+        uno::Any exc(cppu::getCaughtException());
+        OUString msg(comphelper::anyToString(exc));
+        const SolarMutexGuard guard;
+        ScopedVclPtrInstance< MessageDialog > aErrorBox(nullptr, msg);
+        aErrorBox->SetText( rHyperlink.GetText() );
+        aErrorBox->Execute();
+    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

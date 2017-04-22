@@ -25,14 +25,116 @@
 
 #include "clang/Sema/Sema.h"
 
-#include "compat.hxx"
+#include "check.hxx"
 #include "plugin.hxx"
 
 namespace {
 
+// Work around <http://reviews.llvm.org/D22128>:
+//
+// SfxErrorHandler::GetClassString (svtools/source/misc/ehdl.cxx):
+//
+//   ErrorResource_Impl aEr(aId, (sal_uInt16)lClassId);
+//   if(aEr)
+//   {
+//       rStr = static_cast<ResString>(aEr).GetString();
+//   }
+//
+// expr->dump():
+//  CXXStaticCastExpr 0x2b74e8e657b8 'class ResString' static_cast<class ResString> <ConstructorConversion>
+//  `-CXXBindTemporaryExpr 0x2b74e8e65798 'class ResString' (CXXTemporary 0x2b74e8e65790)
+//    `-CXXConstructExpr 0x2b74e8e65758 'class ResString' 'void (class ResString &&) noexcept(false)' elidable
+//      `-MaterializeTemporaryExpr 0x2b74e8e65740 'class ResString' xvalue
+//        `-CXXBindTemporaryExpr 0x2b74e8e65720 'class ResString' (CXXTemporary 0x2b74e8e65718)
+//          `-ImplicitCastExpr 0x2b74e8e65700 'class ResString' <UserDefinedConversion>
+//            `-CXXMemberCallExpr 0x2b74e8e656d8 'class ResString'
+//              `-MemberExpr 0x2b74e8e656a0 '<bound member function type>' .operator ResString 0x2b74e8dc1f00
+//                `-DeclRefExpr 0x2b74e8e65648 'struct ErrorResource_Impl' lvalue Var 0x2b74e8e653b0 'aEr' 'struct ErrorResource_Impl'
+// expr->getSubExprAsWritten()->dump():
+//  MaterializeTemporaryExpr 0x2b74e8e65740 'class ResString' xvalue
+//  `-CXXBindTemporaryExpr 0x2b74e8e65720 'class ResString' (CXXTemporary 0x2b74e8e65718)
+//    `-ImplicitCastExpr 0x2b74e8e65700 'class ResString' <UserDefinedConversion>
+//      `-CXXMemberCallExpr 0x2b74e8e656d8 'class ResString'
+//        `-MemberExpr 0x2b74e8e656a0 '<bound member function type>' .operator ResString 0x2b74e8dc1f00
+//          `-DeclRefExpr 0x2b74e8e65648 'struct ErrorResource_Impl' lvalue Var 0x2b74e8e653b0 'aEr' 'struct ErrorResource_Impl'
+//
+// Copies code from Clang's lib/AST/Expr.cpp:
+namespace {
+  Expr *skipImplicitTemporary(Expr *expr) {
+    // Skip through reference binding to temporary.
+    if (MaterializeTemporaryExpr *Materialize
+                                  = dyn_cast<MaterializeTemporaryExpr>(expr))
+      expr = Materialize->GetTemporaryExpr();
+
+    // Skip any temporary bindings; they're implicit.
+    if (CXXBindTemporaryExpr *Binder = dyn_cast<CXXBindTemporaryExpr>(expr))
+      expr = Binder->getSubExpr();
+
+    return expr;
+  }
+}
+Expr *getSubExprAsWritten(CastExpr *This) {
+  Expr *SubExpr = nullptr;
+  CastExpr *E = This;
+  do {
+    SubExpr = skipImplicitTemporary(E->getSubExpr());
+
+    // Conversions by constructor and conversion functions have a
+    // subexpression describing the call; strip it off.
+    if (E->getCastKind() == CK_ConstructorConversion)
+      SubExpr =
+        skipImplicitTemporary(cast<CXXConstructExpr>(SubExpr)->getArg(0));
+    else if (E->getCastKind() == CK_UserDefinedConversion) {
+      assert((isa<CXXMemberCallExpr>(SubExpr) ||
+              isa<BlockExpr>(SubExpr)) &&
+             "Unexpected SubExpr for CK_UserDefinedConversion.");
+      if (isa<CXXMemberCallExpr>(SubExpr))
+        SubExpr = cast<CXXMemberCallExpr>(SubExpr)->getImplicitObjectArgument();
+    }
+
+    // If the subexpression we're left with is an implicit cast, look
+    // through that, too.
+  } while ((E = dyn_cast<ImplicitCastExpr>(SubExpr)));
+
+  return SubExpr;
+}
+const Expr *getSubExprAsWritten(const CastExpr *This) {
+  return getSubExprAsWritten(const_cast<CastExpr *>(This));
+}
+
 bool isVoidPointer(QualType type) {
     return type->isPointerType()
         && type->getAs<clang::PointerType>()->getPointeeType()->isVoidType();
+}
+
+bool isRedundantConstCast(CXXConstCastExpr const * expr) {
+    return expr->getTypeAsWritten().getCanonicalType().getTypePtr()
+        == (expr->getSubExprAsWritten()->getType().getCanonicalType()
+            .getTypePtr());
+}
+
+bool isArithmeticOp(Expr const * expr) {
+    expr = expr->IgnoreParenImpCasts();
+    if (auto const e = dyn_cast<BinaryOperator>(expr)) {
+        switch (e->getOpcode()) {
+        case BO_Mul:
+        case BO_Div:
+        case BO_Rem:
+        case BO_Add:
+        case BO_Sub:
+        case BO_Shl:
+        case BO_Shr:
+        case BO_And:
+        case BO_Xor:
+        case BO_Or:
+            return true;
+        case BO_Comma:
+            return isArithmeticOp(e->getRHS());
+        default:
+            return false;
+        }
+    }
+    return isa<UnaryOperator>(expr) || isa<AbstractConditionalOperator>(expr);
 }
 
 class RedundantCast:
@@ -50,6 +152,8 @@ public:
 
     bool VisitImplicitCastExpr(ImplicitCastExpr const * expr);
 
+    bool VisitCXXStaticCastExpr(CXXStaticCastExpr const * expr);
+
     bool VisitCXXReinterpretCastExpr(CXXReinterpretCastExpr const * expr);
 
     bool VisitCXXConstCastExpr(CXXConstCastExpr const * expr);
@@ -57,6 +161,8 @@ public:
     bool VisitCallExpr(CallExpr const * expr);
 
     bool VisitCXXDeleteExpr(CXXDeleteExpr const * expr);
+
+    bool VisitCStyleCastExpr(CStyleCastExpr const * expr);
 
     bool VisitBinSub(BinaryOperator const * expr)
     { return visitBinOp(expr); }
@@ -81,6 +187,7 @@ public:
 
 private:
     bool visitBinOp(BinaryOperator const * expr);
+    bool isOkToRemoveArithmeticCast(QualType t1, QualType t2, const Expr* subExpr);
 };
 
 bool RedundantCast::VisitImplicitCastExpr(const ImplicitCastExpr * expr) {
@@ -94,13 +201,15 @@ bool RedundantCast::VisitImplicitCastExpr(const ImplicitCastExpr * expr) {
         {
             auto e = dyn_cast<CXXConstCastExpr>(
                 expr->getSubExpr()->IgnoreParenImpCasts());
-            if (e != nullptr) {
+            if (e != nullptr && !isRedundantConstCast(e)) {
                 auto t1 = e->getSubExpr()->getType().getCanonicalType();
-                auto t2 = expr->getType().getCanonicalType();
+                auto t3 = expr->getType().getCanonicalType();
                 bool ObjCLifetimeConversion;
-                if (t1.getTypePtr() == t2.getTypePtr()
-                    || compiler.getSema().IsQualificationConversion(
-                        t1, t2, false, ObjCLifetimeConversion))
+                if (t1.getTypePtr() == t3.getTypePtr()
+                    || (compiler.getSema().IsQualificationConversion(
+                            t1, t3, false, ObjCLifetimeConversion)
+                        && (e->getType().getCanonicalType().getTypePtr()
+                            != t3.getTypePtr())))
                 {
                     report(
                         DiagnosticsEngine::Warning,
@@ -146,8 +255,8 @@ bool RedundantCast::VisitImplicitCastExpr(const ImplicitCastExpr * expr) {
                        && isVoidPointer(
                            dyn_cast<CXXStaticCastExpr>(e)->getSubExpr()
                            ->IgnoreParenImpCasts()->getType())
-                       && !compat::isMacroBodyExpansion(
-                           compiler, e->getLocStart()))
+                       && !compiler.getSourceManager().isMacroBodyExpansion(
+                           e->getLocStart()))
             {
                 report(
                     DiagnosticsEngine::Warning,
@@ -206,6 +315,123 @@ bool RedundantCast::VisitImplicitCastExpr(const ImplicitCastExpr * expr) {
     return true;
 }
 
+bool RedundantCast::VisitCStyleCastExpr(CStyleCastExpr const * expr) {
+    if (ignoreLocation(expr)) {
+        return true;
+    }
+    if (isInUnoIncludeFile(compiler.getSourceManager().getSpellingLoc(expr->getLocStart()))) {
+        return true;
+    }
+    auto t1 = getSubExprAsWritten(expr)->getType();
+    auto t2 = expr->getTypeAsWritten();
+    if (t1 != t2) {
+        return true;
+    }
+    if (!t1->isBuiltinType() && !loplugin::TypeCheck(t1).Enum() && !loplugin::TypeCheck(t1).Typedef()) {
+        return true;
+    }
+    if (!isOkToRemoveArithmeticCast(t1, t2, expr->getSubExpr())) {
+        return true;
+    }
+    // Ignore FD_ISSET expanding to "...(SOCKET)(fd)..." in some Microsoft
+    // winsock2.h (TODO: improve heuristic of determining that the whole
+    // expr is part of a single macro body expansion):
+    auto l1 = expr->getLocStart();
+    while (compiler.getSourceManager().isMacroArgExpansion(l1)) {
+        l1 = compiler.getSourceManager().getImmediateMacroCallerLoc(l1);
+    }
+    auto l2 = expr->getExprLoc();
+    while (compiler.getSourceManager().isMacroArgExpansion(l2)) {
+        l2 = compiler.getSourceManager().getImmediateMacroCallerLoc(l2);
+    }
+    auto l3 = expr->getLocEnd();
+    while (compiler.getSourceManager().isMacroArgExpansion(l3)) {
+         l3 = compiler.getSourceManager().getImmediateMacroCallerLoc(l3);
+    }
+    if (compiler.getSourceManager().isMacroBodyExpansion(l1)
+        && compiler.getSourceManager().isMacroBodyExpansion(l2)
+        && compiler.getSourceManager().isMacroBodyExpansion(l3)
+        && ignoreLocation(compiler.getSourceManager().getSpellingLoc(l2)))
+    {
+        return true;
+    }
+    report(
+        DiagnosticsEngine::Warning,
+        "redundant cstyle cast from %0 to %1", expr->getExprLoc())
+        << t1 << t2 << expr->getSourceRange();
+    return true;
+}
+
+bool RedundantCast::isOkToRemoveArithmeticCast(QualType t1, QualType t2, const Expr* subExpr) {
+    // Don't warn if the types are arithmetic (in the C++ meaning), and: either
+    // at least one is a typedef (and if both are typedefs,they're different),
+    // or the sub-expression involves some operation that is likely to change
+    // types through promotion, or the sub-expression is an integer literal (so
+    // its type generally depends on its value and suffix if any---even with a
+    // suffix like L it could still be either long or long long):
+    if ((t1->isIntegralType(compiler.getASTContext())
+         || t1->isRealFloatingType())
+        && ((t1 != t2
+             && (loplugin::TypeCheck(t1).Typedef()
+                 || loplugin::TypeCheck(t2).Typedef()))
+            || isArithmeticOp(subExpr)
+            || isa<IntegerLiteral>(subExpr->IgnoreParenImpCasts())))
+    {
+        return false;
+    }
+    return true;
+}
+
+bool RedundantCast::VisitCXXStaticCastExpr(CXXStaticCastExpr const * expr) {
+    if (ignoreLocation(expr)) {
+        return true;
+    }
+    auto t1 = getSubExprAsWritten(expr)->getType();
+    auto t2 = expr->getTypeAsWritten();
+    if (t1.getCanonicalType() != t2.getCanonicalType()) {
+        return true;
+    }
+    if (!isOkToRemoveArithmeticCast(t1, t2, expr->getSubExpr())) {
+        return true;
+    }
+    // Don't warn if the types are 'void *' and at least one involves a typedef
+    // (and if both involve typedefs, they're different) (this covers cases like
+    // 'oslModule', or 'CURL *', or casts between 'LPVOID' and 'HANDLE' in
+    // Windows-only code):
+    if (loplugin::TypeCheck(t1).Pointer().NonConstVolatile().Void()) {
+        if (auto const td1 = t1->getAs<TypedefType>()) {
+            auto const td2 = t2->getAs<TypedefType>();
+            if (td2 == nullptr || td2 != td1) {
+                return true;
+            }
+        } else if (auto const td2 = t2->getAs<TypedefType>()) {
+            auto const td1 = t1->getAs<TypedefType>();
+            if (td1 == nullptr || td1 != td2) {
+                return true;
+            }
+        } else {
+            auto const pt1 = t1->getAs<clang::PointerType>()->getPointeeType();
+            auto const pt2 = t2->getAs<clang::PointerType>()->getPointeeType();
+            if (auto const ptd1 = pt1->getAs<TypedefType>()) {
+                auto const ptd2 = pt2->getAs<TypedefType>();
+                if (ptd2 == nullptr || ptd2 != ptd1) {
+                    return true;
+                }
+            } else if (auto const ptd2 = pt2->getAs<TypedefType>()) {
+                auto const ptd1 = pt1->getAs<TypedefType>();
+                if (ptd1 == nullptr || ptd1 != ptd2) {
+                    return true;
+                }
+            }
+        }
+    }
+    report(
+        DiagnosticsEngine::Warning,
+        "redundant static_cast from %0 to %1", expr->getExprLoc())
+        << t1 << t2 << expr->getSourceRange();
+    return true;
+}
+
 bool RedundantCast::VisitCXXReinterpretCastExpr(
     CXXReinterpretCastExpr const * expr)
 {
@@ -223,13 +449,13 @@ bool RedundantCast::VisitCXXReinterpretCastExpr(
                 loc = compiler.getSourceManager().getImmediateMacroCallerLoc(
                     loc);
             }
-            if (compat::isMacroBodyExpansion(compiler, loc)) {
+            if (compiler.getSourceManager().isMacroBodyExpansion(loc)) {
                 auto loc2 = expr->getLocEnd();
                 while (compiler.getSourceManager().isMacroArgExpansion(loc2)) {
                     loc2 = compiler.getSourceManager()
                         .getImmediateMacroCallerLoc(loc2);
                 }
-                if (compat::isMacroBodyExpansion(compiler, loc2)) {
+                if (compiler.getSourceManager().isMacroBodyExpansion(loc2)) {
                     //TODO: check loc, loc2 are in same macro body expansion
                     loc = compiler.getSourceManager().getSpellingLoc(loc);
                 }
@@ -269,10 +495,7 @@ bool RedundantCast::VisitCXXConstCastExpr(CXXConstCastExpr const * expr) {
     if (ignoreLocation(expr)) {
         return true;
     }
-    if (expr->getTypeAsWritten().getCanonicalType().getTypePtr()
-        == (expr->getSubExprAsWritten()->getType().getCanonicalType()
-            .getTypePtr()))
-    {
+    if (isRedundantConstCast(expr)) {
         report(
             DiagnosticsEngine::Warning, "redundant const_cast from %0 to %1",
             expr->getExprLoc())

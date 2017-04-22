@@ -340,7 +340,7 @@ void ScRangeStringConverter::AssignString(
         if( !rNewStr.isEmpty() )
         {
             if( !rString.isEmpty() )
-                rString += OUString(cSeparator);
+                rString += OUStringLiteral1(cSeparator);
             rString += rNewStr;
         }
     }
@@ -539,20 +539,16 @@ bool ScRangeStringConverter::GetRangeListFromString(
     sal_Int32 nOffset = 0;
     while( nOffset >= 0 )
     {
-        ScRange* pRange = new ScRange;
+        std::unique_ptr<ScRange> pRange( new ScRange );
         if (
              GetRangeFromString( *pRange, rRangeListStr, pDocument, eConv, nOffset, cSeparator, cQuote ) &&
              (nOffset >= 0)
            )
         {
-            rRangeList.push_back( pRange );
-            pRange = nullptr;
+            rRangeList.push_back( pRange.release() );
         }
         else if (nOffset > -1)
             bRet = false;
-        //if ownership transferred to rRangeList pRange was NULLed, otherwwise
-        //delete it
-        delete pRange;
     }
     return bRet;
 }
@@ -574,24 +570,6 @@ bool ScRangeStringConverter::GetAreaFromString(
         rArea.nRowStart = aScRange.aStart.Row();
         rArea.nColEnd = aScRange.aEnd.Col();
         rArea.nRowEnd = aScRange.aEnd.Row();
-        bResult = true;
-    }
-    return bResult;
-}
-
-bool ScRangeStringConverter::GetAddressFromString(
-        table::CellAddress& rAddress,
-        const OUString& rAddressStr,
-        const ScDocument* pDocument,
-        FormulaGrammar::AddressConvention eConv,
-        sal_Int32& nOffset,
-        sal_Unicode cSeparator )
-{
-    ScAddress aScAddress;
-    bool bResult(false);
-    if( GetAddressFromString( aScAddress, rAddressStr, pDocument, eConv, nOffset, cSeparator ) && (nOffset >= 0) )
-    {
-        ScUnoConversion::FillApiAddress( rAddress, aScAddress );
         bResult = true;
     }
     return bResult;

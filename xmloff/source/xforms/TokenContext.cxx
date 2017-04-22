@@ -31,12 +31,10 @@
 using com::sun::star::uno::Reference;
 using com::sun::star::xml::sax::XAttributeList;
 
-
 struct SvXMLTokenMapEntry aEmptyMap[1] =
 {
     XML_TOKEN_MAP_END
 };
-
 
 TokenContext::TokenContext( SvXMLImport& rImport,
                             sal_uInt16 nPrefix,
@@ -49,10 +47,6 @@ TokenContext::TokenContext( SvXMLImport& rImport,
 {
 }
 
-TokenContext::~TokenContext()
-{
-}
-
 void TokenContext::StartElement(
     const Reference<XAttributeList>& xAttributeList )
 {
@@ -60,7 +54,7 @@ void TokenContext::StartElement(
     // - if in map: call HandleAttribute
     // - xmlns:... : ignore
     // - other: warning
-    DBG_ASSERT( mpAttributes != nullptr, "no token map for attributes" );
+    SAL_WARN_IF( mpAttributes == nullptr, "xmloff", "no token map for attributes" );
     SvXMLTokenMap aMap( mpAttributes );
 
     sal_Int16 nCount = xAttributeList->getLength();
@@ -100,7 +94,7 @@ SvXMLImportContext* TokenContext::CreateChildContext(
 
     SvXMLImportContext* pContext = nullptr;
 
-    DBG_ASSERT( mpChildren != nullptr, "no token map for child elements" );
+    SAL_WARN_IF( mpChildren == nullptr, "xmloff", "no token map for child elements" );
     SvXMLTokenMap aMap( mpChildren );
     sal_uInt16 nToken = aMap.Get( nPrefix, rLocalName );
     if( nToken != XML_TOK_UNKNOWN )

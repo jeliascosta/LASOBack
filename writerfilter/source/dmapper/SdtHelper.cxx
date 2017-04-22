@@ -33,7 +33,7 @@ awt::Size lcl_getOptimalWidth(const StyleSheetTablePtr& pStyleSheet, OUString& r
         if (rItem.getLength() > aLongest.getLength())
             aLongest = rItem;
 
-    MapMode aMap(MAP_100TH_MM);
+    MapMode aMap(MapUnit::Map100thMM);
     OutputDevice* pOut = Application::GetDefaultDevice();
     pOut->Push(PushFlags::FONT | PushFlags::MAPMODE);
 
@@ -59,7 +59,7 @@ awt::Size lcl_getOptimalWidth(const StyleSheetTablePtr& pStyleSheet, OUString& r
     sal_Int32 nBorder = nHeight / 2;
 
     // Width: space for the text + the square having the dropdown arrow.
-    return awt::Size(nWidth + nBorder + nHeight, nHeight + nBorder);
+    return {nWidth + nBorder + nHeight, nHeight + nBorder};
 }
 
 SdtHelper::SdtHelper(DomainMapper_Impl& rDM_Impl)
@@ -80,7 +80,8 @@ void SdtHelper::createDropDownControl()
     xPropertySet->setPropertyValue("Dropdown", uno::makeAny(true));
     xPropertySet->setPropertyValue("StringItemList", uno::makeAny(comphelper::containerToSequence(m_aDropDownItems)));
 
-    createControlShape(lcl_getOptimalWidth(m_rDM_Impl.GetStyleSheetTable(), aDefaultText, m_aDropDownItems), xControlModel);
+    createControlShape(lcl_getOptimalWidth(m_rDM_Impl.GetStyleSheetTable(), aDefaultText, m_aDropDownItems),
+                       xControlModel, uno::Sequence<beans::PropertyValue>());
     m_aDropDownItems.clear();
 }
 
@@ -132,7 +133,7 @@ void SdtHelper::createDateControl(OUString& rContentText, const beans::PropertyV
     aGrabBag["OriginalContent"] <<= rContentText;
     aGrabBag["DateFormat"] <<= sDateFormat;
     aGrabBag["Locale"] <<= m_sLocale.makeStringAndClear();
-    aGrabBag["CharFormat"] <<= rCharFormat.Value;
+    aGrabBag["CharFormat"] = rCharFormat.Value;
     // merge in properties like ooxml:CT_SdtPr_alias and friends.
     aGrabBag.update(comphelper::SequenceAsHashMap(comphelper::containerToSequence(m_aGrabBag)));
     // and empty the property list, so they won't end up on the next sdt as well
@@ -140,11 +141,6 @@ void SdtHelper::createDateControl(OUString& rContentText, const beans::PropertyV
 
     std::vector<OUString> aItems;
     createControlShape(lcl_getOptimalWidth(m_rDM_Impl.GetStyleSheetTable(), rContentText, aItems), xControlModel, aGrabBag.getAsConstPropertyValueList());
-}
-
-void SdtHelper::createControlShape(awt::Size aSize, uno::Reference<awt::XControlModel> const& xControlModel)
-{
-    createControlShape(aSize, xControlModel, uno::Sequence<beans::PropertyValue>());
 }
 
 void SdtHelper::createControlShape(awt::Size aSize, uno::Reference<awt::XControlModel> const& xControlModel, const uno::Sequence<beans::PropertyValue>& rGrabBag)

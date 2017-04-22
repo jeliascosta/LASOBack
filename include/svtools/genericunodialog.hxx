@@ -31,7 +31,7 @@
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/lang/NotInitializedException.hpp>
 
-#include <cppuhelper/implbase3.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <cppuhelper/propshlp.hxx>
 #include <comphelper/proparrhlp.hxx>
 #include <comphelper/uno3.hxx>
@@ -56,10 +56,9 @@ namespace svt
 #define     UNODIALOG_PROPERTY_PARENT       "ParentWindow"
 
 
-    typedef ::cppu::WeakImplHelper3 <   css::ui::dialogs::XExecutableDialog
-                                    ,   css::lang::XServiceInfo
-                                    ,   css::lang::XInitialization
-                                    >   OGenericUnoDialogBase;
+    typedef cppu::WeakImplHelper< css::ui::dialogs::XExecutableDialog,
+                                  css::lang::XServiceInfo,
+                                  css::lang::XInitialization > OGenericUnoDialogBase;
 
     /** abstract base class for implementing UNO objects representing dialogs (com.sun.star.awt::XDialog)
     */
@@ -68,13 +67,9 @@ namespace svt
             ,public ::comphelper::OMutexAndBroadcastHelper
             ,public ::comphelper::OPropertyContainer
     {
-    private:
-        ::osl::Mutex                    m_aExecutionMutex;  /// access safety for execute/cancel
-
     protected:
         VclPtr<Dialog>              m_pDialog;                  /// the dialog to execute
         bool                        m_bExecuting : 1;           /// we're currently executing the dialog
-        bool                        m_bCanceled : 1;            /// endDialog was called while we were executing
         bool                        m_bTitleAmbiguous : 1;      /// m_sTitle has not been set yet
         bool                        m_bInitialized : 1;         /// has "initialize" been called?
         bool                        m_bNeedInitialization : 1;  /// do we need to be initialized before any other API call is allowed?
@@ -87,36 +82,36 @@ namespace svt
         css::uno::Reference<css::uno::XComponentContext> m_aContext;
 
     public:
-        inline bool needInitialization() const { return m_bNeedInitialization && !m_bInitialized; }
+        bool needInitialization() const { return m_bNeedInitialization && !m_bInitialized; }
 
     protected:
         OGenericUnoDialog(const css::uno::Reference< css::uno::XComponentContext >& _rxContext);
-        virtual ~OGenericUnoDialog();
+        virtual ~OGenericUnoDialog() override;
 
     public:
         // UNO
         DECLARE_UNO3_DEFAULTS(OGenericUnoDialog, OGenericUnoDialogBase)
-        virtual css::uno::Any SAL_CALL queryInterface(const css::uno::Type& _rType) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL queryInterface(const css::uno::Type& _rType) override;
 
         // XTypeProvider
-        virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override = 0;
+        virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes(  ) override;
+        virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId(  ) override = 0;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override = 0;
-        virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw(css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override = 0;
+        virtual OUString SAL_CALL getImplementationName() override = 0;
+        virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override = 0;
 
         // OPropertySetHelper
-        virtual void SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any& rValue ) throw(css::uno::Exception, std::exception) override;
-        virtual sal_Bool SAL_CALL convertFastPropertyValue( css::uno::Any& rConvertedValue, css::uno::Any& rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue) throw(css::lang::IllegalArgumentException) override;
+        virtual void SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any& rValue ) override;
+        virtual sal_Bool SAL_CALL convertFastPropertyValue( css::uno::Any& rConvertedValue, css::uno::Any& rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue) override;
 
         // XExecutableDialog
-        virtual void SAL_CALL setTitle( const OUString& aTitle ) throw(css::uno::RuntimeException, std::exception) override;
-        virtual sal_Int16 SAL_CALL execute(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setTitle( const OUString& aTitle ) override;
+        virtual sal_Int16 SAL_CALL execute(  ) override;
 
         // XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw(css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
 
     protected:
         /** create the concrete dialog instance. note that m_aMutex is not locked when this method get's called,
@@ -125,8 +120,8 @@ namespace svt
         */
         virtual VclPtr<Dialog> createDialog(vcl::Window* _pParent) = 0;
 
-        /// called to destroy the dialog used. the default implementation just deletes m_pDialog and resets it to NULL
-        virtual void destroyDialog();
+        /// called to destroy the dialog used. deletes m_pDialog and resets it to NULL
+        void destroyDialog();
 
         /** called after the dialog has been executed
             @param      _nExecutionResult       the execution result as returned by Dialog::Execute
@@ -142,7 +137,7 @@ namespace svt
         virtual void implInitialize(const css::uno::Any& _rValue);
 
     private:
-        DECL_LINK_TYPED( OnDialogDying, VclWindowEvent&, void );
+        DECL_LINK( OnDialogDying, VclWindowEvent&, void );
 
         /** ensures that m_pDialog is not <NULL/>
 

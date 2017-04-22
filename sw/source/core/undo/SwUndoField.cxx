@@ -32,8 +32,8 @@
 
 using namespace ::com::sun::star::uno;
 
-SwUndoField::SwUndoField(const SwPosition & rPos, SwUndoId _nId )
-    : SwUndo(_nId)
+SwUndoField::SwUndoField(const SwPosition & rPos )
+    : SwUndo(SwUndoId::FIELD, rPos.GetDoc())
 {
     nNodeIndex = rPos.nNode.GetIndex();
     nOffset = rPos.nContent.GetIndex();
@@ -57,8 +57,8 @@ SwPosition SwUndoField::GetPosition()
 SwUndoFieldFromDoc::SwUndoFieldFromDoc(const SwPosition & rPos,
                          const SwField & rOldField,
                          const SwField & rNewField,
-                         SwMsgPoolItem * _pHint, bool _bUpdate, SwUndoId _nId)
-    : SwUndoField(rPos,_nId)
+                         SwMsgPoolItem * _pHint, bool _bUpdate)
+    : SwUndoField(rPos)
     , pOldField(rOldField.CopyField())
     , pNewField(rNewField.CopyField())
     , pHint(_pHint)
@@ -96,7 +96,7 @@ void SwUndoFieldFromDoc::DoImpl()
         pDoc->getIDocumentFieldsAccess().UpdateField(pTextField, *pNewField, pHint, bUpdate);
         SwFormatField* pDstFormatField = const_cast<SwFormatField*>(&pTextField->GetFormatField());
 
-        if ( pDoc->getIDocumentFieldsAccess().GetFieldType(RES_POSTITFLD, aEmptyOUStr, false) == pDstFormatField->GetField()->GetTyp() )
+        if ( pDoc->getIDocumentFieldsAccess().GetFieldType(SwFieldIds::Postit, aEmptyOUStr, false) == pDstFormatField->GetField()->GetTyp() )
             pDoc->GetDocShell()->Broadcast( SwFormatFieldHint( pDstFormatField, SwFormatFieldHintWhich::INSERTED ) );
     }
 }

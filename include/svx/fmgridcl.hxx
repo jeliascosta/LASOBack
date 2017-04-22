@@ -25,6 +25,7 @@
 #include <svx/gridctrl.hxx>
 #include <svtools/transfer.hxx>
 #include <svx/svxdllapi.h>
+#include <memory>
 
 
 // FmGridHeader
@@ -35,11 +36,11 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC FmGridHeader
             ,public DropTargetHelper
 {
 protected:
-    FmGridHeaderData*       m_pImpl;
+    std::unique_ptr<FmGridHeaderData>       m_pImpl;
 
 public:
     FmGridHeader( BrowseBox* pParent, WinBits nWinBits = WB_STDHEADERBAR | WB_DRAG );
-    virtual ~FmGridHeader();
+    virtual ~FmGridHeader() override;
     virtual void dispose() override;
 
 public:
@@ -78,7 +79,7 @@ protected:
     */
     void notifyColumnSelect(sal_uInt16 nColumnId);
 private:
-    DECL_LINK_TYPED( OnAsyncExecuteDrop, void*, void );
+    DECL_LINK( OnAsyncExecuteDrop, void*, void );
 };
 
 

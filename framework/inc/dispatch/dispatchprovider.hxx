@@ -63,7 +63,7 @@ enum EDispatchHelper
                             - a normal frame never can create a new one by himself
 
     @attention      Use this class as member only! Never use it as baseclass.
-                    XInterface will be ambigous and we hold a weakreference to our OWNER - not to our SUPERCLASS!
+                    XInterface will be ambiguous and we hold a weakreference to our OWNER - not to our SUPERCLASS!
 
     @base           OWeakObject
                         provides ref count and weak mechanism
@@ -90,13 +90,13 @@ class DispatchProvider: public ::cppu::WeakImplHelper< css::frame::XDispatchProv
 
         virtual css::uno::Reference< css::frame::XDispatch > SAL_CALL                       queryDispatch  ( const css::util::URL&                                       aURL             ,
                                                                                                              const OUString&                                      sTargetFrameName ,
-                                                                                                                   sal_Int32                                             nSearchFlags     ) throw( css::uno::RuntimeException, std::exception ) override;
-        virtual css::uno::Sequence< css::uno::Reference< css::frame::XDispatch > > SAL_CALL queryDispatches( const css::uno::Sequence< css::frame::DispatchDescriptor >& lDescriptions    ) throw( css::uno::RuntimeException, std::exception ) override;
+                                                                                                                   sal_Int32                                             nSearchFlags     ) override;
+        virtual css::uno::Sequence< css::uno::Reference< css::frame::XDispatch > > SAL_CALL queryDispatches( const css::uno::Sequence< css::frame::DispatchDescriptor >& lDescriptions    ) override;
 
     /* helper */
     protected:
         // Let him protected! So nobody can use us as base ...
-        virtual ~DispatchProvider();
+        virtual ~DispatchProvider() override;
 
     private:
         css::uno::Reference< css::frame::XDispatch > implts_getOrCreateDispatchHelper   (       EDispatchHelper                            eHelper                       ,

@@ -42,7 +42,7 @@ namespace pcr
     class OPropertyEditor : public Control
     {
     private:
-        typedef ::std::map< OUString, sal_uInt16 >   MapStringToPageId;
+        typedef std::map< OUString, sal_uInt16 >   MapStringToPageId;
         struct HiddenPage
         {
             sal_uInt16  nPos;
@@ -62,16 +62,16 @@ namespace pcr
         sal_Int32                   m_nMaxHelpLines;
 
         MapStringToPageId                       m_aPropertyPageIds;
-        ::std::map< sal_uInt16, HiddenPage >    m_aHiddenPages;
+        std::map< sal_uInt16, HiddenPage >    m_aHiddenPages;
 
     protected:
         void                        Resize() override;
         void                        GetFocus() override;
 
     public:
-                                    OPropertyEditor (vcl::Window* pParent, WinBits nWinStyle = WB_DIALOGCONTROL);
+        explicit                    OPropertyEditor (vcl::Window* pParent);
 
-                                    virtual ~OPropertyEditor();
+                                    virtual ~OPropertyEditor() override;
         virtual void                dispose() override;
 
         void                        EnableUpdate();
@@ -123,7 +123,7 @@ namespace pcr
         OBrowserPage* getPage( const OUString& _rPropertyName );
         const OBrowserPage* getPage( const OUString& _rPropertyName ) const;
 
-        void Update(const ::std::mem_fun_t<void,OBrowserListBox>& _aUpdateFunction);
+        void Update(const std::mem_fun_t<void,OBrowserListBox>& _aUpdateFunction);
 
         typedef void (OPropertyEditor::*PageOperation)( OBrowserPage&, const void* );
         void    forEachPage( PageOperation _pOperation );
@@ -135,8 +135,8 @@ namespace pcr
         void    setHelpLineLimits( OBrowserPage& _rPage, const void* );
 
     protected:
-        DECL_LINK_TYPED(OnPageDeactivate, TabControl*, bool);
-        DECL_LINK_TYPED(OnPageActivate, TabControl*, void);
+        DECL_LINK(OnPageDeactivate, TabControl*, bool);
+        DECL_LINK(OnPageActivate, TabControl*, void);
     };
 
 

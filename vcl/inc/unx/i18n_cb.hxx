@@ -22,9 +22,7 @@
 #include <salwtype.hxx>
 #include <vector>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 // xim callbacks
 void PreeditDoneCallback ( XIC ic, XPointer client_data, XPointer call_data);
@@ -46,17 +44,24 @@ void IM_IMDestroyCallback (XIM im, XPointer client_data, XPointer call_data);
 
 Bool IsControlCode(sal_Unicode nChar);
 
-#ifdef __cplusplus
 } /* extern "C" */
-#endif
 
-typedef struct {
-  sal_Unicode   *pUnicodeBuffer;
-  XIMFeedback   *pCharStyle;
-  unsigned int   nCursorPos;
-  unsigned int   nLength;
-  unsigned int   nSize;
-} preedit_text_t;
+struct preedit_text_t
+{
+    sal_Unicode   *pUnicodeBuffer;
+    XIMFeedback   *pCharStyle;
+    unsigned int   nCursorPos;
+    unsigned int   nLength;
+    unsigned int   nSize;
+    preedit_text_t()
+        : pUnicodeBuffer(nullptr)
+        , pCharStyle(nullptr)
+        , nCursorPos(0)
+        , nLength(0)
+        , nSize(0)
+    {
+    }
+};
 
 class SalFrame;
 
@@ -67,13 +72,19 @@ enum class PreeditStatus {
     StartPending
 };
 
-typedef struct {
+struct preedit_data_t
+{
     SalFrame*               pFrame;
     PreeditStatus           eState;
     preedit_text_t          aText;
     SalExtTextInputEvent    aInputEv;
     std::vector< ExtTextInputAttr >   aInputFlags;
-} preedit_data_t;
+    preedit_data_t()
+        : pFrame(nullptr)
+        , eState(PreeditStatus::DontKnow)
+    {
+    }
+};
 
 #endif // INCLUDED_VCL_INC_UNX_I18N_CB_HXX
 

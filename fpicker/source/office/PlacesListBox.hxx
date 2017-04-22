@@ -28,7 +28,7 @@ class PlacesListBox_Impl : public SvHeaderTabListBox
 
     public:
         PlacesListBox_Impl( PlacesListBox* pParent, const OUString& rTitle );
-        virtual ~PlacesListBox_Impl( );
+        virtual ~PlacesListBox_Impl( ) override;
         virtual void dispose() override;
 
         virtual void MouseButtonUp( const MouseEvent& rMEvt ) override;
@@ -50,7 +50,7 @@ class PlacesListBox : public Control
 
     public:
         PlacesListBox( vcl::Window* pParent, SvtFileDialog* pFileDlg, const OUString& rTitle, WinBits nBits );
-        virtual ~PlacesListBox( );
+        virtual ~PlacesListBox( ) override;
         virtual void dispose() override;
 
         void AppendPlace( const PlacePtr& pPlace );
@@ -70,14 +70,14 @@ class PlacesListBox : public Control
         const VclPtr<PushButton>& GetDeleteButton() const { return mpDelBtn; }
         const VclPtr<PlacesListBox_Impl>& GetPlacesListBox() const { return mpImpl; }
 
-        virtual bool Notify( NotifyEvent& rNEvt ) override;
+        virtual bool EventNotify( NotifyEvent& rNEvt ) override;
 
     private:
 
-        Image getEntryIcon( const PlacePtr& pPlace );
+        static Image getEntryIcon( const PlacePtr& pPlace );
 
-        DECL_LINK_TYPED( Selection, SvTreeListBox*, void );
-        DECL_LINK_TYPED( DoubleClick, SvTreeListBox*, bool );
+        DECL_LINK( Selection, SvTreeListBox*, void );
+        DECL_LINK( DoubleClick, SvTreeListBox*, bool );
 };
 
 #endif

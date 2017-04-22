@@ -28,8 +28,7 @@ enum ConditionType
 {
     thread_type_set,
     thread_type_reset,
-    thread_type_wait,
-    thread_type_check
+    thread_type_wait
 };
 
 /** thread for testing Condition.
@@ -40,11 +39,6 @@ public:
     //get the Condition to operate
     ConditionThread( ::osl::Condition& Con, ConditionType tType): m_MyCon( Con ), m_MyType( tType ) { }
 
-    virtual ~ConditionThread( )
-    {
-        // LLA: do not throw in DTors!
-        // LLA: CPPUNIT_ASSERT_MESSAGE( "#ConditionThread does not shutdown properly.\n", sal_False == this -> isRunning( ) );
-    }
 protected:
     ::osl::Condition& m_MyCon;
     ConditionType m_MyType;

@@ -93,7 +93,7 @@ namespace accessibility
 
         // receive pointer to our frontend class and view window
         AccessibleTextHelper_Impl();
-        virtual ~AccessibleTextHelper_Impl();
+        virtual ~AccessibleTextHelper_Impl() override;
 
         // XAccessibleContext child handling methods
         sal_Int32 SAL_CALL getAccessibleChildCount();
@@ -171,7 +171,6 @@ namespace accessibility
 
         // syntactic sugar for FireEvent
         void GotPropertyEvent( const uno::Any& rNewValue, const sal_Int16 nEventId ) const { FireEvent( nEventId, rNewValue ); }
-        void LostPropertyEvent( const uno::Any& rOldValue, const sal_Int16 nEventId ) const { FireEvent( nEventId, uno::Any(), rOldValue ); }
 
         // shutdown usage of current edit source on myself and the children.
         void ShutdownEditSource();
@@ -256,9 +255,7 @@ namespace accessibility
         // normally should employ RAII here...
         mnNotifierClientId(::comphelper::AccessibleEventNotifier::registerClient())
     {
-#ifdef DBG_UTIL
-        OSL_TRACE( "AccessibleTextHelper_Impl received ID: %d", mnNotifierClientId );
-#endif
+        SAL_INFO("svx", "received ID: " << mnNotifierClientId );
     }
 
     AccessibleTextHelper_Impl::~AccessibleTextHelper_Impl()
@@ -427,7 +424,7 @@ namespace accessibility
                             pAccTable->SetStateDirectly(AccessibleStateType::FOCUSED);
                     }
                 }
-                OSL_TRACE("AccessibleTextHelper_Impl::SetShapeFocus(): Parent object received focus" );
+                SAL_INFO("svx", "Parent object received focus" );
             }
             else
             {
@@ -437,7 +434,7 @@ namespace accessibility
                 {
                     AccessibleCell* pAccessibleCell = dynamic_cast< AccessibleCell* > ( mxFrontEnd.get() );
                     if ( !pAccessibleCell )
-                            LostPropertyEvent( uno::makeAny(AccessibleStateType::FOCUSED), AccessibleEventId::STATE_CHANGED );
+                        FireEvent( AccessibleEventId::STATE_CHANGED, uno::Any(), uno::makeAny(AccessibleStateType::FOCUSED) );
                     else
                     {
                         AccessibleTableShape* pAccTable = pAccessibleCell->GetParentTable();
@@ -445,7 +442,7 @@ namespace accessibility
                             pAccTable->ResetStateDirectly(AccessibleStateType::FOCUSED);
                     }
                 }
-                OSL_TRACE("AccessibleTextHelper_Impl::SetShapeFocus(): Parent object lost focus" );
+                SAL_INFO("svx", "Parent object lost focus" );
             }
         }
     }
@@ -472,7 +469,7 @@ namespace accessibility
             SetShapeFocus( bHaveFocus );
         }
 
-        OSL_TRACE("AccessibleTextHelper_Impl::SetFocus: focus changed, Object %p, state: %s", this, bHaveFocus ? "focused" : "not focused");
+        SAL_INFO("svx", "focus changed, Object " << this << ", state: " << (bHaveFocus ? "focused" : "not focused") );
     }
 
     bool AccessibleTextHelper_Impl::IsActive() const
@@ -519,7 +516,7 @@ namespace accessibility
                     // #103998# Not that important, changed from assertion to trace
                     if( mbThisHasFocus )
                     {
-                        OSL_TRACE("AccessibleTextHelper_Impl::UpdateSelection(): Parent has focus!");
+                        SAL_INFO("svx", "Parent has focus!");
                     }
 
                     sal_Int32 nMaxValidParaIndex( GetTextForwarder().GetParagraphCount() - 1 );
@@ -539,7 +536,7 @@ namespace accessibility
                                                          ::std::min( maLastSelection.nEndPara, nMaxValidParaIndex )+1,
                                                          AccessibleEventId::CARET_CHANGED,
                                                          uno::makeAny(static_cast<sal_Int32>(-1)),
-                                                         uno::makeAny(static_cast<sal_Int32>(maLastSelection.nEndPos)) );
+                                                         uno::makeAny(maLastSelection.nEndPos) );
                             }
 
                             ChangeChildFocus( aSelection.nEndPara );
@@ -563,7 +560,7 @@ namespace accessibility
                         if( maLastSelection.nStartPara != EE_PARA_NOT_FOUND &&
                             maLastSelection.nEndPara == aSelection.nEndPara )
                         {
-                            aOldCursor <<= static_cast<sal_Int32>(maLastSelection.nEndPos);
+                            aOldCursor <<= maLastSelection.nEndPos;
                         }
                         else
                         {
@@ -573,7 +570,7 @@ namespace accessibility
                         maParaManager.FireEvent( aSelection.nEndPara,
                                                  aSelection.nEndPara+1,
                                                  AccessibleEventId::CARET_CHANGED,
-                                                 uno::makeAny(static_cast<sal_Int32>(aSelection.nEndPos)),
+                                                 uno::makeAny(aSelection.nEndPos),
                                                  aOldCursor );
                     }
 
@@ -767,19 +764,19 @@ namespace accessibility
             SvxTextForwarder& rCacheTF = GetTextForwarder();
             SvxViewForwarder& rCacheVF = GetViewForwarder();
 
-            Rectangle aViewArea = rCacheVF.GetVisArea();
+            tools::Rectangle aViewArea = rCacheVF.GetVisArea();
 
             if( IsActive() )
             {
                 // maybe the edit view scrolls, adapt aViewArea
-                Rectangle aEditViewArea = GetEditViewForwarder().GetVisArea();
+                tools::Rectangle aEditViewArea = GetEditViewForwarder().GetVisArea();
                 aViewArea += aEditViewArea.TopLeft();
 
                 // now determine intersection
                 aViewArea.Intersection( aEditViewArea );
             }
 
-            Rectangle aTmpBB, aParaBB;
+            tools::Rectangle aTmpBB, aParaBB;
             bool bFirstChild = true;
             sal_Int32 nCurrPara;
             sal_Int32 nParas=rCacheTF.GetParagraphCount();
@@ -992,7 +989,7 @@ namespace accessibility
 
     /** functor processing queue events
 
-        Reacts on TEXT_HINT_PARAINSERTED/REMOVED events and stores
+        Reacts on SfxHintId::TextParaInserted/REMOVED events and stores
         their content
      */
     class AccessibleTextHelper_QueueFunctor : public ::std::unary_function< const SfxHint*, void >
@@ -1001,7 +998,7 @@ namespace accessibility
         AccessibleTextHelper_QueueFunctor() :
             mnParasChanged( 0 ),
             mnParaIndex(-1),
-            mnHintId(-1)
+            mnHintId(SfxHintId::NONE)
         {}
         void operator()( const SfxHint* pEvent )
         {
@@ -1013,8 +1010,8 @@ namespace accessibility
                 const SvxEditSourceHint* pEditSourceHint = dynamic_cast<const SvxEditSourceHint*>( pEvent );
 
                 if( !pEditSourceHint && pTextHint &&
-                    (pTextHint->GetId() == TEXT_HINT_PARAINSERTED ||
-                     pTextHint->GetId() == TEXT_HINT_PARAREMOVED ) )
+                    (pTextHint->GetId() == SfxHintId::TextParaInserted ||
+                     pTextHint->GetId() == SfxHintId::TextParaRemoved ) )
                 {
                     if( pTextHint->GetValue() == EE_PARA_ALL )
                     {
@@ -1046,7 +1043,7 @@ namespace accessibility
 
             @return hint id of last interesting event (REMOVED/INSERTED).
         */
-        int GetHintId() { return mnHintId; }
+        SfxHintId GetHintId() { return mnHintId; }
 
     private:
         /** number of paragraphs changed during queue processing. -1 for
@@ -1056,7 +1053,7 @@ namespace accessibility
         /// index of paragraph added/removed last
         sal_Int32 mnParaIndex;
         /// TextHint ID (removed/inserted) of last interesting event
-        int mnHintId;
+        SfxHintId mnHintId;
     };
 
     void AccessibleTextHelper_Impl::ProcessQueue()
@@ -1084,7 +1081,7 @@ namespace accessibility
             // #103483# Exactly one paragraph added/removed. This is
             // the normal case, optimize event handling here.
 
-            if( aFunctor.GetHintId() == TEXT_HINT_PARAINSERTED )
+            if( aFunctor.GetHintId() == SfxHintId::TextParaInserted )
             {
                 // update num of paras
                 maParaManager.SetNum( nNewParas );
@@ -1111,7 +1108,7 @@ namespace accessibility
                     OSL_FAIL("AccessibleTextHelper_Impl::ProcessQueue: could not create new paragraph");
                 }
             }
-            else if( aFunctor.GetHintId() == TEXT_HINT_PARAREMOVED )
+            else if( aFunctor.GetHintId() == SfxHintId::TextParaRemoved )
             {
                 ::accessibility::AccessibleParaManager::VectorOfChildren::const_iterator begin = maParaManager.begin();
                 ::std::advance( begin, aFunctor.GetParaIndex() );
@@ -1174,9 +1171,8 @@ namespace accessibility
 
                 // determine hint type
                 const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>( &rHint );
-                const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
                 const TextHint* pTextHint = dynamic_cast<const TextHint*>( &rHint );
-                const SvxViewHint* pViewHint = dynamic_cast<const SvxViewHint*>( &rHint );
+                const SvxViewChangedHint* pViewHint = dynamic_cast<const SvxViewChangedHint*>( &rHint );
                 const SvxEditSourceHint* pEditSourceHint = dynamic_cast<const SvxEditSourceHint*>( &rHint );
 
                 try
@@ -1187,7 +1183,7 @@ namespace accessibility
                     {
                         switch( pEditSourceHint->GetId() )
                         {
-                            case EDITSOURCE_HINT_PARASMOVED:
+                            case SfxHintId::EditSourceParasMoved:
                             {
                                 DBG_ASSERT( pEditSourceHint->GetStartValue() < GetTextForwarder().GetParagraphCount() &&
                                             pEditSourceHint->GetEndValue() < GetTextForwarder().GetParagraphCount(),
@@ -1205,7 +1201,7 @@ namespace accessibility
                                 break;
                             }
 
-                            case EDITSOURCE_HINT_SELECTIONCHANGED:
+                            case SfxHintId::EditSourceSelectionChanged:
                                 // notify listeners
                                 try
                                 {
@@ -1214,13 +1210,14 @@ namespace accessibility
                                 // maybe we're not in edit mode (this is not an error)
                                 catch( const uno::Exception& ) {}
                                 break;
+                            default: break;
                         }
                     }
                     else if( pTextHint )
                     {
                         switch( pTextHint->GetId() )
                         {
-                            case TEXT_HINT_MODIFIED:
+                            case SfxHintId::TextModified:
                             {
                                 // notify listeners
                                 sal_Int32 nPara( pTextHint->GetValue() );
@@ -1244,21 +1241,22 @@ namespace accessibility
                                 break;
                             }
 
-                            case TEXT_HINT_PARAINSERTED:
+                            case SfxHintId::TextParaInserted:
                                 // already happened above
                                 break;
 
-                            case TEXT_HINT_PARAREMOVED:
+                            case SfxHintId::TextParaRemoved:
                                 // already happened above
                                 break;
 
-                            case TEXT_HINT_TEXTHEIGHTCHANGED:
+                            case SfxHintId::TextHeightChanged:
                                 // visibility changed, done below
                                 break;
 
-                            case TEXT_HINT_VIEWSCROLLED:
+                            case SfxHintId::TextViewScrolled:
                                 // visibility changed, done below
                                 break;
+                            default: break;
                         }
 
                         // in all cases, check visibility afterwards.
@@ -1267,20 +1265,15 @@ namespace accessibility
                     }
                     else if( pViewHint )
                     {
-                        switch( pViewHint->GetHintType() )
-                        {
-                            case SvxViewHint::SVX_HINT_VIEWCHANGED:
-                                // just check visibility
-                                UpdateVisibleChildren();
-                                UpdateBoundRect();
-                                break;
-                        }
+                        // just check visibility
+                        UpdateVisibleChildren();
+                        UpdateBoundRect();
                     }
                     else if( pSdrHint )
                     {
                         switch( pSdrHint->GetKind() )
                         {
-                            case HINT_BEGEDIT:
+                            case SdrHintKind::BeginEdit:
                             {
                                 if(!IsActive())
                                 {
@@ -1294,7 +1287,7 @@ namespace accessibility
                                 break;
                             }
 
-                            case HINT_ENDEDIT:
+                            case SdrHintKind::EndEdit:
                             {
                                 // focused child now loses focus
                                 ESelection aSelection;
@@ -1313,29 +1306,21 @@ namespace accessibility
                         }
                     }
                     // it's VITAL to keep the SfxSimpleHint last! It's the base of some classes above!
-                    else if( pSimpleHint )
+                    else if( rHint.GetId() == SfxHintId::Dying)
                     {
-                        switch( pSimpleHint->GetId() )
+                        // edit source is dying under us, become defunc then
+                        try
                         {
-                            case SFX_HINT_DYING:
-                                // edit source is dying under us, become defunc then
-                                try
-                                {
-                                    // make edit source inaccessible
-                                    // Note: cannot destroy it here, since we're called from there!
-                                    ShutdownEditSource();
-                                }
-                                catch( const uno::Exception& ) {}
-
-                                break;
+                            // make edit source inaccessible
+                            // Note: cannot destroy it here, since we're called from there!
+                            ShutdownEditSource();
                         }
+                        catch( const uno::Exception& ) {}
                     }
                 }
                 catch( const uno::Exception& )
                 {
-#ifdef DBG_UTIL
-                    OSL_TRACE("AccessibleTextHelper_Impl::ProcessQueue: Unhandled exception.");
-#endif
+                    SAL_WARN("svx", "Unhandled exception.");
                 }
             }
         }
@@ -1352,29 +1337,47 @@ namespace accessibility
 
         mbInNotify = true;
 
-        // determine hint type
-        const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>( &rHint );
-        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
-        const TextHint* pTextHint = dynamic_cast<const TextHint*>( &rHint );
-        const SvxViewHint* pViewHint = dynamic_cast<const SvxViewHint*>( &rHint );
-        const SvxEditSourceHint* pEditSourceHint = dynamic_cast<const SvxEditSourceHint*>( &rHint );
-
         try
         {
-            // Process notification event
-            if( pEditSourceHint )
+            // Process notification event, arranged in order of likelihood of
+            // occurrence to avoid unnecessary dynamic_cast. Note that
+            // SvxEditSourceHint is derived from TextHint, so has to be checked
+            // before that.
+            if( const SvxViewChangedHint* pViewHint = dynamic_cast<const SvxViewChangedHint*>( &rHint ) )
+            {
+                maEventQueue.Append( *pViewHint );
+
+                // process visibility right away, if not within an
+                // open EE notification frame. Otherwise, event
+                // processing would be delayed until next EE
+                // notification sequence.
+                if( maEventOpenFrames == 0 )
+                    ProcessQueue();
+            }
+            else if( const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>( &rHint ) )
+            {
+                maEventQueue.Append( *pSdrHint );
+
+                // process drawing layer events right away, if not
+                // within an open EE notification frame. Otherwise,
+                // event processing would be delayed until next EE
+                // notification sequence.
+                if( maEventOpenFrames == 0 )
+                    ProcessQueue();
+            }
+            else if( const SvxEditSourceHint* pEditSourceHint = dynamic_cast<const SvxEditSourceHint*>( &rHint ) )
             {
                 maEventQueue.Append( *pEditSourceHint );
                 // EditEngine should emit TEXT_SELECTION_CHANGED events (#i27299#)
                 if( maEventOpenFrames == 0 )
                     ProcessQueue();
             }
-            else if( pTextHint )
+            else if( const TextHint* pTextHint = dynamic_cast<const TextHint*>( &rHint ) )
             {
                 switch( pTextHint->GetId() )
                 {
-                    case TEXT_HINT_BLOCKNOTIFICATION_END:
-                    case TEXT_HINT_INPUT_END:
+                    case SfxHintId::TextBlockNotificationEnd:
+                    case SfxHintId::TextInputEnd:
                         --maEventOpenFrames;
 
                         if( maEventOpenFrames == 0 )
@@ -1400,8 +1403,8 @@ namespace accessibility
                         }
                         break;
 
-                    case TEXT_HINT_BLOCKNOTIFICATION_START:
-                    case TEXT_HINT_INPUT_START:
+                    case SfxHintId::TextBlockNotificationStart:
+                    case SfxHintId::TextInputStart:
                         ++maEventOpenFrames;
                         // no FALLTHROUGH reason: event will not be processed,
                         // thus appending the event isn't necessary. (#i27299#)
@@ -1414,54 +1417,24 @@ namespace accessibility
                         break;
                 }
             }
-            else if( pViewHint )
-            {
-                maEventQueue.Append( *pViewHint );
-
-                // process visibility right away, if not within an
-                // open EE notification frame. Otherwise, event
-                // processing would be delayed until next EE
-                // notification sequence.
-                if( maEventOpenFrames == 0 )
-                    ProcessQueue();
-            }
-            else if( pSdrHint )
-            {
-                maEventQueue.Append( *pSdrHint );
-
-                // process drawing layer events right away, if not
-                // within an open EE notification frame. Otherwise,
-                // event processing would be delayed until next EE
-                // notification sequence.
-                if( maEventOpenFrames == 0 )
-                    ProcessQueue();
-            }
-            // it's VITAL to keep the SfxSimpleHint last! It's the base of some classes above!
-            else if( pSimpleHint )
+            // it's VITAL to keep the SfxHint last! It's the base of the classes above!
+            else if( rHint.GetId() == SfxHintId::Dying )
             {
                 // handle this event _at once_, because after that, objects are invalid
-                switch( pSimpleHint->GetId() )
+                // edit source is dying under us, become defunc then
+                maEventQueue.Clear();
+                try
                 {
-                    case SFX_HINT_DYING:
-                        // edit source is dying under us, become defunc then
-                        maEventQueue.Clear();
-                        try
-                        {
-                            // make edit source inaccessible
-                            // Note: cannot destroy it here, since we're called from there!
-                            ShutdownEditSource();
-                        }
-                        catch( const uno::Exception& ) {}
-
-                        break;
+                    // make edit source inaccessible
+                    // Note: cannot destroy it here, since we're called from there!
+                    ShutdownEditSource();
                 }
+                catch( const uno::Exception& ) {}
             }
         }
         catch( const uno::Exception& )
         {
-#ifdef DBG_UTIL
-            OSL_TRACE("AccessibleTextHelper_Impl::Notify: Unhandled exception.");
-#endif
+            SAL_WARN("svx", "Unhandled exception.");
             mbInNotify = false;
         }
 
@@ -1476,9 +1449,7 @@ namespace accessibility
             {
                 // #106234# Unregister from EventNotifier
                 ::comphelper::AccessibleEventNotifier::revokeClient( getNotifierClientId() );
-#ifdef DBG_UTIL
-                OSL_TRACE( "AccessibleTextHelper_Impl disposed ID: %d", mnNotifierClientId );
-#endif
+                SAL_INFO("svx", "disposed ID: " << mnNotifierClientId );
             }
             catch( const uno::Exception& ) {}
 
@@ -1595,10 +1566,7 @@ namespace accessibility
         if( !xFrontEndContext.is() )
             throw uno::RuntimeException("AccessibleTextHelper_Impl::getAccessibleAt: frontend invalid", mxFrontEnd );
 
-        uno::Reference< XAccessibleComponent > xFrontEndComponent( xFrontEndContext, uno::UNO_QUERY );
-
-        if( !xFrontEndComponent.is() )
-            throw uno::RuntimeException("AccessibleTextHelper_Impl::getAccessibleAt: frontend is no XAccessibleComponent", mxFrontEnd );
+        uno::Reference< XAccessibleComponent > xFrontEndComponent( xFrontEndContext, uno::UNO_QUERY_THROW );
 
         // #103862# No longer need to make given position relative
         Point aPoint( _aPoint.X, _aPoint.Y );
@@ -1617,7 +1585,7 @@ namespace accessibility
             DBG_ASSERT(nChild >= 0 && nChild <= USHRT_MAX,
                        "AccessibleTextHelper_Impl::getAccessibleAt: index value overflow");
 
-            Rectangle aParaBounds( rCacheTF.GetParaBounds( nChild ) );
+            tools::Rectangle aParaBounds( rCacheTF.GetParaBounds( nChild ) );
 
             if( aParaBounds.IsInside( aLogPoint ) )
                 return getAccessibleChild( nChild - mnFirstVisibleChild + GetStartIndex() );

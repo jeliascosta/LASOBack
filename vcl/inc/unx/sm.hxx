@@ -38,6 +38,8 @@ class SessionManagerClient
     static std::unique_ptr< ICEConnectionObserver > m_xICEConnectionObserver;
     static SmcConn m_pSmcConnection;
     static OString m_aClientID;
+    static OString m_aTimeID;
+    static OString m_aClientTimeID;
     static bool m_bDocSaveDone;
 
     static void SaveYourselfProc(       SmcConn connection,
@@ -57,10 +59,10 @@ class SessionManagerClient
 
     static OString getPreviousSessionID();
 
-    DECL_STATIC_LINK_TYPED( SessionManagerClient, ShutDownHdl, void*, void );
-    DECL_STATIC_LINK_TYPED( SessionManagerClient, ShutDownCancelHdl, void*, void );
-    DECL_STATIC_LINK_TYPED( SessionManagerClient, SaveYourselfHdl, void*, void );
-    DECL_STATIC_LINK_TYPED( SessionManagerClient, InteractionHdl, void*, void );
+    DECL_STATIC_LINK( SessionManagerClient, ShutDownHdl, void*, void );
+    DECL_STATIC_LINK( SessionManagerClient, ShutDownCancelHdl, void*, void );
+    DECL_STATIC_LINK( SessionManagerClient, SaveYourselfHdl, void*, void );
+    DECL_STATIC_LINK( SessionManagerClient, InteractionHdl, void*, void );
 public:
     static void open(SalSession * pSession);
     static void close();

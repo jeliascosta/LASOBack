@@ -132,7 +132,8 @@ namespace rtl_OStringBuffer
 
         void ctor_005() {
             rtl::OStringBuffer b1;
-            b1.makeStringAndClear();
+            auto dummy = b1.makeStringAndClear();
+            (void)dummy;
             rtl::OStringBuffer b2(b1);
             (void)b2;
         }
@@ -384,10 +385,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[0] );
             sal_Int32              expVal = kTestStr1Len;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "length of ascii string",
-                aStrBuf.getLength() == expVal
+                expVal, aStrBuf.getLength()
             );
 
         }
@@ -397,10 +398,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[1] );
             sal_Int32              expVal = 1;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "length of ascii string of size 1",
-                aStrBuf.getLength() == expVal
+                expVal, aStrBuf.getLength()
             );
         }
 
@@ -409,10 +410,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[2] );
             sal_Int32              expVal = 0;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "length of empty string",
-                aStrBuf.getLength() == expVal
+                expVal, aStrBuf.getLength()
             );
         }
 
@@ -421,10 +422,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[3] );
             sal_Int32              expVal = 0;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "length of empty string (empty ascii string arg)",
-                aStrBuf.getLength() == expVal
+                expVal, aStrBuf.getLength()
             );
         }
 
@@ -433,10 +434,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[4] );
             sal_Int32              expVal = 1;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "length of string with \\0 embedded",
-                aStrBuf.getLength() == expVal
+                expVal, aStrBuf.getLength()
             );
         }
 
@@ -445,10 +446,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[5] );
             sal_Int32              expVal = kTestStr2Len;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "length(>16) of ascii string",
-                aStrBuf.getLength() == expVal
+                expVal, aStrBuf.getLength()
             );
         }
 
@@ -457,10 +458,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf;
             sal_Int32              expVal = 0;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "length of empty string (default constructor)",
-                aStrBuf.getLength()== expVal
+                expVal, aStrBuf.getLength()
             );
         }
 
@@ -469,10 +470,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( 26 );
             sal_Int32               expVal   = 0;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "length of empty string (with capacity)",
-                aStrBuf.getLength()== expVal
+                expVal, aStrBuf.getLength()
             );
         }
 
@@ -515,10 +516,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[0] );
             sal_Int32              expVal = kTestStr1Len+16;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of ascii string",
-                aStrBuf.getCapacity()== expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -528,10 +529,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[1] );
             sal_Int32              expVal = 1+16;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of ascii string of size 1",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -540,10 +541,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[2] );
             sal_Int32              expVal = 0+16;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of empty string",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -552,10 +553,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[3] );
             sal_Int32              expVal = 0+16;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of empty string (empty ascii string arg)",
-                aStrBuf.getCapacity()== expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -564,10 +565,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[4] );
             sal_Int32              expVal = 1+16;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of string with \\0 embedded",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -576,10 +577,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( *arrOUS[5] );
             sal_Int32              expVal = kTestStr2Len+16;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity(>16) of ascii string",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -588,10 +589,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf;
             sal_Int32              expVal = 16;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of empty string (default constructor)",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -600,10 +601,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( kNonSInt32Max );
             sal_Int32              expVal = kNonSInt32Max;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of empty string (with capacity -2147483648)",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -612,10 +613,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( 16 );
             sal_Int32              expVal = 16;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of empty string (with capacity 16)",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -624,10 +625,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( 6 );
             sal_Int32              expVal = 6;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of empty string (with capacity 6)",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -636,10 +637,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( 0 );
             sal_Int32              expVal = 0;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of empty string (with capacity 0)",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -648,10 +649,10 @@ namespace rtl_OStringBuffer
             ::rtl::OStringBuffer   aStrBuf( -2 );
             sal_Int32              expVal = -2;
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity of empty string (with capacity -2)",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
         }
 
@@ -681,10 +682,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 16, minimum is 5",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -697,10 +698,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 16, minimum is -5",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -713,10 +714,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 16, minimum is 0",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -729,10 +730,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 16, minimum is 20",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -745,10 +746,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 16, minimum is 50",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -761,10 +762,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 6, minimum is 20",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -777,10 +778,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 6, minimum is 2",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -793,10 +794,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 6, minimum is -6",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -809,10 +810,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 6, minimum is -6",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -825,10 +826,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 0, minimum is 6",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -841,10 +842,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 0, minimum is 1",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -857,10 +858,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to 0, minimum is -1",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -873,10 +874,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to -2147483648, minimum is 65535",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -889,10 +890,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to -2147483648, minimum is -1",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -905,10 +906,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to -2147483648, minimum is 0",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -921,10 +922,10 @@ namespace rtl_OStringBuffer
 
             aStrBuf.ensureCapacity( input );
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "capacity equal to -2147483648, minimum is -2147483648",
-                aStrBuf.getCapacity() == expVal
+                expVal, aStrBuf.getCapacity()
             );
 
         }
@@ -1449,11 +1450,11 @@ namespace rtl_OStringBuffer
             const sal_Char* pstr = aStrBuf.getStr();
             int nEqual = strncmp(pstr, expVal, cmpLen);
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "test normal string",
                 /* cmpstr( pstr, expVal, cmpLen ) */
-                nEqual == 0
+                0, nEqual
             );
 
         }
@@ -1466,11 +1467,11 @@ namespace rtl_OStringBuffer
             const sal_Char* pstr = aStrBuf.getStr();
             sal_Int32 nLen = strlen(pstr);
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "test empty string",
                 // cmpstr( pstr, &expVal, cmpLen )
-                nLen == 0
+                static_cast<sal_Int32>(0), nLen
                 );
 
         }
@@ -1492,10 +1493,10 @@ namespace rtl_OStringBuffer
             const sal_Char* pstr = aStrBuf.getStr();
             int nEqual = strncmp(pstr, expVal, cmpLen);
 
-            CPPUNIT_ASSERT_MESSAGE
+            CPPUNIT_ASSERT_EQUAL_MESSAGE
             (
                 "test normal string",
-                nEqual == 0
+                0, nEqual
             );
 
         }
@@ -8214,7 +8215,7 @@ namespace rtl_OStringBuffer
     class  append_006_Int32_WrongRadix : public CppUnit::TestFixture
     {
         OString* arrOUS[5];
-        sal_Int32 intVal;
+        static const sal_Int32 intVal = 11;
 
     public:
         void setUp() override
@@ -8224,8 +8225,6 @@ namespace rtl_OStringBuffer
             arrOUS[2] = new OString( kTestStr25 );
             arrOUS[3] = new OString( "" );
             arrOUS[4] = new OString( kTestStr28 );
-            intVal = 11;
-
         }
 
         void tearDown() override
@@ -13966,7 +13965,7 @@ namespace rtl_OStringBuffer
     class  append_007_Int64_WrongRadix : public CppUnit::TestFixture
     {
         OString* arrOUS[5];
-        sal_Int64 intVal;
+        static const sal_Int64 intVal = 11;
 
     public:
         void setUp() override
@@ -13976,8 +13975,6 @@ namespace rtl_OStringBuffer
             arrOUS[2] = new OString( kTestStr25 );
             arrOUS[3] = new OString( "" );
             arrOUS[4] = new OString( kTestStr28 );
-            intVal = 11;
-
         }
 
         void tearDown() override
@@ -16034,7 +16031,5 @@ CPPUNIT_TEST_SUITE_REGISTRATION(rtl_OStringBuffer::append_009_double);
 CPPUNIT_TEST_SUITE_REGISTRATION(rtl_OStringBuffer::append_009_Double_Negative);
 CPPUNIT_TEST_SUITE_REGISTRATION(rtl_OStringBuffer::AppendUninitialized);
 CPPUNIT_TEST_SUITE_REGISTRATION(rtl_OStringBuffer::remove);
-
-CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

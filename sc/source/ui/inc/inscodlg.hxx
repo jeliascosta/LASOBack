@@ -30,10 +30,10 @@
 class ScInsertContentsDlg : public ModalDialog
 {
 public:
-            ScInsertContentsDlg( vcl::Window*          pParent,
-                                 InsertDeleteFlags nCheckDefaults = InsertDeleteFlags::NONE,
-                                 const OUString*  pStrTitle = nullptr );
-            virtual ~ScInsertContentsDlg();
+            ScInsertContentsDlg( vcl::Window*      pParent,
+                                 InsertDeleteFlags nCheckDefaults,
+                                 const OUString*   pStrTitle );
+    virtual ~ScInsertContentsDlg() override;
     virtual void dispose() override;
 
     InsertDeleteFlags GetInsContentsCmdBits() const;
@@ -46,7 +46,7 @@ public:
     void    SetOtherDoc( bool bSet );
     void    SetFillMode( bool bSet );
     void    SetChangeTrack( bool bSet );
-    void    SetCellShiftDisabled( int nDisable );
+    void    SetCellShiftDisabled( CellShiftDisabledFlags nDisable );
 
 private:
     VclPtr<CheckBox>        mpBtnInsAll;
@@ -84,25 +84,22 @@ private:
     bool              bUsedShortCut;
 
     InsertDeleteFlags nShortCutInsContentsCmdBits;
-    ScPasteFunc       nShortCutFormulaCmdBits;
-    bool              bShortCutSkipEmptyCells;
     bool              bShortCutTranspose;
-    bool              bShortCutIsLink;
     InsCellCmd        nShortCutMoveMode;
 
     static bool         bPreviousAllCheck;
     static InsertDeleteFlags nPreviousChecks;
-    static sal_uInt16   nPreviousChecks2;
+    static InsertContentsFlags nPreviousChecks2;
     static ScPasteFunc  nPreviousFormulaChecks;
     static sal_uInt16   nPreviousMoveMode;          // enum InsCellCmd
 
-    void DisableChecks( bool bInsAllChecked = true );
+    void DisableChecks( bool bInsAllChecked );
     void TestModes();
 
     // Handler
-    DECL_LINK_TYPED( InsAllHdl, Button*, void );
-    DECL_LINK_TYPED( LinkBtnHdl, Button*, void );
-    DECL_LINK_TYPED( ShortCutHdl, Button*, void );
+    DECL_LINK( InsAllHdl, Button*, void );
+    DECL_LINK( LinkBtnHdl, Button*, void );
+    DECL_LINK( ShortCutHdl, Button*, void );
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_INSCODLG_HXX

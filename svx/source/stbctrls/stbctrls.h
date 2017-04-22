@@ -19,16 +19,6 @@
 #ifndef INCLUDED_SVX_SOURCE_STBCTRLS_STBCTRLS_H
 #define INCLUDED_SVX_SOURCE_STBCTRLS_STBCTRLS_H
 
-#define ZOOM_200            1
-#define ZOOM_150            2
-#define ZOOM_100            3
-#define ZOOM_75             4
-#define ZOOM_50             5
-
-#define ZOOM_OPTIMAL        6
-#define ZOOM_PAGE_WIDTH     7
-#define ZOOM_WHOLE_PAGE     8
-
 // IDs as in SUBTOTAL_FUNC of Calc
 
 #define PSZ_FUNC_AVG                1
@@ -37,15 +27,8 @@
 #define PSZ_FUNC_MAX                4
 #define PSZ_FUNC_MIN                5
 #define PSZ_FUNC_SUM                9
-#define PSZ_FUNC_SELECTION_COUNT    12
+#define PSZ_FUNC_SELECTION_COUNT    13
 #define PSZ_FUNC_NONE               16
-
-#define XMLSEC_CALL         1
-
-#define SELECTION_STANDARD  1
-#define SELECTION_EXTENDED  2
-#define SELECTION_ADDED     3
-#define SELECTION_BLOCK     4
 
 #endif
 

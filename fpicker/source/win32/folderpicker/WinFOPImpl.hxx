@@ -38,25 +38,21 @@ public:
 
     // XExecutableDialog
 
-
-    virtual sal_Int16 SAL_CALL execute(  )
-        throw( css::uno::RuntimeException );
+    /// @throws css::uno::RuntimeException
+    virtual sal_Int16 SAL_CALL execute(  );
 
 
     // XFolderPicker
 
 
-    virtual void SAL_CALL setDisplayDirectory( const OUString& aDirectory )
-        throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
+    virtual void SAL_CALL setDisplayDirectory( const OUString& aDirectory ) override;
 
-    virtual OUString SAL_CALL getDisplayDirectory( )
-        throw( css::uno::RuntimeException );
+    virtual OUString SAL_CALL getDisplayDirectory( ) override;
 
-    virtual OUString SAL_CALL getDirectory( )
-        throw( css::uno::RuntimeException );
+    virtual OUString SAL_CALL getDirectory( ) override;
 
 protected:
-    virtual void SAL_CALL onSelChanged( const OUString& aNewPath );
+    virtual void SAL_CALL onSelChanged( const OUString& aNewPath ) override;
 
 private:
     CFolderPicker*  m_pFolderPicker;

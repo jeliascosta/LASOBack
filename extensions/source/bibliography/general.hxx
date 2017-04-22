@@ -24,7 +24,6 @@
 #include <com/sun/star/awt/XControlContainer.hpp>
 #include <com/sun/star/form/XBoundComponent.hpp>
 #include <com/sun/star/sdbc/XRowSetListener.hpp>
-#include <svtools/stdctrl.hxx>
 
 #include <vcl/layout.hxx>
 #include <vcl/lstbox.hxx>
@@ -51,13 +50,13 @@ private:
     VclPtr<BibGeneralPage> mpBibGeneralPage;
 public:
     explicit BibGeneralPageFocusListener(BibGeneralPage *pBibGeneralPage);
-    virtual void SAL_CALL       focusGained( const css::awt::FocusEvent& e ) throw( css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL       focusLost( const css::awt::FocusEvent& e ) throw( css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL       disposing( const css::lang::EventObject& Source ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL       focusGained( const css::awt::FocusEvent& e ) override;
+    virtual void SAL_CALL       focusLost( const css::awt::FocusEvent& e ) override;
+    virtual void SAL_CALL       disposing( const css::lang::EventObject& Source ) override;
 
 };
 
-class BibGeneralPage: public BibTabPage
+class BibGeneralPage : public TabPage, public BibShortCutHandler
 {
     VclPtr<VclGrid>            pGrid;
     VclPtr<VclScrolledWindow>  pScrolledWindow;
@@ -141,7 +140,7 @@ protected:
 
 public:
                                 BibGeneralPage(vcl::Window* pParent, BibDataManager* pDatMan);
-    virtual                     ~BibGeneralPage();
+    virtual                     ~BibGeneralPage() override;
     virtual void                dispose() override;
 
     inline const OUString&      GetErrorString() const;
@@ -163,8 +162,10 @@ public:
 
     const rtl::Reference<BibGeneralPageFocusListener>& GetFocusListener() { return mxBibGeneralPageFocusListener; }
 
-    void focusGained(const css::awt::FocusEvent& rEvent) throw( css::uno::RuntimeException, std::exception );
-    void focusLost(const css::awt::FocusEvent& rEvent) throw( css::uno::RuntimeException, std::exception );
+    /// @throws css::uno::RuntimeException
+    void focusGained(const css::awt::FocusEvent& rEvent);
+    /// @throws css::uno::RuntimeException
+    void focusLost(const css::awt::FocusEvent& rEvent);
 
 };
 

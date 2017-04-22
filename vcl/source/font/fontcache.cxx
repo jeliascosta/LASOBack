@@ -24,11 +24,6 @@
 #include "PhysicalFontFace.hxx"
 #include "PhysicalFontFamily.hxx"
 
-#include <config_graphite.h>
-#if ENABLE_GRAPHITE
-#include "graphite_features.hxx"
-#endif
-
 size_t ImplFontCache::IFSD_Hash::operator()( const FontSelectPattern& rFSD ) const
 {
     return rFSD.hashCode();
@@ -73,14 +68,12 @@ bool ImplFontCache::IFSD_Equal::operator()(const FontSelectPattern& rA, const Fo
             return false;
     }
 
-#if ENABLE_GRAPHITE
     // check for features
-    if ((rA.maTargetName.indexOf(grutils::GrFeatureParser::FEAT_PREFIX)
+    if ((rA.maTargetName.indexOf(FontSelectPatternAttributes::FEAT_PREFIX)
          != -1 ||
-         rB.maTargetName.indexOf(grutils::GrFeatureParser::FEAT_PREFIX)
+         rB.maTargetName.indexOf(FontSelectPatternAttributes::FEAT_PREFIX)
          != -1) && rA.maTargetName != rB.maTargetName)
         return false;
-#endif
 
     if (rA.mbEmbolden != rB.mbEmbolden)
         return false;
@@ -137,7 +130,7 @@ LogicalFontInstance* ImplFontCache::GetFontInstance( PhysicalFontCollection* pFo
     {
         // find the best matching logical font family and update font selector accordingly
         pFontFamily = pFontList->FindFontFamily( aFontSelData );
-        DBG_ASSERT( (pFontFamily != nullptr), "ImplFontCache::Get() No logical font found!" );
+        SAL_WARN_IF( (pFontFamily == nullptr), "vcl", "ImplFontCache::Get() No logical font found!" );
         if( pFontFamily )
             aFontSelData.maSearchName = pFontFamily->GetSearchName();
 
@@ -185,7 +178,7 @@ LogicalFontInstance* ImplFontCache::GetFontInstance( PhysicalFontCollection* pFo
         pFontInstance = pFontData->CreateFontInstance( aFontSelData );
         pFontInstance->mpFontCache = this;
 
-        // if we're subtituting from or to a symbol font we may need a symbol
+        // if we're substituting from or to a symbol font we may need a symbol
         // conversion table
         if( pFontData->IsSymbolFont() || aFontSelData.IsSymbolFont() )
         {

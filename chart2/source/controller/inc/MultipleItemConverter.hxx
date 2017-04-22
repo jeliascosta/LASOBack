@@ -32,7 +32,7 @@ namespace chart { namespace wrapper {
 class MultipleItemConverter : public ItemConverter
 {
 public:
-    virtual ~MultipleItemConverter();
+    virtual ~MultipleItemConverter() override;
 
     virtual void FillItemSet( SfxItemSet & rOutItemSet ) const override;
     virtual bool ApplyItemSet( const SfxItemSet & rItemSet ) override;
@@ -43,7 +43,7 @@ public:
 protected:
     MultipleItemConverter( SfxItemPool& rItemPool );
 
-    ::std::vector< ItemConverter * >            m_aConverters;
+    std::vector< ItemConverter * >            m_aConverters;
 };
 
 }}

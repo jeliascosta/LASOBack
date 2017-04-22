@@ -20,7 +20,7 @@
 
 #include <moduldlg.hxx>
 #include <basidesh.hxx>
-#include <baside2.hrc>
+#include <basidesh.hrc>
 #include <iderdll.hxx>
 #include <iderdll2.hxx>
 #include <o3tl/make_unique.hxx>
@@ -80,7 +80,7 @@ public:
     {
     }
 
-    virtual void SAL_CALL handle( const Reference< task::XInteractionRequest >& rRequest ) throw (css::uno::RuntimeException, std::exception) override
+    virtual void SAL_CALL handle( const Reference< task::XInteractionRequest >& rRequest ) override
     {
         if ( m_xHandler.is() )
         {
@@ -92,7 +92,7 @@ public:
 };
 
 // LibUserData
-class LibUserData
+class LibUserData final
 {
 private:
     ScriptDocument m_aDocument;
@@ -102,7 +102,6 @@ public:
         : m_aDocument(rDocument)
     {
     }
-    virtual ~LibUserData() {};
 
     const ScriptDocument& GetDocument() const { return m_aDocument; }
 };
@@ -155,14 +154,7 @@ CheckBox::CheckBox(vcl::Window* pParent, WinBits nStyle)
     Init();
 }
 
-VCL_BUILDER_DECL_FACTORY(CheckBox)
-{
-    WinBits nWinBits = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-    rRet = VclPtr<CheckBox>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(CheckBox, WB_TABSTOP)
 
 CheckBox::~CheckBox()
 {
@@ -197,7 +189,7 @@ void CheckBox::Init()
     SetHighlightRange();
 }
 
-void CheckBox::SetMode (ObjectMode::Mode e)
+void CheckBox::SetMode (ObjectMode e)
 {
     eMode = e;
 
@@ -265,7 +257,7 @@ bool CheckBox::EditingEntry( SvTreeListEntry* pEntry, Selection& )
     if (eMode != ObjectMode::Module)
         return false;
 
-    DBG_ASSERT( pEntry, "Kein Eintrag?" );
+    DBG_ASSERT( pEntry, "No entry?" );
 
     // check, if Standard library
     OUString aLibName = GetEntryText( pEntry, 0 );
@@ -353,7 +345,7 @@ bool CheckBox::EditedEntry( SvTreeListEntry* pEntry, const OUString& rNewName )
 }
 
 // NewObjectDialog
-IMPL_LINK_NOARG_TYPED(NewObjectDialog, OkButtonHandler, Button*, void)
+IMPL_LINK_NOARG(NewObjectDialog, OkButtonHandler, Button*, void)
 {
     if (IsValidSbxName(m_pEdit->GetText()))
         EndDialog(1);
@@ -364,7 +356,7 @@ IMPL_LINK_NOARG_TYPED(NewObjectDialog, OkButtonHandler, Button*, void)
     }
 }
 
-NewObjectDialog::NewObjectDialog(vcl::Window * pParent, ObjectMode::Mode eMode,
+NewObjectDialog::NewObjectDialog(vcl::Window * pParent, ObjectMode eMode,
     bool bCheckName)
     : ModalDialog(pParent, "NewLibDialog", "modules/BasicIDE/ui/newlibdialog.ui")
 {
@@ -380,9 +372,6 @@ NewObjectDialog::NewObjectDialog(vcl::Window * pParent, ObjectMode::Mode eMode,
             break;
         case ObjectMode::Module:
             SetText( IDE_RESSTR(RID_STR_NEWMOD) );
-            break;
-        case ObjectMode::Method:
-            SetText( IDE_RESSTR(RID_STR_NEWMETH) );
             break;
         case ObjectMode::Dialog:
             SetText( IDE_RESSTR(RID_STR_NEWDLG) );
@@ -435,7 +424,7 @@ sal_Int32 GotoLineDialog::GetLineNumber() const
     return m_pEdit->GetText().toInt32();
 }
 
-IMPL_LINK_NOARG_TYPED(GotoLineDialog, OkButtonHandler, Button*, void)
+IMPL_LINK_NOARG(GotoLineDialog, OkButtonHandler, Button*, void)
 {
     if ( GetLineNumber() )
         EndDialog(1);
@@ -444,7 +433,7 @@ IMPL_LINK_NOARG_TYPED(GotoLineDialog, OkButtonHandler, Button*, void)
 }
 
 // ExportDialog
-IMPL_LINK_NOARG_TYPED(ExportDialog, OkButtonHandler, Button*, void)
+IMPL_LINK_NOARG(ExportDialog, OkButtonHandler, Button*, void)
 {
     mbExportAsPackage = m_pExportAsPackageButton->IsChecked();
     EndDialog(1);
@@ -483,7 +472,7 @@ LibPage::LibPage(vcl::Window * pParent)
 {
     get(m_pBasicsBox, "location");
     get(m_pLibBox, "library");
-    Size aSize(m_pLibBox->LogicToPixel(Size(130, 87), MAP_APPFONT));
+    Size aSize(m_pLibBox->LogicToPixel(Size(130, 87), MapUnit::MapAppFont));
     m_pLibBox->set_height_request(aSize.Height());
     m_pLibBox->set_width_request(aSize.Width());
     get(m_pEditButton, "edit");
@@ -510,7 +499,7 @@ LibPage::LibPage(vcl::Window * pParent)
     m_pLibBox->SetStyle( WB_HSCROLL | WB_BORDER | WB_TABSTOP );
 
     long aTabs[] = { 2, 30, 120 };
-    m_pLibBox->SetTabs( aTabs, MAP_PIXEL );
+    m_pLibBox->SetTabs( aTabs, MapUnit::MapPixel );
 
     FillListBox();
     m_pBasicsBox->SelectEntryPos( 0 );
@@ -607,19 +596,19 @@ void LibPage::DeactivatePage()
 {
 }
 
-IMPL_LINK_TYPED( LibPage, TreeListHighlightHdl, SvTreeListBox *, pBox, void )
+IMPL_LINK( LibPage, TreeListHighlightHdl, SvTreeListBox *, pBox, void )
 {
     if ( pBox->IsSelected( pBox->GetHdlEntry() ) )
         CheckButtons();
 }
 
-IMPL_LINK_NOARG_TYPED( LibPage, BasicSelectHdl, ListBox&, void )
+IMPL_LINK_NOARG( LibPage, BasicSelectHdl, ListBox&, void )
 {
     SetCurLib();
     CheckButtons();
 }
 
-IMPL_LINK_TYPED( LibPage, ButtonHdl, Button *, pButton, void )
+IMPL_LINK( LibPage, ButtonHdl, Button *, pButton, void )
 {
     if (pButton == m_pEditButton)
     {
@@ -627,7 +616,7 @@ IMPL_LINK_TYPED( LibPage, ButtonHdl, Button *, pButton, void )
         SfxRequest aRequest( SID_BASICIDE_APPEAR, SfxCallMode::SYNCHRON, aArgs );
         SfxGetpApp()->ExecuteSlot( aRequest );
 
-        SfxUsrAnyItem aDocItem( SID_BASICIDE_ARG_DOCUMENT_MODEL, makeAny( m_aCurDocument.getDocumentOrNull() ) );
+        SfxUsrAnyItem aDocItem( SID_BASICIDE_ARG_DOCUMENT_MODEL, Any( m_aCurDocument.getDocumentOrNull() ) );
         SvTreeListEntry* pCurEntry = m_pLibBox->GetCurEntry();
         DBG_ASSERT( pCurEntry, "Entry?!" );
         OUString aLibName( SvTabListBox::GetEntryText( pCurEntry, 0 ) );
@@ -693,7 +682,7 @@ IMPL_LINK_TYPED( LibPage, ButtonHdl, Button *, pButton, void )
 
                     if ( bNewProtected != bProtected )
                     {
-                        sal_uLong nPos = (sal_uLong)m_pLibBox->GetModel()->GetAbsPos( pCurEntry );
+                        sal_uLong nPos = m_pLibBox->GetModel()->GetAbsPos( pCurEntry );
                         m_pLibBox->GetModel()->Remove( pCurEntry );
                         ImpInsertLibEntry( aLibName, nPos );
                         m_pLibBox->SetCurEntry( m_pLibBox->GetEntry( nPos ) );
@@ -707,7 +696,7 @@ IMPL_LINK_TYPED( LibPage, ButtonHdl, Button *, pButton, void )
     CheckButtons();
 }
 
-IMPL_LINK_TYPED( LibPage, CheckPasswordHdl, SvxPasswordDialog *, pDlg, bool )
+IMPL_LINK( LibPage, CheckPasswordHdl, SvxPasswordDialog *, pDlg, bool )
 {
     bool bRet = false;
 
@@ -747,18 +736,18 @@ void LibPage::InsertLib()
     // filter
     OUString aTitle(IDEResId(RID_STR_BASIC).toString());
     OUString aFilter;
-    aFilter =  "*.sbl;*.xlc;*.xlb" ;        // library files
-    aFilter += ";*.sdw;*.sxw;*.odt" ;       // text
-    aFilter += ";*.vor;*.stw;*.ott" ;       // text template
-    aFilter += ";*.sgl;*.sxg;*.odm" ;       // master document
-    aFilter += ";*.oth" ;                   // html document template
-    aFilter += ";*.sdc;*.sxc;*.ods" ;       // spreadsheet
-    aFilter += ";*.stc;*.ots" ;             // spreadsheet template
-    aFilter += ";*.sda;*.sxd;*.odg" ;       // drawing
-    aFilter += ";*.std;*.otg" ;             // drawing template
-    aFilter += ";*.sdd;*.sxi;*.odp" ;       // presentation
-    aFilter += ";*.sti;*.otp" ;             // presentation template
-    aFilter += ";*.sxm;*.odf" ;             // formula
+    aFilter = "*.sbl;*.xlc;*.xlb"        // library files
+              ";*.sdw;*.sxw;*.odt"       // text
+              ";*.vor;*.stw;*.ott"       // text template
+              ";*.sgl;*.sxg;*.odm"       // master document
+              ";*.oth"                   // html document template
+              ";*.sdc;*.sxc;*.ods"       // spreadsheet
+              ";*.stc;*.ots"             // spreadsheet template
+              ";*.sda;*.sxd;*.odg"       // drawing
+              ";*.std;*.otg"             // drawing template
+              ";*.sdd;*.sxi;*.odp"       // presentation
+              ";*.sti;*.otp"             // presentation template
+              ";*.sxm;*.odf";            // formula
     xFP->appendFilter( aTitle, aFilter );
 
     // set display directory and filter
@@ -804,13 +793,13 @@ void LibPage::InsertLib()
 
         Reference< XSimpleFileAccess3 > xSFA( SimpleFileAccess::create(comphelper::getProcessComponentContext()) );
 
-        OUString aModURL( aModURLObj.GetMainURL( INetURLObject::NO_DECODE ) );
+        OUString aModURL( aModURLObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
         if ( xSFA->exists( aModURL ) )
         {
             xModLibContImport.set( script::DocumentScriptLibraryContainer::createWithURL(xContext, aModURL), UNO_QUERY );
         }
 
-        OUString aDlgURL( aDlgURLObj.GetMainURL( INetURLObject::NO_DECODE ) );
+        OUString aDlgURL( aDlgURLObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
         if ( xSFA->exists( aDlgURL ) )
         {
             xDlgLibContImport.set( script::DocumentDialogLibraryContainer::createWithURL(xContext, aDlgURL), UNO_QUERY );
@@ -847,7 +836,7 @@ void LibPage::InsertLib()
             }
 
             if ( !pLibDlg )
-                ScopedVclPtrInstance<MessageDialog>(this, IDE_RESSTR(RID_STR_NOLIBINSTORAGE), VCL_MESSAGE_INFO)->Execute();
+                ScopedVclPtrInstance<MessageDialog>(this, IDE_RESSTR(RID_STR_NOLIBINSTORAGE), VclMessageType::Info)->Execute();
             else
             {
                 bool bChanges = false;
@@ -893,9 +882,7 @@ void LibPage::InsertLib()
                                          ( xDlgLibContainer.is() && xDlgLibContainer->hasByName( aLibName ) && xDlgLibContainer->isLibraryReadOnly( aLibName ) && !xDlgLibContainer->isLibraryLink( aLibName ) ) )
                                     {
                                         OUString aErrStr( IDE_RESSTR(RID_STR_REPLACELIB) );
-                                        aErrStr = aErrStr.replaceAll("XX", aLibName);
-                                        aErrStr += "\n";
-                                        aErrStr += IDE_RESSTR(RID_STR_LIBISREADONLY);
+                                        aErrStr = aErrStr.replaceAll("XX", aLibName) + "\n" + IDE_RESSTR(RID_STR_LIBISREADONLY);
                                         ScopedVclPtrInstance<MessageDialog>(this, aErrStr)->Execute();
                                         continue;
                                     }
@@ -910,9 +897,7 @@ void LibPage::InsertLib()
                                         aErrStr = IDE_RESSTR(RID_STR_REFNOTPOSSIBLE);
                                     else
                                         aErrStr = IDE_RESSTR(RID_STR_IMPORTNOTPOSSIBLE);
-                                    aErrStr = aErrStr.replaceAll("XX", aLibName);
-                                    aErrStr += "\n" ;
-                                    aErrStr += IDE_RESSTR(RID_STR_SBXNAMEALLREADYUSED);
+                                    aErrStr = aErrStr.replaceAll("XX", aLibName) + "\n" +IDE_RESSTR(RID_STR_SBXNAMEALLREADYUSED);
                                     ScopedVclPtrInstance<MessageDialog>(this, aErrStr)->Execute();
                                     continue;
                                 }
@@ -970,7 +955,7 @@ void LibPage::InsertLib()
                                         aModStorageURLObj.setExtension( aLibExtension );
                                         aModStorageURLObj.setFinalSlash();
                                     }
-                                    OUString aModStorageURL( aModStorageURLObj.GetMainURL( INetURLObject::NO_DECODE ) );
+                                    OUString aModStorageURL( aModStorageURLObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
 
                                     // create library link
                                     xModLib.set( xModLibContainer->createLibraryLink( aLibName, aModStorageURL, true ), UNO_QUERY);
@@ -1038,7 +1023,7 @@ void LibPage::InsertLib()
                                         aDlgStorageURLObj.setExtension( aLibExtension );
                                         aDlgStorageURLObj.setFinalSlash();
                                     }
-                                    OUString aDlgStorageURL( aDlgStorageURLObj.GetMainURL( INetURLObject::NO_DECODE ) );
+                                    OUString aDlgStorageURL( aDlgStorageURLObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
 
                                     // create library link
                                     xDlgLib.set( xDlgLibContainer->createLibraryLink( aLibName, aDlgStorageURL, true ), UNO_QUERY);
@@ -1166,20 +1151,16 @@ public:
     {}
 
     // Methods
-    virtual Reference< task::XInteractionHandler > SAL_CALL getInteractionHandler()
-        throw(RuntimeException, std::exception) override;
-    virtual Reference< XProgressHandler > SAL_CALL getProgressHandler()
-        throw(RuntimeException, std::exception) override;
+    virtual Reference< task::XInteractionHandler > SAL_CALL getInteractionHandler() override;
+    virtual Reference< XProgressHandler > SAL_CALL getProgressHandler() override;
 };
 
 Reference< task::XInteractionHandler > OLibCommandEnvironment::getInteractionHandler()
-    throw(RuntimeException, std::exception)
 {
     return mxInteraction;
 }
 
 Reference< XProgressHandler > OLibCommandEnvironment::getProgressHandler()
-    throw(RuntimeException, std::exception)
 {
     Reference< XProgressHandler > xRet;
     return xRet;
@@ -1224,12 +1205,12 @@ void LibPage::ExportAsPackage( const OUString& aLibName )
         if( aURL.getExtension().isEmpty() )
             aURL.setExtension( "oxt" );
 
-        OUString aPackageURL( aURL.GetMainURL( INetURLObject::NO_DECODE ) );
+        OUString aPackageURL( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
 
         OUString aTmpPath = SvtPathOptions().GetTempPath();
         INetURLObject aInetObj( aTmpPath );
-        aInetObj.insertName( aLibName, true, INetURLObject::LAST_SEGMENT, INetURLObject::ENCODE_ALL );
-        OUString aSourcePath = aInetObj.GetMainURL( INetURLObject::NO_DECODE );
+        aInetObj.insertName( aLibName, true, INetURLObject::LAST_SEGMENT, INetURLObject::EncodeMechanism::All );
+        OUString aSourcePath = aInetObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
         if( xSFA->exists( aSourcePath ) )
             xSFA->kill( aSourcePath );
         Reference< task::XInteractionHandler > xDummyHandler( new DummyInteractionHandler( xHandler ) );
@@ -1255,27 +1236,27 @@ void LibPage::ExportAsPackage( const OUString& aLibName )
 
         ::ucbhelper::Content destFolderContent( destFolder, xCmdEnv, comphelper::getProcessComponentContext() );
         destFolderContent.transferContent(
-            sourceContent, ::ucbhelper::InsertOperation_COPY,
+            sourceContent, ::ucbhelper::InsertOperation::Copy,
             OUString(), NameClash::OVERWRITE );
 
         INetURLObject aMetaInfInetObj( aTmpPath );
         aMetaInfInetObj.insertName( "META-INF",
-            true, INetURLObject::LAST_SEGMENT, INetURLObject::ENCODE_ALL );
-        OUString aMetaInfFolder = aMetaInfInetObj.GetMainURL( INetURLObject::NO_DECODE );
+            true, INetURLObject::LAST_SEGMENT, INetURLObject::EncodeMechanism::All );
+        OUString aMetaInfFolder = aMetaInfInetObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
         if( xSFA->exists( aMetaInfFolder ) )
             xSFA->kill( aMetaInfFolder );
         xSFA->createFolder( aMetaInfFolder );
 
-        ::std::vector< Sequence<beans::PropertyValue> > manifest;
+        std::vector< Sequence<beans::PropertyValue> > manifest;
         const OUString strMediaType = "MediaType" ;
         const OUString strFullPath = "FullPath" ;
         const OUString strBasicMediaType = "application/vnd.sun.star.basic-library" ;
 
-        OUString fullPath = aLibName;
-        fullPath += "/" ;
+        OUString fullPath = aLibName
+                          + "/" ;
         auto attribs(::comphelper::InitPropertySequence({
-            { strFullPath, makeAny(fullPath) },
-            { strMediaType, makeAny(strBasicMediaType) }
+            { strFullPath, Any(fullPath) },
+            { strMediaType, Any(strBasicMediaType) }
         }));
         manifest.push_back( attribs );
 
@@ -1287,15 +1268,15 @@ void LibPage::ExportAsPackage( const OUString& aLibName )
                 &manifest[ 0 ], manifest.size() ) );
 
         aMetaInfInetObj.insertName( "manifest.xml",
-            true, INetURLObject::LAST_SEGMENT, INetURLObject::ENCODE_ALL );
+            true, INetURLObject::LAST_SEGMENT, INetURLObject::EncodeMechanism::All );
 
         // write buffered pipe data to content:
-        ::ucbhelper::Content manifestContent( aMetaInfInetObj.GetMainURL( INetURLObject::NO_DECODE ), xCmdEnv, comphelper::getProcessComponentContext() );
+        ::ucbhelper::Content manifestContent( aMetaInfInetObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ), xCmdEnv, comphelper::getProcessComponentContext() );
         manifestContent.writeStream( Reference<io::XInputStream>( xPipe, UNO_QUERY_THROW ), true );
 
         ::ucbhelper::Content MetaInfContent( aMetaInfFolder, xCmdEnv, comphelper::getProcessComponentContext() );
         destFolderContent.transferContent(
-            MetaInfContent, ::ucbhelper::InsertOperation_COPY,
+            MetaInfContent, ::ucbhelper::InsertOperation::Copy,
             OUString(), NameClash::OVERWRITE );
 
         if( xSFA->exists( aSourcePath ) )
@@ -1350,7 +1331,7 @@ void LibPage::DeleteCurrent()
     if ( QueryDelLib( aLibName, bIsLibraryLink, this ) )
     {
         // inform BasicIDE
-        SfxUsrAnyItem aDocItem( SID_BASICIDE_ARG_DOCUMENT_MODEL, makeAny( m_aCurDocument.getDocumentOrNull() ) );
+        SfxUsrAnyItem aDocItem( SID_BASICIDE_ARG_DOCUMENT_MODEL, Any( m_aCurDocument.getDocumentOrNull() ) );
         SfxStringItem aLibNameItem( SID_BASICIDE_ARG_LIBNAME, aLibName );
         if (SfxDispatcher* pDispatcher = GetDispatcher())
             pDispatcher->ExecuteList(SID_BASICIDE_LIBREMOVED,
@@ -1369,7 +1350,7 @@ void LibPage::DeleteCurrent()
 
 void LibPage::EndTabDialog()
 {
-    DBG_ASSERT( pTabDlg, "TabDlg nicht gesetzt!" );
+    DBG_ASSERT( pTabDlg, "TabDlg not set!" );
     if ( pTabDlg )
         pTabDlg->EndDialog( 1 );
 }
@@ -1453,7 +1434,7 @@ SvTreeListEntry* LibPage::ImpInsertLibEntry( const OUString& rLibName, sal_uLong
 
     if (bProtected)
     {
-        Image aImage(IDEResId(RID_IMG_LOCKED));
+        Image aImage(BitmapEx(IDEResId(RID_BMP_LOCKED)));
         m_pLibBox->SetExpandedEntryBmp(pNewEntry, aImage);
         m_pLibBox->SetCollapsedEntryBmp(pNewEntry, aImage);
     }
@@ -1544,24 +1525,24 @@ void createLibImpl( vcl::Window* pWin, const ScriptDocument& rDocument,
                         pEntry = pBasicBox->GetParent( pEntry );
                     }
 
-                    sal_uInt16 nMode = pBasicBox->GetMode();
-                    bool bDlgMode = ( nMode & BROWSEMODE_DIALOGS ) && !( nMode & BROWSEMODE_MODULES );
-                    sal_uInt16 nId = bDlgMode ? RID_IMG_DLGLIB : RID_IMG_MODLIB;
+                    BrowseMode nMode = pBasicBox->GetMode();
+                    bool bDlgMode = ( nMode & BrowseMode::Dialogs ) && !( nMode & BrowseMode::Modules );
+                    const sal_uInt16 nId = bDlgMode ? RID_BMP_DLGLIB : RID_BMP_MODLIB;
                     SvTreeListEntry* pNewLibEntry = pBasicBox->AddEntry(
                         aLibName,
-                        Image( IDEResId( nId ) ),
+                        Image(BitmapEx(IDEResId(nId))),
                         pRootEntry, false,
                         o3tl::make_unique<Entry>(OBJ_TYPE_LIBRARY));
-                    DBG_ASSERT( pNewLibEntry, "InsertEntry fehlgeschlagen!" );
+                    DBG_ASSERT( pNewLibEntry, "Insert entry failed!" );
 
                     if( pNewLibEntry )
                     {
                         SvTreeListEntry* pEntry_ = pBasicBox->AddEntry(
                             aModName,
-                            Image( IDEResId( RID_IMG_MODULE ) ),
+                            Image(BitmapEx(IDEResId(RID_BMP_MODULE))),
                             pNewLibEntry, false,
                             o3tl::make_unique<Entry>(OBJ_TYPE_MODULE));
-                        DBG_ASSERT( pEntry_, "InsertEntry fehlgeschlagen!" );
+                        DBG_ASSERT( pEntry_, "Insert entry failed!" );
                         pBasicBox->SetCurEntry( pEntry_ );
                         pBasicBox->Select( pBasicBox->GetCurEntry() );      // OV-Bug?!
                     }

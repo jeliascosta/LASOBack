@@ -40,12 +40,8 @@
 #include <svx/dataaccessdescriptor.hxx>
 
 #include <com/sun/star/sheet/DataImportMode.hpp>
-#include <com/sun/star/table/TableSortField.hpp>
-#include <com/sun/star/table/TableSortFieldType.hpp>
-#include <com/sun/star/sheet/XSubTotalField.hpp>
 #include <com/sun/star/sheet/XDatabaseRanges.hpp>
 #include <com/sun/star/sheet/XDatabaseRange.hpp>
-#include <com/sun/star/table/TableOrientation.hpp>
 #include <comphelper/extract.hxx>
 
 #include <map>
@@ -227,11 +223,11 @@ private:
 
         svx::ODataAccessDescriptor aDescriptor;
         aDescriptor.setDataSource(aParam.aDBName);
-        if (aDescriptor.has(svx::daDataSource))
+        if (aDescriptor.has(svx::DataAccessDescriptorProperty::DataSource))
         {
             sDatabaseName = aParam.aDBName;
         }
-        else if (aDescriptor.has(svx::daConnectionResource))
+        else if (aDescriptor.has(svx::DataAccessDescriptorProperty::ConnectionResource))
         {
             sConRes = aParam.aDBName;
         }
@@ -395,7 +391,7 @@ private:
                 else if (rEntry.IsQueryByNonEmpty())
                     return GetXMLToken(XML_NOEMPTY);
 
-                if (eSearchType == utl::SearchParam::SRCH_REGEXP)
+                if (eSearchType == utl::SearchParam::SearchType::Regexp)
                     return GetXMLToken(XML_MATCH);
                 else
                     return OUString("=");
@@ -409,7 +405,7 @@ private:
             case SC_LESS_EQUAL:
                 return OUString("<=");
             case SC_NOT_EQUAL:
-                if (eSearchType == utl::SearchParam::SRCH_REGEXP)
+                if (eSearchType == utl::SearchParam::SearchType::Regexp)
                     return GetXMLToken(XML_NOMATCH);
                 else
                     return OUString("!=");

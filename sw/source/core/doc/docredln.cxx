@@ -18,6 +18,8 @@
  */
 
 #include <libxml/xmlwriter.h>
+#include <boost/property_tree/json_parser.hpp>
+
 #include <tools/datetimeutils.hxx>
 #include <hintids.hxx>
 #include <svl/itemiter.hxx>
@@ -25,6 +27,11 @@
 #include <editeng/colritem.hxx>
 #include <editeng/udlnitem.hxx>
 #include <editeng/crossedoutitem.hxx>
+#include <comphelper/lok.hxx>
+#include <comphelper/string.hxx>
+#include <LibreOfficeKit/LibreOfficeKitEnums.h>
+#include <unotools/datetime.hxx>
+#include <sfx2/viewsh.hxx>
 #include <swmodule.hxx>
 #include <doc.hxx>
 #include <docredln.hxx>
@@ -43,10 +50,13 @@
 #include <hints.hxx>
 #include <pamtyp.hxx>
 #include <poolfmt.hxx>
+#include <view.hxx>
 #include <viewsh.hxx>
+#include <viscrs.hxx>
 #include <rootfrm.hxx>
-
 #include <comcore.hrc>
+#include <unoport.hxx>
+#include <wrtsh.hxx>
 
 using namespace com::sun::star;
 
@@ -78,13 +88,13 @@ SwExtraRedlineTable::~SwExtraRedlineTable()
 
 void SwExtraRedlineTable::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swExtraRedlineTable"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwExtraRedlineTable"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
 
     for (sal_uInt16 nCurExtraRedlinePos = 0; nCurExtraRedlinePos < GetSize(); ++nCurExtraRedlinePos)
     {
         const SwExtraRedline* pExtraRedline = GetRedline(nCurExtraRedlinePos);
-        xmlTextWriterStartElement(pWriter, BAD_CAST("swExtraRedline"));
+        xmlTextWriterStartElement(pWriter, BAD_CAST("SwExtraRedline"));
         xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
         xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("symbol"), "%s", BAD_CAST(typeid(*pExtraRedline).name()));
         xmlTextWriterEndElement(pWriter);
@@ -120,7 +130,7 @@ bool CheckPosition( const SwPosition* pStt, const SwPosition* pEnd )
 
 bool SwExtraRedlineTable::DeleteAllTableRedlines( SwDoc* pDoc, const SwTable& rTable, bool bSaveInUndo, sal_uInt16 nRedlineTypeToDelete )
 {
-    if( nsRedlineMode_t::REDLINE_IGNOREDELETE_REDLINES & pDoc->getIDocumentRedlineAccess().GetRedlineMode() )
+    if( RedlineFlags::IgnoreDeleteRedlines & pDoc->getIDocumentRedlineAccess().GetRedlineFlags() )
         return false;
 
     bool bChg = false;
@@ -129,7 +139,7 @@ bool SwExtraRedlineTable::DeleteAllTableRedlines( SwDoc* pDoc, const SwTable& rT
     {
         // #TODO - Add 'Undo' support for deleting 'Table Cell' redlines
         /*
-        SwUndoRedline* pUndo = new SwUndoRedline( UNDO_REDLINE, rRange );
+        SwUndoRedline* pUndo = new SwUndoRedline( SwUndoId::REDLINE, rRange );
         if( pUndo->GetRedlSaveCount() )
         {
             GetIDocumentUndoRedo().AppendUndo(pUndo);
@@ -199,7 +209,7 @@ bool SwExtraRedlineTable::DeleteAllTableRedlines( SwDoc* pDoc, const SwTable& rT
 
 bool SwExtraRedlineTable::DeleteTableRowRedline( SwDoc* pDoc, const SwTableLine& rTableLine, bool bSaveInUndo, sal_uInt16 nRedlineTypeToDelete )
 {
-    if( nsRedlineMode_t::REDLINE_IGNOREDELETE_REDLINES & pDoc->getIDocumentRedlineAccess().GetRedlineMode() )
+    if( RedlineFlags::IgnoreDeleteRedlines & pDoc->getIDocumentRedlineAccess().GetRedlineFlags() )
         return false;
 
     bool bChg = false;
@@ -208,7 +218,7 @@ bool SwExtraRedlineTable::DeleteTableRowRedline( SwDoc* pDoc, const SwTableLine&
     {
         // #TODO - Add 'Undo' support for deleting 'Table Cell' redlines
         /*
-        SwUndoRedline* pUndo = new SwUndoRedline( UNDO_REDLINE, rRange );
+        SwUndoRedline* pUndo = new SwUndoRedline( SwUndoId::REDLINE, rRange );
         if( pUndo->GetRedlSaveCount() )
         {
             GetIDocumentUndoRedo().AppendUndo(pUndo);
@@ -246,7 +256,7 @@ bool SwExtraRedlineTable::DeleteTableRowRedline( SwDoc* pDoc, const SwTableLine&
 
 bool SwExtraRedlineTable::DeleteTableCellRedline( SwDoc* pDoc, const SwTableBox& rTableBox, bool bSaveInUndo, sal_uInt16 nRedlineTypeToDelete )
 {
-    if( nsRedlineMode_t::REDLINE_IGNOREDELETE_REDLINES & pDoc->getIDocumentRedlineAccess().GetRedlineMode() )
+    if( RedlineFlags::IgnoreDeleteRedlines & pDoc->getIDocumentRedlineAccess().GetRedlineFlags() )
         return false;
 
     bool bChg = false;
@@ -255,7 +265,7 @@ bool SwExtraRedlineTable::DeleteTableCellRedline( SwDoc* pDoc, const SwTableBox&
     {
         // #TODO - Add 'Undo' support for deleting 'Table Cell' redlines
         /*
-        SwUndoRedline* pUndo = new SwUndoRedline( UNDO_REDLINE, rRange );
+        SwUndoRedline* pUndo = new SwUndoRedline( SwUndoId::REDLINE, rRange );
         if( pUndo->GetRedlSaveCount() )
         {
             GetIDocumentUndoRedo().AppendUndo(pUndo);
@@ -291,19 +301,74 @@ bool SwExtraRedlineTable::DeleteTableCellRedline( SwDoc* pDoc, const SwTableBox&
     return bChg;
 }
 
+/// Emits LOK notification about one addition / removal of a redline item.
+void SwRedlineTable::LOKRedlineNotification(RedlineNotification nType, SwRangeRedline* pRedline)
+{
+    if (!comphelper::LibreOfficeKit::isActive())
+        return;
+
+    boost::property_tree::ptree aRedline;
+    aRedline.put("action", (nType == RedlineNotification::Add ? "Add" :
+                            (nType == RedlineNotification::Remove ? "Remove" :
+                             (nType == RedlineNotification::Modify ? "Modify" : "???"))));
+    aRedline.put("index", pRedline->GetId());
+    aRedline.put("author", pRedline->GetAuthorString(1).toUtf8().getStr());
+    aRedline.put("type", nsRedlineType_t::SwRedlineTypeToOUString(pRedline->GetRedlineData().GetType()).toUtf8().getStr());
+    aRedline.put("comment", pRedline->GetRedlineData().GetComment().toUtf8().getStr());
+    aRedline.put("description", pRedline->GetDescr().toUtf8().getStr());
+    OUString sDateTime = utl::toISO8601(pRedline->GetRedlineData().GetTimeStamp().GetUNODateTime());
+    aRedline.put("dateTime", sDateTime.toUtf8().getStr());
+
+    SwPosition* pStartPos = pRedline->Start();
+    SwPosition* pEndPos = pRedline->End();
+    SwContentNode* pContentNd = pRedline->GetContentNode();
+    SwView* pView = dynamic_cast<SwView*>(SfxViewShell::Current());
+    if (pView && pContentNd)
+    {
+        SwShellCursor aCursor(pView->GetWrtShell(), *pStartPos);
+        aCursor.SetMark();
+        aCursor.GetMark()->nNode = *pContentNd;
+        aCursor.GetMark()->nContent.Assign(pContentNd, pEndPos->nContent.GetIndex());
+
+        aCursor.FillRects();
+
+        SwRects* pRects(&aCursor);
+        std::vector<OString> aRects;
+        for(SwRect& rNextRect : *pRects)
+            aRects.push_back(rNextRect.SVRect().toString());
+
+        const OString sRects = comphelper::string::join("; ", aRects);
+        aRedline.put("textRange", sRects.getStr());
+    }
+
+    boost::property_tree::ptree aTree;
+    aTree.add_child("redline", aRedline);
+    std::stringstream aStream;
+    boost::property_tree::write_json(aStream, aTree);
+    std::string aPayload = aStream.str();
+
+    SfxViewShell* pViewShell = SfxViewShell::GetFirst();
+    while (pViewShell)
+    {
+        pViewShell->libreOfficeKitViewCallback(nType == RedlineNotification::Modify ? LOK_CALLBACK_REDLINE_TABLE_ENTRY_MODIFIED : LOK_CALLBACK_REDLINE_TABLE_SIZE_CHANGED, aPayload.c_str());
+        pViewShell = SfxViewShell::GetNext(*pViewShell);
+    }
+}
+
 bool SwRedlineTable::Insert( SwRangeRedline* p )
 {
     if( p->HasValidRange() )
     {
         std::pair<vector_type::const_iterator, bool> rv = maVector.insert( p );
-        size_t nP = rv.first - begin();
+        size_type nP = rv.first - begin();
+        LOKRedlineNotification(RedlineNotification::Add, p);
         p->CallDisplayFunc(nP);
         return rv.second;
     }
     return InsertWithValidRanges( p );
 }
 
-bool SwRedlineTable::Insert( SwRangeRedline* p, sal_uInt16& rP )
+bool SwRedlineTable::Insert( SwRangeRedline* p, size_type& rP )
 {
     if( p->HasValidRange() )
     {
@@ -315,7 +380,7 @@ bool SwRedlineTable::Insert( SwRangeRedline* p, sal_uInt16& rP )
     return InsertWithValidRanges( p, &rP );
 }
 
-bool SwRedlineTable::InsertWithValidRanges( SwRangeRedline* p, sal_uInt16* pInsPos )
+bool SwRedlineTable::InsertWithValidRanges( SwRangeRedline* p, size_type* pInsPos )
 {
     // Create valid "sub-ranges" from the Selection
     bool bAnyIns = false;
@@ -335,7 +400,7 @@ bool SwRedlineTable::InsertWithValidRanges( SwRangeRedline* p, sal_uInt16* pInsP
     }
 
     SwRangeRedline* pNew = nullptr;
-    sal_uInt16 nInsPos;
+    size_type nInsPos;
 
     if( aNewStt < *pEnd )
         do {
@@ -437,25 +502,26 @@ SwRedlineTable::~SwRedlineTable()
    maVector.DeleteAndDestroyAll();
 }
 
-sal_uInt16 SwRedlineTable::GetPos(const SwRangeRedline* p) const
+SwRedlineTable::size_type SwRedlineTable::GetPos(const SwRangeRedline* p) const
 {
     vector_type::const_iterator it = maVector.find(const_cast<SwRangeRedline* const>(p));
     if( it == maVector.end() )
-        return USHRT_MAX;
+        return npos;
     return it - maVector.begin();
 }
 
 bool SwRedlineTable::Remove( const SwRangeRedline* p )
 {
-    const sal_uInt16 nPos = GetPos(p);
-    if (nPos == USHRT_MAX)
+    const size_type nPos = GetPos(p);
+    if (nPos == npos)
         return false;
     Remove(nPos);
     return true;
 }
 
-void SwRedlineTable::Remove( sal_uInt16 nP )
+void SwRedlineTable::Remove( size_type nP )
 {
+    LOKRedlineNotification(RedlineNotification::Remove, maVector[nP]);
     SwDoc* pDoc = nullptr;
     if( !nP && 1 == size() )
         pDoc = maVector.front()->GetDoc();
@@ -473,14 +539,17 @@ void SwRedlineTable::DeleteAndDestroyAll()
     DeleteAndDestroy(0, size());
 }
 
-void SwRedlineTable::DeleteAndDestroy( sal_uInt16 nP, sal_uInt16 nL )
+void SwRedlineTable::DeleteAndDestroy( size_type nP, size_type nL )
 {
     SwDoc* pDoc = nullptr;
     if( !nP && nL && nL == size() )
         pDoc = maVector.front()->GetDoc();
 
     for( vector_type::const_iterator it = maVector.begin() + nP; it != maVector.begin() + nP + nL; ++it )
+    {
+        LOKRedlineNotification(RedlineNotification::Remove, *it);
         delete *it;
+    }
     maVector.erase( maVector.begin() + nP, maVector.begin() + nP + nL );
 
     SwViewShell* pSh;
@@ -489,29 +558,29 @@ void SwRedlineTable::DeleteAndDestroy( sal_uInt16 nP, sal_uInt16 nL )
         pSh->InvalidateWindows( SwRect( 0, 0, SAL_MAX_INT32, SAL_MAX_INT32 ) );
 }
 
-sal_uInt16 SwRedlineTable::FindNextOfSeqNo( sal_uInt16 nSttPos ) const
+SwRedlineTable::size_type SwRedlineTable::FindNextOfSeqNo( size_type nSttPos ) const
 {
-    return static_cast<size_t>(nSttPos) + 1 < size()
+    return nSttPos + 1 < size()
                 ? FindNextSeqNo( operator[]( nSttPos )->GetSeqNo(), nSttPos+1 )
-                : USHRT_MAX;
+                : npos;
 }
 
-sal_uInt16 SwRedlineTable::FindPrevOfSeqNo( sal_uInt16 nSttPos ) const
+SwRedlineTable::size_type SwRedlineTable::FindPrevOfSeqNo( size_type nSttPos ) const
 {
     return nSttPos ? FindPrevSeqNo( operator[]( nSttPos )->GetSeqNo(), nSttPos-1 )
-                   : USHRT_MAX;
+                   : npos;
 }
 
 /// Find the next or preceding Redline with the same seq.no.
 /// We can limit the search using look ahead (0 searches the whole array).
-sal_uInt16 SwRedlineTable::FindNextSeqNo( sal_uInt16 nSeqNo, sal_uInt16 nSttPos ) const
+SwRedlineTable::size_type SwRedlineTable::FindNextSeqNo( sal_uInt16 nSeqNo, size_type nSttPos ) const
 {
-    sal_uInt16 nLookahead = 20;
-    sal_uInt16 nRet = USHRT_MAX;
+    auto const nLookahead = 20;
+    size_type nRet = npos;
     if( nSeqNo && nSttPos < size() )
     {
-        size_t nEnd = size();
-        const size_t nTmp = static_cast<size_t>(nSttPos)+ static_cast<size_t>(nLookahead);
+        size_type nEnd = size();
+        const size_type nTmp = nSttPos + nLookahead;
         if (nTmp < nEnd)
         {
             nEnd = nTmp;
@@ -527,13 +596,13 @@ sal_uInt16 SwRedlineTable::FindNextSeqNo( sal_uInt16 nSeqNo, sal_uInt16 nSttPos 
     return nRet;
 }
 
-sal_uInt16 SwRedlineTable::FindPrevSeqNo( sal_uInt16 nSeqNo, sal_uInt16 nSttPos ) const
+SwRedlineTable::size_type SwRedlineTable::FindPrevSeqNo( sal_uInt16 nSeqNo, size_type nSttPos ) const
 {
-    sal_uInt16 nLookahead = 20;
-    sal_uInt16 nRet = USHRT_MAX;
+    auto const nLookahead = 20;
+    size_type nRet = npos;
     if( nSeqNo && nSttPos < size() )
     {
-        size_t nEnd = 0;
+        size_type nEnd = 0;
         if( nSttPos > nLookahead )
             nEnd = nSttPos - nLookahead;
 
@@ -549,7 +618,7 @@ sal_uInt16 SwRedlineTable::FindPrevSeqNo( sal_uInt16 nSeqNo, sal_uInt16 nSttPos 
 }
 
 const SwRangeRedline* SwRedlineTable::FindAtPosition( const SwPosition& rSttPos,
-                                        sal_uInt16& rPos,
+                                        size_type& rPos,
                                         bool bNext ) const
 {
     const SwRangeRedline* pFnd = nullptr;
@@ -578,7 +647,7 @@ const SwRangeRedline* SwRedlineTable::FindAtPosition( const SwPosition& rSttPos,
 
 void SwRedlineTable::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swRedlineTable"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwRedlineTable"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
 
     for (SwRedlineTable::size_type nCurRedlinePos = 0; nCurRedlinePos < size(); ++nCurRedlinePos)
@@ -606,17 +675,16 @@ SwRedlineExtraData_FormatColl::SwRedlineExtraData_FormatColl( const OUString& rC
     : sFormatNm(rColl), pSet(nullptr), nPoolId(nPoolFormatId)
 {
     if( pItemSet && pItemSet->Count() )
-        pSet = new SfxItemSet( *pItemSet );
+        pSet.reset( new SfxItemSet( *pItemSet ) );
 }
 
 SwRedlineExtraData_FormatColl::~SwRedlineExtraData_FormatColl()
 {
-    delete pSet;
 }
 
 SwRedlineExtraData* SwRedlineExtraData_FormatColl::CreateNew() const
 {
-    return new SwRedlineExtraData_FormatColl( sFormatNm, nPoolId, pSet );
+    return new SwRedlineExtraData_FormatColl( sFormatNm, nPoolId, pSet.get() );
 }
 
 void SwRedlineExtraData_FormatColl::Reject( SwPaM& rPam ) const
@@ -666,11 +734,10 @@ bool SwRedlineExtraData_FormatColl::operator == ( const SwRedlineExtraData& r) c
 
 void SwRedlineExtraData_FormatColl::SetItemSet( const SfxItemSet& rSet )
 {
-    delete pSet;
     if( rSet.Count() )
-        pSet = new SfxItemSet( rSet );
+        pSet.reset( new SfxItemSet( rSet ) );
     else
-        pSet = nullptr;
+        pSet.reset();
 }
 
 SwRedlineExtraData_Format::SwRedlineExtraData_Format( const SfxItemSet& rSet )
@@ -706,8 +773,8 @@ void SwRedlineExtraData_Format::Reject( SwPaM& rPam ) const
 {
     SwDoc* pDoc = rPam.GetDoc();
 
-    RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)(eOld & ~(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_IGNORE)));
+    RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(eOld & ~RedlineFlags(RedlineFlags::On | RedlineFlags::Ignore));
 
     // Actually we need to reset the Attribute here!
     std::vector<sal_uInt16>::const_iterator it;
@@ -717,7 +784,7 @@ void SwRedlineExtraData_Format::Reject( SwPaM& rPam ) const
             SetAttrMode::DONTEXPAND );
     }
 
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
 }
 
 bool SwRedlineExtraData_Format::operator == ( const SwRedlineExtraData& rCmp ) const
@@ -737,10 +804,9 @@ bool SwRedlineExtraData_Format::operator == ( const SwRedlineExtraData& rCmp ) c
 }
 
 SwRedlineExtraData_FormattingChanges::SwRedlineExtraData_FormattingChanges( const SfxItemSet* pItemSet )
-    : pSet(nullptr)
 {
     if( pItemSet && pItemSet->Count() )
-        pSet = new SfxItemSet( *pItemSet );
+        pSet.reset( new SfxItemSet( *pItemSet ) );
 }
 
 SwRedlineExtraData_FormattingChanges::SwRedlineExtraData_FormattingChanges( const SwRedlineExtraData_FormattingChanges& rCpy )
@@ -749,17 +815,16 @@ SwRedlineExtraData_FormattingChanges::SwRedlineExtraData_FormattingChanges( cons
     // Checking pointer pSet before accessing it for Count
     if( rCpy.pSet && rCpy.pSet->Count() )
     {
-        pSet = new SfxItemSet( *(rCpy.pSet) );
+        pSet.reset( new SfxItemSet( *(rCpy.pSet) ) );
     }
     else
     {
-        pSet = nullptr;
+        pSet.reset();
     }
 }
 
 SwRedlineExtraData_FormattingChanges::~SwRedlineExtraData_FormattingChanges()
 {
-    delete pSet;
 }
 
 SwRedlineExtraData* SwRedlineExtraData_FormattingChanges::CreateNew() const
@@ -789,12 +854,11 @@ bool SwRedlineExtraData_FormattingChanges::operator == ( const SwRedlineExtraDat
     return false;
 }
 
-SwRedlineData::SwRedlineData( RedlineType_t eT, sal_uInt16 nAut )
+SwRedlineData::SwRedlineData( RedlineType_t eT, std::size_t nAut )
     : pNext( nullptr ), pExtraData( nullptr ),
     aStamp( DateTime::SYSTEM ),
     eType( eT ), nAuthor( nAut ), nSeqNo( 0 )
 {
-    aStamp.SetSec( 0 );
     aStamp.SetNanoSec( 0 );
 }
 
@@ -812,9 +876,9 @@ SwRedlineData::SwRedlineData(
 }
 
 // For sw3io: We now own pNext!
-SwRedlineData::SwRedlineData(RedlineType_t eT, sal_uInt16 nAut, const DateTime& rDT,
-    const OUString& rCmnt, SwRedlineData *pNxt, SwRedlineExtraData* pData)
-    : pNext(pNxt), pExtraData(pData), sComment(rCmnt), aStamp(rDT),
+SwRedlineData::SwRedlineData(RedlineType_t eT, std::size_t nAut, const DateTime& rDT,
+    const OUString& rCmnt, SwRedlineData *pNxt)
+    : pNext(pNxt), pExtraData(nullptr), sComment(rCmnt), aStamp(rDT),
     eType(eT), nAuthor(nAut), nSeqNo(0)
 {
 }
@@ -823,6 +887,24 @@ SwRedlineData::~SwRedlineData()
 {
     delete pExtraData;
     delete pNext;
+}
+
+bool SwRedlineData::CanCombine(const SwRedlineData& rCmp) const
+{
+    DateTime aTime = GetTimeStamp();
+    aTime.SetSec(0);
+    DateTime aCompareTime = rCmp.GetTimeStamp();
+    aCompareTime.SetSec(0);
+    return nAuthor == rCmp.nAuthor &&
+            eType == rCmp.eType &&
+            sComment == rCmp.sComment &&
+            aTime == aCompareTime &&
+            (( !pNext && !rCmp.pNext ) ||
+                ( pNext && rCmp.pNext &&
+                pNext->CanCombine( *rCmp.pNext ))) &&
+            (( !pExtraData && !rCmp.pExtraData ) ||
+                ( pExtraData && rCmp.pExtraData &&
+                    *pExtraData == *rCmp.pExtraData ));
 }
 
 /// ExtraData is copied. The Pointer's ownership is thus NOT transferred
@@ -843,12 +925,15 @@ OUString SwRedlineData::GetDescr() const
     return SW_RES(STR_REDLINE_INSERT + GetType());
 }
 
+sal_uInt32 SwRangeRedline::m_nLastId = 1;
+
 SwRangeRedline::SwRangeRedline(RedlineType_t eTyp, const SwPaM& rPam )
     : SwPaM( *rPam.GetMark(), *rPam.GetPoint() ),
     pRedlineData( new SwRedlineData( eTyp, GetDoc()->getIDocumentRedlineAccess().GetRedlineAuthor() ) ),
-    pContentSect( nullptr )
+    pContentSect( nullptr ),
+    m_nId( m_nLastId++ )
 {
-    bDelLastPara = bIsLastParaDelete = false;
+    bDelLastPara = false;
     bIsVisible = true;
     if( !rPam.HasMark() )
         DeleteMark();
@@ -857,9 +942,10 @@ SwRangeRedline::SwRangeRedline(RedlineType_t eTyp, const SwPaM& rPam )
 SwRangeRedline::SwRangeRedline( const SwRedlineData& rData, const SwPaM& rPam )
     : SwPaM( *rPam.GetMark(), *rPam.GetPoint() ),
     pRedlineData( new SwRedlineData( rData )),
-    pContentSect( nullptr )
+    pContentSect( nullptr ),
+    m_nId( m_nLastId++ )
 {
-    bDelLastPara = bIsLastParaDelete = false;
+    bDelLastPara = false;
     bIsVisible = true;
     if( !rPam.HasMark() )
         DeleteMark();
@@ -868,18 +954,20 @@ SwRangeRedline::SwRangeRedline( const SwRedlineData& rData, const SwPaM& rPam )
 SwRangeRedline::SwRangeRedline( const SwRedlineData& rData, const SwPosition& rPos )
     : SwPaM( rPos ),
     pRedlineData( new SwRedlineData( rData )),
-    pContentSect( nullptr )
+    pContentSect( nullptr ),
+    m_nId( m_nLastId++ )
 {
-    bDelLastPara = bIsLastParaDelete = false;
+    bDelLastPara = false;
     bIsVisible = true;
 }
 
 SwRangeRedline::SwRangeRedline( const SwRangeRedline& rCpy )
     : SwPaM( *rCpy.GetMark(), *rCpy.GetPoint() ),
     pRedlineData( new SwRedlineData( *rCpy.pRedlineData )),
-    pContentSect( nullptr )
+    pContentSect( nullptr ),
+    m_nId( rCpy.m_nId )
 {
-    bDelLastPara = bIsLastParaDelete = false;
+    bDelLastPara = false;
     bIsVisible = true;
     if( !rCpy.HasMark() )
         DeleteMark();
@@ -895,6 +983,38 @@ SwRangeRedline::~SwRangeRedline()
         delete pContentSect;
     }
     delete pRedlineData;
+}
+
+void SwRangeRedline::MaybeNotifyModification()
+{
+    if (!comphelper::LibreOfficeKit::isActive())
+        return;
+
+    const SwRedlineTable& rRedTable = GetDoc()->getIDocumentRedlineAccess().GetRedlineTable();
+    for (SwRedlineTable::size_type i = 0; i < rRedTable.size(); ++i)
+    {
+        if (rRedTable[i] == this)
+        {
+            SwRedlineTable::LOKRedlineNotification(RedlineNotification::Modify, this);
+            break;
+        }
+    }
+}
+
+void SwRangeRedline::SetStart( const SwPosition& rPos, SwPosition* pSttPtr )
+{
+    if( !pSttPtr ) pSttPtr = Start();
+    *pSttPtr = rPos;
+
+    MaybeNotifyModification();
+}
+
+void SwRangeRedline::SetEnd( const SwPosition& rPos, SwPosition* pEndPtr )
+{
+    if( !pEndPtr ) pEndPtr = End();
+    *pEndPtr = rPos;
+
+    MaybeNotifyModification();
 }
 
 /// Do we have a valid Selection?
@@ -915,18 +1035,13 @@ bool SwRangeRedline::HasValidRange() const
 
 void SwRangeRedline::CallDisplayFunc(size_t nMyPos)
 {
-    switch( nsRedlineMode_t::REDLINE_SHOW_MASK & GetDoc()->getIDocumentRedlineAccess().GetRedlineMode() )
-    {
-    case nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE:
+    RedlineFlags eShow = RedlineFlags::ShowMask & GetDoc()->getIDocumentRedlineAccess().GetRedlineFlags();
+    if (eShow == (RedlineFlags::ShowInsert | RedlineFlags::ShowDelete))
         Show(0, nMyPos);
-        break;
-    case nsRedlineMode_t::REDLINE_SHOW_INSERT:
+    else if (eShow == RedlineFlags::ShowInsert)
         Hide(0, nMyPos);
-        break;
-    case nsRedlineMode_t::REDLINE_SHOW_DELETE:
+    else if (eShow == RedlineFlags::ShowDelete)
         ShowOriginal(0, nMyPos);
-        break;
-    }
 }
 
 void SwRangeRedline::Show(sal_uInt16 nLoop, size_t nMyPos)
@@ -934,8 +1049,8 @@ void SwRangeRedline::Show(sal_uInt16 nLoop, size_t nMyPos)
     if( 1 <= nLoop )
     {
         SwDoc* pDoc = GetDoc();
-        RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_IGNORE));
+        RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(eOld | RedlineFlags::Ignore);
         ::sw::UndoGuard const undoGuard(pDoc->GetIDocumentUndoRedo());
 
         switch( GetType() )
@@ -957,15 +1072,15 @@ void SwRangeRedline::Show(sal_uInt16 nLoop, size_t nMyPos)
         default:
             break;
         }
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     }
 }
 
 void SwRangeRedline::Hide(sal_uInt16 nLoop, size_t nMyPos)
 {
     SwDoc* pDoc = GetDoc();
-    RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_IGNORE));
+    RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(eOld | RedlineFlags::Ignore);
     ::sw::UndoGuard const undoGuard(pDoc->GetIDocumentUndoRedo());
 
     switch( GetType() )
@@ -994,16 +1109,16 @@ void SwRangeRedline::Hide(sal_uInt16 nLoop, size_t nMyPos)
     default:
         break;
     }
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
 }
 
 void SwRangeRedline::ShowOriginal(sal_uInt16 nLoop, size_t nMyPos)
 {
     SwDoc* pDoc = GetDoc();
-    RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
+    RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
     SwRedlineData* pCur;
 
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_IGNORE));
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(eOld | RedlineFlags::Ignore);
     ::sw::UndoGuard const undoGuard(pDoc->GetIDocumentUndoRedo());
 
     // Determine the Type, it's the first on Stack
@@ -1036,7 +1151,7 @@ void SwRangeRedline::ShowOriginal(sal_uInt16 nLoop, size_t nMyPos)
     default:
         break;
     }
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
 }
 
 void SwRangeRedline::InvalidateRange()       // trigger the Layout
@@ -1148,7 +1263,7 @@ void SwRangeRedline::MoveToSection()
             SwNodeIndex aNdIdx( *pTextNd );
             SwPosition aPos( aNdIdx, SwIndex( pTextNd ));
             if( pCSttNd && pCEndNd )
-                pDoc->getIDocumentContentOperations().MoveAndJoin( aPam, aPos, SwMoveFlags::DEFAULT );
+                pDoc->getIDocumentContentOperations().MoveAndJoin( aPam, aPos );
             else
             {
                 if( pCSttNd && !pCEndNd )
@@ -1316,7 +1431,6 @@ void SwRangeRedline::DelCopyOfSection(size_t nMyPos)
                     }
                 }
 
-                SwPosition aEnd( *pEnd );
                 *GetPoint() = *pEnd;
                 *GetMark() = *pEnd;
                 DeleteMark();
@@ -1519,7 +1633,7 @@ sal_uInt16 SwRangeRedline::GetStackCount() const
     return nRet;
 }
 
-sal_uInt16 SwRangeRedline::GetAuthor( sal_uInt16 nPos ) const
+std::size_t SwRangeRedline::GetAuthor( sal_uInt16 nPos ) const
 {
     return GetRedlineData(nPos).nAuthor;
 }
@@ -1552,18 +1666,20 @@ bool SwRangeRedline::operator<( const SwRangeRedline& rCmp ) const
     return *Start() == *rCmp.Start() && *End() < *rCmp.End();
 }
 
-const SwRedlineData & SwRangeRedline::GetRedlineData(sal_uInt16 nPos) const
+const SwRedlineData & SwRangeRedline::GetRedlineData(const sal_uInt16 nPos) const
 {
     SwRedlineData * pCur = pRedlineData;
 
-    while (nPos > 0 && nullptr != pCur->pNext)
+    sal_uInt16 nP = nPos;
+
+    while (nP > 0 && nullptr != pCur->pNext)
     {
         pCur = pCur->pNext;
 
-        nPos--;
+        nP--;
     }
 
-    OSL_ENSURE( 0 == nPos, "Pos is too big" );
+    SAL_WARN_IF( nP != 0, "sw.core", "Pos " << nPos << " is " << nP << " too big");
 
     return *pCur;
 }
@@ -1606,12 +1722,13 @@ OUString SwRangeRedline::GetDescr()
 
 void SwRangeRedline::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swRangeRedline"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwRangeRedline"));
 
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("id"), BAD_CAST(OString::number(GetSeqNo()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("author"), BAD_CAST(SW_MOD()->GetRedlineAuthor(GetAuthor()).toUtf8().getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("date"), BAD_CAST(DateTimeToOString(GetTimeStamp()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("descr"), BAD_CAST(const_cast<SwRangeRedline*>(this)->GetDescr().toUtf8().getStr()));
 
     OString sRedlineType;
     switch (GetType())
@@ -1694,4 +1811,3 @@ SwTableCellRedline::~SwTableCellRedline()
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */
-

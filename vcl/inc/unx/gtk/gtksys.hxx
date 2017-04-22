@@ -23,13 +23,13 @@ class GtkSalSystem : public SalGenericSystem
     ScreenMonitors_t maScreenMonitors;
 public:
              GtkSalSystem();
-    virtual ~GtkSalSystem();
+    virtual ~GtkSalSystem() override;
     static   GtkSalSystem *GetSingleton();
 
     virtual bool          IsUnifiedDisplay() override;
     virtual unsigned int  GetDisplayScreenCount() override;
     virtual unsigned int  GetDisplayBuiltInScreen() override;
-    virtual Rectangle     GetDisplayScreenPosSizePixel   (unsigned int nScreen) override;
+    virtual tools::Rectangle     GetDisplayScreenPosSizePixel   (unsigned int nScreen) override;
     virtual int           ShowNativeDialog (const OUString&              rTitle,
                                             const OUString&              rMessage,
                                             const std::list< OUString >& rButtons,

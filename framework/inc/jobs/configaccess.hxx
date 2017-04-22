@@ -33,10 +33,10 @@ namespace framework{
 /**
     @short  implements a simple configuration access
     @descr  Sometimes it's better to have direct config access
-            instead of using soecialize config items of the svtools
+            instead of using specialized config items of the svtools
             project. This class can wrapp such configuration access.
  */
-class FWI_DLLPUBLIC ConfigAccess
+class FWI_DLLPUBLIC ConfigAccess final
 {
 
     public:
@@ -78,7 +78,7 @@ class FWI_DLLPUBLIC ConfigAccess
 
                  ConfigAccess( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                                const OUString&                                    sRoot );
-        virtual ~ConfigAccess();
+                 ~ConfigAccess();
 
         void      open   ( EOpenMode eMode );
         void      close  (                 );

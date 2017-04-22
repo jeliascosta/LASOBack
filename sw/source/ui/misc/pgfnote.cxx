@@ -18,6 +18,7 @@
  */
 
 #include <cmdid.h>
+#include <fmtfsize.hxx>
 #include <hintids.hxx>
 #include <svx/dialmgr.hxx>
 #include <svx/dialogs.hrc>
@@ -52,19 +53,19 @@ const sal_uInt16 SwFootNotePage::aPageRg[] = {
 
 // handler to switch between the different possibilities how the footnote
 // region's height can be set.
-IMPL_LINK_NOARG_TYPED(SwFootNotePage, HeightPage, Button*, void)
+IMPL_LINK_NOARG(SwFootNotePage, HeightPage, Button*, void)
 {
     m_pMaxHeightEdit->Enable(false);
 }
 
-IMPL_LINK_NOARG_TYPED(SwFootNotePage, HeightMetric, Button*, void)
+IMPL_LINK_NOARG(SwFootNotePage, HeightMetric, Button*, void)
 {
     m_pMaxHeightEdit->Enable();
     m_pMaxHeightEdit->GrabFocus();
 }
 
 // handler limit values
-IMPL_LINK_NOARG_TYPED(SwFootNotePage, HeightModify, Control&, void)
+IMPL_LINK_NOARG(SwFootNotePage, HeightModify, Control&, void)
 {
     m_pMaxHeightEdit->SetMax(m_pMaxHeightEdit->Normalize(lMaxHeight -
             (m_pDistEdit->Denormalize(m_pDistEdit->GetValue(FUNIT_TWIP)) +
@@ -84,18 +85,18 @@ IMPL_LINK_NOARG_TYPED(SwFootNotePage, HeightModify, Control&, void)
             FUNIT_TWIP);
 }
 
-IMPL_LINK_NOARG_TYPED(SwFootNotePage, LineWidthChanged_Impl, Edit&, void)
+IMPL_LINK_NOARG(SwFootNotePage, LineWidthChanged_Impl, Edit&, void)
 {
     sal_Int64 nVal = static_cast<sal_Int64>(MetricField::ConvertDoubleValue(
                 m_pLineWidthEdit->GetValue( ),
                 m_pLineWidthEdit->GetDecimalDigits( ),
-                m_pLineWidthEdit->GetUnit(), MAP_TWIP ));
+                m_pLineWidthEdit->GetUnit(), MapUnit::MapTwip ));
     m_pLineTypeBox->SetWidth( nVal );
 }
 
-IMPL_LINK_NOARG_TYPED(SwFootNotePage, LineColorSelected_Impl, ListBox&, void)
+IMPL_LINK(SwFootNotePage, LineColorSelected_Impl, SvxColorListBox&, rColorBox, void)
 {
-    m_pLineTypeBox->SetColor( m_pLineColorBox->GetSelectEntryColor() );
+    m_pLineTypeBox->SetColor(rColorBox.GetSelectEntryColor());
 }
 
 SwFootNotePage::SwFootNotePage(vcl::Window *pParent, const SfxItemSet &rSet)
@@ -191,7 +192,7 @@ void SwFootNotePage::Reset(const SfxItemSet *rSet)
 
     sal_Int64 nWidthPt = static_cast<sal_Int64>(MetricField::ConvertDoubleValue(
             sal_Int64( pFootnoteInfo->GetLineWidth() ), m_pLineWidthEdit->GetDecimalDigits(),
-            MAP_TWIP, m_pLineWidthEdit->GetUnit( ) ));
+            MapUnit::MapTwip, m_pLineWidthEdit->GetUnit( ) ));
     m_pLineWidthEdit->SetValue( nWidthPt );
 
     // Separator style
@@ -199,53 +200,21 @@ void SwFootNotePage::Reset(const SfxItemSet *rSet)
 
     m_pLineTypeBox->SetNone(SW_RESSTR(SW_STR_NONE));
     m_pLineTypeBox->InsertEntry(
-        ::editeng::SvxBorderLine::getWidthImpl(table::BorderLineStyle::SOLID),
-        table::BorderLineStyle::SOLID );
+        ::editeng::SvxBorderLine::getWidthImpl(SvxBorderLineStyle::SOLID),
+        SvxBorderLineStyle::SOLID );
     m_pLineTypeBox->InsertEntry(
-        ::editeng::SvxBorderLine::getWidthImpl(table::BorderLineStyle::DOTTED),
-        table::BorderLineStyle::DOTTED );
+        ::editeng::SvxBorderLine::getWidthImpl(SvxBorderLineStyle::DOTTED),
+        SvxBorderLineStyle::DOTTED );
     m_pLineTypeBox->InsertEntry(
-        ::editeng::SvxBorderLine::getWidthImpl(table::BorderLineStyle::DASHED),
-        table::BorderLineStyle::DASHED );
+        ::editeng::SvxBorderLine::getWidthImpl(SvxBorderLineStyle::DASHED),
+        SvxBorderLineStyle::DASHED );
     m_pLineTypeBox->SetWidth( pFootnoteInfo->GetLineWidth( ) );
     m_pLineTypeBox->SelectEntry( pFootnoteInfo->GetLineStyle() );
 
     // Separator Color
-    SfxObjectShell*     pDocSh      = SfxObjectShell::Current();
-    XColorListRef pColorList;
-
-    OSL_ENSURE( pDocSh, "DocShell not found!" );
-
-    if ( pDocSh )
-    {
-        const SfxPoolItem* pColorItem = pDocSh->GetItem( SID_COLOR_TABLE );
-        if ( pColorItem != nullptr )
-            pColorList = static_cast<const SvxColorListItem*>(pColorItem)->GetColorList();
-    }
-
-    OSL_ENSURE( pColorList.is(), "ColorTable not found!" );
-
-    if ( pColorList.is() )
-    {
-        m_pLineColorBox->SetUpdateMode( false );
-
-        for ( long i = 0; i < pColorList->Count(); ++i )
-        {
-            XColorEntry* pEntry = pColorList->GetColor(i);
-            m_pLineColorBox->InsertEntry( pEntry->GetColor(), pEntry->GetName() );
-        }
-        m_pLineColorBox->SetUpdateMode( true );
-    }
-
-    // select color in the list or add it as a user color
-    sal_Int32 nSelPos = m_pLineColorBox->GetEntryPos( pFootnoteInfo->GetLineColor() );
-    if( nSelPos == LISTBOX_ENTRY_NOTFOUND )
-        nSelPos = m_pLineColorBox->InsertEntry( pFootnoteInfo->GetLineColor(),
-                SVX_RESSTR(RID_SVXSTR_COLOR_USER) );
-
-    m_pLineColorBox->SetSelectHdl( LINK( this, SwFootNotePage, LineColorSelected_Impl ) );
-    m_pLineColorBox->SelectEntryPos( nSelPos );
-    m_pLineTypeBox->SetColor( pFootnoteInfo->GetLineColor() );
+    m_pLineColorBox->SelectEntry(pFootnoteInfo->GetLineColor());
+    m_pLineColorBox->SetSelectHdl(LINK(this, SwFootNotePage, LineColorSelected_Impl));
+    m_pLineTypeBox->SetColor(pFootnoteInfo->GetLineColor());
 
     // position
     m_pLinePosBox->SelectEntryPos( static_cast< sal_Int32 >(pFootnoteInfo->GetAdj()) );
@@ -284,22 +253,22 @@ bool SwFootNotePage::FillItemSet(SfxItemSet *rSet)
             m_pLineDistEdit->Denormalize(m_pLineDistEdit->GetValue(FUNIT_TWIP))));
 
     // Separator style
-    rFootnoteInfo.SetLineStyle( ::editeng::SvxBorderStyle( m_pLineTypeBox->GetSelectEntryStyle() ) );
+    rFootnoteInfo.SetLineStyle( SvxBorderLineStyle( m_pLineTypeBox->GetSelectEntryStyle() ) );
 
     // Separator width
     long nWidth = static_cast<long>(MetricField::ConvertDoubleValue(
                    m_pLineWidthEdit->GetValue( ),
                    m_pLineWidthEdit->GetDecimalDigits( ),
-                   m_pLineWidthEdit->GetUnit(), MAP_TWIP ));
+                   m_pLineWidthEdit->GetUnit(), MapUnit::MapTwip ));
     rFootnoteInfo.SetLineWidth( nWidth );
 
     // Separator color
     rFootnoteInfo.SetLineColor( m_pLineColorBox->GetSelectEntryColor() );
 
-        // Position
-    rFootnoteInfo.SetAdj((SwFootnoteAdj)m_pLinePosBox->GetSelectEntryPos());
+    // Position
+    rFootnoteInfo.SetAdj((css::text::HorizontalAdjust)m_pLinePosBox->GetSelectEntryPos());
 
-        // Breite
+    // Width
     rFootnoteInfo.SetWidth(Fraction( static_cast< long >(m_pLineLengthEdit->GetValue()), 100));
 
     const SfxPoolItem* pOldItem;
@@ -312,8 +281,8 @@ bool SwFootNotePage::FillItemSet(SfxItemSet *rSet)
 
 void SwFootNotePage::ActivatePage(const SfxItemSet& rSet)
 {
-    const SvxSizeItem& rSize = static_cast<const SvxSizeItem&>(rSet.Get( RES_FRM_SIZE ));
-    lMaxHeight = rSize.GetSize().Height();
+    auto const & rSize = static_cast<SwFormatFrameSize const &>(rSet.Get( RES_FRM_SIZE ));
+    lMaxHeight = rSize.GetHeight();
 
     const SfxPoolItem* pItem;
     if( SfxItemState::SET == rSet.GetItemState( rSet.GetPool()->GetWhich( SID_ATTR_PAGE_HEADERSET), false, &pItem ) )
@@ -358,12 +327,12 @@ void SwFootNotePage::ActivatePage(const SfxItemSet& rSet)
     HeightModify(*m_pMaxHeightEdit);
 }
 
-SfxTabPage::sfxpg SwFootNotePage::DeactivatePage( SfxItemSet* _pSet)
+DeactivateRC SwFootNotePage::DeactivatePage( SfxItemSet* _pSet)
 {
     if(_pSet)
         FillItemSet(_pSet);
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

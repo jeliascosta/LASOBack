@@ -35,7 +35,7 @@ class LimitBoxImpl: public LimitBox
     public:
         LimitBoxImpl( vcl::Window* pParent, LimitBoxController* pCtrl );
 
-        virtual bool Notify( NotifyEvent& rNEvt ) override;
+        virtual bool EventNotify( NotifyEvent& rNEvt ) override;
 
     private:
         LimitBoxController* m_pControl;
@@ -47,17 +47,17 @@ LimitBoxImpl::LimitBoxImpl( vcl::Window* pParent, LimitBoxController* pCtrl )
 {
 }
 
-bool LimitBoxImpl::Notify( NotifyEvent& rNEvt )
+bool LimitBoxImpl::EventNotify( NotifyEvent& rNEvt )
 {
     bool bHandled = false;
     switch ( rNEvt.GetType() )
     {
         case MouseNotifyEvent::LOSEFOCUS:
         {
-            bHandled = LimitBox::Notify( rNEvt );
+            bHandled = LimitBox::EventNotify(rNEvt);
             uno::Sequence< beans::PropertyValue > aArgs( 1 );
             aArgs[0].Name  = "DBLimit.Value";
-            aArgs[0].Value = uno::makeAny( GetValue() );
+            aArgs[0].Value <<= GetValue();
             m_pControl->dispatchCommand( aArgs );
             break;
         }
@@ -82,7 +82,7 @@ bool LimitBoxImpl::Notify( NotifyEvent& rNEvt )
         default:
             break;
     }
-    return bHandled || LimitBox::Notify( rNEvt );
+    return bHandled || LimitBox::EventNotify(rNEvt);
 }
 
 
@@ -90,7 +90,7 @@ LimitBoxController::LimitBoxController(
     const uno::Reference< uno::XComponentContext >& rxContext ) :
     svt::ToolboxController( rxContext,
                             uno::Reference< frame::XFrame >(),
-                            OUString( ".uno:DBLimit" ) ),
+                            ".uno:DBLimit" ),
     m_pLimitBox( nullptr )
 {
 }
@@ -101,7 +101,6 @@ LimitBoxController::~LimitBoxController()
 
 /// XInterface
 uno::Any SAL_CALL LimitBoxController::queryInterface( const uno::Type& aType )
-throw (uno::RuntimeException, std::exception)
 {
     uno::Any a = ToolboxController::queryInterface( aType );
     if ( a.hasValue() )
@@ -134,7 +133,6 @@ uno::Reference< uno::XInterface >
 
 /// XComponent
 void SAL_CALL LimitBoxController::dispose()
-throw (uno::RuntimeException, std::exception)
 {
     svt::ToolboxController::dispose();
 
@@ -145,7 +143,6 @@ throw (uno::RuntimeException, std::exception)
 /// XStatusListener
 void SAL_CALL LimitBoxController::statusChanged(
     const frame::FeatureStateEvent& rEvent )
-throw ( uno::RuntimeException, std::exception )
 {
     if ( m_pLimitBox )
     {
@@ -169,33 +166,28 @@ throw ( uno::RuntimeException, std::exception )
 
 /// XToolbarController
 void SAL_CALL LimitBoxController::execute( sal_Int16 /*KeyModifier*/ )
-throw (uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL LimitBoxController::click()
-throw (uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL LimitBoxController::doubleClick()
-throw (uno::RuntimeException, std::exception)
 {
 }
 
 uno::Reference< awt::XWindow > SAL_CALL LimitBoxController::createPopupWindow()
-throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< awt::XWindow >();
 }
 
 uno::Reference< awt::XWindow > SAL_CALL LimitBoxController::createItemWindow(
     const uno::Reference< awt::XWindow >& xParent )
-    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XWindow > xItemWindow;
 
-    vcl::Window* pParent = VCLUnoHelper::GetWindow( xParent );
+    VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( xParent );
     if ( pParent )
     {
         SolarMutexGuard aSolarMutexGuard;

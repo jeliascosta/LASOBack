@@ -19,7 +19,6 @@
 #ifndef INCLUDED_SW_SOURCE_UIBASE_INC_WORDCOUNTDIALOG_HXX
 #define INCLUDED_SW_SOURCE_UIBASE_INC_WORDCOUNTDIALOG_HXX
 #include <sfx2/basedlgs.hxx>
-#include <svtools/stdctrl.hxx>
 #include <vcl/layout.hxx>
 #include <vcl/button.hxx>
 struct SwDocStat;
@@ -28,7 +27,6 @@ struct SwDocStat;
 
 class SwWordCountFloatDlg : public SfxModelessDialog
 {
-    virtual void    Activate() override;
     void SetValues(const SwDocStat& rCurrent, const SwDocStat& rDoc);
     void showCJK(bool bShowCJK);
     void showStandardizedPages(bool bShowStandardizedPages);
@@ -50,13 +48,13 @@ class SwWordCountFloatDlg : public SfxModelessDialog
 
     VclPtr<CloseButton> m_pClosePB;
 
-    DECL_STATIC_LINK_TYPED( SwWordCountFloatDlg, CloseHdl, Button*, void );
+    DECL_STATIC_LINK( SwWordCountFloatDlg, CloseHdl, Button*, void );
 public:
     SwWordCountFloatDlg(     SfxBindings* pBindings,
                              SfxChildWindow* pChild,
                              vcl::Window *pParent,
                              SfxChildWinInfo* pInfo);
-    virtual ~SwWordCountFloatDlg();
+    virtual ~SwWordCountFloatDlg() override;
     virtual void dispose() override;
     void    UpdateCounts();
 
@@ -65,16 +63,16 @@ public:
 
 class SwWordCountWrapper : public SfxChildWindow
 {
-    std::unique_ptr<AbstractSwWordCountFloatDlg> xAbstDlg;
+    VclPtr<AbstractSwWordCountFloatDlg> xAbstDlg;
 protected:
     SwWordCountWrapper(    vcl::Window *pParentWindow,
                             sal_uInt16 nId,
                             SfxBindings* pBindings,
                             SfxChildWinInfo* pInfo );
-
     SFX_DECL_CHILDWINDOW_WITHID(SwWordCountWrapper);
 
 public:
+    virtual ~SwWordCountWrapper() override;
     void    UpdateCounts();
     void    SetCounts(const SwDocStat &rCurrCnt, const SwDocStat &rDocStat);
 };

@@ -54,13 +54,13 @@ java_sql_CallableStatement::~java_sql_CallableStatement()
 }
 
 
-Any SAL_CALL java_sql_CallableStatement::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any SAL_CALL java_sql_CallableStatement::queryInterface( const Type & rType )
 {
     Any aRet = java_sql_PreparedStatement::queryInterface(rType);
     return aRet.hasValue() ? aRet : ::cppu::queryInterface(rType,static_cast< css::sdbc::XRow*>(this),static_cast< css::sdbc::XOutParameters*>(this));
 }
 
-::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL java_sql_CallableStatement::getTypes(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+css::uno::Sequence< css::uno::Type > SAL_CALL java_sql_CallableStatement::getTypes(  )
 {
     ::cppu::OTypeCollection aTypes( cppu::UnoType<css::sdbc::XRow>::get(),
                                     cppu::UnoType<css::sdbc::XOutParameters>::get());
@@ -68,7 +68,7 @@ Any SAL_CALL java_sql_CallableStatement::queryInterface( const Type & rType ) th
     return ::comphelper::concatSequences(aTypes.getTypes(),java_sql_PreparedStatement::getTypes());
 }
 
-sal_Bool SAL_CALL java_sql_CallableStatement::wasNull(  ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+sal_Bool SAL_CALL java_sql_CallableStatement::wasNull(  )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -76,14 +76,14 @@ sal_Bool SAL_CALL java_sql_CallableStatement::wasNull(  ) throw(css::sdbc::SQLEx
     return callBooleanMethod( "wasNull", mID );
 }
 
-sal_Bool SAL_CALL java_sql_CallableStatement::getBoolean( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+sal_Bool SAL_CALL java_sql_CallableStatement::getBoolean( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
     static jmethodID mID(nullptr);
     return callBooleanMethodWithIntArg( "getBoolean", mID,columnIndex );
 }
-sal_Int8 SAL_CALL java_sql_CallableStatement::getByte( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+sal_Int8 SAL_CALL java_sql_CallableStatement::getByte( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -91,7 +91,7 @@ sal_Int8 SAL_CALL java_sql_CallableStatement::getByte( sal_Int32 columnIndex ) t
     jbyte (JNIEnv::*pCallMethod)( jobject obj, jmethodID methodID, ... ) = &JNIEnv::CallByteMethod;
     return callMethodWithIntArg<jbyte>(pCallMethod,"getByte","(I)B",mID,columnIndex);
 }
-Sequence< sal_Int8 > SAL_CALL java_sql_CallableStatement::getBytes( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+Sequence< sal_Int8 > SAL_CALL java_sql_CallableStatement::getBytes( sal_Int32 columnIndex )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(java_sql_Statement_BASE::rBHelper.bDisposed);
@@ -110,15 +110,15 @@ Sequence< sal_Int8 > SAL_CALL java_sql_CallableStatement::getBytes( sal_Int32 co
     }
     return aSeq;
 }
-::com::sun::star::util::Date SAL_CALL java_sql_CallableStatement::getDate( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+css::util::Date SAL_CALL java_sql_CallableStatement::getDate( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
     static jmethodID mID(nullptr);
     jobject out = callObjectMethodWithIntArg(t.pEnv,"getDate","(I)Ljava/sql/Date;", mID, columnIndex);
-    return out ? static_cast <com::sun::star::util::Date>(java_sql_Date( t.pEnv, out )) : ::com::sun::star::util::Date();
+    return out ? static_cast <css::util::Date>(java_sql_Date( t.pEnv, out )) : css::util::Date();
 }
-double SAL_CALL java_sql_CallableStatement::getDouble( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+double SAL_CALL java_sql_CallableStatement::getDouble( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -127,7 +127,7 @@ double SAL_CALL java_sql_CallableStatement::getDouble( sal_Int32 columnIndex ) t
     return callMethodWithIntArg<double>(pCallMethod,"getDouble","(I)D",mID,columnIndex);
 }
 
-float SAL_CALL java_sql_CallableStatement::getFloat( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+float SAL_CALL java_sql_CallableStatement::getFloat( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -136,7 +136,7 @@ float SAL_CALL java_sql_CallableStatement::getFloat( sal_Int32 columnIndex ) thr
     return callMethodWithIntArg<jfloat>(pCallMethod,"getFloat","(I)F",mID,columnIndex);
 }
 
-sal_Int32 SAL_CALL java_sql_CallableStatement::getInt( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+sal_Int32 SAL_CALL java_sql_CallableStatement::getInt( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -144,7 +144,7 @@ sal_Int32 SAL_CALL java_sql_CallableStatement::getInt( sal_Int32 columnIndex ) t
     return callIntMethodWithIntArg_ThrowSQL("getInt",mID,columnIndex);
 }
 
-sal_Int64 SAL_CALL java_sql_CallableStatement::getLong( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+sal_Int64 SAL_CALL java_sql_CallableStatement::getLong( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -153,7 +153,7 @@ sal_Int64 SAL_CALL java_sql_CallableStatement::getLong( sal_Int32 columnIndex ) 
     return callMethodWithIntArg<jlong>(pCallMethod,"getLong","(I)J",mID,columnIndex);
 }
 
-Any SAL_CALL java_sql_CallableStatement::getObject( sal_Int32 columnIndex, const Reference< ::com::sun::star::container::XNameAccess >& /*typeMap*/ ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+Any SAL_CALL java_sql_CallableStatement::getObject( sal_Int32 columnIndex, const Reference< css::container::XNameAccess >& /*typeMap*/ )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -163,7 +163,7 @@ Any SAL_CALL java_sql_CallableStatement::getObject( sal_Int32 columnIndex, const
     return Any();
 }
 
-sal_Int16 SAL_CALL java_sql_CallableStatement::getShort( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+sal_Int16 SAL_CALL java_sql_CallableStatement::getShort( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -172,7 +172,7 @@ sal_Int16 SAL_CALL java_sql_CallableStatement::getShort( sal_Int32 columnIndex )
     return callMethodWithIntArg<jshort>(pCallMethod,"getShort","(I)S",mID,columnIndex);
 }
 
-OUString SAL_CALL java_sql_CallableStatement::getString( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+OUString SAL_CALL java_sql_CallableStatement::getString( sal_Int32 columnIndex )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(java_sql_Statement_BASE::rBHelper.bDisposed);
@@ -182,27 +182,27 @@ OUString SAL_CALL java_sql_CallableStatement::getString( sal_Int32 columnIndex )
     return callStringMethodWithIntArg("getString",mID,columnIndex);
 }
 
- ::com::sun::star::util::Time SAL_CALL java_sql_CallableStatement::getTime( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+ css::util::Time SAL_CALL java_sql_CallableStatement::getTime( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
     static jmethodID mID(nullptr);
     jobject out = callObjectMethodWithIntArg(t.pEnv,"getTime","(I)Ljava/sql/Time;", mID, columnIndex);
     // WARNING: the caller becomes the owner of the returned pointer
-    return out ? static_cast <com::sun::star::util::Time> (java_sql_Time( t.pEnv, out )) : ::com::sun::star::util::Time();
+    return out ? static_cast <css::util::Time> (java_sql_Time( t.pEnv, out )) : css::util::Time();
 }
 
- ::com::sun::star::util::DateTime SAL_CALL java_sql_CallableStatement::getTimestamp( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+ css::util::DateTime SAL_CALL java_sql_CallableStatement::getTimestamp( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
     static jmethodID mID(nullptr);
     jobject out = callObjectMethodWithIntArg(t.pEnv,"getTimestamp","(I)Ljava/sql/Timestamp;", mID, columnIndex);
     // WARNING: the caller becomes the owner of the returned pointer
-    return out ? static_cast <com::sun::star::util::DateTime> (java_sql_Timestamp( t.pEnv, out )) : ::com::sun::star::util::DateTime();
+    return out ? static_cast <css::util::DateTime> (java_sql_Timestamp( t.pEnv, out )) : css::util::DateTime();
 }
 
-void SAL_CALL java_sql_CallableStatement::registerOutParameter( sal_Int32 parameterIndex, sal_Int32 sqlType, const OUString& typeName ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+void SAL_CALL java_sql_CallableStatement::registerOutParameter( sal_Int32 parameterIndex, sal_Int32 sqlType, const OUString& typeName )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(java_sql_Statement_BASE::rBHelper.bDisposed);
@@ -212,8 +212,8 @@ void SAL_CALL java_sql_CallableStatement::registerOutParameter( sal_Int32 parame
         createStatement(t.pEnv);
 
         // initialize temporary variable
-        static const char * cSignature = "(IILjava/lang/String;)V";
-        static const char * cMethodName = "registerOutParameter";
+        static const char * const cSignature = "(IILjava/lang/String;)V";
+        static const char * const cMethodName = "registerOutParameter";
         // execute Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -223,7 +223,7 @@ void SAL_CALL java_sql_CallableStatement::registerOutParameter( sal_Int32 parame
         ThrowLoggedSQLException( m_aLogger, t.pEnv, *this );
     }
 }
-void SAL_CALL java_sql_CallableStatement::registerNumericOutParameter( sal_Int32 parameterIndex, sal_Int32 sqlType, sal_Int32 scale ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
+void SAL_CALL java_sql_CallableStatement::registerNumericOutParameter( sal_Int32 parameterIndex, sal_Int32 sqlType, sal_Int32 scale )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(java_sql_Statement_BASE::rBHelper.bDisposed);
@@ -232,8 +232,8 @@ void SAL_CALL java_sql_CallableStatement::registerNumericOutParameter( sal_Int32
     {
         createStatement(t.pEnv);
         // initialize temporary variable
-        static const char * cSignature = "(III)V";
-        static const char * cMethodName = "registerOutParameter";
+        static const char * const cSignature = "(III)V";
+        static const char * const cMethodName = "registerOutParameter";
         // execute Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -252,18 +252,18 @@ jclass java_sql_CallableStatement::getMyClass() const
     return theClass;
 }
 
-Reference< ::com::sun::star::io::XInputStream > SAL_CALL java_sql_CallableStatement::getBinaryStream( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+Reference< css::io::XInputStream > SAL_CALL java_sql_CallableStatement::getBinaryStream( sal_Int32 columnIndex )
 {
     Reference< css::sdbc::XBlob > xBlob = getBlob(columnIndex);
-    return xBlob.is() ? xBlob->getBinaryStream() : Reference< ::com::sun::star::io::XInputStream >();
+    return xBlob.is() ? xBlob->getBinaryStream() : Reference< css::io::XInputStream >();
 }
-Reference< ::com::sun::star::io::XInputStream > SAL_CALL java_sql_CallableStatement::getCharacterStream( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+Reference< css::io::XInputStream > SAL_CALL java_sql_CallableStatement::getCharacterStream( sal_Int32 columnIndex )
 {
     Reference< css::sdbc::XClob > xClob = getClob(columnIndex);
-    return xClob.is() ? xClob->getCharacterStream() : Reference< ::com::sun::star::io::XInputStream >();
+    return xClob.is() ? xClob->getCharacterStream() : Reference< css::io::XInputStream >();
 }
 
-Reference< css::sdbc::XArray > SAL_CALL java_sql_CallableStatement::getArray( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+Reference< css::sdbc::XArray > SAL_CALL java_sql_CallableStatement::getArray( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -273,7 +273,7 @@ Reference< css::sdbc::XArray > SAL_CALL java_sql_CallableStatement::getArray( sa
     return out==nullptr ? nullptr : new java_sql_Array( t.pEnv, out );
 }
 
-Reference< css::sdbc::XClob > SAL_CALL java_sql_CallableStatement::getClob( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+Reference< css::sdbc::XClob > SAL_CALL java_sql_CallableStatement::getClob( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -282,7 +282,7 @@ Reference< css::sdbc::XClob > SAL_CALL java_sql_CallableStatement::getClob( sal_
     // WARNING: the caller becomes the owner of the returned pointer
     return out==nullptr ? nullptr : new java_sql_Clob( t.pEnv, out );
 }
-Reference< css::sdbc::XBlob > SAL_CALL java_sql_CallableStatement::getBlob( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+Reference< css::sdbc::XBlob > SAL_CALL java_sql_CallableStatement::getBlob( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -292,7 +292,7 @@ Reference< css::sdbc::XBlob > SAL_CALL java_sql_CallableStatement::getBlob( sal_
     return out==nullptr ? nullptr : new java_sql_Blob( t.pEnv, out );
 }
 
-Reference< css::sdbc::XRef > SAL_CALL java_sql_CallableStatement::getRef( sal_Int32 columnIndex ) throw(css::sdbc::SQLException, RuntimeException, std::exception)
+Reference< css::sdbc::XRef > SAL_CALL java_sql_CallableStatement::getRef( sal_Int32 columnIndex )
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     createStatement(t.pEnv);
@@ -321,7 +321,7 @@ void java_sql_CallableStatement::createStatement(JNIEnv* /*_pEnv*/)
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     if( t.pEnv && !object ){
         // initialize temporary variable
-        static const char * cMethodName = "prepareCall";
+        static const char * const cMethodName = "prepareCall";
         // execute Java-Call
         jobject out = nullptr;
         // convert Parameter
@@ -330,7 +330,7 @@ void java_sql_CallableStatement::createStatement(JNIEnv* /*_pEnv*/)
         static jmethodID mID(nullptr);
         if ( !mID  )
         {
-            static const char * cSignature = "(Ljava/lang/String;II)Ljava/sql/CallableStatement;";
+            static const char * const cSignature = "(Ljava/lang/String;II)Ljava/sql/CallableStatement;";
             mID  = t.pEnv->GetMethodID( m_pConnection->getMyClass(), cMethodName, cSignature );
         }
         if( mID ){
@@ -338,7 +338,7 @@ void java_sql_CallableStatement::createStatement(JNIEnv* /*_pEnv*/)
         } //mID
         else
         {
-            static const char * cSignature2 = "(Ljava/lang/String;)Ljava/sql/CallableStatement;";
+            static const char * const cSignature2 = "(Ljava/lang/String;)Ljava/sql/CallableStatement;";
             static jmethodID mID2 = t.pEnv->GetMethodID( m_pConnection->getMyClass(), cMethodName, cSignature2 );OSL_ENSURE(mID2,"Unknown method id!");
             if( mID2 ){
                 out = t.pEnv->CallObjectMethod( m_pConnection->getJavaObject(), mID2, str.get() );

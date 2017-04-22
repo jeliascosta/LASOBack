@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svgsymbolnode.hxx>
+#include <svgsymbolnode.hxx>
 #include <drawinglayer/geometry/viewinformation2d.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
 
@@ -37,7 +37,6 @@ namespace svgio
 
         SvgSymbolNode::~SvgSymbolNode()
         {
-            delete mpViewBox;
         }
 
         const SvgStyleAttributes* SvgSymbolNode::getSvgStyleAttributes() const
@@ -73,7 +72,7 @@ namespace svgio
                 }
                 case SVGTokenPreserveAspectRatio:
                 {
-                    setSvgAspectRatio(readSvgAspectRatio(aContent));
+                    maSvgAspectRatio = readSvgAspectRatio(aContent);
                     break;
                 }
                 default:

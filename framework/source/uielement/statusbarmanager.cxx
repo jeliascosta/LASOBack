@@ -31,11 +31,11 @@
 #include "general.h"
 #include "properties.h"
 #include <helper/mischelper.hxx>
-
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/frame/theStatusbarControllerFactory.hpp>
 #include <com/sun/star/ui/ItemStyle.hpp>
 #include <com/sun/star/ui/ItemType.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/XMultiComponentFactory.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -50,17 +50,10 @@
 #include <vcl/settings.hxx>
 #include <vcl/commandinfoprovider.hxx>
 
+#include <cassert>
 #include <functional>
 
 using namespace ::com::sun::star;
-
-// Property names of a menu/menu item ItemDescriptor
-static const char ITEM_DESCRIPTOR_COMMANDURL[]  = "CommandURL";
-static const char ITEM_DESCRIPTOR_HELPURL[]     = "HelpURL";
-static const char ITEM_DESCRIPTOR_OFFSET[]      = "Offset";
-static const char ITEM_DESCRIPTOR_STYLE[]       = "Style";
-static const char ITEM_DESCRIPTOR_WIDTH[]       = "Width";
-static const char ITEM_DESCRIPTOR_TYPE[]        = "Type";
 
 namespace framework
 {
@@ -160,34 +153,29 @@ StatusBar* StatusBarManager::GetStatusBar() const
 }
 
 void StatusBarManager::frameAction( const frame::FrameActionEvent& Action )
-throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
     if ( Action.Action == frame::FrameAction_CONTEXT_CHANGED )
         UpdateControllers();
 }
 
-void SAL_CALL StatusBarManager::disposing( const lang::EventObject& Source ) throw ( uno::RuntimeException, std::exception )
+void SAL_CALL StatusBarManager::disposing( const lang::EventObject& Source )
 {
-    {
-        SolarMutexGuard g;
-        if ( m_bDisposed )
-            return;
-    }
+    SolarMutexGuard g;
+
+    if ( m_bDisposed )
+        return;
 
     RemoveControllers();
 
-    {
-        SolarMutexGuard g;
-        if ( Source.Source == uno::Reference< uno::XInterface >( m_xFrame, uno::UNO_QUERY ))
-            m_xFrame.clear();
+    if ( Source.Source == uno::Reference< uno::XInterface >( m_xFrame, uno::UNO_QUERY ))
+        m_xFrame.clear();
 
-        m_xContext.clear();
-    }
+    m_xContext.clear();
 }
 
 // XComponent
-void SAL_CALL StatusBarManager::dispose() throw( uno::RuntimeException, std::exception )
+void SAL_CALL StatusBarManager::dispose()
 {
     uno::Reference< lang::XComponent > xThis(
         static_cast< OWeakObject* >(this), uno::UNO_QUERY );
@@ -232,7 +220,7 @@ void SAL_CALL StatusBarManager::dispose() throw( uno::RuntimeException, std::exc
     }
 }
 
-void SAL_CALL StatusBarManager::addEventListener( const uno::Reference< lang::XEventListener >& xListener ) throw( uno::RuntimeException, std::exception )
+void SAL_CALL StatusBarManager::addEventListener( const uno::Reference< lang::XEventListener >& xListener )
 {
     SolarMutexGuard g;
 
@@ -243,13 +231,13 @@ void SAL_CALL StatusBarManager::addEventListener( const uno::Reference< lang::XE
     m_aListenerContainer.addInterface( cppu::UnoType<lang::XEventListener>::get(), xListener );
 }
 
-void SAL_CALL StatusBarManager::removeEventListener( const uno::Reference< lang::XEventListener >& xListener ) throw( uno::RuntimeException, std::exception )
+void SAL_CALL StatusBarManager::removeEventListener( const uno::Reference< lang::XEventListener >& xListener )
 {
     m_aListenerContainer.removeInterface( cppu::UnoType<lang::XEventListener>::get(), xListener );
 }
 
 // XUIConfigurationListener
-void SAL_CALL StatusBarManager::elementInserted( const css::ui::ConfigurationEvent& ) throw ( uno::RuntimeException, std::exception )
+void SAL_CALL StatusBarManager::elementInserted( const css::ui::ConfigurationEvent& )
 {
     SolarMutexGuard g;
 
@@ -257,7 +245,7 @@ void SAL_CALL StatusBarManager::elementInserted( const css::ui::ConfigurationEve
         return;
 }
 
-void SAL_CALL StatusBarManager::elementRemoved( const css::ui::ConfigurationEvent& ) throw ( uno::RuntimeException, std::exception )
+void SAL_CALL StatusBarManager::elementRemoved( const css::ui::ConfigurationEvent& )
 {
     SolarMutexGuard g;
 
@@ -265,7 +253,7 @@ void SAL_CALL StatusBarManager::elementRemoved( const css::ui::ConfigurationEven
         return;
 }
 
-void SAL_CALL StatusBarManager::elementReplaced( const css::ui::ConfigurationEvent& ) throw ( uno::RuntimeException, std::exception )
+void SAL_CALL StatusBarManager::elementReplaced( const css::ui::ConfigurationEvent& )
 {
     SolarMutexGuard g;
 
@@ -287,10 +275,8 @@ void StatusBarManager::UpdateControllers()
 
 void StatusBarManager::RemoveControllers()
 {
-    SolarMutexGuard g;
-
-    if ( m_bDisposed )
-        return;
+    DBG_TESTSOLARMUTEX();
+    assert(!m_bDisposed);
 
     std::for_each( m_aControllerMap.begin(),
                    m_aControllerMap.end(),
@@ -333,7 +319,7 @@ void StatusBarManager::CreateControllers()
 
         // TODO remove this
         aPropValue.Name     = "ServiceManager";
-        aPropValue.Value    = uno::makeAny( uno::Reference<lang::XMultiServiceFactory>(m_xContext->getServiceManager(), uno::UNO_QUERY_THROW) );
+        aPropValue.Value    <<= uno::Reference<lang::XMultiServiceFactory>(m_xContext->getServiceManager(), uno::UNO_QUERY_THROW);
         aPropVector.push_back( uno::makeAny( aPropValue ) );
 
         aPropValue.Name     = "ParentWindow";
@@ -396,11 +382,7 @@ void StatusBarManager::CreateControllers()
         }
     }
 
-    AddFrameActionListener();
-}
-
-void StatusBarManager::AddFrameActionListener()
-{
+    // add frame action listeners
     if ( !m_bFrameActionRegistered && m_xFrame.is() )
     {
         m_bFrameActionRegistered = true;
@@ -440,27 +422,27 @@ void StatusBarManager::FillStatusBar( const uno::Reference< container::XIndexAcc
             {
                 for ( int i = 0; i < aProp.getLength(); i++ )
                 {
-                    if ( aProp[i].Name == ITEM_DESCRIPTOR_COMMANDURL )
+                    if ( aProp[i].Name == "CommandURL" )
                     {
                         aProp[i].Value >>= aCommandURL;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_HELPURL )
+                    else if ( aProp[i].Name == "HelpURL" )
                     {
                         aProp[i].Value >>= aHelpURL;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_STYLE )
+                    else if ( aProp[i].Name == "Style" )
                     {
                         aProp[i].Value >>= nStyle;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_TYPE )
+                    else if ( aProp[i].Name == "Type" )
                     {
                         aProp[i].Value >>= nType;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_WIDTH )
+                    else if ( aProp[i].Name == "Width" )
                     {
                         aProp[i].Value >>= nWidth;
                     }
-                    else if ( aProp[i].Name == ITEM_DESCRIPTOR_OFFSET )
+                    else if ( aProp[i].Name == "Offset" )
                     {
                         aProp[i].Value >>= nOffset;
                     }
@@ -468,7 +450,7 @@ void StatusBarManager::FillStatusBar( const uno::Reference< container::XIndexAcc
 
                 if (( nType == css::ui::ItemType::DEFAULT ) && !aCommandURL.isEmpty() )
                 {
-                    OUString aString( vcl::CommandInfoProvider::Instance().GetLabelForCommand(aCommandURL, m_xFrame));
+                    OUString aString( vcl::CommandInfoProvider::GetLabelForCommand(aCommandURL, m_aModuleIdentifier));
                     StatusBarItemBits nItemBits( impl_convertItemStyleToItemBits( nStyle ));
 
                     m_pStatusBar->InsertItem( nId, nWidth, nItemBits, nOffset );
@@ -644,7 +626,7 @@ void StatusBarManager::MouseButtonUp( const MouseEvent& rMEvt )
     MouseButton(rMEvt,&frame::XStatusbarController::mouseButtonUp);
 }
 
-IMPL_LINK_NOARG_TYPED(StatusBarManager, Click, StatusBar*, void)
+IMPL_LINK_NOARG(StatusBarManager, Click, StatusBar*, void)
 {
     SolarMutexGuard g;
 
@@ -665,7 +647,7 @@ IMPL_LINK_NOARG_TYPED(StatusBarManager, Click, StatusBar*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(StatusBarManager, DoubleClick, StatusBar*, void)
+IMPL_LINK_NOARG(StatusBarManager, DoubleClick, StatusBar*, void)
 {
     SolarMutexGuard g;
 

@@ -54,12 +54,12 @@ class SwGlossDecideDlg : public ModalDialog
     VclPtr<OKButton> m_pOk;
     VclPtr<ListBox>  m_pListLB;
 
-    DECL_LINK_TYPED(DoubleClickHdl, ListBox&, void);
-    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
+    DECL_LINK(DoubleClickHdl, ListBox&, void);
+    DECL_LINK(SelectHdl, ListBox&, void);
 
 public:
     explicit SwGlossDecideDlg(vcl::Window* pParent);
-    virtual ~SwGlossDecideDlg();
+    virtual ~SwGlossDecideDlg() override;
     virtual void dispose() override;
 
     ListBox&    GetListBox() {return *m_pListLB;}
@@ -88,12 +88,12 @@ void SwGlossDecideDlg::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SwGlossDecideDlg, DoubleClickHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwGlossDecideDlg, DoubleClickHdl, ListBox&, void)
 {
     EndDialog(RET_OK);
 }
 
-IMPL_LINK_NOARG_TYPED(SwGlossDecideDlg, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwGlossDecideDlg, SelectHdl, ListBox&, void)
 {
     m_pOk->Enable(LISTBOX_ENTRY_NOTFOUND != m_pListLB->GetSelectEntryPos());
 }
@@ -301,7 +301,7 @@ void SwGlossaryList::Update()
                 OUString sName( aTitle.copy( 0, aTitle.getLength() - sExt.getLength() ));
 
                 aFoundGroupNames.push_back(sName);
-                sName += OUStringLiteral1<GLOS_DELIM>() + OUString::number( static_cast<sal_uInt16>(nPath) );
+                sName += OUStringLiteral1(GLOS_DELIM) + OUString::number( static_cast<sal_uInt16>(nPath) );
                 AutoTextGroup* pFound = FindGroup( sName );
                 if( !pFound )
                 {
@@ -378,9 +378,9 @@ void SwGlossaryList::FillGroup(AutoTextGroup* pGroup, SwGlossaries* pGlossaries)
     for(sal_uInt16 j = 0; j < pGroup->nCount; j++)
     {
         pGroup->sLongNames += pBlock->GetLongName(j)
-            + OUStringLiteral1<STRING_DELIM>();
+            + OUStringLiteral1(STRING_DELIM);
         pGroup->sShortNames += pBlock->GetShortName(j)
-            + OUStringLiteral1<STRING_DELIM>();
+            + OUStringLiteral1(STRING_DELIM);
     }
     delete pBlock;
 }

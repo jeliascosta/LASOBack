@@ -38,7 +38,6 @@
 
 using namespace com::sun::star;
 
-//UUUU
 void setSvxBrushItemAsFillAttributesToTargetSet(const SvxBrushItem& rBrush, SfxItemSet& rToSet)
 {
     // Clear all items from the DrawingLayer FillStyle range (if we have any). All
@@ -75,7 +74,7 @@ void setSvxBrushItemAsFillAttributesToTargetSet(const SvxBrushItem& rBrush, SfxI
             rToSet.Put(XFillBmpTileItem(false));
 
             // default for stretch is also top-left, but this will not be visible
-            rToSet.Put(XFillBmpPosItem(RP_LT));
+            rToSet.Put(XFillBmpPosItem(RectPoint::LT));
         }
         else if(GPOS_TILED == rBrush.GetGraphicPos())
         {
@@ -84,7 +83,7 @@ void setSvxBrushItemAsFillAttributesToTargetSet(const SvxBrushItem& rBrush, SfxI
             rToSet.Put(XFillBmpTileItem(true));
 
             // default for tiled is top-left
-            rToSet.Put(XFillBmpPosItem(RP_LT));
+            rToSet.Put(XFillBmpPosItem(RectPoint::LT));
         }
         else
         {
@@ -92,19 +91,19 @@ void setSvxBrushItemAsFillAttributesToTargetSet(const SvxBrushItem& rBrush, SfxI
             rToSet.Put(XFillBmpStretchItem(false));
             rToSet.Put(XFillBmpTileItem(false));
 
-            RECT_POINT aRectPoint(RP_MM);
+            RectPoint aRectPoint(RectPoint::MM);
 
             switch(rBrush.GetGraphicPos())
             {
-                case GPOS_LT: aRectPoint = RP_LT; break;
-                case GPOS_MT: aRectPoint = RP_MT; break;
-                case GPOS_RT: aRectPoint = RP_RT; break;
-                case GPOS_LM: aRectPoint = RP_LM; break;
-                case GPOS_MM: aRectPoint = RP_MM; break;
-                case GPOS_RM: aRectPoint = RP_RM; break;
-                case GPOS_LB: aRectPoint = RP_LB; break;
-                case GPOS_MB: aRectPoint = RP_MB; break;
-                case GPOS_RB: aRectPoint = RP_RB; break;
+                case GPOS_LT: aRectPoint = RectPoint::LT; break;
+                case GPOS_MT: aRectPoint = RectPoint::MT; break;
+                case GPOS_RT: aRectPoint = RectPoint::RT; break;
+                case GPOS_LM: aRectPoint = RectPoint::LM; break;
+                case GPOS_MM: aRectPoint = RectPoint::MM; break;
+                case GPOS_RM: aRectPoint = RectPoint::RM; break;
+                case GPOS_LB: aRectPoint = RectPoint::LB; break;
+                case GPOS_MB: aRectPoint = RectPoint::MB; break;
+                case GPOS_RB: aRectPoint = RectPoint::RB; break;
                 default: break; // GPOS_NONE, GPOS_AREA and GPOS_TILED already handled
             }
 
@@ -150,7 +149,6 @@ void setSvxBrushItemAsFillAttributesToTargetSet(const SvxBrushItem& rBrush, SfxI
     }
 }
 
-//UUUU
 sal_uInt16 getTransparenceForSvxBrushItem(const SfxItemSet& rSourceSet, bool bSearchInParents)
 {
     sal_uInt16 nFillTransparence(static_cast< const XFillTransparenceItem& >(rSourceSet.Get(XATTR_FILLTRANSPARENCE, bSearchInParents)).GetValue());
@@ -170,7 +168,6 @@ sal_uInt16 getTransparenceForSvxBrushItem(const SfxItemSet& rSourceSet, bool bSe
     return nFillTransparence;
 }
 
-//UUUU
 SvxBrushItem getSvxBrushItemForSolid(const SfxItemSet& rSourceSet, bool bSearchInParents, sal_uInt16 nBackgroundID)
 {
     Color aFillColor(static_cast< const XFillColorItem& >(rSourceSet.Get(XATTR_FILLCOLOR, bSearchInParents)).GetColorValue());
@@ -191,10 +188,9 @@ SvxBrushItem getSvxBrushItemForSolid(const SfxItemSet& rSourceSet, bool bSearchI
     return SvxBrushItem(aFillColor, nBackgroundID);
 }
 
-//UUUU
 SvxBrushItem getSvxBrushItemFromSourceSet(const SfxItemSet& rSourceSet, sal_uInt16 nBackgroundID, bool bSearchInParents, bool bXMLImportHack)
 {
-    const XFillStyleItem* pXFillStyleItem(static_cast< const XFillStyleItem*  >(rSourceSet.GetItem(XATTR_FILLSTYLE, bSearchInParents)));
+    const XFillStyleItem* pXFillStyleItem(rSourceSet.GetItem<XFillStyleItem>(XATTR_FILLSTYLE, bSearchInParents));
 
     if(!pXFillStyleItem || drawing::FillStyle_NONE == pXFillStyleItem->GetValue())
     {
@@ -292,7 +288,7 @@ SvxBrushItem getSvxBrushItemFromSourceSet(const SfxItemSet& rSourceSet, sal_uInt
             const XFillBitmapItem& rBmpItm = static_cast< const XFillBitmapItem& >(rSourceSet.Get(XATTR_FILLBITMAP, bSearchInParents));
             const Graphic aGraphic(rBmpItm.GetGraphicObject().GetGraphic());
 
-            // continue idependent of evtl. GRAPHIC_NONE as aGraphic.GetType(), we still need to rescue positions
+            // continue idependent of evtl. GraphicType::NONE as aGraphic.GetType(), we still need to rescue positions
             SvxGraphicPosition aSvxGraphicPosition(GPOS_NONE);
             const XFillBmpStretchItem& rStretchItem = static_cast< const XFillBmpStretchItem& >(rSourceSet.Get(XATTR_FILLBMP_STRETCH, bSearchInParents));
             const XFillBmpTileItem& rTileItem = static_cast< const XFillBmpTileItem& >(rSourceSet.Get(XATTR_FILLBMP_TILE, bSearchInParents));
@@ -311,15 +307,15 @@ SvxBrushItem getSvxBrushItemFromSourceSet(const SfxItemSet& rSourceSet, sal_uInt
 
                 switch(rPosItem.GetValue())
                 {
-                    case RP_LT: aSvxGraphicPosition = GPOS_LT; break;
-                    case RP_MT: aSvxGraphicPosition = GPOS_MT; break;
-                    case RP_RT: aSvxGraphicPosition = GPOS_RT; break;
-                    case RP_LM: aSvxGraphicPosition = GPOS_LM; break;
-                    case RP_MM: aSvxGraphicPosition = GPOS_MM; break;
-                    case RP_RM: aSvxGraphicPosition = GPOS_RM; break;
-                    case RP_LB: aSvxGraphicPosition = GPOS_LB; break;
-                    case RP_MB: aSvxGraphicPosition = GPOS_MB; break;
-                    case RP_RB: aSvxGraphicPosition = GPOS_RB; break;
+                    case RectPoint::LT: aSvxGraphicPosition = GPOS_LT; break;
+                    case RectPoint::MT: aSvxGraphicPosition = GPOS_MT; break;
+                    case RectPoint::RT: aSvxGraphicPosition = GPOS_RT; break;
+                    case RectPoint::LM: aSvxGraphicPosition = GPOS_LM; break;
+                    case RectPoint::MM: aSvxGraphicPosition = GPOS_MM; break;
+                    case RectPoint::RM: aSvxGraphicPosition = GPOS_RM; break;
+                    case RectPoint::LB: aSvxGraphicPosition = GPOS_LB; break;
+                    case RectPoint::MB: aSvxGraphicPosition = GPOS_MB; break;
+                    case RectPoint::RB: aSvxGraphicPosition = GPOS_RB; break;
                 }
             }
 

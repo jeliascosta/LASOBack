@@ -14,6 +14,7 @@
 #include <com/sun/star/container/XIndexReplace.hpp>
 #include <com/sun/star/container/XNamed.hpp>
 #include <com/sun/star/io/XActiveDataSource.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/util/MeasureUnit.hpp>
 #include <com/sun/star/xml/sax/Parser.hpp>
 #include <com/sun/star/xml/sax/Writer.hpp>
@@ -71,8 +72,7 @@ public:
     }
 
     // XNamed
-    virtual OUString SAL_CALL getName()
-        throw (uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getName() override
     {
         SolarMutexGuard g;
         SwNumRulesWithName const* pRules(m_rNumRules.GetRules(m_nIndex));
@@ -83,8 +83,7 @@ public:
         return pRules->GetName();
     }
 
-    virtual void SAL_CALL setName(OUString const& rName)
-        throw (uno::RuntimeException, std::exception) override
+    virtual void SAL_CALL setName(OUString const& rName) override
     {
         SolarMutexGuard g;
         SwNumRulesWithName *const pRules(GetOrCreateRules());
@@ -92,28 +91,23 @@ public:
     }
 
     // XElementAccess
-    virtual uno::Type SAL_CALL getElementType()
-        throw (uno::RuntimeException, std::exception) override
+    virtual uno::Type SAL_CALL getElementType() override
     {
         return ::cppu::UnoType<uno::Sequence<beans::PropertyValue>>::get();
     }
 
-    virtual ::sal_Bool SAL_CALL hasElements()
-        throw (uno::RuntimeException, std::exception) override
+    virtual ::sal_Bool SAL_CALL hasElements() override
     {
         return true;
     }
 
     // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount()
-        throw (uno::RuntimeException, std::exception) override
+    virtual sal_Int32 SAL_CALL getCount() override
     {
         return MAXLEVEL;
     }
 
-    virtual uno::Any SAL_CALL getByIndex(sal_Int32 nIndex)
-        throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException,
-               uno::RuntimeException, std::exception) override
+    virtual uno::Any SAL_CALL getByIndex(sal_Int32 nIndex) override
     {
         if (nIndex < 0 || MAXLEVEL <= nIndex)
             throw lang::IndexOutOfBoundsException();
@@ -141,10 +135,7 @@ public:
 
     // XIndexReplace
     virtual void SAL_CALL replaceByIndex(
-            sal_Int32 nIndex, uno::Any const& rElement)
-        throw (lang::IllegalArgumentException, lang::IndexOutOfBoundsException,
-               lang::WrappedTargetException, uno::RuntimeException,
-               std::exception) override
+            sal_Int32 nIndex, uno::Any const& rElement) override
     {
         if (nIndex < 0 || MAXLEVEL <= nIndex)
             throw lang::IndexOutOfBoundsException();
@@ -326,7 +317,7 @@ class StoredChapterNumberingRootContext
 private:
     SwChapterNumRules & m_rNumRules;
     size_t m_nCounter;
-    ::std::vector<tools::SvRef<SvxXMLListStyleContext>> m_Contexts;
+    std::vector<tools::SvRef<SvxXMLListStyleContext>> m_Contexts;
 
 public:
     StoredChapterNumberingRootContext(
@@ -426,7 +417,7 @@ void ExportStoredChapterNumberingRules(SwChapterNumRules & rRules,
     uno::Reference<xml::sax::XDocumentHandler> const xHandler(
             xWriter, uno::UNO_QUERY);
 
-    uno::Reference<StoredChapterNumberingExport> exp(new StoredChapterNumberingExport(xContext, rFileName, xWriter));
+    rtl::Reference<StoredChapterNumberingExport> exp(new StoredChapterNumberingExport(xContext, rFileName, xWriter));
 
     // if style name contains a space then name != display-name
     // ... and the import needs to map from name to display-name then!

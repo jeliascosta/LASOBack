@@ -88,11 +88,10 @@ namespace
         /// font, etc.
         vcl::Font               maFont;
         RasterOp                maRasterOp;
-        ComplexTextLayoutMode   mnLayoutMode;
+        ComplexTextLayoutFlags   mnLayoutMode;
         LanguageType            maLanguageType;
         PushFlags               mnPushFlags;
 
-        /// bitfield
         /// contains all active markers
         bool                    mbLineColor : 1;
         bool                    mbFillColor : 1;
@@ -105,7 +104,7 @@ namespace
     public:
         PropertyHolder()
         :   maTransformation(),
-            maMapUnit(MAP_100TH_MM),
+            maMapUnit(MapUnit::Map100thMM),
             maLineColor(),
             maFillColor(),
             maTextColor(COL_BLACK),
@@ -114,8 +113,8 @@ namespace
             maOverlineColor(),
             maClipPolyPoygon(),
             maFont(),
-            maRasterOp(ROP_OVERPAINT),
-            mnLayoutMode(TEXT_LAYOUT_DEFAULT),
+            maRasterOp(RasterOp::OverPaint),
+            mnLayoutMode(ComplexTextLayoutFlags::Default),
             maLanguageType(0),
             mnPushFlags(PushFlags::NONE),
             mbLineColor(false),
@@ -125,10 +124,6 @@ namespace
             mbTextLineColor(false),
             mbOverlineColor(false),
             mbClipPolyPolygonActive(false)
-        {
-        }
-
-        ~PropertyHolder()
         {
         }
 
@@ -179,12 +174,12 @@ namespace
 
         const RasterOp& getRasterOp() const { return maRasterOp; }
         void setRasterOp(const RasterOp& rRasterOp) { if(rRasterOp != maRasterOp) maRasterOp = rRasterOp; }
-        bool isRasterOpInvert() const { return (ROP_XOR == maRasterOp || ROP_INVERT == maRasterOp); }
-        bool isRasterOpForceBlack() const { return ROP_0 == maRasterOp; }
+        bool isRasterOpInvert() const { return (RasterOp::Xor == maRasterOp || RasterOp::Invert == maRasterOp); }
+        bool isRasterOpForceBlack() const { return RasterOp::N0 == maRasterOp; }
         bool isRasterOpActive() const { return isRasterOpInvert() || isRasterOpForceBlack(); }
 
-        ComplexTextLayoutMode getLayoutMode() const { return mnLayoutMode; }
-        void setLayoutMode(ComplexTextLayoutMode nNew) { if(nNew != mnLayoutMode) mnLayoutMode = nNew; }
+        ComplexTextLayoutFlags getLayoutMode() const { return mnLayoutMode; }
+        void setLayoutMode(ComplexTextLayoutFlags nNew) { if(nNew != mnLayoutMode) mnLayoutMode = nNew; }
 
         LanguageType getLanguageType() const { return maLanguageType; }
         void setLanguageType(LanguageType aNew) { if(aNew != maLanguageType) maLanguageType = aNew; }
@@ -529,7 +524,7 @@ namespace drawinglayer
         {
         protected:
             /// local decomposition.
-            virtual Primitive2DContainer create2DDecomposition(
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer,
                 const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
@@ -542,16 +537,13 @@ namespace drawinglayer
             }
         };
 
-        Primitive2DContainer NonOverlappingFillGradientPrimitive2D::create2DDecomposition(
+        void NonOverlappingFillGradientPrimitive2D::create2DDecomposition(
+            Primitive2DContainer& rContainer,
             const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             if(!getFillGradient().isDefault())
             {
-                return createFill(false);
-            }
-            else
-            {
-                return Primitive2DContainer();
+                createFill(rContainer, false);
             }
         }
     } // end of namespace primitive2d
@@ -658,7 +650,7 @@ namespace
     {
         if(rLinePolygon.count())
         {
-            const bool bDashDotUsed(LINE_DASH == rLineInfo.GetStyle());
+            const bool bDashDotUsed(LineStyle::Dash == rLineInfo.GetStyle());
             const bool bWidthUsed(rLineInfo.GetWidth() > 1);
 
             if(bDashDotUsed || bWidthUsed)
@@ -673,7 +665,7 @@ namespace
 
                 if(bDashDotUsed)
                 {
-                    ::std::vector< double > fDotDashArray;
+                    std::vector< double > fDotDashArray;
                     const double fDashLen(rLineInfo.GetDashLen());
                     const double fDotLen(rLineInfo.GetDotLen());
                     const double fDistance(rLineInfo.GetDistance());
@@ -690,7 +682,7 @@ namespace
                         fDotDashArray.push_back(fDistance);
                     }
 
-                    const double fAccumulated(::std::accumulate(fDotDashArray.begin(), fDotDashArray.end(), 0.0));
+                    const double fAccumulated(std::accumulate(fDotDashArray.begin(), fDotDashArray.end(), 0.0));
                     const drawinglayer::attribute::StrokeAttribute aStrokeAttribute(
                         fDotDashArray,
                         fAccumulated);
@@ -852,32 +844,32 @@ namespace
 
         switch(rGradient.GetStyle())
         {
-            case GradientStyle_LINEAR :
+            case GradientStyle::Linear :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Linear;
                 break;
             }
-            case GradientStyle_AXIAL :
+            case GradientStyle::Axial :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Axial;
                 break;
             }
-            case GradientStyle_RADIAL :
+            case GradientStyle::Radial :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Radial;
                 break;
             }
-            case GradientStyle_ELLIPTICAL :
+            case GradientStyle::Elliptical :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Elliptical;
                 break;
             }
-            case GradientStyle_SQUARE :
+            case GradientStyle::Square :
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Square;
                 break;
             }
-            default : // GradientStyle_RECT
+            default : // GradientStyle::Rect
             {
                 aGradientStyle = drawinglayer::attribute::GradientStyle::Rect;
                 break;
@@ -904,17 +896,17 @@ namespace
 
         switch(rHatch.GetStyle())
         {
-            default : // case HATCH_SINGLE :
+            default : // case HatchStyle::Single :
             {
                 aHatchStyle = drawinglayer::attribute::HatchStyle::Single;
                 break;
             }
-            case HATCH_DOUBLE :
+            case HatchStyle::Double :
             {
                 aHatchStyle = drawinglayer::attribute::HatchStyle::Double;
                 break;
             }
-            case HATCH_TRIPLE :
+            case HatchStyle::Triple :
             {
                 aHatchStyle = drawinglayer::attribute::HatchStyle::Triple;
                 break;
@@ -1015,8 +1007,8 @@ namespace
     /** helper to handle the change of RasterOp. It takes care of encapsulating all current
         geometry to the current RasterOp (if changed) and needs to be called on any RasterOp
         change. It will also start a new geometry target to embrace to the new RasterOp if
-        a changing RasterOp is used. Currently, ROP_XOR and ROP_INVERT are supported using
-        InvertPrimitive2D, and ROP_0 by using a ModifiedColorPrimitive2D to force to black paint
+        a changing RasterOp is used. Currently, RasterOp::Xor and RasterOp::Invert are supported using
+        InvertPrimitive2D, and RasterOp::N0 by using a ModifiedColorPrimitive2D to force to black paint
      */
     void HandleNewRasterOp(
         RasterOp aRasterOp,
@@ -1220,8 +1212,8 @@ namespace
             drawinglayer::primitive2d::getFontAttributeFromVclFont(
                 aFontScaling,
                 rFont,
-                bool(rProperty.getLayoutMode() & TEXT_LAYOUT_BIDI_RTL),
-                bool(rProperty.getLayoutMode() & TEXT_LAYOUT_BIDI_STRONG)));
+                bool(rProperty.getLayoutMode() & ComplexTextLayoutFlags::BiDiRtl),
+                bool(rProperty.getLayoutMode() & ComplexTextLayoutFlags::BiDiStrong)));
 
         // add FontScaling
         rTextTransform.scale(aFontScaling.getX(), aFontScaling.getY());
@@ -1259,7 +1251,7 @@ namespace
         const OUString& rText,
         sal_uInt16 nTextStart,
         sal_uInt16 nTextLength,
-        const ::std::vector< double >& rDXArray,
+        const std::vector< double >& rDXArray,
         TargetHolder& rTarget,
         PropertyHolder& rProperty)
     {
@@ -1293,7 +1285,7 @@ namespace
                 || LINESTYLE_NONE != rFont.GetUnderline()
                 || STRIKEOUT_NONE != rFont.GetStrikeout()
                 || FontEmphasisMark::NONE != (rFont.GetEmphasisMark() & FontEmphasisMark::Style)
-                || RELIEF_NONE != rFont.GetRelief()
+                || FontRelief::NONE != rFont.GetRelief()
                 || rFont.IsShadow()
                 || bWordLineMode);
 
@@ -1327,8 +1319,8 @@ namespace
 
                 switch(rFont.GetRelief())
                 {
-                    case RELIEF_EMBOSSED : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_EMBOSSED; break;
-                    case RELIEF_ENGRAVED : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_ENGRAVED; break;
+                    case FontRelief::Embossed : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_EMBOSSED; break;
+                    case FontRelief::Engraved : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_ENGRAVED; break;
                     default : break; // RELIEF_NONE, FontRelief_FORCE_EQUAL_SIZE
                 }
 
@@ -1759,7 +1751,7 @@ namespace
                     if(rPropertyHolders.Current().getLineOrFillActive())
                     {
                         const MetaRectAction* pA = static_cast<const MetaRectAction*>(pAction);
-                        const Rectangle& rRectangle = pA->GetRect();
+                        const tools::Rectangle& rRectangle = pA->GetRect();
 
                         if(!rRectangle.IsEmpty())
                         {
@@ -1786,7 +1778,7 @@ namespace
                     if(rPropertyHolders.Current().getLineOrFillActive())
                     {
                         const MetaRoundRectAction* pA = static_cast<const MetaRoundRectAction*>(pAction);
-                        const Rectangle& rRectangle = pA->GetRect();
+                        const tools::Rectangle& rRectangle = pA->GetRect();
 
                         if(!rRectangle.IsEmpty())
                         {
@@ -1825,7 +1817,7 @@ namespace
                     if(rPropertyHolders.Current().getLineOrFillActive())
                     {
                         const MetaEllipseAction* pA = static_cast<const MetaEllipseAction*>(pAction);
-                        const Rectangle& rRectangle = pA->GetRect();
+                        const tools::Rectangle& rRectangle = pA->GetRect();
 
                         if(!rRectangle.IsEmpty())
                         {
@@ -1849,7 +1841,7 @@ namespace
                     if(rPropertyHolders.Current().getLineColorActive())
                     {
                         const MetaArcAction* pA = static_cast<const MetaArcAction*>(pAction);
-                        const tools::Polygon aToolsPoly(pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), POLY_ARC);
+                        const tools::Polygon aToolsPoly(pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), PolyStyle::Arc);
                         const basegfx::B2DPolygon aOutline(aToolsPoly.getB2DPolygon());
 
                         createHairlinePrimitive(aOutline, rTargetHolders.Current(), rPropertyHolders.Current());
@@ -1863,7 +1855,7 @@ namespace
                     if(rPropertyHolders.Current().getLineOrFillActive())
                     {
                         const MetaPieAction* pA = static_cast<const MetaPieAction*>(pAction);
-                        const tools::Polygon aToolsPoly(pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), POLY_PIE);
+                        const tools::Polygon aToolsPoly(pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), PolyStyle::Pie);
                         const basegfx::B2DPolygon aOutline(aToolsPoly.getB2DPolygon());
 
                         createHairlineAndFillPrimitive(aOutline, rTargetHolders.Current(), rPropertyHolders.Current());
@@ -1877,7 +1869,7 @@ namespace
                     if(rPropertyHolders.Current().getLineOrFillActive())
                     {
                         const MetaChordAction* pA = static_cast<const MetaChordAction*>(pAction);
-                        const tools::Polygon aToolsPoly(pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), POLY_CHORD);
+                        const tools::Polygon aToolsPoly(pA->GetRect(), pA->GetStartPoint(), pA->GetEndPoint(), PolyStyle::Chord);
                         const basegfx::B2DPolygon aOutline(aToolsPoly.getB2DPolygon());
 
                         createHairlineAndFillPrimitive(aOutline, rTargetHolders.Current(), rPropertyHolders.Current());
@@ -2038,7 +2030,7 @@ namespace
                         drawinglayer::primitive2d::TextLayouterDevice aTextLayouterDevice;
                         aTextLayouterDevice.setFont(rPropertyHolders.Current().getFont());
 
-                        ::std::vector< double > aTextArray(
+                        std::vector< double > aTextArray(
                             aTextLayouterDevice.getTextArray(
                                 pA->GetText(),
                                 nTextIndex,
@@ -2081,7 +2073,7 @@ namespace
                     /** CHECKED, WORKS WELL */
                     // OSL_FAIL("MetaActionType::TEXTRECT requested (!)");
                     const MetaTextRectAction* pA = static_cast<const MetaTextRectAction*>(pAction);
-                    const Rectangle& rRectangle = pA->GetRect();
+                    const tools::Rectangle& rRectangle = pA->GetRect();
                     const sal_uInt32 nStringLength(pA->GetText().getLength());
 
                     if(!rRectangle.IsEmpty() && 0 != nStringLength)
@@ -2165,7 +2157,7 @@ namespace
                     if(!rBitmap.IsEmpty())
                     {
                         Bitmap aCroppedBitmap(rBitmap);
-                        const Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
+                        const tools::Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
 
                         if(!aCropRectangle.IsEmpty())
                         {
@@ -2207,7 +2199,7 @@ namespace
                     if(!rBitmapEx.IsEmpty())
                     {
                         BitmapEx aCroppedBitmapEx(rBitmapEx);
-                        const Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
+                        const tools::Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
 
                         if(!aCropRectangle.IsEmpty())
                         {
@@ -2249,7 +2241,7 @@ namespace
                     if(!rBitmap.IsEmpty())
                     {
                         Bitmap aCroppedBitmap(rBitmap);
-                        const Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
+                        const tools::Rectangle aCropRectangle(pA->GetSrcPoint(), pA->GetSrcSize());
 
                         if(!aCropRectangle.IsEmpty())
                         {
@@ -2266,7 +2258,7 @@ namespace
                 {
                     /** CHECKED, WORKS WELL */
                     const MetaGradientAction* pA = static_cast<const MetaGradientAction*>(pAction);
-                    const Rectangle& rRectangle = pA->GetRect();
+                    const tools::Rectangle& rRectangle = pA->GetRect();
 
                     if(!rRectangle.IsEmpty())
                     {
@@ -2356,7 +2348,7 @@ namespace
                 {
                     /** CHECKED, WORKS WELL */
                     const MetaWallpaperAction* pA = static_cast<const MetaWallpaperAction*>(pAction);
-                    Rectangle aWallpaperRectangle(pA->GetRect());
+                    tools::Rectangle aWallpaperRectangle(pA->GetRect());
 
                     if(!aWallpaperRectangle.IsEmpty())
                     {
@@ -2429,7 +2421,7 @@ namespace
                 {
                     /** CHECKED, WORKS WELL */
                     const MetaISectRectClipRegionAction* pA = static_cast<const MetaISectRectClipRegionAction*>(pAction);
-                    const Rectangle& rRectangle = pA->GetRect();
+                    const tools::Rectangle& rRectangle = pA->GetRect();
 
                     if(rRectangle.IsEmpty())
                     {
@@ -2662,14 +2654,14 @@ namespace
                 case MetaActionType::MAPMODE :
                 {
                     /** CHECKED, WORKS WELL */
-                    // the most necessary MapMode to be interpreted is MAP_RELATIVE,
+                    // the most necessary MapMode to be interpreted is MapUnit::MapRelative,
                     // but also the others may occur. Even not yet supported ones
                     // may need to be added here later
                     const MetaMapModeAction* pA = static_cast<const MetaMapModeAction*>(pAction);
                     const MapMode& rMapMode = pA->GetMapMode();
                     basegfx::B2DHomMatrix aMapping;
 
-                    if(MAP_RELATIVE == rMapMode.GetMapUnit())
+                    if(MapUnit::MapRelative == rMapMode.GetMapUnit())
                     {
                         aMapping = getTransformFromMapMode(rMapMode);
                     }
@@ -2677,21 +2669,21 @@ namespace
                     {
                         switch(rMapMode.GetMapUnit())
                         {
-                            case MAP_100TH_MM :
+                            case MapUnit::Map100thMM :
                             {
-                                if(MAP_TWIP == rPropertyHolders.Current().getMapUnit())
+                                if(MapUnit::MapTwip == rPropertyHolders.Current().getMapUnit())
                                 {
-                                    // MAP_TWIP -> MAP_100TH_MM
+                                    // MapUnit::MapTwip -> MapUnit::Map100thMM
                                     const double fTwipTo100thMm(127.0 / 72.0);
                                     aMapping.scale(fTwipTo100thMm, fTwipTo100thMm);
                                 }
                                 break;
                             }
-                            case MAP_TWIP :
+                            case MapUnit::MapTwip :
                             {
-                                if(MAP_100TH_MM == rPropertyHolders.Current().getMapUnit())
+                                if(MapUnit::Map100thMM == rPropertyHolders.Current().getMapUnit())
                                 {
-                                    // MAP_100TH_MM -> MAP_TWIP
+                                    // MapUnit::Map100thMM -> MapUnit::MapTwip
                                     const double f100thMmToTwip(72.0 / 127.0);
                                     aMapping.scale(f100thMmToTwip, f100thMmToTwip);
                                 }
@@ -2734,7 +2726,7 @@ namespace
 
                         // convert to target MapUnit if not pixels
                         aFontSize = OutputDevice::LogicToLogic(
-                            aFontSize, MAP_PIXEL, rPropertyHolders.Current().getMapUnit());
+                            aFontSize, MapUnit::MapPixel, rPropertyHolders.Current().getMapUnit());
 
                         aCorrectedFont.SetFontSize(aFontSize);
                         rPropertyHolders.Current().setFont(aCorrectedFont);
@@ -2750,7 +2742,7 @@ namespace
                         rPropertyHolders.Current().setTextColor(rFontColor.getBColor());
                     }
 
-                    // caution: do NOT decativate here on transparet, see
+                    // caution: do NOT deactivate here on transparent, see
                     // OutputDevice::SetFont(..) for more info
                     // rPropertyHolders.Current().setTextColorActive(bActivate);
 
@@ -2794,7 +2786,7 @@ namespace
                     if(bRasterOpMayChange && rPropertyHolders.Current().isRasterOpActive())
                     {
                         // end evtl. RasterOp
-                        HandleNewRasterOp(ROP_OVERPAINT, rTargetHolders, rPropertyHolders);
+                        HandleNewRasterOp(RasterOp::OverPaint, rTargetHolders, rPropertyHolders);
                     }
 
                     rPropertyHolders.Pop();
@@ -2876,7 +2868,7 @@ namespace
                     // this EPS on screen, the renderer visualizing this has to support
                     // that primitive and visualize the Eps file (e.g. printing)
                     const MetaEPSAction* pA = static_cast<const MetaEPSAction*>(pAction);
-                    const Rectangle aRectangle(pA->GetPoint(), pA->GetSize());
+                    const tools::Rectangle aRectangle(pA->GetPoint(), pA->GetSize());
 
                     if(!aRectangle.IsEmpty())
                     {
@@ -3093,7 +3085,7 @@ namespace
                         // better to use this info
                         const MetaGradientExAction* pMetaGradientExAction = nullptr;
                         bool bDone(false);
-                        sal_uInt32 b(nAction + 1);
+                        size_t b(nAction + 1);
 
                         for(; !bDone && b < nCount; b++)
                         {
@@ -3166,9 +3158,9 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer MetafilePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void MetafilePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
         {
-            // prepare target and porperties; each will have one default entry
+            // prepare target and properties; each will have one default entry
             TargetHolders aTargetHolders;
             PropertyHolders aPropertyHolders;
 
@@ -3195,7 +3187,7 @@ namespace drawinglayer
             if(!xRetval.empty())
             {
                 // get target size
-                const Rectangle aMtfTarget(getMetaFile().GetPrefMapMode().GetOrigin(), getMetaFile().GetPrefSize());
+                const tools::Rectangle aMtfTarget(getMetaFile().GetPrefMapMode().GetOrigin(), getMetaFile().GetPrefSize());
 
                 // create transformation
                 basegfx::B2DHomMatrix aAdaptedTransform;
@@ -3215,7 +3207,7 @@ namespace drawinglayer
                 xRetval = Primitive2DContainer { aEmbeddedTransform };
             }
 
-            return xRetval;
+            rContainer.insert(rContainer.end(), xRetval.begin(), xRetval.end());
         }
 
         MetafilePrimitive2D::MetafilePrimitive2D(

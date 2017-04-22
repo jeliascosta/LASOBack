@@ -63,7 +63,7 @@ protected:
     SwFlyFreeFrame( SwFlyFrameFormat*, SwFrame*, SwFrame *pAnchor );
 
     virtual void DestroyImpl() override;
-    virtual ~SwFlyFreeFrame();
+    virtual ~SwFlyFreeFrame() override;
 
 public:
     // #i28701#
@@ -71,23 +71,23 @@ public:
     virtual void MakeAll(vcl::RenderContext* pRenderContext) override;
 
     // #i37068# - accessors for member <mbNoMoveOnCheckClip>
-    inline void SetNoMoveOnCheckClip( const bool _bNewNoMoveOnCheckClip )
+    void SetNoMoveOnCheckClip( const bool _bNewNoMoveOnCheckClip )
     {
         mbNoMoveOnCheckClip = _bNewNoMoveOnCheckClip;
     }
-    inline bool IsNoMoveOnCheckClip() const
+    bool IsNoMoveOnCheckClip() const
     {
         return mbNoMoveOnCheckClip;
     }
     // #i34753# - accessors for member <mbNoMakePos>
-    inline void SetNoMakePos( const bool _bNoMakePos )
+    void SetNoMakePos( const bool _bNoMakePos )
     {
         if ( IsFlyLayFrame() )
         {
             mbNoMakePos = _bNoMakePos;
         }
     }
-    inline bool IsNoMakePos() const
+    bool IsNoMakePos() const
     {
         if ( IsFlyLayFrame() )
         {
@@ -99,7 +99,7 @@ public:
         }
     }
 
-    inline const SwRect& GetUnclippedFrame( ) const
+    const SwRect& GetUnclippedFrame( ) const
     {
         if ( maUnclippedFrame.HasArea( ) )
             return maUnclippedFrame;
@@ -172,11 +172,8 @@ class SwFlyInContentFrame : public SwFlyFrame
 {
     Point aRef;  // relative to this point AbsPos is being calculated
 
-    bool bInvalidLayout :1;
-    bool bInvalidContent  :1;
-
     virtual void DestroyImpl() override;
-    virtual ~SwFlyInContentFrame();
+    virtual ~SwFlyInContentFrame() override;
 
 protected:
     virtual void NotifyBackground( SwPageFrame *pPage,
@@ -196,10 +193,6 @@ public:
     const Point &GetRefPoint() const { return aRef; }
     const Point GetRelPos() const;
 
-    inline void InvalidateLayout() const;
-    inline void InvalidateContent() const;
-    bool IsInvalid() const { return (bInvalidLayout || bInvalidContent); }
-
     // (26.11.93, see tabfrm.hxx, but might also be valid for others)
     // For creation of a Fly after a FlyCnt was created _and_ inserted.
     // Must be called by creator because can be pasted only after creation.
@@ -217,16 +210,6 @@ public:
     // position is calculated during the format of the anchor frame
     virtual void ActionOnInvalidation( const InvalidationType _nInvalid ) override;
 };
-
-inline void SwFlyInContentFrame::InvalidateLayout() const
-{
-    const_cast<SwFlyInContentFrame*>(this)->bInvalidLayout = true;
-}
-inline void SwFlyInContentFrame::InvalidateContent() const
-{
-    const_cast<SwFlyInContentFrame*>(this)->bInvalidContent = true;
-}
-
 
 #endif
 

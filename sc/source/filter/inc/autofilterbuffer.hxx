@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SC_SOURCE_FILTER_INC_AUTOFILTERBUFFER_HXX
 #define INCLUDED_SC_SOURCE_FILTER_INC_AUTOFILTERBUFFER_HXX
 
-#include <com/sun/star/table/CellRangeAddress.hpp>
 #include <oox/helper/helper.hxx>
 #include <oox/helper/refvector.hxx>
 #include "workbookhelper.hxx"
@@ -167,7 +166,7 @@ public:
 
     /** Creates and returns the specified filter settings object. */
     template< typename FilterSettingsType >
-    inline FilterSettingsBase& createFilterSettings()
+    FilterSettingsBase& createFilterSettings()
         { mxSettings.reset( new FilterSettingsType( *this ) ); return *mxSettings; }
 
     /** Returns converted UNO API filter settings representing all filter
@@ -202,7 +201,7 @@ private:
     typedef RefVector< FilterColumn > FilterColumnVector;
 
     FilterColumnVector  maFilterColumns;
-    css::table::CellRangeAddress maRange;
+    ScRange             maRange;
 };
 
 class AutoFilterBuffer : public WorkbookHelper

@@ -41,23 +41,13 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::text;
 using namespace ::xmloff::token;
 
-const sal_Char sAPI_DDECommandFile[] = "DDECommandFile";
-const sal_Char sAPI_DDECommandType[] = "DDECommandType";
-const sal_Char sAPI_DDECommandElement[] = "DDECommandElement";
-const sal_Char sAPI_IsAutomaticUpdate[] = "IsAutomaticUpdate";
-
-
 XMLSectionSourceDDEImportContext::XMLSectionSourceDDEImportContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrfx,
     const OUString& rLocalName,
     Reference<XPropertySet> & rSectPropSet) :
         SvXMLImportContext(rImport, nPrfx, rLocalName),
-        rSectionPropertySet(rSectPropSet),
-        sDdeCommandFile(sAPI_DDECommandFile),
-        sDdeCommandType(sAPI_DDECommandType),
-       sDdeCommandElement(sAPI_DDECommandElement),
-        sIsAutomaticUpdate(sAPI_IsAutomaticUpdate)
+        rSectionPropertySet(rSectPropSet)
 {
 }
 
@@ -131,23 +121,23 @@ void XMLSectionSourceDDEImportContext::StartElement(
 
     // DDE not supported on all platforms; query property first
     if (rSectionPropertySet->getPropertySetInfo()->
-        hasPropertyByName(sDdeCommandFile))
+        hasPropertyByName("DDECommandFile"))
     {
         // use multi property set to force single update of connection #83654#
         Sequence<OUString> aNames(4);
         Sequence<Any> aValues(4);
 
         aValues[0] <<= sApplication;
-        aNames[0] = sDdeCommandFile;
+        aNames[0] = "DDECommandFile";
 
         aValues[1] <<= sTopic;
-        aNames[1] = sDdeCommandType;
+        aNames[1] = "DDECommandType";
 
         aValues[2] <<= sItem;
-        aNames[2] = sDdeCommandElement;
+        aNames[2] = "DDECommandElement";
 
         aValues[3] <<= bAutomaticUpdate;
-        aNames[3] = sIsAutomaticUpdate;
+        aNames[3] = "IsAutomaticUpdate";
 
         Reference<XMultiPropertySet> rMultiPropSet(rSectionPropertySet,
                                                    UNO_QUERY);

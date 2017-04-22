@@ -44,6 +44,7 @@
 #include "xestyle.hxx"
 #include "xename.hxx"
 #include <rtl/uuid.h>
+#include <oox/token/namespaces.hxx>
 
 using namespace ::oox;
 
@@ -61,14 +62,14 @@ struct XclExpHashEntry
 {
     const XclExpString* mpString;       /// Pointer to the string (no ownership).
     sal_uInt32          mnSstIndex;     /// The SST index of this string.
-    inline explicit     XclExpHashEntry( const XclExpString* pString = nullptr, sal_uInt32 nSstIndex = 0 ) :
+    explicit     XclExpHashEntry( const XclExpString* pString, sal_uInt32 nSstIndex ) :
                             mpString( pString ), mnSstIndex( nSstIndex ) {}
 };
 
 /** Function object for strict weak ordering. */
 struct XclExpHashEntrySWO
 {
-    inline bool         operator()( const XclExpHashEntry& rLeft, const XclExpHashEntry& rRight ) const
+    bool         operator()( const XclExpHashEntry& rLeft, const XclExpHashEntry& rRight ) const
                             { return *rLeft.mpString < *rRight.mpString; }
 };
 
@@ -203,7 +204,7 @@ void XclExpSstImpl::SaveXml( XclExpXmlStream& rStrm )
     rStrm.PushStream( pSst );
 
     pSst->startElement( XML_sst,
-            XML_xmlns, "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+            XML_xmlns, XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(xls))).getStr(),
             XML_count, OString::number(  mnTotal ).getStr(),
             XML_uniqueCount, OString::number(  mnSize ).getStr(),
             FSEND );
@@ -321,8 +322,7 @@ XclExpHyperlink::XclExpHyperlink( const XclExpRoot& rRoot, const SvxURLField& rU
     XclExpRecord( EXC_ID_HLINK ),
     maScPos( rScPos ),
     mxVarData( new SvMemoryStream ),
-    mnFlags( 0 ),
-    mbSetDisplay( true )
+    mnFlags( 0 )
 {
     const OUString& rUrl = rUrlField.GetURL();
     const OUString& rRepr = rUrlField.GetRepresentation();
@@ -355,7 +355,7 @@ XclExpHyperlink::XclExpHyperlink( const XclExpRoot& rRoot, const SvxURLField& rU
         if( eProtocol == INetProtocol::Smb )
         {
             // #n382718# (and #n261623#) Convert smb notation to '\\'
-            aFileName = aUrlObj.GetMainURL( INetURLObject::NO_DECODE );
+            aFileName = aUrlObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
             aFileName = aFileName.copy(4); // skip the 'smb:' part
             aFileName = aFileName.replace('/', '\\');
         }
@@ -448,7 +448,7 @@ OUString XclExpHyperlink::BuildFileName(
         sal_uInt16& rnLevel, bool& rbRel, const OUString& rUrl, const XclExpRoot& rRoot, bool bEncoded )
 {
     INetURLObject aURLObject( rUrl );
-    OUString aDosName( bEncoded ? aURLObject.GetURLPath() : aURLObject.getFSysPath( INetURLObject::FSYS_DOS ) );
+    OUString aDosName( bEncoded ? aURLObject.GetURLPath() : aURLObject.getFSysPath( FSysStyle::Dos ) );
     rnLevel = 0;
     rbRel = rRoot.IsRelUrl();
 
@@ -457,8 +457,8 @@ OUString XclExpHyperlink::BuildFileName(
         // try to convert to relative file name
         OUString aTmpName( aDosName );
         aDosName = INetURLObject::GetRelURL( rRoot.GetBasePath(), rUrl,
-            INetURLObject::WAS_ENCODED,
-            (bEncoded ? INetURLObject::DECODE_TO_IURI : INetURLObject::DECODE_WITH_CHARSET));
+            INetURLObject::EncodeMechanism::WasEncoded,
+            (bEncoded ? INetURLObject::DecodeMechanism::ToIUri : INetURLObject::DecodeMechanism::WithCharset));
 
         if (aDosName.startsWith(INET_FILE_SCHEME))
         {
@@ -514,9 +514,7 @@ void XclExpHyperlink::SaveXml( XclExpXmlStream& rStrm )
                                         ? XclXmlUtils::ToOString( *mxTextMark ).getStr()
                                         : nullptr,
             // OOXTODO: XML_tooltip,    from record HLinkTooltip 800h wzTooltip
-            XML_display,            mbSetDisplay
-                                       ? XclXmlUtils::ToOString(m_Repr).getStr()
-                                       : nullptr,
+            XML_display,            XclXmlUtils::ToOString(m_Repr).getStr(),
             FSEND );
 }
 
@@ -571,7 +569,7 @@ void XclExpLabelranges::Save( XclExpStream& rStrm )
 class XclExpCFImpl : protected XclExpRoot
 {
 public:
-    explicit            XclExpCFImpl( const XclExpRoot& rRoot, const ScCondFormatEntry& rFormatEntry, sal_Int32 nPriority = 0 );
+    explicit            XclExpCFImpl( const XclExpRoot& rRoot, const ScCondFormatEntry& rFormatEntry, sal_Int32 nPriority );
 
     /** Writes the body of the CF record. */
     void                WriteBody( XclExpStream& rStrm );
@@ -839,6 +837,18 @@ const char* GetOperatorString(ScConditionMode eMode, bool& bFrmla2)
         case SC_COND_NOTDUPLICATE:
             pRet = nullptr;
             break;
+        case SC_COND_BEGINS_WITH:
+            pRet = "beginsWith";
+        break;
+        case SC_COND_ENDS_WITH:
+            pRet = "endsWith";
+        break;
+        case SC_COND_CONTAINS_TEXT:
+            pRet = "containsText";
+        break;
+        case SC_COND_NOT_CONTAINS_TEXT:
+            pRet = "notContains";
+        break;
         case SC_COND_DIRECT:
             break;
         case SC_COND_NONE:
@@ -1268,14 +1278,24 @@ XclExpCondfmt::~XclExpCondfmt()
 {
 }
 
-bool XclExpCondfmt::IsValid() const
+bool XclExpCondfmt::IsValidForBinary() const
+{
+    // ccf (2 bytes): An unsigned integer that specifies the count of CF records that follow this
+    // record. MUST be greater than or equal to 0x0001, and less than or equal to 0x0003.
+
+    SAL_WARN_IF( maCFList.GetSize() > 3, "sc.filter", "More than 3 conditional filters for cell(s), won't export");
+
+    return !maCFList.IsEmpty() && maCFList.GetSize() <= 3 && !maXclRanges.empty();
+}
+
+bool XclExpCondfmt::IsValidForXml() const
 {
     return !maCFList.IsEmpty() && !maXclRanges.empty();
 }
 
 void XclExpCondfmt::Save( XclExpStream& rStrm )
 {
-    if( IsValid() )
+    if( IsValidForBinary() )
     {
         XclExpRecord::Save( rStrm );
         maCFList.Save( rStrm );
@@ -1295,7 +1315,7 @@ void XclExpCondfmt::WriteBody( XclExpStream& rStrm )
 
 void XclExpCondfmt::SaveXml( XclExpXmlStream& rStrm )
 {
-    if( !IsValid() )
+    if( !IsValidForXml() )
         return;
 
     sax_fastparser::FSHelperPtr& rWorksheet = rStrm.GetCurrentStream();
@@ -1387,7 +1407,7 @@ void XclExpDataBar::SaveXml( XclExpXmlStream& rStrm )
     // extLst entries for Excel 2010 and 2013
     rWorksheet->startElement( XML_extLst, FSEND );
     rWorksheet->startElement( XML_ext,
-                                FSNS( XML_xmlns, XML_x14 ), "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main",
+                                FSNS( XML_xmlns, XML_x14 ), XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(xls14Lst))).getStr(),
                                 XML_uri, "{B025F937-C7B1-47D3-B67F-A62EFF666E3E}",
                                 FSEND );
 
@@ -1422,7 +1442,7 @@ namespace {
 
 const char* getIconSetName( ScIconSetType eType )
 {
-    ScIconSetMap* pMap = ScIconSetFormat::getIconSetMap();
+    const ScIconSetMap* pMap = ScIconSetFormat::g_IconSetMap;
     for(; pMap->pName; ++pMap)
     {
         if(pMap->eType == eType)
@@ -1466,7 +1486,7 @@ XclExpCondFormatBuffer::XclExpCondFormatBuffer( const XclExpRoot& rRoot, XclExtL
                         itr != pCondFmtList->end(); ++itr)
         {
             XclExpCondfmtList::RecordRefType xCondfmtRec( new XclExpCondfmt( GetRoot(), **itr, xExtLst, nIndex ));
-            if( xCondfmtRec->IsValid() )
+            if( xCondfmtRec->IsValidForXml() )
                 maCondfmtList.AppendRecord( xCondfmtRec );
         }
     }
@@ -2006,7 +2026,7 @@ XclExpWebQueryBuffer::XclExpWebQueryBuffer( const XclExpRoot& rRoot )
 
                     OUString aAbsDoc( ScGlobal::GetAbsDocName( aUrl, pShell ) );
                     INetURLObject aUrlObj( aAbsDoc );
-                    OUString aWebQueryUrl( aUrlObj.getFSysPath( INetURLObject::FSYS_DOS ) );
+                    OUString aWebQueryUrl( aUrlObj.getFSysPath( FSysStyle::Dos ) );
                     if( aWebQueryUrl.isEmpty() )
                         aWebQueryUrl = aAbsDoc;
 

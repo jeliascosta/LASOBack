@@ -74,7 +74,7 @@ void SwBaseShell::InsertRegionDialog(SfxRequest& rReq)
     if (!pSet || pSet->Count()==0)
     {
         SwRect aRect;
-        rSh.CalcBoundRect(aRect, FLY_AS_CHAR);
+        rSh.CalcBoundRect(aRect, RndStdIds::FLY_AS_CHAR);
 
         long nWidth = aRect.Width();
         aSet.Put(SwFormatFrameSize(ATT_VAR_SIZE, nWidth));
@@ -83,7 +83,7 @@ void SwBaseShell::InsertRegionDialog(SfxRequest& rReq)
         aSet.Put(SvxSizeItem(SID_ATTR_PAGE_SIZE, Size(nWidth, nWidth)));
         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "Dialog creation failed!");
-        std::unique_ptr<AbstractInsertSectionTabDialog> aTabDlg(pFact->CreateInsertSectionTabDialog(
+        ScopedVclPtr<AbstractInsertSectionTabDialog> aTabDlg(pFact->CreateInsertSectionTabDialog(
             &GetView().GetViewFrame()->GetWindow(), aSet , rSh));
         OSL_ENSURE(aTabDlg, "Dialog creation failed!");
         aTabDlg->Execute();
@@ -111,7 +111,7 @@ void SwBaseShell::InsertRegionDialog(SfxRequest& rReq)
         {
             SwFormatCol aCol;
             SwRect aRect;
-            rSh.CalcBoundRect(aRect, FLY_AS_CHAR);
+            rSh.CalcBoundRect(aRect, RndStdIds::FLY_AS_CHAR);
             long nWidth = aRect.Width();
 
             sal_uInt16 nCol = static_cast<const SfxUInt16Item *>(pItem)->GetValue();
@@ -154,8 +154,8 @@ void SwBaseShell::InsertRegionDialog(SfxRequest& rReq)
 
         if(!aFile.isEmpty() || !aSub.isEmpty())
         {
-            OUString sLinkFileName = OUString(sfx2::cTokenSeparator);
-            sLinkFileName += OUString(sfx2::cTokenSeparator);
+            OUString sLinkFileName = OUStringLiteral1(sfx2::cTokenSeparator)
+                + OUStringLiteral1(sfx2::cTokenSeparator);
             sLinkFileName = comphelper::string::setToken(sLinkFileName, 0, sfx2::cTokenSeparator, aFile);
 
             if(SfxItemState::SET ==
@@ -174,7 +174,7 @@ void SwBaseShell::InsertRegionDialog(SfxRequest& rReq)
     }
 }
 
-IMPL_LINK_TYPED( SwWrtShell, InsertRegionDialog, void*, p, void )
+IMPL_LINK( SwWrtShell, InsertRegionDialog, void*, p, void )
 {
     SwSectionData* pSect = static_cast<SwSectionData*>(p);
     std::unique_ptr<SwSectionData> xSectionData(pSect);
@@ -187,14 +187,14 @@ IMPL_LINK_TYPED( SwWrtShell, InsertRegionDialog, void*, p, void )
                 SID_ATTR_PAGE_SIZE, SID_ATTR_PAGE_SIZE,
                 0);
         SwRect aRect;
-        CalcBoundRect(aRect, FLY_AS_CHAR);
+        CalcBoundRect(aRect, RndStdIds::FLY_AS_CHAR);
         long nWidth = aRect.Width();
         aSet.Put(SwFormatFrameSize(ATT_VAR_SIZE, nWidth));
         // height=width for more consistent preview (analog to edit region)
         aSet.Put(SvxSizeItem(SID_ATTR_PAGE_SIZE, Size(nWidth, nWidth)));
         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "Dialog creation failed!");
-        std::unique_ptr<AbstractInsertSectionTabDialog> aTabDlg(pFact->CreateInsertSectionTabDialog(
+        ScopedVclPtr<AbstractInsertSectionTabDialog> aTabDlg(pFact->CreateInsertSectionTabDialog(
             &GetView().GetViewFrame()->GetWindow(),aSet , *this));
         OSL_ENSURE(aTabDlg, "Dialog creation failed!");
         aTabDlg->SetSectionData(*xSectionData);
@@ -214,12 +214,13 @@ void SwBaseShell::EditRegionDialog(SfxRequest& rReq)
     switch ( nSlot )
     {
         case FN_EDIT_REGION:
+        case FN_EDIT_CURRENT_REGION:
         {
             vcl::Window* pParentWin = &GetView().GetViewFrame()->GetWindow();
             {
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "Dialog creation failed!");
-                std::unique_ptr<AbstractEditRegionDlg> pEditRegionDlg(pFact->CreateEditRegionDlg(pParentWin, rWrtShell));
+                ScopedVclPtr<AbstractEditRegionDlg> pEditRegionDlg(pFact->CreateEditRegionDlg(pParentWin, rWrtShell));
                 OSL_ENSURE(pEditRegionDlg, "Dialog creation failed!");
                 if(pItem && dynamic_cast< const SfxStringItem *>( pItem ) !=  nullptr)
                 {

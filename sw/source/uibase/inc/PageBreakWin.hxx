@@ -10,7 +10,7 @@
 #define INCLUDED_SW_SOURCE_UIBASE_INC_PAGEBREAKWIN_HXX
 
 #include <FrameControl.hxx>
-
+#include <vcl/builder.hxx>
 #include <vcl/menubtn.hxx>
 
 class SwPageFrame;
@@ -22,7 +22,8 @@ class SwPageFrame;
   */
 class SwPageBreakWin : public SwFrameMenuButtonBase
 {
-    PopupMenu*            m_pPopupMenu;
+    VclBuilder            m_aBuilder;
+    VclPtr<PopupMenu>     m_pPopupMenu;
     VclPtr<vcl::Window>   m_pLine;
     bool                  m_bIsAppearing;
     int                   m_nFadeRate;
@@ -34,10 +35,10 @@ class SwPageBreakWin : public SwFrameMenuButtonBase
 
 public:
     SwPageBreakWin( SwEditWin* pEditWin, const SwFrame *pFrame );
-    virtual ~SwPageBreakWin();
+    virtual ~SwPageBreakWin() override;
     virtual void dispose() override;
 
-    virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rRect ) override;
     virtual void Select( ) override;
     virtual void MouseMove( const MouseEvent& rMEvt ) override;
     virtual void Activate( ) override;
@@ -53,8 +54,8 @@ public:
 
 private:
     /// Hide the button (used when the popup menu is closed by clicking outside)
-    DECL_LINK_TYPED( HideHandler, Menu *, bool );
-    DECL_LINK_TYPED( FadeHandler, Timer *, void );
+    DECL_LINK( HideHandler, Menu *, bool );
+    DECL_LINK( FadeHandler, Timer *, void );
 };
 
 #endif

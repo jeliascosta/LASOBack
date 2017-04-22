@@ -37,7 +37,6 @@
 #include <com/sun/star/sheet/ValidationAlertStyle.hpp>
 #include <com/sun/star/sheet/ValidationType.hpp>
 #include <com/sun/star/sheet/ConditionOperator.hpp>
-#include <com/sun/star/table/CellAddress.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/util/XNumberFormatTypes.hpp>
 #include <com/sun/star/sheet/XSheetCellRangeContainer.hpp>
@@ -70,25 +69,7 @@ enum ScXMLDocTokens
     XML_TOK_DOC_META,
     XML_TOK_DOC_SCRIPTS,
     XML_TOK_DOC_BODY,
-    XML_TOK_DOC_SETTINGS,
-    XML_TOK_OFFICE_END=XML_TOK_UNKNOWN
-};
-
-enum ScXMLStylesTokens
-{
-    XML_TOK_STYLES_STYLE
-};
-
-enum ScXMLStylesAttrTokens
-{
-    XML_TOK_STYLES_STYLE_NAME,
-    XML_TOK_STYLES_STYLE_FAMILY,
-    XML_TOK_STYLES_STYLE_PARENT_STYLE_NAME
-};
-
-enum ScXMLStyleTokens
-{
-    XML_TOK_STYLE_PROPERTIES
+    XML_TOK_DOC_SETTINGS
 };
 
 enum ScXMLBodyTokens
@@ -972,6 +953,10 @@ protected:
     virtual SvXMLImportContext *CreateContext(sal_uInt16 nPrefix,
                                       const OUString& rLocalName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList ) override;
+
+    virtual SvXMLImportContext *CreateFastContext( sal_Int32 nElement,
+        const ::css::uno::Reference< ::css::xml::sax::XFastAttributeList >& xAttrList ) override;
+
     virtual XMLShapeImportHelper* CreateShapeImport() override;
 
 public:
@@ -979,11 +964,10 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& rContext,
         OUString const & implementationName, SvXMLImportFlags nImportFlag);
 
-    virtual ~ScXMLImport() throw();
+    virtual ~ScXMLImport() throw() override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence<css::uno::Any>& aArguments )
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence<css::uno::Any>& aArguments ) override;
 
     // namespace office
     // NB: in contrast to other CreateFooContexts, this particular one handles
@@ -997,16 +981,17 @@ public:
     SvXMLImportContext *CreateStylesContext(const OUString& rLocalName,
                                      const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                      bool bAutoStyles );
+
     SvXMLImportContext *CreateBodyContext(
-                                    const OUString& rLocalName,
-                                    const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList );
+                                    const sal_Int32 nElement,
+                                    const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList );
 
     virtual void SetStatistics( const css::uno::Sequence< css::beans::NamedValue> & i_rStats) override;
 
     ScDocumentImport& GetDoc();
 
-    inline ScDocument*          GetDocument()           { return pDoc; }
-    inline const ScDocument*    GetDocument() const     { return pDoc; }
+    ScDocument*          GetDocument()           { return pDoc; }
+    const ScDocument*    GetDocument() const     { return pDoc; }
 
     ScMyTables& GetTables() { return aTables; }
 
@@ -1111,23 +1096,20 @@ public:
     void AddNamedExpression(ScMyNamedExpression* pMyNamedExpression)
     {
         if (!m_pMyNamedExpressions)
-            m_pMyNamedExpressions = new ScMyNamedExpressions();
+            m_pMyNamedExpressions = new ScMyNamedExpressions;
         m_pMyNamedExpressions->push_back(std::unique_ptr<ScMyNamedExpression>(pMyNamedExpression));
     }
-
-    ScMyNamedExpressions* GetNamedExpressions() { return m_pMyNamedExpressions; }
 
     void AddNamedExpression(SCTAB nTab, ScMyNamedExpression* pNamedExp);
 
     void    AddLabelRange(const ScMyLabelRange* pMyLabelRange) {
         if (!pMyLabelRanges)
-            pMyLabelRanges = new ScMyLabelRanges();
+            pMyLabelRanges = new ScMyLabelRanges;
         pMyLabelRanges->push_back(pMyLabelRange); }
-    ScMyLabelRanges* GetLabelRanges() { return pMyLabelRanges; }
 
     void AddValidation(const ScMyImportValidation& rValidation) {
         if (!pValidations)
-            pValidations = new ScMyImportValidations();
+            pValidations = new ScMyImportValidations;
         pValidations->push_back(rValidation); }
     bool GetValidation(const OUString& sName, ScMyImportValidation& aValidation);
 
@@ -1171,14 +1153,10 @@ public:
     void SetStylesToRangesFinished();
 
     // XImporter
-    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
 
-    virtual void SAL_CALL startDocument()
-        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL endDocument()
-        throw(css::xml::sax::SAXException,
-              css::uno::RuntimeException,
-              std::exception) override;
+    virtual void SAL_CALL startDocument() override;
+    virtual void SAL_CALL endDocument() override;
 
     virtual void DisposingModel() override;
 
@@ -1244,7 +1222,7 @@ public:
             const OUString& rAttrValue,
             bool bRestrictToExternalNmsp = false ) const;
 
-    bool IsFormulaErrorConstant( const OUString& rStr ) const;
+    FormulaError GetFormulaErrorConstant( const OUString& rStr ) const;
 
     ScEditEngineDefaulter* GetEditEngine();
     const ScXMLEditAttributeMap& GetEditAttributeMap() const;

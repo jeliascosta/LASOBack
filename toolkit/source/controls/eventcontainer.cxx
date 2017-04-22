@@ -41,22 +41,19 @@ namespace toolkit
 {
 
 // Methods XElementAccess
-Type NameContainer_Impl::getElementType()
-    throw(RuntimeException, std::exception)
+Type ScriptEventContainer::getElementType()
 {
     return mType;
 }
 
-sal_Bool NameContainer_Impl::hasElements()
-    throw(RuntimeException, std::exception)
+sal_Bool ScriptEventContainer::hasElements()
 {
     bool bRet = (mnElementCount > 0);
     return bRet;
 }
 
 // Methods XNameAccess
-Any NameContainer_Impl::getByName( const OUString& aName )
-    throw(NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
+Any ScriptEventContainer::getByName( const OUString& aName )
 {
     NameContainerNameMap::iterator aIt = mHashMap.find( aName );
     if( aIt == mHashMap.end() )
@@ -68,14 +65,12 @@ Any NameContainer_Impl::getByName( const OUString& aName )
     return aRetAny;
 }
 
-Sequence< OUString > NameContainer_Impl::getElementNames()
-    throw(RuntimeException, std::exception)
+Sequence< OUString > ScriptEventContainer::getElementNames()
 {
     return mNames;
 }
 
-sal_Bool NameContainer_Impl::hasByName( const OUString& aName )
-    throw(RuntimeException, std::exception)
+sal_Bool ScriptEventContainer::hasByName( const OUString& aName )
 {
     NameContainerNameMap::iterator aIt = mHashMap.find( aName );
     bool bRet = ( aIt != mHashMap.end() );
@@ -84,8 +79,7 @@ sal_Bool NameContainer_Impl::hasByName( const OUString& aName )
 
 
 // Methods XNameReplace
-void NameContainer_Impl::replaceByName( const OUString& aName, const Any& aElement )
-    throw(IllegalArgumentException, NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
+void ScriptEventContainer::replaceByName( const OUString& aName, const Any& aElement )
 {
     const Type& aAnyType = aElement.getValueType();
     if( mType != aAnyType )
@@ -103,7 +97,7 @@ void NameContainer_Impl::replaceByName( const OUString& aName, const Any& aEleme
     // Fire event
     ContainerEvent aEvent;
     aEvent.Source = *this;
-    aEvent.Element <<= aElement;
+    aEvent.Element = aElement;
     aEvent.ReplacedElement = aOldElement;
     aEvent.Accessor <<= aName;
     maContainerListeners.elementReplaced( aEvent );
@@ -111,8 +105,7 @@ void NameContainer_Impl::replaceByName( const OUString& aName, const Any& aEleme
 
 
 // Methods XNameContainer
-void NameContainer_Impl::insertByName( const OUString& aName, const Any& aElement )
-    throw(IllegalArgumentException, ElementExistException, WrappedTargetException, RuntimeException, std::exception)
+void ScriptEventContainer::insertByName( const OUString& aName, const Any& aElement )
 {
     const Type& aAnyType = aElement.getValueType();
     if( mType != aAnyType )
@@ -134,13 +127,12 @@ void NameContainer_Impl::insertByName( const OUString& aName, const Any& aElemen
     // Fire event
     ContainerEvent aEvent;
     aEvent.Source = *this;
-    aEvent.Element <<= aElement;
+    aEvent.Element = aElement;
     aEvent.Accessor <<= aName;
     maContainerListeners.elementInserted( aEvent );
 }
 
-void NameContainer_Impl::removeByName( const OUString& Name )
-    throw(NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
+void ScriptEventContainer::removeByName( const OUString& Name )
 {
     NameContainerNameMap::iterator aIt = mHashMap.find( Name );
     if( aIt == mHashMap.end() )
@@ -172,20 +164,21 @@ void NameContainer_Impl::removeByName( const OUString& Name )
 }
 
 // Methods XContainer
-void NameContainer_Impl::addContainerListener( const css::uno::Reference< css::container::XContainerListener >& l ) throw(css::uno::RuntimeException, std::exception)
+void ScriptEventContainer::addContainerListener( const css::uno::Reference< css::container::XContainerListener >& l )
 {
     maContainerListeners.addInterface( l );
 }
 
-void NameContainer_Impl::removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& l ) throw(css::uno::RuntimeException, std::exception)
+void ScriptEventContainer::removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& l )
 {
     maContainerListeners.removeInterface( l );
 }
 
 
-// Ctor
 ScriptEventContainer::ScriptEventContainer()
-    : NameContainer_Impl( cppu::UnoType<ScriptEventDescriptor>::get())
+    : mnElementCount( 0 ),
+      mType( cppu::UnoType<ScriptEventDescriptor>::get() ),
+      maContainerListeners( *this )
 {
 }
 

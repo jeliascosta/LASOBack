@@ -41,9 +41,9 @@ void UndoFormulaToValue::Execute()
 
     ScUndoUtil::MarkSimpleBlock(pDocShell, maUndoValues.getRange());
 
-    pDocShell->PostPaint(maUndoValues.getRange(), PAINT_GRID);
+    pDocShell->PostPaint(maUndoValues.getRange(), PaintPartFlags::Grid);
     pDocShell->PostDataChanged();
-    rDoc.BroadcastCells(maUndoValues.getRange(), SC_HINT_DATACHANGED);
+    rDoc.BroadcastCells(maUndoValues.getRange(), SfxHintId::ScDataChanged);
 }
 
 }

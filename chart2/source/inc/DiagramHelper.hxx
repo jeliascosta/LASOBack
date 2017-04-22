@@ -51,7 +51,7 @@ enum DiagramPositioningMode
 class OOO_DLLPUBLIC_CHARTTOOLS DiagramHelper
 {
 public:
-    typedef ::std::pair<
+    typedef std::pair<
             css::uno::Reference< css::chart2::XChartTypeTemplate >,
             OUString >
         tTemplateWithServiceName;
@@ -61,7 +61,7 @@ public:
 
         @return
             A pair containing a template with the correct properties set as
-            first entry and the service name of the templateas second entry.  If
+            first entry and the service name of the templates second entry.  If
             no template was found both elements are empty.
      */
     static tTemplateWithServiceName
@@ -75,7 +75,7 @@ public:
         "vertical==true" for bar charts, "vertical==false" for column charts
      */
     static void setVertical( const css::uno::Reference< css::chart2::XDiagram > & xDiagram,
-                             bool bVertical = true );
+                             bool bVertical );
 
     /** Gets the "SwapXAndYAxis" property at all coordinate systems found in the
         given diagram.
@@ -113,8 +113,7 @@ public:
     static StackMode getStackModeFromChartType(
         const css::uno::Reference< css::chart2::XChartType > & xChartType,
         bool& rbFound, bool& rbAmbiguous,
-        const css::uno::Reference< css::chart2::XCoordinateSystem > & xCorrespondingCoordinateSystem =
-                css::uno::Reference< css::chart2::XCoordinateSystem >()
+        const css::uno::Reference< css::chart2::XCoordinateSystem > & xCorrespondingCoordinateSystem
         );
 
     /** Returns the dimension found for all chart types in the tree.  If the
@@ -160,7 +159,7 @@ public:
             const css::uno::Reference< css::chart2::XDiagram >& xDiagram,
             const css::uno::Reference< css::chart2::XDataSeries >& xSeries );
 
-    static ::std::vector< css::uno::Reference< css::chart2::XDataSeries > >
+    static std::vector< css::uno::Reference< css::chart2::XDataSeries > >
         getDataSeriesFromDiagram(
             const css::uno::Reference< css::chart2::XDiagram > & xDiagram );
 

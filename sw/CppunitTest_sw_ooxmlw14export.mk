@@ -9,8 +9,6 @@
 #
 #*************************************************************************
 
-include $(SRCDIR)/sw/ooxmlexport_setup.mk
-
 $(eval $(call gb_CppunitTest_CppunitTest,sw_ooxmlw14export))
 
 $(eval $(call gb_CppunitTest_add_exception_objects,sw_ooxmlw14export, \
@@ -33,10 +31,7 @@ $(eval $(call gb_CppunitTest_set_include,sw_ooxmlw14export,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sw_ooxmlw14export,\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sw_ooxmlw14export))
 
 $(eval $(call gb_CppunitTest_use_ure,sw_ooxmlw14export))
 $(eval $(call gb_CppunitTest_use_vcl,sw_ooxmlw14export))

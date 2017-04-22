@@ -31,11 +31,11 @@
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/containerhelper.hxx>
 #include <oox/helper/propertyset.hxx>
+#include <oox/helper/binaryinputstream.hxx>
 #include <oox/token/namespaces.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
-#include "biffinputstream.hxx"
 #include "defnamesbuffer.hxx"
 
 namespace oox {
@@ -651,8 +651,8 @@ void AutoFilterBuffer::finalizeImport( sal_Int16 nSheet )
     // rely on existence of the defined name '_FilterDatabase' containing the range address of the filtered area
     if( const DefinedName* pFilterDBName = getDefinedNames().getByBuiltinId( BIFF_DEFNAME_FILTERDATABASE, nSheet ).get() )
     {
-        CellRangeAddress aFilterRange;
-        if( pFilterDBName->getAbsoluteRange( aFilterRange ) && (aFilterRange.Sheet == nSheet) )
+        ScRange aFilterRange;
+        if( pFilterDBName->getAbsoluteRange( aFilterRange ) && (aFilterRange.aStart.Tab() == nSheet) )
         {
             // use the same name for the database range as used for the defined name '_FilterDatabase'
             Reference< XDatabaseRange > xDatabaseRange = createUnnamedDatabaseRangeObject( aFilterRange );
@@ -664,7 +664,7 @@ void AutoFilterBuffer::finalizeImport( sal_Int16 nSheet )
                 // the built-in defined name 'Criteria' must exist
                 if( const DefinedName* pCriteriaName = getDefinedNames().getByBuiltinId( BIFF_DEFNAME_CRITERIA, nSheet ).get() )
                 {
-                    CellRangeAddress aCriteriaRange;
+                    ScRange aCriteriaRange;
                     if( pCriteriaName->getAbsoluteRange( aCriteriaRange ) )
                     {
                         // set some common properties for the filter descriptor
@@ -678,13 +678,13 @@ void AutoFilterBuffer::finalizeImport( sal_Int16 nSheet )
 
                         // position of output data (if built-in defined name 'Extract' exists)
                         DefinedNameRef xExtractName = getDefinedNames().getByBuiltinId( BIFF_DEFNAME_EXTRACT, nSheet );
-                        CellRangeAddress aOutputRange;
+                        ScRange aOutputRange;
                         bool bHasOutputRange = xExtractName.get() && xExtractName->getAbsoluteRange( aOutputRange );
                         aDescProps.setProperty( PROP_CopyOutputData, bHasOutputRange );
                         if( bHasOutputRange )
                         {
                             aDescProps.setProperty( PROP_SaveOutputPosition, true );
-                            aDescProps.setProperty( PROP_OutputPosition, CellAddress( aOutputRange.Sheet, aOutputRange.StartColumn, aOutputRange.StartRow ) );
+                            aDescProps.setProperty( PROP_OutputPosition, CellAddress( aOutputRange.aStart.Tab(), aOutputRange.aStart.Col(), aOutputRange.aStart.Row() ) );
                         }
 
                         /*  Properties of the database range (must be set after
@@ -693,7 +693,10 @@ void AutoFilterBuffer::finalizeImport( sal_Int16 nSheet )
                             deleted). */
                         PropertySet aRangeProps( xDatabaseRange );
                         aRangeProps.setProperty( PROP_AutoFilter, false );
-                        aRangeProps.setProperty( PROP_FilterCriteriaSource, aCriteriaRange );
+                        aRangeProps.setProperty( PROP_FilterCriteriaSource,
+                                                 CellRangeAddress( aCriteriaRange.aStart.Tab(),
+                                                                   aCriteriaRange.aStart.Col(), aCriteriaRange.aStart.Row(),
+                                                                   aCriteriaRange.aEnd.Col(), aCriteriaRange.aEnd.Row() ));
                     }
                 }
             }

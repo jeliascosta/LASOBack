@@ -41,7 +41,7 @@ struct SwFillCursorPos
     sal_uInt16 nColumnCnt;      ///< number of necessary column breaks
     sal_Int16  eOrient;      ///< paragraph alignment
     SwFillMode eMode;       ///< desired fill-up rule
-    SwFillCursorPos( SwFillMode eMd = FILL_TAB ) :
+    SwFillCursorPos( SwFillMode eMd ) :
         nParaCnt( 0 ), nTabCnt( 0 ), nSpaceCnt( 0 ), nColumnCnt( 0 ),
         eOrient( css::text::HoriOrientation::NONE ), eMode( eMd )
     {}
@@ -158,7 +158,7 @@ struct SwCursorMoveState
      */
     bool m_bInFrontOfLabel;
     bool m_bInNumPortion;         ///< point is in number portion #i23726#
-    int m_nInNumPostionOffset;        ///< distance from number portion's start
+    int m_nInNumPortionOffset;        ///< distance from number portion's start
 
     SwCursorMoveState( CursorMoveState eSt = MV_NONE ) :
         m_pFill( nullptr ),
@@ -181,7 +181,7 @@ struct SwCursorMoveState
         m_bContentCheck( false ), // #i43742#
         m_bInFrontOfLabel( false ), // #i27615#
         m_bInNumPortion(false), // #i26726#
-        m_nInNumPostionOffset(0) // #i26726#
+        m_nInNumPortionOffset(0) // #i26726#
     {}
     SwCursorMoveState( SwFillCursorPos *pInitFill ) :
         m_pFill( pInitFill ),
@@ -204,7 +204,7 @@ struct SwCursorMoveState
         m_bContentCheck( false ), // #i43742#
         m_bInFrontOfLabel( false ), // #i27615#
         m_bInNumPortion(false), // #i23726#
-        m_nInNumPostionOffset(0) // #i23726#
+        m_nInNumPortionOffset(0) // #i23726#
     {}
 };
 

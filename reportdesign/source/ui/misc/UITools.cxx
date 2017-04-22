@@ -29,6 +29,7 @@
 #include <tools/diagnose_ex.h>
 
 #include <vcl/svapp.hxx>
+#include <vcl/unohelp.hxx>
 #include <vcl/window.hxx>
 #include <vcl/settings.hxx>
 
@@ -239,7 +240,7 @@ namespace
         aFontItem.PutValue( uno::makeAny( aControlFont ), 0 );
         _rItemSet.Put(aFontItem);
 
-        _rItemSet.Put(SvxFontHeightItem(OutputDevice::LogicToLogic(Size(0, (sal_Int32)aFont.GetFontHeight()), MAP_POINT, MAP_TWIP).Height(),100,_nFontHeight));
+        _rItemSet.Put(SvxFontHeightItem(OutputDevice::LogicToLogic(Size(0, (sal_Int32)aFont.GetFontHeight()), MapUnit::MapPoint, MapUnit::MapTwip).Height(),100,_nFontHeight));
         lang::Locale aLocale;
         switch(_nWhich)
         {
@@ -277,7 +278,8 @@ namespace
                 {
                     ::std::unique_ptr<SfxPoolItem> pClone(pItem->Clone());
                     pClone->PutValue(_xShape->getPropertyValue(aIt->sName), aIt->nMemberId);
-                    _rItemSet.Put(*pClone, aIt->nWID);
+                    pClone->SetWhich(aIt->nWID);
+                    _rItemSet.Put(*pClone);
                 }
             }
             ++aIt;
@@ -389,7 +391,7 @@ namespace
         if ( SfxItemState::SET == _rItemSet.GetItemState( _nFontHeight,true,&pItem) && dynamic_cast< const SvxFontHeightItem *>( pItem ) !=  nullptr)
         {
             const SvxFontHeightItem* pFontItem = static_cast<const SvxFontHeightItem*>(pItem);
-            aNewFont.SetFontHeight(OutputDevice::LogicToLogic(Size(0, pFontItem->GetHeight()), MAP_TWIP, MAP_POINT).Height());
+            aNewFont.SetFontHeight(OutputDevice::LogicToLogic(Size(0, pFontItem->GetHeight()), MapUnit::MapTwip, MapUnit::MapPoint).Height());
         }
         if ( SfxItemState::SET == _rItemSet.GetItemState( _nPosture,true,&pItem) && dynamic_cast< const SvxPostureItem *>( pItem ) !=  nullptr)
         {
@@ -420,7 +422,7 @@ namespace
         if ( SfxItemState::SET == _rItemSet.GetItemState( ITEMID_CHARSCALE_W,true,&pItem) && dynamic_cast< const SvxCharScaleWidthItem *>( pItem ) !=  nullptr)
         {
             const SvxCharScaleWidthItem* pCharItem = static_cast<const SvxCharScaleWidthItem*>(pItem);
-            aNewFont.SetWidthType(VCLUnoHelper::ConvertFontWidth(pCharItem->GetValue()));
+            aNewFont.SetWidthType(vcl::unohelper::ConvertFontWidth(pCharItem->GetValue()));
         }
         if ( SfxItemState::SET == _rItemSet.GetItemState( ITEMID_UNDERLINE,true,&pItem) && dynamic_cast< const SvxUnderlineItem *>( pItem ) !=  nullptr)
         {
@@ -530,7 +532,7 @@ namespace
         if ( SfxItemState::SET == _rItemSet.GetItemState( ITEMID_CASEMAP,true,&pItem) && dynamic_cast< const SvxCaseMapItem *>( pItem ) !=  nullptr)
         {
             const SvxCaseMapItem* pFontItem = static_cast<const SvxCaseMapItem*>(pItem);
-            lcl_pushBack( _out_rProperties, PROPERTY_CHARCASEMAP, uno::makeAny( pFontItem->GetValue() ) );
+            lcl_pushBack( _out_rProperties, PROPERTY_CHARCASEMAP, uno::makeAny( pFontItem->GetEnumValue() ) );
         }
         struct Items {
                 sal_uInt16 nWhich;
@@ -644,10 +646,10 @@ bool openCharDialog( const uno::Reference<report::XReportControlFormat >& _rxRep
         { SID_ATTR_CHAR_CTL_POSTURE, true },
         { SID_ATTR_CHAR_CTL_WEIGHT, true }
     };
-    vcl::Window* pParent = VCLUnoHelper::GetWindow( _rxParentWindow );
+    VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( _rxParentWindow );
     ::std::unique_ptr<FontList> pFontList(new FontList( pParent ));
     XColorListRef pColorList( XColorList::CreateStdColorList() );
-    SfxPoolItem* pDefaults[] =
+    std::vector<SfxPoolItem*> pDefaults
     {
         new SvxFontItem(ITEMID_FONT),
         new SvxFontHeightItem(240,100,ITEMID_FONTHEIGHT),
@@ -663,7 +665,7 @@ bool openCharDialog( const uno::Reference<report::XReportControlFormat >& _rxRep
 
         new SvxColorItem(ITEMID_COLOR),
         new SvxKerningItem(0,ITEMID_KERNING),
-        new SvxCaseMapItem(SVX_CASEMAP_NOT_MAPPED,ITEMID_CASEMAP),
+        new SvxCaseMapItem(SvxCaseMap::NotMapped,ITEMID_CASEMAP),
         new SvxEscapementItem(ITEMID_ESCAPEMENT),
         new SvxFontListItem(pFontList.get(),ITEMID_FONTLIST),
         new SvxAutoKernItem(false,ITEMID_AUTOKERN),
@@ -673,7 +675,7 @@ bool openCharDialog( const uno::Reference<report::XReportControlFormat >& _rxRep
         new SvxTwoLinesItem(true,0,0,ITEMID_TWOLINES),
         new SvxCharRotateItem(0,false,ITEMID_CHARROTATE),
         new SvxCharScaleWidthItem(100,ITEMID_CHARSCALE_W),
-        new SvxCharReliefItem(RELIEF_NONE,ITEMID_CHARRELIEF),
+        new SvxCharReliefItem(FontRelief::NONE,ITEMID_CHARRELIEF),
         new SvxCharHiddenItem(false,ITEMID_CHARHIDDEN),
         new SvxBrushItem(ITEMID_BRUSH),
         new SvxHorJustifyItem(ITEMID_HORJUSTIFY),
@@ -693,7 +695,7 @@ bool openCharDialog( const uno::Reference<report::XReportControlFormat >& _rxRep
 
     };
 
-    OSL_ASSERT( SAL_N_ELEMENTS(pDefaults) == SAL_N_ELEMENTS(aItemInfos) );
+    OSL_ASSERT( pDefaults.size() == SAL_N_ELEMENTS(aItemInfos) );
 
     static const sal_uInt16 pRanges[] =
     {
@@ -701,8 +703,8 @@ bool openCharDialog( const uno::Reference<report::XReportControlFormat >& _rxRep
         0
     };
 
-    SfxItemPool* pPool( new SfxItemPool(OUString("ReportCharProperties"), ITEMID_FONT,ITEMID_WEIGHT_COMPLEX, aItemInfos, pDefaults) );
-    // not needed for font height pPool->SetDefaultMetric( SFX_MAPUNIT_100TH_MM );  // ripped, don't understand why
+    SfxItemPool* pPool( new SfxItemPool("ReportCharProperties", ITEMID_FONT,ITEMID_WEIGHT_COMPLEX, aItemInfos, &pDefaults) );
+    // not needed for font height pPool->SetDefaultMetric( MapUnit::Map100thMM );  // ripped, don't understand why
     pPool->FreezeIdRanges();                        // the same
     bool bSuccess = false;
     try
@@ -744,7 +746,7 @@ bool openAreaDialog( const uno::Reference<report::XShape >& _xShape,const uno::R
 
     std::shared_ptr<rptui::OReportModel> pModel  = ::reportdesign::OReportDefinition::getSdrModel(_xShape->getSection()->getReportDefinition());
 
-    vcl::Window* pParent = VCLUnoHelper::GetWindow( _rxParentWindow );
+    VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( _rxParentWindow );
 
     bool bSuccess = false;
     try
@@ -755,7 +757,7 @@ bool openAreaDialog( const uno::Reference<report::XShape >& _xShape,const uno::R
 
         {   // want the dialog to be destroyed before our set
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-            ::std::unique_ptr<AbstractSvxAreaTabDialog> pDialog(pFact->CreateSvxAreaTabDialog( pParent,pDescriptor.get(),pModel.get(), true ));
+            ScopedVclPtr<AbstractSvxAreaTabDialog> pDialog(pFact->CreateSvxAreaTabDialog( pParent,pDescriptor.get(),pModel.get(), true ));
             if ( RET_OK == pDialog->Execute() )
             {
                 bSuccess = true;
@@ -840,10 +842,10 @@ void notifySystemWindow(vcl::Window* _pWindow, vcl::Window* _pToRegister, const 
     }
 }
 
-SdrObject* isOver(const Rectangle& _rRect, SdrPage& _rPage, SdrView& _rView, bool _bAllObjects, SdrObject* _pIgnore, sal_Int16 _nIgnoreType)
+SdrObject* isOver(const tools::Rectangle& _rRect, SdrPage& _rPage, SdrView& _rView, bool _bAllObjects, SdrObject* _pIgnore, sal_Int16 _nIgnoreType)
 {
     SdrObject* pOverlappedObj = nullptr;
-    SdrObjListIter aIter(_rPage,IM_DEEPNOGROUPS);
+    SdrObjListIter aIter(_rPage,SdrIterMode::DeepNoGroups);
     SdrObject* pObjIter = nullptr;
 
     while( !pOverlappedObj && (pObjIter = aIter.Next()) != nullptr )
@@ -859,7 +861,7 @@ SdrObject* isOver(const Rectangle& _rRect, SdrPage& _rPage, SdrView& _rView, boo
 
             if (dynamic_cast<OUnoObject*>(pObjIter) != nullptr || dynamic_cast<OOle2Obj*>(pObjIter) != nullptr)
             {
-                Rectangle aRect = _rRect.GetIntersection(pObjIter->GetLastBoundRect());
+                tools::Rectangle aRect = _rRect.GetIntersection(pObjIter->GetLastBoundRect());
                 if ( !aRect.IsEmpty() && (aRect.Left() != aRect.Right() && aRect.Top() != aRect.Bottom() ) )
                     pOverlappedObj = pObjIter;
             }
@@ -881,10 +883,10 @@ bool checkArrayForOccurrence(SdrObject* _pObjToCheck, SdrUnoObj* _pIgnore[], int
     return false;
 }
 
-SdrObject* isOver(const Rectangle& _rRect,SdrPage& _rPage,SdrView& _rView,bool _bAllObjects, SdrUnoObj * _pIgnoreList[], int _nIgnoreListLength)
+SdrObject* isOver(const tools::Rectangle& _rRect,SdrPage& _rPage,SdrView& _rView,bool _bAllObjects, SdrUnoObj * _pIgnoreList[], int _nIgnoreListLength)
 {
     SdrObject* pOverlappedObj = nullptr;
-    SdrObjListIter aIter(_rPage,IM_DEEPNOGROUPS);
+    SdrObjListIter aIter(_rPage,SdrIterMode::DeepNoGroups);
     SdrObject* pObjIter = nullptr;
 
     while( !pOverlappedObj && (pObjIter = aIter.Next()) != nullptr )
@@ -897,7 +899,7 @@ SdrObject* isOver(const Rectangle& _rRect,SdrPage& _rPage,SdrView& _rView,bool _
         if ( (_bAllObjects || !_rView.IsObjMarked(pObjIter))
              && (dynamic_cast<OUnoObject*>(pObjIter) != nullptr || dynamic_cast<OOle2Obj*>(pObjIter) != nullptr) )
         {
-            Rectangle aRect = _rRect.GetIntersection(pObjIter->GetLastBoundRect());
+            tools::Rectangle aRect = _rRect.GetIntersection(pObjIter->GetLastBoundRect());
             if ( !aRect.IsEmpty() && (aRect.Left() != aRect.Right() && aRect.Top() != aRect.Bottom() ) )
                 pOverlappedObj = pObjIter;
         }
@@ -911,7 +913,7 @@ SdrObject* isOver(SdrObject* _pObj,SdrPage& _rPage,SdrView& _rView)
     SdrObject* pOverlappedObj = nullptr;
     if (dynamic_cast<OUnoObject*>(_pObj) != nullptr || dynamic_cast<OOle2Obj*>(_pObj) != nullptr) // this doesn't need to be done for shapes
     {
-        Rectangle aRect = _pObj->GetCurrentBoundRect();
+        tools::Rectangle aRect = _pObj->GetCurrentBoundRect();
         pOverlappedObj = isOver(aRect,_rPage,_rView,false/*_bUnMarkedObjects*/,_pObj);
     }
     return pOverlappedObj;
@@ -949,20 +951,20 @@ uno::Sequence< OUString > getParameterNames( const uno::Reference< sdbc::XRowSet
     return aNames;
 }
 
-Rectangle getRectangleFromControl(SdrObject* _pControl)
+tools::Rectangle getRectangleFromControl(SdrObject* _pControl)
 {
     if (_pControl)
     {
         uno::Reference< report::XReportComponent > xComponent( _pControl->getUnoShape(), uno::UNO_QUERY);
         if (xComponent.is())
         {
-            Rectangle aRect(VCLPoint(xComponent->getPosition()),VCLSize(xComponent->getSize()));
+            tools::Rectangle aRect(VCLPoint(xComponent->getPosition()),VCLSize(xComponent->getSize()));
             aRect.setHeight(aRect.getHeight() + 1);
             aRect.setWidth(aRect.getWidth() + 1);
             return aRect;
         }
     }
-    return Rectangle();
+    return tools::Rectangle();
 }
 
 // check overlapping
@@ -970,7 +972,7 @@ void correctOverlapping(SdrObject* _pControl,OReportSection& _aReportSection,boo
 {
     OSectionView& rSectionView = _aReportSection.getSectionView();
     uno::Reference< report::XReportComponent> xComponent(_pControl->getUnoShape(),uno::UNO_QUERY);
-    Rectangle aRect = getRectangleFromControl(_pControl);
+    tools::Rectangle aRect = getRectangleFromControl(_pControl);
 
     bool bOverlapping = true;
     while ( bOverlapping )
@@ -979,7 +981,7 @@ void correctOverlapping(SdrObject* _pControl,OReportSection& _aReportSection,boo
         bOverlapping = pOverlappedObj != nullptr;
         if ( bOverlapping )
         {
-            const Rectangle& aLogicRect = pOverlappedObj->GetLogicRect();
+            const tools::Rectangle& aLogicRect = pOverlappedObj->GetLogicRect();
             aRect.Move(0,aLogicRect.Top() + aLogicRect.getHeight() - aRect.Top());
             xComponent->setPositionY(aRect.Top());
         }
@@ -1014,7 +1016,7 @@ bool openDialogFormula_nothrow( OUString& _in_out_rFormula
     {
         xFactory = _xContext->getServiceManager();
         xServiceFactory.set(xFactory,uno::UNO_QUERY);
-        vcl::Window* pParent = VCLUnoHelper::GetWindow( _xInspectorWindow );
+        VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( _xInspectorWindow );
 
         uno::Reference< report::meta::XFunctionManager> xMgr(xFactory->createInstanceWithContext("org.libreoffice.report.pentaho.SOFunctionManager",_xContext),uno::UNO_QUERY);
         if ( xMgr.is() )

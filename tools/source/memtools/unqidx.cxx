@@ -19,6 +19,8 @@
 
 #include <tools/unqidx.hxx>
 
+UniqueIndexImpl::Index const UniqueIndexImpl::IndexNotFound(SAL_MAX_UINT32);
+
 UniqueIndexImpl::Index UniqueIndexImpl::Insert( void* p )
 {
     // NULL-Pointer not allowed
@@ -89,7 +91,7 @@ UniqueIndexImpl::Index UniqueIndexImpl::NextIndex(Index aIndex) const
     return it->first;
 }
 
-UniqueIndexImpl::Index UniqueIndexImpl::GetIndexOf(void* p) const
+UniqueIndexImpl::Index UniqueIndexImpl::GetIndexOf(void const * p) const
 {
     for( std::map<Index, void*>::const_iterator it = maMap.begin(); it != maMap.end(); ++it )
         if( it->second == p )

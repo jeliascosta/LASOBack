@@ -50,10 +50,7 @@ typedef enum {
 } ServiceType;
 
 
-// helper functions
-
-
-namespace // private
+namespace
 {
 
 /*
@@ -149,28 +146,20 @@ bool GetProxySetting(ServiceType sType, char *host, size_t hostSize, UInt16 *por
     return result;
 }
 
-} // end private namespace
-
-
+} // unnamed namespace
 
 MacOSXBackend::MacOSXBackend()
 {
 }
 
-
-
 MacOSXBackend::~MacOSXBackend(void)
 {
 }
-
-
 
 MacOSXBackend* MacOSXBackend::createInstance()
 {
     return new MacOSXBackend;
 }
-
-
 
 rtl::OUString CFStringToOUString(const CFStringRef sOrig) {
     CFRetain(sOrig);
@@ -204,22 +193,14 @@ rtl::OUString GetOUString( NSString* pStr )
 
 void MacOSXBackend::setPropertyValue(
     rtl::OUString const &, css::uno::Any const &)
-    throw (
-        css::beans::UnknownPropertyException, css::beans::PropertyVetoException,
-        css::lang::IllegalArgumentException, css::lang::WrappedTargetException,
-        css::uno::RuntimeException, std::exception)
 {
     throw css::lang::IllegalArgumentException(
-        rtl::OUString(
-            "setPropertyValue not supported"),
+        "setPropertyValue not supported",
         static_cast< cppu::OWeakObject * >(this), -1);
 }
 
 css::uno::Any MacOSXBackend::getPropertyValue(
     rtl::OUString const & PropertyName)
-    throw (
-        css::beans::UnknownPropertyException, css::lang::WrappedTargetException,
-        css::uno::RuntimeException, std::exception)
 {
     if ( PropertyName == "WorkPathVariable" )
     {
@@ -239,12 +220,12 @@ css::uno::Any MacOSXBackend::getPropertyValue(
             }
             else
             {
-                OSL_TRACE( "user documents list contains empty file path or conversion failed" );
+                SAL_WARN("shell", "user documents list contains empty file path or conversion failed" );
             }
         }
         else
         {
-            OSL_TRACE( "Got nil or empty list of user document directories" );
+            SAL_WARN("shell", "Got nil or empty list of user document directories" );
         }
         return css::uno::makeAny(css::beans::Optional< css::uno::Any >());
     } else if ( PropertyName == "ooInetFTPProxyName" )
@@ -435,17 +416,12 @@ css::uno::Any MacOSXBackend::getPropertyValue(
     }
 }
 
-
-
 rtl::OUString SAL_CALL MacOSXBackend::getBackendName(void)
 {
     return rtl::OUString("com.sun.star.comp.configuration.backend.MacOSXBackend");
 }
 
-
-
 rtl::OUString SAL_CALL MacOSXBackend::getImplementationName(void)
-    throw (uno::RuntimeException, std::exception)
 {
     return getBackendName();
 }
@@ -458,13 +434,11 @@ uno::Sequence<rtl::OUString> SAL_CALL MacOSXBackend::getBackendServiceNames(void
 }
 
 sal_Bool SAL_CALL MacOSXBackend::supportsService(const rtl::OUString& aServiceName)
-    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, aServiceName);
 }
 
 uno::Sequence<rtl::OUString> SAL_CALL MacOSXBackend::getSupportedServiceNames(void)
-    throw (uno::RuntimeException, std::exception)
 {
     return getBackendServiceNames();
 }

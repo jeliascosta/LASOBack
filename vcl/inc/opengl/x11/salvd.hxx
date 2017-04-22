@@ -23,7 +23,8 @@ class X11SalGraphics;
 class X11OpenGLSalVirtualDevice : public SalVirtualDevice
 {
     SalDisplay       *mpDisplay;
-    X11SalGraphics   *mpGraphics;
+    std::unique_ptr<X11SalGraphics>
+                      mpGraphics;
     bool              mbGraphics;         // is Graphics used
     SalX11Screen      mnXScreen;
     int               mnWidth;
@@ -36,7 +37,7 @@ public:
                                DeviceFormat eFormat,
                                const SystemGraphicsData *pData,
                                X11SalGraphics* pNewGraphics);
-    virtual ~X11OpenGLSalVirtualDevice();
+    virtual ~X11OpenGLSalVirtualDevice() override;
 
     // SalGeometryProvider
     virtual long GetWidth() const override { return mnWidth; }

@@ -99,7 +99,7 @@ OString createFileNameFromType( const OString& destination,
         fileNameBuf.append(destination.getStr(), destination.getLength());
 
     if (bWithSeparator)
-        fileNameBuf.append("/", 1);
+        fileNameBuf.append("/");
 
     fileNameBuf.append(type.getStr(), type.getLength());
     fileNameBuf.append(postfix.getStr(), postfix.getLength());
@@ -133,7 +133,7 @@ OString createFileNameFromType( const OString& destination,
 #if defined(SAL_UNX)
         if (mkdir(buffer.getStr(), 0777) == -1)
 #else
-        if (mkdir((char*)buffer.getStr()) == -1)
+        if (mkdir(buffer.getStr()) == -1)
 #endif
         {
             if ( errno == ENOENT )

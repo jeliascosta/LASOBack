@@ -11,28 +11,22 @@ $(eval $(call gb_Module_Module,setup_native))
 
 $(eval $(call gb_Module_add_targets,setup_native,\
 	$(if $(filter LINUX SOLARIS,$(OS)),Library_getuid) \
+	$(if $(filter MACOSX,$(OS)),CustomTarget_mac) \
 	CustomTarget_spell \
+	$(if $(filter WNT,$(OS)),Package_misc) \
 	Package_packinfo \
+	$(if $(filter LINUX SOLARIS,$(OS)), \
+		CustomTarget_scripts \
+		$(if $(ENABLE_ONLINE_UPDATE),Package_scripts) \
+	) \
 ))
-
-ifeq ($(OS),MACOSX)
-$(eval $(call gb_Module_add_targets,setup_native,\
-	CustomTarget_mac \
-))
-endif
 
 ifeq ($(OS),WNT)
 $(eval $(call gb_Module_add_targets,setup_native,\
-	Package_misc \
-))
-endif
-
-ifeq ($(OS)$(COM),WNTMSC)
-$(eval $(call gb_Module_add_targets,setup_native,\
-        Library_instooofiltmsi \
+	Library_instooofiltmsi \
 	Library_qslnkmsi \
 	Library_reg4allmsdoc \
-	$(if $(DISABLE_ACTIVEX),,Library_regactivex) \
+	Library_regactivex \
 	Library_sdqsmsi \
 	Library_sellangmsi \
 	Library_shlxtmsi \
@@ -41,21 +35,6 @@ $(eval $(call gb_Module_add_targets,setup_native,\
 	StaticLibrary_seterror \
 ))
 
-else
-
-ifneq ($(WINEGCC),)
-# this is supposed to be built on the _build_ platform, even though the
-# result is an .exe
-$(eval $(call gb_Module_add_targets,setup_native,\
-	CustomTarget_wintools \
-	Package_wintools \
-))
-endif
-
-$(eval $(call gb_Module_add_targets,setup_native,\
-	CustomTarget_scripts \
-	Package_scripts \
-))
 endif
 
 # vim: set noet sw=4 ts=4:

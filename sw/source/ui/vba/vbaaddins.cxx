@@ -18,6 +18,7 @@
  */
 #include "vbaaddins.hxx"
 #include "vbaaddin.hxx"
+#include <osl/diagnose.h>
 #include <unotools/pathoptions.hxx>
 #include <com/sun/star/lang/XMultiComponentFactory.hpp>
 #include <com/sun/star/ucb/SimpleFileAccess.hpp>
@@ -35,7 +36,7 @@ static uno::Reference< container::XIndexAccess > lcl_getAddinCollection( const u
     SvtPathOptions aPathOpt;
     // FIXME: temporary the STARTUP path is located in $OO/basic3.1/program/addin
     OUString aAddinPath = aPathOpt.GetAddinPath();
-    OSL_TRACE("lcl_getAddinCollection: %s", OUStringToOString( aAddinPath, RTL_TEXTENCODING_UTF8 ).getStr() );
+    SAL_INFO("sw", "lcl_getAddinCollection: " << aAddinPath );
     if( xSFA->isFolder( aAddinPath ) )
     {
         uno::Sequence< OUString > sEntries = xSFA->getFolderContents( aAddinPath, false );
@@ -56,17 +57,17 @@ static uno::Reference< container::XIndexAccess > lcl_getAddinCollection( const u
     return xAddinsAccess;
 }
 
-SwVbaAddins::SwVbaAddins( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext > & xContext ) throw (uno::RuntimeException): SwVbaAddins_BASE( xParent, xContext, lcl_getAddinCollection( xParent,xContext ) )
+SwVbaAddins::SwVbaAddins( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext > & xContext ): SwVbaAddins_BASE( xParent, xContext, lcl_getAddinCollection( xParent,xContext ) )
 {
 }
 // XEnumerationAccess
 uno::Type
-SwVbaAddins::getElementType() throw (uno::RuntimeException)
+SwVbaAddins::getElementType()
 {
     return cppu::UnoType<word::XAddin>::get();
 }
 uno::Reference< container::XEnumeration >
-SwVbaAddins::createEnumeration() throw (uno::RuntimeException)
+SwVbaAddins::createEnumeration()
 {
     uno::Reference< container::XEnumerationAccess > xEnumerationAccess( m_xIndexAccess, uno::UNO_QUERY_THROW );
     return xEnumerationAccess->createEnumeration();

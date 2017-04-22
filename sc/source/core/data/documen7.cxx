@@ -41,8 +41,6 @@
 
 #include "globstr.hrc"
 
-extern const ScFormulaCell* pLastFormulaTreeTop;    // cellform.cxx Err527 WorkAround
-
 void ScDocument::StartListeningArea(
     const ScRange& rRange, bool bGroupListening, SvtListener* pListener )
 {
@@ -82,9 +80,9 @@ void ScDocument::Broadcast( const ScHint& rHint )
     }
 }
 
-void ScDocument::BroadcastCells( const ScRange& rRange, sal_uInt32 nHint, bool bBroadcastSingleBroadcasters )
+void ScDocument::BroadcastCells( const ScRange& rRange, SfxHintId nHint, bool bBroadcastSingleBroadcasters )
 {
-    ClearFormulaContext();
+    PrepareFormulaCalc();
 
     if (!pBASM)
         return;    // Clipboard or Undo
@@ -126,7 +124,7 @@ void ScDocument::BroadcastCells( const ScRange& rRange, sal_uInt32 nHint, bool b
             pTab->SetStreamValid(false);
     }
 
-    BroadcastUno(SfxSimpleHint(SC_HINT_DATACHANGED));
+    BroadcastUno(SfxHint(SfxHintId::ScDataChanged));
 }
 
 namespace {
@@ -456,8 +454,6 @@ void ScDocument::CalcFormulaTree( bool bOnlyForced, bool bProgressBar, bool bSet
                 else
                     pCell = nullptr;
             }
-            if ( ScProgress::IsUserBreak() )
-                pCell = nullptr;
         }
         if ( bProgress )
             ScProgress::DeleteInterpretProgress();
@@ -537,14 +533,34 @@ bool ScDocument::IsInFormulaTrack( ScFormulaCell* pCell ) const
     return pCell->GetPreviousTrack() || pFormulaTrack == pCell;
 }
 
+void ScDocument::FinalTrackFormulas( SfxHintId nHintId )
+{
+    mbTrackFormulasPending = false;
+    mbFinalTrackFormulas = true;
+    {
+        ScBulkBroadcast aBulk( GetBASM(), nHintId);
+        // Collect all pending formula cells in bulk.
+        TrackFormulas( nHintId );
+    }
+    // A final round not in bulk to track all remaining formula cells and their
+    // dependents that were collected during ScBulkBroadcast dtor.
+    TrackFormulas( nHintId );
+    mbFinalTrackFormulas = false;
+}
+
 /*
     The first is broadcasted,
     the ones that are created through this are appended to the Track by Notify.
     The next is broadcasted again, and so on.
     View initiates Interpret.
  */
-void ScDocument::TrackFormulas( sal_uInt32 nHintId )
+void ScDocument::TrackFormulas( SfxHintId nHintId )
 {
+    if (pBASM->IsInBulkBroadcast() && !IsFinalTrackFormulas() && nHintId == SfxHintId::ScDataChanged)
+    {
+        SetTrackFormulasPending();
+        return;
+    }
 
     if ( pFormulaTrack )
     {

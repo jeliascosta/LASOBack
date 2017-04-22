@@ -21,7 +21,8 @@
 #include "xsecctl.hxx"
 #include "xsecparser.hxx"
 #include "ooxmlsecparser.hxx"
-#include <tools/debug.hxx>
+#include "framework/signatureverifierimpl.hxx"
+#include "framework/saxeventkeeperimpl.hxx"
 
 #include <com/sun/star/xml/crypto/sax/XKeyCollector.hpp>
 #include <com/sun/star/xml/crypto/sax/ElementMarkPriority.hpp>
@@ -39,14 +40,11 @@ namespace cssl = com::sun::star::lang;
 namespace cssxc = com::sun::star::xml::crypto;
 namespace cssxs = com::sun::star::xml::sax;
 
-/* xml security framework components */
-#define SIGNATUREVERIFIER_COMPONENT "com.sun.star.xml.crypto.sax.SignatureVerifier"
-
 /* protected: for signature verify */
 cssu::Reference< cssxc::sax::XReferenceResolvedListener > XSecController::prepareSignatureToRead(
     sal_Int32 nSecurityId)
 {
-    if ( m_nStatusOfSecurityComponents != INITIALIZED )
+    if ( m_eStatusOfSecurityComponents != InitializationState::INITIALIZED )
     {
         return nullptr;
     }
@@ -63,18 +61,16 @@ cssu::Reference< cssxc::sax::XReferenceResolvedListener > XSecController::prepar
          * create a SignatureVerifier
          */
     cssu::Reference< cssl::XMultiComponentFactory > xMCF( mxCtx->getServiceManager() );
-    xReferenceResolvedListener.set(
-        xMCF->createInstanceWithContext(SIGNATUREVERIFIER_COMPONENT, mxCtx),
-        cssu::UNO_QUERY);
+    xReferenceResolvedListener = new SignatureVerifierImpl;
 
     cssu::Reference<cssl::XInitialization> xInitialization(xReferenceResolvedListener, cssu::UNO_QUERY);
 
     cssu::Sequence<cssu::Any> args(5);
-    args[0] = cssu::makeAny(OUString::number(nSecurityId));
-    args[1] = cssu::makeAny(m_xSAXEventKeeper);
-    args[2] = cssu::makeAny(OUString::number(nIdOfSignatureElementCollector));
-    args[3] = cssu::makeAny(m_xSecurityContext);
-    args[4] = cssu::makeAny(m_xXMLSignature);
+    args[0] <<= OUString::number(nSecurityId);
+    args[1] <<= uno::Reference<xml::crypto::sax::XSecuritySAXEventKeeper>(static_cast<cppu::OWeakObject*>(m_xSAXEventKeeper.get()), uno::UNO_QUERY);
+    args[2] <<= OUString::number(nIdOfSignatureElementCollector);
+    args[3] <<= m_xSecurityContext;
+    args[4] <<= m_xXMLSignature;
     xInitialization->initialize(args);
 
     cssu::Reference< cssxc::sax::XSignatureVerifyResultBroadcaster >
@@ -82,11 +78,7 @@ cssu::Reference< cssxc::sax::XReferenceResolvedListener > XSecController::prepar
 
     signatureVerifyResultBroadcaster->addSignatureVerifyResultListener( this );
 
-    cssu::Reference<cssxc::sax::XReferenceResolvedBroadcaster> xReferenceResolvedBroadcaster
-        (m_xSAXEventKeeper,
-        cssu::UNO_QUERY);
-
-    xReferenceResolvedBroadcaster->addReferenceResolvedListener(
+    m_xSAXEventKeeper->addReferenceResolvedListener(
         nIdOfSignatureElementCollector,
         xReferenceResolvedListener);
 
@@ -114,7 +106,7 @@ void XSecController::addSignature()
     m_vInternalSignatureInformations.push_back( isi );
 }
 
-void XSecController::addReference( const OUString& ouUri)
+void XSecController::addReference( const OUString& ouUri, sal_Int32 nDigestID )
 {
     if (m_vInternalSignatureInformations.empty())
     {
@@ -122,12 +114,13 @@ void XSecController::addReference( const OUString& ouUri)
         return;
     }
     InternalSignatureInformation &isi = m_vInternalSignatureInformations.back();
-    isi.addReference(SignatureReferenceType::SAMEDOCUMENT,ouUri, -1 );
+    isi.addReference(SignatureReferenceType::SAMEDOCUMENT, nDigestID, ouUri, -1 );
 }
 
 void XSecController::addStreamReference(
     const OUString& ouUri,
-    bool isBinary )
+    bool isBinary,
+    sal_Int32 nDigestID )
 {
         SignatureReferenceType type = (isBinary?SignatureReferenceType::BINARYSTREAM:SignatureReferenceType::XMLSTREAM);
 
@@ -154,7 +147,7 @@ void XSecController::addStreamReference(
         }
     }
 
-    isi.addReference(type, ouUri, -1);
+    isi.addReference(type, nDigestID, ouUri, -1);
 }
 
 void XSecController::setReferenceCount() const
@@ -235,7 +228,7 @@ void XSecController::setSignatureValue( OUString& ouSignatureValue )
     isi.signatureInfor.ouSignatureValue = ouSignatureValue;
 }
 
-void XSecController::setDigestValue( OUString& ouDigestValue )
+void XSecController::setDigestValue( sal_Int32 nDigestID, OUString& ouDigestValue )
 {
     if (m_vInternalSignatureInformations.empty())
     {
@@ -250,6 +243,7 @@ void XSecController::setDigestValue( OUString& ouDigestValue )
     }
     SignatureReferenceInformation &reference =
         isi.signatureInfor.vSignatureReferenceInfors.back();
+    reference.nDigestID = nDigestID;
     reference.ouDigestValue = ouDigestValue;
 }
 
@@ -292,6 +286,18 @@ void XSecController::setCertDigest(const OUString& rCertDigest)
     rInformation.signatureInfor.ouCertDigest = rCertDigest;
 }
 
+void XSecController::addEncapsulatedX509Certificate(const OUString& rEncapsulatedX509Certificate)
+{
+    if (m_vInternalSignatureInformations.empty())
+        return;
+
+    if (rEncapsulatedX509Certificate.isEmpty())
+        return;
+
+    InternalSignatureInformation& rInformation = m_vInternalSignatureInformations.back();
+    rInformation.signatureInfor.maEncapsulatedX509Certificates.insert(rEncapsulatedX509Certificate);
+}
+
 void XSecController::setId( OUString& ouId )
 {
     if (m_vInternalSignatureInformations.empty())
@@ -327,9 +333,9 @@ void XSecController::setPropertyId( OUString& ouPropertyId )
 /* public: for signature verify */
 void XSecController::collectToVerify( const OUString& referenceId )
 {
-    /* DBG_ASSERT( m_xSAXEventKeeper.is(), "the SAXEventKeeper is NULL" ); */
+    /* SAL_WARN_IF( !m_xSAXEventKeeper.is(), "xmlsecurity", "the SAXEventKeeper is NULL" ); */
 
-    if ( m_nStatusOfSecurityComponents == INITIALIZED )
+    if ( m_eStatusOfSecurityComponents == InitializationState::INITIALIZED )
     /*
      * if all security components are ready, verify the signature.
      */
@@ -361,15 +367,11 @@ void XSecController::collectToVerify( const OUString& referenceId )
                     sal_Int32 nKeeperId = m_xSAXEventKeeper->addSecurityElementCollector(
                         cssxc::sax::ElementMarkPriority_BEFOREMODIFY, false );
 
-                    cssu::Reference<cssxc::sax::XReferenceResolvedBroadcaster> xReferenceResolvedBroadcaster
-                        (m_xSAXEventKeeper,
-                        cssu::UNO_QUERY );
-
                     cssu::Reference<cssxc::sax::XReferenceCollector> xReferenceCollector
                         ( isi.xReferenceResolvedListener, cssu::UNO_QUERY );
 
                     m_xSAXEventKeeper->setSecurityId(nKeeperId, isi.signatureInfor.nSecurityId);
-                    xReferenceResolvedBroadcaster->addReferenceResolvedListener( nKeeperId, isi.xReferenceResolvedListener);
+                    m_xSAXEventKeeper->addReferenceResolvedListener( nKeeperId, isi.xReferenceResolvedListener);
                     xReferenceCollector->setReferenceId( nKeeperId );
 
                     isi.vKeeperIds[j] = nKeeperId;
@@ -380,7 +382,7 @@ void XSecController::collectToVerify( const OUString& referenceId )
 
         if ( bJustChainingOn )
         {
-            cssu::Reference< cssxs::XDocumentHandler > xSEKHandler(m_xSAXEventKeeper, cssu::UNO_QUERY);
+            cssu::Reference< cssxs::XDocumentHandler > xSEKHandler(static_cast<cppu::OWeakObject*>(m_xSAXEventKeeper.get()), cssu::UNO_QUERY);
             if (m_xElementStackKeeper.is())
             {
                 m_xElementStackKeeper->retrieve(xSEKHandler, true);
@@ -392,13 +394,13 @@ void XSecController::collectToVerify( const OUString& referenceId )
 
 void XSecController::addSignature( sal_Int32 nSignatureId )
 {
-    DBG_ASSERT( m_xSecParser.is(), "No XSecParser initialized" );
+    SAL_WARN_IF( !m_xSecParser.is(), "xmlsecurity.helper", "No XSecParser initialized" );
 
     m_nReservedSignatureId = nSignatureId;
     m_bVerifyCurrentSignature = true;
 }
 
-cssu::Reference< cssxs::XDocumentHandler > XSecController::createSignatureReader(sal_Int32 nType)
+cssu::Reference< cssxs::XDocumentHandler > const & XSecController::createSignatureReader(sal_Int32 nType)
 {
     if (nType == embed::StorageFormats::OFOPXML)
         m_xSecParser = new OOXMLSecParser(this);

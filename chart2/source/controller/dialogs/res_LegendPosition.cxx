@@ -131,7 +131,7 @@ void LegendPositionResources::writeToModel( const css::uno::Reference< frame::XM
         if( xProp.is() )
         {
             //show
-            xProp->setPropertyValue( "Show" , uno::makeAny( bShowLegend ));
+            xProp->setPropertyValue( "Show" , uno::Any( bShowLegend ));
 
             //position
             chart2::LegendPosition eNewPos;
@@ -154,8 +154,8 @@ void LegendPositionResources::writeToModel( const css::uno::Reference< frame::XM
                 eExp = css::chart::ChartLegendExpansion_WIDE;
             }
 
-            xProp->setPropertyValue( "AnchorPosition" , uno::makeAny( eNewPos ));
-            xProp->setPropertyValue( "Expansion" , uno::makeAny( eExp ));
+            xProp->setPropertyValue( "AnchorPosition" , uno::Any( eNewPos ));
+            xProp->setPropertyValue( "Expansion" , uno::Any( eExp ));
             xProp->setPropertyValue( "RelativePosition" , uno::Any());
         }
     }
@@ -165,7 +165,7 @@ void LegendPositionResources::writeToModel( const css::uno::Reference< frame::XM
     }
 }
 
-IMPL_LINK_NOARG_TYPED(LegendPositionResources, PositionEnableHdl, CheckBox&, void)
+IMPL_LINK_NOARG(LegendPositionResources, PositionEnableHdl, CheckBox&, void)
 {
     bool bEnable = m_pCbxShow == nullptr || m_pCbxShow->IsChecked();
 
@@ -182,7 +182,7 @@ void LegendPositionResources::initFromItemSet( const SfxItemSet& rInAttrs )
     const SfxPoolItem* pPoolItem = nullptr;
     if( rInAttrs.GetItemState( SCHATTR_LEGEND_POS, true, &pPoolItem ) == SfxItemState::SET )
     {
-        sal_Int32 nLegendPosition = static_cast<const SfxInt32Item*>(pPoolItem)->GetValue();
+        chart2::LegendPosition nLegendPosition = (chart2::LegendPosition) static_cast<const SfxInt32Item*>(pPoolItem)->GetValue();
         switch( nLegendPosition )
         {
             case chart2::LegendPosition_LINE_START:
@@ -211,7 +211,7 @@ void LegendPositionResources::initFromItemSet( const SfxItemSet& rInAttrs )
 
 void LegendPositionResources::writeToItemSet( SfxItemSet& rOutAttrs ) const
 {
-    sal_Int32 nLegendPosition = chart2::LegendPosition_CUSTOM;
+    chart2::LegendPosition nLegendPosition = chart2::LegendPosition_CUSTOM;
     if( m_pRbtLeft->IsChecked() )
         nLegendPosition = chart2::LegendPosition_LINE_START;
     else if( m_pRbtTop->IsChecked() )
@@ -220,12 +220,12 @@ void LegendPositionResources::writeToItemSet( SfxItemSet& rOutAttrs ) const
         nLegendPosition = chart2::LegendPosition_LINE_END;
     else if( m_pRbtBottom->IsChecked() )
         nLegendPosition = chart2::LegendPosition_PAGE_END;
-    rOutAttrs.Put(SfxInt32Item(SCHATTR_LEGEND_POS, nLegendPosition ));
+    rOutAttrs.Put( SfxInt32Item(SCHATTR_LEGEND_POS, (sal_Int32)nLegendPosition ) );
 
     rOutAttrs.Put( SfxBoolItem(SCHATTR_LEGEND_SHOW, m_pCbxShow == nullptr || m_pCbxShow->IsChecked()) );
 }
 
-IMPL_LINK_TYPED( LegendPositionResources, PositionChangeHdl, RadioButton&, rRadio, void )
+IMPL_LINK( LegendPositionResources, PositionChangeHdl, RadioButton&, rRadio, void )
 {
     //for each radio click there are coming two change events
     //first uncheck of previous button -> ignore that call

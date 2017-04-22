@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svgtitledescnode.hxx>
+#include <svgtitledescnode.hxx>
 
 
 namespace svgio
@@ -31,7 +31,7 @@ namespace svgio
         :   SvgNode(aType, rDocument, pParent),
             maText()
         {
-            OSL_ENSURE(aType == SVGTokenTitle || aType == SVGTokenDesc, "SvgTitleDescNode should ony be used for Title and Desc (!)");
+            OSL_ENSURE(aType == SVGTokenTitle || aType == SVGTokenDesc, "SvgTitleDescNode should only be used for Title and Desc (!)");
         }
 
         SvgTitleDescNode::~SvgTitleDescNode()

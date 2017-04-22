@@ -145,7 +145,7 @@ public:
 
     void scanForButtonSets( const OUString& rPath );
 
-    Reference< XGraphicProvider > getGraphicProvider();
+    Reference< XGraphicProvider > const & getGraphicProvider();
 
     std::vector< std::shared_ptr< ButtonsImpl > >  maButtons;
     Reference< XGraphicProvider > mxGraphicProvider;
@@ -197,7 +197,7 @@ bool ButtonSetImpl::getPreview( int nSet, const std::vector< OUString >& rButton
         std::vector< Graphic > aGraphics;
 
         ScopedVclPtrInstance< VirtualDevice > pDev;
-        pDev->SetMapMode(MapMode(MAP_PIXEL));
+        pDev->SetMapMode(MapMode(MapUnit::MapPixel));
 
         Size aSize;
         std::vector< OUString >::const_iterator aIter( rButtons.begin() );
@@ -250,7 +250,7 @@ bool ButtonSetImpl::exportButton( int nSet, const OUString& rPath, const OUStrin
     return false;
 }
 
-Reference< XGraphicProvider > ButtonSetImpl::getGraphicProvider()
+Reference< XGraphicProvider > const & ButtonSetImpl::getGraphicProvider()
 {
     if( !mxGraphicProvider.is() )
     {

@@ -94,9 +94,9 @@ void SwAccessibleFrameBase::GetStates(
         rStateSet.AddState( AccessibleStateType::SELECTED );
 }
 
-sal_uInt8 SwAccessibleFrameBase::GetNodeType( const SwFlyFrame *pFlyFrame )
+SwNodeType SwAccessibleFrameBase::GetNodeType( const SwFlyFrame *pFlyFrame )
 {
-    sal_uInt8 nType = ND_TEXTNODE;
+    SwNodeType nType = SwNodeType::Text;
     if( pFlyFrame->Lower() )
     {
          if( pFlyFrame->Lower()->IsNoTextFrame() )
@@ -124,14 +124,12 @@ sal_uInt8 SwAccessibleFrameBase::GetNodeType( const SwFlyFrame *pFlyFrame )
 }
 
 SwAccessibleFrameBase::SwAccessibleFrameBase(
-        SwAccessibleMap* pInitMap,
+        std::shared_ptr<SwAccessibleMap> const& pInitMap,
         sal_Int16 nInitRole,
         const SwFlyFrame* pFlyFrame  ) :
     SwAccessibleContext( pInitMap, nInitRole, pFlyFrame ),
     bIsSelected( false )
 {
-    SolarMutexGuard aGuard;
-
     const SwFrameFormat *pFrameFormat = pFlyFrame->GetFormat();
     const_cast< SwFrameFormat * >( pFrameFormat )->Add( this );
 
@@ -263,14 +261,14 @@ void SwAccessibleFrameBase::Modify( const SfxPoolItem* pOld, const SfxPoolItem *
     }
 }
 
-void SwAccessibleFrameBase::Dispose( bool bRecursive )
+void SwAccessibleFrameBase::Dispose(bool bRecursive, bool bCanSkipInvisible)
 {
     SolarMutexGuard aGuard;
 
     if( GetRegisteredIn() )
         GetRegisteredInNonConst()->Remove( this );
 
-    SwAccessibleContext::Dispose( bRecursive );
+    SwAccessibleContext::Dispose(bRecursive, bCanSkipInvisible);
 }
 
 //Get the selection cursor of the document.
@@ -336,13 +334,13 @@ bool SwAccessibleFrameBase::GetSelectedState( )
                     sal_uLong nEndIndex = pEnd->nNode.GetIndex();
                     if( ( nHere >= nStartIndex ) && (nHere <= nEndIndex)  )
                     {
-                        if( rAnchor.GetAnchorId() == FLY_AS_CHAR )
+                        if( rAnchor.GetAnchorId() == RndStdIds::FLY_AS_CHAR )
                         {
                             if( ((nHere == nStartIndex) && (nIndex >= pStart->nContent.GetIndex())) || (nHere > nStartIndex) )
                                 if( ((nHere == nEndIndex) && (nIndex < pEnd->nContent.GetIndex())) || (nHere < nEndIndex) )
                                     return true;
                         }
-                        else if( rAnchor.GetAnchorId() == FLY_AT_PARA )
+                        else if( rAnchor.GetAnchorId() == RndStdIds::FLY_AT_PARA )
                         {
                             if( ((nHere > nStartIndex) || pStart->nContent.GetIndex() ==0 )
                                 && (nHere < nEndIndex ) )

@@ -26,7 +26,7 @@
 
 
 #include <vector>
-typedef ::std::vector< OUString > StringVector;
+typedef std::vector< OUString > StringVector;
 
 struct SbiParseStack;
 
@@ -69,7 +69,6 @@ public:
     SbiSymPool    aRtlSyms;         // Runtime-Library
     SbiCodeGen    aGen;             // Code-Generator
     SbiSymPool*   pPool;
-    SbiExprType   eCurExpr;
     short         nBase;            // OPTION BASE-value
     bool          bText;            // OPTION COMPARE TEXT
     bool          bExplicit;        // true: OPTION EXPLICIT
@@ -80,6 +79,7 @@ public:
     SbxDataType   eDefTypes[N_DEF_TYPES];    // DEFxxx data types
 
     SbiParser( StarBASIC*, SbModule* );
+    ~SbiParser( );
     bool Parse();
     void SetCodeCompleting( bool b );
     bool IsCodeCompleting() const { return bCodeCompleting;}
@@ -96,7 +96,7 @@ public:
     bool TestComma();
     void TestEoln();
 
-    void Symbol( const KeywordSymbolInfo* pKeywordSymbolInfo = nullptr );  // let or call
+    void Symbol( const KeywordSymbolInfo* pKeywordSymbolInfo );  // let or call
     void ErrorStmnt();              // ERROR n
     void BadBlock();                // LOOP/WEND/NEXT
     void NoIf();                    // ELSE/ELSE IF without IF

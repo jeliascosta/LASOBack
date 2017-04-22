@@ -68,30 +68,20 @@ public:
             const css::uno::Reference< css::uno::XComponentContext >& xContext,
             const css::uno::Sequence< css::uno::Any >& lArguments);
 
-    /** TODO */
-    virtual ~ModuleAcceleratorConfiguration();
-
-    virtual OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual OUString SAL_CALL getImplementationName() override
     {
         return OUString("com.sun.star.comp.framework.ModuleAcceleratorConfiguration");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
-        throw (css::uno::RuntimeException, std::exception) override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.ModuleAcceleratorConfiguration" };
-        return aSeq;
+        return {"com.sun.star.ui.ModuleAcceleratorConfiguration"};
     }
-
-    // XComponent
-    virtual  void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
 
     /// This has to be called after when the instance is acquire()'d.
     void SAL_CALL fillCache();
@@ -121,12 +111,8 @@ ModuleAcceleratorConfiguration::ModuleAcceleratorConfiguration(
 
     if (m_sModule.isEmpty())
         throw css::uno::RuntimeException(
-                OUString("The module dependent accelerator configuration service was initialized with an empty module identifier!"),
+                "The module dependent accelerator configuration service was initialized with an empty module identifier!",
                 static_cast< ::cppu::OWeakObject* >(this));
-}
-
-ModuleAcceleratorConfiguration::~ModuleAcceleratorConfiguration()
-{
 }
 
 void ModuleAcceleratorConfiguration::fillCache()
@@ -139,7 +125,7 @@ void ModuleAcceleratorConfiguration::fillCache()
 #if 0
     // get current office locale ... but don't cache it.
     // Otherwise we must be listener on the configuration layer
-    // which seems to superflous for this small implementation .-)
+    // which seems to superfluous for this small implementation .-)
     // XXX: what is this good for? it was a comphelper::Locale but unused
     LanguageTag aLanguageTag(m_sLocale);
 #endif
@@ -159,23 +145,6 @@ void ModuleAcceleratorConfiguration::fillCache()
         { throw; }
     catch(const css::uno::Exception&)
         {}
-}
-
-// XComponent.dispose(),  #i120029#, to release the cyclic reference
-
-void SAL_CALL ModuleAcceleratorConfiguration::dispose()
-    throw(css::uno::RuntimeException, std::exception)
-{
-    try
-    {
-        css::uno::Reference< css::util::XChangesNotifier > xBroadcaster(m_xCfg, css::uno::UNO_QUERY_THROW);
-        if ( xBroadcaster.is() )
-            xBroadcaster->removeChangesListener(static_cast< css::util::XChangesListener* >(this));
-    }
-    catch(const css::uno::RuntimeException&)
-    { throw; }
-    catch(const css::uno::Exception&)
-    {}
 }
 
 }

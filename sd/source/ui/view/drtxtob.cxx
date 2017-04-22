@@ -215,11 +215,13 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
                     {
                         SvxFontHeightItem aFontItem = dynamic_cast<const SvxFontHeightItem&>(*pI);
                         aFontItem.SetHeight(aFontItem.GetHeight(), stretchX, aFontItem.GetPropUnit());
-                        aAttrSet.Put( aFontItem, nWhich );
+                        aFontItem.SetWhich(nWhich);
+                        aAttrSet.Put( aFontItem );
                     }
                     else
                     {
-                        aAttrSet.Put( *pI, nWhich );
+                        std::unique_ptr<SfxPoolItem> pNewItem(pI->CloneSetWhich(nWhich));
+                        aAttrSet.Put( *pNewItem );
                     }
                 }
                 else
@@ -254,7 +256,7 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
 
                 //fdo#78151 it doesn't make sense to promote or demote outline levels in master view.
                 const DrawViewShell* pDrawViewShell = dynamic_cast< DrawViewShell* >(mpViewShell);
-                const bool bInMasterView = pDrawViewShell && pDrawViewShell->GetEditMode() == EM_MASTERPAGE;
+                const bool bInMasterView = pDrawViewShell && pDrawViewShell->GetEditMode() == EditMode::MasterPage;
 
                 if (!bInMasterView)
                 {
@@ -479,16 +481,16 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
         SvxAdjust eAdj = static_cast<const SvxAdjustItem&>( aAttrSet.Get( EE_PARA_JUST ) ).GetAdjust();
         switch( eAdj )
         {
-            case SVX_ADJUST_LEFT:
+            case SvxAdjust::Left:
                 rSet.Put( SfxBoolItem( SID_ATTR_PARA_ADJUST_LEFT, true ) );
             break;
-            case SVX_ADJUST_CENTER:
+            case SvxAdjust::Center:
                 rSet.Put( SfxBoolItem( SID_ATTR_PARA_ADJUST_CENTER, true ) );
             break;
-            case SVX_ADJUST_RIGHT:
+            case SvxAdjust::Right:
                 rSet.Put( SfxBoolItem( SID_ATTR_PARA_ADJUST_RIGHT, true ) );
             break;
-            case SVX_ADJUST_BLOCK:
+            case SvxAdjust::Block:
                 rSet.Put( SfxBoolItem( SID_ATTR_PARA_ADJUST_BLOCK, true ) );
             break;
             default:
@@ -512,26 +514,26 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
         {
             switch( static_cast<const SvxFrameDirectionItem&>( aAttrSet.Get( EE_PARA_WRITINGDIR ) ).GetValue() )
             {
-                case FRMDIR_VERT_TOP_LEFT:
-                case FRMDIR_VERT_TOP_RIGHT:
+                case SvxFrameDirection::Vertical_LR_TB:
+                case SvxFrameDirection::Vertical_RL_TB:
                 {
                     rSet.DisableItem( SID_ATTR_PARA_LEFT_TO_RIGHT );
                     rSet.DisableItem( SID_ATTR_PARA_RIGHT_TO_LEFT );
                 }
                 break;
 
-                case FRMDIR_HORI_LEFT_TOP:
+                case SvxFrameDirection::Horizontal_LR_TB:
                     rSet.Put( SfxBoolItem( SID_ATTR_PARA_LEFT_TO_RIGHT, true ) );
                     rSet.Put( SfxBoolItem( SID_ATTR_PARA_RIGHT_TO_LEFT, false ) );
                 break;
 
-                case FRMDIR_HORI_RIGHT_TOP:
+                case SvxFrameDirection::Horizontal_RL_TB:
                     rSet.Put( SfxBoolItem( SID_ATTR_PARA_LEFT_TO_RIGHT, false ) );
                     rSet.Put( SfxBoolItem( SID_ATTR_PARA_RIGHT_TO_LEFT, true ) );
                 break;
 
                 // The case for the superordinate object is missing.
-                case FRMDIR_ENVIRONMENT:
+                case SvxFrameDirection::Environment:
                 {
                     SdDrawDocument& rDoc = mpView->GetDoc();
                     css::text::WritingMode eMode = rDoc.GetDefaultWritingMode();
@@ -547,6 +549,7 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
                     rSet.Put( SfxBoolItem( SID_ATTR_PARA_RIGHT_TO_LEFT, !bIsLeftToRight ) );
                 }
                 break;
+                default: break;
             }
         }
 
@@ -561,7 +564,7 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
             rSet.InvalidateItem(EE_PARA_LRSPACE);
             rSet.InvalidateItem(SID_ATTR_PARA_LRSPACE);
         }
-        sal_uInt16 nLineSpace = (sal_uInt16) static_cast<const SvxLineSpacingItem&>( aAttrSet.
+        sal_uInt16 nLineSpace = static_cast<const SvxLineSpacingItem&>( aAttrSet.
                             Get( EE_PARA_SBL ) ).GetPropLineSpace();
         switch( nLineSpace )
         {
@@ -581,9 +584,9 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
     SvxEscapement eEsc = (SvxEscapement ) static_cast<const SvxEscapementItem&>(
                     aAttrSet.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-    if( eEsc == SVX_ESCAPEMENT_SUPERSCRIPT )
+    if( eEsc == SvxEscapement::Superscript )
         rSet.Put( SfxBoolItem( SID_SET_SUPER_SCRIPT, true ) );
-    else if( eEsc == SVX_ESCAPEMENT_SUBSCRIPT )
+    else if( eEsc == SvxEscapement::Subscript )
         rSet.Put( SfxBoolItem( SID_SET_SUB_SCRIPT, true ) );
 }
 

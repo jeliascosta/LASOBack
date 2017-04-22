@@ -40,7 +40,7 @@ namespace accessibility {
     transformation methods do not require explicit mapmodes.  These have to
     be provided implicitly by the classes that implement this
     interface.  A third, less important, difference are the additional
-    transfomation methods for sizes.  The reasons for their existence are
+    transformation methods for sizes.  The reasons for their existence are
     convenience and improved performance.</p>
 
     @attention
@@ -61,7 +61,7 @@ public:
             are, contrary to the base class, in internal coordinates of
             100th of mm.
      */
-    virtual Rectangle GetVisibleArea() const = 0;
+    virtual tools::Rectangle GetVisibleArea() const = 0;
 
     /** Transform the specified point from internal coordinates in 100th of
         mm to an absolute screen position.

@@ -30,6 +30,7 @@
 #include <editeng/postitem.hxx>
 #include <editeng/wghtitem.hxx>
 #include <editeng/fhgtitem.hxx>
+#include <o3tl/any.hxx>
 #include <svl/stritem.hxx>
 
 #include <com/sun/star/beans/XPropertyState.hpp>
@@ -106,7 +107,6 @@ bool CharacterPropertyItemConverter::GetItemProperty( tWhichIdType nWhichId, tPr
 
 void CharacterPropertyItemConverter::FillSpecialItem(
     sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
-    throw( uno::Exception )
 {
     switch( nWhichId )
     {
@@ -150,8 +150,7 @@ void CharacterPropertyItemConverter::FillSpecialItem(
             }
 
             aValue = GetPropertySet()->getPropertyValue( "CharUnderlineHasColor" );
-            if( aValue.hasValue() &&
-                *static_cast< const sal_Bool * >( aValue.getValue()) )
+            if( aValue.hasValue() && *o3tl::doAccess<bool>(aValue) )
             {
                 aItem.PutValue( aValue, MID_TL_HASCOLOR );
                 bModified = true;
@@ -182,8 +181,7 @@ void CharacterPropertyItemConverter::FillSpecialItem(
             }
 
             aValue = GetPropertySet()->getPropertyValue( "CharOverlineHasColor" );
-            if ( aValue.hasValue() &&
-                 *static_cast< const sal_Bool* >( aValue.getValue() ) )
+            if ( aValue.hasValue() && *o3tl::doAccess<bool>(aValue) )
             {
                 aItem.PutValue( aValue, MID_TL_HASCOLOR );
                 bModified = true;
@@ -308,7 +306,6 @@ void CharacterPropertyItemConverter::FillSpecialItem(
 
 bool CharacterPropertyItemConverter::ApplySpecialItem(
     sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
-    throw( uno::Exception )
 {
     bool bChanged = false;
     uno::Any aValue;
@@ -531,7 +528,7 @@ bool CharacterPropertyItemConverter::ApplySpecialItem(
                         if (m_pRefSize && GetRefSizePropertySet()->getPropertyValue( m_aRefSizePropertyName ).hasValue())
                         {
                             GetRefSizePropertySet()->setPropertyValue(
-                                m_aRefSizePropertyName, uno::makeAny(*m_pRefSize));
+                                m_aRefSizePropertyName, uno::Any(*m_pRefSize));
                         }
 
                         GetPropertySet()->setPropertyValue( "CharHeight" + aPostfix, aValue );

@@ -47,7 +47,7 @@ bool ScDrawTextObjectBar::ExecuteCharDlg( const SfxItemSet& rArgs,
     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
     assert(pFact && "ScAbstractFactory create fail!");
 
-    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateScCharDlg(
+    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateScCharDlg(
         pViewData->GetDialogParent(), &rArgs,
         pViewData->GetSfxDocShell()));
     assert(pDlg && "Dialog create fail!");
@@ -81,12 +81,12 @@ bool ScDrawTextObjectBar::ExecuteParaDlg( const SfxItemSet& rArgs,
                             0 );
     aNewAttr.Put( rArgs );
 
-    // Die Werte sind erst einmal uebernommen worden, um den Dialog anzuzeigen.
-    // Muss natuerlich noch geaendert werden
+    // Values have been taken over once to show the dialog.
+    // Has to be changed
     // aNewAttr.Put( SvxParaDlgLimitsItem( 567 * 50, 5670) );
 
     aNewAttr.Put( SvxHyphenZoneItem( false, SID_ATTR_PARA_HYPHENZONE ) );
-    aNewAttr.Put( SvxFormatBreakItem( SVX_BREAK_NONE, SID_ATTR_PARA_PAGEBREAK ) );
+    aNewAttr.Put( SvxFormatBreakItem( SvxBreak::NONE, SID_ATTR_PARA_PAGEBREAK ) );
     aNewAttr.Put( SvxFormatSplitItem( true, SID_ATTR_PARA_SPLIT)  );
     aNewAttr.Put( SvxWidowsItem( 0, SID_ATTR_PARA_WIDOWS) );
     aNewAttr.Put( SvxOrphansItem( 0, SID_ATTR_PARA_ORPHANS) );
@@ -94,7 +94,7 @@ bool ScDrawTextObjectBar::ExecuteParaDlg( const SfxItemSet& rArgs,
     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateScParagraphDlg(
+    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateScParagraphDlg(
         pViewData->GetDialogParent(), &aNewAttr));
     OSL_ENSURE(pDlg, "Dialog create fail!");
     bool bRet = ( pDlg->Execute() == RET_OK );
@@ -114,10 +114,11 @@ void ScDrawTextObjectBar::ExecutePasteContents( SfxRequest & /* rReq */ )
     SdrView* pView = pViewData->GetScDrawView();
     OutlinerView* pOutView = pView->GetTextEditOutlinerView();
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-    std::unique_ptr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( pViewData->GetDialogParent() ));
+    ScopedVclPtr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( pViewData->GetDialogParent() ));
 
     pDlg->Insert( SotClipboardFormatId::STRING, EMPTY_OUSTRING );
     pDlg->Insert( SotClipboardFormatId::RTF,    EMPTY_OUSTRING );
+    pDlg->Insert( SotClipboardFormatId::RICHTEXT,  EMPTY_OUSTRING );
 
     TransferableDataHelper aDataHelper( TransferableDataHelper::CreateFromSystemClipboard( pViewData->GetActiveWin() ) );
 

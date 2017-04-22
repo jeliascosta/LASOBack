@@ -29,27 +29,28 @@
 
 struct IsoLanguageCountryEntry;
 struct IsoLanguageScriptCountryEntry;
+struct Bcp47CountryEntry;
 
 /** Methods related to Microsoft language IDs. For details about MS-LANGIDs
     please see lang.h */
-class I18NLANGTAG_DLLPUBLIC MsLangId
+class SAL_WARN_UNUSED I18NLANGTAG_DLLPUBLIC MsLangId
 {
 public:
 
     /// Create a LangID from a primary and a sublanguage.
-    static inline LanguageType makeLangID( LanguageType nSubLangId, LanguageType nPriLangId)
+    static LanguageType makeLangID( LanguageType nSubLangId, LanguageType nPriLangId)
     {
         return (nSubLangId << 10) | nPriLangId;
     }
 
     /// Get the primary language of a LangID.
-    static inline LanguageType getPrimaryLanguage( LanguageType nLangID)
+    static LanguageType getPrimaryLanguage( LanguageType nLangID)
     {
         return nLangID & LANGUAGE_MASK_PRIMARY;
     }
 
     /// Get the sublanguage of a LangID.
-    static inline LanguageType getSubLanguage( LanguageType nLangID)
+    static LanguageType getSubLanguage( LanguageType nLangID)
     {
         return (nLangID & ~LANGUAGE_MASK_PRIMARY) >> 10;
     }
@@ -266,6 +267,10 @@ public:
         /** Used by lookupFallbackLocale(Locale) */
         I18NLANGTAG_DLLPRIVATE static css::lang::Locale getLocale(
                 const IsoLanguageScriptCountryEntry * pEntry );
+
+        /** Used by lookupFallbackLocale(Locale) */
+        I18NLANGTAG_DLLPRIVATE static css::lang::Locale getLocale(
+                const Bcp47CountryEntry * pEntry );
 
 
         /** Convert a LanguageType to a Locale.

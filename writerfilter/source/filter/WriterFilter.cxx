@@ -26,6 +26,7 @@
 #include <com/sun/star/document/XFilter.hpp>
 #include <com/sun/star/document/XImporter.hpp>
 #include <com/sun/star/drawing/XDrawPageSupplier.hpp>
+#include <com/sun/star/io/WrongFormatException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
@@ -39,6 +40,7 @@
 #include <oox/ole/vbaproject.hxx>
 #include <ooxml/OOXMLDocument.hxx>
 #include <unotools/mediadescriptor.hxx>
+#include <rtl/ref.hxx>
 
 using namespace ::com::sun::star;
 
@@ -94,35 +96,34 @@ protected:
     uno::Reference<lang::XComponent> m_xSrcDoc, m_xDstDoc;
 
 public:
-    explicit WriterFilter(const uno::Reference<uno::XComponentContext>& rxContext)
-        : m_xContext(rxContext)
+    explicit WriterFilter(uno::Reference<uno::XComponentContext> xContext)
+        : m_xContext(std::move(xContext))
     {}
-    virtual ~WriterFilter() = default;
 
     // XFilter
-    virtual sal_Bool SAL_CALL filter(const uno::Sequence<beans::PropertyValue>& rDescriptor) throw (uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL cancel() throw (uno::RuntimeException, std::exception) override;
+    sal_Bool SAL_CALL filter(const uno::Sequence<beans::PropertyValue>& rDescriptor) override;
+    void SAL_CALL cancel() override;
 
     // XImporter
-    virtual void SAL_CALL setTargetDocument(const uno::Reference<lang::XComponent>& xDoc) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL setTargetDocument(const uno::Reference<lang::XComponent>& xDoc) override;
 
     // XExporter
-    virtual void SAL_CALL setSourceDocument(const uno::Reference<lang::XComponent>& xDoc) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL setSourceDocument(const uno::Reference<lang::XComponent>& xDoc) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize(const uno::Sequence<uno::Any>& rArguments) throw (uno::Exception, uno::RuntimeException, std::exception) override;
+    void SAL_CALL initialize(const uno::Sequence<uno::Any>& rArguments) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw (uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& rServiceName) throw (uno::RuntimeException, std::exception) override;
-    virtual uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw (uno::RuntimeException, std::exception) override;
+    OUString SAL_CALL getImplementationName() override;
+    sal_Bool SAL_CALL supportsService(const OUString& rServiceName) override;
+    uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
 
 private:
     void putPropertiesToDocumentGrabBag(const comphelper::SequenceAsHashMap& rProperties);
 
 };
 
-sal_Bool WriterFilter::filter(const uno::Sequence< beans::PropertyValue >& aDescriptor) throw (uno::RuntimeException, std::exception)
+sal_Bool WriterFilter::filter(const uno::Sequence< beans::PropertyValue >& aDescriptor)
 {
     if (m_xSrcDoc.is())
     {
@@ -158,7 +159,7 @@ sal_Bool WriterFilter::filter(const uno::Sequence< beans::PropertyValue >& aDesc
         try
         {
             // use the oox.core.FilterDetect implementation to extract the decrypted ZIP package
-            uno::Reference<::oox::core::FilterDetect> xDetector(new ::oox::core::FilterDetect(m_xContext));
+            rtl::Reference<::oox::core::FilterDetect> xDetector(new ::oox::core::FilterDetect(m_xContext));
             xInputStream = xDetector->extractUnencryptedPackage(aMediaDesc);
         }
         catch (uno::Exception&)
@@ -218,22 +219,22 @@ sal_Bool WriterFilter::filter(const uno::Sequence< beans::PropertyValue >& aDesc
         comphelper::SequenceAsHashMap aGrabBagProperties;
 
         // Adding the saved Theme DOM
-        aGrabBagProperties["OOXTheme"] = uno::makeAny(pDocument->getThemeDom());
+        aGrabBagProperties["OOXTheme"] <<= pDocument->getThemeDom();
 
         // Adding the saved custom xml DOM
-        aGrabBagProperties["OOXCustomXml"] = uno::makeAny(pDocument->getCustomXmlDomList());
-        aGrabBagProperties["OOXCustomXmlProps"] = uno::makeAny(pDocument->getCustomXmlDomPropsList());
+        aGrabBagProperties["OOXCustomXml"] <<= pDocument->getCustomXmlDomList();
+        aGrabBagProperties["OOXCustomXmlProps"] <<= pDocument->getCustomXmlDomPropsList();
 
         // Adding the saved ActiveX DOM
-        aGrabBagProperties["OOXActiveX"] = uno::makeAny(pDocument->getActiveXDomList());
-        aGrabBagProperties["OOXActiveXBin"] = uno::makeAny(pDocument->getActiveXBinList());
+        aGrabBagProperties["OOXActiveX"] <<= pDocument->getActiveXDomList();
+        aGrabBagProperties["OOXActiveXBin"] <<= pDocument->getActiveXBinList();
 
         // Adding the saved Glossary Documnet DOM to the document's grab bag
-        aGrabBagProperties["OOXGlossary"] = uno::makeAny(pDocument->getGlossaryDocDom());
-        aGrabBagProperties["OOXGlossaryDom"] = uno::makeAny(pDocument->getGlossaryDomList());
+        aGrabBagProperties["OOXGlossary"] <<= pDocument->getGlossaryDocDom();
+        aGrabBagProperties["OOXGlossaryDom"] <<= pDocument->getGlossaryDomList();
 
         // Adding the saved embedding document to document's grab bag
-        aGrabBagProperties["OOXEmbeddings"] = uno::makeAny(pDocument->getEmbeddingsList());
+        aGrabBagProperties["OOXEmbeddings"] <<= pDocument->getEmbeddingsList();
 
         putPropertiesToDocumentGrabBag(aGrabBagProperties);
 
@@ -263,11 +264,11 @@ sal_Bool WriterFilter::filter(const uno::Sequence< beans::PropertyValue >& aDesc
 }
 
 
-void WriterFilter::cancel() throw (uno::RuntimeException, std::exception)
+void WriterFilter::cancel()
 {
 }
 
-void WriterFilter::setTargetDocument(const uno::Reference< lang::XComponent >& xDoc) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
+void WriterFilter::setTargetDocument(const uno::Reference< lang::XComponent >& xDoc)
 {
     m_xDstDoc = xDoc;
 
@@ -290,38 +291,39 @@ void WriterFilter::setTargetDocument(const uno::Reference< lang::XComponent >& x
     xSettings->setPropertyValue("InvertBorderSpacing", uno::makeAny(true));
     xSettings->setPropertyValue("CollapseEmptyCellPara", uno::makeAny(true));
     xSettings->setPropertyValue("TabOverflow", uno::makeAny(true));
-    xSettings->setPropertyValue("TreatSingleColumnBreakAsPageBreak", uno::makeAny(true));
     xSettings->setPropertyValue("UnbreakableNumberings", uno::makeAny(true));
 
     xSettings->setPropertyValue("FloattableNomargins", uno::makeAny(true));
     xSettings->setPropertyValue("ClippedPictures", uno::makeAny(true));
     xSettings->setPropertyValue("BackgroundParaOverDrawings", uno::makeAny(true));
     xSettings->setPropertyValue("TabOverMargin", uno::makeAny(true));
+    xSettings->setPropertyValue("TreatSingleColumnBreakAsPageBreak", uno::makeAny(true));
     xSettings->setPropertyValue("PropLineSpacingShrinksFirstLine", uno::makeAny(true));
+    xSettings->setPropertyValue("DoNotCaptureDrawObjsOnPage", uno::makeAny(true));
 }
 
-void WriterFilter::setSourceDocument(const uno::Reference< lang::XComponent >& xDoc) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
+void WriterFilter::setSourceDocument(const uno::Reference< lang::XComponent >& xDoc)
 {
     m_xSrcDoc = xDoc;
 }
 
-void WriterFilter::initialize(const uno::Sequence< uno::Any >& /*rArguments*/) throw (uno::Exception, uno::RuntimeException, std::exception)
+void WriterFilter::initialize(const uno::Sequence< uno::Any >& /*rArguments*/)
 {
 }
 
-OUString WriterFilter::getImplementationName() throw (uno::RuntimeException, std::exception)
+OUString WriterFilter::getImplementationName()
 {
     return OUString("com.sun.star.comp.Writer.WriterFilter");
 }
 
 
-sal_Bool WriterFilter::supportsService(const OUString& rServiceName) throw (uno::RuntimeException, std::exception)
+sal_Bool WriterFilter::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 
-uno::Sequence<OUString> WriterFilter::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
+uno::Sequence<OUString> WriterFilter::getSupportedServiceNames()
 {
     uno::Sequence<OUString> aRet =
     {

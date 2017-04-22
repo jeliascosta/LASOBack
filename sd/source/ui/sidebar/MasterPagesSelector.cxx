@@ -75,7 +75,7 @@ MasterPagesSelector::MasterPagesSelector (
       mpContainer(rpContainer),
       mrDocument(rDocument),
       mrBase(rBase),
-      mnDefaultClickAction(SID_TP_APPLY_TO_ALL_SLIDES),
+      msDefaultClickAction("applyselect"),
       maCurrentItemList(),
       maTokenToValueSetIndex(),
       maLockedMasterPages(),
@@ -112,6 +112,7 @@ void MasterPagesSelector::dispose()
 
     Link<MasterPageContainerChangeEvent&,void> aChangeListener (LINK(this,MasterPagesSelector,ContainerChangeListener));
     mpContainer->RemoveChangeListener(aChangeListener);
+    mpContainer.reset();
     PreviewValueSet::dispose();
 }
 
@@ -155,7 +156,7 @@ void MasterPagesSelector::UpdateLocks (const ItemList& rItemList)
 
 void MasterPagesSelector::Fill()
 {
-    ::std::unique_ptr<ItemList> pItemList (new ItemList());
+    ::std::unique_ptr<ItemList> pItemList (new ItemList);
 
     Fill(*pItemList);
 
@@ -163,20 +164,20 @@ void MasterPagesSelector::Fill()
     UpdateItemList(std::move(pItemList));
 }
 
-ResId MasterPagesSelector::GetContextMenuResId() const
+OUString MasterPagesSelector::GetContextMenuUIFile() const
 {
-    return SdResId(RID_TASKPANE_MASTERPAGESSELECTOR_POPUP);
+    return OUString("modules/simpress/ui/mastermenu.ui");
 }
 
-IMPL_LINK_NOARG_TYPED(MasterPagesSelector, ClickHandler, ValueSet*, void)
+IMPL_LINK_NOARG(MasterPagesSelector, ClickHandler, ValueSet*, void)
 {
     // We use the framework to assign the clicked-on master page because we
     // so use the same mechanism as the context menu does (where we do not
     // have the option to call the assignment method directly.)
-    ExecuteCommand(mnDefaultClickAction);
+    ExecuteCommand(msDefaultClickAction);
 }
 
-IMPL_LINK_TYPED(MasterPagesSelector, RightClickHandler, const MouseEvent&, rEvent, void)
+IMPL_LINK(MasterPagesSelector, RightClickHandler, const MouseEvent&, rEvent, void)
 {
     // Here we only prepare the display of the context menu: the item under
     // the mouse is selected.  The actual display of the context menu is
@@ -215,12 +216,13 @@ void MasterPagesSelector::Command (const CommandEvent& rEvent)
                 Point aPosition (rEvent.GetMousePosPixel());
                 if ( ! rEvent.IsMouseEvent())
                 {
-                    Rectangle aBBox (PreviewValueSet::GetItemRect(nIndex));
+                    ::tools::Rectangle aBBox (PreviewValueSet::GetItemRect(nIndex));
                     aPosition = aBBox.Center();
                 }
 
                 // Setup the menu.
-                std::unique_ptr<PopupMenu> pMenu (new PopupMenu(GetContextMenuResId()));
+                VclBuilder aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), GetContextMenuUIFile(), "");
+                VclPtr<PopupMenu> pMenu(aBuilder.get_menu("menu"));
                 FloatingWindow* pMenuWindow = dynamic_cast<FloatingWindow*>(pMenu->GetWindow());
                 if (pMenuWindow != nullptr)
                     pMenuWindow->SetPopupModeFlags(
@@ -230,7 +232,7 @@ void MasterPagesSelector::Command (const CommandEvent& rEvent)
                 ProcessPopupMenu(*pMenu);
 
                 // Show the menu.
-                pMenu->Execute(this, Rectangle(aPosition,Size(1,1)), PopupMenuFlags::ExecuteDown);
+                pMenu->Execute(this, ::tools::Rectangle(aPosition,Size(1,1)), PopupMenuFlags::ExecuteDown);
             }
         }
         break;
@@ -242,12 +244,12 @@ void MasterPagesSelector::ProcessPopupMenu (Menu& rMenu)
 {
     // Disable some entries.
     if (mpContainer->GetPreviewSize() == MasterPageContainer::SMALL)
-        rMenu.EnableItem(SID_TP_SHOW_SMALL_PREVIEW, false);
+        rMenu.EnableItem(rMenu.GetItemId("small"), false);
     else
-        rMenu.EnableItem(SID_TP_SHOW_LARGE_PREVIEW, false);
+        rMenu.EnableItem(rMenu.GetItemId("large"), false);
 }
 
-IMPL_LINK_TYPED(MasterPagesSelector, OnMenuItemSelected, Menu*, pMenu, bool)
+IMPL_LINK(MasterPagesSelector, OnMenuItemSelected, Menu*, pMenu, bool)
 {
     if (pMenu == nullptr)
     {
@@ -256,78 +258,64 @@ IMPL_LINK_TYPED(MasterPagesSelector, OnMenuItemSelected, Menu*, pMenu, bool)
     }
 
     pMenu->Deactivate();
-    ExecuteCommand(pMenu->GetCurItemId());
+    ExecuteCommand(pMenu->GetCurItemIdent());
     return false;
 }
 
-void MasterPagesSelector::ExecuteCommand (const sal_Int32 nCommandId)
+void MasterPagesSelector::ExecuteCommand(const OString &rIdent)
 {
-    switch (nCommandId)
+    if (rIdent == "applyall")
     {
-        case SID_TP_APPLY_TO_ALL_SLIDES:
-            mrBase.SetBusyState (true);
-            AssignMasterPageToAllSlides (GetSelectedMasterPage());
-            mrBase.SetBusyState (false);
-            break;
-
-        case SID_TP_APPLY_TO_SELECTED_SLIDES:
-            mrBase.SetBusyState (true);
-            AssignMasterPageToSelectedSlides (GetSelectedMasterPage());
-            mrBase.SetBusyState (false);
-            break;
-
-        case SID_TP_USE_FOR_NEW_PRESENTATIONS:
-            DBG_ASSERT (false,
-                "Using slides as default for new presentations"
-                " is not yet implemented");
-            break;
-
-        case SID_TP_SHOW_SMALL_PREVIEW:
-        case SID_TP_SHOW_LARGE_PREVIEW:
+        mrBase.SetBusyState (true);
+        AssignMasterPageToAllSlides (GetSelectedMasterPage());
+        mrBase.SetBusyState (false);
+    }
+    else if (rIdent == "applyselect")
+    {
+        mrBase.SetBusyState (true);
+        AssignMasterPageToSelectedSlides (GetSelectedMasterPage());
+        mrBase.SetBusyState (false);
+    }
+    else if (rIdent == "large")
+    {
+        mrBase.SetBusyState (true);
+        mpContainer->SetPreviewSize(MasterPageContainer::LARGE);
+        mrBase.SetBusyState (false);
+        if (mxSidebar.is())
+            mxSidebar->requestLayout();
+    }
+    else if (rIdent == "small")
+    {
+        mrBase.SetBusyState (true);
+        mpContainer->SetPreviewSize(MasterPageContainer::SMALL);
+        mrBase.SetBusyState (false);
+        if (mxSidebar.is())
+            mxSidebar->requestLayout();
+    }
+    else if (rIdent == "edit")
+    {
+        using namespace ::com::sun::star;
+        uno::Reference<drawing::XDrawPage> xSelectedMaster;
+        SdPage* pMasterPage = GetSelectedMasterPage();
+        assert(pMasterPage); //rhbz#902884
+        if (pMasterPage)
+            xSelectedMaster.set(pMasterPage->getUnoPage(), uno::UNO_QUERY);
+        SfxViewFrame* pViewFrame = mrBase.GetViewFrame();
+        if (pViewFrame != nullptr && xSelectedMaster.is())
         {
-            mrBase.SetBusyState (true);
-            mpContainer->SetPreviewSize(
-                nCommandId==SID_TP_SHOW_SMALL_PREVIEW
-                ? MasterPageContainer::SMALL
-                : MasterPageContainer::LARGE);
-            mrBase.SetBusyState (false);
-            if (mxSidebar.is())
-                mxSidebar->requestLayout();
-            break;
-        }
-
-        case SID_TP_EDIT_MASTER:
-        {
-            using namespace ::com::sun::star;
-            uno::Reference<drawing::XDrawPage> xSelectedMaster;
-            SdPage* pMasterPage = GetSelectedMasterPage();
-            assert(pMasterPage); //rhbz#902884
-            if (pMasterPage)
-                xSelectedMaster.set(pMasterPage->getUnoPage(), uno::UNO_QUERY);
-            SfxViewFrame* pViewFrame = mrBase.GetViewFrame();
-            if (pViewFrame != nullptr && xSelectedMaster.is())
+            SfxDispatcher* pDispatcher = pViewFrame->GetDispatcher();
+            if (pDispatcher != nullptr)
             {
-                SfxDispatcher* pDispatcher = pViewFrame->GetDispatcher();
-                if (pDispatcher != nullptr)
-                {
-                    sal_uInt16 nIndex = PreviewValueSet::GetSelectItemId();
-                    pDispatcher->Execute(SID_MASTERPAGE, SfxCallMode::SYNCHRON);
-                    PreviewValueSet::SelectItem (nIndex);
-                    mrBase.GetDrawController().setCurrentPage(xSelectedMaster);
-                }
+                sal_uInt16 nIndex = PreviewValueSet::GetSelectItemId();
+                pDispatcher->Execute(SID_MASTERPAGE, SfxCallMode::SYNCHRON);
+                PreviewValueSet::SelectItem (nIndex);
+                mrBase.GetDrawController().setCurrentPage(xSelectedMaster);
             }
-            break;
         }
-
-        case SID_CUT:
-        case SID_COPY:
-        case SID_PASTE:
-            // Cut, copy, and paste are not supported and thus are ignored.
-            break;
     }
 }
 
-IMPL_LINK_TYPED(MasterPagesSelector, ContainerChangeListener, MasterPageContainerChangeEvent&, rEvent, void)
+IMPL_LINK(MasterPagesSelector, ContainerChangeListener, MasterPageContainerChangeEvent&, rEvent, void)
 {
     NotifyContainerChangeEvent(rEvent);
 }
@@ -341,7 +329,7 @@ SdPage* MasterPagesSelector::GetSelectedMasterPage()
     UserData* pData = GetUserData(nIndex);
     if (pData != nullptr)
     {
-        pMasterPage = mpContainer->GetPageObjectForToken(pData->second);
+        pMasterPage = mpContainer->GetPageObjectForToken(pData->second, true);
     }
     return pMasterPage;
 }
@@ -354,7 +342,7 @@ void MasterPagesSelector::AssignMasterPageToAllSlides (SdPage* pMasterPage)
     if (pMasterPage == nullptr)
         return;
 
-    sal_uInt16 nPageCount = mrDocument.GetSdPageCount(PK_STANDARD);
+    sal_uInt16 nPageCount = mrDocument.GetSdPageCount(PageKind::Standard);
     if (nPageCount == 0)
         return;
 
@@ -363,10 +351,10 @@ void MasterPagesSelector::AssignMasterPageToAllSlides (SdPage* pMasterPage)
     // assigned.
     OUString sFullLayoutName(pMasterPage->GetLayoutName());
     ::sd::slidesorter::SharedPageSelection pPageList (
-        new ::sd::slidesorter::SlideSorterViewShell::PageSelection());
+        new ::sd::slidesorter::SlideSorterViewShell::PageSelection);
     for (sal_uInt16 nPageIndex=0; nPageIndex<nPageCount; nPageIndex++)
     {
-        SdPage* pPage = mrDocument.GetSdPage (nPageIndex, PK_STANDARD);
+        SdPage* pPage = mrDocument.GetSdPage (nPageIndex, PageKind::Standard);
         if (pPage != nullptr && pPage->GetLayoutName() != sFullLayoutName)
         {
             pPageList->push_back (pPage);
@@ -417,12 +405,12 @@ void MasterPagesSelector::NotifyContainerChangeEvent (const MasterPageContainerC
 
     switch (rEvent.meEventType)
     {
-        case MasterPageContainerChangeEvent::SIZE_CHANGED:
+        case MasterPageContainerChangeEvent::EventType::SIZE_CHANGED:
             PreviewValueSet::SetPreviewSize(mpContainer->GetPreviewSizePixel());
             UpdateAllPreviews();
             break;
 
-        case MasterPageContainerChangeEvent::PREVIEW_CHANGED:
+        case MasterPageContainerChangeEvent::EventType::PREVIEW_CHANGED:
         {
             int nIndex (GetIndexForToken(rEvent.maChildToken));
             if (nIndex >= 0)
@@ -435,14 +423,14 @@ void MasterPagesSelector::NotifyContainerChangeEvent (const MasterPageContainerC
         }
         break;
 
-        case MasterPageContainerChangeEvent::DATA_CHANGED:
+        case MasterPageContainerChangeEvent::EventType::DATA_CHANGED:
         {
             InvalidateItem(rEvent.maChildToken);
             Fill();
         }
         break;
 
-        case MasterPageContainerChangeEvent::CHILD_REMOVED:
+        case MasterPageContainerChangeEvent::EventType::CHILD_REMOVED:
         {
             int nIndex (GetIndexForToken(rEvent.maChildToken));
             SetItem(nIndex, MasterPageContainer::NIL_TOKEN);
@@ -452,13 +440,6 @@ void MasterPagesSelector::NotifyContainerChangeEvent (const MasterPageContainerC
         default:
             break;
    }
-}
-
-MasterPagesSelector::UserData* MasterPagesSelector::CreateUserData (
-    int nIndex,
-    MasterPageContainer::Token aToken)
-{
-    return new UserData(nIndex,aToken);
 }
 
 MasterPagesSelector::UserData* MasterPagesSelector::GetUserData (int nIndex) const
@@ -518,7 +499,7 @@ void MasterPagesSelector::SetItem (
                         mpContainer->GetPageNameForToken(aToken),
                         nIndex);
                 }
-                SetUserData(nIndex, CreateUserData(nIndex,aToken));
+                SetUserData(nIndex, new UserData(nIndex,aToken));
 
                 AddTokenToIndexEntry(nIndex,aToken);
             }

@@ -80,8 +80,8 @@ OCollectionView::OCollectionView( vcl::Window * pParent
     m_pName->GrabFocus();
 
     m_pNewFolder->SetStyle( m_pNewFolder->GetStyle() | WB_NOPOINTERFOCUS );
-    m_pUp->SetModeImage(Image(ModuleRes(IMG_NAVIGATION_BTN_UP_SC)));
-    m_pNewFolder->SetModeImage(Image(ModuleRes(IMG_NAVIGATION_CREATEFOLDER_SC)));
+    m_pUp->SetModeImage(Image(BitmapEx(ModuleRes(BMP_NAVIGATION_BTN_UP_SC))));
+    m_pNewFolder->SetModeImage(Image(BitmapEx(ModuleRes(BMP_NAVIGATION_CREATEFOLDER_SC))));
 
     m_pView->SetDoubleClickHdl( LINK( this, OCollectionView, Dbl_Click_FileView ) );
     m_pView->EnableAutoResize();
@@ -107,7 +107,7 @@ void OCollectionView::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(OCollectionView, Save_Click, Button*, void)
+IMPL_LINK_NOARG(OCollectionView, Save_Click, Button*, void)
 {
     OUString sName = m_pName->GetText();
     if ( sName.isEmpty() )
@@ -194,7 +194,7 @@ IMPL_LINK_NOARG_TYPED(OCollectionView, Save_Click, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(OCollectionView, NewFolder_Click, Button*, void)
+IMPL_LINK_NOARG(OCollectionView, NewFolder_Click, Button*, void)
 {
     try
     {
@@ -212,7 +212,7 @@ IMPL_LINK_NOARG_TYPED(OCollectionView, NewFolder_Click, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(OCollectionView, Up_Click, Button*, void)
+IMPL_LINK_NOARG(OCollectionView, Up_Click, Button*, void)
 {
     try
     {
@@ -236,7 +236,7 @@ IMPL_LINK_NOARG_TYPED(OCollectionView, Up_Click, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(OCollectionView, Dbl_Click_FileView, SvTreeListBox*, bool)
+IMPL_LINK_NOARG(OCollectionView, Dbl_Click_FileView, SvTreeListBox*, bool)
 {
     try
     {

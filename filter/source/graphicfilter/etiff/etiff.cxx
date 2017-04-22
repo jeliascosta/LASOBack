@@ -106,7 +106,6 @@ private:
 public:
 
     explicit            TIFFWriter(SvStream &rStream);
-                        ~TIFFWriter();
 
     bool WriteTIFF( const Graphic& rGraphic, FilterConfigItem* pFilterConfigItem );
 };
@@ -145,11 +144,6 @@ TIFFWriter::TIFFWriter(SvStream &rStream)
 }
 
 
-TIFFWriter::~TIFFWriter()
-{
-}
-
-
 bool TIFFWriter::WriteTIFF( const Graphic& rGraphic, FilterConfigItem* pFilterConfigItem)
 {
     if ( pFilterConfigItem )
@@ -172,28 +166,20 @@ bool TIFFWriter::WriteTIFF( const Graphic& rGraphic, FilterConfigItem* pFilterCo
     mnLatestIfdPos = m_rOStm.Tell();
     m_rOStm.WriteUInt32( 0 );
 
-    Animation   aAnimation;
-    Bitmap      aBmp;
-
     if( mbStatus )
     {
-        if ( rGraphic.IsAnimated() )
-            aAnimation = rGraphic.GetAnimation();
-        else
-        {
-            AnimationBitmap aAnimationBitmap( rGraphic.GetBitmap(), Point(), Size() );
-            aAnimation.Insert( aAnimationBitmap );
-        }
+        Animation aAnimation = rGraphic.IsAnimated() ? rGraphic.GetAnimation() : Animation();
+        if (!rGraphic.IsAnimated())
+            aAnimation.Insert(AnimationBitmap(rGraphic.GetBitmap(), Point(), Size()));
 
-        sal_uInt16 i;
-        for ( i = 0; i < aAnimation.Count(); i++ )
-            mnSumOfAllPictHeight += aAnimation.Get( i ).aBmpEx.GetSizePixel().Height();
+        for (size_t i = 0; i < aAnimation.Count(); ++i)
+            mnSumOfAllPictHeight += aAnimation.Get(i).aBmpEx.GetSizePixel().Height();
 
-        for ( i = 0; mbStatus && ( i < aAnimation.Count() ); i++ )
+        for (size_t i = 0; mbStatus && i < aAnimation.Count(); ++i)
         {
             mnPalPos = 0;
             const AnimationBitmap& rAnimationBitmap = aAnimation.Get( i );
-            aBmp = rAnimationBitmap.aBmpEx.GetBitmap();
+            Bitmap aBmp = rAnimationBitmap.aBmpEx.GetBitmap();
             mpAcc = aBmp.AcquireReadAccess();
             if ( mpAcc )
             {
@@ -207,10 +193,10 @@ bool TIFFWriter::WriteTIFF( const Graphic& rGraphic, FilterConfigItem* pFilterCo
                 {
                     Size aDestMapSize( 300, 300 );
                     const MapMode aMapMode( aBmp.GetPrefMapMode() );
-                    if ( aMapMode.GetMapUnit() != MAP_PIXEL )
+                    if ( aMapMode.GetMapUnit() != MapUnit::MapPixel )
                     {
                         const Size aPrefSize( rGraphic.GetPrefSize() );
-                        aDestMapSize = OutputDevice::LogicToLogic( aPrefSize, aMapMode, MAP_INCH );
+                        aDestMapSize = OutputDevice::LogicToLogic( aPrefSize, aMapMode, MapUnit::MapInch );
                     }
                     ImplWriteResolution( mnXResPos, aDestMapSize.Width() );
                     ImplWriteResolution( mnYResPos, aDestMapSize.Height() );
@@ -267,7 +253,7 @@ bool TIFFWriter::ImplWriteHeader( bool bMultiPage )
 
         // (OFS8) TIFF image file directory (IFD)
         mnCurrentTagCountPos = m_rOStm.Tell();
-        m_rOStm.WriteUInt16( 0 );               // the number of tagentrys is to insert later
+        m_rOStm.WriteUInt16( 0 );               // the number of tangents to insert later
 
         sal_uInt32 nSubFileFlags = 0;
         if ( bMultiPage )
@@ -328,23 +314,22 @@ bool TIFFWriter::ImplWriteHeader( bool bMultiPage )
 
 void TIFFWriter::ImplWritePalette()
 {
-    sal_uInt16 i;
     sal_uLong nCurrentPos = m_rOStm.Tell();
     m_rOStm.Seek( mnPalPos + 8 );           // the palette tag entry needs the offset
     m_rOStm.WriteUInt32( nCurrentPos - mnStreamOfs );  // to the palette colors
     m_rOStm.Seek( nCurrentPos );
 
-    for ( i = 0; i < mnColors; i++ )
+    for ( sal_uInt32 i = 0; i < mnColors; i++ )
     {
         const BitmapColor& rColor = mpAcc->GetPaletteColor( i );
         m_rOStm.WriteUInt16( rColor.GetRed() << 8 );
     }
-    for ( i = 0; i < mnColors; i++ )
+    for ( sal_uInt32 i = 0; i < mnColors; i++ )
     {
         const BitmapColor& rColor = mpAcc->GetPaletteColor( i );
         m_rOStm.WriteUInt16( rColor.GetGreen() << 8 );
     }
-    for ( i = 0; i < mnColors; i++ )
+    for ( sal_uInt32 i = 0; i < mnColors; i++ )
     {
         const BitmapColor& rColor = mpAcc->GetPaletteColor( i );
         m_rOStm.WriteUInt16( rColor.GetBlue() << 8 );

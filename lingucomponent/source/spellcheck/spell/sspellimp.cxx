@@ -58,60 +58,66 @@ using namespace com::sun::star::linguistic2;
 using namespace linguistic;
 
 // XML-header of SPELLML queries
-#define SPELLML_HEADER "<?xml?>"
+#if !defined SPELL_XML
+#define SPELL_XML "<?xml?>"
+#endif
+
+// only available in hunspell >= 1.5
+#if !defined MAXWORDLEN
+#define MAXWORDLEN 176
+#endif
 
 SpellChecker::SpellChecker() :
-    aDicts(nullptr),
-    aDEncs(nullptr),
-    aDLocs(nullptr),
-    aDNames(nullptr),
-    numdict(0),
-    aEvtListeners(GetLinguMutex()),
-    pPropHelper(nullptr),
-    bDisposing(false)
+    m_aDicts(nullptr),
+    m_aDEncs(nullptr),
+    m_aDLocs(nullptr),
+    m_aDNames(nullptr),
+    m_nNumDict(0),
+    m_aEvtListeners(GetLinguMutex()),
+    m_pPropHelper(nullptr),
+    m_bDisposing(false)
 {
 }
 
 SpellChecker::~SpellChecker()
 {
-    if (aDicts)
+    if (m_aDicts)
     {
-       for (int i = 0; i < numdict; ++i)
+       for (int i = 0; i < m_nNumDict; ++i)
        {
-            delete aDicts[i];
+            delete m_aDicts[i];
        }
-       delete[] aDicts;
+       delete[] m_aDicts;
     }
-    delete[] aDEncs;
-    delete[] aDLocs;
-    delete[] aDNames;
-    if (pPropHelper)
+    delete[] m_aDEncs;
+    delete[] m_aDLocs;
+    delete[] m_aDNames;
+    if (m_pPropHelper)
     {
-        pPropHelper->RemoveAsPropListener();
-        delete pPropHelper;
+        m_pPropHelper->RemoveAsPropListener();
+        delete m_pPropHelper;
     }
 }
 
 PropertyHelper_Spelling & SpellChecker::GetPropHelper_Impl()
 {
-    if (!pPropHelper)
+    if (!m_pPropHelper)
     {
         Reference< XLinguProperties >   xPropSet( GetLinguProperties(), UNO_QUERY );
 
-        pPropHelper = new PropertyHelper_Spelling( static_cast<XSpellChecker *>(this), xPropSet );
-        pPropHelper->AddAsPropListener();   //! after a reference is established
+        m_pPropHelper = new PropertyHelper_Spelling( static_cast<XSpellChecker *>(this), xPropSet );
+        m_pPropHelper->AddAsPropListener();   //! after a reference is established
     }
-    return *pPropHelper;
+    return *m_pPropHelper;
 }
 
 Sequence< Locale > SAL_CALL SpellChecker::getLocales()
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
     // this routine should return the locales supported by the installed
     // dictionaries.
-    if (!numdict)
+    if (!m_nNumDict)
     {
         SvtLinguConfig aLinguCfg;
 
@@ -147,7 +153,7 @@ Sequence< Locale > SAL_CALL SpellChecker::getLocales()
             uno::Reference< ucb::XSimpleFileAccess > xAccess(xServiceFactory->createInstance("com.sun.star.ucb.SimpleFileAccess"), uno::UNO_QUERY);
             // get supported locales from the dictionaries-to-use...
             sal_Int32 k = 0;
-            std::set< OUString, lt_rtl_OUString > aLocaleNamesSet;
+            std::set<OUString> aLocaleNamesSet;
             std::list< SvtLinguConfigDictionaryEntry >::const_iterator aDictIt;
             for (aDictIt = aDics.begin();  aDictIt != aDics.end();  ++aDictIt)
             {
@@ -175,13 +181,13 @@ Sequence< Locale > SAL_CALL SpellChecker::getLocales()
                 }
             }
             // ... and add them to the resulting sequence
-            aSuppLocales.realloc( aLocaleNamesSet.size() );
-            std::set< OUString, lt_rtl_OUString >::const_iterator aItB;
+            m_aSuppLocales.realloc( aLocaleNamesSet.size() );
+            std::set<OUString>::const_iterator aItB;
             k = 0;
             for (aItB = aLocaleNamesSet.begin();  aItB != aLocaleNamesSet.end();  ++aItB)
             {
                 Locale aTmp( LanguageTag::convertToLocale( *aItB ));
-                aSuppLocales[k++] = aTmp;
+                m_aSuppLocales[k++] = aTmp;
             }
 
             //! For each dictionary and each locale we need a separate entry.
@@ -189,15 +195,15 @@ Sequence< Locale > SAL_CALL SpellChecker::getLocales()
             //! it is undefined which dictionary gets used.
             //! In the future the implementation should support using several dictionaries
             //! for one locale.
-            numdict = 0;
+            m_nNumDict = 0;
             for (aDictIt = aDics.begin();  aDictIt != aDics.end();  ++aDictIt)
-                numdict = numdict + aDictIt->aLocaleNames.getLength();
+                m_nNumDict = m_nNumDict + aDictIt->aLocaleNames.getLength();
 
             // add dictionary information
-            aDicts  = new Hunspell* [numdict];
-            aDEncs  = new rtl_TextEncoding [numdict];
-            aDLocs  = new Locale [numdict];
-            aDNames = new OUString [numdict];
+            m_aDicts  = new Hunspell* [m_nNumDict];
+            m_aDEncs  = new rtl_TextEncoding [m_nNumDict];
+            m_aDLocs  = new Locale [m_nNumDict];
+            m_aDNames = new OUString [m_nNumDict];
             k = 0;
             for (aDictIt = aDics.begin();  aDictIt != aDics.end();  ++aDictIt)
             {
@@ -212,53 +218,52 @@ Sequence< Locale > SAL_CALL SpellChecker::getLocales()
                     // Once for each of its supported locales.
                     for (sal_Int32 i = 0;  i < nLocales;  ++i)
                     {
-                        aDicts[k]  = nullptr;
-                        aDEncs[k]  = RTL_TEXTENCODING_DONTKNOW;
-                        aDLocs[k]  = LanguageTag::convertToLocale( aLocaleNames[i] );
+                        m_aDicts[k]  = nullptr;
+                        m_aDEncs[k]  = RTL_TEXTENCODING_DONTKNOW;
+                        m_aDLocs[k]  = LanguageTag::convertToLocale( aLocaleNames[i] );
                         // also both files have to be in the same directory and the
                         // file names must only differ in the extension (.aff/.dic).
                         // Thus we use the first location only and strip the extension part.
                         OUString aLocation = aDictIt->aLocations[0];
                         sal_Int32 nPos = aLocation.lastIndexOf( '.' );
                         aLocation = aLocation.copy( 0, nPos );
-                        aDNames[k] = aLocation;
+                        m_aDNames[k] = aLocation;
 
                         ++k;
                     }
                 }
             }
-            DBG_ASSERT( k == numdict, "index mismatch?" );
+            DBG_ASSERT( k == m_nNumDict, "index mismatch?" );
         }
         else
         {
             // no dictionary found so register no dictionaries
-            numdict = 0;
-            delete[] aDicts;
-            aDicts  = nullptr;
-            delete[] aDEncs;
-            aDEncs = nullptr;
-            delete[] aDLocs;
-            aDLocs  = nullptr;
-            delete[] aDNames;
-            aDNames = nullptr;
-            aSuppLocales.realloc(0);
+            m_nNumDict = 0;
+            delete[] m_aDicts;
+            m_aDicts  = nullptr;
+            delete[] m_aDEncs;
+            m_aDEncs = nullptr;
+            delete[] m_aDLocs;
+            m_aDLocs  = nullptr;
+            delete[] m_aDNames;
+            m_aDNames = nullptr;
+            m_aSuppLocales.realloc(0);
         }
     }
 
-    return aSuppLocales;
+    return m_aSuppLocales;
 }
 
 sal_Bool SAL_CALL SpellChecker::hasLocale(const Locale& rLocale)
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
     bool bRes = false;
-    if (!aSuppLocales.getLength())
+    if (!m_aSuppLocales.getLength())
         getLocales();
 
-    const Locale *pLocale = aSuppLocales.getConstArray();
-    sal_Int32 nLen = aSuppLocales.getLength();
+    const Locale *pLocale = m_aSuppLocales.getConstArray();
+    sal_Int32 nLen = m_aSuppLocales.getLength();
     for (sal_Int32 i = 0;  i < nLen;  ++i)
     {
         if (rLocale == pLocale[i])
@@ -270,8 +275,11 @@ sal_Bool SAL_CALL SpellChecker::hasLocale(const Locale& rLocale)
     return bRes;
 }
 
-sal_Int16 SpellChecker::GetSpellFailure( const OUString &rWord, const Locale &rLocale )
+sal_Int16 SpellChecker::GetSpellFailure(const OUString &rWord, const Locale &rLocale)
 {
+    if (rWord.getLength() > MAXWORDLEN)
+        return -1;
+
     Hunspell * pMS = nullptr;
     rtl_TextEncoding eEnc = RTL_TEXTENCODING_DONTKNOW;
 
@@ -305,17 +313,17 @@ sal_Int16 SpellChecker::GetSpellFailure( const OUString &rWord, const Locale &rL
 
     if (n)
     {
-        for (sal_Int32 i = 0; i < numdict; ++i)
+        for (sal_Int32 i = 0; i < m_nNumDict; ++i)
         {
             pMS = nullptr;
             eEnc = RTL_TEXTENCODING_DONTKNOW;
 
-            if (rLocale == aDLocs[i])
+            if (rLocale == m_aDLocs[i])
             {
-                if (!aDicts[i])
+                if (!m_aDicts[i])
                 {
-                    OUString dicpath = aDNames[i] + ".dic";
-                    OUString affpath = aDNames[i] + ".aff";
+                    OUString dicpath = m_aDNames[i] + ".dic";
+                    OUString affpath = m_aDNames[i] + ".aff";
                     OUString dict;
                     OUString aff;
                     osl::FileBase::getSystemPathFromFileURL(dicpath,dict);
@@ -333,13 +341,15 @@ sal_Int16 SpellChecker::GetSpellFailure( const OUString &rWord, const Locale &rL
                     OString aTmpdict(OU2ENC(dict,osl_getThreadTextEncoding()));
 #endif
 
-                    aDicts[i] = new Hunspell(aTmpaff.getStr(),aTmpdict.getStr());
-                    aDEncs[i] = RTL_TEXTENCODING_DONTKNOW;
-                    if (aDicts[i])
-                        aDEncs[i] = getTextEncodingFromCharset(aDicts[i]->get_dic_encoding());
+                    m_aDicts[i] = new Hunspell(aTmpaff.getStr(),aTmpdict.getStr());
+#if defined(H_DEPRECATED)
+                    m_aDEncs[i] = getTextEncodingFromCharset(m_aDicts[i]->get_dict_encoding().c_str());
+#else
+                    m_aDEncs[i] = getTextEncodingFromCharset(m_aDicts[i]->get_dic_encoding());
+#endif
                 }
-                pMS = aDicts[i];
-                eEnc = aDEncs[i];
+                pMS = m_aDicts[i];
+                eEnc = m_aDEncs[i];
             }
 
             if (pMS)
@@ -353,8 +363,12 @@ sal_Int16 SpellChecker::GetSpellFailure( const OUString &rWord, const Locale &rL
                     return -1;
 
                 OString aWrd(OU2ENC(nWord,eEnc));
-                int rVal = pMS->spell(aWrd.getStr());
-                if (rVal != 1) {
+#if defined(H_DEPRECATED)
+                bool bVal = pMS->spell(std::string(aWrd.getStr()));
+#else
+                bool bVal = pMS->spell(aWrd.getStr()) != 0;
+#endif
+                if (!bVal) {
                     if (extrachar && (eEnc != RTL_TEXTENCODING_UTF8)) {
                         OUStringBuffer aBuf(nWord);
                         n = aBuf.getLength();
@@ -372,8 +386,12 @@ sal_Int16 SpellChecker::GetSpellFailure( const OUString &rWord, const Locale &rL
                         }
                         OUString aWord(aBuf.makeStringAndClear());
                         OString bWrd(OU2ENC(aWord, eEnc));
-                        rVal = pMS->spell(bWrd.getStr());
-                        if (rVal == 1) return -1;
+#if defined(H_DEPRECATED)
+                        bVal = pMS->spell(std::string(bWrd.getStr()));
+#else
+                        bVal = pMS->spell(bWrd.getStr()) != 0;
+#endif
+                        if (bVal) return -1;
                     }
                     nRes = SpellFailure::SPELLING_ERROR;
                 } else {
@@ -389,7 +407,6 @@ sal_Int16 SpellChecker::GetSpellFailure( const OUString &rWord, const Locale &rL
 
 sal_Bool SAL_CALL SpellChecker::isValid( const OUString& rWord, const Locale& rLocale,
             const PropertyValues& rProperties )
-        throw(IllegalArgumentException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -400,7 +417,7 @@ sal_Bool SAL_CALL SpellChecker::isValid( const OUString& rWord, const Locale& rL
         return true;
 
     // return sal_False to process SPELLML requests (they are longer than the header)
-    if (rWord.match(SPELLML_HEADER, 0) && (rWord.getLength() > 10)) return false;
+    if (rWord.match(SPELL_XML, 0) && (rWord.getLength() > 10)) return false;
 
     // Get property values to be used.
     // These are be the default values set in the SN_LINGU_PROPERTIES
@@ -412,7 +429,7 @@ sal_Bool SAL_CALL SpellChecker::isValid( const OUString& rWord, const Locale& rL
     rHelper.SetTmpPropVals( rProperties );
 
     sal_Int16 nFailure = GetSpellFailure( rWord, rLocale );
-    if (nFailure != -1 && !rWord.match(SPELLML_HEADER, 0))
+    if (nFailure != -1 && !rWord.match(SPELL_XML, 0))
     {
         sal_Int16 nLang = LinguLocaleToLanguage( rLocale );
         // postprocess result for errors that should be ignored
@@ -459,23 +476,36 @@ Reference< XSpellAlternatives >
         int numsug = 0;
 
         Sequence< OUString > aStr( 0 );
-        for (int i = 0; i < numdict; i++)
+        for (int i = 0; i < m_nNumDict; i++)
         {
             pMS = nullptr;
             eEnc = RTL_TEXTENCODING_DONTKNOW;
 
-            if (rLocale == aDLocs[i])
+            if (rLocale == m_aDLocs[i])
             {
-                pMS = aDicts[i];
-                eEnc = aDEncs[i];
+                pMS = m_aDicts[i];
+                eEnc = m_aDEncs[i];
             }
 
             if (pMS)
             {
-                char ** suglst = nullptr;
                 OString aWrd(OU2ENC(nWord,eEnc));
+#if defined(H_DEPRECATED)
+                std::vector<std::string> suglst = pMS->suggest(std::string(aWrd.getStr()));
+                if (!suglst.empty())
+                {
+                    aStr.realloc(numsug + suglst.size());
+                    OUString *pStr = aStr.getArray();
+                    for (size_t ii = 0; ii < suglst.size(); ++ii)
+                    {
+                        OUString cvtwrd(suglst[ii].c_str(), suglst[ii].size(), eEnc);
+                        pStr[numsug + ii] = cvtwrd;
+                    }
+                    numsug += suglst.size();
+                }
+#else
+                char ** suglst = nullptr;
                 int count = pMS->suggest(&suglst, aWrd.getStr());
-
                 if (count)
                 {
                     aStr.realloc( numsug + count );
@@ -487,8 +517,8 @@ Reference< XSpellAlternatives >
                     }
                     numsug += count;
                 }
-
                 pMS->free_list(&suglst, count);
+#endif
             }
         }
 
@@ -502,7 +532,6 @@ Reference< XSpellAlternatives >
 Reference< XSpellAlternatives > SAL_CALL SpellChecker::spell(
         const OUString& rWord, const Locale& rLocale,
         const PropertyValues& rProperties )
-        throw(IllegalArgumentException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -520,9 +549,9 @@ Reference< XSpellAlternatives > SAL_CALL SpellChecker::spell(
     return xAlt;
 }
 
+/// @throws Exception
 Reference< XInterface > SAL_CALL SpellChecker_CreateInstance(
         const Reference< XMultiServiceFactory > & /*rSMgr*/ )
-        throw(Exception)
 {
 
     Reference< XInterface > xService = static_cast<cppu::OWeakObject*>(new SpellChecker);
@@ -531,12 +560,11 @@ Reference< XInterface > SAL_CALL SpellChecker_CreateInstance(
 
 sal_Bool SAL_CALL SpellChecker::addLinguServiceEventListener(
         const Reference< XLinguServiceEventListener >& rxLstnr )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
     bool bRes = false;
-    if (!bDisposing && rxLstnr.is())
+    if (!m_bDisposing && rxLstnr.is())
     {
         bRes = GetPropHelper().addLinguServiceEventListener( rxLstnr );
     }
@@ -545,12 +573,11 @@ sal_Bool SAL_CALL SpellChecker::addLinguServiceEventListener(
 
 sal_Bool SAL_CALL SpellChecker::removeLinguServiceEventListener(
         const Reference< XLinguServiceEventListener >& rxLstnr )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
     bool bRes = false;
-    if (!bDisposing && rxLstnr.is())
+    if (!m_bDisposing && rxLstnr.is())
     {
         bRes = GetPropHelper().removeLinguServiceEventListener( rxLstnr );
     }
@@ -558,18 +585,15 @@ sal_Bool SAL_CALL SpellChecker::removeLinguServiceEventListener(
 }
 
 OUString SAL_CALL SpellChecker::getServiceDisplayName( const Locale& /*rLocale*/ )
-        throw(RuntimeException, std::exception)
 {
-    MutexGuard  aGuard( GetLinguMutex() );
     return OUString( "Hunspell SpellChecker" );
 }
 
 void SAL_CALL SpellChecker::initialize( const Sequence< Any >& rArguments )
-        throw(Exception, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
-    if (!pPropHelper)
+    if (!m_pPropHelper)
     {
         sal_Int32 nLen = rArguments.getLength();
         if (2 == nLen)
@@ -582,8 +606,8 @@ void SAL_CALL SpellChecker::initialize( const Sequence< Any >& rArguments )
             //! And the reference to the UNO-functions while increasing
             //! the ref-count and will implicitly free the memory
             //! when the object is not longer used.
-            pPropHelper = new PropertyHelper_Spelling( static_cast<XSpellChecker *>(this), xPropSet );
-            pPropHelper->AddAsPropListener();   //! after a reference is established
+            m_pPropHelper = new PropertyHelper_Spelling( static_cast<XSpellChecker *>(this), xPropSet );
+            m_pPropHelper->AddAsPropListener();   //! after a reference is established
         }
         else {
             OSL_FAIL( "wrong number of arguments in sequence" );
@@ -592,57 +616,51 @@ void SAL_CALL SpellChecker::initialize( const Sequence< Any >& rArguments )
 }
 
 void SAL_CALL SpellChecker::dispose()
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
-    if (!bDisposing)
+    if (!m_bDisposing)
     {
-        bDisposing = true;
+        m_bDisposing = true;
         EventObject aEvtObj( static_cast<XSpellChecker *>(this) );
-        aEvtListeners.disposeAndClear( aEvtObj );
-        if (pPropHelper)
+        m_aEvtListeners.disposeAndClear( aEvtObj );
+        if (m_pPropHelper)
         {
-            pPropHelper->RemoveAsPropListener();
-            delete pPropHelper;
-            pPropHelper = nullptr;
+            m_pPropHelper->RemoveAsPropListener();
+            delete m_pPropHelper;
+            m_pPropHelper = nullptr;
         }
     }
 }
 
 void SAL_CALL SpellChecker::addEventListener( const Reference< XEventListener >& rxListener )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
-    if (!bDisposing && rxListener.is())
-        aEvtListeners.addInterface( rxListener );
+    if (!m_bDisposing && rxListener.is())
+        m_aEvtListeners.addInterface( rxListener );
 }
 
 void SAL_CALL SpellChecker::removeEventListener( const Reference< XEventListener >& rxListener )
-        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
-    if (!bDisposing && rxListener.is())
-        aEvtListeners.removeInterface( rxListener );
+    if (!m_bDisposing && rxListener.is())
+        m_aEvtListeners.removeInterface( rxListener );
 }
 
 // Service specific part
 OUString SAL_CALL SpellChecker::getImplementationName()
-        throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
 sal_Bool SAL_CALL SpellChecker::supportsService( const OUString& ServiceName )
-        throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence< OUString > SAL_CALL SpellChecker::getSupportedServiceNames()
-        throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }

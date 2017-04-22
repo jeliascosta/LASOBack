@@ -20,34 +20,11 @@
 #include <osl/diagnose.h>
 #include <comphelper/servicedecl.hxx>
 
+#include <service.hxx>
+
 // component exports
 
 namespace sdecl = comphelper::service_decl;
-
-namespace globals
-{
-extern sdecl::ServiceDecl const serviceDecl;
-}
-
-namespace document
-{
-extern sdecl::ServiceDecl const serviceDecl;
-}
-
-namespace wrapformat
-{
-extern sdecl::ServiceDecl const serviceDecl;
-}
-
-namespace vbaeventshelper
-{
-extern sdecl::ServiceDecl const serviceDecl;
-}
-
-namespace vbaeventshelper
-{
-extern sdecl::ServiceDecl const serviceDecl;
-}
 
 extern "C" SAL_DLLPUBLIC_EXPORT void * SAL_CALL vbaswobj_component_getFactory(
     const sal_Char * pImplName, void *, void *)
@@ -55,7 +32,7 @@ extern "C" SAL_DLLPUBLIC_EXPORT void * SAL_CALL vbaswobj_component_getFactory(
     void* pRet = sdecl::component_getFactoryHelper(pImplName,
             {&globals::serviceDecl, &::document::serviceDecl,
              &wrapformat::serviceDecl, &vbaeventshelper::serviceDecl} );
-    OSL_TRACE("Ret is 0x%p", pRet);
+    SAL_INFO("sw", "Ret is " << pRet);
     return pRet;
 }
 

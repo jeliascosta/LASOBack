@@ -179,8 +179,10 @@ namespace dbtools
     );
 
     /** returns the connection the RowSet is currently working with (which is the ActiveConnection property)
+
+        @throws css::uno::RuntimeException
     */
-    OOO_DLLPUBLIC_DBTOOLS css::uno::Reference< css::sdbc::XConnection> getConnection(const css::uno::Reference< css::sdbc::XRowSet>& _rxRowSet) throw (css::uno::RuntimeException);
+    OOO_DLLPUBLIC_DBTOOLS css::uno::Reference< css::sdbc::XConnection> getConnection(const css::uno::Reference< css::sdbc::XRowSet>& _rxRowSet);
     OOO_DLLPUBLIC_DBTOOLS css::uno::Reference< css::sdbc::XConnection> getConnection_withFeedback(
             const OUString& _rDataSourceName,
             const OUString& _rUser,
@@ -332,7 +334,7 @@ namespace dbtools
     OOO_DLLPUBLIC_DBTOOLS
     bool isDataSourcePropertyEnabled(const css::uno::Reference< css::uno::XInterface>& _xProp,
                                      const OUString& _sProperty,
-                                           bool _bDefault = false);
+                                           bool _bDefault);
 
     /** retrieves a particular indirect data source setting
 
@@ -509,7 +511,7 @@ namespace dbtools
     OOO_DLLPUBLIC_DBTOOLS OUString createUniqueName(
         const css::uno::Sequence< OUString >& _rNames,
         const OUString& _rBaseName,
-        bool _bStartWithNumber = true
+        bool _bStartWithNumber
     );
 
     /** create a name which is a valid SQL 92 identifier name
@@ -570,13 +572,15 @@ namespace dbtools
         @param  x               the value to set
         @param  sqlType         the corresponding sql type @see css::sdbc::DataType
         @param  scale           the scale of the sql type can be 0
+        @throws css::sdbc::SQLException
+        @throws css::uno::RuntimeException
     */
     OOO_DLLPUBLIC_DBTOOLS
     void setObjectWithInfo( const css::uno::Reference< css::sdbc::XParameters>& _xParameters,
                             sal_Int32 parameterIndex,
                             const css::uno::Any& x,
                             sal_Int32 sqlType,
-                            sal_Int32 scale=0) throw(css::sdbc::SQLException, css::uno::RuntimeException);
+                            sal_Int32 scale=0);
 
     /** call the appropriate set method for the specific sql type @see css::sdbc::DataType
         @param  _xParams        the parameters where to set the value
@@ -584,13 +588,15 @@ namespace dbtools
         @param  x               the value to set
         @param  sqlType         the corresponding sql type @see css::sdbc::DataType
         @param  scale           the scale of the sql type can be 0
+        @throws css::sdbc::SQLException
+        @throws css::uno::RuntimeException
     */
     OOO_DLLPUBLIC_DBTOOLS
     void setObjectWithInfo( const css::uno::Reference< css::sdbc::XParameters>& _xParameters,
                             sal_Int32 parameterIndex,
                             const ::connectivity::ORowSetValue& x,
                             sal_Int32 sqlType,
-                            sal_Int32 scale=0) throw(css::sdbc::SQLException, css::uno::RuntimeException);
+                            sal_Int32 scale);
 
 
     /** implements <method scope="com.sun.star.sdb">XParameters::setObject</method>
@@ -622,7 +628,7 @@ namespace dbtools
     OUString createStandardCreateStatement(  const css::uno::Reference< css::beans::XPropertySet >& descriptor,
                                                     const css::uno::Reference< css::sdbc::XConnection>& _xConnection,
                                                     ISQLStatementHelper* _pHelper,
-                                                    const OUString& _sCreatePattern = OUString());
+                                                    const OUString& _sCreatePattern);
 
     /** creates the standard sql statement for the key part of a create table statement.
         @param  descriptor
@@ -704,7 +710,7 @@ namespace dbtools
                                 const css::uno::Reference< css::sdbc::XConnection>& _xConnection,
                                 const OUString& _rName,
                                 bool _bCase,
-                                bool _bQueryForInfo = true,
+                                bool _bQueryForInfo,
                                 bool _bIsAutoIncrement = false,
                                 bool _bIsCurrency = false,
                                 sal_Int32 _nDataType = css::sdbc::DataType::OTHER);

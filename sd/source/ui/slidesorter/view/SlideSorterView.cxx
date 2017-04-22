@@ -88,9 +88,8 @@ namespace {
     {
     public:
         explicit Painter (SlideSorterView& rView) : mrView(rView) {}
-        virtual ~Painter() {}
 
-        virtual void Paint (OutputDevice& rDevice, const Rectangle& rRepaintArea) override
+        virtual void Paint (OutputDevice& rDevice, const ::tools::Rectangle& rRepaintArea) override
         {
             mrView.Paint(rDevice,rRepaintArea);
         }
@@ -107,11 +106,10 @@ class BackgroundPainter
 {
 public:
     explicit BackgroundPainter (const Color& rBackgroundColor) : maBackgroundColor(rBackgroundColor) {}
-    virtual ~BackgroundPainter() {}
     BackgroundPainter(const BackgroundPainter&) = delete;
     BackgroundPainter& operator=(const BackgroundPainter&) = delete;
 
-    virtual void Paint (OutputDevice& rDevice, const Rectangle& rRepaintArea) override
+    virtual void Paint (OutputDevice& rDevice, const ::tools::Rectangle& rRepaintArea) override
     {
         rDevice.SetFillColor(maBackgroundColor);
         rDevice.SetLineColor();
@@ -140,7 +138,6 @@ SlideSorterView::SlideSorterView (SlideSorter& rSlideSorter)
       mpPreviewCache(),
       mpLayeredDevice(new LayeredDevice(rSlideSorter.GetContentWindow())),
       maVisiblePageRange(-1,-1),
-      mbModelChangedWhileModifyEnabled(true),
       maPreviewSize(0,0),
       mbPreciousFlagUpdatePending(true),
       meOrientation(Layouter::GRID),
@@ -210,7 +207,7 @@ sal_Int32 SlideSorterView::GetPageIndexAtPoint (const Point& rWindowPosition) co
 {
     sal_Int32 nIndex (-1);
 
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
     if (pWindow)
     {
         nIndex = mpLayouter->GetIndexAtPoint(pWindow->PixelToLogic(rWindowPosition), false, false);
@@ -310,7 +307,7 @@ void SlideSorterView::Rearrange()
     if (mrModel.GetPageCount() <= 0)
         return;
 
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
     if ( ! pWindow)
         return;
     const Size aWindowSize (pWindow->GetSizePixel());
@@ -402,12 +399,12 @@ void SlideSorterView::UpdateOrientation()
 
 void SlideSorterView::Layout ()
 {
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
     if (pWindow)
     {
         // Set the model area, i.e. the smallest rectangle that includes all
         // page objects.
-        const Rectangle aViewBox (mpLayouter->GetTotalBoundingBox());
+        const ::tools::Rectangle aViewBox (mpLayouter->GetTotalBoundingBox());
         pWindow->SetViewOrigin (aViewBox.TopLeft());
         pWindow->SetViewSize (aViewBox.GetSize());
 
@@ -430,7 +427,7 @@ void SlideSorterView::Layout ()
         while (aPageEnumeration.HasMoreElements())
         {
             model::SharedPageDescriptor pDescriptor (aPageEnumeration.GetNextElement());
-            pDescriptor->SetBoundingBox(mpLayouter->GetPageObjectBox(pDescriptor->GetPageIndex()));
+            pDescriptor->SetBoundingBox(mpLayouter->GetPageObjectBox(pDescriptor->GetPageIndex(), false));
         }
     }
 
@@ -444,14 +441,14 @@ void SlideSorterView::InvalidatePageObjectVisibilities()
 
 void SlideSorterView::DeterminePageObjectVisibilities()
 {
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
     if (pWindow)
     {
         // Set this flag to true here so that an invalidate during the
         // visibility calculation can correctly invalidate it again.
         mbPageObjectVisibilitiesValid = true;
 
-        Rectangle aViewArea (pWindow->PixelToLogic(Rectangle(Point(0,0),pWindow->GetSizePixel())));
+        ::tools::Rectangle aViewArea (pWindow->PixelToLogic(::tools::Rectangle(Point(0,0),pWindow->GetSizePixel())));
         const Range aRange (mpLayouter->GetRangeOfVisiblePageObjects(aViewArea));
         const Range aUnion(
             ::std::min(maVisiblePageRange.Min(), aRange.Min()),
@@ -539,11 +536,11 @@ bool SlideSorterView::SetOrientation (const Layouter::Orientation eOrientation)
 
 void SlideSorterView::RequestRepaint()
 {
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
     if (pWindow)
     {
         mpLayeredDevice->InvalidateAllLayers(
-            Rectangle(
+            ::tools::Rectangle(
                 pWindow->PixelToLogic(Point(0,0)),
                 pWindow->PixelToLogic(pWindow->GetSizePixel())));
         pWindow->Invalidate();
@@ -556,9 +553,9 @@ void SlideSorterView::RequestRepaint (const model::SharedPageDescriptor& rpDescr
         RequestRepaint(rpDescriptor->GetBoundingBox());
 }
 
-void SlideSorterView::RequestRepaint (const Rectangle& rRepaintBox)
+void SlideSorterView::RequestRepaint (const ::tools::Rectangle& rRepaintBox)
 {
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
     if (pWindow)
     {
         mpLayeredDevice->InvalidateAllLayers(rRepaintBox);
@@ -568,7 +565,7 @@ void SlideSorterView::RequestRepaint (const Rectangle& rRepaintBox)
 
 void SlideSorterView::RequestRepaint (const vcl::Region& rRepaintRegion)
 {
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
     if (pWindow)
     {
         mpLayeredDevice->InvalidateAllLayers(rRepaintRegion);
@@ -576,7 +573,7 @@ void SlideSorterView::RequestRepaint (const vcl::Region& rRepaintRegion)
     }
 }
 
-Rectangle SlideSorterView::GetModelArea()
+::tools::Rectangle SlideSorterView::GetModelArea()
 {
     return mpLayouter->GetTotalBoundingBox();
 }
@@ -599,7 +596,7 @@ void SlideSorterView::CompleteRedraw (
     (void)pRedirector;
 #ifdef DEBUG_TIMING
     const double nStartTime (gaTimer.getElapsedTime());
-    OSL_TRACE("SlideSorterView::CompleteRedraw start at %f, %s",
+    SAL_INFO("sd",("SlideSorterView::CompleteRedraw start at %f, %s",
         nStartTime,
         mnLockRedrawSmph ? "locked" : "");
 #endif
@@ -628,7 +625,7 @@ void SlideSorterView::CompleteRedraw (
 
 #ifdef DEBUG_TIMING
     const double nEndTime (gaTimer.getElapsedTime());
-    OSL_TRACE("SlideSorterView::CompleteRedraw end at %f after %fms", nEndTime, (nEndTime-nStartTime)*1000);
+    SAL_INFO("sd",("SlideSorterView::CompleteRedraw end at %f after %fms", nEndTime, (nEndTime-nStartTime)*1000);
     gFrameTimeSum -= gFrameTimes[gFrameTimeIndex];
     gFrameTimes[gFrameTimeIndex] = nStartTime - gnLastFrameStart;
     gnLastFrameStart = nStartTime;
@@ -648,7 +645,7 @@ void SlideSorterView::CompleteRedraw (
 
 void SlideSorterView::Paint (
     OutputDevice& rDevice,
-    const Rectangle& rRepaintArea)
+    const ::tools::Rectangle& rRepaintArea)
 {
     if ( ! mpPageObjectPainter)
         if ( ! GetPageObjectPainter())
@@ -679,7 +676,7 @@ void SlideSorterView::Paint (
 
 void SlideSorterView::ConfigurationChanged (
     utl::ConfigurationBroadcaster* pBroadcaster,
-    sal_uInt32 nHint)
+    ConfigurationHints nHint)
 {
     // Some changes of the configuration (some of the colors for example)
     // may affect the previews.  Throw away the old ones and create new ones.
@@ -690,9 +687,9 @@ void SlideSorterView::ConfigurationChanged (
 
 }
 
-std::shared_ptr<cache::PageCache> SlideSorterView::GetPreviewCache()
+std::shared_ptr<cache::PageCache> const & SlideSorterView::GetPreviewCache()
 {
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
     if (pWindow && mpPreviewCache.get() == nullptr)
     {
         mpPreviewCache.reset(
@@ -705,7 +702,7 @@ std::shared_ptr<cache::PageCache> SlideSorterView::GetPreviewCache()
     return mpPreviewCache;
 }
 
-Pair SlideSorterView::GetVisiblePageRange()
+Pair const & SlideSorterView::GetVisiblePageRange()
 {
     if ( ! mbPageObjectVisibilitiesValid)
         DeterminePageObjectVisibilities();
@@ -745,15 +742,6 @@ void SlideSorterView::DragFinished (sal_Int8 nDropAction)
     View::DragFinished(nDropAction);
 }
 
-void SlideSorterView::Notify (SfxBroadcaster& rBroadcaster, const SfxHint& rHint)
-{
-    ::sd::DrawDocShell* pDocShell = mrModel.GetDocument()->GetDocSh();
-    if (pDocShell!=nullptr && pDocShell->IsEnableSetModified())
-        mbModelChangedWhileModifyEnabled = true;
-
-    ::sd::View::Notify(rBroadcaster, rHint);
-}
-
 void SlideSorterView::UpdatePageUnderMouse ()
 {
     VclPtr<ScrollBar> pVScrollBar (mrSlideSorter.GetVerticalScrollBar());
@@ -767,11 +755,11 @@ void SlideSorterView::UpdatePageUnderMouse ()
         return;
     }
 
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
     if (pWindow && pWindow->IsVisible() && ! pWindow->IsMouseCaptured())
     {
         const Window::PointerState aPointerState (pWindow->GetPointerState());
-        const Rectangle aWindowBox (pWindow->GetPosPixel(), pWindow->GetSizePixel());
+        const ::tools::Rectangle aWindowBox (pWindow->GetPosPixel(), pWindow->GetSizePixel());
         if (aWindowBox.IsInside(aPointerState.maPos))
         {
             UpdatePageUnderMouse(aPointerState.maPos);
@@ -832,7 +820,7 @@ bool SlideSorterView::SetState (
     return bModified;
 }
 
-std::shared_ptr<PageObjectPainter> SlideSorterView::GetPageObjectPainter()
+std::shared_ptr<PageObjectPainter> const & SlideSorterView::GetPageObjectPainter()
 {
     if ( ! mpPageObjectPainter)
         mpPageObjectPainter.reset(new PageObjectPainter(mrSlideSorter));

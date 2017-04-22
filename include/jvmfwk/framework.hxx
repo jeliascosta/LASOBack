@@ -22,9 +22,13 @@
 #ifndef INCLUDED_JVMFWK_FRAMEWORK_HXX
 #define INCLUDED_JVMFWK_FRAMEWORK_HXX
 
+#include <sal/config.h>
+
+#include <memory>
+#include <vector>
+
 #include <jvmfwk/jvmfwkdllapi.hxx>
 #include <rtl/byteseq.hxx>
-#include <rtl/ustring.h>
 #include <rtl/ustring.hxx>
 #include <osl/mutex.h>
 #include "jni.h"
@@ -189,7 +193,6 @@ enum javaFrameworkError
 {
     JFW_E_NONE,
     JFW_E_ERROR,
-    JFW_E_INVALID_ARG,
     JFW_E_NO_SELECT,
     JFW_E_INVALID_SETTINGS,
     JFW_E_NEED_RESTART,
@@ -237,7 +240,7 @@ struct JavaInfo
         assistive technology tools are supported.</p>
      */
     sal_uInt64 nFeatures;
-    /** indicates requirments for running the java runtime.
+    /** indicates requirements for running the java runtime.
 
         <p>For example, it may be necessary to prepare the environment before
         the runtime is created. That could mean, setting the
@@ -254,26 +257,6 @@ struct JavaInfo
      */
     rtl::ByteSequence arVendorData;
 };
-
-namespace jfw {
-
-struct JavaInfoGuard {
-    JavaInfoGuard(JavaInfoGuard &) = delete;
-    void operator =(JavaInfoGuard) = delete;
-
-    JavaInfoGuard(): info(nullptr) {}
-
-    ~JavaInfoGuard() { delete info; }
-
-    void clear() {
-        delete info;
-        info = nullptr;
-    }
-
-    JavaInfo * info;
-};
-
-}
 
 /** compares two <code>JavaInfo</code> objects for equality.
 
@@ -293,7 +276,7 @@ struct JavaInfoGuard {
    the second argument which is compared with the first.
    @return
    true - both object represent the same JRE.</br>
-   false - the objects represend different JREs
+   false - the objects represent different JREs
  */
 JVMFWK_DLLPUBLIC bool jfw_areEqualJavaInfo(
     JavaInfo const * pInfoA,JavaInfo const * pInfoB);
@@ -310,15 +293,10 @@ JVMFWK_DLLPUBLIC bool jfw_areEqualJavaInfo(
     By determining if a VM is running, the user can be presented a message,
     that the changed setting may not be effective immediately.</p>
 
-    @param bRunning
-    [out] sal_True - a VM is running. <br/>
-    sal_False - no VM is running.
-
     @return
-    JFW_E_NONE function ran successfully.<br/>
-    JFW_E_INVALID_ARG the parameter <code>bRunning</code> was NULL.
+    true iff a VM is running.
 */
-JVMFWK_DLLPUBLIC javaFrameworkError jfw_isVMRunning(sal_Bool *bRunning);
+JVMFWK_DLLPUBLIC bool jfw_isVMRunning();
 
 /** detects a suitable JRE and configures the framework to use it.
 
@@ -328,7 +306,7 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_isVMRunning(sal_Bool *bRunning);
     JREs can be provided by different vendors.
     The function obtains information about JRE installations and checks if
     there is one among them that supports
-    a set of features (currently only accessibilty is possible). If none was
+    a set of features (currently only accessibility is possible). If none was
     found then it also uses a list of paths, which have been registered
     by <code>jfw_addJRELocation</code>
     to find JREs. Found JREs are examined in the same way.</p>
@@ -371,13 +349,11 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_isVMRunning(sal_Bool *bRunning);
     the first <code>JavaInfo</code> object that is detected by the algorithm
     as described above is used.</p>
 
-    @param ppInfo
+    @param pInfo
     [out] a <code>JavaInfo</code> pointer, representing the selected JRE.
-    The caller has to delete it. The
-    <code>JavaInfo</code> is for informational purposes only. It is not
+    The <code>JavaInfo</code> is for informational purposes only. It is not
     necessary to call <code>jfw_setSelectedJRE</code> afterwards.<br/>
-    <code>ppInfo</code>can be NULL. If <code>*ppInfo</code> is not null, then it is
-    overwritten, without attempting to free <code>*ppInfo</code>.
+    <code>pInfo</code>can be NULL.
 
     @return
     JFW_E_NONE function ran successfully.<br/>
@@ -387,7 +363,7 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_isVMRunning(sal_Bool *bRunning);
     JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.
  */
-JVMFWK_DLLPUBLIC javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo);
+JVMFWK_DLLPUBLIC javaFrameworkError jfw_findAndSelectJRE(std::unique_ptr<JavaInfo> *pInfo);
 
 /** provides information about all available JRE installations.
 
@@ -401,22 +377,16 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_findAndSelectJRE(JavaInfo **pInfo);
     already an equal object.</p>
 
     @param parInfo
-    [out] on returns it contains a pointer to an array of <code>JavaInfo</code>
-    pointers.
-    The caller must free the array with <code>rtl_freeMemory</code> and each
-    element of the array must be deleted.
-    @param pSize
-    [out] on return contains the size of array returned in <code>parInfo</code>.
+    [out] on returns it contains a vector of <code>JavaInfo</code> pointers.
 
     @return
     JFW_E_NONE function ran successfully.<br/>
-    JFW_E_INVALID_ARG at least on of the parameters was NULL<br/>
     JFW_E_ERROR an error occurred. <br/>
     JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.
 */
 JVMFWK_DLLPUBLIC javaFrameworkError jfw_findAllJREs(
-    JavaInfo ***parInfo, sal_Int32 *pSize);
+    std::vector<std::unique_ptr<JavaInfo>> *parInfo);
 
 /** determines if a path points to a Java installation.
 
@@ -433,13 +403,12 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_findAllJREs(
 
    @param pPath
    [in] a file URL to a directory.
-   @param pInfo
+   @param ppInfo
    [out] the <code>JavaInfo</code> object which represents a JRE found at the
    location specified by <code>pPath</code>
 
    @return
    JFW_E_NONE function ran successfully.<br/>
-   JFW_E_INVALID_ARG at least on of the parameters was NULL<br/>
    JFW_E_ERROR an error occurred. <br/>
    JFW_E_CONFIGURATION mode was not properly set or their prerequisites
    were not met.</br>
@@ -448,7 +417,7 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_findAllJREs(
    requirements as determined by the javavendors.xml
  */
 JVMFWK_DLLPUBLIC javaFrameworkError jfw_getJavaInfoByPath(
-    rtl_uString *pPath, JavaInfo **ppInfo);
+    OUString const & pPath, std::unique_ptr<JavaInfo> *ppInfo);
 
 
 /** starts a Java Virtual Machine (JVM).
@@ -484,9 +453,7 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_getJavaInfoByPath(
     @param pInfo
     [in] optional pointer to a specific JRE; must be caller-freed if not NULL
     @param arOptions
-    [in] the array containing additional start arguments or NULL.
-    @param nSize
-    [in] the size of the array <code>arOptions</code>.
+    [in] the vector containing additional start arguments.
     @param ppVM
     [out] the <code>JavaVM</code> pointer.
     @param ppEnv
@@ -494,8 +461,6 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_getJavaInfoByPath(
 
     @return
     JFW_E_NONE function ran successfully.<br/>
-    JFW_E_INVALID_ARG <code>ppVM</code>, <code>ppEnv</code> are NULL or
-    <code>arOptions</code> was NULL but <code>nSize</code> was greater 0.<br/>
     JFW_E_ERROR an error occurred. <br/>
     JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.</br>
@@ -516,12 +481,12 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_getJavaInfoByPath(
     <code>JAVA_HOME</code>does not meet the version requirements.
  */
 JVMFWK_DLLPUBLIC javaFrameworkError jfw_startVM(
-    JavaInfo const * pInfo, JavaVMOption * arOptions, sal_Int32 nSize,
+    JavaInfo const * pInfo, std::vector<OUString> const & arOptions,
     JavaVM ** ppVM, JNIEnv ** ppEnv);
 
 /** determines the JRE that is to be used.
 
-    <p>When calling <code>jfw_startVM</code> then a VM is startet from
+    <p>When calling <code>jfw_startVM</code> then a VM is started from
     the JRE that is determined by this function.<br/>
     It is not verified if the JRE represented by the <code>JavaInfo</code>
     argument meets the requirements as specified by the javavendors.xml file.
@@ -564,18 +529,16 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_setSelectedJRE(JavaInfo const *pInfo);
     @param ppInfo
     [out] on return it contains a pointer to a <code>JavaInfo</code> object
     that represents the currently selected JRE. When <code>*ppInfo</code> is not
-    NULL then the function overwrites the pointer. It is not attempted to free
-    the pointer.
+    NULL then the function sets the pointer.
 
     @return
     JFW_E_NONE function ran successfully.<br/>
-    JFW_E_INVALIDARG <code>ppInfo</code> is a NULL.<br/>
     JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.<br/>
     JFW_E_INVALID_SETTINGS the javavendors.xml has been changed and no
     JRE has been selected afterwards. <br/>
  */
-JVMFWK_DLLPUBLIC javaFrameworkError jfw_getSelectedJRE(JavaInfo **ppInfo);
+JVMFWK_DLLPUBLIC javaFrameworkError jfw_getSelectedJRE(std::unique_ptr<JavaInfo> *ppInfo);
 
 
 /** determines if Java can be used.
@@ -603,13 +566,12 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_setEnabled(bool bEnabled);
 
    @return
    JFW_E_NONE function ran successfully.<br/>
-   JFW_E_INVALIDARG pbEnabled is NULL<br/>
    JFW_E_ERROR An error occurred.<br/>
    JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.<br/>
     JFW_E_DIRECT_MODE the function cannot be used in this mode.
  */
-JVMFWK_DLLPUBLIC javaFrameworkError jfw_getEnabled(sal_Bool *pbEnabled);
+JVMFWK_DLLPUBLIC javaFrameworkError jfw_getEnabled(bool *pbEnabled);
 
 /** determines parameters which are passed to VM during its creation.
 
@@ -621,46 +583,32 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_getEnabled(sal_Bool *pbEnabled);
     </p>
 
     @param arParameters
-    [in] contains the arguments. It can be NULL if nSize is 0.
-    @param nSize
-    [i] the size of <code>arArgs</code>
+    [in] contains the arguments.
 
     @return
     JFW_E_NONE function ran successfully.<br/>
-    JFW_E_INVALIDARG arArgs is NULL and nSize is not 0
     JFW_E_ERROR An error occurred.<br/>
     JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.<br/>
     JFW_E_DIRECT_MODE the function cannot be used in this mode.
  */
 JVMFWK_DLLPUBLIC javaFrameworkError jfw_setVMParameters(
-    rtl_uString **  arArgs, sal_Int32 nSize);
+    std::vector<OUString> const & arArgs);
 
 /** obtains the currently used start parameters.
 
-    <p>The caller needs to free the returned array with
-    <code>rtl_freeMemory</code>. The contained strings must be released with
-    <code>rtl_uString_release</code>.
-    </p>
-
     @param parParameters
     [out] on returns contains a pointer to the array of the start arguments.
-    If *parParameters is not NULL then the value is overwritten.
-    @param pSize
-    [out] on return contains the size of array returned in
-    <code>parParameters</code>
 
     @return
     JFW_E_NONE function ran successfully.<br/>
-    JFW_E_INVALIDARG parParameters or pSize are  NULL<br/>
     JFW_E_ERROR An error occurred.<br/>
     JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.<br/>
     JFW_E_DIRECT_MODE the function cannot be used in this mode.
  */
 JVMFWK_DLLPUBLIC javaFrameworkError jfw_getVMParameters(
-    rtl_uString *** parParameters,
-    sal_Int32 * pSize);
+    std::vector<OUString> * parParameters);
 
 /** sets the user class path.
 
@@ -674,32 +622,28 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_getVMParameters(
 
    @return
    JFW_E_NONE function ran successfully.<br/>
-   JFW_E_INVALIDARG pCP is NULL.<br/>
    JFW_E_ERROR An error occurred.<br/>
    JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.<br/>
    JFW_E_DIRECT_MODE the function cannot be used in this mode.
  */
-JVMFWK_DLLPUBLIC javaFrameworkError jfw_setUserClassPath(rtl_uString * pCP);
+JVMFWK_DLLPUBLIC javaFrameworkError jfw_setUserClassPath(OUString const  & pCP);
 /** provides the value of the current user class path.
 
    <p>The function returns an empty string if no user class path is set.
    </p>
 
    @param ppCP
-   [out] contains the user class path on return. If <code>*ppCP</code> was
-   not NULL then the value is overwritten. No attempt at freeing that string
-   is made.
+   [out] contains the user class path on return.
 
    @return
    JFW_E_NONE function ran successfully.<br/>
-   JFW_E_INVALIDARG ppCP is NULL.<br/>
    JFW_E_ERROR An error occurred.<br/>
    JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.<br/>
    JFW_E_DIRECT_MODE the function cannot be used in this mode.
  */
-JVMFWK_DLLPUBLIC javaFrameworkError jfw_getUserClassPath(rtl_uString ** ppCP);
+JVMFWK_DLLPUBLIC javaFrameworkError jfw_getUserClassPath(OUString * ppCP);
 
 /** saves the location of a JRE.
 
@@ -721,13 +665,13 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_getUserClassPath(rtl_uString ** ppCP);
 
     @return
     JFW_E_NONE function ran successfully.<br/>
-    JFW_E_INVALIDARG sLocation is NULL.<br/>
     JFW_E_ERROR An error occurred.<br/>
     JFW_E_CONFIGURATION mode was not properly set or their prerequisites
     were not met.<br/>
     JFW_E_DIRECT_MODE the function cannot be used in this mode.
  */
-JVMFWK_DLLPUBLIC javaFrameworkError jfw_addJRELocation(rtl_uString * sLocation);
+JVMFWK_DLLPUBLIC javaFrameworkError jfw_addJRELocation(
+    OUString const & sLocation);
 
 /** checks if the installation of the jre still exists.
 
@@ -738,15 +682,14 @@ JVMFWK_DLLPUBLIC javaFrameworkError jfw_addJRELocation(rtl_uString * sLocation);
     @param pInfo
         [in]  the JavaInfo object with information about the JRE.
     @param pp_exist
-        [out] the parameter is set to either sal_True or sal_False. The value is
+        [out] the parameter is set to either true or false. The value is
         only valid if the function returns JFW_E_NONE.
 
    @return
     JFW_E_NONE the function ran successfully.</br>
     JFW_E_ERROR an error occurred during execution.</br>
-    JFW_E_INVALID_ARG pInfo contains invalid data</br>
  */
-JVMFWK_DLLPUBLIC javaFrameworkError jfw_existJRE(const JavaInfo *pInfo, sal_Bool *exist);
+JVMFWK_DLLPUBLIC javaFrameworkError jfw_existJRE(const JavaInfo *pInfo, bool *exist);
 
 
 /** locks this API so that it cannot be used by other threads.

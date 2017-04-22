@@ -135,7 +135,7 @@ namespace drawinglayer
                                             const basegfx::B2DRange aOutlineRange(basegfx::tools::getRange(aTexPolyPolygon));
                                             const basegfx::BColor aHatchColor(getHatch().getColor());
                                             const double fAngle(getHatch().getAngle());
-                                            ::std::vector< basegfx::B2DHomMatrix > aMatrices;
+                                            std::vector< basegfx::B2DHomMatrix > aMatrices;
 
                                             // get hatch transformations
                                             switch(getHatch().getStyle())
@@ -215,7 +215,7 @@ namespace drawinglayer
                                                 a2D.invert();
                                                 a2DHatchLines.transform(a2D);
 
-                                                // expand back-transformated geometry tpo 3D
+                                                // expand back-transformed geometry to 3D
                                                 basegfx::B3DPolyPolygon a3DHatchLines(basegfx::tools::createB3DPolyPolygonFromB2DPolyPolygon(a2DHatchLines, 0.0));
 
                                                 // create 3d matrix with 3d vectors as column vectors (0,0,1 as Z) and 3d point as offset, this represents
@@ -308,7 +308,7 @@ namespace drawinglayer
             if(getBuffered3DDecomposition().empty())
             {
                 const Primitive3DContainer aNewSequence(impCreate3DDecomposition());
-                const_cast< HatchTexturePrimitive3D* >(this)->setBuffered3DDecomposition(aNewSequence);
+                const_cast< HatchTexturePrimitive3D* >(this)->maBuffered3DDecomposition = aNewSequence;
             }
 
             return getBuffered3DDecomposition();

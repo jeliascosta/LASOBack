@@ -36,14 +36,12 @@ public:
               const OUString& rOuterName
             , const OUString& rInnerSequencePropertyName
             , sal_Int32 nDefaultValue
-            , std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedBarPositionProperty_Base();
+            , const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact );
+    virtual ~WrappedBarPositionProperty_Base() override;
 
-    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
-                        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
+    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
 
-    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
-                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
+    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
 
     void setDimensionAndAxisIndex( sal_Int32 nDimensionIndex, sal_Int32 nAxisIndex );
 
@@ -61,15 +59,15 @@ protected:
 class WrappedGapwidthProperty : public WrappedBarPositionProperty_Base
 {
 public:
-    explicit WrappedGapwidthProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedGapwidthProperty();
+    explicit WrappedGapwidthProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedGapwidthProperty() override;
 };
 
 class WrappedBarOverlapProperty : public WrappedBarPositionProperty_Base
 {
 public:
-    explicit WrappedBarOverlapProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedBarOverlapProperty();
+    explicit WrappedBarOverlapProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedBarOverlapProperty() override;
 };
 
 } //  namespace wrapper

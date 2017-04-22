@@ -87,9 +87,9 @@ class LwpCellLayout : public LwpMiddleLayout
 {
 public:
     LwpCellLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpCellLayout();
+    virtual ~LwpCellLayout() override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_CELL_LAYOUT;}
-    virtual XFCell* ConvertCell(LwpObjectID aTableID, sal_uInt16 nRow, sal_uInt16 nCol);
+    virtual rtl::Reference<XFCell> ConvertCell(LwpObjectID aTableID, sal_uInt16 nRow, sal_uInt16 nCol);
     sal_uInt16 GetRowID(){return crowid;}
     sal_uInt8 GetColID(){return ccolid;}
     void RegisterStyle() override;
@@ -111,7 +111,7 @@ protected:
     void ApplyWatermark(XFCellStyle* pCellStyle);
     void ApplyProtect(XFCell * pCell, LwpObjectID aTableID);
     void ApplyFmtStyle(XFCellStyle *pCellStyle);
-    OUString GetCellStyleName(sal_uInt16 nRow, sal_uInt16 nCol, LwpTableLayout * pTableLayout);
+    OUString const & GetCellStyleName(sal_uInt16 nRow, sal_uInt16 nCol, LwpTableLayout * pTableLayout);
     void RegisterDefaultCell();
     virtual LwpCellBorderType GetCellBorderType(sal_uInt16 nRow, sal_uInt16 nCol, LwpTableLayout * pTableLayout);
     static LwpCellLayout * GetCellByRowCol(sal_uInt16 nRow, sal_uInt16 nCol, LwpTableLayout * pTableLayout);
@@ -144,10 +144,10 @@ class LwpHiddenCellLayout : public LwpCellLayout
 {
 public:
     LwpHiddenCellLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpHiddenCellLayout();
+    virtual ~LwpHiddenCellLayout() override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_HIDDEN_CELL_LAYOUT;}
     virtual void Parse(IXFStream* pOutputStream) override;
-    virtual XFCell* ConvertCell(LwpObjectID aTableID, sal_uInt16 nRow, sal_uInt16 nCol) override;
+    virtual rtl::Reference<XFCell> ConvertCell(LwpObjectID aTableID, sal_uInt16 nRow, sal_uInt16 nCol) override;
     void RegisterStyle() override {}
     virtual void SetCellMap() override;
 protected:
@@ -163,10 +163,10 @@ class LwpConnectedCellLayout : public LwpCellLayout
 {
 public:
     LwpConnectedCellLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpConnectedCellLayout();
+    virtual ~LwpConnectedCellLayout() override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_CONNECTED_CELL_LAYOUT;}
     virtual void Parse(IXFStream* pOutputStream) override;
-    virtual XFCell* ConvertCell(LwpObjectID aTableID, sal_uInt16 nRow, sal_uInt16 nCol) override;
+    virtual rtl::Reference<XFCell> ConvertCell(LwpObjectID aTableID, sal_uInt16 nRow, sal_uInt16 nCol) override;
     sal_uInt16 GetNumrows(){return m_nRealrowspan;}
     sal_uInt8 GetNumcols(){return m_nRealcolspan;}
     virtual void SetCellMap() override;
@@ -189,7 +189,7 @@ class LwpParallelColumnsBlock : public LwpCellLayout
 {
 public:
     LwpParallelColumnsBlock(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpParallelColumnsBlock();
+    virtual ~LwpParallelColumnsBlock() override;
 protected:
     void Read() override;
 

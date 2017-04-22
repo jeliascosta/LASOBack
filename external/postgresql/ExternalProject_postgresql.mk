@@ -19,7 +19,7 @@ $(eval $(call gb_ExternalProject_register_targets,postgresql,\
 	build \
 ))
 
-ifeq ($(OS)$(COM),WNTMSC)
+ifeq ($(OS),WNT)
 
 $(call gb_ExternalProject_get_state_target,postgresql,build) :
 	$(call gb_ExternalProject_run,build,\
@@ -30,6 +30,10 @@ else
 
 postgresql_CPPFLAGS := $(ZLIB_CFLAGS)
 postgresql_LDFLAGS  :=
+
+ifeq ($(SYSTEM_ZLIB),)
+postgresql_LDFLAGS += $(ZLIB_LIBS)
+endif
 
 ifeq ($(DISABLE_OPENSSL),)
 ifeq ($(SYSTEM_OPENSSL),)

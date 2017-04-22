@@ -35,14 +35,6 @@ ScColContainer::~ScColContainer()
     Clear();
 }
 
-
-bool ScColContainer::ColumnExists( SCCOL nColIdx ) const
-{
-    if ( nColIdx < 0 || nColIdx >= size() )
-        return false;
-    return true;
-}
-
 void ScColContainer::Clear()
 {
     SCCOL nSize = size();
@@ -53,4 +45,13 @@ void ScColContainer::Clear()
     }
     aCols.clear();
 }
+
+void ScColContainer::resize( const size_t aNewColSize )
+{
+    size_t aOldColSize = aCols.size();
+    aCols.resize( aNewColSize );
+    for ( size_t nCol = aOldColSize; nCol < aNewColSize; ++nCol )
+        aCols[nCol] = new ScColumn;
+}
+
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

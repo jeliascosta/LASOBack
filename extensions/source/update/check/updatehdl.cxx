@@ -55,11 +55,11 @@
 #include "com/sun/star/container/XNameContainer.hpp"
 
 #include "com/sun/star/frame/Desktop.hpp"
-
+#include "com/sun/star/frame/TerminationVetoException.hpp"
 #include "com/sun/star/lang/XMultiServiceFactory.hpp"
 #include "com/sun/star/task/InteractionHandler.hpp"
 #include "com/sun/star/task/InteractionRequestStringResolver.hpp"
-
+#include <com/sun/star/resource/MissingResourceException.hpp>
 #include <com/sun/star/resource/XResourceBundleLoader.hpp>
 
 #include "updatehdl.hrc"
@@ -118,7 +118,7 @@ void UpdateHandler::enableControls( short nCtrlState )
         return;
 
     // the help button should always be the last button in the
-    // enum list und must never be disabled
+    // enum list and must never be disabled
     for ( int i=0; i<HELP_BUTTON; i++ )
     {
         short nCurStateVal = (short)(nCtrlState >> i);
@@ -300,7 +300,6 @@ OUString UpdateHandler::getDefaultInstErrMsg()
 // XActionListener
 
 void SAL_CALL UpdateHandler::disposing( const lang::EventObject& rEvt )
-    throw( uno::RuntimeException, std::exception )
 {
     if ( rEvt.Source == mxUpdDlg )
         mxUpdDlg.clear();
@@ -308,7 +307,6 @@ void SAL_CALL UpdateHandler::disposing( const lang::EventObject& rEvt )
 
 
 void SAL_CALL UpdateHandler::actionPerformed( awt::ActionEvent const & rEvent )
-    throw( uno::RuntimeException, std::exception )
 {
     DialogControls eButton = BUTTON_COUNT;
     for ( int i = 0; i < BUTTON_COUNT; i++ )
@@ -373,13 +371,11 @@ void SAL_CALL UpdateHandler::actionPerformed( awt::ActionEvent const & rEvent )
 // XTopWindowListener
 
 void SAL_CALL UpdateHandler::windowOpened( const lang::EventObject& )
-    throw( uno::RuntimeException, std::exception )
 {
 }
 
 
 void SAL_CALL UpdateHandler::windowClosing( const lang::EventObject& e )
-    throw( uno::RuntimeException, std::exception )
 {
     awt::ActionEvent aActionEvt;
     aActionEvt.ActionCommand = COMMAND_CLOSE;
@@ -390,40 +386,34 @@ void SAL_CALL UpdateHandler::windowClosing( const lang::EventObject& e )
 
 
 void SAL_CALL UpdateHandler::windowClosed( const lang::EventObject& )
-    throw( uno::RuntimeException, std::exception )
 {
 }
 
 
 void SAL_CALL UpdateHandler::windowMinimized( const lang::EventObject& )
-    throw( uno::RuntimeException, std::exception )
 {
     mbMinimized = true;
 }
 
 
 void SAL_CALL UpdateHandler::windowNormalized( const lang::EventObject& )
-    throw( uno::RuntimeException, std::exception )
 {
     mbMinimized = false;
 }
 
 
 void SAL_CALL UpdateHandler::windowActivated( const lang::EventObject& )
-    throw( uno::RuntimeException, std::exception )
 {
 }
 
 
 void SAL_CALL UpdateHandler::windowDeactivated( const lang::EventObject& )
-    throw( uno::RuntimeException, std::exception )
 {
 }
 
 // XInteractionHandler
 
 void SAL_CALL UpdateHandler::handle( uno::Reference< task::XInteractionRequest > const & rRequest)
-    throw (uno::RuntimeException, std::exception)
 {
     if ( !mxInteractionHdl.is() )
     {
@@ -467,7 +457,6 @@ void SAL_CALL UpdateHandler::handle( uno::Reference< task::XInteractionRequest >
 // XTerminateListener
 
 void SAL_CALL UpdateHandler::queryTermination( const lang::EventObject& )
-    throw ( frame::TerminationVetoException, uno::RuntimeException, std::exception )
 {
     if ( mbShowsMessageBox )
     {
@@ -485,7 +474,6 @@ void SAL_CALL UpdateHandler::queryTermination( const lang::EventObject& )
 
 
 void SAL_CALL UpdateHandler::notifyTermination( const lang::EventObject& )
-    throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( maMutex );
 
@@ -828,10 +816,10 @@ void UpdateHandler::setFullVersion( OUString& rString )
 
     beans::PropertyValue aProperty;
     aProperty.Name  = "nodepath";
-    aProperty.Value = uno::makeAny( OUString("org.openoffice.Setup/Product") );
+    aProperty.Value <<= OUString("org.openoffice.Setup/Product");
 
     uno::Sequence< uno::Any > aArgumentList( 1 );
-    aArgumentList[0] = uno::makeAny( aProperty );
+    aArgumentList[0] <<= aProperty;
 
     uno::Reference< uno::XInterface > xConfigAccess;
     xConfigAccess = xConfigurationProvider->createInstanceWithArguments( "com.sun.star.configuration.ConfigurationAccess",

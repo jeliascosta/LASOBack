@@ -37,7 +37,6 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/util/XFlushable.hpp>
 #include <sfx2/docfilt.hxx>
-#include <svtools/stdctrl.hxx>
 #include <vcl/fixed.hxx>
 #include <unotools/configitem.hxx>
 #include <unotools/optionsdlg.hxx>
@@ -66,14 +65,9 @@ struct SvxSaveTabPage_Impl
     bool                    bInitialized;
 
     SvxSaveTabPage_Impl();
-    ~SvxSaveTabPage_Impl();
 };
 
 SvxSaveTabPage_Impl::SvxSaveTabPage_Impl() : bInitialized( false )
-{
-}
-
-SvxSaveTabPage_Impl::~SvxSaveTabPage_Impl()
 {
 }
 
@@ -398,10 +392,10 @@ void SvxSaveTabPage::Reset( const SfxItemSet* )
     SvtSaveOptions aSaveOpt;
     aLoadUserSettingsCB->Check(aSaveOpt.IsLoadUserSettings());
     aLoadUserSettingsCB->SaveValue();
-    aLoadUserSettingsCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_USEUSERDATA));
+    aLoadUserSettingsCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::UseUserData));
     aLoadDocPrinterCB->Check( aSaveOpt.IsLoadDocumentPrinter() );
     aLoadDocPrinterCB->SaveValue();
-    aLoadDocPrinterCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_LOADDOCPRINTER));
+    aLoadDocPrinterCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::LoadDocPrinter));
 
     if ( !pImpl->bInitialized )
     {
@@ -474,33 +468,33 @@ void SvxSaveTabPage::Reset( const SfxItemSet* )
     }
 
     aDocInfoCB->Check(aSaveOpt.IsDocInfoSave());
-    aDocInfoCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_DOCINFSAVE));
+    aDocInfoCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::DocInfSave));
 
     aBackupCB->Check(aSaveOpt.IsBackup());
-    aBackupCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_BACKUP));
+    aBackupCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::Backup));
 
     aAutoSaveCB->Check(aSaveOpt.IsAutoSave());
-    aAutoSaveCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_AUTOSAVE));
+    aAutoSaveCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::AutoSave));
 
     aUserAutoSaveCB->Check(aSaveOpt.IsUserAutoSave());
-    aUserAutoSaveCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_USERAUTOSAVE));
+    aUserAutoSaveCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::UserAutoSave));
 
     aWarnAlienFormatCB->Check(aSaveOpt.IsWarnAlienFormat());
-    aWarnAlienFormatCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_WARNALIENFORMAT));
+    aWarnAlienFormatCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::WarnAlienFormat));
 
     aAutoSaveEdit->SetValue(aSaveOpt.GetAutoSaveTime());
-    aAutoSaveEdit->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_AUTOSAVETIME));
+    aAutoSaveEdit->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::AutoSaveTime));
 
     // save relatively
     aRelativeFsysCB->Check(aSaveOpt.IsSaveRelFSys());
-    aRelativeFsysCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_SAVERELFSYS));
+    aRelativeFsysCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::SaveRelFsys));
 
     aRelativeInetCB->Check(aSaveOpt.IsSaveRelINet());
-    aRelativeInetCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_SAVERELINET));
+    aRelativeInetCB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::SaveRelInet));
 
     void* pDefaultVersion = reinterpret_cast<void*>( aSaveOpt.GetODFDefaultVersion() );
     aODFVersionLB->SelectEntryPos( aODFVersionLB->GetEntryPos( pDefaultVersion ) );
-    aODFVersionLB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::E_ODFDEFAULTVERSION));
+    aODFVersionLB->Enable(!aSaveOpt.IsReadOnly(SvtSaveOptions::EOption::OdfDefaultVersion));
 
     AutoClickHdl_Impl( aAutoSaveCB );
     ODFVersionHdl_Impl( *aODFVersionLB );
@@ -519,7 +513,7 @@ void SvxSaveTabPage::Reset( const SfxItemSet* )
 }
 
 
-IMPL_LINK_TYPED( SvxSaveTabPage, AutoClickHdl_Impl, Button*, pBox, void )
+IMPL_LINK( SvxSaveTabPage, AutoClickHdl_Impl, Button*, pBox, void )
 {
     if ( pBox == aAutoSaveCB )
     {
@@ -563,7 +557,7 @@ static OUString lcl_ExtracUIName(const Sequence<PropertyValue> &rProperties)
     return sName;
 }
 
-IMPL_LINK_TYPED( SvxSaveTabPage, FilterHdl_Impl, ListBox&, rBox, void )
+IMPL_LINK( SvxSaveTabPage, FilterHdl_Impl, ListBox&, rBox, void )
 {
     const sal_Int32 nCurPos = aDocTypeLB->GetSelectEntryPos();
 
@@ -626,7 +620,7 @@ IMPL_LINK_TYPED( SvxSaveTabPage, FilterHdl_Impl, ListBox&, rBox, void )
     ODFVersionHdl_Impl( *aSaveAsLB );
 };
 
-IMPL_LINK_NOARG_TYPED(SvxSaveTabPage, ODFVersionHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxSaveTabPage, ODFVersionHdl_Impl, ListBox&, void)
 {
     sal_IntPtr nVersion = sal_IntPtr( aODFVersionLB->GetSelectEntryData() );
     bool bShown = SvtSaveOptions::ODFDefaultVersion( nVersion ) != SvtSaveOptions::ODFVER_LATEST;

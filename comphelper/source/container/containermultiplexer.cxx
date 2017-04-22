@@ -29,68 +29,50 @@ namespace comphelper
     using namespace ::com::sun::star::container;
 
     OContainerListener::OContainerListener(::osl::Mutex& _rMutex)
-        :m_pAdapter(nullptr)
-        ,m_rMutex(_rMutex)
+        :m_rMutex(_rMutex)
     {
     }
 
 
     OContainerListener::~OContainerListener()
     {
-        if (m_pAdapter)
+        if (m_xAdapter.is())
         {
-            m_pAdapter->dispose();
-            m_pAdapter = nullptr;
+            m_xAdapter->dispose();
         }
     }
 
 
     void OContainerListener::_elementInserted( const ContainerEvent& /*_rEvent*/ )
-        throw (RuntimeException, std::exception)
     {
     }
 
 
     void OContainerListener::_elementRemoved( const ContainerEvent& )
-        throw (RuntimeException, std::exception)
     {
     }
 
 
     void OContainerListener::_elementReplaced( const ContainerEvent& /*_rEvent*/ )
-        throw (RuntimeException, std::exception)
     {
     }
 
 
     void OContainerListener::_disposing(const EventObject& )
-        throw (RuntimeException, std::exception)
     {
     }
 
 
     void OContainerListener::setAdapter(OContainerListenerAdapter* pAdapter)
     {
-        if (m_pAdapter)
-        {
-            ::osl::MutexGuard aGuard(m_rMutex);
-            m_pAdapter->release();
-            m_pAdapter = nullptr;
-        }
-
-        if (pAdapter)
-        {
-            ::osl::MutexGuard aGuard(m_rMutex);
-            m_pAdapter = pAdapter;
-            m_pAdapter->acquire();
-        }
+        ::osl::MutexGuard aGuard(m_rMutex);
+        m_xAdapter = pAdapter;
     }
 
     OContainerListenerAdapter::OContainerListenerAdapter(OContainerListener* _pListener,
             const  Reference< XContainer >& _rxContainer)
         :m_xContainer(_rxContainer)
         ,m_pListener(_pListener)
-        ,m_nLockCount(0)
     {
         if (m_pListener)
             m_pListener->setAdapter(this);
@@ -133,13 +115,12 @@ namespace comphelper
     }
 
 
-    void SAL_CALL OContainerListenerAdapter::disposing( const  EventObject& _rSource) throw(RuntimeException, std::exception)
+    void SAL_CALL OContainerListenerAdapter::disposing( const  EventObject& _rSource)
     {
         if (m_pListener)
         {
              // tell the listener
-            if (!locked())
-                m_pListener->_disposing(_rSource);
+            m_pListener->_disposing(_rSource);
             // disconnect the listener
             if ( m_pListener )
                 m_pListener->setAdapter(nullptr);
@@ -150,23 +131,23 @@ namespace comphelper
     }
 
 
-    void SAL_CALL OContainerListenerAdapter::elementInserted( const ContainerEvent& _rEvent ) throw(RuntimeException, std::exception)
+    void SAL_CALL OContainerListenerAdapter::elementInserted( const ContainerEvent& _rEvent )
     {
-        if (m_pListener && !locked())
+        if (m_pListener)
             m_pListener->_elementInserted(_rEvent);
     }
 
 
-    void SAL_CALL OContainerListenerAdapter::elementRemoved( const ContainerEvent& _rEvent ) throw(RuntimeException, std::exception)
+    void SAL_CALL OContainerListenerAdapter::elementRemoved( const ContainerEvent& _rEvent )
     {
-        if (m_pListener && !locked())
+        if (m_pListener)
             m_pListener->_elementRemoved(_rEvent);
     }
 
 
-    void SAL_CALL OContainerListenerAdapter::elementReplaced( const ContainerEvent& _rEvent ) throw(RuntimeException, std::exception)
+    void SAL_CALL OContainerListenerAdapter::elementReplaced( const ContainerEvent& _rEvent )
     {
-        if (m_pListener && !locked())
+        if (m_pListener)
             m_pListener->_elementReplaced(_rEvent);
     }
 

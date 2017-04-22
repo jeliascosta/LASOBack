@@ -76,7 +76,6 @@ HWPPara::HWPPara()
     , ctrlflag(0)
     , pstyno(0)
     , cshape(new CharShape)
-    , linfo(nullptr)
 {
     memset(cshape.get(), 0, sizeof(cshape));
     memset(&pshape, 0, sizeof(pshape));
@@ -84,7 +83,6 @@ HWPPara::HWPPara()
 
 HWPPara::~HWPPara()
 {
-    delete[] linfo;
 }
 
 bool HWPPara::Read(HWPFile & hwpf, unsigned char flag)
@@ -114,22 +112,20 @@ bool HWPPara::Read(HWPFile & hwpf, unsigned char flag)
         pshape.pagebreak = etcflag;
     }
 
-    linfo = ::comphelper::newArray_null<LineInfo>(nline);
-    if (!linfo) { return false; }
+    linfo.reset(::comphelper::newArray_null<LineInfo>(nline));
     for (ii = 0; ii < nline; ii++)
     {
         linfo[ii].Read(hwpf, this);
     }
-     if( etcflag & 0x04 ){
+    if( etcflag & 0x04 ){
          hwpf.AddColumnInfo();
-     }
+    }
 
     if (nch && !reuse_shape){
          if( pshape.coldef.ncols > 1 ){
              hwpf.SetColumnDef( &pshape.coldef );
          }
-     }
-
+    }
 
     if( nline > 0 )
     {

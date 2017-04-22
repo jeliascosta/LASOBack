@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <rtl/strbuf.hxx>
+#include <rtl/character.hxx>
 
 #include <tools/stream.hxx>
 #include <tools/globname.hxx>
@@ -105,12 +105,18 @@ SvGlobalName & SvGlobalName::operator = ( const SvGlobalName & rObj )
     return *this;
 }
 
+SvGlobalName & SvGlobalName::operator = ( SvGlobalName && rObj )
+{
+    pImp = std::move(rObj.pImp);
+    return *this;
+}
+
 SvStream& WriteSvGlobalName( SvStream& rOStr, const SvGlobalName & rObj )
 {
     rOStr.WriteUInt32( rObj.pImp->szData.Data1 );
     rOStr.WriteUInt16( rObj.pImp->szData.Data2 );
     rOStr.WriteUInt16( rObj.pImp->szData.Data3 );
-    rOStr.Write( &rObj.pImp->szData.Data4, 8 );
+    rOStr.WriteBytes( &rObj.pImp->szData.Data4, 8 );
     return rOStr;
 }
 
@@ -121,7 +127,7 @@ SvStream& operator >> ( SvStream& rStr, SvGlobalName & rObj )
     rStr.ReadUInt32( rObj.pImp->szData.Data1 );
     rStr.ReadUInt16( rObj.pImp->szData.Data2 );
     rStr.ReadUInt16( rObj.pImp->szData.Data3 );
-    rStr.Read( &rObj.pImp->szData.Data4, 8 );
+    rStr.ReadBytes( &rObj.pImp->szData.Data4, 8 );
     return rStr;
 }
 
@@ -159,16 +165,14 @@ bool SvGlobalName::operator == ( const SvGlobalName & rObj ) const
     return pImp == rObj.pImp;
 }
 
-void SvGlobalName::MakeFromMemory( void * pData )
+void SvGlobalName::MakeFromMemory( void const * pData )
 {
     memcpy( &pImp->szData, pData, sizeof( pImp->szData ) );
 }
 
 bool SvGlobalName::MakeId( const OUString & rIdStr )
 {
-    OString aStr(OUStringToOString(rIdStr,
-        RTL_TEXTENCODING_ASCII_US));
-    const sal_Char *pStr = aStr.getStr();
+    const sal_Unicode *pStr = rIdStr.getStr();
     if( rIdStr.getLength() == 36
       && '-' == pStr[ 8 ]  && '-' == pStr[ 13 ]
       && '-' == pStr[ 18 ] && '-' == pStr[ 23 ] )
@@ -177,11 +181,11 @@ bool SvGlobalName::MakeId( const OUString & rIdStr )
         int i = 0;
         for( i = 0; i < 8; i++ )
         {
-            if( isxdigit( *pStr ) )
-                if( isdigit( *pStr ) )
+            if( rtl::isAsciiHexDigit( *pStr ) )
+                if( rtl::isAsciiDigit( *pStr ) )
                     nFirst = nFirst * 16 + (*pStr - '0');
                 else
-                    nFirst = nFirst * 16 + (toupper( *pStr ) - 'A' + 10 );
+                    nFirst = nFirst * 16 + (rtl::toAsciiUpperCase( *pStr ) - 'A' + 10 );
             else
                 return false;
             pStr++;
@@ -191,11 +195,11 @@ bool SvGlobalName::MakeId( const OUString & rIdStr )
         pStr++;
         for( i = 0; i < 4; i++ )
         {
-            if( isxdigit( *pStr ) )
-                if( isdigit( *pStr ) )
+            if( rtl::isAsciiHexDigit( *pStr ) )
+                if( rtl::isAsciiDigit( *pStr ) )
                     nSec = nSec * 16 + (*pStr - '0');
                 else
-                    nSec = nSec * 16 + (sal_uInt16)(toupper( *pStr ) - 'A' + 10 );
+                    nSec = nSec * 16 + (sal_uInt16)(rtl::toAsciiUpperCase( *pStr ) - 'A' + 10 );
             else
                 return false;
             pStr++;
@@ -205,11 +209,11 @@ bool SvGlobalName::MakeId( const OUString & rIdStr )
         pStr++;
         for( i = 0; i < 4; i++ )
         {
-            if( isxdigit( *pStr ) )
-                if( isdigit( *pStr ) )
+            if( rtl::isAsciiHexDigit( *pStr ) )
+                if( rtl::isAsciiDigit( *pStr ) )
                     nThird = nThird * 16 + (*pStr - '0');
                 else
-                    nThird = nThird * 16 + (sal_uInt16)(toupper( *pStr ) - 'A' + 10 );
+                    nThird = nThird * 16 + (sal_uInt16)(rtl::toAsciiUpperCase( *pStr ) - 'A' + 10 );
             else
                 return false;
             pStr++;
@@ -220,11 +224,11 @@ bool SvGlobalName::MakeId( const OUString & rIdStr )
         pStr++;
         for( i = 0; i < 16; i++ )
         {
-            if( isxdigit( *pStr ) )
-                if( isdigit( *pStr ) )
+            if( rtl::isAsciiHexDigit( *pStr ) )
+                if( rtl::isAsciiDigit( *pStr ) )
                     szRemain[i/2] = szRemain[i/2] * 16 + (*pStr - '0');
                 else
-                    szRemain[i/2] = szRemain[i/2] * 16 + (sal_Int8)(toupper( *pStr ) - 'A' + 10 );
+                    szRemain[i/2] = szRemain[i/2] * 16 + (sal_Int8)(rtl::toAsciiUpperCase( *pStr ) - 'A' + 10 );
             else
                 return false;
             pStr++;

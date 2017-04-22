@@ -84,20 +84,11 @@ SvxConfigFunctionListBox::SvxConfigFunctionListBox(vcl::Window* pParent, WinBits
 
     // Timer for the BallonHelp
     aTimer.SetTimeout( 200 );
-    aTimer.SetTimeoutHdl(
+    aTimer.SetInvokeHandler(
         LINK( this, SvxConfigFunctionListBox, TimerHdl ) );
 }
 
-VCL_BUILDER_DECL_FACTORY(SvxConfigFunctionListBox)
-{
-    WinBits nWinBits = WB_TABSTOP;
-
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-
-    rRet = VclPtr<SvxConfigFunctionListBox>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxConfigFunctionListBox, WB_TABSTOP)
 
 SvxConfigFunctionListBox::~SvxConfigFunctionListBox()
 {
@@ -131,21 +122,21 @@ void SvxConfigFunctionListBox::MouseMove( const MouseEvent& rMEvt )
         aTimer.Start();
     else
     {
-        Rectangle aRect(GetPosPixel(), GetSizePixel());
+        ::tools::Rectangle aRect(GetPosPixel(), GetSizePixel());
         Help::ShowBalloon( this, aMousePos, aRect, OUString() );
         aTimer.Stop();
     }
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxConfigFunctionListBox, TimerHdl, Timer *, void)
+IMPL_LINK_NOARG(SvxConfigFunctionListBox, TimerHdl, Timer *, void)
 {
     aTimer.Stop();
     Point aMousePos = GetPointerPosPixel();
     SvTreeListEntry *pEntry = GetCurEntry();
     if ( pEntry && GetEntry( aMousePos ) == pEntry && pCurEntry == pEntry )
     {
-        Rectangle aRect(GetPosPixel(), GetSizePixel());
+        ::tools::Rectangle aRect(GetPosPixel(), GetSizePixel());
         Help::ShowBalloon( this, OutputToScreenPixel(aMousePos), aRect, GetHelpText( pEntry ) );
     }
 }
@@ -182,7 +173,7 @@ OUString SvxConfigFunctionListBox::GetHelpText( SvTreeListEntry *pEntry )
 
 void SvxConfigFunctionListBox::FunctionSelected()
 {
-    Help::ShowBalloon( this, Point(), Rectangle(), OUString() );
+    Help::ShowBalloon( this, Point(), ::tools::Rectangle(), OUString() );
 }
 
 // drag and drop support
@@ -210,31 +201,20 @@ SvxConfigGroupListBox::SvxConfigGroupListBox(vcl::Window* pParent, WinBits nStyl
     , m_bShowSlots(false)
     , pFunctionListBox(nullptr)
     , m_pImageProvider(nullptr)
-    , m_hdImage(CUI_RES(RID_CUIIMG_HARDDISK))
-    , m_libImage(CUI_RES(RID_CUIIMG_LIB))
-    , m_macImage(CUI_RES(RID_CUIIMG_MACRO))
-    , m_docImage(CUI_RES(RID_CUIIMG_DOC))
+    , m_hdImage(BitmapEx(CUI_RES(RID_CUIBMP_HARDDISK)))
+    , m_libImage(BitmapEx(CUI_RES(RID_CUIBMP_LIB)))
+    , m_macImage(BitmapEx(CUI_RES(RID_CUIBMP_MACRO)))
+    , m_docImage(BitmapEx(CUI_RES(RID_CUIBMP_DOC)))
     , m_sMyMacros(CUI_RESSTR(RID_SVXSTR_MYMACROS))
     , m_sProdMacros(CUI_RESSTR(RID_SVXSTR_PRODMACROS))
 {
-    ImageList aNavigatorImages( SVX_RES( RID_SVXIMGLIST_FMEXPL ) );
-
     SetNodeBitmaps(
-        aNavigatorImages.GetImage( RID_SVXIMG_COLLAPSEDNODE ),
-        aNavigatorImages.GetImage( RID_SVXIMG_EXPANDEDNODE )
+        Image(BitmapEx(SVX_RES(RID_SVXBMP_COLLAPSEDNODE))),
+        Image(BitmapEx(SVX_RES(RID_SVXBMP_EXPANDEDNODE)))
     );
 }
 
-VCL_BUILDER_DECL_FACTORY(SvxConfigGroupListBox)
-{
-    WinBits nWinBits = WB_TABSTOP;
-
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-
-    rRet = VclPtr<SvxConfigGroupListBox>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxConfigGroupListBox, WB_TABSTOP)
 
 SvxConfigGroupListBox::~SvxConfigGroupListBox()
 {
@@ -556,7 +536,7 @@ void SvxConfigGroupListBox::Init(bool bShowSlots, const Reference< frame::XFrame
 
 Image SvxConfigGroupListBox::GetImage(
     const Reference< browse::XBrowseNode >& node,
-    Reference< XComponentContext > xCtx,
+    Reference< XComponentContext > const & xCtx,
     bool bIsRootNode
 )
 {
@@ -617,7 +597,7 @@ Image SvxConfigGroupListBox::GetImage(
 
 Reference< XInterface  >
 SvxConfigGroupListBox::getDocumentModel(
-    Reference< XComponentContext >& xCtx, OUString& docName )
+    Reference< XComponentContext > const & xCtx, OUString& docName )
 {
     Reference< XInterface > xModel;
     Reference< frame::XDesktop2 > desktop = Desktop::create(xCtx);
@@ -967,7 +947,7 @@ void SvxScriptSelectorDialog::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_TYPED( SvxScriptSelectorDialog, SelectHdl, SvTreeListBox*, pCtrl, void )
+IMPL_LINK( SvxScriptSelectorDialog, SelectHdl, SvTreeListBox*, pCtrl, void )
 {
     if (pCtrl == m_pCategories)
     {
@@ -980,7 +960,7 @@ IMPL_LINK_TYPED( SvxScriptSelectorDialog, SelectHdl, SvTreeListBox*, pCtrl, void
     UpdateUI();
 }
 
-IMPL_LINK_NOARG_TYPED( SvxScriptSelectorDialog, FunctionDoubleClickHdl, SvTreeListBox*, bool )
+IMPL_LINK_NOARG( SvxScriptSelectorDialog, FunctionDoubleClickHdl, SvTreeListBox*, bool )
 {
     if (m_pOKButton->IsEnabled())
         ClickHdl(m_pOKButton);
@@ -993,7 +973,7 @@ void
 SvxScriptSelectorDialog::UpdateUI()
 {
     OUString url = GetScriptURL();
-    if ( url != nullptr && !url.isEmpty() )
+    if ( !url.isEmpty() )
     {
         OUString sMessage =
             m_pCommands->GetHelpText(m_pCommands->FirstSelected());
@@ -1008,7 +988,7 @@ SvxScriptSelectorDialog::UpdateUI()
     }
 }
 
-IMPL_LINK_TYPED( SvxScriptSelectorDialog, ClickHdl, Button *, pButton, void )
+IMPL_LINK( SvxScriptSelectorDialog, ClickHdl, Button *, pButton, void )
 {
     if (pButton == m_pCancelButton)
     {

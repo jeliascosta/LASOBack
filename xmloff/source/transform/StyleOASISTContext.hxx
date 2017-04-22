@@ -33,18 +33,17 @@ class XMLStyleOASISTContext : public XMLPersElemContentTContext
     bool m_bPersistent;
     bool m_bControlStyle;
 
-    OUString m_aStyleFamily;
 public:
     XMLStyleOASISTContext( XMLTransformerBase& rTransformer,
                            const OUString& rQName,
-                              bool bPersistent=false );
+                              bool bPersistent );
     XMLStyleOASISTContext( XMLTransformerBase& rTransformer,
                            const OUString& rQName,
                               sal_uInt16 nPrefix,
                               ::xmloff::token::XMLTokenEnum eToken,
-                              bool bPersistent=false );
+                              bool bPersistent );
 
-    virtual ~XMLStyleOASISTContext();
+    virtual ~XMLStyleOASISTContext() override;
 
     virtual rtl::Reference<XMLTransformerContext> CreateChildContext( sal_uInt16 nPrefix,
                                    const OUString& rLocalName,

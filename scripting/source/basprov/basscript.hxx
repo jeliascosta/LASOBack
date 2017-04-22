@@ -57,7 +57,7 @@ namespace basprov
                             m_xDocumentScriptContext;
         // hack, OPropertyContainer doesn't allow you to define a property of unknown
         // type ( I guess because an Any can't contain an Any... I've always wondered why?
-    // as its not unusual to do that in corba )
+    // as it's not unusual to do that in corba )
         css::uno::Sequence< css::uno::Any > m_caller;
     protected:
         // OPropertySetHelper
@@ -69,15 +69,15 @@ namespace basprov
     public:
         BasicScriptImpl(
             const OUString& funcName,
-            SbMethodRef xMethod
+            SbMethodRef const & xMethod
         );
         BasicScriptImpl(
             const OUString& funcName,
-            SbMethodRef xMethod,
+            SbMethodRef const & xMethod,
             BasicManager& documentBasicManager,
             const css::uno::Reference< css::document::XScriptInvocationContext >& documentScriptContext
         );
-        virtual ~BasicScriptImpl();
+        virtual ~BasicScriptImpl() override;
 
         // XInterface
         DECLARE_XINTERFACE()
@@ -89,14 +89,9 @@ namespace basprov
         virtual css::uno::Any SAL_CALL invoke(
             const css::uno::Sequence< css::uno::Any >& aParams,
             css::uno::Sequence< sal_Int16 >& aOutParamIndex,
-            css::uno::Sequence< css::uno::Any >& aOutParam )
-            throw (
-                    css::script::provider::ScriptFrameworkErrorException,
-                    css::reflection::InvocationTargetException,
-                    css::uno::RuntimeException, std::exception ) override;
+            css::uno::Sequence< css::uno::Any >& aOutParam ) override;
         // XPropertySet
-        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  )
-            throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
 
         // SfxListener
         virtual void        Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;

@@ -100,7 +100,7 @@ private:
 public:
                         MetaPixelAction();
 protected:
-    virtual             ~MetaPixelAction();
+    virtual             ~MetaPixelAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -124,7 +124,7 @@ private:
 public:
                         MetaPointAction();
 protected:
-    virtual             ~MetaPointAction();
+    virtual             ~MetaPointAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -150,7 +150,7 @@ private:
 public:
                         MetaLineAction();
 protected:
-    virtual             ~MetaLineAction();
+    virtual             ~MetaLineAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -173,51 +173,51 @@ class VCL_DLLPUBLIC MetaRectAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
 
 public:
                         MetaRectAction();
 protected:
-    virtual             ~MetaRectAction();
+    virtual             ~MetaRectAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-    explicit            MetaRectAction( const Rectangle& );
+    explicit            MetaRectAction( const tools::Rectangle& );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
 };
 
 class VCL_DLLPUBLIC MetaRoundRectAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
     sal_uInt32          mnHorzRound;
     sal_uInt32          mnVertRound;
 
 public:
                         MetaRoundRectAction();
 protected:
-    virtual             ~MetaRoundRectAction();
+    virtual             ~MetaRoundRectAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-                        MetaRoundRectAction( const Rectangle& rRect,
+                        MetaRoundRectAction( const tools::Rectangle& rRect,
                                              sal_uInt32 nHorzRound, sal_uInt32 nVertRound );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
     sal_uInt32          GetHorzRound() const { return mnHorzRound; }
     sal_uInt32          GetVertRound() const { return mnVertRound; }
 };
@@ -226,51 +226,51 @@ class VCL_DLLPUBLIC MetaEllipseAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
 
 public:
                         MetaEllipseAction();
 protected:
-    virtual             ~MetaEllipseAction();
+    virtual             ~MetaEllipseAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-    explicit            MetaEllipseAction( const Rectangle& );
+    explicit            MetaEllipseAction( const tools::Rectangle& );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
 };
 
 class VCL_DLLPUBLIC MetaArcAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
     Point               maStartPt;
     Point               maEndPt;
 
 public:
                         MetaArcAction();
 protected:
-    virtual             ~MetaArcAction();
+    virtual             ~MetaArcAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-                        MetaArcAction( const Rectangle& rRect,
+                        MetaArcAction( const tools::Rectangle& rRect,
                                        const Point& rStart, const Point& rEnd );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
     const Point&        GetStartPoint() const { return maStartPt; }
     const Point&        GetEndPoint() const { return maEndPt; }
 };
@@ -279,27 +279,27 @@ class VCL_DLLPUBLIC MetaPieAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
     Point               maStartPt;
     Point               maEndPt;
 
 public:
                         MetaPieAction();
 protected:
-    virtual             ~MetaPieAction();
+    virtual             ~MetaPieAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-                        MetaPieAction( const Rectangle& rRect,
+                        MetaPieAction( const tools::Rectangle& rRect,
                                        const Point& rStart, const Point& rEnd );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
     const Point&        GetStartPoint() const { return maStartPt; }
     const Point&        GetEndPoint() const { return maEndPt; }
 };
@@ -308,27 +308,27 @@ class VCL_DLLPUBLIC MetaChordAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
     Point               maStartPt;
     Point               maEndPt;
 
 public:
                         MetaChordAction();
 protected:
-    virtual             ~MetaChordAction();
+    virtual             ~MetaChordAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-                        MetaChordAction( const Rectangle& rRect,
+                        MetaChordAction( const tools::Rectangle& rRect,
                                          const Point& rStart, const Point& rEnd );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
     const Point&        GetStartPoint() const { return maStartPt; }
     const Point&        GetEndPoint() const { return maEndPt; }
 };
@@ -343,7 +343,7 @@ private:
 public:
                         MetaPolyLineAction();
 protected:
-    virtual             ~MetaPolyLineAction();
+    virtual             ~MetaPolyLineAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -369,7 +369,7 @@ private:
 public:
                         MetaPolygonAction();
 protected:
-    virtual             ~MetaPolygonAction();
+    virtual             ~MetaPolygonAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -393,7 +393,7 @@ private:
 public:
                         MetaPolyPolygonAction();
 protected:
-    virtual             ~MetaPolyPolygonAction();
+    virtual             ~MetaPolyPolygonAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -420,7 +420,7 @@ private:
 public:
                         MetaTextAction();
 protected:
-    virtual             ~MetaTextAction();
+    virtual             ~MetaTextAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -445,12 +445,13 @@ private:
 
     Point       maStartPt;
     OUString    maStr;
-    long*       mpDXAry;
+    std::unique_ptr<long[]>
+                mpDXAry;
     sal_Int32   mnIndex;
     sal_Int32   mnLen;
 
 protected:
-    virtual             ~MetaTextArrayAction();
+    virtual             ~MetaTextArrayAction() override;
 
 public:
                         MetaTextArrayAction();
@@ -473,7 +474,7 @@ public:
     const OUString& GetText() const { return maStr; }
     sal_Int32       GetIndex() const { return mnIndex; }
     sal_Int32       GetLen() const { return mnLen; }
-    long*           GetDXArray() const { return mpDXAry; }
+    long*           GetDXArray() const { return mpDXAry.get(); }
 };
 
 class VCL_DLLPUBLIC MetaStretchTextAction : public MetaAction
@@ -489,7 +490,7 @@ private:
 public:
                         MetaStretchTextAction();
 protected:
-    virtual             ~MetaStretchTextAction();
+    virtual             ~MetaStretchTextAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -514,27 +515,27 @@ class VCL_DLLPUBLIC MetaTextRectAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
     OUString            maStr;
     DrawTextFlags       mnStyle;
 
 public:
                         MetaTextRectAction();
 protected:
-    virtual             ~MetaTextRectAction();
+    virtual             ~MetaTextRectAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-    MetaTextRectAction( const Rectangle& rRect,
+    MetaTextRectAction( const tools::Rectangle& rRect,
                         const OUString& rStr, DrawTextFlags nStyle );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
     const OUString&     GetText() const { return maStr; }
     DrawTextFlags       GetStyle() const { return mnStyle; }
 };
@@ -552,7 +553,7 @@ private:
 public:
                         MetaTextLineAction();
 protected:
-    virtual             ~MetaTextLineAction();
+    virtual             ~MetaTextLineAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -583,7 +584,7 @@ private:
 public:
                         MetaBmpAction();
 protected:
-    virtual             ~MetaBmpAction();
+    virtual             ~MetaBmpAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -610,7 +611,7 @@ private:
 public:
                         MetaBmpScaleAction();
 protected:
-    virtual             ~MetaBmpScaleAction();
+    virtual             ~MetaBmpScaleAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -641,7 +642,7 @@ private:
 public:
                         MetaBmpScalePartAction();
 protected:
-    virtual             ~MetaBmpScalePartAction();
+    virtual             ~MetaBmpScalePartAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -672,7 +673,7 @@ private:
 public:
                         MetaBmpExAction();
 protected:
-    virtual             ~MetaBmpExAction();
+    virtual             ~MetaBmpExAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -699,7 +700,7 @@ private:
 public:
                         MetaBmpExScaleAction();
 protected:
-    virtual             ~MetaBmpExScaleAction();
+    virtual             ~MetaBmpExScaleAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -730,7 +731,7 @@ private:
 public:
                         MetaBmpExScalePartAction();
 protected:
-    virtual             ~MetaBmpExScalePartAction();
+    virtual             ~MetaBmpExScalePartAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -762,7 +763,7 @@ private:
 public:
                         MetaMaskAction();
 protected:
-    virtual             ~MetaMaskAction();
+    virtual             ~MetaMaskAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -793,7 +794,7 @@ private:
 public:
                         MetaMaskScaleAction();
 protected:
-    virtual             ~MetaMaskScaleAction();
+    virtual             ~MetaMaskScaleAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -827,7 +828,7 @@ private:
 public:
                         MetaMaskScalePartAction();
 protected:
-    virtual             ~MetaMaskScalePartAction();
+    virtual             ~MetaMaskScalePartAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -854,25 +855,25 @@ class VCL_DLLPUBLIC MetaGradientAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
     Gradient            maGradient;
 
 public:
                         MetaGradientAction();
 protected:
-    virtual             ~MetaGradientAction();
+    virtual             ~MetaGradientAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-                        MetaGradientAction( const Rectangle& rRect, const Gradient& rGradient );
+                        MetaGradientAction( const tools::Rectangle& rRect, const Gradient& rGradient );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
     const Gradient&     GetGradient() const { return maGradient; }
 };
 
@@ -886,7 +887,7 @@ private:
 public:
                         MetaGradientExAction();
 protected:
-    virtual             ~MetaGradientExAction();
+    virtual             ~MetaGradientExAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -912,7 +913,7 @@ private:
 public:
                         MetaHatchAction();
 protected:
-    virtual             ~MetaHatchAction();
+    virtual             ~MetaHatchAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -932,26 +933,26 @@ class VCL_DLLPUBLIC MetaWallpaperAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
     Wallpaper           maWallpaper;
 
 public:
                         MetaWallpaperAction();
 protected:
-    virtual             ~MetaWallpaperAction();
+    virtual             ~MetaWallpaperAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-                        MetaWallpaperAction( const Rectangle& rRect,
+                        MetaWallpaperAction( const tools::Rectangle& rRect,
                                              const Wallpaper& rPaper );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
     const Wallpaper&    GetWallpaper() const { return maWallpaper; }
 };
 
@@ -965,7 +966,7 @@ private:
 public:
                         MetaClipRegionAction();
 protected:
-    virtual             ~MetaClipRegionAction();
+    virtual             ~MetaClipRegionAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -985,24 +986,24 @@ class VCL_DLLPUBLIC MetaISectRectClipRegionAction : public MetaAction
 {
 private:
 
-    Rectangle           maRect;
+    tools::Rectangle           maRect;
 
 public:
                         MetaISectRectClipRegionAction();
 protected:
-    virtual             ~MetaISectRectClipRegionAction();
+    virtual             ~MetaISectRectClipRegionAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-    explicit            MetaISectRectClipRegionAction( const Rectangle& );
+    explicit            MetaISectRectClipRegionAction( const tools::Rectangle& );
 
     virtual void        Move( long nHorzMove, long nVertMove ) override;
     virtual void        Scale( double fScaleX, double fScaleY ) override;
 
-    const Rectangle&    GetRect() const { return maRect; }
+    const tools::Rectangle&    GetRect() const { return maRect; }
 };
 
 class VCL_DLLPUBLIC MetaISectRegionClipRegionAction : public MetaAction
@@ -1014,7 +1015,7 @@ private:
 public:
                         MetaISectRegionClipRegionAction();
 protected:
-    virtual             ~MetaISectRegionClipRegionAction();
+    virtual             ~MetaISectRegionClipRegionAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1039,7 +1040,7 @@ private:
 public:
                         MetaMoveClipRegionAction();
 protected:
-    virtual             ~MetaMoveClipRegionAction();
+    virtual             ~MetaMoveClipRegionAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1064,7 +1065,7 @@ private:
 public:
                         MetaLineColorAction();
 protected:
-    virtual             ~MetaLineColorAction();
+    virtual             ~MetaLineColorAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1087,7 +1088,7 @@ private:
 public:
                         MetaFillColorAction();
 protected:
-    virtual             ~MetaFillColorAction();
+    virtual             ~MetaFillColorAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1109,7 +1110,7 @@ private:
 public:
                         MetaTextColorAction();
 protected:
-    virtual             ~MetaTextColorAction();
+    virtual             ~MetaTextColorAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1131,7 +1132,7 @@ private:
 public:
                         MetaTextFillColorAction();
 protected:
-    virtual             ~MetaTextFillColorAction();
+    virtual             ~MetaTextFillColorAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1154,7 +1155,7 @@ private:
 public:
                         MetaTextLineColorAction();
 protected:
-    virtual             ~MetaTextLineColorAction();
+    virtual             ~MetaTextLineColorAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1177,7 +1178,7 @@ private:
 public:
                         MetaOverlineColorAction();
 protected:
-    virtual             ~MetaOverlineColorAction();
+    virtual             ~MetaOverlineColorAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1199,7 +1200,7 @@ private:
 public:
                         MetaTextAlignAction();
 protected:
-    virtual             ~MetaTextAlignAction();
+    virtual             ~MetaTextAlignAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1220,7 +1221,7 @@ private:
 public:
                         MetaMapModeAction();
 protected:
-    virtual             ~MetaMapModeAction();
+    virtual             ~MetaMapModeAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1243,7 +1244,7 @@ private:
 public:
                         MetaFontAction();
 protected:
-    virtual             ~MetaFontAction();
+    virtual             ~MetaFontAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1266,7 +1267,7 @@ private:
 public:
                         MetaPushAction();
 protected:
-    virtual             ~MetaPushAction();
+    virtual             ~MetaPushAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1284,7 +1285,7 @@ public:
 
                         MetaPopAction();
 protected:
-    virtual             ~MetaPopAction();
+    virtual             ~MetaPopAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1301,7 +1302,7 @@ private:
 public:
                         MetaRasterOpAction();
 protected:
-    virtual             ~MetaRasterOpAction();
+    virtual             ~MetaRasterOpAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1323,7 +1324,7 @@ private:
 public:
                         MetaTransparentAction();
 protected:
-    virtual             ~MetaTransparentAction();
+    virtual             ~MetaTransparentAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1351,7 +1352,7 @@ private:
 public:
                         MetaFloatTransparentAction();
 protected:
-    virtual             ~MetaFloatTransparentAction();
+    virtual             ~MetaFloatTransparentAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1382,7 +1383,7 @@ private:
 public:
                         MetaEPSAction();
 protected:
-    virtual             ~MetaEPSAction();
+    virtual             ~MetaEPSAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1411,7 +1412,7 @@ private:
 public:
                         MetaRefPointAction();
 protected:
-    virtual             ~MetaRefPointAction();
+    virtual             ~MetaRefPointAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
@@ -1436,7 +1437,7 @@ private:
     SAL_DLLPRIVATE void ImplInitDynamicData( const sal_uInt8* pData, sal_uInt32 nDataSize );
 
 protected:
-    virtual             ~MetaCommentAction();
+    virtual             ~MetaCommentAction() override;
 
 public:
     explicit            MetaCommentAction();
@@ -1461,21 +1462,21 @@ class VCL_DLLPUBLIC MetaLayoutModeAction : public MetaAction
 {
 private:
 
-    ComplexTextLayoutMode  mnLayoutMode;
+    ComplexTextLayoutFlags  mnLayoutMode;
 
 public:
                         MetaLayoutModeAction();
 protected:
-    virtual             ~MetaLayoutModeAction();
+    virtual             ~MetaLayoutModeAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;
     virtual void        Write( SvStream& rOStm, ImplMetaWriteData* pData ) override;
     virtual void        Read( SvStream& rIStm, ImplMetaReadData* pData ) override;
 
-    explicit            MetaLayoutModeAction( ComplexTextLayoutMode nLayoutMode );
+    explicit            MetaLayoutModeAction( ComplexTextLayoutFlags nLayoutMode );
 
-    ComplexTextLayoutMode  GetLayoutMode() const { return mnLayoutMode; }
+    ComplexTextLayoutFlags  GetLayoutMode() const { return mnLayoutMode; }
 };
 
 class VCL_DLLPUBLIC MetaTextLanguageAction : public MetaAction
@@ -1487,7 +1488,7 @@ private:
 public:
                         MetaTextLanguageAction();
 protected:
-    virtual             ~MetaTextLanguageAction();
+    virtual             ~MetaTextLanguageAction() override;
 public:
     virtual void        Execute( OutputDevice* pOut ) override;
     virtual MetaAction* Clone() override;

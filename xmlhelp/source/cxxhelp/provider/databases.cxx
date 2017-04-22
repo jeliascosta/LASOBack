@@ -36,6 +36,7 @@
 
 // Extensible help
 #include <com/sun/star/deployment/ExtensionManager.hpp>
+#include <com/sun/star/deployment/ExtensionRemovedException.hpp>
 #include <com/sun/star/deployment/thePackageManagerFactory.hpp>
 #include <comphelper/processfactory.hxx>
 #include <com/sun/star/uno/XComponentContext.hpp>
@@ -123,7 +124,7 @@ Databases::Databases( bool showBasic,
                       const OUString& productName,
                       const OUString& productVersion,
                       const OUString& styleSheet,
-                      Reference< uno::XComponentContext > xContext )
+                      Reference< uno::XComponentContext > const & xContext )
     : m_xContext( xContext ),
       m_bShowBasic(showBasic),
       m_nCustomCSSDocLength( 0 ),
@@ -209,7 +210,7 @@ OString Databases::getImageTheme()
     beans::PropertyValue                       aParam ;
     aParam.Name    = "nodepath";
     aParam.Value <<= OUString("org.openoffice.Office.Common");
-    lParams[0] = uno::makeAny(aParam);
+    lParams[0] <<= aParam;
 
     // open it
     uno::Reference< uno::XInterface > xCFG( xConfigProvider->createInstanceWithArguments(
@@ -953,7 +954,7 @@ void Databases::changeCSS(const OUString& newStyleSheet)
 }
 
 void Databases::cascadingStylesheet( const OUString& Language,
-                                     char** buffer,
+                                     std::unique_ptr<char[]>& buffer,
                                      int* byteCount )
 {
     if( ! m_pCustomCSSDoc )
@@ -980,13 +981,13 @@ void Databases::cascadingStylesheet( const OUString& Language,
                     {
                         aCSS = "highcontrastblack";
                         #ifdef _WIN32
-                        HKEY hKey = NULL;
+                        HKEY hKey = nullptr;
                         LONG lResult = RegOpenKeyExA( HKEY_CURRENT_USER, "Control Panel\\Accessibility\\HighContrast", 0, KEY_QUERY_VALUE, &hKey );
                         if ( ERROR_SUCCESS == lResult )
                         {
                             CHAR szBuffer[1024];
                             DWORD nSize = sizeof( szBuffer );
-                            lResult = RegQueryValueExA( hKey, "High Contrast Scheme", NULL, NULL, (LPBYTE)szBuffer, &nSize );
+                            lResult = RegQueryValueExA( hKey, "High Contrast Scheme", nullptr, nullptr, reinterpret_cast<LPBYTE>(szBuffer), &nSize );
                             if ( ERROR_SUCCESS == lResult && nSize > 0 )
                             {
                                 szBuffer[nSize] = '\0';
@@ -1058,16 +1059,16 @@ void Databases::cascadingStylesheet( const OUString& Language,
     }
 
     *byteCount = m_nCustomCSSDocLength;
-    *buffer = new char[ 1 + *byteCount ];
-    (*buffer)[*byteCount] = 0;
-    memcpy( *buffer,m_pCustomCSSDoc,m_nCustomCSSDocLength );
+    buffer.reset( new char[ 1 + *byteCount ] );
+    buffer[*byteCount] = 0;
+    memcpy( buffer.get(), m_pCustomCSSDoc, m_nCustomCSSDocLength );
 
 }
 
 void Databases::setActiveText( const OUString& Module,
                                const OUString& Language,
                                const OUString& Id,
-                               char** buffer,
+                               std::unique_ptr<char[]>& buffer,
                                int* byteCount )
 {
     DataBaseIterator aDbIt( m_xContext, *this, Module, Language, true );
@@ -1112,14 +1113,14 @@ void Databases::setActiveText( const OUString& Module,
             }
 
         *byteCount = nSize;
-        *buffer = new char[ 1 + nSize ];
-        (*buffer)[nSize] = 0;
-        memcpy( *buffer, pData, nSize );
+        buffer.reset( new char[ 1 + nSize ] );
+        buffer[nSize] = 0;
+        memcpy( buffer.get(), pData, nSize );
     }
     else
     {
         *byteCount = 0;
-        *buffer = new char[1]; // Initialize with 1 to avoid compiler warnings
+        buffer.reset( new char[1] ); // Initialize with 1 to avoid compiler warnings
         if( !bFoundAsEmpty )
             m_aEmptyActiveTextSet.insert( id );
     }
@@ -1140,11 +1141,11 @@ void Databases::setInstallPath( const OUString& aInstDir )
 
 ExtensionHelpExistanceMap ExtensionIteratorBase::aHelpExistanceMap;
 
-ExtensionIteratorBase::ExtensionIteratorBase( Reference< XComponentContext > xContext,
+ExtensionIteratorBase::ExtensionIteratorBase( Reference< XComponentContext > const & xContext,
     Databases& rDatabases, const OUString& aInitialModule, const OUString& aLanguage )
         : m_xContext( xContext )
         , m_rDatabases( rDatabases )
-        , m_eState( INITIAL_MODULE )
+        , m_eState( IteratorState::InitialModule )
         , m_aInitialModule( aInitialModule )
         , m_aLanguage( aLanguage )
 {
@@ -1156,7 +1157,7 @@ ExtensionIteratorBase::ExtensionIteratorBase( Databases& rDatabases,
     const OUString& aInitialModule, const OUString& aLanguage )
         : m_xContext( comphelper::getProcessComponentContext() )
         , m_rDatabases( rDatabases )
-        , m_eState( INITIAL_MODULE )
+        , m_eState( IteratorState::InitialModule )
         , m_aInitialModule( aInitialModule )
         , m_aLanguage( aLanguage )
 {
@@ -1254,7 +1255,7 @@ Reference< deployment::XPackage > ExtensionIteratorBase::implGetNextUserHelpPack
 
     if( m_iUserPackage == m_aUserPackagesSeq.getLength() )
     {
-        m_eState = SHARED_EXTENSIONS;       // Later: SHARED_MODULE
+        m_eState = IteratorState::SharedExtensions;       // Later: SHARED_MODULE
     }
     else
     {
@@ -1282,7 +1283,7 @@ Reference< deployment::XPackage > ExtensionIteratorBase::implGetNextSharedHelpPa
 
     if( m_iSharedPackage == m_aSharedPackagesSeq.getLength() )
     {
-        m_eState = BUNDLED_EXTENSIONS;
+        m_eState = IteratorState::BundledExtensions;
     }
     else
     {
@@ -1310,7 +1311,7 @@ Reference< deployment::XPackage > ExtensionIteratorBase::implGetNextBundledHelpP
 
     if( m_iBundledPackage == m_aBundledPackagesSeq.getLength() )
     {
-        m_eState = END_REACHED;
+        m_eState = IteratorState::EndReached;
     }
     else
     {
@@ -1399,20 +1400,20 @@ helpdatafileproxy::Hdf* DataBaseIterator::nextHdf( OUString* o_pExtensionPath, O
 {
     helpdatafileproxy::Hdf* pRetHdf = nullptr;
 
-    while( !pRetHdf && m_eState != END_REACHED )
+    while( !pRetHdf && m_eState != IteratorState::EndReached )
     {
         switch( m_eState )
         {
-            case INITIAL_MODULE:
+            case IteratorState::InitialModule:
                 pRetHdf = m_rDatabases.getHelpDataFile( m_aInitialModule, m_aLanguage, m_bHelpText );
-                m_eState = USER_EXTENSIONS;     // Later: SHARED_MODULE
+                m_eState = IteratorState::UserExtensions;     // Later: SHARED_MODULE
                 break;
 
             // Later:
             //case SHARED_MODULE
 
 
-            case USER_EXTENSIONS:
+            case IteratorState::UserExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextUserHelpPackage( xParentPackageBundle );
@@ -1422,7 +1423,7 @@ helpdatafileproxy::Hdf* DataBaseIterator::nextHdf( OUString* o_pExtensionPath, O
                 break;
             }
 
-            case SHARED_EXTENSIONS:
+            case IteratorState::SharedExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextSharedHelpPackage( xParentPackageBundle );
@@ -1433,7 +1434,7 @@ helpdatafileproxy::Hdf* DataBaseIterator::nextHdf( OUString* o_pExtensionPath, O
                 break;
             }
 
-               case BUNDLED_EXTENSIONS:
+               case IteratorState::BundledExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextBundledHelpPackage( xParentPackageBundle );
@@ -1444,8 +1445,8 @@ helpdatafileproxy::Hdf* DataBaseIterator::nextHdf( OUString* o_pExtensionPath, O
                 break;
             }
 
-            case END_REACHED:
-                OSL_FAIL( "DataBaseIterator::nextDb(): Invalid case END_REACHED" );
+            case IteratorState::EndReached:
+                OSL_FAIL( "DataBaseIterator::nextDb(): Invalid case IteratorState::EndReached" );
                 break;
         }
     }
@@ -1509,25 +1510,25 @@ OUString KeyDataBaseFileIterator::nextDbFile( bool& o_rbExtension )
 {
     OUString aRetFile;
 
-    while( aRetFile.isEmpty() && m_eState != END_REACHED )
+    while( aRetFile.isEmpty() && m_eState != IteratorState::EndReached )
     {
         switch( m_eState )
         {
-            case INITIAL_MODULE:
+            case IteratorState::InitialModule:
                 aRetFile = OUStringBuffer(m_rDatabases.getInstallPathAsURL()).
                     append(m_rDatabases.processLang(m_aLanguage)).append('/').
                     append(m_aInitialModule).append(".key").makeStringAndClear();
 
                 o_rbExtension = false;
 
-                m_eState = USER_EXTENSIONS;     // Later: SHARED_MODULE
+                m_eState = IteratorState::UserExtensions;     // Later: SHARED_MODULE
                 break;
 
             // Later:
             //case SHARED_MODULE
 
 
-            case USER_EXTENSIONS:
+            case IteratorState::UserExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextUserHelpPackage( xParentPackageBundle );
@@ -1539,7 +1540,7 @@ OUString KeyDataBaseFileIterator::nextDbFile( bool& o_rbExtension )
                 break;
             }
 
-            case SHARED_EXTENSIONS:
+            case IteratorState::SharedExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextSharedHelpPackage( xParentPackageBundle );
@@ -1551,7 +1552,7 @@ OUString KeyDataBaseFileIterator::nextDbFile( bool& o_rbExtension )
                 break;
             }
 
-            case BUNDLED_EXTENSIONS:
+            case IteratorState::BundledExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextBundledHelpPackage( xParentPackageBundle );
@@ -1563,8 +1564,8 @@ OUString KeyDataBaseFileIterator::nextDbFile( bool& o_rbExtension )
                 break;
             }
 
-            case END_REACHED:
-                OSL_FAIL( "DataBaseIterator::nextDbFile(): Invalid case END_REACHED" );
+            case IteratorState::EndReached:
+                OSL_FAIL( "DataBaseIterator::nextDbFile(): Invalid case IteratorState::EndReached" );
                 break;
         }
     }
@@ -1590,20 +1591,20 @@ Reference< XHierarchicalNameAccess > JarFileIterator::nextJarFile
 {
     Reference< XHierarchicalNameAccess > xNA;
 
-    while( !xNA.is() && m_eState != END_REACHED )
+    while( !xNA.is() && m_eState != IteratorState::EndReached )
     {
         switch( m_eState )
         {
-            case INITIAL_MODULE:
+            case IteratorState::InitialModule:
                 xNA = m_rDatabases.jarFile( m_aInitialModule, m_aLanguage );
-                m_eState = USER_EXTENSIONS;     // Later: SHARED_MODULE
+                m_eState = IteratorState::UserExtensions;     // Later: SHARED_MODULE
                 break;
 
             // Later:
             //case SHARED_MODULE
 
 
-            case USER_EXTENSIONS:
+            case IteratorState::UserExtensions:
             {
                 Reference< deployment::XPackage > xHelpPackage = implGetNextUserHelpPackage( o_xParentPackageBundle );
                 if( !xHelpPackage.is() )
@@ -1613,7 +1614,7 @@ Reference< XHierarchicalNameAccess > JarFileIterator::nextJarFile
                 break;
             }
 
-            case SHARED_EXTENSIONS:
+            case IteratorState::SharedExtensions:
             {
                 Reference< deployment::XPackage > xHelpPackage = implGetNextSharedHelpPackage( o_xParentPackageBundle );
                 if( !xHelpPackage.is() )
@@ -1623,7 +1624,7 @@ Reference< XHierarchicalNameAccess > JarFileIterator::nextJarFile
                 break;
             }
 
-            case BUNDLED_EXTENSIONS:
+            case IteratorState::BundledExtensions:
             {
                 Reference< deployment::XPackage > xHelpPackage = implGetNextBundledHelpPackage( o_xParentPackageBundle );
                 if( !xHelpPackage.is() )
@@ -1633,8 +1634,8 @@ Reference< XHierarchicalNameAccess > JarFileIterator::nextJarFile
                 break;
             }
 
-            case END_REACHED:
-                OSL_FAIL( "JarFileIterator::nextJarFile(): Invalid case END_REACHED" );
+            case IteratorState::EndReached:
+                OSL_FAIL( "JarFileIterator::nextJarFile(): Invalid case IteratorState::EndReached" );
                 break;
         }
     }
@@ -1707,11 +1708,11 @@ OUString IndexFolderIterator::nextIndexFolder( bool& o_rbExtension, bool& o_rbTe
 {
     OUString aIndexFolder;
 
-    while( aIndexFolder.isEmpty() && m_eState != END_REACHED )
+    while( aIndexFolder.isEmpty() && m_eState != IteratorState::EndReached )
     {
         switch( m_eState )
         {
-            case INITIAL_MODULE:
+            case IteratorState::InitialModule:
                 aIndexFolder = m_rDatabases.getInstallPathAsURL()
                     + m_rDatabases.processLang(m_aLanguage) + "/"
                     + m_aInitialModule + ".idxl";
@@ -1719,14 +1720,14 @@ OUString IndexFolderIterator::nextIndexFolder( bool& o_rbExtension, bool& o_rbTe
                 o_rbTemporary = false;
                 o_rbExtension = false;
 
-                m_eState = USER_EXTENSIONS;     // Later: SHARED_MODULE
+                m_eState = IteratorState::UserExtensions;     // Later: SHARED_MODULE
                 break;
 
             // Later:
             //case SHARED_MODULE
 
 
-            case USER_EXTENSIONS:
+            case IteratorState::UserExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextUserHelpPackage( xParentPackageBundle );
@@ -1738,7 +1739,7 @@ OUString IndexFolderIterator::nextIndexFolder( bool& o_rbExtension, bool& o_rbTe
                 break;
             }
 
-            case SHARED_EXTENSIONS:
+            case IteratorState::SharedExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextSharedHelpPackage( xParentPackageBundle );
@@ -1750,7 +1751,7 @@ OUString IndexFolderIterator::nextIndexFolder( bool& o_rbExtension, bool& o_rbTe
                 break;
             }
 
-            case BUNDLED_EXTENSIONS:
+            case IteratorState::BundledExtensions:
             {
                 Reference< deployment::XPackage > xParentPackageBundle;
                 Reference< deployment::XPackage > xHelpPackage = implGetNextBundledHelpPackage( xParentPackageBundle );
@@ -1762,8 +1763,8 @@ OUString IndexFolderIterator::nextIndexFolder( bool& o_rbExtension, bool& o_rbTe
                 break;
             }
 
-            case END_REACHED:
-                OSL_FAIL( "IndexFolderIterator::nextIndexFolder(): Invalid case END_REACHED" );
+            case IteratorState::EndReached:
+                OSL_FAIL( "IndexFolderIterator::nextIndexFolder(): Invalid case IteratorState::EndReached" );
                 break;
         }
     }

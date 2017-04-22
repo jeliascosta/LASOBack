@@ -20,7 +20,6 @@
 #include "CellLineStyleControl.hxx"
 #include "sc.hrc"
 #include "scresid.hxx"
-#include <CellAppearancePropertyPanel.hrc>
 #include "CellLineStyleValueSet.hxx"
 #include <vcl/i18nhelp.hxx>
 #include <vcl/settings.hxx>
@@ -33,33 +32,30 @@
 
 namespace sc { namespace sidebar {
 
-CellLineStyleControl::CellLineStyleControl(vcl::Window* pParent, CellAppearancePropertyPanel& rPanel)
-:   svx::sidebar::PopupControl(pParent, ScResId(RID_POPUPPANEL_APPEARANCE_CELL_LINESTYLE)),
-    mrCellAppearancePropertyPanel(rPanel),
-    maPushButtonMoreOptions(VclPtr<PushButton>::Create(this, ScResId(PB_OPTIONS))),
-    maCellLineStyleValueSet(VclPtr<sc::sidebar::CellLineStyleValueSet>::Create(this, ScResId(VS_STYLE))),
-    mbVSfocus(true)
+CellLineStylePopup::CellLineStylePopup(SfxDispatcher* pDispatcher)
+    : FloatingWindow(SfxGetpApp()->GetTopWindow(), "FloatingLineStyle", "modules/scalc/ui/floatinglinestyle.ui")
+    , mpDispatcher(pDispatcher)
+    , maCellLineStyleValueSet(VclPtr<sc::sidebar::CellLineStyleValueSet>::Create(get<vcl::Window>("box")))
 {
+    get(maPushButtonMoreOptions, "more");
     Initialize();
-    FreeResource();
 }
 
-CellLineStyleControl::~CellLineStyleControl()
+CellLineStylePopup::~CellLineStylePopup()
 {
     disposeOnce();
 }
 
-void CellLineStyleControl::dispose()
+void CellLineStylePopup::dispose()
 {
-    maPushButtonMoreOptions.disposeAndClear();
+    maPushButtonMoreOptions.clear();
     maCellLineStyleValueSet.disposeAndClear();
-    svx::sidebar::PopupControl::dispose();
+    FloatingWindow::dispose();
 }
 
-void CellLineStyleControl::Initialize()
+void CellLineStylePopup::Initialize()
 {
-    //maPushButtonMoreOptions->SetIcoPosX(2);
-    Link<Button*,void> aLink = LINK(this, CellLineStyleControl, PBClickHdl);
+    Link<Button*,void> aLink = LINK(this, CellLineStylePopup, PBClickHdl);
     maPushButtonMoreOptions->SetClickHdl(aLink);
 
     maCellLineStyleValueSet->SetStyle(maCellLineStyleValueSet->GetStyle()| WB_3DLOOK |  WB_NO_DIRECTSELECT);
@@ -88,20 +84,12 @@ void CellLineStyleControl::Initialize()
     }
 
     SetAllNoSel();
-    maCellLineStyleValueSet->SetSelectHdl(LINK(this, CellLineStyleControl, VSSelectHdl));
+    maCellLineStyleValueSet->SetSelectHdl(LINK(this, CellLineStylePopup, VSSelectHdl));
     maCellLineStyleValueSet->StartSelection();
     maCellLineStyleValueSet->Show();
 }
 
-void CellLineStyleControl::GetFocus()
-{
-    if (!mbVSfocus && maPushButtonMoreOptions)
-        maPushButtonMoreOptions->GrabFocus();
-    else if (maCellLineStyleValueSet)
-        maCellLineStyleValueSet->GrabFocus();
-}
-
-void CellLineStyleControl::SetAllNoSel()
+void CellLineStylePopup::SetAllNoSel()
 {
     maCellLineStyleValueSet->SelectItem(0);
     maCellLineStyleValueSet->SetNoSelection();
@@ -111,14 +99,13 @@ void CellLineStyleControl::SetAllNoSel()
     maCellLineStyleValueSet->StartSelection();
 }
 
-IMPL_LINK_TYPED(CellLineStyleControl, VSSelectHdl, ValueSet*, pControl, void)
+IMPL_LINK(CellLineStylePopup, VSSelectHdl, ValueSet*, pControl, void)
 {
     if(pControl == maCellLineStyleValueSet.get())
     {
         const sal_uInt16 iPos(maCellLineStyleValueSet->GetSelectItemId());
         SvxLineItem aLineItem(SID_FRAME_LINESTYLE);
-        using namespace ::com::sun::star::table::BorderLineStyle;
-        editeng::SvxBorderStyle nStyle = SOLID;
+        SvxBorderLineStyle nStyle = SvxBorderLineStyle::SOLID;
         sal_uInt16 n1 = 0;
         sal_uInt16 n2 = 0;
         sal_uInt16 n3 = 0;
@@ -143,31 +130,31 @@ IMPL_LINK_TYPED(CellLineStyleControl, VSSelectHdl, ValueSet*, pControl, void)
                 n1 = DEF_LINE_WIDTH_0;
                 n2 = DEF_LINE_WIDTH_0;
                 n3 = DEF_LINE_WIDTH_1;
-                nStyle = DOUBLE;
+                nStyle = SvxBorderLineStyle::DOUBLE;
                 break;
             case 6:
                 n1 = DEF_LINE_WIDTH_0;
                 n2 = DEF_LINE_WIDTH_0;
                 n3 = DEF_LINE_WIDTH_2;
-                nStyle = DOUBLE;
+                nStyle = SvxBorderLineStyle::DOUBLE;
                 break;
             case 7:
                 n1 = DEF_LINE_WIDTH_1;
                 n2 = DEF_LINE_WIDTH_2;
                 n3 = DEF_LINE_WIDTH_1;
-                nStyle = DOUBLE;
+                nStyle = SvxBorderLineStyle::DOUBLE;
                 break;
             case 8:
                 n1 = DEF_LINE_WIDTH_2;
                 n2 = DEF_LINE_WIDTH_0;
                 n3 = DEF_LINE_WIDTH_2;
-                nStyle = DOUBLE;
+                nStyle = SvxBorderLineStyle::DOUBLE;
                 break;
             case 9:
                 n1 = DEF_LINE_WIDTH_2;
                 n2 = DEF_LINE_WIDTH_2;
                 n3 = DEF_LINE_WIDTH_2;
-                nStyle = DOUBLE;
+                nStyle = SvxBorderLineStyle::DOUBLE;
                 break;
             default:
                 break;
@@ -176,30 +163,26 @@ IMPL_LINK_TYPED(CellLineStyleControl, VSSelectHdl, ValueSet*, pControl, void)
         editeng::SvxBorderLine aTmp;
         aTmp.GuessLinesWidths(nStyle, n1, n2, n3);
         aLineItem.SetLine( &aTmp );
-        mrCellAppearancePropertyPanel.GetBindings()->GetDispatcher()->ExecuteList(
+        mpDispatcher->ExecuteList(
             SID_FRAME_LINESTYLE, SfxCallMode::RECORD, { &aLineItem });
         SetAllNoSel();
-        mrCellAppearancePropertyPanel.EndCellLineStylePopupMode();
+        EndPopupMode();
     }
 }
 
-IMPL_LINK_TYPED(CellLineStyleControl, PBClickHdl, Button *, pPBtn, void)
+IMPL_LINK(CellLineStylePopup, PBClickHdl, Button *, pPBtn, void)
 {
-    if(pPBtn == maPushButtonMoreOptions.get())
+    if (pPBtn == maPushButtonMoreOptions.get())
     {
-        if(mrCellAppearancePropertyPanel.GetBindings())
-        {
-            mrCellAppearancePropertyPanel.GetBindings()->GetDispatcher()->Execute(SID_CELL_FORMAT_BORDER, SfxCallMode::ASYNCHRON);
-        }
-
-        mrCellAppearancePropertyPanel.EndCellLineStylePopupMode();
+        mpDispatcher->Execute(SID_CELL_FORMAT_BORDER, SfxCallMode::ASYNCHRON);
+        EndPopupMode();
     }
 }
 
-void CellLineStyleControl::SetLineStyleSelect(sal_uInt16 out, sal_uInt16 in, sal_uInt16 dis)
+void CellLineStylePopup::SetLineStyleSelect(sal_uInt16 out, sal_uInt16 in, sal_uInt16 dis)
 {
+    maCellLineStyleValueSet->GrabFocus();
     SetAllNoSel();
-    mbVSfocus = true;
 
     //FIXME: fully for new border line possibilities
 
@@ -242,7 +225,7 @@ void CellLineStyleControl::SetLineStyleSelect(sal_uInt16 out, sal_uInt16 in, sal
     else
     {
         maCellLineStyleValueSet->SetSelItem(0);
-        mbVSfocus = false;
+        maPushButtonMoreOptions->GrabFocus();
     }
     maCellLineStyleValueSet->SetFormat();
     maCellLineStyleValueSet->Invalidate();

@@ -24,7 +24,7 @@
 #include "unx/cupsmgr.hxx"
 #include <vcl/strhelper.hxx>
 
-#include "unx/saldata.hxx"
+#include "saldatabasic.hxx"
 
 #include "tools/urlobj.hxx"
 #include "tools/stream.hxx"
@@ -64,7 +64,7 @@ namespace psp
 
         public:
         SystemQueueInfo();
-        virtual ~SystemQueueInfo();
+        virtual ~SystemQueueInfo() override;
 
         bool hasChanged() const;
         OUString getCommand() const;
@@ -111,24 +111,19 @@ PrinterInfoManager::PrinterInfoManager( Type eType ) :
     m_bUseJobPatch( true ),
     m_aSystemDefaultPaper( "A4" )
 {
-    if( eType == Default )
-        m_pQueueInfo = new SystemQueueInfo();
-    initSystemDefaultPaper();
+    if( eType == Type::Default )
+        m_pQueueInfo.reset( new SystemQueueInfo );
+
+    m_aSystemDefaultPaper = OStringToOUString(
+        PaperInfo::toPSName(PaperInfo::getSystemDefaultPaper().getPaper()),
+        RTL_TEXTENCODING_UTF8);
 }
 
 PrinterInfoManager::~PrinterInfoManager()
 {
-    delete m_pQueueInfo;
     #if OSL_DEBUG_LEVEL > 1
     fprintf( stderr, "PrinterInfoManager: destroyed Manager of type %d\n", getType() );
     #endif
-}
-
-void PrinterInfoManager::initSystemDefaultPaper()
-{
-    m_aSystemDefaultPaper = OStringToOUString(
-        PaperInfo::toPSName(PaperInfo::getSystemDefaultPaper().getPaper()),
-        RTL_TEXTENCODING_UTF8);
 }
 
 bool PrinterInfoManager::checkPrintersChanged( bool bWait )
@@ -210,7 +205,7 @@ void PrinterInfoManager::initialize()
     std::list< OUString >::const_iterator print_dir_it;
     for( print_dir_it = aDirList.begin(); print_dir_it != aDirList.end(); ++print_dir_it )
     {
-        INetURLObject aFile( *print_dir_it, INetProtocol::File, INetURLObject::ENCODE_ALL );
+        INetURLObject aFile( *print_dir_it, INetProtocol::File, INetURLObject::EncodeMechanism::All );
         aFile.Append( PRINT_FILENAME );
         Config aConfig( aFile.PathToFileName() );
         if( aConfig.HasGroup( GLOBAL_DEFAULTS_GROUP ) )
@@ -277,7 +272,7 @@ void PrinterInfoManager::initialize()
     // now collect all available printers
     for( print_dir_it = aDirList.begin(); print_dir_it != aDirList.end(); ++print_dir_it )
     {
-        INetURLObject aDir( *print_dir_it, INetProtocol::File, INetURLObject::ENCODE_ALL );
+        INetURLObject aDir( *print_dir_it, INetProtocol::File, INetURLObject::EncodeMechanism::All );
         INetURLObject aFile( aDir );
         aFile.Append( PRINT_FILENAME );
 
@@ -377,7 +372,7 @@ void PrinterInfoManager::initialize()
                         *  porters: please append your platform to the Solaris
                         *  case if your platform has SystemV printing per default.
                         */
-                        #if defined SOLARIS
+                        #if defined __sun
                         aValue = "lp";
                         #else
                         aValue = "lpr";
@@ -483,7 +478,7 @@ void PrinterInfoManager::initialize()
         aDefaultPrinter.clear();
     m_aDefaultPrinter = aDefaultPrinter;
 
-    if( m_eType != Default )
+    if( m_eType != Type::Default )
         return;
 
     // add a default printer for every available print queue
@@ -504,7 +499,12 @@ void PrinterInfoManager::initialize()
             aMergeInfo.m_aContext.setValue( pMergeKey, pMergeValue );
     }
 
-    getSystemPrintQueues();
+    if( m_pQueueInfo && m_pQueueInfo->hasChanged() )
+    {
+        m_aSystemPrintCommand = m_pQueueInfo->getCommand();
+        m_pQueueInfo->getSystemQueues( m_aSystemPrintQueues );
+        m_pQueueInfo.reset();
+    }
     for( ::std::list< SystemPrintQueue >::iterator it = m_aSystemPrintQueues.begin(); it != m_aSystemPrintQueues.end(); ++it )
     {
         OUString aPrinterName( "<" );
@@ -546,23 +546,9 @@ const PrinterInfo& PrinterInfoManager::getPrinterInfo( const OUString& rPrinter 
     static PrinterInfo aEmptyInfo;
     std::unordered_map< OUString, Printer, OUStringHash >::const_iterator it = m_aPrinters.find( rPrinter );
 
-    DBG_ASSERT( it != m_aPrinters.end(), "Do not ask for info about nonexistent printers" );
+    SAL_WARN_IF( it == m_aPrinters.end(), "vcl", "Do not ask for info about nonexistent printers" );
 
     return it != m_aPrinters.end() ? it->second.m_aInfo : aEmptyInfo;
-}
-
-void PrinterInfoManager::changePrinterInfo( const OUString& rPrinter, const PrinterInfo& rNewInfo )
-{
-    std::unordered_map< OUString, Printer, OUStringHash >::iterator it = m_aPrinters.find( rPrinter );
-
-    DBG_ASSERT( it != m_aPrinters.end(), "Do not change nonexistent printers" );
-
-    if( it != m_aPrinters.end() )
-    {
-        it->second.m_aInfo      = rNewInfo;
-        it->second.m_bModified  = true;
-        writePrinterConfig();
-    }
 }
 
 // need to check writeability / creatability of config files
@@ -832,19 +818,6 @@ bool PrinterInfoManager::setDefaultPrinter( const OUString& rPrinterName )
         writePrinterConfig();
     }
     return bSuccess;
-}
-
-const std::list< PrinterInfoManager::SystemPrintQueue >& PrinterInfoManager::getSystemPrintQueues()
-{
-    if( m_pQueueInfo && m_pQueueInfo->hasChanged() )
-    {
-        m_aSystemPrintCommand = m_pQueueInfo->getCommand();
-        m_pQueueInfo->getSystemQueues( m_aSystemPrintQueues );
-        delete m_pQueueInfo;
-        m_pQueueInfo = nullptr;
-    }
-
-    return m_aSystemPrintQueues;
 }
 
 bool PrinterInfoManager::checkFeatureToken( const OUString& rPrinterName, const char* pToken ) const
@@ -1156,7 +1129,7 @@ void SystemQueueInfo::run()
         OStringBuffer aCmdLine( 128 );
         aCmdLine.append( rParm.pQueueCommand );
         #if OSL_DEBUG_LEVEL > 1
-        fprintf( stderr, "trying print queue command \"%s\" ... ", aParms[i].pQueueCommand );
+        fprintf( stderr, "trying print queue command \"%s\" ... ", rParm.pQueueCommand );
         #endif
         aCmdLine.append( " 2>/dev/null" );
         FILE *pPipe;

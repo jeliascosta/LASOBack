@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/chart2/XChartDocument.hpp>
 #include <fesh.hxx>
 #include <hintids.hxx>
 #include <hints.hxx>
@@ -92,7 +91,6 @@ bool ConvertTableToText( const SwTableNode *pConstTableNode, sal_Unicode cCh )
 
 const SwTable& SwEditShell::InsertTable( const SwInsertTableOptions& rInsTableOpts,
                                          sal_uInt16 nRows, sal_uInt16 nCols,
-                                         sal_Int16 eAdj,
                                          const SwTableAutoFormat* pTAFormat )
 {
     StartAllAction();
@@ -101,7 +99,7 @@ const SwTable& SwEditShell::InsertTable( const SwInsertTableOptions& rInsTableOp
     bool bEndUndo = 0 != pPos->nContent.GetIndex();
     if( bEndUndo )
     {
-        StartUndo( UNDO_START );
+        StartUndo( SwUndoId::START );
         GetDoc()->getIDocumentContentOperations().SplitNode( *pPos, false );
     }
 
@@ -109,10 +107,10 @@ const SwTable& SwEditShell::InsertTable( const SwInsertTableOptions& rInsTableOp
     // from pPos to the new content nodes in the table.
     const SwTable *pTable = GetDoc()->InsertTable( rInsTableOpts, *pPos,
                                                    nRows, nCols,
-                                                   eAdj, pTAFormat,
+                                                   css::text::HoriOrientation::FULL, pTAFormat,
                                                    nullptr, true );
     if( bEndUndo )
-        EndUndo( UNDO_END );
+        EndUndo( SwUndoId::END );
 
     EndAllAction();
     return *pTable;
@@ -120,7 +118,6 @@ const SwTable& SwEditShell::InsertTable( const SwInsertTableOptions& rInsTableOp
 
 bool SwEditShell::TextToTable( const SwInsertTableOptions& rInsTableOpts,
                                sal_Unicode cCh,
-                               sal_Int16 eAdj,
                                const SwTableAutoFormat* pTAFormat )
 {
     SwWait aWait( *GetDoc()->GetDocShell(), true );
@@ -130,7 +127,7 @@ bool SwEditShell::TextToTable( const SwInsertTableOptions& rInsTableOpts,
     {
         if( rPaM.HasMark() )
             bRet |= nullptr != GetDoc()->TextToTable( rInsTableOpts, rPaM, cCh,
-                                                eAdj, pTAFormat );
+                                                css::text::HoriOrientation::FULL, pTAFormat );
     }
     EndAllAction();
     return bRet;
@@ -175,7 +172,7 @@ bool SwEditShell::TableToText( sal_Unicode cCh )
 
     SwContentNode* pCNd = pCursor->GetContentNode();
     if( !pCNd )
-        pCursor->Move( fnMoveForward, fnGoContent );
+        pCursor->Move( fnMoveForward, GoInContent );
     else
         pCursor->GetPoint()->nContent.Assign( pCNd, 0 );
 
@@ -223,7 +220,7 @@ void SwEditShell::InsertDDETable( const SwInsertTableOptions& rInsTableOpts,
     bool bEndUndo = 0 != pPos->nContent.GetIndex();
     if( bEndUndo )
     {
-        StartUndo( UNDO_START );
+        StartUndo( SwUndoId::START );
         GetDoc()->getIDocumentContentOperations().SplitNode( *pPos, false );
     }
 
@@ -235,10 +232,10 @@ void SwEditShell::InsertDDETable( const SwInsertTableOptions& rInsTableOpts,
     SwTableNode* pTableNode = const_cast<SwTableNode*>(pTable->GetTabSortBoxes()[ 0 ]->
                                                 GetSttNd()->FindTableNode());
     SwDDETable* pDDETable = new SwDDETable( *pTable, pDDEType );
-    pTableNode->SetNewTable( pDDETable );       // setze die DDE-Tabelle
+    pTableNode->SetNewTable( pDDETable );       // set the DDE table
 
     if( bEndUndo )
-        EndUndo( UNDO_END );
+        EndUndo( SwUndoId::END );
 
     EndAllAction();
 }
@@ -248,7 +245,6 @@ void SwEditShell::UpdateTable()
 {
     const SwTableNode* pTableNd = IsCursorInTable();
 
-    // Keine Arme keine Kekse
     if( pTableNd )
     {
         StartAllAction();
@@ -305,7 +301,7 @@ bool SwEditShell::GetTableBoxFormulaAttrs( SfxItemSet& rSet ) const
             } while ( pFrame && !pFrame->IsCellFrame() );
             if ( pFrame )
             {
-                SwTableBox *pBox = const_cast<SwTableBox*>(static_cast<const SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox()));
+                SwTableBox *pBox = const_cast<SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox());
                 aBoxes.insert( pBox );
             }
         } while( false );
@@ -322,7 +318,7 @@ bool SwEditShell::GetTableBoxFormulaAttrs( SfxItemSet& rSet ) const
 
             SwTableFormulaUpdate aTableUpdate( &rTable );
             aTableUpdate.m_eFlags = TBL_BOXNAME;
-            static_cast<SwDoc*>(GetDoc())->getIDocumentFieldsAccess().UpdateTableFields( &aTableUpdate );
+            GetDoc()->getIDocumentFieldsAccess().UpdateTableFields( &aTableUpdate );
 
             rSet.Put( pTableFormat->GetAttrSet() );
         }
@@ -347,7 +343,7 @@ void SwEditShell::SetTableBoxFormulaAttrs( const SfxItemSet& rSet )
             } while ( pFrame && !pFrame->IsCellFrame() );
             if ( pFrame )
             {
-                SwTableBox *pBox = const_cast<SwTableBox*>(static_cast<const SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox()));
+                SwTableBox *pBox = const_cast<SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox());
                 aBoxes.insert( pBox );
             }
         } while( false );
@@ -358,12 +354,12 @@ void SwEditShell::SetTableBoxFormulaAttrs( const SfxItemSet& rSet )
         ClearTableBoxContent();
 
     StartAllAction();
-    GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
+    GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
     for (size_t n = 0; n < aBoxes.size(); ++n)
     {
         GetDoc()->SetTableBoxFormulaAttrs( *aBoxes[ n ], rSet );
     }
-    GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
+    GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
     EndAllAction();
 }
 
@@ -379,7 +375,7 @@ bool SwEditShell::IsTableBoxTextFormat() const
             pFrame = pFrame->GetUpper();
         } while ( pFrame && !pFrame->IsCellFrame() );
         if ( pFrame )
-            pBox = static_cast<const SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox());
+            pBox = static_cast<SwCellFrame*>(pFrame)->GetTabBox();
     }
 
     if( !pBox )
@@ -419,7 +415,7 @@ OUString SwEditShell::GetTableBoxText() const
                 pFrame = pFrame->GetUpper();
             } while ( pFrame && !pFrame->IsCellFrame() );
             if ( pFrame )
-                pBox = static_cast<const SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox());
+                pBox = static_cast<SwCellFrame*>(pFrame)->GetTabBox();
         }
 
         sal_uLong nNd;
@@ -429,18 +425,18 @@ OUString SwEditShell::GetTableBoxText() const
     return sRet;
 }
 
-bool SwEditShell::SplitTable( sal_uInt16 eMode )
+bool SwEditShell::SplitTable( SplitTable_HeadlineOption eMode )
 {
     bool bRet = false;
     SwPaM *pCursor = GetCursor();
     if( pCursor->GetNode().FindTableNode() )
     {
         StartAllAction();
-        GetDoc()->GetIDocumentUndoRedo().StartUndo(UNDO_EMPTY, nullptr);
+        GetDoc()->GetIDocumentUndoRedo().StartUndo(SwUndoId::EMPTY, nullptr);
 
         bRet = GetDoc()->SplitTable( *pCursor->GetPoint(), eMode, true );
 
-        GetDoc()->GetIDocumentUndoRedo().EndUndo(UNDO_EMPTY, nullptr);
+        GetDoc()->GetIDocumentUndoRedo().EndUndo(SwUndoId::EMPTY, nullptr);
         ClearFEShellTabCols();
         EndAllAction();
     }
@@ -454,11 +450,11 @@ bool SwEditShell::MergeTable( bool bWithPrev )
     if( pCursor->GetNode().FindTableNode() )
     {
         StartAllAction();
-        GetDoc()->GetIDocumentUndoRedo().StartUndo(UNDO_EMPTY, nullptr);
+        GetDoc()->GetIDocumentUndoRedo().StartUndo(SwUndoId::EMPTY, nullptr);
 
         bRet = GetDoc()->MergeTable( *pCursor->GetPoint(), bWithPrev );
 
-        GetDoc()->GetIDocumentUndoRedo().EndUndo(UNDO_EMPTY, nullptr);
+        GetDoc()->GetIDocumentUndoRedo().EndUndo(SwUndoId::EMPTY, nullptr);
         ClearFEShellTabCols();
         EndAllAction();
     }

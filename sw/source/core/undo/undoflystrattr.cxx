@@ -25,13 +25,13 @@ SwUndoFlyStrAttr::SwUndoFlyStrAttr( SwFlyFrameFormat& rFlyFrameFormat,
                                     const SwUndoId eUndoId,
                                     const OUString& sOldStr,
                                     const OUString& sNewStr )
-    : SwUndo( eUndoId ),
+    : SwUndo( eUndoId, rFlyFrameFormat.GetDoc() ),
       mrFlyFrameFormat( rFlyFrameFormat ),
       msOldStr( sOldStr ),
       msNewStr( sNewStr )
 {
-    assert(eUndoId == UNDO_FLYFRMFMT_TITLE
-        || eUndoId == UNDO_FLYFRMFMT_DESCRIPTION);
+    assert(eUndoId == SwUndoId::FLYFRMFMT_TITLE
+        || eUndoId == SwUndoId::FLYFRMFMT_DESCRIPTION);
 }
 
 SwUndoFlyStrAttr::~SwUndoFlyStrAttr()
@@ -42,12 +42,12 @@ void SwUndoFlyStrAttr::UndoImpl(::sw::UndoRedoContext &)
 {
     switch ( GetId() )
     {
-        case UNDO_FLYFRMFMT_TITLE:
+        case SwUndoId::FLYFRMFMT_TITLE:
         {
             mrFlyFrameFormat.SetObjTitle( msOldStr, true );
         }
         break;
-        case UNDO_FLYFRMFMT_DESCRIPTION:
+        case SwUndoId::FLYFRMFMT_DESCRIPTION:
         {
             mrFlyFrameFormat.SetObjDescription( msOldStr, true );
         }
@@ -62,12 +62,12 @@ void SwUndoFlyStrAttr::RedoImpl(::sw::UndoRedoContext &)
 {
     switch ( GetId() )
     {
-        case UNDO_FLYFRMFMT_TITLE:
+        case SwUndoId::FLYFRMFMT_TITLE:
         {
             mrFlyFrameFormat.SetObjTitle( msNewStr, true );
         }
         break;
-        case UNDO_FLYFRMFMT_DESCRIPTION:
+        case SwUndoId::FLYFRMFMT_DESCRIPTION:
         {
             mrFlyFrameFormat.SetObjDescription( msNewStr, true );
         }

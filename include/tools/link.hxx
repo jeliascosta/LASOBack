@@ -24,42 +24,42 @@
 
 #include <sal/types.h>
 
-#define DECL_LINK_TYPED(Member, ArgType, RetType) \
+#define DECL_LINK(Member, ArgType, RetType) \
     static RetType LinkStub##Member(void *, ArgType); \
     RetType Member(ArgType)
 
-#define DECL_STATIC_LINK_TYPED(Class, Member, ArgType, RetType) \
+#define DECL_STATIC_LINK(Class, Member, ArgType, RetType) \
     static RetType LinkStub##Member(void *, ArgType); \
     static RetType Member(Class *, ArgType)
 
-#define DECL_DLLPRIVATE_LINK_TYPED(Member, ArgType, RetType) \
+#define DECL_DLLPRIVATE_LINK(Member, ArgType, RetType) \
     SAL_DLLPRIVATE static RetType LinkStub##Member(void *, ArgType); \
     SAL_DLLPRIVATE RetType Member(ArgType)
 
-#define DECL_DLLPRIVATE_STATIC_LINK_TYPED(Class, Member, ArgType, RetType) \
+#define DECL_DLLPRIVATE_STATIC_LINK(Class, Member, ArgType, RetType) \
     SAL_DLLPRIVATE static RetType LinkStub##Member(void *, ArgType); \
     SAL_DLLPRIVATE static RetType Member(Class *, ArgType)
 
-#define IMPL_LINK_TYPED(Class, Member, ArgType, ArgName, RetType) \
+#define IMPL_LINK(Class, Member, ArgType, ArgName, RetType) \
     RetType Class::LinkStub##Member(void * instance, ArgType data) { \
         return static_cast<Class *>(instance)->Member(data); \
     } \
     RetType Class::Member(ArgType ArgName)
 
-#define IMPL_LINK_NOARG_TYPED(Class, Member, ArgType, RetType) \
+#define IMPL_LINK_NOARG(Class, Member, ArgType, RetType) \
     RetType Class::LinkStub##Member(void * instance, ArgType data) { \
         return static_cast<Class *>(instance)->Member(data); \
     } \
     RetType Class::Member(SAL_UNUSED_PARAMETER ArgType)
 
-#define IMPL_STATIC_LINK_TYPED( \
+#define IMPL_STATIC_LINK( \
         Class, Member, ArgType, ArgName, RetType) \
     RetType Class::LinkStub##Member(void * instance, ArgType data) { \
         return Member(static_cast<Class *>(instance), data); \
     } \
     RetType Class::Member(SAL_UNUSED_PARAMETER Class *, ArgType ArgName)
 
-#define IMPL_STATIC_LINK_NOARG_TYPED( \
+#define IMPL_STATIC_LINK_NOARG( \
         Class, Member, ArgType, RetType) \
     RetType Class::LinkStub##Member(void * instance, ArgType data) { \
         return Member(static_cast<Class *>(instance), data); \
@@ -68,7 +68,7 @@
         SAL_UNUSED_PARAMETER Class *, SAL_UNUSED_PARAMETER ArgType)
 
 #define LINK(Instance, Class, Member) ::tools::detail::makeLink( \
-    static_cast<Class *>(Instance), &Class::LinkStub##Member)
+    ::tools::detail::castTo<Class *>(Instance), &Class::LinkStub##Member)
 
 template<typename Arg, typename Ret>
 class SAL_WARN_UNUSED Link {
@@ -108,11 +108,15 @@ private:
     void * instance_;
 };
 
-
-// nondefined class used to indicate that the Call() parameter is not in use.
-class LinkParamNone;
+// Class used to indicate that the Call() parameter is not in use:
+class LinkParamNone { LinkParamNone() = delete; };
 
 namespace tools { namespace detail {
+
+// Avoids loplugin:redundantcast in LINK macro, in the common case that Instance
+// is already of type Class * (instead of a derived type):
+template<typename To, typename From> To castTo(From from)
+{ return static_cast<To>(from); }
 
 template<typename Arg, typename Ret>
 Link<Arg, Ret> makeLink(void * instance, Ret (* function)(void *, Arg)) {

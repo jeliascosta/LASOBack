@@ -29,7 +29,6 @@
 #include <svx/strarray.hxx>
 #include <sfx2/basedlgs.hxx>
 #include <svx/checklbx.hxx>
-#include <swlbox.hxx>
 #include <caption.hxx>
 
 class SwFieldMgr;
@@ -59,12 +58,12 @@ private:
     sal_uInt16       m_nLastTab;
     sal_Int32        m_nOldLinkMode;
 
-    DECL_LINK_TYPED(MetricHdl, ListBox&, void);
-    DECL_LINK_TYPED(StandardizedPageCountCheckHdl, Button*, void);
+    DECL_LINK(MetricHdl, ListBox&, void);
+    DECL_LINK(StandardizedPageCountCheckHdl, Button*, void);
 
 public:
     SwLoadOptPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwLoadOptPage();
+    virtual ~SwLoadOptPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent,
@@ -80,15 +79,27 @@ public:
     SwCaptionOptDlg(vcl::Window* pParent, const SfxItemSet& rSet);
 };
 
-class CaptionComboBox : public SwComboBox
+class CaptionComboBox : public ComboBox
 {
+    std::vector<OUString> m_EntryList;
+    std::vector<OUString> m_DelEntryList;
+    OUString              aDefault;
+
+    void InsertSorted(OUString const& rEntry);
+
 protected:
     virtual void KeyInput( const KeyEvent& ) override;
 
 public:
-    CaptionComboBox(vcl::Window* pParent, WinBits nStyle)
-        : SwComboBox(pParent, nStyle)
-    {}
+    CaptionComboBox(vcl::Window* pParent, WinBits nStyle);
+    virtual ~CaptionComboBox() override;
+
+    void                    InsertSwEntry(const OUString&);
+    virtual sal_Int32       InsertEntry(const OUString& rStr, sal_Int32 = COMBOBOX_APPEND) override;
+
+    virtual void            RemoveEntryAt(sal_Int32 nPos) override;
+
+    const OUString&         GetSwEntry(sal_Int32) const;
 };
 
 class SwCaptionPreview : public vcl::Window
@@ -100,10 +111,9 @@ private:
     Point maDrawPos;
 public:
     SwCaptionPreview(vcl::Window* pParent, WinBits nStyle);
-    void Init();
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
     void SetPreviewText( const OUString& rText );
-    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
     virtual Size GetOptimalSize() const override;
 };
 
@@ -153,12 +163,12 @@ private:
     SwFieldMgr* pMgr;
     bool bHTMLMode;
 
-    DECL_LINK_TYPED(SelectHdl, ComboBox&, void);
-    DECL_LINK_TYPED(SelectListBoxHdl, ListBox&, void);
-    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
-    DECL_LINK_TYPED( OrderHdl, ListBox&, void );
-    DECL_LINK_TYPED(ShowEntryHdl, SvTreeListBox*, void);
-    DECL_LINK_TYPED(SaveEntryHdl, SvTreeListBox*, void);
+    DECL_LINK(SelectHdl, ComboBox&, void);
+    DECL_LINK(SelectListBoxHdl, ListBox&, void);
+    DECL_LINK(ModifyHdl, Edit&, void);
+    DECL_LINK( OrderHdl, ListBox&, void );
+    DECL_LINK(ShowEntryHdl, SvTreeListBox*, void);
+    DECL_LINK(SaveEntryHdl, SvTreeListBox*, void);
 
     void DelUserData();
     void SetOptions(const sal_uLong nPos, const SwCapObjType eType, const SvGlobalName *pOleId = nullptr);
@@ -168,7 +178,7 @@ private:
 public:
                         SwCaptionOptPage( vcl::Window* pParent,
                                          const SfxItemSet& rSet );
-                        virtual ~SwCaptionOptPage();
+                        virtual ~SwCaptionOptPage() override;
     virtual void        dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent,

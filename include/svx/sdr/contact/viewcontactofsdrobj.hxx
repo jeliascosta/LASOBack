@@ -55,7 +55,7 @@ public:
 
     // basic constructor, used from SdrObject.
     explicit ViewContactOfSdrObj(SdrObject& rObj);
-    virtual ~ViewContactOfSdrObj();
+    virtual ~ViewContactOfSdrObj() override;
 
     // Access to possible sub-hierarchy
     virtual sal_uInt32 GetObjectCount() const override;
@@ -75,7 +75,7 @@ public:
     virtual drawinglayer::primitive2d::Primitive2DContainer createGluePointPrimitive2DSequence() const override;
 
     // allow embedding if needed (e.g. for SdrObjects, evtl. Name, Title and description get added). This
-    // is a helper normally used from getViewIndependentPrimitive2DSequence(), but there is one exception
+    // is a helper normally used from getViewIndependentPrimitive2DContainer(), but there is one exception
     // for 3D scenes
     virtual drawinglayer::primitive2d::Primitive2DContainer embedToObjectSpecificInformation(const drawinglayer::primitive2d::Primitive2DContainer& rSource) const override;
 };

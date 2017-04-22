@@ -51,6 +51,8 @@
 #include <globdoc.hxx>
 #include <svl/stritem.hxx>
 #include <unotools/moduleoptions.hxx>
+#include <comphelper/lok.hxx>
+#include <LibreOfficeKit/LibreOfficeKitEnums.h>
 #include <svl/visitem.hxx>
 #include <redline.hxx>
 #include <docary.hxx>
@@ -58,7 +60,6 @@
 #include <cmdid.h>
 #include <IDocumentRedlineAccess.hxx>
 
-//UUUU
 #include <doc.hxx>
 
 using namespace ::com::sun::star;
@@ -105,9 +106,9 @@ void SwView::GetState(SfxItemSet &rSet)
                         eFrameType = m_pWrtShell->GetFrameType(nullptr, true);
                         bGetFrameType = true;
                     }
-                    if (! ( ((eFrameType & FrameTypeFlags::FLY_ANY) && m_nSelectionType != nsSelectionType::SEL_DRW_TXT)||
-                        m_nSelectionType & nsSelectionType::SEL_TBL ||
-                        m_nSelectionType & nsSelectionType::SEL_DRW) )
+                    if (! ( ((eFrameType & FrameTypeFlags::FLY_ANY) && m_nSelectionType != SelectionType::DrawObjectEditMode)||
+                        m_nSelectionType & SelectionType::Table ||
+                        m_nSelectionType & SelectionType::DrawObject) )
                     {
                         rSet.DisableItem(nWhich);
                     }
@@ -146,6 +147,7 @@ void SwView::GetState(SfxItemSet &rSet)
             case SID_PRINTDOCDIRECT:
                 GetSlotState( nWhich, SfxViewShell::GetInterface(), &rSet );
             break;
+            case SID_ATTR_PAGE_ORIENTATION:
             case SID_ATTR_PAGE:
             case SID_ATTR_PAGE_SIZE:
             case SID_ATTR_PAGE_PAPERBIN:
@@ -155,7 +157,7 @@ void SwView::GetState(SfxItemSet &rSet)
                 const size_t nCurIdx = m_pWrtShell->GetCurPageDesc();
                 const SwPageDesc& rDesc = m_pWrtShell->GetPageDesc( nCurIdx );
 
-                //UUUU set correct parent to get the XFILL_NONE FillStyle as needed
+                // set correct parent to get the XFILL_NONE FillStyle as needed
                 if(!rSet.GetParent())
                 {
                     const SwFrameFormat& rMaster = rDesc.GetMaster();
@@ -237,17 +239,24 @@ void SwView::GetState(SfxItemSet &rSet)
             break;
             case SID_ATTR_LANGUAGE:
             {
-                rSet.Put(static_cast<const SvxLanguageItem&>(
-                    m_pWrtShell->GetDefault(RES_CHRATR_LANGUAGE)), SID_ATTR_LANGUAGE);
+                std::unique_ptr<SfxPoolItem> pNewItem(static_cast<const SvxLanguageItem&>(
+                    m_pWrtShell->GetDefault(RES_CHRATR_LANGUAGE)).CloneSetWhich(SID_ATTR_LANGUAGE));
+                rSet.Put(*pNewItem);
             }
             break;
             case RES_CHRATR_CJK_LANGUAGE:
-                rSet.Put(static_cast<const SvxLanguageItem&>(
-                    m_pWrtShell->GetDefault(RES_CHRATR_CJK_LANGUAGE)), RES_CHRATR_CJK_LANGUAGE);
+            {
+                std::unique_ptr<SfxPoolItem> pNewItem(static_cast<const SvxLanguageItem&>(
+                    m_pWrtShell->GetDefault(RES_CHRATR_CJK_LANGUAGE)).CloneSetWhich(RES_CHRATR_CJK_LANGUAGE));
+                rSet.Put(*pNewItem);
+            }
             break;
             case RES_CHRATR_CTL_LANGUAGE:
-                rSet.Put(static_cast<const SvxLanguageItem&>(
-                    m_pWrtShell->GetDefault(RES_CHRATR_CTL_LANGUAGE)), RES_CHRATR_CTL_LANGUAGE);
+            {
+                std::unique_ptr<SfxPoolItem> pNewItem(static_cast<const SvxLanguageItem&>(
+                    m_pWrtShell->GetDefault(RES_CHRATR_CTL_LANGUAGE)).CloneSetWhich(RES_CHRATR_CTL_LANGUAGE));
+                rSet.Put(*pNewItem);
+            }
             break;
             case FN_REDLINE_ON:
                 rSet.Put( SfxBoolItem( nWhich, GetDocShell()->IsChangeRecording() ) );
@@ -257,9 +266,7 @@ void SwView::GetState(SfxItemSet &rSet)
             break;
             case FN_REDLINE_SHOW:
             {
-                sal_uInt16 nMask = nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE;
-                rSet.Put( SfxBoolItem( nWhich,
-                    (m_pWrtShell->GetRedlineMode() & nMask) == nMask ));
+                rSet.Put( SfxBoolItem( nWhich, IDocumentRedlineAccess::IsShowChanges(m_pWrtShell->GetRedlineFlags()) ));
             }
             break;
             case SID_AVMEDIA_PLAYER :
@@ -277,11 +284,13 @@ void SwView::GetState(SfxItemSet &rSet)
             {
                 SwDoc *pDoc = m_pWrtShell->GetDoc();
                 SwPaM *pCursor = m_pWrtShell->GetCursor();
+                bool bDisable = false;
                 if (GetDocShell()->HasChangeRecordProtection())
-                    rSet.DisableItem(nWhich);
+                    bDisable = true;
                 else if (pCursor->HasMark())
-                { // If the selection does not contain redlines, disable accepting/rejecting changes.
-                    sal_uInt16 index = 0;
+                {
+                    // If the selection does not contain redlines, disable accepting/rejecting changes.
+                    SwRedlineTable::size_type index = 0;
                     const SwRedlineTable& table = pDoc->getIDocumentRedlineAccess().GetRedlineTable();
                     const SwRangeRedline* redline = table.FindAtPosition( *pCursor->Start(), index );
                     if( redline != nullptr && *redline->Start() == *pCursor->End())
@@ -301,14 +310,26 @@ void SwView::GetState(SfxItemSet &rSet)
                         }
                     }
                     if( redline == nullptr )
-                        rSet.DisableItem(nWhich);
+                        bDisable = true;
                 }
                 else
                 {
                     // If the cursor position isn't on a redline, disable
                     // accepting/rejecting changes.
                     if (nullptr == pDoc->getIDocumentRedlineAccess().GetRedline(*pCursor->Start(), nullptr))
-                        rSet.DisableItem(nWhich);
+                        bDisable = true;
+                }
+
+                // LibreOfficeKit wants to handle changes by index, so always allow here.
+                if (bDisable && !comphelper::LibreOfficeKit::isActive())
+                    rSet.DisableItem(nWhich);
+                if (comphelper::LibreOfficeKit::isActive())
+                {
+                    OString aPayload(".uno:TrackedChangeIndex=");
+                    SwRedlineTable::size_type nRedline = 0;
+                    if (pDoc->getIDocumentRedlineAccess().GetRedline(*pCursor->Start(), &nRedline))
+                        aPayload += OString::number(nRedline);
+                    libreOfficeKitViewCallback(LOK_CALLBACK_STATE_CHANGED, aPayload.getStr());
                 }
             }
             break;
@@ -407,8 +428,7 @@ void SwView::GetState(SfxItemSet &rSet)
                 if( !m_pShell )
                     SelectShell();
                 sal_uInt16 nAlias = 0;
-                bool bDraw = false;
-                if( m_nSelectionType & (nsSelectionType::SEL_DRW_TXT|nsSelectionType::SEL_TXT) )
+                if( m_nSelectionType & (SelectionType::DrawObjectEditMode|SelectionType::Text) )
                 {
                     switch( nWhich )
                     {
@@ -419,17 +439,6 @@ void SwView::GetState(SfxItemSet &rSet)
                         case SID_ALIGN_ANY_TOP      :   nAlias = SID_TABLE_VERT_NONE; break;
                         case SID_ALIGN_ANY_VCENTER  :   nAlias = SID_TABLE_VERT_CENTER; break;
                         case SID_ALIGN_ANY_BOTTOM   :   nAlias = SID_TABLE_VERT_BOTTOM; break;
-                    }
-                }
-                else if(m_nSelectionType & (nsSelectionType::SEL_DRW))
-                {
-                    //the draw shell cannot provide a status per item - only one for SID_OBJECT_ALIGN
-                    if(nWhich != SID_ALIGN_ANY_JUSTIFIED)
-                    {
-                        const SfxPoolItem* pItem = nullptr;
-                        GetViewFrame()->GetDispatcher()->QueryState( SID_OBJECT_ALIGN, pItem );
-                        if(pItem)
-                            bDraw = true;
                     }
                 }
                 else
@@ -449,8 +458,14 @@ void SwView::GetState(SfxItemSet &rSet)
                 if(nAlias)
                     GetViewFrame()->GetDispatcher()->QueryState( nAlias, pState );
                 if(pState)
-                    rSet.Put(*pState, nWhich);
-                else if(!bDraw)
+                {
+                    if (!(m_nSelectionType & SelectionType::DrawObject))
+                    {
+                        std::unique_ptr<SfxPoolItem> pNewItem(pState->CloneSetWhich(nWhich));
+                        rSet.Put(*pNewItem);
+                    }
+                }
+                else
                     rSet.DisableItem(nWhich);
             }
             break;
@@ -469,6 +484,15 @@ void SwView::GetDrawState(SfxItemSet &rSet)
         switch(nWhich)
         {
         case SID_DRAW_LINE:
+        case SID_DRAW_XLINE:
+        case SID_LINE_ARROW_END:
+        case SID_LINE_ARROW_CIRCLE:
+        case SID_LINE_ARROW_SQUARE:
+        case SID_LINE_ARROW_START:
+        case SID_LINE_CIRCLE_ARROW:
+        case SID_LINE_SQUARE_ARROW:
+        case SID_LINE_ARROWS:
+        case SID_DRAW_MEASURELINE:
         case SID_DRAW_RECT:
         case SID_DRAW_ELLIPSE:
         case SID_DRAW_XPOLYGON_NOFILL:
@@ -498,11 +522,6 @@ void SwView::GetDrawState(SfxItemSet &rSet)
                 rSet.Put( SfxBoolItem( nWhich, m_nDrawSfxId == nWhich ) );
             break;
 
-        case SID_SHOW_HIDDEN:
-        case SID_SHOW_FORMS:
-            rSet.DisableItem( nWhich );
-            break;
-
         case SID_DRAW_TEXT_MARQUEE:
             if (::GetHtmlMode(GetDocShell()) & HTMLMODE_SOME_STYLES)
                 rSet.Put( SfxBoolItem(nWhich, m_nDrawSfxId == nWhich));
@@ -516,6 +535,7 @@ void SwView::GetDrawState(SfxItemSet &rSet)
 
         case SID_INSERT_DRAW:
         case SID_FONTWORK_GALLERY_FLOATER :
+        case SID_DRAWTBX_ARROWS:
         {
             if ( bWeb )
                 rSet.DisableItem( nWhich );
@@ -539,17 +559,16 @@ void SwView::GetDrawState(SfxItemSet &rSet)
         }
 }
 
-bool SwView::HasUIFeature( sal_uInt32 nFeature )
+bool SwView::HasUIFeature(SfxShellFeature nFeature) const
 {
-    bool bRet = false;
+    assert((nFeature & ~SfxShellFeature::SwMask) == SfxShellFeature::NONE);
     switch(nFeature)
     {
-        case CHILDWIN_LABEL     : bRet = m_pWrtShell->IsLabelDoc(); break;
-#if HAVE_FEATURE_DBCONNECTIVITY
-        case CHILDWIN_MAILMERGE : bRet = nullptr != GetMailMergeConfigItem(); break;
-#endif
+    case SfxShellFeature::SwChildWindowLabel:
+        return m_pWrtShell->IsLabelDoc();
+    default:
+        return false;
     }
-    return bRet;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

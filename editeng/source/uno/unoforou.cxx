@@ -79,13 +79,10 @@ static SfxItemSet ImplOutlinerForwarderGetAttribs( const ESelection& rSel, EditE
 
         switch( nOnlyHardAttrib )
         {
-        case EditEngineAttribs_All:
+        case EditEngineAttribs::All:
             nFlags = GetAttribsFlags::ALL;
             break;
-        case EditEngineAttribs_HardAndPara:
-            nFlags = GetAttribsFlags::PARAATTRIBS|GetAttribsFlags::CHARATTRIBS;
-            break;
-        case EditEngineAttribs_OnlyHard:
+        case EditEngineAttribs::OnlyHard:
             nFlags = GetAttribsFlags::CHARATTRIBS;
             break;
         default:
@@ -101,7 +98,7 @@ static SfxItemSet ImplOutlinerForwarderGetAttribs( const ESelection& rSel, EditE
 
 SfxItemSet SvxOutlinerForwarder::GetAttribs( const ESelection& rSel, EditEngineAttribs nOnlyHardAttrib ) const
 {
-    if( mpAttribsCache && ( EditEngineAttribs_All == nOnlyHardAttrib ) )
+    if( mpAttribsCache && ( EditEngineAttribs::All == nOnlyHardAttrib ) )
     {
         // have we the correct set in cache?
         if( const_cast<SvxOutlinerForwarder*>(this)->maAttribCacheSelection.IsEqual(rSel) )
@@ -123,7 +120,7 @@ SfxItemSet SvxOutlinerForwarder::GetAttribs( const ESelection& rSel, EditEngineA
 
     SfxItemSet aSet( ImplOutlinerForwarderGetAttribs( rSel, nOnlyHardAttrib, rEditEngine ) );
 
-    if( EditEngineAttribs_All == nOnlyHardAttrib )
+    if( EditEngineAttribs::All == nOnlyHardAttrib )
     {
         mpAttribsCache = new SfxItemSet( aSet );
         maAttribCacheSelection = rSel;
@@ -290,18 +287,18 @@ EBulletInfo SvxOutlinerForwarder::GetBulletInfo( sal_Int32 nPara ) const
     return rOutliner.GetBulletInfo( nPara );
 }
 
-Rectangle SvxOutlinerForwarder::GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const
+tools::Rectangle SvxOutlinerForwarder::GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const
 {
     // EditEngine's 'internal' methods like GetCharacterBounds()
     // don't rotate for vertical text.
     Size aSize( rOutliner.CalcTextSize() );
-    ::std::swap( aSize.Width(), aSize.Height() );
+    std::swap( aSize.Width(), aSize.Height() );
     bool bIsVertical( rOutliner.IsVertical() );
 
     // #108900# Handle virtual position one-past-the end of the string
     if( nIndex >= GetTextLen(nPara) )
     {
-        Rectangle aLast;
+        tools::Rectangle aLast;
 
         if( nIndex )
         {
@@ -337,7 +334,7 @@ Rectangle SvxOutlinerForwarder::GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex
     }
 }
 
-Rectangle SvxOutlinerForwarder::GetParaBounds( sal_Int32 nPara ) const
+tools::Rectangle SvxOutlinerForwarder::GetParaBounds( sal_Int32 nPara ) const
 {
     Point aPnt = rOutliner.GetDocPosTopLeft( nPara );
     Size aSize = rOutliner.CalcTextSize();
@@ -349,13 +346,13 @@ Rectangle SvxOutlinerForwarder::GetParaBounds( sal_Int32 nPara ) const
         // don't rotate.
         sal_uLong nWidth = rOutliner.GetTextHeight( nPara );
 
-        return Rectangle( aSize.Width() - aPnt.Y() - nWidth, 0, aSize.Width() - aPnt.Y(), aSize.Height() );
+        return tools::Rectangle( aSize.Width() - aPnt.Y() - nWidth, 0, aSize.Width() - aPnt.Y(), aSize.Height() );
     }
     else
     {
         sal_uLong nHeight = rOutliner.GetTextHeight( nPara );
 
-        return Rectangle( 0, aPnt.Y(), aSize.Width(), aPnt.Y() + nHeight );
+        return tools::Rectangle( 0, aPnt.Y(), aSize.Width(), aPnt.Y() + nHeight );
     }
 }
 
@@ -372,7 +369,7 @@ OutputDevice* SvxOutlinerForwarder::GetRefDevice() const
 bool SvxOutlinerForwarder::GetIndexAtPoint( const Point& rPos, sal_Int32& nPara, sal_Int32& nIndex ) const
 {
     Size aSize( rOutliner.CalcTextSize() );
-    ::std::swap( aSize.Width(), aSize.Height() );
+    std::swap( aSize.Width(), aSize.Height() );
     Point aEEPos( SvxEditSourceHelper::UserSpaceToEE( rPos,
                                                       aSize,
                                                       rOutliner.IsVertical() ));
@@ -476,9 +473,9 @@ bool SvxOutlinerForwarder::SetDepth( sal_Int32 nPara, sal_Int16 nNewDepth )
         {
             rOutliner.SetDepth( pPara, nNewDepth );
 
-//          const bool bOutlinerText = pSdrObject && (pSdrObject->GetObjInventor() == SdrInventor) && (pSdrObject->GetObjIdentifier() == OBJ_OUTLINETEXT);
+//          const bool bOutlinerText = pSdrObject && (pSdrObject->GetObjInventor() == SdrInventor::Default) && (pSdrObject->GetObjIdentifier() == OBJ_OUTLINETEXT);
             if( bOutlinerText )
-                rOutliner.SetLevelDependendStyleSheet( nPara );
+                rOutliner.SetLevelDependentStyleSheet( nPara );
 
             return true;
         }

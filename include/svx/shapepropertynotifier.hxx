@@ -55,8 +55,6 @@ namespace svx
 
         virtual ~IPropertyValueProvider();
     };
-    typedef std::shared_ptr< IPropertyValueProvider >  PPropertyValueProvider;
-
 
     //= PropertyValueProvider
 
@@ -108,13 +106,13 @@ namespace svx
         PropertyChangeNotifier( ::cppu::OWeakObject& _rOwner, ::osl::Mutex& _rMutex );
         ~PropertyChangeNotifier();
 
-        // listener maintanance
+        // listener maintenance
         void addPropertyChangeListener( const OUString& _rPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener );
         void removePropertyChangeListener( const OUString& _rPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener );
 
         /** registers a IPropertyValueProvider
         */
-        void    registerProvider( const ShapeProperty _eProperty, const PPropertyValueProvider& _rProvider );
+        void    registerProvider( const ShapeProperty _eProperty, const std::shared_ptr<IPropertyValueProvider>& _rProvider );
 
         /** notifies changes in the given property to all registered listeners
 

@@ -21,8 +21,6 @@
 #include "dbastrings.hrc"
 #include <cppuhelper/typeprovider.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <osl/diagnose.h>
-#include <tools/debug.hxx>
 
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::lang;
@@ -45,7 +43,7 @@ OSubComponent::~OSubComponent()
 }
 
 // css::lang::XTypeProvider
-Sequence< Type > OSubComponent::getTypes() throw (RuntimeException, std::exception)
+Sequence< Type > OSubComponent::getTypes()
 {
     OTypeCollection aTypes(cppu::UnoType<XComponent>::get(),
                            cppu::UnoType<XTypeProvider>::get(),
@@ -55,10 +53,6 @@ Sequence< Type > OSubComponent::getTypes() throw (RuntimeException, std::excepti
 }
 
 // XInterface
-void OSubComponent::acquire() throw ( )
-{
-    OComponentHelper::acquire();
-}
 
 void OSubComponent::release() throw ( )
 {
@@ -82,13 +76,13 @@ void OSubComponent::release() throw ( )
                     m_xParent = nullptr;
                 }
 
-                OSL_ENSURE( m_refCount == 1, "OSubComponent::release: invalid ref count (before dispose)!" );
+                SAL_WARN_IF( m_refCount != 1, "dbaccess.core", "OSubComponent::release: invalid ref count (before dispose)!" );
 
                 // First dispose
                 dispose();
 
                 // only the alive ref holds the object
-                OSL_ENSURE( m_refCount == 1, "OSubComponent::release: invalid ref count (after dispose)!" );
+                SAL_WARN_IF( m_refCount != 1, "dbaccess.core", "OSubComponent::release: invalid ref count (after dispose)!" );
 
                 // release the parent in the ~
                 if (xParent.is())
@@ -109,7 +103,7 @@ void OSubComponent::release() throw ( )
     OWeakAggObject::release();
 }
 
-Any OSubComponent::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
+Any OSubComponent::queryInterface( const Type & rType )
 {
     Any aReturn;
     if (!rType.equals(cppu::UnoType<XAggregation>::get()))

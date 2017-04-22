@@ -98,6 +98,17 @@ namespace connectivity
             operator=(_rRH);
         }
 
+        ORowSetValue(ORowSetValue&& _rRH)
+            :m_eTypeKind(css::sdbc::DataType::VARCHAR)
+            ,m_bNull(true)
+            ,m_bBound(true)
+            ,m_bModified(false)
+            ,m_bSigned(true)
+        {
+            m_aValue.m_pString = nullptr;
+            operator=(_rRH);
+        }
+
         ORowSetValue(const OUString& _rRH)
             :m_eTypeKind(css::sdbc::DataType::VARCHAR)
             ,m_bNull(true)
@@ -120,7 +131,7 @@ namespace connectivity
             operator=(_rRH);
         }
 
-        ORowSetValue(const float& _rRH)
+        ORowSetValue(float _rRH)
             :m_eTypeKind(css::sdbc::DataType::FLOAT)
             ,m_bNull(true)
             ,m_bBound(true)
@@ -131,7 +142,7 @@ namespace connectivity
             operator=(_rRH);
         }
 
-        ORowSetValue(const sal_Int8& _rRH)
+        ORowSetValue(sal_Int8 _rRH)
             :m_eTypeKind(css::sdbc::DataType::TINYINT)
             ,m_bNull(true)
             ,m_bBound(true)
@@ -142,17 +153,7 @@ namespace connectivity
             operator=(_rRH);
         }
 
-        ORowSetValue(const sal_uInt8& _rRH)
-            :m_eTypeKind(css::sdbc::DataType::TINYINT)
-            ,m_bNull(true)
-            ,m_bBound(true)
-            ,m_bModified(false)
-            ,m_bSigned(false)
-        {
-            m_aValue.m_pString = nullptr;
-            operator=(_rRH);
-        }
-        ORowSetValue(const sal_Int16& _rRH)
+        ORowSetValue(sal_Int16 _rRH)
             :m_eTypeKind(css::sdbc::DataType::SMALLINT)
             ,m_bNull(true)
             ,m_bBound(true)
@@ -162,7 +163,7 @@ namespace connectivity
             m_aValue.m_pString = nullptr;
             operator=(_rRH);
         }
-        ORowSetValue(const sal_uInt16& _rRH)
+        ORowSetValue(sal_uInt16 _rRH)
             :m_eTypeKind(css::sdbc::DataType::SMALLINT)
             ,m_bNull(true)
             ,m_bBound(true)
@@ -172,7 +173,7 @@ namespace connectivity
             m_aValue.m_pString = nullptr;
             operator=(_rRH);
         }
-        ORowSetValue(const sal_Int32& _rRH)
+        ORowSetValue(sal_Int32 _rRH)
             :m_eTypeKind(css::sdbc::DataType::INTEGER)
             ,m_bNull(true)
             ,m_bBound(true)
@@ -182,7 +183,7 @@ namespace connectivity
             m_aValue.m_pString = nullptr;
             operator=(_rRH);
         }
-        ORowSetValue(const sal_uInt32& _rRH)
+        ORowSetValue(sal_uInt32 _rRH)
             :m_eTypeKind(css::sdbc::DataType::INTEGER)
             ,m_bNull(true)
             ,m_bBound(true)
@@ -192,7 +193,7 @@ namespace connectivity
             m_aValue.m_pString = nullptr;
             operator=(_rRH);
         }
-        ORowSetValue(const sal_Int64& _rRH)
+        ORowSetValue(sal_Int64 _rRH)
             :m_eTypeKind(css::sdbc::DataType::BIGINT)
             ,m_bNull(true)
             ,m_bBound(true)
@@ -202,7 +203,7 @@ namespace connectivity
             m_aValue.m_pString = nullptr;
             operator=(_rRH);
         }
-        ORowSetValue(const sal_uInt64& _rRH)
+        ORowSetValue(sal_uInt64 _rRH)
             :m_eTypeKind(css::sdbc::DataType::BIGINT)
             ,m_bNull(true)
             ,m_bBound(true)
@@ -213,7 +214,7 @@ namespace connectivity
             operator=(_rRH);
         }
 
-        ORowSetValue(const bool& _rRH)
+        ORowSetValue(bool _rRH)
             :m_eTypeKind(css::sdbc::DataType::BIT)
             ,m_bNull(true)
             ,m_bBound(true)
@@ -223,6 +224,7 @@ namespace connectivity
             m_aValue.m_pString = nullptr;
             operator=(_rRH);
         }
+        ORowSetValue(sal_Bool) = delete; // aka sal_uInt8
 
         ORowSetValue(const css::util::Date& _rRH)
             :m_eTypeKind(css::sdbc::DataType::DATE)
@@ -276,22 +278,23 @@ namespace connectivity
             free();
         }
 
-        inline static void * SAL_CALL operator new( size_t nSize )
+        static void * SAL_CALL operator new( size_t nSize )
             { return ::rtl_allocateMemory( nSize ); }
-        inline static void * SAL_CALL operator new( size_t,void* _pHint )
+        static void * SAL_CALL operator new( size_t,void* _pHint )
             { return _pHint; }
-        inline static void SAL_CALL operator delete( void * pMem )
+        static void SAL_CALL operator delete( void * pMem )
             { ::rtl_freeMemory( pMem ); }
-        inline static void SAL_CALL operator delete( void *,void* )
+        static void SAL_CALL operator delete( void *,void* )
             {  }
 
         ORowSetValue& operator=(const ORowSetValue& _rRH);
+        ORowSetValue& operator=(ORowSetValue&& _rRH);
 
         // simple types
         ORowSetValue& operator=(bool _rRH);
+        void operator =(sal_Bool) = delete; // aka sal_uInt8
 
         ORowSetValue& operator=(sal_Int8 _rRH);
-        ORowSetValue& operator=(sal_uInt8 _rRH);
 
         ORowSetValue& operator=(sal_Int16 _rRH);
         ORowSetValue& operator=(sal_uInt16 _rRH);
@@ -317,8 +320,8 @@ namespace connectivity
         ORowSetValue& operator=(const css::uno::Any& _rAny);
 
         operator bool() const   {   return !isNull() && getBool();    }
+        operator sal_Bool() const = delete; // aka sal_uInt8
         operator sal_Int8() const   {   return isNull() ? static_cast<sal_Int8>(0) : getInt8();   }
-        operator sal_uInt8() const  {   return isNull() ? static_cast<sal_uInt8>(0) : getUInt8(); }
 
         operator sal_Int16() const  {   return isNull() ? static_cast<sal_Int16>(0) : getInt16();   }
         operator sal_uInt16() const {   return isNull() ? static_cast<sal_uInt16>(0) : getUInt16(); }
@@ -453,16 +456,16 @@ namespace connectivity
         ORowSetValueDecorator(const ORowSetValue& _aValue) : m_aValue(_aValue){m_aValue.setBound(true);}
         ORowSetValueDecorator& operator=(const ORowSetValue& _aValue);
 
-        inline operator const ORowSetValue&()   const               { return m_aValue; }
-        inline bool operator ==( const ORowSetValue & _rRH )        { return m_aValue == _rRH; }
-        inline const ORowSetValue& getValue()   const               { return m_aValue; }
-        inline ORowSetValue& get()                                  { return m_aValue; }
-        inline void setValue(const ORowSetValue& _aValue)           { m_aValue = _aValue; }
-        inline void setNull()                                       { m_aValue.setNull(); }
-        inline void setBound(bool _bBound )                         { m_aValue.setBound(_bBound);}
-        inline bool isBound( ) const                                { return m_aValue.isBound();}
-        inline void setTypeKind(sal_Int32 _nType)                   { m_aValue.setTypeKind(_nType); }
-        inline void setModified(bool _bModified)                    { m_aValue.setModified(_bModified); }
+        operator const ORowSetValue&()   const               { return m_aValue; }
+        bool operator ==( const ORowSetValue & _rRH )        { return m_aValue == _rRH; }
+        const ORowSetValue& getValue()   const               { return m_aValue; }
+        ORowSetValue& get()                                  { return m_aValue; }
+        void setValue(const ORowSetValue& _aValue)           { m_aValue = _aValue; }
+        void setNull()                                       { m_aValue.setNull(); }
+        void setBound(bool _bBound )                         { m_aValue.setBound(_bBound);}
+        bool isBound( ) const                                { return m_aValue.isBound();}
+        void setTypeKind(sal_Int32 _nType)                   { m_aValue.setTypeKind(_nType); }
+        void setModified(bool _bModified)                    { m_aValue.setModified(_bModified); }
 
     };
     typedef ::rtl::Reference<ORowSetValueDecorator> ORowSetValueDecoratorRef;

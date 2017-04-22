@@ -95,7 +95,6 @@ static void checkLdapReturnCode(const sal_Char *aOperation,
 }
 
 void  LdapConnection::connectSimple(const LdapDefinition& aDefinition)
-   throw (ldap::LdapConnectionException, ldap::LdapGenericException)
 {
     OSL_ENSURE(!isValid(), "Re-connecting to an LDAP connection that is already established");
     if (isValid()) disconnect();
@@ -105,7 +104,6 @@ void  LdapConnection::connectSimple(const LdapDefinition& aDefinition)
 }
 
 void  LdapConnection::connectSimple()
-   throw (ldap::LdapConnectionException, ldap::LdapGenericException)
 {
     if (!isValid())
     {
@@ -134,8 +132,8 @@ void  LdapConnection::connectSimple()
         // Do the bind
 #ifdef _WIN32
         LdapErrCode retCode = ldap_simple_bind_sW(mConnection,
-                                               (PWCHAR) mLdapDefinition.mAnonUser.getStr(),
-                                               (PWCHAR) mLdapDefinition.mAnonCredentials.getStr() );
+                                               SAL_W(const_cast<sal_Unicode *>(mLdapDefinition.mAnonUser.getStr())),
+                                               SAL_W(const_cast<sal_Unicode *>(mLdapDefinition.mAnonCredentials.getStr())) );
 #else
         LdapErrCode retCode = ldap_simple_bind_s(mConnection,
                                                OUStringToOString( mLdapDefinition.mAnonUser, RTL_TEXTENCODING_UTF8 ).getStr(),
@@ -147,20 +145,16 @@ void  LdapConnection::connectSimple()
 }
 
 void LdapConnection::initConnection()
-    throw (ldap::LdapConnectionException)
 {
     if (mLdapDefinition.mServer.isEmpty())
     {
-        OUStringBuffer message ;
-
-        message.append("Cannot initialise connection to LDAP: No server specified.") ;
-        throw ldap::LdapConnectionException(message.makeStringAndClear()) ;
+        throw ldap::LdapConnectionException("Cannot initialise connection to LDAP: No server specified.");
     }
 
     if (mLdapDefinition.mPort == 0) mLdapDefinition.mPort = LDAP_PORT;
 
 #ifdef _WIN32
-    mConnection = ldap_initW((PWCHAR) mLdapDefinition.mServer.getStr(),
+    mConnection = ldap_initW(SAL_W(const_cast<sal_Unicode *>(mLdapDefinition.mServer.getStr())),
                             mLdapDefinition.mPort) ;
 #else
     mConnection = ldap_init(OUStringToOString( mLdapDefinition.mServer, RTL_TEXTENCODING_UTF8 ).getStr(),
@@ -168,20 +162,14 @@ void LdapConnection::initConnection()
 #endif
     if (mConnection == nullptr)
     {
-        OUStringBuffer message ;
-
-        message.append("Cannot initialise connection to LDAP server ") ;
-        message.append(mLdapDefinition.mServer) ;
-        message.append(":") ;
-        message.append(mLdapDefinition.mPort) ;
-        throw ldap::LdapConnectionException(message.makeStringAndClear());
+        throw ldap::LdapConnectionException(
+            "Cannot initialise connection to LDAP server "
+            + mLdapDefinition.mServer + ":" + OUString::number(mLdapDefinition.mPort));
     }
 }
 
  void LdapConnection::getUserProfile(
      const OUString& aUser, LdapData * data)
-    throw (lang::IllegalArgumentException,
-            ldap::LdapConnectionException, ldap::LdapGenericException)
 {
     OSL_ASSERT(data != nullptr);
     if (!isValid()) { connectSimple(); }
@@ -191,10 +179,10 @@ void LdapConnection::initConnection()
     LdapMessageHolder result;
 #ifdef _WIN32
     LdapErrCode retCode = ldap_search_sW(mConnection,
-                                      (PWCHAR) aUserDn.getStr(),
+                                      SAL_W(const_cast<sal_Unicode *>(aUserDn.getStr())),
                                       LDAP_SCOPE_BASE,
                                       const_cast<PWCHAR>( L"(objectclass=*)" ),
-                                      0,
+                                      nullptr,
                                       0, // Attributes + values
                                       &result.msg) ;
 #else
@@ -238,8 +226,6 @@ void LdapConnection::initConnection()
 }
 
  OUString LdapConnection::findUserDn(const OUString& aUser)
-    throw (lang::IllegalArgumentException,
-            ldap::LdapConnectionException, ldap::LdapGenericException)
 {
     if (!isValid()) { connectSimple(); }
 
@@ -258,11 +244,11 @@ void LdapConnection::initConnection()
 
     LdapMessageHolder result;
 #ifdef _WIN32
-    PWCHAR attributes [2] = { const_cast<PWCHAR>( L"1.1" ), NULL };
+    PWCHAR attributes [2] = { const_cast<PWCHAR>( L"1.1" ), nullptr };
     LdapErrCode retCode = ldap_search_sW(mConnection,
-                                      (PWCHAR) mLdapDefinition.mBaseDN.getStr(),
+                                      SAL_W(const_cast<sal_Unicode *>(mLdapDefinition.mBaseDN.getStr())),
                                       LDAP_SCOPE_SUBTREE,
-                                      (PWCHAR) filter.makeStringAndClear().getStr(), attributes, 0, &result.msg) ;
+                                      SAL_W(const_cast<sal_Unicode *>(filter.makeStringAndClear().getStr())), attributes, 0, &result.msg) ;
 #else
     sal_Char * attributes [2] = { const_cast<sal_Char *>(LDAP_NO_ATTRS), nullptr };
     LdapErrCode retCode = ldap_search_s(mConnection,

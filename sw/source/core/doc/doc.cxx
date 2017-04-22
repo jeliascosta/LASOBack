@@ -42,16 +42,9 @@
 #include <hintids.hxx>
 #include <tools/globname.hxx>
 #include <svx/svxids.hrc>
-#include <rtl/random.h>
 
-#include <com/sun/star/i18n/WordType.hpp>
-#include <com/sun/star/i18n/ForbiddenCharacters.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
-#include <com/sun/star/beans/NamedValue.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/document/XDocumentPropertiesSupplier.hpp>
-#include <com/sun/star/document/XDocumentProperties.hpp>
 #include <comphelper/string.hxx>
+#include <comphelper/random.hxx>
 #include <tools/urlobj.hxx>
 #include <tools/poly.hxx>
 #include <tools/multisel.hxx>
@@ -147,19 +140,19 @@ using namespace ::com::sun::star;
 /* IInterface */
 sal_Int32 SwDoc::acquire()
 {
-    OSL_ENSURE(mReferenceCount >= 0, "Negative reference count detected! This is a sign for unbalanced acquire/release calls.");
+    assert(mReferenceCount >= 0);
     return osl_atomic_increment(&mReferenceCount);
 }
 
 sal_Int32 SwDoc::release()
 {
-    OSL_PRECOND(mReferenceCount >= 1, "Object is already released! Releasing it again leads to a negative reference count.");
+    assert(mReferenceCount >= 1);
     return osl_atomic_decrement(&mReferenceCount);
 }
 
 sal_Int32 SwDoc::getReferenceCount() const
 {
-    OSL_ENSURE(mReferenceCount >= 0, "Negative reference count detected! This is a sign for unbalanced acquire/release calls.");
+    assert(mReferenceCount >= 0);
     return mReferenceCount;
 }
 
@@ -245,10 +238,8 @@ void SwDoc::setRsid( sal_uInt32 nVal )
     {
         // Increase the rsid with a random number smaller than 2^17. This way we
         // expect to be able to edit a document 2^12 times before rsid overflows.
-        static rtlRandomPool aPool = rtl_random_createPool();
-        rtl_random_getBytes( aPool, &nIncrease, sizeof ( nIncrease ) );
-        nIncrease &= ( 1<<17 ) - 1;
-        nIncrease++; // make sure the new rsid is not the same
+        // start from 1 to ensure the new rsid is not the same
+        nIncrease = comphelper::rng::uniform_uint_distribution(1, (1 << 17) - 1);
     }
     mnRsid = nVal + nIncrease;
 }
@@ -497,13 +488,13 @@ void SwDoc::ChgDBData(const SwDBData& rNewData)
         maDBData = rNewData;
         getIDocumentState().SetModified();
     }
-    getIDocumentFieldsAccess().GetSysFieldType(RES_DBNAMEFLD)->UpdateFields();
+    getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::DatabaseName)->UpdateFields();
 }
 
 struct PostItField_ : public SetGetExpField
 {
-    PostItField_( const SwNodeIndex& rNdIdx, const SwTextField* pField,  const SwIndex* pIdx = nullptr )
-        : SetGetExpField( rNdIdx, pField, pIdx ) {}
+    PostItField_( const SwNodeIndex& rNdIdx, const SwTextField* pField )
+        : SetGetExpField( rNdIdx, pField, nullptr ) {}
 
     sal_uInt16 GetPageNo( const StringRangeEnumerator &rRangeEnum,
             const std::set< sal_Int32 > &rPossiblePages,
@@ -551,8 +542,8 @@ bool sw_GetPostIts(
 {
     bool bHasPostIts = false;
 
-    SwFieldType* pFieldType = pIDFA->GetSysFieldType( RES_POSTITFLD );
-    OSL_ENSURE( pFieldType, "no PostItType ? ");
+    SwFieldType* pFieldType = pIDFA->GetSysFieldType( SwFieldIds::Postit );
+    assert(pFieldType);
 
     if( pFieldType->HasWriterListeners() )
     {
@@ -589,11 +580,11 @@ static void lcl_FormatPostIt(
 {
     static char const sTmp[] = " : ";
 
-    OSL_ENSURE( SwViewShell::GetShellRes(), "missing ShellRes" );
+    assert(SwViewShell::GetShellRes());
 
     if (bNewPage)
     {
-        pIDCO->InsertPoolItem( aPam, SvxFormatBreakItem( SVX_BREAK_PAGE_AFTER, RES_BREAK ) );
+        pIDCO->InsertPoolItem( aPam, SvxFormatBreakItem( SvxBreak::PageAfter, RES_BREAK ) );
         pIDCO->SplitNode( *aPam.GetPoint(), false );
     }
     else if (!bIsFirstPostIt)
@@ -627,7 +618,7 @@ static void lcl_FormatPostIt(
     aStr = pField->GetPar2();
 #if defined(_WIN32)
     // Throw out all CR in Windows
-    aStr = comphelper::string::remove(aStr, '\r');
+    aStr = aStr.replaceAll("\r", "");
 #endif
     pIDCO->InsertString( aPam, aStr );
 }
@@ -782,8 +773,8 @@ void SwDoc::UpdatePagesForPrintingWithPostItData(
 {
 
     SwPostItMode nPostItMode = static_cast<SwPostItMode>( rOptions.getIntValue( "PrintAnnotationMode", 0 ) );
-    OSL_ENSURE(nPostItMode == SwPostItMode::NONE || rData.HasPostItData(),
-            "print post-its without post-it data?" );
+    assert((nPostItMode == SwPostItMode::NONE || rData.HasPostItData())
+            && "print post-its without post-it data?");
     const SetGetExpFields::size_type nPostItCount =
         rData.HasPostItData() ? rData.m_pPostItFields->size() : 0;
     if (nPostItMode != SwPostItMode::NONE && nPostItCount > 0)
@@ -793,9 +784,9 @@ void SwDoc::UpdatePagesForPrintingWithPostItData(
         // clear document and move to end of it
         SwDoc & rPostItDoc(*rData.m_pPostItShell->GetDoc());
         SwPaM aPam(rPostItDoc.GetNodes().GetEndOfContent());
-        aPam.Move( fnMoveBackward, fnGoDoc );
+        aPam.Move( fnMoveBackward, GoInDoc );
         aPam.SetMark();
-        aPam.Move( fnMoveForward, fnGoDoc );
+        aPam.Move( fnMoveForward, GoInDoc );
         rPostItDoc.getIDocumentContentOperations().DeleteRange( aPam );
 
         const StringRangeEnumerator aRangeEnum( rData.GetPageRange(), 1, nDocPageCount, 0 );
@@ -867,11 +858,9 @@ void SwDoc::UpdatePagesForPrintingWithPostItData(
             const SwPageFrame * pPageFrame = static_cast<SwPageFrame*>(pPostItRoot->Lower());
             while( pPageFrame && nPageNum < nPostItDocPageCount )
             {
-                OSL_ENSURE( pPageFrame, "Empty page frame. How are we going to print this?" );
                 ++nPageNum;
                 // negative page number indicates page is from the post-it doc
                 rData.GetPagesToPrint().push_back( -nPageNum );
-                OSL_ENSURE( pPageFrame, "pPageFrame is NULL!" );
                 pPageFrame = static_cast<const SwPageFrame*>(pPageFrame->GetNext());
             }
             OSL_ENSURE( nPageNum == nPostItDocPageCount, "unexpected number of pages" );
@@ -893,7 +882,7 @@ void SwDoc::UpdatePagesForPrintingWithPostItData(
 
                 // add the post-it document pages to print, i.e those
                 // post-it pages that have the data for the above physical page
-                ::std::map<sal_Int32, sal_Int32>::const_iterator const iter(
+                std::map<sal_Int32, sal_Int32>::const_iterator const iter(
                         aPostItLastStartPageNum.find(nPhysPage));
                 if (iter != aPostItLastStartPageNum.end())
                 {
@@ -959,7 +948,6 @@ void SwDoc::CalculatePagePairsForProspectPrinting(
     const SwPageFrame *pPageFrame  = dynamic_cast<const SwPageFrame*>( rLayout.Lower() );
     while( pPageFrame && nPageNum < nDocPageCount )
     {
-        OSL_ENSURE( pPageFrame, "Empty page frame. How are we going to print this?" );
         ++nPageNum;
         rValidPagesSet.insert( nPageNum );
         validStartFrames[ nPageNum ] = pPageFrame;
@@ -1192,7 +1180,7 @@ static bool lcl_CheckSmartTagsAgain( const SwNodePtr& rpNd, void*  )
 void SwDoc::SpellItAgainSam( bool bInvalid, bool bOnlyWrong, bool bSmartTags )
 {
     std::set<SwRootFrame*> aAllLayouts = GetAllLayouts();
-    OSL_ENSURE( getIDocumentLayoutAccess().GetCurrentLayout(), "SpellAgain: Where's my RootFrame?" );
+    assert(getIDocumentLayoutAccess().GetCurrentLayout() && "SpellAgain: Where's my RootFrame?");
     if( bInvalid )
     {
         for ( auto aLayout : aAllLayouts )
@@ -1325,11 +1313,11 @@ void SwDoc::Summary( SwDoc* pExtDoc, sal_uInt8 nLevel, sal_uInt8 nPara, bool bIm
 bool SwDoc::RemoveInvisibleContent()
 {
     bool bRet = false;
-    GetIDocumentUndoRedo().StartUndo( UNDO_UI_DELETE_INVISIBLECNTNT, nullptr );
+    GetIDocumentUndoRedo().StartUndo( SwUndoId::UI_DELETE_INVISIBLECNTNT, nullptr );
 
     {
         SwTextNode* pTextNd;
-        SwIterator<SwFormatField,SwFieldType> aIter( *getIDocumentFieldsAccess().GetSysFieldType( RES_HIDDENPARAFLD )  );
+        SwIterator<SwFormatField,SwFieldType> aIter( *getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::HiddenPara )  );
         for( SwFormatField* pFormatField = aIter.First(); pFormatField;  pFormatField = aIter.Next() )
         {
             if( pFormatField->GetTextField() &&
@@ -1486,25 +1474,22 @@ bool SwDoc::RemoveInvisibleContent()
 
     if( bRet )
         getIDocumentState().SetModified();
-    GetIDocumentUndoRedo().EndUndo( UNDO_UI_DELETE_INVISIBLECNTNT, nullptr );
+    GetIDocumentUndoRedo().EndUndo( SwUndoId::UI_DELETE_INVISIBLECNTNT, nullptr );
     return bRet;
 }
 
 bool SwDoc::HasInvisibleContent() const
 {
-    if(SwIterator<SwFormatField,SwFieldType>(*getIDocumentFieldsAccess().GetSysFieldType( RES_HIDDENPARAFLD)).First())
+    if(SwIterator<SwFormatField,SwFieldType>(*getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::HiddenPara)).First())
         return true;
 
     // Search for any hidden paragraph (hidden text attribute)
     for( sal_uLong n = GetNodes().Count()-1; n; --n)
     {
         SwTextNode* pTextNd = GetNodes()[ n ]->GetTextNode();
-        if ( pTextNd )
-        {
-            SwPaM aPam(*pTextNd, 0, *pTextNd, pTextNd->GetText().getLength());
-            if( pTextNd->HasHiddenCharAttribute( true ) ||  ( pTextNd->HasHiddenCharAttribute( false ) ) )
-                return true;
-        }
+        if ( pTextNd &&
+             ( pTextNd->HasHiddenCharAttribute( true ) || pTextNd->HasHiddenCharAttribute( false ) ) )
+            return true;
     }
 
     for(auto pSectFormat : GetSections())
@@ -1521,9 +1506,9 @@ bool SwDoc::HasInvisibleContent() const
 
 bool SwDoc::RestoreInvisibleContent()
 {
-    SwUndoId nLastUndoId(UNDO_EMPTY);
+    SwUndoId nLastUndoId(SwUndoId::EMPTY);
     if (GetIDocumentUndoRedo().GetLastUndoInfo(nullptr, & nLastUndoId)
-        && (UNDO_UI_DELETE_INVISIBLECNTNT == nLastUndoId))
+        && (SwUndoId::UI_DELETE_INVISIBLECNTNT == nLastUndoId))
     {
         GetIDocumentUndoRedo().Undo();
         GetIDocumentUndoRedo().ClearRedo();
@@ -1536,7 +1521,7 @@ bool SwDoc::ConvertFieldsToText()
 {
     bool bRet = false;
     getIDocumentFieldsAccess().LockExpFields();
-    GetIDocumentUndoRedo().StartUndo( UNDO_UI_REPLACE, nullptr );
+    GetIDocumentUndoRedo().StartUndo( SwUndoId::UI_REPLACE, nullptr );
 
     const SwFieldTypes* pMyFieldTypes = getIDocumentFieldsAccess().GetFieldTypes();
     const SwFieldTypes::size_type nCount = pMyFieldTypes->size();
@@ -1545,16 +1530,16 @@ bool SwDoc::ConvertFieldsToText()
     {
         const SwFieldType *pCurType = (*pMyFieldTypes)[nType - 1];
 
-        if ( RES_POSTITFLD == pCurType->Which() )
+        if ( SwFieldIds::Postit == pCurType->Which() )
             continue;
 
         SwIterator<SwFormatField,SwFieldType> aIter( *pCurType );
-        ::std::vector<const SwFormatField*> aFieldFormats;
+        std::vector<const SwFormatField*> aFieldFormats;
         for( SwFormatField* pCurFieldFormat = aIter.First(); pCurFieldFormat; pCurFieldFormat = aIter.Next() )
             aFieldFormats.push_back(pCurFieldFormat);
 
-        ::std::vector<const SwFormatField*>::iterator aBegin = aFieldFormats.begin();
-        ::std::vector<const SwFormatField*>::iterator aEnd = aFieldFormats.end();
+        std::vector<const SwFormatField*>::iterator aBegin = aFieldFormats.begin();
+        std::vector<const SwFormatField*>::iterator aEnd = aFieldFormats.end();
         while(aBegin != aEnd)
         {
             const SwTextField *pTextField = (*aBegin)->GetTextField();
@@ -1571,20 +1556,20 @@ bool SwDoc::ConvertFieldsToText()
                 const SwField*  pField = rFormatField.GetField();
 
                 //#i55595# some fields have to be excluded in headers/footers
-                sal_uInt16 nWhich = pField->GetTyp()->Which();
+                SwFieldIds nWhich = pField->GetTyp()->Which();
                 if(!bInHeaderFooter ||
-                        (nWhich != RES_PAGENUMBERFLD &&
-                        nWhich != RES_CHAPTERFLD &&
-                        nWhich != RES_GETEXPFLD&&
-                        nWhich != RES_SETEXPFLD&&
-                        nWhich != RES_INPUTFLD&&
-                        nWhich != RES_REFPAGEGETFLD&&
-                        nWhich != RES_REFPAGESETFLD))
+                        (nWhich != SwFieldIds::PageNumber &&
+                        nWhich != SwFieldIds::Chapter &&
+                        nWhich != SwFieldIds::GetExp&&
+                        nWhich != SwFieldIds::SetExp&&
+                        nWhich != SwFieldIds::Input&&
+                        nWhich != SwFieldIds::RefPageGet&&
+                        nWhich != SwFieldIds::RefPageSet))
                 {
                     OUString sText = pField->ExpandField(true);
 
                     // database fields should not convert their command into text
-                    if( RES_DBFLD == pCurType->Which() && !static_cast<const SwDBField*>(pField)->IsInitialized())
+                    if( SwFieldIds::Database == pCurType->Which() && !static_cast<const SwDBField*>(pField)->IsInitialized())
                         sText.clear();
 
                     SwPaM aInsertPam(*pTextField->GetpTextNode(), pTextField->GetStart());
@@ -1631,7 +1616,7 @@ bool SwDoc::ConvertFieldsToText()
 
     if( bRet )
         getIDocumentState().SetModified();
-    GetIDocumentUndoRedo().EndUndo( UNDO_UI_REPLACE, nullptr );
+    GetIDocumentUndoRedo().EndUndo( SwUndoId::UI_REPLACE, nullptr );
     getIDocumentFieldsAccess().UnlockExpFields();
     return bRet;
 
@@ -1660,7 +1645,7 @@ void SwDoc::AppendUndoForInsertFromDB( const SwPaM& rPam, bool bIsTable )
         const SwTableNode* pTableNd = rPam.GetPoint()->nNode.GetNode().FindTableNode();
         if( pTableNd )
         {
-            SwUndoCpyTable* pUndo = new SwUndoCpyTable;
+            SwUndoCpyTable* pUndo = new SwUndoCpyTable(this);
             pUndo->SetTableSttIdx( pTableNd->GetIndex() );
             GetIDocumentUndoRedo().AppendUndo( pUndo );
         }
@@ -1679,7 +1664,7 @@ void SwDoc::ChgTOX(SwTOXBase & rTOX, const SwTOXBase & rNew)
     {
         GetIDocumentUndoRedo().DelAllUndoObj();
 
-        SwUndo * pUndo = new SwUndoTOXChange(&rTOX, rNew);
+        SwUndo * pUndo = new SwUndoTOXChange(this, &rTOX, rNew);
 
         GetIDocumentUndoRedo().AppendUndo(pUndo);
     }
@@ -1749,11 +1734,11 @@ void SwDoc::ChkCondColls()
      {
         SwTextFormatColl *pColl = (*mpTextFormatCollTable)[n];
         if (RES_CONDTXTFMTCOLL == pColl->Which())
-            pColl->CallSwClientNotify( SwAttrHint(RES_CONDTXTFMTCOLL) );
+            pColl->CallSwClientNotify( SwAttrHint() );
      }
 }
 
-uno::Reference< script::vba::XVBAEventProcessor >
+uno::Reference< script::vba::XVBAEventProcessor > const &
 SwDoc::GetVbaEventProcessor()
 {
 #if HAVE_FEATURE_SCRIPTING

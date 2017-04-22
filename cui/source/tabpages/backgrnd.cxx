@@ -150,14 +150,14 @@ class BackgroundPreviewImpl : public vcl::Window
 public:
     explicit BackgroundPreviewImpl(vcl::Window* pParent);
     void setBmp(bool bBmp);
-    virtual ~BackgroundPreviewImpl();
+    virtual ~BackgroundPreviewImpl() override;
     virtual void    dispose() override;
 
     void            NotifyChange( const Color&  rColor );
     void            NotifyChange( const Bitmap* pBitmap );
 
 protected:
-    virtual void    Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& /*rRenderContext*/, const ::tools::Rectangle& rRect ) override;
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
     virtual void    Resize() override;
 
@@ -169,7 +169,7 @@ private:
     Bitmap*         pBitmap;
     Point           aDrawPos;
     Size            aDrawSize;
-    Rectangle       aDrawRect;
+    ::tools::Rectangle       aDrawRect;
     sal_uInt8            nTransparency;
 };
 
@@ -282,11 +282,11 @@ void BackgroundPreviewImpl::recalcDrawPos()
 void BackgroundPreviewImpl::Resize()
 {
     Window::Resize();
-    aDrawRect = Rectangle(Point(0,0), GetOutputSizePixel());
+    aDrawRect = ::tools::Rectangle(Point(0,0), GetOutputSizePixel());
     recalcDrawPos();
 }
 
-void BackgroundPreviewImpl::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
+void BackgroundPreviewImpl::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle&)
 {
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
     rRenderContext.SetBackground(Wallpaper(rStyleSettings.GetWindowColor()));
@@ -381,7 +381,7 @@ SvxBackgroundTabPage::SvxBackgroundTabPage(vcl::Window* pParent, const SfxItemSe
 
     m_pBackgroundColorSet->SetSelectHdl( HDL(BackgroundColorHdl_Impl) );
     m_pBackgroundColorSet->SetStyle(m_pBackgroundColorSet->GetStyle() | WB_ITEMBORDER | WB_NAMEFIELD | WB_NONEFIELD);
-    m_pBackgroundColorSet->SetText(SVX_RESSTR(RID_SVXSTR_TRANSPARENT));
+    m_pBackgroundColorSet->SetText(SVX_RESSTR(RID_SVXSTR_NOFILL));
 }
 
 SvxBackgroundTabPage::~SvxBackgroundTabPage()
@@ -417,6 +417,7 @@ void SvxBackgroundTabPage::dispose()
     m_pTblLBox.clear();
     m_pBackGroundColorFrame.clear();
     m_pBackgroundColorSet.clear();
+    m_pBackGroundColorLabelFT.clear();
     m_pPreviewWin1.clear();
     m_pBtnPreview.clear();
     m_pBitmapContainer.clear();
@@ -624,8 +625,6 @@ void SvxBackgroundTabPage::ResetFromWallpaperItem( const SfxItemSet& rSet )
     In this case the condition of the preview button is saved.
 */
 void SvxBackgroundTabPage::FillUserData()
-
-
 {
     SetUserData( m_pBtnPreview->IsChecked() ? OUString('1') : OUString('0') );
 }
@@ -697,7 +696,7 @@ bool SvxBackgroundTabPage::FillItemSet( SfxItemSet* rCoreSet )
 
                 SvxGraphicPosition  eNewPos  = GetGraphicPosition_Impl();
                 const bool          bIsLink  = m_pBtnLink->IsChecked();
-                const bool          bWasLink = (nullptr != rOldItem.GetGraphicLink() );
+                const bool          bWasLink = !rOldItem.GetGraphicLink().isEmpty();
 
 
                 if ( !bIsLink && !bIsGraphicValid )
@@ -919,18 +918,18 @@ bool SvxBackgroundTabPage::FillItemSetWithWallpaperItem( SfxItemSet& rCoreSet, s
 }
 
 /** virtual method; is called on deactivation */
-SfxTabPage::sfxpg SvxBackgroundTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxBackgroundTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if ( pPageImpl->bIsImportDlgInExecute )
-        return KEEP_PAGE;
+        return DeactivateRC::KeepPage;
 
     if ( _pSet )
         FillItemSet( _pSet );
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
-void SvxBackgroundTabPage::PointChanged( vcl::Window* , RECT_POINT  )
+void SvxBackgroundTabPage::PointChanged( vcl::Window* , RectPoint  )
 {
     // has to be implemented so that position control can work
 }
@@ -952,8 +951,8 @@ void SvxBackgroundTabPage::ShowSelector()
 
         // delayed loading via timer (because of UI-Update)
         pPageImpl->pLoadIdle = new Idle("DelayedLoad");
-        pPageImpl->pLoadIdle->SetPriority( SchedulerPriority::LOWEST );
-        pPageImpl->pLoadIdle->SetIdleHdl(
+        pPageImpl->pLoadIdle->SetPriority( TaskPriority::LOWEST );
+        pPageImpl->pLoadIdle->SetInvokeHandler(
             LINK( this, SvxBackgroundTabPage, LoadIdleHdl_Impl ) );
 
         bAllowShowSelector = false;
@@ -1082,19 +1081,19 @@ void SvxBackgroundTabPage::SetGraphicPosition_Impl( SvxGraphicPosition ePos )
         {
             m_pBtnPosition->Check();
             m_pWndPosition->Enable();
-            RECT_POINT eNewPos = RP_MM;
+            RectPoint eNewPos = RectPoint::MM;
 
             switch ( ePos )
             {
                 case GPOS_MM:   break;
-                case GPOS_LT:   eNewPos = RP_LT; break;
-                case GPOS_MT:   eNewPos = RP_MT; break;
-                case GPOS_RT:   eNewPos = RP_RT; break;
-                case GPOS_LM:   eNewPos = RP_LM; break;
-                case GPOS_RM:   eNewPos = RP_RM; break;
-                case GPOS_LB:   eNewPos = RP_LB; break;
-                case GPOS_MB:   eNewPos = RP_MB; break;
-                case GPOS_RB:   eNewPos = RP_RB; break;
+                case GPOS_LT:   eNewPos = RectPoint::LT; break;
+                case GPOS_MT:   eNewPos = RectPoint::MT; break;
+                case GPOS_RT:   eNewPos = RectPoint::RT; break;
+                case GPOS_LM:   eNewPos = RectPoint::LM; break;
+                case GPOS_RM:   eNewPos = RectPoint::RM; break;
+                case GPOS_LB:   eNewPos = RectPoint::LB; break;
+                case GPOS_MB:   eNewPos = RectPoint::MB; break;
+                case GPOS_RB:   eNewPos = RectPoint::RB; break;
                 default: ;//prevent warning
             }
             m_pWndPosition->SetActualRP( eNewPos );
@@ -1114,15 +1113,15 @@ SvxGraphicPosition SvxBackgroundTabPage::GetGraphicPosition_Impl()
     {
         switch ( m_pWndPosition->GetActualRP() )
         {
-            case RP_LT: return GPOS_LT;
-            case RP_MT: return GPOS_MT;
-            case RP_RT: return GPOS_RT;
-            case RP_LM: return GPOS_LM;
-            case RP_MM: return GPOS_MM;
-            case RP_RM: return GPOS_RM;
-            case RP_LB: return GPOS_LB;
-            case RP_MB: return GPOS_MB;
-            case RP_RB: return GPOS_RB;
+            case RectPoint::LT: return GPOS_LT;
+            case RectPoint::MT: return GPOS_MT;
+            case RectPoint::RT: return GPOS_RT;
+            case RectPoint::LM: return GPOS_LM;
+            case RectPoint::MM: return GPOS_MM;
+            case RectPoint::RM: return GPOS_RM;
+            case RectPoint::LB: return GPOS_LB;
+            case RectPoint::MB: return GPOS_MB;
+            case RectPoint::RB: return GPOS_RB;
         }
     }
     return GPOS_MM;
@@ -1132,7 +1131,7 @@ SvxGraphicPosition SvxBackgroundTabPage::GetGraphicPosition_Impl()
 // Handler
 
 /** Handler, called when color selection is changed */
-IMPL_LINK_NOARG_TYPED(SvxBackgroundTabPage, BackgroundColorHdl_Impl, ValueSet*, void)
+IMPL_LINK_NOARG(SvxBackgroundTabPage, BackgroundColorHdl_Impl, ValueSet*, void)
 {
     sal_uInt16 nItemId = m_pBackgroundColorSet->GetSelectItemId();
     Color aColor = nItemId ? ( m_pBackgroundColorSet->GetItemColor( nItemId ) ) : Color( COL_TRANSPARENT );
@@ -1140,7 +1139,7 @@ IMPL_LINK_NOARG_TYPED(SvxBackgroundTabPage, BackgroundColorHdl_Impl, ValueSet*, 
     m_pPreviewWin1->NotifyChange( aBgdColor );
 }
 
-IMPL_LINK_NOARG_TYPED(SvxBackgroundTabPage, SelectHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxBackgroundTabPage, SelectHdl_Impl, ListBox&, void)
 {
     if ( drawing::FillStyle_SOLID == lcl_getFillStyle(m_pLbSelect) )
     {
@@ -1152,7 +1151,7 @@ IMPL_LINK_NOARG_TYPED(SvxBackgroundTabPage, SelectHdl_Impl, ListBox&, void)
     }
 }
 
-IMPL_LINK_TYPED( SvxBackgroundTabPage, FileClickHdl_Impl, Button*, pBox, void )
+IMPL_LINK( SvxBackgroundTabPage, FileClickHdl_Impl, Button*, pBox, void )
 {
     if (m_pBtnLink == pBox)
     {
@@ -1162,7 +1161,7 @@ IMPL_LINK_TYPED( SvxBackgroundTabPage, FileClickHdl_Impl, Button*, pBox, void )
             INetURLObject aObj( aBgdGraphicPath );
             OUString aFilePath;
             if ( aObj.GetProtocol() == INetProtocol::File )
-                aFilePath = aObj.getFSysPath( INetURLObject::FSYS_DETECT );
+                aFilePath = aObj.getFSysPath( FSysStyle::Detect );
             else
                 aFilePath = aBgdGraphicPath;
             m_pFtFile->SetText( aFilePath );
@@ -1198,7 +1197,7 @@ IMPL_LINK_TYPED( SvxBackgroundTabPage, FileClickHdl_Impl, Button*, pBox, void )
     }
 }
 
-IMPL_LINK_TYPED( SvxBackgroundTabPage, RadioClickHdl_Impl, Button*, pBtn, void )
+IMPL_LINK( SvxBackgroundTabPage, RadioClickHdl_Impl, Button*, pBtn, void )
 {
     if (pBtn == m_pBtnPosition)
     {
@@ -1218,7 +1217,7 @@ IMPL_LINK_TYPED( SvxBackgroundTabPage, RadioClickHdl_Impl, Button*, pBtn, void )
 /** Handler, called by pressing the browse button.
     Create graphic/insert dialog, set path and start.
 */
-IMPL_LINK_NOARG_TYPED(SvxBackgroundTabPage, BrowseHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxBackgroundTabPage, BrowseHdl_Impl, Button*, void)
 {
     if ( pPageImpl->pLoadIdle->IsActive() )
         return;
@@ -1254,7 +1253,7 @@ IMPL_LINK_NOARG_TYPED(SvxBackgroundTabPage, BrowseHdl_Impl, Button*, void)
     Graphic is only loaded, if it's
     different to the current graphic.
 */
-IMPL_LINK_TYPED( SvxBackgroundTabPage, LoadIdleHdl_Impl, Idle* , pIdle, void )
+IMPL_LINK( SvxBackgroundTabPage, LoadIdleHdl_Impl, Timer*, pIdle, void )
 {
     if ( pIdle == pPageImpl->pLoadIdle )
     {
@@ -1313,7 +1312,7 @@ void SvxBackgroundTabPage::ShowTblControl()
     m_pAsGrid->Show();
 }
 
-IMPL_LINK_TYPED( SvxBackgroundTabPage, TblDestinationHdl_Impl, ListBox&, rBox, void )
+IMPL_LINK( SvxBackgroundTabPage, TblDestinationHdl_Impl, ListBox&, rBox, void )
 {
     sal_Int32 nSelPos = rBox.GetSelectEntryPos();
     if( pTableBck_Impl && pTableBck_Impl->nActPos != nSelPos)

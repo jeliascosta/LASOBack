@@ -17,7 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <sal/config.h>
+
+#include <com/sun/star/io/IOException.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <osl/mutex.hxx>
 #include <osl/diagnose.h>
@@ -48,7 +51,7 @@
 #include <docsh.hxx>
 #include <swmodule.hxx>
 #include <swdll.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <svl/macitem.hxx>
 #include <editeng/acorrcfg.hxx>
 #include <comphelper/servicehelper.hxx>
@@ -69,7 +72,7 @@ SwXAutoTextContainer::~SwXAutoTextContainer()
 
 }
 
-sal_Int32 SwXAutoTextContainer::getCount() throw( uno::RuntimeException, std::exception )
+sal_Int32 SwXAutoTextContainer::getCount()
 {
     OSL_ENSURE(pGlossaries->GetGroupCnt() < static_cast<size_t>(SAL_MAX_INT32),
                "SwXAutoTextContainer::getCount: too many items");
@@ -77,7 +80,6 @@ sal_Int32 SwXAutoTextContainer::getCount() throw( uno::RuntimeException, std::ex
 }
 
 uno::Any SwXAutoTextContainer::getByIndex(sal_Int32 nIndex)
-    throw( lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     const size_t nCount = pGlossaries->GetGroupCnt();
@@ -86,20 +88,19 @@ uno::Any SwXAutoTextContainer::getByIndex(sal_Int32 nIndex)
     return getByName(pGlossaries->GetGroupName( static_cast<size_t>(nIndex) ));
 }
 
-uno::Type SwXAutoTextContainer::getElementType() throw( uno::RuntimeException, std::exception )
+uno::Type SwXAutoTextContainer::getElementType()
 {
     return cppu::UnoType<text::XAutoTextGroup>::get();
 
 }
 
-sal_Bool SwXAutoTextContainer::hasElements() throw( uno::RuntimeException, std::exception )
+sal_Bool SwXAutoTextContainer::hasElements()
 {
     // At least standard should always exists!
     return true;
 }
 
 uno::Any SwXAutoTextContainer::getByName(const OUString& GroupName)
-    throw( container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -114,7 +115,7 @@ uno::Any SwXAutoTextContainer::getByName(const OUString& GroupName)
     return makeAny( xGroup );
 }
 
-uno::Sequence< OUString > SwXAutoTextContainer::getElementNames() throw( uno::RuntimeException, std::exception )
+uno::Sequence< OUString > SwXAutoTextContainer::getElementNames()
 {
     SolarMutexGuard aGuard;
     const size_t nCount = pGlossaries->GetGroupCnt();
@@ -134,7 +135,6 @@ uno::Sequence< OUString > SwXAutoTextContainer::getElementNames() throw( uno::Ru
 }
 // Finds group names with or without path index.
 sal_Bool SwXAutoTextContainer::hasByName(const OUString& Name)
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     OUString sGroupName( pGlossaries->GetCompleteGroupName( Name ) );
@@ -145,7 +145,6 @@ sal_Bool SwXAutoTextContainer::hasByName(const OUString& Name)
 
 uno::Reference< text::XAutoTextGroup >  SwXAutoTextContainer::insertNewByName(
     const OUString& aGroupName)
-    throw( lang::IllegalArgumentException, container::ElementExistException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(hasByName(aGroupName))
@@ -174,7 +173,7 @@ uno::Reference< text::XAutoTextGroup >  SwXAutoTextContainer::insertNewByName(
     OUString sGroup(aGroupName);
     if (sGroup.indexOf(GLOS_DELIM)<0)
     {
-        sGroup += OUStringLiteral1<GLOS_DELIM>() + "0";
+        sGroup += OUStringLiteral1(GLOS_DELIM) + "0";
     }
     pGlossaries->NewGroupDoc(sGroup, sGroup.getToken(0, GLOS_DELIM));
 
@@ -186,7 +185,6 @@ uno::Reference< text::XAutoTextGroup >  SwXAutoTextContainer::insertNewByName(
 }
 
 void SwXAutoTextContainer::removeByName(const OUString& aGroupName)
-    throw( container::NoSuchElementException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     // At first find the name with path extension
@@ -196,17 +194,17 @@ void SwXAutoTextContainer::removeByName(const OUString& aGroupName)
     pGlossaries->DelGroupDoc(sGroupName);
 }
 
-OUString SwXAutoTextContainer::getImplementationName() throw( uno::RuntimeException, std::exception )
+OUString SwXAutoTextContainer::getImplementationName()
 {
     return OUString("SwXAutoTextContainer" );
 }
 
-sal_Bool SwXAutoTextContainer::supportsService(const OUString& rServiceName) throw( uno::RuntimeException, std::exception )
+sal_Bool SwXAutoTextContainer::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-uno::Sequence< OUString > SwXAutoTextContainer::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
+uno::Sequence< OUString > SwXAutoTextContainer::getSupportedServiceNames()
 {
     OUString sService("com.sun.star.text.AutoTextContainer");
     const uno::Sequence< OUString > aSeq( &sService, 1 );
@@ -224,7 +222,6 @@ const uno::Sequence< sal_Int8 > & SwXAutoTextGroup::getUnoTunnelId()
 }
 
 sal_Int64 SAL_CALL SwXAutoTextGroup::getSomething( const uno::Sequence< sal_Int8 >& rId )
-    throw(uno::RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
         && 0 == memcmp( getUnoTunnelId().getConstArray(),
@@ -250,7 +247,7 @@ SwXAutoTextGroup::~SwXAutoTextGroup()
 {
 }
 
-uno::Sequence< OUString > SwXAutoTextGroup::getTitles() throw( uno::RuntimeException, std::exception )
+uno::Sequence< OUString > SwXAutoTextGroup::getTitles()
 {
     SolarMutexGuard aGuard;
     std::unique_ptr<SwTextBlocks> pGlosGroup(pGlossaries ? pGlossaries->GetGroupDoc(m_sGroupName) : nullptr);
@@ -268,8 +265,6 @@ uno::Sequence< OUString > SwXAutoTextGroup::getTitles() throw( uno::RuntimeExcep
 
 void SwXAutoTextGroup::renameByName(const OUString& aElementName,
     const OUString& aNewElementName, const OUString& aNewElementTitle)
-    throw( lang::IllegalArgumentException, container::ElementExistException, io::IOException,
-                                                     uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     // throw exception only if the programmatic name is to be changed into an existing name
@@ -339,7 +334,6 @@ static bool lcl_CopySelToDoc( SwDoc* pInsDoc, OTextCursorHelper* pxCursor, SwXTe
 
 uno::Reference< text::XAutoTextEntry >  SwXAutoTextGroup::insertNewByName(const OUString& aName,
         const OUString& aTitle, const uno::Reference< text::XTextRange > & xTextRange)
-        throw( container::ElementExistException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(hasByName(aName))
@@ -380,7 +374,7 @@ uno::Reference< text::XAutoTextEntry >  SwXAutoTextGroup::insertNewByName(const 
         if(rCfg.IsSaveRelFile())
         {
             INetURLObject aTemp(pGlosGroup->GetFileName());
-            pGlosGroup->SetBaseURL( aTemp.GetMainURL(INetURLObject::NO_DECODE));
+            pGlosGroup->SetBaseURL( aTemp.GetMainURL(INetURLObject::DecodeMechanism::NONE));
         }
         else
             pGlosGroup->SetBaseURL( OUString() );
@@ -393,9 +387,9 @@ uno::Reference< text::XAutoTextEntry >  SwXAutoTextGroup::insertNewByName(const 
             pGlosGroup->ClearDoc();
             if( pGlosGroup->BeginPutDoc( sShortName, sLongName ) )
             {
-                pGDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_DELETE_REDLINES );
+                pGDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::DeleteRedlines );
                 lcl_CopySelToDoc( pGDoc, pxCursor, pxRange );
-                pGDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)( 0 ));
+                pGDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(RedlineFlags::NONE);
                 nRet = pGlosGroup->PutDoc();
             }
         }
@@ -436,7 +430,7 @@ uno::Reference< text::XAutoTextEntry >  SwXAutoTextGroup::insertNewByName(const 
     return xEntry;
 }
 
-void SwXAutoTextGroup::removeByName(const OUString& aEntryName) throw( container::NoSuchElementException, uno::RuntimeException, std::exception )
+void SwXAutoTextGroup::removeByName(const OUString& aEntryName)
 {
     SolarMutexGuard aGuard;
     std::unique_ptr<SwTextBlocks> pGlosGroup(pGlossaries ? pGlossaries->GetGroupDoc(m_sGroupName) : nullptr);
@@ -450,13 +444,13 @@ void SwXAutoTextGroup::removeByName(const OUString& aEntryName) throw( container
         throw container::NoSuchElementException();
 }
 
-OUString SwXAutoTextGroup::getName() throw( uno::RuntimeException, std::exception )
+OUString SwXAutoTextGroup::getName()
 {
     SolarMutexGuard aGuard;
     return sName;
 }
 
-void SwXAutoTextGroup::setName(const OUString& rName) throw( uno::RuntimeException, std::exception )
+void SwXAutoTextGroup::setName(const OUString& rName)
 {
     SolarMutexGuard aGuard;
     if( !pGlossaries )
@@ -484,7 +478,7 @@ void SwXAutoTextGroup::setName(const OUString& rName) throw( uno::RuntimeExcepti
     OUString sNewGroup(rName);
     if (sNewGroup.indexOf(GLOS_DELIM)<0)
     {
-        sNewGroup += OUStringLiteral1<GLOS_DELIM>() + "0";
+        sNewGroup += OUStringLiteral1(GLOS_DELIM) + "0";
     }
 
     //the name must be saved, the group may be invalidated while in RenameGroupDoc()
@@ -498,7 +492,7 @@ void SwXAutoTextGroup::setName(const OUString& rName) throw( uno::RuntimeExcepti
     pGlossaries = pTempGlossaries;
 }
 
-sal_Int32 SwXAutoTextGroup::getCount() throw( uno::RuntimeException, std::exception )
+sal_Int32 SwXAutoTextGroup::getCount()
 {
     SolarMutexGuard aGuard;
     std::unique_ptr<SwTextBlocks> pGlosGroup(pGlossaries ? pGlossaries->GetGroupDoc(m_sGroupName) : nullptr);
@@ -508,7 +502,6 @@ sal_Int32 SwXAutoTextGroup::getCount() throw( uno::RuntimeException, std::except
 }
 
 uno::Any SwXAutoTextGroup::getByIndex(sal_Int32 nIndex)
-    throw( lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     std::unique_ptr<SwTextBlocks> pGlosGroup(pGlossaries ? pGlossaries->GetGroupDoc(m_sGroupName) : nullptr);
@@ -520,13 +513,13 @@ uno::Any SwXAutoTextGroup::getByIndex(sal_Int32 nIndex)
     return getByName(pGlosGroup->GetShortName(static_cast<sal_uInt16>(nIndex)));
 }
 
-uno::Type SwXAutoTextGroup::getElementType() throw( uno::RuntimeException, std::exception )
+uno::Type SwXAutoTextGroup::getElementType()
 {
     return cppu::UnoType<text::XAutoTextEntry>::get();
 
 }
 
-sal_Bool SwXAutoTextGroup::hasElements() throw( uno::RuntimeException, std::exception )
+sal_Bool SwXAutoTextGroup::hasElements()
 {
     SolarMutexGuard aGuard;
     std::unique_ptr<SwTextBlocks> pGlosGroup(pGlossaries ? pGlossaries->GetGroupDoc(m_sGroupName) : nullptr);
@@ -537,7 +530,6 @@ sal_Bool SwXAutoTextGroup::hasElements() throw( uno::RuntimeException, std::exce
 }
 
 uno::Any SwXAutoTextGroup::getByName(const OUString& _rName)
-    throw( container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Reference< text::XAutoTextEntry > xEntry = pGlossaries->GetAutoTextEntry( m_sGroupName, sName, _rName );
@@ -547,7 +539,6 @@ uno::Any SwXAutoTextGroup::getByName(const OUString& _rName)
 }
 
 uno::Sequence< OUString > SwXAutoTextGroup::getElementNames()
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     std::unique_ptr<SwTextBlocks> pGlosGroup(pGlossaries ? pGlossaries->GetGroupDoc(m_sGroupName) : nullptr);
@@ -564,7 +555,6 @@ uno::Sequence< OUString > SwXAutoTextGroup::getElementNames()
 }
 
 sal_Bool SwXAutoTextGroup::hasByName(const OUString& rName)
-    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     bool bRet = false;
@@ -586,7 +576,6 @@ sal_Bool SwXAutoTextGroup::hasByName(const OUString& rName)
 }
 
 uno::Reference< beans::XPropertySetInfo >  SwXAutoTextGroup::getPropertySetInfo()
-    throw( uno::RuntimeException, std::exception )
 {
     static uno::Reference< beans::XPropertySetInfo >  xRet = pPropSet->getPropertySetInfo();
     return xRet;
@@ -594,8 +583,6 @@ uno::Reference< beans::XPropertySetInfo >  SwXAutoTextGroup::getPropertySetInfo(
 
 void SwXAutoTextGroup::setPropertyValue(
     const OUString& rPropertyName, const uno::Any& aValue)
-    throw( beans::UnknownPropertyException, beans::PropertyVetoException,
-         lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     const SfxItemPropertySimpleEntry*   pEntry = pPropSet->getPropertyMap().getByName( rPropertyName );
@@ -624,7 +611,6 @@ void SwXAutoTextGroup::setPropertyValue(
 }
 
 uno::Any SwXAutoTextGroup::getPropertyValue(const OUString& rPropertyName)
-    throw( beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     const SfxItemPropertySimpleEntry*   pEntry = pPropSet->getPropertyMap().getByName( rPropertyName);
@@ -639,10 +625,10 @@ uno::Any SwXAutoTextGroup::getPropertyValue(const OUString& rPropertyName)
     switch(pEntry->nWID)
     {
         case  WID_GROUP_PATH:
-            aAny <<= OUString(pGlosGroup->GetFileName());
+            aAny <<= pGlosGroup->GetFileName();
         break;
         case  WID_GROUP_TITLE:
-            aAny <<= OUString(pGlosGroup->GetName());
+            aAny <<= pGlosGroup->GetName();
         break;
     }
     return aAny;
@@ -650,25 +636,21 @@ uno::Any SwXAutoTextGroup::getPropertyValue(const OUString& rPropertyName)
 
 void SwXAutoTextGroup::addPropertyChangeListener(
     const OUString& /*PropertyName*/, const uno::Reference< beans::XPropertyChangeListener > & /*aListener*/)
-    throw( beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
 }
 
 void SwXAutoTextGroup::removePropertyChangeListener(
     const OUString& /*PropertyName*/, const uno::Reference< beans::XPropertyChangeListener > & /*aListener*/)
-    throw( beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
 }
 
 void SwXAutoTextGroup::addVetoableChangeListener(
     const OUString& /*PropertyName*/, const uno::Reference< beans::XVetoableChangeListener > & /*aListener*/)
-    throw( beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
 }
 
 void SwXAutoTextGroup::removeVetoableChangeListener(
     const OUString& /*PropertyName*/, const uno::Reference< beans::XVetoableChangeListener > & /*aListener*/)
-    throw( beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
 }
 
@@ -679,17 +661,17 @@ void SwXAutoTextGroup::Invalidate()
     m_sGroupName.clear();
 }
 
-OUString SwXAutoTextGroup::getImplementationName() throw( uno::RuntimeException, std::exception )
+OUString SwXAutoTextGroup::getImplementationName()
 {
     return OUString("SwXAutoTextGroup");
 }
 
-sal_Bool SwXAutoTextGroup::supportsService(const OUString& rServiceName) throw( uno::RuntimeException, std::exception )
+sal_Bool SwXAutoTextGroup::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-uno::Sequence< OUString > SwXAutoTextGroup::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
+uno::Sequence< OUString > SwXAutoTextGroup::getSupportedServiceNames()
 {
     uno::Sequence<OUString> aRet { "com.sun.star.text.AutoTextGroup" };
     return aRet;
@@ -706,7 +688,6 @@ const uno::Sequence< sal_Int8 > & SwXAutoTextEntry::getUnoTunnelId()
 }
 
 sal_Int64 SAL_CALL SwXAutoTextEntry::getSomething( const uno::Sequence< sal_Int8 >& rId )
-    throw(uno::RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
         && 0 == memcmp( getUnoTunnelId().getConstArray(),
@@ -719,31 +700,24 @@ sal_Int64 SAL_CALL SwXAutoTextEntry::getSomething( const uno::Sequence< sal_Int8
 
 SwXAutoTextEntry::SwXAutoTextEntry(SwGlossaries* pGlss, const OUString& rGroupName,
                                             const OUString& rEntryName) :
+    WeakComponentImplHelper(m_aMutex),
     pGlossaries(pGlss),
     sGroupName(rGroupName),
-    sEntryName(rEntryName),
-    pBodyText ( nullptr )
+    sEntryName(rEntryName)
 {
 }
 
 SwXAutoTextEntry::~SwXAutoTextEntry()
 {
-    {
-        SolarMutexGuard aGuard;
+    SolarMutexGuard aGuard;
 
-        // ensure that any pending modifications are written
-        implFlushDocument( true );
-
-        //! Bug #96559
-        // DocShell must be cleared before mutex is lost.
-        // Needs to be done explicitly since xDocSh is a class member.
-        // Thus, an own block here, guarded by the SolarMutex
-    }
+    // ensure that any pending modifications are written
+    implFlushDocument( true );
 }
 
 void SwXAutoTextEntry::implFlushDocument( bool _bCloseDoc )
 {
-    if ( xDocSh.Is() )
+    if ( xDocSh.is() )
     {
         if ( xDocSh->GetDoc()->getIDocumentState().IsModified () )
             xDocSh->Save();
@@ -751,39 +725,38 @@ void SwXAutoTextEntry::implFlushDocument( bool _bCloseDoc )
         if ( _bCloseDoc )
         {
             // stop listening at the document
-            EndListening( *&xDocSh );
+            EndListening( *xDocSh );
 
             xDocSh->DoClose();
-            xDocSh.Clear();
+            xDocSh.clear();
         }
     }
 }
 
 void SwXAutoTextEntry::Notify( SfxBroadcaster& _rBC, const SfxHint& _rHint )
 {
-    if ( &_rBC == &xDocSh )
+    if ( &_rBC == xDocSh.get() )
     {   // it's our document
-        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &_rHint );
-        if ( pSimpleHint )
+        if (const SfxEventHint* pEventHint = dynamic_cast<const SfxEventHint*>(&_rHint))
         {
-            if ( SFX_HINT_DEINITIALIZING == pSimpleHint->GetId() )
+            if (SfxEventHintId::PrepareCloseDoc == pEventHint->GetEventId())
+            {
+                implFlushDocument();
+                mxBodyText.clear();
+                EndListening( *xDocSh );
+                xDocSh.clear();
+            }
+        }
+        else
+        {
+            if ( SfxHintId::Deinitializing == _rHint.GetId() )
             {
                 // our document is dying (possibly because we're shuting down, and the document was notified
                 // earlier than we are?)
                 // stop listening at the docu
-                EndListening( *&xDocSh );
+                EndListening( *xDocSh );
                 // and release our reference
-                xDocSh.Clear();
-            }
-        }
-        else if(dynamic_cast<const SfxEventHint*>(&_rHint))
-        {
-            if(SFX_EVENT_PREPARECLOSEDOC == static_cast< const SfxEventHint& >( _rHint ).GetEventId())
-            {
-                implFlushDocument();
-                xBodyText = nullptr;
-                EndListening( *&xDocSh );
-                xDocSh.Clear();
+                xDocSh.clear();
             }
         }
     }
@@ -794,101 +767,103 @@ void SwXAutoTextEntry::GetBodyText ()
     SolarMutexGuard aGuard;
 
     xDocSh = pGlossaries->EditGroupDoc ( sGroupName, sEntryName, false );
-    OSL_ENSURE( xDocSh.Is(), "SwXAutoTextEntry::GetBodyText: unexpected: no doc returned by EditGroupDoc!" );
+    OSL_ENSURE( xDocSh.is(), "SwXAutoTextEntry::GetBodyText: unexpected: no doc returned by EditGroupDoc!" );
 
     // start listening at the document
-    StartListening( *&xDocSh );
+    StartListening( *xDocSh );
 
-    pBodyText = new SwXBodyText ( xDocSh->GetDoc() );
-    xBodyText.set( *pBodyText, uno::UNO_QUERY);
+    mxBodyText = new SwXBodyText ( xDocSh->GetDoc() );
 }
 
-uno::Reference< text::XTextCursor >  SwXAutoTextEntry::createTextCursor() throw( uno::RuntimeException, std::exception )
+void SwXAutoTextEntry::disposing()
+{
+    SolarMutexGuard g;
+    implFlushDocument(true);
+}
+
+uno::Reference< text::XTextCursor >  SwXAutoTextEntry::createTextCursor()
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    return pBodyText->createTextCursor();
+    return mxBodyText->createTextCursor();
 }
 
 uno::Reference< text::XTextCursor >  SwXAutoTextEntry::createTextCursorByRange(
-    const uno::Reference< text::XTextRange > & aTextPosition) throw( uno::RuntimeException, std::exception )
+    const uno::Reference< text::XTextRange > & aTextPosition)
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    return pBodyText->createTextCursorByRange ( aTextPosition );
+    return mxBodyText->createTextCursorByRange ( aTextPosition );
 }
 
-void SwXAutoTextEntry::insertString(const uno::Reference< text::XTextRange > & xRange, const OUString& aString, sal_Bool bAbsorb) throw( uno::RuntimeException, std::exception )
+void SwXAutoTextEntry::insertString(const uno::Reference< text::XTextRange > & xRange, const OUString& aString, sal_Bool bAbsorb)
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    pBodyText->insertString ( xRange, aString, bAbsorb );
+    mxBodyText->insertString ( xRange, aString, bAbsorb );
 }
 
 void SwXAutoTextEntry::insertControlCharacter(const uno::Reference< text::XTextRange > & xRange,
     sal_Int16 nControlCharacter, sal_Bool bAbsorb)
-        throw( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    pBodyText->insertControlCharacter ( xRange, nControlCharacter, bAbsorb );
+    mxBodyText->insertControlCharacter ( xRange, nControlCharacter, bAbsorb );
 }
 
 void SwXAutoTextEntry::insertTextContent(
     const uno::Reference< text::XTextRange > & xRange,
     const uno::Reference< text::XTextContent > & xContent, sal_Bool bAbsorb)
-        throw( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    pBodyText->insertTextContent ( xRange, xContent, bAbsorb );
+    mxBodyText->insertTextContent ( xRange, xContent, bAbsorb );
 }
 
 void SwXAutoTextEntry::removeTextContent(
     const uno::Reference< text::XTextContent > & xContent)
-        throw( container::NoSuchElementException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    pBodyText->removeTextContent ( xContent );
+    mxBodyText->removeTextContent ( xContent );
 }
 
-uno::Reference< text::XText >  SwXAutoTextEntry::getText() throw( uno::RuntimeException, std::exception )
+uno::Reference< text::XText >  SwXAutoTextEntry::getText()
 {
     SolarMutexGuard aGuard;
     uno::Reference< text::XText >  xRet =  static_cast<text::XText*>(this);
     return xRet;
 }
 
-uno::Reference< text::XTextRange >  SwXAutoTextEntry::getStart() throw( uno::RuntimeException, std::exception )
+uno::Reference< text::XTextRange >  SwXAutoTextEntry::getStart()
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    return pBodyText->getStart();
+    return mxBodyText->getStart();
 }
 
-uno::Reference< text::XTextRange >  SwXAutoTextEntry::getEnd() throw( uno::RuntimeException, std::exception )
+uno::Reference< text::XTextRange >  SwXAutoTextEntry::getEnd()
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    return pBodyText->getEnd();
+    return mxBodyText->getEnd();
 }
 
-OUString SwXAutoTextEntry::getString() throw( uno::RuntimeException, std::exception )
+OUString SwXAutoTextEntry::getString()
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    return pBodyText->getString();
+    return mxBodyText->getString();
 }
 
-void SwXAutoTextEntry::setString(const OUString& aString) throw( uno::RuntimeException, std::exception )
+void SwXAutoTextEntry::setString(const OUString& aString)
 {
     SolarMutexGuard aGuard;
     EnsureBodyText();
-    pBodyText->setString( aString );
+    mxBodyText->setString( aString );
 }
 
-void SwXAutoTextEntry::applyTo(const uno::Reference< text::XTextRange > & xTextRange)throw( uno::RuntimeException, std::exception )
+void SwXAutoTextEntry::applyTo(const uno::Reference< text::XTextRange > & xTextRange)
 {
     SolarMutexGuard aGuard;
 
@@ -960,24 +935,23 @@ void SwXAutoTextEntry::applyTo(const uno::Reference< text::XTextRange > & xTextR
         throw uno::RuntimeException();
 }
 
-OUString SwXAutoTextEntry::getImplementationName() throw( uno::RuntimeException, std::exception )
+OUString SwXAutoTextEntry::getImplementationName()
 {
     return OUString("SwXAutoTextEntry");
 }
 
-sal_Bool SwXAutoTextEntry::supportsService(const OUString& rServiceName) throw( uno::RuntimeException, std::exception )
+sal_Bool SwXAutoTextEntry::supportsService(const OUString& rServiceName)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-uno::Sequence< OUString > SwXAutoTextEntry::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
+uno::Sequence< OUString > SwXAutoTextEntry::getSupportedServiceNames()
 {
     uno::Sequence<OUString> aRet { "com.sun.star.text.AutoTextEntry" };
     return aRet;
 }
 
 uno::Reference< container::XNameReplace > SwXAutoTextEntry::getEvents()
-    throw( uno::RuntimeException, std::exception )
 {
     return new SwAutoTextEventDescriptor( *this );
 }
@@ -1003,7 +977,6 @@ SwAutoTextEventDescriptor::~SwAutoTextEventDescriptor()
 }
 
 OUString SwAutoTextEventDescriptor::getImplementationName()
-    throw( uno::RuntimeException, std::exception )
 {
     return sSwAutoTextEventDescriptor;
 }
@@ -1011,11 +984,6 @@ OUString SwAutoTextEventDescriptor::getImplementationName()
 void SwAutoTextEventDescriptor::replaceByName(
     const sal_uInt16 nEvent,
     const SvxMacro& rMacro)
-            throw(
-                lang::IllegalArgumentException,
-                container::NoSuchElementException,
-                lang::WrappedTargetException,
-                uno::RuntimeException)
 {
     OSL_ENSURE( nullptr != rAutoTextEntry.GetGlossaries(),
                 "Strangely enough, the AutoText vanished!" );
@@ -1049,10 +1017,6 @@ void SwAutoTextEventDescriptor::replaceByName(
 void SwAutoTextEventDescriptor::getByName(
     SvxMacro& rMacro,
     const sal_uInt16 nEvent )
-            throw(
-                container::NoSuchElementException,
-                lang::WrappedTargetException,
-                uno::RuntimeException)
 {
     OSL_ENSURE( nullptr != rAutoTextEntry.GetGlossaries(), "no AutoText" );
     OSL_ENSURE( (nEvent == SW_EVENT_END_INS_GLOSSARY) ||

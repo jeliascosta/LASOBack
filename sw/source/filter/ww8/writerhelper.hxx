@@ -234,7 +234,6 @@ namespace sw
             <a href="mailto:cmc@openoffice.org">Caol&aacute;n McNamara</a>
         */
         template<class T> const T & item_cast(const SfxPoolItem &rItem)
-            throw(std::bad_cast)
         {
             if (dynamic_cast<const T *>(&rItem) == nullptr)
                 throw std::bad_cast();
@@ -290,7 +289,7 @@ namespace sw
             <a href="mailto:cmc@openoffice.org">Caol&aacute;n McNamara</a>
         */
         template<class T> const T & ItemGet(const SwContentNode &rNode,
-            sal_uInt16 eType) throw(std::bad_cast)
+            sal_uInt16 eType)
         {
             return item_cast<T>(rNode.GetAttr(eType));
         }
@@ -319,7 +318,7 @@ namespace sw
             <a href="mailto:cmc@openoffice.org">Caol&aacute;n McNamara</a>
         */
         template<class T> const T & ItemGet(const SwFormat &rFormat,
-            sal_uInt16 eType) throw(std::bad_cast, css::uno::RuntimeException)
+            sal_uInt16 eType)
         {
             return item_cast<T>(rFormat.GetFormatAttr(eType));
         }
@@ -350,7 +349,7 @@ namespace sw
             <a href="mailto:cmc@openoffice.org">Caol&aacute;n McNamara</a>
         */
         template<class T> const T & ItemGet(const SfxItemSet &rSet,
-            sal_uInt16 eType) throw(std::bad_cast)
+            sal_uInt16 eType)
         {
             return item_cast<T>(rSet.Get(eType));
         }
@@ -385,7 +384,7 @@ namespace sw
             <a href="mailto:cmc@openoffice.org">Caol&aacute;n McNamara</a>
         */
         template<class T> const T & DefaultItemGet(const SfxItemPool &rPool,
-            sal_uInt16 eType) throw(std::bad_cast)
+            sal_uInt16 eType)
         {
             return item_cast<T>(rPool.GetDefaultItem(eType));
         }
@@ -421,7 +420,7 @@ namespace sw
             <a href="mailto:cmc@openoffice.org">Caol&aacute;n McNamara</a>
         */
         template<class T> const T & DefaultItemGet(const SwDoc &rDoc,
-            sal_uInt16 eType) throw(std::bad_cast)
+            sal_uInt16 eType)
         {
             return DefaultItemGet<T>(rDoc.GetAttrPool(), eType);
         }
@@ -563,9 +562,9 @@ namespace sw
             @author
             <a href="mailto:cmc@openoffice.org">Caol&aacute;n McNamara</a>
         */
-        ww8::Frames GetFrames(const SwDoc &rDoc, SwPaM *pPaM = nullptr);
+        ww8::Frames GetFrames(const SwDoc &rDoc, SwPaM *pPaM);
 
-        /** fix up frame positions, must be called after SetRedlineMode */
+        /** fix up frame positions, must be called after SetRedlineFlags */
         void UpdateFramePositions(ww8::Frames & rFrames);
 
         /** Get the Frames anchored to a given node

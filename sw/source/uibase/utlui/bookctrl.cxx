@@ -76,14 +76,14 @@ void SwBookmarkControl::StateChanged(
 {
     if( eState != SfxItemState::DEFAULT || dynamic_cast< const SfxVoidItem *>( pState ) !=  nullptr )
         GetStatusBar().SetItemText( GetId(), OUString() );
-    else if ( dynamic_cast< const SfxStringItem *>( pState ) !=  nullptr )
+    else if (const SfxStringItem* pStringItem = dynamic_cast<const SfxStringItem*>(pState))
     {
-        sPageNumber = static_cast<const SfxStringItem*>(pState)->GetValue();
-        GetStatusBar().SetItemText( GetId(), sPageNumber );
+        sPageNumber = pStringItem->GetValue();
+        GetStatusBar().SetItemText(GetId(), sPageNumber);
     }
-    else if ( dynamic_cast< const SfxBoolItem *>( pState ) !=  nullptr )
+    else if (const SfxBoolItem* pBoolItem = dynamic_cast<const SfxBoolItem*>(pState))
     {
-        if (static_cast<const SfxBoolItem*>(pState)->GetValue()) // Indicates whether to show extended tooltip
+        if (pBoolItem->GetValue()) // Indicates whether to show extended tooltip
             GetStatusBar().SetQuickHelpText(GetId(), SW_RESSTR(STR_BOOKCTRL_HINT_EXTENDED));
         else
             GetStatusBar().SetQuickHelpText(GetId(), SW_RESSTR(STR_BOOKCTRL_HINT));
@@ -101,27 +101,27 @@ void SwBookmarkControl::Command( const CommandEvent& rCEvt )
     if ( rCEvt.GetCommand() == CommandEventId::ContextMenu &&
             !GetStatusBar().GetItemText( GetId() ).isEmpty() )
     {
-        BookmarkPopup_Impl aPop;
+        ScopedVclPtrInstance<BookmarkPopup_Impl> aPop;
         SwWrtShell* pWrtShell = ::GetActiveWrtShell();
         if( pWrtShell && pWrtShell->getIDocumentMarkAccess()->getAllMarksCount() > 0 )
         {
             IDocumentMarkAccess* const pMarkAccess = pWrtShell->getIDocumentMarkAccess();
             IDocumentMarkAccess::const_iterator_t ppBookmarkStart = pMarkAccess->getBookmarksBegin();
             sal_uInt16 nPopupId = 1;
-            ::std::map<sal_Int32, sal_uInt16> aBookmarkIdx;
+            std::map<sal_Int32, sal_uInt16> aBookmarkIdx;
             for(IDocumentMarkAccess::const_iterator_t ppBookmark = ppBookmarkStart;
                 ppBookmark != pMarkAccess->getBookmarksEnd();
                 ++ppBookmark)
             {
                 if(IDocumentMarkAccess::MarkType::BOOKMARK == IDocumentMarkAccess::GetType(**ppBookmark))
                 {
-                    aPop.InsertItem( nPopupId, ppBookmark->get()->GetName() );
+                    aPop->InsertItem( nPopupId, ppBookmark->get()->GetName() );
                     aBookmarkIdx[nPopupId] = static_cast<sal_uInt16>(ppBookmark - ppBookmarkStart);
                     nPopupId++;
                 }
             }
-            aPop.Execute( &GetStatusBar(), rCEvt.GetMousePosPixel());
-            sal_uInt16 nCurrId = aPop.GetCurId();
+            aPop->Execute( &GetStatusBar(), rCEvt.GetMousePosPixel());
+            sal_uInt16 nCurrId = aPop->GetCurId();
             if( nCurrId != USHRT_MAX)
             {
                 SfxUInt16Item aBookmark( FN_STAT_BOOKMARK, aBookmarkIdx[nCurrId] );

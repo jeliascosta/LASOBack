@@ -17,13 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <baside2.hrc>
+#include <basidesh.hrc>
 #include <helpid.hrc>
 #include "dlgresid.hrc"
-#include <sfx2/sfxcommands.h>
-#include <svx/svxcommands.h>
-
-#define MASKCOLOR   MaskColor = Color { Red = 0xFFFF; Green = 0x0000; Blue = 0xFFFF; };
 
 String RID_STR_FILTER_ALLFILES
 {
@@ -36,26 +32,6 @@ String RID_STR_NOMODULE
 String RID_STR_WRONGPASSWORD
 {
     Text [ en-US ] = "Incorrect Password" ;
-};
-String RID_STR_OPEN
-{
-    Text [ en-US ] = "Load" ;
-};
-String RID_STR_SAVE
-{
-    Text [ en-US ] = "Save" ;
-};
-String RID_STR_SOURCETOBIG
-{
-    Text [ en-US ] = "The source text is too large and can be neither compiled nor saved.\nDelete some of the comments or transfer some methods into another module." ;
-};
-String RID_STR_ERROROPENSTORAGE
-{
-    Text [ en-US ] = "Error opening file" ;
-};
-String RID_STR_ERROROPENLIB
-{
-    Text [ en-US ] = "Error loading library" ;
 };
 String RID_STR_NOLIBINSTORAGE
 {
@@ -105,17 +81,9 @@ String RID_STR_SBXNAMEALLREADYUSED2
 {
     Text [ en-US ] = "Object with same name already exists" ;
 };
-String RID_STR_FILEEXISTS
-{
-    Text [ en-US ] = "The 'XX' file already exists" ;
-};
 String RID_STR_CANNOTRUNMACRO
 {
     Text [ en-US ] = "For security reasons, you cannot run this macro.\n\nFor more information, check the security settings." ;
-};
-String RID_STR_RUNTIMEERROR
-{
-    Text [ en-US ] = "Runtime Error: #" ;
 };
 String RID_STR_SEARCHNOTFOUND
 {
@@ -140,14 +108,6 @@ String RID_STR_COULDNTWRITE
 String RID_STR_CANNOTCHANGENAMESTDLIB
 {
     Text [ en-US ] = "The name of the default library cannot be changed." ;
-};
-String RID_STR_CANNOTCHANGENAMEREFLIB
-{
-    Text [ en-US ] = "The name of a referenced library cannot be changed." ;
-};
-String RID_STR_CANNOTUNLOADSTDLIB
-{
-    Text [ en-US ] = "The default library cannot be deactivated" ;
 };
 String RID_STR_GENERATESOURCE
 {
@@ -181,10 +141,6 @@ String RID_STR_QUERYDELMODULE
 {
     Text [ en-US ] = "Do you want to delete the XX module?" ;
 };
-String RID_STR_OBJNOTFOUND
-{
-    Text [ en-US ] = "Object or method not found" ;
-};
 String RID_STR_BASIC
 {
     Text [ en-US ] = "BASIC" ;
@@ -198,10 +154,6 @@ String RID_STR_COLUMN
 {
      // Abkuerzung fuer 'Spalte'
     Text [ en-US ] = "Col" ;
-};
-String RID_STR_DOC
-{
-    Text [ en-US ] = "Document" ;
 };
 String RID_BASICIDE_OBJECTBAR
 {
@@ -239,21 +191,9 @@ String RID_STR_STACKNAME
 {
     Text [ en-US ] = "Call Stack" ;
 };
-String RID_STR_INITIDE
-{
-    Text [ en-US ] = "BASIC Initialization" ;
-};
-String RID_STR_STDMODULENAME
-{
-    Text [ en-US ] = "Module" ;
-};
 String RID_STR_STDDIALOGNAME
 {
     Text [ en-US ] = "Dialog" ;
-};
-String RID_STR_STDLIBNAME
-{
-    Text [ en-US ] = "Library" ;
 };
 String RID_STR_NEWLIB
 {
@@ -275,10 +215,6 @@ String RID_STR_PAGE
 {
     Text [ en-US ] = "Page" ;
 };
-String RID_STR_MACRONAMEREQ
-{
-    Text [ en-US ] = "A name must be entered." ;
-};
 String RID_STR_WILLSTOPPRG
 {
     Text [ en-US ] = "You will have to restart the program after this edit.\nContinue?" ;
@@ -286,24 +222,6 @@ String RID_STR_WILLSTOPPRG
 String RID_STR_SEARCHALLMODULES
 {
     Text [ en-US ] = "Do you want to replace the text in all active modules?" ;
-};
-Edit RID_EDT_WATCHEDIT
-{
-    HelpId = HID_BASICIDE_WATCHWINDOW_EDIT ;
-    Border = TRUE ;
-    SvLook = TRUE ;
-    Size = MAP_APPFONT ( 80 , 12 ) ;
-};
-ImageButton RID_IMGBTN_REMOVEWATCH
-{
-    HelpId = HID_BASICIDE_REMOVEWATCH ;
-    SmallStyle = TRUE ;
-    ButtonImage = Image
-    {
-        ImageBitmap = Bitmap { File = "baswatr.bmp" ; };
-        MASKCOLOR
-    };
-    QuickHelpText [ en-US ] = "Remove Watch" ;
 };
 
 String RID_STR_REMOVEWATCH
@@ -346,167 +264,86 @@ String RID_STR_SHAREMACROSDIALOGS
     Text [ en-US ] = "%PRODUCTNAME Macros & Dialogs" ;
 };
 
-Menu RID_POPUP_BRKPROPS
+Bitmap RID_BMP_BRKENABLED
 {
-    Text [ en-US ] = "Properties" ;
-    DefaultItemId = RID_BRKPROPS ;
-    ItemList =
-    {
-        MenuItem
-        {
-            Identifier = RID_ACTIV ;
-            HelpId = HID_BASICIDE_ACTIV ;
-            Text [ en-US ] = "Active" ;
-        };
-        MenuItem
-        {
-            Separator = TRUE ;
-        };
-        MenuItem
-        {
-            Identifier = RID_BRKPROPS ;
-            HelpId = HID_BASICIDE_BRKPROPS ;
-            Text [ en-US ] = "Properties..." ;
-        };
-    };
+    File = "im30838.png";
 };
 
-Menu RID_POPUP_BRKDLG
+Bitmap RID_BMP_BRKDISABLED
 {
-    Text [ en-US ] = "Manage Breakpoints" ;
-    ItemList =
-    {
-        MenuItem
-        {
-            Identifier = RID_BRKDLG ;
-            HelpId = HID_BASICIDE_BRKDLG ;
-            Text [ en-US ] = "Manage Breakpoints..." ;
-        };
-    };
+    File = "im30839.png";
 };
 
-Menu RID_POPUP_TABBAR
+Bitmap RID_BMP_STEPMARKER
 {
-    DefaultItemId = SID_BASICIDE_HIDECURPAGE ;
-    ItemList =
-    {
-        MenuItem
-        {
-            Identifier = RID_INSERT ;
-            Text [ en-US ] = "Insert" ;
-            Submenu = Menu
-            {
-                ItemList =
-                {
-                    MenuItem
-                    {
-                        Identifier = SID_BASICIDE_NEWMODULE ;
-                        HelpId = CMD_SID_BASICIDE_NEWMODULE ;
-                        Text [ en-US ] = "BASIC Module" ;
-                    };
-                    MenuItem
-                    {
-                        Identifier = SID_BASICIDE_NEWDIALOG ;
-                        HelpId = CMD_SID_BASICIDE_NEWDIALOG ;
-                        Text [ en-US ] = "BASIC Dialog" ;
-                    };
-                };
-            };
-        };
-        MenuItem
-        {
-            Identifier = SID_BASICIDE_DELETECURRENT ;
-            HelpId = CMD_SID_BASICIDE_DELETECURRENT ;
-            Text [ en-US ] = "Delete" ;
-        };
-        MenuItem
-        {
-            Identifier = SID_BASICIDE_RENAMECURRENT ;
-            HelpId = CMD_SID_BASICIDE_RENAMECURRENT ;
-            Text [ en-US ] = "Rename" ;
-        };
-        MenuItem
-        {
-            Identifier = SID_BASICIDE_HIDECURPAGE ;
-            HelpId = CMD_SID_BASICIDE_HIDECURPAGE ;
-            Text [ en-US ] = "Hide" ;
-        };
-        MenuItem
-        {
-            Separator = TRUE ;
-        };
-        MenuItem
-        {
-            Identifier = SID_BASICIDE_MODULEDLG ;
-            HelpId = CMD_SID_BASICIDE_MODULEDLG ;
-            Text [ en-US ] = "Modules..." ;
-        };
-    };
+    File = "im30840.png";
 };
 
-ImageList RID_IMGLST_LAYOUT
+Bitmap RID_BMP_ERRORMARKER
 {
-    Prefix = "im";
-    MASKCOLOR
-    IdList =
-    {
-        IMGID_BRKENABLED ;
-        IMGID_BRKDISABLED ;
-        IMGID_STEPMARKER ;
-        IMGID_ERRORMARKER ;
-    };
-};
-Image RID_IMG_LOCKED
-{
-    ImageBitmap = Bitmap { File = "lock.png" ; };
-    MASKCOLOR
+    File = "im30841.png";
 };
 
-Image RID_IMG_INSTALLATION
+Bitmap RID_BMP_LOCKED
 {
-    ImageBitmap = Bitmap { File = "harddisk_16.png"; };
-    MASKCOLOR
+    File = "lock.png";
 };
-Image RID_IMG_DOCUMENT
+
+Bitmap RID_BMP_INSTALLATION
 {
-    ImageBitmap = Bitmap { File = "im30826.png"; };
-    MASKCOLOR
+    File = "harddisk_16.png";
 };
-Image RID_IMG_MODLIB
+
+Bitmap RID_BMP_DOCUMENT
 {
-    ImageBitmap = Bitmap { File = "im30820.png"; };
-    MASKCOLOR
+    File = "im30826.png";
 };
-Image RID_IMG_MODLIBNOTLOADED
+
+Bitmap RID_BMP_MODLIB
 {
-    ImageBitmap = Bitmap { File = "im30827.png"; };
-    MASKCOLOR
+    File = "im30820.png";
 };
-Image RID_IMG_MODULE
+
+Bitmap RID_BMP_MODLIBNOTLOADED
 {
-    ImageBitmap = Bitmap { File = "im30821.png"; };
-    MASKCOLOR
+    File = "im30827.png";
 };
-Image RID_IMG_MACRO
+
+Bitmap RID_BMP_MODULE
 {
-    ImageBitmap = Bitmap { File = "im30822.png"; };
-    MASKCOLOR
+    File = "im30821.png";
 };
-Image RID_IMG_DLGLIB
+
+Bitmap RID_BMP_MACRO
 {
-    ImageBitmap = Bitmap { File = "dialogfolder_16.png"; };
-    MASKCOLOR
+    File = "im30822.png";
 };
-Image RID_IMG_DLGLIBNOTLOADED
+
+Bitmap RID_BMP_DLGLIB
 {
-    ImageBitmap = Bitmap { File = "dialogfoldernot_16.png"; };
-    MASKCOLOR
+    File = "dialogfolder_16.png";
 };
-Image RID_IMG_DIALOG
+
+Bitmap RID_BMP_DLGLIBNOTLOADED
 {
-    ImageBitmap = Bitmap { File = "im30823.png"; };
-    MASKCOLOR
+    File = "dialogfoldernot_16.png";
 };
+
+Bitmap RID_BMP_DIALOG
+{
+    File = "im30823.png";
+};
+
+Bitmap RID_BMP_REMOVEWATCH
+{
+    File = "baswatr.png";
+};
+
+String RID_STR_REMOVEWATCHTIP
+{
+    Text [ en-US ] = "Remove Watch" ;
+};
+
 String RID_STR_QUERYREPLACEMACRO
 {
     Text [ en-US ] = "Do you want to overwrite the XX macro?" ;

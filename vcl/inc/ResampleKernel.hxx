@@ -47,7 +47,7 @@ public:
         return (-3.0 <= x && x < 3.0) ? SincFilter(x) * SincFilter( x / 3.0 ) : 0.0;
     }
 
-    static inline double SincFilter(double x)
+    static double SincFilter(double x)
     {
         if (x == 0.0)
         {
@@ -105,21 +105,6 @@ private:
         {
             return 1.0-x;
         }
-        return 0.0;
-    }
-};
-
-class BoxKernel : public Kernel
-{
-public:
-    BoxKernel() : Kernel () {}
-
-private:
-    virtual double  GetWidth() const override { return 0.5; }
-    virtual double  Calculate (double x) const override
-    {
-        if (-0.5 <= x && x < 0.5)
-            return 1.0;
         return 0.0;
     }
 };

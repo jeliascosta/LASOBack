@@ -18,7 +18,6 @@
  */
 
 #include <cppuhelper/factory.hxx>
-#include <osl/diagnose.h>
 #include "dbu_reghelper.hxx"
 #include "uiservices.hxx"
 
@@ -53,7 +52,6 @@ extern "C" void SAL_CALL createRegistryInfo_DBU()
         createRegistryInfo_OUserSettingsDialog();
         createRegistryInfo_OColumnControlModel();
         createRegistryInfo_OColumnControl();
-        createRegistryInfo_OToolboxController();
         createRegistryInfo_CopyTableWizard();
         createRegistryInfo_OTextConnectionSettingsDialog();
         createRegistryInfo_LimitBoxController();

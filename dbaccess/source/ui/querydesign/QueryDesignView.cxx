@@ -108,8 +108,7 @@ namespace
         OUString sRet;
         if ( _bQuote && !_sAliasName.isEmpty() )
         {
-            sRet = ::dbtools::quoteName(_sQuote,_sAliasName);
-            sRet += ".";
+            sRet = ::dbtools::quoteName(_sQuote,_sAliasName) + ".";
         }
         return sRet;
     }
@@ -408,12 +407,10 @@ namespace
                 aErg += " FULL OUTER ";
                 break;
         }
-        aErg += "JOIN ";
-        aErg += rRh;
+        aErg += "JOIN " + rRh;
         if ( CROSS_JOIN != pData->GetJoinType() && !pData->isNatural() )
         {
-            aErg += " ON ";
-            aErg += BuildJoinCriteria(_xConnection,&pData->GetConnLineDataList(),pData);
+            aErg += " ON " + BuildJoinCriteria(_xConnection,&pData->GetConnLineDataList(),pData);
         }
 
         return aErg;
@@ -633,9 +630,6 @@ namespace
 
             OJoinTableView::OTableWindowMap& rTabList = _pView->getTableView()->GetTabWinMap();
 
-            static const char sFieldSeparator[] = ", ";
-            static const char s_sAs[] = " AS ";
-
             aIter = _rFieldList.begin();
             for(;aIter != aEnd;++aIter)
             {
@@ -692,11 +686,11 @@ namespace
                         pEntryField->isNumericOrAggreateFunction()      ||
                         pEntryField->isOtherFunction()))
                     {
-                        aTmpStr.append(s_sAs);
+                        aTmpStr.append(" AS ");
                         aTmpStr.append(::dbtools::quoteName(aQuote, rFieldAlias));
                     }
                     aFieldListStr.append(aTmpStr.makeStringAndClear());
-                    aFieldListStr.append(sFieldSeparator);
+                    aFieldListStr.append(", ");
                 }
             }
             if(!aFieldListStr.isEmpty())
@@ -725,7 +719,7 @@ namespace
         OTableFields::const_iterator aEnd = _rFieldList.end();
         for(;aIter != aEnd;++aIter)
         {
-            nMaxCriteria = ::std::max<sal_uInt16>(nMaxCriteria,(sal_uInt16)(*aIter)->GetCriteria().size());
+            nMaxCriteria = std::max<sal_uInt16>(nMaxCriteria,(sal_uInt16)(*aIter)->GetCriteria().size());
         }
         try
         {
@@ -776,10 +770,7 @@ namespace
                             if ( pEntryField->isAggreateFunction() )
                             {
                                 OSL_ENSURE(!pEntryField->GetFunction().isEmpty(),"No function name for aggregate given!");
-                                aHavingStr += pEntryField->GetFunction();
-                                aHavingStr += "(";              // bracket
-                                aHavingStr += aWork;
-                                aHavingStr += ")";             // bracket
+                                aHavingStr += pEntryField->GetFunction() + "(" + aWork + ")";       // bracket
                             }
                             else
                                 aHavingStr += aWork;
@@ -941,12 +932,9 @@ namespace
                     }
                     else
                     {
-                        aWorkStr += quoteTableAlias(bMulti,pEntryField->GetAlias(),aQuote);
-                        aWorkStr += ::dbtools::quoteName(aQuote, aColumnName);
+                        aWorkStr += quoteTableAlias(bMulti,pEntryField->GetAlias(),aQuote) + ::dbtools::quoteName(aQuote, aColumnName);
                     }
-                    aWorkStr += " ";
-                    aWorkStr += OUString( ";ASC;DESC" ).getToken( (sal_uInt16)eOrder, ';' );
-                    aWorkStr += ",";
+                    aWorkStr += " " + OUString( ";ASC;DESC" ).getToken( (sal_uInt16)eOrder, ';' ) + ",";
                 }
             }
 
@@ -976,7 +964,7 @@ namespace
 
     void GenerateInnerJoinCriterias(const Reference< XConnection>& _xConnection,
                                     OUString& _rJoinCrit,
-                                    const ::std::vector<VclPtr<OTableConnection> >& _rConnList)
+                                    const std::vector<VclPtr<OTableConnection> >& _rConnList)
     {
         auto aIter = _rConnList.begin();
         auto aEnd = _rConnList.end();
@@ -1002,13 +990,12 @@ namespace
 
         if(_rTableNames.insert(sTabName).second)
         {
-            _rsTableListStr += sTabName;
-            _rsTableListStr += ",";
+            _rsTableListStr += sTabName + ",";
         }
     }
     OUString GenerateFromClause( const Reference< XConnection>& _xConnection,
                                         const OQueryTableView::OTableWindowMap* pTabList,
-                                        const ::std::vector<VclPtr<OTableConnection> >& rConnList
+                                        const std::vector<VclPtr<OTableConnection> >& rConnList
                                         )
     {
 
@@ -1021,24 +1008,24 @@ namespace
         {
             auto aIter = rConnList.begin();
             auto aEnd = rConnList.end();
-            ::std::map<OTableWindow*,sal_Int32> aConnectionCount;
+            std::map<OTableWindow*,sal_Int32> aConnectionCount;
             for(;aIter != aEnd;++aIter)
             {
                 static_cast<OQueryTableConnection*>((*aIter).get())->SetVisited(false);
                 ++aConnectionCount[(*aIter)->GetSourceWin()];
                 ++aConnectionCount[(*aIter)->GetDestWin()];
             }
-            ::std::multimap<sal_Int32 , OTableWindow*> aMulti;
-            ::std::map<OTableWindow*,sal_Int32>::const_iterator aCountIter = aConnectionCount.begin();
-            ::std::map<OTableWindow*,sal_Int32>::const_iterator aCountEnd = aConnectionCount.end();
+            std::multimap<sal_Int32 , OTableWindow*> aMulti;
+            std::map<OTableWindow*,sal_Int32>::const_iterator aCountIter = aConnectionCount.begin();
+            std::map<OTableWindow*,sal_Int32>::const_iterator aCountEnd = aConnectionCount.end();
             for(;aCountIter != aCountEnd;++aCountIter)
             {
-                aMulti.insert(::std::multimap<sal_Int32 , OTableWindow*>::value_type(aCountIter->second,aCountIter->first));
+                aMulti.insert(std::multimap<sal_Int32 , OTableWindow*>::value_type(aCountIter->second,aCountIter->first));
             }
 
             const bool bUseEscape = ::dbtools::getBooleanDataSourceSetting( _xConnection, PROPERTY_OUTERJOINESCAPE );
-            ::std::multimap<sal_Int32 , OTableWindow*>::const_reverse_iterator aRIter = aMulti.rbegin();
-            ::std::multimap<sal_Int32 , OTableWindow*>::const_reverse_iterator aREnd = aMulti.rend();
+            std::multimap<sal_Int32 , OTableWindow*>::const_reverse_iterator aRIter = aMulti.rbegin();
+            std::multimap<sal_Int32 , OTableWindow*>::const_reverse_iterator aREnd = aMulti.rend();
             for(;aRIter != aREnd;++aRIter)
             {
                 auto aConIter = aRIter->second->getTableView()->getTableConnections(aRIter->second);
@@ -1113,8 +1100,7 @@ namespace
             const OQueryTableWindow* pEntryTab = static_cast<const OQueryTableWindow*>(aTabIter->second.get());
             if(!pEntryTab->ExistsAConn())
             {
-                aTableListStr += BuildTable(_xConnection,pEntryTab);
-                aTableListStr += ",";
+                aTableListStr += BuildTable(_xConnection,pEntryTab) + ",";
             }
         }
 
@@ -1129,7 +1115,7 @@ namespace
         if(!xConnection.is())
             return OUString();
 
-        ::std::map< OUString,bool> aGroupByNames;
+        std::map< OUString,bool> aGroupByNames;
 
         OUString aGroupByStr;
         try
@@ -1173,17 +1159,15 @@ namespace
                     }
                     if ( aGroupByNames.find(sGroupByPart) == aGroupByNames.end() )
                     {
-                        aGroupByNames.insert(::std::map< OUString,bool>::value_type(sGroupByPart,true));
-                        aGroupByStr += sGroupByPart;
-                        aGroupByStr += ",";
+                        aGroupByNames.insert(std::map< OUString,bool>::value_type(sGroupByPart,true));
+                        aGroupByStr += sGroupByPart + ",";
                     }
                 }
             }
             if ( !aGroupByStr.isEmpty() )
             {
                 aGroupByStr = aGroupByStr.replaceAt(aGroupByStr.getLength()-1,1, OUString(' ') );
-                OUString aGroupByStr2(" GROUP BY ");
-                aGroupByStr2 += aGroupByStr;
+                OUString aGroupByStr2 = " GROUP BY " + aGroupByStr;
                 aGroupByStr = aGroupByStr2;
             }
         }
@@ -2130,7 +2114,7 @@ namespace
             Reference< XConnection> xConnection = rController.getConnection();
 
             OUString aColumnName,aTableRange;
-            for (sal_uInt32 i = 0; i < pParseTree->count() && eOk == eErrorCode ; ++i)
+            for (size_t i = 0; i < pParseTree->count() && eOk == eErrorCode ; ++i)
             {
                 ::connectivity::OSQLParseNode * pColumnRef = pParseTree->getChild(i);
 
@@ -2377,7 +2361,7 @@ namespace
             OQueryController& rController = static_cast<OQueryController&>(_pView->getController());
             ::connectivity::OSQLParseNode* pGroupBy = pSelectRoot->getChild(3)->getChild(2)->getChild(2);
 
-            for( sal_uInt32 i=0 ; i < pGroupBy->count() && eOk == eErrorCode; ++i )
+            for( size_t i=0 ; i < pGroupBy->count() && eOk == eErrorCode; ++i )
             {
                 OTableFieldDescRef aDragInfo = new OTableFieldDesc();
                 ::connectivity::OSQLParseNode* pParamRef = nullptr;
@@ -2387,7 +2371,7 @@ namespace
                     if ( eOk == (eErrorCode = FillDragInfo(_pView,pArgument,aDragInfo)) )
                     {
                         aDragInfo->SetGroupBy(true);
-                        _pSelectionBrw->AddGroupBy(aDragInfo,i);
+                        _pSelectionBrw->AddGroupBy(aDragInfo);
                     }
                 }
                 else if(SQL_ISRULE(pArgument, general_set_fct ) &&
@@ -2395,7 +2379,7 @@ namespace
                         eOk == FillDragInfo(_pView,pParamRef,aDragInfo))
                 {
                     aDragInfo->SetGroupBy(true);
-                    _pSelectionBrw->AddGroupBy( aDragInfo, i );
+                    _pSelectionBrw->AddGroupBy( aDragInfo );
                 }
                 else if( SQL_ISRULE(pArgument, set_fct_spec ) )
                 {
@@ -2411,7 +2395,7 @@ namespace
                         aDragInfo->SetFunctionType(FKT_OTHER);
                         aDragInfo->SetGroupBy(true);
                         aDragInfo->SetVisible(false);
-                        _pSelectionBrw->AddGroupBy( aDragInfo, i );
+                        _pSelectionBrw->AddGroupBy( aDragInfo );
                     }
                     else
                         eErrorCode = eColumnNotFound;
@@ -2438,9 +2422,6 @@ namespace
             case eNoSelectStatement:
                 nResId = STR_QRY_NOSELECT;
                 break;
-            case eColumnInLikeNotFound:
-                nResId = STR_QRY_SYNTAX;
-                break;
             case eNoColumnInLike:
                 nResId = STR_QRY_SYNTAX;
                 break;
@@ -2452,9 +2433,6 @@ namespace
                 break;
             case eTooManyTables:
                 nResId = STR_QRY_TOO_MANY_TABLES;
-                break;
-            case eTooManyConditions:
-                nResId = STR_QRY_TOOMANYCOND;
                 break;
             case eTooManyColumns:
                 nResId = STR_QRY_TOO_MANY_COLUMNS;
@@ -2477,7 +2455,7 @@ namespace
 OQueryDesignView::OQueryDesignView( OQueryContainerWindow* _pParent,
                                     OQueryController& _rController,
                                     const Reference< XComponentContext >& _rxContext)
-    :OQueryView( _pParent, _rController, _rxContext )
+    :OJoinDesignView( _pParent, _rController, _rxContext )
     ,m_aSplitter( VclPtr<Splitter>::Create(this) )
     ,m_eChildFocus(NONE)
     ,m_bInSplitHandler( false )
@@ -2514,10 +2492,10 @@ void OQueryDesignView::dispose()
         ::dbaui::notifySystemWindow(this,m_pTableView,::comphelper::mem_fun(&TaskPaneList::RemoveWindow));
     m_pSelectionBox.disposeAndClear();
     m_aSplitter.disposeAndClear();
-    OQueryView::dispose();
+    OJoinDesignView::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED( OQueryDesignView, SplitHdl, Splitter*, void )
+IMPL_LINK_NOARG( OQueryDesignView, SplitHdl, Splitter*, void )
 {
     if (!getController().isReadOnly())
     {
@@ -2534,7 +2512,7 @@ void OQueryDesignView::Construct()
 {
     m_pTableView = VclPtr<OQueryTableView>::Create(m_pScrollWindow,this);
     ::dbaui::notifySystemWindow(this,m_pTableView,::comphelper::mem_fun(&TaskPaneList::AddWindow));
-    OQueryView::Construct();
+    OJoinDesignView::Construct();
 }
 
 void OQueryDesignView::initialize()
@@ -2548,7 +2526,7 @@ void OQueryDesignView::initialize()
     reset();
 }
 
-void OQueryDesignView::resizeDocumentView(Rectangle& _rPlayground)
+void OQueryDesignView::resizeDocumentView(tools::Rectangle& _rPlayground)
 {
     Point aPlaygroundPos( _rPlayground.TopLeft() );
     Size aPlaygroundSize( _rPlayground.GetSize() );
@@ -2630,10 +2608,6 @@ void OQueryDesignView::clear()
     m_pTableView->ClearAll();
 }
 
-void OQueryDesignView::setStatement(const OUString& /*_rsStatement*/)
-{
-}
-
 void OQueryDesignView::copy()
 {
     if( m_eChildFocus == SELECTION)
@@ -2695,13 +2669,8 @@ void OQueryDesignView::paste()
 void OQueryDesignView::TableDeleted(const OUString& rAliasName)
 {
     // message that the table was removed from the window
-    DeleteFields(rAliasName);
-    static_cast<OQueryController&>(getController()).InvalidateFeature(ID_BROWSER_ADDTABLE); // inform the view again
-}
-
-void OQueryDesignView::DeleteFields( const OUString& rAliasName )
-{
     m_pSelectionBox->DeleteFields( rAliasName );
+    static_cast<OQueryController&>(getController()).InvalidateFeature(ID_BROWSER_ADDTABLE); // inform the view again
 }
 
 bool OQueryDesignView::HasFieldByAliasName(const OUString& rFieldName, OTableFieldDescRef& rInfo)  const
@@ -2732,7 +2701,7 @@ void OQueryDesignView::fillValidFields(const OUString& sAliasName, ComboBox* pFi
 
     OJoinTableView::OTableWindowMap& rTabWins = m_pTableView->GetTabWinMap();
     OUString strCurrentPrefix;
-    ::std::vector< OUString> aFields;
+    std::vector< OUString> aFields;
     OJoinTableView::OTableWindowMap::const_iterator aIter = rTabWins.begin();
     OJoinTableView::OTableWindowMap::const_iterator aEnd  = rTabWins.end();
     for(;aIter != aEnd;++aIter)
@@ -2740,13 +2709,12 @@ void OQueryDesignView::fillValidFields(const OUString& sAliasName, ComboBox* pFi
         OQueryTableWindow* pCurrentWin = static_cast<OQueryTableWindow*>(aIter->second.get());
         if (bAllTables || (pCurrentWin->GetAliasName() == sAliasName))
         {
-            strCurrentPrefix = pCurrentWin->GetAliasName();
-            strCurrentPrefix += ".";
+            strCurrentPrefix = pCurrentWin->GetAliasName() + ".";
 
             pCurrentWin->EnumValidFields(aFields);
 
-            ::std::vector< OUString>::const_iterator aStrIter = aFields.begin();
-            ::std::vector< OUString>::const_iterator aStrEnd = aFields.end();
+            std::vector< OUString>::const_iterator aStrIter = aFields.begin();
+            std::vector< OUString>::const_iterator aStrEnd = aFields.end();
             for(;aStrIter != aStrEnd;++aStrIter)
             {
                 if (bAllTables || aStrIter->toChar() == '*')
@@ -2780,7 +2748,7 @@ bool OQueryDesignView::PreNotify(NotifyEvent& rNEvt)
             m_eChildFocus = TABLEVIEW;
     }
 
-    return OQueryView::PreNotify(rNEvt);
+    return OJoinDesignView::PreNotify(rNEvt);
 }
 
 // check if the statement is correct when not returning false
@@ -2857,8 +2825,7 @@ OUString OQueryDesignView::getStatement()
         OUString aTmp = "( " + aJoinCrit + " )";
         if(!aCriteriaListStr.isEmpty())
         {
-            aTmp += C_AND;
-            aTmp += aCriteriaListStr.makeStringAndClear();
+            aTmp += C_AND + aCriteriaListStr.makeStringAndClear();
         }
         aCriteriaListStr = aTmp;
     }
@@ -3023,10 +2990,7 @@ OSQLParseNode* OQueryDesignView::getPredicateTreeFromEntry(const OTableFieldDesc
         {
             // first try the international version
             OUString sSql;
-            sSql += "SELECT * ";
-            sSql += " FROM x WHERE ";
-            sSql += pEntry->GetField();
-            sSql += _sCriteria;
+            sSql += "SELECT * FROM x WHERE " + pEntry->GetField() + _sCriteria;
             std::unique_ptr<OSQLParseNode> pParseNode( rParser.parseTree( _rsErrorMessage, sSql, true ) );
             nType = DataType::DOUBLE;
             if ( pParseNode.get() )
@@ -3094,7 +3058,7 @@ OSQLParseNode* OQueryDesignView::getPredicateTreeFromEntry(const OTableFieldDesc
 
 void OQueryDesignView::GetFocus()
 {
-    OQueryView::GetFocus();
+    OJoinDesignView::GetFocus();
     if ( m_pSelectionBox && !m_pSelectionBox->HasChildPathFocus() )
     {
         // first we have to deactivate the current cell to refill when necessary
@@ -3257,11 +3221,9 @@ void OQueryDesignView::fillFunctionInfo(  const ::connectivity::OSQLParseNode* p
     case SQLNodeType::ApproxNum:
         nDataType = DataType::DOUBLE;
         break;
-    case SQLNodeType::Date:
     case SQLNodeType::AccessDate:
         nDataType = DataType::TIMESTAMP;
         break;
-    case SQLNodeType::Comparison:
     case SQLNodeType::Equal:
     case SQLNodeType::Less:
     case SQLNodeType::Great:
@@ -3274,7 +3236,6 @@ void OQueryDesignView::fillFunctionInfo(  const ::connectivity::OSQLParseNode* p
     case SQLNodeType::ListRule:
     case SQLNodeType::CommaListRule:
     case SQLNodeType::Keyword:
-    case SQLNodeType::AMMSC: //??
     case SQLNodeType::Punctuation:
         OSL_FAIL("Unexpected SQL Node Type");
         break;

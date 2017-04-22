@@ -38,7 +38,6 @@
 #include <com/sun/star/embed/XTransactionBroadcaster.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/beans/StringPair.hpp>
-#include <com/sun/star/logging/XSimpleLogRing.hpp>
 
 #include <cppuhelper/weak.hxx>
 #include <cppuhelper/interfacecontainer.h>
@@ -91,7 +90,6 @@ struct OWriteStream_Impl : public MutexHolder
     bool                        m_bFlushed;      // sending the streams is coordinated by the root storage of the package
 
     css::uno::Reference< css::packages::XDataSinkEncrSupport > m_xPackageStream;
-    css::uno::Reference< css::logging::XSimpleLogRing >  m_xLogRing;
 
     css::uno::Reference< css::uno::XComponentContext > m_xContext;
 
@@ -124,15 +122,16 @@ struct OWriteStream_Impl : public MutexHolder
     sal_Int32 m_nRelId;
 
 private:
-    OUString GetFilledTempFileIfNo( const css::uno::Reference< css::io::XInputStream >& xStream );
-    OUString FillTempGetFileName();
+    OUString const & GetFilledTempFileIfNo( const css::uno::Reference< css::io::XInputStream >& xStream );
+    OUString const & FillTempGetFileName();
     css::uno::Reference< css::io::XStream >       GetTempFileAsStream();
     css::uno::Reference< css::io::XInputStream >  GetTempFileAsInputStream();
 
     css::uno::Reference< css::io::XStream > GetStream_Impl( sal_Int32 nStreamMode,
                                                                                         bool bHierarchyAccess );
 
-    ::comphelper::SequenceAsHashMap GetCommonRootEncryptionData() throw ( css::packages::NoEncryptionException );
+    /// @throws css::packages::NoEncryptionException
+    ::comphelper::SequenceAsHashMap GetCommonRootEncryptionData();
 
     css::uno::Sequence< css::beans::PropertyValue > ReadPackageStreamProperties();
     css::uno::Sequence< css::beans::PropertyValue > InsertOwnProps(
@@ -154,8 +153,6 @@ public:
     ~OWriteStream_Impl();
 
     void CleanCacheStream();
-
-    void AddLog( const OUString& aMessage );
 
     bool UsesCommonEncryption_Impl() { return m_bUseCommonEncryption; }
     bool HasTempFile_Impl() const { return ( m_aTempURL.getLength() != 0 ); }
@@ -187,7 +184,7 @@ public:
     void Commit();
     void Revert();
 
-    css::uno::Sequence< css::beans::PropertyValue > GetStreamProperties();
+    css::uno::Sequence< css::beans::PropertyValue > const & GetStreamProperties();
 
     css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > GetAllRelationshipsIfAny();
 
@@ -260,7 +257,7 @@ protected:
     bool m_bTransacted;
 
     OWriteStream( OWriteStream_Impl* pImpl, bool bTransacted );
-    OWriteStream( OWriteStream_Impl* pImpl, css::uno::Reference< css::io::XStream > xStream, bool bTransacted );
+    OWriteStream( OWriteStream_Impl* pImpl, css::uno::Reference< css::io::XStream > const & xStream, bool bTransacted );
 
     void CloseOutput_Impl();
 
@@ -272,106 +269,87 @@ protected:
 
 public:
 
-    virtual ~OWriteStream();
+    virtual ~OWriteStream() override;
 
     void CheckInitOnDemand();
     void DeInit();
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& rType )
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& rType ) override;
     virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     //  XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
-        throw( css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
-        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
 
     // XInputStream
-    virtual sal_Int32 SAL_CALL readBytes( css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead )
-        throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL readSomeBytes( css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead ) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip )
-        throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int32 SAL_CALL available(  )
-        throw(css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL closeInput(  )
-        throw(css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL readBytes( css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead ) override;
+    virtual sal_Int32 SAL_CALL readSomeBytes( css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead ) override;
+    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip ) override;
+    virtual sal_Int32 SAL_CALL available(  ) override;
+    virtual void SAL_CALL closeInput(  ) override;
 
     // XOutputStream
-    virtual void SAL_CALL writeBytes( const css::uno::Sequence< sal_Int8 >& aData ) throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL flush(  ) throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL closeOutput(  ) throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeBytes( const css::uno::Sequence< sal_Int8 >& aData ) override;
+    virtual void SAL_CALL flush(  ) override;
+    virtual void SAL_CALL closeOutput(  ) override;
 
     //XSeekable
-    virtual void SAL_CALL seek( sal_Int64 location ) throw (css::lang::IllegalArgumentException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int64 SAL_CALL getPosition() throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Int64 SAL_CALL getLength() throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL seek( sal_Int64 location ) override;
+    virtual sal_Int64 SAL_CALL getPosition() override;
+    virtual sal_Int64 SAL_CALL getLength() override;
 
     //XStream
-    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream(  ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Reference< css::io::XOutputStream > SAL_CALL getOutputStream(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream(  ) override;
+    virtual css::uno::Reference< css::io::XOutputStream > SAL_CALL getOutputStream(  ) override;
 
     // XTruncate
-    virtual void SAL_CALL truncate() throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL truncate() override;
 
     //XComponent
-    virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL dispose() override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
 
     //XEncryptionProtectedSource
-    virtual void SAL_CALL setEncryptionPassword( const OUString& aPass )
-        throw ( css::uno::RuntimeException,
-                css::io::IOException, std::exception ) override;
-    virtual void SAL_CALL removeEncryption()
-        throw ( css::uno::RuntimeException,
-                css::io::IOException, std::exception ) override;
+    virtual void SAL_CALL setEncryptionPassword( const OUString& aPass ) override;
+    virtual void SAL_CALL removeEncryption() override;
 
     //XEncryptionProtectedSource2
-    virtual void SAL_CALL setEncryptionData( const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL hasEncryptionData() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setEncryptionData( const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData ) override;
+    virtual sal_Bool SAL_CALL hasEncryptionData() override;
 
     //XRelationshipAccess
-    virtual sal_Bool SAL_CALL hasByID( const OUString& sID ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getTargetByID( const OUString& sID ) throw (css::container::NoSuchElementException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual OUString SAL_CALL getTypeByID( const OUString& sID ) throw (css::container::NoSuchElementException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::beans::StringPair > SAL_CALL getRelationshipByID( const OUString& sID ) throw (css::container::NoSuchElementException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > SAL_CALL getRelationshipsByType( const OUString& sType ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > SAL_CALL getAllRelationships(  ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL insertRelationshipByID( const OUString& sID, const css::uno::Sequence< css::beans::StringPair >& aEntry, sal_Bool bReplace ) throw (css::container::ElementExistException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL removeRelationshipByID( const OUString& sID ) throw (css::container::NoSuchElementException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL insertRelationships( const css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > >& aEntries, sal_Bool bReplace ) throw (css::container::ElementExistException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL clearRelationships(  ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByID( const OUString& sID ) override;
+    virtual OUString SAL_CALL getTargetByID( const OUString& sID ) override;
+    virtual OUString SAL_CALL getTypeByID( const OUString& sID ) override;
+    virtual css::uno::Sequence< css::beans::StringPair > SAL_CALL getRelationshipByID( const OUString& sID ) override;
+    virtual css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > SAL_CALL getRelationshipsByType( const OUString& sType ) override;
+    virtual css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > SAL_CALL getAllRelationships(  ) override;
+    virtual void SAL_CALL insertRelationshipByID( const OUString& sID, const css::uno::Sequence< css::beans::StringPair >& aEntry, sal_Bool bReplace ) override;
+    virtual void SAL_CALL removeRelationshipByID( const OUString& sID ) override;
+    virtual void SAL_CALL insertRelationships( const css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > >& aEntries, sal_Bool bReplace ) override;
+    virtual void SAL_CALL clearRelationships(  ) override;
 
     //XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo() throw ( css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) throw ( css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
-    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) throw ( css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) throw ( css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) throw ( css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw ( css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw ( css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo() override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
+    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
+    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
+    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
 
     // XTransactedObject
-    virtual void SAL_CALL commit()
-        throw ( css::io::IOException,
-                css::embed::StorageWrappedTargetException,
-                css::uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL revert()
-        throw ( css::io::IOException,
-                css::embed::StorageWrappedTargetException,
-                css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL commit() override;
+    virtual void SAL_CALL revert() override;
 
     // XTransactionBroadcaster
     virtual void SAL_CALL addTransactionListener(
-            const css::uno::Reference< css::embed::XTransactionListener >& aListener )
-        throw ( css::uno::RuntimeException, std::exception ) override;
+            const css::uno::Reference< css::embed::XTransactionListener >& aListener ) override;
     virtual void SAL_CALL removeTransactionListener(
-            const css::uno::Reference< css::embed::XTransactionListener >& aListener )
-        throw ( css::uno::RuntimeException, std::exception ) override;
+            const css::uno::Reference< css::embed::XTransactionListener >& aListener ) override;
 
 };
 

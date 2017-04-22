@@ -45,7 +45,6 @@ enum class BkMode
     NONE         = 0,
     Transparent  = 1,
     OPAQUE       = 2,
-    LAST         = 2
 };
 
 /* xform stuff */
@@ -70,12 +69,14 @@ enum class BkMode
 #define ANSI_VAR_FONT           12
 #define SYSTEM_FIXED_FONT       16
 
-#define R2_BLACK                1
-#define R2_MASKNOTPEN           3
-#define R2_NOT                  6
-#define R2_XORPEN               7
-#define R2_NOP                  11
-#define R2_COPYPEN              13
+enum class WMFRasterOp {
+    NONE                 = 0,
+    Black                = 1,
+    Not                  = 6,
+    XorPen               = 7,
+    Nop                  = 11,
+    CopyPen              = 13
+};
 
 /* Mapping modes */
 #define MM_TEXT                 1
@@ -248,8 +249,8 @@ public:
     WinMtfClipPath(): maClip() {};
 
     void        setClipPath( const tools::PolyPolygon& rPolyPolygon, sal_Int32 nClippingMode );
-    void        intersectClipRect( const Rectangle& rRect );
-    void        excludeClipRect( const Rectangle& rRect );
+    void        intersectClipRect( const tools::Rectangle& rRect );
+    void        excludeClipRect( const tools::Rectangle& rRect );
     void        moveClipRegion( const Size& rSize );
     void        setDefaultClipPath();
 
@@ -288,7 +289,7 @@ public:
 
 struct GDIObj
 {
-    virtual ~GDIObj(); // Polymorphic base class
+    virtual ~GDIObj() = default; // Polymorphic base class
 };
 
 struct WinMtfFontStyle : GDIObj
@@ -335,16 +336,6 @@ struct WinMtfFillStyle : GDIObj
             && bTransparent == rStyle.bTransparent
             && aType == rStyle.aType;
     }
-
-    WinMtfFillStyle& operator=(const WinMtfFillStyle& rStyle)
-    {
-        aFillColor = rStyle.aFillColor;
-        bTransparent = rStyle.bTransparent;
-        aBmp = rStyle.aBmp;
-        aType = rStyle.aType;
-        return *this;
-    }
-
 };
 
 struct WinMtfLineStyle : GDIObj
@@ -363,7 +354,7 @@ struct WinMtfLineStyle : GDIObj
         , bTransparent(bTrans)
     {}
 
-    WinMtfLineStyle( const Color& rColor, const LineInfo& rStyle, bool bTrans = false)
+    WinMtfLineStyle( const Color& rColor, const LineInfo& rStyle, bool bTrans)
         : aLineColor  (rColor)
         , aLineInfo   (rStyle)
         , bTransparent(bTrans)
@@ -374,22 +365,6 @@ struct WinMtfLineStyle : GDIObj
         return aLineColor == rStyle.aLineColor
             && bTransparent == rStyle.bTransparent
             && aLineInfo == rStyle.aLineInfo;
-    }
-
-    WinMtfLineStyle& operator=( const WinMtfLineStyle& rStyle )
-    {
-        aLineColor = rStyle.aLineColor;
-        bTransparent = rStyle.bTransparent;
-        aLineInfo = rStyle.aLineInfo;
-        return *this;
-    }
-
-    WinMtfLineStyle& operator=( WinMtfLineStyle* pStyle )
-    {
-        aLineColor = pStyle->aLineColor;
-        bTransparent = pStyle->bTransparent;
-        aLineInfo = pStyle->aLineInfo;
-        return *this;
     }
 };
 
@@ -416,7 +391,7 @@ struct SaveStruct
 {
     BkMode              nBkMode;
     sal_uInt32          nMapMode, nGfxMode;
-    ComplexTextLayoutMode nTextLayoutMode;
+    ComplexTextLayoutFlags nTextLayoutMode;
     sal_Int32           nWinOrgX, nWinOrgY, nWinExtX, nWinExtY;
     sal_Int32           nDevOrgX, nDevOrgY, nDevWidth, nDevHeight;
 
@@ -437,30 +412,28 @@ struct SaveStruct
     bool                bFillStyleSelected;
 };
 
-typedef std::shared_ptr<SaveStruct> SaveStructPtr;
 
 struct BSaveStruct
 {
     BitmapEx        aBmpEx;
-    Rectangle       aOutRect;
+    tools::Rectangle       aOutRect;
     sal_uInt32      nWinRop;
 
-    BSaveStruct(const Bitmap& rBmp, const Rectangle& rOutRect, sal_uInt32 nRop)
+    BSaveStruct(const Bitmap& rBmp, const tools::Rectangle& rOutRect, sal_uInt32 nRop)
     :   aBmpEx(rBmp)
     ,   aOutRect(rOutRect)
     ,   nWinRop(nRop)
     {}
 
-    BSaveStruct(const BitmapEx& rBmpEx, const Rectangle& rOutRect, sal_uInt32 nRop)
+    BSaveStruct(const BitmapEx& rBmpEx, const tools::Rectangle& rOutRect, sal_uInt32 nRop)
     :   aBmpEx(rBmpEx)
     ,   aOutRect(rOutRect)
     ,   nWinRop(nRop)
     {}
 };
 
-typedef std::vector<std::unique_ptr<BSaveStruct>> BSaveStructList_impl;
 
-class WinMtfOutput
+class WinMtfOutput final
 {
     WinMtfPathObj       aPathObj;
     WinMtfClipPath      aClipPath;
@@ -479,8 +452,8 @@ class WinMtfOutput
     Color               maTextColor;
     Color               maLatestBkColor;
     Color               maBkColor;
-    ComplexTextLayoutMode  mnLatestTextLayoutMode;
-    ComplexTextLayoutMode  mnTextLayoutMode;
+    ComplexTextLayoutFlags  mnLatestTextLayoutMode;
+    ComplexTextLayoutFlags  mnTextLayoutMode;
     BkMode              mnLatestBkMode;
     BkMode              mnBkMode;
     RasterOp            meLatestRasterOp;
@@ -490,13 +463,13 @@ class WinMtfOutput
 
     Point               maActPos;
 
-    sal_uInt32          mnRop;
+    WMFRasterOp         mnRop;
     bool            mbNopMode;
     bool            mbFillStyleSelected;
     bool            mbClipNeedsUpdate;
     bool            mbComplexClip;
 
-    std::vector< SaveStructPtr > vSaveStack;
+    std::vector< std::shared_ptr<SaveStruct> > vSaveStack;
 
     sal_uInt32          mnGfxMode;
     sal_uInt32          mnMapMode;
@@ -511,8 +484,8 @@ class WinMtfOutput
 
     sal_Int32           mnPixX, mnPixY;             // Reference Device in pixel
     sal_Int32           mnMillX, mnMillY;           // Reference Device in Mill
-    Rectangle           mrclFrame;                  // rectangle in logical units 1/100th mm
-    Rectangle           mrclBounds;
+    tools::Rectangle           mrclFrame;                  // rectangle in logical units 1/100th mm
+    tools::Rectangle           mrclBounds;
 
     GDIMetaFile*        mpGDIMetaFile;
 
@@ -522,7 +495,7 @@ class WinMtfOutput
     Point               ImplMap( const Point& rPt );
     Point               ImplScale( const Point& rPt );
     Size                ImplMap( const Size& rSize, bool bDoWorldTransform = true);
-    Rectangle           ImplMap( const Rectangle& rRectangle );
+    tools::Rectangle           ImplMap( const tools::Rectangle& rRectangle );
     void                ImplMap( vcl::Font& rFont );
     tools::Polygon&     ImplMap( tools::Polygon& rPolygon );
     tools::PolyPolygon& ImplMap( tools::PolyPolygon& rPolyPolygon );
@@ -546,8 +519,8 @@ public:
     void                SetWinExt( const Size& rSize , bool bIsEMF = false);
     void                ScaleWinExt( double fX, double fY );
 
-    void                SetrclBounds( const Rectangle& rRect );
-    void                SetrclFrame( const Rectangle& rRect );
+    void                SetrclBounds( const tools::Rectangle& rRect );
+    void                SetrclFrame( const tools::Rectangle& rRect );
     void                SetRefPix( const Size& rSize );
     void                SetRefMill( const Size& rSize );
 
@@ -558,7 +531,7 @@ public:
     void                Push();
     void                Pop();
 
-    sal_uInt32          SetRasterOp( sal_uInt32 nRasterOp );
+    WMFRasterOp         SetRasterOp( WMFRasterOp nRasterOp );
     void                StrokeAndFillPath( bool bStroke, bool bFill );
 
     void                SetGfxMode( sal_Int32 nGfxMode ){ mnGfxMode = nGfxMode; };
@@ -580,7 +553,7 @@ public:
     void                SelectObject( sal_Int32 nIndex );
     rtl_TextEncoding    GetCharSet(){ return maFont.GetCharSet(); };
     const vcl::Font&    GetFont() const { return maFont;}
-    void                SetTextLayoutMode( ComplexTextLayoutMode nLayoutMode );
+    void                SetTextLayoutMode( ComplexTextLayoutFlags nLayoutMode );
 
     void                ClearPath(){ aPathObj.Init(); };
     void                ClosePath(){ aPathObj.ClosePath(); };
@@ -589,22 +562,22 @@ public:
     void                MoveTo( const Point& rPoint, bool bRecordPath = false );
     void                LineTo( const Point& rPoint, bool bRecordPath = false );
     void                DrawPixel( const Point& rSource, const Color& rColor );
-    void                DrawRect( const Rectangle& rRect, bool bEdge = true );
-    void                DrawRoundRect( const Rectangle& rRect, const Size& rSize );
-    void                DrawEllipse( const Rectangle& rRect );
+    void                DrawRect( const tools::Rectangle& rRect, bool bEdge = true );
+    void                DrawRoundRect( const tools::Rectangle& rRect, const Size& rSize );
+    void                DrawEllipse( const tools::Rectangle& rRect );
     void                DrawArc(
-                            const Rectangle& rRect,
+                            const tools::Rectangle& rRect,
                             const Point& rStartAngle,
                             const Point& rEndAngle,
                             bool bDrawTo = false
                         );
     void                DrawPie(
-                            const Rectangle& rRect,
+                            const tools::Rectangle& rRect,
                             const Point& rStartAngle,
                             const Point& rEndAngle
                         );
     void                DrawChord(
-                            const Rectangle& rRect,
+                            const tools::Rectangle& rRect,
                             const Point& rStartAngle,
                             const Point& rEndAngle
                         );
@@ -620,19 +593,20 @@ public:
                                       bool bRecordPath = false
                         );
     void                DrawPolyBezier( tools::Polygon& rPolygin,
-                                        bool bDrawTo = false,
-                                        bool bRecordPath = false
+                                        bool bDrawTo,
+                                        bool bRecordPath
                         );
     void                DrawText( Point& rPosition,
                                   OUString& rString,
                                   long* pDXArry = nullptr,
+                                  long* pDYArry = nullptr,
                                   bool bRecordPath = false,
                                   sal_Int32 nGraphicsMode = GM_COMPATIBLE);
 
-    void                ResolveBitmapActions( BSaveStructList_impl& rSaveList );
+    void                ResolveBitmapActions( std::vector<std::unique_ptr<BSaveStruct>>& rSaveList );
 
-    void                IntersectClipRect( const Rectangle& rRect );
-    void                ExcludeClipRect( const Rectangle& rRect );
+    void                IntersectClipRect( const tools::Rectangle& rRect );
+    void                ExcludeClipRect( const tools::Rectangle& rRect );
     void                MoveClipRegion( const Size& rSize );
     void                SetClipPath(
                             const tools::PolyPolygon& rPolyPoly,
@@ -647,7 +621,7 @@ public:
     void                PassEMFPlusHeaderInfo();
 
     explicit            WinMtfOutput( GDIMetaFile& rGDIMetaFile );
-    virtual             ~WinMtfOutput();
+                        ~WinMtfOutput();
 };
 
 class WinMtf
@@ -658,7 +632,7 @@ protected:
     SvStream*               pWMF;               // the WMF/EMF file to be read
 
     sal_uInt32              nStartPos, nEndPos;
-    BSaveStructList_impl    aBmpSaveList;
+    std::vector<std::unique_ptr<BSaveStruct>>    aBmpSaveList;
 
     FilterConfigItem*   pFilterConfigItem;
 
@@ -672,7 +646,7 @@ protected:
                         WinMtf(
                             GDIMetaFile& rGDIMetaFile,
                             SvStream& rStreamWMF,
-                            FilterConfigItem* pConfigItem = nullptr
+                            FilterConfigItem* pConfigItem
                         );
                         ~WinMtf();
 };
@@ -685,7 +659,7 @@ class EnhWMFReader : public WinMtf
 
     bool        ReadHeader();
                     // reads and converts the rectangle
-    static Rectangle ReadRectangle( sal_Int32, sal_Int32, sal_Int32, sal_Int32 );
+    static tools::Rectangle ReadRectangle( sal_Int32, sal_Int32, sal_Int32, sal_Int32 );
 
 public:
     EnhWMFReader(SvStream& rStreamWMF, GDIMetaFile& rGDIMetaFile, FilterConfigItem* pConfigItem = nullptr);
@@ -698,7 +672,7 @@ private:
     template <class T> tools::Polygon ReadPolygon(sal_uInt32 nStartIndex, sal_uInt32 nPoints);
     template <class T, class Drawer> void ReadAndDrawPolygon(Drawer drawer, const bool skipFirst);
 
-    Rectangle ReadRectangle();
+    tools::Rectangle ReadRectangle();
     void ReadEMFPlusComment(sal_uInt32 length, bool& bHaveDC);
 };
 
@@ -723,7 +697,6 @@ private:
 
     sal_uInt32      nSkipActions;
     sal_uInt32      nCurrentAction;
-    sal_uInt32      nUnicodeEscapeAction;
 
     WMF_EXTERNALHEADER* pExternalHeader;
 
@@ -735,14 +708,14 @@ private:
 
     Point           ReadPoint();                // reads and converts a point (first X then Y)
     Point           ReadYX();                   // reads and converts a point (first Y then X)
-    Rectangle       ReadRectangle();            // reads and converts a rectangle
+    tools::Rectangle       ReadRectangle();            // reads and converts a rectangle
     Size            ReadYXExt();
-    void            GetPlaceableBound( Rectangle& rSize, SvStream* pStrm );
+    void            GetPlaceableBound( tools::Rectangle& rSize, SvStream* pStrm );
 
 public:
 
     WMFReader(SvStream& rStreamWMF, GDIMetaFile& rGDIMetaFile,
-              FilterConfigItem* pConfigItem = nullptr,
+              FilterConfigItem* pConfigItem,
               WMF_EXTERNALHEADER* pExtHeader = nullptr);
 
     // read WMF file from stream and fill the GDIMetaFile

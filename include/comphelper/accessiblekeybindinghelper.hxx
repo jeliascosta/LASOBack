@@ -51,18 +51,20 @@ namespace comphelper
     protected:
         ::osl::Mutex    m_aMutex;
 
-        virtual ~OAccessibleKeyBindingHelper();
+        virtual ~OAccessibleKeyBindingHelper() override;
 
     public:
         OAccessibleKeyBindingHelper();
         OAccessibleKeyBindingHelper( const OAccessibleKeyBindingHelper& rHelper );
 
-        void AddKeyBinding( const css::uno::Sequence< css::awt::KeyStroke >& rKeyBinding ) throw (css::uno::RuntimeException);
-        void AddKeyBinding( const css::awt::KeyStroke& rKeyStroke ) throw (css::uno::RuntimeException);
+        /// @throws css::uno::RuntimeException
+        void AddKeyBinding( const css::uno::Sequence< css::awt::KeyStroke >& rKeyBinding );
+        /// @throws css::uno::RuntimeException
+        void AddKeyBinding( const css::awt::KeyStroke& rKeyStroke );
 
         // XAccessibleKeyBinding
-        virtual sal_Int32 SAL_CALL getAccessibleKeyBindingCount() throw (css::uno::RuntimeException, std::exception) override;
-        virtual css::uno::Sequence< css::awt::KeyStroke > SAL_CALL getAccessibleKeyBinding( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getAccessibleKeyBindingCount() override;
+        virtual css::uno::Sequence< css::awt::KeyStroke > SAL_CALL getAccessibleKeyBinding( sal_Int32 nIndex ) override;
     };
 
 

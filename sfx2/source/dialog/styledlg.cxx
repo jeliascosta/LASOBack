@@ -88,19 +88,6 @@ void SfxStyleDialog::dispose()
 }
 
 
-void SfxStyleDialog::RefreshInputSet()
-
-/*  [Description]
-
-    This is called when <SfxTabPage::DeactivatePage(SfxItemSet *)>
-    returns <SfxTabPage::REFRESH_SET>.
-*/
-
-{
-    SfxTabDialog::RefreshInputSet();
-}
-
-
 short SfxStyleDialog::Ok()
 
 /*  [Description]
@@ -114,7 +101,7 @@ short SfxStyleDialog::Ok()
 }
 
 
-IMPL_LINK_NOARG_TYPED( SfxStyleDialog, CancelHdl, Button *, void )
+IMPL_LINK_NOARG( SfxStyleDialog, CancelHdl, Button *, void )
 
 /*  [Description]
 

@@ -26,7 +26,7 @@
 #include <rtl/ustrbuf.hxx>
 #include <com/sun/star/connection/XConnectionBroadcaster.hpp>
 #include <com/sun/star/connection/ConnectionSetupException.hpp>
-
+#include <com/sun/star/io/IOException.hpp>
 #include <cppuhelper/implbase.hxx>
 
 using namespace ::osl;
@@ -70,29 +70,17 @@ namespace io_acceptor {
     {
     public:
         explicit SocketConnection( const OUString & sConnectionDescription );
-        virtual ~SocketConnection();
 
         virtual sal_Int32 SAL_CALL read( css::uno::Sequence< sal_Int8 >& aReadBytes,
-                                         sal_Int32 nBytesToRead )
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL write( const css::uno::Sequence< sal_Int8 >& aData )
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL flush(  ) throw(
-            css::io::IOException,
-            css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL close(  )
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception) override;
-        virtual OUString SAL_CALL getDescription(  )
-            throw(css::uno::RuntimeException, std::exception) override;
+                                         sal_Int32 nBytesToRead ) override;
+        virtual void SAL_CALL write( const css::uno::Sequence< sal_Int8 >& aData ) override;
+        virtual void SAL_CALL flush(  ) override;
+        virtual void SAL_CALL close(  ) override;
+        virtual OUString SAL_CALL getDescription(  ) override;
 
         // XConnectionBroadcaster
-        virtual void SAL_CALL addStreamListener(const css::uno::Reference< css::io::XStreamListener>& aListener)
-            throw(css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL removeStreamListener(const css::uno::Reference< css::io::XStreamListener>& aListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addStreamListener(const css::uno::Reference< css::io::XStreamListener>& aListener) override;
+        virtual void SAL_CALL removeStreamListener(const css::uno::Reference< css::io::XStreamListener>& aListener) override;
 
     public:
         void completeConnectionString();
@@ -170,20 +158,16 @@ namespace io_acceptor {
                 reinterpret_cast< sal_IntPtr >(&m_socket)) );
     }
 
-    SocketConnection::~SocketConnection()
-    {
-    }
-
     void SocketConnection::completeConnectionString()
     {
         OUStringBuffer buf( 256 );
         buf.append( ",peerPort=" );
-        buf.append( (sal_Int32) m_socket.getPeerPort() );
+        buf.append( m_socket.getPeerPort() );
         buf.append( ",peerHost=" );
         buf.append( m_socket.getPeerHost( ) );
 
         buf.append( ",localPort=" );
-        buf.append( (sal_Int32) m_socket.getLocalPort() );
+        buf.append( m_socket.getLocalPort() );
         buf.append( ",localHost=" );
         buf.append( m_socket.getLocalHost() );
 
@@ -191,8 +175,6 @@ namespace io_acceptor {
     }
 
     sal_Int32 SocketConnection::read( Sequence < sal_Int8 > & aReadBytes , sal_Int32 nBytesToRead )
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception)
     {
         if( ! m_nStatus )
         {
@@ -239,8 +221,6 @@ namespace io_acceptor {
     }
 
     void SocketConnection::write( const Sequence < sal_Int8 > &seq )
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception)
     {
         if( ! m_nStatus )
         {
@@ -275,15 +255,11 @@ namespace io_acceptor {
     }
 
     void SocketConnection::flush( )
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception)
     {
 
     }
 
     void SocketConnection::close()
-            throw(css::io::IOException,
-                  css::uno::RuntimeException, std::exception)
     {
         // ensure close is called only once
         if(  1 == osl_atomic_increment( (&m_nStatus) ) )
@@ -294,21 +270,20 @@ namespace io_acceptor {
     }
 
     OUString SocketConnection::getDescription()
-            throw( css::uno::RuntimeException, std::exception)
     {
         return m_sDescription;
     }
 
 
     // XConnectionBroadcaster
-    void SAL_CALL SocketConnection::addStreamListener(const Reference<XStreamListener> & aListener) throw(RuntimeException, std::exception)
+    void SAL_CALL SocketConnection::addStreamListener(const Reference<XStreamListener> & aListener)
     {
         MutexGuard guard(_mutex);
 
         _listeners.insert(aListener);
     }
 
-    void SAL_CALL SocketConnection::removeStreamListener(const Reference<XStreamListener> & aListener) throw(RuntimeException, std::exception)
+    void SAL_CALL SocketConnection::removeStreamListener(const Reference<XStreamListener> & aListener)
     {
         MutexGuard guard(_mutex);
 
@@ -332,34 +307,29 @@ namespace io_acceptor {
     {
         if( ! m_addr.setPort( m_nPort ) )
         {
-            OUStringBuffer message( 128 );
-            message.append( "acc_socket.cxx:SocketAcceptor::init - error - invalid tcp/ip port " );
-            message.append( (sal_Int32) m_nPort );
-            throw ConnectionSetupException( message.makeStringAndClear() );
+            throw ConnectionSetupException(
+                "acc_socket.cxx:SocketAcceptor::init - error - invalid tcp/ip port " +
+                OUString::number( m_nPort ));
         }
         if( ! m_addr.setHostname( m_sSocketName.pData ) )
         {
-            OUStringBuffer message( 128 );
-            message.append( "acc_socket.cxx:SocketAcceptor::init - error - invalid host " );
-            message.append( m_sSocketName );
-            throw ConnectionSetupException( message.makeStringAndClear() );
+            throw ConnectionSetupException(
+                "acc_socket.cxx:SocketAcceptor::init - error - invalid host " + m_sSocketName );
         }
         m_socket.setOption( osl_Socket_OptionReuseAddr, 1);
 
         if(! m_socket.bind(m_addr) )
         {
-            OUStringBuffer message( 128 );
-            message.append( "acc_socket.cxx:SocketAcceptor::init - error - couldn't bind on " );
-            message.append( m_sSocketName ).append( ":" ).append((sal_Int32)m_nPort);
-            throw ConnectionSetupException( message.makeStringAndClear() );
+            throw ConnectionSetupException(
+                "acc_socket.cxx:SocketAcceptor::init - error - couldn't bind on " +
+                m_sSocketName + ":" + OUString::number(m_nPort));
         }
 
         if(! m_socket.listen() )
         {
-            OUStringBuffer message( 128 );
-            message.append( "acc_socket.cxx:SocketAcceptor::init - error - can't listen on " );
-            message.append( m_sSocketName ).append( ":" ).append( (sal_Int32) m_nPort);
-            throw ConnectionSetupException( message.makeStringAndClear() );
+            throw ConnectionSetupException(
+                "acc_socket.cxx:SocketAcceptor::init - error - can't listen on " +
+                m_sSocketName  + ":" + OUString::number(m_nPort) );
         }
     }
 

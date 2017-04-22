@@ -45,13 +45,13 @@ void SwNoteURL::FillImageMap( ImageMap *pMap, const Point &rPos,
     const size_t nCount = m_List.size();
     if( nCount )
     {
-        MapMode aMap( MAP_100TH_MM );
+        MapMode aMap( MapUnit::Map100thMM );
         for( size_t i = 0; i < nCount; ++i )
         {
             const SwURLNote &rNote = m_List[i];
             SwRect aSwRect( rNote.GetRect() );
             aSwRect -= rPos;
-            Rectangle aRect( OutputDevice::LogicToLogic( aSwRect.SVRect(),
+            tools::Rectangle aRect( OutputDevice::LogicToLogic( aSwRect.SVRect(),
                                                          rMap, aMap ) );
             IMapRectangleObject aObj( aRect, rNote.GetURL(), OUString(), OUString(),
                                       rNote.GetTarget(), OUString(), true, false );

@@ -22,8 +22,6 @@
 #include <editeng/eerdll.hxx>
 
 
-SfxPoolItem* SvxCharHiddenItem::CreateDefault() { return new  SvxCharHiddenItem(false, 0);}
-
 SvxCharHiddenItem::SvxCharHiddenItem( const bool bHidden, const sal_uInt16 nId ) :
     SfxBoolItem( nId, bHidden )
 {
@@ -37,8 +35,8 @@ SfxPoolItem* SvxCharHiddenItem::Clone( SfxItemPool * ) const
 bool SvxCharHiddenItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText,
     const IntlWrapper * /*pIntl*/
 )   const
@@ -47,7 +45,7 @@ bool SvxCharHiddenItem::GetPresentation
 
     if ( GetValue() )
         nId = RID_SVXITEMS_CHARHIDDEN_TRUE;
-    rText = EE_RESSTR(nId);
+    rText = EditResId::GetString(nId);
     return true;
 }
 

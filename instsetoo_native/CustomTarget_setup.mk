@@ -19,6 +19,7 @@ $(eval $(call gb_CustomTarget_register_targets,instsetoo_native/setup,\
 	$(call gb_Helper_get_rcfile,soffice) \
 	$(call gb_Helper_get_rcfile,uno) \
 	$(call gb_Helper_get_rcfile,version) \
+	$(call gb_Helper_get_rcfile,crashreport) \
 ))
 
 $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_rcfile,bootstrap) \
@@ -29,19 +30,17 @@ $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_
 $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_rcfile,soffice) \
 $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_rcfile,uno) \
 $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_rcfile,version) \
+$(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_rcfile,crashreport) \
 	: $(SRCDIR)/instsetoo_native/CustomTarget_setup.mk
 
 $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_rcfile,bootstrap) :
 	$(call gb_Output_announce,$(subst $(WORKDIR)/,,$@),$(true),ECH,1)
 	( \
-		echo '[ErrorReport]' \
-		&& echo 'ErrorReportPort=80' \
-		&& echo 'ErrorReportServer=report.libreoffice.org' \
-		&& echo '[Bootstrap]' \
+		echo '[Bootstrap]' \
 		&& echo 'InstallMode=<installmode>' \
 		&& echo 'ProductKey=$(PRODUCTNAME) $(PRODUCTVERSION)' \
 		$(if $(ENABLE_RELEASE_BUILD),\
-			&& echo 'UserInstallation=$$SYSUSERCONFIG/$(if $(filter-out MACOSX WNT,$(OS)),$(shell echo $(PRODUCTNAME) | tr "[:upper:]" "[:lower:]"),$(PRODUCTNAME))/4', \
+			&& echo 'UserInstallation=$$SYSUSERCONFIG/$(if $(filter-out MACOSX WNT,$(OS)),$(shell echo $(PRODUCTNAME) | tr "[:upper:]" "[:lower:]"),$(shell echo $(PRODUCTNAME) | sed -e 's/ /%20/g'))/4', \
 			&& echo 'UserInstallation=$$ORIGIN/..') \
 	) > $@
 
@@ -75,9 +74,9 @@ $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_
 	$(call gb_Output_announce,$(subst $(WORKDIR)/,,$@),$(true),ECH,1)
 	( \
 		echo '[Bootstrap]' \
-		&& echo 'PKG_BundledUnoFile=$$BUNDLED_EXTENSIONS_USER/registry/com.sun.star.comp.deployment.component.PackageRegistryBackend/$(call gb_Helper_get_rcfile,uno)' \
-		&& echo 'PKG_SharedUnoFile=$$SHARED_EXTENSIONS_USER/registry/com.sun.star.comp.deployment.component.PackageRegistryBackend/$(call gb_Helper_get_rcfile,uno)' \
-		&& echo 'PKG_UserUnoFile=$$UNO_USER_PACKAGES_CACHE/registry/com.sun.star.comp.deployment.component.PackageRegistryBackend/$(call gb_Helper_get_rcfile,uno)' \
+		&& echo 'PKG_BundledUnoFile=$$BUNDLED_EXTENSIONS_USER/registry/com.sun.star.comp.deployment.component.PackageRegistryBackend/unorc' \
+		&& echo 'PKG_SharedUnoFile=$$SHARED_EXTENSIONS_USER/registry/com.sun.star.comp.deployment.component.PackageRegistryBackend/unorc' \
+		&& echo 'PKG_UserUnoFile=$$UNO_USER_PACKAGES_CACHE/registry/com.sun.star.comp.deployment.component.PackageRegistryBackend/unorc' \
 		&& echo 'BAK_EXTENSIONS=$${$$BRAND_BASE_DIR/$(LIBO_ETC_FOLDER)/$(call gb_Helper_get_rcfile,bootstrap):UserInstallation}/user/extensions/bak' \
 		&& echo 'BUNDLED_EXTENSIONS=$$BRAND_BASE_DIR/$(LIBO_SHARE_FOLDER)/extensions' \
 		&& echo 'BUNDLED_EXTENSIONS_USER=$${$$BRAND_BASE_DIR/$(LIBO_ETC_FOLDER)/$(call gb_Helper_get_rcfile,bootstrap):UserInstallation}/user/extensions/bundled' \
@@ -104,10 +103,21 @@ $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_
 	) > $@
 
 # for release-builds (building installers) adjust values in openoffice.lst.in
+# Added 'SecureUserConfig' flags to enable and safe user config files
+#  SecureUserConfig :           boolean - switches securing on/off - default false
+#  SecureUserConfigCompress :   boolean - defines if backup data will be compressed - default true
+#  SecureUserConfigNumCopies :  integer - defines how many compressed copies of saved content will be kept - default 2
+#  SecureUserConfigMode:        integer - defines what to secure, default is 1
+#                                           0 : only registrymodifications.xcu
+#                                           1 : a selected amount of user-defined configs
+#                                           2 : everything in the user config directory
+#  SecureUserConfigExtensions:  boolean - defines to also safe the extension configuration (which extensions
+#                                         are installed, which are activated) - default is true
 $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_rcfile,soffice) :
 	$(call gb_Output_announce,$(subst $(WORKDIR)/,,$@),$(true),ECH,1)
 	( \
 		echo '[Bootstrap]' \
+		&& echo 'CrashDirectory=$${$$BRAND_BASE_DIR/$(LIBO_ETC_FOLDER)/$(call gb_Helper_get_rcfile,bootstrap):UserInstallation}/crash' \
 		&& echo 'HideEula=1' \
 		&& echo 'Logo=1' \
 		&& echo 'NativeProgress=false' \
@@ -117,6 +127,11 @@ $(call gb_CustomTarget_get_workdir,instsetoo_native/setup)/$(call gb_Helper_get_
 		&& echo 'ProgressSize=444,8' \
 		&& echo 'ProgressTextBaseline=145' \
 		&& echo 'ProgressTextColor=255,255,255' \
+		&& echo 'SecureUserConfig=true' \
+		&& echo 'SecureUserConfigCompress=true' \
+		&& echo 'SecureUserConfigExtensions=true' \
+		&& echo 'SecureUserConfigMode=1' \
+		&& echo 'SecureUserConfigNumCopies=2' \
 		&& echo 'URE_BOOTSTRAP=$${ORIGIN}/$(call gb_Helper_get_rcfile,fundamental)' \
 	) > $@
 

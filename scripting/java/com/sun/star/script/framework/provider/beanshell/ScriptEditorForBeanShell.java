@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import java.net.URL;
+import java.net.URLClassLoader;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +45,9 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
+import javax.swing.JToolBar;
+import javax.swing.BorderFactory;
 
 public class ScriptEditorForBeanShell implements ScriptEditor, ActionListener {
 
@@ -181,14 +185,14 @@ public class ScriptEditorForBeanShell implements ScriptEditor, ActionListener {
     public void edit(final XScriptContext context, ScriptMetaData entry) {
         if (entry != null) {
             try {
-                ClassLoader cl = null;
+                URLClassLoader cl = null;
 
                 try {
                     cl = ClassLoaderFactory.getURLClassLoader(entry);
                 } catch (Exception ignore) { // TODO re-examine error handling
                 }
 
-                final ClassLoader theCl = cl;
+                final URLClassLoader theCl = cl;
                 final URL url = entry.getSourceURL();
                 SwingInvocation.invoke(
                 new Runnable() {
@@ -270,21 +274,21 @@ public class ScriptEditorForBeanShell implements ScriptEditor, ActionListener {
         );
 
         String[] labels = {"Run", "Clear", "Save", "Close","Undo","Redo"};
-        JPanel p = new JPanel();
-        p.setLayout(new FlowLayout());
-
+        JToolBar toolbar = new JToolBar();
+        toolbar.setRollover(true);
         for (String label : labels) {
             JButton b = new JButton(label);
+            b.setToolTipText(label);
             b.addActionListener(this);
-            p.add(b);
-
+            toolbar.add(b);
+            toolbar.addSeparator();
             if (label.equals("Save") && filename == null) {
                 b.setEnabled(false);
             }
         }
 
         frame.getContentPane().add((JComponent)view, BorderLayout.CENTER);
-        frame.add(p, BorderLayout.NORTH);
+        frame.add(toolbar, BorderLayout.NORTH);
         frame.pack();
         frame.setSize(590, 480);
         frame.setLocation(300, 200);
@@ -344,6 +348,9 @@ public class ScriptEditorForBeanShell implements ScriptEditor, ActionListener {
             if (fos != null) {
                 try {
                     fos.flush();
+                } catch (IOException ignore) {
+                }
+                try {
                     fos.close();
                 } catch (IOException ignore) {
                 }

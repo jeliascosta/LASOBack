@@ -19,7 +19,6 @@
 #ifndef INCLUDED_SW_SOURCE_UIBASE_INC_WRTSH_HXX
 #define INCLUDED_SW_SOURCE_UIBASE_INC_WRTSH_HXX
 
-#include <com/sun/star/embed/XEmbeddedObject.hpp>
 #include "swdllapi.h"
 #include <fesh.hxx>
 #include <sortopt.hxx>
@@ -27,6 +26,7 @@
 #include <IMark.hxx>
 #include "navmgr.hxx"
 #include <boost/optional.hpp>
+#include <o3tl/typed_flags_set.hxx>
 
 namespace vcl { class Window; }
 class SbxArray;
@@ -47,29 +47,33 @@ class NaviContentBookmark;
 struct SwCallMouseEvent;
 class SfxStringListItem;
 
-namespace com { namespace sun { namespace star { namespace util {
+namespace i18nutil {
     struct SearchOptions2;
-} } } }
+}
 
-typedef sal_Int32 SelectionType;
-namespace nsSelectionType
+enum class SelectionType : sal_Int32
 {
-    const SelectionType SEL_TXT             = CNT_TXT;  // text, never frames too   0x0001
-    const SelectionType SEL_GRF             = CNT_GRF;  // graphic          0x0002
-    const SelectionType SEL_OLE             = CNT_OLE;  // OLE              0x0010
-    const SelectionType SEL_FRM             = 0x000020; // frame, no content type
-    const SelectionType SEL_NUM             = 0x000040; // NumList
-    const SelectionType SEL_TBL             = 0x000080; // cursor is in table
-    const SelectionType SEL_TBL_CELLS       = 0x000100; // table cells are selected
-    const SelectionType SEL_DRW             = 0x000200; // drawing objects (rectangle, circle...)
-    const SelectionType SEL_DRW_TXT         = 0x000400; // draw-textobjects in edit mode
-    const SelectionType SEL_BEZ             = 0x000800; // edit ornament objects
-    const SelectionType SEL_DRW_FORM        = 0x001000; // drawing objects: DB-Forms
-    const SelectionType SEL_FOC_FRM_CTRL    = 0x002000; // a form control is focused. Neither set nor evaluated by the SwWrtShell itself, only by its clients.
-    const SelectionType SEL_MEDIA           = 0x004000; // Media object
-    const SelectionType SEL_EXTRUDED_CUSTOMSHAPE = 0x008000;    // extruded custom shape
-    const SelectionType SEL_FONTWORK        = 0x010000; // fontwork
-    const SelectionType SEL_POSTIT          = 0x020000; //annotation
+    NONE                 = 0x000000,
+    Text                 =  CNT_TXT, // text, never frames too   0x0001
+    Graphic              =  CNT_GRF, // graphic          0x0002
+    Ole                  =  CNT_OLE, // OLE              0x0010
+    Frame                = 0x000020, // frame, no content type
+    NumberList           = 0x000040, // NumList
+    Table                = 0x000080, // cursor is in table
+    TableCell            = 0x000100, // table cells are selected
+    DrawObject           = 0x000200, // drawing objects (rectangle, circle...)
+    DrawObjectEditMode   = 0x000400, // draw-textobjects in edit mode
+    Ornament             = 0x000800, // edit ornament objects
+    DbForm               = 0x001000, // drawing objects: DB-Forms
+    FormControl          = 0x002000, // a form control is focused. Neither set nor evaluated by the SwWrtShell itself, only by its clients.
+    Media                = 0x004000, // Media object
+    ExtrudedCustomShape  = 0x008000, // extruded custom shape
+    FontWork             = 0x010000, // fontwork
+    PostIt               = 0x020000, // annotation
+    All                  = 0x03fff3,
+};
+namespace o3tl {
+    template<> struct typed_flags<SelectionType> : is_typed_flags<SelectionType, 0x03fff3> {};
 }
 
 /** Used by the UI to modify the document model.
@@ -149,7 +153,7 @@ public:
     void    SetInsMode( bool bOn = true );
     void    ToggleInsMode() { SetInsMode( !m_bIns ); }
     bool    IsInsMode() const { return m_bIns; }
-    void    SetRedlineModeAndCheckInsMode( sal_uInt16 eMode );
+    void    SetRedlineFlagsAndCheckInsMode( RedlineFlags eMode );
 
     void    EnterSelFrameMode(const Point *pStartDrag = nullptr);
     void    LeaveSelFrameMode();
@@ -179,8 +183,8 @@ public:
     bool    SelNearestWrd();
     bool    SelWrd      (const Point * = nullptr );
     // #i32329# Enhanced selection
-    void    SelSentence (const Point * = nullptr );
-    void    SelPara     (const Point * = nullptr );
+    void    SelSentence (const Point *);
+    void    SelPara     (const Point *);
     long    SelAll();
 
     // basecursortravelling
@@ -242,7 +246,7 @@ typedef bool (SwWrtShell:: *FNSimpleMove)();
     bool    GotoPage( sal_uInt16 nPage, bool bRecord );
 
     // setting the cursor; remember the old position for turning back
-    DECL_LINK_TYPED( ExecFlyMac, const SwFlyFrameFormat*, void );
+    DECL_LINK( ExecFlyMac, const SwFlyFrameFormat*, void );
 
     bool    PageCursor(SwTwips lOffset, bool bSelect);
 
@@ -283,7 +287,7 @@ typedef bool (SwWrtShell:: *FNSimpleMove)();
             WORD_SPACE_AFTER = 2,
             WORD_NO_SPACE = 3
         };
-    int     IntelligentCut(int nSelectionType, bool bCut = true);
+    int     IntelligentCut(SelectionType nSelectionType, bool bCut = true);
 
     // edit
     void    Insert(SwField &);
@@ -320,7 +324,7 @@ typedef bool (SwWrtShell:: *FNSimpleMove)();
     //OLE
     void    InsertObject(     /*SvInPlaceObjectRef *pObj, */       // != 0 for clipboard
                           const svt::EmbeddedObjectRef&,
-                          SvGlobalName *pName = nullptr,      // != 0 create object accordingly
+                          SvGlobalName *pName,      // != 0 create object accordingly
                           sal_uInt16 nSlotId = 0);       // SlotId for dialog
 
     bool    InsertOleObject( const svt::EmbeddedObjectRef& xObj, SwFlyFrameFormat **pFlyFrameFormat = nullptr );
@@ -361,22 +365,22 @@ typedef bool (SwWrtShell:: *FNSimpleMove)();
     void    GetDoStrings( DoType eDoType, SfxStringListItem& rStrLstItem ) const;
 
     // search and replace
-    sal_uLong SearchPattern(const css::util::SearchOptions2& rSearchOpt,
+    sal_uLong SearchPattern(const i18nutil::SearchOptions2& rSearchOpt,
                          bool bSearchInNotes,
                          SwDocPositions eStart, SwDocPositions eEnd,
-                         FindRanges eFlags = FND_IN_BODY,
+                         FindRanges eFlags = FindRanges::InBody,
                          bool bReplace = false );
 
     sal_uLong SearchTempl  (const OUString &rTempl,
                          SwDocPositions eStart, SwDocPositions eEnd,
-                         FindRanges eFlags = FND_IN_BODY,
+                         FindRanges eFlags = FindRanges::InBody,
                          const OUString* pReplTempl = nullptr );
 
     sal_uLong SearchAttr   (const SfxItemSet& rFindSet,
                          bool bNoColls,
                          SwDocPositions eStart, SwDocPositions eEnd,
-                         FindRanges eFlags = FND_IN_BODY,
-                         const css::util::SearchOptions2* pSearchOpt = nullptr,
+                         FindRanges eFlags = FindRanges::InBody,
+                         const i18nutil::SearchOptions2* pSearchOpt = nullptr,
                          const SfxItemSet* pReplaceSet = nullptr);
 
     void AutoCorrect( SvxAutoCorrect& rACorr, sal_Unicode cChar );
@@ -406,7 +410,7 @@ typedef bool (SwWrtShell:: *FNSimpleMove)();
 
     // jump to the next / previous hyperlink - inside text and also
     // on graphics
-    void SelectNextPrevHyperlink( bool bNext = true );
+    void SelectNextPrevHyperlink( bool bNext );
 
     // determine corresponding SwView
     const SwView&       GetView() const { return m_rView; }
@@ -416,13 +420,13 @@ typedef bool (SwWrtShell:: *FNSimpleMove)();
     void ExecMacro( const SvxMacro& rMacro, OUString* pRet = nullptr, SbxArray* pArgs = nullptr );
     // call into the dark Basic/JavaScript
     sal_uInt16 CallEvent( sal_uInt16 nEvent, const SwCallMouseEvent& rCallEvent,
-                        bool bCheckPtr = false, SbxArray* pArgs = nullptr );
+                        bool bCheckPtr = false );
 
     // a click at the given field. the cursor is on it.
     // execute the predefined actions.
     void ClickToField( const SwField& rField );
-    void ClickToINetAttr( const SwFormatINetFormat& rItem, sal_uInt16 nFilter = URLLOAD_NOFILTER );
-    bool ClickToINetGrf( const Point& rDocPt, sal_uInt16 nFilter = URLLOAD_NOFILTER );
+    void ClickToINetAttr( const SwFormatINetFormat& rItem, LoadUrlFlags nFilter = LoadUrlFlags::NONE );
+    bool ClickToINetGrf( const Point& rDocPt, LoadUrlFlags nFilter );
     inline bool IsInClickToEdit() const ;
 
     // if a URL-Button is selected, return its URL; otherwise an empty string
@@ -439,13 +443,13 @@ typedef bool (SwWrtShell:: *FNSimpleMove)();
     void AutoUpdatePara(SwTextFormatColl* pColl, const SfxItemSet& rStyleSet, SwPaM* pPaM = nullptr );
 
     // link for inserting ranges via Drag&Drop/Clipboard
-    DECL_LINK_TYPED( InsertRegionDialog, void*, void );
+    DECL_LINK( InsertRegionDialog, void*, void );
 
     // ctor, the first one is a kind of a controlled copy ctor for more views of a document
     SwWrtShell( SwWrtShell&, vcl::Window *pWin, SwView &rShell);
     SwWrtShell( SwDoc& rDoc, vcl::Window *pWin, SwView &rShell,
-                const SwViewOption *pViewOpt = nullptr);
-    virtual ~SwWrtShell();
+                const SwViewOption *pViewOpt);
+    virtual ~SwWrtShell() override;
 
     bool TryRemoveIndent(); // #i23725#
 
@@ -457,7 +461,7 @@ typedef bool (SwWrtShell:: *FNSimpleMove)();
     bool GotoFly( const OUString& rName, FlyCntType eType = FLYCNTTYPE_ALL,
          bool bSelFrame = true );
     bool GotoINetAttr( const SwTextINetFormat& rAttr );
-    void GotoOutline( sal_uInt16 nIdx );
+    void GotoOutline( SwOutlineNodes::size_type nIdx );
     bool GotoOutline( const OUString& rName );
     bool GotoRegion( const OUString& rName );
     void GotoRefMark( const OUString& rRefMark, sal_uInt16 nSubType = 0,
@@ -465,7 +469,7 @@ typedef bool (SwWrtShell:: *FNSimpleMove)();
     bool GotoNextTOXBase( const OUString* pName = nullptr);
     bool GotoTable( const OUString& rName );
     bool GotoFormatField( const SwFormatField& rField );
-    const SwRangeRedline* GotoRedline( sal_uInt16 nArrPos, bool bSelect = false);
+    const SwRangeRedline* GotoRedline( SwRedlineTable::size_type nArrPos, bool bSelect);
 
     void ChangeHeaderOrFooter(const OUString& rStyleName, bool bHeader, bool bOn, bool bShowWarning);
     virtual void SetShowHeaderFooterSeparator( FrameControlType eControl, bool bShow ) override;
@@ -565,27 +569,27 @@ private:
     using SwCursorShell::SetCursor;
     SAL_DLLPRIVATE long  SetCursor(const Point *, bool bProp=false );
 
-    SAL_DLLPRIVATE long  SetCursorKillSel(const Point *, bool bProp=false );
+    SAL_DLLPRIVATE long  SetCursorKillSel(const Point *, bool bProp );
 
-    SAL_DLLPRIVATE long  BeginDrag(const Point *, bool bProp=false );
-    SAL_DLLPRIVATE long  DefaultDrag(const Point *, bool bProp=false );
-    SAL_DLLPRIVATE long  DefaultEndDrag(const Point *, bool bProp=false );
+    SAL_DLLPRIVATE long  BeginDrag(const Point *, bool bProp );
+    SAL_DLLPRIVATE long  DefaultDrag(const Point *, bool bProp );
+    SAL_DLLPRIVATE long  DefaultEndDrag(const Point *, bool bProp );
 
-    SAL_DLLPRIVATE long  ExtSelWrd(const Point *, bool bProp=false );
-    SAL_DLLPRIVATE long  ExtSelLn(const Point *, bool bProp=false );
+    SAL_DLLPRIVATE long  ExtSelWrd(const Point *, bool bProp );
+    SAL_DLLPRIVATE long  ExtSelLn(const Point *, bool bProp );
 
-    SAL_DLLPRIVATE long  BeginFrameDrag(const Point *, bool bProp=false );
+    SAL_DLLPRIVATE long  BeginFrameDrag(const Point *, bool bProp );
 
     // after SSize/Move of a frame update; Point is destination.
-    SAL_DLLPRIVATE long  UpdateLayoutFrame(const Point *, bool bProp=false );
+    SAL_DLLPRIVATE long  UpdateLayoutFrame(const Point *, bool bProp );
 
     SAL_DLLPRIVATE void  SttLeaveSelect();
     SAL_DLLPRIVATE void  AddLeaveSelect();
-    SAL_DLLPRIVATE long  Ignore(const Point *, bool bProp=false );
+    SAL_DLLPRIVATE long  Ignore(const Point *, bool bProp );
 
     SAL_DLLPRIVATE void  LeaveExtSel() { m_bSelWrd = m_bSelLn = false;}
 
-    SAL_DLLPRIVATE bool  GoStart(bool KeepArea = false, bool * = nullptr,
+    SAL_DLLPRIVATE bool  GoStart(bool KeepArea, bool *,
             bool bSelect = false, bool bDontMoveRegion = false);
     SAL_DLLPRIVATE bool  GoEnd(bool KeepArea = false, bool * = nullptr);
 
@@ -593,8 +597,7 @@ private:
     {
         BOOKMARK_INDEX,
         BOOKMARK_NEXT,
-        BOOKMARK_PREV,
-        BOOKMARK_LAST_LAST_ENTRY
+        BOOKMARK_PREV
     };
 
     SAL_DLLPRIVATE bool MoveBookMark(BookMarkMove eFuncId, const ::sw::mark::IMark* const pMark=nullptr);

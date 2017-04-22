@@ -74,16 +74,16 @@ namespace svt
             const OUString& _rFilter,
             sal_Int32 _nMinTimeout,
             sal_Int32 _nMaxTimeout,
-            const css::uno::Sequence< OUString >& rBlackList = css::uno::Sequence< OUString >() );
+            const css::uno::Sequence< OUString >& rBlackList );
 
         /// cancels the running action
         void cancel();
 
     protected:
-        virtual ~AsyncPickerAction();
+        virtual ~AsyncPickerAction() override;
 
     private:
-        DECL_LINK_TYPED( OnActionDone, void*, void );
+        DECL_LINK( OnActionDone, void*, void );
 
         AsyncPickerAction( const AsyncPickerAction& ) = delete;
         AsyncPickerAction& operator=( const AsyncPickerAction& ) = delete;

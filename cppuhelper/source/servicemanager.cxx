@@ -29,8 +29,7 @@
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <cppuhelper/bootstrap.hxx>
 #include <cppuhelper/component_context.hxx>
-#include <cppuhelper/implbase1.hxx>
-#include <cppuhelper/implbase3.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <cppuhelper/factory.hxx>
 #include <cppuhelper/shlib.hxx>
@@ -439,7 +438,7 @@ rtl::OUString Parser::getNameAttribute() {
 }
 
 class ContentEnumeration:
-    public cppu::WeakImplHelper1< css::container::XEnumeration >
+    public cppu::WeakImplHelper< css::container::XEnumeration >
 {
 public:
     explicit ContentEnumeration(std::vector< css::uno::Any > const & factories):
@@ -449,15 +448,11 @@ public:
     const ContentEnumeration& operator=(const ContentEnumeration&) = delete;
 
 private:
-    virtual ~ContentEnumeration() {}
+    virtual ~ContentEnumeration() override {}
 
-    virtual sal_Bool SAL_CALL hasMoreElements()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasMoreElements() override;
 
-    virtual css::uno::Any SAL_CALL nextElement()
-        throw (
-            css::container::NoSuchElementException,
-            css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL nextElement() override;
 
     osl::Mutex mutex_;
     std::vector< css::uno::Any > factories_;
@@ -465,16 +460,12 @@ private:
 };
 
 sal_Bool ContentEnumeration::hasMoreElements()
-    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(mutex_);
     return iterator_ != factories_.end();
 }
 
 css::uno::Any ContentEnumeration::nextElement()
-    throw (
-        css::container::NoSuchElementException,
-        css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(mutex_);
     if (iterator_ == factories_.end()) {
@@ -493,7 +484,7 @@ css::beans::Property getDefaultContextProperty() {
 }
 
 class SingletonFactory:
-    public cppu::WeakImplHelper1<css::lang::XSingleComponentFactory>
+    public cppu::WeakImplHelper<css::lang::XSingleComponentFactory>
 {
 public:
     SingletonFactory(
@@ -508,18 +499,16 @@ public:
     const SingletonFactory& operator=(const SingletonFactory&) = delete;
 
 private:
-    virtual ~SingletonFactory() {}
+    virtual ~SingletonFactory() override {}
 
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
     createInstanceWithContext(
-        css::uno::Reference< css::uno::XComponentContext > const & Context)
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference< css::uno::XComponentContext > const & Context) override;
 
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
     createInstanceWithArgumentsAndContext(
         css::uno::Sequence< css::uno::Any > const & Arguments,
-        css::uno::Reference< css::uno::XComponentContext > const & Context)
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference< css::uno::XComponentContext > const & Context) override;
 
     rtl::Reference< cppuhelper::ServiceManager > manager_;
     std::shared_ptr< cppuhelper::ServiceManager::Data::Implementation >
@@ -529,7 +518,6 @@ private:
 css::uno::Reference< css::uno::XInterface >
 SingletonFactory::createInstanceWithContext(
     css::uno::Reference< css::uno::XComponentContext > const & Context)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     manager_->loadImplementation(Context, implementation_);
     return implementation_->createInstance(Context, true);
@@ -539,7 +527,6 @@ css::uno::Reference< css::uno::XInterface >
 SingletonFactory::createInstanceWithArgumentsAndContext(
     css::uno::Sequence< css::uno::Any > const & Arguments,
     css::uno::Reference< css::uno::XComponentContext > const & Context)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     manager_->loadImplementation(Context, implementation_);
     return implementation_->createInstanceWithArguments(
@@ -547,7 +534,7 @@ SingletonFactory::createInstanceWithArgumentsAndContext(
 }
 
 class ImplementationWrapper:
-    public cppu::WeakImplHelper3<
+    public cppu::WeakImplHelper<
         css::lang::XSingleComponentFactory, css::lang::XSingleServiceFactory,
         css::lang::XServiceInfo >
 {
@@ -564,35 +551,30 @@ public:
     const ImplementationWrapper& operator=(const ImplementationWrapper&) = delete;
 
 private:
-    virtual ~ImplementationWrapper() {}
+    virtual ~ImplementationWrapper() override {}
 
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
     createInstanceWithContext(
-        css::uno::Reference< css::uno::XComponentContext > const & Context)
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference< css::uno::XComponentContext > const & Context) override;
 
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
     createInstanceWithArgumentsAndContext(
         css::uno::Sequence< css::uno::Any > const & Arguments,
-        css::uno::Reference< css::uno::XComponentContext > const & Context)
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        css::uno::Reference< css::uno::XComponentContext > const & Context) override;
 
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
-    createInstance() throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    createInstance() override;
 
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
     createInstanceWithArguments(
-        css::uno::Sequence< css::uno::Any > const & Arguments)
-        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        css::uno::Sequence< css::uno::Any > const & Arguments) override;
 
-    virtual rtl::OUString SAL_CALL getImplementationName()
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual rtl::OUString SAL_CALL getImplementationName() override;
 
-    virtual sal_Bool SAL_CALL supportsService(rtl::OUString const & ServiceName)
-        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService(rtl::OUString const & ServiceName) override;
 
     virtual css::uno::Sequence< rtl::OUString > SAL_CALL
-    getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
+    getSupportedServiceNames() override;
 
     rtl::Reference< cppuhelper::ServiceManager > manager_;
     std::weak_ptr< cppuhelper::ServiceManager::Data::Implementation >
@@ -602,7 +584,6 @@ private:
 css::uno::Reference< css::uno::XInterface >
 ImplementationWrapper::createInstanceWithContext(
     css::uno::Reference< css::uno::XComponentContext > const & Context)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     std::shared_ptr< cppuhelper::ServiceManager::Data::Implementation > impl = implementation_.lock();
     assert(impl);
@@ -614,7 +595,6 @@ css::uno::Reference< css::uno::XInterface >
 ImplementationWrapper::createInstanceWithArgumentsAndContext(
     css::uno::Sequence< css::uno::Any > const & Arguments,
     css::uno::Reference< css::uno::XComponentContext > const & Context)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     std::shared_ptr< cppuhelper::ServiceManager::Data::Implementation > impl = implementation_.lock();
     assert(impl);
@@ -625,7 +605,6 @@ ImplementationWrapper::createInstanceWithArgumentsAndContext(
 
 css::uno::Reference< css::uno::XInterface >
 ImplementationWrapper::createInstance()
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     return createInstanceWithContext(manager_->getContext());
 }
@@ -633,14 +612,12 @@ ImplementationWrapper::createInstance()
 css::uno::Reference< css::uno::XInterface >
 ImplementationWrapper::createInstanceWithArguments(
     css::uno::Sequence< css::uno::Any > const & Arguments)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     return createInstanceWithArgumentsAndContext(
         Arguments, manager_->getContext());
 }
 
 rtl::OUString ImplementationWrapper::getImplementationName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     std::shared_ptr< cppuhelper::ServiceManager::Data::Implementation > impl = implementation_.lock();
     assert(impl);
@@ -648,14 +625,12 @@ rtl::OUString ImplementationWrapper::getImplementationName()
 }
 
 sal_Bool ImplementationWrapper::supportsService(rtl::OUString const & ServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence< rtl::OUString >
 ImplementationWrapper::getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
     std::shared_ptr< cppuhelper::ServiceManager::Data::Implementation > impl = implementation_.lock();
     assert(impl);
@@ -687,9 +662,9 @@ cppuhelper::ServiceManager::Data::Implementation::createInstance(
     bool singletonRequest)
 {
     css::uno::Reference<css::uno::XInterface> inst;
-    if (constructor != nullptr) {
+    if (constructor) {
         inst.set(
-            (*constructor)(context.get(), css::uno::Sequence<css::uno::Any>()),
+            constructor(context.get(), css::uno::Sequence<css::uno::Any>()),
             SAL_NO_ACQUIRE);
     } else if (factory1.is()) {
             inst = factory1->createInstanceWithContext(context);
@@ -707,8 +682,8 @@ cppuhelper::ServiceManager::Data::Implementation::createInstanceWithArguments(
     bool singletonRequest, css::uno::Sequence<css::uno::Any> const & arguments)
 {
     css::uno::Reference<css::uno::XInterface> inst;
-    if (constructor != nullptr) {
-        inst.set((*constructor)(context.get(), arguments), SAL_NO_ACQUIRE);
+    if (constructor) {
+        inst.set(constructor(context.get(), arguments), SAL_NO_ACQUIRE);
         //HACK: The constructor will either observe arguments and return inst
         // that does not implement XInitialization (or null), or ignore
         // arguments and return inst that implements XInitialization; this
@@ -798,7 +773,7 @@ void cppuhelper::ServiceManager::loadImplementation(
             "Cannot expand URI" + implementation->info->uri + ": " + e.Message,
             static_cast< cppu::OWeakObject * >(this));
     }
-    cppuhelper::ImplementationConstructorFn * ctor = nullptr;
+    cppuhelper::WrapperConstructorFn ctor;
     css::uno::Reference< css::uno::XInterface > f0;
     // Special handling of SharedLibrary loader, with support for environment,
     // constructor, and prefix arguments:
@@ -809,21 +784,8 @@ void cppuhelper::ServiceManager::loadImplementation(
             uri, implementation->info->environment,
             implementation->info->prefix, implementation->info->name,
             implementation->info->constructor, this, &ctor, &f0);
-        if (ctor != nullptr) {
+        if (ctor) {
             assert(!implementation->info->environment.isEmpty());
-            css::uno::Environment curEnv(css::uno::Environment::getCurrent());
-            css::uno::Environment env(
-                cppuhelper::detail::getEnvironment(
-                    implementation->info->environment,
-                    implementation->info->name));
-            if (!(curEnv.is() && env.is())) {
-                throw css::uno::DeploymentException(
-                    "cannot get environments",
-                    css::uno::Reference<css::uno::XInterface>());
-            }
-            if (curEnv.get() != env.get()) {
-                std::abort();//TODO
-            }
         }
     } else {
         SAL_WARN_IF(
@@ -859,7 +821,7 @@ void cppuhelper::ServiceManager::loadImplementation(
     }
     css::uno::Reference<css::lang::XSingleComponentFactory> f1;
     css::uno::Reference<css::lang::XSingleServiceFactory> f2;
-    if (ctor == nullptr) {
+    if (!ctor) {
         f1.set(f0, css::uno::UNO_QUERY);
         if (!f1.is()) {
             f2.set(f0, css::uno::UNO_QUERY);
@@ -948,7 +910,6 @@ void cppuhelper::ServiceManager::disposing() {
 
 void cppuhelper::ServiceManager::initialize(
     css::uno::Sequence<css::uno::Any> const & aArguments)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     OUString arg;
     if (aArguments.getLength() == 1 && (aArguments[0] >>= arg)
@@ -963,7 +924,6 @@ void cppuhelper::ServiceManager::initialize(
 }
 
 rtl::OUString cppuhelper::ServiceManager::getImplementationName()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return rtl::OUString(
         "com.sun.star.comp.cppuhelper.bootstrap.ServiceManager");
@@ -971,14 +931,12 @@ rtl::OUString cppuhelper::ServiceManager::getImplementationName()
 
 sal_Bool cppuhelper::ServiceManager::supportsService(
     rtl::OUString const & ServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence< rtl::OUString >
 cppuhelper::ServiceManager::getSupportedServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence< rtl::OUString > names(2);
     names[0] = "com.sun.star.lang.MultiServiceFactory";
@@ -989,7 +947,6 @@ cppuhelper::ServiceManager::getSupportedServiceNames()
 css::uno::Reference< css::uno::XInterface >
 cppuhelper::ServiceManager::createInstance(
     rtl::OUString const & aServiceSpecifier)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     assert(context_.is());
     return createInstanceWithContext(aServiceSpecifier, context_);
@@ -999,7 +956,6 @@ css::uno::Reference< css::uno::XInterface >
 cppuhelper::ServiceManager::createInstanceWithArguments(
     rtl::OUString const & ServiceSpecifier,
     css::uno::Sequence< css::uno::Any > const & Arguments)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     assert(context_.is());
     return createInstanceWithArgumentsAndContext(
@@ -1008,7 +964,6 @@ cppuhelper::ServiceManager::createInstanceWithArguments(
 
 css::uno::Sequence< rtl::OUString >
 cppuhelper::ServiceManager::getAvailableServiceNames()
-    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(rBHelper.rMutex);
     if (isDisposed()) {
@@ -1035,7 +990,6 @@ css::uno::Reference< css::uno::XInterface >
 cppuhelper::ServiceManager::createInstanceWithContext(
     rtl::OUString const & aServiceSpecifier,
     css::uno::Reference< css::uno::XComponentContext > const & Context)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     std::shared_ptr< Data::Implementation > impl(
         findServiceImplementation(Context, aServiceSpecifier));
@@ -1049,7 +1003,6 @@ cppuhelper::ServiceManager::createInstanceWithArgumentsAndContext(
     rtl::OUString const & ServiceSpecifier,
     css::uno::Sequence< css::uno::Any > const & Arguments,
     css::uno::Reference< css::uno::XComponentContext > const & Context)
-    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     std::shared_ptr< Data::Implementation > impl(
         findServiceImplementation(Context, ServiceSpecifier));
@@ -1059,13 +1012,11 @@ cppuhelper::ServiceManager::createInstanceWithArgumentsAndContext(
 }
 
 css::uno::Type cppuhelper::ServiceManager::getElementType()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Type();
 }
 
 sal_Bool cppuhelper::ServiceManager::hasElements()
-    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(rBHelper.rMutex);
     return
@@ -1075,7 +1026,6 @@ sal_Bool cppuhelper::ServiceManager::hasElements()
 
 css::uno::Reference< css::container::XEnumeration >
 cppuhelper::ServiceManager::createEnumeration()
-    throw (css::uno::RuntimeException, std::exception)
 {
     throw css::uno::RuntimeException(
         "ServiceManager createEnumeration: method not supported",
@@ -1083,7 +1033,6 @@ cppuhelper::ServiceManager::createEnumeration()
 }
 
 sal_Bool cppuhelper::ServiceManager::has(css::uno::Any const &)
-    throw (css::uno::RuntimeException, std::exception)
 {
     throw css::uno::RuntimeException(
         "ServiceManager has: method not supported",
@@ -1091,9 +1040,6 @@ sal_Bool cppuhelper::ServiceManager::has(css::uno::Any const &)
 }
 
 void cppuhelper::ServiceManager::insert(css::uno::Any const & aElement)
-    throw (
-        css::lang::IllegalArgumentException,
-        css::container::ElementExistException, css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence< css::beans::NamedValue > args;
     if (aElement >>= args) {
@@ -1157,9 +1103,6 @@ void cppuhelper::ServiceManager::insert(css::uno::Any const & aElement)
 }
 
 void cppuhelper::ServiceManager::remove(css::uno::Any const & aElement)
-    throw (
-        css::lang::IllegalArgumentException,
-        css::container::NoSuchElementException, css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence< css::beans::NamedValue > args;
     if (aElement >>= args) {
@@ -1204,7 +1147,6 @@ void cppuhelper::ServiceManager::remove(css::uno::Any const & aElement)
 css::uno::Reference< css::container::XEnumeration >
 cppuhelper::ServiceManager::createContentEnumeration(
     rtl::OUString const & aServiceName)
-    throw (css::uno::RuntimeException, std::exception)
 {
     std::vector< std::shared_ptr< Data::Implementation > > impls;
     {
@@ -1241,13 +1183,13 @@ cppuhelper::ServiceManager::createContentEnumeration(
             }
         }
         if (impl->factory1.is()) {
-            factories.push_back(css::uno::makeAny(impl->factory1));
+            factories.push_back(css::uno::Any(impl->factory1));
         } else if (impl->factory2.is()) {
-            factories.push_back(css::uno::makeAny(impl->factory2));
+            factories.push_back(css::uno::Any(impl->factory2));
         } else {
             css::uno::Reference< css::lang::XSingleComponentFactory > factory(
                     new ImplementationWrapper(this, *i));
-            factories.push_back(css::uno::makeAny(factory));
+            factories.push_back(css::uno::Any(factory));
         }
     }
     return new ContentEnumeration(factories);
@@ -1255,17 +1197,12 @@ cppuhelper::ServiceManager::createContentEnumeration(
 
 css::uno::Reference< css::beans::XPropertySetInfo >
 cppuhelper::ServiceManager::getPropertySetInfo()
-    throw (css::uno::RuntimeException, std::exception)
 {
     return this;
 }
 
 void cppuhelper::ServiceManager::setPropertyValue(
     rtl::OUString const & aPropertyName, css::uno::Any const &)
-    throw (
-        css::beans::UnknownPropertyException, css::beans::PropertyVetoException,
-        css::lang::IllegalArgumentException, css::lang::WrappedTargetException,
-        css::uno::RuntimeException, std::exception)
 {
     if (aPropertyName == "DefaultContext") {
         throw css::beans::PropertyVetoException(
@@ -1278,25 +1215,19 @@ void cppuhelper::ServiceManager::setPropertyValue(
 
 css::uno::Any cppuhelper::ServiceManager::getPropertyValue(
     rtl::OUString const & PropertyName)
-    throw (
-        css::beans::UnknownPropertyException, css::lang::WrappedTargetException,
-        css::uno::RuntimeException, std::exception)
 {
     if (PropertyName != "DefaultContext") {
         throw css::beans::UnknownPropertyException(
             PropertyName, static_cast< cppu::OWeakObject * >(this));
     }
     assert(context_.is());
-    return css::uno::makeAny(context_);
+    return css::uno::Any(context_);
 }
 
 void cppuhelper::ServiceManager::addPropertyChangeListener(
     rtl::OUString const & aPropertyName,
     css::uno::Reference< css::beans::XPropertyChangeListener > const &
         xListener)
-    throw (
-        css::beans::UnknownPropertyException, css::lang::WrappedTargetException,
-        css::uno::RuntimeException, std::exception)
 {
     if (!aPropertyName.isEmpty() && aPropertyName != "DefaultContext") {
         throw css::beans::UnknownPropertyException(
@@ -1310,9 +1241,6 @@ void cppuhelper::ServiceManager::removePropertyChangeListener(
     rtl::OUString const & aPropertyName,
     css::uno::Reference< css::beans::XPropertyChangeListener > const &
         aListener)
-    throw (
-        css::beans::UnknownPropertyException, css::lang::WrappedTargetException,
-        css::uno::RuntimeException, std::exception)
 {
     if (!aPropertyName.isEmpty() && aPropertyName != "DefaultContext") {
         throw css::beans::UnknownPropertyException(
@@ -1326,9 +1254,6 @@ void cppuhelper::ServiceManager::addVetoableChangeListener(
     rtl::OUString const & PropertyName,
     css::uno::Reference< css::beans::XVetoableChangeListener > const &
         aListener)
-    throw (
-        css::beans::UnknownPropertyException, css::lang::WrappedTargetException,
-        css::uno::RuntimeException, std::exception)
 {
     if (!PropertyName.isEmpty() && PropertyName != "DefaultContext") {
         throw css::beans::UnknownPropertyException(
@@ -1342,9 +1267,6 @@ void cppuhelper::ServiceManager::removeVetoableChangeListener(
     rtl::OUString const & PropertyName,
     css::uno::Reference< css::beans::XVetoableChangeListener > const &
         aListener)
-    throw (
-        css::beans::UnknownPropertyException, css::lang::WrappedTargetException,
-        css::uno::RuntimeException, std::exception)
 {
     if (!PropertyName.isEmpty() && PropertyName != "DefaultContext") {
         throw css::beans::UnknownPropertyException(
@@ -1355,7 +1277,7 @@ void cppuhelper::ServiceManager::removeVetoableChangeListener(
 }
 
 css::uno::Sequence< css::beans::Property >
-cppuhelper::ServiceManager::getProperties() throw (css::uno::RuntimeException, std::exception) {
+cppuhelper::ServiceManager::getProperties() {
     css::uno::Sequence< css::beans::Property > props(1);
     props[0] = getDefaultContextProperty();
     return props;
@@ -1363,7 +1285,6 @@ cppuhelper::ServiceManager::getProperties() throw (css::uno::RuntimeException, s
 
 css::beans::Property cppuhelper::ServiceManager::getPropertyByName(
     rtl::OUString const & aName)
-    throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception)
 {
     if (aName != "DefaultContext") {
         throw css::beans::UnknownPropertyException(
@@ -1374,7 +1295,6 @@ css::beans::Property cppuhelper::ServiceManager::getPropertyByName(
 
 sal_Bool cppuhelper::ServiceManager::hasPropertyByName(
     rtl::OUString const & Name)
-    throw (css::uno::RuntimeException, std::exception)
 {
     return Name == "DefaultContext";
 }
@@ -1383,7 +1303,6 @@ cppuhelper::ServiceManager::~ServiceManager() {}
 
 void cppuhelper::ServiceManager::disposing(
     css::lang::EventObject const & Source)
-    throw (css::uno::RuntimeException, std::exception)
 {
     removeLegacyFactory(
         css::uno::Reference< css::lang::XServiceInfo >(
@@ -1404,9 +1323,9 @@ void cppuhelper::ServiceManager::removeEventListenerFromComponent(
     }
 }
 
-void cppuhelper::ServiceManager::readRdbs(rtl::OUString const & uris) {
+void cppuhelper::ServiceManager::init(rtl::OUString const & rdbUris) {
     for (sal_Int32 i = 0; i != -1;) {
-        rtl::OUString uri(uris.getToken(0, ' ', i));
+        rtl::OUString uri(rdbUris.getToken(0, ' ', i));
         if (uri.isEmpty()) {
             continue;
         }
@@ -1930,7 +1849,7 @@ void cppuhelper::ServiceManager::preloadImplementations() {
         {
             // load component library
             osl::Module aModule(aUri, SAL_LOADMODULE_NOW | SAL_LOADMODULE_GLOBAL);
-            SAL_INFO("lok", "loaded component library " << aUri << ( aModule.is() ? " ok" : " no"));
+            SAL_INFO("cppuhelper", "loaded component library " << aUri << ( aModule.is() ? " ok" : " no"));
 
             if (aModule.is() &&
                 !iterator->second->info->environment.isEmpty())
@@ -1973,7 +1892,15 @@ void cppuhelper::ServiceManager::preloadImplementations() {
                 else
                 {
                     // get function symbol component factory
-                    fpFactory = aModule.getFunctionSymbol(iterator->second->info->constructor);
+                    aTargetEnv = cppuhelper::detail::getEnvironment(iterator->second->info->environment, iterator->second->info->name);
+                    if (aSourceEnv.get() == aTargetEnv.get())
+                    {
+                        fpFactory = aModule.getFunctionSymbol(iterator->second->info->constructor);
+                    }
+                    else
+                    {
+                        fpFactory = nullptr;
+                    }
                 }
 
                 css::uno::Reference<css::lang::XSingleComponentFactory> xSCFactory;
@@ -1997,7 +1924,7 @@ void cppuhelper::ServiceManager::preloadImplementations() {
                 }
 
                 if (!iterator->second->info->constructor.isEmpty() && fpFactory)
-                    iterator->second->constructor = reinterpret_cast<ImplementationConstructorFn *>(fpFactory);
+                    iterator->second->constructor = WrapperConstructorFn(reinterpret_cast<ImplementationConstructorFn *>(fpFactory));
 
                 iterator->second->factory1 = xSCFactory;
                 iterator->second->factory2 = xSSFactory;

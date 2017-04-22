@@ -12,9 +12,14 @@
 
 #include <rtl/stringutils.hxx>
 
+#include <cstddef>
 #include <string.h>
 
 #ifdef LIBO_INTERNAL_ONLY // "RTL_FAST_STRING"
+
+#if defined RTL_STRING_UNITTEST_CONCAT
+extern bool rtl_string_unittest_invalid_concat;
+#endif
 
 #ifdef RTL_STRING_UNITTEST
 #define rtl rtlunittest
@@ -141,13 +146,19 @@ struct ToStringHelper< const char[ N ] >
     static const bool allowOUStringConcat = true;
     };
 
-template<char C> struct ToStringHelper<OUStringLiteral1_<C>> {
-    static int length(OUStringLiteral1_<C>) { return 1; }
-    static char * addData(char * buffer, OUStringLiteral1_<C> literal)
-    { return addDataHelper(buffer, &literal.c, 1); }
+template<std::size_t N> struct ToStringHelper<sal_Unicode const[N]> {
+    static int length(sal_Unicode const[N]) { return N - 1; }
+    static sal_Unicode * addData(sal_Unicode * buffer, sal_Unicode const str[N])
+    { return addDataHelper(buffer, str, N - 1); }
+    static bool const allowOStringConcat = false;
+    static bool const allowOUStringConcat = true;
+};
+
+template<> struct ToStringHelper<OUStringLiteral1_> {
+    static int length(OUStringLiteral1_) { return 1; }
     static sal_Unicode * addData(
-        sal_Unicode * buffer, OUStringLiteral1_<C> literal)
-    { return addDataLiteral(buffer, &literal.c, 1); }
+        sal_Unicode * buffer, OUStringLiteral1_ literal)
+    { return addDataHelper(buffer, &literal.c, 1); }
     static bool const allowOStringConcat = false;
     static bool const allowOUStringConcat = true;
 };

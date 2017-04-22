@@ -31,7 +31,7 @@ namespace drawinglayer
     {
         /** UnifiedTransparencePrimitive2D class
 
-            This primitive encapsualtes a child hierarchy and defines
+            This primitive encapsulates a child hierarchy and defines
             that it shall be visualized with the given transparency. That
             transparency is unique for all contained geometry, so that
             e.g. overlapping polygons in the child geometry will not show
@@ -60,7 +60,7 @@ namespace drawinglayer
             virtual basegfx::B2DRange getB2DRange(const geometry::ViewInformation2D& rViewInformation) const override;
 
             /// create decomposition
-            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
 
             /// provide unique ID
             DeclPrimitive2DIDBlock()

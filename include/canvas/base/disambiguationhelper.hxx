@@ -61,7 +61,8 @@ namespace canvas
 
         virtual void disposeThis()
         {}
-        virtual void disposeEventSource( const css::lang::EventObject& ) throw (css::uno::RuntimeException)
+        /// @throws css::uno::RuntimeException
+        virtual void disposeEventSource( const css::lang::EventObject& )
         {}
 
         mutable ::osl::Mutex m_aMutex;
@@ -70,7 +71,7 @@ namespace canvas
         virtual void SAL_CALL disposing() override
         { disposeThis(); }
 
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException) override
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override
         { disposeEventSource(Source); }
 
     };

@@ -118,7 +118,6 @@ void SAL_CALL FullScreenPane::disposing()
 //----- XPane -----------------------------------------------------------------
 
 sal_Bool SAL_CALL FullScreenPane::isVisible()
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -129,7 +128,6 @@ sal_Bool SAL_CALL FullScreenPane::isVisible()
 }
 
 void SAL_CALL FullScreenPane::setVisible (const sal_Bool bIsVisible)
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -140,7 +138,6 @@ void SAL_CALL FullScreenPane::setVisible (const sal_Bool bIsVisible)
 }
 
 Reference<css::accessibility::XAccessible> SAL_CALL FullScreenPane::getAccessible()
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -152,7 +149,6 @@ Reference<css::accessibility::XAccessible> SAL_CALL FullScreenPane::getAccessibl
 
 void SAL_CALL FullScreenPane::setAccessible (
     const Reference<css::accessibility::XAccessible>& rxAccessible)
-    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -166,44 +162,45 @@ void SAL_CALL FullScreenPane::setAccessible (
             if (pParentWindow != nullptr)
                 xAccessibleParent = pParentWindow->GetAccessible();
             Sequence<Any> aArguments (1);
-            aArguments[0] = Any(xAccessibleParent);
+            aArguments[0] <<= xAccessibleParent;
             xInitializable->initialize(aArguments);
         }
         GetWindow()->SetAccessible(rxAccessible);
     }
 }
 
-IMPL_LINK_TYPED(FullScreenPane, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK(FullScreenPane, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {
-        case VCLEVENT_WINDOW_RESIZE:
+        case VclEventId::WindowResize:
             GetWindow()->SetPosPixel(Point(0,0));
             GetWindow()->SetSizePixel(Size(
                 mpWorkWindow->GetSizePixel().Width(),
                 mpWorkWindow->GetSizePixel().Height()));
             break;
 
-        case VCLEVENT_OBJECT_DYING:
+        case VclEventId::ObjectDying:
             mpWorkWindow.disposeAndClear();
             break;
+
+        default: break;
     }
 }
 
 Reference<rendering::XCanvas> FullScreenPane::CreateCanvas()
-    throw (RuntimeException)
 {
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow(mxWindow);
-    if (pWindow != nullptr)
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(mxWindow);
+    if (pWindow)
     {
         Sequence<Any> aArg (5);
 
         // common: first any is VCL pointer to window (for VCL canvas)
-        aArg[0] = makeAny(reinterpret_cast<sal_Int64>(pWindow));
+        aArg[0] <<= reinterpret_cast<sal_Int64>(pWindow.get());
         aArg[1] = Any();
-        aArg[2] = makeAny(css::awt::Rectangle());
-        aArg[3] = makeAny(false);
-        aArg[4] = makeAny(mxWindow);
+        aArg[2] <<= css::awt::Rectangle();
+        aArg[3] <<= false;
+        aArg[4] <<= mxWindow;
 
         Reference<lang::XMultiServiceFactory> xFactory (
             mxComponentContext->getServiceManager(), UNO_QUERY_THROW);

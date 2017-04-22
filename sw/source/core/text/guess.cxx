@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <ctype.h>
 #include <editeng/unolingu.hxx>
 #include <dlelstnr.hxx>
 #include <swmodule.hxx>
@@ -60,8 +59,7 @@ bool SwTextGuess::Guess( const SwTextPortion& rPor, SwTextFormatInfo &rInf,
 
     sal_uInt16 nMaxSizeDiff;
 
-    const SwScriptInfo& rSI =
-            static_cast<SwParaPortion*>(rInf.GetParaPortion())->GetScriptInfo();
+    const SwScriptInfo& rSI = rInf.GetParaPortion()->GetScriptInfo();
 
     sal_uInt16 nMaxComp = ( SwFontScript::CJK == rInf.GetFont()->GetActual() ) &&
                         rSI.CountCompChg() &&
@@ -73,6 +71,35 @@ bool SwTextGuess::Guess( const SwTextPortion& rPor, SwTextFormatInfo &rInf,
 
     SwTwips nLineWidth = rInf.Width() - rInf.X();
     sal_Int32 nMaxLen = rInf.GetText().getLength() - rInf.GetIdx();
+
+    const SvxAdjust& rAdjust = rInf.GetTextFrame()->GetTextNode()->GetSwAttrSet().GetAdjust().GetAdjust();
+
+    // tdf#104668 space chars at the end should be cut if the compatibility option is enabled
+    // for LTR mode only
+    if ( !rInf.GetTextFrame()->IsRightToLeft() )
+    {
+        if ( rInf.GetTextFrame()->GetNode()->getIDocumentSettingAccess()->get( DocumentSettingId::MS_WORD_COMP_TRAILING_BLANKS ) )
+        {
+            if ( rAdjust == SvxAdjust::Right || rAdjust == SvxAdjust::Center )
+            {
+                sal_Int32 nSpaceCnt = 0;
+                for ( int i = (rInf.GetText().getLength() - 1); i >= rInf.GetIdx(); --i )
+                {
+                    sal_Unicode cChar = rInf.GetText()[i];
+                    if ( cChar != CH_BLANK && cChar != CH_FULL_BLANK )
+                        break;
+                    ++nSpaceCnt;
+                }
+                sal_Int32 nCharsCnt = nMaxLen - nSpaceCnt;
+                if ( nSpaceCnt && nCharsCnt < rPor.GetLen() )
+                {
+                    nMaxLen = nCharsCnt;
+                    if ( !nMaxLen )
+                        return true;
+                }
+            }
+        }
+    }
 
     if ( rInf.GetLen() < nMaxLen )
         nMaxLen = rInf.GetLen();
@@ -213,8 +240,7 @@ bool SwTextGuess::Guess( const SwTextPortion& rPor, SwTextFormatInfo &rInf,
         nBreakPos = nCutPos;
         sal_Int32 nX = nBreakPos;
 
-        const SvxAdjust& rAdjust = rInf.GetTextFrame()->GetTextNode()->GetSwAttrSet().GetAdjust().GetAdjust();
-        if ( rAdjust == SVX_ADJUST_LEFT )
+        if ( rAdjust == SvxAdjust::Left )
         {
             // we step back until a non blank character has been found
             // or there is only one more character left
@@ -424,8 +450,7 @@ bool SwTextGuess::Guess( const SwTextPortion& rPor, SwTextFormatInfo &rInf,
                 CHAR_SOFTHYPHEN == rInf.GetText()[ nBreakPos - 1 ] )
                 nBreakPos = rInf.GetIdx() - 1;
 
-            const SvxAdjust& rAdjust = rInf.GetTextFrame()->GetTextNode()->GetSwAttrSet().GetAdjust().GetAdjust();
-            if( rAdjust != SVX_ADJUST_LEFT )
+            if( rAdjust != SvxAdjust::Left )
             {
                 // Delete any blanks at the end of a line, but be careful:
                 // If a field has been expanded, we do not want to delete any
@@ -456,7 +481,7 @@ bool SwTextGuess::Guess( const SwTextPortion& rPor, SwTextFormatInfo &rInf,
             SwPosSize aTmpSize = rInf.GetTextSize( &rSI, nCutPos, nHangingLen );
             aTmpSize.Width(aTmpSize.Width() + nLeftRightBorderSpace);
             OSL_ENSURE( !pHanging, "A hanging portion is hanging around" );
-            pHanging = new SwHangingPortion( aTmpSize );
+            pHanging.reset( new SwHangingPortion( aTmpSize ) );
             pHanging->SetLen( nHangingLen );
             nPorLen = nCutPos - rInf.GetIdx();
         }

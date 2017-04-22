@@ -21,13 +21,12 @@
 #include <svx/svdview.hxx>
 #include <svx/fmshell.hxx>
 
+#include "swmodule.hxx"
 #include "view.hxx"
 #include "edtwin.hxx"
 #include "wrtsh.hxx"
 #include "drawbase.hxx"
 #include "conform.hxx"
-
-extern bool g_bNoInterrupt;       // in swmodule.cxx
 
 ConstFormControl::ConstFormControl(SwWrtShell* pWrtShell, SwEditWin* pEditWin, SwView* pSwView) :
     SwDrawBase(pWrtShell, pEditWin, pSwView)
@@ -60,7 +59,7 @@ bool ConstFormControl::MouseButtonDown(const MouseEvent& rMEvt)
 
     // Only new object; if not in base mode (or pure selection mode)
     if (rMEvt.IsLeft() && !m_pWin->IsDrawAction() &&
-        (eHit == SDRHIT_UNMARKEDOBJECT || eHit == SDRHIT_NONE || m_pSh->IsDrawCreate()))
+        (eHit == SdrHitKind::UnmarkedObject || eHit == SdrHitKind::NONE || m_pSh->IsDrawCreate()))
     {
         g_bNoInterrupt = true;
         m_pWin->CaptureMouse();
@@ -68,7 +67,7 @@ bool ConstFormControl::MouseButtonDown(const MouseEvent& rMEvt)
         m_pWin->SetPointer(Pointer(PointerStyle::DrawRect));
 
         m_aStartPos = m_pWin->PixelToLogic(rMEvt.GetPosPixel());
-        bReturn = m_pSh->BeginCreate( static_cast< sal_uInt16 >(m_pWin->GetSdrDrawMode()), FmFormInventor, m_aStartPos);
+        bReturn = m_pSh->BeginCreate( static_cast< sal_uInt16 >(m_pWin->GetSdrDrawMode()), SdrInventor::FmForm, m_aStartPos);
 
         if (bReturn)
             m_pWin->SetDrawAction(true);
@@ -102,9 +101,9 @@ void ConstFormControl::CreateDefaultObject()
 
     SdrView *pSdrView = m_pSh->GetDrawView();
     pSdrView->SetDesignMode();
-    m_pSh->BeginCreate( static_cast< sal_uInt16 >(m_pWin->GetSdrDrawMode()), FmFormInventor, aStartPos);
+    m_pSh->BeginCreate( static_cast< sal_uInt16 >(m_pWin->GetSdrDrawMode()), SdrInventor::FmForm, aStartPos);
     m_pSh->MoveCreate(aEndPos);
-    m_pSh->EndCreate(SDRCREATE_FORCEEND);
+    m_pSh->EndCreate(SdrCreateCmd::ForceEnd);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

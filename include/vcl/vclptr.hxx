@@ -20,9 +20,20 @@
 #ifndef INCLUDED_VCL_PTR_HXX
 #define INCLUDED_VCL_PTR_HXX
 
+#include <sal/config.h>
+
+#include <config_global.h>
 #include <rtl/ref.hxx>
+#include <vcl/vclreferencebase.hxx>
+
 #include <utility>
 #include <type_traits>
+
+#ifdef DBG_UTIL
+#ifndef WNT
+#include <vcl/vclmain.hxx>
+#endif
+#endif
 
 /// @cond INTERNAL
 namespace vcl { namespace detail {
@@ -60,6 +71,17 @@ public:
     typedef typename C< value, void *, void >::t t;
 };
 
+#if !(defined _MSC_VER && _MSC_VER <= 1900 && !defined __clang__)
+
+template<typename>
+constexpr bool isIncompleteOrDerivedFromVclReferenceBase(...) { return true; }
+
+template<typename T> constexpr bool isIncompleteOrDerivedFromVclReferenceBase(
+    int (*)[sizeof(T)])
+{ return std::is_base_of<VclReferenceBase, T>::value; }
+
+#endif
+
 }; }; // namespace detail, namespace vcl
 
 /// @endcond
@@ -71,34 +93,37 @@ public:
  *
  * @param reference_type must be a subclass of vcl::Window
  */
+namespace detail {
+}
 template <class reference_type>
 class VclPtr
 {
+#if !(defined _MSC_VER && _MSC_VER <= 1900 && !defined __clang__)
+    static_assert(
+        vcl::detail::isIncompleteOrDerivedFromVclReferenceBase<reference_type>(
+            nullptr),
+        "template argument type must be derived from VclReferenceBase");
+#endif
+
     ::rtl::Reference<reference_type> m_rInnerRef;
 
 public:
     /** Constructor...
      */
-    inline VclPtr()
+    VclPtr()
         : m_rInnerRef()
     {}
 
     /** Constructor...
      */
-    inline VclPtr (reference_type * pBody)
+    VclPtr (reference_type * pBody)
         : m_rInnerRef(pBody)
     {}
 
     /** Constructor... that doesn't take a ref.
      */
-    inline VclPtr (reference_type * pBody, __sal_NoAcquire)
+    VclPtr (reference_type * pBody, __sal_NoAcquire)
         : m_rInnerRef(pBody, SAL_NO_ACQUIRE)
-    {}
-
-    /** Copy constructor...
-     */
-    inline VclPtr (const VclPtr<reference_type> & handle)
-        : m_rInnerRef (handle.m_rInnerRef)
     {}
 
     /** Up-casting conversion constructor: Copies interface reference.
@@ -110,12 +135,21 @@ public:
         @param rRef another reference
     */
     template< class derived_type >
-    inline VclPtr(
+    VclPtr(
         const VclPtr< derived_type > & rRef,
         typename ::vcl::detail::UpCast< reference_type, derived_type >::t = 0 )
         : m_rInnerRef( static_cast<reference_type*>(rRef) )
     {
     }
+
+#ifdef DBG_UTIL
+#ifndef WNT
+    virtual ~VclPtr()
+    {
+        assert(m_rInnerRef.get() == nullptr || vclmain::isAlive());
+    }
+#endif
+#endif
 
     /**
      * A construction helper for VclPtr. Since VclPtr types are created
@@ -126,14 +160,14 @@ public:
      *
      * @tparam reference_type must be a subclass of vcl::Window
      */
-    template<typename... Arg> static VclPtr< reference_type > Create(Arg &&... arg)
+    template<typename... Arg> static SAL_WARN_UNUSED_RESULT VclPtr< reference_type > Create(Arg &&... arg)
     {
         return VclPtr< reference_type >( new reference_type(std::forward<Arg>(arg)...), SAL_NO_ACQUIRE );
     }
 
     /** Probably most common used: handle->someBodyOp().
      */
-    inline reference_type * operator->() const
+    reference_type * operator->() const
     {
         return m_rInnerRef.get();
     }
@@ -142,22 +176,22 @@ public:
          I.e. handle->someBodyOp() and handle.get()->someBodyOp()
          are the same.
       */
-    inline reference_type * get() const
+    reference_type * get() const
     {
         return m_rInnerRef.get();
     }
 
-    inline void set(reference_type *pBody)
+    void set(reference_type *pBody)
     {
         m_rInnerRef.set(pBody);
     }
 
-    inline void reset(reference_type *pBody)
+    void reset(reference_type *pBody)
     {
         m_rInnerRef.set(pBody);
     }
 
-    /** Up-casting assignment operator.
+    /** Up-casting copy assignment operator.
 
         Does not work for up-casts to ambiguous bases.
 
@@ -179,27 +213,27 @@ public:
         return *this;
     }
 
-    inline operator reference_type * () const
+    operator reference_type * () const
     {
         return m_rInnerRef.get();
     }
 
-    inline explicit operator bool () const
+    explicit operator bool () const
     {
         return m_rInnerRef.get() != nullptr;
     }
 
-    inline void clear()
+    void clear()
     {
         m_rInnerRef.clear();
     }
 
-    inline void reset()
+    void reset()
     {
         m_rInnerRef.clear();
     }
 
-    inline void disposeAndClear()
+    void disposeAndClear()
     {
         // hold it alive for the lifetime of this method
         ::rtl::Reference<reference_type> aTmp(m_rInnerRef);
@@ -211,7 +245,7 @@ public:
 
     /** Needed to place VclPtr's into STL collection.
      */
-    inline bool operator< (const VclPtr<reference_type> & handle) const
+    bool operator< (const VclPtr<reference_type> & handle) const
     {
         return (m_rInnerRef < handle.m_rInnerRef);
     }
@@ -274,13 +308,19 @@ template<typename T> inline bool operator !=(T * p1, VclPtr<T> const & p2) {
  * @param reference_type must be a subclass of vcl::Window
  */
 template <class reference_type>
-class VclPtrInstance : public VclPtr<reference_type>
+class SAL_WARN_UNUSED VclPtrInstance : public VclPtr<reference_type>
 {
 public:
     template<typename... Arg> VclPtrInstance(Arg &&... arg)
         : VclPtr<reference_type>( new reference_type(std::forward<Arg>(arg)...), SAL_NO_ACQUIRE )
     {
     }
+
+    /**
+     * Override and disallow this, to prevent people accidentally calling it and actually
+     * getting VclPtr::Create and getting a naked VclPtr<> instance
+     */
+    template<typename... Arg> static VclPtrInstance< reference_type > Create(Arg &&... ) = delete;
 };
 
 template <class reference_type>
@@ -289,26 +329,26 @@ class ScopedVclPtr : public VclPtr<reference_type>
 public:
     /** Constructor...
      */
-    inline ScopedVclPtr()
+    ScopedVclPtr()
         : VclPtr<reference_type>()
     {}
 
     /** Constructor
      */
-    inline ScopedVclPtr (reference_type * pBody)
+    ScopedVclPtr (reference_type * pBody)
         : VclPtr<reference_type>(pBody)
     {}
 
     /** Copy constructor...
      */
-    inline ScopedVclPtr (const VclPtr<reference_type> & handle)
+    ScopedVclPtr (const VclPtr<reference_type> & handle)
         : VclPtr<reference_type>(handle)
     {}
 
     /**
        Assignment that releases the last reference.
      */
-    inline void disposeAndReset(reference_type *pBody)
+    void disposeAndReset(reference_type *pBody)
     {
         VclPtr<reference_type>::disposeAndClear();
         VclPtr<reference_type>::set(pBody);
@@ -317,7 +357,7 @@ public:
     /**
        Assignment that releases the last reference.
      */
-    inline ScopedVclPtr<reference_type>& operator= (reference_type * pBody)
+    ScopedVclPtr<reference_type>& operator = (reference_type * pBody)
     {
         disposeAndReset(pBody);
         return *this;
@@ -332,12 +372,18 @@ public:
         @param rRef another reference
     */
     template< class derived_type >
-    inline ScopedVclPtr(
+    ScopedVclPtr(
         const VclPtr< derived_type > & rRef,
         typename ::vcl::detail::UpCast< reference_type, derived_type >::t = 0 )
         : VclPtr<reference_type>( rRef )
     {
     }
+
+    /**
+     * Override and disallow this, to prevent people accidentally calling it and actually
+     * getting VclPtr::Create and getting a naked VclPtr<> instance
+     */
+    template<typename... Arg> static ScopedVclPtr< reference_type > Create(Arg &&... ) = delete;
 
     ~ScopedVclPtr()
     {
@@ -346,16 +392,16 @@ public:
     }
 
 private:
-    // Most likely we don't want this default copy-construtor.
+    // Most likely we don't want this default copy-constructor.
     ScopedVclPtr (const ScopedVclPtr<reference_type> &) = delete;
     // And certainly we don't want a default assignment operator.
-    ScopedVclPtr<reference_type>& operator= (const ScopedVclPtr<reference_type> &) = delete;
+    ScopedVclPtr<reference_type>& operator = (const ScopedVclPtr<reference_type> &) = delete;
     // And disallow reset as that doesn't call disposeAndClear on the original reference
     void reset() = delete;
     void reset(reference_type *pBody) = delete;
 
 protected:
-    inline ScopedVclPtr (reference_type * pBody, __sal_NoAcquire)
+    ScopedVclPtr (reference_type * pBody, __sal_NoAcquire)
         : VclPtr<reference_type>(pBody, SAL_NO_ACQUIRE)
     {}
 };
@@ -374,13 +420,19 @@ protected:
 #pragma warning(disable: 4521) // " multiple copy constructors specified"
 #endif
 template <class reference_type>
-class ScopedVclPtrInstance : public ScopedVclPtr<reference_type>
+class SAL_WARN_UNUSED ScopedVclPtrInstance : public ScopedVclPtr<reference_type>
 {
 public:
     template<typename... Arg> ScopedVclPtrInstance(Arg &&... arg)
         : ScopedVclPtr<reference_type>( new reference_type(std::forward<Arg>(arg)...), SAL_NO_ACQUIRE )
     {
     }
+
+    /**
+     * Override and disallow this, to prevent people accidentally calling it and actually
+     * getting VclPtr::Create and getting a naked VclPtr<> instance
+     */
+    template<typename... Arg> static ScopedVclPtrInstance< reference_type > Create(Arg &&...) = delete;
 
 private:
     // Prevent the above perfect forwarding ctor from hijacking (accidental)

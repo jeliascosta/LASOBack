@@ -43,7 +43,7 @@ using namespace ::com::sun::star::datatransfer;
 using namespace ::com::sun::star::datatransfer::dnd;
 
 class SourceContext;
-// RIGHT MOUSE BUTTON drag and drop not supportet currently.
+// RIGHT MOUSE BUTTON drag and drop not supported currently.
 // ALT modifier is considered to effect a user selection of effects
 class DragSource:
       public MutexDummy,
@@ -84,46 +84,43 @@ public:
 
 public:
     explicit DragSource(const Reference<XComponentContext>& rxContext);
-    virtual ~DragSource();
+    virtual ~DragSource() override;
     DragSource(const DragSource&) = delete;
     DragSource &operator= ( const DragSource&) = delete;
 
   // XInitialization
-    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments )
-        throw(Exception, RuntimeException);
+    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
 
     // XDragSource
-    virtual sal_Bool SAL_CALL isDragImageSupported(  ) throw(RuntimeException);
-    virtual sal_Int32 SAL_CALL getDefaultCursor( sal_Int8 dragAction )
-        throw( IllegalArgumentException, RuntimeException);
+    virtual sal_Bool SAL_CALL isDragImageSupported(  ) override;
+    virtual sal_Int32 SAL_CALL getDefaultCursor( sal_Int8 dragAction ) override;
     virtual void SAL_CALL startDrag( const DragGestureEvent& trigger,
                                      sal_Int8 sourceActions,
                                      sal_Int32 cursor,
                                      sal_Int32 image,
                                      const Reference<XTransferable >& trans,
-                                     const Reference<XDragSourceListener >& listener )
-                throw( RuntimeException);
+                                     const Reference<XDragSourceListener >& listener ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) throw (RuntimeException);
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (RuntimeException);
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (RuntimeException);
+    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(
             /* [in] */ REFIID riid,
-            /* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject);
+            /* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject) override;
 
-    virtual ULONG STDMETHODCALLTYPE AddRef( );
+    virtual ULONG STDMETHODCALLTYPE AddRef( ) override;
 
-    virtual ULONG STDMETHODCALLTYPE Release( );
+    virtual ULONG STDMETHODCALLTYPE Release( ) override;
 
     // IDropSource
     virtual HRESULT STDMETHODCALLTYPE QueryContinueDrag(
         /* [in] */ BOOL fEscapePressed,
-        /* [in] */ DWORD grfKeyState);
+        /* [in] */ DWORD grfKeyState) override;
 
     virtual HRESULT STDMETHODCALLTYPE GiveFeedback(
-        /* [in] */ DWORD dwEffect);
+        /* [in] */ DWORD dwEffect) override;
 
 };
 

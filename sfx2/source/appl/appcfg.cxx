@@ -81,22 +81,20 @@ using namespace ::com::sun::star::beans;
 
 class SfxEventAsyncer_Impl : public SfxListener
 {
-    SfxEventHint        aHint;
-    Idle*               pIdle;
+    SfxEventHint           aHint;
+    std::unique_ptr<Idle>  pIdle;
 
 public:
 
     virtual void        Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
     explicit SfxEventAsyncer_Impl(const SfxEventHint& rHint);
-    virtual ~SfxEventAsyncer_Impl();
-    DECL_LINK_TYPED( IdleHdl, Idle*, void );
+    DECL_LINK( IdleHdl, Timer*, void );
 };
 
 
 void SfxEventAsyncer_Impl::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if( pHint && pHint->GetId() == SFX_HINT_DYING && pIdle->IsActive() )
+    if( rHint.GetId() == SfxHintId::Dying && pIdle->IsActive() )
     {
         pIdle->Stop();
         delete this;
@@ -109,33 +107,21 @@ SfxEventAsyncer_Impl::SfxEventAsyncer_Impl( const SfxEventHint& rHint )
 {
     if( rHint.GetObjShell() )
         StartListening( *rHint.GetObjShell() );
-    pIdle = new Idle;
-    pIdle->SetIdleHdl( LINK(this, SfxEventAsyncer_Impl, IdleHdl) );
-    pIdle->SetPriority( SchedulerPriority::HIGHEST );
+    pIdle.reset( new Idle("SfxEventASyncer") );
+    pIdle->SetInvokeHandler( LINK(this, SfxEventAsyncer_Impl, IdleHdl) );
+    pIdle->SetPriority( TaskPriority::HIGHEST );
+    pIdle->SetDebugName( "sfx::SfxEventAsyncer_Impl pIdle" );
     pIdle->Start();
 }
 
 
-SfxEventAsyncer_Impl::~SfxEventAsyncer_Impl()
-{
-    delete pIdle;
-}
-
-
-IMPL_LINK_TYPED(SfxEventAsyncer_Impl, IdleHdl, Idle*, pAsyncIdle, void)
+IMPL_LINK(SfxEventAsyncer_Impl, IdleHdl, Timer*, pAsyncIdle, void)
 {
     SfxObjectShellRef xRef( aHint.GetObjShell() );
     pAsyncIdle->Stop();
-#ifdef DBG_UTIL
-    if (!xRef.Is())
-    {
-        OStringBuffer aTmp("SfxEvent: ");
-        aTmp.append(OUStringToOString(aHint.GetEventName(), RTL_TEXTENCODING_UTF8));
-        OSL_TRACE( "%s", aTmp.getStr() );
-    }
-#endif
+    SAL_INFO_IF(!xRef.is(), "sfx.appl", "SfxEvent: " << aHint.GetEventName());
     SfxGetpApp()->Broadcast( aHint );
-    if ( xRef.Is() )
+    if ( xRef.is() )
         xRef->Broadcast( aHint );
     delete this;
 }
@@ -172,7 +158,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_BACKUP :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_BACKUP))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::Backup))
                             if (!rSet.Put( SfxBoolItem( rPool.GetWhich( SID_ATTR_BACKUP ),aSaveOptions.IsBackup())))
                                 bRet = false;
                     }
@@ -180,7 +166,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_PRETTYPRINTING:
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_DOPRETTYPRINTING))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::DoPrettyPrinting))
                             if (!rSet.Put( SfxBoolItem( rPool.GetWhich( SID_ATTR_PRETTYPRINTING ), aSaveOptions.IsPrettyPrinting())))
                                 bRet = false;
                     }
@@ -188,7 +174,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_WARNALIENFORMAT:
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_WARNALIENFORMAT))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::WarnAlienFormat))
                             if (!rSet.Put( SfxBoolItem( rPool.GetWhich( SID_ATTR_WARNALIENFORMAT ), aSaveOptions.IsWarnAlienFormat())))
                                 bRet = false;
                     }
@@ -196,7 +182,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_AUTOSAVE :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_AUTOSAVE))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::AutoSave))
                             if (!rSet.Put( SfxBoolItem( rPool.GetWhich( SID_ATTR_AUTOSAVE ), aSaveOptions.IsAutoSave())))
                                 bRet = false;
                     }
@@ -204,7 +190,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_AUTOSAVEPROMPT :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_AUTOSAVEPROMPT))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::AutoSavePrompt))
                             if (!rSet.Put( SfxBoolItem( rPool.GetWhich( SID_ATTR_AUTOSAVEPROMPT ), aSaveOptions.IsAutoSavePrompt())))
                                 bRet = false;
                     }
@@ -212,7 +198,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_AUTOSAVEMINUTE :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_AUTOSAVETIME))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::AutoSaveTime))
                             if (!rSet.Put( SfxUInt16Item( rPool.GetWhich( SID_ATTR_AUTOSAVEMINUTE ), (sal_uInt16)aSaveOptions.GetAutoSaveTime())))
                                 bRet = false;
                     }
@@ -220,7 +206,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_USERAUTOSAVE :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_USERAUTOSAVE))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::UserAutoSave))
                             if (!rSet.Put( SfxBoolItem( rPool.GetWhich( SID_ATTR_USERAUTOSAVE ), aSaveOptions.IsUserAutoSave())))
                                 bRet = false;
                     }
@@ -228,7 +214,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_DOCINFO :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_DOCINFSAVE))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::DocInfSave))
                             if (!rSet.Put( SfxBoolItem( rPool.GetWhich( SID_ATTR_DOCINFO ), aSaveOptions.IsDocInfoSave())))
                                 bRet = false;
                     }
@@ -236,7 +222,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_WORKINGSET :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_SAVEWORKINGSET))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::SaveWorkingSet))
                             if (!rSet.Put( SfxBoolItem( rPool.GetWhich( SID_ATTR_WORKINGSET ), aSaveOptions.IsSaveWorkingSet())))
                                 bRet = false;
                     }
@@ -244,7 +230,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_ATTR_SAVEDOCVIEW :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_SAVEDOCVIEW))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::SaveDocView))
                             if (!rSet.Put( SfxBoolItem( rPool.GetWhich( SID_ATTR_SAVEDOCVIEW ), aSaveOptions.IsSaveDocView())))
                                 bRet = false;
                     }
@@ -259,11 +245,6 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_HELPTIPS :
                     if(rSet.Put( SfxBoolItem ( rPool.GetWhich( SID_HELPTIPS ),
                                aHelpOptions.IsHelpTips() ) ) )
-                        bRet = true;
-                    break;
-                case SID_ATTR_WELCOMESCREEN :
-                    if(rSet.Put( SfxBoolItem ( rPool.GetWhich( SID_ATTR_WELCOMESCREEN ),
-                               aHelpOptions.IsWelcomeScreen() ) ) )
                         bRet = true;
                     break;
                 case SID_HELP_STYLESHEET :
@@ -298,7 +279,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_SAVEREL_INET :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_SAVERELINET))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::SaveRelInet))
                             if (!rSet.Put( SfxBoolItem ( rPool.GetWhich( SID_SAVEREL_INET ), aSaveOptions.IsSaveRelINet() )))
                                 bRet = false;
                     }
@@ -306,7 +287,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_SAVEREL_FSYS :
                     {
                         bRet = true;
-                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::E_SAVERELFSYS))
+                        if (!aSaveOptions.IsReadOnly(SvtSaveOptions::EOption::SaveRelFsys))
                             if (!rSet.Put( SfxBoolItem ( rPool.GetWhich( SID_SAVEREL_FSYS ), aSaveOptions.IsSaveRelFSys() )))
                                 bRet = false;
                     }
@@ -314,7 +295,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_BASIC_ENABLED :
                     {
                         bRet = true;
-                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::E_BASICMODE))
+                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::EOption::BasicMode))
                         {
                             if ( !rSet.Put( SfxUInt16Item( rPool.GetWhich( SID_BASIC_ENABLED ), sal::static_int_cast< sal_uInt16 >(aSecurityOptions.GetBasicMode()))))
                                 bRet = false;
@@ -324,7 +305,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_INET_EXE_PLUGIN  :
                     {
                         bRet = true;
-                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::E_EXECUTEPLUGINS))
+                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::EOption::ExecutePlugins))
                         {
                             if ( !rSet.Put( SfxBoolItem( SID_INET_EXE_PLUGIN, aSecurityOptions.IsExecutePlugins() ) ) )
                                 bRet = false;
@@ -334,7 +315,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_MACRO_WARNING :
                     {
                         bRet = true;
-                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::E_WARNING))
+                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::EOption::Warning))
                         {
                             if ( !rSet.Put( SfxBoolItem( SID_MACRO_WARNING, aSecurityOptions.IsWarningEnabled() ) ) )
                                 bRet = false;
@@ -344,7 +325,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_MACRO_CONFIRMATION :
                     {
                         bRet = true;
-                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::E_CONFIRMATION))
+                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::EOption::Confirmation))
                         {
                             if ( !rSet.Put( SfxBoolItem( SID_MACRO_CONFIRMATION, aSecurityOptions.IsConfirmationEnabled() ) ) )
                                 bRet = false;
@@ -354,7 +335,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 case SID_SECURE_URL :
                     {
                         bRet = true;
-                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::E_SECUREURLS))
+                        if (!aSecurityOptions.IsReadOnly(SvtSecurityOptions::EOption::SecureUrls))
                         {
                             css::uno::Sequence< OUString > seqURLs = aSecurityOptions.GetSecureURLs();
                             std::vector<OUString> aList;
@@ -472,7 +453,7 @@ void SfxApplication::GetOptions( SfxItemSet& rSet )
                 break;
 
                 default:
-                    SAL_INFO( "sfx", "W1:Wrong ID while getting Options!" );
+                    SAL_INFO( "sfx.appl", "W1:Wrong ID while getting Options!" );
                     break;
             }
             SAL_WARN_IF(!bRet, "sfx.appl", "Putting options failed!");
@@ -512,8 +493,7 @@ void SfxApplication::SetOptions_Impl( const SfxItemSet& rSet )
         while ( pCurrViewFrame )
         {
             // update all "final" dispatchers
-            if ( !pCurrViewFrame->GetActiveChildFrame_Impl() )
-                pCurrViewFrame->GetDispatcher()->Update_Impl(true);
+            pCurrViewFrame->GetDispatcher()->Update_Impl(true);
             pCurrViewFrame = SfxViewFrame::GetNext(*pCurrViewFrame);
         }
     }
@@ -607,23 +587,6 @@ void SfxApplication::SetOptions_Impl( const SfxItemSet& rSet )
         DBG_ASSERT(dynamic_cast< const SfxBoolItem *>( pItem ) !=  nullptr, "BoolItem expected");
         aHelpOptions.SetHelpTips( static_cast<const SfxBoolItem *>(pItem)->GetValue());
     }
-
-    // WelcomeScreen
-    if ( SfxItemState::SET == rSet.GetItemState(rPool.GetWhich(SID_ATTR_WELCOMESCREEN ), true, &pItem))
-    {
-        DBG_ASSERT(dynamic_cast< const SfxBoolItem *>( pItem ) !=  nullptr, "BoolItem expected");
-        aHelpOptions.SetWelcomeScreen( static_cast<const SfxBoolItem *>(pItem)->GetValue() );
-    }
-
-    // WelcomeScreen
-    if ( SfxItemState::SET == rSet.GetItemState(rPool.GetWhich(SID_WELCOMESCREEN_RESET ), true, &pItem))
-    {
-        DBG_ASSERT(dynamic_cast< const SfxBoolItem *>( pItem ) !=  nullptr, "BoolItem expected");
-        bool bReset = static_cast<const SfxBoolItem *>(pItem)->GetValue();
-        if ( bReset )
-        {
-            OSL_FAIL( "Not implemented, may be EOL!" );
-        }                                                   }
 
     if ( SfxItemState::SET == rSet.GetItemState(rPool.GetWhich(SID_HELP_STYLESHEET ), true, &pItem))
     {
@@ -733,7 +696,7 @@ void SfxApplication::SetOptions_Impl( const SfxItemSet& rSet )
             static_cast< SfxStringItem const * >(pItem)->GetValue(), batch);
     }
 
-    // Secure-Referers
+    // Secure-Referrer
     if ( SfxItemState::SET == rSet.GetItemState(SID_SECURE_URL, true, &pItem))
     {
         DBG_ASSERT(dynamic_cast< const SfxStringListItem *>( pItem ) !=  nullptr, "StringListItem expected");
@@ -868,14 +831,7 @@ void SfxApplication::NotifyEvent( const SfxEventHint& rEventHint, bool bSynchron
 
     if ( bSynchron )
     {
-#ifdef DBG_UTIL
-        if (!pDoc)
-        {
-            OStringBuffer aTmp("SfxEvent: ");
-            aTmp.append(OUStringToOString(rEventHint.GetEventName(), RTL_TEXTENCODING_UTF8));
-            OSL_TRACE( "%s", aTmp.getStr() );
-        }
-#endif
+        SAL_INFO_IF(!pDoc, "sfx.appl", "SfxEvent: " << rEventHint.GetEventName());
         Broadcast(rEventHint);
         if ( pDoc )
             pDoc->Broadcast( rEventHint );

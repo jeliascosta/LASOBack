@@ -23,7 +23,7 @@
 #include <oox/helper/attributelist.hxx>
 #include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
-#include "biffinputstream.hxx"
+#include <oox/helper/binaryinputstream.hxx>
 
 namespace oox {
 namespace xls {
@@ -104,10 +104,10 @@ WebPrModel& ConnectionModel::createWebPr()
     return *mxWebPr;
 }
 
-Connection::Connection( const WorkbookHelper& rHelper, sal_Int32 nConnId ) :
+Connection::Connection( const WorkbookHelper& rHelper ) :
     WorkbookHelper( rHelper )
 {
-    maModel.mnId = nConnId;
+    maModel.mnId = -1;
 }
 
 void Connection::importConnection( const AttributeList& rAttribs )

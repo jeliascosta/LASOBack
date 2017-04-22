@@ -27,7 +27,7 @@ Impl_Gradient::Impl_Gradient() :
     maStartColor( COL_BLACK ),
     maEndColor( COL_WHITE )
 {
-    meStyle             = GradientStyle_LINEAR;
+    meStyle             = GradientStyle::Linear;
     mnAngle             = 0;
     mnBorder            = 0;
     mnOfsX              = 50;
@@ -74,6 +74,11 @@ Gradient::Gradient() :
 
 Gradient::Gradient( const Gradient& rGradient ) :
     mpImplGradient( rGradient.mpImplGradient )
+{
+}
+
+Gradient::Gradient( Gradient&& rGradient ) :
+    mpImplGradient( std::move(rGradient.mpImplGradient) )
 {
 }
 
@@ -140,12 +145,12 @@ void Gradient::SetSteps( sal_uInt16 nSteps )
     mpImplGradient->mnStepCount = nSteps;
 }
 
-void Gradient::GetBoundRect( const Rectangle& rRect, Rectangle& rBoundRect, Point& rCenter ) const
+void Gradient::GetBoundRect( const tools::Rectangle& rRect, tools::Rectangle& rBoundRect, Point& rCenter ) const
 {
-    Rectangle aRect( rRect );
+    tools::Rectangle aRect( rRect );
     sal_uInt16 nAngle = GetAngle() % 3600;
 
-    if( GetStyle() == GradientStyle_LINEAR || GetStyle() == GradientStyle_AXIAL )
+    if( GetStyle() == GradientStyle::Linear || GetStyle() == GradientStyle::Axial )
     {
         const double    fAngle = nAngle * F_PI1800;
         const double    fWidth = aRect.GetWidth();
@@ -166,7 +171,7 @@ void Gradient::GetBoundRect( const Rectangle& rRect, Rectangle& rBoundRect, Poin
     }
     else
     {
-        if( GetStyle() == GradientStyle_SQUARE || GetStyle() == GradientStyle_RECT )
+        if( GetStyle() == GradientStyle::Square || GetStyle() == GradientStyle::Rect )
         {
             const double    fAngle = nAngle * F_PI1800;
             const double    fWidth = aRect.GetWidth();
@@ -185,13 +190,13 @@ void Gradient::GetBoundRect( const Rectangle& rRect, Rectangle& rBoundRect, Poin
 
         Size aSize( aRect.GetSize() );
 
-        if( GetStyle() == GradientStyle_RADIAL )
+        if( GetStyle() == GradientStyle::Radial )
         {
             // Calculation of radii for circle
             aSize.Width() = (long)(0.5 + sqrt((double)aSize.Width()*(double)aSize.Width() + (double)aSize.Height()*(double)aSize.Height()));
             aSize.Height() = aSize.Width();
         }
-        else if( GetStyle() == GradientStyle_ELLIPTICAL )
+        else if( GetStyle() == GradientStyle::Elliptical )
         {
             // Calculation of radii for ellipse
             aSize.Width() = (long)( 0.5 + (double) aSize.Width()  * 1.4142 );
@@ -225,6 +230,12 @@ Gradient& Gradient::operator=( const Gradient& rGradient )
     return *this;
 }
 
+Gradient& Gradient::operator=( Gradient&& rGradient )
+{
+    mpImplGradient = std::move(rGradient.mpImplGradient);
+    return *this;
+}
+
 bool Gradient::operator==( const Gradient& rGradient ) const
 {
     return mpImplGradient == rGradient.mpImplGradient;
@@ -254,7 +265,7 @@ SvStream& WriteGradient( SvStream& rOStm, const Gradient& rGradient )
 {
     VersionCompat aCompat( rOStm, StreamMode::WRITE, 1 );
 
-    rOStm.WriteUInt16( rGradient.mpImplGradient->meStyle );
+    rOStm.WriteUInt16( (sal_uInt16)rGradient.mpImplGradient->meStyle );
     WriteColor( rOStm, rGradient.mpImplGradient->maStartColor );
     WriteColor( rOStm, rGradient.mpImplGradient->maEndColor );
     rOStm.WriteUInt16( rGradient.mpImplGradient->mnAngle )

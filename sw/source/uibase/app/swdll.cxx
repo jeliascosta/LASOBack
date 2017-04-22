@@ -48,7 +48,7 @@
 #include <unomid.h>
 
 #include "swdllimpl.hxx"
-
+#include <o3tl/make_unique.hxx>
 using namespace com::sun::star;
 
 namespace
@@ -80,10 +80,9 @@ namespace SwGlobals
 }
 
 SwDLL::SwDLL()
+    : m_pAutoCorrCfg(nullptr)
 {
-    // the SdModule must be created
-    SwModule** ppShlPtr = reinterpret_cast<SwModule**>(GetAppData(SHL_WRITER));
-    if ( *ppShlPtr )
+    if ( SfxApplication::GetModule(SfxToolsModule::Writer) )    // Module already active
         return;
 
     std::unique_ptr<SvtModuleOptions> xOpt;
@@ -99,8 +98,9 @@ SwDLL::SwDLL()
 
     SfxObjectFactory* pWDocFact = &SwWebDocShell::Factory();
 
-    SwModule* pModule = new SwModule( pWDocFact, pDocFact, pGlobDocFact );
-    *ppShlPtr = pModule;
+    auto pUniqueModule = o3tl::make_unique<SwModule>(pWDocFact, pDocFact, pGlobDocFact);
+    SwModule* pModule = pUniqueModule.get();
+    SfxApplication::SetModule(SfxToolsModule::Writer, std::move(pUniqueModule));
 
     pWDocFact->SetDocumentServiceName("com.sun.star.text.WebDocument");
 
@@ -113,10 +113,10 @@ SwDLL::SwDLL()
     // register SvDraw-Fields
     SdrRegisterFieldClasses();
 
-    // register 3D-Objekt-Factory
+    // register 3D-object-Factory
     E3dObjFactory();
 
-    // register form::component::Form-Objekt-Factory
+    // register form::component::Form-object-Factory
     FmFormObjFactory();
 
     SdrObjFactory::InsertMakeObjectHdl( LINK( &aSwObjectFactory, SwObjectFactory, MakeObject ) );
@@ -147,16 +147,16 @@ SwDLL::SwDLL()
         SvxAutoCorrCfg& rACfg = SvxAutoCorrCfg::Get();
         const SvxAutoCorrect* pOld = rACfg.GetAutoCorrect();
         rACfg.SetAutoCorrect(new SwAutoCorrect( *pOld ));
+        m_pAutoCorrCfg = &rACfg;
     }
 }
 
 SwDLL::~SwDLL()
 {
-    if (!utl::ConfigManager::IsAvoidConfig())
+    if (m_pAutoCorrCfg)
     {
         // fdo#86494 SwAutoCorrect must be deleted before FinitCore
-        SvxAutoCorrCfg& rACfg = SvxAutoCorrCfg::Get();
-        rACfg.SetAutoCorrect(nullptr); // delete SwAutoCorrect before exit handlers
+        m_pAutoCorrCfg->SetAutoCorrect(nullptr); // delete SwAutoCorrect before exit handlers
     }
 
     // Pool has to be deleted before statics are
@@ -165,14 +165,8 @@ SwDLL::~SwDLL()
     ::FinitUI();
     filters_.reset();
     ::FinitCore();
-    // sign out Objekt-Factory
+    // sign out object-Factory
     SdrObjFactory::RemoveMakeObjectHdl(LINK(&aSwObjectFactory, SwObjectFactory, MakeObject ));
-#if 0
-    // the SwModule must be destroyed
-    SwModule** ppShlPtr = (SwModule**) GetAppData(SHL_WRITER);
-    delete (*ppShlPtr);
-    (*ppShlPtr) = NULL;
-#endif
 }
 
 sw::Filters & SwDLL::getFilters()

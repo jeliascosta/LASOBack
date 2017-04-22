@@ -20,6 +20,7 @@
 #include <swtable.hxx>
 #include <tblsel.hxx>
 #include <tblrwcl.hxx>
+#include <ndtxt.hxx>
 #include <node.hxx>
 #include <UndoTable.hxx>
 #include <pam.hxx>
@@ -216,7 +217,7 @@ static SwTableBox* lcl_LeftBorder2Box( long nLeft, const SwTableLine* pLine )
         }
         nCurrLeft += pBox->GetFrameFormat()->GetFrameSize().GetWidth();
     }
-    OSL_FAIL( "Didn't found wished box" );
+    OSL_FAIL( "Didn't find wished box" );
     return nullptr;
 }
 
@@ -380,7 +381,7 @@ SwBoxSelection* SwTable::CollectBoxSelection( const SwPaM& rPam ) const
     {
         SwTableLine* pLine = m_aLines[nRow];
         OSL_ENSURE( pLine, "Missing table line" );
-        SwSelBoxes *pBoxes = new SwSelBoxes();
+        SwSelBoxes *pBoxes = new SwSelBoxes;
         long nRight = 0;
         const size_t nCount = pLine->GetTabBoxes().size();
         for( size_t nCurrBox = 0; nCurrBox < nCount; ++nCurrBox )
@@ -786,7 +787,7 @@ bool SwTable::NewInsertCol( SwDoc* pDoc, const SwSelBoxes& rBoxes,
 
 For the old table model, ::GetMergeSel(..) is called only,
 for the new table model, PrepareMerge does the main work.
-It modifices all cells to merge (width, border, rowspan etc.) and collects
+It modifies all cells to merge (width, border, rowspan etc.) and collects
 the cells which have to be deleted by Merge(..) afterwards.
 If there are superfluous rows, these cells are put into the deletion list as well.
 
@@ -940,7 +941,23 @@ bool SwTable::PrepareMerge( const SwPaM& rPam, SwSelBoxes& rBoxes,
                     pFormat->SetFormatAttr( SwFormatFrameSize( ATT_VAR_SIZE, 0, 0 ) );
                 }
                 else
+                {
                     pBox->ChgFrameFormat( static_cast<SwTableBoxFormat*>(pNewFormat) );
+                    // remove numbering from cells that will be disabled in the merge
+                    if( nCurrLine )
+                    {
+                        SwPaM aPam( *pBox->GetSttNd(), 0 );
+                        aPam.GetPoint()->nNode++;
+                        SwTextNode* pNd = aPam.GetNode().GetTextNode();
+                        while( pNd )
+                        {
+                            pNd->SetCountedInList( false );
+
+                            aPam.GetPoint()->nNode++;
+                            pNd = aPam.GetNode().GetTextNode();
+                        }
+                    }
+                }
             }
         }
         if( pLastBox ) // Robust
@@ -1095,10 +1112,10 @@ static void lcl_UnMerge( const SwTable& rTable, SwTableBox& rBox, size_t nCnt,
         return;
     if( nCnt > nCount )
         nCnt = nCount;
-    ::std::unique_ptr<size_t[]> const pSplitIdx(new size_t[nCnt]);
+    std::unique_ptr<size_t[]> const pSplitIdx(new size_t[nCnt]);
     if( bSameHeight )
     {
-        ::std::unique_ptr<SwTwips[]> const pHeights(new SwTwips[nCount]);
+        std::unique_ptr<SwTwips[]> const pHeights(new SwTwips[nCount]);
         SwTwips nHeight = 0;
         for (size_t i = 0; i < nCount; ++i)
         {

@@ -42,11 +42,11 @@ class Meaning :
 
 public:
     explicit Meaning(const OUString &rTerm);
-    virtual ~Meaning();
+    virtual ~Meaning() override;
 
     // XMeaning
-    virtual OUString SAL_CALL getMeaning() throw(css::uno::RuntimeException, std::exception) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL querySynonyms() throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getMeaning() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL querySynonyms() override;
 
     // non-interface specific functions
     void    SetSynonyms( const css::uno::Sequence< OUString > &rSyn );

@@ -88,7 +88,7 @@ enum SbiToken {
     FIRSTEXTRA,
     NUMBER=FIRSTEXTRA, FIXSTRING, SYMBOL, CDECL_, BYVAL, BYREF,
     OUTPUT, RANDOM, APPEND, BINARY, ACCESS,
-    LOCK, READ, PRESERVE, BASE, ANY, LIB, OPTIONAL_,
+    LOCK, READ, PRESERVE, BASE, ANY, LIB, OPTIONAL_, PTRSAFE,
     BASIC_EXPLICIT, COMPATIBLE, CLASSMODULE, PARAMARRAY, WITHEVENTS,
 
     // from here there are JavaScript-tokens (same enum so that same type)
@@ -117,7 +117,7 @@ enum SbiToken {
 // #i109076
 class TokenLabelInfo
 {
-    bool* m_pTokenCanBeLabelTab;
+    std::unique_ptr<bool[]> m_pTokenCanBeLabelTab;
 
 public:
     TokenLabelInfo();
@@ -146,8 +146,8 @@ public:
     SbiTokenizer( const OUString&, StarBASIC* = nullptr );
    ~SbiTokenizer();
 
-    inline bool IsEof()             { return bEof; }
-    inline bool IsEos()             { return bEos; }
+    bool IsEof()             { return bEof; }
+    bool IsEos()             { return bEos; }
 
     void  Push( SbiToken );
     const OUString& Symbol( SbiToken );   // reconversion
@@ -158,7 +158,6 @@ public:
 
     void Error( SbError c ) { GenError( c ); }
     void Error( SbError, SbiToken );
-    void Error( SbError, const char* );
     void Error( SbError, const OUString &);
 
     static bool IsEoln( SbiToken t )

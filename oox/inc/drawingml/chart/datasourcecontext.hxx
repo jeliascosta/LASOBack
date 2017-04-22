@@ -39,17 +39,18 @@ class DoubleSequenceContext : public DataSequenceContextBase
 {
 public:
     explicit            DoubleSequenceContext( ::oox::core::ContextHandler2Helper& rParent, DataSequenceModel& rModel );
-    virtual             ~DoubleSequenceContext();
+    virtual             ~DoubleSequenceContext() override;
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
     virtual void        onCharacters( const OUString& rChars ) override;
 
 private:
-    SvNumberFormatter* getNumberFormatter();
+    SvNumberFormatter*  getNumberFormatter();
 
 private:
     sal_Int32           mnPtIndex;          /// Current data point index.
-    SvNumberFormatter*   mpNumberFormatter;
+    std::unique_ptr<SvNumberFormatter>
+                        mpNumberFormatter;
 };
 
 
@@ -60,7 +61,7 @@ class StringSequenceContext : public DataSequenceContextBase
 {
 public:
     explicit            StringSequenceContext( ::oox::core::ContextHandler2Helper& rParent, DataSequenceModel& rModel );
-    virtual             ~StringSequenceContext();
+    virtual             ~StringSequenceContext() override;
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
     virtual void        onCharacters( const OUString& rChars ) override;
@@ -79,7 +80,7 @@ class DataSourceContext : public ContextBase< DataSourceModel >
 {
 public:
     explicit            DataSourceContext( ::oox::core::ContextHandler2Helper& rParent, DataSourceModel& rModel );
-    virtual             ~DataSourceContext();
+    virtual             ~DataSourceContext() override;
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };

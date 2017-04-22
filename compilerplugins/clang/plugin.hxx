@@ -69,11 +69,15 @@ class Plugin
         */
         const Stmt* parentStmt( const Stmt* stmt );
         Stmt* parentStmt( Stmt* stmt );
+        const FunctionDecl* parentFunctionDecl( const Stmt* stmt );
         /**
          Checks if the location is inside an UNO file, more specifically, if it forms part of the URE stable interface,
          which is not allowed to be changed.
         */
         bool isInUnoIncludeFile(SourceLocation spellingLocation) const;
+        bool isInUnoIncludeFile(const FunctionDecl*) const;
+
+        static void normalizeDotDotInFilePath(std::string&);
     private:
         static void registerPlugin( Plugin* (*create)( const InstantiationData& ), const char* optionName, bool isPPCallback, bool byDefault );
         template< typename T > static Plugin* createHelper( const InstantiationData& data );
@@ -100,7 +104,7 @@ class RewritePlugin
             // If the resulting line would be completely empty, it'll be removed.
             RemoveLineIfEmpty = 1 << 0,
             // Use this to remove the declaration/statement as a whole, i.e. all whitespace before the statement
-            // and the trailing semicolor (is not part of the AST element range itself).
+            // and the trailing semicolon (is not part of the AST element range itself).
             // The trailing semicolon must be present.
             RemoveWholeStatement = 1 << 1,
             // Removes also all whitespace preceding and following the expression (completely, so that

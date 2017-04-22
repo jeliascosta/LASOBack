@@ -20,40 +20,30 @@
 #ifndef INCLUDED_HWPFILTER_SOURCE_FORMULA_H
 #define INCLUDED_HWPFILTER_SOURCE_FORMULA_H
 
-// DVO: remove DEBUG dependency
-// #ifndef DEBUG
 #include <com/sun/star/xml/sax/XDocumentHandler.hpp>
 #include "attributes.hxx"
-// DVO: remove DEBUG dependency
-// #endif
+#include <rtl/ref.hxx>
 
 class Node;
 
-// DVO: remove DEBUG dependency
-// #ifndef DEBUG
 using namespace ::com::sun::star::xml::sax;
-// #endif
 
-class Formula
+class Formula final
 {
 public:
-    Formula(char *_eq, int _ishwpeq = 1)
-        : pList(NULL)
+    explicit Formula(char *_eq)
     {
         eq = _eq;
-        isHwpEQ = _ishwpeq;
         trim();
     }
-    virtual ~Formula(){ }
 
-    void setDocumentHandler(Reference < XDocumentHandler > xHandler )
+    void setDocumentHandler(Reference < XDocumentHandler > const & xHandler )
     {
           m_rxDocumentHandler = xHandler;
     }
     void setAttributeListImpl( AttributeListImpl *p )
     {
-        pList = p;
-        rList = static_cast<XAttributeList *>(pList);
+        mxList = p;
     }
     void parse();
 private:
@@ -77,10 +67,8 @@ private:
 
 private:
      Reference< XDocumentHandler >  m_rxDocumentHandler;
-     Reference< XAttributeList > rList;
-     AttributeListImpl *pList;
+     rtl::Reference<AttributeListImpl> mxList;
      char *eq;
-     int isHwpEQ;
 };
 
 #endif

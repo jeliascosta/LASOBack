@@ -122,7 +122,7 @@ public:
 
     static void SetToDocument(
         ScDocumentImport& rDoc, const ScAddress& rPos, const XclImpRoot& rRoot,
-        const XclImpString& rString, sal_uInt16 nXFIndex = 0 );
+        const XclImpString& rString, sal_uInt16 nXFIndex );
 };
 
 // Header/footer conversion ===================================================
@@ -171,7 +171,7 @@ public:
     const XclImpHFConverter& operator=(const XclImpHFConverter&) = delete;
 
     explicit            XclImpHFConverter( const XclImpRoot& rRoot );
-                        virtual ~XclImpHFConverter();
+                        virtual ~XclImpHFConverter() override;
 
     /** Parses the passed string and creates three new edit engine text objects. */
     void                ParseString( const OUString& rHFString );
@@ -201,16 +201,14 @@ private:    // types
 
 private:
     /** Returns the current edit engine text object. */
-    inline XclImpHFPortionInfo& GetCurrInfo() { return maInfos[ meCurrObj ]; }
+    XclImpHFPortionInfo& GetCurrInfo() { return maInfos[ meCurrObj ]; }
     /** Returns the current edit engine text object. */
-    inline XclImpHFPortionInfo::EditTextObjectRef& GetCurrObj() { return GetCurrInfo().mxObj; }
+    XclImpHFPortionInfo::EditTextObjectRef& GetCurrObj() { return GetCurrInfo().mxObj; }
     /** Returns the current selection. */
-    inline ESelection&  GetCurrSel() { return GetCurrInfo().maSel; }
+    ESelection&  GetCurrSel() { return GetCurrInfo().maSel; }
 
     /** Returns the maximum line height of the specified portion. */
     sal_uInt16          GetMaxLineHeight( XclImpHFPortion ePortion ) const;
-    /** Returns the current maximum line height. */
-    sal_uInt16          GetCurrMaxLineHeight() const;
 
     /** Updates the maximum line height of the specified portion, using the current font size. */
     void                UpdateMaxLineHeight( XclImpHFPortion ePortion );
@@ -311,17 +309,17 @@ public:
     virtual             ~XclImpCachedValue();
 
     /** Returns the type of the cached value (EXC_CACHEDVAL_*). */
-    inline sal_uInt8    GetType() const     { return mnType; }
+    sal_uInt8    GetType() const     { return mnType; }
     /** Returns the cached string value, if this value is a string, else an empty string. */
     const OUString& GetString() const { return maStr;}
     /** Returns the cached number, if this value has number type, else 0.0. */
-    inline double       GetValue() const    { return mfValue; }
+    double       GetValue() const    { return mfValue; }
     /** Returns the cached Boolean value, if this value has Boolean type, else false. */
-    inline bool         GetBool() const     { return (mnType == EXC_CACHEDVAL_BOOL) && (mnBoolErr != 0); }
+    bool         GetBool() const     { return (mnType == EXC_CACHEDVAL_BOOL) && (mnBoolErr != 0); }
     /** Returns the cached Calc error code, if this value has Error type, else 0. */
-    inline sal_uInt8    GetXclError() const { return (mnType == EXC_CACHEDVAL_ERROR) ? mnBoolErr : EXC_ERR_NA; }
+    sal_uInt8    GetXclError() const { return (mnType == EXC_CACHEDVAL_ERROR) ? mnBoolErr : EXC_ERR_NA; }
     /** Returns the cached Calc error code, if this value has Error type, else 0. */
-    sal_uInt16              GetScError() const;
+    FormulaError        GetScError() const;
 
 protected:
     typedef ::std::unique_ptr< const ScTokenArray >   ScTokenArrayPtr;

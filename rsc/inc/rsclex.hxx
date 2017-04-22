@@ -30,7 +30,6 @@ class StringContainer
     std::unordered_set< OString, OStringHash >      m_aStrings;
 public:
     StringContainer() {}
-    ~StringContainer() {}
 
     const char* putString( const char* pString );
 };
@@ -59,8 +58,7 @@ struct Node
 {
     Node*   pPrev;
     RSCINST aInst;
-    sal_uInt32  nTupelRec;  // Rekursionstiefe fuer Tupel
-    Node() { pPrev = nullptr; nTupelRec = 0; }
+    Node() { pPrev = nullptr; }
 };
 
 class ObjectStack
@@ -93,12 +91,12 @@ class ObjectStack
 };
 
 /****************** F o r w a r d s **************************************/
-#if defined ( SOLARIS )
-extern "C" int yyparse();   // forward Deklaration fuer erzeugte Funktion
+#if defined(__sun)
+extern "C" int yyparse();   // forward declaration for created function
 extern "C" void yyerror( const char * );
 extern "C" int  yylex();
 #else
-int yyparse();              // forward Deklaration fuer erzeugte Funktion
+int yyparse();              // forward declaration for created function
 void yyerror( char * );
 int  yylex();
 #endif

@@ -91,86 +91,56 @@ class XMLBasedAcceleratorConfiguration : public    ::cppu::WeakImplHelper<
     public:
 
         XMLBasedAcceleratorConfiguration( const css::uno::Reference< css::uno::XComponentContext >& xContext);
-        virtual ~XMLBasedAcceleratorConfiguration(                                                                    );
+        virtual ~XMLBasedAcceleratorConfiguration(                                                                    ) override;
 
         // uno interface!
 
     public:
 
         // XAcceleratorConfiguration
-        virtual css::uno::Sequence< css::awt::KeyEvent > SAL_CALL getAllKeyEvents()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< css::awt::KeyEvent > SAL_CALL getAllKeyEvents() override;
 
-        virtual OUString SAL_CALL getCommandByKeyEvent(const css::awt::KeyEvent& aKeyEvent)
-            throw(css::container::NoSuchElementException,
-            css::uno::RuntimeException, std::exception            ) override;
+        virtual OUString SAL_CALL getCommandByKeyEvent(const css::awt::KeyEvent& aKeyEvent) override;
 
         virtual void SAL_CALL setKeyEvent(const css::awt::KeyEvent& aKeyEvent,
-            const OUString&    sCommand )
-            throw(css::lang::IllegalArgumentException,
-            css::uno::RuntimeException, std::exception         ) override;
+            const OUString&    sCommand ) override;
 
-        virtual void SAL_CALL removeKeyEvent(const css::awt::KeyEvent& aKeyEvent)
-            throw(css::container::NoSuchElementException,
-            css::uno::RuntimeException, std::exception            ) override;
+        virtual void SAL_CALL removeKeyEvent(const css::awt::KeyEvent& aKeyEvent) override;
 
-        virtual css::uno::Sequence< css::awt::KeyEvent > SAL_CALL getKeyEventsByCommand(const OUString& sCommand)
-            throw(css::lang::IllegalArgumentException   ,
-            css::container::NoSuchElementException,
-            css::uno::RuntimeException, std::exception            ) override;
+        virtual css::uno::Sequence< css::awt::KeyEvent > SAL_CALL getKeyEventsByCommand(const OUString& sCommand) override;
 
-        virtual css::uno::Sequence< css::uno::Any > SAL_CALL getPreferredKeyEventsForCommandList(const css::uno::Sequence< OUString >& lCommandList)
-            throw (css::lang::IllegalArgumentException, css::container::NoSuchElementException,
-                   css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< css::uno::Any > SAL_CALL getPreferredKeyEventsForCommandList(const css::uno::Sequence< OUString >& lCommandList) override;
 
-        virtual void SAL_CALL removeCommandFromAllKeyEvents(const OUString& sCommand)
-            throw(css::lang::IllegalArgumentException   ,
-            css::container::NoSuchElementException,
-            css::uno::RuntimeException, std::exception            ) override;
+        virtual void SAL_CALL removeCommandFromAllKeyEvents(const OUString& sCommand) override;
 
         // XUIConfigurationPersistence
-        virtual void SAL_CALL reload()
-            throw(css::uno::Exception       ,
-            css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL reload() override;
 
-        virtual void SAL_CALL store()
-            throw(css::uno::Exception       ,
-            css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL store() override;
 
-        virtual void SAL_CALL storeToStorage(const css::uno::Reference< css::embed::XStorage >& xStorage)
-            throw(css::uno::Exception       ,
-            css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL storeToStorage(const css::uno::Reference< css::embed::XStorage >& xStorage) override;
 
-        virtual sal_Bool SAL_CALL isModified()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isModified() override;
 
-        virtual sal_Bool SAL_CALL isReadOnly()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isReadOnly() override;
 
         // XUIConfigurationStorage
-        virtual void SAL_CALL setStorage(const css::uno::Reference< css::embed::XStorage >& xStorage)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setStorage(const css::uno::Reference< css::embed::XStorage >& xStorage) override;
 
-        virtual sal_Bool SAL_CALL hasStorage()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL hasStorage() override;
 
         // XUIConfiguration
-        virtual void SAL_CALL addConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& xListener) override;
 
-        virtual void SAL_CALL removeConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& xListener) override;
 
         // XReset
         // TODO use XPresetHandler instead if available
-        virtual void SAL_CALL reset()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL reset() override;
 
-        virtual void SAL_CALL addResetListener(const css::uno::Reference< css::form::XResetListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addResetListener(const css::uno::Reference< css::form::XResetListener >& xListener) override;
 
-        virtual void SAL_CALL removeResetListener(const css::uno::Reference< css::form::XResetListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeResetListener(const css::uno::Reference< css::form::XResetListener >& xListener) override;
 
         // called when changes occurred in the storage
         void changesOccurred();
@@ -231,7 +201,6 @@ class XMLBasedAcceleratorConfiguration : public    ::cppu::WeakImplHelper<
 
 class XCUBasedAcceleratorConfiguration : public  ::cppu::WeakImplHelper<
                                                      css::util::XChangesListener,
-                                                     css::lang::XComponent,
                                                      css::form::XReset,                    // TODO use XPresetHandler instead if available
                                                      css::ui::XAcceleratorConfiguration >  // => css::ui::XUIConfigurationPersistence
                                                                                            //    css::ui::XUIConfigurationStorage
@@ -260,99 +229,62 @@ class XCUBasedAcceleratorConfiguration : public  ::cppu::WeakImplHelper<
     public:
 
         XCUBasedAcceleratorConfiguration( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-        virtual ~XCUBasedAcceleratorConfiguration(                                                           );
+        virtual ~XCUBasedAcceleratorConfiguration(                                                           ) override;
 
         // uno interface!
 
     public:
 
         // XAcceleratorConfiguration
-        virtual css::uno::Sequence< css::awt::KeyEvent > SAL_CALL getAllKeyEvents()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< css::awt::KeyEvent > SAL_CALL getAllKeyEvents() override;
 
-        virtual OUString SAL_CALL getCommandByKeyEvent(const css::awt::KeyEvent& aKeyEvent)
-            throw(css::container::NoSuchElementException,
-            css::uno::RuntimeException, std::exception            ) override;
+        virtual OUString SAL_CALL getCommandByKeyEvent(const css::awt::KeyEvent& aKeyEvent) override;
 
         virtual void SAL_CALL setKeyEvent(const css::awt::KeyEvent& aKeyEvent,
-            const OUString&    sCommand )
-            throw (css::lang::IllegalArgumentException, css::container::NoSuchElementException,
-                   css::uno::RuntimeException, std::exception) override;
+            const OUString&    sCommand ) override;
 
-        virtual void SAL_CALL removeKeyEvent(const css::awt::KeyEvent& aKeyEvent)
-            throw(css::container::NoSuchElementException,
-            css::uno::RuntimeException, std::exception            ) override;
+        virtual void SAL_CALL removeKeyEvent(const css::awt::KeyEvent& aKeyEvent) override;
 
-        virtual css::uno::Sequence< css::awt::KeyEvent > SAL_CALL getKeyEventsByCommand(const OUString& sCommand)
-            throw(css::lang::IllegalArgumentException   ,
-            css::container::NoSuchElementException,
-            css::uno::RuntimeException, std::exception            ) override;
+        virtual css::uno::Sequence< css::awt::KeyEvent > SAL_CALL getKeyEventsByCommand(const OUString& sCommand) override;
 
-        virtual css::uno::Sequence< css::uno::Any > SAL_CALL getPreferredKeyEventsForCommandList(const css::uno::Sequence< OUString >& lCommandList)
-            throw(css::lang::IllegalArgumentException, css::container::NoSuchElementException,
-                  css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< css::uno::Any > SAL_CALL getPreferredKeyEventsForCommandList(const css::uno::Sequence< OUString >& lCommandList) override;
 
-        virtual void SAL_CALL removeCommandFromAllKeyEvents(const OUString& sCommand)
-            throw(css::lang::IllegalArgumentException   ,
-            css::container::NoSuchElementException,
-            css::uno::RuntimeException, std::exception            ) override;
+        virtual void SAL_CALL removeCommandFromAllKeyEvents(const OUString& sCommand) override;
 
         // XUIConfigurationPersistence
-        virtual void SAL_CALL reload()
-            throw(css::uno::Exception       ,
-            css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL reload() override;
 
-        virtual void SAL_CALL store()
-            throw(css::uno::Exception       ,
-            css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL store() override;
 
-        virtual void SAL_CALL storeToStorage(const css::uno::Reference< css::embed::XStorage >& xStorage)
-            throw(css::uno::Exception       ,
-            css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL storeToStorage(const css::uno::Reference< css::embed::XStorage >& xStorage) override;
 
-        virtual sal_Bool SAL_CALL isModified()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isModified() override;
 
-        virtual sal_Bool SAL_CALL isReadOnly()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isReadOnly() override;
 
         // XUIConfigurationStorage
-        virtual void SAL_CALL setStorage(const css::uno::Reference< css::embed::XStorage >& xStorage)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setStorage(const css::uno::Reference< css::embed::XStorage >& xStorage) override;
 
-        virtual sal_Bool SAL_CALL hasStorage()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL hasStorage() override;
 
         // XUIConfiguration
-        virtual void SAL_CALL addConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& xListener) override;
 
-        virtual void SAL_CALL removeConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& xListener) override;
 
         // XReset
         // TODO use XPresetHandler instead if available
-        virtual void SAL_CALL reset()
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL reset() override;
 
-        virtual void SAL_CALL addResetListener(const css::uno::Reference< css::form::XResetListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addResetListener(const css::uno::Reference< css::form::XResetListener >& xListener) override;
 
-        virtual void SAL_CALL removeResetListener(const css::uno::Reference< css::form::XResetListener >& xListener)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeResetListener(const css::uno::Reference< css::form::XResetListener >& xListener) override;
 
         // css.util.XChangesListener
-        virtual void SAL_CALL changesOccurred(const css::util::ChangesEvent& aEvent)
-            throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL changesOccurred(const css::util::ChangesEvent& aEvent) override;
 
         // css.lang.XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent)
-            throw(css::uno::RuntimeException, std::exception) override;
-
-        // XComponent
-        virtual  void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
-        virtual  void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual  void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) override;
 
         // helper for derived classes
 

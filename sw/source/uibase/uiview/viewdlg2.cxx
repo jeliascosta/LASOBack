@@ -54,7 +54,7 @@ void SwView::ExecDlgExt(SfxRequest &rReq)
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             assert(pFact && "SwAbstractDialogFactory fail!");
 
-            std::unique_ptr<VclAbstractDialog> pDialog(pFact->CreateSwCaptionDialog( pMDI, *this, DLG_CAPTION ));
+            ScopedVclPtr<VclAbstractDialog> pDialog(pFact->CreateSwCaptionDialog( pMDI, *this ));
             assert(pDialog && "Dialog creation failed!");
             if ( pDialog )
             {
@@ -66,7 +66,7 @@ void SwView::ExecDlgExt(SfxRequest &rReq)
         {
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             assert(pFact && "Dialog creation failed!");
-            std::unique_ptr<AbstractInsFootNoteDlg> pDlg(pFact->CreateInsFootNoteDlg(
+            ScopedVclPtr<AbstractInsFootNoteDlg> pDlg(pFact->CreateInsFootNoteDlg(
                 pMDI, *m_pWrtShell, true));
             assert(pDlg && "Dialog creation failed!");
 
@@ -102,7 +102,7 @@ void SwView::InsertCaption(const InsCaptionOpt *pOpt)
     SwWrtShell &rSh = GetWrtShell();
     if(!rName.isEmpty())
     {
-        sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName(rName, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL);
+        sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName(rName, SwGetPoolIdFromName::TxtColl);
         if( USHRT_MAX != nPoolId )
             rSh.GetTextCollFromPool(nPoolId);
             // Pool template does not exist: Does it exist on the document?
@@ -115,24 +115,24 @@ void SwView::InsertCaption(const InsCaptionOpt *pOpt)
     }
 
     SelectionType eType = rSh.GetSelectionType();
-    if (eType & nsSelectionType::SEL_OLE)
-        eType = nsSelectionType::SEL_GRF;
+    if (eType & SelectionType::Ole)
+        eType = SelectionType::Graphic;
 
-    const SwLabelType eT = eType & nsSelectionType::SEL_TBL ? LTYPE_TABLE :
-                      eType & nsSelectionType::SEL_FRM ? LTYPE_FLY :
-                      eType == nsSelectionType::SEL_TXT ? LTYPE_FLY :
-                      eType & nsSelectionType::SEL_DRW ? LTYPE_DRAW :
+    const SwLabelType eT = (eType & SelectionType::Table) ? LTYPE_TABLE :
+                      (eType & SelectionType::Frame) ? LTYPE_FLY :
+                      (eType == SelectionType::Text) ? LTYPE_FLY :
+                      (eType & SelectionType::DrawObject) ? LTYPE_DRAW :
                                                     LTYPE_OBJECT;
 
     SwFieldMgr aMgr(&rSh);
     SwSetExpFieldType* pFieldType =
-            static_cast<SwSetExpFieldType*>(aMgr.GetFieldType(RES_SETEXPFLD, rName));
+            static_cast<SwSetExpFieldType*>(aMgr.GetFieldType(SwFieldIds::SetExp, rName));
     if (!pFieldType && !rName.isEmpty() )
     {
         // Create new field types
         SwSetExpFieldType aSwSetExpFieldType(rSh.GetDoc(), rName, nsSwGetSetExpType::GSE_SEQ);
         aMgr.InsertFieldType(aSwSetExpFieldType);
-        pFieldType = static_cast<SwSetExpFieldType*>(aMgr.GetFieldType(RES_SETEXPFLD, rName));
+        pFieldType = static_cast<SwSetExpFieldType*>(aMgr.GetFieldType(SwFieldIds::SetExp, rName));
     }
 
     if (!pOpt->IgnoreSeqOpts())
@@ -151,9 +151,9 @@ void SwView::InsertCaption(const InsCaptionOpt *pOpt)
     {
         for (size_t i = 0; i < nCount; ++i)
         {
-            pType = aMgr.GetFieldType(USHRT_MAX, i);
+            pType = aMgr.GetFieldType(SwFieldIds::Unknown, i);
             OUString aTmpName( pType->GetName() );
-            if (aTmpName == rName && pType->Which() == RES_SETEXPFLD)
+            if (aTmpName == rName && pType->Which() == SwFieldIds::SetExp)
             {
                 nID = i;
                 OSL_ENSURE(nID==i, "Downcasting to sal_uInt16 lost information!");
@@ -186,15 +186,15 @@ void SwView::InsertCaption(const InsCaptionOpt *pOpt)
     }
 
     // remember category
-    if (eType & nsSelectionType::SEL_GRF)
+    if (eType & SelectionType::Graphic)
         SetOldGrfCat(rName);
-    else if( eType & nsSelectionType::SEL_TBL)
+    else if( eType & SelectionType::Table)
         SetOldTabCat(rName);
-    else if( eType & nsSelectionType::SEL_FRM)
+    else if( eType & SelectionType::Frame)
         SetOldFrameCat(rName);
-    else if( eType == nsSelectionType::SEL_TXT)
+    else if( eType == SelectionType::Text)
         SetOldFrameCat(rName);
-    else if( eType & nsSelectionType::SEL_DRW)
+    else if( eType & SelectionType::DrawObject)
         SetOldDrwCat(rName);
 }
 

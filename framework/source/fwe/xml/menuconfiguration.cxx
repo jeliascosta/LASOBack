@@ -28,6 +28,7 @@
 
 #include <com/sun/star/xml/sax/Parser.hpp>
 #include <com/sun/star/xml/sax/Writer.hpp>
+#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XActiveDataSource.hpp>
 #include <com/sun/star/frame/XFrame.hpp>
 #include <comphelper/processfactory.hxx>
@@ -54,7 +55,6 @@ MenuConfiguration::~MenuConfiguration()
 
 Reference< XIndexAccess > MenuConfiguration::CreateMenuBarConfigurationFromXML(
     Reference< XInputStream >& rInputStream )
-        throw (WrappedTargetException, RuntimeException)
 {
     Reference< XParser > xParser = Parser::create( m_xContext );
 
@@ -102,7 +102,6 @@ Reference< XIndexAccess > MenuConfiguration::CreateMenuBarConfigurationFromXML(
 void MenuConfiguration::StoreMenuBarConfigurationToXML(
     Reference< XIndexAccess >& rMenuBarConfiguration,
     Reference< XOutputStream >& rOutputStream, bool bIsMenuBar )
-    throw (WrappedTargetException, RuntimeException)
 {
     Reference< XWriter > xWriter = Writer::create(m_xContext);
     xWriter->setOutputStream( rOutputStream );

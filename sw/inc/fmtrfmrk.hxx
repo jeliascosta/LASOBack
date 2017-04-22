@@ -48,7 +48,7 @@ class SwFormatRefMark
 public:
     SwFormatRefMark( const OUString& rText );
     SwFormatRefMark( const SwFormatRefMark& rRefMark );
-    virtual ~SwFormatRefMark( );
+    virtual ~SwFormatRefMark( ) override;
 
     /// "Pure virtual methods" of SfxPoolItem.
     virtual bool            operator==( const SfxPoolItem& ) const override;
@@ -62,8 +62,8 @@ public:
 
     const SwTextRefMark *GetTextRefMark() const   { return pTextAttr; }
 
-    inline       OUString &GetRefName()       { return aRefName; }
-    inline const OUString &GetRefName() const { return aRefName; }
+    OUString &GetRefName()       { return aRefName; }
+    const OUString &GetRefName() const { return aRefName; }
 
     css::uno::WeakReference<css::text::XTextContent> const& GetXRefMark() const
         { return m_wXReferenceMark; }

@@ -17,10 +17,17 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/ucb/ContentAction.hpp>
 #include <com/sun/star/ucb/CommandInfoChange.hpp>
+#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 #include <com/sun/star/ucb/XPersistentPropertySet.hpp>
+#include <com/sun/star/beans/IllegalTypeException.hpp>
+#include <com/sun/star/beans/NotRemoveableException.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <com/sun/star/beans/PropertyExistException.hpp>
 #include <com/sun/star/beans/PropertySetInfoChange.hpp>
 #include <cppuhelper/interfacecontainer.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -152,14 +159,11 @@ void SAL_CALL ContentImplHelper::release()
     rtl::Reference< ContentProviderImplHelper > xKeepProviderAlive(
         m_xProvider );
 
-    {
-        osl::MutexGuard aGuard( m_xProvider->m_aMutex );
-        OWeakObject::release();
-    }
+    osl::MutexGuard aGuard( m_xProvider->m_aMutex );
+    OWeakObject::release();
 }
 
 uno::Any SAL_CALL ContentImplHelper::queryInterface( const uno::Type & rType )
-    throw( uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
             static_cast< lang::XTypeProvider * >(this),
@@ -190,14 +194,12 @@ XTYPEPROVIDER_IMPL_10( ContentImplHelper,
 // virtual
 sal_Bool SAL_CALL ContentImplHelper::supportsService(
                                             const OUString& ServiceName )
-    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // virtual
 void SAL_CALL ContentImplHelper::dispose()
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -246,7 +248,6 @@ void SAL_CALL ContentImplHelper::dispose()
 // virtual
 void SAL_CALL ContentImplHelper::addEventListener(
         const uno::Reference< lang::XEventListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -260,7 +261,6 @@ void SAL_CALL ContentImplHelper::addEventListener(
 // virtual
 void SAL_CALL ContentImplHelper::removeEventListener(
         const uno::Reference< lang::XEventListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -271,7 +271,6 @@ void SAL_CALL ContentImplHelper::removeEventListener(
 // virtual
 uno::Reference< css::ucb::XContentIdentifier > SAL_CALL
 ContentImplHelper::getIdentifier()
-    throw( uno::RuntimeException, std::exception )
 {
     return m_xIdentifier;
 }
@@ -279,7 +278,6 @@ ContentImplHelper::getIdentifier()
 // virtual
 void SAL_CALL ContentImplHelper::addContentEventListener(
         const uno::Reference< css::ucb::XContentEventListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -293,7 +291,6 @@ void SAL_CALL ContentImplHelper::addContentEventListener(
 // virtual
 void SAL_CALL ContentImplHelper::removeContentEventListener(
         const uno::Reference< css::ucb::XContentEventListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -303,7 +300,6 @@ void SAL_CALL ContentImplHelper::removeContentEventListener(
 
 // virtual
 sal_Int32 SAL_CALL ContentImplHelper::createCommandIdentifier()
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -315,7 +311,6 @@ sal_Int32 SAL_CALL ContentImplHelper::createCommandIdentifier()
 void SAL_CALL ContentImplHelper::addPropertiesChangeListener(
         const uno::Sequence< OUString >& PropertyNames,
         const uno::Reference< beans::XPropertiesChangeListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -348,7 +343,6 @@ void SAL_CALL ContentImplHelper::addPropertiesChangeListener(
 void SAL_CALL ContentImplHelper::removePropertiesChangeListener(
         const uno::Sequence< OUString >& PropertyNames,
         const uno::Reference< beans::XPropertiesChangeListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -379,7 +373,6 @@ void SAL_CALL ContentImplHelper::removePropertiesChangeListener(
 // virtual
 void SAL_CALL ContentImplHelper::addCommandInfoChangeListener(
         const uno::Reference< css::ucb::XCommandInfoChangeListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -393,7 +386,6 @@ void SAL_CALL ContentImplHelper::addCommandInfoChangeListener(
 // virtual
 void SAL_CALL ContentImplHelper::removeCommandInfoChangeListener(
         const uno::Reference< css::ucb::XCommandInfoChangeListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -406,10 +398,6 @@ void SAL_CALL ContentImplHelper::addProperty(
         const OUString& Name,
         sal_Int16 Attributes,
         const uno::Any& DefaultValue )
-    throw( beans::PropertyExistException,
-           beans::IllegalTypeException,
-           lang::IllegalArgumentException,
-           uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -494,9 +482,6 @@ void SAL_CALL ContentImplHelper::addProperty(
 
 // virtual
 void SAL_CALL ContentImplHelper::removeProperty( const OUString& Name )
-    throw( beans::UnknownPropertyException,
-           beans::NotRemoveableException,
-           uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -594,7 +579,6 @@ void SAL_CALL ContentImplHelper::removeProperty( const OUString& Name )
 // virtual
 void SAL_CALL ContentImplHelper::addPropertySetInfoChangeListener(
         const uno::Reference< beans::XPropertySetInfoChangeListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -608,7 +592,6 @@ void SAL_CALL ContentImplHelper::addPropertySetInfoChangeListener(
 // virtual
 void SAL_CALL ContentImplHelper::removePropertySetInfoChangeListener(
         const uno::Reference< beans::XPropertySetInfoChangeListener >& Listener )
-    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -618,7 +601,6 @@ void SAL_CALL ContentImplHelper::removePropertySetInfoChangeListener(
 
 // virtual
 uno::Reference< uno::XInterface > SAL_CALL ContentImplHelper::getParent()
-    throw( uno::RuntimeException, std::exception )
 {
     uno::Reference< uno::XInterface > xParent;
     OUString aURL = getParentURL();
@@ -642,7 +624,6 @@ uno::Reference< uno::XInterface > SAL_CALL ContentImplHelper::getParent()
 // virtual
 void SAL_CALL ContentImplHelper::setParent(
                                     const uno::Reference< uno::XInterface >& )
-    throw( lang::NoSupportException, uno::RuntimeException, std::exception )
 {
     throw lang::NoSupportException();
 }

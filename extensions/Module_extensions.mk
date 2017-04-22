@@ -11,10 +11,6 @@ $(eval $(call gb_Module_Module,extensions))
 
 $(eval $(call gb_Module_add_targets,extensions,\
 	Library_res \
-	$(if $(filter IOS ANDROID,$(OS)),, \
-		Library_abp \
-		Library_log \
-		Library_scn) \
 ))
 
 $(eval $(call gb_Module_add_l10n_targets,extensions,\
@@ -27,7 +23,10 @@ $(eval $(call gb_Module_add_l10n_targets,extensions,\
 
 ifneq ($(filter-out IOS ANDROID,$(OS)),)
 $(eval $(call gb_Module_add_targets,extensions,\
+	Library_abp \
 	Library_ldapbe2 \
+	Library_log \
+	Library_scn \
 ))
 endif
 
@@ -70,7 +69,6 @@ endif
 ifeq ($(OS),WNT)
 
 ifeq ($(COM),MSC)
-ifneq ($(DISABLE_ACTIVEX),TRUE)
 $(eval $(call gb_Module_add_targets,extensions,\
 	WinResTarget_activex \
 	Library_so_activex \
@@ -83,14 +81,11 @@ $(eval $(call gb_Module_add_targets,extensions,\
 	Library_so_activex_x64 \
 ))
 endif # BUILD_X64
-endif # DISABLE_ACTIVEX
 endif # COM=MSC
 
-ifeq ($(DISABLE_ATL),)
 $(eval $(call gb_Module_add_targets,extensions,\
 	Library_oleautobridge \
 ))
-endif # DISABLE_ATL
 
 endif # WNT
 

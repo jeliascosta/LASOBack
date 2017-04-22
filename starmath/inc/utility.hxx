@@ -114,15 +114,11 @@ protected:
     sal_uInt16 nMaxItems;
     std::deque<vcl::Font> aFontVec;
 
-    static bool     CompareItem(const vcl::Font & rFirstFont, const vcl::Font & rSecondFont);
-    static OUString GetStringItem(const vcl::Font &rItem);
-
 public:
-    SmFontPickList(sal_uInt16 nMax = 5) : nMaxItems(nMax) {}
+    explicit SmFontPickList(sal_uInt16 nMax = 5) : nMaxItems(nMax) {}
     virtual ~SmFontPickList() { Clear(); }
 
     virtual void    Insert(const vcl::Font &rFont);
-    void            Remove(const vcl::Font &rFont);
 
     void            Clear();
     vcl::Font       Get(sal_uInt16 nPos = 0) const;
@@ -140,7 +136,7 @@ public:
 class SmFontPickListBox : public SmFontPickList, public ListBox
 {
 protected:
-    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
+    DECL_LINK(SelectHdl, ListBox&, void);
 
 public:
     SmFontPickListBox(vcl::Window* pParent, WinBits nBits);

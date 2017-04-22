@@ -69,7 +69,6 @@ struct ScMyCurrencyStyle
     ScMyCurrencyStyle() :
         mpRanges(new ScSimpleRangeList)
     {}
-    ~ScMyCurrencyStyle() {}
 };
 
 struct LessCurrencyStyle
@@ -84,21 +83,21 @@ typedef std::set<ScMyCurrencyStyle, LessCurrencyStyle>  ScMyCurrencyStylesSet;
 
 class ScMyStyleRanges : public SvRefBase
 {
-    std::shared_ptr<ScSimpleRangeList> mpTextList;
-    std::shared_ptr<ScSimpleRangeList> mpNumberList;
-    std::shared_ptr<ScSimpleRangeList> mpTimeList;
-    std::shared_ptr<ScSimpleRangeList> mpDateTimeList;
-    std::shared_ptr<ScSimpleRangeList> mpPercentList;
-    std::shared_ptr<ScSimpleRangeList> mpLogicalList;
-    std::shared_ptr<ScSimpleRangeList> mpUndefinedList;
-    ScMyCurrencyStylesSet*  pCurrencyList;
+    std::shared_ptr<ScSimpleRangeList>     mpTextList;
+    std::shared_ptr<ScSimpleRangeList>     mpNumberList;
+    std::shared_ptr<ScSimpleRangeList>     mpTimeList;
+    std::shared_ptr<ScSimpleRangeList>     mpDateTimeList;
+    std::shared_ptr<ScSimpleRangeList>     mpPercentList;
+    std::shared_ptr<ScSimpleRangeList>     mpLogicalList;
+    std::shared_ptr<ScSimpleRangeList>     mpUndefinedList;
+    std::unique_ptr<ScMyCurrencyStylesSet> pCurrencyList;
 
     static void SetStylesToRanges(const ::std::list<ScRange>& rList,
         const OUString* pStyleName, const sal_Int16 nCellType,
         const OUString* pCurrency, ScXMLImport& rImport);
 public:
     ScMyStyleRanges();
-    virtual ~ScMyStyleRanges();
+    virtual ~ScMyStyleRanges() override;
     void AddRange(const ScRange& rRange, const sal_Int16 nType);
     void AddCurrencyRange(const ScRange& rRange, const OUString* pCurrency);
     void InsertCol(const sal_Int32 nCol, const sal_Int32 nTab, ScDocument* pDoc);
@@ -111,7 +110,6 @@ struct ScMyStyle
     tools::SvRef<ScMyStyleRanges> xRanges;
 
     ScMyStyle() : xRanges(new ScMyStyleRanges()) {}
-    ~ScMyStyle() {}
 };
 
 struct LessStyle

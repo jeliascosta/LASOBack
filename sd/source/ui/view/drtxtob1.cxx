@@ -162,7 +162,7 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                         else
                         {
                             nUpper -= 100;
-                            nUpper = std::max( (long) nUpper, 0L );
+                            nUpper = std::max<long>( nUpper, 0 );
                         }
                         pNewItem->SetUpper( (sal_uInt16) nUpper );
 
@@ -172,7 +172,7 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                         else
                         {
                             nLower -= 100;
-                            nLower = std::max( (long) nLower, 0L );
+                            nLower = std::max<long>( nLower, 0 );
                         }
                         pNewItem->SetLower( (sal_uInt16) nLower );
 
@@ -203,7 +203,7 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                     else
                     {
                         nUpper -= 100;
-                        nUpper = std::max( (long) nUpper, 0L );
+                        nUpper = std::max<long>( nUpper, 0 );
                     }
                     pNewItem->SetUpper( (sal_uInt16) nUpper );
 
@@ -213,7 +213,7 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                     else
                     {
                         nLower -= 100;
-                        nLower = std::max( (long) nLower, 0L );
+                        nLower = std::max<long>( nLower, 0 );
                     }
                     pNewItem->SetLower( (sal_uInt16) nLower );
 
@@ -277,6 +277,23 @@ void TextObjectBar::Execute( SfxRequest &rReq )
         }
         break;
 
+        case SID_HANGING_INDENT:
+        {
+            SfxItemSet aLRSpaceSet( GetPool(), EE_PARA_LRSPACE, EE_PARA_LRSPACE );
+            mpView->GetAttributes( aLRSpaceSet );
+            SvxLRSpaceItem aParaMargin( static_cast<const SvxLRSpaceItem&>( aLRSpaceSet.Get( EE_PARA_LRSPACE ) ) );
+
+            SvxLRSpaceItem aNewMargin( EE_PARA_LRSPACE );
+            aNewMargin.SetTextLeft( aParaMargin.GetTextLeft() + aParaMargin.GetTextFirstLineOfst() );
+            aNewMargin.SetRight( aParaMargin.GetRight() );
+            aNewMargin.SetTextFirstLineOfst( ( aParaMargin.GetTextFirstLineOfst() ) * (-1) );
+            aLRSpaceSet.Put( aNewMargin );
+            mpView->SetAttributes( aLRSpaceSet );
+
+            Invalidate(SID_ATTR_PARA_LRSPACE);
+        }
+        break;
+
         case SID_OUTLINE_UP:
         {
             if (pOLV)
@@ -328,7 +345,7 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                 if (pPageView)
                 {
                     SdPage* pPage = static_cast<SdPage*>(pPageView->GetPage());
-                    bMasterPage = pPage && (pPage->GetPageKind() == PK_STANDARD) && pPage->IsMasterPage();
+                    bMasterPage = pPage && (pPage->GetPageKind() == PageKind::Standard) && pPage->IsMasterPage();
                 }
 
                 if (!bMasterPage)
@@ -491,41 +508,41 @@ void TextObjectBar::Execute( SfxRequest &rReq )
 
                     case SID_ATTR_PARA_ADJUST_LEFT:
                     {
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_LEFT, EE_PARA_JUST ) );
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Left, EE_PARA_JUST ) );
                     }
                     break;
                     case SID_ATTR_PARA_ADJUST_CENTER:
                     {
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_CENTER, EE_PARA_JUST ) );
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Center, EE_PARA_JUST ) );
                     }
                     break;
                     case SID_ATTR_PARA_ADJUST_RIGHT:
                     {
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_RIGHT, EE_PARA_JUST ) );
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Right, EE_PARA_JUST ) );
                     }
                     break;
                     case SID_ATTR_PARA_ADJUST_BLOCK:
                     {
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_BLOCK, EE_PARA_JUST ) );
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Block, EE_PARA_JUST ) );
                     }
                     break;
                     case SID_ATTR_PARA_LINESPACE_10:
                     {
-                        SvxLineSpacingItem aItem( SVX_LINESPACE_ONE_LINE, EE_PARA_SBL );
+                        SvxLineSpacingItem aItem( LINE_SPACE_DEFAULT_HEIGHT, EE_PARA_SBL );
                         aItem.SetPropLineSpace( 100 );
                         aNewAttr.Put( aItem );
                     }
                     break;
                     case SID_ATTR_PARA_LINESPACE_15:
                     {
-                        SvxLineSpacingItem aItem( SVX_LINESPACE_ONE_POINT_FIVE_LINES, EE_PARA_SBL );
+                        SvxLineSpacingItem aItem( LINE_SPACE_DEFAULT_HEIGHT, EE_PARA_SBL );
                         aItem.SetPropLineSpace( 150 );
                         aNewAttr.Put( aItem );
                     }
                     break;
                     case SID_ATTR_PARA_LINESPACE_20:
                     {
-                        SvxLineSpacingItem aItem( SVX_LINESPACE_TWO_LINES, EE_PARA_SBL );
+                        SvxLineSpacingItem aItem( LINE_SPACE_DEFAULT_HEIGHT, EE_PARA_SBL );
                         aItem.SetPropLineSpace( 200 );
                         aNewAttr.Put( aItem );
                     }
@@ -536,10 +553,10 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                         SvxEscapement eEsc = (SvxEscapement ) static_cast<const SvxEscapementItem&>(
                                         aEditAttr.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-                        if( eEsc == SVX_ESCAPEMENT_SUPERSCRIPT )
-                            aItem.SetEscapement( SVX_ESCAPEMENT_OFF );
+                        if( eEsc == SvxEscapement::Superscript )
+                            aItem.SetEscapement( SvxEscapement::Off );
                         else
-                            aItem.SetEscapement( SVX_ESCAPEMENT_SUPERSCRIPT );
+                            aItem.SetEscapement( SvxEscapement::Superscript );
                         aNewAttr.Put( aItem );
                     }
                     break;
@@ -549,10 +566,10 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                         SvxEscapement eEsc = (SvxEscapement ) static_cast<const SvxEscapementItem&>(
                                         aEditAttr.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-                        if( eEsc == SVX_ESCAPEMENT_SUBSCRIPT )
-                            aItem.SetEscapement( SVX_ESCAPEMENT_OFF );
+                        if( eEsc == SvxEscapement::Subscript )
+                            aItem.SetEscapement( SvxEscapement::Off );
                         else
-                            aItem.SetEscapement( SVX_ESCAPEMENT_SUBSCRIPT );
+                            aItem.SetEscapement( SvxEscapement::Subscript );
                         aNewAttr.Put( aItem );
                     }
                     break;
@@ -579,21 +596,21 @@ void TextObjectBar::Execute( SfxRequest &rReq )
             {
                 bool bLeftToRight = nSlot == SID_ATTR_PARA_LEFT_TO_RIGHT;
 
-                sal_uInt16 nAdjust = SVX_ADJUST_LEFT;
+                SvxAdjust nAdjust = SvxAdjust::Left;
                 if( SfxItemState::SET == aEditAttr.GetItemState(EE_PARA_JUST, true, &pPoolItem ) )
-                    nAdjust = static_cast<const SvxAdjustItem*>(pPoolItem)->GetEnumValue();
+                    nAdjust = static_cast<const SvxAdjustItem*>(pPoolItem)->GetAdjust();
 
                 if( bLeftToRight )
                 {
-                    aNewAttr.Put( SvxFrameDirectionItem( FRMDIR_HORI_LEFT_TOP, EE_PARA_WRITINGDIR ) );
-                    if( nAdjust == SVX_ADJUST_RIGHT )
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_LEFT, EE_PARA_JUST ) );
+                    aNewAttr.Put( SvxFrameDirectionItem( SvxFrameDirection::Horizontal_LR_TB, EE_PARA_WRITINGDIR ) );
+                    if( nAdjust == SvxAdjust::Right )
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Left, EE_PARA_JUST ) );
                 }
                 else
                 {
-                    aNewAttr.Put( SvxFrameDirectionItem( FRMDIR_HORI_RIGHT_TOP, EE_PARA_WRITINGDIR ) );
-                    if( nAdjust == SVX_ADJUST_LEFT )
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_RIGHT, EE_PARA_JUST ) );
+                    aNewAttr.Put( SvxFrameDirectionItem( SvxFrameDirection::Horizontal_RL_TB, EE_PARA_WRITINGDIR ) );
+                    if( nAdjust == SvxAdjust::Left )
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Right, EE_PARA_JUST ) );
                 }
 
                 rReq.Done( aNewAttr );
@@ -627,22 +644,22 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                 {
                 case SID_ATTR_PARA_ADJUST_LEFT:
                     {
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_LEFT, EE_PARA_JUST ) );
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Left, EE_PARA_JUST ) );
                     }
                     break;
                 case SID_ATTR_PARA_ADJUST_CENTER:
                     {
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_CENTER, EE_PARA_JUST ) );
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Center, EE_PARA_JUST ) );
                     }
                     break;
                 case SID_ATTR_PARA_ADJUST_RIGHT:
                     {
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_RIGHT, EE_PARA_JUST ) );
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Right, EE_PARA_JUST ) );
                     }
                     break;
                 case SID_ATTR_PARA_ADJUST_BLOCK:
                     {
-                        aNewAttr.Put( SvxAdjustItem( SVX_ADJUST_BLOCK, EE_PARA_JUST ) );
+                        aNewAttr.Put( SvxAdjustItem( SvxAdjust::Block, EE_PARA_JUST ) );
                     }
                     break;
                 }
@@ -661,10 +678,10 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                 SvxEscapement eEsc = (SvxEscapement) static_cast<const SvxEscapementItem&>(
                                 aEditAttr.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-                if( eEsc == SVX_ESCAPEMENT_SUPERSCRIPT )
-                    aItem.SetEscapement( SVX_ESCAPEMENT_OFF );
+                if( eEsc == SvxEscapement::Superscript )
+                    aItem.SetEscapement( SvxEscapement::Off );
                 else
-                    aItem.SetEscapement( SVX_ESCAPEMENT_SUPERSCRIPT );
+                    aItem.SetEscapement( SvxEscapement::Superscript );
                 aNewAttr.Put( aItem );
                 rReq.Done( aNewAttr );
                 pArgs = rReq.GetArgs();
@@ -675,10 +692,10 @@ void TextObjectBar::Execute( SfxRequest &rReq )
                 SvxEscapement eEsc = (SvxEscapement) static_cast<const SvxEscapementItem&>(
                                 aEditAttr.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-                if( eEsc == SVX_ESCAPEMENT_SUBSCRIPT )
-                    aItem.SetEscapement( SVX_ESCAPEMENT_OFF );
+                if( eEsc == SvxEscapement::Subscript )
+                    aItem.SetEscapement( SvxEscapement::Off );
                 else
-                    aItem.SetEscapement( SVX_ESCAPEMENT_SUBSCRIPT );
+                    aItem.SetEscapement( SvxEscapement::Subscript );
                 aNewAttr.Put( aItem );
                 rReq.Done( aNewAttr );
                 pArgs = rReq.GetArgs();

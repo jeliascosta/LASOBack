@@ -14,12 +14,14 @@ define sw_ooxmlexport_libraries
 	cppu \
 	cppuhelper \
 	sal \
+	sfx \
 	sw \
 	test \
 	tl \
 	unotest \
 	utl \
 	vcl \
+	svxcore \
 	$(gb_UWINAPI)
 endef
 
@@ -58,6 +60,7 @@ define sw_ooxmlexport_components
 	sw/util/swd \
 	sw/util/msword \
 	sfx2/util/sfx \
+	sot/util/sot \
 	starmath/util/sm \
 	svl/source/fsstor/fsstorage \
 	svl/util/svl \
@@ -101,10 +104,7 @@ $(eval $(call gb_CppunitTest_set_include,sw_ooxmlexport$(1),\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,sw_ooxmlexport$(1),\
-    offapi \
-    udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,sw_ooxmlexport$(1),))
 
 $(eval $(call gb_CppunitTest_use_ure,sw_ooxmlexport$(1)))
 $(eval $(call gb_CppunitTest_use_vcl,sw_ooxmlexport$(1)))
@@ -115,6 +115,10 @@ $(eval $(call gb_CppunitTest_use_components,sw_ooxmlexport$(1),\
 ))
 
 $(eval $(call gb_CppunitTest_use_configuration,sw_ooxmlexport$(1)))
+
+$(eval $(call gb_CppunitTest_use_uiconfigs,sw_ooxmlexport$(1),\
+    modules/swriter \
+))
 
 $(eval $(call gb_CppunitTest_use_packages,sw_ooxmlexport$(1),\
 	oox_customshapes \

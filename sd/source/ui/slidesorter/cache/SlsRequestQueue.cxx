@@ -37,6 +37,7 @@ public:
     */
     class Comparator { public:
         bool operator() (const Request& rRequest1, const Request& rRequest2)
+            const
         {
             if (rRequest1.meClass == rRequest2.meClass)
             {
@@ -84,7 +85,7 @@ class RequestQueue::Container
 
 RequestQueue::RequestQueue (const SharedCacheContext& rpCacheContext)
     : maMutex(),
-      mpRequestQueue(new Container()),
+      mpRequestQueue(new Container),
       mpCacheContext(rpCacheContext),
       mnMinimumPriority(0),
       mnMaximumPriority(1)

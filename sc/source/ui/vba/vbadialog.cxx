@@ -23,33 +23,33 @@
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
-static const OUString aStringList[]=
+static const OUStringLiteral aStringList[]=
 {
-    OUString( ".uno:Open" ),
-    OUString( ".uno:FormatCellDialog" ),
-    OUString( ".uno:InsertCell" ),
-    OUString( ".uno:Print" ),
-    OUString( ".uno:PasteSpecial" ),
-    OUString( ".uno:ToolProtectionDocument" ),
-    OUString( ".uno:ColumnWidth" ),
-    OUString( ".uno:DefineName" ),
-    OUString( ".uno:ConfigureDialog" ),
-    OUString( ".uno:HyperlinkDialog" ),
-    OUString( ".uno:InsertGraphic" ),
-    OUString( ".uno:InsertObject" ),
-    OUString( ".uno:PageFormatDialog" ),
-    OUString( ".uno:DataSort" ),
-    OUString( ".uno:RowHeight" ),
-    OUString( ".uno:AutoCorrectDlg" ),
-    OUString( ".uno:ConditionalFormatDialog" ),
-    OUString( ".uno:DataConsolidate" ),
-    OUString( ".uno:CreateNames" ),
-    OUString( ".uno:FillSeries" ),
-    OUString( ".uno:Validation"),
-    OUString( ".uno:DefineLabelRange" ),
-    OUString( ".uno:DataFilterAutoFilter" ),
-    OUString( ".uno:DataFilterSpecialFilter" ),
-    OUString( ".uno:AutoFormat" )
+    ".uno:Open",
+    ".uno:FormatCellDialog",
+    ".uno:InsertCell",
+    ".uno:Print",
+    ".uno:PasteSpecial",
+    ".uno:ToolProtectionDocument",
+    ".uno:ColumnWidth",
+    ".uno:DefineName",
+    ".uno:ConfigureDialog",
+    ".uno:HyperlinkDialog",
+    ".uno:InsertGraphic",
+    ".uno:InsertObject",
+    ".uno:PageFormatDialog",
+    ".uno:DataSort",
+    ".uno:RowHeight",
+    ".uno:AutoCorrectDlg",
+    ".uno:ConditionalFormatDialog",
+    ".uno:DataConsolidate",
+    ".uno:CreateNames",
+    ".uno:FillSeries",
+    ".uno:Validation",
+    ".uno:DefineLabelRange",
+    ".uno:DataFilterAutoFilter",
+    ".uno:DataFilterSpecialFilter",
+    ".uno:AutoFormat"
 };
 
 const sal_Int32 nDialogSize = SAL_N_ELEMENTS(aStringList);

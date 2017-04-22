@@ -39,7 +39,7 @@ public:
 #if !defined(_WIN32)
     void testSkipImages();
 #endif
-    void testRedlineMode();
+    void testRedlineFlags();
 
     CPPUNIT_TEST_SUITE(Test);
     CPPUNIT_TEST(testSwappedOutImageExport);
@@ -53,7 +53,7 @@ public:
 #if !defined(_WIN32)
     CPPUNIT_TEST(testSkipImages);
 #endif
-    CPPUNIT_TEST(testRedlineMode);
+    CPPUNIT_TEST(testRedlineFlags);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -193,7 +193,7 @@ void Test::testLinkedGraphicRT()
                 }
                 const GraphicObject& rGraphicObj = pGrfNode->GetGrfObj(true);
                 CPPUNIT_ASSERT_MESSAGE( sFailedMessage.getStr(), !rGraphicObj.IsSwappedOut());
-                CPPUNIT_ASSERT_EQUAL_MESSAGE( sFailedMessage.getStr(), GRAPHIC_BITMAP, rGraphicObj.GetType());
+                CPPUNIT_ASSERT_EQUAL_MESSAGE( sFailedMessage.getStr(), int(GraphicType::Bitmap), int(rGraphicObj.GetType()));
                 CPPUNIT_ASSERT_EQUAL_MESSAGE( sFailedMessage.getStr(), static_cast<sal_uLong>(864900), rGraphicObj.GetSizeBytes());
                 bImageFound = true;
             }
@@ -612,7 +612,7 @@ void Test::testMSCharBackgroundEditing()
                 case 3: nBackColor = 0x00ff00; break; //green
                 case 4: nBackColor = 0xff00ff; break; //magenta
             }
-            xRun->setPropertyValue("CharBackColor", uno::makeAny(static_cast<sal_Int32>(nBackColor)));
+            xRun->setPropertyValue("CharBackColor", uno::makeAny(nBackColor));
             // Remove highlighting
             xRun->setPropertyValue("CharHighlight", uno::makeAny(static_cast<sal_Int32>(COL_TRANSPARENT)));
             // Remove shading marker
@@ -623,7 +623,7 @@ void Test::testMSCharBackgroundEditing()
                 if (rProp.Name == "CharShadingMarker")
                 {
                     CPPUNIT_ASSERT_EQUAL_MESSAGE(sFailedMessage.getStr(), true, rProp.Value.get<bool>());
-                    rProp.Value = uno::makeAny(false);
+                    rProp.Value <<= false;
                 }
             }
             xRun->setPropertyValue("CharInteropGrabBag", uno::makeAny(aGrabBag));
@@ -661,11 +661,11 @@ void Test::testMSCharBackgroundEditing()
             if( strcmp(aFilterNames[nFilter], "writer8") == 0 )
             {
                 CPPUNIT_ASSERT_EQUAL_MESSAGE(sFailedMessage.getStr(), static_cast<sal_Int32>(COL_TRANSPARENT), getProperty<sal_Int32>(xRun,"CharHighlight"));
-                CPPUNIT_ASSERT_EQUAL_MESSAGE(sFailedMessage.getStr(), static_cast<sal_Int32>(nBackColor), getProperty<sal_Int32>(xRun,"CharBackColor"));
+                CPPUNIT_ASSERT_EQUAL_MESSAGE(sFailedMessage.getStr(), nBackColor, getProperty<sal_Int32>(xRun,"CharBackColor"));
             }
             else
             {
-                CPPUNIT_ASSERT_EQUAL_MESSAGE(sFailedMessage.getStr(), static_cast<sal_Int32>(nBackColor), getProperty<sal_Int32>(xRun,"CharHighlight"));
+                CPPUNIT_ASSERT_EQUAL_MESSAGE(sFailedMessage.getStr(), nBackColor, getProperty<sal_Int32>(xRun,"CharHighlight"));
                 CPPUNIT_ASSERT_EQUAL_MESSAGE(sFailedMessage.getStr(), static_cast<sal_Int32>(COL_TRANSPARENT), getProperty<sal_Int32>(xRun,"CharBackColor"));
             }
         }
@@ -821,7 +821,7 @@ void Test::testSkipImages()
 }
 #endif
 
-void Test::testRedlineMode()
+void Test::testRedlineFlags()
 {
     const char* aFilterNames[] = {
         "writer8",
@@ -840,19 +840,19 @@ void Test::testRedlineMode()
 
     IDocumentRedlineAccess & rIDRA(pDoc->getIDocumentRedlineAccess());
     // enable change tracking
-    rIDRA.SetRedlineMode(rIDRA.GetRedlineMode()
-        | nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_DELETE);
+    rIDRA.SetRedlineFlags(rIDRA.GetRedlineFlags()
+        | RedlineFlags::On | RedlineFlags::ShowDelete);
 
     // need a delete redline to trigger mode switching
-    pam.Move(fnMoveForward, fnGoDoc);
+    pam.Move(fnMoveForward, GoInDoc);
     pam.SetMark();
-    pam.Move(fnMoveBackward, fnGoDoc);
+    pam.Move(fnMoveBackward, GoInDoc);
     pDoc->getIDocumentContentOperations().DeleteAndJoin(pam);
 
     // hide delete redlines
-    RedlineMode_t const nRedlineMode =
-        rIDRA.GetRedlineMode() & ~nsRedlineMode_t::REDLINE_SHOW_DELETE;
-    rIDRA.SetRedlineMode(nRedlineMode);
+    RedlineFlags const nRedlineFlags =
+        rIDRA.GetRedlineFlags() & ~RedlineFlags::ShowDelete;
+    rIDRA.SetRedlineFlags(nRedlineFlags);
 
     for (size_t nFilter = 0; nFilter < SAL_N_ELEMENTS(aFilterNames); ++nFilter)
     {
@@ -869,7 +869,7 @@ void Test::testRedlineMode()
         // tdf#97103 check that redline mode is properly restored
         CPPUNIT_ASSERT_EQUAL_MESSAGE(
             OString(OString("redline mode not restored in ") + aFilterNames[nFilter]).getStr(),
-            nRedlineMode, rIDRA.GetRedlineMode());
+            (int)nRedlineFlags, (int)rIDRA.GetRedlineFlags());
     }
 }
 

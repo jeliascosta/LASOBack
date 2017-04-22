@@ -25,7 +25,7 @@
 
 #include <rtl/ref.hxx>
 #include <comphelper/weak.hxx>
-#include <cppuhelper/implbase2.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <svl/svldllapi.h>
 #include <rsc/rscsfx.hxx>
 #include <svl/hint.hxx>
@@ -49,24 +49,24 @@ must broadcast this using <SfxStyleSheetBasePool::GetBroadcaster()> broadcasts.
 The class <SfxStyleSheetHint> is used for this, it contains an Action-Id and a
 pointer to the <SfxStyleSheetBase>. The actions are:
 
-#define SfxStyleSheetHintId::CREATED      // style is created
-#define SfxStyleSheetHintId::MODIFIED     // style is modified
-#define SfxStyleSheetHintId::CHANGED      // style is replaced
-#define SfxStyleSheetHintId::ERASED       // style is deleted
+#define SfxHintId::StyleSheetCreated      // style is created
+#define SfxHintId::StyleSheetModified     // style is modified
+#define SfxHintId::StyleSheetChanged      // style is replaced
+#define SfxHintId::StyleSheetErased       // style is deleted
 
 The following methods already broadcast themself
 
-SfxSimpleHint(SFX_HINT_DYING) from:
+SfxSimpleHint(SfxHintId::Dying) from:
    SfxStyleSheetBasePool::~SfxStyleSheetBasePool()
 
-SfxStyleSheetHint( SfxStyleSheetHintId::CREATED, *p ) from:
+SfxStyleSheetHint( SfxHintId::StyleSheetCreated, *p ) from:
    SfxStyleSheetBasePool::Make( const String& rName,
    SfxStyleFamily eFam, sal_uInt16 mask)
 
-SfxStyleSheetHint( SfxStyleSheetHintId::CHANGED, *pNew ) from:
+SfxStyleSheetHint( SfxHintId::StyleSheetChanged, *pNew ) from:
    SfxStyleSheetBasePool::Add( SfxStyleSheetBase& rSheet )
 
-SfxStyleSheetHint( SfxStyleSheetHintId::ERASED, *p ) from:
+SfxStyleSheetHint( SfxHintId::StyleSheetErased, *p ) from:
    SfxStyleSheetBasePool::Erase( SfxStyleSheetBase* p )
    SfxStyleSheetBasePool::Clear()
 */
@@ -93,14 +93,13 @@ protected:
 
     SfxStyleSheetBase( const OUString&, SfxStyleSheetBasePool*, SfxStyleFamily eFam, sal_uInt16 mask );
     SfxStyleSheetBase( const SfxStyleSheetBase& );
-    virtual ~SfxStyleSheetBase();
+    virtual ~SfxStyleSheetBase() override;
     virtual void Load( SvStream&, sal_uInt16 );
-    virtual void Store( SvStream& );
 
 public:
 
     // returns the internal name of this style
-    virtual const OUString& GetName() const;
+    const OUString& GetName() const;
 
     // sets the internal name of this style.
     //
@@ -112,7 +111,7 @@ public:
 
     /** returns the display name of this style, it is used at the user interface.
         If the display name is empty, this method returns the internal name. */
-    OUString GetDisplayName() const;
+    OUString const & GetDisplayName() const;
 
     virtual const OUString& GetParent() const;
     virtual bool SetParent( const OUString& );
@@ -122,7 +121,7 @@ public:
     virtual bool HasParentSupport() const;      // Default true
     virtual bool HasClearParentSupport() const; // Default false
     virtual bool IsUsed() const;                // Default true
-    virtual OUString GetDescription( SfxMapUnit eMetric );
+    virtual OUString GetDescription( MapUnit eMetric );
 
     SfxStyleSheetBasePool& GetPool() { return *pPool; }
     SfxStyleFamily GetFamily() const     { return nFamily; }
@@ -182,9 +181,6 @@ private:
 friend class SfxStyleSheetBasePool;
 };
 
-typedef std::shared_ptr< SfxStyleSheetIterator > SfxStyleSheetIteratorPtr;
-
-
 class SfxStyleSheetBasePool_Impl;
 
 class SVL_DLLPUBLIC SfxStyleSheetBasePool: public SfxBroadcaster, public comphelper::OWeakTypeObject
@@ -192,12 +188,11 @@ class SVL_DLLPUBLIC SfxStyleSheetBasePool: public SfxBroadcaster, public comphel
 friend class SfxStyleSheetIterator;
 friend class SfxStyleSheetBase;
 
-    SfxStyleSheetBasePool_Impl *pImp;
+    std::unique_ptr<SfxStyleSheetBasePool_Impl> pImpl;
 
 protected:
     SfxStyleSheetIterator&      GetIterator_Impl();
 
-    OUString                    aAppName;
     SfxItemPool&                rPool;
     SfxStyleFamily              nSearchFamily;
     sal_uInt16                  nMask;
@@ -206,7 +201,7 @@ protected:
     virtual SfxStyleSheetBase*  Create( const OUString&, SfxStyleFamily, sal_uInt16 );
     virtual SfxStyleSheetBase*  Create( const SfxStyleSheetBase& );
 
-    virtual                     ~SfxStyleSheetBasePool();
+    virtual                     ~SfxStyleSheetBasePool() override;
 
     void                        StoreStyleSheet(const rtl::Reference< SfxStyleSheetBase >&);
 
@@ -224,7 +219,7 @@ public:
     SfxItemPool&                GetPool() { return rPool;}
     const SfxItemPool&          GetPool() const { return rPool;}
 
-    virtual SfxStyleSheetIteratorPtr CreateIterator(SfxStyleFamily, sal_uInt16 nMask);
+    virtual std::shared_ptr<SfxStyleSheetIterator> CreateIterator(SfxStyleFamily, sal_uInt16 nMask);
     sal_uInt16              Count();
     SfxStyleSheetBase*  operator[](sal_uInt16 nIdx);
 
@@ -277,12 +272,12 @@ public:
     virtual bool        SetParent( const OUString& ) override;
 
 protected:
-    SfxStyleSheet() // do not use! needed by MSVC at compile time to satisfy ImplInheritanceHelper2
-        : SfxStyleSheetBase(OUString("dummy"), nullptr, SfxStyleFamily::All, 0)
+    SfxStyleSheet() // do not use! needed by MSVC at compile time to satisfy ImplInheritanceHelper
+        : SfxStyleSheetBase("dummy", nullptr, SfxStyleFamily::All, 0)
     {
         assert(false);
     }
-    virtual             ~SfxStyleSheet();
+    virtual             ~SfxStyleSheet() override;
 
 };
 
@@ -297,46 +292,33 @@ public:
 };
 
 
-enum SfxStyleSheetHintId
-{
-    CREATED       = 1,  // new
-    MODIFIED      = 2,  // changed
-    CHANGED       = 3,  // erased and re-created (replaced)
-    ERASED        = 4,  // erased
-    INDESTRUCTION = 5,  // in the process of being destructed
-};
-
 class SVL_DLLPUBLIC SfxStyleSheetPoolHint : public SfxHint
 {
 public:
-                         SfxStyleSheetPoolHint(SfxStyleSheetHintId ) {}
+                         SfxStyleSheetPoolHint() {}
 };
 
 
 class SVL_DLLPUBLIC SfxStyleSheetHint: public SfxHint
 {
     SfxStyleSheetBase*  pStyleSh;
-    sal_uInt16          nHint;
-
 public:
-                        SfxStyleSheetHint( sal_uInt16, SfxStyleSheetBase& );
+                        SfxStyleSheetHint( SfxHintId, SfxStyleSheetBase& );
     SfxStyleSheetBase*  GetStyleSheet() const
                         { return pStyleSh; }
-    sal_uInt16          GetHint() const
-                        { return nHint; }
 };
 
-class SVL_DLLPUBLIC SfxStyleSheetHintExtended: public SfxStyleSheetHint
+class SVL_DLLPUBLIC SfxStyleSheetModifiedHint: public SfxStyleSheetHint
 {
     OUString            aName;
 
 public:
-                        SfxStyleSheetHintExtended( sal_uInt16, const OUString& rOld,
+                        SfxStyleSheetModifiedHint( const OUString& rOld,
                                                    SfxStyleSheetBase& );
     const OUString&     GetOldName() const { return aName; }
 };
 
-class SVL_DLLPUBLIC SfxUnoStyleSheet : public ::cppu::ImplInheritanceHelper2< SfxStyleSheet, css::style::XStyle, css::lang::XUnoTunnel >
+class SVL_DLLPUBLIC SfxUnoStyleSheet : public cppu::ImplInheritanceHelper<SfxStyleSheet, css::style::XStyle, css::lang::XUnoTunnel>
 {
 public:
     SfxUnoStyleSheet( const OUString& _rName, const SfxStyleSheetBasePool& _rPool, SfxStyleFamily _eFamily, sal_uInt16 _nMaske );
@@ -344,7 +326,7 @@ public:
     static SfxUnoStyleSheet* getUnoStyleSheet( const css::uno::Reference< css::style::XStyle >& xStyle );
 
     // XUnoTunnel
-    virtual ::sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< ::sal_Int8 >& aIdentifier ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< ::sal_Int8 >& aIdentifier ) override;
 
 private:
     static const css::uno::Sequence< ::sal_Int8 >& getIdentifier();

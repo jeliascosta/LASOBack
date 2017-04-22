@@ -63,7 +63,12 @@
             <menu:menuitem menu:id=".uno:PrinterSetup"/>
             <menu:menuseparator/>
             <menu:menuitem menu:id=".uno:SetDocumentProperties"/>
-            <menu:menuitem menu:id=".uno:Signature"/>
+            <menu:menu menu:id=".uno:SignaturesMenu">
+                <menu:menupopup>
+                    <menu:menuitem menu:id=".uno:Signature"/>
+                    <menu:menuitem menu:id=".uno:SignPDF"/>
+                </menu:menupopup>
+            </menu:menu>
             <menu:menuseparator/>
             <menu:menuitem menu:id=".uno:Quit"/>
         </menu:menupopup>
@@ -107,7 +112,9 @@
             <menu:menuitem menu:id=".uno:NotesMasterPage" menu:style="radio"/>
             <menu:menuitem menu:id=".uno:HandoutMode" menu:style="radio"/>
             <menu:menuseparator/>
+            <menu:menuitem menu:id=".uno:ToolbarMode"/>
             <menu:menuitem menu:id=".uno:AvailableToolbars"/>
+            <menu:menuitem menu:id=".uno:Notebookbar"/>
             <menu:menuitem menu:id=".uno:StatusBarVisible"/>
             <menu:menuitem menu:id=".uno:ShowRuler"/>
             <menu:menuitem menu:id=".uno:LeftPaneImpress"/>
@@ -203,7 +210,11 @@
                         </menu:menupopup>
                     </menu:menu>
                     <menu:menuitem menu:id=".uno:BasicShapes"/>
+                    <menu:menuitem menu:id=".uno:ArrowShapes"/>
                     <menu:menuitem menu:id=".uno:SymbolShapes"/>
+                    <menu:menuitem menu:id=".uno:StarShapes"/>
+                    <menu:menuitem menu:id=".uno:CalloutShapes"/>
+                    <menu:menuitem menu:id=".uno:FlowChartShapes"/>
                 </menu:menupopup>
             </menu:menu>
             <menu:menuitem menu:id=".uno:FontworkGalleryFloater"/>
@@ -578,7 +589,7 @@
                 <menu:menupopup>
                     <menu:menuitem menu:id=".uno:MacroRecorder"/>
                     <menu:menuitem menu:id=".uno:RunMacro"/>
-                    <menu:menu menu:id=".uno:ScriptOrganizer"/>
+                    <menu:menuitem menu:id=".uno:ScriptOrganizer"/>
                     <menu:menuitem menu:id=".uno:MacroSignature"/>
                     <menu:menuseparator/>
                     <menu:menuitem menu:id=".uno:MacroOrganizer?TabId:short=1"/>
@@ -601,8 +612,12 @@
         <menu:menupopup>
             <menu:menuitem menu:id=".uno:HelpIndex"/>
             <menu:menuitem menu:id=".uno:ExtendedHelp"/>
+            <menu:menuitem menu:id=".uno:Documentation"/>
             <menu:menuseparator/>
+            <menu:menuitem menu:id=".uno:QuestionAnswers"/>
             <menu:menuitem menu:id=".uno:SendFeedback"/>
+            <menu:menuseparator/>
+            <menu:menuitem menu:id=".uno:SafeMode"/>
             <menu:menuseparator/>
             <menu:menuitem menu:id=".uno:ShowLicense"/>
             <menu:menuitem menu:id=".uno:About"/>

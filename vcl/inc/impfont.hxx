@@ -26,8 +26,6 @@
 
 #include "fontinstance.hxx"
 
-#include <boost/intrusive_ptr.hpp>
-
 /* The following class is extraordinarily similar to FontAttributes. */
 
 class ImplFont
@@ -74,22 +72,11 @@ public:
 
     // device dependent functions
     int                 GetQuality() const                              { return mnQuality; }
-    const OUString&     GetMapNames() const                             { return maMapNames; }
 
     void                SetQuality( int nQuality )                      { mnQuality = nQuality; }
     void                IncreaseQualityBy( int nQualityAmount )         { mnQuality += nQualityAmount; }
     void                DecreaseQualityBy( int nQualityAmount )         { mnQuality -= nQualityAmount; }
     void                SetMapNames( OUString const & aMapNames )       { maMapNames = aMapNames; }
-
-    bool                IsBuiltInFont() const                           { return mbDevice; }
-    bool                CanEmbed() const                                { return mbEmbeddable; }
-    bool                CanSubset() const                               { return mbSubsettable; }
-    bool                CanRotate() const                               { return mbRotatable; }
-
-    void                SetBuiltInFontFlag( bool bIsBuiltInFont )       { mbDevice = bIsBuiltInFont; }
-    void                SetEmbeddableFlag( bool bEmbeddable )           { mbEmbeddable = bEmbeddable; }
-    void                SetSubsettableFlag( bool bSubsettable )         { mbSubsettable = bSubsettable; }
-    void                SetOrientationFlag( bool bCanRotate )           { mbRotatable = bCanRotate; }
 
     bool                operator==( const ImplFont& ) const;
 
@@ -135,11 +122,7 @@ private:
 
     // Device dependent variables
     OUString            maMapNames;
-    bool                mbWordLine:1,
-                        mbEmbeddable:1,
-                        mbSubsettable:1,
-                        mbRotatable:1,      // is "rotatable" even a word?!? I'll keep it for consistency for now
-                        mbDevice:1;
+    bool                mbWordLine:1;
 
     // TODO: metric data, should be migrated to ImplFontMetric
     short               mnOrientation;

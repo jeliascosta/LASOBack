@@ -35,7 +35,7 @@ public:
     psp::PrinterGfx         m_aPrinterGfx;
 
     PspSalInfoPrinter();
-    virtual ~PspSalInfoPrinter();
+    virtual ~PspSalInfoPrinter() override;
 
     // override all pure virtual methods
     virtual SalGraphics*            AcquireGraphics() override;
@@ -48,8 +48,8 @@ public:
                                                  long& rPageOffX, long& rPageOffY,
                                                  long& rPageWidth, long& rPageHeight ) override;
     virtual sal_uInt32              GetCapabilities( const ImplJobSetup* pSetupData, PrinterCapType nType ) override;
-    virtual sal_uIntPtr             GetPaperBinCount( const ImplJobSetup* pSetupData ) override;
-    virtual OUString                GetPaperBinName( const ImplJobSetup* pSetupData, sal_uIntPtr nPaperBin ) override;
+    virtual sal_uInt16              GetPaperBinCount( const ImplJobSetup* pSetupData ) override;
+    virtual OUString                GetPaperBinName( const ImplJobSetup* pSetupData, sal_uInt16 nPaperBin ) override;
     virtual void                    InitPaperFormats( const ImplJobSetup* pSetupData ) override;
     virtual int                     GetLandscapeAngle( const ImplJobSetup* pSetupData ) override;
 };
@@ -70,7 +70,7 @@ public:
     bool                    m_bIsPDFWriterJob;
 
     PspSalPrinter( SalInfoPrinter *pPrinter );
-    virtual ~PspSalPrinter();
+    virtual ~PspSalPrinter() override;
 
     // override all pure virtual methods
     virtual bool                    StartJob( const OUString* pFileName,

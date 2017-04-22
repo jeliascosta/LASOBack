@@ -64,9 +64,7 @@ namespace drawinglayer
             const BitmapEx& rBitmapEx,
             const basegfx::B2DRange& rRange)
         :   maBitmapEx(rBitmapEx),
-            mpReadBitmap(nullptr),
             maTransparence(),
-            mpReadTransparence(nullptr),
             maTopLeft(rRange.getMinimum()),
             maSize(rRange.getRange()),
             mfMulX(0.0),
@@ -75,7 +73,8 @@ namespace drawinglayer
             mbIsTransparent(maBitmapEx.IsTransparent())
         {
             // #121194# Todo: use alpha channel, too (for 3d)
-            mpReadBitmap = maBitmapEx.GetBitmap().AcquireReadAccess();
+            maBitmap = maBitmapEx.GetBitmap();
+            mpReadBitmap = Bitmap::ScopedReadAccess(maBitmap);
             OSL_ENSURE(mpReadBitmap, "GeoTexSvxBitmapEx: Got no read access to Bitmap (!)");
 
             if(mbIsTransparent)
@@ -90,7 +89,7 @@ namespace drawinglayer
                     maTransparence = rBitmapEx.GetMask();
                 }
 
-                mpReadTransparence = maTransparence.AcquireReadAccess();
+                mpReadTransparence = Bitmap::ScopedReadAccess(maTransparence);
             }
 
             mfMulX = (double)mpReadBitmap->Width() / maSize.getX();
@@ -109,19 +108,17 @@ namespace drawinglayer
 
         GeoTexSvxBitmapEx::~GeoTexSvxBitmapEx()
         {
-            delete mpReadTransparence;
-            delete mpReadBitmap;
         }
 
         sal_uInt8 GeoTexSvxBitmapEx::impGetTransparence(sal_Int32& rX, sal_Int32& rY) const
         {
             switch(maBitmapEx.GetTransparentType())
             {
-                case TRANSPARENT_NONE:
+                case TransparentType::NONE:
                 {
                     break;
                 }
-                case TRANSPARENT_COLOR:
+                case TransparentType::Color:
                 {
                     const BitmapColor aBitmapColor(mpReadBitmap->GetColor(rY, rX));
 
@@ -132,7 +129,7 @@ namespace drawinglayer
 
                     break;
                 }
-                case TRANSPARENT_BITMAP:
+                case TransparentType::Bitmap:
                 {
                     OSL_ENSURE(mpReadTransparence, "OOps, transparence type Bitmap, but no read access created in the constructor (?)");
                     const BitmapColor aBitmapColor(mpReadTransparence->GetPixel(rY, rX));

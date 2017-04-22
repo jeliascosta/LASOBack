@@ -26,6 +26,7 @@
 #include <cppuhelper/component.hxx>
 #include <com/sun/star/lang/XSingleServiceFactory.hpp>
 #include <com/sun/star/frame/Desktop.hpp>
+#include <com/sun/star/frame/TerminationVetoException.hpp>
 #include <com/sun/star/frame/XTerminateListener.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -34,7 +35,6 @@
 #include <com/sun/star/awt/XWindow.hpp>
 #include <com/sun/star/ui/dialogs/XExecutableDialog.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
-#include <tools/resmgr.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 #include <rtl/instance.hxx>
@@ -69,35 +69,34 @@ class XMLFilterDialogComponent :    public XMLFilterDialogComponentBase,
 {
 public:
     explicit XMLFilterDialogComponent( const Reference< XComponentContext >& rxContext );
-    virtual ~XMLFilterDialogComponent();
 
 protected:
     // XInterface
-    virtual Any SAL_CALL queryInterface( const Type& aType ) throw (RuntimeException, std::exception) override;
-    virtual Any SAL_CALL queryAggregation( Type const & rType ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL queryInterface( const Type& aType ) override;
+    virtual Any SAL_CALL queryAggregation( Type const & rType ) override;
     virtual void SAL_CALL acquire() throw () override;
     virtual void SAL_CALL release() throw () override;
 
     // XTypeProvider
-    virtual Sequence< sal_Int8 > SAL_CALL getImplementationId() throw(RuntimeException, std::exception) override;
-    virtual Sequence< Type > SAL_CALL getTypes() throw (RuntimeException, std::exception) override;
+    virtual Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual Sequence< Type > SAL_CALL getTypes() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw(RuntimeException, std::exception) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
 
     // XExecutableDialog
-    virtual void SAL_CALL setTitle( const OUString& aTitle ) throw(RuntimeException, std::exception) override;
-    virtual sal_Int16 SAL_CALL execute(  ) throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTitle( const OUString& aTitle ) override;
+    virtual sal_Int16 SAL_CALL execute(  ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) throw(Exception, RuntimeException, std::exception) override;
+    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
 
     // XTerminateListener
-    virtual void SAL_CALL queryTermination( const EventObject& Event ) throw (TerminationVetoException, RuntimeException, std::exception) override;
-    virtual void SAL_CALL notifyTermination( const EventObject& Event ) throw (RuntimeException, std::exception) override;
-    virtual void SAL_CALL disposing( const EventObject& Source ) throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL queryTermination( const EventObject& Event ) override;
+    virtual void SAL_CALL notifyTermination( const EventObject& Event ) override;
+    virtual void SAL_CALL disposing( const EventObject& Source ) override;
 
     /** Called in dispose method after the listeners were notified.
     */
@@ -110,17 +109,6 @@ private:
     VclPtr<XMLFilterSettingsDialog>          mpDialog;
 };
 
-
-namespace
-{
-    static ResMgr* pXSLTResMgr = nullptr;
-}
-
-ResMgr* getXSLTDialogResMgr()
-{
-    return pXSLTResMgr;
-}
-
 XMLFilterDialogComponent::XMLFilterDialogComponent( const css::uno::Reference< XComponentContext >& rxContext ) :
     OComponentHelper( maMutex ),
     mxContext( rxContext ),
@@ -131,20 +119,14 @@ XMLFilterDialogComponent::XMLFilterDialogComponent( const css::uno::Reference< X
     xDesktop->addTerminateListener( xListener );
 }
 
-
-XMLFilterDialogComponent::~XMLFilterDialogComponent()
-{
-}
-
-
 // XInterface
-Any SAL_CALL XMLFilterDialogComponent::queryInterface( const Type& aType ) throw (RuntimeException, std::exception)
+Any SAL_CALL XMLFilterDialogComponent::queryInterface( const Type& aType )
 {
     return OComponentHelper::queryInterface( aType );
 }
 
 
-Any SAL_CALL XMLFilterDialogComponent::queryAggregation( Type const & rType ) throw (RuntimeException, std::exception)
+Any SAL_CALL XMLFilterDialogComponent::queryAggregation( Type const & rType )
 {
     if (rType == cppu::UnoType<css::ui::dialogs::XExecutableDialog>::get())
     {
@@ -181,31 +163,33 @@ void SAL_CALL XMLFilterDialogComponent::release() throw ()
     OComponentHelper::release();
 }
 
-
-OUString XMLFilterDialogComponent_getImplementationName() throw ( RuntimeException )
+/// @throws RuntimeException
+OUString XMLFilterDialogComponent_getImplementationName()
 {
     return OUString( "com.sun.star.comp.ui.XSLTFilterDialog" );
 }
 
-Sequence< OUString > SAL_CALL XMLFilterDialogComponent_getSupportedServiceNames()  throw ( RuntimeException )
+/// @throws RuntimeException
+Sequence< OUString > SAL_CALL XMLFilterDialogComponent_getSupportedServiceNames()
 {
     Sequence< OUString > aSupported { "com.sun.star.ui.dialogs.XSLTFilterDialog" };
     return aSupported;
 }
 
-Reference< XInterface > SAL_CALL XMLFilterDialogComponent_createInstance( const Reference< XMultiServiceFactory > & rSMgr) throw ( Exception )
+/// @throws Exception
+Reference< XInterface > SAL_CALL XMLFilterDialogComponent_createInstance( const Reference< XMultiServiceFactory > & rSMgr)
 {
     return static_cast<OWeakObject*>(new XMLFilterDialogComponent( comphelper::getComponentContext(rSMgr) ));
 }
 
-OUString SAL_CALL XMLFilterDialogComponent::getImplementationName() throw(css::uno::RuntimeException, std::exception)
+OUString SAL_CALL XMLFilterDialogComponent::getImplementationName()
 {
     return XMLFilterDialogComponent_getImplementationName();
 }
 
 namespace { struct lcl_ImplId : public rtl::Static< ::cppu::OImplementationId, lcl_ImplId > {}; }
 
-Sequence< sal_Int8 > SAL_CALL XMLFilterDialogComponent::getImplementationId() throw( RuntimeException, std::exception )
+Sequence< sal_Int8 > SAL_CALL XMLFilterDialogComponent::getImplementationId()
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -236,17 +220,17 @@ namespace
     struct theDialogComponentTypes : rtl::Static<DialogComponentTypes, theDialogComponentTypes> {};
 }
 
-Sequence< Type > XMLFilterDialogComponent::getTypes() throw (RuntimeException, std::exception)
+Sequence< Type > XMLFilterDialogComponent::getTypes()
 {
     return theDialogComponentTypes::get().getTypeCollection().getTypes();
 }
 
-Sequence< OUString > SAL_CALL XMLFilterDialogComponent::getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception)
+Sequence< OUString > SAL_CALL XMLFilterDialogComponent::getSupportedServiceNames()
 {
     return XMLFilterDialogComponent_getSupportedServiceNames();
 }
 
-sal_Bool SAL_CALL XMLFilterDialogComponent::supportsService(const OUString& ServiceName) throw(RuntimeException, std::exception)
+sal_Bool SAL_CALL XMLFilterDialogComponent::supportsService(const OUString& ServiceName)
 {
     return cppu::supportsService( this, ServiceName );
 }
@@ -258,17 +242,11 @@ void SAL_CALL XMLFilterDialogComponent::disposing()
     ::SolarMutexGuard aGuard;
 
     mpDialog.disposeAndClear();
-
-    if (pXSLTResMgr)
-    {
-        delete pXSLTResMgr;
-        pXSLTResMgr = nullptr;
-    }
 }
 
 
 // XTerminateListener
-void SAL_CALL XMLFilterDialogComponent::queryTermination( const EventObject& /* Event */ ) throw (TerminationVetoException, RuntimeException, std::exception)
+void SAL_CALL XMLFilterDialogComponent::queryTermination( const EventObject& /* Event */ )
 {
     ::SolarMutexGuard aGuard;
 
@@ -288,30 +266,25 @@ void SAL_CALL XMLFilterDialogComponent::queryTermination( const EventObject& /* 
 }
 
 
-void SAL_CALL XMLFilterDialogComponent::notifyTermination( const EventObject& /* Event */ ) throw (RuntimeException, std::exception)
+void SAL_CALL XMLFilterDialogComponent::notifyTermination( const EventObject& /* Event */ )
 {
     // we are going down, so dispose us!
     dispose();
 }
 
-void SAL_CALL XMLFilterDialogComponent::disposing( const EventObject& /* Source */ ) throw (RuntimeException, std::exception)
+void SAL_CALL XMLFilterDialogComponent::disposing( const EventObject& /* Source */ )
 {
 }
 
 
-void SAL_CALL XMLFilterDialogComponent::setTitle( const OUString& /* _rTitle */ ) throw(RuntimeException, std::exception)
+void SAL_CALL XMLFilterDialogComponent::setTitle( const OUString& /* _rTitle */ )
 {
 }
 
 
-sal_Int16 SAL_CALL XMLFilterDialogComponent::execute(  ) throw(RuntimeException, std::exception)
+sal_Int16 SAL_CALL XMLFilterDialogComponent::execute(  )
 {
     ::SolarMutexGuard aGuard;
-
-    if( nullptr == pXSLTResMgr )
-    {
-        pXSLTResMgr = ResMgr::CreateResMgr( "xsltdlg", Application::GetSettings().GetUILanguageTag() );
-    }
 
     if( nullptr == mpDialog )
     {
@@ -332,7 +305,7 @@ sal_Int16 SAL_CALL XMLFilterDialogComponent::execute(  ) throw(RuntimeException,
 }
 
 
-void SAL_CALL XMLFilterDialogComponent::initialize( const Sequence< Any >& aArguments ) throw(Exception, RuntimeException, std::exception)
+void SAL_CALL XMLFilterDialogComponent::initialize( const Sequence< Any >& aArguments )
 {
     const Any* pArguments = aArguments.getConstArray();
     for(sal_Int32 i=0; i<aArguments.getLength(); ++i, ++pArguments)

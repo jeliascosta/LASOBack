@@ -83,15 +83,14 @@ void UnoDialog::endExecute( bool bStatus )
 }
 
 
-Reference< XWindowPeer > UnoDialog::createWindowPeer( Reference< XWindowPeer > xParentPeer )
-    throw ( Exception )
+Reference< XWindowPeer > UnoDialog::createWindowPeer( Reference< XWindowPeer > const & xParentPeer )
 {
     mxDialog->setVisible( false );
     Reference< XToolkit > xToolkit( Toolkit::create( mxContext ), UNO_QUERY_THROW  );
-    if ( !xParentPeer.is() )
-        xParentPeer = xToolkit->getDesktopWindow();
     mxReschedule.set( xToolkit, UNO_QUERY );
-    mxDialog->createPeer( xToolkit, xParentPeer );
+    mxDialog->createPeer(
+        xToolkit,
+        xParentPeer.is() ? xParentPeer : xToolkit->getDesktopWindow());
 //  xWindowPeer = xControl.getPeer();
     return mxDialog->getPeer();
 }

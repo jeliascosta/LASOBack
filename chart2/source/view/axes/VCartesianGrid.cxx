@@ -57,7 +57,10 @@ GridLinePoints::GridLinePoints( const PlottingPositionHelper* pPosHelper, sal_In
                 , CuboidPlanePosition eLeftWallPos
                 , CuboidPlanePosition eBackWallPos
                 , CuboidPlanePosition eBottomPos )
-                : m_nDimensionIndex(nDimensionIndex)
+                : P0(3)
+                , P1(3)
+                , P2(3)
+                , m_nDimensionIndex(nDimensionIndex)
 {
     double MinX = pPosHelper->getLogicMinX();
     double MinY = pPosHelper->getLogicMinY();
@@ -88,10 +91,6 @@ GridLinePoints::GridLinePoints( const PlottingPositionHelper* pPosHelper, sal_In
         MaxZ = fHelp;
     }
     bool bSwapXY = pPosHelper->isSwapXAndY();
-
-    P0.realloc(3);
-    P1.realloc(3);
-    P2.realloc(3);
 
     //P0: point on 'back' wall, not on 'left' wall
     //P1: point on both walls
@@ -175,7 +174,7 @@ VCartesianGrid::~VCartesianGrid()
     m_pPosHelper = nullptr;
 }
 
-void VCartesianGrid::fillLinePropertiesFromGridModel( ::std::vector<VLineProperties>& rLinePropertiesList
+void VCartesianGrid::fillLinePropertiesFromGridModel( std::vector<VLineProperties>& rLinePropertiesList
                                      , const Sequence< Reference< beans::XPropertySet > > & rGridPropertiesList )
 {
     rLinePropertiesList.clear();
@@ -186,7 +185,7 @@ void VCartesianGrid::fillLinePropertiesFromGridModel( ::std::vector<VLinePropert
     for( sal_Int32 nN=0; nN < rGridPropertiesList.getLength(); nN++ )
     {
         if(!AxisHelper::isGridVisible( rGridPropertiesList[nN] ))
-            aLineProperties.LineStyle = uno::makeAny( drawing::LineStyle_NONE );
+            aLineProperties.LineStyle <<= drawing::LineStyle_NONE;
         else
             aLineProperties.initFromPropertySet( rGridPropertiesList[nN] );
         rLinePropertiesList.push_back(aLineProperties);
@@ -206,7 +205,7 @@ void VCartesianGrid::createShapes()
     if(!xGroupShape_Shapes.is())
         return;
 
-    ::std::vector<VLineProperties> aLinePropertiesList;
+    std::vector<VLineProperties> aLinePropertiesList;
     fillLinePropertiesFromGridModel( aLinePropertiesList, m_aGridPropertiesList );
 
     //create all scaled tickmark values
@@ -271,7 +270,7 @@ void VCartesianGrid::createShapes()
 
             //create handle shape:
             VLineProperties aHandleLineProperties;
-            aHandleLineProperties.LineStyle    = uno::makeAny( drawing::LineStyle_NONE );
+            aHandleLineProperties.LineStyle    <<= drawing::LineStyle_NONE;
             Reference< drawing::XShape > xHandleShape =
                 m_pShapeFactory->createLine2D( xTarget, aHandlesPoints, &aHandleLineProperties );
             ::chart::AbstractShapeFactory::setShapeName( xHandleShape, "HandlesOnly" );

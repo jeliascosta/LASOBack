@@ -42,7 +42,6 @@ class ScAccessibleTextData : public SfxListener
 {
 public:
                         ScAccessibleTextData() {}
-    virtual             ~ScAccessibleTextData() {}
 
     virtual ScAccessibleTextData* Clone() const = 0;
 
@@ -54,7 +53,7 @@ public:
     SfxBroadcaster& GetBroadcaster() const { return maBroadcaster; }
 
     virtual void                UpdateData() = 0;
-    DECL_LINK_TYPED( NotifyHdl, EENotify&, void );
+    DECL_LINK( NotifyHdl, EENotify&, void );
 
 private:
     mutable SfxBroadcaster maBroadcaster;
@@ -68,7 +67,6 @@ public:
                         ScAccessibleCellBaseTextData(ScDocShell* pDocShellP,
                             const ScAddress& rP)
                             : ScCellTextData(pDocShellP, rP) {}
-    virtual             ~ScAccessibleCellBaseTextData() {}
     virtual void        Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override { ScCellTextData::Notify(rBC, rHint); }
 
     virtual void                UpdateData() override { ScCellTextData::UpdateData(); }
@@ -81,7 +79,7 @@ class ScAccessibleCellTextData : public ScAccessibleCellBaseTextData
 public:
                         ScAccessibleCellTextData(ScTabViewShell* pViewShell,
                             const ScAddress& rP, ScSplitPos eSplitPos, ScAccessibleCell* pAccCell);
-    virtual             ~ScAccessibleCellTextData();
+    virtual             ~ScAccessibleCellTextData() override;
 
     virtual ScAccessibleTextData* Clone() const override;
 
@@ -107,7 +105,7 @@ class ScAccessibleEditObjectTextData : public ScAccessibleTextData
 public:
     // Add a para to indicate whether the object is cloned
     ScAccessibleEditObjectTextData(EditView* pEditView, vcl::Window* pWin, bool isClone = false);
-    virtual             ~ScAccessibleEditObjectTextData();
+    virtual             ~ScAccessibleEditObjectTextData() override;
 
     virtual ScAccessibleTextData* Clone() const override;
 
@@ -119,7 +117,7 @@ public:
 
     virtual void                UpdateData() override {  }
 
-    DECL_LINK_TYPED( NotifyHdl, EENotify&, void );
+    DECL_LINK( NotifyHdl, EENotify&, void );
 protected:
     ScEditObjectViewForwarder* mpViewForwarder;
     ScEditViewForwarder*       mpEditViewForwarder;
@@ -134,7 +132,7 @@ class ScAccessibleEditLineTextData : public ScAccessibleEditObjectTextData
 {
 public:
                         ScAccessibleEditLineTextData(EditView* pEditView, vcl::Window* pWin);
-    virtual             ~ScAccessibleEditLineTextData();
+    virtual             ~ScAccessibleEditLineTextData() override;
 
     virtual ScAccessibleTextData* Clone() const override;
 
@@ -156,7 +154,7 @@ class ScAccessiblePreviewCellTextData : public ScAccessibleCellBaseTextData
 public:
                         ScAccessiblePreviewCellTextData(ScPreviewShell* pViewShell,
                             const ScAddress& rP);
-    virtual             ~ScAccessiblePreviewCellTextData();
+    virtual             ~ScAccessiblePreviewCellTextData() override;
 
     virtual ScAccessibleTextData* Clone() const override;
 
@@ -179,7 +177,7 @@ class ScAccessiblePreviewHeaderCellTextData : public ScAccessibleCellBaseTextDat
 public:
                         ScAccessiblePreviewHeaderCellTextData(ScPreviewShell* pViewShell,
                             const OUString& rText, const ScAddress& rP, bool bColHeader, bool bRowHeader);
-    virtual             ~ScAccessiblePreviewHeaderCellTextData();
+    virtual             ~ScAccessiblePreviewHeaderCellTextData() override;
 
     virtual ScAccessibleTextData* Clone() const override;
 
@@ -205,7 +203,7 @@ class ScAccessibleHeaderTextData : public ScAccessibleTextData
 public:
                         ScAccessibleHeaderTextData(ScPreviewShell* pViewShell,
                             const EditTextObject* pEditObj, bool bHeader, SvxAdjust eAdjust);
-    virtual             ~ScAccessibleHeaderTextData();
+    virtual             ~ScAccessibleHeaderTextData() override;
 
     virtual ScAccessibleTextData* Clone() const override;
 
@@ -233,7 +231,7 @@ class ScAccessibleNoteTextData : public ScAccessibleTextData
 public:
                         ScAccessibleNoteTextData(ScPreviewShell* pViewShell,
                             const OUString& sText, const ScAddress& aCellPos, bool bMarkNote);
-    virtual             ~ScAccessibleNoteTextData();
+    virtual             ~ScAccessibleNoteTextData() override;
 
     virtual ScAccessibleTextData* Clone() const override;
 
@@ -267,7 +265,7 @@ private:
     TextForwarderPtr            mpTextForwarder;
     ViewForwarderPtr            mpViewForwarder;
     OUString                    maCellText;
-    Rectangle                   maBoundBox;
+    tools::Rectangle                   maBoundBox;
     Size                        maCellSize;
 
 public:
@@ -275,9 +273,9 @@ public:
                                     vcl::Window* pWindow,
                                     EditEngine* pEditEngine,
                                     const OUString& rCellText,
-                                    const Rectangle& rBoundBox,
+                                    const tools::Rectangle& rBoundBox,
                                     const Size& rCellSize );
-    virtual                     ~ScAccessibleCsvTextData();
+    virtual                     ~ScAccessibleCsvTextData() override;
 
     virtual ScAccessibleTextData* Clone() const override;
 

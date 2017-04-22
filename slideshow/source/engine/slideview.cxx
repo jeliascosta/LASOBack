@@ -50,6 +50,7 @@
 #include <basegfx/polygon/b2dpolypolygoncutter.hxx>
 
 #include <com/sun/star/presentation/XSlideShow.hpp>
+#include <com/sun/star/rendering/CompositeOperation.hpp>
 
 #include <memory>
 #include <vector>
@@ -180,7 +181,7 @@ void clearRect( ::cppcanvas::CanvasSharedPtr const& pCanvas,
 
     if( pPolyPoly )
     {
-        pPolyPoly->setCompositeOp( cppcanvas::CanvasGraphic::SOURCE );
+        pPolyPoly->setCompositeOp( css::rendering::CompositeOperation::SOURCE );
         pPolyPoly->setRGBAFillColor( 0xFFFFFF00U );
         pPolyPoly->draw();
     }
@@ -705,14 +706,11 @@ private:
     virtual bool isSoundEnabled() const override;
 
     // XEventListener:
-    virtual void SAL_CALL disposing( lang::EventObject const& evt )
-        throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( lang::EventObject const& evt ) override;
     // XModifyListener:
-    virtual void SAL_CALL modified( const lang::EventObject& aEvent )
-        throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL modified( const lang::EventObject& aEvent ) override;
     // XPaintListener:
-    virtual void SAL_CALL windowPaint( const awt::PaintEvent& e )
-        throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL windowPaint( const awt::PaintEvent& e ) override;
 
     // WeakComponentImplHelperBase:
     virtual void SAL_CALL disposing() override;
@@ -1015,7 +1013,6 @@ void SlideView::_dispose()
 
 // XEventListener
 void SlideView::disposing( lang::EventObject const& evt )
-    throw (uno::RuntimeException, std::exception)
 {
     (void)evt;
 
@@ -1057,7 +1054,6 @@ struct WeakRefWrapper
 
 // XModifyListener
 void SlideView::modified( const lang::EventObject& /*aEvent*/ )
-    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1105,7 +1101,6 @@ void SlideView::modified( const lang::EventObject& /*aEvent*/ )
 
 // XPaintListener
 void SlideView::windowPaint( const awt::PaintEvent& /*e*/ )
-    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard( m_aMutex );
 

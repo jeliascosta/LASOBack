@@ -462,31 +462,29 @@ struct Sc10ColData
 // Cell-Attribute definition
 struct Sc10ColAttr
 {
-    sal_uInt16          Count;
-    Sc10ColData*    pData;
+    sal_uInt16                      Count;
+    std::unique_ptr<Sc10ColData[]>  pData;
 
     Sc10ColAttr()
         : Count(0)
-        , pData(nullptr)
     {
     }
-    ~Sc10ColAttr() { delete [] pData; }
 };
 
 // GraphHeader
 struct Sc10GraphHeader
 {
-    sal_uInt8       Typ;            // Type of Grafik (Ole-Objekt, Image (Bitmap of MetaFile), Chart-Object)
-    sal_Int16       CarretX;        // Cell Position of Grafik
+    sal_uInt8       Typ;            // Type of grafic (Ole-object, Image (Bitmap of MetaFile), Chart-object)
+    sal_Int16       CarretX;        // Cell Position of grafic
     sal_Int16       CarretY;
     sal_Int16       CarretZ;
-    sal_Int32       x;              // x,y distance to cell border in pixels (pixels, as Graphics are stored in window)
+    sal_Int32       x;              // x,y distance to cell border in pixels (pixels, as graphics are stored in window)
     sal_Int32       y;
     sal_Int32       w;              // w,h width and height in pixels
     sal_Int32       h;
-    sal_uInt8       IsRelPos;       // position relativ to cell, or absolute in the table
-    sal_uInt8       DoPrint;        // print Grafic?
-    sal_uInt16      FrameType;      // Frame type around Grafic (none, simple, double, simple thick, double thick)
+    sal_uInt8       IsRelPos;       // position relative to cell, or absolute in the table
+    sal_uInt8       DoPrint;        // print grafic?
+    sal_uInt16      FrameType;      // Frame type around grafic (none, simple, double, simple thick, double thick)
     sal_uInt8       IsTransparent;  // show background?
     Sc10Color   FrameColor;         // FrameColor as RGB value
     Sc10Color   BackColor;          // BackGroundColor as RGB value
@@ -509,7 +507,7 @@ struct Sc10ImageHeader
 // ChartHeader
 struct Sc10ChartHeader
 {
-    sal_Int16   MM;                 // Meatfile structure MapMode, Width, Hight
+    sal_Int16   MM;                 // Metafile structure MapMode, width, height
     sal_Int16   xExt;
     sal_Int16   yExt;
     sal_uInt32 Size;                // image size in BYTES
@@ -602,7 +600,7 @@ public:
 class Sc10FontCollection : public ScCollection
 {
 protected:
-    sal_uLong nError;
+    sal_uLong           nError;
 public:
                         Sc10FontCollection( SvStream& rStream );
     sal_uLong           GetError() { return nError; }
@@ -761,7 +759,7 @@ class Sc10Import
     Sc10NameCollection*     pNameCollection;
     Sc10PatternCollection*  pPatternCollection;
     Sc10DataBaseCollection* pDataBaseCollection;
-    sal_uLong                   nError;
+    sal_uLong               nError;
     SCTAB                   nShowTab;
     ScViewOptions           aSc30ViewOpt;
     ScfStreamProgressBar*   pPrgrsBar;
@@ -770,7 +768,7 @@ public:
                               Sc10Import( SvStream& rStr, ScDocument* pDocument );
                               ~Sc10Import();
 
-    sal_uLong                   Import();
+    sal_uLong               Import();
     void                    LoadFileHeader();
     void                    LoadFileInfo();
     void                    LoadEditStateInfo();

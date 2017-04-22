@@ -70,7 +70,7 @@ const char gsBenMagicBytes[] = BEN_MAGIC_BYTES;
 *   @param  pointer to pointer of Bento Container object
 *   @return error code
 */
-sal_uLong BenOpenContainer(LwpSvStream * pStream, pLtcBenContainer * ppContainer)
+sal_uLong BenOpenContainer(LwpSvStream * pStream, LtcBenContainer ** ppContainer)
 {
     BenError Err;
 
@@ -81,7 +81,7 @@ sal_uLong BenOpenContainer(LwpSvStream * pStream, pLtcBenContainer * ppContainer
         return BenErr_ContainerWithNoObjects;
     }
 
-    pLtcBenContainer pContainer = new LtcBenContainer(pStream);
+    LtcBenContainer * pContainer = new LtcBenContainer(pStream);
     if ((Err = pContainer->Open()) != BenErr_OK) // delete two inputs
     {
         delete pContainer;
@@ -110,38 +110,38 @@ LtcBenContainer::Open() // delete two inputs
 
 void
 LtcBenContainer::RegisterPropertyName(const char * sPropertyName,
-  pCBenPropertyName * ppPropertyName)
+  CBenPropertyName ** ppPropertyName)
 {
-    pCUtListElmt pPrevNamedObjectListElmt;
-    pCBenNamedObject pNamedObject = FindNamedObject(&cNamedObjects,
+    CUtListElmt * pPrevNamedObjectListElmt;
+    CBenNamedObject * pNamedObject = FindNamedObject(&cNamedObjects,
       sPropertyName, &pPrevNamedObjectListElmt);
 
     if (pNamedObject != nullptr)
     {
         if (! pNamedObject->IsPropertyName())
             return;
-        else *ppPropertyName = static_cast<pCBenPropertyName>(pNamedObject);
+        else *ppPropertyName = static_cast<CBenPropertyName *>(pNamedObject);
     }
     else
     {
-        pCUtListElmt pPrevObject;
+        CUtListElmt * pPrevObject;
         if (FindID(&cObjects, cNextAvailObjectID, &pPrevObject) != nullptr)
             return;
 
         *ppPropertyName = new CBenPropertyName(this, cNextAvailObjectID,
-          static_cast<pCBenObject>(pPrevObject), sPropertyName, pPrevNamedObjectListElmt);
+          pPrevObject, sPropertyName, pPrevNamedObjectListElmt);
         ++cNextAvailObjectID;
     }
 }
 
-pCBenObject
-LtcBenContainer::GetNextObject(pCBenObject pCurrObject)
+CBenObject *
+LtcBenContainer::GetNextObject(CBenObject * pCurrObject)
 {
-    return static_cast<pCBenObject>(cObjects.GetNextOrNULL(pCurrObject));
+    return static_cast<CBenObject *>(cObjects.GetNextOrNULL(pCurrObject));
 }
 
-pCBenObject
-LtcBenContainer::FindNextObjectWithProperty(pCBenObject pCurrObject,
+CBenObject *
+LtcBenContainer::FindNextObjectWithProperty(CBenObject * pCurrObject,
   BenObjectID PropertyID)
 {
     while ((pCurrObject = GetNextObject(pCurrObject)) != nullptr)
@@ -219,10 +219,9 @@ BenError LtcBenContainer::SeekFromEnd(long Offset)
 /**
 *   Find the next value stream with property name
 *   @param  string of property name
-*   @param  current value stream pointer with the property name
 *   @return next value stream pointer with the property names
 */
-LtcUtBenValueStream * LtcBenContainer::FindNextValueStreamWithPropertyName(const char * sPropertyName, LtcUtBenValueStream * pCurrentValueStream)
+LtcUtBenValueStream * LtcBenContainer::FindNextValueStreamWithPropertyName(const char * sPropertyName)
 {
     CBenPropertyName * pPropertyName(nullptr);
     RegisterPropertyName(sPropertyName, &pPropertyName);        // Get property name object
@@ -232,10 +231,6 @@ LtcUtBenValueStream * LtcBenContainer::FindNextValueStreamWithPropertyName(const
 
     // Get current object
     CBenObject * pObj = nullptr;
-    if (pCurrentValueStream != nullptr)
-    {
-        pObj = pCurrentValueStream->GetValue()->GetProperty()->GetBenObject();
-    }
 
     pObj =FindNextObjectWithProperty(pObj, pPropertyName->GetID()); // Get next object with same property name
     if (nullptr == pObj)
@@ -258,7 +253,7 @@ LtcUtBenValueStream * LtcBenContainer::FindNextValueStreamWithPropertyName(const
 */
 LtcUtBenValueStream * LtcBenContainer::FindValueStreamWithPropertyName(const char * sPropertyName)
 {
-    return FindNextValueStreamWithPropertyName(sPropertyName, nullptr);
+    return FindNextValueStreamWithPropertyName(sPropertyName);
 }
 /**
 *   <description>
@@ -331,13 +326,13 @@ void LtcBenContainer::CreateGraphicStream(SvStream * &pStream, const char *pObje
     char * pPointer = pBuf;
     if(pD)
     {
-        pD->Read(pPointer, nDLen);
+        pD->ReadBytes(pPointer, nDLen);
         delete pD;
     }
     pPointer += nDLen;
     if(pS)
     {
-        pS->Read(pPointer, nLen - nDLen);
+        pS->ReadBytes(pPointer, nLen - nDLen);
         delete pS;
     }
 

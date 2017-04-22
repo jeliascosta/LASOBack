@@ -36,6 +36,7 @@
 #include <com/sun/star/chart2/XChartType.hpp>
 #include <tools/globname.hxx>
 #include <comphelper/classids.hxx>
+#include <com/sun/star/util/CloseVetoException.hpp>
 #include <com/sun/star/util/XModifyListener.hpp>
 #include <com/sun/star/util/XModifiable.hpp>
 #include <com/sun/star/embed/Aspects.hpp>
@@ -72,16 +73,13 @@ public:
 
     static EmbedEventListener_Impl* Create( EmbeddedObjectRef* );
 
-    virtual void SAL_CALL changingState( const lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState )
-                                    throw (embed::WrongStateException, uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL stateChanged( const lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState )
-                                    throw (uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL queryClosing( const lang::EventObject& Source, sal_Bool GetsOwnership )
-                                    throw (util::CloseVetoException, uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL notifyClosing( const lang::EventObject& Source ) throw (uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL notifyEvent( const document::EventObject& aEvent ) throw( uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL disposing( const lang::EventObject& aEvent ) throw( uno::RuntimeException, std::exception ) override;
-    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL changingState( const lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) override;
+    virtual void SAL_CALL stateChanged( const lang::EventObject& aEvent, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) override;
+    virtual void SAL_CALL queryClosing( const lang::EventObject& Source, sal_Bool GetsOwnership ) override;
+    virtual void SAL_CALL notifyClosing( const lang::EventObject& Source ) override;
+    virtual void SAL_CALL notifyEvent( const document::EventObject& aEvent ) override;
+    virtual void SAL_CALL disposing( const lang::EventObject& aEvent ) override;
+    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) override;
 };
 
 EmbedEventListener_Impl* EmbedEventListener_Impl::Create( EmbeddedObjectRef* p )
@@ -118,15 +116,12 @@ EmbedEventListener_Impl* EmbedEventListener_Impl::Create( EmbeddedObjectRef* p )
 void SAL_CALL EmbedEventListener_Impl::changingState( const lang::EventObject&,
                                                     ::sal_Int32,
                                                     ::sal_Int32 )
-    throw ( embed::WrongStateException,
-            uno::RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL EmbedEventListener_Impl::stateChanged( const lang::EventObject&,
                                                     ::sal_Int32 nOldState,
                                                     ::sal_Int32 nNewState )
-    throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     nState = nNewState;
@@ -162,7 +157,7 @@ void SAL_CALL EmbedEventListener_Impl::stateChanged( const lang::EventObject&,
     }
 }
 
-void SAL_CALL EmbedEventListener_Impl::modified( const lang::EventObject& ) throw (uno::RuntimeException, std::exception)
+void SAL_CALL EmbedEventListener_Impl::modified( const lang::EventObject& )
 {
     SolarMutexGuard aGuard;
     if ( pObject && pObject->GetViewAspect() != embed::Aspects::MSOLE_ICON )
@@ -185,7 +180,7 @@ void SAL_CALL EmbedEventListener_Impl::modified( const lang::EventObject& ) thro
     }
 }
 
-void SAL_CALL EmbedEventListener_Impl::notifyEvent( const document::EventObject& aEvent ) throw( uno::RuntimeException, std::exception )
+void SAL_CALL EmbedEventListener_Impl::notifyEvent( const document::EventObject& aEvent )
 {
     SolarMutexGuard aGuard;
 
@@ -196,7 +191,6 @@ void SAL_CALL EmbedEventListener_Impl::notifyEvent( const document::EventObject&
 }
 
 void SAL_CALL EmbedEventListener_Impl::queryClosing( const lang::EventObject& Source, sal_Bool )
-        throw ( util::CloseVetoException, uno::RuntimeException, std::exception)
 {
     // An embedded object can be shared between several objects (f.e. for undo purposes)
     // the object will not be closed before the last "customer" is destroyed
@@ -205,7 +199,7 @@ void SAL_CALL EmbedEventListener_Impl::queryClosing( const lang::EventObject& So
         throw util::CloseVetoException();
 }
 
-void SAL_CALL EmbedEventListener_Impl::notifyClosing( const lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception)
+void SAL_CALL EmbedEventListener_Impl::notifyClosing( const lang::EventObject& Source )
 {
     if ( pObject && Source.Source == pObject->GetObject() )
     {
@@ -214,7 +208,7 @@ void SAL_CALL EmbedEventListener_Impl::notifyClosing( const lang::EventObject& S
     }
 }
 
-void SAL_CALL EmbedEventListener_Impl::disposing( const lang::EventObject& aEvent ) throw( uno::RuntimeException, std::exception )
+void SAL_CALL EmbedEventListener_Impl::disposing( const lang::EventObject& aEvent )
 {
     if ( pObject && aEvent.Source == pObject->GetObject() )
     {
@@ -228,10 +222,10 @@ struct EmbeddedObjectRef_Impl
     uno::Reference <embed::XEmbeddedObject> mxObj;
 
     EmbedEventListener_Impl*                    xListener;
-    OUString                             aPersistName;
-    OUString                             aMediaType;
+    OUString                                    aPersistName;
+    OUString                                    aMediaType;
     comphelper::EmbeddedObjectContainer*        pContainer;
-    Graphic*                                    pGraphic;
+    std::unique_ptr<Graphic>                    pGraphic;
     sal_Int64                                   nViewAspect;
     bool                                        bIsLocked:1;
     bool                                        bNeedUpdate:1;
@@ -265,12 +259,7 @@ struct EmbeddedObjectRef_Impl
         aDefaultSizeForChart_In_100TH_MM(r.aDefaultSizeForChart_In_100TH_MM)
     {
         if (r.pGraphic && !r.bNeedUpdate)
-            pGraphic = new Graphic(*r.pGraphic);
-    }
-
-    ~EmbeddedObjectRef_Impl()
-    {
-        delete pGraphic;
+            pGraphic.reset( new Graphic(*r.pGraphic) );
     }
 };
 
@@ -417,14 +406,14 @@ void EmbeddedObjectRef::GetReplacement( bool bUpdate )
 {
     if ( bUpdate )
     {
-        DELETEZ( mpImpl->pGraphic );
+        mpImpl->pGraphic.reset();
         (mpImpl->aMediaType).clear();
-        mpImpl->pGraphic = new Graphic;
+        mpImpl->pGraphic.reset( new Graphic );
         mpImpl->mnGraphicVersion++;
     }
     else if ( !mpImpl->pGraphic )
     {
-        mpImpl->pGraphic = new Graphic;
+        mpImpl->pGraphic.reset( new Graphic );
         mpImpl->mnGraphicVersion++;
     }
     else
@@ -458,12 +447,12 @@ const Graphic* EmbeddedObjectRef::GetGraphic() const
         SAL_WARN("svtools.misc", "Something went wrong on getting the graphic: " << ex.Message);
     }
 
-    return mpImpl->pGraphic;
+    return mpImpl->pGraphic.get();
 }
 
 Size EmbeddedObjectRef::GetSize( MapMode* pTargetMapMode ) const
 {
-    MapMode aSourceMapMode( MAP_100TH_MM );
+    MapMode aSourceMapMode( MapUnit::Map100thMM );
     Size aResult;
 
     if ( mpImpl->nViewAspect == embed::Aspects::MSOLE_ICON )
@@ -523,9 +512,7 @@ Size EmbeddedObjectRef::GetSize( MapMode* pTargetMapMode ) const
 void EmbeddedObjectRef::SetGraphicStream( const uno::Reference< io::XInputStream >& xInGrStream,
                                             const OUString& rMediaType )
 {
-    if ( mpImpl->pGraphic )
-        delete mpImpl->pGraphic;
-    mpImpl->pGraphic = new Graphic();
+    mpImpl->pGraphic.reset( new Graphic );
     mpImpl->aMediaType = rMediaType;
     mpImpl->mnGraphicVersion++;
 
@@ -552,9 +539,7 @@ void EmbeddedObjectRef::SetGraphicStream( const uno::Reference< io::XInputStream
 
 void EmbeddedObjectRef::SetGraphic( const Graphic& rGraphic, const OUString& rMediaType )
 {
-    if ( mpImpl->pGraphic )
-        delete mpImpl->pGraphic;
-    mpImpl->pGraphic = new Graphic( rGraphic );
+    mpImpl->pGraphic.reset( new Graphic( rGraphic ) );
     mpImpl->aMediaType = rMediaType;
     mpImpl->mnGraphicVersion++;
 
@@ -584,7 +569,7 @@ SvStream* EmbeddedObjectRef::GetGraphicStream( bool bUpdate ) const
                 do
                 {
                     nRead = xStream->readBytes ( aSequence, nConstBufferSize );
-                    pStream->Write( aSequence.getConstArray(), nRead );
+                    pStream->WriteBytes(aSequence.getConstArray(), nRead);
                 }
                 while ( nRead == nConstBufferSize );
                 pStream->Seek(0);
@@ -638,11 +623,11 @@ SvStream* EmbeddedObjectRef::GetGraphicStream( bool bUpdate ) const
     return nullptr;
 }
 
-void EmbeddedObjectRef::DrawPaintReplacement( const Rectangle &rRect, const OUString &rText, OutputDevice *pOut )
+void EmbeddedObjectRef::DrawPaintReplacement( const tools::Rectangle &rRect, const OUString &rText, OutputDevice *pOut )
 {
-    MapMode aMM( MAP_APPFONT );
+    MapMode aMM( MapUnit::MapAppFont );
     Size aAppFontSz = pOut->LogicToLogic( Size( 0, 8 ), &aMM, nullptr );
-    vcl::Font aFnt( OUString("Helvetica"), aAppFontSz );
+    vcl::Font aFnt( "Helvetica", aAppFontSz );
     aFnt.SetTransparent( true );
     aFnt.SetColor( Color( COL_LIGHTRED ) );
     aFnt.SetWeight( WEIGHT_BOLD );
@@ -720,7 +705,7 @@ void EmbeddedObjectRef::DrawPaintReplacement( const Rectangle &rRect, const OUSt
     pOut->Pop();
 }
 
-void EmbeddedObjectRef::DrawShading( const Rectangle &rRect, OutputDevice *pOut )
+void EmbeddedObjectRef::DrawShading( const tools::Rectangle &rRect, OutputDevice *pOut )
 {
     GDIMetaFile * pMtf = pOut->GetConnectMetaFile();
     if( pMtf && pMtf->IsRecord() )
@@ -837,7 +822,7 @@ void EmbeddedObjectRef::UpdateReplacement()
 
 void EmbeddedObjectRef::UpdateReplacementOnDemand()
 {
-    DELETEZ( mpImpl->pGraphic );
+    mpImpl->pGraphic.reset();
     mpImpl->bNeedUpdate = true;
     mpImpl->mnGraphicVersion++;
 

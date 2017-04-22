@@ -58,10 +58,6 @@ enum SbxDataType {
     SbxUSHORT   = 18,    // * unsigned short (sal_uInt16)
     SbxULONG    = 19,    // * unsigned long (sal_uInt32)
 
-//deprecated:  // old 64bit types kept for backward compatibility in file I/O
-    SbxLONG64   = 20,    //   moved to SbxSALINT64  as 64bit int
-    SbxULONG64  = 21,    //   moved to SbxSALUINT64 as 64bit int
-
     SbxINT      = 22,    // * signed machine-dependent int
     SbxUINT     = 23,    // * unsigned machine-dependent int
 
@@ -85,13 +81,6 @@ enum SbxDataType {
     SbxVECTOR = 0x1000,  // simple counted array
     SbxARRAY  = 0x2000,  // array
     SbxBYREF  = 0x4000,  // access by reference
-
-    SbxSV1 = 128,        // first defined data type for StarView
-    SbxMEMORYSTREAM,     // SvMemoryStream
-    SbxSTORAGE,          // SotStorage
-
-    SbxUSER1  = 256,     // first user defined data type
-    SbxUSERn  = 2047     // last user defined data type
 };
 
 const sal_uInt32 SBX_TYPE_WITH_EVENTS_FLAG = 0x10000;
@@ -130,11 +119,9 @@ enum SbxOperator {
     SbxGE       // this >= var
 };
 
-enum SbxNameType {          // Type of the questioned name of a variable
-    SbxNAME_NONE,           // plain name
-    SbxNAME_SHORT,          // Name(A,B)
-    SbxNAME_SHORT_TYPES,    // Name%(A%,B$)
-    SbxNAME_LONG_TYPES      // Name(A As Integer, B As String) As Integer
+enum class SbxNameType {          // Type of the questioned name of a variable
+    NONE,           // plain name
+    ShortTypes,     // Name%(A%,B$)
 };
 
 // from 1996/3/20: New error messages
@@ -163,7 +150,7 @@ typedef sal_uIntPtr SbxError;           // Preserve old type
 #define ERRCODE_SBX_PROP_READONLY       (15UL | ERRCODE_AREA_SBX | ERRCODE_CLASS_READ)      // Property is read only
 #define ERRCODE_SBX_PROP_WRITEONLY      (16UL | ERRCODE_AREA_SBX | ERRCODE_CLASS_WRITE)     // Property is write only
 #define ERRCODE_SBX_INVALID_OBJECT      (17UL | ERRCODE_AREA_SBX | ERRCODE_CLASS_ACCESS)    // Invalid object reference
-#define ERRCODE_SBX_NO_METHOD           (18UL | ERRCODE_AREA_SBX | ERRCODE_CLASS_RUNTIME)   // Property oder Methode unbekannt
+#define ERRCODE_SBX_NO_METHOD           (18UL | ERRCODE_AREA_SBX | ERRCODE_CLASS_RUNTIME)   // Property or Method unknown
 #define ERRCODE_SBX_INVALID_USAGE_OBJECT (19UL | ERRCODE_AREA_SBX | ERRCODE_CLASS_ACCESS)   // Invalid object usage
 #define ERRCODE_SBX_NO_OLE              (20UL | ERRCODE_AREA_SBX | ERRCODE_CLASS_ACCESS)    // No OLE-Object
 #define ERRCODE_SBX_BAD_METHOD          (21UL | ERRCODE_AREA_SBX | ERRCODE_CLASS_RUNTIME)   // Method not supported
@@ -210,14 +197,6 @@ namespace o3tl
 {
     template<> struct typed_flags<SbxFlagBits> : is_typed_flags<SbxFlagBits, 0xffff> {};
 }
-
-// Broadcaster-IDs:
-#define SBX_HINT_DYING          SFX_HINT_DYING
-#define SBX_HINT_DATAWANTED     SFX_HINT_USER00
-#define SBX_HINT_DATACHANGED    SFX_HINT_DATACHANGED
-#define SBX_HINT_CONVERTED      SFX_HINT_USER01
-#define SBX_HINT_INFOWANTED     SFX_HINT_USER02
-#define SBX_HINT_OBJECTCHANGED  SFX_HINT_USER03
 
 // List of all creators for Load/Store
 

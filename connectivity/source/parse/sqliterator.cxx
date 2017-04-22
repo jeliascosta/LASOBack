@@ -58,7 +58,7 @@ namespace connectivity
 {
     struct OSQLParseTreeIteratorImpl
     {
-        ::std::vector< TNodePair >      m_aJoinConditions;
+        std::vector< TNodePair >      m_aJoinConditions;
         Reference< XConnection >        m_xConnection;
         Reference< XDatabaseMetaData >  m_xDatabaseMetaData;
         Reference< XNameAccess >        m_xTableContainer;
@@ -98,7 +98,7 @@ namespace connectivity
         }
 
     public:
-        inline  bool    isQueryAllowed( const OUString& _rQueryName )
+        bool    isQueryAllowed( const OUString& _rQueryName )
         {
             if ( !m_pForbiddenQueryNames.get() )
                 return true;
@@ -135,12 +135,11 @@ namespace connectivity
 
 OSQLParseTreeIterator::OSQLParseTreeIterator(const Reference< XConnection >& _rxConnection,
                                              const Reference< XNameAccess >& _rxTables,
-                                             const OSQLParser& _rParser,
-                                             const OSQLParseNode* pRoot )
+                                             const OSQLParser& _rParser )
     :m_rParser( _rParser )
     ,m_pImpl( new OSQLParseTreeIteratorImpl( _rxConnection, _rxTables ) )
 {
-    setParseTree(pRoot);
+    setParseTree(nullptr);
 }
 
 
@@ -261,14 +260,12 @@ namespace
     {
         OUString sComposedName;
 
-        static const char s_sTableTypeView[] = "VIEW";
-        static const char s_sTableTypeTable[] = "TABLE";
         static const char s_sWildcard[] = "%" ;
 
         // we want all catalogues, all schemas, all tables
         Sequence< OUString > sTableTypes(3);
-        sTableTypes[0] = s_sTableTypeView;
-        sTableTypes[1] = s_sTableTypeTable;
+        sTableTypes[0] = "VIEW";
+        sTableTypes[1] = "TABLE";
         sTableTypes[2] = s_sWildcard;   // just to be sure to include anything else ....
 
         if ( _rxDBMeta.is() )
@@ -336,7 +333,7 @@ void OSQLParseTreeIterator::impl_getQueryParameterColumns( const OSQLTable& _rQu
         break;
 
     OSQLParseTreeIterator aSubQueryIterator( *this, m_rParser, pSubQueryNode.get() );
-    aSubQueryIterator.traverseSome( TraversalParts::Parameters | TraversalParts::SelectColumns );
+    aSubQueryIterator.impl_traverse( TraversalParts::Parameters | TraversalParts::SelectColumns );
         // SelectColumns might also contain parameters
         // #i77635# - 2007-07-23 / frank.schoenheit@sun.com
     pSubQueryParameterColumns = aSubQueryIterator.getParameters();
@@ -345,8 +342,8 @@ void OSQLParseTreeIterator::impl_getQueryParameterColumns( const OSQLTable& _rQu
     } while ( false );
 
     // copy the parameters of the sub query to our own parameter array
-    ::std::copy( pSubQueryParameterColumns->get().begin(), pSubQueryParameterColumns->get().end(),
-        ::std::insert_iterator< OSQLColumns::Vector >( m_aParameters->get(), m_aParameters->get().end() ) );
+    std::copy( pSubQueryParameterColumns->get().begin(), pSubQueryParameterColumns->get().end(),
+        std::insert_iterator< OSQLColumns::Vector >( m_aParameters->get(), m_aParameters->get().end() ) );
 }
 
 
@@ -450,7 +447,7 @@ void OSQLParseTreeIterator::traverseOneTableName( OSQLTables& _rTables,const OSQ
                                 false,
                                 ::dbtools::EComposeRule::InDataManipulation);
 
-    // if there is no alias for the table name assign the orignal name to it
+    // if there is no alias for the table name assign the original name to it
     if ( aTableRange.isEmpty() )
         aTableRange = aComposedName;
 
@@ -491,7 +488,7 @@ void OSQLParseTreeIterator::impl_fillJoinConditions(const OSQLParseNode* i_pJoin
     }
 }
 
-::std::vector< TNodePair >& OSQLParseTreeIterator::getJoinConditions() const
+std::vector< TNodePair >& OSQLParseTreeIterator::getJoinConditions() const
 {
     return m_pImpl->m_aJoinConditions;
 }
@@ -940,7 +937,7 @@ bool OSQLParseTreeIterator::traverseSelectColumnNames(const OSQLParseNode* pSele
     }
     else if (SQL_ISRULE(pSelectNode->getChild(2),scalar_exp_commalist))
     {
-        // SELECT column[,column] oder SELECT COUNT(*) ...
+        // SELECT column[,column] or SELECT COUNT(*) ...
         OSQLParseNode * pSelection = pSelectNode->getChild(2);
 
         for (size_t i = 0; i < pSelection->count(); i++)
@@ -1530,19 +1527,13 @@ void OSQLParseTreeIterator::traverseOnePredicate(
 
     /*if (SQL_ISRULE(pParseNode,parameter))
         traverseParameter( pParseNode, pColumnRef, aColumnName, aTableRange, sColumnAlias );
-    else */if (SQL_ISRULE(pParseNode,column_ref))// Column-Name (und TableRange):
+    else */if (SQL_ISRULE(pParseNode,column_ref))// Column-Name (and TableRange):
         getColumnRange(pParseNode,aName,rValue);
     else
     {
         traverseSearchCondition(pParseNode);
         //  if (! aIteratorStatus.IsSuccessful()) return;
     }
-}
-
-
-void OSQLParseTreeIterator::traverseSome( TraversalParts _nIncludeMask )
-{
-    impl_traverse( _nIncludeMask );
 }
 
 
@@ -1554,7 +1545,9 @@ void OSQLParseTreeIterator::traverseAll()
 
 void OSQLParseTreeIterator::impl_traverse( TraversalParts _nIncludeMask )
 {
-    impl_resetErrors();
+    // resets our errors
+    m_aErrors = css::sdbc::SQLException();
+
     m_pImpl->m_nIncludeMask = _nIncludeMask;
 
     if ( !traverseTableNames( *m_pImpl->m_pTables ) )
@@ -1604,8 +1597,8 @@ OSQLTable OSQLParseTreeIterator::impl_createTableObject( const OUString& rTableN
         nullptr,
         false,
         rTableName,
-        OUString("Table"),
-        OUString("New Created Table"),
+        "Table",
+        "New Created Table",
         rSchemaName,
         rCatalogName
     );
@@ -1711,7 +1704,7 @@ void OSQLParseTreeIterator::setSelectColumnName(::rtl::Reference<OSQLColumns>& _
                 // did not find a column with this name in any of the tables
                 OParseColumn* pColumn = new OParseColumn(
                     aNewColName,
-                    OUString("VARCHAR"),
+                    "VARCHAR",
                         // TODO: does this match with _nType?
                         // Or should be fill this from the getTypeInfo of the connection?
                     OUString(),

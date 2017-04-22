@@ -4,9 +4,7 @@ import sys
 import re
 import io
 
-definitionSet = set()
-definitionToSourceLocationMap = dict()
-callParamSet = dict()
+callDict = dict() # callInfo tuple -> callValue
 
 # clang does not always use exactly the same numbers in the type-parameter vars it generates
 # so I need to substitute them to ensure we can match correctly.
@@ -15,52 +13,121 @@ def normalizeTypeParams( line ):
     return normalizeTypeParamsRegex.sub("type-parameter-?-?", line)
 
 # reading as binary (since we known it is pure ascii) is much faster than reading as unicode
-with io.open(sys.argv[1], "rb", buffering=1024*1024) as txt:
+with io.open("loplugin.constantparam.log", "rb", buffering=1024*1024) as txt:
     for line in txt:
-        idx1 = line.find("\t")
-        idx2 = line.find("\t",idx1+1)
-        idx3 = line.find("\t",idx2+1)
-        idx4 = line.find("\t",idx3+1)
-        returnType = normalizeTypeParams(line[:idx1])
-        nameAndParams = normalizeTypeParams(line[idx1+1:idx2])
-        sourceLocation = line[idx2+1:idx3]
-        paramName = line[idx3+1:idx4]
-        callValue = line[idx4+1:].strip()
-        callInfo = (returnType, nameAndParams, paramName)
-        if not callInfo in callParamSet:
-            callParamSet[callInfo] = set()
-        callParamSet[callInfo].add(callValue)
-        definitionToSourceLocationMap[callInfo] = sourceLocation
+        tokens = line.strip().split("\t")
+        returnType = normalizeTypeParams(tokens[0])
+        nameAndParams = normalizeTypeParams(tokens[1])
+        sourceLocation = tokens[2]
+        paramName = tokens[3]
+        paramType = normalizeTypeParams(tokens[4])
+        callValue = tokens[5]
+        callInfo = (returnType, nameAndParams, paramName, paramType, sourceLocation)
+        if not callInfo in callDict:
+            callDict[callInfo] = set()
+        callDict[callInfo].add(callValue)
 
 tmp1list = list()
-for callInfo, callValues in callParamSet.iteritems():
+for callInfo, callValues in callDict.iteritems():
     nameAndParams = callInfo[1]
     if len(callValues) != 1:
         continue
-    if "unknown" in callValues:
+    callValue = next(iter(callValues))
+    if "unknown" in callValue:
         continue
-    # ignore anything with only one parameter, normally just setter methods
-    if nameAndParams.find(",") == -1:
+    sourceLoc = callInfo[4]
+    functionSig = callInfo[0] + " " + callInfo[1]
+
+    # try to ignore setter methods
+    if ("," not in nameAndParams) and (("::set" in nameAndParams) or ("::Set" in nameAndParams)):
         continue
-    # if it contains anything other than this set, ignore it
-    if len(callValues - set(["0", "1", "-1", "nullptr"])) > 0:
-        continue
-    v0 = callInfo[0] + " " + callInfo[1]
-    v1 = callInfo[2] + " " + (",".join(callValues))
-    v2 = definitionToSourceLocationMap[callInfo]
-    tmp1list.append((v0,v1,v2))
+    # ignore code that follows a common pattern
+    if sourceLoc.startswith("sw/inc/swatrset.hxx"): continue
+    if sourceLoc.startswith("sw/inc/format.hxx"): continue
+    # template generated code
+    if sourceLoc.startswith("include/sax/fshelper.hxx"): continue
+    # debug code
+    if sourceLoc.startswith("include/oox/dump"): continue
+    # part of our binary API
+    if sourceLoc.startswith("include/LibreOfficeKit"): continue
+
+    v2 = callInfo[3] + " " + callInfo[2] + " " + callValue
+    tmp1list.append((sourceLoc, functionSig, v2))
 
 # sort results by filename:lineno
 def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
     return [int(text) if text.isdigit() else text.lower()
             for text in re.split(_nsre, s)]
-tmp1list.sort(key=lambda v: natural_sort_key(v[2]))
+tmp1list.sort(key=lambda v: natural_sort_key(v[0]))
 
 # print out the results
-with open("unused.constantparams", "wt") as f:
+with open("loplugin.constantparam.report", "wt") as f:
     for v in tmp1list:
-        f.write(v[2] + "\n")
-        f.write("    " + v[0] + "\n")
+        f.write(v[0] + "\n")
         f.write("    " + v[1] + "\n")
+        f.write("    " + v[2] + "\n")
+
+# -------------------------------------------------------------
+# Now a fun set of heuristics to look for methods that
+# take bitmask parameters where one or more of the bits in the
+# bitmask is always one or always zero
+
+# integer to hex str
+def hex(i):
+    return "0x%x" % i
+# I can't use python's ~ operator, because that produces negative numbers
+def negate(i):
+    return (1 << 32) - 1 - i
+
+tmp2list = list()
+for callInfo, callValues in callDict.iteritems():
+    nameAndParams = callInfo[1]
+    if len(callValues) < 2:
+        continue
+    # we are only interested in enum parameters
+    if not "enum" in callInfo[3]: continue
+    if not "Flag" in callInfo[3] and not "flag" in callInfo[3] and not "Bit" in callInfo[3] and not "State" in callInfo[3]: continue
+    # try to ignore setter methods
+    if ("," not in nameAndParams) and (("::set" in nameAndParams) or ("::Set" in nameAndParams)):
+        continue
+
+    setBits = 0
+    clearBits = 0
+    continue_flag = False
+    first = True
+    for callValue in callValues:
+        if "unknown" == callValue or not callValue.isdigit():
+            continue_flag = True
+            break
+        if first:
+            setBits = int(callValue)
+            clearBits = negate(int(callValue))
+            first = False
+        else:
+            setBits = setBits & int(callValue)
+            clearBits = clearBits & negate(int(callValue))
+
+    # estimate allBits by using the highest bit we have seen
+    # TODO dump more precise information about the allBits values of enums
+    allBits = (1 << setBits.bit_length()) - 1
+    clearBits = clearBits & allBits
+    if continue_flag or (setBits == 0 and clearBits == 0): continue
+
+    sourceLoc = callInfo[4]
+    functionSig = callInfo[0] + " " + callInfo[1]
+
+    v2 = callInfo[3] + " " + callInfo[2]
+    if setBits != 0: v2 += " setBits=" + hex(setBits)
+    if clearBits != 0: v2 += " clearBits=" + hex(clearBits)
+    tmp2list.append((sourceLoc, functionSig, v2))
 
 
+# sort results by filename:lineno
+tmp2list.sort(key=lambda v: natural_sort_key(v[0]))
+
+# print out the results
+with open("loplugin.constantparam.report-bitmask-params", "wt") as f:
+    for v in tmp2list:
+        f.write(v[0] + "\n")
+        f.write("    " + v[1] + "\n")
+        f.write("    " + v[2] + "\n")

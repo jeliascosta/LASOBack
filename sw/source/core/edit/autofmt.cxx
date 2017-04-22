@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <ctype.h>
 #include <hintids.hxx>
 
 #include <unotools/charclass.hxx>
@@ -270,7 +269,7 @@ void SwAutoFormat::SetRedlineText_( sal_uInt16 nActionId )
         sText = SwViewShell::GetShellRes()->GetAutoFormatNameLst()[ nActionId ];
         switch( nActionId )
         {
-        case STR_AUTOFMTREDL_SET_NUMBULET:
+        case STR_AUTOFMTREDL_SET_NUMBULLET:
         case STR_AUTOFMTREDL_DEL_MORELINES:
 
         // AutoCorrect actions
@@ -353,7 +352,7 @@ bool SwAutoFormat::HasObjects( const SwNode& rNd )
     for( auto pFrameFormat : rFormats )
     {
         const SwFormatAnchor& rAnchor = pFrameFormat->GetAnchor();
-        if ((FLY_AT_PAGE != rAnchor.GetAnchorId()) &&
+        if ((RndStdIds::FLY_AT_PAGE != rAnchor.GetAnchorId()) &&
             rAnchor.GetContentAnchor() &&
             &rAnchor.GetContentAnchor()->nNode.GetNode() == &rNd )
         {
@@ -553,27 +552,27 @@ bool SwAutoFormat::DoUnderline()
         switch( eState )
         {
         case 1:         // single, 0.05 pt
-            aLine.SetBorderLineStyle(table::BorderLineStyle::SOLID);
+            aLine.SetBorderLineStyle(SvxBorderLineStyle::SOLID);
             aLine.SetWidth( DEF_LINE_WIDTH_0 );
             break;
         case 2:         // single, 1.0 pt
-            aLine.SetBorderLineStyle(table::BorderLineStyle::SOLID);
+            aLine.SetBorderLineStyle(SvxBorderLineStyle::SOLID);
             aLine.SetWidth( DEF_LINE_WIDTH_1 );
             break;
         case 3:         // double, 1.0 pt
-            aLine.SetBorderLineStyle(table::BorderLineStyle::DOUBLE);
+            aLine.SetBorderLineStyle(SvxBorderLineStyle::DOUBLE);
             aLine.SetWidth( DEF_LINE_WIDTH_1 );
             break;
         case 4:         // double (thick/thin), 4.0 pt
-            aLine.SetBorderLineStyle(table::BorderLineStyle::THICKTHIN_SMALLGAP);
+            aLine.SetBorderLineStyle(SvxBorderLineStyle::THICKTHIN_SMALLGAP);
             aLine.SetWidth( DEF_LINE_WIDTH_3  );
             break;
         case 5:         // double (thin/thick), 4.0 pt
-            aLine.SetBorderLineStyle(table::BorderLineStyle::THINTHICK_SMALLGAP);
+            aLine.SetBorderLineStyle(SvxBorderLineStyle::THINTHICK_SMALLGAP);
             aLine.SetWidth( DEF_LINE_WIDTH_3 );
             break;
         case 6:         // double, 2.5 pt
-            aLine.SetBorderLineStyle(table::BorderLineStyle::DOUBLE);
+            aLine.SetBorderLineStyle(SvxBorderLineStyle::DOUBLE);
             aLine.SetWidth( DEF_LINE_WIDTH_2 );
             break;
         }
@@ -645,8 +644,8 @@ bool SwAutoFormat::DoTable()
         sal_Int16 eHori;
         switch( m_pCurTextNd->GetSwAttrSet().GetAdjust().GetAdjust() )
         {
-        case SVX_ADJUST_CENTER:     eHori = text::HoriOrientation::CENTER;    break;
-        case SVX_ADJUST_RIGHT:      eHori = text::HoriOrientation::RIGHT;     break;
+        case SvxAdjust::Center:     eHori = text::HoriOrientation::CENTER;    break;
+        case SvxAdjust::Right:      eHori = text::HoriOrientation::RIGHT;     break;
 
         default:
             if( nSttPos )
@@ -764,12 +763,12 @@ sal_uInt16 SwAutoFormat::GetDigitLevel( const SwTextNode& rNd, sal_Int32& rPos,
                 }
 
                 if( pNumTypes )
-                    *pNumTypes += OUStringLiteral1<'0' + SVX_NUM_ARABIC>();
+                    *pNumTypes += OUStringLiteral1('0' + SVX_NUM_ARABIC);
 
                 eScan = eScan | CHG;
             }
             else if( pNumTypes && !(eScan & DIGIT) )
-                *pNumTypes += OUStringLiteral1<'0' + SVX_NUM_ARABIC>();
+                *pNumTypes += OUStringLiteral1('0' + SVX_NUM_ARABIC);
 
             eScan &= ~DELIM;        // remove Delim
             if( 0 != (eScan & ~CHG) && DIGIT != (eScan & ~CHG))
@@ -792,14 +791,7 @@ sal_uInt16 SwAutoFormat::GetDigitLevel( const SwTextNode& rNd, sal_Int32& rPos,
 
             // Roman numbers are "mdclxvi". Since we want to start numbering with c or d more often,
             // convert first to characters and later to roman numbers if needed.
-#ifdef WITH_ALPHANUM_AS_NUMFMT
-            // detection of 'c' and 'd' a ROMAN numbering should not be done here
-            if( 256 > cLow  &&( (eScan & (LOWER_ROMAN|UPPER_ROMAN))
-                                    ? strchr( "mdclxvi", cLow )
-                                    : strchr( "mlxvi", cLow ) ))
-#else
-            if( 256 > cLow  && ( strchr( "mdclxvi", cLow ) ))
-#endif
+            if( 256 > cLow  && strchr( "mdclxvi", cLow ) )
             {
                 if( bIsUpper )
                 {
@@ -858,11 +850,11 @@ sal_uInt16 SwAutoFormat::GetDigitLevel( const SwTextNode& rNd, sal_Int32& rPos,
                 }
 
                 if( pNumTypes )
-                    *pNumTypes += OUString(cNumTyp);
+                    *pNumTypes += OUStringLiteral1(cNumTyp);
                 eScan = eScan | CHG;
             }
             else if( pNumTypes && !(eScan & eTmpScan) )
-                *pNumTypes += OUString(cNumTyp);
+                *pNumTypes += OUStringLiteral1(cNumTyp);
 
             eScan &= ~DELIM;        // remove Delim
 
@@ -956,9 +948,9 @@ CHECK_ROMAN_5:
                 nClosingParentheses++;
             // only if no numbers were read until here
             if( pPrefix && !( eScan & ( NO_DELIM | CHG )) )
-                *pPrefix += OUString(rText[nPos]);
+                *pPrefix += OUStringLiteral1(rText[nPos]);
             else if( pPostfix )
-                *pPostfix += OUString(rText[nPos]);
+                *pPostfix += OUStringLiteral1(rText[nPos]);
 
             if( NO_DELIM & eScan )
             {
@@ -1010,9 +1002,9 @@ void SwAutoFormat::SetColl( sal_uInt16 nId, bool bHdLineOrText )
                         false, reinterpret_cast<const SfxPoolItem**>(&pAdj) ))
         {
             SvxAdjust eAdj = pAdj->GetAdjust();
-            if( bHdLineOrText ? (SVX_ADJUST_RIGHT != eAdj &&
-                                 SVX_ADJUST_CENTER != eAdj)
-                              : SVX_ADJUST_BLOCK != eAdj )
+            if( bHdLineOrText ? (SvxAdjust::Right != eAdj &&
+                                 SvxAdjust::Center != eAdj)
+                              : SvxAdjust::Block != eAdj )
                 aSet.ClearItem( RES_PARATR_ADJUST );
         }
     }
@@ -1052,12 +1044,12 @@ bool SwAutoFormat::HasBreakAttr( const SwTextNode& rTextNd )
 
     const SfxPoolItem* pItem;
     if( SfxItemState::SET == pSet->GetItemState( RES_BREAK, false, &pItem )
-        && SVX_BREAK_NONE != static_cast<const SvxFormatBreakItem*>(pItem)->GetBreak() )
+        && SvxBreak::NONE != static_cast<const SvxFormatBreakItem*>(pItem)->GetBreak() )
         return true;
 
     if( SfxItemState::SET == pSet->GetItemState( RES_PAGEDESC, false, &pItem )
         && static_cast<const SwFormatPageDesc*>(pItem)->GetPageDesc()
-        && nsUseOnPage::PD_NONE != static_cast<const SwFormatPageDesc*>(pItem)->GetPageDesc()->GetUseOn() )
+        && UseOnPage::NONE != static_cast<const SwFormatPageDesc*>(pItem)->GetPageDesc()->GetUseOn() )
         return true;
     return false;
 }
@@ -1376,7 +1368,7 @@ void SwAutoFormat::BuildText()
 
 void SwAutoFormat::BuildEnum( sal_uInt16 nLvl, sal_uInt16 nDigitLevel )
 {
-    SetRedlineText( STR_AUTOFMTREDL_SET_NUMBULET );
+    SetRedlineText( STR_AUTOFMTREDL_SET_NUMBULLET );
 
     bool bBreak = true;
 
@@ -1420,11 +1412,10 @@ void SwAutoFormat::BuildEnum( sal_uInt16 nLvl, sal_uInt16 nDigitLevel )
     // replace bullet character with defined one
     const OUString& rStr = m_pCurTextNd->GetText();
     sal_Int32 nTextStt = 0;
-    const sal_Unicode* pFndBulletChr;
-    if( m_aFlags.bChgEnumNum &&
-        2 < rStr.getLength() &&
-        nullptr != ( pFndBulletChr = StrChr( pBulletChar, rStr[ nTextStt ] ))
-        && IsSpace( rStr[ nTextStt + 1 ] ) )
+    const sal_Unicode* pFndBulletChr = nullptr;
+    if (m_aFlags.bChgEnumNum && 2 < rStr.getLength())
+        pFndBulletChr = StrChr(pBulletChar, rStr[nTextStt]);
+    if (nullptr != pFndBulletChr && IsSpace(rStr[nTextStt + 1]))
     {
         if( m_aFlags.bAFormatByInput )
         {
@@ -1475,7 +1466,7 @@ void SwAutoFormat::BuildEnum( sal_uInt16 nLvl, sal_uInt16 nDigitLevel )
                         if( !aFormat.GetCharFormat() )
                             aFormat.SetCharFormat( pCFormat );
                         if( bRTL )
-                            aFormat.SetNumAdjust( SVX_ADJUST_RIGHT );
+                            aFormat.SetNumAdjust( SvxAdjust::Right );
 
                         aRule.Set( n, aFormat );
 
@@ -1533,16 +1524,16 @@ void SwAutoFormat::BuildEnum( sal_uInt16 nLvl, sal_uInt16 nDigitLevel )
                         aFormat.SetCharFormat( pCFormat );
 
                     if( !aNumTypes.isEmpty() )
-                        aFormat.SetNumberingType(aNumTypes[ 0 ] - '0');
+                        aFormat.SetNumberingType((SvxNumType)(aNumTypes[ 0 ] - '0'));
 
                     if( bRTL )
-                        aFormat.SetNumAdjust( SVX_ADJUST_RIGHT );
+                        aFormat.SetNumAdjust( SvxAdjust::Right );
                     aRule.Set( nLvl, aFormat );
                 }
                 else
                 {
                     sal_uInt16 nSpaceSteps = nLvl ? sal_uInt16(nLeftTextPos / nLvl) : 0;
-                    sal_uInt8 n;
+                    sal_uInt16 n;
                     for( n = 0; n <= nLvl; ++n )
                     {
                         SwNumFormat aFormat( aRule.Get( n ) );
@@ -1554,7 +1545,7 @@ void SwAutoFormat::BuildEnum( sal_uInt16 nLvl, sal_uInt16 nDigitLevel )
                         aFormat.SetSuffix( aPostfix.getToken( n, (sal_Unicode)1 ));
                         aFormat.SetIncludeUpperLevels( MAXLEVEL );
                         if( n < aNumTypes.getLength() )
-                            aFormat.SetNumberingType((aNumTypes[ n ] - '0'));
+                            aFormat.SetNumberingType((SvxNumType)(aNumTypes[ n ] - '0'));
 
                         aFormat.SetAbsLSpace( sal_uInt16( nSpaceSteps * n )
                                             + lNumIndent );
@@ -1562,7 +1553,7 @@ void SwAutoFormat::BuildEnum( sal_uInt16 nLvl, sal_uInt16 nDigitLevel )
                         if( !aFormat.GetCharFormat() )
                             aFormat.SetCharFormat( pCFormat );
                         if( bRTL )
-                            aFormat.SetNumAdjust( SVX_ADJUST_RIGHT );
+                            aFormat.SetNumAdjust( SvxAdjust::Right );
 
                         aRule.Set( n, aFormat );
                     }
@@ -1631,7 +1622,7 @@ void SwAutoFormat::BuildEnum( sal_uInt16 nLvl, sal_uInt16 nDigitLevel )
         {
             OUString sChgStr('\t');
             if( bChgBullet )
-                sChgStr = OUString( m_aFlags.cBullet ) + sChgStr;
+                sChgStr = OUStringLiteral1( m_aFlags.cBullet ) + sChgStr;
             m_pDoc->getIDocumentContentOperations().InsertString( m_aDelPam, sChgStr );
 
             SfxItemSet aSet( m_pDoc->GetAttrPool(), aTextNodeSetRange );
@@ -1847,14 +1838,14 @@ void SwAutoFormat::AutoCorrect( sal_Int32 nPos )
         while (nPos < pText->getLength() && IsSpace(cChar = (*pText)[nPos]))
             ++nPos;
         if (nPos == pText->getLength())
-            break;      // das wars
+            break;      // that's it
 
         if( ( ( bReplaceQuote && '\"' == cChar ) ||
               ( bReplaceSglQuote && '\'' == cChar ) ) &&
             (!nPos || ' ' == (*pText)[nPos-1]))
         {
 
-            // beachte: Sonderfall Symbolfonts !!!
+            // note: special case symbol fonts !!!
             if( !aFInfo.GetFrame() )
                 aFInfo.SetFrame( GetFrame( *m_pCurTextNd ) );
             if( !aFInfo.IsBullet( nPos ))
@@ -1976,8 +1967,8 @@ void SwAutoFormat::AutoCorrect( sal_Int32 nPos )
                                 m_aDelPam.DeleteMark();
                                 aFInfo.SetFrame( nullptr );
                             }
-                            //#125102# in case of the mode REDLINE_SHOW_DELETE the ** are still contained in pText
-                            if(0 == (m_pDoc->getIDocumentRedlineAccess().GetRedlineMode() & nsRedlineMode_t::REDLINE_SHOW_DELETE))
+                            //#125102# in case of the mode RedlineFlags::ShowDelete the ** are still contained in pText
+                            if(!(m_pDoc->getIDocumentRedlineAccess().GetRedlineFlags() & RedlineFlags::ShowDelete))
                                 nPos = m_aDelPam.GetPoint()->nContent.GetIndex() - 1;
                             // Was a character deleted before starting?
                             if (cBlank && cBlank != (*pText)[nSttPos - 1])
@@ -2148,15 +2139,15 @@ SwAutoFormat::SwAutoFormat( SwEditShell* pEdShell, SvxSwAutoFormatFlags& rFlags,
                          m_nEndNdIdx = m_aEndNdIdx.GetIndex(),
                          m_pDoc->GetDocShell() );
 
-    RedlineMode_t eRedlMode = m_pDoc->getIDocumentRedlineAccess().GetRedlineMode(), eOldMode = eRedlMode;
+    RedlineFlags eRedlMode = m_pDoc->getIDocumentRedlineAccess().GetRedlineFlags(), eOldMode = eRedlMode;
     if( m_aFlags.bWithRedlining )
     {
         m_pDoc->SetAutoFormatRedline( true );
-        eRedlMode = (RedlineMode_t)(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_INSERT);
+        eRedlMode = RedlineFlags::On | RedlineFlags::ShowInsert;
     }
     else
-      eRedlMode = (RedlineMode_t)(nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_IGNORE);
-    m_pDoc->getIDocumentRedlineAccess().SetRedlineMode( eRedlMode );
+      eRedlMode = RedlineFlags::ShowInsert | RedlineFlags::Ignore;
+    m_pDoc->getIDocumentRedlineAccess().SetRedlineFlags( eRedlMode );
 
     // save undo state (might be turned off)
     bool const bUndoState = m_pDoc->GetIDocumentUndoRedo().DoesUndo();
@@ -2530,7 +2521,7 @@ SwAutoFormat::SwAutoFormat( SwEditShell* pEdShell, SvxSwAutoFormatFlags& rFlags,
 
     if( m_aFlags.bWithRedlining )
         m_pDoc->SetAutoFormatRedline( false );
-    m_pDoc->getIDocumentRedlineAccess().SetRedlineMode( eOldMode );
+    m_pDoc->getIDocumentRedlineAccess().SetRedlineFlags( eOldMode );
 
     // restore undo (in case it has been changed)
     m_pDoc->GetIDocumentUndoRedo().DoUndo(bUndoState);
@@ -2546,7 +2537,7 @@ void SwEditShell::AutoFormat( const SvxSwAutoFormatFlags* pAFlags )
 
     SET_CURR_SHELL( this );
     StartAllAction();
-    StartUndo( UNDO_AUTOFORMAT );
+    StartUndo( SwUndoId::AUTOFORMAT );
 
     SvxSwAutoFormatFlags aAFFlags;     // use default values or add params?
     if( pAFlags )
@@ -2574,7 +2565,7 @@ void SwEditShell::AutoFormat( const SvxSwAutoFormatFlags* pAFlags )
         SwAutoFormat aFormat( this, aAFFlags );
     }
 
-    EndUndo( UNDO_AUTOFORMAT );
+    EndUndo( SwUndoId::AUTOFORMAT );
     EndAllAction();
 }
 
@@ -2582,10 +2573,10 @@ void SwEditShell::AutoFormatBySplitNode()
 {
     SET_CURR_SHELL( this );
     SwPaM* pCursor = GetCursor();
-    if( !pCursor->IsMultiSelection() && pCursor->Move( fnMoveBackward, fnGoNode ) )
+    if( !pCursor->IsMultiSelection() && pCursor->Move( fnMoveBackward, GoInNode ) )
     {
         StartAllAction();
-        StartUndo( UNDO_AUTOFORMAT );
+        StartUndo( SwUndoId::AUTOFORMAT );
 
         bool bRange = false;
         pCursor->SetMark();
@@ -2622,9 +2613,9 @@ void SwEditShell::AutoFormatBySplitNode()
             pCursor = GetCursor();
         }
         pCursor->DeleteMark();
-        pCursor->Move( fnMoveForward, fnGoNode );
+        pCursor->Move( fnMoveForward, GoInNode );
 
-        EndUndo( UNDO_AUTOFORMAT );
+        EndUndo( SwUndoId::AUTOFORMAT );
         EndAllAction();
     }
 }

@@ -21,6 +21,7 @@
 #include <comphelper/string.hxx>
 #include <editeng/unolingu.hxx>
 #include <editeng/langitem.hxx>
+#include <o3tl/any.hxx>
 #include <o3tl/make_unique.hxx>
 #include <swtypes.hxx>
 #include <tools/resid.hxx>
@@ -63,7 +64,7 @@ bool    SwAuthEntry::operator==(const SwAuthEntry& rComp)
 }
 
 SwAuthorityFieldType::SwAuthorityFieldType(SwDoc* pDoc)
-    : SwFieldType( RES_AUTHORITY ),
+    : SwFieldType( SwFieldIds::TableOfAuthorities ),
     m_pDoc(pDoc),
     m_SortKeyArr(3),
     m_cPrefix('['),
@@ -245,7 +246,7 @@ sal_uInt16  SwAuthorityFieldType::GetSequencePos(sal_IntPtr nHandle)
         SwTOXSortTabBases aSortArr;
         SwIterator<SwFormatField,SwFieldType> aIter( *this );
 
-        SwTOXInternational aIntl(m_eLanguage, 0, m_sSortAlgorithm);
+        SwTOXInternational aIntl(m_eLanguage, SwTOIOptions::NONE, m_sSortAlgorithm);
 
         for( SwFormatField* pFormatField = aIter.First(); pFormatField; pFormatField = aIter.Next() )
         {
@@ -383,7 +384,7 @@ bool SwAuthorityFieldType::QueryValue( Any& rVal, sal_uInt16 nWhichId ) const
         }
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -413,16 +414,17 @@ bool    SwAuthorityFieldType::PutValue( const Any& rAny, sal_uInt16 nWhichId )
         break;
     }
     case FIELD_PROP_BOOL1:
-        m_bIsSequence = *static_cast<sal_Bool const *>(rAny.getValue());
+        m_bIsSequence = *o3tl::doAccess<bool>(rAny);
         break;
     case FIELD_PROP_BOOL2:
-        m_bSortByDocument = *static_cast<sal_Bool const *>(rAny.getValue());
+        m_bSortByDocument = *o3tl::doAccess<bool>(rAny);
         break;
 
     case FIELD_PROP_LOCALE:
         {
             css::lang::Locale aLocale;
-            if( (bRet = rAny >>= aLocale ))
+            bRet = rAny >>= aLocale;
+            if( bRet )
                 SetLanguage( LanguageTag::convertToLanguageType( aLocale ));
         }
         break;
@@ -430,7 +432,8 @@ bool    SwAuthorityFieldType::PutValue( const Any& rAny, sal_uInt16 nWhichId )
     case FIELD_PROP_PROP_SEQ:
         {
             Sequence<PropertyValues> aSeq;
-            if( (bRet = rAny >>= aSeq) )
+            bRet = rAny >>= aSeq;
+            if( bRet )
             {
                 m_SortKeyArr.clear();
                 const PropertyValues* pValues = aSeq.getConstArray();
@@ -450,7 +453,7 @@ bool    SwAuthorityFieldType::PutValue( const Any& rAny, sal_uInt16 nWhichId )
                         }
                         else if(pValue[j].Name == UNO_NAME_IS_SORT_ASCENDING)
                         {
-                            aSortKey.bSortAscending = *static_cast<sal_Bool const *>(pValue[j].Value.getValue());
+                            aSortKey.bSortAscending = *o3tl::doAccess<bool>(pValue[j].Value);
                         }
                     }
                     m_SortKeyArr.push_back(aSortKey);
@@ -459,7 +462,7 @@ bool    SwAuthorityFieldType::PutValue( const Any& rAny, sal_uInt16 nWhichId )
         }
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return bRet;
 }
@@ -541,7 +544,7 @@ OUString SwAuthorityField::ConditionalExpandAuthIdentifier() const
             sRet += pEntry->GetAuthorField(AUTH_FIELD_IDENTIFIER);
     }
     if(pAuthType->GetSuffix())
-        sRet += OUString(pAuthType->GetSuffix());
+        sRet += OUStringLiteral1(pAuthType->GetSuffix());
     return sRet;
 }
 
@@ -592,7 +595,7 @@ OUString SwAuthorityField::GetDescription() const
     return SW_RES(STR_AUTHORITY_ENTRY);
 }
 
-const char* aFieldNames[] =
+const char* const aFieldNames[] =
 {
     "Identifier",
     "BibiliographicType",

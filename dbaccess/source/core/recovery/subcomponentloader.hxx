@@ -35,11 +35,10 @@ namespace dbaccess
     // SubComponentLoader
     typedef ::cppu::WeakImplHelper<   css::awt::XWindowListener
                                   >   SubComponentLoader_Base;
-    struct SubComponentLoader_Data;
     /** is a helper class which loads/opens a given sub component as soon as the main application
         window becomes visible.
     */
-    class DBACCESS_DLLPRIVATE SubComponentLoader : public SubComponentLoader_Base
+    class SubComponentLoader : public SubComponentLoader_Base
     {
     public:
         SubComponentLoader(
@@ -53,19 +52,21 @@ namespace dbaccess
         );
 
         // XWindowListener
-        virtual void SAL_CALL windowResized( const css::awt::WindowEvent& e ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL windowMoved( const css::awt::WindowEvent& e ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL windowShown( const css::lang::EventObject& e ) throw (css::uno::RuntimeException, std::exception) override;
-        virtual void SAL_CALL windowHidden( const css::lang::EventObject& e ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL windowResized( const css::awt::WindowEvent& e ) override;
+        virtual void SAL_CALL windowMoved( const css::awt::WindowEvent& e ) override;
+        virtual void SAL_CALL windowShown( const css::lang::EventObject& e ) override;
+        virtual void SAL_CALL windowHidden( const css::lang::EventObject& e ) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
 
     protected:
-        virtual ~SubComponentLoader();
+        virtual ~SubComponentLoader() override;
 
     private:
-        SubComponentLoader_Data*    m_pData;
+        const css::uno::Reference< css::ucb::XCommandProcessor >  mxDocDefCommands;
+        const css::uno::Reference< css::lang::XComponent >        mxNonDocComponent;
+        css::uno::Reference< css::awt::XWindow >                  mxAppComponentWindow;
     };
 
 } // namespace dbaccess

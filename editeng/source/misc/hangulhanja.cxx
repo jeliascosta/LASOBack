@@ -58,8 +58,8 @@ namespace editeng
     class HangulHanjaConversion_Impl
     {
     private:
-        typedef ::std::set< OUString, ::std::less< OUString > >                   StringBag;
-        typedef ::std::map< OUString, OUString, ::std::less< OUString > >  StringMap;
+        typedef std::set<OUString>            StringBag;
+        typedef std::map<OUString, OUString>  StringMap;
 
     private:
         StringBag               m_sIgnoreList;
@@ -67,7 +67,7 @@ namespace editeng
         static StringMap        m_aRecentlyUsedList;
 
         // general
-        AbstractHangulHanjaConversionDialog*
+        VclPtr<AbstractHangulHanjaConversionDialog>
                                 m_pConversionDialog;    // the dialog to display for user interaction
         VclPtr<vcl::Window>     m_pUIParent;            // the parent window for any UI we raise
         Reference< XComponentContext >
@@ -78,7 +78,7 @@ namespace editeng
 
         // additions for Chinese simplified / traditional conversion
         HHC::ConversionType     m_eConvType;        // conversion type (Hangul/Hanja, simplified/traditional Chinese,...)
-        LanguageType            m_nSourceLang;      // just a 'copy' of m_aSourceLocale in order in order to
+        LanguageType            m_nSourceLang;      // just a 'copy' of m_aSourceLocale in order to
                                                     // save the applications from always converting to this
                                                     // type in their implementations
         LanguageType            m_nTargetLang;      // target language of new replacement text
@@ -88,7 +88,7 @@ namespace editeng
                                                     // (and likely a specialised dialog) or if it is to run
                                                     // automatically without any user interaction.
                                                     // True for Hangul / Hanja conversion
-                                                    // False for Chinese simlified / traditional conversion
+                                                    // False for Chinese simplified / traditional conversion
 
         HangulHanjaConversion*  m_pAntiImpl;            // our "anti-impl" instance
 
@@ -131,15 +131,13 @@ namespace editeng
     public:
                 void        DoDocumentConversion( );
 
-        inline  bool        IsByCharacter( ) const { return m_bByCharacter; }
+        bool        IsValid() const { return m_xConverter.is(); }
 
-        inline  bool        IsValid() const { return m_xConverter.is(); }
-
-        inline LanguageType GetSourceLang() const   { return m_nSourceLang; }
-        inline LanguageType GetTargetLang() const   { return m_nTargetLang; }
-        inline const vcl::Font * GetTargetFont() const   { return m_pTargetFont; }
-        inline sal_Int32    GetConvOptions() const  { return m_nConvOptions; }
-        inline bool         IsInteractive() const   { return m_bIsInteractive; }
+        LanguageType GetSourceLang() const   { return m_nSourceLang; }
+        LanguageType GetTargetLang() const   { return m_nTargetLang; }
+        const vcl::Font * GetTargetFont() const   { return m_pTargetFont; }
+        sal_Int32    GetConvOptions() const  { return m_nConvOptions; }
+        bool         IsInteractive() const   { return m_bIsInteractive; }
 
     protected:
         void    createDialog();
@@ -152,14 +150,14 @@ namespace editeng
         bool ContinueConversion( bool _bRepeatCurrentUnit );
 
     private:
-        DECL_LINK_TYPED( OnOptionsChanged, LinkParamNone*, void );
-        DECL_LINK_TYPED( OnIgnore, Button*, void );
-        DECL_LINK_TYPED( OnIgnoreAll, Button*, void );
-        DECL_LINK_TYPED( OnChange, Button*, void );
-        DECL_LINK_TYPED( OnChangeAll, Button*, void );
-        DECL_LINK_TYPED( OnByCharClicked, CheckBox*, void );
-        DECL_LINK_TYPED( OnConversionTypeChanged, Button*, void );
-        DECL_LINK_TYPED( OnFind, Button*, void );
+        DECL_LINK( OnOptionsChanged, LinkParamNone*, void );
+        DECL_LINK( OnIgnore, Button*, void );
+        DECL_LINK( OnIgnoreAll, Button*, void );
+        DECL_LINK( OnChange, Button*, void );
+        DECL_LINK( OnChangeAll, Button*, void );
+        DECL_LINK( OnByCharClicked, CheckBox*, void );
+        DECL_LINK( OnConversionTypeChanged, Button*, void );
+        DECL_LINK( OnFind, Button*, void );
 
         /** proceed, after the current convertible has been handled
 
@@ -237,7 +235,7 @@ namespace editeng
                                                             sal_Int32 _nOptions,
                                                             bool _bIsInteractive,
                                                             HangulHanjaConversion* _pAntiImpl )
-        : m_pConversionDialog( nullptr )
+        : m_pConversionDialog()
         , m_pUIParent( _pUIParent )
         , m_xContext( rxContext )
         , m_aSourceLocale( _rSourceLocale )
@@ -328,7 +326,7 @@ namespace editeng
 
         sal_Int32 nLength = m_sCurrentPortion.getLength() - nStartSearch;
         m_nCurrentConversionType = implGetConversionType();
-        m_nCurrentConversionOption = IsByCharacter() ? CHARACTER_BY_CHARACTER : css::i18n::TextConversionOption::NONE;
+        m_nCurrentConversionOption = m_bByCharacter ? CHARACTER_BY_CHARACTER : css::i18n::TextConversionOption::NONE;
         if( m_bIgnorePostPositionalWord )
             m_nCurrentConversionOption = m_nCurrentConversionOption | IGNORE_POST_POSITIONAL_WORD;
 
@@ -457,8 +455,8 @@ namespace editeng
             }
 
             // save currently used value for possible later use
-            m_pAntiImpl->m_bTryBothDirectionsSave = m_bTryBothDirections;
-            m_pAntiImpl->m_ePrimaryConversionDirectionSave = m_eCurrentConversionDirection;
+            HangulHanjaConversion::m_bTryBothDirectionsSave = m_bTryBothDirections;
+            HangulHanjaConversion::m_ePrimaryConversionDirectionSave = m_eCurrentConversionDirection;
         }
 
         bool bFoundAny = implUpdateSuggestions( true, _nStartAt );
@@ -568,7 +566,7 @@ namespace editeng
                 if( m_pConversionDialog )
                     m_pConversionDialog->SetCurrentString( sCurrentUnit, m_aCurrentSuggestions );
 
-                // do not look for the next convertible: We have to wait for the user to interactivly
+                // do not look for the next convertible: We have to wait for the user to interactively
                 // decide what happens with the current convertible
                 return false;
             }
@@ -601,7 +599,7 @@ namespace editeng
 
                     // determine if it's Hangul
                     CharClass aCharClassificaton( m_xContext, LanguageTag( m_aSourceLocale) );
-                    sal_Int16 nScript = aCharClassificaton.getScript( m_sCurrentPortion, sal::static_int_cast< sal_uInt16 >(nNextAsianScript) );
+                    css::i18n::UnicodeScript nScript = aCharClassificaton.getScript( m_sCurrentPortion, sal::static_int_cast< sal_uInt16 >(nNextAsianScript) );
                     if  (   ( UnicodeScript_kHangulJamo == nScript )
                         ||  ( UnicodeScript_kHangulCompatibilityJamo == nScript )
                         ||  ( UnicodeScript_kHangulSyllable == nScript )
@@ -652,8 +650,8 @@ namespace editeng
 
             if (HangulHanjaConversion::IsUseSavedConversionDirectionState())
             {
-                m_ePrimaryConversionDirection = m_pAntiImpl->m_ePrimaryConversionDirectionSave;
-                m_bTryBothDirections = m_pAntiImpl->m_bTryBothDirectionsSave;
+                m_ePrimaryConversionDirection = HangulHanjaConversion::m_ePrimaryConversionDirectionSave;
+                m_bTryBothDirections = HangulHanjaConversion::m_bTryBothDirectionsSave;
                 if( m_bTryBothDirections )
                     m_eCurrentConversionDirection = eDirection;
                 else
@@ -675,7 +673,7 @@ namespace editeng
             else
                 implUpdateData();
             m_pConversionDialog->Execute();
-            DELETEZ( m_pConversionDialog );
+            m_pConversionDialog.disposeAndClear();
         }
         else
         {
@@ -810,20 +808,20 @@ namespace editeng
         m_pAntiImpl->HandleNewUnit( m_nCurrentStartIndex - m_nReplacementBaseIndex, m_nCurrentEndIndex - m_nReplacementBaseIndex );
     }
 
-    IMPL_LINK_NOARG_TYPED(HangulHanjaConversion_Impl, OnOptionsChanged, LinkParamNone*, void)
+    IMPL_LINK_NOARG(HangulHanjaConversion_Impl, OnOptionsChanged, LinkParamNone*, void)
     {
         //options and dictionaries might have been changed
         //-> update our internal settings and the dialog
         implUpdateData();
     }
 
-    IMPL_LINK_NOARG_TYPED(HangulHanjaConversion_Impl, OnIgnore, Button*, void)
+    IMPL_LINK_NOARG(HangulHanjaConversion_Impl, OnIgnore, Button*, void)
     {
         // simply ignore, and proceed
         implProceed( false );
     }
 
-    IMPL_LINK_NOARG_TYPED(HangulHanjaConversion_Impl, OnIgnoreAll, Button*, void)
+    IMPL_LINK_NOARG(HangulHanjaConversion_Impl, OnIgnoreAll, Button*, void)
     {
         DBG_ASSERT( m_pConversionDialog, "HangulHanjaConversion_Impl::OnIgnoreAll: no dialog! How this?" );
 
@@ -841,7 +839,7 @@ namespace editeng
         }
     }
 
-    IMPL_LINK_NOARG_TYPED(HangulHanjaConversion_Impl, OnChange, Button*, void)
+    IMPL_LINK_NOARG(HangulHanjaConversion_Impl, OnChange, Button*, void)
     {
         // change
         DBG_ASSERT( m_pConversionDialog, "we should always have a dialog here!" );
@@ -851,7 +849,7 @@ namespace editeng
         implProceed( false );
     }
 
-    IMPL_LINK_NOARG_TYPED(HangulHanjaConversion_Impl, OnChangeAll, Button*, void)
+    IMPL_LINK_NOARG(HangulHanjaConversion_Impl, OnChangeAll, Button*, void)
     {
         DBG_ASSERT( m_pConversionDialog, "HangulHanjaConversion_Impl::OnChangeAll: no dialog! How this?" );
         if ( m_pConversionDialog )
@@ -873,7 +871,7 @@ namespace editeng
         }
     }
 
-    IMPL_LINK_TYPED( HangulHanjaConversion_Impl, OnByCharClicked, CheckBox*, _pBox, void )
+    IMPL_LINK( HangulHanjaConversion_Impl, OnByCharClicked, CheckBox*, _pBox, void )
     {
         m_bByCharacter = _pBox->IsChecked();
 
@@ -881,14 +879,14 @@ namespace editeng
         implProceed( true );
     }
 
-    IMPL_LINK_NOARG_TYPED(HangulHanjaConversion_Impl, OnConversionTypeChanged, Button*, void)
+    IMPL_LINK_NOARG(HangulHanjaConversion_Impl, OnConversionTypeChanged, Button*, void)
     {
         DBG_ASSERT( m_pConversionDialog, "we should always have a dialog here!" );
         if( m_pConversionDialog )
             m_eConversionFormat = m_pConversionDialog->GetConversionFormat( );
     }
 
-    IMPL_LINK_NOARG_TYPED(HangulHanjaConversion_Impl, OnFind, Button*, void)
+    IMPL_LINK_NOARG(HangulHanjaConversion_Impl, OnFind, Button*, void)
     {
         DBG_ASSERT( m_pConversionDialog, "HangulHanjaConversion_Impl::OnFind: where did this come from?" );
         if ( m_pConversionDialog )

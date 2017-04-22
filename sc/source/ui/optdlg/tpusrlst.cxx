@@ -206,8 +206,8 @@ void ScTpUserLists::Reset( const SfxItemSet* rCoreAttrs )
 
 bool ScTpUserLists::FillItemSet( SfxItemSet* rCoreAttrs )
 {
-    // Modifikationen noch nicht uebernommen?
-    // -> Click auf Add-Button simulieren
+    // Changes aren't saved?
+    // -> simulate click of Add-Button
 
     if ( bModifyMode || bCancelMode )
         BtnClickHdl( mpBtnAdd );
@@ -243,12 +243,12 @@ bool ScTpUserLists::FillItemSet( SfxItemSet* rCoreAttrs )
     return bDataModified;
 }
 
-SfxTabPage::sfxpg ScTpUserLists::DeactivatePage( SfxItemSet* pSetP )
+DeactivateRC ScTpUserLists::DeactivatePage( SfxItemSet* pSetP )
 {
     if ( pSetP )
         FillItemSet( pSetP );
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 size_t ScTpUserLists::UpdateUserListBox()
@@ -283,7 +283,7 @@ void ScTpUserLists::UpdateEntries( size_t nList )
         for ( size_t i=0; i<nSubCount; i++ )
         {
             if ( i!=0 )
-                aEntryListStr += OUStringLiteral1<CR>();
+                aEntryListStr += OUStringLiteral1(CR);
             aEntryListStr += rList.GetSubStr(i);
         }
 
@@ -305,7 +305,7 @@ void ScTpUserLists::MakeListStr( OUString& rListStr )
     {
         OUString aString = comphelper::string::strip(rListStr.getToken(i, LF), ' ');
         aStr += aString;
-        aStr += OUStringLiteral1<cDelimiter>();
+        aStr += OUStringLiteral1(cDelimiter);
     }
 
     aStr = comphelper::string::strip(aStr, cDelimiter);
@@ -313,16 +313,16 @@ void ScTpUserLists::MakeListStr( OUString& rListStr )
 
     rListStr.clear();
 
-    // Alle Doppelten cDelimiter entfernen:
+    // delete all duplicates of cDelimiter
     sal_Int32 c = 0;
     while ( c < nLen )
     {
-        rListStr += OUString(aStr[c]);
+        rListStr += OUStringLiteral1(aStr[c]);
         ++c;
 
         if ((c < nLen) && (aStr[c] == cDelimiter))
         {
-            rListStr += OUString(aStr[c]);
+            rListStr += OUStringLiteral1(aStr[c]);
 
             while ((c < nLen) && (aStr[c] == cDelimiter))
                 ++c;
@@ -382,8 +382,7 @@ void ScTpUserLists::CopyListFromArea( const ScRefAddress& rStartPos,
 
                         if ( !aStrField.isEmpty() )
                         {
-                            aStrList += aStrField;
-                            aStrList += "\n";
+                            aStrList += aStrField + "\n";
                         }
                     }
                     else
@@ -406,8 +405,7 @@ void ScTpUserLists::CopyListFromArea( const ScRefAddress& rStartPos,
 
                         if ( !aStrField.isEmpty() )
                         {
-                            aStrList += aStrField;
-                            aStrList += "\n";
+                            aStrList += aStrField + "\n";
                         }
                     }
                     else
@@ -453,7 +451,7 @@ void ScTpUserLists::RemoveList( size_t nList )
 
 // Handler:
 
-IMPL_LINK_TYPED( ScTpUserLists, LbSelectHdl, ListBox&, rLb, void )
+IMPL_LINK( ScTpUserLists, LbSelectHdl, ListBox&, rLb, void )
 {
     if ( &rLb == mpLbLists )
     {
@@ -474,7 +472,7 @@ IMPL_LINK_TYPED( ScTpUserLists, LbSelectHdl, ListBox&, rLb, void )
     }
 }
 
-IMPL_LINK_TYPED( ScTpUserLists, BtnClickHdl, Button*, pBtn, void )
+IMPL_LINK( ScTpUserLists, BtnClickHdl, Button*, pBtn, void )
 {
     if ( pBtn == mpBtnNew || pBtn == mpBtnDiscard )
     {
@@ -611,10 +609,9 @@ IMPL_LINK_TYPED( ScTpUserLists, BtnClickHdl, Button*, pBtn, void )
         if ( mpLbLists->GetEntryCount() > 0 )
         {
             sal_Int32 nRemovePos   = mpLbLists->GetSelectEntryPos();
-            OUString aMsg         ( aStrQueryRemove.getToken( 0, '#' ) );
-
-            aMsg += mpLbLists->GetEntry( nRemovePos );
-            aMsg += aStrQueryRemove.getToken( 1, '#' );
+            OUString aMsg = aStrQueryRemove.getToken( 0, '#' )
+                          + mpLbLists->GetEntry( nRemovePos )
+                          + aStrQueryRemove.getToken( 1, '#' );
 
             if ( RET_YES == ScopedVclPtrInstance<QueryBox>( this,
                                       WinBits( WB_YES_NO | WB_DEF_YES ),
@@ -704,7 +701,7 @@ IMPL_LINK_TYPED( ScTpUserLists, BtnClickHdl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK_TYPED( ScTpUserLists, EdEntriesModHdl, Edit&, rEd, void )
+IMPL_LINK( ScTpUserLists, EdEntriesModHdl, Edit&, rEd, void )
 {
     if ( &rEd != mpEdEntries )
         return;

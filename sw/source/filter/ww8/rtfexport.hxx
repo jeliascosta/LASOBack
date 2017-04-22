@@ -108,7 +108,7 @@ public:
 
     /// Write the field
     virtual void OutputField(const SwField* pField, ww::eField eFieldType,
-                             const OUString& rFieldCmd, sal_uInt8 nMode = nsFieldFlags::WRITEFIELD_ALL) override;
+                             const OUString& rFieldCmd, FieldFlags nMode = FieldFlags::All) override;
 
     /// Write the data of the form field
     virtual void WriteFormData(const ::sw::mark::IFieldmark& rFieldmark) override;
@@ -133,8 +133,8 @@ protected:
     /// Get ready for a new section.
     virtual void PrepareNewPageDesc(const SfxItemSet* pSet,
                                     const SwNode& rNd,
-                                    const SwFormatPageDesc* pNewPgDescFormat = nullptr,
-                                    const SwPageDesc* pNewPgDesc = nullptr) override;
+                                    const SwFormatPageDesc* pNewPgDescFormat,
+                                    const SwPageDesc* pNewPgDesc) override;
 
     /// Return value indicates if an inherited outline numbering is suppressed.
     virtual bool DisallowInheritingOutlineNumbering(const SwFormat& rFormat) override;
@@ -162,7 +162,7 @@ public:
               bool bOutOutlineOnly = false);
 
     /// Destructor.
-    virtual ~RtfExport();
+    virtual ~RtfExport() override;
 
     rtl_TextEncoding m_eDefaultEncoding;
     rtl_TextEncoding m_eCurrentEncoding;
@@ -182,7 +182,7 @@ public:
     SvStream& OutLong(long nVal);
     void OutUnicode(const sal_Char* pToken, const OUString& rContent, bool bUpr = false);
     void OutDateTime(const sal_Char* pStr, const css::util::DateTime& rDT);
-    void OutPageDescription(const SwPageDesc& rPgDsc, bool bWriteReset, bool bCheckForFirstPage);
+    void OutPageDescription(const SwPageDesc& rPgDsc, bool bCheckForFirstPage);
 
     sal_uInt16 GetColor(const Color& rColor) const;
     void InsColor(const Color& rCol);
@@ -204,6 +204,10 @@ private:
     void WriteFootnoteSettings();
     void WriteMainText();
     void WriteInfo();
+    /// Writes a single user property type.
+    void WriteUserPropType(int nType);
+    /// Writes a single user property value.
+    void WriteUserPropValue(const OUString& rValue);
     /// Writes the userprops group: user defined document properties.
     void WriteUserProps();
     /// Writes the writer-specific \pgdsctbl group.

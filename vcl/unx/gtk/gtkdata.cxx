@@ -349,8 +349,6 @@ GdkCursor *GtkSalDisplay::getCursor( PointerStyle ePointerStyle )
             MAKE_CURSOR( PointerStyle::PivotDelete, pivotdel_ );
             MAKE_CURSOR( PointerStyle::Chain, chain_ );
             MAKE_CURSOR( PointerStyle::ChainNotAllowed, chainnot_ );
-            MAKE_CURSOR( PointerStyle::TimeEventMove, timemove_ );
-            MAKE_CURSOR( PointerStyle::TimeEventSize, timesize_ );
             MAKE_CURSOR( PointerStyle::AutoScrollN, asn_ );
             MAKE_CURSOR( PointerStyle::AutoScrollS, ass_ );
             MAKE_CURSOR( PointerStyle::AutoScrollW, asw_ );
@@ -362,7 +360,6 @@ GdkCursor *GtkSalDisplay::getCursor( PointerStyle ePointerStyle )
             MAKE_CURSOR( PointerStyle::AutoScrollNS, asns_ );
             MAKE_CURSOR( PointerStyle::AutoScrollWE, aswe_ );
             MAKE_CURSOR( PointerStyle::AutoScrollNSWE, asnswe_ );
-            MAKE_CURSOR( PointerStyle::Airbrush, airbrush_ );
             MAKE_CURSOR( PointerStyle::TextVertical, vertcurs_ );
 
             // #i32329#
@@ -371,9 +368,6 @@ GdkCursor *GtkSalDisplay::getCursor( PointerStyle ePointerStyle )
             MAKE_CURSOR( PointerStyle::TabSelectSE, tblselse_ );
             MAKE_CURSOR( PointerStyle::TabSelectW, tblselw_ );
             MAKE_CURSOR( PointerStyle::TabSelectSW, tblselsw_ );
-
-            // #i20119#
-            MAKE_CURSOR( PointerStyle::Paintbrush, paintbrush_ );
 
             MAKE_CURSOR( PointerStyle::HideWhitespace, hidewhitespace_ );
             MAKE_CURSOR( PointerStyle::ShowWhitespace, showwhitespace_ );
@@ -411,7 +405,7 @@ int GtkSalDisplay::CaptureMouse( SalFrame* pSFrame )
     }
 
     m_pCapture = pFrame;
-    static_cast<GtkSalFrame*>(pFrame)->grabPointer( TRUE );
+    pFrame->grabPointer( TRUE );
     return 1;
 }
 
@@ -422,13 +416,13 @@ int GtkSalDisplay::CaptureMouse( SalFrame* pSFrame )
 GtkData::GtkData( SalInstance *pInstance )
     : SalGenericData( SAL_DATA_GTK, pInstance )
     , m_aDispatchMutex()
+    , m_aDispatchCondition()
     , blockIdleTimeout( false )
 {
     m_pUserEvent = nullptr;
-    m_aDispatchCondition = osl_createCondition();
 }
 
-XIOErrorHandler aOrigXIOErrorHandler = nullptr;
+static XIOErrorHandler aOrigXIOErrorHandler = nullptr;
 
 extern "C" {
 
@@ -449,7 +443,7 @@ GtkData::~GtkData()
 
      // sanity check: at this point nobody should be yielding, but wake them
      // up anyway before the condition they're waiting on gets destroyed.
-    osl_setCondition( m_aDispatchCondition );
+    m_aDispatchCondition.set();
 
     osl::MutexGuard g( m_aDispatchMutex );
     if (m_pUserEvent)
@@ -458,7 +452,6 @@ GtkData::~GtkData()
         g_source_unref (m_pUserEvent);
         m_pUserEvent = nullptr;
     }
-    osl_destroyCondition( m_aDispatchCondition );
     XSetIOErrorHandler(aOrigXIOErrorHandler);
 }
 
@@ -508,9 +501,9 @@ SalYieldResult GtkData::Yield( bool bWait, bool bHandleAllCurrentEvents )
              * workaround: timeout of 1 second a emergency exit
              */
             // we are the dispatch thread
-            osl_resetCondition( m_aDispatchCondition );
+            m_aDispatchCondition.reset();
             TimeValue aValue = { 1, 0 };
-            osl_waitCondition( m_aDispatchCondition, &aValue );
+            m_aDispatchCondition.wait( &aValue );
         }
     }
 
@@ -518,7 +511,7 @@ SalYieldResult GtkData::Yield( bool bWait, bool bHandleAllCurrentEvents )
     {
         m_aDispatchMutex.release();
         if( bWasEvent )
-            osl_setCondition( m_aDispatchCondition ); // trigger non dispatch thread yields
+            m_aDispatchCondition.set(); // trigger non dispatch thread yields
     }
     blockIdleTimeout = false;
 

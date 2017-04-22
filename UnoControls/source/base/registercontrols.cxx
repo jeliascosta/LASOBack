@@ -31,42 +31,42 @@
 
 namespace {
 
+/// @throws css::uno::Exception
 css::uno::Reference<css::uno::XInterface> SAL_CALL FrameControl_createInstance(
     css::uno::Reference<css::lang::XMultiServiceFactory> const &
         rServiceManager)
-    throw (css::uno::Exception)
 {
     return static_cast<cppu::OWeakObject *>(
         new unocontrols::FrameControl(
             comphelper::getComponentContext(rServiceManager)));
 }
 
+/// @throws css::uno::Exception
 css::uno::Reference<css::uno::XInterface> SAL_CALL ProgressBar_createInstance(
     css::uno::Reference<css::lang::XMultiServiceFactory> const &
         rServiceManager)
-    throw (css::uno::Exception)
 {
     return static_cast<cppu::OWeakObject *>(
         new unocontrols::ProgressBar(
             comphelper::getComponentContext(rServiceManager)));
 }
 
+/// @throws css::uno::Exception
 css::uno::Reference<css::uno::XInterface> SAL_CALL
 ProgressMonitor_createInstance(
     css::uno::Reference<css::lang::XMultiServiceFactory> const &
         rServiceManager)
-    throw (css::uno::Exception)
 {
     return static_cast<cppu::OWeakObject *>(
         new unocontrols::ProgressMonitor(
             comphelper::getComponentContext(rServiceManager)));
 }
 
+/// @throws css::uno::Exception
 css::uno::Reference<css::uno::XInterface> SAL_CALL
 StatusIndicator_createInstance(
     css::uno::Reference<css::lang::XMultiServiceFactory> const &
         rServiceManager)
-    throw (css::uno::Exception)
 {
     return static_cast<cppu::OWeakObject *>(
         new unocontrols::StatusIndicator(

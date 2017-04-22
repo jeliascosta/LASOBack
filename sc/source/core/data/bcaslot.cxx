@@ -153,7 +153,7 @@ ScDocument::HardRecalcState ScBroadcastAreaSlot::CheckHardRecalcStateCondition()
             OSL_ENSURE( pShell, "Missing DocShell :-/" );
 
             if ( pShell )
-                pShell->SetError( SCWARN_CORE_HARD_RECALC, OSL_LOG_PREFIX );
+                pShell->SetError(SCWARN_CORE_HARD_RECALC);
 
             pDoc->SetAutoCalc( false );
             eState = ScDocument::HARDRECALCSTATE_ETERNAL;
@@ -260,7 +260,7 @@ ScBroadcastAreas::iterator ScBroadcastAreaSlot::FindBroadcastArea(
 
 namespace {
 
-void broadcastRangeByCell( SvtBroadcaster& rBC, const ScRange& rRange, sal_uInt32 nHint )
+void broadcastRangeByCell( SvtBroadcaster& rBC, const ScRange& rRange, SfxHintId nHint )
 {
     ScHint aHint(nHint, ScAddress());
     ScAddress& rPos = aHint.GetAddress();
@@ -281,7 +281,7 @@ void broadcastRangeByCell( SvtBroadcaster& rBC, const ScRange& rRange, sal_uInt3
 
 }
 
-bool ScBroadcastAreaSlot::AreaBroadcast( const ScRange& rRange, sal_uInt32 nHint )
+bool ScBroadcastAreaSlot::AreaBroadcast( const ScRange& rRange, SfxHintId nHint )
 {
     if (aBroadcastAreaTbl.empty())
         return false;
@@ -528,15 +528,15 @@ void ScBroadcastAreaSlot::GetAllListeners(
         const ScRange& rAreaRange = pArea->GetRange();
         switch (eGroup)
         {
-            case sc::ListenerSingle:
+            case sc::ListenerGroupType::Single:
                 if (pArea->IsGroupListening())
                     continue;
             break;
-            case sc::ListenerGroup:
+            case sc::ListenerGroupType::Group:
                 if (!pArea->IsGroupListening())
                     continue;
             break;
-            case sc::ListenerBoth:
+            case sc::ListenerGroupType::Both:
             default:
                 ;
         }
@@ -671,7 +671,7 @@ ScBroadcastAreaSlotMachine::~ScBroadcastAreaSlotMachine()
     delete pBCAlways;
     // Areas to-be-erased still present is a serious error in handling, but at
     // this stage there's nothing we can do anymore.
-    SAL_WARN_IF( !maAreasToBeErased.empty(), "sc", "ScBroadcastAreaSlotMachine::dtor: maAreasToBeErased not empty");
+    SAL_WARN_IF( !maAreasToBeErased.empty(), "sc.core", "ScBroadcastAreaSlotMachine::dtor: maAreasToBeErased not empty");
 }
 
 inline SCSIZE ScBroadcastAreaSlotMachine::ComputeSlotOffset(
@@ -709,7 +709,7 @@ void ScBroadcastAreaSlotMachine::ComputeAreaPoints( const ScRange& rRange,
 }
 
 inline void ComputeNextSlot( SCSIZE & nOff, SCSIZE & nBreak, ScBroadcastAreaSlot** & pp,
-        SCSIZE & nStart, ScBroadcastAreaSlot** const & ppSlots, SCSIZE const & nRowBreak )
+        SCSIZE & nStart, ScBroadcastAreaSlot** const & ppSlots, SCSIZE nRowBreak )
 {
     if ( nOff < nBreak )
     {
@@ -828,7 +828,7 @@ void ScBroadcastAreaSlotMachine::EndListeningArea(
     }
 }
 
-bool ScBroadcastAreaSlotMachine::AreaBroadcast( const ScRange& rRange, sal_uInt32 nHint )
+bool ScBroadcastAreaSlotMachine::AreaBroadcast( const ScRange& rRange, SfxHintId nHint )
 {
     bool bBroadcasted = false;
     SCTAB nEndTab = rRange.aEnd.Tab();
@@ -1095,14 +1095,19 @@ void ScBroadcastAreaSlotMachine::EnterBulkBroadcast()
     ++nInBulkBroadcast;
 }
 
-void ScBroadcastAreaSlotMachine::LeaveBulkBroadcast( sal_uInt32 nHintId )
+void ScBroadcastAreaSlotMachine::LeaveBulkBroadcast( SfxHintId nHintId )
 {
     if (nInBulkBroadcast > 0)
     {
         if (--nInBulkBroadcast == 0)
         {
             ScBroadcastAreasBulk().swap( aBulkBroadcastAreas);
-            BulkBroadcastGroupAreas( nHintId );
+            bool bBroadcasted = BulkBroadcastGroupAreas( nHintId );
+            // Trigger the "final" tracking.
+            if (pDoc->IsTrackFormulasPending())
+                pDoc->FinalTrackFormulas( nHintId );
+            else if (bBroadcasted)
+                pDoc->TrackFormulas( nHintId );
         }
     }
 }
@@ -1126,12 +1131,12 @@ void ScBroadcastAreaSlotMachine::InsertBulkGroupArea( ScBroadcastArea* pArea, co
     pSet->set(rRange, true);
 }
 
-void ScBroadcastAreaSlotMachine::BulkBroadcastGroupAreas( sal_uInt32 nHintId )
+bool ScBroadcastAreaSlotMachine::BulkBroadcastGroupAreas( SfxHintId nHintId )
 {
     if (m_BulkGroupAreas.empty())
-        return;
+        return false;
 
-    sc::BulkDataHint aHint(*pDoc, nullptr, nHintId);
+    sc::BulkDataHint aHint( *pDoc, nHintId);
 
     bool bBroadcasted = false;
     BulkGroupAreasType::iterator it = m_BulkGroupAreas.begin(), itEnd = m_BulkGroupAreas.end();
@@ -1157,8 +1162,8 @@ void ScBroadcastAreaSlotMachine::BulkBroadcastGroupAreas( sal_uInt32 nHintId )
     }
 
     m_BulkGroupAreas.clear();
-    if (bBroadcasted)
-        pDoc->TrackFormulas( nHintId );
+
+    return bBroadcasted;
 }
 
 size_t ScBroadcastAreaSlotMachine::RemoveBulkArea( const ScBroadcastArea* pArea )
@@ -1179,7 +1184,7 @@ void ScBroadcastAreaSlotMachine::PushAreaToBeErased( ScBroadcastAreaSlot* pSlot,
 
 void ScBroadcastAreaSlotMachine::FinallyEraseAreas( ScBroadcastAreaSlot* pSlot )
 {
-    SAL_WARN_IF( pSlot->IsInBroadcastIteration(), "sc",
+    SAL_WARN_IF( pSlot->IsInBroadcastIteration(), "sc.core",
             "ScBroadcastAreaSlotMachine::FinallyEraseAreas: during iteration? NO!");
     if (pSlot->IsInBroadcastIteration())
         return;

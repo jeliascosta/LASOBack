@@ -23,7 +23,6 @@
 #include <osl/diagnose.h>
 
 #include <oox/helper/binaryinputstream.hxx>
-#include "biffinputstream.hxx"
 #include "excelchartconverter.hxx"
 #include "excelvbaproject.hxx"
 #include "stylesbuffer.hxx"
@@ -37,12 +36,11 @@ namespace xls {
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::sheet;
 using namespace ::com::sun::star::uno;
-using namespace ::com::sun::star::xml::sax;
 using namespace ::oox::core;
 
 using ::oox::drawingml::table::TableStyleListPtr;
 
-ExcelFilter::ExcelFilter( const Reference< XComponentContext >& rxContext ) throw( RuntimeException ) :
+ExcelFilter::ExcelFilter( const Reference< XComponentContext >& rxContext ) :
     XmlFilterBase( rxContext ),
     mpBookGlob( nullptr )
 {
@@ -151,7 +149,7 @@ GraphicHelper* ExcelFilter::implCreateGraphicHelper() const
     return new ExcelVbaProject( getComponentContext(), Reference< XSpreadsheetDocument >( getModel(), UNO_QUERY ) );
 }
 
-sal_Bool SAL_CALL ExcelFilter::filter( const css::uno::Sequence< css::beans::PropertyValue >& rDescriptor ) throw( css::uno::RuntimeException, std::exception )
+sal_Bool SAL_CALL ExcelFilter::filter( const css::uno::Sequence< css::beans::PropertyValue >& rDescriptor )
 {
     if ( XmlFilterBase::filter( rDescriptor ) )
         return true;
@@ -176,7 +174,7 @@ sal_Bool SAL_CALL ExcelFilter::filter( const css::uno::Sequence< css::beans::Pro
     return false;
 }
 
-OUString ExcelFilter::getImplementationName() throw (css::uno::RuntimeException, std::exception)
+OUString ExcelFilter::getImplementationName()
 {
     return OUString( "com.sun.star.comp.oox.xls.ExcelFilter" );
 }

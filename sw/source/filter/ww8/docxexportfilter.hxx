@@ -24,7 +24,6 @@
 #include <oox/drawingml/chart/chartconverter.hxx>
 #include <oox/vml/vmldrawing.hxx>
 
-#include <com/sun/star/beans/PropertyValue.hpp>
 
 /// The physical access to the DOCX document (for writing).
 class DocxExportFilter : public oox::core::XmlFilterBase
@@ -44,7 +43,7 @@ public:
     virtual bool        exportDocument() override;
 
 private:
-    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() override;
 
     virtual ::oox::ole::VbaProject* implCreateVbaProject() const override
     {

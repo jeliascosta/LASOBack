@@ -63,7 +63,7 @@ No column merge is allowed.<br/>
 One compulsory Heading row.<br/>
 <br/><br/>
 To let the template be flexible, we use a kind of "detection": we look where
-the items are read the design of each table, reaplying it after writing the
+the items are read the design of each table, re-applying it after writing the
 table.self.xTextDocument
 <br/><br/>
 A note about threads:<br/>
@@ -343,7 +343,7 @@ class AgendaDocument(TextDocument):
             except Exception:
                 traceback.print_exc()
                 raise AttributeError (
-                    "Fatal Error while initialilzing \
+                    "Fatal Error while initializing \
                     Template: items table in section " + i)
 
 
@@ -667,7 +667,7 @@ class ItemsTable(object):
             it means this is the end of the table, so we end here.
             (because after getting the cellName above,
             I call the goRight method.
-            If it did not go right, it means its the last cell.
+            If it did not go right, it means it's the last cell.
             '''
 
         if cellName == cursor.RangeName:
@@ -700,7 +700,7 @@ class ItemsTable(object):
 This class handles the preview of the topics table.
 You can call it the controller of the topics table.
 It differs from ItemsTable in that it has no data model -
-the update is done programttically.<br/>
+the update is done programmatically.<br/>
 <br/>
 The decision to make this class a class by its own
 was done out of logic reasons and not design/functionality reasons,

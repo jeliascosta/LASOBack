@@ -21,7 +21,7 @@
 #define INCLUDED_UCBHELPER_ACTIVEDATASTREAMER_HXX
 
 #include <com/sun/star/io/XActiveDataStreamer.hpp>
-#include <cppuhelper/implbase1.hxx>
+#include <cppuhelper/implbase.hxx>
 
 namespace ucbhelper
 {
@@ -34,18 +34,14 @@ namespace ucbhelper
   */
 
 class ActiveDataStreamer :
-        public cppu::WeakImplHelper1< css::io::XActiveDataStreamer >
+        public cppu::WeakImplHelper< css::io::XActiveDataStreamer >
 {
     css::uno::Reference< css::io::XStream > m_xStream;
 
 public:
     // XActiveDataStreamer methods.
-    virtual void SAL_CALL setStream( const css::uno::Reference< css::io::XStream >& xStream )
-        throw( css::uno::RuntimeException,
-               std::exception ) override;
-    virtual css::uno::Reference< css::io::XStream > SAL_CALL getStream()
-        throw( css::uno::RuntimeException,
-               std::exception ) override;
+    virtual void SAL_CALL setStream( const css::uno::Reference< css::io::XStream >& xStream ) override;
+    virtual css::uno::Reference< css::io::XStream > SAL_CALL getStream() override;
 };
 
 } /* namespace ucbhelper */

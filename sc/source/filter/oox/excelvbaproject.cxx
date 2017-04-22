@@ -24,7 +24,6 @@
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/container/XEnumeration.hpp>
 #include <com/sun/star/container/XEnumerationAccess.hpp>
-#include <com/sun/star/document/XEventsSupplier.hpp>
 #include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/script/ModuleType.hpp>
 #include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
@@ -37,9 +36,7 @@ namespace oox {
 namespace xls {
 
 using namespace ::com::sun::star::container;
-using namespace ::com::sun::star::document;
 using namespace ::com::sun::star::frame;
-using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::script;
 using namespace ::com::sun::star::sheet;
 using namespace ::com::sun::star::uno;
@@ -59,7 +56,7 @@ struct SheetCodeNameInfo
     PropertySet         maSheetProps;       /// Property set of the sheet without codename.
     OUString            maPrefix;           /// Prefix for the codename to be generated.
 
-    inline explicit     SheetCodeNameInfo( PropertySet& rSheetProps, const OUString& rPrefix ) :
+    explicit     SheetCodeNameInfo( PropertySet& rSheetProps, const OUString& rPrefix ) :
                             maSheetProps( rSheetProps ), maPrefix( rPrefix ) {}
 };
 

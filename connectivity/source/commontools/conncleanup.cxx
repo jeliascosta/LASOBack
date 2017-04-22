@@ -27,10 +27,10 @@ namespace dbtools
 {
 
 
-    using namespace ::com::sun::star::uno;
-    using namespace ::com::sun::star::beans;
-    using namespace ::com::sun::star::sdbc;
-    using namespace ::com::sun::star::lang;
+    using namespace css::uno;
+    using namespace css::beans;
+    using namespace css::sdbc;
+    using namespace css::lang;
 
     static const char ACTIVE_CONNECTION_PROPERTY_NAME[] = "ActiveConnection";
 
@@ -124,7 +124,7 @@ namespace dbtools
     }
 
 
-    void SAL_CALL OAutoConnectionDisposer::propertyChange( const PropertyChangeEvent& _rEvent ) throw (RuntimeException, std::exception)
+    void SAL_CALL OAutoConnectionDisposer::propertyChange( const PropertyChangeEvent& _rEvent )
     {
         if ( _rEvent.PropertyName == ACTIVE_CONNECTION_PROPERTY_NAME )
         {   // somebody set a new ActiveConnection
@@ -176,7 +176,7 @@ namespace dbtools
     }
 
 
-    void SAL_CALL OAutoConnectionDisposer::disposing( const EventObject& _rSource ) throw (RuntimeException, std::exception)
+    void SAL_CALL OAutoConnectionDisposer::disposing( const EventObject& _rSource )
     {
         // the rowset is being disposed, and nobody has set a new ActiveConnection in the meantime
         if ( isRowSetListening() )
@@ -184,7 +184,7 @@ namespace dbtools
 
         clearConnection();
 
-        if ( isPropertyListening() )
+        if ( m_bPropertyListening )
             stopPropertyListening( Reference< XPropertySet >( _rSource.Source, UNO_QUERY ) );
     }
 
@@ -204,15 +204,15 @@ namespace dbtools
         }
     }
 
-    void SAL_CALL OAutoConnectionDisposer::cursorMoved( const ::com::sun::star::lang::EventObject& /*event*/ ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+    void SAL_CALL OAutoConnectionDisposer::cursorMoved( const css::lang::EventObject& /*event*/ )
     {
     }
 
-    void SAL_CALL OAutoConnectionDisposer::rowChanged( const ::com::sun::star::lang::EventObject& /*event*/ ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+    void SAL_CALL OAutoConnectionDisposer::rowChanged( const css::lang::EventObject& /*event*/ )
     {
     }
 
-    void SAL_CALL OAutoConnectionDisposer::rowSetChanged( const ::com::sun::star::lang::EventObject& /*event*/ ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+    void SAL_CALL OAutoConnectionDisposer::rowSetChanged( const css::lang::EventObject& /*event*/ )
     {
         stopRowSetListening();
         clearConnection();

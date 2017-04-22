@@ -88,26 +88,10 @@ bool areSameTypedef(QualType type1, QualType type2) {
     return t1 != nullptr && t2 != nullptr && t1->getDecl() == t2->getDecl();
 }
 
-bool isBool(QualType type, bool allowTypedefs = true) {
-    if (type->isBooleanType()) {
-        return true;
-    }
-    if (!allowTypedefs) {
-        return false;
-    }
-    TypedefType const * t2 = type->getAs<TypedefType>();
-    if (t2 == nullptr) {
-        return false;
-    }
-    std::string name(t2->getDecl()->getNameAsString());
-    return name == "sal_Bool" || name == "BOOL" || name == "Boolean"
-        || name == "FT_Bool" || name == "FcBool" || name == "GLboolean"
-        || name == "NPBool" || name == "UBool" || name == "dbus_bool_t"
-        || name == "gboolean" || name == "hb_bool_t" || name == "jboolean";
-}
-
 bool isBool(Expr const * expr, bool allowTypedefs = true) {
-    return isBool(expr->getType(), allowTypedefs);
+    auto t = expr->getType();
+    return allowTypedefs
+        ? bool(loplugin::TypeCheck(t).AnyBoolean()) : t->isBooleanType();
 }
 
 bool isMatchingBool(Expr const * expr, Expr const * comparisonExpr) {
@@ -214,7 +198,7 @@ bool isBoolExpr(Expr const * expr) {
             }
             stack.pop();
             if (stack.empty()) {
-                if (isBool(ty)) {
+                if (loplugin::TypeCheck(ty).AnyBoolean()) {
                     return true;
                 }
                 break;
@@ -240,15 +224,9 @@ bool hasCLanguageLinkageType(FunctionDecl const * decl) {
     if (decl->isExternC()) {
         return true;
     }
-#if CLANG_VERSION >= 30300
     if (decl->isInExternCContext()) {
         return true;
     }
-#else
-    if (decl->getCanonicalDecl()->getDeclContext()->isExternCContext()) {
-        return true;
-    }
-#endif
     return false;
 }
 
@@ -384,8 +362,10 @@ bool ImplicitBoolConversion::TraverseCallExpr(CallExpr * expr) {
                                 auto const ta = dr->getTemplateArgs();
                                 if ((ta[0].getArgument().getKind()
                                      == TemplateArgument::Type)
-                                    && isBool(
-                                        ta[0].getTypeSourceInfo()->getType()))
+                                    && (loplugin::TypeCheck(
+                                            ta[0].getTypeSourceInfo()
+                                            ->getType())
+                                        .AnyBoolean()))
                                 {
                                     continue;
                                 }
@@ -447,7 +427,8 @@ bool ImplicitBoolConversion::TraverseCXXMemberCallExpr(CXXMemberCallExpr * expr)
                         //TODO: fix this superficial nonsense check:
                         if (ct->getNumArgs() >= 1
                             && ct->getArg(0).getKind() == TemplateArgument::Type
-                            && isBool(ct->getArg(0).getAsType()))
+                            && (loplugin::TypeCheck(ct->getArg(0).getAsType())
+                                .AnyBoolean()))
                         {
                             continue;
                         }
@@ -999,7 +980,8 @@ void ImplicitBoolConversion::checkCXXConstructExpr(
                             TemplateArgument const & arg = t1->getArg(
                                 i - ps->begin());
                             if (arg.getKind() == TemplateArgument::Type
-                                && isBool(arg.getAsType()))
+                                && (loplugin::TypeCheck(arg.getAsType())
+                                    .AnyBoolean()))
                             {
                                 continue;
                             }
@@ -1013,7 +995,7 @@ void ImplicitBoolConversion::checkCXXConstructExpr(
 }
 
 void ImplicitBoolConversion::reportWarning(ImplicitCastExpr const * expr) {
-    if (!compiler.getLangOpts().ObjC2 || compiler.getLangOpts().CPlusPlus) {
+    if (compiler.getLangOpts().CPlusPlus) {
         report(
             DiagnosticsEngine::Warning,
             "implicit conversion (%0) from %1 to %2", expr->getLocStart())

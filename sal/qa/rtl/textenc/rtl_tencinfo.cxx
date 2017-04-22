@@ -21,7 +21,6 @@
 
 #include <string.h>
 
-#include <osl/thread.h>
 #include <rtl/tencinfo.h>
 
 #include <cppunit/TestFixture.h>
@@ -37,7 +36,7 @@ namespace
         {
             const sal_Char *pCharSet = rtl_getBestMimeCharsetFromTextEncoding(eIn);
             rtl_TextEncoding eTextEnc = rtl_getTextEncodingFromMimeCharset(pCharSet);
-            CPPUNIT_ASSERT_MESSAGE("rtl_getBestMimeCharsetFromTextEncoding && rtl_getTextEncodingFromMimeCharset differdiffer", eTextEnc == eOut);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("rtl_getBestMimeCharsetFromTextEncoding && rtl_getTextEncodingFromMimeCharset differdiffer", eOut, eTextEnc );
         }
 
         // the defines for the follows test could be found in file inc/rtl/textenc.h
@@ -485,7 +484,7 @@ namespace
         {
             const sal_Char *pCharSet = rtl_getBestUnixCharsetFromTextEncoding(eIn);
             rtl_TextEncoding eTextEnc = rtl_getTextEncodingFromUnixCharset(pCharSet);
-            CPPUNIT_ASSERT_MESSAGE("rtl_getBestUnixCharsetFromTextEncoding && rtl_getTextEncodingFromUnixCharset", eTextEnc == eOut);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("rtl_getBestUnixCharsetFromTextEncoding && rtl_getTextEncodingFromUnixCharset", eOut, eTextEnc );
         }
 
         void UnixCharsetFromTextEncoding_MS_1252()
@@ -1013,7 +1012,7 @@ namespace
         {
             const sal_uInt8 nCharSet = rtl_getBestWindowsCharsetFromTextEncoding(nIn);
             rtl_TextEncoding eTextEnc = rtl_getTextEncodingFromWindowsCharset(nCharSet);
-            CPPUNIT_ASSERT_MESSAGE("rtl_getBestWindowsCharsetFromTextEncoding && rtl_getTextEncodingFromWindowsCharset differ", eTextEnc == nOut);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("rtl_getBestWindowsCharsetFromTextEncoding && rtl_getTextEncodingFromWindowsCharset differ", nOut, eTextEnc );
         }
 
         void WindowsCharsetFromTextEncoding_MS_1252()
@@ -1664,7 +1663,5 @@ CPPUNIT_TEST_SUITE_REGISTRATION(testBestUnix);
 CPPUNIT_TEST_SUITE_REGISTRATION(testBestWindows);
 CPPUNIT_TEST_SUITE_REGISTRATION(testTextEncodingInfo);
 CPPUNIT_TEST_SUITE_REGISTRATION(testEncodingFromUnix);
-
-CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

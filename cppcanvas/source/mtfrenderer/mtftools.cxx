@@ -161,7 +161,7 @@ namespace cppcanvas
             {
                 // simple rect case
 
-                const ::Rectangle aLocalClipRect( rOutdevState.clipRect );
+                const ::tools::Rectangle aLocalClipRect( rOutdevState.clipRect );
 
                 if( bRotation )
                 {
@@ -199,10 +199,10 @@ namespace cppcanvas
                         ::basegfx::B2DPolyPolygon(
                             ::basegfx::tools::createPolygonFromRect(
                                 ::basegfx::B2DRectangle(
-                                    (double)(aLocalClipRect.Left() - rOffset.getX())/pScaling->getX(),
-                                    (double)(aLocalClipRect.Top() - rOffset.getY())/pScaling->getY(),
-                                    (double)(aLocalClipRect.Right() - rOffset.getX())/pScaling->getX(),
-                                    (double)(aLocalClipRect.Bottom() - rOffset.getY())/pScaling->getY() ) ) ) );
+                                    (aLocalClipRect.Left() - rOffset.getX())/pScaling->getX(),
+                                    (aLocalClipRect.Top() - rOffset.getY())/pScaling->getY(),
+                                    (aLocalClipRect.Right() - rOffset.getX())/pScaling->getX(),
+                                    (aLocalClipRect.Bottom() - rOffset.getY())/pScaling->getY() ) ) ) );
                 }
                 else
                 {
@@ -293,7 +293,7 @@ namespace cppcanvas
             {
                 const sal_Int32 nNumLoops(
                     static_cast< sal_Int32 >(
-                        ::std::max( 1.0,
+                        std::max( 1.0,
                                     nLineWidth / nDashSkip ) + .5) );
 
                 double x = nX;

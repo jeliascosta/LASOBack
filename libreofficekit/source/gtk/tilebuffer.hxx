@@ -90,17 +90,13 @@ private:
 class TileBuffer
 {
  public:
- TileBuffer(LibreOfficeKitDocument *document = nullptr,
-            int columns = 0)
-     : m_pLOKDocument(document)
-     , m_nWidth(columns)
+ TileBuffer(int columns = 0)
+     : m_nWidth(columns)
     {
         cairo_surface_t *pSurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, nTileSizePixels, nTileSizePixels);
         m_DummyTile.setSurface(pSurface);
         cairo_surface_destroy(pSurface);
     }
-
-    ~TileBuffer() {}
 
     /**
        Gets the underlying Tile object for given position. The position (0, 0)
@@ -137,8 +133,6 @@ class TileBuffer
      */
     void setInvalid(int x, int y, float zoom, GTask* task, GThreadPool*);
 
-    /// Contains the reference to the LOK Document that this tile buffer is for.
-    LibreOfficeKitDocument *m_pLOKDocument;
     /// Stores all the tiles cached by this tile buffer.
     std::map<int, Tile> m_mTiles;
     /// Width of the current tile buffer (number of columns)
@@ -171,7 +165,7 @@ enum
    A struct that we use to store the data about the LOK call.
 
    Object of this type is passed with all the LOK calls,
-   so that they can be idenitified. Additionally, it also contains
+   so that they can be identified. Additionally, it also contains
    the data that LOK call needs.
 */
 struct LOEvent

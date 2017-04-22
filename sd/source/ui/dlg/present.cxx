@@ -91,7 +91,7 @@ SdStartPresentationDlg::SdStartPresentationDlg( vcl::Window* pWindow,
 
     if( pCustomShowList )
     {
-        sal_uInt16 nPosToSelect = (sal_uInt16) pCustomShowList->GetCurPos();
+        sal_uInt16 nPosToSelect = pCustomShowList->GetCurPos();
         SdCustomShow* pCustomShow;
         // fill Listbox with CustomShows
         for( pCustomShow = pCustomShowList->First();
@@ -318,7 +318,7 @@ void SdStartPresentationDlg::GetAttr( SfxItemSet& rAttr )
 /**
  *      Handler: Enabled/Disabled Listbox "Dias"
  */
-IMPL_LINK_NOARG_TYPED(SdStartPresentationDlg, ChangeRangeHdl, Button*, void)
+IMPL_LINK_NOARG(SdStartPresentationDlg, ChangeRangeHdl, Button*, void)
 {
     aLbDias->Enable( aRbtAtDia->IsChecked() );
     aLbCustomshow->Enable( aRbtCustomshow->IsChecked() );
@@ -327,7 +327,7 @@ IMPL_LINK_NOARG_TYPED(SdStartPresentationDlg, ChangeRangeHdl, Button*, void)
 /**
  *      Handler: Enabled/Disabled Checkbox "AlwaysOnTop"
  */
-IMPL_LINK_NOARG_TYPED(SdStartPresentationDlg, ClickWindowPresentationHdl, Button*, void)
+IMPL_LINK_NOARG(SdStartPresentationDlg, ClickWindowPresentationHdl, Button*, void)
 {
     const bool bAuto = aRbtAuto->IsChecked();
     const bool bWindow = aRbtWindow->IsChecked();
@@ -352,7 +352,7 @@ IMPL_LINK_NOARG_TYPED(SdStartPresentationDlg, ClickWindowPresentationHdl, Button
 /**
  *      Handler: Enabled/Disabled Checkbox "AlwaysOnTop"
  */
-IMPL_LINK_NOARG_TYPED(SdStartPresentationDlg, ChangePauseHdl, Edit&, void)
+IMPL_LINK_NOARG(SdStartPresentationDlg, ChangePauseHdl, Edit&, void)
 {
     aCbxAutoLogo->Enable( aRbtAuto->IsChecked() && ( aTmfPause->GetTime().GetMSFromTime() > 0 ) );
 }

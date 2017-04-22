@@ -93,17 +93,9 @@ const char * dbg_out(const OUString & aStr)
     return aDbgOutResult.getStr();
 }
 
-struct CompareUShort
+map<sal_uInt16,OUString> & GetItemWhichMap()
 {
-    bool operator()(sal_uInt16 a, sal_uInt16 b) const
-    {
-        return a < b;
-    }
-};
-
-map<sal_uInt16,OUString,CompareUShort> & GetItemWhichMap()
-{
-    static map<sal_uInt16,OUString,CompareUShort> aItemWhichMap;
+    static map<sal_uInt16,OUString> aItemWhichMap;
     static bool bInitialized = false;
 
     if (! bInitialized)
@@ -361,19 +353,19 @@ const char * dbg_out(const SwPosition & rPos)
 
 static OUString lcl_dbg_out(const SwPaM & rPam)
 {
-   OUString aStr("[ Pt: ");
+    OUString aStr("[ Pt: ");
 
-   aStr += lcl_dbg_out(*rPam.GetPoint());
+    aStr += lcl_dbg_out(*rPam.GetPoint());
 
-   if (rPam.HasMark())
-   {
-       aStr += ", Mk: ";
-       aStr += lcl_dbg_out(*rPam.GetMark());
-   }
+    if (rPam.HasMark())
+    {
+        aStr += ", Mk: ";
+        aStr += lcl_dbg_out(*rPam.GetMark());
+    }
 
-   aStr += " ]";
+    aStr += " ]";
 
-   return aStr;
+    return aStr;
 }
 
 const char * dbg_out(const SwPaM & rPam)
@@ -776,16 +768,8 @@ const char * dbg_out(SwNodes & rNodes)
 
 static OUString lcl_dbg_out(const SwUndo & rUndo)
 {
-    OUString aStr("[ ");
-
-    aStr += OUString::number(
-                static_cast<SfxUndoAction const&>(rUndo).GetId());
-    aStr += ": ";
-
-    aStr += rUndo.GetComment();
-    aStr += " ]";
-
-    return aStr;
+    return "[ " + OUString::number((int)rUndo.GetId())
+                + ": " + rUndo.GetComment() + " ]";
 }
 
 const char * dbg_out(const SwUndo & rUndo)

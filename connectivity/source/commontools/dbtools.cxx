@@ -27,6 +27,7 @@
 #include <com/sun/star/form/FormComponentType.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/sdb/DatabaseContext.hpp>
 #include <com/sun/star/sdb/BooleanComparisonMode.hpp>
@@ -73,6 +74,7 @@
 #include <connectivity/dbexception.hxx>
 #include <connectivity/dbtools.hxx>
 #include <connectivity/statementcomposer.hxx>
+#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <rtl/ustrbuf.hxx>
 #include <tools/diagnose_ex.h>
@@ -328,7 +330,7 @@ Reference< XConnection> getConnection_withFeedback(const OUString& _rDataSourceN
     return xReturn;
 }
 
-Reference< XConnection> getConnection(const Reference< XRowSet>& _rxRowSet) throw (RuntimeException)
+Reference< XConnection> getConnection(const Reference< XRowSet>& _rxRowSet)
 {
     Reference< XConnection> xReturn;
     Reference< XPropertySet> xRowSetProps(_rxRowSet, UNO_QUERY);
@@ -889,7 +891,7 @@ void qualifiedNameComponents(const Reference< XDatabaseMetaData >& _rxConnMetaDa
 
     if ( aNameComps.bSchemas )
     {
-        sal_Int32 nIndex = sName.indexOf((sal_Unicode)'.');
+        sal_Int32 nIndex = sName.indexOf('.');
         //  OSL_ENSURE(-1 != nIndex, "QualifiedNameComponents : no schema separator!");
         if ( nIndex != -1 )
             _rSchema = sName.copy(0, nIndex);
@@ -963,7 +965,7 @@ try
         if ( pOldProps[i].Name != "DefaultControl" && pOldProps[i].Name != "LabelControl" )
         {
             // binary search
-            Property* pResult = ::std::lower_bound(
+            Property* pResult = std::lower_bound(
                 pNewProps, pNewProps + nNewLen, pOldProps[i], ::comphelper::PropertyCompareByName());
 
             if (    pResult
@@ -1137,7 +1139,7 @@ try
                 nKey = xFormats->addNew(sNewFormat, _rLocale);
             }
 
-            xNewProps->setPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FORMATKEY), makeAny((sal_Int32)nKey));
+            xNewProps->setPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FORMATKEY), makeAny(nKey));
         }
 
         // min-/max-Value
@@ -1155,14 +1157,14 @@ try
         {
             Any aDate( xOldProps->getPropertyValue(sPropDefaultDate) );
             if (aDate.hasValue())
-                aNewDefault <<= DBTypeConversion::toDouble(*static_cast<Date const *>(aDate.getValue()));
+                aNewDefault <<= DBTypeConversion::toDouble(*o3tl::doAccess<Date>(aDate));
         }
 
         if (hasProperty(sPropDefaultTime, xOldProps))
         {
             Any aTime( xOldProps->getPropertyValue(sPropDefaultTime) );
             if (aTime.hasValue())
-                aNewDefault <<= DBTypeConversion::toDouble(*static_cast<Time const *>(aTime.getValue()));
+                aNewDefault <<= DBTypeConversion::toDouble(*o3tl::doAccess<Time>(aTime));
         }
 
         // double or OUString will be copied directly
@@ -1381,11 +1383,11 @@ sal_Int32 getSearchColumnFlag( const Reference< XConnection>& _rxConn,sal_Int32 
 
 OUString createUniqueName( const Sequence< OUString >& _rNames, const OUString& _rBaseName, bool _bStartWithNumber )
 {
-    ::std::set< OUString > aUsedNames;
-    ::std::copy(
+    std::set< OUString > aUsedNames;
+    std::copy(
         _rNames.getConstArray(),
         _rNames.getConstArray() + _rNames.getLength(),
-        ::std::insert_iterator< ::std::set< OUString > >( aUsedNames, aUsedNames.end() )
+        std::insert_iterator< std::set< OUString > >( aUsedNames, aUsedNames.end() )
     );
 
     OUString sName( _rBaseName );
@@ -1395,8 +1397,7 @@ OUString createUniqueName( const Sequence< OUString >& _rNames, const OUString& 
 
     while ( aUsedNames.find( sName ) != aUsedNames.end() )
     {
-        sName = _rBaseName;
-        sName += OUString::number( ++nPos );
+        sName = _rBaseName + OUString::number( ++nPos );
     }
     return sName;
 }
@@ -1438,9 +1439,7 @@ bool implUpdateObject(const Reference< XRowUpdate >& _rxUpdatedObject,
     {
         case TypeClass_ANY:
         {
-            Any aInnerValue;
-            _rValue >>= aInnerValue;
-            bSuccessfullyReRouted = implUpdateObject(_rxUpdatedObject, _nColumnIndex, aInnerValue);
+            bSuccessfullyReRouted = implUpdateObject(_rxUpdatedObject, _nColumnIndex, _rValue);
         }
         break;
 
@@ -1449,29 +1448,29 @@ bool implUpdateObject(const Reference< XRowUpdate >& _rxUpdatedObject,
             break;
 
         case TypeClass_STRING:
-            _rxUpdatedObject->updateString(_nColumnIndex, *static_cast<OUString const *>(_rValue.getValue()));
+            _rxUpdatedObject->updateString(_nColumnIndex, *o3tl::forceAccess<OUString>(_rValue));
             break;
 
         case TypeClass_BOOLEAN:
-            _rxUpdatedObject->updateBoolean(_nColumnIndex, *static_cast<sal_Bool const *>(_rValue.getValue()));
+            _rxUpdatedObject->updateBoolean(_nColumnIndex, *o3tl::forceAccess<bool>(_rValue));
             break;
 
         case TypeClass_BYTE:
-            _rxUpdatedObject->updateByte(_nColumnIndex, *static_cast<sal_Int8 const *>(_rValue.getValue()));
+            _rxUpdatedObject->updateByte(_nColumnIndex, *o3tl::forceAccess<sal_Int8>(_rValue));
             break;
 
         case TypeClass_UNSIGNED_SHORT:
         case TypeClass_SHORT:
-            _rxUpdatedObject->updateShort(_nColumnIndex, *static_cast<sal_Int16 const *>(_rValue.getValue()));
+            _rxUpdatedObject->updateShort(_nColumnIndex, *o3tl::forceAccess<sal_Int16>(_rValue));
             break;
 
         case TypeClass_CHAR:
-            _rxUpdatedObject->updateString(_nColumnIndex,OUString(static_cast<sal_Unicode const *>(_rValue.getValue()),1));
+            _rxUpdatedObject->updateString(_nColumnIndex,OUString(*o3tl::forceAccess<sal_Unicode>(_rValue)));
             break;
 
         case TypeClass_UNSIGNED_LONG:
         case TypeClass_LONG:
-            _rxUpdatedObject->updateInt(_nColumnIndex, *static_cast<sal_Int32 const *>(_rValue.getValue()));
+            _rxUpdatedObject->updateInt(_nColumnIndex, *o3tl::forceAccess<sal_Int32>(_rValue));
             break;
 
         case TypeClass_HYPER:
@@ -1483,36 +1482,34 @@ bool implUpdateObject(const Reference< XRowUpdate >& _rxUpdatedObject,
         break;
 
         case TypeClass_FLOAT:
-            _rxUpdatedObject->updateFloat(_nColumnIndex, *static_cast<float const *>(_rValue.getValue()));
+            _rxUpdatedObject->updateFloat(_nColumnIndex, *o3tl::forceAccess<float>(_rValue));
             break;
 
         case TypeClass_DOUBLE:
-            _rxUpdatedObject->updateDouble(_nColumnIndex, *static_cast<double const *>(_rValue.getValue()));
+            _rxUpdatedObject->updateDouble(_nColumnIndex, *o3tl::forceAccess<double>(_rValue));
             break;
 
         case TypeClass_SEQUENCE:
-            if (_rValue.getValueType() == cppu::UnoType< Sequence< sal_Int8 > >::get())
-                _rxUpdatedObject->updateBytes(_nColumnIndex, *static_cast<Sequence<sal_Int8> const *>(_rValue.getValue()));
+            if (auto s = o3tl::tryAccess<Sequence< sal_Int8 >>(_rValue))
+                _rxUpdatedObject->updateBytes(_nColumnIndex, *s);
             else
                 bSuccessfullyReRouted = false;
             break;
         case TypeClass_STRUCT:
-            if (_rValue.getValueType() == cppu::UnoType<DateTime>::get())
-                _rxUpdatedObject->updateTimestamp(_nColumnIndex, *static_cast<DateTime const *>(_rValue.getValue()));
-            else if (_rValue.getValueType() == cppu::UnoType<Date>::get())
-                _rxUpdatedObject->updateDate(_nColumnIndex, *static_cast<Date const *>(_rValue.getValue()));
-            else if (_rValue.getValueType() == cppu::UnoType<Time>::get())
-                _rxUpdatedObject->updateTime(_nColumnIndex, *static_cast<Time const *>(_rValue.getValue()));
+            if (auto s1 = o3tl::tryAccess<DateTime>(_rValue))
+                _rxUpdatedObject->updateTimestamp(_nColumnIndex, *s1);
+            else if (auto s2 = o3tl::tryAccess<Date>(_rValue))
+                _rxUpdatedObject->updateDate(_nColumnIndex, *s2);
+            else if (auto s3 = o3tl::tryAccess<Time>(_rValue))
+                _rxUpdatedObject->updateTime(_nColumnIndex, *s3);
             else
                 bSuccessfullyReRouted = false;
             break;
 
         case TypeClass_INTERFACE:
-            if (_rValue.getValueType() == cppu::UnoType<XInputStream>::get())
+            if (auto xStream = o3tl::tryAccess<Reference<XInputStream>>(_rValue))
             {
-                Reference< XInputStream >  xStream;
-                _rValue >>= xStream;
-                _rxUpdatedObject->updateBinaryStream(_nColumnIndex, xStream, xStream->available());
+                _rxUpdatedObject->updateBinaryStream(_nColumnIndex, *xStream, (*xStream)->available());
                 break;
             }
             SAL_FALLTHROUGH;
@@ -1548,9 +1545,7 @@ bool implSetObject( const Reference< XParameters >& _rxParameters,
 
         case TypeClass_ANY:
         {
-            Any aInnerValue;
-            _rValue >>= aInnerValue;
-            bSuccessfullyReRouted = implSetObject(_rxParameters, _nColumnIndex, aInnerValue);
+            bSuccessfullyReRouted = implSetObject(_rxParameters, _nColumnIndex, _rValue);
         }
         break;
 
@@ -1559,23 +1554,23 @@ bool implSetObject( const Reference< XParameters >& _rxParameters,
             break;
 
         case TypeClass_STRING:
-            _rxParameters->setString(_nColumnIndex, *static_cast<OUString const *>(_rValue.getValue()));
+            _rxParameters->setString(_nColumnIndex, *o3tl::forceAccess<OUString>(_rValue));
             break;
 
         case TypeClass_BOOLEAN:
-            _rxParameters->setBoolean(_nColumnIndex, *static_cast<sal_Bool const *>(_rValue.getValue()));
+            _rxParameters->setBoolean(_nColumnIndex, *o3tl::forceAccess<bool>(_rValue));
             break;
 
         case TypeClass_BYTE:
-            _rxParameters->setByte(_nColumnIndex, *static_cast<sal_Int8 const *>(_rValue.getValue()));
+            _rxParameters->setByte(_nColumnIndex, *o3tl::forceAccess<sal_Int8>(_rValue));
             break;
 
         case TypeClass_SHORT:
-            _rxParameters->setShort(_nColumnIndex, *static_cast<sal_Int16 const *>(_rValue.getValue()));
+            _rxParameters->setShort(_nColumnIndex, *o3tl::forceAccess<sal_Int16>(_rValue));
             break;
 
         case TypeClass_CHAR:
-            _rxParameters->setString(_nColumnIndex, OUString(static_cast<sal_Unicode const *>(_rValue.getValue()),1));
+            _rxParameters->setString(_nColumnIndex, OUString(*o3tl::forceAccess<sal_Unicode>(_rValue)));
             break;
 
         case TypeClass_UNSIGNED_SHORT:
@@ -1588,28 +1583,28 @@ bool implSetObject( const Reference< XParameters >& _rxParameters,
         }
 
         case TypeClass_FLOAT:
-            _rxParameters->setFloat(_nColumnIndex, *static_cast<float const *>(_rValue.getValue()));
+            _rxParameters->setFloat(_nColumnIndex, *o3tl::forceAccess<float>(_rValue));
             break;
 
         case TypeClass_DOUBLE:
-            _rxParameters->setDouble(_nColumnIndex, *static_cast<double const *>(_rValue.getValue()));
+            _rxParameters->setDouble(_nColumnIndex, *o3tl::forceAccess<double>(_rValue));
             break;
 
         case TypeClass_SEQUENCE:
-            if (_rValue.getValueType() == cppu::UnoType< Sequence< sal_Int8 > >::get())
+            if (auto s = o3tl::tryAccess<Sequence< sal_Int8 >>(_rValue))
             {
-                _rxParameters->setBytes(_nColumnIndex, *static_cast<Sequence<sal_Int8> const *>(_rValue.getValue()));
+                _rxParameters->setBytes(_nColumnIndex, *s);
             }
             else
                 bSuccessfullyReRouted = false;
             break;
         case TypeClass_STRUCT:
-            if (_rValue.getValueType() == cppu::UnoType<DateTime>::get())
-                _rxParameters->setTimestamp(_nColumnIndex, *static_cast<DateTime const *>(_rValue.getValue()));
-            else if (_rValue.getValueType() == cppu::UnoType<Date>::get())
-                _rxParameters->setDate(_nColumnIndex, *static_cast<Date const *>(_rValue.getValue()));
-            else if (_rValue.getValueType() == cppu::UnoType<Time>::get())
-                _rxParameters->setTime(_nColumnIndex, *static_cast<Time const *>(_rValue.getValue()));
+            if (auto s1 = o3tl::tryAccess<DateTime>(_rValue))
+                _rxParameters->setTimestamp(_nColumnIndex, *s1);
+            else if (auto s2 = o3tl::tryAccess<Date>(_rValue))
+                _rxParameters->setDate(_nColumnIndex, *s2);
+            else if (auto s3 = o3tl::tryAccess<Time>(_rValue))
+                _rxParameters->setTime(_nColumnIndex, *s3);
             else
                 bSuccessfullyReRouted = false;
             break;
@@ -1635,38 +1630,38 @@ namespace
 {
     class OParameterWrapper : public ::cppu::WeakImplHelper< XIndexAccess >
     {
-        ::std::vector<bool, std::allocator<bool> >       m_aSet;
+        std::vector<bool, std::allocator<bool> >       m_aSet;
         Reference<XIndexAccess> m_xSource;
     public:
-        OParameterWrapper(const ::std::vector<bool, std::allocator<bool> >& _aSet,const Reference<XIndexAccess>& _xSource) : m_aSet(_aSet),m_xSource(_xSource){}
+        OParameterWrapper(const std::vector<bool, std::allocator<bool> >& _aSet,const Reference<XIndexAccess>& _xSource) : m_aSet(_aSet),m_xSource(_xSource){}
     private:
-        // ::com::sun::star::container::XElementAccess
-        virtual Type SAL_CALL getElementType() throw(RuntimeException, std::exception) override
+        // css::container::XElementAccess
+        virtual Type SAL_CALL getElementType() override
         {
             return m_xSource->getElementType();
         }
-        virtual sal_Bool SAL_CALL hasElements(  ) throw(RuntimeException, std::exception) override
+        virtual sal_Bool SAL_CALL hasElements(  ) override
         {
             if ( m_aSet.empty() )
                 return m_xSource->hasElements();
-            return ::std::count(m_aSet.begin(),m_aSet.end(),false) != 0;
+            return std::count(m_aSet.begin(),m_aSet.end(),false) != 0;
         }
-        // ::com::sun::star::container::XIndexAccess
-        virtual sal_Int32 SAL_CALL getCount(  ) throw(RuntimeException, std::exception) override
+        // css::container::XIndexAccess
+        virtual sal_Int32 SAL_CALL getCount(  ) override
         {
             if ( m_aSet.empty() )
                 return m_xSource->getCount();
-            return ::std::count(m_aSet.begin(),m_aSet.end(),false);
+            return std::count(m_aSet.begin(),m_aSet.end(),false);
         }
-        virtual Any SAL_CALL getByIndex( sal_Int32 Index ) throw(IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception) override
+        virtual Any SAL_CALL getByIndex( sal_Int32 Index ) override
         {
             if ( m_aSet.empty() )
                 return m_xSource->getByIndex(Index);
             if ( m_aSet.size() < (size_t)Index )
                 throw IndexOutOfBoundsException();
 
-            ::std::vector<bool, std::allocator<bool> >::const_iterator aIter = m_aSet.begin();
-            ::std::vector<bool, std::allocator<bool> >::const_iterator aEnd = m_aSet.end();
+            std::vector<bool, std::allocator<bool> >::const_iterator aIter = m_aSet.begin();
+            std::vector<bool, std::allocator<bool> >::const_iterator aEnd = m_aSet.end();
             sal_Int32 i = 0;
             sal_Int32 nParamPos = -1;
             for(; aIter != aEnd && i <= Index; ++aIter)
@@ -1686,7 +1681,7 @@ void askForParameters(const Reference< XSingleSelectQueryComposer >& _xComposer,
                       const Reference<XParameters>& _xParameters,
                       const Reference< XConnection>& _xConnection,
                       const Reference< XInteractionHandler >& _rxHandler,
-                      const ::std::vector<bool, std::allocator<bool> >& _aParametersSet)
+                      const std::vector<bool, std::allocator<bool> >& _aParametersSet)
 {
     OSL_ENSURE(_xComposer.is(),"dbtools::askForParameters XSQLQueryComposer is null!");
     OSL_ENSURE(_xParameters.is(),"dbtools::askForParameters XParameters is null!");
@@ -1698,12 +1693,12 @@ void askForParameters(const Reference< XSingleSelectQueryComposer >& _xComposer,
 
     Reference<XIndexAccess>  xParamsAsIndicies = xParameters.is() ? xParameters->getParameters() : Reference<XIndexAccess>();
     sal_Int32 nParamCount = xParamsAsIndicies.is() ? xParamsAsIndicies->getCount() : 0;
-    ::std::vector<bool, std::allocator<bool> > aNewParameterSet( _aParametersSet );
-    if ( nParamCount && ::std::count(aNewParameterSet.begin(),aNewParameterSet.end(),true) != nParamCount )
+    std::vector<bool, std::allocator<bool> > aNewParameterSet( _aParametersSet );
+    if ( nParamCount && std::count(aNewParameterSet.begin(),aNewParameterSet.end(),true) != nParamCount )
     {
         static const OUString PROPERTY_NAME(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_NAME));
         aNewParameterSet.resize(nParamCount ,false);
-        typedef ::std::map< OUString, ::std::vector<sal_Int32> > TParameterPositions;
+        typedef std::map< OUString, std::vector<sal_Int32> > TParameterPositions;
         TParameterPositions aParameterNames;
         for(sal_Int32 i = 0; i < nParamCount; ++i)
         {
@@ -1763,8 +1758,8 @@ void askForParameters(const Reference< XSingleSelectQueryComposer >& _xComposer,
                     xParamColumn->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_SCALE)) >>= nScale;
                     // (the index of the parameters is one-based)
                 TParameterPositions::const_iterator aFind = aParameterNames.find(pFinalValues->Name);
-                ::std::vector<sal_Int32>::const_iterator aIterPos = aFind->second.begin();
-                ::std::vector<sal_Int32>::const_iterator aEndPos = aFind->second.end();
+                std::vector<sal_Int32>::const_iterator aIterPos = aFind->second.begin();
+                std::vector<sal_Int32>::const_iterator aEndPos = aFind->second.end();
                 for(;aIterPos != aEndPos;++aIterPos)
                 {
                     if ( _aParametersSet.empty() || !_aParametersSet[(*aIterPos)-1] )
@@ -1781,7 +1776,7 @@ void setObjectWithInfo(const Reference<XParameters>& _xParams,
                        sal_Int32 parameterIndex,
                        const Any& x,
                        sal_Int32 sqlType,
-                       sal_Int32 scale)  throw(SQLException, RuntimeException)
+                       sal_Int32 scale)
 {
     ORowSetValue aVal;
     aVal.fill(x);
@@ -1792,7 +1787,7 @@ void setObjectWithInfo(const Reference<XParameters>& _xParams,
                        sal_Int32 parameterIndex,
                        const ::connectivity::ORowSetValue& _rValue,
                        sal_Int32 sqlType,
-                       sal_Int32 scale)  throw(SQLException, RuntimeException)
+                       sal_Int32 scale)
 {
     if ( _rValue.isNull() )
         _xParams->setNull(parameterIndex,sqlType);
@@ -1822,7 +1817,7 @@ void setObjectWithInfo(const Reference<XParameters>& _xParams,
                             _xParams->setClob(parameterIndex,xClob);
                         else
                         {
-                            Reference< ::com::sun::star::io::XInputStream > xStream;
+                            Reference< css::io::XInputStream > xStream;
                             if(x >>= xStream)
                                 _xParams->setCharacterStream(parameterIndex,xStream,xStream->available());
                         }
@@ -1873,7 +1868,7 @@ void setObjectWithInfo(const Reference<XParameters>& _xParams,
                                 _xParams->setClob(parameterIndex,xClob);
                             else
                             {
-                                Reference< ::com::sun::star::io::XInputStream > xBinStream;
+                                Reference< css::io::XInputStream > xBinStream;
                                 if(x >>= xBinStream)
                                     _xParams->setBinaryStream(parameterIndex,xBinStream,xBinStream->available());
                             }
@@ -1966,7 +1961,7 @@ namespace connectivity
 void release(oslInterlockedCount& _refCount,
              ::cppu::OBroadcastHelper& rBHelper,
              Reference< XInterface >& _xInterface,
-             ::com::sun::star::lang::XComponent* _pObject) throw ()
+             css::lang::XComponent* _pObject) throw ()
 {
     if (osl_atomic_decrement( &_refCount ) == 0)
     {
@@ -2006,7 +2001,7 @@ void release(oslInterlockedCount& _refCount,
         osl_atomic_increment( &_refCount );
 }
 
-void checkDisposed(bool _bThrow) throw ( DisposedException )
+void checkDisposed(bool _bThrow)
 {
     if (_bThrow)
         throw DisposedException();

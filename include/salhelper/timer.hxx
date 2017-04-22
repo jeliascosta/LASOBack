@@ -32,7 +32,7 @@ namespace salhelper
  *
  *  Times are seconds in UTC since 01.01.1970
  */
-struct TTimeValue : public TimeValue
+struct SAL_WARN_UNUSED TTimeValue : public TimeValue
 {
     TTimeValue()
     {
@@ -184,7 +184,7 @@ protected:
 
     /** Destructor.
      */
-    virtual ~Timer();
+    virtual ~Timer() SAL_OVERRIDE;
 
     /** What should be done when the 'timer fires'.
      */

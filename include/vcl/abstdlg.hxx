@@ -22,46 +22,72 @@
 #include <rtl/ustring.hxx>
 #include <tools/link.hxx>
 #include <vcl/dllapi.h>
+#include <vcl/vclptr.hxx>
+#include <vcl/vclreferencebase.hxx>
+#include <vector>
 
 namespace vcl { class Window; }
-class ResId;
 class Dialog;
+class Bitmap;
 
-class VCL_DLLPUBLIC VclAbstractDialog
+/**
+* Some things multiple-inherit from VclAbstractDialog and OutputDevice,
+* so we need to use virtual inheritance to keep the referencing counting
+* OK.
+*/
+class VCL_DLLPUBLIC VclAbstractDialog : public virtual VclReferenceBase
 {
+protected:
+    virtual             ~VclAbstractDialog() override;
 public:
-    virtual             ~VclAbstractDialog();
-
     virtual short       Execute() = 0;
+
+    // Screenshot interface
+    virtual std::vector<OString> getAllPageUIXMLDescriptions() const;
+    virtual bool selectPageByUIXMLDescription(const OString& rUIXMLDescription);
+    virtual Bitmap createScreenshot() const;
+    virtual OString GetScreenshotId() const { return OString(); };
 };
 
-class VCL_DLLPUBLIC VclAbstractDialog2
+class VCL_DLLPUBLIC VclAbstractDialog2 : public virtual VclReferenceBase
 {
+protected:
+    virtual             ~VclAbstractDialog2() override;
 public:
-    virtual             ~VclAbstractDialog2();
-
     virtual void        StartExecuteModal( const Link<Dialog&,void>& rEndDialogHdl ) = 0;
     virtual long        GetResult() = 0;
 };
 
 class VCL_DLLPUBLIC VclAbstractTerminatedDialog : public VclAbstractDialog
 {
+protected:
+    virtual             ~VclAbstractTerminatedDialog() override = default;
 public:
-    virtual void        EndDialog(long nResult =0) = 0;
+    virtual void        EndDialog(long nResult) = 0;
 };
 
 class VCL_DLLPUBLIC VclAbstractRefreshableDialog : public VclAbstractDialog
 {
+protected:
+    virtual             ~VclAbstractRefreshableDialog() override = default;
 public:
     virtual void        Update() = 0;
 };
 
 class VCL_DLLPUBLIC AbstractPasswordToOpenModifyDialog : public VclAbstractDialog
 {
+protected:
+    virtual             ~AbstractPasswordToOpenModifyDialog() override = default;
 public:
     virtual OUString    GetPasswordToOpen() const   = 0;
     virtual OUString    GetPasswordToModify() const = 0;
     virtual bool        IsRecommendToOpenReadonly() const = 0;
+};
+
+class VCL_DLLPUBLIC AbstractScreenshotAnnotationDlg : public VclAbstractDialog
+{
+protected:
+    virtual             ~AbstractScreenshotAnnotationDlg() override = default;
 };
 
 class VCL_DLLPUBLIC VclAbstractDialogFactory
@@ -69,12 +95,16 @@ class VCL_DLLPUBLIC VclAbstractDialogFactory
 public:
     virtual             ~VclAbstractDialogFactory();    // needed for export of vtable
     static VclAbstractDialogFactory* Create();
-    // nDialogId was previously a ResId without ResMgr; the ResourceId is now
-    // an implementation detail of the factory
-    virtual VclAbstractDialog* CreateVclDialog( vcl::Window* pParent, sal_uInt32 nResId ) = 0;
+    // The Id is an implementation detail of the factory
+    virtual VclPtr<VclAbstractDialog> CreateVclDialog(vcl::Window* pParent, sal_uInt32 nId) = 0;
 
     // creates instance of PasswordToOpenModifyDialog from cui
-    virtual AbstractPasswordToOpenModifyDialog* CreatePasswordToOpenModifyDialog( vcl::Window * pParent, sal_uInt16 nMinPasswdLen, sal_uInt16 nMaxPasswdLen, bool bIsPasswordToModify ) = 0;
+    virtual VclPtr<AbstractPasswordToOpenModifyDialog> CreatePasswordToOpenModifyDialog( vcl::Window * pParent, sal_uInt16 nMaxPasswdLen, bool bIsPasswordToModify ) = 0;
+
+    // creates instance of ScreenshotAnnotationDlg from cui
+    virtual VclPtr<AbstractScreenshotAnnotationDlg> CreateScreenshotAnnotationDlg(
+        vcl::Window* pParent,
+        Dialog& rParentDialog) = 0;
 };
 
 #endif
